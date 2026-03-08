@@ -20,6 +20,7 @@ pub fn run() {
             vaults::remove_vault,
             vaults::read_vault_tree,
             vaults::read_note,
+            vaults::write_note,
             vaults::pick_folder,
             vaults::get_all_vault_stats,
             vaults::search_stars

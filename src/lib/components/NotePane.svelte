@@ -3,6 +3,7 @@
 	import type { OpenTab } from '$lib/vaults/store';
 	import { detectDir, renderMarkdown } from '$lib/utils';
 	import { dir } from '$lib/i18n';
+	import PropertyEditor from './PropertyEditor.svelte';
 
 	let {
 		tab,
@@ -45,17 +46,17 @@
 			</div>
 		{/if}
 		<div class="note-scroll" dir={noteDir}>
-			{#if properties.length > 0}
-				<div class="note-properties">
-					<div class="props-header">{ar ? 'الخصائص' : 'Properties'}</div>
-					{#each properties as prop}
-						<div class="prop-row">
-							<span class="prop-key">{prop.key}</span>
-							<span class="prop-val">{prop.value || '—'}</span>
-						</div>
-					{/each}
-				</div>
-				<hr class="props-divider"/>
+			{#if tab}
+				<PropertyEditor
+					properties={properties}
+					body={noteBody}
+					tabId={tab.id}
+					filePath={tab.path}
+					{ar}
+				/>
+				{#if properties.length > 0}
+					<hr class="props-divider"/>
+				{/if}
 			{/if}
 			<div class="note-content">
 				{@html renderMarkdown(noteBody)}
@@ -78,20 +79,19 @@
 	.pane-tab-bar {
 		display: flex; align-items: flex-end;
 		background: #f0f0f4; border-bottom: 1px solid #e0e0e4;
-		padding: 10px 4px 0; flex-shrink: 0;
+		padding: 12px 4px 0; flex-shrink: 0;
 	}
 	.pane-tab {
 		position: relative;
+		display: inline-flex; align-items: center; gap: 6px;
 		background: #fff; color: #1f2328;
 		border: 1px solid #e0e0e4;
 		border-top: 3px solid var(--vault-color, #7c3aed);
 		border-bottom: 1px solid #fff;
 		margin-bottom: -1px;
 		border-radius: 6px 6px 0 0;
-		padding: 4px 10px;
+		padding: 5px 10px;
 		font-size: 0.8rem;
-		max-width: 200px;
-		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
 	.pane-tab-vault {
 		position: absolute; bottom: 100%; inset-inline-end: 8px;
@@ -119,15 +119,6 @@
 
 	.note-scroll { flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 800px; }
 
-	.note-properties {
-		background: #f8f8fb; border: 1px solid #e8e8ec; border-radius: 6px;
-		padding: 10px 14px; margin-bottom: 4px;
-	}
-	.props-header { font-size: 0.78rem; font-weight: 600; color: #5c5c66; margin-bottom: 6px; }
-	.prop-row { display: flex; gap: 12px; padding: 3px 0; font-size: 0.82rem; border-bottom: 1px solid #f0f0f4; }
-	.prop-row:last-child { border-bottom: none; }
-	.prop-key { color: #5c5c66; font-weight: 500; min-width: 80px; text-align: end; }
-	.prop-val { color: #1f2328; flex: 1; }
 	.props-divider { border: none; border-top: 1px solid #e8e8ec; margin: 12px 0; }
 
 	.note-content { line-height: 1.8; color: #1f2328; }

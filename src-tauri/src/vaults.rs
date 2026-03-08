@@ -127,6 +127,28 @@ pub fn read_note(file_path: String) -> Result<String, String> {
     fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
+/// Write content to a markdown file inside a vault.
+#[tauri::command]
+pub fn write_note(file_path: String, content: String) -> Result<(), String> {
+    let path = Path::new(&file_path);
+
+    // Safety: only allow writing .md files
+    match path.extension().and_then(|e| e.to_str()) {
+        Some("md") => {}
+        _ => return Err("Can only write to .md files.".to_string()),
+    }
+
+    if !path.exists() {
+        if let Some(parent) = path.parent() {
+            if !parent.exists() {
+                return Err("Parent directory does not exist.".to_string());
+            }
+        }
+    }
+
+    fs::write(path, content).map_err(|e| format!("Failed to write file: {}", e))
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VaultStats {
     pub vault_id: String,

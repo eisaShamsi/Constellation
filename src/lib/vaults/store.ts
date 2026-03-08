@@ -45,9 +45,29 @@ export interface OpenTab {
 	name: string;
 }
 
+export type PropertyType = 'text' | 'number' | 'date' | 'list' | 'link';
+
 export interface FrontmatterProperty {
 	key: string;
 	value: string;
+	type: PropertyType;
+	listItems?: string[];
+}
+
+function detectPropertyType(key: string, value: string): PropertyType {
+	const listKeys = ['tags', 'aliases', 'cssclasses', 'cssclass'];
+	if (listKeys.includes(key.toLowerCase())) return 'list';
+	if (value.startsWith('[') && value.endsWith(']')) return 'list';
+
+	if (/^\[\[.*\]\]$/.test(value)) return 'link';
+
+	if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$/.test(value)) return 'date';
+	const dateKeys = ['date', 'created', 'updated', 'modified', 'due', 'published', 'start', 'end'];
+	if (dateKeys.includes(key.toLowerCase()) && value) return 'date';
+
+	if (/^-?\d+(\.\d+)?$/.test(value) && value !== '') return 'number';
+
+	return 'text';
 }
 
 // ─── Core state ───
@@ -110,23 +130,108 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 	const yamlLines = lines.slice(1, endIndex);
 	const properties: FrontmatterProperty[] = [];
 
-	for (const line of yamlLines) {
+	let i = 0;
+	while (i < yamlLines.length) {
+		const line = yamlLines[i];
 		const colonIdx = line.indexOf(':');
-		if (colonIdx > 0) {
+
+		if (colonIdx > 0 && !line.startsWith(' ') && !line.startsWith('\t')) {
 			const key = line.substring(0, colonIdx).trim();
 			let value = line.substring(colonIdx + 1).trim();
+
+			// Multi-line list: key:\n  - item1\n  - item2
+			const listItems: string[] = [];
+			if (!value && i + 1 < yamlLines.length && /^\s+-\s/.test(yamlLines[i + 1])) {
+				i++;
+				while (i < yamlLines.length && /^\s+-\s/.test(yamlLines[i])) {
+					let item = yamlLines[i].replace(/^\s+-\s*/, '').trim();
+					if ((item.startsWith('"') && item.endsWith('"')) || (item.startsWith("'") && item.endsWith("'"))) {
+						item = item.slice(1, -1);
+					}
+					listItems.push(item);
+					i++;
+				}
+				if (key) {
+					properties.push({ key, value: listItems.join(', '), type: 'list', listItems });
+				}
+				continue;
+			}
+
 			// Strip quotes
 			if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
 				value = value.slice(1, -1);
 			}
+
+			// Inline list: [a, b, c]
+			let parsedListItems: string[] | undefined;
+			if (value.startsWith('[') && value.endsWith(']')) {
+				parsedListItems = value.slice(1, -1)
+					.split(',')
+					.map(s => s.trim().replace(/^["']|["']$/g, ''))
+					.filter(Boolean);
+				value = parsedListItems.join(', ');
+			}
+
+			const type = detectPropertyType(key, value);
 			if (key) {
-				properties.push({ key, value });
+				properties.push({
+					key,
+					value,
+					type,
+					listItems: parsedListItems ?? (type === 'list' ? value.split(',').map(s => s.trim()).filter(Boolean) : undefined)
+				});
 			}
 		}
+		i++;
 	}
 
 	const body = lines.slice(endIndex + 1).join('\n');
 	return { properties, body };
+}
+
+export function reconstructFrontmatter(properties: FrontmatterProperty[]): string {
+	if (properties.length === 0) return '';
+
+	const lines: string[] = ['---'];
+	for (const prop of properties) {
+		if (prop.type === 'list' && prop.listItems && prop.listItems.length > 0) {
+			lines.push(`${prop.key}:`);
+			for (const item of prop.listItems) {
+				lines.push(`  - ${item}`);
+			}
+		} else if (prop.type === 'date' || prop.type === 'number' || prop.type === 'link') {
+			lines.push(`${prop.key}: ${prop.value}`);
+		} else {
+			const v = prop.value;
+			const needsQuoting = /[:{}\[\],&*?|>!%@`#]/.test(v) ||
+				v.startsWith("'") || v.startsWith('"') ||
+				v === '' || v === 'true' || v === 'false' ||
+				v === 'null' || v === 'yes' || v === 'no';
+			if (needsQuoting && v !== '') {
+				lines.push(`${prop.key}: "${v.replace(/"/g, '\\"')}"`);
+			} else {
+				lines.push(`${prop.key}: ${v}`);
+			}
+		}
+	}
+	lines.push('---');
+	return lines.join('\n');
+}
+
+export function buildFullContent(properties: FrontmatterProperty[], body: string): string {
+	const frontmatter = reconstructFrontmatter(properties);
+	if (!frontmatter) return body;
+	return frontmatter + '\n' + body;
+}
+
+export async function writeNote(filePath: string, content: string): Promise<void> {
+	await invoke('write_note', { filePath, content });
+}
+
+export function updateTabContent(tabId: string, newContent: string) {
+	openTabs.update(tabs =>
+		tabs.map(t => t.id === tabId ? { ...t, content: newContent } : t)
+	);
 }
 
 // ─── Outline (headings) extraction ───

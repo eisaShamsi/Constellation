@@ -12,7 +12,8 @@
 		parseFrontmatter, extractHeadings,
 		type FrontmatterProperty, type HeadingItem
 	} from '$lib/vaults/store';
-	import type { VaultStats, FileEntry } from '$lib/vaults/store';
+	import type { VaultStats, FileEntry, PropertyType } from '$lib/vaults/store';
+	import { detectDir } from '$lib/utils';
 	import FileTree from '$lib/components/FileTree.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import { page } from '$app/state';
@@ -28,6 +29,37 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
+
+	// Sidebar resizing
+	let leftSidebarWidth = $state(240);
+	let rightSidebarWidth = $state(260);
+	let resizing = $state<'left' | 'right' | null>(null);
+
+	function startResize(side: 'left' | 'right', e: MouseEvent) {
+		e.preventDefault();
+		resizing = side;
+		const startX = e.clientX;
+		const startWidth = side === 'left' ? leftSidebarWidth : rightSidebarWidth;
+		const isRtl = $dir === 'rtl';
+
+		function onMouseMove(ev: MouseEvent) {
+			const delta = ev.clientX - startX;
+			if (side === 'left') {
+				leftSidebarWidth = Math.max(160, Math.min(500, startWidth + (isRtl ? -delta : delta)));
+			} else {
+				rightSidebarWidth = Math.max(160, Math.min(500, startWidth + (isRtl ? delta : -delta)));
+			}
+		}
+
+		function onMouseUp() {
+			resizing = null;
+			document.removeEventListener('mousemove', onMouseMove);
+			document.removeEventListener('mouseup', onMouseUp);
+		}
+
+		document.addEventListener('mousemove', onMouseMove);
+		document.addEventListener('mouseup', onMouseUp);
+	}
 
 	// Vault trees
 	let vaultTrees = $state<Record<string, FileEntry[]>>({});
@@ -47,12 +79,15 @@
 		return map;
 	});
 
+	const TYPE_ICONS: Record<PropertyType, string> = { text: '\u2261', number: '#', date: '\uD83D\uDCC5', list: '\u2255', link: '\uD83D\uDD17' };
+
 	// Sidebar data: derived from focused tab (whichever pane has focus)
 	const sidebarTab = $derived($focusedTab);
 	const sidebarParsed = $derived(sidebarTab ? parseFrontmatter(sidebarTab.content) : null);
 	const sidebarProperties = $derived<FrontmatterProperty[]>(sidebarParsed?.properties ?? []);
 	const sidebarBody = $derived(sidebarParsed?.body ?? '');
 	const sidebarHeadings = $derived<HeadingItem[]>(sidebarBody ? extractHeadings(sidebarBody) : []);
+	const noteDir = $derived(sidebarBody ? detectDir(sidebarBody) : $dir);
 
 	// Status bar stats from focused tab
 	const wordCount = $derived(sidebarTab ? sidebarTab.content.split(/\s+/).filter(w => w.length > 0).length : 0);
@@ -132,13 +167,10 @@
 	}
 </script>
 
-<div class="app" dir={$dir}>
+<div class="app" dir={$dir} class:resizing={resizing !== null} class:no-sidebar={!sidebarOpen}>
 	<!-- ═══ RIBBON ═══ -->
 	<div class="ribbon">
 		<div class="ribbon-top">
-			<button class="r-btn" class:active={sidebarOpen} onclick={() => sidebarOpen = !sidebarOpen} title={ar ? 'القائمة' : 'Toggle sidebar'}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-			</button>
 			<button class="r-btn" onclick={() => { sidebarOpen = true; searchMode = false; }} title={ar ? 'المستكشف' : 'File explorer'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
 			</button>
@@ -161,7 +193,7 @@
 
 	<!-- ═══ LEFT SIDEBAR ═══ -->
 	{#if sidebarOpen}
-		<aside class="sidebar">
+		<aside class="sidebar" style:width="{leftSidebarWidth}px">
 			<div class="sidebar-toolbar">
 				{#if searchMode}
 					<div class="search-box">
@@ -226,6 +258,8 @@
 			<div class="sidebar-footer">
 				<span class="footer-name">Constellation</span>
 			</div>
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="sidebar-resize" onmousedown={(e) => startResize('left', e)}></div>
 		</aside>
 	{/if}
 
@@ -233,6 +267,9 @@
 	<div class="main-area">
 		<!-- Tab Bar -->
 		<div class="tab-bar">
+			<button class="tab-action" class:active={sidebarOpen} onclick={() => sidebarOpen = !sidebarOpen} title={ar ? 'القائمة الجانبية' : 'Left sidebar'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+			</button>
 			{#if !$splitActive}
 				<div class="tab-scroll">
 					{#each $openTabs as tab (tab.id)}
@@ -302,8 +339,10 @@
 	</div>
 
 	<!-- ═══ RIGHT SIDEBAR ═══ -->
-	<aside class="right-sidebar" class:collapsed={!rightSidebarOpen}>
-		<div class="rs-inner">
+	<aside class="right-sidebar" class:collapsed={!rightSidebarOpen} style:width={rightSidebarOpen ? rightSidebarWidth + 'px' : undefined}>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="rs-resize" onmousedown={(e) => startResize('right', e)}></div>
+		<div class="rs-inner" style:width="{rightSidebarWidth}px" dir={noteDir}>
 			{#if isHome && sidebarTab}
 				<!-- Properties Panel -->
 				<div class="rs-section">
@@ -311,6 +350,7 @@
 					{#if sidebarProperties.length > 0}
 						{#each sidebarProperties as prop}
 							<div class="rs-prop">
+								<span class="rs-prop-icon">{TYPE_ICONS[prop.type]}</span>
 								<span class="rs-prop-key">{prop.key}</span>
 								<span class="rs-prop-val">{prop.value || '—'}</span>
 							</div>
@@ -388,6 +428,9 @@
 		grid-template-rows: 1fr 24px;
 		overflow: hidden;
 	}
+	.app.no-sidebar {
+		grid-template-columns: auto 1fr auto;
+	}
 
 	/* ═══ RIBBON ═══ */
 	.ribbon {
@@ -408,9 +451,10 @@
 
 	/* ═══ LEFT SIDEBAR ═══ */
 	.sidebar {
-		grid-row: 1; width: 240px; background: #f6f6f9;
+		grid-row: 1; background: #f6f6f9;
 		border-inline-end: 1px solid #e0e0e4;
 		display: flex; flex-direction: column; overflow: hidden;
+		position: relative;
 	}
 	.sidebar-toolbar {
 		padding: 4px 6px; border-bottom: 1px solid #e0e0e4;
@@ -497,7 +541,7 @@
 		display: flex; align-items: center; gap: 6px;
 		padding: 5px 10px; font-size: 0.8rem; color: #5c5c66;
 		background: #e8e8ec; border-radius: 6px 6px 0 0;
-		cursor: pointer; max-width: 180px; min-width: 0;
+		cursor: pointer; min-width: 0;
 		border: none; font-family: inherit; flex-shrink: 0;
 		border-top: 3px solid var(--vault-color, transparent);
 		position: relative;
@@ -570,14 +614,15 @@
 
 	/* ═══ RIGHT SIDEBAR ═══ */
 	.right-sidebar {
-		grid-row: 1; width: 260px; background: #f8f8fb;
+		grid-row: 1; background: #f8f8fb;
 		border-inline-start: 1px solid #e0e0e4;
 		overflow: hidden;
 		transition: width 0.2s ease;
+		position: relative;
 	}
-	.right-sidebar.collapsed { width: 0; border-inline-start: none; }
+	.right-sidebar.collapsed { width: 0 !important; border-inline-start: none; }
 	.rs-inner {
-		width: 260px; height: 100%;
+		height: 100%;
 		display: flex; flex-direction: column; overflow-y: auto;
 	}
 
@@ -592,6 +637,7 @@
 		display: flex; justify-content: space-between; gap: 8px;
 		padding: 3px 0; font-size: 0.8rem;
 	}
+	.rs-prop-icon { color: #8b8b96; font-size: 0.75rem; flex-shrink: 0; width: 16px; text-align: center; }
 	.rs-prop-key { color: #5c5c66; font-weight: 500; }
 	.rs-prop-val { color: #1f2328; text-align: end; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.rs-heading {
@@ -615,4 +661,19 @@
 	}
 	.sb-left, .sb-right { display: flex; align-items: center; gap: 4px; }
 	.sb-dot { color: #d0d0d6; }
+
+	/* ═══ RESIZE HANDLES ═══ */
+	.app.resizing { user-select: none; cursor: col-resize; }
+	.sidebar-resize {
+		position: absolute; top: 0; inset-inline-end: 0;
+		width: 4px; height: 100%;
+		cursor: col-resize; z-index: 10;
+	}
+	.sidebar-resize:hover, .app.resizing .sidebar-resize { background: #7c3aed; }
+	.rs-resize {
+		position: absolute; top: 0; inset-inline-start: 0;
+		width: 4px; height: 100%;
+		cursor: col-resize; z-index: 10;
+	}
+	.rs-resize:hover, .app.resizing .rs-resize { background: #7c3aed; }
 </style>
