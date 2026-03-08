@@ -8,12 +8,16 @@
 		tab,
 		isFocused = false,
 		onFocus,
-		ar = false
+		ar = false,
+		color = '#7c3aed',
+		splitView = false
 	}: {
 		tab: OpenTab | null;
 		isFocused?: boolean;
 		onFocus: () => void;
 		ar?: boolean;
+		color?: string;
+		splitView?: boolean;
 	} = $props();
 
 	const parsed = $derived(tab ? parseFrontmatter(tab.content) : null);
@@ -26,11 +30,20 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="pane" class:focused={isFocused} onclick={onFocus}>
 	{#if tab}
-		<div class="pane-breadcrumb">
-			<span class="bc-vault">{tab.vaultName}</span>
-			<span class="bc-sep">/</span>
-			<span class="bc-note">{tab.name}</span>
-		</div>
+		{#if splitView}
+			<div class="pane-tab-bar" style:--vault-color={color}>
+				<div class="pane-tab">
+					<span class="pane-tab-vault">{tab.vaultName}</span>
+					<span class="pane-tab-title">{tab.name}</span>
+				</div>
+			</div>
+		{:else}
+			<div class="pane-breadcrumb">
+				<span class="bc-vault">{tab.vaultName}</span>
+				<span class="bc-sep">/</span>
+				<span class="bc-note">{tab.name}</span>
+			</div>
+		{/if}
 		<div class="note-scroll" dir={noteDir}>
 			{#if properties.length > 0}
 				<div class="note-properties">
@@ -61,6 +74,39 @@
 		overflow: hidden; min-width: 0; min-height: 0;
 	}
 	.pane.focused { box-shadow: inset 0 0 0 2px #7c3aed33; }
+
+	.pane-tab-bar {
+		display: flex; align-items: flex-end;
+		background: #f0f0f4; border-bottom: 1px solid #e0e0e4;
+		padding: 10px 4px 0; flex-shrink: 0;
+	}
+	.pane-tab {
+		position: relative;
+		background: #fff; color: #1f2328;
+		border: 1px solid #e0e0e4;
+		border-top: 3px solid var(--vault-color, #7c3aed);
+		border-bottom: 1px solid #fff;
+		margin-bottom: -1px;
+		border-radius: 6px 6px 0 0;
+		padding: 4px 10px;
+		font-size: 0.8rem;
+		max-width: 200px;
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	.pane-tab-vault {
+		position: absolute; bottom: 100%; inset-inline-end: 8px;
+		font-size: 0.55rem; line-height: 1.3; letter-spacing: 0.02em;
+		color: #1f2328;
+		background: #f0f0f4;
+		padding: 0 5px;
+		border-radius: 3px 3px 0 0;
+		border: 1px solid #e0e0e4; border-bottom: none;
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+		max-width: 100%; pointer-events: none;
+	}
+	.pane-tab-title {
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
 
 	.pane-breadcrumb {
 		padding: 4px 16px; border-bottom: 1px solid #f0f0f4;

@@ -233,25 +233,28 @@
 	<div class="main-area">
 		<!-- Tab Bar -->
 		<div class="tab-bar">
-			<div class="tab-scroll">
-				{#each $openTabs as tab (tab.id)}
-					<button class="tab"
-						class:active={!$splitActive && $activeTabId === tab.id}
-						class:focused={$splitActive && $focusedTabId === tab.id}
-						style:--vault-color={vaultColorMap[tab.vaultName]}
-						onclick={() => switchTab(tab.id)}>
-						<span class="tab-vault">{tab.vaultName}</span>
-						<span class="tab-title">{tab.name}</span>
-						<span class="tab-close" role="button" onclick={(e) => { e.stopPropagation(); closeTab(tab.id); }}>×</span>
-					</button>
-				{/each}
-				{#if !isHome}
-					<div class="tab active">
-						<span class="tab-title">{page.url.pathname === '/settings' ? (ar ? 'الإعدادات' : 'Settings') : (ar ? 'المهارات' : 'Skills')}</span>
-						<a class="tab-close" href="/">×</a>
-					</div>
-				{/if}
-			</div>
+			{#if !$splitActive}
+				<div class="tab-scroll">
+					{#each $openTabs as tab (tab.id)}
+						<button class="tab"
+							class:active={$activeTabId === tab.id}
+							style:--vault-color={vaultColorMap[tab.vaultName]}
+							onclick={() => switchTab(tab.id)}>
+							<span class="tab-vault">{tab.vaultName}</span>
+							<span class="tab-title">{tab.name}</span>
+							<span class="tab-close" role="button" onclick={(e) => { e.stopPropagation(); closeTab(tab.id); }}>×</span>
+						</button>
+					{/each}
+					{#if !isHome}
+						<div class="tab active">
+							<span class="tab-title">{page.url.pathname === '/settings' ? (ar ? 'الإعدادات' : 'Settings') : (ar ? 'المهارات' : 'Skills')}</span>
+							<a class="tab-close" href="/">×</a>
+						</div>
+					{/if}
+				</div>
+			{:else}
+				<div class="tab-scroll"></div>
+			{/if}
 			<button class="tab-action" class:active={$splitActive} onclick={cycleSplit} title={ar ? 'تقسيم' : 'Split view'}>
 				{#if $splitActive && $splitDirection === 'horizontal'}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/></svg>
@@ -273,7 +276,7 @@
 							{#if i > 0}
 								<div class="pane-divider"></div>
 							{/if}
-							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} {ar} />
+							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} {ar} color={vaultColorMap[tab.vaultName]} splitView />
 						{/each}
 					{:else}
 						<NotePane tab={$activeTab} isFocused={true} onFocus={() => {}} {ar} />
@@ -487,12 +490,12 @@
 	}
 	.tab-scroll {
 		flex: 1; min-width: 0; display: flex; align-items: flex-end;
-		gap: 1px; padding: 0 4px; overflow-x: auto;
+		gap: 1px; padding: 12px 4px 0; overflow-x: auto;
 	}
 	.tab-scroll::-webkit-scrollbar { height: 0; }
 	.tab {
 		display: flex; align-items: center; gap: 6px;
-		padding: 14px 10px 5px; font-size: 0.8rem; color: #5c5c66;
+		padding: 5px 10px; font-size: 0.8rem; color: #5c5c66;
 		background: #e8e8ec; border-radius: 6px 6px 0 0;
 		cursor: pointer; max-width: 180px; min-width: 0;
 		border: none; font-family: inherit; flex-shrink: 0;
@@ -507,11 +510,15 @@
 		margin-bottom: -1px;
 	}
 	.tab-vault {
-		position: absolute; top: 2px; inset-inline-end: 6px;
-		font-size: 0.55rem; line-height: 1; letter-spacing: 0.02em;
-		color: var(--vault-color, #8b8b96);
+		position: absolute; bottom: 100%; inset-inline-end: 8px;
+		font-size: 0.55rem; line-height: 1.3; letter-spacing: 0.02em;
+		color: #1f2328;
+		background: #f0f0f4;
+		padding: 0 5px;
+		border-radius: 3px 3px 0 0;
+		border: 1px solid #e0e0e4; border-bottom: none;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-		max-width: calc(100% - 12px); pointer-events: none;
+		max-width: 100%; pointer-events: none;
 	}
 	.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.tab-close {
