@@ -1,103 +1,107 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
-
-  let greetMsg = $state("");
-
-  async function checkBackend() {
-    greetMsg = await invoke("greet", { name: "Constellation" });
-  }
+	import { t } from '$lib/i18n';
+	import { hasProvider } from '$lib/ai/store';
 </script>
 
-<main class="container">
-  <div class="hero">
-    <h1>Constellation</h1>
-    <p class="tagline">A Map of Maps</p>
-    <p class="description">
-      Your unified dashboard for multiple Obsidian vaults.
-      One view across all your knowledge universes.
-    </p>
-    <button onclick={checkBackend}>Test Backend Connection</button>
-    {#if greetMsg}
-      <p class="status">{greetMsg}</p>
-    {/if}
-  </div>
-</main>
+<div class="hero">
+	<h1>{$t('app.name')}</h1>
+	<p class="tagline">{$t('app.tagline')}</p>
+	<p class="description">{$t('app.description')}</p>
+
+	<div class="actions">
+		{#if $hasProvider}
+			<a href="/skills" class="btn primary">{$t('nav.skills')}</a>
+		{:else}
+			<a href="/settings" class="btn primary">{$t('settings.ai')} →</a>
+		{/if}
+	</div>
+
+	<div class="features">
+		<div class="feature">
+			<span class="feature-icon">✦</span>
+			<span>{$t('skill.summarize')}</span>
+		</div>
+		<div class="feature">
+			<span class="feature-icon">?</span>
+			<span>{$t('skill.qa')}</span>
+		</div>
+		<div class="feature">
+			<span class="feature-icon">✎</span>
+			<span>{$t('skill.write')}</span>
+		</div>
+		<div class="feature">
+			<span class="feature-icon">⟡</span>
+			<span>{$t('skill.autolink')}</span>
+		</div>
+	</div>
+</div>
 
 <style>
-:root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-  color: #e0e0e0;
-  background-color: #0d1117;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+	.hero {
+		text-align: center;
+		padding-top: 8vh;
+	}
 
-.container {
-  margin: 0;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 2rem;
-}
+	h1 {
+		font-size: 3.5rem;
+		font-weight: 700;
+		background: linear-gradient(135deg, #7c3aed, #3b82f6, #06b6d4);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+		margin-bottom: 0.25rem;
+	}
 
-.hero {
-  max-width: 600px;
-}
+	.tagline {
+		font-size: 1.25rem;
+		color: #8b949e;
+		margin-top: 0;
+		margin-bottom: 2rem;
+		font-style: italic;
+	}
 
-h1 {
-  font-size: 3.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #7c3aed, #3b82f6, #06b6d4);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 0.25rem;
-}
+	.description {
+		color: #8b949e;
+		line-height: 1.6;
+		max-width: 500px;
+		margin: 0 auto 2rem;
+	}
 
-.tagline {
-  font-size: 1.25rem;
-  color: #8b949e;
-  margin-top: 0;
-  margin-bottom: 2rem;
-  font-style: italic;
-}
+	.actions { margin-bottom: 3rem; }
 
-.description {
-  font-size: 1rem;
-  color: #8b949e;
-  line-height: 1.6;
-  margin-bottom: 2rem;
-}
+	.btn {
+		display: inline-block;
+		padding: 0.75em 1.5em;
+		border-radius: 8px;
+		font-weight: 600;
+		font-size: 1rem;
+		text-decoration: none;
+		transition: all 0.2s;
+	}
+	.btn.primary {
+		background: #7c3aed;
+		color: white;
+	}
+	.btn.primary:hover { background: #6d28d9; }
 
-button {
-  border-radius: 8px;
-  border: 1px solid #30363d;
-  padding: 0.75em 1.5em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #e0e0e0;
-  background-color: #21262d;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+	.features {
+		display: flex;
+		justify-content: center;
+		gap: 1.5rem;
+		flex-wrap: wrap;
+	}
 
-button:hover {
-  border-color: #7c3aed;
-  background-color: #30363d;
-}
+	.feature {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: #161b22;
+		border: 1px solid #21262d;
+		padding: 0.6em 1em;
+		border-radius: 8px;
+		font-size: 0.9rem;
+		color: #c9d1d9;
+	}
 
-.status {
-  margin-top: 1rem;
-  color: #3fb950;
-  font-size: 0.9rem;
-}
+	.feature-icon { font-size: 1.1rem; }
 </style>

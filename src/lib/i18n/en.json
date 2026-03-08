@@ -1,0 +1,79 @@
+{
+  "app": {
+    "name": "Constellation",
+    "tagline": "A Map of Maps",
+    "description": "Your unified dashboard for multiple Obsidian vaults. One view across all your knowledge universes."
+  },
+  "nav": {
+    "home": "Home",
+    "settings": "Settings",
+    "skills": "Skills"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageDescription": "Choose your preferred language",
+    "ai": "AI Provider",
+    "aiDescription": "Configure your AI provider to power intelligent features",
+    "provider": "Provider",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "Enter your API key...",
+    "model": "Model",
+    "testConnection": "Test Connection",
+    "connectionSuccess": "Connected successfully!",
+    "connectionFailed": "Connection failed. Check your API key.",
+    "save": "Save",
+    "saved": "Settings saved!",
+    "ollamaUrl": "Ollama URL",
+    "ollamaUrlPlaceholder": "http://localhost:11434"
+  },
+  "skills": {
+    "title": "Skills",
+    "description": "AI-powered workflows to enhance your notes",
+    "installed": "Installed",
+    "available": "Available",
+    "builtin": "Built-in",
+    "custom": "Custom",
+    "run": "Run",
+    "running": "Running...",
+    "install": "Install",
+    "create": "Create Skill",
+    "noProvider": "Connect an AI provider in Settings to use skills.",
+    "selectNote": "Select a note",
+    "selectVault": "Select a vault",
+    "enterText": "Enter text...",
+    "result": "Result",
+    "copyResult": "Copy",
+    "applyResult": "Apply to Note"
+  },
+  "skill": {
+    "summarize": "Summarize Note",
+    "summarizeDesc": "Generate a concise summary of any note",
+    "qa": "Smart Q&A",
+    "qaDesc": "Ask questions about your vaults and get AI-powered answers",
+    "write": "Writing Assistant",
+    "writeDesc": "Expand, rewrite, or improve your text",
+    "autolink": "Auto-Linker",
+    "autolinkDesc": "Discover connections between notes across vaults",
+    "translate": "Translate Note",
+    "translateDesc": "Translate notes between languages",
+    "meeting": "Meeting Notes",
+    "meetingDesc": "Structure and organize raw meeting notes",
+    "chart": "Chart Generator",
+    "chartDesc": "Create visual charts from your note data",
+    "research": "Research Assistant",
+    "researchDesc": "Analyze and synthesize information across multiple notes"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "error": "Error",
+    "loading": "Loading...",
+    "noResults": "No results found",
+    "search": "Search...",
+    "success": "Success"
+  }
+}

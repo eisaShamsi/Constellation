@@ -37,6 +37,40 @@ Constellation uses a universe-and-stars metaphor to make multi-vault navigation 
 | **Star Line** | A cross-vault reference connecting stars in different universes |
 | **Sky View** | The unified graph showing all universes and their connections |
 
+## AI-Powered
+
+Constellation is AI-powered — but on your terms. Bring your own AI provider and API key. Nothing is sent anywhere without your explicit action.
+
+### Supported Providers
+
+| Provider | Type |
+|---|---|
+| **OpenAI** (GPT-4o, etc.) | Cloud |
+| **Claude** (Anthropic) | Cloud |
+| **Google Gemini** | Cloud |
+| **Ollama** | Local (runs on your machine) |
+
+### AI Skills
+
+Skills are AI-powered workflows that enhance your notes. Constellation ships with 8 built-in skills, and you can create or install custom ones:
+
+| Skill | What It Does |
+|---|---|
+| **Summarize Note** | Condense any note into key points |
+| **Smart Q&A** | Ask questions about your notes, get AI answers |
+| **Writing Assistant** | Expand, rewrite, or improve text |
+| **Auto-Linker** | Discover connections between notes across vaults |
+| **Translate Note** | Translate between languages |
+| **Meeting Notes** | Structure raw meeting notes |
+| **Chart Generator** | Create charts from note data |
+| **Research Assistant** | Analyze and synthesize across multiple notes |
+
+Skills are extensible — create your own by defining a prompt template, inputs, and output format.
+
+## Multi-Language Interface
+
+Constellation supports **Arabic (RTL)** and **English (LTR)** out of the box. The entire interface — including all skills — adapts direction, layout, and text based on the selected language.
+
 ## Planned Features
 
 - **Unified Dashboard** — One interface for all your vaults. Browse, search, and manage files across every vault.
@@ -45,6 +79,7 @@ Constellation uses a universe-and-stars metaphor to make multi-vault navigation 
 - **Unified Graph View (Sky View)** — See all your vaults visualized as clusters of stars, with cross-vault connections drawn between them.
 - **Cross-Vault Search** — Query across every vault simultaneously. Find anything, anywhere.
 - **Plugin System** — Extend Constellation with TypeScript plugins. Community-built, sandboxed for safety.
+- **Infographics & Slide Decks** — Generate visual outputs from your notes using AI skills.
 
 ## Architecture
 
