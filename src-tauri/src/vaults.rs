@@ -127,6 +127,196 @@ pub fn read_note(file_path: String) -> Result<String, String> {
     fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VaultStats {
+    pub vault_id: String,
+    pub name: String,
+    pub path: String,
+    pub star_count: u32,
+    pub folder_count: u32,
+    pub recent_stars: Vec<StarInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StarInfo {
+    pub name: String,
+    pub path: String,
+    pub vault_id: String,
+    pub vault_name: String,
+    pub modified: u64,
+    pub preview: String,
+}
+
+/// Get stats for all vaults — star counts, folder counts, recent stars.
+#[tauri::command]
+pub fn get_all_vault_stats(app: tauri::AppHandle) -> Vec<VaultStats> {
+    let vaults = load_vaults(&app);
+    vaults.iter().map(|v| {
+        let (star_count, folder_count) = count_contents(Path::new(&v.path));
+        let recent_stars = get_recent_notes(Path::new(&v.path), &v.id, &v.name, 5);
+        VaultStats {
+            vault_id: v.id.clone(),
+            name: v.name.clone(),
+            path: v.path.clone(),
+            star_count,
+            folder_count,
+            recent_stars,
+        }
+    }).collect()
+}
+
+/// Search across all vaults for notes matching a query.
+#[tauri::command]
+pub fn search_stars(app: tauri::AppHandle, query: String) -> Vec<StarInfo> {
+    let vaults = load_vaults(&app);
+    let query_lower = query.to_lowercase();
+    let mut results = Vec::new();
+
+    for vault in &vaults {
+        search_notes_recursive(
+            Path::new(&vault.path),
+            &vault.id,
+            &vault.name,
+            &query_lower,
+            &mut results,
+        );
+    }
+
+    // Sort by relevance (name match first, then content match)
+    results.sort_by(|a, b| {
+        let a_name_match = a.name.to_lowercase().contains(&query_lower);
+        let b_name_match = b.name.to_lowercase().contains(&query_lower);
+        b_name_match.cmp(&a_name_match).then(b.modified.cmp(&a.modified))
+    });
+
+    results.truncate(50); // Limit results
+    results
+}
+
+fn count_contents(dir: &Path) -> (u32, u32) {
+    let mut stars = 0u32;
+    let mut folders = 0u32;
+    count_recursive(dir, &mut stars, &mut folders);
+    (stars, folders)
+}
+
+fn count_recursive(dir: &Path, stars: &mut u32, folders: &mut u32) {
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') { continue; }
+
+        if path.is_dir() {
+            *folders += 1;
+            count_recursive(&path, stars, folders);
+        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
+            *stars += 1;
+        }
+    }
+}
+
+fn get_recent_notes(dir: &Path, vault_id: &str, vault_name: &str, limit: usize) -> Vec<StarInfo> {
+    let mut notes = Vec::new();
+    collect_notes_recursive(dir, vault_id, vault_name, &mut notes);
+    notes.sort_by(|a, b| b.modified.cmp(&a.modified));
+    notes.truncate(limit);
+    notes
+}
+
+fn collect_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, notes: &mut Vec<StarInfo>) {
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') { continue; }
+
+        if path.is_dir() {
+            collect_notes_recursive(&path, vault_id, vault_name, notes);
+        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
+            let modified = entry.metadata()
+                .and_then(|m| m.modified())
+                .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
+                .unwrap_or(0);
+
+            let preview = fs::read_to_string(&path)
+                .unwrap_or_default()
+                .lines()
+                .filter(|l| !l.starts_with('#') && !l.starts_with("---") && !l.trim().is_empty())
+                .take(2)
+                .collect::<Vec<_>>()
+                .join(" ");
+            let preview = if preview.len() > 120 { format!("{}...", &preview[..120]) } else { preview };
+
+            notes.push(StarInfo {
+                name: name.trim_end_matches(".md").to_string(),
+                path: path.to_string_lossy().to_string(),
+                vault_id: vault_id.to_string(),
+                vault_name: vault_name.to_string(),
+                modified,
+                preview,
+            });
+        }
+    }
+}
+
+fn search_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, query: &str, results: &mut Vec<StarInfo>) {
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') { continue; }
+
+        if path.is_dir() {
+            search_notes_recursive(&path, vault_id, vault_name, query, results);
+        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
+            let name_clean = name.trim_end_matches(".md").to_string();
+            let content = fs::read_to_string(&path).unwrap_or_default();
+            let name_match = name_clean.to_lowercase().contains(query);
+            let content_match = content.to_lowercase().contains(query);
+
+            if name_match || content_match {
+                let modified = entry.metadata()
+                    .and_then(|m| m.modified())
+                    .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
+                    .unwrap_or(0);
+
+                let preview = if content_match {
+                    // Show the matching line as preview
+                    content.lines()
+                        .find(|l| l.to_lowercase().contains(query))
+                        .unwrap_or("")
+                        .to_string()
+                } else {
+                    content.lines()
+                        .filter(|l| !l.starts_with('#') && !l.trim().is_empty())
+                        .take(1)
+                        .collect::<String>()
+                };
+                let preview = if preview.len() > 120 { format!("{}...", &preview[..120]) } else { preview };
+
+                results.push(StarInfo {
+                    name: name_clean,
+                    path: path.to_string_lossy().to_string(),
+                    vault_id: vault_id.to_string(),
+                    vault_name: vault_name.to_string(),
+                    modified,
+                    preview,
+                });
+            }
+        }
+    }
+}
+
 /// Open a folder picker dialog and return the selected path.
 #[tauri::command]
 pub async fn pick_folder() -> Result<Option<String>, String> {

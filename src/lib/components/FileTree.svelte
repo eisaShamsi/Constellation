@@ -1,41 +1,51 @@
 <script lang="ts">
 	import type { FileEntry } from '$lib/vaults/store';
-	import { openNote, selectedNote } from '$lib/vaults/store';
+	import { selectedNote } from '$lib/vaults/store';
+	import { invoke } from '@tauri-apps/api/core';
 
-	let { entries, depth = 0 }: { entries: FileEntry[]; depth?: number } = $props();
+	let {
+		entries,
+		depth = 0,
+		vaultId = '',
+		vaultName = '',
+		onNoteClick
+	}: {
+		entries: FileEntry[];
+		depth?: number;
+		vaultId?: string;
+		vaultName?: string;
+		onNoteClick?: (path: string, name: string) => void;
+	} = $props();
 
 	function handleClick(entry: FileEntry) {
-		if (!entry.is_dir) {
-			openNote(entry.path);
+		if (!entry.is_dir && onNoteClick) {
+			onNoteClick(entry.path, entry.name.replace('.md', ''));
 		}
-	}
-
-	function isSelected(entry: FileEntry): boolean {
-		return $selectedNote?.path === entry.path;
 	}
 </script>
 
-<ul class="file-tree" style="padding-inline-start: {depth > 0 ? '1.2rem' : '0'}">
+<ul class="tree" style="padding-inline-start: {depth > 0 ? '0.9rem' : '0'}">
 	{#each entries as entry}
 		<li>
 			{#if entry.is_dir}
 				<details open={depth < 1}>
 					<summary class="folder">
-						<span class="icon">📁</span>
-						<span>{entry.name}</span>
+						<svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
+							<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+						</svg>
+						<span class="folder-name">{entry.name}</span>
 					</summary>
 					{#if entry.children && entry.children.length > 0}
-						<svelte:self entries={entry.children} depth={depth + 1} />
+						<svelte:self entries={entry.children} depth={depth + 1} {vaultId} {vaultName} {onNoteClick} />
 					{/if}
 				</details>
 			{:else}
 				<button
-					class="file"
-					class:selected={isSelected(entry)}
+					class="note"
+					class:active={$selectedNote?.path === entry.path}
 					onclick={() => handleClick(entry)}
 				>
-					<span class="icon">📄</span>
-					<span>{entry.name}</span>
+					<span class="note-name">{entry.name.replace('.md', '')}</span>
 				</button>
 			{/if}
 		</li>
@@ -43,43 +53,56 @@
 </ul>
 
 <style>
-	.file-tree {
+	.tree {
 		list-style: none;
 		margin: 0;
 	}
 
-	li { margin: 1px 0; }
+	li { margin: 0; }
 
-	summary {
-		cursor: pointer;
-		padding: 0.3em 0.5em;
+	details > summary { list-style: none; }
+	details > summary::-webkit-details-marker { display: none; }
+	details[open] > summary .chevron { transform: rotate(90deg); }
+
+	.folder {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.2rem 0.4rem;
 		border-radius: 4px;
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-size: 0.9rem;
-		color: #c9d1d9;
+		cursor: pointer;
+		color: #8b949e;
+		font-size: 0.85rem;
+		user-select: none;
 	}
-	summary:hover { background: #21262d; }
-	summary::marker { color: #484f58; }
+	.folder:hover { background: #1c2128; color: #c9d1d9; }
 
-	.file {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
+	.chevron {
+		flex-shrink: 0;
+		color: #484f58;
+		transition: transform 0.15s ease;
+	}
+
+	.folder-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+	.note {
+		display: block;
 		width: 100%;
-		padding: 0.3em 0.5em;
+		padding: 0.2rem 0.4rem 0.2rem 1.4rem;
 		border: none;
 		background: none;
 		color: #c9d1d9;
-		font-size: 0.9rem;
+		font-size: 0.85rem;
 		font-family: inherit;
 		cursor: pointer;
 		border-radius: 4px;
 		text-align: start;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
-	.file:hover { background: #21262d; }
-	.file.selected { background: #1f2937; color: #7c3aed; }
+	.note:hover { background: #1c2128; }
+	.note.active { background: #7c3aed22; color: #a78bfa; }
 
-	.icon { font-size: 0.85rem; flex-shrink: 0; }
+	.note-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
