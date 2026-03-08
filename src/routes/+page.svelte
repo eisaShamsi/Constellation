@@ -1,6 +1,10 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { hasProvider } from '$lib/ai/store';
+	import { vaults, loadVaults } from '$lib/vaults/store';
+
+	onMount(() => { loadVaults(); });
 </script>
 
 <div class="hero">
@@ -9,10 +13,11 @@
 	<p class="description">{$t('app.description')}</p>
 
 	<div class="actions">
+		<a href="/vaults" class="btn primary">{$t('nav.vaults')} ({$vaults.length}) →</a>
 		{#if $hasProvider}
-			<a href="/skills" class="btn primary">{$t('nav.skills')}</a>
+			<a href="/skills" class="btn secondary">{$t('nav.skills')}</a>
 		{:else}
-			<a href="/settings" class="btn primary">{$t('settings.ai')} →</a>
+			<a href="/settings" class="btn secondary">{$t('settings.ai')} →</a>
 		{/if}
 	</div>
 
@@ -83,6 +88,13 @@
 		color: white;
 	}
 	.btn.primary:hover { background: #6d28d9; }
+	.btn.secondary {
+		background: #21262d;
+		border: 1px solid #30363d;
+		color: #e0e0e0;
+		margin-inline-start: 0.75rem;
+	}
+	.btn.secondary:hover { border-color: #7c3aed; background: #30363d; }
 
 	.features {
 		display: flex;

@@ -1,4 +1,5 @@
 mod ai;
+mod vaults;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -13,7 +14,13 @@ pub fn run() {
             greet,
             ai::ai_send_message,
             ai::ai_validate_connection,
-            ai::ai_list_models
+            ai::ai_list_models,
+            vaults::list_vaults,
+            vaults::add_vault,
+            vaults::remove_vault,
+            vaults::read_vault_tree,
+            vaults::read_note,
+            vaults::pick_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

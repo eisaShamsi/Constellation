@@ -12,6 +12,9 @@
 		<a href="/" class="nav-link" class:active={page.url.pathname === '/'}>
 			{$t('nav.home')}
 		</a>
+		<a href="/vaults" class="nav-link" class:active={page.url.pathname === '/vaults'}>
+			{$t('nav.vaults')}
+		</a>
 		<a href="/skills" class="nav-link" class:active={page.url.pathname === '/skills'}>
 			{$t('nav.skills')}
 		</a>
