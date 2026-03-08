@@ -118,12 +118,12 @@
 <style>
 	.skills-page { max-width: 100%; }
 	h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
-	.desc { color: #8b949e; margin-bottom: 1.5rem; }
+	.desc { color: #57606a; margin-bottom: 1.5rem; }
 
 	.notice {
-		background: #1c1917;
-		border: 1px solid #854d0e;
-		color: #fbbf24;
+		background: #fffbeb;
+		border: 1px solid #d97706;
+		color: #92400e;
 		padding: 0.75rem 1rem;
 		border-radius: 8px;
 		margin-bottom: 1.5rem;
@@ -144,42 +144,42 @@
 		align-items: flex-start;
 		gap: 0.75rem;
 		padding: 0.75rem;
-		background: #161b22;
-		border: 1px solid #21262d;
+		background: #f6f8fa;
+		border: 1px solid #d0d7de;
 		border-radius: 8px;
 		cursor: pointer;
 		text-align: start;
-		color: #e0e0e0;
+		color: #24292f;
 		transition: all 0.2s;
 		width: 100%;
 	}
-	.skill-card:hover { border-color: #30363d; background: #1c2128; }
+	.skill-card:hover { border-color: #afb8c1; background: #eaeef2; }
 	.skill-card.active { border-color: #7c3aed; }
 
 	.skill-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
 	.skill-name { font-weight: 600; font-size: 0.9rem; }
-	.skill-desc { color: #8b949e; font-size: 0.8rem; margin-top: 2px; }
+	.skill-desc { color: #57606a; font-size: 0.8rem; margin-top: 2px; }
 
 	.skill-panel {
 		flex: 1;
-		background: #161b22;
-		border: 1px solid #21262d;
+		background: #f6f8fa;
+		border: 1px solid #d0d7de;
 		border-radius: 8px;
 		padding: 1.5rem;
 	}
 	.skill-panel h2 { font-size: 1.3rem; margin-bottom: 0.25rem; }
-	.panel-desc { color: #8b949e; font-size: 0.9rem; margin-bottom: 1.5rem; }
+	.panel-desc { color: #57606a; font-size: 0.9rem; margin-bottom: 1.5rem; }
 
 	.field { display: block; margin-bottom: 1rem; }
-	.field span { display: block; font-size: 0.85rem; color: #8b949e; margin-bottom: 0.3rem; }
+	.field span { display: block; font-size: 0.85rem; color: #57606a; margin-bottom: 0.3rem; }
 
 	textarea, select, input {
 		width: 100%;
 		padding: 0.6em 0.8em;
-		background: #0d1117;
-		border: 1px solid #30363d;
+		background: #ffffff;
+		border: 1px solid #d0d7de;
 		border-radius: 6px;
-		color: #e0e0e0;
+		color: #1f2328;
 		font-size: 0.95rem;
 		font-family: inherit;
 		box-sizing: border-box;
@@ -204,8 +204,8 @@
 	.result {
 		margin-top: 1.5rem;
 		padding: 1rem;
-		background: #0d1117;
-		border: 1px solid #30363d;
+		background: #ffffff;
+		border: 1px solid #d0d7de;
 		border-radius: 6px;
 	}
 	.result h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
@@ -213,7 +213,7 @@
 		white-space: pre-wrap;
 		word-break: break-word;
 		font-size: 0.9rem;
-		color: #c9d1d9;
+		color: #24292f;
 		margin: 0;
 	}
 </style>

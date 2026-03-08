@@ -33,8 +33,8 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.75rem 1.5rem;
-		background: #161b22;
-		border-bottom: 1px solid #21262d;
+		background: #f6f8fa;
+		border-bottom: 1px solid #d0d7de;
 	}
 
 	.brand-link {
@@ -53,7 +53,7 @@
 	}
 
 	.nav-link {
-		color: #8b949e;
+		color: #57606a;
 		text-decoration: none;
 		padding: 0.4em 0.8em;
 		border-radius: 6px;
@@ -62,13 +62,13 @@
 	}
 
 	.nav-link:hover {
-		color: #e0e0e0;
-		background: #21262d;
+		color: #24292f;
+		background: #eaeef2;
 	}
 
 	.nav-link.active {
-		color: #e0e0e0;
-		background: #21262d;
+		color: #24292f;
+		background: #eaeef2;
 	}
 
 	.nav-actions {

@@ -8,9 +8,9 @@
 
 <style>
 	.lang-switch {
-		background: #21262d;
-		border: 1px solid #30363d;
-		color: #e0e0e0;
+		background: #eaeef2;
+		border: 1px solid #d0d7de;
+		color: #24292f;
 		padding: 0.4em 0.8em;
 		border-radius: 6px;
 		cursor: pointer;
@@ -20,6 +20,6 @@
 	}
 	.lang-switch:hover {
 		border-color: #7c3aed;
-		background: #30363d;
+		background: #d0d7de;
 	}
 </style>

@@ -6,7 +6,7 @@
 	import {
 		vaults, vaultStats, selectedNote, searchResults,
 		loadVaults, loadAllStats, addVault, removeVault,
-		searchAllStars, closeNote, timeAgo
+		searchAllStars, closeNote, timeAgo, openNoteTab
 	} from '$lib/vaults/store';
 	import type { VaultStats, FileEntry } from '$lib/vaults/store';
 	import FileTree from '$lib/components/FileTree.svelte';
@@ -76,19 +76,12 @@
 	}
 
 	async function handleNoteClick(filePath: string, noteName: string) {
-		const content: string = await invoke('read_note', { filePath });
-		// Find which vault this belongs to
 		const vault = $vaults.find(v => filePath.startsWith(v.path));
-		selectedNote.set({
-			path: filePath,
-			content,
-			vaultName: vault?.name ?? ''
-		});
+		await openNoteTab(filePath, vault?.name ?? '');
 	}
 
 	async function handleSearchResultClick(path: string, vaultName: string) {
-		const content: string = await invoke('read_note', { filePath: path });
-		selectedNote.set({ path, content, vaultName });
+		await openNoteTab(path, vaultName);
 	}
 
 	function renderMarkdown(md: string): string {
@@ -225,8 +218,8 @@
 	.sidebar {
 		width: 280px;
 		min-width: 280px;
-		background: #161b22;
-		border-inline-end: 1px solid #21262d;
+		background: #f6f8fa;
+		border-inline-end: 1px solid #d0d7de;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
@@ -234,20 +227,20 @@
 
 	.sidebar-search {
 		padding: 0.5rem;
-		border-bottom: 1px solid #21262d;
+		border-bottom: 1px solid #d0d7de;
 	}
 	.sidebar-search input {
 		width: 100%;
 		padding: 0.45rem 0.6rem;
-		background: #0d1117;
-		border: 1px solid #30363d;
+		background: #ffffff;
+		border: 1px solid #d0d7de;
 		border-radius: 6px;
-		color: #e0e0e0;
+		color: #1f2328;
 		font-size: 0.85rem;
 		font-family: inherit;
 	}
 	.sidebar-search input:focus { border-color: #7c3aed; outline: none; }
-	.sidebar-search input::placeholder { color: #484f58; }
+	.sidebar-search input::placeholder { color: #656d76; }
 
 	.vault-list {
 		flex: 1;
@@ -265,17 +258,17 @@
 		padding: 0.4rem 0.6rem;
 		background: none;
 		border: none;
-		color: #c9d1d9;
+		color: #24292f;
 		font-size: 0.85rem;
 		font-weight: 600;
 		font-family: inherit;
 		cursor: pointer;
 		text-align: start;
 	}
-	.vault-header:hover { background: #1c2128; }
+	.vault-header:hover { background: #eaeef2; }
 
 	.vault-chevron {
-		color: #484f58;
+		color: #656d76;
 		flex-shrink: 0;
 		transition: transform 0.15s ease;
 	}
@@ -296,7 +289,7 @@
 	}
 
 	.vault-count {
-		color: #484f58;
+		color: #656d76;
 		font-size: 0.75rem;
 		font-weight: 400;
 	}
@@ -312,9 +305,9 @@
 		margin: 0.5rem;
 		padding: 0.4rem;
 		background: none;
-		border: 1px dashed #30363d;
+		border: 1px dashed #d0d7de;
 		border-radius: 6px;
-		color: #484f58;
+		color: #656d76;
 		font-size: 0.85rem;
 		font-family: inherit;
 		cursor: pointer;
@@ -324,9 +317,9 @@
 
 	.sidebar-error {
 		padding: 0.5rem;
-		color: #f85149;
+		color: #cf222e;
 		font-size: 0.8rem;
-		border-top: 1px solid #21262d;
+		border-top: 1px solid #d0d7de;
 	}
 
 	/* ─── Search Panel ─── */
@@ -339,7 +332,7 @@
 	.section-label {
 		padding: 0.3rem 0.5rem;
 		font-size: 0.75rem;
-		color: #484f58;
+		color: #656d76;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 	}
@@ -350,21 +343,21 @@
 		padding: 0.5rem 0.6rem;
 		background: none;
 		border: none;
-		color: #c9d1d9;
+		color: #24292f;
 		font-family: inherit;
 		cursor: pointer;
 		text-align: start;
 		border-radius: 4px;
 	}
-	.search-result:hover { background: #1c2128; }
-	.search-result.active { background: #7c3aed22; }
+	.search-result:hover { background: #eaeef2; }
+	.search-result.active { background: #7c3aed18; }
 
 	.sr-name { font-size: 0.85rem; font-weight: 500; }
-	.sr-meta { display: flex; gap: 0.4rem; font-size: 0.75rem; color: #484f58; margin-top: 2px; }
+	.sr-meta { display: flex; gap: 0.4rem; font-size: 0.75rem; color: #656d76; margin-top: 2px; }
 	.sr-vault { color: #7c3aed; flex-shrink: 0; }
 	.sr-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-	.no-results { padding: 1rem; text-align: center; color: #484f58; font-size: 0.85rem; }
+	.no-results { padding: 1rem; text-align: center; color: #656d76; font-size: 0.85rem; }
 
 	/* ─── Main Content ─── */
 	.main-content {
@@ -386,27 +379,27 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 0.5rem 1rem;
-		border-bottom: 1px solid #21262d;
-		background: #161b22;
+		border-bottom: 1px solid #d0d7de;
+		background: #f6f8fa;
 		min-height: 38px;
 	}
 
-	.note-breadcrumb { font-size: 0.8rem; color: #8b949e; }
+	.note-breadcrumb { font-size: 0.8rem; color: #57606a; }
 	.breadcrumb-vault { color: #7c3aed; }
-	.breadcrumb-sep { margin: 0 0.3rem; color: #30363d; }
-	.breadcrumb-name { color: #c9d1d9; }
+	.breadcrumb-sep { margin: 0 0.3rem; color: #d0d7de; }
+	.breadcrumb-name { color: #24292f; }
 
 	.close-note {
 		background: none;
 		border: none;
-		color: #484f58;
+		color: #656d76;
 		font-size: 1.3rem;
 		cursor: pointer;
 		padding: 0.2rem 0.4rem;
 		line-height: 1;
 		border-radius: 4px;
 	}
-	.close-note:hover { color: #e0e0e0; background: #21262d; }
+	.close-note:hover { color: #24292f; background: #eaeef2; }
 
 	.note-content {
 		flex: 1;
@@ -417,21 +410,21 @@
 	}
 
 	/* Markdown Styles */
-	.note-content :global(h1) { font-size: 1.8rem; margin: 1.5rem 0 0.75rem; border-bottom: 1px solid #21262d; padding-bottom: 0.3rem; }
+	.note-content :global(h1) { font-size: 1.8rem; margin: 1.5rem 0 0.75rem; border-bottom: 1px solid #d0d7de; padding-bottom: 0.3rem; }
 	.note-content :global(h2) { font-size: 1.4rem; margin: 1.3rem 0 0.5rem; }
 	.note-content :global(h3) { font-size: 1.15rem; margin: 1rem 0 0.4rem; }
 	.note-content :global(p) { margin: 0.5rem 0; }
 	.note-content :global(a) { color: #7c3aed; }
 	.note-content :global(code) {
-		background: #1c2128;
+		background: #f0f2f5;
 		padding: 0.15em 0.35em;
 		border-radius: 4px;
 		font-size: 0.9em;
-		color: #e0e0e0;
+		color: #24292f;
 	}
 	.note-content :global(pre) {
-		background: #161b22;
-		border: 1px solid #21262d;
+		background: #f6f8fa;
+		border: 1px solid #d0d7de;
 		border-radius: 6px;
 		padding: 1rem;
 		overflow-x: auto;
@@ -441,18 +434,18 @@
 		border-inline-start: 3px solid #7c3aed;
 		padding: 0.25rem 1rem;
 		margin: 0.5rem 0;
-		color: #8b949e;
+		color: #57606a;
 	}
 	.note-content :global(ul), .note-content :global(ol) { padding-inline-start: 1.5rem; }
 	.note-content :global(li) { margin: 0.2rem 0; }
-	.note-content :global(hr) { border: none; border-top: 1px solid #21262d; margin: 1.5rem 0; }
+	.note-content :global(hr) { border: none; border-top: 1px solid #d0d7de; margin: 1.5rem 0; }
 	.note-content :global(table) { border-collapse: collapse; width: 100%; margin: 0.75rem 0; }
 	.note-content :global(th), .note-content :global(td) {
-		border: 1px solid #21262d;
+		border: 1px solid #d0d7de;
 		padding: 0.4rem 0.7rem;
 		text-align: start;
 	}
-	.note-content :global(th) { background: #161b22; }
+	.note-content :global(th) { background: #f6f8fa; }
 	.note-content :global(img) { max-width: 100%; border-radius: 6px; }
 	.note-content :global(input[type="checkbox"]) { margin-inline-end: 0.4rem; }
 
@@ -465,11 +458,11 @@
 		justify-content: center;
 		text-align: center;
 		padding: 2rem;
-		color: #484f58;
+		color: #656d76;
 	}
 
 	.empty-icon { font-size: 3rem; margin-bottom: 1rem; }
-	.empty-state h2 { color: #c9d1d9; font-size: 1.3rem; margin-bottom: 0.5rem; }
+	.empty-state h2 { color: #24292f; font-size: 1.3rem; margin-bottom: 0.5rem; }
 	.empty-state p { margin-bottom: 1.5rem; }
 
 	.empty-add-btn {
@@ -497,13 +490,13 @@
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
-		background: #161b22;
-		border: 1px solid #21262d;
+		background: #f6f8fa;
+		border: 1px solid #d0d7de;
 		padding: 0.4em 0.8em;
 		border-radius: 20px;
 		font-size: 0.85rem;
-		color: #8b949e;
+		color: #57606a;
 	}
 	.chip-dot { width: 6px; height: 6px; border-radius: 50%; }
-	.chip-count { color: #484f58; }
+	.chip-count { color: #656d76; }
 </style>

@@ -1,19 +1,20 @@
 <script lang="ts">
 	import type { FileEntry } from '$lib/vaults/store';
-	import { selectedNote } from '$lib/vaults/store';
-	import { invoke } from '@tauri-apps/api/core';
+	import { activeTab, splitActive, openTabs } from '$lib/vaults/store';
 
 	let {
 		entries,
 		depth = 0,
 		vaultId = '',
 		vaultName = '',
+		color = '#7c3aed',
 		onNoteClick
 	}: {
 		entries: FileEntry[];
 		depth?: number;
 		vaultId?: string;
 		vaultName?: string;
+		color?: string;
 		onNoteClick?: (path: string, name: string) => void;
 	} = $props();
 
@@ -24,7 +25,7 @@
 	}
 </script>
 
-<ul class="tree" style="padding-inline-start: {depth > 0 ? '0.9rem' : '0'}">
+<ul class="tree" style="padding-inline-start: {depth > 0 ? '12px' : '0'}">
 	{#each entries as entry}
 		<li>
 			{#if entry.is_dir}
@@ -36,13 +37,14 @@
 						<span class="folder-name">{entry.name}</span>
 					</summary>
 					{#if entry.children && entry.children.length > 0}
-						<svelte:self entries={entry.children} depth={depth + 1} {vaultId} {vaultName} {onNoteClick} />
+						<svelte:self entries={entry.children} depth={depth + 1} {vaultId} {vaultName} {color} {onNoteClick} />
 					{/if}
 				</details>
 			{:else}
 				<button
 					class="note"
-					class:active={$selectedNote?.path === entry.path}
+					class:active={$splitActive ? $openTabs.some(t => t.path === entry.path) : $activeTab?.path === entry.path}
+					style:--vault-color={color}
 					onclick={() => handleClick(entry)}
 				>
 					<span class="note-name">{entry.name.replace('.md', '')}</span>
@@ -67,19 +69,19 @@
 	.folder {
 		display: flex;
 		align-items: center;
-		gap: 0.3rem;
-		padding: 0.2rem 0.4rem;
-		border-radius: 4px;
+		gap: 3px;
+		padding: 2px 6px;
+		border-radius: 3px;
 		cursor: pointer;
-		color: #8b949e;
-		font-size: 0.85rem;
+		color: #57606a;
+		font-size: 0.82rem;
 		user-select: none;
 	}
-	.folder:hover { background: #1c2128; color: #c9d1d9; }
+	.folder:hover { background: #eaeef2; color: #24292f; }
 
 	.chevron {
 		flex-shrink: 0;
-		color: #484f58;
+		color: #8b949e;
 		transition: transform 0.15s ease;
 	}
 
@@ -88,21 +90,21 @@
 	.note {
 		display: block;
 		width: 100%;
-		padding: 0.2rem 0.4rem 0.2rem 1.4rem;
+		padding: 2px 6px 2px 20px;
 		border: none;
 		background: none;
-		color: #c9d1d9;
-		font-size: 0.85rem;
+		color: #24292f;
+		font-size: 0.82rem;
 		font-family: inherit;
 		cursor: pointer;
-		border-radius: 4px;
+		border-radius: 3px;
 		text-align: start;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.note:hover { background: #1c2128; }
-	.note.active { background: #7c3aed22; color: #a78bfa; }
+	.note:hover { background: #eaeef2; }
+	.note.active { background: color-mix(in srgb, var(--vault-color) 8%, transparent); color: var(--vault-color); }
 
 	.note-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

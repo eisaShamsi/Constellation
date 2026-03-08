@@ -179,6 +179,7 @@ pub fn search_stars(app: tauri::AppHandle, query: String) -> Vec<StarInfo> {
             &vault.name,
             &query_lower,
             &mut results,
+            0,
         );
     }
 
@@ -196,11 +197,12 @@ pub fn search_stars(app: tauri::AppHandle, query: String) -> Vec<StarInfo> {
 fn count_contents(dir: &Path) -> (u32, u32) {
     let mut stars = 0u32;
     let mut folders = 0u32;
-    count_recursive(dir, &mut stars, &mut folders);
+    count_recursive(dir, &mut stars, &mut folders, 0);
     (stars, folders)
 }
 
-fn count_recursive(dir: &Path, stars: &mut u32, folders: &mut u32) {
+fn count_recursive(dir: &Path, stars: &mut u32, folders: &mut u32, depth: u32) {
+    if depth > 20 { return; } // Prevent stack overflow from deep/circular structures
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -209,10 +211,12 @@ fn count_recursive(dir: &Path, stars: &mut u32, folders: &mut u32) {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
+        // Skip symlinks to prevent circular recursion
+        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
 
         if path.is_dir() {
             *folders += 1;
-            count_recursive(&path, stars, folders);
+            count_recursive(&path, stars, folders, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             *stars += 1;
         }
@@ -221,13 +225,24 @@ fn count_recursive(dir: &Path, stars: &mut u32, folders: &mut u32) {
 
 fn get_recent_notes(dir: &Path, vault_id: &str, vault_name: &str, limit: usize) -> Vec<StarInfo> {
     let mut notes = Vec::new();
-    collect_notes_recursive(dir, vault_id, vault_name, &mut notes);
+    collect_notes_recursive(dir, vault_id, vault_name, &mut notes, 0);
     notes.sort_by(|a, b| b.modified.cmp(&a.modified));
     notes.truncate(limit);
     notes
 }
 
-fn collect_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, notes: &mut Vec<StarInfo>) {
+/// Safely truncate a string to approximately `max_len` characters.
+fn safe_truncate(s: &str, max_len: usize) -> String {
+    if s.chars().count() <= max_len {
+        s.to_string()
+    } else {
+        let truncated: String = s.chars().take(max_len).collect();
+        format!("{}...", truncated)
+    }
+}
+
+fn collect_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, notes: &mut Vec<StarInfo>, depth: u32) {
+    if depth > 20 { return; }
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -236,9 +251,10 @@ fn collect_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, notes: 
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
+        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
 
         if path.is_dir() {
-            collect_notes_recursive(&path, vault_id, vault_name, notes);
+            collect_notes_recursive(&path, vault_id, vault_name, notes, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             let modified = entry.metadata()
                 .and_then(|m| m.modified())
@@ -252,7 +268,7 @@ fn collect_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, notes: 
                 .take(2)
                 .collect::<Vec<_>>()
                 .join(" ");
-            let preview = if preview.len() > 120 { format!("{}...", &preview[..120]) } else { preview };
+            let preview = safe_truncate(&preview, 120);
 
             notes.push(StarInfo {
                 name: name.trim_end_matches(".md").to_string(),
@@ -266,7 +282,8 @@ fn collect_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, notes: 
     }
 }
 
-fn search_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, query: &str, results: &mut Vec<StarInfo>) {
+fn search_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, query: &str, results: &mut Vec<StarInfo>, depth: u32) {
+    if depth > 20 { return; }
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -275,9 +292,10 @@ fn search_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, query: &
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
+        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
 
         if path.is_dir() {
-            search_notes_recursive(&path, vault_id, vault_name, query, results);
+            search_notes_recursive(&path, vault_id, vault_name, query, results, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             let name_clean = name.trim_end_matches(".md").to_string();
             let content = fs::read_to_string(&path).unwrap_or_default();
@@ -291,7 +309,6 @@ fn search_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, query: &
                     .unwrap_or(0);
 
                 let preview = if content_match {
-                    // Show the matching line as preview
                     content.lines()
                         .find(|l| l.to_lowercase().contains(query))
                         .unwrap_or("")
@@ -302,7 +319,7 @@ fn search_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, query: &
                         .take(1)
                         .collect::<String>()
                 };
-                let preview = if preview.len() > 120 { format!("{}...", &preview[..120]) } else { preview };
+                let preview = safe_truncate(&preview, 120);
 
                 results.push(StarInfo {
                     name: name_clean,
@@ -342,6 +359,10 @@ fn read_dir_recursive(dir: &Path, current_depth: u32, max_depth: u32) -> Vec<Fil
 
         // Skip hidden files/folders (starting with .)
         if name.starts_with('.') {
+            continue;
+        }
+        // Skip symlinks to prevent circular recursion
+        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) {
             continue;
         }
 

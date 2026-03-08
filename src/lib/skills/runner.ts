@@ -18,8 +18,8 @@ function fillTemplate(template: string, inputs: Record<string, string>): string 
 	// Handle {{#if key}}...{{/if}} blocks
 	result = result.replace(
 		/\{\{#if (\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g,
-		(_, key, content) => {
-			return inputs[key] ? content.replace(/\{\{(\w+)\}\}/g, (__, k) => inputs[k] || '') : '';
+		(_: string, key: string, content: string) => {
+			return inputs[key] ? content.replace(/\{\{(\w+)\}\}/g, (__: string, k: string) => inputs[k] || '') : '';
 		}
 	);
 

@@ -117,11 +117,11 @@
 	.settings-page { max-width: 600px; }
 	h1 { font-size: 1.8rem; margin-bottom: 2rem; }
 	h2 { font-size: 1.2rem; margin-bottom: 0.25rem; }
-	.section-desc { color: #8b949e; font-size: 0.9rem; margin-bottom: 1rem; }
+	.section-desc { color: #57606a; font-size: 0.9rem; margin-bottom: 1rem; }
 
 	.settings-section {
-		background: #161b22;
-		border: 1px solid #21262d;
+		background: #f6f8fa;
+		border: 1px solid #d0d7de;
 		border-radius: 8px;
 		padding: 1.5rem;
 		margin-bottom: 1.5rem;
@@ -134,36 +134,36 @@
 	.field span {
 		display: block;
 		font-size: 0.85rem;
-		color: #8b949e;
+		color: #57606a;
 		margin-bottom: 0.3rem;
 	}
 
 	select, input {
 		width: 100%;
 		padding: 0.6em 0.8em;
-		background: #0d1117;
-		border: 1px solid #30363d;
+		background: #ffffff;
+		border: 1px solid #d0d7de;
 		border-radius: 6px;
-		color: #e0e0e0;
+		color: #1f2328;
 		font-size: 0.95rem;
 		box-sizing: border-box;
 	}
 	select:focus, input:focus { border-color: #7c3aed; outline: none; }
 
 	.test-btn {
-		background: #21262d;
-		border: 1px solid #30363d;
-		color: #e0e0e0;
+		background: #eaeef2;
+		border: 1px solid #d0d7de;
+		color: #24292f;
 		padding: 0.6em 1.2em;
 		border-radius: 6px;
 		cursor: pointer;
 		font-size: 0.9rem;
 		transition: all 0.2s;
 	}
-	.test-btn:hover { border-color: #7c3aed; background: #30363d; }
+	.test-btn:hover { border-color: #7c3aed; background: #d0d7de; }
 	.test-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 	.status { font-size: 0.9rem; margin-top: 0.5rem; }
-	.success { color: #3fb950; }
-	.error { color: #f85149; }
+	.success { color: #1a7f37; }
+	.error { color: #cf222e; }
 </style>
