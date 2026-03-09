@@ -138,15 +138,15 @@
 		padding: 2px 6px;
 		border-radius: 3px;
 		cursor: pointer;
-		color: #57606a;
+		color: var(--text-muted);
 		font-size: 0.82rem;
 		user-select: none;
 	}
-	.folder:hover { background: #eaeef2; color: #24292f; }
+	.folder:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 
 	.chevron {
 		flex-shrink: 0;
-		color: #8b949e;
+		color: var(--text-faint);
 		transition: transform 0.15s ease;
 	}
 
@@ -158,7 +158,7 @@
 		padding: 2px 6px 2px 20px;
 		border: none;
 		background: none;
-		color: #24292f;
+		color: var(--text-normal);
 		font-size: 0.82rem;
 		font-family: inherit;
 		cursor: pointer;
@@ -168,7 +168,7 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.note:hover { background: #eaeef2; }
+	.note:hover { background: var(--background-modifier-hover); }
 	.note.active { background: color-mix(in srgb, var(--vault-color) 8%, transparent); color: var(--vault-color); }
 
 	.note-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -176,14 +176,14 @@
 	.rename-input {
 		flex: 1;
 		min-width: 0;
-		border: 1px solid #7c3aed;
+		border: 1px solid var(--interactive-accent);
 		border-radius: 3px;
 		padding: 1px 4px;
 		font-size: 0.82rem;
 		font-family: inherit;
 		outline: none;
-		background: #fff;
-		color: #1f2328;
+		background: var(--background-primary);
+		color: var(--text-normal);
 	}
 
 	.rename-row {

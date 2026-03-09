@@ -33,14 +33,14 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.75rem 1.5rem;
-		background: var(--bg-secondary, #f6f8fa);
-		border-bottom: 1px solid var(--border, #d0d7de);
+		background: var(--background-secondary);
+		border-bottom: 1px solid var(--background-modifier-border);
 	}
 
 	.brand-link {
 		font-size: 1.1rem;
 		font-weight: 700;
-		background: linear-gradient(135deg, #7c3aed, #3b82f6);
+		background: linear-gradient(135deg, var(--interactive-accent), var(--color-blue));
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
@@ -53,7 +53,7 @@
 	}
 
 	.nav-link {
-		color: #57606a;
+		color: var(--text-muted);
 		text-decoration: none;
 		padding: 0.4em 0.8em;
 		border-radius: 6px;
@@ -62,13 +62,13 @@
 	}
 
 	.nav-link:hover {
-		color: #24292f;
-		background: #eaeef2;
+		color: var(--text-normal);
+		background: var(--background-modifier-hover);
 	}
 
 	.nav-link.active {
-		color: #24292f;
-		background: #eaeef2;
+		color: var(--text-normal);
+		background: var(--background-modifier-hover);
 	}
 
 	.nav-actions {

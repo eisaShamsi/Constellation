@@ -106,43 +106,43 @@
 <style>
 	.palette-overlay {
 		position: fixed; inset: 0; z-index: 1000;
-		background: rgba(0, 0, 0, 0.3);
+		background: var(--background-modifier-cover);
 		display: flex; justify-content: center; padding-top: 15vh;
 	}
 	.palette {
-		background: #fff; border-radius: 8px;
-		box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+		background: var(--background-primary); border-radius: 8px;
+		box-shadow: var(--shadow-l);
 		width: 500px; max-height: 400px;
 		display: flex; flex-direction: column;
 		overflow: hidden;
 	}
 	.palette-input-wrap {
 		display: flex; align-items: center; gap: 8px;
-		padding: 8px 12px; border-bottom: 1px solid #e8e8ec;
+		padding: 8px 12px; border-bottom: 1px solid var(--background-modifier-border-focus);
 	}
-	.palette-icon { color: #8b8b96; flex-shrink: 0; }
+	.palette-icon { color: var(--text-faint); flex-shrink: 0; }
 	.palette-input-wrap input {
 		flex: 1; border: none; background: none;
 		font-size: 0.92rem; font-family: inherit;
-		color: #1f2328; outline: none;
+		color: var(--text-normal); outline: none;
 	}
-	.palette-input-wrap input::placeholder { color: #b0b0b8; }
+	.palette-input-wrap input::placeholder { color: var(--color-base-40); }
 	.palette-list { flex: 1; overflow-y: auto; padding: 4px; }
 	.palette-item {
 		display: flex; align-items: center; gap: 8px;
 		width: 100%; padding: 6px 8px;
 		background: none; border: none; border-radius: 4px;
 		cursor: pointer; font-family: inherit; text-align: start;
-		color: #1f2328; font-size: 0.85rem;
+		color: var(--text-normal); font-size: 0.85rem;
 	}
-	.palette-item.selected { background: #7c3aed; color: #fff; }
+	.palette-item.selected { background: var(--interactive-accent); color: var(--text-on-accent); }
 	.pi-icon { width: 20px; text-align: center; font-size: 0.9rem; }
 	.pi-name { flex: 1; }
 	.pi-shortcut {
-		font-size: 0.72rem; color: #8b8b96;
-		background: #f0f0f4; padding: 1px 5px;
+		font-size: 0.72rem; color: var(--text-faint);
+		background: var(--background-secondary-alt); padding: 1px 5px;
 		border-radius: 3px; font-family: monospace;
 	}
-	.palette-item.selected .pi-shortcut { background: rgba(255,255,255,0.2); color: #fff; }
-	.palette-empty { padding: 16px; text-align: center; color: #8b8b96; font-size: 0.85rem; }
+	.palette-item.selected .pi-shortcut { background: rgba(255,255,255,0.2); color: var(--text-on-accent); }
+	.palette-empty { padding: 16px; text-align: center; color: var(--text-faint); font-size: 0.85rem; }
 </style>

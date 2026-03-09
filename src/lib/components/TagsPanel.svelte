@@ -86,11 +86,11 @@
 
 <style>
 	.tags-panel { font-size: 0.8rem; }
-	.tp-empty { color: #b0b0b8; font-size: 0.78rem; }
+	.tp-empty { color: var(--color-base-40); font-size: 0.78rem; }
 	.tp-node { display: flex; align-items: center; gap: 2px; }
 	.tp-toggle {
 		width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
-		background: none; border: none; cursor: pointer; color: #8b8b96; flex-shrink: 0;
+		background: none; border: none; cursor: pointer; color: var(--text-faint); flex-shrink: 0;
 	}
 	.tp-spacer { width: 16px; flex-shrink: 0; }
 	.tp-chev { transition: transform 0.15s ease; }
@@ -99,12 +99,12 @@
 		display: flex; align-items: center; gap: 2px;
 		background: none; border: none; cursor: pointer;
 		font-family: inherit; padding: 2px 4px; border-radius: 3px;
-		color: #1f2328; font-size: 0.8rem;
+		color: var(--text-normal); font-size: 0.8rem;
 	}
-	.tp-tag:hover { background: #f0f0f4; }
-	.tp-hash { color: #7c3aed; font-weight: 600; }
+	.tp-tag:hover { background: var(--background-modifier-hover); }
+	.tp-hash { color: var(--interactive-accent); font-weight: 600; }
 	.tp-count {
-		background: #e8e8ec; color: #8b8b96; border-radius: 8px;
+		background: var(--background-modifier-border-focus); color: var(--text-faint); border-radius: 8px;
 		padding: 0 5px; font-size: 0.68rem; margin-inline-start: 4px;
 	}
 </style>

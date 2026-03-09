@@ -62,14 +62,14 @@
 	.bl-section { margin-bottom: 4px; }
 	.bl-header {
 		display: flex; align-items: center; gap: 4px;
-		padding: 4px 0; font-weight: 600; color: #5c5c66; font-size: 0.75rem;
+		padding: 4px 0; font-weight: 600; color: var(--text-muted); font-size: 0.75rem;
 		text-transform: uppercase; letter-spacing: 0.03em;
 	}
 	.bl-toggle {
 		background: none; border: none; cursor: pointer; font-family: inherit; width: 100%; text-align: start;
 	}
-	.bl-toggle:hover { color: #1f2328; }
-	.bl-count { background: #e8e8ec; border-radius: 8px; padding: 0 5px; font-size: 0.7rem; color: #8b8b96; }
+	.bl-toggle:hover { color: var(--text-normal); }
+	.bl-count { background: var(--background-modifier-border-focus); border-radius: 8px; padding: 0 5px; font-size: 0.7rem; color: var(--text-faint); }
 	.bl-chev { transition: transform 0.15s ease; flex-shrink: 0; }
 	.bl-chev.expanded { transform: rotate(90deg); }
 	.bl-item {
@@ -77,8 +77,8 @@
 		background: none; border: none; cursor: pointer; text-align: start;
 		border-radius: 3px; font-family: inherit;
 	}
-	.bl-item:hover { background: #f0f0f4; }
-	.bl-name { display: block; color: #7c3aed; font-size: 0.8rem; }
-	.bl-context { display: block; color: #8b8b96; font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.bl-empty { color: #b0b0b8; font-size: 0.78rem; padding: 4px 0; }
+	.bl-item:hover { background: var(--background-modifier-hover); }
+	.bl-name { display: block; color: var(--interactive-accent); font-size: 0.8rem; }
+	.bl-context { display: block; color: var(--text-faint); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.bl-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
 </style>

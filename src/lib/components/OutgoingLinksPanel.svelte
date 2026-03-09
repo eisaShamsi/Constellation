@@ -32,15 +32,15 @@
 	.outgoing-panel { font-size: 0.8rem; }
 	.ol-header {
 		display: flex; align-items: center; gap: 4px;
-		padding: 4px 0; font-weight: 600; color: #5c5c66; font-size: 0.75rem;
+		padding: 4px 0; font-weight: 600; color: var(--text-muted); font-size: 0.75rem;
 		text-transform: uppercase; letter-spacing: 0.03em;
 	}
-	.ol-count { background: var(--bg-tertiary, #e8e8ec); border-radius: 8px; padding: 0 5px; font-size: 0.7rem; color: var(--text-muted, #8b8b96); }
+	.ol-count { background: var(--background-modifier-border-focus); border-radius: 8px; padding: 0 5px; font-size: 0.7rem; color: var(--text-faint); }
 	.ol-item {
 		padding: 4px 8px; border-radius: 3px;
 	}
-	.ol-item:hover { background: var(--bg-hover, #f0f0f4); }
-	.ol-target { display: block; color: var(--accent, #7c3aed); font-size: 0.8rem; }
-	.ol-context { display: block; color: var(--text-muted, #8b8b96); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.ol-empty { color: var(--text-faint, #b0b0b8); font-size: 0.78rem; padding: 4px 0; }
+	.ol-item:hover { background: var(--background-modifier-hover); }
+	.ol-target { display: block; color: var(--interactive-accent); font-size: 0.8rem; }
+	.ol-context { display: block; color: var(--text-faint); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ol-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
 </style>

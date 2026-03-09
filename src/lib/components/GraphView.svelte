@@ -80,7 +80,11 @@
 	}
 
 	function isDarkTheme(): boolean {
-		return document.documentElement.getAttribute('data-theme') === 'dark';
+		return document.body.classList.contains('theme-dark');
+	}
+
+	function getCSSVar(name: string): string {
+		return getComputedStyle(document.body).getPropertyValue(name).trim();
 	}
 
 	// ─── Lifecycle ───
@@ -95,9 +99,9 @@
 		themeObserver = new MutationObserver(() => {
 			if (nodeData.length > 0) draw();
 		});
-		themeObserver.observe(document.documentElement, {
+		themeObserver.observe(document.body, {
 			attributes: true,
-			attributeFilter: ['data-theme'],
+			attributeFilter: ['class'],
 		});
 
 		if (nodes.length > 0 && canvasEl) {
@@ -321,16 +325,16 @@
 		if (!ctx || !canvasEl) return;
 		const dark = isDarkTheme();
 
-		const linkColor = dark ? '#585b70' : '#8b8b96';
+		const linkColor = getCSSVar('--graph-line') || (dark ? '#585b70' : '#8b8b96');
 		const linkAlpha = 0.4;
 		const linkDimAlpha = dark ? 0.06 : 0.08;
-		const ringColor = dark ? '#ffffff' : '#1f2328';
-		const ringConnectedColor = dark ? '#ffffffaa' : '#5c5c66';
-		const labelColor = dark ? '#cdd6f4' : '#1f2328';
-		const labelShadow = dark ? '#000000' : '#ffffff';
+		const ringColor = getCSSVar('--text-normal') || (dark ? '#ffffff' : '#1f2328');
+		const ringConnectedColor = getCSSVar('--text-muted') || (dark ? '#ffffffaa' : '#5c5c66');
+		const labelColor = getCSSVar('--graph-text') || (dark ? '#cdd6f4' : '#1f2328');
+		const labelShadow = getCSSVar('--graph-text-shadow') || (dark ? '#000000' : '#ffffff');
 		const legendBg = dark ? 'rgba(24, 24, 36, 0.9)' : 'rgba(255, 255, 255, 0.94)';
 		const legendBorder = dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-		const legendText = dark ? '#cdd6f4' : '#1f2328';
+		const legendText = getCSSVar('--graph-text') || (dark ? '#cdd6f4' : '#1f2328');
 
 		ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 		ctx.save();
@@ -535,7 +539,7 @@
 <style>
 	.graph-container {
 		width: 100%; height: 100%;
-		background: var(--bg-secondary, #f6f6f9);
+		background: var(--background-secondary);
 		position: relative;
 		overflow: hidden;
 	}
@@ -547,19 +551,19 @@
 	.graph-empty {
 		position: absolute; inset: 0;
 		display: flex; align-items: center; justify-content: center;
-		color: var(--text-faint, #b0b0b8); font-size: 0.85rem;
+		color: var(--text-faint); font-size: 0.85rem;
 	}
 	.graph-tooltip {
 		position: absolute;
 		pointer-events: none;
-		background: var(--bg, #fff);
-		border: 1px solid var(--border, #e0e0e4);
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
 		border-radius: 6px;
 		padding: 4px 10px;
 		font-size: 0.8rem;
 		font-weight: 500;
-		color: var(--text, #1f2328);
-		box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+		color: var(--text-normal);
+		box-shadow: var(--shadow-s);
 		white-space: nowrap;
 		z-index: 10;
 	}

@@ -85,12 +85,12 @@
 <style>
 	.ws-overlay {
 		position: fixed; inset: 0; z-index: 1000;
-		background: rgba(0,0,0,0.3); display: flex; align-items: flex-start; justify-content: center;
+		background: var(--background-modifier-cover); display: flex; align-items: flex-start; justify-content: center;
 		padding-top: 15vh;
 	}
 	.ws-panel {
 		background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-		width: 400px; max-width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+		width: 400px; max-width: 90vw; box-shadow: var(--shadow-l);
 		overflow: hidden;
 	}
 	.ws-header {
@@ -115,7 +115,7 @@
 	}
 	.ws-save input:focus { border-color: var(--accent); }
 	.ws-save-btn {
-		padding: 6px 12px; border: none; background: var(--accent); color: #fff;
+		padding: 6px 12px; border: none; background: var(--accent); color: var(--text-on-accent);
 		border-radius: 4px; font-size: 0.8rem; cursor: pointer; white-space: nowrap;
 		font-family: inherit;
 	}

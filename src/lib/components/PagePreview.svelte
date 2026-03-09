@@ -52,10 +52,10 @@
 		z-index: 1100;
 		max-width: 400px;
 		max-height: 300px;
-		background: #fff;
-		border: 1px solid #e0e0e4;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
 		border-radius: 8px;
-		box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+		box-shadow: var(--shadow-l);
 		overflow: hidden;
 		pointer-events: none;
 	}
@@ -63,7 +63,7 @@
 		padding: 12px 16px;
 		font-size: 0.82rem;
 		line-height: 1.6;
-		color: #1f2328;
+		color: var(--text-normal);
 		overflow-y: auto;
 		max-height: 280px;
 	}

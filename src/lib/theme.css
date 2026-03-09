@@ -1,0 +1,166 @@
+/* ═══════════════════════════════════════════════════════
+   Constellation Theme — Obsidian-style CSS variable system
+   3-tier hierarchy: Base colors → Semantic → Compat aliases
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── TIER 1: Base Color Scale ─── */
+
+.theme-light {
+  --color-base-00: #ffffff;
+  --color-base-05: #fcfcfc;
+  --color-base-10: #fafafa;
+  --color-base-20: #f6f6f9;
+  --color-base-25: #f0f0f4;
+  --color-base-30: #e0e0e4;
+  --color-base-35: #d4d4d8;
+  --color-base-40: #b0b0b8;
+  --color-base-50: #8b8b96;
+  --color-base-60: #5c5c66;
+  --color-base-70: #3a3a44;
+  --color-base-100: #1f2328;
+
+  --color-red: #cf222e;
+  --color-orange: #ea580c;
+  --color-yellow: #e0ac00;
+  --color-green: #16a34a;
+  --color-cyan: #0891b2;
+  --color-blue: #2563eb;
+  --color-purple: #7c3aed;
+  --color-pink: #d53984;
+
+  --accent-h: 263;
+  --accent-s: 82%;
+  --accent-l: 58%;
+
+  color-scheme: light;
+}
+
+.theme-dark {
+  --color-base-00: #1e1e2e;
+  --color-base-05: #1c1c2c;
+  --color-base-10: #181825;
+  --color-base-20: #252536;
+  --color-base-25: #2a2a3c;
+  --color-base-30: #313244;
+  --color-base-35: #3a3a4e;
+  --color-base-40: #585b70;
+  --color-base-50: #6c7086;
+  --color-base-60: #a6adc8;
+  --color-base-70: #bac2de;
+  --color-base-100: #cdd6f4;
+
+  --color-red: #f38ba8;
+  --color-orange: #fab387;
+  --color-yellow: #f9e2af;
+  --color-green: #a6e3a1;
+  --color-cyan: #94e2d5;
+  --color-blue: #89b4fa;
+  --color-purple: #b4befe;
+  --color-pink: #f5c2e7;
+
+  --accent-h: 234;
+  --accent-s: 82%;
+  --accent-l: 85%;
+
+  color-scheme: dark;
+}
+
+/* ─── TIER 2: Semantic Variables ─── */
+
+.theme-light, .theme-dark {
+  /* Backgrounds */
+  --background-primary:           var(--color-base-00);
+  --background-primary-alt:       var(--color-base-10);
+  --background-secondary:         var(--color-base-20);
+  --background-secondary-alt:     var(--color-base-25);
+  --background-modifier-border:       var(--color-base-30);
+  --background-modifier-border-focus: var(--color-base-35);
+  --background-modifier-hover:    var(--color-base-25);
+  --background-modifier-form-field:   var(--color-base-00);
+  --background-modifier-cover:    rgba(0, 0, 0, 0.3);
+  --background-modifier-error-hover:  color-mix(in srgb, var(--color-red) 8%, var(--color-base-00));
+  --background-modifier-success:  var(--color-green);
+  --background-modifier-error:    var(--color-red);
+
+  /* Text */
+  --text-normal:       var(--color-base-100);
+  --text-muted:        var(--color-base-60);
+  --text-faint:        var(--color-base-50);
+  --text-on-accent:    #ffffff;
+  --text-error:        var(--color-red);
+  --text-warning:      var(--color-orange);
+  --text-success:      var(--color-green);
+  --text-accent:       hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  --text-accent-hover: hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) - 10%));
+
+  /* Interactive */
+  --interactive-normal:       var(--color-base-20);
+  --interactive-hover:        var(--color-base-25);
+  --interactive-accent:       hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  --interactive-accent-hover: hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) - 8%));
+
+  /* Scrollbar */
+  --scrollbar-bg:                transparent;
+  --scrollbar-thumb-bg:          var(--color-base-35);
+  --scrollbar-active-thumb-bg:   var(--color-base-40);
+
+  /* Typography */
+  --font-interface-theme: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+  --font-text-theme:      -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+  --font-monospace-theme:  "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+  --font-text-size: 15px;
+  --font-ui-smaller: 0.7rem;
+  --font-ui-small:   0.78rem;
+  --font-ui-medium:  0.85rem;
+  --font-ui-large:   1.1rem;
+  --line-height-normal: 1.5;
+  --line-height-tight:  1.3;
+
+  /* Shadows */
+  --shadow-s: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-l: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+  /* Code syntax highlighting */
+  --code-keyword:  var(--color-purple);
+  --code-string:   var(--color-green);
+  --code-number:   var(--color-orange);
+  --code-comment:  var(--color-base-50);
+  --code-function: var(--color-blue);
+  --code-builtin:  var(--color-cyan);
+  --code-type:     var(--color-purple);
+  --code-tag:      var(--color-red);
+  --code-attr:     var(--color-orange);
+  --code-variable: var(--color-orange);
+  --code-meta:     var(--color-base-50);
+
+  /* Graph view (read by canvas JS via getComputedStyle) */
+  --graph-line:           var(--color-base-40);
+  --graph-node-focused:   var(--interactive-accent);
+  --graph-text:           var(--color-base-100);
+  --graph-text-shadow:    var(--color-base-00);
+}
+
+/* Dark-mode overrides */
+.theme-dark {
+  --text-on-accent: #1e1e2e;
+  --background-modifier-cover: rgba(0, 0, 0, 0.5);
+  --shadow-s: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-l: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── TIER 3: Backward-Compatibility Aliases ─── */
+
+.theme-light, .theme-dark {
+  --bg:             var(--background-primary);
+  --bg-secondary:   var(--background-secondary);
+  --bg-tertiary:    var(--background-secondary-alt);
+  --bg-hover:       var(--background-modifier-hover);
+  --border:         var(--background-modifier-border);
+  --border-light:   var(--background-modifier-border-focus);
+  --text:           var(--text-normal);
+  --text-secondary: var(--text-muted);
+  --accent:         var(--interactive-accent);
+  --accent-hover:   var(--interactive-accent-hover);
+  --accent-bg:      var(--background-secondary-alt);
+  --danger:         var(--text-error);
+}

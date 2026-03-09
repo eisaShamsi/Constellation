@@ -87,12 +87,12 @@
 <style>
 	.qs-overlay {
 		position: fixed; inset: 0; z-index: 1000;
-		background: rgba(0, 0, 0, 0.3);
+		background: var(--background-modifier-cover);
 		display: flex; justify-content: center; padding-top: 15vh;
 	}
 	.qs-panel {
-		background: #fff; border-radius: 8px;
-		box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+		background: var(--background-primary); border-radius: 8px;
+		box-shadow: var(--shadow-l);
 		width: 500px; max-height: 400px;
 		display: flex; flex-direction: column;
 		overflow: hidden;
@@ -100,21 +100,22 @@
 	.qs-input {
 		border: none; padding: 12px 16px;
 		font-size: 0.95rem; font-family: inherit;
-		color: #1f2328; outline: none;
-		border-bottom: 1px solid #e8e8ec;
+		color: var(--text-normal); outline: none;
+		background: var(--background-primary);
+		border-bottom: 1px solid var(--background-modifier-border-focus);
 	}
-	.qs-input::placeholder { color: #b0b0b8; }
+	.qs-input::placeholder { color: var(--color-base-40); }
 	.qs-list { flex: 1; overflow-y: auto; padding: 4px; }
 	.qs-item {
 		display: flex; align-items: center; justify-content: space-between;
 		width: 100%; padding: 6px 12px;
 		background: none; border: none; border-radius: 4px;
 		cursor: pointer; font-family: inherit; text-align: start;
-		color: #1f2328; font-size: 0.85rem;
+		color: var(--text-normal); font-size: 0.85rem;
 	}
-	.qs-item.selected { background: #7c3aed; color: #fff; }
+	.qs-item.selected { background: var(--interactive-accent); color: var(--text-on-accent); }
 	.qs-name { font-weight: 500; }
-	.qs-path { font-size: 0.72rem; color: #8b8b96; }
+	.qs-path { font-size: 0.72rem; color: var(--text-faint); }
 	.qs-item.selected .qs-path { color: rgba(255,255,255,0.7); }
-	.qs-empty { padding: 16px; text-align: center; color: #8b8b96; font-size: 0.85rem; }
+	.qs-empty { padding: 16px; text-align: center; color: var(--text-faint); font-size: 0.85rem; }
 </style>

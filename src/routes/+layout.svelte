@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '$lib/theme.css';
 	import { onMount, onDestroy } from 'svelte';
 	import { dir, locale, toggleLocale } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
@@ -158,10 +159,11 @@
 	const colorScheme = $derived($appSettings.colorScheme);
 	$effect(() => {
 		if (typeof document !== 'undefined') {
-			document.documentElement.setAttribute('data-theme', colorScheme === 'system'
+			const resolved = colorScheme === 'system'
 				? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-				: colorScheme
-			);
+				: colorScheme;
+			document.body.classList.remove('theme-light', 'theme-dark');
+			document.body.classList.add(`theme-${resolved}`);
 		}
 	});
 
@@ -1013,54 +1015,14 @@
 	:global(html) { margin: 0; padding: 0; overflow: hidden; }
 	:global(body) {
 		margin: 0; padding: 0;
-		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
-		font-size: 15px; line-height: 1.5; overflow: hidden;
+		font-family: var(--font-interface-theme);
+		font-size: var(--font-text-size); line-height: var(--line-height-normal); overflow: hidden;
+		background: var(--background-primary);
+		color: var(--text-normal);
 	}
-	:global(a) { text-decoration: none; }
+	:global(a) { text-decoration: none; color: var(--text-accent); }
+	:global(a:hover) { color: var(--text-accent-hover); }
 	:global(*) { box-sizing: border-box; }
-
-	/* ═══ THEME VARIABLES ═══ */
-	:global(html), :global([data-theme="light"]) {
-		--bg: #fff;
-		--bg-secondary: #f6f6f9;
-		--bg-tertiary: #f0f0f4;
-		--bg-hover: #ebebef;
-		--border: #e0e0e4;
-		--border-light: #e8e8ec;
-		--text: #1f2328;
-		--text-secondary: #5c5c66;
-		--text-muted: #8b8b96;
-		--text-faint: #b0b0b8;
-		--accent: #7c3aed;
-		--accent-hover: #6d28d9;
-		--accent-bg: #d5ccf7;
-		--danger: #cf222e;
-		color-scheme: light;
-	}
-	:global([data-theme="dark"]) {
-		--bg: #1e1e2e;
-		--bg-secondary: #181825;
-		--bg-tertiary: #252536;
-		--bg-hover: #313244;
-		--border: #313244;
-		--border-light: #3a3a4e;
-		--text: #cdd6f4;
-		--text-secondary: #a6adc8;
-		--text-muted: #6c7086;
-		--text-faint: #585b70;
-		--accent: #b4befe;
-		--accent-hover: #cba6f7;
-		--accent-bg: #313244;
-		--danger: #f38ba8;
-		color-scheme: dark;
-	}
-
-	:global(body) {
-		background: var(--bg);
-		color: var(--text);
-	}
-	:global(a) { color: var(--accent); }
-	:global(a:hover) { color: var(--accent-hover); }
 
 	/* ═══ APP GRID ═══ */
 	.app {
@@ -1264,7 +1226,7 @@
 	.w-hint { font-size: 0.9rem; }
 	.w-hint-sub { font-size: 0.78rem; color: var(--text-faint); margin-top: 4px; }
 	.w-btn {
-		background: var(--accent); border: none; color: #fff;
+		background: var(--accent); border: none; color: var(--text-on-accent);
 		padding: 8px 20px; border-radius: 6px; cursor: pointer;
 		font-size: 0.9rem; font-weight: 600;
 	}

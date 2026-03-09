@@ -66,10 +66,10 @@
 		position: fixed;
 		z-index: 1000;
 		min-width: 160px;
-		background: #fff;
-		border: 1px solid #e0e0e4;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
 		border-radius: 6px;
-		box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+		box-shadow: var(--shadow-l);
 		padding: 4px;
 		display: flex;
 		flex-direction: column;
@@ -84,19 +84,19 @@
 		background: none;
 		font-size: 0.82rem;
 		font-family: inherit;
-		color: #1f2328;
+		color: var(--text-normal);
 		cursor: pointer;
 		border-radius: 4px;
 		text-align: start;
 	}
 	.ctx-item:hover {
-		background: #f0f0f4;
+		background: var(--background-modifier-hover);
 	}
 	.ctx-item.danger {
-		color: #cf222e;
+		color: var(--text-error);
 	}
 	.ctx-item.danger:hover {
-		background: #fef1f2;
+		background: var(--background-modifier-error-hover);
 	}
 	.ctx-icon {
 		font-size: 0.9rem;

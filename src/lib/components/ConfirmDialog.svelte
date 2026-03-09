@@ -38,22 +38,22 @@
 		position: fixed;
 		inset: 0;
 		z-index: 2000;
-		background: rgba(0,0,0,0.3);
+		background: var(--background-modifier-cover);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 	.dialog {
-		background: #fff;
+		background: var(--background-primary);
 		border-radius: 8px;
-		box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+		box-shadow: var(--shadow-l);
 		padding: 20px 24px;
 		min-width: 320px;
 		max-width: 420px;
 	}
 	.dialog-msg {
 		font-size: 0.9rem;
-		color: #1f2328;
+		color: var(--text-normal);
 		margin: 0 0 16px;
 		line-height: 1.5;
 	}
@@ -70,17 +70,17 @@
 		font-family: inherit;
 		cursor: pointer;
 		font-weight: 500;
-		background: #7c3aed;
-		color: #fff;
+		background: var(--interactive-accent);
+		color: var(--text-on-accent);
 	}
-	.dialog-btn:hover { background: #6d28d9; }
+	.dialog-btn:hover { background: var(--interactive-accent-hover); }
 	.dialog-btn.danger {
-		background: #cf222e;
+		background: var(--text-error);
 	}
-	.dialog-btn.danger:hover { background: #a40e26; }
+	.dialog-btn.danger:hover { background: color-mix(in srgb, var(--text-error) 80%, black); }
 	.dialog-btn.cancel {
-		background: #f0f0f4;
-		color: #5c5c66;
+		background: var(--background-secondary-alt);
+		color: var(--text-muted);
 	}
-	.dialog-btn.cancel:hover { background: #e0e0e4; }
+	.dialog-btn.cancel:hover { background: var(--background-modifier-border); }
 </style>
