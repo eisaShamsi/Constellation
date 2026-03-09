@@ -398,7 +398,8 @@
 	function handleGraphNodeClick(path: string, vaultName: string) {
 		const vaultColor = vaultColorMap[vaultName] ?? '#7c3aed';
 		openNoteTab(path, vaultName, vaultColor);
-		showGraphView = false;
+		// Don't close graph — let the user navigate within the graph view
+		// The graph will auto-center on the newly opened note
 	}
 
 	function handleTagClick(tag: string) {
