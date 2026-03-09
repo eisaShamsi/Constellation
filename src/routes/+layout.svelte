@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { dir, locale, toggleLocale } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
@@ -208,7 +208,7 @@
 		await refreshVaultCaches();
 
 		// Listen for file change events from the watcher
-		await listen<{ vaultId: string; paths: string[] }>('vault-changed', async (event) => {
+		const unlistenWatcher = await listen<{ vaultId: string; paths: string[] }>('vault-changed', async (event) => {
 			const { vaultId, paths } = event.payload;
 			await refreshVaultTree(vaultId);
 			await loadAllStats();
@@ -234,6 +234,17 @@
 
 		// Global keyboard shortcuts
 		document.addEventListener('keydown', handleGlobalKeydown);
+
+		// Cleanup on destroy
+		cleanupFns.push(
+			() => document.removeEventListener('keydown', handleGlobalKeydown),
+			unlistenWatcher,
+		);
+	});
+
+	const cleanupFns: (() => void)[] = [];
+	onDestroy(() => {
+		for (const fn of cleanupFns) fn();
 	});
 
 	async function refreshVaultCaches() {
@@ -262,9 +273,9 @@
 		allVaultTags = tags;
 		allNotes = notes;
 
-		// Build graph data from the first vault (or combine)
+		// Build graph data from all vaults combined
 		if ($vaults.length > 0) {
-			const { nodes, links: gLinks } = buildGraphData(links, notes, $vaults[0].name);
+			const { nodes, links: gLinks } = buildGraphData(links, notes);
 			graphNodes = nodes;
 			graphLinks = gLinks;
 		}
@@ -387,7 +398,12 @@
 
 	function handleToggleTheme() {
 		const current = get(appSettings).colorScheme;
-		updateSettings({ colorScheme: current === 'light' ? 'dark' : 'light' });
+		if (current === 'dark') {
+			updateSettings({ colorScheme: 'light' });
+		} else {
+			// 'light' or 'system' → toggle to dark
+			updateSettings({ colorScheme: 'dark' });
+		}
 	}
 
 	async function handleQuickSwitchSelect(path: string, vaultName: string) {
@@ -398,8 +414,7 @@
 	function handleGraphNodeClick(path: string, vaultName: string) {
 		const vaultColor = vaultColorMap[vaultName] ?? '#7c3aed';
 		openNoteTab(path, vaultName, vaultColor);
-		// Don't close graph — let the user navigate within the graph view
-		// The graph will auto-center on the newly opened note
+		showGraphView = false; // Switch to note view
 	}
 
 	function handleTagClick(tag: string) {

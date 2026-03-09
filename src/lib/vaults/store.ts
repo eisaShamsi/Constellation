@@ -652,7 +652,7 @@ export interface GraphLink {
 	target: string;
 }
 
-export function buildGraphData(allLinks: NoteLink[], allNotes: { name: string; path: string }[], vaultName: string) {
+export function buildGraphData(allLinks: NoteLink[], allNotes: { name: string; path: string; vaultName: string }[]) {
 	const nodeMap = new Map<string, GraphNode>();
 	// Add all notes as nodes
 	for (const note of allNotes) {
@@ -660,7 +660,7 @@ export function buildGraphData(allLinks: NoteLink[], allNotes: { name: string; p
 			id: note.name.toLowerCase(),
 			name: note.name,
 			path: note.path,
-			vaultName,
+			vaultName: note.vaultName,
 			linkCount: 0
 		});
 	}

@@ -33,8 +33,8 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.75rem 1.5rem;
-		background: #f6f8fa;
-		border-bottom: 1px solid #d0d7de;
+		background: var(--bg-secondary, #f6f8fa);
+		border-bottom: 1px solid var(--border, #d0d7de);
 	}
 
 	.brand-link {
