@@ -740,6 +740,22 @@ export interface AppSettings {
 
 	// Templates
 	templateFolder: string;
+
+	// Core plugins
+	enabledPlugins: {
+		dailyNotes: boolean;
+		templates: boolean;
+		graphView: boolean;
+		backlinks: boolean;
+		outgoingLinks: boolean;
+		tags: boolean;
+		pagePreview: boolean;
+		search: boolean;
+		quickSwitcher: boolean;
+		commandPalette: boolean;
+		wordCount: boolean;
+		workspaces: boolean;
+	};
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -768,6 +784,20 @@ const DEFAULT_SETTINGS: AppSettings = {
 	dailyNoteFolder: '',
 	dailyNoteTemplate: '',
 	templateFolder: 'Templates',
+	enabledPlugins: {
+		dailyNotes: true,
+		templates: true,
+		graphView: true,
+		backlinks: true,
+		outgoingLinks: true,
+		tags: true,
+		pagePreview: true,
+		search: true,
+		quickSwitcher: true,
+		commandPalette: true,
+		wordCount: true,
+		workspaces: true,
+	},
 };
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);

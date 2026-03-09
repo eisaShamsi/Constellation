@@ -18,9 +18,6 @@
 		<a href="/skills" class="nav-link" class:active={page.url.pathname === '/skills'}>
 			{$t('nav.skills')}
 		</a>
-		<a href="/settings" class="nav-link" class:active={page.url.pathname === '/settings'}>
-			{$t('nav.settings')}
-		</a>
 	</div>
 	<div class="nav-actions">
 		<LanguageSwitcher />

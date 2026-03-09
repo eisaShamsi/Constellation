@@ -39,6 +39,7 @@
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
 	import PagePreview from '$lib/components/PagePreview.svelte';
 	import WorkspaceManager from '$lib/components/WorkspaceManager.svelte';
+	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import OutgoingLinksPanel from '$lib/components/OutgoingLinksPanel.svelte';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
@@ -67,6 +68,9 @@
 
 	// Workspace manager
 	let showWorkspaces = $state(false);
+
+	// Settings modal
+	let showSettings = $state(false);
 
 	// Page preview (hover)
 	let pagePreview = $state<{ content: string; x: number; y: number; visible: boolean }>({ content: '', x: 0, y: 0, visible: false });
@@ -189,6 +193,7 @@
 			{ id: 'nav-back', name: ar ? 'رجوع' : 'Navigate back', shortcut: 'Alt+←', icon: '←', action: navigateBack, category: 'Navigation' },
 			{ id: 'nav-forward', name: ar ? 'تقدم' : 'Navigate forward', shortcut: 'Alt+→', icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: ar ? 'مساحات العمل' : 'Manage workspaces', icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
+			{ id: 'settings', name: ar ? 'الإعدادات' : 'Settings', shortcut: 'Ctrl+,', icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 		];
 	}
 
@@ -330,6 +335,12 @@
 			sidebarOpen = !sidebarOpen;
 			return;
 		}
+		// Settings
+		if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+			e.preventDefault();
+			showSettings = !showSettings;
+			return;
+		}
 		// Navigate back/forward
 		if (e.altKey && e.key === 'ArrowLeft') {
 			e.preventDefault();
@@ -347,6 +358,7 @@
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showGraphView) { showGraphView = false; return; }
 			if (showWorkspaces) { showWorkspaces = false; return; }
+			if (showSettings) { showSettings = false; return; }
 		}
 	}
 
@@ -663,9 +675,9 @@
 			<button class="r-btn" onclick={toggleLocale} title="Language / اللغة">
 				<span class="r-lang">{$locale === 'en' ? 'ع' : 'En'}</span>
 			</button>
-			<a href="/settings" class="r-btn" class:active={page.url.pathname === '/settings'} title={ar ? 'الإعدادات' : 'Settings'}>
+			<button class="r-btn" class:active={showSettings} onclick={() => showSettings = !showSettings} title={ar ? 'الإعدادات' : 'Settings'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-			</a>
+			</button>
 		</div>
 	</div>
 
@@ -782,7 +794,7 @@
 					{/each}
 					{#if !isHome}
 						<div class="tab active">
-							<span class="tab-title">{page.url.pathname === '/settings' ? (ar ? 'الإعدادات' : 'Settings') : (ar ? 'المهارات' : 'Skills')}</span>
+							<span class="tab-title">{ar ? 'المهارات' : 'Skills'}</span>
 							<a class="tab-close" href="/">×</a>
 						</div>
 					{/if}
@@ -952,6 +964,14 @@
 	{#if showWorkspaces}
 		<WorkspaceManager
 			onClose={() => showWorkspaces = false}
+			{ar}
+		/>
+	{/if}
+
+	{#if showSettings}
+		<SettingsModal
+			onClose={() => showSettings = false}
+			commands={getCommands()}
 			{ar}
 		/>
 	{/if}
