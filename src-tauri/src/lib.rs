@@ -32,6 +32,15 @@ pub fn run() {
             vaults::delete_item,
             vaults::resolve_wikilink,
             vaults::read_obsidian_appearance,
+            vaults::scan_vault_links,
+            vaults::scan_vault_tags,
+            vaults::collect_vault_notes,
+            vaults::get_daily_note_path,
+            vaults::update_links_on_rename,
+            vaults::read_note_preview,
+            vaults::save_clipboard_image,
+            vaults::export_note_html,
+            vaults::move_to_trash,
             watcher::watch_vault,
             watcher::unwatch_vault
         ])

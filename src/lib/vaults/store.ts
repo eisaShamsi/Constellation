@@ -151,6 +151,82 @@ export const selectedNote = derived(
 export const vaultCount = derived(vaults, ($v) => $v.length);
 export const totalStars = derived(vaultStats, ($s) => $s.reduce((sum, v) => sum + v.star_count, 0));
 
+// ─── Navigation history ───
+const navHistory = writable<string[]>([]);
+const navHistoryIndex = writable<number>(-1);
+
+export function pushNavHistory(tabId: string) {
+	navHistory.update(h => {
+		const idx = get(navHistoryIndex);
+		const trimmed = h.slice(0, idx + 1);
+		trimmed.push(tabId);
+		if (trimmed.length > 50) trimmed.shift();
+		navHistoryIndex.set(trimmed.length - 1);
+		return trimmed;
+	});
+}
+
+export function navigateBack() {
+	const idx = get(navHistoryIndex);
+	const hist = get(navHistory);
+	if (idx > 0) {
+		navHistoryIndex.set(idx - 1);
+		const tabId = hist[idx - 1];
+		if (get(splitActive)) focusedTabId.set(tabId);
+		else activeTabId.set(tabId);
+	}
+}
+
+export function navigateForward() {
+	const idx = get(navHistoryIndex);
+	const hist = get(navHistory);
+	if (idx < hist.length - 1) {
+		navHistoryIndex.set(idx + 1);
+		const tabId = hist[idx + 1];
+		if (get(splitActive)) focusedTabId.set(tabId);
+		else activeTabId.set(tabId);
+	}
+}
+
+// ─── Bookmarks ───
+export interface Bookmark {
+	id: string;
+	type: 'note' | 'folder' | 'search';
+	path: string;
+	name: string;
+	vaultName: string;
+}
+
+export const bookmarks = writable<Bookmark[]>([]);
+
+export function addBookmark(bm: Omit<Bookmark, 'id'>) {
+	const id = `bm_${Date.now()}`;
+	bookmarks.update(list => [...list, { ...bm, id }]);
+	saveBookmarks();
+}
+
+export function removeBookmark(id: string) {
+	bookmarks.update(list => list.filter(b => b.id !== id));
+	saveBookmarks();
+}
+
+export function isBookmarked(path: string): boolean {
+	return get(bookmarks).some(b => b.path === path);
+}
+
+function saveBookmarks() {
+	try {
+		localStorage.setItem('constellation-bookmarks', JSON.stringify(get(bookmarks)));
+	} catch { /* ignore */ }
+}
+
+export function loadBookmarks() {
+	try {
+		const data = localStorage.getItem('constellation-bookmarks');
+		if (data) bookmarks.set(JSON.parse(data));
+	} catch { /* ignore */ }
+}
+
 // ─── Frontmatter parsing ───
 export function parseFrontmatter(content: string): { properties: FrontmatterProperty[]; body: string } {
 	const lines = content.split('\n');
@@ -337,6 +413,7 @@ export async function openNoteTab(filePath: string, vaultName: string, color: st
 		} else {
 			activeTabId.set(existing.id);
 		}
+		pushNavHistory(existing.id);
 		return;
 	}
 
@@ -357,6 +434,7 @@ export async function openNoteTab(filePath: string, vaultName: string, color: st
 	} else {
 		activeTabId.set(id);
 	}
+	pushNavHistory(id);
 }
 
 export function closeTab(tabId: string) {
@@ -394,6 +472,7 @@ export function switchTab(tabId: string) {
 	} else {
 		activeTabId.set(tabId);
 	}
+	pushNavHistory(tabId);
 }
 
 /** Load vaults and their stats. */
@@ -524,4 +603,282 @@ export async function loadVaultAppearance(vaultPath: string, vaultId: string): P
 	} catch {
 		// Silently fail — use defaults
 	}
+}
+
+// ─── Backlinks scanning ───
+export interface NoteLink {
+	source_path: string;
+	source_name: string;
+	target: string;
+	context: string;
+}
+
+export async function scanVaultLinks(vaultPath: string): Promise<NoteLink[]> {
+	return await invoke('scan_vault_links', { vaultPath });
+}
+
+export function getBacklinks(allLinks: NoteLink[], noteName: string) {
+	const linked = allLinks.filter(l =>
+		l.target.toLowerCase() === noteName.toLowerCase()
+	);
+	return linked.map(l => ({
+		name: l.source_name,
+		path: l.source_path,
+		context: l.context,
+		vaultName: ''
+	}));
+}
+
+export function getOutgoingLinks(allLinks: NoteLink[], notePath: string) {
+	return allLinks.filter(l => l.source_path === notePath);
+}
+
+// ─── Tags scanning ───
+export async function scanVaultTags(vaultPath: string): Promise<Record<string, number>> {
+	return await invoke('scan_vault_tags', { vaultPath });
+}
+
+// ─── Graph data ───
+export interface GraphNode {
+	id: string;
+	name: string;
+	path: string;
+	vaultName: string;
+	linkCount: number;
+}
+
+export interface GraphLink {
+	source: string;
+	target: string;
+}
+
+export function buildGraphData(allLinks: NoteLink[], allNotes: { name: string; path: string }[], vaultName: string) {
+	const nodeMap = new Map<string, GraphNode>();
+	// Add all notes as nodes
+	for (const note of allNotes) {
+		nodeMap.set(note.name.toLowerCase(), {
+			id: note.name.toLowerCase(),
+			name: note.name,
+			path: note.path,
+			vaultName,
+			linkCount: 0
+		});
+	}
+
+	const links: GraphLink[] = [];
+	const seen = new Set<string>();
+
+	for (const link of allLinks) {
+		const sourceId = link.source_name.toLowerCase();
+		const targetId = link.target.toLowerCase();
+
+		if (!nodeMap.has(sourceId) || !nodeMap.has(targetId)) continue;
+
+		const key = `${sourceId}->${targetId}`;
+		if (seen.has(key)) continue;
+		seen.add(key);
+
+		links.push({ source: sourceId, target: targetId });
+		nodeMap.get(sourceId)!.linkCount++;
+		nodeMap.get(targetId)!.linkCount++;
+	}
+
+	// Only include nodes that have at least one link
+	const nodes = Array.from(nodeMap.values()).filter(n => n.linkCount > 0);
+
+	return { nodes, links };
+}
+
+// ─── Daily notes ───
+export async function getDailyNotePath(vaultPath: string, format = '%Y-%m-%d', folder = ''): Promise<string> {
+	return await invoke('get_daily_note_path', { vaultPath, format, folder });
+}
+
+// ─── Link update on rename ───
+export async function updateLinksOnRename(vaultPath: string, oldName: string, newName: string): Promise<number> {
+	return await invoke('update_links_on_rename', { vaultPath, oldName, newName });
+}
+
+// ─── Note preview ───
+export async function readNotePreview(filePath: string, maxChars = 500): Promise<string> {
+	return await invoke('read_note_preview', { filePath, maxChars });
+}
+
+// ─── Settings store ───
+export interface AppSettings {
+	// Editor
+	defaultView: 'reading' | 'editing';
+	showLineNumbers: boolean;
+	readableLineLength: boolean;
+	tabSize: number;
+	smartLists: boolean;
+	autoPairBrackets: boolean;
+	spellcheck: boolean;
+
+	// Files & Links
+	defaultNoteLocation: 'root' | 'current' | 'folder';
+	defaultNoteFolder: string;
+	defaultAttachmentFolder: string;
+	linkFormat: 'shortest' | 'relative' | 'absolute';
+	autoUpdateLinks: boolean;
+	useWikilinks: boolean;
+	confirmDelete: boolean;
+	trashDestination: 'system' | 'obsidian' | 'permanent';
+
+	// Appearance
+	colorScheme: 'light' | 'dark' | 'system';
+	accentColor: string;
+	interfaceFont: string;
+	textFont: string;
+	monoFont: string;
+	fontSize: number;
+
+	// Daily notes
+	dailyNoteFormat: string;
+	dailyNoteFolder: string;
+	dailyNoteTemplate: string;
+
+	// Templates
+	templateFolder: string;
+}
+
+const DEFAULT_SETTINGS: AppSettings = {
+	defaultView: 'reading',
+	showLineNumbers: true,
+	readableLineLength: true,
+	tabSize: 4,
+	smartLists: true,
+	autoPairBrackets: true,
+	spellcheck: false,
+	defaultNoteLocation: 'root',
+	defaultNoteFolder: '',
+	defaultAttachmentFolder: '',
+	linkFormat: 'shortest',
+	autoUpdateLinks: true,
+	useWikilinks: true,
+	confirmDelete: true,
+	trashDestination: 'system',
+	colorScheme: 'light',
+	accentColor: '#7c3aed',
+	interfaceFont: '',
+	textFont: '',
+	monoFont: '',
+	fontSize: 15,
+	dailyNoteFormat: '%Y-%m-%d',
+	dailyNoteFolder: '',
+	dailyNoteTemplate: '',
+	templateFolder: 'Templates',
+};
+
+export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);
+
+export function loadSettings() {
+	try {
+		const data = localStorage.getItem('constellation-settings');
+		if (data) {
+			const parsed = JSON.parse(data);
+			appSettings.set({ ...DEFAULT_SETTINGS, ...parsed });
+		}
+	} catch { /* ignore */ }
+}
+
+export function saveSettings() {
+	try {
+		localStorage.setItem('constellation-settings', JSON.stringify(get(appSettings)));
+	} catch { /* ignore */ }
+}
+
+export function updateSettings(partial: Partial<AppSettings>) {
+	appSettings.update(s => ({ ...s, ...partial }));
+	saveSettings();
+}
+
+// ─── Workspaces ───
+export interface Workspace {
+	id: string;
+	name: string;
+	tabs: { path: string; vaultName: string; vaultColor: string }[];
+	activeTabPath: string | null;
+	splitActive: boolean;
+	splitDir: SplitDirection;
+	timestamp: number;
+}
+
+export const workspaces = writable<Workspace[]>([]);
+
+export function loadWorkspaces() {
+	try {
+		const data = localStorage.getItem('constellation-workspaces');
+		if (data) workspaces.set(JSON.parse(data));
+	} catch { /* ignore */ }
+}
+
+function persistWorkspaces() {
+	try {
+		localStorage.setItem('constellation-workspaces', JSON.stringify(get(workspaces)));
+	} catch { /* ignore */ }
+}
+
+export function saveWorkspace(name: string) {
+	const tabs = get(openTabs).map(t => ({
+		path: t.path,
+		vaultName: t.vaultName,
+		vaultColor: t.vaultColor,
+	}));
+	const activeTab = get(activeTabId);
+	const currentTab = get(openTabs).find(t => t.id === activeTab);
+	const ws: Workspace = {
+		id: `ws_${Date.now()}`,
+		name,
+		tabs,
+		activeTabPath: currentTab?.path ?? null,
+		splitActive: get(splitActive),
+		splitDir: get(splitDirection),
+		timestamp: Date.now(),
+	};
+
+	workspaces.update(list => {
+		// Replace if same name exists
+		const filtered = list.filter(w => w.name !== name);
+		return [...filtered, ws];
+	});
+	persistWorkspaces();
+}
+
+export async function restoreWorkspace(ws: Workspace) {
+	// Close all current tabs
+	openTabs.set([]);
+	activeTabId.set(null);
+	focusedTabId.set(null);
+
+	// Open saved tabs
+	for (const saved of ws.tabs) {
+		try {
+			await openNoteTab(saved.path, saved.vaultName, saved.vaultColor);
+		} catch { /* file may not exist anymore */ }
+	}
+
+	// Restore active tab
+	if (ws.activeTabPath) {
+		const tabs = get(openTabs);
+		const match = tabs.find(t => t.path === ws.activeTabPath);
+		if (match) {
+			activeTabId.set(match.id);
+			focusedTabId.set(match.id);
+		}
+	}
+
+	// Restore split state
+	splitActive.set(ws.splitActive);
+	splitDirection.set(ws.splitDir);
+}
+
+export function deleteWorkspace(id: string) {
+	workspaces.update(list => list.filter(w => w.id !== id));
+	persistWorkspaces();
+}
+
+// ─── Clipboard image paste ───
+export async function saveClipboardImage(vaultPath: string, imageData: string): Promise<string> {
+	return await invoke('save_clipboard_image', { vaultPath, imageData });
 }

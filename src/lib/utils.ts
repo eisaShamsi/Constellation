@@ -1,4 +1,5 @@
-import { marked, type TokenizerAndRendererExtension } from 'marked';
+import { marked, type TokenizerAndRendererExtension, type Tokens } from 'marked';
+import hljs from 'highlight.js';
 
 // ─── WikiLink extension for marked ───
 const wikilinkExtension: TokenizerAndRendererExtension = {
@@ -8,13 +9,25 @@ const wikilinkExtension: TokenizerAndRendererExtension = {
 		return src.indexOf('[[');
 	},
 	tokenizer(src: string) {
+		// Embed: ![[target]]
+		const embedMatch = src.match(/^!\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/);
+		if (embedMatch) {
+			return {
+				type: 'wikilink',
+				raw: embedMatch[0],
+				target: embedMatch[1].trim(),
+				display: (embedMatch[2] || embedMatch[1]).trim(),
+				embed: true
+			};
+		}
 		const match = src.match(/^\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/);
 		if (match) {
 			return {
 				type: 'wikilink',
 				raw: match[0],
 				target: match[1].trim(),
-				display: (match[2] || match[1]).trim()
+				display: (match[2] || match[1]).trim(),
+				embed: false
 			};
 		}
 		return undefined;
@@ -22,11 +35,229 @@ const wikilinkExtension: TokenizerAndRendererExtension = {
 	renderer(token: any) {
 		const target = token.target as string;
 		const display = token.display as string;
+		if (token.embed) {
+			// Check if it's an image
+			const ext = target.split('.').pop()?.toLowerCase() ?? '';
+			const imgExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'avif'];
+			if (imgExts.includes(ext)) {
+				// Parse size from display: ![[img.png|640]] or ![[img.png|640x480]]
+				const sizeMatch = display.match(/^(\d+)(?:x(\d+))?$/);
+				if (sizeMatch && target !== display) {
+					const w = sizeMatch[1];
+					const h = sizeMatch[2];
+					return `<img class="embed-image" data-embed="${encodeURIComponent(target)}" src="" alt="${target}" width="${w}" ${h ? `height="${h}"` : ''} />`;
+				}
+				return `<img class="embed-image" data-embed="${encodeURIComponent(target)}" src="" alt="${target}" />`;
+			}
+			return `<div class="embed-note" data-embed="${encodeURIComponent(target)}"><span class="embed-icon">📄</span> ${display}</div>`;
+		}
 		return `<a class="wikilink" data-wikilink="${encodeURIComponent(target)}" href="javascript:void(0)">${display}</a>`;
 	}
 };
 
-marked.use({ extensions: [wikilinkExtension] });
+// ─── Highlight extension (==text==) ───
+const highlightExtension: TokenizerAndRendererExtension = {
+	name: 'highlight',
+	level: 'inline',
+	start(src: string) {
+		return src.indexOf('==');
+	},
+	tokenizer(src: string) {
+		const match = src.match(/^==([^=]+)==/);
+		if (match) {
+			return { type: 'highlight', raw: match[0], text: match[1] };
+		}
+		return undefined;
+	},
+	renderer(token: any) {
+		return `<mark>${token.text}</mark>`;
+	}
+};
+
+// ─── Comment extension (%%hidden%%) ───
+const commentExtension: TokenizerAndRendererExtension = {
+	name: 'comment',
+	level: 'inline',
+	start(src: string) {
+		return src.indexOf('%%');
+	},
+	tokenizer(src: string) {
+		const match = src.match(/^%%([\s\S]+?)%%/);
+		if (match) {
+			return { type: 'comment', raw: match[0], text: match[1] };
+		}
+		return undefined;
+	},
+	renderer(_token: any) {
+		return ''; // Hidden in reading view
+	}
+};
+
+// ─── Inline math ($formula$) ───
+const inlineMathExtension: TokenizerAndRendererExtension = {
+	name: 'inlineMath',
+	level: 'inline',
+	start(src: string) {
+		return src.indexOf('$');
+	},
+	tokenizer(src: string) {
+		// Don't match $$ (block math)
+		const match = src.match(/^\$([^\$\n]+?)\$/);
+		if (match && !src.startsWith('$$')) {
+			return { type: 'inlineMath', raw: match[0], formula: match[1] };
+		}
+		return undefined;
+	},
+	renderer(token: any) {
+		return `<span class="math-inline" data-math="${encodeURIComponent(token.formula)}">${escapeHtml(token.formula)}</span>`;
+	}
+};
+
+// ─── Callout renderer (overrides blockquote) ───
+const calloutTypes: Record<string, { icon: string; color: string }> = {
+	note: { icon: '📝', color: '#448aff' },
+	abstract: { icon: '📋', color: '#00b0ff' },
+	summary: { icon: '📋', color: '#00b0ff' },
+	tldr: { icon: '📋', color: '#00b0ff' },
+	info: { icon: 'ℹ️', color: '#00b0ff' },
+	todo: { icon: '☑️', color: '#00b0ff' },
+	tip: { icon: '💡', color: '#00bfa5' },
+	hint: { icon: '💡', color: '#00bfa5' },
+	important: { icon: '💡', color: '#00bfa5' },
+	success: { icon: '✅', color: '#00c853' },
+	check: { icon: '✅', color: '#00c853' },
+	done: { icon: '✅', color: '#00c853' },
+	question: { icon: '❓', color: '#64dd17' },
+	help: { icon: '❓', color: '#64dd17' },
+	faq: { icon: '❓', color: '#64dd17' },
+	warning: { icon: '⚠️', color: '#ff9100' },
+	caution: { icon: '⚠️', color: '#ff9100' },
+	attention: { icon: '⚠️', color: '#ff9100' },
+	failure: { icon: '❌', color: '#ff5252' },
+	fail: { icon: '❌', color: '#ff5252' },
+	missing: { icon: '❌', color: '#ff5252' },
+	danger: { icon: '⚡', color: '#ff1744' },
+	error: { icon: '⚡', color: '#ff1744' },
+	bug: { icon: '🐛', color: '#f50057' },
+	example: { icon: '📌', color: '#7c4dff' },
+	quote: { icon: '💬', color: '#9e9e9e' },
+	cite: { icon: '💬', color: '#9e9e9e' },
+};
+
+function escapeHtml(str: string): string {
+	return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ─── Footnote storage ───
+const footnoteDefinitions = new Map<string, string>();
+const footnoteReferences: string[] = [];
+
+const footnoteRefExtension: TokenizerAndRendererExtension = {
+	name: 'footnoteRef',
+	level: 'inline',
+	start(src: string) {
+		return src.indexOf('[^');
+	},
+	tokenizer(src: string) {
+		const match = src.match(/^\[\^([^\]]+)\]/);
+		if (match) {
+			return { type: 'footnoteRef', raw: match[0], ref: match[1] };
+		}
+		return undefined;
+	},
+	renderer(token: any) {
+		const idx = footnoteReferences.indexOf(token.ref);
+		const num = idx >= 0 ? idx + 1 : footnoteReferences.push(token.ref);
+		return `<sup class="footnote-ref"><a href="#fn-${token.ref}" id="fnref-${token.ref}">${num}</a></sup>`;
+	}
+};
+
+// Custom renderer to handle callouts in blockquotes and syntax highlighting
+const renderer = {
+	blockquote(this: any, token: Tokens.Blockquote): string {
+		const rawText = token.raw || '';
+		// Check for callout syntax: > [!type] or > [!type]+ or > [!type]-
+		const calloutMatch = rawText.match(/>\s*\[!(\w+)\]([+-])?\s*(.*)/);
+		if (calloutMatch) {
+			const type = calloutMatch[1].toLowerCase();
+			const foldable = calloutMatch[2];
+			const title = calloutMatch[3]?.trim() || type.charAt(0).toUpperCase() + type.slice(1);
+			const info = calloutTypes[type] || calloutTypes.note!;
+
+			// Get the body content (everything after the first line)
+			const lines = rawText.split('\n').slice(1);
+			const bodyContent = lines.map(l => l.replace(/^>\s?/, '')).join('\n');
+			const bodyHtml = bodyContent ? marked.parse(bodyContent) as string : '';
+
+			const foldableClass = foldable ? ' callout-foldable' : '';
+			const collapsedClass = foldable === '-' ? ' callout-collapsed' : '';
+
+			return `<div class="callout callout-${type}${foldableClass}${collapsedClass}" style="--callout-color: ${info.color}">
+				<div class="callout-title">${foldable ? '<span class="callout-fold">▶</span>' : ''}<span class="callout-icon">${info.icon}</span><span class="callout-title-text">${title}</span></div>
+				<div class="callout-content">${bodyHtml}</div>
+			</div>`;
+		}
+		// Default blockquote
+		const body = this.parser.parse(token.tokens);
+		return `<blockquote>${body}</blockquote>`;
+	},
+	code(token: Tokens.Code): string {
+		const lang = token.lang || '';
+		const code = token.text;
+		// Mermaid diagrams
+		if (lang === 'mermaid') {
+			return `<div class="mermaid-container" data-mermaid="${encodeURIComponent(code)}"><pre class="mermaid">${escapeHtml(code)}</pre></div>`;
+		}
+		// Block math
+		if (lang === 'math') {
+			return `<div class="math-block" data-math="${encodeURIComponent(code)}">${escapeHtml(code)}</div>`;
+		}
+		// Syntax highlighting
+		if (lang && hljs.getLanguage(lang)) {
+			const highlighted = hljs.highlight(code, { language: lang }).value;
+			return `<pre><code class="hljs language-${lang}">${highlighted}</code></pre>`;
+		}
+		// Auto-detect
+		if (code.length > 20) {
+			try {
+				const result = hljs.highlightAuto(code);
+				if (result.relevance > 5) {
+					return `<pre><code class="hljs">${result.value}</code></pre>`;
+				}
+			} catch { /* fallback */ }
+		}
+		return `<pre><code>${escapeHtml(code)}</code></pre>`;
+	}
+};
+
+// ─── Block math ($$...$$) handling via walkTokens ───
+function processBlockMath(token: any) {
+	if (token.type === 'paragraph' && token.raw) {
+		const mathMatch = token.raw.match(/^\$\$([\s\S]+?)\$\$/);
+		if (mathMatch) {
+			token.type = 'html' as any;
+			token.raw = mathMatch[0];
+			(token as any).text = `<div class="math-block" data-math="${encodeURIComponent(mathMatch[1])}">${escapeHtml(mathMatch[1])}</div>`;
+			token.tokens = [];
+		}
+	}
+	// Collect footnote definitions
+	if (token.type === 'paragraph' && token.raw) {
+		const fnMatch = token.raw.match(/^\[\^([^\]]+)\]:\s*([\s\S]+)/);
+		if (fnMatch) {
+			footnoteDefinitions.set(fnMatch[1], fnMatch[2].trim());
+			token.type = 'html' as any;
+			(token as any).text = '';
+			token.tokens = [];
+		}
+	}
+}
+
+marked.use({
+	extensions: [wikilinkExtension, highlightExtension, commentExtension, inlineMathExtension, footnoteRefExtension],
+	renderer: renderer as any,
+	walkTokens: processBlockMath
+});
 marked.setOptions({ breaks: true, gfm: true });
 
 /** Detect if text is predominantly RTL (Arabic, Hebrew, etc.) */
@@ -39,7 +270,109 @@ export function detectDir(text: string): 'rtl' | 'ltr' {
 	return rtlChars > sample.length * 0.3 ? 'rtl' : 'ltr';
 }
 
-/** Render markdown to HTML. */
+/** Render markdown to HTML with all Obsidian extensions. */
 export function renderMarkdown(md: string): string {
-	return marked.parse(md) as string;
+	// Reset footnote state
+	footnoteDefinitions.clear();
+	footnoteReferences.length = 0;
+
+	let html = marked.parse(md) as string;
+
+	// Append footnote definitions at bottom
+	if (footnoteReferences.length > 0) {
+		let fnHtml = '<div class="footnotes"><hr /><ol>';
+		for (const ref of footnoteReferences) {
+			const def = footnoteDefinitions.get(ref) || '';
+			fnHtml += `<li id="fn-${ref}">${def} <a href="#fnref-${ref}" class="footnote-backref">\u21a9</a></li>`;
+		}
+		fnHtml += '</ol></div>';
+		html += fnHtml;
+	}
+
+	return html;
+}
+
+/** Post-process rendered HTML in the DOM: render math, mermaid, etc. */
+export async function postProcessRenderedContent(container: HTMLElement) {
+	// Render KaTeX math
+	try {
+		const katex = await import('katex');
+		container.querySelectorAll('.math-inline').forEach(el => {
+			const formula = decodeURIComponent(el.getAttribute('data-math') || '');
+			try {
+				el.innerHTML = katex.default.renderToString(formula, { throwOnError: false, displayMode: false });
+				el.classList.add('math-rendered');
+			} catch { /* keep raw */ }
+		});
+		container.querySelectorAll('.math-block').forEach(el => {
+			const formula = decodeURIComponent(el.getAttribute('data-math') || '');
+			try {
+				el.innerHTML = katex.default.renderToString(formula, { throwOnError: false, displayMode: true });
+				el.classList.add('math-rendered');
+			} catch { /* keep raw */ }
+		});
+	} catch { /* katex not available */ }
+
+	// Render Mermaid diagrams
+	try {
+		const mermaidModule = await import('mermaid');
+		const mermaid = mermaidModule.default;
+		mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+		const mermaidEls = container.querySelectorAll('.mermaid-container');
+		for (let i = 0; i < mermaidEls.length; i++) {
+			const el = mermaidEls[i] as HTMLElement;
+			const code = decodeURIComponent(el.getAttribute('data-mermaid') || '');
+			try {
+				const { svg } = await mermaid.render(`mermaid-${Date.now()}-${i}`, code);
+				el.innerHTML = svg;
+				el.classList.add('mermaid-rendered');
+			} catch { /* keep raw */ }
+		}
+	} catch { /* mermaid not available */ }
+
+	// Handle callout fold toggles
+	container.querySelectorAll('.callout-foldable .callout-title').forEach(titleEl => {
+		titleEl.addEventListener('click', () => {
+			const callout = titleEl.closest('.callout');
+			if (callout) callout.classList.toggle('callout-collapsed');
+		});
+	});
+}
+
+/** Collect all wikilink targets from markdown text */
+export function extractWikilinks(md: string): string[] {
+	const links: string[] = [];
+	const regex = /\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]/g;
+	let match;
+	while ((match = regex.exec(md)) !== null) {
+		links.push(match[1].trim());
+	}
+	return links;
+}
+
+/** Collect all tags from markdown text */
+export function extractTags(md: string): string[] {
+	const tags: string[] = [];
+	// Inline tags: #tag (not in code blocks or URLs)
+	const regex = /(?:^|\s)#([a-zA-Z\u0600-\u06FF][\w\u0600-\u06FF/\-]*)/g;
+	let match;
+	while ((match = regex.exec(md)) !== null) {
+		if (!tags.includes(match[1])) tags.push(match[1]);
+	}
+	return tags;
+}
+
+/** Get all note names from a vault tree (for autocomplete) */
+export function collectNoteNames(entries: any[]): { name: string; path: string }[] {
+	const notes: { name: string; path: string }[] = [];
+	function walk(entries: any[]) {
+		for (const entry of entries) {
+			if (!entry.is_dir && entry.name.endsWith('.md')) {
+				notes.push({ name: entry.name.replace('.md', ''), path: entry.path });
+			}
+			if (entry.children) walk(entry.children);
+		}
+	}
+	walk(entries);
+	return notes;
 }

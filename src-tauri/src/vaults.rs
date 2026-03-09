@@ -591,3 +591,318 @@ fn uuid_simple() -> String {
         .as_nanos();
     format!("{:x}", timestamp)
 }
+
+// ─── Graph / Backlinks scanning ───
+
+#[derive(Debug, Clone, Serialize)]
+pub struct NoteLink {
+    pub source_path: String,
+    pub source_name: String,
+    pub target: String,
+    pub context: String,
+}
+
+/// Scan all notes in a vault and extract wikilinks from each.
+#[tauri::command]
+pub fn scan_vault_links(vault_path: String) -> Result<Vec<NoteLink>, String> {
+    let mut links = Vec::new();
+    let re = regex::Regex::new(r"\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]").unwrap();
+    scan_links_recursive(Path::new(&vault_path), &re, &mut links);
+    Ok(links)
+}
+
+fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>) {
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') {
+            continue;
+        }
+        if path.is_dir() {
+            scan_links_recursive(&path, re, links);
+        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            if let Ok(content) = fs::read_to_string(&path) {
+                let source_name = path.file_stem()
+                    .map(|s| s.to_string_lossy().to_string())
+                    .unwrap_or_default();
+                for cap in re.captures_iter(&content) {
+                    let target = cap[1].trim().to_string();
+                    // Extract context: the line containing the link
+                    let pos = cap.get(0).map(|m| m.start()).unwrap_or(0);
+                    let line_start = content[..pos].rfind('\n').map(|i| i + 1).unwrap_or(0);
+                    let line_end = content[pos..].find('\n').map(|i| pos + i).unwrap_or(content.len());
+                    let context = safe_truncate(&content[line_start..line_end], 120);
+
+                    links.push(NoteLink {
+                        source_path: path.to_string_lossy().to_string(),
+                        source_name: source_name.clone(),
+                        target,
+                        context,
+                    });
+                }
+            }
+        }
+    }
+}
+
+/// Scan all tags across a vault.
+#[tauri::command]
+pub fn scan_vault_tags(vault_path: String) -> Result<std::collections::HashMap<String, u32>, String> {
+    let mut tags: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    let re = regex::Regex::new(r"(?:^|\s)#([a-zA-Z\p{Arabic}][\w\p{Arabic}/\-]*)").unwrap();
+    scan_tags_recursive(Path::new(&vault_path), &re, &mut tags);
+    Ok(tags)
+}
+
+fn scan_tags_recursive(dir: &Path, re: &regex::Regex, tags: &mut std::collections::HashMap<String, u32>) {
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') {
+            continue;
+        }
+        if path.is_dir() {
+            scan_tags_recursive(&path, re, tags);
+        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            if let Ok(content) = fs::read_to_string(&path) {
+                // Inline tags
+                for cap in re.captures_iter(&content) {
+                    let tag = cap[1].to_string();
+                    *tags.entry(tag).or_insert(0) += 1;
+                }
+                // YAML tags
+                if content.starts_with("---") {
+                    if let Some(end) = content[3..].find("---") {
+                        let yaml = &content[3..3+end];
+                        for line in yaml.lines() {
+                            let trimmed = line.trim();
+                            if trimmed.starts_with("- ") {
+                                // Check if inside tags: block
+                                let tag = trimmed.trim_start_matches("- ").trim().trim_matches('"').trim_matches('\'');
+                                if !tag.is_empty() && !tag.contains(':') && !tag.contains(' ') {
+                                    // Only count if it looks like a tag
+                                    if tag.chars().all(|c| c.is_alphanumeric() || c == '/' || c == '-' || c == '_') {
+                                        // We'll count it if there was a tags: line before
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Collect all note names in a vault (for autocomplete).
+#[tauri::command]
+pub fn collect_vault_notes(vault_path: String) -> Result<Vec<serde_json::Value>, String> {
+    let mut notes = Vec::new();
+    collect_notes_names_recursive(Path::new(&vault_path), &mut notes);
+    Ok(notes)
+}
+
+fn collect_notes_names_recursive(dir: &Path, notes: &mut Vec<serde_json::Value>) {
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') { continue; }
+        if path.is_dir() {
+            collect_notes_names_recursive(&path, notes);
+        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            let note_name = path.file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
+            notes.push(serde_json::json!({
+                "name": note_name,
+                "path": path.to_string_lossy().to_string()
+            }));
+        }
+    }
+}
+
+/// Get daily note path for today.
+#[tauri::command]
+pub fn get_daily_note_path(vault_path: String, format: String, folder: String) -> Result<String, String> {
+    let now = chrono::Local::now();
+    let filename = now.format(&format).to_string();
+    let daily_folder = if folder.is_empty() {
+        Path::new(&vault_path).to_path_buf()
+    } else {
+        Path::new(&vault_path).join(&folder)
+    };
+    fs::create_dir_all(&daily_folder).map_err(|e| e.to_string())?;
+    let file_path = daily_folder.join(format!("{}.md", filename));
+
+    // Create the file if it doesn't exist
+    if !file_path.exists() {
+        let content = format!("---\ndate: {}\n---\n", now.format("%Y-%m-%d"));
+        fs::write(&file_path, content).map_err(|e| e.to_string())?;
+    }
+
+    Ok(file_path.to_string_lossy().to_string())
+}
+
+/// Update all links in a vault when a note is renamed.
+#[tauri::command]
+pub fn update_links_on_rename(vault_path: String, old_name: String, new_name: String) -> Result<u32, String> {
+    let mut count = 0u32;
+    update_links_recursive(Path::new(&vault_path), &old_name, &new_name, &mut count);
+    Ok(count)
+}
+
+fn update_links_recursive(dir: &Path, old_name: &str, new_name: &str, count: &mut u32) {
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') { continue; }
+        if path.is_dir() {
+            update_links_recursive(&path, old_name, new_name, count);
+        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            if let Ok(content) = fs::read_to_string(&path) {
+                let old_link = format!("[[{}]]", old_name);
+                let new_link = format!("[[{}]]", new_name);
+                if content.contains(&old_link) {
+                    let updated = content.replace(&old_link, &new_link);
+                    // Also handle [[old_name|display]]
+                    let old_pipe = format!("[[{}|", old_name);
+                    let new_pipe = format!("[[{}|", new_name);
+                    let updated = updated.replace(&old_pipe, &new_pipe);
+                    if updated != content {
+                        let _ = fs::write(&path, updated);
+                        *count += 1;
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Read a note's content for preview (used by hover preview)
+#[tauri::command]
+pub fn read_note_preview(file_path: String, max_chars: usize) -> Result<String, String> {
+    let content = fs::read_to_string(&file_path)
+        .map_err(|e| format!("Failed to read note: {}", e))?;
+    Ok(safe_truncate(&content, max_chars))
+}
+
+/// Save a base64-encoded image from clipboard to the vault's attachments folder.
+/// Returns the relative path suitable for embedding as `![[filename]]`.
+#[tauri::command]
+pub fn save_clipboard_image(vault_path: String, image_data: String) -> Result<String, String> {
+    // Create attachments folder if it doesn't exist
+    let attachments_dir = Path::new(&vault_path).join("attachments");
+    if !attachments_dir.exists() {
+        fs::create_dir_all(&attachments_dir)
+            .map_err(|e| format!("Failed to create attachments folder: {}", e))?;
+    }
+
+    // Generate filename with timestamp
+    let now = chrono::Local::now();
+    let filename = format!("Pasted image {}.png", now.format("%Y%m%d%H%M%S"));
+    let file_path = attachments_dir.join(&filename);
+
+    // Decode base64 data (strip data URL prefix if present)
+    let b64_data = if let Some(idx) = image_data.find(",") {
+        &image_data[idx + 1..]
+    } else {
+        &image_data
+    };
+
+    use std::io::Write;
+    let decoded = base64_decode(b64_data)
+        .map_err(|e| format!("Failed to decode image data: {}", e))?;
+
+    let mut file = fs::File::create(&file_path)
+        .map_err(|e| format!("Failed to create image file: {}", e))?;
+    file.write_all(&decoded)
+        .map_err(|e| format!("Failed to write image file: {}", e))?;
+
+    Ok(filename)
+}
+
+/// Simple base64 decoder (no external crate needed)
+fn base64_decode(input: &str) -> Result<Vec<u8>, String> {
+    let table: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut lookup = [255u8; 256];
+    for (i, &b) in table.iter().enumerate() {
+        lookup[b as usize] = i as u8;
+    }
+
+    let input = input.trim().replace('\n', "").replace('\r', "");
+    let bytes = input.as_bytes();
+    let mut output = Vec::with_capacity(bytes.len() * 3 / 4);
+
+    let mut i = 0;
+    while i < bytes.len() {
+        let mut buf = [0u8; 4];
+        let mut count = 0;
+        while count < 4 && i < bytes.len() {
+            let b = bytes[i];
+            i += 1;
+            if b == b'=' || b == b' ' || b == b'\t' {
+                if b == b'=' { count += 1; }
+                continue;
+            }
+            let val = lookup[b as usize];
+            if val == 255 { continue; }
+            buf[count] = val;
+            count += 1;
+        }
+        if count >= 2 {
+            output.push((buf[0] << 2) | (buf[1] >> 4));
+        }
+        if count >= 3 {
+            output.push((buf[1] << 4) | (buf[2] >> 2));
+        }
+        if count >= 4 {
+            output.push((buf[2] << 6) | buf[3]);
+        }
+    }
+
+    Ok(output)
+}
+
+/// Export a note's rendered content as HTML
+#[tauri::command]
+pub fn export_note_html(file_path: String) -> Result<String, String> {
+    let content = fs::read_to_string(&file_path)
+        .map_err(|e| format!("Failed to read note: {}", e))?;
+    Ok(content)
+}
+
+/// Move item to system trash (or ".trash" folder inside vault)
+#[tauri::command]
+pub fn move_to_trash(path: String, vault_path: String) -> Result<(), String> {
+    let trash_dir = Path::new(&vault_path).join(".trash");
+    if !trash_dir.exists() {
+        fs::create_dir_all(&trash_dir)
+            .map_err(|e| format!("Failed to create .trash folder: {}", e))?;
+    }
+
+    let source = Path::new(&path);
+    let file_name = source.file_name()
+        .ok_or("Invalid path")?;
+    let dest = trash_dir.join(file_name);
+
+    fs::rename(&source, &dest)
+        .map_err(|e| format!("Failed to move to trash: {}", e))?;
+
+    Ok(())
+}

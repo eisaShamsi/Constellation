@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { parseFrontmatter, extractHeadings, editingTabIds, toggleEditMode, saveTabContent, resolveWikilink, openNoteTab, vaultAppearances, vaults } from '$lib/vaults/store';
 	import type { OpenTab } from '$lib/vaults/store';
-	import { detectDir, renderMarkdown } from '$lib/utils';
+	import { detectDir, renderMarkdown, postProcessRenderedContent, collectNoteNames } from '$lib/utils';
 	import { dir } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import PropertyEditor from './PropertyEditor.svelte';
+	import CodeMirrorEditor from './CodeMirrorEditor.svelte';
 
 	let {
 		tab,
@@ -12,7 +13,9 @@
 		onFocus,
 		ar = false,
 		color = '#7c3aed',
-		splitView = false
+		splitView = false,
+		vaultTrees = {} as Record<string, any[]>,
+		allTags = [] as string[],
 	}: {
 		tab: OpenTab | null;
 		isFocused?: boolean;
@@ -20,6 +23,8 @@
 		ar?: boolean;
 		color?: string;
 		splitView?: boolean;
+		vaultTrees?: Record<string, any[]>;
+		allTags?: string[];
 	} = $props();
 
 	const parsed = $derived(tab ? parseFrontmatter(tab.content) : null);
@@ -41,11 +46,18 @@
 		return vars.join('; ');
 	});
 
+	// Note names for autocomplete
+	const noteNames = $derived.by(() => {
+		if (!vaultId || !vaultTrees[vaultId]) return [];
+		return collectNoteNames(vaultTrees[vaultId]);
+	});
+
 	// Edit mode state
 	let editBody = $state('');
 	let saveTimeout: ReturnType<typeof setTimeout>;
 	let saving = $state(false);
 	let prevTabId = $state('');
+	let contentEl: HTMLDivElement | undefined;
 
 	// Sync editBody when tab changes
 	$effect(() => {
@@ -62,8 +74,18 @@
 		}
 	});
 
-	function handleBodyInput(e: Event) {
-		editBody = (e.target as HTMLTextAreaElement).value;
+	// Post-process rendered content (math, mermaid, callout toggles)
+	$effect(() => {
+		if (!editing && noteBody && contentEl) {
+			// Need to wait for DOM update
+			requestAnimationFrame(() => {
+				if (contentEl) postProcessRenderedContent(contentEl);
+			});
+		}
+	});
+
+	function handleEditorChange(newValue: string) {
+		editBody = newValue;
 		debouncedSaveBody();
 	}
 
@@ -82,51 +104,40 @@
 		if (tab) toggleEditMode(tab.id);
 	}
 
-	// ─── Smart bracket/pair wrapping (Obsidian-style) ───
-	// Uses execCommand('insertText') to preserve the browser's native undo/redo stack.
-	const WRAP_PAIRS: Record<string, string> = {
-		'(': ')',
-		'[': ']',
-		'{': '}',
-		'"': '"',
-		"'": "'",
-		'`': '`',
-		'_': '_',
-		'*': '*',
-	};
-
-	function handleEditorKeydown(e: KeyboardEvent) {
-		const ta = e.target as HTMLTextAreaElement;
-		const { selectionStart, selectionEnd, value } = ta;
-		const selectedText = value.substring(selectionStart, selectionEnd);
-		const close = WRAP_PAIRS[e.key];
-
-		if (!close || e.ctrlKey || e.metaKey || e.altKey) return;
-
-		e.preventDefault();
-		ta.focus();
-
-		if (selectionStart === selectionEnd) {
-			// No selection — auto-close: insert pair, cursor between
-			document.execCommand('insertText', false, e.key + close);
-			// Move cursor back between the pair
-			ta.selectionStart = ta.selectionEnd = selectionStart + 1;
-		} else if (e.key === '[' && selectedText.startsWith('[') && selectedText.endsWith(']')) {
-			// Special case: upgrade [text] → [[text]]
-			const inner = selectedText.slice(1, -1);
-			document.execCommand('insertText', false, '[[' + inner + ']]');
-			// Select the whole [[inner]]
-			ta.selectionStart = selectionStart;
-			ta.selectionEnd = selectionStart + inner.length + 4;
-		} else {
-			// Normal wrap: surround selection with the pair
-			document.execCommand('insertText', false, e.key + selectedText + close);
-			// Keep the inner text selected (inside the brackets)
-			ta.selectionStart = selectionStart + 1;
-			ta.selectionEnd = selectionEnd + 1;
-		}
-
-		// execCommand triggers input event → handleBodyInput runs automatically
+	async function handleExportHTML() {
+		if (!tab || !contentEl) return;
+		const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${tab.name}</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; line-height: 1.7; color: #1f2328; }
+h1, h2, h3, h4, h5, h6 { margin-top: 1.5em; }
+code { background: #f0f0f4; padding: 2px 4px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #f6f6f9; padding: 12px; border-radius: 6px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+blockquote { border-left: 3px solid #7c3aed; margin: 0; padding: 4px 16px; color: #5c5c66; }
+img { max-width: 100%; }
+a { color: #7c3aed; }
+mark { background: #fff3a3; padding: 1px 2px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #e0e0e4; padding: 6px 10px; text-align: start; }
+th { background: #f6f6f9; font-weight: 600; }
+.task-list-item { list-style: none; }
+</style>
+</head>
+<body>
+${contentEl.innerHTML}
+</body>
+</html>`;
+		const blob = new Blob([htmlContent], { type: 'text/html' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `${tab.name}.html`;
+		a.click();
+		URL.revokeObjectURL(url);
 	}
 
 	// WikiLink click handler via event delegation
@@ -175,7 +186,10 @@
 				<span class="bc-note">{tab.name}</span>
 				<div class="bc-actions">
 					{#if saving}<span class="bc-saving">{ar ? 'جارٍ الحفظ...' : 'Saving...'}</span>{/if}
-					<button class="bc-edit-btn" class:active={editing} onclick={handleToggleEdit}
+					<button class="bc-edit-btn" onclick={handleExportHTML} title={ar ? 'تصدير HTML' : 'Export as HTML'}>
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+				</button>
+				<button class="bc-edit-btn" class:active={editing} onclick={handleToggleEdit}
 						title={editing ? (ar ? 'وضع القراءة' : 'Reading mode') : (ar ? 'وضع التحرير' : 'Editing mode')}>
 						{#if editing}
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -200,18 +214,19 @@
 				{/if}
 			{/if}
 			{#if editing}
-				<textarea
-					class="note-editor"
-					dir={noteDir}
+				<CodeMirrorEditor
 					value={editBody}
-					oninput={handleBodyInput}
-					onkeydown={handleEditorKeydown}
+					dir={noteDir}
 					placeholder={ar ? 'اكتب هنا...' : 'Start writing...'}
-				></textarea>
+					onchange={handleEditorChange}
+					{noteNames}
+					{allTags}
+					{ar}
+				/>
 			{:else}
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div class="note-content" onclick={handleNoteContentClick}>
+				<div class="note-content" bind:this={contentEl} onclick={handleNoteContentClick}>
 					{@html renderMarkdown(noteBody)}
 				</div>
 			{/if}
@@ -292,20 +307,18 @@
 
 	.props-divider { border: none; border-top: 1px solid #e8e8ec; margin: 12px 0; }
 
-	.note-editor {
-		width: 100%; min-height: 300px; flex: 1;
-		border: none; background: none; resize: none;
-		font-family: var(--vault-mono-font, 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace);
-		font-size: 0.92rem; line-height: 1.7; color: #1f2328;
-		outline: none; padding: 0;
-	}
-
 	.note-content { line-height: 1.8; color: #1f2328; flex: 1; }
 
+	/* ─── Headings ─── */
 	.note-content :global(h1) { font-size: 1.8rem; margin: 1.5rem 0 0.75rem; color: #1f2328; }
 	.note-content :global(h2) { font-size: 1.4rem; margin: 1.3rem 0 0.5rem; }
 	.note-content :global(h3) { font-size: 1.15rem; margin: 1rem 0 0.4rem; }
+	.note-content :global(h4) { font-size: 1.05rem; margin: 0.8rem 0 0.3rem; }
+	.note-content :global(h5) { font-size: 0.95rem; margin: 0.6rem 0 0.2rem; }
+	.note-content :global(h6) { font-size: 0.85rem; margin: 0.5rem 0 0.2rem; color: #5c5c66; }
 	.note-content :global(p) { margin: 0.5rem 0; }
+
+	/* ─── Links ─── */
 	.note-content :global(a) { color: var(--vault-accent, #7c3aed); }
 	.note-content :global(a.wikilink) {
 		color: var(--vault-accent, #7c3aed);
@@ -316,19 +329,154 @@
 	.note-content :global(a.wikilink:hover) {
 		border-bottom-color: var(--vault-accent, #7c3aed);
 	}
+
+	/* ─── Code ─── */
 	.note-content :global(code) { background: #f0f0f4; padding: 0.15em 0.35em; border-radius: 3px; font-size: 0.9em; }
 	.note-content :global(pre) { background: #f6f6f9; border: 1px solid #e0e0e4; border-radius: 6px; padding: 1rem; overflow-x: auto; }
-	.note-content :global(pre code) { background: none; padding: 0; }
+	.note-content :global(pre code) { background: none; padding: 0; font-size: 0.85rem; line-height: 1.6; }
+
+	/* ─── Blockquote & Lists ─── */
 	.note-content :global(blockquote) { border-inline-start: 3px solid var(--vault-accent, #7c3aed); padding: 0.25rem 1rem; margin: 0.5rem 0; color: #5c5c66; }
 	.note-content :global(ul), .note-content :global(ol) { padding-inline-start: 1.5rem; }
 	.note-content :global(li) { margin: 0.2rem 0; }
 	.note-content :global(hr) { border: none; border-top: 1px solid #e0e0e4; margin: 1.5rem 0; }
+
+	/* ─── Table ─── */
 	.note-content :global(table) { border-collapse: collapse; width: 100%; margin: 0.75rem 0; }
 	.note-content :global(th), .note-content :global(td) { border: 1px solid #e0e0e4; padding: 0.4rem 0.7rem; text-align: start; }
 	.note-content :global(th) { background: #f6f6f9; }
+
+	/* ─── Media ─── */
 	.note-content :global(img) { max-width: 100%; border-radius: 4px; }
 	.note-content :global(input[type="checkbox"]) { margin-inline-end: 0.4rem; }
 	.note-content :global(strong) { font-weight: 600; }
+
+	/* ─── Highlights ─── */
+	.note-content :global(mark) {
+		background: linear-gradient(120deg, #fef08a 0%, #fde047 100%);
+		padding: 0.1em 0.2em;
+		border-radius: 2px;
+	}
+
+	/* ─── Callouts ─── */
+	.note-content :global(.callout) {
+		border: 1px solid #e0e0e4;
+		border-inline-start: 4px solid var(--callout-color, #448aff);
+		border-radius: 4px;
+		margin: 0.75rem 0;
+		background: color-mix(in srgb, var(--callout-color, #448aff) 5%, transparent);
+		overflow: hidden;
+	}
+	.note-content :global(.callout-title) {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 12px;
+		font-weight: 600;
+		font-size: 0.9rem;
+		color: var(--callout-color, #448aff);
+		cursor: default;
+	}
+	.note-content :global(.callout-foldable .callout-title) {
+		cursor: pointer;
+	}
+	.note-content :global(.callout-fold) {
+		transition: transform 0.15s ease;
+		display: inline-block;
+		font-size: 0.7rem;
+	}
+	.note-content :global(.callout:not(.callout-collapsed) .callout-fold) {
+		transform: rotate(90deg);
+	}
+	.note-content :global(.callout-icon) {
+		font-size: 1rem;
+	}
+	.note-content :global(.callout-content) {
+		padding: 0 12px 8px;
+		font-size: 0.9rem;
+	}
+	.note-content :global(.callout-collapsed .callout-content) {
+		display: none;
+	}
+
+	/* ─── Math ─── */
+	.note-content :global(.math-inline) {
+		font-family: 'KaTeX_Main', serif;
+	}
+	.note-content :global(.math-block) {
+		text-align: center;
+		margin: 1rem 0;
+		overflow-x: auto;
+	}
+	.note-content :global(.math-rendered) {
+		font-family: inherit;
+	}
+
+	/* ─── Mermaid ─── */
+	.note-content :global(.mermaid-container) {
+		margin: 1rem 0;
+		text-align: center;
+		overflow-x: auto;
+	}
+	.note-content :global(.mermaid-rendered) {
+		background: none;
+	}
+
+	/* ─── Footnotes ─── */
+	.note-content :global(.footnote-ref a) {
+		color: var(--vault-accent, #7c3aed);
+		text-decoration: none;
+		font-weight: 600;
+	}
+	.note-content :global(.footnotes) {
+		margin-top: 2rem;
+		font-size: 0.85rem;
+		color: #5c5c66;
+	}
+	.note-content :global(.footnotes hr) {
+		margin-bottom: 1rem;
+	}
+	.note-content :global(.footnote-backref) {
+		text-decoration: none;
+		color: var(--vault-accent, #7c3aed);
+	}
+
+	/* ─── Embeds ─── */
+	.note-content :global(.embed-note) {
+		border: 1px solid #e0e0e4;
+		border-inline-start: 3px solid var(--vault-accent, #7c3aed);
+		border-radius: 4px;
+		padding: 8px 12px;
+		margin: 0.5rem 0;
+		background: #f8f8fb;
+		font-size: 0.9rem;
+		cursor: pointer;
+	}
+	.note-content :global(.embed-note:hover) {
+		background: #f0f0f4;
+	}
+	.note-content :global(.embed-icon) {
+		margin-inline-end: 4px;
+	}
+
+	/* ─── Highlight.js Code Theme ─── */
+	.note-content :global(.hljs-keyword) { color: #7c3aed; }
+	.note-content :global(.hljs-string) { color: #16a34a; }
+	.note-content :global(.hljs-number) { color: #ea580c; }
+	.note-content :global(.hljs-comment) { color: #9ca3af; font-style: italic; }
+	.note-content :global(.hljs-function) { color: #2563eb; }
+	.note-content :global(.hljs-title) { color: #2563eb; }
+	.note-content :global(.hljs-built_in) { color: #0891b2; }
+	.note-content :global(.hljs-type) { color: #7c3aed; }
+	.note-content :global(.hljs-attr) { color: #ea580c; }
+	.note-content :global(.hljs-literal) { color: #ea580c; }
+	.note-content :global(.hljs-meta) { color: #6b7280; }
+	.note-content :global(.hljs-tag) { color: #dc2626; }
+	.note-content :global(.hljs-name) { color: #dc2626; }
+	.note-content :global(.hljs-attribute) { color: #7c3aed; }
+	.note-content :global(.hljs-selector-class) { color: #7c3aed; }
+	.note-content :global(.hljs-selector-id) { color: #2563eb; }
+	.note-content :global(.hljs-variable) { color: #ea580c; }
 
 	.pane-empty {
 		flex: 1; display: flex; align-items: center; justify-content: center;
