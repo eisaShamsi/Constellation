@@ -82,6 +82,53 @@
 		if (tab) toggleEditMode(tab.id);
 	}
 
+	// ─── Smart bracket/pair wrapping (Obsidian-style) ───
+	// Uses execCommand('insertText') to preserve the browser's native undo/redo stack.
+	const WRAP_PAIRS: Record<string, string> = {
+		'(': ')',
+		'[': ']',
+		'{': '}',
+		'"': '"',
+		"'": "'",
+		'`': '`',
+		'_': '_',
+		'*': '*',
+	};
+
+	function handleEditorKeydown(e: KeyboardEvent) {
+		const ta = e.target as HTMLTextAreaElement;
+		const { selectionStart, selectionEnd, value } = ta;
+		const selectedText = value.substring(selectionStart, selectionEnd);
+		const close = WRAP_PAIRS[e.key];
+
+		if (!close || e.ctrlKey || e.metaKey || e.altKey) return;
+
+		e.preventDefault();
+		ta.focus();
+
+		if (selectionStart === selectionEnd) {
+			// No selection — auto-close: insert pair, cursor between
+			document.execCommand('insertText', false, e.key + close);
+			// Move cursor back between the pair
+			ta.selectionStart = ta.selectionEnd = selectionStart + 1;
+		} else if (e.key === '[' && selectedText.startsWith('[') && selectedText.endsWith(']')) {
+			// Special case: upgrade [text] → [[text]]
+			const inner = selectedText.slice(1, -1);
+			document.execCommand('insertText', false, '[[' + inner + ']]');
+			// Select the whole [[inner]]
+			ta.selectionStart = selectionStart;
+			ta.selectionEnd = selectionStart + inner.length + 4;
+		} else {
+			// Normal wrap: surround selection with the pair
+			document.execCommand('insertText', false, e.key + selectedText + close);
+			// Keep the inner text selected (inside the brackets)
+			ta.selectionStart = selectionStart + 1;
+			ta.selectionEnd = selectionEnd + 1;
+		}
+
+		// execCommand triggers input event → handleBodyInput runs automatically
+	}
+
 	// WikiLink click handler via event delegation
 	async function handleNoteContentClick(e: MouseEvent) {
 		const target = e.target as HTMLElement;
@@ -158,6 +205,7 @@
 					dir={noteDir}
 					value={editBody}
 					oninput={handleBodyInput}
+					onkeydown={handleEditorKeydown}
 					placeholder={ar ? 'اكتب هنا...' : 'Start writing...'}
 				></textarea>
 			{:else}
