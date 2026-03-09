@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FrontmatterProperty, PropertyType } from '$lib/vaults/store';
-	import { buildFullContent, writeNote, updateTabContent } from '$lib/vaults/store';
+	import { saveTabContent } from '$lib/vaults/store';
 
 	let {
 		properties,
@@ -123,10 +123,8 @@
 		clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(async () => {
 			saving = true;
-			const newContent = buildFullContent(editableProps, body);
-			updateTabContent(tabId, newContent);
 			try {
-				await writeNote(filePath, newContent);
+				await saveTabContent(tabId, filePath, editableProps, body);
 			} catch (err) {
 				console.error('Failed to save:', err);
 			}

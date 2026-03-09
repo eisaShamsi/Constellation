@@ -1,5 +1,32 @@
-import { marked } from 'marked';
+import { marked, type TokenizerAndRendererExtension } from 'marked';
 
+// ─── WikiLink extension for marked ───
+const wikilinkExtension: TokenizerAndRendererExtension = {
+	name: 'wikilink',
+	level: 'inline',
+	start(src: string) {
+		return src.indexOf('[[');
+	},
+	tokenizer(src: string) {
+		const match = src.match(/^\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/);
+		if (match) {
+			return {
+				type: 'wikilink',
+				raw: match[0],
+				target: match[1].trim(),
+				display: (match[2] || match[1]).trim()
+			};
+		}
+		return undefined;
+	},
+	renderer(token: any) {
+		const target = token.target as string;
+		const display = token.display as string;
+		return `<a class="wikilink" data-wikilink="${encodeURIComponent(target)}" href="javascript:void(0)">${display}</a>`;
+	}
+};
+
+marked.use({ extensions: [wikilinkExtension] });
 marked.setOptions({ breaks: true, gfm: true });
 
 /** Detect if text is predominantly RTL (Arabic, Hebrew, etc.) */

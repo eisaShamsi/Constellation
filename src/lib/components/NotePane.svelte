@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { parseFrontmatter, extractHeadings } from '$lib/vaults/store';
+	import { parseFrontmatter, extractHeadings, editingTabIds, toggleEditMode, saveTabContent, resolveWikilink, openNoteTab, vaultAppearances, vaults } from '$lib/vaults/store';
 	import type { OpenTab } from '$lib/vaults/store';
 	import { detectDir, renderMarkdown } from '$lib/utils';
 	import { dir } from '$lib/i18n';
+	import { get } from 'svelte/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 
 	let {
@@ -25,6 +26,77 @@
 	const properties = $derived(parsed?.properties ?? []);
 	const noteBody = $derived(parsed?.body ?? '');
 	const noteDir = $derived(noteBody ? detectDir(noteBody) : $dir);
+	const editing = $derived(tab ? $editingTabIds.has(tab.id) : false);
+
+	// Vault appearance
+	const vaultId = $derived(tab ? get(vaults).find(v => tab!.vaultPath === v.path)?.id : null);
+	const appearance = $derived(vaultId ? $vaultAppearances[vaultId] : null);
+	const paneStyle = $derived.by(() => {
+		if (!appearance) return '';
+		const vars: string[] = [];
+		if (appearance.accent_color) vars.push(`--vault-accent: ${appearance.accent_color}`);
+		if (appearance.base_font_size) vars.push(`--vault-font-size: ${appearance.base_font_size}px`);
+		if (appearance.text_font_family) vars.push(`--vault-text-font: ${appearance.text_font_family}`);
+		if (appearance.monospace_font_family) vars.push(`--vault-mono-font: ${appearance.monospace_font_family}`);
+		return vars.join('; ');
+	});
+
+	// Edit mode state
+	let editBody = $state('');
+	let saveTimeout: ReturnType<typeof setTimeout>;
+	let saving = $state(false);
+	let prevTabId = $state('');
+
+	// Sync editBody when tab changes
+	$effect(() => {
+		if (tab && tab.id !== prevTabId) {
+			editBody = parseFrontmatter(tab.content).body;
+			prevTabId = tab.id;
+		}
+	});
+
+	// Re-sync when entering edit mode
+	$effect(() => {
+		if (editing && tab) {
+			editBody = parseFrontmatter(tab.content).body;
+		}
+	});
+
+	function handleBodyInput(e: Event) {
+		editBody = (e.target as HTMLTextAreaElement).value;
+		debouncedSaveBody();
+	}
+
+	function debouncedSaveBody() {
+		clearTimeout(saveTimeout);
+		saveTimeout = setTimeout(async () => {
+			if (!tab) return;
+			saving = true;
+			const currentParsed = parseFrontmatter(tab.content);
+			await saveTabContent(tab.id, tab.path, currentParsed.properties, editBody);
+			saving = false;
+		}, 800);
+	}
+
+	function handleToggleEdit() {
+		if (tab) toggleEditMode(tab.id);
+	}
+
+	// WikiLink click handler via event delegation
+	async function handleNoteContentClick(e: MouseEvent) {
+		const target = e.target as HTMLElement;
+		const wikilinkEl = target.closest('a.wikilink') as HTMLAnchorElement | null;
+		if (!wikilinkEl || !tab) return;
+
+		e.preventDefault();
+		const linkTarget = decodeURIComponent(wikilinkEl.dataset.wikilink ?? '');
+		if (!linkTarget) return;
+
+		const resolved = await resolveWikilink(tab.vaultPath, linkTarget);
+		if (resolved) {
+			await openNoteTab(resolved, tab.vaultName, tab.vaultColor);
+		}
+	}
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -37,15 +109,37 @@
 					<span class="pane-tab-vault">{tab.vaultName}</span>
 					<span class="pane-tab-title">{tab.name}</span>
 				</div>
+				<div class="pane-tab-actions">
+					{#if saving}<span class="bc-saving">{ar ? 'جارٍ الحفظ...' : 'Saving...'}</span>{/if}
+					<button class="bc-edit-btn" class:active={editing} onclick={handleToggleEdit}
+						title={editing ? (ar ? 'وضع القراءة' : 'Reading mode') : (ar ? 'وضع التحرير' : 'Editing mode')}>
+						{#if editing}
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+						{:else}
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+						{/if}
+					</button>
+				</div>
 			</div>
 		{:else}
 			<div class="pane-breadcrumb">
 				<span class="bc-vault">{tab.vaultName}</span>
 				<span class="bc-sep">/</span>
 				<span class="bc-note">{tab.name}</span>
+				<div class="bc-actions">
+					{#if saving}<span class="bc-saving">{ar ? 'جارٍ الحفظ...' : 'Saving...'}</span>{/if}
+					<button class="bc-edit-btn" class:active={editing} onclick={handleToggleEdit}
+						title={editing ? (ar ? 'وضع القراءة' : 'Reading mode') : (ar ? 'وضع التحرير' : 'Editing mode')}>
+						{#if editing}
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+						{:else}
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+						{/if}
+					</button>
+				</div>
 			</div>
 		{/if}
-		<div class="note-scroll" dir={noteDir}>
+		<div class="note-scroll" dir={noteDir} style={paneStyle}>
 			{#if tab}
 				<PropertyEditor
 					properties={properties}
@@ -58,9 +152,21 @@
 					<hr class="props-divider"/>
 				{/if}
 			{/if}
-			<div class="note-content">
-				{@html renderMarkdown(noteBody)}
-			</div>
+			{#if editing}
+				<textarea
+					class="note-editor"
+					dir={noteDir}
+					value={editBody}
+					oninput={handleBodyInput}
+					placeholder={ar ? 'اكتب هنا...' : 'Start writing...'}
+				></textarea>
+			{:else}
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div class="note-content" onclick={handleNoteContentClick}>
+					{@html renderMarkdown(noteBody)}
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<div class="pane-empty">
@@ -107,6 +213,10 @@
 	.pane-tab-title {
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
+	.pane-tab-actions {
+		display: flex; align-items: center; gap: 4px;
+		margin-inline-start: auto; margin-bottom: 4px;
+	}
 
 	.pane-breadcrumb {
 		padding: 4px 16px; border-bottom: 1px solid #f0f0f4;
@@ -116,22 +226,52 @@
 	.bc-vault { color: #5c5c66; }
 	.bc-sep { margin: 0 4px; color: #d0d0d6; }
 	.bc-note { color: #1f2328; }
+	.bc-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 4px; }
+	.bc-saving { font-size: 0.7rem; color: #7c3aed; }
+	.bc-edit-btn {
+		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+		border: none; background: none; border-radius: 3px; color: #8b8b96; cursor: pointer;
+	}
+	.bc-edit-btn:hover { background: #e0e0e4; color: #1f2328; }
+	.bc-edit-btn.active { color: #7c3aed; }
 
-	.note-scroll { flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 800px; }
+	.note-scroll {
+		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 800px;
+		font-size: var(--vault-font-size, 0.95rem);
+		font-family: var(--vault-text-font, inherit);
+		display: flex; flex-direction: column;
+	}
 
 	.props-divider { border: none; border-top: 1px solid #e8e8ec; margin: 12px 0; }
 
-	.note-content { line-height: 1.8; color: #1f2328; }
+	.note-editor {
+		width: 100%; min-height: 300px; flex: 1;
+		border: none; background: none; resize: none;
+		font-family: var(--vault-mono-font, 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace);
+		font-size: 0.92rem; line-height: 1.7; color: #1f2328;
+		outline: none; padding: 0;
+	}
+
+	.note-content { line-height: 1.8; color: #1f2328; flex: 1; }
 
 	.note-content :global(h1) { font-size: 1.8rem; margin: 1.5rem 0 0.75rem; color: #1f2328; }
 	.note-content :global(h2) { font-size: 1.4rem; margin: 1.3rem 0 0.5rem; }
 	.note-content :global(h3) { font-size: 1.15rem; margin: 1rem 0 0.4rem; }
 	.note-content :global(p) { margin: 0.5rem 0; }
-	.note-content :global(a) { color: #7c3aed; }
+	.note-content :global(a) { color: var(--vault-accent, #7c3aed); }
+	.note-content :global(a.wikilink) {
+		color: var(--vault-accent, #7c3aed);
+		text-decoration: none;
+		border-bottom: 1px dashed color-mix(in srgb, var(--vault-accent, #7c3aed) 40%, transparent);
+		cursor: pointer;
+	}
+	.note-content :global(a.wikilink:hover) {
+		border-bottom-color: var(--vault-accent, #7c3aed);
+	}
 	.note-content :global(code) { background: #f0f0f4; padding: 0.15em 0.35em; border-radius: 3px; font-size: 0.9em; }
 	.note-content :global(pre) { background: #f6f6f9; border: 1px solid #e0e0e4; border-radius: 6px; padding: 1rem; overflow-x: auto; }
 	.note-content :global(pre code) { background: none; padding: 0; }
-	.note-content :global(blockquote) { border-inline-start: 3px solid #7c3aed; padding: 0.25rem 1rem; margin: 0.5rem 0; color: #5c5c66; }
+	.note-content :global(blockquote) { border-inline-start: 3px solid var(--vault-accent, #7c3aed); padding: 0.25rem 1rem; margin: 0.5rem 0; color: #5c5c66; }
 	.note-content :global(ul), .note-content :global(ol) { padding-inline-start: 1.5rem; }
 	.note-content :global(li) { margin: 0.2rem 0; }
 	.note-content :global(hr) { border: none; border-top: 1px solid #e0e0e4; margin: 1.5rem 0; }

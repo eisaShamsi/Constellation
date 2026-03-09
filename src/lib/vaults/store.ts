@@ -42,7 +42,9 @@ export interface OpenTab {
 	path: string;
 	content: string;
 	vaultName: string;
+	vaultPath: string;
 	name: string;
+	vaultColor: string;
 }
 
 export type PropertyType = 'text' | 'number' | 'date' | 'list' | 'link';
@@ -74,6 +76,47 @@ function detectPropertyType(key: string, value: string): PropertyType {
 export const vaults = writable<VaultInfo[]>([]);
 export const vaultStats = writable<VaultStats[]>([]);
 export const searchResults = writable<StarInfo[]>([]);
+
+// ─── Editing mode state ───
+export const editingTabIds = writable<Set<string>>(new Set());
+
+export function toggleEditMode(tabId: string) {
+	editingTabIds.update(set => {
+		const next = new Set(set);
+		if (next.has(tabId)) next.delete(tabId);
+		else next.add(tabId);
+		return next;
+	});
+}
+
+// ─── Centralized save with lock ───
+const saveLocks = new Map<string, boolean>();
+const recentWrites = new Map<string, number>();
+
+export async function saveTabContent(
+	tabId: string,
+	filePath: string,
+	properties: FrontmatterProperty[],
+	body: string
+): Promise<void> {
+	if (saveLocks.get(tabId)) return;
+	saveLocks.set(tabId, true);
+	try {
+		const newContent = buildFullContent(properties, body);
+		updateTabContent(tabId, newContent);
+		recentWrites.set(filePath, Date.now());
+		await writeNote(filePath, newContent);
+		setTimeout(() => recentWrites.delete(filePath), 2000);
+	} finally {
+		saveLocks.set(tabId, false);
+	}
+}
+
+export function wasRecentlyWritten(filePath: string): boolean {
+	const timestamp = recentWrites.get(filePath);
+	if (!timestamp) return false;
+	return Date.now() - timestamp < 2000;
+}
 
 // ─── Multi-tab state ───
 export const openTabs = writable<OpenTab[]>([]);
@@ -284,7 +327,7 @@ export function setFocusedTab(tabId: string) {
 // ─── Tab functions ───
 let tabCounter = 0;
 
-export async function openNoteTab(filePath: string, vaultName: string) {
+export async function openNoteTab(filePath: string, vaultName: string, color: string = '#7c3aed') {
 	const tabs = get(openTabs);
 
 	const existing = tabs.find(t => t.path === filePath);
@@ -301,7 +344,12 @@ export async function openNoteTab(filePath: string, vaultName: string) {
 	const name = filePath.split(/[\\/]/).pop()?.replace('.md', '') ?? '';
 	const id = `tab_${++tabCounter}_${Date.now()}`;
 
-	const tab: OpenTab = { id, path: filePath, content, vaultName, name };
+	// Derive vault path from registered vaults
+	const allVaults = get(vaults);
+	const vault = allVaults.find(v => filePath.startsWith(v.path));
+	const vaultPath = vault?.path ?? '';
+
+	const tab: OpenTab = { id, path: filePath, content, vaultName, vaultPath, name, vaultColor: color };
 	openTabs.update(tabs => [...tabs, tab]);
 
 	if (get(splitActive)) {
@@ -403,4 +451,77 @@ export function timeAgo(timestamp: number): string {
 	if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
 	if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
 	return new Date(timestamp * 1000).toLocaleDateString();
+}
+
+// ─── File operations ───
+export async function createNote(folderPath: string, fileName: string): Promise<string> {
+	const newPath: string = await invoke('create_note', { folderPath, fileName });
+	return newPath;
+}
+
+export async function createFolder(parentPath: string, folderName: string): Promise<string> {
+	const newPath: string = await invoke('create_folder', { parentPath, folderName });
+	return newPath;
+}
+
+export async function renameItem(oldPath: string, newPath: string): Promise<void> {
+	await invoke('rename_item', { oldPath, newPath });
+	// Update any open tabs that reference the old path
+	openTabs.update(tabs => tabs.map(t => {
+		if (t.path === oldPath) {
+			const newName = newPath.split(/[\\/]/).pop()?.replace('.md', '') ?? t.name;
+			return { ...t, path: newPath, name: newName };
+		}
+		// If a folder was renamed, update paths that start with the old folder path
+		if (t.path.startsWith(oldPath + '/') || t.path.startsWith(oldPath + '\\')) {
+			const relative = t.path.substring(oldPath.length);
+			return { ...t, path: newPath + relative };
+		}
+		return t;
+	}));
+}
+
+export async function deleteItem(path: string, permanent = false): Promise<void> {
+	await invoke('delete_item', { path, permanent });
+	// Close any tabs with this path or under this folder
+	openTabs.update(tabs => tabs.filter(t => {
+		if (t.path === path) return false;
+		if (t.path.startsWith(path + '/') || t.path.startsWith(path + '\\')) return false;
+		return true;
+	}));
+}
+
+// ─── Wikilink resolution ───
+export async function resolveWikilink(vaultPath: string, target: string): Promise<string | null> {
+	return await invoke('resolve_wikilink', { vaultPath, target });
+}
+
+// ─── File watcher ───
+export async function startWatchingVault(vaultId: string, vaultPath: string): Promise<void> {
+	await invoke('watch_vault', { vaultId, vaultPath });
+}
+
+export async function stopWatchingVault(vaultId: string): Promise<void> {
+	await invoke('unwatch_vault', { vaultId });
+}
+
+// ─── Vault appearance ───
+export interface ObsidianAppearance {
+	accent_color: string | null;
+	base_font_size: number | null;
+	text_font_family: string | null;
+	monospace_font_family: string | null;
+	interface_font_family: string | null;
+	css_theme: string | null;
+}
+
+export const vaultAppearances = writable<Record<string, ObsidianAppearance>>({});
+
+export async function loadVaultAppearance(vaultPath: string, vaultId: string): Promise<void> {
+	try {
+		const appearance: ObsidianAppearance = await invoke('read_obsidian_appearance', { vaultPath });
+		vaultAppearances.update(map => ({ ...map, [vaultId]: appearance }));
+	} catch {
+		// Silently fail — use defaults
+	}
 }

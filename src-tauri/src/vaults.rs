@@ -356,6 +356,163 @@ fn search_notes_recursive(dir: &Path, vault_id: &str, vault_name: &str, query: &
     }
 }
 
+/// Create a new markdown note inside a vault folder.
+#[tauri::command]
+pub fn create_note(folder_path: String, file_name: String) -> Result<String, String> {
+    let folder = Path::new(&folder_path);
+    if !folder.exists() || !folder.is_dir() {
+        return Err("Folder does not exist.".to_string());
+    }
+
+    let name = if file_name.ends_with(".md") {
+        file_name
+    } else {
+        format!("{}.md", file_name)
+    };
+
+    let file_path = folder.join(&name);
+    if file_path.exists() {
+        return Err("A file with this name already exists.".to_string());
+    }
+
+    let initial = format!("---\n---\n\n");
+    fs::write(&file_path, initial)
+        .map_err(|e| format!("Failed to create note: {}", e))?;
+
+    Ok(file_path.to_string_lossy().to_string())
+}
+
+/// Create a new folder inside a vault.
+#[tauri::command]
+pub fn create_folder(parent_path: String, folder_name: String) -> Result<String, String> {
+    let parent = Path::new(&parent_path);
+    if !parent.exists() || !parent.is_dir() {
+        return Err("Parent directory does not exist.".to_string());
+    }
+
+    let folder_path = parent.join(&folder_name);
+    if folder_path.exists() {
+        return Err("A folder with this name already exists.".to_string());
+    }
+
+    fs::create_dir(&folder_path)
+        .map_err(|e| format!("Failed to create folder: {}", e))?;
+
+    Ok(folder_path.to_string_lossy().to_string())
+}
+
+/// Rename a file or folder.
+#[tauri::command]
+pub fn rename_item(old_path: String, new_path: String) -> Result<(), String> {
+    let old = Path::new(&old_path);
+    if !old.exists() {
+        return Err("Item does not exist.".to_string());
+    }
+
+    let new_p = Path::new(&new_path);
+    if new_p.exists() {
+        return Err("An item with this name already exists.".to_string());
+    }
+
+    fs::rename(old, new_p)
+        .map_err(|e| format!("Failed to rename: {}", e))
+}
+
+/// Delete a file or folder (permanent delete).
+#[tauri::command]
+pub fn delete_item(path: String, permanent: Option<bool>) -> Result<(), String> {
+    let target = Path::new(&path);
+    if !target.exists() {
+        return Err("Item does not exist.".to_string());
+    }
+
+    let _ = permanent; // For now, always permanent delete
+    if target.is_dir() {
+        fs::remove_dir_all(target)
+            .map_err(|e| format!("Failed to delete folder: {}", e))
+    } else {
+        fs::remove_file(target)
+            .map_err(|e| format!("Failed to delete file: {}", e))
+    }
+}
+
+/// Resolve a wikilink target to an actual file path within a vault.
+#[tauri::command]
+pub fn resolve_wikilink(vault_path: String, target: String) -> Result<Option<String>, String> {
+    let vault_dir = Path::new(&vault_path);
+    if !vault_dir.exists() {
+        return Err("Vault path does not exist.".to_string());
+    }
+
+    let target_lower = target.to_lowercase();
+    let mut matches: Vec<PathBuf> = Vec::new();
+    find_note_by_name(vault_dir, &target_lower, &mut matches, 0);
+
+    if matches.is_empty() {
+        return Ok(None);
+    }
+
+    // Prefer shortest path (closest to vault root)
+    matches.sort_by_key(|p| p.to_string_lossy().len());
+    Ok(Some(matches[0].to_string_lossy().to_string()))
+}
+
+fn find_note_by_name(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth: u32) {
+    if depth > 20 { return; }
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') { continue; }
+        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
+
+        if path.is_dir() {
+            find_note_by_name(&path, target, results, depth + 1);
+        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
+            let stem = name.trim_end_matches(".md").to_lowercase();
+            if stem == *target {
+                results.push(path);
+            }
+        }
+    }
+}
+
+/// Read Obsidian's appearance.json for a vault.
+#[tauri::command]
+pub fn read_obsidian_appearance(vault_path: String) -> Result<serde_json::Value, String> {
+    let path = Path::new(&vault_path).join(".obsidian").join("appearance.json");
+    if !path.exists() {
+        // Return defaults
+        return Ok(serde_json::json!({
+            "accent_color": null,
+            "base_font_size": null,
+            "text_font_family": null,
+            "monospace_font_family": null,
+            "interface_font_family": null,
+            "css_theme": null
+        }));
+    }
+
+    let data = fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read appearance.json: {}", e))?;
+
+    let raw: serde_json::Value = serde_json::from_str(&data)
+        .map_err(|e| format!("Failed to parse appearance.json: {}", e))?;
+
+    // Map Obsidian's camelCase to our field names
+    Ok(serde_json::json!({
+        "accent_color": raw.get("accentColor").and_then(|v| v.as_str()),
+        "base_font_size": raw.get("baseFontSize").and_then(|v| v.as_u64()),
+        "text_font_family": raw.get("textFontFamily").and_then(|v| v.as_str()),
+        "monospace_font_family": raw.get("monospaceFontFamily").and_then(|v| v.as_str()),
+        "interface_font_family": raw.get("interfaceFontFamily").and_then(|v| v.as_str()),
+        "css_theme": raw.get("cssTheme").and_then(|v| v.as_str())
+    }))
+}
+
 /// Open a folder picker dialog and return the selected path.
 #[tauri::command]
 pub async fn pick_folder() -> Result<Option<String>, String> {

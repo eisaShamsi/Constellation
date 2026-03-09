@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { dir, locale, toggleLocale } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
+	import { listen } from '@tauri-apps/api/event';
 	import {
 		vaults, vaultStats, searchResults, totalStars, vaultCount,
 		activeTab, openTabs, activeTabId,
@@ -10,12 +11,18 @@
 		openNoteTab, closeTab, switchTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings,
+		createNote, createFolder, renameItem, deleteItem,
+		startWatchingVault, wasRecentlyWritten,
+		loadVaultAppearance, vaultAppearances,
 		type FrontmatterProperty, type HeadingItem
 	} from '$lib/vaults/store';
 	import type { VaultStats, FileEntry, PropertyType } from '$lib/vaults/store';
+	import { get } from 'svelte/store';
 	import { detectDir } from '$lib/utils';
 	import FileTree from '$lib/components/FileTree.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
+	import ContextMenu from '$lib/components/ContextMenu.svelte';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -96,6 +103,35 @@
 	onMount(async () => {
 		await loadVaults();
 		await loadAllStats();
+
+		// Start file watchers and load appearance for all vaults
+		for (const vault of $vaults) {
+			try { await startWatchingVault(vault.id, vault.path); } catch { /* ignore */ }
+			await loadVaultAppearance(vault.path, vault.id);
+		}
+
+		// Listen for file change events from the watcher
+		await listen<{ vaultId: string; paths: string[] }>('vault-changed', async (event) => {
+			const { vaultId, paths } = event.payload;
+			// Refresh the tree for this vault
+			await refreshVaultTree(vaultId);
+			await loadAllStats();
+			// Reload any open tabs whose files changed (if not self-triggered)
+			const tabs = get(openTabs);
+			for (const changedPath of paths) {
+				if (wasRecentlyWritten(changedPath)) continue;
+				const tab = tabs.find(t => t.path === changedPath);
+				if (tab) {
+					try {
+						const content: string = await invoke('read_note', { filePath: changedPath });
+						openTabs.update(tabs => tabs.map(t =>
+							t.path === changedPath ? { ...t, content } : t
+						));
+					} catch { /* file may have been deleted */ }
+				}
+			}
+		});
+
 		if ($vaultStats.length === 1) {
 			await toggleVault($vaultStats[0]);
 		}
@@ -154,14 +190,117 @@
 		}
 	}
 
+	// ─── Context menu state ───
+	let contextMenu = $state<{ x: number; y: number; entry: FileEntry; vaultId: string } | null>(null);
+	let confirmDelete = $state<{ path: string; name: string } | null>(null);
+	let renamingPath = $state('');
+
+	function handleContextMenu(entry: FileEntry, x: number, y: number, vaultId: string) {
+		contextMenu = { x, y, entry, vaultId };
+	}
+
+	function getContextMenuItems(entry: FileEntry, vaultId: string) {
+		const items: { label: string; icon?: string; action: () => void; danger?: boolean }[] = [];
+		if (entry.is_dir) {
+			items.push({
+				label: ar ? 'ملاحظة جديدة' : 'New Note',
+				icon: '📄',
+				action: () => handleCreateNote(entry.path, vaultId)
+			});
+			items.push({
+				label: ar ? 'مجلد جديد' : 'New Folder',
+				icon: '📁',
+				action: () => handleCreateFolder(entry.path, vaultId)
+			});
+		}
+		items.push({
+			label: ar ? 'إعادة تسمية' : 'Rename',
+			icon: '✏️',
+			action: () => { renamingPath = entry.path; }
+		});
+		items.push({
+			label: ar ? 'حذف' : 'Delete',
+			icon: '🗑️',
+			action: () => { confirmDelete = { path: entry.path, name: entry.name }; },
+			danger: true
+		});
+		return items;
+	}
+
+	async function handleCreateNote(folderPath: string, vaultId: string) {
+		try {
+			const name = ar ? 'بدون عنوان' : 'Untitled';
+			const newPath = await createNote(folderPath, name);
+			await refreshVaultTree(vaultId);
+			const vault = $vaults.find(v => v.id === vaultId);
+			if (vault) {
+				const vaultColor = vaultColorMap[vault.name] ?? '#7c3aed';
+				await openNoteTab(newPath, vault.name, vaultColor);
+			}
+		} catch (e) {
+			console.error('Failed to create note:', e);
+		}
+	}
+
+	async function handleCreateFolder(parentPath: string, vaultId: string) {
+		try {
+			const name = ar ? 'مجلد جديد' : 'New Folder';
+			await createFolder(parentPath, name);
+			await refreshVaultTree(vaultId);
+		} catch (e) {
+			console.error('Failed to create folder:', e);
+		}
+	}
+
+	async function handleDeleteConfirm() {
+		if (!confirmDelete) return;
+		try {
+			// Find which vault this belongs to
+			const vault = $vaultStats.find(v => confirmDelete!.path.startsWith(v.path));
+			await deleteItem(confirmDelete.path, true);
+			if (vault) await refreshVaultTree(vault.vault_id);
+			await loadAllStats();
+		} catch (e) {
+			console.error('Failed to delete:', e);
+		}
+		confirmDelete = null;
+	}
+
+	async function handleRenameComplete(oldPath: string, newName: string) {
+		renamingPath = '';
+		if (!oldPath || !newName) return;
+
+		try {
+			const parentDir = oldPath.substring(0, oldPath.lastIndexOf('\\') === -1 ? oldPath.lastIndexOf('/') : oldPath.lastIndexOf('\\'));
+			const isDir = !oldPath.endsWith('.md');
+			const newPath = parentDir + (oldPath.includes('\\') ? '\\' : '/') + (isDir ? newName : newName + '.md');
+			await renameItem(oldPath, newPath);
+			const vault = $vaultStats.find(v => oldPath.startsWith(v.path));
+			if (vault) await refreshVaultTree(vault.vault_id);
+		} catch (e) {
+			console.error('Failed to rename:', e);
+		}
+	}
+
+	async function refreshVaultTree(vaultId: string) {
+		const vault = $vaultStats.find(v => v.vault_id === vaultId);
+		if (vault) {
+			const tree: FileEntry[] = await invoke('read_vault_tree', { path: vault.path, maxDepth: 4 });
+			vaultTrees[vaultId] = tree;
+			vaultTrees = { ...vaultTrees };
+		}
+	}
+
 	async function handleNoteClick(filePath: string, _noteName: string) {
 		const vault = $vaults.find(v => filePath.startsWith(v.path));
-		await openNoteTab(filePath, vault?.name ?? '');
+		const vaultColor = vault ? vaultColorMap[vault.name] : '#7c3aed';
+		await openNoteTab(filePath, vault?.name ?? '', vaultColor);
 		if (!isHome) window.location.href = '/';
 	}
 
 	async function handleSearchResultClick(path: string, vaultName: string) {
-		await openNoteTab(path, vaultName);
+		const vaultColor = vaultColorMap[vaultName] ?? '#7c3aed';
+		await openNoteTab(path, vaultName, vaultColor);
 		clearSearch();
 		if (!isHome) window.location.href = '/';
 	}
@@ -237,7 +376,16 @@
 							</button>
 							{#if expandedVaults.has(vault.vault_id) && vaultTrees[vault.vault_id]}
 								<div class="vault-tree">
-									<FileTree entries={vaultTrees[vault.vault_id]} vaultId={vault.vault_id} vaultName={vault.name} color={vaultColorMap[vault.name]} onNoteClick={handleNoteClick}/>
+									<FileTree
+									entries={vaultTrees[vault.vault_id]}
+									vaultId={vault.vault_id}
+									vaultName={vault.name}
+									color={vaultColorMap[vault.name]}
+									onNoteClick={handleNoteClick}
+									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, vault.vault_id)}
+									{renamingPath}
+									onRenameComplete={handleRenameComplete}
+								/>
 								</div>
 							{/if}
 						</div>
@@ -381,6 +529,27 @@
 			{/if}
 		</div>
 	</aside>
+
+	<!-- ═══ CONTEXT MENU ═══ -->
+	{#if contextMenu}
+		<ContextMenu
+			x={contextMenu.x}
+			y={contextMenu.y}
+			items={getContextMenuItems(contextMenu.entry, contextMenu.vaultId)}
+			onClose={() => contextMenu = null}
+		/>
+	{/if}
+
+	<!-- ═══ CONFIRM DIALOG ═══ -->
+	{#if confirmDelete}
+		<ConfirmDialog
+			message={ar ? `هل أنت متأكد من حذف "${confirmDelete.name}"؟` : `Are you sure you want to delete "${confirmDelete.name}"?`}
+			confirmLabel={ar ? 'حذف' : 'Delete'}
+			cancelLabel={ar ? 'إلغاء' : 'Cancel'}
+			onConfirm={handleDeleteConfirm}
+			onCancel={() => confirmDelete = null}
+		/>
+	{/if}
 
 	<!-- ═══ STATUS BAR ═══ -->
 	<div class="status-bar">

@@ -8,7 +8,10 @@
 		vaultId = '',
 		vaultName = '',
 		color = '#7c3aed',
-		onNoteClick
+		onNoteClick,
+		onContextMenu,
+		renamingPath = '',
+		onRenameComplete
 	}: {
 		entries: FileEntry[];
 		depth?: number;
@@ -16,11 +19,42 @@
 		vaultName?: string;
 		color?: string;
 		onNoteClick?: (path: string, name: string) => void;
+		onContextMenu?: (entry: FileEntry, x: number, y: number) => void;
+		renamingPath?: string;
+		onRenameComplete?: (oldPath: string, newName: string) => void;
 	} = $props();
 
 	function handleClick(entry: FileEntry) {
 		if (!entry.is_dir && onNoteClick) {
 			onNoteClick(entry.path, entry.name.replace('.md', ''));
+		}
+	}
+
+	function handleRightClick(e: MouseEvent, entry: FileEntry) {
+		e.preventDefault();
+		onContextMenu?.(entry, e.clientX, e.clientY);
+	}
+
+	let renameValue = $state('');
+
+	function startRename(entry: FileEntry) {
+		renameValue = entry.is_dir ? entry.name : entry.name.replace('.md', '');
+	}
+
+	function finishRename(entry: FileEntry) {
+		const newName = renameValue.trim();
+		if (newName && newName !== (entry.is_dir ? entry.name : entry.name.replace('.md', ''))) {
+			onRenameComplete?.(entry.path, newName);
+		} else {
+			onRenameComplete?.('', ''); // Cancel
+		}
+	}
+
+	function handleRenameKeydown(e: KeyboardEvent, entry: FileEntry) {
+		if (e.key === 'Enter') {
+			finishRename(entry);
+		} else if (e.key === 'Escape') {
+			onRenameComplete?.('', ''); // Cancel
 		}
 	}
 </script>
@@ -30,25 +64,56 @@
 		<li>
 			{#if entry.is_dir}
 				<details open={depth < 1}>
-					<summary class="folder">
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<summary class="folder" oncontextmenu={(e) => handleRightClick(e, entry)}>
 						<svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
 							<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 						</svg>
-						<span class="folder-name">{entry.name}</span>
+						{#if renamingPath === entry.path}
+							<!-- svelte-ignore a11y_autofocus -->
+							<input
+								class="rename-input"
+								type="text"
+								bind:value={renameValue}
+								onblur={() => finishRename(entry)}
+								onkeydown={(e) => handleRenameKeydown(e, entry)}
+								onfocus={() => startRename(entry)}
+								autofocus
+								onclick={(e) => e.stopPropagation()}
+							/>
+						{:else}
+							<span class="folder-name">{entry.name}</span>
+						{/if}
 					</summary>
 					{#if entry.children && entry.children.length > 0}
-						<svelte:self entries={entry.children} depth={depth + 1} {vaultId} {vaultName} {color} {onNoteClick} />
+						<svelte:self entries={entry.children} depth={depth + 1} {vaultId} {vaultName} {color} {onNoteClick} {onContextMenu} {renamingPath} {onRenameComplete} />
 					{/if}
 				</details>
 			{:else}
-				<button
-					class="note"
-					class:active={$splitActive ? $openTabs.some(t => t.path === entry.path) : $activeTab?.path === entry.path}
-					style:--vault-color={color}
-					onclick={() => handleClick(entry)}
-				>
-					<span class="note-name">{entry.name.replace('.md', '')}</span>
-				</button>
+				{#if renamingPath === entry.path}
+					<div class="rename-row">
+						<!-- svelte-ignore a11y_autofocus -->
+						<input
+							class="rename-input"
+							type="text"
+							bind:value={renameValue}
+							onblur={() => finishRename(entry)}
+							onkeydown={(e) => handleRenameKeydown(e, entry)}
+							onfocus={() => startRename(entry)}
+							autofocus
+						/>
+					</div>
+				{:else}
+					<button
+						class="note"
+						class:active={$splitActive ? $openTabs.some(t => t.path === entry.path) : $activeTab?.path === entry.path}
+						style:--vault-color={color}
+						onclick={() => handleClick(entry)}
+						oncontextmenu={(e) => handleRightClick(e, entry)}
+					>
+						<span class="note-name">{entry.name.replace('.md', '')}</span>
+					</button>
+				{/if}
 			{/if}
 		</li>
 	{/each}
@@ -107,4 +172,21 @@
 	.note.active { background: color-mix(in srgb, var(--vault-color) 8%, transparent); color: var(--vault-color); }
 
 	.note-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+	.rename-input {
+		flex: 1;
+		min-width: 0;
+		border: 1px solid #7c3aed;
+		border-radius: 3px;
+		padding: 1px 4px;
+		font-size: 0.82rem;
+		font-family: inherit;
+		outline: none;
+		background: #fff;
+		color: #1f2328;
+	}
+
+	.rename-row {
+		padding: 2px 6px 2px 20px;
+	}
 </style>

@@ -1,5 +1,6 @@
 mod ai;
 mod vaults;
+mod watcher;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -10,6 +11,7 @@ fn greet(name: &str) -> String {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .manage(watcher::WatcherState::new())
         .invoke_handler(tauri::generate_handler![
             greet,
             ai::ai_send_message,
@@ -23,7 +25,15 @@ pub fn run() {
             vaults::write_note,
             vaults::pick_folder,
             vaults::get_all_vault_stats,
-            vaults::search_stars
+            vaults::search_stars,
+            vaults::create_note,
+            vaults::create_folder,
+            vaults::rename_item,
+            vaults::delete_item,
+            vaults::resolve_wikilink,
+            vaults::read_obsidian_appearance,
+            watcher::watch_vault,
+            watcher::unwatch_vault
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
