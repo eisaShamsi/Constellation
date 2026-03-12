@@ -119,6 +119,11 @@ A Universe can reference other Universes as **children**. When you add a child u
 
 If V7 is later added to Universe B, Universe X automatically sees it.
 
+Child universe vaults are fully integrated across all features:
+- **Graph View** — child vault notes appear with their own color and convex hull.
+- **Search** — notes from child universe vaults are included in search results.
+- **Cross-vault linking** — you can link between your own vaults and child universe vaults using `[[wikilinks]]`.
+
 > [!warning]
 > Circular references are detected and prevented. If Universe A references B and B references A, each is only resolved once.
 

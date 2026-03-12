@@ -12,6 +12,7 @@
 		onAddVault,
 		onManage,
 		onManageUniverse,
+		onChildUniverseChanged,
 		activeUniverseName = '',
 	}: {
 		colorMap: Record<string, string>;
@@ -19,6 +20,7 @@
 		onAddVault: () => void;
 		onManage: () => void;
 		onManageUniverse: () => void;
+		onChildUniverseChanged?: () => void;
 		activeUniverseName?: string;
 	} = $props();
 
@@ -29,6 +31,7 @@
 				await addChildUniverse(result);
 				childUniverses = await getChildUniverses();
 				onClose();
+				onChildUniverseChanged?.();
 			}
 		} catch { /* cancelled or error */ }
 	}

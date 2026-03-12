@@ -98,7 +98,7 @@ Click the **reset** button (circular arrow icon) to restore all controls to thei
 
 ---
 
-## Vault clusters
+## Vault clusters and child universes
 
 When you have multiple vaults, the graph automatically:
 
@@ -108,6 +108,13 @@ When you have multiple vaults, the graph automatically:
 - **Dashes cross-vault links** — links between notes in different vaults appear as dashed lines.
 
 Click any vault name in the legend to hide or show that vault's nodes.
+
+### Child universe vaults in the graph
+
+If your universe has [[Universe#Child universes (Universe of Universes)|child universes]], their vaults appear in the graph automatically alongside your own vaults. Each child universe vault gets its own color, legend entry, and convex hull — just like your own vaults. Cross-vault links between parent and child universe notes are shown as dashed lines.
+
+> [!tip]
+> Use the legend to toggle child universe vaults on or off. This makes it easy to focus on just your own vaults or explore how your notes connect to notes in child universes.
 
 ---
 

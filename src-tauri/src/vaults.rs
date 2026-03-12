@@ -190,8 +190,8 @@ pub fn remove_vault(app: tauri::AppHandle, vault_id: String) -> Result<(), Strin
 /// Read the file tree of a vault (up to 2 levels deep for performance).
 #[tauri::command]
 pub fn read_vault_tree(app: tauri::AppHandle, path: String, max_depth: Option<u32>) -> Result<Vec<FileEntry>, String> {
-    // Validate the path is a registered vault
-    let vaults = load_vaults(&app);
+    // Validate the path is a registered vault (including child universe vaults)
+    let vaults = load_all_vaults(&app);
     if !vaults.iter().any(|v| v.path == path) {
         return Err("Access denied: not a registered vault.".to_string());
     }
@@ -282,10 +282,10 @@ pub struct StarInfo {
     pub preview: String,
 }
 
-/// Get stats for own vaults in the active universe — star counts, folder counts, recent stars.
+/// Get stats for all vaults (own + child universe) — star counts, folder counts, recent stars.
 #[tauri::command]
 pub fn get_all_vault_stats(app: tauri::AppHandle) -> Vec<VaultStats> {
-    let vaults = load_vaults(&app);
+    let vaults = load_all_vaults(&app);
     vaults.iter().map(|v| {
         let (star_count, folder_count) = count_contents(Path::new(&v.path));
         let recent_stars = get_recent_notes(Path::new(&v.path), &v.id, &v.name, 5);
@@ -303,7 +303,7 @@ pub fn get_all_vault_stats(app: tauri::AppHandle) -> Vec<VaultStats> {
 /// Search across all vaults for notes matching a query.
 #[tauri::command]
 pub fn search_stars(app: tauri::AppHandle, query: String) -> Vec<StarInfo> {
-    let vaults = load_vaults(&app);
+    let vaults = load_all_vaults(&app);
     let query_lower = query.to_lowercase();
     let mut results = Vec::new();
 
@@ -506,7 +506,7 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
 /// Search notes by property key/value across all vaults.
 #[tauri::command]
 pub fn search_by_property(app: tauri::AppHandle, key: String, value: String) -> Vec<StarInfo> {
-    let vaults = load_vaults(&app);
+    let vaults = load_all_vaults(&app);
     let key_lower = key.to_lowercase();
     let value_lower = value.to_lowercase();
     let mut results = Vec::new();
@@ -661,7 +661,7 @@ pub fn delete_item(app: tauri::AppHandle, path: String, permanent: Option<bool>)
 /// Resolve a wikilink target to an actual file path within a vault.
 #[tauri::command]
 pub fn resolve_wikilink(app: tauri::AppHandle, vault_path: String, target: String) -> Result<Option<String>, String> {
-    let vaults = load_vaults(&app);
+    let vaults = load_all_vaults(&app);
     if !vaults.iter().any(|v| v.path == vault_path) {
         return Err("Access denied: not a registered vault.".to_string());
     }
@@ -871,7 +871,7 @@ fn has_alias(content: &str, target: &str) -> bool {
 /// Read Obsidian's appearance.json for a vault.
 #[tauri::command]
 pub fn read_obsidian_appearance(app: tauri::AppHandle, vault_path: String) -> Result<serde_json::Value, String> {
-    let vaults = load_vaults(&app);
+    let vaults = load_all_vaults(&app);
     if !vaults.iter().any(|v| v.path == vault_path) {
         return Err("Access denied: not a registered vault.".to_string());
     }
@@ -1006,7 +1006,7 @@ pub struct NoteLink {
 /// Scan all notes in a vault and extract wikilinks from each.
 #[tauri::command]
 pub fn scan_vault_links(app: tauri::AppHandle, vault_path: String, vault_name: String) -> Result<Vec<NoteLink>, String> {
-    let vaults = load_vaults(&app);
+    let vaults = load_all_vaults(&app);
     if !vaults.iter().any(|v| v.path == vault_path) {
         return Err("Access denied: not a registered vault.".to_string());
     }
@@ -1074,7 +1074,7 @@ pub fn scan_unlinked_mentions(
     note_path: String,
     vault_paths: Vec<(String, String)>, // (vault_name, vault_path)
 ) -> Result<Vec<NoteLink>, String> {
-    let registered = load_vaults(&app);
+    let registered = load_all_vaults(&app);
     let wikilink_pattern = format!("[[{}]]", &note_name);
     let wikilink_pattern_lower = wikilink_pattern.to_lowercase();
     let word_re = match regex::Regex::new(&format!(r"(?i)\b{}\b", regex::escape(&note_name))) {
@@ -1162,7 +1162,7 @@ fn scan_unlinked_recursive(
 /// Scan all tags across a vault.
 #[tauri::command]
 pub fn scan_vault_tags(app: tauri::AppHandle, vault_path: String) -> Result<std::collections::HashMap<String, u32>, String> {
-    let vaults = load_vaults(&app);
+    let vaults = load_all_vaults(&app);
     if !vaults.iter().any(|v| v.path == vault_path) {
         return Err("Access denied: not a registered vault.".to_string());
     }
@@ -1292,7 +1292,7 @@ fn build_stopwords() -> std::collections::HashSet<&'static str> {
 /// Scan all notes in a vault and build a word index.
 #[tauri::command]
 pub fn scan_vault_index(app: tauri::AppHandle, vault_path: String) -> Result<Vec<IndexEntry>, String> {
-    let vaults = load_vaults(&app);
+    let vaults = load_all_vaults(&app);
     if !vaults.iter().any(|v| v.path == vault_path) {
         return Err("Access denied: not a registered vault.".to_string());
     }
@@ -1496,7 +1496,7 @@ fn scan_index_words_recursive(
 /// Collect all note names in a vault (for autocomplete).
 #[tauri::command]
 pub fn collect_vault_notes(app: tauri::AppHandle, vault_path: String) -> Result<Vec<serde_json::Value>, String> {
-    let vaults = load_vaults(&app);
+    let vaults = load_all_vaults(&app);
     if !vaults.iter().any(|v| v.path == vault_path) {
         return Err("Access denied: not a registered vault.".to_string());
     }

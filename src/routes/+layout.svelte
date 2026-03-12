@@ -1001,6 +1001,20 @@
 		adding = false;
 	}
 
+	/** Reload everything after a child universe is added/removed. */
+	async function handleChildUniverseChanged() {
+		try {
+			await loadVaults();
+			await loadAllStats();
+			childUniverses = await getChildUniverses();
+			// Start watchers for any new vaults and refresh caches
+			for (const vault of $vaults) {
+				try { await startWatchingVault(vault.id, vault.path); } catch { /* ignore */ }
+			}
+			await refreshVaultCaches();
+		} catch { /* ignore */ }
+	}
+
 	function handleSearch(e: Event) {
 		searchQuery = (e.target as HTMLInputElement).value;
 		clearTimeout(searchTimeout);
@@ -1439,6 +1453,7 @@
 						onAddVault={handleAddVault}
 						onManage={() => showVaultManager = true}
 						onManageUniverse={() => showUniverseManager = true}
+						onChildUniverseChanged={handleChildUniverseChanged}
 						activeUniverseName={activeUniverseName}
 					/>
 				{/if}
