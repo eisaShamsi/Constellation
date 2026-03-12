@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, untrack } from 'svelte';
 	import { t } from '$lib/i18n';
 	import * as d3 from 'd3';
 
@@ -146,29 +146,35 @@
 
 	// ─── Reactivity: re-render on control changes ───
 
+	// Filter changes need full re-render (rebuild nodeData/linkData)
 	$effect(() => {
-		// Track all filter/display values to trigger re-render
-		const _ = [filterQuery, showOrphans, existingOnly, showArrows, textFadeThreshold, nodeSizeMultiplier, linkThicknessMultiplier];
-		if (mounted && nodes.length > 0) renderGraph();
+		const _ = [filterQuery, showOrphans, existingOnly];
+		if (mounted && nodes.length > 0) untrack(() => renderGraph());
 	});
 
+	// Display changes only need redraw (no simulation rebuild)
 	$effect(() => {
-		// Track force values — update simulation dynamically
+		const _ = [showArrows, textFadeThreshold, nodeSizeMultiplier, linkThicknessMultiplier];
+		if (mounted && nodeData.length > 0) untrack(() => draw());
+	});
+
+	// Force changes update simulation dynamically
+	$effect(() => {
 		const _ = [centerForce, repelForce, linkForce, linkDistance];
-		if (simulation) {
-			updateForces();
-		}
+		if (simulation) untrack(() => updateForces());
 	});
 
 	$effect(() => {
-		if (!animating && simulation) {
-			// Run simulation to completion instantly
-			simulation.stop();
-			for (let i = 0; i < 300; i++) simulation.tick();
-			draw();
-		} else if (animating && simulation) {
-			simulation.alpha(0.3).restart();
-		}
+		const anim = animating;
+		untrack(() => {
+			if (!anim && simulation) {
+				simulation.stop();
+				for (let i = 0; i < 300; i++) simulation.tick();
+				draw();
+			} else if (anim && simulation) {
+				simulation.alpha(0.3).restart();
+			}
+		});
 	});
 
 	function updateForces() {
