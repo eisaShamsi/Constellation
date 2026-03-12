@@ -143,6 +143,14 @@
 								{/if}
 							</div>
 							<div class="um-entry-path">{u.path}</div>
+							{#if u.id === activeId}
+								<button class="um-add-child" onclick={() => handleAddChild(u.id)}>
+									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+									</svg>
+									{$t('universe.manager.addChild')}
+								</button>
+							{/if}
 						</div>
 						<div class="um-entry-actions">
 							{#if u.id !== activeId}
@@ -295,6 +303,25 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		direction: ltr;
+	}
+	.um-add-child {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: 6px;
+		padding: 4px 10px;
+		border: 1px dashed var(--background-modifier-border);
+		border-radius: 6px;
+		background: none;
+		color: var(--text-muted);
+		font-size: 0.75rem;
+		font-family: inherit;
+		cursor: pointer;
+	}
+	.um-add-child:hover {
+		color: var(--interactive-accent);
+		border-color: var(--interactive-accent);
+		background: rgba(124, 58, 237, 0.05);
 	}
 	.um-entry-actions {
 		display: flex;

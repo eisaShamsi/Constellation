@@ -605,7 +605,8 @@
       "addChild": "افزودن جهان فرزند",
       "noUniverses": "جهانی یافت نشد",
       "ownVaults": "خزانه‌های خود",
-      "inheritedVaults": "خزانه‌های ارثی"
+      "inheritedVaults": "خزانه‌های ارثی",
+      "openExisting": "باز کردن جهان موجود"
     },
     "switching": "در حال تغییر جهان...",
     "migrating": "در حال انتقال داده‌ها..."

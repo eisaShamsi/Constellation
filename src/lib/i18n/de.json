@@ -605,7 +605,8 @@
       "addChild": "Kind-Universum hinzufügen",
       "noUniverses": "Keine Universen gefunden",
       "ownVaults": "Eigene Tresore",
-      "inheritedVaults": "Geerbte Tresore"
+      "inheritedVaults": "Geerbte Tresore",
+      "openExisting": "Bestehendes Universum öffnen"
     },
     "switching": "Universum wird gewechselt...",
     "migrating": "Daten werden migriert..."

@@ -406,6 +406,68 @@ pub fn resolve_universe_vaults(app: tauri::AppHandle) -> Result<Vec<crate::vault
     Ok(resolve_vaults_recursive(&universe_dir, &mut visited))
 }
 
+/// Info about a child universe — name, path, and how many vaults it contributes.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChildUniverseInfo {
+    pub name: String,
+    pub path: String,
+    pub vault_count: u32,
+}
+
+/// Return info about child universes of the active universe.
+#[tauri::command]
+pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInfo>, String> {
+    let universe_dir = active_universe_dir(&app)?;
+    let meta_path = universe_dir.join("universe.json");
+
+    if !meta_path.exists() {
+        return Ok(vec![]);
+    }
+
+    let data = fs::read_to_string(&meta_path)
+        .map_err(|e| format!("Failed to read universe.json: {}", e))?;
+    let meta: UniverseMeta = serde_json::from_str(&data)
+        .map_err(|e| format!("Failed to parse universe.json: {}", e))?;
+
+    let mut children = Vec::new();
+    for child_path_str in &meta.children {
+        let child_path = Path::new(child_path_str);
+        let child_meta_path = child_path.join("universe.json");
+
+        let name = if child_meta_path.exists() {
+            if let Ok(child_data) = fs::read_to_string(&child_meta_path) {
+                if let Ok(child_meta) = serde_json::from_str::<UniverseMeta>(&child_data) {
+                    child_meta.name
+                } else {
+                    child_path.file_name().unwrap_or_default().to_string_lossy().to_string()
+                }
+            } else {
+                child_path.file_name().unwrap_or_default().to_string_lossy().to_string()
+            }
+        } else {
+            child_path.file_name().unwrap_or_default().to_string_lossy().to_string()
+        };
+
+        // Count vaults in child (non-recursive for display)
+        let vaults_path = child_path.join("vaults.json");
+        let vault_count = if vaults_path.exists() {
+            if let Ok(vdata) = fs::read_to_string(&vaults_path) {
+                serde_json::from_str::<Vec<crate::vaults::VaultInfo>>(&vdata)
+                    .map(|v| v.len() as u32)
+                    .unwrap_or(0)
+            } else { 0 }
+        } else { 0 };
+
+        children.push(ChildUniverseInfo {
+            name,
+            path: child_path_str.clone(),
+            vault_count,
+        });
+    }
+
+    Ok(children)
+}
+
 // ─── Data File I/O Commands ───
 
 /// Read settings.json from the active universe.

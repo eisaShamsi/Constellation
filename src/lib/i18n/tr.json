@@ -605,7 +605,8 @@
       "addChild": "Alt Evren Ekle",
       "noUniverses": "Evren bulunamadı",
       "ownVaults": "Kendi Kasaları",
-      "inheritedVaults": "Devralınan Kasalar"
+      "inheritedVaults": "Devralınan Kasalar",
+      "openExisting": "Mevcut evreni aç"
     },
     "switching": "Evren değiştiriliyor...",
     "migrating": "Verileriniz taşınıyor..."

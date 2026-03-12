@@ -73,7 +73,8 @@ pub fn run() {
             universe::read_universe_property_types,
             universe::save_universe_property_types,
             universe::migrate_legacy_data,
-            universe::open_existing_universe
+            universe::open_existing_universe,
+            universe::get_child_universes
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

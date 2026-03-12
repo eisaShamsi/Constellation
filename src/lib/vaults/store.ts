@@ -580,9 +580,16 @@ export function switchTab(tabId: string) {
 	}
 }
 
-/** Load vaults and their stats. */
+/** Load vaults including child universe vaults. */
 export async function loadVaults() {
-	const list: VaultInfo[] = await invoke('list_vaults');
+	let list: VaultInfo[];
+	try {
+		// Resolve own vaults + child universe vaults (recursive, deduplicated)
+		list = await invoke('resolve_universe_vaults');
+	} catch {
+		// Fallback to own vaults only
+		list = await invoke('list_vaults');
+	}
 	vaults.set(list);
 }
 

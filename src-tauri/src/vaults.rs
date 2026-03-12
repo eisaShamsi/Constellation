@@ -282,7 +282,7 @@ pub struct StarInfo {
     pub preview: String,
 }
 
-/// Get stats for all vaults — star counts, folder counts, recent stars.
+/// Get stats for own vaults in the active universe — star counts, folder counts, recent stars.
 #[tauri::command]
 pub fn get_all_vault_stats(app: tauri::AppHandle) -> Vec<VaultStats> {
     let vaults = load_vaults(&app);

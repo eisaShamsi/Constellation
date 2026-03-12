@@ -71,6 +71,17 @@ export async function migrateLegacyData(name: string, universePath: string): Pro
 	return await invoke('migrate_legacy_data', { name, universePath });
 }
 
+export interface ChildUniverseInfo {
+	name: string;
+	path: string;
+	vault_count: number;
+}
+
+/** Get info about child universes of the active universe. */
+export async function getChildUniverses(): Promise<ChildUniverseInfo[]> {
+	return await invoke('get_child_universes');
+}
+
 // ─── Universe Data File I/O ───
 
 export async function readUniverseSettings(): Promise<Record<string, unknown>> {

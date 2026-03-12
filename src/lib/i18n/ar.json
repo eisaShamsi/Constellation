@@ -605,7 +605,8 @@
       "addChild": "إضافة كون فرعي",
       "noUniverses": "لم يتم العثور على أكوان",
       "ownVaults": "الخزائن الخاصة",
-      "inheritedVaults": "الخزائن الموروثة"
+      "inheritedVaults": "الخزائن الموروثة",
+      "openExisting": "فتح كون موجود"
     },
     "switching": "جارٍ تبديل الكون...",
     "migrating": "جارٍ ترحيل بياناتك..."

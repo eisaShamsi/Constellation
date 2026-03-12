@@ -605,7 +605,8 @@
       "addChild": "ذیلی کائنات شامل کریں",
       "noUniverses": "کوئی کائنات نہیں ملی",
       "ownVaults": "اپنے والٹس",
-      "inheritedVaults": "وراثتی والٹس"
+      "inheritedVaults": "وراثتی والٹس",
+      "openExisting": "موجودہ کائنات کھولیں"
     },
     "switching": "کائنات تبدیل ہو رہی ہے...",
     "migrating": "آپ کا ڈیٹا منتقل ہو رہا ہے..."

@@ -605,7 +605,8 @@
       "addChild": "Ajouter un Univers enfant",
       "noUniverses": "Aucun univers trouvé",
       "ownVaults": "Coffres propres",
-      "inheritedVaults": "Coffres hérités"
+      "inheritedVaults": "Coffres hérités",
+      "openExisting": "Ouvrir un univers existant"
     },
     "switching": "Changement d'univers...",
     "migrating": "Migration de vos données..."

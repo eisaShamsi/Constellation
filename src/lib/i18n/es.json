@@ -605,7 +605,8 @@
       "addChild": "Añadir Universo hijo",
       "noUniverses": "No se encontraron universos",
       "ownVaults": "Bóvedas propias",
-      "inheritedVaults": "Bóvedas heredadas"
+      "inheritedVaults": "Bóvedas heredadas",
+      "openExisting": "Abrir universo existente"
     },
     "switching": "Cambiando universo...",
     "migrating": "Migrando tus datos..."

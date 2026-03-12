@@ -124,6 +124,14 @@ If V7 is later added to Universe B, Universe X automatically sees it.
 
 ---
 
+## Sidebar display
+
+Child universes appear in the left sidebar **above** your vaults, separated by a thin divider line. Each child universe is shown with a **globe icon** to visually distinguish it from vaults (which use a colored dot). The vault count for each child universe is displayed alongside its name.
+
+This flat layout keeps things simple — no collapsible categories, just universes first, then vaults.
+
+---
+
 ## Window title and status bar
 
 The active universe name appears in two places:

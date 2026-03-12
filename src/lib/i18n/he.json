@@ -605,7 +605,8 @@
       "addChild": "הוסף יקום צאצא",
       "noUniverses": "לא נמצאו יקומים",
       "ownVaults": "כספות עצמיות",
-      "inheritedVaults": "כספות בירושה"
+      "inheritedVaults": "כספות בירושה",
+      "openExisting": "פתח יקום קיים"
     },
     "switching": "מחליף יקום...",
     "migrating": "מעביר את הנתונים שלך..."

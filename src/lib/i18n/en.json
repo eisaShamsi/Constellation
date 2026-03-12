@@ -605,7 +605,8 @@
       "addChild": "Add Child Universe",
       "noUniverses": "No universes found",
       "ownVaults": "Own Vaults",
-      "inheritedVaults": "Inherited Vaults"
+      "inheritedVaults": "Inherited Vaults",
+      "openExisting": "Open Existing Universe"
     },
     "switching": "Switching universe...",
     "migrating": "Migrating your data..."

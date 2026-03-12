@@ -62,7 +62,8 @@
 	import {
 		listUniverses, createUniverse, setActiveUniverse,
 		checkMigrationNeeded, migrateLegacyData,
-		type UniverseEntry
+		getChildUniverses,
+		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/vaults/propertyTypeRegistry';
 	import { page } from '$app/state';
@@ -179,6 +180,10 @@
 	// Workspace bases
 	let workspaceBases = $state<WorkspaceBaseEntry[]>([]);
 	let workspaceBasesExpanded = $state(true);
+
+	// Child universes for sidebar
+	let childUniverses = $state<ChildUniverseInfo[]>([]);
+	let childUniversesExpanded = $state(true);
 
 	let error = $state('');
 	let adding = $state(false);
@@ -334,6 +339,7 @@
 			loadWorkspaces().catch(() => {}),
 			loadPropertyTypes().catch(() => {}),
 			listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}),
+			getChildUniverses().then(c => childUniverses = c).catch(() => {}),
 		]);
 
 		// Idle detection for lock screen
@@ -1367,6 +1373,25 @@
 						</div>
 					{/if}
 
+					<!-- Child Universes — listed first with globe icon -->
+					{#each childUniverses as child}
+						<div class="vault-section">
+							<div class="vault-header child-universe-item">
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; opacity: 0.5;">
+									<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+								</svg>
+								<span class="vault-name">{child.name}</span>
+								<span class="child-universe-count">{child.vault_count}</span>
+							</div>
+						</div>
+					{/each}
+
+					<!-- Divider between universes and vaults -->
+					{#if childUniverses.length > 0 && $vaultStats.length > 0}
+						<div class="sidebar-divider"></div>
+					{/if}
+
+					<!-- Vaults — listed after universes with chevron for file tree -->
 					{#each $vaultStats as vault}
 						<div class="vault-section">
 							<button class="vault-header" onclick={() => toggleVault(vault)}>
@@ -1392,6 +1417,7 @@
 							{/if}
 						</div>
 					{/each}
+
 					{#if $vaultStats.length === 0}
 						<div class="empty-sidebar">
 							<p>{$t('sidebar.noVaults')}</p>
@@ -1412,11 +1438,13 @@
 						onClose={() => showVaultSwitcher = false}
 						onAddVault={handleAddVault}
 						onManage={() => showVaultManager = true}
+						onManageUniverse={() => showUniverseManager = true}
+						activeUniverseName={activeUniverseName}
 					/>
 				{/if}
 				<button class="sidebar-footer" onmousedown={(e) => e.stopPropagation()} onclick={() => showVaultSwitcher = !showVaultSwitcher}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10l5-5 5 5"/><path d="M7 14l5 5 5-5"/></svg>
-					<span class="footer-name">{$t('vaultManager.manageVaults')}</span>
+					<span class="footer-name">{$t('universe.title') ?? 'Universe'}</span>
 				</button>
 			</div>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1862,6 +1890,36 @@
 	.v-chev.expanded { transform: rotate(90deg); }
 	.vault-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.vault-tree { padding-inline-start: 8px; }
+
+	/* Sidebar divider between vaults and child universes */
+	.sidebar-divider {
+		height: 1px;
+		background: var(--background-modifier-border);
+		margin: 6px 12px;
+	}
+
+	/* Child universe items in sidebar */
+	.child-universe-header {
+		opacity: 0.85;
+	}
+	.child-universe-item {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 3px 12px 3px 20px;
+		font-size: 0.8rem;
+		color: var(--text-muted);
+	}
+	.child-universe-name {
+		flex: 1;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.child-universe-count {
+		font-size: 0.7rem;
+		color: var(--text-faint);
+	}
 
 	.ws-base-item {
 		display: flex; align-items: center; gap: 6px; width: 100%;

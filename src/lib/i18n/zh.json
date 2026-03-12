@@ -605,7 +605,8 @@
       "addChild": "添加子宇宙",
       "noUniverses": "未找到宇宙",
       "ownVaults": "自有保险库",
-      "inheritedVaults": "继承的保险库"
+      "inheritedVaults": "继承的保险库",
+      "openExisting": "打开现有宇宙"
     },
     "switching": "切换宇宙中...",
     "migrating": "正在迁移数据..."

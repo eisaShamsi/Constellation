@@ -605,7 +605,8 @@
       "addChild": "子ユニバースを追加",
       "noUniverses": "ユニバースが見つかりません",
       "ownVaults": "自身の保管庫",
-      "inheritedVaults": "継承された保管庫"
+      "inheritedVaults": "継承された保管庫",
+      "openExisting": "既存のユニバースを開く"
     },
     "switching": "ユニバースを切替中...",
     "migrating": "データを移行中..."
