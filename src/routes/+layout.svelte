@@ -396,6 +396,9 @@
 		allIndexEntries = [];
 		vaultTrees = {};
 		expandedVaults = new Set();
+		editingTabIds.set(new Set());
+		vaultAppearances.set({});
+		bookmarks.set([]);
 
 		// Reset cache guard so refreshVaultCaches can run for the new universe
 		cacheRefreshing = false;
@@ -515,6 +518,7 @@
 		clearTimeout(previewTimeout);
 		clearTimeout(cacheRefreshDebounce);
 		clearTimeout(unlinkedDebounce);
+		clearTimeout(_wcTimer);
 		resizeCleanup?.();
 		for (const fn of cleanupFns) fn();
 	});
@@ -791,8 +795,8 @@
 			// Refresh workspace bases list
 			workspaceBases = await listWorkspaceBases();
 
-			// Open in a tab — workspace bases use "Constellation" as vault name
-			await openNoteTab(newPath, 'Constellation', '#7c3aed');
+			// Open in a tab — workspace bases use the active universe name
+			await openNoteTab(newPath, activeUniverseName || 'Constellation', '#7c3aed');
 		} catch (e) {
 			console.error('Failed to create workspace base:', e);
 		}
@@ -1343,7 +1347,7 @@
 										<button
 											class="ws-base-item"
 											class:active={$activeTab?.path === base.path}
-											onclick={() => openNoteTab(base.path, 'Constellation', '#7c3aed')}
+											onclick={() => openNoteTab(base.path, activeUniverseName || 'Constellation', '#7c3aed')}
 											oncontextmenu={(e: MouseEvent) => {
 												e.preventDefault();
 												contextMenu = {

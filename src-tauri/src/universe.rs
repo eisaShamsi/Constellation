@@ -50,30 +50,41 @@ impl UniverseState {
 // ─── Registry Helpers ───
 
 /// Path to the global universe registry: {app_data_dir}/universes.json
-fn registry_path(app: &tauri::AppHandle) -> PathBuf {
-    let app_dir = app.path().app_data_dir().expect("failed to get app data dir");
-    fs::create_dir_all(&app_dir).ok();
-    app_dir.join("universes.json")
+fn registry_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let app_dir = app.path().app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    fs::create_dir_all(&app_dir)
+        .map_err(|e| format!("Failed to create app data dir: {}", e))?;
+    Ok(app_dir.join("universes.json"))
 }
 
 fn load_registry(app: &tauri::AppHandle) -> UniverseRegistry {
-    let path = registry_path(app);
+    let path = match registry_path(app) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("[universe] Failed to get registry path: {}", e);
+            return UniverseRegistry { entries: vec![], active_id: None };
+        }
+    };
     if path.exists() {
-        let data = fs::read_to_string(&path).unwrap_or_default();
-        serde_json::from_str(&data).unwrap_or(UniverseRegistry {
-            entries: vec![],
-            active_id: None,
+        let data = match fs::read_to_string(&path) {
+            Ok(d) => d,
+            Err(e) => {
+                eprintln!("[universe] Failed to read registry ({}): {}", path.display(), e);
+                return UniverseRegistry { entries: vec![], active_id: None };
+            }
+        };
+        serde_json::from_str(&data).unwrap_or_else(|e| {
+            eprintln!("[universe] Corrupt registry JSON ({}): {}", path.display(), e);
+            UniverseRegistry { entries: vec![], active_id: None }
         })
     } else {
-        UniverseRegistry {
-            entries: vec![],
-            active_id: None,
-        }
+        UniverseRegistry { entries: vec![], active_id: None }
     }
 }
 
 fn save_registry(app: &tauri::AppHandle, registry: &UniverseRegistry) -> Result<(), String> {
-    let path = registry_path(app);
+    let path = registry_path(app)?;
     let data = serde_json::to_string_pretty(registry).map_err(|e| e.to_string())?;
     fs::write(&path, data).map_err(|e| format!("Failed to save universe registry: {}", e))
 }
@@ -96,7 +107,9 @@ fn uuid_simple() -> String {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    format!("{:x}", timestamp)
+    // Add random component to avoid collisions on low-resolution clocks (Windows ~100ns)
+    let random: u32 = (timestamp as u32).wrapping_mul(2654435761) ^ std::process::id();
+    format!("{:x}{:04x}", timestamp, random & 0xFFFF)
 }
 
 // ─── Vault Resolution (Universe of Universes) ───
@@ -325,7 +338,10 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
 /// Check if migration from legacy app_data_dir storage is needed.
 #[tauri::command]
 pub fn check_migration_needed(app: tauri::AppHandle) -> bool {
-    let reg_path = registry_path(&app);
+    let reg_path = match registry_path(&app) {
+        Ok(p) => p,
+        Err(_) => return false,
+    };
     let old_vaults = app
         .path()
         .app_data_dir()

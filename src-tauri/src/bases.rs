@@ -5,6 +5,41 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 use tauri::Manager;
 
+// ─── Security ───
+
+/// Validate that a file path is within a registered vault or the active universe's bases directory.
+fn validate_base_path(app: &tauri::AppHandle, file_path: &str) -> Result<(), String> {
+    let target = fs::canonicalize(file_path)
+        .or_else(|_| {
+            // File may not exist yet (save); canonicalize parent
+            Path::new(file_path).parent()
+                .ok_or_else(|| "Invalid path".to_string())
+                .and_then(|p| fs::canonicalize(p).map_err(|e| e.to_string()))
+        })
+        .map_err(|_| "Cannot resolve file path.".to_string())?;
+
+    // Check if path is within the active universe directory
+    if let Ok(universe_dir) = crate::universe::active_universe_dir(app) {
+        if let Ok(canon_universe) = fs::canonicalize(&universe_dir) {
+            if target.starts_with(&canon_universe) {
+                return Ok(());
+            }
+        }
+    }
+
+    // Check if path is within any registered vault
+    let vaults = crate::vaults::load_vaults_pub(app);
+    for vault in &vaults {
+        if let Ok(canon_vault) = fs::canonicalize(&vault.path) {
+            if target.starts_with(&canon_vault) {
+                return Ok(());
+            }
+        }
+    }
+
+    Err("Path is outside of registered vaults and universe directory.".to_string())
+}
+
 // ─── Data Structures ───
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -322,7 +357,10 @@ fn apply_filters(rows: &mut Vec<BaseRow>, filters: &[FilterRule]) {
 // ─── Tauri Commands ───
 
 #[tauri::command]
-pub fn parse_base_file(file_path: String) -> Result<BaseDefinition, String> {
+pub fn parse_base_file(app: tauri::AppHandle, file_path: String) -> Result<BaseDefinition, String> {
+    // Security: validate path is within a vault or the active universe bases dir
+    validate_base_path(&app, &file_path)?;
+
     let content = fs::read_to_string(&file_path)
         .map_err(|e| format!("Failed to read base file: {}", e))?;
 
@@ -561,7 +599,10 @@ pub fn create_base(
 }
 
 #[tauri::command]
-pub fn save_base_file(file_path: String, definition: BaseDefinition) -> Result<(), String> {
+pub fn save_base_file(app: tauri::AppHandle, file_path: String, definition: BaseDefinition) -> Result<(), String> {
+    // Security: validate path is within a vault or the active universe bases dir
+    validate_base_path(&app, &file_path)?;
+
     let content = serde_json::to_string_pretty(&definition)
         .map_err(|e| format!("Failed to serialize base: {}", e))?;
     fs::write(&file_path, content)

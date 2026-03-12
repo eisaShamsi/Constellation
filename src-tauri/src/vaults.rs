@@ -33,8 +33,17 @@ fn load_vaults(app: &tauri::AppHandle) -> Vec<VaultInfo> {
         Err(_) => return vec![],
     };
     if path.exists() {
-        let data = fs::read_to_string(&path).unwrap_or_default();
-        serde_json::from_str(&data).unwrap_or_default()
+        let data = match fs::read_to_string(&path) {
+            Ok(d) => d,
+            Err(e) => {
+                eprintln!("[vaults] Failed to read {}: {}", path.display(), e);
+                return vec![];
+            }
+        };
+        serde_json::from_str(&data).unwrap_or_else(|e| {
+            eprintln!("[vaults] Corrupt JSON in {}: {}", path.display(), e);
+            vec![]
+        })
     } else {
         vec![]
     }
@@ -977,7 +986,9 @@ fn uuid_simple() -> String {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    format!("{:x}", timestamp)
+    // Add random component to avoid collisions on low-resolution clocks (Windows ~100ns)
+    let random: u32 = (timestamp as u32).wrapping_mul(2654435761) ^ std::process::id();
+    format!("{:x}{:04x}", timestamp, random & 0xFFFF)
 }
 
 // ─── Graph / Backlinks scanning ───

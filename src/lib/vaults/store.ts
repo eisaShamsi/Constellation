@@ -259,7 +259,7 @@ export function isBookmarked(path: string): boolean {
 }
 
 function saveBookmarks() {
-	invoke('save_universe_bookmarks', { bookmarks: get(bookmarks) }).catch(() => {});
+	invoke('save_universe_bookmarks', { bookmarks: get(bookmarks) }).catch(e => console.error('[save] bookmarks failed:', e));
 }
 
 export async function loadBookmarks() {
@@ -1060,7 +1060,7 @@ let saveSettingsTimer: ReturnType<typeof setTimeout> | null = null;
 export function saveSettings() {
 	if (saveSettingsTimer) clearTimeout(saveSettingsTimer);
 	saveSettingsTimer = setTimeout(() => {
-		invoke('save_universe_settings', { settings: get(appSettings) }).catch(() => {});
+		invoke('save_universe_settings', { settings: get(appSettings) }).catch(e => console.error('[save] settings failed:', e));
 	}, 300);
 }
 
@@ -1098,7 +1098,7 @@ export async function loadWorkspaces() {
 }
 
 function persistWorkspaces() {
-	invoke('save_universe_workspaces', { workspaces: get(workspaces) }).catch(() => {});
+	invoke('save_universe_workspaces', { workspaces: get(workspaces) }).catch(e => console.error('[save] workspaces failed:', e));
 }
 
 export function saveWorkspace(name: string) {

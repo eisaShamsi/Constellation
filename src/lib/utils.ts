@@ -320,7 +320,7 @@ const _RENDER_CACHE_MAX = 50;
 
 /** Render markdown to HTML with all Obsidian extensions. */
 export function renderMarkdown(md: string): string {
-	const key = quickHash(md);
+	const key = `${quickHash(md)}_${md.length}`;
 	const cached = _renderCache.get(key);
 	if (cached !== undefined) return cached;
 
@@ -395,13 +395,17 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 		}
 	} catch { /* mermaid not available */ }
 
-	// Handle callout fold toggles
-	container.querySelectorAll('.callout-foldable .callout-title').forEach(titleEl => {
-		titleEl.addEventListener('click', () => {
-			const callout = titleEl.closest('.callout');
-			if (callout) callout.classList.toggle('callout-collapsed');
+	// Handle callout fold toggles (use event delegation to avoid duplicate listeners)
+	if (!container.dataset.calloutDelegated) {
+		container.dataset.calloutDelegated = 'true';
+		container.addEventListener('click', (e) => {
+			const titleEl = (e.target as HTMLElement).closest('.callout-foldable .callout-title');
+			if (titleEl) {
+				const callout = titleEl.closest('.callout');
+				if (callout) callout.classList.toggle('callout-collapsed');
+			}
 		});
-	});
+	}
 }
 
 /** Collect all wikilink targets from markdown text */
