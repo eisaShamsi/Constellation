@@ -35,6 +35,7 @@ export interface FileEntry {
 	is_dir: boolean;
 	children: FileEntry[] | null;
 	extension: string | null;
+	modified: number | null;
 }
 
 export interface OpenTab {
@@ -45,9 +46,12 @@ export interface OpenTab {
 	vaultPath: string;
 	name: string;
 	vaultColor: string;
+	highlightTerm?: string;
+	history: string[];
+	historyIndex: number;
 }
 
-export type PropertyType = 'text' | 'number' | 'date' | 'list' | 'link';
+export type PropertyType = 'text' | 'number' | 'date' | 'datetime' | 'list' | 'link' | 'checkbox';
 
 export interface FrontmatterProperty {
 	key: string;
@@ -56,17 +60,55 @@ export interface FrontmatterProperty {
 	listItems?: string[];
 }
 
+// Well-known property key sets (English + Arabic)
+const LIST_KEYS = new Set([
+	'tags', 'aliases', 'cssclasses', 'cssclass', 'related', 'categories', 'group',
+	'الوسم', 'وسوم', 'المجموعة', 'ذات صلة', 'أسماء بديلة', 'تصنيفات',
+]);
+const CHECKBOX_KEYS = new Set([
+	'done', 'completed', 'draft', 'publish', 'published', 'pinned', 'archived', 'starred', 'todo',
+	'favorite', 'featured', 'hidden',
+	'مكتمل', 'منشور', 'مسودة', 'مثبت', 'مؤرشف', 'مميز', 'مخفي',
+]);
+const DATE_KEYS = new Set([
+	'date', 'created', 'updated', 'modified', 'due', 'start', 'end', 'deadline', 'completed_date',
+	'أنشئ', 'حُدث', 'تاريخ', 'تعديل', 'موعد', 'بداية', 'نهاية',
+]);
+
+/** Normalize DD/MM/YYYY → YYYY-MM-DD for storage */
+export function normalizeDateValue(value: string): string {
+	const ddmmyyyy = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+	if (ddmmyyyy) {
+		const [, d, m, y] = ddmmyyyy;
+		return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+	}
+	return value;
+}
+
 function detectPropertyType(key: string, value: string): PropertyType {
-	const listKeys = ['tags', 'aliases', 'cssclasses', 'cssclass'];
-	if (listKeys.includes(key.toLowerCase())) return 'list';
+	const k = key.toLowerCase();
+
+	// List detection (highest priority for known keys)
+	if (LIST_KEYS.has(k)) return 'list';
 	if (value.startsWith('[') && value.endsWith(']')) return 'list';
 
+	// Link detection
 	if (/^\[\[.*\]\]$/.test(value)) return 'link';
 
-	if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$/.test(value)) return 'date';
-	const dateKeys = ['date', 'created', 'updated', 'modified', 'due', 'published', 'start', 'end'];
-	if (dateKeys.includes(key.toLowerCase()) && value) return 'date';
+	// Checkbox / boolean detection
+	const lv = value.toLowerCase();
+	if (lv === 'true' || lv === 'false') return 'checkbox';
+	if (CHECKBOX_KEYS.has(k) && value === '') return 'checkbox';
 
+	// Datetime detection (with time component)
+	if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(value)) return 'datetime';
+
+	// Date detection (date only, including DD/MM/YYYY)
+	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'date';
+	if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)) return 'date';
+	if (DATE_KEYS.has(k) && value) return 'date';
+
+	// Number detection
 	if (/^-?\d+(\.\d+)?$/.test(value) && value !== '') return 'number';
 
 	return 'text';
@@ -102,7 +144,18 @@ export async function saveTabContent(
 	if (saveLocks.get(tabId)) return;
 	saveLocks.set(tabId, true);
 	try {
-		const newContent = buildFullContent(properties, body);
+		// Auto-update the "updated" / "حُدث" property if it exists
+		const now = new Date();
+		const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+		const updatedProps = properties.map(p => {
+			const k = p.key.toLowerCase();
+			if ((k === 'updated' || k === 'modified' || k === 'حُدث' || k === 'تعديل') && p.type === 'date') {
+				return { ...p, value: dateStr };
+			}
+			return p;
+		});
+
+		const newContent = buildFullContent(updatedProps, body);
 		updateTabContent(tabId, newContent);
 		recentWrites.set(filePath, Date.now());
 		await writeNote(filePath, newContent);
@@ -151,41 +204,32 @@ export const selectedNote = derived(
 export const vaultCount = derived(vaults, ($v) => $v.length);
 export const totalStars = derived(vaultStats, ($s) => $s.reduce((sum, v) => sum + v.star_count, 0));
 
-// ─── Navigation history ───
-const navHistory = writable<string[]>([]);
-const navHistoryIndex = writable<number>(-1);
-
-export function pushNavHistory(tabId: string) {
-	navHistory.update(h => {
-		const idx = get(navHistoryIndex);
-		const trimmed = h.slice(0, idx + 1);
-		trimmed.push(tabId);
-		if (trimmed.length > 50) trimmed.shift();
-		navHistoryIndex.set(trimmed.length - 1);
-		return trimmed;
-	});
-}
-
+// ─── Per-tab navigation ───
 export function navigateBack() {
-	const idx = get(navHistoryIndex);
-	const hist = get(navHistory);
-	if (idx > 0) {
-		navHistoryIndex.set(idx - 1);
-		const tabId = hist[idx - 1];
-		if (get(splitActive)) focusedTabId.set(tabId);
-		else activeTabId.set(tabId);
-	}
+	const tab = get(splitActive) ? get(focusedTab) : get(activeTab);
+	if (!tab || tab.historyIndex <= 0) return;
+	const newIndex = tab.historyIndex - 1;
+	const targetPath = tab.history[newIndex];
+	loadTabHistoryEntry(tab.id, targetPath, newIndex);
 }
 
 export function navigateForward() {
-	const idx = get(navHistoryIndex);
-	const hist = get(navHistory);
-	if (idx < hist.length - 1) {
-		navHistoryIndex.set(idx + 1);
-		const tabId = hist[idx + 1];
-		if (get(splitActive)) focusedTabId.set(tabId);
-		else activeTabId.set(tabId);
-	}
+	const tab = get(splitActive) ? get(focusedTab) : get(activeTab);
+	if (!tab || tab.historyIndex >= tab.history.length - 1) return;
+	const newIndex = tab.historyIndex + 1;
+	const targetPath = tab.history[newIndex];
+	loadTabHistoryEntry(tab.id, targetPath, newIndex);
+}
+
+async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIndex: number) {
+	try {
+		const content: string = await invoke('read_note', { filePath });
+		const name = filePath.split(/[\\/]/).pop()?.replace('.md', '') ?? '';
+		openTabs.update(tabs => tabs.map(t => {
+			if (t.id !== tabId) return t;
+			return { ...t, path: filePath, content, name, historyIndex: newHistoryIndex, highlightTerm: undefined };
+		}));
+	} catch { /* file may have been deleted */ }
 }
 
 // ─── Bookmarks ───
@@ -215,20 +259,18 @@ export function isBookmarked(path: string): boolean {
 }
 
 function saveBookmarks() {
-	try {
-		localStorage.setItem('constellation-bookmarks', JSON.stringify(get(bookmarks)));
-	} catch { /* ignore */ }
+	invoke('save_universe_bookmarks', { bookmarks: get(bookmarks) }).catch(() => {});
 }
 
-export function loadBookmarks() {
+export async function loadBookmarks() {
 	try {
-		const data = localStorage.getItem('constellation-bookmarks');
-		if (data) bookmarks.set(JSON.parse(data));
+		const data = await invoke<unknown[]>('read_universe_bookmarks');
+		if (data && Array.isArray(data) && data.length > 0) bookmarks.set(data as Bookmark[]);
 	} catch { /* ignore */ }
 }
 
 // ─── Frontmatter parsing ───
-export function parseFrontmatter(content: string): { properties: FrontmatterProperty[]; body: string } {
+export function parseFrontmatter(content: string): { properties: FrontmatterProperty[]; body: string; rawYaml?: string } {
 	const lines = content.split('\n');
 	if (lines[0]?.trim() !== '---') {
 		return { properties: [], body: content };
@@ -247,6 +289,7 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 	}
 
 	const yamlLines = lines.slice(1, endIndex);
+	const rawYaml = yamlLines.join('\n');
 	const properties: FrontmatterProperty[] = [];
 
 	let i = 0;
@@ -292,6 +335,10 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 			}
 
 			const type = detectPropertyType(key, value);
+			// Normalize DD/MM/YYYY dates to YYYY-MM-DD for storage
+			if ((type === 'date' || type === 'datetime') && value) {
+				value = normalizeDateValue(value);
+			}
 			if (key) {
 				properties.push({
 					key,
@@ -305,7 +352,7 @@ export function parseFrontmatter(content: string): { properties: FrontmatterProp
 	}
 
 	const body = lines.slice(endIndex + 1).join('\n');
-	return { properties, body };
+	return { properties, body, rawYaml };
 }
 
 export function reconstructFrontmatter(properties: FrontmatterProperty[]): string {
@@ -318,7 +365,10 @@ export function reconstructFrontmatter(properties: FrontmatterProperty[]): strin
 			for (const item of prop.listItems) {
 				lines.push(`  - ${item}`);
 			}
-		} else if (prop.type === 'date' || prop.type === 'number' || prop.type === 'link') {
+		} else if (prop.type === 'checkbox') {
+			// Write bare YAML boolean (unquoted true/false)
+			lines.push(`${prop.key}: ${prop.value === 'true' ? 'true' : 'false'}`);
+		} else if (prop.type === 'date' || prop.type === 'datetime' || prop.type === 'number' || prop.type === 'link') {
 			lines.push(`${prop.key}: ${prop.value}`);
 		} else {
 			const v = prop.value;
@@ -403,38 +453,83 @@ export function setFocusedTab(tabId: string) {
 // ─── Tab functions ───
 let tabCounter = 0;
 
-export async function openNoteTab(filePath: string, vaultName: string, color: string = '#7c3aed') {
+export function createEmptyTab() {
+	const id = `tab_${++tabCounter}_${Date.now()}`;
+	const tab: OpenTab = {
+		id, path: '', content: '', vaultName: '', vaultPath: '', name: 'New tab', vaultColor: '#7c3aed',
+		history: [], historyIndex: -1,
+	};
+	openTabs.update(tabs => [...tabs, tab]);
+	if (get(splitActive)) {
+		focusedTabId.set(id);
+	} else {
+		activeTabId.set(id);
+	}
+}
+
+export async function openNoteTab(filePath: string, vaultName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean) {
 	const tabs = get(openTabs);
 
-	const existing = tabs.find(t => t.path === filePath);
-	if (existing) {
-		if (get(splitActive)) {
-			focusedTabId.set(existing.id);
-		} else {
-			activeTabId.set(existing.id);
+	// If the same file is already the active tab, just update highlight
+	const currentTab = get(splitActive) ? get(focusedTab) : get(activeTab);
+	if (currentTab && currentTab.path === filePath) {
+		if (highlightTerm) {
+			openTabs.update(tabs => tabs.map(t => t.id === currentTab.id ? { ...t, highlightTerm } : t));
 		}
-		pushNavHistory(existing.id);
 		return;
 	}
 
 	const content: string = await invoke('read_note', { filePath });
-	const name = filePath.split(/[\\/]/).pop()?.replace('.md', '') ?? '';
-	const id = `tab_${++tabCounter}_${Date.now()}`;
+	const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
 
 	// Derive vault path from registered vaults
 	const allVaults = get(vaults);
 	const vault = allVaults.find(v => filePath.startsWith(v.path));
 	const vaultPath = vault?.path ?? '';
 
-	const tab: OpenTab = { id, path: filePath, content, vaultName, vaultPath, name, vaultColor: color };
+	// Default: replace active tab content (Obsidian behavior)
+	if (!newTab && currentTab) {
+		// Push to tab's history (trim forward history)
+		const trimmedHistory = currentTab.history.slice(0, currentTab.historyIndex + 1);
+		trimmedHistory.push(filePath);
+		if (trimmedHistory.length > 50) trimmedHistory.shift();
+		const newHistoryIndex = trimmedHistory.length - 1;
+
+		openTabs.update(tabs => tabs.map(t => {
+			if (t.id !== currentTab.id) return t;
+			return {
+				...t,
+				path: filePath,
+				content,
+				name,
+				vaultName,
+				vaultPath,
+				vaultColor: color,
+				highlightTerm,
+				history: trimmedHistory,
+				historyIndex: newHistoryIndex,
+			};
+		}));
+		return;
+	}
+
+	// Ctrl+click / new tab: create a new tab
+	const id = `tab_${++tabCounter}_${Date.now()}`;
+	const tab: OpenTab = {
+		id, path: filePath, content, vaultName, vaultPath, name, vaultColor: color, highlightTerm,
+		history: [filePath], historyIndex: 0,
+	};
 	openTabs.update(tabs => [...tabs, tab]);
 
-	if (get(splitActive)) {
-		focusedTabId.set(id);
-	} else {
-		activeTabId.set(id);
+	// Only focus the new tab if alwaysFocusNewTabs is enabled
+	const settings = get(appSettings);
+	if (settings.alwaysFocusNewTabs !== false) {
+		if (get(splitActive)) {
+			focusedTabId.set(id);
+		} else {
+			activeTabId.set(id);
+		}
 	}
-	pushNavHistory(id);
 }
 
 export function closeTab(tabId: string) {
@@ -445,6 +540,17 @@ export function closeTab(tabId: string) {
 	const currentActive = get(activeTabId);
 	const newTabs = tabs.filter(t => t.id !== tabId);
 	openTabs.set(newTabs);
+
+	// Clean up editing state and save locks for closed tab
+	editingTabIds.update(set => {
+		if (set.has(tabId)) {
+			const next = new Set(set);
+			next.delete(tabId);
+			return next;
+		}
+		return set;
+	});
+	saveLocks.delete(tabId);
 
 	if (currentActive === tabId) {
 		if (newTabs.length > 0) {
@@ -472,7 +578,6 @@ export function switchTab(tabId: string) {
 	} else {
 		activeTabId.set(tabId);
 	}
-	pushNavHistory(tabId);
 }
 
 /** Load vaults and their stats. */
@@ -505,6 +610,21 @@ export async function removeVault(vaultId: string) {
 	await loadAllStats();
 }
 
+/** Remove a vault with full cleanup: close tabs, stop watcher, refresh caches. */
+export async function removeVaultWithCleanup(vaultId: string) {
+	// Close all open tabs from this vault
+	const tabs = get(openTabs);
+	const vault = get(vaults).find(v => v.id === vaultId);
+	if (vault) {
+		const vaultTabs = tabs.filter(t => t.path.startsWith(vault.path));
+		for (const tab of vaultTabs) closeTab(tab.id);
+	}
+	// Stop file watcher
+	try { await stopWatchingVault(vaultId); } catch { /* ignore */ }
+	// Remove from registry
+	await removeVault(vaultId);
+}
+
 /** Search across all vaults. */
 export async function searchAllStars(query: string) {
 	if (!query.trim()) {
@@ -533,9 +653,35 @@ export function timeAgo(timestamp: number): string {
 }
 
 // ─── File operations ───
-export async function createNote(folderPath: string, fileName: string): Promise<string> {
-	const newPath: string = await invoke('create_note', { folderPath, fileName });
+export async function createNote(folderPath: string, fileName: string, initialFrontmatter?: string): Promise<string> {
+	const newPath: string = await invoke('create_note', { folderPath, fileName, initialFrontmatter: initialFrontmatter ?? null });
 	return newPath;
+}
+
+/** Search notes by property key/value across all vaults */
+export async function searchByProperty(key: string, value: string): Promise<any[]> {
+	return await invoke('search_by_property', { key, value });
+}
+
+/** Build default frontmatter YAML for new notes (auto-dates + user-defined defaults) */
+export function buildDefaultFrontmatter(settings: AppSettings): string {
+	const lines: string[] = [];
+	const now = new Date();
+	const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+	// Auto-populate created date
+	lines.push(`created: ${dateStr}`);
+
+	// Add user-defined default properties
+	if (settings.defaultProperties) {
+		for (const prop of settings.defaultProperties) {
+			if (prop.key && prop.key !== 'created') {
+				lines.push(`${prop.key}: ${prop.value}`);
+			}
+		}
+	}
+
+	return lines.join('\n');
 }
 
 export async function createFolder(parentPath: string, folderName: string): Promise<string> {
@@ -571,8 +717,24 @@ export async function deleteItem(path: string, permanent = false): Promise<void>
 }
 
 // ─── Wikilink resolution ───
+export interface ResolvedLink {
+	path: string;
+	vault_name: string;
+	vault_path: string;
+	fragment: string | null;
+}
+
 export async function resolveWikilink(vaultPath: string, target: string): Promise<string | null> {
 	return await invoke('resolve_wikilink', { vaultPath, target });
+}
+
+export async function resolveWikilinkCrossVault(currentVaultPath: string, target: string): Promise<ResolvedLink | null> {
+	const vaultList = get(vaults).map(v => [v.id, v.name, v.path] as [string, string, string]);
+	return await invoke('resolve_wikilink_cross_vault', { vaults: vaultList, currentVaultPath, target });
+}
+
+export async function getNoteHeadings(filePath: string): Promise<string[]> {
+	return await invoke('get_note_headings', { filePath });
 }
 
 // ─── File watcher ───
@@ -611,10 +773,12 @@ export interface NoteLink {
 	source_name: string;
 	target: string;
 	context: string;
+	vault_name: string;
+	link_type: string | null;
 }
 
-export async function scanVaultLinks(vaultPath: string): Promise<NoteLink[]> {
-	return await invoke('scan_vault_links', { vaultPath });
+export async function scanVaultLinks(vaultPath: string, vaultName: string): Promise<NoteLink[]> {
+	return await invoke('scan_vault_links', { vaultPath, vaultName });
 }
 
 export function getBacklinks(allLinks: NoteLink[], noteName: string) {
@@ -625,7 +789,7 @@ export function getBacklinks(allLinks: NoteLink[], noteName: string) {
 		name: l.source_name,
 		path: l.source_path,
 		context: l.context,
-		vaultName: ''
+		vaultName: l.vault_name
 	}));
 }
 
@@ -633,9 +797,37 @@ export function getOutgoingLinks(allLinks: NoteLink[], notePath: string) {
 	return allLinks.filter(l => l.source_path === notePath);
 }
 
+export async function scanUnlinkedMentions(noteName: string, notePath: string): Promise<{ name: string; path: string; context: string; vaultName: string }[]> {
+	const vaultList = get(vaults).map(v => [v.name, v.path] as [string, string]);
+	const links: NoteLink[] = await invoke('scan_unlinked_mentions', { noteName, notePath, vaultPaths: vaultList });
+	return links.map(l => ({
+		name: l.source_name,
+		path: l.source_path,
+		context: l.context,
+		vaultName: l.vault_name
+	}));
+}
+
 // ─── Tags scanning ───
 export async function scanVaultTags(vaultPath: string): Promise<Record<string, number>> {
 	return await invoke('scan_vault_tags', { vaultPath });
+}
+
+// ─── Index: Word Index ───
+export interface IndexMention {
+	note_path: string;
+	note_name: string;
+}
+
+export interface IndexEntry {
+	term: string;
+	count: number;
+	mentions: IndexMention[];
+	is_compound: boolean;
+}
+
+export async function scanVaultIndex(vaultPath: string): Promise<IndexEntry[]> {
+	return await invoke('scan_vault_index', { vaultPath });
 }
 
 // ─── Graph data ───
@@ -650,6 +842,7 @@ export interface GraphNode {
 export interface GraphLink {
 	source: string;
 	target: string;
+	linkType?: string;
 }
 
 export function buildGraphData(allLinks: NoteLink[], allNotes: { name: string; path: string; vaultName: string }[]) {
@@ -678,7 +871,7 @@ export function buildGraphData(allLinks: NoteLink[], allNotes: { name: string; p
 		if (seen.has(key)) continue;
 		seen.add(key);
 
-		links.push({ source: sourceId, target: targetId });
+		links.push({ source: sourceId, target: targetId, linkType: link.link_type || undefined });
 		nodeMap.get(sourceId)!.linkCount++;
 		nodeMap.get(targetId)!.linkCount++;
 	}
@@ -699,7 +892,11 @@ export async function updateLinksOnRename(vaultPath: string, oldName: string, ne
 	return await invoke('update_links_on_rename', { vaultPath, oldName, newName });
 }
 
-// ─── Note preview ───
+// ─── Note reading ───
+export async function readNote(filePath: string): Promise<string> {
+	return await invoke('read_note', { filePath });
+}
+
 export async function readNotePreview(filePath: string, maxChars = 500): Promise<string> {
 	return await invoke('read_note_preview', { filePath, maxChars });
 }
@@ -708,12 +905,20 @@ export async function readNotePreview(filePath: string, maxChars = 500): Promise
 export interface AppSettings {
 	// Editor
 	defaultView: 'reading' | 'editing';
+	defaultEditingMode: 'livePreview' | 'source';
 	showLineNumbers: boolean;
 	readableLineLength: boolean;
 	tabSize: number;
+	indentWithTabs: boolean;
 	smartLists: boolean;
 	autoPairBrackets: boolean;
+	autoPairMarkdown: boolean;
 	spellcheck: boolean;
+	foldHeading: boolean;
+	foldIndent: boolean;
+	indentationGuides: boolean;
+	alwaysFocusNewTabs: boolean;
+	propertiesInDocument: 'visible' | 'hidden' | 'source';
 
 	// Files & Links
 	defaultNoteLocation: 'root' | 'current' | 'folder';
@@ -741,6 +946,21 @@ export interface AppSettings {
 	// Templates
 	templateFolder: string;
 
+	// Default properties for new notes
+	defaultProperties: { key: string; value: string }[];
+
+	// Updates
+	autoUpdate: boolean;
+
+	// Security
+	security: {
+		vaultEncryption: boolean;
+		lockOnIdle: boolean;
+		lockIdleTimeout: number;
+		lockPinHash: string;
+		apiKeyProtection: boolean;
+	};
+
 	// Core plugins
 	enabledPlugins: {
 		dailyNotes: boolean;
@@ -755,17 +975,26 @@ export interface AppSettings {
 		commandPalette: boolean;
 		wordCount: boolean;
 		workspaces: boolean;
+		index: boolean;
 	};
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
 	defaultView: 'reading',
+	defaultEditingMode: 'livePreview',
 	showLineNumbers: true,
 	readableLineLength: true,
 	tabSize: 4,
+	indentWithTabs: true,
 	smartLists: true,
 	autoPairBrackets: true,
+	autoPairMarkdown: true,
 	spellcheck: false,
+	foldHeading: true,
+	foldIndent: true,
+	indentationGuides: false,
+	alwaysFocusNewTabs: true,
+	propertiesInDocument: 'visible',
 	defaultNoteLocation: 'root',
 	defaultNoteFolder: '',
 	defaultAttachmentFolder: '',
@@ -784,6 +1013,15 @@ const DEFAULT_SETTINGS: AppSettings = {
 	dailyNoteFolder: '',
 	dailyNoteTemplate: '',
 	templateFolder: 'Templates',
+	defaultProperties: [],
+	autoUpdate: true,
+	security: {
+		vaultEncryption: false,
+		lockOnIdle: false,
+		lockIdleTimeout: 5,
+		lockPinHash: '',
+		apiKeyProtection: false,
+	},
 	enabledPlugins: {
 		dailyNotes: true,
 		templates: true,
@@ -797,29 +1035,45 @@ const DEFAULT_SETTINGS: AppSettings = {
 		commandPalette: true,
 		wordCount: true,
 		workspaces: true,
+		index: true,
 	},
 };
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);
 
-export function loadSettings() {
+export async function loadSettings() {
 	try {
-		const data = localStorage.getItem('constellation-settings');
-		if (data) {
-			const parsed = JSON.parse(data);
-			appSettings.set({ ...DEFAULT_SETTINGS, ...parsed });
+		const parsed = await invoke<Record<string, unknown>>('read_universe_settings');
+		if (parsed && Object.keys(parsed).length > 0) {
+			appSettings.set({
+				...DEFAULT_SETTINGS,
+				...(parsed as Partial<AppSettings>),
+				security: { ...DEFAULT_SETTINGS.security, ...((parsed.security as Record<string, unknown>) || {}) },
+				enabledPlugins: { ...DEFAULT_SETTINGS.enabledPlugins, ...((parsed.enabledPlugins as Record<string, boolean>) || {}) },
+			});
 		}
 	} catch { /* ignore */ }
 }
 
+let saveSettingsTimer: ReturnType<typeof setTimeout> | null = null;
+
 export function saveSettings() {
-	try {
-		localStorage.setItem('constellation-settings', JSON.stringify(get(appSettings)));
-	} catch { /* ignore */ }
+	if (saveSettingsTimer) clearTimeout(saveSettingsTimer);
+	saveSettingsTimer = setTimeout(() => {
+		invoke('save_universe_settings', { settings: get(appSettings) }).catch(() => {});
+	}, 300);
 }
 
 export function updateSettings(partial: Partial<AppSettings>) {
 	appSettings.update(s => ({ ...s, ...partial }));
+	saveSettings();
+}
+
+export function updateSecuritySettings(partial: Partial<AppSettings['security']>) {
+	appSettings.update(s => ({
+		...s,
+		security: { ...s.security, ...partial }
+	}));
 	saveSettings();
 }
 
@@ -836,17 +1090,15 @@ export interface Workspace {
 
 export const workspaces = writable<Workspace[]>([]);
 
-export function loadWorkspaces() {
+export async function loadWorkspaces() {
 	try {
-		const data = localStorage.getItem('constellation-workspaces');
-		if (data) workspaces.set(JSON.parse(data));
+		const data = await invoke<unknown[]>('read_universe_workspaces');
+		if (data && Array.isArray(data) && data.length > 0) workspaces.set(data as Workspace[]);
 	} catch { /* ignore */ }
 }
 
 function persistWorkspaces() {
-	try {
-		localStorage.setItem('constellation-workspaces', JSON.stringify(get(workspaces)));
-	} catch { /* ignore */ }
+	invoke('save_universe_workspaces', { workspaces: get(workspaces) }).catch(() => {});
 }
 
 export function saveWorkspace(name: string) {

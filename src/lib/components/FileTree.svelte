@@ -11,22 +11,24 @@
 		onNoteClick,
 		onContextMenu,
 		renamingPath = '',
-		onRenameComplete
+		onRenameComplete,
+		allExpanded = true
 	}: {
 		entries: FileEntry[];
 		depth?: number;
 		vaultId?: string;
 		vaultName?: string;
 		color?: string;
-		onNoteClick?: (path: string, name: string) => void;
+		onNoteClick?: (path: string, name: string, highlightTerm?: string, e?: MouseEvent) => void;
 		onContextMenu?: (entry: FileEntry, x: number, y: number) => void;
 		renamingPath?: string;
 		onRenameComplete?: (oldPath: string, newName: string) => void;
+		allExpanded?: boolean;
 	} = $props();
 
-	function handleClick(entry: FileEntry) {
+	function handleClick(entry: FileEntry, e: MouseEvent) {
 		if (!entry.is_dir && onNoteClick) {
-			onNoteClick(entry.path, entry.name.replace('.md', ''));
+			onNoteClick(entry.path, entry.name.replace(/\.(md|base)$/, ''), undefined, e);
 		}
 	}
 
@@ -38,12 +40,12 @@
 	let renameValue = $state('');
 
 	function startRename(entry: FileEntry) {
-		renameValue = entry.is_dir ? entry.name : entry.name.replace('.md', '');
+		renameValue = entry.is_dir ? entry.name : entry.name.replace(/\.(md|base)$/, '');
 	}
 
 	function finishRename(entry: FileEntry) {
 		const newName = renameValue.trim();
-		if (newName && newName !== (entry.is_dir ? entry.name : entry.name.replace('.md', ''))) {
+		if (newName && newName !== (entry.is_dir ? entry.name : entry.name.replace(/\.(md|base)$/, ''))) {
 			onRenameComplete?.(entry.path, newName);
 		} else {
 			onRenameComplete?.('', ''); // Cancel
@@ -63,7 +65,7 @@
 	{#each entries as entry}
 		<li>
 			{#if entry.is_dir}
-				<details open={depth < 1}>
+				<details open={allExpanded && depth < 2}>
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<summary class="folder" oncontextmenu={(e) => handleRightClick(e, entry)}>
 						<svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
@@ -86,7 +88,7 @@
 						{/if}
 					</summary>
 					{#if entry.children && entry.children.length > 0}
-						<svelte:self entries={entry.children} depth={depth + 1} {vaultId} {vaultName} {color} {onNoteClick} {onContextMenu} {renamingPath} {onRenameComplete} />
+						<svelte:self entries={entry.children} depth={depth + 1} {vaultId} {vaultName} {color} {onNoteClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} />
 					{/if}
 				</details>
 			{:else}
@@ -107,11 +109,15 @@
 					<button
 						class="note"
 						class:active={$splitActive ? $openTabs.some(t => t.path === entry.path) : $activeTab?.path === entry.path}
+						class:base-file={entry.name.endsWith('.base')}
 						style:--vault-color={color}
-						onclick={() => handleClick(entry)}
+						onclick={(e) => handleClick(entry, e)}
 						oncontextmenu={(e) => handleRightClick(e, entry)}
 					>
-						<span class="note-name">{entry.name.replace('.md', '')}</span>
+						{#if entry.name.endsWith('.base')}
+							<svg class="base-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+						{/if}
+						<span class="note-name">{entry.name.replace(/\.(md|base)$/, '')}</span>
 					</button>
 				{/if}
 			{/if}
@@ -172,6 +178,17 @@
 	.note.active { background: color-mix(in srgb, var(--vault-color) 8%, transparent); color: var(--vault-color); }
 
 	.note-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+	.base-file {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+	.base-icon {
+		flex-shrink: 0;
+		color: var(--interactive-accent);
+		opacity: 0.7;
+	}
 
 	.rename-input {
 		flex: 1;

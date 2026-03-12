@@ -31,11 +31,122 @@ Constellation uses a universe-and-stars metaphor to make multi-vault navigation 
 
 | Constellation Term | What It Means |
 |---|---|
-| **Universe** | An Obsidian vault |
+| **Universe** | A portable data container — holds your vaults, bases, settings, bookmarks, and workspaces in a single directory you own |
 | **Star** | A note (markdown file) |
 | **Constellation** | A custom saved view — your curated grouping of stars |
-| **Star Line** | A cross-vault reference connecting stars in different universes |
-| **Sky View** | The unified graph showing all universes and their connections |
+| **Star Line** | A cross-vault reference connecting stars across vaults |
+| **Sky View** | The unified graph showing all vaults and their connections |
+
+## Features
+
+### Universes
+- **First-launch wizard** — Step-by-step setup: welcome → name & locate → add vaults/child universes
+- **Create or Open** — Create a new universe or open an existing one (e.g., from another device)
+- **Universe Manager** — Switch between, create, or remove universes from the sidebar footer
+- **Child Universes** — Reference other universes as children to inherit their vaults automatically
+- **Window title** — Shows "Constellation - UniverseName" so you always know which universe is active
+- **Fast switching** — Parallel loading with instant UI display; caches rebuild in the background
+- **Portable** — Each universe is a self-contained directory you can move, copy, or share
+
+### Tab Navigation (Obsidian-style)
+- **Single-tab navigation** — Clicking a note replaces the active tab content, with back/forward history per tab
+- **Ctrl+click** opens a new tab explicitly
+- **Navigation arrows** appear in the breadcrumb area after navigating to a second note
+- **Empty tab view** with quick actions: Create new note, Go to file, Close
+
+### Sidebar Toolbar
+Four action buttons at the top of the left sidebar:
+- **New note** — Creates a new note with vault picker (if multiple vaults)
+- **New folder** — Creates a new folder with vault picker (if multiple vaults)
+- **Sort order** — Cycles through: Name A→Z, Name Z→A, Modified newest, Modified oldest
+- **Collapse/Expand All** — Toggles all vault folder trees open or closed
+
+### Vault Management
+- Add, remove, and switch between multiple vaults
+- Vaults are registered per-universe — each universe has its own vault set
+- Color-coded vaults for visual distinction
+- Vault switcher accessible from the footer
+
+### File Operations
+- Create, rename, and delete notes and folders
+- Move items to trash (.trash folder within vault)
+- Bookmarks for quick access to frequently used notes
+
+### Cross-Vault Linking
+
+Constellation's core differentiator — your `[[wikilinks]]` work across every vault you add.
+
+#### Basic Cross-Vault Links
+- **`[[note]]`** resolves across ALL vaults (current vault searched first, then others)
+- **`[[vault:note]]`** targets a specific vault explicitly
+- Cross-vault links show a dotted underline + arrow indicator
+- Autocomplete suggests notes from all vaults, with vault name shown
+- Hover preview works across vault boundaries
+
+#### Alias Resolution
+- Notes with `aliases:` in their YAML frontmatter are discoverable by any alias
+- Example: a note named "JavaScript" with `aliases: [JS, ECMAScript]` can be linked as `[[JS]]` from any vault
+- Filename match takes priority; alias lookup runs only when no filename matches
+
+#### Heading & Block References
+- **`[[note#heading]]`** — links to a specific heading; clicking scrolls to that section
+- **`[[note#^block-id]]`** — links to a specific block by its ID
+- Works across vaults: `[[vault:note#heading]]`
+- Autocomplete: type `[[note#` to see a list of headings in the target note
+
+#### Cross-Vault Embeds
+- **`![[note]]`** — embeds the full content of another note inline
+- **`![[note#heading]]`** — embeds only the section under that heading
+- **`![[vault:note]]`** — embeds from a specific vault
+- Embeds nest up to 3 levels deep
+
+#### Typed Links
+- **`[[note|type:related-to]]`** — adds a semantic type to the link
+- Built-in types: `related-to`, `prerequisite`, `see-also`, `contradicts`, `supports`, `extends`
+- Typed links appear with distinct colors in the graph view
+- Autocomplete: type `[[note|type:` to see available link types
+
+#### Smart Auto-Linker (Unlinked Mentions)
+- The Backlinks panel detects plain-text mentions of the current note name across all vaults
+- Expand the "Unlinked Mentions" section to see them
+- Click "Link it" to automatically wrap the mention in `[[wikilinks]]`
+
+#### Link Dashboard
+- Open from the right sidebar (chain icon tab)
+- **Most Connected** — top 10 notes by link count
+- **Cross-Vault** — all links that cross vault boundaries
+- **Broken** — links pointing to notes that don't exist
+- **Orphans** — notes with no incoming or outgoing links
+
+#### Enhanced Graph View
+- Vault clusters: notes from the same vault are gently grouped together with colored hulls
+- Cross-vault edges appear as dashed lines with a gradient between vault colors
+- Typed links are color-coded by type in the graph
+- Click a vault name in the legend to show/hide its nodes
+
+### Markdown Rendering
+- Full markdown rendering with syntax highlighting
+- WikiLinks with preview on hover
+- Callouts, footnotes, math (KaTeX), Mermaid diagrams
+- Highlight syntax (`==text==`)
+- Image embeds from vault attachments
+
+### Search & Navigation
+- Cross-vault full-text search
+- Quick switcher (Ctrl+O)
+- Command palette (Ctrl+P)
+- Keyboard shortcuts for common actions
+
+### Panels
+- Properties editor (YAML frontmatter)
+- Backlinks panel (with unlinked mentions + auto-link)
+- Outgoing links panel
+- Tags panel
+- Graph view (with vault clustering + typed link colors)
+- Link Dashboard (cross-vault links, broken links, orphans, most connected)
+
+### Workspaces
+- Save and restore window layouts
 
 ## AI-Powered
 
@@ -69,17 +180,28 @@ Skills are extensible — create your own by defining a prompt template, inputs,
 
 ## Multi-Language Interface
 
-Constellation supports **Arabic (RTL)** and **English (LTR)** out of the box. The entire interface — including all skills — adapts direction, layout, and text based on the selected language.
+Constellation supports 15 languages with full RTL support:
 
-## Planned Features
+| Language | Direction |
+|---|---|
+| Arabic, Persian, Hebrew, Urdu | RTL |
+| English, Spanish, French, German, Portuguese, Russian, Turkish, Hindi, Chinese, Japanese, Korean | LTR |
 
-- **Unified Dashboard** — One interface for all your vaults. Browse, search, and manage files across every vault.
-- **Full CRUD Operations** — Create, read, update, and organize files and folders, scoped to the correct vault.
-- **Cross-Vault References** — Link notes across vault boundaries using Star Lines. These references live in Constellation's own metadata, never modifying your vault files.
-- **Unified Graph View (Sky View)** — See all your vaults visualized as clusters of stars, with cross-vault connections drawn between them.
-- **Cross-Vault Search** — Query across every vault simultaneously. Find anything, anywhere.
-- **Plugin System** — Extend Constellation with TypeScript plugins. Community-built, sandboxed for safety.
-- **Infographics & Slide Decks** — Generate visual outputs from your notes using AI skills.
+The entire interface — including all skills — adapts direction, layout, and text based on the selected language.
+
+## Security
+
+Constellation takes security seriously:
+
+- **HTML sanitization** — All rendered markdown is sanitized through DOMPurify before DOM injection, preventing XSS attacks from malicious `.md` files
+- **Path containment** — All file operations validate that paths are within registered vaults, preventing path traversal attacks. Read, write, scan, and link-resolution commands all enforce vault membership
+- **Content Security Policy** — Restrictive CSP prevents unauthorized script execution
+- **Mermaid sandboxing** — Diagram rendering uses strict security mode with DOMPurify on SVG output
+- **KaTeX sanitization** — Math formula output is sanitized before DOM injection
+- **Name sanitization** — File and folder names are validated to reject traversal characters (`..`, `\`, `:`)
+- **No shell execution** — The Rust backend uses direct filesystem APIs, never shell commands
+- **Minimal Tauri capabilities** — Only `core:default` and `opener:default` permissions; no broad filesystem or HTTP access
+- **Daily automated audits** — Scheduled code audits check for memory leaks, security vulnerabilities, and code quality
 
 ## Architecture
 

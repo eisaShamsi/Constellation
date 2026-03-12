@@ -1,16 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n';
 
 	let {
 		notes = [] as { name: string; path: string; vaultName: string }[],
 		onSelect,
 		onClose,
-		ar = false,
 	}: {
 		notes: { name: string; path: string; vaultName: string }[];
 		onSelect: (path: string, vaultName: string) => void;
 		onClose: () => void;
-		ar?: boolean;
 	} = $props();
 
 	let query = $state('');
@@ -61,7 +60,7 @@
 			bind:this={inputEl}
 			type="text"
 			class="qs-input"
-			placeholder={ar ? 'ابحث عن ملاحظة...' : 'Find a note...'}
+			placeholder={$t('quickSwitcher.placeholder')}
 			bind:value={query}
 			onkeydown={handleKeydown}
 		/>
@@ -78,7 +77,7 @@
 				</button>
 			{/each}
 			{#if filtered.length === 0 && query}
-				<div class="qs-empty">{ar ? 'لا توجد نتائج' : 'No matching notes'}</div>
+				<div class="qs-empty">{$t('quickSwitcher.noResults')}</div>
 			{/if}
 		</div>
 	</div>

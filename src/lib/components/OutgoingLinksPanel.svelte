@@ -1,19 +1,18 @@
 <script lang="ts">
 	import { openNoteTab, vaults } from '$lib/vaults/store';
+	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 
 	let {
 		outgoingLinks = [] as { target: string; context: string }[],
-		ar = false,
 	}: {
 		outgoingLinks: { target: string; context: string }[];
-		ar?: boolean;
 	} = $props();
 </script>
 
 <div class="outgoing-panel">
 	<div class="ol-header">
-		{ar ? 'الروابط الصادرة' : 'Outgoing links'}
+		{$t('outgoingLinksPanel.header')}
 		<span class="ol-count">{outgoingLinks.length}</span>
 	</div>
 	{#if outgoingLinks.length > 0}
@@ -24,7 +23,7 @@
 			</div>
 		{/each}
 	{:else}
-		<div class="ol-empty">{ar ? 'لا توجد روابط صادرة' : 'No outgoing links'}</div>
+		<div class="ol-empty">{$t('outgoingLinksPanel.noLinks')}</div>
 	{/if}
 </div>
 

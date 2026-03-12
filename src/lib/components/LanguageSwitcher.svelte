@@ -1,9 +1,16 @@
 <script lang="ts">
-	import { locale, toggleLocale } from '$lib/i18n';
+	import { locale, SUPPORTED_LOCALES } from '$lib/i18n';
+
+	function cycleLocale() {
+		const codes = SUPPORTED_LOCALES.map(l => l.code);
+		const idx = codes.indexOf($locale);
+		const next = codes[(idx + 1) % codes.length];
+		locale.set(next);
+	}
 </script>
 
-<button class="lang-switch" onclick={toggleLocale} title="Switch language / تغيير اللغة">
-	{$locale === 'en' ? 'عربي' : 'EN'}
+<button class="lang-switch" onclick={cycleLocale} title="Change language">
+	{$locale.toUpperCase()}
 </button>
 
 <style>

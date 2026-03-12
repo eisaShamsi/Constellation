@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n';
 
 	export interface Command {
 		id: string;
@@ -13,11 +14,9 @@
 	let {
 		commands = [] as Command[],
 		onClose,
-		ar = false,
 	}: {
 		commands: Command[];
 		onClose: () => void;
-		ar?: boolean;
 	} = $props();
 
 	let query = $state('');
@@ -76,7 +75,7 @@
 			<input
 				bind:this={inputEl}
 				type="text"
-				placeholder={ar ? 'أدخل أمر...' : 'Type a command...'}
+				placeholder={$t('commandPalette.placeholder')}
 				bind:value={query}
 				onkeydown={handleKeydown}
 			/>
@@ -97,7 +96,7 @@
 				</button>
 			{/each}
 			{#if filtered.length === 0}
-				<div class="palette-empty">{ar ? 'لا توجد نتائج' : 'No results'}</div>
+				<div class="palette-empty">{$t('commandPalette.noResults')}</div>
 			{/if}
 		</div>
 	</div>

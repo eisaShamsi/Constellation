@@ -1,40 +1,69 @@
 <script lang="ts">
-	import { openNoteTab, vaults } from '$lib/vaults/store';
+	import { openNoteTab, vaults, readNote } from '$lib/vaults/store';
+	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
+	import { invoke } from '@tauri-apps/api/core';
 
 	let {
 		backlinks = [] as { name: string; path: string; context: string; vaultName: string }[],
 		unlinkedMentions = [] as { name: string; path: string; context: string; vaultName: string }[],
-		ar = false,
+		activeNoteName = '',
 	}: {
 		backlinks: { name: string; path: string; context: string; vaultName: string }[];
 		unlinkedMentions: { name: string; path: string; context: string; vaultName: string }[];
-		ar?: boolean;
+		activeNoteName?: string;
 	} = $props();
 
 	let showUnlinked = $state(false);
 
-	async function openLink(path: string, vaultName: string) {
-		const vault = get(vaults).find(v => path.startsWith(v.path));
-		await openNoteTab(path, vaultName, '#7c3aed');
+	function getVaultColor(vaultName: string): string {
+		const v = get(vaults).find(v => v.name === vaultName);
+		return v?.color || '#7c3aed';
+	}
+
+	async function openLink(path: string, vaultName: string, e?: MouseEvent) {
+		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
+		await openNoteTab(path, vaultName, getVaultColor(vaultName), undefined, newTab);
+	}
+
+	async function linkMention(mentionPath: string, e: MouseEvent) {
+		e.stopPropagation();
+		if (!activeNoteName) return;
+		try {
+			const content = await readNote(mentionPath);
+			// Replace first plain-text occurrence with [[wikilink]]
+			const re = new RegExp(`\\b(${activeNoteName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'i');
+			const newContent = content.replace(re, `[[${activeNoteName}]]`);
+			if (newContent !== content) {
+				await invoke('write_note', { filePath: mentionPath, content: newContent });
+			}
+		} catch { /* ignore */ }
 	}
 </script>
 
 <div class="backlinks-panel">
 	<div class="bl-section">
 		<div class="bl-header">
-			{ar ? 'الروابط الواردة' : 'Linked mentions'}
+			{$t('backlinksPanel.linkedMentions')}
 			<span class="bl-count">{backlinks.length}</span>
 		</div>
 		{#if backlinks.length > 0}
 			{#each backlinks as bl}
-				<button class="bl-item" onclick={() => openLink(bl.path, bl.vaultName)}>
-					<span class="bl-name">{bl.name}</span>
+				<button class="bl-item" onclick={(e) => openLink(bl.path, bl.vaultName, e)}>
+					<span class="bl-name-row">
+						{#if bl.vaultName}
+							<span class="bl-vault-dot" style="background:{getVaultColor(bl.vaultName)}"></span>
+						{/if}
+						<span class="bl-name">{bl.name}</span>
+						{#if bl.vaultName}
+							<span class="bl-vault-label">{bl.vaultName}</span>
+						{/if}
+					</span>
 					<span class="bl-context">{bl.context}</span>
 				</button>
 			{/each}
 		{:else}
-			<div class="bl-empty">{ar ? 'لا توجد روابط واردة' : 'No backlinks'}</div>
+			<div class="bl-empty">{$t('backlinksPanel.noBacklinks')}</div>
 		{/if}
 	</div>
 
@@ -43,15 +72,30 @@
 			<svg class="bl-chev" class:expanded={showUnlinked} width="8" height="8" viewBox="0 0 10 10">
 				<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 			</svg>
-			{ar ? 'إشارات غير مرتبطة' : 'Unlinked mentions'}
+			{$t('backlinksPanel.unlinkedMentions')}
 			<span class="bl-count">{unlinkedMentions.length}</span>
 		</button>
 		{#if showUnlinked && unlinkedMentions.length > 0}
 			{#each unlinkedMentions as ul}
-				<button class="bl-item" onclick={() => openLink(ul.path, ul.vaultName)}>
-					<span class="bl-name">{ul.name}</span>
-					<span class="bl-context">{ul.context}</span>
-				</button>
+				<div class="bl-item-row">
+					<button class="bl-item" onclick={(e) => openLink(ul.path, ul.vaultName, e)}>
+						<span class="bl-name-row">
+							{#if ul.vaultName}
+								<span class="bl-vault-dot" style="background:{getVaultColor(ul.vaultName)}"></span>
+							{/if}
+							<span class="bl-name">{ul.name}</span>
+							{#if ul.vaultName}
+								<span class="bl-vault-label">{ul.vaultName}</span>
+							{/if}
+						</span>
+						<span class="bl-context">{ul.context}</span>
+					</button>
+					<button class="bl-link-btn" title="Link it" onclick={(e) => linkMention(ul.path, e)}>
+						<svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+							<path d="M6.5 10.5L9.5 7.5M5 8.5L3.5 10a2.12 2.12 0 003 3L8 11.5M8 7.5l1.5-1.5a2.12 2.12 0 013 3L11 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						</svg>
+					</button>
+				</div>
 			{/each}
 		{/if}
 	</div>
@@ -72,13 +116,24 @@
 	.bl-count { background: var(--background-modifier-border-focus); border-radius: 8px; padding: 0 5px; font-size: 0.7rem; color: var(--text-faint); }
 	.bl-chev { transition: transform 0.15s ease; flex-shrink: 0; }
 	.bl-chev.expanded { transform: rotate(90deg); }
+	.bl-item-row { display: flex; align-items: flex-start; gap: 2px; }
+	.bl-item-row .bl-item { flex: 1; min-width: 0; }
 	.bl-item {
 		display: block; width: 100%; padding: 4px 8px;
 		background: none; border: none; cursor: pointer; text-align: start;
 		border-radius: 3px; font-family: inherit;
 	}
 	.bl-item:hover { background: var(--background-modifier-hover); }
-	.bl-name { display: block; color: var(--interactive-accent); font-size: 0.8rem; }
+	.bl-name-row { display: flex; align-items: center; gap: 4px; }
+	.bl-vault-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+	.bl-vault-label { font-size: 0.68rem; color: var(--text-faint); margin-inline-start: auto; flex-shrink: 0; }
+	.bl-name { color: var(--interactive-accent); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.bl-context { display: block; color: var(--text-faint); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.bl-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
+	.bl-link-btn {
+		flex-shrink: 0; background: none; border: 1px solid var(--background-modifier-border);
+		border-radius: 4px; padding: 3px 4px; cursor: pointer;
+		color: var(--text-muted); margin-top: 4px;
+	}
+	.bl-link-btn:hover { color: var(--interactive-accent); border-color: var(--interactive-accent); }
 </style>

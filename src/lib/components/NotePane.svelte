@@ -1,37 +1,65 @@
 <script lang="ts">
-	import { parseFrontmatter, extractHeadings, editingTabIds, toggleEditMode, saveTabContent, resolveWikilink, openNoteTab, vaultAppearances, vaults } from '$lib/vaults/store';
+	import { onMount, onDestroy } from 'svelte';
+	import { parseFrontmatter, extractHeadings, editingTabIds, toggleEditMode, saveTabContent, resolveWikilinkCrossVault, openNoteTab, openTabs, vaultAppearances, vaults, navigateBack, navigateForward, readNote, appSettings } from '$lib/vaults/store';
 	import type { OpenTab } from '$lib/vaults/store';
 	import { detectDir, renderMarkdown, postProcessRenderedContent, collectNoteNames } from '$lib/utils';
-	import { dir } from '$lib/i18n';
+	import { dir, t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import CodeMirrorEditor from './CodeMirrorEditor.svelte';
+	import BaseView from './BaseView.svelte';
+	import type { BaseDefinition } from '$lib/bases/types';
 
 	let {
 		tab,
 		isFocused = false,
 		onFocus,
-		ar = false,
 		color = '#7c3aed',
 		splitView = false,
 		vaultTrees = {} as Record<string, any[]>,
 		allTags = [] as string[],
+		allNotes = [] as { name: string; path: string; vaultName: string }[],
+		vaultColorMap = {} as Record<string, string>,
+		onCreateNote,
+		onQuickSwitch,
+		onCloseTab,
 	}: {
 		tab: OpenTab | null;
 		isFocused?: boolean;
 		onFocus: () => void;
-		ar?: boolean;
 		color?: string;
 		splitView?: boolean;
 		vaultTrees?: Record<string, any[]>;
 		allTags?: string[];
+		allNotes?: { name: string; path: string; vaultName: string }[];
+		vaultColorMap?: Record<string, string>;
+		onCreateNote?: () => void;
+		onQuickSwitch?: () => void;
+		onCloseTab?: () => void;
 	} = $props();
+
+	const hasHistory = $derived(tab ? (tab.history?.length ?? 0) > 1 : false);
+	const canGoBack = $derived(tab ? (tab.historyIndex ?? 0) > 0 : false);
+	const canGoForward = $derived(tab ? (tab.historyIndex ?? 0) < ((tab.history?.length ?? 1) - 1) : false);
+	const isEmptyTab = $derived(tab ? !tab.path : false);
+	const isBaseFile = $derived(tab?.path?.endsWith('.base') ?? false);
+
+	// Parse .base file content into BaseDefinition
+	const baseDefinition: BaseDefinition | null = $derived.by(() => {
+		if (!isBaseFile || !tab?.content) return null;
+		try {
+			return JSON.parse(tab.content) as BaseDefinition;
+		} catch {
+			return null;
+		}
+	});
 
 	const parsed = $derived(tab ? parseFrontmatter(tab.content) : null);
 	const properties = $derived(parsed?.properties ?? []);
 	const noteBody = $derived(parsed?.body ?? '');
 	const noteDir = $derived(noteBody ? detectDir(noteBody) : $dir);
 	const editing = $derived(tab ? $editingTabIds.has(tab.id) : false);
+	let livePreviewEnabled = $state($appSettings.defaultEditingMode === 'livePreview');
 
 	// Vault appearance
 	const vaultId = $derived(tab ? get(vaults).find(v => tab!.vaultPath === v.path)?.id : null);
@@ -46,16 +74,28 @@
 		return vars.join('; ');
 	});
 
-	// Note names for autocomplete
-	const noteNames = $derived.by(() => {
-		if (!vaultId || !vaultTrees[vaultId]) return [];
-		return collectNoteNames(vaultTrees[vaultId]);
-	});
+	// Note names for autocomplete (cross-vault)
+	const noteNames = $derived(allNotes.map(n => ({ name: n.name, path: n.path, vaultName: n.vaultName })));
 
 	// Edit mode state
 	let editBody = $state('');
 	let saveTimeout: ReturnType<typeof setTimeout>;
 	let saving = $state(false);
+	let rafId: number | null = null;
+	let rafId2: number | null = null;
+
+	function handleToggleLivePreview() { livePreviewEnabled = !livePreviewEnabled; }
+
+	onMount(() => {
+		document.addEventListener('constellation:toggle-live-preview', handleToggleLivePreview);
+	});
+
+	onDestroy(() => {
+		clearTimeout(saveTimeout);
+		if (rafId !== null) cancelAnimationFrame(rafId);
+		if (rafId2 !== null) cancelAnimationFrame(rafId2);
+		document.removeEventListener('constellation:toggle-live-preview', handleToggleLivePreview);
+	});
 	let prevTabId = $state('');
 	let contentEl: HTMLDivElement | undefined;
 
@@ -74,15 +114,74 @@
 		}
 	});
 
-	// Post-process rendered content (math, mermaid, callout toggles)
+	// Post-process rendered content (math, mermaid, callout toggles, embeds)
 	$effect(() => {
 		if (!editing && noteBody && contentEl) {
+			// Cancel any pending RAF from previous render
+			if (rafId !== null) cancelAnimationFrame(rafId);
 			// Need to wait for DOM update
-			requestAnimationFrame(() => {
-				if (contentEl) postProcessRenderedContent(contentEl);
+			rafId = requestAnimationFrame(async () => {
+				rafId = null;
+				if (contentEl) {
+					await postProcessRenderedContent(contentEl);
+					await processEmbeds(contentEl, 0);
+				}
 			});
 		}
 	});
+
+	// Highlight index term in reading mode
+	const highlightTerm = $derived(tab?.highlightTerm);
+	$effect(() => {
+		if (!editing && highlightTerm && contentEl) {
+			if (rafId2 !== null) cancelAnimationFrame(rafId2);
+			rafId2 = requestAnimationFrame(() => {
+				rafId2 = null;
+				if (!contentEl) return;
+				highlightTermInContent(contentEl, highlightTerm);
+				// Scroll to the first highlighted match
+				const first = contentEl.querySelector('.index-hl');
+				if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				// Clear the highlightTerm so it doesn't re-trigger
+				if (tab) {
+					openTabs.update(tabs => tabs.map(t => t.id === tab!.id ? { ...t, highlightTerm: undefined } : t));
+				}
+			});
+		}
+	});
+
+	function highlightTermInContent(container: HTMLElement, term: string) {
+		// Remove any previous index highlights
+		container.querySelectorAll('.index-hl').forEach(el => {
+			const parent = el.parentNode;
+			if (parent) {
+				parent.replaceChild(document.createTextNode(el.textContent ?? ''), el);
+				parent.normalize();
+			}
+		});
+		// Walk text nodes and wrap matches
+		const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+		const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+		const matches: { node: Text; index: number; length: number }[] = [];
+		let node: Text | null;
+		while ((node = walker.nextNode() as Text | null)) {
+			let match: RegExpExecArray | null;
+			regex.lastIndex = 0;
+			while ((match = regex.exec(node.textContent ?? '')) !== null) {
+				matches.push({ node, index: match.index, length: match[0].length });
+			}
+		}
+		// Apply highlights in reverse to preserve indices
+		for (let i = matches.length - 1; i >= 0; i--) {
+			const { node: textNode, index, length } = matches[i];
+			const range = document.createRange();
+			range.setStart(textNode, index);
+			range.setEnd(textNode, index + length);
+			const mark = document.createElement('mark');
+			mark.className = 'index-hl';
+			range.surroundContents(mark);
+		}
+	}
 
 	function handleEditorChange(newValue: string) {
 		editBody = newValue;
@@ -140,6 +239,58 @@ ${contentEl.innerHTML}
 		URL.revokeObjectURL(url);
 	}
 
+	// Process note embeds (![[note]])
+	async function processEmbeds(container: HTMLElement, depth: number) {
+		if (depth >= 3) return; // Max nesting depth
+		const embedEls = container.querySelectorAll('.embed-note:not(.embed-loaded)');
+		for (const el of embedEls) {
+			const embedTarget = decodeURIComponent(el.getAttribute('data-embed') || '');
+			if (!embedTarget || !tab) continue;
+
+			// Strip fragment
+			const hashIdx = embedTarget.indexOf('#');
+			const noteTarget = hashIdx >= 0 ? embedTarget.slice(0, hashIdx) : embedTarget;
+			const fragment = hashIdx >= 0 ? embedTarget.slice(hashIdx + 1) : null;
+
+			try {
+				const resolved = await resolveWikilinkCrossVault(tab.vaultPath, noteTarget);
+				if (!resolved) continue;
+
+				const content = await readNote(resolved.path);
+				// Strip frontmatter
+				let body = content;
+				if (body.startsWith('---')) {
+					const end = body.indexOf('\n---', 3);
+					if (end >= 0) body = body.slice(end + 4).trim();
+				}
+
+				// If fragment is a heading, embed only that section
+				if (fragment && !fragment.startsWith('^')) {
+					const sectionRegex = new RegExp(`^(#{1,6})\\s+${fragment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'im');
+					const match = sectionRegex.exec(body);
+					if (match) {
+						const level = match[1].length;
+						const startIdx = match.index;
+						// Find next heading of same or higher level
+						const rest = body.slice(startIdx + match[0].length);
+						const nextHeading = rest.search(new RegExp(`^#{1,${level}}\\s`, 'm'));
+						body = nextHeading >= 0
+							? body.slice(startIdx, startIdx + match[0].length + nextHeading).trim()
+							: body.slice(startIdx).trim();
+					}
+				}
+
+				const html = renderMarkdown(body);
+				el.innerHTML = html;
+				el.classList.add('embed-loaded');
+
+				// Recursively process nested embeds
+				await postProcessRenderedContent(el as HTMLElement);
+				await processEmbeds(el as HTMLElement, depth + 1);
+			} catch { /* ignore failed embeds */ }
+		}
+	}
+
 	// WikiLink click handler via event delegation
 	async function handleNoteContentClick(e: MouseEvent) {
 		const target = e.target as HTMLElement;
@@ -148,11 +299,52 @@ ${contentEl.innerHTML}
 
 		e.preventDefault();
 		const linkTarget = decodeURIComponent(wikilinkEl.dataset.wikilink ?? '');
-		if (!linkTarget) return;
+		const fragment = wikilinkEl.dataset.fragment ? decodeURIComponent(wikilinkEl.dataset.fragment) : null;
+		if (!linkTarget && !fragment) return;
 
-		const resolved = await resolveWikilink(tab.vaultPath, linkTarget);
+		// Same-note fragment link (e.g. [[#heading]])
+		if (!linkTarget && fragment) {
+			scrollToFragment(fragment);
+			return;
+		}
+
+		const resolved = await resolveWikilinkCrossVault(tab.vaultPath, linkTarget);
 		if (resolved) {
-			await openNoteTab(resolved, tab.vaultName, tab.vaultColor);
+			const newTab = e.ctrlKey || e.metaKey || e.button === 1;
+			const vaultColor = vaultColorMap[resolved.vault_name] ?? tab.vaultColor;
+			await openNoteTab(resolved.path, resolved.vault_name, vaultColor, undefined, newTab);
+			// Scroll to fragment after note loads
+			const frag = fragment || resolved.fragment;
+			if (frag) {
+				setTimeout(() => scrollToFragment(frag), 150);
+			}
+		}
+	}
+
+	function scrollToFragment(fragment: string) {
+		if (!contentEl) return;
+		const isBlock = fragment.startsWith('^');
+		if (isBlock) {
+			// Block reference: find element with matching block-id in text
+			const blockId = fragment.slice(1);
+			const walker = document.createTreeWalker(contentEl, NodeFilter.SHOW_TEXT);
+			while (walker.nextNode()) {
+				if (walker.currentNode.textContent?.includes(`^${blockId}`)) {
+					(walker.currentNode.parentElement)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					return;
+				}
+			}
+		} else {
+			// Heading reference: find matching heading
+			const headings = contentEl.querySelectorAll('h1, h2, h3, h4, h5, h6');
+			const target = fragment.toLowerCase().replace(/-/g, ' ');
+			for (const h of headings) {
+				const text = (h.textContent ?? '').trim().toLowerCase();
+				if (text === target || text.replace(/\s+/g, '-') === fragment.toLowerCase()) {
+					h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					return;
+				}
+			}
 		}
 	}
 </script>
@@ -161,67 +353,145 @@ ${contentEl.innerHTML}
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="pane" class:focused={isFocused} onclick={onFocus}>
 	{#if tab}
-		{#if splitView}
+		{#if isEmptyTab}
+			<div class="pane-breadcrumb">
+				<span class="bc-note">{tab.name}</span>
+			</div>
+			<div class="empty-tab">
+				<span class="empty-tab-title">{tab.name}</span>
+				{#if onCreateNote}
+					<button class="empty-tab-action" onclick={onCreateNote}>
+						{$t('notePane.createNote')} <span class="empty-tab-shortcut">(Ctrl + N)</span>
+					</button>
+				{/if}
+				{#if onQuickSwitch}
+					<button class="empty-tab-action" onclick={onQuickSwitch}>
+						{$t('notePane.goToFile')} <span class="empty-tab-shortcut">(Ctrl + O)</span>
+					</button>
+				{/if}
+				{#if onCloseTab}
+					<button class="empty-tab-action" onclick={onCloseTab}>
+						{$t('notePane.close')}
+					</button>
+				{/if}
+			</div>
+		{:else if splitView}
 			<div class="pane-tab-bar" style:--vault-color={color}>
 				<div class="pane-tab">
 					<span class="pane-tab-vault">{tab.vaultName}</span>
 					<span class="pane-tab-title">{tab.name}</span>
 				</div>
 				<div class="pane-tab-actions">
-					{#if saving}<span class="bc-saving">{ar ? 'جارٍ الحفظ...' : 'Saving...'}</span>{/if}
+					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
 					<button class="bc-edit-btn" class:active={editing} onclick={handleToggleEdit}
-						title={editing ? (ar ? 'وضع القراءة' : 'Reading mode') : (ar ? 'وضع التحرير' : 'Editing mode')}>
+						title={editing ? $t('notePane.readingMode') : $t('notePane.editingMode')}>
 						{#if editing}
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
 						{:else}
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
 						{/if}
 					</button>
+					{#if editing}
+						<button class="bc-edit-btn" class:active={livePreviewEnabled} onclick={() => livePreviewEnabled = !livePreviewEnabled}
+							title={$t('notePane.livePreview')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+						</button>
+					{/if}
 				</div>
 			</div>
 		{:else}
 			<div class="pane-breadcrumb">
+				{#if hasHistory}
+					<button class="bc-nav-btn" onclick={() => navigateBack()} disabled={!canGoBack} title="Back (Alt+←)">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+					</button>
+					<button class="bc-nav-btn" onclick={() => navigateForward()} disabled={!canGoForward} title="Forward (Alt+→)">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+					</button>
+				{/if}
 				<span class="bc-vault">{tab.vaultName}</span>
 				<span class="bc-sep">/</span>
 				<span class="bc-note">{tab.name}</span>
 				<div class="bc-actions">
-					{#if saving}<span class="bc-saving">{ar ? 'جارٍ الحفظ...' : 'Saving...'}</span>{/if}
-					<button class="bc-edit-btn" onclick={handleExportHTML} title={ar ? 'تصدير HTML' : 'Export as HTML'}>
+					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
+					<button class="bc-edit-btn" onclick={handleExportHTML} title={$t('notePane.exportHtml')}>
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 				</button>
 				<button class="bc-edit-btn" class:active={editing} onclick={handleToggleEdit}
-						title={editing ? (ar ? 'وضع القراءة' : 'Reading mode') : (ar ? 'وضع التحرير' : 'Editing mode')}>
+						title={editing ? $t('notePane.readingMode') : $t('notePane.editingMode')}>
 						{#if editing}
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
 						{:else}
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
 						{/if}
 					</button>
+					{#if editing}
+						<button class="bc-edit-btn" class:active={livePreviewEnabled} onclick={() => livePreviewEnabled = !livePreviewEnabled}
+							title={$t('notePane.livePreview')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+						</button>
+					{/if}
 				</div>
 			</div>
 		{/if}
-		<div class="note-scroll" dir={noteDir} style={paneStyle}>
-			{#if tab}
-				<PropertyEditor
-					properties={properties}
-					body={noteBody}
-					tabId={tab.id}
-					filePath={tab.path}
-					{ar}
-				/>
-				{#if properties.length > 0}
-					<hr class="props-divider"/>
+		{#if isBaseFile && baseDefinition && tab}
+			<!-- Base view -->
+			<BaseView
+				definition={baseDefinition}
+				filePath={tab.path}
+				onOpenNote={(path, vaultName) => {
+					const vc = vaultColorMap[vaultName] ?? color;
+					openNoteTab(path, vaultName, vc);
+				}}
+				onCreateNote={(folderPath, properties) => {
+					if (onCreateNote) onCreateNote();
+				}}
+			/>
+		{:else if !isEmptyTab}
+		<div class="note-scroll" class:editing dir={noteDir} style={paneStyle}>
+			{#if tab && $appSettings.propertiesInDocument !== 'hidden'}
+				{#if $appSettings.propertiesInDocument === 'source'}
+					{#if parsed?.rawYaml}
+						<pre class="props-source">{parsed.rawYaml}</pre>
+						<hr class="props-divider"/>
+					{/if}
+				{:else}
+					<PropertyEditor
+						properties={properties}
+						body={noteBody}
+						tabId={tab.id}
+						filePath={tab.path}
+						vaultName={tab.vaultName}
+						onNoteClick={async (noteName) => {
+							if (!tab) return;
+							const resolved = await resolveWikilinkCrossVault(tab.vaultPath, noteName);
+							if (resolved) {
+								const vc = vaultColorMap[resolved.vault_name] ?? color;
+								await openNoteTab(resolved.path, resolved.vault_name, vc);
+							}
+						}}
+					/>
+					{#if properties.length > 0}
+						<hr class="props-divider"/>
+					{/if}
 				{/if}
 			{/if}
 			{#if editing}
 				<CodeMirrorEditor
 					value={editBody}
 					dir={noteDir}
-					placeholder={ar ? 'اكتب هنا...' : 'Start writing...'}
+					placeholder={$t('notePane.placeholder')}
 					onchange={handleEditorChange}
 					{noteNames}
 					{allTags}
-					{ar}
+					livePreview={livePreviewEnabled}
+					showLineNumbers={$appSettings.showLineNumbers}
+					foldHeading={$appSettings.foldHeading}
+					foldIndent={$appSettings.foldIndent}
+					indentationGuides={$appSettings.indentationGuides}
+					indentWithTabs={$appSettings.indentWithTabs}
+					tabSize={$appSettings.tabSize}
+					autoPairMarkdown={$appSettings.autoPairMarkdown}
 				/>
 			{:else}
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -231,9 +501,10 @@ ${contentEl.innerHTML}
 				</div>
 			{/if}
 		</div>
+		{/if}
 	{:else}
 		<div class="pane-empty">
-			{ar ? 'اختر ملاحظة' : 'Select a note'}
+			{$t('notePane.selectNote')}
 		</div>
 	{/if}
 </div>
@@ -290,6 +561,12 @@ ${contentEl.innerHTML}
 	.bc-sep { margin: 0 4px; color: var(--background-modifier-border-focus); }
 	.bc-note { color: var(--text-normal); }
 	.bc-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 4px; }
+	.bc-nav-btn {
+		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+		border: none; background: none; border-radius: 3px; color: var(--text-faint); cursor: pointer; flex-shrink: 0;
+	}
+	.bc-nav-btn:hover:not(:disabled) { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.bc-nav-btn:disabled { opacity: 0.3; cursor: default; }
 	.bc-saving { font-size: 0.7rem; color: var(--interactive-accent); }
 	.bc-edit-btn {
 		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
@@ -304,8 +581,23 @@ ${contentEl.innerHTML}
 		font-family: var(--vault-text-font, inherit);
 		display: flex; flex-direction: column;
 	}
+	.note-scroll.editing {
+		overflow: hidden;
+	}
 
 	.props-divider { border: none; border-top: 1px solid var(--background-modifier-border-focus); margin: 12px 0; }
+	.props-source {
+		font-family: var(--font-monospace, 'Fira Code', monospace);
+		font-size: 0.82rem;
+		background: var(--background-secondary);
+		color: var(--text-muted);
+		padding: 12px 16px;
+		border-radius: 6px;
+		margin: 8px 16px;
+		white-space: pre-wrap;
+		word-break: break-word;
+		border: 1px solid var(--background-modifier-border);
+	}
 
 	.note-content { line-height: 1.8; color: var(--text-normal); flex: 1; }
 
@@ -328,6 +620,16 @@ ${contentEl.innerHTML}
 	}
 	.note-content :global(a.wikilink:hover) {
 		border-bottom-color: var(--vault-accent, var(--interactive-accent));
+	}
+	.note-content :global(a.wikilink.cross-vault) {
+		color: var(--text-accent-hover, #a855f7);
+		border-bottom-style: dotted;
+	}
+	.note-content :global(a.wikilink.cross-vault::before) {
+		content: '↗';
+		font-size: 0.7em;
+		margin-inline-end: 2px;
+		opacity: 0.6;
 	}
 
 	/* ─── Code ─── */
@@ -356,6 +658,17 @@ ${contentEl.innerHTML}
 		background: color-mix(in srgb, var(--color-yellow) 35%, transparent);
 		padding: 0.1em 0.2em;
 		border-radius: 2px;
+	}
+	.note-content :global(mark.index-hl) {
+		background: color-mix(in srgb, var(--color-yellow) 60%, transparent);
+		padding: 0.1em 0.25em;
+		border-radius: 3px;
+		outline: 2px solid color-mix(in srgb, var(--color-yellow) 40%, transparent);
+		animation: index-pulse 1.5s ease-in-out 2;
+	}
+	@keyframes index-pulse {
+		0%, 100% { outline-color: color-mix(in srgb, var(--color-yellow) 40%, transparent); }
+		50% { outline-color: color-mix(in srgb, var(--color-yellow) 80%, transparent); }
 	}
 
 	/* ─── Callouts ─── */
@@ -477,6 +790,20 @@ ${contentEl.innerHTML}
 	.note-content :global(.hljs-selector-class) { color: var(--code-keyword); }
 	.note-content :global(.hljs-selector-id) { color: var(--code-function); }
 	.note-content :global(.hljs-variable) { color: var(--code-variable); }
+
+	.empty-tab {
+		flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+	}
+	.empty-tab-title {
+		font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;
+	}
+	.empty-tab-action {
+		background: none; border: none; cursor: pointer; font-family: inherit;
+		font-size: 0.9rem; color: var(--interactive-accent); padding: 6px 12px;
+		border-radius: 4px;
+	}
+	.empty-tab-action:hover { background: var(--background-modifier-hover); }
+	.empty-tab-shortcut { color: var(--text-faint); font-size: 0.8rem; }
 
 	.pane-empty {
 		flex: 1; display: flex; align-items: center; justify-content: center;

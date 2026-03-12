@@ -1,5 +1,6 @@
 import { marked, type TokenizerAndRendererExtension, type Tokens } from 'marked';
 import hljs from 'highlight.js';
+import DOMPurify from 'dompurify';
 
 // ─── WikiLink extension for marked ───
 const wikilinkExtension: TokenizerAndRendererExtension = {
@@ -34,10 +35,41 @@ const wikilinkExtension: TokenizerAndRendererExtension = {
 	},
 	renderer(token: any) {
 		const target = token.target as string;
-		const display = token.display as string;
+		let display = token.display as string;
+
+		// Parse fragment (#heading or #^block-id)
+		let fragment = '';
+		let baseTarget = target;
+		const hashIdx = target.indexOf('#');
+		if (hashIdx >= 0) {
+			fragment = target.slice(hashIdx + 1);
+			baseTarget = target.slice(0, hashIdx);
+			// If no explicit alias, show note > heading
+			if (target === display) {
+				const notePart = baseTarget || 'this note';
+				display = fragment.startsWith('^') ? notePart : `${notePart} > ${fragment}`;
+			}
+		}
+
+		// Parse typed link: [[note|type:related-to]]
+		let linkType = '';
+		const typeMatch = display.match(/^type:(.+)$/i);
+		if (typeMatch) {
+			linkType = typeMatch[1].trim();
+			display = baseTarget || target; // Show note name instead of type spec
+		}
+
+		// For vault:note syntax, show just the note name if no explicit alias
+		const isCrossVault = baseTarget.includes(':') && target === token.target && target === (token.display as string);
+		if (isCrossVault && !fragment) {
+			display = baseTarget.split(':').pop()!.trim();
+		}
+		const fragmentAttr = fragment ? ` data-fragment="${encodeURIComponent(fragment)}"` : '';
+		const typeAttr = linkType ? ` data-link-type="${encodeURIComponent(linkType)}"` : '';
+
 		if (token.embed) {
 			// Check if it's an image
-			const ext = target.split('.').pop()?.toLowerCase() ?? '';
+			const ext = baseTarget.split('.').pop()?.toLowerCase() ?? '';
 			const imgExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'avif'];
 			if (imgExts.includes(ext)) {
 				// Parse size from display: ![[img.png|640]] or ![[img.png|640x480]]
@@ -45,13 +77,15 @@ const wikilinkExtension: TokenizerAndRendererExtension = {
 				if (sizeMatch && target !== display) {
 					const w = sizeMatch[1];
 					const h = sizeMatch[2];
-					return `<img class="embed-image" data-embed="${encodeURIComponent(target)}" src="" alt="${target}" width="${w}" ${h ? `height="${h}"` : ''} />`;
+					return `<img class="embed-image" data-embed="${encodeURIComponent(target)}" src="" alt="${escapeHtml(target)}" width="${w}" ${h ? `height="${h}"` : ''} />`;
 				}
-				return `<img class="embed-image" data-embed="${encodeURIComponent(target)}" src="" alt="${target}" />`;
+				return `<img class="embed-image" data-embed="${encodeURIComponent(target)}" src="" alt="${escapeHtml(target)}" />`;
 			}
-			return `<div class="embed-note" data-embed="${encodeURIComponent(target)}"><span class="embed-icon">📄</span> ${display}</div>`;
+			return `<div class="embed-note" data-embed="${encodeURIComponent(target)}"${fragmentAttr}><span class="embed-icon">📄</span> ${escapeHtml(display)}</div>`;
 		}
-		return `<a class="wikilink" data-wikilink="${encodeURIComponent(target)}" href="javascript:void(0)">${display}</a>`;
+		const crossClass = isCrossVault ? ' cross-vault' : '';
+		const typeClass = linkType ? ` link-type-${linkType.replace(/[^a-z0-9-]/gi, '')}` : '';
+		return `<a class="wikilink${crossClass}${typeClass}" data-wikilink="${encodeURIComponent(baseTarget || target)}"${fragmentAttr}${typeAttr} href="#" ${linkType ? `title="type: ${escapeHtml(linkType)}"` : ''}>${escapeHtml(display)}</a>`;
 	}
 };
 
@@ -70,7 +104,7 @@ const highlightExtension: TokenizerAndRendererExtension = {
 		return undefined;
 	},
 	renderer(token: any) {
-		return `<mark>${token.text}</mark>`;
+		return `<mark>${escapeHtml(token.text)}</mark>`;
 	}
 };
 
@@ -168,7 +202,8 @@ const footnoteRefExtension: TokenizerAndRendererExtension = {
 	renderer(token: any) {
 		const idx = footnoteReferences.indexOf(token.ref);
 		const num = idx >= 0 ? idx + 1 : footnoteReferences.push(token.ref);
-		return `<sup class="footnote-ref"><a href="#fn-${token.ref}" id="fnref-${token.ref}">${num}</a></sup>`;
+		const safeRef = escapeHtml(token.ref);
+		return `<sup class="footnote-ref"><a href="#fn-${safeRef}" id="fnref-${safeRef}">${num}</a></sup>`;
 	}
 };
 
@@ -193,7 +228,7 @@ const renderer = {
 			const collapsedClass = foldable === '-' ? ' callout-collapsed' : '';
 
 			return `<div class="callout callout-${type}${foldableClass}${collapsedClass}" style="--callout-color: ${info.color}">
-				<div class="callout-title">${foldable ? '<span class="callout-fold">▶</span>' : ''}<span class="callout-icon">${info.icon}</span><span class="callout-title-text">${title}</span></div>
+				<div class="callout-title">${foldable ? '<span class="callout-fold">▶</span>' : ''}<span class="callout-icon">${info.icon}</span><span class="callout-title-text">${escapeHtml(title)}</span></div>
 				<div class="callout-content">${bodyHtml}</div>
 			</div>`;
 		}
@@ -270,8 +305,25 @@ export function detectDir(text: string): 'rtl' | 'ltr' {
 	return rtlChars > sample.length * 0.3 ? 'rtl' : 'ltr';
 }
 
+/** Simple hash for cache key */
+function quickHash(s: string): string {
+	let h = 0;
+	for (let i = 0; i < s.length; i++) {
+		h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+	}
+	return h.toString(36);
+}
+
+/** LRU cache for rendered markdown — avoids re-parsing unchanged content */
+const _renderCache = new Map<string, string>();
+const _RENDER_CACHE_MAX = 50;
+
 /** Render markdown to HTML with all Obsidian extensions. */
 export function renderMarkdown(md: string): string {
+	const key = quickHash(md);
+	const cached = _renderCache.get(key);
+	if (cached !== undefined) return cached;
+
 	// Reset footnote state
 	footnoteDefinitions.clear();
 	footnoteReferences.length = 0;
@@ -283,13 +335,26 @@ export function renderMarkdown(md: string): string {
 		let fnHtml = '<div class="footnotes"><hr /><ol>';
 		for (const ref of footnoteReferences) {
 			const def = footnoteDefinitions.get(ref) || '';
-			fnHtml += `<li id="fn-${ref}">${def} <a href="#fnref-${ref}" class="footnote-backref">\u21a9</a></li>`;
+			fnHtml += `<li id="fn-${escapeHtml(ref)}">${escapeHtml(def)} <a href="#fnref-${escapeHtml(ref)}" class="footnote-backref">\u21a9</a></li>`;
 		}
 		fnHtml += '</ol></div>';
 		html += fnHtml;
 	}
 
-	return html;
+	const result = DOMPurify.sanitize(html, {
+		ADD_TAGS: ['math', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'msup', 'msub', 'mfrac', 'munder', 'mover', 'annotation'],
+		ADD_ATTR: ['data-wikilink', 'data-embed', 'data-vault', 'data-fragment', 'data-link-type', 'data-math', 'data-mermaid', 'data-highlight-term', 'class'],
+		ALLOW_DATA_ATTR: true,
+	});
+
+	// Evict oldest entries when cache is full
+	if (_renderCache.size >= _RENDER_CACHE_MAX) {
+		const first = _renderCache.keys().next().value;
+		if (first !== undefined) _renderCache.delete(first);
+	}
+	_renderCache.set(key, result);
+
+	return result;
 }
 
 /** Post-process rendered HTML in the DOM: render math, mermaid, etc. */
@@ -300,14 +365,14 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 		container.querySelectorAll('.math-inline').forEach(el => {
 			const formula = decodeURIComponent(el.getAttribute('data-math') || '');
 			try {
-				el.innerHTML = katex.default.renderToString(formula, { throwOnError: false, displayMode: false });
+				el.innerHTML = DOMPurify.sanitize(katex.default.renderToString(formula, { throwOnError: false, displayMode: false }));
 				el.classList.add('math-rendered');
 			} catch { /* keep raw */ }
 		});
 		container.querySelectorAll('.math-block').forEach(el => {
 			const formula = decodeURIComponent(el.getAttribute('data-math') || '');
 			try {
-				el.innerHTML = katex.default.renderToString(formula, { throwOnError: false, displayMode: true });
+				el.innerHTML = DOMPurify.sanitize(katex.default.renderToString(formula, { throwOnError: false, displayMode: true }));
 				el.classList.add('math-rendered');
 			} catch { /* keep raw */ }
 		});
@@ -317,14 +382,14 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 	try {
 		const mermaidModule = await import('mermaid');
 		const mermaid = mermaidModule.default;
-		mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+		mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'strict' });
 		const mermaidEls = container.querySelectorAll('.mermaid-container');
 		for (let i = 0; i < mermaidEls.length; i++) {
 			const el = mermaidEls[i] as HTMLElement;
 			const code = decodeURIComponent(el.getAttribute('data-mermaid') || '');
 			try {
 				const { svg } = await mermaid.render(`mermaid-${Date.now()}-${i}`, code);
-				el.innerHTML = svg;
+				el.innerHTML = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true } });
 				el.classList.add('mermaid-rendered');
 			} catch { /* keep raw */ }
 		}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { locale } from '$lib/i18n';
+	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { marked } from 'marked';
 	import {
@@ -19,8 +19,6 @@
 	// Per-vault file trees (loaded on expand)
 	let vaultTrees = $state<Record<string, FileEntry[]>>({});
 	let expandedVaults = $state<Set<string>>(new Set());
-
-	const ar = $derived($locale === 'ar');
 
 	// Configure marked for safe rendering
 	marked.setOptions({ breaks: true, gfm: true });
@@ -98,7 +96,7 @@
 		<div class="sidebar-search">
 			<input
 				type="text"
-				placeholder={ar ? 'بحث في جميع الخزائن...' : 'Search all vaults...'}
+				placeholder={$t('vaults.searchPlaceholder')}
 				value={searchQuery}
 				oninput={handleSearch}
 			/>
@@ -108,7 +106,7 @@
 		{#if searchQuery}
 			<div class="search-panel">
 				{#if $searchResults.length > 0}
-					<div class="section-label">{$searchResults.length} {ar ? 'نتيجة' : 'results'}</div>
+					<div class="section-label">{$searchResults.length} {$t('vaults.results')}</div>
 					{#each $searchResults as star}
 						<button class="search-result" class:active={$selectedNote?.path === star.path} onclick={() => handleSearchResultClick(star.path, star.vault_name)}>
 							<div class="sr-name">{star.name}</div>
@@ -119,7 +117,7 @@
 						</button>
 					{/each}
 				{:else}
-					<div class="no-results">{ar ? 'لا توجد نتائج' : 'No results'}</div>
+					<div class="no-results">{$t('vaults.noResults')}</div>
 				{/if}
 			</div>
 		{:else}
@@ -151,7 +149,7 @@
 
 				<!-- Add Vault -->
 				<button class="add-vault-btn" onclick={handleAddVault} disabled={adding}>
-					{adding ? '...' : (ar ? '+ إضافة خزينة' : '+ Add vault')}
+					{adding ? '...' : $t('vaults.addVault')}
 				</button>
 			</div>
 		{/if}
@@ -183,14 +181,14 @@
 			<div class="empty-state">
 				{#if $vaultStats.length === 0}
 					<div class="empty-icon">🌌</div>
-					<h2>{ar ? 'مرحبا بك في كونستليشن' : 'Welcome to Constellation'}</h2>
-					<p>{ar ? 'أضف خزينة أوبسيديان الأولى من الشريط الجانبي' : 'Add your first Obsidian vault from the sidebar'}</p>
+					<h2>{$t('vaults.welcomeTitle')}</h2>
+					<p>{$t('vaults.welcomeSubtitle')}</p>
 					<button class="empty-add-btn" onclick={handleAddVault}>
-						{ar ? '+ إضافة خزينة' : '+ Add Vault'}
+						{$t('vaults.addVaultCta')}
 					</button>
 				{:else}
 					<div class="empty-hint">
-						<p>{ar ? 'اختر ملاحظة من الشريط الجانبي' : 'Select a note from the sidebar'}</p>
+						<p>{$t('vaults.selectNote')}</p>
 						<div class="stats-row">
 							{#each $vaultStats as vault, i}
 								<div class="stat-chip" style="--accent: {colors[i % colors.length]}">

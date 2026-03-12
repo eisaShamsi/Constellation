@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { workspaces, saveWorkspace, restoreWorkspace, deleteWorkspace, type Workspace } from '$lib/vaults/store';
+	import { t } from '$lib/i18n';
 
 	let {
 		onClose,
-		ar = false,
 	}: {
 		onClose: () => void;
-		ar?: boolean;
 	} = $props();
 
 	let newName = $state('');
@@ -43,7 +42,7 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="ws-panel" onclick={(e) => e.stopPropagation()}>
 		<div class="ws-header">
-			<span class="ws-title">{ar ? 'مساحات العمل' : 'Workspaces'}</span>
+			<span class="ws-title">{$t('workspacesPanel.title')}</span>
 			<button class="ws-close" onclick={onClose}>×</button>
 		</div>
 
@@ -51,29 +50,29 @@
 			<input
 				type="text"
 				bind:value={newName}
-				placeholder={ar ? 'اسم مساحة العمل...' : 'Workspace name...'}
+				placeholder={$t('workspacesPanel.namePlaceholder')}
 				onkeydown={(e) => { if (e.key === 'Enter') handleSave(); }}
 			/>
 			<button class="ws-save-btn" onclick={handleSave} disabled={!newName.trim() || saving}>
-				{ar ? 'حفظ' : 'Save Current'}
+				{$t('workspacesPanel.saveCurrent')}
 			</button>
 		</div>
 
 		<div class="ws-list">
 			{#if $workspaces.length === 0}
-				<div class="ws-empty">{ar ? 'لا توجد مساحات عمل محفوظة' : 'No saved workspaces'}</div>
+				<div class="ws-empty">{$t('workspacesPanel.noWorkspaces')}</div>
 			{:else}
 				{#each $workspaces as ws (ws.id)}
 					<div class="ws-item">
 						<div class="ws-item-info">
 							<span class="ws-item-name">{ws.name}</span>
-							<span class="ws-item-meta">{ws.tabs.length} {ar ? 'تبويبات' : 'tabs'} · {formatDate(ws.timestamp)}</span>
+							<span class="ws-item-meta">{ws.tabs.length} {$t('workspacesPanel.tabs')} · {formatDate(ws.timestamp)}</span>
 						</div>
 						<div class="ws-item-actions">
-							<button class="ws-restore" onclick={() => handleRestore(ws)} title={ar ? 'استعادة' : 'Restore'}>
+							<button class="ws-restore" onclick={() => handleRestore(ws)} title={$t('workspacesPanel.restore')}>
 								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="22 2 22 8 16 8"/></svg>
 							</button>
-							<button class="ws-delete" onclick={() => handleDelete(ws.id)} title={ar ? 'حذف' : 'Delete'}>×</button>
+							<button class="ws-delete" onclick={() => handleDelete(ws.id)} title={$t('workspacesPanel.delete')}>×</button>
 						</div>
 					</div>
 				{/each}

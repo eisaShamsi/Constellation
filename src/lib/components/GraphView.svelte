@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { t } from '$lib/i18n';
 	import * as d3 from 'd3';
 
 	interface GraphNode extends d3.SimulationNodeDatum {
@@ -14,20 +15,28 @@
 	interface GraphLink {
 		source: string;
 		target: string;
+		linkType?: string;
 	}
+
+	const LINK_TYPE_COLORS: Record<string, string> = {
+		'related-to': '#3b82f6',
+		'prerequisite': '#ef4444',
+		'see-also': '#10b981',
+		'contradicts': '#f59e0b',
+		'supports': '#8b5cf6',
+		'extends': '#ec4899',
+	};
 
 	let {
 		nodes = [] as GraphNode[],
 		links = [] as GraphLink[],
 		onNodeClick,
 		activeNodeId = '',
-		ar = false,
 	}: {
 		nodes: GraphNode[];
 		links: GraphLink[];
 		onNodeClick: (path: string, vaultName: string) => void;
 		activeNodeId?: string;
-		ar?: boolean;
 	} = $props();
 
 	let containerEl: HTMLDivElement;
@@ -51,24 +60,40 @@
 	let tooltipY = $state(0);
 	let tooltipVisible = $state(false);
 
+	// Legend click bounds
+	let legendBounds: { x: number; y: number; w: number; h: number; lineH: number; padY: number } | null = null;
+
 	// Vault colors
 	const VAULT_COLORS = [
 		'#8b5cf6', '#3b82f6', '#10b981', '#f59e0b',
 		'#ef4444', '#ec4899', '#06b6d4', '#84cc16',
 	];
 	let vaultColorMap = new Map<string, string>();
-	let vaultList: { name: string; color: string }[] = $state([]);
+	let vaultList: { name: string; color: string; count: number }[] = $state([]);
+	let hiddenVaults: Set<string> = $state(new Set());
 
 	function assignVaultColors() {
-		const vaults = [...new Set(nodes.map(n => n.vaultName))];
+		const vaultCounts = new Map<string, number>();
+		for (const n of nodes) {
+			vaultCounts.set(n.vaultName, (vaultCounts.get(n.vaultName) || 0) + 1);
+		}
+		const vaultNames = [...vaultCounts.keys()];
 		vaultColorMap = new Map();
-		const list: { name: string; color: string }[] = [];
-		vaults.forEach((v, i) => {
+		const list: { name: string; color: string; count: number }[] = [];
+		vaultNames.forEach((v, i) => {
 			const color = VAULT_COLORS[i % VAULT_COLORS.length];
 			vaultColorMap.set(v, color);
-			list.push({ name: v, color });
+			list.push({ name: v, color, count: vaultCounts.get(v) || 0 });
 		});
 		vaultList = list;
+	}
+
+	function toggleVaultVisibility(vaultName: string) {
+		const next = new Set(hiddenVaults);
+		if (next.has(vaultName)) next.delete(vaultName);
+		else next.add(vaultName);
+		hiddenVaults = next;
+		renderGraph();
 	}
 
 	function getNodeRadius(d: any): number {
@@ -192,14 +217,33 @@
 
 		assignVaultColors();
 
-		nodeData = nodes.map(n => ({ ...n }));
-		linkData = links.map(l => ({ ...l }));
+		// Filter hidden vaults
+		const visibleNodes = nodes.filter(n => !hiddenVaults.has(n.vaultName));
+		const visibleIds = new Set(visibleNodes.map(n => n.id));
+		const visibleLinks = links.filter(l => visibleIds.has(l.source as string) && visibleIds.has(l.target as string));
+
+		nodeData = visibleNodes.map(n => ({ ...n }));
+		linkData = visibleLinks.map(l => ({ ...l }));
+
+		// Compute vault cluster centers for clustering force
+		const vaultNames = [...new Set(visibleNodes.map(n => n.vaultName))];
+		const vaultCenters = new Map<string, { x: number; y: number }>();
+		const angle = (2 * Math.PI) / Math.max(vaultNames.length, 1);
+		const clusterRadius = Math.min(width, height) * 0.2;
+		vaultNames.forEach((v, i) => {
+			vaultCenters.set(v, {
+				x: width / 2 + Math.cos(angle * i) * clusterRadius,
+				y: height / 2 + Math.sin(angle * i) * clusterRadius,
+			});
+		});
 
 		simulation = d3.forceSimulation(nodeData)
 			.force('link', d3.forceLink(linkData).id((d: any) => d.id).distance(60))
 			.force('charge', d3.forceManyBody().strength(-80).theta(0.9))
 			.force('center', d3.forceCenter(width / 2, height / 2))
 			.force('collision', d3.forceCollide().radius(8))
+			.force('clusterX', d3.forceX((d: any) => vaultCenters.get(d.vaultName)?.x ?? width / 2).strength(0.05))
+			.force('clusterY', d3.forceY((d: any) => vaultCenters.get(d.vaultName)?.y ?? height / 2).strength(0.05))
 			.alphaDecay(0.06)
 			.velocityDecay(0.45);
 
@@ -312,6 +356,20 @@
 
 	function handleClick(e: MouseEvent) {
 		if (dragMoved) { dragMoved = false; return; }
+
+		// Check legend click
+		if (legendBounds && vaultList.length > 1) {
+			const mx = e.offsetX, my = e.offsetY;
+			const lb = legendBounds;
+			if (mx >= lb.x && mx <= lb.x + lb.w && my >= lb.y && my <= lb.y + lb.h) {
+				const idx = Math.floor((my - lb.y - lb.padY) / lb.lineH);
+				if (idx >= 0 && idx < vaultList.length) {
+					toggleVaultVisibility(vaultList[idx].name);
+					return;
+				}
+			}
+		}
+
 		const [sx, sy] = currentTransform.invert([e.offsetX, e.offsetY]);
 		const node = findNodeAt(sx, sy);
 		if (node) {
@@ -362,6 +420,46 @@
 			if (hn) highlightColor = getNodeColor(hn);
 		}
 
+		// Convex hulls for vault clusters
+		if (vaultList.length > 1) {
+			const vaultPoints = new Map<string, [number, number][]>();
+			for (const n of nodeData) {
+				if (n.x == null) continue;
+				const pts = vaultPoints.get(n.vaultName) || [];
+				pts.push([n.x, n.y]);
+				vaultPoints.set(n.vaultName, pts);
+			}
+			for (const [vName, pts] of vaultPoints) {
+				if (pts.length < 3) continue;
+				const hull = d3.polygonHull(pts);
+				if (!hull) continue;
+				const color = vaultColorMap.get(vName) || '#6b7280';
+				ctx.beginPath();
+				// Expand hull points outward for padding
+				const cx = d3.mean(hull, p => p[0]) || 0;
+				const cy = d3.mean(hull, p => p[1]) || 0;
+				const pad = 20 / currentTransform.k;
+				const expanded = hull.map(([px, py]) => {
+					const dx = px - cx, dy = py - cy;
+					const dist = Math.sqrt(dx * dx + dy * dy);
+					return [px + (dx / dist) * pad, py + (dy / dist) * pad] as [number, number];
+				});
+				ctx.moveTo(expanded[0][0], expanded[0][1]);
+				for (let i = 1; i < expanded.length; i++) {
+					ctx.lineTo(expanded[i][0], expanded[i][1]);
+				}
+				ctx.closePath();
+				ctx.fillStyle = color;
+				ctx.globalAlpha = 0.04;
+				ctx.fill();
+				ctx.strokeStyle = color;
+				ctx.lineWidth = 1 / currentTransform.k;
+				ctx.globalAlpha = 0.15;
+				ctx.setLineDash([]);
+				ctx.stroke();
+			}
+		}
+
 		// Links
 		for (const l of linkData) {
 			const src = l.source;
@@ -369,21 +467,39 @@
 			if (src.x == null || tgt.x == null) continue;
 
 			const isHL = highlightId && (src.id === highlightId || tgt.id === highlightId);
+			const isCrossVault = src.vaultName !== tgt.vaultName;
+			const typedColor = l.linkType ? LINK_TYPE_COLORS[l.linkType] : null;
 
 			ctx.beginPath();
 			ctx.moveTo(src.x, src.y);
 			ctx.lineTo(tgt.x, tgt.y);
 
+			if (isCrossVault && !isHL) {
+				ctx.setLineDash([4 / currentTransform.k, 3 / currentTransform.k]);
+			} else {
+				ctx.setLineDash([]);
+			}
+
 			if (isHL) {
 				ctx.strokeStyle = highlightColor;
 				ctx.lineWidth = 2 / currentTransform.k;
 				ctx.globalAlpha = 0.9;
+				ctx.setLineDash([]);
+			} else if (typedColor) {
+				ctx.strokeStyle = typedColor;
+				ctx.lineWidth = 1.2 / currentTransform.k;
+				ctx.globalAlpha = highlightId ? linkDimAlpha : 0.6;
+			} else if (isCrossVault) {
+				ctx.strokeStyle = linkColor;
+				ctx.lineWidth = 1 / currentTransform.k;
+				ctx.globalAlpha = highlightId ? linkDimAlpha : linkAlpha * 0.7;
 			} else {
 				ctx.strokeStyle = linkColor;
 				ctx.lineWidth = 0.6 / currentTransform.k;
 				ctx.globalAlpha = highlightId ? linkDimAlpha : linkAlpha;
 			}
 			ctx.stroke();
+			ctx.setLineDash([]);
 		}
 
 		// Nodes
@@ -456,7 +572,8 @@
 
 			let maxW = 0;
 			for (const v of vaultList) {
-				const w = ctx.measureText(v.name).width;
+				const label = `${v.name} (${v.count})`;
+				const w = ctx.measureText(label).width;
 				if (w > maxW) maxW = w;
 			}
 			const boxW = dotR * 2 + 12 + maxW + padX * 2;
@@ -472,19 +589,25 @@
 
 			ctx.globalAlpha = 1;
 			for (let i = 0; i < vaultList.length; i++) {
+				const v = vaultList[i];
+				const isHidden = hiddenVaults.has(v.name);
 				const iy = y + padY + i * lineH + lineH / 2;
 
+				ctx.globalAlpha = isHidden ? 0.3 : 1;
 				ctx.beginPath();
 				ctx.arc(x + padX + dotR, iy, dotR, 0, Math.PI * 2);
-				ctx.fillStyle = vaultList[i].color;
+				ctx.fillStyle = v.color;
 				ctx.fill();
 
 				ctx.fillStyle = legendText;
 				ctx.font = `500 ${fs}px system-ui, -apple-system, sans-serif`;
 				ctx.textAlign = 'left';
 				ctx.textBaseline = 'middle';
-				ctx.fillText(vaultList[i].name, x + padX + dotR * 2 + 12, iy);
+				ctx.fillText(`${v.name} (${v.count})`, x + padX + dotR * 2 + 12, iy);
 			}
+
+			// Store legend bounds for click detection
+			legendBounds = { x, y, w: boxW, h: boxH, lineH, padY };
 
 			ctx.restore();
 		}
@@ -525,7 +648,7 @@
 
 <div class="graph-container" bind:this={containerEl}>
 	{#if nodes.length === 0}
-		<div class="graph-empty">{ar ? 'لا توجد ملاحظات لعرضها' : 'No notes to display'}</div>
+		<div class="graph-empty">{$t('graphView.noNotes')}</div>
 	{:else}
 		<canvas bind:this={canvasEl}></canvas>
 		{#if tooltipVisible}

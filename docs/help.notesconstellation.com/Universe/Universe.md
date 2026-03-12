@@ -1,0 +1,154 @@
+---
+aliases:
+  - Universes
+  - Universe setup
+  - Universe manager
+  - Open existing universe
+  - Child universe
+description: Learn how to create, open, and manage Universes in Constellation — your portable data containers for vaults, bases, settings, and more.
+---
+
+# Universe
+
+A **Universe** is a portable, user-owned directory where Constellation stores all your data — vaults, bases, bookmarks, settings, workspaces, and property types. Unlike traditional app data folders hidden deep in your system, a Universe lives wherever you choose and can be moved between devices.
+
+## Universe directory structure
+
+```
+My Universe/
+├── universe.json          # Name, creation date, child references
+├── vaults.json            # Registered Obsidian vaults
+├── bases/                 # Base files (.base)
+├── bookmarks.json         # Bookmarked notes
+├── settings.json          # App settings
+├── workspaces.json        # Workspace layouts
+└── property-types.json    # Property type mappings
+```
+
+---
+
+## First-launch setup wizard
+
+When you launch Constellation for the first time, a setup wizard guides you through creating or opening a Universe.
+
+### Step 0: Welcome
+
+You are presented with two options:
+
+| Option | Description |
+|---|---|
+| **Create New Universe** | Set up a fresh universe with a name and location of your choice. |
+| **Open Existing Universe** | Open a universe folder you've already created on this or another device. |
+
+> [!tip]
+> If you've used Constellation on another computer and copied your Universe folder over, choose **Open Existing Universe** to reconnect it instantly.
+
+### Step 1: Name and location
+
+If you chose **Create New Universe**:
+
+1. Enter a **Universe Name** (e.g., "My Research", "Work Notes").
+2. Click **Choose Folder** to pick where the universe directory will be created.
+3. Click **Next** to create the universe and proceed.
+
+### Step 2: Add vaults and child universes
+
+After creating your universe, you can immediately connect your data:
+
+- **Add Vault** — Opens a folder picker. Select an Obsidian vault folder (must contain a `.obsidian` directory).
+- **Add Child Universe** — Link another existing Universe as a child. Its vaults become available to your new universe automatically.
+- **Skip for now** — Proceed without adding anything. You can always add vaults and child universes later.
+
+Click **Finish** when you're done.
+
+> [!tip]
+> You can add as many vaults and child universes as you like during setup. They can also be managed later through the Universe Manager and Vault Manager.
+
+---
+
+## Opening an existing universe
+
+To open a Universe that already exists on your filesystem:
+
+1. On the welcome screen, click **Open Existing Universe**.
+2. Navigate to the folder that contains `universe.json`.
+3. Constellation reads the universe metadata and registers it automatically.
+
+This is useful when:
+- You copied a Universe folder from another device.
+- You reinstalled Constellation and want to reconnect your data.
+- A colleague shared their Universe folder with you.
+
+---
+
+## Universe Manager
+
+Access the Universe Manager from the sidebar footer (click the universe name) to manage multiple universes.
+
+| Action | Description |
+|---|---|
+| **Switch** | Activate a different universe. All vaults, settings, and caches reload. The window title and status bar update instantly. |
+| **Create New** | Create an additional universe. |
+| **Remove** | Remove a universe from the list (files are preserved on disk). |
+| **Open Folder** | Open the universe directory in your file explorer. |
+| **Add Child Universe** | Link a child universe to share its vaults. |
+
+The active universe is highlighted with a **green badge** and green border, making it easy to identify at a glance.
+
+### Switching performance
+
+Switching universes is designed to be fast:
+
+- Essential data (settings, bookmarks, workspaces) loads **in parallel**.
+- The app UI becomes usable **immediately** after vaults load.
+- File watchers and index caches rebuild **in the background** while you browse.
+- All previous state (tabs, trees, caches) is fully cleared before loading the new universe.
+
+---
+
+## Child universes (Universe of Universes)
+
+A Universe can reference other Universes as **children**. When you add a child universe, its vaults automatically become available in the parent — no duplication needed.
+
+**Example:**
+
+- **Universe A** has vaults: V1, V2, V3
+- **Universe B** has vaults: V4, V5
+- **Universe X** references A and B as children, plus its own vault V6
+- **Effective vaults for X:** V1, V2, V3, V4, V5, V6
+
+If V7 is later added to Universe B, Universe X automatically sees it.
+
+> [!warning]
+> Circular references are detected and prevented. If Universe A references B and B references A, each is only resolved once.
+
+---
+
+## Window title and status bar
+
+The active universe name appears in two places:
+
+- **Window title bar** — Displays as **Constellation - UniverseName**.
+- **Status bar** (bottom-right corner) — Shows the universe name alongside vault and note counts.
+
+Both update immediately when you switch universes through the Universe Manager.
+
+---
+
+## Portability
+
+Since a Universe is a self-contained directory, you can:
+
+- **Move it** to a different drive or location.
+- **Copy it** to another computer.
+- **Back it up** with any file sync or backup tool.
+- **Share it** with others (vault paths will need to be re-registered on the new machine).
+
+> [!tip]
+> The only thing stored outside your Universe is a small registry file in the app data directory that remembers which Universes exist and which one was last active.
+
+---
+
+## RTL support
+
+The Universe setup wizard and manager fully support right-to-left (RTL) languages including Arabic, Hebrew, Persian, and Urdu. The interface direction adapts automatically based on your language setting.

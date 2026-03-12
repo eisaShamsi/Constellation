@@ -1,12 +1,11 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	let {
 		tags = {} as Record<string, number>,
 		onTagClick,
-		ar = false,
 	}: {
 		tags: Record<string, number>;
 		onTagClick: (tag: string) => void;
-		ar?: boolean;
 	} = $props();
 
 	// Build tag tree from flat tags (e.g., "parent/child" → nested)
@@ -50,7 +49,7 @@
 
 <div class="tags-panel">
 	{#if Object.keys(tags).length === 0}
-		<div class="tp-empty">{ar ? 'لا توجد وسوم' : 'No tags'}</div>
+		<div class="tp-empty">{$t('tagsPanel.noTags')}</div>
 	{:else}
 		{#each tagTree as node}
 			{@render tagNode(node, 0)}
