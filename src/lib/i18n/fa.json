@@ -387,7 +387,30 @@
     "selectType": "انتخاب نوع"
   },
   "graphView": {
-    "noNotes": "یادداشتی برای نمایش وجود ندارد"
+    "noNotes": "یادداشتی برای نمایش وجود ندارد",
+    "controls": {
+      "title": "تنظیمات گراف",
+      "reset": "بازنشانی به پیش‌فرض",
+      "filters": "فیلترها",
+      "searchPlaceholder": "جستجوی فایل‌ها...",
+      "tags": "برچسب‌ها",
+      "attachments": "پیوست‌ها",
+      "existingOnly": "فقط فایل‌های موجود",
+      "orphans": "یادداشت‌های منزوی",
+      "groups": "گروه‌ها",
+      "newGroup": "گروه جدید",
+      "display": "نمایش",
+      "arrows": "فلش‌ها",
+      "textFade": "آستانه محو شدن متن",
+      "nodeSize": "اندازه گره",
+      "linkThickness": "ضخامت لینک",
+      "animate": "متحرک‌سازی",
+      "forces": "نیروها",
+      "centerForce": "نیروی مرکزی",
+      "repelForce": "نیروی دافعه",
+      "linkForce": "نیروی لینک",
+      "linkDistance": "فاصله لینک"
+    }
   },
   "vaults": {
     "searchPlaceholder": "جستجوی همه گاوصندوق‌ها...",

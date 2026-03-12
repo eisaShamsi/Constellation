@@ -387,7 +387,30 @@
     "selectType": "Tür seç"
   },
   "graphView": {
-    "noNotes": "Gösterilecek not yok"
+    "noNotes": "Gösterilecek not yok",
+    "controls": {
+      "title": "Grafik Ayarları",
+      "reset": "Varsayılanlara sıfırla",
+      "filters": "Filtreler",
+      "searchPlaceholder": "Dosya ara...",
+      "tags": "Etiketler",
+      "attachments": "Ekler",
+      "existingOnly": "Yalnızca mevcut dosyalar",
+      "orphans": "Yetim notlar",
+      "groups": "Gruplar",
+      "newGroup": "Yeni grup",
+      "display": "Görünüm",
+      "arrows": "Oklar",
+      "textFade": "Metin solma eşiği",
+      "nodeSize": "Düğüm boyutu",
+      "linkThickness": "Bağlantı kalınlığı",
+      "animate": "Animasyon",
+      "forces": "Kuvvetler",
+      "centerForce": "Merkez kuvveti",
+      "repelForce": "İtme kuvveti",
+      "linkForce": "Bağlantı kuvveti",
+      "linkDistance": "Bağlantı mesafesi"
+    }
   },
   "vaults": {
     "searchPlaceholder": "Tüm kasalarda ara...",

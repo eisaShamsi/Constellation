@@ -387,7 +387,30 @@
     "selectType": "Selecionar tipo"
   },
   "graphView": {
-    "noNotes": "Nenhuma nota para exibir"
+    "noNotes": "Nenhuma nota para exibir",
+    "controls": {
+      "title": "Configurações do grafo",
+      "reset": "Redefinir para padrões",
+      "filters": "Filtros",
+      "searchPlaceholder": "Pesquisar arquivos...",
+      "tags": "Tags",
+      "attachments": "Anexos",
+      "existingOnly": "Apenas arquivos existentes",
+      "orphans": "Órfãs",
+      "groups": "Grupos",
+      "newGroup": "Novo grupo",
+      "display": "Exibição",
+      "arrows": "Setas",
+      "textFade": "Limite de esmaecimento do texto",
+      "nodeSize": "Tamanho do nó",
+      "linkThickness": "Espessura do link",
+      "animate": "Animar",
+      "forces": "Forças",
+      "centerForce": "Força central",
+      "repelForce": "Força de repulsão",
+      "linkForce": "Força do link",
+      "linkDistance": "Distância do link"
+    }
   },
   "vaults": {
     "searchPlaceholder": "Pesquisar em todos os cofres...",

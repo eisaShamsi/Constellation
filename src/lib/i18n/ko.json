@@ -387,7 +387,30 @@
     "selectType": "유형 선택"
   },
   "graphView": {
-    "noNotes": "표시할 노트가 없습니다"
+    "noNotes": "표시할 노트가 없습니다",
+    "controls": {
+      "title": "그래프 설정",
+      "reset": "기본값으로 재설정",
+      "filters": "필터",
+      "searchPlaceholder": "파일 검색...",
+      "tags": "태그",
+      "attachments": "첨부 파일",
+      "existingOnly": "기존 파일만",
+      "orphans": "고립된 노트",
+      "groups": "그룹",
+      "newGroup": "새 그룹",
+      "display": "표시",
+      "arrows": "화살표",
+      "textFade": "텍스트 페이드 임계값",
+      "nodeSize": "노드 크기",
+      "linkThickness": "링크 두께",
+      "animate": "애니메이션",
+      "forces": "힘",
+      "centerForce": "중심력",
+      "repelForce": "척력",
+      "linkForce": "링크 힘",
+      "linkDistance": "링크 거리"
+    }
   },
   "vaults": {
     "searchPlaceholder": "모든 보관함 검색...",

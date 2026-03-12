@@ -1,69 +1,81 @@
-# Plan: Universe Setup Wizard (Multi-Step)
+# Plan: Graph View Controls Panel
 
-Transform `UniverseSetup.svelte` from a single-step form into a multi-step wizard with 3 steps:
+## Goal
+Add an Obsidian-style controls panel to the existing Graph View with **Filters**, **Groups**, **Display**, and **Forces** sections — matching the Obsidian screenshot the user provided.
 
-## Step 0: Welcome / Choose Action
-- **Create New Universe** — proceed to Step 1
-- **Open Existing Universe** — folder picker → reads `universe.json` from the selected directory → registers it in the registry → calls `onCreated` (skip Steps 1 & 2)
-
-## Step 1: Name & Location (current screen, mostly unchanged)
-- Universe name input
-- Folder location picker
-- "Next" button (instead of "Create Universe") → creates the universe directory + `universe.json`, then advances to Step 2
-- "Back" button to return to Step 0
-
-## Step 2: Add Vaults & Child Universes
-- Shows the universe name at the top ("Setting up: MyFirstUniverseTest")
-- **Add Vault** button — opens folder picker, validates `.obsidian/` folder, registers the vault
-- Lists added vaults with remove buttons
-- **Add Child Universe** button — opens folder picker to link an existing universe as a child
-- Lists added child universes with remove buttons
-- **Finish** button — calls `onCreated(entry)` to proceed to the main app
-- "Skip" link to finish without adding anything
-
-## Migration Flow
-If `needsMigration` is true, skip Step 0 and go straight to Step 1 (migration path), then Step 2.
+## Current State
+- `GraphView.svelte` (694 lines): D3 force simulation on Canvas with vault clustering, legend, zoom/pan, drag, tooltips
+- Hardcoded force values: charge=-80, distance=60, collision=8, clusterStrength=0.05, alphaDecay=0.06
+- Hardcoded display values: node radius 4-14, link width 0.6-2
+- No search filter, no groups, no animate toggle, no user-configurable controls
+- Legend drawn on canvas (vault color dots with counts)
 
 ## Implementation
 
-### 1. Rust: `open_existing_universe` command (`universe.rs`)
-New Tauri command that:
-- Takes a `path: String` (user-picked folder)
-- Validates that `{path}/universe.json` exists and is valid JSON (`UniverseMeta`)
-- Reads the `UniverseMeta` to get the name and created date
-- Checks it's not already registered (by path)
-- Adds an `UniverseEntry` to the registry
-- Sets it as active
-- Returns the `UniverseEntry`
+### Step 1: Add Controls State + HTML Panel to `GraphView.svelte`
 
-Register in `lib.rs`.
+Add a collapsible HTML side panel (left, ~280px) overlaying the canvas. Four collapsible `<details>` sections:
 
-### 2. TypeScript: `openExistingUniverse()` in `universe/store.ts`
-IPC wrapper for the new command.
+**Filters:**
+- `filterQuery: string` — search input (filters nodes by name/path)
+- `showTags: boolean` (default: off) — toggle tag nodes
+- `showAttachments: boolean` (default: off) — toggle attachments
+- `existingOnly: boolean` (default: off) — hide ghost/unresolved nodes
+- `showOrphans: boolean` (default: on) — show unlinked notes
 
-### 3. Rewrite `UniverseSetup.svelte` as wizard
-- Add `step` state: `0 | 1 | 2`
-- Step 0: Welcome screen with two large buttons (Create New / Open Existing)
-- Step 1: Current name+location form, but button says "Next" and goes to step 2
-- Step 2: Vault & child universe management with add/remove, then "Finish"
-- After creating universe in Step 1, store the `UniverseEntry` and `setActiveUniverse` so that Step 2 vault operations go to the right universe
+**Groups:**
+- `groups: Array<{ query: string; color: string }>` — color-coded search groups
+- "New group" button adds a row with query input + color picker + delete button
+- Nodes matching a group query get that group's color override
 
-### 4. i18n: Add new keys in all 15 language files
-New keys under `universe.setup`:
-- `welcome`, `createNew`, `createNewDesc`, `openExisting`, `openExistingDesc`
-- `next`, `back`
-- `addVaultsHeading`, `addVaultsDescription`
-- `addVault`, `addChildUniverse`, `finish`, `skip`
-- `noVaultsYet`, `vaultAdded`, `childAdded`
-- `openError` (for invalid universe folder)
+**Display:**
+- `showArrows: boolean` (default: off) — draw arrowheads on links
+- `textFadeThreshold: number` (range 0–5, default: 1.5) — zoom level for label visibility
+- `nodeSize: number` (range 1–10, default: 4) — node scale multiplier
+- `linkThickness: number` (range 1–5, default: 1) — link width multiplier
+- `animate: boolean` (default: true) — toggle force animation; when off, simulation runs to completion instantly
 
-### 5. Help docs
-Update `docs/help.notesconstellation.com/Universe/Universe.md` with the new wizard flow.
+**Forces:**
+- `centerForce: number` (range 0–1, default: 0.5)
+- `repelForce: number` (range 0–300, default: 80)
+- `linkForce: number` (range 0–1, default: 1)
+- `linkDistance: number` (range 10–500, default: 60)
 
-## Files to modify
-1. `src-tauri/src/universe.rs` — add `open_existing_universe` command
-2. `src-tauri/src/lib.rs` — register new command
-3. `src/lib/universe/store.ts` — add `openExistingUniverse()` wrapper
-4. `src/lib/components/UniverseSetup.svelte` — rewrite as 3-step wizard
-5. `src/lib/i18n/*.json` (15 files) — add new keys
-6. `docs/help.notesconstellation.com/Universe/Universe.md` — update help docs
+Panel features:
+- Close (×) and Reset (↻) buttons in the header
+- Toggle button (gear icon) on the graph toolbar to show/hide
+- Scrollable, styled to match the app theme
+
+### Step 2: Wire Controls to D3 Simulation
+
+- **Filters**: Applied in `renderGraph()` when building nodeData/linkData
+  - `filterQuery` → filter nodes by name/path substring match
+  - `showOrphans` → filter nodes with linkCount === 0
+  - `existingOnly` → would filter ghost nodes (currently graph only shows linked notes, so minimal impact)
+- **Groups**: In `getNodeColor()`, check if node matches any group query; first match wins
+- **Display**:
+  - `showArrows` → draw arrowhead triangles at link endpoints in `draw()`
+  - `textFadeThreshold` → show labels when `currentTransform.k >= threshold`
+  - `nodeSize` → multiply `getNodeRadius()` result
+  - `linkThickness` → multiply link lineWidth
+  - `animate` → when toggled off, tick simulation to alpha=0 instantly
+- **Forces**: Use `$effect` to dynamically update `simulation.force(...)` parameters without full re-render, then reheat with `simulation.alpha(0.3).restart()`
+
+### Step 3: i18n (15 locale files)
+Add keys under `graphView.controls`:
+```
+filters, search, tags, attachments, existingOnly, orphans,
+groups, newGroup,
+display, arrows, textFade, nodeSize, linkThickness, animate,
+forces, centerForce, repelForce, linkForce, linkDistance,
+reset
+```
+
+### Step 4: Help Docs
+Create/update `docs/help.notesconstellation.com/Graph View/Graph View.md`
+
+## Files to Modify
+1. `src/lib/components/GraphView.svelte` — Controls panel UI + wiring (main change)
+2. `src/lib/i18n/*.json` (15 files) — Graph control translations
+3. `docs/help.notesconstellation.com/Graph View/Graph View.md` — Help documentation
+4. `src/routes/+layout.svelte` — Add toggle button for controls panel in graph header

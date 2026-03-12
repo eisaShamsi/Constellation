@@ -387,7 +387,30 @@
     "selectType": "Typ wählen"
   },
   "graphView": {
-    "noNotes": "Keine Notizen zum Anzeigen"
+    "noNotes": "Keine Notizen zum Anzeigen",
+    "controls": {
+      "title": "Graph-Einstellungen",
+      "reset": "Auf Standardwerte zurücksetzen",
+      "filters": "Filter",
+      "searchPlaceholder": "Dateien suchen...",
+      "tags": "Tags",
+      "attachments": "Anhänge",
+      "existingOnly": "Nur vorhandene Dateien",
+      "orphans": "Verwaiste Notizen",
+      "groups": "Gruppen",
+      "newGroup": "Neue Gruppe",
+      "display": "Anzeige",
+      "arrows": "Pfeile",
+      "textFade": "Textausblendungsschwelle",
+      "nodeSize": "Knotengröße",
+      "linkThickness": "Verbindungsstärke",
+      "animate": "Animieren",
+      "forces": "Kräfte",
+      "centerForce": "Zentrierungskraft",
+      "repelForce": "Abstoßungskraft",
+      "linkForce": "Verbindungskraft",
+      "linkDistance": "Verbindungsabstand"
+    }
   },
   "vaults": {
     "searchPlaceholder": "Alle Tresore durchsuchen...",

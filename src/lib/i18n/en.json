@@ -387,7 +387,30 @@
     "selectType": "Select type"
   },
   "graphView": {
-    "noNotes": "No notes to display"
+    "noNotes": "No notes to display",
+    "controls": {
+      "title": "Graph Settings",
+      "reset": "Reset to defaults",
+      "filters": "Filters",
+      "searchPlaceholder": "Search files...",
+      "tags": "Tags",
+      "attachments": "Attachments",
+      "existingOnly": "Existing files only",
+      "orphans": "Orphans",
+      "groups": "Groups",
+      "newGroup": "New group",
+      "display": "Display",
+      "arrows": "Arrows",
+      "textFade": "Text fade threshold",
+      "nodeSize": "Node size",
+      "linkThickness": "Link thickness",
+      "animate": "Animate",
+      "forces": "Forces",
+      "centerForce": "Center force",
+      "repelForce": "Repel force",
+      "linkForce": "Link force",
+      "linkDistance": "Link distance"
+    }
   },
   "vaults": {
     "searchPlaceholder": "Search all vaults...",

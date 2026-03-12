@@ -387,7 +387,30 @@
     "selectType": "Выбрать тип"
   },
   "graphView": {
-    "noNotes": "Нет заметок для отображения"
+    "noNotes": "Нет заметок для отображения",
+    "controls": {
+      "title": "Настройки графа",
+      "reset": "Сбросить к значениям по умолчанию",
+      "filters": "Фильтры",
+      "searchPlaceholder": "Поиск файлов...",
+      "tags": "Теги",
+      "attachments": "Вложения",
+      "existingOnly": "Только существующие файлы",
+      "orphans": "Изолированные заметки",
+      "groups": "Группы",
+      "newGroup": "Новая группа",
+      "display": "Отображение",
+      "arrows": "Стрелки",
+      "textFade": "Порог затухания текста",
+      "nodeSize": "Размер узла",
+      "linkThickness": "Толщина связи",
+      "animate": "Анимация",
+      "forces": "Силы",
+      "centerForce": "Сила центрирования",
+      "repelForce": "Сила отталкивания",
+      "linkForce": "Сила связи",
+      "linkDistance": "Расстояние связи"
+    }
   },
   "vaults": {
     "searchPlaceholder": "Поиск по всем хранилищам...",

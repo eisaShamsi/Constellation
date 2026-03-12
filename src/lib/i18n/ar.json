@@ -387,7 +387,30 @@
     "selectType": "اختر النوع"
   },
   "graphView": {
-    "noNotes": "لا توجد ملاحظات لعرضها"
+    "noNotes": "لا توجد ملاحظات لعرضها",
+    "controls": {
+      "title": "إعدادات الرسم البياني",
+      "reset": "إعادة تعيين الافتراضيات",
+      "filters": "المرشحات",
+      "searchPlaceholder": "البحث في الملفات...",
+      "tags": "الوسوم",
+      "attachments": "المرفقات",
+      "existingOnly": "الملفات الموجودة فقط",
+      "orphans": "الملاحظات المعزولة",
+      "groups": "المجموعات",
+      "newGroup": "مجموعة جديدة",
+      "display": "العرض",
+      "arrows": "الأسهم",
+      "textFade": "عتبة تلاشي النص",
+      "nodeSize": "حجم العقدة",
+      "linkThickness": "سمك الرابط",
+      "animate": "تحريك",
+      "forces": "القوى",
+      "centerForce": "قوة المركز",
+      "repelForce": "قوة التنافر",
+      "linkForce": "قوة الرابط",
+      "linkDistance": "مسافة الرابط"
+    }
   },
   "vaults": {
     "searchPlaceholder": "البحث في جميع الخزائن...",

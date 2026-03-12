@@ -387,7 +387,30 @@
     "selectType": "प्रकार चुनें"
   },
   "graphView": {
-    "noNotes": "दिखाने के लिए कोई नोट नहीं"
+    "noNotes": "दिखाने के लिए कोई नोट नहीं",
+    "controls": {
+      "title": "ग्राफ़ सेटिंग्स",
+      "reset": "डिफ़ॉल्ट पर रीसेट करें",
+      "filters": "फ़िल्टर",
+      "searchPlaceholder": "फ़ाइलें खोजें...",
+      "tags": "टैग्स",
+      "attachments": "अटैचमेंट",
+      "existingOnly": "केवल मौजूदा फ़ाइलें",
+      "orphans": "अकेले नोट्स",
+      "groups": "समूह",
+      "newGroup": "नया समूह",
+      "display": "प्रदर्शन",
+      "arrows": "तीर",
+      "textFade": "टेक्स्ट फ़ेड सीमा",
+      "nodeSize": "नोड का आकार",
+      "linkThickness": "लिंक की मोटाई",
+      "animate": "एनिमेट",
+      "forces": "बल",
+      "centerForce": "केंद्र बल",
+      "repelForce": "प्रतिकर्षण बल",
+      "linkForce": "लिंक बल",
+      "linkDistance": "लिंक दूरी"
+    }
   },
   "vaults": {
     "searchPlaceholder": "सभी तिजोरियों में खोजें...",

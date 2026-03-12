@@ -27,6 +27,11 @@
 		'extends': '#ec4899',
 	};
 
+	const GROUP_COLORS = [
+		'#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+		'#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
+	];
+
 	let {
 		nodes = [] as GraphNode[],
 		links = [] as GraphLink[],
@@ -72,6 +77,126 @@
 	let vaultList: { name: string; color: string; count: number }[] = $state([]);
 	let hiddenVaults: Set<string> = $state(new Set());
 
+	// ─── Controls Panel State ───
+
+	let showControls = $state(true);
+
+	// Sections collapsed state
+	let filtersOpen = $state(true);
+	let groupsOpen = $state(true);
+	let displayOpen = $state(true);
+	let forcesOpen = $state(true);
+
+	// Filters
+	let filterQuery = $state('');
+	let showOrphans = $state(true);
+	let existingOnly = $state(false);
+
+	// Groups
+	let groups: { query: string; color: string }[] = $state([]);
+
+	// Display
+	let showArrows = $state(false);
+	let textFadeThreshold = $state(1.5);
+	let nodeSizeMultiplier = $state(4);
+	let linkThicknessMultiplier = $state(1);
+	let animating = $state(true);
+
+	// Forces
+	let centerForce = $state(0.5);
+	let repelForce = $state(80);
+	let linkForce = $state(1);
+	let linkDistance = $state(60);
+
+	function resetControls() {
+		filterQuery = '';
+		showOrphans = true;
+		existingOnly = false;
+		groups = [];
+		showArrows = false;
+		textFadeThreshold = 1.5;
+		nodeSizeMultiplier = 4;
+		linkThicknessMultiplier = 1;
+		animating = true;
+		centerForce = 0.5;
+		repelForce = 80;
+		linkForce = 1;
+		linkDistance = 60;
+		renderGraph();
+	}
+
+	function addGroup() {
+		groups = [...groups, { query: '', color: GROUP_COLORS[groups.length % GROUP_COLORS.length] }];
+	}
+
+	function removeGroup(index: number) {
+		groups = groups.filter((_, i) => i !== index);
+		renderGraph();
+	}
+
+	function updateGroupQuery(index: number, query: string) {
+		groups = groups.map((g, i) => i === index ? { ...g, query } : g);
+		renderGraph();
+	}
+
+	function updateGroupColor(index: number, color: string) {
+		groups = groups.map((g, i) => i === index ? { ...g, color } : g);
+		renderGraph();
+	}
+
+	// ─── Reactivity: re-render on control changes ───
+
+	$effect(() => {
+		// Track all filter/display values to trigger re-render
+		const _ = [filterQuery, showOrphans, existingOnly, showArrows, textFadeThreshold, nodeSizeMultiplier, linkThicknessMultiplier];
+		if (mounted && nodes.length > 0) renderGraph();
+	});
+
+	$effect(() => {
+		// Track force values — update simulation dynamically
+		const _ = [centerForce, repelForce, linkForce, linkDistance];
+		if (simulation) {
+			updateForces();
+		}
+	});
+
+	$effect(() => {
+		if (!animating && simulation) {
+			// Run simulation to completion instantly
+			simulation.stop();
+			for (let i = 0; i < 300; i++) simulation.tick();
+			draw();
+		} else if (animating && simulation) {
+			simulation.alpha(0.3).restart();
+		}
+	});
+
+	function updateForces() {
+		if (!simulation || !containerEl) return;
+		const width = containerEl.clientWidth;
+		const height = containerEl.clientHeight;
+
+		const center = simulation.force('center') as d3.ForceCenter<any> | undefined;
+		if (center) {
+			center.strength(centerForce);
+		}
+
+		const charge = simulation.force('charge') as d3.ForceManyBody<any> | undefined;
+		if (charge) {
+			charge.strength(-repelForce);
+		}
+
+		const link = simulation.force('link') as d3.ForceLink<any, any> | undefined;
+		if (link) {
+			link.strength(linkForce);
+			link.distance(linkDistance);
+		}
+
+		simulation.alpha(0.3).restart();
+	}
+
+	// ─── Vault colors ───
+
 	function assignVaultColors() {
 		const vaultCounts = new Map<string, number>();
 		for (const n of nodes) {
@@ -97,11 +222,35 @@
 	}
 
 	function getNodeRadius(d: any): number {
-		return Math.max(4, Math.min(14, 3 + d.linkCount * 1.5));
+		const base = Math.max(4, Math.min(14, 3 + d.linkCount * 1.5));
+		return base * (nodeSizeMultiplier / 4);
 	}
 
 	function getNodeColor(d: any): string {
+		// Check groups first — first matching group wins
+		for (const g of groups) {
+			if (g.query.trim() && matchesQuery(d, g.query)) {
+				return g.color;
+			}
+		}
 		return vaultColorMap.get(d.vaultName) || '#6b7280';
+	}
+
+	function matchesQuery(node: any, query: string): boolean {
+		const q = query.toLowerCase().trim();
+		if (!q) return false;
+
+		// Support path: prefix
+		if (q.startsWith('path:')) {
+			const pathFilter = q.slice(5).trim();
+			return node.path.toLowerCase().includes(pathFilter);
+		}
+		// Support tag: prefix (if we had tag data on nodes)
+		if (q.startsWith('tag:')) {
+			return false; // tags not on nodes currently
+		}
+		// Default: match name or path
+		return node.name.toLowerCase().includes(q) || node.path.toLowerCase().includes(q);
 	}
 
 	function isDarkTheme(): boolean {
@@ -120,7 +269,6 @@
 		mounted = true;
 		ctx = canvasEl?.getContext('2d') || null;
 
-		// Theme change observer — just redraws, no heavy work
 		themeObserver = new MutationObserver(() => {
 			if (nodeData.length > 0) draw();
 		});
@@ -134,7 +282,6 @@
 		}
 	});
 
-	// Re-render only when nodes actually change (not on every reactive tick)
 	let prevNodesLen = 0;
 	$effect(() => {
 		const len = nodes.length;
@@ -190,7 +337,6 @@
 			simulation.on('end', null);
 			simulation = null;
 		}
-		// Remove d3 zoom listeners from canvas
 		if (canvasEl) {
 			d3.select(canvasEl).on('.zoom', null);
 		}
@@ -203,7 +349,6 @@
 	function renderGraph() {
 		if (!containerEl || !canvasEl || !ctx) return;
 
-		// Full cleanup of previous simulation and listeners
 		cleanup();
 
 		const width = containerEl.clientWidth;
@@ -217,16 +362,27 @@
 
 		assignVaultColors();
 
-		// Filter hidden vaults
-		const visibleNodes = nodes.filter(n => !hiddenVaults.has(n.vaultName));
-		const visibleIds = new Set(visibleNodes.map(n => n.id));
+		// Apply filters
+		let filteredNodes = nodes.filter(n => !hiddenVaults.has(n.vaultName));
+
+		// Search filter
+		if (filterQuery.trim()) {
+			filteredNodes = filteredNodes.filter(n => matchesQuery(n, filterQuery));
+		}
+
+		// Orphans filter
+		if (!showOrphans) {
+			filteredNodes = filteredNodes.filter(n => n.linkCount > 0);
+		}
+
+		const visibleIds = new Set(filteredNodes.map(n => n.id));
 		const visibleLinks = links.filter(l => visibleIds.has(l.source as string) && visibleIds.has(l.target as string));
 
-		nodeData = visibleNodes.map(n => ({ ...n }));
+		nodeData = filteredNodes.map(n => ({ ...n }));
 		linkData = visibleLinks.map(l => ({ ...l }));
 
-		// Compute vault cluster centers for clustering force
-		const vaultNames = [...new Set(visibleNodes.map(n => n.vaultName))];
+		// Compute vault cluster centers
+		const vaultNames = [...new Set(filteredNodes.map(n => n.vaultName))];
 		const vaultCenters = new Map<string, { x: number; y: number }>();
 		const angle = (2 * Math.PI) / Math.max(vaultNames.length, 1);
 		const clusterRadius = Math.min(width, height) * 0.2;
@@ -238,9 +394,9 @@
 		});
 
 		simulation = d3.forceSimulation(nodeData)
-			.force('link', d3.forceLink(linkData).id((d: any) => d.id).distance(60))
-			.force('charge', d3.forceManyBody().strength(-80).theta(0.9))
-			.force('center', d3.forceCenter(width / 2, height / 2))
+			.force('link', d3.forceLink(linkData).id((d: any) => d.id).distance(linkDistance).strength(linkForce))
+			.force('charge', d3.forceManyBody().strength(-repelForce).theta(0.9))
+			.force('center', d3.forceCenter(width / 2, height / 2).strength(centerForce))
 			.force('collision', d3.forceCollide().radius(8))
 			.force('clusterX', d3.forceX((d: any) => vaultCenters.get(d.vaultName)?.x ?? width / 2).strength(0.05))
 			.force('clusterY', d3.forceY((d: any) => vaultCenters.get(d.vaultName)?.y ?? height / 2).strength(0.05))
@@ -263,7 +419,13 @@
 			}
 		});
 
-		// Zoom — applied fresh (old ones removed in cleanup)
+		if (!animating) {
+			simulation.stop();
+			for (let i = 0; i < 300; i++) simulation.tick();
+			draw();
+		}
+
+		// Zoom
 		const zoomBehavior = d3.zoom<HTMLCanvasElement, unknown>()
 			.scaleExtent([0.1, 8])
 			.filter((event) => {
@@ -281,7 +443,6 @@
 
 		d3.select(canvasEl).call(zoomBehavior as any);
 
-		// Mouse listeners — add once, remove in onDestroy
 		canvasEl.onmousedown = handleMouseDown;
 		canvasEl.onmousemove = handleMouseMove;
 		canvasEl.onmouseup = handleMouseUp;
@@ -435,7 +596,6 @@
 				if (!hull) continue;
 				const color = vaultColorMap.get(vName) || '#6b7280';
 				ctx.beginPath();
-				// Expand hull points outward for padding
 				const cx = d3.mean(hull, p => p[0]) || 0;
 				const cy = d3.mean(hull, p => p[1]) || 0;
 				const pad = 20 / currentTransform.k;
@@ -480,26 +640,50 @@
 				ctx.setLineDash([]);
 			}
 
+			const thickness = linkThicknessMultiplier;
+
 			if (isHL) {
 				ctx.strokeStyle = highlightColor;
-				ctx.lineWidth = 2 / currentTransform.k;
+				ctx.lineWidth = (2 * thickness) / currentTransform.k;
 				ctx.globalAlpha = 0.9;
 				ctx.setLineDash([]);
 			} else if (typedColor) {
 				ctx.strokeStyle = typedColor;
-				ctx.lineWidth = 1.2 / currentTransform.k;
+				ctx.lineWidth = (1.2 * thickness) / currentTransform.k;
 				ctx.globalAlpha = highlightId ? linkDimAlpha : 0.6;
 			} else if (isCrossVault) {
 				ctx.strokeStyle = linkColor;
-				ctx.lineWidth = 1 / currentTransform.k;
+				ctx.lineWidth = (1 * thickness) / currentTransform.k;
 				ctx.globalAlpha = highlightId ? linkDimAlpha : linkAlpha * 0.7;
 			} else {
 				ctx.strokeStyle = linkColor;
-				ctx.lineWidth = 0.6 / currentTransform.k;
+				ctx.lineWidth = (0.6 * thickness) / currentTransform.k;
 				ctx.globalAlpha = highlightId ? linkDimAlpha : linkAlpha;
 			}
 			ctx.stroke();
 			ctx.setLineDash([]);
+
+			// Arrows
+			if (showArrows && !isHL) {
+				const dx = tgt.x - src.x;
+				const dy = tgt.y - src.y;
+				const len = Math.sqrt(dx * dx + dy * dy);
+				if (len > 0) {
+					const tgtR = getNodeRadius(tgt);
+					const arrowLen = 6 / currentTransform.k;
+					const endX = tgt.x - (dx / len) * tgtR;
+					const endY = tgt.y - (dy / len) * tgtR;
+					const angle = Math.atan2(dy, dx);
+					ctx.beginPath();
+					ctx.moveTo(endX, endY);
+					ctx.lineTo(endX - arrowLen * Math.cos(angle - 0.4), endY - arrowLen * Math.sin(angle - 0.4));
+					ctx.lineTo(endX - arrowLen * Math.cos(angle + 0.4), endY - arrowLen * Math.sin(angle + 0.4));
+					ctx.closePath();
+					ctx.fillStyle = ctx.strokeStyle;
+					ctx.globalAlpha = 0.6;
+					ctx.fill();
+				}
+			}
 		}
 
 		// Nodes
@@ -533,8 +717,9 @@
 			}
 		}
 
-		// Labels
-		if (highlightId) {
+		// Labels — show based on text fade threshold
+		const showLabels = currentTransform.k >= textFadeThreshold;
+		if (showLabels || highlightId) {
 			const fontSize = Math.max(9, 12 / currentTransform.k);
 			ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
 			ctx.textAlign = 'center';
@@ -544,17 +729,23 @@
 				if (n.x == null) continue;
 				const isFocused = n.id === highlightId;
 				const isConnected = connectedIds?.has(n.id);
-				if (!isFocused && !isConnected) continue;
+
+				// When zoomed in enough, show all labels; otherwise only focused/connected
+				if (!showLabels && !isFocused && !isConnected) continue;
+				if (showLabels && highlightId && !isFocused && !isConnected) {
+					// Dim non-related labels when something is highlighted
+					continue;
+				}
 
 				const r = getNodeRadius(n);
 				const yOff = n.y + r + 5 / currentTransform.k;
 				const shadowOff = 1 / currentTransform.k;
 
-				ctx.globalAlpha = isFocused ? 0.7 : 0.5;
+				ctx.globalAlpha = isFocused ? 0.7 : (showLabels ? 0.4 : 0.5);
 				ctx.fillStyle = labelShadow;
 				ctx.fillText(n.name, n.x + shadowOff, yOff + shadowOff);
 
-				ctx.globalAlpha = isFocused ? 1 : 0.8;
+				ctx.globalAlpha = isFocused ? 1 : (showLabels ? 0.7 : 0.8);
 				ctx.fillStyle = labelColor;
 				ctx.fillText(n.name, n.x, yOff);
 			}
@@ -606,7 +797,6 @@
 				ctx.fillText(`${v.name} (${v.count})`, x + padX + dotR * 2 + 12, iy);
 			}
 
-			// Store legend bounds for click detection
 			legendBounds = { x, y, w: boxW, h: boxH, lineH, padY };
 
 			ctx.restore();
@@ -650,6 +840,150 @@
 	{#if nodes.length === 0}
 		<div class="graph-empty">{$t('graphView.noNotes')}</div>
 	{:else}
+		<!-- Controls toggle button -->
+		<button
+			class="controls-toggle"
+			class:active={showControls}
+			onclick={() => showControls = !showControls}
+			title={$t('graphView.controls.title') ?? 'Graph Settings'}
+		>
+			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<circle cx="12" cy="12" r="3"/>
+				<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+			</svg>
+		</button>
+
+		<!-- Controls Panel -->
+		{#if showControls}
+			<div class="controls-panel">
+				<div class="controls-header">
+					<button class="controls-reset" onclick={resetControls} title={$t('graphView.controls.reset') ?? 'Reset'}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<polyline points="1 4 1 10 7 10"/>
+							<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+						</svg>
+					</button>
+					<button class="controls-close" onclick={() => showControls = false}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+						</svg>
+					</button>
+				</div>
+
+				<div class="controls-body">
+					<!-- Filters -->
+					<details bind:open={filtersOpen}>
+						<summary>{$t('graphView.controls.filters') ?? 'Filters'}</summary>
+						<div class="control-section">
+							<div class="search-input">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+								</svg>
+								<input
+									type="text"
+									placeholder={$t('graphView.controls.searchPlaceholder') ?? 'Search files...'}
+									bind:value={filterQuery}
+								/>
+							</div>
+							<label class="toggle-row">
+								<span>{$t('graphView.controls.existingOnly') ?? 'Existing files only'}</span>
+								<input type="checkbox" bind:checked={existingOnly} class="toggle" />
+							</label>
+							<label class="toggle-row">
+								<span>{$t('graphView.controls.orphans') ?? 'Orphans'}</span>
+								<input type="checkbox" bind:checked={showOrphans} class="toggle" />
+							</label>
+						</div>
+					</details>
+
+					<!-- Groups -->
+					<details bind:open={groupsOpen}>
+						<summary>{$t('graphView.controls.groups') ?? 'Groups'}</summary>
+						<div class="control-section">
+							{#each groups as group, i}
+								<div class="group-row">
+									<input
+										type="color"
+										value={group.color}
+										oninput={(e) => updateGroupColor(i, (e.target as HTMLInputElement).value)}
+										class="color-picker"
+									/>
+									<input
+										type="text"
+										placeholder="path:folder or tag:#name"
+										value={group.query}
+										oninput={(e) => updateGroupQuery(i, (e.target as HTMLInputElement).value)}
+										class="group-query"
+									/>
+									<button class="group-remove" onclick={() => removeGroup(i)}>
+										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+										</svg>
+									</button>
+								</div>
+							{/each}
+							<button class="new-group-btn" onclick={addGroup}>
+								{$t('graphView.controls.newGroup') ?? 'New group'}
+							</button>
+						</div>
+					</details>
+
+					<!-- Display -->
+					<details bind:open={displayOpen}>
+						<summary>{$t('graphView.controls.display') ?? 'Display'}</summary>
+						<div class="control-section">
+							<label class="toggle-row">
+								<span>{$t('graphView.controls.arrows') ?? 'Arrows'}</span>
+								<input type="checkbox" bind:checked={showArrows} class="toggle" />
+							</label>
+							<div class="slider-row">
+								<span>{$t('graphView.controls.textFade') ?? 'Text fade threshold'}</span>
+								<input type="range" min="0" max="5" step="0.1" bind:value={textFadeThreshold} />
+							</div>
+							<div class="slider-row">
+								<span>{$t('graphView.controls.nodeSize') ?? 'Node size'}</span>
+								<input type="range" min="1" max="10" step="0.5" bind:value={nodeSizeMultiplier} />
+							</div>
+							<div class="slider-row">
+								<span>{$t('graphView.controls.linkThickness') ?? 'Link thickness'}</span>
+								<input type="range" min="0.5" max="5" step="0.25" bind:value={linkThicknessMultiplier} />
+							</div>
+							<button
+								class="animate-btn"
+								class:active={animating}
+								onclick={() => animating = !animating}
+							>
+								{$t('graphView.controls.animate') ?? 'Animate'}
+							</button>
+						</div>
+					</details>
+
+					<!-- Forces -->
+					<details bind:open={forcesOpen}>
+						<summary>{$t('graphView.controls.forces') ?? 'Forces'}</summary>
+						<div class="control-section">
+							<div class="slider-row">
+								<span>{$t('graphView.controls.centerForce') ?? 'Center force'}</span>
+								<input type="range" min="0" max="1" step="0.05" bind:value={centerForce} />
+							</div>
+							<div class="slider-row">
+								<span>{$t('graphView.controls.repelForce') ?? 'Repel force'}</span>
+								<input type="range" min="0" max="300" step="5" bind:value={repelForce} />
+							</div>
+							<div class="slider-row">
+								<span>{$t('graphView.controls.linkForce') ?? 'Link force'}</span>
+								<input type="range" min="0" max="1" step="0.05" bind:value={linkForce} />
+							</div>
+							<div class="slider-row">
+								<span>{$t('graphView.controls.linkDistance') ?? 'Link distance'}</span>
+								<input type="range" min="10" max="500" step="10" bind:value={linkDistance} />
+							</div>
+						</div>
+					</details>
+				</div>
+			</div>
+		{/if}
+
 		<canvas bind:this={canvasEl}></canvas>
 		{#if tooltipVisible}
 			<div class="graph-tooltip" style="left: {tooltipX}px; top: {tooltipY}px;">
@@ -689,5 +1023,295 @@
 		box-shadow: var(--shadow-s);
 		white-space: nowrap;
 		z-index: 10;
+	}
+
+	/* ─── Controls Toggle Button ─── */
+	.controls-toggle {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		z-index: 20;
+		width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		color: var(--text-muted);
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+	.controls-toggle:hover, .controls-toggle.active {
+		color: var(--text-normal);
+		background: var(--background-modifier-hover);
+	}
+
+	/* ─── Controls Panel ─── */
+	.controls-panel {
+		position: absolute;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		width: 272px;
+		z-index: 15;
+		background: var(--background-primary);
+		border-right: 1px solid var(--background-modifier-border);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		box-shadow: var(--shadow-s);
+	}
+
+	.controls-header {
+		display: flex;
+		justify-content: flex-end;
+		gap: 4px;
+		padding: 8px 10px 4px;
+	}
+
+	.controls-reset, .controls-close {
+		width: 28px;
+		height: 28px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: none;
+		border: none;
+		border-radius: 4px;
+		color: var(--text-muted);
+		cursor: pointer;
+	}
+	.controls-reset:hover, .controls-close:hover {
+		background: var(--background-modifier-hover);
+		color: var(--text-normal);
+	}
+
+	.controls-body {
+		flex: 1;
+		overflow-y: auto;
+		padding: 0 0 12px;
+	}
+
+	/* Sections */
+	details {
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+	summary {
+		padding: 10px 14px;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--text-normal);
+		cursor: pointer;
+		user-select: none;
+		list-style: none;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	summary::before {
+		content: '▸';
+		font-size: 0.7rem;
+		transition: transform 0.15s;
+	}
+	details[open] > summary::before {
+		transform: rotate(90deg);
+	}
+	summary:hover {
+		background: var(--background-modifier-hover);
+	}
+
+	.control-section {
+		padding: 4px 14px 12px;
+	}
+
+	/* Search input */
+	.search-input {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 10px;
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		margin-bottom: 8px;
+		color: var(--text-muted);
+	}
+	.search-input input {
+		flex: 1;
+		background: none;
+		border: none;
+		outline: none;
+		font-size: 0.78rem;
+		color: var(--text-normal);
+	}
+	.search-input input::placeholder {
+		color: var(--text-faint);
+	}
+
+	/* Toggle rows */
+	.toggle-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 5px 0;
+		font-size: 0.78rem;
+		color: var(--text-normal);
+		cursor: pointer;
+	}
+	.toggle {
+		appearance: none;
+		width: 36px;
+		height: 20px;
+		background: var(--background-modifier-border);
+		border-radius: 10px;
+		position: relative;
+		cursor: pointer;
+		transition: background 0.2s;
+		flex-shrink: 0;
+	}
+	.toggle::after {
+		content: '';
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 16px;
+		height: 16px;
+		background: white;
+		border-radius: 50%;
+		transition: transform 0.2s;
+	}
+	.toggle:checked {
+		background: var(--interactive-accent);
+	}
+	.toggle:checked::after {
+		transform: translateX(16px);
+	}
+
+	/* Slider rows */
+	.slider-row {
+		padding: 4px 0;
+	}
+	.slider-row span {
+		display: block;
+		font-size: 0.78rem;
+		color: var(--text-normal);
+		margin-bottom: 4px;
+	}
+	.slider-row input[type="range"] {
+		width: 100%;
+		height: 4px;
+		appearance: none;
+		background: var(--background-modifier-border);
+		border-radius: 2px;
+		outline: none;
+		cursor: pointer;
+	}
+	.slider-row input[type="range"]::-webkit-slider-thumb {
+		appearance: none;
+		width: 16px;
+		height: 16px;
+		background: white;
+		border: 2px solid var(--background-modifier-border);
+		border-radius: 50%;
+		cursor: pointer;
+	}
+	.slider-row input[type="range"]::-webkit-slider-thumb:hover {
+		border-color: var(--interactive-accent);
+	}
+
+	/* Groups */
+	.group-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: 6px;
+	}
+	.color-picker {
+		width: 24px;
+		height: 24px;
+		padding: 0;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 4px;
+		cursor: pointer;
+		background: none;
+		flex-shrink: 0;
+	}
+	.color-picker::-webkit-color-swatch-wrapper {
+		padding: 2px;
+	}
+	.color-picker::-webkit-color-swatch {
+		border: none;
+		border-radius: 2px;
+	}
+	.group-query {
+		flex: 1;
+		padding: 4px 8px;
+		font-size: 0.75rem;
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 4px;
+		color: var(--text-normal);
+		outline: none;
+		min-width: 0;
+	}
+	.group-query:focus {
+		border-color: var(--interactive-accent);
+	}
+	.group-remove {
+		width: 22px;
+		height: 22px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: none;
+		border: none;
+		border-radius: 4px;
+		color: var(--text-muted);
+		cursor: pointer;
+		flex-shrink: 0;
+	}
+	.group-remove:hover {
+		background: var(--background-modifier-hover);
+		color: var(--text-normal);
+	}
+	.new-group-btn {
+		width: 100%;
+		padding: 6px;
+		font-size: 0.78rem;
+		font-weight: 500;
+		background: var(--interactive-accent);
+		color: white;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: opacity 0.15s;
+	}
+	.new-group-btn:hover {
+		opacity: 0.9;
+	}
+
+	/* Animate button */
+	.animate-btn {
+		width: 100%;
+		padding: 6px;
+		font-size: 0.78rem;
+		font-weight: 500;
+		background: var(--background-secondary);
+		color: var(--text-normal);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		cursor: pointer;
+		margin-top: 4px;
+		transition: all 0.15s;
+	}
+	.animate-btn.active {
+		background: var(--interactive-accent);
+		color: white;
+		border-color: var(--interactive-accent);
+	}
+	.animate-btn:hover {
+		opacity: 0.9;
 	}
 </style>

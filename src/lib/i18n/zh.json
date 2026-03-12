@@ -387,7 +387,30 @@
     "selectType": "选择类型"
   },
   "graphView": {
-    "noNotes": "没有可显示的笔记"
+    "noNotes": "没有可显示的笔记",
+    "controls": {
+      "title": "图谱设置",
+      "reset": "重置为默认值",
+      "filters": "筛选",
+      "searchPlaceholder": "搜索文件...",
+      "tags": "标签",
+      "attachments": "附件",
+      "existingOnly": "仅显示已有文件",
+      "orphans": "孤立笔记",
+      "groups": "分组",
+      "newGroup": "新建分组",
+      "display": "显示",
+      "arrows": "箭头",
+      "textFade": "文字淡出阈值",
+      "nodeSize": "节点大小",
+      "linkThickness": "连线粗细",
+      "animate": "动画",
+      "forces": "力",
+      "centerForce": "中心力",
+      "repelForce": "排斥力",
+      "linkForce": "连接力",
+      "linkDistance": "连接距离"
+    }
   },
   "vaults": {
     "searchPlaceholder": "搜索所有仓库...",

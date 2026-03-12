@@ -387,7 +387,30 @@
     "selectType": "Choisir le type"
   },
   "graphView": {
-    "noNotes": "Aucune note à afficher"
+    "noNotes": "Aucune note à afficher",
+    "controls": {
+      "title": "Paramètres du graphe",
+      "reset": "Réinitialiser les valeurs par défaut",
+      "filters": "Filtres",
+      "searchPlaceholder": "Rechercher des fichiers...",
+      "tags": "Étiquettes",
+      "attachments": "Pièces jointes",
+      "existingOnly": "Fichiers existants uniquement",
+      "orphans": "Orphelines",
+      "groups": "Groupes",
+      "newGroup": "Nouveau groupe",
+      "display": "Affichage",
+      "arrows": "Flèches",
+      "textFade": "Seuil de fondu du texte",
+      "nodeSize": "Taille des nœuds",
+      "linkThickness": "Épaisseur des liens",
+      "animate": "Animer",
+      "forces": "Forces",
+      "centerForce": "Force de centrage",
+      "repelForce": "Force de répulsion",
+      "linkForce": "Force de liaison",
+      "linkDistance": "Distance de liaison"
+    }
   },
   "vaults": {
     "searchPlaceholder": "Rechercher dans tous les coffres...",

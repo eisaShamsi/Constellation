@@ -387,7 +387,30 @@
     "selectType": "タイプを選択"
   },
   "graphView": {
-    "noNotes": "表示するノートがありません"
+    "noNotes": "表示するノートがありません",
+    "controls": {
+      "title": "グラフ設定",
+      "reset": "デフォルトにリセット",
+      "filters": "フィルター",
+      "searchPlaceholder": "ファイルを検索...",
+      "tags": "タグ",
+      "attachments": "添付ファイル",
+      "existingOnly": "既存のファイルのみ",
+      "orphans": "孤立ノート",
+      "groups": "グループ",
+      "newGroup": "新しいグループ",
+      "display": "表示",
+      "arrows": "矢印",
+      "textFade": "テキストフェードしきい値",
+      "nodeSize": "ノードサイズ",
+      "linkThickness": "リンクの太さ",
+      "animate": "アニメーション",
+      "forces": "力",
+      "centerForce": "中心力",
+      "repelForce": "反発力",
+      "linkForce": "リンク力",
+      "linkDistance": "リンク距離"
+    }
   },
   "vaults": {
     "searchPlaceholder": "すべての保管庫を検索...",
