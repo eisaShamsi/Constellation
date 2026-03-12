@@ -264,6 +264,19 @@
 	// ─── Lifecycle ───
 
 	let themeObserver: MutationObserver | null = null;
+	let resizeObserver: ResizeObserver | null = null;
+
+	function handleResize() {
+		if (!containerEl || !canvasEl || !ctx || nodeData.length === 0) return;
+		const width = containerEl.clientWidth;
+		const height = containerEl.clientHeight;
+		dpr = window.devicePixelRatio || 1;
+		canvasEl.width = width * dpr;
+		canvasEl.height = height * dpr;
+		canvasEl.style.width = width + 'px';
+		canvasEl.style.height = height + 'px';
+		draw();
+	}
 
 	onMount(() => {
 		mounted = true;
@@ -276,6 +289,12 @@
 			attributes: true,
 			attributeFilter: ['class'],
 		});
+
+		// Resize observer to handle window maximize/resize
+		resizeObserver = new ResizeObserver(() => {
+			handleResize();
+		});
+		if (containerEl) resizeObserver.observe(containerEl);
 
 		if (nodes.length > 0 && canvasEl) {
 			renderGraph();
@@ -823,6 +842,8 @@
 		cleanup();
 		themeObserver?.disconnect();
 		themeObserver = null;
+		resizeObserver?.disconnect();
+		resizeObserver = null;
 		ctx = null;
 		nodeData = [];
 		linkData = [];
