@@ -5,6 +5,7 @@
 	import {
 		listUniverses, setActiveUniverse, removeUniverseFromRegistry,
 		createUniverse, addChildUniverse, removeChildUniverse,
+		openExistingUniverse,
 		type UniverseEntry
 	} from '$lib/universe/store';
 
@@ -94,6 +95,20 @@
 		}
 	}
 
+	async function handleOpenExisting() {
+		try {
+			const result = await invoke<string | null>('pick_folder');
+			if (!result) return;
+			error = '';
+			creating = true;
+			await openExistingUniverse(result);
+			await refresh();
+		} catch (e: unknown) {
+			error = e instanceof Error ? e.message : String(e);
+		}
+		creating = false;
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') { e.preventDefault(); onClose(); }
 	}
@@ -164,9 +179,14 @@
 					</div>
 				</div>
 			{:else}
-				<button class="um-btn um-btn-accent" onclick={() => showCreateForm = true}>
-					+ {$t('universe.manager.createNew')}
-				</button>
+				<div class="um-footer-buttons">
+					<button class="um-btn um-btn-accent" onclick={() => showCreateForm = true}>
+						+ {$t('universe.manager.createNew')}
+					</button>
+					<button class="um-btn" onclick={handleOpenExisting} disabled={creating}>
+						{$t('universe.manager.openExisting') ?? 'Open Existing'}
+					</button>
+				</div>
 			{/if}
 		</div>
 	</div>
@@ -341,6 +361,13 @@
 		display: flex;
 		gap: 8px;
 		justify-content: flex-end;
+	}
+	.um-footer-buttons {
+		display: flex;
+		gap: 8px;
+	}
+	.um-footer-buttons .um-btn {
+		flex: 1;
 	}
 	.um-error {
 		font-size: 0.8rem;
