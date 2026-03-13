@@ -4,39 +4,34 @@ mod universe;
 mod vaults;
 mod watcher;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 #[tauri::command]
 fn open_second_screen(app: tauri::AppHandle) -> Result<(), String> {
-    use tauri::{WebviewWindowBuilder, WebviewUrl};
-
-    // If already open, just focus it
     if let Some(win) = app.get_webview_window("second-screen") {
+        win.show().map_err(|e| e.to_string())?;
         win.set_focus().map_err(|e| e.to_string())?;
-        return Ok(());
+        // Force WebView2 to repaint after showing a hidden window
+        let _ = win.eval("void(0)");
     }
-
-    WebviewWindowBuilder::new(&app, "second-screen", WebviewUrl::App("/?screen=1".into()))
-        .title("Constellation - Screen 2")
-        .inner_size(1200.0, 800.0)
-        .min_inner_size(600.0, 400.0)
-        .build()
-        .map_err(|e| e.to_string())?;
-
     Ok(())
 }
 
 #[tauri::command]
 fn close_second_screen(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(win) = app.get_webview_window("second-screen") {
-        win.destroy().map_err(|e| e.to_string())?;
+        win.hide().map_err(|e| e.to_string())?;
     }
     Ok(())
 }
 
 #[tauri::command]
 fn is_second_screen_open(app: tauri::AppHandle) -> bool {
-    app.get_webview_window("second-screen").is_some()
+    if let Some(win) = app.get_webview_window("second-screen") {
+        win.is_visible().unwrap_or(false)
+    } else {
+        false
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -114,6 +109,17 @@ pub fn run() {
             close_second_screen,
             is_second_screen_open
         ])
+        .on_window_event(|window, event| {
+            // Intercept close on second-screen: hide instead of destroy
+            if window.label() == "second-screen" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                    // Notify frontend that screen was closed
+                    let _ = window.emit("screen-hidden", ());
+                }
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

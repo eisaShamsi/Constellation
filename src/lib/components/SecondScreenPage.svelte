@@ -107,23 +107,18 @@
 	// ─── Close handler ───
 	async function handleClose() {
 		notifyScreenClosed();
-		try {
-			await getCurrentWindow().close();
-		} catch {
-			// Fallback: ask main to close us
-			try { await invoke('close_second_screen'); } catch {}
-		}
+		try { await invoke('close_second_screen'); } catch {}
 	}
 
 	onMount(async () => {
 		const win = getCurrentWindow();
 		try { await win.setTitle('Constellation - Screen 2'); } catch {}
 
-		// Listen for native window close (X button) to notify main window
-		const unlistenClose = await win.onCloseRequested(async () => {
+		// Listen for screen-hidden event (Rust hides instead of closing)
+		const unlistenHidden = await listen('screen-hidden', () => {
 			notifyScreenClosed();
 		});
-		unlisteners.push(unlistenClose);
+		unlisteners.push(unlistenHidden);
 
 		// Ensure universe is active (shared Rust state from main window)
 		try {

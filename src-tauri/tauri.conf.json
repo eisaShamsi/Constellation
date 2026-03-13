@@ -15,6 +15,14 @@
         "title": "Constellation",
         "width": 1200,
         "height": 800
+      },
+      {
+        "label": "second-screen",
+        "title": "Constellation - Screen 2",
+        "url": "screen.html",
+        "width": 1200,
+        "height": 800,
+        "visible": false
       }
     ],
     "security": {

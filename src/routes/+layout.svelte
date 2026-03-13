@@ -69,12 +69,8 @@
 	import { openSecondScreen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, type ScreenNote } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
-	import SecondScreenPage from '$lib/components/SecondScreenPage.svelte';
 
 	let { children }: { children: Snippet } = $props();
-
-	// Detect if this window is the second screen (opened with ?screen=1)
-	const isSecondScreenWindow = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('screen');
 
 	// Sidebar state
 	let sidebarOpen = $state(true);
@@ -431,9 +427,6 @@
 
 	// ─── Lifecycle ───
 	onMount(async () => {
-		// Second screen window handles its own initialization
-		if (isSecondScreenWindow) return;
-
 		// 1. Check universe state
 		let universes: UniverseEntry[] = [];
 		let needsMigration = false;
@@ -1294,9 +1287,7 @@
 	const allTagsList = $derived(Object.keys(allVaultTags));
 </script>
 
-{#if isSecondScreenWindow}
-	<SecondScreenPage />
-{:else if showUniverseSetup}
+{#if showUniverseSetup}
 	<UniverseSetup
 		onCreated={handleUniverseCreated}
 		migrationMode={false}
