@@ -66,10 +66,15 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/vaults/propertyTypeRegistry';
+	import { openSecondScreen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, type ScreenNote } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
+	import SecondScreenPage from '$lib/components/SecondScreenPage.svelte';
 
 	let { children }: { children: Snippet } = $props();
+
+	// Detect if this window is the second screen (opened with ?screen=1)
+	const isSecondScreenWindow = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('screen');
 
 	// Sidebar state
 	let sidebarOpen = $state(true);
@@ -114,6 +119,7 @@
 
 	// Settings modal
 	let showSettings = $state(false);
+	let secondScreenOpen = $state(false);
 
 	// Vault management
 	let showVaultSwitcher = $state(false);
@@ -290,6 +296,8 @@
 			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
 			{ id: 'random-note', name: $t('commands.randomNote'), icon: '🎲', action: handleRandomNote, category: 'Navigation' },
 			{ id: 'toggle-theme', name: $t('commands.toggleTheme'), icon: '🌗', action: handleToggleTheme, category: 'Appearance' },
+			{ id: 'second-screen', name: $t('secondScreen.title'), shortcut: 'Ctrl+Shift+2', icon: '🖥️', action: handleToggleSecondScreen, category: 'View' },
+			{ id: 'send-to-screen', name: $t('secondScreen.sendToScreen'), icon: '📤', action: handleSendToSecondScreen, category: 'View' },
 			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: 'Alt+←', icon: '←', action: navigateBack, category: 'Navigation' },
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: 'Alt+→', icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
@@ -423,6 +431,9 @@
 
 	// ─── Lifecycle ───
 	onMount(async () => {
+		// Second screen window handles its own initialization
+		if (isSecondScreenWindow) return;
+
 		// 1. Check universe state
 		let universes: UniverseEntry[] = [];
 		let needsMigration = false;
@@ -508,6 +519,14 @@
 			await toggleVault($vaultStats[0]);
 		}
 
+		// Second screen event listeners
+		const unlistenScreenNote = await onNoteToMain(async (note: ScreenNote) => {
+			await openNoteTab(note.path, note.vaultName, note.vaultPath, note.vaultColor);
+		});
+		const unlistenScreenClosed = await onScreenClosed(() => {
+			secondScreenOpen = false;
+		});
+
 		// Global keyboard shortcuts
 		document.addEventListener('keydown', handleGlobalKeydown);
 
@@ -515,6 +534,8 @@
 		cleanupFns.push(
 			() => document.removeEventListener('keydown', handleGlobalKeydown),
 			unlistenWatcher,
+			unlistenScreenNote,
+			unlistenScreenClosed,
 		);
 	});
 
@@ -651,6 +672,12 @@
 			e.preventDefault();
 			sidebarOpen = true;
 			searchMode = true;
+			return;
+		}
+		// Second screen (Ctrl+Shift+2)
+		if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '2') {
+			e.preventDefault();
+			handleToggleSecondScreen();
 			return;
 		}
 		// Toggle left sidebar
@@ -922,6 +949,36 @@
 			// 'light' or 'system' → toggle to dark
 			updateSettings({ colorScheme: 'dark' });
 		}
+	}
+
+	async function handleToggleSecondScreen() {
+		// Check actual window state (not just local flag) to handle native X close
+		const isOpen = await invoke<boolean>('is_second_screen_open');
+		if (isOpen) {
+			await invoke('close_second_screen');
+			secondScreenOpen = false;
+		} else {
+			await openSecondScreen();
+			secondScreenOpen = true;
+		}
+	}
+
+	async function handleSendToSecondScreen() {
+		const tab = get(activeTab);
+		if (!tab?.path) return;
+		if (!secondScreenOpen) {
+			await openSecondScreen();
+			secondScreenOpen = true;
+			// Small delay to let window open
+			await new Promise(r => setTimeout(r, 500));
+		}
+		await sendNoteToScreen({
+			path: tab.path,
+			name: tab.name,
+			vaultName: tab.vaultName,
+			vaultPath: tab.vaultPath,
+			vaultColor: tab.vaultColor,
+		});
 	}
 
 	async function handleQuickSwitchSelect(path: string, vaultName: string) {
@@ -1237,7 +1294,9 @@
 	const allTagsList = $derived(Object.keys(allVaultTags));
 </script>
 
-{#if showUniverseSetup}
+{#if isSecondScreenWindow}
+	<SecondScreenPage />
+{:else if showUniverseSetup}
 	<UniverseSetup
 		onCreated={handleUniverseCreated}
 		migrationMode={false}
@@ -1271,6 +1330,9 @@
 			</button>
 		</div>
 		<div class="ribbon-bottom">
+			<button class="r-btn" class:active={secondScreenOpen} onclick={handleToggleSecondScreen} title={$t('secondScreen.title')}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+			</button>
 			<button class="r-btn" onclick={() => showUniverseManager = true} title={$t('universe.title')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
 			</button>

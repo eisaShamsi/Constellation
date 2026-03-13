@@ -610,5 +610,23 @@
     },
     "switching": "Evren değiştiriliyor...",
     "migrating": "Verileriniz taşınıyor..."
+  },
+  "secondScreen": {
+    "title": "İkinci Ekran",
+    "grid": "Izgara",
+    "graph": "Grafik",
+    "detail": "Detay",
+    "loading": "Notlar yükleniyor...",
+    "linked": "Bağlantılı",
+    "linkedOn": "Bağlantılı gezinme açık",
+    "linkedOff": "Bağlantılı gezinme kapalı",
+    "searchNotes": "Notlarda ara...",
+    "allVaults": "Tüm kasalar",
+    "sortName": "Ada göre sırala",
+    "sortVault": "Kasaya göre sırala",
+    "noResults": "Eşleşen not yok",
+    "noNotes": "Not bulunamadı",
+    "detailEmpty": "Görüntülemek için bir not seçin",
+    "sendToScreen": "İkinci ekrana gönder"
   }
 }

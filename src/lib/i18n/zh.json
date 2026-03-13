@@ -610,5 +610,23 @@
     },
     "switching": "切换宇宙中...",
     "migrating": "正在迁移数据..."
+  },
+  "secondScreen": {
+    "title": "第二屏幕",
+    "grid": "网格",
+    "graph": "图谱",
+    "detail": "详情",
+    "loading": "正在加载笔记...",
+    "linked": "已链接",
+    "linkedOn": "链接浏览已开启",
+    "linkedOff": "链接浏览已关闭",
+    "searchNotes": "搜索笔记...",
+    "allVaults": "所有仓库",
+    "sortName": "按名称排序",
+    "sortVault": "按仓库排序",
+    "noResults": "无匹配笔记",
+    "noNotes": "未找到笔记",
+    "detailEmpty": "选择一个笔记在此查看",
+    "sendToScreen": "发送到第二屏幕"
   }
 }

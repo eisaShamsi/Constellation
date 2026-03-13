@@ -610,5 +610,23 @@
     },
     "switching": "Universum wird gewechselt...",
     "migrating": "Daten werden migriert..."
+  },
+  "secondScreen": {
+    "title": "Zweiter Bildschirm",
+    "grid": "Raster",
+    "graph": "Graph",
+    "detail": "Detail",
+    "loading": "Notizen werden geladen...",
+    "linked": "Verknüpft",
+    "linkedOn": "Verknüpftes Browsen ein",
+    "linkedOff": "Verknüpftes Browsen aus",
+    "searchNotes": "Notizen durchsuchen...",
+    "allVaults": "Alle Tresore",
+    "sortName": "Nach Name sortieren",
+    "sortVault": "Nach Tresor sortieren",
+    "noResults": "Keine passenden Notizen",
+    "noNotes": "Keine Notizen gefunden",
+    "detailEmpty": "Wähle eine Notiz zur Ansicht",
+    "sendToScreen": "An zweiten Bildschirm senden"
   }
 }

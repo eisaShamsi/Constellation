@@ -610,5 +610,23 @@
     },
     "switching": "Switching universe...",
     "migrating": "Migrating your data..."
+  },
+  "secondScreen": {
+    "title": "Second Screen",
+    "grid": "Grid",
+    "graph": "Graph",
+    "detail": "Detail",
+    "loading": "Loading notes...",
+    "linked": "Linked",
+    "linkedOn": "Linked browsing on",
+    "linkedOff": "Linked browsing off",
+    "searchNotes": "Search notes...",
+    "allVaults": "All vaults",
+    "sortName": "Sort by name",
+    "sortVault": "Sort by vault",
+    "noResults": "No matching notes",
+    "noNotes": "No notes found",
+    "detailEmpty": "Select a note to view here",
+    "sendToScreen": "Send to Second Screen"
   }
 }

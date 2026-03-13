@@ -610,5 +610,23 @@
     },
     "switching": "유니버스 전환 중...",
     "migrating": "데이터 마이그레이션 중..."
+  },
+  "secondScreen": {
+    "title": "보조 화면",
+    "grid": "그리드",
+    "graph": "그래프",
+    "detail": "상세",
+    "loading": "노트 로딩 중...",
+    "linked": "연결됨",
+    "linkedOn": "연결 브라우징 켜짐",
+    "linkedOff": "연결 브라우징 꺼짐",
+    "searchNotes": "노트 검색...",
+    "allVaults": "모든 보관함",
+    "sortName": "이름순 정렬",
+    "sortVault": "보관함순 정렬",
+    "noResults": "일치하는 노트 없음",
+    "noNotes": "노트를 찾을 수 없음",
+    "detailEmpty": "여기에 표시할 노트를 선택하세요",
+    "sendToScreen": "보조 화면으로 보내기"
   }
 }

@@ -610,5 +610,23 @@
     },
     "switching": "מחליף יקום...",
     "migrating": "מעביר את הנתונים שלך..."
+  },
+  "secondScreen": {
+    "title": "מסך שני",
+    "grid": "רשת",
+    "graph": "גרף",
+    "detail": "פרטים",
+    "loading": "טוען הערות...",
+    "linked": "מקושר",
+    "linkedOn": "גלישה מקושרת פעילה",
+    "linkedOff": "גלישה מקושרת כבויה",
+    "searchNotes": "חפש הערות...",
+    "allVaults": "כל הכספות",
+    "sortName": "מיין לפי שם",
+    "sortVault": "מיין לפי כספת",
+    "noResults": "לא נמצאו הערות תואמות",
+    "noNotes": "לא נמצאו הערות",
+    "detailEmpty": "בחר הערה לצפייה כאן",
+    "sendToScreen": "שלח למסך השני"
   }
 }

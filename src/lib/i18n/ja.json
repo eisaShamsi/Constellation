@@ -610,5 +610,23 @@
     },
     "switching": "ユニバースを切替中...",
     "migrating": "データを移行中..."
+  },
+  "secondScreen": {
+    "title": "セカンドスクリーン",
+    "grid": "グリッド",
+    "graph": "グラフ",
+    "detail": "詳細",
+    "loading": "ノートを読み込み中...",
+    "linked": "リンク済み",
+    "linkedOn": "リンクブラウジングON",
+    "linkedOff": "リンクブラウジングOFF",
+    "searchNotes": "ノートを検索...",
+    "allVaults": "すべての保管庫",
+    "sortName": "名前順",
+    "sortVault": "保管庫順",
+    "noResults": "一致するノートはありません",
+    "noNotes": "ノートが見つかりません",
+    "detailEmpty": "ノートを選択して表示",
+    "sendToScreen": "セカンドスクリーンに送信"
   }
 }

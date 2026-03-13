@@ -610,5 +610,23 @@
     },
     "switching": "Cambiando universo...",
     "migrating": "Migrando tus datos..."
+  },
+  "secondScreen": {
+    "title": "Segunda pantalla",
+    "grid": "Cuadrícula",
+    "graph": "Gráfico",
+    "detail": "Detalle",
+    "loading": "Cargando notas...",
+    "linked": "Vinculado",
+    "linkedOn": "Navegación vinculada activada",
+    "linkedOff": "Navegación vinculada desactivada",
+    "searchNotes": "Buscar notas...",
+    "allVaults": "Todas las bóvedas",
+    "sortName": "Ordenar por nombre",
+    "sortVault": "Ordenar por bóveda",
+    "noResults": "No hay notas coincidentes",
+    "noNotes": "No se encontraron notas",
+    "detailEmpty": "Selecciona una nota para verla aquí",
+    "sendToScreen": "Enviar a segunda pantalla"
   }
 }
