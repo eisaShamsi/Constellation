@@ -30,7 +30,7 @@
 		type FrontmatterProperty, type HeadingItem, type NoteLink, type GraphNode, type GraphLink,
 		type IndexEntry
 	} from '$lib/vaults/store';
-	import type { VaultStats, FileEntry } from '$lib/vaults/store';
+	import type { VaultStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen } from '$lib/vaults/store';
 	import { get } from 'svelte/store';
 	import { detectDir } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
@@ -43,6 +43,9 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import QuickSwitcher from '$lib/components/QuickSwitcher.svelte';
 	import GraphView from '$lib/components/GraphView.svelte';
+	import FullGraph from '$lib/components/FullGraph.svelte';
+	import LocalGraph from '$lib/components/LocalGraph.svelte';
+	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
 	import LinkDashboard from '$lib/components/LinkDashboard.svelte';
@@ -66,7 +69,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/vaults/propertyTypeRegistry';
-	import { openSecondScreen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, type ScreenNote } from '$lib/secondScreen';
+	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, type ScreenNote, type ScreenState } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -98,7 +101,7 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'graph' | 'links'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'graph'>('properties');
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(240);
@@ -139,8 +142,15 @@
 	let allVaultTags = $state<Record<string, number>>({});
 	let allNotes = $state<{ name: string; path: string; vaultName: string }[]>([]);
 	let allIndexEntries = $state<IndexEntry[]>([]);
-	let graphNodes = $state<GraphNode[]>([]);
-	let graphLinks = $state<GraphLink[]>([]);
+	// Graph data stored as plain (non-reactive) arrays to avoid $state proxy overhead
+	// on potentially tens of thousands of items. Use graphVersion to signal changes.
+	let graphNodes: GraphNode[] = [];
+	let graphLinks: GraphLink[] = [];
+	let graphVersion = $state(0);
+	// Graph data is passed to GraphView as plain arrays.
+	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
+	// make iteration extremely slow. Instead, graphVersion ($state) triggers re-render
+	// and GraphView reads the plain graphNodes/graphLinks directly.
 
 	let resizeCleanup: (() => void) | null = null;
 
@@ -235,6 +245,67 @@
 			target: l.target,
 			context: l.context,
 		}));
+	});
+
+	// Tags for the active note (from frontmatter + inline #tags)
+	const activeNoteTags = $derived.by(() => {
+		if (!sidebarTab) return [];
+		const tags: string[] = [];
+		// From frontmatter properties
+		for (const p of sidebarProperties) {
+			if (p.key === 'tags' || p.key === 'tag') {
+				if (Array.isArray(p.value)) {
+					tags.push(...p.value.map((v: string) => String(v).trim()).filter(Boolean));
+				} else if (typeof p.value === 'string') {
+					tags.push(...p.value.split(',').map(v => v.trim()).filter(Boolean));
+				}
+			}
+		}
+		// From inline #tags in body
+		const bodyText = sidebarBody || '';
+		const inlineMatches = bodyText.match(/(?:^|\s)#([a-zA-Z\u0600-\u06FF][\w\u0600-\u06FF/\-]*)/g);
+		if (inlineMatches) {
+			for (const m of inlineMatches) {
+				tags.push(m.trim().replace(/^#/, ''));
+			}
+		}
+		return [...new Set(tags)];
+	});
+
+	// Local graph: nodes/links for the active note and its direct connections
+	// Uses deferred state to avoid blocking the main thread with heavy iteration
+	let localGraphNodes = $state<GraphNode[]>([]);
+	let localGraphLinks = $state<GraphLink[]>([]);
+	let _localGraphTimer: ReturnType<typeof setTimeout> | undefined;
+
+	$effect(() => {
+		// Track reactive dependencies (graphVersion signals when plain arrays change)
+		const isVisible = rightSidebarOpen && rightSidebarTab === 'graph';
+		const tab = sidebarTab;
+		const _ver = graphVersion; // reactive trigger for non-reactive graphNodes/graphLinks
+
+		clearTimeout(_localGraphTimer);
+
+		if (!isVisible || !tab) {
+			localGraphNodes = [];
+			localGraphLinks = [];
+			return;
+		}
+
+		// Defer computation to avoid blocking UI
+		_localGraphTimer = setTimeout(() => {
+			const activeId = tab.name.replace(/\.md$/, '').toLowerCase();
+			const connectedIds = new Set<string>();
+			connectedIds.add(activeId);
+			for (const link of graphLinks) {
+				if (link.source === activeId || link.target === activeId) {
+					connectedIds.add(link.source);
+					connectedIds.add(link.target);
+				}
+			}
+			localGraphNodes = graphNodes.filter(n => connectedIds.has(n.id));
+			localGraphLinks = graphLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
+		}, 50);
 	});
 
 	// Status bar stats from focused tab (debounced to avoid per-keystroke recompute)
@@ -588,6 +659,7 @@
 				const { nodes, links: gLinks } = buildGraphData(links, notes);
 				graphNodes = nodes;
 				graphLinks = gLinks;
+				graphVersion++;
 			}
 		} finally {
 			cacheRefreshing = false;
@@ -1573,12 +1645,12 @@
 						<span class="graph-title">{$t('layout.graphViewTitle')}</span>
 						<button class="graph-close" onclick={() => showGraphView = false}>×</button>
 					</div>
-					<GraphView
-						nodes={graphNodes}
-						links={graphLinks}
-						onNodeClick={handleGraphNodeClick}
-						activeNodeId={sidebarTab?.name?.toLowerCase() ?? ''}
-					/>
+					<FullGraph
+					nodes={graphNodes}
+					links={graphLinks}
+					onNodeClick={handleGraphNodeClick}
+					activeNodeId={sidebarTab?.name?.toLowerCase() ?? ''}
+				/>
 				</div>
 			{:else if isHome && ($activeTab || $splitActive)}
 				<div class="pane-container" class:horizontal={$splitActive && $splitDirection === 'horizontal'}>
@@ -1640,7 +1712,7 @@
 	<aside class="right-sidebar" class:collapsed={!rightSidebarOpen} style:width={rightSidebarOpen ? rightSidebarWidth + 'px' : undefined}>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="rs-resize" onmousedown={(e) => startResize('right', e)}></div>
-		<div class="rs-inner" style:width="{rightSidebarWidth}px" dir={noteDir}>
+		<div class="rs-inner" dir={noteDir}>
 			<!-- Right sidebar tab bar -->
 			<div class="rs-tabs">
 				<button class="rs-tab" class:active={rightSidebarTab === 'properties'} onclick={() => rightSidebarTab = 'properties'} title={$t('panels.properties')}>
@@ -1652,8 +1724,8 @@
 				<button class="rs-tab" class:active={rightSidebarTab === 'tags'} onclick={() => rightSidebarTab = 'tags'} title={$t('panels.tags')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
 				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'links'} onclick={() => rightSidebarTab = 'links'} title={$t('panels.linkDashboard')}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+				<button class="rs-tab" class:active={rightSidebarTab === 'graph'} onclick={() => rightSidebarTab = 'graph'} title={$t('panels.graphView')}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg>
 				</button>
 			</div>
 
@@ -1661,25 +1733,21 @@
 				{#if rightSidebarTab === 'properties'}
 					<!-- Properties Panel (interactive editor) -->
 					<div class="rs-section">
-						{#if sidebarTab}
-							<PropertyEditor
-								properties={sidebarProperties}
-								body={sidebarBody}
-								tabId={sidebarTab.id}
-								filePath={sidebarTab.path}
-								vaultName={sidebarTab.vaultName}
-								onNoteClick={async (noteName) => {
-									if (!sidebarTab) return;
-									const resolved = await resolveWikilinkCrossVault(sidebarTab.vaultPath, noteName);
-									if (resolved) {
-										const vc = $vaults.find(v => v.name === resolved.vault_name)?.color || '#7c3aed';
-										await openNoteTab(resolved.path, resolved.vault_name, vc);
-									}
-								}}
-							/>
-						{:else}
-							<div class="rs-empty">{$t('panels.noProperties')}</div>
-						{/if}
+						<PropertyEditor
+							properties={sidebarProperties}
+							body={sidebarBody}
+							tabId={sidebarTab.id}
+							filePath={sidebarTab.path}
+							vaultName={sidebarTab.vaultName}
+							onNoteClick={async (noteName) => {
+								if (!sidebarTab) return;
+								const resolved = await resolveWikilinkCrossVault(sidebarTab.vaultPath, noteName);
+								if (resolved) {
+									const vc = $vaults.find(v => v.name === resolved.vault_name)?.color || '#7c3aed';
+									await openNoteTab(resolved.path, resolved.vault_name, vc);
+								}
+							}}
+						/>
 					</div>
 
 					<!-- Outline Panel -->
@@ -1707,26 +1775,44 @@
 							activeNoteName={sidebarTab?.name ?? ''}
 						/>
 					</div>
-									<div class="rs-section">
+					<div class="rs-section">
 						<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
 						<OutgoingLinksPanel
 							outgoingLinks={currentOutgoing}
 						/>
 					</div>
-{:else if rightSidebarTab === 'tags'}
+				{:else if rightSidebarTab === 'tags'}
+					<!-- Tags for the active note -->
 					<div class="rs-section">
-						<div class="rs-header">{$t('panels.tagsHeader')}</div>
-						<TagsPanel tags={allVaultTags} onTagClick={handleTagClick} />
+						<div class="rs-header">{$t('panels.tags')}</div>
+						{#if activeNoteTags.length > 0}
+							<div class="rs-note-tags">
+								{#each activeNoteTags as tag}
+									<button class="rs-tag-chip" onclick={() => handleTagClick(tag)}>
+										<span class="rs-tag-hash">#</span>{tag}
+									</button>
+								{/each}
+							</div>
+						{:else}
+							<div class="rs-empty">{$t('panels.noTags')}</div>
+						{/if}
 					</div>
-				{:else if rightSidebarTab === 'links'}
-					<div class="rs-section">
-						<div class="rs-header">{$t('panels.linkDashboard')}</div>
-						<LinkDashboard
-							allLinks={allVaultLinks}
-							allNotes={allNotes}
-							visible={rightSidebarTab === 'links'}
-							onNoteClick={(path, vaultName) => openNoteTab(path, vaultName, $vaults.find(v => v.name === vaultName)?.color || '#7c3aed')}
-						/>
+				{:else if rightSidebarTab === 'graph'}
+					<!-- Local graph centered on the active note -->
+					<div class="rs-section rs-full-height">
+						{#if localGraphNodes.length > 0}
+							<LocalGraph
+								nodes={localGraphNodes}
+								links={localGraphLinks}
+								onNodeClick={(nodeId) => {
+									const note = allNotes.find(n => n.path === nodeId || n.name.replace(/\.md$/, '').toLowerCase() === nodeId);
+									if (note) openNoteTab(note.path, note.vaultName, vaultColorMap[note.vaultName] || '#7c3aed');
+								}}
+								activeNodeId={sidebarTab?.name?.replace(/\.md$/, '').toLowerCase()}
+							/>
+						{:else}
+							<div class="rs-empty-full">{$t('panels.noConnections')}</div>
+						{/if}
 					</div>
 				{/if}
 			{:else}
@@ -1754,6 +1840,70 @@
 	{#if showWorkspaces}
 		<WorkspaceManager
 			onClose={() => showWorkspaces = false}
+			getLayoutState={async () => {
+				const layout: WorkspaceLayout = {
+					leftSidebarOpen: sidebarOpen,
+					leftSidebarWidth,
+					rightSidebarOpen,
+					rightSidebarTab,
+					rightSidebarWidth,
+				};
+				let secondScreen: WorkspaceSecondScreen | undefined;
+				if (secondScreenOpen) {
+					// Request state from second screen via IPC
+					try {
+						const screenState = await new Promise<ScreenState>((resolve, reject) => {
+							const timeout = setTimeout(() => reject(new Error('timeout')), 2000);
+							onStateResponse((state) => {
+								clearTimeout(timeout);
+								resolve(state);
+							}).then((unlisten) => {
+								setTimeout(() => unlisten(), 2500);
+							});
+							requestScreenState();
+						});
+						secondScreen = {
+							open: true,
+							mode: screenState.mode,
+							linkedBrowsing: screenState.linkedBrowsing,
+							tabs: screenState.tabs,
+							activeTabPath: screenState.activeTabPath,
+						};
+					} catch {
+						// Fallback if second screen doesn't respond
+						secondScreen = { open: true, mode: 'grid', linkedBrowsing: false, tabs: [], activeTabPath: null };
+					}
+				}
+				return { layout, secondScreen };
+			}}
+			onRestore={async (layout, screen) => {
+				if (layout) {
+					sidebarOpen = layout.leftSidebarOpen;
+					leftSidebarWidth = layout.leftSidebarWidth;
+					rightSidebarOpen = layout.rightSidebarOpen;
+					const validTabs = ['properties', 'backlinks', 'tags', 'graph'] as const;
+					rightSidebarTab = validTabs.includes(layout.rightSidebarTab as any) ? layout.rightSidebarTab as typeof rightSidebarTab : 'properties';
+					rightSidebarWidth = layout.rightSidebarWidth;
+				}
+				if (screen?.open) {
+					if (!secondScreenOpen) {
+						await openSecondScreen();
+						secondScreenOpen = true;
+					}
+					// Give second screen time to initialize, then send restore
+					setTimeout(() => {
+						sendWorkspaceRestore({
+							mode: screen.mode as any,
+							linkedBrowsing: screen.linkedBrowsing,
+							tabs: screen.tabs,
+							activeTabPath: screen.activeTabPath,
+						});
+					}, 500);
+				} else if (screen && !screen.open && secondScreenOpen) {
+					await closeSecondScreen();
+					secondScreenOpen = false;
+				}
+			}}
 		/>
 	{/if}
 
@@ -2150,7 +2300,7 @@
 	.right-sidebar.collapsed { width: 0 !important; border-inline-start: none; }
 	.rs-inner {
 		height: 100%;
-		display: flex; flex-direction: column; overflow-y: auto;
+		display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
 	}
 
 	.rs-tabs {
@@ -2167,6 +2317,11 @@
 
 	.rs-section {
 		padding: 12px; border-bottom: 1px solid var(--border-light);
+	}
+	.rs-section.rs-full-height {
+		flex: 1; display: flex; flex-direction: column;
+		padding: 0; border-bottom: none; overflow: hidden;
+		min-height: 0;
 	}
 	.rs-header {
 		font-size: 0.78rem; font-weight: 600; color: var(--accent);
@@ -2190,6 +2345,18 @@
 	.rs-empty-full {
 		padding: 24px; text-align: center; color: var(--text-faint); font-size: 0.85rem;
 	}
+	.rs-note-tags {
+		display: flex; flex-wrap: wrap; gap: 6px;
+	}
+	.rs-tag-chip {
+		display: inline-flex; align-items: center; gap: 2px;
+		padding: 3px 8px; border-radius: 12px;
+		background: var(--bg-hover); border: 1px solid var(--border-light);
+		font-size: 0.78rem; color: var(--text-secondary);
+		cursor: pointer; font-family: inherit;
+	}
+	.rs-tag-chip:hover { background: var(--accent-bg, rgba(124, 58, 237, 0.1)); color: var(--accent); border-color: var(--accent); }
+	.rs-tag-hash { color: var(--accent); font-weight: 600; }
 
 	/* ═══ STATUS BAR ═══ */
 	.status-bar {
@@ -2216,11 +2383,11 @@
 	}
 	.sidebar-resize:hover, .app.resizing .sidebar-resize { background: var(--accent); }
 	.rs-resize {
-		position: absolute; top: 0; inset-inline-start: 0;
-		width: 4px; height: 100%;
+		position: absolute; top: 0; inset-inline-start: -3px;
+		width: 7px; height: 100%;
 		cursor: col-resize; z-index: 10;
 	}
-	.rs-resize:hover, .app.resizing .rs-resize { background: var(--accent); }
+	.rs-resize:hover, .app.resizing .rs-resize { background: var(--accent); opacity: 0.5; }
 
 	/* ═══ APP LOADING ═══ */
 	.app-loading {

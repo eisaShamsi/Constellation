@@ -294,7 +294,11 @@
     "tags": "برچسب‌ها",
     "tagsHeader": "برچسب‌ها",
     "linkDashboard": "داشبورد لینک‌ها",
-    "noNoteSelected": "یادداشتی انتخاب نشده"
+    "noteGrid": "شبکه یادداشت‌ها",
+    "graphView": "نمای گراف",
+    "noNoteSelected": "یادداشتی انتخاب نشده",
+    "noTags": "برچسبی در این یادداشت نیست",
+    "noConnections": "ارتباطی نیست"
   },
   "linkDashboard": {
     "mostConnected": "بیشترین اتصال",

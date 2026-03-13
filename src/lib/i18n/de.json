@@ -294,7 +294,11 @@
     "tags": "Tags",
     "tagsHeader": "Tags",
     "linkDashboard": "Link-Dashboard",
-    "noNoteSelected": "Keine Notiz ausgewählt"
+    "noteGrid": "Notiz-Raster",
+    "graphView": "Graphansicht",
+    "noNoteSelected": "Keine Notiz ausgewählt",
+    "noTags": "Keine Tags in dieser Notiz",
+    "noConnections": "Keine Verbindungen"
   },
   "linkDashboard": {
     "mostConnected": "Meistverbunden",

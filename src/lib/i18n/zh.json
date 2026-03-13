@@ -294,7 +294,11 @@
     "tags": "标签",
     "tagsHeader": "标签",
     "linkDashboard": "链接面板",
-    "noNoteSelected": "未选择笔记"
+    "noteGrid": "笔记网格",
+    "graphView": "图谱视图",
+    "noNoteSelected": "未选择笔记",
+    "noTags": "此笔记无标签",
+    "noConnections": "无连接"
   },
   "linkDashboard": {
     "mostConnected": "连接最多",

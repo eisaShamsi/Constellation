@@ -294,7 +294,11 @@
     "tags": "Etiketler",
     "tagsHeader": "Etiketler",
     "linkDashboard": "Bağlantı Panosu",
-    "noNoteSelected": "Not seçilmedi"
+    "noteGrid": "Not Izgarası",
+    "graphView": "Grafik Görünümü",
+    "noNoteSelected": "Not seçilmedi",
+    "noTags": "Bu notta etiket yok",
+    "noConnections": "Bağlantı yok"
   },
   "linkDashboard": {
     "mostConnected": "En Çok Bağlantılı",

@@ -1,27 +1,33 @@
 <script lang="ts">
-	import { workspaces, saveWorkspace, restoreWorkspace, deleteWorkspace, type Workspace } from '$lib/vaults/store';
+	import { workspaces, saveWorkspace, restoreWorkspace, deleteWorkspace, type Workspace, type WorkspaceLayout, type WorkspaceSecondScreen } from '$lib/vaults/store';
 	import { t } from '$lib/i18n';
 
 	let {
 		onClose,
+		getLayoutState,
+		onRestore,
 	}: {
 		onClose: () => void;
+		getLayoutState?: () => Promise<{ layout: WorkspaceLayout; secondScreen?: WorkspaceSecondScreen }>;
+		onRestore?: (layout?: WorkspaceLayout, secondScreen?: WorkspaceSecondScreen) => void;
 	} = $props();
 
 	let newName = $state('');
 	let saving = $state(false);
 
-	function handleSave() {
+	async function handleSave() {
 		const name = newName.trim();
 		if (!name) return;
 		saving = true;
-		saveWorkspace(name);
+		const state = await getLayoutState?.();
+		saveWorkspace(name, state?.layout, state?.secondScreen);
 		newName = '';
 		saving = false;
 	}
 
 	async function handleRestore(ws: Workspace) {
-		await restoreWorkspace(ws);
+		const result = await restoreWorkspace(ws);
+		onRestore?.(result.layout, result.secondScreen);
 		onClose();
 	}
 

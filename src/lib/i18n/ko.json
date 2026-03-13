@@ -294,7 +294,11 @@
     "tags": "태그",
     "tagsHeader": "태그",
     "linkDashboard": "링크 대시보드",
-    "noNoteSelected": "선택된 노트 없음"
+    "noteGrid": "노트 그리드",
+    "graphView": "그래프 보기",
+    "noNoteSelected": "선택된 노트 없음",
+    "noTags": "이 노트에 태그 없음",
+    "noConnections": "연결 없음"
   },
   "linkDashboard": {
     "mostConnected": "최다 연결",

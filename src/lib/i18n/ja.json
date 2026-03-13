@@ -294,7 +294,11 @@
     "tags": "タグ",
     "tagsHeader": "タグ",
     "linkDashboard": "リンクダッシュボード",
-    "noNoteSelected": "ノートが選択されていません"
+    "noteGrid": "ノートグリッド",
+    "graphView": "グラフビュー",
+    "noNoteSelected": "ノートが選択されていません",
+    "noTags": "このノートにタグなし",
+    "noConnections": "接続なし"
   },
   "linkDashboard": {
     "mostConnected": "最多接続",

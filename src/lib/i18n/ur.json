@@ -294,7 +294,11 @@
     "tags": "ٹیگز",
     "tagsHeader": "ٹیگز",
     "linkDashboard": "لنک ڈیش بورڈ",
-    "noNoteSelected": "کوئی نوٹ منتخب نہیں"
+    "noteGrid": "نوٹ گرڈ",
+    "graphView": "گراف ویو",
+    "noNoteSelected": "کوئی نوٹ منتخب نہیں",
+    "noTags": "اس نوٹ میں کوئی ٹیگز نہیں",
+    "noConnections": "کوئی رابطے نہیں"
   },
   "linkDashboard": {
     "mostConnected": "سب سے زیادہ جڑے",

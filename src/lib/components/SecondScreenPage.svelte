@@ -18,12 +18,13 @@
 	import { get } from 'svelte/store';
 	import { detectDir } from '$lib/utils';
 	import NotePane from '$lib/components/NotePane.svelte';
-	import GraphView from '$lib/components/GraphView.svelte';
+	import FullGraph from '$lib/components/FullGraph.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import {
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
-		sendNoteToMain, notifyScreenClosed,
-		type ScreenNote, type ScreenMode
+		onStateRequest, onWorkspaceRestore,
+		sendNoteToMain, notifyScreenClosed, sendScreenState,
+		type ScreenNote, type ScreenMode, type ScreenState
 	} from '$lib/secondScreen';
 	import {
 		setActiveUniverse, listUniverses
@@ -180,6 +181,50 @@
 			setTimeout(() => loadAllData(), 3000);
 		});
 		unlisteners.push(u5);
+
+		// Listen for state request from main (workspace save)
+		const u6 = await onStateRequest(() => {
+			const tabs = get(openTabs).map(t => ({
+				path: t.path,
+				vaultName: t.vaultName,
+				vaultColor: t.vaultColor,
+			}));
+			const currentTab = get(activeTab);
+			sendScreenState({
+				mode: currentMode,
+				linkedBrowsing,
+				tabs,
+				activeTabPath: currentTab?.path ?? null,
+			});
+		});
+		unlisteners.push(u6);
+
+		// Listen for workspace restore from main
+		const u7 = await onWorkspaceRestore(async (state: ScreenState) => {
+			// Set mode and linked browsing
+			currentMode = state.mode;
+			linkedBrowsing = state.linkedBrowsing;
+
+			// Close current tabs and open saved ones
+			openTabs.set([]);
+			activeTabId.set(null);
+
+			for (const saved of state.tabs) {
+				try {
+					await openNoteTab(saved.path, saved.vaultName, saved.vaultColor);
+				} catch { /* file may not exist anymore */ }
+			}
+
+			// Restore active tab
+			if (state.activeTabPath) {
+				const tabs = get(openTabs);
+				const match = tabs.find(t => t.path === state.activeTabPath);
+				if (match) {
+					activeTabId.set(match.id);
+				}
+			}
+		});
+		unlisteners.push(u7);
 	});
 
 	onDestroy(() => {
@@ -316,7 +361,7 @@
 			/>
 		{:else if currentMode === 'graph'}
 			<div class="graph-container">
-				<GraphView
+				<FullGraph
 					nodes={graphNodes}
 					links={graphLinks}
 					onNodeClick={handleGraphNodeClick}

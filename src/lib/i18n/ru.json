@@ -294,7 +294,11 @@
     "tags": "Теги",
     "tagsHeader": "Теги",
     "linkDashboard": "Панель ссылок",
-    "noNoteSelected": "Заметка не выбрана"
+    "noteGrid": "Сетка заметок",
+    "graphView": "Граф",
+    "noNoteSelected": "Заметка не выбрана",
+    "noTags": "Нет тегов в этой заметке",
+    "noConnections": "Нет связей"
   },
   "linkDashboard": {
     "mostConnected": "Наиболее связанные",

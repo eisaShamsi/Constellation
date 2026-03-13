@@ -294,7 +294,11 @@
     "tags": "תגיות",
     "tagsHeader": "תגיות",
     "linkDashboard": "לוח קישורים",
-    "noNoteSelected": "לא נבחר פתק"
+    "noteGrid": "רשת הערות",
+    "graphView": "תצוגת גרף",
+    "noNoteSelected": "לא נבחר פתק",
+    "noTags": "אין תגיות בפתק זה",
+    "noConnections": "אין חיבורים"
   },
   "linkDashboard": {
     "mostConnected": "המקושרים ביותר",

@@ -294,7 +294,11 @@
     "tags": "Tags",
     "tagsHeader": "Tags",
     "linkDashboard": "Link Dashboard",
-    "noNoteSelected": "No note selected"
+    "noteGrid": "Note Grid",
+    "graphView": "Graph View",
+    "noNoteSelected": "No note selected",
+    "noTags": "No tags in this note",
+    "noConnections": "No connections"
   },
   "linkDashboard": {
     "mostConnected": "Top Connected",

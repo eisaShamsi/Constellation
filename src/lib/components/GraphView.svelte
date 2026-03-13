@@ -42,6 +42,7 @@
 		links: GraphLink[];
 		onNodeClick: (path: string, vaultName: string) => void;
 		activeNodeId?: string;
+		compact?: boolean;
 	} = $props();
 
 	let containerEl: HTMLDivElement;
@@ -75,11 +76,12 @@
 	];
 	let vaultColorMap = new Map<string, string>();
 	let vaultList: { name: string; color: string; count: number }[] = $state([]);
+	let nodeCountInfo = $state(''); // "Showing 400 of 1228 nodes"
 	let hiddenVaults: Set<string> = $state(new Set());
 
 	// ─── Controls Panel State ───
 
-	let showControls = $state(true);
+	let showControls = $state(false);
 
 	// Sections collapsed state
 	let filtersOpen = $state(true);
@@ -100,7 +102,7 @@
 	let textFadeThreshold = $state(1.5);
 	let nodeSizeMultiplier = $state(4);
 	let linkThicknessMultiplier = $state(1);
-	let animating = $state(true);
+	let animating = $state(!compact);
 
 	// Forces
 	let centerForce = $state(0.5);
@@ -147,35 +149,56 @@
 	// ─── Reactivity: re-render on control changes ───
 
 	// Filter changes need full re-render (rebuild nodeData/linkData)
+	// Skip in compact mode — filters are hidden
 	$effect(() => {
 		const _ = [filterQuery, showOrphans, existingOnly];
-		if (mounted && nodes.length > 0) untrack(() => renderGraph());
+		if (mounted && !compact && nodes.length > 0) untrack(() => renderGraph());
 	});
 
 	// Display changes only need redraw (no simulation rebuild)
 	$effect(() => {
 		const _ = [showArrows, textFadeThreshold, nodeSizeMultiplier, linkThicknessMultiplier];
-		if (mounted && nodeData.length > 0) untrack(() => draw());
+		if (mounted && !compact && nodeData.length > 0) untrack(() => draw());
 	});
 
 	// Force changes update simulation dynamically
 	$effect(() => {
 		const _ = [centerForce, repelForce, linkForce, linkDistance];
-		if (simulation) untrack(() => updateForces());
+		if (!compact && simulation) untrack(() => updateForces());
 	});
 
+	// Animation toggle — skip in compact mode (always static)
 	$effect(() => {
 		const anim = animating;
+		if (compact) return;
 		untrack(() => {
 			if (!anim && simulation) {
 				simulation.stop();
-				for (let i = 0; i < 300; i++) simulation.tick();
-				draw();
+				// Use batched async ticks to avoid blocking the main thread
+				batchedTick(simulation, 300, () => draw());
 			} else if (anim && simulation) {
 				simulation.alpha(0.3).restart();
 			}
 		});
 	});
+
+	/** Run N simulation ticks in small batches to avoid freezing the UI */
+	function batchedTick(sim: d3.Simulation<any, any>, total: number, onDone: () => void) {
+		const BATCH = 30;
+		let done = 0;
+		function step() {
+			const end = Math.min(done + BATCH, total);
+			for (let i = done; i < end; i++) sim.tick();
+			done = end;
+			draw(); // progressive render
+			if (done < total) {
+				requestAnimationFrame(step);
+			} else {
+				onDone();
+			}
+		}
+		requestAnimationFrame(step);
+	}
 
 	function updateForces() {
 		if (!simulation || !containerEl) return;
@@ -205,7 +228,8 @@
 
 	function assignVaultColors() {
 		const vaultCounts = new Map<string, number>();
-		for (const n of nodes) {
+		const rawNodes = Array.from(nodes);
+		for (const n of rawNodes) {
 			vaultCounts.set(n.vaultName, (vaultCounts.get(n.vaultName) || 0) + 1);
 		}
 		const vaultNames = [...vaultCounts.keys()];
@@ -302,22 +326,14 @@
 		});
 		if (containerEl) resizeObserver.observe(containerEl);
 
-		if (nodes.length > 0 && canvasEl) {
-			renderGraph();
-		}
-	});
-
-	let prevNodesLen = 0;
-	$effect(() => {
-		const len = nodes.length;
-		if (mounted && len > 0 && len !== prevNodesLen && canvasEl) {
-			prevNodesLen = len;
-			ctx = canvasEl.getContext('2d');
-			renderGraph();
+		// Render once on mount (deferred to avoid blocking)
+		if (nodes.length > 0) {
+			requestAnimationFrame(() => renderGraph());
 		}
 	});
 
 	$effect(() => {
+		if (compact) return; // In compact mode, active node is always centered by renderGraph
 		if (activeNodeId && activeNodeId !== prevActiveNodeId && nodeData.length > 0) {
 			prevActiveNodeId = activeNodeId;
 			centerOnNode(activeNodeId);
@@ -387,17 +403,65 @@
 
 		assignVaultColors();
 
-		// Apply filters
-		let filteredNodes = nodes.filter(n => !hiddenVaults.has(n.vaultName));
+		// In compact mode, use a simple radial layout — no d3 simulation
+		if (compact) {
+			nodeData = nodes.map(n => ({ ...n }));
+			linkData = links.map(l => ({ ...l }));
 
-		// Search filter
+			// Place active node at center, others in a circle around it
+			const cx = width / 2;
+			const cy = height / 2;
+			const radius = Math.min(width, height) * 0.3;
+			const others = nodeData.filter(n => n.id !== activeNodeId);
+			const center = nodeData.find(n => n.id === activeNodeId);
+
+			if (center) {
+				center.x = cx;
+				center.y = cy;
+			}
+			others.forEach((n, i) => {
+				const a = (2 * Math.PI * i) / Math.max(others.length, 1) - Math.PI / 2;
+				n.x = cx + Math.cos(a) * radius;
+				n.y = cy + Math.sin(a) * radius;
+			});
+
+			// Resolve link references (d3-style: source/target become node objects)
+			const nodeById = new Map(nodeData.map(n => [n.id, n]));
+			for (const l of linkData) {
+				const s = nodeById.get(l.source as string);
+				const t = nodeById.get(l.target as string);
+				if (s) l.source = s;
+				if (t) l.target = t;
+			}
+
+			draw();
+			return;
+		}
+
+		// ─── Full mode: d3 force simulation ───
+		// Defer ALL heavy work to avoid blocking the UI thread.
+		// d3.forceSimulation() + forceLink() initialization is O(N+E) and
+		// synchronously blocks with 1885 nodes + thousands of links.
+		// ─── Full mode: d3 force simulation ───
+		// Cap nodes to prevent UI freeze. d3 handles ~400 nodes smoothly.
+		const MAX_INITIAL_NODES = 50; // DEBUG: testing if d3 is the bottleneck
+		console.log('[GraphView] renderGraph called, nodes:', nodes.length, 'links:', links.length);
+
+		let filteredNodes = nodes.filter(n => !hiddenVaults.has(n.vaultName));
 		if (filterQuery.trim()) {
 			filteredNodes = filteredNodes.filter(n => matchesQuery(n, filterQuery));
 		}
-
-		// Orphans filter
 		if (!showOrphans) {
 			filteredNodes = filteredNodes.filter(n => n.linkCount > 0);
+		}
+
+		// Sort by link count (most connected first) and cap
+		const totalFiltered = filteredNodes.length;
+		if (filteredNodes.length > MAX_INITIAL_NODES) {
+			filteredNodes = [...filteredNodes].sort((a, b) => b.linkCount - a.linkCount).slice(0, MAX_INITIAL_NODES);
+			nodeCountInfo = `${MAX_INITIAL_NODES} / ${totalFiltered}`;
+		} else {
+			nodeCountInfo = `${totalFiltered}`;
 		}
 
 		const visibleIds = new Set(filteredNodes.map(n => n.id));
@@ -409,32 +473,25 @@
 		// Compute vault cluster centers
 		const vaultNames = [...new Set(filteredNodes.map(n => n.vaultName))];
 		const vaultCenters = new Map<string, { x: number; y: number }>();
-		const angle = (2 * Math.PI) / Math.max(vaultNames.length, 1);
+		const clusterAngle = (2 * Math.PI) / Math.max(vaultNames.length, 1);
 		const clusterRadius = Math.min(width, height) * 0.2;
 		vaultNames.forEach((v, i) => {
 			vaultCenters.set(v, {
-				x: width / 2 + Math.cos(angle * i) * clusterRadius,
-				y: height / 2 + Math.sin(angle * i) * clusterRadius,
+				x: width / 2 + Math.cos(clusterAngle * i) * clusterRadius,
+				y: height / 2 + Math.sin(clusterAngle * i) * clusterRadius,
 			});
 		});
 
 		simulation = d3.forceSimulation(nodeData)
+			.stop()
 			.force('link', d3.forceLink(linkData).id((d: any) => d.id).distance(linkDistance).strength(linkForce))
-			.force('charge', d3.forceManyBody().strength(-repelForce).theta(0.9))
+			.force('charge', d3.forceManyBody().strength(-repelForce).theta(1.2))
 			.force('center', d3.forceCenter(width / 2, height / 2).strength(centerForce))
-			.force('collision', d3.forceCollide().radius(8))
+			.force('collision', d3.forceCollide().radius(6))
 			.force('clusterX', d3.forceX((d: any) => vaultCenters.get(d.vaultName)?.x ?? width / 2).strength(0.05))
 			.force('clusterY', d3.forceY((d: any) => vaultCenters.get(d.vaultName)?.y ?? height / 2).strength(0.05))
-			.alphaDecay(0.06)
-			.velocityDecay(0.45);
-
-		let tickCount = 0;
-		simulation.on('tick', () => {
-			tickCount++;
-			if (tickCount % 2 === 0 || simulation!.alpha() < 0.05) {
-				draw();
-			}
-		});
+			.alphaDecay(0.08)
+			.velocityDecay(0.5);
 
 		simulation.on('end', () => {
 			draw();
@@ -443,12 +500,6 @@
 				centerOnNode(activeNodeId);
 			}
 		});
-
-		if (!animating) {
-			simulation.stop();
-			for (let i = 0; i < 300; i++) simulation.tick();
-			draw();
-		}
 
 		// Zoom
 		const zoomBehavior = d3.zoom<HTMLCanvasElement, unknown>()
@@ -467,12 +518,23 @@
 			});
 
 		d3.select(canvasEl).call(zoomBehavior as any);
-
 		canvasEl.onmousedown = handleMouseDown;
 		canvasEl.onmousemove = handleMouseMove;
 		canvasEl.onmouseup = handleMouseUp;
 		canvasEl.onmouseleave = handleMouseLeave;
 		canvasEl.onclick = handleClick;
+
+		// Start ticking progressively
+		if (animating) {
+			batchedTick(simulation, 150, () => {
+				if (simulation) {
+					simulation.on('tick', () => draw());
+					simulation.alpha(0.1).restart();
+				}
+			});
+		} else {
+			batchedTick(simulation, 200, () => draw());
+		}
 	}
 
 	function findNodeAt(sx: number, sy: number): any {
@@ -868,6 +930,7 @@
 		<div class="graph-empty">{$t('graphView.noNotes')}</div>
 	{:else}
 		<!-- Controls toggle button -->
+		{#if !compact}
 		<button
 			class="controls-toggle"
 			class:active={showControls}
@@ -1010,12 +1073,16 @@
 				</div>
 			</div>
 		{/if}
+		{/if}
 
 		<canvas bind:this={canvasEl}></canvas>
 		{#if tooltipVisible}
 			<div class="graph-tooltip" style="left: {tooltipX}px; top: {tooltipY}px;">
 				{tooltipText}
 			</div>
+		{/if}
+		{#if !compact && nodeCountInfo}
+			<div class="node-count-badge">{nodeCountInfo} nodes</div>
 		{/if}
 	{/if}
 </div>
@@ -1026,6 +1093,18 @@
 		background: var(--background-secondary);
 		position: relative;
 		overflow: hidden;
+	}
+	.node-count-badge {
+		position: absolute;
+		bottom: 8px;
+		right: 8px;
+		padding: 2px 8px;
+		font-size: 11px;
+		color: var(--text-muted);
+		background: var(--background-primary);
+		border-radius: 4px;
+		opacity: 0.8;
+		pointer-events: none;
 	}
 	canvas {
 		display: block;

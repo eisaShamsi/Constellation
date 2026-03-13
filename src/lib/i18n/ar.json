@@ -294,7 +294,11 @@
     "tags": "الوسوم",
     "tagsHeader": "الوسوم",
     "linkDashboard": "لوحة الروابط",
-    "noNoteSelected": "لا توجد ملاحظة مفتوحة"
+    "noteGrid": "شبكة الملاحظات",
+    "graphView": "عرض الرسم البياني",
+    "noNoteSelected": "لا توجد ملاحظة مفتوحة",
+    "noTags": "لا توجد وسوم في هذه الملاحظة",
+    "noConnections": "لا توجد روابط"
   },
   "linkDashboard": {
     "mostConnected": "الأكثر ارتباطاً",

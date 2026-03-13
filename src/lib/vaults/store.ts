@@ -1085,6 +1085,22 @@ export function updateSecuritySettings(partial: Partial<AppSettings['security']>
 }
 
 // ─── Workspaces ───
+export interface WorkspaceLayout {
+	leftSidebarOpen: boolean;
+	leftSidebarWidth: number;
+	rightSidebarOpen: boolean;
+	rightSidebarTab: string;
+	rightSidebarWidth: number;
+}
+
+export interface WorkspaceSecondScreen {
+	open: boolean;
+	mode: string;
+	linkedBrowsing: boolean;
+	tabs: { path: string; vaultName: string; vaultColor: string }[];
+	activeTabPath: string | null;
+}
+
 export interface Workspace {
 	id: string;
 	name: string;
@@ -1093,6 +1109,8 @@ export interface Workspace {
 	splitActive: boolean;
 	splitDir: SplitDirection;
 	timestamp: number;
+	layout?: WorkspaceLayout;
+	secondScreen?: WorkspaceSecondScreen;
 }
 
 export const workspaces = writable<Workspace[]>([]);
@@ -1108,7 +1126,7 @@ function persistWorkspaces() {
 	invoke('save_universe_workspaces', { workspaces: get(workspaces) }).catch(e => console.error('[save] workspaces failed:', e));
 }
 
-export function saveWorkspace(name: string) {
+export function saveWorkspace(name: string, layout?: WorkspaceLayout, secondScreenState?: WorkspaceSecondScreen) {
 	const tabs = get(openTabs).map(t => ({
 		path: t.path,
 		vaultName: t.vaultName,
@@ -1124,6 +1142,8 @@ export function saveWorkspace(name: string) {
 		splitActive: get(splitActive),
 		splitDir: get(splitDirection),
 		timestamp: Date.now(),
+		layout,
+		secondScreen: secondScreenState,
 	};
 
 	workspaces.update(list => {
@@ -1134,7 +1154,7 @@ export function saveWorkspace(name: string) {
 	persistWorkspaces();
 }
 
-export async function restoreWorkspace(ws: Workspace) {
+export async function restoreWorkspace(ws: Workspace): Promise<{ layout?: WorkspaceLayout; secondScreen?: WorkspaceSecondScreen }> {
 	// Close all current tabs
 	openTabs.set([]);
 	activeTabId.set(null);
@@ -1160,6 +1180,9 @@ export async function restoreWorkspace(ws: Workspace) {
 	// Restore split state
 	splitActive.set(ws.splitActive);
 	splitDirection.set(ws.splitDir);
+
+	// Return layout and second screen state for the caller to apply
+	return { layout: ws.layout, secondScreen: ws.secondScreen };
 }
 
 export function deleteWorkspace(id: string) {

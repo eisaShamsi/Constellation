@@ -294,7 +294,11 @@
     "tags": "Tags",
     "tagsHeader": "Tags",
     "linkDashboard": "Painel de links",
-    "noNoteSelected": "Nenhuma nota selecionada"
+    "noteGrid": "Grade de notas",
+    "graphView": "Visualização de grafo",
+    "noNoteSelected": "Nenhuma nota selecionada",
+    "noTags": "Sem tags nesta nota",
+    "noConnections": "Sem conexões"
   },
   "linkDashboard": {
     "mostConnected": "Mais conectadas",

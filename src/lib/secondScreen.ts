@@ -79,6 +79,32 @@ export async function broadcastNoteSaved(path: string): Promise<void> {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Workspace state exchange                                           */
+/* ------------------------------------------------------------------ */
+
+export interface ScreenState {
+	mode: ScreenMode;
+	linkedBrowsing: boolean;
+	tabs: { path: string; vaultName: string; vaultColor: string }[];
+	activeTabPath: string | null;
+}
+
+/** Main → Second Screen: request current state for workspace save */
+export async function requestScreenState(): Promise<void> {
+	await emit('screen:state-request');
+}
+
+/** Second Screen → Main: reply with current state */
+export async function sendScreenState(state: ScreenState): Promise<void> {
+	await emit('screen:state-response', state);
+}
+
+/** Main → Second Screen: restore a saved workspace state */
+export async function sendWorkspaceRestore(state: ScreenState): Promise<void> {
+	await emit('screen:workspace-restore', state);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Listeners                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -104,4 +130,16 @@ export function onSettingsChanged(callback: () => void): Promise<UnlistenFn> {
 
 export function onScreenClosed(callback: () => void): Promise<UnlistenFn> {
 	return listen('screen:closed', () => callback());
+}
+
+export function onStateRequest(callback: () => void): Promise<UnlistenFn> {
+	return listen('screen:state-request', () => callback());
+}
+
+export function onStateResponse(callback: (state: ScreenState) => void): Promise<UnlistenFn> {
+	return listen<ScreenState>('screen:state-response', (event) => callback(event.payload));
+}
+
+export function onWorkspaceRestore(callback: (state: ScreenState) => void): Promise<UnlistenFn> {
+	return listen<ScreenState>('screen:workspace-restore', (event) => callback(event.payload));
 }

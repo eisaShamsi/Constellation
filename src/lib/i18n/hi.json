@@ -294,7 +294,11 @@
     "tags": "टैग्स",
     "tagsHeader": "टैग्स",
     "linkDashboard": "लिंक डैशबोर्ड",
-    "noNoteSelected": "कोई नोट चयनित नहीं"
+    "noteGrid": "नोट ग्रिड",
+    "graphView": "ग्राफ़ दृश्य",
+    "noNoteSelected": "कोई नोट चयनित नहीं",
+    "noTags": "इस नोट में कोई टैग नहीं",
+    "noConnections": "कोई कनेक्शन नहीं"
   },
   "linkDashboard": {
     "mostConnected": "सर्वाधिक जुड़े",
