@@ -38,6 +38,7 @@
 	let graphNodes = $state<GraphNode[]>([]);
 	let graphLinks = $state<GraphLink[]>([]);
 	let loading = $state(true);
+	let universeName = $state('');
 
 	// ─── Vault color map ───
 	const vaultColors = [
@@ -112,7 +113,7 @@
 
 	onMount(async () => {
 		const win = getCurrentWindow();
-		try { await win.setTitle('Constellation - Screen 2'); } catch {}
+		try { await win.setTitle('Constellation'); } catch {}
 
 		// Listen for screen-hidden event (Rust hides instead of closing)
 		const unlistenHidden = await listen('screen-hidden', () => {
@@ -125,6 +126,8 @@
 			const universes = await listUniverses();
 			if (universes.length > 0) {
 				await setActiveUniverse(universes[0].id);
+				universeName = universes[0].name || '';
+				await win.setTitle(`Constellation - ${universeName}`).catch(() => {});
 			}
 		} catch {}
 
@@ -154,6 +157,14 @@
 
 		// Listen for universe switch
 		const u3 = await onUniverseSwitch(async () => {
+			// Update universe name
+			try {
+				const universes = await listUniverses();
+				if (universes.length > 0) {
+					universeName = universes[0].name || '';
+					getCurrentWindow().setTitle(`Constellation - ${universeName}`).catch(() => {});
+				}
+			} catch {}
 			await loadAllData();
 		});
 		unlisteners.push(u3);
@@ -219,7 +230,11 @@
 			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
 			</svg>
-			<span>Screen 2</span>
+			{#if universeName}
+				<span>{universeName} <span class="screen-badge">(Screen 2)</span></span>
+			{:else}
+				<span>Screen 2</span>
+			{/if}
 		</div>
 
 		<div class="mode-switcher">
@@ -394,6 +409,11 @@
 		font-weight: 600;
 		color: var(--text-muted);
 		margin-inline-end: auto;
+	}
+	.screen-badge {
+		font-weight: 400;
+		opacity: 0.6;
+		font-size: 11px;
 	}
 
 	.mode-switcher {
