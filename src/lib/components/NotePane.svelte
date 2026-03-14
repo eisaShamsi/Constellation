@@ -91,7 +91,14 @@
 	});
 
 	onDestroy(() => {
-		clearTimeout(saveTimeout);
+		// Flush any pending save before the component is destroyed
+		if (saveTimeout) {
+			clearTimeout(saveTimeout);
+			if (tab) {
+				const currentParsed = parseFrontmatter(tab.content);
+				saveTabContent(tab.id, tab.path, currentParsed.properties, editBody).catch(() => {});
+			}
+		}
 		if (rafId !== null) cancelAnimationFrame(rafId);
 		if (rafId2 !== null) cancelAnimationFrame(rafId2);
 		document.removeEventListener('constellation:toggle-live-preview', handleToggleLivePreview);

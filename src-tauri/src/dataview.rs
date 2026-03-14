@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::Path;
 use std::time::Instant;
 use serde::{Deserialize, Serialize};
@@ -316,9 +317,19 @@ pub fn execute_dataview_query(
         "folder" => {
             for (vault_name, vault_path) in &vault_paths {
                 let full_path = Path::new(vault_path).join(&query.source_value);
-                if full_path.exists() {
-                    scan_folder(&full_path, vault_name, vault_path, true, &mut rows);
+                // Validate the resolved path stays within the vault (prevents path traversal)
+                let vault_canon = match fs::canonicalize(vault_path) {
+                    Ok(p) => p,
+                    Err(_) => continue,
+                };
+                let full_path_canon = match fs::canonicalize(&full_path) {
+                    Ok(p) => p,
+                    Err(_) => continue, // Path doesn't exist or is invalid
+                };
+                if !full_path_canon.starts_with(&vault_canon) {
+                    continue; // Silently skip: path escapes vault boundary
                 }
+                scan_folder(&full_path_canon, vault_name, vault_path, true, &mut rows);
             }
         }
         "tag" => {

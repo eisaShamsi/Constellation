@@ -810,12 +810,20 @@ pub fn save_workspace_base(
     // Validate the path is inside the workspace bases directory
     let bases_dir = workspace_bases_dir(&app)?;
     let target = Path::new(&file_path);
-    let canon_target = fs::canonicalize(target)
-        .or_else(|_| Ok::<PathBuf, String>(target.to_path_buf()))
-        .unwrap();
     let canon_dir = fs::canonicalize(&bases_dir)
-        .or_else(|_| Ok::<PathBuf, String>(bases_dir.clone()))
-        .unwrap();
+        .map_err(|_| "Invalid workspace bases directory.".to_string())?;
+    // For new files that don't exist yet, canonicalize the parent directory and
+    // append only the filename — avoids raw-path starts_with bypass via ".." components.
+    let canon_target = if target.exists() {
+        fs::canonicalize(target)
+            .map_err(|_| "Invalid target path.".to_string())?
+    } else {
+        let parent = target.parent().ok_or("Invalid target path.".to_string())?;
+        let canon_parent = fs::canonicalize(parent)
+            .map_err(|_| "Parent directory does not exist.".to_string())?;
+        let fname = target.file_name().ok_or("Invalid file name.".to_string())?;
+        canon_parent.join(fname)
+    };
 
     if !canon_target.starts_with(&canon_dir) {
         return Err("Access denied: path is not within workspace bases directory.".to_string());

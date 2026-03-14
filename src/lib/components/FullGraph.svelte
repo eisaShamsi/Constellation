@@ -451,12 +451,15 @@
 
 	// Re-layout when nodes change significantly
 	let prevLen = 0;
+	let layoutRaf: number | null = null;
 	$effect(() => {
 		const len = nodes.length;
 		if (len !== prevLen && len > 0) {
 			prevLen = len;
-			requestAnimationFrame(() => initLayout());
+			if (layoutRaf !== null) cancelAnimationFrame(layoutRaf);
+			layoutRaf = requestAnimationFrame(() => { layoutRaf = null; initLayout(); });
 		}
+		return () => { if (layoutRaf !== null) { cancelAnimationFrame(layoutRaf); layoutRaf = null; } };
 	});
 </script>
 

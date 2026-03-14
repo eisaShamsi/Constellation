@@ -143,9 +143,13 @@ fn resolve_vaults_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>) ->
         if let Ok(data) = fs::read_to_string(&meta_path) {
             if let Ok(meta) = serde_json::from_str::<UniverseMeta>(&data) {
                 for child_path_str in &meta.children {
-                    let child_path = Path::new(child_path_str);
-                    if child_path.is_dir() {
-                        let child_vaults = resolve_vaults_recursive(child_path, visited);
+                    // Canonicalize before use to resolve any ".." or symlink components
+                    let child_canon = match fs::canonicalize(child_path_str) {
+                        Ok(p) => p,
+                        Err(_) => continue, // Path doesn't exist or is invalid — skip
+                    };
+                    if child_canon.is_dir() {
+                        let child_vaults = resolve_vaults_recursive(&child_canon, visited);
                         all_vaults.extend(child_vaults);
                     }
                 }

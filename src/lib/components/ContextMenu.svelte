@@ -31,13 +31,16 @@
 		function handleEscape(e: KeyboardEvent) {
 			if (e.key === 'Escape') onClose();
 		}
-		// Delay slightly to avoid the same click that opened the menu
-		setTimeout(() => {
+		// Delay slightly to avoid the same click that opened the menu.
+		// Track the timer so we can cancel it if the component unmounts first.
+		let openTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+			openTimer = null;
 			document.addEventListener('click', handleClickOutside);
 			document.addEventListener('keydown', handleEscape);
 		}, 10);
 
 		return () => {
+			if (openTimer !== null) clearTimeout(openTimer);
 			document.removeEventListener('click', handleClickOutside);
 			document.removeEventListener('keydown', handleEscape);
 		};

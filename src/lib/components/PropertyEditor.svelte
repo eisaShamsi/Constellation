@@ -77,6 +77,7 @@
 
 	let editableProps = $state<FrontmatterProperty[]>([]);
 	let saveTimeout: ReturnType<typeof setTimeout>;
+	let focusRaf: number | null = null;
 	let saving = $state(false);
 	let prevTabId = $state('');
 	let tagInputs = $state<Record<number, string>>({});
@@ -138,7 +139,9 @@
 	// Listen for global add-property event (Ctrl+;)
 	function handleAddPropertyEvent() {
 		addProperty();
-		requestAnimationFrame(() => {
+		if (focusRaf !== null) cancelAnimationFrame(focusRaf);
+		focusRaf = requestAnimationFrame(() => {
+			focusRaf = null;
 			const rows = document.querySelectorAll('.pe-key');
 			const last = rows[rows.length - 1] as HTMLInputElement | undefined;
 			last?.focus();
@@ -152,6 +155,14 @@
 	onDestroy(() => {
 		document.removeEventListener('constellation:add-property', handleAddPropertyEvent);
 		document.removeEventListener('click', handleDocClick);
+		if (focusRaf !== null) cancelAnimationFrame(focusRaf);
+		// Flush any pending save before the component is destroyed
+		if (saveTimeout) {
+			clearTimeout(saveTimeout);
+			if (tabId && filePath) {
+				saveTabContent(tabId, filePath, editableProps, body).catch(() => {});
+			}
+		}
 	});
 
 	function getIcon(prop: FrontmatterProperty): { icon: string; color?: string; isSpecial: boolean } {

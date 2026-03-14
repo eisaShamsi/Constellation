@@ -60,6 +60,7 @@
 	let dragMoved = false;
 	let prevActiveNodeId = '';
 	let mounted = false;
+	let centerRaf: number | null = null;
 
 	// Tooltip
 	let tooltipText = $state('');
@@ -347,6 +348,9 @@
 		const target = nodeData.find((n: any) => n.id === nodeId);
 		if (!target || target.x == null || target.y == null) return;
 
+		// Cancel any in-progress centering animation
+		if (centerRaf !== null) { cancelAnimationFrame(centerRaf); centerRaf = null; }
+
 		const width = containerEl.clientWidth;
 		const height = containerEl.clientHeight;
 		const scale = 1.5;
@@ -359,20 +363,22 @@
 		const start = performance.now();
 
 		function animate(time: number) {
+			centerRaf = null;
 			const t = Math.min(1, (time - start) / duration);
 			const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 			currentTransform = d3.zoomIdentity
 				.translate(from.x + (to.x - from.x) * e, from.y + (to.y - from.y) * e)
 				.scale(from.k + (to.k - from.k) * e);
 			draw();
-			if (t < 1) requestAnimationFrame(animate);
+			if (t < 1) centerRaf = requestAnimationFrame(animate);
 		}
-		requestAnimationFrame(animate);
+		centerRaf = requestAnimationFrame(animate);
 	}
 
 	// ─── Cleanup helper ───
 
 	function cleanup() {
+		if (centerRaf !== null) { cancelAnimationFrame(centerRaf); centerRaf = null; }
 		if (simulation) {
 			simulation.stop();
 			simulation.on('tick', null);
