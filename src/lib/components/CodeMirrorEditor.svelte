@@ -12,7 +12,8 @@
 	import { saveClipboardImage, resolveWikilinkCrossVault, getNoteHeadings } from '$lib/vaults/store';
 	import FormattingToolbar from './FormattingToolbar.svelte';
 	import TableToolbar from './TableToolbar.svelte';
-	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, type ParsedTable } from '$lib/editor/tableUtils';
+	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, type ParsedTable } from '$lib/editor/tableUtils';
+	import { evaluateTableFormulas, indexToCol } from '$lib/editor/tableFormulas';
 	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
 
 	let {
@@ -142,6 +143,18 @@
 		});
 		currentTable = newTable;
 		view.focus();
+	}
+
+	function insertFormulaAtCursor(editorView: EditorView, table: ParsedTable) {
+		// Insert a SUM formula placeholder at the current cell
+		const col = table.cursorCol;
+		const colLetter = indexToCol(col);
+		const lastDataRow = table.rows.length - 1;
+		const formula = `=SUM(${colLetter}1:${colLetter}${lastDataRow})`;
+		const row = table.cursorRow;
+		const newRows = table.rows.map(r => [...r]);
+		newRows[row][col] = formula;
+		applyTableChange({ ...table, rows: newRows });
 	}
 
 	// Tab navigation in tables
@@ -993,6 +1006,14 @@
 			onAlignLeft={() => { if (currentTable) applyTableChange(setAlignment(currentTable, currentTable.cursorCol, 'left')); }}
 			onAlignCenter={() => { if (currentTable) applyTableChange(setAlignment(currentTable, currentTable.cursorCol, 'center')); }}
 			onAlignRight={() => { if (currentTable) applyTableChange(setAlignment(currentTable, currentTable.cursorCol, 'right')); }}
+			onMoveRowUp={() => { if (currentTable) applyTableChange(moveRow(currentTable, currentTable.cursorRow, 'up')); }}
+			onMoveRowDown={() => { if (currentTable) applyTableChange(moveRow(currentTable, currentTable.cursorRow, 'down')); }}
+			onMoveColLeft={() => { if (currentTable) applyTableChange(moveColumn(currentTable, currentTable.cursorCol, 'left')); }}
+			onMoveColRight={() => { if (currentTable) applyTableChange(moveColumn(currentTable, currentTable.cursorCol, 'right')); }}
+			onSortAsc={() => { if (currentTable) applyTableChange(sortByColumn(currentTable, currentTable.cursorCol, 'asc')); }}
+			onSortDesc={() => { if (currentTable) applyTableChange(sortByColumn(currentTable, currentTable.cursorCol, 'desc')); }}
+			onInsertFormula={() => { if (currentTable && view) insertFormulaAtCursor(view, currentTable); }}
+			onEvaluateFormulas={() => { if (currentTable) applyTableChange({ ...currentTable, rows: evaluateTableFormulas(currentTable.rows) }); }}
 		/>
 	{/if}
 </div>

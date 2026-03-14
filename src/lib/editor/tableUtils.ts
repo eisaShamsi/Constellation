@@ -235,6 +235,51 @@ export function setAlignment(table: ParsedTable, col: number, alignment: 'left' 
 	return { ...table, alignments: newAlignments };
 }
 
+/** Move a row up or down */
+export function moveRow(table: ParsedTable, row: number, direction: 'up' | 'down'): ParsedTable | null {
+	if (row === 0) return null; // Can't move header
+	const targetRow = direction === 'up' ? row - 1 : row + 1;
+	if (targetRow < 1 || targetRow >= table.rows.length) return null;
+	const newRows = [...table.rows.map(r => [...r])];
+	[newRows[row], newRows[targetRow]] = [newRows[targetRow], newRows[row]];
+	return { ...table, rows: newRows, cursorRow: targetRow };
+}
+
+/** Move a column left or right */
+export function moveColumn(table: ParsedTable, col: number, direction: 'left' | 'right'): ParsedTable | null {
+	const targetCol = direction === 'left' ? col - 1 : col + 1;
+	if (targetCol < 0 || targetCol >= table.columnCount) return null;
+	const newRows = table.rows.map(row => {
+		const r = [...row];
+		[r[col], r[targetCol]] = [r[targetCol], r[col]];
+		return r;
+	});
+	const newAlignments = [...table.alignments];
+	[newAlignments[col], newAlignments[targetCol]] = [newAlignments[targetCol], newAlignments[col]];
+	return { ...table, rows: newRows, alignments: newAlignments, cursorCol: targetCol };
+}
+
+/** Sort data rows by a column (header row stays in place) */
+export function sortByColumn(table: ParsedTable, col: number, direction: 'asc' | 'desc'): ParsedTable {
+	if (table.rows.length <= 1) return table;
+	const header = table.rows[0];
+	const dataRows = table.rows.slice(1).map(r => [...r]);
+	dataRows.sort((a, b) => {
+		const va = (a[col] || '').trim();
+		const vb = (b[col] || '').trim();
+		const na = parseFloat(va);
+		const nb = parseFloat(vb);
+		// Numeric comparison if both are numbers
+		if (!isNaN(na) && !isNaN(nb)) {
+			return direction === 'asc' ? na - nb : nb - na;
+		}
+		// String comparison
+		const cmp = va.localeCompare(vb, undefined, { sensitivity: 'base' });
+		return direction === 'asc' ? cmp : -cmp;
+	});
+	return { ...table, rows: [header, ...dataRows] };
+}
+
 /** Get the position of a specific cell in the formatted table for cursor placement */
 export function getCellPosition(formattedTable: string, row: number, col: number): number {
 	const lines = formattedTable.split('\n');
