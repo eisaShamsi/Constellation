@@ -8,7 +8,7 @@
 
 Constellation is a desktop knowledge management platform built for people who think in connected notes. It stores everything as standard Markdown files on your local file system — no cloud accounts, no vendor lock-in, no subscription required.
 
-Constellation introduces the **Universe** — a portable, self-contained workspace that unifies multiple vaults of Markdown files, structured databases, AI assistance, task management, and calendar views into a single coherent experience. Where other tools give you a single notebook, Constellation gives you an interconnected system.
+Constellation introduces the **Universe** — a portable, self-contained workspace that unifies multiple libraries of Markdown files, structured databases, AI assistance, task management, and calendar views into a single coherent experience. Where other tools give you a single notebook, Constellation gives you an interconnected system.
 
 **Technical foundation:** Tauri v2 (Rust backend) + SvelteKit + Svelte 5. Native performance, small binary size, full offline operation, no Electron overhead.
 
@@ -21,7 +21,7 @@ Knowledge management today is fragmented. Users face a common set of problems re
 | Problem | What Users Do Today | The Cost |
 |---------|---------------------|----------|
 | Notes scattered across tools | Manual copy-paste between apps | Lost connections, duplicated effort |
-| One notebook/vault at a time | Close one project to open another | Context-switching, no cross-project search or linking |
+| One notebook at a time | Close one project to open another | Context-switching, no cross-project search or linking |
 | Missing task management | Separate task app (Todoist, Things, etc.) | Tasks disconnected from the notes that created them |
 | No database views | Export to spreadsheets or use separate tools | Data lives outside the knowledge system |
 | Rigid table editing | Edit tables in a spreadsheet, paste back | Workflow interruption, no formulas in notes |
@@ -36,7 +36,7 @@ Some tools solve a few of these. None solve all of them. Users end up assembling
 
 ### Non-Destructive by Design
 
-Constellation is built on a foundational principle: **your files are never modified without your explicit action.** It reads your existing Markdown folders exactly as they are — it does not inject metadata, rewrite frontmatter, alter folder structures, or create hidden configuration files inside your vaults. Your Markdown files remain pure, portable, and fully compatible with any text editor or tool that reads standard Markdown.
+Constellation is built on a foundational principle: **your files are never modified without your explicit action.** It reads your existing Markdown folders exactly as they are — it does not inject metadata, rewrite frontmatter, alter folder structures, or create hidden configuration files inside your libraries. Your Markdown files remain pure, portable, and fully compatible with any text editor or tool that reads standard Markdown.
 
 This means adopting Constellation carries **zero risk**. Point it at your existing folders of notes, explore every feature, and if you ever decide to use a different tool — nothing has changed. There is no migration, no conversion, and no cleanup required. Constellation is a window into your knowledge, not a lock on it.
 
@@ -49,7 +49,7 @@ Constellation's defining architectural concept is the **Universe** — a portabl
 ```
 MyUniverse/
   universe.json          # Identity and metadata
-  vaults.json            # Registered vault paths
+  libraries.json         # Registered library paths
   settings.json          # All preferences
   bookmarks.json         # Saved bookmarks
   workspaces.json        # Tab layouts
@@ -59,10 +59,10 @@ MyUniverse/
 
 ### Why This Matters
 
-- **Portability.** Copy the universe directory to another machine and everything follows — settings, bookmarks, workspaces, database definitions. The vaults themselves are just folders of Markdown files that live wherever you want.
-- **Multi-vault by design.** A universe can register any number of vaults. Search, graph view, task scanning, backlinks, and databases all operate across vault boundaries natively.
-- **Hierarchy.** Universes can reference child universes, inheriting their vaults. A team lead's universe can include a shared team universe plus a personal universe — with circular reference prevention built in.
-- **No lock-in.** The universe is JSON files in a folder. The vaults are Markdown files in folders. Walk away at any time — your notes are standard files that any tool can read.
+- **Portability.** Copy the universe directory to another machine and everything follows — settings, bookmarks, workspaces, database definitions. The libraries themselves are just folders of Markdown files that live wherever you want.
+- **Multi-library by design.** A universe can register any number of libraries. Search, graph view, task scanning, backlinks, and databases all operate across library boundaries natively.
+- **Hierarchy.** Universes can reference child universes, inheriting their libraries. A team lead's universe can include a shared team universe plus a personal universe — with circular reference prevention built in.
+- **No lock-in.** The universe is JSON files in a folder. The libraries are Markdown files in folders. Walk away at any time — your notes are standard files that any tool can read.
 
 ---
 
@@ -72,19 +72,19 @@ MyUniverse/
 
 | Capability | Details |
 |-----------|---------|
-| **True multi-vault workspace** | Open, search, link, and graph across multiple vaults simultaneously in one window. |
+| **True multi-library workspace** | Open, search, link, and graph across multiple libraries simultaneously in one window. |
 | **Universe portability** | All configuration travels in a single portable directory. Move machines and your entire workspace follows. |
-| **Child universes** | Compose workspaces hierarchically — a team vault feeds into your personal universe automatically. |
-| **Cross-vault backlinks** | See which notes in *any* vault link to the current note — not limited to a single vault. |
-| **Cross-vault graph** | One knowledge graph showing connections across all your vaults. |
-| **Unified task scanning** | Global Tasks view aggregates tasks from every vault with filtering by vault, priority, due date, and text search. |
+| **Child universes** | Compose workspaces hierarchically — a team library feeds into your personal universe automatically. |
+| **Cross-library backlinks** | See which notes in *any* library link to the current note — not limited to a single library. |
+| **Cross-library graph** | One knowledge graph showing connections across all your libraries. |
+| **Unified task scanning** | Global Tasks view aggregates tasks from every library with filtering by library, priority, due date, and text search. |
 | **Built-in Bases (databases)** | Non-destructive database views with table/card/list modes, filtering, sorting, inline editing — no external tools needed. |
 | **Table formulas** | `=SUM()`, `=AVG()`, `=COUNT()`, `=MIN()`, `=MAX()` with cell references and ranges, evaluated in-place inside your Markdown tables. |
 | **Multi-provider AI** | OpenAI, Anthropic, Google Gemini, and Ollama (local) from one interface, with 8 pre-built skills — directly integrated with your notes. |
 | **Second screen** | A fully independent secondary window that extends your workspace across two screens — edit, browse, view graphs, or manage tasks side by side with no limitations. Not just a reference pane; a complete second workspace. |
 | **15 languages at launch** | English, Arabic, German, Spanish, French, Hebrew, Hindi, Japanese, Korean, Portuguese, Russian, Turkish, Urdu, Chinese, Farsi — all with full RTL support. |
-| **Security layer** | Vault encryption at rest, idle lock with PIN, API key storage in OS keyring. |
-| **Non-destructive vault access** | Never modifies vault files without explicit user action. Zero-risk adoption — try Constellation and switch tools freely with no trace left behind. |
+| **Security layer** | Library encryption at rest, idle lock with PIN, API key storage in OS keyring. |
+| **Non-destructive library access** | Never modifies library files without explicit user action. Zero-risk adoption — try Constellation and switch tools freely with no trace left behind. |
 
 ### 4.2 Everything Built In
 
@@ -93,14 +93,14 @@ Features that other tools require plugins, extensions, or external apps to achie
 | Feature | How Others Handle It | Constellation (Built-In) |
 |---------|---------------------|--------------------------|
 | Structured queries | Dataview plugin / external scripts | Native query parser (TABLE, LIST, TASK, CALENDAR queries) |
-| Task management | Separate task apps or plugins | Vault-wide scanning, toggle, due dates, priority, tags |
+| Task management | Separate task apps or plugins | Library-wide scanning, toggle, due dates, priority, tags |
 | Calendar sidebar | Separate calendar plugins | Month view with note/task dots, daily note creation |
 | Advanced tables | Basic Markdown tables or spreadsheets | Row/column operations, sorting, move, formulas |
-| Templates | Manual copy-paste or plugin syntax | Template variables (date, time, title, folder, vault, cursor) |
+| Templates | Manual copy-paste or plugin syntax | Template variables (date, time, title, folder, library, cursor) |
 | Note importing | Manual conversion scripts | 7 formats: Markdown folders, Notion, Bear, Evernote, HTML, CSV, Plain Text |
-| Backlinks panel | Basic or plugin-dependent | Enhanced with cross-vault support and unlinked mentions |
-| Graph view | Single-vault only in most tools | Cross-vault nodes, force controls, grouping |
-| Tag browser | Basic implementations | Tag frequency analysis, vault-wide aggregation |
+| Backlinks panel | Basic or plugin-dependent | Enhanced with cross-library support and unlinked mentions |
+| Graph view | Single-source only in most tools | Cross-library nodes, force controls, grouping |
+| Tag browser | Basic implementations | Tag frequency analysis, library-wide aggregation |
 
 ### 4.3 Import From Anywhere
 
@@ -108,7 +108,7 @@ Constellation's built-in importer supports migration from:
 
 | Source | What Gets Imported |
 |--------|-------------------|
-| **Markdown folders** | Direct vault registration — no conversion needed |
+| **Markdown folders** | Direct library registration — no conversion needed |
 | **Notion exports** | Cleans hex IDs, converts internal links to wikilinks |
 | **Bear notes** | Converts Bear's format to standard Markdown |
 | **Evernote (.enex)** | Converts ENML to Markdown, preserves tags and dates as frontmatter |
@@ -141,7 +141,7 @@ Transparency matters. These are capabilities not currently in Constellation:
 
 **Pain today:** Must close one project to open another. Cannot search across collections. Cannot see connections between a client's project notes and research notes in a separate folder.
 
-**Constellation answer:** Register all vaults in one universe. Search, graph, task scan, and link across all of them simultaneously.
+**Constellation answer:** Register all libraries in one universe. Search, graph, task scan, and link across all of them simultaneously.
 
 ### 5.2 The Tool-Fatigued Power User
 
@@ -165,7 +165,7 @@ Transparency matters. These are capabilities not currently in Constellation:
 
 **Pain today:** No concept of workspace composition in most tools. Shared note collections require manual setup per person.
 
-**Constellation answer:** Create a team universe with shared vaults. Each team member adds the team universe as a child of their personal universe. Team vaults appear automatically alongside personal vaults.
+**Constellation answer:** Create a team universe with shared libraries. Each team member adds the team universe as a child of their personal universe. Team libraries appear automatically alongside personal libraries.
 
 ### 5.5 The AI-Augmented Researcher
 
@@ -181,7 +181,7 @@ Transparency matters. These are capabilities not currently in Constellation:
 
 **Pain today:** Most note apps offer no built-in encryption, no idle lock, and store API keys in plaintext configuration files.
 
-**Constellation answer:** Vault encryption at rest, idle lock with PIN, API key storage in OS keyring.
+**Constellation answer:** Library encryption at rest, idle lock with PIN, API key storage in OS keyring.
 
 ### 5.7 The Migrating User
 
@@ -197,7 +197,7 @@ Transparency matters. These are capabilities not currently in Constellation:
 
 ### 6.1 Performance
 
-Constellation's Rust backend performs file operations, link scanning, task extraction, and database queries at native speed. Heavy operations — vault-wide task scanning, structured queries, link graph building — execute in the Rust process and return structured results to the frontend. The editor never competes with background processing for resources.
+Constellation's Rust backend performs file operations, link scanning, task extraction, and database queries at native speed. Heavy operations — library-wide task scanning, structured queries, link graph building — execute in the Rust process and return structured results to the frontend. The editor never competes with background processing for resources.
 
 ### 6.2 Binary Size and Resource Usage
 
@@ -213,7 +213,7 @@ All data lives on the user's file system in standard formats:
 - Notes: Markdown files with YAML frontmatter
 - Databases: JSON `.base` files
 - Configuration: JSON files in the universe directory
-- Attachments: Standard image/PDF files in vault folders
+- Attachments: Standard image/PDF files in library folders
 
 No telemetry. No cloud dependency. No account required.
 
@@ -233,15 +233,15 @@ This section defines how we measure whether Constellation fulfills its purpose. 
 | Resolve `[[wikilinks]]` | Correct resolution across files and folders |
 | Render callouts, highlights, math, mermaid | Rich rendering of extended Markdown syntax |
 
-### 7.2 Multi-Vault Promise: "A Universe of Knowledge"
+### 7.2 Multi-Library Promise: "A Universe of Knowledge"
 
 | Test | Expected Result |
 |------|----------------|
-| Register 3+ vaults | All appear in file explorer with distinct colors |
-| Search across vaults | Results from all vaults, labeled by source |
-| Graph across vaults | Nodes from all vaults, cross-vault edges visible |
-| Backlinks across vaults | Note in Vault A shows backlinks from Vault B |
-| Tasks across vaults | Global Tasks view aggregates all vaults |
+| Register 3+ libraries | All appear in file explorer with distinct colors |
+| Search across libraries | Results from all libraries, labeled by source |
+| Graph across libraries | Nodes from all libraries, cross-library edges visible |
+| Backlinks across libraries | Note in Library A shows backlinks from Library B |
+| Tasks across libraries | Global Tasks view aggregates all libraries |
 
 ### 7.3 All-In-One Promise: "Everything Built In"
 
@@ -267,16 +267,16 @@ This section defines how we measure whether Constellation fulfills its purpose. 
 
 ## 8. Competitive Landscape
 
-Constellation occupies a unique position in the knowledge management space: **local-first, multi-vault, all-in-one, and multilingual.**
+Constellation occupies a unique position in the knowledge management space: **local-first, multi-library, all-in-one, and multilingual.**
 
 | Dimension | Constellation | Obsidian | Notion | Logseq | Roam | Bear |
 |-----------|--------------|----------|--------|--------|------|------|
 | Data ownership | Local files | Local files | Cloud-hosted | Local files | Cloud-hosted | iCloud |
 | Offline capability | Full | Full | Limited | Full | None | Full |
 | File format | Standard Markdown | Standard Markdown | Proprietary | Markdown/EDN | Proprietary | Proprietary |
-| Multi-vault | Native (Universe) | One vault per window | N/A (workspaces) | Single graph | Single graph | N/A |
-| Cross-vault search | Yes | No | N/A | No | No | No |
-| Cross-vault graph | Yes | No | N/A | No | No | No |
+| Multi-library | Native (Universe) | One vault per window | N/A (workspaces) | Single graph | Single graph | N/A |
+| Cross-library search | Yes | No | N/A | No | No | No |
+| Cross-library graph | Yes | No | N/A | No | No | No |
 | Database views | Built-in (Bases) | Plugin required | Native | Queries (limited) | Queries | No |
 | Task management | Built-in | Plugin required | Basic | Plugin required | Basic | No |
 | AI integration | Built-in (4 providers) | Plugin required | Built-in (1 provider) | Plugin required | Plugin required | No |
@@ -300,16 +300,16 @@ Based on this concept paper, the following development priorities align with Con
 
 ### High Priority (Reinforces Core Differentiators)
 
-1. **Polish multi-vault experience** — cross-vault move/copy, vault-scoped settings
+1. **Polish multi-library experience** — cross-library move/copy, library-scoped settings
 2. **Bases performance at scale** — handle 10,000+ note databases efficiently
-3. **AI skill expansion** — custom skill builder, context-aware vault Q&A
-4. **Mobile companion** — read-only vault browser for iOS/Android
+3. **AI skill expansion** — custom skill builder, context-aware library Q&A
+4. **Mobile companion** — read-only library browser for iOS/Android
 
 ### Medium Priority (Broadens Platform)
 
 5. **Canvas / whiteboard** — infinite canvas with embedded notes
-6. **PDF annotation** — highlight and annotate PDFs within vaults
-7. **Publish / static site export** — generate websites from vault content
+6. **PDF annotation** — highlight and annotate PDFs within libraries
+7. **Publish / static site export** — generate websites from library content
 8. **Constellation URI protocol** — deep linking into specific notes and views
 
 ### Lower Priority (Future Vision)
@@ -322,9 +322,9 @@ Based on this concept paper, the following development priorities align with Con
 
 ## 10. Conclusion
 
-Constellation exists because knowledge management should not require systems integration. A note-taking platform should ship with the tools its users need — databases, tasks, calendars, templates, importers, AI, and multi-vault support — tested together, updated together, and usable out of the box.
+Constellation exists because knowledge management should not require systems integration. A note-taking platform should ship with the tools its users need — databases, tasks, calendars, templates, importers, AI, and multi-library support — tested together, updated together, and usable out of the box.
 
-For the knowledge worker who has built a workflow across multiple tools and feels the friction of managing that stack, Constellation offers a unified alternative that works with standard Markdown files, requires zero configuration, and provides capabilities no single existing tool offers — true multi-vault workspaces, cross-vault everything, and portable universe-based configuration.
+For the knowledge worker who has built a workflow across multiple tools and feels the friction of managing that stack, Constellation offers a unified alternative that works with standard Markdown files, requires zero configuration, and provides capabilities no single existing tool offers — true multi-library workspaces, cross-library everything, and portable universe-based configuration.
 
 The files are yours. The format is Markdown. The door is always open.
 
