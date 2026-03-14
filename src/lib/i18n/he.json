@@ -246,7 +246,8 @@
     "foldAll": "קפל את כל הסעיפים",
     "unfoldAll": "פרוש את כל הסעיפים",
     "toggleLivePreview": "החלף תצוגה מקדימה חיה",
-    "insertTemplate": "הוסף מתבנית"
+    "insertTemplate": "הוסף מתבנית",
+    "importNotes": "ייבוא הערות"
   },
   "actions": {
     "untitled": "ללא כותרת",
@@ -265,7 +266,8 @@
     "aiSkills": "כישורי AI",
     "toggleTheme": "החלף ערכת נושא",
     "index": "מפתח",
-    "settings": "הגדרות"
+    "settings": "הגדרות",
+    "importNotes": "ייבוא הערות"
   },
   "sidebar": {
     "searchPlaceholder": "חיפוש...",
@@ -562,7 +564,20 @@
     "deleteColumn": "מחק עמודה",
     "alignLeft": "יישר לשמאל",
     "alignCenter": "מרכז",
-    "alignRight": "יישר לימין"
+    "alignRight": "יישר לימין",
+    "moreActions": "פעולות נוספות",
+    "move": "הזז",
+    "moveRowUp": "הזז שורה למעלה",
+    "moveRowDown": "הזז שורה למטה",
+    "moveColLeft": "הזז עמודה שמאלה",
+    "moveColRight": "הזז עמודה ימינה",
+    "sort": "מיין",
+    "sortAsc": "מיון עולה",
+    "sortDesc": "מיון יורד",
+    "formulas": "נוסחאות",
+    "insertFormula": "הכנס נוסחה",
+    "evaluateFormulas": "חשב נוסחאות",
+    "evaluate": "חשב"
   },
   "common": {
     "cancel": "ביטול",
@@ -717,5 +732,40 @@
     "noNotes": "לא נמצאו הערות",
     "detailEmpty": "בחר הערה לצפייה כאן",
     "sendToScreen": "שלח למסך השני"
+  },
+  "importer": {
+    "title": "ייבוא הערות",
+    "selectFormat": "בחר את הפורמט של ההערות לייבוא.",
+    "formats": {
+      "markdown": "מרקדאון",
+      "markdownDesc": "קבצי מרקדאון (.md) מכל אפליקציה",
+      "notion": "נושן",
+      "notionDesc": "מרחב עבודה נושן מיוצא",
+      "bear": "Bear",
+      "bearDesc": "תיקיית הערות Bear מיוצאת",
+      "evernote": "אברנוט",
+      "evernoteDesc": "קובץ .enex של אברנוט",
+      "html": "HTML",
+      "htmlDesc": "קבצי HTML שהומרו למרקדאון",
+      "csv": "CSV",
+      "csvDesc": "קובץ CSV/TSV — כל שורה הופכת להערה",
+      "txt": "טקסט רגיל",
+      "txtDesc": "קבצי טקסט שהומרו למרקדאון"
+    },
+    "targetVault": "כספת יעד",
+    "subfolder": "תיקיית משנה",
+    "selectSource": "בחר מקור",
+    "scanning": "סורק קבצים...",
+    "previewTitle": "מוכן לייבוא",
+    "files": "קבצים",
+    "andMore": "ועוד {count}...",
+    "back": "חזרה",
+    "importNow": "ייבא עכשיו",
+    "importing": "מייבא...",
+    "complete": "הייבוא הושלם!",
+    "imported": "יובאו",
+    "skipped": "דולגו",
+    "errors": "שגיאות",
+    "done": "סיום"
   }
 }

@@ -246,7 +246,8 @@
     "foldAll": "折叠所有",
     "unfoldAll": "展开所有",
     "toggleLivePreview": "切换实时预览",
-    "insertTemplate": "从模板插入"
+    "insertTemplate": "从模板插入",
+    "importNotes": "导入笔记"
   },
   "actions": {
     "untitled": "未命名",
@@ -265,7 +266,8 @@
     "aiSkills": "AI 技能",
     "toggleTheme": "切换主题",
     "index": "索引",
-    "settings": "设置"
+    "settings": "设置",
+    "importNotes": "导入笔记"
   },
   "sidebar": {
     "searchPlaceholder": "搜索...",
@@ -562,7 +564,20 @@
     "deleteColumn": "删除列",
     "alignLeft": "左对齐",
     "alignCenter": "居中",
-    "alignRight": "右对齐"
+    "alignRight": "右对齐",
+    "moreActions": "更多操作",
+    "move": "移动",
+    "moveRowUp": "上移行",
+    "moveRowDown": "下移行",
+    "moveColLeft": "左移列",
+    "moveColRight": "右移列",
+    "sort": "排序",
+    "sortAsc": "升序排列",
+    "sortDesc": "降序排列",
+    "formulas": "公式",
+    "insertFormula": "插入公式",
+    "evaluateFormulas": "计算公式",
+    "evaluate": "计算"
   },
   "common": {
     "cancel": "取消",
@@ -717,5 +732,40 @@
     "noNotes": "未找到笔记",
     "detailEmpty": "选择一个笔记在此查看",
     "sendToScreen": "发送到第二屏幕"
+  },
+  "importer": {
+    "title": "导入笔记",
+    "selectFormat": "选择要导入的笔记格式。",
+    "formats": {
+      "markdown": "Markdown",
+      "markdownDesc": "来自任何应用的 Markdown 文件(.md)",
+      "notion": "Notion",
+      "notionDesc": "导出的 Notion 工作区",
+      "bear": "Bear",
+      "bearDesc": "Bear 笔记导出文件夹",
+      "evernote": "Evernote",
+      "evernoteDesc": "Evernote .enex 导出文件",
+      "html": "HTML",
+      "htmlDesc": "转换为 Markdown 的 HTML 文件",
+      "csv": "CSV",
+      "csvDesc": "CSV/TSV 文件 — 每行生成一条笔记",
+      "txt": "纯文本",
+      "txtDesc": "转换为 Markdown 的文本文件"
+    },
+    "targetVault": "目标仓库",
+    "subfolder": "子文件夹",
+    "selectSource": "选择来源",
+    "scanning": "正在扫描文件...",
+    "previewTitle": "准备导入",
+    "files": "个文件",
+    "andMore": "还有 {count} 个...",
+    "back": "返回",
+    "importNow": "立即导入",
+    "importing": "正在导入...",
+    "complete": "导入完成！",
+    "imported": "已导入",
+    "skipped": "已跳过",
+    "errors": "错误",
+    "done": "完成"
   }
 }

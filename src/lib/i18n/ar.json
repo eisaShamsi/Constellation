@@ -246,7 +246,8 @@
     "foldAll": "طي جميع الأقسام",
     "unfoldAll": "فتح جميع الأقسام",
     "toggleLivePreview": "تبديل المعاينة الحية",
-    "insertTemplate": "إدراج من قالب"
+    "insertTemplate": "إدراج من قالب",
+    "importNotes": "استيراد الملاحظات"
   },
   "actions": {
     "untitled": "بدون عنوان",
@@ -265,7 +266,8 @@
     "aiSkills": "مهارات الذكاء الاصطناعي",
     "toggleTheme": "تبديل المظهر",
     "index": "الفهرس",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "importNotes": "استيراد الملاحظات"
   },
   "sidebar": {
     "searchPlaceholder": "بحث...",
@@ -562,7 +564,20 @@
     "deleteColumn": "حذف عمود",
     "alignLeft": "محاذاة لليسار",
     "alignCenter": "محاذاة للوسط",
-    "alignRight": "محاذاة لليمين"
+    "alignRight": "محاذاة لليمين",
+    "moreActions": "إجراءات إضافية",
+    "move": "نقل",
+    "moveRowUp": "نقل الصف لأعلى",
+    "moveRowDown": "نقل الصف لأسفل",
+    "moveColLeft": "نقل العمود لليسار",
+    "moveColRight": "نقل العمود لليمين",
+    "sort": "ترتيب",
+    "sortAsc": "ترتيب تصاعدي",
+    "sortDesc": "ترتيب تنازلي",
+    "formulas": "صيغ",
+    "insertFormula": "إدراج صيغة",
+    "evaluateFormulas": "حساب الصيغ",
+    "evaluate": "حساب"
   },
   "common": {
     "cancel": "إلغاء",
@@ -717,5 +732,40 @@
     "noNotes": "لم يتم العثور على ملاحظات",
     "detailEmpty": "اختر ملاحظة لعرضها هنا",
     "sendToScreen": "إرسال إلى الشاشة الثانية"
+  },
+  "importer": {
+    "title": "استيراد الملاحظات",
+    "selectFormat": "اختر تنسيق الملاحظات التي تريد استيرادها.",
+    "formats": {
+      "markdown": "ماركداون",
+      "markdownDesc": "ملفات ماركداون (.md) من أي تطبيق",
+      "notion": "نوشن",
+      "notionDesc": "مساحة عمل نوشن مصدّرة",
+      "bear": "بير",
+      "bearDesc": "مجلد ملاحظات بير المصدّر",
+      "evernote": "إيفرنوت",
+      "evernoteDesc": "ملف إيفرنوت .enex",
+      "html": "HTML",
+      "htmlDesc": "ملفات HTML محوّلة إلى ماركداون",
+      "csv": "CSV",
+      "csvDesc": "ملف CSV/TSV — كل صف يصبح ملاحظة",
+      "txt": "نص عادي",
+      "txtDesc": "ملفات نصية محوّلة إلى ماركداون"
+    },
+    "targetVault": "الخزنة المستهدفة",
+    "subfolder": "المجلد الفرعي",
+    "selectSource": "اختر المصدر",
+    "scanning": "جاري فحص الملفات...",
+    "previewTitle": "جاهز للاستيراد",
+    "files": "ملفات",
+    "andMore": "و{count} أخرى...",
+    "back": "رجوع",
+    "importNow": "استيراد الآن",
+    "importing": "جاري الاستيراد...",
+    "complete": "اكتمل الاستيراد!",
+    "imported": "مستورد",
+    "skipped": "تم تخطيه",
+    "errors": "أخطاء",
+    "done": "تم"
   }
 }

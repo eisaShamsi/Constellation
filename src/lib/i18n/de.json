@@ -246,7 +246,8 @@
     "foldAll": "Alle Abschnitte falten",
     "unfoldAll": "Alle Abschnitte entfalten",
     "toggleLivePreview": "Live-Vorschau umschalten",
-    "insertTemplate": "Aus Vorlage einfügen"
+    "insertTemplate": "Aus Vorlage einfügen",
+    "importNotes": "Notizen importieren"
   },
   "actions": {
     "untitled": "Unbenannt",
@@ -265,7 +266,8 @@
     "aiSkills": "KI-Fähigkeiten",
     "toggleTheme": "Design umschalten",
     "index": "Index",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "importNotes": "Notizen importieren"
   },
   "sidebar": {
     "searchPlaceholder": "Suchen...",
@@ -562,7 +564,20 @@
     "deleteColumn": "Spalte löschen",
     "alignLeft": "Linksbündig",
     "alignCenter": "Zentriert",
-    "alignRight": "Rechtsbündig"
+    "alignRight": "Rechtsbündig",
+    "moreActions": "Weitere Aktionen",
+    "move": "Verschieben",
+    "moveRowUp": "Zeile nach oben",
+    "moveRowDown": "Zeile nach unten",
+    "moveColLeft": "Spalte nach links",
+    "moveColRight": "Spalte nach rechts",
+    "sort": "Sortieren",
+    "sortAsc": "Aufsteigend sortieren",
+    "sortDesc": "Absteigend sortieren",
+    "formulas": "Formeln",
+    "insertFormula": "Formel einfügen",
+    "evaluateFormulas": "Formeln auswerten",
+    "evaluate": "Ausw."
   },
   "common": {
     "cancel": "Abbrechen",
@@ -717,5 +732,40 @@
     "noNotes": "Keine Notizen gefunden",
     "detailEmpty": "Wähle eine Notiz zur Ansicht",
     "sendToScreen": "An zweiten Bildschirm senden"
+  },
+  "importer": {
+    "title": "Notizen importieren",
+    "selectFormat": "Wählen Sie das Format der Notizen, die Sie importieren möchten.",
+    "formats": {
+      "markdown": "Markdown",
+      "markdownDesc": "Markdown-Dateien (.md) aus jeder App",
+      "notion": "Notion",
+      "notionDesc": "Exportierter Notion-Workspace",
+      "bear": "Bear",
+      "bearDesc": "Bear-Notizen Exportordner",
+      "evernote": "Evernote",
+      "evernoteDesc": "Evernote .enex Exportdatei",
+      "html": "HTML",
+      "htmlDesc": "HTML-Dateien zu Markdown konvertiert",
+      "csv": "CSV",
+      "csvDesc": "CSV/TSV-Datei — jede Zeile wird eine Notiz",
+      "txt": "Klartext",
+      "txtDesc": "Textdateien zu Markdown konvertiert"
+    },
+    "targetVault": "Ziel-Tresor",
+    "subfolder": "Unterordner",
+    "selectSource": "Quelle auswählen",
+    "scanning": "Dateien werden gescannt...",
+    "previewTitle": "Bereit zum Import",
+    "files": "Dateien",
+    "andMore": "und {count} weitere...",
+    "back": "Zurück",
+    "importNow": "Jetzt importieren",
+    "importing": "Importieren...",
+    "complete": "Import abgeschlossen!",
+    "imported": "Importiert",
+    "skipped": "Übersprungen",
+    "errors": "Fehler",
+    "done": "Fertig"
   }
 }

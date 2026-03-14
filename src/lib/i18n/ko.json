@@ -246,7 +246,8 @@
     "foldAll": "모두 접기",
     "unfoldAll": "모두 펼치기",
     "toggleLivePreview": "실시간 미리보기 전환",
-    "insertTemplate": "템플릿에서 삽입"
+    "insertTemplate": "템플릿에서 삽입",
+    "importNotes": "노트 가져오기"
   },
   "actions": {
     "untitled": "제목 없음",
@@ -265,7 +266,8 @@
     "aiSkills": "AI 스킬",
     "toggleTheme": "테마 전환",
     "index": "색인",
-    "settings": "설정"
+    "settings": "설정",
+    "importNotes": "노트 가져오기"
   },
   "sidebar": {
     "searchPlaceholder": "검색...",
@@ -562,7 +564,20 @@
     "deleteColumn": "열 삭제",
     "alignLeft": "왼쪽 정렬",
     "alignCenter": "가운데 정렬",
-    "alignRight": "오른쪽 정렬"
+    "alignRight": "오른쪽 정렬",
+    "moreActions": "더 많은 작업",
+    "move": "이동",
+    "moveRowUp": "행 위로 이동",
+    "moveRowDown": "행 아래로 이동",
+    "moveColLeft": "열 왼쪽으로 이동",
+    "moveColRight": "열 오른쪽으로 이동",
+    "sort": "정렬",
+    "sortAsc": "오름차순 정렬",
+    "sortDesc": "내림차순 정렬",
+    "formulas": "수식",
+    "insertFormula": "수식 삽입",
+    "evaluateFormulas": "수식 계산",
+    "evaluate": "계산"
   },
   "common": {
     "cancel": "취소",
@@ -717,5 +732,40 @@
     "noNotes": "노트를 찾을 수 없음",
     "detailEmpty": "여기에 표시할 노트를 선택하세요",
     "sendToScreen": "보조 화면으로 보내기"
+  },
+  "importer": {
+    "title": "노트 가져오기",
+    "selectFormat": "가져올 노트의 형식을 선택하세요.",
+    "formats": {
+      "markdown": "마크다운",
+      "markdownDesc": "모든 앱의 마크다운 파일(.md)",
+      "notion": "Notion",
+      "notionDesc": "내보낸 Notion 워크스페이스",
+      "bear": "Bear",
+      "bearDesc": "Bear 노트 내보내기 폴더",
+      "evernote": "Evernote",
+      "evernoteDesc": "Evernote .enex 내보내기 파일",
+      "html": "HTML",
+      "htmlDesc": "마크다운으로 변환된 HTML 파일",
+      "csv": "CSV",
+      "csvDesc": "CSV/TSV 파일 — 각 행이 노트가 됩니다",
+      "txt": "일반 텍스트",
+      "txtDesc": "마크다운으로 변환된 텍스트 파일"
+    },
+    "targetVault": "대상 보관함",
+    "subfolder": "하위 폴더",
+    "selectSource": "소스 선택",
+    "scanning": "파일 스캔 중...",
+    "previewTitle": "가져올 준비 완료",
+    "files": "파일",
+    "andMore": "외 {count}개...",
+    "back": "뒤로",
+    "importNow": "지금 가져오기",
+    "importing": "가져오는 중...",
+    "complete": "가져오기 완료!",
+    "imported": "가져옴",
+    "skipped": "건너뜀",
+    "errors": "오류",
+    "done": "완료"
   }
 }

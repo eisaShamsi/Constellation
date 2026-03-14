@@ -246,7 +246,8 @@
     "foldAll": "Recolher todas as seções",
     "unfoldAll": "Expandir todas as seções",
     "toggleLivePreview": "Alternar visualização ao vivo",
-    "insertTemplate": "Inserir a partir de modelo"
+    "insertTemplate": "Inserir a partir de modelo",
+    "importNotes": "Importar notas"
   },
   "actions": {
     "untitled": "Sem título",
@@ -265,7 +266,8 @@
     "aiSkills": "Habilidades de IA",
     "toggleTheme": "Alternar tema",
     "index": "Índice",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "importNotes": "Importar notas"
   },
   "sidebar": {
     "searchPlaceholder": "Pesquisar...",
@@ -562,7 +564,20 @@
     "deleteColumn": "Excluir coluna",
     "alignLeft": "Alinhar à esquerda",
     "alignCenter": "Centralizar",
-    "alignRight": "Alinhar à direita"
+    "alignRight": "Alinhar à direita",
+    "moreActions": "Mais ações",
+    "move": "Mover",
+    "moveRowUp": "Mover linha para cima",
+    "moveRowDown": "Mover linha para baixo",
+    "moveColLeft": "Mover coluna para a esquerda",
+    "moveColRight": "Mover coluna para a direita",
+    "sort": "Ordenar",
+    "sortAsc": "Ordem crescente",
+    "sortDesc": "Ordem decrescente",
+    "formulas": "Fórmulas",
+    "insertFormula": "Inserir fórmula",
+    "evaluateFormulas": "Avaliar fórmulas",
+    "evaluate": "Aval."
   },
   "common": {
     "cancel": "Cancelar",
@@ -717,5 +732,40 @@
     "noNotes": "Nenhuma nota encontrada",
     "detailEmpty": "Selecione uma nota para visualizar aqui",
     "sendToScreen": "Enviar para segunda tela"
+  },
+  "importer": {
+    "title": "Importar notas",
+    "selectFormat": "Escolha o formato das notas que deseja importar.",
+    "formats": {
+      "markdown": "Markdown",
+      "markdownDesc": "Arquivos Markdown (.md) de qualquer app",
+      "notion": "Notion",
+      "notionDesc": "Workspace Notion exportado",
+      "bear": "Bear",
+      "bearDesc": "Pasta de exportação Bear",
+      "evernote": "Evernote",
+      "evernoteDesc": "Arquivo .enex do Evernote",
+      "html": "HTML",
+      "htmlDesc": "Arquivos HTML convertidos para Markdown",
+      "csv": "CSV",
+      "csvDesc": "Arquivo CSV/TSV — cada linha vira uma nota",
+      "txt": "Texto simples",
+      "txtDesc": "Arquivos de texto convertidos para Markdown"
+    },
+    "targetVault": "Cofre alvo",
+    "subfolder": "Subpasta",
+    "selectSource": "Selecionar fonte",
+    "scanning": "Escaneando arquivos...",
+    "previewTitle": "Pronto para importar",
+    "files": "arquivos",
+    "andMore": "e mais {count}...",
+    "back": "Voltar",
+    "importNow": "Importar agora",
+    "importing": "Importando...",
+    "complete": "Importação concluída!",
+    "imported": "Importados",
+    "skipped": "Ignorados",
+    "errors": "Erros",
+    "done": "Concluído"
   }
 }

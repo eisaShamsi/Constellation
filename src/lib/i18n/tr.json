@@ -246,7 +246,8 @@
     "foldAll": "Tüm bölümleri katla",
     "unfoldAll": "Tüm bölümleri aç",
     "toggleLivePreview": "Canlı önizlemeyi değiştir",
-    "insertTemplate": "Şablondan ekle"
+    "insertTemplate": "Şablondan ekle",
+    "importNotes": "Notları içe aktar"
   },
   "actions": {
     "untitled": "Başlıksız",
@@ -265,7 +266,8 @@
     "aiSkills": "Yapay Zeka Becerileri",
     "toggleTheme": "Temayı değiştir",
     "index": "Dizin",
-    "settings": "Ayarlar"
+    "settings": "Ayarlar",
+    "importNotes": "Notları içe aktar"
   },
   "sidebar": {
     "searchPlaceholder": "Ara...",
@@ -562,7 +564,20 @@
     "deleteColumn": "Sütunu sil",
     "alignLeft": "Sola hizala",
     "alignCenter": "Ortala",
-    "alignRight": "Sağa hizala"
+    "alignRight": "Sağa hizala",
+    "moreActions": "Diğer işlemler",
+    "move": "Taşı",
+    "moveRowUp": "Satırı yukarı taşı",
+    "moveRowDown": "Satırı aşağı taşı",
+    "moveColLeft": "Sütunu sola taşı",
+    "moveColRight": "Sütunu sağa taşı",
+    "sort": "Sırala",
+    "sortAsc": "Artan sıra",
+    "sortDesc": "Azalan sıra",
+    "formulas": "Formüller",
+    "insertFormula": "Formül ekle",
+    "evaluateFormulas": "Formülleri hesapla",
+    "evaluate": "Hesapla"
   },
   "common": {
     "cancel": "İptal",
@@ -717,5 +732,40 @@
     "noNotes": "Not bulunamadı",
     "detailEmpty": "Görüntülemek için bir not seçin",
     "sendToScreen": "İkinci ekrana gönder"
+  },
+  "importer": {
+    "title": "Notları İçe Aktar",
+    "selectFormat": "İçe aktarmak istediğiniz notların biçimini seçin.",
+    "formats": {
+      "markdown": "Markdown",
+      "markdownDesc": "Herhangi bir uygulamadan Markdown dosyaları (.md)",
+      "notion": "Notion",
+      "notionDesc": "Dışa aktarılmış Notion çalışma alanı",
+      "bear": "Bear",
+      "bearDesc": "Bear notları dışa aktarma klasörü",
+      "evernote": "Evernote",
+      "evernoteDesc": "Evernote .enex dışa aktarma dosyası",
+      "html": "HTML",
+      "htmlDesc": "Markdown'a dönüştürülen HTML dosyaları",
+      "csv": "CSV",
+      "csvDesc": "CSV/TSV dosyası — her satır bir not olur",
+      "txt": "Düz Metin",
+      "txtDesc": "Markdown'a dönüştürülen metin dosyaları"
+    },
+    "targetVault": "Hedef kasa",
+    "subfolder": "Alt klasör",
+    "selectSource": "Kaynak seç",
+    "scanning": "Dosyalar taranıyor...",
+    "previewTitle": "İçe aktarmaya hazır",
+    "files": "dosya",
+    "andMore": "ve {count} tane daha...",
+    "back": "Geri",
+    "importNow": "Şimdi içe aktar",
+    "importing": "İçe aktarılıyor...",
+    "complete": "İçe aktarma tamamlandı!",
+    "imported": "İçe aktarılan",
+    "skipped": "Atlanan",
+    "errors": "Hatalar",
+    "done": "Tamam"
   }
 }

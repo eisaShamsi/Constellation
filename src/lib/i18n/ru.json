@@ -246,7 +246,8 @@
     "foldAll": "Свернуть все разделы",
     "unfoldAll": "Развернуть все разделы",
     "toggleLivePreview": "Переключить предпросмотр",
-    "insertTemplate": "Вставить из шаблона"
+    "insertTemplate": "Вставить из шаблона",
+    "importNotes": "Импорт заметок"
   },
   "actions": {
     "untitled": "Без названия",
@@ -265,7 +266,8 @@
     "aiSkills": "Навыки ИИ",
     "toggleTheme": "Сменить тему",
     "index": "Указатель",
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "importNotes": "Импорт заметок"
   },
   "sidebar": {
     "searchPlaceholder": "Поиск...",
@@ -562,7 +564,20 @@
     "deleteColumn": "Удалить столбец",
     "alignLeft": "По левому краю",
     "alignCenter": "По центру",
-    "alignRight": "По правому краю"
+    "alignRight": "По правому краю",
+    "moreActions": "Ещё",
+    "move": "Переместить",
+    "moveRowUp": "Переместить строку вверх",
+    "moveRowDown": "Переместить строку вниз",
+    "moveColLeft": "Переместить столбец влево",
+    "moveColRight": "Переместить столбец вправо",
+    "sort": "Сортировка",
+    "sortAsc": "По возрастанию",
+    "sortDesc": "По убыванию",
+    "formulas": "Формулы",
+    "insertFormula": "Вставить формулу",
+    "evaluateFormulas": "Вычислить формулы",
+    "evaluate": "Вычислить"
   },
   "common": {
     "cancel": "Отмена",
@@ -717,5 +732,40 @@
     "noNotes": "Заметки не найдены",
     "detailEmpty": "Выберите заметку для просмотра",
     "sendToScreen": "Отправить на второй экран"
+  },
+  "importer": {
+    "title": "Импорт заметок",
+    "selectFormat": "Выберите формат заметок для импорта.",
+    "formats": {
+      "markdown": "Markdown",
+      "markdownDesc": "Файлы Markdown (.md) из любого приложения",
+      "notion": "Notion",
+      "notionDesc": "Экспортированное рабочее пространство Notion",
+      "bear": "Bear",
+      "bearDesc": "Папка экспорта заметок Bear",
+      "evernote": "Evernote",
+      "evernoteDesc": "Файл .enex из Evernote",
+      "html": "HTML",
+      "htmlDesc": "HTML-файлы, конвертированные в Markdown",
+      "csv": "CSV",
+      "csvDesc": "Файл CSV/TSV — каждая строка становится заметкой",
+      "txt": "Текст",
+      "txtDesc": "Текстовые файлы, конвертированные в Markdown"
+    },
+    "targetVault": "Целевое хранилище",
+    "subfolder": "Подпапка",
+    "selectSource": "Выбрать источник",
+    "scanning": "Сканирование файлов...",
+    "previewTitle": "Готово к импорту",
+    "files": "файлов",
+    "andMore": "и ещё {count}...",
+    "back": "Назад",
+    "importNow": "Импортировать",
+    "importing": "Импорт...",
+    "complete": "Импорт завершён!",
+    "imported": "Импортировано",
+    "skipped": "Пропущено",
+    "errors": "Ошибки",
+    "done": "Готово"
   }
 }

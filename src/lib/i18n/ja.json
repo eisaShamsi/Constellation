@@ -246,7 +246,8 @@
     "foldAll": "すべて折りたたむ",
     "unfoldAll": "すべて展開",
     "toggleLivePreview": "ライブプレビュー切替",
-    "insertTemplate": "テンプレートから挿入"
+    "insertTemplate": "テンプレートから挿入",
+    "importNotes": "ノートをインポート"
   },
   "actions": {
     "untitled": "無題",
@@ -265,7 +266,8 @@
     "aiSkills": "AIスキル",
     "toggleTheme": "テーマを切り替え",
     "index": "索引",
-    "settings": "設定"
+    "settings": "設定",
+    "importNotes": "ノートをインポート"
   },
   "sidebar": {
     "searchPlaceholder": "検索...",
@@ -562,7 +564,20 @@
     "deleteColumn": "列を削除",
     "alignLeft": "左揃え",
     "alignCenter": "中央揃え",
-    "alignRight": "右揃え"
+    "alignRight": "右揃え",
+    "moreActions": "その他の操作",
+    "move": "移動",
+    "moveRowUp": "行を上に移動",
+    "moveRowDown": "行を下に移動",
+    "moveColLeft": "列を左に移動",
+    "moveColRight": "列を右に移動",
+    "sort": "並び替え",
+    "sortAsc": "昇順に並び替え",
+    "sortDesc": "降順に並び替え",
+    "formulas": "数式",
+    "insertFormula": "数式を挿入",
+    "evaluateFormulas": "数式を計算",
+    "evaluate": "計算"
   },
   "common": {
     "cancel": "キャンセル",
@@ -717,5 +732,40 @@
     "noNotes": "ノートが見つかりません",
     "detailEmpty": "ノートを選択して表示",
     "sendToScreen": "セカンドスクリーンに送信"
+  },
+  "importer": {
+    "title": "ノートをインポート",
+    "selectFormat": "インポートするノートの形式を選択してください。",
+    "formats": {
+      "markdown": "Markdown",
+      "markdownDesc": "任意のアプリからのMarkdownファイル(.md)",
+      "notion": "Notion",
+      "notionDesc": "エクスポートされたNotionワークスペース",
+      "bear": "Bear",
+      "bearDesc": "Bearノートエクスポートフォルダ",
+      "evernote": "Evernote",
+      "evernoteDesc": "Evernote .enexエクスポートファイル",
+      "html": "HTML",
+      "htmlDesc": "Markdownに変換されたHTMLファイル",
+      "csv": "CSV",
+      "csvDesc": "CSV/TSVファイル — 各行がノートになります",
+      "txt": "テキスト",
+      "txtDesc": "Markdownに変換されたテキストファイル"
+    },
+    "targetVault": "対象ボールト",
+    "subfolder": "サブフォルダ",
+    "selectSource": "ソースを選択",
+    "scanning": "ファイルをスキャン中...",
+    "previewTitle": "インポート準備完了",
+    "files": "ファイル",
+    "andMore": "他{count}件...",
+    "back": "戻る",
+    "importNow": "今すぐインポート",
+    "importing": "インポート中...",
+    "complete": "インポート完了！",
+    "imported": "インポート済み",
+    "skipped": "スキップ",
+    "errors": "エラー",
+    "done": "完了"
   }
 }

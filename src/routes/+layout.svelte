@@ -68,6 +68,7 @@
 	import IndexPanel from '$lib/components/IndexPanel.svelte';
 	import UniverseSetup from '$lib/components/UniverseSetup.svelte';
 	import UniverseManager from '$lib/components/UniverseManager.svelte';
+	import ImporterModal from '$lib/components/ImporterModal.svelte';
 	import {
 		listUniverses, createUniverse, setActiveUniverse,
 		checkMigrationNeeded, migrateLegacyData,
@@ -133,6 +134,8 @@
 
 	// Settings modal
 	let showSettings = $state(false);
+	// Importer modal
+	let showImporter = $state(false);
 	let secondScreenOpen = $state(false);
 
 	// Vault management
@@ -443,6 +446,7 @@
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: 'Alt+→', icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), icon: '📖', action: () => { showCommandPalette = false; sidebarOpen = true; searchMode = false; indexMode = true; }, category: 'Navigation' },
+			{ id: 'import-notes', name: $t('commands.importNotes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: 'Ctrl+,', icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: 'Ctrl+;', icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
 			{ id: 'insert-link', name: $t('commands.insertLink'), shortcut: 'Ctrl+K', icon: '🔗', action: () => {}, category: 'Editor' },
@@ -868,6 +872,7 @@
 			if (showTemplatePicker) { showTemplatePicker = false; return; }
 			if (showWorkspaces) { showWorkspaces = false; return; }
 			if (showSettings) { showSettings = false; return; }
+			if (showImporter) { showImporter = false; return; }
 		}
 	}
 
@@ -1576,6 +1581,9 @@
 			<button class="r-btn" onclick={handleToggleTheme} title={$t('ribbon.toggleTheme')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
 			</button>
+<button class="r-btn" onclick={() => showImporter = true} title={$t('ribbon.importNotes')}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+			</button>
 <button class="r-btn" class:active={showSettings} onclick={() => showSettings = !showSettings} title={$t('ribbon.settings')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
 			</button>
@@ -2157,6 +2165,14 @@
 			colorMap={vaultColorMap}
 			onClose={() => showVaultManager = false}
 			onRefresh={refreshVaultCaches}
+		/>
+	{/if}
+
+	{#if showImporter}
+		<ImporterModal
+			vaults={$vaults.map(v => ({ name: v.name, path: v.path }))}
+			onClose={() => showImporter = false}
+			onImportComplete={refreshVaultCaches}
 		/>
 	{/if}
 

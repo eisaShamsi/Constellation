@@ -246,7 +246,8 @@
     "foldAll": "सभी अनुभाग मोड़ें",
     "unfoldAll": "सभी अनुभाग खोलें",
     "toggleLivePreview": "लाइव पूर्वावलोकन टॉगल करें",
-    "insertTemplate": "टेम्पलेट से डालें"
+    "insertTemplate": "टेम्पलेट से डालें",
+    "importNotes": "नोट्स आयात करें"
   },
   "actions": {
     "untitled": "बिना शीर्षक",
@@ -265,7 +266,8 @@
     "aiSkills": "AI कौशल",
     "toggleTheme": "थीम बदलें",
     "index": "अनुक्रमणिका",
-    "settings": "सेटिंग्स"
+    "settings": "सेटिंग्स",
+    "importNotes": "नोट्स आयात करें"
   },
   "sidebar": {
     "searchPlaceholder": "खोजें...",
@@ -562,7 +564,20 @@
     "deleteColumn": "स्तंभ हटाएं",
     "alignLeft": "बाएं संरेखित",
     "alignCenter": "केंद्र",
-    "alignRight": "दाएं संरेखित"
+    "alignRight": "दाएं संरेखित",
+    "moreActions": "और कार्य",
+    "move": "स्थानांतरित करें",
+    "moveRowUp": "पंक्ति ऊपर ले जाएँ",
+    "moveRowDown": "पंक्ति नीचे ले जाएँ",
+    "moveColLeft": "स्तंभ बाएँ ले जाएँ",
+    "moveColRight": "स्तंभ दाएँ ले जाएँ",
+    "sort": "क्रमबद्ध करें",
+    "sortAsc": "आरोही क्रम",
+    "sortDesc": "अवरोही क्रम",
+    "formulas": "सूत्र",
+    "insertFormula": "सूत्र डालें",
+    "evaluateFormulas": "सूत्रों की गणना करें",
+    "evaluate": "गणना"
   },
   "common": {
     "cancel": "रद्द करें",
@@ -717,5 +732,40 @@
     "noNotes": "कोई नोट नहीं मिला",
     "detailEmpty": "यहाँ देखने के लिए एक नोट चुनें",
     "sendToScreen": "दूसरी स्क्रीन पर भेजें"
+  },
+  "importer": {
+    "title": "नोट्स आयात करें",
+    "selectFormat": "जिन नोट्स को आयात करना चाहते हैं उनका प्रारूप चुनें।",
+    "formats": {
+      "markdown": "मार्कडाउन",
+      "markdownDesc": "किसी भी ऐप से मार्कडाउन (.md) फ़ाइलें",
+      "notion": "नोशन",
+      "notionDesc": "निर्यातित नोशन कार्यक्षेत्र",
+      "bear": "बियर",
+      "bearDesc": "बियर नोट्स निर्यात फ़ोल्डर",
+      "evernote": "एवरनोट",
+      "evernoteDesc": "एवरनोट .enex निर्यात फ़ाइल",
+      "html": "HTML",
+      "htmlDesc": "मार्कडाउन में रूपांतरित HTML फ़ाइलें",
+      "csv": "CSV",
+      "csvDesc": "CSV/TSV फ़ाइल — हर पंक्ति एक नोट बनती है",
+      "txt": "सादा पाठ",
+      "txtDesc": "मार्कडाउन में रूपांतरित टेक्स्ट फ़ाइलें"
+    },
+    "targetVault": "लक्ष्य वॉल्ट",
+    "subfolder": "उपफ़ोल्डर",
+    "selectSource": "स्रोत चुनें",
+    "scanning": "फ़ाइलें स्कैन हो रही हैं...",
+    "previewTitle": "आयात के लिए तैयार",
+    "files": "फ़ाइलें",
+    "andMore": "और {count} अधिक...",
+    "back": "वापस",
+    "importNow": "अभी आयात करें",
+    "importing": "आयात हो रहा है...",
+    "complete": "आयात पूरा!",
+    "imported": "आयातित",
+    "skipped": "छोड़े गए",
+    "errors": "त्रुटियाँ",
+    "done": "हो गया"
   }
 }

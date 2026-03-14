@@ -246,7 +246,8 @@
     "foldAll": "Replier toutes les sections",
     "unfoldAll": "Déplier toutes les sections",
     "toggleLivePreview": "Basculer l'aperçu en direct",
-    "insertTemplate": "Insérer depuis un modèle"
+    "insertTemplate": "Insérer depuis un modèle",
+    "importNotes": "Importer des notes"
   },
   "actions": {
     "untitled": "Sans titre",
@@ -265,7 +266,8 @@
     "aiSkills": "Compétences IA",
     "toggleTheme": "Basculer le thème",
     "index": "Index",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "importNotes": "Importer des notes"
   },
   "sidebar": {
     "searchPlaceholder": "Rechercher...",
@@ -562,7 +564,20 @@
     "deleteColumn": "Supprimer la colonne",
     "alignLeft": "Aligner à gauche",
     "alignCenter": "Centrer",
-    "alignRight": "Aligner à droite"
+    "alignRight": "Aligner à droite",
+    "moreActions": "Plus d'actions",
+    "move": "Déplacer",
+    "moveRowUp": "Déplacer la ligne vers le haut",
+    "moveRowDown": "Déplacer la ligne vers le bas",
+    "moveColLeft": "Déplacer la colonne à gauche",
+    "moveColRight": "Déplacer la colonne à droite",
+    "sort": "Trier",
+    "sortAsc": "Tri croissant",
+    "sortDesc": "Tri décroissant",
+    "formulas": "Formules",
+    "insertFormula": "Insérer une formule",
+    "evaluateFormulas": "Évaluer les formules",
+    "evaluate": "Éval."
   },
   "common": {
     "cancel": "Annuler",
@@ -717,5 +732,40 @@
     "noNotes": "Aucune note trouvée",
     "detailEmpty": "Sélectionnez une note à afficher ici",
     "sendToScreen": "Envoyer au deuxième écran"
+  },
+  "importer": {
+    "title": "Importer des notes",
+    "selectFormat": "Choisissez le format des notes à importer.",
+    "formats": {
+      "markdown": "Markdown",
+      "markdownDesc": "Fichiers Markdown (.md) de n'importe quelle app",
+      "notion": "Notion",
+      "notionDesc": "Espace de travail Notion exporté",
+      "bear": "Bear",
+      "bearDesc": "Dossier d'export Bear",
+      "evernote": "Evernote",
+      "evernoteDesc": "Fichier .enex Evernote",
+      "html": "HTML",
+      "htmlDesc": "Fichiers HTML convertis en Markdown",
+      "csv": "CSV",
+      "csvDesc": "Fichier CSV/TSV — chaque ligne devient une note",
+      "txt": "Texte brut",
+      "txtDesc": "Fichiers texte convertis en Markdown"
+    },
+    "targetVault": "Coffre cible",
+    "subfolder": "Sous-dossier",
+    "selectSource": "Sélectionner la source",
+    "scanning": "Analyse des fichiers...",
+    "previewTitle": "Prêt à importer",
+    "files": "fichiers",
+    "andMore": "et {count} de plus...",
+    "back": "Retour",
+    "importNow": "Importer maintenant",
+    "importing": "Importation...",
+    "complete": "Importation terminée !",
+    "imported": "Importés",
+    "skipped": "Ignorés",
+    "errors": "Erreurs",
+    "done": "Terminé"
   }
 }

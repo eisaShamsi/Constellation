@@ -1,6 +1,7 @@
 mod ai;
 mod bases;
 mod dataview;
+mod importers;
 mod tasks;
 mod universe;
 mod vaults;
@@ -112,6 +113,9 @@ pub fn run() {
             tasks::scan_note_tasks,
             tasks::toggle_task,
             tasks::scan_vault_note_dates,
+            importers::import_pick_source,
+            importers::import_preview,
+            importers::import_execute,
             open_second_screen,
             close_second_screen,
             is_second_screen_open

@@ -246,7 +246,8 @@
     "foldAll": "بستن همه بخش‌ها",
     "unfoldAll": "باز کردن همه بخش‌ها",
     "toggleLivePreview": "تبدیل پیش‌نمایش زنده",
-    "insertTemplate": "درج از الگو"
+    "insertTemplate": "درج از الگو",
+    "importNotes": "وارد کردن یادداشت‌ها"
   },
   "actions": {
     "untitled": "بدون عنوان",
@@ -265,7 +266,8 @@
     "aiSkills": "مهارت‌های هوش مصنوعی",
     "toggleTheme": "تغییر پوسته",
     "index": "فهرست",
-    "settings": "تنظیمات"
+    "settings": "تنظیمات",
+    "importNotes": "وارد کردن یادداشت‌ها"
   },
   "sidebar": {
     "searchPlaceholder": "جستجو...",
@@ -562,7 +564,20 @@
     "deleteColumn": "حذف ستون",
     "alignLeft": "چپ‌چین",
     "alignCenter": "وسط‌چین",
-    "alignRight": "راست‌چین"
+    "alignRight": "راست‌چین",
+    "moreActions": "اقدامات بیشتر",
+    "move": "جابجایی",
+    "moveRowUp": "انتقال ردیف به بالا",
+    "moveRowDown": "انتقال ردیف به پایین",
+    "moveColLeft": "انتقال ستون به چپ",
+    "moveColRight": "انتقال ستون به راست",
+    "sort": "مرتب‌سازی",
+    "sortAsc": "مرتب‌سازی صعودی",
+    "sortDesc": "مرتب‌سازی نزولی",
+    "formulas": "فرمول‌ها",
+    "insertFormula": "درج فرمول",
+    "evaluateFormulas": "محاسبه فرمول‌ها",
+    "evaluate": "محاسبه"
   },
   "common": {
     "cancel": "لغو",
@@ -717,5 +732,40 @@
     "noNotes": "یادداشتی یافت نشد",
     "detailEmpty": "یک یادداشت برای مشاهده انتخاب کنید",
     "sendToScreen": "ارسال به صفحه دوم"
+  },
+  "importer": {
+    "title": "وارد کردن یادداشت‌ها",
+    "selectFormat": "قالب یادداشت‌هایی که می‌خواهید وارد کنید را انتخاب کنید.",
+    "formats": {
+      "markdown": "مارک‌داون",
+      "markdownDesc": "فایل‌های مارک‌داون (.md) از هر برنامه",
+      "notion": "نوشن",
+      "notionDesc": "فضای کاری نوشن صادرشده",
+      "bear": "بیر",
+      "bearDesc": "پوشه صادرشده یادداشت‌های بیر",
+      "evernote": "اورنوت",
+      "evernoteDesc": "فایل .enex اورنوت",
+      "html": "HTML",
+      "htmlDesc": "فایل‌های HTML تبدیل‌شده به مارک‌داون",
+      "csv": "CSV",
+      "csvDesc": "فایل CSV/TSV — هر ردیف یک یادداشت می‌شود",
+      "txt": "متن ساده",
+      "txtDesc": "فایل‌های متنی تبدیل‌شده به مارک‌داون"
+    },
+    "targetVault": "صندوق مقصد",
+    "subfolder": "پوشه فرعی",
+    "selectSource": "انتخاب منبع",
+    "scanning": "در حال اسکن فایل‌ها...",
+    "previewTitle": "آماده وارد کردن",
+    "files": "فایل",
+    "andMore": "و {count} مورد دیگر...",
+    "back": "بازگشت",
+    "importNow": "وارد کردن",
+    "importing": "در حال وارد کردن...",
+    "complete": "وارد کردن کامل شد!",
+    "imported": "واردشده",
+    "skipped": "ردشده",
+    "errors": "خطاها",
+    "done": "انجام"
   }
 }

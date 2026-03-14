@@ -246,7 +246,8 @@
     "foldAll": "Fold all sections",
     "unfoldAll": "Unfold all sections",
     "toggleLivePreview": "Toggle live preview",
-    "insertTemplate": "Insert from template"
+    "insertTemplate": "Insert from template",
+    "importNotes": "Import notes"
   },
   "actions": {
     "untitled": "Untitled",
@@ -265,7 +266,8 @@
     "aiSkills": "AI Skills",
     "toggleTheme": "Toggle theme",
     "index": "Index",
-    "settings": "Settings"
+    "settings": "Settings",
+    "importNotes": "Import notes"
   },
   "sidebar": {
     "searchPlaceholder": "Search...",
@@ -562,7 +564,20 @@
     "deleteColumn": "Delete column",
     "alignLeft": "Align left",
     "alignCenter": "Align center",
-    "alignRight": "Align right"
+    "alignRight": "Align right",
+    "moreActions": "More actions",
+    "move": "Move",
+    "moveRowUp": "Move row up",
+    "moveRowDown": "Move row down",
+    "moveColLeft": "Move column left",
+    "moveColRight": "Move column right",
+    "sort": "Sort",
+    "sortAsc": "Sort ascending",
+    "sortDesc": "Sort descending",
+    "formulas": "Formulas",
+    "insertFormula": "Insert formula",
+    "evaluateFormulas": "Evaluate formulas",
+    "evaluate": "Eval"
   },
   "common": {
     "cancel": "Cancel",
@@ -717,5 +732,40 @@
     "noNotes": "No notes found",
     "detailEmpty": "Select a note to view here",
     "sendToScreen": "Send to Second Screen"
+  },
+  "importer": {
+    "title": "Import Notes",
+    "selectFormat": "Choose the format of the notes you want to import.",
+    "formats": {
+      "markdown": "Markdown",
+      "markdownDesc": "Markdown files (.md) from any app",
+      "notion": "Notion",
+      "notionDesc": "Exported Notion workspace",
+      "bear": "Bear",
+      "bearDesc": "Bear notes export folder",
+      "evernote": "Evernote",
+      "evernoteDesc": "Evernote .enex export file",
+      "html": "HTML",
+      "htmlDesc": "HTML files converted to markdown",
+      "csv": "CSV",
+      "csvDesc": "CSV/TSV file — each row becomes a note",
+      "txt": "Plain Text",
+      "txtDesc": "Text files converted to markdown"
+    },
+    "targetVault": "Target vault",
+    "subfolder": "Subfolder",
+    "selectSource": "Select source",
+    "scanning": "Scanning files...",
+    "previewTitle": "Ready to import",
+    "files": "files",
+    "andMore": "and {count} more...",
+    "back": "Back",
+    "importNow": "Import now",
+    "importing": "Importing...",
+    "complete": "Import complete!",
+    "imported": "Imported",
+    "skipped": "Skipped",
+    "errors": "Errors",
+    "done": "Done"
   }
 }

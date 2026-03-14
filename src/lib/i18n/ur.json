@@ -246,7 +246,8 @@
     "foldAll": "تمام حصے بند کریں",
     "unfoldAll": "تمام حصے کھولیں",
     "toggleLivePreview": "لائیو پیش نظارہ تبدیل کریں",
-    "insertTemplate": "ٹیمپلیٹ سے داخل کریں"
+    "insertTemplate": "ٹیمپلیٹ سے داخل کریں",
+    "importNotes": "نوٹس درآمد کریں"
   },
   "actions": {
     "untitled": "بغیر عنوان",
@@ -265,7 +266,8 @@
     "aiSkills": "AI مہارتیں",
     "toggleTheme": "تھیم تبدیل کریں",
     "index": "فہرست",
-    "settings": "ترتیبات"
+    "settings": "ترتیبات",
+    "importNotes": "نوٹس درآمد کریں"
   },
   "sidebar": {
     "searchPlaceholder": "تلاش...",
@@ -562,7 +564,20 @@
     "deleteColumn": "کالم حذف کریں",
     "alignLeft": "بائیں سیدھ",
     "alignCenter": "مرکز سیدھ",
-    "alignRight": "دائیں سیدھ"
+    "alignRight": "دائیں سیدھ",
+    "moreActions": "مزید اعمال",
+    "move": "منتقل کریں",
+    "moveRowUp": "قطار اوپر منتقل کریں",
+    "moveRowDown": "قطار نیچے منتقل کریں",
+    "moveColLeft": "کالم بائیں منتقل کریں",
+    "moveColRight": "کالم دائیں منتقل کریں",
+    "sort": "ترتیب",
+    "sortAsc": "صعودی ترتیب",
+    "sortDesc": "نزولی ترتیب",
+    "formulas": "فارمولے",
+    "insertFormula": "فارمولا داخل کریں",
+    "evaluateFormulas": "فارمولوں کا حساب",
+    "evaluate": "حساب"
   },
   "common": {
     "cancel": "منسوخ",
@@ -717,5 +732,40 @@
     "noNotes": "کوئی نوٹ نہیں ملا",
     "detailEmpty": "یہاں دیکھنے کے لیے نوٹ منتخب کریں",
     "sendToScreen": "دوسری اسکرین پر بھیجیں"
+  },
+  "importer": {
+    "title": "نوٹس درآمد کریں",
+    "selectFormat": "جو نوٹس درآمد کرنا چاہتے ہیں ان کی شکل منتخب کریں۔",
+    "formats": {
+      "markdown": "مارک ڈاؤن",
+      "markdownDesc": "کسی بھی ایپ سے مارک ڈاؤن (.md) فائلیں",
+      "notion": "نوشن",
+      "notionDesc": "برآمد شدہ نوشن ورک اسپیس",
+      "bear": "بیئر",
+      "bearDesc": "بیئر نوٹس ایکسپورٹ فولڈر",
+      "evernote": "ایور نوٹ",
+      "evernoteDesc": "ایور نوٹ .enex فائل",
+      "html": "HTML",
+      "htmlDesc": "HTML فائلیں مارک ڈاؤن میں تبدیل شدہ",
+      "csv": "CSV",
+      "csvDesc": "CSV/TSV فائل — ہر قطار ایک نوٹ بنتی ہے",
+      "txt": "سادہ متن",
+      "txtDesc": "ٹیکسٹ فائلیں مارک ڈاؤن میں تبدیل شدہ"
+    },
+    "targetVault": "ہدف والٹ",
+    "subfolder": "ذیلی فولڈر",
+    "selectSource": "ذریعہ منتخب کریں",
+    "scanning": "فائلیں اسکین ہو رہی ہیں...",
+    "previewTitle": "درآمد کے لیے تیار",
+    "files": "فائلیں",
+    "andMore": "اور {count} مزید...",
+    "back": "واپس",
+    "importNow": "ابھی درآمد کریں",
+    "importing": "درآمد ہو رہا ہے...",
+    "complete": "درآمد مکمل!",
+    "imported": "درآمد شدہ",
+    "skipped": "چھوڑے گئے",
+    "errors": "غلطیاں",
+    "done": "ہو گیا"
   }
 }
