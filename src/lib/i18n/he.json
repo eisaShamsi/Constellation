@@ -13,7 +13,7 @@
       "appearance": "מראה",
       "hotkeys": "מקשי קיצור",
       "security": "אבטחה",
-      "plugins": "תוספים מובנים",
+      "plugins": "תכונות מובנות",
       "ai": "ספק AI",
       "templates": "תבניות"
     },
@@ -151,7 +151,7 @@
       "noCommands": "לא נמצאו פקודות"
     },
     "plugins": {
-      "intro": "תוספים מובנים. ניתן להפעיל או לבטל כל אחד מהם.",
+      "intro": "תכונות מובנות ב-Constellation. ניתן להפעיל או להשבית כל אחת.",
       "dailyNotes": "פתקים יומיים",
       "dailyNotesDesc": "צור ופתח פתקים יומיים",
       "templates": "תבניות",
@@ -298,7 +298,7 @@
   },
   "welcome": {
     "title": "ברוכים הבאים ל-Constellation",
-    "subtitle": "הוסף את כספת ה-Obsidian הראשונה שלך כדי להתחיל",
+    "subtitle": "הוסף את הכספת הראשונה שלך כדי להתחיל",
     "addVault": "+ הוסף כספת",
     "selectNote": "בחר פתק מהסרגל הצדדי",
     "quickSwitchHint": "או לחץ Ctrl+O למעבר מהיר"
@@ -491,7 +491,7 @@
     "noResults": "אין תוצאות",
     "addVault": "+ הוסף כספת",
     "welcomeTitle": "ברוכים הבאים ל-Constellation",
-    "welcomeSubtitle": "הוסף את כספת ה-Obsidian הראשונה שלך מהסרגל הצדדי",
+    "welcomeSubtitle": "הוסף את הכספת הראשונה שלך מהסרגל הצדדי",
     "addVaultCta": "+ הוסף כספת",
     "selectNote": "בחר פתק מהסרגל הצדדי"
   },
@@ -669,12 +669,12 @@
       "next": "הבא",
       "back": "חזרה",
       "addVaultsHeading": "הוסף את הכספות שלך",
-      "addVaultsDescription": "חבר את כספות Obsidian ויקומים צאצאים. תמיד תוכל להוסיף עוד מאוחר יותר.",
+      "addVaultsDescription": "חבר את הכספות ויקומים צאצאים. תמיד תוכל להוסיף עוד מאוחר יותר.",
       "addVault": "הוסף כספת",
       "addChildUniverse": "הוסף יקום צאצא",
       "finish": "סיום",
       "skip": "דלג לעת עתה",
-      "noVaultsYet": "עדיין לא נוספו כספות. הוסף כספת Obsidian או יקום צאצא כדי להתחיל.",
+      "noVaultsYet": "עדיין לא נוספו כספות. הוסף כספת או יקום צאצא כדי להתחיל.",
       "remove": "הסר"
     },
     "manager": {

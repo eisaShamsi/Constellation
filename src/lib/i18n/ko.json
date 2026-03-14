@@ -13,7 +13,7 @@
       "appearance": "외관",
       "hotkeys": "단축키",
       "security": "보안",
-      "plugins": "핵심 플러그인",
+      "plugins": "내장 기능",
       "ai": "AI 제공자",
       "templates": "템플릿"
     },
@@ -151,7 +151,7 @@
       "noCommands": "명령어를 찾을 수 없습니다"
     },
     "plugins": {
-      "intro": "기본 제공되는 핵심 플러그인입니다. 각각 활성화하거나 비활성화할 수 있습니다.",
+      "intro": "Constellation에 내장된 기능입니다. 각각을 활성화하거나 비활성화할 수 있습니다.",
       "dailyNotes": "일일 노트",
       "dailyNotesDesc": "일일 노트 생성 및 열기",
       "templates": "템플릿",
@@ -298,7 +298,7 @@
   },
   "welcome": {
     "title": "Constellation에 오신 것을 환영합니다",
-    "subtitle": "시작하려면 첫 번째 Obsidian 보관함을 추가하세요",
+    "subtitle": "시작하려면 첫 번째 보관함을 추가하세요",
     "addVault": "+ 보관함 추가",
     "selectNote": "사이드바에서 노트를 선택하세요",
     "quickSwitchHint": "또는 Ctrl+O를 눌러 빠른 전환"
@@ -491,7 +491,7 @@
     "noResults": "결과 없음",
     "addVault": "+ 보관함 추가",
     "welcomeTitle": "Constellation에 오신 것을 환영합니다",
-    "welcomeSubtitle": "사이드바에서 첫 번째 Obsidian 보관함을 추가하세요",
+    "welcomeSubtitle": "사이드바에서 첫 번째 보관함을 추가하세요",
     "addVaultCta": "+ 보관함 추가",
     "selectNote": "사이드바에서 노트를 선택하세요"
   },
@@ -669,12 +669,12 @@
       "next": "다음",
       "back": "뒤로",
       "addVaultsHeading": "보관함 추가",
-      "addVaultsDescription": "Obsidian 보관함과 하위 유니버스를 연결하세요. 나중에 언제든지 더 추가할 수 있습니다.",
+      "addVaultsDescription": "보관함과 하위 유니버스를 연결하세요. 나중에 언제든지 더 추가할 수 있습니다.",
       "addVault": "보관함 추가",
       "addChildUniverse": "하위 유니버스 추가",
       "finish": "완료",
       "skip": "지금은 건너뛰기",
-      "noVaultsYet": "아직 추가된 보관함이 없습니다. 시작하려면 Obsidian 보관함 또는 하위 유니버스를 추가하세요.",
+      "noVaultsYet": "아직 추가된 보관함이 없습니다. 시작하려면 보관함 또는 하위 유니버스를 추가하세요.",
       "remove": "제거"
     },
     "manager": {

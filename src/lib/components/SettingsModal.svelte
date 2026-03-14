@@ -713,7 +713,7 @@
 						</div>
 						<select class="setting-control" value={$appSettings.trashDestination} onchange={(e) => updateSettings({ trashDestination: (e.target as HTMLSelectElement).value as any })}>
 							<option value="system">{$t('settings.files.systemTrash')}</option>
-							<option value="obsidian">{$t('settings.files.trashFolder')}</option>
+							<option value="local">{$t('settings.files.trashFolder')}</option>
 							<option value="permanent">{$t('settings.files.permanentDelete')}</option>
 						</select>
 					</div>

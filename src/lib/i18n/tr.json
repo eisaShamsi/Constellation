@@ -13,7 +13,7 @@
       "appearance": "Görünüm",
       "hotkeys": "Kısayol Tuşları",
       "security": "Güvenlik",
-      "plugins": "Temel Eklentiler",
+      "plugins": "Yerleşik Özellikler",
       "ai": "Yapay Zeka Sağlayıcı",
       "templates": "Şablonlar"
     },
@@ -151,7 +151,7 @@
       "noCommands": "Komut bulunamadı"
     },
     "plugins": {
-      "intro": "Yerleşik temel eklentiler. Her birini etkinleştirebilir veya devre dışı bırakabilirsiniz.",
+      "intro": "Constellation'a yerleşik özellikler. Her birini etkinleştirebilir veya devre dışı bırakabilirsiniz.",
       "dailyNotes": "Günlük Notlar",
       "dailyNotesDesc": "Günlük notlar oluşturun ve açın",
       "templates": "Şablonlar",
@@ -298,7 +298,7 @@
   },
   "welcome": {
     "title": "Constellation'a Hoş Geldiniz",
-    "subtitle": "Başlamak için ilk Obsidian kasanızı ekleyin",
+    "subtitle": "Başlamak için ilk kasanızı ekleyin",
     "addVault": "+ Kasa Ekle",
     "selectNote": "Kenar çubuğundan bir not seçin",
     "quickSwitchHint": "veya hızlı geçiş için Ctrl+O'ya basın"
@@ -491,7 +491,7 @@
     "noResults": "Sonuç yok",
     "addVault": "+ Kasa ekle",
     "welcomeTitle": "Constellation'a Hoş Geldiniz",
-    "welcomeSubtitle": "Kenar çubuğundan ilk Obsidian kasanızı ekleyin",
+    "welcomeSubtitle": "Kenar çubuğundan ilk kasanızı ekleyin",
     "addVaultCta": "+ Kasa Ekle",
     "selectNote": "Kenar çubuğundan bir not seçin"
   },
@@ -669,12 +669,12 @@
       "next": "İleri",
       "back": "Geri",
       "addVaultsHeading": "Kasalarınızı Ekleyin",
-      "addVaultsDescription": "Obsidian kasalarınızı ve alt evrenleri bağlayın. Daha sonra istediğiniz zaman daha fazlasını ekleyebilirsiniz.",
+      "addVaultsDescription": "Kasalarınızı ve alt evrenleri bağlayın. Daha sonra istediğiniz zaman daha fazlasını ekleyebilirsiniz.",
       "addVault": "Kasa Ekle",
       "addChildUniverse": "Alt Evren Ekle",
       "finish": "Bitir",
       "skip": "Şimdilik atla",
-      "noVaultsYet": "Henüz kasa eklenmedi. Başlamak için bir Obsidian kasası veya alt evren ekleyin.",
+      "noVaultsYet": "Henüz kasa eklenmedi. Başlamak için bir kasa veya alt evren ekleyin.",
       "remove": "Kaldır"
     },
     "manager": {

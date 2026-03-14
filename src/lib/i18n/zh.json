@@ -13,7 +13,7 @@
       "appearance": "外观",
       "hotkeys": "快捷键",
       "security": "安全",
-      "plugins": "核心插件",
+      "plugins": "内置功能",
       "ai": "AI 服务商",
       "templates": "模板"
     },
@@ -151,7 +151,7 @@
       "noCommands": "未找到命令"
     },
     "plugins": {
-      "intro": "内置核心插件。您可以启用或禁用每个插件。",
+      "intro": "Constellation 内置功能。您可以启用或禁用每个功能。",
       "dailyNotes": "日记",
       "dailyNotesDesc": "创建和打开每日笔记",
       "templates": "模板",
@@ -298,7 +298,7 @@
   },
   "welcome": {
     "title": "欢迎使用 Constellation",
-    "subtitle": "添加您的第一个 Obsidian 仓库以开始使用",
+    "subtitle": "添加您的第一个仓库以开始使用",
     "addVault": "+ 添加仓库",
     "selectNote": "从侧边栏选择一篇笔记",
     "quickSwitchHint": "或按 Ctrl+O 快速切换"
@@ -491,7 +491,7 @@
     "noResults": "无结果",
     "addVault": "+ 添加仓库",
     "welcomeTitle": "欢迎使用 Constellation",
-    "welcomeSubtitle": "从侧边栏添加您的第一个 Obsidian 仓库",
+    "welcomeSubtitle": "从侧边栏添加您的第一个仓库",
     "addVaultCta": "+ 添加仓库",
     "selectNote": "从侧边栏选择一篇笔记"
   },
@@ -669,12 +669,12 @@
       "next": "下一步",
       "back": "返回",
       "addVaultsHeading": "添加你的仓库",
-      "addVaultsDescription": "连接你的 Obsidian 仓库和子宇宙。你可以随时添加更多。",
+      "addVaultsDescription": "连接你的仓库和子宇宙。你可以随时添加更多。",
       "addVault": "添加仓库",
       "addChildUniverse": "添加子宇宙",
       "finish": "完成",
       "skip": "暂时跳过",
-      "noVaultsYet": "尚未添加任何仓库。添加一个 Obsidian 仓库或子宇宙以开始。",
+      "noVaultsYet": "尚未添加任何仓库。添加一个仓库或子宇宙以开始。",
       "remove": "移除"
     },
     "manager": {

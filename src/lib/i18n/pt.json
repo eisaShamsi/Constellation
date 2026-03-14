@@ -13,7 +13,7 @@
       "appearance": "Aparência",
       "hotkeys": "Atalhos de teclado",
       "security": "Segurança",
-      "plugins": "Plugins principais",
+      "plugins": "Recursos integrados",
       "ai": "Provedor de IA",
       "templates": "Modelos"
     },
@@ -151,7 +151,7 @@
       "noCommands": "Nenhum comando encontrado"
     },
     "plugins": {
-      "intro": "Plugins principais integrados. Você pode ativar ou desativar cada um.",
+      "intro": "Recursos integrados no Constellation. Você pode ativar ou desativar cada um.",
       "dailyNotes": "Notas diárias",
       "dailyNotesDesc": "Criar e abrir notas diárias",
       "templates": "Modelos",
@@ -298,7 +298,7 @@
   },
   "welcome": {
     "title": "Bem-vindo ao Constellation",
-    "subtitle": "Adicione seu primeiro cofre do Obsidian para começar",
+    "subtitle": "Adicione seu primeiro cofre para começar",
     "addVault": "+ Adicionar cofre",
     "selectNote": "Selecione uma nota na barra lateral",
     "quickSwitchHint": "ou pressione Ctrl+O para troca rápida"
@@ -491,7 +491,7 @@
     "noResults": "Sem resultados",
     "addVault": "+ Adicionar cofre",
     "welcomeTitle": "Bem-vindo ao Constellation",
-    "welcomeSubtitle": "Adicione seu primeiro cofre do Obsidian pela barra lateral",
+    "welcomeSubtitle": "Adicione seu primeiro cofre pela barra lateral",
     "addVaultCta": "+ Adicionar cofre",
     "selectNote": "Selecione uma nota na barra lateral"
   },
@@ -669,12 +669,12 @@
       "next": "Próximo",
       "back": "Voltar",
       "addVaultsHeading": "Adicione seus Cofres",
-      "addVaultsDescription": "Conecte seus cofres do Obsidian e universos filhos. Você sempre pode adicionar mais depois.",
+      "addVaultsDescription": "Conecte seus cofres e universos filhos. Você sempre pode adicionar mais depois.",
       "addVault": "Adicionar cofre",
       "addChildUniverse": "Adicionar universo filho",
       "finish": "Concluir",
       "skip": "Pular por enquanto",
-      "noVaultsYet": "Nenhum cofre adicionado ainda. Adicione um cofre do Obsidian ou universo filho para começar.",
+      "noVaultsYet": "Nenhum cofre adicionado ainda. Adicione um cofre ou universo filho para começar.",
       "remove": "Remover"
     },
     "manager": {

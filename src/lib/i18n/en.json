@@ -13,7 +13,7 @@
       "appearance": "Appearance",
       "hotkeys": "Hotkeys",
       "security": "Security",
-      "plugins": "Core Plugins",
+      "plugins": "Built-in Features",
       "ai": "AI Provider",
       "templates": "Templates"
     },
@@ -151,7 +151,7 @@
       "noCommands": "No commands found"
     },
     "plugins": {
-      "intro": "Core plugins that come built-in. You can enable or disable each one.",
+      "intro": "Built-in features included with Constellation. You can enable or disable each one.",
       "dailyNotes": "Daily Notes",
       "dailyNotesDesc": "Create and open daily notes",
       "templates": "Templates",
@@ -298,7 +298,7 @@
   },
   "welcome": {
     "title": "Welcome to Constellation",
-    "subtitle": "Add your first Obsidian vault to get started",
+    "subtitle": "Add your first vault to get started",
     "addVault": "+ Add Vault",
     "selectNote": "Select a note from the sidebar",
     "quickSwitchHint": "or press Ctrl+O to quick switch"
@@ -491,7 +491,7 @@
     "noResults": "No results",
     "addVault": "+ Add vault",
     "welcomeTitle": "Welcome to Constellation",
-    "welcomeSubtitle": "Add your first Obsidian vault from the sidebar",
+    "welcomeSubtitle": "Add your first vault from the sidebar",
     "addVaultCta": "+ Add Vault",
     "selectNote": "Select a note from the sidebar"
   },
@@ -669,12 +669,12 @@
       "next": "Next",
       "back": "Back",
       "addVaultsHeading": "Add Your Vaults",
-      "addVaultsDescription": "Connect your Obsidian vaults and child universes. You can always add more later.",
+      "addVaultsDescription": "Connect your vaults and child universes. You can always add more later.",
       "addVault": "Add Vault",
       "addChildUniverse": "Add Child Universe",
       "finish": "Finish",
       "skip": "Skip for now",
-      "noVaultsYet": "No vaults added yet. Add an Obsidian vault or child universe to get started.",
+      "noVaultsYet": "No vaults added yet. Add a vault or child universe to get started.",
       "remove": "Remove"
     },
     "manager": {

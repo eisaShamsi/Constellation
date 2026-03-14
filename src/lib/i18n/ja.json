@@ -13,7 +13,7 @@
       "appearance": "外観",
       "hotkeys": "ホットキー",
       "security": "セキュリティ",
-      "plugins": "コアプラグイン",
+      "plugins": "組み込み機能",
       "ai": "AIプロバイダー",
       "templates": "テンプレート"
     },
@@ -151,7 +151,7 @@
       "noCommands": "コマンドが見つかりません"
     },
     "plugins": {
-      "intro": "組み込みのコアプラグイン。各プラグインを有効または無効にできます。",
+      "intro": "Constellationに組み込まれた機能。各機能を有効・無効にできます。",
       "dailyNotes": "デイリーノート",
       "dailyNotesDesc": "デイリーノートを作成して開く",
       "templates": "テンプレート",
@@ -298,7 +298,7 @@
   },
   "welcome": {
     "title": "Constellation へようこそ",
-    "subtitle": "最初のObsidian保管庫を追加して始めましょう",
+    "subtitle": "最初の保管庫を追加して始めましょう",
     "addVault": "+ 保管庫を追加",
     "selectNote": "サイドバーからノートを選択してください",
     "quickSwitchHint": "またはCtrl+Oでクイックスイッチ"
@@ -491,7 +491,7 @@
     "noResults": "結果なし",
     "addVault": "+ 保管庫を追加",
     "welcomeTitle": "Constellation へようこそ",
-    "welcomeSubtitle": "サイドバーから最初のObsidian保管庫を追加してください",
+    "welcomeSubtitle": "サイドバーから最初の保管庫を追加してください",
     "addVaultCta": "+ 保管庫を追加",
     "selectNote": "サイドバーからノートを選択してください"
   },
@@ -669,12 +669,12 @@
       "next": "次へ",
       "back": "戻る",
       "addVaultsHeading": "ボールトを追加",
-      "addVaultsDescription": "Obsidianボールトと子ユニバースを接続します。後からいつでも追加できます。",
+      "addVaultsDescription": "ボールトと子ユニバースを接続します。後からいつでも追加できます。",
       "addVault": "ボールトを追加",
       "addChildUniverse": "子ユニバースを追加",
       "finish": "完了",
       "skip": "今はスキップ",
-      "noVaultsYet": "まだボールトが追加されていません。Obsidianボールトまたは子ユニバースを追加して始めましょう。",
+      "noVaultsYet": "まだボールトが追加されていません。ボールトまたは子ユニバースを追加して始めましょう。",
       "remove": "削除"
     },
     "manager": {

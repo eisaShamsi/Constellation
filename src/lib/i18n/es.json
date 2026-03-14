@@ -13,7 +13,7 @@
       "appearance": "Apariencia",
       "hotkeys": "Atajos de teclado",
       "security": "Seguridad",
-      "plugins": "Plugins principales",
+      "plugins": "Funciones integradas",
       "ai": "Proveedor de IA",
       "templates": "Plantillas"
     },
@@ -151,7 +151,7 @@
       "noCommands": "No se encontraron comandos"
     },
     "plugins": {
-      "intro": "Plugins principales integrados. Puedes activar o desactivar cada uno.",
+      "intro": "Funciones integradas en Constellation. Puedes activar o desactivar cada una.",
       "dailyNotes": "Notas diarias",
       "dailyNotesDesc": "Crear y abrir notas diarias",
       "templates": "Plantillas",
@@ -298,7 +298,7 @@
   },
   "welcome": {
     "title": "Bienvenido a Constellation",
-    "subtitle": "Añade tu primera bóveda de Obsidian para comenzar",
+    "subtitle": "Añade tu primera bóveda para comenzar",
     "addVault": "+ Añadir bóveda",
     "selectNote": "Selecciona una nota desde la barra lateral",
     "quickSwitchHint": "o presiona Ctrl+O para cambio rápido"
@@ -491,7 +491,7 @@
     "noResults": "Sin resultados",
     "addVault": "+ Añadir bóveda",
     "welcomeTitle": "Bienvenido a Constellation",
-    "welcomeSubtitle": "Añade tu primera bóveda de Obsidian desde la barra lateral",
+    "welcomeSubtitle": "Añade tu primera bóveda desde la barra lateral",
     "addVaultCta": "+ Añadir bóveda",
     "selectNote": "Selecciona una nota desde la barra lateral"
   },
@@ -669,12 +669,12 @@
       "next": "Siguiente",
       "back": "Atrás",
       "addVaultsHeading": "Agrega tus Bóvedas",
-      "addVaultsDescription": "Conecta tus bóvedas de Obsidian y universos secundarios. Siempre puedes agregar más después.",
+      "addVaultsDescription": "Conecta tus bóvedas y universos secundarios. Siempre puedes agregar más después.",
       "addVault": "Agregar bóveda",
       "addChildUniverse": "Agregar universo secundario",
       "finish": "Finalizar",
       "skip": "Omitir por ahora",
-      "noVaultsYet": "Aún no se han agregado bóvedas. Agrega una bóveda de Obsidian o un universo secundario para comenzar.",
+      "noVaultsYet": "Aún no se han agregado bóvedas. Agrega una bóveda o un universo secundario para comenzar.",
       "remove": "Eliminar"
     },
     "manager": {

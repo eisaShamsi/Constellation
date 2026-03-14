@@ -577,7 +577,7 @@
 		return true;
 	}
 
-	// Toggle Obsidian-style comment %%...%%
+	// Toggle block comment %%...%%
 	function toggleComment(view: EditorView): boolean {
 		const { state } = view;
 		const { from, to } = state.selection.main;
@@ -680,8 +680,8 @@
 		...smartPairKeymap(),
 	]);
 
-	// Obsidian-like theme
-	const obsidianTheme = EditorView.theme({
+	// Editor theme
+	const editorTheme = EditorView.theme({
 		'&': {
 			fontSize: '0.92rem',
 		},
@@ -881,7 +881,7 @@
 				dirCompartment.of(EditorView.editorAttributes.of({ dir })),
 				livePreviewCompartment.of(livePreview ? [livePreviewPlugin, livePreviewTheme] : []),
 				cmPlaceholder(placeholder),
-				obsidianTheme,
+				editorTheme,
 				clipboardImagePaste(),
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {

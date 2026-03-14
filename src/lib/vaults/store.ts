@@ -956,7 +956,7 @@ export interface AppSettings {
 	autoUpdateLinks: boolean;
 	useWikilinks: boolean;
 	confirmDelete: boolean;
-	trashDestination: 'system' | 'obsidian' | 'permanent';
+	trashDestination: 'system' | 'local' | 'permanent';
 
 	// Appearance
 	colorScheme: 'light' | 'dark' | 'system';
@@ -989,7 +989,7 @@ export interface AppSettings {
 		apiKeyProtection: boolean;
 	};
 
-	// Core plugins
+	// Built-in features
 	enabledPlugins: {
 		dailyNotes: boolean;
 		templates: boolean;

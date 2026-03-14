@@ -13,7 +13,7 @@
       "appearance": "Apparence",
       "hotkeys": "Raccourcis clavier",
       "security": "Sécurité",
-      "plugins": "Plugins principaux",
+      "plugins": "Fonctionnalités intégrées",
       "ai": "Fournisseur IA",
       "templates": "Modèles"
     },
@@ -151,7 +151,7 @@
       "noCommands": "Aucune commande trouvée"
     },
     "plugins": {
-      "intro": "Plugins principaux intégrés. Vous pouvez activer ou désactiver chacun d'eux.",
+      "intro": "Fonctionnalités intégrées à Constellation. Vous pouvez activer ou désactiver chacune.",
       "dailyNotes": "Notes quotidiennes",
       "dailyNotesDesc": "Créer et ouvrir des notes quotidiennes",
       "templates": "Modèles",
@@ -298,7 +298,7 @@
   },
   "welcome": {
     "title": "Bienvenue dans Constellation",
-    "subtitle": "Ajoutez votre premier coffre Obsidian pour commencer",
+    "subtitle": "Ajoutez votre premier coffre pour commencer",
     "addVault": "+ Ajouter un coffre",
     "selectNote": "Sélectionnez une note depuis la barre latérale",
     "quickSwitchHint": "ou appuyez sur Ctrl+O pour changer rapidement"
@@ -491,7 +491,7 @@
     "noResults": "Aucun résultat",
     "addVault": "+ Ajouter un coffre",
     "welcomeTitle": "Bienvenue dans Constellation",
-    "welcomeSubtitle": "Ajoutez votre premier coffre Obsidian depuis la barre latérale",
+    "welcomeSubtitle": "Ajoutez votre premier coffre depuis la barre latérale",
     "addVaultCta": "+ Ajouter un coffre",
     "selectNote": "Sélectionnez une note depuis la barre latérale"
   },
@@ -669,12 +669,12 @@
       "next": "Suivant",
       "back": "Retour",
       "addVaultsHeading": "Ajoutez vos coffres",
-      "addVaultsDescription": "Connectez vos coffres Obsidian et univers enfants. Vous pouvez toujours en ajouter d'autres plus tard.",
+      "addVaultsDescription": "Connectez vos coffres et univers enfants. Vous pouvez toujours en ajouter d'autres plus tard.",
       "addVault": "Ajouter un coffre",
       "addChildUniverse": "Ajouter un univers enfant",
       "finish": "Terminer",
       "skip": "Passer pour le moment",
-      "noVaultsYet": "Aucun coffre ajouté pour le moment. Ajoutez un coffre Obsidian ou un univers enfant pour commencer.",
+      "noVaultsYet": "Aucun coffre ajouté pour le moment. Ajoutez un coffre ou un univers enfant pour commencer.",
       "remove": "Supprimer"
     },
     "manager": {

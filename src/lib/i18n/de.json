@@ -13,7 +13,7 @@
       "appearance": "Erscheinungsbild",
       "hotkeys": "Tastenkürzel",
       "security": "Sicherheit",
-      "plugins": "Kern-Plugins",
+      "plugins": "Integrierte Funktionen",
       "ai": "KI-Anbieter",
       "templates": "Vorlagen"
     },
@@ -151,7 +151,7 @@
       "noCommands": "Keine Befehle gefunden"
     },
     "plugins": {
-      "intro": "Integrierte Kern-Plugins. Sie können jedes einzelne aktivieren oder deaktivieren.",
+      "intro": "Integrierte Funktionen in Constellation. Sie können jede einzelne aktivieren oder deaktivieren.",
       "dailyNotes": "Tägliche Notizen",
       "dailyNotesDesc": "Tägliche Notizen erstellen und öffnen",
       "templates": "Vorlagen",
@@ -298,7 +298,7 @@
   },
   "welcome": {
     "title": "Willkommen bei Constellation",
-    "subtitle": "Fügen Sie Ihren ersten Obsidian-Tresor hinzu, um zu beginnen",
+    "subtitle": "Fügen Sie Ihren ersten Tresor hinzu, um zu beginnen",
     "addVault": "+ Tresor hinzufügen",
     "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste",
     "quickSwitchHint": "oder drücken Sie Strg+O zum Schnellwechseln"
@@ -491,7 +491,7 @@
     "noResults": "Keine Ergebnisse",
     "addVault": "+ Tresor hinzufügen",
     "welcomeTitle": "Willkommen bei Constellation",
-    "welcomeSubtitle": "Fügen Sie Ihren ersten Obsidian-Tresor über die Seitenleiste hinzu",
+    "welcomeSubtitle": "Fügen Sie Ihren ersten Tresor über die Seitenleiste hinzu",
     "addVaultCta": "+ Tresor hinzufügen",
     "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste"
   },
@@ -669,12 +669,12 @@
       "next": "Weiter",
       "back": "Zurück",
       "addVaultsHeading": "Füge deine Tresore hinzu",
-      "addVaultsDescription": "Verbinde deine Obsidian-Tresore und Unter-Universen. Du kannst später jederzeit weitere hinzufügen.",
+      "addVaultsDescription": "Verbinde deine Tresore und Unter-Universen. Du kannst später jederzeit weitere hinzufügen.",
       "addVault": "Tresor hinzufügen",
       "addChildUniverse": "Unter-Universum hinzufügen",
       "finish": "Fertig",
       "skip": "Vorerst überspringen",
-      "noVaultsYet": "Noch keine Tresore hinzugefügt. Füge einen Obsidian-Tresor oder ein Unter-Universum hinzu, um loszulegen.",
+      "noVaultsYet": "Noch keine Tresore hinzugefügt. Füge einen Tresor oder ein Unter-Universum hinzu, um loszulegen.",
       "remove": "Entfernen"
     },
     "manager": {
