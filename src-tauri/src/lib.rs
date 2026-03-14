@@ -1,6 +1,7 @@
 mod ai;
 mod bases;
 mod dataview;
+mod tasks;
 mod universe;
 mod vaults;
 mod watcher;
@@ -107,6 +108,10 @@ pub fn run() {
             universe::open_existing_universe,
             universe::get_child_universes,
             dataview::execute_dataview_query,
+            tasks::scan_vault_tasks,
+            tasks::scan_note_tasks,
+            tasks::toggle_task,
+            tasks::scan_vault_note_dates,
             open_second_screen,
             close_second_screen,
             is_second_screen_open

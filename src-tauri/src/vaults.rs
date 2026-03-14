@@ -93,7 +93,7 @@ fn validate_path_in_vault(file_path: &str, vault_path: &str) -> Result<PathBuf, 
 
 /// Validate that a path is within any registered vault (including child universe vaults)
 /// or the active universe directory.
-fn validate_path_in_any_vault(app: &tauri::AppHandle, file_path: &str) -> Result<PathBuf, String> {
+pub fn validate_path_in_any_vault(app: &tauri::AppHandle, file_path: &str) -> Result<PathBuf, String> {
     let vaults = load_all_vaults(app);
     for vault in &vaults {
         if let Ok(canon) = validate_path_in_vault(file_path, &vault.path) {
@@ -1696,7 +1696,9 @@ pub fn export_note_html(app: tauri::AppHandle, file_path: String) -> Result<Stri
 
 /// Move item to system trash (or ".trash" folder inside vault)
 #[tauri::command]
-pub fn move_to_trash(_app: tauri::AppHandle, path: String, vault_path: String) -> Result<(), String> {
+pub fn move_to_trash(app: tauri::AppHandle, path: String, vault_path: String) -> Result<(), String> {
+    // Verify the file is within a registered vault (not just any caller-supplied vault_path)
+    validate_path_in_any_vault(&app, &path)?;
     validate_path_in_vault(&path, &vault_path)?;
     let trash_dir = Path::new(&vault_path).join(".trash");
     if !trash_dir.exists() {

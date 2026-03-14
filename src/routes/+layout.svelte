@@ -48,6 +48,11 @@
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
 	import LinkDashboard from '$lib/components/LinkDashboard.svelte';
+	import TasksPanel from '$lib/components/TasksPanel.svelte';
+	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
+	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
+	import { scanNoteTasks, toggleTask, scanVaultNoteDates } from '$lib/tasks/store';
+	import type { TaskItem } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
 	import PagePreview from '$lib/components/PagePreview.svelte';
 	import WorkspaceManager from '$lib/components/WorkspaceManager.svelte';
@@ -100,7 +105,7 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'graph'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'graph' | 'tasks' | 'calendar'>('properties');
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(240);
@@ -111,6 +116,13 @@
 	let showCommandPalette = $state(false);
 	let showQuickSwitcher = $state(false);
 	let showGraphView = $state(false);
+	let showGlobalTasks = $state(false);
+
+	// Tasks sidebar data
+	let sidebarTasks = $state<TaskItem[]>([]);
+	// Calendar sidebar data
+	let calendarNoteDates = $state<Record<string, number>>({});
+	let calendarTaskDates = $state<Record<string, number>>({});
 
 	// Workspace manager
 	let showWorkspaces = $state(false);
@@ -135,6 +147,8 @@
 
 	// Cache refresh debounce (for file watcher)
 	let cacheRefreshDebounce: ReturnType<typeof setTimeout>;
+	// Watcher debounce (hoisted so onDestroy can clear it)
+	let watcherDebounce: ReturnType<typeof setTimeout>;
 
 	// Vault data caches
 	let allVaultLinks = $state<NoteLink[]>([]);
@@ -307,6 +321,61 @@
 		}, 50);
 	});
 
+	// Tasks sidebar: load tasks from the active note when Tasks tab is visible
+	let _tasksTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		const isVisible = rightSidebarOpen && rightSidebarTab === 'tasks';
+		const tab = sidebarTab;
+		clearTimeout(_tasksTimer);
+		if (!isVisible || !tab?.path) {
+			sidebarTasks = [];
+			return;
+		}
+		_tasksTimer = setTimeout(async () => {
+			try {
+				const result = await scanNoteTasks(tab.path, tab.vaultName, tab.vaultPath);
+				sidebarTasks = result.tasks;
+			} catch { sidebarTasks = []; }
+		}, 100);
+	});
+
+	// Calendar sidebar: load note dates when Calendar tab is visible
+	let _calTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		const isVisible = rightSidebarOpen && rightSidebarTab === 'calendar';
+		clearTimeout(_calTimer);
+		if (!isVisible) return;
+		_calTimer = setTimeout(async () => {
+			try {
+				const vaultList = get(vaults);
+				const dateCounts: Record<string, number> = {};
+				const taskCounts: Record<string, number> = {};
+				const results = await Promise.all(
+					vaultList.map(v => scanVaultNoteDates(v.path, v.name))
+				);
+				for (const dateMap of results) {
+					for (const [date, entries] of Object.entries(dateMap)) {
+						dateCounts[date] = (dateCounts[date] || 0) + entries.length;
+					}
+				}
+				// Also scan tasks for due dates
+				const { scanVaultTasks } = await import('$lib/tasks/store');
+				const taskResults = await Promise.all(
+					vaultList.map(v => scanVaultTasks(v.path, v.name))
+				);
+				for (const result of taskResults) {
+					for (const task of result.tasks) {
+						if (task.due_date && !task.completed) {
+							taskCounts[task.due_date] = (taskCounts[task.due_date] || 0) + 1;
+						}
+					}
+				}
+				calendarNoteDates = dateCounts;
+				calendarTaskDates = taskCounts;
+			} catch { /* ignore */ }
+		}, 200);
+	});
+
 	// Status bar stats from focused tab (debounced to avoid per-keystroke recompute)
 	let wordCount = $state(0);
 	let charCount = $state(0);
@@ -352,6 +421,7 @@
 			{ id: 'daily-note', name: $t('commands.dailyNote'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: 'Ctrl+E', icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'graph-view', name: $t('commands.graphView'), icon: '🕸️', action: () => showGraphView = !showGraphView, category: 'View' },
+			{ id: 'global-tasks', name: $t('commands.globalTasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showGraphView = false; }, category: 'View' },
 			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: 'Ctrl+B', icon: '𝐁', action: () => {}, category: 'Editor' },
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: 'Ctrl+I', icon: '𝐼', action: () => {}, category: 'Editor' },
 			{ id: 'split-view', name: $t('commands.splitView'), shortcut: '', icon: '⊞', action: cycleSplit, category: 'View' },
@@ -537,7 +607,6 @@
 		// Listen for file change events from the watcher
 		let pendingTreeRefresh: Set<string> = new Set();
 		let pendingTabReloads: Set<string> = new Set();
-		let watcherDebounce: ReturnType<typeof setTimeout>;
 		const unlistenWatcher = await listen<{ vaultId: string; paths: string[] }>('vault-changed', (event) => {
 			const { vaultId, paths } = event.payload;
 			pendingTreeRefresh.add(vaultId);
@@ -607,6 +676,7 @@
 		clearTimeout(searchTimeout);
 		clearTimeout(previewTimeout);
 		clearTimeout(cacheRefreshDebounce);
+		clearTimeout(watcherDebounce);
 		clearTimeout(unlinkedDebounce);
 		clearTimeout(_wcTimer);
 		resizeCleanup?.();
@@ -778,6 +848,7 @@
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showGraphView) { showGraphView = false; return; }
+			if (showGlobalTasks) { showGlobalTasks = false; return; }
 			if (showWorkspaces) { showWorkspaces = false; return; }
 			if (showSettings) { showSettings = false; return; }
 		}
@@ -1381,6 +1452,9 @@
 			<button class="r-btn" onclick={() => showGraphView = !showGraphView} title={$t('ribbon.graphView')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
 			</button>
+			<button class="r-btn" onclick={() => { showGlobalTasks = !showGlobalTasks; showGraphView = false; }} title={$t('ribbon.globalTasks')}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+			</button>
 			<button class="r-btn" onclick={handleOpenDailyNote} title={$t('ribbon.dailyNote')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
 			</button>
@@ -1651,6 +1725,11 @@
 					activeNodeId={sidebarTab?.name?.toLowerCase() ?? ''}
 				/>
 				</div>
+			{:else if showGlobalTasks}
+				<GlobalTasksView
+					{vaultColorMap}
+					onClose={() => showGlobalTasks = false}
+				/>
 			{:else if isHome && ($activeTab || $splitActive)}
 				<div class="pane-container" class:horizontal={$splitActive && $splitDirection === 'horizontal'}>
 					{#if $splitActive}
@@ -1725,6 +1804,12 @@
 				</button>
 				<button class="rs-tab" class:active={rightSidebarTab === 'graph'} onclick={() => rightSidebarTab = 'graph'} title={$t('panels.graphView')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg>
+				</button>
+				<button class="rs-tab" class:active={rightSidebarTab === 'tasks'} onclick={() => rightSidebarTab = 'tasks'} title={$t('panels.tasks')}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+				</button>
+				<button class="rs-tab" class:active={rightSidebarTab === 'calendar'} onclick={() => rightSidebarTab = 'calendar'} title={$t('panels.calendar')}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
 				</button>
 			</div>
 
@@ -1814,6 +1899,50 @@
 							<div class="rs-empty-full">{$t('panels.noConnections')}</div>
 						{/if}
 					</div>
+				{:else if rightSidebarTab === 'tasks'}
+					<div class="rs-section rs-full-height">
+						<TasksPanel
+							tasks={sidebarTasks}
+							onToggle={async (filePath, lineNumber) => {
+								try {
+									const newContent = await toggleTask(filePath, lineNumber);
+									// Refresh the active tab content if it's the same file
+									const activeTab = get(focusedTab);
+									if (activeTab && activeTab.path === filePath) {
+										openTabs.update(tabs => tabs.map(t => t.path === filePath ? { ...t, content: newContent } : t));
+									}
+									// Re-scan tasks
+									if (sidebarTab?.path) {
+										const result = await scanNoteTasks(sidebarTab.path, sidebarTab.vaultName, sidebarTab.vaultPath);
+										sidebarTasks = result.tasks;
+									}
+								} catch (e) { console.error('Toggle task failed:', e); }
+							}}
+							{vaultColorMap}
+						/>
+					</div>
+				{:else if rightSidebarTab === 'calendar'}
+					<div class="rs-section rs-full-height">
+						<CalendarPanel
+							noteDates={calendarNoteDates}
+							taskDueDates={calendarTaskDates}
+							onDayClick={async (dateStr) => {
+								// Open or create daily note for this date
+								const vaultList = get(vaults);
+								if (vaultList.length === 0) return;
+								const vault = vaultList[0];
+								try {
+									const dailyPath: string = await invoke('get_daily_note_path', {
+										vaultPath: vault.path,
+										format: get(appSettings).dailyNoteFormat || '%Y-%m-%d',
+										folder: get(appSettings).dailyNoteFolder || '',
+									});
+									const vc = vaultColorMap[vault.name] || '#7c3aed';
+									await openNoteTab(dailyPath, vault.name, vc);
+								} catch (e) { console.error('Daily note failed:', e); }
+							}}
+						/>
+					</div>
 				{/if}
 			{:else}
 				<div class="rs-empty-full">{$t('panels.noNoteSelected')}</div>
@@ -1881,7 +2010,7 @@
 					sidebarOpen = layout.leftSidebarOpen;
 					leftSidebarWidth = layout.leftSidebarWidth;
 					rightSidebarOpen = layout.rightSidebarOpen;
-					const validTabs = ['properties', 'backlinks', 'tags', 'graph'] as const;
+					const validTabs = ['properties', 'backlinks', 'tags', 'graph', 'tasks', 'calendar'] as const;
 					rightSidebarTab = validTabs.includes(layout.rightSidebarTab as any) ? layout.rightSidebarTab as typeof rightSidebarTab : 'properties';
 					rightSidebarWidth = layout.rightSidebarWidth;
 				}
