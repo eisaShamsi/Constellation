@@ -450,12 +450,19 @@
 			{ label: '/callout', detail: 'Callout', apply: '> [!note] Title\n> Content\n' },
 			{ label: '/math', detail: 'Math block', apply: '$$\n\n$$' },
 			{ label: '/mermaid', detail: 'Mermaid diagram', apply: '```mermaid\ngraph TD\n  A --> B\n```\n' },
+			{ label: '/template', detail: 'Insert template', apply: '' },
 		];
 		return {
 			from: before.from,
 			options: commands.map(c => ({
 				...c,
 				apply: (view: EditorView, _completion: Completion, from: number, to: number) => {
+					if (c.label === '/template') {
+						// Clear the slash command text and trigger template picker
+						view.dispatch({ changes: { from: line.from, to } });
+						window.dispatchEvent(new CustomEvent('constellation:open-template-picker'));
+						return;
+					}
 					// Replace the slash command (and any leading whitespace on the line) with the content
 					view.dispatch({
 						changes: { from: line.from, to, insert: c.apply as string }

@@ -14,7 +14,8 @@
       "hotkeys": "Горячие клавиши",
       "security": "Безопасность",
       "plugins": "Основные плагины",
-      "ai": "Поставщик ИИ"
+      "ai": "Поставщик ИИ",
+      "templates": "Шаблоны"
     },
     "about": {
       "tagline": "Хранилище хранилищ",
@@ -196,6 +197,21 @@
       "verifyConnection": "Проверьте настройки подключения",
       "testing": "Тестирование...",
       "test": "Тест"
+    },
+    "templates": {
+      "templateFolder": "Папка шаблонов",
+      "templateFolderDesc": "Папка, в которой хранятся файлы шаблонов",
+      "dailyNoteTemplate": "Шаблон ежедневной заметки",
+      "dailyNoteTemplateDesc": "Имя файла шаблона для ежедневных заметок (без .md)",
+      "variables": "Переменные шаблона",
+      "variablesDesc": "Доступные переменные для использования в шаблонах",
+      "varDate": "Текущая дата (YYYY-MM-DD)",
+      "varDateFormat": "Пользовательский формат даты (напр. YYYY/MM/DD)",
+      "varTime": "Текущее время (HH:MM)",
+      "varTitle": "Заголовок заметки",
+      "varFolder": "Имя родительской папки",
+      "varVault": "Имя хранилища",
+      "varCursor": "Позиция курсора после вставки"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "Выбрать следующее вхождение",
     "foldAll": "Свернуть все разделы",
     "unfoldAll": "Развернуть все разделы",
-    "toggleLivePreview": "Переключить предпросмотр"
+    "toggleLivePreview": "Переключить предпросмотр",
+    "insertTemplate": "Вставить из шаблона"
   },
   "actions": {
     "untitled": "Без названия",
@@ -676,6 +693,12 @@
     "queryError": "Ошибка запроса",
     "queryFailed": "Запрос не выполнен",
     "file": "Файл"
+  },
+  "templates": {
+    "pickerTitle": "Вставить шаблон",
+    "searchTemplates": "Поиск шаблонов...",
+    "noTemplates": "Подходящих шаблонов не найдено",
+    "noTemplatesConfigured": "Шаблоны не найдены. Создайте файлы .md в папке шаблонов."
   },
   "secondScreen": {
     "title": "Второй экран",

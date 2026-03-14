@@ -14,7 +14,8 @@
       "hotkeys": "کلیدهای میانبر",
       "security": "امنیت",
       "plugins": "افزونه‌های اصلی",
-      "ai": "ارائه‌دهنده هوش مصنوعی"
+      "ai": "ارائه‌دهنده هوش مصنوعی",
+      "templates": "الگوها"
     },
     "about": {
       "tagline": "گاوصندوقی از گاوصندوق‌ها",
@@ -196,6 +197,21 @@
       "verifyConnection": "تنظیمات اتصال خود را بررسی کنید",
       "testing": "در حال تست...",
       "test": "تست"
+    },
+    "templates": {
+      "templateFolder": "پوشه الگوها",
+      "templateFolderDesc": "پوشه‌ای که فایل‌های الگوی شما در آن ذخیره شده‌اند",
+      "dailyNoteTemplate": "الگوی یادداشت روزانه",
+      "dailyNoteTemplateDesc": "نام فایل الگو برای ایجاد یادداشت‌های روزانه (بدون .md)",
+      "variables": "متغیرهای الگو",
+      "variablesDesc": "متغیرهای موجود برای استفاده در الگوهای شما",
+      "varDate": "تاریخ فعلی (YYYY-MM-DD)",
+      "varDateFormat": "قالب تاریخ سفارشی (مثلاً YYYY/MM/DD)",
+      "varTime": "زمان فعلی (HH:MM)",
+      "varTitle": "عنوان یادداشت",
+      "varFolder": "نام پوشه والد",
+      "varVault": "نام گاوصندوق",
+      "varCursor": "موقعیت نشانگر پس از درج"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "انتخاب تکرار بعدی",
     "foldAll": "بستن همه بخش‌ها",
     "unfoldAll": "باز کردن همه بخش‌ها",
-    "toggleLivePreview": "تبدیل پیش‌نمایش زنده"
+    "toggleLivePreview": "تبدیل پیش‌نمایش زنده",
+    "insertTemplate": "درج از الگو"
   },
   "actions": {
     "untitled": "بدون عنوان",
@@ -676,6 +693,12 @@
     "queryError": "خطای پرس‌وجو",
     "queryFailed": "پرس‌وجو ناموفق بود",
     "file": "فایل"
+  },
+  "templates": {
+    "pickerTitle": "درج الگو",
+    "searchTemplates": "جستجوی الگوها...",
+    "noTemplates": "الگوی مطابقی یافت نشد",
+    "noTemplatesConfigured": "الگویی یافت نشد. فایل‌های .md را در پوشه الگوهای خود ایجاد کنید."
   },
   "secondScreen": {
     "title": "صفحه دوم",

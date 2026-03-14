@@ -14,7 +14,8 @@
       "hotkeys": "اختصارات لوحة المفاتيح",
       "security": "الأمان",
       "plugins": "الإضافات الأساسية",
-      "ai": "الذكاء الاصطناعي"
+      "ai": "الذكاء الاصطناعي",
+      "templates": "القوالب"
     },
     "about": {
       "tagline": "خزنة من الخزائن",
@@ -196,6 +197,21 @@
       "verifyConnection": "تحقق من إعدادات الاتصال",
       "testing": "جارٍ الاختبار...",
       "test": "اختبار"
+    },
+    "templates": {
+      "templateFolder": "مجلد القوالب",
+      "templateFolderDesc": "المجلد الذي تُخزّن فيه ملفات القوالب",
+      "dailyNoteTemplate": "قالب الملاحظة اليومية",
+      "dailyNoteTemplateDesc": "اسم ملف القالب المستخدم عند إنشاء الملاحظات اليومية (بدون .md)",
+      "variables": "متغيرات القالب",
+      "variablesDesc": "المتغيرات المتاحة التي يمكنك استخدامها في قوالبك",
+      "varDate": "التاريخ الحالي (YYYY-MM-DD)",
+      "varDateFormat": "تنسيق تاريخ مخصص (مثلاً YYYY/MM/DD)",
+      "varTime": "الوقت الحالي (HH:MM)",
+      "varTitle": "عنوان الملاحظة",
+      "varFolder": "اسم المجلد الأب",
+      "varVault": "اسم الخزنة",
+      "varCursor": "موضع المؤشر بعد الإدراج"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "تحديد التكرار التالي",
     "foldAll": "طي جميع الأقسام",
     "unfoldAll": "فتح جميع الأقسام",
-    "toggleLivePreview": "تبديل المعاينة الحية"
+    "toggleLivePreview": "تبديل المعاينة الحية",
+    "insertTemplate": "إدراج من قالب"
   },
   "actions": {
     "untitled": "بدون عنوان",
@@ -676,6 +693,12 @@
     "queryError": "خطأ في الاستعلام",
     "queryFailed": "فشل الاستعلام",
     "file": "ملف"
+  },
+  "templates": {
+    "pickerTitle": "إدراج قالب",
+    "searchTemplates": "البحث في القوالب...",
+    "noTemplates": "لا توجد قوالب مطابقة",
+    "noTemplatesConfigured": "لم يتم العثور على قوالب. أنشئ ملفات .md في مجلد القوالب."
   },
   "secondScreen": {
     "title": "الشاشة الثانية",

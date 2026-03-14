@@ -14,7 +14,8 @@
       "hotkeys": "شارٹ کٹ کیز",
       "security": "سیکیورٹی",
       "plugins": "بنیادی پلگ انز",
-      "ai": "AI فراہم کنندہ"
+      "ai": "AI فراہم کنندہ",
+      "templates": "ٹیمپلیٹس"
     },
     "about": {
       "tagline": "خزانوں کا خزانہ",
@@ -196,6 +197,21 @@
       "verifyConnection": "اپنی کنکشن ترتیبات کی تصدیق کریں",
       "testing": "جانچ ہو رہی ہے...",
       "test": "ٹیسٹ"
+    },
+    "templates": {
+      "templateFolder": "ٹیمپلیٹ فولڈر",
+      "templateFolderDesc": "وہ فولڈر جہاں آپ کی ٹیمپلیٹ فائلیں محفوظ ہیں",
+      "dailyNoteTemplate": "روزانہ نوٹ ٹیمپلیٹ",
+      "dailyNoteTemplateDesc": "روزانہ نوٹ بنانے کے لیے ٹیمپلیٹ فائل کا نام (.md کے بغیر)",
+      "variables": "ٹیمپلیٹ متغیرات",
+      "variablesDesc": "اپنے ٹیمپلیٹس میں استعمال کے لیے دستیاب متغیرات",
+      "varDate": "موجودہ تاریخ (YYYY-MM-DD)",
+      "varDateFormat": "حسب ضرورت تاریخ فارمیٹ (مثلاً YYYY/MM/DD)",
+      "varTime": "موجودہ وقت (HH:MM)",
+      "varTitle": "نوٹ کا عنوان",
+      "varFolder": "پیرنٹ فولڈر کا نام",
+      "varVault": "خزانے کا نام",
+      "varCursor": "داخل کرنے کے بعد کرسر کی پوزیشن"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "اگلا واقع منتخب کریں",
     "foldAll": "تمام حصے بند کریں",
     "unfoldAll": "تمام حصے کھولیں",
-    "toggleLivePreview": "لائیو پیش نظارہ تبدیل کریں"
+    "toggleLivePreview": "لائیو پیش نظارہ تبدیل کریں",
+    "insertTemplate": "ٹیمپلیٹ سے داخل کریں"
   },
   "actions": {
     "untitled": "بغیر عنوان",
@@ -676,6 +693,12 @@
     "queryError": "استفسار میں خرابی",
     "queryFailed": "استفسار ناکام",
     "file": "فائل"
+  },
+  "templates": {
+    "pickerTitle": "ٹیمپلیٹ داخل کریں",
+    "searchTemplates": "ٹیمپلیٹس تلاش کریں...",
+    "noTemplates": "کوئی مماثل ٹیمپلیٹ نہیں",
+    "noTemplatesConfigured": "کوئی ٹیمپلیٹ نہیں ملا۔ اپنے ٹیمپلیٹ فولڈر میں .md فائلیں بنائیں۔"
   },
   "secondScreen": {
     "title": "دوسری اسکرین",

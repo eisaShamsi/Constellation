@@ -32,6 +32,7 @@
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
 		{ id: 'editor', label: $t('settings.sections.editor'), icon: 'edit' },
 		{ id: 'files', label: $t('settings.sections.files'), icon: 'folder' },
+		{ id: 'templates', label: $t('settings.sections.templates'), icon: 'clipboard' },
 		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
 		{ id: 'hotkeys', label: $t('settings.sections.hotkeys'), icon: 'keyboard' },
 		{ id: 'plugins', label: $t('settings.sections.plugins'), icon: 'puzzle' },
@@ -717,6 +718,44 @@
 						</select>
 					</div>
 
+				<!-- ═══ TEMPLATES ═══ -->
+				{:else if activeSection === 'templates'}
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.templates.templateFolder')}</div>
+							<div class="setting-desc">{$t('settings.templates.templateFolderDesc')}</div>
+						</div>
+						<input class="setting-input" type="text" value={$appSettings.templateFolder}
+							placeholder="Templates"
+							oninput={(e) => updateSettings({ templateFolder: (e.target as HTMLInputElement).value })} />
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.templates.dailyNoteTemplate')}</div>
+							<div class="setting-desc">{$t('settings.templates.dailyNoteTemplateDesc')}</div>
+						</div>
+						<input class="setting-input" type="text" value={$appSettings.dailyNoteTemplate}
+							placeholder=""
+							oninput={(e) => updateSettings({ dailyNoteTemplate: (e.target as HTMLInputElement).value })} />
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.templates.variables')}</div>
+							<div class="setting-desc">{$t('settings.templates.variablesDesc')}</div>
+						</div>
+						<div class="setting-info-box">
+							<code>{'{{date}}'}</code> — {$t('settings.templates.varDate')}<br/>
+							<code>{'{{date:FORMAT}}'}</code> — {$t('settings.templates.varDateFormat')}<br/>
+							<code>{'{{time}}'}</code> — {$t('settings.templates.varTime')}<br/>
+							<code>{'{{title}}'}</code> — {$t('settings.templates.varTitle')}<br/>
+							<code>{'{{folder}}'}</code> — {$t('settings.templates.varFolder')}<br/>
+							<code>{'{{vault}}'}</code> — {$t('settings.templates.varVault')}<br/>
+							<code>{'{{cursor}}'}</code> — {$t('settings.templates.varCursor')}
+						</div>
+					</div>
+
 				<!-- ═══ APPEARANCE ═══ -->
 				{:else if activeSection === 'appearance'}
 					<div class="setting-item">
@@ -1035,6 +1074,16 @@
 		font-size: 0.85rem; font-family: inherit;
 	}
 	.setting-input:focus { border-color: var(--interactive-accent); outline: none; }
+
+	.setting-info-box {
+		font-size: 0.78rem; color: var(--text-faint);
+		background: var(--background-secondary); border-radius: 6px;
+		padding: 10px 14px; line-height: 1.8; width: 100%;
+	}
+	.setting-info-box code {
+		background: var(--background-modifier-border); padding: 2px 6px;
+		border-radius: 3px; font-size: 0.75rem; color: var(--text-normal);
+	}
 
 	/* Toggle Switch */
 	.toggle { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }

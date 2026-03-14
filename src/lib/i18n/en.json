@@ -14,7 +14,8 @@
       "hotkeys": "Hotkeys",
       "security": "Security",
       "plugins": "Core Plugins",
-      "ai": "AI Provider"
+      "ai": "AI Provider",
+      "templates": "Templates"
     },
     "about": {
       "tagline": "A Vault of Vaults",
@@ -196,6 +197,21 @@
       "verifyConnection": "Verify your connection settings",
       "testing": "Testing...",
       "test": "Test"
+    },
+    "templates": {
+      "templateFolder": "Template folder",
+      "templateFolderDesc": "The folder where your template files are stored",
+      "dailyNoteTemplate": "Daily note template",
+      "dailyNoteTemplateDesc": "Template file name to use when creating daily notes (without .md)",
+      "variables": "Template variables",
+      "variablesDesc": "Available variables you can use in your templates",
+      "varDate": "Current date (YYYY-MM-DD)",
+      "varDateFormat": "Custom date format (e.g. YYYY/MM/DD)",
+      "varTime": "Current time (HH:MM)",
+      "varTitle": "Note title",
+      "varFolder": "Parent folder name",
+      "varVault": "Vault name",
+      "varCursor": "Cursor position after insertion"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "Select next occurrence",
     "foldAll": "Fold all sections",
     "unfoldAll": "Unfold all sections",
-    "toggleLivePreview": "Toggle live preview"
+    "toggleLivePreview": "Toggle live preview",
+    "insertTemplate": "Insert from template"
   },
   "actions": {
     "untitled": "Untitled",
@@ -676,6 +693,12 @@
     "queryError": "Query error",
     "queryFailed": "Query failed",
     "file": "File"
+  },
+  "templates": {
+    "pickerTitle": "Insert Template",
+    "searchTemplates": "Search templates...",
+    "noTemplates": "No matching templates",
+    "noTemplatesConfigured": "No templates found. Create .md files in your template folder."
   },
   "secondScreen": {
     "title": "Second Screen",

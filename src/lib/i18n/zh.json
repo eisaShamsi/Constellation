@@ -14,7 +14,8 @@
       "hotkeys": "快捷键",
       "security": "安全",
       "plugins": "核心插件",
-      "ai": "AI 服务商"
+      "ai": "AI 服务商",
+      "templates": "模板"
     },
     "about": {
       "tagline": "库中之库",
@@ -196,6 +197,21 @@
       "verifyConnection": "请验证您的连接设置",
       "testing": "正在测试...",
       "test": "测试"
+    },
+    "templates": {
+      "templateFolder": "模板文件夹",
+      "templateFolderDesc": "存储模板文件的文件夹",
+      "dailyNoteTemplate": "每日笔记模板",
+      "dailyNoteTemplateDesc": "创建每日笔记时使用的模板文件名（不含 .md）",
+      "variables": "模板变量",
+      "variablesDesc": "可在模板中使用的变量",
+      "varDate": "当前日期 (YYYY-MM-DD)",
+      "varDateFormat": "自定义日期格式（如 YYYY/MM/DD）",
+      "varTime": "当前时间 (HH:MM)",
+      "varTitle": "笔记标题",
+      "varFolder": "父文件夹名称",
+      "varVault": "库名称",
+      "varCursor": "插入后的光标位置"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "选择下一个匹配",
     "foldAll": "折叠所有",
     "unfoldAll": "展开所有",
-    "toggleLivePreview": "切换实时预览"
+    "toggleLivePreview": "切换实时预览",
+    "insertTemplate": "从模板插入"
   },
   "actions": {
     "untitled": "未命名",
@@ -676,6 +693,12 @@
     "queryError": "查询错误",
     "queryFailed": "查询失败",
     "file": "文件"
+  },
+  "templates": {
+    "pickerTitle": "插入模板",
+    "searchTemplates": "搜索模板...",
+    "noTemplates": "没有匹配的模板",
+    "noTemplatesConfigured": "未找到模板。请在模板文件夹中创建 .md 文件。"
   },
   "secondScreen": {
     "title": "第二屏幕",

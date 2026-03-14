@@ -14,7 +14,8 @@
       "hotkeys": "Tastenkürzel",
       "security": "Sicherheit",
       "plugins": "Kern-Plugins",
-      "ai": "KI-Anbieter"
+      "ai": "KI-Anbieter",
+      "templates": "Vorlagen"
     },
     "about": {
       "tagline": "Ein Tresor der Tresore",
@@ -196,6 +197,21 @@
       "verifyConnection": "Überprüfen Sie Ihre Verbindungseinstellungen",
       "testing": "Wird getestet...",
       "test": "Testen"
+    },
+    "templates": {
+      "templateFolder": "Vorlagenordner",
+      "templateFolderDesc": "Der Ordner, in dem Ihre Vorlagendateien gespeichert sind",
+      "dailyNoteTemplate": "Tägliche-Notiz-Vorlage",
+      "dailyNoteTemplateDesc": "Vorlagendateiname für tägliche Notizen (ohne .md)",
+      "variables": "Vorlagenvariablen",
+      "variablesDesc": "Verfügbare Variablen für Ihre Vorlagen",
+      "varDate": "Aktuelles Datum (YYYY-MM-DD)",
+      "varDateFormat": "Benutzerdefiniertes Datumsformat (z.B. YYYY/MM/DD)",
+      "varTime": "Aktuelle Uhrzeit (HH:MM)",
+      "varTitle": "Notiz-Titel",
+      "varFolder": "Übergeordneter Ordnername",
+      "varVault": "Tresorname",
+      "varCursor": "Cursorposition nach dem Einfügen"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "Nächstes Vorkommen auswählen",
     "foldAll": "Alle Abschnitte falten",
     "unfoldAll": "Alle Abschnitte entfalten",
-    "toggleLivePreview": "Live-Vorschau umschalten"
+    "toggleLivePreview": "Live-Vorschau umschalten",
+    "insertTemplate": "Aus Vorlage einfügen"
   },
   "actions": {
     "untitled": "Unbenannt",
@@ -676,6 +693,12 @@
     "queryError": "Abfragefehler",
     "queryFailed": "Abfrage fehlgeschlagen",
     "file": "Datei"
+  },
+  "templates": {
+    "pickerTitle": "Vorlage einfügen",
+    "searchTemplates": "Vorlagen suchen...",
+    "noTemplates": "Keine passenden Vorlagen",
+    "noTemplatesConfigured": "Keine Vorlagen gefunden. Erstellen Sie .md-Dateien in Ihrem Vorlagenordner."
   },
   "secondScreen": {
     "title": "Zweiter Bildschirm",

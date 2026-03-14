@@ -14,7 +14,8 @@
       "hotkeys": "शॉर्टकट कीज़",
       "security": "सुरक्षा",
       "plugins": "मुख्य प्लगइन्स",
-      "ai": "AI प्रदाता"
+      "ai": "AI प्रदाता",
+      "templates": "टेम्पलेट्स"
     },
     "about": {
       "tagline": "तिजोरियों की तिजोरी",
@@ -196,6 +197,21 @@
       "verifyConnection": "अपनी कनेक्शन सेटिंग्स सत्यापित करें",
       "testing": "परीक्षण हो रहा है...",
       "test": "परीक्षण"
+    },
+    "templates": {
+      "templateFolder": "टेम्पलेट फ़ोल्डर",
+      "templateFolderDesc": "वह फ़ोल्डर जहाँ आपकी टेम्पलेट फ़ाइलें संग्रहीत हैं",
+      "dailyNoteTemplate": "दैनिक नोट टेम्पलेट",
+      "dailyNoteTemplateDesc": "दैनिक नोट बनाते समय उपयोग करने के लिए टेम्पलेट फ़ाइल का नाम (.md के बिना)",
+      "variables": "टेम्पलेट चर",
+      "variablesDesc": "आपके टेम्पलेट्स में उपलब्ध चर",
+      "varDate": "वर्तमान तिथि (YYYY-MM-DD)",
+      "varDateFormat": "कस्टम दिनांक प्रारूप (जैसे YYYY/MM/DD)",
+      "varTime": "वर्तमान समय (HH:MM)",
+      "varTitle": "नोट का शीर्षक",
+      "varFolder": "पैरेंट फ़ोल्डर का नाम",
+      "varVault": "वॉल्ट का नाम",
+      "varCursor": "सम्मिलन के बाद कर्सर की स्थिति"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "अगली उपस्थिति चुनें",
     "foldAll": "सभी अनुभाग मोड़ें",
     "unfoldAll": "सभी अनुभाग खोलें",
-    "toggleLivePreview": "लाइव पूर्वावलोकन टॉगल करें"
+    "toggleLivePreview": "लाइव पूर्वावलोकन टॉगल करें",
+    "insertTemplate": "टेम्पलेट से डालें"
   },
   "actions": {
     "untitled": "बिना शीर्षक",
@@ -676,6 +693,12 @@
     "queryError": "क्वेरी त्रुटि",
     "queryFailed": "क्वेरी विफल",
     "file": "फ़ाइल"
+  },
+  "templates": {
+    "pickerTitle": "टेम्पलेट डालें",
+    "searchTemplates": "टेम्पलेट खोजें...",
+    "noTemplates": "कोई मेल खाता टेम्पलेट नहीं",
+    "noTemplatesConfigured": "कोई टेम्पलेट नहीं मिला। अपने टेम्पलेट फ़ोल्डर में .md फ़ाइलें बनाएं।"
   },
   "secondScreen": {
     "title": "दूसरी स्क्रीन",

@@ -14,7 +14,8 @@
       "hotkeys": "Atalhos de teclado",
       "security": "Segurança",
       "plugins": "Plugins principais",
-      "ai": "Provedor de IA"
+      "ai": "Provedor de IA",
+      "templates": "Modelos"
     },
     "about": {
       "tagline": "Um Cofre de Cofres",
@@ -196,6 +197,21 @@
       "verifyConnection": "Verifique suas configurações de conexão",
       "testing": "Testando...",
       "test": "Testar"
+    },
+    "templates": {
+      "templateFolder": "Pasta de modelos",
+      "templateFolderDesc": "A pasta onde seus arquivos de modelo estão armazenados",
+      "dailyNoteTemplate": "Modelo de nota diária",
+      "dailyNoteTemplateDesc": "Nome do arquivo de modelo para notas diárias (sem .md)",
+      "variables": "Variáveis de modelo",
+      "variablesDesc": "Variáveis disponíveis para usar em seus modelos",
+      "varDate": "Data atual (YYYY-MM-DD)",
+      "varDateFormat": "Formato de data personalizado (ex. YYYY/MM/DD)",
+      "varTime": "Hora atual (HH:MM)",
+      "varTitle": "Título da nota",
+      "varFolder": "Nome da pasta pai",
+      "varVault": "Nome do cofre",
+      "varCursor": "Posição do cursor após inserção"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "Selecionar próxima ocorrência",
     "foldAll": "Recolher todas as seções",
     "unfoldAll": "Expandir todas as seções",
-    "toggleLivePreview": "Alternar visualização ao vivo"
+    "toggleLivePreview": "Alternar visualização ao vivo",
+    "insertTemplate": "Inserir a partir de modelo"
   },
   "actions": {
     "untitled": "Sem título",
@@ -676,6 +693,12 @@
     "queryError": "Erro na consulta",
     "queryFailed": "Consulta falhou",
     "file": "Arquivo"
+  },
+  "templates": {
+    "pickerTitle": "Inserir modelo",
+    "searchTemplates": "Pesquisar modelos...",
+    "noTemplates": "Nenhum modelo correspondente",
+    "noTemplatesConfigured": "Nenhum modelo encontrado. Crie arquivos .md na sua pasta de modelos."
   },
   "secondScreen": {
     "title": "Segunda tela",

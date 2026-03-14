@@ -14,7 +14,8 @@
       "hotkeys": "Atajos de teclado",
       "security": "Seguridad",
       "plugins": "Plugins principales",
-      "ai": "Proveedor de IA"
+      "ai": "Proveedor de IA",
+      "templates": "Plantillas"
     },
     "about": {
       "tagline": "Una Bóveda de Bóvedas",
@@ -196,6 +197,21 @@
       "verifyConnection": "Verifica la configuración de conexión",
       "testing": "Probando...",
       "test": "Probar"
+    },
+    "templates": {
+      "templateFolder": "Carpeta de plantillas",
+      "templateFolderDesc": "La carpeta donde se almacenan los archivos de plantilla",
+      "dailyNoteTemplate": "Plantilla de nota diaria",
+      "dailyNoteTemplateDesc": "Nombre del archivo de plantilla para notas diarias (sin .md)",
+      "variables": "Variables de plantilla",
+      "variablesDesc": "Variables disponibles para usar en sus plantillas",
+      "varDate": "Fecha actual (YYYY-MM-DD)",
+      "varDateFormat": "Formato de fecha personalizado (ej. YYYY/MM/DD)",
+      "varTime": "Hora actual (HH:MM)",
+      "varTitle": "Título de la nota",
+      "varFolder": "Nombre de la carpeta padre",
+      "varVault": "Nombre de la bóveda",
+      "varCursor": "Posición del cursor después de insertar"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "Seleccionar siguiente ocurrencia",
     "foldAll": "Plegar todas las secciones",
     "unfoldAll": "Desplegar todas las secciones",
-    "toggleLivePreview": "Alternar vista previa en vivo"
+    "toggleLivePreview": "Alternar vista previa en vivo",
+    "insertTemplate": "Insertar desde plantilla"
   },
   "actions": {
     "untitled": "Sin título",
@@ -676,6 +693,12 @@
     "queryError": "Error de consulta",
     "queryFailed": "Consulta fallida",
     "file": "Archivo"
+  },
+  "templates": {
+    "pickerTitle": "Insertar plantilla",
+    "searchTemplates": "Buscar plantillas...",
+    "noTemplates": "No hay plantillas coincidentes",
+    "noTemplatesConfigured": "No se encontraron plantillas. Cree archivos .md en su carpeta de plantillas."
   },
   "secondScreen": {
     "title": "Segunda pantalla",

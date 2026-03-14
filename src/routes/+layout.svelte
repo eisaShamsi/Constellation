@@ -42,6 +42,8 @@
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import QuickSwitcher from '$lib/components/QuickSwitcher.svelte';
+	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
+	import { processTemplate, extractTemplateBody } from '$lib/templates/engine';
 	import FullGraph from '$lib/components/FullGraph.svelte';
 	import LocalGraph from '$lib/components/LocalGraph.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
@@ -115,6 +117,8 @@
 	// Command palette & quick switcher
 	let showCommandPalette = $state(false);
 	let showQuickSwitcher = $state(false);
+	let showTemplatePicker = $state(false);
+	let templatePickerMode = $state<'insert' | 'newNote'>('insert');
 	let showGraphView = $state(false);
 	let showGlobalTasks = $state(false);
 
@@ -422,6 +426,7 @@
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: 'Ctrl+E', icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'graph-view', name: $t('commands.graphView'), icon: '🕸️', action: () => showGraphView = !showGraphView, category: 'View' },
 			{ id: 'global-tasks', name: $t('commands.globalTasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showGraphView = false; }, category: 'View' },
+			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: 'Ctrl+T', icon: '📋', action: () => { templatePickerMode = 'insert'; showTemplatePicker = true; }, category: 'Templates' },
 			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: 'Ctrl+B', icon: '𝐁', action: () => {}, category: 'Editor' },
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: 'Ctrl+I', icon: '𝐼', action: () => {}, category: 'Editor' },
 			{ id: 'split-view', name: $t('commands.splitView'), shortcut: '', icon: '⊞', action: cycleSplit, category: 'View' },
@@ -567,6 +572,10 @@
 
 	// ─── Lifecycle ───
 	onMount(async () => {
+		// Listen for template picker requests from CodeMirrorEditor /template slash command
+		const handleTemplatePicker = () => { templatePickerMode = 'insert'; showTemplatePicker = true; };
+		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
+
 		// 1. Check universe state
 		let universes: UniverseEntry[] = [];
 		let needsMigration = false;
@@ -776,6 +785,13 @@
 			showCommandPalette = false;
 			return;
 		}
+		// Insert template
+		if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+			e.preventDefault();
+			templatePickerMode = 'insert';
+			showTemplatePicker = !showTemplatePicker;
+			return;
+		}
 		// New note
 		if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
 			e.preventDefault();
@@ -849,6 +865,7 @@
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showGraphView) { showGraphView = false; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
+			if (showTemplatePicker) { showTemplatePicker = false; return; }
 			if (showWorkspaces) { showWorkspaces = false; return; }
 			if (showSettings) { showSettings = false; return; }
 		}
@@ -899,14 +916,13 @@
 			}
 			if (!newPath) return;
 
-			// If we have a template body, append it after the frontmatter
+			// If we have a template body, process variables and append
 			if (templateBody.trim()) {
 				try {
-					const { invoke: inv } = await import('@tauri-apps/api/core');
-					const currentContent: string = await inv('read_note', { filePath: newPath });
-					const parsed = parseFrontmatter(currentContent);
-					const fullContent = `---\n${defaultFM}\n---\n${templateBody}`;
-					await inv('write_note', { filePath: newPath, content: fullContent });
+					const ctx = { title: name, folder: '', vault: vault.name };
+					const result = processTemplate(templateBody, ctx);
+					const fullContent = `---\n${defaultFM}\n---\n${result.content}`;
+					await invoke('write_note', { filePath: newPath, content: fullContent });
 				} catch { /* template write failed — note still created */ }
 			}
 
@@ -1052,9 +1068,94 @@
 		try {
 			const path = await getDailyNotePath(firstVault.path, $appSettings.dailyNoteFormat, $appSettings.dailyNoteFolder);
 			const vaultColor = vaultColorMap[firstVault.name] ?? '#7c3aed';
+
+			// Apply daily note template if configured and note was just created (has only date frontmatter)
+			const dailyTpl = $appSettings.dailyNoteTemplate;
+			if (dailyTpl && $appSettings.enabledPlugins?.templates) {
+				try {
+					const noteContent: string = await invoke('read_note', { filePath: path });
+					// Only apply template if note is freshly created (short content = just frontmatter)
+					if (noteContent.length < 50) {
+						const tplPath = `${firstVault.path}/${$appSettings.templateFolder}/${dailyTpl}`;
+						const tplPathMd = tplPath.endsWith('.md') ? tplPath : tplPath + '.md';
+						const tplRaw: string = await invoke('read_note', { filePath: tplPathMd });
+						const tplBody = extractTemplateBody(tplRaw);
+						const fileName = path.split(/[/\\]/).pop()?.replace(/\.md$/, '') || '';
+						const ctx = { title: fileName, folder: $appSettings.dailyNoteFolder || '', vault: firstVault.name };
+						const result = processTemplate(tplBody, ctx);
+						const newContent = noteContent.trimEnd() + '\n' + result.content;
+						await invoke('write_note', { filePath: path, content: newContent });
+					}
+				} catch { /* template not found — OK */ }
+			}
+
 			await openNoteTab(path, firstVault.name, vaultColor);
 		} catch (e) {
 			console.error('Failed to open daily note:', e);
+		}
+	}
+
+	/** Get list of template files from all vaults' template folders */
+	function getTemplateFiles(): { name: string; path: string; vaultName: string }[] {
+		const templates: { name: string; path: string; vaultName: string }[] = [];
+		const templateFolder = $appSettings.templateFolder;
+		if (!templateFolder) return templates;
+		// Normalize template folder for matching
+		const tplFolderNorm = templateFolder.replace(/\\/g, '/');
+		for (const note of allNotes) {
+			// Check if path contains /TemplateFolder/ segment
+			const normPath = note.path.replace(/\\/g, '/');
+			if (normPath.includes('/' + tplFolderNorm + '/')) {
+				templates.push({
+					name: note.name.replace(/\.md$/, ''),
+					path: note.path,
+					vaultName: note.vaultName,
+				});
+			}
+		}
+		return templates.sort((a, b) => a.name.localeCompare(b.name));
+	}
+
+	/** Handle template selection — insert content into active note */
+	async function handleTemplateSelect(templatePath: string, _vaultName: string) {
+		try {
+			const raw: string = await invoke('read_note', { filePath: templatePath });
+			const body = extractTemplateBody(raw);
+			const tab = get(focusedTab);
+			if (!tab) return;
+
+			const ctx = {
+				title: tab.name.replace(/\.md$/, ''),
+				folder: tab.path.split(/[/\\]/).slice(-2, -1)[0] || '',
+				vault: tab.vaultName,
+			};
+			const result = processTemplate(body, ctx);
+
+			if (templatePickerMode === 'insert') {
+				// Insert at cursor in editor
+				const pane = document.querySelector('.note-pane.active .cm-editor') as HTMLElement | null;
+				if (pane) {
+					// Dispatch to CodeMirror
+					const cmView = (pane as any)?.cmView?.view;
+					if (cmView) {
+						const pos = cmView.state.selection.main.head;
+						cmView.dispatch({
+							changes: { from: pos, insert: result.content },
+							selection: result.cursorOffset != null
+								? { anchor: pos + result.cursorOffset }
+								: { anchor: pos + result.content.length }
+						});
+						return;
+					}
+				}
+				// Fallback: append to note content
+				const currentContent = tab.content || '';
+				const newContent = currentContent + '\n' + result.content;
+				await invoke('write_note', { filePath: tab.path, content: newContent });
+				openTabs.update(tabs => tabs.map(t => t.id === tab.id ? { ...t, content: newContent } : t));
+			}
+		} catch (e) {
+			console.error('Failed to insert template:', e);
 		}
 	}
 
@@ -1963,6 +2064,14 @@
 			notes={allSwitcherNotes}
 			onSelect={handleQuickSwitchSelect}
 			onClose={() => showQuickSwitcher = false}
+		/>
+	{/if}
+
+	{#if showTemplatePicker}
+		<TemplatePicker
+			templates={getTemplateFiles()}
+			onSelect={handleTemplateSelect}
+			onClose={() => showTemplatePicker = false}
 		/>
 	{/if}
 

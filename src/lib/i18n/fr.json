@@ -14,7 +14,8 @@
       "hotkeys": "Raccourcis clavier",
       "security": "Sécurité",
       "plugins": "Plugins principaux",
-      "ai": "Fournisseur IA"
+      "ai": "Fournisseur IA",
+      "templates": "Modèles"
     },
     "about": {
       "tagline": "Un Coffre de Coffres",
@@ -196,6 +197,21 @@
       "verifyConnection": "Vérifiez vos paramètres de connexion",
       "testing": "Test en cours...",
       "test": "Tester"
+    },
+    "templates": {
+      "templateFolder": "Dossier de modèles",
+      "templateFolderDesc": "Le dossier où vos fichiers modèles sont stockés",
+      "dailyNoteTemplate": "Modèle de note quotidienne",
+      "dailyNoteTemplateDesc": "Nom du fichier modèle pour les notes quotidiennes (sans .md)",
+      "variables": "Variables de modèle",
+      "variablesDesc": "Variables disponibles pour vos modèles",
+      "varDate": "Date actuelle (YYYY-MM-DD)",
+      "varDateFormat": "Format de date personnalisé (ex. YYYY/MM/DD)",
+      "varTime": "Heure actuelle (HH:MM)",
+      "varTitle": "Titre de la note",
+      "varFolder": "Nom du dossier parent",
+      "varVault": "Nom du coffre",
+      "varCursor": "Position du curseur après insertion"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "Sélectionner l'occurrence suivante",
     "foldAll": "Replier toutes les sections",
     "unfoldAll": "Déplier toutes les sections",
-    "toggleLivePreview": "Basculer l'aperçu en direct"
+    "toggleLivePreview": "Basculer l'aperçu en direct",
+    "insertTemplate": "Insérer depuis un modèle"
   },
   "actions": {
     "untitled": "Sans titre",
@@ -676,6 +693,12 @@
     "queryError": "Erreur de requête",
     "queryFailed": "Échec de la requête",
     "file": "Fichier"
+  },
+  "templates": {
+    "pickerTitle": "Insérer un modèle",
+    "searchTemplates": "Rechercher des modèles...",
+    "noTemplates": "Aucun modèle correspondant",
+    "noTemplatesConfigured": "Aucun modèle trouvé. Créez des fichiers .md dans votre dossier de modèles."
   },
   "secondScreen": {
     "title": "Deuxième écran",

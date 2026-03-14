@@ -14,7 +14,8 @@
       "hotkeys": "מקשי קיצור",
       "security": "אבטחה",
       "plugins": "תוספים מובנים",
-      "ai": "ספק AI"
+      "ai": "ספק AI",
+      "templates": "תבניות"
     },
     "about": {
       "tagline": "כספת של כספות",
@@ -196,6 +197,21 @@
       "verifyConnection": "אמת את הגדרות החיבור שלך",
       "testing": "בודק...",
       "test": "בדיקה"
+    },
+    "templates": {
+      "templateFolder": "תיקיית תבניות",
+      "templateFolderDesc": "התיקייה בה מאוחסנים קבצי התבניות שלך",
+      "dailyNoteTemplate": "תבנית הערה יומית",
+      "dailyNoteTemplateDesc": "שם קובץ התבנית ליצירת הערות יומיות (ללא .md)",
+      "variables": "משתני תבנית",
+      "variablesDesc": "משתנים זמינים לשימוש בתבניות שלך",
+      "varDate": "תאריך נוכחי (YYYY-MM-DD)",
+      "varDateFormat": "פורמט תאריך מותאם אישית (לדוגמה YYYY/MM/DD)",
+      "varTime": "שעה נוכחית (HH:MM)",
+      "varTitle": "כותרת ההערה",
+      "varFolder": "שם תיקיית האב",
+      "varVault": "שם הכספת",
+      "varCursor": "מיקום הסמן לאחר הוספה"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "בחר מופע הבא",
     "foldAll": "קפל את כל הסעיפים",
     "unfoldAll": "פרוש את כל הסעיפים",
-    "toggleLivePreview": "החלף תצוגה מקדימה חיה"
+    "toggleLivePreview": "החלף תצוגה מקדימה חיה",
+    "insertTemplate": "הוסף מתבנית"
   },
   "actions": {
     "untitled": "ללא כותרת",
@@ -676,6 +693,12 @@
     "queryError": "שגיאת שאילתה",
     "queryFailed": "השאילתה נכשלה",
     "file": "קובץ"
+  },
+  "templates": {
+    "pickerTitle": "הוספת תבנית",
+    "searchTemplates": "חיפוש תבניות...",
+    "noTemplates": "לא נמצאו תבניות תואמות",
+    "noTemplatesConfigured": "לא נמצאו תבניות. צור קבצי .md בתיקיית התבניות שלך."
   },
   "secondScreen": {
     "title": "מסך שני",

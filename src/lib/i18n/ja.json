@@ -14,7 +14,8 @@
       "hotkeys": "ホットキー",
       "security": "セキュリティ",
       "plugins": "コアプラグイン",
-      "ai": "AIプロバイダー"
+      "ai": "AIプロバイダー",
+      "templates": "テンプレート"
     },
     "about": {
       "tagline": "保管庫の保管庫",
@@ -196,6 +197,21 @@
       "verifyConnection": "接続設定を確認してください",
       "testing": "テスト中...",
       "test": "テスト"
+    },
+    "templates": {
+      "templateFolder": "テンプレートフォルダ",
+      "templateFolderDesc": "テンプレートファイルが保存されているフォルダ",
+      "dailyNoteTemplate": "デイリーノートテンプレート",
+      "dailyNoteTemplateDesc": "デイリーノート作成時に使用するテンプレートファイル名（.md不要）",
+      "variables": "テンプレート変数",
+      "variablesDesc": "テンプレートで使用できる変数",
+      "varDate": "現在の日付 (YYYY-MM-DD)",
+      "varDateFormat": "カスタム日付形式 (例: YYYY/MM/DD)",
+      "varTime": "現在の時刻 (HH:MM)",
+      "varTitle": "ノートタイトル",
+      "varFolder": "親フォルダ名",
+      "varVault": "保管庫名",
+      "varCursor": "挿入後のカーソル位置"
     }
   },
   "commands": {
@@ -229,7 +245,8 @@
     "selectNextOccurrence": "次の出現を選択",
     "foldAll": "すべて折りたたむ",
     "unfoldAll": "すべて展開",
-    "toggleLivePreview": "ライブプレビュー切替"
+    "toggleLivePreview": "ライブプレビュー切替",
+    "insertTemplate": "テンプレートから挿入"
   },
   "actions": {
     "untitled": "無題",
@@ -676,6 +693,12 @@
     "queryError": "クエリエラー",
     "queryFailed": "クエリ失敗",
     "file": "ファイル"
+  },
+  "templates": {
+    "pickerTitle": "テンプレートを挿入",
+    "searchTemplates": "テンプレートを検索...",
+    "noTemplates": "一致するテンプレートがありません",
+    "noTemplatesConfigured": "テンプレートが見つかりません。テンプレートフォルダに .md ファイルを作成してください。"
   },
   "secondScreen": {
     "title": "セカンドスクリーン",
