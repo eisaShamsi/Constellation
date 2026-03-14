@@ -615,6 +615,19 @@
     "switching": "در حال تغییر جهان...",
     "migrating": "در حال انتقال داده‌ها..."
   },
+  "dataview": {
+    "label": "Dataview",
+    "loading": "در حال بارگذاری پرس‌وجو...",
+    "noResults": "نتیجه‌ای یافت نشد",
+    "results": "نتایج",
+    "of": "از",
+    "total": "مجموع",
+    "refresh": "بازخوانی",
+    "unsupportedType": "نوع پرس‌وجوی پشتیبانی‌نشده",
+    "queryError": "خطای پرس‌وجو",
+    "queryFailed": "پرس‌وجو ناموفق بود",
+    "file": "فایل"
+  },
   "secondScreen": {
     "title": "صفحه دوم",
     "grid": "شبکه",

@@ -273,5 +273,5 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ## Links
 
-- **Website**: [notesconstellation.com](https://notesconstellation.com)
+- **Website**: [uConstellation.World](https://uConstellation.World)
 - **Repository**: [github.com/eisaShamsi/Constellation](https://github.com/eisaShamsi/Constellation)

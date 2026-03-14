@@ -615,6 +615,19 @@
     "switching": "Changement d'univers...",
     "migrating": "Migration de vos données..."
   },
+  "dataview": {
+    "label": "Dataview",
+    "loading": "Chargement de la requête...",
+    "noResults": "Aucun résultat",
+    "results": "résultats",
+    "of": "de",
+    "total": "total",
+    "refresh": "Actualiser",
+    "unsupportedType": "Type de requête non pris en charge",
+    "queryError": "Erreur de requête",
+    "queryFailed": "Échec de la requête",
+    "file": "Fichier"
+  },
   "secondScreen": {
     "title": "Deuxième écran",
     "grid": "Grille",

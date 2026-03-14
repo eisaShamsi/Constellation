@@ -615,6 +615,19 @@
     "switching": "ब्रह्मांड बदल रहा है...",
     "migrating": "आपका डेटा माइग्रेट हो रहा है..."
   },
+  "dataview": {
+    "label": "Dataview",
+    "loading": "क्वेरी लोड हो रही है...",
+    "noResults": "कोई परिणाम नहीं",
+    "results": "परिणाम",
+    "of": "में से",
+    "total": "कुल",
+    "refresh": "रीफ्रेश",
+    "unsupportedType": "असमर्थित क्वेरी प्रकार",
+    "queryError": "क्वेरी त्रुटि",
+    "queryFailed": "क्वेरी विफल",
+    "file": "फ़ाइल"
+  },
   "secondScreen": {
     "title": "दूसरी स्क्रीन",
     "grid": "ग्रिड",

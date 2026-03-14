@@ -615,6 +615,19 @@
     "switching": "Universum wird gewechselt...",
     "migrating": "Daten werden migriert..."
   },
+  "dataview": {
+    "label": "Dataview",
+    "loading": "Abfrage wird geladen...",
+    "noResults": "Keine Ergebnisse",
+    "results": "Ergebnisse",
+    "of": "von",
+    "total": "Gesamt",
+    "refresh": "Aktualisieren",
+    "unsupportedType": "Nicht unterstützter Abfragetyp",
+    "queryError": "Abfragefehler",
+    "queryFailed": "Abfrage fehlgeschlagen",
+    "file": "Datei"
+  },
   "secondScreen": {
     "title": "Zweiter Bildschirm",
     "grid": "Raster",

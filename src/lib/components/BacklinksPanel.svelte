@@ -8,17 +8,18 @@
 		backlinks = [] as { name: string; path: string; context: string; vaultName: string }[],
 		unlinkedMentions = [] as { name: string; path: string; context: string; vaultName: string }[],
 		activeNoteName = '',
+		vaultColorMap = {} as Record<string, string>,
 	}: {
 		backlinks: { name: string; path: string; context: string; vaultName: string }[];
 		unlinkedMentions: { name: string; path: string; context: string; vaultName: string }[];
 		activeNoteName?: string;
+		vaultColorMap?: Record<string, string>;
 	} = $props();
 
 	let showUnlinked = $state(false);
 
 	function getVaultColor(vaultName: string): string {
-		const v = get(vaults).find(v => v.name === vaultName);
-		return v?.color || '#7c3aed';
+		return vaultColorMap[vaultName] || '#7c3aed';
 	}
 
 	async function openLink(path: string, vaultName: string, e?: MouseEvent) {

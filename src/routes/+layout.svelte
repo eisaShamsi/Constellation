@@ -42,7 +42,6 @@
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import QuickSwitcher from '$lib/components/QuickSwitcher.svelte';
-	import GraphView from '$lib/components/GraphView.svelte';
 	import FullGraph from '$lib/components/FullGraph.svelte';
 	import LocalGraph from '$lib/components/LocalGraph.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
@@ -1743,7 +1742,7 @@
 								if (!sidebarTab) return;
 								const resolved = await resolveWikilinkCrossVault(sidebarTab.vaultPath, noteName);
 								if (resolved) {
-									const vc = $vaults.find(v => v.name === resolved.vault_name)?.color || '#7c3aed';
+									const vc = vaultColorMap[resolved.vault_name] || '#7c3aed';
 									await openNoteTab(resolved.path, resolved.vault_name, vc);
 								}
 							}}
@@ -1773,6 +1772,7 @@
 							backlinks={currentBacklinks}
 							unlinkedMentions={currentUnlinkedMentions}
 							activeNoteName={sidebarTab?.name ?? ''}
+							{vaultColorMap}
 						/>
 					</div>
 					<div class="rs-section">

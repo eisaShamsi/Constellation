@@ -1,5 +1,6 @@
 mod ai;
 mod bases;
+mod dataview;
 mod universe;
 mod vaults;
 mod watcher;
@@ -105,6 +106,7 @@ pub fn run() {
             universe::migrate_legacy_data,
             universe::open_existing_universe,
             universe::get_child_universes,
+            dataview::execute_dataview_query,
             open_second_screen,
             close_second_screen,
             is_second_screen_open

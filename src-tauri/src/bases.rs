@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
-use tauri::Manager;
+// tauri::Manager unused — removed
 
 // ─── Security ───
 
@@ -131,7 +131,7 @@ pub struct BaseQueryResult {
 
 /// Parse YAML frontmatter from a markdown note into a HashMap.
 /// Returns None if no valid frontmatter found.
-fn parse_frontmatter(content: &str) -> Option<HashMap<String, String>> {
+pub fn parse_frontmatter(content: &str) -> Option<HashMap<String, String>> {
     if !content.starts_with("---") {
         return None;
     }
@@ -207,7 +207,7 @@ fn parse_frontmatter(content: &str) -> Option<HashMap<String, String>> {
 // ─── Scanning ───
 
 /// Recursively scan a directory for .md files and extract their frontmatter.
-fn scan_folder(
+pub fn scan_folder(
     dir: &Path,
     vault_name: &str,
     vault_path: &str,
@@ -259,7 +259,7 @@ fn scan_folder(
 }
 
 /// Scan notes filtered by tag across a vault.
-fn scan_by_tag(
+pub fn scan_by_tag(
     dir: &Path,
     vault_name: &str,
     vault_path: &str,
@@ -320,7 +320,7 @@ fn scan_by_tag(
 
 // ─── Filtering ───
 
-fn apply_filters(rows: &mut Vec<BaseRow>, filters: &[FilterRule]) {
+pub fn apply_filters(rows: &mut Vec<BaseRow>, filters: &[FilterRule]) {
     for filter in filters {
         rows.retain(|row| {
             let value = if filter.property == "file_name" {
@@ -486,7 +486,7 @@ pub fn query_base(
 }
 
 /// Fixed sorting that handles owned strings properly.
-fn apply_sorts_fixed(rows: &mut Vec<BaseRow>, sorts: &[SortRule]) {
+pub fn apply_sorts_fixed(rows: &mut Vec<BaseRow>, sorts: &[SortRule]) {
     if sorts.is_empty() { return; }
 
     rows.sort_by(|a, b| {
@@ -560,16 +560,6 @@ pub fn create_base(
     if file_path.exists() {
         return Err("A file with this name already exists.".to_string());
     }
-
-    // Compute relative source path from vault root
-    let relative_source = vaults.iter().find_map(|v| {
-        let vp = fs::canonicalize(&v.path).ok()?;
-        if canon_folder.starts_with(&vp) {
-            Some(canon_folder.strip_prefix(&vp).ok()?.to_string_lossy().to_string().replace('\\', "/"))
-        } else {
-            None
-        }
-    }).unwrap_or_default();
 
     // Build default BaseDefinition
     let display_name = name.trim_end_matches(".base").to_string();

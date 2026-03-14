@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { vaultStats, loadVaults, loadAllStats } from '$lib/vaults/store';
@@ -57,11 +57,11 @@
 			universeCount = universes.length;
 			childUniverses = await getChildUniverses();
 		} catch { /* ignore */ }
+	});
 
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-			document.removeEventListener('keydown', handleKeydown);
-		};
+	onDestroy(() => {
+		document.removeEventListener('mousedown', handleClickOutside);
+		document.removeEventListener('keydown', handleKeydown);
 	});
 </script>
 

@@ -1,81 +1,140 @@
-# Plan: Graph View Controls Panel
+# Plan: Second Screen (Dual Monitor) Feature
 
-## Goal
-Add an Obsidian-style controls panel to the existing Graph View with **Filters**, **Groups**, **Display**, and **Forces** sections — matching the Obsidian screenshot the user provided.
+## Overview
 
-## Current State
-- `GraphView.svelte` (694 lines): D3 force simulation on Canvas with vault clustering, legend, zoom/pan, drag, tooltips
-- Hardcoded force values: charge=-80, distance=60, collision=8, clusterStrength=0.05, alphaDecay=0.06
-- Hardcoded display values: node radius 4-14, link width 0.6-2
-- No search filter, no groups, no animate toggle, no user-configurable controls
-- Legend drawn on canvas (vault color dots with counts)
+Add a Lightroom-style **Second Screen** feature. A dedicated companion window with **switchable view modes** that the user can drag to a second monitor. Both windows share the same universe, vaults, and file watchers.
 
-## Implementation
+**Monitor 1 (Main):** Full app — sidebar, graph, search, tabs, editor
+**Monitor 2 (Second Screen):** Companion window with view mode selector
 
-### Step 1: Add Controls State + HTML Panel to `GraphView.svelte`
+---
 
-Add a collapsible HTML side panel (left, ~280px) overlaying the canvas. Four collapsible `<details>` sections:
+## View Modes (like Lightroom's Secondary Window)
 
-**Filters:**
-- `filterQuery: string` — search input (filters nodes by name/path)
-- `showTags: boolean` (default: off) — toggle tag nodes
-- `showAttachments: boolean` (default: off) — toggle attachments
-- `existingOnly: boolean` (default: off) — hide ghost/unresolved nodes
-- `showOrphans: boolean` (default: on) — show unlinked notes
+The second screen has a **mode switcher** in its toolbar (bottom or top bar with icons):
 
-**Groups:**
-- `groups: Array<{ query: string; color: string }>` — color-coded search groups
-- "New group" button adds a row with query input + color picker + delete button
-- Nodes matching a group query get that group's color override
+| Mode | Icon | Description |
+|------|------|-------------|
+| **Grid** | ▦ | Card grid of all notes across vaults — shows note title, vault color dot, preview snippet, modified date. Click to open in main window or in Detail mode. Searchable/filterable. |
+| **Graph** | ◉ | Full graph view (reuses GraphView component). Click a node → opens in main window. Navigation-focused. |
+| **Detail** | ▢ | Single note reader/editor (NotePane). When you click a note in main window's tree/search, it shows here. |
 
-**Display:**
-- `showArrows: boolean` (default: off) — draw arrowheads on links
-- `textFadeThreshold: number` (range 0–5, default: 1.5) — zoom level for label visibility
-- `nodeSize: number` (range 1–10, default: 4) — node scale multiplier
-- `linkThickness: number` (range 1–5, default: 1) — link width multiplier
-- `animate: boolean` (default: true) — toggle force animation; when off, simulation runs to completion instantly
+A small **mode indicator bar** at the bottom shows which mode is active (like Lightroom's G / E / D shortcuts).
 
-**Forces:**
-- `centerForce: number` (range 0–1, default: 0.5)
-- `repelForce: number` (range 0–300, default: 80)
-- `linkForce: number` (range 0–1, default: 1)
-- `linkDistance: number` (range 10–500, default: 60)
+### Interaction Between Windows
 
-Panel features:
-- Close (×) and Reset (↻) buttons in the header
-- Toggle button (gear icon) on the graph toolbar to show/hide
-- Scrollable, styled to match the app theme
+- **Main → Second Screen:** Clicking a note in the sidebar/search/graph with `Ctrl+click` or a dedicated button sends it to the second screen's Detail mode.
+- **Second Screen → Main:** Clicking a note card in Grid mode or a node in Graph mode opens it in the main window's editor.
+- **Linked browsing (optional toggle):** When enabled, navigating in the main window automatically updates the second screen's Detail view (like Lightroom's "lock" behavior).
 
-### Step 2: Wire Controls to D3 Simulation
+---
 
-- **Filters**: Applied in `renderGraph()` when building nodeData/linkData
-  - `filterQuery` → filter nodes by name/path substring match
-  - `showOrphans` → filter nodes with linkCount === 0
-  - `existingOnly` → would filter ghost nodes (currently graph only shows linked notes, so minimal impact)
-- **Groups**: In `getNodeColor()`, check if node matches any group query; first match wins
-- **Display**:
-  - `showArrows` → draw arrowhead triangles at link endpoints in `draw()`
-  - `textFadeThreshold` → show labels when `currentTransform.k >= threshold`
-  - `nodeSize` → multiply `getNodeRadius()` result
-  - `linkThickness` → multiply link lineWidth
-  - `animate` → when toggled off, tick simulation to alpha=0 instantly
-- **Forces**: Use `$effect` to dynamically update `simulation.force(...)` parameters without full re-render, then reheat with `simulation.alpha(0.3).restart()`
+## Architecture
 
-### Step 3: i18n (15 locale files)
-Add keys under `graphView.controls`:
-```
-filters, search, tags, attachments, existingOnly, orphans,
-groups, newGroup,
-display, arrows, textFade, nodeSize, linkThickness, animate,
-forces, centerForce, repelForce, linkForce, linkDistance,
-reset
-```
+### Tauri Multi-Window
 
-### Step 4: Help Docs
-Create/update `docs/help.notesconstellation.com/Graph View/Graph View.md`
+- Main window → `/` (existing layout)
+- Second screen → `/screen` (new SvelteKit route)
+- Created at runtime via `WebviewWindow` (not at startup)
 
-## Files to Modify
-1. `src/lib/components/GraphView.svelte` — Controls panel UI + wiring (main change)
-2. `src/lib/i18n/*.json` (15 files) — Graph control translations
-3. `docs/help.notesconstellation.com/Graph View/Graph View.md` — Help documentation
-4. `src/routes/+layout.svelte` — Add toggle button for controls panel in graph header
+### State Sync via Tauri Events
+
+| Event | Direction | Purpose |
+|-------|-----------|---------|
+| `screen:open-note` | Main → Screen | Send note to detail view |
+| `screen:open-in-main` | Screen → Main | Send note to main editor |
+| `note-saved` | Both ↔ Both | Refresh when note saved in either window |
+| `vault-changed` | Rust → Both | File watcher (already exists) |
+| `universe-switched` | Main → Screen | Reload everything |
+| `screen:mode-changed` | Screen → Main | Inform main of current mode |
+| `screen:closed` | Screen → Main | Cleanup |
+
+### Second Screen State (local, per-window)
+
+- `currentMode`: 'grid' | 'graph' | 'detail'
+- `detailNote`: currently displayed note in detail mode
+- `gridFilter`: search/filter text for grid mode
+- `gridSort`: sort order (name, date, vault)
+- `linkedBrowsing`: boolean — auto-follow main window navigation
+
+---
+
+## Implementation Steps
+
+### Phase 1: Tauri Backend
+
+1. **`src-tauri/capabilities/default.json`** — Add `"second-screen"` to windows array, add permissions: `core:window:allow-create`, `core:window:allow-close`, `core:window:allow-set-focus`, `core:window:allow-set-title`
+2. **`src-tauri/src/lib.rs`** — Add `open_second_screen` command: creates `WebviewWindow` labeled `"second-screen"` pointing to `/screen`, sized to fill the second monitor if available
+
+### Phase 2: Second Screen Route
+
+3. **`src/routes/screen/+layout.svelte`** — Minimal layout: theme + i18n setup, Tauri event listeners, no sidebar
+4. **`src/routes/screen/+page.svelte`** — Second screen UI:
+   - Mode switcher bar (Grid / Graph / Detail icons)
+   - Conditional rendering based on `currentMode`
+   - Grid mode: card layout with note cards, search bar, vault filter, sort
+   - Graph mode: reuse `GraphView.svelte` component
+   - Detail mode: reuse `NotePane.svelte` component
+   - Linked browsing toggle in toolbar
+   - Event listeners for cross-window sync
+
+### Phase 3: Grid Mode Component
+
+5. **`src/lib/components/NoteGrid.svelte`** — New component:
+   - Loads all notes via existing `collect_vault_notes` IPC
+   - Renders as responsive card grid
+   - Each card: note title, vault color indicator, 2-line preview, modified date
+   - Search input filters by name/content
+   - Sort: by name, date modified, vault
+   - Click card → emits event to open in main window
+   - Double-click → switches to Detail mode with that note
+
+### Phase 4: Cross-Window Communication
+
+6. **`src/lib/secondScreen.ts`** — Helper module:
+   - `openSecondScreen(mode?)` — invoke Rust command, optionally set initial mode
+   - `sendNoteToScreen(note)` — emit `screen:open-note`
+   - `sendNoteToMain(note)` — emit `screen:open-in-main`
+   - `isSecondScreenOpen()` — check if window exists
+   - `closeSecondScreen()` — close the window
+
+### Phase 5: Main Window Integration
+
+7. **Toolbar button** — Monitor icon (like Lightroom's `2` button) in top toolbar, toggles second screen
+8. **Sidebar/tree context** — `Ctrl+click` on any note sends it to second screen
+9. **Graph node context** — Right-click option "Open in Second Screen"
+10. **Tab context menu** — "Send to Second Screen" option
+
+### Phase 6: Polish
+
+11. **Window title** — "Constellation - Screen 2 - [Mode] - [Universe]"
+12. **Keyboard shortcuts** — `G` for Grid, `E` for Graph, `D` for Detail (when second screen focused)
+13. **i18n** — Add keys across all 15 locales
+14. **Help docs** — Create `docs/.../Second Screen/Second Screen.md`
+15. **Workspace save/restore** — Include second screen mode + state in workspace data
+
+---
+
+## Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| `src/routes/screen/+page.svelte` | **Create** — Second screen with mode switcher |
+| `src/routes/screen/+layout.svelte` | **Create** — Minimal layout (theme + i18n) |
+| `src/lib/components/NoteGrid.svelte` | **Create** — Card grid view for Grid mode |
+| `src/lib/secondScreen.ts` | **Create** — Cross-window communication |
+| `src-tauri/capabilities/default.json` | **Modify** — Window permissions |
+| `src-tauri/src/lib.rs` | **Modify** — `open_second_screen` command |
+| `src/routes/+layout.svelte` | **Modify** — Toolbar button, Ctrl+click handling |
+| `src/lib/vaults/store.ts` | **Modify** — Note save broadcasting |
+| 15 x `src/lib/i18n/*.json` | **Modify** — Second screen translations |
+| `docs/.../Second Screen/Second Screen.md` | **Create** — Help documentation |
+
+---
+
+## Risks & Mitigations
+
+- **Store isolation:** Each window has own Svelte stores — sync via Tauri events, not shared memory. This is desired (independent state per window).
+- **Same-note editing:** If both windows edit same note, last-save-wins. V1 shows a warning badge when a note is open in both.
+- **Performance:** Grid mode loading all notes at once could be slow with 1000+ notes. Use virtual scrolling for the card grid.
+- **Graph reuse:** GraphView component currently lives inside layout. Need to make it standalone/importable for the second screen.

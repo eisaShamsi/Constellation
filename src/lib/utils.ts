@@ -239,6 +239,10 @@ const renderer = {
 	code(token: Tokens.Code): string {
 		const lang = token.lang || '';
 		const code = token.text;
+		// Dataview queries
+		if (lang === 'dataview') {
+			return `<div class="dataview-query" data-dataview="${encodeURIComponent(code)}"><pre class="dataview-source"><code>${escapeHtml(code)}</code></pre></div>`;
+		}
 		// Mermaid diagrams
 		if (lang === 'mermaid') {
 			return `<div class="mermaid-container" data-mermaid="${encodeURIComponent(code)}"><pre class="mermaid">${escapeHtml(code)}</pre></div>`;
@@ -343,7 +347,7 @@ export function renderMarkdown(md: string): string {
 
 	const result = DOMPurify.sanitize(html, {
 		ADD_TAGS: ['math', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'msup', 'msub', 'mfrac', 'munder', 'mover', 'annotation'],
-		ADD_ATTR: ['data-wikilink', 'data-embed', 'data-vault', 'data-fragment', 'data-link-type', 'data-math', 'data-mermaid', 'data-highlight-term', 'class'],
+		ADD_ATTR: ['data-wikilink', 'data-embed', 'data-vault', 'data-fragment', 'data-link-type', 'data-math', 'data-mermaid', 'data-dataview', 'data-path', 'data-highlight-term', 'class'],
 		ALLOW_DATA_ATTR: true,
 	});
 
@@ -394,6 +398,67 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 			} catch { /* keep raw */ }
 		}
 	} catch { /* mermaid not available */ }
+
+	// Render Dataview queries
+	const dataviewEls = container.querySelectorAll('.dataview-query:not(.dataview-rendered)');
+	if (dataviewEls.length > 0) {
+		const { executeDataviewQuery } = await import('$lib/dataview/store');
+		// Get vault paths from the global store
+		const { vaults } = await import('$lib/vaults/store');
+		const { get } = await import('svelte/store');
+		const vaultList = get(vaults);
+		const vaultPaths: [string, string][] = vaultList.map((v: any) => [v.name, v.path]);
+
+		for (const el of dataviewEls) {
+			const queryText = decodeURIComponent((el as HTMLElement).getAttribute('data-dataview') || '');
+			if (!queryText) continue;
+			el.classList.add('dataview-rendered');
+
+			// Show loading state
+			el.innerHTML = '<div class="dv-inline-loading">Loading query...</div>';
+
+			try {
+				const result = await executeDataviewQuery(queryText, vaultPaths);
+				if (result.error) {
+					el.innerHTML = `<div class="dv-inline-error">${DOMPurify.sanitize(result.error)}</div>`;
+					continue;
+				}
+
+				let html = '';
+				if (result.query_type === 'table') {
+					html += '<div class="dv-inline-table-wrap"><table class="dv-inline-table">';
+					html += '<thead><tr><th>File</th>';
+					for (const col of result.columns) {
+						html += `<th>${DOMPurify.sanitize(col)}</th>`;
+					}
+					html += '</tr></thead><tbody>';
+					for (const row of result.rows) {
+						const name = row.file_name.replace(/\.md$/, '');
+						html += `<tr><td><a class="dv-inline-link" data-path="${DOMPurify.sanitize(row.file_path)}" data-vault="${DOMPurify.sanitize(row.vault_name)}">${DOMPurify.sanitize(name)}</a></td>`;
+						for (const col of result.columns) {
+							const val = row.properties[col] || '';
+							html += `<td>${DOMPurify.sanitize(val)}</td>`;
+						}
+						html += '</tr>';
+					}
+					html += '</tbody></table></div>';
+				} else if (result.query_type === 'list') {
+					html += '<ul class="dv-inline-list">';
+					for (const row of result.rows) {
+						const name = row.file_name.replace(/\.md$/, '');
+						html += `<li><a class="dv-inline-link" data-path="${DOMPurify.sanitize(row.file_path)}" data-vault="${DOMPurify.sanitize(row.vault_name)}">${DOMPurify.sanitize(name)}</a></li>`;
+					}
+					html += '</ul>';
+				} else {
+					html = '<div class="dv-inline-empty">No results</div>';
+				}
+				html += `<div class="dv-inline-footer">${result.rows.length} results &middot; ${result.query_time_ms}ms</div>`;
+				el.innerHTML = html;
+			} catch (e: any) {
+				el.innerHTML = `<div class="dv-inline-error">${e?.message || 'Query failed'}</div>`;
+			}
+		}
+	}
 
 	// Handle callout fold toggles (use event delegation to avoid duplicate listeners)
 	if (!container.dataset.calloutDelegated) {

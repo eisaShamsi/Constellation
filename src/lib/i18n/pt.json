@@ -615,6 +615,19 @@
     "switching": "Trocando universo...",
     "migrating": "Migrando seus dados..."
   },
+  "dataview": {
+    "label": "Dataview",
+    "loading": "Carregando consulta...",
+    "noResults": "Sem resultados",
+    "results": "resultados",
+    "of": "de",
+    "total": "total",
+    "refresh": "Atualizar",
+    "unsupportedType": "Tipo de consulta não suportado",
+    "queryError": "Erro na consulta",
+    "queryFailed": "Consulta falhou",
+    "file": "Arquivo"
+  },
   "secondScreen": {
     "title": "Segunda tela",
     "grid": "Grade",

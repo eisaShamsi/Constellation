@@ -615,6 +615,19 @@
     "switching": "Switching universe...",
     "migrating": "Migrating your data..."
   },
+  "dataview": {
+    "label": "Dataview",
+    "loading": "Loading query...",
+    "noResults": "No results",
+    "results": "results",
+    "of": "of",
+    "total": "total",
+    "refresh": "Refresh",
+    "unsupportedType": "Unsupported query type",
+    "queryError": "Query error",
+    "queryFailed": "Query failed",
+    "file": "File"
+  },
   "secondScreen": {
     "title": "Second Screen",
     "grid": "Grid",

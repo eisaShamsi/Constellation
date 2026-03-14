@@ -615,6 +615,19 @@
     "switching": "Переключение вселенной...",
     "migrating": "Миграция данных..."
   },
+  "dataview": {
+    "label": "Dataview",
+    "loading": "Загрузка запроса...",
+    "noResults": "Нет результатов",
+    "results": "результатов",
+    "of": "из",
+    "total": "всего",
+    "refresh": "Обновить",
+    "unsupportedType": "Неподдерживаемый тип запроса",
+    "queryError": "Ошибка запроса",
+    "queryFailed": "Запрос не выполнен",
+    "file": "Файл"
+  },
   "secondScreen": {
     "title": "Второй экран",
     "grid": "Сетка",

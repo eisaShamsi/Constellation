@@ -615,6 +615,19 @@
     "switching": "کائنات تبدیل ہو رہی ہے...",
     "migrating": "آپ کا ڈیٹا منتقل ہو رہا ہے..."
   },
+  "dataview": {
+    "label": "Dataview",
+    "loading": "استفسار لوڈ ہو رہا ہے...",
+    "noResults": "کوئی نتائج نہیں",
+    "results": "نتائج",
+    "of": "میں سے",
+    "total": "کل",
+    "refresh": "ریفریش",
+    "unsupportedType": "غیر معاون استفسار کی قسم",
+    "queryError": "استفسار میں خرابی",
+    "queryFailed": "استفسار ناکام",
+    "file": "فائل"
+  },
   "secondScreen": {
     "title": "دوسری اسکرین",
     "grid": "گرڈ",

@@ -173,7 +173,7 @@ No telemetry, analytics, or usage data is collected or transmitted.
 
 If you discover a security vulnerability in Constellation, please report it responsibly:
 
-- Open an issue on [GitHub](https://github.com/notesconstellation/constellation/issues) with the label `security`.
+- Open an issue on [GitHub](https://github.com/uConstellation/constellation/issues) with the label `security`.
 - Alternatively, email the developer directly.
 
 Do not publicly disclose security vulnerabilities before they have been addressed.

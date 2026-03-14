@@ -50,6 +50,29 @@ class CheckboxWidget extends WidgetType {
 	eq(other: CheckboxWidget) { return this.checked === other.checked; }
 }
 
+/** Widget shown for dataview code blocks when cursor is outside */
+class DataviewLabelWidget extends WidgetType {
+	query: string;
+	constructor(query: string) {
+		super();
+		this.query = query;
+	}
+	toDOM() {
+		const wrap = document.createElement('div');
+		wrap.className = 'cm-dv-label-widget';
+		const badge = document.createElement('span');
+		badge.className = 'cm-dv-badge';
+		badge.textContent = 'Dataview';
+		wrap.appendChild(badge);
+		const preview = document.createElement('code');
+		preview.className = 'cm-dv-query-preview';
+		preview.textContent = this.query.length > 80 ? this.query.slice(0, 80) + '…' : this.query;
+		wrap.appendChild(preview);
+		return wrap;
+	}
+	eq(other: DataviewLabelWidget) { return this.query === other.query; }
+}
+
 function buildDecorations(view: EditorView): DecorationSet {
 	const doc = view.state.doc;
 	const cursorLine = doc.lineAt(view.state.selection.main.head).number;
@@ -61,7 +84,9 @@ function buildDecorations(view: EditorView): DecorationSet {
 			from, to,
 			enter(node) {
 				const nodeLine = doc.lineAt(node.from).number;
+				const nodeEndLine = doc.lineAt(node.to).number;
 				const onCursorLine = nodeLine === cursorLine;
+				const cursorInBlock = cursorLine >= nodeLine && cursorLine <= nodeEndLine;
 
 				// ATX Headings (# through ######)
 				if (node.name.startsWith('ATXHeading') && node.name.length === 11) {
@@ -133,6 +158,22 @@ function buildDecorations(view: EditorView): DecorationSet {
 					if (!onCursorLine) {
 						ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
 							widget: new CheckboxWidget(checked),
+						}) });
+					}
+				}
+
+				// Dataview fenced code blocks — show label widget when cursor is outside
+				if (node.name === 'FencedCode' && !cursorInBlock) {
+					const firstLine = doc.lineAt(node.from);
+					const info = firstLine.text.trim();
+					if (/^```+\s*dataview\s*$/i.test(info)) {
+						// Extract the query text (between opening and closing fence)
+						const innerFrom = firstLine.to + 1;
+						const lastLine = doc.lineAt(node.to);
+						const innerTo = lastLine.text.trim().startsWith('```') ? lastLine.from : node.to;
+						const queryText = innerTo > innerFrom ? doc.sliceString(innerFrom, innerTo).trim() : '';
+						ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
+							widget: new DataviewLabelWidget(queryText),
 						}) });
 					}
 				}
@@ -242,5 +283,35 @@ export const livePreviewTheme = EditorView.theme({
 		marginRight: '4px',
 		cursor: 'pointer',
 		accentColor: 'var(--vault-accent, var(--interactive-accent))',
+	},
+	'.cm-dv-label-widget': {
+		display: 'flex',
+		alignItems: 'center',
+		gap: '8px',
+		padding: '6px 10px',
+		margin: '4px 0',
+		border: '1px solid var(--background-modifier-border)',
+		borderRadius: '6px',
+		background: 'var(--background-secondary)',
+		cursor: 'pointer',
+		userSelect: 'none',
+	},
+	'.cm-dv-badge': {
+		fontSize: '11px',
+		fontWeight: '600',
+		color: 'var(--interactive-accent)',
+		textTransform: 'uppercase',
+		letterSpacing: '0.5px',
+		flexShrink: '0',
+	},
+	'.cm-dv-query-preview': {
+		fontSize: '11px',
+		color: 'var(--text-muted)',
+		overflow: 'hidden',
+		textOverflow: 'ellipsis',
+		whiteSpace: 'nowrap',
+		background: 'none',
+		padding: '0',
+		fontFamily: 'var(--font-monospace-theme)',
 	},
 });

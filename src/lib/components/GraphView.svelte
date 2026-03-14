@@ -37,6 +37,7 @@
 		links = [] as GraphLink[],
 		onNodeClick,
 		activeNodeId = '',
+		compact = false,
 	}: {
 		nodes: GraphNode[];
 		links: GraphLink[];

@@ -294,6 +294,20 @@ ${contentEl.innerHTML}
 	// WikiLink click handler via event delegation
 	async function handleNoteContentClick(e: MouseEvent) {
 		const target = e.target as HTMLElement;
+
+		// Dataview inline link click
+		const dvLink = target.closest('a.dv-inline-link') as HTMLAnchorElement | null;
+		if (dvLink) {
+			e.preventDefault();
+			const path = dvLink.dataset.path;
+			const vault = dvLink.dataset.vault;
+			if (path && vault) {
+				const vc = vaultColorMap[vault] ?? '#7c3aed';
+				await openNoteTab(path, vault, vc);
+			}
+			return;
+		}
+
 		const wikilinkEl = target.closest('a.wikilink') as HTMLAnchorElement | null;
 		if (!wikilinkEl || !tab) return;
 
@@ -790,6 +804,94 @@ ${contentEl.innerHTML}
 	.note-content :global(.hljs-selector-class) { color: var(--code-keyword); }
 	.note-content :global(.hljs-selector-id) { color: var(--code-function); }
 	.note-content :global(.hljs-variable) { color: var(--code-variable); }
+
+	/* ─── Dataview Inline Results ─── */
+	.note-content :global(.dataview-query) {
+		margin: 12px 0;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		overflow: hidden;
+		font-size: 13px;
+	}
+	.note-content :global(.dataview-source) {
+		display: none;
+	}
+	.note-content :global(.dv-inline-loading) {
+		padding: 16px;
+		text-align: center;
+		color: var(--text-muted);
+		font-size: 12px;
+	}
+	.note-content :global(.dv-inline-error) {
+		padding: 12px 16px;
+		color: var(--text-error);
+		background: rgba(255, 0, 0, 0.05);
+		font-size: 12px;
+		border-radius: 4px;
+	}
+	.note-content :global(.dv-inline-empty) {
+		padding: 16px;
+		text-align: center;
+		color: var(--text-muted);
+		font-size: 12px;
+	}
+	.note-content :global(.dv-inline-table-wrap) {
+		overflow-x: auto;
+	}
+	.note-content :global(.dv-inline-table) {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 13px;
+	}
+	.note-content :global(.dv-inline-table th) {
+		text-align: start;
+		padding: 6px 10px;
+		font-weight: 600;
+		font-size: 11px;
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.3px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+		position: sticky;
+		top: 0;
+	}
+	.note-content :global(.dv-inline-table td) {
+		padding: 5px 10px;
+		border-bottom: 1px solid var(--background-modifier-border-hover, rgba(0,0,0,0.04));
+		color: var(--text-normal);
+	}
+	.note-content :global(.dv-inline-table tr:hover td) {
+		background: var(--background-modifier-hover);
+	}
+	.note-content :global(.dv-inline-link) {
+		color: var(--interactive-accent);
+		cursor: pointer;
+		text-decoration: none;
+		background: none;
+		border: none;
+		font-size: inherit;
+		padding: 0;
+	}
+	.note-content :global(.dv-inline-link:hover) {
+		text-decoration: underline;
+	}
+	.note-content :global(.dv-inline-list) {
+		list-style: none;
+		padding: 8px 12px;
+		margin: 0;
+	}
+	.note-content :global(.dv-inline-list li) {
+		padding: 3px 0;
+	}
+	.note-content :global(.dv-inline-footer) {
+		padding: 4px 10px;
+		font-size: 11px;
+		color: var(--text-faint);
+		border-top: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+		text-align: end;
+	}
 
 	.empty-tab {
 		flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
