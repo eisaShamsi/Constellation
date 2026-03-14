@@ -513,6 +513,10 @@ ${contentEl.innerHTML}
 					indentWithTabs={$appSettings.indentWithTabs}
 					tabSize={$appSettings.tabSize}
 					autoPairMarkdown={$appSettings.autoPairMarkdown}
+					initialCursorPos={tab?.cursorPos ?? 0}
+					initialScrollTop={tab?.scrollTop ?? 0}
+					onCursorChange={(pos) => { if (tab) tab.cursorPos = pos; }}
+					onScrollChange={(top) => { if (tab) tab.scrollTop = top; }}
 				/>
 			{:else}
 				<!-- svelte-ignore a11y_click_events_have_key_events -->

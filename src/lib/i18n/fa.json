@@ -293,7 +293,8 @@
     "rightSidebar": "نوار کناری راست",
     "splitView": "نمای تقسیم",
     "skills": "مهارت‌ها",
-    "graphViewTitle": "نمای گراف"
+    "graphViewTitle": "نمای گراف",
+    "pinned": "سنجاق شده"
   },
   "welcome": {
     "title": "به Constellation خوش آمدید",

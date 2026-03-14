@@ -293,7 +293,8 @@
     "rightSidebar": "Sağ kenar çubuğu",
     "splitView": "Bölünmüş görünüm",
     "skills": "Beceriler",
-    "graphViewTitle": "Grafik Görünümü"
+    "graphViewTitle": "Grafik Görünümü",
+    "pinned": "Sabitlendi"
   },
   "welcome": {
     "title": "Constellation'a Hoş Geldiniz",

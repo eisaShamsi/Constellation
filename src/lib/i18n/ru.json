@@ -293,7 +293,8 @@
     "rightSidebar": "Правая панель",
     "splitView": "Разделённый вид",
     "skills": "Навыки",
-    "graphViewTitle": "Граф"
+    "graphViewTitle": "Граф",
+    "pinned": "Закреплено"
   },
   "welcome": {
     "title": "Добро пожаловать в Constellation",

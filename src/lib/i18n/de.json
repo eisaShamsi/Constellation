@@ -293,7 +293,8 @@
     "rightSidebar": "Rechte Seitenleiste",
     "splitView": "Geteilte Ansicht",
     "skills": "Fähigkeiten",
-    "graphViewTitle": "Graphansicht"
+    "graphViewTitle": "Graphansicht",
+    "pinned": "Angeheftet"
   },
   "welcome": {
     "title": "Willkommen bei Constellation",

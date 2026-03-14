@@ -293,7 +293,8 @@
     "rightSidebar": "الشريط الأيمن",
     "splitView": "تقسيم العرض",
     "skills": "المهارات",
-    "graphViewTitle": "الرسم البياني"
+    "graphViewTitle": "الرسم البياني",
+    "pinned": "مثبت"
   },
   "welcome": {
     "title": "مرحبا بك في كونستليشن",

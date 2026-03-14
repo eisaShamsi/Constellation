@@ -61,6 +61,7 @@ pub fn run() {
             vaults::create_note,
             vaults::create_folder,
             vaults::rename_item,
+            vaults::move_item,
             vaults::delete_item,
             vaults::resolve_wikilink,
             vaults::resolve_wikilink_cross_vault,

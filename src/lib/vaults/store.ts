@@ -49,6 +49,9 @@ export interface OpenTab {
 	highlightTerm?: string;
 	history: string[];
 	historyIndex: number;
+	cursorPos?: number;
+	scrollTop?: number;
+	pinned?: boolean;
 }
 
 export type PropertyType = 'text' | 'number' | 'date' | 'datetime' | 'list' | 'link' | 'checkbox';
@@ -711,6 +714,24 @@ export async function renameItem(oldPath: string, newPath: string): Promise<void
 		}
 		return t;
 	}));
+}
+
+export async function moveItem(sourcePath: string, targetFolder: string): Promise<string> {
+	const newPath = await invoke<string>('move_item', { sourcePath, targetFolder });
+	// Update any open tabs that reference the old path
+	openTabs.update(tabs => tabs.map(t => {
+		if (t.path === sourcePath) {
+			const newName = newPath.split(/[\\/]/).pop()?.replace('.md', '') ?? t.name;
+			return { ...t, path: newPath, name: newName };
+		}
+		// If a folder was moved, update paths under it
+		if (t.path.startsWith(sourcePath + '/') || t.path.startsWith(sourcePath + '\\')) {
+			const relative = t.path.substring(sourcePath.length);
+			return { ...t, path: targetFolder + relative };
+		}
+		return t;
+	}));
+	return newPath;
 }
 
 export async function deleteItem(path: string, permanent = false): Promise<void> {

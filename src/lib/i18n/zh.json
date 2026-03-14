@@ -293,7 +293,8 @@
     "rightSidebar": "右侧边栏",
     "splitView": "分屏视图",
     "skills": "技能",
-    "graphViewTitle": "关系图谱"
+    "graphViewTitle": "关系图谱",
+    "pinned": "已固定"
   },
   "welcome": {
     "title": "欢迎使用 Constellation",

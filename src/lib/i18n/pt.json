@@ -293,7 +293,8 @@
     "rightSidebar": "Barra lateral direita",
     "splitView": "Visualização dividida",
     "skills": "Habilidades",
-    "graphViewTitle": "Visualização em grafo"
+    "graphViewTitle": "Visualização em grafo",
+    "pinned": "Fixada"
   },
   "welcome": {
     "title": "Bem-vindo ao Constellation",

@@ -293,7 +293,8 @@
     "rightSidebar": "दायाँ साइडबार",
     "splitView": "विभाजित दृश्य",
     "skills": "कौशल",
-    "graphViewTitle": "ग्राफ़ दृश्य"
+    "graphViewTitle": "ग्राफ़ दृश्य",
+    "pinned": "पिन किया गया"
   },
   "welcome": {
     "title": "Constellation में आपका स्वागत है",

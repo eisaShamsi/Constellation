@@ -304,28 +304,64 @@ pub fn get_all_vault_stats(app: tauri::AppHandle) -> Vec<VaultStats> {
 #[tauri::command]
 pub fn search_stars(app: tauri::AppHandle, query: String) -> Vec<StarInfo> {
     let vaults = load_all_vaults(&app);
-    let query_lower = query.to_lowercase();
     let mut results = Vec::new();
+
+    // Parse search operators: file:, tag:, path:
+    let mut file_filter: Option<String> = None;
+    let mut tag_filter: Option<String> = None;
+    let mut path_filter: Option<String> = None;
+    let mut text_query = String::new();
+
+    for part in query.split_whitespace() {
+        let lower = part.to_lowercase();
+        if let Some(val) = lower.strip_prefix("file:") {
+            file_filter = Some(val.to_string());
+        } else if let Some(val) = lower.strip_prefix("tag:") {
+            tag_filter = Some(val.trim_start_matches('#').to_string());
+        } else if let Some(val) = lower.strip_prefix("path:") {
+            path_filter = Some(val.to_string());
+        } else {
+            if !text_query.is_empty() { text_query.push(' '); }
+            text_query.push_str(&lower);
+        }
+    }
 
     for vault in &vaults {
         search_notes_recursive(
             Path::new(&vault.path),
             &vault.id,
             &vault.name,
-            &query_lower,
+            &text_query,
             &mut results,
             0,
         );
     }
 
+    // Apply operator filters
+    if let Some(ref ff) = file_filter {
+        results.retain(|r| r.name.to_lowercase().contains(ff));
+    }
+    if let Some(ref pf) = path_filter {
+        results.retain(|r| r.path.to_lowercase().replace('\\', "/").contains(pf));
+    }
+    if let Some(ref tf) = tag_filter {
+        results.retain(|r| {
+            // Read file content and check for tag
+            let content = fs::read_to_string(&r.path).unwrap_or_default().to_lowercase();
+            content.contains(&format!("#{}", tf))
+                || content.contains(&format!("- {}", tf)) // YAML tags list
+        });
+    }
+
     // Sort by relevance (name match first, then content match)
+    let query_lower = text_query.clone();
     results.sort_by(|a, b| {
         let a_name_match = a.name.to_lowercase().contains(&query_lower);
         let b_name_match = b.name.to_lowercase().contains(&query_lower);
         b_name_match.cmp(&a_name_match).then(b.modified.cmp(&a.modified))
     });
 
-    results.truncate(50); // Limit results
+    results.truncate(200); // Limit results
     results
 }
 
@@ -637,6 +673,30 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
 
     fs::rename(old, new_p)
         .map_err(|e| format!("Failed to rename: {}", e))
+}
+
+/// Move a file or folder to a different directory within any registered vault.
+#[tauri::command]
+pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: String) -> Result<String, String> {
+    validate_path_in_any_vault(&app, &source_path)?;
+    validate_path_in_any_vault(&app, &target_folder)?;
+    let source = Path::new(&source_path);
+    if !source.exists() {
+        return Err("Source item does not exist.".to_string());
+    }
+    let target_dir = Path::new(&target_folder);
+    if !target_dir.is_dir() {
+        return Err("Target folder does not exist.".to_string());
+    }
+    let file_name = source.file_name()
+        .ok_or("Cannot determine file name.")?;
+    let dest = target_dir.join(file_name);
+    if dest.exists() {
+        return Err("An item with this name already exists in the target folder.".to_string());
+    }
+    fs::rename(source, &dest)
+        .map_err(|e| format!("Failed to move: {}", e))?;
+    Ok(dest.to_string_lossy().to_string())
 }
 
 /// Delete a file or folder (permanent delete).

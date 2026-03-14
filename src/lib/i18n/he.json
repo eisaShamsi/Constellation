@@ -293,7 +293,8 @@
     "rightSidebar": "סרגל צד ימני",
     "splitView": "תצוגה מפוצלת",
     "skills": "כישורים",
-    "graphViewTitle": "תצוגת גרף"
+    "graphViewTitle": "תצוגת גרף",
+    "pinned": "מוצמד"
   },
   "welcome": {
     "title": "ברוכים הבאים ל-Constellation",

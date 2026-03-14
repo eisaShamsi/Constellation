@@ -293,7 +293,8 @@
     "rightSidebar": "오른쪽 사이드바",
     "splitView": "분할 보기",
     "skills": "스킬",
-    "graphViewTitle": "그래프 보기"
+    "graphViewTitle": "그래프 보기",
+    "pinned": "고정됨"
   },
   "welcome": {
     "title": "Constellation에 오신 것을 환영합니다",

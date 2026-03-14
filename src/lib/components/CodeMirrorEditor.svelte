@@ -32,6 +32,10 @@
 		indentWithTabs = true,
 		tabSize = 4,
 		autoPairMarkdown = true,
+		initialCursorPos = 0,
+		initialScrollTop = 0,
+		onCursorChange,
+		onScrollChange,
 	}: {
 		value: string;
 		dir?: 'ltr' | 'rtl';
@@ -48,6 +52,10 @@
 		indentWithTabs?: boolean;
 		tabSize?: number;
 		autoPairMarkdown?: boolean;
+		initialCursorPos?: number;
+		initialScrollTop?: number;
+		onCursorChange?: (pos: number) => void;
+		onScrollChange?: (top: number) => void;
 	} = $props();
 
 	let containerEl: HTMLDivElement;
@@ -883,11 +891,27 @@
 					if (update.selectionSet || update.docChanged) {
 						updateToolbar(update.view);
 						updateTableToolbar(update.view);
+						if (update.selectionSet && onCursorChange) {
+							onCursorChange(update.state.selection.main.head);
+						}
+					}
+					if (update.geometryChanged && onScrollChange) {
+						onScrollChange(update.view.scrollDOM.scrollTop);
 					}
 				}),
 			]
 		});
 		view = new EditorView({ state: startState, parent: containerEl });
+
+		// Restore cursor position and scroll
+		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
+			view.dispatch({ selection: { anchor: initialCursorPos } });
+		}
+		if (initialScrollTop > 0) {
+			requestAnimationFrame(() => {
+				view?.scrollDOM.scrollTo({ top: initialScrollTop });
+			});
+		}
 
 		document.addEventListener('constellation:fold-all', handleFoldAll);
 		document.addEventListener('constellation:unfold-all', handleUnfoldAll);

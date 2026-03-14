@@ -293,7 +293,8 @@
     "rightSidebar": "Right sidebar",
     "splitView": "Split view",
     "skills": "Skills",
-    "graphViewTitle": "Graph View"
+    "graphViewTitle": "Graph View",
+    "pinned": "Pinned"
   },
   "welcome": {
     "title": "Welcome to Constellation",

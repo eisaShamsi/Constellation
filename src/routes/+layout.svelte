@@ -1786,11 +1786,20 @@
 					{#each $openTabs as tab (tab.id)}
 						<button class="tab"
 							class:active={$activeTabId === tab.id}
+							class:pinned={tab.pinned}
 							style:--vault-color={vaultColorMap[tab.vaultName]}
-							onclick={() => switchTab(tab.id)}>
-							{#if tab.vaultName}<span class="tab-vault">{tab.vaultName}</span>{/if}
+							onclick={() => switchTab(tab.id)}
+							onauxclick={(e) => { if (e.button === 1 && !tab.pinned) { e.preventDefault(); closeTab(tab.id); } }}
+							oncontextmenu={(e) => { e.preventDefault(); tab.pinned = !tab.pinned; }}>
+							{#if tab.pinned}
+								<span class="tab-pin" title={$t('layout.pinned')}>📌</span>
+							{:else if tab.vaultName}
+								<span class="tab-vault">{tab.vaultName}</span>
+							{/if}
 							<span class="tab-title">{tab.name}</span>
-							<span class="tab-close" role="button" onclick={(e) => { e.stopPropagation(); closeTab(tab.id); }}>×</span>
+							{#if !tab.pinned}
+								<span class="tab-close" role="button" onclick={(e) => { e.stopPropagation(); closeTab(tab.id); }}>×</span>
+							{/if}
 						</button>
 					{/each}
 					{#if !isHome}
@@ -2471,6 +2480,8 @@
 		max-width: 100%; pointer-events: none;
 	}
 	.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.tab.pinned { min-width: 36px; padding: 0 8px; }
+	.tab-pin { font-size: 0.65rem; flex-shrink: 0; }
 	.tab-close {
 		background: none; border: none; color: var(--text-muted);
 		cursor: pointer; font-size: 0.85rem; padding: 0; line-height: 1;
