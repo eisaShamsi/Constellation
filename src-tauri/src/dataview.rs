@@ -282,15 +282,15 @@ fn tokenize_dql(input: &str) -> Vec<String> {
     tokens
 }
 
-/// Execute a Dataview query against the given vaults.
+/// Execute a Dataview query against the given libraries.
 ///
 /// `query_text` is the raw DQL query string.
-/// `vault_paths` is a list of (vault_name, vault_path) tuples.
+/// `library_paths` is a list of (library_name, library_path) tuples.
 #[tauri::command]
 pub fn execute_dataview_query(
     _app: tauri::AppHandle,
     query_text: String,
-    vault_paths: Vec<(String, String)>,
+    library_paths: Vec<(String, String)>,
 ) -> DataviewResult {
     let start = Instant::now();
 
@@ -315,10 +315,10 @@ pub fn execute_dataview_query(
 
     match query.source_type.as_str() {
         "folder" => {
-            for (vault_name, vault_path) in &vault_paths {
-                let full_path = Path::new(vault_path).join(&query.source_value);
-                // Validate the resolved path stays within the vault (prevents path traversal)
-                let vault_canon = match fs::canonicalize(vault_path) {
+            for (library_name, library_path) in &library_paths {
+                let full_path = Path::new(library_path).join(&query.source_value);
+                // Validate the resolved path stays within the library (prevents path traversal)
+                let library_canon = match fs::canonicalize(library_path) {
                     Ok(p) => p,
                     Err(_) => continue,
                 };
@@ -326,23 +326,23 @@ pub fn execute_dataview_query(
                     Ok(p) => p,
                     Err(_) => continue, // Path doesn't exist or is invalid
                 };
-                if !full_path_canon.starts_with(&vault_canon) {
-                    continue; // Silently skip: path escapes vault boundary
+                if !full_path_canon.starts_with(&library_canon) {
+                    continue; // Silently skip: path escapes library boundary
                 }
-                scan_folder(&full_path_canon, vault_name, vault_path, true, &mut rows);
+                scan_folder(&full_path_canon, library_name, library_path, true, &mut rows);
             }
         }
         "tag" => {
-            for (vault_name, vault_path) in &vault_paths {
-                let vp = Path::new(vault_path);
-                scan_by_tag(vp, vault_name, vault_path, &query.source_value, &mut rows);
+            for (library_name, library_path) in &library_paths {
+                let vp = Path::new(library_path);
+                scan_by_tag(vp, library_name, library_path, &query.source_value, &mut rows);
             }
         }
         _ => {
-            // "all" — scan all vaults
-            for (vault_name, vault_path) in &vault_paths {
-                let vp = Path::new(vault_path);
-                scan_folder(vp, vault_name, vault_path, true, &mut rows);
+            // "all" — scan all libraries
+            for (library_name, library_path) in &library_paths {
+                let vp = Path::new(library_path);
+                scan_folder(vp, library_name, library_path, true, &mut rows);
             }
         }
     }

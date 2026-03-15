@@ -3,9 +3,9 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { TaskScanResult, NoteDateEntry } from './types';
 
-/** Scan an entire vault for tasks. */
-export async function scanVaultTasks(libraryPath: string, libraryName: string): Promise<TaskScanResult> {
-	return await invoke('scan_vault_tasks', { libraryPath, libraryName });
+/** Scan an entire library for tasks. */
+export async function scanLibraryTasks(libraryPath: string, libraryName: string): Promise<TaskScanResult> {
+	return await invoke('scan_library_tasks', { libraryPath, libraryName });
 }
 
 /** Scan a single note for tasks. */
@@ -18,7 +18,7 @@ export async function toggleTask(filePath: string, lineNumber: number): Promise<
 	return await invoke('toggle_task', { filePath, lineNumber });
 }
 
-/** Scan vault for note dates (modified + frontmatter). Returns map of date -> entries. */
-export async function scanVaultNoteDates(libraryPath: string, libraryName: string): Promise<Record<string, NoteDateEntry[]>> {
-	return await invoke('scan_vault_note_dates', { libraryPath, libraryName });
+/** Scan library for note dates (modified + frontmatter). Returns map of date -> entries. */
+export async function scanLibraryNoteDates(libraryPath: string, libraryName: string): Promise<Record<string, NoteDateEntry[]>> {
+	return await invoke('scan_library_note_dates', { libraryPath, libraryName });
 }

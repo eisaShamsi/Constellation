@@ -76,7 +76,7 @@
 					<span class="tp-icon">📄</span>
 					<span class="tp-name">{tpl.name}</span>
 					{#if tpl.libraryName}
-						<span class="tp-vault">{tpl.libraryName}</span>
+						<span class="tp-lib-name">{tpl.libraryName}</span>
 					{/if}
 				</button>
 			{/each}
@@ -129,7 +129,7 @@
 	.tp-item.selected { background: var(--interactive-accent); color: var(--text-on-accent); }
 	.tp-icon { font-size: 0.9rem; }
 	.tp-name { flex: 1; font-weight: 500; }
-	.tp-vault { font-size: 0.7rem; color: var(--text-faint); }
-	.tp-item.selected .tp-vault { color: rgba(255,255,255,0.7); }
+	.tp-lib-name { font-size: 0.7rem; color: var(--text-faint); }
+	.tp-item.selected .tp-lib-name { color: rgba(255,255,255,0.7); }
 	.tp-empty { padding: 20px; text-align: center; color: var(--text-faint); font-size: 0.85rem; }
 </style>

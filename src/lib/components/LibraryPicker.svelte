@@ -34,12 +34,12 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="vp-overlay" bind:this={overlayEl} onclick={handleOverlayClick}>
 	<div class="vp-modal">
-		<div class="vp-title">{$t('notePane.selectVault')}</div>
+		<div class="vp-title">{$t('notePane.selectLibrary')}</div>
 		<div class="vp-list">
-			{#each $libraries as vault}
-				<button class="vp-item" onclick={() => { onSelect(vault); onClose(); }}>
-					<span class="vp-dot" style="background: {colorMap[vault.name] || '#7c3aed'}"></span>
-					<span class="vp-name">{vault.name}</span>
+			{#each $libraries as lib}
+				<button class="vp-item" onclick={() => { onSelect(lib); onClose(); }}>
+					<span class="vp-dot" style="background: {colorMap[lib.name] || '#7c3aed'}"></span>
+					<span class="vp-name">{lib.name}</span>
 				</button>
 			{/each}
 		</div>

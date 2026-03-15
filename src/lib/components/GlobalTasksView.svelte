@@ -3,7 +3,7 @@
 	import { t, dir } from '$lib/i18n';
 	import { libraries, openNoteTab } from '$lib/libraries/store';
 	import { get } from 'svelte/store';
-	import { scanVaultTasks, toggleTask } from '$lib/tasks/store';
+	import { scanLibraryTasks, toggleTask } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 
 	let {
@@ -24,7 +24,7 @@
 	let dueFilter = $state<'all' | 'overdue' | 'today' | 'week' | 'nodate'>('all');
 	let priorityFilter = $state<'all' | 'high' | 'medium' | 'low'>('all');
 	let searchQuery = $state('');
-	let groupBy = $state<'none' | 'file' | 'vault' | 'priority' | 'due'>('file');
+	let groupBy = $state<'none' | 'file' | 'library' | 'priority' | 'due'>('file');
 	let sortBy = $state<'due' | 'priority' | 'file'>('due');
 
 	const todayStr = new Date().toISOString().slice(0, 10);
@@ -95,7 +95,7 @@
 		for (const task of filteredTasks) {
 			let key = '';
 			if (groupBy === 'file') key = task.file_name;
-			else if (groupBy === 'vault') key = task.library_name;
+			else if (groupBy === 'library') key = task.library_name;
 			else if (groupBy === 'priority') key = task.priority || $t('tasksPanel.noPriority');
 			else if (groupBy === 'due') {
 				if (!task.due_date) key = $t('tasksPanel.noDueDate');
@@ -115,7 +115,7 @@
 		const libraryList = get(libraries);
 		try {
 			const results = await Promise.all(
-				libraryList.map(v => scanVaultTasks(v.path, v.name))
+				libraryList.map(v => scanLibraryTasks(v.path, v.name))
 			);
 			allTasks = results.flatMap(r => r.tasks);
 			scanTime = Math.round(performance.now() - start);
@@ -211,7 +211,7 @@
 		{#if libraryNames.length > 1}
 			<div class="gt-filter-group">
 				<select bind:value={libraryFilter}>
-					<option value="all">{$t('globalTasks.allVaults')}</option>
+					<option value="all">{$t('globalTasks.allLibraries')}</option>
 					{#each libraryNames as vn}
 						<option value={vn}>{vn}</option>
 					{/each}
@@ -234,7 +234,7 @@
 			<select bind:value={groupBy}>
 				<option value="none">{$t('globalTasks.noGroup')}</option>
 				<option value="file">{$t('globalTasks.groupByFile')}</option>
-				<option value="vault">{$t('globalTasks.groupByVault')}</option>
+				<option value="library">{$t('globalTasks.groupByLibrary')}</option>
 				<option value="priority">{$t('globalTasks.groupByPriority')}</option>
 				<option value="due">{$t('globalTasks.groupByDue')}</option>
 			</select>

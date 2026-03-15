@@ -59,7 +59,7 @@ const wikilinkExtension: TokenizerAndRendererExtension = {
 			display = baseTarget || target; // Show note name instead of type spec
 		}
 
-		// For vault:note syntax, show just the note name if no explicit alias
+		// For library:note syntax, show just the note name if no explicit alias
 		const isCrossLibrary = baseTarget.includes(':') && target === token.target && target === (token.display as string);
 		if (isCrossLibrary && !fragment) {
 			display = baseTarget.split(':').pop()!.trim();
@@ -83,7 +83,7 @@ const wikilinkExtension: TokenizerAndRendererExtension = {
 			}
 			return `<div class="embed-note" data-embed="${encodeURIComponent(target)}"${fragmentAttr}><span class="embed-icon">📄</span> ${escapeHtml(display)}</div>`;
 		}
-		const crossClass = isCrossLibrary ? ' cross-vault' : '';
+		const crossClass = isCrossLibrary ? ' cross-library' : '';
 		const typeClass = linkType ? ` link-type-${linkType.replace(/[^a-z0-9-]/gi, '')}` : '';
 		return `<a class="wikilink${crossClass}${typeClass}" data-wikilink="${encodeURIComponent(baseTarget || target)}"${fragmentAttr}${typeAttr} href="#" ${linkType ? `title="type: ${escapeHtml(linkType)}"` : ''}>${escapeHtml(display)}</a>`;
 	}
@@ -347,7 +347,7 @@ export function renderMarkdown(md: string): string {
 
 	const result = DOMPurify.sanitize(html, {
 		ADD_TAGS: ['math', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'msup', 'msub', 'mfrac', 'munder', 'mover', 'annotation'],
-		ADD_ATTR: ['data-wikilink', 'data-embed', 'data-vault', 'data-fragment', 'data-link-type', 'data-math', 'data-mermaid', 'data-dataview', 'data-path', 'data-highlight-term', 'class'],
+		ADD_ATTR: ['data-wikilink', 'data-embed', 'data-library', 'data-fragment', 'data-link-type', 'data-math', 'data-mermaid', 'data-dataview', 'data-path', 'data-highlight-term', 'class'],
 		ALLOW_DATA_ATTR: true,
 	});
 
@@ -403,7 +403,7 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 	const dataviewEls = container.querySelectorAll('.dataview-query:not(.dataview-rendered)');
 	if (dataviewEls.length > 0) {
 		const { executeDataviewQuery } = await import('$lib/dataview/store');
-		// Get vault paths from the global store
+		// Get library paths from the global store
 		const { libraries } = await import('$lib/libraries/store');
 		const { get } = await import('svelte/store');
 		const libraryList = get(libraries);
@@ -434,7 +434,7 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 					html += '</tr></thead><tbody>';
 					for (const row of result.rows) {
 						const name = row.file_name.replace(/\.md$/, '');
-						html += `<tr><td><a class="dv-inline-link" data-path="${DOMPurify.sanitize(row.file_path)}" data-vault="${DOMPurify.sanitize(row.library_name)}">${DOMPurify.sanitize(name)}</a></td>`;
+						html += `<tr><td><a class="dv-inline-link" data-path="${DOMPurify.sanitize(row.file_path)}" data-library="${DOMPurify.sanitize(row.library_name)}">${DOMPurify.sanitize(name)}</a></td>`;
 						for (const col of result.columns) {
 							const val = row.properties[col] || '';
 							html += `<td>${DOMPurify.sanitize(val)}</td>`;
@@ -446,7 +446,7 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 					html += '<ul class="dv-inline-list">';
 					for (const row of result.rows) {
 						const name = row.file_name.replace(/\.md$/, '');
-						html += `<li><a class="dv-inline-link" data-path="${DOMPurify.sanitize(row.file_path)}" data-vault="${DOMPurify.sanitize(row.library_name)}">${DOMPurify.sanitize(name)}</a></li>`;
+						html += `<li><a class="dv-inline-link" data-path="${DOMPurify.sanitize(row.file_path)}" data-library="${DOMPurify.sanitize(row.library_name)}">${DOMPurify.sanitize(name)}</a></li>`;
 					}
 					html += '</ul>';
 				} else {
@@ -496,7 +496,7 @@ export function extractTags(md: string): string[] {
 	return tags;
 }
 
-/** Get all note names from a vault tree (for autocomplete) */
+/** Get all note names from a library tree (for autocomplete) */
 export function collectNoteNames(entries: any[]): { name: string; path: string }[] {
 	const notes: { name: string; path: string }[] = [];
 	function walk(entries: any[]) {

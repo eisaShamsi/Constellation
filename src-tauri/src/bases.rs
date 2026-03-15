@@ -7,7 +7,7 @@ use std::time::Instant;
 
 // ─── Security ───
 
-/// Validate that a file path is within a registered vault or the active universe's bases directory.
+/// Validate that a file path is within a registered library or the active universe's bases directory.
 fn validate_base_path(app: &tauri::AppHandle, file_path: &str) -> Result<(), String> {
     let target = fs::canonicalize(file_path)
         .or_else(|_| {
@@ -27,17 +27,17 @@ fn validate_base_path(app: &tauri::AppHandle, file_path: &str) -> Result<(), Str
         }
     }
 
-    // Check if path is within any registered vault
-    let vaults = crate::libraries::load_libraries_pub(app);
-    for vault in &vaults {
-        if let Ok(canon_vault) = fs::canonicalize(&vault.path) {
-            if target.starts_with(&canon_vault) {
+    // Check if path is within any registered library
+    let libraries = crate::libraries::load_libraries_pub(app);
+    for lib in &libraries {
+        if let Ok(canon_lib) = fs::canonicalize(&lib.path) {
+            if target.starts_with(&canon_lib) {
                 return Ok(());
             }
         }
     }
 
-    Err("Path is outside of registered vaults and universe directory.".to_string())
+    Err("Path is outside of registered libraries and universe directory.".to_string())
 }
 
 // ─── Data Structures ───
@@ -46,12 +46,12 @@ fn validate_base_path(app: &tauri::AppHandle, file_path: &str) -> Result<(), Str
 pub struct BaseSource {
     #[serde(rename = "type")]
     pub source_type: String,   // "folder" | "tag" | "all"
-    pub path: Option<String>,  // folder path (relative to vault root)
+    pub path: Option<String>,  // folder path (relative to library root)
     pub tag: Option<String>,   // tag filter
     #[serde(rename = "includeSubfolders", default = "default_true")]
     pub include_subfolders: bool,
     #[serde(rename = "selectedVaults", default)]
-    pub selected_vaults: Vec<String>, // empty = all vaults; populated = only these vault names
+    pub selected_vaults: Vec<String>, // empty = all libraries; populated = only these library names
 }
 
 fn default_true() -> bool { true }
@@ -258,7 +258,7 @@ pub fn scan_folder(
     }
 }
 
-/// Scan notes filtered by tag across a vault.
+/// Scan notes filtered by tag across a library.
 pub fn scan_by_tag(
     dir: &Path,
     library_name: &str,
@@ -358,7 +358,7 @@ pub fn apply_filters(rows: &mut Vec<BaseRow>, filters: &[FilterRule]) {
 
 #[tauri::command]
 pub fn parse_base_file(app: tauri::AppHandle, file_path: String) -> Result<BaseDefinition, String> {
-    // Security: validate path is within a vault or the active universe bases dir
+    // Security: validate path is within a library or the active universe bases dir
     validate_base_path(&app, &file_path)?;
 
     let content = fs::read_to_string(&file_path)
@@ -391,8 +391,8 @@ pub fn query_base(
     let start = Instant::now();
     let mut rows = Vec::new();
 
-    // Filter vaults by selectedVaults (empty = all vaults)
-    let active_vaults: Vec<&(String, String)> = if definition.source.selected_vaults.is_empty() {
+    // Filter libraries by selectedLibraries (empty = all libraries)
+    let active_libs: Vec<&(String, String)> = if definition.source.selected_vaults.is_empty() {
         library_paths.iter().collect()
     } else {
         library_paths.iter()
@@ -403,7 +403,7 @@ pub fn query_base(
     match definition.source.source_type.as_str() {
         "folder" => {
             let folder = definition.source.path.as_deref().unwrap_or("");
-            for (vname, vpath) in &active_vaults {
+            for (vname, vpath) in &active_libs {
                 let full_path = Path::new(vpath).join(folder);
                 if full_path.exists() && full_path.is_dir() {
                     scan_folder(
@@ -418,7 +418,7 @@ pub fn query_base(
         }
         "tag" => {
             let tag = definition.source.tag.as_deref().unwrap_or("");
-            for (vname, vpath) in &active_vaults {
+            for (vname, vpath) in &active_libs {
                 scan_by_tag(
                     Path::new(vpath),
                     vname,
@@ -429,7 +429,7 @@ pub fn query_base(
             }
         }
         "all" => {
-            for (vname, vpath) in &active_vaults {
+            for (vname, vpath) in &active_libs {
                 scan_folder(
                     Path::new(vpath),
                     vname,
@@ -439,7 +439,7 @@ pub fn query_base(
                 );
             }
         }
-        // Legacy "vault" type: treat as "all" with selectedVaults=[vault]
+        // Legacy "vault" type: treat as "all" with selectedVaults=[library]
         "vault" => {
             let target = definition.source.selected_vaults.first()
                 .or(definition.source.path.as_ref())
@@ -527,18 +527,18 @@ pub fn create_base(
     folder_path: String,
     file_name: String,
 ) -> Result<String, String> {
-    // Validate folder is in a registered vault
-    let vaults = crate::libraries::load_libraries_pub(&app);
+    // Validate folder is in a registered library
+    let libraries = crate::libraries::load_libraries_pub(&app);
     let folder = Path::new(&folder_path);
     let canon_folder = fs::canonicalize(folder)
         .map_err(|_| "Folder does not exist.".to_string())?;
-    let in_vault = vaults.iter().any(|v| {
+    let in_library = libraries.iter().any(|v| {
         fs::canonicalize(&v.path)
             .map(|vp| canon_folder.starts_with(vp))
             .unwrap_or(false)
     });
-    if !in_vault {
-        return Err("Access denied: path is not within any registered vault.".to_string());
+    if !in_library {
+        return Err("Access denied: path is not within any registered library.".to_string());
     }
     if !folder.is_dir() {
         return Err("Folder does not exist.".to_string());
@@ -590,7 +590,7 @@ pub fn create_base(
 
 #[tauri::command]
 pub fn save_base_file(app: tauri::AppHandle, file_path: String, definition: BaseDefinition) -> Result<(), String> {
-    // Security: validate path is within a vault or the active universe bases dir
+    // Security: validate path is within a library or the active universe bases dir
     validate_base_path(&app, &file_path)?;
 
     let content = serde_json::to_string_pretty(&definition)
@@ -606,15 +606,15 @@ pub fn update_note_property(
     key: String,
     value: String,
 ) -> Result<(), String> {
-    // Security: validate path is in a vault
-    let vaults = crate::libraries::load_libraries_pub(&app);
-    let in_vault = vaults.iter().any(|v| {
+    // Security: validate path is in a library
+    let libraries = crate::libraries::load_libraries_pub(&app);
+    let in_library = libraries.iter().any(|v| {
         fs::canonicalize(&file_path).ok()
             .and_then(|fp| fs::canonicalize(&v.path).ok().map(|vp| fp.starts_with(vp)))
             .unwrap_or(false)
     });
-    if !in_vault {
-        return Err("Access denied: file is not in a registered vault.".to_string());
+    if !in_library {
+        return Err("Access denied: file is not in a registered library.".to_string());
     }
 
     let content = fs::read_to_string(&file_path)

@@ -35,8 +35,8 @@
     },
     "security": {
       "intro": "Kütüphane verilerinizi koruyun, API anahtarlarını güvence altına alın ve boşta kalınca uygulamayı kilitleyin.",
-      "vaultEncryption": "Kütüphane şifreleme",
-      "vaultEncryptionDesc": "Bu cihazdaki önbelleğe alınmış kütüphane verilerini şifrele",
+      "libraryEncryption": "Kütüphane şifreleme",
+      "libraryEncryptionDesc": "Bu cihazdaki önbelleğe alınmış kütüphane verilerini şifrele",
       "enabled": "Etkin",
       "disabled": "Devre dışı",
       "lockHeading": "Kilit ekranı",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "Yeni notlar için varsayılan konum",
       "defaultLocationDesc": "Yeni notların kaydedileceği yer",
-      "vaultRoot": "Kütüphane kök klasörü",
+      "libraryRoot": "Kütüphane kök klasörü",
       "currentFolder": "Mevcut dosyayla aynı klasör",
       "specifiedFolder": "Aşağıda belirtilen klasörde",
       "folderPath": "Klasör yolu",
@@ -225,7 +225,7 @@
       "varTime": "Geçerli saat (HH:MM)",
       "varTitle": "Not başlığı",
       "varFolder": "Üst klasör adı",
-      "varVault": "Kütüphane adı",
+      "varLibrary": "Kütüphane adı",
       "varCursor": "Ekleme sonrası imleç konumu"
     }
   },
@@ -234,7 +234,7 @@
     "newBase": "Yeni Temel",
     "quickCapture": "Hızlı Yakalama",
     "quickSwitcher": "Yıldız atlayışı",
-    "searchVault": "Kütüphanede ara",
+    "searchLibrary": "Kütüphanede ara",
     "dailyNote": "Günlük notu aç",
     "toggleEdit": "Düzenleme/okuma modunu değiştir",
     "starView": "Yıldız görünümünü aç",
@@ -245,7 +245,7 @@
     "closeNote": "Mevcut notu kapat",
     "toggleLeftSidebar": "Sol kenar çubuğunu değiştir",
     "toggleRightSidebar": "Sağ kenar çubuğunu değiştir",
-    "addVault": "Kütüphane ekle",
+    "addLibrary": "Kütüphane ekle",
     "toggleBookmark": "Yer imini değiştir",
     "randomNote": "Rastgele not aç",
     "toggleTheme": "Koyu/açık modu değiştir",
@@ -287,13 +287,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "Ara...",
-    "addVault": "Kütüphane ekle",
+    "addLibrary": "Kütüphane ekle",
     "results": "sonuç",
     "noResults": "Sonuç bulunamadı",
     "bookmarks": "Yer İmleri",
     "bases": "Tabanlar",
-    "noVaults": "Henüz kütüphane yok",
-    "addVaultButton": "+ Kütüphane ekle",
+    "noLibraries": "Henüz kütüphane yok",
+    "addLibraryButton": "+ Kütüphane ekle",
     "newNote": "Yeni not",
     "newBase": "Yeni Temel",
     "newFolder": "Yeni klasör",
@@ -315,7 +315,7 @@
   "welcome": {
     "title": "Constellation'a Hoş Geldiniz",
     "subtitle": "Başlamak için ilk kütüphanenizi ekleyin",
-    "addVault": "+ Kütüphane Ekle",
+    "addLibrary": "+ Kütüphane Ekle",
     "selectNote": "Kenar çubuğundan bir not seçin",
     "quickSwitchHint": "veya yıldız atlayışı için Ctrl+O'ya basın"
   },
@@ -375,11 +375,11 @@
     "noTasksFound": "Görev bulunamadı",
     "allDates": "Tüm tarihler",
     "thisWeek": "Bu hafta",
-    "allVaults": "Tüm kütüphaneler",
+    "allLibraries": "Tüm kütüphaneler",
     "allPriorities": "Tüm öncelikler",
     "noGroup": "Gruplandırma yok",
     "groupByFile": "Dosyaya göre grupla",
-    "groupByVault": "Kütüphaneye göre grupla",
+    "groupByLibrary": "Kütüphaneye göre grupla",
     "groupByPriority": "Önceliğe göre grupla",
     "groupByDue": "Son tarihe göre grupla",
     "sortByFile": "Dosyaya göre sırala",
@@ -387,10 +387,10 @@
   },
   "linkDashboard": {
     "mostConnected": "En Çok Bağlantılı",
-    "crossVault": "Kütüphaneler Arası",
+    "crossLibrary": "Kütüphaneler Arası",
     "broken": "Kırık",
     "orphans": "Yalnız Notlar",
-    "noCrossVault": "Kütüphaneler arası bağlantı yok",
+    "noCrossLibrary": "Kütüphaneler arası bağlantı yok",
     "noBroken": "Kırık bağlantı yok",
     "noOrphans": "Yalnız not yok"
   },
@@ -403,7 +403,7 @@
     "properties": "özellik",
     "words": "kelime",
     "characters": "karakter",
-    "vaults": "kütüphane",
+    "libraries": "kütüphane",
     "notes": "not"
   },
   "notePane": {
@@ -417,7 +417,7 @@
     "createNote": "Yeni not oluştur",
     "goToFile": "Dosyaya git",
     "close": "Kapat",
-    "selectVault": "Kütüphane seç"
+    "selectLibrary": "Kütüphane seç"
   },
   "commandPalette": {
     "placeholder": "Bir komut yazın...",
@@ -501,15 +501,19 @@
       "linkDistance": "Bağlantı mesafesi"
     }
   },
-  "vaults": {
+  "libraries": {
     "searchPlaceholder": "Tüm kütüphanelerde ara...",
     "results": "sonuç",
     "noResults": "Sonuç yok",
-    "addVault": "+ Kütüphane ekle",
+    "addLibrary": "+ Kütüphane ekle",
     "welcomeTitle": "Constellation'a Hoş Geldiniz",
     "welcomeSubtitle": "Kenar çubuğundan ilk kütüphanenizi ekleyin",
-    "addVaultCta": "+ Kütüphane Ekle",
-    "selectNote": "Kenar çubuğundan bir not seçin"
+    "addLibraryCta": "+ Kütüphane Ekle",
+    "selectNote": "Kenar çubuğundan bir not seçin",
+    "newLibrary": "New Library",
+    "linkLibrary": "Link Existing Library",
+    "newLibraryDesc": "Create a fresh empty library folder to start writing from scratch.",
+    "linkLibraryDesc": "Connect an existing Markdown folder as a library — non-destructively."
   },
   "skills": {
     "title": "Beceriler",
@@ -524,7 +528,7 @@
     "create": "Beceri Oluştur",
     "noProvider": "Becerileri kullanmak için Ayarlar'da bir yapay zeka sağlayıcı bağlayın.",
     "selectNote": "Bir not seçin",
-    "selectVault": "Bir kütüphane seçin",
+    "selectLibrary": "Bir kütüphane seçin",
     "enterText": "Metin girin...",
     "result": "Sonuç",
     "copyResult": "Kopyala",
@@ -548,15 +552,15 @@
     "research": "Araştırma Asistanı",
     "researchDesc": "Birden fazla nottan bilgileri analiz edin ve birleştirin"
   },
-  "vaultManager": {
+  "libraryManager": {
     "title": "Kütüphaneleri yönet",
-    "openVault": "+ Kütüphane aç",
-    "manageVaults": "Kütüphaneleri yönet...",
+    "openLibrary": "+ Kütüphane aç",
+    "manageLibraries": "Kütüphaneleri yönet...",
     "openFolder": "Klasörü aç",
     "remove": "Kaldır",
     "confirmRemove": "Constellation'dan \"{name}\" kaldırılsın mı? Dosyalarınız silinmeyecek.",
-    "addVault": "+ Kütüphane ekle",
-    "noVaults": "Kayıtlı kütüphane yok",
+    "addLibrary": "+ Kütüphane ekle",
+    "noLibraries": "Kayıtlı kütüphane yok",
     "notes": "not"
   },
   "lockScreen": {
@@ -650,9 +654,9 @@
       "title": "Kaynak",
       "folder": "Klasör",
       "tag": "Etiket",
-      "vault": "Kütüphane",
-      "allVaults": "Tüm Kütüphaneler",
-      "vaults": "kütüphaneler",
+      "library": "Kütüphane",
+      "allLibraries": "Tüm Kütüphaneler",
+      "libraries": "kütüphaneler",
       "folderPath": "Klasör yolu",
       "folderPlaceholder": "ör. Projeler/Aktif",
       "folderHint": "Bu klasörü içeren tüm kütüphanelerde tarar",
@@ -660,7 +664,7 @@
       "tagName": "Etiket",
       "tagPlaceholder": "ör. proje",
       "tagHint": "Bu etikete sahip tüm notları tüm kütüphanelerde tarar",
-      "vaultsLabel": "Kütüphaneler",
+      "librariesLabel": "Kütüphaneler",
       "allHint": "Bağlı tüm kütüphanelerdeki tüm notları tarar",
       "apply": "Uygula",
       "cancel": "İptal"
@@ -684,15 +688,15 @@
       "creating": "Oluşturuluyor...",
       "next": "İleri",
       "back": "Geri",
-      "addVaultsHeading": "Kütüphanelerinizi Ekleyin",
-      "addVaultsDescription": "Kütüphanelerinizi ve alt evrenleri bağlayın. Daha sonra istediğiniz zaman daha fazlasını ekleyebilirsiniz.",
-      "addVault": "Kütüphane Ekle",
+      "addLibrariesHeading": "Kütüphanelerinizi Ekleyin",
+      "addLibrariesDescription": "Kütüphanelerinizi ve alt evrenleri bağlayın. Daha sonra istediğiniz zaman daha fazlasını ekleyebilirsiniz.",
+      "addLibrary": "Kütüphane Ekle",
       "addChildUniverse": "Alt Evren Ekle",
       "starterKit": "Başlangıç klasörlerini oluştur",
       "starterKitDesc": "Atlas, Takvim, Projeler ve Gelen Kutusu klasörlerini Hoş Geldiniz notuyla oluşturun",
       "finish": "Bitir",
       "skip": "Şimdilik atla",
-      "noVaultsYet": "Henüz kütüphane eklenmedi. Başlamak için bir kütüphane veya alt evren ekleyin.",
+      "noLibrariesYet": "Henüz kütüphane eklenmedi. Başlamak için bir kütüphane veya alt evren ekleyin.",
       "remove": "Kaldır",
       "importApp": "Başka bir uygulamadan içe aktar",
       "importAppDesc": "Notlarınızı Obsidian, Notion, Evernote veya diğer uygulamalardan Constellation'a taşıyın.",
@@ -702,7 +706,9 @@
       "importConfirm": "İçe aktar ve Evren oluştur",
       "importingNotes": "Notlarınız içe aktarılıyor...",
       "importLocationLabel": "Evren konumu",
-      "importComplete": "İçe aktarma tamamlandı! {count} dosya içe aktarıldı."
+      "importComplete": "İçe aktarma tamamlandı! {count} dosya içe aktarıldı.",
+      "linkLibrary": "Link a Library",
+      "linkLibraryDesc": "Wrap an existing Markdown folder as a library in your universe. Non-destructive — your files stay untouched."
     },
     "manager": {
       "heading": "Evren Yöneticisi",
@@ -717,8 +723,8 @@
       "children": "Alt Evrenler",
       "addChild": "Alt Evren Ekle",
       "noUniverses": "Evren bulunamadı",
-      "ownVaults": "Kendi Kütüphaneleri",
-      "inheritedVaults": "Devralınan Kütüphaneler",
+      "ownLibraries": "Kendi Kütüphaneleri",
+      "inheritedLibraries": "Devralınan Kütüphaneler",
       "openExisting": "Mevcut evreni aç"
     },
     "switching": "Evren değiştiriliyor...",
@@ -753,9 +759,9 @@
     "linkedOn": "Bağlantılı gezinme açık",
     "linkedOff": "Bağlantılı gezinme kapalı",
     "searchNotes": "Notlarda ara...",
-    "allVaults": "Tüm kütüphaneler",
+    "allLibraries": "Tüm kütüphaneler",
     "sortName": "Ada göre sırala",
-    "sortVault": "Kütüphaneye göre sırala",
+    "sortLibrary": "Kütüphaneye göre sırala",
     "noResults": "Eşleşen not yok",
     "noNotes": "Not bulunamadı",
     "detailEmpty": "Görüntülemek için bir not seçin",
@@ -782,7 +788,7 @@
       "txt": "Düz Metin",
       "txtDesc": "Markdown'a dönüştürülen metin dosyaları"
     },
-    "targetVault": "Hedef kütüphane",
+    "targetLibrary": "Hedef kütüphane",
     "subfolder": "Alt klasör",
     "selectSource": "Kaynak seç",
     "scanning": "Dosyalar taranıyor...",

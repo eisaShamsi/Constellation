@@ -75,15 +75,15 @@
 
 			<!-- Query libraries -->
 			<div class="nbd-section">
-				<span class="nbd-label">{$t('bases.source.vaultsLabel')}</span>
-				<div class="nbd-vault-list">
-					<label class="nbd-vault" class:active={allSelected}>
+				<span class="nbd-label">{$t('bases.source.librariesLabel')}</span>
+				<div class="nbd-lib-list">
+					<label class="nbd-lib-item" class:active={allSelected}>
 						<input type="checkbox" checked={allSelected} onchange={selectAll} />
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-						<span>{$t('bases.source.allVaults')}</span>
+						<span>{$t('bases.source.allLibraries')}</span>
 					</label>
 					{#each $libraries as v}
-						<label class="nbd-vault" class:active={selectedLibraryNames.includes(v.name)}>
+						<label class="nbd-lib-item" class:active={selectedLibraryNames.includes(v.name)}>
 							<input
 								type="checkbox"
 								checked={allSelected || selectedLibraryNames.includes(v.name)}
@@ -171,14 +171,14 @@
 		gap: 6px;
 	}
 
-	.nbd-vault-list {
+	.nbd-lib-list {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
 		max-height: 180px;
 		overflow-y: auto;
 	}
-	.nbd-vault {
+	.nbd-lib-item {
 		display: flex;
 		align-items: center;
 		gap: 8px;
@@ -189,14 +189,14 @@
 		cursor: pointer;
 		transition: all 0.1s;
 	}
-	.nbd-vault:hover {
+	.nbd-lib-item:hover {
 		background: var(--background-modifier-hover);
 		color: var(--text-normal);
 	}
-	.nbd-vault.active {
+	.nbd-lib-item.active {
 		color: var(--text-normal);
 	}
-	.nbd-vault input[type="checkbox"] {
+	.nbd-lib-item input[type="checkbox"] {
 		cursor: pointer;
 		accent-color: var(--interactive-accent);
 	}

@@ -35,8 +35,8 @@
     },
     "security": {
       "intro": "라이브러리 데이터 보호, API 키 보안 및 유휴 시 앱 잠금.",
-      "vaultEncryption": "라이브러리 암호화",
-      "vaultEncryptionDesc": "이 기기에 캐시된 라이브러리 데이터 암호화",
+      "libraryEncryption": "라이브러리 암호화",
+      "libraryEncryptionDesc": "이 기기에 캐시된 라이브러리 데이터 암호화",
       "enabled": "활성화됨",
       "disabled": "비활성화됨",
       "lockHeading": "잠금 화면",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "새 노트의 기본 위치",
       "defaultLocationDesc": "새 노트가 저장되는 위치",
-      "vaultRoot": "라이브러리 루트 폴더",
+      "libraryRoot": "라이브러리 루트 폴더",
       "currentFolder": "현재 파일과 같은 폴더",
       "specifiedFolder": "아래에 지정된 폴더에",
       "folderPath": "폴더 경로",
@@ -225,7 +225,7 @@
       "varTime": "현재 시간 (HH:MM)",
       "varTitle": "노트 제목",
       "varFolder": "상위 폴더 이름",
-      "varVault": "라이브러리 이름",
+      "varLibrary": "라이브러리 이름",
       "varCursor": "삽입 후 커서 위치"
     }
   },
@@ -234,7 +234,7 @@
     "newBase": "새 베이스",
     "quickCapture": "빠른 캡처",
     "quickSwitcher": "스타 점프",
-    "searchVault": "라이브러리 검색",
+    "searchLibrary": "라이브러리 검색",
     "dailyNote": "일일 노트 열기",
     "toggleEdit": "편집/읽기 모드 전환",
     "starView": "별 보기 열기",
@@ -245,7 +245,7 @@
     "closeNote": "현재 노트 닫기",
     "toggleLeftSidebar": "왼쪽 사이드바 전환",
     "toggleRightSidebar": "오른쪽 사이드바 전환",
-    "addVault": "라이브러리 추가",
+    "addLibrary": "라이브러리 추가",
     "toggleBookmark": "북마크 전환",
     "randomNote": "랜덤 노트 열기",
     "toggleTheme": "다크/라이트 모드 전환",
@@ -287,13 +287,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "검색...",
-    "addVault": "라이브러리 추가",
+    "addLibrary": "라이브러리 추가",
     "results": "개 결과",
     "noResults": "결과를 찾을 수 없습니다",
     "bookmarks": "북마크",
     "bases": "베이스",
-    "noVaults": "라이브러리이 아직 없습니다",
-    "addVaultButton": "+ 라이브러리 추가",
+    "noLibraries": "라이브러리이 아직 없습니다",
+    "addLibraryButton": "+ 라이브러리 추가",
     "newNote": "새 노트",
     "newBase": "새 베이스",
     "newFolder": "새 폴더",
@@ -315,7 +315,7 @@
   "welcome": {
     "title": "Constellation에 오신 것을 환영합니다",
     "subtitle": "시작하려면 첫 번째 라이브러리을 추가하세요",
-    "addVault": "+ 라이브러리 추가",
+    "addLibrary": "+ 라이브러리 추가",
     "selectNote": "사이드바에서 노트를 선택하세요",
     "quickSwitchHint": "또는 Ctrl+O를 눌러 스타 점프"
   },
@@ -375,11 +375,11 @@
     "noTasksFound": "작업을 찾을 수 없음",
     "allDates": "모든 날짜",
     "thisWeek": "이번 주",
-    "allVaults": "모든 라이브러리",
+    "allLibraries": "모든 라이브러리",
     "allPriorities": "모든 우선순위",
     "noGroup": "그룹 없음",
     "groupByFile": "파일별 그룹",
-    "groupByVault": "라이브러리별 그룹",
+    "groupByLibrary": "라이브러리별 그룹",
     "groupByPriority": "우선순위별 그룹",
     "groupByDue": "마감일별 그룹",
     "sortByFile": "파일순 정렬",
@@ -387,10 +387,10 @@
   },
   "linkDashboard": {
     "mostConnected": "최다 연결",
-    "crossVault": "라이브러리 간",
+    "crossLibrary": "라이브러리 간",
     "broken": "끊긴 링크",
     "orphans": "고아 노트",
-    "noCrossVault": "라이브러리 간 링크 없음",
+    "noCrossLibrary": "라이브러리 간 링크 없음",
     "noBroken": "끊긴 링크 없음",
     "noOrphans": "고아 노트 없음"
   },
@@ -403,7 +403,7 @@
     "properties": "속성",
     "words": "단어",
     "characters": "글자",
-    "vaults": "라이브러리",
+    "libraries": "라이브러리",
     "notes": "노트"
   },
   "notePane": {
@@ -417,7 +417,7 @@
     "createNote": "새 노트 만들기",
     "goToFile": "파일로 이동",
     "close": "닫기",
-    "selectVault": "라이브러리 선택"
+    "selectLibrary": "라이브러리 선택"
   },
   "commandPalette": {
     "placeholder": "명령어 입력...",
@@ -501,15 +501,19 @@
       "linkDistance": "링크 거리"
     }
   },
-  "vaults": {
+  "libraries": {
     "searchPlaceholder": "모든 라이브러리 검색...",
     "results": "개 결과",
     "noResults": "결과 없음",
-    "addVault": "+ 라이브러리 추가",
+    "addLibrary": "+ 라이브러리 추가",
     "welcomeTitle": "Constellation에 오신 것을 환영합니다",
     "welcomeSubtitle": "사이드바에서 첫 번째 라이브러리을 추가하세요",
-    "addVaultCta": "+ 라이브러리 추가",
-    "selectNote": "사이드바에서 노트를 선택하세요"
+    "addLibraryCta": "+ 라이브러리 추가",
+    "selectNote": "사이드바에서 노트를 선택하세요",
+    "newLibrary": "New Library",
+    "linkLibrary": "Link Existing Library",
+    "newLibraryDesc": "Create a fresh empty library folder to start writing from scratch.",
+    "linkLibraryDesc": "Connect an existing Markdown folder as a library — non-destructively."
   },
   "skills": {
     "title": "스킬",
@@ -524,7 +528,7 @@
     "create": "스킬 만들기",
     "noProvider": "스킬을 사용하려면 설정에서 AI 제공자를 연결하세요.",
     "selectNote": "노트 선택",
-    "selectVault": "라이브러리 선택",
+    "selectLibrary": "라이브러리 선택",
     "enterText": "텍스트 입력...",
     "result": "결과",
     "copyResult": "복사",
@@ -548,15 +552,15 @@
     "research": "연구 도우미",
     "researchDesc": "여러 노트에서 정보를 분석하고 종합"
   },
-  "vaultManager": {
+  "libraryManager": {
     "title": "라이브러리 관리",
-    "openVault": "+ 라이브러리 열기",
-    "manageVaults": "라이브러리 관리...",
+    "openLibrary": "+ 라이브러리 열기",
+    "manageLibraries": "라이브러리 관리...",
     "openFolder": "폴더 열기",
     "remove": "제거",
     "confirmRemove": "Constellation에서 \"{name}\"을(를) 제거하시겠습니까? 파일은 삭제되지 않습니다.",
-    "addVault": "+ 라이브러리 추가",
-    "noVaults": "등록된 라이브러리 없음",
+    "addLibrary": "+ 라이브러리 추가",
+    "noLibraries": "등록된 라이브러리 없음",
     "notes": "노트"
   },
   "lockScreen": {
@@ -650,9 +654,9 @@
       "title": "소스",
       "folder": "폴더",
       "tag": "태그",
-      "vault": "라이브러리",
-      "allVaults": "모든 라이브러리",
-      "vaults": "라이브러리",
+      "library": "라이브러리",
+      "allLibraries": "모든 라이브러리",
+      "libraries": "라이브러리",
       "folderPath": "폴더 경로",
       "folderPlaceholder": "예: 프로젝트/활성",
       "folderHint": "이 폴더를 포함하는 모든 라이브러리에서 스캔합니다",
@@ -660,7 +664,7 @@
       "tagName": "태그",
       "tagPlaceholder": "예: 프로젝트",
       "tagHint": "이 태그가 있는 모든 노트를 모든 라이브러리에서 스캔합니다",
-      "vaultsLabel": "라이브러리",
+      "librariesLabel": "라이브러리",
       "allHint": "연결된 모든 라이브러리의 모든 노트를 스캔합니다",
       "apply": "적용",
       "cancel": "취소"
@@ -684,15 +688,15 @@
       "creating": "생성 중...",
       "next": "다음",
       "back": "뒤로",
-      "addVaultsHeading": "라이브러리 추가",
-      "addVaultsDescription": "라이브러리과 하위 유니버스를 연결하세요. 나중에 언제든지 더 추가할 수 있습니다.",
-      "addVault": "라이브러리 추가",
+      "addLibrariesHeading": "라이브러리 추가",
+      "addLibrariesDescription": "라이브러리과 하위 유니버스를 연결하세요. 나중에 언제든지 더 추가할 수 있습니다.",
+      "addLibrary": "라이브러리 추가",
       "addChildUniverse": "하위 유니버스 추가",
       "starterKit": "스타터 폴더 만들기",
       "starterKitDesc": "아틀라스, 캘린더, 프로젝트, 수신함 폴더를 환영 노트와 함께 설정",
       "finish": "완료",
       "skip": "지금은 건너뛰기",
-      "noVaultsYet": "아직 추가된 라이브러리이 없습니다. 시작하려면 라이브러리 또는 하위 유니버스를 추가하세요.",
+      "noLibrariesYet": "아직 추가된 라이브러리이 없습니다. 시작하려면 라이브러리 또는 하위 유니버스를 추가하세요.",
       "remove": "제거",
       "importApp": "다른 앱에서 가져오기",
       "importAppDesc": "Obsidian, Notion, Evernote 또는 다른 앱에서 노트를 Constellation으로 마이그레이션합니다.",
@@ -702,7 +706,9 @@
       "importConfirm": "가져오기 및 유니버스 만들기",
       "importingNotes": "노트를 가져오는 중...",
       "importLocationLabel": "유니버스 위치",
-      "importComplete": "가져오기 완료! {count}개 파일을 가져왔습니다."
+      "importComplete": "가져오기 완료! {count}개 파일을 가져왔습니다.",
+      "linkLibrary": "Link a Library",
+      "linkLibraryDesc": "Wrap an existing Markdown folder as a library in your universe. Non-destructive — your files stay untouched."
     },
     "manager": {
       "heading": "유니버스 관리자",
@@ -717,8 +723,8 @@
       "children": "하위 유니버스",
       "addChild": "하위 유니버스 추가",
       "noUniverses": "유니버스를 찾을 수 없습니다",
-      "ownVaults": "자체 라이브러리",
-      "inheritedVaults": "상속된 라이브러리",
+      "ownLibraries": "자체 라이브러리",
+      "inheritedLibraries": "상속된 라이브러리",
       "openExisting": "기존 유니버스 열기"
     },
     "switching": "유니버스 전환 중...",
@@ -753,9 +759,9 @@
     "linkedOn": "연결 브라우징 켜짐",
     "linkedOff": "연결 브라우징 꺼짐",
     "searchNotes": "노트 검색...",
-    "allVaults": "모든 라이브러리",
+    "allLibraries": "모든 라이브러리",
     "sortName": "이름순 정렬",
-    "sortVault": "라이브러리순 정렬",
+    "sortLibrary": "라이브러리순 정렬",
     "noResults": "일치하는 노트 없음",
     "noNotes": "노트를 찾을 수 없음",
     "detailEmpty": "여기에 표시할 노트를 선택하세요",
@@ -782,7 +788,7 @@
       "txt": "일반 텍스트",
       "txtDesc": "마크다운으로 변환된 텍스트 파일"
     },
-    "targetVault": "대상 라이브러리",
+    "targetLibrary": "대상 라이브러리",
     "subfolder": "하위 폴더",
     "selectSource": "소스 선택",
     "scanning": "파일 스캔 중...",

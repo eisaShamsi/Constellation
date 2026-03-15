@@ -15,8 +15,8 @@
 	} = $props();
 
 	let searchQuery = $state('');
-	let sortBy = $state<'name' | 'vault' | 'modified'>('name');
-	let selectedVault = $state<string>('all');
+	let sortBy = $state<'name' | 'library' | 'modified'>('name');
+	let selectedLibrary = $state<string>('all');
 
 	// Get unique library names
 	const libraryNames = $derived([...new Set(notes.map(n => n.libraryName))].sort());
@@ -26,8 +26,8 @@
 		let result = notes;
 
 		// Library filter
-		if (selectedVault !== 'all') {
-			result = result.filter(n => n.libraryName === selectedVault);
+		if (selectedLibrary !== 'all') {
+			result = result.filter(n => n.libraryName === selectedLibrary);
 		}
 
 		// Search filter
@@ -41,7 +41,7 @@
 		// Sort
 		result = [...result].sort((a, b) => {
 			if (sortBy === 'name') return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
-			if (sortBy === 'vault') return a.libraryName.localeCompare(b.libraryName) || a.name.localeCompare(b.name);
+			if (sortBy === 'library') return a.libraryName.localeCompare(b.libraryName) || a.name.localeCompare(b.name);
 			return a.name.localeCompare(b.name); // fallback
 		});
 
@@ -74,16 +74,16 @@
 			{/if}
 		</div>
 
-		<select class="grid-filter" bind:value={selectedVault}>
-			<option value="all">{$t('secondScreen.allVaults')}</option>
-			{#each libraryNames as vault}
-				<option value={vault}>{vault}</option>
+		<select class="grid-filter" bind:value={selectedLibrary}>
+			<option value="all">{$t('secondScreen.allLibraries')}</option>
+			{#each libraryNames as lib}
+				<option value={lib}>{lib}</option>
 			{/each}
 		</select>
 
 		<select class="grid-sort" bind:value={sortBy}>
 			<option value="name">{$t('secondScreen.sortName')}</option>
-			<option value="vault">{$t('secondScreen.sortVault')}</option>
+			<option value="library">{$t('secondScreen.sortLibrary')}</option>
 		</select>
 
 		<span class="grid-count">{filteredNotes.length} / {notes.length}</span>

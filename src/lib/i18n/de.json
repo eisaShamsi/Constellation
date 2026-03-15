@@ -35,8 +35,8 @@
     },
     "security": {
       "intro": "Schütze deine Bibliotheks-Daten, sichere API-Schlüssel und sperre die App bei Inaktivität.",
-      "vaultEncryption": "Bibliotheks-Verschlüsselung",
-      "vaultEncryptionDesc": "Gespeicherte Bibliotheks-Daten auf diesem Gerät verschlüsseln",
+      "libraryEncryption": "Bibliotheks-Verschlüsselung",
+      "libraryEncryptionDesc": "Gespeicherte Bibliotheks-Daten auf diesem Gerät verschlüsseln",
       "enabled": "Aktiviert",
       "disabled": "Deaktiviert",
       "lockHeading": "Sperrbildschirm",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "Standardort für neue Notizen",
       "defaultLocationDesc": "Wo neue Notizen abgelegt werden",
-      "vaultRoot": "Stammordner der Bibliothek",
+      "libraryRoot": "Stammordner der Bibliothek",
       "currentFolder": "Gleicher Ordner wie aktuelle Datei",
       "specifiedFolder": "Im unten angegebenen Ordner",
       "folderPath": "Ordnerpfad",
@@ -225,7 +225,7 @@
       "varTime": "Aktuelle Uhrzeit (HH:MM)",
       "varTitle": "Notiz-Titel",
       "varFolder": "Übergeordneter Ordnername",
-      "varVault": "Bibliotheksname",
+      "varLibrary": "Bibliotheksname",
       "varCursor": "Cursorposition nach dem Einfügen"
     }
   },
@@ -234,7 +234,7 @@
     "newBase": "Neue Basis",
     "quickCapture": "Schnellerfassung",
     "quickSwitcher": "Sternensprung",
-    "searchVault": "Bibliothek durchsuchen",
+    "searchLibrary": "Bibliothek durchsuchen",
     "dailyNote": "Tägliche Notiz öffnen",
     "toggleEdit": "Bearbeitungs-/Lesemodus umschalten",
     "starView": "Sternenansicht öffnen",
@@ -245,7 +245,7 @@
     "closeNote": "Aktuelle Notiz schließen",
     "toggleLeftSidebar": "Linke Seitenleiste umschalten",
     "toggleRightSidebar": "Rechte Seitenleiste umschalten",
-    "addVault": "Bibliothek hinzufügen",
+    "addLibrary": "Bibliothek hinzufügen",
     "toggleBookmark": "Lesezeichen umschalten",
     "randomNote": "Zufällige Notiz öffnen",
     "toggleTheme": "Dunklen/Hellen Modus umschalten",
@@ -287,13 +287,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "Suchen...",
-    "addVault": "Bibliothek hinzufügen",
+    "addLibrary": "Bibliothek hinzufügen",
     "results": "Ergebnisse",
     "noResults": "Keine Ergebnisse gefunden",
     "bookmarks": "Lesezeichen",
     "bases": "Basen",
-    "noVaults": "Noch keine Bibliotheken",
-    "addVaultButton": "+ Bibliothek hinzufügen",
+    "noLibraries": "Noch keine Bibliotheken",
+    "addLibraryButton": "+ Bibliothek hinzufügen",
     "newNote": "Neue Notiz",
     "newBase": "Neue Basis",
     "newFolder": "Neuer Ordner",
@@ -315,7 +315,7 @@
   "welcome": {
     "title": "Willkommen bei Constellation",
     "subtitle": "Fügen Sie Ihren ersten Bibliothek hinzu, um zu beginnen",
-    "addVault": "+ Bibliothek hinzufügen",
+    "addLibrary": "+ Bibliothek hinzufügen",
     "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste",
     "quickSwitchHint": "oder drücken Sie Strg+O zum Schnellwechseln"
   },
@@ -375,11 +375,11 @@
     "noTasksFound": "Keine Aufgaben gefunden",
     "allDates": "Alle Daten",
     "thisWeek": "Diese Woche",
-    "allVaults": "Alle Bibliotheken",
+    "allLibraries": "Alle Bibliotheken",
     "allPriorities": "Alle Prioritäten",
     "noGroup": "Keine Gruppierung",
     "groupByFile": "Nach Datei gruppieren",
-    "groupByVault": "Nach Bibliothek gruppieren",
+    "groupByLibrary": "Nach Bibliothek gruppieren",
     "groupByPriority": "Nach Priorität gruppieren",
     "groupByDue": "Nach Fälligkeitsdatum gruppieren",
     "sortByFile": "Nach Datei sortieren",
@@ -387,10 +387,10 @@
   },
   "linkDashboard": {
     "mostConnected": "Meistverbunden",
-    "crossVault": "Bibliothek-übergreifend",
+    "crossLibrary": "Bibliothek-übergreifend",
     "broken": "Defekt",
     "orphans": "Verwaiste Notizen",
-    "noCrossVault": "Keine bibliothek-übergreifenden Links",
+    "noCrossLibrary": "Keine bibliothek-übergreifenden Links",
     "noBroken": "Keine defekten Links",
     "noOrphans": "Keine verwaisten Notizen"
   },
@@ -403,7 +403,7 @@
     "properties": "Eigenschaften",
     "words": "Wörter",
     "characters": "Zeichen",
-    "vaults": "Bibliotheken",
+    "libraries": "Bibliotheken",
     "notes": "Notizen"
   },
   "notePane": {
@@ -417,7 +417,7 @@
     "createNote": "Neue Notiz erstellen",
     "goToFile": "Zur Datei gehen",
     "close": "Schließen",
-    "selectVault": "Bibliothek auswählen"
+    "selectLibrary": "Bibliothek auswählen"
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben...",
@@ -501,15 +501,19 @@
       "linkDistance": "Verbindungsabstand"
     }
   },
-  "vaults": {
+  "libraries": {
     "searchPlaceholder": "Alle Bibliotheken durchsuchen...",
     "results": "Ergebnisse",
     "noResults": "Keine Ergebnisse",
-    "addVault": "+ Bibliothek hinzufügen",
+    "addLibrary": "+ Bibliothek hinzufügen",
     "welcomeTitle": "Willkommen bei Constellation",
     "welcomeSubtitle": "Fügen Sie Ihren ersten Bibliothek über die Seitenleiste hinzu",
-    "addVaultCta": "+ Bibliothek hinzufügen",
-    "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste"
+    "addLibraryCta": "+ Bibliothek hinzufügen",
+    "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste",
+    "newLibrary": "New Library",
+    "linkLibrary": "Link Existing Library",
+    "newLibraryDesc": "Create a fresh empty library folder to start writing from scratch.",
+    "linkLibraryDesc": "Connect an existing Markdown folder as a library — non-destructively."
   },
   "skills": {
     "title": "Fähigkeiten",
@@ -524,7 +528,7 @@
     "create": "Fähigkeit erstellen",
     "noProvider": "Verbinden Sie einen KI-Anbieter in den Einstellungen, um Fähigkeiten zu nutzen.",
     "selectNote": "Notiz auswählen",
-    "selectVault": "Bibliothek auswählen",
+    "selectLibrary": "Bibliothek auswählen",
     "enterText": "Text eingeben...",
     "result": "Ergebnis",
     "copyResult": "Kopieren",
@@ -548,15 +552,15 @@
     "research": "Forschungsassistent",
     "researchDesc": "Informationen aus mehreren Notizen analysieren und zusammenführen"
   },
-  "vaultManager": {
+  "libraryManager": {
     "title": "Bibliotheks verwalten",
-    "openVault": "+ Bibliothek öffnen",
-    "manageVaults": "Bibliotheks verwalten...",
+    "openLibrary": "+ Bibliothek öffnen",
+    "manageLibraries": "Bibliotheks verwalten...",
     "openFolder": "Ordner öffnen",
     "remove": "Entfernen",
     "confirmRemove": "\"{name}\" aus Constellation entfernen? Deine Dateien werden nicht gelöscht.",
-    "addVault": "+ Bibliothek hinzufügen",
-    "noVaults": "Keine Bibliotheks registriert",
+    "addLibrary": "+ Bibliothek hinzufügen",
+    "noLibraries": "Keine Bibliotheks registriert",
     "notes": "Notizen"
   },
   "lockScreen": {
@@ -650,9 +654,9 @@
       "title": "Quelle",
       "folder": "Ordner",
       "tag": "Schlagwort",
-      "vault": "Bibliothek",
-      "allVaults": "Alle Bibliotheken",
-      "vaults": "Bibliotheken",
+      "library": "Bibliothek",
+      "allLibraries": "Alle Bibliotheken",
+      "libraries": "Bibliotheken",
       "folderPath": "Ordnerpfad",
       "folderPlaceholder": "z.B. Projekte/Aktiv",
       "folderHint": "Durchsucht diesen Ordner in allen Bibliotheken, die ihn enthalten",
@@ -660,7 +664,7 @@
       "tagName": "Schlagwort",
       "tagPlaceholder": "z.B. projekt",
       "tagHint": "Durchsucht alle Notizen mit diesem Schlagwort in allen Bibliotheken",
-      "vaultsLabel": "Bibliotheken",
+      "librariesLabel": "Bibliotheken",
       "allHint": "Durchsucht alle Notizen in allen verbundenen Bibliotheken",
       "apply": "Anwenden",
       "cancel": "Abbrechen"
@@ -684,15 +688,15 @@
       "creating": "Wird erstellt...",
       "next": "Weiter",
       "back": "Zurück",
-      "addVaultsHeading": "Füge deine Bibliotheken hinzu",
-      "addVaultsDescription": "Verbinde deine Bibliotheken und Unter-Universen. Du kannst später jederzeit weitere hinzufügen.",
-      "addVault": "Bibliothek hinzufügen",
+      "addLibrariesHeading": "Füge deine Bibliotheken hinzu",
+      "addLibrariesDescription": "Verbinde deine Bibliotheken und Unter-Universen. Du kannst später jederzeit weitere hinzufügen.",
+      "addLibrary": "Bibliothek hinzufügen",
       "addChildUniverse": "Unter-Universum hinzufügen",
       "starterKit": "Startordner erstellen",
       "starterKitDesc": "Atlas-, Kalender-, Projekte- und Eingangsordner mit einer Willkommensnotiz einrichten",
       "finish": "Fertig",
       "skip": "Vorerst überspringen",
-      "noVaultsYet": "Noch keine Bibliotheken hinzugefügt. Füge einen Bibliothek oder ein Unter-Universum hinzu, um loszulegen.",
+      "noLibrariesYet": "Noch keine Bibliotheken hinzugefügt. Füge einen Bibliothek oder ein Unter-Universum hinzu, um loszulegen.",
       "remove": "Entfernen",
       "importApp": "Aus einer anderen App importieren",
       "importAppDesc": "Migrieren Sie Ihre Notizen aus Obsidian, Notion, Evernote oder anderen Apps nach Constellation.",
@@ -702,7 +706,9 @@
       "importConfirm": "Importieren & Universum erstellen",
       "importingNotes": "Notizen werden importiert...",
       "importLocationLabel": "Universum-Speicherort",
-      "importComplete": "Import abgeschlossen! {count} Dateien importiert."
+      "importComplete": "Import abgeschlossen! {count} Dateien importiert.",
+      "linkLibrary": "Link a Library",
+      "linkLibraryDesc": "Wrap an existing Markdown folder as a library in your universe. Non-destructive — your files stay untouched."
     },
     "manager": {
       "heading": "Universum-Manager",
@@ -717,8 +723,8 @@
       "children": "Kind-Universen",
       "addChild": "Kind-Universum hinzufügen",
       "noUniverses": "Keine Universen gefunden",
-      "ownVaults": "Eigene Bibliotheken",
-      "inheritedVaults": "Geerbte Bibliotheken",
+      "ownLibraries": "Eigene Bibliotheken",
+      "inheritedLibraries": "Geerbte Bibliotheken",
       "openExisting": "Bestehendes Universum öffnen"
     },
     "switching": "Universum wird gewechselt...",
@@ -753,9 +759,9 @@
     "linkedOn": "Verknüpftes Browsen ein",
     "linkedOff": "Verknüpftes Browsen aus",
     "searchNotes": "Notizen durchsuchen...",
-    "allVaults": "Alle Bibliotheken",
+    "allLibraries": "Alle Bibliotheken",
     "sortName": "Nach Name sortieren",
-    "sortVault": "Nach Bibliothek sortieren",
+    "sortLibrary": "Nach Bibliothek sortieren",
     "noResults": "Keine passenden Notizen",
     "noNotes": "Keine Notizen gefunden",
     "detailEmpty": "Wähle eine Notiz zur Ansicht",
@@ -782,7 +788,7 @@
       "txt": "Klartext",
       "txtDesc": "Textdateien zu Markdown konvertiert"
     },
-    "targetVault": "Ziel-Bibliothek",
+    "targetLibrary": "Ziel-Bibliothek",
     "subfolder": "Unterordner",
     "selectSource": "Quelle auswählen",
     "scanning": "Dateien werden gescannt...",

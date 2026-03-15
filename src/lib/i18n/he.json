@@ -35,8 +35,8 @@
     },
     "security": {
       "intro": "הגנה על נתוני הספרייה, אבטחת מפתחות API ונעילת האפליקציה בזמן חוסר פעילות.",
-      "vaultEncryption": "הצפנת ספרייה",
-      "vaultEncryptionDesc": "הצפנת נתוני ספרייה מאוחסנים במכשיר זה",
+      "libraryEncryption": "הצפנת ספרייה",
+      "libraryEncryptionDesc": "הצפנת נתוני ספרייה מאוחסנים במכשיר זה",
       "enabled": "מופעל",
       "disabled": "מושבת",
       "lockHeading": "מסך נעילה",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "מיקום ברירת מחדל לפתקים חדשים",
       "defaultLocationDesc": "היכן פתקים חדשים ממוקמים",
-      "vaultRoot": "תיקיית שורש הספרייה",
+      "libraryRoot": "תיקיית שורש הספרייה",
       "currentFolder": "אותה תיקייה כמו הקובץ הנוכחי",
       "specifiedFolder": "בתיקייה שצוינה למטה",
       "folderPath": "נתיב תיקייה",
@@ -225,7 +225,7 @@
       "varTime": "שעה נוכחית (HH:MM)",
       "varTitle": "כותרת ההערה",
       "varFolder": "שם תיקיית האב",
-      "varVault": "שם הספרייה",
+      "varLibrary": "שם הספרייה",
       "varCursor": "מיקום הסמן לאחר הוספה"
     }
   },
@@ -234,7 +234,7 @@
     "newBase": "בסיס חדש",
     "quickCapture": "לכידה מהירה",
     "quickSwitcher": "קפיצת כוכבים",
-    "searchVault": "חפש בספרייה",
+    "searchLibrary": "חפש בספרייה",
     "dailyNote": "פתח פתק יומי",
     "toggleEdit": "החלף מצב עריכה/קריאה",
     "starView": "פתח תצוגת כוכבים",
@@ -245,7 +245,7 @@
     "closeNote": "סגור פתק נוכחי",
     "toggleLeftSidebar": "החלף סרגל צד שמאלי",
     "toggleRightSidebar": "החלף סרגל צד ימני",
-    "addVault": "הוסף ספרייה",
+    "addLibrary": "הוסף ספרייה",
     "toggleBookmark": "החלף סימנייה",
     "randomNote": "פתח פתק אקראי",
     "toggleTheme": "החלף מצב כהה/בהיר",
@@ -287,13 +287,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "חיפוש...",
-    "addVault": "הוסף ספרייה",
+    "addLibrary": "הוסף ספרייה",
     "results": "תוצאות",
     "noResults": "לא נמצאו תוצאות",
     "bookmarks": "סימניות",
     "bases": "בסיסים",
-    "noVaults": "אין ספריות עדיין",
-    "addVaultButton": "+ הוסף ספרייה",
+    "noLibraries": "אין ספריות עדיין",
+    "addLibraryButton": "+ הוסף ספרייה",
     "newNote": "פתק חדש",
     "newBase": "בסיס חדש",
     "newFolder": "תיקייה חדשה",
@@ -315,7 +315,7 @@
   "welcome": {
     "title": "ברוכים הבאים ל-Constellation",
     "subtitle": "הוסף את הספרייה הראשונה שלך כדי להתחיל",
-    "addVault": "+ הוסף ספרייה",
+    "addLibrary": "+ הוסף ספרייה",
     "selectNote": "בחר פתק מהסרגל הצדדי",
     "quickSwitchHint": "או לחץ Ctrl+O לקפיצת כוכבים"
   },
@@ -375,11 +375,11 @@
     "noTasksFound": "לא נמצאו משימות",
     "allDates": "כל התאריכים",
     "thisWeek": "השבוע",
-    "allVaults": "כל הספריות",
+    "allLibraries": "כל הספריות",
     "allPriorities": "כל העדיפויות",
     "noGroup": "ללא קיבוץ",
     "groupByFile": "קבץ לפי קובץ",
-    "groupByVault": "קבץ לפי ספרייה",
+    "groupByLibrary": "קבץ לפי ספרייה",
     "groupByPriority": "קבץ לפי עדיפות",
     "groupByDue": "קבץ לפי תאריך יעד",
     "sortByFile": "מיון לפי קובץ",
@@ -387,10 +387,10 @@
   },
   "linkDashboard": {
     "mostConnected": "המקושרים ביותר",
-    "crossVault": "בין-ספריות",
+    "crossLibrary": "בין-ספריות",
     "broken": "שבורים",
     "orphans": "פתקים מבודדים",
-    "noCrossVault": "אין קישורים בין-ספריות",
+    "noCrossLibrary": "אין קישורים בין-ספריות",
     "noBroken": "אין קישורים שבורים",
     "noOrphans": "אין פתקים מבודדים"
   },
@@ -403,7 +403,7 @@
     "properties": "מאפיינים",
     "words": "מילים",
     "characters": "תווים",
-    "vaults": "ספריות",
+    "libraries": "ספריות",
     "notes": "פתקים"
   },
   "notePane": {
@@ -417,7 +417,7 @@
     "createNote": "צור פתק חדש",
     "goToFile": "עבור לקובץ",
     "close": "סגור",
-    "selectVault": "בחר ספרייה"
+    "selectLibrary": "בחר ספרייה"
   },
   "commandPalette": {
     "placeholder": "הקלד פקודה...",
@@ -501,15 +501,19 @@
       "linkDistance": "מרחק קישור"
     }
   },
-  "vaults": {
+  "libraries": {
     "searchPlaceholder": "חפש בכל הספריות...",
     "results": "תוצאות",
     "noResults": "אין תוצאות",
-    "addVault": "+ הוסף ספרייה",
+    "addLibrary": "+ הוסף ספרייה",
     "welcomeTitle": "ברוכים הבאים ל-Constellation",
     "welcomeSubtitle": "הוסף את הספרייה הראשונה שלך מהסרגל הצדדי",
-    "addVaultCta": "+ הוסף ספרייה",
-    "selectNote": "בחר פתק מהסרגל הצדדי"
+    "addLibraryCta": "+ הוסף ספרייה",
+    "selectNote": "בחר פתק מהסרגל הצדדי",
+    "newLibrary": "New Library",
+    "linkLibrary": "Link Existing Library",
+    "newLibraryDesc": "Create a fresh empty library folder to start writing from scratch.",
+    "linkLibraryDesc": "Connect an existing Markdown folder as a library — non-destructively."
   },
   "skills": {
     "title": "כישורים",
@@ -524,7 +528,7 @@
     "create": "צור כישור",
     "noProvider": "חבר ספק AI בהגדרות כדי להשתמש בכישורים.",
     "selectNote": "בחר פתק",
-    "selectVault": "בחר ספרייה",
+    "selectLibrary": "בחר ספרייה",
     "enterText": "הכנס טקסט...",
     "result": "תוצאה",
     "copyResult": "העתק",
@@ -548,15 +552,15 @@
     "research": "עוזר מחקר",
     "researchDesc": "נתח וסנתז מידע ממספר פתקים"
   },
-  "vaultManager": {
+  "libraryManager": {
     "title": "ניהול ספריות",
-    "openVault": "+ פתח ספרייה",
-    "manageVaults": "ניהול ספריות...",
+    "openLibrary": "+ פתח ספרייה",
+    "manageLibraries": "ניהול ספריות...",
     "openFolder": "פתח תיקייה",
     "remove": "הסר",
     "confirmRemove": "להסיר את \"{name}\" מ-Constellation? הקבצים שלך לא יימחקו.",
-    "addVault": "+ הוסף ספרייה",
-    "noVaults": "אין ספריות רשומות",
+    "addLibrary": "+ הוסף ספרייה",
+    "noLibraries": "אין ספריות רשומות",
     "notes": "הערות"
   },
   "lockScreen": {
@@ -650,9 +654,9 @@
       "title": "מקור",
       "folder": "תיקייה",
       "tag": "תגית",
-      "vault": "ספרייה",
-      "allVaults": "כל הספריות",
-      "vaults": "ספריות",
+      "library": "ספרייה",
+      "allLibraries": "כל הספריות",
+      "libraries": "ספריות",
       "folderPath": "נתיב תיקייה",
       "folderPlaceholder": "לדוגמה פרויקטים/פעילים",
       "folderHint": "סורק תיקייה זו בכל הספריות שמכילות אותה",
@@ -660,7 +664,7 @@
       "tagName": "תגית",
       "tagPlaceholder": "לדוגמה פרויקט",
       "tagHint": "סורק את כל ההערות עם תגית זו בכל הספריות",
-      "vaultsLabel": "ספריות",
+      "librariesLabel": "ספריות",
       "allHint": "סורק את כל ההערות בכל הספריות המחוברות",
       "apply": "החל",
       "cancel": "ביטול"
@@ -684,15 +688,15 @@
       "creating": "יוצר...",
       "next": "הבא",
       "back": "חזרה",
-      "addVaultsHeading": "הוסף את הספריות שלך",
-      "addVaultsDescription": "חבר את הספריות ויקומים צאצאים. תמיד תוכל להוסיף עוד מאוחר יותר.",
-      "addVault": "הוסף ספרייה",
+      "addLibrariesHeading": "הוסף את הספריות שלך",
+      "addLibrariesDescription": "חבר את הספריות ויקומים צאצאים. תמיד תוכל להוסיף עוד מאוחר יותר.",
+      "addLibrary": "הוסף ספרייה",
       "addChildUniverse": "הוסף יקום צאצא",
       "starterKit": "צור תיקיות התחלה",
       "starterKitDesc": "הגדר תיקיות אטלס, לוח שנה, מאמצים ודואר נכנס עם הערת ברוכים הבאים",
       "finish": "סיום",
       "skip": "דלג לעת עתה",
-      "noVaultsYet": "עדיין לא נוספו ספריות. הוסף ספרייה או יקום צאצא כדי להתחיל.",
+      "noLibrariesYet": "עדיין לא נוספו ספריות. הוסף ספרייה או יקום צאצא כדי להתחיל.",
       "remove": "הסר",
       "importApp": "ייבוא מאפליקציה אחרת",
       "importAppDesc": "העבר את הפתקים שלך מ-Obsidian, Notion, Evernote או אפליקציות אחרות אל Constellation.",
@@ -702,7 +706,9 @@
       "importConfirm": "ייבוא ויצירת יקום",
       "importingNotes": "מייבא את הפתקים שלך...",
       "importLocationLabel": "מיקום היקום",
-      "importComplete": "הייבוא הושלם! {count} קבצים יובאו."
+      "importComplete": "הייבוא הושלם! {count} קבצים יובאו.",
+      "linkLibrary": "Link a Library",
+      "linkLibraryDesc": "Wrap an existing Markdown folder as a library in your universe. Non-destructive — your files stay untouched."
     },
     "manager": {
       "heading": "מנהל יקומים",
@@ -717,8 +723,8 @@
       "children": "יקומים צאצאים",
       "addChild": "הוסף יקום צאצא",
       "noUniverses": "לא נמצאו יקומים",
-      "ownVaults": "ספריות עצמיות",
-      "inheritedVaults": "ספריות בירושה",
+      "ownLibraries": "ספריות עצמיות",
+      "inheritedLibraries": "ספריות בירושה",
       "openExisting": "פתח יקום קיים"
     },
     "switching": "מחליף יקום...",
@@ -753,9 +759,9 @@
     "linkedOn": "גלישה מקושרת פעילה",
     "linkedOff": "גלישה מקושרת כבויה",
     "searchNotes": "חפש הערות...",
-    "allVaults": "כל הספריות",
+    "allLibraries": "כל הספריות",
     "sortName": "מיין לפי שם",
-    "sortVault": "מיין לפי ספרייה",
+    "sortLibrary": "מיין לפי ספרייה",
     "noResults": "לא נמצאו הערות תואמות",
     "noNotes": "לא נמצאו הערות",
     "detailEmpty": "בחר הערה לצפייה כאן",
@@ -782,7 +788,7 @@
       "txt": "טקסט רגיל",
       "txtDesc": "קבצי טקסט שהומרו למרקדאון"
     },
-    "targetVault": "ספרייה יעד",
+    "targetLibrary": "ספרייה יעד",
     "subfolder": "תיקיית משנה",
     "selectSource": "בחר מקור",
     "scanning": "סורק קבצים...",

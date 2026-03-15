@@ -18,9 +18,9 @@
 	let searchQuery = $state('');
 	let searchTimeout: ReturnType<typeof setTimeout>;
 
-	// Per-vault file trees (loaded on expand)
+	// Per-library file trees (loaded on expand)
 	let libraryTrees = $state<Record<string, FileEntry[]>>({});
-	let expandedVaults = $state<Set<string>>(new Set());
+	let expandedLibraries = $state<Set<string>>(new Set());
 
 	// Configure marked for safe rendering
 	marked.setOptions({ breaks: true, gfm: true });
@@ -28,33 +28,33 @@
 	onMount(async () => {
 		await loadLibraries();
 		await loadAllStats();
-		// Auto-expand first vault if only one
+		// Auto-expand first library if only one
 		if ($libraryStats.length === 1) {
 			await toggleLibrary($libraryStats[0]);
 		}
 	});
 
-	async function toggleLibrary(vault: LibraryStats) {
-		const id = vault.library_id;
-		if (expandedVaults.has(id)) {
-			expandedVaults.delete(id);
-			expandedVaults = new Set(expandedVaults);
+	async function toggleLibrary(lib: LibraryStats) {
+		const id = lib.library_id;
+		if (expandedLibraries.has(id)) {
+			expandedLibraries.delete(id);
+			expandedLibraries = new Set(expandedLibraries);
 		} else {
 			// Load tree if not loaded
 			if (!libraryTrees[id]) {
 				const tree: FileEntry[] = await invoke('read_library_tree', {
-					path: vault.path,
+					path: lib.path,
 					maxDepth: 4
 				});
 				libraryTrees[id] = tree;
 				libraryTrees = { ...libraryTrees };
 			}
-			expandedVaults.add(id);
-			expandedVaults = new Set(expandedVaults);
+			expandedLibraries.add(id);
+			expandedLibraries = new Set(expandedLibraries);
 		}
 	}
 
-	async function handleAddVault() {
+	async function handleAddLibrary() {
 		adding = true;
 		error = '';
 		try {
@@ -87,8 +87,8 @@
 	}
 
 	async function handleNoteClick(filePath: string, noteName: string) {
-		const vault = $libraries.find(v => filePath.startsWith(v.path));
-		await openNoteTab(filePath, vault?.name ?? '');
+		const lib = $libraries.find(v => filePath.startsWith(v.path));
+		await openNoteTab(filePath, lib?.name ?? '');
 	}
 
 	async function handleSearchResultClick(path: string, libraryName: string) {
@@ -124,7 +124,7 @@
 						<button class="search-result" class:active={$selectedNote?.path === star.path} onclick={() => handleSearchResultClick(star.path, star.library_name)}>
 							<div class="sr-name">{star.name}</div>
 							<div class="sr-meta">
-								<span class="sr-vault">{star.library_name}</span>
+								<span class="sr-lib-name">{star.library_name}</span>
 								<span class="sr-preview">{star.preview}</span>
 							</div>
 						</button>
@@ -134,25 +134,25 @@
 				{/if}
 			</div>
 		{:else}
-			<!-- Vault Tree -->
-			<div class="vault-list">
-				{#each $libraryStats as vault, i}
-					<div class="vault-section">
-						<button class="vault-header" onclick={() => toggleLibrary(vault)} style="--accent: {colors[i % colors.length]}">
-							<svg class="vault-chevron" class:expanded={expandedVaults.has(vault.library_id)} width="10" height="10" viewBox="0 0 10 10">
+			<!-- Library Tree -->
+			<div class="lib-list">
+				{#each $libraryStats as lib, i}
+					<div class="lib-section">
+						<button class="lib-header" onclick={() => toggleLibrary(lib)} style="--accent: {colors[i % colors.length]}">
+							<svg class="lib-chevron" class:expanded={expandedLibraries.has(lib.library_id)} width="10" height="10" viewBox="0 0 10 10">
 								<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 							</svg>
-							<span class="vault-dot" style="background: {colors[i % colors.length]}"></span>
-							<span class="vault-name">{vault.name}</span>
-							<span class="library-count">{vault.star_count}</span>
+							<span class="lib-dot" style="background: {colors[i % colors.length]}"></span>
+							<span class="lib-name">{lib.name}</span>
+							<span class="library-count">{lib.star_count}</span>
 						</button>
 
-						{#if expandedVaults.has(vault.library_id) && libraryTrees[vault.library_id]}
-							<div class="vault-tree">
+						{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id]}
+							<div class="lib-tree">
 								<FileTree
-									entries={libraryTrees[vault.library_id]}
-									libraryId={vault.library_id}
-									libraryName={vault.name}
+									entries={libraryTrees[lib.library_id]}
+									libraryId={lib.library_id}
+									libraryName={lib.name}
 									onNoteClick={handleNoteClick}
 								/>
 							</div>
@@ -160,9 +160,9 @@
 					</div>
 				{/each}
 
-				<!-- Add Vault -->
-				<button class="add-vault-btn" onclick={handleAddVault} disabled={adding}>
-					{adding ? '...' : $t('vaults.addVault')}
+				<!-- Add Library -->
+				<button class="add-lib-btn" onclick={handleAddLibrary} disabled={adding}>
+					{adding ? '...' : $t('libraries.addLibrary')}
 				</button>
 			</div>
 		{/if}
@@ -179,7 +179,7 @@
 			<div class="note-view">
 				<div class="note-topbar">
 					<div class="note-breadcrumb">
-						<span class="breadcrumb-vault">{$selectedNote.libraryName}</span>
+						<span class="breadcrumb-lib">{$selectedNote.libraryName}</span>
 						<span class="breadcrumb-sep">/</span>
 						<span class="breadcrumb-name">{$selectedNote.path.split(/[\\/]/).pop()?.replace('.md', '')}</span>
 					</div>
@@ -222,7 +222,7 @@
 							<div class="option-icon">🔗</div>
 							<h3>{$t('libraries.linkLibrary')}</h3>
 							<p>{$t('libraries.linkLibraryDesc')}</p>
-							<button class="option-btn secondary" onclick={handleAddVault} disabled={adding}>
+							<button class="option-btn secondary" onclick={handleAddLibrary} disabled={adding}>
 								{adding ? '...' : '📂 Browse'}
 							</button>
 						</div>
@@ -235,11 +235,11 @@
 					<div class="empty-hint">
 						<p>{$t('libraries.selectNote')}</p>
 						<div class="stats-row">
-							{#each $libraryStats as vault, i}
+							{#each $libraryStats as lib, i}
 								<div class="stat-chip" style="--accent: {colors[i % colors.length]}">
 									<span class="chip-dot" style="background: {colors[i % colors.length]}"></span>
-									{vault.name}
-									<span class="chip-count">{vault.star_count}</span>
+									{lib.name}
+									<span class="chip-count">{lib.star_count}</span>
 								</div>
 							{/each}
 						</div>
@@ -285,15 +285,15 @@
 	.sidebar-search input:focus { border-color: #7c3aed; outline: none; }
 	.sidebar-search input::placeholder { color: #656d76; }
 
-	.vault-list {
+	.lib-list {
 		flex: 1;
 		overflow-y: auto;
 		padding: 0.3rem 0;
 	}
 
-	.vault-section { }
+	.lib-section { }
 
-	.vault-header {
+	.lib-header {
 		display: flex;
 		align-items: center;
 		gap: 0.35rem;
@@ -308,23 +308,23 @@
 		cursor: pointer;
 		text-align: start;
 	}
-	.vault-header:hover { background: #eaeef2; }
+	.lib-header:hover { background: #eaeef2; }
 
-	.vault-chevron {
+	.lib-chevron {
 		color: #656d76;
 		flex-shrink: 0;
 		transition: transform 0.15s ease;
 	}
-	.vault-chevron.expanded { transform: rotate(90deg); }
+	.lib-chevron.expanded { transform: rotate(90deg); }
 
-	.vault-dot {
+	.lib-dot {
 		width: 8px;
 		height: 8px;
 		border-radius: 50%;
 		flex-shrink: 0;
 	}
 
-	.vault-name {
+	.lib-name {
 		flex: 1;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -337,12 +337,12 @@
 		font-weight: 400;
 	}
 
-	.vault-tree {
+	.lib-tree {
 		padding-inline-start: 0.8rem;
 		padding-bottom: 0.3rem;
 	}
 
-	.add-vault-btn {
+	.add-lib-btn {
 		display: block;
 		width: calc(100% - 1rem);
 		margin: 0.5rem;
@@ -356,7 +356,7 @@
 		cursor: pointer;
 		text-align: center;
 	}
-	.add-vault-btn:hover { border-color: #7c3aed; color: #7c3aed; }
+	.add-lib-btn:hover { border-color: #7c3aed; color: #7c3aed; }
 
 	.sidebar-error {
 		padding: 0.5rem;
@@ -397,7 +397,7 @@
 
 	.sr-name { font-size: 0.85rem; font-weight: 500; }
 	.sr-meta { display: flex; gap: 0.4rem; font-size: 0.75rem; color: #656d76; margin-top: 2px; }
-	.sr-vault { color: #7c3aed; flex-shrink: 0; }
+	.sr-lib-name { color: #7c3aed; flex-shrink: 0; }
 	.sr-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 	.no-results { padding: 1rem; text-align: center; color: #656d76; font-size: 0.85rem; }
@@ -428,7 +428,7 @@
 	}
 
 	.note-breadcrumb { font-size: 0.8rem; color: #57606a; }
-	.breadcrumb-vault { color: #7c3aed; }
+	.breadcrumb-lib { color: #7c3aed; }
 	.breadcrumb-sep { margin: 0 0.3rem; color: #d0d7de; }
 	.breadcrumb-name { color: #24292f; }
 

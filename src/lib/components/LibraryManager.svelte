@@ -26,7 +26,7 @@
 		}
 	}
 
-	async function handleAddVault() {
+	async function handleAddLibrary() {
 		adding = true;
 		try {
 			await addLibrary();
@@ -35,9 +35,9 @@
 		adding = false;
 	}
 
-	async function handleRemove(vault: LibraryStats) {
+	async function handleRemove(lib: LibraryStats) {
 		confirmingRemove = null;
-		await removeLibraryWithCleanup(vault.library_id);
+		await removeLibraryWithCleanup(lib.library_id);
 		onRefresh();
 	}
 
@@ -62,9 +62,9 @@
 <div class="vm-overlay" onkeydown={handleKeydown}>
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="vm-backdrop" onclick={onClose}></div>
-	<div class="vm-modal" role="dialog" aria-label={$t('vaultManager.title')}>
+	<div class="vm-modal" role="dialog" aria-label={$t('libraryManager.title')}>
 		<div class="vm-header">
-			<h2>{$t('vaultManager.title')}</h2>
+			<h2>{$t('libraryManager.title')}</h2>
 			<button class="vm-close" onclick={onClose}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
 			</button>
@@ -72,23 +72,23 @@
 
 		<div class="vm-body">
 			{#if $libraryStats.length === 0}
-				<div class="vm-empty">{$t('vaultManager.noVaults')}</div>
+				<div class="vm-empty">{$t('libraryManager.noLibraries')}</div>
 			{:else}
-				{#each $libraryStats as vault}
-					<div class="vm-vault">
-						<div class="vm-vault-info">
-							<span class="vm-dot" style="background: {colorMap[vault.name] || '#7c3aed'}"></span>
-							<div class="vm-vault-text">
-								<div class="vm-vault-name">{vault.name}</div>
-								<div class="vm-vault-path" title={vault.path}>{truncatePath(vault.path)}</div>
+				{#each $libraryStats as lib}
+					<div class="vm-lib-item">
+						<div class="vm-lib-info">
+							<span class="vm-dot" style="background: {colorMap[lib.name] || '#7c3aed'}"></span>
+							<div class="vm-lib-text">
+								<div class="vm-lib-name">{lib.name}</div>
+								<div class="vm-lib-path" title={lib.path}>{truncatePath(lib.path)}</div>
 							</div>
-							<span class="vm-library-count">{vault.star_count} {$t('vaultManager.notes')}</span>
+							<span class="vm-library-count">{lib.star_count} {$t('libraryManager.notes')}</span>
 						</div>
-						<div class="vm-vault-actions">
-							<button class="vm-action" title={$t('vaultManager.openFolder')} onclick={() => handleOpenFolder(vault.path)}>
+						<div class="vm-lib-actions">
+							<button class="vm-action" title={$t('libraryManager.openFolder')} onclick={() => handleOpenFolder(lib.path)}>
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
 							</button>
-							<button class="vm-action vm-danger" title={$t('vaultManager.remove')} onclick={() => confirmingRemove = vault}>
+							<button class="vm-action vm-danger" title={$t('libraryManager.remove')} onclick={() => confirmingRemove = lib}>
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
 							</button>
 						</div>
@@ -98,8 +98,8 @@
 		</div>
 
 		<div class="vm-footer">
-			<button class="vm-add-btn" onclick={handleAddVault} disabled={adding}>
-				{$t('vaultManager.addVault')}
+			<button class="vm-add-btn" onclick={handleAddLibrary} disabled={adding}>
+				{$t('libraryManager.addLibrary')}
 			</button>
 		</div>
 	</div>
@@ -107,10 +107,10 @@
 	{#if confirmingRemove}
 		<div class="vm-confirm-overlay">
 			<div class="vm-confirm">
-				<p>{$t('vaultManager.confirmRemove', { name: confirmingRemove.name })}</p>
+				<p>{$t('libraryManager.confirmRemove', { name: confirmingRemove.name })}</p>
 				<div class="vm-confirm-actions">
 					<button class="vm-btn-cancel" onclick={() => confirmingRemove = null}>{$t('common.cancel')}</button>
-					<button class="vm-btn-remove" onclick={() => handleRemove(confirmingRemove!)}>{$t('vaultManager.remove')}</button>
+					<button class="vm-btn-remove" onclick={() => handleRemove(confirmingRemove!)}>{$t('libraryManager.remove')}</button>
 				</div>
 			</div>
 		</div>
@@ -161,26 +161,26 @@
 		padding: 32px 20px; text-align: center;
 		color: var(--text-faint); font-size: 0.88rem;
 	}
-	.vm-vault {
+	.vm-lib-item {
 		display: flex; align-items: center; justify-content: space-between;
 		padding: 10px 20px; gap: 12px;
 	}
-	.vm-vault:hover { background: var(--background-modifier-hover); }
-	.vm-vault-info {
+	.vm-lib-item:hover { background: var(--background-modifier-hover); }
+	.vm-lib-item-info {
 		display: flex; align-items: center; gap: 10px;
 		flex: 1; min-width: 0;
 	}
 	.vm-dot {
 		width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
 	}
-	.vm-vault-text {
+	.vm-lib-item-text {
 		flex: 1; min-width: 0;
 	}
-	.vm-vault-name {
+	.vm-lib-item-name {
 		font-size: 0.9rem; font-weight: 600; color: var(--text-normal);
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
-	.vm-vault-path {
+	.vm-lib-item-path {
 		font-size: 0.75rem; color: var(--text-faint);
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
@@ -188,7 +188,7 @@
 		font-size: 0.75rem; color: var(--text-muted);
 		flex-shrink: 0; white-space: nowrap;
 	}
-	.vm-vault-actions {
+	.vm-lib-item-actions {
 		display: flex; gap: 4px; flex-shrink: 0;
 	}
 	.vm-action {

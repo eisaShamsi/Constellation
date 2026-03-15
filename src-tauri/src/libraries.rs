@@ -27,7 +27,7 @@ fn libraries_config_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(cdir.join("libraries.json"))
 }
 
-/// Load registered vaults from the active universe's libraries.json (own vaults only).
+/// Load registered libraries from the active universe's libraries.json (own libraries only).
 fn load_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     let path = match libraries_config_path(app) {
         Ok(p) => p,
@@ -50,7 +50,7 @@ fn load_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     }
 }
 
-/// Load ALL vaults: own + child universe vaults (recursive, deduplicated).
+/// Load ALL libraries: own + child universe libraries (recursive, deduplicated).
 /// This is what the frontend and query_base should use.
 pub fn load_all_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     match crate::universe::resolve_universe_libraries(app.clone()) {
@@ -64,14 +64,14 @@ pub fn load_libraries_pub(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     load_all_libraries(app)
 }
 
-/// Save registered vaults to the active universe's config.
+/// Save registered libraries to the active universe's config.
 fn save_libraries(app: &tauri::AppHandle, libraries: &[LibraryInfo]) -> Result<(), String> {
     let path = libraries_config_path(app)?;
     let data = serde_json::to_string_pretty(libraries).map_err(|e| e.to_string())?;
     fs::write(&path, data).map_err(|e| format!("Failed to save libraries config: {}", e))
 }
 
-/// Validate that a file path is contained within a vault directory.
+/// Validate that a file path is contained within a library directory.
 /// Prevents path traversal attacks by canonicalizing both paths.
 fn validate_path_in_library(file_path: &str, library_path: &str) -> Result<PathBuf, String> {
     let library_canon = fs::canonicalize(library_path)
@@ -92,7 +92,7 @@ fn validate_path_in_library(file_path: &str, library_path: &str) -> Result<PathB
     Ok(file_canon)
 }
 
-/// Validate that a path is within any registered library (including child universe vaults)
+/// Validate that a path is within any registered library (including child universe libraries)
 /// or the active universe directory.
 pub fn validate_path_in_any_library(app: &tauri::AppHandle, file_path: &str) -> Result<PathBuf, String> {
     let libraries = load_all_libraries(app);
@@ -127,13 +127,13 @@ fn sanitize_name(name: &str) -> Result<String, String> {
     Ok(name.to_string())
 }
 
-/// List all registered vaults.
+/// List all registered libraries.
 #[tauri::command]
 pub fn list_libraries(app: tauri::AppHandle) -> Vec<LibraryInfo> {
     load_libraries(&app)
 }
 
-/// Add a vault by its folder path.
+/// Add a library by its folder path.
 #[tauri::command]
 pub fn add_library(app: tauri::AppHandle, path: String) -> Result<LibraryInfo, String> {
     let library_path = Path::new(&path);
@@ -170,7 +170,7 @@ pub fn add_library(app: tauri::AppHandle, path: String) -> Result<LibraryInfo, S
     Ok(library)
 }
 
-/// Remove a vault by ID (does NOT delete any files).
+/// Remove a library by ID (does NOT delete any files).
 #[tauri::command]
 pub fn remove_library(app: tauri::AppHandle, library_id: String) -> Result<(), String> {
     let mut libraries = load_libraries(&app);
@@ -184,10 +184,10 @@ pub fn remove_library(app: tauri::AppHandle, library_id: String) -> Result<(), S
     save_libraries(&app, &libraries)
 }
 
-/// Read the file tree of a vault (up to 2 levels deep for performance).
+/// Read the file tree of a library (up to 2 levels deep for performance).
 #[tauri::command]
 pub fn read_library_tree(app: tauri::AppHandle, path: String, max_depth: Option<u32>) -> Result<Vec<FileEntry>, String> {
-    // Validate the path is a registered vault (including child universe vaults)
+    // Validate the path is a registered library (including child universe libraries)
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == path) {
         return Err("Access denied: not a registered library.".to_string());
@@ -201,7 +201,7 @@ pub fn read_library_tree(app: tauri::AppHandle, path: String, max_depth: Option<
     Ok(read_dir_recursive(library_path, 0, depth))
 }
 
-/// Read the content of a file inside a vault.
+/// Read the content of a file inside a library.
 #[tauri::command]
 pub fn read_note(app: tauri::AppHandle, file_path: String) -> Result<String, String> {
     validate_path_in_any_library(&app, &file_path)?;
@@ -231,7 +231,7 @@ pub fn get_note_headings(app: tauri::AppHandle, file_path: String) -> Result<Vec
     Ok(headings)
 }
 
-/// Write content to a markdown file inside a vault.
+/// Write content to a markdown file inside a library.
 #[tauri::command]
 pub fn write_note(app: tauri::AppHandle, file_path: String, content: String) -> Result<(), String> {
     validate_path_in_any_library(&app, &file_path)?;
@@ -279,7 +279,7 @@ pub struct StarInfo {
     pub preview: String,
 }
 
-/// Get stats for all vaults (own + child universe) — star counts, folder counts, recent stars.
+/// Get stats for all libraries (own + child universe) — star counts, folder counts, recent stars.
 #[tauri::command]
 pub fn get_all_library_stats(app: tauri::AppHandle) -> Vec<LibraryStats> {
     let libraries = load_all_libraries(&app);
@@ -297,7 +297,7 @@ pub fn get_all_library_stats(app: tauri::AppHandle) -> Vec<LibraryStats> {
     }).collect()
 }
 
-/// Search across all vaults for notes matching a query.
+/// Search across all libraries for notes matching a query.
 #[tauri::command]
 pub fn search_stars(app: tauri::AppHandle, query: String) -> Vec<StarInfo> {
     let libraries = load_all_libraries(&app);
@@ -502,7 +502,7 @@ fn search_notes_recursive(dir: &Path, library_id: &str, library_name: &str, quer
     }
 }
 
-/// Create a new markdown note inside a vault folder.
+/// Create a new markdown note inside a library folder.
 /// `initial_frontmatter` is optional YAML content (without delimiters) to insert between `---` markers.
 #[tauri::command]
 pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String, initial_frontmatter: Option<String>) -> Result<String, String> {
@@ -536,7 +536,7 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
     Ok(file_path.to_string_lossy().to_string())
 }
 
-/// Search notes by property key/value across all vaults.
+/// Search notes by property key/value across all libraries.
 #[tauri::command]
 pub fn search_by_property(app: tauri::AppHandle, key: String, value: String) -> Vec<StarInfo> {
     let libraries = load_all_libraries(&app);
@@ -632,7 +632,7 @@ fn search_property_recursive(dir: &Path, library_id: &str, library_name: &str, k
     }
 }
 
-/// Create a new folder inside a vault.
+/// Create a new folder inside a library.
 #[tauri::command]
 pub fn create_folder(app: tauri::AppHandle, parent_path: String, folder_name: String) -> Result<String, String> {
     let safe_name = sanitize_name(&folder_name)?;
@@ -715,7 +715,7 @@ pub fn delete_item(app: tauri::AppHandle, path: String, permanent: Option<bool>)
     }
 }
 
-/// Resolve a wikilink target to an actual file path within a vault.
+/// Resolve a wikilink target to an actual file path within a library.
 #[tauri::command]
 pub fn resolve_wikilink(app: tauri::AppHandle, library_path: String, target: String) -> Result<Option<String>, String> {
     let libraries = load_all_libraries(&app);
@@ -735,7 +735,7 @@ pub fn resolve_wikilink(app: tauri::AppHandle, library_path: String, target: Str
         return Ok(None);
     }
 
-    // Prefer shortest path (closest to vault root)
+    // Prefer shortest path (closest to library root)
     matches.sort_by_key(|p| p.to_string_lossy().len());
     Ok(Some(matches[0].to_string_lossy().to_string()))
 }
@@ -748,8 +748,8 @@ pub struct ResolvedLink {
     pub fragment: Option<String>,
 }
 
-/// Resolve a wikilink across all vaults. Searches current vault first, then others.
-/// Supports `library_name:note` syntax to target a specific vault.
+/// Resolve a wikilink across all libraries. Searches current library first, then others.
+/// Supports `library_name:note` syntax to target a specific library.
 /// Supports `note#heading` and `note#^block-id` — fragment is stripped before resolution and returned separately.
 #[tauri::command]
 pub fn resolve_wikilink_cross_library(
@@ -764,7 +764,7 @@ pub fn resolve_wikilink_cross_library(
         (target.clone(), None)
     };
 
-    // Check for vault:note syntax
+    // Check for library:note syntax
     if let Some(colon_pos) = base_target.find(':') {
         let library_prefix = base_target[..colon_pos].trim().to_lowercase();
         let note_target = base_target[colon_pos + 1..].trim().to_lowercase();
@@ -792,7 +792,7 @@ pub fn resolve_wikilink_cross_library(
 
     let target_lower = base_target.to_lowercase();
 
-    // Search current vault first
+    // Search current library first
     let current_dir = Path::new(&current_library_path);
     if current_dir.exists() {
         let mut matches: Vec<PathBuf> = Vec::new();
@@ -812,7 +812,7 @@ pub fn resolve_wikilink_cross_library(
         }
     }
 
-    // Search other vaults
+    // Search other libraries
     for (_id, name, path) in &libraries {
         if *path == current_library_path { continue; }
         let library_dir = Path::new(path);
@@ -925,7 +925,7 @@ fn has_alias(content: &str, target: &str) -> bool {
     false
 }
 
-/// Read Obsidian's appearance.json for a vault.
+/// Read Obsidian's appearance.json for a library.
 #[tauri::command]
 pub fn read_library_appearance(app: tauri::AppHandle, library_path: String) -> Result<serde_json::Value, String> {
     let libraries = load_all_libraries(&app);
@@ -1121,7 +1121,7 @@ pub struct NoteLink {
     pub link_type: Option<String>,
 }
 
-/// Scan all notes in a vault and extract wikilinks from each.
+/// Scan all notes in a library and extract wikilinks from each.
 #[tauri::command]
 pub fn scan_library_links(app: tauri::AppHandle, library_path: String, library_name: String) -> Result<Vec<NoteLink>, String> {
     let libraries = load_all_libraries(&app);
@@ -1183,7 +1183,7 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
     }
 }
 
-/// Scan for unlinked mentions of a note name across all vaults.
+/// Scan for unlinked mentions of a note name across all libraries.
 /// Returns notes that mention the name as plain text but don't have a [[wikilink]] to it.
 #[tauri::command]
 pub fn scan_unlinked_mentions(
@@ -1277,7 +1277,7 @@ fn scan_unlinked_recursive(
     }
 }
 
-/// Scan all tags across a vault.
+/// Scan all tags across a library.
 #[tauri::command]
 pub fn scan_library_tags(app: tauri::AppHandle, library_path: String) -> Result<std::collections::HashMap<String, u32>, String> {
     let libraries = load_all_libraries(&app);
@@ -1407,7 +1407,7 @@ fn build_stopwords() -> std::collections::HashSet<&'static str> {
     words.iter().copied().collect()
 }
 
-/// Scan all notes in a vault and build a word index.
+/// Scan all notes in a library and build a word index.
 #[tauri::command]
 pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result<Vec<IndexEntry>, String> {
     let libraries = load_all_libraries(&app);
@@ -1611,7 +1611,7 @@ fn scan_index_words_recursive(
     }
 }
 
-/// Collect all note names in a vault (for autocomplete).
+/// Collect all note names in a library (for autocomplete).
 #[tauri::command]
 pub fn collect_library_notes(app: tauri::AppHandle, library_path: String) -> Result<Vec<serde_json::Value>, String> {
     let libraries = load_all_libraries(&app);
@@ -1662,7 +1662,7 @@ pub fn get_daily_note_path(app: tauri::AppHandle, library_path: String, format: 
     } else {
         Path::new(&library_path).join(&folder)
     };
-    // Validate the resolved path is still within the vault
+    // Validate the resolved path is still within the library
     validate_path_in_library(&daily_folder.to_string_lossy(), &library_path)?;
     fs::create_dir_all(&daily_folder).map_err(|e| e.to_string())?;
     let file_path = daily_folder.join(format!("{}.md", filename));
@@ -1711,7 +1711,7 @@ pub fn quick_capture(app: tauri::AppHandle, library_path: String, inbox_folder: 
     Ok(file_path.to_string_lossy().to_string())
 }
 
-/// Update all links in a vault when a note is renamed.
+/// Update all links in a library when a note is renamed.
 #[tauri::command]
 pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_name: String, new_name: String) -> Result<u32, String> {
     validate_path_in_any_library(&app, &library_path)?;
@@ -1760,7 +1760,7 @@ pub fn read_note_preview(app: tauri::AppHandle, file_path: String, max_chars: us
     Ok(safe_truncate(&content, max_chars))
 }
 
-/// Save a base64-encoded image from clipboard to the vault's attachments folder.
+/// Save a base64-encoded image from clipboard to the library's attachments folder.
 /// Returns the relative path suitable for embedding as `![[filename]]`.
 #[tauri::command]
 pub fn save_clipboard_image(app: tauri::AppHandle, library_path: String, image_data: String) -> Result<String, String> {
@@ -1847,10 +1847,10 @@ pub fn export_note_html(app: tauri::AppHandle, file_path: String) -> Result<Stri
     Ok(content)
 }
 
-/// Move item to system trash (or ".trash" folder inside vault)
+/// Move item to system trash (or ".trash" folder inside library)
 #[tauri::command]
 pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) -> Result<(), String> {
-    // Verify the file is within a registered vault (not just any caller-supplied library_path)
+    // Verify the file is within a registered library (not just any caller-supplied library_path)
     validate_path_in_any_library(&app, &path)?;
     validate_path_in_library(&path, &library_path)?;
     let trash_dir = Path::new(&library_path).join(".trash");

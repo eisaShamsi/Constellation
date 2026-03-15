@@ -53,7 +53,7 @@
 			case 'tag': return `#${definition.source.tag || ''}` + librarySuffix;
 			case 'all': return selectedLibraryNames.length > 0
 				? `${selectedLibraryNames.length} ${$t('bases.source.libraries')}`
-				: $t('bases.source.allVaults');
+				: $t('bases.source.allLibraries');
 			default: return '';
 		}
 	});
@@ -276,7 +276,7 @@
 						</button>
 						<button class="source-type-btn" class:active={sourceType === 'all'} onclick={() => sourceType = 'all'}>
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-							{$t('bases.source.allVaults')}
+							{$t('bases.source.allLibraries')}
 						</button>
 					</div>
 
@@ -299,12 +299,12 @@
 
 				<!-- Right: library checkboxes -->
 				<div class="source-right">
-					<div class="source-section-label">{$t('bases.source.vaultsLabel')}</div>
+					<div class="source-section-label">{$t('bases.source.librariesLabel')}</div>
 					<div class="library-checklist">
 						<label class="library-check" class:active={allLibrariesSelected}>
 							<input type="checkbox" checked={allLibrariesSelected} onchange={toggleAllLibraries} />
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-							<span>{$t('bases.source.allVaults')}</span>
+							<span>{$t('bases.source.allLibraries')}</span>
 						</label>
 						{#each availableLibraries as v}
 							<label class="library-check" class:active={selectedLibraryNames.includes(v.name)}>

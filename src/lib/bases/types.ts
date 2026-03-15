@@ -5,7 +5,7 @@ export interface BaseSource {
 	path?: string;
 	tag?: string;
 	includeSubfolders?: boolean;
-	selectedLibraries?: string[]; // empty/undefined = all libraries; populated = only these vault names
+	selectedLibraries?: string[]; // empty/undefined = all libraries; populated = only these library names
 }
 
 export interface ColumnDef {

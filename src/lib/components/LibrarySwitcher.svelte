@@ -65,7 +65,7 @@
 	});
 </script>
 
-<div class="vault-switcher" bind:this={popupEl}>
+<div class="library-switcher" bind:this={popupEl}>
 	<!-- Universe section -->
 	<div class="vs-section-header">{$t('universe.title') ?? 'Universe'}</div>
 	<div class="vs-item vs-universe-info">
@@ -96,20 +96,20 @@
 	<div class="vs-divider"></div>
 
 	<!-- Own Libraries section -->
-	<div class="vs-section-header">{$t('universe.manager.ownVaults') ?? 'Own Libraries'}</div>
+	<div class="vs-section-header">{$t('universe.manager.ownLibraries') ?? 'Own Libraries'}</div>
 	<button class="vs-item vs-add" onclick={() => { onClose(); onAddLibrary(); }}>
-		<span>{$t('vaultManager.openVault')}</span>
+		<span>{$t('libraryManager.openLibrary')}</span>
 	</button>
 
 	{#if $libraryStats.length === 0}
-		<div class="vs-empty">{$t('vaultManager.noVaults')}</div>
+		<div class="vs-empty">{$t('libraryManager.noLibraries')}</div>
 	{:else}
 		<div class="vs-list">
-			{#each $libraryStats as vault}
-				<div class="vs-item vs-vault">
-					<span class="vs-dot" style="background: {colorMap[vault.name] || '#7c3aed'}"></span>
-					<span class="vs-name">{vault.name}</span>
-					<span class="vs-count">{vault.star_count}</span>
+			{#each $libraryStats as lib}
+				<div class="vs-item vs-lib-item">
+					<span class="vs-dot" style="background: {colorMap[lib.name] || '#7c3aed'}"></span>
+					<span class="vs-name">{lib.name}</span>
+					<span class="vs-count">{lib.star_count}</span>
 				</div>
 			{/each}
 		</div>
@@ -141,12 +141,12 @@
 			<path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/>
 			<path d="M16 3v4"/><path d="M8 3v4"/>
 		</svg>
-		<span>{$t('vaultManager.manageVaults')}</span>
+		<span>{$t('libraryManager.manageLibraries')}</span>
 	</button>
 </div>
 
 <style>
-	.vault-switcher {
+	.library-switcher {
 		position: absolute;
 		bottom: 100%;
 		inset-inline-start: 0;
@@ -203,7 +203,7 @@
 		color: var(--text-muted);
 		font-size: 0.82rem;
 	}
-	.vs-vault {
+	.vs-lib-item {
 		cursor: default;
 	}
 	.vs-child-universe {

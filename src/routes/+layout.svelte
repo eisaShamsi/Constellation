@@ -53,7 +53,7 @@
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
-	import { scanNoteTasks, toggleTask, scanVaultNoteDates } from '$lib/tasks/store';
+	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
 	import PagePreview from '$lib/components/PagePreview.svelte';
@@ -141,7 +141,7 @@
 	let showImporter = $state(false);
 	let secondScreenOpen = $state(false);
 
-	// Vault management
+	// Library management
 	let showLibrarySwitcher = $state(false);
 	let showLibraryManager = $state(false);
 	let showLibraryPicker = $state(false);
@@ -160,9 +160,9 @@
 	// Watcher debounce (hoisted so onDestroy can clear it)
 	let watcherDebounce: ReturnType<typeof setTimeout>;
 
-	// Vault data caches
-	let allVaultLinks = $state<NoteLink[]>([]);
-	let allVaultTags = $state<Record<string, number>>({});
+	// Library data caches
+	let allLibraryLinks = $state<NoteLink[]>([]);
+	let allLibraryTags = $state<Record<string, number>>({});
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let allIndexEntries = $state<IndexEntry[]>([]);
 	// Star data stored as plain (non-reactive) arrays to avoid $state proxy overhead
@@ -208,9 +208,9 @@
 		};
 	}
 
-	// Vault trees
+	// Library trees
 	let libraryTrees = $state<Record<string, FileEntry[]>>({});
-	let expandedVaults = $state<Set<string>>(new Set());
+	let expandedLibraries = $state<Set<string>>(new Set());
 
 	// Workspace bases
 	let workspaceBases = $state<WorkspaceBaseEntry[]>([]);
@@ -227,7 +227,7 @@
 
 	const isHome = $derived(page.url.pathname === '/');
 
-	// Vault color palette
+	// Library color palette
 	const LIBRARY_COLORS = ['#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#8b5cf6'];
 	const libraryColorMap = $derived.by(() => {
 		const map: Record<string, string> = {};
@@ -246,7 +246,7 @@
 	// Backlinks for current note
 	const currentBacklinks = $derived.by(() => {
 		if (!sidebarTab) return [];
-		return getBacklinks(allVaultLinks, sidebarTab.name);
+		return getBacklinks(allLibraryLinks, sidebarTab.name);
 	});
 
 	// Unlinked mentions for current note
@@ -266,7 +266,7 @@
 	// Outgoing links for current note
 	const currentOutgoing = $derived.by(() => {
 		if (!sidebarTab) return [];
-		return getOutgoingLinks(allVaultLinks, sidebarTab.path).map(l => ({
+		return getOutgoingLinks(allLibraryLinks, sidebarTab.path).map(l => ({
 			target: l.target,
 			context: l.context,
 		}));
@@ -370,7 +370,7 @@
 				const dateCounts: Record<string, number> = {};
 				const taskCounts: Record<string, number> = {};
 				const results = await Promise.all(
-					libraryList.map(v => scanVaultNoteDates(v.path, v.name))
+					libraryList.map(v => scanLibraryNoteDates(v.path, v.name))
 				);
 				for (const dateMap of results) {
 					for (const [date, entries] of Object.entries(dateMap)) {
@@ -378,9 +378,9 @@
 					}
 				}
 				// Also scan tasks for due dates
-				const { scanVaultTasks } = await import('$lib/tasks/store');
+				const { scanLibraryTasks } = await import('$lib/tasks/store');
 				const taskResults = await Promise.all(
-					libraryList.map(v => scanVaultTasks(v.path, v.name))
+					libraryList.map(v => scanLibraryTasks(v.path, v.name))
 				);
 				for (const result of taskResults) {
 					for (const task of result.tasks) {
@@ -495,7 +495,7 @@
 			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
 			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
 			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchVault'), shortcut: sc('search'), icon: '🔎', action: () => { sidebarOpen = true; searchMode = true; }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { sidebarOpen = true; searchMode = true; }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'star-view', name: $t('commands.starView'), shortcut: sc('star-view'), icon: '🕸️', action: () => showStarView = !showStarView, category: 'View' },
@@ -507,7 +507,7 @@
 			{ id: 'close-note', name: $t('commands.closeNote'), shortcut: sc('close-note'), icon: '✕', action: closeNote, category: 'File' },
 			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: sc('toggle-left'), icon: '◧', action: () => sidebarOpen = !sidebarOpen, category: 'View' },
 			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: sc('toggle-right'), icon: '◨', action: () => rightSidebarOpen = !rightSidebarOpen, category: 'View' },
-			{ id: 'add-vault', name: $t('commands.addVault'), shortcut: sc('add-vault'), icon: '📁', action: handleAddLibrary, category: 'Vault' },
+			{ id: 'add-library', name: $t('commands.addLibrary'), shortcut: sc('add-library'), icon: '📁', action: handleAddLibrary, category: 'Library' },
 			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), shortcut: sc('toggle-bookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
 			{ id: 'random-note', name: $t('commands.randomNote'), shortcut: sc('random-note'), icon: '🎲', action: handleRandomNote, category: 'Navigation' },
 			{ id: 'toggle-theme', name: $t('commands.toggleTheme'), shortcut: sc('toggle-theme'), icon: '🌗', action: handleToggleTheme, category: 'Appearance' },
@@ -587,9 +587,9 @@
 		appReady = true;
 
 		// Start file watchers and build caches in the background
-		for (const vault of $libraries) {
-			try { await startWatchingLibrary(vault.id, vault.path); } catch { /* ignore */ }
-			await loadLibraryAppearance(vault.path, vault.id);
+		for (const lib of $libraries) {
+			try { await startWatchingLibrary(lib.id, lib.path); } catch { /* ignore */ }
+			await loadLibraryAppearance(lib.path, lib.id);
 		}
 		await refreshLibraryCaches();
 	}
@@ -607,8 +607,8 @@
 		showUniverseManager = false;
 
 		// Unwatch all libraries
-		for (const vault of $libraries) {
-			try { await invoke('unwatch_library', { libraryId: vault.id }); } catch { /* ignore */ }
+		for (const lib of $libraries) {
+			try { await invoke('unwatch_library', { libraryId: lib.id }); } catch { /* ignore */ }
 		}
 
 		// Clear in-memory state
@@ -617,15 +617,15 @@
 		$focusedTabId = null;
 		workspaceBases = [];
 
-		// Clear vault stores so sidebar resets
+		// Clear library stores so sidebar resets
 		libraries.set([]);
 		libraryStats.set([]);
-		allVaultLinks = [];
-		allVaultTags = {};
+		allLibraryLinks = [];
+		allLibraryTags = {};
 		allNotes = [];
 		allIndexEntries = [];
 		libraryTrees = {};
-		expandedVaults = new Set();
+		expandedLibraries = new Set();
 		editingTabIds.set(new Set());
 		libraryAppearances.set({});
 		bookmarks.set([]);
@@ -794,28 +794,28 @@
 			const libraryList = $libraries;
 			for (let i = 0; i < libraryList.length; i += 2) {
 				const batch = libraryList.slice(i, i + 2);
-				const batchResults = await Promise.all(batch.map(async (vault) => {
-					const [vaultLinks, vaultTags, vaultNotes, vaultIndex] = await Promise.all([
-						scanLibraryLinks(vault.path, vault.name).catch(() => [] as NoteLink[]),
-						scanLibraryTags(vault.path).catch(() => ({} as Record<string, number>)),
-						invoke('collect_library_notes', { libraryPath: vault.path }).catch(() => []) as Promise<any[]>,
-						scanLibraryIndex(vault.path).catch(() => [] as IndexEntry[]),
+				const batchResults = await Promise.all(batch.map(async (lib) => {
+					const [libLinks, libTags, libNotes, libIndex] = await Promise.all([
+						scanLibraryLinks(lib.path, lib.name).catch(() => [] as NoteLink[]),
+						scanLibraryTags(lib.path).catch(() => ({} as Record<string, number>)),
+						invoke('collect_library_notes', { libraryPath: lib.path }).catch(() => []) as Promise<any[]>,
+						scanLibraryIndex(lib.path).catch(() => [] as IndexEntry[]),
 					]);
-					return { vault, vaultLinks, vaultTags, vaultNotes, vaultIndex };
+					return { lib, libLinks, libTags, libNotes, libIndex };
 				}));
 
-				for (const { vault, vaultLinks, vaultTags, vaultNotes, vaultIndex } of batchResults) {
-					links.push(...vaultLinks);
-					for (const [tag, count] of Object.entries(vaultTags)) {
+				for (const { lib, libLinks, libTags, libNotes, libIndex } of batchResults) {
+					links.push(...libLinks);
+					for (const [tag, count] of Object.entries(libTags)) {
 						tags[tag] = (tags[tag] || 0) + count;
 					}
-					notes.push(...vaultNotes.map((n: any) => ({ name: n.name, path: n.path, libraryName: vault.name })));
-					indexRaw.push(...vaultIndex);
+					notes.push(...libNotes.map((n: any) => ({ name: n.name, path: n.path, libraryName: lib.name })));
+					indexRaw.push(...libIndex);
 				}
 			}
 
-			allVaultLinks = links;
-			allVaultTags = tags;
+			allLibraryLinks = links;
+			allLibraryTags = tags;
 			allNotes = notes;
 			allIndexEntries = mergeIndexEntries(indexRaw);
 
@@ -898,7 +898,7 @@
 		}
 	}
 
-	async function createNoteInLibrary(vault: { id: string; name: string; path: string }) {
+	async function createNoteInLibrary(lib: { id: string; name: string; path: string }) {
 		try {
 			const baseName = $t('actions.untitled');
 			let name = baseName;
@@ -912,7 +912,7 @@
 			const templateFolder = $appSettings.templateFolder;
 			if (templateFolder && $appSettings.enabledFeatures?.templates) {
 				try {
-					const templatePath = `${vault.path}/${templateFolder}/default.md`;
+					const templatePath = `${lib.path}/${templateFolder}/default.md`;
 					const tpl: string = await invoke('read_note', { filePath: templatePath });
 					if (tpl) {
 						// Extract body from template (skip its own frontmatter)
@@ -924,7 +924,7 @@
 
 			for (let i = 0; i < 100; i++) {
 				try {
-					newPath = await createNote(vault.path, name, defaultFM);
+					newPath = await createNote(lib.path, name, defaultFM);
 					break;
 				} catch {
 					name = `${baseName} ${i + 1}`;
@@ -935,16 +935,16 @@
 			// If we have a template body, process variables and append
 			if (templateBody.trim()) {
 				try {
-					const ctx = { title: name, folder: '', vault: vault.name };
+					const ctx = { title: name, folder: '', library: lib.name };
 					const result = processTemplate(templateBody, ctx);
 					const fullContent = `---\n${defaultFM}\n---\n${result.content}`;
 					await invoke('write_note', { filePath: newPath, content: fullContent });
 				} catch { /* template write failed — note still created */ }
 			}
 
-			await refreshLibraryTree(vault.id);
-			const libraryColor = libraryColorMap[vault.name] ?? '#7c3aed';
-			await openNoteTab(newPath, vault.name, libraryColor);
+			await refreshLibraryTree(lib.id);
+			const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
+			await openNoteTab(newPath, lib.name, libraryColor);
 			// Auto-enter edit mode
 			const tab = get(focusedTab);
 			if (tab) toggleEditMode(tab.id);
@@ -973,7 +973,7 @@
 		showNewBaseDialog = true;
 	}
 
-	async function createWorkspaceBaseWithVaults(
+	async function createWorkspaceBaseWithLibraries(
 		baseName: string,
 		selectedLibraries: string[],
 	) {
@@ -1028,23 +1028,23 @@
 		}
 	}
 
-	async function createFolderInLibrary(vault: { id: string; name: string; path: string }) {
+	async function createFolderInLibrary(lib: { id: string; name: string; path: string }) {
 		try {
 			const baseName = $t('actions.newFolder');
 			let name = baseName;
 			for (let i = 0; i < 100; i++) {
 				try {
-					await createFolder(vault.path, name);
+					await createFolder(lib.path, name);
 					break;
 				} catch {
 					name = `${baseName} ${i + 1}`;
 				}
 			}
-			await refreshLibraryTree(vault.id);
-			// Expand the vault if not already
-			if (!expandedVaults.has(vault.id)) {
-				expandedVaults.add(vault.id);
-				expandedVaults = new Set(expandedVaults);
+			await refreshLibraryTree(lib.id);
+			// Expand the library if not already
+			if (!expandedLibraries.has(lib.id)) {
+				expandedLibraries.add(lib.id);
+				expandedLibraries = new Set(expandedLibraries);
 			}
 		} catch (e) {
 			console.error('Failed to create folder:', e);
@@ -1082,24 +1082,24 @@
 	}
 
 	function toggleCollapseAll() {
-		if (expandedVaults.size > 0) {
-			expandedVaults = new Set();
+		if (expandedLibraries.size > 0) {
+			expandedLibraries = new Set();
 			allExpanded = false;
 		} else {
-			for (const vault of $libraryStats) {
-				expandedVaults.add(vault.library_id);
+			for (const lib of $libraryStats) {
+				expandedLibraries.add(lib.library_id);
 			}
-			expandedVaults = new Set(expandedVaults);
+			expandedLibraries = new Set(expandedLibraries);
 			allExpanded = true;
 		}
 	}
 
 	async function handleOpenDailyNote() {
-		const firstVault = $libraries[0];
-		if (!firstVault) return;
+		const firstLib = $libraries[0];
+		if (!firstLib) return;
 		try {
-			const path = await getDailyNotePath(firstVault.path, $appSettings.dailyNoteFormat, $appSettings.dailyNoteFolder);
-			const libraryColor = libraryColorMap[firstVault.name] ?? '#7c3aed';
+			const path = await getDailyNotePath(firstLib.path, $appSettings.dailyNoteFormat, $appSettings.dailyNoteFolder);
+			const libraryColor = libraryColorMap[firstLib.name] ?? '#7c3aed';
 
 			// Apply daily note template if configured and note was just created (has only date frontmatter)
 			const dailyTpl = $appSettings.dailyNoteTemplate;
@@ -1108,12 +1108,12 @@
 					const noteContent: string = await invoke('read_note', { filePath: path });
 					// Only apply template if note is freshly created (short content = just frontmatter)
 					if (noteContent.length < 50) {
-						const tplPath = `${firstVault.path}/${$appSettings.templateFolder}/${dailyTpl}`;
+						const tplPath = `${firstLib.path}/${$appSettings.templateFolder}/${dailyTpl}`;
 						const tplPathMd = tplPath.endsWith('.md') ? tplPath : tplPath + '.md';
 						const tplRaw: string = await invoke('read_note', { filePath: tplPathMd });
 						const tplBody = extractTemplateBody(tplRaw);
 						const fileName = path.split(/[/\\]/).pop()?.replace(/\.md$/, '') || '';
-						const ctx = { title: fileName, folder: $appSettings.dailyNoteFolder || '', vault: firstVault.name };
+						const ctx = { title: fileName, folder: $appSettings.dailyNoteFolder || '', library: firstLib.name };
 						const result = processTemplate(tplBody, ctx);
 						const newContent = noteContent.trimEnd() + '\n' + result.content;
 						await invoke('write_note', { filePath: path, content: newContent });
@@ -1121,7 +1121,7 @@
 				} catch { /* template not found — OK */ }
 			}
 
-			await openNoteTab(path, firstVault.name, libraryColor);
+			await openNoteTab(path, firstLib.name, libraryColor);
 		} catch (e) {
 			console.error('Failed to open daily note:', e);
 		}
@@ -1159,7 +1159,7 @@
 			const ctx = {
 				title: tab.name.replace(/\.md$/, ''),
 				folder: tab.path.split(/[/\\]/).slice(-2, -1)[0] || '',
-				vault: tab.libraryName,
+				library: tab.libraryName,
 			};
 			const result = processTemplate(body, ctx);
 
@@ -1322,20 +1322,20 @@
 		pagePreview = { ...pagePreview, visible: false };
 	}
 
-	// ─── Vault tree operations ───
-	async function toggleLibrary(vault: LibraryStats) {
-		const id = vault.library_id;
-		if (expandedVaults.has(id)) {
-			expandedVaults.delete(id);
-			expandedVaults = new Set(expandedVaults);
+	// ─── Library tree operations ───
+	async function toggleLibrary(lib: LibraryStats) {
+		const id = lib.library_id;
+		if (expandedLibraries.has(id)) {
+			expandedLibraries.delete(id);
+			expandedLibraries = new Set(expandedLibraries);
 		} else {
 			if (!libraryTrees[id]) {
-				const tree: FileEntry[] = await invoke('read_library_tree', { path: vault.path, maxDepth: 4 });
+				const tree: FileEntry[] = await invoke('read_library_tree', { path: lib.path, maxDepth: 4 });
 				libraryTrees[id] = tree;
 				libraryTrees = { ...libraryTrees };
 			}
-			expandedVaults.add(id);
-			expandedVaults = new Set(expandedVaults);
+			expandedLibraries.add(id);
+			expandedLibraries = new Set(expandedLibraries);
 		}
 	}
 
@@ -1367,8 +1367,8 @@
 			await loadAllStats();
 			childUniverses = await getChildUniverses();
 			// Start watchers for any new libraries and refresh caches
-			for (const vault of $libraries) {
-				try { await startWatchingLibrary(vault.id, vault.path); } catch { /* ignore */ }
+			for (const lib of $libraries) {
+				try { await startWatchingLibrary(lib.id, lib.path); } catch { /* ignore */ }
 			}
 			await refreshLibraryCaches();
 		} catch { /* ignore */ }
@@ -1481,10 +1481,10 @@
 			const name = $t('actions.untitled');
 			const newPath = await createNote(folderPath, name);
 			await refreshLibraryTree(libraryId);
-			const vault = $libraries.find(v => v.id === libraryId);
-			if (vault) {
-				const libraryColor = libraryColorMap[vault.name] ?? '#7c3aed';
-				await openNoteTab(newPath, vault.name, libraryColor);
+			const lib = $libraries.find(v => v.id === libraryId);
+			if (lib) {
+				const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
+				await openNoteTab(newPath, lib.name, libraryColor);
 			}
 		} catch (e) {
 			console.error('Failed to create note:', e);
@@ -1508,10 +1508,10 @@
 			if (!newPath) return;
 
 			await refreshLibraryTree(libraryId);
-			const vault = $libraries.find(v => v.id === libraryId);
-			if (vault) {
-				const libraryColor = libraryColorMap[vault.name] ?? '#7c3aed';
-				await openNoteTab(newPath, vault.name, libraryColor);
+			const lib = $libraries.find(v => v.id === libraryId);
+			if (lib) {
+				const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
+				await openNoteTab(newPath, lib.name, libraryColor);
 			}
 		} catch (e) {
 			console.error('Failed to create base:', e);
@@ -1531,9 +1531,9 @@
 	async function handleDeleteConfirm() {
 		if (!confirmDelete) return;
 		try {
-			const vault = $libraryStats.find(v => confirmDelete!.path.startsWith(v.path));
+			const lib = $libraryStats.find(v => confirmDelete!.path.startsWith(v.path));
 			await deleteItem(confirmDelete.path, true);
-			if (vault) await refreshLibraryTree(vault.library_id);
+			if (lib) await refreshLibraryTree(lib.library_id);
 			await loadAllStats();
 		} catch (e) {
 			console.error('Failed to delete:', e);
@@ -1554,12 +1554,12 @@
 			const oldName = oldPath.split(/[\\/]/).pop()?.replace('.md', '') ?? '';
 
 			await renameItem(oldPath, newPath);
-			const vault = $libraryStats.find(v => oldPath.startsWith(v.path));
-			if (vault) {
-				await refreshLibraryTree(vault.library_id);
+			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
+			if (lib) {
+				await refreshLibraryTree(lib.library_id);
 				// Auto-update links
 				if ($appSettings.autoUpdateLinks && !isDir) {
-					await updateLinksOnRename(vault.path, oldName, newName);
+					await updateLinksOnRename(lib.path, oldName, newName);
 				}
 			}
 		} catch (e) {
@@ -1568,19 +1568,19 @@
 	}
 
 	async function refreshLibraryTree(libraryId: string) {
-		const vault = $libraryStats.find(v => v.library_id === libraryId);
-		if (vault) {
-			const tree: FileEntry[] = await invoke('read_library_tree', { path: vault.path, maxDepth: 4 });
+		const lib = $libraryStats.find(v => v.library_id === libraryId);
+		if (lib) {
+			const tree: FileEntry[] = await invoke('read_library_tree', { path: lib.path, maxDepth: 4 });
 			libraryTrees[libraryId] = tree;
 			libraryTrees = { ...libraryTrees };
 		}
 	}
 
 	async function handleNoteClick(filePath: string, _noteName: string, highlightTerm?: string, e?: MouseEvent) {
-		const vault = $libraries.find(v => filePath.startsWith(v.path));
-		const libraryColor = vault ? libraryColorMap[vault.name] : '#7c3aed';
+		const lib = $libraries.find(v => filePath.startsWith(v.path));
+		const libraryColor = lib ? libraryColorMap[lib.name] : '#7c3aed';
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		await openNoteTab(filePath, vault?.name ?? '', libraryColor, highlightTerm, newTab);
+		await openNoteTab(filePath, lib?.name ?? '', libraryColor, highlightTerm, newTab);
 		if (!isHome) window.location.href = '/';
 	}
 
@@ -1596,13 +1596,13 @@
 		if (scOpen) {
 			secondScreenOpen = true; // sync local state
 			const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
-			const vault = $libraries.find(v => filePath.startsWith(v.path));
+			const lib = $libraries.find(v => filePath.startsWith(v.path));
 			await sendNoteToScreen({
 				path: filePath,
 				name,
-				libraryName: vault?.name ?? '',
-				libraryPath: vault?.path ?? '',
-				libraryColor: vault ? libraryColorMap[vault.name] : '#7c3aed',
+				libraryName: lib?.name ?? '',
+				libraryPath: lib?.path ?? '',
+				libraryColor: lib ? libraryColorMap[lib.name] : '#7c3aed',
 			});
 			return;
 		}
@@ -1610,15 +1610,15 @@
 		try {
 			const content: string = await invoke('read_note', { filePath });
 			const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
-			const vault = $libraries.find(v => filePath.startsWith(v.path));
-			const libraryColor = vault ? libraryColorMap[vault.name] : '#7c3aed';
+			const lib = $libraries.find(v => filePath.startsWith(v.path));
+			const libraryColor = lib ? libraryColorMap[lib.name] : '#7c3aed';
 			indexNoteTab = {
 				id: `index_preview_${Date.now()}`,
 				path: filePath,
 				content,
 				name,
-				libraryName: vault?.name ?? '',
-				libraryPath: vault?.path ?? '',
+				libraryName: lib?.name ?? '',
+				libraryPath: lib?.path ?? '',
 				libraryColor,
 				highlightTerm,
 				history: [filePath],
@@ -1636,7 +1636,7 @@
 	}
 
 	// Get all tags as flat array for editor autocomplete
-	const allTagsList = $derived(Object.keys(allVaultTags));
+	const allTagsList = $derived(Object.keys(allLibraryTags));
 </script>
 
 {#if showUniverseSetup}
@@ -1718,8 +1718,8 @@
 						<button class="tb-btn" onclick={cycleSortOrder} title={getSortTooltip()}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/></svg>
 						</button>
-						<button class="tb-btn" onclick={toggleCollapseAll} title={expandedVaults.size > 0 ? $t('sidebar.collapseAll') : $t('sidebar.expandAll')}>
-							{#if expandedVaults.size > 0}
+						<button class="tb-btn" onclick={toggleCollapseAll} title={expandedLibraries.size > 0 ? $t('sidebar.collapseAll') : $t('sidebar.expandAll')}>
+							{#if expandedLibraries.size > 0}
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/></svg>
 							{:else}
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
@@ -1737,7 +1737,7 @@
 							<button class="s-result" class:active={$activeTab?.path === star.path} onclick={(e) => handleSearchResultClick(star.path, star.library_name, e)}>
 								<div class="s-name">{star.name}</div>
 								<div class="s-meta">
-									<span class="s-vault">{star.library_name}</span>
+									<span class="s-lib-name">{star.library_name}</span>
 									<span class="s-preview">{star.preview}</span>
 								</div>
 							</button>
@@ -1752,7 +1752,7 @@
 						{#each $bookmarks as bm}
 							<button class="s-result" onclick={(e) => handleNoteClick(bm.path, bm.name, undefined, e)}>
 								<div class="s-name">⭐ {bm.name}</div>
-								<div class="s-meta"><span class="s-vault">{bm.libraryName}</span></div>
+								<div class="s-meta"><span class="s-lib-name">{bm.libraryName}</span></div>
 							</button>
 						{/each}
 					{/if}
@@ -1811,24 +1811,24 @@
 						<div class="sidebar-divider"></div>
 					{/if}
 
-					<!-- Vaults — listed after universes with chevron for file tree -->
-					{#each $libraryStats as vault}
+					<!-- Libraries — listed after universes with chevron for file tree -->
+					{#each $libraryStats as lib}
 						<div class="library-section">
-							<button class="library-header" onclick={() => toggleLibrary(vault)}>
-								<svg class="v-chev" class:expanded={expandedVaults.has(vault.library_id)} width="8" height="8" viewBox="0 0 10 10">
+							<button class="library-header" onclick={() => toggleLibrary(lib)}>
+								<svg class="v-chev" class:expanded={expandedLibraries.has(lib.library_id)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
-								<span class="library-name">{vault.name}</span>
+								<span class="library-name">{lib.name}</span>
 							</button>
-							{#if expandedVaults.has(vault.library_id) && libraryTrees[vault.library_id]}
+							{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id]}
 								<div class="library-tree">
 									<FileTree
-									entries={sortEntries(libraryTrees[vault.library_id])}
-									libraryId={vault.library_id}
-									libraryName={vault.name}
-									color={libraryColorMap[vault.name]}
+									entries={sortEntries(libraryTrees[lib.library_id])}
+									libraryId={lib.library_id}
+									libraryName={lib.name}
+									color={libraryColorMap[lib.name]}
 									onNoteClick={handleNoteClick}
-									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, vault.library_id)}
+									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, lib.library_id)}
 									{renamingPath}
 									onRenameComplete={handleRenameComplete}
 									{allExpanded}
@@ -1840,8 +1840,8 @@
 
 					{#if $libraryStats.length === 0}
 						<div class="empty-sidebar">
-							<p>{$t('sidebar.noVaults')}</p>
-							<button class="add-first-btn" onclick={handleAddLibrary}>{$t('sidebar.addVaultButton')}</button>
+							<p>{$t('sidebar.noLibraries')}</p>
+							<button class="add-first-btn" onclick={handleAddLibrary}>{$t('sidebar.addLibraryButton')}</button>
 						</div>
 					{/if}
 				{/if}
@@ -1893,7 +1893,7 @@
 							{#if tab.pinned}
 								<span class="tab-pin" title={$t('layout.pinned')}>📌</span>
 							{:else if tab.libraryName}
-								<span class="tab-vault">{tab.libraryName}</span>
+								<span class="tab-lib-name">{tab.libraryName}</span>
 							{/if}
 							<span class="tab-title">{tab.name}</span>
 							{#if !tab.pinned}
@@ -2204,15 +2204,15 @@
 							onDayClick={async (dateStr) => {
 								const libraryList = get(libraries);
 								if (libraryList.length === 0) return;
-								const vault = libraryList[0];
+								const lib = libraryList[0];
 								try {
 									const dailyPath: string = await invoke('get_daily_note_path', {
-										libraryPath: vault.path,
+										libraryPath: lib.path,
 										format: get(appSettings).dailyNoteFormat || '%Y-%m-%d',
 										folder: get(appSettings).dailyNoteFolder || '',
 									});
-									const vc = libraryColorMap[vault.name] || '#7c3aed';
-									await openNoteTab(dailyPath, vault.name, vc);
+									const vc = libraryColorMap[lib.name] || '#7c3aed';
+									await openNoteTab(dailyPath, lib.name, vc);
 								} catch (e) { console.error('Daily note failed:', e); }
 							}}
 						/>
@@ -2344,7 +2344,7 @@
 	{#if showLibraryPicker}
 		<LibraryPicker
 			colorMap={libraryColorMap}
-			onSelect={(vault) => libraryPickerAction === 'folder' ? createFolderInLibrary(vault) : createNoteInLibrary(vault)}
+			onSelect={(lib) => libraryPickerAction === 'folder' ? createFolderInLibrary(lib) : createNoteInLibrary(lib)}
 			onClose={() => showLibraryPicker = false}
 		/>
 	{/if}
@@ -2352,7 +2352,7 @@
 	{#if showNewBaseDialog}
 		<NewBaseDialog
 			colorMap={libraryColorMap}
-			onCreate={(_vault, name, selectedLibraries) => createWorkspaceBaseWithVaults(name, selectedLibraries)}
+			onCreate={(_lib, name, selectedLibraries) => createWorkspaceBaseWithLibraries(name, selectedLibraries)}
 			onClose={() => showNewBaseDialog = false}
 		/>
 	{/if}
@@ -2395,7 +2395,7 @@
 				<span class="sb-dot">·</span>
 				<span class="sb-item">{sidebarTab.name}</span>
 			{:else}
-				<span class="sb-item">{$t('vaultManager.manageVaults')}</span>
+				<span class="sb-item">{$t('libraryManager.manageLibraries')}</span>
 			{/if}
 		</div>
 		<div class="sb-right">
@@ -2514,7 +2514,7 @@
 	.s-result.active { background: var(--accent-bg); }
 	.s-name { font-size: 0.82rem; font-weight: 500; }
 	.s-meta { display: flex; gap: 4px; font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
-	.s-vault { color: var(--accent); flex-shrink: 0; }
+	.s-lib-name { color: var(--accent); flex-shrink: 0; }
 	.s-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.no-results { padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.82rem; }
 
@@ -2625,7 +2625,7 @@
 		border-bottom: 1px solid var(--bg);
 		margin-bottom: -1px;
 	}
-	.tab-vault {
+	.tab-lib-name {
 		position: absolute; bottom: 100%; inset-inline-end: 8px;
 		font-size: 0.55rem; line-height: 1.3; letter-spacing: 0.02em;
 		color: var(--text);

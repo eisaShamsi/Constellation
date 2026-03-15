@@ -33,9 +33,9 @@
 	const crossLibraryLinks = $derived.by(() => {
 		if (!visible) return [];
 		return allLinks.filter(l => {
-			const sourceVault = notesByPath.get(l.source_path)?.libraryName;
+			const sourceLib = notesByPath.get(l.source_path)?.libraryName;
 			const targetNote = notesByName.get(l.target.toLowerCase());
-			return sourceVault && targetNote && sourceVault !== targetNote.libraryName;
+			return sourceLib && targetNote && sourceLib !== targetNote.libraryName;
 		});
 	});
 
@@ -84,7 +84,7 @@
 			{$t('linkDashboard.mostConnected')} <span class="ld-badge">{mostConnected.length}</span>
 		</button>
 		<button class="ld-tab" class:active={activeSection === 'cross'} onclick={() => activeSection = 'cross'}>
-			{$t('linkDashboard.crossVault')} <span class="ld-badge">{crossLibraryLinks.length}</span>
+			{$t('linkDashboard.crossLibrary')} <span class="ld-badge">{crossLibraryLinks.length}</span>
 		</button>
 		<button class="ld-tab" class:active={activeSection === 'broken'} onclick={() => activeSection = 'broken'}>
 			{$t('linkDashboard.broken')} <span class="ld-badge">{brokenLinks.length}</span>
@@ -110,7 +110,7 @@
 				</button>
 			{/each}
 			{#if crossLibraryLinks.length === 0}
-				<div class="ld-empty">{$t('linkDashboard.noCrossVault')}</div>
+				<div class="ld-empty">{$t('linkDashboard.noCrossLibrary')}</div>
 			{/if}
 		{:else if activeSection === 'broken'}
 			{#each brokenLinks.slice(0, 50) as link}

@@ -35,8 +35,8 @@
     },
     "security": {
       "intro": "अपने लाइब्रेरी डेटा की सुरक्षा करें, API कुंजियों को सुरक्षित रखें और निष्क्रिय होने पर ऐप लॉक करें।",
-      "vaultEncryption": "लाइब्रेरी एन्क्रिप्शन",
-      "vaultEncryptionDesc": "इस डिवाइस पर कैश किए गए लाइब्रेरी डेटा को एन्क्रिप्ट करें",
+      "libraryEncryption": "लाइब्रेरी एन्क्रिप्शन",
+      "libraryEncryptionDesc": "इस डिवाइस पर कैश किए गए लाइब्रेरी डेटा को एन्क्रिप्ट करें",
       "enabled": "सक्षम",
       "disabled": "अक्षम",
       "lockHeading": "लॉक स्क्रीन",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "नए नोट्स का डिफ़ॉल्ट स्थान",
       "defaultLocationDesc": "नए नोट्स कहाँ रखे जाते हैं",
-      "vaultRoot": "लाइब्रेरी का मूल फ़ोल्डर",
+      "libraryRoot": "लाइब्रेरी का मूल फ़ोल्डर",
       "currentFolder": "वर्तमान फ़ाइल का फ़ोल्डर",
       "specifiedFolder": "नीचे निर्दिष्ट फ़ोल्डर में",
       "folderPath": "फ़ोल्डर पथ",
@@ -225,7 +225,7 @@
       "varTime": "वर्तमान समय (HH:MM)",
       "varTitle": "नोट का शीर्षक",
       "varFolder": "पैरेंट फ़ोल्डर का नाम",
-      "varVault": "लाइब्रेरी का नाम",
+      "varLibrary": "लाइब्रेरी का नाम",
       "varCursor": "सम्मिलन के बाद कर्सर की स्थिति"
     }
   },
@@ -234,7 +234,7 @@
     "newBase": "नया बेस",
     "quickCapture": "त्वरित कैप्चर",
     "quickSwitcher": "स्टार जंप",
-    "searchVault": "लाइब्रेरी में खोजें",
+    "searchLibrary": "लाइब्रेरी में खोजें",
     "dailyNote": "दैनिक नोट खोलें",
     "toggleEdit": "संपादन/पठन मोड टॉगल करें",
     "starView": "तारा दृश्य खोलें",
@@ -245,7 +245,7 @@
     "closeNote": "वर्तमान नोट बंद करें",
     "toggleLeftSidebar": "बायाँ साइडबार टॉगल करें",
     "toggleRightSidebar": "दायाँ साइडबार टॉगल करें",
-    "addVault": "लाइब्रेरी जोड़ें",
+    "addLibrary": "लाइब्रेरी जोड़ें",
     "toggleBookmark": "बुकमार्क टॉगल करें",
     "randomNote": "रैंडम नोट खोलें",
     "toggleTheme": "डार्क/लाइट मोड टॉगल करें",
@@ -287,13 +287,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "खोजें...",
-    "addVault": "लाइब्रेरी जोड़ें",
+    "addLibrary": "लाइब्रेरी जोड़ें",
     "results": "परिणाम",
     "noResults": "कोई परिणाम नहीं मिला",
     "bookmarks": "बुकमार्क्स",
     "bases": "बेस",
-    "noVaults": "अभी कोई लाइब्रेरी नहीं",
-    "addVaultButton": "+ लाइब्रेरी जोड़ें",
+    "noLibraries": "अभी कोई लाइब्रेरी नहीं",
+    "addLibraryButton": "+ लाइब्रेरी जोड़ें",
     "newNote": "नया नोट",
     "newBase": "नया बेस",
     "newFolder": "नया फ़ोल्डर",
@@ -315,7 +315,7 @@
   "welcome": {
     "title": "Constellation में आपका स्वागत है",
     "subtitle": "शुरू करने के लिए अपनी पहली लाइब्रेरी जोड़ें",
-    "addVault": "+ लाइब्रेरी जोड़ें",
+    "addLibrary": "+ लाइब्रेरी जोड़ें",
     "selectNote": "साइडबार से एक नोट चुनें",
     "quickSwitchHint": "या स्टार जंप के लिए Ctrl+O दबाएँ"
   },
@@ -375,11 +375,11 @@
     "noTasksFound": "कोई कार्य नहीं मिला",
     "allDates": "सभी तिथियाँ",
     "thisWeek": "इस सप्ताह",
-    "allVaults": "सभी लाइब्रेरियाँ",
+    "allLibraries": "सभी लाइब्रेरियाँ",
     "allPriorities": "सभी प्राथमिकताएँ",
     "noGroup": "कोई समूहीकरण नहीं",
     "groupByFile": "फ़ाइल के अनुसार समूहित करें",
-    "groupByVault": "लाइब्रेरी के अनुसार समूहित करें",
+    "groupByLibrary": "लाइब्रेरी के अनुसार समूहित करें",
     "groupByPriority": "प्राथमिकता के अनुसार समूहित करें",
     "groupByDue": "देय तिथि के अनुसार समूहित करें",
     "sortByFile": "फ़ाइल के अनुसार क्रमबद्ध करें",
@@ -387,10 +387,10 @@
   },
   "linkDashboard": {
     "mostConnected": "सर्वाधिक जुड़े",
-    "crossVault": "क्रॉस-लाइब्रेरी",
+    "crossLibrary": "क्रॉस-लाइब्रेरी",
     "broken": "टूटे हुए",
     "orphans": "अकेले नोट्स",
-    "noCrossVault": "कोई क्रॉस-लाइब्रेरी लिंक नहीं",
+    "noCrossLibrary": "कोई क्रॉस-लाइब्रेरी लिंक नहीं",
     "noBroken": "कोई टूटे हुए लिंक नहीं",
     "noOrphans": "कोई अकेले नोट नहीं"
   },
@@ -403,7 +403,7 @@
     "properties": "गुण",
     "words": "शब्द",
     "characters": "अक्षर",
-    "vaults": "लाइब्रेरियाँ",
+    "libraries": "लाइब्रेरियाँ",
     "notes": "नोट्स"
   },
   "notePane": {
@@ -417,7 +417,7 @@
     "createNote": "नया नोट बनाएं",
     "goToFile": "फाइल पर जाएं",
     "close": "बंद करें",
-    "selectVault": "लाइब्रेरी चुनें"
+    "selectLibrary": "लाइब्रेरी चुनें"
   },
   "commandPalette": {
     "placeholder": "कमांड टाइप करें...",
@@ -501,15 +501,19 @@
       "linkDistance": "लिंक दूरी"
     }
   },
-  "vaults": {
+  "libraries": {
     "searchPlaceholder": "सभी लाइब्रेरियों में खोजें...",
     "results": "परिणाम",
     "noResults": "कोई परिणाम नहीं",
-    "addVault": "+ लाइब्रेरी जोड़ें",
+    "addLibrary": "+ लाइब्रेरी जोड़ें",
     "welcomeTitle": "Constellation में आपका स्वागत है",
     "welcomeSubtitle": "साइडबार से अपनी पहली लाइब्रेरी जोड़ें",
-    "addVaultCta": "+ लाइब्रेरी जोड़ें",
-    "selectNote": "साइडबार से एक नोट चुनें"
+    "addLibraryCta": "+ लाइब्रेरी जोड़ें",
+    "selectNote": "साइडबार से एक नोट चुनें",
+    "newLibrary": "New Library",
+    "linkLibrary": "Link Existing Library",
+    "newLibraryDesc": "Create a fresh empty library folder to start writing from scratch.",
+    "linkLibraryDesc": "Connect an existing Markdown folder as a library — non-destructively."
   },
   "skills": {
     "title": "कौशल",
@@ -524,7 +528,7 @@
     "create": "कौशल बनाएँ",
     "noProvider": "कौशल उपयोग करने के लिए सेटिंग्स में AI प्रदाता कनेक्ट करें।",
     "selectNote": "नोट चुनें",
-    "selectVault": "लाइब्रेरी चुनें",
+    "selectLibrary": "लाइब्रेरी चुनें",
     "enterText": "टेक्स्ट दर्ज करें...",
     "result": "परिणाम",
     "copyResult": "कॉपी",
@@ -548,15 +552,15 @@
     "research": "शोध सहायक",
     "researchDesc": "कई नोट्स से जानकारी का विश्लेषण और संश्लेषण करें"
   },
-  "vaultManager": {
+  "libraryManager": {
     "title": "लाइब्रेरी प्रबंधन",
-    "openVault": "+ लाइब्रेरी खोलें",
-    "manageVaults": "लाइब्रेरी प्रबंधन...",
+    "openLibrary": "+ लाइब्रेरी खोलें",
+    "manageLibraries": "लाइब्रेरी प्रबंधन...",
     "openFolder": "फ़ोल्डर खोलें",
     "remove": "हटाएं",
     "confirmRemove": "Constellation से \"{name}\" हटाएं? आपकी फ़ाइलें हटाई नहीं जाएंगी।",
-    "addVault": "+ लाइब्रेरी जोड़ें",
-    "noVaults": "कोई लाइब्रेरी पंजीकृत नहीं",
+    "addLibrary": "+ लाइब्रेरी जोड़ें",
+    "noLibraries": "कोई लाइब्रेरी पंजीकृत नहीं",
     "notes": "नोट्स"
   },
   "lockScreen": {
@@ -650,9 +654,9 @@
       "title": "स्रोत",
       "folder": "फ़ोल्डर",
       "tag": "टैग",
-      "vault": "लाइब्रेरी",
-      "allVaults": "सभी लाइब्रेरी",
-      "vaults": "लाइब्रेरी",
+      "library": "लाइब्रेरी",
+      "allLibraries": "सभी लाइब्रेरी",
+      "libraries": "लाइब्रेरी",
       "folderPath": "फ़ोल्डर पथ",
       "folderPlaceholder": "जैसे प्रोजेक्ट्स/सक्रिय",
       "folderHint": "इस फ़ोल्डर को उन सभी लाइब्रेरी में स्कैन करता है जिनमें यह मौजूद है",
@@ -660,7 +664,7 @@
       "tagName": "टैग",
       "tagPlaceholder": "जैसे प्रोजेक्ट",
       "tagHint": "इस टैग वाले सभी नोट्स को सभी लाइब्रेरी में स्कैन करता है",
-      "vaultsLabel": "लाइब्रेरी",
+      "librariesLabel": "लाइब्रेरी",
       "allHint": "सभी जुड़े हुए लाइब्रेरी में सभी नोट्स को स्कैन करता है",
       "apply": "लागू करें",
       "cancel": "रद्द करें"
@@ -684,15 +688,15 @@
       "creating": "बना रहा है...",
       "next": "अगला",
       "back": "पीछे",
-      "addVaultsHeading": "अपनी लाइब्रेरियाँ जोड़ें",
-      "addVaultsDescription": "अपनी लाइब्रेरियाँ और चाइल्ड ब्रह्मांड कनेक्ट करें। आप बाद में और भी जोड़ सकते हैं।",
-      "addVault": "लाइब्रेरी जोड़ें",
+      "addLibrariesHeading": "अपनी लाइब्रेरियाँ जोड़ें",
+      "addLibrariesDescription": "अपनी लाइब्रेरियाँ और चाइल्ड ब्रह्मांड कनेक्ट करें। आप बाद में और भी जोड़ सकते हैं।",
+      "addLibrary": "लाइब्रेरी जोड़ें",
       "addChildUniverse": "चाइल्ड ब्रह्मांड जोड़ें",
       "starterKit": "स्टार्टर फ़ोल्डर बनाएं",
       "starterKitDesc": "एटलस, कैलेंडर, प्रयास और इनबॉक्स फ़ोल्डर एक स्वागत नोट के साथ सेट करें",
       "finish": "समाप्त",
       "skip": "अभी छोड़ें",
-      "noVaultsYet": "अभी तक कोई लाइब्रेरी नहीं जोड़ी गई। शुरू करने के लिए एक लाइब्रेरी या चाइल्ड ब्रह्मांड जोड़ें।",
+      "noLibrariesYet": "अभी तक कोई लाइब्रेरी नहीं जोड़ी गई। शुरू करने के लिए एक लाइब्रेरी या चाइल्ड ब्रह्मांड जोड़ें।",
       "remove": "हटाएं",
       "importApp": "किसी अन्य ऐप से आयात करें",
       "importAppDesc": "अपने नोट्स Obsidian, Notion, Evernote या अन्य ऐप्स से Constellation में माइग्रेट करें।",
@@ -702,7 +706,9 @@
       "importConfirm": "आयात करें और ब्रह्मांड बनाएं",
       "importingNotes": "आपके नोट्स आयात हो रहे हैं...",
       "importLocationLabel": "ब्रह्मांड का स्थान",
-      "importComplete": "आयात पूरा! {count} फ़ाइलें आयात की गईं।"
+      "importComplete": "आयात पूरा! {count} फ़ाइलें आयात की गईं।",
+      "linkLibrary": "Link a Library",
+      "linkLibraryDesc": "Wrap an existing Markdown folder as a library in your universe. Non-destructive — your files stay untouched."
     },
     "manager": {
       "heading": "ब्रह्मांड प्रबंधक",
@@ -717,8 +723,8 @@
       "children": "बाल ब्रह्मांड",
       "addChild": "बाल ब्रह्मांड जोड़ें",
       "noUniverses": "कोई ब्रह्मांड नहीं मिला",
-      "ownVaults": "स्वयं के लाइब्रेरी",
-      "inheritedVaults": "विरासत में मिले लाइब्रेरी",
+      "ownLibraries": "स्वयं के लाइब्रेरी",
+      "inheritedLibraries": "विरासत में मिले लाइब्रेरी",
       "openExisting": "मौजूदा ब्रह्मांड खोलें"
     },
     "switching": "ब्रह्मांड बदल रहा है...",
@@ -753,9 +759,9 @@
     "linkedOn": "लिंक्ड ब्राउज़िंग चालू",
     "linkedOff": "लिंक्ड ब्राउज़िंग बंद",
     "searchNotes": "नोट्स खोजें...",
-    "allVaults": "सभी लाइब्रेरी",
+    "allLibraries": "सभी लाइब्रेरी",
     "sortName": "नाम से क्रमबद्ध",
-    "sortVault": "लाइब्रेरी से क्रमबद्ध",
+    "sortLibrary": "लाइब्रेरी से क्रमबद्ध",
     "noResults": "कोई मिलान नोट नहीं",
     "noNotes": "कोई नोट नहीं मिला",
     "detailEmpty": "यहाँ देखने के लिए एक नोट चुनें",
@@ -782,7 +788,7 @@
       "txt": "सादा पाठ",
       "txtDesc": "मार्कडाउन में रूपांतरित टेक्स्ट फ़ाइलें"
     },
-    "targetVault": "लक्ष्य लाइब्रेरी",
+    "targetLibrary": "लक्ष्य लाइब्रेरी",
     "subfolder": "उपफ़ोल्डर",
     "selectSource": "स्रोत चुनें",
     "scanning": "फ़ाइलें स्कैन हो रही हैं...",

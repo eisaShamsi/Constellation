@@ -424,8 +424,8 @@
 
 		{:else if step === 2}
 			<!-- ═══ STEP 2: Add Libraries & Child Universes ═══ -->
-			<h1 class="us-heading">{$t('universe.setup.addVaultsHeading')}</h1>
-			<p class="us-description">{$t('universe.setup.addVaultsDescription')}</p>
+			<h1 class="us-heading">{$t('universe.setup.addLibrariesHeading')}</h1>
+			<p class="us-description">{$t('universe.setup.addLibrariesDescription')}</p>
 
 			<!-- Step indicator -->
 			<div class="us-steps">
@@ -440,13 +440,13 @@
 				<!-- Added Libraries List -->
 				{#if addedLibraries.length > 0}
 					<div class="us-list">
-						{#each addedLibraries as vault (vault.id)}
+						{#each addedLibraries as lib (lib.id)}
 							<div class="us-list-item">
 								<svg class="us-list-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 									<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
 								</svg>
-								<span class="us-list-name">{vault.name}</span>
-								<button class="us-list-remove" onclick={() => handleRemoveLibrary(vault.id)} title={$t('universe.setup.remove')}>
+								<span class="us-list-name">{lib.name}</span>
+								<button class="us-list-remove" onclick={() => handleRemoveLibrary(lib.id)} title={$t('universe.setup.remove')}>
 									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 								</button>
 							</div>
@@ -472,7 +472,7 @@
 				{/if}
 
 				{#if addedLibraries.length === 0 && addedChildren.length === 0}
-					<div class="us-empty">{$t('universe.setup.noVaultsYet')}</div>
+					<div class="us-empty">{$t('universe.setup.noLibrariesYet')}</div>
 				{/if}
 
 				{#if error}
@@ -485,7 +485,7 @@
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
 						</svg>
-						{$t('universe.setup.addVault')}
+						{$t('universe.setup.addLibrary')}
 					</button>
 					<button class="us-add-btn" onclick={handleAddChild} disabled={adding}>
 						<svg width="16" height="16" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">

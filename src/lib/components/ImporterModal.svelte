@@ -114,8 +114,8 @@
 					<label class="import-label">
 						{$t('importer.targetLibrary')}
 						<select bind:value={targetLibrary}>
-							{#each libraries as vault}
-								<option value={vault.path}>{vault.name}</option>
+							{#each libraries as lib}
+								<option value={lib.path}>{lib.name}</option>
 							{/each}
 						</select>
 					</label>

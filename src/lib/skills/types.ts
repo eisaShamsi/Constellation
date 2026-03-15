@@ -4,7 +4,7 @@
  */
 
 export interface SkillInput {
-	type: 'note-select' | 'vault-select' | 'text' | 'textarea' | 'select';
+	type: 'note-select' | 'library-select' | 'text' | 'textarea' | 'select';
 	key: string;
 	label: string;
 	label_ar?: string;

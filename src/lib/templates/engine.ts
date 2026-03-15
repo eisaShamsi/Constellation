@@ -1,10 +1,10 @@
 // ─── Constellation Template Engine ───
-// Processes template variables: {{date}}, {{title}}, {{time}}, {{folder}}, {{vault}}, {{date:FORMAT}}, {{cursor}}
+// Processes template variables: {{date}}, {{title}}, {{time}}, {{folder}}, {{library}}, {{date:FORMAT}}, {{cursor}}
 
 export interface TemplateContext {
 	title: string;
 	folder: string;
-	vault: string;
+	library: string;
 }
 
 /** Cursor placeholder — replaced last so we can return its position */
@@ -23,7 +23,7 @@ export interface TemplateResult {
  *   {{time}}         → current time in HH:MM
  *   {{title}}        → note title (file name without .md)
  *   {{folder}}       → parent folder name
- *   {{vault}}        → vault name
+ *   {{library}}        → library name
  *   {{cursor}}       → removed, cursor position returned
  */
 export function processTemplate(raw: string, ctx: TemplateContext): TemplateResult {
@@ -50,8 +50,8 @@ export function processTemplate(raw: string, ctx: TemplateContext): TemplateResu
 	// {{folder}}
 	content = content.replace(/\{\{folder\}\}/gi, ctx.folder);
 
-	// {{vault}}
-	content = content.replace(/\{\{vault\}\}/gi, ctx.vault);
+	// {{library}}
+	content = content.replace(/\{\{(?:vault|library)\}\}/gi, ctx.library);
 
 	// {{cursor}} — find position then remove
 	const cursorIdx = content.indexOf(CURSOR_MARKER);

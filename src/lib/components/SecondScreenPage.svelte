@@ -6,7 +6,8 @@
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { dir, t } from '$lib/i18n';
 	import {
-		libraries, loadLibraries, appSettings, loadSettings,
+		libraries, loadLibraries, appSettings, loadSettings, updateSettings,
+		loadLibraryAppearance,
 		openNoteTab, openTabs, activeTabId, activeTab,
 		switchTab, closeTab, createEmptyTab,
 		parseFrontmatter, editingTabIds, toggleEditMode,
@@ -63,7 +64,7 @@
 	let libraryColorMap = $derived.by(() => {
 		const map: Record<string, string> = {};
 		const v = $libraries;
-		v.forEach((vault, i) => { map[vault.name] = libraryColors[i % libraryColors.length]; });
+		v.forEach((lib, i) => { map[lib.name] = libraryColors[i % libraryColors.length]; });
 		return map;
 	});
 
@@ -92,12 +93,17 @@
 			await loadSettings();
 			await loadLibraries();
 
+			// Load library appearances (fonts, colors) for each library
+			for (const lib of $libraries) {
+				await loadLibraryAppearance(lib.path, lib.id);
+			}
+
 			const libraryList = $libraries;
 			const notes: { name: string; path: string; libraryName: string }[] = [];
 
-			for (const vault of libraryList) {
-				const vaultNotes = await (invoke('collect_library_notes', { libraryPath: vault.path }).catch(() => []) as Promise<any[]>);
-				notes.push(...vaultNotes.map((n: any) => ({ name: n.name, path: n.path, libraryName: vault.name })));
+			for (const lib of libraryList) {
+				const libNotes = await (invoke('collect_library_notes', { libraryPath: lib.path }).catch(() => []) as Promise<any[]>);
+				notes.push(...libNotes.map((n: any) => ({ name: n.name, path: n.path, libraryName: lib.name })));
 			}
 
 			allNotes = notes;
@@ -123,10 +129,10 @@
 			noteTags = Array.isArray(tagProp?.value) ? tagProp.value : [];
 
 			// Scan links for the note's library
-			const vault = $libraries.find(v => v.name === tab.libraryName);
-			if (!vault) return;
+			const lib = $libraries.find(v => v.name === tab.libraryName);
+			if (!lib) return;
 
-			const links = await scanLibraryLinks(vault.path, vault.name).catch(() => [] as NoteLink[]);
+			const links = await scanLibraryLinks(lib.path, lib.name).catch(() => [] as NoteLink[]);
 			const tabName = tab.name?.toLowerCase() || '';
 
 			// Forward links: links FROM this note
@@ -135,7 +141,7 @@
 				.map(l => {
 					// l.target is the link text, find matching note
 					const match = allNotes.find(n => n.name.toLowerCase() === l.target.toLowerCase());
-					return match || { name: l.target, path: '', libraryName: vault.name };
+					return match || { name: l.target, path: '', libraryName: lib.name };
 				})
 				.filter(l => l.path) // only include notes that exist
 				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
@@ -145,7 +151,7 @@
 				.filter(l => l.target.toLowerCase() === tabName)
 				.map(l => {
 					const match = allNotes.find(n => n.path === l.source_path);
-					return match || { name: l.source_path.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '', path: l.source_path, libraryName: vault.name };
+					return match || { name: l.source_path.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '', path: l.source_path, libraryName: lib.name };
 				})
 				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
 			// Build local star data for sky view
@@ -304,10 +310,10 @@
 
 	// ─── Handlers ───
 	async function handleSidebarLinkClick(path: string, libraryName: string) {
-		const vault = $libraries.find(v => v.name === libraryName);
-		if (!vault) return;
+		const lib = $libraries.find(v => v.name === libraryName);
+		if (!lib) return;
 		const color = libraryColorMap[libraryName] || '#7c3aed';
-		await openNoteTab(path, libraryName, vault.path, color);
+		await openNoteTab(path, libraryName, lib.path, color);
 		await loadSidebarData();
 	}
 

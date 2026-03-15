@@ -704,7 +704,7 @@
 							<div class="setting-desc">{$t('settings.files.defaultLocationDesc')}</div>
 						</div>
 						<select class="setting-control" value={$appSettings.defaultNoteLocation} onchange={(e) => updateSettings({ defaultNoteLocation: (e.target as HTMLSelectElement).value as any })}>
-							<option value="root">{$t('settings.files.vaultRoot')}</option>
+							<option value="root">{$t('settings.files.libraryRoot')}</option>
 							<option value="current">{$t('settings.files.currentFolder')}</option>
 							<option value="folder">{$t('settings.files.specifiedFolder')}</option>
 						</select>
@@ -834,7 +834,7 @@
 							<code>{'{{time}}'}</code> — {$t('settings.templates.varTime')}<br/>
 							<code>{'{{title}}'}</code> — {$t('settings.templates.varTitle')}<br/>
 							<code>{'{{folder}}'}</code> — {$t('settings.templates.varFolder')}<br/>
-							<code>{'{{vault}}'}</code> — {$t('settings.templates.varVault')}<br/>
+							<code>{'{{library}}'}</code> — {$t('settings.templates.varLibrary')}<br/>
 							<code>{'{{cursor}}'}</code> — {$t('settings.templates.varCursor')}
 						</div>
 					</div>

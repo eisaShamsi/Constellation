@@ -345,9 +345,9 @@ fn timestamp_to_date(secs: u64) -> String {
 
 // ─── Tauri Commands ───
 
-/// Scan an entire vault for tasks.
+/// Scan an entire library for tasks.
 #[tauri::command]
-pub fn scan_vault_tasks(
+pub fn scan_library_tasks(
     app: tauri::AppHandle,
     library_path: String,
     library_name: String,
@@ -474,10 +474,10 @@ pub fn toggle_task(
     Ok(final_content)
 }
 
-/// Scan a vault for note dates (modified + frontmatter date/created).
+/// Scan a library for note dates (modified + frontmatter date/created).
 /// Returns a map of YYYY-MM-DD -> list of notes for that date.
 #[tauri::command]
-pub fn scan_vault_note_dates(
+pub fn scan_library_note_dates(
     app: tauri::AppHandle,
     library_path: String,
     library_name: String,

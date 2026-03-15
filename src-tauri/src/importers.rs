@@ -227,7 +227,7 @@ pub async fn import_execute(
     target_library: String,
     subfolder: String,
 ) -> Result<ImportResult, String> {
-    // Validate target vault path
+    // Validate target library path
     validate_path_in_any_library(&app, &target_library)?;
 
     let dest = if subfolder.is_empty() {

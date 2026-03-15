@@ -35,8 +35,8 @@
     },
     "security": {
       "intro": "Защита данных библиотеки, безопасное хранение ключей API и блокировка приложения при бездействии.",
-      "vaultEncryption": "Шифрование библиотеки",
-      "vaultEncryptionDesc": "Шифрование кэшированных данных библиотеки на этом устройстве",
+      "libraryEncryption": "Шифрование библиотеки",
+      "libraryEncryptionDesc": "Шифрование кэшированных данных библиотеки на этом устройстве",
       "enabled": "Включено",
       "disabled": "Отключено",
       "lockHeading": "Экран блокировки",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "Расположение новых заметок по умолчанию",
       "defaultLocationDesc": "Где размещаются новые заметки",
-      "vaultRoot": "Корневая папка библиотеки",
+      "libraryRoot": "Корневая папка библиотеки",
       "currentFolder": "Та же папка, что и у текущего файла",
       "specifiedFolder": "В папке, указанной ниже",
       "folderPath": "Путь к папке",
@@ -225,7 +225,7 @@
       "varTime": "Текущее время (HH:MM)",
       "varTitle": "Заголовок заметки",
       "varFolder": "Имя родительской папки",
-      "varVault": "Имя библиотеки",
+      "varLibrary": "Имя библиотеки",
       "varCursor": "Позиция курсора после вставки"
     }
   },
@@ -234,7 +234,7 @@
     "newBase": "Новая база",
     "quickCapture": "Быстрый захват",
     "quickSwitcher": "Звёздный прыжок",
-    "searchVault": "Поиск по библиотеке",
+    "searchLibrary": "Поиск по библиотеке",
     "dailyNote": "Открыть ежедневную заметку",
     "toggleEdit": "Переключить режим редактирования/чтения",
     "starView": "Открыть вид звёзд",
@@ -245,7 +245,7 @@
     "closeNote": "Закрыть текущую заметку",
     "toggleLeftSidebar": "Переключить левую панель",
     "toggleRightSidebar": "Переключить правую панель",
-    "addVault": "Добавить библиотеке",
+    "addLibrary": "Добавить библиотеке",
     "toggleBookmark": "Переключить закладку",
     "randomNote": "Открыть случайную заметку",
     "toggleTheme": "Переключить тёмный/светлый режим",
@@ -287,13 +287,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "Поиск...",
-    "addVault": "Добавить библиотеке",
+    "addLibrary": "Добавить библиотеке",
     "results": "результатов",
     "noResults": "Результатов не найдено",
     "bookmarks": "Закладки",
     "bases": "Базы",
-    "noVaults": "Хранилищ пока нет",
-    "addVaultButton": "+ Добавить библиотеке",
+    "noLibraries": "Хранилищ пока нет",
+    "addLibraryButton": "+ Добавить библиотеке",
     "newNote": "Новая заметка",
     "newBase": "Новая база",
     "newFolder": "Новая папка",
@@ -315,7 +315,7 @@
   "welcome": {
     "title": "Добро пожаловать в Constellation",
     "subtitle": "Добавьте ваше первое библиотеке, чтобы начать",
-    "addVault": "+ Добавить библиотеке",
+    "addLibrary": "+ Добавить библиотеке",
     "selectNote": "Выберите заметку на боковой панели",
     "quickSwitchHint": "или нажмите Ctrl+O для звёздного прыжка"
   },
@@ -375,11 +375,11 @@
     "noTasksFound": "Задачи не найдены",
     "allDates": "Все даты",
     "thisWeek": "На этой неделе",
-    "allVaults": "Все библиотеки",
+    "allLibraries": "Все библиотеки",
     "allPriorities": "Все приоритеты",
     "noGroup": "Без группировки",
     "groupByFile": "Группировать по файлу",
-    "groupByVault": "Группировать по библиотеке",
+    "groupByLibrary": "Группировать по библиотеке",
     "groupByPriority": "Группировать по приоритету",
     "groupByDue": "Группировать по сроку",
     "sortByFile": "Сортировать по файлу",
@@ -387,10 +387,10 @@
   },
   "linkDashboard": {
     "mostConnected": "Наиболее связанные",
-    "crossVault": "Меж-библиотека",
+    "crossLibrary": "Меж-библиотека",
     "broken": "Битые",
     "orphans": "Изолированные заметки",
-    "noCrossVault": "Нет меж-библиотечных ссылок",
+    "noCrossLibrary": "Нет меж-библиотечных ссылок",
     "noBroken": "Нет битых ссылок",
     "noOrphans": "Нет изолированных заметок"
   },
@@ -403,7 +403,7 @@
     "properties": "свойств",
     "words": "слов",
     "characters": "символов",
-    "vaults": "библиотек",
+    "libraries": "библиотек",
     "notes": "заметок"
   },
   "notePane": {
@@ -417,7 +417,7 @@
     "createNote": "Создать новую заметку",
     "goToFile": "Перейти к файлу",
     "close": "Закрыть",
-    "selectVault": "Выбрать библиотеке"
+    "selectLibrary": "Выбрать библиотеке"
   },
   "commandPalette": {
     "placeholder": "Введите команду...",
@@ -501,15 +501,19 @@
       "linkDistance": "Расстояние связи"
     }
   },
-  "vaults": {
+  "libraries": {
     "searchPlaceholder": "Поиск по всем библиотеким...",
     "results": "результатов",
     "noResults": "Нет результатов",
-    "addVault": "+ Добавить библиотеке",
+    "addLibrary": "+ Добавить библиотеке",
     "welcomeTitle": "Добро пожаловать в Constellation",
     "welcomeSubtitle": "Добавьте ваше первое библиотеке через боковую панель",
-    "addVaultCta": "+ Добавить библиотеке",
-    "selectNote": "Выберите заметку на боковой панели"
+    "addLibraryCta": "+ Добавить библиотеке",
+    "selectNote": "Выберите заметку на боковой панели",
+    "newLibrary": "New Library",
+    "linkLibrary": "Link Existing Library",
+    "newLibraryDesc": "Create a fresh empty library folder to start writing from scratch.",
+    "linkLibraryDesc": "Connect an existing Markdown folder as a library — non-destructively."
   },
   "skills": {
     "title": "Навыки",
@@ -524,7 +528,7 @@
     "create": "Создать навык",
     "noProvider": "Подключите поставщика ИИ в Настройках для использования навыков.",
     "selectNote": "Выберите заметку",
-    "selectVault": "Выберите библиотеке",
+    "selectLibrary": "Выберите библиотеке",
     "enterText": "Введите текст...",
     "result": "Результат",
     "copyResult": "Копировать",
@@ -548,15 +552,15 @@
     "research": "Исследовательский помощник",
     "researchDesc": "Анализ и синтез информации из нескольких заметок"
   },
-  "vaultManager": {
+  "libraryManager": {
     "title": "Управление библиотеками",
-    "openVault": "+ Открыть библиотеке",
-    "manageVaults": "Управление библиотеками...",
+    "openLibrary": "+ Открыть библиотеке",
+    "manageLibraries": "Управление библиотеками...",
     "openFolder": "Открыть папку",
     "remove": "Удалить",
     "confirmRemove": "Удалить \"{name}\" из Constellation? Ваши файлы не будут удалены.",
-    "addVault": "+ Добавить библиотеке",
-    "noVaults": "Нет зарегистрированных библиотек",
+    "addLibrary": "+ Добавить библиотеке",
+    "noLibraries": "Нет зарегистрированных библиотек",
     "notes": "заметок"
   },
   "lockScreen": {
@@ -650,9 +654,9 @@
       "title": "Источник",
       "folder": "Папка",
       "tag": "Тег",
-      "vault": "Библиотека",
-      "allVaults": "Все библиотеки",
-      "vaults": "библиотеки",
+      "library": "Библиотека",
+      "allLibraries": "Все библиотеки",
+      "libraries": "библиотеки",
       "folderPath": "Путь к папке",
       "folderPlaceholder": "напр. Проекты/Активные",
       "folderHint": "Сканирует эту папку во всех библиотеках, которые её содержат",
@@ -660,7 +664,7 @@
       "tagName": "Тег",
       "tagPlaceholder": "напр. проект",
       "tagHint": "Сканирует все заметки с этим тегом во всех библиотеках",
-      "vaultsLabel": "Библиотеки",
+      "librariesLabel": "Библиотеки",
       "allHint": "Сканирует все заметки во всех подключённых библиотеках",
       "apply": "Применить",
       "cancel": "Отмена"
@@ -684,15 +688,15 @@
       "creating": "Создание...",
       "next": "Далее",
       "back": "Назад",
-      "addVaultsHeading": "Добавьте ваши библиотеки",
-      "addVaultsDescription": "Подключите библиотеки и дочерние вселенные. Вы всегда сможете добавить ещё позже.",
-      "addVault": "Добавить библиотеке",
+      "addLibrariesHeading": "Добавьте ваши библиотеки",
+      "addLibrariesDescription": "Подключите библиотеки и дочерние вселенные. Вы всегда сможете добавить ещё позже.",
+      "addLibrary": "Добавить библиотеке",
       "addChildUniverse": "Добавить дочернюю вселенную",
       "starterKit": "Создать стартовые папки",
       "starterKitDesc": "Настроить папки Атлас, Календарь, Проекты и Входящие с приветственной заметкой",
       "finish": "Готово",
       "skip": "Пропустить",
-      "noVaultsYet": "Библиотеки ещё не добавлены. Добавьте библиотеке или дочернюю вселенную, чтобы начать.",
+      "noLibrariesYet": "Библиотеки ещё не добавлены. Добавьте библиотеке или дочернюю вселенную, чтобы начать.",
       "remove": "Удалить",
       "importApp": "Импорт из другого приложения",
       "importAppDesc": "Перенесите заметки из Obsidian, Notion, Evernote или других приложений в Constellation.",
@@ -702,7 +706,9 @@
       "importConfirm": "Импортировать и создать Вселенную",
       "importingNotes": "Импорт заметок...",
       "importLocationLabel": "Расположение Вселенной",
-      "importComplete": "Импорт завершён! Импортировано файлов: {count}."
+      "importComplete": "Импорт завершён! Импортировано файлов: {count}.",
+      "linkLibrary": "Link a Library",
+      "linkLibraryDesc": "Wrap an existing Markdown folder as a library in your universe. Non-destructive — your files stay untouched."
     },
     "manager": {
       "heading": "Менеджер Вселенных",
@@ -717,8 +723,8 @@
       "children": "Дочерние вселенные",
       "addChild": "Добавить дочернюю вселенную",
       "noUniverses": "Вселенные не найдены",
-      "ownVaults": "Собственные библиотеки",
-      "inheritedVaults": "Унаследованные библиотеки",
+      "ownLibraries": "Собственные библиотеки",
+      "inheritedLibraries": "Унаследованные библиотеки",
       "openExisting": "Открыть существующую вселенную"
     },
     "switching": "Переключение вселенной...",
@@ -753,9 +759,9 @@
     "linkedOn": "Связанный просмотр вкл.",
     "linkedOff": "Связанный просмотр выкл.",
     "searchNotes": "Поиск заметок...",
-    "allVaults": "Все библиотеки",
+    "allLibraries": "Все библиотеки",
     "sortName": "По имени",
-    "sortVault": "По библиотеке",
+    "sortLibrary": "По библиотеке",
     "noResults": "Совпадений не найдено",
     "noNotes": "Заметки не найдены",
     "detailEmpty": "Выберите заметку для просмотра",
@@ -782,7 +788,7 @@
       "txt": "Текст",
       "txtDesc": "Текстовые файлы, конвертированные в Markdown"
     },
-    "targetVault": "Целевое библиотеке",
+    "targetLibrary": "Целевое библиотеке",
     "subfolder": "Подпапка",
     "selectSource": "Выбрать источник",
     "scanning": "Сканирование файлов...",

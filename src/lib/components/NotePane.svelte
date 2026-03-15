@@ -68,8 +68,8 @@
 		if (!appearance) return '';
 		const vars: string[] = [];
 		if (appearance.accent_color) vars.push(`--library-accent: ${appearance.accent_color}`);
-		if (appearance.base_font_size) vars.push(`--vault-font-size: ${appearance.base_font_size}px`);
-		if (appearance.text_font_family) vars.push(`--vault-text-font: ${appearance.text_font_family}`);
+		if (appearance.base_font_size) vars.push(`--library-font-size: ${appearance.base_font_size}px`);
+		if (appearance.text_font_family) vars.push(`--library-text-font: ${appearance.text_font_family}`);
 		if (appearance.monospace_font_family) vars.push(`--library-mono-font: ${appearance.monospace_font_family}`);
 		return vars.join('; ');
 	});
@@ -82,6 +82,7 @@
 	let saveTimeout: ReturnType<typeof setTimeout>;
 	let saving = $state(false);
 	let propsCollapsed = $state(false);
+	let noteWidth = $state(100); // percentage 50-100
 	let rafId: number | null = null;
 	let rafId2: number | null = null;
 
@@ -308,10 +309,10 @@ ${contentEl.innerHTML}
 		if (dvLink) {
 			e.preventDefault();
 			const path = dvLink.dataset.path;
-			const vault = dvLink.dataset.vault;
-			if (path && vault) {
-				const vc = libraryColorMap[vault] ?? '#7c3aed';
-				await openNoteTab(path, vault, vc);
+			const lib = dvLink.dataset.library;
+			if (path && lib) {
+				const vc = libraryColorMap[lib] ?? '#7c3aed';
+				await openNoteTab(path, lib, vc);
 			}
 			return;
 		}
@@ -400,7 +401,7 @@ ${contentEl.innerHTML}
 		{:else if splitView}
 			<div class="pane-tab-bar" style:--library-color={color}>
 				<div class="pane-tab">
-					<span class="pane-tab-vault">{tab.libraryName}</span>
+					<span class="pane-tab-lib">{tab.libraryName}</span>
 					<span class="pane-tab-title">{tab.name}</span>
 				</div>
 				<div class="pane-tab-actions">
@@ -431,10 +432,16 @@ ${contentEl.innerHTML}
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
 					</button>
 				{/if}
-				<span class="bc-vault">{tab.libraryName}</span>
+				<span class="bc-lib-name">{tab.libraryName}</span>
 				<span class="bc-sep">/</span>
 				<span class="bc-note">{tab.name}</span>
 				<div class="bc-actions">
+					<div class="bc-width-control" title="Note width: {noteWidth}%">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M21 12H3M21 12l-4-4m4 4l-4 4M3 12l4-4m-4 4l4 4"/>
+						</svg>
+						<input type="range" class="bc-width-slider" min="50" max="100" step="5" bind:value={noteWidth} />
+					</div>
 					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
 					<button class="bc-edit-btn" onclick={handleExportHTML} title={$t('notePane.exportHtml')}>
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -470,7 +477,7 @@ ${contentEl.innerHTML}
 				}}
 			/>
 		{:else if !isEmptyTab}
-		<div class="note-scroll" class:editing dir={noteDir} style={paneStyle}>
+		<div class="note-scroll" class:editing dir={noteDir} style="{paneStyle}; max-width: {noteWidth}%">
 			{#if tab}
 				<h1 class="note-title" dir="auto">{tab.name}</h1>
 			{/if}
@@ -570,7 +577,7 @@ ${contentEl.innerHTML}
 		padding: 5px 10px;
 		font-size: 0.8rem;
 	}
-	.pane-tab-vault {
+	.pane-tab-lib {
 		position: absolute; bottom: 100%; inset-inline-end: 8px;
 		font-size: 0.55rem; line-height: 1.3; letter-spacing: 0.02em;
 		color: var(--text-normal);
@@ -594,10 +601,12 @@ ${contentEl.innerHTML}
 		font-size: 0.78rem; color: var(--text-faint); flex-shrink: 0;
 		display: flex; align-items: center; min-height: 28px;
 	}
-	.bc-vault { color: var(--text-muted); }
+	.bc-lib-name { color: var(--text-muted); }
 	.bc-sep { margin: 0 4px; color: var(--background-modifier-border-focus); }
 	.bc-note { color: var(--text-normal); }
 	.bc-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 4px; }
+	.bc-width-control { display: flex; align-items: center; gap: 6px; color: var(--text-muted); padding: 0 4px; }
+	.bc-width-slider { width: 80px; height: 4px; accent-color: var(--interactive-accent); cursor: pointer; }
 	.bc-nav-btn {
 		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 3px; color: var(--text-faint); cursor: pointer; flex-shrink: 0;
@@ -614,9 +623,9 @@ ${contentEl.innerHTML}
 	.bc-edit-btn.active { color: var(--interactive-accent); }
 
 	.note-scroll {
-		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 100%;
-		font-size: var(--vault-font-size, 0.95rem);
-		font-family: var(--vault-text-font, inherit);
+		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 100%; align-self: center; width: 100%;
+		font-size: var(--library-font-size, 0.95rem);
+		font-family: var(--library-text-font, inherit);
 		display: flex; flex-direction: column;
 	}
 	.note-scroll.editing {
@@ -676,11 +685,11 @@ ${contentEl.innerHTML}
 	.note-content :global(a.wikilink:hover) {
 		border-bottom-color: var(--library-accent, var(--interactive-accent));
 	}
-	.note-content :global(a.wikilink.cross-vault) {
+	.note-content :global(a.wikilink.cross-library) {
 		color: var(--text-accent-hover, #a855f7);
 		border-bottom-style: dotted;
 	}
-	.note-content :global(a.wikilink.cross-vault::before) {
+	.note-content :global(a.wikilink.cross-library::before) {
 		content: '↗';
 		font-size: 0.7em;
 		margin-inline-end: 2px;
