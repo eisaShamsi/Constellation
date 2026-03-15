@@ -181,6 +181,58 @@
 	let pendingTimers: ReturnType<typeof setTimeout>[] = [];
 	let libraryChangeTimer: ReturnType<typeof setTimeout> | null = null;
 
+	// ─── Apply global font settings (mirrors +layout.svelte logic) ───
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		const s = $appSettings;
+		const root = document.documentElement.style;
+
+		const defaultUI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif';
+		const defaultMono = '"Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace';
+		const uiFont = s.interfaceFont || defaultUI;
+		const txtFont = s.textFont || uiFont;
+		const mono = s.monoFont || defaultMono;
+
+		root.setProperty('--font-text-size', s.fontSize + 'px');
+		root.setProperty('--font-monospace-theme', mono);
+
+		// Build per-script @font-face rules using unicode-range
+		const scripts = s.scriptFonts || {};
+		let css = '';
+		const ranges: Record<string, string> = {
+			arabic: 'U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF',
+			hebrew: 'U+0590-05FF, U+FB1D-FB4F',
+			cjk: 'U+4E00-9FFF, U+3000-303F, U+30A0-30FF, U+3040-309F, U+AC00-D7AF',
+		};
+
+		let hasScriptFont = false;
+		for (const [script, range] of Object.entries(ranges)) {
+			const fontName = scripts[script];
+			if (fontName) {
+				hasScriptFont = true;
+				css += `@font-face { font-family: "ConstellationUI"; src: local("${fontName}"); unicode-range: ${range}; }\n`;
+				css += `@font-face { font-family: "ConstellationText"; src: local("${fontName}"); unicode-range: ${range}; }\n`;
+			}
+		}
+
+		if (hasScriptFont) {
+			root.setProperty('--font-interface-theme', `"ConstellationUI", ${uiFont}`);
+			root.setProperty('--font-text-theme', `"ConstellationText", ${txtFont}`);
+		} else {
+			root.setProperty('--font-interface-theme', uiFont);
+			root.setProperty('--font-text-theme', txtFont);
+		}
+
+		// Inject or update the style element for script fonts
+		let styleEl = document.getElementById('constellation-script-fonts');
+		if (!styleEl) {
+			styleEl = document.createElement('style');
+			styleEl.id = 'constellation-script-fonts';
+			document.head.appendChild(styleEl);
+		}
+		styleEl.textContent = css;
+	});
+
 	// ─── Close handler ───
 	async function handleClose() {
 		notifyScreenClosed();
