@@ -173,6 +173,7 @@
 	// ─── Event listeners ───
 	let unlisteners: (() => void)[] = [];
 	let pendingTimers: ReturnType<typeof setTimeout>[] = [];
+	let libraryChangeTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// ─── Close handler ───
 	async function handleClose() {
@@ -248,8 +249,8 @@
 
 		// Listen for library file changes
 		const u5 = await listen<{ libraryId: string; paths: string[] }>('library-changed', async () => {
-			const t = setTimeout(() => loadAllData(), 3000);
-			pendingTimers.push(t);
+			if (libraryChangeTimer) clearTimeout(libraryChangeTimer);
+			libraryChangeTimer = setTimeout(() => loadAllData(), 3000);
 		});
 		unlisteners.push(u5);
 
@@ -298,6 +299,7 @@
 	onDestroy(() => {
 		unlisteners.forEach(u => u());
 		pendingTimers.forEach(t => clearTimeout(t));
+		if (libraryChangeTimer) clearTimeout(libraryChangeTimer);
 	});
 
 	// ─── Handlers ───

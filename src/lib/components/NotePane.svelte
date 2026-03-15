@@ -614,7 +614,7 @@ ${contentEl.innerHTML}
 	.bc-edit-btn.active { color: var(--interactive-accent); }
 
 	.note-scroll {
-		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 800px;
+		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 100%;
 		font-size: var(--vault-font-size, 0.95rem);
 		font-family: var(--vault-text-font, inherit);
 		display: flex; flex-direction: column;

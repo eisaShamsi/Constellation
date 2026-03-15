@@ -772,6 +772,9 @@
 		clearTimeout(watcherDebounce);
 		clearTimeout(unlinkedDebounce);
 		clearTimeout(_wcTimer);
+		clearTimeout(_localStarTimer);
+		clearTimeout(_tasksTimer);
+		clearTimeout(_calTimer);
 		resizeCleanup?.();
 		for (const fn of cleanupFns) fn();
 	});
