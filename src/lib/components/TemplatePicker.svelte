@@ -3,12 +3,12 @@
 	import { t } from '$lib/i18n';
 
 	let {
-		templates = [] as { name: string; path: string; vaultName: string }[],
+		templates = [] as { name: string; path: string; libraryName: string }[],
 		onSelect,
 		onClose,
 	}: {
-		templates: { name: string; path: string; vaultName: string }[];
-		onSelect: (path: string, vaultName: string) => void;
+		templates: { name: string; path: string; libraryName: string }[];
+		onSelect: (path: string, libraryName: string) => void;
 		onClose: () => void;
 	} = $props();
 
@@ -44,7 +44,7 @@
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
 			if (filtered[selectedIndex]) {
-				onSelect(filtered[selectedIndex].path, filtered[selectedIndex].vaultName);
+				onSelect(filtered[selectedIndex].path, filtered[selectedIndex].libraryName);
 				onClose();
 			}
 		}
@@ -70,13 +70,13 @@
 				<button
 					class="tp-item"
 					class:selected={i === selectedIndex}
-					onclick={() => { onSelect(tpl.path, tpl.vaultName); onClose(); }}
+					onclick={() => { onSelect(tpl.path, tpl.libraryName); onClose(); }}
 					onmouseenter={() => selectedIndex = i}
 				>
 					<span class="tp-icon">📄</span>
 					<span class="tp-name">{tpl.name}</span>
-					{#if tpl.vaultName}
-						<span class="tp-vault">{tpl.vaultName}</span>
+					{#if tpl.libraryName}
+						<span class="tp-vault">{tpl.libraryName}</span>
 					{/if}
 				</button>
 			{/each}

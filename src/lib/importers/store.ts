@@ -12,13 +12,13 @@ export async function importPreview(source: string, format: string): Promise<Imp
 export async function importExecute(
 	source: string,
 	format: string,
-	targetVault: string,
+	targetLibrary: string,
 	subfolder: string
 ): Promise<ImportResult> {
 	return invoke<ImportResult>('import_execute', {
 		source,
 		format,
-		targetVault,
+		targetLibrary,
 		subfolder,
 	});
 }

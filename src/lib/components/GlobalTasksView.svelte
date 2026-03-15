@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t, dir } from '$lib/i18n';
-	import { vaults, openNoteTab } from '$lib/vaults/store';
+	import { libraries, openNoteTab } from '$lib/libraries/store';
 	import { get } from 'svelte/store';
 	import { scanVaultTasks, toggleTask } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 
 	let {
-		vaultColorMap = {} as Record<string, string>,
+		libraryColorMap = {} as Record<string, string>,
 		onClose,
 	}: {
-		vaultColorMap?: Record<string, string>;
+		libraryColorMap?: Record<string, string>;
 		onClose: () => void;
 	} = $props();
 
@@ -20,7 +20,7 @@
 
 	// Filters
 	let statusFilter = $state<'all' | 'incomplete' | 'completed'>('incomplete');
-	let vaultFilter = $state<string>('all');
+	let libraryFilter = $state<string>('all');
 	let dueFilter = $state<'all' | 'overdue' | 'today' | 'week' | 'nodate'>('all');
 	let priorityFilter = $state<'all' | 'high' | 'medium' | 'low'>('all');
 	let searchQuery = $state('');
@@ -34,8 +34,8 @@
 		return d.toISOString().slice(0, 10);
 	})();
 
-	const vaultNames = $derived(
-		[...new Set(allTasks.map(t => t.vault_name))].sort()
+	const libraryNames = $derived(
+		[...new Set(allTasks.map(t => t.library_name))].sort()
 	);
 
 	const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -47,8 +47,8 @@
 		if (statusFilter === 'incomplete') list = list.filter(t => !t.completed);
 		if (statusFilter === 'completed') list = list.filter(t => t.completed);
 
-		// Vault filter
-		if (vaultFilter !== 'all') list = list.filter(t => t.vault_name === vaultFilter);
+		// Library filter
+		if (libraryFilter !== 'all') list = list.filter(t => t.library_name === libraryFilter);
 
 		// Due date filter
 		if (dueFilter === 'overdue') list = list.filter(t => t.due_date && t.due_date < todayStr);
@@ -95,7 +95,7 @@
 		for (const task of filteredTasks) {
 			let key = '';
 			if (groupBy === 'file') key = task.file_name;
-			else if (groupBy === 'vault') key = task.vault_name;
+			else if (groupBy === 'vault') key = task.library_name;
 			else if (groupBy === 'priority') key = task.priority || $t('tasksPanel.noPriority');
 			else if (groupBy === 'due') {
 				if (!task.due_date) key = $t('tasksPanel.noDueDate');
@@ -112,10 +112,10 @@
 	async function loadAllTasks() {
 		loading = true;
 		const start = performance.now();
-		const vaultList = get(vaults);
+		const libraryList = get(libraries);
 		try {
 			const results = await Promise.all(
-				vaultList.map(v => scanVaultTasks(v.path, v.name))
+				libraryList.map(v => scanVaultTasks(v.path, v.name))
 			);
 			allTasks = results.flatMap(r => r.tasks);
 			scanTime = Math.round(performance.now() - start);
@@ -137,8 +137,8 @@
 
 	async function openTask(task: TaskItem, e?: MouseEvent) {
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		const vc = vaultColorMap[task.vault_name] || '#7c3aed';
-		await openNoteTab(task.file_path, task.vault_name, vc, undefined, newTab);
+		const vc = libraryColorMap[task.library_name] || '#7c3aed';
+		await openNoteTab(task.file_path, task.library_name, vc, undefined, newTab);
 	}
 
 	function cleanText(text: string): string {
@@ -207,12 +207,12 @@
 			</select>
 		</div>
 
-		<!-- Vault filter -->
-		{#if vaultNames.length > 1}
+		<!-- Library filter -->
+		{#if libraryNames.length > 1}
 			<div class="gt-filter-group">
-				<select bind:value={vaultFilter}>
+				<select bind:value={libraryFilter}>
 					<option value="all">{$t('globalTasks.allVaults')}</option>
-					{#each vaultNames as vn}
+					{#each libraryNames as vn}
 						<option value={vn}>{vn}</option>
 					{/each}
 				</select>
@@ -290,7 +290,7 @@
 									<span class="gt-tag">{tag}</span>
 								{/each}
 								<button class="gt-file-link" onclick={(e) => openTask(task, e)}>
-									<span class="gt-vault-dot" style="background:{vaultColorMap[task.vault_name] || '#7c3aed'}"></span>
+									<span class="gt-library-dot" style="background:{libraryColorMap[task.library_name] || '#7c3aed'}"></span>
 									{task.file_name}
 								</button>
 							</div>
@@ -525,7 +525,7 @@
 	.gt-file-link:hover {
 		color: var(--accent, #7c3aed);
 	}
-	.gt-vault-dot {
+	.gt-library-dot {
 		width: 6px;
 		height: 6px;
 		border-radius: 50%;

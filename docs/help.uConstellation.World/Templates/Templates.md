@@ -27,7 +27,7 @@ Use double curly braces to insert dynamic content:
 | `{{time}}` | Current time (HH:MM) | 14:30 |
 | `{{title}}` | Note title (without .md) | My New Note |
 | `{{folder}}` | Parent folder name | Projects |
-| `{{vault}}` | Vault name | Personal |
+| `{{library}}` | Library name | Personal |
 | `{{cursor}}` | Cursor position after insert | *(removed, cursor placed here)* |
 
 ### Date Format Tokens
@@ -54,7 +54,7 @@ Use `{{date:FORMAT}}` with these tokens:
 
 ### Method 1: Template Picker (Ctrl+T)
 
-1. Press **Ctrl+T** or use the Command Palette ("Insert from template")
+1. Press **Ctrl+T** or use Mission Control ("Insert from template")
 2. Search and select a template
 3. Template content is inserted at your cursor position with all variables processed
 

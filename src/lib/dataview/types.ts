@@ -13,8 +13,8 @@ export interface DataviewResult {
 export interface DataviewRow {
 	file_path: string;
 	file_name: string;
-	vault_name: string;
-	vault_path: string;
+	library_name: string;
+	library_path: string;
 	properties: Record<string, string>;
 	modified: number;
 }

@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Constellation",
-    "tagline": "库中之库"
+    "tagline": "资料库的宇宙"
   },
   "settings": {
     "title": "设置",
@@ -11,14 +11,14 @@
       "editor": "编辑器",
       "files": "文件与链接",
       "appearance": "外观",
-      "hotkeys": "快捷键",
+      "hotkeys": "键盘快捷键",
       "security": "安全",
       "plugins": "内置功能",
       "ai": "AI 服务商",
       "templates": "模板"
     },
     "about": {
-      "tagline": "库中之库",
+      "tagline": "资料库的宇宙",
       "developedBy": "开发者"
     },
     "general": {
@@ -34,9 +34,9 @@
       "autoUpdateDesc": "自动下载并安装更新"
     },
     "security": {
-      "intro": "保护保险库数据、保障API密钥安全，并在空闲时锁定应用。",
-      "vaultEncryption": "保险库加密",
-      "vaultEncryptionDesc": "加密此设备上缓存的保险库数据",
+      "intro": "保护资料库数据、保障API密钥安全，并在空闲时锁定应用。",
+      "vaultEncryption": "资料库加密",
+      "vaultEncryptionDesc": "加密此设备上缓存的资料库数据",
       "enabled": "已启用",
       "disabled": "已禁用",
       "lockHeading": "锁定屏幕",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "新笔记的默认位置",
       "defaultLocationDesc": "新笔记存放的位置",
-      "vaultRoot": "仓库根目录",
+      "vaultRoot": "资料库根目录",
       "currentFolder": "与当前文件相同的文件夹",
       "specifiedFolder": "在下方指定的文件夹中",
       "folderPath": "文件夹路径",
@@ -109,11 +109,13 @@
       "defaultAttachmentFolder": "默认附件文件夹",
       "defaultAttachmentFolderDesc": "附件的存储位置",
       "sameAsNotePlaceholder": "与笔记相同的文件夹",
+      "inboxFolder": "收件箱文件夹",
+      "inboxFolderDesc": "快速捕获笔记的文件夹 (Ctrl+Shift+N)",
       "linkFormat": "新链接格式",
       "linkFormatDesc": "内部链接的生成方式",
       "shortestPath": "尽可能使用最短路径",
       "relativePath": "文件的相对路径",
-      "absolutePath": "仓库中的绝对路径",
+      "absolutePath": "资料库中的绝对路径",
       "autoUpdateLinks": "自动更新内部链接",
       "autoUpdateLinksDesc": "重命名笔记时更新所有链接",
       "useWikilinks": "使用 [[Wikilinks]]",
@@ -146,9 +148,15 @@
       "fontSizeDesc": "笔记内容的基础字体大小"
     },
     "hotkeys": {
-      "filter": "筛选命令...",
+      "filter": "筛选快捷键...",
       "notSet": "未设置",
-      "noCommands": "未找到命令"
+      "noCommands": "未找到快捷键",
+      "pressKey": "按下快捷键...",
+      "resetToDefault": "恢复默认",
+      "resetAll": "重置所有快捷键",
+      "resetAllConfirm": "将所有快捷键重置为默认？",
+      "conflict": "已被使用: {name}",
+      "customized": "已自定义"
     },
     "plugins": {
       "intro": "Constellation 内置功能。您可以启用或禁用每个功能。",
@@ -156,8 +164,8 @@
       "dailyNotesDesc": "创建和打开每日笔记",
       "templates": "模板",
       "templatesDesc": "从模板文件插入内容",
-      "graphView": "关系图谱",
-      "graphViewDesc": "可视化笔记之间的链接",
+      "starView": "星空视图",
+      "starViewDesc": "可视化笔记之间的链接",
       "backlinks": "反向链接",
       "backlinksDesc": "显示链接到当前笔记的笔记",
       "outgoingLinks": "出链",
@@ -168,9 +176,9 @@
       "pagePreviewDesc": "悬停链接时预览笔记",
       "search": "搜索",
       "searchDesc": "在所有笔记中搜索",
-      "quickSwitcher": "快速切换",
+      "quickSwitcher": "星际跳跃",
       "quickSwitcherDesc": "在笔记之间快速导航",
-      "commandPalette": "命令面板",
+      "commandPalette": "任务控制",
       "commandPaletteDesc": "快速访问所有命令",
       "wordCount": "字数统计",
       "wordCountDesc": "在状态栏显示字数",
@@ -210,18 +218,19 @@
       "varTime": "当前时间 (HH:MM)",
       "varTitle": "笔记标题",
       "varFolder": "父文件夹名称",
-      "varVault": "库名称",
+      "varVault": "资料库名称",
       "varCursor": "插入后的光标位置"
     }
   },
   "commands": {
     "newNote": "新建笔记",
     "newBase": "新建数据库",
-    "quickSwitcher": "快速切换",
-    "searchVault": "搜索仓库",
+    "quickCapture": "快速捕获",
+    "quickSwitcher": "星际跳跃",
+    "searchVault": "搜索资料库",
     "dailyNote": "打开日记",
     "toggleEdit": "切换编辑/阅读模式",
-    "graphView": "打开关系图谱",
+    "starView": "打开星空视图",
     "globalTasks": "打开全局任务",
     "toggleBold": "切换粗体",
     "toggleItalic": "切换斜体",
@@ -229,7 +238,7 @@
     "closeNote": "关闭当前笔记",
     "toggleLeftSidebar": "切换左侧边栏",
     "toggleRightSidebar": "切换右侧边栏",
-    "addVault": "添加仓库",
+    "addVault": "添加资料库",
     "toggleBookmark": "切换书签",
     "randomNote": "打开随机笔记",
     "toggleTheme": "切换深色/浅色模式",
@@ -257,10 +266,10 @@
     "rename": "重命名",
     "delete": "删除"
   },
-  "ribbon": {
+  "dock": {
     "fileExplorer": "文件浏览器",
     "search": "搜索",
-    "graphView": "关系图谱",
+    "starView": "星空视图",
     "globalTasks": "全局任务",
     "dailyNote": "日记",
     "aiSkills": "AI 技能",
@@ -271,13 +280,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "搜索...",
-    "addVault": "添加仓库",
+    "addVault": "添加资料库",
     "results": "个结果",
     "noResults": "未找到结果",
     "bookmarks": "书签",
     "bases": "数据库",
-    "noVaults": "暂无仓库",
-    "addVaultButton": "+ 添加仓库",
+    "noVaults": "暂无资料库",
+    "addVaultButton": "+ 添加资料库",
     "newNote": "新建笔记",
     "newBase": "新建数据库",
     "newFolder": "新建文件夹",
@@ -293,15 +302,15 @@
     "rightSidebar": "右侧边栏",
     "splitView": "分屏视图",
     "skills": "技能",
-    "graphViewTitle": "关系图谱",
+    "starViewTitle": "星空视图",
     "pinned": "已固定"
   },
   "welcome": {
     "title": "欢迎使用 Constellation",
-    "subtitle": "添加您的第一个仓库以开始使用",
-    "addVault": "+ 添加仓库",
+    "subtitle": "添加您的第一个资料库以开始使用",
+    "addVault": "+ 添加资料库",
     "selectNote": "从侧边栏选择一篇笔记",
-    "quickSwitchHint": "或按 Ctrl+O 快速切换"
+    "quickSwitchHint": "或按 Ctrl+O 星际跳跃"
   },
   "panels": {
     "properties": "属性",
@@ -317,7 +326,7 @@
     "tagsHeader": "标签",
     "linkDashboard": "链接面板",
     "noteGrid": "笔记网格",
-    "graphView": "图谱视图",
+    "starView": "星空视图",
     "noNoteSelected": "未选择笔记",
     "noTags": "此笔记无标签",
     "noConnections": "无连接",
@@ -359,11 +368,11 @@
     "noTasksFound": "未找到任务",
     "allDates": "所有日期",
     "thisWeek": "本周",
-    "allVaults": "所有仓库",
+    "allVaults": "所有资料库",
     "allPriorities": "所有优先级",
     "noGroup": "不分组",
     "groupByFile": "按文件分组",
-    "groupByVault": "按仓库分组",
+    "groupByVault": "按资料库分组",
     "groupByPriority": "按优先级分组",
     "groupByDue": "按到期日分组",
     "sortByFile": "按文件排序",
@@ -371,10 +380,10 @@
   },
   "linkDashboard": {
     "mostConnected": "连接最多",
-    "crossVault": "跨仓库",
+    "crossVault": "跨资料库",
     "broken": "失效链接",
     "orphans": "孤立笔记",
-    "noCrossVault": "无跨仓库链接",
+    "noCrossVault": "无跨资料库链接",
     "noBroken": "无失效链接",
     "noOrphans": "无孤立笔记"
   },
@@ -387,7 +396,7 @@
     "properties": "个属性",
     "words": "个字",
     "characters": "个字符",
-    "vaults": "个仓库",
+    "vaults": "个资料库",
     "notes": "篇笔记"
   },
   "notePane": {
@@ -401,7 +410,7 @@
     "createNote": "创建新笔记",
     "goToFile": "跳转到文件",
     "close": "关闭",
-    "selectVault": "选择保险库"
+    "selectVault": "选择资料库"
   },
   "commandPalette": {
     "placeholder": "输入命令...",
@@ -459,10 +468,10 @@
     "typeCheckbox": "复选框",
     "selectType": "选择类型"
   },
-  "graphView": {
+  "starView": {
     "noNotes": "没有可显示的笔记",
     "controls": {
-      "title": "图谱设置",
+      "title": "星空设置",
       "reset": "重置为默认值",
       "filters": "筛选",
       "searchPlaceholder": "搜索文件...",
@@ -486,13 +495,13 @@
     }
   },
   "vaults": {
-    "searchPlaceholder": "搜索所有仓库...",
+    "searchPlaceholder": "搜索所有资料库...",
     "results": "个结果",
     "noResults": "无结果",
-    "addVault": "+ 添加仓库",
+    "addVault": "+ 添加资料库",
     "welcomeTitle": "欢迎使用 Constellation",
-    "welcomeSubtitle": "从侧边栏添加您的第一个仓库",
-    "addVaultCta": "+ 添加仓库",
+    "welcomeSubtitle": "从侧边栏添加您的第一个资料库",
+    "addVaultCta": "+ 添加资料库",
     "selectNote": "从侧边栏选择一篇笔记"
   },
   "skills": {
@@ -508,7 +517,7 @@
     "create": "创建技能",
     "noProvider": "在设置中连接 AI 服务商以使用技能。",
     "selectNote": "选择一篇笔记",
-    "selectVault": "选择一个仓库",
+    "selectVault": "选择一个资料库",
     "enterText": "输入文本...",
     "result": "结果",
     "copyResult": "复制",
@@ -518,11 +527,11 @@
     "summarize": "笔记摘要",
     "summarizeDesc": "为任意笔记生成简明摘要",
     "qa": "智能问答",
-    "qaDesc": "提出关于仓库内容的问题，获取 AI 回答",
+    "qaDesc": "提出关于资料库内容的问题，获取 AI 回答",
     "write": "写作助手",
     "writeDesc": "扩展、改写或改进您的文本",
     "autolink": "自动链接",
-    "autolinkDesc": "发现跨仓库笔记之间的关联",
+    "autolinkDesc": "发现跨资料库笔记之间的关联",
     "translate": "翻译笔记",
     "translateDesc": "在不同语言之间翻译笔记",
     "meeting": "会议笔记",
@@ -533,14 +542,14 @@
     "researchDesc": "分析和综合多篇笔记中的信息"
   },
   "vaultManager": {
-    "title": "管理保险库",
-    "openVault": "+ 打开保险库",
-    "manageVaults": "管理保险库...",
+    "title": "管理资料库",
+    "openVault": "+ 打开资料库",
+    "manageVaults": "管理资料库...",
     "openFolder": "打开文件夹",
     "remove": "移除",
     "confirmRemove": "从 Constellation 移除\u201c{name}\u201d\uff1f您的文件不会被删除。",
-    "addVault": "+ 添加保险库",
-    "noVaults": "没有已注册的保险库",
+    "addVault": "+ 添加资料库",
+    "noVaults": "没有已注册的资料库",
     "notes": "篇笔记"
   },
   "lockScreen": {
@@ -634,18 +643,18 @@
       "title": "来源",
       "folder": "文件夹",
       "tag": "标签",
-      "vault": "仓库",
-      "allVaults": "所有仓库",
-      "vaults": "仓库",
+      "vault": "资料库",
+      "allVaults": "所有资料库",
+      "vaults": "资料库",
       "folderPath": "文件夹路径",
       "folderPlaceholder": "例如 项目/活跃",
-      "folderHint": "在包含此文件夹的所有仓库中扫描",
+      "folderHint": "在包含此文件夹的所有资料库中扫描",
       "includeSubfolders": "包含子文件夹",
       "tagName": "标签",
       "tagPlaceholder": "例如 项目",
-      "tagHint": "在所有仓库中扫描带有此标签的所有笔记",
-      "vaultsLabel": "仓库",
-      "allHint": "扫描所有已连接仓库中的所有笔记",
+      "tagHint": "在所有资料库中扫描带有此标签的所有笔记",
+      "vaultsLabel": "资料库",
+      "allHint": "扫描所有已连接资料库中的所有笔记",
       "apply": "应用",
       "cancel": "取消"
     }
@@ -668,14 +677,25 @@
       "creating": "创建中...",
       "next": "下一步",
       "back": "返回",
-      "addVaultsHeading": "添加你的仓库",
-      "addVaultsDescription": "连接你的仓库和子宇宙。你可以随时添加更多。",
-      "addVault": "添加仓库",
+      "addVaultsHeading": "添加你的资料库",
+      "addVaultsDescription": "连接你的资料库和子宇宙。你可以随时添加更多。",
+      "addVault": "添加资料库",
       "addChildUniverse": "添加子宇宙",
+      "starterKit": "创建起步文件夹",
+      "starterKitDesc": "设置图谱、日历、项目和收件箱文件夹，附带欢迎笔记",
       "finish": "完成",
       "skip": "暂时跳过",
-      "noVaultsYet": "尚未添加任何仓库。添加一个仓库或子宇宙以开始。",
-      "remove": "移除"
+      "noVaultsYet": "尚未添加任何资料库。添加一个资料库或子宇宙以开始。",
+      "remove": "移除",
+      "importApp": "从其他应用导入",
+      "importAppDesc": "将你的笔记从 Obsidian、Notion、Evernote 或其他应用迁移到 Constellation。",
+      "importHeading": "导入你的笔记",
+      "importDescription": "选择你要迁移的应用，然后选择源文件夹或文件。",
+      "importPreviewHeading": "准备导入",
+      "importConfirm": "导入并创建宇宙",
+      "importingNotes": "正在导入你的笔记...",
+      "importLocationLabel": "宇宙位置",
+      "importComplete": "导入完成！已导入 {count} 个文件。"
     },
     "manager": {
       "heading": "宇宙管理器",
@@ -690,15 +710,15 @@
       "children": "子宇宙",
       "addChild": "添加子宇宙",
       "noUniverses": "未找到宇宙",
-      "ownVaults": "自有保险库",
-      "inheritedVaults": "继承的保险库",
+      "ownVaults": "自有资料库",
+      "inheritedVaults": "继承的资料库",
       "openExisting": "打开现有宇宙"
     },
     "switching": "切换宇宙中...",
     "migrating": "正在迁移数据..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "Lens",
     "loading": "正在加载查询...",
     "noResults": "无结果",
     "results": "条结果",
@@ -719,16 +739,16 @@
   "secondScreen": {
     "title": "第二屏幕",
     "grid": "网格",
-    "graph": "图谱",
+    "star": "星空",
     "detail": "详情",
     "loading": "正在加载笔记...",
     "linked": "已链接",
     "linkedOn": "链接浏览已开启",
     "linkedOff": "链接浏览已关闭",
     "searchNotes": "搜索笔记...",
-    "allVaults": "所有仓库",
+    "allVaults": "所有资料库",
     "sortName": "按名称排序",
-    "sortVault": "按仓库排序",
+    "sortVault": "按资料库排序",
     "noResults": "无匹配笔记",
     "noNotes": "未找到笔记",
     "detailEmpty": "选择一个笔记在此查看",
@@ -738,6 +758,8 @@
     "title": "导入笔记",
     "selectFormat": "选择要导入的笔记格式。",
     "formats": {
+      "obsidian": "Obsidian",
+      "obsidianDesc": "导入包含所有笔记和附件的 Obsidian 仓库",
       "markdown": "Markdown",
       "markdownDesc": "来自任何应用的 Markdown 文件(.md)",
       "notion": "Notion",
@@ -753,7 +775,7 @@
       "txt": "纯文本",
       "txtDesc": "转换为 Markdown 的文本文件"
     },
-    "targetVault": "目标仓库",
+    "targetVault": "目标资料库",
     "subfolder": "子文件夹",
     "selectSource": "选择来源",
     "scanning": "正在扫描文件...",

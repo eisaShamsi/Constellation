@@ -46,7 +46,7 @@ Click any day to open or create a daily note for that date:
 The calendar aggregates dates from two sources:
 
 1. **File dates**: The modification date of each `.md` file, plus any `date` or `created` frontmatter properties
-2. **Task due dates**: Due dates from incomplete tasks across all vaults
+2. **Task due dates**: Due dates from incomplete tasks across all libraries
 
 ## Integration with Tasks
 

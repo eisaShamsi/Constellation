@@ -12,9 +12,11 @@
 	let {
 		onClose,
 		onSwitch,
+		onRemoveLast,
 	}: {
 		onClose: () => void;
 		onSwitch: () => void;
+		onRemoveLast: () => void;
 	} = $props();
 
 	let universes: UniverseEntry[] = $state([]);
@@ -24,6 +26,7 @@
 	let newPath = $state('');
 	let creating = $state(false);
 	let error = $state('');
+	let confirmRemoveId: string | null = $state(null);
 	let overlayEl: HTMLDivElement;
 
 	onMount(() => {
@@ -54,9 +57,27 @@
 	}
 
 	async function handleRemove(id: string) {
-		if (id === activeId) return; // Can't remove active
+		confirmRemoveId = id;
+	}
+
+	async function confirmRemove() {
+		const id = confirmRemoveId;
+		if (!id) return;
+		confirmRemoveId = null;
+		const wasActive = id === activeId;
 		await removeUniverseFromRegistry(id);
 		await refresh();
+
+		if (universes.length === 0) {
+			// Last universe removed — go back to setup
+			onRemoveLast();
+			return;
+		}
+
+		if (wasActive && universes.length > 0) {
+			// Removed the active universe but others remain — switch to first
+			await handleSwitch(universes[0].id);
+		}
 	}
 
 	async function pickFolder() {
@@ -110,7 +131,14 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			if (confirmRemoveId) {
+				confirmRemoveId = null;
+			} else {
+				onClose();
+			}
+		}
 	}
 
 	function handleOverlayClick(e: MouseEvent) {
@@ -155,11 +183,21 @@
 						<div class="um-entry-actions">
 							{#if u.id !== activeId}
 								<button class="um-btn" onclick={() => handleSwitch(u.id)}>{$t('universe.manager.switch')}</button>
-								<button class="um-btn um-btn-danger" onclick={() => handleRemove(u.id)}>{$t('universe.manager.remove')}</button>
 							{/if}
+							<button class="um-btn um-btn-danger" onclick={() => handleRemove(u.id)}>{$t('universe.manager.remove')}</button>
 						</div>
 					</div>
 				{/each}
+			{/if}
+
+			{#if confirmRemoveId}
+				<div class="um-confirm">
+					<span class="um-confirm-text">{$t('universe.manager.removeConfirm')}</span>
+					<div class="um-confirm-actions">
+						<button class="um-btn um-btn-danger" onclick={confirmRemove}>{$t('universe.manager.remove')}</button>
+						<button class="um-btn" onclick={() => confirmRemoveId = null}>{$t('bases.source.cancel')}</button>
+					</div>
+				</div>
 			{/if}
 
 			{#if error}
@@ -347,6 +385,24 @@
 	.um-btn.um-btn-accent:hover { opacity: 0.9; }
 	.um-btn.um-btn-accent:disabled { opacity: 0.5; cursor: not-allowed; }
 	.um-btn.um-btn-danger:hover { color: var(--text-error, #f38ba8); border-color: var(--text-error, #f38ba8); }
+	.um-confirm {
+		padding: 10px 12px;
+		border-radius: 8px;
+		border: 1px solid var(--text-error, #f38ba8);
+		background: rgba(243, 139, 168, 0.08);
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.um-confirm-text {
+		font-size: 0.82rem;
+		color: var(--text-normal);
+	}
+	.um-confirm-actions {
+		display: flex;
+		gap: 6px;
+		justify-content: flex-end;
+	}
 	.um-footer {
 		padding: 12px 16px;
 		border-top: 1px solid var(--background-modifier-border);

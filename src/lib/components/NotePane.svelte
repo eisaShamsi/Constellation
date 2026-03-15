@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { parseFrontmatter, extractHeadings, editingTabIds, toggleEditMode, saveTabContent, resolveWikilinkCrossVault, openNoteTab, openTabs, vaultAppearances, vaults, navigateBack, navigateForward, readNote, appSettings } from '$lib/vaults/store';
-	import type { OpenTab } from '$lib/vaults/store';
+	import { parseFrontmatter, extractHeadings, editingTabIds, toggleEditMode, saveTabContent, resolveWikilinkCrossLibrary, openNoteTab, openTabs, libraryAppearances, libraries, navigateBack, navigateForward, readNote, appSettings } from '$lib/libraries/store';
+	import type { OpenTab } from '$lib/libraries/store';
 	import { detectDir, renderMarkdown, postProcessRenderedContent, collectNoteNames } from '$lib/utils';
 	import { dir, t } from '$lib/i18n';
 	import { get } from 'svelte/store';
@@ -16,10 +16,10 @@
 		onFocus,
 		color = '#7c3aed',
 		splitView = false,
-		vaultTrees = {} as Record<string, any[]>,
+		libraryTrees = {} as Record<string, any[]>,
 		allTags = [] as string[],
-		allNotes = [] as { name: string; path: string; vaultName: string }[],
-		vaultColorMap = {} as Record<string, string>,
+		allNotes = [] as { name: string; path: string; libraryName: string }[],
+		libraryColorMap = {} as Record<string, string>,
 		onCreateNote,
 		onQuickSwitch,
 		onCloseTab,
@@ -29,10 +29,10 @@
 		onFocus: () => void;
 		color?: string;
 		splitView?: boolean;
-		vaultTrees?: Record<string, any[]>;
+		libraryTrees?: Record<string, any[]>;
 		allTags?: string[];
-		allNotes?: { name: string; path: string; vaultName: string }[];
-		vaultColorMap?: Record<string, string>;
+		allNotes?: { name: string; path: string; libraryName: string }[];
+		libraryColorMap?: Record<string, string>;
 		onCreateNote?: () => void;
 		onQuickSwitch?: () => void;
 		onCloseTab?: () => void;
@@ -61,21 +61,21 @@
 	const editing = $derived(tab ? $editingTabIds.has(tab.id) : false);
 	let livePreviewEnabled = $state($appSettings.defaultEditingMode === 'livePreview');
 
-	// Vault appearance
-	const vaultId = $derived(tab ? get(vaults).find(v => tab!.vaultPath === v.path)?.id : null);
-	const appearance = $derived(vaultId ? $vaultAppearances[vaultId] : null);
+	// Library appearance
+	const libraryId = $derived(tab ? get(libraries).find(v => tab!.libraryPath === v.path)?.id : null);
+	const appearance = $derived(libraryId ? $libraryAppearances[libraryId] : null);
 	const paneStyle = $derived.by(() => {
 		if (!appearance) return '';
 		const vars: string[] = [];
-		if (appearance.accent_color) vars.push(`--vault-accent: ${appearance.accent_color}`);
+		if (appearance.accent_color) vars.push(`--library-accent: ${appearance.accent_color}`);
 		if (appearance.base_font_size) vars.push(`--vault-font-size: ${appearance.base_font_size}px`);
 		if (appearance.text_font_family) vars.push(`--vault-text-font: ${appearance.text_font_family}`);
-		if (appearance.monospace_font_family) vars.push(`--vault-mono-font: ${appearance.monospace_font_family}`);
+		if (appearance.monospace_font_family) vars.push(`--library-mono-font: ${appearance.monospace_font_family}`);
 		return vars.join('; ');
 	});
 
-	// Note names for autocomplete (cross-vault)
-	const noteNames = $derived(allNotes.map(n => ({ name: n.name, path: n.path, vaultName: n.vaultName })));
+	// Note names for autocomplete (cross-library)
+	const noteNames = $derived(allNotes.map(n => ({ name: n.name, path: n.path, libraryName: n.libraryName })));
 
 	// Edit mode state
 	let editBody = $state('');
@@ -260,7 +260,7 @@ ${contentEl.innerHTML}
 			const fragment = hashIdx >= 0 ? embedTarget.slice(hashIdx + 1) : null;
 
 			try {
-				const resolved = await resolveWikilinkCrossVault(tab.vaultPath, noteTarget);
+				const resolved = await resolveWikilinkCrossLibrary(tab.libraryPath, noteTarget);
 				if (!resolved) continue;
 
 				const content = await readNote(resolved.path);
@@ -309,7 +309,7 @@ ${contentEl.innerHTML}
 			const path = dvLink.dataset.path;
 			const vault = dvLink.dataset.vault;
 			if (path && vault) {
-				const vc = vaultColorMap[vault] ?? '#7c3aed';
+				const vc = libraryColorMap[vault] ?? '#7c3aed';
 				await openNoteTab(path, vault, vc);
 			}
 			return;
@@ -329,11 +329,11 @@ ${contentEl.innerHTML}
 			return;
 		}
 
-		const resolved = await resolveWikilinkCrossVault(tab.vaultPath, linkTarget);
+		const resolved = await resolveWikilinkCrossLibrary(tab.libraryPath, linkTarget);
 		if (resolved) {
 			const newTab = e.ctrlKey || e.metaKey || e.button === 1;
-			const vaultColor = vaultColorMap[resolved.vault_name] ?? tab.vaultColor;
-			await openNoteTab(resolved.path, resolved.vault_name, vaultColor, undefined, newTab);
+			const libraryColor = libraryColorMap[resolved.library_name] ?? tab.libraryColor;
+			await openNoteTab(resolved.path, resolved.library_name, libraryColor, undefined, newTab);
 			// Scroll to fragment after note loads
 			const frag = fragment || resolved.fragment;
 			if (frag) {
@@ -397,9 +397,9 @@ ${contentEl.innerHTML}
 				{/if}
 			</div>
 		{:else if splitView}
-			<div class="pane-tab-bar" style:--vault-color={color}>
+			<div class="pane-tab-bar" style:--library-color={color}>
 				<div class="pane-tab">
-					<span class="pane-tab-vault">{tab.vaultName}</span>
+					<span class="pane-tab-vault">{tab.libraryName}</span>
 					<span class="pane-tab-title">{tab.name}</span>
 				</div>
 				<div class="pane-tab-actions">
@@ -430,7 +430,7 @@ ${contentEl.innerHTML}
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
 					</button>
 				{/if}
-				<span class="bc-vault">{tab.vaultName}</span>
+				<span class="bc-vault">{tab.libraryName}</span>
 				<span class="bc-sep">/</span>
 				<span class="bc-note">{tab.name}</span>
 				<div class="bc-actions">
@@ -460,9 +460,9 @@ ${contentEl.innerHTML}
 			<BaseView
 				definition={baseDefinition}
 				filePath={tab.path}
-				onOpenNote={(path, vaultName) => {
-					const vc = vaultColorMap[vaultName] ?? color;
-					openNoteTab(path, vaultName, vc);
+				onOpenNote={(path, libraryName) => {
+					const vc = libraryColorMap[libraryName] ?? color;
+					openNoteTab(path, libraryName, vc);
 				}}
 				onCreateNote={(folderPath, properties) => {
 					if (onCreateNote) onCreateNote();
@@ -482,13 +482,13 @@ ${contentEl.innerHTML}
 						body={noteBody}
 						tabId={tab.id}
 						filePath={tab.path}
-						vaultName={tab.vaultName}
+						libraryName={tab.libraryName}
 						onNoteClick={async (noteName) => {
 							if (!tab) return;
-							const resolved = await resolveWikilinkCrossVault(tab.vaultPath, noteName);
+							const resolved = await resolveWikilinkCrossLibrary(tab.libraryPath, noteName);
 							if (resolved) {
-								const vc = vaultColorMap[resolved.vault_name] ?? color;
-								await openNoteTab(resolved.path, resolved.vault_name, vc);
+								const vc = libraryColorMap[resolved.library_name] ?? color;
+								await openNoteTab(resolved.path, resolved.library_name, vc);
 							}
 						}}
 					/>
@@ -551,7 +551,7 @@ ${contentEl.innerHTML}
 		display: inline-flex; align-items: center; gap: 6px;
 		background: var(--background-primary); color: var(--text-normal);
 		border: 1px solid var(--background-modifier-border);
-		border-top: 3px solid var(--vault-color, var(--interactive-accent));
+		border-top: 3px solid var(--library-color, var(--interactive-accent));
 		border-bottom: 1px solid var(--background-primary);
 		margin-bottom: -1px;
 		border-radius: 6px 6px 0 0;
@@ -636,15 +636,15 @@ ${contentEl.innerHTML}
 	.note-content :global(p) { margin: 0.5rem 0; }
 
 	/* ─── Links ─── */
-	.note-content :global(a) { color: var(--vault-accent, var(--interactive-accent)); }
+	.note-content :global(a) { color: var(--library-accent, var(--interactive-accent)); }
 	.note-content :global(a.wikilink) {
-		color: var(--vault-accent, var(--interactive-accent));
+		color: var(--library-accent, var(--interactive-accent));
 		text-decoration: none;
-		border-bottom: 1px dashed color-mix(in srgb, var(--vault-accent, var(--interactive-accent)) 40%, transparent);
+		border-bottom: 1px dashed color-mix(in srgb, var(--library-accent, var(--interactive-accent)) 40%, transparent);
 		cursor: pointer;
 	}
 	.note-content :global(a.wikilink:hover) {
-		border-bottom-color: var(--vault-accent, var(--interactive-accent));
+		border-bottom-color: var(--library-accent, var(--interactive-accent));
 	}
 	.note-content :global(a.wikilink.cross-vault) {
 		color: var(--text-accent-hover, #a855f7);
@@ -663,7 +663,7 @@ ${contentEl.innerHTML}
 	.note-content :global(pre code) { background: none; padding: 0; font-size: 0.85rem; line-height: 1.6; }
 
 	/* ─── Blockquote & Lists ─── */
-	.note-content :global(blockquote) { border-inline-start: 3px solid var(--vault-accent, var(--interactive-accent)); padding: 0.25rem 1rem; margin: 0.5rem 0; color: var(--text-muted); }
+	.note-content :global(blockquote) { border-inline-start: 3px solid var(--library-accent, var(--interactive-accent)); padding: 0.25rem 1rem; margin: 0.5rem 0; color: var(--text-muted); }
 	.note-content :global(ul), .note-content :global(ol) { padding-inline-start: 1.5rem; }
 	.note-content :global(li) { margin: 0.2rem 0; }
 	.note-content :global(hr) { border: none; border-top: 1px solid var(--background-modifier-border); margin: 1.5rem 0; }
@@ -762,7 +762,7 @@ ${contentEl.innerHTML}
 
 	/* ─── Footnotes ─── */
 	.note-content :global(.footnote-ref a) {
-		color: var(--vault-accent, var(--interactive-accent));
+		color: var(--library-accent, var(--interactive-accent));
 		text-decoration: none;
 		font-weight: 600;
 	}
@@ -776,13 +776,13 @@ ${contentEl.innerHTML}
 	}
 	.note-content :global(.footnote-backref) {
 		text-decoration: none;
-		color: var(--vault-accent, var(--interactive-accent));
+		color: var(--library-accent, var(--interactive-accent));
 	}
 
 	/* ─── Embeds ─── */
 	.note-content :global(.embed-note) {
 		border: 1px solid var(--background-modifier-border);
-		border-inline-start: 3px solid var(--vault-accent, var(--interactive-accent));
+		border-inline-start: 3px solid var(--library-accent, var(--interactive-accent));
 		border-radius: 4px;
 		padding: 8px 12px;
 		margin: 0.5rem 0;

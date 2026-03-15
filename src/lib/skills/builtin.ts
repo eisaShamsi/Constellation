@@ -104,7 +104,7 @@ export const builtinSkills: SkillDefinition[] = [
 		id: 'autolink',
 		name: 'Auto-Linker',
 		name_ar: 'الربط التلقائي',
-		description: 'Discover connections between notes across vaults',
+		description: 'Discover connections between notes across libraries',
 		description_ar: 'اكتشف الروابط بين الملاحظات عبر الخزائن',
 		icon: '⟡',
 		category: 'organization',

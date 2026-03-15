@@ -60,7 +60,7 @@ MyUniverse/
 ### Why This Matters
 
 - **Portability.** Copy the universe directory to another machine and everything follows — settings, bookmarks, workspaces, database definitions. The libraries themselves are just folders of Markdown files that live wherever you want.
-- **Multi-library by design.** A universe can register any number of libraries. Search, graph view, task scanning, backlinks, and databases all operate across library boundaries natively.
+- **Multi-library by design.** A universe can register any number of libraries. Search, Sky View, task scanning, backlinks, and databases all operate across library boundaries natively.
 - **Hierarchy.** Universes can reference child universes, inheriting their libraries. A team lead's universe can include a shared team universe plus a personal universe — with circular reference prevention built in.
 - **No lock-in.** The universe is JSON files in a folder. The libraries are Markdown files in folders. Walk away at any time — your notes are standard files that any tool can read.
 
@@ -92,14 +92,14 @@ Features that other tools require plugins, extensions, or external apps to achie
 
 | Feature | How Others Handle It | Constellation (Built-In) |
 |---------|---------------------|--------------------------|
-| Structured queries | Dataview plugin / external scripts | Native query parser (TABLE, LIST, TASK, CALENDAR queries) |
+| Structured queries (Lens) | Plugin-based or external scripts | Native query parser (TABLE, LIST, TASK, CALENDAR queries) |
 | Task management | Separate task apps or plugins | Library-wide scanning, toggle, due dates, priority, tags |
 | Calendar sidebar | Separate calendar plugins | Month view with note/task dots, daily note creation |
 | Advanced tables | Basic Markdown tables or spreadsheets | Row/column operations, sorting, move, formulas |
 | Templates | Manual copy-paste or plugin syntax | Template variables (date, time, title, folder, library, cursor) |
 | Note importing | Manual conversion scripts | 7 formats: Markdown folders, Notion, Bear, Evernote, HTML, CSV, Plain Text |
 | Backlinks panel | Basic or plugin-dependent | Enhanced with cross-library support and unlinked mentions |
-| Graph view | Single-source only in most tools | Cross-library nodes, force controls, grouping |
+| Sky View | Single-source only in most tools | Cross-library nodes, force controls, grouping |
 | Tag browser | Basic implementations | Tag frequency analysis, library-wide aggregation |
 
 ### 4.3 Import From Anywhere
@@ -274,7 +274,7 @@ Constellation occupies a unique position in the knowledge management space: **lo
 | Data ownership | Local files | Local files | Cloud-hosted | Local files | Cloud-hosted | iCloud |
 | Offline capability | Full | Full | Limited | Full | None | Full |
 | File format | Standard Markdown | Standard Markdown | Proprietary | Markdown/EDN | Proprietary | Proprietary |
-| Multi-library | Native (Universe) | One vault per window | N/A (workspaces) | Single graph | Single graph | N/A |
+| Multi-library | Native (Universe) | One library per window | N/A (workspaces) | Single graph | Single graph | N/A |
 | Cross-library search | Yes | No | N/A | No | No | No |
 | Cross-library graph | Yes | No | N/A | No | No | No |
 | Database views | Built-in (Bases) | Plugin required | Native | Queries (limited) | Queries | No |

@@ -1,30 +1,30 @@
 <script lang="ts">
-	import { openNoteTab, vaults, readNote } from '$lib/vaults/store';
+	import { openNoteTab, libraries, readNote } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
 
 	let {
-		backlinks = [] as { name: string; path: string; context: string; vaultName: string }[],
-		unlinkedMentions = [] as { name: string; path: string; context: string; vaultName: string }[],
+		backlinks = [] as { name: string; path: string; context: string; libraryName: string }[],
+		unlinkedMentions = [] as { name: string; path: string; context: string; libraryName: string }[],
 		activeNoteName = '',
-		vaultColorMap = {} as Record<string, string>,
+		libraryColorMap = {} as Record<string, string>,
 	}: {
-		backlinks: { name: string; path: string; context: string; vaultName: string }[];
-		unlinkedMentions: { name: string; path: string; context: string; vaultName: string }[];
+		backlinks: { name: string; path: string; context: string; libraryName: string }[];
+		unlinkedMentions: { name: string; path: string; context: string; libraryName: string }[];
 		activeNoteName?: string;
-		vaultColorMap?: Record<string, string>;
+		libraryColorMap?: Record<string, string>;
 	} = $props();
 
 	let showUnlinked = $state(false);
 
-	function getVaultColor(vaultName: string): string {
-		return vaultColorMap[vaultName] || '#7c3aed';
+	function getLibraryColor(libraryName: string): string {
+		return libraryColorMap[libraryName] || '#7c3aed';
 	}
 
-	async function openLink(path: string, vaultName: string, e?: MouseEvent) {
+	async function openLink(path: string, libraryName: string, e?: MouseEvent) {
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		await openNoteTab(path, vaultName, getVaultColor(vaultName), undefined, newTab);
+		await openNoteTab(path, libraryName, getLibraryColor(libraryName), undefined, newTab);
 	}
 
 	async function linkMention(mentionPath: string, e: MouseEvent) {
@@ -50,14 +50,14 @@
 		</div>
 		{#if backlinks.length > 0}
 			{#each backlinks as bl}
-				<button class="bl-item" onclick={(e) => openLink(bl.path, bl.vaultName, e)}>
+				<button class="bl-item" onclick={(e) => openLink(bl.path, bl.libraryName, e)}>
 					<span class="bl-name-row">
-						{#if bl.vaultName}
-							<span class="bl-vault-dot" style="background:{getVaultColor(bl.vaultName)}"></span>
+						{#if bl.libraryName}
+							<span class="bl-library-dot" style="background:{getLibraryColor(bl.libraryName)}"></span>
 						{/if}
 						<span class="bl-name">{bl.name}</span>
-						{#if bl.vaultName}
-							<span class="bl-vault-label">{bl.vaultName}</span>
+						{#if bl.libraryName}
+							<span class="bl-library-label">{bl.libraryName}</span>
 						{/if}
 					</span>
 					<span class="bl-context">{bl.context}</span>
@@ -79,14 +79,14 @@
 		{#if showUnlinked && unlinkedMentions.length > 0}
 			{#each unlinkedMentions as ul}
 				<div class="bl-item-row">
-					<button class="bl-item" onclick={(e) => openLink(ul.path, ul.vaultName, e)}>
+					<button class="bl-item" onclick={(e) => openLink(ul.path, ul.libraryName, e)}>
 						<span class="bl-name-row">
-							{#if ul.vaultName}
-								<span class="bl-vault-dot" style="background:{getVaultColor(ul.vaultName)}"></span>
+							{#if ul.libraryName}
+								<span class="bl-library-dot" style="background:{getLibraryColor(ul.libraryName)}"></span>
 							{/if}
 							<span class="bl-name">{ul.name}</span>
-							{#if ul.vaultName}
-								<span class="bl-vault-label">{ul.vaultName}</span>
+							{#if ul.libraryName}
+								<span class="bl-library-label">{ul.libraryName}</span>
 							{/if}
 						</span>
 						<span class="bl-context">{ul.context}</span>
@@ -126,8 +126,8 @@
 	}
 	.bl-item:hover { background: var(--background-modifier-hover); }
 	.bl-name-row { display: flex; align-items: center; gap: 4px; }
-	.bl-vault-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-	.bl-vault-label { font-size: 0.68rem; color: var(--text-faint); margin-inline-start: auto; flex-shrink: 0; }
+	.bl-library-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+	.bl-library-label { font-size: 0.68rem; color: var(--text-faint); margin-inline-start: auto; flex-shrink: 0; }
 	.bl-name { color: var(--interactive-accent); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.bl-context { display: block; color: var(--text-faint); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.bl-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }

@@ -4,7 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::time::Instant;
 
-use crate::vaults::validate_path_in_any_vault;
+use crate::libraries::validate_path_in_any_library;
 
 // ─── Types ───
 
@@ -14,8 +14,8 @@ pub struct TaskItem {
     pub completed: bool,
     pub file_path: String,
     pub file_name: String,
-    pub vault_name: String,
-    pub vault_path: String,
+    pub library_name: String,
+    pub library_path: String,
     pub line_number: usize, // 1-indexed
     pub due_date: Option<String>,
     pub priority: Option<String>, // "high", "medium", "low"
@@ -180,25 +180,25 @@ fn parse_task_line(
     line_number: usize,
     file_path: &str,
     file_name: &str,
-    vault_name: &str,
-    vault_path: &str,
+    library_name: &str,
+    library_path: &str,
 ) -> Option<TaskItem> {
     // Match: optional whitespace, -, *, or +, space, [ ] or [x] or [X]
     let trimmed = line.trim_start();
-    if trimmed.len() < 5 {
+    // Use chars() for safe UTF-8 handling instead of byte indexing
+    let first_char = match trimmed.chars().next() {
+        Some(c) => c,
+        None => return None,
+    };
+    if first_char != '-' && first_char != '*' && first_char != '+' {
         return None;
     }
-    let marker = &trimmed[..1];
-    if marker != "-" && marker != "*" && marker != "+" {
-        return None;
-    }
-    let after_marker = &trimmed[1..].trim_start();
+    let after_marker = trimmed[first_char.len_utf8()..].trim_start();
     if !after_marker.starts_with("[ ]") && !after_marker.starts_with("[x]") && !after_marker.starts_with("[X]") {
         return None;
     }
     let completed = !after_marker.starts_with("[ ]");
-    let text_start = if after_marker.starts_with("[ ]") { 3 } else { 3 };
-    let text = after_marker[text_start..].trim_start().to_string();
+    let text = after_marker[3..].trim_start().to_string();
 
     Some(TaskItem {
         due_date: extract_due_date(&text),
@@ -210,8 +210,8 @@ fn parse_task_line(
         completed,
         file_path: file_path.to_string(),
         file_name: file_name.to_string(),
-        vault_name: vault_name.to_string(),
-        vault_path: vault_path.to_string(),
+        library_name: library_name.to_string(),
+        library_path: library_path.to_string(),
         line_number,
     })
 }
@@ -220,8 +220,8 @@ fn parse_task_line(
 
 fn scan_tasks_recursive(
     dir: &Path,
-    vault_name: &str,
-    vault_path: &str,
+    library_name: &str,
+    library_path: &str,
     tasks: &mut Vec<TaskItem>,
 ) {
     let read_dir = match fs::read_dir(dir) {
@@ -235,7 +235,7 @@ fn scan_tasks_recursive(
             continue;
         }
         if path.is_dir() {
-            scan_tasks_recursive(&path, vault_name, vault_path, tasks);
+            scan_tasks_recursive(&path, library_name, library_path, tasks);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 let file_path_str = path.to_string_lossy().to_string();
@@ -249,8 +249,8 @@ fn scan_tasks_recursive(
                         i + 1, // 1-indexed
                         &file_path_str,
                         &file_name,
-                        vault_name,
-                        vault_path,
+                        library_name,
+                        library_path,
                     ) {
                         tasks.push(task);
                     }
@@ -264,7 +264,7 @@ fn scan_tasks_recursive(
 
 fn scan_dates_recursive(
     dir: &Path,
-    vault_name: &str,
+    library_name: &str,
     entries: &mut Vec<NoteDateEntry>,
 ) {
     let read_dir = match fs::read_dir(dir) {
@@ -278,7 +278,7 @@ fn scan_dates_recursive(
             continue;
         }
         if path.is_dir() {
-            scan_dates_recursive(&path, vault_name, entries);
+            scan_dates_recursive(&path, library_name, entries);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             let file_path_str = path.to_string_lossy().to_string();
             let file_name = path
@@ -349,13 +349,13 @@ fn timestamp_to_date(secs: u64) -> String {
 #[tauri::command]
 pub fn scan_vault_tasks(
     app: tauri::AppHandle,
-    vault_path: String,
-    vault_name: String,
+    library_path: String,
+    library_name: String,
 ) -> Result<TaskScanResult, String> {
-    validate_path_in_any_vault(&app, &vault_path)?;
+    validate_path_in_any_library(&app, &library_path)?;
     let start = Instant::now();
     let mut tasks = Vec::new();
-    scan_tasks_recursive(Path::new(&vault_path), &vault_name, &vault_path, &mut tasks);
+    scan_tasks_recursive(Path::new(&library_path), &library_name, &library_path, &mut tasks);
     let total_count = tasks.len();
     Ok(TaskScanResult {
         tasks,
@@ -369,10 +369,10 @@ pub fn scan_vault_tasks(
 pub fn scan_note_tasks(
     app: tauri::AppHandle,
     file_path: String,
-    vault_name: String,
-    vault_path: String,
+    library_name: String,
+    library_path: String,
 ) -> Result<TaskScanResult, String> {
-    validate_path_in_any_vault(&app, &file_path)?;
+    validate_path_in_any_library(&app, &file_path)?;
     let start = Instant::now();
     let mut tasks = Vec::new();
 
@@ -389,8 +389,8 @@ pub fn scan_note_tasks(
                     i + 1,
                     &file_path,
                     &file_name,
-                    &vault_name,
-                    &vault_path,
+                    &library_name,
+                    &library_path,
                 ) {
                     tasks.push(task);
                 }
@@ -414,7 +414,7 @@ pub fn toggle_task(
     file_path: String,
     line_number: usize,
 ) -> Result<String, String> {
-    validate_path_in_any_vault(&app, &file_path)?;
+    validate_path_in_any_library(&app, &file_path)?;
     let path = Path::new(&file_path);
 
     // Safety: only .md files
@@ -479,12 +479,12 @@ pub fn toggle_task(
 #[tauri::command]
 pub fn scan_vault_note_dates(
     app: tauri::AppHandle,
-    vault_path: String,
-    vault_name: String,
+    library_path: String,
+    library_name: String,
 ) -> Result<HashMap<String, Vec<NoteDateEntry>>, String> {
-    validate_path_in_any_vault(&app, &vault_path)?;
+    validate_path_in_any_library(&app, &library_path)?;
     let mut entries = Vec::new();
-    scan_dates_recursive(Path::new(&vault_path), &vault_name, &mut entries);
+    scan_dates_recursive(Path::new(&library_path), &library_name, &mut entries);
 
     let mut map: HashMap<String, Vec<NoteDateEntry>> = HashMap::new();
     for entry in entries {

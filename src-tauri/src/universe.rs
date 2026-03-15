@@ -8,7 +8,7 @@ use tauri::Manager;
 
 // ─── Data Structures ───
 
-/// Metadata stored inside each universe directory as universe.json.
+/// Metadata stored inside each universe's .constellation/universe.json.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UniverseMeta {
     pub name: String,
@@ -45,6 +45,19 @@ impl UniverseState {
             active_path: Mutex::new(None),
         }
     }
+}
+
+// ─── .constellation/ Directory Helpers ───
+
+/// Return the .constellation/ config directory inside a universe root.
+pub fn constellation_dir(universe_root: &Path) -> PathBuf {
+    universe_root.join(".constellation")
+}
+
+/// Return the .constellation/ directory for the active universe.
+pub fn active_constellation_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let root = active_universe_dir(app)?;
+    Ok(constellation_dir(&root))
 }
 
 // ─── Registry Helpers ───
@@ -91,8 +104,7 @@ fn save_registry(app: &tauri::AppHandle, registry: &UniverseRegistry) -> Result<
 
 // ─── Active Universe Helper ───
 
-/// Get the active universe directory path from managed state.
-/// This is the central function that replaces all app_data_dir usage.
+/// Get the active universe ROOT directory path from managed state.
 pub fn active_universe_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let state = app.state::<UniverseState>();
     let lock = state.active_path.lock().map_err(|e| e.to_string())?;
@@ -107,16 +119,81 @@ fn uuid_simple() -> String {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    // Add random component to avoid collisions on low-resolution clocks (Windows ~100ns)
     let random: u32 = (timestamp as u32).wrapping_mul(2654435761) ^ std::process::id();
     format!("{:x}{:04x}", timestamp, random & 0xFFFF)
 }
 
-// ─── Vault Resolution (Universe of Universes) ───
+// ─── Migration: old flat format → .constellation/ ───
 
-/// Recursively resolve all vaults accessible from a universe directory.
-/// Collects own vaults + child universe vaults, deduplicated by path.
-fn resolve_vaults_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>) -> Vec<crate::vaults::VaultInfo> {
+/// Auto-migrate a universe from the old flat layout to .constellation/ subdirectory.
+/// Called when setting an active universe.
+fn migrate_to_constellation(universe_root: &Path) -> Result<(), String> {
+    let cdir = constellation_dir(universe_root);
+    let old_meta = universe_root.join("universe.json");
+
+    // Only migrate if old format exists but .constellation/ does not
+    if !old_meta.exists() || cdir.exists() {
+        return Ok(());
+    }
+
+    eprintln!("[universe] Migrating {} to .constellation/ format", universe_root.display());
+
+    fs::create_dir_all(&cdir)
+        .map_err(|e| format!("Failed to create .constellation/: {}", e))?;
+    fs::create_dir_all(cdir.join("bases"))
+        .map_err(|e| format!("Failed to create .constellation/bases/: {}", e))?;
+
+    // Move config files into .constellation/
+    let files_to_move = [
+        "universe.json",
+        "settings.json",
+        "bookmarks.json",
+        "workspaces.json",
+        "property-types.json",
+    ];
+    for file in &files_to_move {
+        let src = universe_root.join(file);
+        if src.exists() {
+            let dest = cdir.join(file);
+            fs::rename(&src, &dest)
+                .map_err(|e| format!("Failed to move {}: {}", file, e))?;
+        }
+    }
+
+    // Rename vaults.json → libraries.json during migration
+    let old_vaults = universe_root.join("vaults.json");
+    if old_vaults.exists() {
+        let dest = cdir.join("libraries.json");
+        fs::rename(&old_vaults, &dest)
+            .map_err(|e| format!("Failed to move vaults.json → libraries.json: {}", e))?;
+    }
+
+    // Move bases/ directory contents
+    let old_bases = universe_root.join("bases");
+    if old_bases.is_dir() {
+        let new_bases = cdir.join("bases");
+        if let Ok(entries) = fs::read_dir(&old_bases) {
+            for entry in entries.flatten() {
+                let src = entry.path();
+                if src.is_file() {
+                    let dest = new_bases.join(entry.file_name());
+                    fs::rename(&src, &dest).ok();
+                }
+            }
+        }
+        // Remove old empty bases dir
+        fs::remove_dir(&old_bases).ok();
+    }
+
+    eprintln!("[universe] Migration complete for {}", universe_root.display());
+    Ok(())
+}
+
+// ─── Library Resolution (Universe of Universes) ───
+
+/// Recursively resolve all libraries accessible from a universe directory.
+/// Collects own libraries + child universe libraries, deduplicated by path.
+fn resolve_libraries_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>) -> Vec<crate::libraries::LibraryInfo> {
     // Prevent circular references
     if let Ok(canon) = fs::canonicalize(universe_path) {
         if visited.contains(&canon) {
@@ -125,32 +202,43 @@ fn resolve_vaults_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>) ->
         visited.push(canon);
     }
 
-    let mut all_vaults: Vec<crate::vaults::VaultInfo> = Vec::new();
+    let mut all_libraries: Vec<crate::libraries::LibraryInfo> = Vec::new();
+    let cdir = constellation_dir(universe_path);
 
-    // 1. Load own vaults from vaults.json
-    let vaults_path = universe_path.join("vaults.json");
-    if vaults_path.exists() {
-        if let Ok(data) = fs::read_to_string(&vaults_path) {
-            if let Ok(vaults) = serde_json::from_str::<Vec<crate::vaults::VaultInfo>>(&data) {
-                all_vaults.extend(vaults);
+    // 1. Load own libraries from .constellation/libraries.json
+    let libs_path = cdir.join("libraries.json");
+    if libs_path.exists() {
+        if let Ok(data) = fs::read_to_string(&libs_path) {
+            if let Ok(libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&data) {
+                all_libraries.extend(libs);
+            }
+        }
+    } else {
+        // Fallback: try old flat format (vaults.json at root)
+        let old_path = universe_path.join("vaults.json");
+        if old_path.exists() {
+            if let Ok(data) = fs::read_to_string(&old_path) {
+                if let Ok(libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&data) {
+                    all_libraries.extend(libs);
+                }
             }
         }
     }
 
-    // 2. Load children from universe.json and recurse
-    let meta_path = universe_path.join("universe.json");
+    // 2. Load children from .constellation/universe.json and recurse
+    let meta_path = cdir.join("universe.json");
+    let meta_path = if meta_path.exists() { meta_path } else { universe_path.join("universe.json") };
     if meta_path.exists() {
         if let Ok(data) = fs::read_to_string(&meta_path) {
             if let Ok(meta) = serde_json::from_str::<UniverseMeta>(&data) {
                 for child_path_str in &meta.children {
-                    // Canonicalize before use to resolve any ".." or symlink components
                     let child_canon = match fs::canonicalize(child_path_str) {
                         Ok(p) => p,
-                        Err(_) => continue, // Path doesn't exist or is invalid — skip
+                        Err(_) => continue,
                     };
                     if child_canon.is_dir() {
-                        let child_vaults = resolve_vaults_recursive(&child_canon, visited);
-                        all_vaults.extend(child_vaults);
+                        let child_libs = resolve_libraries_recursive(&child_canon, visited);
+                        all_libraries.extend(child_libs);
                     }
                 }
             }
@@ -159,9 +247,9 @@ fn resolve_vaults_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>) ->
 
     // 3. Deduplicate by path
     let mut seen = std::collections::HashSet::new();
-    all_vaults.retain(|v| seen.insert(v.path.clone()));
+    all_libraries.retain(|v| seen.insert(v.path.clone()));
 
-    all_vaults
+    all_libraries
 }
 
 // ─── Tauri Commands ───
@@ -172,7 +260,7 @@ pub fn list_universes(app: tauri::AppHandle) -> Vec<UniverseEntry> {
     load_registry(&app).entries
 }
 
-/// Create a new universe: directory structure + universe.json + empty data files.
+/// Create a new universe: .constellation/ directory structure + config files.
 #[tauri::command]
 pub fn create_universe(
     app: tauri::AppHandle,
@@ -186,36 +274,37 @@ pub fn create_universe(
     }
 
     // Create directory structure
-    fs::create_dir_all(&universe_dir)
-        .map_err(|e| format!("Failed to create universe directory: {}", e))?;
-    fs::create_dir_all(universe_dir.join("bases"))
+    let cdir = constellation_dir(&universe_dir);
+    fs::create_dir_all(&cdir)
+        .map_err(|e| format!("Failed to create .constellation/ directory: {}", e))?;
+    fs::create_dir_all(cdir.join("bases"))
         .map_err(|e| format!("Failed to create bases directory: {}", e))?;
 
-    // Write universe.json
+    // Write universe.json into .constellation/
     let now = chrono::Local::now().to_rfc3339();
     let meta = UniverseMeta {
         name: name.clone(),
         created: now.clone(),
-        version: 1,
+        version: 2,
         children: vec![],
     };
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
-    fs::write(universe_dir.join("universe.json"), &meta_json)
+    fs::write(cdir.join("universe.json"), &meta_json)
         .map_err(|e| format!("Failed to write universe.json: {}", e))?;
 
-    // Write empty data files
-    fs::write(universe_dir.join("vaults.json"), "[]")
-        .map_err(|e| format!("Failed to write vaults.json: {}", e))?;
-    fs::write(universe_dir.join("bookmarks.json"), "[]")
+    // Write empty data files into .constellation/
+    fs::write(cdir.join("libraries.json"), "[]")
+        .map_err(|e| format!("Failed to write libraries.json: {}", e))?;
+    fs::write(cdir.join("bookmarks.json"), "[]")
         .map_err(|e| format!("Failed to write bookmarks.json: {}", e))?;
-    fs::write(universe_dir.join("settings.json"), "{}")
+    fs::write(cdir.join("settings.json"), "{}")
         .map_err(|e| format!("Failed to write settings.json: {}", e))?;
-    fs::write(universe_dir.join("workspaces.json"), "[]")
+    fs::write(cdir.join("workspaces.json"), "[]")
         .map_err(|e| format!("Failed to write workspaces.json: {}", e))?;
-    fs::write(universe_dir.join("property-types.json"), "{}")
+    fs::write(cdir.join("property-types.json"), "{}")
         .map_err(|e| format!("Failed to write property-types.json: {}", e))?;
 
-    // Add to registry
+    // Add to registry (path = universe ROOT, not .constellation/)
     let entry = UniverseEntry {
         id: format!("universe_{}", uuid_simple()),
         name: name.clone(),
@@ -225,7 +314,6 @@ pub fn create_universe(
 
     let mut registry = load_registry(&app);
     registry.entries.push(entry.clone());
-    // If this is the first universe, make it active
     if registry.active_id.is_none() {
         registry.active_id = Some(entry.id.clone());
     }
@@ -234,7 +322,7 @@ pub fn create_universe(
     Ok(entry)
 }
 
-/// Set the active universe by ID. Updates both the registry and managed state.
+/// Set the active universe by ID. Auto-migrates old format if needed.
 #[tauri::command]
 pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), String> {
     let mut registry = load_registry(&app);
@@ -249,6 +337,9 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
     if !universe_path.is_dir() {
         return Err(format!("Universe directory does not exist: {}", entry.path));
     }
+
+    // Auto-migrate old flat format to .constellation/
+    migrate_to_constellation(&universe_path)?;
 
     // Update managed state
     let state = app.state::<UniverseState>();
@@ -281,8 +372,7 @@ pub fn remove_universe_from_registry(app: tauri::AppHandle, id: String) -> Resul
     save_registry(&app, &registry)
 }
 
-/// Open an existing universe directory (must contain universe.json).
-/// Reads its metadata, registers it, and sets it as active.
+/// Open an existing universe directory (must contain .constellation/universe.json).
 #[tauri::command]
 pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<UniverseEntry, String> {
     let universe_dir = Path::new(&path);
@@ -291,10 +381,18 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
         return Err("Path does not exist or is not a directory.".to_string());
     }
 
-    let meta_path = universe_dir.join("universe.json");
-    if !meta_path.exists() {
-        return Err("This folder does not contain a universe.json file. It is not a valid Constellation universe.".to_string());
-    }
+    // Auto-migrate if old flat format detected
+    migrate_to_constellation(universe_dir)?;
+
+    // Check for .constellation/universe.json (new format) or universe.json (fallback)
+    let cdir = constellation_dir(universe_dir);
+    let meta_path = if cdir.join("universe.json").exists() {
+        cdir.join("universe.json")
+    } else if universe_dir.join("universe.json").exists() {
+        universe_dir.join("universe.json")
+    } else {
+        return Err("This folder does not contain a .constellation/ directory. It is not a valid Constellation universe.".to_string());
+    };
 
     let data = fs::read_to_string(&meta_path)
         .map_err(|e| format!("Failed to read universe.json: {}", e))?;
@@ -339,6 +437,88 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
     Ok(entry)
 }
 
+/// Link an existing Markdown folder as a universe.
+/// Creates .constellation/ inside the folder and registers it as a single-library universe.
+#[tauri::command]
+pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<UniverseEntry, String> {
+    let library_dir = Path::new(&path);
+
+    if !library_dir.is_dir() {
+        return Err("Path does not exist or is not a directory.".to_string());
+    }
+
+    let cdir = constellation_dir(library_dir);
+
+    // If .constellation/ already exists, treat as "open existing"
+    if cdir.join("universe.json").exists() {
+        return open_existing_universe(app, path);
+    }
+
+    // Create .constellation/ inside the library folder
+    fs::create_dir_all(&cdir)
+        .map_err(|e| format!("Failed to create .constellation/ directory: {}", e))?;
+    fs::create_dir_all(cdir.join("bases"))
+        .map_err(|e| format!("Failed to create bases directory: {}", e))?;
+
+    // Derive name from folder name
+    let name = library_dir
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
+    let name = if name.is_empty() { "My Library".to_string() } else { name };
+
+    let now = chrono::Local::now().to_rfc3339();
+
+    // Write universe.json
+    let meta = UniverseMeta {
+        name: name.clone(),
+        created: now.clone(),
+        version: 2,
+        children: vec![],
+    };
+    let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
+    fs::write(cdir.join("universe.json"), &meta_json)
+        .map_err(|e| format!("Failed to write universe.json: {}", e))?;
+
+    // Register the folder itself as the sole library
+    let lib_id = format!("library_{}", uuid_simple());
+    let library_entry = crate::libraries::LibraryInfo {
+        id: lib_id,
+        name: name.clone(),
+        path: path.clone(),
+    };
+    let libs_json = serde_json::to_string_pretty(&vec![library_entry]).map_err(|e| e.to_string())?;
+    fs::write(cdir.join("libraries.json"), &libs_json)
+        .map_err(|e| format!("Failed to write libraries.json: {}", e))?;
+
+    // Write empty data files
+    fs::write(cdir.join("bookmarks.json"), "[]").ok();
+    fs::write(cdir.join("settings.json"), "{}").ok();
+    fs::write(cdir.join("workspaces.json"), "[]").ok();
+    fs::write(cdir.join("property-types.json"), "{}").ok();
+
+    // Register in global registry
+    let entry = UniverseEntry {
+        id: format!("universe_{}", uuid_simple()),
+        name,
+        path: path.clone(),
+        created: now,
+    };
+
+    let mut registry = load_registry(&app);
+    registry.entries.push(entry.clone());
+    registry.active_id = Some(entry.id.clone());
+    save_registry(&app, &registry)?;
+
+    // Set managed state
+    let state = app.state::<UniverseState>();
+    let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
+    *lock = Some(library_dir.to_path_buf());
+
+    Ok(entry)
+}
+
 /// Check if migration from legacy app_data_dir storage is needed.
 #[tauri::command]
 pub fn check_migration_needed(app: tauri::AppHandle) -> bool {
@@ -357,20 +537,22 @@ pub fn check_migration_needed(app: tauri::AppHandle) -> bool {
 /// Add a child universe path to the active universe's children array.
 #[tauri::command]
 pub fn add_child_universe(app: tauri::AppHandle, child_path: String) -> Result<(), String> {
-    let universe_dir = active_universe_dir(&app)?;
-    let meta_path = universe_dir.join("universe.json");
+    let cdir = active_constellation_dir(&app)?;
+    let meta_path = cdir.join("universe.json");
     let data = fs::read_to_string(&meta_path)
         .map_err(|e| format!("Failed to read universe.json: {}", e))?;
     let mut meta: UniverseMeta = serde_json::from_str(&data)
         .map_err(|e| format!("Failed to parse universe.json: {}", e))?;
 
-    // Validate child path exists and has a universe.json
+    // Validate child path exists and has .constellation/universe.json (or old universe.json)
     let child_dir = Path::new(&child_path);
-    if !child_dir.join("universe.json").exists() {
+    let child_cdir = constellation_dir(child_dir);
+    if !child_cdir.join("universe.json").exists() && !child_dir.join("universe.json").exists() {
         return Err("The selected path is not a valid universe.".to_string());
     }
 
     // Prevent adding self
+    let universe_dir = active_universe_dir(&app)?;
     if let (Ok(self_canon), Ok(child_canon)) = (fs::canonicalize(&universe_dir), fs::canonicalize(child_dir)) {
         if self_canon == child_canon {
             return Err("A universe cannot be a child of itself.".to_string());
@@ -388,8 +570,8 @@ pub fn add_child_universe(app: tauri::AppHandle, child_path: String) -> Result<(
 /// Remove a child universe path from the active universe's children array.
 #[tauri::command]
 pub fn remove_child_universe(app: tauri::AppHandle, child_path: String) -> Result<(), String> {
-    let universe_dir = active_universe_dir(&app)?;
-    let meta_path = universe_dir.join("universe.json");
+    let cdir = active_constellation_dir(&app)?;
+    let meta_path = cdir.join("universe.json");
     let data = fs::read_to_string(&meta_path)
         .map_err(|e| format!("Failed to read universe.json: {}", e))?;
     let mut meta: UniverseMeta = serde_json::from_str(&data)
@@ -401,28 +583,28 @@ pub fn remove_child_universe(app: tauri::AppHandle, child_path: String) -> Resul
     fs::write(&meta_path, json).map_err(|e| format!("Failed to save universe.json: {}", e))
 }
 
-/// Return the full merged vault list for the active universe
+/// Return the full merged library list for the active universe
 /// (own + children, recursive, deduplicated).
 #[tauri::command]
-pub fn resolve_universe_vaults(app: tauri::AppHandle) -> Result<Vec<crate::vaults::VaultInfo>, String> {
+pub fn resolve_universe_libraries(app: tauri::AppHandle) -> Result<Vec<crate::libraries::LibraryInfo>, String> {
     let universe_dir = active_universe_dir(&app)?;
     let mut visited = Vec::new();
-    Ok(resolve_vaults_recursive(&universe_dir, &mut visited))
+    Ok(resolve_libraries_recursive(&universe_dir, &mut visited))
 }
 
-/// Info about a child universe — name, path, and how many vaults it contributes.
+/// Info about a child universe — name, path, and how many libraries it contributes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChildUniverseInfo {
     pub name: String,
     pub path: String,
-    pub vault_count: u32,
+    pub library_count: u32,
 }
 
 /// Return info about child universes of the active universe.
 #[tauri::command]
 pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInfo>, String> {
-    let universe_dir = active_universe_dir(&app)?;
-    let meta_path = universe_dir.join("universe.json");
+    let cdir = active_constellation_dir(&app)?;
+    let meta_path = cdir.join("universe.json");
 
     if !meta_path.exists() {
         return Ok(vec![]);
@@ -436,7 +618,14 @@ pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInf
     let mut children = Vec::new();
     for child_path_str in &meta.children {
         let child_path = Path::new(child_path_str);
-        let child_meta_path = child_path.join("universe.json");
+        let child_cdir = constellation_dir(child_path);
+
+        // Try .constellation/universe.json first, then old flat format
+        let child_meta_path = if child_cdir.join("universe.json").exists() {
+            child_cdir.join("universe.json")
+        } else {
+            child_path.join("universe.json")
+        };
 
         let name = if child_meta_path.exists() {
             if let Ok(child_data) = fs::read_to_string(&child_meta_path) {
@@ -452,11 +641,15 @@ pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInf
             child_path.file_name().unwrap_or_default().to_string_lossy().to_string()
         };
 
-        // Count vaults in child (non-recursive for display)
-        let vaults_path = child_path.join("vaults.json");
-        let vault_count = if vaults_path.exists() {
-            if let Ok(vdata) = fs::read_to_string(&vaults_path) {
-                serde_json::from_str::<Vec<crate::vaults::VaultInfo>>(&vdata)
+        // Count libraries in child
+        let libs_path = if child_cdir.join("libraries.json").exists() {
+            child_cdir.join("libraries.json")
+        } else {
+            child_path.join("vaults.json")
+        };
+        let library_count = if libs_path.exists() {
+            if let Ok(vdata) = fs::read_to_string(&libs_path) {
+                serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&vdata)
                     .map(|v| v.len() as u32)
                     .unwrap_or(0)
             } else { 0 }
@@ -465,7 +658,7 @@ pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInf
         children.push(ChildUniverseInfo {
             name,
             path: child_path_str.clone(),
-            vault_count,
+            library_count,
         });
     }
 
@@ -473,11 +666,12 @@ pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInf
 }
 
 // ─── Data File I/O Commands ───
+// All data files live inside .constellation/
 
 /// Read settings.json from the active universe.
 #[tauri::command]
 pub fn read_universe_settings(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let dir = active_universe_dir(&app)?;
+    let dir = active_constellation_dir(&app)?;
     let path = dir.join("settings.json");
     if path.exists() {
         let data = fs::read_to_string(&path)
@@ -491,7 +685,7 @@ pub fn read_universe_settings(app: tauri::AppHandle) -> Result<serde_json::Value
 /// Save settings.json to the active universe.
 #[tauri::command]
 pub fn save_universe_settings(app: tauri::AppHandle, settings: serde_json::Value) -> Result<(), String> {
-    let dir = active_universe_dir(&app)?;
+    let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
     fs::write(dir.join("settings.json"), json)
         .map_err(|e| format!("Failed to save settings: {}", e))
@@ -500,7 +694,7 @@ pub fn save_universe_settings(app: tauri::AppHandle, settings: serde_json::Value
 /// Read bookmarks.json from the active universe.
 #[tauri::command]
 pub fn read_universe_bookmarks(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let dir = active_universe_dir(&app)?;
+    let dir = active_constellation_dir(&app)?;
     let path = dir.join("bookmarks.json");
     if path.exists() {
         let data = fs::read_to_string(&path)
@@ -514,7 +708,7 @@ pub fn read_universe_bookmarks(app: tauri::AppHandle) -> Result<serde_json::Valu
 /// Save bookmarks.json to the active universe.
 #[tauri::command]
 pub fn save_universe_bookmarks(app: tauri::AppHandle, bookmarks: serde_json::Value) -> Result<(), String> {
-    let dir = active_universe_dir(&app)?;
+    let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&bookmarks).map_err(|e| e.to_string())?;
     fs::write(dir.join("bookmarks.json"), json)
         .map_err(|e| format!("Failed to save bookmarks: {}", e))
@@ -523,7 +717,7 @@ pub fn save_universe_bookmarks(app: tauri::AppHandle, bookmarks: serde_json::Val
 /// Read workspaces.json from the active universe.
 #[tauri::command]
 pub fn read_universe_workspaces(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let dir = active_universe_dir(&app)?;
+    let dir = active_constellation_dir(&app)?;
     let path = dir.join("workspaces.json");
     if path.exists() {
         let data = fs::read_to_string(&path)
@@ -537,7 +731,7 @@ pub fn read_universe_workspaces(app: tauri::AppHandle) -> Result<serde_json::Val
 /// Save workspaces.json to the active universe.
 #[tauri::command]
 pub fn save_universe_workspaces(app: tauri::AppHandle, workspaces: serde_json::Value) -> Result<(), String> {
-    let dir = active_universe_dir(&app)?;
+    let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&workspaces).map_err(|e| e.to_string())?;
     fs::write(dir.join("workspaces.json"), json)
         .map_err(|e| format!("Failed to save workspaces: {}", e))
@@ -546,7 +740,7 @@ pub fn save_universe_workspaces(app: tauri::AppHandle, workspaces: serde_json::V
 /// Read property-types.json from the active universe.
 #[tauri::command]
 pub fn read_universe_property_types(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let dir = active_universe_dir(&app)?;
+    let dir = active_constellation_dir(&app)?;
     let path = dir.join("property-types.json");
     if path.exists() {
         let data = fs::read_to_string(&path)
@@ -560,13 +754,13 @@ pub fn read_universe_property_types(app: tauri::AppHandle) -> Result<serde_json:
 /// Save property-types.json to the active universe.
 #[tauri::command]
 pub fn save_universe_property_types(app: tauri::AppHandle, types: serde_json::Value) -> Result<(), String> {
-    let dir = active_universe_dir(&app)?;
+    let dir = active_constellation_dir(&app)?;
     let json = serde_json::to_string_pretty(&types).map_err(|e| e.to_string())?;
     fs::write(dir.join("property-types.json"), json)
         .map_err(|e| format!("Failed to save property types: {}", e))
 }
 
-// ─── Migration ───
+// ─── Legacy Migration ───
 
 /// Migrate legacy data from app_data_dir to a new universe directory.
 #[tauri::command]
@@ -575,25 +769,26 @@ pub fn migrate_legacy_data(app: tauri::AppHandle, name: String, universe_path: S
     let app_dir = app.path().app_data_dir()
         .map_err(|_| "Failed to get app data dir.".to_string())?;
 
-    // Create universe directory structure
-    fs::create_dir_all(&universe_dir)
-        .map_err(|e| format!("Failed to create universe directory: {}", e))?;
-    fs::create_dir_all(universe_dir.join("bases"))
+    // Create universe directory structure with .constellation/
+    let cdir = constellation_dir(&universe_dir);
+    fs::create_dir_all(&cdir)
+        .map_err(|e| format!("Failed to create .constellation/ directory: {}", e))?;
+    fs::create_dir_all(cdir.join("bases"))
         .map_err(|e| format!("Failed to create bases directory: {}", e))?;
 
-    // Copy vaults.json
+    // Copy vaults.json → .constellation/libraries.json
     let old_vaults = app_dir.join("vaults.json");
     if old_vaults.exists() {
-        fs::copy(&old_vaults, universe_dir.join("vaults.json"))
+        fs::copy(&old_vaults, cdir.join("libraries.json"))
             .map_err(|e| format!("Failed to copy vaults.json: {}", e))?;
     } else {
-        fs::write(universe_dir.join("vaults.json"), "[]").ok();
+        fs::write(cdir.join("libraries.json"), "[]").ok();
     }
 
     // Copy bases directory contents
     let old_bases = app_dir.join("bases");
     if old_bases.is_dir() {
-        let target_bases = universe_dir.join("bases");
+        let target_bases = cdir.join("bases");
         if let Ok(entries) = fs::read_dir(&old_bases) {
             for entry in entries.flatten() {
                 let src = entry.path();
@@ -611,25 +806,25 @@ pub fn migrate_legacy_data(app: tauri::AppHandle, name: String, universe_path: S
     let meta = UniverseMeta {
         name: name.clone(),
         created: now.clone(),
-        version: 1,
+        version: 2,
         children: vec![],
     };
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
-    fs::write(universe_dir.join("universe.json"), &meta_json)
+    fs::write(cdir.join("universe.json"), &meta_json)
         .map_err(|e| format!("Failed to write universe.json: {}", e))?;
 
-    // Write empty data files (will be populated by frontend migration)
-    if !universe_dir.join("bookmarks.json").exists() {
-        fs::write(universe_dir.join("bookmarks.json"), "[]").ok();
+    // Write empty data files
+    if !cdir.join("bookmarks.json").exists() {
+        fs::write(cdir.join("bookmarks.json"), "[]").ok();
     }
-    if !universe_dir.join("settings.json").exists() {
-        fs::write(universe_dir.join("settings.json"), "{}").ok();
+    if !cdir.join("settings.json").exists() {
+        fs::write(cdir.join("settings.json"), "{}").ok();
     }
-    if !universe_dir.join("workspaces.json").exists() {
-        fs::write(universe_dir.join("workspaces.json"), "[]").ok();
+    if !cdir.join("workspaces.json").exists() {
+        fs::write(cdir.join("workspaces.json"), "[]").ok();
     }
-    if !universe_dir.join("property-types.json").exists() {
-        fs::write(universe_dir.join("property-types.json"), "{}").ok();
+    if !cdir.join("property-types.json").exists() {
+        fs::write(cdir.join("property-types.json"), "{}").ok();
     }
 
     // Create registry with this universe
@@ -652,4 +847,33 @@ pub fn migrate_legacy_data(app: tauri::AppHandle, name: String, universe_path: S
     *lock = Some(universe_dir);
 
     Ok(entry)
+}
+
+/// Scaffold a starter PKM structure in a library folder.
+/// Creates Atlas/, Calendar/, Efforts/, + (inbox), and a Welcome.md note.
+#[tauri::command]
+pub fn scaffold_starter_library(library_path: String) -> Result<(), String> {
+    let root = Path::new(&library_path);
+    if !root.exists() {
+        return Err("Library path does not exist.".to_string());
+    }
+
+    let folders = ["Atlas", "Calendar", "Efforts", "+"];
+    for folder in &folders {
+        let dir = root.join(folder);
+        fs::create_dir_all(&dir).map_err(|e| format!("Failed to create {}: {}", folder, e))?;
+    }
+
+    let welcome_path = root.join("Welcome.md");
+    if !welcome_path.exists() {
+        let now = chrono::Local::now().format("%Y-%m-%d").to_string();
+        let content = format!(
+            "---\ncreated: {}\nstatus: seedling\n---\n\n# Welcome to Constellation\n\nYour knowledge universe is ready. Here's a quick guide to get started:\n\n## Folder Structure\n\n- **Atlas** — Maps of Content, dashboards, and indexes\n- **Calendar** — Daily notes and time-based entries\n- **Efforts** — Active projects and tasks\n- **+** — Quick capture inbox (Ctrl+Shift+N)\n\n## Tips\n\n- Use `[[wikilinks]]` to connect your notes\n- Press `Ctrl+N` to create a new note\n- Press `Ctrl+Shift+N` to quick-capture into your inbox\n- Open the Star View to see your knowledge network\n\nHappy exploring!\n",
+            now
+        );
+        fs::write(&welcome_path, &content)
+            .map_err(|e| format!("Failed to write Welcome.md: {}", e))?;
+    }
+
+    Ok(())
 }

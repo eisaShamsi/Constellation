@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { FileEntry } from '$lib/vaults/store';
-	import { activeTab, splitActive, openTabs } from '$lib/vaults/store';
+	import type { FileEntry } from '$lib/libraries/store';
+	import { activeTab, splitActive, openTabs } from '$lib/libraries/store';
 
 	let {
 		entries,
 		depth = 0,
-		vaultId = '',
-		vaultName = '',
+		libraryId = '',
+		libraryName = '',
 		color = '#7c3aed',
 		onNoteClick,
 		onContextMenu,
@@ -16,8 +16,8 @@
 	}: {
 		entries: FileEntry[];
 		depth?: number;
-		vaultId?: string;
-		vaultName?: string;
+		libraryId?: string;
+		libraryName?: string;
 		color?: string;
 		onNoteClick?: (path: string, name: string, highlightTerm?: string, e?: MouseEvent) => void;
 		onContextMenu?: (entry: FileEntry, x: number, y: number) => void;
@@ -88,7 +88,7 @@
 						{/if}
 					</summary>
 					{#if entry.children && entry.children.length > 0}
-						<svelte:self entries={entry.children} depth={depth + 1} {vaultId} {vaultName} {color} {onNoteClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} />
+						<svelte:self entries={entry.children} depth={depth + 1} {libraryId} {libraryName} {color} {onNoteClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} />
 					{/if}
 				</details>
 			{:else}
@@ -110,13 +110,14 @@
 						class="note"
 						class:active={$splitActive ? $openTabs.some(t => t.path === entry.path) : $activeTab?.path === entry.path}
 						class:base-file={entry.name.endsWith('.base')}
-						style:--vault-color={color}
+						style:--library-color={color}
 						onclick={(e) => handleClick(entry, e)}
 						oncontextmenu={(e) => handleRightClick(e, entry)}
 					>
 						{#if entry.name.endsWith('.base')}
 							<svg class="base-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
 						{/if}
+						{#if entry.status === 'seedling'}<span class="note-status" title="Seedling">🌱</span>{:else if entry.status === 'growing'}<span class="note-status" title="Growing">🌿</span>{:else if entry.status === 'evergreen'}<span class="note-status" title="Evergreen">🌲</span>{/if}
 						<span class="note-name">{entry.name.replace(/\.(md|base)$/, '')}</span>
 					</button>
 				{/if}
@@ -175,9 +176,10 @@
 		white-space: nowrap;
 	}
 	.note:hover { background: var(--background-modifier-hover); }
-	.note.active { background: color-mix(in srgb, var(--vault-color) 8%, transparent); color: var(--vault-color); }
+	.note.active { background: color-mix(in srgb, var(--library-color) 8%, transparent); color: var(--library-color); }
 
 	.note-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.note-status { font-size: 0.75rem; flex-shrink: 0; margin-inline-end: 1px; }
 
 	.base-file {
 		display: flex;

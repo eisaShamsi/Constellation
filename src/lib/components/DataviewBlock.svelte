@@ -7,12 +7,12 @@
 
 	let {
 		query,
-		vaultPaths,
+		libraryPaths,
 		onNoteClick,
 	}: {
 		query: string;
-		vaultPaths: [string, string][];
-		onNoteClick?: (path: string, vaultName: string) => void;
+		libraryPaths: [string, string][];
+		onNoteClick?: (path: string, libraryName: string) => void;
 	} = $props();
 
 	let result = $state<DataviewResult | null>(null);
@@ -22,7 +22,7 @@
 	async function runQuery() {
 		loading = true;
 		try {
-			result = await executeDataviewQuery(query, vaultPaths);
+			result = await executeDataviewQuery(query, libraryPaths);
 		} catch (e: any) {
 			result = {
 				query_type: 'error',
@@ -42,7 +42,7 @@
 	});
 
 	function handleNoteClick(row: DataviewRow) {
-		onNoteClick?.(row.file_path, row.vault_name);
+		onNoteClick?.(row.file_path, row.library_name);
 	}
 
 	function formatValue(value: string): string {

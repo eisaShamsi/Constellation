@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Constellation",
-    "tagline": "כספת של כספות"
+    "tagline": "יקום של ספריות"
   },
   "settings": {
     "title": "הגדרות",
@@ -11,14 +11,14 @@
       "editor": "עורך",
       "files": "קבצים וקישורים",
       "appearance": "מראה",
-      "hotkeys": "מקשי קיצור",
+      "hotkeys": "קיצורי מקלדת",
       "security": "אבטחה",
       "plugins": "תכונות מובנות",
       "ai": "ספק AI",
       "templates": "תבניות"
     },
     "about": {
-      "tagline": "כספת של כספות",
+      "tagline": "יקום של ספריות",
       "developedBy": "פותח על ידי"
     },
     "general": {
@@ -34,9 +34,9 @@
       "autoUpdateDesc": "הורד והתקן עדכונים אוטומטית"
     },
     "security": {
-      "intro": "הגנה על נתוני הכספת, אבטחת מפתחות API ונעילת האפליקציה בזמן חוסר פעילות.",
-      "vaultEncryption": "הצפנת כספת",
-      "vaultEncryptionDesc": "הצפנת נתוני כספת מאוחסנים במכשיר זה",
+      "intro": "הגנה על נתוני הספרייה, אבטחת מפתחות API ונעילת האפליקציה בזמן חוסר פעילות.",
+      "vaultEncryption": "הצפנת ספרייה",
+      "vaultEncryptionDesc": "הצפנת נתוני ספרייה מאוחסנים במכשיר זה",
       "enabled": "מופעל",
       "disabled": "מושבת",
       "lockHeading": "מסך נעילה",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "מיקום ברירת מחדל לפתקים חדשים",
       "defaultLocationDesc": "היכן פתקים חדשים ממוקמים",
-      "vaultRoot": "תיקיית שורש הכספת",
+      "vaultRoot": "תיקיית שורש הספרייה",
       "currentFolder": "אותה תיקייה כמו הקובץ הנוכחי",
       "specifiedFolder": "בתיקייה שצוינה למטה",
       "folderPath": "נתיב תיקייה",
@@ -109,11 +109,13 @@
       "defaultAttachmentFolder": "תיקיית קבצים מצורפים",
       "defaultAttachmentFolderDesc": "היכן קבצים מצורפים נשמרים",
       "sameAsNotePlaceholder": "אותה תיקייה כמו הפתק",
+      "inboxFolder": "תיקיית דואר נכנס",
+      "inboxFolderDesc": "תיקייה להערות לכידה מהירה (Ctrl+Shift+N)",
       "linkFormat": "פורמט קישור חדש",
       "linkFormatDesc": "כיצד קישורים פנימיים נוצרים",
       "shortestPath": "הנתיב הקצר ביותר כשאפשר",
       "relativePath": "נתיב יחסי לקובץ",
-      "absolutePath": "נתיב מוחלט בכספת",
+      "absolutePath": "נתיב מוחלט בספרייה",
       "autoUpdateLinks": "עדכן קישורים פנימיים אוטומטית",
       "autoUpdateLinksDesc": "עדכן את כל הקישורים כאשר פתק משנה שם",
       "useWikilinks": "השתמש ב-[[Wikilinks]]",
@@ -146,9 +148,15 @@
       "fontSizeDesc": "גודל גופן בסיסי לתוכן הפתקים"
     },
     "hotkeys": {
-      "filter": "סנן פקודות...",
+      "filter": "סנן קיצורים...",
       "notSet": "לא הוגדר",
-      "noCommands": "לא נמצאו פקודות"
+      "noCommands": "לא נמצאו קיצורים",
+      "pressKey": "לחץ על קיצור...",
+      "resetToDefault": "אפס לברירת מחדל",
+      "resetAll": "אפס את כל הקיצורים",
+      "resetAllConfirm": "לאפס את כל הקיצורים לברירות המחדל?",
+      "conflict": "כבר בשימוש על ידי: {name}",
+      "customized": "מותאם"
     },
     "plugins": {
       "intro": "תכונות מובנות ב-Constellation. ניתן להפעיל או להשבית כל אחת.",
@@ -156,8 +164,8 @@
       "dailyNotesDesc": "צור ופתח פתקים יומיים",
       "templates": "תבניות",
       "templatesDesc": "הכנס תוכן מקבצי תבנית",
-      "graphView": "תצוגת גרף",
-      "graphViewDesc": "הצג קישורים בין פתקים",
+      "starView": "תצוגת כוכבים",
+      "starViewDesc": "הצג קישורים בין פתקים",
       "backlinks": "קישורים נכנסים",
       "backlinksDesc": "הצג פתקים שמקשרים לפתק הנוכחי",
       "outgoingLinks": "קישורים יוצאים",
@@ -168,9 +176,9 @@
       "pagePreviewDesc": "תצוגה מקדימה של פתקים בריחוף מעל קישור",
       "search": "חיפוש",
       "searchDesc": "חפש בכל הפתקים",
-      "quickSwitcher": "מעבר מהיר",
+      "quickSwitcher": "קפיצת כוכבים",
       "quickSwitcherDesc": "נווט במהירות בין פתקים",
-      "commandPalette": "לוח פקודות",
+      "commandPalette": "מרכז שליטה",
       "commandPaletteDesc": "גישה מהירה לכל הפקודות",
       "wordCount": "ספירת מילים",
       "wordCountDesc": "הצג ספירת מילים בשורת המצב",
@@ -210,18 +218,19 @@
       "varTime": "שעה נוכחית (HH:MM)",
       "varTitle": "כותרת ההערה",
       "varFolder": "שם תיקיית האב",
-      "varVault": "שם הכספת",
+      "varVault": "שם הספרייה",
       "varCursor": "מיקום הסמן לאחר הוספה"
     }
   },
   "commands": {
     "newNote": "פתק חדש",
     "newBase": "בסיס חדש",
-    "quickSwitcher": "מעבר מהיר",
-    "searchVault": "חפש בכספת",
+    "quickCapture": "לכידה מהירה",
+    "quickSwitcher": "קפיצת כוכבים",
+    "searchVault": "חפש בספרייה",
     "dailyNote": "פתח פתק יומי",
     "toggleEdit": "החלף מצב עריכה/קריאה",
-    "graphView": "פתח תצוגת גרף",
+    "starView": "פתח תצוגת כוכבים",
     "globalTasks": "פתח משימות גלובליות",
     "toggleBold": "החלף מודגש",
     "toggleItalic": "החלף נטוי",
@@ -229,7 +238,7 @@
     "closeNote": "סגור פתק נוכחי",
     "toggleLeftSidebar": "החלף סרגל צד שמאלי",
     "toggleRightSidebar": "החלף סרגל צד ימני",
-    "addVault": "הוסף כספת",
+    "addVault": "הוסף ספרייה",
     "toggleBookmark": "החלף סימנייה",
     "randomNote": "פתח פתק אקראי",
     "toggleTheme": "החלף מצב כהה/בהיר",
@@ -257,10 +266,10 @@
     "rename": "שנה שם",
     "delete": "מחק"
   },
-  "ribbon": {
+  "dock": {
     "fileExplorer": "סייר קבצים",
     "search": "חיפוש",
-    "graphView": "תצוגת גרף",
+    "starView": "תצוגת כוכבים",
     "globalTasks": "משימות גלובליות",
     "dailyNote": "פתק יומי",
     "aiSkills": "כישורי AI",
@@ -271,13 +280,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "חיפוש...",
-    "addVault": "הוסף כספת",
+    "addVault": "הוסף ספרייה",
     "results": "תוצאות",
     "noResults": "לא נמצאו תוצאות",
     "bookmarks": "סימניות",
     "bases": "בסיסים",
-    "noVaults": "אין כספות עדיין",
-    "addVaultButton": "+ הוסף כספת",
+    "noVaults": "אין ספריות עדיין",
+    "addVaultButton": "+ הוסף ספרייה",
     "newNote": "פתק חדש",
     "newBase": "בסיס חדש",
     "newFolder": "תיקייה חדשה",
@@ -293,15 +302,15 @@
     "rightSidebar": "סרגל צד ימני",
     "splitView": "תצוגה מפוצלת",
     "skills": "כישורים",
-    "graphViewTitle": "תצוגת גרף",
+    "starViewTitle": "תצוגת כוכבים",
     "pinned": "מוצמד"
   },
   "welcome": {
     "title": "ברוכים הבאים ל-Constellation",
-    "subtitle": "הוסף את הכספת הראשונה שלך כדי להתחיל",
-    "addVault": "+ הוסף כספת",
+    "subtitle": "הוסף את הספרייה הראשונה שלך כדי להתחיל",
+    "addVault": "+ הוסף ספרייה",
     "selectNote": "בחר פתק מהסרגל הצדדי",
-    "quickSwitchHint": "או לחץ Ctrl+O למעבר מהיר"
+    "quickSwitchHint": "או לחץ Ctrl+O לקפיצת כוכבים"
   },
   "panels": {
     "properties": "מאפיינים",
@@ -317,7 +326,7 @@
     "tagsHeader": "תגיות",
     "linkDashboard": "לוח קישורים",
     "noteGrid": "רשת הערות",
-    "graphView": "תצוגת גרף",
+    "starView": "תצוגת כוכבים",
     "noNoteSelected": "לא נבחר פתק",
     "noTags": "אין תגיות בפתק זה",
     "noConnections": "אין חיבורים",
@@ -359,11 +368,11 @@
     "noTasksFound": "לא נמצאו משימות",
     "allDates": "כל התאריכים",
     "thisWeek": "השבוע",
-    "allVaults": "כל הכספות",
+    "allVaults": "כל הספריות",
     "allPriorities": "כל העדיפויות",
     "noGroup": "ללא קיבוץ",
     "groupByFile": "קבץ לפי קובץ",
-    "groupByVault": "קבץ לפי כספת",
+    "groupByVault": "קבץ לפי ספרייה",
     "groupByPriority": "קבץ לפי עדיפות",
     "groupByDue": "קבץ לפי תאריך יעד",
     "sortByFile": "מיון לפי קובץ",
@@ -371,10 +380,10 @@
   },
   "linkDashboard": {
     "mostConnected": "המקושרים ביותר",
-    "crossVault": "בין-כספות",
+    "crossVault": "בין-ספריות",
     "broken": "שבורים",
     "orphans": "פתקים מבודדים",
-    "noCrossVault": "אין קישורים בין-כספות",
+    "noCrossVault": "אין קישורים בין-ספריות",
     "noBroken": "אין קישורים שבורים",
     "noOrphans": "אין פתקים מבודדים"
   },
@@ -387,7 +396,7 @@
     "properties": "מאפיינים",
     "words": "מילים",
     "characters": "תווים",
-    "vaults": "כספות",
+    "vaults": "ספריות",
     "notes": "פתקים"
   },
   "notePane": {
@@ -401,7 +410,7 @@
     "createNote": "צור פתק חדש",
     "goToFile": "עבור לקובץ",
     "close": "סגור",
-    "selectVault": "בחר כספת"
+    "selectVault": "בחר ספרייה"
   },
   "commandPalette": {
     "placeholder": "הקלד פקודה...",
@@ -459,10 +468,10 @@
     "typeCheckbox": "תיבת סימון",
     "selectType": "בחר סוג"
   },
-  "graphView": {
+  "starView": {
     "noNotes": "אין פתקים להצגה",
     "controls": {
-      "title": "הגדרות גרף",
+      "title": "הגדרות כוכבים",
       "reset": "איפוס לברירות מחדל",
       "filters": "מסננים",
       "searchPlaceholder": "חיפוש קבצים...",
@@ -486,13 +495,13 @@
     }
   },
   "vaults": {
-    "searchPlaceholder": "חפש בכל הכספות...",
+    "searchPlaceholder": "חפש בכל הספריות...",
     "results": "תוצאות",
     "noResults": "אין תוצאות",
-    "addVault": "+ הוסף כספת",
+    "addVault": "+ הוסף ספרייה",
     "welcomeTitle": "ברוכים הבאים ל-Constellation",
-    "welcomeSubtitle": "הוסף את הכספת הראשונה שלך מהסרגל הצדדי",
-    "addVaultCta": "+ הוסף כספת",
+    "welcomeSubtitle": "הוסף את הספרייה הראשונה שלך מהסרגל הצדדי",
+    "addVaultCta": "+ הוסף ספרייה",
     "selectNote": "בחר פתק מהסרגל הצדדי"
   },
   "skills": {
@@ -508,7 +517,7 @@
     "create": "צור כישור",
     "noProvider": "חבר ספק AI בהגדרות כדי להשתמש בכישורים.",
     "selectNote": "בחר פתק",
-    "selectVault": "בחר כספת",
+    "selectVault": "בחר ספרייה",
     "enterText": "הכנס טקסט...",
     "result": "תוצאה",
     "copyResult": "העתק",
@@ -518,11 +527,11 @@
     "summarize": "סכם פתק",
     "summarizeDesc": "צור סיכום תמציתי של כל פתק",
     "qa": "שאלות ותשובות חכמות",
-    "qaDesc": "שאל שאלות על הכספות שלך וקבל תשובות מבוססות AI",
+    "qaDesc": "שאל שאלות על הספריות שלך וקבל תשובות מבוססות AI",
     "write": "עוזר כתיבה",
     "writeDesc": "הרחב, שכתב או שפר את הטקסט שלך",
     "autolink": "קישור אוטומטי",
-    "autolinkDesc": "גלה קשרים בין פתקים בכספות שונות",
+    "autolinkDesc": "גלה קשרים בין פתקים בספריות שונות",
     "translate": "תרגם פתק",
     "translateDesc": "תרגם פתקים בין שפות",
     "meeting": "פתקי ישיבה",
@@ -533,14 +542,14 @@
     "researchDesc": "נתח וסנתז מידע ממספר פתקים"
   },
   "vaultManager": {
-    "title": "ניהול כספות",
-    "openVault": "+ פתח כספת",
-    "manageVaults": "ניהול כספות...",
+    "title": "ניהול ספריות",
+    "openVault": "+ פתח ספרייה",
+    "manageVaults": "ניהול ספריות...",
     "openFolder": "פתח תיקייה",
     "remove": "הסר",
     "confirmRemove": "להסיר את \"{name}\" מ-Constellation? הקבצים שלך לא יימחקו.",
-    "addVault": "+ הוסף כספת",
-    "noVaults": "אין כספות רשומות",
+    "addVault": "+ הוסף ספרייה",
+    "noVaults": "אין ספריות רשומות",
     "notes": "הערות"
   },
   "lockScreen": {
@@ -634,18 +643,18 @@
       "title": "מקור",
       "folder": "תיקייה",
       "tag": "תגית",
-      "vault": "כספת",
-      "allVaults": "כל הכספות",
-      "vaults": "כספות",
+      "vault": "ספרייה",
+      "allVaults": "כל הספריות",
+      "vaults": "ספריות",
       "folderPath": "נתיב תיקייה",
       "folderPlaceholder": "לדוגמה פרויקטים/פעילים",
-      "folderHint": "סורק תיקייה זו בכל הכספות שמכילות אותה",
+      "folderHint": "סורק תיקייה זו בכל הספריות שמכילות אותה",
       "includeSubfolders": "כלול תיקיות משנה",
       "tagName": "תגית",
       "tagPlaceholder": "לדוגמה פרויקט",
-      "tagHint": "סורק את כל ההערות עם תגית זו בכל הכספות",
-      "vaultsLabel": "כספות",
-      "allHint": "סורק את כל ההערות בכל הכספות המחוברות",
+      "tagHint": "סורק את כל ההערות עם תגית זו בכל הספריות",
+      "vaultsLabel": "ספריות",
+      "allHint": "סורק את כל ההערות בכל הספריות המחוברות",
       "apply": "החל",
       "cancel": "ביטול"
     }
@@ -668,14 +677,25 @@
       "creating": "יוצר...",
       "next": "הבא",
       "back": "חזרה",
-      "addVaultsHeading": "הוסף את הכספות שלך",
-      "addVaultsDescription": "חבר את הכספות ויקומים צאצאים. תמיד תוכל להוסיף עוד מאוחר יותר.",
-      "addVault": "הוסף כספת",
+      "addVaultsHeading": "הוסף את הספריות שלך",
+      "addVaultsDescription": "חבר את הספריות ויקומים צאצאים. תמיד תוכל להוסיף עוד מאוחר יותר.",
+      "addVault": "הוסף ספרייה",
       "addChildUniverse": "הוסף יקום צאצא",
+      "starterKit": "צור תיקיות התחלה",
+      "starterKitDesc": "הגדר תיקיות אטלס, לוח שנה, מאמצים ודואר נכנס עם הערת ברוכים הבאים",
       "finish": "סיום",
       "skip": "דלג לעת עתה",
-      "noVaultsYet": "עדיין לא נוספו כספות. הוסף כספת או יקום צאצא כדי להתחיל.",
-      "remove": "הסר"
+      "noVaultsYet": "עדיין לא נוספו ספריות. הוסף ספרייה או יקום צאצא כדי להתחיל.",
+      "remove": "הסר",
+      "importApp": "ייבוא מאפליקציה אחרת",
+      "importAppDesc": "העבר את הפתקים שלך מ-Obsidian, Notion, Evernote או אפליקציות אחרות אל Constellation.",
+      "importHeading": "ייבוא הפתקים שלך",
+      "importDescription": "בחר את האפליקציה ממנה אתה מעביר, ואז בחר את תיקיית המקור או הקובץ.",
+      "importPreviewHeading": "מוכן לייבוא",
+      "importConfirm": "ייבוא ויצירת יקום",
+      "importingNotes": "מייבא את הפתקים שלך...",
+      "importLocationLabel": "מיקום היקום",
+      "importComplete": "הייבוא הושלם! {count} קבצים יובאו."
     },
     "manager": {
       "heading": "מנהל יקומים",
@@ -690,15 +710,15 @@
       "children": "יקומים צאצאים",
       "addChild": "הוסף יקום צאצא",
       "noUniverses": "לא נמצאו יקומים",
-      "ownVaults": "כספות עצמיות",
-      "inheritedVaults": "כספות בירושה",
+      "ownVaults": "ספריות עצמיות",
+      "inheritedVaults": "ספריות בירושה",
       "openExisting": "פתח יקום קיים"
     },
     "switching": "מחליף יקום...",
     "migrating": "מעביר את הנתונים שלך..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "Lens",
     "loading": "טוען שאילתה...",
     "noResults": "אין תוצאות",
     "results": "תוצאות",
@@ -719,16 +739,16 @@
   "secondScreen": {
     "title": "מסך שני",
     "grid": "רשת",
-    "graph": "גרף",
+    "star": "כוכבים",
     "detail": "פרטים",
     "loading": "טוען הערות...",
     "linked": "מקושר",
     "linkedOn": "גלישה מקושרת פעילה",
     "linkedOff": "גלישה מקושרת כבויה",
     "searchNotes": "חפש הערות...",
-    "allVaults": "כל הכספות",
+    "allVaults": "כל הספריות",
     "sortName": "מיין לפי שם",
-    "sortVault": "מיין לפי כספת",
+    "sortVault": "מיין לפי ספרייה",
     "noResults": "לא נמצאו הערות תואמות",
     "noNotes": "לא נמצאו הערות",
     "detailEmpty": "בחר הערה לצפייה כאן",
@@ -738,6 +758,8 @@
     "title": "ייבוא הערות",
     "selectFormat": "בחר את הפורמט של ההערות לייבוא.",
     "formats": {
+      "obsidian": "Obsidian",
+      "obsidianDesc": "ייבוא כספת Obsidian עם כל הפתקים והקבצים המצורפים",
       "markdown": "מרקדאון",
       "markdownDesc": "קבצי מרקדאון (.md) מכל אפליקציה",
       "notion": "נושן",
@@ -753,7 +775,7 @@
       "txt": "טקסט רגיל",
       "txtDesc": "קבצי טקסט שהומרו למרקדאון"
     },
-    "targetVault": "כספת יעד",
+    "targetVault": "ספרייה יעד",
     "subfolder": "תיקיית משנה",
     "selectSource": "בחר מקור",
     "scanning": "סורק קבצים...",

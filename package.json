@@ -1,7 +1,7 @@
 {
   "name": "constellation",
   "version": "0.1.0",
-  "description": "A Map of Maps — Unified dashboard for multiple Obsidian vaults",
+  "description": "A Universe of Libraries — Desktop knowledge management platform for connected notes",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

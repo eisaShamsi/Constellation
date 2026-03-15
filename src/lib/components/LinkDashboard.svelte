@@ -1,41 +1,41 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import type { NoteLink } from '$lib/vaults/store';
+	import type { NoteLink } from '$lib/libraries/store';
 
 	let {
 		allLinks = [] as NoteLink[],
-		allNotes = [] as { name: string; path: string; vaultName: string }[],
+		allNotes = [] as { name: string; path: string; libraryName: string }[],
 		onNoteClick,
 		visible = false,
 	}: {
 		allLinks: NoteLink[];
-		allNotes: { name: string; path: string; vaultName: string }[];
-		onNoteClick: (path: string, vaultName: string) => void;
+		allNotes: { name: string; path: string; libraryName: string }[];
+		onNoteClick: (path: string, libraryName: string) => void;
 		visible?: boolean;
 	} = $props();
 
 	// Pre-build lookup maps once — O(n) instead of O(n²)
 	const notesByName = $derived.by(() => {
-		if (!visible) return new Map<string, { name: string; path: string; vaultName: string }>();
-		const map = new Map<string, { name: string; path: string; vaultName: string }>();
+		if (!visible) return new Map<string, { name: string; path: string; libraryName: string }>();
+		const map = new Map<string, { name: string; path: string; libraryName: string }>();
 		for (const n of allNotes) map.set(n.name.toLowerCase(), n);
 		return map;
 	});
 
 	const notesByPath = $derived.by(() => {
-		if (!visible) return new Map<string, { name: string; path: string; vaultName: string }>();
-		const map = new Map<string, { name: string; path: string; vaultName: string }>();
+		if (!visible) return new Map<string, { name: string; path: string; libraryName: string }>();
+		const map = new Map<string, { name: string; path: string; libraryName: string }>();
 		for (const n of allNotes) map.set(n.path, n);
 		return map;
 	});
 
-	// Cross-vault links — O(m) with map lookups
-	const crossVaultLinks = $derived.by(() => {
+	// Cross-library links — O(m) with map lookups
+	const crossLibraryLinks = $derived.by(() => {
 		if (!visible) return [];
 		return allLinks.filter(l => {
-			const sourceVault = notesByPath.get(l.source_path)?.vaultName;
+			const sourceVault = notesByPath.get(l.source_path)?.libraryName;
 			const targetNote = notesByName.get(l.target.toLowerCase());
-			return sourceVault && targetNote && sourceVault !== targetNote.vaultName;
+			return sourceVault && targetNote && sourceVault !== targetNote.libraryName;
 		});
 	});
 
@@ -71,7 +71,7 @@
 			.slice(0, 10)
 			.map(([path, count]) => {
 				const note = notesByPath.get(path);
-				return { name: note?.name || path.split(/[/\\]/).pop() || '', path, vaultName: note?.vaultName || '', count };
+				return { name: note?.name || path.split(/[/\\]/).pop() || '', path, libraryName: note?.libraryName || '', count };
 			});
 	});
 
@@ -84,7 +84,7 @@
 			{$t('linkDashboard.mostConnected')} <span class="ld-badge">{mostConnected.length}</span>
 		</button>
 		<button class="ld-tab" class:active={activeSection === 'cross'} onclick={() => activeSection = 'cross'}>
-			{$t('linkDashboard.crossVault')} <span class="ld-badge">{crossVaultLinks.length}</span>
+			{$t('linkDashboard.crossVault')} <span class="ld-badge">{crossLibraryLinks.length}</span>
 		</button>
 		<button class="ld-tab" class:active={activeSection === 'broken'} onclick={() => activeSection = 'broken'}>
 			{$t('linkDashboard.broken')} <span class="ld-badge">{brokenLinks.length}</span>
@@ -97,24 +97,24 @@
 	<div class="ld-content">
 		{#if activeSection === 'top'}
 			{#each mostConnected as item}
-				<button class="ld-item" onclick={() => onNoteClick(item.path, item.vaultName)}>
+				<button class="ld-item" onclick={() => onNoteClick(item.path, item.libraryName)}>
 					<span class="ld-name">{item.name}</span>
 					<span class="ld-detail">{item.count} links</span>
 				</button>
 			{/each}
 		{:else if activeSection === 'cross'}
-			{#each crossVaultLinks.slice(0, 50) as link}
-				<button class="ld-item" onclick={() => onNoteClick(link.source_path, link.vault_name)}>
+			{#each crossLibraryLinks.slice(0, 50) as link}
+				<button class="ld-item" onclick={() => onNoteClick(link.source_path, link.library_name)}>
 					<span class="ld-name">{link.source_name}</span>
 					<span class="ld-detail">→ {link.target}</span>
 				</button>
 			{/each}
-			{#if crossVaultLinks.length === 0}
+			{#if crossLibraryLinks.length === 0}
 				<div class="ld-empty">{$t('linkDashboard.noCrossVault')}</div>
 			{/if}
 		{:else if activeSection === 'broken'}
 			{#each brokenLinks.slice(0, 50) as link}
-				<button class="ld-item" onclick={() => onNoteClick(link.source_path, link.vault_name)}>
+				<button class="ld-item" onclick={() => onNoteClick(link.source_path, link.library_name)}>
 					<span class="ld-name">{link.source_name}</span>
 					<span class="ld-detail ld-broken">→ {link.target}</span>
 				</button>
@@ -124,9 +124,9 @@
 			{/if}
 		{:else if activeSection === 'orphan'}
 			{#each orphanNotes.slice(0, 50) as note}
-				<button class="ld-item" onclick={() => onNoteClick(note.path, note.vaultName)}>
+				<button class="ld-item" onclick={() => onNoteClick(note.path, note.libraryName)}>
 					<span class="ld-name">{note.name}</span>
-					<span class="ld-detail">{note.vaultName}</span>
+					<span class="ld-detail">{note.libraryName}</span>
 				</button>
 			{/each}
 			{#if orphanNotes.length === 0}

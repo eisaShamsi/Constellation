@@ -6,33 +6,33 @@
 	import { listen } from '@tauri-apps/api/event';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import {
-		vaults, vaultStats, searchResults, totalStars, vaultCount,
+		libraries, libraryStats, searchResults, totalStars, libraryCount,
 		activeTab, openTabs, activeTabId,
 		splitActive, splitDirection, focusedTabId, focusedTab,
-		loadVaults, loadAllStats, addVault, searchAllStars,
+		loadLibraries, loadAllStats, addLibrary, createNewLibrary, searchAllStars,
 		openNoteTab, closeTab, switchTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings,
 		createNote, createFolder, renameItem, deleteItem,
-		startWatchingVault, wasRecentlyWritten,
-		loadVaultAppearance, vaultAppearances,
+		startWatchingLibrary, wasRecentlyWritten,
+		loadLibraryAppearance, libraryAppearances,
 		toggleEditMode, editingTabIds,
 		navigateBack, navigateForward,
-		scanVaultLinks, scanVaultTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
-		scanVaultIndex,
-		buildGraphData, readNotePreview,
-		getDailyNotePath, updateLinksOnRename,
+		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
+		scanLibraryIndex,
+		buildStarData, readNotePreview,
+		getDailyNotePath, updateLinksOnRename, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings,
 		loadWorkspaces, workspaces,
-		resolveWikilinkCrossVault,
+		resolveWikilinkCrossLibrary,
 		buildDefaultFrontmatter, searchByProperty,
-		type FrontmatterProperty, type HeadingItem, type NoteLink, type GraphNode, type GraphLink,
+		type FrontmatterProperty, type HeadingItem, type NoteLink, type StarNode, type StarLink,
 		type IndexEntry
-	} from '$lib/vaults/store';
-	import type { VaultStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen } from '$lib/vaults/store';
+	} from '$lib/libraries/store';
+	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen } from '$lib/libraries/store';
 	import { get } from 'svelte/store';
-	import { detectDir } from '$lib/utils';
+	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	import type { BaseDefinition } from '$lib/bases/types';
@@ -44,8 +44,8 @@
 	import QuickSwitcher from '$lib/components/QuickSwitcher.svelte';
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
 	import { processTemplate, extractTemplateBody } from '$lib/templates/engine';
-	import FullGraph from '$lib/components/FullGraph.svelte';
-	import LocalGraph from '$lib/components/LocalGraph.svelte';
+	import FullStarView from '$lib/components/FullStarView.svelte';
+	import LocalStarView from '$lib/components/LocalStarView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
@@ -60,9 +60,9 @@
 	import WorkspaceManager from '$lib/components/WorkspaceManager.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import LockScreen from '$lib/components/LockScreen.svelte';
-	import VaultSwitcher from '$lib/components/VaultSwitcher.svelte';
-	import VaultManager from '$lib/components/VaultManager.svelte';
-	import VaultPicker from '$lib/components/VaultPicker.svelte';
+	import LibrarySwitcher from '$lib/components/LibrarySwitcher.svelte';
+	import LibraryManager from '$lib/components/LibraryManager.svelte';
+	import LibraryPicker from '$lib/components/LibraryPicker.svelte';
 	import NewBaseDialog from '$lib/components/NewBaseDialog.svelte';
 	import OutgoingLinksPanel from '$lib/components/OutgoingLinksPanel.svelte';
 	import IndexPanel from '$lib/components/IndexPanel.svelte';
@@ -75,7 +75,7 @@
 		getChildUniverses,
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
-	import { loadPropertyTypes } from '$lib/vaults/propertyTypeRegistry';
+	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
 	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, type ScreenNote, type ScreenState } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
@@ -89,7 +89,7 @@
 	let searchQuery = $state('');
 	let searchTimeout: ReturnType<typeof setTimeout>;
 	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
-	let vaultPickerAction = $state<'note' | 'folder' | 'base'>('note');
+	let libraryPickerAction = $state<'note' | 'folder' | 'base'>('note');
 	let allExpanded = $state(true);
 
 	// Universe state
@@ -108,7 +108,7 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'graph' | 'tasks' | 'calendar'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar'>('properties');
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(240);
@@ -120,7 +120,7 @@
 	let showQuickSwitcher = $state(false);
 	let showTemplatePicker = $state(false);
 	let templatePickerMode = $state<'insert' | 'newNote'>('insert');
-	let showGraphView = $state(false);
+	let showStarView = $state(false);
 	let showGlobalTasks = $state(false);
 
 	// Tasks sidebar data
@@ -139,9 +139,9 @@
 	let secondScreenOpen = $state(false);
 
 	// Vault management
-	let showVaultSwitcher = $state(false);
-	let showVaultManager = $state(false);
-	let showVaultPicker = $state(false);
+	let showLibrarySwitcher = $state(false);
+	let showLibraryManager = $state(false);
+	let showLibraryPicker = $state(false);
 	let showNewBaseDialog = $state(false);
 
 	// Lock screen
@@ -160,17 +160,17 @@
 	// Vault data caches
 	let allVaultLinks = $state<NoteLink[]>([]);
 	let allVaultTags = $state<Record<string, number>>({});
-	let allNotes = $state<{ name: string; path: string; vaultName: string }[]>([]);
+	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let allIndexEntries = $state<IndexEntry[]>([]);
-	// Graph data stored as plain (non-reactive) arrays to avoid $state proxy overhead
-	// on potentially tens of thousands of items. Use graphVersion to signal changes.
-	let graphNodes: GraphNode[] = [];
-	let graphLinks: GraphLink[] = [];
-	let graphVersion = $state(0);
-	// Graph data is passed to GraphView as plain arrays.
+	// Star data stored as plain (non-reactive) arrays to avoid $state proxy overhead
+	// on potentially tens of thousands of items. Use starVersion to signal changes.
+	let starNodes: StarNode[] = [];
+	let starLinks: StarLink[] = [];
+	let starVersion = $state(0);
+	// Star data is passed to StarView as plain arrays.
 	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
-	// make iteration extremely slow. Instead, graphVersion ($state) triggers re-render
-	// and GraphView reads the plain graphNodes/graphLinks directly.
+	// make iteration extremely slow. Instead, starVersion ($state) triggers re-render
+	// and StarView reads the plain starNodes/starLinks directly.
 
 	let resizeCleanup: (() => void) | null = null;
 
@@ -206,7 +206,7 @@
 	}
 
 	// Vault trees
-	let vaultTrees = $state<Record<string, FileEntry[]>>({});
+	let libraryTrees = $state<Record<string, FileEntry[]>>({});
 	let expandedVaults = $state<Set<string>>(new Set());
 
 	// Workspace bases
@@ -219,14 +219,16 @@
 
 	let error = $state('');
 	let adding = $state(false);
+	let creatingNew = $state(false);
+	let newLibraryName = $state('');
 
 	const isHome = $derived(page.url.pathname === '/');
 
 	// Vault color palette
-	const VAULT_COLORS = ['#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#8b5cf6'];
-	const vaultColorMap = $derived.by(() => {
+	const LIBRARY_COLORS = ['#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#8b5cf6'];
+	const libraryColorMap = $derived.by(() => {
 		const map: Record<string, string> = {};
-		$vaults.forEach((v, i) => { map[v.name] = VAULT_COLORS[i % VAULT_COLORS.length]; });
+		$libraries.forEach((v, i) => { map[v.name] = LIBRARY_COLORS[i % LIBRARY_COLORS.length]; });
 		return map;
 	});
 
@@ -245,7 +247,7 @@
 	});
 
 	// Unlinked mentions for current note
-	let currentUnlinkedMentions: { name: string; path: string; context: string; vaultName: string }[] = $state([]);
+	let currentUnlinkedMentions: { name: string; path: string; context: string; libraryName: string }[] = $state([]);
 	let unlinkedDebounce: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
 		const tab = sidebarTab;
@@ -292,39 +294,39 @@
 		return [...new Set(tags)];
 	});
 
-	// Local graph: nodes/links for the active note and its direct connections
+	// Local star: nodes/links for the active note and its direct connections
 	// Uses deferred state to avoid blocking the main thread with heavy iteration
-	let localGraphNodes = $state<GraphNode[]>([]);
-	let localGraphLinks = $state<GraphLink[]>([]);
-	let _localGraphTimer: ReturnType<typeof setTimeout> | undefined;
+	let localStarNodes = $state<StarNode[]>([]);
+	let localStarLinks = $state<StarLink[]>([]);
+	let _localStarTimer: ReturnType<typeof setTimeout> | undefined;
 
 	$effect(() => {
-		// Track reactive dependencies (graphVersion signals when plain arrays change)
-		const isVisible = rightSidebarOpen && rightSidebarTab === 'graph';
+		// Track reactive dependencies (starVersion signals when plain arrays change)
+		const isVisible = rightSidebarOpen && rightSidebarTab === 'star';
 		const tab = sidebarTab;
-		const _ver = graphVersion; // reactive trigger for non-reactive graphNodes/graphLinks
+		const _ver = starVersion; // reactive trigger for non-reactive starNodes/starLinks
 
-		clearTimeout(_localGraphTimer);
+		clearTimeout(_localStarTimer);
 
 		if (!isVisible || !tab) {
-			localGraphNodes = [];
-			localGraphLinks = [];
+			localStarNodes = [];
+			localStarLinks = [];
 			return;
 		}
 
 		// Defer computation to avoid blocking UI
-		_localGraphTimer = setTimeout(() => {
+		_localStarTimer = setTimeout(() => {
 			const activeId = tab.name.replace(/\.md$/, '').toLowerCase();
 			const connectedIds = new Set<string>();
 			connectedIds.add(activeId);
-			for (const link of graphLinks) {
+			for (const link of starLinks) {
 				if (link.source === activeId || link.target === activeId) {
 					connectedIds.add(link.source);
 					connectedIds.add(link.target);
 				}
 			}
-			localGraphNodes = graphNodes.filter(n => connectedIds.has(n.id));
-			localGraphLinks = graphLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
+			localStarNodes = starNodes.filter(n => connectedIds.has(n.id));
+			localStarLinks = starLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
 		}, 50);
 	});
 
@@ -335,14 +337,19 @@
 		const tab = sidebarTab;
 		clearTimeout(_tasksTimer);
 		if (!isVisible || !tab?.path) {
-			sidebarTasks = [];
 			return;
 		}
+		console.log('[Tasks] Effect fired, scheduling scan for:', tab.path);
 		_tasksTimer = setTimeout(async () => {
 			try {
-				const result = await scanNoteTasks(tab.path, tab.vaultName, tab.vaultPath);
+				console.log('[Tasks] Scanning note tasks...');
+				const result = await scanNoteTasks(tab.path, tab.libraryName, tab.libraryPath);
+				console.log('[Tasks] Scan complete, found', result.tasks.length, 'tasks');
 				sidebarTasks = result.tasks;
-			} catch { sidebarTasks = []; }
+			} catch (e) {
+				console.error('[Tasks] Scan failed:', e);
+				sidebarTasks = [];
+			}
 		}, 100);
 	});
 
@@ -352,13 +359,15 @@
 		const isVisible = rightSidebarOpen && rightSidebarTab === 'calendar';
 		clearTimeout(_calTimer);
 		if (!isVisible) return;
+		console.log('[Calendar] Effect fired, scheduling scan...');
 		_calTimer = setTimeout(async () => {
 			try {
-				const vaultList = get(vaults);
+				const libraryList = get(libraries);
+				console.log('[Calendar] Scanning', libraryList.length, 'libraries...');
 				const dateCounts: Record<string, number> = {};
 				const taskCounts: Record<string, number> = {};
 				const results = await Promise.all(
-					vaultList.map(v => scanVaultNoteDates(v.path, v.name))
+					libraryList.map(v => scanVaultNoteDates(v.path, v.name))
 				);
 				for (const dateMap of results) {
 					for (const [date, entries] of Object.entries(dateMap)) {
@@ -368,7 +377,7 @@
 				// Also scan tasks for due dates
 				const { scanVaultTasks } = await import('$lib/tasks/store');
 				const taskResults = await Promise.all(
-					vaultList.map(v => scanVaultTasks(v.path, v.name))
+					libraryList.map(v => scanVaultTasks(v.path, v.name))
 				);
 				for (const result of taskResults) {
 					for (const task of result.tasks) {
@@ -379,7 +388,8 @@
 				}
 				calendarNoteDates = dateCounts;
 				calendarTaskDates = taskCounts;
-			} catch { /* ignore */ }
+				console.log('[Calendar] Scan complete');
+			} catch (e) { console.error('[Calendar] Scan failed:', e); }
 		}, 200);
 	});
 
@@ -396,7 +406,7 @@
 		}, 300);
 	});
 
-	// All note names across all vaults (for quick switcher)
+	// All note names across all libraries (for quick switcher)
 	const allSwitcherNotes = $derived(allNotes);
 
 	// Dark mode
@@ -419,43 +429,47 @@
 	});
 
 	// ─── Commands for command palette ───
+	function sc(id: string): string { return formatShortcut(getResolvedShortcut(id, $appSettings.customShortcuts)); }
+
 	function getCommands() {
 		return [
-			{ id: 'new-note', name: $t('commands.newNote'), shortcut: 'Ctrl+N', icon: '📄', action: handleNewNote, category: 'File' },
-			{ id: 'new-base', name: $t('commands.newBase'), shortcut: 'Ctrl+Shift+B', icon: '▦', action: handleNewBase, category: 'File' },
-			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: 'Ctrl+O', icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchVault'), shortcut: 'Ctrl+Shift+F', icon: '🔎', action: () => { sidebarOpen = true; searchMode = true; }, category: 'Navigation' },
-			{ id: 'daily-note', name: $t('commands.dailyNote'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
-			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: 'Ctrl+E', icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
-			{ id: 'graph-view', name: $t('commands.graphView'), icon: '🕸️', action: () => showGraphView = !showGraphView, category: 'View' },
-			{ id: 'global-tasks', name: $t('commands.globalTasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showGraphView = false; }, category: 'View' },
-			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: 'Ctrl+T', icon: '📋', action: () => { templatePickerMode = 'insert'; showTemplatePicker = true; }, category: 'Templates' },
-			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: 'Ctrl+B', icon: '𝐁', action: () => {}, category: 'Editor' },
-			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: 'Ctrl+I', icon: '𝐼', action: () => {}, category: 'Editor' },
-			{ id: 'split-view', name: $t('commands.splitView'), shortcut: '', icon: '⊞', action: cycleSplit, category: 'View' },
-			{ id: 'close-note', name: $t('commands.closeNote'), shortcut: 'Ctrl+W', icon: '✕', action: closeNote, category: 'File' },
-			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: 'Ctrl+\\', icon: '◧', action: () => sidebarOpen = !sidebarOpen, category: 'View' },
-			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), icon: '◨', action: () => rightSidebarOpen = !rightSidebarOpen, category: 'View' },
-			{ id: 'add-vault', name: $t('commands.addVault'), icon: '📁', action: handleAddVault, category: 'Vault' },
-			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
-			{ id: 'random-note', name: $t('commands.randomNote'), icon: '🎲', action: handleRandomNote, category: 'Navigation' },
-			{ id: 'toggle-theme', name: $t('commands.toggleTheme'), icon: '🌗', action: handleToggleTheme, category: 'Appearance' },
-			{ id: 'second-screen', name: $t('secondScreen.title'), shortcut: 'Ctrl+Shift+2', icon: '🖥️', action: handleToggleSecondScreen, category: 'View' },
-			{ id: 'send-to-screen', name: $t('secondScreen.sendToScreen'), icon: '📤', action: handleSendToSecondScreen, category: 'View' },
-			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: 'Alt+←', icon: '←', action: navigateBack, category: 'Navigation' },
-			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: 'Alt+→', icon: '→', action: navigateForward, category: 'Navigation' },
-			{ id: 'workspaces', name: $t('commands.workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
-			{ id: 'index', name: $t('commands.index'), icon: '📖', action: () => { showCommandPalette = false; sidebarOpen = true; searchMode = false; indexMode = true; }, category: 'Navigation' },
-			{ id: 'import-notes', name: $t('commands.importNotes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
-			{ id: 'settings', name: $t('commands.settings'), shortcut: 'Ctrl+,', icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
-			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: 'Ctrl+;', icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
-			{ id: 'insert-link', name: $t('commands.insertLink'), shortcut: 'Ctrl+K', icon: '🔗', action: () => {}, category: 'Editor' },
-			{ id: 'duplicate-line', name: $t('commands.duplicateLine'), shortcut: 'Ctrl+Shift+D', icon: '📋', action: () => {}, category: 'Editor' },
-			{ id: 'toggle-comment', name: $t('commands.toggleComment'), shortcut: 'Ctrl+/', icon: '💬', action: () => {}, category: 'Editor' },
-			{ id: 'select-next', name: $t('commands.selectNextOccurrence'), shortcut: 'Ctrl+D', icon: '🔤', action: () => {}, category: 'Editor' },
-			{ id: 'fold-all', name: $t('commands.foldAll'), icon: '🔽', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:fold-all')); }, category: 'Editor' },
-			{ id: 'unfold-all', name: $t('commands.unfoldAll'), icon: '🔼', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:unfold-all')); }, category: 'Editor' },
-			{ id: 'toggle-live-preview', name: $t('commands.toggleLivePreview'), icon: '📖', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:toggle-live-preview')); }, category: 'Editor' },
+			{ id: 'command-palette', name: $t('settings.plugins.commandPalette'), shortcut: sc('command-palette'), icon: '🚀', action: () => { showCommandPalette = !showCommandPalette; showQuickSwitcher = false; }, category: 'Navigation' },
+			{ id: 'new-note', name: $t('commands.newNote'), shortcut: sc('new-note'), icon: '📄', action: handleNewNote, category: 'File' },
+			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
+			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
+			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchVault'), shortcut: sc('search'), icon: '🔎', action: () => { sidebarOpen = true; searchMode = true; }, category: 'Navigation' },
+			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
+			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
+			{ id: 'star-view', name: $t('commands.starView'), shortcut: sc('star-view'), icon: '🕸️', action: () => showStarView = !showStarView, category: 'View' },
+			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showStarView = false; }, category: 'View' },
+			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; showTemplatePicker = true; }, category: 'Templates' },
+			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: sc('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
+			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
+			{ id: 'split-view', name: $t('commands.splitView'), shortcut: sc('split-view'), icon: '⊞', action: cycleSplit, category: 'View' },
+			{ id: 'close-note', name: $t('commands.closeNote'), shortcut: sc('close-note'), icon: '✕', action: closeNote, category: 'File' },
+			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: sc('toggle-left'), icon: '◧', action: () => sidebarOpen = !sidebarOpen, category: 'View' },
+			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: sc('toggle-right'), icon: '◨', action: () => rightSidebarOpen = !rightSidebarOpen, category: 'View' },
+			{ id: 'add-vault', name: $t('commands.addVault'), shortcut: sc('add-vault'), icon: '📁', action: handleAddLibrary, category: 'Vault' },
+			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), shortcut: sc('toggle-bookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
+			{ id: 'random-note', name: $t('commands.randomNote'), shortcut: sc('random-note'), icon: '🎲', action: handleRandomNote, category: 'Navigation' },
+			{ id: 'toggle-theme', name: $t('commands.toggleTheme'), shortcut: sc('toggle-theme'), icon: '🌗', action: handleToggleTheme, category: 'Appearance' },
+			{ id: 'second-screen', name: $t('secondScreen.title'), shortcut: sc('second-screen'), icon: '🖥️', action: handleToggleSecondScreen, category: 'View' },
+			{ id: 'send-to-screen', name: $t('secondScreen.sendToScreen'), shortcut: sc('send-to-screen'), icon: '📤', action: handleSendToSecondScreen, category: 'View' },
+			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: sc('nav-back'), icon: '←', action: navigateBack, category: 'Navigation' },
+			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
+			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
+			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; sidebarOpen = true; searchMode = false; indexMode = true; }, category: 'Navigation' },
+			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
+			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
+			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
+			{ id: 'insert-link', name: $t('commands.insertLink'), shortcut: sc('insert-link'), icon: '🔗', action: () => {}, category: 'Editor' },
+			{ id: 'duplicate-line', name: $t('commands.duplicateLine'), shortcut: sc('duplicate-line'), icon: '📋', action: () => {}, category: 'Editor' },
+			{ id: 'toggle-comment', name: $t('commands.toggleComment'), shortcut: sc('toggle-comment'), icon: '💬', action: () => {}, category: 'Editor' },
+			{ id: 'select-next', name: $t('commands.selectNextOccurrence'), shortcut: sc('select-next'), icon: '🔤', action: () => {}, category: 'Editor' },
+			{ id: 'fold-all', name: $t('commands.foldAll'), shortcut: sc('fold-all'), icon: '🔽', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:fold-all')); }, category: 'Editor' },
+			{ id: 'unfold-all', name: $t('commands.unfoldAll'), shortcut: sc('unfold-all'), icon: '🔼', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:unfold-all')); }, category: 'Editor' },
+			{ id: 'toggle-live-preview', name: $t('commands.toggleLivePreview'), shortcut: sc('toggle-live-preview'), icon: '📖', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:toggle-live-preview')); }, category: 'Editor' },
 		];
 	}
 
@@ -508,19 +522,19 @@
 			if (idleTimer) clearTimeout(idleTimer);
 		});
 
-		// Load vaults — this is what the sidebar needs
-		try { await loadVaults(); } catch { /* ignore */ }
+		// Load libraries — this is what the sidebar needs
+		try { await loadLibraries(); } catch { /* ignore */ }
 		try { await loadAllStats(); } catch { /* ignore */ }
 
 		// App is usable now — show UI immediately
 		appReady = true;
 
 		// Start file watchers and build caches in the background
-		for (const vault of $vaults) {
-			try { await startWatchingVault(vault.id, vault.path); } catch { /* ignore */ }
-			await loadVaultAppearance(vault.path, vault.id);
+		for (const vault of $libraries) {
+			try { await startWatchingLibrary(vault.id, vault.path); } catch { /* ignore */ }
+			await loadLibraryAppearance(vault.path, vault.id);
 		}
-		await refreshVaultCaches();
+		await refreshLibraryCaches();
 	}
 
 	async function handleUniverseCreated(entry: UniverseEntry) {
@@ -535,9 +549,9 @@
 		appReady = false;
 		showUniverseManager = false;
 
-		// Unwatch all vaults
-		for (const vault of $vaults) {
-			try { await invoke('unwatch_vault', { vaultId: vault.id }); } catch { /* ignore */ }
+		// Unwatch all libraries
+		for (const vault of $libraries) {
+			try { await invoke('unwatch_library', { libraryId: vault.id }); } catch { /* ignore */ }
 		}
 
 		// Clear in-memory state
@@ -547,19 +561,19 @@
 		workspaceBases = [];
 
 		// Clear vault stores so sidebar resets
-		vaults.set([]);
-		vaultStats.set([]);
+		libraries.set([]);
+		libraryStats.set([]);
 		allVaultLinks = [];
 		allVaultTags = {};
 		allNotes = [];
 		allIndexEntries = [];
-		vaultTrees = {};
+		libraryTrees = {};
 		expandedVaults = new Set();
 		editingTabIds.set(new Set());
-		vaultAppearances.set({});
+		libraryAppearances.set({});
 		bookmarks.set([]);
 
-		// Reset cache guard so refreshVaultCaches can run for the new universe
+		// Reset cache guard so refreshLibraryCaches can run for the new universe
 		cacheRefreshing = false;
 
 		// Update active universe name for title bar and status bar
@@ -576,6 +590,15 @@
 
 	// ─── Lifecycle ───
 	onMount(async () => {
+		// Global error handlers to prevent WebView crashes
+		window.addEventListener('unhandledrejection', (e) => {
+			console.error('[Constellation] Unhandled rejection:', e.reason);
+			e.preventDefault();
+		});
+		window.addEventListener('error', (e) => {
+			console.error('[Constellation] Uncaught error:', e.error);
+		});
+
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
 		const handleTemplatePicker = () => { templatePickerMode = 'insert'; showTemplatePicker = true; };
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
@@ -620,23 +643,23 @@
 		// Listen for file change events from the watcher
 		let pendingTreeRefresh: Set<string> = new Set();
 		let pendingTabReloads: Set<string> = new Set();
-		const unlistenWatcher = await listen<{ vaultId: string; paths: string[] }>('vault-changed', (event) => {
-			const { vaultId, paths } = event.payload;
-			pendingTreeRefresh.add(vaultId);
+		const unlistenWatcher = await listen<{ libraryId: string; paths: string[] }>('library-changed', (event) => {
+			const { libraryId, paths } = event.payload;
+			pendingTreeRefresh.add(libraryId);
 			for (const p of paths) {
 				if (!wasRecentlyWritten(p)) pendingTabReloads.add(p);
 			}
 			// Batch rapid file changes (300ms window)
 			clearTimeout(watcherDebounce);
 			watcherDebounce = setTimeout(async () => {
-				const vaultIds = [...pendingTreeRefresh];
+				const libraryIds = [...pendingTreeRefresh];
 				const tabPaths = [...pendingTabReloads];
 				pendingTreeRefresh.clear();
 				pendingTabReloads.clear();
 
-				// Refresh trees for changed vaults
-				for (const vid of vaultIds) {
-					await refreshVaultTree(vid);
+				// Refresh trees for changed libraries
+				for (const vid of libraryIds) {
+					await refreshLibraryTree(vid);
 				}
 				await loadAllStats();
 
@@ -656,17 +679,17 @@
 
 				// Debounced cache refresh for links, tags, index
 				clearTimeout(cacheRefreshDebounce);
-				cacheRefreshDebounce = setTimeout(() => refreshVaultCaches(), 5000);
+				cacheRefreshDebounce = setTimeout(() => refreshLibraryCaches(), 5000);
 			}, 300);
 		});
 
-		if ($vaultStats.length === 1) {
-			await toggleVault($vaultStats[0]);
+		if ($libraryStats.length === 1) {
+			await toggleLibrary($libraryStats[0]);
 		}
 
 		// Second screen event listeners
 		const unlistenScreenNote = await onNoteToMain(async (note: ScreenNote) => {
-			await openNoteTab(note.path, note.vaultName, note.vaultPath, note.vaultColor);
+			await openNoteTab(note.path, note.libraryName, note.libraryPath, note.libraryColor);
 		});
 		const unlistenScreenClosed = await onScreenClosed(() => {
 			secondScreenOpen = false;
@@ -697,26 +720,26 @@
 	});
 
 	let cacheRefreshing = false;
-	async function refreshVaultCaches() {
+	async function refreshLibraryCaches() {
 		// Prevent concurrent scans — skip if one is already in progress
 		if (cacheRefreshing) return;
 		cacheRefreshing = true;
 		try {
 			const links: NoteLink[] = [];
 			const tags: Record<string, number> = {};
-			const notes: { name: string; path: string; vaultName: string }[] = [];
+			const notes: { name: string; path: string; libraryName: string }[] = [];
 			const indexRaw: IndexEntry[] = [];
 
-			// Process vaults sequentially (2 at a time) to avoid IPC flood
-			const vaultList = $vaults;
-			for (let i = 0; i < vaultList.length; i += 2) {
-				const batch = vaultList.slice(i, i + 2);
+			// Process libraries sequentially (2 at a time) to avoid IPC flood
+			const libraryList = $libraries;
+			for (let i = 0; i < libraryList.length; i += 2) {
+				const batch = libraryList.slice(i, i + 2);
 				const batchResults = await Promise.all(batch.map(async (vault) => {
 					const [vaultLinks, vaultTags, vaultNotes, vaultIndex] = await Promise.all([
-						scanVaultLinks(vault.path, vault.name).catch(() => [] as NoteLink[]),
-						scanVaultTags(vault.path).catch(() => ({} as Record<string, number>)),
-						invoke('collect_vault_notes', { vaultPath: vault.path }).catch(() => []) as Promise<any[]>,
-						scanVaultIndex(vault.path).catch(() => [] as IndexEntry[]),
+						scanLibraryLinks(vault.path, vault.name).catch(() => [] as NoteLink[]),
+						scanLibraryTags(vault.path).catch(() => ({} as Record<string, number>)),
+						invoke('collect_library_notes', { libraryPath: vault.path }).catch(() => []) as Promise<any[]>,
+						scanLibraryIndex(vault.path).catch(() => [] as IndexEntry[]),
 					]);
 					return { vault, vaultLinks, vaultTags, vaultNotes, vaultIndex };
 				}));
@@ -726,7 +749,7 @@
 					for (const [tag, count] of Object.entries(vaultTags)) {
 						tags[tag] = (tags[tag] || 0) + count;
 					}
-					notes.push(...vaultNotes.map((n: any) => ({ name: n.name, path: n.path, vaultName: vault.name })));
+					notes.push(...vaultNotes.map((n: any) => ({ name: n.name, path: n.path, libraryName: vault.name })));
 					indexRaw.push(...vaultIndex);
 				}
 			}
@@ -736,12 +759,12 @@
 			allNotes = notes;
 			allIndexEntries = mergeIndexEntries(indexRaw);
 
-			// Build graph data from all vaults combined
-			if (vaultList.length > 0) {
-				const { nodes, links: gLinks } = buildGraphData(links, notes);
-				graphNodes = nodes;
-				graphLinks = gLinks;
-				graphVersion++;
+			// Build star data from all libraries combined
+			if (libraryList.length > 0) {
+				const { nodes, links: gLinks } = buildStarData(links, notes);
+				starNodes = nodes;
+				starLinks = gLinks;
+				starVersion++;
 			}
 		} finally {
 			cacheRefreshing = false;
@@ -754,7 +777,7 @@
 			const key = entry.term.toLowerCase();
 			const existing = map.get(key);
 			if (existing) {
-				// Sum counts across vaults
+				// Sum counts across libraries
 				existing.count += entry.count;
 				// Merge mentions, deduplicate by note_path
 				const existingPaths = new Set(existing.mentions.map(m => m.note_path));
@@ -775,119 +798,46 @@
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if (isLocked) { e.preventDefault(); e.stopPropagation(); return; }
-		// Command palette
-		if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-			e.preventDefault();
-			showCommandPalette = !showCommandPalette;
-			showQuickSwitcher = false;
-			return;
-		}
-		// Quick switcher
-		if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
-			e.preventDefault();
-			showQuickSwitcher = !showQuickSwitcher;
-			showCommandPalette = false;
-			return;
-		}
-		// Insert template
-		if ((e.ctrlKey || e.metaKey) && e.key === 't') {
-			e.preventDefault();
-			templatePickerMode = 'insert';
-			showTemplatePicker = !showTemplatePicker;
-			return;
-		}
-		// New note
-		if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-			e.preventDefault();
-			handleNewNote();
-			return;
-		}
-		// New base
-		if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'B') {
-			e.preventDefault();
-			handleNewBase();
-			return;
-		}
-		// Toggle edit mode
-		if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
-			e.preventDefault();
-			const tab = get(focusedTab);
-			if (tab) toggleEditMode(tab.id);
-			return;
-		}
-		// Close tab
-		if ((e.ctrlKey || e.metaKey) && e.key === 'w') {
-			e.preventDefault();
-			closeNote();
-			return;
-		}
-		// Search
-		if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
-			e.preventDefault();
-			sidebarOpen = true;
-			searchMode = true;
-			return;
-		}
-		// Second screen (Ctrl+Shift+2)
-		if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '2') {
-			e.preventDefault();
-			handleToggleSecondScreen();
-			return;
-		}
-		// Toggle left sidebar
-		if ((e.ctrlKey || e.metaKey) && e.key === '\\') {
-			e.preventDefault();
-			sidebarOpen = !sidebarOpen;
-			return;
-		}
-		// Settings
-		if ((e.ctrlKey || e.metaKey) && e.key === ',') {
-			e.preventDefault();
-			showSettings = !showSettings;
-			return;
-		}
-		// Add property (Ctrl+;)
-		if ((e.ctrlKey || e.metaKey) && e.key === ';') {
-			e.preventDefault();
-			document.dispatchEvent(new CustomEvent('constellation:add-property'));
-			return;
-		}
-		// Navigate back/forward
-		if (e.altKey && e.key === 'ArrowLeft') {
-			e.preventDefault();
-			navigateBack();
-			return;
-		}
-		if (e.altKey && e.key === 'ArrowRight') {
-			e.preventDefault();
-			navigateForward();
-			return;
-		}
-		// Escape closes overlays
+
+		// Escape always closes overlays (not remappable)
 		if (e.key === 'Escape') {
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
-			if (showGraphView) { showGraphView = false; return; }
+			if (showStarView) { showStarView = false; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
 			if (showTemplatePicker) { showTemplatePicker = false; return; }
 			if (showWorkspaces) { showWorkspaces = false; return; }
 			if (showSettings) { showSettings = false; return; }
 			if (showImporter) { showImporter = false; return; }
+			return;
+		}
+
+		// Build lookup from shortcut combo → action
+		const combo = eventToShortcut(e);
+		if (!combo) return;
+
+		const cmds = getCommands();
+		for (const cmd of cmds) {
+			if (cmd.shortcut && normalizeShortcut(cmd.shortcut) === combo) {
+				e.preventDefault();
+				cmd.action();
+				return;
+			}
 		}
 	}
 
 	// ─── Actions ───
 	async function handleNewNote() {
-		if ($vaults.length === 0) return;
-		if ($vaults.length === 1) {
-			await createNoteInVault($vaults[0]);
+		if ($libraries.length === 0) return;
+		if ($libraries.length === 1) {
+			await createNoteInLibrary($libraries[0]);
 		} else {
-			vaultPickerAction = 'note';
-			showVaultPicker = true;
+			libraryPickerAction = 'note';
+			showLibraryPicker = true;
 		}
 	}
 
-	async function createNoteInVault(vault: { id: string; name: string; path: string }) {
+	async function createNoteInLibrary(vault: { id: string; name: string; path: string }) {
 		try {
 			const baseName = $t('actions.untitled');
 			let name = baseName;
@@ -899,7 +849,7 @@
 			// Try loading template content if configured
 			let templateBody = '';
 			const templateFolder = $appSettings.templateFolder;
-			if (templateFolder && $appSettings.enabledPlugins?.templates) {
+			if (templateFolder && $appSettings.enabledFeatures?.templates) {
 				try {
 					const templatePath = `${vault.path}/${templateFolder}/default.md`;
 					const tpl: string = await invoke('read_note', { filePath: templatePath });
@@ -931,14 +881,30 @@
 				} catch { /* template write failed — note still created */ }
 			}
 
-			await refreshVaultTree(vault.id);
-			const vaultColor = vaultColorMap[vault.name] ?? '#7c3aed';
-			await openNoteTab(newPath, vault.name, vaultColor);
+			await refreshLibraryTree(vault.id);
+			const libraryColor = libraryColorMap[vault.name] ?? '#7c3aed';
+			await openNoteTab(newPath, vault.name, libraryColor);
 			// Auto-enter edit mode
 			const tab = get(focusedTab);
 			if (tab) toggleEditMode(tab.id);
 		} catch (e) {
 			console.error('Failed to create note:', e);
+		}
+	}
+
+	async function handleQuickCapture() {
+		if ($libraries.length === 0) return;
+		const lib = $libraries[0];
+		try {
+			const inboxFolder = $appSettings.inboxFolder ?? '+';
+			const newPath = await quickCapture(lib.path, inboxFolder);
+			await refreshLibraryTree(lib.id);
+			const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
+			await openNoteTab(newPath, lib.name, libraryColor);
+			const tab = get(focusedTab);
+			if (tab) toggleEditMode(tab.id);
+		} catch (e) {
+			console.error('Quick capture failed:', e);
 		}
 	}
 
@@ -948,7 +914,7 @@
 
 	async function createWorkspaceBaseWithVaults(
 		baseName: string,
-		selectedVaults: string[],
+		selectedLibraries: string[],
 	) {
 		try {
 			let name = baseName;
@@ -964,14 +930,14 @@
 			}
 			if (!newPath) return;
 
-			// Overwrite with the user's selected vaults + name
+			// Overwrite with the user's selected libraries + name
 			const definition: BaseDefinition = {
 				version: 1,
 				name,
 				source: {
 					type: 'all',
 					includeSubfolders: true,
-					selectedVaults: selectedVaults.length > 0 ? selectedVaults : undefined,
+					selectedLibraries: selectedLibraries.length > 0 ? selectedLibraries : undefined,
 				},
 				columns: [],
 				filters: [],
@@ -992,16 +958,16 @@
 	}
 
 	async function handleNewFolder() {
-		if ($vaults.length === 0) return;
-		if ($vaults.length === 1) {
-			await createFolderInVault($vaults[0]);
+		if ($libraries.length === 0) return;
+		if ($libraries.length === 1) {
+			await createFolderInLibrary($libraries[0]);
 		} else {
-			vaultPickerAction = 'folder';
-			showVaultPicker = true;
+			libraryPickerAction = 'folder';
+			showLibraryPicker = true;
 		}
 	}
 
-	async function createFolderInVault(vault: { id: string; name: string; path: string }) {
+	async function createFolderInLibrary(vault: { id: string; name: string; path: string }) {
 		try {
 			const baseName = $t('actions.newFolder');
 			let name = baseName;
@@ -1013,7 +979,7 @@
 					name = `${baseName} ${i + 1}`;
 				}
 			}
-			await refreshVaultTree(vault.id);
+			await refreshLibraryTree(vault.id);
 			// Expand the vault if not already
 			if (!expandedVaults.has(vault.id)) {
 				expandedVaults.add(vault.id);
@@ -1059,8 +1025,8 @@
 			expandedVaults = new Set();
 			allExpanded = false;
 		} else {
-			for (const vault of $vaultStats) {
-				expandedVaults.add(vault.vault_id);
+			for (const vault of $libraryStats) {
+				expandedVaults.add(vault.library_id);
 			}
 			expandedVaults = new Set(expandedVaults);
 			allExpanded = true;
@@ -1068,15 +1034,15 @@
 	}
 
 	async function handleOpenDailyNote() {
-		const firstVault = $vaults[0];
+		const firstVault = $libraries[0];
 		if (!firstVault) return;
 		try {
 			const path = await getDailyNotePath(firstVault.path, $appSettings.dailyNoteFormat, $appSettings.dailyNoteFolder);
-			const vaultColor = vaultColorMap[firstVault.name] ?? '#7c3aed';
+			const libraryColor = libraryColorMap[firstVault.name] ?? '#7c3aed';
 
 			// Apply daily note template if configured and note was just created (has only date frontmatter)
 			const dailyTpl = $appSettings.dailyNoteTemplate;
-			if (dailyTpl && $appSettings.enabledPlugins?.templates) {
+			if (dailyTpl && $appSettings.enabledFeatures?.templates) {
 				try {
 					const noteContent: string = await invoke('read_note', { filePath: path });
 					// Only apply template if note is freshly created (short content = just frontmatter)
@@ -1094,15 +1060,15 @@
 				} catch { /* template not found — OK */ }
 			}
 
-			await openNoteTab(path, firstVault.name, vaultColor);
+			await openNoteTab(path, firstVault.name, libraryColor);
 		} catch (e) {
 			console.error('Failed to open daily note:', e);
 		}
 	}
 
-	/** Get list of template files from all vaults' template folders */
-	function getTemplateFiles(): { name: string; path: string; vaultName: string }[] {
-		const templates: { name: string; path: string; vaultName: string }[] = [];
+	/** Get list of template files from all libraries' template folders */
+	function getTemplateFiles(): { name: string; path: string; libraryName: string }[] {
+		const templates: { name: string; path: string; libraryName: string }[] = [];
 		const templateFolder = $appSettings.templateFolder;
 		if (!templateFolder) return templates;
 		// Normalize template folder for matching
@@ -1114,7 +1080,7 @@
 				templates.push({
 					name: note.name.replace(/\.md$/, ''),
 					path: note.path,
-					vaultName: note.vaultName,
+					libraryName: note.libraryName,
 				});
 			}
 		}
@@ -1122,7 +1088,7 @@
 	}
 
 	/** Handle template selection — insert content into active note */
-	async function handleTemplateSelect(templatePath: string, _vaultName: string) {
+	async function handleTemplateSelect(templatePath: string, _libraryName: string) {
 		try {
 			const raw: string = await invoke('read_note', { filePath: templatePath });
 			const body = extractTemplateBody(raw);
@@ -1132,7 +1098,7 @@
 			const ctx = {
 				title: tab.name.replace(/\.md$/, ''),
 				folder: tab.path.split(/[/\\]/).slice(-2, -1)[0] || '',
-				vault: tab.vaultName,
+				vault: tab.libraryName,
 			};
 			const result = processTemplate(body, ctx);
 
@@ -1171,15 +1137,15 @@
 			const bm = get(bookmarks).find(b => b.path === tab.path);
 			if (bm) removeBookmark(bm.id);
 		} else {
-			addBookmark({ type: 'note', path: tab.path, name: tab.name, vaultName: tab.vaultName });
+			addBookmark({ type: 'note', path: tab.path, name: tab.name, libraryName: tab.libraryName });
 		}
 	}
 
 	function handleRandomNote() {
 		if (allNotes.length === 0) return;
 		const randomNote = allNotes[Math.floor(Math.random() * allNotes.length)];
-		const vaultColor = vaultColorMap[randomNote.vaultName] ?? '#7c3aed';
-		openNoteTab(randomNote.path, randomNote.vaultName, vaultColor);
+		const libraryColor = libraryColorMap[randomNote.libraryName] ?? '#7c3aed';
+		openNoteTab(randomNote.path, randomNote.libraryName, libraryColor);
 	}
 
 	function handleToggleTheme() {
@@ -1216,21 +1182,21 @@
 		await sendNoteToScreen({
 			path: tab.path,
 			name: tab.name,
-			vaultName: tab.vaultName,
-			vaultPath: tab.vaultPath,
-			vaultColor: tab.vaultColor,
+			libraryName: tab.libraryName,
+			libraryPath: tab.libraryPath,
+			libraryColor: tab.libraryColor,
 		});
 	}
 
-	async function handleQuickSwitchSelect(path: string, vaultName: string) {
-		const vaultColor = vaultColorMap[vaultName] ?? '#7c3aed';
-		await openNoteTab(path, vaultName, vaultColor);
+	async function handleQuickSwitchSelect(path: string, libraryName: string) {
+		const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
+		await openNoteTab(path, libraryName, libraryColor);
 	}
 
-	function handleGraphNodeClick(path: string, vaultName: string) {
-		const vaultColor = vaultColorMap[vaultName] ?? '#7c3aed';
-		openNoteTab(path, vaultName, vaultColor);
-		showGraphView = false; // Switch to note view
+	function handleStarNodeClick(path: string, libraryName: string) {
+		const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
+		openNoteTab(path, libraryName, libraryColor);
+		showStarView = false; // Switch to note view
 	}
 
 	function handleTagClick(tag: string) {
@@ -1257,8 +1223,8 @@
 		const gen = ++previewGeneration;
 		previewTimeout = setTimeout(async () => {
 			try {
-				const vaultList = $vaults.map(v => [v.id, v.name, v.path] as [string, string, string]);
-				const resolved = await invoke<{ path: string; vault_name: string; vault_path: string } | null>('resolve_wikilink_cross_vault', { vaults: vaultList, currentVaultPath: sidebarTab!.vaultPath, target: linkTarget });
+				const libraryList = $libraries.map(v => [v.id, v.name, v.path] as [string, string, string]);
+				const resolved = await invoke<{ path: string; library_name: string; library_path: string } | null>('resolve_wikilink_cross_library', { libraries: libraryList, currentLibraryPath: sidebarTab!.libraryPath, target: linkTarget });
 				if (gen !== previewGeneration) return; // stale — user moved to a different link
 				if (resolved) {
 					const content = await readNotePreview(resolved.path, 800);
@@ -1275,41 +1241,54 @@
 	}
 
 	// ─── Vault tree operations ───
-	async function toggleVault(vault: VaultStats) {
-		const id = vault.vault_id;
+	async function toggleLibrary(vault: LibraryStats) {
+		const id = vault.library_id;
 		if (expandedVaults.has(id)) {
 			expandedVaults.delete(id);
 			expandedVaults = new Set(expandedVaults);
 		} else {
-			if (!vaultTrees[id]) {
-				const tree: FileEntry[] = await invoke('read_vault_tree', { path: vault.path, maxDepth: 4 });
-				vaultTrees[id] = tree;
-				vaultTrees = { ...vaultTrees };
+			if (!libraryTrees[id]) {
+				const tree: FileEntry[] = await invoke('read_library_tree', { path: vault.path, maxDepth: 4 });
+				libraryTrees[id] = tree;
+				libraryTrees = { ...libraryTrees };
 			}
 			expandedVaults.add(id);
 			expandedVaults = new Set(expandedVaults);
 		}
 	}
 
-	async function handleAddVault() {
+	async function handleAddLibrary() {
 		adding = true;
 		error = '';
-		try { await addVault(); await loadAllStats(); await refreshVaultCaches(); }
+		try { await addLibrary(); await loadAllStats(); await refreshLibraryCaches(); }
 		catch (e) { error = String(e); }
 		adding = false;
+	}
+
+	async function handleCreateNewLibrary() {
+		const name = newLibraryName.trim() || 'My Library';
+		creatingNew = true;
+		error = '';
+		try {
+			await createNewLibrary(name);
+			newLibraryName = '';
+			await loadAllStats();
+			await refreshLibraryCaches();
+		} catch (e) { error = String(e); }
+		creatingNew = false;
 	}
 
 	/** Reload everything after a child universe is added/removed. */
 	async function handleChildUniverseChanged() {
 		try {
-			await loadVaults();
+			await loadLibraries();
 			await loadAllStats();
 			childUniverses = await getChildUniverses();
-			// Start watchers for any new vaults and refresh caches
-			for (const vault of $vaults) {
-				try { await startWatchingVault(vault.id, vault.path); } catch { /* ignore */ }
+			// Start watchers for any new libraries and refresh caches
+			for (const vault of $libraries) {
+				try { await startWatchingLibrary(vault.id, vault.path); } catch { /* ignore */ }
 			}
-			await refreshVaultCaches();
+			await refreshLibraryCaches();
 		} catch { /* ignore */ }
 	}
 
@@ -1354,19 +1333,19 @@
 	}
 
 	// ─── Context menu state ───
-	let contextMenu = $state<{ x: number; y: number; entry: FileEntry; vaultId: string } | null>(null);
+	let contextMenu = $state<{ x: number; y: number; entry: FileEntry; libraryId: string } | null>(null);
 	let confirmDelete = $state<{ path: string; name: string } | null>(null);
 	let renamingPath = $state('');
 
-	function handleContextMenu(entry: FileEntry, x: number, y: number, vaultId: string) {
-		contextMenu = { x, y, entry, vaultId };
+	function handleContextMenu(entry: FileEntry, x: number, y: number, libraryId: string) {
+		contextMenu = { x, y, entry, libraryId };
 	}
 
-	function getContextMenuItems(entry: FileEntry, vaultId: string) {
+	function getContextMenuItems(entry: FileEntry, libraryId: string) {
 		const items: { label: string; icon?: string; action: () => void; danger?: boolean }[] = [];
 
 		// Workspace bases have a simplified context menu
-		if (vaultId === '__workspace__') {
+		if (libraryId === '__workspace__') {
 			items.push({
 				label: $t('actions.delete'),
 				icon: '🗑️',
@@ -1380,12 +1359,12 @@
 			items.push({
 				label: $t('actions.newNote'),
 				icon: '📄',
-				action: () => handleCreateNote(entry.path, vaultId)
+				action: () => handleCreateNote(entry.path, libraryId)
 			});
 			items.push({
 				label: $t('actions.newFolder'),
 				icon: '📁',
-				action: () => handleCreateFolder(entry.path, vaultId)
+				action: () => handleCreateFolder(entry.path, libraryId)
 			});
 		}
 		items.push({
@@ -1415,22 +1394,22 @@
 		}
 	}
 
-	async function handleCreateNote(folderPath: string, vaultId: string) {
+	async function handleCreateNote(folderPath: string, libraryId: string) {
 		try {
 			const name = $t('actions.untitled');
 			const newPath = await createNote(folderPath, name);
-			await refreshVaultTree(vaultId);
-			const vault = $vaults.find(v => v.id === vaultId);
+			await refreshLibraryTree(libraryId);
+			const vault = $libraries.find(v => v.id === libraryId);
 			if (vault) {
-				const vaultColor = vaultColorMap[vault.name] ?? '#7c3aed';
-				await openNoteTab(newPath, vault.name, vaultColor);
+				const libraryColor = libraryColorMap[vault.name] ?? '#7c3aed';
+				await openNoteTab(newPath, vault.name, libraryColor);
 			}
 		} catch (e) {
 			console.error('Failed to create note:', e);
 		}
 	}
 
-	async function handleCreateBase(folderPath: string, vaultId: string) {
+	async function handleCreateBase(folderPath: string, libraryId: string) {
 		try {
 			const baseName = $t('bases.untitled');
 			let name = baseName;
@@ -1446,22 +1425,22 @@
 			}
 			if (!newPath) return;
 
-			await refreshVaultTree(vaultId);
-			const vault = $vaults.find(v => v.id === vaultId);
+			await refreshLibraryTree(libraryId);
+			const vault = $libraries.find(v => v.id === libraryId);
 			if (vault) {
-				const vaultColor = vaultColorMap[vault.name] ?? '#7c3aed';
-				await openNoteTab(newPath, vault.name, vaultColor);
+				const libraryColor = libraryColorMap[vault.name] ?? '#7c3aed';
+				await openNoteTab(newPath, vault.name, libraryColor);
 			}
 		} catch (e) {
 			console.error('Failed to create base:', e);
 		}
 	}
 
-	async function handleCreateFolder(parentPath: string, vaultId: string) {
+	async function handleCreateFolder(parentPath: string, libraryId: string) {
 		try {
 			const name = $t('actions.newFolder');
 			await createFolder(parentPath, name);
-			await refreshVaultTree(vaultId);
+			await refreshLibraryTree(libraryId);
 		} catch (e) {
 			console.error('Failed to create folder:', e);
 		}
@@ -1470,9 +1449,9 @@
 	async function handleDeleteConfirm() {
 		if (!confirmDelete) return;
 		try {
-			const vault = $vaultStats.find(v => confirmDelete!.path.startsWith(v.path));
+			const vault = $libraryStats.find(v => confirmDelete!.path.startsWith(v.path));
 			await deleteItem(confirmDelete.path, true);
-			if (vault) await refreshVaultTree(vault.vault_id);
+			if (vault) await refreshLibraryTree(vault.library_id);
 			await loadAllStats();
 		} catch (e) {
 			console.error('Failed to delete:', e);
@@ -1493,9 +1472,9 @@
 			const oldName = oldPath.split(/[\\/]/).pop()?.replace('.md', '') ?? '';
 
 			await renameItem(oldPath, newPath);
-			const vault = $vaultStats.find(v => oldPath.startsWith(v.path));
+			const vault = $libraryStats.find(v => oldPath.startsWith(v.path));
 			if (vault) {
-				await refreshVaultTree(vault.vault_id);
+				await refreshLibraryTree(vault.library_id);
 				// Auto-update links
 				if ($appSettings.autoUpdateLinks && !isDir) {
 					await updateLinksOnRename(vault.path, oldName, newName);
@@ -1506,27 +1485,27 @@
 		}
 	}
 
-	async function refreshVaultTree(vaultId: string) {
-		const vault = $vaultStats.find(v => v.vault_id === vaultId);
+	async function refreshLibraryTree(libraryId: string) {
+		const vault = $libraryStats.find(v => v.library_id === libraryId);
 		if (vault) {
-			const tree: FileEntry[] = await invoke('read_vault_tree', { path: vault.path, maxDepth: 4 });
-			vaultTrees[vaultId] = tree;
-			vaultTrees = { ...vaultTrees };
+			const tree: FileEntry[] = await invoke('read_library_tree', { path: vault.path, maxDepth: 4 });
+			libraryTrees[libraryId] = tree;
+			libraryTrees = { ...libraryTrees };
 		}
 	}
 
 	async function handleNoteClick(filePath: string, _noteName: string, highlightTerm?: string, e?: MouseEvent) {
-		const vault = $vaults.find(v => filePath.startsWith(v.path));
-		const vaultColor = vault ? vaultColorMap[vault.name] : '#7c3aed';
+		const vault = $libraries.find(v => filePath.startsWith(v.path));
+		const libraryColor = vault ? libraryColorMap[vault.name] : '#7c3aed';
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		await openNoteTab(filePath, vault?.name ?? '', vaultColor, highlightTerm, newTab);
+		await openNoteTab(filePath, vault?.name ?? '', libraryColor, highlightTerm, newTab);
 		if (!isHome) window.location.href = '/';
 	}
 
-	async function handleSearchResultClick(path: string, vaultName: string, e?: MouseEvent) {
-		const vaultColor = vaultColorMap[vaultName] ?? '#7c3aed';
+	async function handleSearchResultClick(path: string, libraryName: string, e?: MouseEvent) {
+		const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		await openNoteTab(path, vaultName, vaultColor, undefined, newTab);
+		await openNoteTab(path, libraryName, libraryColor, undefined, newTab);
 		clearSearch();
 		if (!isHome) window.location.href = '/';
 	}
@@ -1546,45 +1525,45 @@
 	</div>
 {:else}
 <div class="app" dir={$dir} class:resizing={resizing !== null} class:no-sidebar={!sidebarOpen} class:dark={colorScheme === 'dark'}>
-	<!-- ═══ RIBBON ═══ -->
-	<div class="ribbon">
-		<div class="ribbon-top">
-			<button class="r-btn" onclick={() => { sidebarOpen = true; searchMode = false; indexMode = false; }} title={$t('ribbon.fileExplorer')}>
+	<!-- ═══ DOCK ═══ -->
+	<div class="dock">
+		<div class="dock-top">
+			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = false; indexMode = false; }} title={$t('dock.fileExplorer')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
 			</button>
-			<button class="r-btn" onclick={() => { sidebarOpen = true; searchMode = true; indexMode = false; }} title={$t('ribbon.search')}>
+			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = true; indexMode = false; }} title={$t('dock.search')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</button>
-			<button class="r-btn" onclick={() => showGraphView = !showGraphView} title={$t('ribbon.graphView')}>
+			<button class="dock-btn" onclick={() => showStarView = !showStarView} title={$t('dock.starView')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
 			</button>
-			<button class="r-btn" onclick={() => { showGlobalTasks = !showGlobalTasks; showGraphView = false; }} title={$t('ribbon.globalTasks')}>
+			<button class="dock-btn" onclick={() => { showGlobalTasks = !showGlobalTasks; showStarView = false; }} title={$t('dock.globalTasks')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 			</button>
-			<button class="r-btn" onclick={handleOpenDailyNote} title={$t('ribbon.dailyNote')}>
+			<button class="dock-btn" onclick={handleOpenDailyNote} title={$t('dock.dailyNote')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
 			</button>
-			<a href="/skills" class="r-btn" class:active={page.url.pathname === '/skills'} title={$t('ribbon.aiSkills')}>
+			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('dock.aiSkills')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
 			</a>
-			<button class="r-btn" class:active={indexMode} onclick={() => { sidebarOpen = true; searchMode = false; indexMode = !indexMode; }} title={$t('ribbon.index')}>
+			<button class="dock-btn" class:active={indexMode} onclick={() => { sidebarOpen = true; searchMode = false; indexMode = !indexMode; }} title={$t('dock.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
 			</button>
 		</div>
-		<div class="ribbon-bottom">
-			<button class="r-btn" class:active={secondScreenOpen} onclick={handleToggleSecondScreen} title={$t('secondScreen.title')}>
+		<div class="dock-bottom">
+			<button class="dock-btn" class:active={secondScreenOpen} onclick={handleToggleSecondScreen} title={$t('secondScreen.title')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
 			</button>
-			<button class="r-btn" onclick={() => showUniverseManager = true} title={$t('universe.title')}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+			<button class="dock-btn" onclick={() => showUniverseManager = true} title={$t('universe.title')}>
+				<svg width="16" height="16" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><circle cx="100" cy="100" r="30" fill="#534AB7"/><circle cx="100" cy="100" r="19" fill="#3C3489"/><circle cx="45" cy="42" r="24" fill="#378ADD"/><circle cx="130" cy="52" r="20" fill="#7F77DD"/><circle cx="162" cy="110" r="16" fill="#1D9E75"/><circle cx="80" cy="158" r="13" fill="#D85A30"/></svg>
 			</button>
-			<button class="r-btn" onclick={handleToggleTheme} title={$t('ribbon.toggleTheme')}>
+			<button class="dock-btn" onclick={handleToggleTheme} title={$t('dock.toggleTheme')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
 			</button>
-<button class="r-btn" onclick={() => showImporter = true} title={$t('ribbon.importNotes')}>
+<button class="dock-btn" onclick={() => showImporter = true} title={$t('dock.importNotes')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 			</button>
-<button class="r-btn" class:active={showSettings} onclick={() => showSettings = !showSettings} title={$t('ribbon.settings')}>
+<button class="dock-btn" class:active={showSettings} onclick={() => showSettings = !showSettings} title={$t('dock.settings')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
 			</button>
 		</div>
@@ -1635,10 +1614,10 @@
 					{#if $searchResults.length > 0}
 						<div class="section-label">{$searchResults.length} {$t('sidebar.results')}</div>
 						{#each $searchResults as star}
-							<button class="s-result" class:active={$activeTab?.path === star.path} onclick={(e) => handleSearchResultClick(star.path, star.vault_name, e)}>
+							<button class="s-result" class:active={$activeTab?.path === star.path} onclick={(e) => handleSearchResultClick(star.path, star.library_name, e)}>
 								<div class="s-name">{star.name}</div>
 								<div class="s-meta">
-									<span class="s-vault">{star.vault_name}</span>
+									<span class="s-vault">{star.library_name}</span>
 									<span class="s-preview">{star.preview}</span>
 								</div>
 							</button>
@@ -1653,23 +1632,23 @@
 						{#each $bookmarks as bm}
 							<button class="s-result" onclick={(e) => handleNoteClick(bm.path, bm.name, undefined, e)}>
 								<div class="s-name">⭐ {bm.name}</div>
-								<div class="s-meta"><span class="s-vault">{bm.vaultName}</span></div>
+								<div class="s-meta"><span class="s-vault">{bm.libraryName}</span></div>
 							</button>
 						{/each}
 					{/if}
 
 					<!-- Workspace Bases section -->
 					{#if workspaceBases.length > 0}
-						<div class="vault-section">
-							<button class="vault-header" onclick={() => workspaceBasesExpanded = !workspaceBasesExpanded}>
+						<div class="library-section">
+							<button class="library-header" onclick={() => workspaceBasesExpanded = !workspaceBasesExpanded}>
 								<svg class="v-chev" class:expanded={workspaceBasesExpanded} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
 								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-inline-end: 4px; opacity: 0.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-								<span class="vault-name">{$t('sidebar.bases')}</span>
+								<span class="library-name">{$t('sidebar.bases')}</span>
 							</button>
 							{#if workspaceBasesExpanded}
-								<div class="vault-tree">
+								<div class="library-tree">
 									{#each workspaceBases as base}
 										<button
 											class="ws-base-item"
@@ -1680,8 +1659,8 @@
 												contextMenu = {
 													x: e.clientX,
 													y: e.clientY,
-													entry: { name: base.name + '.base', path: base.path, is_dir: false, children: null, extension: 'base', modified: base.modified },
-													vaultId: '__workspace__',
+													entry: { name: base.name + '.base', path: base.path, is_dir: false, children: null, extension: 'base', modified: base.modified, status: null },
+													libraryId: '__workspace__',
 												};
 											}}
 										>
@@ -1696,40 +1675,40 @@
 
 					<!-- Child Universes — listed first with globe icon -->
 					{#each childUniverses as child}
-						<div class="vault-section">
-							<div class="vault-header child-universe-item">
+						<div class="library-section">
+							<div class="library-header child-universe-item">
 								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; opacity: 0.5;">
 									<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
 								</svg>
-								<span class="vault-name">{child.name}</span>
-								<span class="child-universe-count">{child.vault_count}</span>
+								<span class="library-name">{child.name}</span>
+								<span class="child-universe-count">{child.library_count}</span>
 							</div>
 						</div>
 					{/each}
 
-					<!-- Divider between universes and vaults -->
-					{#if childUniverses.length > 0 && $vaultStats.length > 0}
+					<!-- Divider between universes and libraries -->
+					{#if childUniverses.length > 0 && $libraryStats.length > 0}
 						<div class="sidebar-divider"></div>
 					{/if}
 
 					<!-- Vaults — listed after universes with chevron for file tree -->
-					{#each $vaultStats as vault}
-						<div class="vault-section">
-							<button class="vault-header" onclick={() => toggleVault(vault)}>
-								<svg class="v-chev" class:expanded={expandedVaults.has(vault.vault_id)} width="8" height="8" viewBox="0 0 10 10">
+					{#each $libraryStats as vault}
+						<div class="library-section">
+							<button class="library-header" onclick={() => toggleLibrary(vault)}>
+								<svg class="v-chev" class:expanded={expandedVaults.has(vault.library_id)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
-								<span class="vault-name">{vault.name}</span>
+								<span class="library-name">{vault.name}</span>
 							</button>
-							{#if expandedVaults.has(vault.vault_id) && vaultTrees[vault.vault_id]}
-								<div class="vault-tree">
+							{#if expandedVaults.has(vault.library_id) && libraryTrees[vault.library_id]}
+								<div class="library-tree">
 									<FileTree
-									entries={sortEntries(vaultTrees[vault.vault_id])}
-									vaultId={vault.vault_id}
-									vaultName={vault.name}
-									color={vaultColorMap[vault.name]}
+									entries={sortEntries(libraryTrees[vault.library_id])}
+									libraryId={vault.library_id}
+									libraryName={vault.name}
+									color={libraryColorMap[vault.name]}
 									onNoteClick={handleNoteClick}
-									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, vault.vault_id)}
+									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, vault.library_id)}
 									{renamingPath}
 									onRenameComplete={handleRenameComplete}
 									{allExpanded}
@@ -1739,10 +1718,10 @@
 						</div>
 					{/each}
 
-					{#if $vaultStats.length === 0}
+					{#if $libraryStats.length === 0}
 						<div class="empty-sidebar">
 							<p>{$t('sidebar.noVaults')}</p>
-							<button class="add-first-btn" onclick={handleAddVault}>{$t('sidebar.addVaultButton')}</button>
+							<button class="add-first-btn" onclick={handleAddLibrary}>{$t('sidebar.addVaultButton')}</button>
 						</div>
 					{/if}
 				{/if}
@@ -1753,18 +1732,18 @@
 			{/if}
 
 			<div class="sidebar-footer-wrap">
-				{#if showVaultSwitcher}
-					<VaultSwitcher
-						colorMap={vaultColorMap}
-						onClose={() => showVaultSwitcher = false}
-						onAddVault={handleAddVault}
-						onManage={() => showVaultManager = true}
+				{#if showLibrarySwitcher}
+					<LibrarySwitcher
+						colorMap={libraryColorMap}
+						onClose={() => showLibrarySwitcher = false}
+						onAddLibrary={handleAddLibrary}
+						onManage={() => showLibraryManager = true}
 						onManageUniverse={() => showUniverseManager = true}
 						onChildUniverseChanged={handleChildUniverseChanged}
 						activeUniverseName={activeUniverseName}
 					/>
 				{/if}
-				<button class="sidebar-footer" onmousedown={(e) => e.stopPropagation()} onclick={() => showVaultSwitcher = !showVaultSwitcher}>
+				<button class="sidebar-footer" onmousedown={(e) => e.stopPropagation()} onclick={() => showLibrarySwitcher = !showLibrarySwitcher}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10l5-5 5 5"/><path d="M7 14l5 5 5-5"/></svg>
 					<span class="footer-name">{$t('universe.title') ?? 'Universe'}</span>
 				</button>
@@ -1787,14 +1766,14 @@
 						<button class="tab"
 							class:active={$activeTabId === tab.id}
 							class:pinned={tab.pinned}
-							style:--vault-color={vaultColorMap[tab.vaultName]}
+							style:--library-color={libraryColorMap[tab.libraryName]}
 							onclick={() => switchTab(tab.id)}
 							onauxclick={(e) => { if (e.button === 1 && !tab.pinned) { e.preventDefault(); closeTab(tab.id); } }}
 							oncontextmenu={(e) => { e.preventDefault(); tab.pinned = !tab.pinned; }}>
 							{#if tab.pinned}
 								<span class="tab-pin" title={$t('layout.pinned')}>📌</span>
-							{:else if tab.vaultName}
-								<span class="tab-vault">{tab.vaultName}</span>
+							{:else if tab.libraryName}
+								<span class="tab-vault">{tab.libraryName}</span>
 							{/if}
 							<span class="tab-title">{tab.name}</span>
 							{#if !tab.pinned}
@@ -1830,22 +1809,22 @@
 
 		<!-- Content -->
 		<div class="content-area" onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
-			{#if showGraphView}
-				<div class="graph-fullscreen">
-					<div class="graph-header">
-						<span class="graph-title">{$t('layout.graphViewTitle')}</span>
-						<button class="graph-close" onclick={() => showGraphView = false}>×</button>
+			{#if showStarView}
+				<div class="star-fullscreen">
+					<div class="star-header">
+						<span class="star-title">{$t('layout.starViewTitle')}</span>
+						<button class="star-close" onclick={() => showStarView = false}>×</button>
 					</div>
-					<FullGraph
-					nodes={graphNodes}
-					links={graphLinks}
-					onNodeClick={handleGraphNodeClick}
+					<FullStarView
+					nodes={starNodes}
+					links={starLinks}
+					onNodeClick={handleStarNodeClick}
 					activeNodeId={sidebarTab?.name?.toLowerCase() ?? ''}
 				/>
 				</div>
 			{:else if showGlobalTasks}
 				<GlobalTasksView
-					{vaultColorMap}
+					{libraryColorMap}
 					onClose={() => showGlobalTasks = false}
 				/>
 			{:else if isHome && ($activeTab || $splitActive)}
@@ -1855,10 +1834,10 @@
 							{#if i > 0}
 								<div class="pane-divider"></div>
 							{/if}
-							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} color={vaultColorMap[tab.vaultName]} splitView {vaultTrees} allTags={allTagsList} {allNotes} {vaultColorMap} />
+							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} color={libraryColorMap[tab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
 						{/each}
 					{:else}
-						<NotePane tab={$activeTab} isFocused={true} onFocus={() => {}} {vaultTrees} allTags={allTagsList} {allNotes} {vaultColorMap}
+						<NotePane tab={$activeTab} isFocused={true} onFocus={() => {}} {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap}
 						onCreateNote={handleNewNote}
 						onQuickSwitch={() => showQuickSwitcher = true}
 						onCloseTab={() => { if ($activeTab) closeTab($activeTab.id); }}
@@ -1867,7 +1846,7 @@
 				</div>
 			{:else if isHome}
 				<div class="welcome">
-					{#if $vaultStats.length === 0}
+					{#if $libraryStats.length === 0}
 						<svg class="w-icon" width="80" height="80" viewBox="0 0 160 160" fill="none">
 								<defs>
 									<linearGradient id="wStarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1875,22 +1854,50 @@
 										<stop offset="100%" stop-color="#7c3aed" />
 									</linearGradient>
 								</defs>
-								<!-- Center star (largest) -->
 								<path d="M80,64 L85,75 L96,80 L85,85 L80,96 L75,85 L64,80 L75,75 Z" fill="url(#wStarGrad)" />
-								<!-- Top star -->
 								<path d="M80,42 L82.5,47 L88,50 L82.5,53 L80,58 L77.5,53 L72,50 L77.5,47 Z" fill="url(#wStarGrad)" />
-								<!-- Top-right star -->
 								<path d="M108,58 L110.5,63 L116,66 L110.5,69 L108,74 L105.5,69 L100,66 L105.5,63 Z" fill="url(#wStarGrad)" />
-								<!-- Bottom-right star -->
 								<path d="M104,96 L106.5,101 L112,104 L106.5,107 L104,112 L101.5,107 L96,104 L101.5,101 Z" fill="url(#wStarGrad)" />
-								<!-- Bottom-left star -->
 								<path d="M60,102 L62,106 L67,109 L62,112 L60,116 L58,112 L53,109 L58,106 Z" fill="url(#wStarGrad)" />
-								<!-- Left star -->
 								<path d="M50,66 L52.5,71 L58,74 L52.5,77 L50,82 L47.5,77 L42,74 L47.5,71 Z" fill="url(#wStarGrad)" />
 							</svg>
-						<p class="w-title">{$t('welcome.title')}</p>
-						<p class="w-sub">{$t('welcome.subtitle')}</p>
-						<button class="w-btn" onclick={handleAddVault}>{$t('welcome.addVault')}</button>
+						<p class="w-title">{$t('libraries.welcomeTitle')}</p>
+						<p class="w-sub">{$t('libraries.welcomeSubtitle')}</p>
+
+						<div class="w-options">
+							<!-- Option 1: New Library -->
+							<div class="w-option-card">
+								<div class="w-option-icon">📁</div>
+								<p class="w-option-title">{$t('libraries.newLibrary')}</p>
+								<p class="w-option-desc">{$t('libraries.newLibraryDesc')}</p>
+								<div class="w-option-form">
+									<input
+										type="text"
+										class="w-option-input"
+										placeholder="My Library"
+										bind:value={newLibraryName}
+										onkeydown={(e) => e.key === 'Enter' && handleCreateNewLibrary()}
+									/>
+									<button class="w-option-btn primary" onclick={handleCreateNewLibrary} disabled={creatingNew}>
+										{creatingNew ? '...' : '+ Create'}
+									</button>
+								</div>
+							</div>
+
+							<!-- Option 2: Link Existing -->
+							<div class="w-option-card">
+								<div class="w-option-icon">🔗</div>
+								<p class="w-option-title">{$t('libraries.linkLibrary')}</p>
+								<p class="w-option-desc">{$t('libraries.linkLibraryDesc')}</p>
+								<button class="w-option-btn secondary" onclick={handleAddLibrary} disabled={adding}>
+									{adding ? '...' : '📂 Browse'}
+								</button>
+							</div>
+						</div>
+
+						{#if error}
+							<p class="w-error">{error}</p>
+						{/if}
 					{:else}
 						<p class="w-hint">{$t('welcome.selectNote')}</p>
 						<p class="w-hint-sub">{$t('welcome.quickSwitchHint')}</p>
@@ -1920,7 +1927,7 @@
 				<button class="rs-tab" class:active={rightSidebarTab === 'tags'} onclick={() => rightSidebarTab = 'tags'} title={$t('panels.tags')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
 				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'graph'} onclick={() => rightSidebarTab = 'graph'} title={$t('panels.graphView')}>
+				<button class="rs-tab" class:active={rightSidebarTab === 'star'} onclick={() => rightSidebarTab = 'star'} title={$t('panels.starView')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg>
 				</button>
 				<button class="rs-tab" class:active={rightSidebarTab === 'tasks'} onclick={() => rightSidebarTab = 'tasks'} title={$t('panels.tasks')}>
@@ -1940,13 +1947,13 @@
 							body={sidebarBody}
 							tabId={sidebarTab.id}
 							filePath={sidebarTab.path}
-							vaultName={sidebarTab.vaultName}
+							libraryName={sidebarTab.libraryName}
 							onNoteClick={async (noteName) => {
 								if (!sidebarTab) return;
-								const resolved = await resolveWikilinkCrossVault(sidebarTab.vaultPath, noteName);
+								const resolved = await resolveWikilinkCrossLibrary(sidebarTab.libraryPath, noteName);
 								if (resolved) {
-									const vc = vaultColorMap[resolved.vault_name] || '#7c3aed';
-									await openNoteTab(resolved.path, resolved.vault_name, vc);
+									const vc = libraryColorMap[resolved.library_name] || '#7c3aed';
+									await openNoteTab(resolved.path, resolved.library_name, vc);
 								}
 							}}
 						/>
@@ -1975,7 +1982,7 @@
 							backlinks={currentBacklinks}
 							unlinkedMentions={currentUnlinkedMentions}
 							activeNoteName={sidebarTab?.name ?? ''}
-							{vaultColorMap}
+							{libraryColorMap}
 						/>
 					</div>
 					<div class="rs-section">
@@ -2000,16 +2007,16 @@
 							<div class="rs-empty">{$t('panels.noTags')}</div>
 						{/if}
 					</div>
-				{:else if rightSidebarTab === 'graph'}
-					<!-- Local graph centered on the active note -->
+				{:else if rightSidebarTab === 'star'}
+					<!-- Local star centered on the active note -->
 					<div class="rs-section rs-full-height">
-						{#if localGraphNodes.length > 0}
-							<LocalGraph
-								nodes={localGraphNodes}
-								links={localGraphLinks}
+						{#if localStarNodes.length > 0}
+							<LocalStarView
+								nodes={localStarNodes}
+								links={localStarLinks}
 								onNodeClick={(nodeId) => {
 									const note = allNotes.find(n => n.path === nodeId || n.name.replace(/\.md$/, '').toLowerCase() === nodeId);
-									if (note) openNoteTab(note.path, note.vaultName, vaultColorMap[note.vaultName] || '#7c3aed');
+									if (note) openNoteTab(note.path, note.libraryName, libraryColorMap[note.libraryName] || '#7c3aed');
 								}}
 								activeNodeId={sidebarTab?.name?.replace(/\.md$/, '').toLowerCase()}
 							/>
@@ -2019,25 +2026,27 @@
 					</div>
 				{:else if rightSidebarTab === 'tasks'}
 					<div class="rs-section rs-full-height">
-						<TasksPanel
-							tasks={sidebarTasks}
-							onToggle={async (filePath, lineNumber) => {
-								try {
-									const newContent = await toggleTask(filePath, lineNumber);
-									// Refresh the active tab content if it's the same file
-									const activeTab = get(focusedTab);
-									if (activeTab && activeTab.path === filePath) {
-										openTabs.update(tabs => tabs.map(t => t.path === filePath ? { ...t, content: newContent } : t));
-									}
-									// Re-scan tasks
-									if (sidebarTab?.path) {
-										const result = await scanNoteTasks(sidebarTab.path, sidebarTab.vaultName, sidebarTab.vaultPath);
-										sidebarTasks = result.tasks;
-									}
-								} catch (e) { console.error('Toggle task failed:', e); }
-							}}
-							{vaultColorMap}
-						/>
+						{#if sidebarTasks.length > 0}
+							<TasksPanel
+								tasks={sidebarTasks}
+								onToggle={async (filePath, lineNumber) => {
+									try {
+										const newContent = await toggleTask(filePath, lineNumber);
+										const activeTab = get(focusedTab);
+										if (activeTab && activeTab.path === filePath) {
+											openTabs.update(tabs => tabs.map(t => t.path === filePath ? { ...t, content: newContent } : t));
+										}
+										if (sidebarTab?.path) {
+											const result = await scanNoteTasks(sidebarTab.path, sidebarTab.libraryName, sidebarTab.libraryPath);
+											sidebarTasks = result.tasks;
+										}
+									} catch (e) { console.error('Toggle task failed:', e); }
+								}}
+								{libraryColorMap}
+							/>
+						{:else}
+							<div class="rs-empty-full">{$t('tasksPanel.noTasks')}</div>
+						{/if}
 					</div>
 				{:else if rightSidebarTab === 'calendar'}
 					<div class="rs-section rs-full-height">
@@ -2045,17 +2054,16 @@
 							noteDates={calendarNoteDates}
 							taskDueDates={calendarTaskDates}
 							onDayClick={async (dateStr) => {
-								// Open or create daily note for this date
-								const vaultList = get(vaults);
-								if (vaultList.length === 0) return;
-								const vault = vaultList[0];
+								const libraryList = get(libraries);
+								if (libraryList.length === 0) return;
+								const vault = libraryList[0];
 								try {
 									const dailyPath: string = await invoke('get_daily_note_path', {
-										vaultPath: vault.path,
+										libraryPath: vault.path,
 										format: get(appSettings).dailyNoteFormat || '%Y-%m-%d',
 										folder: get(appSettings).dailyNoteFolder || '',
 									});
-									const vc = vaultColorMap[vault.name] || '#7c3aed';
+									const vc = libraryColorMap[vault.name] || '#7c3aed';
 									await openNoteTab(dailyPath, vault.name, vc);
 								} catch (e) { console.error('Daily note failed:', e); }
 							}}
@@ -2136,7 +2144,7 @@
 					sidebarOpen = layout.leftSidebarOpen;
 					leftSidebarWidth = layout.leftSidebarWidth;
 					rightSidebarOpen = layout.rightSidebarOpen;
-					const validTabs = ['properties', 'backlinks', 'tags', 'graph', 'tasks', 'calendar'] as const;
+					const validTabs = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar'] as const;
 					rightSidebarTab = validTabs.includes(layout.rightSidebarTab as any) ? layout.rightSidebarTab as typeof rightSidebarTab : 'properties';
 					rightSidebarWidth = layout.rightSidebarWidth;
 				}
@@ -2169,34 +2177,34 @@
 		/>
 	{/if}
 
-	{#if showVaultManager}
-		<VaultManager
-			colorMap={vaultColorMap}
-			onClose={() => showVaultManager = false}
-			onRefresh={refreshVaultCaches}
+	{#if showLibraryManager}
+		<LibraryManager
+			colorMap={libraryColorMap}
+			onClose={() => showLibraryManager = false}
+			onRefresh={refreshLibraryCaches}
 		/>
 	{/if}
 
 	{#if showImporter}
 		<ImporterModal
-			vaults={$vaults.map(v => ({ name: v.name, path: v.path }))}
+			libraries={$libraries.map(v => ({ name: v.name, path: v.path }))}
 			onClose={() => showImporter = false}
-			onImportComplete={refreshVaultCaches}
+			onImportComplete={refreshLibraryCaches}
 		/>
 	{/if}
 
-	{#if showVaultPicker}
-		<VaultPicker
-			colorMap={vaultColorMap}
-			onSelect={(vault) => vaultPickerAction === 'folder' ? createFolderInVault(vault) : createNoteInVault(vault)}
-			onClose={() => showVaultPicker = false}
+	{#if showLibraryPicker}
+		<LibraryPicker
+			colorMap={libraryColorMap}
+			onSelect={(vault) => libraryPickerAction === 'folder' ? createFolderInLibrary(vault) : createNoteInLibrary(vault)}
+			onClose={() => showLibraryPicker = false}
 		/>
 	{/if}
 
 	{#if showNewBaseDialog}
 		<NewBaseDialog
-			colorMap={vaultColorMap}
-			onCreate={(_vault, name, selectedVaults) => createWorkspaceBaseWithVaults(name, selectedVaults)}
+			colorMap={libraryColorMap}
+			onCreate={(_vault, name, selectedLibraries) => createWorkspaceBaseWithVaults(name, selectedLibraries)}
 			onClose={() => showNewBaseDialog = false}
 		/>
 	{/if}
@@ -2205,7 +2213,7 @@
 		<ContextMenu
 			x={contextMenu.x}
 			y={contextMenu.y}
-			items={getContextMenuItems(contextMenu.entry, contextMenu.vaultId)}
+			items={getContextMenuItems(contextMenu.entry, contextMenu.libraryId)}
 			onClose={() => contextMenu = null}
 		/>
 	{/if}
@@ -2235,7 +2243,7 @@
 	<div class="status-bar">
 		<div class="sb-left">
 			{#if sidebarTab}
-				<span class="sb-item">{sidebarTab.vaultName}</span>
+				<span class="sb-item">{sidebarTab.libraryName}</span>
 				<span class="sb-dot">·</span>
 				<span class="sb-item">{sidebarTab.name}</span>
 			{:else}
@@ -2253,13 +2261,13 @@
 				<span class="sb-item">{charCount} {$t('statusBar.characters')}</span>
 				<span class="sb-dot">·</span>
 			{/if}
-			<span class="sb-item">{$vaultCount} {$t('statusBar.vaults')}</span>
+			<span class="sb-item">{$libraryCount} {$t('statusBar.libraries')}</span>
 			<span class="sb-dot">·</span>
 			<span class="sb-item">{$totalStars} {$t('statusBar.notes')}</span>
 			{#if activeUniverseName}
 				<span class="sb-dot">·</span>
 				<button class="sb-universe" onclick={() => showUniverseManager = true} title={$t('universe.manager.heading')}>
-					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+					<svg width="10" height="10" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><circle cx="100" cy="100" r="30" fill="#534AB7"/><circle cx="100" cy="100" r="19" fill="#3C3489"/><circle cx="45" cy="42" r="24" fill="#378ADD"/><circle cx="130" cy="52" r="20" fill="#7F77DD"/><circle cx="162" cy="110" r="16" fill="#1D9E75"/><circle cx="80" cy="158" r="13" fill="#D85A30"/></svg>
 					{activeUniverseName}
 				</button>
 			{/if}
@@ -2272,6 +2280,7 @@
 	<UniverseManager
 		onClose={() => showUniverseManager = false}
 		onSwitch={handleUniverseSwitch}
+		onRemoveLast={() => { showUniverseManager = false; appReady = false; showUniverseSetup = true; }}
 	/>
 {/if}
 
@@ -2300,21 +2309,21 @@
 		grid-template-columns: auto 1fr auto;
 	}
 
-	/* ═══ RIBBON ═══ */
-	.ribbon {
+	/* ═══ DOCK ═══ */
+	.dock {
 		grid-row: 1; width: 40px; background: var(--bg-tertiary);
 		border-inline-end: 1px solid var(--border);
 		display: flex; flex-direction: column;
 		justify-content: space-between; align-items: center; padding: 6px 0;
 	}
-	.ribbon-top, .ribbon-bottom { display: flex; flex-direction: column; align-items: center; gap: 1px; }
-	.r-btn {
+	.dock-top, .dock-bottom { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+	.dock-btn {
 		width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
 		border-radius: 4px; border: none; background: none;
 		color: var(--text-secondary); cursor: pointer; text-decoration: none; transition: all 0.1s;
 	}
-	.r-btn:hover { background: var(--border); color: var(--text); }
-	.r-btn.active { color: var(--accent); }
+	.dock-btn:hover { background: var(--border); color: var(--text); }
+	.dock-btn.active { color: var(--accent); }
 
 	/* ═══ LEFT SIDEBAR ═══ */
 	.sidebar {
@@ -2361,18 +2370,18 @@
 	.s-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.no-results { padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.82rem; }
 
-	.vault-header {
+	.library-header {
 		display: flex; align-items: center; gap: 4px; width: 100%; padding: 3px 12px;
 		background: none; border: none; color: var(--text-secondary);
 		font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; text-align: start;
 	}
-	.vault-header:hover { background: var(--bg-hover); }
+	.library-header:hover { background: var(--bg-hover); }
 	.v-chev { color: var(--text-muted); flex-shrink: 0; transition: transform 0.15s ease; }
 	.v-chev.expanded { transform: rotate(90deg); }
-	.vault-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.vault-tree { padding-inline-start: 8px; }
+	.library-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.library-tree { padding-inline-start: 8px; }
 
-	/* Sidebar divider between vaults and child universes */
+	/* Sidebar divider between libraries and child universes */
 	.sidebar-divider {
 		height: 1px;
 		background: var(--background-modifier-border);
@@ -2458,13 +2467,13 @@
 		background: var(--bg-hover); border-radius: 6px 6px 0 0;
 		cursor: pointer; min-width: 0;
 		border: none; font-family: inherit; flex-shrink: 0;
-		border-top: 3px solid var(--vault-color, transparent);
+		border-top: 3px solid var(--library-color, transparent);
 		position: relative;
 	}
 	.tab.active, .tab.focused {
 		background: var(--bg); color: var(--text);
 		border: 1px solid var(--border);
-		border-top: 3px solid var(--vault-color, var(--accent));
+		border-top: 3px solid var(--library-color, var(--accent));
 		border-bottom: 1px solid var(--bg);
 		margin-bottom: -1px;
 	}
@@ -2518,22 +2527,22 @@
 	.pane-container.horizontal > .pane-divider { height: 3px; cursor: row-resize; }
 	.pane-divider:hover { background: var(--accent); }
 
-	/* Graph fullscreen */
-	.graph-fullscreen {
+	/* Star fullscreen */
+	.star-fullscreen {
 		flex: 1; display: flex; flex-direction: column; overflow: hidden;
 	}
-	.graph-header {
+	.star-header {
 		display: flex; align-items: center; justify-content: space-between;
 		padding: 8px 16px; border-bottom: 1px solid var(--border);
 		background: var(--bg-secondary);
 	}
-	.graph-title { font-weight: 600; font-size: 0.9rem; }
-	.graph-close {
+	.star-title { font-weight: 600; font-size: 0.9rem; }
+	.star-close {
 		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 3px; color: var(--text-muted); cursor: pointer;
 		font-size: 1.2rem;
 	}
-	.graph-close:hover { background: var(--border); color: var(--text); }
+	.star-close:hover { background: var(--border); color: var(--text); }
 
 	/* Welcome */
 	.welcome {
@@ -2551,6 +2560,41 @@
 		font-size: 0.9rem; font-weight: 600;
 	}
 	.w-btn:hover { background: var(--accent-hover); }
+
+	/* Welcome option cards */
+	.w-options {
+		display: flex; gap: 1.25rem; max-width: 580px; width: 100%; margin-top: 0.5rem;
+	}
+	.w-option-card {
+		flex: 1; background: var(--bg-primary); border: 1px solid var(--border);
+		border-radius: 12px; padding: 1.5rem; text-align: center;
+		display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+		transition: border-color 0.15s, box-shadow 0.15s;
+	}
+	.w-option-card:hover {
+		border-color: var(--accent);
+		box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 10%, transparent);
+	}
+	.w-option-icon { font-size: 1.8rem; margin-bottom: 0.2rem; }
+	.w-option-title { color: var(--text); font-size: 0.95rem; font-weight: 600; margin: 0; }
+	.w-option-desc { color: var(--text-muted); font-size: 0.8rem; margin: 0 0 0.75rem 0; line-height: 1.45; }
+	.w-option-form { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+	.w-option-input {
+		width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border);
+		border-radius: 6px; font-size: 0.85rem; font-family: inherit; text-align: center;
+		color: var(--text); background: var(--bg-secondary);
+	}
+	.w-option-input:focus { border-color: var(--accent); outline: none; background: var(--bg-primary); }
+	.w-option-btn {
+		padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600;
+		font-family: inherit; cursor: pointer; border: none; width: 100%; transition: background 0.15s;
+	}
+	.w-option-btn.primary { background: var(--accent); color: var(--text-on-accent); }
+	.w-option-btn.primary:hover { background: var(--accent-hover); }
+	.w-option-btn.secondary { background: var(--bg-secondary); color: var(--text); border: 1px solid var(--border); }
+	.w-option-btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+	.w-option-btn:disabled { opacity: 0.6; cursor: default; }
+	.w-error { margin-top: 1rem; color: var(--danger, #cf222e); font-size: 0.85rem; }
 
 	.page-scroll { flex: 1; overflow-y: auto; padding: 2rem; max-width: 900px; margin: 0 auto; width: 100%; }
 

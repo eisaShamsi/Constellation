@@ -13,13 +13,13 @@ export async function parseBaseFile(filePath: string): Promise<BaseDefinition> {
 /**
  * Query a Base: scan notes, apply filters/sorts, return rows.
  * @param definition The Base definition (parsed from .base file)
- * @param vaultPaths Array of [vaultName, vaultPath] tuples
+ * @param libraryPaths Array of [libraryName, libraryPath] tuples
  */
 export async function queryBase(
 	definition: BaseDefinition,
-	vaultPaths: [string, string][],
+	libraryPaths: [string, string][],
 ): Promise<BaseQueryResult> {
-	return await invoke('query_base', { definition, vaultPaths });
+	return await invoke('query_base', { definition, libraryPaths });
 }
 
 /**

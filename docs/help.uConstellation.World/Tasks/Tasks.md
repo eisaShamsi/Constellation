@@ -3,7 +3,7 @@ aliases:
   - Tasks Panel
   - Task Management
   - Global Tasks
-description: Create, manage, and track tasks across all your vaults with due dates, priorities, and interactive checkboxes.
+description: Create, manage, and track tasks across all your libraries with due dates, priorities, and interactive checkboxes.
 ---
 
 # Tasks
@@ -52,10 +52,10 @@ The Tasks tab in the right sidebar shows all tasks from the **currently active n
 
 ## Global Tasks View
 
-Access the full-page Global Tasks view to see tasks across **all vaults**:
+Access the full-page Global Tasks view to see tasks across **all libraries**:
 
 - Click the **☑ checkbox icon** in the left ribbon
-- Or use the **Command Palette** (`Ctrl+P`) and search for "Global Tasks"
+- Or use **Mission Control** (`Ctrl+P`) and search for "Global Tasks"
 
 ### Filtering & Sorting
 
@@ -63,7 +63,7 @@ Access the full-page Global Tasks view to see tasks across **all vaults**:
 |--------|---------|
 | Status | All, Incomplete, Completed |
 | Due Date | All dates, Overdue, Today, This week, No date |
-| Vault | All vaults or a specific vault |
+| Library | All libraries or a specific library |
 | Priority | All, High, Medium, Low |
 | Search | Free-text search across task text, file names, and tags |
 
@@ -71,7 +71,7 @@ Access the full-page Global Tasks view to see tasks across **all vaults**:
 
 Group tasks by:
 - **File** - Tasks grouped under their source note
-- **Vault** - Tasks grouped by vault
+- **Library** - Tasks grouped by library
 - **Priority** - High, Medium, Low, No priority
 - **Due date** - Overdue, Today, and by date
 

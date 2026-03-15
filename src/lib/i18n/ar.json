@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Constellation",
-    "tagline": "خزنة من الخزائن"
+    "tagline": "عالم من المكتبات"
   },
   "settings": {
     "title": "الإعدادات",
@@ -11,14 +11,14 @@
       "editor": "المحرر",
       "files": "الملفات والروابط",
       "appearance": "المظهر",
-      "hotkeys": "اختصارات لوحة المفاتيح",
+      "hotkeys": "اختصارات المفاتيح",
       "security": "الأمان",
       "plugins": "ميزات مدمجة",
       "ai": "الذكاء الاصطناعي",
       "templates": "القوالب"
     },
     "about": {
-      "tagline": "خزنة من الخزائن",
+      "tagline": "عالم من المكتبات",
       "developedBy": "تطوير"
     },
     "general": {
@@ -34,9 +34,9 @@
       "autoUpdateDesc": "تنزيل التحديثات وتثبيتها تلقائيا"
     },
     "security": {
-      "intro": "حماية بيانات الخزنة وتأمين مفاتيح API وقفل التطبيق عند الخمول.",
-      "vaultEncryption": "تشفير الخزنة",
-      "vaultEncryptionDesc": "تشفير بيانات الخزنة المخزنة على هذا الجهاز",
+      "intro": "حماية بيانات المكتبة وتأمين مفاتيح API وقفل التطبيق عند الخمول.",
+      "vaultEncryption": "تشفير المكتبة",
+      "vaultEncryptionDesc": "تشفير بيانات المكتبة المخزنة على هذا الجهاز",
       "enabled": "مفعّل",
       "disabled": "معطّل",
       "lockHeading": "شاشة القفل",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "موقع الملاحظات الجديدة",
       "defaultLocationDesc": "أين يتم إنشاء الملاحظات الجديدة",
-      "vaultRoot": "جذر الخزينة",
+      "vaultRoot": "جذر المكتبة",
       "currentFolder": "المجلد الحالي",
       "specifiedFolder": "مجلد محدد",
       "folderPath": "مسار المجلد",
@@ -109,6 +109,8 @@
       "defaultAttachmentFolder": "مجلد المرفقات الافتراضي",
       "defaultAttachmentFolderDesc": "المجلد الذي يتم حفظ المرفقات فيه",
       "sameAsNotePlaceholder": "نفس مجلد الملاحظة",
+      "inboxFolder": "مجلد الوارد",
+      "inboxFolderDesc": "مجلد لملاحظات الالتقاط السريع (Ctrl+Shift+N)",
       "linkFormat": "تنسيق الرابط الجديد",
       "linkFormatDesc": "كيف يتم إنشاء الروابط الداخلية",
       "shortestPath": "أقصر مسار",
@@ -146,9 +148,15 @@
       "fontSizeDesc": "حجم الخط الأساسي لمحتوى الملاحظات"
     },
     "hotkeys": {
-      "filter": "تصفية الأوامر...",
+      "filter": "تصفية الاختصارات...",
       "notSet": "لا يوجد",
-      "noCommands": "لم يتم العثور على أوامر"
+      "noCommands": "لم يتم العثور على اختصارات",
+      "pressKey": "اضغط الاختصار...",
+      "resetToDefault": "إعادة للافتراضي",
+      "resetAll": "إعادة تعيين جميع الاختصارات",
+      "resetAllConfirm": "إعادة تعيين جميع الاختصارات للافتراضي؟",
+      "conflict": "مستخدم بالفعل بواسطة: {name}",
+      "customized": "مخصص"
     },
     "plugins": {
       "intro": "ميزات مدمجة مع Constellation. يمكنك تفعيل أو تعطيل كل منها.",
@@ -156,8 +164,8 @@
       "dailyNotesDesc": "إنشاء وفتح الملاحظات اليومية",
       "templates": "القوالب",
       "templatesDesc": "إدراج محتوى من ملفات القوالب",
-      "graphView": "الرسم البياني",
-      "graphViewDesc": "عرض الروابط بين الملاحظات بصريا",
+      "starView": "عرض النجوم",
+      "starViewDesc": "عرض الروابط بين الملاحظات بصريا",
       "backlinks": "الروابط الواردة",
       "backlinksDesc": "عرض الملاحظات المرتبطة بالملاحظة الحالية",
       "outgoingLinks": "الروابط الصادرة",
@@ -168,9 +176,9 @@
       "pagePreviewDesc": "معاينة الملاحظات عند التمرير فوق الرابط",
       "search": "البحث",
       "searchDesc": "البحث في جميع الملاحظات",
-      "quickSwitcher": "التبديل السريع",
+      "quickSwitcher": "القفز النجمي",
       "quickSwitcherDesc": "التنقل السريع بين الملاحظات",
-      "commandPalette": "لوحة الأوامر",
+      "commandPalette": "مركز التحكم",
       "commandPaletteDesc": "الوصول السريع لجميع الأوامر",
       "wordCount": "عداد الكلمات",
       "wordCountDesc": "عرض عدد الكلمات في شريط الحالة",
@@ -210,18 +218,19 @@
       "varTime": "الوقت الحالي (HH:MM)",
       "varTitle": "عنوان الملاحظة",
       "varFolder": "اسم المجلد الأب",
-      "varVault": "اسم الخزنة",
+      "varVault": "اسم المكتبة",
       "varCursor": "موضع المؤشر بعد الإدراج"
     }
   },
   "commands": {
     "newNote": "ملاحظة جديدة",
     "newBase": "قاعدة جديدة",
-    "quickSwitcher": "التبديل السريع",
-    "searchVault": "بحث في الخزينة",
+    "quickCapture": "التقاط سريع",
+    "quickSwitcher": "القفز النجمي",
+    "searchVault": "بحث في المكتبة",
     "dailyNote": "ملاحظة اليوم",
     "toggleEdit": "تبديل وضع التحرير",
-    "graphView": "عرض الرسم البياني",
+    "starView": "عرض النجوم",
     "globalTasks": "فتح المهام العامة",
     "toggleBold": "تبديل الخط العريض",
     "toggleItalic": "تبديل المائل",
@@ -229,7 +238,7 @@
     "closeNote": "إغلاق الملاحظة",
     "toggleLeftSidebar": "تبديل الشريط الأيسر",
     "toggleRightSidebar": "تبديل الشريط الأيمن",
-    "addVault": "إضافة خزينة",
+    "addVault": "إضافة مكتبة",
     "toggleBookmark": "تبديل المفضلة",
     "randomNote": "ملاحظة عشوائية",
     "toggleTheme": "تبديل المظهر",
@@ -257,10 +266,10 @@
     "rename": "إعادة تسمية",
     "delete": "حذف"
   },
-  "ribbon": {
+  "dock": {
     "fileExplorer": "المستكشف",
     "search": "بحث",
-    "graphView": "الرسم البياني",
+    "starView": "عرض النجوم",
     "globalTasks": "المهام العامة",
     "dailyNote": "ملاحظة اليوم",
     "aiSkills": "مهارات الذكاء الاصطناعي",
@@ -271,13 +280,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "بحث...",
-    "addVault": "إضافة خزينة",
+    "addVault": "إضافة مكتبة",
     "results": "نتائج",
     "noResults": "لا توجد نتائج",
     "bookmarks": "المفضلة",
     "bases": "القواعد",
-    "noVaults": "لا توجد خزائن",
-    "addVaultButton": "+ إضافة خزينة",
+    "noVaults": "لا توجد مكتبات",
+    "addVaultButton": "+ إضافة مكتبة",
     "newNote": "ملاحظة جديدة",
     "newBase": "قاعدة جديدة",
     "newFolder": "مجلد جديد",
@@ -293,15 +302,15 @@
     "rightSidebar": "الشريط الأيمن",
     "splitView": "تقسيم العرض",
     "skills": "المهارات",
-    "graphViewTitle": "الرسم البياني",
+    "starViewTitle": "عرض النجوم",
     "pinned": "مثبت"
   },
   "welcome": {
     "title": "مرحبا بك في كونستليشن",
-    "subtitle": "أضف خزينتك الأولى للبدء",
-    "addVault": "+ إضافة خزينة",
+    "subtitle": "أضف مكتبتك الأولى للبدء",
+    "addVault": "+ إضافة مكتبة",
     "selectNote": "اختر ملاحظة من الشريط الجانبي",
-    "quickSwitchHint": "أو اضغط Ctrl+O للتبديل السريع"
+    "quickSwitchHint": "أو اضغط Ctrl+O للقفز النجمي"
   },
   "panels": {
     "properties": "الخصائص",
@@ -317,7 +326,7 @@
     "tagsHeader": "الوسوم",
     "linkDashboard": "لوحة الروابط",
     "noteGrid": "شبكة الملاحظات",
-    "graphView": "عرض الرسم البياني",
+    "starView": "عرض النجوم",
     "noNoteSelected": "لا توجد ملاحظة مفتوحة",
     "noTags": "لا توجد وسوم في هذه الملاحظة",
     "noConnections": "لا توجد روابط",
@@ -359,11 +368,11 @@
     "noTasksFound": "لم يتم العثور على مهام",
     "allDates": "جميع التواريخ",
     "thisWeek": "هذا الأسبوع",
-    "allVaults": "جميع الخزائن",
+    "allVaults": "جميع المكتبات",
     "allPriorities": "جميع الأولويات",
     "noGroup": "بدون تجميع",
     "groupByFile": "تجميع حسب الملف",
-    "groupByVault": "تجميع حسب الخزنة",
+    "groupByVault": "تجميع حسب المكتبة",
     "groupByPriority": "تجميع حسب الأولوية",
     "groupByDue": "تجميع حسب تاريخ الاستحقاق",
     "sortByFile": "ترتيب حسب الملف",
@@ -371,10 +380,10 @@
   },
   "linkDashboard": {
     "mostConnected": "الأكثر ارتباطاً",
-    "crossVault": "عبر الخزائن",
+    "crossVault": "عبر المكتبات",
     "broken": "مكسورة",
     "orphans": "الملاحظات المعزولة",
-    "noCrossVault": "لا توجد روابط عبر الخزائن",
+    "noCrossVault": "لا توجد روابط عبر المكتبات",
     "noBroken": "لا توجد روابط مكسورة",
     "noOrphans": "لا توجد ملاحظات معزولة"
   },
@@ -387,7 +396,7 @@
     "properties": "خصائص",
     "words": "كلمات",
     "characters": "أحرف",
-    "vaults": "خزائن",
+    "vaults": "مكتبات",
     "notes": "ملاحظات"
   },
   "notePane": {
@@ -401,7 +410,7 @@
     "createNote": "إنشاء ملاحظة جديدة",
     "goToFile": "الانتقال إلى ملف",
     "close": "إغلاق",
-    "selectVault": "اختر الخزنة"
+    "selectVault": "اختر المكتبة"
   },
   "commandPalette": {
     "placeholder": "أدخل أمر...",
@@ -459,10 +468,10 @@
     "typeCheckbox": "مربع اختيار",
     "selectType": "اختر النوع"
   },
-  "graphView": {
+  "starView": {
     "noNotes": "لا توجد ملاحظات لعرضها",
     "controls": {
-      "title": "إعدادات الرسم البياني",
+      "title": "إعدادات النجوم",
       "reset": "إعادة تعيين الافتراضيات",
       "filters": "المرشحات",
       "searchPlaceholder": "البحث في الملفات...",
@@ -486,14 +495,26 @@
     }
   },
   "vaults": {
-    "searchPlaceholder": "البحث في جميع الخزائن...",
+    "searchPlaceholder": "البحث في جميع المكتبات...",
     "results": "نتائج",
     "noResults": "لا توجد نتائج",
-    "addVault": "+ إضافة خزينة",
+    "addVault": "+ إضافة مكتبة",
     "welcomeTitle": "مرحبا بك في كونستليشن",
-    "welcomeSubtitle": "أضف خزينتك الأولى من الشريط الجانبي",
-    "addVaultCta": "+ إضافة خزينة",
+    "welcomeSubtitle": "أضف مكتبتك الأولى من الشريط الجانبي",
+    "addVaultCta": "+ إضافة مكتبة",
     "selectNote": "اختر ملاحظة من الشريط الجانبي"
+  },
+  "libraries": {
+    "searchPlaceholder": "البحث في جميع المكتبات...",
+    "results": "نتائج",
+    "noResults": "لا توجد نتائج",
+    "welcomeTitle": "مرحبًا بك في Constellation",
+    "welcomeSubtitle": "كونك جاهز. أضف مكتبات لبدء استكشاف ملاحظاتك.",
+    "selectNote": "اختر ملاحظة من الشريط الجانبي",
+    "newLibrary": "مكتبة جديدة",
+    "newLibraryDesc": "أنشئ مجلد مكتبة فارغ للبدء بالكتابة من الصفر.",
+    "linkLibrary": "ربط مكتبة موجودة",
+    "linkLibraryDesc": "اربط مجلد ماركداون موجود كمكتبة — بدون تعديل ملفاتك."
   },
   "skills": {
     "title": "المهارات",
@@ -508,7 +529,7 @@
     "create": "إنشاء مهارة",
     "noProvider": "اربط مزود ذكاء اصطناعي في الإعدادات لاستخدام المهارات.",
     "selectNote": "اختر ملاحظة",
-    "selectVault": "اختر خزينة",
+    "selectVault": "اختر مكتبة",
     "enterText": "أدخل نصا...",
     "result": "النتيجة",
     "copyResult": "نسخ",
@@ -518,11 +539,11 @@
     "summarize": "تلخيص الملاحظة",
     "summarizeDesc": "إنشاء ملخص موجز لأي ملاحظة",
     "qa": "أسئلة وأجوبة ذكية",
-    "qaDesc": "اطرح أسئلة حول خزائنك واحصل على إجابات مدعومة بالذكاء الاصطناعي",
+    "qaDesc": "اطرح أسئلة حول مكتباتك واحصل على إجابات مدعومة بالذكاء الاصطناعي",
     "write": "مساعد الكتابة",
     "writeDesc": "توسيع أو إعادة صياغة أو تحسين النص",
     "autolink": "الربط التلقائي",
-    "autolinkDesc": "اكتشاف الروابط بين الملاحظات عبر الخزائن",
+    "autolinkDesc": "اكتشاف الروابط بين الملاحظات عبر المكتبات",
     "translate": "ترجمة الملاحظة",
     "translateDesc": "ترجمة الملاحظات بين اللغات",
     "meeting": "ملاحظات الاجتماع",
@@ -533,14 +554,14 @@
     "researchDesc": "تحليل وتجميع المعلومات من ملاحظات متعددة"
   },
   "vaultManager": {
-    "title": "إدارة الخزائن",
-    "openVault": "+ فتح خزنة",
-    "manageVaults": "إدارة الخزائن...",
+    "title": "إدارة المكتبات",
+    "openVault": "+ فتح مكتبة",
+    "manageVaults": "إدارة المكتبات...",
     "openFolder": "فتح المجلد",
     "remove": "إزالة",
     "confirmRemove": "إزالة \"{name}\" من Constellation؟ لن يتم حذف ملفاتك.",
-    "addVault": "+ إضافة خزنة",
-    "noVaults": "لا توجد خزائن مسجلة",
+    "addVault": "+ إضافة مكتبة",
+    "noVaults": "لا توجد مكتبات مسجلة",
     "notes": "ملاحظات"
   },
   "lockScreen": {
@@ -634,18 +655,18 @@
       "title": "المصدر",
       "folder": "مجلد",
       "tag": "وسم",
-      "vault": "خزينة",
-      "allVaults": "جميع الخزائن",
-      "vaults": "خزائن",
+      "vault": "مكتبة",
+      "allVaults": "جميع المكتبات",
+      "vaults": "مكتبات",
       "folderPath": "مسار المجلد",
       "folderPlaceholder": "مثال: مشاريع/نشطة",
-      "folderHint": "يفحص هذا المجلد في جميع الخزائن التي تحتويه",
+      "folderHint": "يفحص هذا المجلد في جميع المكتبات التي تحتويه",
       "includeSubfolders": "تضمين المجلدات الفرعية",
       "tagName": "الوسم",
       "tagPlaceholder": "مثال: مشروع",
-      "tagHint": "يفحص جميع الملاحظات بهذا الوسم عبر جميع الخزائن",
-      "vaultsLabel": "الخزائن",
-      "allHint": "يفحص جميع الملاحظات في كل الخزائن المتصلة",
+      "tagHint": "يفحص جميع الملاحظات بهذا الوسم عبر جميع المكتبات",
+      "vaultsLabel": "المكتبات",
+      "allHint": "يفحص جميع الملاحظات في كل المكتبات المتصلة",
       "apply": "تطبيق",
       "cancel": "إلغاء"
     }
@@ -660,6 +681,8 @@
       "createNewDesc": "أنشئ كونًا جديدًا باسم وموقع من اختيارك.",
       "openExisting": "فتح كون موجود",
       "openExistingDesc": "افتح مجلد كون أنشأته مسبقًا على هذا الجهاز أو جهاز آخر.",
+      "linkLibrary": "ربط مكتبة",
+      "linkLibraryDesc": "حوّل مجلد ماركداون موجود إلى مكتبة في كونك. غير مُدمّر — ملفاتك تبقى كما هي.",
       "nameLabel": "اسم الكون",
       "namePlaceholder": "كوني",
       "locationLabel": "الموقع",
@@ -668,14 +691,25 @@
       "creating": "جارٍ الإنشاء...",
       "next": "التالي",
       "back": "رجوع",
-      "addVaultsHeading": "أضف خزائنك",
-      "addVaultsDescription": "اربط خزائنك والأكوان الفرعية. يمكنك دائمًا إضافة المزيد لاحقًا.",
-      "addVault": "إضافة خزنة",
+      "addVaultsHeading": "أضف مكتباتك",
+      "addVaultsDescription": "اربط مكتباتك والأكوان الفرعية. يمكنك دائمًا إضافة المزيد لاحقًا.",
+      "addVault": "إضافة مكتبة",
       "addChildUniverse": "إضافة كون فرعي",
+      "starterKit": "إنشاء مجلدات البداية",
+      "starterKitDesc": "إعداد مجلدات أطلس والتقويم والمشاريع والوارد مع ملاحظة ترحيب",
       "finish": "إنهاء",
       "skip": "تخطَّ الآن",
-      "noVaultsYet": "لم تُضَف أي خزائن بعد. أضف خزنة أو كونًا فرعيًا للبدء.",
-      "remove": "إزالة"
+      "noVaultsYet": "لم تُضَف أي مكتبات بعد. أضف مكتبة أو كونًا فرعيًا للبدء.",
+      "remove": "إزالة",
+      "importApp": "استيراد من تطبيق آخر",
+      "importAppDesc": "انقل ملاحظاتك من Obsidian أو Notion أو Evernote أو تطبيقات أخرى إلى Constellation.",
+      "importHeading": "استيراد ملاحظاتك",
+      "importDescription": "اختر التطبيق الذي تنتقل منه، ثم حدد المجلد أو الملف المصدر.",
+      "importPreviewHeading": "جاهز للاستيراد",
+      "importConfirm": "استيراد وإنشاء الكون",
+      "importingNotes": "جارٍ استيراد ملاحظاتك...",
+      "importLocationLabel": "موقع الكون",
+      "importComplete": "اكتمل الاستيراد! تم استيراد {count} ملف."
     },
     "manager": {
       "heading": "مدير الأكوان",
@@ -690,15 +724,15 @@
       "children": "الأكوان الفرعية",
       "addChild": "إضافة كون فرعي",
       "noUniverses": "لم يتم العثور على أكوان",
-      "ownVaults": "الخزائن الخاصة",
-      "inheritedVaults": "الخزائن الموروثة",
+      "ownVaults": "المكتبات الخاصة",
+      "inheritedVaults": "المكتبات الموروثة",
       "openExisting": "فتح كون موجود"
     },
     "switching": "جارٍ تبديل الكون...",
     "migrating": "جارٍ ترحيل بياناتك..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "Lens",
     "loading": "جارٍ تحميل الاستعلام...",
     "noResults": "لا توجد نتائج",
     "results": "نتائج",
@@ -719,16 +753,16 @@
   "secondScreen": {
     "title": "الشاشة الثانية",
     "grid": "شبكة",
-    "graph": "رسم بياني",
+    "star": "نجوم",
     "detail": "تفاصيل",
     "loading": "جاري تحميل الملاحظات...",
     "linked": "مرتبط",
     "linkedOn": "التصفح المرتبط مفعّل",
     "linkedOff": "التصفح المرتبط معطّل",
     "searchNotes": "بحث في الملاحظات...",
-    "allVaults": "جميع الخزائن",
+    "allVaults": "جميع المكتبات",
     "sortName": "ترتيب بالاسم",
-    "sortVault": "ترتيب بالخزنة",
+    "sortVault": "ترتيب بالمكتبة",
     "noResults": "لا توجد ملاحظات مطابقة",
     "noNotes": "لم يتم العثور على ملاحظات",
     "detailEmpty": "اختر ملاحظة لعرضها هنا",
@@ -738,6 +772,8 @@
     "title": "استيراد الملاحظات",
     "selectFormat": "اختر تنسيق الملاحظات التي تريد استيرادها.",
     "formats": {
+      "obsidian": "Obsidian",
+      "obsidianDesc": "استيراد خزنة Obsidian بجميع الملاحظات والمرفقات",
       "markdown": "ماركداون",
       "markdownDesc": "ملفات ماركداون (.md) من أي تطبيق",
       "notion": "نوشن",
@@ -753,7 +789,7 @@
       "txt": "نص عادي",
       "txtDesc": "ملفات نصية محوّلة إلى ماركداون"
     },
-    "targetVault": "الخزنة المستهدفة",
+    "targetVault": "المكتبة المستهدفة",
     "subfolder": "المجلد الفرعي",
     "selectSource": "اختر المصدر",
     "scanning": "جاري فحص الملفات...",

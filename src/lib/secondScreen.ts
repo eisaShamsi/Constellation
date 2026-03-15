@@ -13,12 +13,12 @@ import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
 export interface ScreenNote {
 	path: string;
 	name: string;
-	vaultName: string;
-	vaultPath: string;
-	vaultColor: string;
+	libraryName: string;
+	libraryPath: string;
+	libraryColor: string;
 }
 
-export type ScreenMode = 'grid' | 'graph' | 'detail';
+export type ScreenMode = 'grid' | 'star' | 'detail';
 
 /* ------------------------------------------------------------------ */
 /*  Window management                                                  */
@@ -85,7 +85,7 @@ export async function broadcastNoteSaved(path: string): Promise<void> {
 export interface ScreenState {
 	mode: ScreenMode;
 	linkedBrowsing: boolean;
-	tabs: { path: string; vaultName: string; vaultColor: string }[];
+	tabs: { path: string; libraryName: string; libraryColor: string }[];
 	activeTabPath: string | null;
 }
 

@@ -114,6 +114,10 @@ def create_styles():
         'Code', fontName='Courier', fontSize=9, textColor=MED_BLUE,
         spaceAfter=4, leading=14, leftIndent=30, backColor=LIGHT_BLUE
     )
+    styles['th'] = ParagraphStyle(
+        'TableHeader', fontName='Arial-Bold', fontSize=9.5, textColor=white,
+        leading=14
+    )
     return styles
 
 
@@ -199,7 +203,7 @@ def build_pdf():
         alignment=TA_CENTER, leading=17
     )
     story.append(p(desc_style,
-        'Multi-vault knowledge management. Built-in databases, tasks, calendars, '
+        'Multi-library knowledge management. Built-in databases, tasks, calendars, '
         'AI assistance, and templates. Non-destructive. No plugins required.'
     ))
     story.append(Spacer(1, 60))
@@ -253,7 +257,7 @@ def build_pdf():
     ))
     story.append(p(S['body'],
         'Constellation introduces the <b>Universe</b> — a portable, self-contained workspace that unifies '
-        'multiple vaults of Markdown files, structured databases, AI assistance, task management, and '
+        'multiple libraries of Markdown files, structured databases, AI assistance, task management, and '
         'calendar views into a single coherent experience. Where other tools give you a single notebook, '
         'Constellation gives you an interconnected system.'
     ))
@@ -271,13 +275,13 @@ def build_pdf():
     ))
 
     t2_headers = [
-        Paragraph('<b>Problem</b>', S['body']),
-        Paragraph('<b>What Users Do Today</b>', S['body']),
-        Paragraph('<b>The Cost</b>', S['body'])
+        Paragraph('Problem', S['th']),
+        Paragraph('What Users Do Today', S['th']),
+        Paragraph('The Cost', S['th'])
     ]
     t2_rows = [
         [p(S['body'], 'Notes scattered across tools'), p(S['body'], 'Manual copy-paste between apps'), p(S['body'], 'Lost connections, duplicated effort')],
-        [p(S['body'], 'One notebook/vault at a time'), p(S['body'], 'Close one project to open another'), p(S['body'], 'Context-switching, no cross-project search or linking')],
+        [p(S['body'], 'One notebook/library at a time'), p(S['body'], 'Close one project to open another'), p(S['body'], 'Context-switching, no cross-project search or linking')],
         [p(S['body'], 'Missing task management'), p(S['body'], 'Separate task app (Todoist, Things, etc.)'), p(S['body'], 'Tasks disconnected from the notes that created them')],
         [p(S['body'], 'No database views'), p(S['body'], 'Export to spreadsheets or use separate tools'), p(S['body'], 'Data lives outside the knowledge system')],
         [p(S['body'], 'Rigid table editing'), p(S['body'], 'Edit tables in a spreadsheet, paste back'), p(S['body'], 'Workflow interruption, no formulas in notes')],
@@ -304,7 +308,7 @@ def build_pdf():
         'Constellation is built on a foundational principle: <b>your files are never modified without your '
         'explicit action.</b> It reads your existing Markdown folders exactly as they are — it does '
         'not inject metadata, rewrite frontmatter, alter folder structures, or create hidden configuration '
-        'files inside your vaults. Your Markdown files remain pure, portable, and fully compatible with '
+        'files inside your libraries. Your Markdown files remain pure, portable, and fully compatible with '
         'any text editor or tool that reads standard Markdown.'
     ))
     story.append(p(S['body'],
@@ -324,7 +328,7 @@ def build_pdf():
 
     story.append(p(S['code'], 'MyUniverse/'))
     story.append(p(S['code'], '  universe.json          # Identity and metadata'))
-    story.append(p(S['code'], '  vaults.json            # Registered vault paths'))
+    story.append(p(S['code'], '  libraries.json         # Registered library paths'))
     story.append(p(S['code'], '  settings.json          # All preferences'))
     story.append(p(S['code'], '  bookmarks.json         # Saved bookmarks'))
     story.append(p(S['code'], '  workspaces.json        # Tab layouts'))
@@ -334,10 +338,10 @@ def build_pdf():
 
     story.append(p(S['h3'], 'Why This Matters'))
     bullets = [
-        '<b>Portability.</b> Copy the universe directory to another machine and everything follows — settings, bookmarks, workspaces, database definitions. The vaults themselves are just folders of Markdown files that live wherever you want.',
-        '<b>Multi-vault by design.</b> A universe can register any number of vaults. Search, graph view, task scanning, backlinks, and databases all operate across vault boundaries natively.',
-        '<b>Hierarchy.</b> Universes can reference child universes, inheriting their vaults. A team lead\'s universe can include a shared team universe plus a personal universe — with circular reference prevention built in.',
-        '<b>No lock-in.</b> The universe is JSON files in a folder. The vaults are Markdown files in folders. Walk away at any time — your notes are standard files that any tool can read.',
+        '<b>Portability.</b> Copy the universe directory to another machine and everything follows — settings, bookmarks, workspaces, database definitions. The libraries themselves are just folders of Markdown files that live wherever you want.',
+        '<b>Multi-library by design.</b> A universe can register any number of libraries. Search, Sky View, task scanning, backlinks, and databases all operate across library boundaries natively.',
+        '<b>Hierarchy.</b> Universes can reference child universes, inheriting their libraries. A team lead\'s universe can include a shared team universe plus a personal universe — with circular reference prevention built in.',
+        '<b>No lock-in.</b> The universe is JSON files in a folder. The libraries are Markdown files in folders. Walk away at any time — your notes are standard files that any tool can read.',
     ]
     for text in bullets:
         story.append(p(S['bullet'], f'&#8226;  {text}'))
@@ -349,23 +353,23 @@ def build_pdf():
     story.append(p(S['h2'], '4.1 Capabilities That Set Constellation Apart'))
 
     t4_headers = [
-        Paragraph('<b>Capability</b>', S['body']),
-        Paragraph('<b>Details</b>', S['body'])
+        Paragraph('Capability', S['th']),
+        Paragraph('Details', S['th'])
     ]
     t4_rows = [
-        [p(S['body'], '<b>True multi-vault workspace</b>'), p(S['body'], 'Open, search, link, and graph across multiple vaults simultaneously in one window.')],
+        [p(S['body'], '<b>True multi-library workspace</b>'), p(S['body'], 'Open, search, link, and graph across multiple libraries simultaneously in one window.')],
         [p(S['body'], '<b>Universe portability</b>'), p(S['body'], 'All configuration travels in a single portable directory. Move machines and your entire workspace follows.')],
-        [p(S['body'], '<b>Child universes</b>'), p(S['body'], 'Compose workspaces hierarchically — a team vault feeds into your personal universe automatically.')],
-        [p(S['body'], '<b>Cross-vault backlinks</b>'), p(S['body'], 'See which notes in <i>any</i> vault link to the current note — not limited to a single vault.')],
-        [p(S['body'], '<b>Cross-vault graph</b>'), p(S['body'], 'One knowledge graph showing connections across all your vaults.')],
-        [p(S['body'], '<b>Unified task scanning</b>'), p(S['body'], 'Global Tasks view aggregates tasks from every vault with filtering by vault, priority, due date, and text search.')],
+        [p(S['body'], '<b>Child universes</b>'), p(S['body'], 'Compose workspaces hierarchically — a team library feeds into your personal universe automatically.')],
+        [p(S['body'], '<b>Cross-library backlinks</b>'), p(S['body'], 'See which notes in <i>any</i> library link to the current note — not limited to a single library.')],
+        [p(S['body'], '<b>Cross-library graph</b>'), p(S['body'], 'One knowledge graph showing connections across all your libraries.')],
+        [p(S['body'], '<b>Unified task scanning</b>'), p(S['body'], 'Global Tasks view aggregates tasks from every library with filtering by library, priority, due date, and text search.')],
         [p(S['body'], '<b>Built-in Bases (databases)</b>'), p(S['body'], 'Non-destructive database views with table/card/list modes, filtering, sorting, inline editing — no external tools needed.')],
         [p(S['body'], '<b>Table formulas</b>'), p(S['body'], '=SUM(), =AVG(), =COUNT(), =MIN(), =MAX() with cell references and ranges, evaluated in-place inside your Markdown tables.')],
         [p(S['body'], '<b>Multi-provider AI</b>'), p(S['body'], 'OpenAI, Anthropic, Google Gemini, and Ollama (local) from one interface, with 8 pre-built skills — directly integrated with your notes.')],
         [p(S['body'], '<b>Second screen</b>'), p(S['body'], 'A fully independent secondary window that extends your workspace across two screens — edit, browse, view graphs, or manage tasks side by side with no limitations. Not just a reference pane; a complete second workspace.')],
         [p(S['body'], '<b>15 languages at launch</b>'), p(S['body'], 'English, Arabic, German, Spanish, French, Hebrew, Hindi, Japanese, Korean, Portuguese, Russian, Turkish, Urdu, Chinese, Farsi — all with full RTL support.')],
-        [p(S['body'], '<b>Security layer</b>'), p(S['body'], 'Vault encryption at rest, idle lock with PIN, API key storage in OS keyring.')],
-        [p(S['body'], '<b>Non-destructive vault access</b>'), p(S['body'], 'Never modifies vault files without explicit user action. Zero-risk adoption — try Constellation and switch tools freely with no trace left behind.')],
+        [p(S['body'], '<b>Security layer</b>'), p(S['body'], 'Library encryption at rest, idle lock with PIN, API key storage in OS keyring.')],
+        [p(S['body'], '<b>Non-destructive library access</b>'), p(S['body'], 'Never modifies library files without explicit user action. Zero-risk adoption — try Constellation and switch tools freely with no trace left behind.')],
     ]
     story.append(make_table(t4_headers, t4_rows, [avail * 0.30, avail * 0.70]))
 
@@ -374,20 +378,20 @@ def build_pdf():
         'Features that other tools require plugins, extensions, or external apps to achieve ship built into Constellation:'
     ))
     t42_headers = [
-        Paragraph('<b>Feature</b>', S['body']),
-        Paragraph('<b>How Others Handle It</b>', S['body']),
-        Paragraph('<b>Constellation (Built-In)</b>', S['body'])
+        Paragraph('Feature', S['th']),
+        Paragraph('Traditional Answer', S['th']),
+        Paragraph('Constellation (Built-In)', S['th'])
     ]
     t42_rows = [
-        [p(S['body'], 'Structured queries'), p(S['body'], 'Dataview plugin / external scripts'), p(S['body'], 'Native query parser (TABLE, LIST, TASK, CALENDAR queries)')],
-        [p(S['body'], 'Task management'), p(S['body'], 'Separate task apps or plugins'), p(S['body'], 'Vault-wide scanning, toggle, due dates, priority, tags')],
+        [p(S['body'], 'Structured queries'), p(S['body'], 'Plugin-based apps / external scripts'), p(S['body'], 'Native Lens query parser (TABLE, LIST, TASK, CALENDAR queries)')],
+        [p(S['body'], 'Task management'), p(S['body'], 'Separate task apps or plugins'), p(S['body'], 'Library-wide scanning, toggle, due dates, priority, tags')],
         [p(S['body'], 'Calendar sidebar'), p(S['body'], 'Separate calendar plugins'), p(S['body'], 'Month view with note/task dots, daily note creation')],
         [p(S['body'], 'Advanced tables'), p(S['body'], 'Basic Markdown tables or spreadsheets'), p(S['body'], 'Row/column operations, sorting, move, formulas')],
-        [p(S['body'], 'Templates'), p(S['body'], 'Manual copy-paste or plugin syntax'), p(S['body'], 'Template variables (date, time, title, folder, vault, cursor)')],
+        [p(S['body'], 'Templates'), p(S['body'], 'Manual copy-paste or plugin syntax'), p(S['body'], 'Template variables (date, time, title, folder, library, cursor)')],
         [p(S['body'], 'Note importing'), p(S['body'], 'Manual conversion scripts'), p(S['body'], '7 formats: Markdown folders, Notion, Bear, Evernote, HTML, CSV, Plain Text')],
-        [p(S['body'], 'Backlinks panel'), p(S['body'], 'Basic or plugin-dependent'), p(S['body'], 'Enhanced with cross-vault support and unlinked mentions')],
-        [p(S['body'], 'Graph view'), p(S['body'], 'Single-vault only in most tools'), p(S['body'], 'Cross-vault nodes, force controls, grouping')],
-        [p(S['body'], 'Tag browser'), p(S['body'], 'Basic implementations'), p(S['body'], 'Tag frequency analysis, vault-wide aggregation')],
+        [p(S['body'], 'Backlinks panel'), p(S['body'], 'Basic or plugin-dependent'), p(S['body'], 'Enhanced with cross-library support and unlinked mentions')],
+        [p(S['body'], 'Sky View'), p(S['body'], 'Single-library only in most tools'), p(S['body'], 'Cross-library nodes, force controls, grouping')],
+        [p(S['body'], 'Tag browser'), p(S['body'], 'Basic implementations'), p(S['body'], 'Tag frequency analysis, library-wide aggregation')],
     ]
     story.append(make_table(t42_headers, t42_rows, [avail * 0.22, avail * 0.33, avail * 0.45]))
 
@@ -396,11 +400,11 @@ def build_pdf():
         'Constellation\'s built-in importer supports migration from:'
     ))
     t43_headers = [
-        Paragraph('<b>Source</b>', S['body']),
-        Paragraph('<b>What Gets Imported</b>', S['body'])
+        Paragraph('Source', S['th']),
+        Paragraph('What Gets Imported', S['th'])
     ]
     t43_rows = [
-        [p(S['body'], '<b>Markdown folders</b>'), p(S['body'], 'Direct vault registration — no conversion needed')],
+        [p(S['body'], '<b>Markdown folders</b>'), p(S['body'], 'Direct library registration — no conversion needed')],
         [p(S['body'], '<b>Notion exports</b>'), p(S['body'], 'Cleans hex IDs, converts internal links to wikilinks')],
         [p(S['body'], '<b>Bear notes</b>'), p(S['body'], 'Converts Bear\'s format to standard Markdown')],
         [p(S['body'], '<b>Evernote (.enex)</b>'), p(S['body'], 'Converts ENML to Markdown, preserves tags and dates as frontmatter')],
@@ -420,8 +424,8 @@ def build_pdf():
         'Transparency matters. These are capabilities not currently in Constellation:'
     ))
     t44_headers = [
-        Paragraph('<b>Feature</b>', S['body']),
-        Paragraph('<b>Status</b>', S['body'])
+        Paragraph('Feature', S['th']),
+        Paragraph('Status', S['th'])
     ]
     t44_rows = [
         [p(S['body'], 'Mobile apps (iOS/Android)'), p(S['body'], 'Not yet — desktop only (Windows, macOS, Linux)')],
@@ -441,7 +445,7 @@ def build_pdf():
         ('5.1 The Multi-Project Professional',
          'Consultant, researcher, or knowledge worker who maintains separate note collections for different clients, projects, or life domains.',
          'Must close one project to open another. Cannot search across collections. Cannot see connections between a client\'s project notes and research notes in a separate folder.',
-         'Register all vaults in one universe. Search, graph, task scan, and link across all of them simultaneously.'),
+         'Register all libraries in one universe. Search, graph, task scan, and link across all of them simultaneously.'),
         ('5.2 The Tool-Fatigued Power User',
          'Power user running multiple apps and extensions who spends significant time managing updates, resolving conflicts, and debugging breakage.',
          'Every tool update is a risk. Task management, databases, templates, calendar, and AI are all separate systems maintained by different teams on different schedules.',
@@ -453,7 +457,7 @@ def build_pdf():
         ('5.4 The Team Lead or Organization Builder',
          'Manager or team lead who wants to share a knowledge base with team members while maintaining personal notes separately.',
          'No concept of workspace composition in most tools. Shared note collections require manual setup per person.',
-         'Create a team universe with shared vaults. Each team member adds the team universe as a child of their personal universe. Team vaults appear automatically alongside personal vaults.'),
+         'Create a team universe with shared libraries. Each team member adds the team universe as a child of their personal universe. Team libraries appear automatically alongside personal libraries.'),
         ('5.5 The AI-Augmented Researcher',
          'Researcher or student who wants AI assistance integrated directly into their note-taking workflow — summarization, Q&A, writing assistance, translation.',
          'Must use a separate AI tool, manually copy context, and paste results back. Or install competing AI extensions with inconsistent interfaces and separate API key management.',
@@ -461,7 +465,7 @@ def build_pdf():
         ('5.6 The Security-Conscious User',
          'Professional handling sensitive notes (legal, medical, financial, personal) who needs encryption and access control.',
          'Most note apps offer no built-in encryption, no idle lock, and store API keys in plaintext configuration files.',
-         'Vault encryption at rest, idle lock with PIN, API key storage in OS keyring.'),
+         'Library encryption at rest, idle lock with PIN, API key storage in OS keyring.'),
         ('5.7 The Migrating User',
          'Someone moving away from Notion, Evernote, Bear, or another tool who wants to own their data locally without losing years of accumulated notes.',
          'Migration is painful. Export formats are inconsistent. Internal links break. Metadata gets lost. Many users stay locked in because switching costs are too high.',
@@ -481,7 +485,7 @@ def build_pdf():
     tech_items = [
         ('6.1 Performance',
          'Constellation\'s Rust backend performs file operations, link scanning, task extraction, and database '
-         'queries at native speed. Heavy operations — vault-wide task scanning, structured queries, link graph '
+         'queries at native speed. Heavy operations — library-wide task scanning, structured queries, link graph '
          'building — execute in the Rust process and return structured results to the frontend. The editor '
          'never competes with background processing for resources.'),
         ('6.2 Binary Size and Resource Usage',
@@ -494,7 +498,7 @@ def build_pdf():
         ('6.4 Data Sovereignty',
          'All data lives on the user\'s file system in standard formats: Markdown files with YAML frontmatter, '
          'JSON .base files for databases, JSON files in the universe directory for configuration, and standard '
-         'image/PDF files in vault folders for attachments. No telemetry. No cloud dependency. No account required.'),
+         'image/PDF files in library folders for attachments. No telemetry. No cloud dependency. No account required.'),
     ]
     for title, body in tech_items:
         story.append(p(S['h2'], title))
@@ -506,7 +510,7 @@ def build_pdf():
     story.append(p(S['body'], 'This section defines how we measure whether Constellation fulfills its purpose. Each criterion maps to a testable capability.'))
 
     story.append(p(S['h2'], '7.1 Core Promise: "Your Notes, Your Way"'))
-    v1_headers = [Paragraph('<b>Test</b>', S['body']), Paragraph('<b>Expected Result</b>', S['body'])]
+    v1_headers = [Paragraph('Test', S['th']), Paragraph('Expected Result', S['th'])]
     v1_rows = [
         [p(S['body'], 'Open any folder of Markdown files'), p(S['body'], 'All notes visible, frontmatter parsed, links resolved')],
         [p(S['body'], 'Edit a note and save'), p(S['body'], 'File on disk updates, readable by any Markdown tool')],
@@ -516,19 +520,19 @@ def build_pdf():
     ]
     story.append(make_table(v1_headers, v1_rows, [avail * 0.40, avail * 0.60]))
 
-    story.append(p(S['h2'], '7.2 Multi-Vault Promise: "A Universe of Knowledge"'))
-    v2_headers = [Paragraph('<b>Test</b>', S['body']), Paragraph('<b>Expected Result</b>', S['body'])]
+    story.append(p(S['h2'], '7.2 Multi-Library Promise: "A Universe of Libraries"'))
+    v2_headers = [Paragraph('Test', S['th']), Paragraph('Expected Result', S['th'])]
     v2_rows = [
-        [p(S['body'], 'Register 3+ vaults'), p(S['body'], 'All appear in file explorer with distinct colors')],
-        [p(S['body'], 'Search across vaults'), p(S['body'], 'Results from all vaults, labeled by source')],
-        [p(S['body'], 'Graph across vaults'), p(S['body'], 'Nodes from all vaults, cross-vault edges visible')],
-        [p(S['body'], 'Backlinks across vaults'), p(S['body'], 'Note in Vault A shows backlinks from Vault B')],
-        [p(S['body'], 'Tasks across vaults'), p(S['body'], 'Global Tasks view aggregates all vaults')],
+        [p(S['body'], 'Register 3+ libraries'), p(S['body'], 'All appear in file explorer with distinct colors')],
+        [p(S['body'], 'Search across libraries'), p(S['body'], 'Results from all libraries, labeled by source')],
+        [p(S['body'], 'Graph across libraries'), p(S['body'], 'Nodes from all libraries, cross-library edges visible')],
+        [p(S['body'], 'Backlinks across libraries'), p(S['body'], 'Note in Library A shows backlinks from Library B')],
+        [p(S['body'], 'Tasks across libraries'), p(S['body'], 'Global Tasks view aggregates all libraries')],
     ]
     story.append(make_table(v2_headers, v2_rows, [avail * 0.40, avail * 0.60]))
 
     story.append(p(S['h2'], '7.3 All-In-One Promise: "Everything Built In"'))
-    v3_headers = [Paragraph('<b>Test</b>', S['body']), Paragraph('<b>Expected Result</b>', S['body'])]
+    v3_headers = [Paragraph('Test', S['th']), Paragraph('Expected Result', S['th'])]
     v3_rows = [
         [p(S['body'], 'Structured query in note'), p(S['body'], 'TABLE, LIST, TASK queries render results')],
         [p(S['body'], 'Task checkbox toggle'), p(S['body'], 'Toggle in sidebar updates file on disk')],
@@ -540,7 +544,7 @@ def build_pdf():
     story.append(make_table(v3_headers, v3_rows, [avail * 0.40, avail * 0.60]))
 
     story.append(p(S['h2'], '7.4 User Experience Promise: "Works for Everyone"'))
-    v4_headers = [Paragraph('<b>Test</b>', S['body']), Paragraph('<b>Expected Result</b>', S['body'])]
+    v4_headers = [Paragraph('Test', S['th']), Paragraph('Expected Result', S['th'])]
     v4_rows = [
         [p(S['body'], 'Switch to Arabic'), p(S['body'], 'Full UI in Arabic, RTL layout, mirrored sidebar')],
         [p(S['body'], 'Create note with Arabic properties'), p(S['body'], 'Date/list/checkbox keys detected correctly')],
@@ -555,26 +559,26 @@ def build_pdf():
 
     story.append(p(S['body'],
         'Constellation occupies a unique position in the knowledge management space: '
-        '<b>local-first, multi-vault, all-in-one, and multilingual.</b>'
+        '<b>local-first, multi-library, all-in-one, and multilingual.</b>'
     ))
 
     t8_headers = [
-        Paragraph('<b>Dimension</b>', S['body']),
-        Paragraph('<b>Constellation</b>', S['body']),
-        Paragraph('<b>Obsidian</b>', S['body']),
-        Paragraph('<b>Notion</b>', S['body']),
-        Paragraph('<b>Logseq</b>', S['body']),
-        Paragraph('<b>Roam</b>', S['body']),
-        Paragraph('<b>Bear</b>', S['body']),
+        Paragraph('Dimension', S['th']),
+        Paragraph('Constellation', S['th']),
+        Paragraph('Obsidian', S['th']),
+        Paragraph('Notion', S['th']),
+        Paragraph('Logseq', S['th']),
+        Paragraph('Roam', S['th']),
+        Paragraph('Bear', S['th']),
     ]
     col_w = avail / 7
     t8_rows = [
         [p(S['body'], 'Data ownership'), p(S['body'], 'Local files'), p(S['body'], 'Local files'), p(S['body'], 'Cloud-hosted'), p(S['body'], 'Local files'), p(S['body'], 'Cloud-hosted'), p(S['body'], 'iCloud')],
         [p(S['body'], 'Offline capability'), p(S['body'], 'Full'), p(S['body'], 'Full'), p(S['body'], 'Limited'), p(S['body'], 'Full'), p(S['body'], 'None'), p(S['body'], 'Full')],
         [p(S['body'], 'File format'), p(S['body'], 'Standard Markdown'), p(S['body'], 'Standard Markdown'), p(S['body'], 'Proprietary'), p(S['body'], 'Markdown/EDN'), p(S['body'], 'Proprietary'), p(S['body'], 'Proprietary')],
-        [p(S['body'], 'Multi-vault'), p(S['body'], 'Native (Universe)'), p(S['body'], 'One vault per window'), p(S['body'], 'N/A (workspaces)'), p(S['body'], 'Single graph'), p(S['body'], 'Single graph'), p(S['body'], 'N/A')],
-        [p(S['body'], 'Cross-vault search'), p(S['body'], 'Yes'), p(S['body'], 'No'), p(S['body'], 'N/A'), p(S['body'], 'No'), p(S['body'], 'No'), p(S['body'], 'No')],
-        [p(S['body'], 'Cross-vault graph'), p(S['body'], 'Yes'), p(S['body'], 'No'), p(S['body'], 'N/A'), p(S['body'], 'No'), p(S['body'], 'No'), p(S['body'], 'No')],
+        [p(S['body'], 'Multi-library'), p(S['body'], 'Native (Universe)'), p(S['body'], 'One vault per window'), p(S['body'], 'N/A (workspaces)'), p(S['body'], 'Single graph'), p(S['body'], 'Single graph'), p(S['body'], 'N/A')],
+        [p(S['body'], 'Cross-library search'), p(S['body'], 'Yes'), p(S['body'], 'No'), p(S['body'], 'N/A'), p(S['body'], 'No'), p(S['body'], 'No'), p(S['body'], 'No')],
+        [p(S['body'], 'Cross-library graph'), p(S['body'], 'Yes'), p(S['body'], 'No'), p(S['body'], 'N/A'), p(S['body'], 'No'), p(S['body'], 'No'), p(S['body'], 'No')],
         [p(S['body'], 'Database views'), p(S['body'], 'Built-in (Bases)'), p(S['body'], 'Plugin required'), p(S['body'], 'Native'), p(S['body'], 'Queries (limited)'), p(S['body'], 'Queries'), p(S['body'], 'No')],
         [p(S['body'], 'Task management'), p(S['body'], 'Built-in'), p(S['body'], 'Plugin required'), p(S['body'], 'Basic'), p(S['body'], 'Plugin required'), p(S['body'], 'Basic'), p(S['body'], 'No')],
         [p(S['body'], 'AI integration'), p(S['body'], 'Built-in (4 providers)'), p(S['body'], 'Plugin required'), p(S['body'], 'Built-in (1 provider)'), p(S['body'], 'Plugin required'), p(S['body'], 'Plugin required'), p(S['body'], 'No')],
@@ -608,18 +612,18 @@ def build_pdf():
 
     story.append(p(S['h2'], 'High Priority (Reinforces Core Differentiators)'))
     for i, item in enumerate([
-        'Polish multi-vault experience — cross-vault move/copy, vault-scoped settings',
+        'Polish multi-library experience — cross-library move/copy, library-scoped settings',
         'Bases performance at scale — handle 10,000+ note databases efficiently',
-        'AI skill expansion — custom skill builder, context-aware vault Q&amp;A',
-        'Mobile companion — read-only vault browser for iOS/Android',
+        'AI skill expansion — custom skill builder, context-aware library Q&amp;A',
+        'Mobile companion — read-only library browser for iOS/Android',
     ], 1):
         story.append(p(S['bullet'], f'{i}.  {item}'))
 
     story.append(p(S['h2'], 'Medium Priority (Broadens Platform)'))
     for i, item in enumerate([
         'Canvas / whiteboard — infinite canvas with embedded notes',
-        'PDF annotation — highlight and annotate PDFs within vaults',
-        'Publish / static site export — generate websites from vault content',
+        'PDF annotation — highlight and annotate PDFs within libraries',
+        'Publish / static site export — generate websites from library content',
         'Constellation URI protocol — deep linking into specific notes and views',
     ], 5):
         story.append(p(S['bullet'], f'{i}.  {item}'))
@@ -638,13 +642,13 @@ def build_pdf():
     story.append(p(S['body'],
         'Constellation exists because knowledge management should not require systems integration. A note-taking '
         'platform should ship with the tools its users need — databases, tasks, calendars, templates, importers, '
-        'AI, and multi-vault support — tested together, updated together, and usable out of the box.'
+        'AI, and multi-library support — tested together, updated together, and usable out of the box.'
     ))
     story.append(p(S['body'],
         'For the knowledge worker who has built a workflow across multiple tools and feels the friction of '
         'managing that stack, Constellation offers a unified alternative that works with standard Markdown files, '
-        'requires zero configuration, and provides capabilities no single existing tool offers — true multi-vault '
-        'workspaces, cross-vault everything, and portable universe-based configuration.'
+        'requires zero configuration, and provides capabilities no single existing tool offers — true multi-library '
+        'workspaces, cross-library everything, and portable universe-based configuration.'
     ))
     story.append(p(S['body'],
         'The files are yours. The format is Markdown. The door is always open.'

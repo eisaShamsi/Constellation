@@ -5,7 +5,7 @@ export interface BaseSource {
 	path?: string;
 	tag?: string;
 	includeSubfolders?: boolean;
-	selectedVaults?: string[]; // empty/undefined = all vaults; populated = only these vault names
+	selectedLibraries?: string[]; // empty/undefined = all libraries; populated = only these vault names
 }
 
 export interface ColumnDef {
@@ -41,8 +41,8 @@ export interface BaseDefinition {
 export interface BaseRow {
 	file_path: string;
 	file_name: string;
-	vault_name: string;
-	vault_path: string;
+	library_name: string;
+	library_path: string;
 	properties: Record<string, string>;
 	modified: number;
 }

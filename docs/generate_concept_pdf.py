@@ -242,7 +242,7 @@ def cover_page(canvas_obj, doc):
     # Tagline at bottom
     c.setFont("Helvetica-Oblique", 12)
     c.setFillColor(GOLD)
-    c.drawCentredString(w / 2, 80, "A Vault of Vaults  \u2022  A Map of Maps")
+    c.drawCentredString(w / 2, 80, "A Universe of Libraries")
 
     # Bottom line
     c.setStrokeColor(GOLD)
@@ -375,7 +375,7 @@ def build_pdf():
         ("1.", "What Is Constellation?"),
         ("2.", "The Problem Constellation Solves"),
         ("3.", "Core Architecture: The Universe Model"),
-        ("4.", "Feature Comparison: Constellation vs. Obsidian"),
+        ("4.", "Feature Overview: What Constellation Delivers"),
         ("5.", "Who Is Constellation For?"),
         ("6.", "Technical Advantages"),
         ("7.", "Development Validation Criteria"),
@@ -401,16 +401,16 @@ def build_pdf():
     story.append(Spacer(1, 8))
 
     story.append(Paragraph(
-        "Constellation is a desktop application for knowledge management, note-taking, and personal "
-        "information organization. It reads and writes standard Obsidian-compatible Markdown files stored "
-        "on the user\u2019s own file system \u2014 no cloud accounts, no vendor lock-in, no subscription required.",
+        "Constellation is a desktop knowledge management platform built for people who think in "
+        "connected notes. It stores everything as standard Markdown files on your local file "
+        "system \u2014 no cloud accounts, no vendor lock-in, no subscription required.",
         S['body']
     ))
     story.append(Paragraph(
-        "Where Obsidian gives you a vault, Constellation gives you a <b>universe</b> \u2014 a portable, "
-        "self-contained workspace that unifies multiple vaults, structured databases, AI assistance, task "
-        "management, and calendar views into a single coherent experience. Everything Obsidian requires "
-        "community plugins to achieve, Constellation ships as built-in, first-class functionality.",
+        "Constellation introduces the <b>Universe</b> \u2014 a portable, self-contained workspace that "
+        "unifies multiple libraries of Markdown files, structured databases, AI assistance, task "
+        "management, and calendar views into a single coherent experience. Where other tools give you "
+        "a single notebook, Constellation gives you an interconnected system.",
         S['body']
     ))
     story.append(Paragraph(
@@ -427,18 +427,18 @@ def build_pdf():
     story.append(Spacer(1, 8))
 
     story.append(Paragraph(
-        "Obsidian is an excellent Markdown editor. But as a knowledge management <i>system</i>, it has "
-        "structural limitations that its plugin ecosystem patches over rather than solves:",
+        "Most Markdown-based note-taking tools are excellent editors. But as knowledge management "
+        "<i>systems</i>, they have structural limitations that plugin ecosystems patch over rather than solve:",
         S['body']
     ))
 
     story.append(Spacer(1, 6))
     t2 = build_table(
-        ["Problem", "Obsidian\u2019s Answer", "The Cost"],
+        ["Problem", "Traditional Answer", "The Cost"],
         [
-            ["One vault at a time", "Community workarounds", "Context-switching, no cross-vault search or linking"],
+            ["One library at a time", "Community workarounds", "Context-switching, no cross-library search or linking"],
             ["Task management", "Tasks plugin (community)", "Separate install, separate updates, potential breakage"],
-            ["Database views", "Dataview plugin (community)", "Complex query language, performance issues at scale"],
+            ["Database views", "Lens plugin (community)", "Complex query language, performance issues at scale"],
             ["Table editing", "Advanced Tables plugin (community)", "Basic functionality, no formulas"],
             ["Calendar integration", "Calendar plugin (community)", "Limited to daily notes, no task integration"],
             ["Templates", "Templater plugin (community)", "Complex syntax, security concerns with JS execution"],
@@ -452,8 +452,8 @@ def build_pdf():
     story.append(Spacer(1, 10))
 
     story.append(Paragraph(
-        "Obsidian users routinely install 15\u201330 plugins to reach a functional workflow. Each plugin is "
-        "maintained by a different developer, updated on a different schedule, and can break on any Obsidian "
+        "Power users of plugin-based apps routinely install 15\u201330 plugins to reach a functional workflow. Each plugin is "
+        "maintained by a different developer, updated on a different schedule, and can break on any app "
         "update. The user becomes a systems integrator.",
         S['body']
     ))
@@ -480,7 +480,7 @@ def build_pdf():
     story.append(CodeBlock(
         "MyUniverse/\n"
         "  universe.json          # Identity and metadata\n"
-        "  vaults.json            # Registered vault paths\n"
+        "  libraries.json         # Registered library paths\n"
         "  settings.json          # All preferences\n"
         "  bookmarks.json         # Saved bookmarks\n"
         "  workspaces.json        # Tab layouts\n"
@@ -494,15 +494,15 @@ def build_pdf():
 
     benefits = [
         ("<b>Portability.</b> Copy the universe directory to another machine and everything follows \u2014 "
-         "settings, bookmarks, workspaces, database definitions. The vaults themselves are just folders of "
+         "settings, bookmarks, workspaces, database definitions. The libraries themselves are just folders of "
          "Markdown files."),
-        ("<b>Multi-vault by design.</b> A universe can register any number of vaults. Search, graph view, "
-         "task scanning, backlinks, and databases all operate across vault boundaries natively."),
-        ("<b>Hierarchy.</b> Universes can reference child universes, inheriting their vaults. A team lead\u2019s "
+        ("<b>Multi-library by design.</b> A universe can register any number of libraries. Search, Sky View, "
+         "task scanning, backlinks, and databases all operate across library boundaries natively."),
+        ("<b>Hierarchy.</b> Universes can reference child universes, inheriting their libraries. A team lead\u2019s "
          "universe can include a shared team universe plus a personal universe \u2014 with circular reference "
          "prevention built in."),
-        ("<b>No lock-in.</b> The universe is JSON files in a folder. The vaults are Markdown files in folders. "
-         "Walk away at any time, open the same vaults in Obsidian, and nothing is lost."),
+        ("<b>No lock-in.</b> The universe is JSON files in a folder. The libraries are Markdown files in folders. "
+         "Walk away at any time, open the same files in any Markdown editor, and nothing is lost."),
     ]
     for b in benefits:
         story.append(Paragraph(f"\u2022  {b}", S['bullet']))
@@ -510,29 +510,29 @@ def build_pdf():
     # ═══════════════════════════════════════════
     # Section 4: Feature Comparison
     # ═══════════════════════════════════════════
-    story.append(Paragraph("4. Feature Comparison: Constellation vs. Obsidian", S['section_title']))
+    story.append(Paragraph("4. Feature Overview: What Constellation Delivers", S['section_title']))
     story.append(HorizontalRule(CONTENT_W, GOLD, 1))
     story.append(Spacer(1, 8))
 
     # 4.1
-    story.append(Paragraph("4.1  What Constellation Does That Obsidian Cannot (Even With Plugins)", S['subsection_title']))
+    story.append(Paragraph("4.1  Core Differentiators", S['subsection_title']))
     story.append(Spacer(1, 4))
 
     t41 = build_table(
         ["Capability", "Details"],
         [
-            ["<b>True multi-vault workspace</b>", "Open, search, link, and graph across multiple vaults simultaneously. Obsidian can only open one vault at a time per window."],
-            ["<b>Universe portability</b>", "All configuration travels in a single portable directory. Obsidian settings are per-vault and non-portable."],
-            ["<b>Child universes</b>", "Compose workspaces hierarchically \u2014 a team vault feeds into your personal universe automatically."],
-            ["<b>Cross-vault backlinks</b>", "See which notes in any vault link to the current note. Obsidian backlinks are vault-scoped."],
-            ["<b>Cross-vault graph</b>", "One graph showing connections across all your vaults. Obsidian\u2019s graph is single-vault."],
-            ["<b>Unified task scanning</b>", "Global Tasks view aggregates tasks from every vault with filtering by vault, priority, due date, and text search."],
+            ["<b>True multi-library workspace</b>", "Open, search, link, and visualize across multiple libraries simultaneously. Most tools can only open one library at a time per window."],
+            ["<b>Universe portability</b>", "All configuration travels in a single portable directory. Other tools store settings per-library and non-portably."],
+            ["<b>Child universes</b>", "Compose workspaces hierarchically \u2014 a team library feeds into your personal universe automatically."],
+            ["<b>Cross-library backlinks</b>", "See which notes in any library link to the current note. Other tools scope backlinks to a single library."],
+            ["<b>Cross-library Sky View</b>", "One graph showing connections across all your libraries in the Sky View."],
+            ["<b>Unified task scanning</b>", "Global Tasks view aggregates tasks from every library with filtering by library, priority, due date, and text search."],
             ["<b>Built-in Bases (databases)</b>", "Non-destructive database views with table/card/list modes, filtering, sorting, inline editing \u2014 no plugin needed."],
             ["<b>Table formulas</b>", "=SUM(), =AVG(), =COUNT(), =MIN(), =MAX() with cell references and ranges, evaluated in-place."],
             ["<b>Multi-provider AI</b>", "OpenAI, Anthropic, Google Gemini, and Ollama (local) from one interface, with 8 pre-built skills."],
             ["<b>Second screen</b>", "Dedicated secondary window for reference browsing while editing in the primary window."],
             ["<b>15 languages at launch</b>", "English, Arabic, German, Spanish, French, Hebrew, Hindi, Japanese, Korean, Portuguese, Russian, Turkish, Urdu, Chinese, Farsi \u2014 all with full RTL support."],
-            ["<b>Security layer</b>", "Vault encryption at rest, idle lock with PIN, API key storage in OS keyring."],
+            ["<b>Security layer</b>", "Library encryption at rest, idle lock with PIN, API key storage in OS keyring."],
         ],
         [CONTENT_W * 0.30, CONTENT_W * 0.70],
         S
@@ -541,25 +541,25 @@ def build_pdf():
     story.append(Spacer(1, 12))
 
     # 4.2
-    story.append(Paragraph("4.2  What Constellation Matches (Built-In, No Plugins Required)", S['subsection_title']))
+    story.append(Paragraph("4.2  Built-In Features (No Plugins Needed)", S['subsection_title']))
     story.append(Paragraph(
-        "Every feature below requires a community plugin in Obsidian. In Constellation, it ships out of the box:",
+        "Every feature below typically requires a community plugin in other tools. In Constellation, it ships out of the box:",
         S['body']
     ))
     story.append(Spacer(1, 4))
 
     t42 = build_table(
-        ["Feature", "Obsidian (Plugin Required)", "Constellation (Built-In)"],
+        ["Feature", "Plugin-Based Apps", "Constellation (Built-In)"],
         [
-            ["Dataview queries", "Dataview plugin", "Native DQL parser (TABLE, LIST, TASK, CALENDAR queries)"],
-            ["Task management", "Tasks plugin", "Vault-wide scanning, toggle, due dates, priority, tags"],
+            ["Lens queries", "Query plugin required", "Native DQL parser (TABLE, LIST, TASK, CALENDAR queries)"],
+            ["Task management", "Tasks plugin", "Library-wide scanning, toggle, due dates, priority, tags"],
             ["Calendar sidebar", "Calendar plugin", "Month view with note/task dots, daily note creation"],
             ["Advanced tables", "Advanced Tables plugin", "Row/column operations, sorting, move, formulas"],
-            ["Templates", "Templater plugin", "Template variables (date, time, title, folder, vault, cursor)"],
+            ["Templates", "Templater plugin", "Template variables (date, time, title, folder, library, cursor)"],
             ["Note importer", "Importer plugin", "7 formats: Markdown, Notion, Bear, Evernote, HTML, CSV, Plain Text"],
-            ["Backlinks panel", "Core (basic)", "Enhanced with cross-vault support and unlinked mentions"],
-            ["Graph view", "Core (basic)", "Enhanced with cross-vault nodes, force controls, grouping"],
-            ["Tag browser", "Core (basic)", "Tag frequency, vault-wide aggregation"],
+            ["Backlinks panel", "Core (basic)", "Enhanced with cross-library support and unlinked mentions"],
+            ["Sky View", "Core (basic)", "Enhanced with cross-library nodes, force controls, grouping"],
+            ["Tag browser", "Core (basic)", "Tag frequency, library-wide aggregation"],
         ],
         [CONTENT_W * 0.18, CONTENT_W * 0.32, CONTENT_W * 0.50],
         S
@@ -568,18 +568,18 @@ def build_pdf():
     story.append(Spacer(1, 12))
 
     # 4.3
-    story.append(Paragraph("4.3  What Obsidian Does That Constellation Does Not (Yet)", S['subsection_title']))
-    story.append(Paragraph("Transparency matters. These are Obsidian capabilities not currently in Constellation:", S['body']))
+    story.append(Paragraph("4.3  Planned Features", S['subsection_title']))
+    story.append(Paragraph("Transparency matters. These are capabilities not currently in Constellation:", S['body']))
     story.append(Spacer(1, 4))
 
     t43 = build_table(
         ["Feature", "Status"],
         [
             ["Mobile apps (iOS/Android)", "Not yet \u2014 desktop only (Windows, macOS, Linux)"],
-            ["Obsidian Sync / Publish", "Not planned \u2014 use Git, Syncthing, or any file sync"],
-            ["Community plugin ecosystem", "Not applicable \u2014 features are built-in"],
+            ["Cloud sync / publish", "Not planned \u2014 use Git, Syncthing, or any file sync"],
+            ["Third-party plugin ecosystem", "Not applicable \u2014 features are built-in"],
             ["Canvas (infinite whiteboard)", "Not yet"],
-            ["Obsidian URI protocol", "Not yet"],
+            ["Custom URI protocol", "Not yet"],
             ["PDF annotation", "Not yet"],
             ["Audio recording", "Not yet"],
         ],
@@ -596,13 +596,13 @@ def build_pdf():
     story.append(Spacer(1, 8))
 
     personas = [
-        ("5.1  The Multi-Vault Professional",
-         "Consultant, researcher, or knowledge worker who maintains separate vaults for different clients, projects, or life domains.",
-         "Must close one vault to open another. Cannot search across vaults. Cannot see connections between client A\u2019s project notes and research notes in a separate vault.",
-         "Register all vaults in one universe. Search, graph, task scan, and link across all of them simultaneously."),
+        ("5.1  The Multi-Library Professional",
+         "Consultant, researcher, or knowledge worker who maintains separate libraries for different clients, projects, or life domains.",
+         "Must close one library to open another. Cannot search across libraries. Cannot see connections between client A\u2019s project notes and research notes in a separate library.",
+         "Register all libraries in one universe. Search, visualize, task scan, and link across all of them simultaneously."),
         ("5.2  The Plugin-Fatigued Power User",
-         "Current Obsidian user running 20+ plugins who spends significant time managing plugin updates, resolving conflicts, and debugging breakage after Obsidian updates.",
-         "Every plugin update is a risk. Dataview, Tasks, Templater, Calendar, Advanced Tables, and Importer are all maintained by different people on different schedules.",
+         "Power user running 20+ plugins who spends significant time managing plugin updates, resolving conflicts, and debugging breakage after app updates.",
+         "Every plugin update is a risk. Lens, Tasks, Templater, Calendar, Advanced Tables, and Importer are all maintained by different people on different schedules.",
          "All of these are built-in, tested together, and updated as one unit. Zero plugin management."),
         ("5.3  The Arabic/RTL Knowledge Worker",
          "User who works primarily in Arabic, Hebrew, Farsi, or Urdu and needs a note-taking system that treats RTL as a first-class concern.",
@@ -610,8 +610,8 @@ def build_pdf():
          "15 languages including 4 RTL languages. Arabic property key detection. Full UI mirroring. RTL-aware tables, forms, editors, and calendar."),
         ("5.4  The Team Lead or Organization Builder",
          "Manager or team lead who wants to share a knowledge base with team members while maintaining personal notes separately.",
-         "No concept of workspace composition. Shared vaults require manual setup per person.",
-         "Create a team universe with shared vaults. Each team member adds the team universe as a child of their personal universe. Team vaults appear automatically alongside personal vaults."),
+         "No concept of workspace composition. Shared libraries require manual setup per person.",
+         "Create a team universe with shared libraries. Each team member adds the team universe as a child of their personal universe. Team libraries appear automatically alongside personal libraries."),
         ("5.5  The AI-Augmented Researcher",
          "Researcher or student who wants AI assistance integrated directly into their note-taking workflow.",
          "Must choose between competing AI plugins, configure API keys in each, and deal with inconsistent interfaces.",
@@ -619,13 +619,13 @@ def build_pdf():
         ("5.6  The Security-Conscious User",
          "Professional handling sensitive notes (legal, medical, financial, personal) who needs encryption and access control.",
          "No built-in encryption. No idle lock. API keys stored in plaintext plugin configs.",
-         "Vault encryption at rest, idle lock with PIN, API key storage in OS keyring."),
+         "Library encryption at rest, idle lock with PIN, API key storage in OS keyring."),
     ]
 
     for title, profile, pain, answer in personas:
         story.append(Paragraph(title, S['subsection_title']))
         story.append(Paragraph(f"<b>Profile:</b> {profile}", S['body']))
-        story.append(Paragraph(f"<b>Pain point with Obsidian:</b> {pain}", S['body']))
+        story.append(Paragraph(f"<b>Pain point:</b> {pain}", S['body']))
         story.append(Paragraph(f"<b>Constellation answer:</b> {answer}", S['body']))
         story.append(Spacer(1, 4))
 
@@ -639,13 +639,13 @@ def build_pdf():
     tech_sections = [
         ("6.1  Performance",
          "Constellation\u2019s Rust backend performs file operations, link scanning, task extraction, and database "
-         "queries at native speed. Heavy operations \u2014 vault-wide task scanning, dataview queries, link graph "
+         "queries at native speed. Heavy operations \u2014 library-wide task scanning, Lens queries, link graph "
          "building \u2014 execute in the Rust process and return structured results to the frontend.",
-         "Obsidian\u2019s plugin system runs everything in the Electron renderer process (JavaScript). Community "
-         "plugins like Dataview perform full vault scans in JS, competing for the same thread as the editor."),
+         "Electron-based tools run everything in the renderer process (JavaScript). Plugin-based query engines "
+         "perform full library scans in JS, competing for the same thread as the editor."),
         ("6.2  Binary Size and Resource Usage",
          "Tauri v2 uses the system\u2019s native webview rather than bundling Chromium. The result is a significantly "
-         "smaller binary and lower memory footprint compared to Obsidian\u2019s Electron-based architecture.",
+         "smaller binary and lower memory footprint compared to Electron-based alternatives.",
          None),
         ("6.3  Security Model",
          "Tauri\u2019s Rust backend provides a natural security boundary. File system access is controlled through "
@@ -678,22 +678,22 @@ def build_pdf():
     ))
 
     validation_tables = [
-        ("7.1  Core Promise: \u201cRead and Write Obsidian Vaults\u201d", [
-            ["Open a vault created in Obsidian", "All notes visible, frontmatter parsed, links resolved"],
-            ["Edit a note and save", "File on disk updates, Obsidian can open and read the changes"],
-            ["Create a note with frontmatter", "Valid YAML frontmatter, Obsidian-compatible"],
-            ["Resolve [[wikilinks]]", "Same resolution behavior as Obsidian"],
-            ["Render callouts, highlights, math, mermaid", "Visual parity with Obsidian\u2019s renderer"],
+        ("7.1  Core Promise: \u201cRead and Write Markdown Libraries\u201d", [
+            ["Open a standard Markdown library", "All notes visible, frontmatter parsed, links resolved"],
+            ["Edit a note and save", "File on disk updates, any Markdown editor can read the changes"],
+            ["Create a note with frontmatter", "Valid YAML frontmatter, standard Markdown compatible"],
+            ["Resolve [[wikilinks]]", "Standard wikilink resolution behavior"],
+            ["Render callouts, highlights, math, mermaid", "Full-featured Markdown rendering"],
         ]),
-        ("7.2  Multi-Vault Promise: \u201cA Vault of Vaults\u201d", [
-            ["Register 3+ vaults", "All appear in file explorer with distinct colors"],
-            ["Search across vaults", "Results from all vaults, labeled by source"],
-            ["Graph across vaults", "Nodes from all vaults, cross-vault edges visible"],
-            ["Backlinks across vaults", "Note in Vault A shows backlinks from Vault B"],
-            ["Tasks across vaults", "Global Tasks view aggregates all vaults"],
+        ("7.2  Multi-Library Promise: \u201cA Universe of Libraries\u201d", [
+            ["Register 3+ libraries", "All appear in file explorer with distinct colors"],
+            ["Search across libraries", "Results from all libraries, labeled by source"],
+            ["Sky View across libraries", "Nodes from all libraries, cross-library edges visible"],
+            ["Backlinks across libraries", "Note in Library A shows backlinks from Library B"],
+            ["Tasks across libraries", "Global Tasks view aggregates all libraries"],
         ]),
         ("7.3  Plugin Replacement Promise: \u201cNo Plugins Needed\u201d", [
-            ["Dataview query in note", "TABLE, LIST, TASK queries render results"],
+            ["Lens query in note", "TABLE, LIST, TASK queries render results"],
             ["Task checkbox toggle", "Toggle in sidebar updates file on disk"],
             ["Calendar dot indicators", "Days with notes/tasks show visual indicators"],
             ["Table formula evaluation", "=SUM(A1:A5) calculates correctly"],
@@ -727,24 +727,24 @@ def build_pdf():
     story.append(HorizontalRule(CONTENT_W, GOLD, 1))
     story.append(Spacer(1, 8))
 
-    story.append(Paragraph("Against Obsidian", S['subsection_title']))
+    story.append(Paragraph("Standalone Value Proposition", S['subsection_title']))
     story.append(Paragraph(
-        "Constellation is not anti-Obsidian. It is built <i>on</i> Obsidian\u2019s file format and <i>for</i> "
-        "Obsidian\u2019s user base. The pitch is simple:",
+        "Constellation is built on standard Markdown and designed for users who want a complete, integrated "
+        "knowledge management experience without assembling it from plugins. The pitch is simple:",
         S['body']
     ))
     story.append(Spacer(1, 4))
     story.append(GoldAccentBox(
-        "\u201cKeep your Markdown files exactly where they are. Keep using Obsidian if you want. But when you "
-        "need multiple vaults in one window, built-in databases, cross-vault search, AI assistance, and zero "
-        "plugin management \u2014 open Constellation.\u201d",
+        "\u201cKeep your Markdown files exactly where they are. When you need multiple libraries in one window, "
+        "built-in databases, cross-library search, AI assistance, and zero plugin management \u2014 open "
+        "Constellation.\u201d",
         CONTENT_W,
         S['quote']
     ))
     story.append(Spacer(1, 8))
     story.append(Paragraph(
-        "Constellation does not require migration. It reads the same files. Users can switch between "
-        "Obsidian and Constellation freely.",
+        "Constellation does not require migration. It reads standard Markdown files. Users can open the same "
+        "files in any Markdown editor at any time.",
         S['body']
     ))
     story.append(Spacer(1, 8))
@@ -758,7 +758,7 @@ def build_pdf():
             ["Data ownership", "Local files", "Cloud-hosted", "Local files", "Cloud-hosted"],
             ["Offline capability", "Full", "Limited", "Full", "None"],
             ["File format", "Standard Markdown", "Proprietary", "Markdown/EDN", "Proprietary"],
-            ["Multi-vault", "Native", "N/A (workspaces)", "Single graph", "Single graph"],
+            ["Multi-library", "Native", "N/A (workspaces)", "Single graph", "Single graph"],
             ["Database views", "Built-in Bases", "Native databases", "Queries (limited)", "Queries"],
             ["AI integration", "Built-in (4 providers)", "Built-in (1 provider)", "Plugin", "Plugin"],
             ["Pricing", "Free / Open Source", "Freemium + subscription", "Free", "Subscription"],
@@ -783,10 +783,10 @@ def build_pdf():
 
     story.append(Paragraph("High Priority (Reinforces Core Differentiators)", S['subsection_title']))
     high = [
-        "<b>Polish multi-vault experience</b> \u2014 cross-vault move/copy, vault-scoped settings",
+        "<b>Polish multi-library experience</b> \u2014 cross-library move/copy, library-scoped settings",
         "<b>Bases performance at scale</b> \u2014 handle 10,000+ note databases efficiently",
-        "<b>AI skill expansion</b> \u2014 custom skill builder, context-aware vault Q&amp;A",
-        "<b>Mobile companion</b> \u2014 read-only vault browser for iOS/Android",
+        "<b>AI skill expansion</b> \u2014 custom skill builder, context-aware library Q&amp;A",
+        "<b>Mobile companion</b> \u2014 read-only library browser for iOS/Android",
     ]
     for i, item in enumerate(high, 1):
         story.append(Paragraph(f"{i}.&nbsp;&nbsp;{item}", S['bullet']))
@@ -794,9 +794,9 @@ def build_pdf():
     story.append(Paragraph("Medium Priority (Competitive Parity)", S['subsection_title']))
     med = [
         "<b>Canvas / whiteboard</b> \u2014 infinite canvas with embedded notes",
-        "<b>PDF annotation</b> \u2014 highlight and annotate PDFs within vaults",
-        "<b>Obsidian URI compatibility</b> \u2014 handle obsidian:// protocol links",
-        "<b>Publish / static site export</b> \u2014 generate websites from vault content",
+        "<b>PDF annotation</b> \u2014 highlight and annotate PDFs within libraries",
+        "<b>Custom URI protocol</b> \u2014 handle constellation:// protocol links",
+        "<b>Publish / static site export</b> \u2014 generate websites from library content",
     ]
     for i, item in enumerate(med, 5):
         story.append(Paragraph(f"{i}.&nbsp;&nbsp;{item}", S['bullet']))
@@ -820,15 +820,15 @@ def build_pdf():
     story.append(Paragraph(
         "Constellation exists because knowledge management should not require systems integration. A "
         "note-taking application should ship with the tools its users need \u2014 databases, tasks, calendars, "
-        "templates, importers, AI, and multi-vault support \u2014 tested together, updated together, and usable "
+        "templates, importers, AI, and multi-library support \u2014 tested together, updated together, and usable "
         "out of the box.",
         S['body']
     ))
     story.append(Paragraph(
-        "For the Obsidian user who has built a workflow on community plugins and feels the friction of managing "
-        "that stack, Constellation offers a unified alternative that reads the same files, requires zero "
-        "configuration, and adds capabilities that Obsidian\u2019s architecture cannot provide \u2014 true multi-vault "
-        "workspaces, cross-vault everything, and portable universe-based configuration.",
+        "For the power user who has built a workflow on community plugins and feels the friction of managing "
+        "that stack, Constellation offers a unified alternative that reads standard Markdown files, requires zero "
+        "configuration, and delivers capabilities that plugin-based architectures cannot provide \u2014 true multi-library "
+        "workspaces, cross-library everything, and portable universe-based configuration.",
         S['body']
     ))
 

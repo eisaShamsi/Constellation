@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t, dir } from '$lib/i18n';
-	import { vaults, type VaultInfo } from '$lib/vaults/store';
+	import { libraries, type LibraryInfo } from '$lib/libraries/store';
 
 	let {
 		colorMap,
@@ -9,33 +9,33 @@
 		onClose,
 	}: {
 		colorMap: Record<string, string>;
-		onCreate: (saveVault: VaultInfo, baseName: string, selectedVaults: string[]) => void;
+		onCreate: (saveLibrary: LibraryInfo, baseName: string, selectedLibraries: string[]) => void;
 		onClose: () => void;
 	} = $props();
 
 	let baseName = $state('');
-	let selectedVaultNames: string[] = $state([]);
+	let selectedLibraryNames: string[] = $state([]);
 	let nameInput: HTMLInputElement;
 	let overlayEl: HTMLDivElement;
 
-	const allSelected = $derived(selectedVaultNames.length === 0);
+	const allSelected = $derived(selectedLibraryNames.length === 0);
 
-	function toggleVault(name: string) {
-		if (selectedVaultNames.includes(name)) {
-			selectedVaultNames = selectedVaultNames.filter(v => v !== name);
+	function toggleLibrary(name: string) {
+		if (selectedLibraryNames.includes(name)) {
+			selectedLibraryNames = selectedLibraryNames.filter(v => v !== name);
 		} else {
-			selectedVaultNames = [...selectedVaultNames, name];
+			selectedLibraryNames = [...selectedLibraryNames, name];
 		}
 	}
 
 	function selectAll() {
-		selectedVaultNames = [];
+		selectedLibraryNames = [];
 	}
 
 	function handleCreate() {
-		// Pass a dummy vault — workspace bases don't need a save vault
-		const dummyVault = $vaults[0] ?? { id: '', name: '', path: '' };
-		onCreate(dummyVault, baseName || $t('bases.untitled'), selectedVaultNames);
+		// Pass a dummy library — workspace bases don't need a save library
+		const dummyLibrary = $libraries[0] ?? { id: '', name: '', path: '' };
+		onCreate(dummyLibrary, baseName || $t('bases.untitled'), selectedLibraryNames);
 		onClose();
 	}
 
@@ -73,7 +73,7 @@
 				/>
 			</label>
 
-			<!-- Query vaults -->
+			<!-- Query libraries -->
 			<div class="nbd-section">
 				<span class="nbd-label">{$t('bases.source.vaultsLabel')}</span>
 				<div class="nbd-vault-list">
@@ -82,12 +82,12 @@
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
 						<span>{$t('bases.source.allVaults')}</span>
 					</label>
-					{#each $vaults as v}
-						<label class="nbd-vault" class:active={selectedVaultNames.includes(v.name)}>
+					{#each $libraries as v}
+						<label class="nbd-vault" class:active={selectedLibraryNames.includes(v.name)}>
 							<input
 								type="checkbox"
-								checked={allSelected || selectedVaultNames.includes(v.name)}
-								onchange={() => toggleVault(v.name)}
+								checked={allSelected || selectedLibraryNames.includes(v.name)}
+								onchange={() => toggleLibrary(v.name)}
 							/>
 							<span class="nbd-dot" style="background: {colorMap[v.name] || '#7c3aed'}"></span>
 							<span>{v.name}</span>

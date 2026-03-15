@@ -17,7 +17,7 @@ export interface ImportResult {
 	files: string[];
 }
 
-export type ImportFormat = 'markdown' | 'notion' | 'bear' | 'enex' | 'html' | 'csv' | 'txt';
+export type ImportFormat = 'obsidian' | 'markdown' | 'notion' | 'bear' | 'enex' | 'html' | 'csv' | 'txt';
 
 export interface ImportFormatOption {
 	id: ImportFormat;

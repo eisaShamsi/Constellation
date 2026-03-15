@@ -19,7 +19,7 @@ Bases let you view your notes as structured databases. A Base collects notes fro
 
 ## Creating a Base
 
-To create a Base, create a file with the `.base` extension in your vault. The file contains a JSON definition:
+To create a Base, create a file with the `.base` extension in your library. The file contains a JSON definition:
 
 ```json
 {
@@ -50,7 +50,7 @@ The `source` field defines which notes to include:
 |-------------|-------------|---------|
 | `folder` | Notes in a specific folder | `"type": "folder", "path": "Projects"` |
 | `tag` | Notes with a specific tag | `"type": "tag", "tag": "project"` |
-| `vault` | All notes in a vault | `"type": "vault"` |
+| `library` | All notes in a library | `"type": "library"` |
 
 ### Subfolders
 
@@ -219,15 +219,15 @@ Bases fully support right-to-left layouts:
 Bases query your notes directly from disk each time they load. The query time is displayed in the footer (e.g., "42 results in 12ms").
 
 > [!tip] Tips for fast queries
-> - Use `folder` source instead of `vault` when possible
-> - Keep your Base focused on specific folders rather than entire vaults
+> - Use `folder` source instead of `library` when possible
+> - Keep your Base focused on specific folders rather than entire libraries
 > - The query engine skips notes without YAML frontmatter automatically
 
 ---
 
-## Cross-vault support
+## Cross-library support
 
-Bases work across multiple vaults. The vault name is displayed alongside each note in card and list views, helping you identify which vault a note belongs to.
+Bases work across multiple libraries. The library name is displayed alongside each note in card and list views, helping you identify which library a note belongs to.
 
 ---
 

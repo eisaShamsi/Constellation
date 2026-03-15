@@ -3,12 +3,12 @@
 	import { t } from '$lib/i18n';
 
 	let {
-		notes = [] as { name: string; path: string; vaultName: string }[],
+		notes = [] as { name: string; path: string; libraryName: string }[],
 		onSelect,
 		onClose,
 	}: {
-		notes: { name: string; path: string; vaultName: string }[];
-		onSelect: (path: string, vaultName: string) => void;
+		notes: { name: string; path: string; libraryName: string }[];
+		onSelect: (path: string, libraryName: string) => void;
 		onClose: () => void;
 	} = $props();
 
@@ -44,7 +44,7 @@
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
 			if (filtered[selectedIndex]) {
-				onSelect(filtered[selectedIndex].path, filtered[selectedIndex].vaultName);
+				onSelect(filtered[selectedIndex].path, filtered[selectedIndex].libraryName);
 				onClose();
 			}
 		}
@@ -69,11 +69,11 @@
 				<button
 					class="qs-item"
 					class:selected={i === selectedIndex}
-					onclick={() => { onSelect(note.path, note.vaultName); onClose(); }}
+					onclick={() => { onSelect(note.path, note.libraryName); onClose(); }}
 					onmouseenter={() => selectedIndex = i}
 				>
 					<span class="qs-name">{note.name}</span>
-					<span class="qs-path">{note.vaultName}</span>
+					<span class="qs-path">{note.libraryName}</span>
 				</button>
 			{/each}
 			{#if filtered.length === 0 && query}

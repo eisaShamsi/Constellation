@@ -8,8 +8,8 @@
 	import { searchKeymap, highlightSelectionMatches, openSearchPanel, selectNextOccurrence } from '@codemirror/search';
 	import { closeBrackets, closeBracketsKeymap, autocompletion, type CompletionContext, type Completion } from '@codemirror/autocomplete';
 	import { syntaxHighlighting, defaultHighlightStyle, bracketMatching, indentOnInput, foldGutter, foldKeymap, foldService, foldAll, unfoldAll, indentUnit } from '@codemirror/language';
-	import type { FileEntry } from '$lib/vaults/store';
-	import { saveClipboardImage, resolveWikilinkCrossVault, getNoteHeadings } from '$lib/vaults/store';
+	import type { FileEntry } from '$lib/libraries/store';
+	import { saveClipboardImage, resolveWikilinkCrossLibrary, getNoteHeadings } from '$lib/libraries/store';
 	import FormattingToolbar from './FormattingToolbar.svelte';
 	import TableToolbar from './TableToolbar.svelte';
 	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, type ParsedTable } from '$lib/editor/tableUtils';
@@ -21,9 +21,9 @@
 		dir = 'ltr' as 'ltr' | 'rtl',
 		placeholder = '',
 		onchange,
-		noteNames = [] as { name: string; path: string; vaultName?: string }[],
+		noteNames = [] as { name: string; path: string; libraryName?: string }[],
 		allTags = [] as string[],
-		vaultPath = '',
+		libraryPath = '',
 		livePreview = false,
 		showLineNumbers = true,
 		foldHeading = true,
@@ -41,9 +41,9 @@
 		dir?: 'ltr' | 'rtl';
 		placeholder?: string;
 		onchange: (value: string) => void;
-		noteNames?: { name: string; path: string; vaultName?: string }[];
+		noteNames?: { name: string; path: string; libraryName?: string }[];
 		allTags?: string[];
-		vaultPath?: string;
+		libraryPath?: string;
 		livePreview?: boolean;
 		showLineNumbers?: boolean;
 		foldHeading?: boolean;
@@ -393,7 +393,7 @@
 			.slice(0, 20)
 			.map(n => ({
 				label: n.name,
-				detail: n.vaultName ? ` — ${n.vaultName}` : undefined,
+				detail: n.libraryName ? ` — ${n.libraryName}` : undefined,
 				type: 'text',
 				apply: (view: EditorView, _completion: Completion, from: number, to: number) => {
 					view.dispatch({
@@ -408,7 +408,7 @@
 	// Heading autocomplete after [[note#
 	async function headingCompletion(context: CompletionContext, before: any, noteName: string, headingQuery: string) {
 		// Resolve the note to get its path
-		const resolved = await resolveWikilinkCrossVault(vaultPath, noteName);
+		const resolved = await resolveWikilinkCrossLibrary(libraryPath, noteName);
 		if (!resolved) return null;
 
 		const headings = await getNoteHeadings(resolved.path);
@@ -686,13 +686,13 @@
 			fontSize: '0.92rem',
 		},
 		'.cm-content': {
-			fontFamily: 'var(--vault-mono-font, var(--font-monospace-theme))',
+			fontFamily: 'var(--library-mono-font, var(--font-monospace-theme))',
 			lineHeight: '1.7',
 			padding: '0',
-			caretColor: 'var(--vault-accent, var(--interactive-accent))',
+			caretColor: 'var(--library-accent, var(--interactive-accent))',
 		},
 		'.cm-cursor': {
-			borderLeftColor: 'var(--vault-accent, var(--interactive-accent))',
+			borderLeftColor: 'var(--library-accent, var(--interactive-accent))',
 		},
 		'.cm-gutters': {
 			backgroundColor: 'transparent',
@@ -772,7 +772,7 @@
 		return EditorView.domEventHandlers({
 			paste: (event: ClipboardEvent, editorView: EditorView) => {
 				const items = event.clipboardData?.items;
-				if (!items || !vaultPath) return false;
+				if (!items || !libraryPath) return false;
 
 				for (const item of items) {
 					if (item.type.startsWith('image/')) {
@@ -784,7 +784,7 @@
 						reader.onload = async () => {
 							const base64 = reader.result as string;
 							try {
-								const filename = await saveClipboardImage(vaultPath, base64);
+								const filename = await saveClipboardImage(libraryPath, base64);
 								const embed = `![[${filename}]]`;
 								const pos = editorView.state.selection.main.from;
 								editorView.dispatch({
@@ -985,7 +985,7 @@
 		}
 	});
 
-	// Listen for fold-all / unfold-all events from command palette
+	// Listen for fold-all / unfold-all events from mission control
 	function handleFoldAll() { if (view) foldAll(view); }
 	function handleUnfoldAll() { if (view) unfoldAll(view); }
 

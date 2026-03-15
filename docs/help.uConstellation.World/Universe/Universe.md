@@ -5,19 +5,19 @@ aliases:
   - Universe manager
   - Open existing universe
   - Child universe
-description: Learn how to create, open, and manage Universes in Constellation — your portable data containers for vaults, bases, settings, and more.
+description: Learn how to create, open, and manage Universes in Constellation — your portable data containers for libraries, bases, settings, and more.
 ---
 
 # Universe
 
-A **Universe** is a portable, user-owned directory where Constellation stores all your data — vaults, bases, bookmarks, settings, workspaces, and property types. Unlike traditional app data folders hidden deep in your system, a Universe lives wherever you choose and can be moved between devices.
+A **Universe** is a portable, user-owned directory where Constellation stores all your data — libraries, bases, bookmarks, settings, workspaces, and property types. Unlike traditional app data folders hidden deep in your system, a Universe lives wherever you choose and can be moved between devices.
 
 ## Universe directory structure
 
 ```
 My Universe/
 ├── universe.json          # Name, creation date, child references
-├── vaults.json            # Registered Obsidian vaults
+├── libraries.json         # Registered libraries
 ├── bases/                 # Base files (.base)
 ├── bookmarks.json         # Bookmarked notes
 ├── settings.json          # App settings
@@ -51,18 +51,18 @@ If you chose **Create New Universe**:
 2. Click **Choose Folder** to pick where the universe directory will be created.
 3. Click **Next** to create the universe and proceed.
 
-### Step 2: Add vaults and child universes
+### Step 2: Add libraries and child universes
 
 After creating your universe, you can immediately connect your data:
 
-- **Add Vault** — Opens a folder picker. Select an Obsidian vault folder (must contain a `.obsidian` directory).
-- **Add Child Universe** — Link another existing Universe as a child. Its vaults become available to your new universe automatically.
-- **Skip for now** — Proceed without adding anything. You can always add vaults and child universes later.
+- **Add Library** — Opens a folder picker. Select a Markdown library folder.
+- **Add Child Universe** — Link another existing Universe as a child. Its libraries become available to your new universe automatically.
+- **Skip for now** — Proceed without adding anything. You can always add libraries and child universes later.
 
 Click **Finish** when you're done.
 
 > [!tip]
-> You can add as many vaults and child universes as you like during setup. They can also be managed later through the Universe Manager and Vault Manager.
+> You can add as many libraries and child universes as you like during setup. They can also be managed later through the Universe Manager and Library Manager.
 
 ---
 
@@ -87,11 +87,11 @@ Access the Universe Manager from the sidebar footer (click the universe name) to
 
 | Action | Description |
 |---|---|
-| **Switch** | Activate a different universe. All vaults, settings, and caches reload. The window title and status bar update instantly. |
+| **Switch** | Activate a different universe. All libraries, settings, and caches reload. The window title and status bar update instantly. |
 | **Create New** | Create an additional universe. |
 | **Remove** | Remove a universe from the list (files are preserved on disk). |
 | **Open Folder** | Open the universe directory in your file explorer. |
-| **Add Child Universe** | Link a child universe to share its vaults. |
+| **Add Child Universe** | Link a child universe to share its libraries. |
 
 The active universe is highlighted with a **green badge** and green border, making it easy to identify at a glance.
 
@@ -100,7 +100,7 @@ The active universe is highlighted with a **green badge** and green border, maki
 Switching universes is designed to be fast:
 
 - Essential data (settings, bookmarks, workspaces) loads **in parallel**.
-- The app UI becomes usable **immediately** after vaults load.
+- The app UI becomes usable **immediately** after libraries load.
 - File watchers and index caches rebuild **in the background** while you browse.
 - All previous state (tabs, trees, caches) is fully cleared before loading the new universe.
 
@@ -108,21 +108,21 @@ Switching universes is designed to be fast:
 
 ## Child universes (Universe of Universes)
 
-A Universe can reference other Universes as **children**. When you add a child universe, its vaults automatically become available in the parent — no duplication needed.
+A Universe can reference other Universes as **children**. When you add a child universe, its libraries automatically become available in the parent — no duplication needed.
 
 **Example:**
 
-- **Universe A** has vaults: V1, V2, V3
-- **Universe B** has vaults: V4, V5
-- **Universe X** references A and B as children, plus its own vault V6
-- **Effective vaults for X:** V1, V2, V3, V4, V5, V6
+- **Universe A** has libraries: L1, L2, L3
+- **Universe B** has libraries: L4, L5
+- **Universe X** references A and B as children, plus its own library L6
+- **Effective libraries for X:** L1, L2, L3, L4, L5, L6
 
-If V7 is later added to Universe B, Universe X automatically sees it.
+If L7 is later added to Universe B, Universe X automatically sees it.
 
-Child universe vaults are fully integrated across all features:
-- **Graph View** — child vault notes appear with their own color and convex hull.
-- **Search** — notes from child universe vaults are included in search results.
-- **Cross-vault linking** — you can link between your own vaults and child universe vaults using `[[wikilinks]]`.
+Child universe libraries are fully integrated across all features:
+- **Sky View** — child library notes appear with their own color and convex hull.
+- **Search** — notes from child universe libraries are included in search results.
+- **Cross-library linking** — you can link between your own libraries and child universe libraries using `[[wikilinks]]`.
 
 > [!warning]
 > Circular references are detected and prevented. If Universe A references B and B references A, each is only resolved once.
@@ -131,9 +131,9 @@ Child universe vaults are fully integrated across all features:
 
 ## Sidebar display
 
-Child universes appear in the left sidebar **above** your vaults, separated by a thin divider line. Each child universe is shown with a **globe icon** to visually distinguish it from vaults (which use a colored dot). The vault count for each child universe is displayed alongside its name.
+Child universes appear in the left sidebar **above** your libraries, separated by a thin divider line. Each child universe is shown with a **globe icon** to visually distinguish it from libraries (which use a colored dot). The library count for each child universe is displayed alongside its name.
 
-This flat layout keeps things simple — no collapsible categories, just universes first, then vaults.
+This flat layout keeps things simple — no collapsible categories, just universes first, then libraries.
 
 ---
 
@@ -142,7 +142,7 @@ This flat layout keeps things simple — no collapsible categories, just univers
 The active universe name appears in two places:
 
 - **Window title bar** — Displays as **Constellation - UniverseName**.
-- **Status bar** (bottom-right corner) — Shows the universe name alongside vault and note counts.
+- **Status bar** (bottom-right corner) — Shows the universe name alongside library and note counts.
 
 Both update immediately when you switch universes through the Universe Manager.
 
@@ -155,7 +155,7 @@ Since a Universe is a self-contained directory, you can:
 - **Move it** to a different drive or location.
 - **Copy it** to another computer.
 - **Back it up** with any file sync or backup tool.
-- **Share it** with others (vault paths will need to be re-registered on the new machine).
+- **Share it** with others (library paths will need to be re-registered on the new machine).
 
 > [!tip]
 > The only thing stored outside your Universe is a small registry file in the app data directory that remembers which Universes exist and which one was last active.

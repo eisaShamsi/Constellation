@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings } from '$lib/vaults/store';
+	import { appSettings, updateSettings, updateSecuritySettings } from '$lib/libraries/store';
+	import { eventToShortcut, normalizeShortcut, getResolvedShortcut, DEFAULT_SHORTCUTS } from '$lib/utils';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
 	import { PROVIDER_INFO, DEFAULT_MODELS, type ProviderId } from '$lib/ai/provider';
@@ -25,6 +26,8 @@
 	let pinConfirm = $state('');
 	let pinError = $state('');
 	let pinChanging = $state(false);
+	let recordingCommandId: string | null = $state(null);
+	let conflictWarning: { commandId: string; existingName: string } | null = $state(null);
 
 	const sections = $derived([
 		{ id: 'about', label: $t('settings.sections.about'), icon: 'info' },
@@ -45,10 +48,10 @@
 			: commands
 	);
 
-	const corePlugins = $derived([
+	const coreFeatures = $derived([
 		{ id: 'dailyNotes', name: $t('settings.plugins.dailyNotes'), desc: $t('settings.plugins.dailyNotesDesc') },
 		{ id: 'templates', name: $t('settings.plugins.templates'), desc: $t('settings.plugins.templatesDesc') },
-		{ id: 'graphView', name: $t('settings.plugins.graphView'), desc: $t('settings.plugins.graphViewDesc') },
+		{ id: 'starView', name: $t('settings.plugins.starView'), desc: $t('settings.plugins.starViewDesc') },
 		{ id: 'backlinks', name: $t('settings.plugins.backlinks'), desc: $t('settings.plugins.backlinksDesc') },
 		{ id: 'outgoingLinks', name: $t('settings.plugins.outgoingLinks'), desc: $t('settings.plugins.outgoingLinksDesc') },
 		{ id: 'tags', name: $t('settings.plugins.tags'), desc: $t('settings.plugins.tagsDesc') },
@@ -61,6 +64,7 @@
 	]);
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (recordingCommandId) return; // handled by capture listener
 		if (e.key === 'Escape') {
 			e.preventDefault();
 			e.stopPropagation();
@@ -104,16 +108,16 @@
 		testing = false;
 	}
 
-	function getPluginEnabled(id: string): boolean {
-		const plugins = ($appSettings as any).enabledPlugins;
-		if (!plugins) return true;
-		return plugins[id] !== false;
+	function getFeatureEnabled(id: string): boolean {
+		const features = $appSettings.enabledFeatures;
+		if (!features) return true;
+		return (features as Record<string, boolean>)[id] !== false;
 	}
 
-	function togglePlugin(id: string) {
-		const current = ($appSettings as any).enabledPlugins || {};
+	function toggleFeature(id: string) {
+		const current = $appSettings.enabledFeatures || {};
 		updateSettings({
-			enabledPlugins: { ...current, [id]: !getPluginEnabled(id) }
+			enabledFeatures: { ...current, [id]: !getFeatureEnabled(id) }
 		} as any);
 	}
 
@@ -174,6 +178,73 @@
 			updateSecuritySettings({ lockOnIdle: !current });
 		}
 	}
+
+	function startRecording(cmdId: string) {
+		conflictWarning = null;
+		recordingCommandId = cmdId;
+	}
+
+	function cancelRecording() {
+		recordingCommandId = null;
+		conflictWarning = null;
+	}
+
+	function saveShortcut(cmdId: string, combo: string) {
+		// Check for conflicts
+		const conflict = commands.find(c =>
+			c.id !== cmdId &&
+			c.shortcut &&
+			normalizeShortcut(c.shortcut) === combo
+		);
+		if (conflict) {
+			conflictWarning = { commandId: cmdId, existingName: conflict.name };
+		} else {
+			conflictWarning = null;
+		}
+		const custom = { ...$appSettings.customShortcuts, [cmdId]: combo };
+		updateSettings({ customShortcuts: custom } as any);
+		recordingCommandId = null;
+	}
+
+	function resetShortcut(cmdId: string) {
+		const custom = { ...$appSettings.customShortcuts };
+		delete custom[cmdId];
+		updateSettings({ customShortcuts: custom } as any);
+		conflictWarning = null;
+	}
+
+	function resetAllShortcuts() {
+		updateSettings({ customShortcuts: {} } as any);
+		conflictWarning = null;
+	}
+
+	function isCustomized(cmdId: string): boolean {
+		return cmdId in ($appSettings.customShortcuts || {});
+	}
+
+	function handleRecordKey(e: KeyboardEvent) {
+		if (!recordingCommandId) return;
+		e.preventDefault();
+		e.stopPropagation();
+
+		if (e.key === 'Escape') {
+			cancelRecording();
+			return;
+		}
+
+		const combo = eventToShortcut(e);
+		if (!combo) return; // bare modifier
+
+		saveShortcut(recordingCommandId, combo);
+	}
+
+	$effect(() => {
+		if (recordingCommandId) {
+			const handler = (e: KeyboardEvent) => handleRecordKey(e);
+			document.addEventListener('keydown', handler, true);
+			return () => document.removeEventListener('keydown', handler, true);
+		}
+	});
 
 	let containerEl: HTMLDivElement;
 	onMount(() => { containerEl?.focus(); });
@@ -318,22 +389,22 @@
 				{:else if activeSection === 'security'}
 					<p class="section-intro">{$t('settings.security.intro')}</p>
 
-					<!-- Vault Encryption -->
+					<!-- Library Encryption -->
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.security.vaultEncryption')}</div>
-							<div class="setting-desc">{$t('settings.security.vaultEncryptionDesc')}</div>
+							<div class="setting-name">{$t('settings.security.libraryEncryption')}</div>
+							<div class="setting-desc">{$t('settings.security.libraryEncryptionDesc')}</div>
 						</div>
 						<div class="security-control-row">
-							{#if $appSettings.security.vaultEncryption}
+							{#if $appSettings.security.libraryEncryption}
 								<span class="security-badge active">{$t('settings.security.enabled')}</span>
 							{:else}
 								<span class="security-badge">{$t('settings.security.disabled')}</span>
 							{/if}
 							<label class="toggle">
 								<input type="checkbox"
-									checked={$appSettings.security.vaultEncryption}
-									onchange={() => updateSecuritySettings({ vaultEncryption: !$appSettings.security.vaultEncryption })} />
+									checked={$appSettings.security.libraryEncryption}
+									onchange={() => updateSecuritySettings({ libraryEncryption: !$appSettings.security.libraryEncryption })} />
 								<span class="toggle-slider"></span>
 							</label>
 						</div>
@@ -660,6 +731,16 @@
 
 					<div class="setting-item">
 						<div class="setting-info">
+							<div class="setting-name">{$t('settings.files.inboxFolder')}</div>
+							<div class="setting-desc">{$t('settings.files.inboxFolderDesc')}</div>
+						</div>
+						<input class="setting-input" type="text" value={$appSettings.inboxFolder}
+							placeholder="+"
+							oninput={(e) => updateSettings({ inboxFolder: (e.target as HTMLInputElement).value })} />
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
 							<div class="setting-name">{$t('settings.files.linkFormat')}</div>
 							<div class="setting-desc">{$t('settings.files.linkFormatDesc')}</div>
 						</div>
@@ -828,10 +909,17 @@
 
 				<!-- ═══ HOTKEYS ═══ -->
 				{:else if activeSection === 'hotkeys'}
-					<div class="hotkey-filter">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-						<input type="text" placeholder={$t('settings.hotkeys.filter')}
-							value={hotkeyFilter} oninput={(e) => hotkeyFilter = (e.target as HTMLInputElement).value} />
+					<div class="hotkey-toolbar">
+						<div class="hotkey-filter">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+							<input type="text" placeholder={$t('settings.hotkeys.filter')}
+								value={hotkeyFilter} oninput={(e) => hotkeyFilter = (e.target as HTMLInputElement).value} />
+						</div>
+						{#if Object.keys($appSettings.customShortcuts || {}).length > 0}
+							<button class="hotkey-reset-all" onclick={() => { if (confirm($t('settings.hotkeys.resetAllConfirm'))) resetAllShortcuts(); }}>
+								{$t('settings.hotkeys.resetAll')}
+							</button>
+						{/if}
 					</div>
 
 					<div class="hotkey-list">
@@ -841,33 +929,46 @@
 									{#if cmd.icon}<span class="hotkey-icon">{cmd.icon}</span>{/if}
 									<span class="hotkey-name">{cmd.name}</span>
 									{#if cmd.category}<span class="hotkey-cat">{cmd.category}</span>{/if}
+									{#if isCustomized(cmd.id)}<span class="hotkey-customized">{$t('settings.hotkeys.customized')}</span>{/if}
 								</div>
-								<div class="hotkey-binding">
-									{#if cmd.shortcut}
-										<kbd>{cmd.shortcut}</kbd>
+								<div class="hotkey-actions">
+									{#if recordingCommandId === cmd.id}
+										<span class="hotkey-recording">{$t('settings.hotkeys.pressKey')}</span>
 									{:else}
-										<span class="hotkey-unset">{$t('settings.hotkeys.notSet')}</span>
+										<button class="hotkey-btn" onclick={() => startRecording(cmd.id)} title={$t('settings.hotkeys.pressKey')}>
+											{#if cmd.shortcut}
+												<kbd>{cmd.shortcut}</kbd>
+											{:else}
+												<span class="hotkey-unset">{$t('settings.hotkeys.notSet')}</span>
+											{/if}
+										</button>
+									{/if}
+									{#if isCustomized(cmd.id) && recordingCommandId !== cmd.id}
+										<button class="hotkey-reset" onclick={() => resetShortcut(cmd.id)} title={$t('settings.hotkeys.resetToDefault')}>↺</button>
 									{/if}
 								</div>
 							</div>
+							{#if conflictWarning && conflictWarning.commandId === cmd.id}
+								<div class="hotkey-conflict">{$t('settings.hotkeys.conflict').replace('{name}', conflictWarning.existingName)}</div>
+							{/if}
 						{/each}
 						{#if filteredCommands.length === 0}
 							<div class="hotkey-empty">{$t('settings.hotkeys.noCommands')}</div>
 						{/if}
 					</div>
 
-				<!-- ═══ CORE PLUGINS ═══ -->
+				<!-- ═══ BUILT-IN FEATURES ═══ -->
 				{:else if activeSection === 'plugins'}
 					<p class="section-intro">{$t('settings.plugins.intro')}</p>
-					{#each corePlugins as plugin}
-						<div class="setting-item plugin-item">
+					{#each coreFeatures as feature}
+						<div class="setting-item feature-item">
 							<div class="setting-info">
-								<div class="setting-name">{plugin.name}</div>
-								<div class="setting-desc">{plugin.desc}</div>
+								<div class="setting-name">{feature.name}</div>
+								<div class="setting-desc">{feature.desc}</div>
 							</div>
 							<label class="toggle">
-								<input type="checkbox" checked={getPluginEnabled(plugin.id)}
-									onchange={() => togglePlugin(plugin.id)} />
+								<input type="checkbox" checked={getFeatureEnabled(feature.id)}
+									onchange={() => toggleFeature(feature.id)} />
 								<span class="toggle-slider"></span>
 							</label>
 						</div>
@@ -1136,9 +1237,12 @@
 	}
 
 	/* ═══ HOTKEYS ═══ */
+	.hotkey-toolbar {
+		display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+	}
 	.hotkey-filter {
-		display: flex; align-items: center; gap: 8px;
-		padding: 8px 12px; margin-bottom: 12px;
+		flex: 1; display: flex; align-items: center; gap: 8px;
+		padding: 8px 12px;
 		background: var(--background-secondary);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 8px;
@@ -1149,6 +1253,12 @@
 		color: var(--text-normal); font-size: 0.88rem; font-family: inherit;
 	}
 	.hotkey-filter input::placeholder { color: var(--text-faint); }
+	.hotkey-reset-all {
+		font-size: 0.78rem; color: var(--text-muted); background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border); border-radius: 6px;
+		padding: 6px 12px; cursor: pointer; white-space: nowrap;
+	}
+	.hotkey-reset-all:hover { color: var(--text-normal); border-color: var(--text-faint); }
 	.hotkey-list { display: flex; flex-direction: column; }
 	.hotkey-item {
 		display: flex; align-items: center; justify-content: space-between;
@@ -1156,26 +1266,59 @@
 		gap: 12px;
 	}
 	.hotkey-item:last-child { border-bottom: none; }
-	.hotkey-info { display: flex; align-items: center; gap: 8px; min-width: 0; }
+	.hotkey-info { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
 	.hotkey-icon { font-size: 0.9rem; flex-shrink: 0; }
 	.hotkey-name { font-size: 0.88rem; color: var(--text-normal); }
 	.hotkey-cat {
 		font-size: 0.7rem; color: var(--text-faint);
 		background: var(--background-secondary-alt); padding: 1px 6px; border-radius: 4px;
 	}
-	.hotkey-binding { flex-shrink: 0; }
+	.hotkey-customized {
+		font-size: 0.65rem; color: var(--interactive-accent);
+		background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+		padding: 1px 6px; border-radius: 4px; font-weight: 500;
+	}
+	.hotkey-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+	.hotkey-btn {
+		background: none; border: none; cursor: pointer; padding: 0; border-radius: 4px;
+	}
+	.hotkey-btn:hover kbd {
+		border-color: var(--interactive-accent); color: var(--text-normal);
+	}
+	.hotkey-btn:hover .hotkey-unset { color: var(--text-muted); }
 	kbd {
 		font-family: var(--font-monospace-theme);
 		font-size: 0.78rem; color: var(--text-muted);
 		background: var(--background-secondary);
 		border: 1px solid var(--background-modifier-border);
 		padding: 2px 8px; border-radius: 4px;
+		transition: border-color 0.15s, color 0.15s;
+	}
+	.hotkey-recording {
+		font-size: 0.78rem; color: var(--interactive-accent);
+		border: 1px dashed var(--interactive-accent);
+		padding: 2px 10px; border-radius: 4px;
+		animation: hotkey-pulse 1s ease-in-out infinite;
+	}
+	@keyframes hotkey-pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.5; }
+	}
+	.hotkey-reset {
+		background: none; border: none; cursor: pointer;
+		font-size: 0.9rem; color: var(--text-faint); padding: 2px 4px;
+		border-radius: 4px; line-height: 1;
+	}
+	.hotkey-reset:hover { color: var(--text-normal); background: var(--background-secondary); }
+	.hotkey-conflict {
+		font-size: 0.75rem; color: #d97706; padding: 2px 0 6px 0;
+		margin-top: -6px;
 	}
 	.hotkey-unset { font-size: 0.78rem; color: var(--text-faint); font-style: italic; }
 	.hotkey-empty { text-align: center; padding: 24px; color: var(--text-faint); font-size: 0.85rem; }
 
 	/* ═══ PLUGINS ═══ */
-	.plugin-item .setting-name { font-weight: 500; }
+	.feature-item .setting-name { font-weight: 500; }
 
 	/* ═══ AI ═══ */
 	.test-btn {

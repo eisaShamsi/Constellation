@@ -44,7 +44,7 @@ All formatting shortcuts wrap the current selection. If no text is selected, the
 |----------|--------|
 | **Ctrl+D** | Select next occurrence of the current selection |
 | **Ctrl+Shift+D** | Duplicate the current line |
-| **Ctrl+/** | Toggle Obsidian comment (`%%...%%`) |
+| **Ctrl+/** | Toggle comment (`%%...%%`) |
 | **Ctrl+Shift+V** | Paste as plain text |
 | **Ctrl+Z** | Undo |
 | **Ctrl+Shift+Z** | Redo |
@@ -58,16 +58,16 @@ All formatting shortcuts wrap the current selection. If no text is selected, the
 | **Ctrl+Shift+[** | Fold the section at cursor |
 | **Ctrl+Shift+]** | Unfold the section at cursor |
 
-You can also use the **Fold all sections** and **Unfold all sections** commands from the command palette (**Ctrl+P**).
+You can also use the **Fold all sections** and **Unfold all sections** commands from Mission Control (**Ctrl+P**).
 
 ### Navigation shortcuts
 
 | Shortcut | Action |
 |----------|--------|
-| **Ctrl+O** | Quick switcher |
-| **Ctrl+P** | Command palette |
-| **Ctrl+Shift+F** | Search vault |
-| **Ctrl+G** | Open graph view |
+| **Ctrl+O** | Star Jump |
+| **Ctrl+P** | Mission Control |
+| **Ctrl+Shift+F** | Search library |
+| **Ctrl+G** | Open Sky View |
 | **Ctrl+N** | New note |
 
 ---
@@ -147,7 +147,7 @@ Live preview mode renders Markdown formatting inline as you type, hiding syntax 
 ### Enabling live preview
 
 - Click the **book icon** button next to the edit/read mode toggle in the note header.
-- Or use the command palette: **Toggle live preview** (**Ctrl+P**, then search for it).
+- Or use Mission Control: **Toggle live preview** (**Ctrl+P**, then search for it).
 
 ### What renders in live preview
 
@@ -190,7 +190,7 @@ Nested list items can be folded to hide their children. Click the fold arrow nex
 - **Fold all sections**: Collapses all foldable sections in the note.
 - **Unfold all sections**: Expands all folded sections.
 
-Both commands are available from the command palette (**Ctrl+P**).
+Both commands are available from Mission Control (**Ctrl+P**).
 
 ---
 
@@ -266,11 +266,11 @@ Type `/` at the beginning of a line to open the slash command menu with quick in
 
 ### Wikilink autocomplete
 
-Type `[[` to open the note autocomplete. Start typing a note name and matching notes from all vaults appear. Press **Enter** to insert the link. You can also link to specific headings with `[[note#heading]]`.
+Type `[[` to open the note autocomplete. Start typing a note name and matching notes from all libraries appear. Press **Enter** to insert the link. You can also link to specific headings with `[[note#heading]]`.
 
 ### Tag autocomplete
 
-Type `#` to open the tag autocomplete. Existing tags from your vaults are suggested as you type.
+Type `#` to open the tag autocomplete. Existing tags from your libraries are suggested as you type.
 
 ---
 

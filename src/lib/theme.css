@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   Constellation Theme — Obsidian-style CSS variable system
+   Constellation Theme — CSS variable system
    3-tier hierarchy: Base colors → Semantic → Compat aliases
    ═══════════════════════════════════════════════════════ */
 
@@ -133,11 +133,11 @@
   --code-variable: var(--color-orange);
   --code-meta:     var(--color-base-50);
 
-  /* Graph view (read by canvas JS via getComputedStyle) */
-  --graph-line:           var(--color-base-40);
-  --graph-node-focused:   var(--interactive-accent);
-  --graph-text:           var(--color-base-100);
-  --graph-text-shadow:    var(--color-base-00);
+  /* Star view (read by canvas JS via getComputedStyle) */
+  --star-line:           var(--color-base-40);
+  --star-node-focused:   var(--interactive-accent);
+  --star-text:           var(--color-base-100);
+  --star-text-shadow:    var(--color-base-00);
 }
 
 /* Dark-mode overrides */

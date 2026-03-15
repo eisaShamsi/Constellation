@@ -4,30 +4,30 @@
 
 	let {
 		notes = [],
-		vaultColorMap = {},
+		libraryColorMap = {},
 		onNoteClick,
 		onNoteDoubleClick,
 	}: {
-		notes: { name: string; path: string; vaultName: string }[];
-		vaultColorMap: Record<string, string>;
-		onNoteClick: (note: { name: string; path: string; vaultName: string }) => void;
-		onNoteDoubleClick?: (note: { name: string; path: string; vaultName: string }) => void;
+		notes: { name: string; path: string; libraryName: string }[];
+		libraryColorMap: Record<string, string>;
+		onNoteClick: (note: { name: string; path: string; libraryName: string }) => void;
+		onNoteDoubleClick?: (note: { name: string; path: string; libraryName: string }) => void;
 	} = $props();
 
 	let searchQuery = $state('');
 	let sortBy = $state<'name' | 'vault' | 'modified'>('name');
 	let selectedVault = $state<string>('all');
 
-	// Get unique vault names
-	const vaultNames = $derived([...new Set(notes.map(n => n.vaultName))].sort());
+	// Get unique library names
+	const libraryNames = $derived([...new Set(notes.map(n => n.libraryName))].sort());
 
 	// Filter and sort
 	const filteredNotes = $derived.by(() => {
 		let result = notes;
 
-		// Vault filter
+		// Library filter
 		if (selectedVault !== 'all') {
-			result = result.filter(n => n.vaultName === selectedVault);
+			result = result.filter(n => n.libraryName === selectedVault);
 		}
 
 		// Search filter
@@ -41,7 +41,7 @@
 		// Sort
 		result = [...result].sort((a, b) => {
 			if (sortBy === 'name') return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
-			if (sortBy === 'vault') return a.vaultName.localeCompare(b.vaultName) || a.name.localeCompare(b.name);
+			if (sortBy === 'vault') return a.libraryName.localeCompare(b.libraryName) || a.name.localeCompare(b.name);
 			return a.name.localeCompare(b.name); // fallback
 		});
 
@@ -76,7 +76,7 @@
 
 		<select class="grid-filter" bind:value={selectedVault}>
 			<option value="all">{$t('secondScreen.allVaults')}</option>
-			{#each vaultNames as vault}
+			{#each libraryNames as vault}
 				<option value={vault}>{vault}</option>
 			{/each}
 		</select>
@@ -98,11 +98,11 @@
 				ondblclick={() => onNoteDoubleClick?.(note)}
 			>
 				<div class="card-header">
-					<span class="card-dot" style="background:{vaultColorMap[note.vaultName] || '#7c3aed'}"></span>
+					<span class="card-dot" style="background:{libraryColorMap[note.libraryName] || '#7c3aed'}"></span>
 					<span class="card-title">{note.name.replace(/\.md$/, '')}</span>
 				</div>
 				<div class="card-folder">{getFolder(note.path)}</div>
-				<div class="card-vault">{note.vaultName}</div>
+				<div class="card-library">{note.libraryName}</div>
 			</button>
 		{/each}
 
@@ -240,7 +240,7 @@
 		padding-inline-start: 14px;
 	}
 
-	.card-vault {
+	.card-library {
 		font-size: 10px;
 		color: var(--text-secondary);
 		padding-inline-start: 14px;

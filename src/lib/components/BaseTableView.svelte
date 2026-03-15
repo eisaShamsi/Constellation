@@ -14,7 +14,7 @@
 		columns: ColumnDef[];
 		dir: 'ltr' | 'rtl';
 		onCellEdit: (row: BaseRow, key: string, value: string) => void;
-		onOpenNote: (path: string, vaultName: string) => void;
+		onOpenNote: (path: string, libraryName: string) => void;
 		onColumnReorder?: (columns: ColumnDef[]) => void;
 	} = $props();
 
@@ -173,7 +173,7 @@
 				<tr class="base-row">
 					<!-- File name cell -->
 					<td class="cell-filename sticky-col">
-						<button class="file-link" onclick={() => onOpenNote(row.file_path, row.vault_name)}>
+						<button class="file-link" onclick={() => onOpenNote(row.file_path, row.library_name)}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 								<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
 								<polyline points="14 2 14 8 20 8"/>
@@ -217,7 +217,7 @@
 							{:else if cellType === 'link'}
 								<button class="cell-link" onclick={() => {
 									const target = value.replace(/^\[\[|\]\]$/g, '');
-									onOpenNote(target, row.vault_name);
+									onOpenNote(target, row.library_name);
 								}}>
 									{value.replace(/^\[\[|\]\]$/g, '')}
 								</button>

@@ -3,14 +3,14 @@ aliases:
   - Security
   - Privacy
   - Lock screen
-  - Vault encryption
+  - Library encryption
   - API key protection
-description: Learn how Constellation protects your vault data, locks your app, and secures API keys.
+description: Learn how Constellation protects your library data, locks your app, and secures API keys.
 ---
 
 # Security and privacy
 
-Constellation is a local-first desktop application. Your vault data stays on your device and is never uploaded to external servers. All AI-related API calls are routed through the Tauri backend, meaning your API keys never touch the browser layer.
+Constellation is a local-first desktop application. Your library data stays on your device and is never uploaded to external servers. All AI-related API calls are routed through the Tauri backend, meaning your API keys never touch the browser layer.
 
 You can find security settings under **Settings > Security**.
 
@@ -20,7 +20,7 @@ Constellation offers three optional security features you can enable independent
 
 | Feature | Purpose | Status |
 |---------|---------|--------|
-| [[#Vault encryption]] | Encrypt cached vault data at rest | Optional |
+| [[#Library encryption]] | Encrypt cached library data at rest | Optional |
 | [[#Lock on idle]] | Lock the app after inactivity | Optional |
 | [[#Secure API key storage]] | Store API keys in the OS keyring | Optional |
 
@@ -28,27 +28,27 @@ All security features are **disabled by default** and can be toggled on or off a
 
 ---
 
-## Vault encryption
+## Library encryption
 
 > [!abstract] What it does
-> When enabled, Constellation encrypts your cached vault data at rest on the local device. This protects your data if someone gains access to your filesystem.
+> When enabled, Constellation encrypts your cached library data at rest on the local device. This protects your data if someone gains access to your filesystem.
 
 ### How it works
 
-- Constellation caches vault metadata (file trees, search indices, tag maps) locally for performance.
-- With vault encryption enabled, this cached data is encrypted before being written to disk.
-- Your original `.md` files in the Obsidian vault folder are **not modified** — Constellation is a reader and does not alter source files.
+- Constellation caches library metadata (file trees, search indices, tag maps) locally for performance.
+- With library encryption enabled, this cached data is encrypted before being written to disk.
+- Your original `.md` files in the library folder are **not modified** — Constellation is a reader and does not alter source files.
 - Encryption uses the operating system's native secure storage facilities via the Tauri backend.
 
 ### How to enable
 
 1. Open **Settings** (Ctrl+, or the gear icon in the sidebar).
 2. Navigate to **Security**.
-3. Toggle **Vault encryption** to on.
+3. Toggle **Library encryption** to on.
 4. The status badge will change from "Disabled" to "Enabled".
 
 > [!tip]
-> Vault encryption protects cached data only. Your original Obsidian vault files are managed by your operating system's file-level permissions and disk encryption (e.g., BitLocker on Windows, FileVault on macOS).
+> Library encryption protects cached data only. Your original library files are managed by your operating system's file-level permissions and disk encryption (e.g., BitLocker on Windows, FileVault on macOS).
 
 ---
 
@@ -144,7 +144,7 @@ With **Secure API key storage** enabled:
 
 Constellation is designed as a local-first application:
 
-- **Vault files**: Read directly from your local filesystem. Never copied or uploaded.
+- **Library files**: Read directly from your local filesystem. Never copied or uploaded.
 - **Settings**: Stored in browser localStorage under the `constellation-settings` key.
 - **Locale preference**: Stored in localStorage under the `constellation-locale` key.
 - **Workspaces and bookmarks**: Stored in localStorage.

@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Constellation",
-    "tagline": "Ein Tresor der Tresore"
+    "tagline": "Ein Universum der Bibliotheken"
   },
   "settings": {
     "title": "Einstellungen",
@@ -11,14 +11,14 @@
       "editor": "Editor",
       "files": "Dateien & Links",
       "appearance": "Erscheinungsbild",
-      "hotkeys": "Tastenkürzel",
+      "hotkeys": "Tastaturkürzel",
       "security": "Sicherheit",
       "plugins": "Integrierte Funktionen",
       "ai": "KI-Anbieter",
       "templates": "Vorlagen"
     },
     "about": {
-      "tagline": "Ein Tresor der Tresore",
+      "tagline": "Ein Universum der Bibliotheken",
       "developedBy": "Entwickelt von"
     },
     "general": {
@@ -34,9 +34,9 @@
       "autoUpdateDesc": "Updates automatisch herunterladen und installieren"
     },
     "security": {
-      "intro": "Schütze deine Vault-Daten, sichere API-Schlüssel und sperre die App bei Inaktivität.",
-      "vaultEncryption": "Vault-Verschlüsselung",
-      "vaultEncryptionDesc": "Gespeicherte Vault-Daten auf diesem Gerät verschlüsseln",
+      "intro": "Schütze deine Bibliotheks-Daten, sichere API-Schlüssel und sperre die App bei Inaktivität.",
+      "vaultEncryption": "Bibliotheks-Verschlüsselung",
+      "vaultEncryptionDesc": "Gespeicherte Bibliotheks-Daten auf diesem Gerät verschlüsseln",
       "enabled": "Aktiviert",
       "disabled": "Deaktiviert",
       "lockHeading": "Sperrbildschirm",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "Standardort für neue Notizen",
       "defaultLocationDesc": "Wo neue Notizen abgelegt werden",
-      "vaultRoot": "Stammordner des Tresors",
+      "vaultRoot": "Stammordner der Bibliothek",
       "currentFolder": "Gleicher Ordner wie aktuelle Datei",
       "specifiedFolder": "Im unten angegebenen Ordner",
       "folderPath": "Ordnerpfad",
@@ -109,11 +109,13 @@
       "defaultAttachmentFolder": "Standard-Anhangsordner",
       "defaultAttachmentFolderDesc": "Wo Anhänge gespeichert werden",
       "sameAsNotePlaceholder": "Gleicher Ordner wie die Notiz",
+      "inboxFolder": "Eingangsordner",
+      "inboxFolderDesc": "Ordner für Schnellerfassungsnotizen (Strg+Umschalt+N)",
       "linkFormat": "Neues Link-Format",
       "linkFormatDesc": "Wie interne Links erzeugt werden",
       "shortestPath": "Kürzester Pfad wenn möglich",
       "relativePath": "Relativer Pfad zur Datei",
-      "absolutePath": "Absoluter Pfad im Tresor",
+      "absolutePath": "Absoluter Pfad in der Bibliothek",
       "autoUpdateLinks": "Interne Links automatisch aktualisieren",
       "autoUpdateLinksDesc": "Alle Links beim Umbenennen einer Notiz aktualisieren",
       "useWikilinks": "[[Wikilinks]] verwenden",
@@ -146,9 +148,15 @@
       "fontSizeDesc": "Basis-Schriftgröße für den Notizinhalt"
     },
     "hotkeys": {
-      "filter": "Befehle filtern...",
+      "filter": "Tastaturkürzel filtern...",
       "notSet": "Nicht gesetzt",
-      "noCommands": "Keine Befehle gefunden"
+      "noCommands": "Keine Tastaturkürzel gefunden",
+      "pressKey": "Tastenkombination drücken...",
+      "resetToDefault": "Standard wiederherstellen",
+      "resetAll": "Alle Tastenkürzel zurücksetzen",
+      "resetAllConfirm": "Alle Tastenkürzel auf Standard zurücksetzen?",
+      "conflict": "Bereits verwendet von: {name}",
+      "customized": "Angepasst"
     },
     "plugins": {
       "intro": "Integrierte Funktionen in Constellation. Sie können jede einzelne aktivieren oder deaktivieren.",
@@ -156,8 +164,8 @@
       "dailyNotesDesc": "Tägliche Notizen erstellen und öffnen",
       "templates": "Vorlagen",
       "templatesDesc": "Inhalte aus Vorlagendateien einfügen",
-      "graphView": "Graphansicht",
-      "graphViewDesc": "Verbindungen zwischen Notizen visualisieren",
+      "starView": "Sternenansicht",
+      "starViewDesc": "Verbindungen zwischen Notizen visualisieren",
       "backlinks": "Rückverweise",
       "backlinksDesc": "Notizen anzeigen, die auf die aktuelle Notiz verweisen",
       "outgoingLinks": "Ausgehende Links",
@@ -168,9 +176,9 @@
       "pagePreviewDesc": "Notizen beim Überfahren eines Links in der Vorschau anzeigen",
       "search": "Suche",
       "searchDesc": "In allen Notizen suchen",
-      "quickSwitcher": "Schnellwechsler",
+      "quickSwitcher": "Sternensprung",
       "quickSwitcherDesc": "Schnell zwischen Notizen navigieren",
-      "commandPalette": "Befehlspalette",
+      "commandPalette": "Missionskontrolle",
       "commandPaletteDesc": "Schneller Zugriff auf alle Befehle",
       "wordCount": "Wortanzahl",
       "wordCountDesc": "Wortanzahl in der Statusleiste anzeigen",
@@ -210,18 +218,19 @@
       "varTime": "Aktuelle Uhrzeit (HH:MM)",
       "varTitle": "Notiz-Titel",
       "varFolder": "Übergeordneter Ordnername",
-      "varVault": "Tresorname",
+      "varVault": "Bibliotheksname",
       "varCursor": "Cursorposition nach dem Einfügen"
     }
   },
   "commands": {
     "newNote": "Neue Notiz",
     "newBase": "Neue Basis",
-    "quickSwitcher": "Schnellwechsler",
-    "searchVault": "Tresor durchsuchen",
+    "quickCapture": "Schnellerfassung",
+    "quickSwitcher": "Sternensprung",
+    "searchVault": "Bibliothek durchsuchen",
     "dailyNote": "Tägliche Notiz öffnen",
     "toggleEdit": "Bearbeitungs-/Lesemodus umschalten",
-    "graphView": "Graphansicht öffnen",
+    "starView": "Sternenansicht öffnen",
     "globalTasks": "Globale Aufgaben öffnen",
     "toggleBold": "Fett umschalten",
     "toggleItalic": "Kursiv umschalten",
@@ -229,7 +238,7 @@
     "closeNote": "Aktuelle Notiz schließen",
     "toggleLeftSidebar": "Linke Seitenleiste umschalten",
     "toggleRightSidebar": "Rechte Seitenleiste umschalten",
-    "addVault": "Tresor hinzufügen",
+    "addVault": "Bibliothek hinzufügen",
     "toggleBookmark": "Lesezeichen umschalten",
     "randomNote": "Zufällige Notiz öffnen",
     "toggleTheme": "Dunklen/Hellen Modus umschalten",
@@ -257,10 +266,10 @@
     "rename": "Umbenennen",
     "delete": "Löschen"
   },
-  "ribbon": {
+  "dock": {
     "fileExplorer": "Datei-Explorer",
     "search": "Suche",
-    "graphView": "Graphansicht",
+    "starView": "Sternenansicht",
     "globalTasks": "Globale Aufgaben",
     "dailyNote": "Tägliche Notiz",
     "aiSkills": "KI-Fähigkeiten",
@@ -271,13 +280,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "Suchen...",
-    "addVault": "Tresor hinzufügen",
+    "addVault": "Bibliothek hinzufügen",
     "results": "Ergebnisse",
     "noResults": "Keine Ergebnisse gefunden",
     "bookmarks": "Lesezeichen",
     "bases": "Basen",
-    "noVaults": "Noch keine Tresore",
-    "addVaultButton": "+ Tresor hinzufügen",
+    "noVaults": "Noch keine Bibliotheken",
+    "addVaultButton": "+ Bibliothek hinzufügen",
     "newNote": "Neue Notiz",
     "newBase": "Neue Basis",
     "newFolder": "Neuer Ordner",
@@ -293,13 +302,13 @@
     "rightSidebar": "Rechte Seitenleiste",
     "splitView": "Geteilte Ansicht",
     "skills": "Fähigkeiten",
-    "graphViewTitle": "Graphansicht",
+    "starViewTitle": "Sternenansicht",
     "pinned": "Angeheftet"
   },
   "welcome": {
     "title": "Willkommen bei Constellation",
-    "subtitle": "Fügen Sie Ihren ersten Tresor hinzu, um zu beginnen",
-    "addVault": "+ Tresor hinzufügen",
+    "subtitle": "Fügen Sie Ihren ersten Bibliothek hinzu, um zu beginnen",
+    "addVault": "+ Bibliothek hinzufügen",
     "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste",
     "quickSwitchHint": "oder drücken Sie Strg+O zum Schnellwechseln"
   },
@@ -317,7 +326,7 @@
     "tagsHeader": "Tags",
     "linkDashboard": "Link-Dashboard",
     "noteGrid": "Notiz-Raster",
-    "graphView": "Graphansicht",
+    "starView": "Sternenansicht",
     "noNoteSelected": "Keine Notiz ausgewählt",
     "noTags": "Keine Tags in dieser Notiz",
     "noConnections": "Keine Verbindungen",
@@ -359,11 +368,11 @@
     "noTasksFound": "Keine Aufgaben gefunden",
     "allDates": "Alle Daten",
     "thisWeek": "Diese Woche",
-    "allVaults": "Alle Tresore",
+    "allVaults": "Alle Bibliotheken",
     "allPriorities": "Alle Prioritäten",
     "noGroup": "Keine Gruppierung",
     "groupByFile": "Nach Datei gruppieren",
-    "groupByVault": "Nach Tresor gruppieren",
+    "groupByVault": "Nach Bibliothek gruppieren",
     "groupByPriority": "Nach Priorität gruppieren",
     "groupByDue": "Nach Fälligkeitsdatum gruppieren",
     "sortByFile": "Nach Datei sortieren",
@@ -371,10 +380,10 @@
   },
   "linkDashboard": {
     "mostConnected": "Meistverbunden",
-    "crossVault": "Tresor-übergreifend",
+    "crossVault": "Bibliothek-übergreifend",
     "broken": "Defekt",
     "orphans": "Verwaiste Notizen",
-    "noCrossVault": "Keine tresor-übergreifenden Links",
+    "noCrossVault": "Keine bibliothek-übergreifenden Links",
     "noBroken": "Keine defekten Links",
     "noOrphans": "Keine verwaisten Notizen"
   },
@@ -387,7 +396,7 @@
     "properties": "Eigenschaften",
     "words": "Wörter",
     "characters": "Zeichen",
-    "vaults": "Tresore",
+    "vaults": "Bibliotheken",
     "notes": "Notizen"
   },
   "notePane": {
@@ -401,7 +410,7 @@
     "createNote": "Neue Notiz erstellen",
     "goToFile": "Zur Datei gehen",
     "close": "Schließen",
-    "selectVault": "Tresor auswählen"
+    "selectVault": "Bibliothek auswählen"
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben...",
@@ -459,10 +468,10 @@
     "typeCheckbox": "Kontrollkästchen",
     "selectType": "Typ wählen"
   },
-  "graphView": {
+  "starView": {
     "noNotes": "Keine Notizen zum Anzeigen",
     "controls": {
-      "title": "Graph-Einstellungen",
+      "title": "Sternen-Einstellungen",
       "reset": "Auf Standardwerte zurücksetzen",
       "filters": "Filter",
       "searchPlaceholder": "Dateien suchen...",
@@ -486,13 +495,13 @@
     }
   },
   "vaults": {
-    "searchPlaceholder": "Alle Tresore durchsuchen...",
+    "searchPlaceholder": "Alle Bibliotheken durchsuchen...",
     "results": "Ergebnisse",
     "noResults": "Keine Ergebnisse",
-    "addVault": "+ Tresor hinzufügen",
+    "addVault": "+ Bibliothek hinzufügen",
     "welcomeTitle": "Willkommen bei Constellation",
-    "welcomeSubtitle": "Fügen Sie Ihren ersten Tresor über die Seitenleiste hinzu",
-    "addVaultCta": "+ Tresor hinzufügen",
+    "welcomeSubtitle": "Fügen Sie Ihren ersten Bibliothek über die Seitenleiste hinzu",
+    "addVaultCta": "+ Bibliothek hinzufügen",
     "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste"
   },
   "skills": {
@@ -508,7 +517,7 @@
     "create": "Fähigkeit erstellen",
     "noProvider": "Verbinden Sie einen KI-Anbieter in den Einstellungen, um Fähigkeiten zu nutzen.",
     "selectNote": "Notiz auswählen",
-    "selectVault": "Tresor auswählen",
+    "selectVault": "Bibliothek auswählen",
     "enterText": "Text eingeben...",
     "result": "Ergebnis",
     "copyResult": "Kopieren",
@@ -518,11 +527,11 @@
     "summarize": "Notiz zusammenfassen",
     "summarizeDesc": "Eine knappe Zusammenfassung jeder Notiz erstellen",
     "qa": "Intelligente Fragen & Antworten",
-    "qaDesc": "Stellen Sie Fragen zu Ihren Tresoren und erhalten Sie KI-gestützte Antworten",
+    "qaDesc": "Stellen Sie Fragen zu Ihren Bibliotheken und erhalten Sie KI-gestützte Antworten",
     "write": "Schreibassistent",
     "writeDesc": "Text erweitern, umschreiben oder verbessern",
     "autolink": "Auto-Verlinker",
-    "autolinkDesc": "Verbindungen zwischen Notizen verschiedener Tresore entdecken",
+    "autolinkDesc": "Verbindungen zwischen Notizen verschiedener Bibliotheken entdecken",
     "translate": "Notiz übersetzen",
     "translateDesc": "Notizen zwischen Sprachen übersetzen",
     "meeting": "Besprechungsnotizen",
@@ -533,14 +542,14 @@
     "researchDesc": "Informationen aus mehreren Notizen analysieren und zusammenführen"
   },
   "vaultManager": {
-    "title": "Vaults verwalten",
-    "openVault": "+ Vault öffnen",
-    "manageVaults": "Vaults verwalten...",
+    "title": "Bibliotheks verwalten",
+    "openVault": "+ Bibliothek öffnen",
+    "manageVaults": "Bibliotheks verwalten...",
     "openFolder": "Ordner öffnen",
     "remove": "Entfernen",
     "confirmRemove": "\"{name}\" aus Constellation entfernen? Deine Dateien werden nicht gelöscht.",
-    "addVault": "+ Vault hinzufügen",
-    "noVaults": "Keine Vaults registriert",
+    "addVault": "+ Bibliothek hinzufügen",
+    "noVaults": "Keine Bibliotheks registriert",
     "notes": "Notizen"
   },
   "lockScreen": {
@@ -634,18 +643,18 @@
       "title": "Quelle",
       "folder": "Ordner",
       "tag": "Schlagwort",
-      "vault": "Tresor",
-      "allVaults": "Alle Tresore",
-      "vaults": "Tresore",
+      "vault": "Bibliothek",
+      "allVaults": "Alle Bibliotheken",
+      "vaults": "Bibliotheken",
       "folderPath": "Ordnerpfad",
       "folderPlaceholder": "z.B. Projekte/Aktiv",
-      "folderHint": "Durchsucht diesen Ordner in allen Tresoren, die ihn enthalten",
+      "folderHint": "Durchsucht diesen Ordner in allen Bibliotheken, die ihn enthalten",
       "includeSubfolders": "Unterordner einbeziehen",
       "tagName": "Schlagwort",
       "tagPlaceholder": "z.B. projekt",
-      "tagHint": "Durchsucht alle Notizen mit diesem Schlagwort in allen Tresoren",
-      "vaultsLabel": "Tresore",
-      "allHint": "Durchsucht alle Notizen in allen verbundenen Tresoren",
+      "tagHint": "Durchsucht alle Notizen mit diesem Schlagwort in allen Bibliotheken",
+      "vaultsLabel": "Bibliotheken",
+      "allHint": "Durchsucht alle Notizen in allen verbundenen Bibliotheken",
       "apply": "Anwenden",
       "cancel": "Abbrechen"
     }
@@ -668,14 +677,25 @@
       "creating": "Wird erstellt...",
       "next": "Weiter",
       "back": "Zurück",
-      "addVaultsHeading": "Füge deine Tresore hinzu",
-      "addVaultsDescription": "Verbinde deine Tresore und Unter-Universen. Du kannst später jederzeit weitere hinzufügen.",
-      "addVault": "Tresor hinzufügen",
+      "addVaultsHeading": "Füge deine Bibliotheken hinzu",
+      "addVaultsDescription": "Verbinde deine Bibliotheken und Unter-Universen. Du kannst später jederzeit weitere hinzufügen.",
+      "addVault": "Bibliothek hinzufügen",
       "addChildUniverse": "Unter-Universum hinzufügen",
+      "starterKit": "Startordner erstellen",
+      "starterKitDesc": "Atlas-, Kalender-, Projekte- und Eingangsordner mit einer Willkommensnotiz einrichten",
       "finish": "Fertig",
       "skip": "Vorerst überspringen",
-      "noVaultsYet": "Noch keine Tresore hinzugefügt. Füge einen Tresor oder ein Unter-Universum hinzu, um loszulegen.",
-      "remove": "Entfernen"
+      "noVaultsYet": "Noch keine Bibliotheken hinzugefügt. Füge einen Bibliothek oder ein Unter-Universum hinzu, um loszulegen.",
+      "remove": "Entfernen",
+      "importApp": "Aus einer anderen App importieren",
+      "importAppDesc": "Migrieren Sie Ihre Notizen aus Obsidian, Notion, Evernote oder anderen Apps nach Constellation.",
+      "importHeading": "Notizen importieren",
+      "importDescription": "Wählen Sie die App, von der Sie migrieren, und dann den Quellordner oder die Quelldatei.",
+      "importPreviewHeading": "Bereit zum Import",
+      "importConfirm": "Importieren & Universum erstellen",
+      "importingNotes": "Notizen werden importiert...",
+      "importLocationLabel": "Universum-Speicherort",
+      "importComplete": "Import abgeschlossen! {count} Dateien importiert."
     },
     "manager": {
       "heading": "Universum-Manager",
@@ -690,15 +710,15 @@
       "children": "Kind-Universen",
       "addChild": "Kind-Universum hinzufügen",
       "noUniverses": "Keine Universen gefunden",
-      "ownVaults": "Eigene Tresore",
-      "inheritedVaults": "Geerbte Tresore",
+      "ownVaults": "Eigene Bibliotheken",
+      "inheritedVaults": "Geerbte Bibliotheken",
       "openExisting": "Bestehendes Universum öffnen"
     },
     "switching": "Universum wird gewechselt...",
     "migrating": "Daten werden migriert..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "Lens",
     "loading": "Abfrage wird geladen...",
     "noResults": "Keine Ergebnisse",
     "results": "Ergebnisse",
@@ -719,16 +739,16 @@
   "secondScreen": {
     "title": "Zweiter Bildschirm",
     "grid": "Raster",
-    "graph": "Graph",
+    "star": "Stern",
     "detail": "Detail",
     "loading": "Notizen werden geladen...",
     "linked": "Verknüpft",
     "linkedOn": "Verknüpftes Browsen ein",
     "linkedOff": "Verknüpftes Browsen aus",
     "searchNotes": "Notizen durchsuchen...",
-    "allVaults": "Alle Tresore",
+    "allVaults": "Alle Bibliotheken",
     "sortName": "Nach Name sortieren",
-    "sortVault": "Nach Tresor sortieren",
+    "sortVault": "Nach Bibliothek sortieren",
     "noResults": "Keine passenden Notizen",
     "noNotes": "Keine Notizen gefunden",
     "detailEmpty": "Wähle eine Notiz zur Ansicht",
@@ -738,6 +758,8 @@
     "title": "Notizen importieren",
     "selectFormat": "Wählen Sie das Format der Notizen, die Sie importieren möchten.",
     "formats": {
+      "obsidian": "Obsidian",
+      "obsidianDesc": "Einen Obsidian-Vault mit allen Notizen und Anhängen importieren",
       "markdown": "Markdown",
       "markdownDesc": "Markdown-Dateien (.md) aus jeder App",
       "notion": "Notion",
@@ -753,7 +775,7 @@
       "txt": "Klartext",
       "txtDesc": "Textdateien zu Markdown konvertiert"
     },
-    "targetVault": "Ziel-Tresor",
+    "targetVault": "Ziel-Bibliothek",
     "subfolder": "Unterordner",
     "selectSource": "Quelle auswählen",
     "scanning": "Dateien werden gescannt...",

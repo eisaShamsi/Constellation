@@ -11,7 +11,7 @@
 		rows: BaseRow[];
 		columns: ColumnDef[];
 		dir: 'ltr' | 'rtl';
-		onOpenNote: (path: string, vaultName: string) => void;
+		onOpenNote: (path: string, libraryName: string) => void;
 	} = $props();
 
 	const visibleColumns = $derived(columns.filter(c => c.visible !== false).slice(0, 6));
@@ -23,7 +23,7 @@
 
 <div class="base-card-grid" dir={dir}>
 	{#each rows as row (row.file_path)}
-		<button class="base-card" onclick={() => onOpenNote(row.file_path, row.vault_name)}>
+		<button class="base-card" onclick={() => onOpenNote(row.file_path, row.library_name)}>
 			<div class="card-header">
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -66,8 +66,8 @@
 					{/if}
 				{/each}
 			</div>
-			{#if row.vault_name}
-				<div class="card-vault">{row.vault_name}</div>
+			{#if row.library_name}
+				<div class="card-library">{row.library_name}</div>
 			{/if}
 		</button>
 	{/each}
@@ -166,7 +166,7 @@
 		white-space: nowrap;
 	}
 
-	.card-vault {
+	.card-library {
 		font-size: 0.7rem;
 		color: var(--text-faint);
 		margin-top: auto;

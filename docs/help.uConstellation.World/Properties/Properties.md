@@ -60,7 +60,7 @@ If the key is not recognized, the value format is checked:
 
 ### Date format normalization
 
-Dates entered in **DD/MM/YYYY** format (common in many locales) are automatically normalized to **YYYY-MM-DD** for storage, ensuring compatibility with Obsidian and Dataview.
+Dates entered in **DD/MM/YYYY** format (common in many locales) are automatically normalized to **YYYY-MM-DD** for storage, ensuring compatibility with other Markdown tools and Lens.
 
 ---
 
@@ -77,7 +77,7 @@ Click the type icon next to any property to open the type selector dropdown. Thi
 
 ### Type persistence
 
-When you change a property's type, the choice is remembered vault-wide. The same key will be recognized as that type in all notes within the same vault. Type assignments persist across sessions via local storage.
+When you change a property's type, the choice is remembered library-wide. The same key will be recognized as that type in all notes within the same library. Type assignments persist across sessions via local storage.
 
 ---
 
@@ -147,7 +147,7 @@ The list filters as you type. Press **Up/Down** arrows to navigate, **Enter** to
 
 Properties detected as **Link** type display their value as a clickable link. Clicking the link opens the target note in a new tab:
 
-- The link is resolved as a wikilink across all vaults (cross-vault linking).
+- The link is resolved as a wikilink across all libraries (cross-library linking).
 - If the target note exists, it opens directly.
 - Link values are styled as clickable text with an underline on hover.
 
@@ -172,15 +172,15 @@ When you save a note that already contains an `updated`, `modified`, `حُدث`,
 
 ## Templates
 
-When creating a new note, Constellation checks for a default template at `{vault}/Templates/default.md`. If found:
+When creating a new note, Constellation checks for a default template at `{library}/Templates/default.md`. If found:
 
 - The template's YAML frontmatter is merged with the auto-generated properties (like `created`).
 - The template's body content is used as the initial note content.
 
-This lets you define a standard set of properties and boilerplate content for all new notes in a vault.
+This lets you define a standard set of properties and boilerplate content for all new notes in a library.
 
 > [!tip]
-> Create a `Templates` folder in your vault root and add a `default.md` file with your preferred frontmatter and content structure.
+> Create a `Templates` folder in your library root and add a `default.md` file with your preferred frontmatter and content structure.
 
 ---
 
@@ -192,7 +192,7 @@ You can search notes by their property values using the special `[key:value]` sy
 
 1. Open the search panel (**Ctrl+Shift+F** or the magnifying glass icon).
 2. Type a query in the format `[key:value]`.
-3. Constellation searches all vaults for notes whose frontmatter contains a matching key-value pair.
+3. Constellation searches all libraries for notes whose frontmatter contains a matching key-value pair.
 
 ### Examples
 
@@ -234,11 +234,11 @@ Properties fully support right-to-left (RTL) languages:
 
 ## Tips
 
-> [!tip] Obsidian compatibility
-> Properties are stored as standard YAML frontmatter, fully compatible with Obsidian, Dataview, and other tools that read frontmatter.
+> [!tip] Markdown tools compatibility
+> Properties are stored as standard YAML frontmatter, fully compatible with any Markdown tool that reads frontmatter.
 
 > [!tip] Type persistence saves time
-> Once you set a property type (e.g. making "status" a List), it applies vault-wide. You won't need to set it again for other notes.
+> Once you set a property type (e.g. making "status" a List), it applies library-wide. You won't need to set it again for other notes.
 
 > [!tip] Use templates for consistency
-> Create a `Templates/default.md` in your vault to ensure every new note starts with the same properties structure.
+> Create a `Templates/default.md` in your library to ensure every new note starts with the same properties structure.

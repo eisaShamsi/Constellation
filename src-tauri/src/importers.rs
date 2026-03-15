@@ -2,7 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::vaults::validate_path_in_any_vault;
+use crate::libraries::validate_path_in_any_library;
+
+const EXCLUDED_DIRS: &[&str] = &[
+    ".obsidian", ".trash", ".git", ".svn", "node_modules", "__MACOSX",
+];
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImportResult {
@@ -32,7 +36,7 @@ pub struct ImportPreviewEntry {
 pub async fn import_pick_source(format: String) -> Result<String, String> {
     let dialog = rfd::AsyncFileDialog::new();
     match format.as_str() {
-        "folder" | "markdown" | "bear" | "notion" => {
+        "folder" | "markdown" | "bear" | "notion" | "obsidian" => {
             let folder = dialog
                 .set_title("Select folder to import")
                 .pick_folder()
@@ -110,8 +114,7 @@ pub async fn import_preview(
     format: String,
 ) -> Result<ImportPreview, String> {
     match format.as_str() {
-        "markdown" | "folder" => preview_folder_md(&source),
-        "bear" => preview_folder_md(&source),
+        "markdown" | "folder" | "bear" | "obsidian" => preview_folder_all(&source),
         "notion" => preview_notion(&source),
         "enex" => preview_enex(&source),
         "html" => preview_multi_files(&source, "html"),
@@ -121,13 +124,13 @@ pub async fn import_preview(
     }
 }
 
-fn preview_folder_md(source: &str) -> Result<ImportPreview, String> {
+fn preview_folder_all(source: &str) -> Result<ImportPreview, String> {
     let path = Path::new(source);
     if !path.is_dir() {
         return Err("Source is not a directory".to_string());
     }
     let mut entries = Vec::new();
-    collect_files_recursive(path, &["md", "markdown"], &mut entries)?;
+    collect_all_files_recursive(path, &mut entries)?;
     Ok(ImportPreview {
         file_count: entries.len(),
         format: "markdown".to_string(),
@@ -141,8 +144,7 @@ fn preview_notion(source: &str) -> Result<ImportPreview, String> {
         return Err("Source is not a directory".to_string());
     }
     let mut entries = Vec::new();
-    // Notion exports as markdown + CSV
-    collect_files_recursive(path, &["md", "markdown", "csv"], &mut entries)?;
+    collect_all_files_recursive(path, &mut entries)?;
     Ok(ImportPreview {
         file_count: entries.len(),
         format: "notion".to_string(),
@@ -222,23 +224,23 @@ pub async fn import_execute(
     app: tauri::AppHandle,
     source: String,
     format: String,
-    target_vault: String,
+    target_library: String,
     subfolder: String,
 ) -> Result<ImportResult, String> {
     // Validate target vault path
-    validate_path_in_any_vault(&app, &target_vault)?;
+    validate_path_in_any_library(&app, &target_library)?;
 
     let dest = if subfolder.is_empty() {
-        PathBuf::from(&target_vault)
+        PathBuf::from(&target_library)
     } else {
-        PathBuf::from(&target_vault).join(&subfolder)
+        PathBuf::from(&target_library).join(&subfolder)
     };
 
     // Create destination folder
     fs::create_dir_all(&dest).map_err(|e| format!("Failed to create destination: {}", e))?;
 
     match format.as_str() {
-        "markdown" | "folder" | "bear" => import_markdown_folder(&source, &dest),
+        "markdown" | "folder" | "bear" | "obsidian" => import_markdown_folder(&source, &dest),
         "notion" => import_notion_folder(&source, &dest),
         "enex" => import_enex(&source, &dest),
         "html" => import_html_files(&source, &dest),
@@ -251,11 +253,11 @@ pub async fn import_execute(
 fn import_markdown_folder(source: &str, dest: &Path) -> Result<ImportResult, String> {
     let src = Path::new(source);
     let mut result = ImportResult { imported: 0, skipped: 0, errors: vec![], files: vec![] };
-    copy_md_tree(src, dest, src, &mut result)?;
+    copy_full_tree(src, dest, src, &mut result)?;
     Ok(result)
 }
 
-fn copy_md_tree(
+fn copy_full_tree(
     current: &Path,
     dest_base: &Path,
     src_root: &Path,
@@ -265,42 +267,29 @@ fn copy_md_tree(
     for entry in entries.flatten() {
         let path = entry.path();
         let rel = path.strip_prefix(src_root).unwrap_or(&path);
+        let name = path.file_name().unwrap_or_default().to_string_lossy();
 
         if path.is_dir() {
-            let name = path.file_name().unwrap_or_default().to_string_lossy();
-            if name.starts_with('.') {
+            if name.starts_with('.') || EXCLUDED_DIRS.iter().any(|d| name.eq_ignore_ascii_case(d)) {
                 continue;
             }
             let sub_dest = dest_base.join(rel);
             let _ = fs::create_dir_all(&sub_dest);
-            copy_md_tree(&path, dest_base, src_root, result)?;
-        } else if let Some(ext) = path.extension() {
-            let ext_lower = ext.to_string_lossy().to_lowercase();
-            if ext_lower == "md" || ext_lower == "markdown" {
-                let target = dest_base.join(rel);
-                if let Some(parent) = target.parent() {
-                    let _ = fs::create_dir_all(parent);
-                }
-                if target.exists() {
-                    result.skipped += 1;
-                } else {
-                    match fs::copy(&path, &target) {
-                        Ok(_) => {
-                            result.imported += 1;
-                            result.files.push(target.to_string_lossy().to_string());
-                        }
-                        Err(e) => result.errors.push(format!("{}: {}", path.display(), e)),
-                    }
-                }
+            copy_full_tree(&path, dest_base, src_root, result)?;
+        } else {
+            let target = dest_base.join(rel);
+            if let Some(parent) = target.parent() {
+                let _ = fs::create_dir_all(parent);
             }
-            // Also copy images/attachments
-            if matches!(ext_lower.as_str(), "png" | "jpg" | "jpeg" | "gif" | "svg" | "webp" | "pdf") {
-                let target = dest_base.join(rel);
-                if let Some(parent) = target.parent() {
-                    let _ = fs::create_dir_all(parent);
-                }
-                if !target.exists() {
-                    let _ = fs::copy(&path, &target);
+            if target.exists() {
+                result.skipped += 1;
+            } else {
+                match fs::copy(&path, &target) {
+                    Ok(_) => {
+                        result.imported += 1;
+                        result.files.push(target.to_string_lossy().to_string());
+                    }
+                    Err(e) => result.errors.push(format!("{}: {}", path.display(), e)),
                 }
             }
         }
@@ -342,6 +331,15 @@ fn import_notion_folder(source: &str, dest: &Path) -> Result<ImportResult, Strin
                                     Err(e) => result.errors.push(format!("{}: {}", path.display(), e)),
                                 }
                             }
+                            Err(e) => result.errors.push(format!("{}: {}", path.display(), e)),
+                        }
+                    }
+                } else if ext_lower != "csv" {
+                    // Copy attachments (images, PDFs, etc.)
+                    let target = dest.join(path.file_name().unwrap_or_default());
+                    if !target.exists() {
+                        match fs::copy(&path, &target) {
+                            Ok(_) => { result.imported += 1; }
                             Err(e) => result.errors.push(format!("{}: {}", path.display(), e)),
                         }
                     }
@@ -539,30 +537,27 @@ fn import_text_files(source: &str, dest: &Path) -> Result<ImportResult, String> 
 
 // ─── Helpers ───────────────────────────────────────────────
 
-fn collect_files_recursive(
+fn collect_all_files_recursive(
     dir: &Path,
-    extensions: &[&str],
     entries: &mut Vec<ImportPreviewEntry>,
 ) -> Result<(), String> {
     let read = fs::read_dir(dir).map_err(|e| e.to_string())?;
     for entry in read.flatten() {
         let path = entry.path();
+        let name = path.file_name().unwrap_or_default().to_string_lossy();
         if path.is_dir() {
-            let name = path.file_name().unwrap_or_default().to_string_lossy();
-            if !name.starts_with('.') {
-                collect_files_recursive(&path, extensions, entries)?;
+            if name.starts_with('.') || EXCLUDED_DIRS.iter().any(|d| name.eq_ignore_ascii_case(d)) {
+                continue;
             }
-        } else if let Some(ext) = path.extension() {
-            let ext_lower = ext.to_string_lossy().to_lowercase();
-            if extensions.iter().any(|e| *e == ext_lower.as_str()) {
-                let size = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
-                let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
-                entries.push(ImportPreviewEntry {
-                    source_name: name.clone(),
-                    target_name: name,
-                    size_bytes: size,
-                });
-            }
+            collect_all_files_recursive(&path, entries)?;
+        } else {
+            let size = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+            let file_name = name.to_string();
+            entries.push(ImportPreviewEntry {
+                source_name: file_name.clone(),
+                target_name: file_name,
+                size_bytes: size,
+            });
         }
     }
     Ok(())

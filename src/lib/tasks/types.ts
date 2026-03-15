@@ -5,8 +5,8 @@ export interface TaskItem {
 	completed: boolean;
 	file_path: string;
 	file_name: string;
-	vault_name: string;
-	vault_path: string;
+	library_name: string;
+	library_path: string;
 	line_number: number;
 	due_date: string | null;
 	priority: 'high' | 'medium' | 'low' | null;

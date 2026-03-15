@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { openNoteTab } from '$lib/vaults/store';
+	import { openNoteTab } from '$lib/libraries/store';
 	import type { TaskItem } from '$lib/tasks/types';
 
 	let {
 		tasks = [] as TaskItem[],
 		onToggle,
-		vaultColorMap = {} as Record<string, string>,
+		libraryColorMap = {} as Record<string, string>,
 	}: {
 		tasks: TaskItem[];
 		onToggle: (filePath: string, lineNumber: number) => void;
-		vaultColorMap?: Record<string, string>;
+		libraryColorMap?: Record<string, string>;
 	} = $props();
 
 	let filter = $state<'all' | 'incomplete' | 'completed'>('all');
@@ -71,13 +71,13 @@
 		}
 	}
 
-	function getVaultColor(vaultName: string): string {
-		return vaultColorMap[vaultName] || '#7c3aed';
+	function getLibraryColor(libraryName: string): string {
+		return libraryColorMap[libraryName] || '#7c3aed';
 	}
 
 	async function openTask(task: TaskItem, e?: MouseEvent) {
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		await openNoteTab(task.file_path, task.vault_name, getVaultColor(task.vault_name), undefined, newTab);
+		await openNoteTab(task.file_path, task.library_name, getLibraryColor(task.library_name), undefined, newTab);
 	}
 
 	// Strip metadata from display text (due dates, priority emojis, completion dates)

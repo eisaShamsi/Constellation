@@ -28,7 +28,7 @@ fn validate_base_path(app: &tauri::AppHandle, file_path: &str) -> Result<(), Str
     }
 
     // Check if path is within any registered vault
-    let vaults = crate::vaults::load_vaults_pub(app);
+    let vaults = crate::libraries::load_libraries_pub(app);
     for vault in &vaults {
         if let Ok(canon_vault) = fs::canonicalize(&vault.path) {
             if target.starts_with(&canon_vault) {
@@ -113,8 +113,8 @@ fn default_auto() -> String { "auto".to_string() }
 pub struct BaseRow {
     pub file_path: String,
     pub file_name: String,
-    pub vault_name: String,
-    pub vault_path: String,
+    pub library_name: String,
+    pub library_path: String,
     pub properties: HashMap<String, String>,
     pub modified: u64,
 }
@@ -209,8 +209,8 @@ pub fn parse_frontmatter(content: &str) -> Option<HashMap<String, String>> {
 /// Recursively scan a directory for .md files and extract their frontmatter.
 pub fn scan_folder(
     dir: &Path,
-    vault_name: &str,
-    vault_path: &str,
+    library_name: &str,
+    library_path: &str,
     include_subfolders: bool,
     rows: &mut Vec<BaseRow>,
 ) {
@@ -230,7 +230,7 @@ pub fn scan_folder(
 
         if path.is_dir() {
             if include_subfolders {
-                scan_folder(&path, vault_name, vault_path, true, rows);
+                scan_folder(&path, library_name, library_path, true, rows);
             }
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             let content = match fs::read_to_string(&path) {
@@ -249,8 +249,8 @@ pub fn scan_folder(
             rows.push(BaseRow {
                 file_path: path.to_string_lossy().to_string(),
                 file_name,
-                vault_name: vault_name.to_string(),
-                vault_path: vault_path.to_string(),
+                library_name: library_name.to_string(),
+                library_path: library_path.to_string(),
                 properties,
                 modified,
             });
@@ -261,8 +261,8 @@ pub fn scan_folder(
 /// Scan notes filtered by tag across a vault.
 pub fn scan_by_tag(
     dir: &Path,
-    vault_name: &str,
-    vault_path: &str,
+    library_name: &str,
+    library_path: &str,
     tag: &str,
     rows: &mut Vec<BaseRow>,
 ) {
@@ -280,7 +280,7 @@ pub fn scan_by_tag(
         if name.starts_with('.') { continue; }
 
         if path.is_dir() {
-            scan_by_tag(&path, vault_name, vault_path, tag, rows);
+            scan_by_tag(&path, library_name, library_path, tag, rows);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             let content = match fs::read_to_string(&path) {
                 Ok(c) => c,
@@ -309,8 +309,8 @@ pub fn scan_by_tag(
             rows.push(BaseRow {
                 file_path: path.to_string_lossy().to_string(),
                 file_name: name.trim_end_matches(".md").to_string(),
-                vault_name: vault_name.to_string(),
-                vault_path: vault_path.to_string(),
+                library_name: library_name.to_string(),
+                library_path: library_path.to_string(),
                 properties,
                 modified,
             });
@@ -386,16 +386,16 @@ fn parse_base_yaml(content: &str) -> Result<BaseDefinition, String> {
 pub fn query_base(
     _app: tauri::AppHandle,
     definition: BaseDefinition,
-    vault_paths: Vec<(String, String)>, // (vault_name, vault_path) pairs
+    library_paths: Vec<(String, String)>, // (library_name, library_path) pairs
 ) -> Result<BaseQueryResult, String> {
     let start = Instant::now();
     let mut rows = Vec::new();
 
     // Filter vaults by selectedVaults (empty = all vaults)
     let active_vaults: Vec<&(String, String)> = if definition.source.selected_vaults.is_empty() {
-        vault_paths.iter().collect()
+        library_paths.iter().collect()
     } else {
-        vault_paths.iter()
+        library_paths.iter()
             .filter(|(vname, _)| definition.source.selected_vaults.contains(vname))
             .collect()
     };
@@ -445,7 +445,7 @@ pub fn query_base(
                 .or(definition.source.path.as_ref())
                 .cloned()
                 .unwrap_or_default();
-            for (vname, vpath) in &vault_paths {
+            for (vname, vpath) in &library_paths {
                 if *vname == target {
                     scan_folder(Path::new(vpath), vname, vpath, true, &mut rows);
                     break;
@@ -528,7 +528,7 @@ pub fn create_base(
     file_name: String,
 ) -> Result<String, String> {
     // Validate folder is in a registered vault
-    let vaults = crate::vaults::load_vaults_pub(&app);
+    let vaults = crate::libraries::load_libraries_pub(&app);
     let folder = Path::new(&folder_path);
     let canon_folder = fs::canonicalize(folder)
         .map_err(|_| "Folder does not exist.".to_string())?;
@@ -607,7 +607,7 @@ pub fn update_note_property(
     value: String,
 ) -> Result<(), String> {
     // Security: validate path is in a vault
-    let vaults = crate::vaults::load_vaults_pub(&app);
+    let vaults = crate::libraries::load_libraries_pub(&app);
     let in_vault = vaults.iter().any(|v| {
         fs::canonicalize(&file_path).ok()
             .and_then(|fp| fs::canonicalize(&v.path).ok().map(|vp| fp.starts_with(vp)))
@@ -696,10 +696,10 @@ fn update_frontmatter_property(content: &str, key: &str, value: &str) -> String 
 
 // ─── Workspace-level Base Storage ───
 
-/// Get the workspace bases directory: {active_universe}/bases/
+/// Get the workspace bases directory: {active_universe}/.constellation/bases/
 fn workspace_bases_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let universe_dir = crate::universe::active_universe_dir(app)?;
-    let bases_dir = universe_dir.join("bases");
+    let cdir = crate::universe::active_constellation_dir(app)?;
+    let bases_dir = cdir.join("bases");
     fs::create_dir_all(&bases_dir).map_err(|e| format!("Failed to create bases dir: {}", e))?;
     Ok(bases_dir)
 }

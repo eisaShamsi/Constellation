@@ -17,17 +17,17 @@ impl WatcherState {
 }
 
 #[tauri::command]
-pub fn watch_vault(app: AppHandle, vault_id: String, vault_path: String) -> Result<(), String> {
+pub fn watch_library(app: AppHandle, library_id: String, library_path: String) -> Result<(), String> {
     let state = app.state::<WatcherState>();
     let mut watchers = state.watchers.lock().map_err(|e| e.to_string())?;
 
     // Don't watch if already watching
-    if watchers.contains_key(&vault_id) {
+    if watchers.contains_key(&library_id) {
         return Ok(());
     }
 
     let app_clone = app.clone();
-    let vid = vault_id.clone();
+    let lid = library_id.clone();
 
     let mut watcher = notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
         if let Ok(event) = res {
@@ -54,9 +54,9 @@ pub fn watch_vault(app: AppHandle, vault_id: String, vault_path: String) -> Resu
 
             if !changed_paths.is_empty() {
                 let _ = app_clone.emit(
-                    "vault-changed",
+                    "library-changed",
                     serde_json::json!({
-                        "vaultId": vid,
+                        "libraryId": lid,
                         "paths": changed_paths
                     }),
                 );
@@ -65,19 +65,19 @@ pub fn watch_vault(app: AppHandle, vault_id: String, vault_path: String) -> Resu
     })
     .map_err(|e| format!("Failed to create watcher: {}", e))?;
 
-    let path = PathBuf::from(&vault_path);
+    let path = PathBuf::from(&library_path);
     watcher
         .watch(&path, RecursiveMode::Recursive)
         .map_err(|e| format!("Failed to watch path: {}", e))?;
 
-    watchers.insert(vault_id, watcher);
+    watchers.insert(library_id, watcher);
     Ok(())
 }
 
 #[tauri::command]
-pub fn unwatch_vault(app: AppHandle, vault_id: String) -> Result<(), String> {
+pub fn unwatch_library(app: AppHandle, library_id: String) -> Result<(), String> {
     let state = app.state::<WatcherState>();
     let mut watchers = state.watchers.lock().map_err(|e| e.to_string())?;
-    watchers.remove(&vault_id);
+    watchers.remove(&library_id);
     Ok(())
 }

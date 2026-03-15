@@ -5,11 +5,11 @@
 
 	let {
 		onClose,
-		vaults = [] as { name: string; path: string }[],
+		libraries = [] as { name: string; path: string }[],
 		onImportComplete,
 	}: {
 		onClose: () => void;
-		vaults: { name: string; path: string }[];
+		libraries: { name: string; path: string }[];
 		onImportComplete?: () => void;
 	} = $props();
 
@@ -18,7 +18,7 @@
 	let step = $state<Step>('format');
 	let selectedFormat = $state<ImportFormat>('markdown');
 	let sourcePath = $state('');
-	let targetVault = $state(vaults[0]?.path ?? '');
+	let targetLibrary = $state(libraries[0]?.path ?? '');
 	let subfolder = $state('Imported');
 	let preview = $state<ImportPreview | null>(null);
 	let result = $state<ImportResult | null>(null);
@@ -26,6 +26,7 @@
 	let loading = $state(false);
 
 	const formats: { id: ImportFormat; icon: string; labelKey: string; descKey: string }[] = [
+		{ id: 'obsidian', icon: 'M12 2L3 7v10l9 5 9-5V7l-9-5zM12 22V12M3 7l9 5 9-5', labelKey: 'importer.formats.obsidian', descKey: 'importer.formats.obsidianDesc' },
 		{ id: 'markdown', icon: 'M3 3h18v18H3zM7 15V9l3 4 3-4v6M17 9v6', labelKey: 'importer.formats.markdown', descKey: 'importer.formats.markdownDesc' },
 		{ id: 'notion', icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z', labelKey: 'importer.formats.notion', descKey: 'importer.formats.notionDesc' },
 		{ id: 'bear', icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z', labelKey: 'importer.formats.bear', descKey: 'importer.formats.bearDesc' },
@@ -42,7 +43,7 @@
 	async function pickSource() {
 		error = '';
 		try {
-			const pickType = selectedFormat === 'markdown' || selectedFormat === 'notion' || selectedFormat === 'bear' ? 'folder' : selectedFormat;
+			const pickType = ['markdown', 'notion', 'bear', 'obsidian'].includes(selectedFormat) ? 'folder' : selectedFormat;
 			sourcePath = await importPickSource(pickType);
 			if (sourcePath) {
 				loading = true;
@@ -61,7 +62,7 @@
 		loading = true;
 		step = 'importing';
 		try {
-			result = await importExecute(sourcePath, selectedFormat, targetVault, subfolder);
+			result = await importExecute(sourcePath, selectedFormat, targetLibrary, subfolder);
 			step = 'done';
 		} catch (e: any) {
 			error = e?.toString() ?? 'Import failed';
@@ -111,9 +112,9 @@
 
 				<div class="importer-target">
 					<label class="import-label">
-						{$t('importer.targetVault')}
-						<select bind:value={targetVault}>
-							{#each vaults as vault}
+						{$t('importer.targetLibrary')}
+						<select bind:value={targetLibrary}>
+							{#each libraries as vault}
 								<option value={vault.path}>{vault.name}</option>
 							{/each}
 						</select>

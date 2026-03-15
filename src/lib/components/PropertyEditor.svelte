@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { FrontmatterProperty, PropertyType } from '$lib/vaults/store';
-	import { saveTabContent, normalizeDateValue } from '$lib/vaults/store';
-	import { setRegisteredType, getRegisteredType } from '$lib/vaults/propertyTypeRegistry';
+	import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
+	import { saveTabContent, normalizeDateValue } from '$lib/libraries/store';
+	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
 	import { onMount, onDestroy } from 'svelte';
 
@@ -11,14 +11,14 @@
 		tabId,
 		filePath,
 		onNoteClick,
-		vaultName = '',
+		libraryName = '',
 	}: {
 		properties: FrontmatterProperty[];
 		body: string;
 		tabId: string;
 		filePath: string;
 		onNoteClick?: (noteName: string) => void;
-		vaultName?: string;
+		libraryName?: string;
 	} = $props();
 
 	const TYPE_ICONS: Record<PropertyType, string> = {
@@ -109,7 +109,7 @@
 			if (!saving || tabChanged) {
 				editableProps = properties.map(p => {
 					// Apply registered type override if available
-					const registeredType = vaultName ? getRegisteredType(vaultName, p.key) : undefined;
+					const registeredType = libraryName ? getRegisteredType(libraryName, p.key) : undefined;
 					return {
 						...p,
 						type: registeredType ?? p.type,
@@ -197,9 +197,9 @@
 			}
 			return updated;
 		});
-		// Persist type choice vault-wide
-		if (vaultName && prop.key) {
-			setRegisteredType(vaultName, prop.key, newType);
+		// Persist type choice library-wide
+		if (libraryName && prop.key) {
+			setRegisteredType(libraryName, prop.key, newType);
 		}
 		debouncedSave();
 	}

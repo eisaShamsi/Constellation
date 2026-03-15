@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Constellation",
-    "tagline": "گاوصندوقی از گاوصندوق‌ها"
+    "tagline": "جهانی از کتابخانه‌ها"
   },
   "settings": {
     "title": "تنظیمات",
@@ -11,14 +11,14 @@
       "editor": "ویرایشگر",
       "files": "فایل‌ها و لینک‌ها",
       "appearance": "ظاهر",
-      "hotkeys": "کلیدهای میانبر",
+      "hotkeys": "میانبرهای صفحه‌کلید",
       "security": "امنیت",
       "plugins": "ویژگی‌های داخلی",
       "ai": "ارائه‌دهنده هوش مصنوعی",
       "templates": "الگوها"
     },
     "about": {
-      "tagline": "گاوصندوقی از گاوصندوق‌ها",
+      "tagline": "جهانی از کتابخانه‌ها",
       "developedBy": "توسعه‌دهنده"
     },
     "general": {
@@ -34,9 +34,9 @@
       "autoUpdateDesc": "دانلود و نصب خودکار به‌روزرسانی‌ها"
     },
     "security": {
-      "intro": "محافظت از داده‌های خزانه، ایمن‌سازی کلیدهای API و قفل برنامه در حالت بیکاری.",
-      "vaultEncryption": "رمزنگاری خزانه",
-      "vaultEncryptionDesc": "رمزنگاری داده‌های ذخیره شده خزانه در این دستگاه",
+      "intro": "محافظت از داده‌های کتابخانه، ایمن‌سازی کلیدهای API و قفل برنامه در حالت بیکاری.",
+      "vaultEncryption": "رمزنگاری کتابخانه",
+      "vaultEncryptionDesc": "رمزنگاری داده‌های ذخیره شده کتابخانه در این دستگاه",
       "enabled": "فعال",
       "disabled": "غیرفعال",
       "lockHeading": "صفحه قفل",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "مکان پیش‌فرض برای یادداشت‌های جدید",
       "defaultLocationDesc": "محل قرارگیری یادداشت‌های جدید",
-      "vaultRoot": "پوشه ریشه گاوصندوق",
+      "vaultRoot": "پوشه ریشه کتابخانه",
       "currentFolder": "همان پوشه فایل فعلی",
       "specifiedFolder": "در پوشه مشخص‌شده زیر",
       "folderPath": "مسیر پوشه",
@@ -109,11 +109,13 @@
       "defaultAttachmentFolder": "پوشه پیش‌فرض پیوست‌ها",
       "defaultAttachmentFolderDesc": "محل ذخیره‌سازی پیوست‌ها",
       "sameAsNotePlaceholder": "همان پوشه یادداشت",
+      "inboxFolder": "پوشه ورودی",
+      "inboxFolderDesc": "پوشه برای یادداشت‌های سریع (Ctrl+Shift+N)",
       "linkFormat": "فرمت لینک جدید",
       "linkFormatDesc": "نحوه ایجاد لینک‌های داخلی",
       "shortestPath": "کوتاه‌ترین مسیر در صورت امکان",
       "relativePath": "مسیر نسبی به فایل",
-      "absolutePath": "مسیر مطلق در گاوصندوق",
+      "absolutePath": "مسیر مطلق در کتابخانه",
       "autoUpdateLinks": "به‌روزرسانی خودکار لینک‌های داخلی",
       "autoUpdateLinksDesc": "به‌روزرسانی همه لینک‌ها هنگام تغییر نام یادداشت",
       "useWikilinks": "استفاده از [[Wikilinks]]",
@@ -146,9 +148,15 @@
       "fontSizeDesc": "اندازه پایه فونت برای محتوای یادداشت"
     },
     "hotkeys": {
-      "filter": "فیلتر دستورات...",
+      "filter": "فیلتر میانبرها...",
       "notSet": "تنظیم نشده",
-      "noCommands": "دستوری یافت نشد"
+      "noCommands": "میانبری یافت نشد",
+      "pressKey": "کلید میانبر را فشار دهید...",
+      "resetToDefault": "بازنشانی به پیش‌فرض",
+      "resetAll": "بازنشانی همه میانبرها",
+      "resetAllConfirm": "همه میانبرها به پیش‌فرض بازنشانی شوند؟",
+      "conflict": "قبلاً استفاده شده توسط: {name}",
+      "customized": "سفارشی"
     },
     "plugins": {
       "intro": "ویژگی‌های داخلی Constellation. می‌توانید هر کدام را فعال یا غیرفعال کنید.",
@@ -156,8 +164,8 @@
       "dailyNotesDesc": "ایجاد و باز کردن یادداشت‌های روزانه",
       "templates": "قالب‌ها",
       "templatesDesc": "درج محتوا از فایل‌های قالب",
-      "graphView": "نمای گراف",
-      "graphViewDesc": "تجسم لینک‌ها بین یادداشت‌ها",
+      "starView": "نمای ستاره",
+      "starViewDesc": "تجسم لینک‌ها بین یادداشت‌ها",
       "backlinks": "لینک‌های برگشتی",
       "backlinksDesc": "نمایش یادداشت‌هایی که به یادداشت فعلی لینک دارند",
       "outgoingLinks": "لینک‌های خروجی",
@@ -168,9 +176,9 @@
       "pagePreviewDesc": "پیش‌نمایش یادداشت‌ها هنگام توقف روی لینک",
       "search": "جستجو",
       "searchDesc": "جستجو در تمام یادداشت‌ها",
-      "quickSwitcher": "جابجایی سریع",
+      "quickSwitcher": "پرش ستاره‌ای",
       "quickSwitcherDesc": "پیمایش سریع بین یادداشت‌ها",
-      "commandPalette": "پالت دستورات",
+      "commandPalette": "مرکز فرمان",
       "commandPaletteDesc": "دسترسی سریع به همه دستورات",
       "wordCount": "شمارش کلمات",
       "wordCountDesc": "نمایش تعداد کلمات در نوار وضعیت",
@@ -210,18 +218,19 @@
       "varTime": "زمان فعلی (HH:MM)",
       "varTitle": "عنوان یادداشت",
       "varFolder": "نام پوشه والد",
-      "varVault": "نام گاوصندوق",
+      "varVault": "نام کتابخانه",
       "varCursor": "موقعیت نشانگر پس از درج"
     }
   },
   "commands": {
     "newNote": "یادداشت جدید",
     "newBase": "پایگاه جدید",
-    "quickSwitcher": "جابجایی سریع",
-    "searchVault": "جستجوی گاوصندوق",
+    "quickCapture": "یادداشت سریع",
+    "quickSwitcher": "پرش ستاره‌ای",
+    "searchVault": "جستجوی کتابخانه",
     "dailyNote": "باز کردن یادداشت روزانه",
     "toggleEdit": "تغییر حالت ویرایش/خواندن",
-    "graphView": "باز کردن نمای گراف",
+    "starView": "باز کردن نمای ستاره",
     "globalTasks": "باز کردن وظایف کلی",
     "toggleBold": "تغییر حالت درشت",
     "toggleItalic": "تغییر حالت مورب",
@@ -229,7 +238,7 @@
     "closeNote": "بستن یادداشت فعلی",
     "toggleLeftSidebar": "تغییر حالت نوار کناری چپ",
     "toggleRightSidebar": "تغییر حالت نوار کناری راست",
-    "addVault": "افزودن گاوصندوق",
+    "addVault": "افزودن کتابخانه",
     "toggleBookmark": "تغییر حالت نشانک",
     "randomNote": "باز کردن یادداشت تصادفی",
     "toggleTheme": "تغییر حالت تاریک/روشن",
@@ -257,10 +266,10 @@
     "rename": "تغییر نام",
     "delete": "حذف"
   },
-  "ribbon": {
+  "dock": {
     "fileExplorer": "مرورگر فایل",
     "search": "جستجو",
-    "graphView": "نمای گراف",
+    "starView": "نمای ستاره",
     "globalTasks": "وظایف کلی",
     "dailyNote": "یادداشت روزانه",
     "aiSkills": "مهارت‌های هوش مصنوعی",
@@ -271,13 +280,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "جستجو...",
-    "addVault": "افزودن گاوصندوق",
+    "addVault": "افزودن کتابخانه",
     "results": "نتیجه",
     "noResults": "نتیجه‌ای یافت نشد",
     "bookmarks": "نشانک‌ها",
     "bases": "پایگاه‌ها",
-    "noVaults": "هنوز گاوصندوقی نیست",
-    "addVaultButton": "+ افزودن گاوصندوق",
+    "noVaults": "هنوز کتابخانهی نیست",
+    "addVaultButton": "+ افزودن کتابخانه",
     "newNote": "یادداشت جدید",
     "newBase": "پایگاه جدید",
     "newFolder": "پوشه جدید",
@@ -293,15 +302,15 @@
     "rightSidebar": "نوار کناری راست",
     "splitView": "نمای تقسیم",
     "skills": "مهارت‌ها",
-    "graphViewTitle": "نمای گراف",
+    "starViewTitle": "نمای ستاره",
     "pinned": "سنجاق شده"
   },
   "welcome": {
     "title": "به Constellation خوش آمدید",
-    "subtitle": "اولین گاوصندوق خود را اضافه کنید تا شروع شود",
-    "addVault": "+ افزودن گاوصندوق",
+    "subtitle": "اولین کتابخانه خود را اضافه کنید تا شروع شود",
+    "addVault": "+ افزودن کتابخانه",
     "selectNote": "یک یادداشت از نوار کناری انتخاب کنید",
-    "quickSwitchHint": "یا Ctrl+O را برای جابجایی سریع فشار دهید"
+    "quickSwitchHint": "یا Ctrl+O را برای پرش ستاره‌ای فشار دهید"
   },
   "panels": {
     "properties": "ویژگی‌ها",
@@ -317,7 +326,7 @@
     "tagsHeader": "برچسب‌ها",
     "linkDashboard": "داشبورد لینک‌ها",
     "noteGrid": "شبکه یادداشت‌ها",
-    "graphView": "نمای گراف",
+    "starView": "نمای ستاره",
     "noNoteSelected": "یادداشتی انتخاب نشده",
     "noTags": "برچسبی در این یادداشت نیست",
     "noConnections": "ارتباطی نیست",
@@ -359,11 +368,11 @@
     "noTasksFound": "وظیفه‌ای یافت نشد",
     "allDates": "همه تاریخ‌ها",
     "thisWeek": "این هفته",
-    "allVaults": "همه گاوصندوق‌ها",
+    "allVaults": "همه کتابخانه‌ها",
     "allPriorities": "همه اولویت‌ها",
     "noGroup": "بدون گروه‌بندی",
     "groupByFile": "گروه‌بندی بر اساس فایل",
-    "groupByVault": "گروه‌بندی بر اساس گاوصندوق",
+    "groupByVault": "گروه‌بندی بر اساس کتابخانه",
     "groupByPriority": "گروه‌بندی بر اساس اولویت",
     "groupByDue": "گروه‌بندی بر اساس سررسید",
     "sortByFile": "مرتب‌سازی بر اساس فایل",
@@ -371,10 +380,10 @@
   },
   "linkDashboard": {
     "mostConnected": "بیشترین اتصال",
-    "crossVault": "بین گاوصندوق‌ها",
+    "crossVault": "بین کتابخانه‌ها",
     "broken": "شکسته",
     "orphans": "یادداشت‌های منزوی",
-    "noCrossVault": "لینک بین گاوصندوق وجود ندارد",
+    "noCrossVault": "لینک بین کتابخانه وجود ندارد",
     "noBroken": "لینک شکسته‌ای وجود ندارد",
     "noOrphans": "یادداشت منزوی‌ای وجود ندارد"
   },
@@ -387,7 +396,7 @@
     "properties": "ویژگی",
     "words": "کلمه",
     "characters": "نویسه",
-    "vaults": "گاوصندوق",
+    "vaults": "کتابخانه",
     "notes": "یادداشت"
   },
   "notePane": {
@@ -401,7 +410,7 @@
     "createNote": "ایجاد یادداشت جدید",
     "goToFile": "رفتن به فایل",
     "close": "بستن",
-    "selectVault": "انتخاب صندوقچه"
+    "selectVault": "انتخاب کتابخانه"
   },
   "commandPalette": {
     "placeholder": "یک دستور تایپ کنید...",
@@ -459,10 +468,10 @@
     "typeCheckbox": "کادر انتخاب",
     "selectType": "انتخاب نوع"
   },
-  "graphView": {
+  "starView": {
     "noNotes": "یادداشتی برای نمایش وجود ندارد",
     "controls": {
-      "title": "تنظیمات گراف",
+      "title": "تنظیمات نمای ستاره",
       "reset": "بازنشانی به پیش‌فرض",
       "filters": "فیلترها",
       "searchPlaceholder": "جستجوی فایل‌ها...",
@@ -486,13 +495,13 @@
     }
   },
   "vaults": {
-    "searchPlaceholder": "جستجوی همه گاوصندوق‌ها...",
+    "searchPlaceholder": "جستجوی همه کتابخانه‌ها...",
     "results": "نتیجه",
     "noResults": "نتیجه‌ای نیست",
-    "addVault": "+ افزودن گاوصندوق",
+    "addVault": "+ افزودن کتابخانه",
     "welcomeTitle": "به Constellation خوش آمدید",
-    "welcomeSubtitle": "اولین گاوصندوق خود را از نوار کناری اضافه کنید",
-    "addVaultCta": "+ افزودن گاوصندوق",
+    "welcomeSubtitle": "اولین کتابخانه خود را از نوار کناری اضافه کنید",
+    "addVaultCta": "+ افزودن کتابخانه",
     "selectNote": "یک یادداشت از نوار کناری انتخاب کنید"
   },
   "skills": {
@@ -508,7 +517,7 @@
     "create": "ایجاد مهارت",
     "noProvider": "برای استفاده از مهارت‌ها، یک ارائه‌دهنده هوش مصنوعی در تنظیمات متصل کنید.",
     "selectNote": "یک یادداشت انتخاب کنید",
-    "selectVault": "یک گاوصندوق انتخاب کنید",
+    "selectVault": "یک کتابخانه انتخاب کنید",
     "enterText": "متن وارد کنید...",
     "result": "نتیجه",
     "copyResult": "کپی",
@@ -522,7 +531,7 @@
     "write": "دستیار نوشتن",
     "writeDesc": "بسط، بازنویسی یا بهبود متن شما",
     "autolink": "لینک‌دهی خودکار",
-    "autolinkDesc": "کشف ارتباطات بین یادداشت‌ها در گاوصندوق‌ها",
+    "autolinkDesc": "کشف ارتباطات بین یادداشت‌ها در کتابخانه‌ها",
     "translate": "ترجمه یادداشت",
     "translateDesc": "ترجمه یادداشت‌ها بین زبان‌ها",
     "meeting": "یادداشت‌های جلسه",
@@ -533,14 +542,14 @@
     "researchDesc": "تحلیل و ترکیب اطلاعات از چندین یادداشت"
   },
   "vaultManager": {
-    "title": "مدیریت خزانه‌ها",
-    "openVault": "+ باز کردن خزانه",
-    "manageVaults": "مدیریت خزانه‌ها...",
+    "title": "مدیریت کتابخانه‌ها",
+    "openVault": "+ باز کردن کتابخانه",
+    "manageVaults": "مدیریت کتابخانه‌ها...",
     "openFolder": "باز کردن پوشه",
     "remove": "حذف",
     "confirmRemove": "حذف \"{name}\" از Constellation؟ فایل‌های شما حذف نخواهند شد.",
-    "addVault": "+ افزودن خزانه",
-    "noVaults": "خزانه‌ای ثبت نشده",
+    "addVault": "+ افزودن کتابخانه",
+    "noVaults": "کتابخانه‌ای ثبت نشده",
     "notes": "یادداشت"
   },
   "lockScreen": {
@@ -634,18 +643,18 @@
       "title": "منبع",
       "folder": "پوشه",
       "tag": "برچسب",
-      "vault": "صندوق",
-      "allVaults": "همه صندوق‌ها",
-      "vaults": "صندوق‌ها",
+      "vault": "کتابخانه",
+      "allVaults": "همه کتابخانه‌ها",
+      "vaults": "کتابخانه‌ها",
       "folderPath": "مسیر پوشه",
       "folderPlaceholder": "مثلاً پروژه‌ها/فعال",
-      "folderHint": "این پوشه را در تمام صندوق‌هایی که شامل آن هستند جستجو می‌کند",
+      "folderHint": "این پوشه را در تمام کتابخانه‌هایی که شامل آن هستند جستجو می‌کند",
       "includeSubfolders": "شامل زیرپوشه‌ها",
       "tagName": "برچسب",
       "tagPlaceholder": "مثلاً پروژه",
-      "tagHint": "تمام یادداشت‌های دارای این برچسب را در همه صندوق‌ها جستجو می‌کند",
-      "vaultsLabel": "صندوق‌ها",
-      "allHint": "تمام یادداشت‌ها را در همه صندوق‌های متصل جستجو می‌کند",
+      "tagHint": "تمام یادداشت‌های دارای این برچسب را در همه کتابخانه‌ها جستجو می‌کند",
+      "vaultsLabel": "کتابخانه‌ها",
+      "allHint": "تمام یادداشت‌ها را در همه کتابخانه‌های متصل جستجو می‌کند",
       "apply": "اعمال",
       "cancel": "لغو"
     }
@@ -668,14 +677,25 @@
       "creating": "در حال ایجاد...",
       "next": "بعدی",
       "back": "قبلی",
-      "addVaultsHeading": "خزانه‌های خود را اضافه کنید",
-      "addVaultsDescription": "خزانه‌ها و جهان‌های فرعی خود را متصل کنید. همیشه می‌توانید بعداً موارد بیشتری اضافه کنید.",
-      "addVault": "افزودن خزانه",
+      "addVaultsHeading": "کتابخانه‌های خود را اضافه کنید",
+      "addVaultsDescription": "کتابخانه‌ها و جهان‌های فرعی خود را متصل کنید. همیشه می‌توانید بعداً موارد بیشتری اضافه کنید.",
+      "addVault": "افزودن کتابخانه",
       "addChildUniverse": "افزودن جهان فرعی",
+      "starterKit": "ایجاد پوشه‌های شروع",
+      "starterKitDesc": "راه‌اندازی پوشه‌های اطلس، تقویم، پروژه‌ها و ورودی با یادداشت خوش‌آمدگویی",
       "finish": "پایان",
       "skip": "فعلاً رد شوید",
-      "noVaultsYet": "هنوز خزانه‌ای اضافه نشده است. برای شروع یک خزانه یا جهان فرعی اضافه کنید.",
-      "remove": "حذف"
+      "noVaultsYet": "هنوز کتابخانه‌ای اضافه نشده است. برای شروع یک کتابخانه یا جهان فرعی اضافه کنید.",
+      "remove": "حذف",
+      "importApp": "وارد کردن از برنامه دیگر",
+      "importAppDesc": "یادداشت‌های خود را از Obsidian، Notion، Evernote یا برنامه‌های دیگر به Constellation منتقل کنید.",
+      "importHeading": "وارد کردن یادداشت‌ها",
+      "importDescription": "برنامه‌ای که از آن مهاجرت می‌کنید را انتخاب کنید، سپس پوشه یا فایل منبع را مشخص کنید.",
+      "importPreviewHeading": "آماده وارد کردن",
+      "importConfirm": "وارد کردن و ایجاد جهان",
+      "importingNotes": "در حال وارد کردن یادداشت‌ها...",
+      "importLocationLabel": "مکان جهان",
+      "importComplete": "وارد کردن کامل شد! {count} فایل وارد شد."
     },
     "manager": {
       "heading": "مدیر جهان‌ها",
@@ -690,15 +710,15 @@
       "children": "جهان‌های فرزند",
       "addChild": "افزودن جهان فرزند",
       "noUniverses": "جهانی یافت نشد",
-      "ownVaults": "خزانه‌های خود",
-      "inheritedVaults": "خزانه‌های ارثی",
+      "ownVaults": "کتابخانه‌های خود",
+      "inheritedVaults": "کتابخانه‌های ارثی",
       "openExisting": "باز کردن جهان موجود"
     },
     "switching": "در حال تغییر جهان...",
     "migrating": "در حال انتقال داده‌ها..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "Lens",
     "loading": "در حال بارگذاری پرس‌وجو...",
     "noResults": "نتیجه‌ای یافت نشد",
     "results": "نتایج",
@@ -719,16 +739,16 @@
   "secondScreen": {
     "title": "صفحه دوم",
     "grid": "شبکه",
-    "graph": "نمودار",
+    "star": "ستاره",
     "detail": "جزئیات",
     "loading": "در حال بارگذاری یادداشت‌ها...",
     "linked": "مرتبط",
     "linkedOn": "مرور مرتبط فعال",
     "linkedOff": "مرور مرتبط غیرفعال",
     "searchNotes": "جستجوی یادداشت‌ها...",
-    "allVaults": "همه خزانه‌ها",
+    "allVaults": "همه کتابخانه‌ها",
     "sortName": "مرتب‌سازی بر اساس نام",
-    "sortVault": "مرتب‌سازی بر اساس خزانه",
+    "sortVault": "مرتب‌سازی بر اساس کتابخانه",
     "noResults": "یادداشت مطابقی یافت نشد",
     "noNotes": "یادداشتی یافت نشد",
     "detailEmpty": "یک یادداشت برای مشاهده انتخاب کنید",
@@ -738,6 +758,8 @@
     "title": "وارد کردن یادداشت‌ها",
     "selectFormat": "قالب یادداشت‌هایی که می‌خواهید وارد کنید را انتخاب کنید.",
     "formats": {
+      "obsidian": "Obsidian",
+      "obsidianDesc": "وارد کردن یک خزانه Obsidian با تمام یادداشت‌ها و پیوست‌ها",
       "markdown": "مارک‌داون",
       "markdownDesc": "فایل‌های مارک‌داون (.md) از هر برنامه",
       "notion": "نوشن",
@@ -753,7 +775,7 @@
       "txt": "متن ساده",
       "txtDesc": "فایل‌های متنی تبدیل‌شده به مارک‌داون"
     },
-    "targetVault": "صندوق مقصد",
+    "targetVault": "کتابخانه مقصد",
     "subfolder": "پوشه فرعی",
     "selectSource": "انتخاب منبع",
     "scanning": "در حال اسکن فایل‌ها...",

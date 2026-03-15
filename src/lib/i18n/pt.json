@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Constellation",
-    "tagline": "Um Cofre de Cofres"
+    "tagline": "Um Universo de Bibliotecas"
   },
   "settings": {
     "title": "Configurações",
@@ -11,14 +11,14 @@
       "editor": "Editor",
       "files": "Arquivos e links",
       "appearance": "Aparência",
-      "hotkeys": "Atalhos de teclado",
+      "hotkeys": "Atalhos do teclado",
       "security": "Segurança",
       "plugins": "Recursos integrados",
       "ai": "Provedor de IA",
       "templates": "Modelos"
     },
     "about": {
-      "tagline": "Um Cofre de Cofres",
+      "tagline": "Um Universo de Bibliotecas",
       "developedBy": "Desenvolvido por"
     },
     "general": {
@@ -34,9 +34,9 @@
       "autoUpdateDesc": "Baixar e instalar atualizações automaticamente"
     },
     "security": {
-      "intro": "Proteja os dados do cofre, proteja as chaves de API e bloqueie o app quando inativo.",
-      "vaultEncryption": "Criptografia do cofre",
-      "vaultEncryptionDesc": "Criptografar dados do cofre armazenados neste dispositivo",
+      "intro": "Proteja os dados do biblioteca, proteja as chaves de API e bloqueie o app quando inativo.",
+      "vaultEncryption": "Criptografia do biblioteca",
+      "vaultEncryptionDesc": "Criptografar dados do biblioteca armazenados neste dispositivo",
       "enabled": "Ativado",
       "disabled": "Desativado",
       "lockHeading": "Tela de bloqueio",
@@ -101,7 +101,7 @@
     "files": {
       "defaultLocation": "Localização padrão para novas notas",
       "defaultLocationDesc": "Onde as novas notas são colocadas",
-      "vaultRoot": "Pasta raiz do cofre",
+      "vaultRoot": "Pasta raiz do biblioteca",
       "currentFolder": "Mesma pasta do arquivo atual",
       "specifiedFolder": "Na pasta especificada abaixo",
       "folderPath": "Caminho da pasta",
@@ -109,11 +109,13 @@
       "defaultAttachmentFolder": "Pasta padrão de anexos",
       "defaultAttachmentFolderDesc": "Onde os anexos são armazenados",
       "sameAsNotePlaceholder": "Mesma pasta da nota",
+      "inboxFolder": "Pasta de entrada",
+      "inboxFolderDesc": "Pasta para notas de captura rápida (Ctrl+Shift+N)",
       "linkFormat": "Formato de novos links",
       "linkFormatDesc": "Como os links internos são gerados",
       "shortestPath": "Caminho mais curto quando possível",
       "relativePath": "Caminho relativo ao arquivo",
-      "absolutePath": "Caminho absoluto no cofre",
+      "absolutePath": "Caminho absoluto no biblioteca",
       "autoUpdateLinks": "Atualizar links internos automaticamente",
       "autoUpdateLinksDesc": "Atualizar todos os links ao renomear uma nota",
       "useWikilinks": "Usar [[Wikilinks]]",
@@ -146,9 +148,15 @@
       "fontSizeDesc": "Tamanho base da fonte para o conteúdo das notas"
     },
     "hotkeys": {
-      "filter": "Filtrar comandos...",
+      "filter": "Filtrar atalhos...",
       "notSet": "Não definido",
-      "noCommands": "Nenhum comando encontrado"
+      "noCommands": "Nenhum atalho encontrado",
+      "pressKey": "Pressione atalho...",
+      "resetToDefault": "Redefinir para o padrão",
+      "resetAll": "Redefinir todos os atalhos",
+      "resetAllConfirm": "Redefinir todos os atalhos para o padrão?",
+      "conflict": "Já utilizado por: {name}",
+      "customized": "Personalizado"
     },
     "plugins": {
       "intro": "Recursos integrados no Constellation. Você pode ativar ou desativar cada um.",
@@ -156,8 +164,8 @@
       "dailyNotesDesc": "Criar e abrir notas diárias",
       "templates": "Modelos",
       "templatesDesc": "Inserir conteúdo a partir de arquivos de modelo",
-      "graphView": "Visualização em grafo",
-      "graphViewDesc": "Visualizar links entre notas",
+      "starView": "Vista estelar",
+      "starViewDesc": "Visualizar links entre notas",
       "backlinks": "Backlinks",
       "backlinksDesc": "Mostrar notas que apontam para a nota atual",
       "outgoingLinks": "Links de saída",
@@ -168,9 +176,9 @@
       "pagePreviewDesc": "Pré-visualizar notas ao passar o cursor sobre um link",
       "search": "Pesquisa",
       "searchDesc": "Pesquisar em todas as notas",
-      "quickSwitcher": "Troca rápida",
+      "quickSwitcher": "Salto estelar",
       "quickSwitcherDesc": "Navegar rapidamente entre notas",
-      "commandPalette": "Paleta de comandos",
+      "commandPalette": "Controle de missão",
       "commandPaletteDesc": "Acesso rápido a todos os comandos",
       "wordCount": "Contagem de palavras",
       "wordCountDesc": "Mostrar contagem de palavras na barra de status",
@@ -210,18 +218,19 @@
       "varTime": "Hora atual (HH:MM)",
       "varTitle": "Título da nota",
       "varFolder": "Nome da pasta pai",
-      "varVault": "Nome do cofre",
+      "varVault": "Nome do biblioteca",
       "varCursor": "Posição do cursor após inserção"
     }
   },
   "commands": {
     "newNote": "Nova nota",
     "newBase": "Nova Base",
-    "quickSwitcher": "Troca rápida",
-    "searchVault": "Pesquisar no cofre",
+    "quickCapture": "Captura rápida",
+    "quickSwitcher": "Salto estelar",
+    "searchVault": "Pesquisar no biblioteca",
     "dailyNote": "Abrir nota diária",
     "toggleEdit": "Alternar modo edição/leitura",
-    "graphView": "Abrir visualização em grafo",
+    "starView": "Abrir vista estelar",
     "globalTasks": "Abrir tarefas globais",
     "toggleBold": "Alternar negrito",
     "toggleItalic": "Alternar itálico",
@@ -229,7 +238,7 @@
     "closeNote": "Fechar nota atual",
     "toggleLeftSidebar": "Alternar barra lateral esquerda",
     "toggleRightSidebar": "Alternar barra lateral direita",
-    "addVault": "Adicionar cofre",
+    "addVault": "Adicionar biblioteca",
     "toggleBookmark": "Alternar marcador",
     "randomNote": "Abrir nota aleatória",
     "toggleTheme": "Alternar modo escuro/claro",
@@ -257,10 +266,10 @@
     "rename": "Renomear",
     "delete": "Excluir"
   },
-  "ribbon": {
+  "dock": {
     "fileExplorer": "Explorador de arquivos",
     "search": "Pesquisa",
-    "graphView": "Visualização em grafo",
+    "starView": "Vista estelar",
     "globalTasks": "Tarefas Globais",
     "dailyNote": "Nota diária",
     "aiSkills": "Habilidades de IA",
@@ -271,13 +280,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "Pesquisar...",
-    "addVault": "Adicionar cofre",
+    "addVault": "Adicionar biblioteca",
     "results": "resultados",
     "noResults": "Nenhum resultado encontrado",
     "bookmarks": "Marcadores",
     "bases": "Bases",
-    "noVaults": "Nenhum cofre ainda",
-    "addVaultButton": "+ Adicionar cofre",
+    "noVaults": "Nenhum biblioteca ainda",
+    "addVaultButton": "+ Adicionar biblioteca",
     "newNote": "Nova nota",
     "newBase": "Nova Base",
     "newFolder": "Nova pasta",
@@ -293,15 +302,15 @@
     "rightSidebar": "Barra lateral direita",
     "splitView": "Visualização dividida",
     "skills": "Habilidades",
-    "graphViewTitle": "Visualização em grafo",
+    "starViewTitle": "Vista estelar",
     "pinned": "Fixada"
   },
   "welcome": {
     "title": "Bem-vindo ao Constellation",
-    "subtitle": "Adicione seu primeiro cofre para começar",
-    "addVault": "+ Adicionar cofre",
+    "subtitle": "Adicione seu primeiro biblioteca para começar",
+    "addVault": "+ Adicionar biblioteca",
     "selectNote": "Selecione uma nota na barra lateral",
-    "quickSwitchHint": "ou pressione Ctrl+O para troca rápida"
+    "quickSwitchHint": "ou pressione Ctrl+O para salto estelar"
   },
   "panels": {
     "properties": "Propriedades",
@@ -317,7 +326,7 @@
     "tagsHeader": "Tags",
     "linkDashboard": "Painel de links",
     "noteGrid": "Grade de notas",
-    "graphView": "Visualização de grafo",
+    "starView": "Vista estelar",
     "noNoteSelected": "Nenhuma nota selecionada",
     "noTags": "Sem tags nesta nota",
     "noConnections": "Sem conexões",
@@ -359,11 +368,11 @@
     "noTasksFound": "Nenhuma tarefa encontrada",
     "allDates": "Todas as datas",
     "thisWeek": "Esta semana",
-    "allVaults": "Todos os cofres",
+    "allVaults": "Todos os bibliotecas",
     "allPriorities": "Todas as prioridades",
     "noGroup": "Sem agrupamento",
     "groupByFile": "Agrupar por arquivo",
-    "groupByVault": "Agrupar por cofre",
+    "groupByVault": "Agrupar por biblioteca",
     "groupByPriority": "Agrupar por prioridade",
     "groupByDue": "Agrupar por data de vencimento",
     "sortByFile": "Ordenar por arquivo",
@@ -371,10 +380,10 @@
   },
   "linkDashboard": {
     "mostConnected": "Mais conectadas",
-    "crossVault": "Entre cofres",
+    "crossVault": "Entre bibliotecas",
     "broken": "Quebrados",
     "orphans": "Órfãs",
-    "noCrossVault": "Sem links entre cofres",
+    "noCrossVault": "Sem links entre bibliotecas",
     "noBroken": "Sem links quebrados",
     "noOrphans": "Sem notas órfãs"
   },
@@ -387,7 +396,7 @@
     "properties": "propriedades",
     "words": "palavras",
     "characters": "caracteres",
-    "vaults": "cofres",
+    "vaults": "bibliotecas",
     "notes": "notas"
   },
   "notePane": {
@@ -401,7 +410,7 @@
     "createNote": "Criar nova nota",
     "goToFile": "Ir para arquivo",
     "close": "Fechar",
-    "selectVault": "Selecionar cofre"
+    "selectVault": "Selecionar biblioteca"
   },
   "commandPalette": {
     "placeholder": "Digite um comando...",
@@ -459,10 +468,10 @@
     "typeCheckbox": "Caixa de seleção",
     "selectType": "Selecionar tipo"
   },
-  "graphView": {
+  "starView": {
     "noNotes": "Nenhuma nota para exibir",
     "controls": {
-      "title": "Configurações do grafo",
+      "title": "Configurações da vista estelar",
       "reset": "Redefinir para padrões",
       "filters": "Filtros",
       "searchPlaceholder": "Pesquisar arquivos...",
@@ -486,13 +495,13 @@
     }
   },
   "vaults": {
-    "searchPlaceholder": "Pesquisar em todos os cofres...",
+    "searchPlaceholder": "Pesquisar em todos os bibliotecas...",
     "results": "resultados",
     "noResults": "Sem resultados",
-    "addVault": "+ Adicionar cofre",
+    "addVault": "+ Adicionar biblioteca",
     "welcomeTitle": "Bem-vindo ao Constellation",
-    "welcomeSubtitle": "Adicione seu primeiro cofre pela barra lateral",
-    "addVaultCta": "+ Adicionar cofre",
+    "welcomeSubtitle": "Adicione seu primeiro biblioteca pela barra lateral",
+    "addVaultCta": "+ Adicionar biblioteca",
     "selectNote": "Selecione uma nota na barra lateral"
   },
   "skills": {
@@ -508,7 +517,7 @@
     "create": "Criar habilidade",
     "noProvider": "Conecte um provedor de IA nas Configurações para usar as habilidades.",
     "selectNote": "Selecione uma nota",
-    "selectVault": "Selecione um cofre",
+    "selectVault": "Selecione um biblioteca",
     "enterText": "Insira o texto...",
     "result": "Resultado",
     "copyResult": "Copiar",
@@ -518,11 +527,11 @@
     "summarize": "Resumir nota",
     "summarizeDesc": "Gerar um resumo conciso de qualquer nota",
     "qa": "Perguntas e respostas inteligentes",
-    "qaDesc": "Faça perguntas sobre seus cofres e obtenha respostas com IA",
+    "qaDesc": "Faça perguntas sobre seus bibliotecas e obtenha respostas com IA",
     "write": "Assistente de escrita",
     "writeDesc": "Expandir, reescrever ou melhorar seu texto",
     "autolink": "Vinculador automático",
-    "autolinkDesc": "Descobrir conexões entre notas de diferentes cofres",
+    "autolinkDesc": "Descobrir conexões entre notas de diferentes bibliotecas",
     "translate": "Traduzir nota",
     "translateDesc": "Traduzir notas entre idiomas",
     "meeting": "Notas de reunião",
@@ -533,14 +542,14 @@
     "researchDesc": "Analisar e sintetizar informações de várias notas"
   },
   "vaultManager": {
-    "title": "Gerenciar cofres",
-    "openVault": "+ Abrir cofre",
-    "manageVaults": "Gerenciar cofres...",
+    "title": "Gerenciar bibliotecas",
+    "openVault": "+ Abrir biblioteca",
+    "manageVaults": "Gerenciar bibliotecas...",
     "openFolder": "Abrir pasta",
     "remove": "Remover",
     "confirmRemove": "Remover \"{name}\" do Constellation? Seus arquivos não serão excluídos.",
-    "addVault": "+ Adicionar cofre",
-    "noVaults": "Nenhum cofre registrado",
+    "addVault": "+ Adicionar biblioteca",
+    "noVaults": "Nenhum biblioteca registrado",
     "notes": "notas"
   },
   "lockScreen": {
@@ -634,18 +643,18 @@
       "title": "Fonte",
       "folder": "Pasta",
       "tag": "Etiqueta",
-      "vault": "Cofre",
-      "allVaults": "Todos os cofres",
-      "vaults": "cofres",
+      "vault": "Biblioteca",
+      "allVaults": "Todos os bibliotecas",
+      "vaults": "bibliotecas",
       "folderPath": "Caminho da pasta",
       "folderPlaceholder": "ex. Projetos/Ativos",
-      "folderHint": "Analisa esta pasta em todos os cofres que a contêm",
+      "folderHint": "Analisa esta pasta em todos os bibliotecas que a contêm",
       "includeSubfolders": "Incluir subpastas",
       "tagName": "Etiqueta",
       "tagPlaceholder": "ex. projeto",
-      "tagHint": "Analisa todas as notas com esta etiqueta em todos os cofres",
-      "vaultsLabel": "Cofres",
-      "allHint": "Analisa todas as notas em todos os cofres conectados",
+      "tagHint": "Analisa todas as notas com esta etiqueta em todos os bibliotecas",
+      "vaultsLabel": "Bibliotecas",
+      "allHint": "Analisa todas as notas em todos os bibliotecas conectados",
       "apply": "Aplicar",
       "cancel": "Cancelar"
     }
@@ -668,14 +677,25 @@
       "creating": "Criando...",
       "next": "Próximo",
       "back": "Voltar",
-      "addVaultsHeading": "Adicione seus Cofres",
-      "addVaultsDescription": "Conecte seus cofres e universos filhos. Você sempre pode adicionar mais depois.",
-      "addVault": "Adicionar cofre",
+      "addVaultsHeading": "Adicione seus Bibliotecas",
+      "addVaultsDescription": "Conecte seus bibliotecas e universos filhos. Você sempre pode adicionar mais depois.",
+      "addVault": "Adicionar biblioteca",
       "addChildUniverse": "Adicionar universo filho",
+      "starterKit": "Criar pastas iniciais",
+      "starterKitDesc": "Configurar pastas Atlas, Calendário, Projetos e Entrada com uma nota de boas-vindas",
       "finish": "Concluir",
       "skip": "Pular por enquanto",
-      "noVaultsYet": "Nenhum cofre adicionado ainda. Adicione um cofre ou universo filho para começar.",
-      "remove": "Remover"
+      "noVaultsYet": "Nenhum biblioteca adicionado ainda. Adicione um biblioteca ou universo filho para começar.",
+      "remove": "Remover",
+      "importApp": "Importar de outro aplicativo",
+      "importAppDesc": "Migre suas notas do Obsidian, Notion, Evernote ou outros aplicativos para o Constellation.",
+      "importHeading": "Importar suas notas",
+      "importDescription": "Escolha o aplicativo de origem e selecione a pasta ou arquivo de origem.",
+      "importPreviewHeading": "Pronto para importar",
+      "importConfirm": "Importar e criar Universo",
+      "importingNotes": "Importando suas notas...",
+      "importLocationLabel": "Localização do Universo",
+      "importComplete": "Importação concluída! {count} arquivos importados."
     },
     "manager": {
       "heading": "Gerenciador de Universos",
@@ -690,15 +710,15 @@
       "children": "Universos filhos",
       "addChild": "Adicionar Universo filho",
       "noUniverses": "Nenhum universo encontrado",
-      "ownVaults": "Cofres próprios",
-      "inheritedVaults": "Cofres herdados",
+      "ownVaults": "Bibliotecas próprios",
+      "inheritedVaults": "Bibliotecas herdados",
       "openExisting": "Abrir universo existente"
     },
     "switching": "Trocando universo...",
     "migrating": "Migrando seus dados..."
   },
   "dataview": {
-    "label": "Dataview",
+    "label": "Lens",
     "loading": "Carregando consulta...",
     "noResults": "Sem resultados",
     "results": "resultados",
@@ -719,16 +739,16 @@
   "secondScreen": {
     "title": "Segunda tela",
     "grid": "Grade",
-    "graph": "Gráfico",
+    "star": "Estrela",
     "detail": "Detalhe",
     "loading": "Carregando notas...",
     "linked": "Vinculado",
     "linkedOn": "Navegação vinculada ativada",
     "linkedOff": "Navegação vinculada desativada",
     "searchNotes": "Pesquisar notas...",
-    "allVaults": "Todos os cofres",
+    "allVaults": "Todos os bibliotecas",
     "sortName": "Ordenar por nome",
-    "sortVault": "Ordenar por cofre",
+    "sortVault": "Ordenar por biblioteca",
     "noResults": "Nenhuma nota correspondente",
     "noNotes": "Nenhuma nota encontrada",
     "detailEmpty": "Selecione uma nota para visualizar aqui",
@@ -738,6 +758,8 @@
     "title": "Importar notas",
     "selectFormat": "Escolha o formato das notas que deseja importar.",
     "formats": {
+      "obsidian": "Obsidian",
+      "obsidianDesc": "Importar um cofre Obsidian com todas as notas e anexos",
       "markdown": "Markdown",
       "markdownDesc": "Arquivos Markdown (.md) de qualquer app",
       "notion": "Notion",
@@ -753,7 +775,7 @@
       "txt": "Texto simples",
       "txtDesc": "Arquivos de texto convertidos para Markdown"
     },
-    "targetVault": "Cofre alvo",
+    "targetVault": "Biblioteca alvo",
     "subfolder": "Subpasta",
     "selectSource": "Selecionar fonte",
     "scanning": "Escaneando arquivos...",

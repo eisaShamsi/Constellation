@@ -13,7 +13,7 @@
 		columns: ColumnDef[];
 		dir: 'ltr' | 'rtl';
 		onCellEdit: (row: BaseRow, key: string, value: string) => void;
-		onOpenNote: (path: string, vaultName: string) => void;
+		onOpenNote: (path: string, libraryName: string) => void;
 	} = $props();
 
 	const visibleColumns = $derived(columns.filter(c => c.visible !== false).slice(0, 4));
@@ -48,15 +48,15 @@
 	{#each rows as row, rowIdx (row.file_path)}
 		<div class="list-item">
 			<div class="list-item-main">
-				<button class="list-file-link" onclick={() => onOpenNote(row.file_path, row.vault_name)}>
+				<button class="list-file-link" onclick={() => onOpenNote(row.file_path, row.library_name)}>
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
 						<polyline points="14 2 14 8 20 8"/>
 					</svg>
 					<span dir={getCellDir(row.file_name)}>{row.file_name}</span>
 				</button>
-				{#if row.vault_name}
-					<span class="list-vault">{row.vault_name}</span>
+				{#if row.library_name}
+					<span class="list-library">{row.library_name}</span>
 				{/if}
 			</div>
 			<div class="list-item-props">
@@ -163,7 +163,7 @@
 		color: var(--text-faint);
 	}
 
-	.list-vault {
+	.list-library {
 		font-size: 0.7rem;
 		color: var(--text-faint);
 		background: var(--background-secondary);

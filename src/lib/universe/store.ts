@@ -56,9 +56,14 @@ export async function removeChildUniverse(childPath: string): Promise<void> {
 	return await invoke('remove_child_universe', { childPath });
 }
 
-/** Resolve the full merged vault list for the active universe. */
-export async function resolveUniverseVaults(): Promise<{ id: string; name: string; path: string }[]> {
-	return await invoke('resolve_universe_vaults');
+/** Resolve the full merged library list for the active universe. */
+export async function resolveUniverseLibraries(): Promise<{ id: string; name: string; path: string }[]> {
+	return await invoke('resolve_universe_libraries');
+}
+
+/** Link a folder as a single-library universe and register it. */
+export async function linkLibraryAsUniverse(path: string): Promise<UniverseEntry> {
+	return await invoke('link_library_as_universe', { path });
 }
 
 /** Open an existing universe directory (must contain universe.json). */
@@ -74,7 +79,7 @@ export async function migrateLegacyData(name: string, universePath: string): Pro
 export interface ChildUniverseInfo {
 	name: string;
 	path: string;
-	vault_count: number;
+	library_count: number;
 }
 
 /** Get info about child universes of the active universe. */

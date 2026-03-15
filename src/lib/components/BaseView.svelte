@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { queryBase, saveBaseFile, updateNoteProperty } from '$lib/bases/store';
 	import { createDefaultColumn, detectCellType, type BaseDefinition, type BaseQueryResult, type BaseRow, type ColumnDef, type BaseSource } from '$lib/bases/types';
-	import { vaults } from '$lib/vaults/store';
+	import { libraries } from '$lib/libraries/store';
 	import { t, dir } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 	import BaseTableView from './BaseTableView.svelte';
@@ -19,7 +19,7 @@
 	}: {
 		definition: BaseDefinition;
 		filePath: string;
-		onOpenNote: (path: string, vaultName: string) => void;
+		onOpenNote: (path: string, libraryName: string) => void;
 		onCreateNote?: (folderPath: string, properties: Record<string, string>) => void;
 	} = $props();
 
@@ -35,24 +35,24 @@
 	let sourcePath = $state(definition.source.path ?? '');
 	let sourceTag = $state(definition.source.tag ?? '');
 	let sourceSubfolders = $state(definition.source.includeSubfolders ?? true);
-	let selectedVaultNames: string[] = $state(definition.source.selectedVaults ?? []);
+	let selectedLibraryNames: string[] = $state(definition.source.selectedLibraries ?? []);
 
-	// Available vaults for the picker
-	const availableVaults = $derived($vaults);
+	// Available libraries for the picker
+	const availableLibraries = $derived($libraries);
 
-	// Whether all vaults are selected (empty = all)
-	const allVaultsSelected = $derived(selectedVaultNames.length === 0);
+	// Whether all libraries are selected (empty = all)
+	const allLibrariesSelected = $derived(selectedLibraryNames.length === 0);
 
 	// Source description for display
 	const sourceLabel = $derived.by(() => {
-		const vaultSuffix = selectedVaultNames.length > 0
-			? ` (${selectedVaultNames.length})`
+		const librarySuffix = selectedLibraryNames.length > 0
+			? ` (${selectedLibraryNames.length})`
 			: '';
 		switch (definition.source.type) {
-			case 'folder': return (definition.source.path || '/') + vaultSuffix;
-			case 'tag': return `#${definition.source.tag || ''}` + vaultSuffix;
-			case 'all': return selectedVaultNames.length > 0
-				? `${selectedVaultNames.length} ${$t('bases.source.vaults')}`
+			case 'folder': return (definition.source.path || '/') + librarySuffix;
+			case 'tag': return `#${definition.source.tag || ''}` + librarySuffix;
+			case 'all': return selectedLibraryNames.length > 0
+				? `${selectedLibraryNames.length} ${$t('bases.source.libraries')}`
 				: $t('bases.source.allVaults');
 			default: return '';
 		}
@@ -67,11 +67,11 @@
 		}
 	});
 
-	// Count unique vaults in results
-	const vaultCount = $derived.by(() => {
+	// Count unique libraries in results
+	const libraryCount = $derived.by(() => {
 		if (!result) return 0;
-		const vaultSet = new Set(result.rows.map(r => r.vault_name));
-		return vaultSet.size;
+		const librarySet = new Set(result.rows.map(r => r.library_name));
+		return librarySet.size;
 	});
 
 	// Effective columns: user-defined or auto-detected
@@ -98,8 +98,8 @@
 		loading = true;
 		error = '';
 		try {
-			const vaultPaths: [string, string][] = $vaults.map(v => [v.name, v.path]);
-			result = await queryBase(definition, vaultPaths);
+			const libraryPaths: [string, string][] = $libraries.map(v => [v.name, v.path]);
+			result = await queryBase(definition, libraryPaths);
 		} catch (e: any) {
 			error = e?.toString() ?? 'Query failed';
 		}
@@ -139,19 +139,19 @@
 		await saveBaseFile(filePath, definition);
 	}
 
-	function toggleVault(name: string) {
-		if (selectedVaultNames.includes(name)) {
-			selectedVaultNames = selectedVaultNames.filter(v => v !== name);
+	function toggleLibrary(name: string) {
+		if (selectedLibraryNames.includes(name)) {
+			selectedLibraryNames = selectedLibraryNames.filter(v => v !== name);
 		} else {
-			selectedVaultNames = [...selectedVaultNames, name];
+			selectedLibraryNames = [...selectedLibraryNames, name];
 		}
 	}
 
-	function toggleAllVaults() {
-		if (allVaultsSelected) {
+	function toggleAllLibraries() {
+		if (allLibrariesSelected) {
 			// Can't deselect "all" — do nothing (it's already all)
 		} else {
-			selectedVaultNames = [];
+			selectedLibraryNames = [];
 		}
 	}
 
@@ -159,7 +159,7 @@
 		const newSource: BaseSource = {
 			type: sourceType,
 			includeSubfolders: sourceSubfolders,
-			selectedVaults: selectedVaultNames.length > 0 ? selectedVaultNames : undefined,
+			selectedLibraries: selectedLibraryNames.length > 0 ? selectedLibraryNames : undefined,
 		};
 		if (sourceType === 'folder') newSource.path = sourcePath;
 		if (sourceType === 'tag') newSource.tag = sourceTag;
@@ -196,9 +196,9 @@
 			{#if result}
 				<span class="base-count">
 					{result.rows.length} / {result.total_count}
-					{#if vaultCount > 1}
-						<span class="vault-count" title="{vaultCount} {$t('bases.source.vaults')}">
-							· {vaultCount} {$t('bases.source.vaults')}
+					{#if libraryCount > 1}
+						<span class="library-count" title="{libraryCount} {$t('bases.source.libraries')}">
+							· {libraryCount} {$t('bases.source.libraries')}
 						</span>
 					{/if}
 				</span>
@@ -297,18 +297,18 @@
 					{/if}
 				</div>
 
-				<!-- Right: vault checkboxes -->
+				<!-- Right: library checkboxes -->
 				<div class="source-right">
 					<div class="source-section-label">{$t('bases.source.vaultsLabel')}</div>
-					<div class="vault-checklist">
-						<label class="vault-check" class:active={allVaultsSelected}>
-							<input type="checkbox" checked={allVaultsSelected} onchange={toggleAllVaults} />
+					<div class="library-checklist">
+						<label class="library-check" class:active={allLibrariesSelected}>
+							<input type="checkbox" checked={allLibrariesSelected} onchange={toggleAllLibraries} />
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
 							<span>{$t('bases.source.allVaults')}</span>
 						</label>
-						{#each availableVaults as v}
-							<label class="vault-check" class:active={selectedVaultNames.includes(v.name)}>
-								<input type="checkbox" checked={allVaultsSelected || selectedVaultNames.includes(v.name)} onchange={() => toggleVault(v.name)} />
+						{#each availableLibraries as v}
+							<label class="library-check" class:active={selectedLibraryNames.includes(v.name)}>
+								<input type="checkbox" checked={allLibrariesSelected || selectedLibraryNames.includes(v.name)} onchange={() => toggleLibrary(v.name)} />
 								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-4h6v4"/></svg>
 								<span>{v.name}</span>
 							</label>
@@ -319,7 +319,7 @@
 
 			<div class="source-actions">
 				<button class="source-apply" onclick={handleSourceChange}>{$t('bases.source.apply')}</button>
-				<button class="source-cancel" onclick={() => { showSource = false; sourceType = definition.source.type; sourcePath = definition.source.path ?? ''; sourceTag = definition.source.tag ?? ''; sourceSubfolders = definition.source.includeSubfolders ?? true; selectedVaultNames = definition.source.selectedVaults ?? []; }}>{$t('bases.source.cancel')}</button>
+				<button class="source-cancel" onclick={() => { showSource = false; sourceType = definition.source.type; sourcePath = definition.source.path ?? ''; sourceTag = definition.source.tag ?? ''; sourceSubfolders = definition.source.includeSubfolders ?? true; selectedLibraryNames = definition.source.selectedLibraries ?? []; }}>{$t('bases.source.cancel')}</button>
 			</div>
 		</div>
 	{/if}
@@ -389,8 +389,8 @@
 			{#if result.query_time_ms > 0}
 				<div class="base-footer">
 					<span class="query-time">{result.rows.length} {$t('bases.resultsIn')} {result.query_time_ms}ms</span>
-					{#if vaultCount > 1}
-						<span class="query-vaults">· {vaultCount} {$t('bases.source.vaults')}</span>
+					{#if libraryCount > 1}
+						<span class="query-libraries">· {libraryCount} {$t('bases.source.libraries')}</span>
 					{/if}
 				</div>
 			{/if}
@@ -447,7 +447,7 @@
 		white-space: nowrap;
 	}
 
-	.vault-count {
+	.library-count {
 		color: var(--interactive-accent);
 	}
 
@@ -613,8 +613,8 @@
 		cursor: pointer;
 	}
 
-	/* Vault checklist */
-	.vault-checklist {
+	/* Library checklist */
+	.library-checklist {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
@@ -622,7 +622,7 @@
 		overflow-y: auto;
 	}
 
-	.vault-check {
+	.library-check {
 		display: flex;
 		align-items: center;
 		gap: 6px;
@@ -633,18 +633,18 @@
 		cursor: pointer;
 		transition: all 0.1s;
 	}
-	.vault-check:hover {
+	.library-check:hover {
 		background: var(--background-modifier-hover);
 		color: var(--text-normal);
 	}
-	.vault-check.active {
+	.library-check.active {
 		color: var(--text-normal);
 	}
-	.vault-check input[type="checkbox"] {
+	.library-check input[type="checkbox"] {
 		cursor: pointer;
 		accent-color: var(--interactive-accent);
 	}
-	.vault-check span {
+	.library-check span {
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -704,7 +704,7 @@
 		font-size: 0.72rem;
 		color: var(--text-faint);
 	}
-	.query-vaults {
+	.query-libraries {
 		font-size: 0.72rem;
 		color: var(--interactive-accent);
 	}

@@ -60,8 +60,8 @@ const wikilinkExtension: TokenizerAndRendererExtension = {
 		}
 
 		// For vault:note syntax, show just the note name if no explicit alias
-		const isCrossVault = baseTarget.includes(':') && target === token.target && target === (token.display as string);
-		if (isCrossVault && !fragment) {
+		const isCrossLibrary = baseTarget.includes(':') && target === token.target && target === (token.display as string);
+		if (isCrossLibrary && !fragment) {
 			display = baseTarget.split(':').pop()!.trim();
 		}
 		const fragmentAttr = fragment ? ` data-fragment="${encodeURIComponent(fragment)}"` : '';
@@ -83,7 +83,7 @@ const wikilinkExtension: TokenizerAndRendererExtension = {
 			}
 			return `<div class="embed-note" data-embed="${encodeURIComponent(target)}"${fragmentAttr}><span class="embed-icon">📄</span> ${escapeHtml(display)}</div>`;
 		}
-		const crossClass = isCrossVault ? ' cross-vault' : '';
+		const crossClass = isCrossLibrary ? ' cross-vault' : '';
 		const typeClass = linkType ? ` link-type-${linkType.replace(/[^a-z0-9-]/gi, '')}` : '';
 		return `<a class="wikilink${crossClass}${typeClass}" data-wikilink="${encodeURIComponent(baseTarget || target)}"${fragmentAttr}${typeAttr} href="#" ${linkType ? `title="type: ${escapeHtml(linkType)}"` : ''}>${escapeHtml(display)}</a>`;
 	}
@@ -404,10 +404,10 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 	if (dataviewEls.length > 0) {
 		const { executeDataviewQuery } = await import('$lib/dataview/store');
 		// Get vault paths from the global store
-		const { vaults } = await import('$lib/vaults/store');
+		const { libraries } = await import('$lib/libraries/store');
 		const { get } = await import('svelte/store');
-		const vaultList = get(vaults);
-		const vaultPaths: [string, string][] = vaultList.map((v: any) => [v.name, v.path]);
+		const libraryList = get(libraries);
+		const libraryPaths: [string, string][] = libraryList.map((v: any) => [v.name, v.path]);
 
 		for (const el of dataviewEls) {
 			const queryText = decodeURIComponent((el as HTMLElement).getAttribute('data-dataview') || '');
@@ -418,7 +418,7 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 			el.innerHTML = '<div class="dv-inline-loading">Loading query...</div>';
 
 			try {
-				const result = await executeDataviewQuery(queryText, vaultPaths);
+				const result = await executeDataviewQuery(queryText, libraryPaths);
 				if (result.error) {
 					el.innerHTML = `<div class="dv-inline-error">${DOMPurify.sanitize(result.error)}</div>`;
 					continue;
@@ -434,7 +434,7 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 					html += '</tr></thead><tbody>';
 					for (const row of result.rows) {
 						const name = row.file_name.replace(/\.md$/, '');
-						html += `<tr><td><a class="dv-inline-link" data-path="${DOMPurify.sanitize(row.file_path)}" data-vault="${DOMPurify.sanitize(row.vault_name)}">${DOMPurify.sanitize(name)}</a></td>`;
+						html += `<tr><td><a class="dv-inline-link" data-path="${DOMPurify.sanitize(row.file_path)}" data-vault="${DOMPurify.sanitize(row.library_name)}">${DOMPurify.sanitize(name)}</a></td>`;
 						for (const col of result.columns) {
 							const val = row.properties[col] || '';
 							html += `<td>${DOMPurify.sanitize(val)}</td>`;
@@ -446,7 +446,7 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 					html += '<ul class="dv-inline-list">';
 					for (const row of result.rows) {
 						const name = row.file_name.replace(/\.md$/, '');
-						html += `<li><a class="dv-inline-link" data-path="${DOMPurify.sanitize(row.file_path)}" data-vault="${DOMPurify.sanitize(row.vault_name)}">${DOMPurify.sanitize(name)}</a></li>`;
+						html += `<li><a class="dv-inline-link" data-path="${DOMPurify.sanitize(row.file_path)}" data-vault="${DOMPurify.sanitize(row.library_name)}">${DOMPurify.sanitize(name)}</a></li>`;
 					}
 					html += '</ul>';
 				} else {
@@ -509,4 +509,76 @@ export function collectNoteNames(entries: any[]): { name: string; path: string }
 	}
 	walk(entries);
 	return notes;
+}
+
+// ─── Keyboard Shortcuts ───
+
+/** Default keyboard shortcuts for all commands. Command ID → shortcut string. */
+export const DEFAULT_SHORTCUTS: Record<string, string> = {
+	'command-palette': 'Ctrl+P',
+	'new-note': 'Ctrl+N',
+	'quick-capture': 'Ctrl+Shift+N',
+	'new-base': 'Ctrl+Shift+B',
+	'quick-switch': 'Ctrl+O',
+	'search': 'Ctrl+Shift+F',
+	'toggle-edit': 'Ctrl+E',
+	'insert-template': 'Ctrl+T',
+	'toggle-bold': 'Ctrl+B',
+	'toggle-italic': 'Ctrl+I',
+	'close-note': 'Ctrl+W',
+	'toggle-left': 'Ctrl+\\',
+	'settings': 'Ctrl+,',
+	'add-property': 'Ctrl+;',
+	'second-screen': 'Ctrl+Shift+2',
+	'nav-back': 'Alt+ArrowLeft',
+	'nav-forward': 'Alt+ArrowRight',
+	'insert-link': 'Ctrl+K',
+	'duplicate-line': 'Ctrl+Shift+D',
+	'toggle-comment': 'Ctrl+/',
+	'select-next': 'Ctrl+D',
+};
+
+/** Convert a KeyboardEvent into a normalized shortcut string like "Ctrl+Shift+N". */
+export function eventToShortcut(e: KeyboardEvent): string {
+	const parts: string[] = [];
+	if (e.ctrlKey || e.metaKey) parts.push('Ctrl');
+	if (e.shiftKey) parts.push('Shift');
+	if (e.altKey) parts.push('Alt');
+
+	let key = e.key;
+	if (key === ' ') key = 'Space';
+	if (/^[a-zA-Z]$/.test(key)) key = key.toUpperCase();
+
+	// Don't add modifier keys themselves
+	if (['Control', 'Shift', 'Alt', 'Meta'].includes(key)) return '';
+
+	parts.push(key);
+	return parts.join('+');
+}
+
+/** Normalize a stored shortcut string for consistent comparison. */
+export function normalizeShortcut(s: string): string {
+	if (!s) return '';
+	return s.split('+').map(part => {
+		if (/^[a-zA-Z]$/.test(part)) return part.toUpperCase();
+		if (part === '←') return 'ArrowLeft';
+		if (part === '→') return 'ArrowRight';
+		return part;
+	}).join('+');
+}
+
+/** Resolve a command's shortcut: custom override if set, else default. */
+export function getResolvedShortcut(commandId: string, customShortcuts: Record<string, string>): string {
+	if (commandId in customShortcuts) return customShortcuts[commandId];
+	return DEFAULT_SHORTCUTS[commandId] ?? '';
+}
+
+/** Format a shortcut string for display (e.g., "ArrowLeft" → "←"). */
+export function formatShortcut(s: string): string {
+	if (!s) return '';
+	return s
+		.replace('ArrowLeft', '←')
+		.replace('ArrowRight', '→')
+		.replace('ArrowUp', '↑')
+		.replace('ArrowDown', '↓');
 }

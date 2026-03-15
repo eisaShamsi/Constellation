@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { openNoteTab, vaults } from '$lib/vaults/store';
+	import { openNoteTab, libraries } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 

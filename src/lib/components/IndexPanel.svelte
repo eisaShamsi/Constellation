@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import type { IndexEntry, IndexMention } from '$lib/vaults/store';
+	import type { IndexEntry, IndexMention } from '$lib/libraries/store';
 
 	let {
 		entries = [] as IndexEntry[],

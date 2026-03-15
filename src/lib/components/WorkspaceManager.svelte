@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { workspaces, saveWorkspace, restoreWorkspace, deleteWorkspace, type Workspace, type WorkspaceLayout, type WorkspaceSecondScreen } from '$lib/vaults/store';
+	import { workspaces, saveWorkspace, restoreWorkspace, deleteWorkspace, type Workspace, type WorkspaceLayout, type WorkspaceSecondScreen } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 
 	let {

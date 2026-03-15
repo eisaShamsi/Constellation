@@ -261,9 +261,9 @@ export const livePreviewTheme = EditorView.theme({
 		padding: '1px 4px',
 	},
 	'.cm-md-link': {
-		color: 'var(--vault-accent, var(--interactive-accent))',
+		color: 'var(--library-accent, var(--interactive-accent))',
 		textDecoration: 'underline',
-		textDecorationColor: 'color-mix(in srgb, var(--vault-accent, var(--interactive-accent)) 40%, transparent)',
+		textDecorationColor: 'color-mix(in srgb, var(--library-accent, var(--interactive-accent)) 40%, transparent)',
 	},
 	'.cm-md-highlight': {
 		backgroundColor: 'color-mix(in srgb, var(--color-yellow) 35%, transparent)',
@@ -282,7 +282,7 @@ export const livePreviewTheme = EditorView.theme({
 		verticalAlign: 'middle',
 		marginRight: '4px',
 		cursor: 'pointer',
-		accentColor: 'var(--vault-accent, var(--interactive-accent))',
+		accentColor: 'var(--library-accent, var(--interactive-accent))',
 	},
 	'.cm-dv-label-widget': {
 		display: 'flex',

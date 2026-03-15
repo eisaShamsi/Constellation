@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { appSettings } from '$lib/vaults/store';
+	import { appSettings } from '$lib/libraries/store';
 
 	let { onUnlock }: { onUnlock: () => void } = $props();
 

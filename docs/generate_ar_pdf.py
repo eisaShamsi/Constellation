@@ -369,7 +369,7 @@ def build_pdf():
         tc(S['table_header'], 'الميزة'),
     ]
     t42r = [
-        [tc(S['table_cell'], 'محلل استعلامات أصلي (TABLE، LIST، TASK، CALENDAR)'), tc(S['table_cell'], 'إضافة Dataview / سكريبتات خارجية'), tc(S['table_cell'], 'الاستعلامات المنظمة')],
+        [tc(S['table_cell'], 'محلل استعلامات أصلي (TABLE، LIST، TASK، CALENDAR)'), tc(S['table_cell'], 'إضافات أو سكريبتات خارجية'), tc(S['table_cell'], 'الاستعلامات المنظمة')],
         [tc(S['table_cell'], 'مسح شامل للخزنة، تبديل، تواريخ استحقاق، أولوية، وسوم'), tc(S['table_cell'], 'تطبيقات مهام منفصلة أو إضافات'), tc(S['table_cell'], 'إدارة المهام')],
         [tc(S['table_cell'], 'عرض شهري مع نقاط الملاحظات/المهام، إنشاء ملاحظة يومية'), tc(S['table_cell'], 'إضافات تقويم منفصلة'), tc(S['table_cell'], 'شريط التقويم')],
         [tc(S['table_cell'], 'عمليات صفوف/أعمدة، فرز، نقل، صيغ'), tc(S['table_cell'], 'جداول ماركداون أساسية أو جداول بيانات'), tc(S['table_cell'], 'جداول متقدمة')],

@@ -3,12 +3,12 @@ aliases:
   - Import Notes
   - Note Importer
   - Migration
-description: Import notes from other apps like Notion, Evernote, Bear, or plain files into your Constellation vaults.
+description: Import notes from other apps like Notion, Evernote, Bear, or plain files into your Constellation libraries.
 ---
 
 # Importer
 
-Constellation's built-in Importer lets you bring notes from other apps into your vaults. It supports multiple formats and converts them to Obsidian-compatible Markdown.
+Constellation's built-in Importer lets you bring notes from other apps into your libraries. It supports multiple formats and converts them to standard Markdown.
 
 ## Supported Formats
 
@@ -25,10 +25,10 @@ Constellation's built-in Importer lets you bring notes from other apps into your
 ## How to Use
 
 1. Open the Importer via:
-   - **Command palette** → "Import notes"
+   - **Mission Control** → "Import notes"
    - **Ribbon** → Import button (download arrow icon)
 2. **Select format** — choose the source format
-3. **Choose target vault** and optional subfolder (default: "Imported")
+3. **Choose target library** and optional subfolder (default: "Imported")
 4. **Select source** — pick the file(s) or folder
 5. **Preview** — review what will be imported
 6. **Import** — click "Import now" to begin
@@ -79,7 +79,7 @@ Constellation's built-in Importer lets you bring notes from other apps into your
 ## Safety
 
 - **No overwriting**: Existing files are never overwritten. Duplicates are skipped and counted.
-- **Vault validation**: The target path is validated to ensure it's within a registered vault.
+- **Library validation**: The target path is validated to ensure it's within a registered library.
 - **Error reporting**: Any files that fail to import are listed with their error messages.
 
 > [!tip]

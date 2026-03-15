@@ -2,9 +2,9 @@ mod ai;
 mod bases;
 mod dataview;
 mod importers;
+mod libraries;
 mod tasks;
 mod universe;
-mod vaults;
 mod watcher;
 
 use tauri::{Emitter, Manager};
@@ -39,6 +39,19 @@ fn is_second_screen_open(app: tauri::AppHandle) -> bool {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Install panic hook to log crashes before the process exits
+    std::panic::set_hook(Box::new(|info| {
+        let msg = format!("[CONSTELLATION PANIC] {}", info);
+        eprintln!("{}", msg);
+        // Also write to a crash log file next to the executable
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(dir) = exe.parent() {
+                let log_path = dir.join("constellation-crash.log");
+                let _ = std::fs::write(&log_path, &msg);
+            }
+        }
+    }));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(watcher::WatcherState::new())
@@ -47,38 +60,40 @@ pub fn run() {
             ai::ai_send_message,
             ai::ai_validate_connection,
             ai::ai_list_models,
-            vaults::list_vaults,
-            vaults::add_vault,
-            vaults::remove_vault,
-            vaults::read_vault_tree,
-            vaults::read_note,
-            vaults::get_note_headings,
-            vaults::write_note,
-            vaults::pick_folder,
-            vaults::get_all_vault_stats,
-            vaults::search_stars,
-            vaults::search_by_property,
-            vaults::create_note,
-            vaults::create_folder,
-            vaults::rename_item,
-            vaults::move_item,
-            vaults::delete_item,
-            vaults::resolve_wikilink,
-            vaults::resolve_wikilink_cross_vault,
-            vaults::read_obsidian_appearance,
-            vaults::scan_vault_links,
-            vaults::scan_unlinked_mentions,
-            vaults::scan_vault_tags,
-            vaults::collect_vault_notes,
-            vaults::get_daily_note_path,
-            vaults::update_links_on_rename,
-            vaults::read_note_preview,
-            vaults::save_clipboard_image,
-            vaults::export_note_html,
-            vaults::move_to_trash,
-            vaults::scan_vault_index,
-            watcher::watch_vault,
-            watcher::unwatch_vault,
+            libraries::list_libraries,
+            libraries::add_library,
+            libraries::remove_library,
+            libraries::read_library_tree,
+            libraries::read_note,
+            libraries::get_note_headings,
+            libraries::write_note,
+            libraries::pick_folder,
+            libraries::create_new_library,
+            libraries::get_all_library_stats,
+            libraries::search_stars,
+            libraries::search_by_property,
+            libraries::create_note,
+            libraries::create_folder,
+            libraries::rename_item,
+            libraries::move_item,
+            libraries::delete_item,
+            libraries::resolve_wikilink,
+            libraries::resolve_wikilink_cross_library,
+            libraries::read_library_appearance,
+            libraries::scan_library_links,
+            libraries::scan_unlinked_mentions,
+            libraries::scan_library_tags,
+            libraries::collect_library_notes,
+            libraries::get_daily_note_path,
+            libraries::quick_capture,
+            libraries::update_links_on_rename,
+            libraries::read_note_preview,
+            libraries::save_clipboard_image,
+            libraries::export_note_html,
+            libraries::move_to_trash,
+            libraries::scan_library_index,
+            watcher::watch_library,
+            watcher::unwatch_library,
             bases::parse_base_file,
             bases::query_base,
             bases::save_base_file,
@@ -97,7 +112,7 @@ pub fn run() {
             universe::check_migration_needed,
             universe::add_child_universe,
             universe::remove_child_universe,
-            universe::resolve_universe_vaults,
+            universe::resolve_universe_libraries,
             universe::read_universe_settings,
             universe::save_universe_settings,
             universe::read_universe_bookmarks,
@@ -109,6 +124,8 @@ pub fn run() {
             universe::migrate_legacy_data,
             universe::open_existing_universe,
             universe::get_child_universes,
+            universe::link_library_as_universe,
+            universe::scaffold_starter_library,
             dataview::execute_dataview_query,
             tasks::scan_vault_tasks,
             tasks::scan_note_tasks,

@@ -6,19 +6,19 @@
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { dir, t } from '$lib/i18n';
 	import {
-		vaults, loadVaults, appSettings, loadSettings,
+		libraries, loadLibraries, appSettings, loadSettings,
 		openNoteTab, openTabs, activeTabId, activeTab,
 		switchTab, closeTab, createEmptyTab,
 		parseFrontmatter, editingTabIds, toggleEditMode,
 		navigateBack, navigateForward,
-		scanVaultLinks, scanVaultTags, scanVaultIndex,
-		buildGraphData, readNotePreview,
-		type NoteLink, type GraphNode, type GraphLink, type IndexEntry
-	} from '$lib/vaults/store';
+		scanLibraryLinks, scanLibraryTags, scanLibraryIndex,
+		buildStarData, readNotePreview,
+		type NoteLink, type StarNode, type StarLink, type IndexEntry
+	} from '$lib/libraries/store';
 	import { get } from 'svelte/store';
 	import { detectDir } from '$lib/utils';
 	import NotePane from '$lib/components/NotePane.svelte';
-	import FullGraph from '$lib/components/FullGraph.svelte';
+	import FullStarView from '$lib/components/FullStarView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import {
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
@@ -35,21 +35,21 @@
 	let linkedBrowsing = $state(true);
 
 	// ─── Data state ───
-	let allNotes = $state<{ name: string; path: string; vaultName: string }[]>([]);
-	let graphNodes = $state<GraphNode[]>([]);
-	let graphLinks = $state<GraphLink[]>([]);
+	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
+	let starNodes = $state<StarNode[]>([]);
+	let starLinks = $state<StarLink[]>([]);
 	let loading = $state(true);
 	let universeName = $state('');
 
-	// ─── Vault color map ───
-	const vaultColors = [
+	// ─── Library color map ───
+	const libraryColors = [
 		'#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
 		'#ec4899', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
 	];
-	let vaultColorMap = $derived.by(() => {
+	let libraryColorMap = $derived.by(() => {
 		const map: Record<string, string> = {};
-		const v = $vaults;
-		v.forEach((vault, i) => { map[vault.name] = vaultColors[i % vaultColors.length]; });
+		const v = $libraries;
+		v.forEach((vault, i) => { map[vault.name] = libraryColors[i % libraryColors.length]; });
 		return map;
 	});
 
@@ -76,27 +76,27 @@
 		loading = true;
 		try {
 			await loadSettings();
-			await loadVaults();
+			await loadLibraries();
 
-			const vaultList = $vaults;
+			const libraryList = $libraries;
 			const links: NoteLink[] = [];
-			const notes: { name: string; path: string; vaultName: string }[] = [];
+			const notes: { name: string; path: string; libraryName: string }[] = [];
 
-			for (const vault of vaultList) {
+			for (const vault of libraryList) {
 				const [vaultLinks, vaultNotes] = await Promise.all([
-					scanVaultLinks(vault.path, vault.name).catch(() => [] as NoteLink[]),
-					invoke('collect_vault_notes', { vaultPath: vault.path }).catch(() => []) as Promise<any[]>,
+					scanLibraryLinks(vault.path, vault.name).catch(() => [] as NoteLink[]),
+					invoke('collect_library_notes', { libraryPath: vault.path }).catch(() => []) as Promise<any[]>,
 				]);
 				links.push(...vaultLinks);
-				notes.push(...vaultNotes.map((n: any) => ({ name: n.name, path: n.path, vaultName: vault.name })));
+				notes.push(...vaultNotes.map((n: any) => ({ name: n.name, path: n.path, libraryName: vault.name })));
 			}
 
 			allNotes = notes;
 
-			if (vaultList.length > 0) {
-				const { nodes, links: gLinks } = buildGraphData(links, notes);
-				graphNodes = nodes;
-				graphLinks = gLinks;
+			if (libraryList.length > 0) {
+				const { nodes, links: gLinks } = buildStarData(links, notes);
+				starNodes = nodes;
+				starLinks = gLinks;
 			}
 		} finally {
 			loading = false;
@@ -137,7 +137,7 @@
 
 		// Listen for notes sent from main window
 		const u1 = await onNoteToScreen(async (note) => {
-			await openNoteTab(note.path, note.vaultName, note.vaultPath, note.vaultColor);
+			await openNoteTab(note.path, note.libraryName, note.libraryPath, note.libraryColor);
 			if (linkedBrowsing) {
 				currentMode = 'detail';
 			}
@@ -176,8 +176,8 @@
 		});
 		unlisteners.push(u4);
 
-		// Listen for vault file changes
-		const u5 = await listen<{ vaultId: string; paths: string[] }>('vault-changed', async () => {
+		// Listen for library file changes
+		const u5 = await listen<{ libraryId: string; paths: string[] }>('library-changed', async () => {
 			setTimeout(() => loadAllData(), 3000);
 		});
 		unlisteners.push(u5);
@@ -186,8 +186,8 @@
 		const u6 = await onStateRequest(() => {
 			const tabs = get(openTabs).map(t => ({
 				path: t.path,
-				vaultName: t.vaultName,
-				vaultColor: t.vaultColor,
+				libraryName: t.libraryName,
+				libraryColor: t.libraryColor,
 			}));
 			const currentTab = get(activeTab);
 			sendScreenState({
@@ -211,7 +211,7 @@
 
 			for (const saved of state.tabs) {
 				try {
-					await openNoteTab(saved.path, saved.vaultName, saved.vaultColor);
+					await openNoteTab(saved.path, saved.libraryName, saved.libraryColor);
 				} catch { /* file may not exist anymore */ }
 			}
 
@@ -232,34 +232,34 @@
 	});
 
 	// ─── Handlers ───
-	function handleGridNoteClick(note: { name: string; path: string; vaultName: string }) {
-		const vault = $vaults.find(v => v.name === note.vaultName);
+	function handleGridNoteClick(note: { name: string; path: string; libraryName: string }) {
+		const vault = $libraries.find(v => v.name === note.libraryName);
 		if (!vault) return;
-		const color = vaultColorMap[note.vaultName] || '#7c3aed';
+		const color = libraryColorMap[note.libraryName] || '#7c3aed';
 		sendNoteToMain({
 			path: note.path,
 			name: note.name,
-			vaultName: note.vaultName,
-			vaultPath: vault.path,
-			vaultColor: color,
+			libraryName: note.libraryName,
+			libraryPath: vault.path,
+			libraryColor: color,
 		});
 	}
 
-	function handleGridNoteDoubleClick(note: { name: string; path: string; vaultName: string }) {
-		const vault = $vaults.find(v => v.name === note.vaultName);
+	function handleGridNoteDoubleClick(note: { name: string; path: string; libraryName: string }) {
+		const vault = $libraries.find(v => v.name === note.libraryName);
 		if (!vault) return;
-		const color = vaultColorMap[note.vaultName] || '#7c3aed';
-		openNoteTab(note.path, note.vaultName, vault.path, color);
+		const color = libraryColorMap[note.libraryName] || '#7c3aed';
+		openNoteTab(note.path, note.libraryName, vault.path, color);
 		currentMode = 'detail';
 	}
 
-	function handleGraphNodeClick(path: string, vaultName: string) {
-		const vault = $vaults.find(v => v.name === vaultName);
+	function handleStarNodeClick(path: string, libraryName: string) {
+		const vault = $libraries.find(v => v.name === libraryName);
 		if (!vault) return;
-		const color = vaultColorMap[vaultName] || '#7c3aed';
+		const color = libraryColorMap[libraryName] || '#7c3aed';
 		sendNoteToMain({
 			path, name: path.split('/').pop()?.replace('.md', '') ?? path,
-			vaultName, vaultPath: vault.path, vaultColor: color,
+			libraryName, libraryPath: vault.path, libraryColor: color,
 		});
 	}
 
@@ -294,9 +294,9 @@
 				<span class="mode-key">G</span>
 			</button>
 			<button
-				class="mode-btn" class:active={currentMode === 'graph'}
-				onclick={() => switchMode('graph')}
-				title={$t('secondScreen.graph')}
+				class="mode-btn" class:active={currentMode === 'star'}
+				onclick={() => switchMode('star')}
+				title={$t('secondScreen.star')}
 			>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/>
@@ -355,16 +355,16 @@
 		{:else if currentMode === 'grid'}
 			<NoteGrid
 				notes={allNotes}
-				{vaultColorMap}
+				{libraryColorMap}
 				onNoteClick={handleGridNoteClick}
 				onNoteDoubleClick={handleGridNoteDoubleClick}
 			/>
-		{:else if currentMode === 'graph'}
-			<div class="graph-container">
-				<FullGraph
-					nodes={graphNodes}
-					links={graphLinks}
-					onNodeClick={handleGraphNodeClick}
+		{:else if currentMode === 'star'}
+			<div class="star-container">
+				<FullStarView
+					nodes={starNodes}
+					links={starLinks}
+					onNodeClick={handleStarNodeClick}
 				/>
 			</div>
 		{:else if currentMode === 'detail'}
@@ -378,7 +378,7 @@
 									class="detail-tab" class:active={$activeTabId === tab.id}
 									onclick={() => switchTab(tab.id)}
 								>
-									<span class="tab-dot" style="background:{vaultColorMap[tab.vaultName] || '#7c3aed'}"></span>
+									<span class="tab-dot" style="background:{libraryColorMap[tab.libraryName] || '#7c3aed'}"></span>
 									<span class="tab-name">{tab.name || $t('tabs.newTab')}</span>
 									<button class="tab-close" onclick={(e) => { e.stopPropagation(); closeTab(tab.id); }}>×</button>
 								</div>
@@ -389,9 +389,9 @@
 						tab={$activeTab}
 						isFocused={true}
 						onFocus={() => {}}
-						color={vaultColorMap[$activeTab.vaultName] || '#7c3aed'}
+						color={libraryColorMap[$activeTab.libraryName] || '#7c3aed'}
 						allNotes={allNotes}
-						{vaultColorMap}
+						{libraryColorMap}
 					/>
 				</div>
 			{:else}
@@ -408,7 +408,7 @@
 	<!-- Bottom status bar -->
 	<div class="screen-status">
 		<span class="status-mode">
-			{currentMode === 'grid' ? $t('secondScreen.grid') : currentMode === 'graph' ? $t('secondScreen.graph') : $t('secondScreen.detail')}
+			{currentMode === 'grid' ? $t('secondScreen.grid') : currentMode === 'star' ? $t('secondScreen.star') : $t('secondScreen.detail')}
 		</span>
 		<span class="status-count">{allNotes.length} {$t('statusBar.notes')}</span>
 		{#if linkedBrowsing}
@@ -420,7 +420,7 @@
 <svelte:window onkeydown={(e) => {
 	if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 	if (e.key === 'g' || e.key === 'G') { currentMode = 'grid'; e.preventDefault(); }
-	if (e.key === 'e' || e.key === 'E') { currentMode = 'graph'; e.preventDefault(); }
+	if (e.key === 'e' || e.key === 'E') { currentMode = 'star'; e.preventDefault(); }
 	if (e.key === 'd' || e.key === 'D') { currentMode = 'detail'; e.preventDefault(); }
 }} />
 
@@ -551,7 +551,7 @@
 	}
 	@keyframes spin { to { transform: rotate(360deg); } }
 
-	.graph-container {
+	.star-container {
 		height: 100%;
 		position: relative;
 	}
