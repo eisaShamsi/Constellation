@@ -145,7 +145,14 @@
       "monoFont": "等幅フォント",
       "monoFontDesc": "コードブロックとインラインコードのフォント",
       "fontSize": "フォントサイズ",
-      "fontSizeDesc": "ノートコンテンツの基本フォントサイズ"
+      "fontSizeDesc": "ノートコンテンツの基本フォントサイズ",
+      "scriptFonts": "文字体系フォント",
+      "scriptFontsDesc": "異なる文字体系ごとに優先フォントを設定します。各文字体系は同じページを共有しながら独自のフォントを使用します。",
+      "arabicFont": "アラビア文字フォント",
+      "hebrewFont": "ヘブライ文字フォント",
+      "cjkFont": "CJKフォント（中国語/日本語/韓国語）",
+      "customFont": "カスタム...",
+      "customFontPlaceholder": "フォント名を入力..."
     },
     "hotkeys": {
       "filter": "ショートカットを絞り込み...",

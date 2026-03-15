@@ -145,7 +145,14 @@
       "monoFont": "Police à chasse fixe",
       "monoFontDesc": "Police pour les blocs de code et le code en ligne",
       "fontSize": "Taille de police",
-      "fontSizeDesc": "Taille de police de base pour le contenu des notes"
+      "fontSizeDesc": "Taille de police de base pour le contenu des notes",
+      "scriptFonts": "Polices par système d'écriture",
+      "scriptFontsDesc": "Définir les polices préférées pour les différents systèmes d'écriture. Chaque système utilisera sa propre police tout en partageant la même page.",
+      "arabicFont": "Police arabe",
+      "hebrewFont": "Police hébraïque",
+      "cjkFont": "Police CJK (chinois/japonais/coréen)",
+      "customFont": "Personnalisée...",
+      "customFontPlaceholder": "Saisir le nom de la police..."
     },
     "hotkeys": {
       "filter": "Filtrer les raccourcis...",

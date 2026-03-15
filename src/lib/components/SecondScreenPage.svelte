@@ -18,8 +18,7 @@
 	import { get } from 'svelte/store';
 	import { detectDir } from '$lib/utils';
 	import NotePane from '$lib/components/NotePane.svelte';
-	import FullStarView from '$lib/components/FullStarView.svelte';
-	import NoteGrid from '$lib/components/NoteGrid.svelte';
+	import LocalStarView from '$lib/components/LocalStarView.svelte';
 	import {
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
 		onStateRequest, onWorkspaceRestore,
@@ -30,16 +29,31 @@
 		setActiveUniverse, listUniverses
 	} from '$lib/universe/store';
 
-	// ─── Mode state ───
-	let currentMode = $state<ScreenMode>('grid');
-	let linkedBrowsing = $state(true);
+	// ─── State ───
+	let sidebarOpen = $state(true);
+	let noteWidth = $state(100); // percentage 50-100
+	let skyViewOpen = $state(false);
+	// Sky view: RTL note → sky on left, LTR note → sky on right
+	let skyViewPosition = $derived.by(() => {
+		const tab = $activeTab;
+		if (!tab?.content) return 'right';
+		const d = detectDir(tab.content);
+		return d === 'rtl' ? 'left' : 'right';
+	});
 
 	// ─── Data state ───
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
-	let starNodes = $state<StarNode[]>([]);
-	let starLinks = $state<StarLink[]>([]);
 	let loading = $state(true);
 	let universeName = $state('');
+
+	// ─── Sidebar data ───
+	let backlinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
+	let forwardLinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
+	let noteTags = $state<string[]>([]);
+
+	// ─── Sky view (local star) data ───
+	let localStarNodes = $state<StarNode[]>([]);
+	let localStarLinks = $state<StarLink[]>([]);
 
 	// ─── Library color map ───
 	const libraryColors = [
@@ -79,32 +93,86 @@
 			await loadLibraries();
 
 			const libraryList = $libraries;
-			const links: NoteLink[] = [];
 			const notes: { name: string; path: string; libraryName: string }[] = [];
 
 			for (const vault of libraryList) {
-				const [vaultLinks, vaultNotes] = await Promise.all([
-					scanLibraryLinks(vault.path, vault.name).catch(() => [] as NoteLink[]),
-					invoke('collect_library_notes', { libraryPath: vault.path }).catch(() => []) as Promise<any[]>,
-				]);
-				links.push(...vaultLinks);
+				const vaultNotes = await (invoke('collect_library_notes', { libraryPath: vault.path }).catch(() => []) as Promise<any[]>);
 				notes.push(...vaultNotes.map((n: any) => ({ name: n.name, path: n.path, libraryName: vault.name })));
 			}
 
 			allNotes = notes;
-
-			if (libraryList.length > 0) {
-				const { nodes, links: gLinks } = buildStarData(links, notes);
-				starNodes = nodes;
-				starLinks = gLinks;
-			}
 		} finally {
 			loading = false;
 		}
 	}
 
+	// ─── Load sidebar data for active note ───
+	async function loadSidebarData() {
+		const tab = get(activeTab);
+		if (!tab?.path) {
+			backlinks = [];
+			forwardLinks = [];
+			noteTags = [];
+			return;
+		}
+
+		try {
+			// Parse frontmatter for tags
+			const fm = parseFrontmatter(tab.content || '');
+			const tagProp = fm.properties.find(p => p.key === 'tags');
+			noteTags = Array.isArray(tagProp?.value) ? tagProp.value : [];
+
+			// Scan links for the note's library
+			const vault = $libraries.find(v => v.name === tab.libraryName);
+			if (!vault) return;
+
+			const links = await scanLibraryLinks(vault.path, vault.name).catch(() => [] as NoteLink[]);
+			const tabName = tab.name?.toLowerCase() || '';
+
+			// Forward links: links FROM this note
+			forwardLinks = links
+				.filter(l => l.source_path === tab.path)
+				.map(l => {
+					// l.target is the link text, find matching note
+					const match = allNotes.find(n => n.name.toLowerCase() === l.target.toLowerCase());
+					return match || { name: l.target, path: '', libraryName: vault.name };
+				})
+				.filter(l => l.path) // only include notes that exist
+				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
+
+			// Backlinks: links TO this note (where target matches our note name)
+			backlinks = links
+				.filter(l => l.target.toLowerCase() === tabName)
+				.map(l => {
+					const match = allNotes.find(n => n.path === l.source_path);
+					return match || { name: l.source_path.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '', path: l.source_path, libraryName: vault.name };
+				})
+				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
+			// Build local star data for sky view
+			const { nodes: starNodes, links: starLinks } = buildStarData(links, allNotes);
+			const activeId = tabName;
+			const connectedIds = new Set<string>();
+			connectedIds.add(activeId);
+			for (const link of starLinks) {
+				if (link.source === activeId || link.target === activeId) {
+					connectedIds.add(link.source);
+					connectedIds.add(link.target);
+				}
+			}
+			localStarNodes = starNodes.filter(n => connectedIds.has(n.id));
+			localStarLinks = starLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
+		} catch {
+			backlinks = [];
+			forwardLinks = [];
+			noteTags = [];
+			localStarNodes = [];
+			localStarLinks = [];
+		}
+	}
+
 	// ─── Event listeners ───
 	let unlisteners: (() => void)[] = [];
+	let pendingTimers: ReturnType<typeof setTimeout>[] = [];
 
 	// ─── Close handler ───
 	async function handleClose() {
@@ -138,9 +206,7 @@
 		// Listen for notes sent from main window
 		const u1 = await onNoteToScreen(async (note) => {
 			await openNoteTab(note.path, note.libraryName, note.libraryPath, note.libraryColor);
-			if (linkedBrowsing) {
-				currentMode = 'detail';
-			}
+			await loadSidebarData();
 		});
 		unlisteners.push(u1);
 
@@ -170,15 +236,20 @@
 		});
 		unlisteners.push(u3);
 
-		// Listen for settings changes
-		const u4 = await onSettingsChanged(async () => {
-			await loadSettings();
+		// Listen for settings changes (payload contains current settings from main window)
+		const u4 = await onSettingsChanged(async (settings) => {
+			if (settings && Object.keys(settings).length > 0) {
+				appSettings.set({ ...get(appSettings), ...settings });
+			} else {
+				await loadSettings();
+			}
 		});
 		unlisteners.push(u4);
 
 		// Listen for library file changes
 		const u5 = await listen<{ libraryId: string; paths: string[] }>('library-changed', async () => {
-			setTimeout(() => loadAllData(), 3000);
+			const t = setTimeout(() => loadAllData(), 3000);
+			pendingTimers.push(t);
 		});
 		unlisteners.push(u5);
 
@@ -191,8 +262,8 @@
 			}));
 			const currentTab = get(activeTab);
 			sendScreenState({
-				mode: currentMode,
-				linkedBrowsing,
+				mode: 'detail',
+				linkedBrowsing: true,
 				tabs,
 				activeTabPath: currentTab?.path ?? null,
 			});
@@ -201,10 +272,6 @@
 
 		// Listen for workspace restore from main
 		const u7 = await onWorkspaceRestore(async (state: ScreenState) => {
-			// Set mode and linked browsing
-			currentMode = state.mode;
-			linkedBrowsing = state.linkedBrowsing;
-
 			// Close current tabs and open saved ones
 			openTabs.set([]);
 			activeTabId.set(null);
@@ -223,48 +290,30 @@
 					activeTabId.set(match.id);
 				}
 			}
+			await loadSidebarData();
 		});
 		unlisteners.push(u7);
 	});
 
 	onDestroy(() => {
 		unlisteners.forEach(u => u());
+		pendingTimers.forEach(t => clearTimeout(t));
 	});
 
 	// ─── Handlers ───
-	function handleGridNoteClick(note: { name: string; path: string; libraryName: string }) {
-		const vault = $libraries.find(v => v.name === note.libraryName);
-		if (!vault) return;
-		const color = libraryColorMap[note.libraryName] || '#7c3aed';
-		sendNoteToMain({
-			path: note.path,
-			name: note.name,
-			libraryName: note.libraryName,
-			libraryPath: vault.path,
-			libraryColor: color,
-		});
-	}
-
-	function handleGridNoteDoubleClick(note: { name: string; path: string; libraryName: string }) {
-		const vault = $libraries.find(v => v.name === note.libraryName);
-		if (!vault) return;
-		const color = libraryColorMap[note.libraryName] || '#7c3aed';
-		openNoteTab(note.path, note.libraryName, vault.path, color);
-		currentMode = 'detail';
-	}
-
-	function handleStarNodeClick(path: string, libraryName: string) {
+	async function handleSidebarLinkClick(path: string, libraryName: string) {
 		const vault = $libraries.find(v => v.name === libraryName);
 		if (!vault) return;
 		const color = libraryColorMap[libraryName] || '#7c3aed';
-		sendNoteToMain({
-			path, name: path.split('/').pop()?.replace('.md', '') ?? path,
-			libraryName, libraryPath: vault.path, libraryColor: color,
-		});
+		await openNoteTab(path, libraryName, vault.path, color);
+		await loadSidebarData();
 	}
 
-	function switchMode(mode: ScreenMode) {
-		currentMode = mode;
+	async function handleTabSwitch(tabId: string) {
+		switchTab(tabId);
+		// Small delay to let activeTab update
+		const t = setTimeout(() => loadSidebarData(), 50);
+		pendingTimers.push(t);
 	}
 </script>
 
@@ -282,55 +331,32 @@
 			{/if}
 		</div>
 
-		<div class="mode-switcher">
-			<button
-				class="mode-btn" class:active={currentMode === 'grid'}
-				onclick={() => switchMode('grid')}
-				title={$t('secondScreen.grid')}
-			>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-				</svg>
-				<span class="mode-key">G</span>
-			</button>
-			<button
-				class="mode-btn" class:active={currentMode === 'star'}
-				onclick={() => switchMode('star')}
-				title={$t('secondScreen.star')}
-			>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/>
-					<line x1="6" y1="7" x2="10" y2="10"/><line x1="14" y1="10" x2="18" y2="7"/><line x1="6" y1="17" x2="10" y2="14"/><line x1="14" y1="14" x2="18" y2="17"/>
-				</svg>
-				<span class="mode-key">E</span>
-			</button>
-			<button
-				class="mode-btn" class:active={currentMode === 'detail'}
-				onclick={() => switchMode('detail')}
-				title={$t('secondScreen.detail')}
-			>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/>
-				</svg>
-				<span class="mode-key">D</span>
-			</button>
-		</div>
-
 		<div class="screen-actions">
+			<div class="width-control" title="Note width: {noteWidth}%">
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M21 12H3M21 12l-4-4m4 4l-4 4M3 12l4-4m-4 4l4 4"/>
+				</svg>
+				<input type="range" class="width-slider" min="50" max="100" step="5" bind:value={noteWidth} />
+			</div>
+			<div class="sky-controls">
+				<button
+					class="sky-toggle" class:active={skyViewOpen}
+					onclick={() => skyViewOpen = !skyViewOpen}
+					title="Toggle sky view"
+				>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="12" r="2"/><circle cx="5" cy="6" r="1.5"/><circle cx="19" cy="6" r="1.5"/><circle cx="5" cy="18" r="1.5"/><circle cx="19" cy="18" r="1.5"/>
+						<line x1="12" y1="12" x2="5" y2="6"/><line x1="12" y1="12" x2="19" y2="6"/><line x1="12" y1="12" x2="5" y2="18"/><line x1="12" y1="12" x2="19" y2="18"/>
+					</svg>
+				</button>
+				</div>
 			<button
-				class="linked-btn" class:active={linkedBrowsing}
-				onclick={() => linkedBrowsing = !linkedBrowsing}
-				title={linkedBrowsing ? $t('secondScreen.linkedOn') : $t('secondScreen.linkedOff')}
+				class="sidebar-toggle" class:active={sidebarOpen}
+				onclick={() => sidebarOpen = !sidebarOpen}
+				title="Toggle sidebar"
 			>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					{#if linkedBrowsing}
-						<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-						<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-					{:else}
-						<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-						<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-						<line x1="2" y1="2" x2="22" y2="22" stroke-width="2.5"/>
-					{/if}
+					<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/>
 				</svg>
 			</button>
 			<button
@@ -352,31 +378,16 @@
 				<div class="spinner"></div>
 				<p>{$t('secondScreen.loading')}</p>
 			</div>
-		{:else if currentMode === 'grid'}
-			<NoteGrid
-				notes={allNotes}
-				{libraryColorMap}
-				onNoteClick={handleGridNoteClick}
-				onNoteDoubleClick={handleGridNoteDoubleClick}
-			/>
-		{:else if currentMode === 'star'}
-			<div class="star-container">
-				<FullStarView
-					nodes={starNodes}
-					links={starLinks}
-					onNodeClick={handleStarNodeClick}
-				/>
-			</div>
-		{:else if currentMode === 'detail'}
-			{#if $activeTab}
-				<div class="detail-container">
+		{:else if $activeTab}
+			<div class="detail-layout">
+				<div class="detail-container" style="--note-width: {noteWidth}%">
 					{#if $openTabs.length > 0}
 						<div class="detail-tabs">
 							{#each $openTabs as tab (tab.id)}
 								<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 								<div
 									class="detail-tab" class:active={$activeTabId === tab.id}
-									onclick={() => switchTab(tab.id)}
+									onclick={() => handleTabSwitch(tab.id)}
 								>
 									<span class="tab-dot" style="background:{libraryColorMap[tab.libraryName] || '#7c3aed'}"></span>
 									<span class="tab-name">{tab.name || $t('tabs.newTab')}</span>
@@ -385,44 +396,117 @@
 							{/each}
 						</div>
 					{/if}
-					<NotePane
-						tab={$activeTab}
-						isFocused={true}
-						onFocus={() => {}}
-						color={libraryColorMap[$activeTab.libraryName] || '#7c3aed'}
-						allNotes={allNotes}
-						{libraryColorMap}
-					/>
+					<div class="note-and-sky" class:sky-open={skyViewOpen} data-sky-pos={skyViewPosition} style="--sky-size: {Math.min(50, Math.max(20, localStarNodes.length * 4 + 10))}%">
+					<div class="note-area">
+						<NotePane
+							tab={$activeTab}
+							isFocused={true}
+							onFocus={() => {}}
+							color={libraryColorMap[$activeTab.libraryName] || '#7c3aed'}
+							allNotes={allNotes}
+							{libraryColorMap}
+						/>
+					</div>
+					{#if skyViewOpen && localStarNodes.length > 0}
+						<div class="sky-view-panel">
+							<LocalStarView
+								nodes={localStarNodes}
+								links={localStarLinks}
+								activeNodeId={$activeTab.name?.replace(/\.md$/, '').toLowerCase() || ''}
+								onNodeClick={async (id) => {
+									const note = allNotes.find(n => n.name.toLowerCase() === id);
+									if (note) await handleSidebarLinkClick(note.path, note.libraryName);
+								}}
+							/>
+						</div>
+					{/if}
 				</div>
-			{:else}
-				<div class="detail-empty">
-					<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
-						<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/>
-					</svg>
-					<p>{$t('secondScreen.detailEmpty')}</p>
 				</div>
-			{/if}
+
+				{#if sidebarOpen}
+					<div class="screen-sidebar">
+						<!-- Backlinks -->
+						<div class="sidebar-section">
+							<h3 class="sidebar-heading">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+								Backlinks
+								<span class="sidebar-count">{backlinks.length}</span>
+							</h3>
+							{#if backlinks.length > 0}
+								<ul class="sidebar-links">
+									{#each backlinks as link}
+										<li>
+											<button class="sidebar-link" dir="auto" onclick={() => handleSidebarLinkClick(link.path, link.libraryName)}>
+												<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
+												{link.name}
+											</button>
+										</li>
+									{/each}
+								</ul>
+							{:else}
+								<p class="sidebar-empty">No backlinks</p>
+							{/if}
+						</div>
+
+						<!-- Forward links -->
+						<div class="sidebar-section">
+							<h3 class="sidebar-heading">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+								Forward links
+								<span class="sidebar-count">{forwardLinks.length}</span>
+							</h3>
+							{#if forwardLinks.length > 0}
+								<ul class="sidebar-links">
+									{#each forwardLinks as link}
+										<li>
+											<button class="sidebar-link" dir="auto" onclick={() => handleSidebarLinkClick(link.path, link.libraryName)}>
+												<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
+												{link.name}
+											</button>
+										</li>
+									{/each}
+								</ul>
+							{:else}
+								<p class="sidebar-empty">No forward links</p>
+							{/if}
+						</div>
+
+						<!-- Tags -->
+						<div class="sidebar-section">
+							<h3 class="sidebar-heading">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+								Tags
+								<span class="sidebar-count">{noteTags.length}</span>
+							</h3>
+							{#if noteTags.length > 0}
+								<div class="sidebar-tags">
+									{#each noteTags as tag}
+										<span class="sidebar-tag">#{tag}</span>
+									{/each}
+								</div>
+							{:else}
+								<p class="sidebar-empty">No tags</p>
+							{/if}
+						</div>
+					</div>
+				{/if}
+			</div>
+		{:else}
+			<div class="detail-empty">
+				<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+					<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/>
+				</svg>
+				<p>{$t('secondScreen.detailEmpty')}</p>
+			</div>
 		{/if}
 	</div>
 
 	<!-- Bottom status bar -->
 	<div class="screen-status">
-		<span class="status-mode">
-			{currentMode === 'grid' ? $t('secondScreen.grid') : currentMode === 'star' ? $t('secondScreen.star') : $t('secondScreen.detail')}
-		</span>
 		<span class="status-count">{allNotes.length} {$t('statusBar.notes')}</span>
-		{#if linkedBrowsing}
-			<span class="status-linked">{$t('secondScreen.linked')}</span>
-		{/if}
+		<span class="status-linked">{$t('secondScreen.linked')}</span>
 	</div>
 </div>
-
-<svelte:window onkeydown={(e) => {
-	if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-	if (e.key === 'g' || e.key === 'G') { currentMode = 'grid'; e.preventDefault(); }
-	if (e.key === 'e' || e.key === 'E') { currentMode = 'star'; e.preventDefault(); }
-	if (e.key === 'd' || e.key === 'D') { currentMode = 'detail'; e.preventDefault(); }
-}} />
 
 <style>
 	.second-screen {
@@ -461,44 +545,9 @@
 		font-size: 11px;
 	}
 
-	.mode-switcher {
-		display: flex;
-		gap: 2px;
-		background: var(--background-secondary-alt);
-		border-radius: 6px;
-		padding: 2px;
-	}
-
-	.mode-btn {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		padding: 5px 10px;
-		border: none;
-		border-radius: 4px;
-		background: transparent;
-		color: var(--text-muted);
-		cursor: pointer;
-		font-size: 11px;
-		transition: all 0.15s;
-	}
-	.mode-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-	.mode-btn.active { background: var(--interactive-accent); color: white; }
-
-	.mode-key {
-		font-size: 10px;
-		font-weight: 700;
-		opacity: 0.6;
-		border: 1px solid currentColor;
-		border-radius: 3px;
-		padding: 0 3px;
-		line-height: 1.4;
-	}
-	.mode-btn.active .mode-key { border-color: rgba(255,255,255,0.4); }
-
 	.screen-actions { display: flex; gap: 4px; }
 
-	.linked-btn {
+	.sky-toggle, .sidebar-toggle, .close-btn {
 		display: flex;
 		align-items: center;
 		padding: 5px 8px;
@@ -509,21 +558,29 @@
 		cursor: pointer;
 		transition: all 0.15s;
 	}
-	.linked-btn:hover { background: var(--background-modifier-hover); }
-	.linked-btn.active { color: var(--interactive-accent); }
+	.sky-toggle:hover, .sidebar-toggle:hover { background: var(--background-modifier-hover); }
+	.sky-toggle.active, .sidebar-toggle.active { color: var(--interactive-accent); }
 
-	.close-btn {
+	.sky-controls {
 		display: flex;
 		align-items: center;
-		padding: 5px 8px;
-		border: none;
-		border-radius: 4px;
-		background: transparent;
-		color: var(--text-muted);
-		cursor: pointer;
-		transition: all 0.15s;
+		gap: 2px;
 	}
 	.close-btn:hover { background: var(--text-error); color: white; }
+
+	.width-control {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		color: var(--text-muted);
+		padding: 0 4px;
+	}
+	.width-slider {
+		width: 80px;
+		height: 4px;
+		accent-color: var(--interactive-accent);
+		cursor: pointer;
+	}
 
 	/* ─── Content ─── */
 	.screen-content {
@@ -551,16 +608,73 @@
 	}
 	@keyframes spin { to { transform: rotate(360deg); } }
 
-	.star-container {
+	/* ─── Detail layout ─── */
+	.detail-layout {
+		display: flex;
 		height: 100%;
-		position: relative;
 	}
 
-	/* ─── Detail mode ─── */
 	.detail-container {
 		display: flex;
 		flex-direction: column;
+		flex: 1;
+		min-width: 0;
 		height: 100%;
+		overflow: hidden;
+	}
+	/* Override NotePane's hardcoded max-width: 800px — controlled by width slider */
+	.note-area {
+		overflow: hidden !important;
+		contain: size layout;
+	}
+	.note-area :global(*) {
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+	.note-area :global(.note-scroll) {
+		max-width: 100% !important;
+		overflow-x: hidden !important;
+	}
+	.note-area :global(.note-content) {
+		overflow-wrap: break-word;
+		word-break: break-word;
+	}
+
+	.note-and-sky {
+		display: flex;
+		flex: 1;
+		min-height: 0;
+		min-width: 0;
+		overflow: hidden;
+		direction: ltr; /* isolate from page RTL so flex-direction works predictably */
+	}
+	.note-and-sky[data-sky-pos="right"] {
+		flex-direction: row;
+	}
+	.note-and-sky[data-sky-pos="left"] {
+		flex-direction: row-reverse;
+	}
+	.note-area {
+		flex: 1;
+		min-height: 0;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+	.sky-view-panel {
+		flex: 0 0 var(--sky-size);
+		aspect-ratio: 1;
+		align-self: center;
+		background: var(--background-primary);
+		min-width: 120px;
+		min-height: 120px;
+		max-width: 100%;
+		max-height: 100%;
+		border: 2px solid var(--background-modifier-border);
+		border-radius: 6px;
+		margin: 4px;
+		overflow: hidden;
 	}
 
 	.detail-tabs {
@@ -625,6 +739,95 @@
 		font-size: 14px;
 	}
 
+	/* ─── Right sidebar ─── */
+	.screen-sidebar {
+		width: 260px;
+		flex-shrink: 0;
+		border-inline-start: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+		overflow-y: auto;
+		padding: 8px 0;
+	}
+
+	.sidebar-section {
+		padding: 8px 12px;
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+	.sidebar-section:last-child { border-bottom: none; }
+
+	.sidebar-heading {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin: 0 0 6px;
+	}
+
+	.sidebar-count {
+		font-weight: 400;
+		opacity: 0.6;
+		font-size: 0.7rem;
+	}
+
+	.sidebar-links {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.sidebar-links li { margin: 1px 0; }
+
+	.sidebar-link {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		width: 100%;
+		padding: 4px 6px;
+		border: none;
+		border-radius: 4px;
+		background: none;
+		color: var(--interactive-accent);
+		font-size: 0.78rem;
+		font-family: inherit;
+		cursor: pointer;
+		text-align: start;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.sidebar-link:hover {
+		background: var(--background-modifier-hover);
+		text-decoration: underline;
+	}
+
+	.link-dot {
+		width: 6px; height: 6px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.sidebar-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+	.sidebar-tag {
+		font-size: 0.72rem;
+		padding: 2px 8px;
+		border-radius: 10px;
+		background: var(--background-modifier-hover);
+		color: var(--text-muted);
+	}
+
+	.sidebar-empty {
+		font-size: 0.75rem;
+		color: var(--text-faint);
+		margin: 4px 0 0;
+	}
+
 	/* ─── Status bar ─── */
 	.screen-status {
 		display: flex;
@@ -635,12 +838,6 @@
 		border-top: 1px solid var(--background-modifier-border);
 		font-size: 11px;
 		color: var(--text-muted);
-	}
-
-	.status-mode {
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
 	}
 
 	.status-linked {

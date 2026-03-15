@@ -145,7 +145,14 @@
       "monoFont": "고정폭 글꼴",
       "monoFontDesc": "코드 블록 및 인라인 코드에 사용되는 글꼴",
       "fontSize": "글꼴 크기",
-      "fontSizeDesc": "노트 내용의 기본 글꼴 크기"
+      "fontSizeDesc": "노트 내용의 기본 글꼴 크기",
+      "scriptFonts": "문자 체계 글꼴",
+      "scriptFontsDesc": "다양한 문자 체계에 대해 선호하는 글꼴을 설정합니다. 각 문자 체계는 같은 페이지를 공유하면서 고유한 글꼴을 사용합니다.",
+      "arabicFont": "아랍어 글꼴",
+      "hebrewFont": "히브리어 글꼴",
+      "cjkFont": "CJK 글꼴 (중국어/일본어/한국어)",
+      "customFont": "사용자 지정...",
+      "customFontPlaceholder": "글꼴 이름 입력..."
     },
     "hotkeys": {
       "filter": "단축키 필터...",

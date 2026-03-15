@@ -984,6 +984,7 @@ export interface AppSettings {
 	textFont: string;
 	monoFont: string;
 	fontSize: number;
+	scriptFonts: Record<string, string>;
 
 	// Quick Capture
 	inboxFolder: string;
@@ -1062,6 +1063,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	textFont: '',
 	monoFont: '',
 	fontSize: 15,
+	scriptFonts: {},
 	inboxFolder: '+',
 	dailyNoteFormat: '%Y-%m-%d',
 	dailyNoteFolder: '',

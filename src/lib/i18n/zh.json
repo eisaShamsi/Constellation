@@ -145,7 +145,14 @@
       "monoFont": "等宽字体",
       "monoFontDesc": "代码块和行内代码使用的字体",
       "fontSize": "字体大小",
-      "fontSizeDesc": "笔记内容的基础字体大小"
+      "fontSizeDesc": "笔记内容的基础字体大小",
+      "scriptFonts": "文字体系字体",
+      "scriptFontsDesc": "为不同的书写系统设置首选字体。每种文字体系将使用各自的字体，同时共享同一页面。",
+      "arabicFont": "阿拉伯文字体",
+      "hebrewFont": "希伯来文字体",
+      "cjkFont": "CJK 字体（中文/日文/韩文）",
+      "customFont": "自定义...",
+      "customFontPlaceholder": "输入字体名称..."
     },
     "hotkeys": {
       "filter": "筛选快捷键...",

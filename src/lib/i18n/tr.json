@@ -145,7 +145,14 @@
       "monoFont": "Sabit genişlikli yazı tipi",
       "monoFontDesc": "Kod blokları ve satır içi kod için yazı tipi",
       "fontSize": "Yazı tipi boyutu",
-      "fontSizeDesc": "Not içeriği için temel yazı tipi boyutu"
+      "fontSizeDesc": "Not içeriği için temel yazı tipi boyutu",
+      "scriptFonts": "Yazı sistemi yazı tipleri",
+      "scriptFontsDesc": "Farklı yazı sistemleri için tercih edilen yazı tiplerini ayarlayın. Her yazı sistemi aynı sayfayı paylaşırken kendi yazı tipini kullanır.",
+      "arabicFont": "Arapça yazı tipi",
+      "hebrewFont": "İbranice yazı tipi",
+      "cjkFont": "CJK yazı tipi (Çince/Japonca/Korece)",
+      "customFont": "Özel...",
+      "customFontPlaceholder": "Yazı tipi adı yazın..."
     },
     "hotkeys": {
       "filter": "Kısayolları filtrele...",

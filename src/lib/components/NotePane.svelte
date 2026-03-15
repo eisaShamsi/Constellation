@@ -81,6 +81,7 @@
 	let editBody = $state('');
 	let saveTimeout: ReturnType<typeof setTimeout>;
 	let saving = $state(false);
+	let propsCollapsed = $state(false);
 	let rafId: number | null = null;
 	let rafId2: number | null = null;
 
@@ -372,7 +373,7 @@ ${contentEl.innerHTML}
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="pane" class:focused={isFocused} onclick={onFocus}>
+<div class="pane" class:focused={isFocused} onclick={onFocus} dir={noteDir}>
 	{#if tab}
 		{#if isEmptyTab}
 			<div class="pane-breadcrumb">
@@ -470,10 +471,19 @@ ${contentEl.innerHTML}
 			/>
 		{:else if !isEmptyTab}
 		<div class="note-scroll" class:editing dir={noteDir} style={paneStyle}>
+			{#if tab}
+				<h1 class="note-title" dir="auto">{tab.name}</h1>
+			{/if}
 			{#if tab && $appSettings.propertiesInDocument !== 'hidden'}
 				{#if $appSettings.propertiesInDocument === 'source'}
 					{#if parsed?.rawYaml}
-						<pre class="props-source">{parsed.rawYaml}</pre>
+						<button class="props-toggle" onclick={() => propsCollapsed = !propsCollapsed}>
+							<svg class="props-chevron" class:collapsed={propsCollapsed} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+							<span>Properties</span>
+						</button>
+						{#if !propsCollapsed}
+							<pre class="props-source">{parsed.rawYaml}</pre>
+						{/if}
 						<hr class="props-divider"/>
 					{/if}
 				{:else}
@@ -483,6 +493,8 @@ ${contentEl.innerHTML}
 						tabId={tab.id}
 						filePath={tab.path}
 						libraryName={tab.libraryName}
+						collapsed={propsCollapsed}
+						onToggle={() => propsCollapsed = !propsCollapsed}
 						onNoteClick={async (noteName) => {
 							if (!tab) return;
 							const resolved = await resolveWikilinkCrossLibrary(tab.libraryPath, noteName);
@@ -592,6 +604,7 @@ ${contentEl.innerHTML}
 	}
 	.bc-nav-btn:hover:not(:disabled) { background: var(--background-modifier-hover); color: var(--text-normal); }
 	.bc-nav-btn:disabled { opacity: 0.3; cursor: default; }
+	:global([dir="rtl"]) .bc-nav-btn svg { transform: scaleX(-1); }
 	.bc-saving { font-size: 0.7rem; color: var(--interactive-accent); }
 	.bc-edit-btn {
 		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
@@ -610,6 +623,19 @@ ${contentEl.innerHTML}
 		overflow: hidden;
 	}
 
+	.props-toggle {
+		display: flex; align-items: center; gap: 4px;
+		background: none; border: 1px solid var(--background-modifier-border);
+		border-radius: 6px; padding: 4px 12px;
+		font-size: 0.78rem; color: var(--text-muted); cursor: pointer;
+		width: 100%;
+		transition: background 0.15s;
+	}
+	.props-toggle:hover { background: var(--background-modifier-hover); }
+	.props-chevron { transition: transform 0.2s; flex-shrink: 0; }
+	.props-chevron.collapsed { transform: rotate(-90deg); }
+	:global([dir="rtl"]) .props-chevron.collapsed { transform: rotate(90deg); }
+
 	.props-divider { border: none; border-top: 1px solid var(--background-modifier-border-focus); margin: 12px 0; }
 	.props-source {
 		font-family: var(--font-monospace, 'Fira Code', monospace);
@@ -624,6 +650,10 @@ ${contentEl.innerHTML}
 		border: 1px solid var(--background-modifier-border);
 	}
 
+	.note-title {
+		font-size: 1.8rem; font-weight: 700; margin: 0 0 0.5rem;
+		color: var(--text-normal); line-height: 1.3;
+	}
 	.note-content { line-height: 1.8; color: var(--text-normal); flex: 1; }
 
 	/* ─── Headings ─── */

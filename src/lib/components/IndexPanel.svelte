@@ -5,9 +5,15 @@
 	let {
 		entries = [] as IndexEntry[],
 		onNoteClick,
+		onNoteHover = (_path: string, _e: MouseEvent) => {},
+		onNoteLeave = () => {},
+		activeNotePath = '',
 	}: {
 		entries: IndexEntry[];
 		onNoteClick: (filePath: string, noteName: string, term?: string, e?: MouseEvent) => void;
+		onNoteHover?: (filePath: string, e: MouseEvent) => void;
+		onNoteLeave?: () => void;
+		activeNotePath?: string;
 	} = $props();
 
 	let filterQuery = $state('');
@@ -295,6 +301,33 @@
 		return Array.from(letters).sort(compareLetters);
 	});
 
+	// Group alphabet letters by script for multi-line display
+	const groupedLetters = $derived.by(() => {
+		if (allLetters.length === 0) return [];
+		const groups: { script: ScriptKey; dir: 'rtl' | 'ltr'; letters: string[] }[] = [];
+		let currentScript: ScriptKey | null = null;
+		let currentLetters: string[] = [];
+
+		for (const letter of allLetters) {
+			const script = getScript(letter);
+			if (script !== currentScript) {
+				if (currentLetters.length > 0 && currentScript) {
+					const dir = (currentScript === 'ar' || currentScript === 'he') ? 'rtl' : 'ltr';
+					groups.push({ script: currentScript, dir, letters: currentLetters });
+				}
+				currentScript = script;
+				currentLetters = [letter];
+			} else {
+				currentLetters.push(letter);
+			}
+		}
+		if (currentLetters.length > 0 && currentScript) {
+			const dir = (currentScript === 'ar' || currentScript === 'he') ? 'rtl' : 'ltr';
+			groups.push({ script: currentScript, dir, letters: currentLetters });
+		}
+		return groups;
+	});
+
 	const totalTerms = $derived(entries.length);
 	const hiddenCount = $derived(entries.filter(e => excludedTerms.has(e.term.toLowerCase())).length);
 
@@ -366,7 +399,7 @@
 
 <svelte:window onclick={handleWindowClick} />
 
-<div class="index-panel">
+<div class="index-panel" dir={activeScript === 'ar' || activeScript === 'he' ? 'rtl' : activeScript === 'all' ? 'auto' : 'ltr'}>
 	<!-- Toolbar: filter + actions -->
 	<div class="gp-toolbar">
 		<div class="gp-search">
@@ -425,10 +458,14 @@
 	{/if}
 
 	<!-- Alphabet bar (only in alpha sort) -->
-	{#if sortMode === 'alpha' && allLetters.length > 0}
+	{#if sortMode === 'alpha' && groupedLetters.length > 0}
 		<div class="gp-alphabet">
-			{#each allLetters as letter}
-				<button class="gp-alpha-btn" onclick={() => scrollToLetter(letter)}>{letter}</button>
+			{#each groupedLetters as group}
+				<div class="gp-alpha-row" dir={group.dir}>
+					{#each group.letters as letter}
+						<button class="gp-alpha-btn" onclick={() => scrollToLetter(letter)}>{letter}</button>
+					{/each}
+				</div>
 			{/each}
 		</div>
 	{/if}
@@ -448,7 +485,7 @@
 								<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
-								<span class="gp-term-name">
+								<span class="gp-term-name" dir="auto">
 									{entry.term}
 									{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
 								</span>
@@ -459,10 +496,14 @@
 							</button>
 
 							{#if expandedTerms.has(entry.term)}
-								<div class="gp-references">
+								<div class="gp-references" dir="auto">
 									{#each entry.mentions as mention, i}
-										<button class="gp-ref" onclick={(e) => onNoteClick(mention.note_path, mention.note_name, entry.term, e)}>
-											{mention.note_name}</button>{#if i < entry.mentions.length - 1}<span class="gp-sep">,</span>{/if}
+										<button class="gp-ref" class:active={mention.note_path === activeNotePath}
+											data-filepath={mention.note_path}
+											onclick={(e) => onNoteClick(mention.note_path, mention.note_name, entry.term, e)}
+											onmouseenter={(e) => onNoteHover(mention.note_path, e)}
+											onmouseleave={() => onNoteLeave()}>
+											{mention.note_name}</button>
 									{/each}
 								</div>
 							{/if}
@@ -478,7 +519,7 @@
 						<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
 							<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 						</svg>
-						<span class="gp-term-name">
+						<span class="gp-term-name" dir="auto">
 							{entry.term}
 							{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
 						</span>
@@ -489,10 +530,14 @@
 					</button>
 
 					{#if expandedTerms.has(entry.term)}
-						<div class="gp-references">
+						<div class="gp-references" dir="auto">
 							{#each entry.mentions as mention, i}
-								<button class="gp-ref" onclick={(e) => onNoteClick(mention.note_path, mention.note_name, entry.term, e)}>
-									{mention.note_name}</button>{#if i < entry.mentions.length - 1}<span class="gp-sep">,</span>{/if}
+								<button class="gp-ref" class:active={mention.note_path === activeNotePath}
+									data-filepath={mention.note_path}
+									onclick={(e) => onNoteClick(mention.note_path, mention.note_name, entry.term, e)}
+									onmouseenter={(e) => onNoteHover(mention.note_path, e)}
+									onmouseleave={() => onNoteLeave()}>
+									{mention.note_name}</button>
 							{/each}
 						</div>
 					{/if}
@@ -624,10 +669,15 @@
 	/* ── Alphabet navigation bar ── */
 	.gp-alphabet {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 1px;
+		flex-direction: column;
+		gap: 2px;
 		padding: 4px 6px;
 		border-bottom: 1px solid var(--border);
+	}
+	.gp-alpha-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1px;
 		justify-content: center;
 	}
 	.gp-alpha-btn {
@@ -654,6 +704,8 @@
 		overflow-y: auto;
 		flex: 1;
 		padding: 4px 0;
+		columns: 280px auto;
+		column-gap: 8px;
 	}
 	.gp-empty {
 		color: var(--color-base-40);
@@ -671,6 +723,7 @@
 	/* ── Letter groups ── */
 	.gp-letter-group {
 		margin-bottom: 2px;
+		/* Allow large letter groups to split across columns */
 	}
 	.gp-letter {
 		font-weight: 700;
@@ -679,16 +732,16 @@
 		text-transform: uppercase;
 		padding: 6px 10px 2px;
 		letter-spacing: 0.08em;
-		position: sticky;
-		top: 0;
 		background: var(--bg-secondary);
 		border-bottom: 1px solid var(--border);
+		break-after: avoid;
 	}
 
 	/* ── Term entry ── */
 	.gp-entry {
 		padding: 0 4px;
 		margin-bottom: 2px;
+		break-inside: avoid;
 	}
 	.gp-entry.hidden-term {
 		opacity: 0.4;
@@ -767,8 +820,7 @@
 	.gp-references {
 		padding: 3px 10px 6px 22px;
 		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
+		flex-direction: column;
 		gap: 1px;
 	}
 	.gp-ref {
@@ -778,18 +830,20 @@
 		font-family: inherit;
 		font-size: 0.74rem;
 		color: var(--interactive-accent);
-		padding: 1px 2px;
-		border-radius: 2px;
+		padding: 2px 4px;
+		border-radius: 3px;
 		text-decoration: none;
+		text-align: start;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.gp-ref.active {
+		font-weight: 700;
 	}
 	.gp-ref:hover {
 		text-decoration: underline;
 		background: var(--background-modifier-hover);
-	}
-	.gp-sep {
-		color: var(--text-faint);
-		font-size: 0.74rem;
-		margin-inline-end: 2px;
 	}
 
 	/* ── Context menu ── */
@@ -818,5 +872,19 @@
 	}
 	.gp-context-menu button:hover {
 		background: var(--background-modifier-hover);
+	}
+
+	/* ── RTL support ── */
+	:global([dir="rtl"]) .gp-chev {
+		transform: rotate(180deg);
+	}
+	:global([dir="rtl"]) .gp-chev.expanded {
+		transform: rotate(90deg);
+	}
+	:global([dir="rtl"]) .gp-references {
+		padding: 3px 22px 6px 10px;
+	}
+	:global([dir="rtl"]) .gp-letter {
+		text-align: right;
 	}
 </style>

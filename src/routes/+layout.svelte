@@ -85,7 +85,7 @@
 	// Sidebar state
 	let sidebarOpen = $state(true);
 	let searchMode = $state(false);
-	let indexMode = $state(false);
+	// indexMode removed - index now opens as full page view
 	let searchQuery = $state('');
 	let searchTimeout: ReturnType<typeof setTimeout>;
 	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
@@ -122,6 +122,9 @@
 	let templatePickerMode = $state<'insert' | 'newNote'>('insert');
 	let showStarView = $state(false);
 	let showGlobalTasks = $state(false);
+	let showIndex = $state(false);
+	let indexNoteTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
+	let indexActiveNotePath = $state('');
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -421,6 +424,60 @@
 		}
 	});
 
+	// Apply custom fonts at runtime
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		const s = $appSettings;
+		const root = document.documentElement.style;
+
+		// Apply base font settings to CSS variables
+		const defaultUI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif';
+		const defaultMono = '"Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace';
+		const uiFont = s.interfaceFont || defaultUI;
+		const txtFont = s.textFont || uiFont;
+		const mono = s.monoFont || defaultMono;
+
+		root.setProperty('--font-text-size', s.fontSize + 'px');
+		root.setProperty('--font-monospace-theme', mono);
+
+		// Build per-script @font-face rules using unicode-range
+		const scripts = s.scriptFonts || {};
+		let css = '';
+		const ranges: Record<string, string> = {
+			arabic: 'U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF',
+			hebrew: 'U+0590-05FF, U+FB1D-FB4F',
+			cjk: 'U+4E00-9FFF, U+3000-303F, U+30A0-30FF, U+3040-309F, U+AC00-D7AF',
+		};
+
+		let hasScriptFont = false;
+		for (const [script, range] of Object.entries(ranges)) {
+			const fontName = scripts[script];
+			if (fontName) {
+				hasScriptFont = true;
+				css += `@font-face { font-family: "ConstellationUI"; src: local("${fontName}"); unicode-range: ${range}; }\n`;
+				css += `@font-face { font-family: "ConstellationText"; src: local("${fontName}"); unicode-range: ${range}; }\n`;
+			}
+		}
+
+		// Prepend virtual font families so script-specific fonts are tried first
+		if (hasScriptFont) {
+			root.setProperty('--font-interface-theme', `"ConstellationUI", ${uiFont}`);
+			root.setProperty('--font-text-theme', `"ConstellationText", ${txtFont}`);
+		} else {
+			root.setProperty('--font-interface-theme', uiFont);
+			root.setProperty('--font-text-theme', txtFont);
+		}
+
+		// Inject or update the style element
+		let styleEl = document.getElementById('constellation-script-fonts');
+		if (!styleEl) {
+			styleEl = document.createElement('style');
+			styleEl.id = 'constellation-script-fonts';
+			document.head.appendChild(styleEl);
+		}
+		styleEl.textContent = css;
+	});
+
 	// Re-init idle timer when lock settings change
 	$effect(() => {
 		const _lockOn = $appSettings.security?.lockOnIdle;
@@ -459,7 +516,7 @@
 			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: sc('nav-back'), icon: '←', action: navigateBack, category: 'Navigation' },
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
-			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; sidebarOpen = true; searchMode = false; indexMode = true; }, category: 'Navigation' },
+			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showStarView = false; showGlobalTasks = false; }, category: 'Navigation' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
@@ -805,6 +862,7 @@
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showStarView) { showStarView = false; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
+			if (showIndex) { showIndex = false; return; }
 			if (showTemplatePicker) { showTemplatePicker = false; return; }
 			if (showWorkspaces) { showWorkspaces = false; return; }
 			if (showSettings) { showSettings = false; return; }
@@ -1156,6 +1214,7 @@
 			// 'light' or 'system' → toggle to dark
 			updateSettings({ colorScheme: 'dark' });
 		}
+		notifySettingsChanged(get(appSettings));
 	}
 
 	async function handleToggleSecondScreen() {
@@ -1225,7 +1284,7 @@
 			try {
 				const libraryList = $libraries.map(v => [v.id, v.name, v.path] as [string, string, string]);
 				const resolved = await invoke<{ path: string; library_name: string; library_path: string } | null>('resolve_wikilink_cross_library', { libraries: libraryList, currentLibraryPath: sidebarTab!.libraryPath, target: linkTarget });
-				if (gen !== previewGeneration) return; // stale — user moved to a different link
+				if (gen !== previewGeneration) return;
 				if (resolved) {
 					const content = await readNotePreview(resolved.path, 800);
 					if (gen !== previewGeneration) return;
@@ -1236,6 +1295,26 @@
 	}
 
 	function handleWikilinkLeave() {
+		clearTimeout(previewTimeout);
+		pagePreview = { ...pagePreview, visible: false };
+	}
+
+	// ─── Index note hover preview ───
+	async function handleIndexNoteHover(filePath: string, e: MouseEvent) {
+		clearTimeout(previewTimeout);
+		const gen = ++previewGeneration;
+		const cx = e.clientX;
+		const cy = e.clientY;
+		previewTimeout = setTimeout(async () => {
+			try {
+				const content = await readNotePreview(filePath, 2000);
+				if (gen !== previewGeneration) return;
+				pagePreview = { content, x: cx, y: cy, visible: true };
+			} catch { /* ignore */ }
+		}, 300);
+	}
+
+	function handleIndexNoteLeave() {
 		clearTimeout(previewTimeout);
 		pagePreview = { ...pagePreview, visible: false };
 	}
@@ -1502,6 +1581,49 @@
 		if (!isHome) window.location.href = '/';
 	}
 
+	async function handleIndexNoteClick(filePath: string, noteName: string, highlightTerm?: string, e?: MouseEvent) {
+		// Ctrl+click or middle-click: open in a real tab (existing behavior)
+		if (e && (e.ctrlKey || e.metaKey || e.button === 1)) {
+			return handleNoteClick(filePath, noteName, highlightTerm, e);
+		}
+		// Bold the active link in the index
+		indexActiveNotePath = filePath;
+		// If second screen is open, send the note there
+		const scOpen = secondScreenOpen || await isSecondScreenOpen().catch(() => false);
+		if (scOpen) {
+			secondScreenOpen = true; // sync local state
+			const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
+			const vault = $libraries.find(v => filePath.startsWith(v.path));
+			await sendNoteToScreen({
+				path: filePath,
+				name,
+				libraryName: vault?.name ?? '',
+				libraryPath: vault?.path ?? '',
+				libraryColor: vault ? libraryColorMap[vault.name] : '#7c3aed',
+			});
+			return;
+		}
+		// Normal click: build a standalone tab for the index split pane (no store mutation)
+		try {
+			const content: string = await invoke('read_note', { filePath });
+			const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
+			const vault = $libraries.find(v => filePath.startsWith(v.path));
+			const libraryColor = vault ? libraryColorMap[vault.name] : '#7c3aed';
+			indexNoteTab = {
+				id: `index_preview_${Date.now()}`,
+				path: filePath,
+				content,
+				name,
+				libraryName: vault?.name ?? '',
+				libraryPath: vault?.path ?? '',
+				libraryColor,
+				highlightTerm,
+				history: [filePath],
+				historyIndex: 0,
+			};
+		} catch { /* ignore read errors */ }
+	}
+
 	async function handleSearchResultClick(path: string, libraryName: string, e?: MouseEvent) {
 		const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
@@ -1528,10 +1650,10 @@
 	<!-- ═══ DOCK ═══ -->
 	<div class="dock">
 		<div class="dock-top">
-			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = false; indexMode = false; }} title={$t('dock.fileExplorer')}>
+			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = false; }} title={$t('dock.fileExplorer')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
 			</button>
-			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = true; indexMode = false; }} title={$t('dock.search')}>
+			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = true; }} title={$t('dock.search')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</button>
 			<button class="dock-btn" onclick={() => showStarView = !showStarView} title={$t('dock.starView')}>
@@ -1546,7 +1668,7 @@
 			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('dock.aiSkills')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
 			</a>
-			<button class="dock-btn" class:active={indexMode} onclick={() => { sidebarOpen = true; searchMode = false; indexMode = !indexMode; }} title={$t('dock.index')}>
+			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showStarView = false; showGlobalTasks = false; }} title={$t('dock.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
 			</button>
 		</div>
@@ -1605,12 +1727,7 @@
 			</div>
 
 			<div class="sidebar-content">
-				{#if indexMode}
-					<IndexPanel
-						entries={allIndexEntries}
-						onNoteClick={handleNoteClick}
-					/>
-				{:else if searchMode && searchQuery}
+				{#if searchMode && searchQuery}
 					{#if $searchResults.length > 0}
 						<div class="section-label">{$searchResults.length} {$t('sidebar.results')}</div>
 						{#each $searchResults as star}
@@ -1827,6 +1944,34 @@
 					{libraryColorMap}
 					onClose={() => showGlobalTasks = false}
 				/>
+			{:else if showIndex}
+				<div class="index-split" class:has-note={indexNoteTab}>
+					{#if indexNoteTab}
+						<div class="index-note-pane">
+							<div class="index-note-header">
+								<span class="index-note-name" dir="auto">{indexNoteTab.name}</span>
+								<button class="index-close" onclick={() => { indexNoteTab = null; indexActiveNotePath = ''; }} title="Close note">×</button>
+							</div>
+							<NotePane tab={indexNoteTab} isFocused={true} onFocus={() => {}} color={libraryColorMap[indexNoteTab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
+						</div>
+						<div class="index-split-divider"></div>
+					{/if}
+					<div class="index-panel-pane">
+						<div class="index-header">
+							<span class="index-title">{$t('dock.index')}</span>
+							<button class="index-close" onclick={() => { showIndex = false; indexNoteTab = null; indexActiveNotePath = ''; }}>×</button>
+						</div>
+						<div class="index-body">
+							<IndexPanel
+								entries={allIndexEntries}
+								onNoteClick={handleIndexNoteClick}
+								onNoteHover={handleIndexNoteHover}
+								onNoteLeave={handleIndexNoteLeave}
+								activeNotePath={indexActiveNotePath}
+							/>
+						</div>
+					</div>
+				</div>
 			{:else if isHome && ($activeTab || $splitActive)}
 				<div class="pane-container" class:horizontal={$splitActive && $splitDirection === 'horizontal'}>
 					{#if $splitActive}
@@ -2543,6 +2688,50 @@
 		font-size: 1.2rem;
 	}
 	.star-close:hover { background: var(--border); color: var(--text); }
+
+	/* Index split view */
+	.index-split {
+		flex: 1; display: flex; flex-direction: row; overflow: hidden;
+	}
+	.index-panel-pane {
+		flex: 1; display: flex; flex-direction: column; overflow: hidden;
+		min-width: 0;
+	}
+	.index-split.has-note .index-panel-pane {
+		flex: 1;
+	}
+	.index-note-pane {
+		flex: 1; display: flex; flex-direction: column; overflow: hidden;
+		min-width: 0;
+	}
+	.index-note-header {
+		display: flex; align-items: center; justify-content: space-between;
+		padding: 4px 12px; border-bottom: 1px solid var(--border);
+		background: var(--bg-secondary);
+	}
+	.index-note-name {
+		font-size: 0.8rem; font-weight: 500; color: var(--text-muted);
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	.index-split-divider {
+		flex-shrink: 0; width: 3px; background: var(--border); cursor: col-resize;
+	}
+	.index-split-divider:hover { background: var(--interactive-accent); }
+	.index-header {
+		display: flex; align-items: center; justify-content: space-between;
+		padding: 8px 16px; border-bottom: 1px solid var(--border);
+		background: var(--bg-secondary);
+	}
+	.index-title { font-weight: 600; font-size: 0.9rem; }
+	.index-close {
+		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+		border: none; background: none; border-radius: 3px; color: var(--text-muted); cursor: pointer;
+		font-size: 1.2rem;
+	}
+	.index-close:hover { background: var(--border); color: var(--text); }
+	.index-body {
+		flex: 1; overflow: auto;
+	}
 
 	/* Welcome */
 	.welcome {

@@ -12,6 +12,8 @@
 		filePath,
 		onNoteClick,
 		libraryName = '',
+		collapsed = false,
+		onToggle,
 	}: {
 		properties: FrontmatterProperty[];
 		body: string;
@@ -19,6 +21,8 @@
 		filePath: string;
 		onNoteClick?: (noteName: string) => void;
 		libraryName?: string;
+		collapsed?: boolean;
+		onToggle?: () => void;
 	} = $props();
 
 	const TYPE_ICONS: Record<PropertyType, string> = {
@@ -353,13 +357,18 @@
 </script>
 
 <div class="property-editor">
-	<div class="pe-header">
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="pe-header" class:pe-clickable={!!onToggle} onclick={() => onToggle?.()}>
+		{#if onToggle}
+			<svg class="pe-chevron" class:collapsed={collapsed} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+		{/if}
 		<span class="pe-title">{$t('propertyEditor.title')}</span>
 		{#if saving}
 			<span class="pe-saving">{$t('propertyEditor.saving')}</span>
 		{/if}
 	</div>
 
+	{#if !collapsed}
 	{#each editableProps as prop, idx}
 		{@const iconInfo = getIcon(prop)}
 		{@const isEmpty = !prop.value || (prop.type === 'list' && (!prop.listItems || prop.listItems.length === 0))}
@@ -502,6 +511,7 @@
 	<button class="pe-add" bind:this={addBtnRef} onclick={addProperty}>
 		+ {$t('propertyEditor.addProperty')}
 	</button>
+	{/if}
 </div>
 
 <style>
@@ -514,10 +524,15 @@
 	}
 
 	.pe-header {
-		display: flex; align-items: center; justify-content: space-between;
+		display: flex; align-items: center; gap: 4px;
 		margin-bottom: 8px;
 	}
+	.pe-header.pe-clickable { cursor: pointer; border-radius: 4px; padding: 2px 4px; margin: -2px -4px 8px; }
+	.pe-header.pe-clickable:hover { background: var(--background-modifier-hover); }
 	.pe-title { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
+	.pe-chevron { transition: transform 0.2s; flex-shrink: 0; color: var(--text-muted); }
+	.pe-chevron.collapsed { transform: rotate(-90deg); }
+	:global([dir="rtl"]) .pe-chevron.collapsed { transform: rotate(90deg); }
 	.pe-saving { font-size: 0.7rem; color: var(--interactive-accent); }
 
 	.pe-row {

@@ -145,7 +145,14 @@
       "monoFont": "Monospace-Schriftart",
       "monoFontDesc": "Schriftart für Codeblöcke und Inline-Code",
       "fontSize": "Schriftgröße",
-      "fontSizeDesc": "Basis-Schriftgröße für den Notizinhalt"
+      "fontSizeDesc": "Basis-Schriftgröße für den Notizinhalt",
+      "scriptFonts": "Schriftarten nach Schriftsystem",
+      "scriptFontsDesc": "Bevorzugte Schriftarten für verschiedene Schriftsysteme festlegen. Jedes Schriftsystem verwendet seine eigene Schriftart auf derselben Seite.",
+      "arabicFont": "Arabische Schriftart",
+      "hebrewFont": "Hebräische Schriftart",
+      "cjkFont": "CJK-Schriftart (Chinesisch/Japanisch/Koreanisch)",
+      "customFont": "Benutzerdefiniert...",
+      "customFontPlaceholder": "Schriftartname eingeben..."
     },
     "hotkeys": {
       "filter": "Tastaturkürzel filtern...",

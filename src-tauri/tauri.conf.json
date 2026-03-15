@@ -14,7 +14,8 @@
       {
         "title": "Constellation",
         "width": 1200,
-        "height": 800
+        "height": 800,
+        "zoomHotkeysEnabled": true
       },
       {
         "label": "second-screen",
@@ -22,7 +23,8 @@
         "url": "screen.html",
         "width": 1200,
         "height": 800,
-        "visible": false
+        "visible": false,
+        "zoomHotkeysEnabled": true
       }
     ],
     "security": {

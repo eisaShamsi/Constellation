@@ -145,7 +145,14 @@
       "monoFont": "Fuente monoespaciada",
       "monoFontDesc": "Fuente para bloques de código y código en línea",
       "fontSize": "Tamaño de fuente",
-      "fontSizeDesc": "Tamaño de fuente base para el contenido de notas"
+      "fontSizeDesc": "Tamaño de fuente base para el contenido de notas",
+      "scriptFonts": "Fuentes por sistema de escritura",
+      "scriptFontsDesc": "Establecer fuentes preferidas para diferentes sistemas de escritura. Cada sistema usará su propia fuente compartiendo la misma página.",
+      "arabicFont": "Fuente árabe",
+      "hebrewFont": "Fuente hebrea",
+      "cjkFont": "Fuente CJK (chino/japonés/coreano)",
+      "customFont": "Personalizada...",
+      "customFontPlaceholder": "Escribir nombre de fuente..."
     },
     "hotkeys": {
       "filter": "Filtrar atajos...",

@@ -50,9 +50,9 @@ export async function notifyUniverseSwitch(): Promise<void> {
 	await emit('screen:universe-switched');
 }
 
-/** Notify second screen that theme/settings changed */
-export async function notifySettingsChanged(): Promise<void> {
-	await emit('screen:settings-changed');
+/** Notify second screen that theme/settings changed, passing the current settings */
+export async function notifySettingsChanged(settings?: Record<string, any>): Promise<void> {
+	await emit('screen:settings-changed', settings || {});
 }
 
 /* ------------------------------------------------------------------ */
@@ -124,8 +124,8 @@ export function onUniverseSwitch(callback: () => void): Promise<UnlistenFn> {
 	return listen('screen:universe-switched', () => callback());
 }
 
-export function onSettingsChanged(callback: () => void): Promise<UnlistenFn> {
-	return listen('screen:settings-changed', () => callback());
+export function onSettingsChanged(callback: (settings?: Record<string, any>) => void): Promise<UnlistenFn> {
+	return listen<Record<string, any>>('screen:settings-changed', (event) => callback(event.payload));
 }
 
 export function onScreenClosed(callback: () => void): Promise<UnlistenFn> {

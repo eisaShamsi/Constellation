@@ -127,31 +127,21 @@
 			}
 		}
 
-		// Draw labels
-		const fontSize = 11;
+		// Draw labels for all nodes
+		const fontSize = 10;
 		ctx.font = `${fontSize}px system-ui, -apple-system, sans-serif`;
 		ctx.textAlign = 'center';
 		for (const pos of nodePositions) {
 			const isActive = pos.node.id === activeNodeId;
 			const isHovered = hoveredNode === pos.node;
-			if (!isActive && !isHovered) continue;
 
 			const label = pos.node.name.replace(/\.md$/, '');
 			const textWidth = ctx.measureText(label).width;
 
-			// Background pill
-			const px = 4, py = 2;
-			ctx.fillStyle = dark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.85)';
-			ctx.beginPath();
-			const rx = pos.x - textWidth / 2 - px;
-			const ry = pos.y + (isActive ? 12 : 10);
-			const rw = textWidth + px * 2;
-			const rh = fontSize + py * 2;
-			ctx.roundRect(rx, ry, rw, rh, 3);
-			ctx.fill();
-
-			ctx.fillStyle = dark ? '#e5e5e5' : '#333';
-			ctx.fillText(label, pos.x, pos.y + (isActive ? 12 : 10) + fontSize - 1);
+			ctx.fillStyle = (isActive || isHovered)
+				? (dark ? '#fff' : '#000')
+				: (dark ? '#bbb' : '#555');
+			ctx.fillText(label, pos.x, pos.y + (isActive ? 12 : 9) + fontSize - 1);
 		}
 	}
 
@@ -215,7 +205,7 @@
 	});
 </script>
 
-<div class="local-graph" bind:this={containerEl}>
+<div class="local-star" bind:this={containerEl}>
 	<canvas
 		bind:this={canvasEl}
 		onmousemove={handleMouseMove}

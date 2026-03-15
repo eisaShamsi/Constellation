@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
 	import { appSettings, updateSettings, updateSecuritySettings } from '$lib/libraries/store';
+	import { get } from 'svelte/store';
+	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { eventToShortcut, normalizeShortcut, getResolvedShortcut, DEFAULT_SHORTCUTS } from '$lib/utils';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -844,7 +846,7 @@
 							<div class="setting-name">{$t('settings.appearance.colorScheme')}</div>
 							<div class="setting-desc">{$t('settings.appearance.colorSchemeDesc')}</div>
 						</div>
-						<select class="setting-control" value={$appSettings.colorScheme} onchange={(e) => updateSettings({ colorScheme: (e.target as HTMLSelectElement).value as any })}>
+						<select class="setting-control" value={$appSettings.colorScheme} onchange={(e) => { updateSettings({ colorScheme: (e.target as HTMLSelectElement).value as any }); notifySettingsChanged(get(appSettings)); }}>
 							<option value="light">{$t('settings.appearance.light')}</option>
 							<option value="dark">{$t('settings.appearance.dark')}</option>
 							<option value="system">{$t('settings.appearance.system')}</option>
@@ -865,35 +867,50 @@
 
 					<div class="setting-heading">{$t('settings.appearance.fonts')}</div>
 
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.interfaceFont')}</div>
-							<div class="setting-desc">{$t('settings.appearance.interfaceFontDesc')}</div>
+					{#each [
+						{ key: 'interfaceFont' as const, label: $t('settings.appearance.interfaceFont'), desc: $t('settings.appearance.interfaceFontDesc'),
+						  presets: ['Inter', 'Segoe UI', 'Calibri', 'Arial', 'Helvetica Neue', 'Roboto', 'Noto Sans', 'Tahoma', 'SF Pro Display', 'Sakkal Majalla', 'Simplified Arabic', 'Noto Naskh Arabic', 'Noto Sans Hebrew', 'Noto Sans CJK'] },
+						{ key: 'textFont' as const, label: $t('settings.appearance.textFont'), desc: $t('settings.appearance.textFontDesc'),
+						  presets: ['Inter', 'Segoe UI', 'Calibri', 'Arial', 'Georgia', 'Palatino', 'Charter', 'Literata', 'Roboto', 'Noto Sans', 'Noto Serif', 'Sakkal Majalla', 'Traditional Arabic', 'Amiri', 'Noto Naskh Arabic', 'Noto Sans Hebrew', 'David', 'Noto Sans CJK', 'Noto Serif CJK'] },
+						{ key: 'monoFont' as const, label: $t('settings.appearance.monoFont'), desc: $t('settings.appearance.monoFontDesc'),
+						  presets: ['Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Source Code Pro', 'IBM Plex Mono', 'Menlo', 'Monaco', 'Courier New'] },
+					] as fontEntry}
+						{@const currentFontVal = $appSettings[fontEntry.key] || ''}
+						{@const isFontCustom = currentFontVal !== '' && !fontEntry.presets.includes(currentFontVal)}
+						<div class="setting-item script-font-item">
+							<div class="setting-info">
+								<div class="setting-name">{fontEntry.label}</div>
+								<div class="setting-desc">{fontEntry.desc}</div>
+							</div>
+							<div class="script-font-control">
+								<select class="setting-select"
+									value={isFontCustom ? '__custom__' : currentFontVal}
+									onchange={(e) => {
+										const val = (e.target as HTMLSelectElement).value;
+										if (val === '__custom__') {
+											updateSettings({ [fontEntry.key]: ' ' });
+										} else {
+											updateSettings({ [fontEntry.key]: val });
+										}
+									}}>
+									<option value="">{$t('settings.appearance.systemDefault')}</option>
+									{#each fontEntry.presets as font}
+										<option value={font}>{font}</option>
+									{/each}
+									<option value="__custom__">{$t('settings.appearance.customFont')}</option>
+								</select>
+								{#if isFontCustom}
+									<input class="setting-input script-font-custom" type="text"
+										value={currentFontVal.trim()}
+										placeholder={$t('settings.appearance.customFontPlaceholder')}
+										oninput={(e) => {
+											const val = (e.target as HTMLInputElement).value;
+											updateSettings({ [fontEntry.key]: val || ' ' });
+										}} />
+								{/if}
+							</div>
 						</div>
-						<input class="setting-input" type="text" value={$appSettings.interfaceFont}
-							placeholder={$t('settings.appearance.systemDefault')}
-							oninput={(e) => updateSettings({ interfaceFont: (e.target as HTMLInputElement).value })} />
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.textFont')}</div>
-							<div class="setting-desc">{$t('settings.appearance.textFontDesc')}</div>
-						</div>
-						<input class="setting-input" type="text" value={$appSettings.textFont}
-							placeholder={$t('settings.appearance.systemDefault')}
-							oninput={(e) => updateSettings({ textFont: (e.target as HTMLInputElement).value })} />
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.monoFont')}</div>
-							<div class="setting-desc">{$t('settings.appearance.monoFontDesc')}</div>
-						</div>
-						<input class="setting-input" type="text" value={$appSettings.monoFont}
-							placeholder="Cascadia Code, Fira Code, Consolas"
-							oninput={(e) => updateSettings({ monoFont: (e.target as HTMLInputElement).value })} />
-					</div>
+					{/each}
 
 					<div class="setting-item">
 						<div class="setting-info">
@@ -906,6 +923,51 @@
 							<span class="slider-val">{$appSettings.fontSize}px</span>
 						</div>
 					</div>
+
+					<div class="setting-heading">{$t('settings.appearance.scriptFonts')}</div>
+					<div class="setting-desc" style="margin-bottom: 8px; padding: 0 2px;">{$t('settings.appearance.scriptFontsDesc')}</div>
+
+					{#each [
+						{ key: 'arabic', label: $t('settings.appearance.arabicFont'), preview: 'بسم الله الرحمن الرحيم', presets: ['Calibri', 'Arial', 'Tahoma', 'Simplified Arabic', 'Traditional Arabic', 'Sakkal Majalla', 'Amiri', 'Noto Naskh Arabic'] },
+						{ key: 'hebrew', label: $t('settings.appearance.hebrewFont'), preview: 'בְּרֵאשִׁית בָּרָא', presets: ['David', 'Miriam', 'Arial', 'Frank Ruehl', 'Noto Sans Hebrew'] },
+						{ key: 'cjk', label: $t('settings.appearance.cjkFont'), preview: '中文テスト한국어', presets: ['Noto Sans CJK', 'Microsoft YaHei', 'Hiragino Sans', 'Meiryo', 'SimSun', 'Malgun Gothic'] },
+					] as entry}
+						{@const currentVal = ($appSettings.scriptFonts || {})[entry.key] || ''}
+						{@const isCustom = currentVal !== '' && !entry.presets.includes(currentVal)}
+						<div class="setting-item script-font-item">
+							<div class="setting-info">
+								<div class="setting-name">{entry.label}</div>
+								<div class="script-font-preview" style:font-family={currentVal || 'inherit'}>{entry.preview}</div>
+							</div>
+							<div class="script-font-control">
+								<select class="setting-select"
+									value={isCustom ? '__custom__' : currentVal}
+									onchange={(e) => {
+										const val = (e.target as HTMLSelectElement).value;
+										if (val === '__custom__') {
+											updateSettings({ scriptFonts: { ...($appSettings.scriptFonts || {}), [entry.key]: ' ' } });
+										} else {
+											updateSettings({ scriptFonts: { ...($appSettings.scriptFonts || {}), [entry.key]: val } });
+										}
+									}}>
+									<option value="">{$t('settings.appearance.systemDefault')}</option>
+									{#each entry.presets as font}
+										<option value={font}>{font}</option>
+									{/each}
+									<option value="__custom__">{$t('settings.appearance.customFont')}</option>
+								</select>
+								{#if isCustom}
+									<input class="setting-input script-font-custom" type="text"
+										value={currentVal.trim()}
+										placeholder={$t('settings.appearance.customFontPlaceholder')}
+										oninput={(e) => {
+											const val = (e.target as HTMLInputElement).value;
+											updateSettings({ scriptFonts: { ...($appSettings.scriptFonts || {}), [entry.key]: val || ' ' } });
+										}} />
+								{/if}
+							</div>
+						</div>
+					{/each}
 
 				<!-- ═══ HOTKEYS ═══ -->
 				{:else if activeSection === 'hotkeys'}
@@ -1390,4 +1452,21 @@
 		font-size: 0.82rem; cursor: pointer;
 	}
 	.dialog-btn.cancel:hover { opacity: 0.85; }
+
+	/* Script fonts */
+	.setting-select {
+		min-width: 180px; max-width: 240px; padding: 6px 10px;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px; color: var(--text-normal);
+		font-size: 0.85rem; font-family: inherit; cursor: pointer;
+	}
+	.setting-select:focus { border-color: var(--interactive-accent); outline: none; }
+	.script-font-item { flex-wrap: wrap; }
+	.script-font-control { display: flex; flex-direction: column; gap: 6px; min-width: 180px; }
+	.script-font-custom { min-width: 180px; margin-top: 2px; }
+	.script-font-preview {
+		font-size: 1.05rem; color: var(--text-muted); margin-top: 4px;
+		line-height: 1.4; letter-spacing: 0.02em;
+	}
 </style>

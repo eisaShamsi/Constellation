@@ -145,7 +145,14 @@
       "monoFont": "Monospace font",
       "monoFontDesc": "Font for code blocks and inline code",
       "fontSize": "Font size",
-      "fontSizeDesc": "Base font size for note content"
+      "fontSizeDesc": "Base font size for note content",
+      "scriptFonts": "Script Fonts",
+      "scriptFontsDesc": "Set preferred fonts for different writing systems. Each script will use its own font while sharing the same page.",
+      "arabicFont": "Arabic Font",
+      "hebrewFont": "Hebrew Font",
+      "cjkFont": "CJK Font (Chinese/Japanese/Korean)",
+      "customFont": "Custom...",
+      "customFontPlaceholder": "Type font name..."
     },
     "hotkeys": {
       "filter": "Filter shortcuts...",
