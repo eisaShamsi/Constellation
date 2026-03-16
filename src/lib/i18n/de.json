@@ -24,7 +24,9 @@
       "checkNow": "Jetzt prüfen",
       "checking": "Wird geprüft...",
       "upToDate": "Sie sind auf dem neuesten Stand!",
-      "updateAvailable": "Update verfügbar!",
+      "updateAvailable": "Update {version} verfügbar!",
+      "downloadAndInstall": "Herunterladen & Installieren",
+      "updateError": "Fehler beim Suchen nach Updates",
       "autoUpdate": "Automatische Updates",
       "autoUpdateDesc": "Updates automatisch herunterladen und installieren"
     },

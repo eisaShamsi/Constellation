@@ -24,7 +24,9 @@
       "checkNow": "ابھی جانچیں",
       "checking": "جانچ ہو رہی ہے...",
       "upToDate": "آپ کا ورژن تازہ ترین ہے!",
-      "updateAvailable": "اپ ڈیٹ دستیاب ہے!",
+      "updateAvailable": "اپ ڈیٹ {version} دستیاب ہے!",
+      "downloadAndInstall": "ڈاؤن لوڈ اور انسٹال کریں",
+      "updateError": "اپ ڈیٹس کی جانچ ناکام ہوگئی",
       "autoUpdate": "خودکار اپ ڈیٹس",
       "autoUpdateDesc": "خودکار طور پر اپ ڈیٹس ڈاؤن لوڈ اور انسٹال کریں"
     },

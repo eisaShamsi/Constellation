@@ -127,7 +127,27 @@
       "WebFetch(domain:github.com)",
       "Bash(find 'E:\\\\مشاريع كلاود\\\\Constellation\\\\src-tauri' -name tauri.*.json -o -name *conf*.json)",
       "Bash(sort -k5 -rn)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(grep -r zoom 'E:/مشاريع كلاود/Constellation/node_modules/@tauri-apps/api/' --include=*.d.ts)",
+      "Bash(grep -n \"$effect\\\\|setProperty\\\\|cssText\" \"E:\\\\مشاريع كلاود\\\\Constellation\\\\src\\\\routes\\\\+layout.svelte\")",
+      "Bash(grep -rn \"setProperty\\\\|--accent-h\\\\|--accent-s\\\\|--accent-l\" 'E:\\\\مشاريع كلاود\\\\Constellation\\\\src' --include=*.svelte --include=*.ts)",
+      "Bash(grep -rn \"$appSettings\\\\.\\\\\\(interfaceFont\\\\|textFont\\\\|monoFont\\\\|fontSize\\\\\\)\\\\|style\\\\.setProperty\\\\|setProperty.*font\" 'E:\\\\مشاريع كلاود\\\\Constellation\\\\src' --include=*.ts --include=*.svelte)",
+      "WebFetch(domain:floating-ui.com)",
+      "WebFetch(domain:mayank.co)",
+      "WebFetch(domain:www.w3.org)",
+      "WebFetch(domain:boringrails.com)",
+      "WebFetch(domain:www.goulin.fr)",
+      "WebFetch(domain:css-tricks.com)",
+      "Bash(python3:*)",
+      "Bash(taskkill //PID 71496 //F)",
+      "Bash(npm run:*)",
+      "WebFetch(domain:silentvoid13.github.io)",
+      "Bash(npm install:*)",
+      "Bash(cargo add:*)",
+      "Bash(npx @tauri-apps/cli signer generate -w ~/.tauri/constellation.key)",
+      "Bash(TAURI_SIGNING_PRIVATE_KEY_PASSWORD=\"\" npx @tauri-apps/cli signer generate -w \"$HOME/.tauri/constellation.key\" --ci)",
+      "Bash(npm ls:*)"
     ]
   }
 }

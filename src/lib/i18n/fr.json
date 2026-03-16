@@ -24,7 +24,9 @@
       "checkNow": "Vérifier maintenant",
       "checking": "Vérification...",
       "upToDate": "Vous êtes à jour !",
-      "updateAvailable": "Mise à jour disponible !",
+      "updateAvailable": "Mise à jour {version} disponible !",
+      "downloadAndInstall": "Télécharger et installer",
+      "updateError": "Échec de la vérification des mises à jour",
       "autoUpdate": "Mises à jour automatiques",
       "autoUpdateDesc": "Télécharger et installer les mises à jour automatiquement"
     },

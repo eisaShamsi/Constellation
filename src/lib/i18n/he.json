@@ -24,7 +24,9 @@
       "checkNow": "בדוק עכשיו",
       "checking": "בודק...",
       "upToDate": "הגרסה שלך מעודכנת!",
-      "updateAvailable": "עדכון זמין!",
+      "updateAvailable": "עדכון {version} זמין!",
+      "downloadAndInstall": "הורדה והתקנה",
+      "updateError": "בדיקת העדכונים נכשלה",
       "autoUpdate": "עדכונים אוטומטיים",
       "autoUpdateDesc": "הורד והתקן עדכונים אוטומטית"
     },

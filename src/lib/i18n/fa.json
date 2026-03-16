@@ -24,7 +24,9 @@
       "checkNow": "بررسی الان",
       "checking": "در حال بررسی...",
       "upToDate": "نسخه شما به‌روز است!",
-      "updateAvailable": "به‌روزرسانی موجود است!",
+      "updateAvailable": "به‌روزرسانی {version} موجود است!",
+      "downloadAndInstall": "دانلود و نصب",
+      "updateError": "خطا در بررسی به‌روزرسانی‌ها",
       "autoUpdate": "به‌روزرسانی خودکار",
       "autoUpdateDesc": "دانلود و نصب خودکار به‌روزرسانی‌ها"
     },

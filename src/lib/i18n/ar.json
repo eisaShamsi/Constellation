@@ -24,7 +24,9 @@
       "checkNow": "تحقق الآن",
       "checking": "جارٍ التحقق...",
       "upToDate": "أنت تستخدم أحدث إصدار!",
-      "updateAvailable": "يتوفر تحديث جديد!",
+      "updateAvailable": "يتوفر تحديث جديد {version}!",
+      "downloadAndInstall": "تنزيل وتثبيت",
+      "updateError": "فشل التحقق من التحديثات",
       "autoUpdate": "التحديث التلقائي",
       "autoUpdateDesc": "تنزيل التحديثات وتثبيتها تلقائيا"
     },

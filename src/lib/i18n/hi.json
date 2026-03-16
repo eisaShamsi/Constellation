@@ -24,7 +24,9 @@
       "checkNow": "अभी जाँचें",
       "checking": "जाँच हो रही है...",
       "upToDate": "आप अप टू डेट हैं!",
-      "updateAvailable": "अपडेट उपलब्ध है!",
+      "updateAvailable": "अपडेट {version} उपलब्ध है!",
+      "downloadAndInstall": "डाउनलोड और इंस्टॉल करें",
+      "updateError": "अपडेट की जाँच विफल रही",
       "autoUpdate": "स्वचालित अपडेट",
       "autoUpdateDesc": "अपडेट स्वचालित रूप से डाउनलोड और इंस्टॉल करें"
     },

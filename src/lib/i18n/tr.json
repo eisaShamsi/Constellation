@@ -24,7 +24,9 @@
       "checkNow": "Şimdi kontrol et",
       "checking": "Kontrol ediliyor...",
       "upToDate": "Güncelsiniz!",
-      "updateAvailable": "Güncelleme mevcut!",
+      "updateAvailable": "Güncelleme {version} mevcut!",
+      "downloadAndInstall": "İndir ve Kur",
+      "updateError": "Güncelleme kontrolü başarısız oldu",
       "autoUpdate": "Otomatik güncelleme",
       "autoUpdateDesc": "Güncellemeleri otomatik olarak indir ve yükle"
     },

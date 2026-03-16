@@ -24,7 +24,9 @@
       "checkNow": "今すぐ確認",
       "checking": "確認中...",
       "upToDate": "最新バージョンです！",
-      "updateAvailable": "アップデートがあります！",
+      "updateAvailable": "アップデート {version} が利用可能です！",
+      "downloadAndInstall": "ダウンロードしてインストール",
+      "updateError": "アップデートの確認に失敗しました",
       "autoUpdate": "自動アップデート",
       "autoUpdateDesc": "アップデートを自動的にダウンロードしてインストール"
     },

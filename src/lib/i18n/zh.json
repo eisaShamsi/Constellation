@@ -24,7 +24,9 @@
       "checkNow": "立即检查",
       "checking": "正在检查...",
       "upToDate": "已是最新版本！",
-      "updateAvailable": "有可用更新！",
+      "updateAvailable": "有可用更新 {version}！",
+      "downloadAndInstall": "下载并安装",
+      "updateError": "检查更新失败",
       "autoUpdate": "自动更新",
       "autoUpdateDesc": "自动下载并安装更新"
     },

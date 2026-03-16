@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import { check } from '@tauri-apps/plugin-updater';
+	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
 	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats } from '$lib/libraries/store';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
@@ -104,12 +106,52 @@
 		setLocale((e.target as HTMLSelectElement).value as Locale);
 	}
 
+	let updateAvailable = $state<any>(null);
+	let updateDownloading = $state(false);
+	let updateProgress = $state(0);
+
 	async function handleCheckUpdate() {
 		updateChecking = true;
 		updateStatus = '';
-		await new Promise(r => setTimeout(r, 1500));
-		updateStatus = $t('settings.general.upToDate');
+		updateAvailable = null;
+		try {
+			const update = await check();
+			if (update) {
+				updateAvailable = update;
+				updateStatus = $t('settings.general.updateAvailable').replace('{version}', update.version);
+			} else {
+				updateStatus = $t('settings.general.upToDate');
+			}
+		} catch (e) {
+			updateStatus = $t('settings.general.updateError');
+			console.error('Update check failed:', e);
+		}
 		updateChecking = false;
+	}
+
+	async function handleDownloadAndInstall() {
+		if (!updateAvailable) return;
+		updateDownloading = true;
+		updateProgress = 0;
+		try {
+			let totalBytes = 0;
+			let downloadedBytes = 0;
+			await updateAvailable.downloadAndInstall((event: any) => {
+				if (event.event === 'Started' && event.data?.contentLength) {
+					totalBytes = event.data.contentLength;
+				} else if (event.event === 'Progress' && event.data?.chunkLength) {
+					downloadedBytes += event.data.chunkLength;
+					if (totalBytes > 0) updateProgress = Math.round((downloadedBytes / totalBytes) * 100);
+				} else if (event.event === 'Finished') {
+					updateProgress = 100;
+				}
+			});
+			await relaunch();
+		} catch (e) {
+			updateStatus = $t('settings.general.updateError');
+			updateDownloading = false;
+			console.error('Update install failed:', e);
+		}
 	}
 
 	async function testConnection() {
@@ -323,6 +365,17 @@
 									<div class="setting-info">
 										<div class="setting-desc" style="color: var(--interactive-accent)">{updateStatus}</div>
 									</div>
+									{#if updateAvailable && !updateDownloading}
+										<button class="setting-btn" style="background: var(--interactive-accent); color: white;" onclick={handleDownloadAndInstall}>
+											{$t('settings.general.downloadAndInstall')}
+										</button>
+									{/if}
+									{#if updateDownloading}
+										<div class="update-progress">
+											<div class="update-progress-bar" style="width: {updateProgress}%"></div>
+											<span class="update-progress-text">{updateProgress}%</span>
+										</div>
+									{/if}
 								</div>
 							{/if}
 							<div class="setting-item">
@@ -1344,6 +1397,19 @@
 	}
 	.setting-btn:hover { opacity: 0.9; }
 	.setting-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+	.update-progress {
+		position: relative; width: 120px; height: 28px;
+		background: var(--background-modifier-border); border-radius: 6px; overflow: hidden;
+	}
+	.update-progress-bar {
+		height: 100%; background: var(--interactive-accent);
+		border-radius: 6px; transition: width 0.3s;
+	}
+	.update-progress-text {
+		position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+		font-size: 0.75rem; font-weight: 600; color: var(--text-normal);
+	}
 
 	/* ═══ SECURITY ═══ */
 	.security-control-row {
