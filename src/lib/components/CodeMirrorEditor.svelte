@@ -738,13 +738,14 @@
 			fontSize: '0.92rem',
 		},
 		'.cm-content': {
-			fontFamily: 'var(--vault-mono-font, var(--font-monospace-theme))',
+			fontFamily: 'var(--library-text-font, var(--font-text-theme, inherit))',
+			fontSize: 'var(--library-font-size, var(--font-text-size, 0.95rem))',
 			lineHeight: '1.7',
 			padding: '0',
-			caretColor: 'var(--vault-accent, var(--interactive-accent))',
+			caretColor: 'var(--interactive-accent)',
 		},
 		'.cm-cursor': {
-			borderLeftColor: 'var(--vault-accent, var(--interactive-accent))',
+			borderLeftColor: 'var(--interactive-accent)',
 		},
 		'.cm-gutters': {
 			backgroundColor: 'transparent',

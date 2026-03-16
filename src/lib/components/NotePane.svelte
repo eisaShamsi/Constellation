@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { parseFrontmatter, extractHeadings, editingTabIds, toggleEditMode, saveTabContent, resolveWikilinkCrossLibrary, openNoteTab, openTabs, libraryAppearances, libraries, navigateBack, navigateForward, readNote, appSettings } from '$lib/libraries/store';
+	import { parseFrontmatter, extractHeadings, editingTabIds, toggleEditMode, saveTabContent, resolveWikilinkCrossLibrary, openNoteTab, openTabs, libraryAppearances, libraries, navigateBack, navigateForward, readNote, appSettings, renameItem } from '$lib/libraries/store';
 	import type { OpenTab } from '$lib/libraries/store';
 	import { detectDir, renderMarkdown, postProcessRenderedContent, collectNoteNames } from '$lib/utils';
 	import { dir, t } from '$lib/i18n';
@@ -485,7 +485,21 @@ ${contentEl.innerHTML}
 		{:else if !isEmptyTab}
 		<div class="note-scroll" class:editing dir={noteDir} style="{paneStyle}; max-width: {noteWidth}%">
 			{#if tab}
-				<h1 class="note-title" dir="auto">{tab.name}</h1>
+				<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+				<h1 class="note-title" dir="auto" contenteditable="true" spellcheck="false"
+					onblur={async (e) => {
+						const newName = (e.target as HTMLElement).textContent?.trim();
+						if (newName && newName !== tab.name && tab.path) {
+							const dir = tab.path.substring(0, tab.path.lastIndexOf('/') + 1) || tab.path.substring(0, tab.path.lastIndexOf('\\') + 1);
+							const newPath = dir + newName + '.md';
+							try { await renameItem(tab.path, newPath); } catch {}
+						}
+					}}
+					onkeydown={(e) => {
+						if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); }
+						if (e.key === 'Escape') { (e.target as HTMLElement).textContent = tab.name; (e.target as HTMLElement).blur(); }
+					}}
+				>{tab.name}</h1>
 			{/if}
 			{#if tab && $appSettings.propertiesInDocument !== 'hidden'}
 				{#if $appSettings.propertiesInDocument === 'source'}
@@ -668,7 +682,12 @@ ${contentEl.innerHTML}
 	.note-title {
 		font-size: 1.8rem; font-weight: 700; margin: 0 0 0.5rem;
 		color: var(--text-normal); line-height: 1.3;
+		outline: none; border: none; border-radius: 4px;
+		padding: 2px 4px; margin-inline: -4px;
+		transition: background 0.15s;
 	}
+	.note-title:hover { background: var(--background-modifier-hover); }
+	.note-title:focus { background: var(--background-secondary); }
 	.note-content { line-height: 1.8; color: var(--text-normal); flex: 1; }
 
 	/* ─── Headings ─── */
