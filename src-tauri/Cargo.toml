@@ -1,6 +1,6 @@
 [package]
 name = "constellation"
-version = "0.2.0"
+version = "0.3.0"
 description = "A Universe of Libraries — Desktop knowledge management platform for connected notes"
 authors = ["eisaShamsi"]
 license = "MIT"
