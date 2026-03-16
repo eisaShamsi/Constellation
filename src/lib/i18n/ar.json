@@ -6,20 +6,15 @@
   "settings": {
     "title": "الإعدادات",
     "sections": {
-      "about": "حول",
-      "general": "عام",
+      "dashboard": "لوحة المعلومات",
+      "universe": "الكون والمكتبات",
       "editor": "المحرر",
-      "files": "الملفات والروابط",
+      "skyview": "عرض السماء والروابط",
+      "intelligence": "الذكاء",
+      "security": "الأمان والخصوصية",
       "appearance": "المظهر",
-      "hotkeys": "اختصارات لوحة المفاتيح",
-      "security": "الأمان",
-      "plugins": "ميزات مدمجة",
-      "ai": "الذكاء الاصطناعي",
-      "templates": "القوالب"
-    },
-    "about": {
-      "tagline": "خزنة من الخزائن",
-      "developedBy": "تطوير"
+      "keyboard": "لوحة المفاتيح",
+      "features": "الميزات"
     },
     "general": {
       "language": "اللغة",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "تنزيل التحديثات وتثبيتها تلقائيا"
     },
     "security": {
-      "intro": "حماية بيانات الخزنة وتأمين مفاتيح API وقفل التطبيق عند الخمول.",
-      "vaultEncryption": "تشفير الخزنة",
-      "vaultEncryptionDesc": "تشفير بيانات الخزنة المخزنة على هذا الجهاز",
+      "intro": "حماية بياناتك وتأمين مفاتيح API وقفل التطبيق عند الخمول.",
+      "vaultEncryption": "تشفير المكتبة",
+      "vaultEncryptionDesc": "تشفير بيانات المكتبة المخزنة على هذا الجهاز",
       "enabled": "مفعّل",
       "disabled": "معطّل",
       "lockHeading": "شاشة القفل",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "موقع الملاحظات الجديدة",
       "defaultLocationDesc": "أين يتم إنشاء الملاحظات الجديدة",
-      "vaultRoot": "جذر الخزينة",
       "currentFolder": "المجلد الحالي",
       "specifiedFolder": "مجلد محدد",
       "folderPath": "مسار المجلد",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "أين يتم نقل الملفات المحذوفة",
       "systemTrash": "سلة مهملات النظام",
       "trashFolder": "مجلد .trash",
-      "permanentDelete": "حذف نهائي"
+      "permanentDelete": "حذف نهائي",
+      "libraryRoot": "جذر المكتبة"
     },
     "appearance": {
       "colorScheme": "نظام الألوان الأساسي",
@@ -145,13 +140,75 @@
       "fontSize": "حجم الخط",
       "fontSizeDesc": "حجم الخط الأساسي لمحتوى الملاحظات"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "المزود",
+      "providerDesc": "اختر مزود خدمة الذكاء الاصطناعي",
+      "none": "لا شيء",
+      "apiKey": "مفتاح API",
+      "apiKeyDesc": "مفتاح الوصول إلى واجهة البرمجة",
+      "apiKeyPlaceholder": "أدخل مفتاح API",
+      "serverUrl": "عنوان الخادم",
+      "serverUrlDesc": "عنوان خادم Ollama المحلي",
+      "model": "النموذج",
+      "modelDesc": "نموذج الذكاء الاصطناعي المستخدم",
+      "connection": "الاتصال",
+      "connectedSuccess": "تم الاتصال بنجاح",
+      "connectionFailed": "فشل الاتصال",
+      "verifyConnection": "تحقق من إعدادات الاتصال",
+      "testing": "جارٍ الاختبار...",
+      "test": "اختبار",
+      "connectionTest": "اختبار"
+    },
+    "templates": {
+      "templateFolder": "مجلد القوالب",
+      "templateFolderDesc": "المجلد الذي تُخزّن فيه ملفات القوالب",
+      "dailyNoteTemplate": "قالب الملاحظة اليومية",
+      "dailyNoteTemplateDesc": "اسم ملف القالب المستخدم عند إنشاء الملاحظات اليومية (بدون .md)",
+      "variables": "متغيرات القالب",
+      "variablesDesc": "المتغيرات المتاحة التي يمكنك استخدامها في قوالبك",
+      "varDate": "التاريخ الحالي (YYYY-MM-DD)",
+      "varDateFormat": "تنسيق تاريخ مخصص (مثلاً YYYY/MM/DD)",
+      "varTime": "الوقت الحالي (HH:MM)",
+      "varTitle": "عنوان الملاحظة",
+      "varFolder": "اسم المجلد الأب",
+      "varCursor": "موضع المؤشر بعد الإدراج",
+      "varLibrary": "اسم المكتبة"
+    },
+    "dashboard": {
+      "libraries": "المكتبات",
+      "notes": "الملاحظات",
+      "aiProvider": "مزود الذكاء الاصطناعي",
+      "lockStatus": "حالة القفل",
+      "developedBy": "تطوير"
+    },
+    "universe": {
+      "intro": "إعداد كيفية إدارة الكون للمكتبات والملاحظات والقوالب.",
+      "noteDefaults": "إعدادات الملاحظة الافتراضية",
+      "templates": "القوالب"
+    },
+    "skyview": {
+      "intro": "إعداد كيفية عمل خطوط النجوم (الروابط عبر المكتبات) وعرض السماء."
+    },
+    "intelligence": {
+      "intro": "إعداد مزودي الذكاء الاصطناعي والمهارات وضوابط الخصوصية لمكتباتك.",
+      "connection": "الاتصال",
+      "preferences": "التفضيلات",
+      "contextLines": "حجم السياق",
+      "contextLinesDesc": "عدد أسطر الملاحظة المرسلة للذكاء الاصطناعي كسياق",
+      "libraryAccess": "وصول المكتبة",
+      "libraryAccessDesc": "المكتبات التي يمكن للذكاء الاصطناعي قراءتها عند معالجة المهارات",
+      "allLibraries": "جميع المكتبات",
+      "activeOnly": "المكتبة النشطة فقط",
+      "noAccess": "بدون وصول"
+    },
+    "keyboard": {
       "filter": "تصفية الأوامر...",
       "notSet": "لا يوجد",
-      "noCommands": "لم يتم العثور على أوامر"
+      "noCommands": "لم يتم العثور على أوامر",
+      "pressKeys": "اضغط المفاتيح..."
     },
-    "plugins": {
-      "intro": "ميزات مدمجة مع Constellation. يمكنك تفعيل أو تعطيل كل منها.",
+    "features": {
+      "intro": "تبديل الميزات المدمجة. الميزات المعطلة مخفية من الواجهة.",
       "dailyNotes": "الملاحظات اليومية",
       "dailyNotesDesc": "إنشاء وفتح الملاحظات اليومية",
       "templates": "القوالب",
@@ -177,41 +234,12 @@
       "workspaces": "مساحات العمل",
       "workspacesDesc": "حفظ واستعادة تخطيطات مساحات العمل",
       "index": "الفهرس",
-      "indexDesc": "جمع وتصفح المصطلحات من جميع الملاحظات"
-    },
-    "ai": {
-      "intro": "اربط خدمة ذكاء اصطناعي لتلخيص الملاحظات والدردشة مع محتواك.",
-      "provider": "المزود",
-      "providerDesc": "اختر مزود خدمة الذكاء الاصطناعي",
-      "none": "لا شيء",
-      "apiKey": "مفتاح API",
-      "apiKeyDesc": "مفتاح الوصول إلى واجهة البرمجة",
-      "apiKeyPlaceholder": "أدخل مفتاح API",
-      "serverUrl": "عنوان الخادم",
-      "serverUrlDesc": "عنوان خادم Ollama المحلي",
-      "model": "النموذج",
-      "modelDesc": "نموذج الذكاء الاصطناعي المستخدم",
-      "connection": "الاتصال",
-      "connectedSuccess": "تم الاتصال بنجاح",
-      "connectionFailed": "فشل الاتصال",
-      "verifyConnection": "تحقق من إعدادات الاتصال",
-      "testing": "جارٍ الاختبار...",
-      "test": "اختبار"
-    },
-    "templates": {
-      "templateFolder": "مجلد القوالب",
-      "templateFolderDesc": "المجلد الذي تُخزّن فيه ملفات القوالب",
-      "dailyNoteTemplate": "قالب الملاحظة اليومية",
-      "dailyNoteTemplateDesc": "اسم ملف القالب المستخدم عند إنشاء الملاحظات اليومية (بدون .md)",
-      "variables": "متغيرات القالب",
-      "variablesDesc": "المتغيرات المتاحة التي يمكنك استخدامها في قوالبك",
-      "varDate": "التاريخ الحالي (YYYY-MM-DD)",
-      "varDateFormat": "تنسيق تاريخ مخصص (مثلاً YYYY/MM/DD)",
-      "varTime": "الوقت الحالي (HH:MM)",
-      "varTitle": "عنوان الملاحظة",
-      "varFolder": "اسم المجلد الأب",
-      "varVault": "اسم الخزنة",
-      "varCursor": "موضع المؤشر بعد الإدراج"
+      "indexDesc": "جمع وتصفح المصطلحات من جميع الملاحظات",
+      "on": "مفعّل",
+      "off": "معطّل",
+      "navigation": "التنقل",
+      "discovery": "الاكتشاف",
+      "organization": "التنظيم"
     }
   },
   "commands": {

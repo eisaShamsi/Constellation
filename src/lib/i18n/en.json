@@ -6,20 +6,22 @@
   "settings": {
     "title": "Settings",
     "sections": {
-      "about": "About",
-      "general": "General",
+      "dashboard": "Dashboard",
+      "universe": "Universe & Libraries",
       "editor": "Editor",
-      "files": "Files & Links",
+      "skyview": "Sky View & Links",
+      "intelligence": "Intelligence",
+      "security": "Security & Privacy",
       "appearance": "Appearance",
-      "hotkeys": "Hotkeys",
-      "security": "Security",
-      "plugins": "Built-in Features",
-      "ai": "AI Provider",
-      "templates": "Templates"
+      "keyboard": "Keyboard",
+      "features": "Features"
     },
-    "about": {
-      "tagline": "A Vault of Vaults",
-      "developedBy": "Developed By"
+    "dashboard": {
+      "libraries": "Libraries",
+      "notes": "Notes",
+      "aiProvider": "AI Provider",
+      "lockStatus": "Lock Status",
+      "developedBy": "Developed by"
     },
     "general": {
       "language": "Language",
@@ -33,10 +35,15 @@
       "autoUpdate": "Automatic updates",
       "autoUpdateDesc": "Automatically download and install updates"
     },
+    "universe": {
+      "intro": "Configure how your universe manages libraries, notes, and templates.",
+      "noteDefaults": "Note Defaults",
+      "templates": "Templates"
+    },
     "security": {
-      "intro": "Protect your vault data, secure API keys, and lock the app when idle.",
-      "vaultEncryption": "Vault encryption",
-      "vaultEncryptionDesc": "Encrypt cached vault data at rest on this device",
+      "intro": "Protect your data, secure API keys, and lock the app when idle.",
+      "vaultEncryption": "Library encryption",
+      "vaultEncryptionDesc": "Encrypt cached library data at rest on this device",
       "enabled": "Enabled",
       "disabled": "Disabled",
       "lockHeading": "Lock Screen",
@@ -70,16 +77,12 @@
       "sourceMode": "Source mode",
       "display": "Display",
       "readableLineLength": "Readable line length",
-      "readableLineLengthDesc": "Limit maximum line length. Less content fits onscreen, but long blocks of text are more readable",
+      "readableLineLengthDesc": "Limit maximum line length for better readability",
       "propertiesInDocument": "Properties in document",
-      "propertiesInDocumentDesc": "Choose how properties are displayed at the top of notes. Select \"source\" to show properties as raw YAML",
+      "propertiesInDocumentDesc": "How properties are displayed. Select \"source\" to show raw YAML",
       "propsVisible": "Visible",
       "propsHidden": "Hidden",
       "propsSource": "Source",
-      "foldHeading": "Fold heading",
-      "foldHeadingDesc": "Lets you fold all content under a heading",
-      "foldIndent": "Fold indent",
-      "foldIndentDesc": "Lets you fold part of an indentation, such as lists",
       "showLineNumbers": "Line numbers",
       "showLineNumbersDesc": "Show line numbers in the gutter",
       "indentationGuides": "Indentation guides",
@@ -93,15 +96,13 @@
       "autoPairMarkdownDesc": "Pair symbols automatically for bold, italic, code, and more",
       "smartLists": "Smart lists",
       "smartListsDesc": "Automatically set indentation and place list items correctly",
-      "indentWithTabs": "Indent using tabs",
-      "indentWithTabsDesc": "Use tabs to indent by pressing the \"Tab\" key. Turn this off to indent using 4 spaces",
       "tabSize": "Tab size",
       "tabSizeDesc": "Number of spaces a tab character will render as"
     },
     "files": {
       "defaultLocation": "Default location for new notes",
       "defaultLocationDesc": "Where new notes are placed",
-      "vaultRoot": "Vault root folder",
+      "libraryRoot": "Library root folder",
       "currentFolder": "Same folder as current file",
       "specifiedFolder": "In the folder specified below",
       "folderPath": "Folder path",
@@ -109,12 +110,12 @@
       "defaultAttachmentFolder": "Default attachment folder",
       "defaultAttachmentFolderDesc": "Where attachments are stored",
       "sameAsNotePlaceholder": "Same folder as note",
-      "linkFormat": "New link format",
+      "linkFormat": "Link format",
       "linkFormatDesc": "How internal links are generated",
       "shortestPath": "Shortest path when possible",
       "relativePath": "Relative path to file",
-      "absolutePath": "Absolute path in vault",
-      "autoUpdateLinks": "Automatically update internal links",
+      "absolutePath": "Absolute path in library",
+      "autoUpdateLinks": "Auto-update links on rename",
       "autoUpdateLinksDesc": "Update all links when a note is renamed",
       "useWikilinks": "Use [[Wikilinks]]",
       "useWikilinksDesc": "Use [[Wikilinks]] instead of [Markdown links](...)",
@@ -126,8 +127,11 @@
       "trashFolder": ".trash folder",
       "permanentDelete": "Permanently delete"
     },
+    "skyview": {
+      "intro": "Configure how Star Lines (cross-library links) and the Sky View graph behave."
+    },
     "appearance": {
-      "colorScheme": "Base color scheme",
+      "colorScheme": "Color scheme",
       "colorSchemeDesc": "Choose between light and dark mode, or follow your OS",
       "light": "Light",
       "dark": "Dark",
@@ -145,18 +149,24 @@
       "fontSize": "Font size",
       "fontSizeDesc": "Base font size for note content"
     },
-    "hotkeys": {
+    "keyboard": {
       "filter": "Filter commands...",
       "notSet": "Not set",
-      "noCommands": "No commands found"
+      "noCommands": "No commands found",
+      "pressKeys": "Press keys..."
     },
-    "plugins": {
-      "intro": "Built-in features included with Constellation. You can enable or disable each one.",
+    "features": {
+      "intro": "Toggle built-in features on or off. Disabled features are hidden from the interface.",
+      "on": "On",
+      "off": "Off",
+      "navigation": "Navigation",
+      "discovery": "Discovery",
+      "organization": "Organization",
       "dailyNotes": "Daily Notes",
       "dailyNotesDesc": "Create and open daily notes",
       "templates": "Templates",
       "templatesDesc": "Insert content from template files",
-      "graphView": "Graph View",
+      "graphView": "Sky View",
       "graphViewDesc": "Visualize links between notes",
       "backlinks": "Backlinks",
       "backlinksDesc": "Show notes that link to the current note",
@@ -167,7 +177,7 @@
       "pagePreview": "Page Preview",
       "pagePreviewDesc": "Preview notes on link hover",
       "search": "Search",
-      "searchDesc": "Search across all notes",
+      "searchDesc": "Search across all libraries",
       "quickSwitcher": "Quick Switcher",
       "quickSwitcherDesc": "Quickly navigate between notes",
       "commandPalette": "Command Palette",
@@ -179,8 +189,19 @@
       "index": "Index",
       "indexDesc": "Collect and browse terms from all notes"
     },
+    "intelligence": {
+      "intro": "Configure AI providers, skills, and privacy controls for your libraries.",
+      "connection": "Connection",
+      "preferences": "Preferences",
+      "contextLines": "Context size",
+      "contextLinesDesc": "Lines of note content sent to AI for context",
+      "libraryAccess": "Library access",
+      "libraryAccessDesc": "Which libraries the AI can read when processing skills",
+      "allLibraries": "All libraries",
+      "activeOnly": "Active library only",
+      "noAccess": "No library access"
+    },
     "ai": {
-      "intro": "Connect an AI service for note summarization and chat with your content.",
       "provider": "Provider",
       "providerDesc": "Choose your AI service provider",
       "none": "None",
@@ -191,7 +212,7 @@
       "serverUrlDesc": "Local Ollama server address",
       "model": "Model",
       "modelDesc": "AI model to use",
-      "connection": "Connection",
+      "connectionTest": "Test connection",
       "connectedSuccess": "Connected successfully",
       "connectionFailed": "Connection failed",
       "verifyConnection": "Verify your connection settings",
@@ -210,7 +231,7 @@
       "varTime": "Current time (HH:MM)",
       "varTitle": "Note title",
       "varFolder": "Parent folder name",
-      "varVault": "Vault name",
+      "varLibrary": "Library name",
       "varCursor": "Cursor position after insertion"
     }
   },

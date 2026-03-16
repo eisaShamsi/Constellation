@@ -6,20 +6,15 @@
   "settings": {
     "title": "Configurações",
     "sections": {
-      "about": "Sobre",
-      "general": "Geral",
+      "dashboard": "Painel",
+      "universe": "Universo & Bibliotecas",
       "editor": "Editor",
-      "files": "Arquivos e links",
+      "skyview": "Sky View & Links",
+      "intelligence": "Inteligência",
+      "security": "Segurança & Privacidade",
       "appearance": "Aparência",
-      "hotkeys": "Atalhos de teclado",
-      "security": "Segurança",
-      "plugins": "Recursos integrados",
-      "ai": "Provedor de IA",
-      "templates": "Modelos"
-    },
-    "about": {
-      "tagline": "Um Cofre de Cofres",
-      "developedBy": "Desenvolvido por"
+      "keyboard": "Teclado",
+      "features": "Funcionalidades"
     },
     "general": {
       "language": "Idioma",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "Baixar e instalar atualizações automaticamente"
     },
     "security": {
-      "intro": "Proteja os dados do cofre, proteja as chaves de API e bloqueie o app quando inativo.",
-      "vaultEncryption": "Criptografia do cofre",
-      "vaultEncryptionDesc": "Criptografar dados do cofre armazenados neste dispositivo",
+      "intro": "Proteja seus dados, proteja chaves API e bloqueie o app quando inativo.",
+      "vaultEncryption": "Criptografia de biblioteca",
+      "vaultEncryptionDesc": "Criptografar dados de biblioteca armazenados neste dispositivo",
       "enabled": "Ativado",
       "disabled": "Desativado",
       "lockHeading": "Tela de bloqueio",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "Localização padrão para novas notas",
       "defaultLocationDesc": "Onde as novas notas são colocadas",
-      "vaultRoot": "Pasta raiz do cofre",
       "currentFolder": "Mesma pasta do arquivo atual",
       "specifiedFolder": "Na pasta especificada abaixo",
       "folderPath": "Caminho da pasta",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "Para onde os arquivos excluídos são movidos",
       "systemTrash": "Lixeira do sistema",
       "trashFolder": "Pasta .trash",
-      "permanentDelete": "Excluir permanentemente"
+      "permanentDelete": "Excluir permanentemente",
+      "libraryRoot": "Pasta raiz da biblioteca"
     },
     "appearance": {
       "colorScheme": "Esquema de cores base",
@@ -145,13 +140,75 @@
       "fontSize": "Tamanho da fonte",
       "fontSizeDesc": "Tamanho base da fonte para o conteúdo das notas"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "Provedor",
+      "providerDesc": "Escolha seu provedor de serviço de IA",
+      "none": "Nenhum",
+      "apiKey": "API Key",
+      "apiKeyDesc": "Sua chave de acesso à API",
+      "apiKeyPlaceholder": "Insira a API Key",
+      "serverUrl": "URL do servidor",
+      "serverUrlDesc": "Endereço do servidor local do Ollama",
+      "model": "Modelo",
+      "modelDesc": "Modelo de IA a utilizar",
+      "connection": "Conexão",
+      "connectedSuccess": "Conectado com sucesso",
+      "connectionFailed": "Falha na conexão",
+      "verifyConnection": "Verifique suas configurações de conexão",
+      "testing": "Testando...",
+      "test": "Testar",
+      "connectionTest": "Testar"
+    },
+    "templates": {
+      "templateFolder": "Pasta de modelos",
+      "templateFolderDesc": "A pasta onde seus arquivos de modelo estão armazenados",
+      "dailyNoteTemplate": "Modelo de nota diária",
+      "dailyNoteTemplateDesc": "Nome do arquivo de modelo para notas diárias (sem .md)",
+      "variables": "Variáveis de modelo",
+      "variablesDesc": "Variáveis disponíveis para usar em seus modelos",
+      "varDate": "Data atual (YYYY-MM-DD)",
+      "varDateFormat": "Formato de data personalizado (ex. YYYY/MM/DD)",
+      "varTime": "Hora atual (HH:MM)",
+      "varTitle": "Título da nota",
+      "varFolder": "Nome da pasta pai",
+      "varCursor": "Posição do cursor após inserção",
+      "varLibrary": "Nome da biblioteca"
+    },
+    "dashboard": {
+      "libraries": "Bibliotecas",
+      "notes": "Notas",
+      "aiProvider": "Provedor de IA",
+      "lockStatus": "Estado do bloqueio",
+      "developedBy": "Desenvolvido por"
+    },
+    "universe": {
+      "intro": "Configure como o universo gerencia bibliotecas, notas e modelos.",
+      "noteDefaults": "Padrões de notas",
+      "templates": "Modelos"
+    },
+    "skyview": {
+      "intro": "Configure o comportamento de Star Lines (links entre bibliotecas) e Sky View."
+    },
+    "intelligence": {
+      "intro": "Configure provedores de IA, habilidades e controles de privacidade para suas bibliotecas.",
+      "connection": "Conexão",
+      "preferences": "Preferências",
+      "contextLines": "Tamanho do contexto",
+      "contextLinesDesc": "Linhas do conteúdo da nota enviadas à IA como contexto",
+      "libraryAccess": "Acesso às bibliotecas",
+      "libraryAccessDesc": "Quais bibliotecas a IA pode ler ao processar habilidades",
+      "allLibraries": "Todas as bibliotecas",
+      "activeOnly": "Apenas biblioteca ativa",
+      "noAccess": "Sem acesso"
+    },
+    "keyboard": {
       "filter": "Filtrar comandos...",
       "notSet": "Não definido",
-      "noCommands": "Nenhum comando encontrado"
+      "noCommands": "Nenhum comando encontrado",
+      "pressKeys": "Pressione teclas..."
     },
-    "plugins": {
-      "intro": "Recursos integrados no Constellation. Você pode ativar ou desativar cada um.",
+    "features": {
+      "intro": "Ative ou desative funcionalidades integradas. Funcionalidades desativadas ficam ocultas da interface.",
       "dailyNotes": "Notas diárias",
       "dailyNotesDesc": "Criar e abrir notas diárias",
       "templates": "Modelos",
@@ -177,41 +234,12 @@
       "workspaces": "Espaços de trabalho",
       "workspacesDesc": "Salvar e restaurar layouts de espaços de trabalho",
       "index": "Índice",
-      "indexDesc": "Coletar e navegar por termos de todas as notas"
-    },
-    "ai": {
-      "intro": "Conecte um serviço de IA para resumir notas e conversar com seu conteúdo.",
-      "provider": "Provedor",
-      "providerDesc": "Escolha seu provedor de serviço de IA",
-      "none": "Nenhum",
-      "apiKey": "API Key",
-      "apiKeyDesc": "Sua chave de acesso à API",
-      "apiKeyPlaceholder": "Insira a API Key",
-      "serverUrl": "URL do servidor",
-      "serverUrlDesc": "Endereço do servidor local do Ollama",
-      "model": "Modelo",
-      "modelDesc": "Modelo de IA a utilizar",
-      "connection": "Conexão",
-      "connectedSuccess": "Conectado com sucesso",
-      "connectionFailed": "Falha na conexão",
-      "verifyConnection": "Verifique suas configurações de conexão",
-      "testing": "Testando...",
-      "test": "Testar"
-    },
-    "templates": {
-      "templateFolder": "Pasta de modelos",
-      "templateFolderDesc": "A pasta onde seus arquivos de modelo estão armazenados",
-      "dailyNoteTemplate": "Modelo de nota diária",
-      "dailyNoteTemplateDesc": "Nome do arquivo de modelo para notas diárias (sem .md)",
-      "variables": "Variáveis de modelo",
-      "variablesDesc": "Variáveis disponíveis para usar em seus modelos",
-      "varDate": "Data atual (YYYY-MM-DD)",
-      "varDateFormat": "Formato de data personalizado (ex. YYYY/MM/DD)",
-      "varTime": "Hora atual (HH:MM)",
-      "varTitle": "Título da nota",
-      "varFolder": "Nome da pasta pai",
-      "varVault": "Nome do cofre",
-      "varCursor": "Posição do cursor após inserção"
+      "indexDesc": "Coletar e navegar por termos de todas as notas",
+      "on": "Ativado",
+      "off": "Desativado",
+      "navigation": "Navegação",
+      "discovery": "Descoberta",
+      "organization": "Organização"
     }
   },
   "commands": {

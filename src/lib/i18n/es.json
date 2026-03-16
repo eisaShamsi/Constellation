@@ -6,20 +6,15 @@
   "settings": {
     "title": "Ajustes",
     "sections": {
-      "about": "Acerca de",
-      "general": "General",
+      "dashboard": "Panel",
+      "universe": "Universo y Bibliotecas",
       "editor": "Editor",
-      "files": "Archivos y enlaces",
+      "skyview": "Sky View y Enlaces",
+      "intelligence": "Inteligencia",
+      "security": "Seguridad y Privacidad",
       "appearance": "Apariencia",
-      "hotkeys": "Atajos de teclado",
-      "security": "Seguridad",
-      "plugins": "Funciones integradas",
-      "ai": "Proveedor de IA",
-      "templates": "Plantillas"
-    },
-    "about": {
-      "tagline": "Una Bóveda de Bóvedas",
-      "developedBy": "Desarrollado por"
+      "keyboard": "Teclado",
+      "features": "Funciones"
     },
     "general": {
       "language": "Idioma",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "Descargar e instalar actualizaciones automáticamente"
     },
     "security": {
-      "intro": "Protege los datos de tu bóveda, asegura las claves API y bloquea la app en inactividad.",
-      "vaultEncryption": "Cifrado de bóveda",
-      "vaultEncryptionDesc": "Cifrar los datos almacenados de la bóveda en este dispositivo",
+      "intro": "Protege tus datos, asegura las claves API y bloquea la app cuando esté inactiva.",
+      "vaultEncryption": "Cifrado de biblioteca",
+      "vaultEncryptionDesc": "Cifrar datos de biblioteca almacenados en este dispositivo",
       "enabled": "Activado",
       "disabled": "Desactivado",
       "lockHeading": "Pantalla de bloqueo",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "Ubicación predeterminada para nuevas notas",
       "defaultLocationDesc": "Dónde se colocan las nuevas notas",
-      "vaultRoot": "Carpeta raíz de la bóveda",
       "currentFolder": "Misma carpeta que el archivo actual",
       "specifiedFolder": "En la carpeta especificada abajo",
       "folderPath": "Ruta de carpeta",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "A dónde se mueven los archivos eliminados",
       "systemTrash": "Papelera del sistema",
       "trashFolder": "Carpeta .trash",
-      "permanentDelete": "Eliminar permanentemente"
+      "permanentDelete": "Eliminar permanentemente",
+      "libraryRoot": "Carpeta raíz de la biblioteca"
     },
     "appearance": {
       "colorScheme": "Esquema de colores base",
@@ -145,13 +140,75 @@
       "fontSize": "Tamaño de fuente",
       "fontSizeDesc": "Tamaño de fuente base para el contenido de notas"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "Proveedor",
+      "providerDesc": "Elige tu proveedor de servicio de IA",
+      "none": "Ninguno",
+      "apiKey": "API Key",
+      "apiKeyDesc": "Tu clave de acceso API",
+      "apiKeyPlaceholder": "Ingresa la API Key",
+      "serverUrl": "URL del servidor",
+      "serverUrlDesc": "Dirección del servidor local de Ollama",
+      "model": "Modelo",
+      "modelDesc": "Modelo de IA a utilizar",
+      "connection": "Conexión",
+      "connectedSuccess": "Conectado exitosamente",
+      "connectionFailed": "Conexión fallida",
+      "verifyConnection": "Verifica la configuración de conexión",
+      "testing": "Probando...",
+      "test": "Probar",
+      "connectionTest": "Probar"
+    },
+    "templates": {
+      "templateFolder": "Carpeta de plantillas",
+      "templateFolderDesc": "La carpeta donde se almacenan los archivos de plantilla",
+      "dailyNoteTemplate": "Plantilla de nota diaria",
+      "dailyNoteTemplateDesc": "Nombre del archivo de plantilla para notas diarias (sin .md)",
+      "variables": "Variables de plantilla",
+      "variablesDesc": "Variables disponibles para usar en sus plantillas",
+      "varDate": "Fecha actual (YYYY-MM-DD)",
+      "varDateFormat": "Formato de fecha personalizado (ej. YYYY/MM/DD)",
+      "varTime": "Hora actual (HH:MM)",
+      "varTitle": "Título de la nota",
+      "varFolder": "Nombre de la carpeta padre",
+      "varCursor": "Posición del cursor después de insertar",
+      "varLibrary": "Nombre de la biblioteca"
+    },
+    "dashboard": {
+      "libraries": "Bibliotecas",
+      "notes": "Notas",
+      "aiProvider": "Proveedor de IA",
+      "lockStatus": "Estado de bloqueo",
+      "developedBy": "Desarrollado por"
+    },
+    "universe": {
+      "intro": "Configura cómo tu universo gestiona bibliotecas, notas y plantillas.",
+      "noteDefaults": "Valores predeterminados de notas",
+      "templates": "Plantillas"
+    },
+    "skyview": {
+      "intro": "Configura el comportamiento de Star Lines (enlaces entre bibliotecas) y Sky View."
+    },
+    "intelligence": {
+      "intro": "Configura proveedores de IA, habilidades y controles de privacidad para tus bibliotecas.",
+      "connection": "Conexión",
+      "preferences": "Preferencias",
+      "contextLines": "Tamaño del contexto",
+      "contextLinesDesc": "Líneas del contenido de la nota enviadas a la IA como contexto",
+      "libraryAccess": "Acceso a bibliotecas",
+      "libraryAccessDesc": "Qué bibliotecas puede leer la IA al procesar habilidades",
+      "allLibraries": "Todas las bibliotecas",
+      "activeOnly": "Solo biblioteca activa",
+      "noAccess": "Sin acceso"
+    },
+    "keyboard": {
       "filter": "Filtrar comandos...",
       "notSet": "No configurado",
-      "noCommands": "No se encontraron comandos"
+      "noCommands": "No se encontraron comandos",
+      "pressKeys": "Presiona teclas..."
     },
-    "plugins": {
-      "intro": "Funciones integradas en Constellation. Puedes activar o desactivar cada una.",
+    "features": {
+      "intro": "Activa o desactiva las funciones integradas. Las funciones desactivadas se ocultan de la interfaz.",
       "dailyNotes": "Notas diarias",
       "dailyNotesDesc": "Crear y abrir notas diarias",
       "templates": "Plantillas",
@@ -177,41 +234,12 @@
       "workspaces": "Espacios de trabajo",
       "workspacesDesc": "Guardar y restaurar diseños de espacios de trabajo",
       "index": "Índice",
-      "indexDesc": "Recopilar y explorar términos de todas las notas"
-    },
-    "ai": {
-      "intro": "Conecta un servicio de IA para resumir notas y chatear con tu contenido.",
-      "provider": "Proveedor",
-      "providerDesc": "Elige tu proveedor de servicio de IA",
-      "none": "Ninguno",
-      "apiKey": "API Key",
-      "apiKeyDesc": "Tu clave de acceso API",
-      "apiKeyPlaceholder": "Ingresa la API Key",
-      "serverUrl": "URL del servidor",
-      "serverUrlDesc": "Dirección del servidor local de Ollama",
-      "model": "Modelo",
-      "modelDesc": "Modelo de IA a utilizar",
-      "connection": "Conexión",
-      "connectedSuccess": "Conectado exitosamente",
-      "connectionFailed": "Conexión fallida",
-      "verifyConnection": "Verifica la configuración de conexión",
-      "testing": "Probando...",
-      "test": "Probar"
-    },
-    "templates": {
-      "templateFolder": "Carpeta de plantillas",
-      "templateFolderDesc": "La carpeta donde se almacenan los archivos de plantilla",
-      "dailyNoteTemplate": "Plantilla de nota diaria",
-      "dailyNoteTemplateDesc": "Nombre del archivo de plantilla para notas diarias (sin .md)",
-      "variables": "Variables de plantilla",
-      "variablesDesc": "Variables disponibles para usar en sus plantillas",
-      "varDate": "Fecha actual (YYYY-MM-DD)",
-      "varDateFormat": "Formato de fecha personalizado (ej. YYYY/MM/DD)",
-      "varTime": "Hora actual (HH:MM)",
-      "varTitle": "Título de la nota",
-      "varFolder": "Nombre de la carpeta padre",
-      "varVault": "Nombre de la bóveda",
-      "varCursor": "Posición del cursor después de insertar"
+      "indexDesc": "Recopilar y explorar términos de todas las notas",
+      "on": "Activado",
+      "off": "Desactivado",
+      "navigation": "Navegación",
+      "discovery": "Descubrimiento",
+      "organization": "Organización"
     }
   },
   "commands": {

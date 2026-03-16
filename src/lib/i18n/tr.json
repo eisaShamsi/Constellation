@@ -6,20 +6,15 @@
   "settings": {
     "title": "Ayarlar",
     "sections": {
-      "about": "Hakkında",
-      "general": "Genel",
-      "editor": "Düzenleyici",
-      "files": "Dosyalar ve Bağlantılar",
+      "dashboard": "Gösterge Paneli",
+      "universe": "Evren & Kütüphaneler",
+      "editor": "Editör",
+      "skyview": "Gökyüzü Görünümü & Bağlantılar",
+      "intelligence": "Zeka",
+      "security": "Güvenlik & Gizlilik",
       "appearance": "Görünüm",
-      "hotkeys": "Kısayol Tuşları",
-      "security": "Güvenlik",
-      "plugins": "Yerleşik Özellikler",
-      "ai": "Yapay Zeka Sağlayıcı",
-      "templates": "Şablonlar"
-    },
-    "about": {
-      "tagline": "Kasaların Kasası",
-      "developedBy": "Geliştirici"
+      "keyboard": "Klavye",
+      "features": "Özellikler"
     },
     "general": {
       "language": "Dil",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "Güncellemeleri otomatik olarak indir ve yükle"
     },
     "security": {
-      "intro": "Kasa verilerinizi koruyun, API anahtarlarını güvence altına alın ve boşta kalınca uygulamayı kilitleyin.",
-      "vaultEncryption": "Kasa şifreleme",
-      "vaultEncryptionDesc": "Bu cihazdaki önbelleğe alınmış kasa verilerini şifrele",
+      "intro": "Verilerinizi koruyun, API anahtarlarını güvence altına alın ve boşta kaldığında uygulamayı kilitleyin.",
+      "vaultEncryption": "Kütüphane şifrelemesi",
+      "vaultEncryptionDesc": "Bu cihazda depolanan kütüphane verilerini şifreleyin",
       "enabled": "Etkin",
       "disabled": "Devre dışı",
       "lockHeading": "Kilit ekranı",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "Yeni notlar için varsayılan konum",
       "defaultLocationDesc": "Yeni notların kaydedileceği yer",
-      "vaultRoot": "Kasa kök klasörü",
       "currentFolder": "Mevcut dosyayla aynı klasör",
       "specifiedFolder": "Aşağıda belirtilen klasörde",
       "folderPath": "Klasör yolu",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "Silinen dosyaların taşınacağı yer",
       "systemTrash": "Sistem geri dönüşüm kutusu",
       "trashFolder": ".trash klasörü",
-      "permanentDelete": "Kalıcı olarak sil"
+      "permanentDelete": "Kalıcı olarak sil",
+      "libraryRoot": "Kütüphane kök klasörü"
     },
     "appearance": {
       "colorScheme": "Temel renk şeması",
@@ -145,13 +140,75 @@
       "fontSize": "Yazı tipi boyutu",
       "fontSizeDesc": "Not içeriği için temel yazı tipi boyutu"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "Sağlayıcı",
+      "providerDesc": "Yapay zeka servis sağlayıcınızı seçin",
+      "none": "Hiçbiri",
+      "apiKey": "API Key",
+      "apiKeyDesc": "API erişim anahtarınız",
+      "apiKeyPlaceholder": "API Key girin",
+      "serverUrl": "Sunucu URL'si",
+      "serverUrlDesc": "Yerel Ollama sunucu adresi",
+      "model": "Model",
+      "modelDesc": "Kullanılacak yapay zeka modeli",
+      "connection": "Bağlantı",
+      "connectedSuccess": "Başarıyla bağlandı",
+      "connectionFailed": "Bağlantı başarısız",
+      "verifyConnection": "Bağlantı ayarlarınızı doğrulayın",
+      "testing": "Test ediliyor...",
+      "test": "Test",
+      "connectionTest": "Test"
+    },
+    "templates": {
+      "templateFolder": "Şablon klasörü",
+      "templateFolderDesc": "Şablon dosyalarınızın saklandığı klasör",
+      "dailyNoteTemplate": "Günlük not şablonu",
+      "dailyNoteTemplateDesc": "Günlük not oluştururken kullanılacak şablon dosya adı (.md olmadan)",
+      "variables": "Şablon değişkenleri",
+      "variablesDesc": "Şablonlarınızda kullanabileceğiniz değişkenler",
+      "varDate": "Geçerli tarih (YYYY-MM-DD)",
+      "varDateFormat": "Özel tarih biçimi (ör. YYYY/MM/DD)",
+      "varTime": "Geçerli saat (HH:MM)",
+      "varTitle": "Not başlığı",
+      "varFolder": "Üst klasör adı",
+      "varCursor": "Ekleme sonrası imleç konumu",
+      "varLibrary": "Kütüphane adı"
+    },
+    "dashboard": {
+      "libraries": "Kütüphaneler",
+      "notes": "Notlar",
+      "aiProvider": "AI Sağlayıcı",
+      "lockStatus": "Kilit durumu",
+      "developedBy": "Geliştiren"
+    },
+    "universe": {
+      "intro": "Evrenizin kütüphaneleri, notları ve şablonları nasıl yönettiğini yapılandırın.",
+      "noteDefaults": "Not varsayılanları",
+      "templates": "Şablonlar"
+    },
+    "skyview": {
+      "intro": "Star Lines (kütüphaneler arası bağlantılar) ve Gökyüzü Görünümü davranışını yapılandırın."
+    },
+    "intelligence": {
+      "intro": "Kütüphaneleriniz için AI sağlayıcılarını, becerileri ve gizlilik kontrollerini yapılandırın.",
+      "connection": "Bağlantı",
+      "preferences": "Tercihler",
+      "contextLines": "Bağlam boyutu",
+      "contextLinesDesc": "AI'ye bağlam olarak gönderilen not içeriği satır sayısı",
+      "libraryAccess": "Kütüphane erişimi",
+      "libraryAccessDesc": "Beceri işlerken AI'nin hangi kütüphaneleri okuyabileceği",
+      "allLibraries": "Tüm kütüphaneler",
+      "activeOnly": "Yalnızca aktif kütüphane",
+      "noAccess": "Erişim yok"
+    },
+    "keyboard": {
       "filter": "Komutları filtrele...",
       "notSet": "Ayarlanmamış",
-      "noCommands": "Komut bulunamadı"
+      "noCommands": "Komut bulunamadı",
+      "pressKeys": "Tuşlara basın..."
     },
-    "plugins": {
-      "intro": "Constellation'a yerleşik özellikler. Her birini etkinleştirebilir veya devre dışı bırakabilirsiniz.",
+    "features": {
+      "intro": "Yerleşik özellikleri açın veya kapatın. Devre dışı bırakılan özellikler arayüzden gizlenir.",
       "dailyNotes": "Günlük Notlar",
       "dailyNotesDesc": "Günlük notlar oluşturun ve açın",
       "templates": "Şablonlar",
@@ -177,41 +234,12 @@
       "workspaces": "Çalışma Alanları",
       "workspacesDesc": "Çalışma alanı düzenlerini kaydet ve geri yükle",
       "index": "Dizin",
-      "indexDesc": "Tüm notlardan terimleri toplayın ve göz atın"
-    },
-    "ai": {
-      "intro": "Not özetleme ve içeriğinizle sohbet için bir yapay zeka servisi bağlayın.",
-      "provider": "Sağlayıcı",
-      "providerDesc": "Yapay zeka servis sağlayıcınızı seçin",
-      "none": "Hiçbiri",
-      "apiKey": "API Key",
-      "apiKeyDesc": "API erişim anahtarınız",
-      "apiKeyPlaceholder": "API Key girin",
-      "serverUrl": "Sunucu URL'si",
-      "serverUrlDesc": "Yerel Ollama sunucu adresi",
-      "model": "Model",
-      "modelDesc": "Kullanılacak yapay zeka modeli",
-      "connection": "Bağlantı",
-      "connectedSuccess": "Başarıyla bağlandı",
-      "connectionFailed": "Bağlantı başarısız",
-      "verifyConnection": "Bağlantı ayarlarınızı doğrulayın",
-      "testing": "Test ediliyor...",
-      "test": "Test"
-    },
-    "templates": {
-      "templateFolder": "Şablon klasörü",
-      "templateFolderDesc": "Şablon dosyalarınızın saklandığı klasör",
-      "dailyNoteTemplate": "Günlük not şablonu",
-      "dailyNoteTemplateDesc": "Günlük not oluştururken kullanılacak şablon dosya adı (.md olmadan)",
-      "variables": "Şablon değişkenleri",
-      "variablesDesc": "Şablonlarınızda kullanabileceğiniz değişkenler",
-      "varDate": "Geçerli tarih (YYYY-MM-DD)",
-      "varDateFormat": "Özel tarih biçimi (ör. YYYY/MM/DD)",
-      "varTime": "Geçerli saat (HH:MM)",
-      "varTitle": "Not başlığı",
-      "varFolder": "Üst klasör adı",
-      "varVault": "Kasa adı",
-      "varCursor": "Ekleme sonrası imleç konumu"
+      "indexDesc": "Tüm notlardan terimleri toplayın ve göz atın",
+      "on": "Açık",
+      "off": "Kapalı",
+      "navigation": "Gezinme",
+      "discovery": "Keşif",
+      "organization": "Düzenleme"
     }
   },
   "commands": {

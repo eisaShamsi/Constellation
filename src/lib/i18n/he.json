@@ -6,20 +6,15 @@
   "settings": {
     "title": "הגדרות",
     "sections": {
-      "about": "אודות",
-      "general": "כללי",
+      "dashboard": "לוח מחוונים",
+      "universe": "יקום וספריות",
       "editor": "עורך",
-      "files": "קבצים וקישורים",
+      "skyview": "תצוגת שמיים וקישורים",
+      "intelligence": "בינה",
+      "security": "אבטחה ופרטיות",
       "appearance": "מראה",
-      "hotkeys": "מקשי קיצור",
-      "security": "אבטחה",
-      "plugins": "תכונות מובנות",
-      "ai": "ספק AI",
-      "templates": "תבניות"
-    },
-    "about": {
-      "tagline": "כספת של כספות",
-      "developedBy": "פותח על ידי"
+      "keyboard": "מקלדת",
+      "features": "תכונות"
     },
     "general": {
       "language": "שפה",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "הורד והתקן עדכונים אוטומטית"
     },
     "security": {
-      "intro": "הגנה על נתוני הכספת, אבטחת מפתחות API ונעילת האפליקציה בזמן חוסר פעילות.",
-      "vaultEncryption": "הצפנת כספת",
-      "vaultEncryptionDesc": "הצפנת נתוני כספת מאוחסנים במכשיר זה",
+      "intro": "הגן על הנתונים שלך, אבטח מפתחות API ונעל את האפליקציה בזמן חוסר פעילות.",
+      "vaultEncryption": "הצפנת ספריה",
+      "vaultEncryptionDesc": "הצפנת נתוני ספריה מאוחסנים במכשיר זה",
       "enabled": "מופעל",
       "disabled": "מושבת",
       "lockHeading": "מסך נעילה",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "מיקום ברירת מחדל לפתקים חדשים",
       "defaultLocationDesc": "היכן פתקים חדשים ממוקמים",
-      "vaultRoot": "תיקיית שורש הכספת",
       "currentFolder": "אותה תיקייה כמו הקובץ הנוכחי",
       "specifiedFolder": "בתיקייה שצוינה למטה",
       "folderPath": "נתיב תיקייה",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "לאן קבצים שנמחקו מועברים",
       "systemTrash": "סל המחזור של המערכת",
       "trashFolder": "תיקיית .trash",
-      "permanentDelete": "מחיקה לצמיתות"
+      "permanentDelete": "מחיקה לצמיתות",
+      "libraryRoot": "תיקיית שורש הספריה"
     },
     "appearance": {
       "colorScheme": "ערכת צבעים בסיסית",
@@ -145,13 +140,75 @@
       "fontSize": "גודל גופן",
       "fontSizeDesc": "גודל גופן בסיסי לתוכן הפתקים"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "ספק",
+      "providerDesc": "בחר את ספק שירות ה-AI שלך",
+      "none": "ללא",
+      "apiKey": "API Key",
+      "apiKeyDesc": "מפתח הגישה שלך ל-API",
+      "apiKeyPlaceholder": "הכנס API Key",
+      "serverUrl": "כתובת שרת",
+      "serverUrlDesc": "כתובת שרת Ollama מקומי",
+      "model": "מודל",
+      "modelDesc": "מודל AI לשימוש",
+      "connection": "חיבור",
+      "connectedSuccess": "חובר בהצלחה",
+      "connectionFailed": "החיבור נכשל",
+      "verifyConnection": "אמת את הגדרות החיבור שלך",
+      "testing": "בודק...",
+      "test": "בדיקה",
+      "connectionTest": "בדיקה"
+    },
+    "templates": {
+      "templateFolder": "תיקיית תבניות",
+      "templateFolderDesc": "התיקייה בה מאוחסנים קבצי התבניות שלך",
+      "dailyNoteTemplate": "תבנית הערה יומית",
+      "dailyNoteTemplateDesc": "שם קובץ התבנית ליצירת הערות יומיות (ללא .md)",
+      "variables": "משתני תבנית",
+      "variablesDesc": "משתנים זמינים לשימוש בתבניות שלך",
+      "varDate": "תאריך נוכחי (YYYY-MM-DD)",
+      "varDateFormat": "פורמט תאריך מותאם אישית (לדוגמה YYYY/MM/DD)",
+      "varTime": "שעה נוכחית (HH:MM)",
+      "varTitle": "כותרת ההערה",
+      "varFolder": "שם תיקיית האב",
+      "varCursor": "מיקום הסמן לאחר הוספה",
+      "varLibrary": "שם הספריה"
+    },
+    "dashboard": {
+      "libraries": "ספריות",
+      "notes": "הערות",
+      "aiProvider": "ספק בינה מלאכותית",
+      "lockStatus": "מצב נעילה",
+      "developedBy": "פותח על ידי"
+    },
+    "universe": {
+      "intro": "הגדר כיצד היקום שלך מנהל ספריות, הערות ותבניות.",
+      "noteDefaults": "ברירות מחדל של הערות",
+      "templates": "תבניות"
+    },
+    "skyview": {
+      "intro": "הגדר כיצד קווי כוכב (קישורים חוצי ספריות) ותצוגת שמיים פועלים."
+    },
+    "intelligence": {
+      "intro": "הגדר ספקי בינה מלאכותית, כישורים ובקרות פרטיות לספריות שלך.",
+      "connection": "חיבור",
+      "preferences": "העדפות",
+      "contextLines": "גודל הקשר",
+      "contextLinesDesc": "שורות מתוכן ההערה שנשלחות לבינה מלאכותית כהקשר",
+      "libraryAccess": "גישה לספריות",
+      "libraryAccessDesc": "אילו ספריות הבינה המלאכותית יכולה לקרוא בעת עיבוד כישורים",
+      "allLibraries": "כל הספריות",
+      "activeOnly": "ספריה פעילה בלבד",
+      "noAccess": "ללא גישה"
+    },
+    "keyboard": {
       "filter": "סנן פקודות...",
       "notSet": "לא הוגדר",
-      "noCommands": "לא נמצאו פקודות"
+      "noCommands": "לא נמצאו פקודות",
+      "pressKeys": "לחץ על מקשים..."
     },
-    "plugins": {
-      "intro": "תכונות מובנות ב-Constellation. ניתן להפעיל או להשבית כל אחת.",
+    "features": {
+      "intro": "הפעל או כבה תכונות מובנות. תכונות מושבתות מוסתרות מהממשק.",
       "dailyNotes": "פתקים יומיים",
       "dailyNotesDesc": "צור ופתח פתקים יומיים",
       "templates": "תבניות",
@@ -177,41 +234,12 @@
       "workspaces": "סביבות עבודה",
       "workspacesDesc": "שמור ושחזר פריסות סביבת עבודה",
       "index": "מפתח",
-      "indexDesc": "איסוף ועיון במונחים מכל הפתקים"
-    },
-    "ai": {
-      "intro": "חבר שירות AI לסיכום פתקים ושיחה עם התוכן שלך.",
-      "provider": "ספק",
-      "providerDesc": "בחר את ספק שירות ה-AI שלך",
-      "none": "ללא",
-      "apiKey": "API Key",
-      "apiKeyDesc": "מפתח הגישה שלך ל-API",
-      "apiKeyPlaceholder": "הכנס API Key",
-      "serverUrl": "כתובת שרת",
-      "serverUrlDesc": "כתובת שרת Ollama מקומי",
-      "model": "מודל",
-      "modelDesc": "מודל AI לשימוש",
-      "connection": "חיבור",
-      "connectedSuccess": "חובר בהצלחה",
-      "connectionFailed": "החיבור נכשל",
-      "verifyConnection": "אמת את הגדרות החיבור שלך",
-      "testing": "בודק...",
-      "test": "בדיקה"
-    },
-    "templates": {
-      "templateFolder": "תיקיית תבניות",
-      "templateFolderDesc": "התיקייה בה מאוחסנים קבצי התבניות שלך",
-      "dailyNoteTemplate": "תבנית הערה יומית",
-      "dailyNoteTemplateDesc": "שם קובץ התבנית ליצירת הערות יומיות (ללא .md)",
-      "variables": "משתני תבנית",
-      "variablesDesc": "משתנים זמינים לשימוש בתבניות שלך",
-      "varDate": "תאריך נוכחי (YYYY-MM-DD)",
-      "varDateFormat": "פורמט תאריך מותאם אישית (לדוגמה YYYY/MM/DD)",
-      "varTime": "שעה נוכחית (HH:MM)",
-      "varTitle": "כותרת ההערה",
-      "varFolder": "שם תיקיית האב",
-      "varVault": "שם הכספת",
-      "varCursor": "מיקום הסמן לאחר הוספה"
+      "indexDesc": "איסוף ועיון במונחים מכל הפתקים",
+      "on": "פעיל",
+      "off": "כבוי",
+      "navigation": "ניווט",
+      "discovery": "גילוי",
+      "organization": "ארגון"
     }
   },
   "commands": {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings } from '$lib/vaults/store';
+	import { appSettings, updateSettings, updateSecuritySettings, vaults, vaultStats } from '$lib/vaults/store';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
 	import { PROVIDER_INFO, DEFAULT_MODELS, type ProviderId } from '$lib/ai/provider';
@@ -14,7 +14,7 @@
 		commands?: { id: string; name: string; shortcut?: string; icon?: string; category?: string }[];
 	} = $props();
 
-	let activeSection = $state('about');
+	let activeSection = $state('dashboard');
 	let hotkeyFilter = $state('');
 	let testStatus = $state('');
 	let testing = $state(false);
@@ -25,18 +25,19 @@
 	let pinConfirm = $state('');
 	let pinError = $state('');
 	let pinChanging = $state(false);
+	let editingHotkey = $state<string | null>(null);
+	let hotkeyListening = $state(false);
 
 	const sections = $derived([
-		{ id: 'about', label: $t('settings.sections.about'), icon: 'info' },
-		{ id: 'general', label: $t('settings.sections.general'), icon: 'globe' },
-		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
+		{ id: 'dashboard', label: $t('settings.sections.dashboard'), icon: 'dashboard' },
+		{ id: 'universe', label: $t('settings.sections.universe'), icon: 'universe' },
 		{ id: 'editor', label: $t('settings.sections.editor'), icon: 'edit' },
-		{ id: 'files', label: $t('settings.sections.files'), icon: 'folder' },
-		{ id: 'templates', label: $t('settings.sections.templates'), icon: 'clipboard' },
+		{ id: 'skyview', label: $t('settings.sections.skyview'), icon: 'graph' },
+		{ id: 'intelligence', label: $t('settings.sections.intelligence'), icon: 'bot' },
+		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
 		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
-		{ id: 'hotkeys', label: $t('settings.sections.hotkeys'), icon: 'keyboard' },
-		{ id: 'plugins', label: $t('settings.sections.plugins'), icon: 'puzzle' },
-		{ id: 'ai', label: $t('settings.sections.ai'), icon: 'bot' },
+		{ id: 'keyboard', label: $t('settings.sections.keyboard'), icon: 'keyboard' },
+		{ id: 'features', label: $t('settings.sections.features'), icon: 'grid' },
 	]);
 
 	const filteredCommands = $derived(
@@ -45,22 +46,47 @@
 			: commands
 	);
 
-	const corePlugins = $derived([
-		{ id: 'dailyNotes', name: $t('settings.plugins.dailyNotes'), desc: $t('settings.plugins.dailyNotesDesc') },
-		{ id: 'templates', name: $t('settings.plugins.templates'), desc: $t('settings.plugins.templatesDesc') },
-		{ id: 'graphView', name: $t('settings.plugins.graphView'), desc: $t('settings.plugins.graphViewDesc') },
-		{ id: 'backlinks', name: $t('settings.plugins.backlinks'), desc: $t('settings.plugins.backlinksDesc') },
-		{ id: 'outgoingLinks', name: $t('settings.plugins.outgoingLinks'), desc: $t('settings.plugins.outgoingLinksDesc') },
-		{ id: 'tags', name: $t('settings.plugins.tags'), desc: $t('settings.plugins.tagsDesc') },
-		{ id: 'pagePreview', name: $t('settings.plugins.pagePreview'), desc: $t('settings.plugins.pagePreviewDesc') },
-		{ id: 'search', name: $t('settings.plugins.search'), desc: $t('settings.plugins.searchDesc') },
-		{ id: 'quickSwitcher', name: $t('settings.plugins.quickSwitcher'), desc: $t('settings.plugins.quickSwitcherDesc') },
-		{ id: 'commandPalette', name: $t('settings.plugins.commandPalette'), desc: $t('settings.plugins.commandPaletteDesc') },
-		{ id: 'wordCount', name: $t('settings.plugins.wordCount'), desc: $t('settings.plugins.wordCountDesc') },
-		{ id: 'workspaces', name: $t('settings.plugins.workspaces'), desc: $t('settings.plugins.workspacesDesc') },
+	// Feature cards grouped by category
+	const featureGroups = $derived([
+		{
+			category: $t('settings.features.navigation'),
+			icon: 'compass',
+			features: [
+				{ id: 'search', name: $t('settings.features.search'), desc: $t('settings.features.searchDesc'), icon: '🔍' },
+				{ id: 'quickSwitcher', name: $t('settings.features.quickSwitcher'), desc: $t('settings.features.quickSwitcherDesc'), icon: '⚡' },
+				{ id: 'commandPalette', name: $t('settings.features.commandPalette'), desc: $t('settings.features.commandPaletteDesc'), icon: '🎯' },
+			]
+		},
+		{
+			category: $t('settings.features.discovery'),
+			icon: 'eye',
+			features: [
+				{ id: 'graphView', name: $t('settings.features.graphView'), desc: $t('settings.features.graphViewDesc'), icon: '🌐' },
+				{ id: 'backlinks', name: $t('settings.features.backlinks'), desc: $t('settings.features.backlinksDesc'), icon: '🔗' },
+				{ id: 'outgoingLinks', name: $t('settings.features.outgoingLinks'), desc: $t('settings.features.outgoingLinksDesc'), icon: '↗️' },
+				{ id: 'pagePreview', name: $t('settings.features.pagePreview'), desc: $t('settings.features.pagePreviewDesc'), icon: '👁️' },
+				{ id: 'tags', name: $t('settings.features.tags'), desc: $t('settings.features.tagsDesc'), icon: '🏷️' },
+				{ id: 'index', name: $t('settings.features.index'), desc: $t('settings.features.indexDesc'), icon: '📑' },
+			]
+		},
+		{
+			category: $t('settings.features.organization'),
+			icon: 'layers',
+			features: [
+				{ id: 'dailyNotes', name: $t('settings.features.dailyNotes'), desc: $t('settings.features.dailyNotesDesc'), icon: '📅' },
+				{ id: 'templates', name: $t('settings.features.templates'), desc: $t('settings.features.templatesDesc'), icon: '📋' },
+				{ id: 'workspaces', name: $t('settings.features.workspaces'), desc: $t('settings.features.workspacesDesc'), icon: '📐' },
+				{ id: 'wordCount', name: $t('settings.features.wordCount'), desc: $t('settings.features.wordCountDesc'), icon: '📊' },
+			]
+		},
 	]);
 
+	// Dashboard computed stats
+	const totalNotes = $derived($vaultStats.reduce((sum, v) => sum + (v.noteCount || 0), 0));
+	const totalLibraries = $derived($vaults.length);
+
 	function handleKeydown(e: KeyboardEvent) {
+		if (hotkeyListening) return;
 		if (e.key === 'Escape') {
 			e.preventDefault();
 			e.stopPropagation();
@@ -80,7 +106,6 @@
 	async function handleCheckUpdate() {
 		updateChecking = true;
 		updateStatus = '';
-		// Simulate checking (placeholder for Tauri plugin-updater)
 		await new Promise(r => setTimeout(r, 1500));
 		updateStatus = $t('settings.general.upToDate');
 		updateChecking = false;
@@ -104,32 +129,38 @@
 		testing = false;
 	}
 
-	function getPluginEnabled(id: string): boolean {
-		const plugins = ($appSettings as any).enabledPlugins;
-		if (!plugins) return true;
-		return plugins[id] !== false;
+	function getFeatureEnabled(id: string): boolean {
+		const features = ($appSettings as any).enabledFeatures;
+		if (!features) return true;
+		return features[id] !== false;
 	}
 
-	function togglePlugin(id: string) {
-		const current = ($appSettings as any).enabledPlugins || {};
+	function toggleFeature(id: string) {
+		const current = ($appSettings as any).enabledFeatures || {};
 		updateSettings({
-			enabledPlugins: { ...current, [id]: !getPluginEnabled(id) }
+			enabledFeatures: { ...current, [id]: !getFeatureEnabled(id) }
+		} as any);
+	}
+
+	function updateAIPrefs(partial: Partial<typeof $appSettings.ai>) {
+		updateSettings({
+			ai: { ...$appSettings.ai, ...partial }
 		} as any);
 	}
 
 	function sectionIcon(icon: string): string {
 		const icons: Record<string, string> = {
-			info: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z',
-			globe: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',
+			dashboard: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z',
+			universe: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',
 			edit: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
-			folder: 'M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z',
+			graph: 'M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z',
 			palette: 'M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8z',
 			keyboard: 'M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z',
-			puzzle: 'M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7 1.49 0 2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z',
+			grid: 'M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z',
 			shield: 'M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z',
 			bot: 'M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1H3a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM9 14a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z',
 		};
-		return icons[icon] || icons.info;
+		return icons[icon] || icons.dashboard;
 	}
 
 	async function hashPin(pin: string): Promise<string> {
@@ -175,6 +206,20 @@
 		}
 	}
 
+	function handleHotkeyCapture(cmdId: string, e: KeyboardEvent) {
+		if (!['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+			e.preventDefault();
+			const parts: string[] = [];
+			if (e.ctrlKey) parts.push('Ctrl');
+			if (e.altKey) parts.push('Alt');
+			if (e.shiftKey) parts.push('Shift');
+			parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
+			// For now just display the captured shortcut (hotkey persistence is a future feature)
+			editingHotkey = null;
+			hotkeyListening = false;
+		}
+	}
+
 	let containerEl: HTMLDivElement;
 	onMount(() => { containerEl?.focus(); });
 </script>
@@ -207,239 +252,202 @@
 			</div>
 
 			<div class="settings-content-body">
-				<!-- ═══ ABOUT ═══ -->
-				{#if activeSection === 'about'}
-					<div class="about-section">
-						<div class="about-logo">
-							<svg width="120" height="120" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<!-- ═══ DASHBOARD ═══ -->
+				{#if activeSection === 'dashboard'}
+					<div class="dashboard">
+						<div class="dashboard-header">
+							<svg class="dash-logo" width="64" height="64" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<defs>
 									<linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
 										<stop offset="0%" stop-color="var(--interactive-accent)" />
 										<stop offset="100%" stop-color="var(--color-purple)" />
 									</linearGradient>
-									<radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
-										<stop offset="0%" stop-color="var(--interactive-accent)" stop-opacity="0.12" />
-										<stop offset="100%" stop-color="var(--interactive-accent)" stop-opacity="0" />
-									</radialGradient>
-									<filter id="starGlow">
-										<feGaussianBlur stdDeviation="2" result="blur" />
-										<feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-									</filter>
+									<filter id="starGlow"><feGaussianBlur stdDeviation="2" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
 								</defs>
-
-								<!-- Ambient glow -->
-								<circle cx="80" cy="80" r="75" fill="url(#glowGrad)" />
-
-								<!-- Distant tiny stars -->
-								<circle cx="65" cy="55" r="1.5" fill="var(--interactive-accent)" opacity="0.3" />
-								<circle cx="100" cy="68" r="1.2" fill="var(--interactive-accent)" opacity="0.25" />
-								<circle cx="68" cy="98" r="1.3" fill="var(--interactive-accent)" opacity="0.2" />
-								<circle cx="95" cy="52" r="1" fill="var(--interactive-accent)" opacity="0.2" />
-								<circle cx="90" cy="110" r="1" fill="var(--interactive-accent)" opacity="0.15" />
-
-								<!-- Center star (largest) -->
-								<path d="M80,64 L85,75 L96,80 L85,85 L80,96 L75,85 L64,80 L75,75 Z"
-									fill="url(#starGrad)" filter="url(#starGlow)" />
-
-								<!-- Top star -->
-								<path d="M80,42 L82.5,47 L88,50 L82.5,53 L80,58 L77.5,53 L72,50 L77.5,47 Z"
-									fill="url(#starGrad)" filter="url(#starGlow)" />
-
-								<!-- Top-right star -->
-								<path d="M108,58 L110.5,63 L116,66 L110.5,69 L108,74 L105.5,69 L100,66 L105.5,63 Z"
-									fill="url(#starGrad)" filter="url(#starGlow)" />
-
-								<!-- Bottom-right star -->
-								<path d="M104,96 L106.5,101 L112,104 L106.5,107 L104,112 L101.5,107 L96,104 L101.5,101 Z"
-									fill="url(#starGrad)" filter="url(#starGlow)" />
-
-								<!-- Bottom-left star -->
-								<path d="M60,102 L62,106 L67,109 L62,112 L60,116 L58,112 L53,109 L58,106 Z"
-									fill="url(#starGrad)" filter="url(#starGlow)" />
-
-								<!-- Left star -->
-								<path d="M50,66 L52.5,71 L58,74 L52.5,77 L50,82 L47.5,77 L42,74 L47.5,71 Z"
-									fill="url(#starGrad)" filter="url(#starGlow)" />
+								<path d="M80,64 L85,75 L96,80 L85,85 L80,96 L75,85 L64,80 L75,75 Z" fill="url(#starGrad)" filter="url(#starGlow)" />
+								<path d="M80,42 L82.5,47 L88,50 L82.5,53 L80,58 L77.5,53 L72,50 L77.5,47 Z" fill="url(#starGrad)" filter="url(#starGlow)" />
+								<path d="M108,58 L110.5,63 L116,66 L110.5,69 L108,74 L105.5,69 L100,66 L105.5,63 Z" fill="url(#starGrad)" filter="url(#starGlow)" />
+								<path d="M104,96 L106.5,101 L112,104 L106.5,107 L104,112 L101.5,107 L96,104 L101.5,101 Z" fill="url(#starGrad)" filter="url(#starGlow)" />
+								<path d="M60,102 L62,106 L67,109 L62,112 L60,116 L58,112 L53,109 L58,106 Z" fill="url(#starGrad)" filter="url(#starGlow)" />
+								<path d="M50,66 L52.5,71 L58,74 L52.5,77 L50,82 L47.5,77 L42,74 L47.5,71 Z" fill="url(#starGrad)" filter="url(#starGlow)" />
 							</svg>
+							<div class="dash-title">
+								<span class="dash-name">Constellation</span>
+								<span class="dash-version">v0.1.0</span>
+							</div>
 						</div>
-						<div class="about-name">Constellation</div>
-						<div class="about-tagline">{$t('settings.about.tagline')}</div>
-						<div class="about-version">v0.1.0</div>
-						<div class="about-dev">{$t('settings.about.developedBy')}<br/>Eisa ALSHAMSI</div>
-						<div class="about-links">
-							<span class="about-link">
+
+						<div class="dash-stats">
+							<div class="stat-card">
+								<div class="stat-value">{totalLibraries}</div>
+								<div class="stat-label">{$t('settings.dashboard.libraries')}</div>
+							</div>
+							<div class="stat-card">
+								<div class="stat-value">{totalNotes}</div>
+								<div class="stat-label">{$t('settings.dashboard.notes')}</div>
+							</div>
+							<div class="stat-card">
+								<div class="stat-value">{$aiSettings.provider ? PROVIDER_INFO[$aiSettings.provider]?.name ?? '—' : '—'}</div>
+								<div class="stat-label">{$t('settings.dashboard.aiProvider')}</div>
+							</div>
+							<div class="stat-card">
+								<div class="stat-value">{$appSettings.security.lockOnIdle ? '🔒' : '🔓'}</div>
+								<div class="stat-label">{$t('settings.dashboard.lockStatus')}</div>
+							</div>
+						</div>
+
+						<div class="dash-section">
+							<div class="setting-item">
+								<div class="setting-info">
+									<div class="setting-name">{$t('settings.general.language')}</div>
+									<div class="setting-desc">{$t('settings.general.languageDesc')}</div>
+								</div>
+								<select class="setting-control" value={$locale} onchange={handleLangChange}>
+									{#each SUPPORTED_LOCALES as loc}
+										<option value={loc.code}>{loc.label}</option>
+									{/each}
+								</select>
+							</div>
+							<div class="setting-item">
+								<div class="setting-info">
+									<div class="setting-name">{$t('settings.general.checkForUpdates')}</div>
+									<div class="setting-desc">{$t('settings.general.checkForUpdatesDesc')}</div>
+								</div>
+								<button class="setting-btn" onclick={handleCheckUpdate} disabled={updateChecking}>
+									{updateChecking ? $t('settings.general.checking') : $t('settings.general.checkNow')}
+								</button>
+							</div>
+							{#if updateStatus}
+								<div class="setting-item">
+									<div class="setting-info">
+										<div class="setting-desc" style="color: var(--interactive-accent)">{updateStatus}</div>
+									</div>
+								</div>
+							{/if}
+							<div class="setting-item">
+								<div class="setting-info">
+									<div class="setting-name">{$t('settings.general.autoUpdate')}</div>
+									<div class="setting-desc">{$t('settings.general.autoUpdateDesc')}</div>
+								</div>
+								<label class="toggle">
+									<input type="checkbox" checked={$appSettings.autoUpdate} onchange={() => updateSettings({ autoUpdate: !$appSettings.autoUpdate })} />
+									<span class="toggle-slider"></span>
+								</label>
+							</div>
+						</div>
+
+						<div class="dash-footer">
+							<span class="dash-dev">{$t('settings.dashboard.developedBy')} Eisa ALSHAMSI</span>
+							<span class="dash-link">
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
 								GitHub
 							</span>
 						</div>
 					</div>
 
-				<!-- ═══ GENERAL ═══ -->
-				{:else if activeSection === 'general'}
+				<!-- ═══ UNIVERSE & LIBRARIES ═══ -->
+				{:else if activeSection === 'universe'}
+					<p class="section-intro">{$t('settings.universe.intro')}</p>
+
+					<div class="setting-section-heading">{$t('settings.universe.noteDefaults')}</div>
+
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.general.language')}</div>
-							<div class="setting-desc">{$t('settings.general.languageDesc')}</div>
+							<div class="setting-name">{$t('settings.files.defaultLocation')}</div>
+							<div class="setting-desc">{$t('settings.files.defaultLocationDesc')}</div>
 						</div>
-						<select class="setting-control" value={$locale} onchange={handleLangChange}>
-							{#each SUPPORTED_LOCALES as loc}
-								<option value={loc.code}>{loc.label}</option>
-							{/each}
+						<select class="setting-control" value={$appSettings.defaultNoteLocation} onchange={(e) => updateSettings({ defaultNoteLocation: (e.target as HTMLSelectElement).value as any })}>
+							<option value="root">{$t('settings.files.libraryRoot')}</option>
+							<option value="current">{$t('settings.files.currentFolder')}</option>
+							<option value="folder">{$t('settings.files.specifiedFolder')}</option>
 						</select>
 					</div>
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.general.checkForUpdates')}</div>
-							<div class="setting-desc">{$t('settings.general.checkForUpdatesDesc')}</div>
-						</div>
-						<button class="setting-btn" onclick={handleCheckUpdate} disabled={updateChecking}>
-							{updateChecking ? $t('settings.general.checking') : $t('settings.general.checkNow')}
-						</button>
-					</div>
-					{#if updateStatus}
-						<div class="setting-item">
+
+					{#if $appSettings.defaultNoteLocation === 'folder'}
+						<div class="setting-item sub-setting">
 							<div class="setting-info">
-								<div class="setting-desc" style="color: var(--interactive-accent)">{updateStatus}</div>
+								<div class="setting-name">{$t('settings.files.folderPath')}</div>
 							</div>
+							<input class="setting-input" type="text" value={$appSettings.defaultNoteFolder}
+								placeholder={$t('settings.files.folderPathPlaceholder')}
+								oninput={(e) => updateSettings({ defaultNoteFolder: (e.target as HTMLInputElement).value })} />
 						</div>
 					{/if}
+
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.general.autoUpdate')}</div>
-							<div class="setting-desc">{$t('settings.general.autoUpdateDesc')}</div>
+							<div class="setting-name">{$t('settings.files.defaultAttachmentFolder')}</div>
+							<div class="setting-desc">{$t('settings.files.defaultAttachmentFolderDesc')}</div>
+						</div>
+						<input class="setting-input" type="text" value={$appSettings.defaultAttachmentFolder}
+							placeholder={$t('settings.files.sameAsNotePlaceholder')}
+							oninput={(e) => updateSettings({ defaultAttachmentFolder: (e.target as HTMLInputElement).value })} />
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.files.confirmDelete')}</div>
+							<div class="setting-desc">{$t('settings.files.confirmDeleteDesc')}</div>
 						</div>
 						<label class="toggle">
-							<input type="checkbox" checked={$appSettings.autoUpdate} onchange={() => updateSettings({ autoUpdate: !$appSettings.autoUpdate })} />
+							<input type="checkbox" checked={$appSettings.confirmDelete}
+								onchange={(e) => updateSettings({ confirmDelete: (e.target as HTMLInputElement).checked })} />
 							<span class="toggle-slider"></span>
 						</label>
 					</div>
 
-				<!-- ═══ SECURITY ═══ -->
-				{:else if activeSection === 'security'}
-					<p class="section-intro">{$t('settings.security.intro')}</p>
-
-					<!-- Vault Encryption -->
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.security.vaultEncryption')}</div>
-							<div class="setting-desc">{$t('settings.security.vaultEncryptionDesc')}</div>
+							<div class="setting-name">{$t('settings.files.deletedFiles')}</div>
+							<div class="setting-desc">{$t('settings.files.deletedFilesDesc')}</div>
 						</div>
-						<div class="security-control-row">
-							{#if $appSettings.security.vaultEncryption}
-								<span class="security-badge active">{$t('settings.security.enabled')}</span>
-							{:else}
-								<span class="security-badge">{$t('settings.security.disabled')}</span>
-							{/if}
-							<label class="toggle">
-								<input type="checkbox"
-									checked={$appSettings.security.vaultEncryption}
-									onchange={() => updateSecuritySettings({ vaultEncryption: !$appSettings.security.vaultEncryption })} />
-								<span class="toggle-slider"></span>
-							</label>
-						</div>
+						<select class="setting-control" value={$appSettings.trashDestination} onchange={(e) => updateSettings({ trashDestination: (e.target as HTMLSelectElement).value as any })}>
+							<option value="system">{$t('settings.files.systemTrash')}</option>
+							<option value="local">{$t('settings.files.trashFolder')}</option>
+							<option value="permanent">{$t('settings.files.permanentDelete')}</option>
+						</select>
 					</div>
 
-					<div class="setting-heading">{$t('settings.security.lockHeading')}</div>
+					<div class="setting-section-heading">{$t('settings.universe.templates')}</div>
 
-					<!-- Lock on Idle -->
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.security.lockOnIdle')}</div>
-							<div class="setting-desc">{$t('settings.security.lockOnIdleDesc')}</div>
+							<div class="setting-name">{$t('settings.templates.templateFolder')}</div>
+							<div class="setting-desc">{$t('settings.templates.templateFolderDesc')}</div>
 						</div>
-						<label class="toggle">
-							<input type="checkbox"
-								checked={$appSettings.security.lockOnIdle}
-								onchange={handleToggleLockOnIdle} />
-							<span class="toggle-slider"></span>
-						</label>
+						<input class="setting-input" type="text" value={$appSettings.templateFolder}
+							placeholder="Templates"
+							oninput={(e) => updateSettings({ templateFolder: (e.target as HTMLInputElement).value })} />
 					</div>
 
-					{#if $appSettings.security.lockOnIdle}
-						<!-- Timeout -->
-						<div class="setting-item sub-setting">
-							<div class="setting-info">
-								<div class="setting-name">{$t('settings.security.idleTimeout')}</div>
-								<div class="setting-desc">{$t('settings.security.idleTimeoutDesc')}</div>
-							</div>
-							<select class="setting-control"
-								value={$appSettings.security.lockIdleTimeout}
-								onchange={(e) => updateSecuritySettings({ lockIdleTimeout: parseInt((e.target as HTMLSelectElement).value) })}>
-								<option value={1}>1 {$t('settings.security.minutes')}</option>
-								<option value={5}>5 {$t('settings.security.minutes')}</option>
-								<option value={10}>10 {$t('settings.security.minutes')}</option>
-								<option value={15}>15 {$t('settings.security.minutes')}</option>
-								<option value={30}>30 {$t('settings.security.minutes')}</option>
-								<option value={60}>60 {$t('settings.security.minutes')}</option>
-							</select>
-						</div>
-
-						<!-- Change PIN -->
-						<div class="setting-item sub-setting">
-							<div class="setting-info">
-								<div class="setting-name">{$t('settings.security.pin')}</div>
-								<div class="setting-desc">{$t('settings.security.pinDesc')}</div>
-							</div>
-							<button class="setting-btn" onclick={() => { showPinSetup = true; pinChanging = true; }}>
-								{$t('settings.security.changePin')}
-							</button>
-						</div>
-					{/if}
-
-					<!-- PIN Setup Form -->
-					{#if showPinSetup}
-						<div class="pin-setup">
-							<div class="pin-setup-title">
-								{pinChanging ? $t('settings.security.changePin') : $t('settings.security.setPin')}
-							</div>
-							<div class="pin-fields">
-								<input class="setting-input" type="password"
-									placeholder={$t('settings.security.enterPin')}
-									maxlength="8"
-									value={pinInput}
-									oninput={(e) => pinInput = (e.target as HTMLInputElement).value} />
-								<input class="setting-input" type="password"
-									placeholder={$t('settings.security.confirmPin')}
-									maxlength="8"
-									value={pinConfirm}
-									oninput={(e) => pinConfirm = (e.target as HTMLInputElement).value} />
-							</div>
-							{#if pinError}
-								<div class="pin-error">{pinError}</div>
-							{/if}
-							<div class="pin-actions">
-								<button class="dialog-btn cancel" onclick={handleCancelPin}>{$t('common.cancel')}</button>
-								<button class="setting-btn" onclick={handleSetPin}>{$t('common.confirm')}</button>
-							</div>
-						</div>
-					{/if}
-
-					<div class="setting-heading">{$t('settings.security.apiHeading')}</div>
-
-					<!-- API Key Protection -->
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.security.apiKeyProtection')}</div>
-							<div class="setting-desc">{$t('settings.security.apiKeyProtectionDesc')}</div>
+							<div class="setting-name">{$t('settings.templates.dailyNoteTemplate')}</div>
+							<div class="setting-desc">{$t('settings.templates.dailyNoteTemplateDesc')}</div>
 						</div>
-						<div class="security-control-row">
-							{#if $appSettings.security.apiKeyProtection}
-								<span class="security-badge active">{$t('settings.security.enabled')}</span>
-							{:else}
-								<span class="security-badge">{$t('settings.security.disabled')}</span>
-							{/if}
-							<label class="toggle">
-								<input type="checkbox"
-									checked={$appSettings.security.apiKeyProtection}
-									onchange={() => updateSecuritySettings({ apiKeyProtection: !$appSettings.security.apiKeyProtection })} />
-								<span class="toggle-slider"></span>
-							</label>
+						<input class="setting-input" type="text" value={$appSettings.dailyNoteTemplate}
+							placeholder=""
+							oninput={(e) => updateSettings({ dailyNoteTemplate: (e.target as HTMLInputElement).value })} />
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.templates.variables')}</div>
+							<div class="setting-desc">{$t('settings.templates.variablesDesc')}</div>
+						</div>
+						<div class="setting-info-box">
+							<code>{'{{date}}'}</code> — {$t('settings.templates.varDate')}<br/>
+							<code>{'{{date:FORMAT}}'}</code> — {$t('settings.templates.varDateFormat')}<br/>
+							<code>{'{{time}}'}</code> — {$t('settings.templates.varTime')}<br/>
+							<code>{'{{title}}'}</code> — {$t('settings.templates.varTitle')}<br/>
+							<code>{'{{folder}}'}</code> — {$t('settings.templates.varFolder')}<br/>
+							<code>{'{{library}}'}</code> — {$t('settings.templates.varLibrary')}<br/>
+							<code>{'{{cursor}}'}</code> — {$t('settings.templates.varCursor')}
 						</div>
 					</div>
 
 				<!-- ═══ EDITOR ═══ -->
 				{:else if activeSection === 'editor'}
-					<!-- General -->
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.editor.alwaysFocusNewTabs')}</div>
@@ -474,7 +482,6 @@
 						</select>
 					</div>
 
-					<!-- Display -->
 					<div class="setting-section-heading">{$t('settings.editor.display')}</div>
 
 					<div class="setting-item">
@@ -503,30 +510,6 @@
 
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.editor.foldHeading')}</div>
-							<div class="setting-desc">{$t('settings.editor.foldHeadingDesc')}</div>
-						</div>
-						<label class="toggle">
-							<input type="checkbox" checked={$appSettings.foldHeading}
-								onchange={(e) => updateSettings({ foldHeading: (e.target as HTMLInputElement).checked })} />
-							<span class="toggle-slider"></span>
-						</label>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.editor.foldIndent')}</div>
-							<div class="setting-desc">{$t('settings.editor.foldIndentDesc')}</div>
-						</div>
-						<label class="toggle">
-							<input type="checkbox" checked={$appSettings.foldIndent}
-								onchange={(e) => updateSettings({ foldIndent: (e.target as HTMLInputElement).checked })} />
-							<span class="toggle-slider"></span>
-						</label>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
 							<div class="setting-name">{$t('settings.editor.showLineNumbers')}</div>
 							<div class="setting-desc">{$t('settings.editor.showLineNumbersDesc')}</div>
 						</div>
@@ -549,7 +532,6 @@
 						</label>
 					</div>
 
-					<!-- Behavior -->
 					<div class="setting-section-heading">{$t('settings.editor.behavior')}</div>
 
 					<div class="setting-item">
@@ -602,18 +584,6 @@
 
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.editor.indentWithTabs')}</div>
-							<div class="setting-desc">{$t('settings.editor.indentWithTabsDesc')}</div>
-						</div>
-						<label class="toggle">
-							<input type="checkbox" checked={$appSettings.indentWithTabs}
-								onchange={(e) => updateSettings({ indentWithTabs: (e.target as HTMLInputElement).checked })} />
-							<span class="toggle-slider"></span>
-						</label>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
 							<div class="setting-name">{$t('settings.editor.tabSize')}</div>
 							<div class="setting-desc">{$t('settings.editor.tabSizeDesc')}</div>
 						</div>
@@ -623,40 +593,11 @@
 						</select>
 					</div>
 
-				<!-- ═══ FILES & LINKS ═══ -->
-				{:else if activeSection === 'files'}
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.files.defaultLocation')}</div>
-							<div class="setting-desc">{$t('settings.files.defaultLocationDesc')}</div>
-						</div>
-						<select class="setting-control" value={$appSettings.defaultNoteLocation} onchange={(e) => updateSettings({ defaultNoteLocation: (e.target as HTMLSelectElement).value as any })}>
-							<option value="root">{$t('settings.files.vaultRoot')}</option>
-							<option value="current">{$t('settings.files.currentFolder')}</option>
-							<option value="folder">{$t('settings.files.specifiedFolder')}</option>
-						</select>
-					</div>
+				<!-- ═══ SKY VIEW & LINKS ═══ -->
+				{:else if activeSection === 'skyview'}
+					<p class="section-intro">{$t('settings.skyview.intro')}</p>
 
-					{#if $appSettings.defaultNoteLocation === 'folder'}
-						<div class="setting-item sub-setting">
-							<div class="setting-info">
-								<div class="setting-name">{$t('settings.files.folderPath')}</div>
-							</div>
-							<input class="setting-input" type="text" value={$appSettings.defaultNoteFolder}
-								placeholder={$t('settings.files.folderPathPlaceholder')}
-								oninput={(e) => updateSettings({ defaultNoteFolder: (e.target as HTMLInputElement).value })} />
-						</div>
-					{/if}
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.files.defaultAttachmentFolder')}</div>
-							<div class="setting-desc">{$t('settings.files.defaultAttachmentFolderDesc')}</div>
-						</div>
-						<input class="setting-input" type="text" value={$appSettings.defaultAttachmentFolder}
-							placeholder={$t('settings.files.sameAsNotePlaceholder')}
-							oninput={(e) => updateSettings({ defaultAttachmentFolder: (e.target as HTMLInputElement).value })} />
-					</div>
+					<div class="setting-section-heading">{$t('settings.skyview.linking')}</div>
 
 					<div class="setting-item">
 						<div class="setting-info">
@@ -694,65 +635,224 @@
 						</label>
 					</div>
 
+				<!-- ═══ INTELLIGENCE (AI) ═══ -->
+				{:else if activeSection === 'intelligence'}
+					<p class="section-intro">{$t('settings.intelligence.intro')}</p>
+
+					<div class="setting-section-heading">{$t('settings.intelligence.connection')}</div>
+
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.files.confirmDelete')}</div>
-							<div class="setting-desc">{$t('settings.files.confirmDeleteDesc')}</div>
+							<div class="setting-name">{$t('settings.ai.provider')}</div>
+							<div class="setting-desc">{$t('settings.ai.providerDesc')}</div>
+						</div>
+						<select class="setting-control" value={$aiSettings.provider ?? ''} onchange={handleProviderChange}>
+							<option value="">— {$t('settings.ai.none')} —</option>
+							{#each Object.entries(PROVIDER_INFO) as [id, info]}
+								<option value={id}>{info.name}</option>
+							{/each}
+						</select>
+					</div>
+
+					{#if $aiSettings.provider}
+						{@const info = PROVIDER_INFO[$aiSettings.provider]}
+
+						{#if info.requiresKey}
+							<div class="setting-item">
+								<div class="setting-info">
+									<div class="setting-name">{$t('settings.ai.apiKey')}</div>
+									<div class="setting-desc">{$t('settings.ai.apiKeyDesc')}</div>
+								</div>
+								<input class="setting-input" type="password"
+									placeholder={$t('settings.ai.apiKeyPlaceholder')}
+									value={$aiSettings.apiKey}
+									oninput={(e) => updateAISettings({ apiKey: (e.target as HTMLInputElement).value })} />
+							</div>
+						{/if}
+
+						{#if info.hasBaseUrl}
+							<div class="setting-item">
+								<div class="setting-info">
+									<div class="setting-name">{$t('settings.ai.serverUrl')}</div>
+									<div class="setting-desc">{$t('settings.ai.serverUrlDesc')}</div>
+								</div>
+								<input class="setting-input" type="text"
+									placeholder="http://localhost:11434"
+									value={$aiSettings.baseUrl}
+									oninput={(e) => updateAISettings({ baseUrl: (e.target as HTMLInputElement).value })} />
+							</div>
+						{/if}
+
+						<div class="setting-item">
+							<div class="setting-info">
+								<div class="setting-name">{$t('settings.ai.model')}</div>
+								<div class="setting-desc">{$t('settings.ai.modelDesc')}</div>
+							</div>
+							<input class="setting-input" type="text"
+								value={$aiSettings.model}
+								placeholder={DEFAULT_MODELS[$aiSettings.provider]}
+								oninput={(e) => updateAISettings({ model: (e.target as HTMLInputElement).value })} />
+						</div>
+
+						<div class="setting-item">
+							<div class="setting-info">
+								<div class="setting-name">{$t('settings.ai.connectionTest')}</div>
+								<div class="setting-desc">
+									{#if testStatus === 'success'}
+										<span class="test-success">{$t('settings.ai.connectedSuccess')}</span>
+									{:else if testStatus === 'failed'}
+										<span class="test-failed">{$t('settings.ai.connectionFailed')}</span>
+									{:else}
+										{$t('settings.ai.verifyConnection')}
+									{/if}
+								</div>
+							</div>
+							<button class="test-btn" onclick={testConnection} disabled={testing}>
+								{testing ? $t('settings.ai.testing') : $t('settings.ai.test')}
+							</button>
+						</div>
+					{/if}
+
+					<div class="setting-section-heading">{$t('settings.intelligence.preferences')}</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.intelligence.contextLines')}</div>
+							<div class="setting-desc">{$t('settings.intelligence.contextLinesDesc')}</div>
+						</div>
+						<div class="slider-row">
+							<input type="range" class="setting-slider" min="10" max="200" step="10" value={$appSettings.ai.contextLines}
+								oninput={(e) => updateAIPrefs({ contextLines: parseInt((e.target as HTMLInputElement).value) })} />
+							<span class="slider-val">{$appSettings.ai.contextLines}</span>
+						</div>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.intelligence.libraryAccess')}</div>
+							<div class="setting-desc">{$t('settings.intelligence.libraryAccessDesc')}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.ai.libraryAccess} onchange={(e) => updateAIPrefs({ libraryAccess: (e.target as HTMLSelectElement).value as any })}>
+							<option value="all">{$t('settings.intelligence.allLibraries')}</option>
+							<option value="active">{$t('settings.intelligence.activeOnly')}</option>
+							<option value="none">{$t('settings.intelligence.noAccess')}</option>
+						</select>
+					</div>
+
+				<!-- ═══ SECURITY ═══ -->
+				{:else if activeSection === 'security'}
+					<p class="section-intro">{$t('settings.security.intro')}</p>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.security.vaultEncryption')}</div>
+							<div class="setting-desc">{$t('settings.security.vaultEncryptionDesc')}</div>
+						</div>
+						<div class="security-control-row">
+							{#if $appSettings.security.vaultEncryption}
+								<span class="security-badge active">{$t('settings.security.enabled')}</span>
+							{:else}
+								<span class="security-badge">{$t('settings.security.disabled')}</span>
+							{/if}
+							<label class="toggle">
+								<input type="checkbox"
+									checked={$appSettings.security.vaultEncryption}
+									onchange={() => updateSecuritySettings({ vaultEncryption: !$appSettings.security.vaultEncryption })} />
+								<span class="toggle-slider"></span>
+							</label>
+						</div>
+					</div>
+
+					<div class="setting-heading">{$t('settings.security.lockHeading')}</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.security.lockOnIdle')}</div>
+							<div class="setting-desc">{$t('settings.security.lockOnIdleDesc')}</div>
 						</div>
 						<label class="toggle">
-							<input type="checkbox" checked={$appSettings.confirmDelete}
-								onchange={(e) => updateSettings({ confirmDelete: (e.target as HTMLInputElement).checked })} />
+							<input type="checkbox"
+								checked={$appSettings.security.lockOnIdle}
+								onchange={handleToggleLockOnIdle} />
 							<span class="toggle-slider"></span>
 						</label>
 					</div>
 
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.files.deletedFiles')}</div>
-							<div class="setting-desc">{$t('settings.files.deletedFilesDesc')}</div>
+					{#if $appSettings.security.lockOnIdle}
+						<div class="setting-item sub-setting">
+							<div class="setting-info">
+								<div class="setting-name">{$t('settings.security.idleTimeout')}</div>
+								<div class="setting-desc">{$t('settings.security.idleTimeoutDesc')}</div>
+							</div>
+							<select class="setting-control"
+								value={$appSettings.security.lockIdleTimeout}
+								onchange={(e) => updateSecuritySettings({ lockIdleTimeout: parseInt((e.target as HTMLSelectElement).value) })}>
+								<option value={1}>1 {$t('settings.security.minutes')}</option>
+								<option value={5}>5 {$t('settings.security.minutes')}</option>
+								<option value={10}>10 {$t('settings.security.minutes')}</option>
+								<option value={15}>15 {$t('settings.security.minutes')}</option>
+								<option value={30}>30 {$t('settings.security.minutes')}</option>
+								<option value={60}>60 {$t('settings.security.minutes')}</option>
+							</select>
 						</div>
-						<select class="setting-control" value={$appSettings.trashDestination} onchange={(e) => updateSettings({ trashDestination: (e.target as HTMLSelectElement).value as any })}>
-							<option value="system">{$t('settings.files.systemTrash')}</option>
-							<option value="local">{$t('settings.files.trashFolder')}</option>
-							<option value="permanent">{$t('settings.files.permanentDelete')}</option>
-						</select>
-					</div>
 
-				<!-- ═══ TEMPLATES ═══ -->
-				{:else if activeSection === 'templates'}
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.templates.templateFolder')}</div>
-							<div class="setting-desc">{$t('settings.templates.templateFolderDesc')}</div>
+						<div class="setting-item sub-setting">
+							<div class="setting-info">
+								<div class="setting-name">{$t('settings.security.pin')}</div>
+								<div class="setting-desc">{$t('settings.security.pinDesc')}</div>
+							</div>
+							<button class="setting-btn" onclick={() => { showPinSetup = true; pinChanging = true; }}>
+								{$t('settings.security.changePin')}
+							</button>
 						</div>
-						<input class="setting-input" type="text" value={$appSettings.templateFolder}
-							placeholder="Templates"
-							oninput={(e) => updateSettings({ templateFolder: (e.target as HTMLInputElement).value })} />
-					</div>
+					{/if}
+
+					{#if showPinSetup}
+						<div class="pin-setup">
+							<div class="pin-setup-title">
+								{pinChanging ? $t('settings.security.changePin') : $t('settings.security.setPin')}
+							</div>
+							<div class="pin-fields">
+								<input class="setting-input" type="password"
+									placeholder={$t('settings.security.enterPin')}
+									maxlength="8"
+									value={pinInput}
+									oninput={(e) => pinInput = (e.target as HTMLInputElement).value} />
+								<input class="setting-input" type="password"
+									placeholder={$t('settings.security.confirmPin')}
+									maxlength="8"
+									value={pinConfirm}
+									oninput={(e) => pinConfirm = (e.target as HTMLInputElement).value} />
+							</div>
+							{#if pinError}
+								<div class="pin-error">{pinError}</div>
+							{/if}
+							<div class="pin-actions">
+								<button class="dialog-btn cancel" onclick={handleCancelPin}>{$t('common.cancel')}</button>
+								<button class="setting-btn" onclick={handleSetPin}>{$t('common.confirm')}</button>
+							</div>
+						</div>
+					{/if}
+
+					<div class="setting-heading">{$t('settings.security.apiHeading')}</div>
 
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.templates.dailyNoteTemplate')}</div>
-							<div class="setting-desc">{$t('settings.templates.dailyNoteTemplateDesc')}</div>
+							<div class="setting-name">{$t('settings.security.apiKeyProtection')}</div>
+							<div class="setting-desc">{$t('settings.security.apiKeyProtectionDesc')}</div>
 						</div>
-						<input class="setting-input" type="text" value={$appSettings.dailyNoteTemplate}
-							placeholder=""
-							oninput={(e) => updateSettings({ dailyNoteTemplate: (e.target as HTMLInputElement).value })} />
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.templates.variables')}</div>
-							<div class="setting-desc">{$t('settings.templates.variablesDesc')}</div>
-						</div>
-						<div class="setting-info-box">
-							<code>{'{{date}}'}</code> — {$t('settings.templates.varDate')}<br/>
-							<code>{'{{date:FORMAT}}'}</code> — {$t('settings.templates.varDateFormat')}<br/>
-							<code>{'{{time}}'}</code> — {$t('settings.templates.varTime')}<br/>
-							<code>{'{{title}}'}</code> — {$t('settings.templates.varTitle')}<br/>
-							<code>{'{{folder}}'}</code> — {$t('settings.templates.varFolder')}<br/>
-							<code>{'{{vault}}'}</code> — {$t('settings.templates.varVault')}<br/>
-							<code>{'{{cursor}}'}</code> — {$t('settings.templates.varCursor')}
+						<div class="security-control-row">
+							{#if $appSettings.security.apiKeyProtection}
+								<span class="security-badge active">{$t('settings.security.enabled')}</span>
+							{:else}
+								<span class="security-badge">{$t('settings.security.disabled')}</span>
+							{/if}
+							<label class="toggle">
+								<input type="checkbox"
+									checked={$appSettings.security.apiKeyProtection}
+									onchange={() => updateSecuritySettings({ apiKeyProtection: !$appSettings.security.apiKeyProtection })} />
+								<span class="toggle-slider"></span>
+							</label>
 						</div>
 					</div>
 
@@ -826,11 +926,11 @@
 						</div>
 					</div>
 
-				<!-- ═══ HOTKEYS ═══ -->
-				{:else if activeSection === 'hotkeys'}
+				<!-- ═══ KEYBOARD ═══ -->
+				{:else if activeSection === 'keyboard'}
 					<div class="hotkey-filter">
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-						<input type="text" placeholder={$t('settings.hotkeys.filter')}
+						<input type="text" placeholder={$t('settings.keyboard.filter')}
 							value={hotkeyFilter} oninput={(e) => hotkeyFilter = (e.target as HTMLInputElement).value} />
 					</div>
 
@@ -843,111 +943,53 @@
 									{#if cmd.category}<span class="hotkey-cat">{cmd.category}</span>{/if}
 								</div>
 								<div class="hotkey-binding">
-									{#if cmd.shortcut}
-										<kbd>{cmd.shortcut}</kbd>
+									{#if editingHotkey === cmd.id}
+										<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+										<kbd class="hotkey-recording" tabindex="0"
+											onkeydown={(e) => handleHotkeyCapture(cmd.id, e)}
+											onblur={() => { editingHotkey = null; hotkeyListening = false; }}>
+											{$t('settings.keyboard.pressKeys')}
+										</kbd>
 									{:else}
-										<span class="hotkey-unset">{$t('settings.hotkeys.notSet')}</span>
+										<button class="hotkey-edit-btn" onclick={() => { editingHotkey = cmd.id; hotkeyListening = true; }}>
+											{#if cmd.shortcut}
+												<kbd>{cmd.shortcut}</kbd>
+											{:else}
+												<span class="hotkey-unset">{$t('settings.keyboard.notSet')}</span>
+											{/if}
+										</button>
 									{/if}
 								</div>
 							</div>
 						{/each}
 						{#if filteredCommands.length === 0}
-							<div class="hotkey-empty">{$t('settings.hotkeys.noCommands')}</div>
+							<div class="hotkey-empty">{$t('settings.keyboard.noCommands')}</div>
 						{/if}
 					</div>
 
-				<!-- ═══ CORE PLUGINS ═══ -->
-				{:else if activeSection === 'plugins'}
-					<p class="section-intro">{$t('settings.plugins.intro')}</p>
-					{#each corePlugins as plugin}
-						<div class="setting-item plugin-item">
-							<div class="setting-info">
-								<div class="setting-name">{plugin.name}</div>
-								<div class="setting-desc">{plugin.desc}</div>
+				<!-- ═══ FEATURES ═══ -->
+				{:else if activeSection === 'features'}
+					<p class="section-intro">{$t('settings.features.intro')}</p>
+
+					{#each featureGroups as group}
+						<div class="feature-group">
+							<div class="feature-group-header">{group.category}</div>
+							<div class="feature-grid">
+								{#each group.features as feature}
+									<button class="feature-card" class:enabled={getFeatureEnabled(feature.id)}
+										onclick={() => toggleFeature(feature.id)}>
+										<div class="feature-card-icon">{feature.icon}</div>
+										<div class="feature-card-name">{feature.name}</div>
+										<div class="feature-card-desc">{feature.desc}</div>
+										<div class="feature-card-toggle">
+											<span class="feature-dot" class:on={getFeatureEnabled(feature.id)}></span>
+											{getFeatureEnabled(feature.id) ? $t('settings.features.on') : $t('settings.features.off')}
+										</div>
+									</button>
+								{/each}
 							</div>
-							<label class="toggle">
-								<input type="checkbox" checked={getPluginEnabled(plugin.id)}
-									onchange={() => togglePlugin(plugin.id)} />
-								<span class="toggle-slider"></span>
-							</label>
 						</div>
 					{/each}
-
-				<!-- ═══ AI PROVIDER ═══ -->
-				{:else if activeSection === 'ai'}
-					<p class="section-intro">{$t('settings.ai.intro')}</p>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.ai.provider')}</div>
-							<div class="setting-desc">{$t('settings.ai.providerDesc')}</div>
-						</div>
-						<select class="setting-control" value={$aiSettings.provider ?? ''} onchange={handleProviderChange}>
-							<option value="">— {$t('settings.ai.none')} —</option>
-							{#each Object.entries(PROVIDER_INFO) as [id, info]}
-								<option value={id}>{info.name}</option>
-							{/each}
-						</select>
-					</div>
-
-					{#if $aiSettings.provider}
-						{@const info = PROVIDER_INFO[$aiSettings.provider]}
-
-						{#if info.requiresKey}
-							<div class="setting-item">
-								<div class="setting-info">
-									<div class="setting-name">{$t('settings.ai.apiKey')}</div>
-									<div class="setting-desc">{$t('settings.ai.apiKeyDesc')}</div>
-								</div>
-								<input class="setting-input" type="password"
-									placeholder={$t('settings.ai.apiKeyPlaceholder')}
-									value={$aiSettings.apiKey}
-									oninput={(e) => updateAISettings({ apiKey: (e.target as HTMLInputElement).value })} />
-							</div>
-						{/if}
-
-						{#if info.hasBaseUrl}
-							<div class="setting-item">
-								<div class="setting-info">
-									<div class="setting-name">{$t('settings.ai.serverUrl')}</div>
-									<div class="setting-desc">{$t('settings.ai.serverUrlDesc')}</div>
-								</div>
-								<input class="setting-input" type="text"
-									placeholder="http://localhost:11434"
-									value={$aiSettings.baseUrl}
-									oninput={(e) => updateAISettings({ baseUrl: (e.target as HTMLInputElement).value })} />
-							</div>
-						{/if}
-
-						<div class="setting-item">
-							<div class="setting-info">
-								<div class="setting-name">{$t('settings.ai.model')}</div>
-								<div class="setting-desc">{$t('settings.ai.modelDesc')}</div>
-							</div>
-							<input class="setting-input" type="text"
-								value={$aiSettings.model}
-								placeholder={DEFAULT_MODELS[$aiSettings.provider]}
-								oninput={(e) => updateAISettings({ model: (e.target as HTMLInputElement).value })} />
-						</div>
-
-						<div class="setting-item">
-							<div class="setting-info">
-								<div class="setting-name">{$t('settings.ai.connection')}</div>
-								<div class="setting-desc">
-									{#if testStatus === 'success'}
-										<span class="test-success">{$t('settings.ai.connectedSuccess')}</span>
-									{:else if testStatus === 'failed'}
-										<span class="test-failed">{$t('settings.ai.connectionFailed')}</span>
-									{:else}
-										{$t('settings.ai.verifyConnection')}
-									{/if}
-								</div>
-							</div>
-							<button class="test-btn" onclick={testConnection} disabled={testing}>
-								{testing ? $t('settings.ai.testing') : $t('settings.ai.test')}
-							</button>
-						</div>
-					{/if}
 				{/if}
 			</div>
 		</div>
@@ -963,7 +1005,7 @@
 		outline: none;
 	}
 	.settings-modal {
-		width: 90vw; max-width: 900px; height: 80vh;
+		width: 90vw; max-width: 920px; height: 82vh;
 		display: flex;
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
@@ -974,7 +1016,7 @@
 
 	/* ═══ SIDEBAR ═══ */
 	.settings-sidebar {
-		width: 220px; flex-shrink: 0;
+		width: 210px; flex-shrink: 0;
 		background: var(--background-secondary);
 		border-inline-end: 1px solid var(--background-modifier-border);
 		display: flex; flex-direction: column;
@@ -1037,7 +1079,6 @@
 		border-bottom: 1px solid var(--background-modifier-border);
 	}
 	.setting-item:last-child { border-bottom: none; }
-	.setting-item.sub-setting { padding-inline-start: 16px; }
 	.setting-info { flex: 1; min-width: 0; }
 	.setting-name { font-size: 0.88rem; font-weight: 500; color: var(--text-normal); }
 	.setting-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
@@ -1116,26 +1157,44 @@
 	.setting-slider { flex: 1; accent-color: var(--interactive-accent); }
 	.slider-val { font-size: 0.82rem; color: var(--text-muted); min-width: 38px; text-align: end; }
 
-	/* ═══ ABOUT ═══ */
-	.about-section { text-align: center; padding: 32px 0; }
-	.about-logo { margin-bottom: 4px; display: flex; justify-content: center; }
-	.about-name { font-size: 1.5rem; font-weight: 700; color: var(--text-normal); }
-	.about-tagline { font-size: 0.9rem; color: var(--text-muted); margin-top: 2px; }
-	.about-version {
-		display: inline-block; margin-top: 8px;
-		font-size: 0.78rem; color: var(--text-faint);
-		background: var(--background-secondary-alt);
-		padding: 2px 10px; border-radius: 12px;
+	/* ═══ DASHBOARD ═══ */
+	.dashboard { }
+	.dashboard-header {
+		display: flex; align-items: center; gap: 16px;
+		padding-bottom: 20px; border-bottom: 1px solid var(--background-modifier-border);
 	}
-	.about-dev { font-size: 0.85rem; color: var(--text-muted); margin-top: 16px; line-height: 1.6; }
-	.about-links { margin-top: 16px; display: flex; justify-content: center; gap: 12px; }
-	.about-link {
+	.dash-title { display: flex; flex-direction: column; gap: 2px; }
+	.dash-name { font-size: 1.3rem; font-weight: 700; color: var(--text-normal); }
+	.dash-version {
+		font-size: 0.75rem; color: var(--text-faint);
+		background: var(--background-secondary-alt);
+		padding: 1px 8px; border-radius: 10px; width: fit-content;
+	}
+	.dash-stats {
+		display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+		padding: 20px 0;
+	}
+	.stat-card {
+		text-align: center; padding: 16px 8px;
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 10px;
+	}
+	.stat-value { font-size: 1.2rem; font-weight: 700; color: var(--text-normal); }
+	.stat-label { font-size: 0.72rem; color: var(--text-faint); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+	.dash-section { border-top: 1px solid var(--background-modifier-border); }
+	.dash-footer {
+		display: flex; align-items: center; justify-content: space-between;
+		padding-top: 16px; margin-top: 8px;
+		border-top: 1px solid var(--background-modifier-border);
+	}
+	.dash-dev { font-size: 0.82rem; color: var(--text-muted); }
+	.dash-link {
 		display: flex; align-items: center; gap: 4px;
-		font-size: 0.82rem; color: var(--interactive-accent);
-		cursor: pointer;
+		font-size: 0.82rem; color: var(--interactive-accent); cursor: pointer;
 	}
 
-	/* ═══ HOTKEYS ═══ */
+	/* ═══ KEYBOARD ═══ */
 	.hotkey-filter {
 		display: flex; align-items: center; gap: 8px;
 		padding: 8px 12px; margin-bottom: 12px;
@@ -1164,6 +1223,10 @@
 		background: var(--background-secondary-alt); padding: 1px 6px; border-radius: 4px;
 	}
 	.hotkey-binding { flex-shrink: 0; }
+	.hotkey-edit-btn {
+		background: none; border: none; cursor: pointer; padding: 0;
+	}
+	.hotkey-edit-btn:hover kbd { border-color: var(--interactive-accent); }
 	kbd {
 		font-family: var(--font-monospace-theme);
 		font-size: 0.78rem; color: var(--text-muted);
@@ -1171,13 +1234,52 @@
 		border: 1px solid var(--background-modifier-border);
 		padding: 2px 8px; border-radius: 4px;
 	}
+	.hotkey-recording {
+		background: var(--interactive-accent); color: var(--text-on-accent);
+		border-color: var(--interactive-accent); animation: pulse 1s infinite;
+		outline: none;
+	}
+	@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 	.hotkey-unset { font-size: 0.78rem; color: var(--text-faint); font-style: italic; }
 	.hotkey-empty { text-align: center; padding: 24px; color: var(--text-faint); font-size: 0.85rem; }
 
-	/* ═══ PLUGINS ═══ */
-	.plugin-item .setting-name { font-weight: 500; }
+	/* ═══ FEATURES GRID ═══ */
+	.feature-group { margin-bottom: 24px; }
+	.feature-group-header {
+		font-size: 0.8rem; font-weight: 600; color: var(--text-faint);
+		text-transform: uppercase; letter-spacing: 0.04em;
+		margin-bottom: 10px;
+	}
+	.feature-grid {
+		display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+	}
+	.feature-card {
+		display: flex; flex-direction: column; gap: 4px;
+		padding: 14px; border-radius: 10px;
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+		cursor: pointer; text-align: start;
+		font-family: inherit;
+		transition: all 0.15s ease;
+	}
+	.feature-card:hover { border-color: var(--interactive-accent); }
+	.feature-card.enabled { border-color: color-mix(in srgb, var(--interactive-accent) 40%, transparent); }
+	.feature-card-icon { font-size: 1.2rem; }
+	.feature-card-name { font-size: 0.82rem; font-weight: 600; color: var(--text-normal); }
+	.feature-card-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+	.feature-card-toggle {
+		display: flex; align-items: center; gap: 5px;
+		font-size: 0.7rem; color: var(--text-faint); margin-top: 4px;
+		text-transform: uppercase; letter-spacing: 0.03em;
+	}
+	.feature-dot {
+		width: 8px; height: 8px; border-radius: 50%;
+		background: var(--background-modifier-border);
+		transition: background 0.2s ease;
+	}
+	.feature-dot.on { background: var(--color-green, #4ade80); }
 
-	/* ═══ AI ═══ */
+	/* ═══ AI / INTELLIGENCE ═══ */
 	.test-btn {
 		padding: 6px 16px;
 		background: var(--interactive-normal);

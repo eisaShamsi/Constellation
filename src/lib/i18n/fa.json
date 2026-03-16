@@ -6,20 +6,15 @@
   "settings": {
     "title": "تنظیمات",
     "sections": {
-      "about": "درباره",
-      "general": "عمومی",
+      "dashboard": "داشبورد",
+      "universe": "جهان و کتابخانه‌ها",
       "editor": "ویرایشگر",
-      "files": "فایل‌ها و لینک‌ها",
+      "skyview": "نمای آسمان و پیوندها",
+      "intelligence": "هوش",
+      "security": "امنیت و حریم خصوصی",
       "appearance": "ظاهر",
-      "hotkeys": "کلیدهای میانبر",
-      "security": "امنیت",
-      "plugins": "ویژگی‌های داخلی",
-      "ai": "ارائه‌دهنده هوش مصنوعی",
-      "templates": "الگوها"
-    },
-    "about": {
-      "tagline": "گاوصندوقی از گاوصندوق‌ها",
-      "developedBy": "توسعه‌دهنده"
+      "keyboard": "صفحه‌کلید",
+      "features": "ویژگی‌ها"
     },
     "general": {
       "language": "زبان",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "دانلود و نصب خودکار به‌روزرسانی‌ها"
     },
     "security": {
-      "intro": "محافظت از داده‌های خزانه، ایمن‌سازی کلیدهای API و قفل برنامه در حالت بیکاری.",
-      "vaultEncryption": "رمزنگاری خزانه",
-      "vaultEncryptionDesc": "رمزنگاری داده‌های ذخیره شده خزانه در این دستگاه",
+      "intro": "از داده‌های خود محافظت کنید، کلیدهای API را ایمن کنید و برنامه را در حالت بیکار قفل کنید.",
+      "vaultEncryption": "رمزگذاری کتابخانه",
+      "vaultEncryptionDesc": "رمزگذاری داده‌های کتابخانه ذخیره شده در این دستگاه",
       "enabled": "فعال",
       "disabled": "غیرفعال",
       "lockHeading": "صفحه قفل",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "مکان پیش‌فرض برای یادداشت‌های جدید",
       "defaultLocationDesc": "محل قرارگیری یادداشت‌های جدید",
-      "vaultRoot": "پوشه ریشه گاوصندوق",
       "currentFolder": "همان پوشه فایل فعلی",
       "specifiedFolder": "در پوشه مشخص‌شده زیر",
       "folderPath": "مسیر پوشه",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "محل انتقال فایل‌های حذف‌شده",
       "systemTrash": "سطل زباله سیستم",
       "trashFolder": "پوشه .trash",
-      "permanentDelete": "حذف دائمی"
+      "permanentDelete": "حذف دائمی",
+      "libraryRoot": "ریشه کتابخانه"
     },
     "appearance": {
       "colorScheme": "طرح رنگ پایه",
@@ -145,13 +140,75 @@
       "fontSize": "اندازه فونت",
       "fontSizeDesc": "اندازه پایه فونت برای محتوای یادداشت"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "ارائه‌دهنده",
+      "providerDesc": "ارائه‌دهنده سرویس هوش مصنوعی خود را انتخاب کنید",
+      "none": "هیچ‌کدام",
+      "apiKey": "API Key",
+      "apiKeyDesc": "کلید دسترسی API شما",
+      "apiKeyPlaceholder": "API Key را وارد کنید",
+      "serverUrl": "آدرس سرور",
+      "serverUrlDesc": "آدرس سرور محلی Ollama",
+      "model": "مدل",
+      "modelDesc": "مدل هوش مصنوعی مورد استفاده",
+      "connection": "اتصال",
+      "connectedSuccess": "اتصال موفقیت‌آمیز",
+      "connectionFailed": "اتصال ناموفق",
+      "verifyConnection": "تنظیمات اتصال خود را بررسی کنید",
+      "testing": "در حال تست...",
+      "test": "تست",
+      "connectionTest": "تست"
+    },
+    "templates": {
+      "templateFolder": "پوشه الگوها",
+      "templateFolderDesc": "پوشه‌ای که فایل‌های الگوی شما در آن ذخیره شده‌اند",
+      "dailyNoteTemplate": "الگوی یادداشت روزانه",
+      "dailyNoteTemplateDesc": "نام فایل الگو برای ایجاد یادداشت‌های روزانه (بدون .md)",
+      "variables": "متغیرهای الگو",
+      "variablesDesc": "متغیرهای موجود برای استفاده در الگوهای شما",
+      "varDate": "تاریخ فعلی (YYYY-MM-DD)",
+      "varDateFormat": "قالب تاریخ سفارشی (مثلاً YYYY/MM/DD)",
+      "varTime": "زمان فعلی (HH:MM)",
+      "varTitle": "عنوان یادداشت",
+      "varFolder": "نام پوشه والد",
+      "varCursor": "موقعیت نشانگر پس از درج",
+      "varLibrary": "نام کتابخانه"
+    },
+    "dashboard": {
+      "libraries": "کتابخانه‌ها",
+      "notes": "یادداشت‌ها",
+      "aiProvider": "ارائه‌دهنده هوش مصنوعی",
+      "lockStatus": "وضعیت قفل",
+      "developedBy": "توسعه‌یافته توسط"
+    },
+    "universe": {
+      "intro": "تنظیم نحوه مدیریت جهان شما بر کتابخانه‌ها، یادداشت‌ها و قالب‌ها.",
+      "noteDefaults": "پیش‌فرض‌های یادداشت",
+      "templates": "قالب‌ها"
+    },
+    "skyview": {
+      "intro": "تنظیم نحوه کار خطوط ستاره (پیوندهای بین کتابخانه‌ای) و نمای آسمان."
+    },
+    "intelligence": {
+      "intro": "تنظیم ارائه‌دهندگان هوش مصنوعی، مهارت‌ها و کنترل‌های حریم خصوصی برای کتابخانه‌ها.",
+      "connection": "اتصال",
+      "preferences": "ترجیحات",
+      "contextLines": "اندازه زمینه",
+      "contextLinesDesc": "تعداد خطوط یادداشت ارسال شده به هوش مصنوعی برای زمینه",
+      "libraryAccess": "دسترسی کتابخانه",
+      "libraryAccessDesc": "کتابخانه‌هایی که هوش مصنوعی هنگام پردازش مهارت‌ها می‌تواند بخواند",
+      "allLibraries": "همه کتابخانه‌ها",
+      "activeOnly": "فقط کتابخانه فعال",
+      "noAccess": "بدون دسترسی"
+    },
+    "keyboard": {
       "filter": "فیلتر دستورات...",
       "notSet": "تنظیم نشده",
-      "noCommands": "دستوری یافت نشد"
+      "noCommands": "دستوری یافت نشد",
+      "pressKeys": "کلیدها را فشار دهید..."
     },
-    "plugins": {
-      "intro": "ویژگی‌های داخلی Constellation. می‌توانید هر کدام را فعال یا غیرفعال کنید.",
+    "features": {
+      "intro": "ویژگی‌های داخلی را روشن یا خاموش کنید. ویژگی‌های غیرفعال از رابط کاربری مخفی می‌شوند.",
       "dailyNotes": "یادداشت‌های روزانه",
       "dailyNotesDesc": "ایجاد و باز کردن یادداشت‌های روزانه",
       "templates": "قالب‌ها",
@@ -177,41 +234,12 @@
       "workspaces": "فضاهای کاری",
       "workspacesDesc": "ذخیره و بازیابی چیدمان فضای کاری",
       "index": "فهرست",
-      "indexDesc": "جمع‌آوری و مرور اصطلاحات از تمام یادداشت‌ها"
-    },
-    "ai": {
-      "intro": "اتصال سرویس هوش مصنوعی برای خلاصه‌سازی یادداشت و گفتگو با محتوای شما.",
-      "provider": "ارائه‌دهنده",
-      "providerDesc": "ارائه‌دهنده سرویس هوش مصنوعی خود را انتخاب کنید",
-      "none": "هیچ‌کدام",
-      "apiKey": "API Key",
-      "apiKeyDesc": "کلید دسترسی API شما",
-      "apiKeyPlaceholder": "API Key را وارد کنید",
-      "serverUrl": "آدرس سرور",
-      "serverUrlDesc": "آدرس سرور محلی Ollama",
-      "model": "مدل",
-      "modelDesc": "مدل هوش مصنوعی مورد استفاده",
-      "connection": "اتصال",
-      "connectedSuccess": "اتصال موفقیت‌آمیز",
-      "connectionFailed": "اتصال ناموفق",
-      "verifyConnection": "تنظیمات اتصال خود را بررسی کنید",
-      "testing": "در حال تست...",
-      "test": "تست"
-    },
-    "templates": {
-      "templateFolder": "پوشه الگوها",
-      "templateFolderDesc": "پوشه‌ای که فایل‌های الگوی شما در آن ذخیره شده‌اند",
-      "dailyNoteTemplate": "الگوی یادداشت روزانه",
-      "dailyNoteTemplateDesc": "نام فایل الگو برای ایجاد یادداشت‌های روزانه (بدون .md)",
-      "variables": "متغیرهای الگو",
-      "variablesDesc": "متغیرهای موجود برای استفاده در الگوهای شما",
-      "varDate": "تاریخ فعلی (YYYY-MM-DD)",
-      "varDateFormat": "قالب تاریخ سفارشی (مثلاً YYYY/MM/DD)",
-      "varTime": "زمان فعلی (HH:MM)",
-      "varTitle": "عنوان یادداشت",
-      "varFolder": "نام پوشه والد",
-      "varVault": "نام گاوصندوق",
-      "varCursor": "موقعیت نشانگر پس از درج"
+      "indexDesc": "جمع‌آوری و مرور اصطلاحات از تمام یادداشت‌ها",
+      "on": "روشن",
+      "off": "خاموش",
+      "navigation": "ناوبری",
+      "discovery": "کشف",
+      "organization": "سازمان‌دهی"
     }
   },
   "commands": {

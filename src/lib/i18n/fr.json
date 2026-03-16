@@ -6,20 +6,15 @@
   "settings": {
     "title": "Paramètres",
     "sections": {
-      "about": "À propos",
-      "general": "Général",
+      "dashboard": "Tableau de bord",
+      "universe": "Univers & Bibliothèques",
       "editor": "Éditeur",
-      "files": "Fichiers et liens",
+      "skyview": "Sky View & Liens",
+      "intelligence": "Intelligence",
+      "security": "Sécurité & Confidentialité",
       "appearance": "Apparence",
-      "hotkeys": "Raccourcis clavier",
-      "security": "Sécurité",
-      "plugins": "Fonctionnalités intégrées",
-      "ai": "Fournisseur IA",
-      "templates": "Modèles"
-    },
-    "about": {
-      "tagline": "Un Coffre de Coffres",
-      "developedBy": "Développé par"
+      "keyboard": "Clavier",
+      "features": "Fonctionnalités"
     },
     "general": {
       "language": "Langue",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "Télécharger et installer les mises à jour automatiquement"
     },
     "security": {
-      "intro": "Protégez les données de votre coffre, sécurisez les clés API et verrouillez l'app en cas d'inactivité.",
-      "vaultEncryption": "Chiffrement du coffre",
-      "vaultEncryptionDesc": "Chiffrer les données du coffre stockées sur cet appareil",
+      "intro": "Protégez vos données, sécurisez les clés API et verrouillez l'application en cas d'inactivité.",
+      "vaultEncryption": "Chiffrement de bibliothèque",
+      "vaultEncryptionDesc": "Chiffrer les données de bibliothèque stockées sur cet appareil",
       "enabled": "Activé",
       "disabled": "Désactivé",
       "lockHeading": "Écran de verrouillage",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "Emplacement par défaut des nouvelles notes",
       "defaultLocationDesc": "Où les nouvelles notes sont placées",
-      "vaultRoot": "Dossier racine du coffre",
       "currentFolder": "Même dossier que le fichier actuel",
       "specifiedFolder": "Dans le dossier spécifié ci-dessous",
       "folderPath": "Chemin du dossier",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "Où les fichiers supprimés sont déplacés",
       "systemTrash": "Corbeille du système",
       "trashFolder": "Dossier .trash",
-      "permanentDelete": "Supprimer définitivement"
+      "permanentDelete": "Supprimer définitivement",
+      "libraryRoot": "Racine de la bibliothèque"
     },
     "appearance": {
       "colorScheme": "Schéma de couleurs de base",
@@ -145,13 +140,75 @@
       "fontSize": "Taille de police",
       "fontSizeDesc": "Taille de police de base pour le contenu des notes"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "Fournisseur",
+      "providerDesc": "Choisissez votre fournisseur de service IA",
+      "none": "Aucun",
+      "apiKey": "API Key",
+      "apiKeyDesc": "Votre clé d'accès API",
+      "apiKeyPlaceholder": "Entrez la API Key",
+      "serverUrl": "URL du serveur",
+      "serverUrlDesc": "Adresse du serveur Ollama local",
+      "model": "Modèle",
+      "modelDesc": "Modèle IA à utiliser",
+      "connection": "Connexion",
+      "connectedSuccess": "Connecté avec succès",
+      "connectionFailed": "Connexion échouée",
+      "verifyConnection": "Vérifiez vos paramètres de connexion",
+      "testing": "Test en cours...",
+      "test": "Tester",
+      "connectionTest": "Tester"
+    },
+    "templates": {
+      "templateFolder": "Dossier de modèles",
+      "templateFolderDesc": "Le dossier où vos fichiers modèles sont stockés",
+      "dailyNoteTemplate": "Modèle de note quotidienne",
+      "dailyNoteTemplateDesc": "Nom du fichier modèle pour les notes quotidiennes (sans .md)",
+      "variables": "Variables de modèle",
+      "variablesDesc": "Variables disponibles pour vos modèles",
+      "varDate": "Date actuelle (YYYY-MM-DD)",
+      "varDateFormat": "Format de date personnalisé (ex. YYYY/MM/DD)",
+      "varTime": "Heure actuelle (HH:MM)",
+      "varTitle": "Titre de la note",
+      "varFolder": "Nom du dossier parent",
+      "varCursor": "Position du curseur après insertion",
+      "varLibrary": "Nom de la bibliothèque"
+    },
+    "dashboard": {
+      "libraries": "Bibliothèques",
+      "notes": "Notes",
+      "aiProvider": "Fournisseur IA",
+      "lockStatus": "État du verrou",
+      "developedBy": "Développé par"
+    },
+    "universe": {
+      "intro": "Configurez comment votre univers gère les bibliothèques, notes et modèles.",
+      "noteDefaults": "Paramètres par défaut des notes",
+      "templates": "Modèles"
+    },
+    "skyview": {
+      "intro": "Configurez le comportement des Star Lines (liens inter-bibliothèques) et de Sky View."
+    },
+    "intelligence": {
+      "intro": "Configurez les fournisseurs IA, les compétences et les contrôles de confidentialité pour vos bibliothèques.",
+      "connection": "Connexion",
+      "preferences": "Préférences",
+      "contextLines": "Taille du contexte",
+      "contextLinesDesc": "Lignes de contenu de note envoyées à l'IA comme contexte",
+      "libraryAccess": "Accès aux bibliothèques",
+      "libraryAccessDesc": "Quelles bibliothèques l'IA peut lire lors du traitement des compétences",
+      "allLibraries": "Toutes les bibliothèques",
+      "activeOnly": "Bibliothèque active uniquement",
+      "noAccess": "Aucun accès"
+    },
+    "keyboard": {
       "filter": "Filtrer les commandes...",
       "notSet": "Non défini",
-      "noCommands": "Aucune commande trouvée"
+      "noCommands": "Aucune commande trouvée",
+      "pressKeys": "Appuyez sur les touches..."
     },
-    "plugins": {
-      "intro": "Fonctionnalités intégrées à Constellation. Vous pouvez activer ou désactiver chacune.",
+    "features": {
+      "intro": "Activez ou désactivez les fonctionnalités intégrées. Les fonctionnalités désactivées sont masquées.",
       "dailyNotes": "Notes quotidiennes",
       "dailyNotesDesc": "Créer et ouvrir des notes quotidiennes",
       "templates": "Modèles",
@@ -177,41 +234,12 @@
       "workspaces": "Espaces de travail",
       "workspacesDesc": "Sauvegarder et restaurer les dispositions d'espaces de travail",
       "index": "Index",
-      "indexDesc": "Collecter et parcourir les termes de toutes les notes"
-    },
-    "ai": {
-      "intro": "Connectez un service IA pour résumer des notes et discuter avec votre contenu.",
-      "provider": "Fournisseur",
-      "providerDesc": "Choisissez votre fournisseur de service IA",
-      "none": "Aucun",
-      "apiKey": "API Key",
-      "apiKeyDesc": "Votre clé d'accès API",
-      "apiKeyPlaceholder": "Entrez la API Key",
-      "serverUrl": "URL du serveur",
-      "serverUrlDesc": "Adresse du serveur Ollama local",
-      "model": "Modèle",
-      "modelDesc": "Modèle IA à utiliser",
-      "connection": "Connexion",
-      "connectedSuccess": "Connecté avec succès",
-      "connectionFailed": "Connexion échouée",
-      "verifyConnection": "Vérifiez vos paramètres de connexion",
-      "testing": "Test en cours...",
-      "test": "Tester"
-    },
-    "templates": {
-      "templateFolder": "Dossier de modèles",
-      "templateFolderDesc": "Le dossier où vos fichiers modèles sont stockés",
-      "dailyNoteTemplate": "Modèle de note quotidienne",
-      "dailyNoteTemplateDesc": "Nom du fichier modèle pour les notes quotidiennes (sans .md)",
-      "variables": "Variables de modèle",
-      "variablesDesc": "Variables disponibles pour vos modèles",
-      "varDate": "Date actuelle (YYYY-MM-DD)",
-      "varDateFormat": "Format de date personnalisé (ex. YYYY/MM/DD)",
-      "varTime": "Heure actuelle (HH:MM)",
-      "varTitle": "Titre de la note",
-      "varFolder": "Nom du dossier parent",
-      "varVault": "Nom du coffre",
-      "varCursor": "Position du curseur après insertion"
+      "indexDesc": "Collecter et parcourir les termes de toutes les notes",
+      "on": "Activé",
+      "off": "Désactivé",
+      "navigation": "Navigation",
+      "discovery": "Découverte",
+      "organization": "Organisation"
     }
   },
   "commands": {

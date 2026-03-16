@@ -6,20 +6,15 @@
   "settings": {
     "title": "Einstellungen",
     "sections": {
-      "about": "Über",
-      "general": "Allgemein",
+      "dashboard": "Dashboard",
+      "universe": "Universum & Bibliotheken",
       "editor": "Editor",
-      "files": "Dateien & Links",
+      "skyview": "Sky View & Links",
+      "intelligence": "Intelligenz",
+      "security": "Sicherheit & Datenschutz",
       "appearance": "Erscheinungsbild",
-      "hotkeys": "Tastenkürzel",
-      "security": "Sicherheit",
-      "plugins": "Integrierte Funktionen",
-      "ai": "KI-Anbieter",
-      "templates": "Vorlagen"
-    },
-    "about": {
-      "tagline": "Ein Tresor der Tresore",
-      "developedBy": "Entwickelt von"
+      "keyboard": "Tastatur",
+      "features": "Funktionen"
     },
     "general": {
       "language": "Sprache",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "Updates automatisch herunterladen und installieren"
     },
     "security": {
-      "intro": "Schütze deine Vault-Daten, sichere API-Schlüssel und sperre die App bei Inaktivität.",
-      "vaultEncryption": "Vault-Verschlüsselung",
-      "vaultEncryptionDesc": "Gespeicherte Vault-Daten auf diesem Gerät verschlüsseln",
+      "intro": "Schütze deine Daten, sichere API-Schlüssel und sperre die App bei Inaktivität.",
+      "vaultEncryption": "Bibliothek-Verschlüsselung",
+      "vaultEncryptionDesc": "Gespeicherte Bibliotheksdaten auf diesem Gerät verschlüsseln",
       "enabled": "Aktiviert",
       "disabled": "Deaktiviert",
       "lockHeading": "Sperrbildschirm",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "Standardort für neue Notizen",
       "defaultLocationDesc": "Wo neue Notizen abgelegt werden",
-      "vaultRoot": "Stammordner des Tresors",
       "currentFolder": "Gleicher Ordner wie aktuelle Datei",
       "specifiedFolder": "Im unten angegebenen Ordner",
       "folderPath": "Ordnerpfad",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "Wohin gelöschte Dateien verschoben werden",
       "systemTrash": "System-Papierkorb",
       "trashFolder": ".trash-Ordner",
-      "permanentDelete": "Dauerhaft löschen"
+      "permanentDelete": "Dauerhaft löschen",
+      "libraryRoot": "Bibliothek-Stammordner"
     },
     "appearance": {
       "colorScheme": "Basis-Farbschema",
@@ -145,13 +140,75 @@
       "fontSize": "Schriftgröße",
       "fontSizeDesc": "Basis-Schriftgröße für den Notizinhalt"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "Anbieter",
+      "providerDesc": "Wählen Sie Ihren KI-Dienstanbieter",
+      "none": "Keiner",
+      "apiKey": "API Key",
+      "apiKeyDesc": "Ihr API-Zugriffsschlüssel",
+      "apiKeyPlaceholder": "API Key eingeben",
+      "serverUrl": "Server-URL",
+      "serverUrlDesc": "Lokale Ollama-Serveradresse",
+      "model": "Modell",
+      "modelDesc": "Zu verwendendes KI-Modell",
+      "connection": "Verbindung",
+      "connectedSuccess": "Erfolgreich verbunden",
+      "connectionFailed": "Verbindung fehlgeschlagen",
+      "verifyConnection": "Überprüfen Sie Ihre Verbindungseinstellungen",
+      "testing": "Wird getestet...",
+      "test": "Testen",
+      "connectionTest": "Testen"
+    },
+    "templates": {
+      "templateFolder": "Vorlagenordner",
+      "templateFolderDesc": "Der Ordner, in dem Ihre Vorlagendateien gespeichert sind",
+      "dailyNoteTemplate": "Tägliche-Notiz-Vorlage",
+      "dailyNoteTemplateDesc": "Vorlagendateiname für tägliche Notizen (ohne .md)",
+      "variables": "Vorlagenvariablen",
+      "variablesDesc": "Verfügbare Variablen für Ihre Vorlagen",
+      "varDate": "Aktuelles Datum (YYYY-MM-DD)",
+      "varDateFormat": "Benutzerdefiniertes Datumsformat (z.B. YYYY/MM/DD)",
+      "varTime": "Aktuelle Uhrzeit (HH:MM)",
+      "varTitle": "Notiz-Titel",
+      "varFolder": "Übergeordneter Ordnername",
+      "varCursor": "Cursorposition nach dem Einfügen",
+      "varLibrary": "Bibliotheksname"
+    },
+    "dashboard": {
+      "libraries": "Bibliotheken",
+      "notes": "Notizen",
+      "aiProvider": "KI-Anbieter",
+      "lockStatus": "Sperrstatus",
+      "developedBy": "Entwickelt von"
+    },
+    "universe": {
+      "intro": "Konfiguriere, wie dein Universum Bibliotheken, Notizen und Vorlagen verwaltet.",
+      "noteDefaults": "Notiz-Standardeinstellungen",
+      "templates": "Vorlagen"
+    },
+    "skyview": {
+      "intro": "Konfiguriere das Verhalten von Star Lines (bibliotheksübergreifende Links) und Sky View."
+    },
+    "intelligence": {
+      "intro": "KI-Anbieter, Fähigkeiten und Datenschutzkontrollen für Ihre Bibliotheken konfigurieren.",
+      "connection": "Verbindung",
+      "preferences": "Einstellungen",
+      "contextLines": "Kontextgröße",
+      "contextLinesDesc": "Zeilen des Notizinhalts, die als Kontext an die KI gesendet werden",
+      "libraryAccess": "Bibliothekszugriff",
+      "libraryAccessDesc": "Welche Bibliotheken die KI bei der Verarbeitung von Fähigkeiten lesen darf",
+      "allLibraries": "Alle Bibliotheken",
+      "activeOnly": "Nur aktive Bibliothek",
+      "noAccess": "Kein Zugriff"
+    },
+    "keyboard": {
       "filter": "Befehle filtern...",
       "notSet": "Nicht gesetzt",
-      "noCommands": "Keine Befehle gefunden"
+      "noCommands": "Keine Befehle gefunden",
+      "pressKeys": "Tasten drücken..."
     },
-    "plugins": {
-      "intro": "Integrierte Funktionen in Constellation. Sie können jede einzelne aktivieren oder deaktivieren.",
+    "features": {
+      "intro": "Integrierte Funktionen ein- oder ausschalten. Deaktivierte Funktionen werden ausgeblendet.",
       "dailyNotes": "Tägliche Notizen",
       "dailyNotesDesc": "Tägliche Notizen erstellen und öffnen",
       "templates": "Vorlagen",
@@ -177,41 +234,12 @@
       "workspaces": "Arbeitsbereiche",
       "workspacesDesc": "Arbeitsbereich-Layouts speichern und wiederherstellen",
       "index": "Index",
-      "indexDesc": "Begriffe aus allen Notizen sammeln und durchsuchen"
-    },
-    "ai": {
-      "intro": "Verbinden Sie einen KI-Dienst zur Zusammenfassung von Notizen und zum Chatten mit Ihren Inhalten.",
-      "provider": "Anbieter",
-      "providerDesc": "Wählen Sie Ihren KI-Dienstanbieter",
-      "none": "Keiner",
-      "apiKey": "API Key",
-      "apiKeyDesc": "Ihr API-Zugriffsschlüssel",
-      "apiKeyPlaceholder": "API Key eingeben",
-      "serverUrl": "Server-URL",
-      "serverUrlDesc": "Lokale Ollama-Serveradresse",
-      "model": "Modell",
-      "modelDesc": "Zu verwendendes KI-Modell",
-      "connection": "Verbindung",
-      "connectedSuccess": "Erfolgreich verbunden",
-      "connectionFailed": "Verbindung fehlgeschlagen",
-      "verifyConnection": "Überprüfen Sie Ihre Verbindungseinstellungen",
-      "testing": "Wird getestet...",
-      "test": "Testen"
-    },
-    "templates": {
-      "templateFolder": "Vorlagenordner",
-      "templateFolderDesc": "Der Ordner, in dem Ihre Vorlagendateien gespeichert sind",
-      "dailyNoteTemplate": "Tägliche-Notiz-Vorlage",
-      "dailyNoteTemplateDesc": "Vorlagendateiname für tägliche Notizen (ohne .md)",
-      "variables": "Vorlagenvariablen",
-      "variablesDesc": "Verfügbare Variablen für Ihre Vorlagen",
-      "varDate": "Aktuelles Datum (YYYY-MM-DD)",
-      "varDateFormat": "Benutzerdefiniertes Datumsformat (z.B. YYYY/MM/DD)",
-      "varTime": "Aktuelle Uhrzeit (HH:MM)",
-      "varTitle": "Notiz-Titel",
-      "varFolder": "Übergeordneter Ordnername",
-      "varVault": "Tresorname",
-      "varCursor": "Cursorposition nach dem Einfügen"
+      "indexDesc": "Begriffe aus allen Notizen sammeln und durchsuchen",
+      "on": "An",
+      "off": "Aus",
+      "navigation": "Navigation",
+      "discovery": "Entdeckung",
+      "organization": "Organisation"
     }
   },
   "commands": {

@@ -899,7 +899,7 @@
 			// Try loading template content if configured
 			let templateBody = '';
 			const templateFolder = $appSettings.templateFolder;
-			if (templateFolder && $appSettings.enabledPlugins?.templates) {
+			if (templateFolder && $appSettings.enabledFeatures?.templates) {
 				try {
 					const templatePath = `${vault.path}/${templateFolder}/default.md`;
 					const tpl: string = await invoke('read_note', { filePath: templatePath });
@@ -1076,7 +1076,7 @@
 
 			// Apply daily note template if configured and note was just created (has only date frontmatter)
 			const dailyTpl = $appSettings.dailyNoteTemplate;
-			if (dailyTpl && $appSettings.enabledPlugins?.templates) {
+			if (dailyTpl && $appSettings.enabledFeatures?.templates) {
 				try {
 					const noteContent: string = await invoke('read_note', { filePath: path });
 					// Only apply template if note is freshly created (short content = just frontmatter)

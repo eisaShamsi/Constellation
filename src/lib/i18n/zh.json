@@ -6,20 +6,15 @@
   "settings": {
     "title": "设置",
     "sections": {
-      "about": "关于",
-      "general": "通用",
+      "dashboard": "仪表盘",
+      "universe": "宇宙与资料库",
       "editor": "编辑器",
-      "files": "文件与链接",
+      "skyview": "天空视图与链接",
+      "intelligence": "智能",
+      "security": "安全与隐私",
       "appearance": "外观",
-      "hotkeys": "快捷键",
-      "security": "安全",
-      "plugins": "内置功能",
-      "ai": "AI 服务商",
-      "templates": "模板"
-    },
-    "about": {
-      "tagline": "库中之库",
-      "developedBy": "开发者"
+      "keyboard": "键盘",
+      "features": "功能"
     },
     "general": {
       "language": "语言",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "自动下载并安装更新"
     },
     "security": {
-      "intro": "保护保险库数据、保障API密钥安全，并在空闲时锁定应用。",
-      "vaultEncryption": "保险库加密",
-      "vaultEncryptionDesc": "加密此设备上缓存的保险库数据",
+      "intro": "保护数据、安全存储API密钥，并在空闲时锁定应用。",
+      "vaultEncryption": "资料库加密",
+      "vaultEncryptionDesc": "加密存储在此设备上的资料库数据",
       "enabled": "已启用",
       "disabled": "已禁用",
       "lockHeading": "锁定屏幕",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "新笔记的默认位置",
       "defaultLocationDesc": "新笔记存放的位置",
-      "vaultRoot": "仓库根目录",
       "currentFolder": "与当前文件相同的文件夹",
       "specifiedFolder": "在下方指定的文件夹中",
       "folderPath": "文件夹路径",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "已删除文件的移动位置",
       "systemTrash": "系统回收站",
       "trashFolder": ".trash 文件夹",
-      "permanentDelete": "永久删除"
+      "permanentDelete": "永久删除",
+      "libraryRoot": "资料库根文件夹"
     },
     "appearance": {
       "colorScheme": "基础配色方案",
@@ -145,13 +140,75 @@
       "fontSize": "字体大小",
       "fontSizeDesc": "笔记内容的基础字体大小"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "服务商",
+      "providerDesc": "选择您的 AI 服务提供商",
+      "none": "无",
+      "apiKey": "API Key",
+      "apiKeyDesc": "您的 API 访问密钥",
+      "apiKeyPlaceholder": "输入 API Key",
+      "serverUrl": "服务器地址",
+      "serverUrlDesc": "本地 Ollama 服务器地址",
+      "model": "模型",
+      "modelDesc": "要使用的 AI 模型",
+      "connection": "连接",
+      "connectedSuccess": "连接成功",
+      "connectionFailed": "连接失败",
+      "verifyConnection": "请验证您的连接设置",
+      "testing": "正在测试...",
+      "test": "测试",
+      "connectionTest": "测试"
+    },
+    "templates": {
+      "templateFolder": "模板文件夹",
+      "templateFolderDesc": "存储模板文件的文件夹",
+      "dailyNoteTemplate": "每日笔记模板",
+      "dailyNoteTemplateDesc": "创建每日笔记时使用的模板文件名（不含 .md）",
+      "variables": "模板变量",
+      "variablesDesc": "可在模板中使用的变量",
+      "varDate": "当前日期 (YYYY-MM-DD)",
+      "varDateFormat": "自定义日期格式（如 YYYY/MM/DD）",
+      "varTime": "当前时间 (HH:MM)",
+      "varTitle": "笔记标题",
+      "varFolder": "父文件夹名称",
+      "varCursor": "插入后的光标位置",
+      "varLibrary": "资料库名称"
+    },
+    "dashboard": {
+      "libraries": "资料库",
+      "notes": "笔记",
+      "aiProvider": "AI 提供商",
+      "lockStatus": "锁定状态",
+      "developedBy": "开发者"
+    },
+    "universe": {
+      "intro": "配置宇宙如何管理资料库、笔记和模板。",
+      "noteDefaults": "笔记默认设置",
+      "templates": "模板"
+    },
+    "skyview": {
+      "intro": "配置星线（跨资料库链接）和天空视图的行为。"
+    },
+    "intelligence": {
+      "intro": "为你的资料库配置AI提供商、技能和隐私控制。",
+      "connection": "连接",
+      "preferences": "偏好设置",
+      "contextLines": "上下文大小",
+      "contextLinesDesc": "发送给AI作为上下文的笔记内容行数",
+      "libraryAccess": "资料库访问",
+      "libraryAccessDesc": "AI在处理技能时可以读取哪些资料库",
+      "allLibraries": "所有资料库",
+      "activeOnly": "仅活动资料库",
+      "noAccess": "无访问权限"
+    },
+    "keyboard": {
       "filter": "筛选命令...",
       "notSet": "未设置",
-      "noCommands": "未找到命令"
+      "noCommands": "未找到命令",
+      "pressKeys": "按下按键..."
     },
-    "plugins": {
-      "intro": "Constellation 内置功能。您可以启用或禁用每个功能。",
+    "features": {
+      "intro": "开启或关闭内置功能。禁用的功能将从界面中隐藏。",
       "dailyNotes": "日记",
       "dailyNotesDesc": "创建和打开每日笔记",
       "templates": "模板",
@@ -177,41 +234,12 @@
       "workspaces": "工作区",
       "workspacesDesc": "保存和恢复工作区布局",
       "index": "索引",
-      "indexDesc": "收集和浏览所有笔记中的术语"
-    },
-    "ai": {
-      "intro": "连接 AI 服务以进行笔记摘要和内容对话。",
-      "provider": "服务商",
-      "providerDesc": "选择您的 AI 服务提供商",
-      "none": "无",
-      "apiKey": "API Key",
-      "apiKeyDesc": "您的 API 访问密钥",
-      "apiKeyPlaceholder": "输入 API Key",
-      "serverUrl": "服务器地址",
-      "serverUrlDesc": "本地 Ollama 服务器地址",
-      "model": "模型",
-      "modelDesc": "要使用的 AI 模型",
-      "connection": "连接",
-      "connectedSuccess": "连接成功",
-      "connectionFailed": "连接失败",
-      "verifyConnection": "请验证您的连接设置",
-      "testing": "正在测试...",
-      "test": "测试"
-    },
-    "templates": {
-      "templateFolder": "模板文件夹",
-      "templateFolderDesc": "存储模板文件的文件夹",
-      "dailyNoteTemplate": "每日笔记模板",
-      "dailyNoteTemplateDesc": "创建每日笔记时使用的模板文件名（不含 .md）",
-      "variables": "模板变量",
-      "variablesDesc": "可在模板中使用的变量",
-      "varDate": "当前日期 (YYYY-MM-DD)",
-      "varDateFormat": "自定义日期格式（如 YYYY/MM/DD）",
-      "varTime": "当前时间 (HH:MM)",
-      "varTitle": "笔记标题",
-      "varFolder": "父文件夹名称",
-      "varVault": "库名称",
-      "varCursor": "插入后的光标位置"
+      "indexDesc": "收集和浏览所有笔记中的术语",
+      "on": "开启",
+      "off": "关闭",
+      "navigation": "导航",
+      "discovery": "发现",
+      "organization": "组织"
     }
   },
   "commands": {
@@ -538,7 +566,7 @@
     "manageVaults": "管理保险库...",
     "openFolder": "打开文件夹",
     "remove": "移除",
-    "confirmRemove": "从 Constellation 移除\u201c{name}\u201d\uff1f您的文件不会被删除。",
+    "confirmRemove": "从 Constellation 移除“{name}”？您的文件不会被删除。",
     "addVault": "+ 添加保险库",
     "noVaults": "没有已注册的保险库",
     "notes": "篇笔记"

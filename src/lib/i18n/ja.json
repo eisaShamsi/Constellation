@@ -6,20 +6,15 @@
   "settings": {
     "title": "設定",
     "sections": {
-      "about": "概要",
-      "general": "一般",
+      "dashboard": "ダッシュボード",
+      "universe": "ユニバース＆ライブラリ",
       "editor": "エディタ",
-      "files": "ファイルとリンク",
+      "skyview": "スカイビュー＆リンク",
+      "intelligence": "インテリジェンス",
+      "security": "セキュリティ＆プライバシー",
       "appearance": "外観",
-      "hotkeys": "ホットキー",
-      "security": "セキュリティ",
-      "plugins": "組み込み機能",
-      "ai": "AIプロバイダー",
-      "templates": "テンプレート"
-    },
-    "about": {
-      "tagline": "保管庫の保管庫",
-      "developedBy": "開発者"
+      "keyboard": "キーボード",
+      "features": "機能"
     },
     "general": {
       "language": "言語",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "アップデートを自動的にダウンロードしてインストール"
     },
     "security": {
-      "intro": "ボールトデータの保護、APIキーの安全確保、アイドル時のアプリロック。",
-      "vaultEncryption": "ボールト暗号化",
-      "vaultEncryptionDesc": "このデバイスに保存されたボールトデータを暗号化",
+      "intro": "データを保護し、APIキーを安全に保管し、アイドル時にアプリをロックします。",
+      "vaultEncryption": "ライブラリ暗号化",
+      "vaultEncryptionDesc": "このデバイスに保存されたライブラリデータを暗号化",
       "enabled": "有効",
       "disabled": "無効",
       "lockHeading": "ロック画面",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "新しいノートのデフォルト保存先",
       "defaultLocationDesc": "新しいノートが保存される場所",
-      "vaultRoot": "保管庫のルートフォルダ",
       "currentFolder": "現在のファイルと同じフォルダ",
       "specifiedFolder": "以下で指定したフォルダ",
       "folderPath": "フォルダパス",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "削除されたファイルの移動先",
       "systemTrash": "システムのごみ箱",
       "trashFolder": ".trash フォルダ",
-      "permanentDelete": "完全に削除"
+      "permanentDelete": "完全に削除",
+      "libraryRoot": "ライブラリルートフォルダ"
     },
     "appearance": {
       "colorScheme": "基本カラースキーム",
@@ -145,13 +140,75 @@
       "fontSize": "フォントサイズ",
       "fontSizeDesc": "ノートコンテンツの基本フォントサイズ"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "プロバイダー",
+      "providerDesc": "AIサービスプロバイダーを選択",
+      "none": "なし",
+      "apiKey": "API Key",
+      "apiKeyDesc": "あなたのAPIアクセスキー",
+      "apiKeyPlaceholder": "API Keyを入力",
+      "serverUrl": "サーバーURL",
+      "serverUrlDesc": "ローカルOllamaサーバーのアドレス",
+      "model": "モデル",
+      "modelDesc": "使用するAIモデル",
+      "connection": "接続",
+      "connectedSuccess": "接続に成功しました",
+      "connectionFailed": "接続に失敗しました",
+      "verifyConnection": "接続設定を確認してください",
+      "testing": "テスト中...",
+      "test": "テスト",
+      "connectionTest": "テスト"
+    },
+    "templates": {
+      "templateFolder": "テンプレートフォルダ",
+      "templateFolderDesc": "テンプレートファイルが保存されているフォルダ",
+      "dailyNoteTemplate": "デイリーノートテンプレート",
+      "dailyNoteTemplateDesc": "デイリーノート作成時に使用するテンプレートファイル名（.md不要）",
+      "variables": "テンプレート変数",
+      "variablesDesc": "テンプレートで使用できる変数",
+      "varDate": "現在の日付 (YYYY-MM-DD)",
+      "varDateFormat": "カスタム日付形式 (例: YYYY/MM/DD)",
+      "varTime": "現在の時刻 (HH:MM)",
+      "varTitle": "ノートタイトル",
+      "varFolder": "親フォルダ名",
+      "varCursor": "挿入後のカーソル位置",
+      "varLibrary": "ライブラリ名"
+    },
+    "dashboard": {
+      "libraries": "ライブラリ",
+      "notes": "ノート",
+      "aiProvider": "AIプロバイダー",
+      "lockStatus": "ロック状態",
+      "developedBy": "開発者"
+    },
+    "universe": {
+      "intro": "ユニバースがライブラリ、ノート、テンプレートをどのように管理するかを設定します。",
+      "noteDefaults": "ノートのデフォルト",
+      "templates": "テンプレート"
+    },
+    "skyview": {
+      "intro": "スターライン（クロスライブラリリンク）とスカイビューの動作を設定します。"
+    },
+    "intelligence": {
+      "intro": "ライブラリのAIプロバイダー、スキル、プライバシー設定を構成します。",
+      "connection": "接続",
+      "preferences": "設定",
+      "contextLines": "コンテキストサイズ",
+      "contextLinesDesc": "AIにコンテキストとして送信されるノート内容の行数",
+      "libraryAccess": "ライブラリアクセス",
+      "libraryAccessDesc": "スキル処理時にAIが読み取れるライブラリ",
+      "allLibraries": "すべてのライブラリ",
+      "activeOnly": "アクティブなライブラリのみ",
+      "noAccess": "アクセスなし"
+    },
+    "keyboard": {
       "filter": "コマンドを絞り込み...",
       "notSet": "未設定",
-      "noCommands": "コマンドが見つかりません"
+      "noCommands": "コマンドが見つかりません",
+      "pressKeys": "キーを押してください..."
     },
-    "plugins": {
-      "intro": "Constellationに組み込まれた機能。各機能を有効・無効にできます。",
+    "features": {
+      "intro": "組み込み機能のオン/オフを切り替えます。無効にした機能はインターフェースから非表示になります。",
       "dailyNotes": "デイリーノート",
       "dailyNotesDesc": "デイリーノートを作成して開く",
       "templates": "テンプレート",
@@ -177,41 +234,12 @@
       "workspaces": "ワークスペース",
       "workspacesDesc": "ワークスペースレイアウトを保存・復元",
       "index": "索引",
-      "indexDesc": "すべてのノートから用語を収集・閲覧"
-    },
-    "ai": {
-      "intro": "ノートの要約やコンテンツとの対話のためにAIサービスを接続します。",
-      "provider": "プロバイダー",
-      "providerDesc": "AIサービスプロバイダーを選択",
-      "none": "なし",
-      "apiKey": "API Key",
-      "apiKeyDesc": "あなたのAPIアクセスキー",
-      "apiKeyPlaceholder": "API Keyを入力",
-      "serverUrl": "サーバーURL",
-      "serverUrlDesc": "ローカルOllamaサーバーのアドレス",
-      "model": "モデル",
-      "modelDesc": "使用するAIモデル",
-      "connection": "接続",
-      "connectedSuccess": "接続に成功しました",
-      "connectionFailed": "接続に失敗しました",
-      "verifyConnection": "接続設定を確認してください",
-      "testing": "テスト中...",
-      "test": "テスト"
-    },
-    "templates": {
-      "templateFolder": "テンプレートフォルダ",
-      "templateFolderDesc": "テンプレートファイルが保存されているフォルダ",
-      "dailyNoteTemplate": "デイリーノートテンプレート",
-      "dailyNoteTemplateDesc": "デイリーノート作成時に使用するテンプレートファイル名（.md不要）",
-      "variables": "テンプレート変数",
-      "variablesDesc": "テンプレートで使用できる変数",
-      "varDate": "現在の日付 (YYYY-MM-DD)",
-      "varDateFormat": "カスタム日付形式 (例: YYYY/MM/DD)",
-      "varTime": "現在の時刻 (HH:MM)",
-      "varTitle": "ノートタイトル",
-      "varFolder": "親フォルダ名",
-      "varVault": "保管庫名",
-      "varCursor": "挿入後のカーソル位置"
+      "indexDesc": "すべてのノートから用語を収集・閲覧",
+      "on": "オン",
+      "off": "オフ",
+      "navigation": "ナビゲーション",
+      "discovery": "ディスカバリー",
+      "organization": "整理"
     }
   },
   "commands": {

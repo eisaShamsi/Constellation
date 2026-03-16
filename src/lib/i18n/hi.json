@@ -6,20 +6,15 @@
   "settings": {
     "title": "सेटिंग्स",
     "sections": {
-      "about": "परिचय",
-      "general": "सामान्य",
+      "dashboard": "डैशबोर्ड",
+      "universe": "ब्रह्मांड और पुस्तकालय",
       "editor": "संपादक",
-      "files": "फ़ाइलें और लिंक",
+      "skyview": "स्काई व्यू और लिंक",
+      "intelligence": "बुद्धिमत्ता",
+      "security": "सुरक्षा और गोपनीयता",
       "appearance": "दिखावट",
-      "hotkeys": "शॉर्टकट कीज़",
-      "security": "सुरक्षा",
-      "plugins": "अंतर्निहित सुविधाएँ",
-      "ai": "AI प्रदाता",
-      "templates": "टेम्पलेट्स"
-    },
-    "about": {
-      "tagline": "तिजोरियों की तिजोरी",
-      "developedBy": "विकासकर्ता"
+      "keyboard": "कीबोर्ड",
+      "features": "सुविधाएँ"
     },
     "general": {
       "language": "भाषा",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "अपडेट स्वचालित रूप से डाउनलोड और इंस्टॉल करें"
     },
     "security": {
-      "intro": "अपने वॉल्ट डेटा की सुरक्षा करें, API कुंजियों को सुरक्षित रखें और निष्क्रिय होने पर ऐप लॉक करें।",
-      "vaultEncryption": "वॉल्ट एन्क्रिप्शन",
-      "vaultEncryptionDesc": "इस डिवाइस पर कैश किए गए वॉल्ट डेटा को एन्क्रिप्ट करें",
+      "intro": "अपने डेटा की सुरक्षा करें, API कुंजियाँ सुरक्षित रखें और निष्क्रिय होने पर ऐप लॉक करें।",
+      "vaultEncryption": "पुस्तकालय एन्क्रिप्शन",
+      "vaultEncryptionDesc": "इस डिवाइस पर संग्रहीत पुस्तकालय डेटा को एन्क्रिप्ट करें",
       "enabled": "सक्षम",
       "disabled": "अक्षम",
       "lockHeading": "लॉक स्क्रीन",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "नए नोट्स का डिफ़ॉल्ट स्थान",
       "defaultLocationDesc": "नए नोट्स कहाँ रखे जाते हैं",
-      "vaultRoot": "तिजोरी का मूल फ़ोल्डर",
       "currentFolder": "वर्तमान फ़ाइल का फ़ोल्डर",
       "specifiedFolder": "नीचे निर्दिष्ट फ़ोल्डर में",
       "folderPath": "फ़ोल्डर पथ",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "हटाई गई फ़ाइलें कहाँ ले जाई जाती हैं",
       "systemTrash": "सिस्टम रीसायकल बिन",
       "trashFolder": ".trash फ़ोल्डर",
-      "permanentDelete": "स्थायी रूप से हटाएँ"
+      "permanentDelete": "स्थायी रूप से हटाएँ",
+      "libraryRoot": "पुस्तकालय रूट फ़ोल्डर"
     },
     "appearance": {
       "colorScheme": "आधार रंग योजना",
@@ -145,13 +140,75 @@
       "fontSize": "फ़ॉन्ट आकार",
       "fontSizeDesc": "नोट सामग्री का आधार फ़ॉन्ट आकार"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "प्रदाता",
+      "providerDesc": "अपना AI सेवा प्रदाता चुनें",
+      "none": "कोई नहीं",
+      "apiKey": "API Key",
+      "apiKeyDesc": "आपकी API एक्सेस कुंजी",
+      "apiKeyPlaceholder": "API Key दर्ज करें",
+      "serverUrl": "सर्वर URL",
+      "serverUrlDesc": "स्थानीय Ollama सर्वर का पता",
+      "model": "मॉडल",
+      "modelDesc": "उपयोग करने के लिए AI मॉडल",
+      "connection": "कनेक्शन",
+      "connectedSuccess": "सफलतापूर्वक कनेक्ट हुआ",
+      "connectionFailed": "कनेक्शन विफल",
+      "verifyConnection": "अपनी कनेक्शन सेटिंग्स सत्यापित करें",
+      "testing": "परीक्षण हो रहा है...",
+      "test": "परीक्षण",
+      "connectionTest": "परीक्षण"
+    },
+    "templates": {
+      "templateFolder": "टेम्पलेट फ़ोल्डर",
+      "templateFolderDesc": "वह फ़ोल्डर जहाँ आपकी टेम्पलेट फ़ाइलें संग्रहीत हैं",
+      "dailyNoteTemplate": "दैनिक नोट टेम्पलेट",
+      "dailyNoteTemplateDesc": "दैनिक नोट बनाते समय उपयोग करने के लिए टेम्पलेट फ़ाइल का नाम (.md के बिना)",
+      "variables": "टेम्पलेट चर",
+      "variablesDesc": "आपके टेम्पलेट्स में उपलब्ध चर",
+      "varDate": "वर्तमान तिथि (YYYY-MM-DD)",
+      "varDateFormat": "कस्टम दिनांक प्रारूप (जैसे YYYY/MM/DD)",
+      "varTime": "वर्तमान समय (HH:MM)",
+      "varTitle": "नोट का शीर्षक",
+      "varFolder": "पैरेंट फ़ोल्डर का नाम",
+      "varCursor": "सम्मिलन के बाद कर्सर की स्थिति",
+      "varLibrary": "पुस्तकालय का नाम"
+    },
+    "dashboard": {
+      "libraries": "पुस्तकालय",
+      "notes": "नोट्स",
+      "aiProvider": "AI प्रदाता",
+      "lockStatus": "लॉक स्थिति",
+      "developedBy": "द्वारा विकसित"
+    },
+    "universe": {
+      "intro": "अपने ब्रह्मांड को पुस्तकालय, नोट्स और टेम्पलेट्स कैसे प्रबंधित करता है, कॉन्फ़िगर करें।",
+      "noteDefaults": "नोट डिफ़ॉल्ट",
+      "templates": "टेम्पलेट"
+    },
+    "skyview": {
+      "intro": "स्टार लाइन्स (क्रॉस-लाइब्रेरी लिंक) और स्काई व्यू कैसे काम करें, कॉन्फ़िगर करें।"
+    },
+    "intelligence": {
+      "intro": "अपनी पुस्तकालयों के लिए AI प्रदाताओं, कौशलों और गोपनीयता नियंत्रणों को कॉन्फ़िगर करें।",
+      "connection": "कनेक्शन",
+      "preferences": "प्राथमिकताएँ",
+      "contextLines": "संदर्भ आकार",
+      "contextLinesDesc": "AI को संदर्भ के लिए भेजी जाने वाली नोट सामग्री की पंक्तियाँ",
+      "libraryAccess": "पुस्तकालय पहुँच",
+      "libraryAccessDesc": "कौशल संसाधित करते समय AI कौन से पुस्तकालय पढ़ सकता है",
+      "allLibraries": "सभी पुस्तकालय",
+      "activeOnly": "केवल सक्रिय पुस्तकालय",
+      "noAccess": "कोई पहुँच नहीं"
+    },
+    "keyboard": {
       "filter": "कमांड फ़िल्टर करें...",
       "notSet": "सेट नहीं है",
-      "noCommands": "कोई कमांड नहीं मिली"
+      "noCommands": "कोई कमांड नहीं मिली",
+      "pressKeys": "कुंजियाँ दबाएँ..."
     },
-    "plugins": {
-      "intro": "Constellation में अंतर्निहित सुविधाएँ। आप प्रत्येक को सक्षम या अक्षम कर सकते हैं।",
+    "features": {
+      "intro": "अंतर्निहित सुविधाओं को चालू या बंद करें। अक्षम सुविधाएँ इंटरफ़ेस से छिपी होती हैं।",
       "dailyNotes": "दैनिक नोट्स",
       "dailyNotesDesc": "दैनिक नोट्स बनाएँ और खोलें",
       "templates": "टेम्पलेट्स",
@@ -177,41 +234,12 @@
       "workspaces": "वर्कस्पेस",
       "workspacesDesc": "वर्कस्पेस लेआउट सहेजें और पुनर्स्थापित करें",
       "index": "अनुक्रमणिका",
-      "indexDesc": "सभी नोट्स से शब्दों को एकत्र और ब्राउज़ करें"
-    },
-    "ai": {
-      "intro": "नोट सारांश और अपनी सामग्री से बातचीत के लिए AI सेवा कनेक्ट करें।",
-      "provider": "प्रदाता",
-      "providerDesc": "अपना AI सेवा प्रदाता चुनें",
-      "none": "कोई नहीं",
-      "apiKey": "API Key",
-      "apiKeyDesc": "आपकी API एक्सेस कुंजी",
-      "apiKeyPlaceholder": "API Key दर्ज करें",
-      "serverUrl": "सर्वर URL",
-      "serverUrlDesc": "स्थानीय Ollama सर्वर का पता",
-      "model": "मॉडल",
-      "modelDesc": "उपयोग करने के लिए AI मॉडल",
-      "connection": "कनेक्शन",
-      "connectedSuccess": "सफलतापूर्वक कनेक्ट हुआ",
-      "connectionFailed": "कनेक्शन विफल",
-      "verifyConnection": "अपनी कनेक्शन सेटिंग्स सत्यापित करें",
-      "testing": "परीक्षण हो रहा है...",
-      "test": "परीक्षण"
-    },
-    "templates": {
-      "templateFolder": "टेम्पलेट फ़ोल्डर",
-      "templateFolderDesc": "वह फ़ोल्डर जहाँ आपकी टेम्पलेट फ़ाइलें संग्रहीत हैं",
-      "dailyNoteTemplate": "दैनिक नोट टेम्पलेट",
-      "dailyNoteTemplateDesc": "दैनिक नोट बनाते समय उपयोग करने के लिए टेम्पलेट फ़ाइल का नाम (.md के बिना)",
-      "variables": "टेम्पलेट चर",
-      "variablesDesc": "आपके टेम्पलेट्स में उपलब्ध चर",
-      "varDate": "वर्तमान तिथि (YYYY-MM-DD)",
-      "varDateFormat": "कस्टम दिनांक प्रारूप (जैसे YYYY/MM/DD)",
-      "varTime": "वर्तमान समय (HH:MM)",
-      "varTitle": "नोट का शीर्षक",
-      "varFolder": "पैरेंट फ़ोल्डर का नाम",
-      "varVault": "वॉल्ट का नाम",
-      "varCursor": "सम्मिलन के बाद कर्सर की स्थिति"
+      "indexDesc": "सभी नोट्स से शब्दों को एकत्र और ब्राउज़ करें",
+      "on": "चालू",
+      "off": "बंद",
+      "navigation": "नेविगेशन",
+      "discovery": "खोज",
+      "organization": "संगठन"
     }
   },
   "commands": {

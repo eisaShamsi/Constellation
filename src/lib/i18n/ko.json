@@ -6,20 +6,15 @@
   "settings": {
     "title": "설정",
     "sections": {
-      "about": "정보",
-      "general": "일반",
+      "dashboard": "대시보드",
+      "universe": "유니버스 & 라이브러리",
       "editor": "편집기",
-      "files": "파일 및 링크",
+      "skyview": "스카이 뷰 & 링크",
+      "intelligence": "인텔리전스",
+      "security": "보안 & 개인정보",
       "appearance": "외관",
-      "hotkeys": "단축키",
-      "security": "보안",
-      "plugins": "내장 기능",
-      "ai": "AI 제공자",
-      "templates": "템플릿"
-    },
-    "about": {
-      "tagline": "보관함의 보관함",
-      "developedBy": "개발자"
+      "keyboard": "키보드",
+      "features": "기능"
     },
     "general": {
       "language": "언어",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "업데이트를 자동으로 다운로드하고 설치"
     },
     "security": {
-      "intro": "볼트 데이터 보호, API 키 보안 및 유휴 시 앱 잠금.",
-      "vaultEncryption": "볼트 암호화",
-      "vaultEncryptionDesc": "이 기기에 캐시된 볼트 데이터 암호화",
+      "intro": "데이터를 보호하고, API 키를 안전하게 보관하며, 유휴 시 앱을 잠급니다.",
+      "vaultEncryption": "라이브러리 암호화",
+      "vaultEncryptionDesc": "이 기기에 저장된 라이브러리 데이터 암호화",
       "enabled": "활성화됨",
       "disabled": "비활성화됨",
       "lockHeading": "잠금 화면",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "새 노트의 기본 위치",
       "defaultLocationDesc": "새 노트가 저장되는 위치",
-      "vaultRoot": "보관함 루트 폴더",
       "currentFolder": "현재 파일과 같은 폴더",
       "specifiedFolder": "아래에 지정된 폴더에",
       "folderPath": "폴더 경로",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "삭제된 파일이 이동되는 위치",
       "systemTrash": "시스템 휴지통",
       "trashFolder": ".trash 폴더",
-      "permanentDelete": "영구 삭제"
+      "permanentDelete": "영구 삭제",
+      "libraryRoot": "라이브러리 루트 폴더"
     },
     "appearance": {
       "colorScheme": "기본 색상 테마",
@@ -145,13 +140,75 @@
       "fontSize": "글꼴 크기",
       "fontSizeDesc": "노트 내용의 기본 글꼴 크기"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "제공자",
+      "providerDesc": "AI 서비스 제공자를 선택하세요",
+      "none": "없음",
+      "apiKey": "API Key",
+      "apiKeyDesc": "API 액세스 키",
+      "apiKeyPlaceholder": "API Key 입력",
+      "serverUrl": "서버 URL",
+      "serverUrlDesc": "로컬 Ollama 서버 주소",
+      "model": "모델",
+      "modelDesc": "사용할 AI 모델",
+      "connection": "연결",
+      "connectedSuccess": "연결 성공",
+      "connectionFailed": "연결 실패",
+      "verifyConnection": "연결 설정을 확인하세요",
+      "testing": "테스트 중...",
+      "test": "테스트",
+      "connectionTest": "테스트"
+    },
+    "templates": {
+      "templateFolder": "템플릿 폴더",
+      "templateFolderDesc": "템플릿 파일이 저장된 폴더",
+      "dailyNoteTemplate": "일일 노트 템플릿",
+      "dailyNoteTemplateDesc": "일일 노트 생성 시 사용할 템플릿 파일 이름 (.md 제외)",
+      "variables": "템플릿 변수",
+      "variablesDesc": "템플릿에서 사용할 수 있는 변수",
+      "varDate": "현재 날짜 (YYYY-MM-DD)",
+      "varDateFormat": "사용자 정의 날짜 형식 (예: YYYY/MM/DD)",
+      "varTime": "현재 시간 (HH:MM)",
+      "varTitle": "노트 제목",
+      "varFolder": "상위 폴더 이름",
+      "varCursor": "삽입 후 커서 위치",
+      "varLibrary": "라이브러리 이름"
+    },
+    "dashboard": {
+      "libraries": "라이브러리",
+      "notes": "노트",
+      "aiProvider": "AI 제공자",
+      "lockStatus": "잠금 상태",
+      "developedBy": "개발자"
+    },
+    "universe": {
+      "intro": "유니버스가 라이브러리, 노트, 템플릿을 관리하는 방법을 구성합니다.",
+      "noteDefaults": "노트 기본값",
+      "templates": "템플릿"
+    },
+    "skyview": {
+      "intro": "스타 라인(크로스 라이브러리 링크)과 스카이 뷰의 동작을 구성합니다."
+    },
+    "intelligence": {
+      "intro": "라이브러리의 AI 제공자, 스킬, 개인정보 제어를 구성합니다.",
+      "connection": "연결",
+      "preferences": "환경설정",
+      "contextLines": "컨텍스트 크기",
+      "contextLinesDesc": "AI에 컨텍스트로 전송되는 노트 콘텐츠 행 수",
+      "libraryAccess": "라이브러리 접근",
+      "libraryAccessDesc": "스킬 처리 시 AI가 읽을 수 있는 라이브러리",
+      "allLibraries": "모든 라이브러리",
+      "activeOnly": "활성 라이브러리만",
+      "noAccess": "접근 없음"
+    },
+    "keyboard": {
       "filter": "명령어 필터...",
       "notSet": "설정되지 않음",
-      "noCommands": "명령어를 찾을 수 없습니다"
+      "noCommands": "명령어를 찾을 수 없습니다",
+      "pressKeys": "키를 누르세요..."
     },
-    "plugins": {
-      "intro": "Constellation에 내장된 기능입니다. 각각을 활성화하거나 비활성화할 수 있습니다.",
+    "features": {
+      "intro": "내장 기능을 켜거나 끕니다. 비활성화된 기능은 인터페이스에서 숨겨집니다.",
       "dailyNotes": "일일 노트",
       "dailyNotesDesc": "일일 노트 생성 및 열기",
       "templates": "템플릿",
@@ -177,41 +234,12 @@
       "workspaces": "작업 공간",
       "workspacesDesc": "작업 공간 레이아웃 저장 및 복원",
       "index": "색인",
-      "indexDesc": "모든 노트에서 용어를 수집하고 탐색"
-    },
-    "ai": {
-      "intro": "노트 요약 및 콘텐츠와의 대화를 위해 AI 서비스를 연결하세요.",
-      "provider": "제공자",
-      "providerDesc": "AI 서비스 제공자를 선택하세요",
-      "none": "없음",
-      "apiKey": "API Key",
-      "apiKeyDesc": "API 액세스 키",
-      "apiKeyPlaceholder": "API Key 입력",
-      "serverUrl": "서버 URL",
-      "serverUrlDesc": "로컬 Ollama 서버 주소",
-      "model": "모델",
-      "modelDesc": "사용할 AI 모델",
-      "connection": "연결",
-      "connectedSuccess": "연결 성공",
-      "connectionFailed": "연결 실패",
-      "verifyConnection": "연결 설정을 확인하세요",
-      "testing": "테스트 중...",
-      "test": "테스트"
-    },
-    "templates": {
-      "templateFolder": "템플릿 폴더",
-      "templateFolderDesc": "템플릿 파일이 저장된 폴더",
-      "dailyNoteTemplate": "일일 노트 템플릿",
-      "dailyNoteTemplateDesc": "일일 노트 생성 시 사용할 템플릿 파일 이름 (.md 제외)",
-      "variables": "템플릿 변수",
-      "variablesDesc": "템플릿에서 사용할 수 있는 변수",
-      "varDate": "현재 날짜 (YYYY-MM-DD)",
-      "varDateFormat": "사용자 정의 날짜 형식 (예: YYYY/MM/DD)",
-      "varTime": "현재 시간 (HH:MM)",
-      "varTitle": "노트 제목",
-      "varFolder": "상위 폴더 이름",
-      "varVault": "보관함 이름",
-      "varCursor": "삽입 후 커서 위치"
+      "indexDesc": "모든 노트에서 용어를 수집하고 탐색",
+      "on": "켜기",
+      "off": "끄기",
+      "navigation": "탐색",
+      "discovery": "발견",
+      "organization": "정리"
     }
   },
   "commands": {

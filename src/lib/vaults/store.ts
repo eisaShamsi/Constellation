@@ -989,8 +989,16 @@ export interface AppSettings {
 		apiKeyProtection: boolean;
 	};
 
+	// AI preferences
+	ai: {
+		defaultSkill: string;
+		contextLines: number;
+		libraryAccess: 'all' | 'active' | 'none';
+		excludedLibraries: string[];
+	};
+
 	// Built-in features
-	enabledPlugins: {
+	enabledFeatures: {
 		dailyNotes: boolean;
 		templates: boolean;
 		graphView: boolean;
@@ -1050,7 +1058,13 @@ const DEFAULT_SETTINGS: AppSettings = {
 		lockPinHash: '',
 		apiKeyProtection: false,
 	},
-	enabledPlugins: {
+	ai: {
+		defaultSkill: '',
+		contextLines: 50,
+		libraryAccess: 'all',
+		excludedLibraries: [],
+	},
+	enabledFeatures: {
 		dailyNotes: true,
 		templates: true,
 		graphView: true,

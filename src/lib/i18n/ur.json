@@ -6,20 +6,15 @@
   "settings": {
     "title": "ترتیبات",
     "sections": {
-      "about": "بارے میں",
-      "general": "عمومی",
+      "dashboard": "ڈیش بورڈ",
+      "universe": "کائنات اور لائبریریاں",
       "editor": "ایڈیٹر",
-      "files": "فائلیں اور لنکس",
+      "skyview": "اسکائی ویو اور لنکس",
+      "intelligence": "ذہانت",
+      "security": "سیکیورٹی اور رازداری",
       "appearance": "ظاہری شکل",
-      "hotkeys": "شارٹ کٹ کیز",
-      "security": "سیکیورٹی",
-      "plugins": "بلٹ ان خصوصیات",
-      "ai": "AI فراہم کنندہ",
-      "templates": "ٹیمپلیٹس"
-    },
-    "about": {
-      "tagline": "خزانوں کا خزانہ",
-      "developedBy": "تیار کردہ"
+      "keyboard": "کی بورڈ",
+      "features": "خصوصیات"
     },
     "general": {
       "language": "زبان",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "خودکار طور پر اپ ڈیٹس ڈاؤن لوڈ اور انسٹال کریں"
     },
     "security": {
-      "intro": "والٹ ڈیٹا کی حفاظت، API کلیدوں کو محفوظ بنانا اور بیکاری پر ایپ کو لاک کرنا۔",
-      "vaultEncryption": "والٹ انکرپشن",
-      "vaultEncryptionDesc": "اس ڈیوائس پر والٹ کے محفوظ ڈیٹا کو انکرپٹ کریں",
+      "intro": "اپنے ڈیٹا کی حفاظت کریں، API کیز محفوظ رکھیں اور بیکار ہونے پر ایپ لاک کریں۔",
+      "vaultEncryption": "لائبریری انکرپشن",
+      "vaultEncryptionDesc": "اس ڈیوائس پر ذخیرہ شدہ لائبریری ڈیٹا کو انکرپٹ کریں",
       "enabled": "فعال",
       "disabled": "غیر فعال",
       "lockHeading": "لاک اسکرین",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "نئے نوٹس کے لیے ڈیفالٹ مقام",
       "defaultLocationDesc": "نئے نوٹس کہاں رکھے جاتے ہیں",
-      "vaultRoot": "خزانے کا روٹ فولڈر",
       "currentFolder": "موجودہ فائل کا فولڈر",
       "specifiedFolder": "نیچے مخصوص کردہ فولڈر میں",
       "folderPath": "فولڈر کا راستہ",
@@ -124,7 +118,8 @@
       "deletedFilesDesc": "حذف شدہ فائلیں کہاں منتقل ہوتی ہیں",
       "systemTrash": "سسٹم ری سائیکل بن",
       "trashFolder": ".trash فولڈر",
-      "permanentDelete": "مستقل حذف"
+      "permanentDelete": "مستقل حذف",
+      "libraryRoot": "لائبریری روٹ فولڈر"
     },
     "appearance": {
       "colorScheme": "بنیادی رنگ سکیم",
@@ -145,13 +140,75 @@
       "fontSize": "فونٹ سائز",
       "fontSizeDesc": "نوٹ کے مواد کا بنیادی فونٹ سائز"
     },
-    "hotkeys": {
+    "ai": {
+      "provider": "فراہم کنندہ",
+      "providerDesc": "اپنا AI سروس فراہم کنندہ منتخب کریں",
+      "none": "کوئی نہیں",
+      "apiKey": "API Key",
+      "apiKeyDesc": "آپ کی API رسائی کلید",
+      "apiKeyPlaceholder": "API Key درج کریں",
+      "serverUrl": "سرور URL",
+      "serverUrlDesc": "مقامی Ollama سرور کا پتہ",
+      "model": "ماڈل",
+      "modelDesc": "استعمال کرنے کے لیے AI ماڈل",
+      "connection": "کنکشن",
+      "connectedSuccess": "کامیابی سے جڑ گیا",
+      "connectionFailed": "کنکشن ناکام",
+      "verifyConnection": "اپنی کنکشن ترتیبات کی تصدیق کریں",
+      "testing": "جانچ ہو رہی ہے...",
+      "test": "ٹیسٹ",
+      "connectionTest": "ٹیسٹ"
+    },
+    "templates": {
+      "templateFolder": "ٹیمپلیٹ فولڈر",
+      "templateFolderDesc": "وہ فولڈر جہاں آپ کی ٹیمپلیٹ فائلیں محفوظ ہیں",
+      "dailyNoteTemplate": "روزانہ نوٹ ٹیمپلیٹ",
+      "dailyNoteTemplateDesc": "روزانہ نوٹ بنانے کے لیے ٹیمپلیٹ فائل کا نام (.md کے بغیر)",
+      "variables": "ٹیمپلیٹ متغیرات",
+      "variablesDesc": "اپنے ٹیمپلیٹس میں استعمال کے لیے دستیاب متغیرات",
+      "varDate": "موجودہ تاریخ (YYYY-MM-DD)",
+      "varDateFormat": "حسب ضرورت تاریخ فارمیٹ (مثلاً YYYY/MM/DD)",
+      "varTime": "موجودہ وقت (HH:MM)",
+      "varTitle": "نوٹ کا عنوان",
+      "varFolder": "پیرنٹ فولڈر کا نام",
+      "varCursor": "داخل کرنے کے بعد کرسر کی پوزیشن",
+      "varLibrary": "لائبریری کا نام"
+    },
+    "dashboard": {
+      "libraries": "لائبریریاں",
+      "notes": "نوٹس",
+      "aiProvider": "AI فراہم کنندہ",
+      "lockStatus": "لاک کی حالت",
+      "developedBy": "تیار کردہ"
+    },
+    "universe": {
+      "intro": "ترتیب دیں کہ آپ کی کائنات لائبریریاں، نوٹس اور ٹیمپلیٹس کو کیسے سنبھالتی ہے۔",
+      "noteDefaults": "نوٹ ڈیفالٹس",
+      "templates": "ٹیمپلیٹس"
+    },
+    "skyview": {
+      "intro": "Star Lines (کراس لائبریری لنکس) اور اسکائی ویو کے رویے کو ترتیب دیں۔"
+    },
+    "intelligence": {
+      "intro": "اپنی لائبریریوں کے لیے AI فراہم کنندگان، مہارتوں اور رازداری کے کنٹرولز کو ترتیب دیں۔",
+      "connection": "کنکشن",
+      "preferences": "ترجیحات",
+      "contextLines": "سیاق و سباق کا سائز",
+      "contextLinesDesc": "سیاق و سباق کے طور پر AI کو بھیجی گئی نوٹ کی سطروں کی تعداد",
+      "libraryAccess": "لائبریری تک رسائی",
+      "libraryAccessDesc": "مہارتوں پر عمل کرتے وقت AI کون سی لائبریریاں پڑھ سکتا ہے",
+      "allLibraries": "تمام لائبریریاں",
+      "activeOnly": "صرف فعال لائبریری",
+      "noAccess": "کوئی رسائی نہیں"
+    },
+    "keyboard": {
       "filter": "کمانڈز فلٹر کریں...",
       "notSet": "سیٹ نہیں ہے",
-      "noCommands": "کوئی کمانڈ نہیں ملی"
+      "noCommands": "کوئی کمانڈ نہیں ملی",
+      "pressKeys": "کیز دبائیں..."
     },
-    "plugins": {
-      "intro": "Constellation میں شامل بلٹ ان خصوصیات۔ آپ ہر ایک کو فعال یا غیر فعال کر سکتے ہیں۔",
+    "features": {
+      "intro": "بلٹ ان خصوصیات کو آن یا آف کریں۔ غیر فعال خصوصیات انٹرفیس سے چھپی ہوتی ہیں۔",
       "dailyNotes": "روزانہ نوٹس",
       "dailyNotesDesc": "روزانہ نوٹس بنائیں اور کھولیں",
       "templates": "ٹیمپلیٹس",
@@ -177,41 +234,12 @@
       "workspaces": "ورک اسپیسز",
       "workspacesDesc": "ورک اسپیس کی ترتیب محفوظ اور بحال کریں",
       "index": "فہرست",
-      "indexDesc": "تمام نوٹس سے اصطلاحات جمع اور براؤز کریں"
-    },
-    "ai": {
-      "intro": "نوٹ کی خلاصہ سازی اور اپنے مواد سے گفتگو کے لیے AI سروس جوڑیں۔",
-      "provider": "فراہم کنندہ",
-      "providerDesc": "اپنا AI سروس فراہم کنندہ منتخب کریں",
-      "none": "کوئی نہیں",
-      "apiKey": "API Key",
-      "apiKeyDesc": "آپ کی API رسائی کلید",
-      "apiKeyPlaceholder": "API Key درج کریں",
-      "serverUrl": "سرور URL",
-      "serverUrlDesc": "مقامی Ollama سرور کا پتہ",
-      "model": "ماڈل",
-      "modelDesc": "استعمال کرنے کے لیے AI ماڈل",
-      "connection": "کنکشن",
-      "connectedSuccess": "کامیابی سے جڑ گیا",
-      "connectionFailed": "کنکشن ناکام",
-      "verifyConnection": "اپنی کنکشن ترتیبات کی تصدیق کریں",
-      "testing": "جانچ ہو رہی ہے...",
-      "test": "ٹیسٹ"
-    },
-    "templates": {
-      "templateFolder": "ٹیمپلیٹ فولڈر",
-      "templateFolderDesc": "وہ فولڈر جہاں آپ کی ٹیمپلیٹ فائلیں محفوظ ہیں",
-      "dailyNoteTemplate": "روزانہ نوٹ ٹیمپلیٹ",
-      "dailyNoteTemplateDesc": "روزانہ نوٹ بنانے کے لیے ٹیمپلیٹ فائل کا نام (.md کے بغیر)",
-      "variables": "ٹیمپلیٹ متغیرات",
-      "variablesDesc": "اپنے ٹیمپلیٹس میں استعمال کے لیے دستیاب متغیرات",
-      "varDate": "موجودہ تاریخ (YYYY-MM-DD)",
-      "varDateFormat": "حسب ضرورت تاریخ فارمیٹ (مثلاً YYYY/MM/DD)",
-      "varTime": "موجودہ وقت (HH:MM)",
-      "varTitle": "نوٹ کا عنوان",
-      "varFolder": "پیرنٹ فولڈر کا نام",
-      "varVault": "خزانے کا نام",
-      "varCursor": "داخل کرنے کے بعد کرسر کی پوزیشن"
+      "indexDesc": "تمام نوٹس سے اصطلاحات جمع اور براؤز کریں",
+      "on": "آن",
+      "off": "آف",
+      "navigation": "نیویگیشن",
+      "discovery": "دریافت",
+      "organization": "تنظیم"
     }
   },
   "commands": {
