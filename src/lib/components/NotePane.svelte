@@ -659,6 +659,16 @@ ${contentEl.innerHTML}
 	.note-scroll.editing {
 		overflow: hidden;
 	}
+	.note-scroll :global(.cm-editor) {
+		font-family: var(--library-text-font, var(--font-text-theme, inherit));
+	}
+	.note-scroll :global(.cm-editor .cm-content) {
+		font-family: var(--library-text-font, var(--font-text-theme, inherit)) !important;
+		font-size: var(--library-font-size, var(--font-text-size, 0.95rem)) !important;
+	}
+	.note-scroll :global(.cm-editor .cm-line) {
+		font-family: inherit;
+	}
 
 	.props-toggle {
 		display: flex; align-items: center; gap: 4px;

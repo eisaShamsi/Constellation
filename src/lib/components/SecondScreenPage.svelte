@@ -187,7 +187,7 @@
 		const s = $appSettings;
 		const root = document.documentElement.style;
 
-		const defaultUI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif';
+		const defaultUI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans CJK SC", sans-serif';
 		const defaultMono = '"Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace';
 		const uiFont = s.interfaceFont || defaultUI;
 		const txtFont = s.textFont || uiFont;
