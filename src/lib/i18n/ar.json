@@ -204,7 +204,8 @@
       "templates": "القوالب"
     },
     "skyview": {
-      "intro": "إعداد كيفية عمل خطوط النجوم (الروابط عبر المكتبات) وعرض السماء."
+      "intro": "إعداد كيفية عمل خطوط النجوم (الروابط عبر المكتبات) وعرض السماء.",
+      "linking": "Linking"
     },
     "intelligence": {
       "intro": "إعداد مزودي الذكاء الاصطناعي والمهارات وضوابط الخصوصية لمكتباتك.",
@@ -257,6 +258,9 @@
       "navigation": "التنقل",
       "discovery": "الاكتشاف",
       "organization": "التنظيم"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -293,7 +297,9 @@
     "toggleLivePreview": "تبديل المعاينة الحية",
     "insertTemplate": "إدراج من قالب",
     "importNotes": "استيراد الملاحظات",
-    "insertTable": "إدراج جدول"
+    "insertTable": "إدراج جدول",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "بدون عنوان",
@@ -340,7 +346,8 @@
     "splitView": "تقسيم العرض",
     "skills": "المهارات",
     "graphViewTitle": "الرسم البياني",
-    "pinned": "مثبت"
+    "pinned": "مثبت",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "مرحبا بك في كونستليشن",
@@ -370,7 +377,8 @@
     "tasks": "المهام",
     "tasksHeader": "المهام",
     "calendar": "التقويم",
-    "calendarHeader": "التقويم"
+    "calendarHeader": "التقويم",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "الكل",
@@ -540,7 +548,11 @@
     "welcomeTitle": "مرحبا بك في كونستليشن",
     "welcomeSubtitle": "أضف مكتبتك الأولى من الشريط الجانبي",
     "addLibraryCta": "+ إضافة مكتبة",
-    "selectNote": "اختر ملاحظة من الشريط الجانبي"
+    "selectNote": "اختر ملاحظة من الشريط الجانبي",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "المهارات",
@@ -726,7 +738,17 @@
       "noLibrariesYet": "لم تُضَف أي مكتبات بعد. أضف مكتبة أو كونًا فرعيًا للبدء.",
       "remove": "إزالة",
       "starterKit": "تضمين حزمة البدء",
-      "starterKitDesc": "إضافة ملاحظات وهيكل مجلدات نموذجي للبدء"
+      "starterKitDesc": "إضافة ملاحظات وهيكل مجلدات نموذجي للبدء",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes"
     },
     "manager": {
       "heading": "مدير الأكوان",
@@ -825,5 +847,39 @@
     "skipped": "تم تخطيه",
     "errors": "أخطاء",
     "done": "تم"
+  },
+  "starView": {
+    "noNotes": "لا توجد ملاحظات لعرضها",
+    "controls": {
+      "title": "إعدادات الرسم البياني",
+      "reset": "إعادة تعيين الافتراضيات",
+      "filters": "المرشحات",
+      "searchPlaceholder": "البحث في الملفات...",
+      "tags": "الوسوم",
+      "attachments": "المرفقات",
+      "existingOnly": "الملفات الموجودة فقط",
+      "orphans": "الملاحظات المعزولة",
+      "groups": "المجموعات",
+      "newGroup": "مجموعة جديدة",
+      "display": "العرض",
+      "arrows": "الأسهم",
+      "textFade": "عتبة تلاشي النص",
+      "nodeSize": "حجم العقدة",
+      "linkThickness": "سمك الرابط",
+      "animate": "تحريك",
+      "forces": "القوى",
+      "centerForce": "قوة المركز",
+      "repelForce": "قوة التنافر",
+      "linkForce": "قوة الرابط",
+      "linkDistance": "مسافة الرابط"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }

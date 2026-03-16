@@ -204,7 +204,8 @@
       "templates": "ٹیمپلیٹس"
     },
     "skyview": {
-      "intro": "Star Lines (کراس لائبریری لنکس) اور اسکائی ویو کے رویے کو ترتیب دیں۔"
+      "intro": "Star Lines (کراس لائبریری لنکس) اور اسکائی ویو کے رویے کو ترتیب دیں۔",
+      "linking": "Linking"
     },
     "intelligence": {
       "intro": "اپنی لائبریریوں کے لیے AI فراہم کنندگان، مہارتوں اور رازداری کے کنٹرولز کو ترتیب دیں۔",
@@ -257,6 +258,9 @@
       "navigation": "نیویگیشن",
       "discovery": "دریافت",
       "organization": "تنظیم"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -293,7 +297,9 @@
     "importNotes": "نوٹس درآمد کریں",
     "insertTable": "ٹیبل داخل کریں",
     "addLibrary": "خزانہ شامل کریں",
-    "searchLibrary": "خزانے میں تلاش"
+    "searchLibrary": "خزانے میں تلاش",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "بغیر عنوان",
@@ -340,7 +346,8 @@
     "splitView": "تقسیم شدہ ویو",
     "skills": "مہارتیں",
     "graphViewTitle": "گراف ویو",
-    "pinned": "پن کیا گیا"
+    "pinned": "پن کیا گیا",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "Constellation میں خوش آمدید",
@@ -370,7 +377,8 @@
     "tasks": "کام",
     "tasksHeader": "کام",
     "calendar": "کیلنڈر",
-    "calendarHeader": "کیلنڈر"
+    "calendarHeader": "کیلنڈر",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "سب",
@@ -540,7 +548,11 @@
     "welcomeSubtitle": "سائڈبار سے اپنا پہلا خزانہ شامل کریں",
     "selectNote": "سائڈبار سے ایک نوٹ منتخب کریں",
     "addLibrary": "+ خزانہ شامل کریں",
-    "addLibraryCta": "+ خزانہ شامل کریں"
+    "addLibraryCta": "+ خزانہ شامل کریں",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "مہارتیں",
@@ -715,7 +727,17 @@
       "noLibrariesYet": "ابھی تک کوئی لائبریری شامل نہیں کی گئی۔ شروع کرنے کے لیے ایک لائبریری یا ذیلی کائنات شامل کریں۔",
       "remove": "ہٹائیں",
       "starterKit": "اسٹارٹر کٹ شامل کریں",
-      "starterKitDesc": "شروع کرنے کے لیے نمونہ نوٹس اور فولڈر ڈھانچہ شامل کریں"
+      "starterKitDesc": "شروع کرنے کے لیے نمونہ نوٹس اور فولڈر ڈھانچہ شامل کریں",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes"
     },
     "manager": {
       "heading": "کائنات مینیجر",
@@ -825,5 +847,39 @@
     "manageLibraries": "والٹ مینجمنٹ...",
     "noLibraries": "کوئی والٹ رجسٹرڈ نہیں",
     "openLibrary": "+ والٹ کھولیں"
+  },
+  "starView": {
+    "noNotes": "دکھانے کے لیے کوئی نوٹس نہیں",
+    "controls": {
+      "title": "گراف کی ترتیبات",
+      "reset": "ڈیفالٹ پر ری سیٹ کریں",
+      "filters": "فلٹرز",
+      "searchPlaceholder": "فائلیں تلاش کریں...",
+      "tags": "ٹیگز",
+      "attachments": "منسلکات",
+      "existingOnly": "صرف موجود فائلیں",
+      "orphans": "یتیم نوٹس",
+      "groups": "گروپس",
+      "newGroup": "نیا گروپ",
+      "display": "ڈسپلے",
+      "arrows": "تیر",
+      "textFade": "متن کی دھندلاہٹ کی حد",
+      "nodeSize": "نوڈ کا سائز",
+      "linkThickness": "لنک کی موٹائی",
+      "animate": "متحرک",
+      "forces": "قوتیں",
+      "centerForce": "مرکزی قوت",
+      "repelForce": "دھکیلنے کی قوت",
+      "linkForce": "لنک کی قوت",
+      "linkDistance": "لنک کی دوری"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }

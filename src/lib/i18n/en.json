@@ -130,7 +130,8 @@
       "permanentDelete": "Permanently delete"
     },
     "skyview": {
-      "intro": "Configure how Star Lines (cross-library links) and the Sky View graph behave."
+      "intro": "Configure how Star Lines (cross-library links) and the Sky View graph behave.",
+      "linking": "Linking"
     },
     "appearance": {
       "colorScheme": "Color scheme",
@@ -250,6 +251,9 @@
       "folderPath": "Folder path",
       "templateName": "Template name",
       "noFolderTemplates": "No folder templates configured"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -286,7 +290,9 @@
     "toggleLivePreview": "Toggle live preview",
     "insertTemplate": "Insert from template",
     "importNotes": "Import notes",
-    "insertTable": "Insert table"
+    "insertTable": "Insert table",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "Untitled",
@@ -333,7 +339,8 @@
     "splitView": "Split view",
     "skills": "Skills",
     "graphViewTitle": "Graph View",
-    "pinned": "Pinned"
+    "pinned": "Pinned",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "Welcome to Constellation",
@@ -363,7 +370,8 @@
     "tasks": "Tasks",
     "tasksHeader": "Tasks",
     "calendar": "Calendar",
-    "calendarHeader": "Calendar"
+    "calendarHeader": "Calendar",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "All",
@@ -533,7 +541,11 @@
     "welcomeTitle": "Welcome to Constellation",
     "welcomeSubtitle": "Add your first library from the sidebar",
     "addLibraryCta": "+ Add Library",
-    "selectNote": "Select a note from the sidebar"
+    "selectNote": "Select a note from the sidebar",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "Skills",
@@ -717,7 +729,19 @@
       "finish": "Finish",
       "skip": "Skip for now",
       "noLibrariesYet": "No libraries added yet. Add a library or child universe to get started.",
-      "remove": "Remove"
+      "remove": "Remove",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes",
+      "starterKit": "Starter Kit",
+      "starterKitDesc": "Begin with a pre-made collection of notes"
     },
     "manager": {
       "heading": "Universe Manager",
@@ -816,5 +840,39 @@
     "skipped": "Skipped",
     "errors": "Errors",
     "done": "Done"
+  },
+  "starView": {
+    "noNotes": "No notes to display",
+    "controls": {
+      "title": "Graph Settings",
+      "reset": "Reset to defaults",
+      "filters": "Filters",
+      "searchPlaceholder": "Search files...",
+      "tags": "Tags",
+      "attachments": "Attachments",
+      "existingOnly": "Existing files only",
+      "orphans": "Orphans",
+      "groups": "Groups",
+      "newGroup": "New group",
+      "display": "Display",
+      "arrows": "Arrows",
+      "textFade": "Text fade threshold",
+      "nodeSize": "Node size",
+      "linkThickness": "Link thickness",
+      "animate": "Animate",
+      "forces": "Forces",
+      "centerForce": "Center force",
+      "repelForce": "Repel force",
+      "linkForce": "Link force",
+      "linkDistance": "Link distance"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }

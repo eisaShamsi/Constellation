@@ -204,7 +204,8 @@
       "templates": "テンプレート"
     },
     "skyview": {
-      "intro": "スターライン（クロスライブラリリンク）とスカイビューの動作を設定します。"
+      "intro": "スターライン（クロスライブラリリンク）とスカイビューの動作を設定します。",
+      "linking": "Linking"
     },
     "intelligence": {
       "intro": "ライブラリのAIプロバイダー、スキル、プライバシー設定を構成します。",
@@ -257,6 +258,9 @@
       "navigation": "ナビゲーション",
       "discovery": "ディスカバリー",
       "organization": "整理"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -293,7 +297,9 @@
     "importNotes": "ノートをインポート",
     "insertTable": "テーブルを挿入",
     "addLibrary": "保管庫を追加",
-    "searchLibrary": "保管庫を検索"
+    "searchLibrary": "保管庫を検索",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "無題",
@@ -340,7 +346,8 @@
     "splitView": "分割ビュー",
     "skills": "スキル",
     "graphViewTitle": "グラフビュー",
-    "pinned": "ピン留め"
+    "pinned": "ピン留め",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "Constellation へようこそ",
@@ -370,7 +377,8 @@
     "tasks": "タスク",
     "tasksHeader": "タスク",
     "calendar": "カレンダー",
-    "calendarHeader": "カレンダー"
+    "calendarHeader": "カレンダー",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "すべて",
@@ -540,7 +548,11 @@
     "welcomeSubtitle": "サイドバーから最初の保管庫を追加してください",
     "selectNote": "サイドバーからノートを選択してください",
     "addLibrary": "+ 保管庫を追加",
-    "addLibraryCta": "+ 保管庫を追加"
+    "addLibraryCta": "+ 保管庫を追加",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "スキル",
@@ -715,7 +727,17 @@
       "noLibrariesYet": "まだライブラリが追加されていません。ライブラリまたは子ユニバースを追加して始めましょう。",
       "remove": "削除",
       "starterKit": "スターターキットを含める",
-      "starterKitDesc": "開始用のサンプルノートとフォルダ構造を追加"
+      "starterKitDesc": "開始用のサンプルノートとフォルダ構造を追加",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes"
     },
     "manager": {
       "heading": "ユニバースマネージャー",
@@ -825,5 +847,39 @@
     "manageLibraries": "ボールト管理...",
     "noLibraries": "登録されたボールトがありません",
     "openLibrary": "+ ボールトを開く"
+  },
+  "starView": {
+    "noNotes": "表示するノートがありません",
+    "controls": {
+      "title": "グラフ設定",
+      "reset": "デフォルトにリセット",
+      "filters": "フィルター",
+      "searchPlaceholder": "ファイルを検索...",
+      "tags": "タグ",
+      "attachments": "添付ファイル",
+      "existingOnly": "既存のファイルのみ",
+      "orphans": "孤立ノート",
+      "groups": "グループ",
+      "newGroup": "新しいグループ",
+      "display": "表示",
+      "arrows": "矢印",
+      "textFade": "テキストフェードしきい値",
+      "nodeSize": "ノードサイズ",
+      "linkThickness": "リンクの太さ",
+      "animate": "アニメーション",
+      "forces": "力",
+      "centerForce": "中心力",
+      "repelForce": "反発力",
+      "linkForce": "リンク力",
+      "linkDistance": "リンク距離"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }

@@ -204,7 +204,8 @@
       "templates": "Plantillas"
     },
     "skyview": {
-      "intro": "Configura el comportamiento de Star Lines (enlaces entre bibliotecas) y Sky View."
+      "intro": "Configura el comportamiento de Star Lines (enlaces entre bibliotecas) y Sky View.",
+      "linking": "Linking"
     },
     "intelligence": {
       "intro": "Configura proveedores de IA, habilidades y controles de privacidad para tus bibliotecas.",
@@ -257,6 +258,9 @@
       "navigation": "Navegación",
       "discovery": "Descubrimiento",
       "organization": "Organización"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -293,7 +297,9 @@
     "toggleLivePreview": "Alternar vista previa en vivo",
     "insertTemplate": "Insertar desde plantilla",
     "importNotes": "Importar notas",
-    "insertTable": "Insertar tabla"
+    "insertTable": "Insertar tabla",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "Sin título",
@@ -340,7 +346,8 @@
     "splitView": "Vista dividida",
     "skills": "Habilidades",
     "graphViewTitle": "Vista de grafo",
-    "pinned": "Fijada"
+    "pinned": "Fijada",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "Bienvenido a Constellation",
@@ -370,7 +377,8 @@
     "tasks": "Tareas",
     "tasksHeader": "Tareas",
     "calendar": "Calendario",
-    "calendarHeader": "Calendario"
+    "calendarHeader": "Calendario",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "Todas",
@@ -540,7 +548,11 @@
     "welcomeTitle": "Bienvenido a Constellation",
     "welcomeSubtitle": "Añade tu primera biblioteca desde la barra lateral",
     "addLibraryCta": "+ Añadir biblioteca",
-    "selectNote": "Selecciona una nota desde la barra lateral"
+    "selectNote": "Selecciona una nota desde la barra lateral",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "Habilidades",
@@ -726,7 +738,17 @@
       "noLibrariesYet": "Aún no se han agregado bibliotecas. Agrega una biblioteca o un universo secundario para comenzar.",
       "remove": "Eliminar",
       "starterKit": "Incluir kit de inicio",
-      "starterKitDesc": "Agregar notas de ejemplo y estructura de carpetas para comenzar"
+      "starterKitDesc": "Agregar notas de ejemplo y estructura de carpetas para comenzar",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes"
     },
     "manager": {
       "heading": "Gestor de Universos",
@@ -825,5 +847,39 @@
     "skipped": "Omitidos",
     "errors": "Errores",
     "done": "Listo"
+  },
+  "starView": {
+    "noNotes": "No hay notas para mostrar",
+    "controls": {
+      "title": "Ajustes del grafo",
+      "reset": "Restablecer valores predeterminados",
+      "filters": "Filtros",
+      "searchPlaceholder": "Buscar archivos...",
+      "tags": "Etiquetas",
+      "attachments": "Adjuntos",
+      "existingOnly": "Solo archivos existentes",
+      "orphans": "Huérfanas",
+      "groups": "Grupos",
+      "newGroup": "Nuevo grupo",
+      "display": "Visualización",
+      "arrows": "Flechas",
+      "textFade": "Umbral de desvanecimiento del texto",
+      "nodeSize": "Tamaño del nodo",
+      "linkThickness": "Grosor del enlace",
+      "animate": "Animar",
+      "forces": "Fuerzas",
+      "centerForce": "Fuerza de centrado",
+      "repelForce": "Fuerza de repulsión",
+      "linkForce": "Fuerza de enlace",
+      "linkDistance": "Distancia de enlace"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }

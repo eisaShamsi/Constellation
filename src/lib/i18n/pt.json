@@ -204,7 +204,8 @@
       "templates": "Modelos"
     },
     "skyview": {
-      "intro": "Configure o comportamento de Star Lines (links entre bibliotecas) e Sky View."
+      "intro": "Configure o comportamento de Star Lines (links entre bibliotecas) e Sky View.",
+      "linking": "Linking"
     },
     "intelligence": {
       "intro": "Configure provedores de IA, habilidades e controles de privacidade para suas bibliotecas.",
@@ -257,6 +258,9 @@
       "navigation": "Navegação",
       "discovery": "Descoberta",
       "organization": "Organização"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -293,7 +297,9 @@
     "importNotes": "Importar notas",
     "insertTable": "Inserir tabela",
     "addLibrary": "Adicionar cofre",
-    "searchLibrary": "Pesquisar no cofre"
+    "searchLibrary": "Pesquisar no cofre",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "Sem título",
@@ -340,7 +346,8 @@
     "splitView": "Visualização dividida",
     "skills": "Habilidades",
     "graphViewTitle": "Visualização em grafo",
-    "pinned": "Fixada"
+    "pinned": "Fixada",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "Bem-vindo ao Constellation",
@@ -370,7 +377,8 @@
     "tasks": "Tarefas",
     "tasksHeader": "Tarefas",
     "calendar": "Calendário",
-    "calendarHeader": "Calendário"
+    "calendarHeader": "Calendário",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "Todas",
@@ -540,7 +548,11 @@
     "welcomeSubtitle": "Adicione seu primeiro cofre pela barra lateral",
     "selectNote": "Selecione uma nota na barra lateral",
     "addLibrary": "+ Adicionar cofre",
-    "addLibraryCta": "+ Adicionar cofre"
+    "addLibraryCta": "+ Adicionar cofre",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "Habilidades",
@@ -715,7 +727,17 @@
       "noLibrariesYet": "Nenhuma biblioteca adicionada ainda. Adicione uma biblioteca ou universo filho para começar.",
       "remove": "Remover",
       "starterKit": "Incluir kit inicial",
-      "starterKitDesc": "Adicionar notas de exemplo e estrutura de pastas para começar"
+      "starterKitDesc": "Adicionar notas de exemplo e estrutura de pastas para começar",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes"
     },
     "manager": {
       "heading": "Gerenciador de Universos",
@@ -825,5 +847,39 @@
     "manageLibraries": "Gerenciar cofres...",
     "noLibraries": "Nenhum cofre registrado",
     "openLibrary": "+ Abrir cofre"
+  },
+  "starView": {
+    "noNotes": "Nenhuma nota para exibir",
+    "controls": {
+      "title": "Configurações do grafo",
+      "reset": "Redefinir para padrões",
+      "filters": "Filtros",
+      "searchPlaceholder": "Pesquisar arquivos...",
+      "tags": "Tags",
+      "attachments": "Anexos",
+      "existingOnly": "Apenas arquivos existentes",
+      "orphans": "Órfãs",
+      "groups": "Grupos",
+      "newGroup": "Novo grupo",
+      "display": "Exibição",
+      "arrows": "Setas",
+      "textFade": "Limite de esmaecimento do texto",
+      "nodeSize": "Tamanho do nó",
+      "linkThickness": "Espessura do link",
+      "animate": "Animar",
+      "forces": "Forças",
+      "centerForce": "Força central",
+      "repelForce": "Força de repulsão",
+      "linkForce": "Força do link",
+      "linkDistance": "Distância do link"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }

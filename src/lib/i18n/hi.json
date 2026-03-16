@@ -204,7 +204,8 @@
       "templates": "टेम्पलेट"
     },
     "skyview": {
-      "intro": "स्टार लाइन्स (क्रॉस-लाइब्रेरी लिंक) और स्काई व्यू कैसे काम करें, कॉन्फ़िगर करें।"
+      "intro": "स्टार लाइन्स (क्रॉस-लाइब्रेरी लिंक) और स्काई व्यू कैसे काम करें, कॉन्फ़िगर करें।",
+      "linking": "Linking"
     },
     "intelligence": {
       "intro": "अपनी पुस्तकालयों के लिए AI प्रदाताओं, कौशलों और गोपनीयता नियंत्रणों को कॉन्फ़िगर करें।",
@@ -257,6 +258,9 @@
       "navigation": "नेविगेशन",
       "discovery": "खोज",
       "organization": "संगठन"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -293,7 +297,9 @@
     "importNotes": "नोट्स आयात करें",
     "insertTable": "तालिका डालें",
     "addLibrary": "तिजोरी जोड़ें",
-    "searchLibrary": "तिजोरी में खोजें"
+    "searchLibrary": "तिजोरी में खोजें",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "बिना शीर्षक",
@@ -340,7 +346,8 @@
     "splitView": "विभाजित दृश्य",
     "skills": "कौशल",
     "graphViewTitle": "ग्राफ़ दृश्य",
-    "pinned": "पिन किया गया"
+    "pinned": "पिन किया गया",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "Constellation में आपका स्वागत है",
@@ -370,7 +377,8 @@
     "tasks": "कार्य",
     "tasksHeader": "कार्य",
     "calendar": "कैलेंडर",
-    "calendarHeader": "कैलेंडर"
+    "calendarHeader": "कैलेंडर",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "सभी",
@@ -540,7 +548,11 @@
     "welcomeSubtitle": "साइडबार से अपनी पहली तिजोरी जोड़ें",
     "selectNote": "साइडबार से एक नोट चुनें",
     "addLibrary": "+ तिजोरी जोड़ें",
-    "addLibraryCta": "+ तिजोरी जोड़ें"
+    "addLibraryCta": "+ तिजोरी जोड़ें",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "कौशल",
@@ -715,7 +727,17 @@
       "noLibrariesYet": "अभी तक कोई लाइब्रेरी नहीं जोड़ी गई। शुरू करने के लिए एक लाइब्रेरी या चाइल्ड ब्रह्मांड जोड़ें।",
       "remove": "हटाएं",
       "starterKit": "स्टार्टर किट शामिल करें",
-      "starterKitDesc": "शुरू करने के लिए नमूना नोट्स और फ़ोल्डर संरचना जोड़ें"
+      "starterKitDesc": "शुरू करने के लिए नमूना नोट्स और फ़ोल्डर संरचना जोड़ें",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes"
     },
     "manager": {
       "heading": "ब्रह्मांड प्रबंधक",
@@ -825,5 +847,39 @@
     "manageLibraries": "वॉल्ट प्रबंधन...",
     "noLibraries": "कोई वॉल्ट पंजीकृत नहीं",
     "openLibrary": "+ वॉल्ट खोलें"
+  },
+  "starView": {
+    "noNotes": "दिखाने के लिए कोई नोट नहीं",
+    "controls": {
+      "title": "ग्राफ़ सेटिंग्स",
+      "reset": "डिफ़ॉल्ट पर रीसेट करें",
+      "filters": "फ़िल्टर",
+      "searchPlaceholder": "फ़ाइलें खोजें...",
+      "tags": "टैग्स",
+      "attachments": "अटैचमेंट",
+      "existingOnly": "केवल मौजूदा फ़ाइलें",
+      "orphans": "अकेले नोट्स",
+      "groups": "समूह",
+      "newGroup": "नया समूह",
+      "display": "प्रदर्शन",
+      "arrows": "तीर",
+      "textFade": "टेक्स्ट फ़ेड सीमा",
+      "nodeSize": "नोड का आकार",
+      "linkThickness": "लिंक की मोटाई",
+      "animate": "एनिमेट",
+      "forces": "बल",
+      "centerForce": "केंद्र बल",
+      "repelForce": "प्रतिकर्षण बल",
+      "linkForce": "लिंक बल",
+      "linkDistance": "लिंक दूरी"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }

@@ -204,7 +204,8 @@
       "templates": "Şablonlar"
     },
     "skyview": {
-      "intro": "Star Lines (kütüphaneler arası bağlantılar) ve Gökyüzü Görünümü davranışını yapılandırın."
+      "intro": "Star Lines (kütüphaneler arası bağlantılar) ve Gökyüzü Görünümü davranışını yapılandırın.",
+      "linking": "Linking"
     },
     "intelligence": {
       "intro": "Kütüphaneleriniz için AI sağlayıcılarını, becerileri ve gizlilik kontrollerini yapılandırın.",
@@ -257,6 +258,9 @@
       "navigation": "Gezinme",
       "discovery": "Keşif",
       "organization": "Düzenleme"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -293,7 +297,9 @@
     "importNotes": "Notları içe aktar",
     "insertTable": "Tablo ekle",
     "addLibrary": "Kasa ekle",
-    "searchLibrary": "Kasada ara"
+    "searchLibrary": "Kasada ara",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "Başlıksız",
@@ -340,7 +346,8 @@
     "splitView": "Bölünmüş görünüm",
     "skills": "Beceriler",
     "graphViewTitle": "Grafik Görünümü",
-    "pinned": "Sabitlendi"
+    "pinned": "Sabitlendi",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "Constellation'a Hoş Geldiniz",
@@ -370,7 +377,8 @@
     "tasks": "Görevler",
     "tasksHeader": "Görevler",
     "calendar": "Takvim",
-    "calendarHeader": "Takvim"
+    "calendarHeader": "Takvim",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "Tümü",
@@ -540,7 +548,11 @@
     "welcomeSubtitle": "Kenar çubuğundan ilk kasanızı ekleyin",
     "selectNote": "Kenar çubuğundan bir not seçin",
     "addLibrary": "+ Kasa ekle",
-    "addLibraryCta": "+ Kasa Ekle"
+    "addLibraryCta": "+ Kasa Ekle",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "Beceriler",
@@ -715,7 +727,17 @@
       "noLibrariesYet": "Henüz kütüphane eklenmedi. Başlamak için bir kütüphane veya alt evren ekleyin.",
       "remove": "Kaldır",
       "starterKit": "Başlangıç kitini dahil et",
-      "starterKitDesc": "Başlamak için örnek notlar ve klasör yapısı ekle"
+      "starterKitDesc": "Başlamak için örnek notlar ve klasör yapısı ekle",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes"
     },
     "manager": {
       "heading": "Evren Yöneticisi",
@@ -825,5 +847,39 @@
     "manageLibraries": "Kasaları yönet...",
     "noLibraries": "Kayıtlı kasa yok",
     "openLibrary": "+ Kasa aç"
+  },
+  "starView": {
+    "noNotes": "Gösterilecek not yok",
+    "controls": {
+      "title": "Grafik Ayarları",
+      "reset": "Varsayılanlara sıfırla",
+      "filters": "Filtreler",
+      "searchPlaceholder": "Dosya ara...",
+      "tags": "Etiketler",
+      "attachments": "Ekler",
+      "existingOnly": "Yalnızca mevcut dosyalar",
+      "orphans": "Yetim notlar",
+      "groups": "Gruplar",
+      "newGroup": "Yeni grup",
+      "display": "Görünüm",
+      "arrows": "Oklar",
+      "textFade": "Metin solma eşiği",
+      "nodeSize": "Düğüm boyutu",
+      "linkThickness": "Bağlantı kalınlığı",
+      "animate": "Animasyon",
+      "forces": "Kuvvetler",
+      "centerForce": "Merkez kuvveti",
+      "repelForce": "İtme kuvveti",
+      "linkForce": "Bağlantı kuvveti",
+      "linkDistance": "Bağlantı mesafesi"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }

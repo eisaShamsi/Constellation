@@ -204,7 +204,8 @@
       "templates": "תבניות"
     },
     "skyview": {
-      "intro": "הגדר כיצד קווי כוכב (קישורים חוצי ספריות) ותצוגת שמיים פועלים."
+      "intro": "הגדר כיצד קווי כוכב (קישורים חוצי ספריות) ותצוגת שמיים פועלים.",
+      "linking": "Linking"
     },
     "intelligence": {
       "intro": "הגדר ספקי בינה מלאכותית, כישורים ובקרות פרטיות לספריות שלך.",
@@ -257,6 +258,9 @@
       "navigation": "ניווט",
       "discovery": "גילוי",
       "organization": "ארגון"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -293,7 +297,9 @@
     "importNotes": "ייבוא הערות",
     "insertTable": "הוסף טבלה",
     "addLibrary": "הוסף כספת",
-    "searchLibrary": "חפש בכספת"
+    "searchLibrary": "חפש בכספת",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "ללא כותרת",
@@ -340,7 +346,8 @@
     "splitView": "תצוגה מפוצלת",
     "skills": "כישורים",
     "graphViewTitle": "תצוגת גרף",
-    "pinned": "מוצמד"
+    "pinned": "מוצמד",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "ברוכים הבאים ל-Constellation",
@@ -370,7 +377,8 @@
     "tasks": "משימות",
     "tasksHeader": "משימות",
     "calendar": "לוח שנה",
-    "calendarHeader": "לוח שנה"
+    "calendarHeader": "לוח שנה",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "הכל",
@@ -540,7 +548,11 @@
     "welcomeSubtitle": "הוסף את הכספת הראשונה שלך מהסרגל הצדדי",
     "selectNote": "בחר פתק מהסרגל הצדדי",
     "addLibrary": "+ הוסף כספת",
-    "addLibraryCta": "+ הוסף כספת"
+    "addLibraryCta": "+ הוסף כספת",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "כישורים",
@@ -715,7 +727,17 @@
       "noLibrariesYet": "עדיין לא נוספו ספריות. הוסף ספריה או יקום צאצא כדי להתחיל.",
       "remove": "הסר",
       "starterKit": "כלול ערכת התחלה",
-      "starterKitDesc": "הוסף הערות לדוגמה ומבנה תיקיות להתחלה"
+      "starterKitDesc": "הוסף הערות לדוגמה ומבנה תיקיות להתחלה",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes"
     },
     "manager": {
       "heading": "מנהל יקומים",
@@ -825,5 +847,39 @@
     "manageLibraries": "ניהול כספות...",
     "noLibraries": "אין כספות רשומות",
     "openLibrary": "+ פתח כספת"
+  },
+  "starView": {
+    "noNotes": "אין פתקים להצגה",
+    "controls": {
+      "title": "הגדרות גרף",
+      "reset": "איפוס לברירות מחדל",
+      "filters": "מסננים",
+      "searchPlaceholder": "חיפוש קבצים...",
+      "tags": "תגיות",
+      "attachments": "קבצים מצורפים",
+      "existingOnly": "קבצים קיימים בלבד",
+      "orphans": "פתקים מבודדים",
+      "groups": "קבוצות",
+      "newGroup": "קבוצה חדשה",
+      "display": "תצוגה",
+      "arrows": "חיצים",
+      "textFade": "סף דהיית טקסט",
+      "nodeSize": "גודל צומת",
+      "linkThickness": "עובי קישור",
+      "animate": "הנפשה",
+      "forces": "כוחות",
+      "centerForce": "כוח מרכוז",
+      "repelForce": "כוח דחייה",
+      "linkForce": "כוח קישור",
+      "linkDistance": "מרחק קישור"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }

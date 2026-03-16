@@ -204,7 +204,8 @@
       "templates": "템플릿"
     },
     "skyview": {
-      "intro": "스타 라인(크로스 라이브러리 링크)과 스카이 뷰의 동작을 구성합니다."
+      "intro": "스타 라인(크로스 라이브러리 링크)과 스카이 뷰의 동작을 구성합니다.",
+      "linking": "Linking"
     },
     "intelligence": {
       "intro": "라이브러리의 AI 제공자, 스킬, 개인정보 제어를 구성합니다.",
@@ -257,6 +258,9 @@
       "navigation": "탐색",
       "discovery": "발견",
       "organization": "정리"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -293,7 +297,9 @@
     "importNotes": "노트 가져오기",
     "insertTable": "표 삽입",
     "addLibrary": "보관함 추가",
-    "searchLibrary": "보관함 검색"
+    "searchLibrary": "보관함 검색",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "제목 없음",
@@ -340,7 +346,8 @@
     "splitView": "분할 보기",
     "skills": "스킬",
     "graphViewTitle": "그래프 보기",
-    "pinned": "고정됨"
+    "pinned": "고정됨",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "Constellation에 오신 것을 환영합니다",
@@ -370,7 +377,8 @@
     "tasks": "작업",
     "tasksHeader": "작업",
     "calendar": "캘린더",
-    "calendarHeader": "캘린더"
+    "calendarHeader": "캘린더",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "전체",
@@ -540,7 +548,11 @@
     "welcomeSubtitle": "사이드바에서 첫 번째 보관함을 추가하세요",
     "selectNote": "사이드바에서 노트를 선택하세요",
     "addLibrary": "+ 보관함 추가",
-    "addLibraryCta": "+ 보관함 추가"
+    "addLibraryCta": "+ 보관함 추가",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "스킬",
@@ -715,7 +727,17 @@
       "noLibrariesYet": "아직 추가된 라이브러리가 없습니다. 시작하려면 라이브러리 또는 하위 유니버스를 추가하세요.",
       "remove": "제거",
       "starterKit": "스타터 키트 포함",
-      "starterKitDesc": "시작용 샘플 노트와 폴더 구조 추가"
+      "starterKitDesc": "시작용 샘플 노트와 폴더 구조 추가",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes"
     },
     "manager": {
       "heading": "유니버스 관리자",
@@ -825,5 +847,39 @@
     "manageLibraries": "볼트 관리...",
     "noLibraries": "등록된 볼트 없음",
     "openLibrary": "+ 볼트 열기"
+  },
+  "starView": {
+    "noNotes": "표시할 노트가 없습니다",
+    "controls": {
+      "title": "그래프 설정",
+      "reset": "기본값으로 재설정",
+      "filters": "필터",
+      "searchPlaceholder": "파일 검색...",
+      "tags": "태그",
+      "attachments": "첨부 파일",
+      "existingOnly": "기존 파일만",
+      "orphans": "고립된 노트",
+      "groups": "그룹",
+      "newGroup": "새 그룹",
+      "display": "표시",
+      "arrows": "화살표",
+      "textFade": "텍스트 페이드 임계값",
+      "nodeSize": "노드 크기",
+      "linkThickness": "링크 두께",
+      "animate": "애니메이션",
+      "forces": "힘",
+      "centerForce": "중심력",
+      "repelForce": "척력",
+      "linkForce": "링크 힘",
+      "linkDistance": "링크 거리"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }

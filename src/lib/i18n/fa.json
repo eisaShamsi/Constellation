@@ -204,7 +204,8 @@
       "templates": "قالب‌ها"
     },
     "skyview": {
-      "intro": "تنظیم نحوه کار خطوط ستاره (پیوندهای بین کتابخانه‌ای) و نمای آسمان."
+      "intro": "تنظیم نحوه کار خطوط ستاره (پیوندهای بین کتابخانه‌ای) و نمای آسمان.",
+      "linking": "Linking"
     },
     "intelligence": {
       "intro": "تنظیم ارائه‌دهندگان هوش مصنوعی، مهارت‌ها و کنترل‌های حریم خصوصی برای کتابخانه‌ها.",
@@ -257,6 +258,9 @@
       "navigation": "ناوبری",
       "discovery": "کشف",
       "organization": "سازمان‌دهی"
+    },
+    "plugins": {
+      "commandPalette": "Command Palette"
     }
   },
   "commands": {
@@ -293,7 +297,9 @@
     "toggleLivePreview": "تبدیل پیش‌نمایش زنده",
     "insertTemplate": "درج از الگو",
     "importNotes": "وارد کردن یادداشت‌ها",
-    "insertTable": "درج جدول"
+    "insertTable": "درج جدول",
+    "quickCapture": "Quick Capture",
+    "starView": "Star View"
   },
   "actions": {
     "untitled": "بدون عنوان",
@@ -340,7 +346,8 @@
     "splitView": "نمای تقسیم",
     "skills": "مهارت‌ها",
     "graphViewTitle": "نمای گراف",
-    "pinned": "سنجاق شده"
+    "pinned": "سنجاق شده",
+    "starViewTitle": "Star View"
   },
   "welcome": {
     "title": "به Constellation خوش آمدید",
@@ -370,7 +377,8 @@
     "tasks": "وظایف",
     "tasksHeader": "وظایف",
     "calendar": "تقویم",
-    "calendarHeader": "تقویم"
+    "calendarHeader": "تقویم",
+    "starView": "Star View"
   },
   "tasksPanel": {
     "all": "همه",
@@ -540,7 +548,11 @@
     "welcomeTitle": "به Constellation خوش آمدید",
     "welcomeSubtitle": "اولین کتابخانه خود را از نوار کناری اضافه کنید",
     "addLibraryCta": "+ افزودن کتابخانه",
-    "selectNote": "یک یادداشت از نوار کناری انتخاب کنید"
+    "selectNote": "یک یادداشت از نوار کناری انتخاب کنید",
+    "linkLibrary": "Link Existing Library",
+    "linkLibraryDesc": "Connect an existing folder as a library",
+    "newLibrary": "Create New Library",
+    "newLibraryDesc": "Create a new empty library folder"
   },
   "skills": {
     "title": "مهارت‌ها",
@@ -726,7 +738,17 @@
       "noLibrariesYet": "هنوز کتابخانه‌ای اضافه نشده است. برای شروع یک کتابخانه یا جهان فرعی اضافه کنید.",
       "remove": "حذف",
       "starterKit": "شامل بسته شروع",
-      "starterKitDesc": "افزودن یادداشت‌ها و ساختار پوشه نمونه برای شروع"
+      "starterKitDesc": "افزودن یادداشت‌ها و ساختار پوشه نمونه برای شروع",
+      "importApp": "Import from App",
+      "importAppDesc": "Import notes from another application",
+      "importConfirm": "Import",
+      "importDescription": "Select an app to import notes from",
+      "importHeading": "Import Notes",
+      "importLocationLabel": "Import Location",
+      "importPreviewHeading": "Preview",
+      "importingNotes": "Importing notes...",
+      "linkLibrary": "Link Existing Library",
+      "linkLibraryDesc": "Connect an existing folder of notes"
     },
     "manager": {
       "heading": "مدیر جهان‌ها",
@@ -825,5 +847,39 @@
     "errors": "خطاها",
     "done": "انجام",
     "targetLibrary": "صندوق مقصد"
+  },
+  "starView": {
+    "noNotes": "یادداشتی برای نمایش وجود ندارد",
+    "controls": {
+      "title": "تنظیمات گراف",
+      "reset": "بازنشانی به پیش‌فرض",
+      "filters": "فیلترها",
+      "searchPlaceholder": "جستجوی فایل‌ها...",
+      "tags": "برچسب‌ها",
+      "attachments": "پیوست‌ها",
+      "existingOnly": "فقط فایل‌های موجود",
+      "orphans": "یادداشت‌های منزوی",
+      "groups": "گروه‌ها",
+      "newGroup": "گروه جدید",
+      "display": "نمایش",
+      "arrows": "فلش‌ها",
+      "textFade": "آستانه محو شدن متن",
+      "nodeSize": "اندازه گره",
+      "linkThickness": "ضخامت لینک",
+      "animate": "متحرک‌سازی",
+      "forces": "نیروها",
+      "centerForce": "نیروی مرکزی",
+      "repelForce": "نیروی دافعه",
+      "linkForce": "نیروی لینک",
+      "linkDistance": "فاصله لینک"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "libraries": "Libraries",
+    "skills": "Skills"
+  },
+  "tabs": {
+    "newTab": "New Tab"
   }
 }
