@@ -1,36 +1,36 @@
 # Constellation Development Plan
-## Goal: Feature Parity with Obsidian
+## Goal: Complete Knowledge Management Platform
 
-> Based on comprehensive analysis of help.obsidian.md (900+ lines of feature documentation)
-> vs. Constellation's current codebase (13 components, 9 AI skills, 4 providers, file watcher, split view)
+> Feature gap analysis based on comprehensive review of existing knowledge management tools
+> vs. Constellation's current codebase (44 components, 9 AI skills, 4 providers, file watcher, split view)
 
 ---
 
 ## Current State Summary
 
 ### Already Implemented
-- Multi-vault management (add, remove, browse)
+- Multi-library management (add, remove, browse)
 - File tree with expand/collapse
 - Note reading with rendered Markdown (headings, bold, italic, lists, code, links, tables, blockquotes, images, checkboxes, HR)
 - WikiLink rendering (`[[target]]` and `[[target|display]]`) + click-to-open
-- Plain textarea editor with auto-save (800ms debounce)
+- CodeMirror 6 editor with auto-save (800ms debounce)
 - Smart bracket/pair wrapping with undo/redo support
 - YAML frontmatter property editor (text, number, date, list, link types)
 - Split view (vertical/horizontal) with focused pane tracking
-- Tab system with vault color indicators
+- Tab system with library color indicators
 - Right sidebar (properties panel + outline/headings)
-- Left sidebar (vault tree + search)
+- Left sidebar (library tree + search)
 - Context menu (new note, new folder, rename, delete)
 - Confirmation dialog for destructive actions
-- File watcher (per-vault, .md + directories)
-- Vault appearance loading from `.obsidian/appearance.json`
-- Per-vault CSS theming (accent color, fonts, font size)
+- File watcher (per-library, .md + directories)
+- Library appearance loading from existing theme settings
+- Per-library CSS theming (accent color, fonts, font size)
 - Full-text search (filename + content, 50 results)
-- RTL/LTR auto-detection + bilingual UI (English/Arabic)
+- RTL/LTR auto-detection + 15 languages
 - AI integration (OpenAI, Anthropic, Gemini, Ollama)
 - 9 built-in AI skills (summarize, Q&A, writing assistant, auto-linker, translate, meeting notes, chart generator, research)
-- Status bar (word count, char count, properties count, vault count)
-- Settings page (language, AI provider config)
+- Status bar (word count, char count, properties count, library count)
+- Settings modal (language, AI provider config)
 - Inline rename in file tree
 
 ### Not Implemented (Gap Analysis)
@@ -41,7 +41,7 @@ The gaps are organized into **10 phases** below, ordered by impact and dependenc
 ## Phase 1: Markdown Rendering Completeness
 **Priority: Critical | Effort: Medium | Impact: High**
 
-Constellation renders basic Markdown but is missing several Obsidian-specific formatting features.
+Constellation renders basic Markdown but is missing several extended formatting features.
 
 ### 1.1 Highlights (`==text==`)
 - Add custom `marked` extension (like the wikilink one)
@@ -109,10 +109,10 @@ Constellation renders basic Markdown but is missing several Obsidian-specific fo
 ## Phase 2: Editor Enhancements
 **Priority: Critical | Effort: Large | Impact: High**
 
-The plain textarea editor needs several features to match Obsidian's editing experience.
+The editor needs several features to match the best-in-class editing experience.
 
 ### 2.1 Link Autocomplete
-- When user types `[[`, show a dropdown of all notes in vault
+- When user types `[[`, show a dropdown of all notes in library
 - Fuzzy search as user types
 - Show file path for disambiguation
 - Include aliases in suggestions
@@ -173,7 +173,7 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 
 ### 3.1 Backlinks Panel
 - New sidebar panel showing all notes that link TO the current note
-- Scan all vault notes for `[[current-note-name]]` references
+- Scan all library notes for `[[current-note-name]]` references
 - Show context around each backlink (surrounding text)
 - Linked mentions (explicit `[[links]]`)
 - Unlinked mentions (text matching note name without `[[]]`)
@@ -203,7 +203,7 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 - Resolve links by alias name
 
 ### 3.6 Auto-update Links on Rename
-- When renaming a note, scan all vault notes for references to the old name
+- When renaming a note, scan all library notes for references to the old name
 - Update all `[[old-name]]` → `[[new-name]]`
 - Handle both wikilinks and markdown links
 - Configurable: ask before updating / auto-update / don't update
@@ -217,7 +217,7 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 
 ---
 
-## Phase 4: Core Plugin Features
+## Phase 4: Built-in Features
 **Priority: High | Effort: Large | Impact: High**
 
 ### 4.1 Graph View
@@ -236,7 +236,7 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 - Search and execute any command
 - Show associated keyboard shortcuts
 - Pinned/recent commands at top
-- Commands from: file operations, editing, view toggles, navigation, plugins
+- Commands from: file operations, editing, view toggles, navigation
 
 ### 4.3 Quick Switcher
 - `Ctrl+O` to open quick switcher overlay
@@ -258,7 +258,7 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 - Insert template content into current note
 - Template variables:
   - `{{title}}` — current note filename
-  - `{{date}}` — current date (format configurable, Moment.js style)
+  - `{{date}}` — current date (format configurable)
   - `{{time}}` — current time
 - Command palette: "Insert template" → select from template list
 
@@ -267,10 +267,10 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 - Bookmark sidebar panel with drag-to-reorder
 - Bookmark groups/folders for organization
 - Keyboard shortcut to toggle bookmark on current note
-- Persist bookmarks to `.obsidian/bookmarks.json`
+- Persist bookmarks to universe directory
 
 ### 4.7 Tags View
-- Sidebar panel listing all tags across the vault
+- Sidebar panel listing all tags across the library
 - Show count of notes per tag
 - Click tag to filter/search
 - Nested tag hierarchy display (`#parent/child` as tree)
@@ -320,7 +320,7 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 ### 5.2 File Sorting
 - Sort by name (A-Z, Z-A)
 - Sort by modification date (newest first, oldest first)
-- Configurable per-vault or global
+- Configurable per-library or global
 - Sort toggle in file explorer header
 
 ### 5.3 Reveal Active File in Explorer
@@ -340,7 +340,7 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 
 ### 5.6 File Recovery / Version History
 - Periodic snapshots of note content
-- Store snapshots in `.obsidian/file-recovery/` or similar
+- Store snapshots in universe directory
 - UI to browse and restore previous versions
 - Configurable snapshot interval and retention
 
@@ -357,19 +357,19 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 **Priority: Medium | Effort: Medium | Impact: Medium**
 
 ### 6.1 Dark Mode
-- Full dark mode support (currently light only)
+- Full dark mode support
 - Toggle: Light / Dark / System
 - Dark mode CSS variables for all components
-- Respect Obsidian's appearance.json `theme` setting
+- Respect existing appearance settings from library themes
 
 ### 6.2 CSS Snippets Integration
-- Read CSS snippets from vault's `.obsidian/snippets/` folder
+- Read CSS snippets from library configuration
 - Apply enabled snippets to the note rendering
 - Toggle snippets in settings
 - Preview snippet effects
 
 ### 6.3 Theme Integration
-- Read active community theme from `.obsidian/themes/`
+- Support custom themes
 - Apply theme CSS variables to note rendering
 - Show theme name in settings
 
@@ -384,7 +384,7 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 ### 6.5 Accent Color Picker
 - Color picker in settings
 - Apply accent color across all UI elements
-- Override per-vault from Obsidian appearance
+- Override per-library from appearance settings
 
 ### 6.6 Readable Line Length
 - Toggle max-width constraint on note content
@@ -392,8 +392,8 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 - When disabled: content fills full width
 
 ### 6.7 Show Line Numbers (Editor)
-- Toggle line numbers in textarea editor
-- Gutter with line numbers alongside the textarea
+- Toggle line numbers in editor
+- Gutter with line numbers alongside the editor
 
 ### Files to modify:
 - `src/app.css` or new `src/lib/theme.css` — Dark mode variables, base theme
@@ -409,13 +409,13 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 
 ### 7.1 Global Hotkey System
 - Centralized hotkey registry
-- Default hotkeys matching Obsidian:
+- Default hotkeys:
   - `Ctrl+N` — New note
   - `Ctrl+O` — Quick switcher
   - `Ctrl+P` — Command palette
   - `Ctrl+F` — Find in note
   - `Ctrl+H` — Find and replace
-  - `Ctrl+Shift+F` — Search in vault
+  - `Ctrl+Shift+F` — Search in library
   - `Ctrl+E` — Toggle edit/reading mode
   - `Ctrl+Enter` — Toggle checkbox
   - `Ctrl+B` — Bold
@@ -468,7 +468,7 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 ### 8.2 Workspaces
 - Save current layout (open tabs, split configuration, sidebar state) as named workspace
 - Switch between saved workspaces
-- Persist to `.obsidian/workspaces.json`
+- Persist to universe directory
 
 ### 8.3 Pop-out Windows
 - Open a note in a separate OS window
@@ -477,7 +477,6 @@ The plain textarea editor needs several features to match Obsidian's editing exp
 
 ### 8.4 Vim Mode
 - Optional Vim keybindings in the editor
-- Would require upgrading from textarea to CodeMirror or Monaco
 - All standard Vim motions, modes, commands
 
 ### 8.5 Import System
@@ -545,12 +544,12 @@ Expand the settings page to include all configurable options:
 #### Hotkeys Settings
 - Full hotkey configuration panel (see Phase 7)
 
-#### Plugin Settings
+#### Feature Settings
 - Enable/disable built-in features
 - AI provider configuration (already implemented)
 
 ### 9.2 Settings Persistence
-- Save settings to a JSON file (per-vault or global)
+- Save settings to a JSON file (per-library or global)
 - Load settings on app startup
 - Settings change triggers reactive updates
 
@@ -565,7 +564,7 @@ Expand the settings page to include all configurable options:
 **Priority: Low | Effort: Small-Medium | Impact: Medium**
 
 ### 10.1 Random Note
-- Command/button to open a random note from the vault
+- Command/button to open a random note from the library
 - Ribbon icon
 
 ### 10.2 Word Count Enhancement
@@ -579,7 +578,7 @@ Expand the settings page to include all configurable options:
 
 ### 10.4 Ribbon (Icon Bar)
 - Vertical icon bar on far left
-- Quick access icons: new note, open vault, search, graph, daily note, command palette
+- Quick access icons: new note, open library, search, graph, daily note, command palette
 - Configurable: show/hide icons, reorder
 
 ### 10.5 Table Editing
@@ -589,7 +588,7 @@ Expand the settings page to include all configurable options:
 - Format table (auto-align pipes)
 - Tab key navigation between cells
 
-### 10.6 Obsidian URI Protocol
+### 10.6 URI Protocol
 - Register `constellation://` URI scheme via Tauri
 - Support: open note, new note, search, daily note
 - Deep linking into specific notes
@@ -597,7 +596,7 @@ Expand the settings page to include all configurable options:
 ### 10.7 Drag & Drop External Files
 - Drag files from system file manager into note
 - Images → save as attachment + insert `![[image]]`
-- Markdown files → import into vault
+- Markdown files → import into library
 - Other files → save as attachment
 
 ### 10.8 Clipboard Image Paste
@@ -608,7 +607,7 @@ Expand the settings page to include all configurable options:
 ### 10.9 Export Options
 - Export note as PDF
 - Export note as HTML
-- Export vault as ZIP
+- Export library as ZIP
 
 ---
 
@@ -619,7 +618,7 @@ Expand the settings page to include all configurable options:
 | 1. Markdown Rendering | Critical | Medium | None | Not Started |
 | 2. Editor Enhancements | Critical | Large | None | Not Started |
 | 3. Advanced Linking | High | Medium | Phase 1 | Not Started |
-| 4. Core Plugins | High | Large | Phase 2, 3 | Not Started |
+| 4. Built-in Features | High | Large | Phase 2, 3 | Not Started |
 | 5. File Management | Medium | Medium | None | Not Started |
 | 6. Appearance & Theming | Medium | Medium | None | Not Started |
 | 7. Keyboard Shortcuts | Medium | Medium | Phase 4 | Not Started |
@@ -643,11 +642,11 @@ Expand the settings page to include all configurable options:
 ### Sprint 3 (Navigation) — Phases 3 + 4.8
 - Backlinks, outgoing links, aliases, link auto-update
 - Page preview on hover
-- **Why third**: Knowledge graph features are Obsidian's core differentiator
+- **Why third**: Knowledge graph features are a core differentiator
 
 ### Sprint 4 (Discovery) — Phases 4.1-4.5
 - Graph view, command palette, quick switcher, daily notes, templates
-- **Why fourth**: These are the most-used Obsidian plugins
+- **Why fourth**: These are the most-used knowledge management features
 
 ### Sprint 5 (Organization) — Phases 4.6-4.10 + 5
 - Bookmarks, tags view, note composer, file drag/drop, sorting
@@ -681,7 +680,7 @@ Expand the settings page to include all configurable options:
 
 3. **Math rendering**: Choose between:
    - **KaTeX** — Faster, smaller bundle, stricter LaTeX
-   - **MathJax** — More complete LaTeX support, larger bundle (Obsidian uses MathJax)
+   - **MathJax** — More complete LaTeX support, larger bundle
 
 4. **Canvas implementation**: For the Canvas feature, evaluate:
    - **Fabric.js** — Full-featured canvas library

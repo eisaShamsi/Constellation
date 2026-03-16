@@ -1,25 +1,20 @@
 {
   "app": {
     "name": "Constellation",
-    "tagline": "Un Univers de Bibliothèques"
+    "tagline": "Un Coffre de Coffres"
   },
   "settings": {
     "title": "Paramètres",
     "sections": {
-      "about": "À propos",
-      "general": "Général",
+      "dashboard": "Tableau de bord",
+      "universe": "Univers & Bibliothèques",
       "editor": "Éditeur",
-      "files": "Fichiers et liens",
+      "skyview": "Sky View & Liens",
+      "intelligence": "Intelligence",
+      "security": "Sécurité & Confidentialité",
       "appearance": "Apparence",
-      "hotkeys": "Raccourcis clavier",
-      "security": "Sécurité",
-      "plugins": "Fonctionnalités intégrées",
-      "ai": "Fournisseur IA",
-      "templates": "Modèles"
-    },
-    "about": {
-      "tagline": "Un Univers de Bibliothèques",
-      "developedBy": "Développé par"
+      "keyboard": "Clavier",
+      "features": "Fonctionnalités"
     },
     "general": {
       "language": "Langue",
@@ -34,9 +29,9 @@
       "autoUpdateDesc": "Télécharger et installer les mises à jour automatiquement"
     },
     "security": {
-      "intro": "Protégez les données de votre bibliothèque, sécurisez les clés API et verrouillez l'app en cas d'inactivité.",
-      "libraryEncryption": "Chiffrement du bibliothèque",
-      "libraryEncryptionDesc": "Chiffrer les données du bibliothèque stockées sur cet appareil",
+      "intro": "Protégez vos données, sécurisez les clés API et verrouillez l'application en cas d'inactivité.",
+      "vaultEncryption": "Chiffrement de bibliothèque",
+      "vaultEncryptionDesc": "Chiffrer les données de bibliothèque stockées sur cet appareil",
       "enabled": "Activé",
       "disabled": "Désactivé",
       "lockHeading": "Écran de verrouillage",
@@ -101,7 +96,6 @@
     "files": {
       "defaultLocation": "Emplacement par défaut des nouvelles notes",
       "defaultLocationDesc": "Où les nouvelles notes sont placées",
-      "libraryRoot": "Dossier racine du bibliothèque",
       "currentFolder": "Même dossier que le fichier actuel",
       "specifiedFolder": "Dans le dossier spécifié ci-dessous",
       "folderPath": "Chemin du dossier",
@@ -109,13 +103,11 @@
       "defaultAttachmentFolder": "Dossier de pièces jointes par défaut",
       "defaultAttachmentFolderDesc": "Où les pièces jointes sont stockées",
       "sameAsNotePlaceholder": "Même dossier que la note",
-      "inboxFolder": "Dossier de réception",
-      "inboxFolderDesc": "Dossier pour les notes de capture rapide (Ctrl+Maj+N)",
       "linkFormat": "Format des nouveaux liens",
       "linkFormatDesc": "Comment les liens internes sont générés",
       "shortestPath": "Chemin le plus court si possible",
       "relativePath": "Chemin relatif au fichier",
-      "absolutePath": "Chemin absolu dans le bibliothèque",
+      "absolutePath": "Chemin absolu dans le coffre",
       "autoUpdateLinks": "Mettre à jour les liens internes automatiquement",
       "autoUpdateLinksDesc": "Mettre à jour tous les liens lors du renommage d'une note",
       "useWikilinks": "Utiliser les [[Wikilinks]]",
@@ -126,7 +118,8 @@
       "deletedFilesDesc": "Où les fichiers supprimés sont déplacés",
       "systemTrash": "Corbeille du système",
       "trashFolder": "Dossier .trash",
-      "permanentDelete": "Supprimer définitivement"
+      "permanentDelete": "Supprimer définitivement",
+      "libraryRoot": "Racine de la bibliothèque"
     },
     "appearance": {
       "colorScheme": "Schéma de couleurs de base",
@@ -145,57 +138,9 @@
       "monoFont": "Police à chasse fixe",
       "monoFontDesc": "Police pour les blocs de code et le code en ligne",
       "fontSize": "Taille de police",
-      "fontSizeDesc": "Taille de police de base pour le contenu des notes",
-      "scriptFonts": "Polices par système d'écriture",
-      "scriptFontsDesc": "Définir les polices préférées pour les différents systèmes d'écriture. Chaque système utilisera sa propre police tout en partageant la même page.",
-      "arabicFont": "Police arabe",
-      "hebrewFont": "Police hébraïque",
-      "cjkFont": "Police CJK (chinois/japonais/coréen)",
-      "customFont": "Personnalisée...",
-      "customFontPlaceholder": "Saisir le nom de la police..."
-    },
-    "hotkeys": {
-      "filter": "Filtrer les raccourcis...",
-      "notSet": "Non défini",
-      "noCommands": "Aucun raccourci trouvé",
-      "pressKey": "Appuyez sur un raccourci...",
-      "resetToDefault": "Réinitialiser par défaut",
-      "resetAll": "Réinitialiser tous les raccourcis",
-      "resetAllConfirm": "Réinitialiser tous les raccourcis par défaut ?",
-      "conflict": "Déjà utilisé par : {name}",
-      "customized": "Personnalisé"
-    },
-    "plugins": {
-      "intro": "Fonctionnalités intégrées à Constellation. Vous pouvez activer ou désactiver chacune.",
-      "dailyNotes": "Notes quotidiennes",
-      "dailyNotesDesc": "Créer et ouvrir des notes quotidiennes",
-      "templates": "Modèles",
-      "templatesDesc": "Insérer du contenu depuis des fichiers modèles",
-      "starView": "Vue stellaire",
-      "starViewDesc": "Visualiser les liens entre les notes",
-      "backlinks": "Rétroliens",
-      "backlinksDesc": "Afficher les notes qui pointent vers la note actuelle",
-      "outgoingLinks": "Liens sortants",
-      "outgoingLinksDesc": "Afficher les liens dans la note actuelle",
-      "tags": "Étiquettes",
-      "tagsDesc": "Afficher et parcourir toutes les étiquettes",
-      "pagePreview": "Aperçu de page",
-      "pagePreviewDesc": "Prévisualiser les notes au survol d'un lien",
-      "search": "Recherche",
-      "searchDesc": "Rechercher dans toutes les notes",
-      "quickSwitcher": "Saut stellaire",
-      "quickSwitcherDesc": "Naviguer rapidement entre les notes",
-      "commandPalette": "Contrôle de mission",
-      "commandPaletteDesc": "Accès rapide à toutes les commandes",
-      "wordCount": "Compteur de mots",
-      "wordCountDesc": "Afficher le nombre de mots dans la barre d'état",
-      "workspaces": "Espaces de travail",
-      "workspacesDesc": "Sauvegarder et restaurer les dispositions d'espaces de travail",
-      "index": "Index",
-      "indexDesc": "Collecter et parcourir les termes de toutes les notes"
+      "fontSizeDesc": "Taille de police de base pour le contenu des notes"
     },
     "ai": {
-      "intro": "Connectez un service IA pour résumer des notes et discuter avec votre contenu.",
       "provider": "Fournisseur",
       "providerDesc": "Choisissez votre fournisseur de service IA",
       "none": "Aucun",
@@ -211,7 +156,8 @@
       "connectionFailed": "Connexion échouée",
       "verifyConnection": "Vérifiez vos paramètres de connexion",
       "testing": "Test en cours...",
-      "test": "Tester"
+      "test": "Tester",
+      "connectionTest": "Tester"
     },
     "templates": {
       "templateFolder": "Dossier de modèles",
@@ -225,19 +171,85 @@
       "varTime": "Heure actuelle (HH:MM)",
       "varTitle": "Titre de la note",
       "varFolder": "Nom du dossier parent",
-      "varLibrary": "Nom du bibliothèque",
-      "varCursor": "Position du curseur après insertion"
+      "varCursor": "Position du curseur après insertion",
+      "varLibrary": "Nom de la bibliothèque"
+    },
+    "dashboard": {
+      "libraries": "Bibliothèques",
+      "notes": "Notes",
+      "aiProvider": "Fournisseur IA",
+      "lockStatus": "État du verrou",
+      "developedBy": "Développé par"
+    },
+    "universe": {
+      "intro": "Configurez comment votre univers gère les bibliothèques, notes et modèles.",
+      "noteDefaults": "Paramètres par défaut des notes",
+      "templates": "Modèles"
+    },
+    "skyview": {
+      "intro": "Configurez le comportement des Star Lines (liens inter-bibliothèques) et de Sky View."
+    },
+    "intelligence": {
+      "intro": "Configurez les fournisseurs IA, les compétences et les contrôles de confidentialité pour vos bibliothèques.",
+      "connection": "Connexion",
+      "preferences": "Préférences",
+      "contextLines": "Taille du contexte",
+      "contextLinesDesc": "Lignes de contenu de note envoyées à l'IA comme contexte",
+      "libraryAccess": "Accès aux bibliothèques",
+      "libraryAccessDesc": "Quelles bibliothèques l'IA peut lire lors du traitement des compétences",
+      "allLibraries": "Toutes les bibliothèques",
+      "activeOnly": "Bibliothèque active uniquement",
+      "noAccess": "Aucun accès"
+    },
+    "keyboard": {
+      "filter": "Filtrer les commandes...",
+      "notSet": "Non défini",
+      "noCommands": "Aucune commande trouvée",
+      "pressKeys": "Appuyez sur les touches..."
+    },
+    "features": {
+      "intro": "Activez ou désactivez les fonctionnalités intégrées. Les fonctionnalités désactivées sont masquées.",
+      "dailyNotes": "Notes quotidiennes",
+      "dailyNotesDesc": "Créer et ouvrir des notes quotidiennes",
+      "templates": "Modèles",
+      "templatesDesc": "Insérer du contenu depuis des fichiers modèles",
+      "graphView": "Vue en graphe",
+      "graphViewDesc": "Visualiser les liens entre les notes",
+      "backlinks": "Rétroliens",
+      "backlinksDesc": "Afficher les notes qui pointent vers la note actuelle",
+      "outgoingLinks": "Liens sortants",
+      "outgoingLinksDesc": "Afficher les liens dans la note actuelle",
+      "tags": "Étiquettes",
+      "tagsDesc": "Afficher et parcourir toutes les étiquettes",
+      "pagePreview": "Aperçu de page",
+      "pagePreviewDesc": "Prévisualiser les notes au survol d'un lien",
+      "search": "Recherche",
+      "searchDesc": "Rechercher dans toutes les notes",
+      "quickSwitcher": "Changement rapide",
+      "quickSwitcherDesc": "Naviguer rapidement entre les notes",
+      "commandPalette": "Palette de commandes",
+      "commandPaletteDesc": "Accès rapide à toutes les commandes",
+      "wordCount": "Compteur de mots",
+      "wordCountDesc": "Afficher le nombre de mots dans la barre d'état",
+      "workspaces": "Espaces de travail",
+      "workspacesDesc": "Sauvegarder et restaurer les dispositions d'espaces de travail",
+      "index": "Index",
+      "indexDesc": "Collecter et parcourir les termes de toutes les notes",
+      "on": "Activé",
+      "off": "Désactivé",
+      "navigation": "Navigation",
+      "discovery": "Découverte",
+      "organization": "Organisation"
     }
   },
   "commands": {
     "newNote": "Nouvelle note",
     "newBase": "Nouvelle Base",
-    "quickCapture": "Capture rapide",
-    "quickSwitcher": "Saut stellaire",
-    "searchLibrary": "Rechercher dans le bibliothèque",
+    "quickSwitcher": "Changement rapide",
+    "searchVault": "Rechercher dans le coffre",
     "dailyNote": "Ouvrir la note quotidienne",
     "toggleEdit": "Basculer mode édition/lecture",
-    "starView": "Ouvrir la vue stellaire",
+    "graphView": "Ouvrir la vue en graphe",
     "globalTasks": "Ouvrir les tâches globales",
     "toggleBold": "Basculer gras",
     "toggleItalic": "Basculer italique",
@@ -245,7 +257,7 @@
     "closeNote": "Fermer la note actuelle",
     "toggleLeftSidebar": "Basculer barre latérale gauche",
     "toggleRightSidebar": "Basculer barre latérale droite",
-    "addLibrary": "Ajouter un bibliothèque",
+    "addVault": "Ajouter un coffre",
     "toggleBookmark": "Basculer marque-page",
     "randomNote": "Ouvrir une note aléatoire",
     "toggleTheme": "Basculer mode sombre/clair",
@@ -263,7 +275,8 @@
     "unfoldAll": "Déplier toutes les sections",
     "toggleLivePreview": "Basculer l'aperçu en direct",
     "insertTemplate": "Insérer depuis un modèle",
-    "importNotes": "Importer des notes"
+    "importNotes": "Importer des notes",
+    "insertTable": "Insérer un tableau"
   },
   "actions": {
     "untitled": "Sans titre",
@@ -273,10 +286,10 @@
     "rename": "Renommer",
     "delete": "Supprimer"
   },
-  "dock": {
+  "ribbon": {
     "fileExplorer": "Explorateur de fichiers",
     "search": "Recherche",
-    "starView": "Vue stellaire",
+    "graphView": "Vue en graphe",
     "globalTasks": "Tâches Globales",
     "dailyNote": "Note quotidienne",
     "aiSkills": "Compétences IA",
@@ -287,13 +300,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "Rechercher...",
-    "addLibrary": "Ajouter un bibliothèque",
+    "addVault": "Ajouter un coffre",
     "results": "résultats",
     "noResults": "Aucun résultat trouvé",
     "bookmarks": "Marque-pages",
     "bases": "Bases",
-    "noLibraries": "Aucun bibliothèque pour le moment",
-    "addLibraryButton": "+ Ajouter un bibliothèque",
+    "noVaults": "Aucun coffre pour le moment",
+    "addVaultButton": "+ Ajouter un coffre",
     "newNote": "Nouvelle note",
     "newBase": "Nouvelle Base",
     "newFolder": "Nouveau dossier",
@@ -309,13 +322,13 @@
     "rightSidebar": "Barre latérale droite",
     "splitView": "Vue divisée",
     "skills": "Compétences",
-    "starViewTitle": "Vue stellaire",
+    "graphViewTitle": "Vue en graphe",
     "pinned": "Épinglé"
   },
   "welcome": {
     "title": "Bienvenue dans Constellation",
-    "subtitle": "Ajoutez votre premier bibliothèque pour commencer",
-    "addLibrary": "+ Ajouter un bibliothèque",
+    "subtitle": "Ajoutez votre premier coffre pour commencer",
+    "addVault": "+ Ajouter un coffre",
     "selectNote": "Sélectionnez une note depuis la barre latérale",
     "quickSwitchHint": "ou appuyez sur Ctrl+O pour changer rapidement"
   },
@@ -333,7 +346,7 @@
     "tagsHeader": "Étiquettes",
     "linkDashboard": "Tableau de bord des liens",
     "noteGrid": "Grille de notes",
-    "starView": "Vue stellaire",
+    "graphView": "Vue graphique",
     "noNoteSelected": "Aucune note sélectionnée",
     "noTags": "Aucune étiquette dans cette note",
     "noConnections": "Aucune connexion",
@@ -375,11 +388,11 @@
     "noTasksFound": "Aucune tâche trouvée",
     "allDates": "Toutes les dates",
     "thisWeek": "Cette semaine",
-    "allLibraries": "Tous les bibliothèques",
+    "allVaults": "Tous les coffres",
     "allPriorities": "Toutes les priorités",
     "noGroup": "Sans regroupement",
     "groupByFile": "Grouper par fichier",
-    "groupByLibrary": "Grouper par bibliothèque",
+    "groupByVault": "Grouper par coffre",
     "groupByPriority": "Grouper par priorité",
     "groupByDue": "Grouper par date d'échéance",
     "sortByFile": "Trier par fichier",
@@ -387,10 +400,10 @@
   },
   "linkDashboard": {
     "mostConnected": "Les plus connectées",
-    "crossLibrary": "Inter-bibliothèques",
+    "crossVault": "Inter-coffres",
     "broken": "Brisés",
     "orphans": "Orphelines",
-    "noCrossLibrary": "Aucun lien inter-bibliothèques",
+    "noCrossVault": "Aucun lien inter-coffres",
     "noBroken": "Aucun lien brisé",
     "noOrphans": "Aucune note orpheline"
   },
@@ -403,7 +416,7 @@
     "properties": "propriétés",
     "words": "mots",
     "characters": "caractères",
-    "libraries": "bibliothèques",
+    "libraries": "coffres",
     "notes": "notes"
   },
   "notePane": {
@@ -417,7 +430,7 @@
     "createNote": "Créer une note",
     "goToFile": "Aller au fichier",
     "close": "Fermer",
-    "selectLibrary": "Sélectionner le bibliothèque"
+    "selectVault": "Sélectionner le coffre"
   },
   "commandPalette": {
     "placeholder": "Tapez une commande...",
@@ -475,10 +488,10 @@
     "typeCheckbox": "Case à cocher",
     "selectType": "Choisir le type"
   },
-  "starView": {
+  "graphView": {
     "noNotes": "Aucune note à afficher",
     "controls": {
-      "title": "Paramètres de la vue stellaire",
+      "title": "Paramètres du graphe",
       "reset": "Réinitialiser les valeurs par défaut",
       "filters": "Filtres",
       "searchPlaceholder": "Rechercher des fichiers...",
@@ -502,18 +515,14 @@
     }
   },
   "libraries": {
-    "searchPlaceholder": "Rechercher dans tous les bibliothèques...",
+    "searchPlaceholder": "Rechercher dans tous les coffres...",
     "results": "résultats",
     "noResults": "Aucun résultat",
-    "addLibrary": "+ Ajouter un bibliothèque",
+    "addVault": "+ Ajouter un coffre",
     "welcomeTitle": "Bienvenue dans Constellation",
-    "welcomeSubtitle": "Ajoutez votre premier bibliothèque depuis la barre latérale",
-    "addLibraryCta": "+ Ajouter un bibliothèque",
-    "selectNote": "Sélectionnez une note depuis la barre latérale",
-    "newLibrary": "New Library",
-    "linkLibrary": "Link Existing Library",
-    "newLibraryDesc": "Create a fresh empty library folder to start writing from scratch.",
-    "linkLibraryDesc": "Connect an existing Markdown folder as a library — non-destructively."
+    "welcomeSubtitle": "Ajoutez votre premier coffre depuis la barre latérale",
+    "addVaultCta": "+ Ajouter un coffre",
+    "selectNote": "Sélectionnez une note depuis la barre latérale"
   },
   "skills": {
     "title": "Compétences",
@@ -528,7 +537,7 @@
     "create": "Créer une compétence",
     "noProvider": "Connectez un fournisseur IA dans les Paramètres pour utiliser les compétences.",
     "selectNote": "Sélectionnez une note",
-    "selectLibrary": "Sélectionnez un bibliothèque",
+    "selectVault": "Sélectionnez un coffre",
     "enterText": "Saisissez du texte...",
     "result": "Résultat",
     "copyResult": "Copier",
@@ -538,11 +547,11 @@
     "summarize": "Résumer la note",
     "summarizeDesc": "Générer un résumé concis de n'importe quelle note",
     "qa": "Questions-réponses intelligentes",
-    "qaDesc": "Posez des questions sur vos bibliothèques et obtenez des réponses par IA",
+    "qaDesc": "Posez des questions sur vos coffres et obtenez des réponses par IA",
     "write": "Assistant d'écriture",
     "writeDesc": "Développez, réécrivez ou améliorez votre texte",
     "autolink": "Liaison automatique",
-    "autolinkDesc": "Découvrez des connexions entre notes de différents bibliothèques",
+    "autolinkDesc": "Découvrez des connexions entre notes de différents coffres",
     "translate": "Traduire la note",
     "translateDesc": "Traduire des notes entre langues",
     "meeting": "Notes de réunion",
@@ -552,15 +561,15 @@
     "research": "Assistant de recherche",
     "researchDesc": "Analyser et synthétiser des informations à partir de plusieurs notes"
   },
-  "libraryManager": {
-    "title": "Gérer les bibliothèques",
-    "openLibrary": "+ Ouvrir un bibliothèque",
-    "manageLibraries": "Gérer les bibliothèques...",
+  "vaultManager": {
+    "title": "Gérer les coffres",
+    "openVault": "+ Ouvrir un coffre",
+    "manageVaults": "Gérer les coffres...",
     "openFolder": "Ouvrir le dossier",
     "remove": "Supprimer",
     "confirmRemove": "Supprimer \"{name}\" de Constellation ? Vos fichiers ne seront pas supprimés.",
-    "addLibrary": "+ Ajouter un bibliothèque",
-    "noLibraries": "Aucun bibliothèque enregistré",
+    "addVault": "+ Ajouter un coffre",
+    "noVaults": "Aucun coffre enregistré",
     "notes": "notes"
   },
   "lockScreen": {
@@ -576,7 +585,9 @@
     "highlight": "Surligner",
     "code": "Code en ligne",
     "link": "Lien",
-    "heading": "Titre"
+    "heading": "Titre",
+    "table": "Tableau",
+    "convertToTable": "Convertir en tableau"
   },
   "tableToolbar": {
     "addRow": "Ajouter une ligne",
@@ -654,18 +665,18 @@
       "title": "Source",
       "folder": "Dossier",
       "tag": "Étiquette",
-      "library": "Bibliothèque",
-      "allLibraries": "Tous les bibliothèques",
-      "libraries": "bibliothèques",
+      "library": "Coffre",
+      "allVaults": "Tous les coffres",
+      "libraries": "coffres",
       "folderPath": "Chemin du dossier",
       "folderPlaceholder": "ex. Projets/Actifs",
-      "folderHint": "Analyse ce dossier dans tous les bibliothèques qui le contiennent",
+      "folderHint": "Analyse ce dossier dans tous les coffres qui le contiennent",
       "includeSubfolders": "Inclure les sous-dossiers",
       "tagName": "Étiquette",
       "tagPlaceholder": "ex. projet",
-      "tagHint": "Analyse toutes les notes avec cette étiquette dans tous les bibliothèques",
-      "librariesLabel": "Bibliothèques",
-      "allHint": "Analyse toutes les notes dans tous les bibliothèques connectés",
+      "tagHint": "Analyse toutes les notes avec cette étiquette dans tous les coffres",
+      "vaultsLabel": "Coffres",
+      "allHint": "Analyse toutes les notes dans tous les coffres connectés",
       "apply": "Appliquer",
       "cancel": "Annuler"
     }
@@ -688,27 +699,14 @@
       "creating": "Création...",
       "next": "Suivant",
       "back": "Retour",
-      "addLibrariesHeading": "Ajoutez vos bibliothèques",
-      "addLibrariesDescription": "Connectez vos bibliothèques et univers enfants. Vous pouvez toujours en ajouter d'autres plus tard.",
-      "addLibrary": "Ajouter un bibliothèque",
+      "addVaultsHeading": "Ajoutez vos coffres",
+      "addVaultsDescription": "Connectez vos coffres et univers enfants. Vous pouvez toujours en ajouter d'autres plus tard.",
+      "addVault": "Ajouter un coffre",
       "addChildUniverse": "Ajouter un univers enfant",
-      "starterKit": "Créer les dossiers de démarrage",
-      "starterKitDesc": "Configurer les dossiers Atlas, Calendrier, Projets et Réception avec une note de bienvenue",
       "finish": "Terminer",
       "skip": "Passer pour le moment",
-      "noLibrariesYet": "Aucun bibliothèque ajouté pour le moment. Ajoutez un bibliothèque ou un univers enfant pour commencer.",
-      "remove": "Supprimer",
-      "importApp": "Importer depuis une autre application",
-      "importAppDesc": "Migrez vos notes depuis Obsidian, Notion, Evernote ou d'autres applications vers Constellation.",
-      "importHeading": "Importer vos notes",
-      "importDescription": "Choisissez l'application d'origine, puis sélectionnez le dossier ou fichier source.",
-      "importPreviewHeading": "Prêt à importer",
-      "importConfirm": "Importer et créer l'Univers",
-      "importingNotes": "Importation de vos notes...",
-      "importLocationLabel": "Emplacement de l'Univers",
-      "importComplete": "Importation terminée ! {count} fichiers importés.",
-      "linkLibrary": "Link a Library",
-      "linkLibraryDesc": "Wrap an existing Markdown folder as a library in your universe. Non-destructive — your files stay untouched."
+      "noVaultsYet": "Aucun coffre ajouté pour le moment. Ajoutez un coffre ou un univers enfant pour commencer.",
+      "remove": "Supprimer"
     },
     "manager": {
       "heading": "Gestionnaire d'Univers",
@@ -723,15 +721,15 @@
       "children": "Univers enfants",
       "addChild": "Ajouter un Univers enfant",
       "noUniverses": "Aucun univers trouvé",
-      "ownLibraries": "Bibliothèques propres",
-      "inheritedLibraries": "Bibliothèques héritées",
+      "ownVaults": "Coffres propres",
+      "inheritedVaults": "Coffres hérités",
       "openExisting": "Ouvrir un univers existant"
     },
     "switching": "Changement d'univers...",
     "migrating": "Migration de vos données..."
   },
   "dataview": {
-    "label": "Lens",
+    "label": "Dataview",
     "loading": "Chargement de la requête...",
     "noResults": "Aucun résultat",
     "results": "résultats",
@@ -752,16 +750,16 @@
   "secondScreen": {
     "title": "Deuxième écran",
     "grid": "Grille",
-    "star": "Étoile",
+    "graph": "Graphe",
     "detail": "Détail",
     "loading": "Chargement des notes...",
     "linked": "Lié",
     "linkedOn": "Navigation liée activée",
     "linkedOff": "Navigation liée désactivée",
     "searchNotes": "Rechercher des notes...",
-    "allLibraries": "Tous les bibliothèques",
+    "allVaults": "Tous les coffres",
     "sortName": "Trier par nom",
-    "sortLibrary": "Trier par bibliothèque",
+    "sortVault": "Trier par coffre",
     "noResults": "Aucune note correspondante",
     "noNotes": "Aucune note trouvée",
     "detailEmpty": "Sélectionnez une note à afficher ici",
@@ -771,8 +769,6 @@
     "title": "Importer des notes",
     "selectFormat": "Choisissez le format des notes à importer.",
     "formats": {
-      "obsidian": "Obsidian",
-      "obsidianDesc": "Importer un coffre Obsidian avec toutes les notes et pièces jointes",
       "markdown": "Markdown",
       "markdownDesc": "Fichiers Markdown (.md) de n'importe quelle app",
       "notion": "Notion",
@@ -788,7 +784,7 @@
       "txt": "Texte brut",
       "txtDesc": "Fichiers texte convertis en Markdown"
     },
-    "targetLibrary": "Bibliothèque cible",
+    "targetVault": "Coffre cible",
     "subfolder": "Sous-dossier",
     "selectSource": "Sélectionner la source",
     "scanning": "Analyse des fichiers...",
