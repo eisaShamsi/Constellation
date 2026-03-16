@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "הגדר כיצד קווי כוכב (קישורים חוצי ספריות) ותצוגת שמיים פועלים.",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "מראה הגרף",
+      "nodeSize": "גודל צומת",
+      "nodeSizeDesc": "מקדם קנה מידה לרדיוס הצומת בגרף",
+      "labelVisibility": "נראות תוויות",
+      "labelVisibilityDesc": "מתי להציג שמות פתקים על צמתים",
+      "labelHover": "בריחוף",
+      "labelAlways": "תמיד",
+      "labelNone": "אף פעם",
+      "labelFontSize": "גודל גופן תווית",
+      "linkThickness": "עובי קישור",
+      "linkThicknessDesc": "עובי קווי החיבור בין צמתים",
+      "showOrphans": "הצג פתקים מבודדים",
+      "showOrphansDesc": "הצג פתקים ללא חיבורים בגרף",
+      "physics": "פיזיקה",
+      "repelForce": "כוח דחייה",
+      "repelForceDesc": "עוצמת הדחייה בין צמתים",
+      "linkForce": "כוח קפיץ הקישור",
+      "linkForceDesc": "עוצמת המשיכה בין צמתים מחוברים",
+      "linkDistance": "מרחק קישור",
+      "linkDistanceDesc": "מרחק יעד בין צמתים מחוברים"
     },
     "intelligence": {
       "intro": "הגדר ספקי בינה מלאכותית, כישורים ובקרות פרטיות לספריות שלך.",

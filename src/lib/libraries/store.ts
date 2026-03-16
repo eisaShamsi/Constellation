@@ -1018,6 +1018,19 @@ export interface AppSettings {
 	// Custom keyboard shortcut overrides (command ID → shortcut string, empty = unbound)
 	customShortcuts: Record<string, string>;
 
+	// Sky View graph settings
+	skyView: {
+		nodeSize: number;
+		labelVisibility: 'hover' | 'always' | 'none';
+		labelFontSize: number;
+		linkThickness: number;
+		repelForce: number;
+		linkForce: number;
+		linkDistance: number;
+		showOrphans: boolean;
+		colorByLibrary: boolean;
+	};
+
 	// Built-in features
 	enabledFeatures: {
 		dailyNotes: boolean;
@@ -1082,6 +1095,17 @@ const DEFAULT_SETTINGS: AppSettings = {
 		lockIdleTimeout: 5,
 		lockPinHash: '',
 		apiKeyProtection: false,
+	},
+	skyView: {
+		nodeSize: 4,
+		labelVisibility: 'hover' as const,
+		labelFontSize: 12,
+		linkThickness: 1,
+		repelForce: 80,
+		linkForce: 0.05,
+		linkDistance: 30,
+		showOrphans: true,
+		colorByLibrary: true,
 	},
 	enabledFeatures: {
 		dailyNotes: true,

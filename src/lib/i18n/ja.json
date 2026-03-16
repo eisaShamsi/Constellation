@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "スターライン（クロスライブラリリンク）とスカイビューの動作を設定します。",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "グラフの外観",
+      "nodeSize": "ノードサイズ",
+      "nodeSizeDesc": "グラフ内のノード半径のスケール係数",
+      "labelVisibility": "ラベルの表示",
+      "labelVisibilityDesc": "ノードにノート名を表示するタイミング",
+      "labelHover": "ホバー時",
+      "labelAlways": "常に表示",
+      "labelNone": "非表示",
+      "labelFontSize": "ラベルのフォントサイズ",
+      "linkThickness": "リンクの太さ",
+      "linkThicknessDesc": "ノード間の接続線の太さ",
+      "showOrphans": "孤立ノートを表示",
+      "showOrphansDesc": "グラフ内で接続のないノートを表示する",
+      "physics": "物理演算",
+      "repelForce": "反発力",
+      "repelForceDesc": "ノード同士が押し合う強さ",
+      "linkForce": "リンクのバネ力",
+      "linkForceDesc": "接続されたノード同士が引き合う強さ",
+      "linkDistance": "リンク距離",
+      "linkDistanceDesc": "接続されたノード間の目標距離"
     },
     "intelligence": {
       "intro": "ライブラリのAIプロバイダー、スキル、プライバシー設定を構成します。",

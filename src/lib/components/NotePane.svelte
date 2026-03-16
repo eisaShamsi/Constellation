@@ -107,6 +107,7 @@
 	});
 	let prevTabId = $state('');
 	let contentEl: HTMLDivElement | undefined;
+	let titleInputEl: HTMLInputElement | undefined;
 
 	// Sync editBody when tab changes
 	$effect(() => {

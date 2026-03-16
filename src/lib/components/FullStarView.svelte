@@ -17,17 +17,39 @@
 		target: string;
 	}
 
+	interface SkyViewSettings {
+		nodeSize: number;
+		labelVisibility: 'hover' | 'always' | 'none';
+		labelFontSize: number;
+		linkThickness: number;
+		repelForce: number;
+		linkForce: number;
+		linkDistance: number;
+		showOrphans: boolean;
+		colorByLibrary: boolean;
+	}
+
+	const DEFAULT_SKY: SkyViewSettings = {
+		nodeSize: 4, labelVisibility: 'hover', labelFontSize: 12,
+		linkThickness: 1, repelForce: 80, linkForce: 0.05,
+		linkDistance: 30, showOrphans: true, colorByLibrary: true,
+	};
+
 	let {
 		nodes,
 		links,
 		onNodeClick,
 		activeNodeId = '',
+		skyViewSettings = DEFAULT_SKY,
 	}: {
 		nodes: StarNode[];
 		links: StarLink[];
 		onNodeClick: (path: string, libraryName: string) => void;
 		activeNodeId?: string;
+		skyViewSettings?: SkyViewSettings;
 	} = $props();
+
+	const cfg = $derived({ ...DEFAULT_SKY, ...skyViewSettings });
 
 	let containerEl: HTMLDivElement;
 	let canvasEl: HTMLCanvasElement;
@@ -79,6 +101,15 @@
 			rawLinks.push({ source: l.source, target: l.target });
 		}
 
+		// Filter orphans if setting is off
+		if (!cfg.showOrphans) {
+			const linkedIds = new Set<string>();
+			for (const l of rawLinks) { linkedIds.add(l.source); linkedIds.add(l.target); }
+			for (let i = rawNodes.length - 1; i >= 0; i--) {
+				if (!linkedIds.has(rawNodes[i].id)) rawNodes.splice(i, 1);
+			}
+		}
+
 		// Assign library colors
 		const libraryNames = [...new Set(rawNodes.map(n => n.libraryName))];
 		libraryColorMap = new Map();
@@ -108,7 +139,7 @@
 				vx: 0,
 				vy: 0,
 				node: n,
-				r: Math.max(2, Math.min(8, 2 + Math.sqrt(n.linkCount))) * (n.outgoingCount >= 5 ? 1.6 : 1),
+				r: Math.max(2, Math.min(8, 2 + Math.sqrt(n.linkCount))) * (n.outgoingCount >= 5 ? 1.6 : 1) * (cfg.nodeSize / 4),
 			};
 		});
 
@@ -156,7 +187,7 @@
 			}
 
 			// Repulsion (Barnes-Hut approximation: simple grid-based)
-			const repulse = 80 * simAlpha;
+			const repulse = cfg.repelForce * simAlpha;
 			// Use spatial hashing for efficiency
 			const cellSize = 50;
 			const cells = new Map<string, number[]>();
@@ -199,8 +230,8 @@
 			}
 
 			// Link attraction
-			const linkForce = 0.05 * simAlpha;
-			const idealDist = 30;
+			const linkForce = cfg.linkForce * simAlpha;
+			const idealDist = cfg.linkDistance;
 			for (const { si, ti } of linkIdx) {
 				const dx = nodePos[ti].x - nodePos[si].x;
 				const dy = nodePos[ti].y - nodePos[si].y;
@@ -263,7 +294,7 @@
 
 		// Draw links
 		ctx.strokeStyle = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-		ctx.lineWidth = 0.5 / viewScale;
+		ctx.lineWidth = (cfg.linkThickness * 0.5) / viewScale;
 		ctx.beginPath();
 		for (const { si, ti } of linkIdx) {
 			ctx.moveTo(nodePos[si].x, nodePos[si].y);
@@ -303,39 +334,41 @@
 		ctx.restore();
 
 		// Draw labels in screen space (fixed size regardless of zoom)
-		const fontSize = 12;
-		ctx.font = `${fontSize}px system-ui, -apple-system, sans-serif`;
-		ctx.textAlign = 'center';
+		if (cfg.labelVisibility !== 'none') {
+			const fontSize = cfg.labelFontSize;
+			ctx.font = `${fontSize}px system-ui, -apple-system, sans-serif`;
+			ctx.textAlign = 'center';
 
-		for (let i = 0; i < nodePos.length; i++) {
-			const p = nodePos[i];
-			const isActive = p.node.id === activeNodeId;
-			const isHovered = i === hoveredIdx;
-			if (!isActive && !isHovered) continue;
+			for (let i = 0; i < nodePos.length; i++) {
+				const p = nodePos[i];
+				const isActive = p.node.id === activeNodeId;
+				const isHovered = i === hoveredIdx;
+				if (cfg.labelVisibility === 'hover' && !isActive && !isHovered) continue;
 
-			// Convert world position to screen position
-			const sx = p.x * viewScale + width / 2 + viewX;
-			const sy = p.y * viewScale + height / 2 + viewY;
+				// Convert world position to screen position
+				const sx = p.x * viewScale + width / 2 + viewX;
+				const sy = p.y * viewScale + height / 2 + viewY;
 
-			const label = p.node.name.replace(/\.md$/, '');
-			const textWidth = ctx.measureText(label).width;
-			const px = 5;
-			const py = 3;
-			const labelY = sy + p.r + 14;
+				const label = p.node.name.replace(/\.md$/, '');
+				const textWidth = ctx.measureText(label).width;
+				const px = 5;
+				const py = 3;
+				const labelY = sy + p.r + 14;
 
-			ctx.fillStyle = dark ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.9)';
-			ctx.beginPath();
-			ctx.roundRect(
-				sx - textWidth / 2 - px,
-				labelY - fontSize,
-				textWidth + px * 2,
-				fontSize + py * 2,
-				3
-			);
-			ctx.fill();
+				ctx.fillStyle = dark ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.9)';
+				ctx.beginPath();
+				ctx.roundRect(
+					sx - textWidth / 2 - px,
+					labelY - fontSize,
+					textWidth + px * 2,
+					fontSize + py * 2,
+					3
+				);
+				ctx.fill();
 
-			ctx.fillStyle = dark ? '#e5e5e5' : '#333';
-			ctx.fillText(label, sx, labelY);
+				ctx.fillStyle = (isActive || isHovered) ? (dark ? '#fff' : '#000') : (dark ? '#bbb' : '#555');
+				ctx.fillText(label, sx, labelY);
+			}
 		}
 
 		// Status text

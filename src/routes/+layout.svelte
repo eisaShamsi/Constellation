@@ -5,6 +5,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
+	import { getVersion } from '@tauri-apps/api/app';
 	import {
 		libraries, libraryStats, searchResults, totalStars, libraryCount,
 		activeTab, openTabs, activeTabId,
@@ -98,12 +99,19 @@
 	let showUniverseSetup = $state(false);
 	let showUniverseManager = $state(false);
 	let activeUniverseName = $state('');
+	let appVersion = $state('');
 	let appReady = $state(false);
+
+	// Load app version
+	getVersion().then(v => appVersion = v).catch(() => {});
 
 	// Update window title when active universe changes
 	$effect(() => {
 		const name = activeUniverseName;
-		if (name) {
+		const ver = appVersion;
+		if (name && ver) {
+			getCurrentWindow().setTitle(`Constellation v${ver} - ${name}`).catch(() => {});
+		} else if (name) {
 			getCurrentWindow().setTitle(`Constellation - ${name}`).catch(() => {});
 		}
 	});
@@ -2000,6 +2008,7 @@
 					links={starLinks}
 					onNodeClick={handleStarNodeClick}
 					activeNodeId={sidebarTab?.name?.toLowerCase() ?? ''}
+					skyViewSettings={$appSettings.skyView}
 				/>
 				</div>
 			{:else if showGlobalTasks}

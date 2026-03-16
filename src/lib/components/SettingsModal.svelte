@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import { getVersion } from '@tauri-apps/api/app';
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
@@ -21,6 +22,8 @@
 	let hotkeyFilter = $state('');
 	let testStatus = $state('');
 	let testing = $state(false);
+	let appVersion = $state('');
+	getVersion().then(v => appVersion = v).catch(() => {});
 	let updateChecking = $state(false);
 	let updateStatus = $state('');
 	let showPinSetup = $state(false);
@@ -316,7 +319,7 @@
 							</svg>
 							<div class="dash-title">
 								<span class="dash-name">Constellation</span>
-								<span class="dash-version">v0.1.0</span>
+								<span class="dash-version">v{appVersion}</span>
 							</div>
 						</div>
 
@@ -716,6 +719,106 @@
 								onchange={(e) => updateSettings({ useWikilinks: (e.target as HTMLInputElement).checked })} />
 							<span class="toggle-slider"></span>
 						</label>
+					</div>
+
+					<div class="setting-section-heading">{$t('settings.skyview.graphAppearance')}</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.skyview.nodeSize')}</div>
+							<div class="setting-desc">{$t('settings.skyview.nodeSizeDesc')}</div>
+						</div>
+						<div class="setting-range">
+							<input type="range" min="1" max="10" step="1" value={$appSettings.skyView?.nodeSize ?? 4}
+								oninput={(e) => updateSettings({ skyView: { ...$appSettings.skyView, nodeSize: Number((e.target as HTMLInputElement).value) } })} />
+							<span class="range-value">{$appSettings.skyView?.nodeSize ?? 4}</span>
+						</div>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.skyview.labelVisibility')}</div>
+							<div class="setting-desc">{$t('settings.skyview.labelVisibilityDesc')}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.skyView?.labelVisibility ?? 'hover'}
+							onchange={(e) => updateSettings({ skyView: { ...$appSettings.skyView, labelVisibility: (e.target as HTMLSelectElement).value as any } })}>
+							<option value="hover">{$t('settings.skyview.labelHover')}</option>
+							<option value="always">{$t('settings.skyview.labelAlways')}</option>
+							<option value="none">{$t('settings.skyview.labelNone')}</option>
+						</select>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.skyview.labelFontSize')}</div>
+						</div>
+						<div class="setting-range">
+							<input type="range" min="8" max="20" step="1" value={$appSettings.skyView?.labelFontSize ?? 12}
+								oninput={(e) => updateSettings({ skyView: { ...$appSettings.skyView, labelFontSize: Number((e.target as HTMLInputElement).value) } })} />
+							<span class="range-value">{$appSettings.skyView?.labelFontSize ?? 12}px</span>
+						</div>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.skyview.linkThickness')}</div>
+							<div class="setting-desc">{$t('settings.skyview.linkThicknessDesc')}</div>
+						</div>
+						<div class="setting-range">
+							<input type="range" min="0.5" max="3" step="0.5" value={$appSettings.skyView?.linkThickness ?? 1}
+								oninput={(e) => updateSettings({ skyView: { ...$appSettings.skyView, linkThickness: Number((e.target as HTMLInputElement).value) } })} />
+							<span class="range-value">{$appSettings.skyView?.linkThickness ?? 1}</span>
+						</div>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.skyview.showOrphans')}</div>
+							<div class="setting-desc">{$t('settings.skyview.showOrphansDesc')}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox" checked={$appSettings.skyView?.showOrphans ?? true}
+								onchange={(e) => updateSettings({ skyView: { ...$appSettings.skyView, showOrphans: (e.target as HTMLInputElement).checked } })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+
+					<div class="setting-section-heading">{$t('settings.skyview.physics')}</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.skyview.repelForce')}</div>
+							<div class="setting-desc">{$t('settings.skyview.repelForceDesc')}</div>
+						</div>
+						<div class="setting-range">
+							<input type="range" min="10" max="200" step="5" value={$appSettings.skyView?.repelForce ?? 80}
+								oninput={(e) => updateSettings({ skyView: { ...$appSettings.skyView, repelForce: Number((e.target as HTMLInputElement).value) } })} />
+							<span class="range-value">{$appSettings.skyView?.repelForce ?? 80}</span>
+						</div>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.skyview.linkForce')}</div>
+							<div class="setting-desc">{$t('settings.skyview.linkForceDesc')}</div>
+						</div>
+						<div class="setting-range">
+							<input type="range" min="0.01" max="0.2" step="0.01" value={$appSettings.skyView?.linkForce ?? 0.05}
+								oninput={(e) => updateSettings({ skyView: { ...$appSettings.skyView, linkForce: Number((e.target as HTMLInputElement).value) } })} />
+							<span class="range-value">{($appSettings.skyView?.linkForce ?? 0.05).toFixed(2)}</span>
+						</div>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.skyview.linkDistance')}</div>
+							<div class="setting-desc">{$t('settings.skyview.linkDistanceDesc')}</div>
+						</div>
+						<div class="setting-range">
+							<input type="range" min="20" max="150" step="5" value={$appSettings.skyView?.linkDistance ?? 30}
+								oninput={(e) => updateSettings({ skyView: { ...$appSettings.skyView, linkDistance: Number((e.target as HTMLInputElement).value) } })} />
+							<span class="range-value">{$appSettings.skyView?.linkDistance ?? 30}</span>
+						</div>
 					</div>
 
 				<!-- ═══ INTELLIGENCE (AI) ═══ -->
@@ -1190,6 +1293,15 @@
 		cursor: pointer;
 	}
 	.setting-control:focus { border-color: var(--interactive-accent); outline: none; }
+	.setting-range {
+		display: flex; align-items: center; gap: 8px; min-width: 180px;
+	}
+	.setting-range input[type="range"] {
+		flex: 1; accent-color: var(--interactive-accent);
+	}
+	.range-value {
+		font-size: 12px; color: var(--text-muted); min-width: 32px; text-align: end;
+	}
 	.setting-input {
 		min-width: 180px; max-width: 240px; padding: 6px 10px;
 		background: var(--background-primary);

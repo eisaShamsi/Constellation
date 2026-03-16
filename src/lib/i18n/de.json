@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "Konfiguriere das Verhalten von Star Lines (bibliotheksübergreifende Links) und Sky View.",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "Graph-Darstellung",
+      "nodeSize": "Knotengröße",
+      "nodeSizeDesc": "Skalierungsfaktor für den Knotenradius im Graphen",
+      "labelVisibility": "Beschriftungssichtbarkeit",
+      "labelVisibilityDesc": "Wann Notizennamen auf Knoten angezeigt werden",
+      "labelHover": "Beim Überfahren",
+      "labelAlways": "Immer",
+      "labelNone": "Nie",
+      "labelFontSize": "Schriftgröße der Beschriftung",
+      "linkThickness": "Verbindungsstärke",
+      "linkThicknessDesc": "Stärke der Verbindungslinien zwischen Knoten",
+      "showOrphans": "Verwaiste Notizen anzeigen",
+      "showOrphansDesc": "Notizen ohne Verbindungen im Graphen anzeigen",
+      "physics": "Physik",
+      "repelForce": "Abstoßungskraft",
+      "repelForceDesc": "Wie stark sich Knoten gegenseitig abstoßen",
+      "linkForce": "Verbindungsfederkraft",
+      "linkForceDesc": "Wie stark verbundene Knoten sich anziehen",
+      "linkDistance": "Verbindungsabstand",
+      "linkDistanceDesc": "Zielabstand zwischen verbundenen Knoten"
     },
     "intelligence": {
       "intro": "KI-Anbieter, Fähigkeiten und Datenschutzkontrollen für Ihre Bibliotheken konfigurieren.",

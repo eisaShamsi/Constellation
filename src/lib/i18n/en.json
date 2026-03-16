@@ -131,7 +131,27 @@
     },
     "skyview": {
       "intro": "Configure how Star Lines (cross-library links) and the Sky View graph behave.",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "Graph Appearance",
+      "nodeSize": "Node size",
+      "nodeSizeDesc": "Scale factor for node radius in the graph",
+      "labelVisibility": "Label visibility",
+      "labelVisibilityDesc": "When to show note names on nodes",
+      "labelHover": "On hover",
+      "labelAlways": "Always",
+      "labelNone": "Never",
+      "labelFontSize": "Label font size",
+      "linkThickness": "Link thickness",
+      "linkThicknessDesc": "Thickness of connection lines between nodes",
+      "showOrphans": "Show orphan notes",
+      "showOrphansDesc": "Display notes with no connections in the graph",
+      "physics": "Physics",
+      "repelForce": "Repulsion force",
+      "repelForceDesc": "How strongly nodes push each other apart",
+      "linkForce": "Link spring force",
+      "linkForceDesc": "How strongly connected nodes pull together",
+      "linkDistance": "Link distance",
+      "linkDistanceDesc": "Target distance between connected nodes"
     },
     "appearance": {
       "colorScheme": "Color scheme",

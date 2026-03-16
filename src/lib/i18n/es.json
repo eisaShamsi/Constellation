@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "Configura el comportamiento de Star Lines (enlaces entre bibliotecas) y Sky View.",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "Apariencia del grafo",
+      "nodeSize": "Tamaño del nodo",
+      "nodeSizeDesc": "Factor de escala para el radio de los nodos en el grafo",
+      "labelVisibility": "Visibilidad de etiquetas",
+      "labelVisibilityDesc": "Cuándo mostrar los nombres de las notas en los nodos",
+      "labelHover": "Al pasar el cursor",
+      "labelAlways": "Siempre",
+      "labelNone": "Nunca",
+      "labelFontSize": "Tamaño de fuente de etiqueta",
+      "linkThickness": "Grosor del enlace",
+      "linkThicknessDesc": "Grosor de las líneas de conexión entre nodos",
+      "showOrphans": "Mostrar notas huérfanas",
+      "showOrphansDesc": "Mostrar notas sin conexiones en el grafo",
+      "physics": "Física",
+      "repelForce": "Fuerza de repulsión",
+      "repelForceDesc": "Cuánto se repelen los nodos entre sí",
+      "linkForce": "Fuerza elástica del enlace",
+      "linkForceDesc": "Cuánto se atraen los nodos conectados",
+      "linkDistance": "Distancia del enlace",
+      "linkDistanceDesc": "Distancia objetivo entre nodos conectados"
     },
     "intelligence": {
       "intro": "Configura proveedores de IA, habilidades y controles de privacidad para tus bibliotecas.",

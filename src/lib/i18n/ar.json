@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "إعداد كيفية عمل خطوط النجوم (الروابط عبر المكتبات) وعرض السماء.",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "مظهر الرسم البياني",
+      "nodeSize": "حجم العقدة",
+      "nodeSizeDesc": "معامل تكبير نصف قطر العقدة في الرسم البياني",
+      "labelVisibility": "ظهور التسمية",
+      "labelVisibilityDesc": "متى تُعرض أسماء الملاحظات على العقد",
+      "labelHover": "عند التمرير",
+      "labelAlways": "دائمًا",
+      "labelNone": "أبدًا",
+      "labelFontSize": "حجم خط التسمية",
+      "linkThickness": "سمك الرابط",
+      "linkThicknessDesc": "سمك خطوط الاتصال بين العقد",
+      "showOrphans": "إظهار الملاحظات المعزولة",
+      "showOrphansDesc": "عرض الملاحظات التي ليس لها اتصالات في الرسم البياني",
+      "physics": "الفيزياء",
+      "repelForce": "قوة التنافر",
+      "repelForceDesc": "مدى قوة تدافع العقد عن بعضها",
+      "linkForce": "قوة نابض الرابط",
+      "linkForceDesc": "مدى قوة جذب العقد المتصلة لبعضها",
+      "linkDistance": "مسافة الرابط",
+      "linkDistanceDesc": "المسافة المستهدفة بين العقد المتصلة"
     },
     "intelligence": {
       "intro": "إعداد مزودي الذكاء الاصطناعي والمهارات وضوابط الخصوصية لمكتباتك.",

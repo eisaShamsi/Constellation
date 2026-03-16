@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "Configure o comportamento de Star Lines (links entre bibliotecas) e Sky View.",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "Aparência do grafo",
+      "nodeSize": "Tamanho do nó",
+      "nodeSizeDesc": "Fator de escala para o raio dos nós no grafo",
+      "labelVisibility": "Visibilidade dos rótulos",
+      "labelVisibilityDesc": "Quando mostrar os nomes das notas nos nós",
+      "labelHover": "Ao passar o cursor",
+      "labelAlways": "Sempre",
+      "labelNone": "Nunca",
+      "labelFontSize": "Tamanho da fonte do rótulo",
+      "linkThickness": "Espessura do link",
+      "linkThicknessDesc": "Espessura das linhas de conexão entre os nós",
+      "showOrphans": "Mostrar notas órfãs",
+      "showOrphansDesc": "Exibir notas sem conexões no grafo",
+      "physics": "Física",
+      "repelForce": "Força de repulsão",
+      "repelForceDesc": "Intensidade com que os nós se repelem",
+      "linkForce": "Força elástica do link",
+      "linkForceDesc": "Intensidade com que nós conectados se atraem",
+      "linkDistance": "Distância do link",
+      "linkDistanceDesc": "Distância alvo entre nós conectados"
     },
     "intelligence": {
       "intro": "Configure provedores de IA, habilidades e controles de privacidade para suas bibliotecas.",

@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "स्टार लाइन्स (क्रॉस-लाइब्रेरी लिंक) और स्काई व्यू कैसे काम करें, कॉन्फ़िगर करें।",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "ग्राफ़ का रूप",
+      "nodeSize": "नोड का आकार",
+      "nodeSizeDesc": "ग्राफ़ में नोड त्रिज्या का स्केल फ़ैक्टर",
+      "labelVisibility": "लेबल दृश्यता",
+      "labelVisibilityDesc": "नोड्स पर नोट के नाम कब दिखाएँ",
+      "labelHover": "होवर पर",
+      "labelAlways": "हमेशा",
+      "labelNone": "कभी नहीं",
+      "labelFontSize": "लेबल फ़ॉन्ट आकार",
+      "linkThickness": "लिंक की मोटाई",
+      "linkThicknessDesc": "नोड्स के बीच कनेक्शन लाइनों की मोटाई",
+      "showOrphans": "अनाथ नोट्स दिखाएँ",
+      "showOrphansDesc": "ग्राफ़ में बिना कनेक्शन वाले नोट्स प्रदर्शित करें",
+      "physics": "भौतिकी",
+      "repelForce": "प्रतिकर्षण बल",
+      "repelForceDesc": "नोड्स एक-दूसरे को कितनी ज़ोर से धकेलते हैं",
+      "linkForce": "लिंक स्प्रिंग बल",
+      "linkForceDesc": "जुड़े हुए नोड्स एक-दूसरे को कितनी ज़ोर से खींचते हैं",
+      "linkDistance": "लिंक दूरी",
+      "linkDistanceDesc": "जुड़े हुए नोड्स के बीच लक्ष्य दूरी"
     },
     "intelligence": {
       "intro": "अपनी पुस्तकालयों के लिए AI प्रदाताओं, कौशलों और गोपनीयता नियंत्रणों को कॉन्फ़िगर करें।",

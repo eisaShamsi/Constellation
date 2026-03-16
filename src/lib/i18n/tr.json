@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "Star Lines (kütüphaneler arası bağlantılar) ve Gökyüzü Görünümü davranışını yapılandırın.",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "Grafik Görünümü",
+      "nodeSize": "Düğüm boyutu",
+      "nodeSizeDesc": "Grafikteki düğüm yarıçapı için ölçek faktörü",
+      "labelVisibility": "Etiket görünürlüğü",
+      "labelVisibilityDesc": "Düğümlerde not adlarının ne zaman gösterileceği",
+      "labelHover": "Üzerine gelince",
+      "labelAlways": "Her zaman",
+      "labelNone": "Hiçbir zaman",
+      "labelFontSize": "Etiket yazı boyutu",
+      "linkThickness": "Bağlantı kalınlığı",
+      "linkThicknessDesc": "Düğümler arasındaki bağlantı çizgilerinin kalınlığı",
+      "showOrphans": "Yetim notları göster",
+      "showOrphansDesc": "Grafikte bağlantısı olmayan notları göster",
+      "physics": "Fizik",
+      "repelForce": "İtme kuvveti",
+      "repelForceDesc": "Düğümlerin birbirini ne kadar güçlü ittiği",
+      "linkForce": "Bağlantı yay kuvveti",
+      "linkForceDesc": "Bağlı düğümlerin birbirini ne kadar güçlü çektiği",
+      "linkDistance": "Bağlantı mesafesi",
+      "linkDistanceDesc": "Bağlı düğümler arasındaki hedef mesafe"
     },
     "intelligence": {
       "intro": "Kütüphaneleriniz için AI sağlayıcılarını, becerileri ve gizlilik kontrollerini yapılandırın.",

@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "Star Lines (کراس لائبریری لنکس) اور اسکائی ویو کے رویے کو ترتیب دیں۔",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "گراف کی ظاہری شکل",
+      "nodeSize": "نوڈ کا سائز",
+      "nodeSizeDesc": "گراف میں نوڈ کے ریڈیئس کا اسکیل فیکٹر",
+      "labelVisibility": "لیبل کی نمائش",
+      "labelVisibilityDesc": "نوڈز پر نوٹ کے نام کب دکھائیں",
+      "labelHover": "ہوور پر",
+      "labelAlways": "ہمیشہ",
+      "labelNone": "کبھی نہیں",
+      "labelFontSize": "لیبل فونٹ سائز",
+      "linkThickness": "لنک کی موٹائی",
+      "linkThicknessDesc": "نوڈز کے درمیان کنکشن لائنوں کی موٹائی",
+      "showOrphans": "یتیم نوٹس دکھائیں",
+      "showOrphansDesc": "گراف میں بغیر کنکشن والے نوٹس دکھائیں",
+      "physics": "فزکس",
+      "repelForce": "دفعی قوت",
+      "repelForceDesc": "نوڈز ایک دوسرے کو کتنی زور سے دھکیلتے ہیں",
+      "linkForce": "لنک اسپرنگ قوت",
+      "linkForceDesc": "جڑے ہوئے نوڈز ایک دوسرے کو کتنی زور سے کھینچتے ہیں",
+      "linkDistance": "لنک فاصلہ",
+      "linkDistanceDesc": "جڑے ہوئے نوڈز کے درمیان ہدف فاصلہ"
     },
     "intelligence": {
       "intro": "اپنی لائبریریوں کے لیے AI فراہم کنندگان، مہارتوں اور رازداری کے کنٹرولز کو ترتیب دیں۔",

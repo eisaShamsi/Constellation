@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "Configurez le comportement des Star Lines (liens inter-bibliothèques) et de Sky View.",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "Apparence du graphe",
+      "nodeSize": "Taille des nœuds",
+      "nodeSizeDesc": "Facteur d'échelle du rayon des nœuds dans le graphe",
+      "labelVisibility": "Visibilité des étiquettes",
+      "labelVisibilityDesc": "Quand afficher les noms des notes sur les nœuds",
+      "labelHover": "Au survol",
+      "labelAlways": "Toujours",
+      "labelNone": "Jamais",
+      "labelFontSize": "Taille de police des étiquettes",
+      "linkThickness": "Épaisseur des liens",
+      "linkThicknessDesc": "Épaisseur des lignes de connexion entre les nœuds",
+      "showOrphans": "Afficher les notes orphelines",
+      "showOrphansDesc": "Afficher les notes sans connexions dans le graphe",
+      "physics": "Physique",
+      "repelForce": "Force de répulsion",
+      "repelForceDesc": "Intensité de la répulsion entre les nœuds",
+      "linkForce": "Force élastique des liens",
+      "linkForceDesc": "Intensité de l'attraction entre les nœuds connectés",
+      "linkDistance": "Distance des liens",
+      "linkDistanceDesc": "Distance cible entre les nœuds connectés"
     },
     "intelligence": {
       "intro": "Configurez les fournisseurs IA, les compétences et les contrôles de confidentialité pour vos bibliothèques.",

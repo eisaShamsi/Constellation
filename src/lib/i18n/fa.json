@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "تنظیم نحوه کار خطوط ستاره (پیوندهای بین کتابخانه‌ای) و نمای آسمان.",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "ظاهر نمودار",
+      "nodeSize": "اندازه گره",
+      "nodeSizeDesc": "ضریب مقیاس شعاع گره در نمودار",
+      "labelVisibility": "نمایش برچسب",
+      "labelVisibilityDesc": "زمان نمایش نام یادداشت‌ها روی گره‌ها",
+      "labelHover": "هنگام اشاره",
+      "labelAlways": "همیشه",
+      "labelNone": "هرگز",
+      "labelFontSize": "اندازه قلم برچسب",
+      "linkThickness": "ضخامت پیوند",
+      "linkThicknessDesc": "ضخامت خطوط اتصال بین گره‌ها",
+      "showOrphans": "نمایش یادداشت‌های بدون پیوند",
+      "showOrphansDesc": "نمایش یادداشت‌هایی که هیچ اتصالی در نمودار ندارند",
+      "physics": "فیزیک",
+      "repelForce": "نیروی دافعه",
+      "repelForceDesc": "شدت رانش گره‌ها از یکدیگر",
+      "linkForce": "نیروی فنری پیوند",
+      "linkForceDesc": "شدت جذب گره‌های متصل به یکدیگر",
+      "linkDistance": "فاصله پیوند",
+      "linkDistanceDesc": "فاصله هدف بین گره‌های متصل"
     },
     "intelligence": {
       "intro": "تنظیم ارائه‌دهندگان هوش مصنوعی، مهارت‌ها و کنترل‌های حریم خصوصی برای کتابخانه‌ها.",

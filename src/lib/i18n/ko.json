@@ -205,7 +205,27 @@
     },
     "skyview": {
       "intro": "스타 라인(크로스 라이브러리 링크)과 스카이 뷰의 동작을 구성합니다.",
-      "linking": "Linking"
+      "linking": "Linking",
+      "graphAppearance": "그래프 모양",
+      "nodeSize": "노드 크기",
+      "nodeSizeDesc": "그래프에서 노드 반경의 배율",
+      "labelVisibility": "레이블 표시",
+      "labelVisibilityDesc": "노드에 노트 이름을 표시할 시점",
+      "labelHover": "호버 시",
+      "labelAlways": "항상",
+      "labelNone": "표시 안 함",
+      "labelFontSize": "레이블 글꼴 크기",
+      "linkThickness": "링크 두께",
+      "linkThicknessDesc": "노드 간 연결선의 두께",
+      "showOrphans": "고립된 노트 표시",
+      "showOrphansDesc": "그래프에서 연결이 없는 노트를 표시",
+      "physics": "물리",
+      "repelForce": "반발력",
+      "repelForceDesc": "노드가 서로 밀어내는 강도",
+      "linkForce": "링크 스프링 힘",
+      "linkForceDesc": "연결된 노드가 서로 끌어당기는 강도",
+      "linkDistance": "링크 거리",
+      "linkDistanceDesc": "연결된 노드 간의 목표 거리"
     },
     "intelligence": {
       "intro": "라이브러리의 AI 제공자, 스킬, 개인정보 제어를 구성합니다.",
