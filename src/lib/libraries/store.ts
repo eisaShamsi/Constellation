@@ -4,6 +4,7 @@
 
 import { writable, derived, get } from 'svelte/store';
 import { invoke } from '@tauri-apps/api/core';
+import { emit } from '@tauri-apps/api/event';
 
 export interface LibraryInfo {
 	id: string;
@@ -1125,6 +1126,8 @@ export function saveSettings() {
 export function updateSettings(partial: Partial<AppSettings>) {
 	appSettings.update(s => ({ ...s, ...partial }));
 	saveSettings();
+	// Notify second screen of settings change
+	emit('screen:settings-changed', get(appSettings)).catch(() => {});
 }
 
 export function updateSecuritySettings(partial: Partial<AppSettings['security']>) {

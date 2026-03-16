@@ -8,8 +8,8 @@
 	import { searchKeymap, highlightSelectionMatches, openSearchPanel, selectNextOccurrence } from '@codemirror/search';
 	import { closeBrackets, closeBracketsKeymap, autocompletion, type CompletionContext, type Completion } from '@codemirror/autocomplete';
 	import { syntaxHighlighting, defaultHighlightStyle, bracketMatching, indentOnInput, foldGutter, foldKeymap, foldService, foldAll, unfoldAll, indentUnit } from '@codemirror/language';
-	import type { FileEntry } from '$lib/vaults/store';
-	import { saveClipboardImage, resolveWikilinkCrossVault, getNoteHeadings } from '$lib/vaults/store';
+	import type { FileEntry } from '$lib/libraries/store';
+	import { saveClipboardImage, resolveWikilinkCrossLibrary, getNoteHeadings } from '$lib/libraries/store';
 	import FormattingToolbar from './FormattingToolbar.svelte';
 	import TableToolbar from './TableToolbar.svelte';
 	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, generateTable, detectTabularText, tabularTextToTable, type ParsedTable } from '$lib/editor/tableUtils';
@@ -445,7 +445,7 @@
 	// Heading autocomplete after [[note#
 	async function headingCompletion(context: CompletionContext, before: any, noteName: string, headingQuery: string) {
 		// Resolve the note to get its path
-		const resolved = await resolveWikilinkCrossVault(libraryPath, noteName);
+		const resolved = await resolveWikilinkCrossLibrary(libraryPath, noteName);
 		if (!resolved) return null;
 
 		const headings = await getNoteHeadings(resolved.path);

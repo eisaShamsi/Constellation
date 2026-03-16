@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, vaults, vaultStats } from '$lib/vaults/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats } from '$lib/libraries/store';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
 	import { PROVIDER_INFO, DEFAULT_MODELS, type ProviderId } from '$lib/ai/provider';
@@ -82,8 +82,8 @@
 	]);
 
 	// Dashboard computed stats
-	const totalNotes = $derived($vaultStats.reduce((sum, v) => sum + (v.noteCount || 0), 0));
-	const totalLibraries = $derived($vaults.length);
+	const totalNotes = $derived($libraryStats.reduce((sum, v) => sum + (v.star_count || 0), 0));
+	const totalLibraries = $derived($libraries.length);
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (hotkeyListening) return;
@@ -745,19 +745,19 @@
 
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.security.vaultEncryption')}</div>
-							<div class="setting-desc">{$t('settings.security.vaultEncryptionDesc')}</div>
+							<div class="setting-name">{$t('settings.security.libraryEncryption')}</div>
+							<div class="setting-desc">{$t('settings.security.libraryEncryptionDesc')}</div>
 						</div>
 						<div class="security-control-row">
-							{#if $appSettings.security.vaultEncryption}
+							{#if $appSettings.security.libraryEncryption}
 								<span class="security-badge active">{$t('settings.security.enabled')}</span>
 							{:else}
 								<span class="security-badge">{$t('settings.security.disabled')}</span>
 							{/if}
 							<label class="toggle">
 								<input type="checkbox"
-									checked={$appSettings.security.vaultEncryption}
-									onchange={() => updateSecuritySettings({ vaultEncryption: !$appSettings.security.vaultEncryption })} />
+									checked={$appSettings.security.libraryEncryption}
+									onchange={() => updateSecuritySettings({ libraryEncryption: !$appSettings.security.libraryEncryption })} />
 								<span class="toggle-slider"></span>
 							</label>
 						</div>

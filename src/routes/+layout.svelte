@@ -1217,7 +1217,6 @@
 			// 'light' or 'system' → toggle to dark
 			updateSettings({ colorScheme: 'dark' });
 		}
-		notifySettingsChanged(get(appSettings));
 	}
 
 	async function handleToggleSecondScreen() {
