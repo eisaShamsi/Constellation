@@ -275,7 +275,8 @@
     "unfoldAll": "פרוש את כל הסעיפים",
     "toggleLivePreview": "החלף תצוגה מקדימה חיה",
     "insertTemplate": "הוסף מתבנית",
-    "importNotes": "ייבוא הערות"
+    "importNotes": "ייבוא הערות",
+    "insertTable": "הוסף טבלה"
   },
   "actions": {
     "untitled": "ללא כותרת",
@@ -584,7 +585,9 @@
     "highlight": "הדגשה",
     "code": "קוד מוטבע",
     "link": "קישור",
-    "heading": "כותרת"
+    "heading": "כותרת",
+    "table": "טבלה",
+    "convertToTable": "המר לטבלה"
   },
   "tableToolbar": {
     "addRow": "הוסף שורה",

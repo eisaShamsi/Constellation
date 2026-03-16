@@ -275,7 +275,8 @@
     "unfoldAll": "Déplier toutes les sections",
     "toggleLivePreview": "Basculer l'aperçu en direct",
     "insertTemplate": "Insérer depuis un modèle",
-    "importNotes": "Importer des notes"
+    "importNotes": "Importer des notes",
+    "insertTable": "Insérer un tableau"
   },
   "actions": {
     "untitled": "Sans titre",
@@ -584,7 +585,9 @@
     "highlight": "Surligner",
     "code": "Code en ligne",
     "link": "Lien",
-    "heading": "Titre"
+    "heading": "Titre",
+    "table": "Tableau",
+    "convertToTable": "Convertir en tableau"
   },
   "tableToolbar": {
     "addRow": "Ajouter une ligne",

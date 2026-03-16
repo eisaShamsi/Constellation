@@ -275,7 +275,8 @@
     "unfoldAll": "تمام حصے کھولیں",
     "toggleLivePreview": "لائیو پیش نظارہ تبدیل کریں",
     "insertTemplate": "ٹیمپلیٹ سے داخل کریں",
-    "importNotes": "نوٹس درآمد کریں"
+    "importNotes": "نوٹس درآمد کریں",
+    "insertTable": "ٹیبل داخل کریں"
   },
   "actions": {
     "untitled": "بغیر عنوان",
@@ -584,7 +585,9 @@
     "highlight": "نمایاں",
     "code": "ان لائن کوڈ",
     "link": "لنک",
-    "heading": "سرخی"
+    "heading": "سرخی",
+    "table": "ٹیبل",
+    "convertToTable": "ٹیبل میں تبدیل کریں"
   },
   "tableToolbar": {
     "addRow": "قطار شامل کریں",

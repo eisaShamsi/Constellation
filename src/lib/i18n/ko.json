@@ -275,7 +275,8 @@
     "unfoldAll": "모두 펼치기",
     "toggleLivePreview": "실시간 미리보기 전환",
     "insertTemplate": "템플릿에서 삽입",
-    "importNotes": "노트 가져오기"
+    "importNotes": "노트 가져오기",
+    "insertTable": "표 삽입"
   },
   "actions": {
     "untitled": "제목 없음",
@@ -584,7 +585,9 @@
     "highlight": "강조",
     "code": "인라인 코드",
     "link": "링크",
-    "heading": "제목"
+    "heading": "제목",
+    "table": "표",
+    "convertToTable": "표로 변환"
   },
   "tableToolbar": {
     "addRow": "행 추가",

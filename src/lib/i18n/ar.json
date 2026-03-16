@@ -275,7 +275,8 @@
     "unfoldAll": "فتح جميع الأقسام",
     "toggleLivePreview": "تبديل المعاينة الحية",
     "insertTemplate": "إدراج من قالب",
-    "importNotes": "استيراد الملاحظات"
+    "importNotes": "استيراد الملاحظات",
+    "insertTable": "إدراج جدول"
   },
   "actions": {
     "untitled": "بدون عنوان",
@@ -584,7 +585,9 @@
     "highlight": "تمييز",
     "code": "كود مضمّن",
     "link": "رابط",
-    "heading": "عنوان"
+    "heading": "عنوان",
+    "table": "جدول",
+    "convertToTable": "تحويل إلى جدول"
   },
   "tableToolbar": {
     "addRow": "إضافة صف",

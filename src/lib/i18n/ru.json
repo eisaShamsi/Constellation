@@ -275,7 +275,8 @@
     "unfoldAll": "Развернуть все разделы",
     "toggleLivePreview": "Переключить предпросмотр",
     "insertTemplate": "Вставить из шаблона",
-    "importNotes": "Импорт заметок"
+    "importNotes": "Импорт заметок",
+    "insertTable": "Вставить таблицу"
   },
   "actions": {
     "untitled": "Без названия",
@@ -584,7 +585,9 @@
     "highlight": "Выделение",
     "code": "Встроенный код",
     "link": "Ссылка",
-    "heading": "Заголовок"
+    "heading": "Заголовок",
+    "table": "Таблица",
+    "convertToTable": "Преобразовать в таблицу"
   },
   "tableToolbar": {
     "addRow": "Добавить строку",

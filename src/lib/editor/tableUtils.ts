@@ -190,6 +190,62 @@ function formatRow(row: string[], widths: number[], colCount: number): string {
 	return '| ' + cells.join(' | ') + ' |';
 }
 
+/** Generate a blank markdown table with the given dimensions */
+export function generateTable(rows: number, cols: number): string {
+	const header = Array.from({ length: cols }, (_, i) => `Column ${i + 1}`);
+	const allRows = [header];
+	for (let r = 1; r < rows; r++) {
+		allRows.push(new Array(cols).fill(''));
+	}
+	const alignments: ('none')[] = new Array(cols).fill('none');
+	return formatTable(allRows, alignments);
+}
+
+/** Detect if text looks like tabular data (TSV or CSV) */
+export function detectTabularText(text: string): 'tsv' | 'csv' | null {
+	const lines = text.trim().split('\n');
+	if (lines.length < 1) return null;
+	// Check for tabs first (TSV from spreadsheet paste is most common)
+	const tabCount = lines[0].split('\t').length;
+	if (tabCount >= 2) {
+		// Verify consistency: at least half the lines should have similar tab count
+		const consistent = lines.filter(l => Math.abs(l.split('\t').length - tabCount) <= 1).length;
+		if (consistent >= lines.length * 0.5) return 'tsv';
+	}
+	// Check for commas (CSV)
+	const commaCount = lines[0].split(',').length;
+	if (commaCount >= 2) {
+		const consistent = lines.filter(l => Math.abs(l.split(',').length - commaCount) <= 1).length;
+		if (consistent >= lines.length * 0.5) return 'csv';
+	}
+	return null;
+}
+
+/** Convert TSV or CSV text to a markdown table string */
+export function tabularTextToTable(text: string, format: 'tsv' | 'csv'): string {
+	const delimiter = format === 'tsv' ? '\t' : ',';
+	const lines = text.trim().split('\n');
+	const rows = lines.map(line => {
+		// Simple split — handles unquoted fields. For CSV, strip surrounding quotes.
+		return line.split(delimiter).map(cell => {
+			let c = cell.trim();
+			if (format === 'csv' && c.startsWith('"') && c.endsWith('"')) {
+				c = c.slice(1, -1).replace(/""/g, '"');
+			}
+			// Escape pipe characters that would break table syntax
+			return c.replace(/\|/g, '\\|');
+		});
+	});
+	if (rows.length === 0) return '';
+	// If only one row, treat as header with one empty data row
+	if (rows.length === 1) {
+		rows.push(new Array(rows[0].length).fill(''));
+	}
+	const colCount = Math.max(...rows.map(r => r.length));
+	const alignments: ('none')[] = new Array(colCount).fill('none');
+	return formatTable(rows, alignments);
+}
+
 /** Add a new row after the specified index */
 export function addRow(table: ParsedTable, afterRow: number): ParsedTable {
 	const newRow = new Array(table.columnCount).fill('');

@@ -275,7 +275,8 @@
     "unfoldAll": "باز کردن همه بخش‌ها",
     "toggleLivePreview": "تبدیل پیش‌نمایش زنده",
     "insertTemplate": "درج از الگو",
-    "importNotes": "وارد کردن یادداشت‌ها"
+    "importNotes": "وارد کردن یادداشت‌ها",
+    "insertTable": "درج جدول"
   },
   "actions": {
     "untitled": "بدون عنوان",
@@ -584,7 +585,9 @@
     "highlight": "برجسته",
     "code": "کد درون‌خطی",
     "link": "پیوند",
-    "heading": "سرعنوان"
+    "heading": "سرعنوان",
+    "table": "جدول",
+    "convertToTable": "تبدیل به جدول"
   },
   "tableToolbar": {
     "addRow": "افزودن سطر",

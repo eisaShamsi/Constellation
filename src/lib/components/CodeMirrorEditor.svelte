@@ -12,9 +12,10 @@
 	import { saveClipboardImage, resolveWikilinkCrossVault, getNoteHeadings } from '$lib/vaults/store';
 	import FormattingToolbar from './FormattingToolbar.svelte';
 	import TableToolbar from './TableToolbar.svelte';
-	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, type ParsedTable } from '$lib/editor/tableUtils';
+	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, generateTable, detectTabularText, tabularTextToTable, type ParsedTable } from '$lib/editor/tableUtils';
 	import { evaluateTableFormulas, indexToCol } from '$lib/editor/tableFormulas';
 	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
+	import TableGridPicker from './TableGridPicker.svelte';
 
 	let {
 		value = '',
@@ -139,6 +140,42 @@
 			tableToolbarVisible = false;
 			currentTable = null;
 		}
+	}
+
+	// Grid picker state (for visual table insertion)
+	let gridPickerVisible = $state(false);
+	let gridPickerX = $state(0);
+	let gridPickerY = $state(0);
+
+	function showTableGridPicker() {
+		if (!view || !containerEl) return;
+		const pos = view.state.selection.main.head;
+		const coords = view.coordsAtPos(pos);
+		if (!coords) return;
+		const rect = containerEl.getBoundingClientRect();
+		gridPickerX = Math.max(100, Math.min(coords.left - rect.left, rect.width - 100));
+		gridPickerY = coords.bottom - rect.top + 4;
+		gridPickerVisible = true;
+	}
+
+	function insertTableFromGrid(rows: number, cols: number) {
+		gridPickerVisible = false;
+		if (!view) return;
+		const tableStr = generateTable(rows, cols);
+		const pos = view.state.selection.main.head;
+		const line = view.state.doc.lineAt(pos);
+		// Insert on a new line if cursor is not at start of an empty line
+		const prefix = line.text.trim() === '' ? '' : '\n';
+		view.dispatch({
+			changes: { from: line.text.trim() === '' ? line.from : pos, to: line.text.trim() === '' ? line.to : pos, insert: prefix + tableStr + '\n' },
+			selection: { anchor: (line.text.trim() === '' ? line.from : pos) + prefix.length + '| '.length }
+		});
+		view.focus();
+	}
+
+	// Expose for command palette / external triggers
+	export function openTablePicker() {
+		showTableGridPicker();
 	}
 
 	function applyTableChange(newTable: ParsedTable | null) {
@@ -467,7 +504,7 @@
 			{ label: '/code', detail: 'Code block', apply: '```\n\n```' },
 			{ label: '/quote', detail: 'Blockquote', apply: '> ' },
 			{ label: '/divider', detail: 'Horizontal rule', apply: '---\n' },
-			{ label: '/table', detail: 'Table', apply: '| Column 1 | Column 2 |\n| --- | --- |\n| | |\n' },
+			{ label: '/table', detail: 'Table (or /table 3x4)', apply: '' },
 			{ label: '/callout', detail: 'Callout', apply: '> [!note] Title\n> Content\n' },
 			{ label: '/math', detail: 'Math block', apply: '$$\n\n$$' },
 			{ label: '/mermaid', detail: 'Mermaid diagram', apply: '```mermaid\ngraph TD\n  A --> B\n```\n' },
@@ -482,6 +519,21 @@
 						// Clear the slash command text and trigger template picker
 						view.dispatch({ changes: { from: line.from, to } });
 						window.dispatchEvent(new CustomEvent('constellation:open-template-picker'));
+						return;
+					}
+					if (c.label === '/table') {
+						// Parse optional NxM dimensions from the typed text, e.g. "/table 3x4"
+						const typed = line.text.trim();
+						const dimMatch = typed.match(/\/table\s+(\d+)\s*[x×X]\s*(\d+)/);
+						let tableStr: string;
+						if (dimMatch) {
+							const cols = Math.max(1, Math.min(parseInt(dimMatch[1]), 20));
+							const rows = Math.max(2, Math.min(parseInt(dimMatch[2]), 50));
+							tableStr = generateTable(rows, cols);
+						} else {
+							tableStr = generateTable(2, 2);
+						}
+						view.dispatch({ changes: { from: line.from, to, insert: tableStr + '\n' } });
 						return;
 					}
 					// Replace the slash command (and any leading whitespace on the line) with the content
@@ -772,33 +824,61 @@
 		return EditorView.domEventHandlers({
 			paste: (event: ClipboardEvent, editorView: EditorView) => {
 				const items = event.clipboardData?.items;
-				if (!items || !vaultPath) return false;
+				if (!items) return false;
 
-				for (const item of items) {
-					if (item.type.startsWith('image/')) {
-						event.preventDefault();
-						const blob = item.getAsFile();
-						if (!blob) return true;
+				// Check for images first
+				if (vaultPath) {
+					for (const item of items) {
+						if (item.type.startsWith('image/')) {
+							event.preventDefault();
+							const blob = item.getAsFile();
+							if (!blob) return true;
 
-						const reader = new FileReader();
-						reader.onload = async () => {
-							const base64 = reader.result as string;
-							try {
-								const filename = await saveClipboardImage(vaultPath, base64);
-								const embed = `![[${filename}]]`;
-								const pos = editorView.state.selection.main.from;
-								editorView.dispatch({
-									changes: { from: pos, to: pos, insert: embed },
-									selection: { anchor: pos + embed.length }
-								});
-							} catch (err) {
-								console.error('Failed to paste image:', err);
-							}
-						};
-						reader.readAsDataURL(blob);
-						return true;
+							const reader = new FileReader();
+							reader.onload = async () => {
+								const base64 = reader.result as string;
+								try {
+									const filename = await saveClipboardImage(vaultPath, base64);
+									const embed = `![[${filename}]]`;
+									const pos = editorView.state.selection.main.from;
+									editorView.dispatch({
+										changes: { from: pos, to: pos, insert: embed },
+										selection: { anchor: pos + embed.length }
+									});
+								} catch (err) {
+									console.error('Failed to paste image:', err);
+								}
+							};
+							reader.readAsDataURL(blob);
+							return true;
+						}
 					}
 				}
+
+				// Check for tabular text (TSV/CSV from spreadsheets)
+				const text = event.clipboardData?.getData('text/plain');
+				if (text) {
+					const format = detectTabularText(text);
+					if (format) {
+						const lines = text.trim().split('\n');
+						// Only auto-convert if it looks clearly tabular (2+ rows, 2+ columns)
+						const colCount = lines[0].split(format === 'tsv' ? '\t' : ',').length;
+						if (lines.length >= 2 && colCount >= 2) {
+							event.preventDefault();
+							const tableStr = tabularTextToTable(text, format);
+							const { from, to } = editorView.state.selection.main;
+							const line = editorView.state.doc.lineAt(from);
+							const prefix = line.text.trim() === '' && from === to ? '' : '\n';
+							const insertFrom = line.text.trim() === '' && from === to ? line.from : from;
+							const insertTo = line.text.trim() === '' && from === to ? line.to : to;
+							editorView.dispatch({
+								changes: { from: insertFrom, to: insertTo, insert: prefix + tableStr + '\n' }
+							});
+							return true;
+						}
+					}
+				}
+
 				return false;
 			}
 		});
@@ -891,6 +971,7 @@
 					if (update.selectionSet || update.docChanged) {
 						updateToolbar(update.view);
 						updateTableToolbar(update.view);
+						checkSelectionTabular(update.view);
 						if (update.selectionSet && onCursorChange) {
 							onCursorChange(update.state.selection.main.head);
 						}
@@ -915,6 +996,7 @@
 
 		document.addEventListener('constellation:fold-all', handleFoldAll);
 		document.addEventListener('constellation:unfold-all', handleUnfoldAll);
+		document.addEventListener('constellation:insert-table', handleInsertTable);
 	});
 
 	// Sync value prop → editor
@@ -988,11 +1070,35 @@
 	// Listen for fold-all / unfold-all events from command palette
 	function handleFoldAll() { if (view) foldAll(view); }
 	function handleUnfoldAll() { if (view) unfoldAll(view); }
+	function handleInsertTable() { showTableGridPicker(); }
+
+	// Check if the current selection looks like tabular data (for Convert to Table button)
+	let selectionIsTabular = $state(false);
+
+	function checkSelectionTabular(editorView: EditorView) {
+		const { from, to } = editorView.state.selection.main;
+		if (from === to) { selectionIsTabular = false; return; }
+		const text = editorView.state.sliceDoc(from, to);
+		selectionIsTabular = detectTabularText(text) !== null;
+	}
+
+	function convertSelectionToTable() {
+		if (!view) return;
+		const { from, to } = view.state.selection.main;
+		if (from === to) return;
+		const text = view.state.sliceDoc(from, to);
+		const format = detectTabularText(text);
+		if (!format) return;
+		const tableStr = tabularTextToTable(text, format);
+		view.dispatch({ changes: { from, to, insert: tableStr } });
+		view.focus();
+	}
 
 	onDestroy(() => {
 		if (toolbarTimeout) clearTimeout(toolbarTimeout);
 		document.removeEventListener('constellation:fold-all', handleFoldAll);
 		document.removeEventListener('constellation:unfold-all', handleUnfoldAll);
+		document.removeEventListener('constellation:insert-table', handleInsertTable);
 		view?.destroy();
 	});
 
@@ -1017,6 +1123,8 @@
 			onCode={() => { wrapSelection(view!, '`', '`'); view!.focus(); }}
 			onLink={() => { wrapSelection(view!, '[[', ']]'); view!.focus(); }}
 			onHeading={applyHeading}
+			showConvertToTable={selectionIsTabular}
+			onConvertToTable={convertSelectionToTable}
 		/>
 	{/if}
 	{#if tableToolbarVisible && view && currentTable}
@@ -1038,6 +1146,14 @@
 			onSortDesc={() => { if (currentTable) applyTableChange(sortByColumn(currentTable, currentTable.cursorCol, 'desc')); }}
 			onInsertFormula={() => { if (currentTable && view) insertFormulaAtCursor(view, currentTable); }}
 			onEvaluateFormulas={() => { if (currentTable) applyTableChange({ ...currentTable, rows: evaluateTableFormulas(currentTable.rows) }); }}
+		/>
+	{/if}
+	{#if gridPickerVisible}
+		<TableGridPicker
+			x={gridPickerX}
+			y={gridPickerY}
+			onInsert={insertTableFromGrid}
+			onClose={() => gridPickerVisible = false}
 		/>
 	{/if}
 </div>

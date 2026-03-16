@@ -275,7 +275,8 @@
     "unfoldAll": "Desplegar todas las secciones",
     "toggleLivePreview": "Alternar vista previa en vivo",
     "insertTemplate": "Insertar desde plantilla",
-    "importNotes": "Importar notas"
+    "importNotes": "Importar notas",
+    "insertTable": "Insertar tabla"
   },
   "actions": {
     "untitled": "Sin título",
@@ -584,7 +585,9 @@
     "highlight": "Resaltar",
     "code": "Código en línea",
     "link": "Enlace",
-    "heading": "Encabezado"
+    "heading": "Encabezado",
+    "table": "Tabla",
+    "convertToTable": "Convertir a tabla"
   },
   "tableToolbar": {
     "addRow": "Agregar fila",

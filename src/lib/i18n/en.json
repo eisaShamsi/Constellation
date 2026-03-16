@@ -268,7 +268,8 @@
     "unfoldAll": "Unfold all sections",
     "toggleLivePreview": "Toggle live preview",
     "insertTemplate": "Insert from template",
-    "importNotes": "Import notes"
+    "importNotes": "Import notes",
+    "insertTable": "Insert table"
   },
   "actions": {
     "untitled": "Untitled",
@@ -577,7 +578,9 @@
     "highlight": "Highlight",
     "code": "Inline code",
     "link": "Link",
-    "heading": "Heading"
+    "heading": "Heading",
+    "table": "Table",
+    "convertToTable": "Convert to table"
   },
   "tableToolbar": {
     "addRow": "Add row",

@@ -456,6 +456,7 @@
 			{ id: 'fold-all', name: $t('commands.foldAll'), icon: '🔽', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:fold-all')); }, category: 'Editor' },
 			{ id: 'unfold-all', name: $t('commands.unfoldAll'), icon: '🔼', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:unfold-all')); }, category: 'Editor' },
 			{ id: 'toggle-live-preview', name: $t('commands.toggleLivePreview'), icon: '📖', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:toggle-live-preview')); }, category: 'Editor' },
+			{ id: 'insert-table', name: $t('commands.insertTable'), icon: '▦', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:insert-table')); }, category: 'Editor' },
 		];
 	}
 

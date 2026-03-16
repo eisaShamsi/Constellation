@@ -275,7 +275,8 @@
     "unfoldAll": "展开所有",
     "toggleLivePreview": "切换实时预览",
     "insertTemplate": "从模板插入",
-    "importNotes": "导入笔记"
+    "importNotes": "导入笔记",
+    "insertTable": "插入表格"
   },
   "actions": {
     "untitled": "未命名",
@@ -584,7 +585,9 @@
     "highlight": "高亮",
     "code": "行内代码",
     "link": "链接",
-    "heading": "标题"
+    "heading": "标题",
+    "table": "表格",
+    "convertToTable": "转换为表格"
   },
   "tableToolbar": {
     "addRow": "添加行",

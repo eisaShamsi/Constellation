@@ -275,7 +275,8 @@
     "unfoldAll": "Tüm bölümleri aç",
     "toggleLivePreview": "Canlı önizlemeyi değiştir",
     "insertTemplate": "Şablondan ekle",
-    "importNotes": "Notları içe aktar"
+    "importNotes": "Notları içe aktar",
+    "insertTable": "Tablo ekle"
   },
   "actions": {
     "untitled": "Başlıksız",
@@ -584,7 +585,9 @@
     "highlight": "Vurgula",
     "code": "Satır içi kod",
     "link": "Bağlantı",
-    "heading": "Başlık"
+    "heading": "Başlık",
+    "table": "Tablo",
+    "convertToTable": "Tabloya dönüştür"
   },
   "tableToolbar": {
     "addRow": "Satır ekle",

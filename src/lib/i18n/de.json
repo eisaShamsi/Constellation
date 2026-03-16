@@ -275,7 +275,8 @@
     "unfoldAll": "Alle Abschnitte entfalten",
     "toggleLivePreview": "Live-Vorschau umschalten",
     "insertTemplate": "Aus Vorlage einfügen",
-    "importNotes": "Notizen importieren"
+    "importNotes": "Notizen importieren",
+    "insertTable": "Tabelle einfügen"
   },
   "actions": {
     "untitled": "Unbenannt",
@@ -584,7 +585,9 @@
     "highlight": "Hervorheben",
     "code": "Inline-Code",
     "link": "Link",
-    "heading": "Überschrift"
+    "heading": "Überschrift",
+    "table": "Tabelle",
+    "convertToTable": "In Tabelle umwandeln"
   },
   "tableToolbar": {
     "addRow": "Zeile hinzufügen",
