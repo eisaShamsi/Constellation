@@ -164,7 +164,7 @@
 		if (saveTimeout) {
 			clearTimeout(saveTimeout);
 			if (tabId && filePath) {
-				saveTabContent(tabId, filePath, editableProps, body).catch(() => {});
+				saveTabContent(tabId, filePath, editableProps, body).catch((e) => console.error('[PropertyEditor] Flush save failed:', e));
 			}
 		}
 	});

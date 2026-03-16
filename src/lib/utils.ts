@@ -455,7 +455,8 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 				html += `<div class="dv-inline-footer">${result.rows.length} results &middot; ${result.query_time_ms}ms</div>`;
 				el.innerHTML = html;
 			} catch (e: any) {
-				el.innerHTML = `<div class="dv-inline-error">${e?.message || 'Query failed'}</div>`;
+				console.error('[Dataview] Query execution error:', e);
+				el.innerHTML = `<div class="dv-inline-error">${DOMPurify.sanitize(e?.message || 'Query failed')}</div>`;
 			}
 		}
 	}

@@ -98,7 +98,7 @@
 			clearTimeout(saveTimeout);
 			if (tab) {
 				const currentParsed = parseFrontmatter(tab.content);
-				saveTabContent(tab.id, tab.path, currentParsed.properties, editBody).catch(() => {});
+				saveTabContent(tab.id, tab.path, currentParsed.properties, editBody).catch((e) => console.error('[NotePane] Flush save failed:', e));
 			}
 		}
 		if (rafId !== null) cancelAnimationFrame(rafId);
