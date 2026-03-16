@@ -32,8 +32,6 @@
     },
     "security": {
       "intro": "データを保護し、APIキーを安全に保管し、アイドル時にアプリをロックします。",
-      "vaultEncryption": "ライブラリ暗号化",
-      "vaultEncryptionDesc": "このデバイスに保存されたライブラリデータを暗号化",
       "enabled": "有効",
       "disabled": "無効",
       "lockHeading": "ロック画面",
@@ -52,7 +50,9 @@
       "pinMismatch": "PINが一致しません",
       "apiHeading": "APIセキュリティ",
       "apiKeyProtection": "APIキーの安全な保存",
-      "apiKeyProtectionDesc": "APIキーをメモリではなくOSのセキュアキーチェーンに保存"
+      "apiKeyProtectionDesc": "APIキーをメモリではなくOSのセキュアキーチェーンに保存",
+      "libraryEncryption": "ライブラリ暗号化",
+      "libraryEncryptionDesc": "このデバイスに保存されたライブラリデータを暗号化"
     },
     "editor": {
       "alwaysFocusNewTabs": "新しいタブを常にフォーカス",
@@ -263,7 +263,6 @@
     "newNote": "新規ノート",
     "newBase": "新規ベース",
     "quickSwitcher": "クイックスイッチャー",
-    "searchVault": "保管庫を検索",
     "dailyNote": "デイリーノートを開く",
     "toggleEdit": "編集/閲覧モードを切り替え",
     "graphView": "グラフビューを開く",
@@ -274,7 +273,6 @@
     "closeNote": "現在のノートを閉じる",
     "toggleLeftSidebar": "左サイドバーを切り替え",
     "toggleRightSidebar": "右サイドバーを切り替え",
-    "addVault": "保管庫を追加",
     "toggleBookmark": "ブックマークを切り替え",
     "randomNote": "ランダムなノートを開く",
     "toggleTheme": "ダーク/ライトモードを切り替え",
@@ -293,7 +291,9 @@
     "toggleLivePreview": "ライブプレビュー切替",
     "insertTemplate": "テンプレートから挿入",
     "importNotes": "ノートをインポート",
-    "insertTable": "テーブルを挿入"
+    "insertTable": "テーブルを挿入",
+    "addLibrary": "保管庫を追加",
+    "searchLibrary": "保管庫を検索"
   },
   "actions": {
     "untitled": "無題",
@@ -317,13 +317,10 @@
   },
   "sidebar": {
     "searchPlaceholder": "検索...",
-    "addVault": "保管庫を追加",
     "results": "件の結果",
     "noResults": "結果が見つかりません",
     "bookmarks": "ブックマーク",
     "bases": "ベース",
-    "noVaults": "保管庫はまだありません",
-    "addVaultButton": "+ 保管庫を追加",
     "newNote": "新規ノート",
     "newBase": "新規ベース",
     "newFolder": "新規フォルダ",
@@ -332,7 +329,10 @@
     "sortModifiedDesc": "並べ替え：更新日（新しい順）",
     "sortModifiedAsc": "並べ替え：更新日（古い順）",
     "collapseAll": "すべて折りたたむ",
-    "expandAll": "すべて展開"
+    "expandAll": "すべて展開",
+    "addLibrary": "保管庫を追加",
+    "addLibraryButton": "+ 保管庫を追加",
+    "noLibraries": "保管庫はまだありません"
   },
   "layout": {
     "leftSidebar": "左サイドバー",
@@ -345,9 +345,9 @@
   "welcome": {
     "title": "Constellation へようこそ",
     "subtitle": "最初の保管庫を追加して始めましょう",
-    "addVault": "+ 保管庫を追加",
     "selectNote": "サイドバーからノートを選択してください",
-    "quickSwitchHint": "またはCtrl+Oでクイックスイッチ"
+    "quickSwitchHint": "またはCtrl+Oでクイックスイッチ",
+    "addLibrary": "+ 保管庫を追加"
   },
   "panels": {
     "properties": "プロパティ",
@@ -405,24 +405,24 @@
     "noTasksFound": "タスクが見つかりません",
     "allDates": "すべての日付",
     "thisWeek": "今週",
-    "allVaults": "すべての保管庫",
     "allPriorities": "すべての優先度",
     "noGroup": "グループ化なし",
     "groupByFile": "ファイルでグループ化",
-    "groupByVault": "保管庫でグループ化",
     "groupByPriority": "優先度でグループ化",
     "groupByDue": "期限日でグループ化",
     "sortByFile": "ファイルで並べ替え",
-    "search": "タスクを検索..."
+    "search": "タスクを検索...",
+    "allLibraries": "すべての保管庫",
+    "groupByLibrary": "保管庫でグループ化"
   },
   "linkDashboard": {
     "mostConnected": "最多接続",
-    "crossVault": "保管庫間",
     "broken": "リンク切れ",
     "orphans": "孤立ノート",
-    "noCrossVault": "保管庫間リンクなし",
     "noBroken": "リンク切れなし",
-    "noOrphans": "孤立ノートなし"
+    "noOrphans": "孤立ノートなし",
+    "crossLibrary": "保管庫間",
+    "noCrossLibrary": "保管庫間リンクなし"
   },
   "dialogs": {
     "confirmDelete": "「{name}」を削除してもよろしいですか？",
@@ -448,7 +448,7 @@
     "createNote": "新規ノート作成",
     "goToFile": "ファイルに移動",
     "close": "閉じる",
-    "selectVault": "保管庫を選択"
+    "selectLibrary": "保管庫を選択"
   },
   "commandPalette": {
     "placeholder": "コマンドを入力...",
@@ -536,11 +536,11 @@
     "searchPlaceholder": "すべての保管庫を検索...",
     "results": "件の結果",
     "noResults": "結果なし",
-    "addVault": "+ 保管庫を追加",
     "welcomeTitle": "Constellation へようこそ",
     "welcomeSubtitle": "サイドバーから最初の保管庫を追加してください",
-    "addVaultCta": "+ 保管庫を追加",
-    "selectNote": "サイドバーからノートを選択してください"
+    "selectNote": "サイドバーからノートを選択してください",
+    "addLibrary": "+ 保管庫を追加",
+    "addLibraryCta": "+ 保管庫を追加"
   },
   "skills": {
     "title": "スキル",
@@ -555,11 +555,11 @@
     "create": "スキルを作成",
     "noProvider": "スキルを使用するには、設定でAIプロバイダーを接続してください。",
     "selectNote": "ノートを選択",
-    "selectVault": "保管庫を選択",
     "enterText": "テキストを入力...",
     "result": "結果",
     "copyResult": "コピー",
-    "applyResult": "ノートに適用"
+    "applyResult": "ノートに適用",
+    "selectLibrary": "保管庫を選択"
   },
   "skill": {
     "summarize": "ノートを要約",
@@ -578,17 +578,6 @@
     "chartDesc": "ノートデータからビジュアルチャートを作成",
     "research": "リサーチアシスタント",
     "researchDesc": "複数のノートから情報を分析・統合"
-  },
-  "vaultManager": {
-    "title": "ボールト管理",
-    "openVault": "+ ボールトを開く",
-    "manageVaults": "ボールト管理...",
-    "openFolder": "フォルダを開く",
-    "remove": "削除",
-    "confirmRemove": "Constellation から「{name}」を削除しますか？ファイルは削除されません。",
-    "addVault": "+ ボールトを追加",
-    "noVaults": "登録されたボールトがありません",
-    "notes": "ノート"
   },
   "lockScreen": {
     "title": "Constellation はロックされています",
@@ -684,7 +673,6 @@
       "folder": "フォルダ",
       "tag": "タグ",
       "library": "ボールト",
-      "allVaults": "すべてのボールト",
       "libraries": "ボールト",
       "folderPath": "フォルダパス",
       "folderPlaceholder": "例: プロジェクト/アクティブ",
@@ -693,10 +681,11 @@
       "tagName": "タグ",
       "tagPlaceholder": "例: プロジェクト",
       "tagHint": "このタグを持つすべてのノートをすべてのボールトでスキャンします",
-      "vaultsLabel": "ボールト",
       "allHint": "接続されたすべてのボールトのすべてのノートをスキャンします",
       "apply": "適用",
-      "cancel": "キャンセル"
+      "cancel": "キャンセル",
+      "allLibraries": "すべてのボールト",
+      "librariesLabel": "ボールト"
     }
   },
   "universe": {
@@ -717,14 +706,16 @@
       "creating": "作成中...",
       "next": "次へ",
       "back": "戻る",
-      "addVaultsHeading": "ボールトを追加",
-      "addVaultsDescription": "ボールトと子ユニバースを接続します。後からいつでも追加できます。",
-      "addVault": "ボールトを追加",
+      "addLibrariesHeading": "ライブラリを追加",
+      "addLibrariesDescription": "ライブラリと子ユニバースを接続します。後からいつでも追加できます。",
+      "addLibrary": "ライブラリを追加",
       "addChildUniverse": "子ユニバースを追加",
       "finish": "完了",
       "skip": "今はスキップ",
-      "noVaultsYet": "まだボールトが追加されていません。ボールトまたは子ユニバースを追加して始めましょう。",
-      "remove": "削除"
+      "noLibrariesYet": "まだライブラリが追加されていません。ライブラリまたは子ユニバースを追加して始めましょう。",
+      "remove": "削除",
+      "starterKit": "スターターキットを含める",
+      "starterKitDesc": "開始用のサンプルノートとフォルダ構造を追加"
     },
     "manager": {
       "heading": "ユニバースマネージャー",
@@ -739,9 +730,9 @@
       "children": "子ユニバース",
       "addChild": "子ユニバースを追加",
       "noUniverses": "ユニバースが見つかりません",
-      "ownVaults": "自身の保管庫",
-      "inheritedVaults": "継承された保管庫",
-      "openExisting": "既存のユニバースを開く"
+      "openExisting": "既存のユニバースを開く",
+      "ownLibraries": "自身の保管庫",
+      "inheritedLibraries": "継承された保管庫"
     },
     "switching": "ユニバースを切替中...",
     "migrating": "データを移行中..."
@@ -781,13 +772,13 @@
     "linkedOn": "リンクブラウジングON",
     "linkedOff": "リンクブラウジングOFF",
     "searchNotes": "ノートを検索...",
-    "allVaults": "すべての保管庫",
     "sortName": "名前順",
-    "sortVault": "保管庫順",
     "noResults": "一致するノートはありません",
     "noNotes": "ノートが見つかりません",
     "detailEmpty": "ノートを選択して表示",
-    "sendToScreen": "セカンドスクリーンに送信"
+    "sendToScreen": "セカンドスクリーンに送信",
+    "allLibraries": "すべての保管庫",
+    "sortLibrary": "保管庫順"
   },
   "importer": {
     "title": "ノートをインポート",
@@ -808,7 +799,6 @@
       "txt": "テキスト",
       "txtDesc": "Markdownに変換されたテキストファイル"
     },
-    "targetVault": "対象ボールト",
     "subfolder": "サブフォルダ",
     "selectSource": "ソースを選択",
     "scanning": "ファイルをスキャン中...",
@@ -822,6 +812,18 @@
     "imported": "インポート済み",
     "skipped": "スキップ",
     "errors": "エラー",
-    "done": "完了"
+    "done": "完了",
+    "targetLibrary": "対象ボールト"
+  },
+  "libraryManager": {
+    "title": "ボールト管理",
+    "openFolder": "フォルダを開く",
+    "remove": "削除",
+    "confirmRemove": "Constellation から「{name}」を削除しますか？ファイルは削除されません。",
+    "notes": "ノート",
+    "addLibrary": "+ ボールトを追加",
+    "manageLibraries": "ボールト管理...",
+    "noLibraries": "登録されたボールトがありません",
+    "openLibrary": "+ ボールトを開く"
   }
 }

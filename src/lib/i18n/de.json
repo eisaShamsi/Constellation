@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Constellation",
-    "tagline": "Ein Tresor der Tresore"
+    "tagline": "Eine Bibliothek der Bibliotheken"
   },
   "settings": {
     "title": "Einstellungen",
@@ -32,8 +32,8 @@
     },
     "security": {
       "intro": "Schütze deine Daten, sichere API-Schlüssel und sperre die App bei Inaktivität.",
-      "vaultEncryption": "Bibliothek-Verschlüsselung",
-      "vaultEncryptionDesc": "Gespeicherte Bibliotheksdaten auf diesem Gerät verschlüsseln",
+      "libraryEncryption": "Bibliothek-Verschlüsselung",
+      "libraryEncryptionDesc": "Gespeicherte Bibliotheksdaten auf diesem Gerät verschlüsseln",
       "enabled": "Aktiviert",
       "disabled": "Deaktiviert",
       "lockHeading": "Sperrbildschirm",
@@ -109,7 +109,7 @@
       "linkFormatDesc": "Wie interne Links erzeugt werden",
       "shortestPath": "Kürzester Pfad wenn möglich",
       "relativePath": "Relativer Pfad zur Datei",
-      "absolutePath": "Absoluter Pfad im Tresor",
+      "absolutePath": "Absoluter Pfad in der Bibliothek",
       "autoUpdateLinks": "Interne Links automatisch aktualisieren",
       "autoUpdateLinksDesc": "Alle Links beim Umbenennen einer Notiz aktualisieren",
       "useWikilinks": "[[Wikilinks]] verwenden",
@@ -263,7 +263,7 @@
     "newNote": "Neue Notiz",
     "newBase": "Neue Basis",
     "quickSwitcher": "Schnellwechsler",
-    "searchVault": "Tresor durchsuchen",
+    "searchLibrary": "Bibliothek durchsuchen",
     "dailyNote": "Tägliche Notiz öffnen",
     "toggleEdit": "Bearbeitungs-/Lesemodus umschalten",
     "graphView": "Graphansicht öffnen",
@@ -274,7 +274,7 @@
     "closeNote": "Aktuelle Notiz schließen",
     "toggleLeftSidebar": "Linke Seitenleiste umschalten",
     "toggleRightSidebar": "Rechte Seitenleiste umschalten",
-    "addVault": "Tresor hinzufügen",
+    "addLibrary": "Bibliothek hinzufügen",
     "toggleBookmark": "Lesezeichen umschalten",
     "randomNote": "Zufällige Notiz öffnen",
     "toggleTheme": "Dunklen/Hellen Modus umschalten",
@@ -317,13 +317,13 @@
   },
   "sidebar": {
     "searchPlaceholder": "Suchen...",
-    "addVault": "Tresor hinzufügen",
+    "addLibrary": "Bibliothek hinzufügen",
     "results": "Ergebnisse",
     "noResults": "Keine Ergebnisse gefunden",
     "bookmarks": "Lesezeichen",
     "bases": "Basen",
-    "noVaults": "Noch keine Tresore",
-    "addVaultButton": "+ Tresor hinzufügen",
+    "noLibraries": "Noch keine Bibliotheken",
+    "addLibraryButton": "+ Bibliothek hinzufügen",
     "newNote": "Neue Notiz",
     "newBase": "Neue Basis",
     "newFolder": "Neuer Ordner",
@@ -344,8 +344,8 @@
   },
   "welcome": {
     "title": "Willkommen bei Constellation",
-    "subtitle": "Fügen Sie Ihren ersten Tresor hinzu, um zu beginnen",
-    "addVault": "+ Tresor hinzufügen",
+    "subtitle": "Fügen Sie Ihre erste Bibliothek hinzu, um zu beginnen",
+    "addLibrary": "+ Bibliothek hinzufügen",
     "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste",
     "quickSwitchHint": "oder drücken Sie Strg+O zum Schnellwechseln"
   },
@@ -405,11 +405,11 @@
     "noTasksFound": "Keine Aufgaben gefunden",
     "allDates": "Alle Daten",
     "thisWeek": "Diese Woche",
-    "allVaults": "Alle Tresore",
+    "allLibraries": "Alle Bibliotheken",
     "allPriorities": "Alle Prioritäten",
     "noGroup": "Keine Gruppierung",
     "groupByFile": "Nach Datei gruppieren",
-    "groupByVault": "Nach Tresor gruppieren",
+    "groupByLibrary": "Nach Bibliothek gruppieren",
     "groupByPriority": "Nach Priorität gruppieren",
     "groupByDue": "Nach Fälligkeitsdatum gruppieren",
     "sortByFile": "Nach Datei sortieren",
@@ -417,10 +417,10 @@
   },
   "linkDashboard": {
     "mostConnected": "Meistverbunden",
-    "crossVault": "Tresor-übergreifend",
+    "crossLibrary": "Bibliotheksübergreifend",
     "broken": "Defekt",
     "orphans": "Verwaiste Notizen",
-    "noCrossVault": "Keine tresor-übergreifenden Links",
+    "noCrossLibrary": "Keine bibliotheksübergreifenden Links",
     "noBroken": "Keine defekten Links",
     "noOrphans": "Keine verwaisten Notizen"
   },
@@ -433,7 +433,7 @@
     "properties": "Eigenschaften",
     "words": "Wörter",
     "characters": "Zeichen",
-    "libraries": "Tresore",
+    "libraries": "Bibliotheken",
     "notes": "Notizen"
   },
   "notePane": {
@@ -448,7 +448,7 @@
     "createNote": "Neue Notiz erstellen",
     "goToFile": "Zur Datei gehen",
     "close": "Schließen",
-    "selectVault": "Tresor auswählen"
+    "selectLibrary": "Bibliothek auswählen"
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben...",
@@ -533,13 +533,13 @@
     }
   },
   "libraries": {
-    "searchPlaceholder": "Alle Tresore durchsuchen...",
+    "searchPlaceholder": "Alle Bibliotheken durchsuchen...",
     "results": "Ergebnisse",
     "noResults": "Keine Ergebnisse",
-    "addVault": "+ Tresor hinzufügen",
+    "addLibrary": "+ Bibliothek hinzufügen",
     "welcomeTitle": "Willkommen bei Constellation",
-    "welcomeSubtitle": "Fügen Sie Ihren ersten Tresor über die Seitenleiste hinzu",
-    "addVaultCta": "+ Tresor hinzufügen",
+    "welcomeSubtitle": "Fügen Sie Ihre erste Bibliothek über die Seitenleiste hinzu",
+    "addLibraryCta": "+ Bibliothek hinzufügen",
     "selectNote": "Wählen Sie eine Notiz aus der Seitenleiste"
   },
   "skills": {
@@ -555,7 +555,7 @@
     "create": "Fähigkeit erstellen",
     "noProvider": "Verbinden Sie einen KI-Anbieter in den Einstellungen, um Fähigkeiten zu nutzen.",
     "selectNote": "Notiz auswählen",
-    "selectVault": "Tresor auswählen",
+    "selectLibrary": "Bibliothek auswählen",
     "enterText": "Text eingeben...",
     "result": "Ergebnis",
     "copyResult": "Kopieren",
@@ -565,11 +565,11 @@
     "summarize": "Notiz zusammenfassen",
     "summarizeDesc": "Eine knappe Zusammenfassung jeder Notiz erstellen",
     "qa": "Intelligente Fragen & Antworten",
-    "qaDesc": "Stellen Sie Fragen zu Ihren Tresoren und erhalten Sie KI-gestützte Antworten",
+    "qaDesc": "Stellen Sie Fragen zu Ihren Bibliotheken und erhalten Sie KI-gestützte Antworten",
     "write": "Schreibassistent",
     "writeDesc": "Text erweitern, umschreiben oder verbessern",
     "autolink": "Auto-Verlinker",
-    "autolinkDesc": "Verbindungen zwischen Notizen verschiedener Tresore entdecken",
+    "autolinkDesc": "Verbindungen zwischen Notizen verschiedener Bibliotheken entdecken",
     "translate": "Notiz übersetzen",
     "translateDesc": "Notizen zwischen Sprachen übersetzen",
     "meeting": "Besprechungsnotizen",
@@ -579,15 +579,15 @@
     "research": "Forschungsassistent",
     "researchDesc": "Informationen aus mehreren Notizen analysieren und zusammenführen"
   },
-  "vaultManager": {
-    "title": "Vaults verwalten",
-    "openVault": "+ Vault öffnen",
-    "manageVaults": "Vaults verwalten...",
+  "libraryManager": {
+    "title": "Bibliotheken verwalten",
+    "openLibrary": "+ Bibliothek öffnen",
+    "manageLibraries": "Bibliotheken verwalten...",
     "openFolder": "Ordner öffnen",
     "remove": "Entfernen",
     "confirmRemove": "\"{name}\" aus Constellation entfernen? Deine Dateien werden nicht gelöscht.",
-    "addVault": "+ Vault hinzufügen",
-    "noVaults": "Keine Vaults registriert",
+    "addLibrary": "+ Bibliothek hinzufügen",
+    "noLibraries": "Keine Bibliotheken registriert",
     "notes": "Notizen"
   },
   "lockScreen": {
@@ -683,18 +683,18 @@
       "title": "Quelle",
       "folder": "Ordner",
       "tag": "Schlagwort",
-      "library": "Tresor",
-      "allVaults": "Alle Tresore",
-      "libraries": "Tresore",
+      "library": "Bibliothek",
+      "allLibraries": "Alle Bibliotheken",
+      "libraries": "Bibliotheken",
       "folderPath": "Ordnerpfad",
       "folderPlaceholder": "z.B. Projekte/Aktiv",
-      "folderHint": "Durchsucht diesen Ordner in allen Tresoren, die ihn enthalten",
+      "folderHint": "Durchsucht diesen Ordner in allen Bibliotheken, die ihn enthalten",
       "includeSubfolders": "Unterordner einbeziehen",
       "tagName": "Schlagwort",
       "tagPlaceholder": "z.B. projekt",
-      "tagHint": "Durchsucht alle Notizen mit diesem Schlagwort in allen Tresoren",
-      "vaultsLabel": "Tresore",
-      "allHint": "Durchsucht alle Notizen in allen verbundenen Tresoren",
+      "tagHint": "Durchsucht alle Notizen mit diesem Schlagwort in allen Bibliotheken",
+      "librariesLabel": "Bibliotheken",
+      "allHint": "Durchsucht alle Notizen in allen verbundenen Bibliotheken",
       "apply": "Anwenden",
       "cancel": "Abbrechen"
     }
@@ -717,14 +717,16 @@
       "creating": "Wird erstellt...",
       "next": "Weiter",
       "back": "Zurück",
-      "addVaultsHeading": "Füge deine Tresore hinzu",
-      "addVaultsDescription": "Verbinde deine Tresore und Unter-Universen. Du kannst später jederzeit weitere hinzufügen.",
-      "addVault": "Tresor hinzufügen",
+      "addLibrariesHeading": "Füge deine Bibliotheken hinzu",
+      "addLibrariesDescription": "Verbinde deine Bibliotheken und Unter-Universen. Du kannst später jederzeit weitere hinzufügen.",
+      "addLibrary": "Bibliothek hinzufügen",
       "addChildUniverse": "Unter-Universum hinzufügen",
       "finish": "Fertig",
       "skip": "Vorerst überspringen",
-      "noVaultsYet": "Noch keine Tresore hinzugefügt. Füge einen Tresor oder ein Unter-Universum hinzu, um loszulegen.",
-      "remove": "Entfernen"
+      "noLibrariesYet": "Noch keine Bibliotheken hinzugefügt. Füge eine Bibliothek oder ein Unter-Universum hinzu, um loszulegen.",
+      "remove": "Entfernen",
+      "starterKit": "Starterpaket einschließen",
+      "starterKitDesc": "Beispielnotizen und Ordnerstruktur zum Einstieg hinzufügen"
     },
     "manager": {
       "heading": "Universum-Manager",
@@ -739,8 +741,8 @@
       "children": "Kind-Universen",
       "addChild": "Kind-Universum hinzufügen",
       "noUniverses": "Keine Universen gefunden",
-      "ownVaults": "Eigene Tresore",
-      "inheritedVaults": "Geerbte Tresore",
+      "ownLibraries": "Eigene Bibliotheken",
+      "inheritedLibraries": "Geerbte Bibliotheken",
       "openExisting": "Bestehendes Universum öffnen"
     },
     "switching": "Universum wird gewechselt...",
@@ -781,9 +783,9 @@
     "linkedOn": "Verknüpftes Browsen ein",
     "linkedOff": "Verknüpftes Browsen aus",
     "searchNotes": "Notizen durchsuchen...",
-    "allVaults": "Alle Tresore",
+    "allLibraries": "Alle Bibliotheken",
     "sortName": "Nach Name sortieren",
-    "sortVault": "Nach Tresor sortieren",
+    "sortLibrary": "Nach Bibliothek sortieren",
     "noResults": "Keine passenden Notizen",
     "noNotes": "Keine Notizen gefunden",
     "detailEmpty": "Wähle eine Notiz zur Ansicht",
@@ -808,7 +810,7 @@
       "txt": "Klartext",
       "txtDesc": "Textdateien zu Markdown konvertiert"
     },
-    "targetVault": "Ziel-Tresor",
+    "targetLibrary": "Ziel-Bibliothek",
     "subfolder": "Unterordner",
     "selectSource": "Quelle auswählen",
     "scanning": "Dateien werden gescannt...",

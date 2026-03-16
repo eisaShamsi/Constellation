@@ -32,8 +32,6 @@
     },
     "security": {
       "intro": "데이터를 보호하고, API 키를 안전하게 보관하며, 유휴 시 앱을 잠급니다.",
-      "vaultEncryption": "라이브러리 암호화",
-      "vaultEncryptionDesc": "이 기기에 저장된 라이브러리 데이터 암호화",
       "enabled": "활성화됨",
       "disabled": "비활성화됨",
       "lockHeading": "잠금 화면",
@@ -52,7 +50,9 @@
       "pinMismatch": "PIN이 일치하지 않습니다",
       "apiHeading": "API 보안",
       "apiKeyProtection": "안전한 API 키 저장",
-      "apiKeyProtectionDesc": "API 키를 메모리 대신 OS 보안 키체인에 저장"
+      "apiKeyProtectionDesc": "API 키를 메모리 대신 OS 보안 키체인에 저장",
+      "libraryEncryption": "라이브러리 암호화",
+      "libraryEncryptionDesc": "이 기기에 저장된 라이브러리 데이터 암호화"
     },
     "editor": {
       "alwaysFocusNewTabs": "새 탭에 항상 포커스",
@@ -263,7 +263,6 @@
     "newNote": "새 노트",
     "newBase": "새 베이스",
     "quickSwitcher": "빠른 전환",
-    "searchVault": "보관함 검색",
     "dailyNote": "일일 노트 열기",
     "toggleEdit": "편집/읽기 모드 전환",
     "graphView": "그래프 보기 열기",
@@ -274,7 +273,6 @@
     "closeNote": "현재 노트 닫기",
     "toggleLeftSidebar": "왼쪽 사이드바 전환",
     "toggleRightSidebar": "오른쪽 사이드바 전환",
-    "addVault": "보관함 추가",
     "toggleBookmark": "북마크 전환",
     "randomNote": "랜덤 노트 열기",
     "toggleTheme": "다크/라이트 모드 전환",
@@ -293,7 +291,9 @@
     "toggleLivePreview": "실시간 미리보기 전환",
     "insertTemplate": "템플릿에서 삽입",
     "importNotes": "노트 가져오기",
-    "insertTable": "표 삽입"
+    "insertTable": "표 삽입",
+    "addLibrary": "보관함 추가",
+    "searchLibrary": "보관함 검색"
   },
   "actions": {
     "untitled": "제목 없음",
@@ -317,13 +317,10 @@
   },
   "sidebar": {
     "searchPlaceholder": "검색...",
-    "addVault": "보관함 추가",
     "results": "개 결과",
     "noResults": "결과를 찾을 수 없습니다",
     "bookmarks": "북마크",
     "bases": "베이스",
-    "noVaults": "보관함이 아직 없습니다",
-    "addVaultButton": "+ 보관함 추가",
     "newNote": "새 노트",
     "newBase": "새 베이스",
     "newFolder": "새 폴더",
@@ -332,7 +329,10 @@
     "sortModifiedDesc": "정렬: 수정일 (최신순)",
     "sortModifiedAsc": "정렬: 수정일 (오래된순)",
     "collapseAll": "모두 접기",
-    "expandAll": "모두 펼치기"
+    "expandAll": "모두 펼치기",
+    "addLibrary": "보관함 추가",
+    "addLibraryButton": "+ 보관함 추가",
+    "noLibraries": "보관함이 아직 없습니다"
   },
   "layout": {
     "leftSidebar": "왼쪽 사이드바",
@@ -345,9 +345,9 @@
   "welcome": {
     "title": "Constellation에 오신 것을 환영합니다",
     "subtitle": "시작하려면 첫 번째 보관함을 추가하세요",
-    "addVault": "+ 보관함 추가",
     "selectNote": "사이드바에서 노트를 선택하세요",
-    "quickSwitchHint": "또는 Ctrl+O를 눌러 빠른 전환"
+    "quickSwitchHint": "또는 Ctrl+O를 눌러 빠른 전환",
+    "addLibrary": "+ 보관함 추가"
   },
   "panels": {
     "properties": "속성",
@@ -405,24 +405,24 @@
     "noTasksFound": "작업을 찾을 수 없음",
     "allDates": "모든 날짜",
     "thisWeek": "이번 주",
-    "allVaults": "모든 보관함",
     "allPriorities": "모든 우선순위",
     "noGroup": "그룹 없음",
     "groupByFile": "파일별 그룹",
-    "groupByVault": "보관함별 그룹",
     "groupByPriority": "우선순위별 그룹",
     "groupByDue": "마감일별 그룹",
     "sortByFile": "파일순 정렬",
-    "search": "작업 검색..."
+    "search": "작업 검색...",
+    "allLibraries": "모든 보관함",
+    "groupByLibrary": "보관함별 그룹"
   },
   "linkDashboard": {
     "mostConnected": "최다 연결",
-    "crossVault": "보관함 간",
     "broken": "끊긴 링크",
     "orphans": "고아 노트",
-    "noCrossVault": "보관함 간 링크 없음",
     "noBroken": "끊긴 링크 없음",
-    "noOrphans": "고아 노트 없음"
+    "noOrphans": "고아 노트 없음",
+    "crossLibrary": "보관함 간",
+    "noCrossLibrary": "보관함 간 링크 없음"
   },
   "dialogs": {
     "confirmDelete": "\"{name}\"을(를) 삭제하시겠습니까?",
@@ -448,7 +448,7 @@
     "createNote": "새 노트 만들기",
     "goToFile": "파일로 이동",
     "close": "닫기",
-    "selectVault": "금고 선택"
+    "selectLibrary": "금고 선택"
   },
   "commandPalette": {
     "placeholder": "명령어 입력...",
@@ -536,11 +536,11 @@
     "searchPlaceholder": "모든 보관함 검색...",
     "results": "개 결과",
     "noResults": "결과 없음",
-    "addVault": "+ 보관함 추가",
     "welcomeTitle": "Constellation에 오신 것을 환영합니다",
     "welcomeSubtitle": "사이드바에서 첫 번째 보관함을 추가하세요",
-    "addVaultCta": "+ 보관함 추가",
-    "selectNote": "사이드바에서 노트를 선택하세요"
+    "selectNote": "사이드바에서 노트를 선택하세요",
+    "addLibrary": "+ 보관함 추가",
+    "addLibraryCta": "+ 보관함 추가"
   },
   "skills": {
     "title": "스킬",
@@ -555,11 +555,11 @@
     "create": "스킬 만들기",
     "noProvider": "스킬을 사용하려면 설정에서 AI 제공자를 연결하세요.",
     "selectNote": "노트 선택",
-    "selectVault": "보관함 선택",
     "enterText": "텍스트 입력...",
     "result": "결과",
     "copyResult": "복사",
-    "applyResult": "노트에 적용"
+    "applyResult": "노트에 적용",
+    "selectLibrary": "보관함 선택"
   },
   "skill": {
     "summarize": "노트 요약",
@@ -578,17 +578,6 @@
     "chartDesc": "노트 데이터로 시각적 차트 생성",
     "research": "연구 도우미",
     "researchDesc": "여러 노트에서 정보를 분석하고 종합"
-  },
-  "vaultManager": {
-    "title": "볼트 관리",
-    "openVault": "+ 볼트 열기",
-    "manageVaults": "볼트 관리...",
-    "openFolder": "폴더 열기",
-    "remove": "제거",
-    "confirmRemove": "Constellation에서 \"{name}\"을(를) 제거하시겠습니까? 파일은 삭제되지 않습니다.",
-    "addVault": "+ 볼트 추가",
-    "noVaults": "등록된 볼트 없음",
-    "notes": "노트"
   },
   "lockScreen": {
     "title": "Constellation이 잠겨 있습니다",
@@ -684,7 +673,6 @@
       "folder": "폴더",
       "tag": "태그",
       "library": "볼트",
-      "allVaults": "모든 볼트",
       "libraries": "볼트",
       "folderPath": "폴더 경로",
       "folderPlaceholder": "예: 프로젝트/활성",
@@ -693,10 +681,11 @@
       "tagName": "태그",
       "tagPlaceholder": "예: 프로젝트",
       "tagHint": "이 태그가 있는 모든 노트를 모든 볼트에서 스캔합니다",
-      "vaultsLabel": "볼트",
       "allHint": "연결된 모든 볼트의 모든 노트를 스캔합니다",
       "apply": "적용",
-      "cancel": "취소"
+      "cancel": "취소",
+      "allLibraries": "모든 볼트",
+      "librariesLabel": "볼트"
     }
   },
   "universe": {
@@ -717,14 +706,16 @@
       "creating": "생성 중...",
       "next": "다음",
       "back": "뒤로",
-      "addVaultsHeading": "보관함 추가",
-      "addVaultsDescription": "보관함과 하위 유니버스를 연결하세요. 나중에 언제든지 더 추가할 수 있습니다.",
-      "addVault": "보관함 추가",
+      "addLibrariesHeading": "라이브러리 추가",
+      "addLibrariesDescription": "라이브러리와 하위 유니버스를 연결하세요. 나중에 언제든지 더 추가할 수 있습니다.",
+      "addLibrary": "라이브러리 추가",
       "addChildUniverse": "하위 유니버스 추가",
       "finish": "완료",
       "skip": "지금은 건너뛰기",
-      "noVaultsYet": "아직 추가된 보관함이 없습니다. 시작하려면 보관함 또는 하위 유니버스를 추가하세요.",
-      "remove": "제거"
+      "noLibrariesYet": "아직 추가된 라이브러리가 없습니다. 시작하려면 라이브러리 또는 하위 유니버스를 추가하세요.",
+      "remove": "제거",
+      "starterKit": "스타터 키트 포함",
+      "starterKitDesc": "시작용 샘플 노트와 폴더 구조 추가"
     },
     "manager": {
       "heading": "유니버스 관리자",
@@ -739,9 +730,9 @@
       "children": "하위 유니버스",
       "addChild": "하위 유니버스 추가",
       "noUniverses": "유니버스를 찾을 수 없습니다",
-      "ownVaults": "자체 보관함",
-      "inheritedVaults": "상속된 보관함",
-      "openExisting": "기존 유니버스 열기"
+      "openExisting": "기존 유니버스 열기",
+      "ownLibraries": "자체 보관함",
+      "inheritedLibraries": "상속된 보관함"
     },
     "switching": "유니버스 전환 중...",
     "migrating": "데이터 마이그레이션 중..."
@@ -781,13 +772,13 @@
     "linkedOn": "연결 브라우징 켜짐",
     "linkedOff": "연결 브라우징 꺼짐",
     "searchNotes": "노트 검색...",
-    "allVaults": "모든 보관함",
     "sortName": "이름순 정렬",
-    "sortVault": "보관함순 정렬",
     "noResults": "일치하는 노트 없음",
     "noNotes": "노트를 찾을 수 없음",
     "detailEmpty": "여기에 표시할 노트를 선택하세요",
-    "sendToScreen": "보조 화면으로 보내기"
+    "sendToScreen": "보조 화면으로 보내기",
+    "allLibraries": "모든 보관함",
+    "sortLibrary": "보관함순 정렬"
   },
   "importer": {
     "title": "노트 가져오기",
@@ -808,7 +799,6 @@
       "txt": "일반 텍스트",
       "txtDesc": "마크다운으로 변환된 텍스트 파일"
     },
-    "targetVault": "대상 보관함",
     "subfolder": "하위 폴더",
     "selectSource": "소스 선택",
     "scanning": "파일 스캔 중...",
@@ -822,6 +812,18 @@
     "imported": "가져옴",
     "skipped": "건너뜀",
     "errors": "오류",
-    "done": "완료"
+    "done": "완료",
+    "targetLibrary": "대상 보관함"
+  },
+  "libraryManager": {
+    "title": "볼트 관리",
+    "openFolder": "폴더 열기",
+    "remove": "제거",
+    "confirmRemove": "Constellation에서 \"{name}\"을(를) 제거하시겠습니까? 파일은 삭제되지 않습니다.",
+    "notes": "노트",
+    "addLibrary": "+ 볼트 추가",
+    "manageLibraries": "볼트 관리...",
+    "noLibraries": "등록된 볼트 없음",
+    "openLibrary": "+ 볼트 열기"
   }
 }

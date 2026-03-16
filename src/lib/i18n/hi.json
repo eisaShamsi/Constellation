@@ -32,8 +32,6 @@
     },
     "security": {
       "intro": "अपने डेटा की सुरक्षा करें, API कुंजियाँ सुरक्षित रखें और निष्क्रिय होने पर ऐप लॉक करें।",
-      "vaultEncryption": "पुस्तकालय एन्क्रिप्शन",
-      "vaultEncryptionDesc": "इस डिवाइस पर संग्रहीत पुस्तकालय डेटा को एन्क्रिप्ट करें",
       "enabled": "सक्षम",
       "disabled": "अक्षम",
       "lockHeading": "लॉक स्क्रीन",
@@ -52,7 +50,9 @@
       "pinMismatch": "पिन मेल नहीं खाते",
       "apiHeading": "API सुरक्षा",
       "apiKeyProtection": "सुरक्षित API कुंजी भंडारण",
-      "apiKeyProtectionDesc": "API कुंजियों को मेमोरी के बजाय OS के सुरक्षित कीरिंग में संग्रहीत करें"
+      "apiKeyProtectionDesc": "API कुंजियों को मेमोरी के बजाय OS के सुरक्षित कीरिंग में संग्रहीत करें",
+      "libraryEncryption": "पुस्तकालय एन्क्रिप्शन",
+      "libraryEncryptionDesc": "इस डिवाइस पर संग्रहीत पुस्तकालय डेटा को एन्क्रिप्ट करें"
     },
     "editor": {
       "alwaysFocusNewTabs": "नए टैब्स पर हमेशा फोकस करें",
@@ -263,7 +263,6 @@
     "newNote": "नया नोट",
     "newBase": "नया बेस",
     "quickSwitcher": "त्वरित स्विचर",
-    "searchVault": "तिजोरी में खोजें",
     "dailyNote": "दैनिक नोट खोलें",
     "toggleEdit": "संपादन/पठन मोड टॉगल करें",
     "graphView": "ग्राफ़ दृश्य खोलें",
@@ -274,7 +273,6 @@
     "closeNote": "वर्तमान नोट बंद करें",
     "toggleLeftSidebar": "बायाँ साइडबार टॉगल करें",
     "toggleRightSidebar": "दायाँ साइडबार टॉगल करें",
-    "addVault": "तिजोरी जोड़ें",
     "toggleBookmark": "बुकमार्क टॉगल करें",
     "randomNote": "रैंडम नोट खोलें",
     "toggleTheme": "डार्क/लाइट मोड टॉगल करें",
@@ -293,7 +291,9 @@
     "toggleLivePreview": "लाइव पूर्वावलोकन टॉगल करें",
     "insertTemplate": "टेम्पलेट से डालें",
     "importNotes": "नोट्स आयात करें",
-    "insertTable": "तालिका डालें"
+    "insertTable": "तालिका डालें",
+    "addLibrary": "तिजोरी जोड़ें",
+    "searchLibrary": "तिजोरी में खोजें"
   },
   "actions": {
     "untitled": "बिना शीर्षक",
@@ -317,13 +317,10 @@
   },
   "sidebar": {
     "searchPlaceholder": "खोजें...",
-    "addVault": "तिजोरी जोड़ें",
     "results": "परिणाम",
     "noResults": "कोई परिणाम नहीं मिला",
     "bookmarks": "बुकमार्क्स",
     "bases": "बेस",
-    "noVaults": "अभी कोई तिजोरी नहीं",
-    "addVaultButton": "+ तिजोरी जोड़ें",
     "newNote": "नया नोट",
     "newBase": "नया बेस",
     "newFolder": "नया फ़ोल्डर",
@@ -332,7 +329,10 @@
     "sortModifiedDesc": "क्रम: संशोधित (नवीनतम)",
     "sortModifiedAsc": "क्रम: संशोधित (पुरानी)",
     "collapseAll": "सभी संक्षिप्त करें",
-    "expandAll": "सभी विस्तृत करें"
+    "expandAll": "सभी विस्तृत करें",
+    "addLibrary": "तिजोरी जोड़ें",
+    "addLibraryButton": "+ तिजोरी जोड़ें",
+    "noLibraries": "अभी कोई तिजोरी नहीं"
   },
   "layout": {
     "leftSidebar": "बायाँ साइडबार",
@@ -345,9 +345,9 @@
   "welcome": {
     "title": "Constellation में आपका स्वागत है",
     "subtitle": "शुरू करने के लिए अपनी पहली तिजोरी जोड़ें",
-    "addVault": "+ तिजोरी जोड़ें",
     "selectNote": "साइडबार से एक नोट चुनें",
-    "quickSwitchHint": "या त्वरित स्विच के लिए Ctrl+O दबाएँ"
+    "quickSwitchHint": "या त्वरित स्विच के लिए Ctrl+O दबाएँ",
+    "addLibrary": "+ तिजोरी जोड़ें"
   },
   "panels": {
     "properties": "गुण",
@@ -405,24 +405,24 @@
     "noTasksFound": "कोई कार्य नहीं मिला",
     "allDates": "सभी तिथियाँ",
     "thisWeek": "इस सप्ताह",
-    "allVaults": "सभी तिजोरियाँ",
     "allPriorities": "सभी प्राथमिकताएँ",
     "noGroup": "कोई समूहीकरण नहीं",
     "groupByFile": "फ़ाइल के अनुसार समूहित करें",
-    "groupByVault": "तिजोरी के अनुसार समूहित करें",
     "groupByPriority": "प्राथमिकता के अनुसार समूहित करें",
     "groupByDue": "देय तिथि के अनुसार समूहित करें",
     "sortByFile": "फ़ाइल के अनुसार क्रमबद्ध करें",
-    "search": "कार्य खोजें..."
+    "search": "कार्य खोजें...",
+    "allLibraries": "सभी तिजोरियाँ",
+    "groupByLibrary": "तिजोरी के अनुसार समूहित करें"
   },
   "linkDashboard": {
     "mostConnected": "सर्वाधिक जुड़े",
-    "crossVault": "क्रॉस-वॉल्ट",
     "broken": "टूटे हुए",
     "orphans": "अकेले नोट्स",
-    "noCrossVault": "कोई क्रॉस-वॉल्ट लिंक नहीं",
     "noBroken": "कोई टूटे हुए लिंक नहीं",
-    "noOrphans": "कोई अकेले नोट नहीं"
+    "noOrphans": "कोई अकेले नोट नहीं",
+    "crossLibrary": "क्रॉस-वॉल्ट",
+    "noCrossLibrary": "कोई क्रॉस-वॉल्ट लिंक नहीं"
   },
   "dialogs": {
     "confirmDelete": "क्या आप वाकई \"{name}\" को हटाना चाहते हैं?",
@@ -448,7 +448,7 @@
     "createNote": "नया नोट बनाएं",
     "goToFile": "फाइल पर जाएं",
     "close": "बंद करें",
-    "selectVault": "वॉल्ट चुनें"
+    "selectLibrary": "वॉल्ट चुनें"
   },
   "commandPalette": {
     "placeholder": "कमांड टाइप करें...",
@@ -536,11 +536,11 @@
     "searchPlaceholder": "सभी तिजोरियों में खोजें...",
     "results": "परिणाम",
     "noResults": "कोई परिणाम नहीं",
-    "addVault": "+ तिजोरी जोड़ें",
     "welcomeTitle": "Constellation में आपका स्वागत है",
     "welcomeSubtitle": "साइडबार से अपनी पहली तिजोरी जोड़ें",
-    "addVaultCta": "+ तिजोरी जोड़ें",
-    "selectNote": "साइडबार से एक नोट चुनें"
+    "selectNote": "साइडबार से एक नोट चुनें",
+    "addLibrary": "+ तिजोरी जोड़ें",
+    "addLibraryCta": "+ तिजोरी जोड़ें"
   },
   "skills": {
     "title": "कौशल",
@@ -555,11 +555,11 @@
     "create": "कौशल बनाएँ",
     "noProvider": "कौशल उपयोग करने के लिए सेटिंग्स में AI प्रदाता कनेक्ट करें।",
     "selectNote": "नोट चुनें",
-    "selectVault": "तिजोरी चुनें",
     "enterText": "टेक्स्ट दर्ज करें...",
     "result": "परिणाम",
     "copyResult": "कॉपी",
-    "applyResult": "नोट पर लागू करें"
+    "applyResult": "नोट पर लागू करें",
+    "selectLibrary": "तिजोरी चुनें"
   },
   "skill": {
     "summarize": "नोट का सारांश",
@@ -578,17 +578,6 @@
     "chartDesc": "अपने नोट डेटा से विजुअल चार्ट बनाएँ",
     "research": "शोध सहायक",
     "researchDesc": "कई नोट्स से जानकारी का विश्लेषण और संश्लेषण करें"
-  },
-  "vaultManager": {
-    "title": "वॉल्ट प्रबंधन",
-    "openVault": "+ वॉल्ट खोलें",
-    "manageVaults": "वॉल्ट प्रबंधन...",
-    "openFolder": "फ़ोल्डर खोलें",
-    "remove": "हटाएं",
-    "confirmRemove": "Constellation से \"{name}\" हटाएं? आपकी फ़ाइलें हटाई नहीं जाएंगी।",
-    "addVault": "+ वॉल्ट जोड़ें",
-    "noVaults": "कोई वॉल्ट पंजीकृत नहीं",
-    "notes": "नोट्स"
   },
   "lockScreen": {
     "title": "Constellation लॉक है",
@@ -684,7 +673,6 @@
       "folder": "फ़ोल्डर",
       "tag": "टैग",
       "library": "वॉल्ट",
-      "allVaults": "सभी वॉल्ट",
       "libraries": "वॉल्ट",
       "folderPath": "फ़ोल्डर पथ",
       "folderPlaceholder": "जैसे प्रोजेक्ट्स/सक्रिय",
@@ -693,10 +681,11 @@
       "tagName": "टैग",
       "tagPlaceholder": "जैसे प्रोजेक्ट",
       "tagHint": "इस टैग वाले सभी नोट्स को सभी वॉल्ट में स्कैन करता है",
-      "vaultsLabel": "वॉल्ट",
       "allHint": "सभी जुड़े हुए वॉल्ट में सभी नोट्स को स्कैन करता है",
       "apply": "लागू करें",
-      "cancel": "रद्द करें"
+      "cancel": "रद्द करें",
+      "allLibraries": "सभी वॉल्ट",
+      "librariesLabel": "वॉल्ट"
     }
   },
   "universe": {
@@ -717,14 +706,16 @@
       "creating": "बना रहा है...",
       "next": "अगला",
       "back": "पीछे",
-      "addVaultsHeading": "अपनी तिजोरियाँ जोड़ें",
-      "addVaultsDescription": "अपनी तिजोरियाँ और चाइल्ड ब्रह्मांड कनेक्ट करें। आप बाद में और भी जोड़ सकते हैं।",
-      "addVault": "तिजोरी जोड़ें",
+      "addLibrariesHeading": "अपनी लाइब्रेरी जोड़ें",
+      "addLibrariesDescription": "अपनी लाइब्रेरी और चाइल्ड ब्रह्मांड कनेक्ट करें। आप बाद में और भी जोड़ सकते हैं।",
+      "addLibrary": "लाइब्रेरी जोड़ें",
       "addChildUniverse": "चाइल्ड ब्रह्मांड जोड़ें",
       "finish": "समाप्त",
       "skip": "अभी छोड़ें",
-      "noVaultsYet": "अभी तक कोई तिजोरी नहीं जोड़ी गई। शुरू करने के लिए एक तिजोरी या चाइल्ड ब्रह्मांड जोड़ें।",
-      "remove": "हटाएं"
+      "noLibrariesYet": "अभी तक कोई लाइब्रेरी नहीं जोड़ी गई। शुरू करने के लिए एक लाइब्रेरी या चाइल्ड ब्रह्मांड जोड़ें।",
+      "remove": "हटाएं",
+      "starterKit": "स्टार्टर किट शामिल करें",
+      "starterKitDesc": "शुरू करने के लिए नमूना नोट्स और फ़ोल्डर संरचना जोड़ें"
     },
     "manager": {
       "heading": "ब्रह्मांड प्रबंधक",
@@ -739,9 +730,9 @@
       "children": "बाल ब्रह्मांड",
       "addChild": "बाल ब्रह्मांड जोड़ें",
       "noUniverses": "कोई ब्रह्मांड नहीं मिला",
-      "ownVaults": "स्वयं के वॉल्ट",
-      "inheritedVaults": "विरासत में मिले वॉल्ट",
-      "openExisting": "मौजूदा ब्रह्मांड खोलें"
+      "openExisting": "मौजूदा ब्रह्मांड खोलें",
+      "ownLibraries": "स्वयं के वॉल्ट",
+      "inheritedLibraries": "विरासत में मिले वॉल्ट"
     },
     "switching": "ब्रह्मांड बदल रहा है...",
     "migrating": "आपका डेटा माइग्रेट हो रहा है..."
@@ -781,13 +772,13 @@
     "linkedOn": "लिंक्ड ब्राउज़िंग चालू",
     "linkedOff": "लिंक्ड ब्राउज़िंग बंद",
     "searchNotes": "नोट्स खोजें...",
-    "allVaults": "सभी वॉल्ट",
     "sortName": "नाम से क्रमबद्ध",
-    "sortVault": "वॉल्ट से क्रमबद्ध",
     "noResults": "कोई मिलान नोट नहीं",
     "noNotes": "कोई नोट नहीं मिला",
     "detailEmpty": "यहाँ देखने के लिए एक नोट चुनें",
-    "sendToScreen": "दूसरी स्क्रीन पर भेजें"
+    "sendToScreen": "दूसरी स्क्रीन पर भेजें",
+    "allLibraries": "सभी वॉल्ट",
+    "sortLibrary": "वॉल्ट से क्रमबद्ध"
   },
   "importer": {
     "title": "नोट्स आयात करें",
@@ -808,7 +799,6 @@
       "txt": "सादा पाठ",
       "txtDesc": "मार्कडाउन में रूपांतरित टेक्स्ट फ़ाइलें"
     },
-    "targetVault": "लक्ष्य वॉल्ट",
     "subfolder": "उपफ़ोल्डर",
     "selectSource": "स्रोत चुनें",
     "scanning": "फ़ाइलें स्कैन हो रही हैं...",
@@ -822,6 +812,18 @@
     "imported": "आयातित",
     "skipped": "छोड़े गए",
     "errors": "त्रुटियाँ",
-    "done": "हो गया"
+    "done": "हो गया",
+    "targetLibrary": "लक्ष्य वॉल्ट"
+  },
+  "libraryManager": {
+    "title": "वॉल्ट प्रबंधन",
+    "openFolder": "फ़ोल्डर खोलें",
+    "remove": "हटाएं",
+    "confirmRemove": "Constellation से \"{name}\" हटाएं? आपकी फ़ाइलें हटाई नहीं जाएंगी।",
+    "notes": "नोट्स",
+    "addLibrary": "+ वॉल्ट जोड़ें",
+    "manageLibraries": "वॉल्ट प्रबंधन...",
+    "noLibraries": "कोई वॉल्ट पंजीकृत नहीं",
+    "openLibrary": "+ वॉल्ट खोलें"
   }
 }

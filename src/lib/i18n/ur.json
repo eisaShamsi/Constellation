@@ -32,8 +32,6 @@
     },
     "security": {
       "intro": "اپنے ڈیٹا کی حفاظت کریں، API کیز محفوظ رکھیں اور بیکار ہونے پر ایپ لاک کریں۔",
-      "vaultEncryption": "لائبریری انکرپشن",
-      "vaultEncryptionDesc": "اس ڈیوائس پر ذخیرہ شدہ لائبریری ڈیٹا کو انکرپٹ کریں",
       "enabled": "فعال",
       "disabled": "غیر فعال",
       "lockHeading": "لاک اسکرین",
@@ -52,7 +50,9 @@
       "pinMismatch": "پن مماثل نہیں ہیں",
       "apiHeading": "API سیکیورٹی",
       "apiKeyProtection": "محفوظ API کلید ذخیرہ",
-      "apiKeyProtectionDesc": "API کلیدوں کو میموری کی بجائے OS کی محفوظ کیرنگ میں محفوظ کریں"
+      "apiKeyProtectionDesc": "API کلیدوں کو میموری کی بجائے OS کی محفوظ کیرنگ میں محفوظ کریں",
+      "libraryEncryption": "لائبریری انکرپشن",
+      "libraryEncryptionDesc": "اس ڈیوائس پر ذخیرہ شدہ لائبریری ڈیٹا کو انکرپٹ کریں"
     },
     "editor": {
       "alwaysFocusNewTabs": "نئے ٹیبز پر ہمیشہ فوکس کریں",
@@ -263,7 +263,6 @@
     "newNote": "نیا نوٹ",
     "newBase": "نیا بیس",
     "quickSwitcher": "فوری سوئچر",
-    "searchVault": "خزانے میں تلاش",
     "dailyNote": "روزانہ نوٹ کھولیں",
     "toggleEdit": "ایڈیٹ/پڑھنے کا موڈ تبدیل کریں",
     "graphView": "گراف ویو کھولیں",
@@ -274,7 +273,6 @@
     "closeNote": "موجودہ نوٹ بند کریں",
     "toggleLeftSidebar": "بایاں سائڈبار تبدیل کریں",
     "toggleRightSidebar": "دایاں سائڈبار تبدیل کریں",
-    "addVault": "خزانہ شامل کریں",
     "toggleBookmark": "بک مارک تبدیل کریں",
     "randomNote": "بے ترتیب نوٹ کھولیں",
     "toggleTheme": "تاریک/روشن موڈ تبدیل کریں",
@@ -293,7 +291,9 @@
     "toggleLivePreview": "لائیو پیش نظارہ تبدیل کریں",
     "insertTemplate": "ٹیمپلیٹ سے داخل کریں",
     "importNotes": "نوٹس درآمد کریں",
-    "insertTable": "ٹیبل داخل کریں"
+    "insertTable": "ٹیبل داخل کریں",
+    "addLibrary": "خزانہ شامل کریں",
+    "searchLibrary": "خزانے میں تلاش"
   },
   "actions": {
     "untitled": "بغیر عنوان",
@@ -317,13 +317,10 @@
   },
   "sidebar": {
     "searchPlaceholder": "تلاش...",
-    "addVault": "خزانہ شامل کریں",
     "results": "نتائج",
     "noResults": "کوئی نتائج نہیں ملے",
     "bookmarks": "بک مارکس",
     "bases": "بیسز",
-    "noVaults": "ابھی کوئی خزانہ نہیں",
-    "addVaultButton": "+ خزانہ شامل کریں",
     "newNote": "نیا نوٹ",
     "newBase": "نیا بیس",
     "newFolder": "نیا فولڈر",
@@ -332,7 +329,10 @@
     "sortModifiedDesc": "ترتیب: ترمیم (تازہ ترین)",
     "sortModifiedAsc": "ترتیب: ترمیم (پرانا ترین)",
     "collapseAll": "سب سمیٹیں",
-    "expandAll": "سب پھیلائیں"
+    "expandAll": "سب پھیلائیں",
+    "addLibrary": "خزانہ شامل کریں",
+    "addLibraryButton": "+ خزانہ شامل کریں",
+    "noLibraries": "ابھی کوئی خزانہ نہیں"
   },
   "layout": {
     "leftSidebar": "بایاں سائڈبار",
@@ -345,9 +345,9 @@
   "welcome": {
     "title": "Constellation میں خوش آمدید",
     "subtitle": "شروع کرنے کے لیے اپنا پہلا خزانہ شامل کریں",
-    "addVault": "+ خزانہ شامل کریں",
     "selectNote": "سائڈبار سے ایک نوٹ منتخب کریں",
-    "quickSwitchHint": "یا فوری سوئچ کے لیے Ctrl+O دبائیں"
+    "quickSwitchHint": "یا فوری سوئچ کے لیے Ctrl+O دبائیں",
+    "addLibrary": "+ خزانہ شامل کریں"
   },
   "panels": {
     "properties": "خصوصیات",
@@ -405,24 +405,24 @@
     "noTasksFound": "کوئی کام نہیں ملا",
     "allDates": "تمام تاریخیں",
     "thisWeek": "اس ہفتے",
-    "allVaults": "تمام خزانے",
     "allPriorities": "تمام ترجیحات",
     "noGroup": "کوئی گروپ بندی نہیں",
     "groupByFile": "فائل کے مطابق گروپ",
-    "groupByVault": "خزانے کے مطابق گروپ",
     "groupByPriority": "ترجیح کے مطابق گروپ",
     "groupByDue": "مقررہ تاریخ کے مطابق گروپ",
     "sortByFile": "فائل کے مطابق ترتیب",
-    "search": "کام تلاش کریں..."
+    "search": "کام تلاش کریں...",
+    "allLibraries": "تمام خزانے",
+    "groupByLibrary": "خزانے کے مطابق گروپ"
   },
   "linkDashboard": {
     "mostConnected": "سب سے زیادہ جڑے",
-    "crossVault": "خزانوں کے درمیان",
     "broken": "ٹوٹے ہوئے",
     "orphans": "تنہا نوٹس",
-    "noCrossVault": "خزانوں کے درمیان کوئی لنکس نہیں",
     "noBroken": "کوئی ٹوٹے ہوئے لنکس نہیں",
-    "noOrphans": "کوئی تنہا نوٹس نہیں"
+    "noOrphans": "کوئی تنہا نوٹس نہیں",
+    "crossLibrary": "خزانوں کے درمیان",
+    "noCrossLibrary": "خزانوں کے درمیان کوئی لنکس نہیں"
   },
   "dialogs": {
     "confirmDelete": "کیا آپ واقعی \"{name}\" کو حذف کرنا چاہتے ہیں؟",
@@ -448,7 +448,7 @@
     "createNote": "نیا نوٹ بنائیں",
     "goToFile": "فائل پر جائیں",
     "close": "بند کریں",
-    "selectVault": "والٹ منتخب کریں"
+    "selectLibrary": "والٹ منتخب کریں"
   },
   "commandPalette": {
     "placeholder": "کمانڈ ٹائپ کریں...",
@@ -536,11 +536,11 @@
     "searchPlaceholder": "تمام خزانوں میں تلاش...",
     "results": "نتائج",
     "noResults": "کوئی نتائج نہیں",
-    "addVault": "+ خزانہ شامل کریں",
     "welcomeTitle": "Constellation میں خوش آمدید",
     "welcomeSubtitle": "سائڈبار سے اپنا پہلا خزانہ شامل کریں",
-    "addVaultCta": "+ خزانہ شامل کریں",
-    "selectNote": "سائڈبار سے ایک نوٹ منتخب کریں"
+    "selectNote": "سائڈبار سے ایک نوٹ منتخب کریں",
+    "addLibrary": "+ خزانہ شامل کریں",
+    "addLibraryCta": "+ خزانہ شامل کریں"
   },
   "skills": {
     "title": "مہارتیں",
@@ -555,11 +555,11 @@
     "create": "مہارت بنائیں",
     "noProvider": "مہارتیں استعمال کرنے کے لیے ترتیبات میں AI فراہم کنندہ جوڑیں۔",
     "selectNote": "نوٹ منتخب کریں",
-    "selectVault": "خزانہ منتخب کریں",
     "enterText": "متن درج کریں...",
     "result": "نتیجہ",
     "copyResult": "کاپی",
-    "applyResult": "نوٹ پر لاگو کریں"
+    "applyResult": "نوٹ پر لاگو کریں",
+    "selectLibrary": "خزانہ منتخب کریں"
   },
   "skill": {
     "summarize": "نوٹ کا خلاصہ",
@@ -578,17 +578,6 @@
     "chartDesc": "اپنے نوٹ ڈیٹا سے بصری چارٹس بنائیں",
     "research": "تحقیقی معاون",
     "researchDesc": "متعدد نوٹس سے معلومات کا تجزیہ اور ترکیب کریں"
-  },
-  "vaultManager": {
-    "title": "والٹ مینجمنٹ",
-    "openVault": "+ والٹ کھولیں",
-    "manageVaults": "والٹ مینجمنٹ...",
-    "openFolder": "فولڈر کھولیں",
-    "remove": "ہٹائیں",
-    "confirmRemove": "Constellation سے \"{name}\" ہٹائیں؟ آپ کی فائلیں حذف نہیں ہوں گی۔",
-    "addVault": "+ والٹ شامل کریں",
-    "noVaults": "کوئی والٹ رجسٹرڈ نہیں",
-    "notes": "نوٹس"
   },
   "lockScreen": {
     "title": "Constellation لاک ہے",
@@ -684,7 +673,6 @@
       "folder": "فولڈر",
       "tag": "ٹیگ",
       "library": "والٹ",
-      "allVaults": "تمام والٹس",
       "libraries": "والٹس",
       "folderPath": "فولڈر کا راستہ",
       "folderPlaceholder": "مثلاً پروجیکٹس/فعال",
@@ -693,10 +681,11 @@
       "tagName": "ٹیگ",
       "tagPlaceholder": "مثلاً پروجیکٹ",
       "tagHint": "اس ٹیگ والے تمام نوٹس کو تمام والٹس میں اسکین کرتا ہے",
-      "vaultsLabel": "والٹس",
       "allHint": "تمام جڑے ہوئے والٹس میں تمام نوٹس کو اسکین کرتا ہے",
       "apply": "لاگو کریں",
-      "cancel": "منسوخ کریں"
+      "cancel": "منسوخ کریں",
+      "allLibraries": "تمام والٹس",
+      "librariesLabel": "والٹس"
     }
   },
   "universe": {
@@ -717,14 +706,16 @@
       "creating": "بنایا جا رہا ہے...",
       "next": "اگلا",
       "back": "واپس",
-      "addVaultsHeading": "اپنی تجوریاں شامل کریں",
-      "addVaultsDescription": "اپنی تجوریاں اور ذیلی کائناتیں جوڑیں۔ آپ بعد میں ہمیشہ مزید شامل کر سکتے ہیں۔",
-      "addVault": "تجوری شامل کریں",
+      "addLibrariesHeading": "اپنی لائبریریاں شامل کریں",
+      "addLibrariesDescription": "اپنی لائبریریاں اور ذیلی کائناتیں جوڑیں۔ آپ بعد میں ہمیشہ مزید شامل کر سکتے ہیں۔",
+      "addLibrary": "لائبریری شامل کریں",
       "addChildUniverse": "ذیلی کائنات شامل کریں",
       "finish": "مکمل",
       "skip": "ابھی چھوڑیں",
-      "noVaultsYet": "ابھی تک کوئی تجوری شامل نہیں کی گئی۔ شروع کرنے کے لیے ایک تجوری یا ذیلی کائنات شامل کریں۔",
-      "remove": "ہٹائیں"
+      "noLibrariesYet": "ابھی تک کوئی لائبریری شامل نہیں کی گئی۔ شروع کرنے کے لیے ایک لائبریری یا ذیلی کائنات شامل کریں۔",
+      "remove": "ہٹائیں",
+      "starterKit": "اسٹارٹر کٹ شامل کریں",
+      "starterKitDesc": "شروع کرنے کے لیے نمونہ نوٹس اور فولڈر ڈھانچہ شامل کریں"
     },
     "manager": {
       "heading": "کائنات مینیجر",
@@ -739,9 +730,9 @@
       "children": "ذیلی کائناتیں",
       "addChild": "ذیلی کائنات شامل کریں",
       "noUniverses": "کوئی کائنات نہیں ملی",
-      "ownVaults": "اپنے والٹس",
-      "inheritedVaults": "وراثتی والٹس",
-      "openExisting": "موجودہ کائنات کھولیں"
+      "openExisting": "موجودہ کائنات کھولیں",
+      "ownLibraries": "اپنے والٹس",
+      "inheritedLibraries": "وراثتی والٹس"
     },
     "switching": "کائنات تبدیل ہو رہی ہے...",
     "migrating": "آپ کا ڈیٹا منتقل ہو رہا ہے..."
@@ -781,13 +772,13 @@
     "linkedOn": "منسلک براؤزنگ آن",
     "linkedOff": "منسلک براؤزنگ آف",
     "searchNotes": "نوٹس تلاش کریں...",
-    "allVaults": "تمام والٹس",
     "sortName": "نام سے ترتیب",
-    "sortVault": "والٹ سے ترتیب",
     "noResults": "کوئی مماثل نوٹ نہیں",
     "noNotes": "کوئی نوٹ نہیں ملا",
     "detailEmpty": "یہاں دیکھنے کے لیے نوٹ منتخب کریں",
-    "sendToScreen": "دوسری اسکرین پر بھیجیں"
+    "sendToScreen": "دوسری اسکرین پر بھیجیں",
+    "allLibraries": "تمام والٹس",
+    "sortLibrary": "والٹ سے ترتیب"
   },
   "importer": {
     "title": "نوٹس درآمد کریں",
@@ -808,7 +799,6 @@
       "txt": "سادہ متن",
       "txtDesc": "ٹیکسٹ فائلیں مارک ڈاؤن میں تبدیل شدہ"
     },
-    "targetVault": "ہدف والٹ",
     "subfolder": "ذیلی فولڈر",
     "selectSource": "ذریعہ منتخب کریں",
     "scanning": "فائلیں اسکین ہو رہی ہیں...",
@@ -822,6 +812,18 @@
     "imported": "درآمد شدہ",
     "skipped": "چھوڑے گئے",
     "errors": "غلطیاں",
-    "done": "ہو گیا"
+    "done": "ہو گیا",
+    "targetLibrary": "ہدف والٹ"
+  },
+  "libraryManager": {
+    "title": "والٹ مینجمنٹ",
+    "openFolder": "فولڈر کھولیں",
+    "remove": "ہٹائیں",
+    "confirmRemove": "Constellation سے \"{name}\" ہٹائیں؟ آپ کی فائلیں حذف نہیں ہوں گی۔",
+    "notes": "نوٹس",
+    "addLibrary": "+ والٹ شامل کریں",
+    "manageLibraries": "والٹ مینجمنٹ...",
+    "noLibraries": "کوئی والٹ رجسٹرڈ نہیں",
+    "openLibrary": "+ والٹ کھولیں"
   }
 }

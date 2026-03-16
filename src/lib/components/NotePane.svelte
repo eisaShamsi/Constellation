@@ -485,10 +485,12 @@ ${contentEl.innerHTML}
 		{:else if !isEmptyTab}
 		<div class="note-scroll" class:editing dir={noteDir} style="{paneStyle}; max-width: {noteWidth}%">
 			{#if tab}
-				<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-				<h1 class="note-title" dir="auto" contenteditable="true" spellcheck="false"
+				<input class="note-title" dir="auto" spellcheck="false"
+					bind:this={titleInputEl}
+					value={tab.name}
+					onfocus={(e) => (e.target as HTMLInputElement).select()}
 					onblur={async (e) => {
-						const newName = (e.target as HTMLElement).textContent?.trim();
+						const newName = (e.target as HTMLInputElement).value.trim();
 						if (newName && newName !== tab.name && tab.path) {
 							const dir = tab.path.substring(0, tab.path.lastIndexOf('/') + 1) || tab.path.substring(0, tab.path.lastIndexOf('\\') + 1);
 							const newPath = dir + newName + '.md';
@@ -496,10 +498,16 @@ ${contentEl.innerHTML}
 						}
 					}}
 					onkeydown={(e) => {
-						if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); }
-						if (e.key === 'Escape') { (e.target as HTMLElement).textContent = tab.name; (e.target as HTMLElement).blur(); }
+						if (e.key === 'Enter') {
+							e.preventDefault();
+							(e.target as HTMLInputElement).blur();
+							// Move focus to editor like Obsidian
+							const editor = (e.target as HTMLElement).closest('.note-scroll')?.querySelector('.cm-content') as HTMLElement;
+							if (editor) editor.focus();
+						}
+						if (e.key === 'Escape') { (e.target as HTMLInputElement).value = tab.name; (e.target as HTMLInputElement).blur(); }
 					}}
-				>{tab.name}</h1>
+				/>
 			{/if}
 			{#if tab && $appSettings.propertiesInDocument !== 'hidden'}
 				{#if $appSettings.propertiesInDocument === 'source'}
@@ -680,10 +688,12 @@ ${contentEl.innerHTML}
 	}
 
 	.note-title {
+		display: block; width: 100%; box-sizing: border-box;
 		font-size: 1.8rem; font-weight: 700; margin: 0 0 0.5rem;
 		color: var(--text-normal); line-height: 1.3;
 		outline: none; border: none; border-radius: 4px;
 		padding: 2px 4px; margin-inline: -4px;
+		background: transparent; font-family: inherit;
 		transition: background 0.15s;
 	}
 	.note-title:hover { background: var(--background-modifier-hover); }

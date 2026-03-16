@@ -32,8 +32,6 @@
     },
     "security": {
       "intro": "Verilerinizi koruyun, API anahtarlarını güvence altına alın ve boşta kaldığında uygulamayı kilitleyin.",
-      "vaultEncryption": "Kütüphane şifrelemesi",
-      "vaultEncryptionDesc": "Bu cihazda depolanan kütüphane verilerini şifreleyin",
       "enabled": "Etkin",
       "disabled": "Devre dışı",
       "lockHeading": "Kilit ekranı",
@@ -52,7 +50,9 @@
       "pinMismatch": "PIN'ler eşleşmiyor",
       "apiHeading": "API Güvenliği",
       "apiKeyProtection": "Güvenli API anahtarı depolama",
-      "apiKeyProtectionDesc": "API anahtarlarını bellek yerine işletim sisteminin güvenli anahtar zincirinde depola"
+      "apiKeyProtectionDesc": "API anahtarlarını bellek yerine işletim sisteminin güvenli anahtar zincirinde depola",
+      "libraryEncryption": "Kütüphane şifrelemesi",
+      "libraryEncryptionDesc": "Bu cihazda depolanan kütüphane verilerini şifreleyin"
     },
     "editor": {
       "alwaysFocusNewTabs": "Yeni sekmelere her zaman odaklan",
@@ -263,7 +263,6 @@
     "newNote": "Yeni not",
     "newBase": "Yeni Temel",
     "quickSwitcher": "Hızlı geçiş",
-    "searchVault": "Kasada ara",
     "dailyNote": "Günlük notu aç",
     "toggleEdit": "Düzenleme/okuma modunu değiştir",
     "graphView": "Grafik görünümünü aç",
@@ -274,7 +273,6 @@
     "closeNote": "Mevcut notu kapat",
     "toggleLeftSidebar": "Sol kenar çubuğunu değiştir",
     "toggleRightSidebar": "Sağ kenar çubuğunu değiştir",
-    "addVault": "Kasa ekle",
     "toggleBookmark": "Yer imini değiştir",
     "randomNote": "Rastgele not aç",
     "toggleTheme": "Koyu/açık modu değiştir",
@@ -293,7 +291,9 @@
     "toggleLivePreview": "Canlı önizlemeyi değiştir",
     "insertTemplate": "Şablondan ekle",
     "importNotes": "Notları içe aktar",
-    "insertTable": "Tablo ekle"
+    "insertTable": "Tablo ekle",
+    "addLibrary": "Kasa ekle",
+    "searchLibrary": "Kasada ara"
   },
   "actions": {
     "untitled": "Başlıksız",
@@ -317,13 +317,10 @@
   },
   "sidebar": {
     "searchPlaceholder": "Ara...",
-    "addVault": "Kasa ekle",
     "results": "sonuç",
     "noResults": "Sonuç bulunamadı",
     "bookmarks": "Yer İmleri",
     "bases": "Tabanlar",
-    "noVaults": "Henüz kasa yok",
-    "addVaultButton": "+ Kasa ekle",
     "newNote": "Yeni not",
     "newBase": "Yeni Temel",
     "newFolder": "Yeni klasör",
@@ -332,7 +329,10 @@
     "sortModifiedDesc": "Sıralama: Değiştirilme (en yeni)",
     "sortModifiedAsc": "Sıralama: Değiştirilme (en eski)",
     "collapseAll": "Tümünü daralt",
-    "expandAll": "Tümünü genişlet"
+    "expandAll": "Tümünü genişlet",
+    "addLibrary": "Kasa ekle",
+    "addLibraryButton": "+ Kasa ekle",
+    "noLibraries": "Henüz kasa yok"
   },
   "layout": {
     "leftSidebar": "Sol kenar çubuğu",
@@ -345,9 +345,9 @@
   "welcome": {
     "title": "Constellation'a Hoş Geldiniz",
     "subtitle": "Başlamak için ilk kasanızı ekleyin",
-    "addVault": "+ Kasa Ekle",
     "selectNote": "Kenar çubuğundan bir not seçin",
-    "quickSwitchHint": "veya hızlı geçiş için Ctrl+O'ya basın"
+    "quickSwitchHint": "veya hızlı geçiş için Ctrl+O'ya basın",
+    "addLibrary": "+ Kasa Ekle"
   },
   "panels": {
     "properties": "Özellikler",
@@ -405,24 +405,24 @@
     "noTasksFound": "Görev bulunamadı",
     "allDates": "Tüm tarihler",
     "thisWeek": "Bu hafta",
-    "allVaults": "Tüm kasalar",
     "allPriorities": "Tüm öncelikler",
     "noGroup": "Gruplandırma yok",
     "groupByFile": "Dosyaya göre grupla",
-    "groupByVault": "Kasaya göre grupla",
     "groupByPriority": "Önceliğe göre grupla",
     "groupByDue": "Son tarihe göre grupla",
     "sortByFile": "Dosyaya göre sırala",
-    "search": "Görev ara..."
+    "search": "Görev ara...",
+    "allLibraries": "Tüm kasalar",
+    "groupByLibrary": "Kasaya göre grupla"
   },
   "linkDashboard": {
     "mostConnected": "En Çok Bağlantılı",
-    "crossVault": "Kasalar Arası",
     "broken": "Kırık",
     "orphans": "Yalnız Notlar",
-    "noCrossVault": "Kasalar arası bağlantı yok",
     "noBroken": "Kırık bağlantı yok",
-    "noOrphans": "Yalnız not yok"
+    "noOrphans": "Yalnız not yok",
+    "crossLibrary": "Kasalar Arası",
+    "noCrossLibrary": "Kasalar arası bağlantı yok"
   },
   "dialogs": {
     "confirmDelete": "\"{name}\" öğesini silmek istediğinizden emin misiniz?",
@@ -448,7 +448,7 @@
     "createNote": "Yeni not oluştur",
     "goToFile": "Dosyaya git",
     "close": "Kapat",
-    "selectVault": "Kasa seç"
+    "selectLibrary": "Kasa seç"
   },
   "commandPalette": {
     "placeholder": "Bir komut yazın...",
@@ -536,11 +536,11 @@
     "searchPlaceholder": "Tüm kasalarda ara...",
     "results": "sonuç",
     "noResults": "Sonuç yok",
-    "addVault": "+ Kasa ekle",
     "welcomeTitle": "Constellation'a Hoş Geldiniz",
     "welcomeSubtitle": "Kenar çubuğundan ilk kasanızı ekleyin",
-    "addVaultCta": "+ Kasa Ekle",
-    "selectNote": "Kenar çubuğundan bir not seçin"
+    "selectNote": "Kenar çubuğundan bir not seçin",
+    "addLibrary": "+ Kasa ekle",
+    "addLibraryCta": "+ Kasa Ekle"
   },
   "skills": {
     "title": "Beceriler",
@@ -555,11 +555,11 @@
     "create": "Beceri Oluştur",
     "noProvider": "Becerileri kullanmak için Ayarlar'da bir yapay zeka sağlayıcı bağlayın.",
     "selectNote": "Bir not seçin",
-    "selectVault": "Bir kasa seçin",
     "enterText": "Metin girin...",
     "result": "Sonuç",
     "copyResult": "Kopyala",
-    "applyResult": "Nota Uygula"
+    "applyResult": "Nota Uygula",
+    "selectLibrary": "Bir kasa seçin"
   },
   "skill": {
     "summarize": "Notu Özetle",
@@ -578,17 +578,6 @@
     "chartDesc": "Not verilerinizden görsel grafikler oluşturun",
     "research": "Araştırma Asistanı",
     "researchDesc": "Birden fazla nottan bilgileri analiz edin ve birleştirin"
-  },
-  "vaultManager": {
-    "title": "Kasaları yönet",
-    "openVault": "+ Kasa aç",
-    "manageVaults": "Kasaları yönet...",
-    "openFolder": "Klasörü aç",
-    "remove": "Kaldır",
-    "confirmRemove": "Constellation'dan \"{name}\" kaldırılsın mı? Dosyalarınız silinmeyecek.",
-    "addVault": "+ Kasa ekle",
-    "noVaults": "Kayıtlı kasa yok",
-    "notes": "not"
   },
   "lockScreen": {
     "title": "Constellation kilitli",
@@ -684,7 +673,6 @@
       "folder": "Klasör",
       "tag": "Etiket",
       "library": "Kasa",
-      "allVaults": "Tüm Kasalar",
       "libraries": "kasalar",
       "folderPath": "Klasör yolu",
       "folderPlaceholder": "ör. Projeler/Aktif",
@@ -693,10 +681,11 @@
       "tagName": "Etiket",
       "tagPlaceholder": "ör. proje",
       "tagHint": "Bu etikete sahip tüm notları tüm kasalarda tarar",
-      "vaultsLabel": "Kasalar",
       "allHint": "Bağlı tüm kasalardaki tüm notları tarar",
       "apply": "Uygula",
-      "cancel": "İptal"
+      "cancel": "İptal",
+      "allLibraries": "Tüm Kasalar",
+      "librariesLabel": "Kasalar"
     }
   },
   "universe": {
@@ -717,14 +706,16 @@
       "creating": "Oluşturuluyor...",
       "next": "İleri",
       "back": "Geri",
-      "addVaultsHeading": "Kasalarınızı Ekleyin",
-      "addVaultsDescription": "Kasalarınızı ve alt evrenleri bağlayın. Daha sonra istediğiniz zaman daha fazlasını ekleyebilirsiniz.",
-      "addVault": "Kasa Ekle",
+      "addLibrariesHeading": "Kütüphanelerinizi Ekleyin",
+      "addLibrariesDescription": "Kütüphanelerinizi ve alt evrenleri bağlayın. Daha sonra istediğiniz zaman daha fazlasını ekleyebilirsiniz.",
+      "addLibrary": "Kütüphane Ekle",
       "addChildUniverse": "Alt Evren Ekle",
       "finish": "Bitir",
       "skip": "Şimdilik atla",
-      "noVaultsYet": "Henüz kasa eklenmedi. Başlamak için bir kasa veya alt evren ekleyin.",
-      "remove": "Kaldır"
+      "noLibrariesYet": "Henüz kütüphane eklenmedi. Başlamak için bir kütüphane veya alt evren ekleyin.",
+      "remove": "Kaldır",
+      "starterKit": "Başlangıç kitini dahil et",
+      "starterKitDesc": "Başlamak için örnek notlar ve klasör yapısı ekle"
     },
     "manager": {
       "heading": "Evren Yöneticisi",
@@ -739,9 +730,9 @@
       "children": "Alt Evrenler",
       "addChild": "Alt Evren Ekle",
       "noUniverses": "Evren bulunamadı",
-      "ownVaults": "Kendi Kasaları",
-      "inheritedVaults": "Devralınan Kasalar",
-      "openExisting": "Mevcut evreni aç"
+      "openExisting": "Mevcut evreni aç",
+      "ownLibraries": "Kendi Kasaları",
+      "inheritedLibraries": "Devralınan Kasalar"
     },
     "switching": "Evren değiştiriliyor...",
     "migrating": "Verileriniz taşınıyor..."
@@ -781,13 +772,13 @@
     "linkedOn": "Bağlantılı gezinme açık",
     "linkedOff": "Bağlantılı gezinme kapalı",
     "searchNotes": "Notlarda ara...",
-    "allVaults": "Tüm kasalar",
     "sortName": "Ada göre sırala",
-    "sortVault": "Kasaya göre sırala",
     "noResults": "Eşleşen not yok",
     "noNotes": "Not bulunamadı",
     "detailEmpty": "Görüntülemek için bir not seçin",
-    "sendToScreen": "İkinci ekrana gönder"
+    "sendToScreen": "İkinci ekrana gönder",
+    "allLibraries": "Tüm kasalar",
+    "sortLibrary": "Kasaya göre sırala"
   },
   "importer": {
     "title": "Notları İçe Aktar",
@@ -808,7 +799,6 @@
       "txt": "Düz Metin",
       "txtDesc": "Markdown'a dönüştürülen metin dosyaları"
     },
-    "targetVault": "Hedef kasa",
     "subfolder": "Alt klasör",
     "selectSource": "Kaynak seç",
     "scanning": "Dosyalar taranıyor...",
@@ -822,6 +812,18 @@
     "imported": "İçe aktarılan",
     "skipped": "Atlanan",
     "errors": "Hatalar",
-    "done": "Tamam"
+    "done": "Tamam",
+    "targetLibrary": "Hedef kasa"
+  },
+  "libraryManager": {
+    "title": "Kasaları yönet",
+    "openFolder": "Klasörü aç",
+    "remove": "Kaldır",
+    "confirmRemove": "Constellation'dan \"{name}\" kaldırılsın mı? Dosyalarınız silinmeyecek.",
+    "notes": "not",
+    "addLibrary": "+ Kasa ekle",
+    "manageLibraries": "Kasaları yönet...",
+    "noLibraries": "Kayıtlı kasa yok",
+    "openLibrary": "+ Kasa aç"
   }
 }
