@@ -997,6 +997,8 @@ export interface AppSettings {
 
 	// Templates
 	templateFolder: string;
+	folderTemplates: Record<string, string>;
+	templateHotkeys: Record<string, string>;
 
 	// Default properties for new notes
 	defaultProperties: { key: string; value: string }[];
@@ -1070,6 +1072,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 	dailyNoteFolder: '',
 	dailyNoteTemplate: '',
 	templateFolder: 'Templates',
+	folderTemplates: {},
+	templateHotkeys: {},
 	defaultProperties: [],
 	autoUpdate: true,
 	security: {

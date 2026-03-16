@@ -443,6 +443,12 @@ ${contentEl.innerHTML}
 						<input type="range" class="bc-width-slider" min="50" max="100" step="5" bind:value={noteWidth} />
 					</div>
 					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
+					{#if editing}
+						<button class="bc-edit-btn" onclick={() => window.dispatchEvent(new Event('constellation:open-template-picker'))}
+							title={$t('notePane.insertTemplate')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+						</button>
+					{/if}
 					<button class="bc-edit-btn" onclick={handleExportHTML} title={$t('notePane.exportHtml')}>
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 				</button>

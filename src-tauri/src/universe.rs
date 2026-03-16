@@ -279,6 +279,8 @@ pub fn create_universe(
         .map_err(|e| format!("Failed to create .constellation/ directory: {}", e))?;
     fs::create_dir_all(cdir.join("bases"))
         .map_err(|e| format!("Failed to create bases directory: {}", e))?;
+    fs::create_dir_all(cdir.join("templates"))
+        .map_err(|e| format!("Failed to create templates directory: {}", e))?;
 
     // Write universe.json into .constellation/
     let now = chrono::Local::now().to_rfc3339();
@@ -876,4 +878,57 @@ pub fn scaffold_starter_library(library_path: String) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+// ─── Template Commands ───
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TemplateEntry {
+    pub name: String,
+    pub path: String,
+}
+
+/// Get the path to the universe-level templates directory.
+#[tauri::command]
+pub fn get_templates_dir(app: tauri::AppHandle) -> Result<String, String> {
+    let cdir = active_constellation_dir(&app)?;
+    let templates_dir = cdir.join("templates");
+    fs::create_dir_all(&templates_dir)
+        .map_err(|e| format!("Failed to create templates directory: {}", e))?;
+    Ok(templates_dir.to_string_lossy().to_string())
+}
+
+/// List all .md template files in the universe templates directory.
+#[tauri::command]
+pub fn list_templates(app: tauri::AppHandle) -> Result<Vec<TemplateEntry>, String> {
+    let cdir = active_constellation_dir(&app)?;
+    let templates_dir = cdir.join("templates");
+    if !templates_dir.exists() {
+        return Ok(vec![]);
+    }
+    let mut templates = Vec::new();
+    collect_templates_recursive(&templates_dir, &mut templates);
+    templates.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(templates)
+}
+
+fn collect_templates_recursive(dir: &Path, templates: &mut Vec<TemplateEntry>) {
+    let entries = match fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_templates_recursive(&path, templates);
+        } else if path.extension().map_or(false, |ext| ext == "md") {
+            let name = path.file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
+            templates.push(TemplateEntry {
+                name,
+                path: path.to_string_lossy().to_string(),
+            });
+        }
+    }
 }

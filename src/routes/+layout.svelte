@@ -43,7 +43,9 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import QuickSwitcher from '$lib/components/QuickSwitcher.svelte';
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
-	import { processTemplate, extractTemplateBody } from '$lib/templates/engine';
+	import TemplatePrompt from '$lib/components/TemplatePrompt.svelte';
+	import TemplateSuggester from '$lib/components/TemplateSuggester.svelte';
+	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
 	import FullStarView from '$lib/components/FullStarView.svelte';
 	import LocalStarView from '$lib/components/LocalStarView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
@@ -120,6 +122,32 @@
 	let showQuickSwitcher = $state(false);
 	let showTemplatePicker = $state(false);
 	let templatePickerMode = $state<'insert' | 'newNote'>('insert');
+
+	// Template prompt/suggester state for async template processing
+	let activePrompt = $state<{ question: string; defaultValue?: string; resolve: (v: string | null) => void } | null>(null);
+	let activeSuggester = $state<{ options: string[]; resolve: (v: string | null) => void } | null>(null);
+
+	/** Build TemplateCallbacks with promise-based bridges for interactive variables */
+	function buildTemplateCallbacks(): TemplateCallbacks {
+		return {
+			getClipboard: async () => {
+				try { return await navigator.clipboard.readText(); } catch { return ''; }
+			},
+			getFileMetadata: async (filePath: string) => {
+				try { return await invoke('get_file_metadata', { filePath }); } catch { return null; }
+			},
+			promptUser: (question: string, defaultValue?: string) => {
+				return new Promise<string | null>((resolve) => {
+					activePrompt = { question, defaultValue, resolve };
+				});
+			},
+			suggestOptions: (options: string[]) => {
+				return new Promise<string | null>((resolve) => {
+					activeSuggester = { options, resolve };
+				});
+			},
+		};
+	}
 	let showStarView = $state(false);
 	let showGlobalTasks = $state(false);
 	let showIndex = $state(false);
@@ -500,7 +528,7 @@
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'star-view', name: $t('commands.starView'), shortcut: sc('star-view'), icon: '🕸️', action: () => showStarView = !showStarView, category: 'View' },
 			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showStarView = false; }, category: 'View' },
-			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; showTemplatePicker = true; }, category: 'Templates' },
+			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
 			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: sc('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
 			{ id: 'split-view', name: $t('commands.splitView'), shortcut: sc('split-view'), icon: '⊞', action: cycleSplit, category: 'View' },
@@ -657,7 +685,7 @@
 		});
 
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
-		const handleTemplatePicker = () => { templatePickerMode = 'insert'; showTemplatePicker = true; };
+		const handleTemplatePicker = () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; };
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
 
 		// 1. Check universe state
@@ -885,6 +913,16 @@
 				return;
 			}
 		}
+
+		// Check template hotkeys
+		const tplHotkeys = $appSettings.templateHotkeys || {};
+		for (const [shortcut, tplPath] of Object.entries(tplHotkeys)) {
+			if (normalizeShortcut(shortcut) === combo) {
+				e.preventDefault();
+				handleTemplateSelect(tplPath, '');
+				return;
+			}
+		}
 	}
 
 	// ─── Actions ───
@@ -907,20 +945,8 @@
 			// Build default frontmatter with auto-dates + user defaults
 			const defaultFM = buildDefaultFrontmatter($appSettings);
 
-			// Try loading template content if configured
+			// Template will be resolved after path is determined (for folder templates)
 			let templateBody = '';
-			const templateFolder = $appSettings.templateFolder;
-			if (templateFolder && $appSettings.enabledFeatures?.templates) {
-				try {
-					const templatePath = `${lib.path}/${templateFolder}/default.md`;
-					const tpl: string = await invoke('read_note', { filePath: templatePath });
-					if (tpl) {
-						// Extract body from template (skip its own frontmatter)
-						const tplParsed = parseFrontmatter(tpl);
-						templateBody = tplParsed.body;
-					}
-				} catch { /* no default template — OK */ }
-			}
 
 			for (let i = 0; i < 100; i++) {
 				try {
@@ -932,11 +958,43 @@
 			}
 			if (!newPath) return;
 
-			// If we have a template body, process variables and append
+			// Resolve template: check folder templates first, then default.md
+			if ($appSettings.enabledFeatures?.templates) {
+				try {
+					const tplDir: string = await invoke('get_templates_dir');
+					const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(0, -1).join('/');
+
+					// Check folder templates (deepest match wins)
+					const folderTpls = $appSettings.folderTemplates || {};
+					let matchedTpl = '';
+					let matchDepth = -1;
+					for (const [folder, tplName] of Object.entries(folderTpls)) {
+						const normFolder = folder.replace(/\\/g, '/');
+						if (noteFolder.includes(normFolder) || noteFolder.endsWith(normFolder)) {
+							const depth = normFolder.split('/').length;
+							if (depth > matchDepth) {
+								matchDepth = depth;
+								matchedTpl = tplName;
+							}
+						}
+					}
+
+					const tplFile = matchedTpl || 'default';
+					const tplPath = `${tplDir}/${tplFile.endsWith('.md') ? tplFile : tplFile + '.md'}`;
+					const tpl: string = await invoke('read_note', { filePath: tplPath });
+					if (tpl) {
+						const tplParsed = parseFrontmatter(tpl);
+						templateBody = tplParsed.body;
+					}
+				} catch { /* no template — OK */ }
+			}
+
+			// Apply template if found
 			if (templateBody.trim()) {
 				try {
-					const ctx = { title: name, folder: '', library: lib.name };
-					const result = processTemplate(templateBody, ctx);
+					const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(-2, -1)[0] || '';
+					const ctx = { title: name, folder: noteFolder, library: lib.name, filePath: newPath };
+					const result = await processTemplateAsync(templateBody, ctx, buildTemplateCallbacks());
 					const fullContent = `---\n${defaultFM}\n---\n${result.content}`;
 					await invoke('write_note', { filePath: newPath, content: fullContent });
 				} catch { /* template write failed — note still created */ }
@@ -1106,15 +1164,14 @@
 			if (dailyTpl && $appSettings.enabledFeatures?.templates) {
 				try {
 					const noteContent: string = await invoke('read_note', { filePath: path });
-					// Only apply template if note is freshly created (short content = just frontmatter)
 					if (noteContent.length < 50) {
-						const tplPath = `${firstLib.path}/${$appSettings.templateFolder}/${dailyTpl}`;
-						const tplPathMd = tplPath.endsWith('.md') ? tplPath : tplPath + '.md';
-						const tplRaw: string = await invoke('read_note', { filePath: tplPathMd });
+						const tplDir: string = await invoke('get_templates_dir');
+						const tplName = dailyTpl.endsWith('.md') ? dailyTpl : dailyTpl + '.md';
+						const tplRaw: string = await invoke('read_note', { filePath: `${tplDir}/${tplName}` });
 						const tplBody = extractTemplateBody(tplRaw);
 						const fileName = path.split(/[/\\]/).pop()?.replace(/\.md$/, '') || '';
-						const ctx = { title: fileName, folder: $appSettings.dailyNoteFolder || '', library: firstLib.name };
-						const result = processTemplate(tplBody, ctx);
+						const ctx = { title: fileName, folder: $appSettings.dailyNoteFolder || '', library: firstLib.name, filePath: path };
+						const result = await processTemplateAsync(tplBody, ctx, buildTemplateCallbacks());
 						const newContent = noteContent.trimEnd() + '\n' + result.content;
 						await invoke('write_note', { filePath: path, content: newContent });
 					}
@@ -1127,25 +1184,22 @@
 		}
 	}
 
-	/** Get list of template files from all libraries' template folders */
-	function getTemplateFiles(): { name: string; path: string; libraryName: string }[] {
-		const templates: { name: string; path: string; libraryName: string }[] = [];
-		const templateFolder = $appSettings.templateFolder;
-		if (!templateFolder) return templates;
-		// Normalize template folder for matching
-		const tplFolderNorm = templateFolder.replace(/\\/g, '/');
-		for (const note of allNotes) {
-			// Check if path contains /TemplateFolder/ segment
-			const normPath = note.path.replace(/\\/g, '/');
-			if (normPath.includes('/' + tplFolderNorm + '/')) {
-				templates.push({
-					name: note.name.replace(/\.md$/, ''),
-					path: note.path,
-					libraryName: note.libraryName,
-				});
-			}
+	/** Cached universe-level templates list */
+	let cachedTemplates = $state<{ name: string; path: string; libraryName: string }[]>([]);
+
+	/** Refresh templates from universe .constellation/templates/ directory */
+	async function refreshTemplates() {
+		try {
+			const entries: { name: string; path: string }[] = await invoke('list_templates');
+			cachedTemplates = entries.map(e => ({ name: e.name, path: e.path, libraryName: '' }));
+		} catch {
+			cachedTemplates = [];
 		}
-		return templates.sort((a, b) => a.name.localeCompare(b.name));
+	}
+
+	/** Get list of template files (from cache, refreshes on open) */
+	function getTemplateFiles(): { name: string; path: string; libraryName: string }[] {
+		return cachedTemplates;
 	}
 
 	/** Handle template selection — insert content into active note */
@@ -1156,12 +1210,19 @@
 			const tab = get(focusedTab);
 			if (!tab) return;
 
+			// Build context with frontmatter for async engine
+			const fm = tab.content ? parseFrontmatter(tab.content) : null;
+			const fmRecord: Record<string, string> = {};
+			if (fm?.properties) for (const p of fm.properties) fmRecord[p.key] = p.value;
+
 			const ctx = {
 				title: tab.name.replace(/\.md$/, ''),
 				folder: tab.path.split(/[/\\]/).slice(-2, -1)[0] || '',
 				library: tab.libraryName,
+				filePath: tab.path,
+				frontmatter: fmRecord,
 			};
-			const result = processTemplate(body, ctx);
+			const result = await processTemplateAsync(body, ctx, buildTemplateCallbacks());
 
 			if (templatePickerMode === 'insert') {
 				// Insert at cursor in editor
@@ -2244,6 +2305,23 @@
 			templates={getTemplateFiles()}
 			onSelect={handleTemplateSelect}
 			onClose={() => showTemplatePicker = false}
+		/>
+	{/if}
+
+	{#if activePrompt}
+		<TemplatePrompt
+			question={activePrompt.question}
+			defaultValue={activePrompt.defaultValue}
+			onSubmit={(val) => { activePrompt?.resolve(val); activePrompt = null; }}
+			onCancel={() => { activePrompt?.resolve(null); activePrompt = null; }}
+		/>
+	{/if}
+
+	{#if activeSuggester}
+		<TemplateSuggester
+			options={activeSuggester.options}
+			onSelect={(val) => { activeSuggester?.resolve(val); activeSuggester = null; }}
+			onCancel={() => { activeSuggester?.resolve(null); activeSuggester = null; }}
 		/>
 	{/if}
 

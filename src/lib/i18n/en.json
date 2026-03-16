@@ -232,7 +232,22 @@
       "varTitle": "Note title",
       "varFolder": "Parent folder name",
       "varLibrary": "Library name",
-      "varCursor": "Cursor position after insertion"
+      "varCursor": "Cursor position after insertion",
+      "varYesterday": "Yesterday's date",
+      "varTomorrow": "Tomorrow's date",
+      "varDateOffset": "Date with offset (N days)",
+      "varClipboard": "Clipboard content",
+      "varFrontmatter": "Current note's frontmatter value",
+      "varFileCreated": "File creation date",
+      "varFileModified": "File modification date",
+      "varPrompt": "Ask for input when inserting",
+      "varSuggester": "Pick from a list when inserting",
+      "folderTemplates": "Folder templates",
+      "folderTemplatesDesc": "Automatically apply templates when creating notes in specific folders",
+      "addFolderTemplate": "Add folder template",
+      "folderPath": "Folder path",
+      "templateName": "Template name",
+      "noFolderTemplates": "No folder templates configured"
     }
   },
   "commands": {
@@ -417,6 +432,7 @@
     "readingMode": "Reading mode",
     "editingMode": "Editing mode",
     "exportHtml": "Export as HTML",
+    "insertTemplate": "Insert template",
     "livePreview": "Live preview",
     "placeholder": "Start writing...",
     "selectNote": "Select a note",
@@ -738,7 +754,13 @@
     "pickerTitle": "Insert Template",
     "searchTemplates": "Search templates...",
     "noTemplates": "No matching templates",
-    "noTemplatesConfigured": "No templates found. Create .md files in your template folder."
+    "noTemplatesConfigured": "No templates found. Create .md files in your template folder.",
+    "promptTitle": "Template Input",
+    "promptSubmit": "OK",
+    "promptCancel": "Cancel",
+    "suggesterTitle": "Choose an option",
+    "suggesterSearch": "Filter options...",
+    "noOptions": "No matching options"
   },
   "secondScreen": {
     "title": "Second Screen",

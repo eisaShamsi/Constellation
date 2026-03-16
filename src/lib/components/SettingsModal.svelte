@@ -459,10 +459,19 @@
 						<div class="setting-info-box">
 							<code>{'{{date}}'}</code> — {$t('settings.templates.varDate')}<br/>
 							<code>{'{{date:FORMAT}}'}</code> — {$t('settings.templates.varDateFormat')}<br/>
+							<code>{'{{yesterday}}'}</code> — {$t('settings.templates.varYesterday')}<br/>
+							<code>{'{{tomorrow}}'}</code> — {$t('settings.templates.varTomorrow')}<br/>
+							<code>{'{{date+N}}'}</code> / <code>{'{{date-N}}'}</code> — {$t('settings.templates.varDateOffset')}<br/>
 							<code>{'{{time}}'}</code> — {$t('settings.templates.varTime')}<br/>
 							<code>{'{{title}}'}</code> — {$t('settings.templates.varTitle')}<br/>
 							<code>{'{{folder}}'}</code> — {$t('settings.templates.varFolder')}<br/>
 							<code>{'{{library}}'}</code> — {$t('settings.templates.varLibrary')}<br/>
+							<code>{'{{clipboard}}'}</code> — {$t('settings.templates.varClipboard')}<br/>
+							<code>{'{{frontmatter.KEY}}'}</code> — {$t('settings.templates.varFrontmatter')}<br/>
+							<code>{'{{file.createdAt}}'}</code> — {$t('settings.templates.varFileCreated')}<br/>
+							<code>{'{{file.modifiedAt}}'}</code> — {$t('settings.templates.varFileModified')}<br/>
+							<code>{'{{prompt:Question}}'}</code> — {$t('settings.templates.varPrompt')}<br/>
+							<code>{'{{suggester:a,b,c}}'}</code> — {$t('settings.templates.varSuggester')}<br/>
 							<code>{'{{cursor}}'}</code> — {$t('settings.templates.varCursor')}
 						</div>
 					</div>

@@ -1869,3 +1869,28 @@ pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) 
 
     Ok(())
 }
+
+// ─── File Metadata ───
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct FileMetadata {
+    pub created: u64,
+    pub modified: u64,
+}
+
+/// Get file creation and modification timestamps (Unix seconds).
+#[tauri::command]
+pub fn get_file_metadata(file_path: String) -> Result<FileMetadata, String> {
+    let meta = fs::metadata(&file_path)
+        .map_err(|e| format!("Failed to read metadata for {}: {}", file_path, e))?;
+
+    let created = meta.created()
+        .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
+        .unwrap_or(0);
+
+    let modified = meta.modified()
+        .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
+        .unwrap_or(0);
+
+    Ok(FileMetadata { created, modified })
+}
