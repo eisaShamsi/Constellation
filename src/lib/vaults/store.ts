@@ -490,7 +490,7 @@ export async function openNoteTab(filePath: string, vaultName: string, color: st
 	const vault = allVaults.find(v => filePath.startsWith(v.path));
 	const vaultPath = vault?.path ?? '';
 
-	// Default: replace active tab content (Obsidian behavior)
+	// Default: replace active tab content (single-tab navigation)
 	if (!newTab && currentTab) {
 		// Push to tab's history (trim forward history)
 		const trimmedHistory = currentTab.history.slice(0, currentTab.historyIndex + 1);
@@ -774,8 +774,8 @@ export async function stopWatchingVault(vaultId: string): Promise<void> {
 	await invoke('unwatch_vault', { vaultId });
 }
 
-// ─── Vault appearance ───
-export interface ObsidianAppearance {
+// ─── Library appearance ───
+export interface LibraryAppearance {
 	accent_color: string | null;
 	base_font_size: number | null;
 	text_font_family: string | null;
@@ -784,11 +784,11 @@ export interface ObsidianAppearance {
 	css_theme: string | null;
 }
 
-export const vaultAppearances = writable<Record<string, ObsidianAppearance>>({});
+export const vaultAppearances = writable<Record<string, LibraryAppearance>>({});
 
 export async function loadVaultAppearance(vaultPath: string, vaultId: string): Promise<void> {
 	try {
-		const appearance: ObsidianAppearance = await invoke('read_obsidian_appearance', { vaultPath });
+		const appearance: LibraryAppearance = await invoke('read_library_appearance', { vaultPath });
 		vaultAppearances.update(map => ({ ...map, [vaultId]: appearance }));
 	} catch {
 		// Silently fail — use defaults

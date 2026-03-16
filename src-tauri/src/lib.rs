@@ -65,7 +65,7 @@ pub fn run() {
             vaults::delete_item,
             vaults::resolve_wikilink,
             vaults::resolve_wikilink_cross_vault,
-            vaults::read_obsidian_appearance,
+            vaults::read_library_appearance,
             vaults::scan_vault_links,
             vaults::scan_unlinked_mentions,
             vaults::scan_vault_tags,

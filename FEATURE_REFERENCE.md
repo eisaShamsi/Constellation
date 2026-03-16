@@ -1,7 +1,8 @@
-# Obsidian Complete Feature Catalog
+# Competitive Feature Reference
 
-> Comprehensive reference for building Constellation -- an Obsidian-identical application.
-> Sourced from https://help.obsidian.md/ (March 2026)
+> Reference catalog of knowledge management features across the industry.
+> Used as a benchmark for Constellation's feature development.
+> Sourced from competitor documentation (March 2026)
 
 ---
 

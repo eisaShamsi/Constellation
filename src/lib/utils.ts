@@ -322,7 +322,7 @@ function quickHash(s: string): string {
 const _renderCache = new Map<string, string>();
 const _RENDER_CACHE_MAX = 50;
 
-/** Render markdown to HTML with all Obsidian extensions. */
+/** Render markdown to HTML with all extended syntax. */
 export function renderMarkdown(md: string): string {
 	const key = `${quickHash(md)}_${md.length}`;
 	const cached = _renderCache.get(key);

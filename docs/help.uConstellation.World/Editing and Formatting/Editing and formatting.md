@@ -44,7 +44,7 @@ All formatting shortcuts wrap the current selection. If no text is selected, the
 |----------|--------|
 | **Ctrl+D** | Select next occurrence of the current selection |
 | **Ctrl+Shift+D** | Duplicate the current line |
-| **Ctrl+/** | Toggle Obsidian comment (`%%...%%`) |
+| **Ctrl+/** | Toggle block comment (`%%...%%`) |
 | **Ctrl+Shift+V** | Paste as plain text |
 | **Ctrl+Z** | Undo |
 | **Ctrl+Shift+Z** | Redo |

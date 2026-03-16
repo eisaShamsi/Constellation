@@ -141,10 +141,14 @@ pub fn add_vault(app: tauri::AppHandle, path: String) -> Result<VaultInfo, Strin
         return Err("Path does not exist or is not a folder.".to_string());
     }
 
-    // Check if it looks like an Obsidian vault (has .obsidian folder)
-    let obsidian_dir = vault_path.join(".obsidian");
-    if !obsidian_dir.exists() {
-        return Err("This folder does not appear to be an Obsidian vault (no .obsidian folder found).".to_string());
+    // Check that the folder contains at least one .md file or subfolder
+    let has_content = vault_path.read_dir()
+        .map(|entries| entries.flatten().any(|e| {
+            e.path().extension().map_or(false, |ext| ext == "md") || e.path().is_dir()
+        }))
+        .unwrap_or(false);
+    if !has_content {
+        return Err("This folder does not appear to contain any notes or subfolders.".to_string());
     }
 
     let mut vaults = load_vaults(&app);
@@ -928,12 +932,12 @@ fn has_alias(content: &str, target: &str) -> bool {
     false
 }
 
-/// Read Obsidian's appearance.json for a vault.
+/// Read appearance settings for a library (checks .obsidian/appearance.json for compatibility).
 #[tauri::command]
-pub fn read_obsidian_appearance(app: tauri::AppHandle, vault_path: String) -> Result<serde_json::Value, String> {
+pub fn read_library_appearance(app: tauri::AppHandle, vault_path: String) -> Result<serde_json::Value, String> {
     let vaults = load_all_vaults(&app);
     if !vaults.iter().any(|v| v.path == vault_path) {
-        return Err("Access denied: not a registered vault.".to_string());
+        return Err("Access denied: not a registered library.".to_string());
     }
     let path = Path::new(&vault_path).join(".obsidian").join("appearance.json");
     if !path.exists() {
@@ -954,7 +958,7 @@ pub fn read_obsidian_appearance(app: tauri::AppHandle, vault_path: String) -> Re
     let raw: serde_json::Value = serde_json::from_str(&data)
         .map_err(|e| format!("Failed to parse appearance.json: {}", e))?;
 
-    // Map Obsidian's camelCase to our field names
+    // Map camelCase keys to our field names
     Ok(serde_json::json!({
         "accent_color": raw.get("accentColor").and_then(|v| v.as_str()),
         "base_font_size": raw.get("baseFontSize").and_then(|v| v.as_u64()),
@@ -970,7 +974,7 @@ pub fn read_obsidian_appearance(app: tauri::AppHandle, vault_path: String) -> Re
 pub async fn pick_folder() -> Result<Option<String>, String> {
     // Use Tauri's dialog API via rfd (rust file dialog)
     let result = rfd::FileDialog::new()
-        .set_title("Select Obsidian Vault Folder")
+        .set_title("Select Library Folder")
         .pick_folder();
 
     Ok(result.map(|p| p.to_string_lossy().to_string()))

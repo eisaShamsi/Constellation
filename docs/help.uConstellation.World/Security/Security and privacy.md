@@ -37,7 +37,7 @@ All security features are **disabled by default** and can be toggled on or off a
 
 - Constellation caches vault metadata (file trees, search indices, tag maps) locally for performance.
 - With vault encryption enabled, this cached data is encrypted before being written to disk.
-- Your original `.md` files in the Obsidian vault folder are **not modified** — Constellation is a reader and does not alter source files.
+- Your original `.md` files in the library folder are **not modified** — Constellation is a reader and does not alter source files.
 - Encryption uses the operating system's native secure storage facilities via the Tauri backend.
 
 ### How to enable
@@ -48,7 +48,7 @@ All security features are **disabled by default** and can be toggled on or off a
 4. The status badge will change from "Disabled" to "Enabled".
 
 > [!tip]
-> Vault encryption protects cached data only. Your original Obsidian vault files are managed by your operating system's file-level permissions and disk encryption (e.g., BitLocker on Windows, FileVault on macOS).
+> Vault encryption protects cached data only. Your original library files are managed by your operating system's file-level permissions and disk encryption (e.g., BitLocker on Windows, FileVault on macOS).
 
 ---
 

@@ -1,7 +1,7 @@
 [package]
 name = "constellation"
 version = "0.1.0"
-description = "A Map of Maps — Unified dashboard for multiple Obsidian vaults"
+description = "A Map of Maps — Unified knowledge management platform for multiple Markdown libraries"
 authors = ["eisaShamsi"]
 license = "MIT"
 edition = "2021"

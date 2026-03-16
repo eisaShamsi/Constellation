@@ -17,7 +17,7 @@ A **Universe** is a portable, user-owned directory where Constellation stores al
 ```
 My Universe/
 ├── universe.json          # Name, creation date, child references
-├── vaults.json            # Registered Obsidian vaults
+├── vaults.json            # Registered libraries
 ├── bases/                 # Base files (.base)
 ├── bookmarks.json         # Bookmarked notes
 ├── settings.json          # App settings
@@ -55,8 +55,8 @@ If you chose **Create New Universe**:
 
 After creating your universe, you can immediately connect your data:
 
-- **Add Vault** — Opens a folder picker. Select an Obsidian vault folder (must contain a `.obsidian` directory).
-- **Add Child Universe** — Link another existing Universe as a child. Its vaults become available to your new universe automatically.
+- **Add Vault** — Opens a folder picker. Select a folder containing Markdown files.
+- **Add Child Universe** — Link another existing Universe as a child. Its libraries become available to your new universe automatically.
 - **Skip for now** — Proceed without adding anything. You can always add vaults and child universes later.
 
 Click **Finish** when you're done.

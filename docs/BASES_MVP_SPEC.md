@@ -85,7 +85,7 @@ direction: auto           # auto | rtl | ltr (auto = detect from content)
 
 ### Why YAML?
 - Human-readable in any text editor
-- Obsidian-compatible (consistent with frontmatter)
+- Standard format (consistent with frontmatter)
 - Diffable in git
 - Non-destructive: if Constellation is removed, it's just a text file
 

@@ -60,7 +60,7 @@ If the key is not recognized, the value format is checked:
 
 ### Date format normalization
 
-Dates entered in **DD/MM/YYYY** format (common in many locales) are automatically normalized to **YYYY-MM-DD** for storage, ensuring compatibility with Obsidian and Dataview.
+Dates entered in **DD/MM/YYYY** format (common in many locales) are automatically normalized to **YYYY-MM-DD** for storage, ensuring compatibility with Dataview and other Markdown tools.
 
 ---
 
@@ -234,8 +234,8 @@ Properties fully support right-to-left (RTL) languages:
 
 ## Tips
 
-> [!tip] Obsidian compatibility
-> Properties are stored as standard YAML frontmatter, fully compatible with Obsidian, Dataview, and other tools that read frontmatter.
+> [!tip] Standard format
+> Properties are stored as standard YAML frontmatter, fully compatible with Dataview and any tool that reads frontmatter.
 
 > [!tip] Type persistence saves time
 > Once you set a property type (e.g. making "status" a List), it applies vault-wide. You won't need to set it again for other notes.

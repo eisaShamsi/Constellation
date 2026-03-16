@@ -13,7 +13,7 @@ description: Learn how to use Dataview queries in Constellation to dynamically d
 Dataview lets you write queries inside your notes that dynamically display lists and tables of matching notes. Queries are written in **Dataview Query Language (DQL)** inside fenced code blocks, and results update automatically from your vault's [[Properties|frontmatter properties]].
 
 > [!tip] Built-in feature
-> Dataview is a native Constellation feature. Unlike the Obsidian plugin, queries run on the Rust backend for fast performance across large vaults and multi-vault universes.
+> Dataview is a native Constellation feature. Queries run on the Rust backend for fast performance across large libraries and multi-library universes.
 
 ---
 
@@ -178,9 +178,9 @@ Dataview tables automatically detect RTL content using Constellation's bidirecti
 
 ---
 
-## Comparison with Obsidian Dataview Plugin
+## Comparison with Community Dataview Plugins
 
-| Feature | Constellation | Obsidian Plugin |
+| Feature | Constellation | Third-Party Plugins |
 |---------|--------------|-----------------|
 | Query engine | Rust (native, fast) | JavaScript |
 | Multi-vault | Yes (all vaults in universe) | Single vault only |

@@ -8,7 +8,7 @@ description: Import notes from other apps like Notion, Evernote, Bear, or plain 
 
 # Importer
 
-Constellation's built-in Importer lets you bring notes from other apps into your vaults. It supports multiple formats and converts them to Obsidian-compatible Markdown.
+Constellation's built-in Importer lets you bring notes from other apps into your libraries. It supports multiple formats and converts them to standard Markdown.
 
 ## Supported Formats
 
