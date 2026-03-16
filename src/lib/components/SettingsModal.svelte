@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { invoke } from '@tauri-apps/api/core';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
 	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats } from '$lib/libraries/store';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
@@ -379,9 +380,19 @@
 							<div class="setting-name">{$t('settings.files.defaultAttachmentFolder')}</div>
 							<div class="setting-desc">{$t('settings.files.defaultAttachmentFolderDesc')}</div>
 						</div>
-						<input class="setting-input" type="text" value={$appSettings.defaultAttachmentFolder}
-							placeholder={$t('settings.files.sameAsNotePlaceholder')}
-							oninput={(e) => updateSettings({ defaultAttachmentFolder: (e.target as HTMLInputElement).value })} />
+						<div class="setting-input-browse">
+							<input class="setting-input" type="text" value={$appSettings.defaultAttachmentFolder}
+								placeholder={$t('settings.files.sameAsNotePlaceholder')}
+								oninput={(e) => updateSettings({ defaultAttachmentFolder: (e.target as HTMLInputElement).value })} />
+							<button class="browse-btn" onclick={async () => {
+								try {
+									const result = await invoke<string | null>('pick_folder');
+									if (result) updateSettings({ defaultAttachmentFolder: result });
+								} catch { /* cancelled */ }
+							}}>
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+							</button>
+						</div>
 					</div>
 
 					<div class="setting-item">
@@ -415,9 +426,19 @@
 							<div class="setting-name">{$t('settings.templates.templateFolder')}</div>
 							<div class="setting-desc">{$t('settings.templates.templateFolderDesc')}</div>
 						</div>
-						<input class="setting-input" type="text" value={$appSettings.templateFolder}
-							placeholder="Templates"
-							oninput={(e) => updateSettings({ templateFolder: (e.target as HTMLInputElement).value })} />
+						<div class="setting-input-browse">
+							<input class="setting-input" type="text" value={$appSettings.templateFolder}
+								placeholder="Templates"
+								oninput={(e) => updateSettings({ templateFolder: (e.target as HTMLInputElement).value })} />
+							<button class="browse-btn" onclick={async () => {
+								try {
+									const result = await invoke<string | null>('pick_folder');
+									if (result) updateSettings({ templateFolder: result });
+								} catch { /* cancelled */ }
+							}}>
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+							</button>
+						</div>
 					</div>
 
 					<div class="setting-item">
@@ -1115,6 +1136,18 @@
 		font-size: 0.85rem; font-family: inherit;
 	}
 	.setting-input:focus { border-color: var(--interactive-accent); outline: none; }
+
+	.setting-input-browse {
+		display: flex; align-items: center; gap: 6px;
+	}
+	.setting-input-browse .setting-input { flex: 1; min-width: 140px; }
+	.browse-btn {
+		display: flex; align-items: center; justify-content: center;
+		width: 32px; height: 32px; padding: 0; border: 1px solid var(--background-modifier-border);
+		border-radius: 6px; background: var(--background-primary); color: var(--text-muted);
+		cursor: pointer; flex-shrink: 0;
+	}
+	.browse-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 
 	.setting-info-box {
 		font-size: 0.78rem; color: var(--text-faint);
