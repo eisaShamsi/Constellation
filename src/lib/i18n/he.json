@@ -172,7 +172,22 @@
       "varTitle": "כותרת ההערה",
       "varFolder": "שם תיקיית האב",
       "varCursor": "מיקום הסמן לאחר הוספה",
-      "varLibrary": "שם הספריה"
+      "varLibrary": "שם הספריה",
+      "varYesterday": "תאריך אתמול",
+      "varTomorrow": "תאריך מחר",
+      "varDateOffset": "תאריך עם היסט (N ימים)",
+      "varClipboard": "תוכן הלוח",
+      "varFrontmatter": "ערך frontmatter של ההערה הנוכחית",
+      "varFileCreated": "תאריך יצירת הקובץ",
+      "varFileModified": "תאריך שינוי הקובץ",
+      "varPrompt": "בקש קלט בעת הוספה",
+      "varSuggester": "בחר מרשימה בעת הוספה",
+      "folderTemplates": "תבניות תיקייה",
+      "folderTemplatesDesc": "החל תבניות אוטומטית בעת יצירת הערות בתיקיות ספציפיות",
+      "addFolderTemplate": "הוסף תבנית תיקייה",
+      "folderPath": "נתיב תיקייה",
+      "templateName": "שם התבנית",
+      "noFolderTemplates": "לא הוגדרו תבניות תיקייה"
     },
     "dashboard": {
       "libraries": "ספריות",
@@ -424,6 +439,7 @@
     "readingMode": "מצב קריאה",
     "editingMode": "מצב עריכה",
     "exportHtml": "ייצא כ-HTML",
+    "insertTemplate": "הוסף תבנית",
     "livePreview": "תצוגה מקדימה חיה",
     "placeholder": "התחל לכתוב...",
     "selectNote": "בחר פתק",
@@ -745,7 +761,13 @@
     "pickerTitle": "הוספת תבנית",
     "searchTemplates": "חיפוש תבניות...",
     "noTemplates": "לא נמצאו תבניות תואמות",
-    "noTemplatesConfigured": "לא נמצאו תבניות. צור קבצי .md בתיקיית התבניות שלך."
+    "noTemplatesConfigured": "לא נמצאו תבניות. צור קבצי .md בתיקיית התבניות שלך.",
+    "promptTitle": "קלט תבנית",
+    "promptSubmit": "אישור",
+    "promptCancel": "ביטול",
+    "suggesterTitle": "בחר אפשרות",
+    "suggesterSearch": "סנן אפשרויות...",
+    "noOptions": "אין אפשרויות תואמות"
   },
   "secondScreen": {
     "title": "מסך שני",

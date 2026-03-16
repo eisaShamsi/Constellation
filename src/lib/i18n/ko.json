@@ -172,7 +172,22 @@
       "varTitle": "노트 제목",
       "varFolder": "상위 폴더 이름",
       "varCursor": "삽입 후 커서 위치",
-      "varLibrary": "라이브러리 이름"
+      "varLibrary": "라이브러리 이름",
+      "varYesterday": "어제 날짜",
+      "varTomorrow": "내일 날짜",
+      "varDateOffset": "오프셋이 있는 날짜 (N일)",
+      "varClipboard": "클립보드 내용",
+      "varFrontmatter": "현재 노트의 프론트매터 값",
+      "varFileCreated": "파일 생성 날짜",
+      "varFileModified": "파일 수정 날짜",
+      "varPrompt": "삽입 시 입력 요청",
+      "varSuggester": "삽입 시 목록에서 선택",
+      "folderTemplates": "폴더 템플릿",
+      "folderTemplatesDesc": "특정 폴더에서 노트를 생성할 때 자동으로 템플릿 적용",
+      "addFolderTemplate": "폴더 템플릿 추가",
+      "folderPath": "폴더 경로",
+      "templateName": "템플릿 이름",
+      "noFolderTemplates": "구성된 폴더 템플릿 없음"
     },
     "dashboard": {
       "libraries": "라이브러리",
@@ -424,6 +439,7 @@
     "readingMode": "읽기 모드",
     "editingMode": "편집 모드",
     "exportHtml": "HTML로 내보내기",
+    "insertTemplate": "템플릿 삽입",
     "livePreview": "실시간 미리보기",
     "placeholder": "글쓰기 시작...",
     "selectNote": "노트를 선택하세요",
@@ -745,7 +761,13 @@
     "pickerTitle": "템플릿 삽입",
     "searchTemplates": "템플릿 검색...",
     "noTemplates": "일치하는 템플릿 없음",
-    "noTemplatesConfigured": "템플릿을 찾을 수 없습니다. 템플릿 폴더에 .md 파일을 만드세요."
+    "noTemplatesConfigured": "템플릿을 찾을 수 없습니다. 템플릿 폴더에 .md 파일을 만드세요.",
+    "promptTitle": "템플릿 입력",
+    "promptSubmit": "확인",
+    "promptCancel": "취소",
+    "suggesterTitle": "옵션 선택",
+    "suggesterSearch": "옵션 필터...",
+    "noOptions": "일치하는 옵션 없음"
   },
   "secondScreen": {
     "title": "보조 화면",

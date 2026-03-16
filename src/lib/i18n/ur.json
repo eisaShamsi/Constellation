@@ -172,7 +172,22 @@
       "varTitle": "نوٹ کا عنوان",
       "varFolder": "پیرنٹ فولڈر کا نام",
       "varCursor": "داخل کرنے کے بعد کرسر کی پوزیشن",
-      "varLibrary": "لائبریری کا نام"
+      "varLibrary": "لائبریری کا نام",
+      "varYesterday": "کل کی تاریخ (گزشتہ)",
+      "varTomorrow": "کل کی تاریخ (آنے والا)",
+      "varDateOffset": "آفسیٹ کے ساتھ تاریخ (N دن)",
+      "varClipboard": "کلپ بورڈ کا مواد",
+      "varFrontmatter": "موجودہ نوٹ کی فرنٹ میٹر قدر",
+      "varFileCreated": "فائل بنانے کی تاریخ",
+      "varFileModified": "فائل میں ترمیم کی تاریخ",
+      "varPrompt": "داخل کرتے وقت ان پٹ طلب کریں",
+      "varSuggester": "داخل کرتے وقت فہرست سے منتخب کریں",
+      "folderTemplates": "فولڈر ٹیمپلیٹس",
+      "folderTemplatesDesc": "مخصوص فولڈرز میں نوٹس بناتے وقت خودکار طور پر ٹیمپلیٹس لاگو کریں",
+      "addFolderTemplate": "فولڈر ٹیمپلیٹ شامل کریں",
+      "folderPath": "فولڈر کا راستہ",
+      "templateName": "ٹیمپلیٹ کا نام",
+      "noFolderTemplates": "کوئی فولڈر ٹیمپلیٹ ترتیب نہیں دیا گیا"
     },
     "dashboard": {
       "libraries": "لائبریریاں",
@@ -424,6 +439,7 @@
     "readingMode": "پڑھنے کا موڈ",
     "editingMode": "ایڈیٹنگ موڈ",
     "exportHtml": "HTML کے طور پر ایکسپورٹ",
+    "insertTemplate": "ٹیمپلیٹ داخل کریں",
     "livePreview": "لائیو پیش نظارہ",
     "placeholder": "لکھنا شروع کریں...",
     "selectNote": "ایک نوٹ منتخب کریں",
@@ -745,7 +761,13 @@
     "pickerTitle": "ٹیمپلیٹ داخل کریں",
     "searchTemplates": "ٹیمپلیٹس تلاش کریں...",
     "noTemplates": "کوئی مماثل ٹیمپلیٹ نہیں",
-    "noTemplatesConfigured": "کوئی ٹیمپلیٹ نہیں ملا۔ اپنے ٹیمپلیٹ فولڈر میں .md فائلیں بنائیں۔"
+    "noTemplatesConfigured": "کوئی ٹیمپلیٹ نہیں ملا۔ اپنے ٹیمپلیٹ فولڈر میں .md فائلیں بنائیں۔",
+    "promptTitle": "ٹیمپلیٹ ان پٹ",
+    "promptSubmit": "ٹھیک ہے",
+    "promptCancel": "منسوخ",
+    "suggesterTitle": "ایک آپشن منتخب کریں",
+    "suggesterSearch": "آپشنز فلٹر کریں...",
+    "noOptions": "کوئی مماثل آپشن نہیں"
   },
   "secondScreen": {
     "title": "دوسری اسکرین",

@@ -172,7 +172,22 @@
       "varTitle": "Заголовок заметки",
       "varFolder": "Имя родительской папки",
       "varCursor": "Позиция курсора после вставки",
-      "varLibrary": "Имя библиотеки"
+      "varLibrary": "Имя библиотеки",
+      "varYesterday": "Вчерашняя дата",
+      "varTomorrow": "Завтрашняя дата",
+      "varDateOffset": "Дата со смещением (N дней)",
+      "varClipboard": "Содержимое буфера обмена",
+      "varFrontmatter": "Значение метаданных текущей заметки",
+      "varFileCreated": "Дата создания файла",
+      "varFileModified": "Дата изменения файла",
+      "varPrompt": "Запросить ввод при вставке",
+      "varSuggester": "Выбрать из списка при вставке",
+      "folderTemplates": "Шаблоны папок",
+      "folderTemplatesDesc": "Автоматически применять шаблоны при создании заметок в определённых папках",
+      "addFolderTemplate": "Добавить шаблон папки",
+      "folderPath": "Путь к папке",
+      "templateName": "Имя шаблона",
+      "noFolderTemplates": "Шаблоны папок не настроены"
     },
     "dashboard": {
       "libraries": "Библиотеки",
@@ -424,6 +439,7 @@
     "readingMode": "Режим чтения",
     "editingMode": "Режим редактирования",
     "exportHtml": "Экспорт в HTML",
+    "insertTemplate": "Вставить шаблон",
     "livePreview": "Предпросмотр",
     "placeholder": "Начните писать...",
     "selectNote": "Выберите заметку",
@@ -745,7 +761,13 @@
     "pickerTitle": "Вставить шаблон",
     "searchTemplates": "Поиск шаблонов...",
     "noTemplates": "Подходящих шаблонов не найдено",
-    "noTemplatesConfigured": "Шаблоны не найдены. Создайте файлы .md в папке шаблонов."
+    "noTemplatesConfigured": "Шаблоны не найдены. Создайте файлы .md в папке шаблонов.",
+    "promptTitle": "Ввод шаблона",
+    "promptSubmit": "ОК",
+    "promptCancel": "Отмена",
+    "suggesterTitle": "Выберите вариант",
+    "suggesterSearch": "Фильтр вариантов...",
+    "noOptions": "Подходящих вариантов нет"
   },
   "secondScreen": {
     "title": "Второй экран",

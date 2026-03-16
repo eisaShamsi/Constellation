@@ -172,7 +172,22 @@
       "varTitle": "Título da nota",
       "varFolder": "Nome da pasta pai",
       "varCursor": "Posição do cursor após inserção",
-      "varLibrary": "Nome da biblioteca"
+      "varLibrary": "Nome da biblioteca",
+      "varYesterday": "Data de ontem",
+      "varTomorrow": "Data de amanhã",
+      "varDateOffset": "Data com deslocamento (N dias)",
+      "varClipboard": "Conteúdo da área de transferência",
+      "varFrontmatter": "Valor do frontmatter da nota atual",
+      "varFileCreated": "Data de criação do arquivo",
+      "varFileModified": "Data de modificação do arquivo",
+      "varPrompt": "Solicitar entrada ao inserir",
+      "varSuggester": "Escolher de uma lista ao inserir",
+      "folderTemplates": "Modelos de pasta",
+      "folderTemplatesDesc": "Aplicar modelos automaticamente ao criar notas em pastas específicas",
+      "addFolderTemplate": "Adicionar modelo de pasta",
+      "folderPath": "Caminho da pasta",
+      "templateName": "Nome do modelo",
+      "noFolderTemplates": "Nenhum modelo de pasta configurado"
     },
     "dashboard": {
       "libraries": "Bibliotecas",
@@ -424,6 +439,7 @@
     "readingMode": "Modo leitura",
     "editingMode": "Modo edição",
     "exportHtml": "Exportar como HTML",
+    "insertTemplate": "Inserir modelo",
     "livePreview": "Visualização ao vivo",
     "placeholder": "Comece a escrever...",
     "selectNote": "Selecione uma nota",
@@ -745,7 +761,13 @@
     "pickerTitle": "Inserir modelo",
     "searchTemplates": "Pesquisar modelos...",
     "noTemplates": "Nenhum modelo correspondente",
-    "noTemplatesConfigured": "Nenhum modelo encontrado. Crie arquivos .md na sua pasta de modelos."
+    "noTemplatesConfigured": "Nenhum modelo encontrado. Crie arquivos .md na sua pasta de modelos.",
+    "promptTitle": "Entrada do modelo",
+    "promptSubmit": "OK",
+    "promptCancel": "Cancelar",
+    "suggesterTitle": "Escolha uma opção",
+    "suggesterSearch": "Filtrar opções...",
+    "noOptions": "Nenhuma opção correspondente"
   },
   "secondScreen": {
     "title": "Segunda tela",

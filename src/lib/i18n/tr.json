@@ -172,7 +172,22 @@
       "varTitle": "Not başlığı",
       "varFolder": "Üst klasör adı",
       "varCursor": "Ekleme sonrası imleç konumu",
-      "varLibrary": "Kütüphane adı"
+      "varLibrary": "Kütüphane adı",
+      "varYesterday": "Dünün tarihi",
+      "varTomorrow": "Yarının tarihi",
+      "varDateOffset": "Kaydırmalı tarih (N gün)",
+      "varClipboard": "Pano içeriği",
+      "varFrontmatter": "Mevcut notun frontmatter değeri",
+      "varFileCreated": "Dosya oluşturma tarihi",
+      "varFileModified": "Dosya değişiklik tarihi",
+      "varPrompt": "Eklerken giriş iste",
+      "varSuggester": "Eklerken listeden seç",
+      "folderTemplates": "Klasör şablonları",
+      "folderTemplatesDesc": "Belirli klasörlerde not oluştururken şablonları otomatik olarak uygula",
+      "addFolderTemplate": "Klasör şablonu ekle",
+      "folderPath": "Klasör yolu",
+      "templateName": "Şablon adı",
+      "noFolderTemplates": "Yapılandırılmış klasör şablonu yok"
     },
     "dashboard": {
       "libraries": "Kütüphaneler",
@@ -424,6 +439,7 @@
     "readingMode": "Okuma modu",
     "editingMode": "Düzenleme modu",
     "exportHtml": "HTML olarak dışa aktar",
+    "insertTemplate": "Şablon ekle",
     "livePreview": "Canlı önizleme",
     "placeholder": "Yazmaya başlayın...",
     "selectNote": "Bir not seçin",
@@ -745,7 +761,13 @@
     "pickerTitle": "Şablon ekle",
     "searchTemplates": "Şablon ara...",
     "noTemplates": "Eşleşen şablon yok",
-    "noTemplatesConfigured": "Şablon bulunamadı. Şablon klasörünüzde .md dosyaları oluşturun."
+    "noTemplatesConfigured": "Şablon bulunamadı. Şablon klasörünüzde .md dosyaları oluşturun.",
+    "promptTitle": "Şablon Girişi",
+    "promptSubmit": "Tamam",
+    "promptCancel": "İptal",
+    "suggesterTitle": "Bir seçenek belirleyin",
+    "suggesterSearch": "Seçenekleri filtrele...",
+    "noOptions": "Eşleşen seçenek yok"
   },
   "secondScreen": {
     "title": "İkinci Ekran",

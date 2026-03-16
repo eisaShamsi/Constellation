@@ -172,7 +172,22 @@
       "varTitle": "Notiz-Titel",
       "varFolder": "Übergeordneter Ordnername",
       "varCursor": "Cursorposition nach dem Einfügen",
-      "varLibrary": "Bibliotheksname"
+      "varLibrary": "Bibliotheksname",
+      "varYesterday": "Datum von gestern",
+      "varTomorrow": "Datum von morgen",
+      "varDateOffset": "Datum mit Versatz (N Tage)",
+      "varClipboard": "Inhalt der Zwischenablage",
+      "varFrontmatter": "Frontmatter-Wert der aktuellen Notiz",
+      "varFileCreated": "Erstellungsdatum der Datei",
+      "varFileModified": "Änderungsdatum der Datei",
+      "varPrompt": "Bei Einfügung nach Eingabe fragen",
+      "varSuggester": "Bei Einfügung aus Liste wählen",
+      "folderTemplates": "Ordnervorlagen",
+      "folderTemplatesDesc": "Vorlagen automatisch anwenden, wenn Notizen in bestimmten Ordnern erstellt werden",
+      "addFolderTemplate": "Ordnervorlage hinzufügen",
+      "folderPath": "Ordnerpfad",
+      "templateName": "Vorlagenname",
+      "noFolderTemplates": "Keine Ordnervorlagen konfiguriert"
     },
     "dashboard": {
       "libraries": "Bibliotheken",
@@ -424,6 +439,7 @@
     "readingMode": "Lesemodus",
     "editingMode": "Bearbeitungsmodus",
     "exportHtml": "Als HTML exportieren",
+    "insertTemplate": "Vorlage einfügen",
     "livePreview": "Live-Vorschau",
     "placeholder": "Beginnen Sie zu schreiben...",
     "selectNote": "Wählen Sie eine Notiz",
@@ -745,7 +761,13 @@
     "pickerTitle": "Vorlage einfügen",
     "searchTemplates": "Vorlagen suchen...",
     "noTemplates": "Keine passenden Vorlagen",
-    "noTemplatesConfigured": "Keine Vorlagen gefunden. Erstellen Sie .md-Dateien in Ihrem Vorlagenordner."
+    "noTemplatesConfigured": "Keine Vorlagen gefunden. Erstellen Sie .md-Dateien in Ihrem Vorlagenordner.",
+    "promptTitle": "Vorlageneingabe",
+    "promptSubmit": "OK",
+    "promptCancel": "Abbrechen",
+    "suggesterTitle": "Option auswählen",
+    "suggesterSearch": "Optionen filtern...",
+    "noOptions": "Keine passenden Optionen"
   },
   "secondScreen": {
     "title": "Zweiter Bildschirm",

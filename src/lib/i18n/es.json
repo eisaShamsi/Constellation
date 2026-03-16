@@ -172,7 +172,22 @@
       "varTitle": "Título de la nota",
       "varFolder": "Nombre de la carpeta padre",
       "varCursor": "Posición del cursor después de insertar",
-      "varLibrary": "Nombre de la biblioteca"
+      "varLibrary": "Nombre de la biblioteca",
+      "varYesterday": "Fecha de ayer",
+      "varTomorrow": "Fecha de mañana",
+      "varDateOffset": "Fecha con desplazamiento (N días)",
+      "varClipboard": "Contenido del portapapeles",
+      "varFrontmatter": "Valor del frontmatter de la nota actual",
+      "varFileCreated": "Fecha de creación del archivo",
+      "varFileModified": "Fecha de modificación del archivo",
+      "varPrompt": "Solicitar entrada al insertar",
+      "varSuggester": "Elegir de una lista al insertar",
+      "folderTemplates": "Plantillas de carpeta",
+      "folderTemplatesDesc": "Aplicar plantillas automáticamente al crear notas en carpetas específicas",
+      "addFolderTemplate": "Añadir plantilla de carpeta",
+      "folderPath": "Ruta de carpeta",
+      "templateName": "Nombre de la plantilla",
+      "noFolderTemplates": "No hay plantillas de carpeta configuradas"
     },
     "dashboard": {
       "libraries": "Bibliotecas",
@@ -424,6 +439,7 @@
     "readingMode": "Modo lectura",
     "editingMode": "Modo edición",
     "exportHtml": "Exportar como HTML",
+    "insertTemplate": "Insertar plantilla",
     "livePreview": "Vista previa en vivo",
     "placeholder": "Empieza a escribir...",
     "selectNote": "Selecciona una nota",
@@ -745,7 +761,13 @@
     "pickerTitle": "Insertar plantilla",
     "searchTemplates": "Buscar plantillas...",
     "noTemplates": "No hay plantillas coincidentes",
-    "noTemplatesConfigured": "No se encontraron plantillas. Cree archivos .md en su carpeta de plantillas."
+    "noTemplatesConfigured": "No se encontraron plantillas. Cree archivos .md en su carpeta de plantillas.",
+    "promptTitle": "Entrada de plantilla",
+    "promptSubmit": "Aceptar",
+    "promptCancel": "Cancelar",
+    "suggesterTitle": "Elige una opción",
+    "suggesterSearch": "Filtrar opciones...",
+    "noOptions": "No hay opciones coincidentes"
   },
   "secondScreen": {
     "title": "Segunda pantalla",

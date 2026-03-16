@@ -172,7 +172,22 @@
       "varTitle": "笔记标题",
       "varFolder": "父文件夹名称",
       "varCursor": "插入后的光标位置",
-      "varLibrary": "资料库名称"
+      "varLibrary": "资料库名称",
+      "varYesterday": "昨天的日期",
+      "varTomorrow": "明天的日期",
+      "varDateOffset": "带偏移的日期（N天）",
+      "varClipboard": "剪贴板内容",
+      "varFrontmatter": "当前笔记的元数据值",
+      "varFileCreated": "文件创建日期",
+      "varFileModified": "文件修改日期",
+      "varPrompt": "插入时请求输入",
+      "varSuggester": "插入时从列表中选择",
+      "folderTemplates": "文件夹模板",
+      "folderTemplatesDesc": "在特定文件夹中创建笔记时自动应用模板",
+      "addFolderTemplate": "添加文件夹模板",
+      "folderPath": "文件夹路径",
+      "templateName": "模板名称",
+      "noFolderTemplates": "未配置文件夹模板"
     },
     "dashboard": {
       "libraries": "资料库",
@@ -424,6 +439,7 @@
     "readingMode": "阅读模式",
     "editingMode": "编辑模式",
     "exportHtml": "导出为 HTML",
+    "insertTemplate": "插入模板",
     "livePreview": "实时预览",
     "placeholder": "开始写作...",
     "selectNote": "选择一篇笔记",
@@ -745,7 +761,13 @@
     "pickerTitle": "插入模板",
     "searchTemplates": "搜索模板...",
     "noTemplates": "没有匹配的模板",
-    "noTemplatesConfigured": "未找到模板。请在模板文件夹中创建 .md 文件。"
+    "noTemplatesConfigured": "未找到模板。请在模板文件夹中创建 .md 文件。",
+    "promptTitle": "模板输入",
+    "promptSubmit": "确定",
+    "promptCancel": "取消",
+    "suggesterTitle": "选择一个选项",
+    "suggesterSearch": "筛选选项...",
+    "noOptions": "没有匹配的选项"
   },
   "secondScreen": {
     "title": "第二屏幕",

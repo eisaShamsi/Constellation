@@ -172,7 +172,22 @@
       "varTitle": "ノートタイトル",
       "varFolder": "親フォルダ名",
       "varCursor": "挿入後のカーソル位置",
-      "varLibrary": "ライブラリ名"
+      "varLibrary": "ライブラリ名",
+      "varYesterday": "昨日の日付",
+      "varTomorrow": "明日の日付",
+      "varDateOffset": "オフセット付き日付（N日）",
+      "varClipboard": "クリップボードの内容",
+      "varFrontmatter": "現在のノートのフロントマター値",
+      "varFileCreated": "ファイル作成日",
+      "varFileModified": "ファイル更新日",
+      "varPrompt": "挿入時に入力を求める",
+      "varSuggester": "挿入時にリストから選択",
+      "folderTemplates": "フォルダテンプレート",
+      "folderTemplatesDesc": "特定のフォルダでノートを作成する際にテンプレートを自動適用",
+      "addFolderTemplate": "フォルダテンプレートを追加",
+      "folderPath": "フォルダパス",
+      "templateName": "テンプレート名",
+      "noFolderTemplates": "フォルダテンプレートが設定されていません"
     },
     "dashboard": {
       "libraries": "ライブラリ",
@@ -424,6 +439,7 @@
     "readingMode": "閲覧モード",
     "editingMode": "編集モード",
     "exportHtml": "HTMLとしてエクスポート",
+    "insertTemplate": "テンプレートを挿入",
     "livePreview": "ライブプレビュー",
     "placeholder": "ここに入力...",
     "selectNote": "ノートを選択",
@@ -745,7 +761,13 @@
     "pickerTitle": "テンプレートを挿入",
     "searchTemplates": "テンプレートを検索...",
     "noTemplates": "一致するテンプレートがありません",
-    "noTemplatesConfigured": "テンプレートが見つかりません。テンプレートフォルダに .md ファイルを作成してください。"
+    "noTemplatesConfigured": "テンプレートが見つかりません。テンプレートフォルダに .md ファイルを作成してください。",
+    "promptTitle": "テンプレート入力",
+    "promptSubmit": "OK",
+    "promptCancel": "キャンセル",
+    "suggesterTitle": "オプションを選択",
+    "suggesterSearch": "オプションを絞り込み...",
+    "noOptions": "一致するオプションがありません"
   },
   "secondScreen": {
     "title": "セカンドスクリーン",

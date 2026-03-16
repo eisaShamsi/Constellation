@@ -172,7 +172,22 @@
       "varTitle": "नोट का शीर्षक",
       "varFolder": "पैरेंट फ़ोल्डर का नाम",
       "varCursor": "सम्मिलन के बाद कर्सर की स्थिति",
-      "varLibrary": "पुस्तकालय का नाम"
+      "varLibrary": "पुस्तकालय का नाम",
+      "varYesterday": "कल की तारीख (बीता हुआ)",
+      "varTomorrow": "कल की तारीख (आने वाला)",
+      "varDateOffset": "ऑफ़सेट के साथ तारीख (N दिन)",
+      "varClipboard": "क्लिपबोर्ड सामग्री",
+      "varFrontmatter": "वर्तमान नोट का फ्रंटमैटर मान",
+      "varFileCreated": "फ़ाइल निर्माण तिथि",
+      "varFileModified": "फ़ाइल संशोधन तिथि",
+      "varPrompt": "सम्मिलन के समय इनपुट माँगें",
+      "varSuggester": "सम्मिलन के समय सूची से चुनें",
+      "folderTemplates": "फ़ोल्डर टेम्पलेट",
+      "folderTemplatesDesc": "विशिष्ट फ़ोल्डरों में नोट्स बनाते समय स्वचालित रूप से टेम्पलेट लागू करें",
+      "addFolderTemplate": "फ़ोल्डर टेम्पलेट जोड़ें",
+      "folderPath": "फ़ोल्डर पथ",
+      "templateName": "टेम्पलेट का नाम",
+      "noFolderTemplates": "कोई फ़ोल्डर टेम्पलेट कॉन्फ़िगर नहीं है"
     },
     "dashboard": {
       "libraries": "पुस्तकालय",
@@ -424,6 +439,7 @@
     "readingMode": "पठन मोड",
     "editingMode": "संपादन मोड",
     "exportHtml": "HTML के रूप में निर्यात करें",
+    "insertTemplate": "टेम्पलेट डालें",
     "livePreview": "लाइव पूर्वावलोकन",
     "placeholder": "लिखना शुरू करें...",
     "selectNote": "एक नोट चुनें",
@@ -745,7 +761,13 @@
     "pickerTitle": "टेम्पलेट डालें",
     "searchTemplates": "टेम्पलेट खोजें...",
     "noTemplates": "कोई मेल खाता टेम्पलेट नहीं",
-    "noTemplatesConfigured": "कोई टेम्पलेट नहीं मिला। अपने टेम्पलेट फ़ोल्डर में .md फ़ाइलें बनाएं।"
+    "noTemplatesConfigured": "कोई टेम्पलेट नहीं मिला। अपने टेम्पलेट फ़ोल्डर में .md फ़ाइलें बनाएं।",
+    "promptTitle": "टेम्पलेट इनपुट",
+    "promptSubmit": "ठीक",
+    "promptCancel": "रद्द करें",
+    "suggesterTitle": "एक विकल्प चुनें",
+    "suggesterSearch": "विकल्प फ़िल्टर करें...",
+    "noOptions": "कोई मिलान विकल्प नहीं"
   },
   "secondScreen": {
     "title": "दूसरी स्क्रीन",

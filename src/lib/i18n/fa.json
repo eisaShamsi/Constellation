@@ -172,7 +172,22 @@
       "varTitle": "عنوان یادداشت",
       "varFolder": "نام پوشه والد",
       "varCursor": "موقعیت نشانگر پس از درج",
-      "varLibrary": "نام کتابخانه"
+      "varLibrary": "نام کتابخانه",
+      "varYesterday": "تاریخ دیروز",
+      "varTomorrow": "تاریخ فردا",
+      "varDateOffset": "تاریخ با انحراف (N روز)",
+      "varClipboard": "محتوای کلیپ‌بورد",
+      "varFrontmatter": "مقدار فرانت‌متر یادداشت فعلی",
+      "varFileCreated": "تاریخ ایجاد فایل",
+      "varFileModified": "تاریخ تغییر فایل",
+      "varPrompt": "درخواست ورودی هنگام درج",
+      "varSuggester": "انتخاب از فهرست هنگام درج",
+      "folderTemplates": "الگوهای پوشه",
+      "folderTemplatesDesc": "اعمال خودکار الگوها هنگام ایجاد یادداشت در پوشه‌های خاص",
+      "addFolderTemplate": "افزودن الگوی پوشه",
+      "folderPath": "مسیر پوشه",
+      "templateName": "نام الگو",
+      "noFolderTemplates": "هیچ الگوی پوشه‌ای تنظیم نشده"
     },
     "dashboard": {
       "libraries": "کتابخانه‌ها",
@@ -424,6 +439,7 @@
     "readingMode": "حالت خواندن",
     "editingMode": "حالت ویرایش",
     "exportHtml": "خروجی به HTML",
+    "insertTemplate": "درج الگو",
     "livePreview": "پیش‌نمایش زنده",
     "placeholder": "شروع به نوشتن...",
     "selectNote": "یک یادداشت انتخاب کنید",
@@ -745,7 +761,13 @@
     "pickerTitle": "درج الگو",
     "searchTemplates": "جستجوی الگوها...",
     "noTemplates": "الگوی مطابقی یافت نشد",
-    "noTemplatesConfigured": "الگویی یافت نشد. فایل‌های .md را در پوشه الگوهای خود ایجاد کنید."
+    "noTemplatesConfigured": "الگویی یافت نشد. فایل‌های .md را در پوشه الگوهای خود ایجاد کنید.",
+    "promptTitle": "ورودی الگو",
+    "promptSubmit": "تأیید",
+    "promptCancel": "لغو",
+    "suggesterTitle": "یک گزینه انتخاب کنید",
+    "suggesterSearch": "فیلتر گزینه‌ها...",
+    "noOptions": "گزینه مطابقی یافت نشد"
   },
   "secondScreen": {
     "title": "صفحه دوم",

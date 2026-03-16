@@ -172,7 +172,22 @@
       "varTitle": "عنوان الملاحظة",
       "varFolder": "اسم المجلد الأب",
       "varCursor": "موضع المؤشر بعد الإدراج",
-      "varLibrary": "اسم المكتبة"
+      "varLibrary": "اسم المكتبة",
+      "varYesterday": "تاريخ الأمس",
+      "varTomorrow": "تاريخ الغد",
+      "varDateOffset": "تاريخ بإزاحة (N أيام)",
+      "varClipboard": "محتوى الحافظة",
+      "varFrontmatter": "قيمة البيانات الوصفية للملاحظة الحالية",
+      "varFileCreated": "تاريخ إنشاء الملف",
+      "varFileModified": "تاريخ تعديل الملف",
+      "varPrompt": "طلب إدخال عند الإدراج",
+      "varSuggester": "اختيار من قائمة عند الإدراج",
+      "folderTemplates": "قوالب المجلدات",
+      "folderTemplatesDesc": "تطبيق القوالب تلقائياً عند إنشاء ملاحظات في مجلدات محددة",
+      "addFolderTemplate": "إضافة قالب مجلد",
+      "folderPath": "مسار المجلد",
+      "templateName": "اسم القالب",
+      "noFolderTemplates": "لم يتم تكوين قوالب مجلدات"
     },
     "dashboard": {
       "libraries": "المكتبات",
@@ -424,6 +439,7 @@
     "readingMode": "وضع القراءة",
     "editingMode": "وضع التحرير",
     "exportHtml": "تصدير HTML",
+    "insertTemplate": "إدراج قالب",
     "livePreview": "معاينة حية",
     "placeholder": "اكتب هنا...",
     "selectNote": "اختر ملاحظة",
@@ -745,7 +761,13 @@
     "pickerTitle": "إدراج قالب",
     "searchTemplates": "البحث في القوالب...",
     "noTemplates": "لا توجد قوالب مطابقة",
-    "noTemplatesConfigured": "لم يتم العثور على قوالب. أنشئ ملفات .md في مجلد القوالب."
+    "noTemplatesConfigured": "لم يتم العثور على قوالب. أنشئ ملفات .md في مجلد القوالب.",
+    "promptTitle": "إدخال القالب",
+    "promptSubmit": "موافق",
+    "promptCancel": "إلغاء",
+    "suggesterTitle": "اختر خياراً",
+    "suggesterSearch": "تصفية الخيارات...",
+    "noOptions": "لا توجد خيارات مطابقة"
   },
   "secondScreen": {
     "title": "الشاشة الثانية",
