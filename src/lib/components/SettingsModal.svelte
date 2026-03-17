@@ -585,6 +585,17 @@
 						</select>
 					</div>
 
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.editor.editorType')}</div>
+							<div class="setting-desc">{$t('settings.editor.editorTypeDesc')}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.editorType} onchange={(e) => updateSettings({ editorType: (e.target as HTMLSelectElement).value as any })}>
+							<option value="markdown">{$t('settings.editor.markdownEditor')}</option>
+							<option value="document">{$t('settings.editor.documentEditor')}</option>
+						</select>
+					</div>
+
 					<div class="setting-section-heading">{$t('settings.editor.display')}</div>
 
 					<div class="setting-item">

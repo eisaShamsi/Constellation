@@ -7,6 +7,7 @@
 	import { get } from 'svelte/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import CodeMirrorEditor from './CodeMirrorEditor.svelte';
+	import TipTapEditor from './TipTapEditor.svelte';
 	import BaseView from './BaseView.svelte';
 	import TableGridPicker from './TableGridPicker.svelte';
 	import type { BaseDefinition } from '$lib/bases/types';
@@ -559,26 +560,35 @@ ${contentEl.innerHTML}
 				{/if}
 			{/if}
 			{#if editing}
-				<CodeMirrorEditor
-					value={editBody}
-					dir={noteDir}
-					placeholder={$t('notePane.placeholder')}
-					onchange={handleEditorChange}
-					{noteNames}
-					{allTags}
-					livePreview={livePreviewEnabled}
-					showLineNumbers={$appSettings.showLineNumbers}
-					foldHeading={$appSettings.foldHeading}
-					foldIndent={$appSettings.foldIndent}
-					indentationGuides={$appSettings.indentationGuides}
-					indentWithTabs={$appSettings.indentWithTabs}
-					tabSize={$appSettings.tabSize}
-					autoPairMarkdown={$appSettings.autoPairMarkdown}
-					initialCursorPos={tab?.cursorPos ?? 0}
-					initialScrollTop={tab?.scrollTop ?? 0}
-					onCursorChange={(pos) => { if (tab) tab.cursorPos = pos; }}
-					onScrollChange={(top) => { if (tab) tab.scrollTop = top; }}
-				/>
+				{#if $appSettings.editorType === 'document'}
+					<TipTapEditor
+						value={editBody}
+						dir={noteDir}
+						placeholder={$t('notePane.placeholder')}
+						onchange={handleEditorChange}
+					/>
+				{:else}
+					<CodeMirrorEditor
+						value={editBody}
+						dir={noteDir}
+						placeholder={$t('notePane.placeholder')}
+						onchange={handleEditorChange}
+						{noteNames}
+						{allTags}
+						livePreview={livePreviewEnabled}
+						showLineNumbers={$appSettings.showLineNumbers}
+						foldHeading={$appSettings.foldHeading}
+						foldIndent={$appSettings.foldIndent}
+						indentationGuides={$appSettings.indentationGuides}
+						indentWithTabs={$appSettings.indentWithTabs}
+						tabSize={$appSettings.tabSize}
+						autoPairMarkdown={$appSettings.autoPairMarkdown}
+						initialCursorPos={tab?.cursorPos ?? 0}
+						initialScrollTop={tab?.scrollTop ?? 0}
+						onCursorChange={(pos) => { if (tab) tab.cursorPos = pos; }}
+						onScrollChange={(top) => { if (tab) tab.scrollTop = top; }}
+					/>
+				{/if}
 			{:else}
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->

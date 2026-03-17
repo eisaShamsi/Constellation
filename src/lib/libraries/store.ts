@@ -954,6 +954,7 @@ export interface AppSettings {
 	// Editor
 	defaultView: 'reading' | 'editing';
 	defaultEditingMode: 'livePreview' | 'source';
+	editorType: 'markdown' | 'document';
 	showLineNumbers: boolean;
 	readableLineLength: boolean;
 	tabSize: number;
@@ -1053,6 +1054,7 @@ export interface AppSettings {
 const DEFAULT_SETTINGS: AppSettings = {
 	defaultView: 'reading',
 	defaultEditingMode: 'livePreview',
+	editorType: 'markdown',
 	showLineNumbers: true,
 	readableLineLength: true,
 	tabSize: 4,

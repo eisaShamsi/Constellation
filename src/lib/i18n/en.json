@@ -79,6 +79,10 @@
       "defaultEditingModeDesc": "The default editing mode a new tab will start with",
       "livePreview": "Live Preview",
       "sourceMode": "Source mode",
+      "editorType": "Editor type",
+      "editorTypeDesc": "Choose between Markdown (code editor) or Document (word processor-like) editing",
+      "markdownEditor": "Markdown",
+      "documentEditor": "Document",
       "display": "Display",
       "readableLineLength": "Readable line length",
       "readableLineLengthDesc": "Limit maximum line length for better readability",
@@ -528,6 +532,10 @@
     "typeLink": "Link",
     "typeCheckbox": "Checkbox",
     "selectType": "Select type"
+  },
+  "editor": {
+    "undo": "Undo",
+    "redo": "Redo"
   },
   "graphView": {
     "noNotes": "No notes to display",

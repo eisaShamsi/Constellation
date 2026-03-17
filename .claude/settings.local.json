@@ -153,7 +153,8 @@
       "Bash(gh run:*)",
       "Bash(gh repo:*)",
       "Bash(gh auth:*)",
-      "Bash(gh gist:*)"
+      "Bash(gh gist:*)",
+      "Bash(curl -s \"https://gist.githubusercontent.com/eisaShamsi/d78713095f2bddb26698c9f04a79b2d8/raw/latest.json\")"
     ]
   }
 }
