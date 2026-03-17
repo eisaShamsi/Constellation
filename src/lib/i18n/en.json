@@ -35,7 +35,9 @@
       "downloadAndInstall": "Download & Install",
       "updateError": "Failed to check for updates",
       "autoUpdate": "Automatic updates",
-      "autoUpdateDesc": "Automatically download and install updates"
+      "autoUpdateDesc": "Automatically download and install updates",
+      "githubToken": "GitHub Token",
+      "githubTokenDesc": "Personal access token for private repo updates (repo scope required)"
     },
     "universe": {
       "intro": "Configure how your universe manages libraries, notes, and templates.",

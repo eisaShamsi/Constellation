@@ -1005,6 +1005,7 @@ export interface AppSettings {
 
 	// Updates
 	autoUpdate: boolean;
+	githubToken: string;
 
 	// Security
 	security: {
@@ -1089,6 +1090,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	templateHotkeys: {},
 	defaultProperties: [],
 	autoUpdate: true,
+	githubToken: '',
 	security: {
 		libraryEncryption: false,
 		lockOnIdle: false,

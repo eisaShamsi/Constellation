@@ -149,7 +149,9 @@
       "Bash(TAURI_SIGNING_PRIVATE_KEY_PASSWORD=\"\" npx @tauri-apps/cli signer generate -w \"$HOME/.tauri/constellation.key\" --ci)",
       "Bash(npm ls:*)",
       "Bash(while read:*)",
-      "Bash(gh release:*)"
+      "Bash(gh release:*)",
+      "Bash(gh run:*)",
+      "Bash(gh repo:*)"
     ]
   }
 }

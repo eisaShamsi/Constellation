@@ -113,12 +113,20 @@
 	let updateDownloading = $state(false);
 	let updateProgress = $state(0);
 
+	function getUpdateHeaders(): HeadersInit | undefined {
+		const token = $appSettings.githubToken;
+		if (token) {
+			return { 'Authorization': `token ${token}`, 'Accept': 'application/octet-stream' };
+		}
+		return undefined;
+	}
+
 	async function handleCheckUpdate() {
 		updateChecking = true;
 		updateStatus = '';
 		updateAvailable = null;
 		try {
-			const update = await check();
+			const update = await check({ headers: getUpdateHeaders() });
 			if (update) {
 				updateAvailable = update;
 				updateStatus = $t('settings.general.updateAvailable').replace('{version}', update.version);
@@ -148,7 +156,7 @@
 				} else if (event.event === 'Finished') {
 					updateProgress = 100;
 				}
-			});
+			}, { headers: getUpdateHeaders() });
 			await relaunch();
 		} catch (e) {
 			updateStatus = $t('settings.general.updateError');
@@ -390,6 +398,15 @@
 									<input type="checkbox" checked={$appSettings.autoUpdate} onchange={() => updateSettings({ autoUpdate: !$appSettings.autoUpdate })} />
 									<span class="toggle-slider"></span>
 								</label>
+							</div>
+							<div class="setting-item">
+								<div class="setting-info">
+									<div class="setting-name">{$t('settings.general.githubToken')}</div>
+									<div class="setting-desc">{$t('settings.general.githubTokenDesc')}</div>
+								</div>
+								<input class="setting-input" type="password" value={$appSettings.githubToken}
+									placeholder="ghp_..."
+									oninput={(e) => updateSettings({ githubToken: (e.target as HTMLInputElement).value })} />
 							</div>
 						</div>
 
