@@ -1,6 +1,6 @@
 {
 	"name": "constellation",
-	"version": "0.3.2",
+	"version": "0.3.3",
 	"description": "A Universe of Libraries — Desktop knowledge management platform for connected notes",
 	"type": "module",
 	"scripts": {
