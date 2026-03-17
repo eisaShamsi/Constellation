@@ -682,18 +682,21 @@
 	}
 
 	// ─── Lifecycle ───
+	function handleUnhandledRejection(e: PromiseRejectionEvent) {
+		console.error('[Constellation] Unhandled rejection:', e.reason);
+		e.preventDefault();
+	}
+	function handleUncaughtError(e: ErrorEvent) {
+		console.error('[Constellation] Uncaught error:', e.error);
+	}
+	function handleTemplatePicker() { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }
+
 	onMount(async () => {
 		// Global error handlers to prevent WebView crashes
-		window.addEventListener('unhandledrejection', (e) => {
-			console.error('[Constellation] Unhandled rejection:', e.reason);
-			e.preventDefault();
-		});
-		window.addEventListener('error', (e) => {
-			console.error('[Constellation] Uncaught error:', e.error);
-		});
+		window.addEventListener('unhandledrejection', handleUnhandledRejection);
+		window.addEventListener('error', handleUncaughtError);
 
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
-		const handleTemplatePicker = () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; };
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
 
 		// 1. Check universe state
@@ -812,6 +815,9 @@
 		clearTimeout(_tasksTimer);
 		clearTimeout(_calTimer);
 		resizeCleanup?.();
+		window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+		window.removeEventListener('error', handleUncaughtError);
+		window.removeEventListener('constellation:open-template-picker', handleTemplatePicker);
 		for (const fn of cleanupFns) fn();
 	});
 

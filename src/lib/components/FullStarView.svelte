@@ -153,15 +153,12 @@
 			}
 		}
 
-		// Center view
-		viewX = 0;
-		viewY = 0;
-		viewScale = 1;
-
 		// Start simulation
 		simAlpha = 1;
 		simIterations = 0;
 		simRunning = true;
+		// Initial fit after a short delay
+		viewX = 0; viewY = 0; viewScale = 1;
 		runSimulation();
 	}
 
@@ -256,10 +253,42 @@
 			simIterations++;
 		}
 
+		// Periodically auto-fit while simulation runs so graph fills screen
+		if (simIterations === 30 || simIterations === 100) {
+			fitToScreen();
+		}
 		draw();
 		if (simRunning) {
 			animFrame = requestAnimationFrame(runSimulation);
+		} else {
+			// Final auto-fit when simulation settles
+			fitToScreen();
 		}
+	}
+
+	function fitToScreen() {
+		if (!containerEl || nodePos.length === 0) return;
+		const w = containerEl.clientWidth;
+		const h = containerEl.clientHeight;
+		if (w === 0 || h === 0) return;
+
+		let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+		for (const p of nodePos) {
+			if (p.x < minX) minX = p.x;
+			if (p.x > maxX) maxX = p.x;
+			if (p.y < minY) minY = p.y;
+			if (p.y > maxY) maxY = p.y;
+		}
+
+		const graphW = maxX - minX || 1;
+		const graphH = maxY - minY || 1;
+		const padding = 60;
+		const scale = Math.min((w - padding * 2) / graphW, (h - padding * 2) / graphH, 2);
+
+		viewScale = scale;
+		viewX = -(minX + maxX) / 2 * scale;
+		viewY = -(minY + maxY) / 2 * scale;
+		draw();
 	}
 
 	function setupCanvas() {
@@ -508,7 +537,7 @@
 	});
 </script>
 
-<div class="graph-container" bind:this={containerEl}>
+<div class="star-container" bind:this={containerEl}>
 	<canvas
 		bind:this={canvasEl}
 		onmousemove={handleMouseMove}

@@ -119,7 +119,7 @@
 
 	function setView(view: 'table' | 'card' | 'list') {
 		definition.view = view;
-		saveBaseFile(filePath, definition);
+		saveBaseFile(filePath, definition).catch((e) => console.error('[BaseView] Save view failed:', e));
 	}
 
 	async function handleFiltersChange(filters: typeof definition.filters) {
