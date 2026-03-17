@@ -46,7 +46,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/eisaShamsi/Constellation/releases/latest/download/latest.json"
+        "https://gist.githubusercontent.com/eisaShamsi/d78713095f2bddb26698c9f04a79b2d8/raw/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdGMTI5NjU2RUE3NEZDQwpSV1RNVDZkdVpTbnhCeHJCOU55MzdpdFQ1VEoybGsreFBpYUFmQ1lTZW85VHFUSzd5dFlka3k2eQo="
     }

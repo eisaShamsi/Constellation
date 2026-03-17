@@ -124,3 +124,17 @@ jobs:
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
+
+      - name: Update public Gist with latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GIST_TOKEN }}
+        shell: bash
+        run: |
+          # Download latest.json from the release
+          gh release download ${{ steps.tag.outputs.tag }} --pattern "latest.json" --output latest.json --repo eisaShamsi/Constellation || true
+          if [ -f latest.json ]; then
+            gh gist edit d78713095f2bddb26698c9f04a79b2d8 -f latest.json latest.json
+            echo "✅ Updated Gist with latest.json"
+          else
+            echo "⚠️ latest.json not found in release assets"
+          fi
