@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "新しいタブが開始するデフォルトの編集モード",
       "livePreview": "ライブプレビュー",
       "sourceMode": "ソースモード",
+      "editorType": "エディタータイプ",
+      "editorTypeDesc": "Markdown（コードエディター）またはドキュメント（ワープロ風）編集を選択",
+      "markdownEditor": "Markdown",
+      "documentEditor": "ドキュメント",
       "display": "表示",
       "readableLineLength": "読みやすい行幅",
       "readableLineLengthDesc": "最大行幅を制限します。表示されるコンテンツは減りますが、長いテキストブロックが読みやすくなります",
@@ -533,6 +537,10 @@
     "typeLink": "リンク",
     "typeCheckbox": "チェックボックス",
     "selectType": "タイプを選択"
+  },
+  "editor": {
+    "undo": "元に戻す",
+    "redo": "やり直す"
   },
   "graphView": {
     "noNotes": "表示するノートがありません",

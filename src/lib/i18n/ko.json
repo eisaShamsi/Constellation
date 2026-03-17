@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "새 탭이 시작되는 기본 편집 모드",
       "livePreview": "실시간 미리보기",
       "sourceMode": "소스 모드",
+      "editorType": "편집기 유형",
+      "editorTypeDesc": "Markdown(코드 편집기) 또는 문서(워드프로세서 스타일) 편집 중 선택",
+      "markdownEditor": "Markdown",
+      "documentEditor": "문서",
       "display": "표시",
       "readableLineLength": "읽기 쉬운 줄 길이",
       "readableLineLengthDesc": "최대 줄 길이를 제한합니다. 화면에 표시되는 콘텐츠는 줄어들지만 긴 텍스트 블록의 가독성이 향상됩니다",
@@ -533,6 +537,10 @@
     "typeLink": "링크",
     "typeCheckbox": "체크박스",
     "selectType": "유형 선택"
+  },
+  "editor": {
+    "undo": "실행 취소",
+    "redo": "다시 실행"
   },
   "graphView": {
     "noNotes": "표시할 노트가 없습니다",

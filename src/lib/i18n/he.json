@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "מצב העריכה שבו לשונית חדשה מתחילה כברירת מחדל",
       "livePreview": "תצוגה מקדימה חיה",
       "sourceMode": "מצב מקור",
+      "editorType": "סוג העורך",
+      "editorTypeDesc": "בחר בין Markdown (עורך קוד) או מסמך (דומה למעבד תמלילים)",
+      "markdownEditor": "Markdown",
+      "documentEditor": "מסמך",
       "display": "תצוגה",
       "readableLineLength": "אורך שורה קריא",
       "readableLineLengthDesc": "הגבל את אורך השורה המרבי. פחות תוכן נכנס במסך, אך בלוקי טקסט ארוכים קריאים יותר",
@@ -533,6 +537,10 @@
     "typeLink": "קישור",
     "typeCheckbox": "תיבת סימון",
     "selectType": "בחר סוג"
+  },
+  "editor": {
+    "undo": "ביטול",
+    "redo": "שחזור"
   },
   "graphView": {
     "noNotes": "אין פתקים להצגה",

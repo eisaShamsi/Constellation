@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "وضع التحرير الافتراضي الذي يبدأ به تبويب جديد",
       "livePreview": "المعاينة الحية",
       "sourceMode": "وضع المصدر",
+      "editorType": "نوع المحرر",
+      "editorTypeDesc": "اختر بين محرر Markdown (محرر أكواد) أو محرر مستندات (شبيه بمعالج النصوص)",
+      "markdownEditor": "Markdown",
+      "documentEditor": "مستند",
       "display": "العرض",
       "readableLineLength": "طول سطر مقروء",
       "readableLineLengthDesc": "تحديد أقصى طول للسطر. محتوى أقل على الشاشة، لكن النصوص الطويلة أسهل في القراءة",
@@ -533,6 +537,10 @@
     "typeLink": "رابط",
     "typeCheckbox": "مربع اختيار",
     "selectType": "اختر النوع"
+  },
+  "editor": {
+    "undo": "تراجع",
+    "redo": "إعادة"
   },
   "graphView": {
     "noNotes": "لا توجد ملاحظات لعرضها",

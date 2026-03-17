@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "O modo de edição padrão com o qual uma nova aba inicia",
       "livePreview": "Visualização ao vivo",
       "sourceMode": "Modo fonte",
+      "editorType": "Tipo de editor",
+      "editorTypeDesc": "Escolha entre Markdown (editor de código) ou Documento (similar a um processador de texto)",
+      "markdownEditor": "Markdown",
+      "documentEditor": "Documento",
       "display": "Exibição",
       "readableLineLength": "Comprimento de linha legível",
       "readableLineLengthDesc": "Limitar o comprimento máximo da linha. Menos conteúdo cabe na tela, mas blocos longos de texto ficam mais legíveis",
@@ -533,6 +537,10 @@
     "typeLink": "Link",
     "typeCheckbox": "Caixa de seleção",
     "selectType": "Selecionar tipo"
+  },
+  "editor": {
+    "undo": "Desfazer",
+    "redo": "Refazer"
   },
   "graphView": {
     "noNotes": "Nenhuma nota para exibir",

@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "Der Standard-Bearbeitungsmodus, mit dem ein neuer Tab startet",
       "livePreview": "Live-Vorschau",
       "sourceMode": "Quellmodus",
+      "editorType": "Editortyp",
+      "editorTypeDesc": "Wählen Sie zwischen Markdown (Code-Editor) oder Dokument (Textverarbeitung)",
+      "markdownEditor": "Markdown",
+      "documentEditor": "Dokument",
       "display": "Anzeige",
       "readableLineLength": "Lesbare Zeilenlänge",
       "readableLineLengthDesc": "Maximale Zeilenlänge begrenzen. Weniger Inhalt ist sichtbar, aber lange Textblöcke sind besser lesbar",
@@ -533,6 +537,10 @@
     "typeLink": "Link",
     "typeCheckbox": "Kontrollkästchen",
     "selectType": "Typ wählen"
+  },
+  "editor": {
+    "undo": "Rückgängig",
+    "redo": "Wiederherstellen"
   },
   "graphView": {
     "noNotes": "Keine Notizen zum Anzeigen",

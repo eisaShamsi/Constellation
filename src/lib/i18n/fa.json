@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "حالت ویرایش پیش‌فرضی که یک تب جدید با آن شروع می‌شود",
       "livePreview": "پیش‌نمایش زنده",
       "sourceMode": "حالت منبع",
+      "editorType": "نوع ویرایشگر",
+      "editorTypeDesc": "انتخاب بین ویرایشگر Markdown (ویرایشگر کد) یا سند (شبیه واژه‌پرداز)",
+      "markdownEditor": "Markdown",
+      "documentEditor": "سند",
       "display": "نمایش",
       "readableLineLength": "طول خط خوانا",
       "readableLineLengthDesc": "محدود کردن حداکثر طول خط. محتوای کمتری در صفحه جا می‌شود، اما بلوک‌های بلند متن خواناتر می‌شوند",
@@ -533,6 +537,10 @@
     "typeLink": "پیوند",
     "typeCheckbox": "کادر انتخاب",
     "selectType": "انتخاب نوع"
+  },
+  "editor": {
+    "undo": "واگرد",
+    "redo": "ازنو"
   },
   "graphView": {
     "noNotes": "یادداشتی برای نمایش وجود ندارد",

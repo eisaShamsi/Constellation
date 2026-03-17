@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "Le mode d'édition par défaut avec lequel un nouvel onglet démarre",
       "livePreview": "Aperçu en direct",
       "sourceMode": "Mode source",
+      "editorType": "Type d'éditeur",
+      "editorTypeDesc": "Choisissez entre Markdown (éditeur de code) ou Document (similaire à un traitement de texte)",
+      "markdownEditor": "Markdown",
+      "documentEditor": "Document",
       "display": "Affichage",
       "readableLineLength": "Longueur de ligne lisible",
       "readableLineLengthDesc": "Limiter la longueur maximale des lignes. Moins de contenu est visible à l'écran, mais les longs blocs de texte sont plus lisibles",
@@ -533,6 +537,10 @@
     "typeLink": "Lien",
     "typeCheckbox": "Case à cocher",
     "selectType": "Choisir le type"
+  },
+  "editor": {
+    "undo": "Annuler",
+    "redo": "Rétablir"
   },
   "graphView": {
     "noNotes": "Aucune note à afficher",

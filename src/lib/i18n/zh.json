@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "新标签页启动时的默认编辑模式",
       "livePreview": "实时预览",
       "sourceMode": "源码模式",
+      "editorType": "编辑器类型",
+      "editorTypeDesc": "选择 Markdown（代码编辑器）或文档（类似文字处理器）编辑方式",
+      "markdownEditor": "Markdown",
+      "documentEditor": "文档",
       "display": "显示",
       "readableLineLength": "可读行宽",
       "readableLineLengthDesc": "限制最大行宽。屏幕上显示的内容较少，但长文本块更易阅读",
@@ -533,6 +537,10 @@
     "typeLink": "链接",
     "typeCheckbox": "复选框",
     "selectType": "选择类型"
+  },
+  "editor": {
+    "undo": "撤销",
+    "redo": "重做"
   },
   "graphView": {
     "noNotes": "没有可显示的笔记",

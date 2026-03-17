@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "Yeni bir sekmenin başlayacağı varsayılan düzenleme modu",
       "livePreview": "Canlı önizleme",
       "sourceMode": "Kaynak modu",
+      "editorType": "Editör türü",
+      "editorTypeDesc": "Markdown (kod editörü) veya Belge (kelime işlemci benzeri) düzenleme arasında seçim yapın",
+      "markdownEditor": "Markdown",
+      "documentEditor": "Belge",
       "display": "Görüntüleme",
       "readableLineLength": "Okunabilir satır uzunluğu",
       "readableLineLengthDesc": "Maksimum satır uzunluğunu sınırla. Ekranda daha az içerik görünür, ancak uzun metin blokları daha okunabilir olur",
@@ -533,6 +537,10 @@
     "typeLink": "Bağlantı",
     "typeCheckbox": "Onay kutusu",
     "selectType": "Tür seç"
+  },
+  "editor": {
+    "undo": "Geri al",
+    "redo": "Yinele"
   },
   "graphView": {
     "noNotes": "Gösterilecek not yok",

@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "وہ ڈیفالٹ ایڈیٹنگ موڈ جس کے ساتھ نیا ٹیب شروع ہوتا ہے",
       "livePreview": "لائیو پیش نظارہ",
       "sourceMode": "سورس موڈ",
+      "editorType": "ایڈیٹر کی قسم",
+      "editorTypeDesc": "Markdown (کوڈ ایڈیٹر) یا دستاویز (ورڈ پروسیسر جیسا) ایڈیٹنگ میں سے انتخاب کریں",
+      "markdownEditor": "Markdown",
+      "documentEditor": "دستاویز",
       "display": "ڈسپلے",
       "readableLineLength": "پڑھنے کے قابل لائن کی لمبائی",
       "readableLineLengthDesc": "زیادہ سے زیادہ لائن کی لمبائی محدود کریں۔ اسکرین پر کم مواد آتا ہے، لیکن لمبے متن کے بلاکس زیادہ پڑھنے کے قابل ہوتے ہیں",
@@ -533,6 +537,10 @@
     "typeLink": "لنک",
     "typeCheckbox": "چیک باکس",
     "selectType": "قسم منتخب کریں"
+  },
+  "editor": {
+    "undo": "واپس کریں",
+    "redo": "دوبارہ کریں"
   },
   "graphView": {
     "noNotes": "دکھانے کے لیے کوئی نوٹس نہیں",

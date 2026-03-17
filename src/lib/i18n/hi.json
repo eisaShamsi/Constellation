@@ -65,6 +65,10 @@
       "defaultEditingModeDesc": "वह डिफ़ॉल्ट संपादन मोड जिसके साथ एक नया टैब शुरू होता है",
       "livePreview": "लाइव पूर्वावलोकन",
       "sourceMode": "सोर्स मोड",
+      "editorType": "संपादक प्रकार",
+      "editorTypeDesc": "Markdown (कोड संपादक) या दस्तावेज़ (वर्ड प्रोसेसर जैसा) संपादन चुनें",
+      "markdownEditor": "Markdown",
+      "documentEditor": "दस्तावेज़",
       "display": "प्रदर्शन",
       "readableLineLength": "पठनीय लाइन लंबाई",
       "readableLineLengthDesc": "अधिकतम लाइन लंबाई सीमित करें। स्क्रीन पर कम सामग्री दिखती है, लेकिन लंबे टेक्स्ट ब्लॉक अधिक पठनीय होते हैं",
@@ -533,6 +537,10 @@
     "typeLink": "लिंक",
     "typeCheckbox": "चेकबॉक्स",
     "selectType": "प्रकार चुनें"
+  },
+  "editor": {
+    "undo": "पूर्ववत करें",
+    "redo": "फिर से करें"
   },
   "graphView": {
     "noNotes": "दिखाने के लिए कोई नोट नहीं",
