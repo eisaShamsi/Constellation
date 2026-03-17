@@ -1071,7 +1071,14 @@
 	// Listen for fold-all / unfold-all events from command palette
 	function handleFoldAll() { if (view) foldAll(view); }
 	function handleUnfoldAll() { if (view) unfoldAll(view); }
-	function handleInsertTable() { showTableGridPicker(); }
+	function handleInsertTable(e: Event) {
+		const detail = (e as CustomEvent).detail;
+		if (detail?.rows && detail?.cols) {
+			insertTableFromGrid(detail.rows, detail.cols);
+		} else {
+			showTableGridPicker();
+		}
+	}
 
 	// Check if the current selection looks like tabular data (for Convert to Table button)
 	let selectionIsTabular = $state(false);

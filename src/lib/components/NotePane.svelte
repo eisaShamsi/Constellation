@@ -8,6 +8,7 @@
 	import PropertyEditor from './PropertyEditor.svelte';
 	import CodeMirrorEditor from './CodeMirrorEditor.svelte';
 	import BaseView from './BaseView.svelte';
+	import TableGridPicker from './TableGridPicker.svelte';
 	import type { BaseDefinition } from '$lib/bases/types';
 
 	let {
@@ -82,6 +83,7 @@
 	let saveTimeout: ReturnType<typeof setTimeout>;
 	let saving = $state(false);
 	let propsCollapsed = $state(false);
+	let showTablePicker = $state(false);
 	let noteWidth = $state(100); // percentage 50-100
 	let rafId: number | null = null;
 	let rafId2: number | null = null;
@@ -449,6 +451,17 @@ ${contentEl.innerHTML}
 							title={$t('notePane.insertTemplate')}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
 						</button>
+						<button class="bc-edit-btn" onclick={() => showTablePicker = !showTablePicker}
+							title={$t('toolbar.insertTable')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+						</button>
+						{#if showTablePicker}
+							<div class="bc-table-picker">
+								<TableGridPicker x={0} y={0}
+									onInsert={(rows, cols) => { showTablePicker = false; document.dispatchEvent(new CustomEvent('constellation:insert-table', { detail: { rows, cols } })); }}
+									onClose={() => showTablePicker = false} />
+							</div>
+						{/if}
 					{/if}
 					<button class="bc-edit-btn" onclick={handleExportHTML} title={$t('notePane.exportHtml')}>
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -650,6 +663,14 @@ ${contentEl.innerHTML}
 	}
 	.bc-edit-btn:hover { background: var(--background-modifier-border); color: var(--text-normal); }
 	.bc-edit-btn.active { color: var(--interactive-accent); }
+
+	.bc-table-picker {
+		position: absolute; top: 100%; right: 0; z-index: 50;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+		padding: 8px;
+	}
 
 	.note-scroll {
 		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 100%; align-self: center; width: 100%;
