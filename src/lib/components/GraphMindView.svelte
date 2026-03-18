@@ -646,16 +646,7 @@
 	{/if}
 
 	<!-- Stats bar -->
-	<!-- 3D Axis Labels (overlay — positioned to match gizmo) -->
-	{#if isTilted}
-		<div class="gm-axis-labels">
-			<span class="gm-axis-x">X</span>
-			<span class="gm-axis-y">Y</span>
-			<span class="gm-axis-z">Z</span>
-		</div>
-	{/if}
-
-	<div class="gm-stats" dir="auto">
+<div class="gm-stats" dir="auto">
 		<span>{nodeCount} {$t('graphView.nodes') || 'nodes'}</span>
 		<span class="gm-sep">&middot;</span>
 		<span>{edgeCount} {$t('graphView.edges') || 'edges'}</span>
@@ -879,17 +870,7 @@
 	.gm-cluster-count { font-size: 9px; color: var(--text-faint); }
 
 	/* 3D Axis gizmo labels */
-	.gm-axis-labels {
-		position: absolute; bottom: 55px; left: 15px; z-index: 10;
-		pointer-events: none;
-		display: flex; gap: 8px;
-		font-size: 10px; font-weight: 700; font-family: monospace;
-	}
-	.gm-axis-x { color: #ef4444; }
-	.gm-axis-y { color: #22c55e; }
-	.gm-axis-z { color: #3b82f6; }
-
-	/* Context menu */
+/* Context menu */
 	.gm-context-menu {
 		position: fixed; z-index: 100;
 		background: var(--background-primary);

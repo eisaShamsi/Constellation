@@ -99,6 +99,7 @@ export class GraphEngine {
 	private app: Application | null = null;
 	private linkGfx: Graphics = new Graphics();
 	private gizmoGfx: Graphics = new Graphics(); // 3D axis guide
+	private gizmoLabels: Text[] = []; // X, Y, Z labels on axes
 	private nodeContainer: Container = new Container();
 	private nodeGfx: Graphics[] = [];
 	private labelPool: Map<number, Text> = new Map();
@@ -231,6 +232,23 @@ export class GraphEngine {
 		this.app.stage.addChild(this.linkGfx);
 		this.app.stage.addChild(this.nodeContainer);
 		this.app.stage.addChild(this.gizmoGfx);
+
+		// Create gizmo axis labels (X, Y, Z)
+		const gizmoLabelStyle = (color: string) => new TextStyle({
+			fontSize: 13, fontWeight: 'bold', fontFamily: 'monospace', fill: color,
+		});
+		const axisLabels = [
+			{ text: 'X', color: '#ef4444' },
+			{ text: 'Y', color: '#22c55e' },
+			{ text: 'Z', color: '#3b82f6' },
+		];
+		for (const al of axisLabels) {
+			const t = new Text({ text: al.text, style: gizmoLabelStyle(al.color) });
+			t.anchor.set(0.5, 0.5);
+			t.visible = false;
+			this.app.stage.addChild(t);
+			this.gizmoLabels.push(t);
+		}
 
 		// Event listeners on the canvas
 		const canvas = this.app.canvas as HTMLCanvasElement;
@@ -1568,24 +1586,28 @@ export class GraphEngine {
 	/** Draw 3D axis gizmo in bottom-left corner (only when rotated) */
 	private drawAxisGizmo(w: number, h: number, dark: boolean): void {
 		this.gizmoGfx.clear();
-		if (!this.isRotated()) return;
+		const rotated = this.isRotated();
 
-		const cx = 50; // center X (bottom-left corner)
-		const cy = h - 50; // center Y
-		const axisLen = 30; // length of each axis line
+		// Hide labels when not rotated
+		for (const lbl of this.gizmoLabels) lbl.visible = false;
+		if (!rotated) return;
+
+		const cx = 60;
+		const cy = h - 120;
+		const axisLen = 45;
 
 		const rx = this.camRotX * Math.PI / 180;
 		const ry = this.camRotY * Math.PI / 180;
 		const rz = this.camRotZ * Math.PI / 180;
 
-		// Rotate axis unit vectors through camera rotation
 		const axes = [
-			{ label: 'X', ux: 1, uy: 0, uz: 0, color: 0xef4444 }, // red
-			{ label: 'Y', ux: 0, uy: 1, uz: 0, color: 0x22c55e }, // green
-			{ label: 'Z', ux: 0, uy: 0, uz: 1, color: 0x3b82f6 }, // blue
+			{ ux: 1, uy: 0, uz: 0, color: 0xef4444 }, // X red
+			{ ux: 0, uy: 1, uz: 0, color: 0x22c55e }, // Y green
+			{ ux: 0, uy: 0, uz: 1, color: 0x3b82f6 }, // Z blue
 		];
 
-		for (const axis of axes) {
+		for (let i = 0; i < axes.length; i++) {
+			const axis = axes[i];
 			let x = axis.ux, y = axis.uy, z = axis.uz;
 
 			// Apply same rotation as camera (Z → X → Y)
@@ -1605,26 +1627,31 @@ export class GraphEngine {
 				x = x2; z = z2;
 			}
 
-			// Project to 2D (simple orthographic for gizmo)
 			const ex = cx + x * axisLen;
 			const ey = cy + y * axisLen;
 
 			// Draw axis line
 			this.gizmoGfx.moveTo(cx, cy);
 			this.gizmoGfx.lineTo(ex, ey);
-			this.gizmoGfx.stroke({ width: 2, color: axis.color, alpha: 0.9 });
+			this.gizmoGfx.stroke({ width: 2.5, color: axis.color, alpha: 0.9 });
 
 			// Draw axis endpoint dot
-			this.gizmoGfx.circle(ex, ey, 3);
+			this.gizmoGfx.circle(ex, ey, 4);
 			this.gizmoGfx.fill({ color: axis.color, alpha: 0.9 });
+
+			// Position text label at end of axis (offset slightly outward)
+			const labelOffset = 14;
+			const dx = x !== 0 ? Math.sign(x) * labelOffset : 0;
+			const dy = y !== 0 ? Math.sign(y) * labelOffset : 0;
+			const lbl = this.gizmoLabels[i];
+			lbl.x = ex + dx;
+			lbl.y = ey + dy;
+			lbl.visible = true;
 		}
 
 		// Draw center dot
-		this.gizmoGfx.circle(cx, cy, 2);
+		this.gizmoGfx.circle(cx, cy, 3);
 		this.gizmoGfx.fill({ color: dark ? 0xffffff : 0x333333, alpha: 0.5 });
-
-		// Draw labels using gizmo graphics text (Pixi Text is expensive, use simple approach)
-		// Labels are drawn as part of the gizmo overlay in the Svelte component instead
 	}
 
 	private updateLabels(w: number, h: number, hovered: number, neighbors: Set<number> | null | undefined, dark: boolean): void {
