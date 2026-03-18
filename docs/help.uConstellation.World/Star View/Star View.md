@@ -1,135 +1,222 @@
 ---
 aliases:
   - Star View
-  - Sky view
+  - Sky View
+  - GraphMind
+  - Graph View
   - Link star view
   - Network view
   - Note connections
-description: Visualize and explore the connections between your notes using Constellation's interactive Star View.
+  - 3D graph
+description: Visualize and explore the connections between your notes using Constellation's interactive Star View powered by the GraphMind engine.
 ---
 
 # Star View
 
-Star View displays your notes as an interactive network of nodes and links. Each node is a note, and each line represents a `[[wikilink]]` between notes. The more connections a note has, the larger its node appears.
+Star View displays your notes as an interactive network of nodes and links, powered by the **GraphMind** engine (Pixi.js WebGL). Each node is a note, and each line represents a `[[wikilink]]` between notes. The more connections a note has, the larger its node appears.
 
 ## Opening Star View
 
 | Method | Action |
 |--------|--------|
 | **Mission Control** | Press `Ctrl+P`, type "star view" |
-| **Ribbon** | Click the star view icon in the top toolbar |
+| **Ribbon** | Click the graph icon in the sidebar |
+| **Keyboard** | `Ctrl+G` |
 
-Press `Escape` to close the star view.
-
----
-
-## Interacting with the star view
-
-- **Pan**: Click and drag on empty space.
-- **Zoom**: Scroll wheel or pinch gesture.
-- **Drag nodes**: Click and drag any node to reposition it.
-- **Hover**: Shows the note name as a tooltip and highlights connected nodes.
-- **Click a node**: Opens that note in a new tab.
-- **Legend**: Click a library name in the legend to toggle its visibility.
+Press `Escape` to close the Star View.
 
 ---
 
-## Controls panel
+## Interacting with the graph
 
-Click the gear icon (top-right of the star view) to open the **Settings panel**. It has four collapsible sections:
+### Basic interactions
 
-### Filters
+| Input | Behavior |
+|-------|----------|
+| **Pan** | Click and drag on empty space |
+| **Zoom** | Scroll wheel (2D) or `Ctrl+Scroll` (3D) |
+| **Drag nodes** | Click and drag any node to reposition it |
+| **Hover** | Shows the note name in the status bar and highlights connected nodes and edges |
+| **Click a node** | Opens that note in the editor |
+| **Double-click a node** | Zooms in and centers on that node |
+| **Right-click a node** | Opens the context menu |
 
-Control which notes appear on the star view.
+### Context menu
+
+Right-click any node to access:
+
+| Action | Description |
+|--------|-------------|
+| **Open** | Opens the note in the editor |
+| **Focus** | Enters focus mode centered on this node |
+| **Pin** | Locks the node at its current position. Click again to unpin. |
+| **Hide** | Hides the node from the graph. Use "Show all" in the toolbar to reveal hidden nodes. |
+
+---
+
+## 3D navigation
+
+Star View supports full 3D navigation — fly through your notes like navigating through stars.
+
+### Entering 3D mode
+
+**Middle-click and drag** (or **Alt+click and drag**) to rotate the graph in 3D space. Once rotated, 3D navigation controls become active.
+
+### 3D controls
+
+| Input | Action |
+|-------|--------|
+| **Middle-click drag** | Rotate around X and Y axes |
+| **Shift+Middle-click drag** | Rotate around Z axis |
+| **W / Arrow Up** | Fly forward (into the screen) |
+| **S / Arrow Down** | Fly backward |
+| **A / Arrow Left** | Strafe left |
+| **D / Arrow Right** | Strafe right |
+| **Q** | Move down |
+| **E** | Move up |
+| **Ctrl+Scroll** | Zoom (change field of view) |
+| **Regular Scroll** | Fly forward/backward along camera direction |
+| **0** | Reset rotation back to flat 2D view |
+| **Reset button** (↺ icon) | Same as pressing `0` |
+
+### XYZ axis gizmo
+
+When in 3D mode, a color-coded axis guide appears in the bottom-left corner:
+
+| Axis | Color | Direction |
+|------|-------|-----------|
+| **X** | Red | Left–Right |
+| **Y** | Green | Up–Down |
+| **Z** | Blue | Forward–Back (depth) |
+
+The gizmo rotates with the camera so you always know your orientation.
+
+### Hover and click in 3D
+
+You can hover over and click nodes while navigating in 3D. The note name appears in the status bar, and clicking opens the note — just like in 2D mode.
+
+---
+
+## Layout modes
+
+Star View offers three layout algorithms. Switch between them by pressing `Ctrl+L` or using the layout button in the toolbar.
+
+| Mode | Description | Best for |
+|------|-------------|----------|
+| **Organic** | Force-directed layout. Clusters emerge naturally from link density. | General exploration — the default mode. |
+| **Hierarchical** | Top-down directed acyclic graph (DAG). | Structured libraries with parent–child relationships. |
+| **Temporal** | Nodes arranged along a horizontal time axis by creation date. | Seeing when notes were created and how the library grew. |
+
+Switching modes triggers a smooth animated transition that preserves your spatial orientation.
+
+> [!tip]
+> Hierarchical mode is especially useful for notes that follow a tree-like structure (e.g., MOCs linking to subtopics). Temporal mode reveals your intellectual timeline — when clusters of related notes were created.
+
+---
+
+## Focus mode
+
+Focus mode shows only a specific note and its neighborhood. It is a dynamic, interactive local graph.
+
+### Entering focus mode
+
+- **Right-click a node** → **Focus**
+- **Press Space** to toggle focus mode on the currently active note
+
+### Focus controls
+
+When in focus mode, a control bar appears at the top:
 
 | Control | Description |
 |---------|-------------|
-| **Search** | Filter nodes by name or path. Supports `path:` prefix for folder filtering (e.g., `path:Projects`). |
-| **Existing files only** | Hides "ghost" nodes — links to notes that don't exist yet. |
-| **Orphans** | Toggle notes that have no links. When off, only connected notes appear. |
+| **Depth slider** (1–5) | How many hops of connections to show. 1 = direct links only, 5 = five levels deep. |
+| **Direction filter** (↔ / ← / →) | Show all links, incoming only, or outgoing only. |
+| **Exit button** (×) | Return to the full graph view |
+
+### Navigation breadcrumb
+
+As you click through nodes in focus mode, a breadcrumb trail appears at the top showing your navigation path. Click any breadcrumb to jump back to that note's local graph.
 
 > [!tip]
-> Combine search with library legend toggles for precise filtering. For example, hide all libraries except one, then search for a specific folder path.
+> Combine focus mode with the depth slider to progressively explore a note's neighborhood. Start at depth 1 to see direct connections, then increase to discover second and third-degree relationships.
 
-### Groups
+---
 
-Create color-coded groups to visually categorize nodes.
+## Search-to-highlight
 
-1. Click **New group**.
-2. Enter a search query (same syntax as the filter: plain text or `path:folder`).
-3. Choose a color using the color picker.
-4. All matching nodes will be painted with that color.
+Press `Ctrl+F` to open the search bar. Type a query to highlight matching notes.
 
-You can create multiple groups. The first matching group takes priority.
+Unlike a filter, search-to-highlight **dims** non-matching nodes without removing them. You retain the full graph structure and spatial context while the matching nodes are highlighted.
 
 > [!tip]
-> Use groups to color-code by project or topic. For example:
-> - `path:Projects` with blue
-> - `path:Resources` with green
-> - `path:Archive` with gray
+> Search works in both the full graph and focus mode. You can search while in 3D mode as well.
 
-### Display
+---
 
-Control the visual appearance of the star view.
+## Settings panel
+
+Click the gear icon (⚙) in the toolbar to open the settings panel. It has three tabs:
+
+### Graph Appearance
+
+| Control | Description | Default |
+|---------|-------------|---------|
+| **Node size** | Scale all nodes larger or smaller | 1.5 |
+| **Label visibility** | When labels appear: On hover, Always, or None | On hover |
+| **Label font size** | Size of note name labels | 12 |
+| **Link thickness** | Width of edge lines | 1 |
+| **Show orphan notes** | Include notes with no links | On |
+
+### Physics
+
+| Control | Description | Default |
+|---------|-------------|---------|
+| **Repulsion** | How strongly nodes push apart | 50 |
+| **Link force** | How strongly linked nodes attract | 0.05 |
+| **Link distance** | Target distance between linked nodes | 30 |
+| **Reheat simulation** | Restart the force layout from the current state | — |
+
+### AI
+
+Settings for semantic AI links (Phase 2 — requires local embedding model).
 
 | Control | Description |
 |---------|-------------|
-| **Arrows** | Show directional arrowheads on links. |
-| **Text fade threshold** | Controls the zoom level at which note labels become visible. Lower values show labels earlier. |
-| **Node size** | Scale all nodes larger or smaller. Nodes still scale relative to their connection count. |
-| **Link thickness** | Scale the width of link lines. |
-| **Animate** | Toggle the force simulation animation. When off, the layout is computed instantly and frozen. |
-
-### Forces
-
-Control the physics simulation that arranges nodes.
-
-| Force | Description | Effect of increasing |
-|-------|-------------|---------------------|
-| **Center force** | Pulls everything toward the center. | Sky view becomes more compact. |
-| **Repel force** | Pushes nodes apart. | Nodes spread out, clusters separate. |
-| **Link force** | Pulls linked nodes closer together. | Tighter clusters around connected notes. |
-| **Link distance** | Minimum distance between linked nodes. | More spacing between connected nodes. |
-
-> [!tip]
-> A good starting point for readable star views: high link force, moderate repel force, and moderate center force. This naturally forms visible clusters around your hub notes.
-
-Click the **reset** button (circular arrow icon) to restore all controls to their default values.
+| **Show semantic links** | Toggle AI-detected dashed edges |
+| **Confidence threshold** | Slider to filter semantic links by similarity score |
 
 ---
 
-## Library clusters and child universes
+## Legend
 
-When you have multiple libraries, the star view automatically:
+The legend appears in the bottom-right corner and shows color assignments for your libraries.
 
-- **Colors nodes** by library (each library gets a unique color).
-- **Draws convex hulls** — semi-transparent colored regions around each library's notes.
-- **Shows a legend** in the top-left corner listing each library with its note count.
-- **Dashes cross-library links** — links between notes in different libraries appear as dashed lines.
+### Color mode toggle
 
-Click any library name in the legend to hide or show that library's nodes.
+Click **Library** or **Folder** buttons at the top of the legend to switch how nodes are colored:
 
-### Child universe libraries in the star view
+| Mode | Coloring |
+|------|----------|
+| **Library** | Each library gets a unique color |
+| **Folder** | Each top-level folder gets a unique color |
 
-If your universe has [[Universe#Child universes (Universe of Universes)|child universes]], their libraries appear in the star view automatically alongside your own libraries. Each child universe library gets its own color, legend entry, and convex hull — just like your own libraries. Cross-library links between parent and child universe notes are shown as dashed lines.
+### Visibility checkboxes
+
+Each legend entry has a checkbox. Uncheck a library or folder to hide its nodes from the graph. This lets you focus on specific subsets of your knowledge base.
 
 > [!tip]
-> Use the legend to toggle child universe libraries on or off. This makes it easy to focus on just your own libraries or explore how your notes connect to notes in child universes.
+> When in Folder mode, the folder count is shown in parentheses. Long folder lists are scrollable.
 
 ---
 
-## Link types
+## Status bar
 
-If your notes use typed links (e.g., `[[note|type:related-to]]`), they appear with distinct colors:
+The bottom-left status bar shows:
 
-| Type | Color |
-|------|-------|
-| related-to | Blue |
-| prerequisite | Red |
-| see-also | Green |
-| contradicts | Amber |
-| supports | Purple |
-| extends | Pink |
+- **Node count** — total visible nodes
+- **Edge count** — total visible edges
+- **MOC count** — number of Maps of Content (high-connectivity hub notes)
+- **Hovered note name** — appears when you hover over a node
 
 ---
 
@@ -137,11 +224,33 @@ If your notes use typed links (e.g., `[[note|type:related-to]]`), they appear wi
 
 | Shortcut | Action |
 |----------|--------|
+| `Ctrl+G` | Open Star View |
 | `Escape` | Close Star View |
-| `Ctrl+P` → "star view" | Open Star View |
+| `Ctrl+F` | Toggle search-to-highlight |
+| `Ctrl+L` | Cycle layout mode (Organic → Hierarchical → Temporal) |
+| `Space` | Toggle focus mode on active note |
+| `0` | Reset 3D rotation to flat 2D |
+| `W/A/S/D` | Fly through 3D space (when rotated) |
+| `Q/E` | Move down/up in 3D space |
 
 ---
 
 ## RTL support
 
-Star View works correctly with Arabic, Hebrew, and other RTL note names. Labels render in the correct direction and tooltips display RTL text properly.
+Star View provides first-class support for Arabic, Hebrew, and other RTL scripts:
+
+- **Node labels** auto-detect script direction — Arabic titles render right-to-left
+- **Legend items** flip dot/text order based on content language
+- **Tooltips and panels** respect RTL layout
+- **Arabic font fallback** — labels use system Arabic fonts (Noto Naskh Arabic, Segoe UI) when the primary font lacks Arabic glyph coverage
+
+---
+
+## Technical notes
+
+Star View is powered by the **GraphMind** engine, a Pixi.js WebGL renderer with a d3-force simulation running in a dedicated Web Worker. This architecture ensures:
+
+- **60fps rendering** even with thousands of nodes
+- **Non-blocking layout** — force simulation never freezes the UI
+- **Hover is visual-only** — hovering never triggers physics recalculation
+- **The simulation stops after settling** — once nodes find their positions, the physics engine fully stops. Only dragging a node or changing settings restarts it.

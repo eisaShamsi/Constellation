@@ -19,7 +19,50 @@ description: Learn how to edit and format notes in Constellation, including keyb
 
 # Editing and formatting
 
-Constellation uses a CodeMirror 6 editor with full Markdown support. You can write and format notes using keyboard shortcuts, the floating formatting toolbar, slash commands, or by typing Markdown syntax directly.
+Constellation offers two editor modes, selectable in **Settings > Editor**:
+
+| Mode | Engine | Best for |
+|------|--------|----------|
+| **Markdown** (default) | CodeMirror 6 | Power users who prefer direct Markdown syntax control |
+| **Document** | TipTap (ProseMirror) | Word-processor experience — WYSIWYG editing like Google Docs or Microsoft Word |
+
+Both modes save notes as standard Markdown files. The Document editor converts between HTML and Markdown transparently — your files remain portable regardless of which mode you use.
+
+### Switching editor mode
+
+Go to **Settings > Editor > Editor type** and choose **Markdown editor** or **Document editor**.
+
+---
+
+## Document editor (TipTap)
+
+The Document editor provides a familiar word-processor toolbar with buttons for:
+
+| Button | Action |
+|--------|--------|
+| **Undo / Redo** | Step through edit history |
+| **H1 / H2 / H3** | Heading levels |
+| **B / I / U / S** | Bold, Italic, Underline, Strikethrough |
+| **Highlight** | Background highlight |
+| **Align** | Left, Center, Right text alignment |
+| **Lists** | Bullet list, Numbered list, Task list |
+| **Blockquote** | Indented quote block |
+| **Code block** | Fenced code block |
+| **Horizontal rule** | Divider line |
+| **Table** | Insert/manage tables (rows, columns, delete) |
+| **Link** | Insert hyperlink |
+| **Image** | Insert image |
+
+All standard keyboard shortcuts (Ctrl+B, Ctrl+I, Ctrl+Z, etc.) work in the Document editor.
+
+> [!tip]
+> The Document editor is ideal for users who prefer not to learn Markdown syntax. Everything you type is rendered immediately as formatted text.
+
+---
+
+## Markdown editor (CodeMirror)
+
+The Markdown editor gives you full control over the raw Markdown syntax with live preview, formatting toolbar, and smart editing features.
 
 ---
 
