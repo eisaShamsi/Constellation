@@ -141,14 +141,17 @@ export class GraphEngine {
 	// Resize
 	private resizeObserver: ResizeObserver | null = null;
 
-	// Perspective tilt
-	private tiltX: number = 0; // degrees rotation around X axis
-	private tiltY: number = 0; // degrees rotation around Y axis
-	private isTilting: boolean = false;
-	private tiltStartX: number = 0;
-	private tiltStartY: number = 0;
-	private tiltBaseX: number = 0;
-	private tiltBaseY: number = 0;
+	// 3D Camera rotation (degrees)
+	private camRotX: number = 0; // pitch
+	private camRotY: number = 0; // yaw
+	private camRotZ: number = 0; // roll
+	private camDistance: number = 1200; // perspective distance
+	private isRotating: boolean = false;
+	private rotStartX: number = 0;
+	private rotStartY: number = 0;
+	private rotBaseX: number = 0;
+	private rotBaseY: number = 0;
+	private rotBaseZ: number = 0;
 
 	// Redraw flag
 	private needsRedraw: boolean = true;
@@ -528,41 +531,88 @@ export class GraphEngine {
 		}
 	}
 
-	// ─── Perspective Tilt ───────────────────────────────────────
+	// ─── 3D Camera ─────────────────────────────────────────────
 
-	private applyTilt(canvas: HTMLCanvasElement): void {
-		canvas.style.transform = `perspective(1200px) rotateX(${this.tiltX}deg) rotateY(${this.tiltY}deg)`;
-		canvas.style.transformOrigin = 'center center';
-		const tilted = Math.abs(this.tiltX) > 1 || Math.abs(this.tiltY) > 1;
-		this.callbacks.onTiltChange?.(tilted);
+	/**
+	 * Project a 2D graph point (gx, gy, 0) through 3D rotation + perspective.
+	 * Returns screen (sx, sy, depth) where depth is used for size scaling.
+	 */
+	private project3D(gx: number, gy: number, w: number, h: number): { sx: number; sy: number; depth: number } {
+		// Convert degrees to radians
+		const rx = this.camRotX * Math.PI / 180;
+		const ry = this.camRotY * Math.PI / 180;
+		const rz = this.camRotZ * Math.PI / 180;
+
+		// Apply 2D view transform first (pan + zoom)
+		let x = gx * this.viewScale + this.viewX;
+		let y = gy * this.viewScale + this.viewY;
+		let z = 0;
+
+		// Rotate around Z axis (roll)
+		if (rz !== 0) {
+			const cosZ = Math.cos(rz), sinZ = Math.sin(rz);
+			const x2 = x * cosZ - y * sinZ;
+			const y2 = x * sinZ + y * cosZ;
+			x = x2; y = y2;
+		}
+
+		// Rotate around X axis (pitch)
+		if (rx !== 0) {
+			const cosX = Math.cos(rx), sinX = Math.sin(rx);
+			const y2 = y * cosX - z * sinX;
+			const z2 = y * sinX + z * cosX;
+			y = y2; z = z2;
+		}
+
+		// Rotate around Y axis (yaw)
+		if (ry !== 0) {
+			const cosY = Math.cos(ry), sinY = Math.sin(ry);
+			const x2 = x * cosY + z * sinY;
+			const z2 = -x * sinY + z * cosY;
+			x = x2; z = z2;
+		}
+
+		// Perspective projection
+		const d = this.camDistance;
+		const scale = d / (d + z);
+
+		return {
+			sx: x * scale + w / 2,
+			sy: y * scale + h / 2,
+			depth: scale, // >1 = closer, <1 = farther
+		};
 	}
 
 	resetTilt(): void {
-		this.tiltX = 0;
-		this.tiltY = 0;
-		const canvas = this.app?.canvas as HTMLCanvasElement;
-		if (canvas) {
-			// Animate back to flat
-			const startX = parseFloat(canvas.style.transform.match(/rotateX\(([-\d.]+)deg\)/)?.[1] || '0');
-			const startY = parseFloat(canvas.style.transform.match(/rotateY\(([-\d.]+)deg\)/)?.[1] || '0');
-			const frames = 15;
-			let frame = 0;
-			const animate = () => {
-				frame++;
-				const t = frame / frames;
-				const ease = t * (2 - t);
-				const rx = startX * (1 - ease);
-				const ry = startY * (1 - ease);
-				canvas.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg)`;
-				if (frame < frames) requestAnimationFrame(animate);
-				else canvas.style.transform = '';
-			};
-			requestAnimationFrame(animate);
-		}
+		// Animate back to flat
+		const startX = this.camRotX;
+		const startY = this.camRotY;
+		const startZ = this.camRotZ;
+		const frames = 20;
+		let frame = 0;
+
+		const animate = () => {
+			frame++;
+			const t = frame / frames;
+			const ease = t * t * (3 - 2 * t); // smoothstep
+			this.camRotX = startX * (1 - ease);
+			this.camRotY = startY * (1 - ease);
+			this.camRotZ = startZ * (1 - ease);
+			this.needsRedraw = true;
+			if (frame < frames) {
+				requestAnimationFrame(animate);
+			} else {
+				this.camRotX = 0;
+				this.camRotY = 0;
+				this.camRotZ = 0;
+				this.callbacks.onTiltChange?.(false);
+			}
+		};
+		requestAnimationFrame(animate);
 	}
 
-	getTilt(): { x: number; y: number } {
-		return { x: this.tiltX, y: this.tiltY };
+	isRotated(): boolean {
+		return Math.abs(this.camRotX) > 1 || Math.abs(this.camRotY) > 1 || Math.abs(this.camRotZ) > 1;
 	}
 
 	// ─── Layout Modes ──────────────────────────────────────────
@@ -871,12 +921,19 @@ export class GraphEngine {
 		const canvas = this.app?.canvas as HTMLCanvasElement;
 		if (!canvas) return;
 
-		if (this.isTilting) {
-			const dx = e.clientX - this.tiltStartX;
-			const dy = e.clientY - this.tiltStartY;
-			this.tiltY = Math.max(-60, Math.min(60, this.tiltBaseY + dx * 0.3));
-			this.tiltX = Math.max(-60, Math.min(60, this.tiltBaseX - dy * 0.3));
-			this.applyTilt(canvas);
+		if (this.isRotating) {
+			const dx = e.clientX - this.rotStartX;
+			const dy = e.clientY - this.rotStartY;
+			// Left/right drag = yaw (Y rotation), up/down = pitch (X rotation)
+			this.camRotY = this.rotBaseY + dx * 0.4;
+			this.camRotX = this.rotBaseX - dy * 0.4;
+			// Ctrl held during rotation = also add roll (Z rotation)
+			if (e.ctrlKey || e.metaKey) {
+				this.camRotZ = this.rotBaseZ + dx * 0.2;
+			}
+			this.needsRedraw = true;
+			const tilted = this.isRotated();
+			this.callbacks.onTiltChange?.(tilted);
 			return;
 		}
 
@@ -922,14 +979,15 @@ export class GraphEngine {
 	};
 
 	private onPointerDown = (e: PointerEvent): void => {
-		// Middle mouse button or Shift+left click = start tilting
+		// Middle mouse button or Shift+left click = start 3D rotation
 		if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
 			e.preventDefault();
-			this.isTilting = true;
-			this.tiltStartX = e.clientX;
-			this.tiltStartY = e.clientY;
-			this.tiltBaseX = this.tiltX;
-			this.tiltBaseY = this.tiltY;
+			this.isRotating = true;
+			this.rotStartX = e.clientX;
+			this.rotStartY = e.clientY;
+			this.rotBaseX = this.camRotX;
+			this.rotBaseY = this.camRotY;
+			this.rotBaseZ = this.camRotZ;
 			const canvas = this.app?.canvas as HTMLCanvasElement;
 			if (canvas) canvas.style.cursor = 'move';
 			return;
@@ -959,8 +1017,8 @@ export class GraphEngine {
 	private onPointerUp = (e: PointerEvent): void => {
 		const canvas = this.app?.canvas as HTMLCanvasElement;
 
-		if (this.isTilting) {
-			this.isTilting = false;
+		if (this.isRotating) {
+			this.isRotating = false;
 			if (canvas) canvas.style.cursor = this.hoveredIdx >= 0 ? 'pointer' : 'grab';
 			return;
 		}
@@ -1001,7 +1059,7 @@ export class GraphEngine {
 
 	private onPointerLeave = (): void => {
 		this.isPanning = false;
-		this.isTilting = false;
+		this.isRotating = false;
 		this.draggedNodeIdx = -1;
 		if (this.hoveredIdx !== -1) {
 			this.hoveredIdx = -1;
@@ -1115,6 +1173,7 @@ export class GraphEngine {
 		this.linkGfx.clear();
 		const normalEdgeColor = dark ? 0x475569 : 0xbcccdc;
 		const normalEdgeAlpha = dark ? 0.25 : 0.15;
+		const is3D = this.isRotated();
 
 		for (const link of this.links) {
 			// Skip edges involving hidden nodes
@@ -1123,10 +1182,17 @@ export class GraphEngine {
 			const src = this.nodes[link.sourceIdx];
 			const tgt = this.nodes[link.targetIdx];
 
-			const sx = src.x * this.viewScale + w / 2 + this.viewX;
-			const sy = src.y * this.viewScale + h / 2 + this.viewY;
-			const tx = tgt.x * this.viewScale + w / 2 + this.viewX;
-			const ty = tgt.y * this.viewScale + h / 2 + this.viewY;
+			let sx: number, sy: number, tx: number, ty: number;
+			if (is3D) {
+				const sp = this.project3D(src.x, src.y, w, h);
+				const tp = this.project3D(tgt.x, tgt.y, w, h);
+				sx = sp.sx; sy = sp.sy; tx = tp.sx; ty = tp.sy;
+			} else {
+				sx = src.x * this.viewScale + w / 2 + this.viewX;
+				sy = src.y * this.viewScale + h / 2 + this.viewY;
+				tx = tgt.x * this.viewScale + w / 2 + this.viewX;
+				ty = tgt.y * this.viewScale + h / 2 + this.viewY;
+			}
 
 			// Focus/local mode: skip edges where both ends are outside visible set
 			if (visibleSet && !visibleSet.has(link.sourceIdx) && !visibleSet.has(link.targetIdx)) continue;
@@ -1164,8 +1230,14 @@ export class GraphEngine {
 				continue;
 			}
 
-			const sx = n.x * this.viewScale + w / 2 + this.viewX;
-			const sy = n.y * this.viewScale + h / 2 + this.viewY;
+			let sx: number, sy: number, depthScale = 1;
+			if (is3D) {
+				const p = this.project3D(n.x, n.y, w, h);
+				sx = p.sx; sy = p.sy; depthScale = p.depth;
+			} else {
+				sx = n.x * this.viewScale + w / 2 + this.viewX;
+				sy = n.y * this.viewScale + h / 2 + this.viewY;
+			}
 
 			const isHovered = i === hovered;
 			const isActive = i === this.activeNodeIdx;
@@ -1179,7 +1251,7 @@ export class GraphEngine {
 			else if (hovered >= 0 && !isHovered && !isNeighbor) alpha = DIM_ALPHA;
 			else if (hasSearch && !this.searchMatchSet.has(i) && hovered < 0) alpha = DIM_ALPHA;
 
-			const r = n.r * (isHovered ? 1.4 : isActive ? 1.3 : 1);
+			const r = n.r * (isHovered ? 1.4 : isActive ? 1.3 : 1) * depthScale;
 
 			gfx.clear();
 			gfx.circle(sx, sy, r);
@@ -1219,6 +1291,7 @@ export class GraphEngine {
 		if (this.config.labelVisibility === 'none') return;
 
 		const showAll = this.config.labelVisibility === 'always';
+		const is3D = this.isRotated();
 
 		for (let i = 0; i < this.nodes.length; i++) {
 			const n = this.nodes[i];
@@ -1228,8 +1301,14 @@ export class GraphEngine {
 
 			if (!showAll && !isHovered && !isActive) continue;
 
-			const sx = n.x * this.viewScale + w / 2 + this.viewX;
-			const sy = n.y * this.viewScale + h / 2 + this.viewY;
+			let sx: number, sy: number;
+			if (is3D) {
+				const p = this.project3D(n.x, n.y, w, h);
+				sx = p.sx; sy = p.sy;
+			} else {
+				sx = n.x * this.viewScale + w / 2 + this.viewX;
+				sy = n.y * this.viewScale + h / 2 + this.viewY;
+			}
 
 			let label = this.labelPool.get(i);
 			if (!label) {
