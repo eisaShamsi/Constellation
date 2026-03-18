@@ -86,6 +86,9 @@
 	// Color-by mode for legend
 	let colorBy = $state<'library' | 'folder' | 'tag'>('library');
 
+	// Hidden groups — toggled off in legend checkboxes
+	let hiddenGroups = $state(new Set<string>());
+
 	// Hidden count
 	let hiddenCount = $state(0);
 
@@ -219,20 +222,34 @@
 	// Data changes → engine
 	let prevNodeLen = 0;
 	let prevColorBy = 'library';
+	let prevHiddenKey = '';
 	$effect(() => {
 		const len = nodes.length;
 		const cb = colorBy;
 		const cmap = activeColorMap;
-		if ((len !== prevNodeLen || cb !== prevColorBy) && len > 0 && engine) {
+		const hiddenKey = [...hiddenGroups].sort().join(',');
+		if ((len !== prevNodeLen || cb !== prevColorBy || hiddenKey !== prevHiddenKey) && len > 0 && engine) {
 			prevNodeLen = len;
 			prevColorBy = cb;
+			prevHiddenKey = hiddenKey;
+
+			let dataNodes = nodes;
+			let dataLinks = links;
+
 			// When colorBy is 'folder', remap nodes to use folder as their grouping key
 			if (cb === 'folder') {
-				const folderNodes = nodes.map(n => ({ ...n, libraryName: getNodeFolder(n.path) }));
-				engine.setData(folderNodes, links, cmap);
-			} else {
-				engine.setData(nodes, links, cmap);
+				dataNodes = nodes.map(n => ({ ...n, libraryName: getNodeFolder(n.path) }));
 			}
+
+			// Filter out hidden groups
+			if (hiddenGroups.size > 0) {
+				const groupKey = cb === 'folder' ? (n: typeof dataNodes[0]) => getNodeFolder(n.path) : (n: typeof dataNodes[0]) => n.libraryName;
+				const visibleIds = new Set(dataNodes.filter(n => !hiddenGroups.has(groupKey(n))).map(n => n.id));
+				dataNodes = dataNodes.filter(n => visibleIds.has(n.id));
+				dataLinks = links.filter(l => visibleIds.has(l.source) && visibleIds.has(l.target));
+			}
+
+			engine.setData(dataNodes, dataLinks, cmap);
 		}
 	});
 
@@ -476,23 +493,35 @@
 		<div class="gm-legend" dir="auto">
 			<div class="gm-legend-header">
 				<button class="gm-legend-toggle" class:active={colorBy === 'library'}
-					onclick={() => { colorBy = 'library'; }}>
+					onclick={() => { colorBy = 'library'; hiddenGroups = new Set(); }}>
 					{$t('graphView.colorByLibrary') || 'Library'}
 				</button>
 				<button class="gm-legend-toggle" class:active={colorBy === 'folder'}
-					onclick={() => { colorBy = 'folder'; }}>
+					onclick={() => { colorBy = 'folder'; hiddenGroups = new Set(); }}>
 					{$t('graphView.colorByFolder') || 'Folder'} ({Object.keys(folderColorMap).length})
 				</button>
 			</div>
 			<div class="gm-legend-items">
 				{#each Object.entries(activeColorMap) as [name, color]}
 					{@const nameIsRTL = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(name)}
-					<div class="gm-legend-item" style:flex-direction={nameIsRTL ? 'row-reverse' : 'row'}>
+					{@const isHidden = hiddenGroups.has(name)}
+					<label class="gm-legend-item" style:flex-direction={nameIsRTL ? 'row-reverse' : 'row'} style:opacity={isHidden ? 0.4 : 1}>
+						<input type="checkbox" class="gm-legend-check" checked={!isHidden}
+							onchange={() => {
+								const next = new Set(hiddenGroups);
+								if (next.has(name)) next.delete(name); else next.add(name);
+								hiddenGroups = next;
+							}} />
 						<span class="gm-legend-dot" style="background:{color}"></span>
 						<span class="gm-legend-name" dir="auto" style:text-align={nameIsRTL ? 'right' : 'left'}>{name}</span>
-					</div>
+					</label>
 				{/each}
 			</div>
+			{#if hiddenGroups.size > 0}
+				<button class="gm-legend-clear" onclick={() => { hiddenGroups = new Set(); }}>
+					{$t('graphView.showAll') || 'Show all'}
+				</button>
+			{/if}
 		</div>
 	{/if}
 </div>
@@ -634,7 +663,19 @@
 	}
 	.gm-legend-toggle:hover:not(.active) { background: var(--background-modifier-hover); }
 	.gm-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+	.gm-legend-check {
+		width: 12px; height: 12px; margin: 0; cursor: pointer;
+		accent-color: var(--interactive-accent, #7c3aed);
+	}
 	.gm-legend-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
+	.gm-legend-clear {
+		width: 100%; border: none; background: transparent;
+		color: var(--interactive-accent, #7c3aed); font-size: 10px;
+		cursor: pointer; padding: 2px 0; text-align: center;
+		border-top: 1px solid var(--background-modifier-border);
+		margin-top: 2px;
+	}
+	.gm-legend-clear:hover { text-decoration: underline; }
 
 	/* Context menu */
 	.gm-context-menu {
