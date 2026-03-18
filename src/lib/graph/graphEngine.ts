@@ -1213,16 +1213,22 @@ export class GraphEngine {
 	private onWheel = (e: WheelEvent): void => {
 		e.preventDefault();
 
-		// In 3D mode: scroll = fly forward/backward through the star field
 		if (this.isRotated()) {
-			const speed = 20;
-			const ry = this.camRotY * Math.PI / 180;
-			const rx = this.camRotX * Math.PI / 180;
-			const dir = e.deltaY > 0 ? 1 : -1;
-			// Move camera along the direction it's looking
-			this.camPosX += Math.sin(ry) * dir * speed;
-			this.camPosY -= Math.sin(rx) * dir * speed;
-			this.camPosZ += Math.cos(ry) * Math.cos(rx) * dir * speed;
+			if (e.ctrlKey || e.metaKey) {
+				// Ctrl+Scroll in 3D = zoom (change perspective / viewScale)
+				const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+				this.viewScale *= zoomFactor;
+				this.viewScale = Math.max(0.05, Math.min(15, this.viewScale));
+			} else {
+				// Regular scroll in 3D = fly forward/backward
+				const speed = 20;
+				const ry = this.camRotY * Math.PI / 180;
+				const rx = this.camRotX * Math.PI / 180;
+				const dir = e.deltaY > 0 ? 1 : -1;
+				this.camPosX += Math.sin(ry) * dir * speed;
+				this.camPosY -= Math.sin(rx) * dir * speed;
+				this.camPosZ += Math.cos(ry) * Math.cos(rx) * dir * speed;
+			}
 			this.needsRedraw = true;
 			return;
 		}
