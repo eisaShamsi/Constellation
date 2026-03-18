@@ -12,9 +12,14 @@
 	 *   - Simulation state (owned by forceWorker)
 	 */
 	import { onMount, onDestroy } from 'svelte';
-	import { t } from '$lib/i18n';
+	import { t, isRTL as isRTLStore } from '$lib/i18n';
 	import { GraphEngine, type EngineConfig, type LayoutMode } from '$lib/graph/graphEngine';
 	import type { StarNode, StarLink } from '$lib/libraries/store';
+
+	// RTL-aware directional symbols
+	const arrowIncoming = $derived($isRTLStore ? '→' : '←');
+	const arrowOutgoing = $derived($isRTLStore ? '←' : '→');
+	const breadcrumbSep = $derived($isRTLStore ? '‹' : '›');
 
 	const DEFAULTS: EngineConfig = {
 		nodeSize: 1.5,
@@ -391,11 +396,11 @@
 			<span class="gm-focus-label">🔍 {focusNodeName}</span>
 			<div class="gm-focus-direction">
 				<button class="gm-dir-btn" class:active={focusDirection === 'all'}
-					title="All links" onclick={() => { focusDirection = 'all'; engine?.setFocusDirection('all'); }}>↔</button>
+					title={$t('graphView.directionAll')} onclick={() => { focusDirection = 'all'; engine?.setFocusDirection('all'); }}>↔</button>
 				<button class="gm-dir-btn" class:active={focusDirection === 'incoming'}
-					title="Incoming only" onclick={() => { focusDirection = 'incoming'; engine?.setFocusDirection('incoming'); }}>←</button>
+					title={$t('graphView.directionIncoming')} onclick={() => { focusDirection = 'incoming'; engine?.setFocusDirection('incoming'); }}>{arrowIncoming}</button>
 				<button class="gm-dir-btn" class:active={focusDirection === 'outgoing'}
-					title="Outgoing only" onclick={() => { focusDirection = 'outgoing'; engine?.setFocusDirection('outgoing'); }}>→</button>
+					title={$t('graphView.directionOutgoing')} onclick={() => { focusDirection = 'outgoing'; engine?.setFocusDirection('outgoing'); }}>{arrowOutgoing}</button>
 			</div>
 			<label class="gm-focus-depth">
 				<span>{$t('graphView.depth')}: {focusDepth}</span>
@@ -409,7 +414,7 @@
 	{#if breadcrumb.length > 0}
 		<div class="gm-breadcrumb" dir="auto">
 			{#each breadcrumb as item, i}
-				{#if i > 0}<span class="gm-bc-sep">›</span>{/if}
+				{#if i > 0}<span class="gm-bc-sep">{breadcrumbSep}</span>{/if}
 				<button class="gm-bc-item" onclick={() => { engine?.setFocusNode(item.id); }}
 					dir="auto">{item.name}</button>
 			{/each}
@@ -439,7 +444,7 @@
 
 	<!-- Context menu -->
 	{#if contextMenu}
-		<div class="gm-context-menu" style="left:{contextMenu.x}px;top:{contextMenu.y}px" dir="auto">
+		<div class="gm-context-menu" style="{$isRTLStore ? 'right' : 'left'}:{$isRTLStore ? (window.innerWidth - contextMenu.x) : contextMenu.x}px;top:{contextMenu.y}px" dir="auto">
 			<button class="gm-ctx-item" onclick={ctxOpen}>📄 {$t('graphView.open')}</button>
 			<button class="gm-ctx-item" onclick={ctxFocus}>🔍 {$t('graphView.focus')}</button>
 			<button class="gm-ctx-item" onclick={ctxPin}>📌 {engine?.isNodePinned(contextMenu.node.id) ? $t('graphView.unpin') : $t('graphView.pin')}</button>
@@ -503,7 +508,7 @@
 	/* Toolbar */
 	.gm-toolbar {
 		position: absolute;
-		top: 8px; left: 8px; right: 8px;
+		top: 8px; inset-inline-start: 8px; inset-inline-end: 8px;
 		z-index: 10;
 		display: flex;
 		justify-content: space-between;
