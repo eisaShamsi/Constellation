@@ -50,10 +50,16 @@
 			emDelimiter: '*',
 		});
 
-		// Table support
+		// Table support — pass through thead/tbody transparently
+		td.addRule('tableSection', {
+			filter: ['thead', 'tbody', 'tfoot'],
+			replacement(content) {
+				return content;
+			}
+		});
 		td.addRule('tableCell', {
 			filter: ['th', 'td'],
-			replacement(content, node) {
+			replacement(content) {
 				return ` ${content.trim()} |`;
 			}
 		});
@@ -65,13 +71,13 @@
 		});
 		td.addRule('table', {
 			filter: 'table',
-			replacement(content, node) {
+			replacement(content) {
 				const rows = content.trim().split('\n').filter(Boolean);
 				if (rows.length === 0) return '';
 				const firstRow = rows[0];
 				const cols = (firstRow.match(/\|/g) || []).length - 1;
 				const separator = '|' + ' --- |'.repeat(cols);
-				return '\n' + rows[0] + separator + '\n' + rows.slice(1).join('\n') + '\n';
+				return '\n' + rows[0] + '\n' + separator + '\n' + rows.slice(1).join('\n') + '\n';
 			}
 		});
 
@@ -91,7 +97,7 @@
 
 	function markdownToHtml(md: string): string {
 		if (!md) return '<p></p>';
-		return marked.parse(md, { async: false }) as string;
+		return marked.parse(md, { async: false, gfm: true }) as string;
 	}
 
 	function htmlToMarkdown(html: string): string {
