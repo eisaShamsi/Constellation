@@ -66,6 +66,22 @@ const HIGHLIGHT_EDGE_COLOR = 0xf97316;
 const DIM_ALPHA = 0.12;
 const MOC_RING_COLOR = 0xf59e0b;
 const RTL_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/;
+const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+const HEBREW_REGEX = /[\u0590-\u05FF]/;
+const CJK_REGEX = /[\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/;
+
+// Font stacks for different scripts
+const FONT_LATIN = '"Inter", "Segoe UI", system-ui, -apple-system, sans-serif';
+const FONT_ARABIC = '"Noto Naskh Arabic", "Noto Sans Arabic", "Segoe UI", "Tahoma", "Arial", sans-serif';
+const FONT_HEBREW = '"Noto Sans Hebrew", "Segoe UI", "Arial", sans-serif';
+const FONT_CJK = '"Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif';
+
+function getFontForText(text: string): string {
+	if (ARABIC_REGEX.test(text)) return FONT_ARABIC;
+	if (HEBREW_REGEX.test(text)) return FONT_HEBREW;
+	if (CJK_REGEX.test(text)) return FONT_CJK;
+	return FONT_LATIN;
+}
 
 const CELL_SIZE = 50;
 
@@ -1312,21 +1328,24 @@ export class GraphEngine {
 
 			let label = this.labelPool.get(i);
 			if (!label) {
+				const fontFamily = getFontForText(n.name);
 				const style = new TextStyle({
 					fontSize: this.config.labelFontSize,
-					fontFamily: 'system-ui, -apple-system, sans-serif',
+					fontFamily,
 					fill: dark ? '#e2e8f0' : '#1e293b',
 					align: n.isRTL ? 'right' : 'left',
+					direction: n.isRTL ? 'rtl' : 'ltr',
 				});
 				label = new Text({ text: n.name, style });
-				label.anchor.set(n.isRTL ? 1 : 0, 0);
+				label.anchor.set(n.isRTL ? 1 : 0, 0.5);
 				this.app!.stage.addChild(label);
 				this.labelPool.set(i, label);
 			}
 
 			label.visible = true;
-			const offsetX = n.isRTL ? -n.r - 4 : n.r + 4;
-			label.position.set(sx + offsetX, sy - this.config.labelFontSize / 2);
+			const labelR = n.r * (isHovered ? 1.4 : isActive ? 1.3 : 1);
+			const offsetX = n.isRTL ? -labelR - 6 : labelR + 6;
+			label.position.set(sx + offsetX, sy);
 
 			// Dim if not relevant
 			if (hovered >= 0 && !isHovered && !isNeighbor) {

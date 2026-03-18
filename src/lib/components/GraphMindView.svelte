@@ -483,7 +483,7 @@
 	/* Settings panel */
 	.gm-settings {
 		position: absolute;
-		top: 48px; right: 8px;
+		top: 48px; inset-inline-end: 8px;
 		z-index: 20; width: 260px;
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
@@ -516,7 +516,7 @@
 	/* Stats bar */
 	.gm-stats {
 		position: absolute;
-		bottom: 8px; left: 8px;
+		bottom: 8px; inset-inline-start: 8px;
 		z-index: 10;
 		display: flex; gap: 6px; align-items: center;
 		font-size: 11px; color: var(--text-faint);
@@ -530,7 +530,7 @@
 	/* Legend */
 	.gm-legend {
 		position: absolute;
-		bottom: 8px; right: 8px;
+		bottom: 8px; inset-inline-end: 8px;
 		z-index: 10;
 		display: flex; flex-direction: column; gap: 3px;
 		background: var(--background-primary);
@@ -567,7 +567,7 @@
 	/* Focus bar */
 	.gm-focus-bar {
 		position: absolute;
-		top: 48px; left: 8px;
+		top: 48px; inset-inline-start: 8px;
 		z-index: 15;
 		display: flex; align-items: center; gap: 8px;
 		background: var(--background-primary);
@@ -584,7 +584,7 @@
 	/* Local graph indicator */
 	.gm-local-indicator {
 		position: absolute;
-		top: 48px; left: 8px;
+		top: 48px; inset-inline-start: 8px;
 		z-index: 15;
 		display: flex; align-items: center; gap: 8px;
 		background: var(--background-primary);
@@ -609,7 +609,7 @@
 	/* Breadcrumb trail */
 	.gm-breadcrumb {
 		position: absolute;
-		bottom: 36px; left: 8px; right: 8px;
+		bottom: 36px; inset-inline-start: 8px; inset-inline-end: 8px;
 		z-index: 12;
 		display: flex; align-items: center; gap: 4px;
 		background: var(--background-primary);
@@ -639,7 +639,7 @@
 	/* Hidden nodes indicator */
 	.gm-hidden-bar {
 		position: absolute;
-		top: 48px; right: 8px;
+		top: 48px; inset-inline-end: 8px;
 		z-index: 15;
 		display: flex; align-items: center; gap: 8px;
 		background: var(--background-primary);
