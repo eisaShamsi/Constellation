@@ -35,10 +35,10 @@
 		colorByLibrary: true,
 	};
 
-	const DEFAULT_NODE_COLOR = '#7c3aed';
+	const DEFAULT_NODE_COLOR = '#a78bfa';
 	const HIGHLIGHT_EDGE_COLOR = '#ffffff';
-	const DIM_COLOR = '#1a1a2e';
-	const DIM_EDGE_COLOR = '#0a0a1a';
+	const DIM_COLOR = '#2a2a3e';
+	const DIM_EDGE_COLOR = '#1a1a2e';
 
 	let containerEl: HTMLDivElement;
 	let sigma: Sigma | null = null;
@@ -50,6 +50,8 @@
 	let searchVisible = $state(false);
 	let showSettings = $state(false);
 	let layoutSettled = false;
+	let nodeCount = $state(0);
+	let edgeCount = $state(0);
 
 	// Local settings copy for inline controls
 	let localSettings = $state({ ...DEFAULTS, ...skyViewSettings });
@@ -108,11 +110,13 @@
 
 			g.addEdgeWithKey(edgeKey, link.source, link.target, {
 				size: settings.linkThickness,
-				color: '#334155',
+				color: '#475569',
 				linkType: link.linkType,
 			});
 		}
 
+		nodeCount = g.order;
+		edgeCount = g.size;
 		return g;
 	}
 
@@ -216,11 +220,13 @@
 			labelSize: settings.labelFontSize,
 			labelColor: { color: '#e2e8f0' },
 			labelFont: 'system-ui, -apple-system, sans-serif',
-			defaultEdgeColor: '#334155',
+			defaultEdgeColor: '#475569',
 			defaultNodeColor: DEFAULT_NODE_COLOR,
 			edgeLabelSize: 10,
 			minCameraRatio: 0.02,
 			maxCameraRatio: 20,
+			stagePadding: 30,
+			zIndex: true,
 			// Node & edge rendering reducers for hover/search highlighting
 			nodeReducer: (nodeId, data) => {
 				const res = { ...data };
@@ -559,9 +565,9 @@
 
 	<!-- Stats bar -->
 	<div class="gm-stats" dir="auto">
-		<span>{graph?.order ?? 0} {$t('graphView.nodes') || 'nodes'}</span>
+		<span>{nodeCount} nodes</span>
 		<span class="gm-sep">·</span>
-		<span>{graph?.size ?? 0} {$t('graphView.edges') || 'edges'}</span>
+		<span>{edgeCount} edges</span>
 		{#if hoveredNode && graph}
 			<span class="gm-sep">·</span>
 			<span class="gm-hovered" dir="auto">{graph.getNodeAttribute(hoveredNode, 'label')}</span>
@@ -590,7 +596,7 @@
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
-		background: var(--background-primary, #0f0f1a);
+		background: #0c0c18;
 	}
 
 	.gm-renderer {
@@ -772,7 +778,7 @@
 		flex-shrink: 0;
 	}
 	.gm-legend-name {
-		max-width: 120px;
+		max-width: 180px;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
