@@ -613,6 +613,10 @@
 	.gm-legend-item {
 		display: flex; align-items: center; gap: 6px;
 		font-size: 11px; color: var(--text-muted);
+		flex-direction: row;
+	}
+	:global([dir="rtl"]) .gm-legend-item {
+		flex-direction: row-reverse;
 	}
 	.gm-legend-header {
 		display: flex; gap: 2px; margin-bottom: 4px;
@@ -633,7 +637,7 @@
 	}
 	.gm-legend-toggle:hover:not(.active) { background: var(--background-modifier-hover); }
 	.gm-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-	.gm-legend-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.gm-legend-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
 
 	/* Context menu */
 	.gm-context-menu {
