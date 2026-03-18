@@ -35,6 +35,7 @@ export interface EngineCallbacks {
 	onContextMenu?: (node: { id: string; name: string; path: string; libraryName: string }, x: number, y: number) => void;
 	onFocusChange?: (focused: boolean, nodeName?: string) => void;
 	onHiddenCountChange?: (count: number) => void;
+	onTiltChange?: (tilted: boolean) => void;
 }
 
 interface EngineNode {
@@ -140,6 +141,15 @@ export class GraphEngine {
 	// Resize
 	private resizeObserver: ResizeObserver | null = null;
 
+	// Perspective tilt
+	private tiltX: number = 0; // degrees rotation around X axis
+	private tiltY: number = 0; // degrees rotation around Y axis
+	private isTilting: boolean = false;
+	private tiltStartX: number = 0;
+	private tiltStartY: number = 0;
+	private tiltBaseX: number = 0;
+	private tiltBaseY: number = 0;
+
 	// Redraw flag
 	private needsRedraw: boolean = true;
 
@@ -196,6 +206,7 @@ export class GraphEngine {
 		canvas.addEventListener('wheel', this.onWheel, { passive: false });
 		canvas.addEventListener('dblclick', this.onDoubleClick);
 		canvas.addEventListener('contextmenu', this.onContextMenu);
+		canvas.addEventListener('auxclick', (e) => e.preventDefault()); // prevent middle-click paste
 
 		// Theme observer
 		this.themeObserver = new MutationObserver(() => {
@@ -517,6 +528,43 @@ export class GraphEngine {
 		}
 	}
 
+	// ─── Perspective Tilt ───────────────────────────────────────
+
+	private applyTilt(canvas: HTMLCanvasElement): void {
+		canvas.style.transform = `perspective(1200px) rotateX(${this.tiltX}deg) rotateY(${this.tiltY}deg)`;
+		canvas.style.transformOrigin = 'center center';
+		const tilted = Math.abs(this.tiltX) > 1 || Math.abs(this.tiltY) > 1;
+		this.callbacks.onTiltChange?.(tilted);
+	}
+
+	resetTilt(): void {
+		this.tiltX = 0;
+		this.tiltY = 0;
+		const canvas = this.app?.canvas as HTMLCanvasElement;
+		if (canvas) {
+			// Animate back to flat
+			const startX = parseFloat(canvas.style.transform.match(/rotateX\(([-\d.]+)deg\)/)?.[1] || '0');
+			const startY = parseFloat(canvas.style.transform.match(/rotateY\(([-\d.]+)deg\)/)?.[1] || '0');
+			const frames = 15;
+			let frame = 0;
+			const animate = () => {
+				frame++;
+				const t = frame / frames;
+				const ease = t * (2 - t);
+				const rx = startX * (1 - ease);
+				const ry = startY * (1 - ease);
+				canvas.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+				if (frame < frames) requestAnimationFrame(animate);
+				else canvas.style.transform = '';
+			};
+			requestAnimationFrame(animate);
+		}
+	}
+
+	getTilt(): { x: number; y: number } {
+		return { x: this.tiltX, y: this.tiltY };
+	}
+
 	// ─── Layout Modes ──────────────────────────────────────────
 
 	setLayoutMode(mode: LayoutMode): void {
@@ -823,6 +871,15 @@ export class GraphEngine {
 		const canvas = this.app?.canvas as HTMLCanvasElement;
 		if (!canvas) return;
 
+		if (this.isTilting) {
+			const dx = e.clientX - this.tiltStartX;
+			const dy = e.clientY - this.tiltStartY;
+			this.tiltY = Math.max(-60, Math.min(60, this.tiltBaseY + dx * 0.3));
+			this.tiltX = Math.max(-60, Math.min(60, this.tiltBaseX - dy * 0.3));
+			this.applyTilt(canvas);
+			return;
+		}
+
 		if (this.isPanning) {
 			this.viewX = this.panViewX + (e.clientX - this.panStartX);
 			this.viewY = this.panViewY + (e.clientY - this.panStartY);
@@ -865,6 +922,19 @@ export class GraphEngine {
 	};
 
 	private onPointerDown = (e: PointerEvent): void => {
+		// Middle mouse button or Shift+left click = start tilting
+		if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+			e.preventDefault();
+			this.isTilting = true;
+			this.tiltStartX = e.clientX;
+			this.tiltStartY = e.clientY;
+			this.tiltBaseX = this.tiltX;
+			this.tiltBaseY = this.tiltY;
+			const canvas = this.app?.canvas as HTMLCanvasElement;
+			if (canvas) canvas.style.cursor = 'move';
+			return;
+		}
+
 		if (e.button !== 0) return;
 		this.pointerDownTime = Date.now();
 
@@ -888,6 +958,12 @@ export class GraphEngine {
 
 	private onPointerUp = (e: PointerEvent): void => {
 		const canvas = this.app?.canvas as HTMLCanvasElement;
+
+		if (this.isTilting) {
+			this.isTilting = false;
+			if (canvas) canvas.style.cursor = this.hoveredIdx >= 0 ? 'pointer' : 'grab';
+			return;
+		}
 
 		if (this.draggedNodeIdx >= 0) {
 			if (this.isDragging) {
@@ -925,6 +1001,7 @@ export class GraphEngine {
 
 	private onPointerLeave = (): void => {
 		this.isPanning = false;
+		this.isTilting = false;
 		this.draggedNodeIdx = -1;
 		if (this.hoveredIdx !== -1) {
 			this.hoveredIdx = -1;

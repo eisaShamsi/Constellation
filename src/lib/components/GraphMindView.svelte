@@ -75,6 +75,9 @@
 	// Navigation breadcrumb
 	let breadcrumb = $state<{ id: string; name: string }[]>([]);
 
+	// Tilt state
+	let isTilted = $state(false);
+
 	// Hidden count
 	let hiddenCount = $state(0);
 
@@ -209,6 +212,7 @@
 			onContextMenu: (node, x, y) => { contextMenu = { node, x, y }; },
 			onFocusChange: (active, name) => { focusActive = active; focusNodeName = name ?? ''; if (!active) { breadcrumb = []; focusDirection = 'all'; } },
 			onHiddenCountChange: (count) => { hiddenCount = count; },
+			onTiltChange: (tilted) => { isTilted = tilted; },
 		});
 
 		await engine.init();
@@ -251,6 +255,11 @@
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="21" x2="21" y2="21"/><circle cx="5" cy="16" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="13" cy="14" r="2"/><circle cx="17" cy="8" r="2"/><circle cx="21" cy="6" r="2"/></svg>
 				{/if}
 			</button>
+			{#if isTilted}
+				<button class="gm-btn" title="Reset tilt" onclick={() => { engine?.resetTilt(); isTilted = false; }}>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9"/><polyline points="3 3 3 12 12 12"/></svg>
+				</button>
+			{/if}
 			<button class="gm-btn" title="Fit to screen" onclick={() => engine?.fitToScreen()}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
 			</button>
