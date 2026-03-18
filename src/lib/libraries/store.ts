@@ -883,6 +883,7 @@ export interface StarNode {
 	libraryName: string;
 	linkCount: number;
 	outgoingCount: number;
+	createdAt?: number; // epoch ms from file metadata
 }
 
 export interface StarLink {

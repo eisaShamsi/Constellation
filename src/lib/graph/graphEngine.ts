@@ -13,6 +13,8 @@ import { Application, Graphics, Container, Text, TextStyle } from 'pixi.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
+export type LayoutMode = 'organic' | 'hierarchical' | 'temporal';
+
 export interface EngineConfig {
 	nodeSize: number;
 	labelVisibility: 'hover' | 'always' | 'none';
@@ -23,12 +25,16 @@ export interface EngineConfig {
 	linkDistance: number;
 	showOrphans: boolean;
 	colorByLibrary: boolean;
+	layoutMode: LayoutMode;
 }
 
 export interface EngineCallbacks {
 	onNodeClick: (path: string, libraryName: string) => void;
 	onNodeHover: (name: string | null) => void;
 	onStatsReady: (nodeCount: number, edgeCount: number, mocCount: number) => void;
+	onContextMenu?: (node: { id: string; name: string; path: string; libraryName: string }, x: number, y: number) => void;
+	onFocusChange?: (focused: boolean, nodeName?: string) => void;
+	onHiddenCountChange?: (count: number) => void;
 }
 
 interface EngineNode {
@@ -44,6 +50,7 @@ interface EngineNode {
 	linkCount: number;
 	outgoingCount: number;
 	isRTL: boolean;
+	createdAt: number; // epoch ms (0 if unknown)
 }
 
 interface EngineLink {
@@ -81,6 +88,30 @@ export class GraphEngine {
 	private activeNodeIdx: number = -1;
 	private searchQuery: string = '';
 	private searchMatchSet: Set<number> = new Set();
+
+	// Focus mode
+	private focusNodeIdx: number = -1;
+	private focusDepth: number = 2;
+	private focusDirection: 'all' | 'incoming' | 'outgoing' = 'all';
+	private focusSet: Set<number> = new Set();
+
+	// Local graph mode (Space bar toggle)
+	private localGraphMode: boolean = false;
+
+	// Pin & Hide
+	private pinnedNodeIds: Set<string> = new Set();
+	private hiddenNodeIds: Set<string> = new Set();
+	private hiddenIndices: Set<number> = new Set();
+
+	// Layout transition
+	private transitionFrom: { x: number; y: number }[] = [];
+	private transitionTo: { x: number; y: number }[] = [];
+	private transitionProgress: number = -1; // -1 = no transition
+	private transitionFrames: number = 30;
+
+	// Directed neighbor maps (for directional filter)
+	private outgoingMap: Map<number, Set<number>> = new Map();
+	private incomingMap: Map<number, Set<number>> = new Map();
 
 	// View transform
 	private viewX: number = 0;
@@ -164,6 +195,7 @@ export class GraphEngine {
 		canvas.addEventListener('pointerleave', this.onPointerLeave);
 		canvas.addEventListener('wheel', this.onWheel, { passive: false });
 		canvas.addEventListener('dblclick', this.onDoubleClick);
+		canvas.addEventListener('contextmenu', this.onContextMenu);
 
 		// Theme observer
 		this.themeObserver = new MutationObserver(() => {
@@ -185,7 +217,7 @@ export class GraphEngine {
 	// ─── Public API ────────────────────────────────────────────────
 
 	setData(
-		rawNodes: { id: string; name: string; path: string; libraryName: string; linkCount: number; outgoingCount: number }[],
+		rawNodes: { id: string; name: string; path: string; libraryName: string; linkCount: number; outgoingCount: number; createdAt?: number }[],
 		rawLinks: { source: string; target: string }[],
 		colorMap: Record<string, string>
 	): void {
@@ -226,14 +258,19 @@ export class GraphEngine {
 				linkCount: n.linkCount,
 				outgoingCount: n.outgoingCount,
 				isRTL: RTL_REGEX.test(n.name),
+				createdAt: n.createdAt ?? 0,
 			};
 		});
 
 		// Build links
 		this.links = [];
 		this.neighborMap = new Map();
+		this.outgoingMap = new Map();
+		this.incomingMap = new Map();
 		for (let i = 0; i < this.nodes.length; i++) {
 			this.neighborMap.set(i, new Set());
+			this.outgoingMap.set(i, new Set());
+			this.incomingMap.set(i, new Set());
 		}
 
 		for (const l of rawLinks) {
@@ -243,6 +280,8 @@ export class GraphEngine {
 				this.links.push({ sourceIdx: si, targetIdx: ti });
 				this.neighborMap.get(si)!.add(ti);
 				this.neighborMap.get(ti)!.add(si);
+				this.outgoingMap.get(si)!.add(ti);
+				this.incomingMap.get(ti)!.add(si);
 			}
 		}
 
@@ -383,6 +422,273 @@ export class GraphEngine {
 		}
 	}
 
+	// ─── Focus Mode ────────────────────────────────────────────
+
+	setFocusNode(nodeId: string | null): void {
+		if (!nodeId) {
+			this.focusNodeIdx = -1;
+			this.focusSet.clear();
+			this.callbacks.onFocusChange?.(false);
+		} else {
+			this.focusNodeIdx = this.nodes.findIndex((n) => n.id === nodeId);
+			if (this.focusNodeIdx >= 0) {
+				this.rebuildFocusSet();
+				this.callbacks.onFocusChange?.(true, this.nodes[this.focusNodeIdx].name);
+			}
+		}
+		this.needsRedraw = true;
+	}
+
+	setFocusDepth(depth: number): void {
+		this.focusDepth = depth;
+		if (this.focusNodeIdx >= 0) {
+			this.rebuildFocusSet();
+			this.needsRedraw = true;
+		}
+	}
+
+	setFocusDirection(dir: 'all' | 'incoming' | 'outgoing'): void {
+		this.focusDirection = dir;
+		if (this.focusNodeIdx >= 0) {
+			this.rebuildFocusSet();
+			this.needsRedraw = true;
+		}
+	}
+
+	getFocusDirection(): 'all' | 'incoming' | 'outgoing' {
+		return this.focusDirection;
+	}
+
+	private rebuildFocusSet(): void {
+		this.focusSet = this.getNeighborsAtDepth(this.focusNodeIdx, this.focusDepth);
+	}
+
+	// ─── Local Graph Mode ──────────────────────────────────────
+
+	toggleLocalGraph(): void {
+		this.localGraphMode = !this.localGraphMode;
+		this.needsRedraw = true;
+	}
+
+	getLocalGraphMode(): boolean {
+		return this.localGraphMode;
+	}
+
+	// ─── Pin & Hide ────────────────────────────────────────────
+
+	pinNode(nodeId: string): void {
+		if (this.pinnedNodeIds.has(nodeId)) {
+			this.pinnedNodeIds.delete(nodeId);
+			this.worker?.postMessage({ type: 'unpinNode', id: nodeId });
+		} else {
+			this.pinnedNodeIds.add(nodeId);
+			const node = this.nodes.find((n) => n.id === nodeId);
+			if (node) {
+				this.worker?.postMessage({ type: 'pinNode', id: nodeId, x: node.x, y: node.y });
+			}
+		}
+		this.needsRedraw = true;
+	}
+
+	isNodePinned(nodeId: string): boolean {
+		return this.pinnedNodeIds.has(nodeId);
+	}
+
+	hideNode(nodeId: string): void {
+		this.hiddenNodeIds.add(nodeId);
+		this.rebuildHiddenIndices();
+		this.callbacks.onHiddenCountChange?.(this.hiddenNodeIds.size);
+		this.needsRedraw = true;
+	}
+
+	showAllHidden(): void {
+		this.hiddenNodeIds.clear();
+		this.hiddenIndices.clear();
+		this.callbacks.onHiddenCountChange?.(0);
+		this.needsRedraw = true;
+	}
+
+	private rebuildHiddenIndices(): void {
+		this.hiddenIndices.clear();
+		for (let i = 0; i < this.nodes.length; i++) {
+			if (this.hiddenNodeIds.has(this.nodes[i].id)) {
+				this.hiddenIndices.add(i);
+			}
+		}
+	}
+
+	// ─── Layout Modes ──────────────────────────────────────────
+
+	setLayoutMode(mode: LayoutMode): void {
+		this.config.layoutMode = mode;
+
+		if (mode === 'organic') {
+			// Re-run force simulation — worker handles organic layout
+			this.startWorker();
+			return;
+		}
+
+		// Compute target positions
+		const targets = mode === 'hierarchical'
+			? this.computeHierarchicalLayout()
+			: this.computeTemporalLayout();
+
+		// Stop the force worker — we're using computed positions
+		if (this.worker) {
+			this.worker.postMessage({ type: 'stop' });
+		}
+
+		// Animate transition from current to target
+		this.transitionFrom = this.nodes.map(n => ({ x: n.x, y: n.y }));
+		this.transitionTo = targets;
+		this.transitionProgress = 0;
+		this.needsRedraw = true;
+	}
+
+	getLayoutMode(): LayoutMode {
+		return this.config.layoutMode;
+	}
+
+	cycleLayoutMode(): LayoutMode {
+		const modes: LayoutMode[] = ['organic', 'hierarchical', 'temporal'];
+		const idx = modes.indexOf(this.config.layoutMode);
+		const next = modes[(idx + 1) % modes.length];
+		this.setLayoutMode(next);
+		return next;
+	}
+
+	private computeHierarchicalLayout(): { x: number; y: number }[] {
+		const n = this.nodes.length;
+		if (n === 0) return [];
+
+		// Find root nodes: MOCs (outgoing >= 5) or nodes with most outgoing links
+		const roots: number[] = [];
+		for (let i = 0; i < n; i++) {
+			if (this.nodes[i].outgoingCount >= 5) roots.push(i);
+		}
+		// If no MOCs, pick top 3 by link count
+		if (roots.length === 0) {
+			const sorted = [...Array(n).keys()].sort((a, b) => this.nodes[b].linkCount - this.nodes[a].linkCount);
+			roots.push(...sorted.slice(0, Math.min(3, n)));
+		}
+
+		// BFS from roots to assign levels
+		const level = new Array(n).fill(-1);
+		const queue: number[] = [];
+		for (const r of roots) {
+			if (level[r] === -1) {
+				level[r] = 0;
+				queue.push(r);
+			}
+		}
+		while (queue.length > 0) {
+			const cur = queue.shift()!;
+			const neighbors = this.neighborMap.get(cur);
+			if (!neighbors) continue;
+			for (const nb of neighbors) {
+				if (level[nb] === -1) {
+					level[nb] = level[cur] + 1;
+					queue.push(nb);
+				}
+			}
+		}
+		// Assign orphans to max level + 1
+		const maxLevel = Math.max(...level.filter(l => l >= 0), 0);
+		for (let i = 0; i < n; i++) {
+			if (level[i] === -1) level[i] = maxLevel + 1;
+		}
+
+		// Group by level
+		const levels: number[][] = [];
+		for (let i = 0; i < n; i++) {
+			const lv = level[i];
+			while (levels.length <= lv) levels.push([]);
+			levels[lv].push(i);
+		}
+
+		// Assign positions: y = level * spacing, x = spread within level
+		const ySpacing = 120;
+		const totalHeight = levels.length * ySpacing;
+		const positions: { x: number; y: number }[] = new Array(n);
+
+		for (let lv = 0; lv < levels.length; lv++) {
+			const row = levels[lv];
+			const xSpacing = Math.max(40, 800 / (row.length + 1));
+			const rowWidth = (row.length - 1) * xSpacing;
+			for (let j = 0; j < row.length; j++) {
+				positions[row[j]] = {
+					x: -rowWidth / 2 + j * xSpacing,
+					y: -totalHeight / 2 + lv * ySpacing,
+				};
+			}
+		}
+
+		return positions;
+	}
+
+	private computeTemporalLayout(): { x: number; y: number }[] {
+		const n = this.nodes.length;
+		if (n === 0) return [];
+
+		// Sort nodes by createdAt
+		const indices = [...Array(n).keys()];
+		const hasDate = this.nodes.some(nd => nd.createdAt > 0);
+
+		if (!hasDate) {
+			// Fallback: spread linearly by index (alphabetical order)
+			indices.sort((a, b) => this.nodes[a].name.localeCompare(this.nodes[b].name));
+		} else {
+			indices.sort((a, b) => (this.nodes[a].createdAt || 0) - (this.nodes[b].createdAt || 0));
+		}
+
+		// Spread on x-axis, scatter y to avoid overlap
+		const xSpacing = Math.max(20, 2000 / (n + 1));
+		const totalWidth = (n - 1) * xSpacing;
+		const positions: { x: number; y: number }[] = new Array(n);
+
+		for (let j = 0; j < indices.length; j++) {
+			const idx = indices[j];
+			positions[idx] = {
+				x: -totalWidth / 2 + j * xSpacing,
+				y: (Math.random() - 0.5) * 200 + (this.nodes[idx].linkCount * 10), // slight y scatter by link count
+			};
+		}
+
+		return positions;
+	}
+
+	// ─── BFS Traversal ─────────────────────────────────────────
+
+	private getNeighborsAtDepth(startIdx: number, maxDepth: number): Set<number> {
+		const visited = new Set<number>();
+		const queue: [number, number][] = [[startIdx, 0]];
+		visited.add(startIdx);
+
+		// Pick the right neighbor map based on focus direction
+		const getNeighbors = (idx: number): Set<number> | undefined => {
+			if (this.focusDirection === 'outgoing') return this.outgoingMap.get(idx);
+			if (this.focusDirection === 'incoming') return this.incomingMap.get(idx);
+			return this.neighborMap.get(idx); // 'all'
+		};
+
+		while (queue.length > 0) {
+			const [idx, depth] = queue.shift()!;
+			if (depth >= maxDepth) continue;
+
+			const neighbors = getNeighbors(idx);
+			if (!neighbors) continue;
+
+			for (const nIdx of neighbors) {
+				if (!visited.has(nIdx)) {
+					visited.add(nIdx);
+					queue.push([nIdx, depth + 1]);
+				}
+			}
+		}
+
+		return visited;
+	}
+
 	destroy(): void {
 		if (this.worker) {
 			this.worker.postMessage({ type: 'stop' });
@@ -398,6 +704,7 @@ export class GraphEngine {
 			canvas.removeEventListener('pointerleave', this.onPointerLeave);
 			canvas.removeEventListener('wheel', this.onWheel);
 			canvas.removeEventListener('dblclick', this.onDoubleClick);
+			canvas.removeEventListener('contextmenu', this.onContextMenu);
 		}
 
 		this.themeObserver?.disconnect();
@@ -647,6 +954,17 @@ export class GraphEngine {
 		this.needsRedraw = true;
 	};
 
+	private onContextMenu = (e: MouseEvent): void => {
+		e.preventDefault();
+		if (this.hoveredIdx < 0) return;
+		const node = this.nodes[this.hoveredIdx];
+		this.callbacks.onContextMenu?.(
+			{ id: node.id, name: node.name, path: node.path, libraryName: node.libraryName },
+			e.clientX,
+			e.clientY
+		);
+	};
+
 	private onDoubleClick = (e: MouseEvent): void => {
 		if (this.hoveredIdx < 0) return;
 		const node = this.nodes[this.hoveredIdx];
@@ -679,6 +997,22 @@ export class GraphEngine {
 	// ─── Render Loop (Pixi Ticker) ────────────────────────────────
 
 	private draw = (): void => {
+		// Handle layout transition animation
+		if (this.transitionProgress >= 0 && this.transitionProgress < this.transitionFrames) {
+			this.transitionProgress++;
+			const t = this.transitionProgress / this.transitionFrames;
+			const ease = t * t * (3 - 2 * t); // smoothstep
+			for (let i = 0; i < this.nodes.length && i < this.transitionFrom.length; i++) {
+				this.nodes[i].x = this.transitionFrom[i].x + (this.transitionTo[i].x - this.transitionFrom[i].x) * ease;
+				this.nodes[i].y = this.transitionFrom[i].y + (this.transitionTo[i].y - this.transitionFrom[i].y) * ease;
+			}
+			this.needsRedraw = true;
+			if (this.transitionProgress >= this.transitionFrames) {
+				this.transitionProgress = -1; // done
+				this.fitToScreen();
+			}
+		}
+
 		if (!this.needsRedraw || !this.app) return;
 		this.needsRedraw = false;
 
@@ -689,12 +1023,26 @@ export class GraphEngine {
 		const hasSearch = this.searchQuery.length > 0;
 		const dark = this.isDark;
 
+		// Build visible set based on focus/local/hidden state
+		const hasFocus = this.focusNodeIdx >= 0;
+		const hasLocal = this.localGraphMode && this.activeNodeIdx >= 0;
+		let visibleSet: Set<number> | null = null;
+
+		if (hasFocus) {
+			visibleSet = this.focusSet;
+		} else if (hasLocal) {
+			visibleSet = this.getNeighborsAtDepth(this.activeNodeIdx, 2);
+		}
+
 		// ─── Links ────
 		this.linkGfx.clear();
 		const normalEdgeColor = dark ? 0x475569 : 0xbcccdc;
 		const normalEdgeAlpha = dark ? 0.25 : 0.15;
 
 		for (const link of this.links) {
+			// Skip edges involving hidden nodes
+			if (this.hiddenIndices.has(link.sourceIdx) || this.hiddenIndices.has(link.targetIdx)) continue;
+
 			const src = this.nodes[link.sourceIdx];
 			const tgt = this.nodes[link.targetIdx];
 
@@ -703,13 +1051,12 @@ export class GraphEngine {
 			const tx = tgt.x * this.viewScale + w / 2 + this.viewX;
 			const ty = tgt.y * this.viewScale + h / 2 + this.viewY;
 
-			// Determine if highlighted
+			// Focus/local mode: skip edges where both ends are outside visible set
+			if (visibleSet && !visibleSet.has(link.sourceIdx) && !visibleSet.has(link.targetIdx)) continue;
+
 			const isNeighborEdge = hovered >= 0 && (link.sourceIdx === hovered || link.targetIdx === hovered);
 
-			if (hovered >= 0 && !isNeighborEdge) {
-				// Hide non-neighbor edges when hovering
-				continue;
-			}
+			if (hovered >= 0 && !isNeighborEdge) continue;
 
 			if (hasSearch) {
 				const srcMatch = this.searchMatchSet.has(link.sourceIdx);
@@ -734,17 +1081,26 @@ export class GraphEngine {
 			const gfx = this.nodeGfx[i];
 			if (!gfx) continue;
 
+			// Hidden nodes: completely invisible
+			if (this.hiddenIndices.has(i)) {
+				gfx.clear();
+				continue;
+			}
+
 			const sx = n.x * this.viewScale + w / 2 + this.viewX;
 			const sy = n.y * this.viewScale + h / 2 + this.viewY;
 
 			const isHovered = i === hovered;
 			const isActive = i === this.activeNodeIdx;
 			const isNeighbor = neighbors?.has(i) ?? false;
+			const inVisibleSet = visibleSet ? visibleSet.has(i) : true;
+			const isPinned = this.pinnedNodeIds.has(n.id);
 
 			// Determine alpha
 			let alpha = 1.0;
-			if (hovered >= 0 && !isHovered && !isNeighbor) alpha = DIM_ALPHA;
-			if (hasSearch && !this.searchMatchSet.has(i) && hovered < 0) alpha = DIM_ALPHA;
+			if (!inVisibleSet) alpha = DIM_ALPHA;
+			else if (hovered >= 0 && !isHovered && !isNeighbor) alpha = DIM_ALPHA;
+			else if (hasSearch && !this.searchMatchSet.has(i) && hovered < 0) alpha = DIM_ALPHA;
 
 			const r = n.r * (isHovered ? 1.4 : isActive ? 1.3 : 1);
 
@@ -756,6 +1112,12 @@ export class GraphEngine {
 			if (isActive) {
 				gfx.circle(sx, sy, r + 2);
 				gfx.stroke({ width: 2, color: dark ? 0xffffff : 0x333333, alpha: 0.8 });
+			}
+
+			// Pinned indicator (cyan ring)
+			if (isPinned) {
+				gfx.circle(sx, sy, r + 2.5);
+				gfx.stroke({ width: 2, color: 0x06b6d4, alpha: alpha });
 			}
 
 			// MOC gold ring
