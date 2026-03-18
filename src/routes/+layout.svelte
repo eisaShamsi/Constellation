@@ -47,7 +47,7 @@
 	import TemplatePrompt from '$lib/components/TemplatePrompt.svelte';
 	import TemplateSuggester from '$lib/components/TemplateSuggester.svelte';
 	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
-	import FullStarView from '$lib/components/FullStarView.svelte';
+	import GraphMindView from '$lib/components/GraphMindView.svelte';
 	import LocalStarView from '$lib/components/LocalStarView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
@@ -2009,12 +2009,13 @@
 						<span class="star-title">{$t('layout.starViewTitle')}</span>
 						<button class="star-close" onclick={() => showStarView = false}>×</button>
 					</div>
-					<FullStarView
+					<GraphMindView
 					nodes={starNodes}
 					links={starLinks}
 					onNodeClick={handleStarNodeClick}
 					activeNodeId={sidebarTab?.name?.toLowerCase() ?? ''}
 					skyViewSettings={$appSettings.skyView}
+					{libraryColorMap}
 				/>
 				</div>
 			{:else if showGlobalTasks}
