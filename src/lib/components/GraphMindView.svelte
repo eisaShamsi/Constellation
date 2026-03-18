@@ -1,11 +1,32 @@
 <script lang="ts">
+	/**
+	 * GraphMind — Layer 1: Thin Svelte Wrapper
+	 *
+	 * This component owns ONLY:
+	 *   - UI controls (settings panel, search bar, toolbar)
+	 *   - Stats display (node count, edge count, hovered name)
+	 *
+	 * It does NOT own:
+	 *   - Node positions (owned by GraphEngine)
+	 *   - Hover state (owned by GraphEngine)
+	 *   - Simulation state (owned by forceWorker)
+	 */
 	import { onMount, onDestroy } from 'svelte';
-	import Graph from 'graphology';
-	import Sigma from 'sigma';
 	import { t } from '$lib/i18n';
-	import { detectDir } from '$lib/utils';
+	import { GraphEngine, type EngineConfig } from '$lib/graph/graphEngine';
 	import type { StarNode, StarLink } from '$lib/libraries/store';
-	import type { GraphMindSettings } from '$lib/graph/types';
+
+	const DEFAULTS: EngineConfig = {
+		nodeSize: 4,
+		labelVisibility: 'hover',
+		labelFontSize: 12,
+		linkThickness: 1,
+		repelForce: 80,
+		linkForce: 0.05,
+		linkDistance: 30,
+		showOrphans: true,
+		colorByLibrary: true,
+	};
 
 	let {
 		nodes = [] as StarNode[],
@@ -19,524 +40,151 @@
 		links: StarLink[];
 		onNodeClick?: (path: string, libraryName: string) => void;
 		activeNodeId?: string;
-		skyViewSettings?: GraphMindSettings;
+		skyViewSettings?: Partial<EngineConfig>;
 		libraryColorMap?: Record<string, string>;
 	} = $props();
 
-	const DEFAULTS: GraphMindSettings = {
-		nodeSize: 4,
-		labelVisibility: 'hover',
-		labelFontSize: 12,
-		linkThickness: 1,
-		repelForce: 50,
-		linkForce: 0.05,
-		linkDistance: 30,
-		showOrphans: true,
-		colorByLibrary: true,
-	};
-
-	const DEFAULT_NODE_COLOR = '#a78bfa';
-	const HIGHLIGHT_EDGE_COLOR = '#f97316'; // orange — visible on both light and dark
-	const DIM_NODE_COLOR = '#d0d0d0'; // light gray — visible on white, subtle on dark
-	const DIM_EDGE_COLOR = '#e0e0e0';
-
-	let containerEl: HTMLDivElement;
-	let sigma: Sigma | null = null;
-	let graph: Graph | null = null;
-	let worker: Worker | null = null;
-	let hoveredNode: string | null = $state(null);
-	let highlightedNeighbors: Set<string> = new Set();
-	let searchQuery = $state('');
+	// ─── Layer 1 state: UI only ─────────────────────────────
+	let settingsOpen = $state(false);
+	let settingsTab: 'appearance' | 'physics' = $state('appearance');
 	let searchVisible = $state(false);
-	let showSettings = $state(false);
-	let layoutSettled = false;
+	let searchQuery = $state('');
+	let hoveredName = $state<string | null>(null);
 	let nodeCount = $state(0);
 	let edgeCount = $state(0);
+	let mocCount = $state(0);
 
-	// Local settings copy for inline controls
-	let localSettings = $state({ ...DEFAULTS, ...skyViewSettings });
+	// ─── NOT $state: plain JS config (Law 3) ─────────────────
+	let engineConfig: EngineConfig = { ...DEFAULTS, ...skyViewSettings };
 
-	// Settings panel controls
-	let settingsPanel: 'appearance' | 'physics' = $state('appearance');
+	// Local copies for settings UI (these ARE $state for input binding)
+	let uiNodeSize = $state(engineConfig.nodeSize);
+	let uiLabelVisibility = $state(engineConfig.labelVisibility);
+	let uiLabelFontSize = $state(engineConfig.labelFontSize);
+	let uiLinkThickness = $state(engineConfig.linkThickness);
+	let uiShowOrphans = $state(engineConfig.showOrphans);
+	let uiRepelForce = $state(engineConfig.repelForce);
+	let uiLinkForce = $state(engineConfig.linkForce);
+	let uiLinkDistance = $state(engineConfig.linkDistance);
 
-	function getSettings(): GraphMindSettings {
-		return { ...DEFAULTS, ...skyViewSettings, ...localSettings };
-	}
+	let containerEl: HTMLDivElement;
+	let engine: GraphEngine | null = null;
 
-	/** Convert a hex color to rgba with given alpha */
-	function addAlpha(color: string, alpha: number): string {
-		if (color.startsWith('rgba')) return color.replace(/[\d.]+\)$/, `${alpha})`);
-		if (color.startsWith('rgb')) return color.replace('rgb(', 'rgba(').replace(')', `,${alpha})`);
-		// Hex
-		const hex = color.replace('#', '');
-		const r = parseInt(hex.substring(0, 2), 16);
-		const g = parseInt(hex.substring(2, 4), 16);
-		const b = parseInt(hex.substring(4, 6), 16);
-		return `rgba(${r},${g},${b},${alpha})`;
-	}
-
-	function isRTL(text: string): boolean {
-		// Check for Arabic/Hebrew characters
-		return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(text);
-	}
-
-	function buildGraph() {
-		const g = new Graph({ multi: false, type: 'directed', allowSelfLoops: false });
-		const settings = getSettings();
-
-		const filteredNodes = settings.showOrphans
-			? nodes
-			: nodes.filter((n) => n.linkCount > 0);
-
-		const nodeIdSet = new Set(filteredNodes.map((n) => n.id));
-
-		// Add nodes
-		for (const node of filteredNodes) {
-			const size = (2 + Math.sqrt(node.linkCount) * 1.5) * (settings.nodeSize / 4);
-			const color = settings.colorByLibrary
-				? (libraryColorMap[node.libraryName] || DEFAULT_NODE_COLOR)
-				: DEFAULT_NODE_COLOR;
-
-			g.addNode(node.id, {
-				label: node.name,
-				size,
-				color,
-				x: (Math.random() - 0.5) * 1000,
-				y: (Math.random() - 0.5) * 1000,
-				// Custom attributes
-				path: node.path,
-				libraryName: node.libraryName,
-				linkCount: node.linkCount,
-				outgoingCount: node.outgoingCount,
-				isRTL: isRTL(node.name),
-			});
-		}
-
-		// Add edges
-		for (const link of links) {
-			if (!nodeIdSet.has(link.source) || !nodeIdSet.has(link.target)) continue;
-			if (link.source === link.target) continue;
-			// Avoid duplicate edges
-			const edgeKey = `${link.source}->${link.target}`;
-			if (g.hasEdge(edgeKey)) continue;
-
-			g.addEdgeWithKey(edgeKey, link.source, link.target, {
-				size: settings.linkThickness,
-				color: 'rgba(128,128,150,0.4)',
-				linkType: link.linkType,
-			});
-		}
-
-		nodeCount = g.order;
-		edgeCount = g.size;
-		return g;
-	}
-
-	function startForceWorker() {
-		if (worker) {
-			worker.terminate();
-			worker = null;
-		}
-		if (!graph || graph.order === 0) return;
-
-		const settings = getSettings();
-
-		try {
-			worker = new Worker(
-				new URL('$lib/graph/forceWorker.ts', import.meta.url),
-				{ type: 'module' }
-			);
-		} catch {
-			// Fallback: inline simple force layout
-			applySimpleLayout();
-			return;
-		}
-
-		const workerNodes = graph.mapNodes((id, attrs) => ({
-			id,
-			x: attrs.x,
-			y: attrs.y,
-		}));
-		const workerEdges = graph.mapEdges((_, attrs, source, target) => ({
-			source,
-			target,
-		}));
-
-		worker.onmessage = (e: MessageEvent) => {
-			if (e.data.type === 'positions' && graph && sigma) {
-				const positions = e.data.positions as Float64Array;
-				const nodeIds = graph.nodes();
-				for (let i = 0; i < nodeIds.length && i * 2 + 1 < positions.length; i++) {
-					graph.setNodeAttribute(nodeIds[i], 'x', positions[i * 2]);
-					graph.setNodeAttribute(nodeIds[i], 'y', positions[i * 2 + 1]);
-				}
-				sigma.refresh();
-
-				// Auto-fit on early iterations
-				if (!layoutSettled && e.data.settled) {
-					layoutSettled = true;
-					fitToScreen();
-				}
-			}
-		};
-
-		worker.postMessage({
-			type: 'init',
-			nodes: workerNodes,
-			edges: workerEdges,
-			settings: {
-				repelForce: settings.repelForce,
-				linkForce: settings.linkForce,
-				linkDistance: settings.linkDistance,
-				centerForce: 0.1,
-			},
-		});
-	}
-
-	function applySimpleLayout() {
-		// Fallback: circular layout
-		if (!graph) return;
-		const nodeIds = graph.nodes();
-		const radius = Math.max(200, nodeIds.length * 3);
-		nodeIds.forEach((id, i) => {
-			const angle = (2 * Math.PI * i) / nodeIds.length;
-			graph!.setNodeAttribute(id, 'x', Math.cos(angle) * radius);
-			graph!.setNodeAttribute(id, 'y', Math.sin(angle) * radius);
-		});
-		sigma?.refresh();
-		setTimeout(fitToScreen, 100);
-	}
-
-	function fitToScreen() {
-		if (!sigma || !graph || graph.order === 0) return;
-		const camera = sigma.getCamera();
-		camera.animatedReset({ duration: 300 });
-	}
-
-	function initSigma() {
-		if (!containerEl) return;
-		if (sigma) {
-			sigma.kill();
-			sigma = null;
-		}
-
-		graph = buildGraph();
-		if (graph.order === 0) return;
-
-		const settings = getSettings();
-		const dir = detectDir(nodes[0]?.name ?? '');
-
-		sigma = new Sigma(graph, containerEl, {
-			renderLabels: settings.labelVisibility !== 'none',
-			labelRenderedSizeThreshold: settings.labelVisibility === 'always' ? 0 : 8,
-			labelSize: settings.labelFontSize,
-			labelColor: { color: '#e2e8f0' },
-			labelFont: 'system-ui, -apple-system, sans-serif',
-			defaultEdgeColor: '#475569',
-			defaultNodeColor: DEFAULT_NODE_COLOR,
-			edgeLabelSize: 10,
-			minCameraRatio: 0.02,
-			maxCameraRatio: 20,
-			stagePadding: 30,
-			zIndex: true,
-			// Node & edge rendering reducers for hover/search highlighting
-			nodeReducer: (nodeId, data) => {
-				const res = { ...data };
-
-				// Active node glow
-				if (nodeId === activeNodeId) {
-					res.highlighted = true;
-					res.size = (data.size ?? 5) * 1.3;
-				}
-
-				// Hover highlighting — dim non-neighbors but keep them visible
-				if (hoveredNode) {
-					if (nodeId === hoveredNode) {
-						res.highlighted = true;
-						res.size = (data.size ?? 5) * 1.4;
-						res.zIndex = 10;
-					} else if (highlightedNeighbors.has(nodeId)) {
-						res.zIndex = 5;
-					} else {
-						res.color = DIM_NODE_COLOR;
-						res.label = '';
-					}
-				}
-
-				// Search highlighting
-				if (searchQuery && searchVisible) {
-					const q = searchQuery.toLowerCase();
-					const label = (data.label ?? '').toLowerCase();
-					if (!label.includes(q)) {
-						if (!hoveredNode) {
-							res.color = DIM_NODE_COLOR;
-							res.label = '';
-						}
-					} else {
-						res.highlighted = true;
-						res.zIndex = 10;
-					}
-				}
-
-				return res;
-			},
-			edgeReducer: (edgeId, data) => {
-				const res = { ...data };
-
-				if (hoveredNode && graph) {
-					const source = graph.source(edgeId);
-					const target = graph.target(edgeId);
-					if (source === hoveredNode || target === hoveredNode) {
-						res.color = HIGHLIGHT_EDGE_COLOR;
-						res.size = (data.size ?? 1) * 2;
-						res.zIndex = 10;
-					} else {
-						res.hidden = true;
-					}
-				}
-
-				if (searchQuery && searchVisible && graph) {
-					const q = searchQuery.toLowerCase();
-					const source = graph.source(edgeId);
-					const target = graph.target(edgeId);
-					const sourceLabel = (graph.getNodeAttribute(source, 'label') ?? '').toLowerCase();
-					const targetLabel = (graph.getNodeAttribute(target, 'label') ?? '').toLowerCase();
-					if (!sourceLabel.includes(q) && !targetLabel.includes(q)) {
-						res.hidden = true;
-					}
-				}
-
-				return res;
-			},
-		});
-
-		// --- Event handlers ---
-
-		// Hover
-		sigma.on('enterNode', ({ node }) => {
-			hoveredNode = node;
-			highlightedNeighbors = new Set(graph!.neighbors(node));
-			containerEl.style.cursor = 'pointer';
-			// Only refresh when simulation settled — worker already refreshes during layout
-			if (layoutSettled) sigma?.refresh();
-		});
-
-		sigma.on('leaveNode', () => {
-			hoveredNode = null;
-			highlightedNeighbors.clear();
-			containerEl.style.cursor = 'grab';
-			if (layoutSettled) sigma?.refresh();
-		});
-
-		// Click: open note
-		sigma.on('clickNode', ({ node }) => {
-			if (!graph) return;
-			const attrs = graph.getNodeAttributes(node);
-			onNodeClick?.(attrs.path, attrs.libraryName);
-		});
-
-		// Double-click: focus on node
-		sigma.on('doubleClickNode', ({ node }) => {
-			if (!graph || !sigma) return;
-			const attrs = graph.getNodeAttributes(node);
-			const camera = sigma.getCamera();
-			camera.animate({ x: attrs.x, y: attrs.y, ratio: 0.3 }, { duration: 300 });
-		});
-
-		// Right-click: future context menu
-		sigma.on('rightClickNode', ({ node, event }) => {
-			event.original.preventDefault();
-			// TODO Phase 3: context menu
-		});
-
-		// Drag behavior
-		let draggedNode: string | null = null;
-		let isDragging = false;
-
-		sigma.on('downNode', ({ node, event }) => {
-			draggedNode = node;
-			isDragging = false;
-			// Disable camera panning while dragging
-			sigma!.getCamera().disable();
-		});
-
-		sigma.getMouseCaptor().on('mousemovebody', (e: any) => {
-			if (!draggedNode || !sigma || !graph) return;
-			isDragging = true;
-
-			// Get new position from viewport coordinates
-			const pos = sigma.viewportToGraph(e);
-			graph.setNodeAttribute(draggedNode, 'x', pos.x);
-			graph.setNodeAttribute(draggedNode, 'y', pos.y);
-
-			// Pin node in worker
-			worker?.postMessage({ type: 'pinNode', id: draggedNode, x: pos.x, y: pos.y });
-
-			sigma.refresh();
-		});
-
-		sigma.getMouseCaptor().on('mouseup', () => {
-			if (draggedNode) {
-				sigma?.getCamera().enable();
-				if (!isDragging) {
-					// Was a click, not a drag — unpin
-					worker?.postMessage({ type: 'unpinNode', id: draggedNode });
-				}
-				draggedNode = null;
-				isDragging = false;
-			}
-		});
-
-		containerEl.style.cursor = 'grab';
-
-		// Start force layout
-		layoutSettled = false;
-		startForceWorker();
+	function handleSettingChange(key: keyof EngineConfig, value: any) {
+		(engineConfig as any)[key] = value;
+		engine?.updateConfig({ [key]: value });
 	}
 
 	// Keyboard shortcuts
 	function handleKeydown(e: KeyboardEvent) {
-		// Ctrl+F — search
 		if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
 			e.preventDefault();
 			searchVisible = !searchVisible;
-			if (!searchVisible) {
-				searchQuery = '';
-				sigma?.refresh();
-			}
+			if (!searchVisible) searchQuery = '';
 		}
-		// Escape — close search or settings
 		if (e.key === 'Escape') {
-			if (searchVisible) {
-				searchVisible = false;
-				searchQuery = '';
-				sigma?.refresh();
-			}
-			if (showSettings) showSettings = false;
+			if (searchVisible) { searchVisible = false; searchQuery = ''; }
+			if (settingsOpen) settingsOpen = false;
 		}
 	}
 
-	// Search reactivity
+	// Search → engine (one-way)
+	let prevSearch = '';
 	$effect(() => {
-		if (searchQuery !== undefined && sigma) {
-			sigma.refresh();
+		const q = searchQuery;
+		if (q !== prevSearch) {
+			prevSearch = q;
+			engine?.setSearch(q);
 		}
 	});
 
-	// Re-init when data changes
+	// Active node → engine
 	$effect(() => {
-		const _n = nodes.length;
-		const _l = links.length;
-		if (containerEl && nodes.length > 0) {
-			initSigma();
+		const id = activeNodeId;
+		engine?.setActiveNode(id);
+	});
+
+	// Data changes → engine
+	let prevNodeLen = 0;
+	$effect(() => {
+		const len = nodes.length;
+		if (len !== prevNodeLen && len > 0 && engine) {
+			prevNodeLen = len;
+			engine.setData(nodes, links, libraryColorMap);
 		}
 	});
 
-	// Track previous physics values to avoid unnecessary simulation restarts
-	let prevPhysics = { repelForce: DEFAULTS.repelForce, linkForce: DEFAULTS.linkForce, linkDistance: DEFAULTS.linkDistance };
-
-	// Settings change → update graph
-	$effect(() => {
-		const s = localSettings;
-		if (!graph || !sigma) return;
-
-		// Update node sizes
-		const sizeMul = s.nodeSize / 4;
-		graph.forEachNode((id, attrs) => {
-			const lc = attrs.linkCount ?? 0;
-			graph!.setNodeAttribute(id, 'size', (2 + Math.sqrt(lc) * 1.5) * sizeMul);
-		});
-
-		// Update edge thickness
-		graph.forEachEdge((id) => {
-			graph!.setEdgeAttribute(id, 'size', s.linkThickness);
-		});
-
-		// Update sigma settings
-		sigma.setSetting('renderLabels', s.labelVisibility !== 'none');
-		sigma.setSetting('labelRenderedSizeThreshold', s.labelVisibility === 'always' ? 0 : 8);
-		sigma.setSetting('labelSize', s.labelFontSize);
-
-		sigma.refresh();
-
-		// Only update worker physics if physics settings actually changed
-		if (s.repelForce !== prevPhysics.repelForce || s.linkForce !== prevPhysics.linkForce || s.linkDistance !== prevPhysics.linkDistance) {
-			prevPhysics = { repelForce: s.repelForce, linkForce: s.linkForce, linkDistance: s.linkDistance };
-			worker?.postMessage({
-				type: 'updateSettings',
-				settings: {
-					repelForce: s.repelForce,
-					linkForce: s.linkForce,
-					linkDistance: s.linkDistance,
-					centerForce: 0.1,
-				},
-			});
-		}
-	});
-
-	onMount(() => {
+	onMount(async () => {
 		window.addEventListener('keydown', handleKeydown);
+
+		engine = new GraphEngine(containerEl, engineConfig, {
+			onNodeClick: (path, lib) => onNodeClick?.(path, lib),
+			onNodeHover: (name) => { hoveredName = name; },
+			onStatsReady: (nc, ec, mc) => { nodeCount = nc; edgeCount = ec; mocCount = mc; },
+		});
+
+		await engine.init();
+
+		if (nodes.length > 0) {
+			prevNodeLen = nodes.length;
+			engine.setData(nodes, links, libraryColorMap);
+		}
 	});
 
 	onDestroy(() => {
 		window.removeEventListener('keydown', handleKeydown);
-		worker?.terminate();
-		worker = null;
-		sigma?.kill();
-		sigma = null;
-		graph = null;
+		engine?.destroy();
+		engine = null;
 	});
 </script>
 
-<div class="graphmind-container">
+<div class="gm-container" bind:this={containerEl}>
 	<!-- Toolbar -->
 	<div class="gm-toolbar" dir="auto">
 		<div class="gm-toolbar-left">
-			<button class="gm-btn" class:active={searchVisible} title="{$t('layout.search')} (Ctrl+F)" onclick={() => { searchVisible = !searchVisible; if (!searchVisible) { searchQuery = ''; sigma?.refresh(); } }}>
+			<button class="gm-btn" class:active={searchVisible} title="{$t('layout.search')} (Ctrl+F)"
+				onclick={() => { searchVisible = !searchVisible; if (!searchVisible) searchQuery = ''; }}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 			</button>
 			{#if searchVisible}
-				<input
-					class="gm-search"
-					type="text"
-					dir="auto"
-					placeholder={$t('layout.search')}
-					bind:value={searchQuery}
-					autofocus
-				/>
+				<input class="gm-search" type="text" dir="auto" placeholder={$t('layout.search')}
+					bind:value={searchQuery} autofocus />
 			{/if}
 		</div>
 		<div class="gm-toolbar-right">
-			<button class="gm-btn" title="Fit to screen" onclick={fitToScreen}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+			<button class="gm-btn" title="Fit to screen" onclick={() => engine?.fitToScreen()}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
 			</button>
-			<button class="gm-btn" class:active={showSettings} title="Settings" onclick={() => showSettings = !showSettings}>
+			<button class="gm-btn" class:active={settingsOpen} title="Settings"
+				onclick={() => settingsOpen = !settingsOpen}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
 			</button>
 		</div>
 	</div>
 
 	<!-- Settings panel -->
-	{#if showSettings}
+	{#if settingsOpen}
 		<div class="gm-settings" dir="auto">
 			<div class="gm-settings-tabs">
-				<button class="gm-tab" class:active={settingsPanel === 'appearance'} onclick={() => settingsPanel = 'appearance'}>
+				<button class="gm-tab" class:active={settingsTab === 'appearance'} onclick={() => settingsTab = 'appearance'}>
 					{$t('settings.skyview.graphAppearance') || 'Appearance'}
 				</button>
-				<button class="gm-tab" class:active={settingsPanel === 'physics'} onclick={() => settingsPanel = 'physics'}>
+				<button class="gm-tab" class:active={settingsTab === 'physics'} onclick={() => settingsTab = 'physics'}>
 					{$t('settings.skyview.physics') || 'Physics'}
 				</button>
 			</div>
 
-			{#if settingsPanel === 'appearance'}
+			{#if settingsTab === 'appearance'}
 				<label class="gm-setting">
 					<span>{$t('settings.skyview.nodeSize') || 'Node size'}</span>
-					<input type="range" min="1" max="10" step="0.5" bind:value={localSettings.nodeSize} />
-					<span class="gm-val">{localSettings.nodeSize}</span>
+					<input type="range" min="1" max="10" step="0.5" bind:value={uiNodeSize}
+						oninput={() => handleSettingChange('nodeSize', uiNodeSize)} />
+					<span class="gm-val">{uiNodeSize}</span>
 				</label>
 				<label class="gm-setting">
 					<span>{$t('settings.skyview.labelVisibility') || 'Labels'}</span>
-					<select bind:value={localSettings.labelVisibility}>
+					<select bind:value={uiLabelVisibility}
+						onchange={() => handleSettingChange('labelVisibility', uiLabelVisibility)}>
 						<option value="hover">{$t('settings.skyview.labelHover') || 'On hover'}</option>
 						<option value="always">{$t('settings.skyview.labelAlways') || 'Always'}</option>
 						<option value="none">{$t('settings.skyview.labelNone') || 'None'}</option>
@@ -544,52 +192,56 @@
 				</label>
 				<label class="gm-setting">
 					<span>{$t('settings.skyview.labelFontSize') || 'Label size'}</span>
-					<input type="range" min="8" max="24" step="1" bind:value={localSettings.labelFontSize} />
-					<span class="gm-val">{localSettings.labelFontSize}</span>
+					<input type="range" min="8" max="24" step="1" bind:value={uiLabelFontSize}
+						oninput={() => handleSettingChange('labelFontSize', uiLabelFontSize)} />
+					<span class="gm-val">{uiLabelFontSize}</span>
 				</label>
 				<label class="gm-setting">
 					<span>{$t('settings.skyview.linkThickness') || 'Link width'}</span>
-					<input type="range" min="0.5" max="5" step="0.5" bind:value={localSettings.linkThickness} />
-					<span class="gm-val">{localSettings.linkThickness}</span>
+					<input type="range" min="0.5" max="5" step="0.5" bind:value={uiLinkThickness}
+						oninput={() => handleSettingChange('linkThickness', uiLinkThickness)} />
+					<span class="gm-val">{uiLinkThickness}</span>
 				</label>
 				<label class="gm-setting">
 					<span>{$t('settings.skyview.showOrphans') || 'Show orphans'}</span>
-					<input type="checkbox" bind:checked={localSettings.showOrphans} />
+					<input type="checkbox" bind:checked={uiShowOrphans}
+						onchange={() => { handleSettingChange('showOrphans', uiShowOrphans); engine?.setData(nodes, links, libraryColorMap); }} />
 				</label>
 			{:else}
 				<label class="gm-setting">
 					<span>{$t('settings.skyview.repelForce') || 'Repulsion'}</span>
-					<input type="range" min="10" max="300" step="5" bind:value={localSettings.repelForce} />
-					<span class="gm-val">{localSettings.repelForce}</span>
+					<input type="range" min="10" max="300" step="5" bind:value={uiRepelForce}
+						oninput={() => handleSettingChange('repelForce', uiRepelForce)} />
+					<span class="gm-val">{uiRepelForce}</span>
 				</label>
 				<label class="gm-setting">
 					<span>{$t('settings.skyview.linkForce') || 'Link force'}</span>
-					<input type="range" min="0.01" max="0.3" step="0.01" bind:value={localSettings.linkForce} />
-					<span class="gm-val">{localSettings.linkForce.toFixed(2)}</span>
+					<input type="range" min="0.01" max="0.3" step="0.01" bind:value={uiLinkForce}
+						oninput={() => handleSettingChange('linkForce', uiLinkForce)} />
+					<span class="gm-val">{uiLinkForce.toFixed(2)}</span>
 				</label>
 				<label class="gm-setting">
 					<span>{$t('settings.skyview.linkDistance') || 'Link distance'}</span>
-					<input type="range" min="10" max="300" step="5" bind:value={localSettings.linkDistance} />
-					<span class="gm-val">{localSettings.linkDistance}</span>
+					<input type="range" min="10" max="300" step="5" bind:value={uiLinkDistance}
+						oninput={() => handleSettingChange('linkDistance', uiLinkDistance)} />
+					<span class="gm-val">{uiLinkDistance}</span>
 				</label>
-				<button class="gm-btn gm-reset" onclick={() => {
-					worker?.postMessage({ type: 'restart' });
-					layoutSettled = false;
-				}}>
-					Reheat simulation
-				</button>
 			{/if}
 		</div>
 	{/if}
 
 	<!-- Stats bar -->
 	<div class="gm-stats" dir="auto">
-		<span>{nodeCount} {$t('graphView.nodes')}</span>
-		<span class="gm-sep">·</span>
-		<span>{edgeCount} {$t('graphView.edges')}</span>
-		{#if hoveredNode && graph}
-			<span class="gm-sep">·</span>
-			<span class="gm-hovered" dir="auto">{graph.getNodeAttribute(hoveredNode, 'label')}</span>
+		<span>{nodeCount} {$t('graphView.nodes') || 'nodes'}</span>
+		<span class="gm-sep">&middot;</span>
+		<span>{edgeCount} {$t('graphView.edges') || 'edges'}</span>
+		{#if mocCount > 0}
+			<span class="gm-sep">&middot;</span>
+			<span>{mocCount} MOCs</span>
+		{/if}
+		{#if hoveredName}
+			<span class="gm-sep">&middot;</span>
+			<span class="gm-hovered" dir="auto">{hoveredName}</span>
 		{/if}
 	</div>
 
@@ -604,34 +256,21 @@
 			{/each}
 		</div>
 	{/if}
-
-	<!-- WebGL canvas container -->
-	<div class="gm-renderer" bind:this={containerEl}></div>
 </div>
 
 <style>
-	.graphmind-container {
+	.gm-container {
 		position: relative;
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
-		background: var(--background-primary);
-	}
-
-	.gm-renderer {
-		width: 100%;
-		height: 100%;
-	}
-	.gm-renderer :global(canvas) {
-		display: block;
+		background: var(--background-secondary);
 	}
 
 	/* Toolbar */
 	.gm-toolbar {
 		position: absolute;
-		top: 8px;
-		left: 8px;
-		right: 8px;
+		top: 8px; left: 8px; right: 8px;
 		z-index: 10;
 		display: flex;
 		justify-content: space-between;
@@ -639,167 +278,95 @@
 		pointer-events: none;
 	}
 	.gm-toolbar-left, .gm-toolbar-right {
-		display: flex;
-		gap: 4px;
-		align-items: center;
+		display: flex; gap: 4px; align-items: center;
 		pointer-events: auto;
 	}
 
 	.gm-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 32px;
-		height: 32px;
-		border: none;
+		display: flex; align-items: center; justify-content: center;
+		width: 32px; height: 32px;
+		border: 1px solid var(--background-modifier-border);
 		border-radius: 6px;
-		background: var(--background-secondary-alt, rgba(30, 30, 46, 0.9));
-		color: var(--text-muted, #94a3b8);
+		background: var(--background-primary);
+		color: var(--text-muted);
 		cursor: pointer;
-		backdrop-filter: blur(8px);
 		transition: all 0.15s;
 	}
-	.gm-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal, #e2e8f0); }
-	.gm-btn.active { background: var(--interactive-accent, #7c3aed); color: white; }
+	.gm-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.gm-btn.active { background: var(--interactive-accent); color: white; }
 
 	.gm-search {
-		height: 32px;
-		padding: 0 10px;
-		border: 1px solid var(--background-modifier-border, #334155);
+		height: 32px; padding: 0 10px;
+		border: 1px solid var(--background-modifier-border);
 		border-radius: 6px;
-		background: var(--background-secondary, rgba(30, 30, 46, 0.95));
-		color: var(--text-normal, #e2e8f0);
-		font-size: 13px;
-		outline: none;
+		background: var(--background-primary);
+		color: var(--text-normal);
+		font-size: 13px; outline: none;
 		min-width: 200px;
-		backdrop-filter: blur(8px);
 	}
-	.gm-search:focus { border-color: var(--interactive-accent, #7c3aed); }
+	.gm-search:focus { border-color: var(--interactive-accent); }
 
 	/* Settings panel */
 	.gm-settings {
 		position: absolute;
-		top: 48px;
-		right: 8px;
-		z-index: 20;
-		width: 260px;
-		background: var(--background-secondary, rgba(30, 30, 46, 0.95));
-		border: 1px solid var(--background-modifier-border, #334155);
-		border-radius: 8px;
-		padding: 8px;
-		backdrop-filter: blur(12px);
+		top: 48px; right: 8px;
+		z-index: 20; width: 260px;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; padding: 8px;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 	}
-	[dir="rtl"] .gm-settings {
-		right: auto;
-		left: 8px;
-	}
-	.gm-settings-tabs {
-		display: flex;
-		gap: 4px;
-		margin-bottom: 8px;
-	}
+	.gm-settings-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
 	.gm-tab {
-		flex: 1;
-		padding: 5px 8px;
-		border: none;
-		border-radius: 4px;
+		flex: 1; padding: 5px 8px;
+		border: none; border-radius: 4px;
 		background: transparent;
-		color: var(--text-muted, #94a3b8);
-		font-size: 12px;
-		cursor: pointer;
+		color: var(--text-muted); font-size: 12px; cursor: pointer;
 	}
-	.gm-tab.active { background: var(--interactive-accent, #7c3aed); color: white; }
+	.gm-tab.active { background: var(--interactive-accent); color: white; }
 
 	.gm-setting {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 4px 0;
-		font-size: 12px;
-		color: var(--text-muted, #94a3b8);
+		display: flex; align-items: center; gap: 8px;
+		padding: 4px 0; font-size: 12px; color: var(--text-muted);
 	}
 	.gm-setting span:first-child { flex: 1; white-space: nowrap; }
-	.gm-setting input[type="range"] { flex: 1; max-width: 100px; accent-color: var(--interactive-accent, #7c3aed); }
+	.gm-setting input[type="range"] { flex: 1; max-width: 100px; accent-color: var(--interactive-accent); }
 	.gm-setting select {
-		background: var(--background-secondary);
-		color: var(--text-normal, #e2e8f0);
-		border: 1px solid var(--background-modifier-border, #334155);
-		border-radius: 4px;
-		padding: 2px 6px;
-		font-size: 12px;
+		background: var(--background-secondary); color: var(--text-normal);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 4px; padding: 2px 6px; font-size: 12px;
 	}
-	.gm-setting input[type="checkbox"] { accent-color: var(--interactive-accent, #7c3aed); }
+	.gm-setting input[type="checkbox"] { accent-color: var(--interactive-accent); }
 	.gm-val { width: 30px; text-align: end; font-variant-numeric: tabular-nums; }
-
-	.gm-reset {
-		width: 100%;
-		margin-top: 8px;
-		font-size: 12px;
-		padding: 6px;
-	}
 
 	/* Stats bar */
 	.gm-stats {
 		position: absolute;
-		bottom: 8px;
-		left: 8px;
+		bottom: 8px; left: 8px;
 		z-index: 10;
-		display: flex;
-		gap: 6px;
-		align-items: center;
-		font-size: 11px;
-		color: var(--text-faint, #64748b);
-		background: var(--background-secondary-alt, rgba(30, 30, 46, 0.85));
-		padding: 4px 10px;
-		border-radius: 6px;
-		backdrop-filter: blur(8px);
-	}
-	[dir="rtl"] .gm-stats {
-		left: auto;
-		right: 8px;
+		display: flex; gap: 6px; align-items: center;
+		font-size: 11px; color: var(--text-faint);
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		padding: 4px 10px; border-radius: 6px;
 	}
 	.gm-sep { opacity: 0.3; }
-	.gm-hovered { color: var(--text-normal, #e2e8f0); font-weight: 500; }
+	.gm-hovered { color: var(--text-normal); font-weight: 500; }
 
 	/* Legend */
 	.gm-legend {
 		position: absolute;
-		bottom: 8px;
-		right: 8px;
+		bottom: 8px; right: 8px;
 		z-index: 10;
-		display: flex;
-		flex-direction: column;
-		gap: 3px;
-		background: var(--background-secondary-alt, rgba(30, 30, 46, 0.85));
-		padding: 6px 10px;
-		border-radius: 6px;
-		backdrop-filter: blur(8px);
-	}
-	[dir="rtl"] .gm-legend {
-		right: auto;
-		left: 8px;
-	}
-	[dir="rtl"] .gm-stats {
-		left: auto;
-		right: 8px;
+		display: flex; flex-direction: column; gap: 3px;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		padding: 6px 10px; border-radius: 6px;
 	}
 	.gm-legend-item {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		font-size: 11px;
-		color: var(--text-muted, #94a3b8);
+		display: flex; align-items: center; gap: 6px;
+		font-size: 11px; color: var(--text-muted);
 	}
-	.gm-legend-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		flex-shrink: 0;
-	}
-	.gm-legend-name {
-		max-width: 180px;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
+	.gm-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+	.gm-legend-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

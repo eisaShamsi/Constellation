@@ -1,6 +1,13 @@
 /**
- * GraphMind — Web Worker for D3 force simulation.
- * Runs layout computation off the main thread.
+ * GraphMind — Layer 3: Web Worker for D3 force simulation.
+ *
+ * STRICT STOP GATE (Law 2):
+ * Only two events may restart the simulation:
+ *   1. dragEnd  — user finished dragging a node
+ *   2. updateSettings — user changed physics settings
+ *
+ * Hover events NEVER reach this worker. This is enforced by design
+ * in graphEngine.ts (Layer 2), which never sends hover-related messages.
  */
 
 import {
@@ -26,11 +33,11 @@ interface WEdge extends SimulationLinkDatum<WNode> {
 
 let simulation: ReturnType<typeof forceSimulation<WNode>> | null = null;
 let nodes: WNode[] = [];
+let nodeById: Map<string, WNode> = new Map();
 let tickCount = 0;
 const MAX_TICKS = 300;
 
 function sendPositions(settled: boolean) {
-	// Pack positions as flat Float64Array: [x0, y0, x1, y1, ...]
 	const positions = new Float64Array(nodes.length * 2);
 	for (let i = 0; i < nodes.length; i++) {
 		positions[i * 2] = nodes[i].x ?? 0;
@@ -38,7 +45,6 @@ function sendPositions(settled: boolean) {
 	}
 	(self as unknown as Worker).postMessage(
 		{ type: 'positions', positions, settled },
-		// Transfer the buffer for zero-copy
 		[positions.buffer] as any
 	);
 }
@@ -55,18 +61,16 @@ function initSimulation(
 
 	tickCount = 0;
 
-	// Create fresh node objects
 	nodes = inNodes.map((n) => ({
 		id: n.id,
 		x: n.x ?? (Math.random() - 0.5) * 1000,
 		y: n.y ?? (Math.random() - 0.5) * 1000,
 	}));
 
-	const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+	nodeById = new Map(nodes.map((n) => [n.id, n]));
 
-	// Resolve edges to node references
 	const edges: WEdge[] = inEdges
-		.filter((e) => nodeMap.has(e.source) && nodeMap.has(e.target))
+		.filter((e) => nodeById.has(e.source) && nodeById.has(e.target))
 		.map((e) => ({ source: e.source, target: e.target }));
 
 	simulation = forceSimulation<WNode>(nodes)
@@ -85,10 +89,12 @@ function initSimulation(
 		.velocityDecay(0.5)
 		.on('tick', () => {
 			tickCount++;
-			// Send position updates every 3 ticks for performance
 			if (tickCount % 3 === 0 || tickCount <= 5) {
 				const settled = tickCount >= MAX_TICKS || (simulation?.alpha() ?? 0) < 0.005;
 				sendPositions(settled);
+				if (settled && simulation) {
+					simulation.stop();
+				}
 			}
 		})
 		.on('end', () => {
@@ -96,59 +102,78 @@ function initSimulation(
 		});
 }
 
+// ─── Message Handler with STRICT STOP GATE ────────────────────────────
+
 self.onmessage = (e: MessageEvent) => {
 	const msg = e.data;
 
 	switch (msg.type) {
+		// ── INIT: start fresh simulation ──
 		case 'init':
 			initSimulation(msg.nodes, msg.edges, msg.settings);
 			(self as unknown as Worker).postMessage({ type: 'ready' });
 			break;
 
+		// ── SETTINGS_CHANGE: allowed restart (Law 2) ──
 		case 'updateSettings':
 			if (simulation) {
 				const s = msg.settings;
 				(simulation.force('charge') as any)?.strength(-s.repelForce);
 				(simulation.force('link') as any)?.strength(s.linkForce).distance(s.linkDistance);
 				(simulation.force('center') as any)?.strength(s.centerForce);
-				simulation.alpha(0.5).restart();
+				simulation.alpha(0.3).restart(); // Allowed: SETTINGS_CHANGE
 				tickCount = 0;
 			}
 			break;
 
+		// ── DRAG_END: allowed restart (Law 2) ──
+		case 'dragEnd':
+			if (simulation) {
+				const node = nodeById.get(msg.id);
+				if (node) {
+					node.x = msg.x;
+					node.y = msg.y;
+					node.fx = msg.x;
+					node.fy = msg.y;
+					simulation.alpha(0.3).restart(); // Allowed: DRAG_END
+					tickCount = 0;
+				}
+			}
+			break;
+
+		// ── pinNode: position only, NO restart ──
 		case 'pinNode':
-			if (nodes.length > 0) {
-				const node = nodes.find((n) => n.id === msg.id);
+			if (nodeById.size > 0) {
+				const node = nodeById.get(msg.id);
 				if (node) {
 					node.fx = msg.x;
 					node.fy = msg.y;
-					// Only reheat enough for neighbors to adjust
-					if ((simulation?.alpha() ?? 0) < 0.05) {
-						simulation?.alpha(0.1).restart();
-					}
+					// NO restart — just record position during active drag
 				}
 			}
 			break;
 
+		// ── unpinNode: release, NO restart ──
 		case 'unpinNode':
-			if (nodes.length > 0) {
-				const node = nodes.find((n) => n.id === msg.id);
+			if (nodeById.size > 0) {
+				const node = nodeById.get(msg.id);
 				if (node) {
 					node.fx = null;
 					node.fy = null;
-					// Gentle reheat — just enough for the unpinned node to settle
-					simulation?.alpha(0.05).restart();
+					// NO restart — node stays where it was
 				}
 			}
 			break;
 
-		case 'restart':
-			simulation?.alpha(0.5).restart();
-			tickCount = 0;
-			break;
-
+		// ── stop: terminate simulation ──
 		case 'stop':
 			simulation?.stop();
+			break;
+
+		// ── All other message types are silently ignored ──
+		// This is the defensive gate. Hover, refresh, render events
+		// can NEVER reach here because graphEngine.ts never sends them.
+		default:
 			break;
 	}
 };
