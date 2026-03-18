@@ -261,6 +261,12 @@
 				layoutMode = engine.cycleLayoutMode();
 			}
 		}
+		// 0 key — reset rotation back to 2D
+		if (e.key === '0' && !(e.target instanceof HTMLInputElement) && isTilted) {
+			e.preventDefault();
+			engine?.resetTilt();
+			isTilted = false;
+		}
 		// WASD / Arrow keys — fly through 3D star field (only when in 3D mode)
 		if (isTilted && !(e.target instanceof HTMLInputElement) && !e.ctrlKey && !e.metaKey) {
 			const speed = 15;
@@ -434,7 +440,7 @@
 				{/if}
 			</button>
 			{#if isTilted}
-				<button class="gm-btn" title="Reset tilt" onclick={() => { engine?.resetTilt(); isTilted = false; }}>
+				<button class="gm-btn" title="Reset rotation (0)" onclick={() => { engine?.resetTilt(); isTilted = false; }}>
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9"/><polyline points="3 3 3 12 12 12"/></svg>
 				</button>
 			{/if}
