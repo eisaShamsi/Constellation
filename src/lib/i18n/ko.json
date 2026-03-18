@@ -543,6 +543,8 @@
     "redo": "다시 실행"
   },
   "graphView": {
+    "nodes": "노드",
+    "edges": "엣지",
     "noNotes": "표시할 노트가 없습니다",
     "controls": {
       "title": "그래프 설정",

@@ -484,7 +484,12 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		return;
 	}
 
-	const content: string = await invoke('read_note', { filePath });
+	let content: string;
+	try {
+		content = await invoke('read_note', { filePath });
+	} catch {
+		return; // File may not exist or be readable
+	}
 	const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
 
 	// Derive library path from registered libraries

@@ -543,6 +543,8 @@
     "redo": "Yinele"
   },
   "graphView": {
+    "nodes": "düğümler",
+    "edges": "kenarlar",
     "noNotes": "Gösterilecek not yok",
     "controls": {
       "title": "Grafik Ayarları",

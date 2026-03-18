@@ -543,6 +543,8 @@
     "redo": "Wiederherstellen"
   },
   "graphView": {
+    "nodes": "Knoten",
+    "edges": "Kanten",
     "noNotes": "Keine Notizen zum Anzeigen",
     "controls": {
       "title": "Graph-Einstellungen",

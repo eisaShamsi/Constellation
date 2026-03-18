@@ -543,6 +543,8 @@
     "redo": "Rehacer"
   },
   "graphView": {
+    "nodes": "nodos",
+    "edges": "aristas",
     "noNotes": "No hay notas para mostrar",
     "controls": {
       "title": "Ajustes del grafo",

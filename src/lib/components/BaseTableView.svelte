@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { detectCellType, type BaseRow, type ColumnDef, type PropertyType } from '$lib/bases/types';
 	import { detectDir } from '$lib/utils';
 
@@ -92,6 +93,12 @@
 		window.removeEventListener('mouseup', onResizeEnd);
 		if (onColumnReorder) onColumnReorder(columns);
 	}
+
+	onDestroy(() => {
+		// Clean up resize listeners if component unmounts mid-resize
+		window.removeEventListener('mousemove', onResizeMove);
+		window.removeEventListener('mouseup', onResizeEnd);
+	});
 
 	// ─── Column drag reorder ───
 	function onColDragStart(e: DragEvent, col: ColumnDef) {

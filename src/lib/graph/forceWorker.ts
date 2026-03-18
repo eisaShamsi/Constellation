@@ -79,14 +79,15 @@ function initSimulation(
 		)
 		.force('charge', forceManyBody<WNode>().strength(-settings.repelForce).theta(1.2))
 		.force('center', forceCenter(0, 0).strength(settings.centerForce))
-		.force('collide', forceCollide<WNode>(8))
-		.alphaDecay(0.02)
-		.velocityDecay(0.4)
+		.force('collide', forceCollide<WNode>(6))
+		.alphaDecay(0.03)
+		.alphaMin(0.005)
+		.velocityDecay(0.5)
 		.on('tick', () => {
 			tickCount++;
 			// Send position updates every 3 ticks for performance
 			if (tickCount % 3 === 0 || tickCount <= 5) {
-				const settled = tickCount >= MAX_TICKS || (simulation?.alpha() ?? 0) < 0.001;
+				const settled = tickCount >= MAX_TICKS || (simulation?.alpha() ?? 0) < 0.005;
 				sendPositions(settled);
 			}
 		})
@@ -121,7 +122,10 @@ self.onmessage = (e: MessageEvent) => {
 				if (node) {
 					node.fx = msg.x;
 					node.fy = msg.y;
-					simulation?.alpha(0.3).restart();
+					// Only reheat enough for neighbors to adjust
+					if ((simulation?.alpha() ?? 0) < 0.05) {
+						simulation?.alpha(0.1).restart();
+					}
 				}
 			}
 			break;
@@ -132,7 +136,8 @@ self.onmessage = (e: MessageEvent) => {
 				if (node) {
 					node.fx = null;
 					node.fy = null;
-					simulation?.alpha(0.3).restart();
+					// Gentle reheat — just enough for the unpinned node to settle
+					simulation?.alpha(0.05).restart();
 				}
 			}
 			break;

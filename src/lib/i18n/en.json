@@ -538,6 +538,8 @@
     "redo": "Redo"
   },
   "graphView": {
+    "nodes": "nodes",
+    "edges": "edges",
     "noNotes": "No notes to display",
     "controls": {
       "title": "Graph Settings",

@@ -28,7 +28,7 @@
 		labelVisibility: 'hover',
 		labelFontSize: 12,
 		linkThickness: 1,
-		repelForce: 80,
+		repelForce: 50,
 		linkForce: 0.05,
 		linkDistance: 30,
 		showOrphans: true,
@@ -36,9 +36,9 @@
 	};
 
 	const DEFAULT_NODE_COLOR = '#a78bfa';
-	const HIGHLIGHT_EDGE_COLOR = '#ffffff';
-	const DIM_COLOR = '#2a2a3e';
-	const DIM_EDGE_COLOR = '#1a1a2e';
+	const HIGHLIGHT_EDGE_COLOR = '#f97316'; // orange — visible on both light and dark
+	const DIM_NODE_COLOR = '#d0d0d0'; // light gray — visible on white, subtle on dark
+	const DIM_EDGE_COLOR = '#e0e0e0';
 
 	let containerEl: HTMLDivElement;
 	let sigma: Sigma | null = null;
@@ -61,6 +61,18 @@
 
 	function getSettings(): GraphMindSettings {
 		return { ...DEFAULTS, ...skyViewSettings, ...localSettings };
+	}
+
+	/** Convert a hex color to rgba with given alpha */
+	function addAlpha(color: string, alpha: number): string {
+		if (color.startsWith('rgba')) return color.replace(/[\d.]+\)$/, `${alpha})`);
+		if (color.startsWith('rgb')) return color.replace('rgb(', 'rgba(').replace(')', `,${alpha})`);
+		// Hex
+		const hex = color.replace('#', '');
+		const r = parseInt(hex.substring(0, 2), 16);
+		const g = parseInt(hex.substring(2, 4), 16);
+		const b = parseInt(hex.substring(4, 6), 16);
+		return `rgba(${r},${g},${b},${alpha})`;
 	}
 
 	function isRTL(text: string): boolean {
@@ -110,7 +122,7 @@
 
 			g.addEdgeWithKey(edgeKey, link.source, link.target, {
 				size: settings.linkThickness,
-				color: '#475569',
+				color: 'rgba(128,128,150,0.4)',
 				linkType: link.linkType,
 			});
 		}
@@ -233,19 +245,20 @@
 
 				// Active node glow
 				if (nodeId === activeNodeId) {
-					res.color = '#ffffff';
+					res.highlighted = true;
 					res.size = (data.size ?? 5) * 1.3;
 				}
 
-				// Hover highlighting
+				// Hover highlighting — dim non-neighbors but keep them visible
 				if (hoveredNode) {
 					if (nodeId === hoveredNode) {
-						res.size = (data.size ?? 5) * 1.5;
+						res.highlighted = true;
+						res.size = (data.size ?? 5) * 1.4;
 						res.zIndex = 10;
 					} else if (highlightedNeighbors.has(nodeId)) {
 						res.zIndex = 5;
 					} else {
-						res.color = DIM_COLOR;
+						res.color = DIM_NODE_COLOR;
 						res.label = '';
 					}
 				}
@@ -256,7 +269,7 @@
 					const label = (data.label ?? '').toLowerCase();
 					if (!label.includes(q)) {
 						if (!hoveredNode) {
-							res.color = DIM_COLOR;
+							res.color = DIM_NODE_COLOR;
 							res.label = '';
 						}
 					} else {
@@ -278,7 +291,6 @@
 						res.size = (data.size ?? 1) * 2;
 						res.zIndex = 10;
 					} else {
-						res.color = DIM_EDGE_COLOR;
 						res.hidden = true;
 					}
 				}
@@ -304,15 +316,16 @@
 		sigma.on('enterNode', ({ node }) => {
 			hoveredNode = node;
 			highlightedNeighbors = new Set(graph!.neighbors(node));
-			sigma?.refresh();
 			containerEl.style.cursor = 'pointer';
+			// Only refresh when simulation settled — worker already refreshes during layout
+			if (layoutSettled) sigma?.refresh();
 		});
 
 		sigma.on('leaveNode', () => {
 			hoveredNode = null;
 			highlightedNeighbors.clear();
-			sigma?.refresh();
 			containerEl.style.cursor = 'grab';
+			if (layoutSettled) sigma?.refresh();
 		});
 
 		// Click: open note
@@ -419,6 +432,9 @@
 		}
 	});
 
+	// Track previous physics values to avoid unnecessary simulation restarts
+	let prevPhysics = { repelForce: DEFAULTS.repelForce, linkForce: DEFAULTS.linkForce, linkDistance: DEFAULTS.linkDistance };
+
 	// Settings change → update graph
 	$effect(() => {
 		const s = localSettings;
@@ -443,16 +459,19 @@
 
 		sigma.refresh();
 
-		// Update worker physics
-		worker?.postMessage({
-			type: 'updateSettings',
-			settings: {
-				repelForce: s.repelForce,
-				linkForce: s.linkForce,
-				linkDistance: s.linkDistance,
-				centerForce: 0.1,
-			},
-		});
+		// Only update worker physics if physics settings actually changed
+		if (s.repelForce !== prevPhysics.repelForce || s.linkForce !== prevPhysics.linkForce || s.linkDistance !== prevPhysics.linkDistance) {
+			prevPhysics = { repelForce: s.repelForce, linkForce: s.linkForce, linkDistance: s.linkDistance };
+			worker?.postMessage({
+				type: 'updateSettings',
+				settings: {
+					repelForce: s.repelForce,
+					linkForce: s.linkForce,
+					linkDistance: s.linkDistance,
+					centerForce: 0.1,
+				},
+			});
+		}
 	});
 
 	onMount(() => {
@@ -565,9 +584,9 @@
 
 	<!-- Stats bar -->
 	<div class="gm-stats" dir="auto">
-		<span>{nodeCount} nodes</span>
+		<span>{nodeCount} {$t('graphView.nodes')}</span>
 		<span class="gm-sep">·</span>
-		<span>{edgeCount} edges</span>
+		<span>{edgeCount} {$t('graphView.edges')}</span>
 		{#if hoveredNode && graph}
 			<span class="gm-sep">·</span>
 			<span class="gm-hovered" dir="auto">{graph.getNodeAttribute(hoveredNode, 'label')}</span>
@@ -596,7 +615,7 @@
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
-		background: #0c0c18;
+		background: var(--background-primary);
 	}
 
 	.gm-renderer {
@@ -634,13 +653,13 @@
 		height: 32px;
 		border: none;
 		border-radius: 6px;
-		background: rgba(15, 15, 26, 0.85);
+		background: var(--background-secondary-alt, rgba(30, 30, 46, 0.9));
 		color: var(--text-muted, #94a3b8);
 		cursor: pointer;
 		backdrop-filter: blur(8px);
 		transition: all 0.15s;
 	}
-	.gm-btn:hover { background: rgba(30, 30, 50, 0.95); color: var(--text-normal, #e2e8f0); }
+	.gm-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal, #e2e8f0); }
 	.gm-btn.active { background: var(--interactive-accent, #7c3aed); color: white; }
 
 	.gm-search {
@@ -648,7 +667,7 @@
 		padding: 0 10px;
 		border: 1px solid var(--background-modifier-border, #334155);
 		border-radius: 6px;
-		background: rgba(15, 15, 26, 0.9);
+		background: var(--background-secondary, rgba(30, 30, 46, 0.95));
 		color: var(--text-normal, #e2e8f0);
 		font-size: 13px;
 		outline: none;
@@ -664,7 +683,7 @@
 		right: 8px;
 		z-index: 20;
 		width: 260px;
-		background: rgba(15, 15, 26, 0.95);
+		background: var(--background-secondary, rgba(30, 30, 46, 0.95));
 		border: 1px solid var(--background-modifier-border, #334155);
 		border-radius: 8px;
 		padding: 8px;
@@ -702,7 +721,7 @@
 	.gm-setting span:first-child { flex: 1; white-space: nowrap; }
 	.gm-setting input[type="range"] { flex: 1; max-width: 100px; accent-color: var(--interactive-accent, #7c3aed); }
 	.gm-setting select {
-		background: rgba(30, 30, 50, 0.9);
+		background: var(--background-secondary);
 		color: var(--text-normal, #e2e8f0);
 		border: 1px solid var(--background-modifier-border, #334155);
 		border-radius: 4px;
@@ -730,7 +749,7 @@
 		align-items: center;
 		font-size: 11px;
 		color: var(--text-faint, #64748b);
-		background: rgba(15, 15, 26, 0.8);
+		background: var(--background-secondary-alt, rgba(30, 30, 46, 0.85));
 		padding: 4px 10px;
 		border-radius: 6px;
 		backdrop-filter: blur(8px);
@@ -751,7 +770,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 3px;
-		background: rgba(15, 15, 26, 0.8);
+		background: var(--background-secondary-alt, rgba(30, 30, 46, 0.85));
 		padding: 6px 10px;
 		border-radius: 6px;
 		backdrop-filter: blur(8px);

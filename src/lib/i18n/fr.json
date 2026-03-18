@@ -543,6 +543,8 @@
     "redo": "Rétablir"
   },
   "graphView": {
+    "nodes": "n\u0153uds",
+    "edges": "liens",
     "noNotes": "Aucune note à afficher",
     "controls": {
       "title": "Paramètres du graphe",

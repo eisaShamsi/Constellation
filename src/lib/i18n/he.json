@@ -543,6 +543,8 @@
     "redo": "שחזור"
   },
   "graphView": {
+    "nodes": "צמתים",
+    "edges": "קשתות",
     "noNotes": "אין פתקים להצגה",
     "controls": {
       "title": "הגדרות גרף",

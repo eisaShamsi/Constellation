@@ -543,6 +543,8 @@
     "redo": "やり直す"
   },
   "graphView": {
+    "nodes": "ノード",
+    "edges": "エッジ",
     "noNotes": "表示するノートがありません",
     "controls": {
       "title": "グラフ設定",

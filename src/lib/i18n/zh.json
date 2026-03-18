@@ -543,6 +543,8 @@
     "redo": "重做"
   },
   "graphView": {
+    "nodes": "节点",
+    "edges": "连线",
     "noNotes": "没有可显示的笔记",
     "controls": {
       "title": "图谱设置",
