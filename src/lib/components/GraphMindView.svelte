@@ -15,6 +15,8 @@
 	import { t, isRTL as isRTLStore } from '$lib/i18n';
 	import { GraphEngine, type EngineConfig, type LayoutMode } from '$lib/graph/graphEngine';
 	import type { StarNode, StarLink } from '$lib/libraries/store';
+	import { computeSemanticLinks, type EmbeddingProgress } from '$lib/graph/semanticEngine';
+	import { invoke } from '@tauri-apps/api/core';
 
 	// RTL-aware directional symbols
 	const arrowIncoming = $derived($isRTLStore ? '→' : '←');
@@ -32,6 +34,8 @@
 		showOrphans: true,
 		colorByLibrary: true,
 		layoutMode: 'organic',
+		showSemanticLinks: false,
+		semanticThreshold: 0.5,
 	};
 
 	let {
@@ -52,7 +56,7 @@
 
 	// ─── Layer 1 state: UI only ─────────────────────────────
 	let settingsOpen = $state(false);
-	let settingsTab: 'appearance' | 'physics' = $state('appearance');
+	let settingsTab: 'appearance' | 'physics' | 'intelligence' = $state('appearance');
 	let searchVisible = $state(false);
 	let searchQuery = $state('');
 	let hoveredName = $state<string | null>(null);
@@ -82,6 +86,13 @@
 
 	// Tilt state
 	let isTilted = $state(false);
+
+	// Semantic links (Phase 2)
+	let semanticComputing = $state(false);
+	let semanticProgress = $state('');
+	let semanticLinkCount = $state(0);
+	let uiShowSemanticLinks = $state(false);
+	let uiSemanticThreshold = $state(0.5);
 
 	// Color-by mode for legend
 	let colorBy = $state<'library' | 'folder' | 'tag'>('library');
@@ -145,6 +156,51 @@
 	function handleSettingChange(key: keyof EngineConfig, value: any) {
 		(engineConfig as any)[key] = value;
 		engine?.updateConfig({ [key]: value });
+	}
+
+	/** Compute semantic links for all notes (Phase 2) */
+	async function computeSemantic() {
+		if (semanticComputing || nodes.length < 2) return;
+		semanticComputing = true;
+		semanticProgress = 'Loading AI model...';
+
+		try {
+			// Read note contents from disk via Tauri
+			const noteContents: { id: string; name: string; content: string }[] = [];
+			for (const n of nodes) {
+				try {
+					const content: string = await invoke('read_file', { path: n.path });
+					noteContents.push({ id: n.id, name: n.name, content });
+				} catch {
+					noteContents.push({ id: n.id, name: n.name, content: '' });
+				}
+			}
+
+			const semanticResults = await computeSemanticLinks(
+				noteContents,
+				links,
+				uiSemanticThreshold,
+				500,
+				(p: EmbeddingProgress) => {
+					if (p.stage === 'loading-model') semanticProgress = 'Loading AI model...';
+					else if (p.stage === 'embedding') semanticProgress = `Embedding notes: ${p.current}/${p.total}`;
+					else if (p.stage === 'computing-links') semanticProgress = 'Computing similarities...';
+					else semanticProgress = '';
+				}
+			);
+
+			semanticLinkCount = semanticResults.length;
+			engine?.setSemanticLinks(semanticResults);
+
+			// Auto-enable display
+			uiShowSemanticLinks = true;
+			handleSettingChange('showSemanticLinks', true);
+		} catch (err) {
+			semanticProgress = `Error: ${err}`;
+			setTimeout(() => { semanticProgress = ''; }, 5000);
+		} finally {
+			semanticComputing = false;
+		}
 	}
 
 	// Keyboard shortcuts
@@ -349,6 +405,9 @@
 				<button class="gm-tab" class:active={settingsTab === 'physics'} onclick={() => settingsTab = 'physics'}>
 					{$t('settings.skyview.physics') || 'Physics'}
 				</button>
+				<button class="gm-tab" class:active={settingsTab === 'intelligence'} onclick={() => settingsTab = 'intelligence'}>
+					AI
+				</button>
 			</div>
 
 			{#if settingsTab === 'appearance'}
@@ -384,7 +443,7 @@
 					<input type="checkbox" bind:checked={uiShowOrphans}
 						onchange={() => { handleSettingChange('showOrphans', uiShowOrphans); engine?.setData(nodes, links, libraryColorMap); }} />
 				</label>
-			{:else}
+			{:else if settingsTab === 'physics'}
 				<label class="gm-setting">
 					<span>{$t('settings.skyview.repelForce') || 'Repulsion'}</span>
 					<input type="range" min="10" max="300" step="5" bind:value={uiRepelForce}
@@ -403,6 +462,41 @@
 						oninput={() => handleSettingChange('linkDistance', uiLinkDistance)} />
 					<span class="gm-val">{uiLinkDistance}</span>
 				</label>
+			{:else if settingsTab === 'intelligence'}
+				<!-- Semantic Links (Phase 2) -->
+				<div class="gm-ai-section">
+					<div class="gm-ai-header">Semantic Links</div>
+					<p class="gm-ai-desc">AI detects hidden connections between notes that share conceptual overlap but aren't explicitly linked.</p>
+
+					{#if semanticLinkCount > 0}
+						<label class="gm-setting">
+							<span>Show semantic links</span>
+							<input type="checkbox" bind:checked={uiShowSemanticLinks}
+								onchange={() => handleSettingChange('showSemanticLinks', uiShowSemanticLinks)} />
+						</label>
+						<div class="gm-ai-stat">{semanticLinkCount} connections found</div>
+					{/if}
+
+					<label class="gm-setting">
+						<span>Threshold</span>
+						<input type="range" min="0.3" max="0.9" step="0.05" bind:value={uiSemanticThreshold} />
+						<span class="gm-val">{uiSemanticThreshold.toFixed(2)}</span>
+					</label>
+
+					<button class="gm-btn gm-compute-btn"
+						disabled={semanticComputing}
+						onclick={computeSemantic}>
+						{#if semanticComputing}
+							{semanticProgress}
+						{:else if semanticLinkCount > 0}
+							Recompute
+						{:else}
+							Compute Semantic Links
+						{/if}
+					</button>
+
+					<p class="gm-ai-note">Runs locally — nothing leaves your machine. First run downloads a ~23MB model.</p>
+				</div>
 			{/if}
 		</div>
 	{/if}
@@ -676,6 +770,18 @@
 		margin-top: 2px;
 	}
 	.gm-legend-clear:hover { text-decoration: underline; }
+
+	/* AI Intelligence tab */
+	.gm-ai-section { display: flex; flex-direction: column; gap: 6px; }
+	.gm-ai-header { font-size: 12px; font-weight: 600; color: var(--text-normal); }
+	.gm-ai-desc { font-size: 10px; color: var(--text-faint); margin: 0; line-height: 1.4; }
+	.gm-ai-note { font-size: 9px; color: var(--text-faint); margin: 0; opacity: 0.7; }
+	.gm-ai-stat { font-size: 11px; color: var(--interactive-accent, #7c3aed); font-weight: 500; }
+	.gm-compute-btn {
+		width: 100% !important; padding: 6px !important; font-size: 11px !important;
+		margin-top: 4px;
+	}
+	.gm-compute-btn:disabled { opacity: 0.6; cursor: wait !important; }
 
 	/* Context menu */
 	.gm-context-menu {

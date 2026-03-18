@@ -26,6 +26,8 @@ export interface EngineConfig {
 	showOrphans: boolean;
 	colorByLibrary: boolean;
 	layoutMode: LayoutMode;
+	showSemanticLinks: boolean;
+	semanticThreshold: number; // 0-1, default 0.5
 }
 
 export interface EngineCallbacks {
@@ -57,6 +59,8 @@ interface EngineNode {
 interface EngineLink {
 	sourceIdx: number;
 	targetIdx: number;
+	semantic?: boolean; // true = AI-detected, false/undefined = explicit wikilink
+	similarity?: number; // 0-1 confidence for semantic links
 }
 
 // ─── Constants ────────────────────────────────────────────────────────
@@ -97,7 +101,8 @@ export class GraphEngine {
 
 	// Data (plain arrays — Law 1)
 	private nodes: EngineNode[] = [];
-	private links: EngineLink[] = [];
+	private links: EngineLink[] = []; // explicit links
+	private semanticLinks: EngineLink[] = []; // AI-detected links (Phase 2)
 	private neighborMap: Map<number, Set<number>> = new Map();
 
 	// Render-only state (Law 1 — never leaves this class)
@@ -393,6 +398,27 @@ export class GraphEngine {
 				if (this.nodes[i].name.toLowerCase().includes(this.searchQuery)) {
 					this.searchMatchSet.add(i);
 				}
+			}
+		}
+		this.needsRedraw = true;
+	}
+
+	/** Inject AI-detected semantic links (Phase 2) */
+	setSemanticLinks(links: { source: string; target: string; similarity: number }[]): void {
+		const nodeIdMap = new Map<string, number>();
+		this.nodes.forEach((n, i) => nodeIdMap.set(n.id, i));
+
+		this.semanticLinks = [];
+		for (const l of links) {
+			const si = nodeIdMap.get(l.source);
+			const ti = nodeIdMap.get(l.target);
+			if (si !== undefined && ti !== undefined && si !== ti) {
+				this.semanticLinks.push({
+					sourceIdx: si,
+					targetIdx: ti,
+					semantic: true,
+					similarity: l.similarity,
+				});
 			}
 		}
 		this.needsRedraw = true;
@@ -1231,6 +1257,45 @@ export class GraphEngine {
 				this.linkGfx.moveTo(sx, sy);
 				this.linkGfx.lineTo(tx, ty);
 				this.linkGfx.stroke({ width: this.config.linkThickness * 0.5, color: normalEdgeColor, alpha: normalEdgeAlpha });
+			}
+		}
+
+		// ─── Semantic Links (dashed, Phase 2) ────
+		if (this.config.showSemanticLinks && this.semanticLinks.length > 0 && hovered < 0 && !hasSearch) {
+			const semanticColor = dark ? 0x818cf8 : 0x6366f1; // indigo
+			for (const sl of this.semanticLinks) {
+				if (this.hiddenIndices.has(sl.sourceIdx) || this.hiddenIndices.has(sl.targetIdx)) continue;
+				if (visibleSet && !visibleSet.has(sl.sourceIdx) && !visibleSet.has(sl.targetIdx)) continue;
+
+				const src = this.nodes[sl.sourceIdx];
+				const tgt = this.nodes[sl.targetIdx];
+				let sx: number, sy: number, tx: number, ty: number;
+				if (is3D) {
+					const sp = this.project3D(src.x, src.y, w, h);
+					const tp = this.project3D(tgt.x, tgt.y, w, h);
+					sx = sp.sx; sy = sp.sy; tx = tp.sx; ty = tp.sy;
+				} else {
+					sx = src.x * this.viewScale + w / 2 + this.viewX;
+					sy = src.y * this.viewScale + h / 2 + this.viewY;
+					tx = tgt.x * this.viewScale + w / 2 + this.viewX;
+					ty = tgt.y * this.viewScale + h / 2 + this.viewY;
+				}
+
+				// Draw dashed line
+				const alpha = (sl.similarity ?? 0.5) * 0.6;
+				const dx = tx - sx, dy = ty - sy;
+				const len = Math.sqrt(dx * dx + dy * dy);
+				if (len < 1) continue;
+				const dashLen = 6, gapLen = 4;
+				const ux = dx / len, uy = dy / len;
+				let d = 0;
+				while (d < len) {
+					const segEnd = Math.min(d + dashLen, len);
+					this.linkGfx.moveTo(sx + ux * d, sy + uy * d);
+					this.linkGfx.lineTo(sx + ux * segEnd, sy + uy * segEnd);
+					this.linkGfx.stroke({ width: this.config.linkThickness * 0.4, color: semanticColor, alpha });
+					d = segEnd + gapLen;
+				}
 			}
 		}
 
