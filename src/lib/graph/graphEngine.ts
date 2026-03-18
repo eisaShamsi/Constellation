@@ -1431,11 +1431,28 @@ export class GraphEngine {
 			else if (hovered >= 0 && !isHovered && !isNeighbor) alpha = DIM_ALPHA;
 			else if (hasSearch && !this.searchMatchSet.has(i) && hovered < 0) alpha = DIM_ALPHA;
 
+			// Luminosity by recency: recently modified notes are brighter
+			let luminosity = 1.0;
+			if (n.createdAt > 0 && alpha === 1.0) {
+				const now = Date.now();
+				const age = now - n.createdAt;
+				const WEEK = 7 * 24 * 60 * 60 * 1000;
+				luminosity = Math.max(0.4, 1.0 - (age / (52 * WEEK))); // Fade over 1 year
+			}
+
 			const r = n.r * (isHovered ? 1.4 : isActive ? 1.3 : 1) * depthScale;
+			const isOrphan = n.linkCount === 0;
 
 			gfx.clear();
 			gfx.circle(sx, sy, r);
-			gfx.fill({ color: n.color, alpha });
+			gfx.fill({ color: n.color, alpha: alpha * luminosity });
+
+			// Orphan pulsing ring (dim, animated)
+			if (isOrphan && alpha > DIM_ALPHA) {
+				const pulse = 0.3 + 0.2 * Math.sin(Date.now() / 600 + i);
+				gfx.circle(sx, sy, r + 3);
+				gfx.stroke({ width: 1, color: dark ? 0x64748b : 0x94a3b8, alpha: pulse });
+			}
 
 			// Active ring
 			if (isActive) {
@@ -1454,6 +1471,11 @@ export class GraphEngine {
 				gfx.circle(sx, sy, r + 1.5);
 				gfx.stroke({ width: 1.5, color: MOC_RING_COLOR, alpha: alpha });
 			}
+		}
+
+		// Orphan pulse requires continuous redraw
+		if (this.config.showOrphans && this.nodes.some(n => n.linkCount === 0)) {
+			this.needsRedraw = true;
 		}
 
 		// ─── Labels ────
