@@ -99,8 +99,21 @@
 		return turndown.turndown(html);
 	}
 
+	// Listen for table insertion from NotePane breadcrumb bar
+	function handleInsertTableEvent(e: Event) {
+		const detail = (e as CustomEvent).detail;
+		if (editor && detail?.rows && detail?.cols) {
+			editor.chain().focus().insertTable({
+				rows: detail.rows,
+				cols: detail.cols,
+				withHeaderRow: true,
+			}).run();
+		}
+	}
+
 	onMount(() => {
 		turndown = initTurndown();
+		document.addEventListener('constellation:insert-table', handleInsertTableEvent);
 
 		editor = new Editor({
 			element: editorEl,
@@ -175,6 +188,7 @@
 
 	onDestroy(() => {
 		if (debounceTimer) clearTimeout(debounceTimer);
+		document.removeEventListener('constellation:insert-table', handleInsertTableEvent);
 		// Flush any pending markdown conversion before destroying
 		if (editor && !editor.isDestroyed) {
 			const html = editor.getHTML();
