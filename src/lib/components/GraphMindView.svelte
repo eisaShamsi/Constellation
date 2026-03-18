@@ -130,14 +130,24 @@
 		const map: Record<string, string> = {};
 		const folders = new Set<string>();
 		for (const n of nodes) {
-			// Extract top-level folder from path relative to library
 			const parts = n.path.replace(/\\/g, '/').split('/');
-			// Find the folder after the library root — usually 2nd-to-last or deeper
 			const folder = parts.length >= 3 ? parts[parts.length - 2] : '(root)';
 			folders.add(folder);
 		}
 		const sorted = [...folders].sort();
 		sorted.forEach((f, i) => { map[f] = GROUP_COLORS[i % GROUP_COLORS.length]; });
+		return map;
+	});
+
+	// Map: library name → set of folder names belonging to that library
+	const libraryFolderMap = $derived.by(() => {
+		const map: Record<string, Set<string>> = {};
+		for (const n of nodes) {
+			const parts = n.path.replace(/\\/g, '/').split('/');
+			const folder = parts.length >= 3 ? parts[parts.length - 2] : '(root)';
+			if (!map[n.libraryName]) map[n.libraryName] = new Set();
+			map[n.libraryName].add(folder);
+		}
 		return map;
 	});
 
@@ -318,10 +328,20 @@
 				dataNodes = nodes.map(n => ({ ...n, libraryName: getNodeFolder(n.path) }));
 			}
 
-			// Filter out hidden groups
+			// Filter out hidden groups (with library→folder cascade)
 			if (hiddenGroups.size > 0) {
+				// Build effective hidden set: if a library is hidden, also hide all its folders
+				const effectiveHidden = new Set(hiddenGroups);
+				if (cb === 'folder') {
+					for (const lib of hiddenGroups) {
+						const folders = libraryFolderMap[lib];
+						if (folders) {
+							for (const f of folders) effectiveHidden.add(f);
+						}
+					}
+				}
 				const groupKey = cb === 'folder' ? (n: typeof dataNodes[0]) => getNodeFolder(n.path) : (n: typeof dataNodes[0]) => n.libraryName;
-				const visibleIds = new Set(dataNodes.filter(n => !hiddenGroups.has(groupKey(n))).map(n => n.id));
+				const visibleIds = new Set(dataNodes.filter(n => !effectiveHidden.has(groupKey(n))).map(n => n.id));
 				dataNodes = dataNodes.filter(n => visibleIds.has(n.id));
 				dataLinks = links.filter(l => visibleIds.has(l.source) && visibleIds.has(l.target));
 			}
