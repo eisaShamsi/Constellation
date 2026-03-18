@@ -37,6 +37,8 @@
 	let turndown: TurndownService;
 	let isUpdating = false;
 	let lastExternalValue = value;
+	let lastInternalMarkdown = value; // Track MD we produced ourselves
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Configure turndown for clean Markdown output
 	function initTurndown(): TurndownService {
@@ -130,21 +132,33 @@
 			},
 			onUpdate: ({ editor: ed }) => {
 				if (isUpdating) return;
-				const html = ed.getHTML();
-				const md = htmlToMarkdown(html);
-				onchange?.(md);
+				// Debounce the expensive HTML→Markdown conversion
+				if (debounceTimer) clearTimeout(debounceTimer);
+				debounceTimer = setTimeout(() => {
+					if (!ed || ed.isDestroyed) return;
+					const html = ed.getHTML();
+					const md = htmlToMarkdown(html);
+					lastInternalMarkdown = md; // Track so $effect skips setContent
+					lastExternalValue = md;
+					onchange?.(md);
+				}, 300);
 			},
 		});
 	});
 
-	// Update content when external value changes
+	// Update content ONLY when value changes externally (e.g. switching notes)
+	// Skip if the change came from the editor's own onUpdate (tracked via lastInternalMarkdown)
 	$effect(() => {
-		if (editor && value !== lastExternalValue) {
+		if (editor && value !== lastExternalValue && value !== lastInternalMarkdown) {
 			lastExternalValue = value;
+			lastInternalMarkdown = value;
 			isUpdating = true;
 			const html = markdownToHtml(value);
 			editor.commands.setContent(html, { emitUpdate: false });
 			isUpdating = false;
+		} else if (value !== lastExternalValue) {
+			// Value changed but matches our internal markdown — just update tracking
+			lastExternalValue = value;
 		}
 	});
 
@@ -160,6 +174,15 @@
 	});
 
 	onDestroy(() => {
+		if (debounceTimer) clearTimeout(debounceTimer);
+		// Flush any pending markdown conversion before destroying
+		if (editor && !editor.isDestroyed) {
+			const html = editor.getHTML();
+			const md = htmlToMarkdown(html);
+			if (md !== lastInternalMarkdown) {
+				onchange?.(md);
+			}
+		}
 		editor?.destroy();
 	});
 
