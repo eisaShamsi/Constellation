@@ -261,6 +261,18 @@
 				layoutMode = engine.cycleLayoutMode();
 			}
 		}
+		// WASD / Arrow keys — fly through 3D star field (only when in 3D mode)
+		if (isTilted && !(e.target instanceof HTMLInputElement) && !e.ctrlKey && !e.metaKey) {
+			const speed = 15;
+			switch (e.key.toLowerCase()) {
+				case 'w': case 'arrowup':    e.preventDefault(); engine?.moveCamera(0, 0, speed); break;
+				case 's': case 'arrowdown':  e.preventDefault(); engine?.moveCamera(0, 0, -speed); break;
+				case 'a': case 'arrowleft':  e.preventDefault(); engine?.moveCamera(-speed, 0, 0); break;
+				case 'd': case 'arrowright': e.preventDefault(); engine?.moveCamera(speed, 0, 0); break;
+				case 'q':                    e.preventDefault(); engine?.moveCamera(0, -speed, 0); break;
+				case 'e':                    e.preventDefault(); engine?.moveCamera(0, speed, 0); break;
+			}
+		}
 	}
 
 	// Close context menu on any click outside

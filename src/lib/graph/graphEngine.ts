@@ -45,6 +45,7 @@ interface EngineNode {
 	id: string;
 	x: number;
 	y: number;
+	z: number; // 3D depth coordinate
 	r: number;
 	color: number; // hex int for Pixi
 	colorHex: string; // original hex string
@@ -167,10 +168,13 @@ export class GraphEngine {
 	// Resize
 	private resizeObserver: ResizeObserver | null = null;
 
-	// 3D Camera rotation (degrees)
-	private camRotX: number = 0; // pitch
-	private camRotY: number = 0; // yaw
-	private camRotZ: number = 0; // roll
+	// 3D Camera
+	private camRotX: number = 0; // pitch (degrees)
+	private camRotY: number = 0; // yaw (degrees)
+	private camRotZ: number = 0; // roll (degrees)
+	private camPosX: number = 0; // camera position in graph space
+	private camPosY: number = 0;
+	private camPosZ: number = 0; // negative = into the screen (flying forward)
 	private camDistance: number = 1200; // perspective distance
 	private isRotating: boolean = false;
 	private rotStartX: number = 0;
@@ -289,6 +293,7 @@ export class GraphEngine {
 				id: n.id,
 				x: (Math.random() - 0.5) * 800,
 				y: (Math.random() - 0.5) * 800,
+				z: (Math.random() - 0.5) * 400, // 3D depth spread
 				r: Math.max(2, (2 + Math.sqrt(n.linkCount) * 1.5) * (n.outgoingCount >= 5 ? 1.6 : 1) * sizeMul),
 				color: hexToInt(hexStr),
 				colorHex: hexStr,
@@ -610,16 +615,16 @@ export class GraphEngine {
 	 * Project a 2D graph point (gx, gy, 0) through 3D rotation + perspective.
 	 * Returns screen (sx, sy, depth) where depth is used for size scaling.
 	 */
-	private project3D(gx: number, gy: number, w: number, h: number): { sx: number; sy: number; depth: number } {
+	private project3D(gx: number, gy: number, gz: number, w: number, h: number): { sx: number; sy: number; depth: number } {
 		// Convert degrees to radians
 		const rx = this.camRotX * Math.PI / 180;
 		const ry = this.camRotY * Math.PI / 180;
 		const rz = this.camRotZ * Math.PI / 180;
 
-		// Apply 2D view transform first (pan + zoom)
-		let x = gx * this.viewScale + this.viewX;
-		let y = gy * this.viewScale + this.viewY;
-		let z = 0;
+		// Position relative to camera
+		let x = (gx - this.camPosX) * this.viewScale + this.viewX;
+		let y = (gy - this.camPosY) * this.viewScale + this.viewY;
+		let z = (gz - this.camPosZ) * this.viewScale;
 
 		// Rotate around Z axis (roll)
 		if (rz !== 0) {
@@ -656,11 +661,22 @@ export class GraphEngine {
 		};
 	}
 
+	/** Move camera in 3D space (for WASD controls) */
+	moveCamera(dx: number, dy: number, dz: number): void {
+		this.camPosX += dx;
+		this.camPosY += dy;
+		this.camPosZ += dz;
+		this.needsRedraw = true;
+	}
+
 	resetTilt(): void {
 		// Animate back to flat
 		const startX = this.camRotX;
 		const startY = this.camRotY;
 		const startZ = this.camRotZ;
+		const startPosX = this.camPosX;
+		const startPosY = this.camPosY;
+		const startPosZ = this.camPosZ;
 		const frames = 20;
 		let frame = 0;
 
@@ -671,6 +687,9 @@ export class GraphEngine {
 			this.camRotX = startX * (1 - ease);
 			this.camRotY = startY * (1 - ease);
 			this.camRotZ = startZ * (1 - ease);
+			this.camPosX = startPosX * (1 - ease);
+			this.camPosY = startPosY * (1 - ease);
+			this.camPosZ = startPosZ * (1 - ease);
 			this.needsRedraw = true;
 			if (frame < frames) {
 				requestAnimationFrame(animate);
@@ -678,6 +697,9 @@ export class GraphEngine {
 				this.camRotX = 0;
 				this.camRotY = 0;
 				this.camRotZ = 0;
+				this.camPosX = 0;
+				this.camPosY = 0;
+				this.camPosZ = 0;
 				this.callbacks.onTiltChange?.(false);
 			}
 		};
@@ -1156,6 +1178,22 @@ export class GraphEngine {
 
 	private onWheel = (e: WheelEvent): void => {
 		e.preventDefault();
+
+		// In 3D mode: scroll = fly forward/backward through the star field
+		if (this.isRotated()) {
+			const speed = 20;
+			const ry = this.camRotY * Math.PI / 180;
+			const rx = this.camRotX * Math.PI / 180;
+			const dir = e.deltaY > 0 ? 1 : -1;
+			// Move camera along the direction it's looking
+			this.camPosX += Math.sin(ry) * dir * speed;
+			this.camPosY -= Math.sin(rx) * dir * speed;
+			this.camPosZ += Math.cos(ry) * Math.cos(rx) * dir * speed;
+			this.needsRedraw = true;
+			return;
+		}
+
+		// 2D mode: standard zoom
 		const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
 		const canvas = this.app?.canvas as HTMLCanvasElement;
 		if (!canvas) return;
@@ -1270,7 +1308,7 @@ export class GraphEngine {
 				const n = this.nodes[idx];
 				let sx: number, sy: number;
 				if (is3D) {
-					const p = this.project3D(n.x, n.y, w, h);
+					const p = this.project3D(n.x, n.y, n.z, w, h);
 					sx = p.sx; sy = p.sy;
 				} else {
 					sx = n.x * this.viewScale + w / 2 + this.viewX;
@@ -1308,8 +1346,8 @@ export class GraphEngine {
 
 			let sx: number, sy: number, tx: number, ty: number;
 			if (is3D) {
-				const sp = this.project3D(src.x, src.y, w, h);
-				const tp = this.project3D(tgt.x, tgt.y, w, h);
+				const sp = this.project3D(src.x, src.y, src.z, w, h);
+				const tp = this.project3D(tgt.x, tgt.y, tgt.z, w, h);
 				sx = sp.sx; sy = sp.sy; tx = tp.sx; ty = tp.sy;
 			} else {
 				sx = src.x * this.viewScale + w / 2 + this.viewX;
@@ -1370,8 +1408,8 @@ export class GraphEngine {
 				const tgt = this.nodes[sl.targetIdx];
 				let sx: number, sy: number, tx: number, ty: number;
 				if (is3D) {
-					const sp = this.project3D(src.x, src.y, w, h);
-					const tp = this.project3D(tgt.x, tgt.y, w, h);
+					const sp = this.project3D(src.x, src.y, src.z, w, h);
+					const tp = this.project3D(tgt.x, tgt.y, tgt.z, w, h);
 					sx = sp.sx; sy = sp.sy; tx = tp.sx; ty = tp.sy;
 				} else {
 					sx = src.x * this.viewScale + w / 2 + this.viewX;
@@ -1412,7 +1450,7 @@ export class GraphEngine {
 
 			let sx: number, sy: number, depthScale = 1;
 			if (is3D) {
-				const p = this.project3D(n.x, n.y, w, h);
+				const p = this.project3D(n.x, n.y, n.z, w, h);
 				sx = p.sx; sy = p.sy; depthScale = p.depth;
 			} else {
 				sx = n.x * this.viewScale + w / 2 + this.viewX;
@@ -1505,7 +1543,7 @@ export class GraphEngine {
 
 			let sx: number, sy: number;
 			if (is3D) {
-				const p = this.project3D(n.x, n.y, w, h);
+				const p = this.project3D(n.x, n.y, n.z, w, h);
 				sx = p.sx; sy = p.sy;
 			} else {
 				sx = n.x * this.viewScale + w / 2 + this.viewX;
