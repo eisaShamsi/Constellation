@@ -486,9 +486,10 @@
 			</div>
 			<div class="gm-legend-items">
 				{#each Object.entries(activeColorMap) as [name, color]}
-					<div class="gm-legend-item">
+					{@const nameIsRTL = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(name)}
+					<div class="gm-legend-item" style:flex-direction={nameIsRTL ? 'row-reverse' : 'row'}>
 						<span class="gm-legend-dot" style="background:{color}"></span>
-						<span class="gm-legend-name" dir="auto">{name}</span>
+						<span class="gm-legend-name" dir="auto" style:text-align={nameIsRTL ? 'right' : 'left'}>{name}</span>
 					</div>
 				{/each}
 			</div>
@@ -613,10 +614,6 @@
 	.gm-legend-item {
 		display: flex; align-items: center; gap: 6px;
 		font-size: 11px; color: var(--text-muted);
-		flex-direction: row;
-	}
-	:global([dir="rtl"]) .gm-legend-item {
-		flex-direction: row-reverse;
 	}
 	.gm-legend-header {
 		display: flex; gap: 2px; margin-bottom: 4px;
