@@ -1001,6 +1001,30 @@ export class GraphEngine {
 		return -1;
 	}
 
+	/** Hit test in 3D mode: test against projected screen positions */
+	private hitTest3D(screenX: number, screenY: number): number {
+		const w = this.container.clientWidth;
+		const h = this.container.clientHeight;
+		const hitRadius = 15; // pixels on screen
+		let closest = -1;
+		let closestDist = hitRadius * hitRadius;
+
+		for (let i = 0; i < this.nodes.length; i++) {
+			if (this.hiddenIndices.has(i)) continue;
+			const n = this.nodes[i];
+			const p = this.project3D(n.x, n.y, n.z, w, h);
+			if (p.depth <= 0) continue; // behind camera
+			const dx = screenX - p.sx;
+			const dy = screenY - p.sy;
+			const d2 = dx * dx + dy * dy;
+			if (d2 < closestDist) {
+				closestDist = d2;
+				closest = i;
+			}
+		}
+		return closest;
+	}
+
 	private screenToWorld(sx: number, sy: number): { wx: number; wy: number } {
 		const w = this.container.clientWidth;
 		const h = this.container.clientHeight;
@@ -1060,9 +1084,19 @@ export class GraphEngine {
 
 		// Hover detection
 		const rect = canvas.getBoundingClientRect();
-		const { wx, wy } = this.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-		this.buildSpatialGrid();
-		const idx = this.hitTest(wx, wy);
+		const screenX = e.clientX - rect.left;
+		const screenY = e.clientY - rect.top;
+		let idx: number;
+
+		if (this.isRotated()) {
+			// 3D mode: hit test against projected screen positions
+			idx = this.hitTest3D(screenX, screenY);
+		} else {
+			// 2D mode: standard spatial grid
+			const { wx, wy } = this.screenToWorld(screenX, screenY);
+			this.buildSpatialGrid();
+			idx = this.hitTest(wx, wy);
+		}
 
 		if (idx !== this.hoveredIdx) {
 			this.hoveredIdx = idx; // Law 1: plain variable, never $state
