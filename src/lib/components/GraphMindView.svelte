@@ -16,6 +16,7 @@
 	import { GraphEngine, type EngineConfig, type LayoutMode } from '$lib/graph/graphEngine';
 	import type { StarNode, StarLink } from '$lib/libraries/store';
 	import { computeSemanticLinks, type EmbeddingProgress } from '$lib/graph/semanticEngine';
+	import { detectClusters, type ClusterResult } from '$lib/graph/clusterEngine';
 	import { invoke } from '@tauri-apps/api/core';
 
 	// RTL-aware directional symbols
@@ -93,6 +94,8 @@
 	let semanticLinkCount = $state(0);
 	let uiShowSemanticLinks = $state(false);
 	let uiSemanticThreshold = $state(0.5);
+	let clusterResult = $state<ClusterResult | null>(null);
+	let showClusters = $state(false);
 
 	// Color-by mode for legend
 	let colorBy = $state<'library' | 'folder' | 'tag'>('library');
@@ -201,6 +204,24 @@
 		} finally {
 			semanticComputing = false;
 		}
+	}
+
+	/** Detect note clusters using Louvain algorithm (Phase 2) */
+	function runClusterDetection() {
+		if (nodes.length < 3) return;
+		const result = detectClusters(
+			nodes.map(n => ({ id: n.id, name: n.name })),
+			links
+		);
+		clusterResult = result;
+		showClusters = true;
+
+		// Send to engine
+		const colorMap = new Map<number, string>();
+		for (const c of result.clusters) {
+			colorMap.set(c.id, c.color);
+		}
+		engine?.setClusters(result.assignments, colorMap);
 	}
 
 	// Keyboard shortcuts
@@ -497,6 +518,35 @@
 
 					<p class="gm-ai-note">Runs locally — nothing leaves your machine. First run downloads a ~23MB model.</p>
 				</div>
+
+				<!-- Cluster Detection -->
+				<div class="gm-ai-section" style="margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--background-modifier-border);">
+					<div class="gm-ai-header">Cluster Detection</div>
+					<p class="gm-ai-desc">Groups notes into communities based on link structure using the Louvain algorithm.</p>
+
+					{#if clusterResult && clusterResult.clusters.length > 0}
+						<label class="gm-setting">
+							<span>Show clusters</span>
+							<input type="checkbox" bind:checked={showClusters}
+								onchange={() => { if (showClusters && clusterResult) { const cm = new Map<number, string>(); clusterResult.clusters.forEach(c => cm.set(c.id, c.color)); engine?.setClusters(clusterResult.assignments, cm); } else { engine?.clearClusters(); } }} />
+						</label>
+						<div class="gm-ai-stat">{clusterResult.clusters.length} clusters (Q={clusterResult.modularity.toFixed(2)})</div>
+						<div class="gm-cluster-list">
+							{#each clusterResult.clusters as c}
+								<div class="gm-cluster-item">
+									<span class="gm-legend-dot" style="background:{c.color}"></span>
+									<span class="gm-cluster-name">{c.suggestedName}</span>
+									<span class="gm-cluster-count">{c.memberIds.length}</span>
+								</div>
+							{/each}
+						</div>
+					{/if}
+
+					<button class="gm-btn gm-compute-btn"
+						onclick={runClusterDetection}>
+						{clusterResult ? 'Recompute' : 'Detect Clusters'}
+					</button>
+				</div>
 			{/if}
 		</div>
 	{/if}
@@ -782,6 +832,10 @@
 		margin-top: 4px;
 	}
 	.gm-compute-btn:disabled { opacity: 0.6; cursor: wait !important; }
+	.gm-cluster-list { display: flex; flex-direction: column; gap: 2px; max-height: 100px; overflow-y: auto; }
+	.gm-cluster-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-muted); }
+	.gm-cluster-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.gm-cluster-count { font-size: 9px; color: var(--text-faint); }
 
 	/* Context menu */
 	.gm-context-menu {

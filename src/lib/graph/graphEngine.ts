@@ -105,6 +105,9 @@ export class GraphEngine {
 	private nodes: EngineNode[] = [];
 	private links: EngineLink[] = []; // explicit links
 	private semanticLinks: EngineLink[] = []; // AI-detected links (Phase 2)
+	private clusterAssignments: Map<number, number> = new Map(); // nodeIdx → clusterId
+	private clusterColors: Map<number, number> = new Map(); // clusterId → color (hex int)
+	private showClusters: boolean = false;
 	private neighborMap: Map<number, Set<number>> = new Map();
 
 	// Render-only state (Law 1 — never leaves this class)
@@ -423,6 +426,32 @@ export class GraphEngine {
 				});
 			}
 		}
+		this.needsRedraw = true;
+	}
+
+	/** Set cluster assignments for community visualization (Phase 2) */
+	setClusters(assignments: Map<string, number>, clusterColors: Map<number, string>): void {
+		this.clusterAssignments.clear();
+		this.clusterColors.clear();
+
+		const nodeIdMap = new Map<string, number>();
+		this.nodes.forEach((n, i) => nodeIdMap.set(n.id, i));
+
+		for (const [id, cid] of assignments) {
+			const idx = nodeIdMap.get(id);
+			if (idx !== undefined) this.clusterAssignments.set(idx, cid);
+		}
+		for (const [cid, hex] of clusterColors) {
+			this.clusterColors.set(cid, hexToInt(hex));
+		}
+		this.showClusters = true;
+		this.needsRedraw = true;
+	}
+
+	clearClusters(): void {
+		this.clusterAssignments.clear();
+		this.clusterColors.clear();
+		this.showClusters = false;
 		this.needsRedraw = true;
 	}
 
@@ -1231,6 +1260,44 @@ export class GraphEngine {
 		const normalEdgeColor = dark ? 0x475569 : 0xbcccdc;
 		const normalEdgeAlpha = dark ? 0.25 : 0.15;
 		const is3D = this.isRotated();
+
+		// ─── Cluster boundaries (Phase 2, drawn first so links render on top) ────
+		if (this.showClusters && this.clusterAssignments.size > 0 && hovered < 0) {
+			// Group node positions by cluster
+			const clusterPositions: Map<number, { xs: number[]; ys: number[] }> = new Map();
+			for (const [idx, cid] of this.clusterAssignments) {
+				if (this.hiddenIndices.has(idx)) continue;
+				const n = this.nodes[idx];
+				let sx: number, sy: number;
+				if (is3D) {
+					const p = this.project3D(n.x, n.y, w, h);
+					sx = p.sx; sy = p.sy;
+				} else {
+					sx = n.x * this.viewScale + w / 2 + this.viewX;
+					sy = n.y * this.viewScale + h / 2 + this.viewY;
+				}
+				if (!clusterPositions.has(cid)) clusterPositions.set(cid, { xs: [], ys: [] });
+				clusterPositions.get(cid)!.xs.push(sx);
+				clusterPositions.get(cid)!.ys.push(sy);
+			}
+
+			// Draw translucent ellipses
+			for (const [cid, pos] of clusterPositions) {
+				if (pos.xs.length < 3) continue;
+				const cx = pos.xs.reduce((a, b) => a + b, 0) / pos.xs.length;
+				const cy = pos.ys.reduce((a, b) => a + b, 0) / pos.ys.length;
+				let maxDx = 0, maxDy = 0;
+				for (let i = 0; i < pos.xs.length; i++) {
+					maxDx = Math.max(maxDx, Math.abs(pos.xs[i] - cx));
+					maxDy = Math.max(maxDy, Math.abs(pos.ys[i] - cy));
+				}
+				const rx = maxDx + 30, ry = maxDy + 30;
+				const color = this.clusterColors.get(cid) ?? 0x7c3aed;
+				this.linkGfx.ellipse(cx, cy, rx, ry);
+				this.linkGfx.fill({ color, alpha: 0.06 });
+				this.linkGfx.stroke({ width: 1, color, alpha: 0.15 });
+			}
+		}
 
 		for (const link of this.links) {
 			// Skip edges involving hidden nodes
