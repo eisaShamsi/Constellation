@@ -38,6 +38,7 @@ export interface EngineCallbacks {
 	onFocusChange?: (focused: boolean, nodeName?: string) => void;
 	onHiddenCountChange?: (count: number) => void;
 	onTiltChange?: (tilted: boolean) => void;
+	onEdgeHover?: (info: { sourceName: string; targetName: string; linkType?: string; semantic?: boolean; similarity?: number } | null) => void;
 }
 
 interface EngineNode {
@@ -61,6 +62,7 @@ interface EngineLink {
 	targetIdx: number;
 	semantic?: boolean; // true = AI-detected, false/undefined = explicit wikilink
 	similarity?: number; // 0-1 confidence for semantic links
+	linkType?: string; // relationship label: supports, contradicts, elaborates, questions, custom
 }
 
 // ─── Constants ────────────────────────────────────────────────────────
@@ -253,7 +255,7 @@ export class GraphEngine {
 
 	setData(
 		rawNodes: { id: string; name: string; path: string; libraryName: string; linkCount: number; outgoingCount: number; createdAt?: number }[],
-		rawLinks: { source: string; target: string }[],
+		rawLinks: { source: string; target: string; linkType?: string }[],
 		colorMap: Record<string, string>
 	): void {
 		// Kill previous worker
@@ -312,7 +314,7 @@ export class GraphEngine {
 			const si = nodeIdMap.get(l.source);
 			const ti = nodeIdMap.get(l.target);
 			if (si !== undefined && ti !== undefined && si !== ti) {
-				this.links.push({ sourceIdx: si, targetIdx: ti });
+				this.links.push({ sourceIdx: si, targetIdx: ti, linkType: l.linkType });
 				this.neighborMap.get(si)!.add(ti);
 				this.neighborMap.get(ti)!.add(si);
 				this.outgoingMap.get(si)!.add(ti);
@@ -1015,6 +1017,19 @@ export class GraphEngine {
 			this.hoveredIdx = idx; // Law 1: plain variable, never $state
 			canvas.style.cursor = idx >= 0 ? 'pointer' : 'grab';
 			this.callbacks.onNodeHover(idx >= 0 ? this.nodes[idx].name : null);
+			// Send edge relationship info for hovered node's connections
+			if (idx >= 0 && this.callbacks.onEdgeHover) {
+				const typedEdge = this.links.find(l =>
+					(l.sourceIdx === idx || l.targetIdx === idx) && l.linkType
+				);
+				if (typedEdge) {
+					const src = this.nodes[typedEdge.sourceIdx];
+					const tgt = this.nodes[typedEdge.targetIdx];
+					this.callbacks.onEdgeHover({ sourceName: src.name, targetName: tgt.name, linkType: typedEdge.linkType });
+				} else {
+					this.callbacks.onEdgeHover(null);
+				}
+			}
 			this.needsRedraw = true;
 			// NOTICE: Worker is NEVER notified of hover. Law 2 enforced.
 		}
@@ -1253,6 +1268,23 @@ export class GraphEngine {
 				this.linkGfx.moveTo(sx, sy);
 				this.linkGfx.lineTo(tx, ty);
 				this.linkGfx.stroke({ width: this.config.linkThickness * 2, color: HIGHLIGHT_EDGE_COLOR, alpha: 0.9 });
+
+				// Render edge label if linkType exists
+				if (link.linkType) {
+					const mx = (sx + tx) / 2, my = (sy + ty) / 2;
+					const key = `edge_${link.sourceIdx}_${link.targetIdx}`;
+					if (!this.labelPool.has(-link.sourceIdx - 1000)) {
+						const label = new Text({
+							text: link.linkType,
+							style: { fontSize: 9, fill: HIGHLIGHT_EDGE_COLOR, fontFamily: 'system-ui' },
+						});
+						label.anchor.set(0.5, 0.5);
+						this.app!.stage.addChild(label);
+						this.labelPool.set(-link.sourceIdx - 1000, label);
+					}
+					const label = this.labelPool.get(-link.sourceIdx - 1000);
+					if (label) { label.x = mx; label.y = my - 8; label.visible = true; }
+				}
 			} else {
 				this.linkGfx.moveTo(sx, sy);
 				this.linkGfx.lineTo(tx, ty);
