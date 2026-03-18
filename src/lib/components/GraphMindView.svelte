@@ -78,6 +78,9 @@
 	// Tilt state
 	let isTilted = $state(false);
 
+	// Color-by mode for legend
+	let colorBy = $state<'library' | 'folder' | 'tag'>('library');
+
 	// Hidden count
 	let hiddenCount = $state(0);
 
@@ -93,6 +96,40 @@
 	let uiRepelForce = $state(engineConfig.repelForce);
 	let uiLinkForce = $state(engineConfig.linkForce);
 	let uiLinkDistance = $state(engineConfig.linkDistance);
+
+	const GROUP_COLORS = [
+		'#a78bfa', '#34d399', '#60a5fa', '#f472b6', '#fbbf24',
+		'#f87171', '#2dd4bf', '#818cf8', '#fb923c', '#a3e635',
+		'#e879f9', '#38bdf8', '#facc15', '#4ade80', '#f43f5e',
+	];
+
+	// Compute folder-based color map from note paths
+	const folderColorMap = $derived.by(() => {
+		const map: Record<string, string> = {};
+		const folders = new Set<string>();
+		for (const n of nodes) {
+			// Extract top-level folder from path relative to library
+			const parts = n.path.replace(/\\/g, '/').split('/');
+			// Find the folder after the library root — usually 2nd-to-last or deeper
+			const folder = parts.length >= 3 ? parts[parts.length - 2] : '(root)';
+			folders.add(folder);
+		}
+		const sorted = [...folders].sort();
+		sorted.forEach((f, i) => { map[f] = GROUP_COLORS[i % GROUP_COLORS.length]; });
+		return map;
+	});
+
+	// Get the folder for a node
+	function getNodeFolder(path: string): string {
+		const parts = path.replace(/\\/g, '/').split('/');
+		return parts.length >= 3 ? parts[parts.length - 2] : '(root)';
+	}
+
+	// Active color map based on colorBy mode
+	const activeColorMap = $derived.by(() => {
+		if (colorBy === 'folder') return folderColorMap;
+		return libraryColorMap; // 'library' default
+	});
 
 	let containerEl: HTMLDivElement;
 	let engine: GraphEngine | null = null;
@@ -176,11 +213,21 @@
 
 	// Data changes → engine
 	let prevNodeLen = 0;
+	let prevColorBy = 'library';
 	$effect(() => {
 		const len = nodes.length;
-		if (len !== prevNodeLen && len > 0 && engine) {
+		const cb = colorBy;
+		const cmap = activeColorMap;
+		if ((len !== prevNodeLen || cb !== prevColorBy) && len > 0 && engine) {
 			prevNodeLen = len;
-			engine.setData(nodes, links, libraryColorMap);
+			prevColorBy = cb;
+			// When colorBy is 'folder', remap nodes to use folder as their grouping key
+			if (cb === 'folder') {
+				const folderNodes = nodes.map(n => ({ ...n, libraryName: getNodeFolder(n.path) }));
+				engine.setData(folderNodes, links, cmap);
+			} else {
+				engine.setData(nodes, links, cmap);
+			}
 		}
 	});
 
@@ -219,7 +266,7 @@
 
 		if (nodes.length > 0) {
 			prevNodeLen = nodes.length;
-			engine.setData(nodes, links, libraryColorMap);
+			engine.setData(nodes, links, activeColorMap);
 		}
 	});
 
@@ -420,9 +467,19 @@
 	</div>
 
 	<!-- Legend -->
-	{#if Object.keys(libraryColorMap).length > 1}
+	{#if Object.keys(activeColorMap).length > 0}
 		<div class="gm-legend" dir="auto">
-			{#each Object.entries(libraryColorMap) as [name, color]}
+			<div class="gm-legend-header">
+				<button class="gm-legend-toggle" class:active={colorBy === 'library'}
+					onclick={() => { colorBy = 'library'; }}>
+					{$t('graphView.colorByLibrary') || 'Library'}
+				</button>
+				<button class="gm-legend-toggle" class:active={colorBy === 'folder'}
+					onclick={() => { colorBy = 'folder'; }}>
+					{$t('graphView.colorByFolder') || 'Folder'}
+				</button>
+			</div>
+			{#each Object.entries(activeColorMap) as [name, color]}
 				<div class="gm-legend-item">
 					<span class="gm-legend-dot" style="background:{color}"></span>
 					<span class="gm-legend-name" dir="auto">{name}</span>
@@ -541,6 +598,24 @@
 		display: flex; align-items: center; gap: 6px;
 		font-size: 11px; color: var(--text-muted);
 	}
+	.gm-legend-header {
+		display: flex; gap: 2px; margin-bottom: 4px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		padding-bottom: 4px;
+	}
+	.gm-legend-toggle {
+		flex: 1; padding: 2px 6px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 4px;
+		background: transparent; color: var(--text-muted);
+		font-size: 10px; cursor: pointer;
+		white-space: nowrap;
+	}
+	.gm-legend-toggle.active {
+		background: var(--interactive-accent); color: white;
+		border-color: var(--interactive-accent);
+	}
+	.gm-legend-toggle:hover:not(.active) { background: var(--background-modifier-hover); }
 	.gm-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 	.gm-legend-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

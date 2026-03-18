@@ -555,6 +555,8 @@
     "directionAll": "All links",
     "directionIncoming": "Incoming only",
     "directionOutgoing": "Outgoing only",
+    "colorByLibrary": "Library",
+    "colorByFolder": "Folder",
     "noNotes": "No notes to display",
     "controls": {
       "title": "Graph Settings",
