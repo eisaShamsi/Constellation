@@ -476,15 +476,17 @@
 				</button>
 				<button class="gm-legend-toggle" class:active={colorBy === 'folder'}
 					onclick={() => { colorBy = 'folder'; }}>
-					{$t('graphView.colorByFolder') || 'Folder'}
+					{$t('graphView.colorByFolder') || 'Folder'} ({Object.keys(folderColorMap).length})
 				</button>
 			</div>
-			{#each Object.entries(activeColorMap) as [name, color]}
-				<div class="gm-legend-item">
-					<span class="gm-legend-dot" style="background:{color}"></span>
-					<span class="gm-legend-name" dir="auto">{name}</span>
-				</div>
-			{/each}
+			<div class="gm-legend-items">
+				{#each Object.entries(activeColorMap) as [name, color]}
+					<div class="gm-legend-item">
+						<span class="gm-legend-dot" style="background:{color}"></span>
+						<span class="gm-legend-name" dir="auto">{name}</span>
+					</div>
+				{/each}
+			</div>
 		</div>
 	{/if}
 </div>
@@ -593,7 +595,16 @@
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
 		padding: 6px 10px; border-radius: 6px;
+		max-height: 240px;
+		min-width: 100px;
 	}
+	.gm-legend-items {
+		display: flex; flex-direction: column; gap: 3px;
+		overflow-y: auto; max-height: 180px;
+		scrollbar-width: thin;
+	}
+	.gm-legend-items::-webkit-scrollbar { width: 4px; }
+	.gm-legend-items::-webkit-scrollbar-thumb { background: var(--background-modifier-border); border-radius: 2px; }
 	.gm-legend-item {
 		display: flex; align-items: center; gap: 6px;
 		font-size: 11px; color: var(--text-muted);
