@@ -560,6 +560,8 @@
     "directionAll": "כל הקישורים",
     "directionIncoming": "נכנסים בלבד",
     "directionOutgoing": "יוצאים בלבד",
+    "colorByLibrary": "ספרייה",
+    "colorByFolder": "תיקייה",
     "noNotes": "אין פתקים להצגה",
     "controls": {
       "title": "הגדרות גרף",

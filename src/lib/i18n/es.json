@@ -560,6 +560,8 @@
     "directionAll": "Todos los enlaces",
     "directionIncoming": "Solo entrantes",
     "directionOutgoing": "Solo salientes",
+    "colorByLibrary": "Biblioteca",
+    "colorByFolder": "Carpeta",
     "noNotes": "No hay notas para mostrar",
     "controls": {
       "title": "Ajustes del grafo",

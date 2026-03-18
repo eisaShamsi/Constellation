@@ -560,6 +560,8 @@
     "directionAll": "Tous les liens",
     "directionIncoming": "Entrants uniquement",
     "directionOutgoing": "Sortants uniquement",
+    "colorByLibrary": "Bibliothèque",
+    "colorByFolder": "Dossier",
     "noNotes": "Aucune note à afficher",
     "controls": {
       "title": "Paramètres du graphe",

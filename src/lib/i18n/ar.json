@@ -560,6 +560,8 @@
     "directionAll": "جميع الروابط",
     "directionIncoming": "الواردة فقط",
     "directionOutgoing": "الصادرة فقط",
+    "colorByLibrary": "المكتبة",
+    "colorByFolder": "المجلد",
     "noNotes": "لا توجد ملاحظات لعرضها",
     "controls": {
       "title": "إعدادات الرسم البياني",

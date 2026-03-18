@@ -560,6 +560,8 @@
     "directionAll": "Alle Verknüpfungen",
     "directionIncoming": "Nur eingehende",
     "directionOutgoing": "Nur ausgehende",
+    "colorByLibrary": "Bibliothek",
+    "colorByFolder": "Ordner",
     "noNotes": "Keine Notizen zum Anzeigen",
     "controls": {
       "title": "Graph-Einstellungen",

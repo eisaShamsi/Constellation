@@ -560,6 +560,8 @@
     "directionAll": "همه پیوندها",
     "directionIncoming": "فقط ورودی",
     "directionOutgoing": "فقط خروجی",
+    "colorByLibrary": "کتابخانه",
+    "colorByFolder": "پوشه",
     "noNotes": "یادداشتی برای نمایش وجود ندارد",
     "controls": {
       "title": "تنظیمات گراف",

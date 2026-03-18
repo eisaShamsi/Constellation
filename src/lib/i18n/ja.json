@@ -560,6 +560,8 @@
     "directionAll": "すべてのリンク",
     "directionIncoming": "受信のみ",
     "directionOutgoing": "送信のみ",
+    "colorByLibrary": "ライブラリ",
+    "colorByFolder": "フォルダ",
     "noNotes": "表示するノートがありません",
     "controls": {
       "title": "グラフ設定",

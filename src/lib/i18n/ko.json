@@ -560,6 +560,8 @@
     "directionAll": "모든 링크",
     "directionIncoming": "수신만",
     "directionOutgoing": "발신만",
+    "colorByLibrary": "라이브러리",
+    "colorByFolder": "폴더",
     "noNotes": "표시할 노트가 없습니다",
     "controls": {
       "title": "그래프 설정",

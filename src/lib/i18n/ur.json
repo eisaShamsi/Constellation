@@ -560,6 +560,8 @@
     "directionAll": "تمام روابط",
     "directionIncoming": "صرف آنے والے",
     "directionOutgoing": "صرف جانے والے",
+    "colorByLibrary": "لائبریری",
+    "colorByFolder": "فولڈر",
     "noNotes": "دکھانے کے لیے کوئی نوٹس نہیں",
     "controls": {
       "title": "گراف کی ترتیبات",

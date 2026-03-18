@@ -560,6 +560,8 @@
     "directionAll": "Все ссылки",
     "directionIncoming": "Только входящие",
     "directionOutgoing": "Только исходящие",
+    "colorByLibrary": "Библиотека",
+    "colorByFolder": "Папка",
     "noNotes": "Нет заметок для отображения",
     "controls": {
       "title": "Настройки графа",

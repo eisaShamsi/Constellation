@@ -560,6 +560,8 @@
     "directionAll": "Tüm bağlantılar",
     "directionIncoming": "Yalnızca gelen",
     "directionOutgoing": "Yalnızca giden",
+    "colorByLibrary": "Kütüphane",
+    "colorByFolder": "Klasör",
     "noNotes": "Gösterilecek not yok",
     "controls": {
       "title": "Grafik Ayarları",

@@ -560,6 +560,8 @@
     "directionAll": "所有链接",
     "directionIncoming": "仅传入",
     "directionOutgoing": "仅传出",
+    "colorByLibrary": "资料库",
+    "colorByFolder": "文件夹",
     "noNotes": "没有可显示的笔记",
     "controls": {
       "title": "图谱设置",

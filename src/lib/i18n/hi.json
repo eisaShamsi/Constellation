@@ -560,6 +560,8 @@
     "directionAll": "सभी लिंक",
     "directionIncoming": "केवल आने वाले",
     "directionOutgoing": "केवल जाने वाले",
+    "colorByLibrary": "लाइब्रेरी",
+    "colorByFolder": "फ़ोल्डर",
     "noNotes": "दिखाने के लिए कोई नोट नहीं",
     "controls": {
       "title": "ग्राफ़ सेटिंग्स",
