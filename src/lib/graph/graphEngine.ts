@@ -439,10 +439,12 @@ export class GraphEngine {
 		}
 
 		// Handle multiSphere toggle
-		if ('multiSphere' in partial && this.layoutSettled) {
-			if (this.config.multiSphere) {
+		if ('multiSphere' in partial) {
+			if (this.config.multiSphere && this.nodes.length > 0) {
 				// Turning ON: project nodes into separate library spheres
 				this.projectOntoSphere();
+				// Zoom out to show all spheres
+				setTimeout(() => this.fitToScreen(), 100);
 			} else {
 				// Turning OFF: re-run force layout to restore standard view
 				this.librarySpheres.clear();
@@ -595,7 +597,7 @@ export class GraphEngine {
 		const sortedRadii = [...sphereRadii].sort((a, b) => b - a);
 		const largestR = sortedRadii[0] || 200;
 		const secondR = sortedRadii[1] || 200;
-		this.globalOrbitRadius = libCount === 1 ? 0 : (largestR + secondR) * 1.5;
+		this.globalOrbitRadius = libCount === 1 ? 0 : (largestR + secondR) * 2.5;
 
 		// Clear and rebuild sphere data
 		this.librarySpheres.clear();
@@ -605,12 +607,12 @@ export class GraphEngine {
 			const nodeIndices = libGroups.get(libName)!;
 			const sphereR = sphereRadii[li];
 
-			// Position each library on a circular orbit (in the XZ plane)
+			// Position each library on a circular orbit (in the XY plane — visible from front)
 			const orbitAngle = (360 / libCount) * li;
 			const rad = orbitAngle * Math.PI / 180;
 			const centerX = this.globalOrbitRadius * Math.cos(rad);
-			const centerY = 0;
-			const centerZ = this.globalOrbitRadius * Math.sin(rad);
+			const centerY = this.globalOrbitRadius * Math.sin(rad);
+			const centerZ = 0;
 
 			this.librarySpheres.set(libName, {
 				centerX, centerY, centerZ,
