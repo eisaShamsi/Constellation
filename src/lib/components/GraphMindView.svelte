@@ -192,6 +192,7 @@
 	let engine: GraphEngine | null = null;
 
 	function handleSettingChange(key: keyof EngineConfig, value: any) {
+		console.log('[GMView] handleSettingChange', key, value, 'engine?', !!engine);
 		(engineConfig as any)[key] = value;
 		engine?.updateConfig({ [key]: value });
 	}

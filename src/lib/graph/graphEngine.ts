@@ -440,8 +440,10 @@ export class GraphEngine {
 
 		// Handle multiSphere toggle
 		if ('multiSphere' in partial) {
+			console.log('[GraphMind] multiSphere toggled:', this.config.multiSphere, 'nodes:', this.nodes.length);
 			if (this.config.multiSphere && this.nodes.length > 0) {
 				// Turning ON: project nodes into separate library spheres
+				console.log('[GraphMind] Projecting onto spheres...');
 				this.projectOntoSphere();
 				// Zoom out to show all spheres
 				setTimeout(() => this.fitToScreen(), 100);
@@ -1826,7 +1828,7 @@ export class GraphEngine {
 	/** Draw translucent sphere borders around each library in multi-sphere mode */
 	private drawSphereBorders(w: number, h: number, dark: boolean): void {
 		if (!this.sphereBorderGfx) {
-			this.sphereBorderGfx = new PIXI.Graphics();
+			this.sphereBorderGfx = new Graphics();
 			this.app!.stage.addChild(this.sphereBorderGfx);
 		}
 		this.sphereBorderGfx.clear();
