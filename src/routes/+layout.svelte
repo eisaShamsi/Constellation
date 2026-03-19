@@ -192,7 +192,10 @@
 		const tab = $activeTab;
 		if (!tab?.content) return;
 		// Send content updates for diff + word count (debounced by Svelte's batching)
+		console.log('[Main] Sending note content to second screen:', tab.name, 'words:', tab.content.split(/\s+/).length);
 		emitNoteContentUpdate(tab.content, lastSavedContent || tab.content, tab.name);
+		// Also emit editor context mode
+		emitContextChanged('editor');
 	});
 	// Track initial content for diff baseline
 	$effect(() => {
