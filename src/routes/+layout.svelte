@@ -79,7 +79,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitClipboardCopy, emitNoteContentUpdate, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -185,6 +185,25 @@
 			});
 		}
 	});
+	// Clipboard monitoring: send copy events to second screen
+	let lastSavedContent = $state('');
+	$effect(() => {
+		if (!secondScreenOpen || showStarView) return;
+		const tab = $activeTab;
+		if (!tab?.content) return;
+		// Send content updates for diff + word count (debounced by Svelte's batching)
+		emitNoteContentUpdate(tab.content, lastSavedContent || tab.content, tab.name);
+	});
+	// Track initial content for diff baseline
+	$effect(() => {
+		const tab = $activeTab;
+		if (tab?.path) {
+			invoke<string>('read_note', { filePath: tab.path }).then(saved => {
+				lastSavedContent = saved;
+			}).catch(() => {});
+		}
+	});
+
 	let showGlobalTasks = $state(false);
 	let showIndex = $state(false);
 	let indexNoteTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
@@ -726,6 +745,17 @@
 
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
+
+		// Clipboard monitoring for second screen
+		document.addEventListener('copy', () => {
+			if (!secondScreenOpen) return;
+			setTimeout(async () => {
+				try {
+					const text = await navigator.clipboard.readText();
+					if (text) emitClipboardCopy(text, $activeTab?.name?.replace(/\.md$/, '') || 'unknown');
+				} catch {}
+			}, 100);
+		});
 
 		// 1. Check universe state
 		let universes: UniverseEntry[] = [];

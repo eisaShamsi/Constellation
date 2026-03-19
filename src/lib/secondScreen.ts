@@ -183,3 +183,25 @@ export function onSkyViewHover(callback: (node: SkyViewNodeInfo | null) => void)
 export function onSkyViewClick(callback: (node: SkyViewNodeInfo) => void): Promise<UnlistenFn> {
 	return listen<{ node: SkyViewNodeInfo }>('screen:skyview-click', (event) => callback(event.payload.node));
 }
+
+/* ------------------------------------------------------------------ */
+/*  Editor mode events                                                  */
+/* ------------------------------------------------------------------ */
+
+/** Main → Second Screen: clipboard copy event */
+export async function emitClipboardCopy(text: string, source: string): Promise<void> {
+	await emit('screen:clipboard-copy', { text, source });
+}
+
+/** Main → Second Screen: note content update (for diff + word count) */
+export async function emitNoteContentUpdate(content: string, savedContent: string, noteName: string): Promise<void> {
+	await emit('screen:note-content', { content, savedContent, noteName });
+}
+
+export function onClipboardCopy(callback: (text: string, source: string) => void): Promise<UnlistenFn> {
+	return listen<{ text: string; source: string }>('screen:clipboard-copy', (event) => callback(event.payload.text, event.payload.source));
+}
+
+export function onNoteContentUpdate(callback: (content: string, savedContent: string, noteName: string) => void): Promise<UnlistenFn> {
+	return listen<{ content: string; savedContent: string; noteName: string }>('screen:note-content', (event) => callback(event.payload.content, event.payload.savedContent, event.payload.noteName));
+}

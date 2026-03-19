@@ -24,6 +24,7 @@
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
 		onStateRequest, onWorkspaceRestore,
 		onContextChanged, onSkyViewHover, onSkyViewClick,
+		onClipboardCopy, onNoteContentUpdate,
 		sendNoteToMain, notifyScreenClosed, sendScreenState,
 		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo
 	} from '$lib/secondScreen';
@@ -78,6 +79,115 @@
 	let peekNote = $state<{ name: string; path: string; libraryName: string; libraryColor: string } | null>(null);
 	let peekTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
 	let peekGeneration = 0;
+
+	// ─── Editor Mode: Smart Panels ───
+
+	// Reference Shelf: pin a different note for reading while writing
+	let refShelfNote = $state<{ name: string; path: string; libraryName: string } | null>(null);
+	let refShelfContent = $state('');
+	let refShelfLoading = $state(false);
+	let refShelfSearch = $state('');
+	let refShelfResults = $derived.by(() => {
+		if (!refShelfSearch || refShelfSearch.length < 2) return [];
+		const q = refShelfSearch.toLowerCase();
+		return allNotes.filter(n => n.name.toLowerCase().includes(q)).slice(0, 15);
+	});
+
+	async function pinReferenceNote(note: { name: string; path: string; libraryName: string }) {
+		refShelfNote = note;
+		refShelfLoading = true;
+		refShelfSearch = '';
+		try {
+			refShelfContent = await invoke<string>('read_note', { filePath: note.path });
+		} catch {
+			refShelfContent = '(Failed to load)';
+		}
+		refShelfLoading = false;
+	}
+
+	// Clipboard Timeline: track copied text
+	let clipboardItems = $state<{ text: string; time: number; source: string }[]>([]);
+	function addToClipboard(text: string, source: string) {
+		if (!text.trim()) return;
+		// Deduplicate
+		clipboardItems = [{ text: text.slice(0, 2000), time: Date.now(), source }, ...clipboardItems.filter(c => c.text !== text)].slice(0, 50);
+	}
+
+	// Writing Dashboard
+	let dashSessionStart = $state(0);
+	let dashWordCount = $state(0);
+	let dashCharCount = $state(0);
+	let dashSessionWords = $state(0); // words written this session
+	let dashInitialWords = $state(0);
+	let pomodoroRunning = $state(false);
+	let pomodoroTimeLeft = $state(25 * 60); // 25 min in seconds
+	let pomodoroInterval: ReturnType<typeof setInterval> | null = null;
+
+	function startPomodoro() {
+		pomodoroRunning = true;
+		pomodoroTimeLeft = 25 * 60;
+		if (pomodoroInterval) clearInterval(pomodoroInterval);
+		pomodoroInterval = setInterval(() => {
+			pomodoroTimeLeft--;
+			if (pomodoroTimeLeft <= 0) {
+				pomodoroRunning = false;
+				if (pomodoroInterval) clearInterval(pomodoroInterval);
+				pomodoroInterval = null;
+			}
+		}, 1000);
+	}
+	function stopPomodoro() {
+		pomodoroRunning = false;
+		if (pomodoroInterval) clearInterval(pomodoroInterval);
+		pomodoroInterval = null;
+		pomodoroTimeLeft = 25 * 60;
+	}
+	function formatPomodoroTime(sec: number): string {
+		const m = Math.floor(sec / 60);
+		const s = sec % 60;
+		return `${m}:${s.toString().padStart(2, '0')}`;
+	}
+
+	// Note Diff: track last saved vs current
+	let diffLastSaved = $state('');
+	let diffCurrent = $state('');
+	let diffLines = $derived.by(() => {
+		if (!diffLastSaved && !diffCurrent) return [];
+		const oldLines = diffLastSaved.split('\n');
+		const newLines = diffCurrent.split('\n');
+		const result: { type: 'same' | 'added' | 'removed'; text: string }[] = [];
+		const maxLen = Math.max(oldLines.length, newLines.length);
+		for (let i = 0; i < maxLen; i++) {
+			const oldLine = oldLines[i] ?? '';
+			const newLine = newLines[i] ?? '';
+			if (oldLine === newLine) {
+				result.push({ type: 'same', text: newLine });
+			} else {
+				if (i < oldLines.length && oldLine !== '') {
+					result.push({ type: 'removed', text: oldLine });
+				}
+				if (i < newLines.length && newLine !== '') {
+					result.push({ type: 'added', text: newLine });
+				}
+			}
+		}
+		return result;
+	});
+	let diffChangeCount = $derived(diffLines.filter(l => l.type !== 'same').length);
+
+	// AI Context Radar: semantic suggestions (uses existing embedding infrastructure)
+	let radarSuggestions = $state<{ name: string; path: string; libraryName: string; score: number }[]>([]);
+	let radarLoading = $state(false);
+	let radarLastQuery = '';
+
+	// Editor mode active panel (which sections are expanded)
+	let editorPanels = $state<Record<string, boolean>>({
+		reference: true,
+		radar: true,
+		clipboard: true,
+		dashboard: true,
+		diff: true,
+	});
 
 	async function loadPeekPreview(note: { name: string; path: string; libraryName: string; libraryColor: string }) {
 		const gen = ++peekGeneration;
@@ -558,12 +668,38 @@
 			await loadSkyViewCompanionData(node);
 		});
 		unlisteners.push(u10);
+
+		// Editor mode: clipboard copy events
+		const u11 = await onClipboardCopy((text, source) => {
+			addToClipboard(text, source);
+		});
+		unlisteners.push(u11);
+
+		// Editor mode: note content updates (for diff + dashboard)
+		const u12 = await onNoteContentUpdate((content, savedContent, noteName) => {
+			diffCurrent = content;
+			if (!diffLastSaved || diffLastSaved !== savedContent) {
+				diffLastSaved = savedContent;
+			}
+			// Update dashboard word counts
+			const words = content.replace(/^---[\s\S]*?---\n?/, '').trim().split(/\s+/).filter(w => w.length > 0).length;
+			const chars = content.length;
+			if (dashSessionStart === 0) {
+				dashSessionStart = Date.now();
+				dashInitialWords = words;
+			}
+			dashWordCount = words;
+			dashCharCount = chars;
+			dashSessionWords = Math.max(0, words - dashInitialWords);
+		});
+		unlisteners.push(u12);
 	});
 
 	onDestroy(() => {
 		unlisteners.forEach(u => u());
 		pendingTimers.forEach(t => clearTimeout(t));
 		if (libraryChangeTimer) clearTimeout(libraryChangeTimer);
+		if (pomodoroInterval) clearInterval(pomodoroInterval);
 	});
 
 	// ─── Handlers ───
@@ -807,53 +943,172 @@
 					</div>
 				{/if}
 			</div>
-		{:else if $activeTab}
-			<div class="detail-layout">
-				<div class="detail-container" style="--note-width: {noteWidth}%">
-					{#if $openTabs.length > 0}
-						<div class="detail-tabs">
-							{#each $openTabs as tab (tab.id)}
-								<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-								<div
-									class="detail-tab" class:active={$activeTabId === tab.id}
-									onclick={() => handleTabSwitch(tab.id)}
-								>
-									<span class="tab-dot" style="background:{libraryColorMap[tab.libraryName] || '#7c3aed'}"></span>
-									<span class="tab-name">{tab.name || $t('tabs.newTab')}</span>
-									<button class="tab-close" onclick={(e) => { e.stopPropagation(); closeTab(tab.id); }}>×</button>
-								</div>
-							{/each}
-						</div>
-					{/if}
-					<div class="note-and-sky" class:sky-open={skyViewOpen} data-sky-pos={skyViewPosition} style="--sky-size: {Math.min(50, Math.max(20, localStarNodes.length * 4 + 10))}%">
-					<div class="note-area">
-						<NotePane
-							tab={$activeTab}
-							isFocused={true}
-							onFocus={() => {}}
-							color={libraryColorMap[$activeTab.libraryName] || '#7c3aed'}
-							allNotes={allNotes}
-							{libraryColorMap}
-						/>
+		{:else if $activeTab || contextMode === 'editor'}
+			<div class="editor-companion">
+				<!-- Writing Dashboard (top bar) -->
+				<div class="ec-dashboard">
+					<div class="ec-stats">
+						<span class="ec-stat"><strong>{dashWordCount}</strong> words</span>
+						<span class="ec-stat"><strong>{dashCharCount}</strong> chars</span>
+						<span class="ec-stat"><strong>+{dashSessionWords}</strong> this session</span>
+						{#if dashSessionStart > 0}
+							<span class="ec-stat">{Math.round((Date.now() - dashSessionStart) / 60000)}m elapsed</span>
+						{/if}
 					</div>
-					{#if skyViewOpen && localStarNodes.length > 0}
-						<div class="sky-view-panel">
-							<LocalStarView
-								nodes={localStarNodes}
-								links={localStarLinks}
-								activeNodeId={$activeTab.name?.replace(/\.md$/, '').toLowerCase() || ''}
-								onNodeClick={async (id) => {
-									const note = allNotes.find(n => n.name.toLowerCase() === id);
-									if (note) await handleSidebarLinkClick(note.path, note.libraryName);
-								}}
-							/>
-						</div>
-					{/if}
-				</div>
+					<div class="ec-pomodoro">
+						{#if pomodoroRunning}
+							<span class="ec-timer">{formatPomodoroTime(pomodoroTimeLeft)}</span>
+							<button class="ec-btn ec-btn-stop" onclick={stopPomodoro}>Stop</button>
+						{:else}
+							<button class="ec-btn ec-btn-start" onclick={startPomodoro}>
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+								Pomodoro 25m
+							</button>
+						{/if}
+					</div>
 				</div>
 
-				{#if sidebarOpen}
-					<div class="screen-sidebar">
+				<div class="ec-panels">
+					<!-- Reference Shelf -->
+					<div class="ec-panel" class:collapsed={!editorPanels.reference}>
+						<button class="ec-panel-header" onclick={() => editorPanels.reference = !editorPanels.reference}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+							<span>Reference Shelf</span>
+							<svg class="ec-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+						</button>
+						{#if editorPanels.reference}
+							<div class="ec-panel-body">
+								{#if refShelfNote}
+									<div class="ref-pinned">
+										<span class="ref-name" dir="auto">{refShelfNote.name.replace(/\.md$/, '')}</span>
+										<button class="ec-btn-icon" onclick={() => { refShelfNote = null; refShelfContent = ''; }} title="Unpin">×</button>
+									</div>
+									{#if refShelfLoading}
+										<p class="ec-muted">Loading...</p>
+									{:else}
+										<div class="ref-content markdown-rendered" dir="auto">
+											{@html renderMarkdownPreview(refShelfContent)}
+										</div>
+									{/if}
+								{:else}
+									<input class="ec-search" type="text" dir="auto" placeholder="Search notes to pin..." bind:value={refShelfSearch} />
+									{#if refShelfResults.length > 0}
+										<ul class="ec-results">
+											{#each refShelfResults as note}
+												<li>
+													<button class="ec-result-btn" dir="auto" onclick={() => pinReferenceNote(note)}>
+														<span class="link-dot" style="background:{libraryColorMap[note.libraryName] || '#7c3aed'}"></span>
+														{note.name.replace(/\.md$/, '')}
+													</button>
+												</li>
+											{/each}
+										</ul>
+									{/if}
+								{/if}
+							</div>
+						{/if}
+					</div>
+
+					<!-- AI Context Radar -->
+					<div class="ec-panel" class:collapsed={!editorPanels.radar}>
+						<button class="ec-panel-header" onclick={() => editorPanels.radar = !editorPanels.radar}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0110 10"/><path d="M12 2a10 10 0 016.93 4"/><circle cx="12" cy="12" r="2"/></svg>
+							<span>AI Context Radar</span>
+							{#if radarLoading}
+								<span class="ec-badge">...</span>
+							{:else if radarSuggestions.length > 0}
+								<span class="ec-badge">{radarSuggestions.length}</span>
+							{/if}
+							<svg class="ec-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+						</button>
+						{#if editorPanels.radar}
+							<div class="ec-panel-body">
+								{#if radarSuggestions.length > 0}
+									<ul class="ec-results">
+										{#each radarSuggestions as sug}
+											<li>
+												<button class="ec-result-btn" dir="auto" onclick={() => pinReferenceNote(sug)}>
+													<span class="link-dot" style="background:{libraryColorMap[sug.libraryName] || '#7c3aed'}"></span>
+													<span class="ec-result-name">{sug.name.replace(/\.md$/, '')}</span>
+													<span class="ec-score">{Math.round(sug.score * 100)}%</span>
+												</button>
+											</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="ec-muted">Semantic suggestions will appear as you write</p>
+								{/if}
+							</div>
+						{/if}
+					</div>
+
+					<!-- Clipboard Timeline -->
+					<div class="ec-panel" class:collapsed={!editorPanels.clipboard}>
+						<button class="ec-panel-header" onclick={() => editorPanels.clipboard = !editorPanels.clipboard}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+							<span>Clipboard Timeline</span>
+							{#if clipboardItems.length > 0}
+								<span class="ec-badge">{clipboardItems.length}</span>
+							{/if}
+							<svg class="ec-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+						</button>
+						{#if editorPanels.clipboard}
+							<div class="ec-panel-body">
+								{#if clipboardItems.length > 0}
+									<ul class="ec-clipboard">
+										{#each clipboardItems as item}
+											<li class="ec-clip-item" dir="auto">
+												<button class="ec-clip-btn" onclick={async () => {
+													try { await navigator.clipboard.writeText(item.text); } catch {}
+												}} title="Click to copy back">
+													<span class="ec-clip-text">{item.text.slice(0, 120)}{item.text.length > 120 ? '...' : ''}</span>
+													<span class="ec-clip-meta">{item.source} · {new Date(item.time).toLocaleTimeString()}</span>
+												</button>
+											</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="ec-muted">Copy text in the editor — it will appear here</p>
+								{/if}
+							</div>
+						{/if}
+					</div>
+
+					<!-- Note Diff -->
+					<div class="ec-panel" class:collapsed={!editorPanels.diff}>
+						<button class="ec-panel-header" onclick={() => editorPanels.diff = !editorPanels.diff}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M18 9l-6-6-6 6"/><path d="M6 15l6 6 6-6"/></svg>
+							<span>Note Diff</span>
+							{#if diffChangeCount > 0}
+								<span class="ec-badge ec-badge-warn">{diffChangeCount} changes</span>
+							{/if}
+							<svg class="ec-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+						</button>
+						{#if editorPanels.diff}
+							<div class="ec-panel-body">
+								{#if diffLines.length > 0 && diffChangeCount > 0}
+									<div class="ec-diff">
+										{#each diffLines as line}
+											{#if line.type !== 'same'}
+												<div class="ec-diff-line" class:ec-diff-added={line.type === 'added'} class:ec-diff-removed={line.type === 'removed'} dir="auto">
+													<span class="ec-diff-marker">{line.type === 'added' ? '+' : '-'}</span>
+													{line.text || ' '}
+												</div>
+											{/if}
+										{/each}
+									</div>
+								{:else}
+									<p class="ec-muted">No unsaved changes</p>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+
+			<!-- Keep the sidebar for backward compat but hidden by default in editor companion mode -->
+			{#if false && sidebarOpen}
+				<div class="screen-sidebar">
 						<!-- Backlinks -->
 						<div class="sidebar-section">
 							<h3 class="sidebar-heading">
@@ -1452,5 +1707,162 @@
 		width: 6px; height: 6px;
 		border-radius: 50%;
 		background: currentColor;
+	}
+
+	/* ─── Editor Companion Panels ─── */
+	.editor-companion {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.ec-dashboard {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 8px 16px;
+		background: var(--background-secondary);
+		border-bottom: 1px solid var(--background-modifier-border);
+		flex-shrink: 0;
+	}
+	.ec-stats { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
+	.ec-stat strong { color: var(--text-normal); font-variant-numeric: tabular-nums; }
+	.ec-pomodoro { display: flex; align-items: center; gap: 8px; }
+	.ec-timer { font-size: 18px; font-weight: 700; color: var(--interactive-accent); font-variant-numeric: tabular-nums; }
+	.ec-btn {
+		display: flex; align-items: center; gap: 4px;
+		padding: 4px 10px; border: none; border-radius: 4px;
+		font-size: 12px; cursor: pointer;
+		background: var(--background-modifier-hover); color: var(--text-muted);
+	}
+	.ec-btn:hover { background: var(--interactive-accent); color: white; }
+	.ec-btn-start { background: var(--interactive-accent); color: white; }
+	.ec-btn-stop { background: #ef4444; color: white; }
+
+	.ec-panels {
+		flex: 1;
+		overflow-y: auto;
+		padding: 8px;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.ec-panel {
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px;
+		overflow: hidden;
+		background: var(--background-primary);
+	}
+	.ec-panel.collapsed .ec-chevron { transform: rotate(-90deg); }
+
+	.ec-panel-header {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: 100%;
+		padding: 8px 12px;
+		border: none;
+		background: var(--background-secondary);
+		color: var(--text-normal);
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+		text-align: start;
+	}
+	.ec-panel-header:hover { background: var(--background-modifier-hover); }
+	.ec-panel-header span:first-of-type { flex: 1; }
+	.ec-chevron { transition: transform 0.15s; flex-shrink: 0; }
+
+	.ec-panel-body {
+		padding: 8px 12px;
+		max-height: 300px;
+		overflow-y: auto;
+	}
+
+	.ec-badge {
+		font-size: 10px;
+		padding: 1px 6px;
+		border-radius: 10px;
+		background: var(--interactive-accent);
+		color: white;
+	}
+	.ec-badge-warn { background: #f59e0b; }
+
+	.ec-muted { font-size: 12px; color: var(--text-faint); margin: 4px 0; }
+
+	.ec-search {
+		width: 100%;
+		padding: 6px 10px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		background: var(--background-secondary);
+		color: var(--text-normal);
+		font-size: 13px;
+		outline: none;
+	}
+	.ec-search:focus { border-color: var(--interactive-accent); }
+
+	.ec-results { list-style: none; padding: 0; margin: 6px 0 0; }
+	.ec-results li { margin: 0; }
+	.ec-result-btn {
+		display: flex; align-items: center; gap: 8px;
+		width: 100%; padding: 5px 8px; border: none; border-radius: 4px;
+		background: transparent; color: var(--text-normal);
+		font-size: 12px; cursor: pointer; text-align: start;
+	}
+	.ec-result-btn:hover { background: var(--background-modifier-hover); }
+	.ec-result-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ec-score { font-size: 10px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+	/* Reference Shelf */
+	.ref-pinned {
+		display: flex; align-items: center; gap: 8px;
+		padding-bottom: 6px; border-bottom: 1px solid var(--background-modifier-border);
+		margin-bottom: 8px;
+	}
+	.ref-name { flex: 1; font-weight: 600; font-size: 13px; }
+	.ec-btn-icon {
+		width: 24px; height: 24px; border: none; border-radius: 4px;
+		background: transparent; color: var(--text-muted); cursor: pointer;
+		display: flex; align-items: center; justify-content: center; font-size: 16px;
+	}
+	.ec-btn-icon:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.ref-content { font-size: 13px; line-height: 1.6; max-height: 250px; overflow-y: auto; }
+	.ref-content :global(h1) { font-size: 1.2em; }
+	.ref-content :global(h2) { font-size: 1.1em; }
+	.ref-content :global(h3) { font-size: 1em; }
+
+	/* Clipboard Timeline */
+	.ec-clipboard { list-style: none; padding: 0; margin: 0; }
+	.ec-clip-item { margin-bottom: 4px; }
+	.ec-clip-btn {
+		display: flex; flex-direction: column; gap: 2px;
+		width: 100%; padding: 6px 8px; border: none; border-radius: 4px;
+		background: var(--background-secondary); color: var(--text-normal);
+		font-size: 12px; cursor: pointer; text-align: start;
+	}
+	.ec-clip-btn:hover { background: var(--background-modifier-hover); }
+	.ec-clip-text { white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+	.ec-clip-meta { font-size: 10px; color: var(--text-faint); }
+
+	/* Note Diff */
+	.ec-diff {
+		font-family: var(--font-monospace, 'Fira Code', monospace);
+		font-size: 11px;
+		line-height: 1.5;
+	}
+	.ec-diff-line {
+		padding: 1px 8px;
+		border-radius: 2px;
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+	.ec-diff-added { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
+	.ec-diff-removed { background: rgba(239, 68, 68, 0.15); color: #ef4444; text-decoration: line-through; }
+	.ec-diff-marker {
+		display: inline-block; width: 14px;
+		font-weight: 700; user-select: none;
 	}
 </style>
