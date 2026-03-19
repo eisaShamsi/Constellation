@@ -187,10 +187,15 @@ export class GraphEngine {
 	private rotBaseZ: number = 0;
 
 	// 4D: auto-rotation (slow idle spin when not interacting)
-	private autoRotateSpeed: number = 0.05; // degrees per frame
+	private autoRotateBaseSpeed: number = 0.05; // degrees per frame — full speed
+	private autoRotateSlowSpeed: number = 0.005; // degrees per frame — when mouse is over canvas
+	private autoRotateCurrentSpeed: number = 0.05; // current interpolated speed
 	private autoRotateEnabled: boolean = true;
 	private lastInteractionTime: number = 0;
 	private autoRotateDelay: number = 3000; // ms of inactivity before auto-rotate starts
+	private mouseOverCanvas: boolean = false;
+	private lastMouseMoveTime: number = 0;
+	private mouseIdleDelay: number = 2000; // ms after mouse stops moving to resume speed
 
 	// Camera gravity: pull camera back toward center
 	private cameraGravityStrength: number = 0.02; // 0 = off, higher = stronger pull
@@ -1078,6 +1083,10 @@ export class GraphEngine {
 		const canvas = this.app?.canvas as HTMLCanvasElement;
 		if (!canvas) return;
 
+		// Track mouse presence for auto-rotation slowdown
+		this.mouseOverCanvas = true;
+		this.lastMouseMoveTime = performance.now();
+
 		if (this.isRotating) {
 			const dx = e.clientX - this.rotStartX;
 			const dy = e.clientY - this.rotStartY;
@@ -1244,6 +1253,7 @@ export class GraphEngine {
 		this.isPanning = false;
 		this.isRotating = false;
 		this.lastInteractionTime = performance.now();
+		this.mouseOverCanvas = false;
 		this.draggedNodeIdx = -1;
 		if (this.hoveredIdx !== -1) {
 			this.hoveredIdx = -1;
@@ -1341,9 +1351,17 @@ export class GraphEngine {
 		const now = performance.now();
 
 		// 4D: Auto-rotate when idle (slow ambient spin like a living organism)
+		// Smoothly interpolate speed: slow when mouse is active over canvas, fast when idle
 		if (this.autoRotateEnabled && !this.isDragging && !this.isRotating && !this.isPanning) {
+			// Determine target speed
+			const mouseActive = this.mouseOverCanvas && (now - this.lastMouseMoveTime < this.mouseIdleDelay);
+			const targetSpeed = mouseActive ? this.autoRotateSlowSpeed : this.autoRotateBaseSpeed;
+			// Smooth interpolation toward target speed (ease in/out)
+			const lerpRate = mouseActive ? 0.15 : 0.03; // slow down fast, speed up gradually
+			this.autoRotateCurrentSpeed += (targetSpeed - this.autoRotateCurrentSpeed) * lerpRate;
+
 			if (now - this.lastInteractionTime > this.autoRotateDelay) {
-				this.camRotY += this.autoRotateSpeed;
+				this.camRotY += this.autoRotateCurrentSpeed;
 				if (this.camRotY > 360) this.camRotY -= 360;
 				if (this.camRotY < -360) this.camRotY += 360;
 				this.needsRedraw = true;
