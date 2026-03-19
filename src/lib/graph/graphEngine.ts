@@ -1115,8 +1115,8 @@ export class GraphEngine {
 
 		this.worker.onmessage = (e: MessageEvent) => {
 			if (e.data.type === 'positions') {
-				// After layout settled + sphere projected, ignore further worker positions
-				if (this.layoutSettled) return;
+				// In multi-sphere mode, stop accepting worker positions after projection
+				if (this.config.multiSphere && this.layoutSettled) return;
 
 				// Accept 3D positions from worker: [x0, y0, z0, x1, y1, z1, ...]
 				const pos = e.data.positions as Float64Array;
@@ -1133,8 +1133,10 @@ export class GraphEngine {
 				if (e.data.settled && !this.didInitialFit) {
 					this.didInitialFit = true;
 					this.layoutSettled = true;
-					// Project nodes into 3D sphere(s) after force layout settles
-					this.projectOntoSphere();
+					// Only project into spheres when multi-sphere is enabled
+					if (this.config.multiSphere) {
+						this.projectOntoSphere();
+					}
 					this.fitToScreen();
 				}
 			}
