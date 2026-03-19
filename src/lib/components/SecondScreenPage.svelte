@@ -1106,75 +1106,6 @@
 				</div>
 			</div>
 
-			<!-- Keep the sidebar for backward compat but hidden by default in editor companion mode -->
-			{#if false && sidebarOpen}
-				<div class="screen-sidebar">
-						<!-- Backlinks -->
-						<div class="sidebar-section">
-							<h3 class="sidebar-heading">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-								Backlinks
-								<span class="sidebar-count">{backlinks.length}</span>
-							</h3>
-							{#if backlinks.length > 0}
-								<ul class="sidebar-links">
-									{#each backlinks as link}
-										<li>
-											<button class="sidebar-link" dir="auto" onclick={() => handleSidebarLinkClick(link.path, link.libraryName)}>
-												<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
-												{link.name}
-											</button>
-										</li>
-									{/each}
-								</ul>
-							{:else}
-								<p class="sidebar-empty">No backlinks</p>
-							{/if}
-						</div>
-
-						<!-- Forward links -->
-						<div class="sidebar-section">
-							<h3 class="sidebar-heading">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-								Forward links
-								<span class="sidebar-count">{forwardLinks.length}</span>
-							</h3>
-							{#if forwardLinks.length > 0}
-								<ul class="sidebar-links">
-									{#each forwardLinks as link}
-										<li>
-											<button class="sidebar-link" dir="auto" onclick={() => handleSidebarLinkClick(link.path, link.libraryName)}>
-												<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
-												{link.name}
-											</button>
-										</li>
-									{/each}
-								</ul>
-							{:else}
-								<p class="sidebar-empty">No forward links</p>
-							{/if}
-						</div>
-
-						<!-- Tags -->
-						<div class="sidebar-section">
-							<h3 class="sidebar-heading">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-								Tags
-								<span class="sidebar-count">{noteTags.length}</span>
-							</h3>
-							{#if noteTags.length > 0}
-								<div class="sidebar-tags">
-									{#each noteTags as tag}
-										<span class="sidebar-tag">#{tag}</span>
-									{/each}
-								</div>
-							{:else}
-								<p class="sidebar-empty">No tags</p>
-							{/if}
-						</div>
-					</div>
-				{/if}
-			</div>
 		{:else}
 			<div class="detail-empty">
 				<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
@@ -1182,6 +1113,8 @@
 				</svg>
 				<p>{$t('secondScreen.detailEmpty')}</p>
 			</div>
+		{/if}
+	</div>
 		{/if}
 	</div>
 
@@ -1715,6 +1648,7 @@
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
+		height: 100%;
 	}
 
 	.ec-dashboard {
