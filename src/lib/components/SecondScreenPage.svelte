@@ -1181,10 +1181,12 @@
 	}
 	.skyview-peek-area {
 		flex: 1;
-		overflow-y: auto;
-		padding: 16px 20px;
+		overflow: hidden;
+		padding: 0;
 		border-inline-end: 1px solid var(--background-modifier-border, #e0e0e0);
 		min-width: 0;
+		display: flex;
+		flex-direction: column;
 	}
 	.peek-empty {
 		display: flex;
@@ -1250,9 +1252,9 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		margin-bottom: 10px;
-		padding-bottom: 8px;
+		padding: 10px 24px;
 		border-bottom: 1px solid var(--background-modifier-border, #e0e0e0);
+		background: var(--background-secondary, #f8f8f8);
 	}
 	.peek-name {
 		flex: 1;
@@ -1281,14 +1283,13 @@
 		flex: 1;
 		overflow: hidden;
 		min-height: 0;
+		padding: 0 24px;
 	}
 	.peek-editor :global(.pane) {
 		height: 100% !important;
 		border: none !important;
-		padding-inline-end: 20px !important;
-	}
-	.peek-editor :global(.note-content) {
-		padding-inline-end: 16px !important;
+		max-width: 800px;
+		margin: 0 auto;
 	}
 	.skyview-header {
 		display: flex;
