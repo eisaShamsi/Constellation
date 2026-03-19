@@ -254,13 +254,7 @@
 			engine?.toggleLocalGraph();
 			localGraph = engine?.getLocalGraphMode() ?? false;
 		}
-		// Ctrl+L — cycle layout modes
-		if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
-			e.preventDefault();
-			if (engine) {
-				layoutMode = engine.cycleLayoutMode();
-			}
-		}
+		// Ctrl+L removed — only organic layout mode used
 		// 0 key — reset rotation back to 2D
 		if (e.key === '0' && !(e.target instanceof HTMLInputElement) && isTilted) {
 			e.preventDefault();
@@ -429,16 +423,6 @@
 			{/if}
 		</div>
 		<div class="gm-toolbar-right">
-			<button class="gm-btn gm-layout-btn" title="Layout mode (Ctrl+L)"
-				onclick={() => { if (engine) layoutMode = engine.cycleLayoutMode(); }}>
-				{#if layoutMode === 'organic'}
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><line x1="12" y1="12" x2="6" y2="6"/><line x1="12" y1="12" x2="18" y2="6"/><line x1="12" y1="12" x2="6" y2="18"/><line x1="12" y1="12" x2="18" y2="18"/></svg>
-				{:else if layoutMode === 'hierarchical'}
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="3" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="4" cy="21" r="2"/><circle cx="12" cy="21" r="2"/><circle cx="20" cy="21" r="2"/><line x1="12" y1="5" x2="6" y2="10"/><line x1="12" y1="5" x2="18" y2="10"/><line x1="6" y1="14" x2="4" y2="19"/><line x1="18" y1="14" x2="20" y2="19"/><line x1="6" y1="14" x2="12" y2="19"/></svg>
-				{:else}
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="21" x2="21" y2="21"/><circle cx="5" cy="16" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="13" cy="14" r="2"/><circle cx="17" cy="8" r="2"/><circle cx="21" cy="6" r="2"/></svg>
-				{/if}
-			</button>
 			{#if isTilted}
 				<button class="gm-btn" title="Reset rotation (0)" onclick={() => { engine?.resetTilt(); isTilted = false; }}>
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9"/><polyline points="3 3 3 12 12 12"/></svg>
@@ -656,10 +640,6 @@
 		<span>{nodeCount} {$t('graphView.nodes') || 'nodes'}</span>
 		<span class="gm-sep">&middot;</span>
 		<span>{edgeCount} {$t('graphView.edges') || 'edges'}</span>
-		{#if layoutMode !== 'organic'}
-			<span class="gm-sep">&middot;</span>
-			<span class="gm-layout-label">{layoutMode === 'hierarchical' ? '🏛️' : '📅'} {layoutMode}</span>
-		{/if}
 		{#if mocCount > 0}
 			<span class="gm-sep">&middot;</span>
 			<span>{mocCount} MOCs</span>
