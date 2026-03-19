@@ -1286,6 +1286,12 @@
 		height: 100% !important;
 		border: none !important;
 	}
+	.peek-editor :global(.cm-editor),
+	.peek-editor :global(.cm-content),
+	.peek-editor :global(.note-reading),
+	.peek-editor :global(.ProseMirror) {
+		padding-inline-end: 20px !important;
+	}
 	.skyview-header {
 		display: flex;
 		align-items: center;
