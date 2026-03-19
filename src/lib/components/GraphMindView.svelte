@@ -100,8 +100,31 @@
 	// Color-by mode for legend
 	let colorBy = $state<'library' | 'folder' | 'tag'>('library');
 
-	// Hidden groups — toggled off in legend checkboxes
-	let hiddenGroups = $state(new Set<string>());
+	// Hidden groups — separate sets for library and folder modes
+	let hiddenLibraries = $state(new Set<string>());
+	let hiddenFolders = $state(new Set<string>());
+
+	// Effective hidden groups: current mode's set + library→folder cascade
+	const hiddenGroups = $derived.by(() => {
+		const set = new Set(colorBy === 'folder' ? hiddenFolders : hiddenLibraries);
+		// Cascade: hidden libraries → hide their folders too
+		if (colorBy === 'folder') {
+			for (const lib of hiddenLibraries) {
+				const folders = libraryFolderMap[lib];
+				if (folders) for (const f of folders) set.add(f);
+			}
+		}
+		return set;
+	});
+
+	// Visible folder count (only folders from visible libraries)
+	const visibleFolderCount = $derived.by(() => {
+		let count = 0;
+		for (const [lib, folders] of Object.entries(libraryFolderMap)) {
+			if (!hiddenLibraries.has(lib)) count += folders.size;
+		}
+		return count;
+	});
 
 	// Hidden count
 	let hiddenCount = $state(0);
@@ -655,24 +678,40 @@
 		<div class="gm-legend" dir="auto">
 			<div class="gm-legend-header">
 				<button class="gm-legend-toggle" class:active={colorBy === 'library'}
-					onclick={() => { colorBy = 'library'; hiddenGroups = new Set(); }}>
+					onclick={() => { colorBy = 'library'; }}>
 					{$t('graphView.colorByLibrary') || 'Library'}
 				</button>
 				<button class="gm-legend-toggle" class:active={colorBy === 'folder'}
-					onclick={() => { colorBy = 'folder'; hiddenGroups = new Set(); }}>
-					{$t('graphView.colorByFolder') || 'Folder'} ({Object.keys(folderColorMap).length})
+					onclick={() => { colorBy = 'folder'; }}>
+					{$t('graphView.colorByFolder') || 'Folder'} ({visibleFolderCount})
 				</button>
 			</div>
 			<div class="gm-legend-items">
-				{#each Object.entries(activeColorMap) as [name, color]}
+				{#each Object.entries(activeColorMap).filter(([name]) => {
+					// In folder mode, only show folders from visible libraries
+					if (colorBy === 'folder') {
+						for (const [lib, folders] of Object.entries(libraryFolderMap)) {
+							if (hiddenLibraries.has(lib)) continue;
+							if (folders.has(name)) return true;
+						}
+						return false;
+					}
+					return true;
+				}) as [name, color]}
 					{@const nameIsRTL = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(name)}
 					{@const isHidden = hiddenGroups.has(name)}
 					<label class="gm-legend-item" style:flex-direction={nameIsRTL ? 'row-reverse' : 'row'} style:opacity={isHidden ? 0.4 : 1}>
 						<input type="checkbox" class="gm-legend-check" checked={!isHidden}
 							onchange={() => {
-								const next = new Set(hiddenGroups);
-								if (next.has(name)) next.delete(name); else next.add(name);
-								hiddenGroups = next;
+								if (colorBy === 'folder') {
+									const next = new Set(hiddenFolders);
+									if (next.has(name)) next.delete(name); else next.add(name);
+									hiddenFolders = next;
+								} else {
+									const next = new Set(hiddenLibraries);
+									if (next.has(name)) next.delete(name); else next.add(name);
+									hiddenLibraries = next;
+								}
 							}} />
 						<span class="gm-legend-dot" style="background:{color}"></span>
 						<span class="gm-legend-name" dir="auto" style:text-align={nameIsRTL ? 'right' : 'left'}>{name}</span>
@@ -680,7 +719,7 @@
 				{/each}
 			</div>
 			{#if hiddenGroups.size > 0}
-				<button class="gm-legend-clear" onclick={() => { hiddenGroups = new Set(); }}>
+				<button class="gm-legend-clear" onclick={() => { hiddenLibraries = new Set(); hiddenFolders = new Set(); }}>
 					{$t('graphView.showAll') || 'Show all'}
 				</button>
 			{/if}
