@@ -513,8 +513,8 @@
 				</label>
 				<label class="gm-setting">
 					<span>{$t('graphView.multiSphere') || 'Separate spheres'}</span>
-					<input type="checkbox" bind:checked={uiMultiSphere}
-						onchange={() => { handleSettingChange('multiSphere', uiMultiSphere); engine?.setData(nodes, links, libraryColorMap); }} />
+					<input type="checkbox" checked={uiMultiSphere}
+						onchange={(e) => { const v = (e.target as HTMLInputElement).checked; uiMultiSphere = v; handleSettingChange('multiSphere', v); }} />
 				</label>
 			{:else if settingsTab === 'physics'}
 				<label class="gm-setting">
