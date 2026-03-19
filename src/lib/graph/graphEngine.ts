@@ -502,7 +502,7 @@ export class GraphEngine {
 		// Crystal Ball: nodes fill a 3D sphere volume
 		// Senior nodes near core, newer/leaf nodes at outer edge
 		const outerR = Math.max(350, Math.sqrt(this.nodes.length) * 28);
-		const innerR = outerR * 0.08; // core minimum radius
+		const innerR = 0; // start from dead center — fill the entire ball
 
 		// Compute seniority: high link count + old age = closer to core
 		const now = Date.now();
