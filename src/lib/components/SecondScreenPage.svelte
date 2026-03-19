@@ -1283,13 +1283,10 @@
 		flex: 1;
 		overflow: hidden;
 		min-height: 0;
-		padding: 0 24px;
 	}
 	.peek-editor :global(.pane) {
 		height: 100% !important;
 		border: none !important;
-		max-width: 800px;
-		margin: 0 auto;
 	}
 	.skyview-header {
 		display: flex;
