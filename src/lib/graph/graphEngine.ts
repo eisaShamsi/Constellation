@@ -1019,27 +1019,27 @@ export class GraphEngine {
 
 		this.worker.onmessage = (e: MessageEvent) => {
 			if (e.data.type === 'positions') {
-				// CRITICAL: Once layout settled and sphere projected, STOP accepting
-				// 2D positions from worker — they would flatten the sphere back to a plane
-				if (this.layoutSettled) return;
-
+				// Accept 3D positions from worker: [x0, y0, z0, x1, y1, z1, ...]
 				const pos = e.data.positions as Float64Array;
-				for (let i = 0; i < this.nodes.length && i * 2 + 1 < pos.length; i++) {
-					this.nodes[i].x = pos[i * 2];
-					this.nodes[i].y = pos[i * 2 + 1];
+				const stride = pos.length / this.nodes.length >= 2.5 ? 3 : 2; // detect 2D vs 3D
+				for (let i = 0; i < this.nodes.length && i * stride + (stride - 1) < pos.length; i++) {
+					this.nodes[i].x = pos[i * stride];
+					this.nodes[i].y = pos[i * stride + 1];
+					if (stride === 3) {
+						this.nodes[i].z = pos[i * stride + 2];
+					}
 				}
 				this.needsRedraw = true;
 
 				if (e.data.settled && !this.didInitialFit) {
 					this.didInitialFit = true;
 					this.layoutSettled = true;
-					this.projectOntoSphere();
 					this.fitToScreen();
 				}
 			}
 		};
 
-		const workerNodes = this.nodes.map((n) => ({ id: n.id, x: n.x, y: n.y }));
+		const workerNodes = this.nodes.map((n) => ({ id: n.id, x: n.x, y: n.y, z: n.z, linkCount: n.linkCount }));
 		const workerEdges = this.links.map((l) => ({
 			source: this.nodes[l.sourceIdx].id,
 			target: this.nodes[l.targetIdx].id,
