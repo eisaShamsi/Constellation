@@ -157,11 +157,32 @@
 		};
 	}
 	let showStarView = $state(false);
-	// Emit context change to second screen when Sky View toggles
+	// Emit context change to second screen when Sky View toggles or active tab changes
 	let skyviewHoverTimer: ReturnType<typeof setTimeout> | null = null;
 	$effect(() => {
 		if (secondScreenOpen) {
-			emitContextChanged(showStarView ? 'skyview' : 'editor');
+			const mode = showStarView ? 'skyview' : 'editor';
+			emitContextChanged(mode);
+			// When switching to editor mode, send the current note to second screen
+			if (mode === 'editor' && $activeTab?.path) {
+				sendNoteToScreen({
+					path: $activeTab.path,
+					body: '',
+					libraryName: $activeTab.libraryName,
+					name: $activeTab.name,
+				});
+			}
+		}
+	});
+	// Also sync when the user switches tabs in editor mode
+	$effect(() => {
+		if (secondScreenOpen && !showStarView && $activeTab?.path) {
+			sendNoteToScreen({
+				path: $activeTab.path,
+				body: '',
+				libraryName: $activeTab.libraryName,
+				name: $activeTab.name,
+			});
 		}
 	});
 	let showGlobalTasks = $state(false);
