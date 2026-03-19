@@ -22,8 +22,13 @@
 	let searchQuery = $state('');
 	let searchVisible = $state(false);
 	let hierarchySource = $state<'folders' | 'tags' | 'moc' | 'parent'>('folders');
-	let layoutMode = $state<'tree' | 'radial'>('tree');
+	let layoutMode = $state<'tree' | 'radial' | 'sunburst' | 'treemap'>('tree');
 	let treeOrientation = $state<'vertical' | 'horizontal'>('vertical');
+	let colorMode = $state<'library' | 'status' | 'depth'>('library');
+
+	// Breadcrumb drill-down
+	let breadcrumb: { name: string; path: string }[] = $state([]);
+	let drillRootPath: string | null = $state(null); // null = show full tree
 
 	// D3 data
 	let rootData: any = null;
@@ -42,6 +47,10 @@
 
 	// Collapsed nodes tracking
 	let collapsedPaths = $state(new Set<string>());
+
+	// Sunburst/Treemap data
+	let sunburstArcs: { x0: number; x1: number; y0: number; y1: number; data: any; depth: number }[] = $state([]);
+	let treemapRects: { x0: number; y0: number; x1: number; y1: number; data: any; depth: number }[] = $state([]);
 
 	// Hover
 	let hoveredNode: any = $state(null);
@@ -105,6 +114,97 @@
 		}));
 	}
 
+	async function loadTagHierarchy() {
+		const libs = $libraries;
+		const allTags: Record<string, number> = {};
+		for (const lib of libs) {
+			const tags = await invoke<Record<string, number>>('scan_library_tags', { libraryPath: lib.path }).catch(() => ({}));
+			for (const [tag, count] of Object.entries(tags)) {
+				allTags[tag] = (allTags[tag] || 0) + count;
+			}
+		}
+
+		// Build tag tree
+		function buildTagTree(tags: Record<string, number>): any[] {
+			const roots: any[] = [];
+			const nodeMap = new Map<string, any>();
+			const sorted = Object.entries(tags).sort((a, b) => a[0].localeCompare(b[0]));
+			for (const [tag, count] of sorted) {
+				const parts = tag.split('/');
+				let path = '';
+				let parent = roots;
+				for (let i = 0; i < parts.length; i++) {
+					path += (i > 0 ? '/' : '') + parts[i];
+					let existing = nodeMap.get(path);
+					if (!existing) {
+						existing = { name: '#' + parts[i], path: 'tag:' + path, isDir: true, isTag: true, color: '#7c3aed', children: [] };
+						nodeMap.set(path, existing);
+						parent.push(existing);
+					}
+					if (i === parts.length - 1) existing._count = count;
+					parent = existing.children;
+				}
+			}
+			return roots;
+		}
+
+		return {
+			name: 'Tags',
+			path: '__tags_root__',
+			isDir: true,
+			isRoot: true,
+			children: buildTagTree(allTags),
+		};
+	}
+
+	async function loadMOCHierarchy() {
+		const libs = $libraries;
+		const allLinks: { source: string; target: string; sourceName: string }[] = [];
+		const noteNames = new Map<string, string>();
+
+		for (const lib of libs) {
+			const links = await invoke<any[]>('scan_library_links', { libraryPath: lib.path }).catch(() => []);
+			for (const l of links) {
+				allLinks.push({ source: l.source_name, target: l.target, sourceName: l.source_name });
+				noteNames.set(l.source_name, l.source_path);
+			}
+		}
+
+		// Find MOC notes (5+ outgoing links)
+		const outgoing = new Map<string, Set<string>>();
+		for (const l of allLinks) {
+			if (!outgoing.has(l.source)) outgoing.set(l.source, new Set());
+			outgoing.get(l.source)!.add(l.target);
+		}
+
+		const mocs: any[] = [];
+		for (const [name, targets] of outgoing) {
+			if (targets.size >= 5) {
+				mocs.push({
+					name,
+					path: noteNames.get(name) || name,
+					isDir: true,
+					isMOC: true,
+					color: '#d97706',
+					children: [...targets].map(t => ({
+						name: t,
+						path: t,
+						isNote: true,
+						color: '#64748b',
+					})),
+				});
+			}
+		}
+
+		return {
+			name: 'Maps of Content',
+			path: '__moc_root__',
+			isDir: true,
+			isRoot: true,
+			children: mocs.sort((a, b) => (b.children?.length || 0) - (a.children?.length || 0)),
+		};
+	}
+
 	// ─── Layout Computation ────────────────────────────────
 	function computeLayout() {
 		if (!rootData) return;
@@ -122,14 +222,57 @@
 			};
 		}
 
-		const filtered = filterCollapsed(rootData);
+		// Find drill-down subtree if active
+		let sourceData = rootData;
+		if (drillRootPath) {
+			const findNode = (node: any, path: string): any => {
+				if (node.path === path) return node;
+				if (!node.children) return null;
+				for (const c of node.children) {
+					const found = findNode(c, path);
+					if (found) return found;
+				}
+				return null;
+			};
+			sourceData = findNode(rootData, drillRootPath) || rootData;
+		}
+
+		const filtered = filterCollapsed(sourceData);
 		d3Root = d3.hierarchy(filtered);
 
 		// Compute layout
 		const nodeCount = d3Root.descendants().length;
 		const nodeSize: [number, number] = treeOrientation === 'vertical' ? [180, 80] : [40, 220];
 
-		if (layoutMode === 'tree') {
+		// Clear all layout data
+		sunburstArcs = [];
+		treemapRects = [];
+
+		if (layoutMode === 'sunburst') {
+			// Sunburst: partition layout in polar coordinates
+			d3Root.sum((d: any) => d.children ? 0 : 1);
+			const partition = d3.partition().size([2 * Math.PI, 300]);
+			partition(d3Root as any);
+			sunburstArcs = d3Root.descendants().filter((d: any) => d.depth > 0).map((d: any) => ({
+				x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y1,
+				data: d.data, depth: d.depth,
+			}));
+			treeNodes = [];
+			treeLinks = [];
+		} else if (layoutMode === 'treemap') {
+			// Treemap: rectangle packing
+			const w = containerEl?.clientWidth || 800;
+			const h = containerEl?.clientHeight || 600;
+			d3Root.sum((d: any) => d.children ? 0 : 1);
+			const treemap = d3.treemap().size([w - 40, h - 100]).padding(2).round(true);
+			treemap(d3Root as any);
+			treemapRects = d3Root.leaves().map((d: any) => ({
+				x0: d.x0, y0: d.y0, x1: d.x1, y1: d.y1,
+				data: d.data, depth: d.depth,
+			}));
+			treeNodes = [];
+			treeLinks = [];
+		} else if (layoutMode === 'tree') {
 			const treeLayout = d3.tree().nodeSize(nodeSize);
 			treeLayout(d3Root as any);
 		} else {
@@ -138,29 +281,31 @@
 			treeLayout(d3Root as any);
 		}
 
-		// Extract nodes and links
-		const nodes = d3Root.descendants().map((d: any) => ({
-			x: layoutMode === 'radial' ? d.y * Math.cos(d.x - Math.PI / 2) : (treeOrientation === 'vertical' ? d.x : d.y),
-			y: layoutMode === 'radial' ? d.y * Math.sin(d.x - Math.PI / 2) : (treeOrientation === 'vertical' ? d.y : d.x),
-			data: d.data,
-			depth: d.depth,
-			children: d.children,
-			_collapsed: d.data._collapsed,
-		}));
+		if (layoutMode === 'tree' || layoutMode === 'radial') {
+			// Extract nodes and links for tree/radial
+			const nodes = d3Root.descendants().map((d: any) => ({
+				x: layoutMode === 'radial' ? d.y * Math.cos(d.x - Math.PI / 2) : (treeOrientation === 'vertical' ? d.x : d.y),
+				y: layoutMode === 'radial' ? d.y * Math.sin(d.x - Math.PI / 2) : (treeOrientation === 'vertical' ? d.y : d.x),
+				data: d.data,
+				depth: d.depth,
+				children: d.children,
+				_collapsed: d.data._collapsed,
+			}));
 
-		const links = d3Root.links().map((l: any) => ({
-			source: {
-				x: layoutMode === 'radial' ? l.source.y * Math.cos(l.source.x - Math.PI / 2) : (treeOrientation === 'vertical' ? l.source.x : l.source.y),
-				y: layoutMode === 'radial' ? l.source.y * Math.sin(l.source.x - Math.PI / 2) : (treeOrientation === 'vertical' ? l.source.y : l.source.x),
-			},
-			target: {
-				x: layoutMode === 'radial' ? l.target.y * Math.cos(l.target.x - Math.PI / 2) : (treeOrientation === 'vertical' ? l.target.x : l.target.y),
-				y: layoutMode === 'radial' ? l.target.y * Math.sin(l.target.x - Math.PI / 2) : (treeOrientation === 'vertical' ? l.target.y : l.target.x),
-			},
-		}));
+			const links = d3Root.links().map((l: any) => ({
+				source: {
+					x: layoutMode === 'radial' ? l.source.y * Math.cos(l.source.x - Math.PI / 2) : (treeOrientation === 'vertical' ? l.source.x : l.source.y),
+					y: layoutMode === 'radial' ? l.source.y * Math.sin(l.source.x - Math.PI / 2) : (treeOrientation === 'vertical' ? l.source.y : l.source.x),
+				},
+				target: {
+					x: layoutMode === 'radial' ? l.target.y * Math.cos(l.target.x - Math.PI / 2) : (treeOrientation === 'vertical' ? l.target.x : l.target.y),
+					y: layoutMode === 'radial' ? l.target.y * Math.sin(l.target.x - Math.PI / 2) : (treeOrientation === 'vertical' ? l.target.y : l.target.x),
+				},
+			}));
 
-		treeNodes = nodes;
-		treeLinks = links;
+			treeNodes = nodes;
+			treeLinks = links;
+		}
 
 		// Stats
 		totalNodes = d3Root.descendants().length;
@@ -188,6 +333,46 @@
 			toggleCollapse(node.data.path);
 		} else if (node.data.isNote) {
 			onNoteClick?.(node.data.path, node.data.name);
+		}
+	}
+
+	function handleNodeDoubleClick(node: any) {
+		// Drill down: re-root the chart at this node
+		if (node.data.isDir || node.data.isLibrary) {
+			drillRootPath = node.data.path;
+			breadcrumb = [...breadcrumb, { name: node.data.name, path: node.data.path }];
+			computeLayout();
+			setTimeout(fitToScreen, 100);
+		}
+	}
+
+	function drillUp(idx: number) {
+		if (idx < 0) {
+			// Go to root
+			drillRootPath = null;
+			breadcrumb = [];
+		} else {
+			drillRootPath = breadcrumb[idx].path;
+			breadcrumb = breadcrumb.slice(0, idx + 1);
+		}
+		computeLayout();
+		setTimeout(fitToScreen, 100);
+	}
+
+	// Depth-based color palette
+	const depthColors = ['#7c3aed', '#2563eb', '#0891b2', '#059669', '#d97706', '#dc2626', '#9333ea', '#4f46e5'];
+
+	function nodeColor(node: any): string {
+		if (colorMode === 'library') {
+			return node.data.color || '#7c3aed';
+		} else if (colorMode === 'status') {
+			if (node.data.status === 'evergreen') return '#059669';
+			if (node.data.status === 'growing') return '#d97706';
+			if (node.data.status === 'seedling') return '#2563eb';
+			if (node.data.isDir) return '#64748b';
+			return '#94a3b8';
+		} else {
+			return depthColors[node.depth % depthColors.length];
 		}
 	}
 
@@ -260,16 +445,39 @@
 		if (rootData) computeLayout();
 	});
 
+	async function loadHierarchy() {
+		loading = true;
+		drillRootPath = null;
+		breadcrumb = [];
+		collapsedPaths = new Set();
+		switch (hierarchySource) {
+			case 'folders': rootData = await loadFolderHierarchy(); break;
+			case 'tags': rootData = await loadTagHierarchy(); break;
+			case 'moc': rootData = await loadMOCHierarchy(); break;
+			default: rootData = await loadFolderHierarchy();
+		}
+		loading = false;
+		if (rootData) {
+			computeLayout();
+			setTimeout(fitToScreen, 100);
+		}
+	}
+
+	// React to hierarchy source change
+	let prevSource = hierarchySource;
+	$effect(() => {
+		if (hierarchySource !== prevSource) {
+			prevSource = hierarchySource;
+			loadHierarchy();
+		}
+	});
+
 	// ─── Lifecycle ─────────────────────────────────────────
 	onMount(async () => {
 		window.addEventListener('keydown', handleKeydown);
 
-		// Load data
-		rootData = await loadFolderHierarchy();
-		loading = false;
-
-		if (!rootData) return;
-		computeLayout();
+		// Load initial data
+		await loadHierarchy();
 
 		// Setup zoom
 		zoomBehavior = d3.zoom<SVGSVGElement, unknown>()
@@ -309,6 +517,8 @@
 			<select class="oc-select" bind:value={layoutMode} onchange={() => { computeLayout(); setTimeout(fitToScreen, 100); }}>
 				<option value="tree">{$t('orgChart.tree') || 'Tree'}</option>
 				<option value="radial">{$t('orgChart.radial') || 'Radial'}</option>
+				<option value="sunburst">{$t('orgChart.sunburst') || 'Sunburst'}</option>
+				<option value="treemap">{$t('orgChart.treemap') || 'Treemap'}</option>
 			</select>
 			{#if layoutMode === 'tree'}
 				<button class="oc-btn" onclick={() => { treeOrientation = treeOrientation === 'vertical' ? 'horizontal' : 'vertical'; computeLayout(); setTimeout(fitToScreen, 100); }} title="Toggle orientation">
@@ -319,6 +529,11 @@
 					{/if}
 				</button>
 			{/if}
+			<select class="oc-select" bind:value={colorMode}>
+				<option value="library">{$t('orgChart.colorLibrary') || 'Color: Library'}</option>
+				<option value="status">{$t('orgChart.colorStatus') || 'Color: Status'}</option>
+				<option value="depth">{$t('orgChart.colorDepth') || 'Color: Depth'}</option>
+			</select>
 			<button class="oc-btn" onclick={fitToScreen} title="Fit to screen">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
 			</button>
@@ -328,6 +543,17 @@
 		</div>
 	</div>
 
+	<!-- Breadcrumb -->
+	{#if breadcrumb.length > 0}
+		<div class="oc-breadcrumb">
+			<button class="oc-crumb" onclick={() => drillUp(-1)}>🌐 Universe</button>
+			{#each breadcrumb as crumb, i}
+				<span class="oc-crumb-sep">›</span>
+				<button class="oc-crumb" class:active={i === breadcrumb.length - 1} onclick={() => drillUp(i)}>{crumb.name}</button>
+			{/each}
+		</div>
+	{/if}
+
 	<!-- SVG Canvas -->
 	{#if loading}
 		<div class="oc-loading">
@@ -336,6 +562,69 @@
 		</div>
 	{:else}
 		<svg bind:this={svgEl} class="oc-svg" width="100%" height="100%">
+			<!-- Sunburst arcs (no zoom transform — fills viewport) -->
+			{#if layoutMode === 'sunburst' && sunburstArcs.length > 0}
+				<g transform="translate({(containerEl?.clientWidth || 800) / 2},{(containerEl?.clientHeight || 600) / 2})">
+					{#each sunburstArcs as arc}
+						{@const innerR = arc.y0}
+						{@const outerR = arc.y1}
+						{@const startAngle = arc.x0 - Math.PI / 2}
+						{@const endAngle = arc.x1 - Math.PI / 2}
+						{@const arcGen = d3.arc()({innerRadius: innerR, outerRadius: outerR, startAngle: arc.x0, endAngle: arc.x1})}
+						<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+						<path
+							d={arcGen}
+							fill={nodeColor({ data: arc.data, depth: arc.depth })}
+							stroke="var(--background-primary)"
+							stroke-width="1"
+							opacity="0.85"
+							class="oc-arc"
+							onmouseenter={() => hoveredNode = arc}
+							onmouseleave={() => hoveredNode = null}
+							onclick={() => {
+								if (arc.data.isDir) toggleCollapse(arc.data.path);
+								else if (arc.data.isNote) onNoteClick?.(arc.data.path, arc.data.name);
+							}}
+						/>
+						{#if (arc.x1 - arc.x0) > 0.1}
+							<text
+								transform="translate({d3.arc().centroid({innerRadius: innerR, outerRadius: outerR, startAngle: arc.x0, endAngle: arc.x1})})"
+								text-anchor="middle" font-size="9" fill="white" style="pointer-events:none;"
+							>{arc.data.name?.length > 12 ? arc.data.name.slice(0, 11) + '…' : arc.data.name}</text>
+						{/if}
+					{/each}
+				</g>
+			{/if}
+
+			<!-- Treemap rects (no zoom transform — fills viewport) -->
+			{#if layoutMode === 'treemap' && treemapRects.length > 0}
+				<g transform="translate(20,20)">
+					{#each treemapRects as rect}
+						<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+						<g class="oc-treemap-cell"
+							onmouseenter={() => hoveredNode = rect}
+							onmouseleave={() => hoveredNode = null}
+							onclick={() => { if (rect.data.isNote) onNoteClick?.(rect.data.path, rect.data.name); }}
+						>
+							<rect
+								x={rect.x0} y={rect.y0}
+								width={rect.x1 - rect.x0} height={rect.y1 - rect.y0}
+								fill={nodeColor({ data: rect.data, depth: rect.depth })}
+								stroke="var(--background-primary)" stroke-width="1"
+								rx="2" opacity="0.8"
+							/>
+							{#if (rect.x1 - rect.x0) > 40 && (rect.y1 - rect.y0) > 14}
+								<text
+									x={rect.x0 + 4} y={rect.y0 + 12}
+									font-size="10" fill="white" style="pointer-events:none;"
+								>{rect.data.name?.length > 18 ? rect.data.name.slice(0, 17) + '…' : rect.data.name}</text>
+							{/if}
+						</g>
+					{/each}
+				</g>
+			{/if}
+
+			<!-- Tree/Radial nodes and links -->
 			<g transform="translate({transform.x},{transform.y}) scale({transform.k})">
 				<!-- Links -->
 				{#each treeLinks as link}
@@ -357,6 +646,7 @@
 						class="oc-node"
 						transform="translate({node.x},{node.y})"
 						onclick={() => handleNodeClick(node)}
+						ondblclick={() => handleNodeDoubleClick(node)}
 						onmouseenter={() => hoveredNode = node}
 						onmouseleave={() => hoveredNode = null}
 						opacity={isDim ? 0.2 : 1}
@@ -365,7 +655,7 @@
 						<rect
 							x="-70" y="-16" width="140" height="32" rx="6"
 							fill={isMatch ? 'color-mix(in srgb, var(--interactive-accent) 20%, var(--background-primary))' : 'var(--background-primary)'}
-							stroke={node.data.color || 'var(--text-faint)'}
+							stroke={nodeColor(node)}
 							stroke-width={hoveredNode === node ? 2 : 1}
 						/>
 						<!-- Icon -->
@@ -487,4 +777,19 @@
 		font-size: 11px; color: var(--text-faint); flex-shrink: 0;
 	}
 	.oc-sep { opacity: 0.3; }
+
+	/* Breadcrumb */
+	.oc-breadcrumb {
+		display: flex; align-items: center; gap: 4px;
+		padding: 4px 12px; background: var(--background-secondary);
+		border-bottom: 1px solid var(--background-modifier-border);
+		font-size: 12px; flex-shrink: 0; overflow-x: auto;
+	}
+	.oc-crumb {
+		border: none; background: transparent; color: var(--text-muted);
+		cursor: pointer; padding: 2px 6px; border-radius: 3px; white-space: nowrap;
+	}
+	.oc-crumb:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.oc-crumb.active { color: var(--interactive-accent); font-weight: 600; }
+	.oc-crumb-sep { color: var(--text-faint); font-size: 10px; }
 </style>
