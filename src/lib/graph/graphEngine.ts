@@ -185,6 +185,15 @@ export class GraphEngine {
 	private rotBaseY: number = 0;
 	private rotBaseZ: number = 0;
 
+	// 4D: auto-rotation (slow idle spin when not interacting)
+	private autoRotateSpeed: number = 0.05; // degrees per frame
+	private autoRotateEnabled: boolean = true;
+	private lastInteractionTime: number = 0;
+	private autoRotateDelay: number = 3000; // ms of inactivity before auto-rotate starts
+
+	// Camera gravity: pull camera back toward center
+	private cameraGravityStrength: number = 0.02; // 0 = off, higher = stronger pull
+
 	// Redraw flag
 	private needsRedraw: boolean = true;
 
@@ -482,42 +491,54 @@ export class GraphEngine {
 
 	/**
 	 * Project 2D force-layout positions onto a sphere surface.
-	 * Uses the 2D (x, y) as longitude/latitude and maps to 3D sphere coords.
-	 * This gives depth when rotating in 3D — no more "wall" effect.
+	 * Uses polar coordinates: distance from center → latitude (pole to equator),
+	 * angle around center → longitude. Clusters stay together, shape is spherical.
 	 */
 	private projectOntoSphere(): void {
 		if (this.nodes.length === 0) return;
 
-		// Find bounding box of 2D positions to normalize
-		let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-		for (const n of this.nodes) {
-			if (n.x < minX) minX = n.x;
-			if (n.x > maxX) maxX = n.x;
-			if (n.y < minY) minY = n.y;
-			if (n.y > maxY) maxY = n.y;
+		// Sphere radius — proportional to node count
+		const R = Math.max(300, Math.sqrt(this.nodes.length) * 25);
+
+		// Sort nodes by distance from 2D center — gives us a rank for even distribution
+		let cx = 0, cy = 0;
+		for (const n of this.nodes) { cx += n.x; cy += n.y; }
+		cx /= this.nodes.length;
+		cy /= this.nodes.length;
+
+		// Compute polar coords in 2D
+		const polar: { idx: number; angle: number; dist: number }[] = [];
+		for (let i = 0; i < this.nodes.length; i++) {
+			const dx = this.nodes[i].x - cx;
+			const dy = this.nodes[i].y - cy;
+			polar.push({ idx: i, angle: Math.atan2(dy, dx), dist: Math.sqrt(dx * dx + dy * dy) });
 		}
 
-		const cx = (minX + maxX) / 2;
-		const cy = (minY + maxY) / 2;
-		const span = Math.max(maxX - minX, maxY - minY) || 1;
+		// Sort by distance for rank-based latitude (equal-area Fibonacci sphere)
+		// This ensures even distribution regardless of 2D clustering
+		const sorted = [...polar].sort((a, b) => a.dist - b.dist);
+		const rankMap = new Map<number, number>();
+		sorted.forEach((p, rank) => rankMap.set(p.idx, rank));
 
-		// Sphere radius proportional to graph size
-		const R = span * 0.6;
+		const N = this.nodes.length;
+		const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ~2.3999 radians
 
-		for (const n of this.nodes) {
-			// Normalize to [-1, 1] range
-			const nx = (n.x - cx) / (span / 2);
-			const ny = (n.y - cy) / (span / 2);
+		for (let i = 0; i < N; i++) {
+			const rank = rankMap.get(i)!;
+			const p = polar[i];
 
-			// Map to spherical coordinates
-			// longitude from x, latitude from y
-			const lon = nx * Math.PI * 0.8; // ±144 degrees
-			const lat = ny * Math.PI * 0.4; // ±72 degrees
+			// Fibonacci sphere: evenly distributes points on sphere surface
+			// Latitude from rank (0=north pole, N-1=south pole)
+			const lat = Math.asin(1 - (2 * rank + 1) / N); // ranges from +π/2 to -π/2
 
-			// Spherical to Cartesian
-			n.x = R * Math.cos(lat) * Math.sin(lon);
-			n.z = R * Math.cos(lat) * Math.cos(lon);
-			n.y = R * Math.sin(lat);
+			// Longitude: use golden angle for even spiral, but OFFSET by original 2D angle
+			// to preserve cluster relationships (nearby 2D nodes stay nearby on sphere)
+			const lon = p.angle + rank * goldenAngle * 0.3; // blend golden spiral with original angle
+
+			// Spherical → Cartesian
+			this.nodes[i].x = R * Math.cos(lat) * Math.cos(lon);
+			this.nodes[i].z = R * Math.cos(lat) * Math.sin(lon);
+			this.nodes[i].y = R * Math.sin(lat);
 		}
 
 		this.needsRedraw = true;
@@ -1129,6 +1150,7 @@ export class GraphEngine {
 
 		if (this.draggedNodeIdx >= 0) {
 			this.isDragging = true;
+			this.lastInteractionTime = performance.now();
 			const rect = canvas.getBoundingClientRect();
 			const { wx, wy } = this.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
 			this.nodes[this.draggedNodeIdx].x = wx;
@@ -1189,6 +1211,7 @@ export class GraphEngine {
 		if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
 			e.preventDefault();
 			this.isRotating = true;
+			this.lastInteractionTime = performance.now();
 			this.rotStartX = e.clientX;
 			this.rotStartY = e.clientY;
 			this.rotBaseX = this.camRotX;
@@ -1211,6 +1234,7 @@ export class GraphEngine {
 		} else {
 			// Start panning
 			this.isPanning = true;
+			this.lastInteractionTime = performance.now();
 			this.panStartX = e.clientX;
 			this.panStartY = e.clientY;
 			this.panViewX = this.viewX;
@@ -1266,6 +1290,7 @@ export class GraphEngine {
 	private onPointerLeave = (): void => {
 		this.isPanning = false;
 		this.isRotating = false;
+		this.lastInteractionTime = performance.now();
 		this.draggedNodeIdx = -1;
 		if (this.hoveredIdx !== -1) {
 			this.hoveredIdx = -1;
@@ -1360,10 +1385,23 @@ export class GraphEngine {
 	// ─── Render Loop (Pixi Ticker) ────────────────────────────────
 
 	private draw = (): void => {
+		const now = performance.now();
+
+		// 4D: Auto-rotate when idle (slow ambient spin like a living organism)
+		if (this.autoRotateEnabled && !this.isDragging && !this.isRotating && !this.isPanning) {
+			if (now - this.lastInteractionTime > this.autoRotateDelay) {
+				this.camRotY += this.autoRotateSpeed;
+				// Keep in 360° range
+				if (this.camRotY > 360) this.camRotY -= 360;
+				if (this.camRotY < -360) this.camRotY += 360;
+				this.needsRedraw = true;
+			}
+		}
+
 		// Gravity: gently pull camera position back toward sphere center (0,0,0)
 		// Only when not actively dragging/rotating
 		if (!this.isDragging && !this.isRotating && !this.isPanning) {
-			const grav = 0.02; // strength — subtle drift back
+			const grav = this.cameraGravityStrength;
 			const threshold = 0.5; // stop jitter below this
 			if (Math.abs(this.camPosX) > threshold) { this.camPosX *= (1 - grav); this.needsRedraw = true; }
 			if (Math.abs(this.camPosY) > threshold) { this.camPosY *= (1 - grav); this.needsRedraw = true; }
