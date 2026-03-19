@@ -654,7 +654,7 @@
 								<div class="peek-preview">
 									<div class="peek-header">
 										<span class="skyview-dot" style="background:{peekNote?.libraryColor}"></span>
-										<h3 class="peek-name" dir="auto">{peekNote?.name}</h3>
+										<h3 class="peek-name" dir="auto">{peekNote?.name?.replace(/\.md$/, '')}</h3>
 										<button class="peek-close" onclick={closePeek} title="Close">
 											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 										</button>
