@@ -1385,6 +1385,7 @@ export class GraphEngine {
 		const neighbors = hovered >= 0 ? this.neighborMap.get(hovered) : null;
 		const hasSearch = this.searchQuery.length > 0;
 		const dark = this.isDark;
+		const is3D = this.isRotated();
 
 		// Build visible set based on focus/local/hidden state
 		const hasFocus = this.focusNodeIdx >= 0;
