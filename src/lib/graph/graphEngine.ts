@@ -531,9 +531,9 @@ export class GraphEngine {
 			// Latitude from rank (0=north pole, N-1=south pole)
 			const lat = Math.asin(1 - (2 * rank + 1) / N); // ranges from +π/2 to -π/2
 
-			// Longitude: use golden angle for even spiral, but OFFSET by original 2D angle
-			// to preserve cluster relationships (nearby 2D nodes stay nearby on sphere)
-			const lon = p.angle + rank * goldenAngle * 0.3; // blend golden spiral with original angle
+			// Longitude: Fibonacci golden angle as PRIMARY (even spiral coverage)
+			// Original 2D angle as small perturbation to keep clusters nearby
+			const lon = rank * goldenAngle + p.angle * 0.3;
 
 			// Spherical → Cartesian
 			this.nodes[i].x = R * Math.cos(lat) * Math.cos(lon);
