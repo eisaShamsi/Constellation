@@ -71,6 +71,8 @@
 	// ─── Sky View Companion state ───
 	let contextMode = $state<ContextMode>('editor');
 	let skyviewNode = $state<SkyViewNodeInfo | null>(null);
+	let pinnedSkyviewNode = $state<SkyViewNodeInfo | null>(null); // Stays until next click
+	let isHoverPreview = $state(false); // true = temporary hover, false = pinned click
 	let skyviewPreview = $state('');
 	let skyviewBacklinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let skyviewForwardLinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
@@ -457,16 +459,30 @@
 		});
 		unlisteners.push(u8);
 
-		// Sky View companion: listen for hover events
+		// Sky View companion: listen for hover events (temporary preview)
 		const u9 = await onSkyViewHover(async (node) => {
-			if (contextMode !== 'skyview' || !node) return;
+			if (contextMode !== 'skyview') return;
+			if (!node) {
+				// Hover ended — revert to pinned note if one exists
+				isHoverPreview = false;
+				if (pinnedSkyviewNode) {
+					await loadSkyViewCompanionData(pinnedSkyviewNode);
+				} else {
+					skyviewNode = null;
+				}
+				return;
+			}
+			// Show temporary hover preview
+			isHoverPreview = true;
 			await loadSkyViewCompanionData(node);
 		});
 		unlisteners.push(u9);
 
-		// Sky View companion: listen for click events (sticky)
+		// Sky View companion: listen for click events (pinned — stays until next click)
 		const u10 = await onSkyViewClick(async (node) => {
 			if (contextMode !== 'skyview') return;
+			isHoverPreview = false;
+			pinnedSkyviewNode = node; // Pin this note
 			await loadSkyViewCompanionData(node);
 		});
 		unlisteners.push(u10);
@@ -565,6 +581,9 @@
 								<span class="skyview-dot" style="background:{skyviewNode.libraryColor}"></span>
 								<h2 class="skyview-name" dir="auto">{skyviewNode.name}</h2>
 								<span class="skyview-lib">{skyviewNode.libraryName}</span>
+								{#if !isHoverPreview && pinnedSkyviewNode}
+									<span class="skyview-pinned" title="Pinned">📌</span>
+								{/if}
 							</div>
 
 							{#if skyviewPreview}

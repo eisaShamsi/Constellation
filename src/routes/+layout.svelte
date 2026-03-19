@@ -1337,20 +1337,24 @@
 	}
 
 	function handleStarNodeClick(path: string, libraryName: string) {
-		// Emit to second screen before switching away from Sky View
+		const lib = $libraries.find(v => v.name === libraryName);
+		const color = libraryColorMap[libraryName] ?? '#7c3aed';
+
 		if (secondScreenOpen) {
-			const lib = $libraries.find(v => v.name === libraryName);
+			// Pin the note on second screen — stay in Sky View
 			emitSkyViewClick({
 				path,
 				name: path.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '',
 				libraryName,
 				libraryPath: lib?.path ?? '',
-				libraryColor: libraryColorMap[libraryName] ?? '#7c3aed',
+				libraryColor: color,
 			});
+			return; // Don't leave Sky View
 		}
-		const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
-		openNoteTab(path, libraryName, libraryColor);
-		showStarView = false; // Switch to note view
+
+		// No second screen — open note in main and exit Sky View
+		openNoteTab(path, libraryName, color);
+		showStarView = false;
 	}
 
 	function handleTagClick(tag: string) {
