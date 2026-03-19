@@ -28,7 +28,6 @@ export interface EngineConfig {
 	layoutMode: LayoutMode;
 	showSemanticLinks: boolean;
 	semanticThreshold: number; // 0-1, default 0.5
-	multiSphere: boolean; // each library gets its own sphere
 }
 
 export interface EngineCallbacks {
@@ -195,18 +194,6 @@ export class GraphEngine {
 
 	// Camera gravity: pull camera back toward center
 	private cameraGravityStrength: number = 0.02; // 0 = off, higher = stronger pull
-
-	// Multi-sphere: each library orbits as its own sphere
-	private librarySpheres: Map<string, {
-		centerX: number; centerY: number; centerZ: number; // sphere center in world space
-		radius: number; // sphere radius
-		localRotAngle: number; // local self-rotation (degrees)
-		localRotSpeed: number; // degrees per frame
-		orbitAngle: number; // position on global orbit (degrees)
-		nodeIndices: number[]; // indices into this.nodes
-	}> = new Map();
-	private globalOrbitSpeed: number = 0.02; // degrees per frame
-	private globalOrbitRadius: number = 0; // computed from library count
 
 	// Redraw flag
 	private needsRedraw: boolean = true;
@@ -438,27 +425,6 @@ export class GraphEngine {
 			});
 		}
 
-		// Handle multiSphere toggle
-		if ('multiSphere' in partial) {
-			console.log('[GraphMind] multiSphere toggled:', this.config.multiSphere, 'nodes:', this.nodes.length);
-			if (this.config.multiSphere && this.nodes.length > 0) {
-				// Turning ON: project nodes into separate library spheres
-				console.log('[GraphMind] Projecting onto spheres...');
-				this.projectOntoSphere();
-				// Zoom out to show all spheres
-				setTimeout(() => this.fitToScreen(), 100);
-			} else {
-				// Turning OFF: re-run force layout to restore standard view
-				this.librarySpheres.clear();
-				if (this.sphereBorderGfx) {
-					this.sphereBorderGfx.clear();
-				}
-				this.didInitialFit = false;
-				this.layoutSettled = false;
-				this.startWorker();
-			}
-		}
-
 		this.needsRedraw = true;
 	}
 
@@ -524,152 +490,6 @@ export class GraphEngine {
 		this.clusterAssignments.clear();
 		this.clusterColors.clear();
 		this.showClusters = false;
-		this.needsRedraw = true;
-	}
-
-	/**
-	 * Project nodes into a 3D sphere (Crystal Ball).
-	 * - Single mode: all nodes fill one sphere volume
-	 * - Multi-sphere mode: each library gets its own sphere, arranged in orbit
-	 */
-	private projectOntoSphere(): void {
-		if (this.nodes.length === 0) return;
-
-		if (this.config.multiSphere) {
-			this.projectMultiSphere();
-		} else {
-			this.projectSingleSphere(this.nodes.map((_, i) => i), 0, 0, 0);
-		}
-
-		this.needsRedraw = true;
-	}
-
-	/** Fill a subset of nodes into a sphere volume centered at (cx, cy, cz) */
-	private projectSingleSphere(indices: number[], cx: number, cy: number, cz: number): void {
-		const N = indices.length;
-		if (N === 0) return;
-
-		const outerR = Math.max(200, Math.sqrt(N) * 28);
-		const now = Date.now();
-		const phi = (1 + Math.sqrt(5)) / 2;
-
-		// Rank by seniority: high links + old = closer to core
-		const scored = indices.map(idx => {
-			const n = this.nodes[idx];
-			const linkScore = Math.sqrt(n.linkCount) * 3;
-			const ageDays = n.createdAt > 0 ? (now - n.createdAt) / 86400000 : 0;
-			const ageScore = Math.min(10, Math.sqrt(ageDays / 30) * 3);
-			return { idx, score: linkScore + ageScore };
-		}).sort((a, b) => b.score - a.score);
-
-		for (let rank = 0; rank < N; rank++) {
-			const { idx } = scored[rank];
-			const t = (rank + 0.5) / N;
-			const r = outerR * t;
-			const theta = Math.acos(1 - 2 * t);
-			const lonAngle = 2 * Math.PI * rank / phi;
-
-			this.nodes[idx].x = cx + r * Math.sin(theta) * Math.cos(lonAngle);
-			this.nodes[idx].y = cy + r * Math.cos(theta);
-			this.nodes[idx].z = cz + r * Math.sin(theta) * Math.sin(lonAngle);
-		}
-	}
-
-	/** Multi-sphere: each library gets its own sphere, arranged in a circular orbit */
-	private projectMultiSphere(): void {
-		// Group nodes by library
-		const libGroups = new Map<string, number[]>();
-		for (let i = 0; i < this.nodes.length; i++) {
-			const lib = this.nodes[i].libraryName;
-			if (!libGroups.has(lib)) libGroups.set(lib, []);
-			libGroups.get(lib)!.push(i);
-		}
-
-		const libs = Array.from(libGroups.keys());
-		const libCount = libs.length;
-		if (libCount === 0) return;
-
-		// Compute each library's sphere radius first
-		const sphereRadii: number[] = libs.map(lib => {
-			const count = libGroups.get(lib)!.length;
-			return Math.max(150, Math.sqrt(count) * 25);
-		});
-
-		// Orbit radius: sum of the two largest radii + generous gap
-		const sortedRadii = [...sphereRadii].sort((a, b) => b - a);
-		const largestR = sortedRadii[0] || 200;
-		const secondR = sortedRadii[1] || 200;
-		this.globalOrbitRadius = libCount === 1 ? 0 : (largestR + secondR) * 2.5;
-
-		// Clear and rebuild sphere data
-		this.librarySpheres.clear();
-
-		for (let li = 0; li < libCount; li++) {
-			const libName = libs[li];
-			const nodeIndices = libGroups.get(libName)!;
-			const sphereR = sphereRadii[li];
-
-			// Position each library on a circular orbit (in the XY plane — visible from front)
-			const orbitAngle = (360 / libCount) * li;
-			const rad = orbitAngle * Math.PI / 180;
-			const centerX = this.globalOrbitRadius * Math.cos(rad);
-			const centerY = this.globalOrbitRadius * Math.sin(rad);
-			const centerZ = 0;
-
-			this.librarySpheres.set(libName, {
-				centerX, centerY, centerZ,
-				radius: sphereR,
-				localRotAngle: li * 60,
-				localRotSpeed: 0.03 + li * 0.01,
-				orbitAngle,
-				nodeIndices,
-			});
-
-			// Project this library's nodes into its own sphere
-			this.projectSingleSphere(nodeIndices, centerX, centerY, centerZ);
-		}
-	}
-
-	/** Apply multi-sphere rotations in the draw loop */
-	private updateMultiSphereRotations(): void {
-		if (!this.config.multiSphere || this.librarySpheres.size === 0) return;
-
-		// Global orbit: rotate all sphere centers around the origin
-		for (const [, sphere] of this.librarySpheres) {
-			sphere.orbitAngle += this.globalOrbitSpeed;
-			if (sphere.orbitAngle > 360) sphere.orbitAngle -= 360;
-
-			const rad = sphere.orbitAngle * Math.PI / 180;
-			const newCX = this.globalOrbitRadius * Math.cos(rad);
-			const newCZ = this.globalOrbitRadius * Math.sin(rad);
-
-			// Move all nodes relative to new sphere center
-			const dx = newCX - sphere.centerX;
-			const dz = newCZ - sphere.centerZ;
-
-			for (const idx of sphere.nodeIndices) {
-				this.nodes[idx].x += dx;
-				this.nodes[idx].z += dz;
-			}
-
-			sphere.centerX = newCX;
-			sphere.centerZ = newCZ;
-
-			// Local rotation: rotate each node around its sphere center (Y axis)
-			sphere.localRotAngle += sphere.localRotSpeed;
-			const localRad = sphere.localRotSpeed * Math.PI / 180;
-			const cosR = Math.cos(localRad);
-			const sinR = Math.sin(localRad);
-
-			for (const idx of sphere.nodeIndices) {
-				const n = this.nodes[idx];
-				const lx = n.x - sphere.centerX;
-				const lz = n.z - sphere.centerZ;
-				n.x = sphere.centerX + lx * cosR - lz * sinR;
-				n.z = sphere.centerZ + lx * sinR + lz * cosR;
-			}
-		}
-
 		this.needsRedraw = true;
 	}
 
@@ -1136,12 +956,9 @@ export class GraphEngine {
 
 		this.worker.onmessage = (e: MessageEvent) => {
 			if (e.data.type === 'positions') {
-				// In multi-sphere mode, stop accepting worker positions after projection
-				if (this.config.multiSphere && this.layoutSettled) return;
-
 				// Accept 3D positions from worker: [x0, y0, z0, x1, y1, z1, ...]
 				const pos = e.data.positions as Float64Array;
-				const stride = pos.length / this.nodes.length >= 2.5 ? 3 : 2; // detect 2D vs 3D
+				const stride = pos.length / this.nodes.length >= 2.5 ? 3 : 2;
 				for (let i = 0; i < this.nodes.length && i * stride + (stride - 1) < pos.length; i++) {
 					this.nodes[i].x = pos[i * stride];
 					this.nodes[i].y = pos[i * stride + 1];
@@ -1154,10 +971,6 @@ export class GraphEngine {
 				if (e.data.settled && !this.didInitialFit) {
 					this.didInitialFit = true;
 					this.layoutSettled = true;
-					// Only project into spheres when multi-sphere is enabled
-					if (this.config.multiSphere) {
-						this.projectOntoSphere();
-					}
 					this.fitToScreen();
 				}
 			}
@@ -1537,11 +1350,6 @@ export class GraphEngine {
 			}
 		}
 
-		// Multi-sphere: rotate each library sphere locally + orbit globally
-		if (this.config.multiSphere && !this.isDragging && !this.isRotating) {
-			this.updateMultiSphereRotations();
-		}
-
 		// Gravity: gently pull camera position back toward sphere center (0,0,0)
 		// Only when not actively dragging/rotating
 		if (!this.isDragging && !this.isRotating && !this.isPanning) {
@@ -1587,12 +1395,6 @@ export class GraphEngine {
 			visibleSet = this.focusSet;
 		} else if (hasLocal) {
 			visibleSet = this.getNeighborsAtDepth(this.activeNodeIdx, 2);
-		}
-
-		// ─── Sphere borders (multi-sphere mode) ────
-		const is3D = this.isRotated();
-		if (this.config.multiSphere && this.librarySpheres.size > 0) {
-			this.drawSphereBorders(w, h, dark);
 		}
 
 		// ─── Links ────
@@ -1826,64 +1628,6 @@ export class GraphEngine {
 
 	/** Draw 3D axis gizmo in bottom-left corner (only when rotated) */
 	/** Draw translucent sphere borders around each library in multi-sphere mode */
-	private drawSphereBorders(w: number, h: number, dark: boolean): void {
-		if (!this.sphereBorderGfx) {
-			this.sphereBorderGfx = new Graphics();
-			this.app!.stage.addChild(this.sphereBorderGfx);
-		}
-		this.sphereBorderGfx.clear();
-
-		for (const [libName, sphere] of this.librarySpheres) {
-			const R = sphere.radius;
-			const cx = sphere.centerX;
-			const cy = sphere.centerY;
-			const cz = sphere.centerZ;
-
-			// Get library color
-			const hexStr = this.colorMap[libName] || '#a78bfa';
-			const color = hexToInt(hexStr);
-
-			// Draw 3 great circles (XY, XZ, YZ planes) projected through 3D
-			const segments = 48;
-			for (let plane = 0; plane < 3; plane++) {
-				this.sphereBorderGfx.lineStyle(1.5, color, 0.25);
-				let started = false;
-
-				for (let s = 0; s <= segments; s++) {
-					const a = (s / segments) * Math.PI * 2;
-					let px: number, py: number, pz: number;
-
-					if (plane === 0) {
-						// XY circle (equator from front)
-						px = cx + R * Math.cos(a);
-						py = cy + R * Math.sin(a);
-						pz = cz;
-					} else if (plane === 1) {
-						// XZ circle (equator from top)
-						px = cx + R * Math.cos(a);
-						py = cy;
-						pz = cz + R * Math.sin(a);
-					} else {
-						// YZ circle (equator from side)
-						px = cx;
-						py = cy + R * Math.cos(a);
-						pz = cz + R * Math.sin(a);
-					}
-
-					const p = this.project3D(px, py, pz, w, h);
-					if (!started) {
-						this.sphereBorderGfx.moveTo(p.sx, p.sy);
-						started = true;
-					} else {
-						this.sphereBorderGfx.lineTo(p.sx, p.sy);
-					}
-				}
-			}
-		}
-	}
-
-	private sphereBorderGfx: PIXI.Graphics | null = null;
-
 	private drawAxisGizmo(w: number, h: number, dark: boolean): void {
 		this.gizmoGfx.clear();
 		const rotated = this.isRotated();

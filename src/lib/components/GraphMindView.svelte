@@ -37,7 +37,6 @@
 		layoutMode: 'organic',
 		showSemanticLinks: false,
 		semanticThreshold: 0.5,
-		multiSphere: false,
 	};
 
 	let {
@@ -139,7 +138,6 @@
 	let uiLabelFontSize = $state(engineConfig.labelFontSize);
 	let uiLinkThickness = $state(engineConfig.linkThickness);
 	let uiShowOrphans = $state(engineConfig.showOrphans);
-	let uiMultiSphere = $state(engineConfig.multiSphere);
 	let uiRepelForce = $state(engineConfig.repelForce);
 	let uiLinkForce = $state(engineConfig.linkForce);
 	let uiLinkDistance = $state(engineConfig.linkDistance);
@@ -192,7 +190,6 @@
 	let engine: GraphEngine | null = null;
 
 	function handleSettingChange(key: keyof EngineConfig, value: any) {
-		console.log('[GMView] handleSettingChange', key, value, 'engine?', !!engine);
 		(engineConfig as any)[key] = value;
 		engine?.updateConfig({ [key]: value });
 	}
@@ -511,11 +508,6 @@
 					<span>{$t('settings.skyview.showOrphans') || 'Show orphans'}</span>
 					<input type="checkbox" bind:checked={uiShowOrphans}
 						onchange={() => { handleSettingChange('showOrphans', uiShowOrphans); engine?.setData(nodes, links, libraryColorMap); }} />
-				</label>
-				<label class="gm-setting">
-					<span>{$t('graphView.multiSphere') || 'Separate spheres'}</span>
-					<input type="checkbox" checked={uiMultiSphere}
-						onchange={(e) => { const v = (e.target as HTMLInputElement).checked; uiMultiSphere = v; handleSettingChange('multiSphere', v); }} />
 				</label>
 			{:else if settingsTab === 'physics'}
 				<label class="gm-setting">
