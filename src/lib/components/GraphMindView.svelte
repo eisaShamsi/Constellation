@@ -37,6 +37,7 @@
 		layoutMode: 'organic',
 		showSemanticLinks: false,
 		semanticThreshold: 0.5,
+		multiSphere: false,
 	};
 
 	let {
@@ -138,6 +139,7 @@
 	let uiLabelFontSize = $state(engineConfig.labelFontSize);
 	let uiLinkThickness = $state(engineConfig.linkThickness);
 	let uiShowOrphans = $state(engineConfig.showOrphans);
+	let uiMultiSphere = $state(engineConfig.multiSphere);
 	let uiRepelForce = $state(engineConfig.repelForce);
 	let uiLinkForce = $state(engineConfig.linkForce);
 	let uiLinkDistance = $state(engineConfig.linkDistance);
@@ -508,6 +510,11 @@
 					<span>{$t('settings.skyview.showOrphans') || 'Show orphans'}</span>
 					<input type="checkbox" bind:checked={uiShowOrphans}
 						onchange={() => { handleSettingChange('showOrphans', uiShowOrphans); engine?.setData(nodes, links, libraryColorMap); }} />
+				</label>
+				<label class="gm-setting">
+					<span>{$t('graphView.multiSphere') || 'Separate spheres'}</span>
+					<input type="checkbox" bind:checked={uiMultiSphere}
+						onchange={() => { handleSettingChange('multiSphere', uiMultiSphere); engine?.setData(nodes, links, libraryColorMap); }} />
 				</label>
 			{:else if settingsTab === 'physics'}
 				<label class="gm-setting">

@@ -557,6 +557,8 @@
     "directionOutgoing": "Outgoing only",
     "colorByLibrary": "Library",
     "colorByFolder": "Folder",
+    "multiSphere": "Separate spheres",
+    "multiSphereDesc": "Each library orbits as its own sphere",
     "noNotes": "No notes to display",
     "controls": {
       "title": "Graph Settings",

@@ -28,6 +28,7 @@ export interface EngineConfig {
 	layoutMode: LayoutMode;
 	showSemanticLinks: boolean;
 	semanticThreshold: number; // 0-1, default 0.5
+	multiSphere: boolean; // each library gets its own sphere
 }
 
 export interface EngineCallbacks {
@@ -193,6 +194,18 @@ export class GraphEngine {
 
 	// Camera gravity: pull camera back toward center
 	private cameraGravityStrength: number = 0.02; // 0 = off, higher = stronger pull
+
+	// Multi-sphere: each library orbits as its own sphere
+	private librarySpheres: Map<string, {
+		centerX: number; centerY: number; centerZ: number; // sphere center in world space
+		radius: number; // sphere radius
+		localRotAngle: number; // local self-rotation (degrees)
+		localRotSpeed: number; // degrees per frame
+		orbitAngle: number; // position on global orbit (degrees)
+		nodeIndices: number[]; // indices into this.nodes
+	}> = new Map();
+	private globalOrbitSpeed: number = 0.02; // degrees per frame
+	private globalOrbitRadius: number = 0; // computed from library count
 
 	// Redraw flag
 	private needsRedraw: boolean = true;
@@ -490,67 +503,140 @@ export class GraphEngine {
 	}
 
 	/**
-	 * Crystal Ball projection: nodes fill the VOLUME of a sphere.
-	 * - Senior nodes (high link count, old) near the core
-	 * - Newer/leaf nodes pushed toward the outer edge
-	 * - Fibonacci spiral for even angular distribution
-	 * - Result: looks spherical from every viewing angle
+	 * Project nodes into a 3D sphere (Crystal Ball).
+	 * - Single mode: all nodes fill one sphere volume
+	 * - Multi-sphere mode: each library gets its own sphere, arranged in orbit
 	 */
 	private projectOntoSphere(): void {
 		if (this.nodes.length === 0) return;
 
-		// Crystal Ball: nodes fill a 3D sphere volume
-		// Senior nodes near core, newer/leaf nodes at outer edge
-		const outerR = Math.max(350, Math.sqrt(this.nodes.length) * 28);
-		const innerR = 0; // start from dead center — fill the entire ball
-
-		// Compute seniority: high link count + old age = closer to core
-		const now = Date.now();
-		const scores: { idx: number; score: number }[] = [];
-		let maxScore = 0;
-		for (let i = 0; i < this.nodes.length; i++) {
-			const n = this.nodes[i];
-			const linkScore = Math.sqrt(n.linkCount) * 3;
-			const ageMs = n.createdAt > 0 ? (now - n.createdAt) : 0;
-			const ageDays = ageMs / (1000 * 60 * 60 * 24);
-			const ageScore = Math.min(10, Math.sqrt(ageDays / 30) * 3);
-			const score = linkScore + ageScore;
-			scores.push({ idx: i, score });
-			if (score > maxScore) maxScore = score;
+		if (this.config.multiSphere) {
+			this.projectMultiSphere();
+		} else {
+			this.projectSingleSphere(this.nodes.map((_, i) => i), 0, 0, 0);
 		}
-		if (maxScore === 0) maxScore = 1;
 
-		// Sort: highest score = rank 0 = closest to core
-		scores.sort((a, b) => b.score - a.score);
+		this.needsRedraw = true;
+	}
 
-		const N = this.nodes.length;
-		// Golden ratio for longitude spiral
+	/** Fill a subset of nodes into a sphere volume centered at (cx, cy, cz) */
+	private projectSingleSphere(indices: number[], cx: number, cy: number, cz: number): void {
+		const N = indices.length;
+		if (N === 0) return;
+
+		const outerR = Math.max(200, Math.sqrt(N) * 28);
+		const now = Date.now();
 		const phi = (1 + Math.sqrt(5)) / 2;
 
+		// Rank by seniority: high links + old = closer to core
+		const scored = indices.map(idx => {
+			const n = this.nodes[idx];
+			const linkScore = Math.sqrt(n.linkCount) * 3;
+			const ageDays = n.createdAt > 0 ? (now - n.createdAt) / 86400000 : 0;
+			const ageScore = Math.min(10, Math.sqrt(ageDays / 30) * 3);
+			return { idx, score: linkScore + ageScore };
+		}).sort((a, b) => b.score - a.score);
+
 		for (let rank = 0; rank < N; rank++) {
-			const { idx } = scores[rank];
-
-			// ── Volumetric Fibonacci lattice ──
-			// This distributes N points EVENLY inside a sphere (not just on surface)
-			//
-			// 1. Radius: linear mapping — senior nodes at center, junior at edge
-			//    Linear (not cbrt) keeps the core dense and filled
-			const t = (rank + 0.5) / N; // 0→1
+			const { idx } = scored[rank];
+			const t = (rank + 0.5) / N;
 			const r = outerR * t;
-
-			// 2. Latitude (polar angle θ): acos(1 - 2t) gives uniform distribution
-			//    on a sphere surface for each shell. This is the KEY fix —
-			//    asin produced clustering at poles; acos(1-2t) is uniform.
-			const theta = Math.acos(1 - 2 * t); // 0 to π (north pole to south pole)
-
-			// 3. Longitude (azimuthal φ): golden angle ensures no two points
-			//    at similar latitudes share similar longitudes
+			const theta = Math.acos(1 - 2 * t);
 			const lonAngle = 2 * Math.PI * rank / phi;
 
-			// Spherical → Cartesian (θ=polar from +Y axis, φ=azimuthal around Y)
-			this.nodes[idx].x = r * Math.sin(theta) * Math.cos(lonAngle);
-			this.nodes[idx].y = r * Math.cos(theta); // Y = up/down axis
-			this.nodes[idx].z = r * Math.sin(theta) * Math.sin(lonAngle);
+			this.nodes[idx].x = cx + r * Math.sin(theta) * Math.cos(lonAngle);
+			this.nodes[idx].y = cy + r * Math.cos(theta);
+			this.nodes[idx].z = cz + r * Math.sin(theta) * Math.sin(lonAngle);
+		}
+	}
+
+	/** Multi-sphere: each library gets its own sphere, arranged in a circular orbit */
+	private projectMultiSphere(): void {
+		// Group nodes by library
+		const libGroups = new Map<string, number[]>();
+		for (let i = 0; i < this.nodes.length; i++) {
+			const lib = this.nodes[i].libraryName;
+			if (!libGroups.has(lib)) libGroups.set(lib, []);
+			libGroups.get(lib)!.push(i);
+		}
+
+		const libs = Array.from(libGroups.keys());
+		const libCount = libs.length;
+		if (libCount === 0) return;
+
+		// Orbit radius: enough to separate spheres without overlap
+		const maxSphereR = Math.max(200, Math.sqrt(this.nodes.length / libCount) * 28);
+		this.globalOrbitRadius = libCount === 1 ? 0 : maxSphereR * 2.5;
+
+		// Clear and rebuild sphere data
+		this.librarySpheres.clear();
+
+		for (let li = 0; li < libCount; li++) {
+			const libName = libs[li];
+			const nodeIndices = libGroups.get(libName)!;
+
+			// Position each library on a circular orbit (in the XZ plane)
+			const orbitAngle = (360 / libCount) * li;
+			const rad = orbitAngle * Math.PI / 180;
+			const centerX = this.globalOrbitRadius * Math.cos(rad);
+			const centerY = 0;
+			const centerZ = this.globalOrbitRadius * Math.sin(rad);
+
+			// Compute individual sphere radius
+			const sphereR = Math.max(200, Math.sqrt(nodeIndices.length) * 28);
+
+			this.librarySpheres.set(libName, {
+				centerX, centerY, centerZ,
+				radius: sphereR,
+				localRotAngle: li * 60, // offset start rotations
+				localRotSpeed: 0.03 + li * 0.01, // slightly different speeds
+				orbitAngle,
+				nodeIndices,
+			});
+
+			// Project this library's nodes into its own sphere
+			this.projectSingleSphere(nodeIndices, centerX, centerY, centerZ);
+		}
+	}
+
+	/** Apply multi-sphere rotations in the draw loop */
+	private updateMultiSphereRotations(): void {
+		if (!this.config.multiSphere || this.librarySpheres.size === 0) return;
+
+		// Global orbit: rotate all sphere centers around the origin
+		for (const [, sphere] of this.librarySpheres) {
+			sphere.orbitAngle += this.globalOrbitSpeed;
+			if (sphere.orbitAngle > 360) sphere.orbitAngle -= 360;
+
+			const rad = sphere.orbitAngle * Math.PI / 180;
+			const newCX = this.globalOrbitRadius * Math.cos(rad);
+			const newCZ = this.globalOrbitRadius * Math.sin(rad);
+
+			// Move all nodes relative to new sphere center
+			const dx = newCX - sphere.centerX;
+			const dz = newCZ - sphere.centerZ;
+
+			for (const idx of sphere.nodeIndices) {
+				this.nodes[idx].x += dx;
+				this.nodes[idx].z += dz;
+			}
+
+			sphere.centerX = newCX;
+			sphere.centerZ = newCZ;
+
+			// Local rotation: rotate each node around its sphere center (Y axis)
+			sphere.localRotAngle += sphere.localRotSpeed;
+			const localRad = sphere.localRotSpeed * Math.PI / 180;
+			const cosR = Math.cos(localRad);
+			const sinR = Math.sin(localRad);
+
+			for (const idx of sphere.nodeIndices) {
+				const n = this.nodes[idx];
+				const lx = n.x - sphere.centerX;
+				const lz = n.z - sphere.centerZ;
+				n.x = sphere.centerX + lx * cosR - lz * sinR;
+				n.z = sphere.centerZ + lx * sinR + lz * cosR;
+			}
 		}
 
 		this.needsRedraw = true;
@@ -1407,11 +1493,15 @@ export class GraphEngine {
 		if (this.autoRotateEnabled && !this.isDragging && !this.isRotating && !this.isPanning) {
 			if (now - this.lastInteractionTime > this.autoRotateDelay) {
 				this.camRotY += this.autoRotateSpeed;
-				// Keep in 360° range
 				if (this.camRotY > 360) this.camRotY -= 360;
 				if (this.camRotY < -360) this.camRotY += 360;
 				this.needsRedraw = true;
 			}
+		}
+
+		// Multi-sphere: rotate each library sphere locally + orbit globally
+		if (this.config.multiSphere && !this.isDragging && !this.isRotating) {
+			this.updateMultiSphereRotations();
 		}
 
 		// Gravity: gently pull camera position back toward sphere center (0,0,0)
