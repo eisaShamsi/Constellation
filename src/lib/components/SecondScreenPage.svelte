@@ -73,6 +73,43 @@
 	let skyviewNode = $state<SkyViewNodeInfo | null>(null);
 	let pinnedSkyviewNode = $state<SkyViewNodeInfo | null>(null); // Stays until next click
 	let isHoverPreview = $state(false); // true = temporary hover, false = pinned click
+
+	// Navigation history for second screen (back/forward)
+	let skyviewHistory = $state<SkyViewNodeInfo[]>([]);
+	let skyviewHistoryIdx = $state(-1); // current position in history
+	let isNavigatingHistory = false; // prevent pushes during back/forward
+
+	function pushSkyviewHistory(node: SkyViewNodeInfo) {
+		if (isNavigatingHistory) return;
+		// Truncate forward history when navigating to a new node
+		skyviewHistory = [...skyviewHistory.slice(0, skyviewHistoryIdx + 1), node];
+		skyviewHistoryIdx = skyviewHistory.length - 1;
+	}
+
+	function canGoBack() { return skyviewHistoryIdx > 0; }
+	function canGoForward() { return skyviewHistoryIdx < skyviewHistory.length - 1; }
+
+	async function goBack() {
+		if (!canGoBack()) return;
+		isNavigatingHistory = true;
+		skyviewHistoryIdx--;
+		const node = skyviewHistory[skyviewHistoryIdx];
+		pinnedSkyviewNode = node;
+		isHoverPreview = false;
+		await loadSkyViewCompanionData(node);
+		isNavigatingHistory = false;
+	}
+
+	async function goForward() {
+		if (!canGoForward()) return;
+		isNavigatingHistory = true;
+		skyviewHistoryIdx++;
+		const node = skyviewHistory[skyviewHistoryIdx];
+		pinnedSkyviewNode = node;
+		isHoverPreview = false;
+		await loadSkyViewCompanionData(node);
+		isNavigatingHistory = false;
+	}
 	let skyviewPreview = $state('');
 	let skyviewBacklinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let skyviewForwardLinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
@@ -482,7 +519,8 @@
 		const u10 = await onSkyViewClick(async (node) => {
 			if (contextMode !== 'skyview') return;
 			isHoverPreview = false;
-			pinnedSkyviewNode = node; // Pin this note
+			pinnedSkyviewNode = node;
+			pushSkyviewHistory(node);
 			await loadSkyViewCompanionData(node);
 		});
 		unlisteners.push(u10);
@@ -577,6 +615,15 @@
 				{#if skyviewNode}
 					<div class="skyview-layout">
 						<div class="skyview-detail">
+							<div class="skyview-nav">
+								<button class="skyview-nav-btn" disabled={!canGoBack()} onclick={goBack} title="Back">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+								</button>
+								<button class="skyview-nav-btn" disabled={!canGoForward()} onclick={goForward} title="Forward">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+								</button>
+								<span class="skyview-nav-count">{skyviewHistoryIdx + 1}/{skyviewHistory.length}</span>
+							</div>
 							<div class="skyview-header">
 								<span class="skyview-dot" style="background:{skyviewNode.libraryColor}"></span>
 								<h2 class="skyview-name" dir="auto">{skyviewNode.name}</h2>
@@ -602,13 +649,17 @@
 										{#each skyviewBacklinks as link}
 											<li>
 												<button class="sidebar-link" dir="auto" onclick={() => {
-													loadSkyViewCompanionData({
+													const node = {
 														name: link.name.replace(/\.md$/, ''),
 														path: link.path,
 														libraryName: link.libraryName,
 														libraryColor: libraryColorMap[link.libraryName] || '#7c3aed',
 														linkCount: 0, outgoingCount: 0,
-													});
+													};
+													pinnedSkyviewNode = node;
+													isHoverPreview = false;
+													pushSkyviewHistory(node);
+													loadSkyViewCompanionData(node);
 												}}>
 													<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
 													{link.name}
@@ -631,13 +682,17 @@
 										{#each skyviewForwardLinks as link}
 											<li>
 												<button class="sidebar-link" dir="auto" onclick={() => {
-													loadSkyViewCompanionData({
+													const node = {
 														name: link.name.replace(/\.md$/, ''),
 														path: link.path,
 														libraryName: link.libraryName,
 														libraryColor: libraryColorMap[link.libraryName] || '#7c3aed',
 														linkCount: 0, outgoingCount: 0,
-													});
+													};
+													pinnedSkyviewNode = node;
+													isHoverPreview = false;
+													pushSkyviewHistory(node);
+													loadSkyViewCompanionData(node);
 												}}>
 													<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
 													{link.name}
@@ -1079,6 +1134,41 @@
 		width: 35%;
 		flex-shrink: 0;
 		border-inline-start: 1px solid var(--background-modifier-border);
+	}
+	.skyview-nav {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		margin-bottom: 8px;
+	}
+	.skyview-nav-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border: none;
+		border-radius: 6px;
+		background: var(--background-modifier-hover, #f0f0f0);
+		color: var(--text-muted, #666);
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+	.skyview-nav-btn:hover:not(:disabled) {
+		background: var(--interactive-accent, #7c3aed);
+		color: white;
+	}
+	.skyview-nav-btn:disabled {
+		opacity: 0.3;
+		cursor: default;
+	}
+	.skyview-nav-count {
+		font-size: 11px;
+		color: var(--text-faint, #999);
+		margin-inline-start: 4px;
+	}
+	.skyview-pinned {
+		font-size: 14px;
 	}
 	.skyview-header {
 		display: flex;
