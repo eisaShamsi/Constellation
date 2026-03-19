@@ -175,10 +175,77 @@
 	});
 	let diffChangeCount = $derived(diffLines.filter(l => l.type !== 'same').length);
 
-	// AI Context Radar: semantic suggestions (uses existing embedding infrastructure)
+	// AI Context Radar: semantic suggestions
 	let radarSuggestions = $state<{ name: string; path: string; libraryName: string; score: number }[]>([]);
 	let radarLoading = $state(false);
 	let radarLastQuery = '';
+
+	// Embedding index state
+	let embeddingIndexBuilt = $state(false);
+	let embeddingBuilding = $state(false);
+	let embeddingBuildProgress = $state(0);
+	let embeddingBuildStatus = $state('');
+
+	async function startBuildIndex() {
+		if (embeddingBuilding) return;
+		embeddingBuilding = true;
+		embeddingBuildProgress = 0;
+		embeddingBuildStatus = 'Loading AI model...';
+
+		try {
+			const { buildIndex, isIndexBuilt } = await import('$lib/ai/embeddings');
+
+			// Collect note contents
+			const noteContents: { path: string; name: string; libraryName: string; content: string }[] = [];
+			for (const note of allNotes) {
+				try {
+					const lib = $libraries.find(v => v.name === note.libraryName);
+					if (!lib) continue;
+					const content = await invoke<string>('read_note', { libraryPath: lib.path, notePath: note.path });
+					noteContents.push({ path: note.path, name: note.name, libraryName: note.libraryName, content: content || '' });
+				} catch {
+					noteContents.push({ path: note.path, name: note.name, libraryName: note.libraryName, content: '' });
+				}
+			}
+
+			await buildIndex(noteContents, (current, total, status) => {
+				embeddingBuildProgress = Math.round((current / total) * 100);
+				embeddingBuildStatus = status;
+			});
+
+			embeddingIndexBuilt = isIndexBuilt();
+			embeddingBuildStatus = 'Done!';
+
+			// Immediately run radar for current note
+			if ($activeTab) {
+				await runRadar($activeTab.path);
+			}
+		} catch (err) {
+			console.error('[Embeddings] Build failed:', err);
+			embeddingBuildStatus = 'Failed — see console';
+		} finally {
+			embeddingBuilding = false;
+		}
+	}
+
+	async function runRadar(notePath: string) {
+		if (!embeddingIndexBuilt) return;
+		radarLoading = true;
+		try {
+			const { findSimilar } = await import('$lib/ai/embeddings');
+			const results = findSimilar(notePath, 10, 0.3);
+			radarSuggestions = results.map(r => ({
+				name: r.name,
+				path: r.path,
+				libraryName: r.libraryName,
+				score: r.similarity,
+			}));
+		} catch (err) {
+			console.error('[Radar] Failed:', err);
+		} finally {
+			radarLoading = false;
+		}
+	}
 
 	// Editor mode active panel (which sections are expanded)
 	let editorPanels = $state<Record<string, boolean>>({
@@ -539,6 +606,12 @@
 
 		// Load data
 		await loadAllData();
+
+		// Check if embedding index exists
+		try {
+			const { isIndexBuilt } = await import('$lib/ai/embeddings');
+			embeddingIndexBuilt = isIndexBuilt();
+		} catch {}
 
 		// Listen for notes sent from main window
 		const u1 = await onNoteToScreen(async (note) => {
@@ -1023,7 +1096,25 @@
 						</button>
 						{#if editorPanels.radar}
 							<div class="ec-panel-body">
-								{#if radarSuggestions.length > 0}
+								{#if !embeddingIndexBuilt}
+									<div class="ec-build-index">
+										<p class="ec-muted">Build the AI index to enable semantic suggestions across your {allNotes.length} notes.</p>
+										{#if embeddingBuildProgress > 0 && embeddingBuildProgress < 100}
+											<div class="ec-progress-bar">
+												<div class="ec-progress-fill" style="width: {embeddingBuildProgress}%"></div>
+											</div>
+											<p class="ec-muted">{embeddingBuildStatus}</p>
+										{:else}
+											<button class="ec-build-btn" onclick={startBuildIndex} disabled={embeddingBuilding}>
+												{#if embeddingBuilding}
+													Building...
+												{:else}
+													Build Index ({allNotes.length} notes)
+												{/if}
+											</button>
+										{/if}
+									</div>
+								{:else if radarSuggestions.length > 0}
 									<ul class="ec-results">
 										{#each radarSuggestions as sug}
 											<li>
@@ -1035,8 +1126,10 @@
 											</li>
 										{/each}
 									</ul>
+								{:else if radarLoading}
+									<p class="ec-muted">Finding related notes...</p>
 								{:else}
-									<p class="ec-muted">Semantic suggestions will appear as you write</p>
+									<p class="ec-muted">No semantic matches for this note. Try editing to see suggestions.</p>
 								{/if}
 							</div>
 						{/if}
@@ -1723,6 +1816,34 @@
 	.ec-badge-warn { background: #f59e0b; }
 
 	.ec-muted { font-size: 12px; color: var(--text-faint); margin: 4px 0; }
+
+	.ec-build-index { text-align: center; padding: 12px 0; }
+	.ec-build-btn {
+		padding: 8px 20px;
+		border: none;
+		border-radius: 6px;
+		background: var(--interactive-accent, #7c3aed);
+		color: white;
+		font-size: 13px;
+		cursor: pointer;
+		margin-top: 8px;
+	}
+	.ec-build-btn:hover { opacity: 0.9; }
+	.ec-build-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+	.ec-progress-bar {
+		width: 100%;
+		height: 6px;
+		background: var(--background-modifier-border);
+		border-radius: 3px;
+		overflow: hidden;
+		margin: 8px 0;
+	}
+	.ec-progress-fill {
+		height: 100%;
+		background: var(--interactive-accent, #7c3aed);
+		border-radius: 3px;
+		transition: width 0.3s;
+	}
 
 	.ec-search {
 		width: 100%;
