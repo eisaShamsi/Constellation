@@ -74,9 +74,9 @@
 	let pinnedSkyviewNode = $state<SkyViewNodeInfo | null>(null); // Stays until next click
 	let isHoverPreview = $state(false); // true = temporary hover, false = pinned click
 
-	// Peek preview: show linked note content without navigating
+	// Peek preview: full editable note in left panel
 	let peekNote = $state<{ name: string; path: string; libraryName: string; libraryColor: string } | null>(null);
-	let peekContent = $state('');
+	let peekTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
 	let peekGeneration = 0;
 
 	async function loadPeekPreview(note: { name: string; path: string; libraryName: string; libraryColor: string }) {
@@ -85,16 +85,27 @@
 		try {
 			const content = await invoke<string>('read_note', { filePath: note.path });
 			if (gen !== peekGeneration) return;
-			peekContent = content;
+			const lib = $libraries.find(v => v.name === note.libraryName);
+			peekTab = {
+				id: `peek-${note.path}`,
+				path: note.path,
+				content,
+				libraryName: note.libraryName,
+				libraryPath: lib?.path ?? '',
+				name: note.name.endsWith('.md') ? note.name : note.name + '.md',
+				libraryColor: note.libraryColor,
+				history: [note.path],
+				historyIndex: 0,
+			};
 		} catch {
 			if (gen !== peekGeneration) return;
-			peekContent = '';
+			peekTab = null;
 		}
 	}
 
 	function closePeek() {
 		peekNote = null;
-		peekContent = '';
+		peekTab = null;
 	}
 
 	// Navigation history for second screen (back/forward)
@@ -639,22 +650,25 @@
 					<div class="skyview-layout">
 						<!-- Left: Peek preview (fills empty space) -->
 						<div class="skyview-peek-area">
-							{#if peekNote}
+							{#if peekTab}
 								<div class="peek-preview">
 									<div class="peek-header">
-										<span class="skyview-dot" style="background:{peekNote.libraryColor}"></span>
-										<h3 class="peek-name" dir="auto">{peekNote.name}</h3>
-										<button class="peek-close" onclick={closePeek} title="Close preview">
+										<span class="skyview-dot" style="background:{peekNote?.libraryColor}"></span>
+										<h3 class="peek-name" dir="auto">{peekNote?.name}</h3>
+										<button class="peek-close" onclick={closePeek} title="Close">
 											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 										</button>
 									</div>
-									{#if peekContent}
-										<div class="peek-content markdown-rendered" dir="auto">
-											{@html renderMarkdownPreview(peekContent)}
-										</div>
-									{:else}
-										<p class="sidebar-empty">Loading...</p>
-									{/if}
+									<div class="peek-editor">
+										<NotePane
+											tab={peekTab}
+											isFocused={true}
+											onFocus={() => {}}
+											color={peekNote?.libraryColor || '#7c3aed'}
+											allNotes={allNotes}
+											{libraryColorMap}
+										/>
+									</div>
 								</div>
 							{:else}
 								<div class="peek-empty">
@@ -1263,26 +1277,14 @@
 		background: var(--background-modifier-hover);
 		color: var(--text-normal);
 	}
-	.peek-content {
+	.peek-editor {
 		flex: 1;
-		overflow-y: auto;
-		font-size: 13px;
-		line-height: 1.6;
-		color: var(--text-normal);
+		overflow: hidden;
+		min-height: 0;
 	}
-	.peek-content :global(h1),
-	.peek-content :global(h2),
-	.peek-content :global(h3) {
-		margin-top: 12px;
-		margin-bottom: 6px;
-	}
-	.peek-content :global(p) {
-		margin-bottom: 8px;
-	}
-	.peek-content :global(ul),
-	.peek-content :global(ol) {
-		padding-inline-start: 20px;
-		margin-bottom: 8px;
+	.peek-editor :global(.pane) {
+		height: 100% !important;
+		border: none !important;
 	}
 	.skyview-header {
 		display: flex;
