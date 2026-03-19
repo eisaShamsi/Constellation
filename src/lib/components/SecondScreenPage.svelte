@@ -1288,6 +1288,9 @@
 		height: 100% !important;
 		border: none !important;
 	}
+	.peek-editor :global(.note-scroll) {
+		padding-inline: 3rem !important;
+	}
 	.skyview-header {
 		display: flex;
 		align-items: center;
