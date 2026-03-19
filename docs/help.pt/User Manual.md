@@ -1,0 +1,431 @@
+# Manual do Usuario do Constellation
+
+**Versao 0.3.4 | Marco 2026**
+
+Constellation e um aplicativo de desktop para Gestao do Conhecimento Pessoal (PKM) que permite gerenciar bibliotecas de notas em Markdown. Desenvolvido com Tauri v2, SvelteKit e Rust, funciona nativamente no Windows, macOS e Linux com suporte completo para arabe e escrita RTL.
+
+---
+
+## Sumario
+
+1. [Primeiros Passos](#primeiros-passos)
+2. [Universo e Bibliotecas](#universo-e-bibliotecas)
+3. [Criar e Editar Notas](#criar-e-editar-notas)
+4. [Vista Estelar (GraphMind)](#vista-estelar-graphmind)
+5. [Segunda Tela](#segunda-tela)
+6. [Propriedades e Frontmatter](#propriedades-e-frontmatter)
+7. [Modelos](#modelos)
+8. [Tabelas](#tabelas)
+9. [Tarefas](#tarefas)
+10. [Importador](#importador)
+11. [Calendario](#calendario)
+12. [Lens](#lens)
+13. [Configuracoes](#configuracoes)
+14. [Atalhos de Teclado](#atalhos-de-teclado)
+15. [Suporte RTL e Arabe](#suporte-rtl-e-arabe)
+16. [Seguranca e Privacidade](#seguranca-e-privacidade)
+
+---
+
+## 1. Primeiros Passos
+
+### Instalacao
+
+Baixe o instalador mais recente na [pagina de versoes do Constellation](https://github.com/eisaShamsi/Constellation/releases):
+
+- **Windows**: Instalador `.exe` (NSIS) ou `.msi`
+- **macOS**: Imagem de disco `.dmg`
+- **Linux**: Pacote `.AppImage` ou `.deb`
+
+### Primeira Execucao
+
+Ao abrir o Constellation pela primeira vez, o **Assistente de Configuracao do Universo** guia voce atraves de:
+
+1. **Escolha seu idioma** — 15 idiomas disponiveis
+2. **Crie ou importe uma biblioteca** — aponte para uma pasta existente com arquivos Markdown, ou comece do zero
+3. **Nomeie seu universo** — o universo e o contêiner de todas as suas bibliotecas
+
+### Visao Geral da Interface
+
+| Elemento | Descricao |
+|----------|-----------|
+| **Barra Lateral (Ribbon)** | Botoes de navegacao: Arvore de arquivos, Busca, Vista Estelar, Calendario, Modelos, Configuracoes |
+| **Arvore de Arquivos** | Navegue por notas e pastas dentro das suas bibliotecas |
+| **Editor** | Leia e edite suas notas em Markdown |
+| **Barra de Abas** | Abra multiplas notas em abas |
+| **Barra de Status** | Contagem de palavras, caracteres e tempo de leitura |
+
+---
+
+## 2. Universo e Bibliotecas
+
+### O que e um Universo?
+
+Um **Universo** e o contêiner de nivel superior que abriga todas as suas bibliotecas. Pense nele como seu espaco de trabalho ou colecao de bibliotecas.
+
+### O que e uma Biblioteca?
+
+Uma **Biblioteca** e uma pasta no seu computador contendo arquivos Markdown (`.md`). Voce pode ter multiplas bibliotecas em um unico universo — por exemplo, uma para notas de trabalho e outra para notas pessoais.
+
+### Gerenciar Bibliotecas
+
+- **Adicionar uma biblioteca**: Configuracoes > Bibliotecas > Adicionar Biblioteca, ou arraste uma pasta para o aplicativo
+- **Remover uma biblioteca**: Configuracoes > Bibliotecas > clique no botao de remover ao lado do nome da biblioteca
+- **Configuracoes da biblioteca**: Cada biblioteca pode ter suas proprias configuracoes de aparencia (fontes, cores)
+
+### Universos Secundarios
+
+Voce pode aninhar universos dentro de outros universos. Um **Universo Secundario** e outra pasta de universo referenciada pelo seu universo principal. As notas dos universos secundarios aparecem na Vista Estelar junto com suas proprias notas, com links entre bibliotecas exibidos como linhas tracejadas.
+
+---
+
+## 3. Criar e Editar Notas
+
+### Criar uma Nota
+
+| Metodo | Acao |
+|--------|------|
+| **Teclado** | `Ctrl+N` |
+| **Arvore de Arquivos** | Clique com botao direito em uma pasta > Nova Nota |
+| **Mission Control** | `Ctrl+P` > "Nova nota" |
+
+### Modos do Editor
+
+Constellation oferece dois modos de editor, selecionaveis em **Configuracoes > Editor > Tipo de editor**:
+
+#### Editor Markdown (CodeMirror)
+
+O editor padrao para usuarios avancados. Escreva Markdown diretamente com:
+
+- **Pre-visualizacao ao Vivo** — renderiza a formatacao em linha enquanto voce digita
+- **Modo Fonte** — mostra a sintaxe Markdown bruta
+- **Barra de formatacao** — aparece ao selecionar texto
+- **Comandos com barra** — digite `/` para insercoes rapidas
+- **Autocompletar de Wikilinks** — digite `[[` para vincular notas
+- **Cursores multiplos** — `Alt+Click` ou `Ctrl+D`
+
+#### Editor de Documentos (TipTap)
+
+Uma experiencia WYSIWYG estilo processador de texto com barra visual:
+
+- Negrito, Italico, Sublinhado, Tachado, Realce
+- Titulos (H1–H3), Alinhamento de texto
+- Listas com marcadores, Listas numeradas, Listas de tarefas
+- Citacoes, Blocos de codigo, Linhas horizontais
+- Tabelas (inserir, adicionar/remover linhas e colunas)
+- Links e Imagens
+
+Ambos os editores salvam como arquivos Markdown padrao. Voce pode alternar entre eles a qualquer momento sem perda de dados.
+
+### Atalhos de Formatacao de Texto
+
+| Atalho | Acao |
+|--------|------|
+| `Ctrl+B` | Negrito |
+| `Ctrl+I` | Italico |
+| `Ctrl+Shift+S` | Tachado |
+| `Ctrl+Shift+H` | Realce |
+| `Ctrl+K` | Inserir wikilink |
+| `Ctrl+Z` | Desfazer |
+| `Ctrl+Shift+Z` | Refazer |
+
+### Vincular Notas
+
+Digite `[[` para abrir o autocompletar de notas. Comece a digitar o nome de uma nota e selecione entre as sugestoes. Os links aparecem como wikilinks clicaveis: `[[Nome da Nota]]`.
+
+Voce tambem pode vincular a titulos especificos: `[[Nome da Nota#Titulo]]`.
+
+---
+
+## 4. Vista Estelar (GraphMind)
+
+A Vista Estelar visualiza suas notas como um grafo 3D interativo alimentado pelo motor **GraphMind** (Pixi.js WebGL).
+
+### Abrir a Vista Estelar
+
+- Clique no icone de grafo na barra lateral
+- Pressione `Ctrl+G`
+- Mission Control (`Ctrl+P`) > "Vista Estelar"
+
+### Navegacao
+
+| Entrada | Acao |
+|---------|------|
+| **Clique + arrastar** | Deslocar o grafo |
+| **Scroll** | Aproximar/afastar |
+| **Clique em um no** | Abrir a nota |
+| **Clique direito em um no** | Menu de contexto (Abrir, Focar, Fixar, Ocultar) |
+| **Clique do meio + arrastar** | Rotacionar em 3D |
+| **W/A/S/D** | Voar pelo espaco 3D |
+| **0** | Redefinir rotacao para 2D |
+| **Ctrl+F** | Buscar e destacar |
+| **Space** | Alternar modo foco |
+
+### Modos de Layout
+
+Pressione `Ctrl+L` para alternar entre:
+
+- **Organico** — layout dirigido por forcas onde agrupamentos surgem naturalmente
+- **Hierarquico** — layout em arvore de cima para baixo
+- **Temporal** — notas organizadas por data de criacao em uma linha do tempo
+
+### Modo Foco
+
+Clique com botao direito em um no > **Focar** para ver apenas sua vizinhanca. Ajuste:
+
+- **Profundidade** (1–5 saltos) — quantos niveis de conexoes exibir
+- **Direcao** (↔/←/→) — todos os links, apenas de entrada, ou apenas de saida
+
+### Navegacao 3D
+
+Clique com o botao do meio e arraste para rotacionar. Use W/A/S/D/Q/E para voar pelo campo estelar. Um indicador de eixos XYZ no canto mostra sua orientacao. Pressione `0` para redefinir.
+
+### Configuracoes
+
+Clique no icone de engrenagem para:
+
+- **Aparencia**: Tamanho do no, visibilidade dos rotulos, tamanho da fonte, espessura dos links, exibir orfaos
+- **Fisica**: Forca de repulsao, forca de ligacao, distância de ligacao
+- **IA**: Limiar de links semanticos (Fase 2)
+
+### Legenda
+
+A legenda no canto inferior direito mostra as cores de biblioteca/pasta com caixas de selecao para alternar a visibilidade.
+
+---
+
+## 5. Segunda Tela
+
+Abra uma janela separada para visualizacao de notas lado a lado.
+
+- **Abrir**: Clique no icone de segunda tela na barra lateral, ou `Ctrl+Shift+N`
+- **Sincronizacao**: As notas abrem na segunda tela de forma independente. As configuracoes de fontes e tema se aplicam a ambas as janelas.
+- **Largura da nota**: Ajustavel atraves do controle deslizante na barra de ferramentas
+
+---
+
+## 6. Propriedades e Frontmatter
+
+As notas podem ter frontmatter YAML no topo:
+
+```yaml
+---
+tags: [projeto, ativo]
+date: 2026-03-19
+status: em-andamento
+---
+```
+
+Constellation detecta os tipos de propriedades automaticamente:
+
+| Tipo | Exemplo |
+|------|---------|
+| **Texto** | `author: Joao` |
+| **Numero** | `priority: 5` |
+| **Data** | `date: 2026-03-19` |
+| **Lista** | `tags: [a, b, c]` |
+| **Caixa de selecao** | `done: true` |
+| **Link** | `related: [[Outra Nota]]` |
+
+Alterne a exibicao de propriedades em **Configuracoes > Editor > Propriedades no documento** (Visivel / Oculto / Fonte).
+
+---
+
+## 7. Modelos
+
+Crie modelos de notas reutilizaveis:
+
+1. Crie uma pasta para modelos na sua biblioteca
+2. Defina o caminho da pasta de modelos em **Configuracoes > Modelos**
+3. Ao criar uma nova nota, escolha um modelo no seletor de modelos
+
+Os modelos suportam variaveis:
+
+| Variavel | Substituida por |
+|----------|-----------------|
+| `{{date}}` | Data atual |
+| `{{time}}` | Hora atual |
+| `{{title}}` | Titulo da nota |
+| `{{clipboard}}` | Conteudo da area de transferencia |
+
+---
+
+## 8. Tabelas
+
+### Tabelas Markdown
+
+Digite uma tabela Markdown manualmente ou use o comando de barra `/table`:
+
+```markdown
+| Cabecalho 1 | Cabecalho 2 |
+|-------------|-------------|
+| Celula 1    | Celula 2    |
+```
+
+### Barra de Ferramentas de Tabela
+
+Quando o cursor esta dentro de uma tabela, uma barra flutuante aparece com:
+
+- Adicionar/remover linhas e colunas
+- Alinhar colunas (esquerda, centro, direita)
+- Navegar entre celulas com `Tab` / `Shift+Tab`
+
+### Tabelas no Editor de Documentos
+
+O editor de Documentos (TipTap) oferece uma experiencia visual de tabelas:
+
+- Clique no botao de tabela para inserir
+- Use o menu suspenso para gerenciar linhas/colunas
+- Redimensione colunas arrastando as bordas
+
+---
+
+## 9. Tarefas
+
+Constellation suporta caixas de selecao de tarefas nas notas:
+
+```markdown
+- [ ] Tarefa incompleta
+- [x] Tarefa concluida
+```
+
+No modo de Pre-visualizacao ao Vivo, as caixas de selecao sao clicaveis. As tarefas podem ser buscadas e filtradas em todas as suas bibliotecas.
+
+---
+
+## 10. Importador
+
+Importe notas de outras ferramentas PKM:
+
+- **Obsidian** — importa vaults com compatibilidade completa de wikilinks
+- **Pastas Markdown** — importe qualquer pasta de arquivos `.md`
+- **Outros formatos** — HTML, arquivos de texto
+
+Va para **Configuracoes > Importador** para iniciar uma importacao.
+
+---
+
+## 11. Calendario
+
+A visualizacao do Calendario mostra as notas organizadas por data:
+
+- Notas com uma propriedade `date` aparecem nos seus respectivos dias
+- Notas diarias podem ser criadas para qualquer data
+- Navegue entre meses com os botoes de seta
+
+Abra o Calendario na barra lateral.
+
+---
+
+## 12. Lens
+
+Lens fornece visualizacoes filtradas das suas notas:
+
+- Filtre por etiquetas, pastas, propriedades
+- Ordene por nome, data ou propriedades personalizadas
+- Salve configuracoes do Lens para acesso rapido
+
+---
+
+## 13. Configuracoes
+
+Acesse as Configuracoes pelo icone de engrenagem na barra lateral ou `Ctrl+,`.
+
+### Geral
+
+- Idioma (15 idiomas)
+- Tema (Claro / Escuro)
+- Fonte da interface, Fonte de texto, Fonte monoespcada, Tamanho da fonte
+
+### Editor
+
+- Tipo de editor (Markdown / Documento)
+- Visualizacao padrao (Leitura / Edicao)
+- Modo de Pre-visualizacao ao Vivo
+- Numeros de linha, Guias de indentacao, Verificacao ortografica
+- Auto-fechar parenteses, Listas inteligentes
+
+### Bibliotecas
+
+- Adicionar/remover bibliotecas
+- Configuracoes de aparencia por biblioteca
+- Localizacao da pasta de anexos
+
+### Atualizacoes
+
+- Verificar atualizacoes
+- Token do GitHub para atualizacoes de repositorios privados
+
+---
+
+## 14. Atalhos de Teclado
+
+### Globais
+
+| Atalho | Acao |
+|--------|------|
+| `Ctrl+N` | Nova nota |
+| `Ctrl+O` | Star Jump (abertura rapida) |
+| `Ctrl+P` | Mission Control |
+| `Ctrl+G` | Abrir Vista Estelar |
+| `Ctrl+,` | Configuracoes |
+| `Ctrl+Shift+F` | Buscar na biblioteca |
+| `Ctrl+Shift+N` | Segunda tela |
+
+### Editor
+
+| Atalho | Acao |
+|--------|------|
+| `Ctrl+B` | Negrito |
+| `Ctrl+I` | Italico |
+| `Ctrl+K` | Inserir wikilink |
+| `Ctrl+Z` | Desfazer |
+| `Ctrl+Shift+Z` | Refazer |
+| `Ctrl+D` | Selecionar proxima ocorrencia |
+| `Ctrl+/` | Alternar comentario |
+| `Tab` | Indentar / proxima celula da tabela |
+
+### Vista Estelar
+
+| Atalho | Acao |
+|--------|------|
+| `Ctrl+F` | Buscar e destacar |
+| `Ctrl+L` | Alternar modo de layout |
+| `Space` | Alternar modo foco |
+| `0` | Redefinir rotacao 3D |
+| `W/A/S/D/Q/E` | Voar em 3D |
+| `Escape` | Fechar Vista Estelar |
+
+---
+
+## 15. Suporte RTL e Arabe
+
+Constellation oferece suporte de primeira classe para arabe, hebraico, persa, urdu e outros idiomas com escrita RTL:
+
+- **Deteccao automatica**: A direcao da nota e detectada automaticamente a partir do conteudo
+- **Interface**: Interface RTL completa quando o idioma arabe/hebraico e selecionado
+- **Editor**: Edicao de texto RTL com movimento de cursor e selecao corretos
+- **Vista Estelar**: Rotulos em arabe sao renderizados da direita para a esquerda com fallback de fonte adequado
+- **Legenda**: Os itens invertem a ordem ponto/texto com base no idioma do conteudo
+- **Fontes de escrita**: Configure fontes para arabe, hebraico e CJK independentemente nas Configuracoes
+
+### Configuracao para Arabe
+
+1. Va para **Configuracoes > Geral > Idioma** e selecione Arabe
+2. Opcionalmente, defina uma fonte dedicada para arabe em **Configuracoes > Geral > Fontes de escrita**
+3. Notas com conteudo em arabe serao renderizadas automaticamente em RTL
+
+---
+
+## 16. Seguranca e Privacidade
+
+- **Todos os dados permanecem locais** — sem sincronizacao na nuvem, sem telemetria, sem rastreamento
+- **Arquivos Markdown** — suas notas sao arquivos de texto simples que pertencem totalmente a voce
+- **Sem conta necessaria** — Constellation funciona completamente offline
+- **Atualizacoes opcionais** — verifique atualizacoes manualmente nas Configuracoes
+- **Codigo aberto** — inspecione o codigo em [github.com/eisaShamsi/Constellation](https://github.com/eisaShamsi/Constellation)
+
+---
+
+*Manual do Usuario do Constellation — Versao 0.3.4 — Marco 2026*
+*uconstellation.world*
