@@ -90,6 +90,7 @@
 	let sidebarOpen = $state(true);
 	let searchMode = $state(false);
 	let navigatorMode = $state(false); // Toggle between classic file tree and Notebook Navigator
+	let preNavigatorWidth = 240; // Saved sidebar width before navigator expanded it
 	// indexMode removed - index now opens as full page view
 	let searchQuery = $state('');
 	let searchTimeout: ReturnType<typeof setTimeout>;
@@ -1877,7 +1878,7 @@
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
 							{/if}
 						</button>
-						<button class="tb-btn" class:active={navigatorMode} onclick={() => { navigatorMode = !navigatorMode; if (navigatorMode && leftSidebarWidth < 400) leftSidebarWidth = 450; }} title={$t('navigator.title') || 'Navigator'}>
+						<button class="tb-btn" class:active={navigatorMode} onclick={() => { if (!navigatorMode) { preNavigatorWidth = leftSidebarWidth; navigatorMode = true; if (leftSidebarWidth < 400) leftSidebarWidth = 450; } else { navigatorMode = false; leftSidebarWidth = preNavigatorWidth; } }} title={$t('navigator.title') || 'Navigator'}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
 						</button>
 					</div>
