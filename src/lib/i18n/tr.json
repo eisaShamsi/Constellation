@@ -562,6 +562,8 @@
     "directionOutgoing": "Yalnızca giden",
     "colorByLibrary": "Kütüphane",
     "colorByFolder": "Klasör",
+    "multiSphere": "Ayrı küreler",
+    "multiSphereDesc": "Her kütüphane kendi küresi olarak yörüngede döner",
     "noNotes": "Gösterilecek not yok",
     "controls": {
       "title": "Grafik Ayarları",

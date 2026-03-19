@@ -562,6 +562,8 @@
     "directionOutgoing": "فقط خروجی",
     "colorByLibrary": "کتابخانه",
     "colorByFolder": "پوشه",
+    "multiSphere": "کره‌های جداگانه",
+    "multiSphereDesc": "هر کتابخانه به‌صورت کره‌ای مستقل می‌چرخد",
     "noNotes": "یادداشتی برای نمایش وجود ندارد",
     "controls": {
       "title": "تنظیمات گراف",

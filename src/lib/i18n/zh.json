@@ -562,6 +562,8 @@
     "directionOutgoing": "仅传出",
     "colorByLibrary": "资料库",
     "colorByFolder": "文件夹",
+    "multiSphere": "独立球体",
+    "multiSphereDesc": "每个库作为独立球体运行",
     "noNotes": "没有可显示的笔记",
     "controls": {
       "title": "图谱设置",

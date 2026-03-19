@@ -562,6 +562,8 @@
     "directionOutgoing": "صرف جانے والے",
     "colorByLibrary": "لائبریری",
     "colorByFolder": "فولڈر",
+    "multiSphere": "علیحدہ کرے",
+    "multiSphereDesc": "ہر لائبریری اپنے کرے کے طور پر گردش کرتی ہے",
     "noNotes": "دکھانے کے لیے کوئی نوٹس نہیں",
     "controls": {
       "title": "گراف کی ترتیبات",

@@ -562,6 +562,8 @@
     "directionOutgoing": "الصادرة فقط",
     "colorByLibrary": "المكتبة",
     "colorByFolder": "المجلد",
+    "multiSphere": "كرات منفصلة",
+    "multiSphereDesc": "كل مكتبة تدور ككرة مستقلة",
     "noNotes": "لا توجد ملاحظات لعرضها",
     "controls": {
       "title": "إعدادات الرسم البياني",

@@ -562,6 +562,8 @@
     "directionOutgoing": "Sortants uniquement",
     "colorByLibrary": "Bibliothèque",
     "colorByFolder": "Dossier",
+    "multiSphere": "Sphères séparées",
+    "multiSphereDesc": "Chaque bibliothèque orbite comme sa propre sphère",
     "noNotes": "Aucune note à afficher",
     "controls": {
       "title": "Paramètres du graphe",

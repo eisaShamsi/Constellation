@@ -562,6 +562,8 @@
     "directionOutgoing": "יוצאים בלבד",
     "colorByLibrary": "ספרייה",
     "colorByFolder": "תיקייה",
+    "multiSphere": "כדורים נפרדים",
+    "multiSphereDesc": "כל ספרייה מקיפה ככדור עצמאי",
     "noNotes": "אין פתקים להצגה",
     "controls": {
       "title": "הגדרות גרף",

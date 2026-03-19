@@ -562,6 +562,8 @@
     "directionOutgoing": "केवल जाने वाले",
     "colorByLibrary": "लाइब्रेरी",
     "colorByFolder": "फ़ोल्डर",
+    "multiSphere": "अलग-अलग गोले",
+    "multiSphereDesc": "प्रत्येक लाइब्रेरी अपने स्वयं के गोले के रूप में परिक्रमा करती है",
     "noNotes": "दिखाने के लिए कोई नोट नहीं",
     "controls": {
       "title": "ग्राफ़ सेटिंग्स",

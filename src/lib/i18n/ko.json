@@ -562,6 +562,8 @@
     "directionOutgoing": "발신만",
     "colorByLibrary": "라이브러리",
     "colorByFolder": "폴더",
+    "multiSphere": "개별 구체",
+    "multiSphereDesc": "각 라이브러리가 독립된 구체로 공전합니다",
     "noNotes": "표시할 노트가 없습니다",
     "controls": {
       "title": "그래프 설정",

@@ -562,6 +562,8 @@
     "directionOutgoing": "Solo salientes",
     "colorByLibrary": "Biblioteca",
     "colorByFolder": "Carpeta",
+    "multiSphere": "Esferas separadas",
+    "multiSphereDesc": "Cada biblioteca orbita como su propia esfera",
     "noNotes": "No hay notas para mostrar",
     "controls": {
       "title": "Ajustes del grafo",

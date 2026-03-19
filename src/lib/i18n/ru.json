@@ -562,6 +562,8 @@
     "directionOutgoing": "Только исходящие",
     "colorByLibrary": "Библиотека",
     "colorByFolder": "Папка",
+    "multiSphere": "Отдельные сферы",
+    "multiSphereDesc": "Каждая библиотека вращается как отдельная сфера",
     "noNotes": "Нет заметок для отображения",
     "controls": {
       "title": "Настройки графа",

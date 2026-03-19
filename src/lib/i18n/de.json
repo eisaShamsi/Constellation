@@ -562,6 +562,8 @@
     "directionOutgoing": "Nur ausgehende",
     "colorByLibrary": "Bibliothek",
     "colorByFolder": "Ordner",
+    "multiSphere": "Getrennte Sphären",
+    "multiSphereDesc": "Jede Bibliothek kreist als eigene Sphäre",
     "noNotes": "Keine Notizen zum Anzeigen",
     "controls": {
       "title": "Graph-Einstellungen",

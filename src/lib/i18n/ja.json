@@ -562,6 +562,8 @@
     "directionOutgoing": "送信のみ",
     "colorByLibrary": "ライブラリ",
     "colorByFolder": "フォルダ",
+    "multiSphere": "個別の球体",
+    "multiSphereDesc": "各ライブラリが独自の球体として周回します",
     "noNotes": "表示するノートがありません",
     "controls": {
       "title": "グラフ設定",
