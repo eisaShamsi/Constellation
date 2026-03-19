@@ -30,6 +30,17 @@
 	import {
 		setActiveUniverse, listUniverses
 	} from '$lib/universe/store';
+	import { marked } from 'marked';
+
+	function renderMarkdownPreview(raw: string): string {
+		// Strip frontmatter
+		const body = raw.replace(/^---[\s\S]*?---\n?/, '').slice(0, 2000);
+		try {
+			return marked.parse(body, { async: false }) as string;
+		} catch {
+			return `<p>${body.slice(0, 800)}</p>`;
+		}
+	}
 
 	// ─── State ───
 	let sidebarOpen = $state(true);
@@ -557,8 +568,8 @@
 							</div>
 
 							{#if skyviewPreview}
-								<div class="skyview-preview" dir="auto">
-									{skyviewPreview.replace(/^---[\s\S]*?---\n?/, '').slice(0, 800)}
+								<div class="skyview-preview markdown-rendered" dir="auto">
+									{@html renderMarkdownPreview(skyviewPreview)}
 								</div>
 							{/if}
 
@@ -571,7 +582,15 @@
 									<ul class="sidebar-links">
 										{#each skyviewBacklinks as link}
 											<li>
-												<button class="sidebar-link" dir="auto" onclick={() => { sendNoteToMain({ path: link.path, name: link.name, libraryName: link.libraryName, libraryPath: '', libraryColor: libraryColorMap[link.libraryName] || '#7c3aed' }); }}>
+												<button class="sidebar-link" dir="auto" onclick={() => {
+													loadSkyViewCompanionData({
+														name: link.name.replace(/\.md$/, ''),
+														path: link.path,
+														libraryName: link.libraryName,
+														libraryColor: libraryColorMap[link.libraryName] || '#7c3aed',
+														linkCount: 0, outgoingCount: 0,
+													});
+												}}>
 													<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
 													{link.name}
 												</button>
@@ -592,7 +611,15 @@
 									<ul class="sidebar-links">
 										{#each skyviewForwardLinks as link}
 											<li>
-												<button class="sidebar-link" dir="auto" onclick={() => { sendNoteToMain({ path: link.path, name: link.name, libraryName: link.libraryName, libraryPath: '', libraryColor: libraryColorMap[link.libraryName] || '#7c3aed' }); }}>
+												<button class="sidebar-link" dir="auto" onclick={() => {
+													loadSkyViewCompanionData({
+														name: link.name.replace(/\.md$/, ''),
+														path: link.path,
+														libraryName: link.libraryName,
+														libraryColor: libraryColorMap[link.libraryName] || '#7c3aed',
+														linkCount: 0, outgoingCount: 0,
+													});
+												}}>
 													<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
 													{link.name}
 												</button>
