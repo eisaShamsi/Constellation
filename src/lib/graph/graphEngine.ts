@@ -480,6 +480,49 @@ export class GraphEngine {
 		this.needsRedraw = true;
 	}
 
+	/**
+	 * Project 2D force-layout positions onto a sphere surface.
+	 * Uses the 2D (x, y) as longitude/latitude and maps to 3D sphere coords.
+	 * This gives depth when rotating in 3D — no more "wall" effect.
+	 */
+	private projectOntoSphere(): void {
+		if (this.nodes.length === 0) return;
+
+		// Find bounding box of 2D positions to normalize
+		let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+		for (const n of this.nodes) {
+			if (n.x < minX) minX = n.x;
+			if (n.x > maxX) maxX = n.x;
+			if (n.y < minY) minY = n.y;
+			if (n.y > maxY) maxY = n.y;
+		}
+
+		const cx = (minX + maxX) / 2;
+		const cy = (minY + maxY) / 2;
+		const span = Math.max(maxX - minX, maxY - minY) || 1;
+
+		// Sphere radius proportional to graph size
+		const R = span * 0.6;
+
+		for (const n of this.nodes) {
+			// Normalize to [-1, 1] range
+			const nx = (n.x - cx) / (span / 2);
+			const ny = (n.y - cy) / (span / 2);
+
+			// Map to spherical coordinates
+			// longitude from x, latitude from y
+			const lon = nx * Math.PI * 0.8; // ±144 degrees
+			const lat = ny * Math.PI * 0.4; // ±72 degrees
+
+			// Spherical to Cartesian
+			n.x = R * Math.cos(lat) * Math.sin(lon);
+			n.z = R * Math.cos(lat) * Math.cos(lon);
+			n.y = R * Math.sin(lat);
+		}
+
+		this.needsRedraw = true;
+	}
+
 	fitToScreen(): void {
 		if (this.nodes.length === 0 || !this.app) return;
 		const w = this.container.clientWidth;
@@ -953,6 +996,7 @@ export class GraphEngine {
 				if (e.data.settled && !this.didInitialFit) {
 					this.didInitialFit = true;
 					this.layoutSettled = true;
+					this.projectOntoSphere();
 					this.fitToScreen();
 				}
 			}
@@ -1316,6 +1360,16 @@ export class GraphEngine {
 	// ─── Render Loop (Pixi Ticker) ────────────────────────────────
 
 	private draw = (): void => {
+		// Gravity: gently pull camera position back toward sphere center (0,0,0)
+		// Only when not actively dragging/rotating
+		if (!this.isDragging && !this.isRotating && !this.isPanning) {
+			const grav = 0.02; // strength — subtle drift back
+			const threshold = 0.5; // stop jitter below this
+			if (Math.abs(this.camPosX) > threshold) { this.camPosX *= (1 - grav); this.needsRedraw = true; }
+			if (Math.abs(this.camPosY) > threshold) { this.camPosY *= (1 - grav); this.needsRedraw = true; }
+			if (Math.abs(this.camPosZ) > threshold) { this.camPosZ *= (1 - grav); this.needsRedraw = true; }
+		}
+
 		// Handle layout transition animation
 		if (this.transitionProgress >= 0 && this.transitionProgress < this.transitionFrames) {
 			this.transitionProgress++;
