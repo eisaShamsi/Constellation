@@ -74,6 +74,29 @@
 	let pinnedSkyviewNode = $state<SkyViewNodeInfo | null>(null); // Stays until next click
 	let isHoverPreview = $state(false); // true = temporary hover, false = pinned click
 
+	// Peek preview: show linked note content without navigating
+	let peekNote = $state<{ name: string; path: string; libraryName: string; libraryColor: string } | null>(null);
+	let peekContent = $state('');
+	let peekGeneration = 0;
+
+	async function loadPeekPreview(note: { name: string; path: string; libraryName: string; libraryColor: string }) {
+		const gen = ++peekGeneration;
+		peekNote = note;
+		try {
+			const content = await invoke<string>('read_note', { notePath: note.path });
+			if (gen !== peekGeneration) return;
+			peekContent = content;
+		} catch {
+			if (gen !== peekGeneration) return;
+			peekContent = '';
+		}
+	}
+
+	function closePeek() {
+		peekNote = null;
+		peekContent = '';
+	}
+
 	// Navigation history for second screen (back/forward)
 	let skyviewHistory = $state<SkyViewNodeInfo[]>([]);
 	let skyviewHistoryIdx = $state(-1); // current position in history
@@ -649,17 +672,12 @@
 										{#each skyviewBacklinks as link}
 											<li>
 												<button class="sidebar-link" dir="auto" onclick={() => {
-													const node = {
+													loadPeekPreview({
 														name: link.name.replace(/\.md$/, ''),
 														path: link.path,
 														libraryName: link.libraryName,
 														libraryColor: libraryColorMap[link.libraryName] || '#7c3aed',
-														linkCount: 0, outgoingCount: 0,
-													};
-													pinnedSkyviewNode = node;
-													isHoverPreview = false;
-													pushSkyviewHistory(node);
-													loadSkyViewCompanionData(node);
+													});
 												}}>
 													<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
 													{link.name}
@@ -682,17 +700,12 @@
 										{#each skyviewForwardLinks as link}
 											<li>
 												<button class="sidebar-link" dir="auto" onclick={() => {
-													const node = {
+													loadPeekPreview({
 														name: link.name.replace(/\.md$/, ''),
 														path: link.path,
 														libraryName: link.libraryName,
 														libraryColor: libraryColorMap[link.libraryName] || '#7c3aed',
-														linkCount: 0, outgoingCount: 0,
-													};
-													pinnedSkyviewNode = node;
-													isHoverPreview = false;
-													pushSkyviewHistory(node);
-													loadSkyViewCompanionData(node);
+													});
 												}}>
 													<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
 													{link.name}
@@ -716,6 +729,25 @@
 											<span class="sidebar-tag">#{tag}</span>
 										{/each}
 									</div>
+								</div>
+							{/if}
+
+							{#if peekNote}
+								<div class="peek-preview">
+									<div class="peek-header">
+										<span class="skyview-dot" style="background:{peekNote.libraryColor}"></span>
+										<h3 class="peek-name" dir="auto">{peekNote.name}</h3>
+										<button class="peek-close" onclick={closePeek} title="Close preview">
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+										</button>
+									</div>
+									{#if peekContent}
+										<div class="peek-content markdown-rendered" dir="auto">
+											{@html renderMarkdownPreview(peekContent)}
+										</div>
+									{:else}
+										<p class="sidebar-empty">Loading...</p>
+									{/if}
 								</div>
 							{/if}
 						</div>
@@ -1169,6 +1201,67 @@
 	}
 	.skyview-pinned {
 		font-size: 14px;
+	}
+
+	/* Peek preview */
+	.peek-preview {
+		margin-top: 16px;
+		padding: 12px;
+		border: 1px solid var(--background-modifier-border, #e0e0e0);
+		border-radius: 8px;
+		background: var(--background-primary, #fff);
+		max-height: 400px;
+		overflow-y: auto;
+	}
+	.peek-header {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 10px;
+		padding-bottom: 8px;
+		border-bottom: 1px solid var(--background-modifier-border, #e0e0e0);
+	}
+	.peek-name {
+		flex: 1;
+		font-size: 15px;
+		font-weight: 600;
+		margin: 0;
+		color: var(--text-normal);
+	}
+	.peek-close {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		border: none;
+		border-radius: 4px;
+		background: transparent;
+		color: var(--text-muted);
+		cursor: pointer;
+	}
+	.peek-close:hover {
+		background: var(--background-modifier-hover);
+		color: var(--text-normal);
+	}
+	.peek-content {
+		font-size: 13px;
+		line-height: 1.6;
+		color: var(--text-normal);
+	}
+	.peek-content :global(h1),
+	.peek-content :global(h2),
+	.peek-content :global(h3) {
+		margin-top: 12px;
+		margin-bottom: 6px;
+	}
+	.peek-content :global(p) {
+		margin-bottom: 8px;
+	}
+	.peek-content :global(ul),
+	.peek-content :global(ol) {
+		padding-inline-start: 20px;
+		margin-bottom: 8px;
 	}
 	.skyview-header {
 		display: flex;
