@@ -38,6 +38,7 @@
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	import type { BaseDefinition } from '$lib/bases/types';
 	import FileTree from '$lib/components/FileTree.svelte';
+	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
@@ -88,6 +89,7 @@
 	// Sidebar state
 	let sidebarOpen = $state(true);
 	let searchMode = $state(false);
+	let navigatorMode = $state(false); // Toggle between classic file tree and Notebook Navigator
 	// indexMode removed - index now opens as full page view
 	let searchQuery = $state('');
 	let searchTimeout: ReturnType<typeof setTimeout>;
@@ -1875,12 +1877,21 @@
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
 							{/if}
 						</button>
+						<button class="tb-btn" class:active={navigatorMode} onclick={() => { navigatorMode = !navigatorMode; if (navigatorMode && leftSidebarWidth < 400) leftSidebarWidth = 450; }} title={$t('navigator.title') || 'Navigator'}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+						</button>
 					</div>
 				{/if}
 			</div>
 
 			<div class="sidebar-content">
-				{#if searchMode && searchQuery}
+				{#if navigatorMode}
+					<NotebookNavigator
+						mode="main"
+						{libraryColorMap}
+						onNoteClick={(path, name, lib) => handleNoteClick(path, name, undefined)}
+					/>
+				{:else if searchMode && searchQuery}
 					{#if $searchResults.length > 0}
 						<div class="section-label">{$searchResults.length} {$t('sidebar.results')}</div>
 						{#each $searchResults as star}
