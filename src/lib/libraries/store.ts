@@ -1107,7 +1107,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 		apiKeyProtection: false,
 	},
 	skyView: {
-		nodeSize: 4,
+		nodeSize: 1.5,
 		labelVisibility: 'hover' as const,
 		labelFontSize: 12,
 		linkThickness: 1,
