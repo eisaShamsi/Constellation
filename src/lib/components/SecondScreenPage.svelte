@@ -23,8 +23,9 @@
 	import {
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
 		onStateRequest, onWorkspaceRestore,
+		onContextChanged, onSkyViewHover, onSkyViewClick,
 		sendNoteToMain, notifyScreenClosed, sendScreenState,
-		type ScreenNote, type ScreenMode, type ScreenState
+		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo
 	} from '$lib/secondScreen';
 	import {
 		setActiveUniverse, listUniverses
@@ -55,6 +56,89 @@
 	// ─── Sky view (local star) data ───
 	let localStarNodes = $state<StarNode[]>([]);
 	let localStarLinks = $state<StarLink[]>([]);
+
+	// ─── Sky View Companion state ───
+	let contextMode = $state<ContextMode>('editor');
+	let skyviewNode = $state<SkyViewNodeInfo | null>(null);
+	let skyviewPreview = $state('');
+	let skyviewBacklinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
+	let skyviewForwardLinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
+	let skyviewTags = $state<string[]>([]);
+	let skyviewLocalNodes = $state<StarNode[]>([]);
+	let skyviewLocalLinks = $state<StarLink[]>([]);
+	let skyviewGeneration = 0;
+
+	async function loadSkyViewCompanionData(node: SkyViewNodeInfo) {
+		const gen = ++skyviewGeneration;
+		skyviewNode = node;
+
+		// Load note preview
+		try {
+			const content = await invoke<string>('read_note', { notePath: node.path });
+			if (gen !== skyviewGeneration) return;
+			skyviewPreview = content.slice(0, 2000);
+
+			// Parse tags from frontmatter
+			const fm = parseFrontmatter(content);
+			const tagProp = fm.properties.find(p => p.key === 'tags');
+			skyviewTags = tagProp?.listItems ?? [];
+		} catch {
+			if (gen !== skyviewGeneration) return;
+			skyviewPreview = '';
+			skyviewTags = [];
+		}
+
+		// Scan for backlinks and forward links
+		const lib = $libraries.find(v => v.name === node.libraryName);
+		if (lib) {
+			try {
+				const links = await scanLibraryLinks(lib.path, lib.name);
+				if (gen !== skyviewGeneration) return;
+				const nodeName = node.name.toLowerCase();
+
+				skyviewForwardLinks = links
+					.filter(l => l.source_name.toLowerCase() === nodeName)
+					.map(l => {
+						const target = allNotes.find(n => n.name.replace(/\.md$/, '').toLowerCase() === l.target.toLowerCase());
+						return target ? { name: target.name, path: target.path, libraryName: target.libraryName } : null;
+					})
+					.filter(Boolean) as { name: string; path: string; libraryName: string }[];
+
+				skyviewBacklinks = links
+					.filter(l => l.target.toLowerCase() === nodeName)
+					.map(l => {
+						const src = allNotes.find(n => n.path === l.source_path);
+						return src ? { name: src.name, path: src.path, libraryName: src.libraryName } : null;
+					})
+					.filter(Boolean) as { name: string; path: string; libraryName: string }[];
+
+				// Build local star for this node
+				const { nodes: sn, links: sl } = buildStarData(links, allNotes.map(n => ({
+					id: n.name.replace(/\.md$/, '').toLowerCase(),
+					name: n.name,
+					path: n.path,
+					libraryName: n.libraryName,
+					linkCount: 0,
+					outgoingCount: 0,
+				})));
+				const connectedIds = new Set<string>([nodeName]);
+				for (const link of sl) {
+					if (link.source === nodeName || link.target === nodeName) {
+						connectedIds.add(link.source);
+						connectedIds.add(link.target);
+					}
+				}
+				skyviewLocalNodes = sn.filter(n => connectedIds.has(n.id));
+				skyviewLocalLinks = sl.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
+			} catch {
+				if (gen !== skyviewGeneration) return;
+				skyviewBacklinks = [];
+				skyviewForwardLinks = [];
+				skyviewLocalNodes = [];
+				skyviewLocalLinks = [];
+			}
+		}
+	}
 
 	// ─── Library color map ───
 	const libraryColors = [
@@ -352,6 +436,29 @@
 			await loadSidebarData();
 		});
 		unlisteners.push(u7);
+
+		// Sky View companion: listen for context mode changes
+		const u8 = await onContextChanged((mode) => {
+			contextMode = mode;
+			if (mode !== 'skyview') {
+				skyviewNode = null;
+			}
+		});
+		unlisteners.push(u8);
+
+		// Sky View companion: listen for hover events
+		const u9 = await onSkyViewHover(async (node) => {
+			if (contextMode !== 'skyview' || !node) return;
+			await loadSkyViewCompanionData(node);
+		});
+		unlisteners.push(u9);
+
+		// Sky View companion: listen for click events (sticky)
+		const u10 = await onSkyViewClick(async (node) => {
+			if (contextMode !== 'skyview') return;
+			await loadSkyViewCompanionData(node);
+		});
+		unlisteners.push(u10);
 	});
 
 	onDestroy(() => {
@@ -437,6 +544,112 @@
 			<div class="screen-loading">
 				<div class="spinner"></div>
 				<p>{$t('secondScreen.loading')}</p>
+			</div>
+		{:else if contextMode === 'skyview'}
+			<div class="skyview-companion">
+				{#if skyviewNode}
+					<div class="skyview-layout">
+						<div class="skyview-detail">
+							<div class="skyview-header">
+								<span class="skyview-dot" style="background:{skyviewNode.libraryColor}"></span>
+								<h2 class="skyview-name" dir="auto">{skyviewNode.name}</h2>
+								<span class="skyview-lib">{skyviewNode.libraryName}</span>
+							</div>
+
+							{#if skyviewPreview}
+								<div class="skyview-preview" dir="auto">
+									{skyviewPreview.replace(/^---[\s\S]*?---\n?/, '').slice(0, 800)}
+								</div>
+							{/if}
+
+							<div class="sidebar-section">
+								<h3 class="sidebar-heading">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+									Backlinks <span class="sidebar-count">{skyviewBacklinks.length}</span>
+								</h3>
+								{#if skyviewBacklinks.length > 0}
+									<ul class="sidebar-links">
+										{#each skyviewBacklinks as link}
+											<li>
+												<button class="sidebar-link" dir="auto" onclick={() => { sendNoteToMain({ path: link.path, name: link.name, libraryName: link.libraryName, libraryPath: '', libraryColor: libraryColorMap[link.libraryName] || '#7c3aed' }); }}>
+													<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
+													{link.name}
+												</button>
+											</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="sidebar-empty">No backlinks</p>
+								{/if}
+							</div>
+
+							<div class="sidebar-section">
+								<h3 class="sidebar-heading">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+									Forward links <span class="sidebar-count">{skyviewForwardLinks.length}</span>
+								</h3>
+								{#if skyviewForwardLinks.length > 0}
+									<ul class="sidebar-links">
+										{#each skyviewForwardLinks as link}
+											<li>
+												<button class="sidebar-link" dir="auto" onclick={() => { sendNoteToMain({ path: link.path, name: link.name, libraryName: link.libraryName, libraryPath: '', libraryColor: libraryColorMap[link.libraryName] || '#7c3aed' }); }}>
+													<span class="link-dot" style="background:{libraryColorMap[link.libraryName] || '#7c3aed'}"></span>
+													{link.name}
+												</button>
+											</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="sidebar-empty">No forward links</p>
+								{/if}
+							</div>
+
+							{#if skyviewTags.length > 0}
+								<div class="sidebar-section">
+									<h3 class="sidebar-heading">
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+										Tags <span class="sidebar-count">{skyviewTags.length}</span>
+									</h3>
+									<div class="sidebar-tags">
+										{#each skyviewTags as tag}
+											<span class="sidebar-tag">#{tag}</span>
+										{/each}
+									</div>
+								</div>
+							{/if}
+						</div>
+
+						{#if skyviewLocalNodes.length > 0}
+							<div class="skyview-graph">
+								<LocalStarView
+									nodes={skyviewLocalNodes}
+									links={skyviewLocalLinks}
+									activeNodeId={skyviewNode.name.replace(/\.md$/, '').toLowerCase()}
+									onNodeClick={async (id) => {
+										const note = allNotes.find(n => n.name.replace(/\.md$/, '').toLowerCase() === id);
+										if (note) {
+											const lib = $libraries.find(v => v.name === note.libraryName);
+											await loadSkyViewCompanionData({
+												path: note.path,
+												name: note.name,
+												libraryName: note.libraryName,
+												libraryPath: lib?.path ?? '',
+												libraryColor: libraryColorMap[note.libraryName] ?? '#7c3aed',
+											});
+										}
+									}}
+								/>
+							</div>
+						{/if}
+					</div>
+				{:else}
+					<div class="detail-empty">
+						<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+							<circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+						</svg>
+						<p>{$t('secondScreen.skyviewHint') || 'Hover over a node in Sky View to see its details here'}</p>
+					</div>
+				{/if}
 			</div>
 		{:else if $activeTab}
 			<div class="detail-layout">
@@ -797,6 +1010,66 @@
 		gap: 12px;
 		color: var(--text-faint);
 		font-size: 14px;
+	}
+
+	/* ─── Sky View Companion ─── */
+	.skyview-companion {
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+	}
+	.skyview-layout {
+		display: flex;
+		height: 100%;
+		gap: 0;
+	}
+	.skyview-detail {
+		flex: 1;
+		overflow-y: auto;
+		padding: 16px 20px;
+		min-width: 0;
+	}
+	.skyview-graph {
+		width: 35%;
+		flex-shrink: 0;
+		border-inline-start: 1px solid var(--background-modifier-border);
+	}
+	.skyview-header {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 16px;
+		flex-wrap: wrap;
+	}
+	.skyview-dot {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+	.skyview-name {
+		font-size: 18px;
+		font-weight: 600;
+		color: var(--text-normal);
+		margin: 0;
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.skyview-lib {
+		font-size: 12px;
+		color: var(--text-faint);
+		white-space: nowrap;
+	}
+	.skyview-preview {
+		font-size: 13px;
+		color: var(--text-muted);
+		line-height: 1.6;
+		margin-bottom: 16px;
+		white-space: pre-wrap;
+		max-height: 300px;
+		overflow-y: auto;
 	}
 
 	/* ─── Right sidebar ─── */

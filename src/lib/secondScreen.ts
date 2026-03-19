@@ -18,7 +18,16 @@ export interface ScreenNote {
 	libraryColor: string;
 }
 
-export type ScreenMode = 'grid' | 'star' | 'detail';
+export type ScreenMode = 'grid' | 'star' | 'detail' | 'skyview';
+export type ContextMode = 'editor' | 'skyview' | 'browser';
+
+export interface SkyViewNodeInfo {
+	path: string;
+	name: string;
+	libraryName: string;
+	libraryPath: string;
+	libraryColor: string;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Window management                                                  */
@@ -142,4 +151,35 @@ export function onStateResponse(callback: (state: ScreenState) => void): Promise
 
 export function onWorkspaceRestore(callback: (state: ScreenState) => void): Promise<UnlistenFn> {
 	return listen<ScreenState>('screen:workspace-restore', (event) => callback(event.payload));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Sky View context events                                            */
+/* ------------------------------------------------------------------ */
+
+/** Main → Second Screen: context mode changed (skyview/editor) */
+export async function emitContextChanged(mode: ContextMode): Promise<void> {
+	await emit('screen:context-changed', { mode });
+}
+
+/** Main → Second Screen: node hovered in Sky View */
+export async function emitSkyViewHover(node: SkyViewNodeInfo | null): Promise<void> {
+	await emit('screen:skyview-hover', { node });
+}
+
+/** Main → Second Screen: node clicked in Sky View */
+export async function emitSkyViewClick(node: SkyViewNodeInfo): Promise<void> {
+	await emit('screen:skyview-click', { node });
+}
+
+export function onContextChanged(callback: (mode: ContextMode) => void): Promise<UnlistenFn> {
+	return listen<{ mode: ContextMode }>('screen:context-changed', (event) => callback(event.payload.mode));
+}
+
+export function onSkyViewHover(callback: (node: SkyViewNodeInfo | null) => void): Promise<UnlistenFn> {
+	return listen<{ node: SkyViewNodeInfo | null }>('screen:skyview-hover', (event) => callback(event.payload.node));
+}
+
+export function onSkyViewClick(callback: (node: SkyViewNodeInfo) => void): Promise<UnlistenFn> {
+	return listen<{ node: SkyViewNodeInfo }>('screen:skyview-click', (event) => callback(event.payload.node));
 }

@@ -43,6 +43,7 @@
 		nodes = [] as StarNode[],
 		links = [] as StarLink[],
 		onNodeClick = undefined as ((path: string, libraryName: string) => void) | undefined,
+		onNodeHover = undefined as ((node: { name: string; path: string; libraryName: string } | null) => void) | undefined,
 		activeNodeId = '',
 		skyViewSettings,
 		libraryColorMap = {} as Record<string, string>,
@@ -50,6 +51,7 @@
 		nodes: StarNode[];
 		links: StarLink[];
 		onNodeClick?: (path: string, libraryName: string) => void;
+		onNodeHover?: (node: { name: string; path: string; libraryName: string } | null) => void;
 		activeNodeId?: string;
 		skyViewSettings?: Partial<EngineConfig>;
 		libraryColorMap?: Record<string, string>;
@@ -408,7 +410,7 @@
 				}
 				onNodeClick?.(path, lib);
 			},
-			onNodeHover: (name) => { hoveredName = name; },
+			onNodeHover: (node) => { hoveredName = node?.name ?? null; onNodeHover?.(node); },
 			onStatsReady: (nc, ec, mc) => { nodeCount = nc; edgeCount = ec; mocCount = mc; },
 			onContextMenu: (node, x, y) => { contextMenu = { node, x, y }; },
 			onFocusChange: (active, name) => { focusActive = active; focusNodeName = name ?? ''; if (!active) { breadcrumb = []; focusDirection = 'all'; } },

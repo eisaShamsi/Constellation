@@ -79,7 +79,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, type ScreenNote, type ScreenState } from '$lib/secondScreen';
+	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -157,6 +157,13 @@
 		};
 	}
 	let showStarView = $state(false);
+	// Emit context change to second screen when Sky View toggles
+	let skyviewHoverTimer: ReturnType<typeof setTimeout> | null = null;
+	$effect(() => {
+		if (secondScreenOpen) {
+			emitContextChanged(showStarView ? 'skyview' : 'editor');
+		}
+	});
 	let showGlobalTasks = $state(false);
 	let showIndex = $state(false);
 	let indexNoteTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
@@ -1330,6 +1337,17 @@
 	}
 
 	function handleStarNodeClick(path: string, libraryName: string) {
+		// Emit to second screen before switching away from Sky View
+		if (secondScreenOpen) {
+			const lib = $libraries.find(v => v.name === libraryName);
+			emitSkyViewClick({
+				path,
+				name: path.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '',
+				libraryName,
+				libraryPath: lib?.path ?? '',
+				libraryColor: libraryColorMap[libraryName] ?? '#7c3aed',
+			});
+		}
 		const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
 		openNoteTab(path, libraryName, libraryColor);
 		showStarView = false; // Switch to note view
@@ -2013,6 +2031,21 @@
 					nodes={starNodes}
 					links={starLinks}
 					onNodeClick={handleStarNodeClick}
+					onNodeHover={(node) => {
+						if (!secondScreenOpen) return;
+						if (skyviewHoverTimer) clearTimeout(skyviewHoverTimer);
+						skyviewHoverTimer = setTimeout(() => {
+							if (!node) { emitSkyViewHover(null); return; }
+							const lib = $libraries.find(v => v.name === node.libraryName);
+							emitSkyViewHover({
+								path: node.path,
+								name: node.name,
+								libraryName: node.libraryName,
+								libraryPath: lib?.path ?? '',
+								libraryColor: libraryColorMap[node.libraryName] ?? '#7c3aed',
+							});
+						}, 100);
+					}}
 					activeNodeId={sidebarTab?.name?.toLowerCase() ?? ''}
 					skyViewSettings={$appSettings.skyView}
 					{libraryColorMap}

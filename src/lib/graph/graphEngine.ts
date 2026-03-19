@@ -32,7 +32,7 @@ export interface EngineConfig {
 
 export interface EngineCallbacks {
 	onNodeClick: (path: string, libraryName: string) => void;
-	onNodeHover: (name: string | null) => void;
+	onNodeHover: (node: { name: string; path: string; libraryName: string } | null) => void;
 	onStatsReady: (nodeCount: number, edgeCount: number, mocCount: number) => void;
 	onContextMenu?: (node: { id: string; name: string; path: string; libraryName: string }, x: number, y: number) => void;
 	onFocusChange?: (focused: boolean, nodeName?: string) => void;
@@ -1140,7 +1140,7 @@ export class GraphEngine {
 		if (idx !== this.hoveredIdx) {
 			this.hoveredIdx = idx; // Law 1: plain variable, never $state
 			canvas.style.cursor = idx >= 0 ? 'pointer' : 'grab';
-			this.callbacks.onNodeHover(idx >= 0 ? this.nodes[idx].name : null);
+			this.callbacks.onNodeHover(idx >= 0 ? { name: this.nodes[idx].name, path: this.nodes[idx].path, libraryName: this.nodes[idx].libraryName } : null);
 			// Send edge relationship info for hovered node's connections
 			if (idx >= 0 && this.callbacks.onEdgeHover) {
 				const typedEdge = this.links.find(l =>
