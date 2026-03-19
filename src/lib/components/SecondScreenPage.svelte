@@ -1115,8 +1115,6 @@
 			</div>
 		{/if}
 	</div>
-		{/if}
-	</div>
 
 	<!-- Bottom status bar -->
 	<div class="screen-status">
