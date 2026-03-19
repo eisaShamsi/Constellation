@@ -860,7 +860,9 @@
     "noResults": "Keine passenden Notizen",
     "noNotes": "Keine Notizen gefunden",
     "detailEmpty": "Wähle eine Notiz zur Ansicht",
-    "sendToScreen": "An zweiten Bildschirm senden"
+    "sendToScreen": "An zweiten Bildschirm senden",
+    "skyviewHint": "Bewegen Sie den Mauszeiger über einen Knoten in der Himmelsansicht, um seine Details hier zu sehen",
+    "skyviewMode": "Himmelsansicht-Begleiter"
   },
   "importer": {
     "title": "Notizen importieren",

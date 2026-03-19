@@ -849,7 +849,9 @@
     "detailEmpty": "选择一个笔记在此查看",
     "sendToScreen": "发送到第二屏幕",
     "allLibraries": "所有仓库",
-    "sortLibrary": "按仓库排序"
+    "sortLibrary": "按仓库排序",
+    "skyviewHint": "将鼠标悬停在天空视图中的节点上，即可在此查看其详情",
+    "skyviewMode": "天空视图伴侣"
   },
   "importer": {
     "title": "导入笔记",

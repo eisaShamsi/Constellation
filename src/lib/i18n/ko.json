@@ -849,7 +849,9 @@
     "detailEmpty": "여기에 표시할 노트를 선택하세요",
     "sendToScreen": "보조 화면으로 보내기",
     "allLibraries": "모든 보관함",
-    "sortLibrary": "보관함순 정렬"
+    "sortLibrary": "보관함순 정렬",
+    "skyviewHint": "스카이 뷰에서 노드 위에 마우스를 올리면 여기에 세부 정보가 표시됩니다",
+    "skyviewMode": "스카이 뷰 도우미"
   },
   "importer": {
     "title": "노트 가져오기",

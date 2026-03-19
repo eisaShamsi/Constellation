@@ -849,7 +849,9 @@
     "detailEmpty": "Görüntülemek için bir not seçin",
     "sendToScreen": "İkinci ekrana gönder",
     "allLibraries": "Tüm kasalar",
-    "sortLibrary": "Kasaya göre sırala"
+    "sortLibrary": "Kasaya göre sırala",
+    "skyviewHint": "Gökyüzü Görünümünde bir düğümün üzerine gelin ve ayrıntılarını burada görün",
+    "skyviewMode": "Gökyüzü Görünümü Eşlikçisi"
   },
   "importer": {
     "title": "Notları İçe Aktar",

@@ -849,7 +849,9 @@
     "detailEmpty": "Selecione uma nota para visualizar aqui",
     "sendToScreen": "Enviar para segunda tela",
     "allLibraries": "Todos os cofres",
-    "sortLibrary": "Ordenar por cofre"
+    "sortLibrary": "Ordenar por cofre",
+    "skyviewHint": "Passe o mouse sobre um nó na Visão do Céu para ver seus detalhes aqui",
+    "skyviewMode": "Acompanhante da Visão do Céu"
   },
   "importer": {
     "title": "Importar notas",

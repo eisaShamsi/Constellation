@@ -849,7 +849,9 @@
     "detailEmpty": "ノートを選択して表示",
     "sendToScreen": "セカンドスクリーンに送信",
     "allLibraries": "すべての保管庫",
-    "sortLibrary": "保管庫順"
+    "sortLibrary": "保管庫順",
+    "skyviewHint": "スカイビューのノードにカーソルを合わせると、ここに詳細が表示されます",
+    "skyviewMode": "スカイビューコンパニオン"
   },
   "importer": {
     "title": "ノートをインポート",

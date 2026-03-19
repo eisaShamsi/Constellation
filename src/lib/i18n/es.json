@@ -860,7 +860,9 @@
     "noResults": "No hay notas coincidentes",
     "noNotes": "No se encontraron notas",
     "detailEmpty": "Selecciona una nota para verla aquí",
-    "sendToScreen": "Enviar a segunda pantalla"
+    "sendToScreen": "Enviar a segunda pantalla",
+    "skyviewHint": "Pasa el cursor sobre un nodo en Vista del cielo para ver sus detalles aquí",
+    "skyviewMode": "Acompañante de Vista del cielo"
   },
   "importer": {
     "title": "Importar notas",

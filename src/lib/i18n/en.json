@@ -855,7 +855,9 @@
     "noResults": "No matching notes",
     "noNotes": "No notes found",
     "detailEmpty": "Select a note to view here",
-    "sendToScreen": "Send to Second Screen"
+    "sendToScreen": "Send to Second Screen",
+    "skyviewHint": "Hover over a node in Sky View to see its details here",
+    "skyviewMode": "Sky View Companion"
   },
   "importer": {
     "title": "Import Notes",

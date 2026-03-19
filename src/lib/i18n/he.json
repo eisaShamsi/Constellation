@@ -849,7 +849,9 @@
     "detailEmpty": "בחר הערה לצפייה כאן",
     "sendToScreen": "שלח למסך השני",
     "allLibraries": "כל הכספות",
-    "sortLibrary": "מיין לפי כספת"
+    "sortLibrary": "מיין לפי כספת",
+    "skyviewHint": "העבר את העכבר מעל צומת בתצוגת השמיים כדי לראות את הפרטים כאן",
+    "skyviewMode": "מלווה תצוגת שמיים"
   },
   "importer": {
     "title": "ייבוא הערות",
