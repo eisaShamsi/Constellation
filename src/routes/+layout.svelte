@@ -49,6 +49,7 @@
 	import TemplateSuggester from '$lib/components/TemplateSuggester.svelte';
 	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
 	import GraphMindView from '$lib/components/GraphMindView.svelte';
+	import OrgChart from '$lib/components/OrgChart.svelte';
 	import LocalStarView from '$lib/components/LocalStarView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
@@ -160,6 +161,7 @@
 		};
 	}
 	let showStarView = $state(false);
+	let showOrgChart = $state(false);
 	// Emit context change to second screen when Sky View toggles or active tab changes
 	let skyviewHoverTimer: ReturnType<typeof setTimeout> | null = null;
 	$effect(() => {
@@ -970,6 +972,7 @@
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showStarView) { showStarView = false; return; }
+			if (showOrgChart) { showOrgChart = false; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
 			if (showIndex) { showIndex = false; return; }
 			if (showTemplatePicker) { showTemplatePicker = false; return; }
@@ -1815,6 +1818,9 @@
 			<button class="dock-btn" onclick={() => showStarView = !showStarView} title={$t('ribbon.graphView')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
 			</button>
+			<button class="dock-btn" onclick={() => { showOrgChart = !showOrgChart; showStarView = false; }} title={$t('orgChart.title') || 'Org Chart'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><rect x="2" y="10" width="6" height="4" rx="1"/><rect x="16" y="10" width="6" height="4" rx="1"/><rect x="9" y="18" width="6" height="4" rx="1"/><path d="M12 6v4"/><path d="M5 14v2a2 2 0 0 0 2 2h3"/><path d="M19 14v2a2 2 0 0 1-2 2h-3"/></svg>
+			</button>
 			<button class="dock-btn" onclick={() => { showGlobalTasks = !showGlobalTasks; showStarView = false; }} title={$t('ribbon.globalTasks')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 			</button>
@@ -2120,6 +2126,14 @@
 					skyViewSettings={$appSettings.skyView}
 					{libraryColorMap}
 				/>
+				</div>
+			{:else if showOrgChart}
+				<div class="star-fullscreen">
+					<OrgChart
+						{libraryColorMap}
+						onNoteClick={(path, name) => { showOrgChart = false; handleNoteClick(path, name); }}
+						onClose={() => showOrgChart = false}
+					/>
 				</div>
 			{:else if showGlobalTasks}
 				<GlobalTasksView
