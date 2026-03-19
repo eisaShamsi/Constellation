@@ -637,6 +637,33 @@
 			<div class="skyview-companion">
 				{#if skyviewNode}
 					<div class="skyview-layout">
+						<!-- Left: Peek preview (fills empty space) -->
+						<div class="skyview-peek-area">
+							{#if peekNote}
+								<div class="peek-preview">
+									<div class="peek-header">
+										<span class="skyview-dot" style="background:{peekNote.libraryColor}"></span>
+										<h3 class="peek-name" dir="auto">{peekNote.name}</h3>
+										<button class="peek-close" onclick={closePeek} title="Close preview">
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+										</button>
+									</div>
+									{#if peekContent}
+										<div class="peek-content markdown-rendered" dir="auto">
+											{@html renderMarkdownPreview(peekContent)}
+										</div>
+									{:else}
+										<p class="sidebar-empty">Loading...</p>
+									{/if}
+								</div>
+							{:else}
+								<div class="peek-empty">
+									<p class="sidebar-empty">{$t('secondScreen.skyviewHint') || 'Click a link to preview it here'}</p>
+								</div>
+							{/if}
+						</div>
+
+						<!-- Right: Links, tags, graph -->
 						<div class="skyview-detail">
 							<div class="skyview-nav">
 								<button class="skyview-nav-btn" disabled={!canGoBack()} onclick={goBack} title="Back">
@@ -732,24 +759,6 @@
 								</div>
 							{/if}
 
-							{#if peekNote}
-								<div class="peek-preview">
-									<div class="peek-header">
-										<span class="skyview-dot" style="background:{peekNote.libraryColor}"></span>
-										<h3 class="peek-name" dir="auto">{peekNote.name}</h3>
-										<button class="peek-close" onclick={closePeek} title="Close preview">
-											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-										</button>
-									</div>
-									{#if peekContent}
-										<div class="peek-content markdown-rendered" dir="auto">
-											{@html renderMarkdownPreview(peekContent)}
-										</div>
-									{:else}
-										<p class="sidebar-empty">Loading...</p>
-									{/if}
-								</div>
-							{/if}
 						</div>
 
 						{#if skyviewLocalNodes.length > 0}
@@ -1156,6 +1165,20 @@
 		height: 100%;
 		gap: 0;
 	}
+	.skyview-peek-area {
+		flex: 1;
+		overflow-y: auto;
+		padding: 16px 20px;
+		border-inline-end: 1px solid var(--background-modifier-border, #e0e0e0);
+		min-width: 0;
+	}
+	.peek-empty {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		opacity: 0.5;
+	}
 	.skyview-detail {
 		flex: 1;
 		overflow-y: auto;
@@ -1205,13 +1228,9 @@
 
 	/* Peek preview */
 	.peek-preview {
-		margin-top: 16px;
-		padding: 12px;
-		border: 1px solid var(--background-modifier-border, #e0e0e0);
-		border-radius: 8px;
-		background: var(--background-primary, #fff);
-		max-height: 400px;
-		overflow-y: auto;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
 	}
 	.peek-header {
 		display: flex;
@@ -1245,6 +1264,8 @@
 		color: var(--text-normal);
 	}
 	.peek-content {
+		flex: 1;
+		overflow-y: auto;
 		font-size: 13px;
 		line-height: 1.6;
 		color: var(--text-normal);
