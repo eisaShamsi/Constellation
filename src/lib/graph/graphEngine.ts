@@ -533,9 +533,10 @@ export class GraphEngine {
 			// ── Volumetric Fibonacci lattice ──
 			// This distributes N points EVENLY inside a sphere (not just on surface)
 			//
-			// 1. Radius: cbrt gives equal volume per shell
-			const t = (rank + 0.5) / N; // 0→1, offset avoids pole singularity
-			const r = innerR + (outerR - innerR) * Math.cbrt(t);
+			// 1. Radius: linear mapping — senior nodes at center, junior at edge
+			//    Linear (not cbrt) keeps the core dense and filled
+			const t = (rank + 0.5) / N; // 0→1
+			const r = outerR * t;
 
 			// 2. Latitude (polar angle θ): acos(1 - 2t) gives uniform distribution
 			//    on a sphere surface for each shell. This is the KEY fix —
