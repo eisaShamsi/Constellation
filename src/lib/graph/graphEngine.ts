@@ -438,6 +438,23 @@ export class GraphEngine {
 			});
 		}
 
+		// Handle multiSphere toggle
+		if ('multiSphere' in partial && this.layoutSettled) {
+			if (this.config.multiSphere) {
+				// Turning ON: project nodes into separate library spheres
+				this.projectOntoSphere();
+			} else {
+				// Turning OFF: re-run force layout to restore standard view
+				this.librarySpheres.clear();
+				if (this.sphereBorderGfx) {
+					this.sphereBorderGfx.clear();
+				}
+				this.didInitialFit = false;
+				this.layoutSettled = false;
+				this.startWorker();
+			}
+		}
+
 		this.needsRedraw = true;
 	}
 
