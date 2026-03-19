@@ -490,55 +490,64 @@ export class GraphEngine {
 	}
 
 	/**
-	 * Project 2D force-layout positions onto a sphere surface.
-	 * Uses polar coordinates: distance from center → latitude (pole to equator),
-	 * angle around center → longitude. Clusters stay together, shape is spherical.
+	 * Crystal Ball projection: nodes fill the VOLUME of a sphere.
+	 * - Senior nodes (high link count, old) near the core
+	 * - Newer/leaf nodes pushed toward the outer edge
+	 * - Fibonacci spiral for even angular distribution
+	 * - Result: looks spherical from every viewing angle
 	 */
 	private projectOntoSphere(): void {
 		if (this.nodes.length === 0) return;
 
-		// Sphere radius — proportional to node count
-		const R = Math.max(300, Math.sqrt(this.nodes.length) * 25);
+		// Ball outer radius — proportional to node count
+		const outerR = Math.max(350, Math.sqrt(this.nodes.length) * 28);
+		const innerR = outerR * 0.05; // minimum radius (core)
 
-		// Sort nodes by distance from 2D center — gives us a rank for even distribution
-		let cx = 0, cy = 0;
-		for (const n of this.nodes) { cx += n.x; cy += n.y; }
-		cx /= this.nodes.length;
-		cy /= this.nodes.length;
+		// Compute "seniority" score per node:
+		// Higher = more senior (closer to core)
+		// Based on: link count (connectivity) + age (creation date)
+		const now = Date.now();
+		const scores: { idx: number; score: number }[] = [];
+		let maxScore = 0;
 
-		// Compute polar coords in 2D
-		const polar: { idx: number; angle: number; dist: number }[] = [];
 		for (let i = 0; i < this.nodes.length; i++) {
-			const dx = this.nodes[i].x - cx;
-			const dy = this.nodes[i].y - cy;
-			polar.push({ idx: i, angle: Math.atan2(dy, dx), dist: Math.sqrt(dx * dx + dy * dy) });
+			const n = this.nodes[i];
+			// Link count contribution (MOCs/hubs are senior)
+			const linkScore = Math.sqrt(n.linkCount) * 3;
+			// Age contribution: older = higher score (0-10 range)
+			const ageMs = n.createdAt > 0 ? (now - n.createdAt) : 0;
+			const ageDays = ageMs / (1000 * 60 * 60 * 24);
+			const ageScore = Math.min(10, Math.sqrt(ageDays / 30) * 3); // sqrt scale, caps at ~10
+			const score = linkScore + ageScore;
+			scores.push({ idx: i, score });
+			if (score > maxScore) maxScore = score;
 		}
+		if (maxScore === 0) maxScore = 1;
 
-		// Sort by distance for rank-based latitude (equal-area Fibonacci sphere)
-		// This ensures even distribution regardless of 2D clustering
-		const sorted = [...polar].sort((a, b) => a.dist - b.dist);
-		const rankMap = new Map<number, number>();
-		sorted.forEach((p, rank) => rankMap.set(p.idx, rank));
+		// Sort by score descending → highest score = lowest rank = closest to core
+		scores.sort((a, b) => b.score - a.score);
 
 		const N = this.nodes.length;
 		const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ~2.3999 radians
 
-		for (let i = 0; i < N; i++) {
-			const rank = rankMap.get(i)!;
-			const p = polar[i];
+		for (let rank = 0; rank < N; rank++) {
+			const { idx } = scores[rank];
 
-			// Fibonacci sphere: evenly distributes points on sphere surface
-			// Latitude from rank (0=north pole, N-1=south pole)
-			const lat = Math.asin(1 - (2 * rank + 1) / N); // ranges from +π/2 to -π/2
+			// Fibonacci sphere angular distribution (even coverage)
+			// Latitude: from north pole (rank 0) to south pole (rank N-1)
+			const lat = Math.asin(1 - (2 * rank + 1) / N);
+			// Longitude: golden angle spiral
+			const lon = rank * goldenAngle;
 
-			// Longitude: Fibonacci golden angle as PRIMARY (even spiral coverage)
-			// Original 2D angle as small perturbation to keep clusters nearby
-			const lon = rank * goldenAngle + p.angle * 0.3;
+			// Radius: senior nodes (low rank) → near core, junior (high rank) → outer edge
+			// Use cube root for volumetric distribution (equal density per shell)
+			const t = rank / (N - 1 || 1); // 0 = most senior, 1 = most junior
+			const r = innerR + (outerR - innerR) * Math.cbrt(t); // cbrt for even volume fill
 
 			// Spherical → Cartesian
-			this.nodes[i].x = R * Math.cos(lat) * Math.cos(lon);
-			this.nodes[i].z = R * Math.cos(lat) * Math.sin(lon);
-			this.nodes[i].y = R * Math.sin(lat);
+			this.nodes[idx].x = r * Math.cos(lat) * Math.cos(lon);
+			this.nodes[idx].z = r * Math.cos(lat) * Math.sin(lon);
+			this.nodes[idx].y = r * Math.sin(lat);
 		}
 
 		this.needsRedraw = true;
