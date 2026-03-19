@@ -107,6 +107,7 @@ export class GraphEngine {
 
 	// Data (plain arrays — Law 1)
 	private nodes: EngineNode[] = [];
+	private colorMap: Record<string, string> = {};
 	private links: EngineLink[] = []; // explicit links
 	private semanticLinks: EngineLink[] = []; // AI-detected links (Phase 2)
 	private clusterAssignments: Map<number, number> = new Map(); // nodeIdx → clusterId
@@ -307,6 +308,9 @@ export class GraphEngine {
 		rawLinks: { source: string; target: string; linkType?: string }[],
 		colorMap: Record<string, string>
 	): void {
+		// Store color map for sphere borders
+		this.colorMap = colorMap;
+
 		// Kill previous worker
 		if (this.worker) {
 			this.worker.terminate();
@@ -564,9 +568,17 @@ export class GraphEngine {
 		const libCount = libs.length;
 		if (libCount === 0) return;
 
-		// Orbit radius: enough to separate spheres without overlap
-		const maxSphereR = Math.max(200, Math.sqrt(this.nodes.length / libCount) * 28);
-		this.globalOrbitRadius = libCount === 1 ? 0 : maxSphereR * 2.5;
+		// Compute each library's sphere radius first
+		const sphereRadii: number[] = libs.map(lib => {
+			const count = libGroups.get(lib)!.length;
+			return Math.max(150, Math.sqrt(count) * 25);
+		});
+
+		// Orbit radius: sum of the two largest radii + generous gap
+		const sortedRadii = [...sphereRadii].sort((a, b) => b - a);
+		const largestR = sortedRadii[0] || 200;
+		const secondR = sortedRadii[1] || 200;
+		this.globalOrbitRadius = libCount === 1 ? 0 : (largestR + secondR) * 1.5;
 
 		// Clear and rebuild sphere data
 		this.librarySpheres.clear();
@@ -574,6 +586,7 @@ export class GraphEngine {
 		for (let li = 0; li < libCount; li++) {
 			const libName = libs[li];
 			const nodeIndices = libGroups.get(libName)!;
+			const sphereR = sphereRadii[li];
 
 			// Position each library on a circular orbit (in the XZ plane)
 			const orbitAngle = (360 / libCount) * li;
@@ -582,14 +595,11 @@ export class GraphEngine {
 			const centerY = 0;
 			const centerZ = this.globalOrbitRadius * Math.sin(rad);
 
-			// Compute individual sphere radius
-			const sphereR = Math.max(200, Math.sqrt(nodeIndices.length) * 28);
-
 			this.librarySpheres.set(libName, {
 				centerX, centerY, centerZ,
 				radius: sphereR,
-				localRotAngle: li * 60, // offset start rotations
-				localRotSpeed: 0.03 + li * 0.01, // slightly different speeds
+				localRotAngle: li * 60,
+				localRotSpeed: 0.03 + li * 0.01,
 				orbitAngle,
 				nodeIndices,
 			});
@@ -1105,6 +1115,9 @@ export class GraphEngine {
 
 		this.worker.onmessage = (e: MessageEvent) => {
 			if (e.data.type === 'positions') {
+				// After layout settled + sphere projected, ignore further worker positions
+				if (this.layoutSettled) return;
+
 				// Accept 3D positions from worker: [x0, y0, z0, x1, y1, z1, ...]
 				const pos = e.data.positions as Float64Array;
 				const stride = pos.length / this.nodes.length >= 2.5 ? 3 : 2; // detect 2D vs 3D
@@ -1120,6 +1133,8 @@ export class GraphEngine {
 				if (e.data.settled && !this.didInitialFit) {
 					this.didInitialFit = true;
 					this.layoutSettled = true;
+					// Project nodes into 3D sphere(s) after force layout settles
+					this.projectOntoSphere();
 					this.fitToScreen();
 				}
 			}
@@ -1551,11 +1566,16 @@ export class GraphEngine {
 			visibleSet = this.getNeighborsAtDepth(this.activeNodeIdx, 2);
 		}
 
+		// ─── Sphere borders (multi-sphere mode) ────
+		const is3D = this.isRotated();
+		if (this.config.multiSphere && this.librarySpheres.size > 0) {
+			this.drawSphereBorders(w, h, dark);
+		}
+
 		// ─── Links ────
 		this.linkGfx.clear();
 		const normalEdgeColor = dark ? 0x475569 : 0xbcccdc;
 		const normalEdgeAlpha = dark ? 0.25 : 0.15;
-		const is3D = this.isRotated();
 
 		// ─── Cluster boundaries (Phase 2, drawn first so links render on top) ────
 		if (this.showClusters && this.clusterAssignments.size > 0 && hovered < 0) {
@@ -1782,6 +1802,65 @@ export class GraphEngine {
 	};
 
 	/** Draw 3D axis gizmo in bottom-left corner (only when rotated) */
+	/** Draw translucent sphere borders around each library in multi-sphere mode */
+	private drawSphereBorders(w: number, h: number, dark: boolean): void {
+		if (!this.sphereBorderGfx) {
+			this.sphereBorderGfx = new PIXI.Graphics();
+			this.app!.stage.addChild(this.sphereBorderGfx);
+		}
+		this.sphereBorderGfx.clear();
+
+		for (const [libName, sphere] of this.librarySpheres) {
+			const R = sphere.radius;
+			const cx = sphere.centerX;
+			const cy = sphere.centerY;
+			const cz = sphere.centerZ;
+
+			// Get library color
+			const hexStr = this.colorMap[libName] || '#a78bfa';
+			const color = hexToInt(hexStr);
+
+			// Draw 3 great circles (XY, XZ, YZ planes) projected through 3D
+			const segments = 48;
+			for (let plane = 0; plane < 3; plane++) {
+				this.sphereBorderGfx.lineStyle(1.5, color, 0.25);
+				let started = false;
+
+				for (let s = 0; s <= segments; s++) {
+					const a = (s / segments) * Math.PI * 2;
+					let px: number, py: number, pz: number;
+
+					if (plane === 0) {
+						// XY circle (equator from front)
+						px = cx + R * Math.cos(a);
+						py = cy + R * Math.sin(a);
+						pz = cz;
+					} else if (plane === 1) {
+						// XZ circle (equator from top)
+						px = cx + R * Math.cos(a);
+						py = cy;
+						pz = cz + R * Math.sin(a);
+					} else {
+						// YZ circle (equator from side)
+						px = cx;
+						py = cy + R * Math.cos(a);
+						pz = cz + R * Math.sin(a);
+					}
+
+					const p = this.project3D(px, py, pz, w, h);
+					if (!started) {
+						this.sphereBorderGfx.moveTo(p.sx, p.sy);
+						started = true;
+					} else {
+						this.sphereBorderGfx.lineTo(p.sx, p.sy);
+					}
+				}
+			}
+		}
+	}
+
+	private sphereBorderGfx: PIXI.Graphics | null = null;
+
 	private drawAxisGizmo(w: number, h: number, dark: boolean): void {
 		this.gizmoGfx.clear();
 		const rotated = this.isRotated();
