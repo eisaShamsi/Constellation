@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "المتصفح",
+    "folders": "المجلدات",
+    "tags": "الوسوم",
+    "properties": "الخصائص",
+    "allNotes": "جميع الملاحظات",
+    "allTags": "جميع الوسوم",
+    "filter": "تصفية الملاحظات...",
+    "search": "بحث",
+    "sortName": "ترتيب حسب الاسم",
+    "sortModified": "ترتيب حسب التعديل",
+    "sortCreated": "ترتيب حسب الإنشاء",
+    "sortSize": "ترتيب حسب الحجم",
+    "noResults": "لا توجد ملاحظات مطابقة",
+    "selected": "محدد",
+    "batchTag": "وسم",
+    "batchMove": "نقل",
+    "batchDelete": "حذف",
+    "preview": "معاينة",
+    "openInEditor": "فتح في المحرر"
   }
 }

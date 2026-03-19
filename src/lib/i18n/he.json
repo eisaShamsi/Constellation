@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "נווט",
+    "folders": "תיקיות",
+    "tags": "תגיות",
+    "properties": "מאפיינים",
+    "allNotes": "כל הפתקים",
+    "allTags": "כל התגיות",
+    "filter": "סנן פתקים...",
+    "search": "חיפוש",
+    "sortName": "מיון לפי שם",
+    "sortModified": "מיון לפי שינוי",
+    "sortCreated": "מיון לפי יצירה",
+    "sortSize": "מיון לפי גודל",
+    "noResults": "לא נמצאו פתקים תואמים",
+    "selected": "נבחר",
+    "batchTag": "תייג",
+    "batchMove": "העבר",
+    "batchDelete": "מחק",
+    "preview": "תצוגה מקדימה",
+    "openInEditor": "פתח בעורך"
   }
 }

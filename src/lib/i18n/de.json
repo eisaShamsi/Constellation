@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "Navigator",
+    "folders": "Ordner",
+    "tags": "Tags",
+    "properties": "Eigenschaften",
+    "allNotes": "Alle Notizen",
+    "allTags": "Alle Tags",
+    "filter": "Notizen filtern...",
+    "search": "Suche",
+    "sortName": "Nach Name sortieren",
+    "sortModified": "Nach Änderung sortieren",
+    "sortCreated": "Nach Erstellung sortieren",
+    "sortSize": "Nach Größe sortieren",
+    "noResults": "Keine passenden Notizen",
+    "selected": "ausgewählt",
+    "batchTag": "Taggen",
+    "batchMove": "Verschieben",
+    "batchDelete": "Löschen",
+    "preview": "Vorschau",
+    "openInEditor": "Im Editor öffnen"
   }
 }

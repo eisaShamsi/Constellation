@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "ナビゲーター",
+    "folders": "フォルダ",
+    "tags": "タグ",
+    "properties": "プロパティ",
+    "allNotes": "すべてのノート",
+    "allTags": "すべてのタグ",
+    "filter": "ノートを絞り込み...",
+    "search": "検索",
+    "sortName": "名前で並べ替え",
+    "sortModified": "更新日で並べ替え",
+    "sortCreated": "作成日で並べ替え",
+    "sortSize": "サイズで並べ替え",
+    "noResults": "一致するノートがありません",
+    "selected": "選択済み",
+    "batchTag": "タグ付け",
+    "batchMove": "移動",
+    "batchDelete": "削除",
+    "preview": "プレビュー",
+    "openInEditor": "エディタで開く"
   }
 }

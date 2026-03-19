@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "ناوبر",
+    "folders": "پوشه‌ها",
+    "tags": "برچسب‌ها",
+    "properties": "ویژگی‌ها",
+    "allNotes": "همه یادداشت‌ها",
+    "allTags": "همه برچسب‌ها",
+    "filter": "فیلتر یادداشت‌ها...",
+    "search": "جستجو",
+    "sortName": "مرتب‌سازی بر اساس نام",
+    "sortModified": "مرتب‌سازی بر اساس تغییر",
+    "sortCreated": "مرتب‌سازی بر اساس ایجاد",
+    "sortSize": "مرتب‌سازی بر اساس حجم",
+    "noResults": "یادداشت مطابقی یافت نشد",
+    "selected": "انتخاب شده",
+    "batchTag": "برچسب",
+    "batchMove": "انتقال",
+    "batchDelete": "حذف",
+    "preview": "پیش‌نمایش",
+    "openInEditor": "باز کردن در ویرایشگر"
   }
 }

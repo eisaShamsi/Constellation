@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "Gezgin",
+    "folders": "Klasörler",
+    "tags": "Etiketler",
+    "properties": "Özellikler",
+    "allNotes": "Tüm notlar",
+    "allTags": "Tüm etiketler",
+    "filter": "Notları filtrele...",
+    "search": "Ara",
+    "sortName": "Ada göre sırala",
+    "sortModified": "Değişikliğe göre sırala",
+    "sortCreated": "Oluşturmaya göre sırala",
+    "sortSize": "Boyuta göre sırala",
+    "noResults": "Eşleşen not bulunamadı",
+    "selected": "seçili",
+    "batchTag": "Etiketle",
+    "batchMove": "Taşı",
+    "batchDelete": "Sil",
+    "preview": "Önizleme",
+    "openInEditor": "Düzenleyicide aç"
   }
 }

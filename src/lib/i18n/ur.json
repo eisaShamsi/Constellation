@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "نیویگیٹر",
+    "folders": "فولڈرز",
+    "tags": "ٹیگز",
+    "properties": "خصوصیات",
+    "allNotes": "تمام نوٹس",
+    "allTags": "تمام ٹیگز",
+    "filter": "نوٹس فلٹر کریں...",
+    "search": "تلاش",
+    "sortName": "نام کے مطابق ترتیب",
+    "sortModified": "ترمیم کے مطابق ترتیب",
+    "sortCreated": "تخلیق کے مطابق ترتیب",
+    "sortSize": "سائز کے مطابق ترتیب",
+    "noResults": "کوئی مماثل نوٹس نہیں",
+    "selected": "منتخب",
+    "batchTag": "ٹیگ",
+    "batchMove": "منتقل",
+    "batchDelete": "حذف",
+    "preview": "پیش نظارہ",
+    "openInEditor": "ایڈیٹر میں کھولیں"
   }
 }

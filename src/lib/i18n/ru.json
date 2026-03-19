@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "Навигатор",
+    "folders": "Папки",
+    "tags": "Теги",
+    "properties": "Свойства",
+    "allNotes": "Все заметки",
+    "allTags": "Все теги",
+    "filter": "Фильтр заметок...",
+    "search": "Поиск",
+    "sortName": "Сортировать по имени",
+    "sortModified": "Сортировать по изменению",
+    "sortCreated": "Сортировать по созданию",
+    "sortSize": "Сортировать по размеру",
+    "noResults": "Нет подходящих заметок",
+    "selected": "выбрано",
+    "batchTag": "Тег",
+    "batchMove": "Переместить",
+    "batchDelete": "Удалить",
+    "preview": "Предпросмотр",
+    "openInEditor": "Открыть в редакторе"
   }
 }

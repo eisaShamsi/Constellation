@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "नेविगेटर",
+    "folders": "फ़ोल्डर",
+    "tags": "टैग",
+    "properties": "गुण",
+    "allNotes": "सभी नोट्स",
+    "allTags": "सभी टैग",
+    "filter": "नोट्स फ़िल्टर करें...",
+    "search": "खोजें",
+    "sortName": "नाम से क्रमबद्ध करें",
+    "sortModified": "संशोधन से क्रमबद्ध करें",
+    "sortCreated": "निर्माण से क्रमबद्ध करें",
+    "sortSize": "आकार से क्रमबद्ध करें",
+    "noResults": "कोई मेल खाते नोट्स नहीं",
+    "selected": "चयनित",
+    "batchTag": "टैग",
+    "batchMove": "स्थानांतरित",
+    "batchDelete": "हटाएँ",
+    "preview": "पूर्वावलोकन",
+    "openInEditor": "संपादक में खोलें"
   }
 }

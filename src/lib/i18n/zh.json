@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "导航器",
+    "folders": "文件夹",
+    "tags": "标签",
+    "properties": "属性",
+    "allNotes": "所有笔记",
+    "allTags": "所有标签",
+    "filter": "筛选笔记...",
+    "search": "搜索",
+    "sortName": "按名称排序",
+    "sortModified": "按修改时间排序",
+    "sortCreated": "按创建时间排序",
+    "sortSize": "按大小排序",
+    "noResults": "没有匹配的笔记",
+    "selected": "已选择",
+    "batchTag": "标签",
+    "batchMove": "移动",
+    "batchDelete": "删除",
+    "preview": "预览",
+    "openInEditor": "在编辑器中打开"
   }
 }

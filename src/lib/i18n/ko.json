@@ -932,5 +932,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "네비게이터",
+    "folders": "폴더",
+    "tags": "태그",
+    "properties": "속성",
+    "allNotes": "모든 노트",
+    "allTags": "모든 태그",
+    "filter": "노트 필터...",
+    "search": "검색",
+    "sortName": "이름순 정렬",
+    "sortModified": "수정일순 정렬",
+    "sortCreated": "생성일순 정렬",
+    "sortSize": "크기순 정렬",
+    "noResults": "일치하는 노트 없음",
+    "selected": "선택됨",
+    "batchTag": "태그",
+    "batchMove": "이동",
+    "batchDelete": "삭제",
+    "preview": "미리보기",
+    "openInEditor": "편집기에서 열기"
   }
 }
