@@ -1288,8 +1288,18 @@
 		height: 100% !important;
 		border: none !important;
 	}
+	.peek-editor :global(*) {
+		max-width: 100%;
+		box-sizing: border-box;
+	}
 	.peek-editor :global(.note-scroll) {
-		padding-inline: 3rem !important;
+		max-width: 100% !important;
+		overflow-x: hidden !important;
+		padding: 1.5rem 3rem !important;
+	}
+	.peek-editor :global(.note-content) {
+		overflow-wrap: break-word;
+		word-break: break-word;
 	}
 	.skyview-header {
 		display: flex;
