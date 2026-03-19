@@ -124,21 +124,90 @@
 		}
 	}
 
-	function handleBatchTag() {
+	async function handleBatchTag() {
 		const tag = prompt('Enter tag to add:');
-		if (!tag) return;
-		// TODO: Add tag to all selected notes' frontmatter
-		alert(`Would add tag "${tag}" to ${selectedPaths.size} notes (not yet implemented)`);
-	}
-
-	function handleBatchMove() {
-		alert(`Would move ${selectedPaths.size} notes (not yet implemented)`);
-	}
-
-	function handleBatchDelete() {
-		if (confirm(`Delete ${selectedPaths.size} notes? This cannot be undone.`)) {
-			alert(`Would delete ${selectedPaths.size} notes (not yet implemented)`);
+		if (!tag || !tag.trim()) return;
+		const tagClean = tag.trim().replace(/^#/, '');
+		let success = 0;
+		for (const path of selectedPaths) {
+			try {
+				const content = await invoke<string>('read_note', { filePath: path });
+				let newContent: string;
+				if (content.startsWith('---')) {
+					const endIdx = content.indexOf('---', 3);
+					if (endIdx > 0) {
+						const yaml = content.substring(3, endIdx);
+						const body = content.substring(endIdx + 3);
+						if (yaml.includes('tags:')) {
+							// Append to existing tags list
+							newContent = '---' + yaml.replace(/^(tags:.*)/m, `$1\n  - ${tagClean}`) + '---' + body;
+						} else {
+							// Add tags section
+							newContent = '---' + yaml + `tags:\n  - ${tagClean}\n` + '---' + body;
+						}
+					} else {
+						newContent = `---\ntags:\n  - ${tagClean}\n---\n` + content;
+					}
+				} else {
+					newContent = `---\ntags:\n  - ${tagClean}\n---\n` + content;
+				}
+				await invoke('write_note', { filePath: path, content: newContent });
+				success++;
+			} catch { /* skip failed */ }
 		}
+		// Refresh data
+		if (success > 0) {
+			selectedPaths = new Set();
+			await refreshData();
+		}
+	}
+
+	async function handleBatchMove() {
+		const folder = await invoke<string | null>('pick_folder').catch(() => null);
+		if (!folder) return;
+		let success = 0;
+		for (const path of selectedPaths) {
+			try {
+				await invoke('move_item', { sourcePath: path, targetFolder: folder });
+				success++;
+			} catch { /* skip failed */ }
+		}
+		if (success > 0) {
+			selectedPaths = new Set();
+			await refreshData();
+		}
+	}
+
+	async function handleBatchDelete() {
+		if (!confirm(`Delete ${selectedPaths.size} notes? This cannot be undone.`)) return;
+		let success = 0;
+		for (const path of selectedPaths) {
+			try {
+				await invoke('delete_item', { path, permanent: false });
+				success++;
+			} catch { /* skip failed */ }
+		}
+		if (success > 0) {
+			selectedPaths = new Set();
+			await refreshData();
+		}
+	}
+
+	async function refreshData() {
+		const libs = $libraries;
+		const allNotes: NoteWithMeta[] = [];
+		const allTags: Record<string, number> = {};
+		for (const lib of libs) {
+			const notes = await collectLibraryNotesWithMeta(lib.path).catch(() => []);
+			for (const n of notes) n.libraryName = lib.name;
+			allNotes.push(...notes);
+			const libTags = await invoke<Record<string, number>>('scan_library_tags', { libraryPath: lib.path }).catch(() => ({}));
+			for (const [tag, count] of Object.entries(libTags)) {
+				allTags[tag] = (allTags[tag] || 0) + count;
+			}
+		}
+		allNotesWithMeta = allNotes;
+		tagMap = allTags;
 	}
 
 	// Keyboard handler

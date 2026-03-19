@@ -13,17 +13,18 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 3. [Creating and Editing Notes](#creating-and-editing-notes)
 4. [Star View (GraphMind)](#star-view-graphmind)
 5. [Second Screen](#second-screen)
-6. [Properties and Frontmatter](#properties-and-frontmatter)
-7. [Templates](#templates)
-8. [Tables](#tables)
-9. [Tasks](#tasks)
-10. [Importer](#importer)
-11. [Calendar](#calendar)
-12. [Lens](#lens)
-13. [Settings](#settings)
-14. [Keyboard Shortcuts](#keyboard-shortcuts)
-15. [RTL and Arabic Support](#rtl-and-arabic-support)
-16. [Security and Privacy](#security-and-privacy)
+6. [Notebook Navigator](#notebook-navigator)
+7. [Properties and Frontmatter](#properties-and-frontmatter)
+8. [Templates](#templates)
+9. [Tables](#tables)
+10. [Tasks](#tasks)
+11. [Importer](#importer)
+12. [Calendar](#calendar)
+13. [Lens](#lens)
+14. [Settings](#settings)
+15. [Keyboard Shortcuts](#keyboard-shortcuts)
+16. [RTL and Arabic Support](#rtl-and-arabic-support)
+17. [Security and Privacy](#security-and-privacy)
 
 ---
 
@@ -204,7 +205,59 @@ Open a separate window for side-by-side note viewing.
 
 ---
 
-## 6. Properties and Frontmatter
+## 6. Notebook Navigator
+
+The Notebook Navigator is a dual-pane file browser that replaces the classic sidebar for advanced note browsing.
+
+### Opening the Navigator
+
+Click the dual-pane icon (⊞) in the sidebar toolbar. The sidebar auto-expands to fit the two panes. Click again to return to the classic file tree.
+
+### Browse Modes
+
+| Mode | Description |
+|------|-------------|
+| **Folders** | Navigate your library folder tree. Click a folder to see its notes. |
+| **Tags** | Hierarchical tag browser. Click a tag to see all notes with that tag. |
+| **Properties** | Search notes by frontmatter property key/value pairs. |
+
+### File List
+
+The right pane shows matching notes with:
+- **Title** and **preview snippet** (first 100 characters)
+- **Tag badges** (colored pills)
+- **Relative date** (e.g., "2d ago", "3mo")
+- **Library color dot**
+
+### Sorting
+
+Click the sort buttons to order by:
+- **A** — Name (alphabetical)
+- **⏱** — Last modified
+- **##** — File size
+
+### Batch Operations
+
+Select multiple files using checkboxes, then use the batch bar:
+- **Tag** — Add a tag to all selected notes' frontmatter
+- **Move** — Move selected notes to a different folder
+- **Delete** — Delete selected notes (with confirmation)
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| **Arrow Up/Down** | Navigate file list |
+| **Enter** | Open focused note |
+| **Space** | Toggle checkbox on focused note |
+
+### Second Screen
+
+The Navigator is also available on the second screen — click the dual-pane icon in the second screen toolbar. Single click sends the note to the main editor.
+
+---
+
+## 7. Properties and Frontmatter
 
 Notes can have YAML frontmatter at the top:
 
@@ -231,7 +284,7 @@ Toggle property display in **Settings > Editor > Properties in document** (Visib
 
 ---
 
-## 7. Templates
+## 8. Templates
 
 Create reusable note templates:
 
@@ -250,7 +303,7 @@ Templates support variables:
 
 ---
 
-## 8. Tables
+## 9. Tables
 
 ### Markdown Tables
 
@@ -280,7 +333,7 @@ The Document editor (TipTap) provides a visual table experience:
 
 ---
 
-## 9. Tasks
+## 10. Tasks
 
 Constellation supports task checkboxes in notes:
 
@@ -293,7 +346,7 @@ In Live Preview mode, checkboxes are clickable. Tasks can be searched and filter
 
 ---
 
-## 10. Importer
+## 11. Importer
 
 Import notes from other PKM tools:
 
@@ -305,7 +358,7 @@ Go to **Settings > Importer** to start an import.
 
 ---
 
-## 11. Calendar
+## 12. Calendar
 
 The Calendar view shows notes organized by date:
 
@@ -317,7 +370,7 @@ Open the Calendar from the sidebar.
 
 ---
 
-## 12. Lens
+## 13. Lens
 
 Lens provides filtered views of your notes:
 
@@ -327,7 +380,7 @@ Lens provides filtered views of your notes:
 
 ---
 
-## 13. Settings
+## 14. Settings
 
 Access Settings from the sidebar gear icon or `Ctrl+,`.
 
@@ -358,7 +411,7 @@ Access Settings from the sidebar gear icon or `Ctrl+,`.
 
 ---
 
-## 14. Keyboard Shortcuts
+## 15. Keyboard Shortcuts
 
 ### Global
 
@@ -398,7 +451,7 @@ Access Settings from the sidebar gear icon or `Ctrl+,`.
 
 ---
 
-## 15. RTL and Arabic Support
+## 16. RTL and Arabic Support
 
 Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, and other RTL scripts:
 
@@ -417,7 +470,7 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 
 ---
 
-## 16. Security and Privacy
+## 17. Security and Privacy
 
 - **All data stays local** — no cloud sync, no telemetry, no tracking
 - **Markdown files** — your notes are plain text files you own completely
