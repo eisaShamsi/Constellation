@@ -83,7 +83,7 @@
 		const gen = ++peekGeneration;
 		peekNote = note;
 		try {
-			const content = await invoke<string>('read_note', { notePath: note.path });
+			const content = await invoke<string>('read_note', { filePath: note.path });
 			if (gen !== peekGeneration) return;
 			peekContent = content;
 		} catch {
