@@ -1141,9 +1141,14 @@ export async function loadSettings() {
 	try {
 		const parsed = await invoke<Record<string, unknown>>('read_universe_settings');
 		if (parsed && Object.keys(parsed).length > 0) {
-			appSettings.set({
+			// Migrate: old default nodeSize was 4, new default is 1.5
+		const savedSkyView = (parsed.skyView as Record<string, unknown>) || {};
+		if (savedSkyView.nodeSize === 4) savedSkyView.nodeSize = 1.5;
+
+		appSettings.set({
 				...DEFAULT_SETTINGS,
 				...(parsed as Partial<AppSettings>),
+				skyView: { ...DEFAULT_SETTINGS.skyView, ...savedSkyView },
 				security: { ...DEFAULT_SETTINGS.security, ...((parsed.security as Record<string, unknown>) || {}) },
 				enabledFeatures: { ...DEFAULT_SETTINGS.enabledFeatures, ...((parsed.enabledFeatures as Record<string, boolean>) ?? (parsed.enabledPlugins as Record<string, boolean>) ?? {}) },
 				customShortcuts: { ...((parsed.customShortcuts as Record<string, string>) || {}) },

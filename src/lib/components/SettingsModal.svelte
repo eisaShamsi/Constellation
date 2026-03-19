@@ -757,9 +757,9 @@
 							<div class="setting-desc">{$t('settings.skyview.nodeSizeDesc')}</div>
 						</div>
 						<div class="setting-range">
-							<input type="range" min="1" max="10" step="1" value={$appSettings.skyView?.nodeSize ?? 4}
+							<input type="range" min="0.5" max="10" step="0.5" value={$appSettings.skyView?.nodeSize ?? 1.5}
 								oninput={(e) => updateSettings({ skyView: { ...$appSettings.skyView, nodeSize: Number((e.target as HTMLInputElement).value) } })} />
-							<span class="range-value">{$appSettings.skyView?.nodeSize ?? 4}</span>
+							<span class="range-value">{$appSettings.skyView?.nodeSize ?? 1.5}</span>
 						</div>
 					</div>
 
