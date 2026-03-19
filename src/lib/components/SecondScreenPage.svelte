@@ -943,8 +943,8 @@
 					</div>
 				{/if}
 			</div>
-		{:else if $activeTab || contextMode === 'editor'}
-			<div class="editor-companion">
+		{:else if contextMode === 'editor' || $activeTab}
+			<div class="editor-companion" style="min-height: 100%; background: var(--background-primary);">
 				<!-- Writing Dashboard (top bar) -->
 				<div class="ec-dashboard">
 					<div class="ec-stats">
@@ -1644,11 +1644,11 @@
 
 	/* ─── Editor Companion Panels ─── */
 	.editor-companion {
-		flex: 1;
+		position: absolute;
+		top: 0; left: 0; right: 0; bottom: 0;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-		height: 100%;
 	}
 
 	.ec-dashboard {
