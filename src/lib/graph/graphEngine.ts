@@ -499,55 +499,57 @@ export class GraphEngine {
 	private projectOntoSphere(): void {
 		if (this.nodes.length === 0) return;
 
-		// Ball outer radius — proportional to node count
+		// Crystal Ball: nodes fill a 3D sphere volume
+		// Senior nodes near core, newer/leaf nodes at outer edge
 		const outerR = Math.max(350, Math.sqrt(this.nodes.length) * 28);
-		const innerR = outerR * 0.05; // minimum radius (core)
+		const innerR = outerR * 0.08; // core minimum radius
 
-		// Compute "seniority" score per node:
-		// Higher = more senior (closer to core)
-		// Based on: link count (connectivity) + age (creation date)
+		// Compute seniority: high link count + old age = closer to core
 		const now = Date.now();
 		const scores: { idx: number; score: number }[] = [];
 		let maxScore = 0;
-
 		for (let i = 0; i < this.nodes.length; i++) {
 			const n = this.nodes[i];
-			// Link count contribution (MOCs/hubs are senior)
 			const linkScore = Math.sqrt(n.linkCount) * 3;
-			// Age contribution: older = higher score (0-10 range)
 			const ageMs = n.createdAt > 0 ? (now - n.createdAt) : 0;
 			const ageDays = ageMs / (1000 * 60 * 60 * 24);
-			const ageScore = Math.min(10, Math.sqrt(ageDays / 30) * 3); // sqrt scale, caps at ~10
+			const ageScore = Math.min(10, Math.sqrt(ageDays / 30) * 3);
 			const score = linkScore + ageScore;
 			scores.push({ idx: i, score });
 			if (score > maxScore) maxScore = score;
 		}
 		if (maxScore === 0) maxScore = 1;
 
-		// Sort by score descending → highest score = lowest rank = closest to core
+		// Sort: highest score = rank 0 = closest to core
 		scores.sort((a, b) => b.score - a.score);
 
 		const N = this.nodes.length;
-		const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ~2.3999 radians
+		// Golden ratio for longitude spiral
+		const phi = (1 + Math.sqrt(5)) / 2;
 
 		for (let rank = 0; rank < N; rank++) {
 			const { idx } = scores[rank];
 
-			// Fibonacci sphere angular distribution (even coverage)
-			// Latitude: from north pole (rank 0) to south pole (rank N-1)
-			const lat = Math.asin(1 - (2 * rank + 1) / N);
-			// Longitude: golden angle spiral
-			const lon = rank * goldenAngle;
+			// ── Volumetric Fibonacci lattice ──
+			// This distributes N points EVENLY inside a sphere (not just on surface)
+			//
+			// 1. Radius: cbrt gives equal volume per shell
+			const t = (rank + 0.5) / N; // 0→1, offset avoids pole singularity
+			const r = innerR + (outerR - innerR) * Math.cbrt(t);
 
-			// Radius: senior nodes (low rank) → near core, junior (high rank) → outer edge
-			// Use cube root for volumetric distribution (equal density per shell)
-			const t = rank / (N - 1 || 1); // 0 = most senior, 1 = most junior
-			const r = innerR + (outerR - innerR) * Math.cbrt(t); // cbrt for even volume fill
+			// 2. Latitude (polar angle θ): acos(1 - 2t) gives uniform distribution
+			//    on a sphere surface for each shell. This is the KEY fix —
+			//    asin produced clustering at poles; acos(1-2t) is uniform.
+			const theta = Math.acos(1 - 2 * t); // 0 to π (north pole to south pole)
 
-			// Spherical → Cartesian
-			this.nodes[idx].x = r * Math.cos(lat) * Math.cos(lon);
-			this.nodes[idx].z = r * Math.cos(lat) * Math.sin(lon);
-			this.nodes[idx].y = r * Math.sin(lat);
+			// 3. Longitude (azimuthal φ): golden angle ensures no two points
+			//    at similar latitudes share similar longitudes
+			const lonAngle = 2 * Math.PI * rank / phi;
+
+			// Spherical → Cartesian (θ=polar from +Y axis, φ=azimuthal around Y)
+			this.nodes[idx].x = r * Math.sin(theta) * Math.cos(lonAngle);
+			this.nodes[idx].y = r * Math.cos(theta); // Y = up/down axis
+			this.nodes[idx].z = r * Math.sin(theta) * Math.sin(lonAngle);
 		}
 
 		this.needsRedraw = true;
@@ -1016,6 +1018,10 @@ export class GraphEngine {
 
 		this.worker.onmessage = (e: MessageEvent) => {
 			if (e.data.type === 'positions') {
+				// CRITICAL: Once layout settled and sphere projected, STOP accepting
+				// 2D positions from worker — they would flatten the sphere back to a plane
+				if (this.layoutSettled) return;
+
 				const pos = e.data.positions as Float64Array;
 				for (let i = 0; i < this.nodes.length && i * 2 + 1 < pos.length; i++) {
 					this.nodes[i].x = pos[i * 2];
