@@ -927,5 +927,26 @@
   },
   "tabs": {
     "newTab": "New Tab"
+  },
+  "navigator": {
+    "title": "Navigator",
+    "folders": "Folders",
+    "tags": "Tags",
+    "properties": "Properties",
+    "allNotes": "All notes",
+    "allTags": "All tags",
+    "filter": "Filter notes...",
+    "search": "Search",
+    "sortName": "Sort by name",
+    "sortModified": "Sort by modified",
+    "sortCreated": "Sort by created",
+    "sortSize": "Sort by size",
+    "noResults": "No matching notes",
+    "selected": "selected",
+    "batchTag": "Tag",
+    "batchMove": "Move",
+    "batchDelete": "Delete",
+    "preview": "Preview",
+    "openInEditor": "Open in editor"
   }
 }

@@ -19,6 +19,7 @@
 	import { get } from 'svelte/store';
 	import { detectDir } from '$lib/utils';
 	import NotePane from '$lib/components/NotePane.svelte';
+	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import LocalStarView from '$lib/components/LocalStarView.svelte';
 	import {
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
@@ -47,6 +48,7 @@
 	let sidebarOpen = $state(true);
 	let noteWidth = $state(100); // percentage 50-100
 	let skyViewOpen = $state(false);
+	let navigatorOpen = $state(false);
 	// Sky view: RTL note → sky on left, LTR note → sky on right
 	let skyViewPosition = $derived.by(() => {
 		const tab = $activeTab;
@@ -826,6 +828,13 @@
 				</button>
 				</div>
 			<button
+				class="sky-toggle" class:active={navigatorOpen}
+				onclick={() => { navigatorOpen = !navigatorOpen; if (navigatorOpen) { skyViewOpen = false; } }}
+				title={$t('navigator.title') || 'Navigator'}
+			>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+			</button>
+			<button
 				class="sidebar-toggle" class:active={sidebarOpen}
 				onclick={() => sidebarOpen = !sidebarOpen}
 				title="Toggle sidebar"
@@ -848,7 +857,21 @@
 
 	<!-- Content area -->
 	<div class="screen-content">
-		{#if loading}
+		{#if navigatorOpen}
+			<div class="navigator-fullscreen">
+				<NotebookNavigator
+					mode="second"
+					{libraryColorMap}
+					onNoteClick={(path, name, lib) => {
+						// Single click: send to main editor
+						sendNoteToMain({ path, name: name + '.md', libraryName: lib, body: '', libraryPath: '' });
+					}}
+					onNoteDoubleClick={(path, name, lib) => {
+						sendNoteToMain({ path, name: name + '.md', libraryName: lib, body: '', libraryPath: '' });
+					}}
+				/>
+			</div>
+		{:else if loading}
 			<div class="screen-loading">
 				<div class="spinner"></div>
 				<p>{$t('secondScreen.loading')}</p>
@@ -1295,6 +1318,12 @@
 		flex: 1;
 		overflow: hidden;
 		position: relative;
+	}
+
+	.navigator-fullscreen {
+		position: absolute;
+		top: 0; left: 0; right: 0; bottom: 0;
+		overflow: hidden;
 	}
 
 	.screen-loading {
