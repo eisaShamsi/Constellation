@@ -222,7 +222,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>${tab.name}</title>
+<title>${tab.name.replace(/\.md$/, '')}</title>
 <style>
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; line-height: 1.7; color: #1f2328; }
 h1, h2, h3, h4, h5, h6 { margin-top: 1.5em; }
@@ -247,7 +247,7 @@ ${contentEl.innerHTML}
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `${tab.name}.html`;
+		a.download = `${tab.name.replace(/\.md$/, '')}.html`;
 		a.click();
 		URL.revokeObjectURL(url);
 	}
@@ -382,10 +382,10 @@ ${contentEl.innerHTML}
 	{#if tab}
 		{#if isEmptyTab}
 			<div class="pane-breadcrumb">
-				<span class="bc-note">{tab.name}</span>
+				<span class="bc-note">{tab.name.replace(/\.md$/, '')}</span>
 			</div>
 			<div class="empty-tab">
-				<span class="empty-tab-title">{tab.name}</span>
+				<span class="empty-tab-title">{tab.name.replace(/\.md$/, '')}</span>
 				{#if onCreateNote}
 					<button class="empty-tab-action" onclick={onCreateNote}>
 						{$t('notePane.createNote')} <span class="empty-tab-shortcut">(Ctrl + N)</span>
@@ -406,7 +406,7 @@ ${contentEl.innerHTML}
 			<div class="pane-tab-bar" style:--library-color={color}>
 				<div class="pane-tab">
 					<span class="pane-tab-lib">{tab.libraryName}</span>
-					<span class="pane-tab-title">{tab.name}</span>
+					<span class="pane-tab-title">{tab.name.replace(/\.md$/, '')}</span>
 				</div>
 				<div class="pane-tab-actions">
 					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
@@ -438,7 +438,7 @@ ${contentEl.innerHTML}
 				{/if}
 				<span class="bc-lib-name">{tab.libraryName}</span>
 				<span class="bc-sep">/</span>
-				<span class="bc-note">{tab.name}</span>
+				<span class="bc-note">{tab.name.replace(/\.md$/, '')}</span>
 				<div class="bc-actions">
 					<div class="bc-width-control" title="Note width: {noteWidth}%">
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -502,11 +502,11 @@ ${contentEl.innerHTML}
 			{#if tab}
 				<input class="note-title" dir="auto" spellcheck="false"
 					bind:this={titleInputEl}
-					value={tab.name}
+					value={tab.name.replace(/\.md$/, '')}
 					onfocus={(e) => (e.target as HTMLInputElement).select()}
 					onblur={async (e) => {
 						const newName = (e.target as HTMLInputElement).value.trim();
-						if (newName && newName !== tab.name && tab.path) {
+						if (newName && newName !== tab.name.replace(/\.md$/, '') && tab.path) {
 							const dir = tab.path.substring(0, tab.path.lastIndexOf('/') + 1) || tab.path.substring(0, tab.path.lastIndexOf('\\') + 1);
 							const newPath = dir + newName + '.md';
 							try { await renameItem(tab.path, newPath); } catch {}
@@ -520,7 +520,7 @@ ${contentEl.innerHTML}
 							const editor = (e.target as HTMLElement).closest('.note-scroll')?.querySelector('.cm-content') as HTMLElement;
 							if (editor) editor.focus();
 						}
-						if (e.key === 'Escape') { (e.target as HTMLInputElement).value = tab.name; (e.target as HTMLInputElement).blur(); }
+						if (e.key === 'Escape') { (e.target as HTMLInputElement).value = tab.name.replace(/\.md$/, ''); (e.target as HTMLInputElement).blur(); }
 					}}
 				/>
 			{/if}
