@@ -86,6 +86,7 @@ pub fn run() {
             libraries::scan_unlinked_mentions,
             libraries::scan_library_tags,
             libraries::collect_library_notes,
+            libraries::collect_library_notes_with_metadata,
             libraries::get_daily_note_path,
             libraries::quick_capture,
             libraries::update_links_on_rename,

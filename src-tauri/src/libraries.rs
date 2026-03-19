@@ -1646,6 +1646,127 @@ fn collect_notes_names_recursive(dir: &Path, notes: &mut Vec<serde_json::Value>)
     }
 }
 
+/// Collect all notes with rich metadata (name, path, modified, size, preview, tags, folder).
+/// Used by the Notebook Navigator for fast file listing without N+1 calls.
+#[tauri::command]
+pub fn collect_library_notes_with_metadata(app: tauri::AppHandle, library_path: String) -> Result<Vec<serde_json::Value>, String> {
+    let libraries = load_all_libraries(&app);
+    if !libraries.iter().any(|v| v.path == library_path) {
+        return Err("Access denied: not a registered library.".to_string());
+    }
+    let mut notes = Vec::new();
+    let tag_re = regex::Regex::new(r"(?:^|\s)#([a-zA-Z\p{Arabic}][\w\p{Arabic}/\-]*)").unwrap();
+    let lib_path = Path::new(&library_path);
+    collect_notes_meta_recursive(lib_path, lib_path, &tag_re, &mut notes);
+    Ok(notes)
+}
+
+fn collect_notes_meta_recursive(
+    dir: &Path,
+    lib_root: &Path,
+    tag_re: &regex::Regex,
+    notes: &mut Vec<serde_json::Value>,
+) {
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') { continue; }
+        if path.is_dir() {
+            collect_notes_meta_recursive(&path, lib_root, tag_re, notes);
+        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            let note_name = path.file_name()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
+
+            // File metadata
+            let meta = fs::metadata(&path).ok();
+            let modified = meta.as_ref()
+                .and_then(|m| m.modified().ok())
+                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|d| d.as_millis() as u64)
+                .unwrap_or(0);
+            let size = meta.as_ref().map(|m| m.len()).unwrap_or(0);
+
+            // Relative folder path
+            let folder = path.parent()
+                .and_then(|p| p.strip_prefix(lib_root).ok())
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_default();
+
+            // Read content for preview and tags
+            let content = fs::read_to_string(&path).unwrap_or_default();
+
+            // Strip frontmatter for preview
+            let body = if content.starts_with("---") {
+                if let Some(end) = content[3..].find("---") {
+                    content[3 + end + 3..].trim_start().to_string()
+                } else {
+                    content.clone()
+                }
+            } else {
+                content.clone()
+            };
+            let preview: String = body.chars().take(200).collect();
+
+            // Extract tags (inline)
+            let mut tags: Vec<String> = Vec::new();
+            for cap in tag_re.captures_iter(&content) {
+                let tag = cap[1].to_string();
+                if !tags.contains(&tag) {
+                    tags.push(tag);
+                }
+            }
+
+            // Extract YAML tags
+            if content.starts_with("---") {
+                if let Some(end) = content[3..].find("---") {
+                    let yaml = &content[3..3 + end];
+                    let mut in_tags = false;
+                    for line in yaml.lines() {
+                        let trimmed = line.trim();
+                        if trimmed.starts_with("tags:") {
+                            in_tags = true;
+                            // Inline tags: tags: [a, b, c]
+                            if let Some(bracket) = trimmed.strip_prefix("tags:").map(|s| s.trim()) {
+                                if bracket.starts_with('[') && bracket.ends_with(']') {
+                                    for t in bracket[1..bracket.len()-1].split(',') {
+                                        let t = t.trim().trim_matches('"').trim_matches('\'').to_string();
+                                        if !t.is_empty() && !tags.contains(&t) {
+                                            tags.push(t);
+                                        }
+                                    }
+                                    in_tags = false;
+                                }
+                            }
+                        } else if in_tags && trimmed.starts_with("- ") {
+                            let t = trimmed.trim_start_matches("- ").trim().trim_matches('"').trim_matches('\'').to_string();
+                            if !t.is_empty() && !tags.contains(&t) {
+                                tags.push(t);
+                            }
+                        } else if in_tags && !trimmed.is_empty() && !trimmed.starts_with('-') {
+                            in_tags = false;
+                        }
+                    }
+                }
+            }
+
+            notes.push(serde_json::json!({
+                "name": note_name,
+                "path": path.to_string_lossy().to_string(),
+                "modified": modified,
+                "size": size,
+                "preview": preview,
+                "tags": tags,
+                "folder": folder,
+            }));
+        }
+    }
+}
+
 /// Get daily note path for today.
 #[tauri::command]
 pub fn get_daily_note_path(app: tauri::AppHandle, library_path: String, format: String, folder: String) -> Result<String, String> {

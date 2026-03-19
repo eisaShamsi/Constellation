@@ -875,6 +875,22 @@ export async function scanLibraryIndex(libraryPath: string): Promise<IndexEntry[
 	return await invoke('scan_library_index', { libraryPath });
 }
 
+// ─── Navigator data ───
+export interface NoteWithMeta {
+	name: string;
+	path: string;
+	modified: number; // epoch ms
+	size: number; // bytes
+	preview: string; // first 200 chars, frontmatter stripped
+	tags: string[];
+	folder: string; // relative folder path within library
+	libraryName?: string; // set by frontend after loading
+}
+
+export async function collectLibraryNotesWithMeta(libraryPath: string): Promise<NoteWithMeta[]> {
+	return await invoke<NoteWithMeta[]>('collect_library_notes_with_metadata', { libraryPath });
+}
+
 // ─── Graph data ───
 export interface StarNode {
 	id: string;
