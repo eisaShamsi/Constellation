@@ -953,5 +953,19 @@
     "batchDelete": "削除",
     "preview": "プレビュー",
     "openInEditor": "エディタで開く"
+  },
+  "orgChart": {
+    "title": "組織図",
+    "folders": "フォルダ",
+    "tags": "タグ",
+    "moc": "MOCリンク",
+    "parent": "親プロパティ",
+    "tree": "ツリー",
+    "radial": "ラジアル",
+    "sunburst": "サンバースト",
+    "treemap": "ツリーマップ",
+    "colorLibrary": "色: ライブラリ",
+    "colorStatus": "色: ステータス",
+    "colorDepth": "色: 深さ"
   }
 }

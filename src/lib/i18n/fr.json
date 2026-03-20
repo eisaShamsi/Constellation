@@ -953,5 +953,19 @@
     "batchDelete": "Supprimer",
     "preview": "Aperçu",
     "openInEditor": "Ouvrir dans l'éditeur"
+  },
+  "orgChart": {
+    "title": "Organigramme",
+    "folders": "Dossiers",
+    "tags": "Tags",
+    "moc": "Liens MOC",
+    "parent": "Propriété parent",
+    "tree": "Arbre",
+    "radial": "Radial",
+    "sunburst": "Sunburst",
+    "treemap": "Treemap",
+    "colorLibrary": "Couleur : Bibliothèque",
+    "colorStatus": "Couleur : Statut",
+    "colorDepth": "Couleur : Profondeur"
   }
 }

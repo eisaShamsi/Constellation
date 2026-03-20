@@ -953,5 +953,19 @@
     "batchDelete": "हटाएँ",
     "preview": "पूर्वावलोकन",
     "openInEditor": "संपादक में खोलें"
+  },
+  "orgChart": {
+    "title": "संगठन चार्ट",
+    "folders": "फ़ोल्डर",
+    "tags": "टैग",
+    "moc": "MOC लिंक",
+    "parent": "पैरेंट प्रॉपर्टी",
+    "tree": "ट्री",
+    "radial": "रेडियल",
+    "sunburst": "सनबर्स्ट",
+    "treemap": "ट्रीमैप",
+    "colorLibrary": "रंग: लाइब्रेरी",
+    "colorStatus": "रंग: स्थिति",
+    "colorDepth": "रंग: गहराई"
   }
 }

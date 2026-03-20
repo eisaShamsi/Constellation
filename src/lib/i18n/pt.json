@@ -953,5 +953,19 @@
     "batchDelete": "Excluir",
     "preview": "Pré-visualização",
     "openInEditor": "Abrir no editor"
+  },
+  "orgChart": {
+    "title": "Organograma",
+    "folders": "Pastas",
+    "tags": "Tags",
+    "moc": "Links MOC",
+    "parent": "Propriedade pai",
+    "tree": "Árvore",
+    "radial": "Radial",
+    "sunburst": "Sunburst",
+    "treemap": "Treemap",
+    "colorLibrary": "Cor: Biblioteca",
+    "colorStatus": "Cor: Status",
+    "colorDepth": "Cor: Profundidade"
   }
 }

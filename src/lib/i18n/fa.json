@@ -953,5 +953,19 @@
     "batchDelete": "حذف",
     "preview": "پیش‌نمایش",
     "openInEditor": "باز کردن در ویرایشگر"
+  },
+  "orgChart": {
+    "title": "نمودار سازمانی",
+    "folders": "پوشه‌ها",
+    "tags": "برچسب‌ها",
+    "moc": "پیوندهای MOC",
+    "parent": "ویژگی والد",
+    "tree": "درختی",
+    "radial": "شعاعی",
+    "sunburst": "آفتابی",
+    "treemap": "نقشه درختی",
+    "colorLibrary": "رنگ: کتابخانه",
+    "colorStatus": "رنگ: وضعیت",
+    "colorDepth": "رنگ: عمق"
   }
 }

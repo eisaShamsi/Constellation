@@ -953,5 +953,19 @@
     "batchDelete": "Sil",
     "preview": "Önizleme",
     "openInEditor": "Düzenleyicide aç"
+  },
+  "orgChart": {
+    "title": "Organizasyon Şeması",
+    "folders": "Klasörler",
+    "tags": "Etiketler",
+    "moc": "MOC Bağlantıları",
+    "parent": "Üst Özellik",
+    "tree": "Ağaç",
+    "radial": "Radyal",
+    "sunburst": "Sunburst",
+    "treemap": "Treemap",
+    "colorLibrary": "Renk: Kütüphane",
+    "colorStatus": "Renk: Durum",
+    "colorDepth": "Renk: Derinlik"
   }
 }

@@ -953,5 +953,19 @@
     "batchDelete": "حذف",
     "preview": "پیش نظارہ",
     "openInEditor": "ایڈیٹر میں کھولیں"
+  },
+  "orgChart": {
+    "title": "تنظیمی چارٹ",
+    "folders": "فولڈرز",
+    "tags": "ٹیگز",
+    "moc": "MOC لنکس",
+    "parent": "پیرنٹ پراپرٹی",
+    "tree": "ٹری",
+    "radial": "ریڈیل",
+    "sunburst": "سن برسٹ",
+    "treemap": "ٹری میپ",
+    "colorLibrary": "رنگ: لائبریری",
+    "colorStatus": "رنگ: حالت",
+    "colorDepth": "رنگ: گہرائی"
   }
 }

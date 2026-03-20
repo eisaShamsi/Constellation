@@ -953,5 +953,19 @@
     "batchDelete": "מחק",
     "preview": "תצוגה מקדימה",
     "openInEditor": "פתח בעורך"
+  },
+  "orgChart": {
+    "title": "תרשים ארגוני",
+    "folders": "תיקיות",
+    "tags": "תגיות",
+    "moc": "קישורי MOC",
+    "parent": "מאפיין הורה",
+    "tree": "עץ",
+    "radial": "רדיאלי",
+    "sunburst": "Sunburst",
+    "treemap": "Treemap",
+    "colorLibrary": "צבע: ספרייה",
+    "colorStatus": "צבע: סטטוס",
+    "colorDepth": "צבע: עומק"
   }
 }

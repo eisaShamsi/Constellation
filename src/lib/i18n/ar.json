@@ -953,5 +953,19 @@
     "batchDelete": "حذف",
     "preview": "معاينة",
     "openInEditor": "فتح في المحرر"
+  },
+  "orgChart": {
+    "title": "مخطط هيكلي",
+    "folders": "المجلدات",
+    "tags": "الوسوم",
+    "moc": "روابط MOC",
+    "parent": "خاصية الأصل",
+    "tree": "شجرة",
+    "radial": "شعاعي",
+    "sunburst": "شعاع شمسي",
+    "treemap": "خريطة شجرية",
+    "colorLibrary": "اللون: المكتبة",
+    "colorStatus": "اللون: الحالة",
+    "colorDepth": "اللون: العمق"
   }
 }

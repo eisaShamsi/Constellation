@@ -953,5 +953,19 @@
     "batchDelete": "Удалить",
     "preview": "Предпросмотр",
     "openInEditor": "Открыть в редакторе"
+  },
+  "orgChart": {
+    "title": "Организационная диаграмма",
+    "folders": "Папки",
+    "tags": "Теги",
+    "moc": "Ссылки MOC",
+    "parent": "Родительское свойство",
+    "tree": "Дерево",
+    "radial": "Радиальная",
+    "sunburst": "Sunburst",
+    "treemap": "Treemap",
+    "colorLibrary": "Цвет: Библиотека",
+    "colorStatus": "Цвет: Статус",
+    "colorDepth": "Цвет: Глубина"
   }
 }

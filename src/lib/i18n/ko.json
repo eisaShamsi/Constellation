@@ -953,5 +953,19 @@
     "batchDelete": "삭제",
     "preview": "미리보기",
     "openInEditor": "편집기에서 열기"
+  },
+  "orgChart": {
+    "title": "조직도",
+    "folders": "폴더",
+    "tags": "태그",
+    "moc": "MOC 링크",
+    "parent": "상위 속성",
+    "tree": "트리",
+    "radial": "방사형",
+    "sunburst": "선버스트",
+    "treemap": "트리맵",
+    "colorLibrary": "색상: 라이브러리",
+    "colorStatus": "색상: 상태",
+    "colorDepth": "색상: 깊이"
   }
 }

@@ -953,5 +953,19 @@
     "batchDelete": "删除",
     "preview": "预览",
     "openInEditor": "在编辑器中打开"
+  },
+  "orgChart": {
+    "title": "组织结构图",
+    "folders": "文件夹",
+    "tags": "标签",
+    "moc": "MOC 链接",
+    "parent": "父级属性",
+    "tree": "树形图",
+    "radial": "径向图",
+    "sunburst": "旭日图",
+    "treemap": "矩形树图",
+    "colorLibrary": "颜色：资料库",
+    "colorStatus": "颜色：状态",
+    "colorDepth": "颜色：深度"
   }
 }
