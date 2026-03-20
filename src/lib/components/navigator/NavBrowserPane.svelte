@@ -87,9 +87,18 @@
 		<!-- Folders mode -->
 		{#if browseMode === 'folders'}
 			<button class="nav-tree-item" class:active={selectedFolder === null} onclick={() => onFolderSelect?.(null)}>
-				<span class="nav-tree-label">📚 {$t('navigator.allNotes') || 'All notes'}</span>
+				<span class="nav-tree-label">{$t('navigator.allNotes') || 'All notes'}</span>
 			</button>
-			{#each folderTree as entry}
+			<!-- cUniverse entries first -->
+			{#each folderTree.filter(e => e.isCUniverse) as entry}
+				{@render folderNode(entry, 0)}
+			{/each}
+			<!-- Separator if there are both cUniverses and own libraries -->
+			{#if folderTree.some(e => e.isCUniverse) && folderTree.some(e => !e.isCUniverse && e.is_dir)}
+				<div class="nav-tree-separator"></div>
+			{/if}
+			<!-- Own libraries -->
+			{#each folderTree.filter(e => !e.isCUniverse) as entry}
 				{#if entry.is_dir}
 					{@render folderNode(entry, 0)}
 				{/if}
@@ -98,7 +107,7 @@
 		<!-- Tags mode -->
 		{:else if browseMode === 'tags'}
 			<button class="nav-tree-item" class:active={selectedTag === null} onclick={() => onTagSelect?.(null)}>
-				<span class="nav-tree-label">🏷️ {$t('navigator.allTags') || 'All tags'}</span>
+				<span class="nav-tree-label">{$t('navigator.allTags') || 'All tags'}</span>
 			</button>
 			{#each tagTree as node}
 				{@render tagNode(node, 0)}
@@ -128,7 +137,15 @@
 		{:else}
 			<span class="nav-tree-spacer"></span>
 		{/if}
-		<button class="nav-tree-item" class:active={selectedFolder === entry.path} onclick={() => onFolderSelect?.(entry.path)} dir="auto">
+		<button class="nav-tree-item" class:active={selectedFolder === entry.path} class:cu-entry={entry.isCUniverse} onclick={() => onFolderSelect?.(entry.path)} dir="auto" title={entry.name}>
+			{#if entry.isCUniverse}
+				<svg class="nav-tree-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+					<circle cx="12" cy="12" r="3"/>
+					<ellipse cx="12" cy="12" rx="10" ry="4"/>
+					<ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/>
+					<ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>
+				</svg>
+			{/if}
 			<span class="nav-tree-label">{entry.name}</span>
 		</button>
 	</div>
@@ -167,7 +184,7 @@
 {/snippet}
 
 <style>
-	.nav-browser { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+	.nav-browser { display: flex; flex-direction: column; height: 100%; overflow: hidden; font-family: var(--font-interface-theme), sans-serif; }
 
 	.nav-mode-tabs {
 		display: flex; gap: 2px; padding: 6px 8px; flex-shrink: 0;
@@ -183,7 +200,7 @@
 
 	.nav-browser-scroll { flex: 1; overflow-y: auto; padding: 4px 0; }
 
-	.nav-tree-row { display: flex; align-items: center; gap: 2px; }
+	.nav-tree-row { display: flex; align-items: center; gap: 2px; min-width: 0; }
 	.nav-tree-chevron {
 		flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
 		border: none; background: transparent; color: var(--text-muted); cursor: pointer; padding: 0;
@@ -192,15 +209,20 @@
 	.nav-tree-spacer { flex-shrink: 0; width: 16px; }
 
 	.nav-tree-item {
-		flex: 1; display: flex; align-items: center; gap: 6px;
+		flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px;
 		padding: 4px 8px; border: none; border-radius: 3px;
 		background: transparent; color: var(--text-normal); cursor: pointer;
 		font-size: 12px; text-align: start;
+		font-family: var(--font-interface-theme), sans-serif;
 	}
 	.nav-tree-item:hover { background: var(--background-modifier-hover); }
 	.nav-tree-item.active { background: color-mix(in srgb, var(--interactive-accent) 15%, transparent); color: var(--interactive-accent); }
 
 	.nav-tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.nav-tree-icon { flex-shrink: 0; color: var(--text-muted); }
+	.cu-entry { color: var(--interactive-accent); font-weight: 600; }
+	.cu-entry .nav-tree-label { white-space: normal; word-break: break-word; }
+	.nav-tree-separator { height: 1px; margin: 4px 12px; background: var(--background-modifier-border); }
 	.nav-tree-count { flex-shrink: 0; font-size: 10px; color: var(--text-faint); background: var(--background-secondary); padding: 0 5px; border-radius: 8px; }
 
 	.nav-prop-form { display: flex; flex-direction: column; gap: 6px; padding: 8px; }

@@ -78,6 +78,7 @@
 		display: flex; align-items: flex-start; gap: 8px;
 		width: 100%; padding: 8px 10px; border: none; border-radius: 4px;
 		background: transparent; cursor: pointer; text-align: start;
+		font-family: var(--font-interface-theme), sans-serif;
 		border-bottom: 1px solid var(--background-modifier-border, #e2e8f0);
 		transition: background 0.1s;
 	}

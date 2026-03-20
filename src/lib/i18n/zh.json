@@ -952,7 +952,14 @@
     "batchMove": "移动",
     "batchDelete": "删除",
     "preview": "预览",
-    "openInEditor": "在编辑器中打开"
+    "openInEditor": "在编辑器中打开",
+    "treeMode": "树形",
+    "listMode": "列表",
+    "skyViewMode": "天空视图",
+    "fileExplorer": "文件浏览器",
+    "notesNavigator": "笔记导航",
+    "orgChart": "组织图",
+    "notesManagement": "笔记管理"
   },
   "orgChart": {
     "title": "组织结构图",

@@ -952,7 +952,14 @@
     "batchMove": "העבר",
     "batchDelete": "מחק",
     "preview": "תצוגה מקדימה",
-    "openInEditor": "פתח בעורך"
+    "openInEditor": "פתח בעורך",
+    "treeMode": "עץ",
+    "listMode": "רשימה",
+    "skyViewMode": "תצוגת שמיים",
+    "fileExplorer": "סייר קבצים",
+    "notesNavigator": "נווט הערות",
+    "orgChart": "תרשים ארגוני",
+    "notesManagement": "ניהול הערות"
   },
   "orgChart": {
     "title": "תרשים ארגוני",

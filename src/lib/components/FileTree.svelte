@@ -9,6 +9,7 @@
 		libraryName = '',
 		color = '#7c3aed',
 		onNoteClick,
+		onFolderClick,
 		onContextMenu,
 		renamingPath = '',
 		onRenameComplete,
@@ -20,6 +21,7 @@
 		libraryName?: string;
 		color?: string;
 		onNoteClick?: (path: string, name: string, highlightTerm?: string, e?: MouseEvent) => void;
+		onFolderClick?: (path: string) => void;
 		onContextMenu?: (entry: FileEntry, x: number, y: number) => void;
 		renamingPath?: string;
 		onRenameComplete?: (oldPath: string, newName: string) => void;
@@ -67,7 +69,7 @@
 			{#if entry.is_dir}
 				<details open={allExpanded && depth < 2}>
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<summary class="folder" oncontextmenu={(e) => handleRightClick(e, entry)}>
+					<summary class="folder" oncontextmenu={(e) => handleRightClick(e, entry)} onclick={() => onFolderClick?.(entry.path)}>
 						<svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
 							<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 						</svg>
@@ -88,7 +90,7 @@
 						{/if}
 					</summary>
 					{#if entry.children && entry.children.length > 0}
-						<svelte:self entries={entry.children} depth={depth + 1} {libraryId} {libraryName} {color} {onNoteClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} />
+						<svelte:self entries={entry.children} depth={depth + 1} {libraryId} {libraryName} {color} {onNoteClick} {onFolderClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} />
 					{/if}
 				</details>
 			{:else}

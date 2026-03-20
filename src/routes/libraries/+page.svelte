@@ -4,11 +4,12 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { marked } from 'marked';
 	import {
-		libraries, libraryStats, selectedNote, searchResults,
+		libraries, libraryStats, selectedNote, searchResults, appSettings,
 		loadLibraries, loadAllStats, addLibrary, createNewLibrary, removeLibrary,
 		searchAllStars, closeNote, timeAgo, openNoteTab
 	} from '$lib/libraries/store';
 	import type { LibraryStats, FileEntry } from '$lib/libraries/store';
+	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import FileTree from '$lib/components/FileTree.svelte';
 
 	let error = $state('');
@@ -22,12 +23,58 @@
 	let libraryTrees = $state<Record<string, FileEntry[]>>({});
 	let expandedLibraries = $state<Set<string>>(new Set());
 
+	// Font from settings
+	const uiFont = $derived($appSettings.interfaceFont || 'system-ui, sans-serif');
+
+	// Child universes
+	let childUniverses = $state<ChildUniverseInfo[]>([]);
+	let childUniverseLibPaths = $state<Map<string, Set<string>>>(new Map());
+	let expandedChildUniverses = $state<Set<string>>(new Set());
+
+	function normalizePath(p: string): string {
+		return p.replace(/\\/g, '/').toLowerCase();
+	}
+
+	function isChildUniverseLib(libPath: string): boolean {
+		const norm = normalizePath(libPath);
+		for (const paths of childUniverseLibPaths.values()) {
+			if (paths.has(norm)) return true;
+		}
+		return false;
+	}
+
+	function getChildUniverseLibs(cuPath: string): LibraryStats[] {
+		const paths = childUniverseLibPaths.get(cuPath);
+		if (!paths) return [];
+		return $libraryStats.filter(lib => paths.has(normalizePath(lib.path)));
+	}
+
+	const ownLibraries = $derived($libraryStats.filter(lib => !isChildUniverseLib(lib.path)));
+
 	// Configure marked for safe rendering
 	marked.setOptions({ breaks: true, gfm: true });
 
 	onMount(async () => {
 		await loadLibraries();
 		await loadAllStats();
+
+		// Load child universes
+		try {
+			childUniverses = await getChildUniverses();
+			const map = new Map<string, Set<string>>();
+			for (const cu of childUniverses) {
+				try {
+					const childLibs = await invoke<{ id: string; name: string; path: string }[]>(
+						'read_child_universe_libraries', { childPath: cu.path }
+					);
+					map.set(cu.path, new Set(childLibs.map(l => normalizePath(l.path))));
+				} catch {
+					map.set(cu.path, new Set());
+				}
+			}
+			childUniverseLibPaths = map;
+		} catch { /* no child universes */ }
+
 		// Auto-expand first library if only one
 		if ($libraryStats.length === 1) {
 			await toggleLibrary($libraryStats[0]);
@@ -102,7 +149,7 @@
 	const colors = ['#7c3aed', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6'];
 </script>
 
-<div class="workspace-layout">
+<div class="workspace-layout" style="font-family:{uiFont};">
 	<!-- Sidebar -->
 	<aside class="sidebar">
 		<!-- Search -->
@@ -136,7 +183,52 @@
 		{:else}
 			<!-- Library Tree -->
 			<div class="lib-list">
-				{#each $libraryStats as lib, i}
+				<!-- Child Universes first -->
+				{#each childUniverses as child}
+					<div class="lib-section">
+						<button class="lib-header cu-header" onclick={() => {
+							const next = new Set(expandedChildUniverses);
+							if (next.has(child.path)) next.delete(child.path); else next.add(child.path);
+							expandedChildUniverses = next;
+						}}>
+							<svg class="lib-chevron" class:expanded={expandedChildUniverses.has(child.path)} width="10" height="10" viewBox="0 0 10 10">
+								<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+							</svg>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.5" style="flex-shrink: 0;">
+								<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
+								<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
+								<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
+							</svg>
+							<span class="lib-name">{child.name}</span>
+							<span class="library-count">{child.library_count}</span>
+						</button>
+
+						{#if expandedChildUniverses.has(child.path)}
+							<div class="cu-libs">
+								{#each getChildUniverseLibs(child.path) as lib, i}
+									<div class="lib-section">
+										<button class="lib-header" onclick={() => toggleLibrary(lib)} style="--accent: {lib.path ? colors[(colors.length - 1 - i) % colors.length] : '#7c3aed'}">
+											<svg class="lib-chevron" class:expanded={expandedLibraries.has(lib.library_id)} width="10" height="10" viewBox="0 0 10 10">
+												<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+											</svg>
+											<span class="lib-dot" style="background: {colors[(colors.length - 1 - i) % colors.length]}"></span>
+											<span class="lib-name">{lib.name}</span>
+											<span class="library-count">{lib.star_count}</span>
+										</button>
+										{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id]}
+											<div class="lib-tree">
+												<FileTree entries={libraryTrees[lib.library_id]} libraryId={lib.library_id} libraryName={lib.name} onNoteClick={handleNoteClick} />
+											</div>
+										{/if}
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/each}
+
+				<!-- Own Libraries -->
+				{#each ownLibraries as lib, i}
 					<div class="lib-section">
 						<button class="lib-header" onclick={() => toggleLibrary(lib)} style="--accent: {colors[i % colors.length]}">
 							<svg class="lib-chevron" class:expanded={expandedLibraries.has(lib.library_id)} width="10" height="10" viewBox="0 0 10 10">
@@ -340,6 +432,13 @@
 	.lib-tree {
 		padding-inline-start: 0.8rem;
 		padding-bottom: 0.3rem;
+	}
+
+	.cu-header {
+		font-weight: 600;
+	}
+	.cu-libs {
+		padding-inline-start: 1rem;
 	}
 
 	.add-lib-btn {

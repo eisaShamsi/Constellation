@@ -106,13 +106,13 @@
 </div>
 
 <style>
-	.nav-file-list { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+	.nav-file-list { display: flex; flex-direction: column; height: 100%; overflow: hidden; font-family: var(--font-interface-theme), sans-serif; }
 
 	.nav-list-toolbar { display: flex; gap: 6px; padding: 8px; align-items: center; flex-shrink: 0; }
 	.nav-filter {
 		flex: 1; height: 28px; padding: 0 8px; border: 1px solid var(--background-modifier-border);
 		border-radius: 4px; background: var(--background-primary); color: var(--text-normal);
-		font-size: 12px; outline: none;
+		font-size: 12px; outline: none; font-family: inherit;
 	}
 	.nav-filter:focus { border-color: var(--interactive-accent); }
 

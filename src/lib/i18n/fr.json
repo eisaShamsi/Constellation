@@ -952,7 +952,14 @@
     "batchMove": "Déplacer",
     "batchDelete": "Supprimer",
     "preview": "Aperçu",
-    "openInEditor": "Ouvrir dans l'éditeur"
+    "openInEditor": "Ouvrir dans l'éditeur",
+    "treeMode": "Arbre",
+    "listMode": "Liste",
+    "skyViewMode": "Vue du ciel",
+    "fileExplorer": "Explorateur de fichiers",
+    "notesNavigator": "Navigateur de notes",
+    "orgChart": "Organigramme",
+    "notesManagement": "Gestion des notes"
   },
   "orgChart": {
     "title": "Organigramme",

@@ -952,7 +952,14 @@
     "batchMove": "Переместить",
     "batchDelete": "Удалить",
     "preview": "Предпросмотр",
-    "openInEditor": "Открыть в редакторе"
+    "openInEditor": "Открыть в редакторе",
+    "treeMode": "Дерево",
+    "listMode": "Список",
+    "skyViewMode": "Вид неба",
+    "fileExplorer": "Проводник",
+    "notesNavigator": "Навигатор заметок",
+    "orgChart": "Организационная диаграмма",
+    "notesManagement": "Управление заметками"
   },
   "orgChart": {
     "title": "Организационная диаграмма",

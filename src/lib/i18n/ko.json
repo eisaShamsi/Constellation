@@ -952,7 +952,14 @@
     "batchMove": "이동",
     "batchDelete": "삭제",
     "preview": "미리보기",
-    "openInEditor": "편집기에서 열기"
+    "openInEditor": "편집기에서 열기",
+    "treeMode": "트리",
+    "listMode": "목록",
+    "skyViewMode": "스카이 뷰",
+    "fileExplorer": "파일 탐색기",
+    "notesNavigator": "노트 탐색기",
+    "orgChart": "조직도",
+    "notesManagement": "노트 관리"
   },
   "orgChart": {
     "title": "조직도",

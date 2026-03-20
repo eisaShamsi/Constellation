@@ -952,7 +952,14 @@
     "batchMove": "منتقل",
     "batchDelete": "حذف",
     "preview": "پیش نظارہ",
-    "openInEditor": "ایڈیٹر میں کھولیں"
+    "openInEditor": "ایڈیٹر میں کھولیں",
+    "treeMode": "درخت",
+    "listMode": "فہرست",
+    "skyViewMode": "آسمانی نظارہ",
+    "fileExplorer": "فائل ایکسپلورر",
+    "notesNavigator": "نوٹس نیویگیٹر",
+    "orgChart": "تنظیمی چارٹ",
+    "notesManagement": "نوٹس مینجمنٹ"
   },
   "orgChart": {
     "title": "تنظیمی چارٹ",

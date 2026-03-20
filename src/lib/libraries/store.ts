@@ -38,6 +38,7 @@ export interface FileEntry {
 	extension: string | null;
 	modified: number | null;
 	status: string | null;
+	isCUniverse?: boolean;
 }
 
 export interface OpenTab {

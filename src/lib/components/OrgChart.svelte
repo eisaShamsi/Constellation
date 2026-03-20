@@ -10,11 +10,15 @@
 	let {
 		libraryColorMap = {} as Record<string, string>,
 		universeName = '',
+		embedded = false,
+		selectedPath = $bindable(null as string | null),
 		onNoteClick,
 		onClose,
 	}: {
 		libraryColorMap?: Record<string, string>;
 		universeName?: string;
+		embedded?: boolean;
+		selectedPath?: string | null;
 		onNoteClick?: (path: string, name: string, highlightTerm?: string, e?: MouseEvent) => void;
 		onClose?: () => void;
 	} = $props();
@@ -171,7 +175,7 @@
 				libraryName,
 				libraryPath,
 				color: libraryColorMap[libraryName] || '#7c3aed',
-				status: e.status,
+				status: e.status ?? undefined,
 				children: e.is_dir && e.children ? buildTree(e.children, libraryName, libraryPath) : undefined,
 				expanded: false,
 			};
@@ -260,6 +264,62 @@
 		return false;
 	}
 
+	// ─── Selection sync ────────────────────────────────────
+	// When selectedPath changes, expand ancestors and scroll into view
+	function normPath(p: string): string { return p.replace(/\\/g, '/').toLowerCase(); }
+
+	/** Check if node is exactly selected */
+	function isExactSelected(node: TreeNode): boolean {
+		if (!selectedPath) return false;
+		return normPath(node.path) === normPath(selectedPath);
+	}
+
+	/** Check if node is a descendant of the selected path (parent selected) */
+	function isGroupSelected(node: TreeNode): boolean {
+		if (!selectedPath) return false;
+		const sel = normPath(selectedPath);
+		const np = normPath(node.path);
+		// Exact match = primary selection, not group
+		if (np === sel) return false;
+		// Node is a child of selected path
+		return np.startsWith(sel + '/');
+	}
+
+	/** Get the color for the selection group frame */
+	function getSelectionColor(node: TreeNode): string {
+		if (!selectedPath) return '';
+		// Find the library color for this node
+		if (node.color) return node.color;
+		if (node.libraryName && libraryColorMap[node.libraryName]) return libraryColorMap[node.libraryName];
+		return 'var(--interactive-accent)';
+	}
+
+	function expandToPath(node: TreeNode, targetPath: string): boolean {
+		const tp = normPath(targetPath);
+		if (normPath(node.path) === tp) return true;
+		if (node.children) {
+			for (const child of node.children) {
+				if (expandToPath(child, targetPath)) {
+					node.expanded = true;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	$effect(() => {
+		if (selectedPath && rootNode) {
+			expandToPath(rootNode, selectedPath);
+			rootNode = rootNode; // trigger reactivity
+			// Scroll the selected element into view after DOM update
+			requestAnimationFrame(() => {
+				const el = document.querySelector('.tree-node-selected');
+				el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+			});
+		}
+	});
+
 	// ─── Keyboard ──────────────────────────────────────────
 	function handleKeydown(e: KeyboardEvent) {
 		if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -289,8 +349,10 @@
 
 <div class="oc-container" style="font-family:{uiFont};" dir={isRTL ? 'rtl' : 'ltr'}>
 	<!-- Header -->
-	<div class="oc-header">
-		<span class="oc-title">{$t('orgChart.title') || 'Organization Chart'}</span>
+	<div class="oc-header" class:oc-header-embedded={embedded}>
+		{#if !embedded}
+			<span class="oc-title">{$t('orgChart.title') || 'Sky View'}</span>
+		{/if}
 		<div class="oc-toolbar">
 			{#if searchVisible}
 				<input class="oc-search" type="text" dir="auto" placeholder={$t('layout.search') || 'Search...'} bind:value={searchQuery} autofocus />
@@ -304,9 +366,11 @@
 			<button class="oc-btn" onclick={() => { if (rootNode) { function collapseAll(n: TreeNode) { if (!n.isRoot) n.expanded = false; n.children?.forEach(collapseAll); } collapseAll(rootNode); rootNode = { ...rootNode }; } }} title="Collapse all">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h6"/></svg>
 			</button>
-			<button class="oc-close" onclick={onClose}>
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-			</button>
+			{#if !embedded}
+				<button class="oc-close" onclick={onClose}>
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+				</button>
+			{/if}
 		</div>
 	</div>
 
@@ -335,6 +399,9 @@
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<span
 							class="tree-node"
+							class:tree-node-selected={isExactSelected(node)}
+							class:tree-node-group-selected={isGroupSelected(node)}
+							style:--selection-color={isExactSelected(node) || isGroupSelected(node) ? getSelectionColor(node) : ''}
 							class:tree-drop-target={dragOverPath === node.path}
 							class:tree-dragging={dragSource?.path === node.path}
 							draggable={!node.isRoot}
@@ -349,6 +416,8 @@
 								} else if (node.isNote) {
 									onNoteClick?.(node.path, node.name);
 								}
+								// Update selection for all node types (except root)
+								if (!node.isRoot) selectedPath = node.path;
 							}}
 						>
 							<!-- Icon -->
@@ -435,6 +504,8 @@
 		padding: 8px 12px; border-bottom: 1px solid var(--background-modifier-border);
 		background: var(--background-secondary); flex-shrink: 0; z-index: 10;
 	}
+	.oc-header-embedded { padding: 4px 8px; }
+	.oc-header-embedded .oc-toolbar { flex: 1; justify-content: flex-end; }
 	.oc-title { font-size: 14px; font-weight: 600; color: var(--text-normal); }
 	.oc-toolbar { display: flex; gap: 4px; align-items: center; }
 	.oc-btn {
@@ -542,6 +613,18 @@
 	}
 	.tree-node:hover {
 		background: var(--background-modifier-hover);
+	}
+	.tree-node.tree-node-selected {
+		background: color-mix(in srgb, var(--selection-color, var(--interactive-accent)) 15%, transparent);
+		outline: 2px solid var(--selection-color, var(--interactive-accent));
+		outline-offset: -1px;
+		border-radius: 4px;
+	}
+	.tree-node.tree-node-group-selected {
+		background: color-mix(in srgb, var(--selection-color, var(--interactive-accent)) 10%, transparent);
+		outline: 1px dashed var(--selection-color, var(--interactive-accent));
+		outline-offset: -1px;
+		border-radius: 4px;
 	}
 	.tree-node.tree-drop-target {
 		background: color-mix(in srgb, var(--interactive-accent) 20%, transparent);

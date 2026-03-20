@@ -20,6 +20,7 @@
 	import { detectDir } from '$lib/utils';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
+	import OrgChart from '$lib/components/OrgChart.svelte';
 	import LocalStarView from '$lib/components/LocalStarView.svelte';
 	import {
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
@@ -49,6 +50,7 @@
 	let noteWidth = $state(100); // percentage 50-100
 	let skyViewOpen = $state(false);
 	let navigatorOpen = $state(false);
+	let secondSidebarMode = $state<'tree' | 'list' | 'skyview'>('list');
 	// Sky view: RTL note → sky on left, LTR note → sky on right
 	let skyViewPosition = $derived.by(() => {
 		const tab = $activeTab;
@@ -827,12 +829,20 @@
 					</svg>
 				</button>
 				</div>
+			<!-- Mode tabs: List / Sky View -->
 			<button
-				class="sky-toggle" class:active={navigatorOpen}
-				onclick={() => { navigatorOpen = !navigatorOpen; if (navigatorOpen) { skyViewOpen = false; } }}
-				title={$t('navigator.title') || 'Navigator'}
+				class="sky-toggle" class:active={navigatorOpen && secondSidebarMode === 'list'}
+				onclick={() => { if (navigatorOpen && secondSidebarMode === 'list') { navigatorOpen = false; } else { navigatorOpen = true; secondSidebarMode = 'list'; skyViewOpen = false; } }}
+				title={$t('navigator.listMode') || 'List'}
 			>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+			</button>
+			<button
+				class="sky-toggle" class:active={navigatorOpen && secondSidebarMode === 'skyview'}
+				onclick={() => { if (navigatorOpen && secondSidebarMode === 'skyview') { navigatorOpen = false; } else { navigatorOpen = true; secondSidebarMode = 'skyview'; skyViewOpen = false; } }}
+				title={$t('navigator.skyViewMode') || 'Sky View'}
+			>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
 			</button>
 			<button
 				class="sidebar-toggle" class:active={sidebarOpen}
@@ -857,17 +867,27 @@
 
 	<!-- Content area -->
 	<div class="screen-content">
-		{#if navigatorOpen}
+		{#if navigatorOpen && secondSidebarMode === 'list'}
 			<div class="navigator-fullscreen">
 				<NotebookNavigator
 					mode="second"
 					{libraryColorMap}
 					onNoteClick={(path, name, lib) => {
-						// Single click: send to main editor
 						sendNoteToMain({ path, name: name + '.md', libraryName: lib, body: '', libraryPath: '' });
 					}}
 					onNoteDoubleClick={(path, name, lib) => {
 						sendNoteToMain({ path, name: name + '.md', libraryName: lib, body: '', libraryPath: '' });
+					}}
+				/>
+			</div>
+		{:else if navigatorOpen && secondSidebarMode === 'skyview'}
+			<div class="navigator-fullscreen">
+				<OrgChart
+					{libraryColorMap}
+					universeName={universeName}
+					embedded={true}
+					onNoteClick={(path, name) => {
+						sendNoteToMain({ path, name: name + '.md', libraryName: '', body: '', libraryPath: '' });
 					}}
 				/>
 			</div>

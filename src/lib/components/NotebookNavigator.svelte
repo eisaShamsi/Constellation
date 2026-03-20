@@ -3,6 +3,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { t } from '$lib/i18n';
 	import { libraries, collectLibraryNotesWithMeta, type NoteWithMeta, type FileEntry } from '$lib/libraries/store';
+	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import NavBrowserPane from './navigator/NavBrowserPane.svelte';
 	import NavFileList from './navigator/NavFileList.svelte';
 	import NavBatchBar from './navigator/NavBatchBar.svelte';
@@ -58,29 +59,72 @@
 		return result;
 	});
 
+	function normalizePath(p: string): string { return p.replace(/\\/g, '/').toLowerCase(); }
+
 	// Load data
 	onMount(async () => {
 		try {
 			const libs = $libraries;
 			const allNotes: NoteWithMeta[] = [];
 			const allTags: Record<string, number> = {};
-			const trees: FileEntry[] = [];
 
+			// Build per-library trees and collect notes/tags
+			const libTreeMap = new Map<string, FileEntry>(); // lib.path → tree entry
 			for (const lib of libs) {
-				// Notes with metadata
 				const notes = await collectLibraryNotesWithMeta(lib.path);
 				for (const n of notes) n.libraryName = lib.name;
 				allNotes.push(...notes);
 
-				// Tags
 				const libTags = await invoke<Record<string, number>>('scan_library_tags', { libraryPath: lib.path }).catch(() => ({}));
 				for (const [tag, count] of Object.entries(libTags)) {
 					allTags[tag] = (allTags[tag] || 0) + count;
 				}
 
-				// Folder tree
 				const tree = await invoke<FileEntry[]>('read_library_tree', { libraryPath: lib.path, maxDepth: 10 }).catch(() => []);
-				trees.push({ name: lib.name, path: lib.path, is_dir: true, children: tree } as FileEntry);
+				libTreeMap.set(normalizePath(lib.path), { name: lib.name, path: lib.path, is_dir: true, children: tree } as FileEntry);
+			}
+
+			// Group under child universes
+			let childUniverses: ChildUniverseInfo[] = [];
+			try { childUniverses = await getChildUniverses(); } catch {}
+
+			const childLibPathSets = new Map<string, Set<string>>();
+			for (const cu of childUniverses) {
+				try {
+					const childLibs = await invoke<{ id: string; name: string; path: string }[]>(
+						'read_child_universe_libraries', { childPath: cu.path }
+					).catch(() => []);
+					childLibPathSets.set(cu.path, new Set(childLibs.map(l => normalizePath(l.path))));
+				} catch {
+					childLibPathSets.set(cu.path, new Set());
+				}
+			}
+
+			const assignedPaths = new Set<string>();
+			const trees: FileEntry[] = [];
+
+			// Child universes first
+			for (const cu of childUniverses) {
+				const paths = childLibPathSets.get(cu.path) || new Set();
+				const cuChildren: FileEntry[] = [];
+				for (const p of paths) {
+					const entry = libTreeMap.get(p);
+					if (entry) {
+						cuChildren.push(entry);
+						assignedPaths.add(p);
+					}
+				}
+				if (cuChildren.length > 0) {
+					trees.push({ name: cu.name, path: cu.path, is_dir: true, children: cuChildren, isCUniverse: true } as FileEntry);
+				}
+			}
+
+			// Own libraries (not assigned to any child universe)
+			for (const lib of libs) {
+				if (!assignedPaths.has(normalizePath(lib.path))) {
+					const entry = libTreeMap.get(normalizePath(lib.path));
+					if (entry) trees.push(entry);
+				}
 			}
 
 			allNotesWithMeta = allNotes;
@@ -284,6 +328,7 @@
 	.notebook-navigator {
 		display: flex; flex-direction: column; height: 100%; overflow: hidden;
 		background: var(--background-primary);
+		font-family: var(--font-interface-theme), sans-serif;
 	}
 
 	.nav-loading {
@@ -299,7 +344,7 @@
 
 	.nav-panes { display: flex; flex: 1; overflow: hidden; }
 
-	.nav-browser-pane { width: 35%; min-width: 120px; overflow: hidden; border-inline-end: 1px solid var(--background-modifier-border); }
+	.nav-browser-pane { width: 40%; min-width: 140px; overflow: hidden; border-inline-end: 1px solid var(--background-modifier-border); }
 	.nav-list-pane { flex: 1; overflow: hidden; }
 
 	.nav-divider {

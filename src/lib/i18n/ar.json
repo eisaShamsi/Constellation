@@ -952,7 +952,14 @@
     "batchMove": "نقل",
     "batchDelete": "حذف",
     "preview": "معاينة",
-    "openInEditor": "فتح في المحرر"
+    "openInEditor": "فتح في المحرر",
+    "treeMode": "شجرة",
+    "listMode": "قائمة",
+    "skyViewMode": "منظر السماء",
+    "fileExplorer": "مستعرض الملفات",
+    "notesNavigator": "متصفح الملاحظات",
+    "orgChart": "المخطط التنظيمي",
+    "notesManagement": "إدارة الملاحظات"
   },
   "orgChart": {
     "title": "مخطط هيكلي",

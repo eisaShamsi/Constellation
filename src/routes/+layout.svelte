@@ -90,8 +90,22 @@
 	// Sidebar state
 	let sidebarOpen = $state(true);
 	let searchMode = $state(false);
-	let navigatorMode = $state(false); // Toggle between classic file tree and Notebook Navigator
-	let preNavigatorWidth = 240; // Saved sidebar width before navigator expanded it
+	let sidebarMode = $state<'tree' | 'list' | 'skyview'>('tree');
+	let preTreeWidth = 240; // Saved sidebar width before wider modes expanded it
+
+	/** Measure the pixel width needed to display the longest cUniverse/library name */
+	function calcContentWidth(extraPadding: number = 80): number {
+		const allNames = [...childUniverses.map(c => c.name), ...$libraryStats.map(l => l.name)];
+		if (allNames.length === 0) return 240;
+		const canvas = document.createElement('canvas');
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return 280;
+		const font = $appSettings?.interfaceFont || 'system-ui, sans-serif';
+		ctx.font = `13px ${font}`;
+		const maxTextWidth = Math.max(...allNames.map(n => ctx.measureText(n).width));
+		// Add padding for: tree indent (~40px), icons (~20px), count badge (~50px), scrollbar (~16px), extra
+		return Math.min(Math.max(Math.ceil(maxTextWidth) + extraPadding, 200), 500);
+	}
 	// indexMode removed - index now opens as full page view
 	let searchQuery = $state('');
 	let searchTimeout: ReturnType<typeof setTimeout>;
@@ -161,7 +175,9 @@
 		};
 	}
 	let showStarView = $state(false);
-	let showOrgChart = $state(false);
+	// showOrgChart removed — now sidebarMode === 'skyview'
+	// Shared selection path — when an item is clicked in any sidebar mode, OrgChart highlights it
+	let skyViewSelectedPath = $state<string | null>(null);
 	// Emit context change to second screen when Sky View toggles or active tab changes
 	let skyviewHoverTimer: ReturnType<typeof setTimeout> | null = null;
 	$effect(() => {
@@ -310,6 +326,10 @@
 	// Child universes for sidebar
 	let childUniverses = $state<ChildUniverseInfo[]>([]);
 	let childUniversesExpanded = $state(true);
+	// Track which libraries belong to which child universe (childUniversePath → Set of normalized library paths)
+	let childUniverseLibPaths = $state<Map<string, Set<string>>>(new Map());
+	// Track which child universes are expanded in the file explorer
+	let expandedChildUniverses = $state<Set<string>>(new Set());
 
 	let error = $state('');
 	let adding = $state(false);
@@ -317,6 +337,23 @@
 	let newLibraryName = $state('');
 
 	const isHome = $derived(page.url.pathname === '/');
+
+	// Separate own libraries from child universe libraries
+	function isChildUniverseLib(libPath: string): boolean {
+		const norm = libPath.replace(/\\/g, '/').toLowerCase();
+		for (const paths of childUniverseLibPaths.values()) {
+			if (paths.has(norm)) return true;
+		}
+		return false;
+	}
+
+	function getChildUniverseLibs(cuPath: string) {
+		const paths = childUniverseLibPaths.get(cuPath);
+		if (!paths) return [];
+		return $libraryStats.filter(lib => paths.has(lib.path.replace(/\\/g, '/').toLowerCase()));
+	}
+
+	const ownLibraries = $derived($libraryStats.filter(lib => !isChildUniverseLib(lib.path)));
 
 	// Library color palette
 	const LIBRARY_COLORS = ['#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#8b5cf6'];
@@ -654,7 +691,22 @@
 			loadWorkspaces().catch(() => {}),
 			loadPropertyTypes().catch(() => {}),
 			listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}),
-			getChildUniverses().then(c => childUniverses = c).catch(() => {}),
+			getChildUniverses().then(async (c) => {
+				childUniverses = c;
+				// Resolve which libraries belong to each child universe
+				const map = new Map<string, Set<string>>();
+				for (const cu of c) {
+					try {
+						const childLibs = await invoke<{ id: string; name: string; path: string }[]>(
+							'read_child_universe_libraries', { childPath: cu.path }
+						);
+						map.set(cu.path, new Set(childLibs.map(l => l.path.replace(/\\/g, '/').toLowerCase())));
+					} catch {
+						map.set(cu.path, new Set());
+					}
+				}
+				childUniverseLibPaths = map;
+			}).catch(() => {}),
 		]);
 
 		// Idle detection for lock screen
@@ -972,7 +1024,7 @@
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showStarView) { showStarView = false; return; }
-			if (showOrgChart) { showOrgChart = false; return; }
+			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
 			if (showIndex) { showIndex = false; return; }
 			if (showTemplatePicker) { showTemplatePicker = false; return; }
@@ -1480,6 +1532,7 @@
 
 	// ─── Library tree operations ───
 	async function toggleLibrary(lib: LibraryStats) {
+		skyViewSelectedPath = lib.path;
 		const id = lib.library_id;
 		if (expandedLibraries.has(id)) {
 			expandedLibraries.delete(id);
@@ -1733,6 +1786,7 @@
 	}
 
 	async function handleNoteClick(filePath: string, _noteName: string, highlightTerm?: string, e?: MouseEvent) {
+		skyViewSelectedPath = filePath;
 		const lib = $libraries.find(v => filePath.startsWith(v.path));
 		const libraryColor = lib ? libraryColorMap[lib.name] : '#7c3aed';
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
@@ -1809,19 +1863,10 @@
 	<!-- ═══ DOCK ═══ -->
 	<div class="dock">
 		<div class="dock-top">
-			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = false; }} title={$t('ribbon.fileExplorer')}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-			</button>
 			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = true; }} title={$t('ribbon.search')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</button>
-			<button class="dock-btn" class:active={showStarView} onclick={() => { showStarView = !showStarView; showOrgChart = false; showGlobalTasks = false; showIndex = false; }} title={$t('ribbon.graphView')}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
-			</button>
-			<button class="dock-btn" class:active={showOrgChart} onclick={() => { showOrgChart = !showOrgChart; showStarView = false; showGlobalTasks = false; showIndex = false; }} title={$t('orgChart.title') || 'Org Chart'}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><rect x="2" y="10" width="6" height="4" rx="1"/><rect x="16" y="10" width="6" height="4" rx="1"/><rect x="9" y="18" width="6" height="4" rx="1"/><path d="M12 6v4"/><path d="M5 14v2a2 2 0 0 0 2 2h3"/><path d="M19 14v2a2 2 0 0 1-2 2h-3"/></svg>
-			</button>
-			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => { showGlobalTasks = !showGlobalTasks; showStarView = false; showOrgChart = false; showIndex = false; }} title={$t('ribbon.globalTasks')}>
+			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => { showGlobalTasks = !showGlobalTasks; showStarView = false; showIndex = false; }} title={$t('ribbon.globalTasks')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 			</button>
 			<button class="dock-btn" onclick={handleOpenDailyNote} title={$t('ribbon.dailyNote')}>
@@ -1830,7 +1875,7 @@
 			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('ribbon.aiSkills')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
 			</a>
-			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showStarView = false; showOrgChart = false; showGlobalTasks = false; }} title={$t('ribbon.index')}>
+			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showStarView = false; showGlobalTasks = false; }} title={$t('ribbon.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
 			</button>
 		</div>
@@ -1838,9 +1883,7 @@
 			<button class="dock-btn" class:active={secondScreenOpen} onclick={handleToggleSecondScreen} title={$t('secondScreen.title')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/><rect x="9" y="10" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/></svg>
 			</button>
-			<button class="dock-btn" onclick={() => showUniverseManager = true} title={$t('universe.title')}>
-				<svg width="16" height="16" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><circle cx="100" cy="100" r="30" fill="#534AB7"/><circle cx="100" cy="100" r="19" fill="#3C3489"/><circle cx="45" cy="42" r="24" fill="#378ADD"/><circle cx="130" cy="52" r="20" fill="#7F77DD"/><circle cx="162" cy="110" r="16" fill="#1D9E75"/><circle cx="80" cy="158" r="13" fill="#D85A30"/></svg>
-			</button>
+			<!-- Universe manager moved to sidebar -->
 			<button class="dock-btn" onclick={handleToggleTheme} title={$t('ribbon.toggleTheme')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
 			</button>
@@ -1864,7 +1907,8 @@
 						<button class="search-clear" onclick={clearSearch}>×</button>
 					</div>
 				{:else}
-					<div class="toolbar-actions">
+					<!-- Row 1: New Elements (new note, new base, new folder) -->
+					<div class="toolbar-actions new-elements">
 						<button class="tb-btn" onclick={handleNewNote} title={$t('sidebar.newNote')}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
 						</button>
@@ -1874,29 +1918,52 @@
 						<button class="tb-btn" onclick={handleNewFolder} title={$t('sidebar.newFolder')}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
 						</button>
-						<button class="tb-btn" onclick={cycleSortOrder} title={getSortTooltip()}>
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/></svg>
+					</div>
+					<!-- Row 2: Notes Management (File Explorer, Notes Navigator, Org Chart + tree-specific sort/collapse) -->
+					<div class="toolbar-modes notes-management">
+						<button class="mode-tab" class:active={sidebarMode === 'tree'} onclick={() => { if (sidebarMode !== 'tree') { sidebarMode = 'tree'; leftSidebarWidth = calcContentWidth(100); } }} title={$t('navigator.fileExplorer') || 'File Explorer'}>
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
 						</button>
-						<button class="tb-btn" onclick={toggleCollapseAll} title={expandedLibraries.size > 0 ? $t('sidebar.collapseAll') : $t('sidebar.expandAll')}>
-							{#if expandedLibraries.size > 0}
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/></svg>
-							{:else}
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
-							{/if}
+						<button class="mode-tab" class:active={sidebarMode === 'list'} onclick={() => { if (sidebarMode !== 'list') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'list'; leftSidebarWidth = Math.max(leftSidebarWidth, 450); } }} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
 						</button>
-						<button class="tb-btn" class:active={navigatorMode} onclick={() => { if (!navigatorMode) { preNavigatorWidth = leftSidebarWidth; navigatorMode = true; if (leftSidebarWidth < 400) leftSidebarWidth = 450; } else { navigatorMode = false; leftSidebarWidth = preNavigatorWidth; } }} title={$t('navigator.title') || 'Navigator'}>
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+						<button class="mode-tab" class:active={sidebarMode === 'skyview'} onclick={() => { if (sidebarMode !== 'skyview') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'skyview'; leftSidebarWidth = calcContentWidth(130); } }} title={$t('navigator.orgChart') || 'Organization Chart'}>
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
 						</button>
+						<button class="mode-tab" class:active={showStarView} onclick={() => { showStarView = !showStarView; showGlobalTasks = false; showIndex = false; }} title={$t('ribbon.graphView')}>
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
+						</button>
+						{#if sidebarMode === 'tree'}
+							<button class="mode-tab" onclick={cycleSortOrder} title={getSortTooltip()}>
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/></svg>
+							</button>
+							<button class="mode-tab" onclick={toggleCollapseAll} title={expandedLibraries.size > 0 ? $t('sidebar.collapseAll') : $t('sidebar.expandAll')}>
+								{#if expandedLibraries.size > 0}
+									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/></svg>
+								{:else}
+									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+								{/if}
+							</button>
+						{/if}
 					</div>
 				{/if}
 			</div>
 
 			<div class="sidebar-content">
-				{#if navigatorMode}
+				{#if sidebarMode === 'list'}
 					<NotebookNavigator
 						mode="main"
 						{libraryColorMap}
 						onNoteClick={(path, name, lib) => handleNoteClick(path, name, undefined)}
+					/>
+				{:else if sidebarMode === 'skyview'}
+					<OrgChart
+						{libraryColorMap}
+						universeName={activeUniverseName}
+						bind:selectedPath={skyViewSelectedPath}
+						onNoteClick={(path, name) => handleNoteClick(path, name)}
+						onClose={() => sidebarMode = 'tree'}
+						embedded={true}
 					/>
 				{:else if searchMode && searchQuery}
 					{#if $searchResults.length > 0}
@@ -1961,26 +2028,62 @@
 						</div>
 					{/if}
 
-					<!-- Child Universes — listed first with globe icon -->
+					<!-- Child Universes — expandable, with their libraries nested inside -->
 					{#each childUniverses as child}
 						<div class="library-section">
-							<div class="library-header child-universe-item">
-								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; opacity: 0.5;">
-									<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+							<button class="library-header child-universe-item" onclick={() => {
+								skyViewSelectedPath = child.path;
+								const next = new Set(expandedChildUniverses);
+								if (next.has(child.path)) next.delete(child.path); else next.add(child.path);
+								expandedChildUniverses = next;
+							}}>
+								<svg class="v-chev" class:expanded={expandedChildUniverses.has(child.path)} width="8" height="8" viewBox="0 0 10 10">
+									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+								</svg>
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.5" style="flex-shrink: 0;">
+									<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
+									<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
+									<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
 								</svg>
 								<span class="library-name">{child.name}</span>
 								<span class="child-universe-count">{child.library_count}</span>
-							</div>
+							</button>
+
+							{#if expandedChildUniverses.has(child.path)}
+								<div class="child-universe-libs">
+									{#each getChildUniverseLibs(child.path) as lib}
+										<div class="library-section library-section-nested">
+											<button class="library-header" onclick={() => toggleLibrary(lib)}>
+												<svg class="v-chev" class:expanded={expandedLibraries.has(lib.library_id)} width="8" height="8" viewBox="0 0 10 10">
+													<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+												</svg>
+												<span class="library-name">{lib.name}</span>
+											</button>
+											{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id]}
+												<div class="library-tree">
+													<FileTree
+													entries={sortEntries(libraryTrees[lib.library_id])}
+													libraryId={lib.library_id}
+													libraryName={lib.name}
+													color={libraryColorMap[lib.name]}
+													onNoteClick={handleNoteClick}
+													onFolderClick={(path) => { skyViewSelectedPath = path; }}
+													onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, lib.library_id)}
+													{renamingPath}
+													onRenameComplete={handleRenameComplete}
+													{allExpanded}
+												/>
+												</div>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							{/if}
 						</div>
 					{/each}
 
-					<!-- Divider between universes and libraries -->
-					{#if childUniverses.length > 0 && $libraryStats.length > 0}
-						<div class="sidebar-divider"></div>
-					{/if}
-
-					<!-- Libraries — listed after universes with chevron for file tree -->
-					{#each $libraryStats as lib}
+					<!-- Own Libraries — only libraries NOT belonging to a child universe -->
+					{#each ownLibraries as lib}
 						<div class="library-section">
 							<button class="library-header" onclick={() => toggleLibrary(lib)}>
 								<svg class="v-chev" class:expanded={expandedLibraries.has(lib.library_id)} width="8" height="8" viewBox="0 0 10 10">
@@ -1996,6 +2099,7 @@
 									libraryName={lib.name}
 									color={libraryColorMap[lib.name]}
 									onNoteClick={handleNoteClick}
+									onFolderClick={(path) => { skyViewSelectedPath = path; }}
 									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, lib.library_id)}
 									{renamingPath}
 									onRenameComplete={handleRenameComplete}
@@ -2126,15 +2230,6 @@
 					skyViewSettings={$appSettings.skyView}
 					{libraryColorMap}
 				/>
-				</div>
-			{:else if showOrgChart}
-				<div class="star-fullscreen">
-					<OrgChart
-						{libraryColorMap}
-						universeName={activeUniverseName}
-						onNoteClick={(path, name) => { showOrgChart = false; handleNoteClick(path, name); }}
-						onClose={() => showOrgChart = false}
-					/>
 				</div>
 			{:else if showGlobalTasks}
 				<GlobalTasksView
@@ -2693,14 +2788,31 @@
 	}
 	.sidebar-toolbar {
 		padding: 4px 6px; border-bottom: 1px solid var(--border);
-		min-height: 34px; display: flex; align-items: center;
+		min-height: 34px; display: flex; flex-direction: column;
 	}
-	.toolbar-actions { display: flex; gap: 2px; align-items: center; }
+	.toolbar-actions { display: flex; gap: 2px; align-items: center; padding: 2px 0; }
 	.tb-btn {
 		width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 3px; color: var(--text-muted); cursor: pointer;
 	}
 	.tb-btn:hover { background: var(--border); color: var(--text); }
+	.tb-btn.active { color: var(--interactive-accent); }
+
+	.toolbar-section-label {
+		font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.5px;
+		padding: 4px 8px 0; font-family: inherit;
+	}
+
+	.toolbar-modes {
+		display: flex; gap: 2px; padding: 2px 6px 4px; border-top: 1px solid var(--background-modifier-border);
+	}
+	.mode-tab {
+		flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
+		padding: 3px 4px; border: none; border-radius: 4px; background: transparent;
+		color: var(--text-muted); cursor: pointer; font-size: 11px; font-family: inherit;
+	}
+	.mode-tab:hover { background: var(--background-modifier-hover); }
+	.mode-tab.active { background: color-mix(in srgb, var(--interactive-accent) 15%, transparent); color: var(--interactive-accent); font-weight: 600; }
 
 	.search-box {
 		display: flex; align-items: center; gap: 4px; width: 100%;
@@ -2754,10 +2866,11 @@
 	.child-universe-item {
 		display: flex;
 		align-items: center;
-		gap: 6px;
-		padding: 3px 12px 3px 20px;
+		gap: 4px;
+		padding: 3px 12px;
 		font-size: 0.8rem;
-		color: var(--text-muted);
+		color: var(--text-secondary);
+		font-weight: 600;
 	}
 	.child-universe-name {
 		flex: 1;
@@ -2768,6 +2881,15 @@
 	.child-universe-count {
 		font-size: 0.7rem;
 		color: var(--text-faint);
+		margin-inline-start: auto;
+	}
+	.child-universe-libs {
+		padding-inline-start: 16px;
+	}
+	.library-section-nested {
+	}
+	.library-section-nested .library-header {
+		font-weight: 500;
 	}
 
 	.ws-base-item {

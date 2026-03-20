@@ -952,7 +952,14 @@
     "batchMove": "移動",
     "batchDelete": "削除",
     "preview": "プレビュー",
-    "openInEditor": "エディタで開く"
+    "openInEditor": "エディタで開く",
+    "treeMode": "ツリー",
+    "listMode": "リスト",
+    "skyViewMode": "スカイビュー",
+    "fileExplorer": "ファイルエクスプローラー",
+    "notesNavigator": "ノートナビゲーター",
+    "orgChart": "組織図",
+    "notesManagement": "ノート管理"
   },
   "orgChart": {
     "title": "組織図",

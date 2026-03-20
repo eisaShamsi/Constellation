@@ -952,7 +952,14 @@
     "batchMove": "स्थानांतरित",
     "batchDelete": "हटाएँ",
     "preview": "पूर्वावलोकन",
-    "openInEditor": "संपादक में खोलें"
+    "openInEditor": "संपादक में खोलें",
+    "treeMode": "वृक्ष",
+    "listMode": "सूची",
+    "skyViewMode": "आकाश दृश्य",
+    "fileExplorer": "फ़ाइल एक्सप्लोरर",
+    "notesNavigator": "नोट्स नेविगेटर",
+    "orgChart": "संगठन चार्ट",
+    "notesManagement": "नोट्स प्रबंधन"
   },
   "orgChart": {
     "title": "संगठन चार्ट",

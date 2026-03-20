@@ -952,7 +952,14 @@
     "batchMove": "انتقال",
     "batchDelete": "حذف",
     "preview": "پیش‌نمایش",
-    "openInEditor": "باز کردن در ویرایشگر"
+    "openInEditor": "باز کردن در ویرایشگر",
+    "treeMode": "درخت",
+    "listMode": "فهرست",
+    "skyViewMode": "نمای آسمان",
+    "fileExplorer": "مرورگر فایل",
+    "notesNavigator": "ناوبر یادداشت‌ها",
+    "orgChart": "نمودار سازمانی",
+    "notesManagement": "مدیریت یادداشت‌ها"
   },
   "orgChart": {
     "title": "نمودار سازمانی",

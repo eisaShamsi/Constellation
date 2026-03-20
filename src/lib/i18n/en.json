@@ -947,7 +947,14 @@
     "batchMove": "Move",
     "batchDelete": "Delete",
     "preview": "Preview",
-    "openInEditor": "Open in editor"
+    "openInEditor": "Open in editor",
+    "treeMode": "Tree",
+    "listMode": "List",
+    "skyViewMode": "Sky View",
+    "fileExplorer": "File Explorer",
+    "notesNavigator": "Notes Navigator",
+    "orgChart": "Organization Chart",
+    "notesManagement": "Notes Management"
   },
   "orgChart": {
     "title": "Organization Chart",

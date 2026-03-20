@@ -952,7 +952,14 @@
     "batchMove": "Taşı",
     "batchDelete": "Sil",
     "preview": "Önizleme",
-    "openInEditor": "Düzenleyicide aç"
+    "openInEditor": "Düzenleyicide aç",
+    "treeMode": "Ağaç",
+    "listMode": "Liste",
+    "skyViewMode": "Gökyüzü görünümü",
+    "fileExplorer": "Dosya Gezgini",
+    "notesNavigator": "Not Gezgini",
+    "orgChart": "Organizasyon Şeması",
+    "notesManagement": "Not Yönetimi"
   },
   "orgChart": {
     "title": "Organizasyon Şeması",
