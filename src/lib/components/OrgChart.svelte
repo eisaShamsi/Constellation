@@ -449,13 +449,22 @@
 		loading = true;
 		drillRootPath = null;
 		breadcrumb = [];
-		collapsedPaths = new Set();
 		switch (hierarchySource) {
 			case 'folders': rootData = await loadFolderHierarchy(); break;
 			case 'tags': rootData = await loadTagHierarchy(); break;
 			case 'moc': rootData = await loadMOCHierarchy(); break;
 			default: rootData = await loadFolderHierarchy();
 		}
+		// Start with all directories collapsed — click to expand
+		const initialCollapsed = new Set<string>();
+		function collectDirs(node: any) {
+			if (node.isDir && !node.isRoot && node.children?.length > 0) {
+				initialCollapsed.add(node.path);
+			}
+			if (node.children) node.children.forEach(collectDirs);
+		}
+		if (rootData) collectDirs(rootData);
+		collapsedPaths = initialCollapsed;
 		loading = false;
 		if (rootData) {
 			computeLayout();
