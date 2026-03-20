@@ -667,6 +667,29 @@ pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInf
     Ok(children)
 }
 
+/// Read library list from a child universe path (reads its .constellation/libraries.json).
+#[tauri::command]
+pub fn read_child_universe_libraries(_app: tauri::AppHandle, child_path: String) -> Result<Vec<crate::libraries::LibraryInfo>, String> {
+    let cp = Path::new(&child_path);
+    let cdir = constellation_dir(cp);
+
+    let libs_path = if cdir.join("libraries.json").exists() {
+        cdir.join("libraries.json")
+    } else {
+        cp.join("vaults.json")
+    };
+
+    if !libs_path.exists() {
+        return Ok(vec![]);
+    }
+
+    let data = fs::read_to_string(&libs_path)
+        .map_err(|e| format!("Failed to read libraries.json: {}", e))?;
+    let libs: Vec<crate::libraries::LibraryInfo> = serde_json::from_str(&data)
+        .map_err(|e| format!("Failed to parse libraries.json: {}", e))?;
+    Ok(libs)
+}
+
 // ─── Data File I/O Commands ───
 // All data files live inside .constellation/
 

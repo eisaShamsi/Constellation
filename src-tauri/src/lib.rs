@@ -127,6 +127,7 @@ pub fn run() {
             universe::migrate_legacy_data,
             universe::open_existing_universe,
             universe::get_child_universes,
+            universe::read_child_universe_libraries,
             universe::link_library_as_universe,
             universe::scaffold_starter_library,
             universe::get_templates_dir,
