@@ -14,17 +14,18 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 4. [Star View (GraphMind)](#star-view-graphmind)
 5. [Second Screen](#second-screen)
 6. [Notebook Navigator](#notebook-navigator)
-7. [Properties and Frontmatter](#properties-and-frontmatter)
-8. [Templates](#templates)
-9. [Tables](#tables)
-10. [Tasks](#tasks)
-11. [Importer](#importer)
-12. [Calendar](#calendar)
-13. [Lens](#lens)
-14. [Settings](#settings)
-15. [Keyboard Shortcuts](#keyboard-shortcuts)
-16. [RTL and Arabic Support](#rtl-and-arabic-support)
-17. [Security and Privacy](#security-and-privacy)
+7. [Organization Chart](#organization-chart)
+8. [Properties and Frontmatter](#properties-and-frontmatter)
+9. [Templates](#templates)
+10. [Tables](#tables)
+11. [Tasks](#tasks)
+12. [Importer](#importer)
+13. [Calendar](#calendar)
+14. [Lens](#lens)
+15. [Settings](#settings)
+16. [Keyboard Shortcuts](#keyboard-shortcuts)
+17. [RTL and Arabic Support](#rtl-and-arabic-support)
+18. [Security and Privacy](#security-and-privacy)
 
 ---
 
@@ -257,7 +258,57 @@ The Navigator is also available on the second screen — click the dual-pane ico
 
 ---
 
-## 7. Properties and Frontmatter
+## 7. Organization Chart
+
+The Organization Chart visualizes your entire knowledge base as an interactive hierarchy tree.
+
+### Opening the Org Chart
+
+Click the org chart icon (tree diagram) in the sidebar dock, or use Mission Control (`Ctrl+P` → "org chart").
+
+### Hierarchy Sources
+
+Switch the hierarchy source using the dropdown in the toolbar:
+
+| Source | What it shows |
+|--------|---------------|
+| **Folders** | Library → Folder → Subfolder → Note (default) |
+| **Tags** | Tag taxonomy tree (nested tags like `#science/physics` become branches) |
+| **MOC Links** | Hub notes with 5+ outgoing links and their targets |
+| **Parent Property** | Notes with `parent: [[X]]` in frontmatter form a chain |
+
+### Layout Modes
+
+| Mode | Description |
+|------|-------------|
+| **Tree** | Classic top-down org chart (toggle vertical/horizontal) |
+| **Radial** | Branches radiate outward from the center |
+| **Sunburst** | Concentric rings — inner = top folders, outer = notes |
+| **Treemap** | Rectangle packing — size represents note count |
+
+### Interactions
+
+| Action | Effect |
+|--------|--------|
+| **Click a folder** | Expand/collapse its children |
+| **Click a note** | Opens it in the editor |
+| **Double-click a folder** | Drill down — re-roots the chart at that folder |
+| **Breadcrumb trail** | Navigate back up after drilling down |
+| **Ctrl+F** | Search — highlights the path from root to matching nodes |
+| **Scroll** | Zoom in/out |
+| **Drag** | Pan the view |
+| **Fit to screen** | Button in toolbar resets the view |
+
+### Color Coding
+
+Switch color mode using the dropdown:
+- **Library** — each library gets its own color
+- **Status** — seedling (blue), growing (amber), evergreen (green)
+- **Depth** — rainbow gradient by tree depth level
+
+---
+
+## 9. Properties and Frontmatter
 
 Notes can have YAML frontmatter at the top:
 
