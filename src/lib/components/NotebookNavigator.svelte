@@ -14,12 +14,14 @@
 		onNoteClick,
 		onNoteDoubleClick,
 		onNotePreview,
+		onFolderSelect,
 	}: {
 		mode?: 'main' | 'second';
 		libraryColorMap?: Record<string, string>;
 		onNoteClick?: (path: string, name: string, libraryName: string) => void;
 		onNoteDoubleClick?: (path: string, name: string, libraryName: string) => void;
 		onNotePreview?: (path: string, name: string, libraryName: string) => void;
+		onFolderSelect?: (path: string | string[] | null) => void;
 	} = $props();
 
 	// Data
@@ -296,7 +298,21 @@
 					{propertyKey}
 					{propertyValue}
 					onModeChange={(m) => { browseMode = m; selectedFolder = null; selectedTag = null; propertyResults = []; }}
-					onFolderSelect={(p) => { selectedFolder = p; focusedIndex = -1; }}
+					onFolderSelect={(p) => {
+						selectedFolder = p; focusedIndex = -1;
+						// Propagate to Star View
+						if (p && onFolderSelect) {
+							// Check if this is a cUniverse entry — pass all child library paths
+							const cuEntry = folderTrees.find(e => e.isCUniverse && e.path === p);
+							if (cuEntry && cuEntry.children) {
+								onFolderSelect(cuEntry.children.map(c => c.path));
+							} else {
+								onFolderSelect(p);
+							}
+						} else if (onFolderSelect) {
+							onFolderSelect(null);
+						}
+					}}
 					onTagSelect={(t) => { selectedTag = t; focusedIndex = -1; }}
 					onPropertySearch={handlePropertySearch}
 				/>

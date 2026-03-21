@@ -120,6 +120,10 @@ export class GraphEngine {
 	private searchQuery: string = '';
 	private searchMatchSet: Set<number> = new Set();
 
+	// Highlight filter (from sidebar selection)
+	private highlightSet: Set<number> = new Set();
+	private highlightColor: number = 0x7c3aed;
+
 	// Focus mode
 	private focusNodeIdx: number = -1;
 	private focusDepth: number = 2;
@@ -435,6 +439,26 @@ export class GraphEngine {
 
 	setActiveNode(nodeId: string): void {
 		this.activeNodeIdx = this.nodes.findIndex((n) => n.id === nodeId);
+		this.needsRedraw = true;
+	}
+
+	/** Highlight all nodes matching a filter path or array of paths (for cUniverse = multiple library paths) */
+	setHighlightFilter(filterPath: string | string[] | null, color: number = 0x7c3aed): void {
+		this.highlightSet.clear();
+		this.highlightColor = color;
+		if (filterPath) {
+			const paths = Array.isArray(filterPath) ? filterPath : [filterPath];
+			const norms = paths.map(p => p.replace(/\\/g, '/').toLowerCase());
+			for (let i = 0; i < this.nodes.length; i++) {
+				const nodePath = this.nodes[i].path.replace(/\\/g, '/').toLowerCase();
+				for (const norm of norms) {
+					if (nodePath.startsWith(norm + '/') || nodePath === norm) {
+						this.highlightSet.add(i);
+						break;
+					}
+				}
+			}
+		}
 		this.needsRedraw = true;
 	}
 
@@ -1618,6 +1642,12 @@ export class GraphEngine {
 			if (isActive) {
 				gfx.circle(sx, sy, r + 2);
 				gfx.stroke({ width: 2, color: dark ? 0xffffff : 0x333333, alpha: 0.8 });
+			}
+
+			// Highlight ring (sidebar selection)
+			if (this.highlightSet.has(i)) {
+				gfx.circle(sx, sy, r + 3);
+				gfx.stroke({ width: 2.5, color: this.highlightColor, alpha: 0.9 });
 			}
 
 			// Pinned indicator (cyan ring)

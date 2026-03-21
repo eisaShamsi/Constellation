@@ -11,14 +11,14 @@
 		libraryColorMap = {} as Record<string, string>,
 		universeName = '',
 		embedded = false,
-		selectedPath = $bindable(null as string | null),
+		selectedPath = $bindable(null as string | string[] | null),
 		onNoteClick,
 		onClose,
 	}: {
 		libraryColorMap?: Record<string, string>;
 		universeName?: string;
 		embedded?: boolean;
-		selectedPath?: string | null;
+		selectedPath?: string | string[] | null;
 		onNoteClick?: (path: string, name: string, highlightTerm?: string, e?: MouseEvent) => void;
 		onClose?: () => void;
 	} = $props();
@@ -271,17 +271,26 @@
 	/** Check if node is exactly selected */
 	function isExactSelected(node: TreeNode): boolean {
 		if (!selectedPath) return false;
-		return normPath(node.path) === normPath(selectedPath);
+		const np = normPath(node.path);
+		if (Array.isArray(selectedPath)) {
+			return selectedPath.some(p => normPath(p) === np);
+		}
+		return np === normPath(selectedPath);
 	}
 
 	/** Check if node is a descendant of the selected path (parent selected) */
 	function isGroupSelected(node: TreeNode): boolean {
 		if (!selectedPath) return false;
-		const sel = normPath(selectedPath);
 		const np = normPath(node.path);
-		// Exact match = primary selection, not group
+		if (Array.isArray(selectedPath)) {
+			// Check if node is under any of the selected paths
+			return selectedPath.some(p => {
+				const sel = normPath(p);
+				return np !== sel && np.startsWith(sel + '/');
+			});
+		}
+		const sel = normPath(selectedPath);
 		if (np === sel) return false;
-		// Node is a child of selected path
 		return np.startsWith(sel + '/');
 	}
 
@@ -310,7 +319,8 @@
 
 	$effect(() => {
 		if (selectedPath && rootNode) {
-			expandToPath(rootNode, selectedPath);
+			const paths = Array.isArray(selectedPath) ? selectedPath : [selectedPath];
+			for (const p of paths) expandToPath(rootNode, p);
 			rootNode = rootNode; // trigger reactivity
 			// Scroll the selected element into view after DOM update
 			requestAnimationFrame(() => {
@@ -417,7 +427,14 @@
 									onNoteClick?.(node.path, node.name);
 								}
 								// Update selection for all node types (except root)
-								if (!node.isRoot) selectedPath = node.path;
+								if (!node.isRoot) {
+									if (node.isCUniverse && node.children) {
+										// Pass all child library paths for Star View highlighting
+										selectedPath = node.children.map(c => c.path);
+									} else {
+										selectedPath = node.path;
+									}
+								}
 							}}
 						>
 							<!-- Icon -->

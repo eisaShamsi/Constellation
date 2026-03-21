@@ -45,6 +45,8 @@
 		onNodeClick = undefined as ((path: string, libraryName: string) => void) | undefined,
 		onNodeHover = undefined as ((node: { name: string; path: string; libraryName: string } | null) => void) | undefined,
 		activeNodeId = '',
+		highlightPath = null as string | string[] | null,
+		highlightColor = 0x7c3aed,
 		skyViewSettings,
 		libraryColorMap = {} as Record<string, string>,
 	}: {
@@ -53,6 +55,8 @@
 		onNodeClick?: (path: string, libraryName: string) => void;
 		onNodeHover?: (node: { name: string; path: string; libraryName: string } | null) => void;
 		activeNodeId?: string;
+		highlightPath?: string | string[] | null;
+		highlightColor?: number;
 		skyViewSettings?: Partial<EngineConfig>;
 		libraryColorMap?: Record<string, string>;
 	} = $props();
@@ -341,6 +345,13 @@
 	$effect(() => {
 		const id = activeNodeId;
 		engine?.setActiveNode(id);
+	});
+
+	// Highlight filter → engine
+	$effect(() => {
+		const p = highlightPath;
+		const c = highlightColor;
+		engine?.setHighlightFilter(p, c);
 	});
 
 	// Data changes → engine

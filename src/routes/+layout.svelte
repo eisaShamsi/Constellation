@@ -177,7 +177,16 @@
 	let showStarView = $state(false);
 	// showOrgChart removed — now sidebarMode === 'skyview'
 	// Shared selection path — when an item is clicked in any sidebar mode, OrgChart highlights it
-	let skyViewSelectedPath = $state<string | null>(null);
+	let skyViewSelectedPath = $state<string | string[] | null>(null);
+
+	// PiP (Picture-in-Picture) overlay state
+	let showPiP = $state(false);
+	let pipX = $state(0); // will be set on first show
+	let pipY = $state(0);
+	let pipW = $state(420);
+	let pipH = $state(320);
+	let pipInitialized = $state(false);
+
 	// Emit context change to second screen when Sky View toggles or active tab changes
 	let skyviewHoverTimer: ReturnType<typeof setTimeout> | null = null;
 	$effect(() => {
@@ -281,6 +290,105 @@
 	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
 	// make iteration extremely slow. Instead, starVersion ($state) triggers re-render
 	// and StarView reads the plain starNodes/starLinks directly.
+
+	// PiP filtered data — recomputed when selection or star data changes
+	// Uses starVersion as reactive trigger since starNodes/starLinks are plain arrays
+	const pipFilteredNodes = $derived.by(() => {
+		const _ver = starVersion; // reactive trigger
+		if (!skyViewSelectedPath || !showStarView) return [];
+		const paths = Array.isArray(skyViewSelectedPath) ? skyViewSelectedPath : [skyViewSelectedPath];
+		const norms = paths.map(p => p.replace(/\\/g, '/').toLowerCase());
+		return starNodes.filter(n => {
+			const np = n.path.replace(/\\/g, '/').toLowerCase();
+			return norms.some(norm => np.startsWith(norm + '/') || np === norm);
+		});
+	});
+	const pipFilteredNodeIds = $derived(new Set(pipFilteredNodes.map(n => n.id)));
+	const pipFilteredLinks = $derived.by(() => {
+		const _ver = starVersion;
+		if (pipFilteredNodes.length === 0) return [];
+		return starLinks.filter(l => pipFilteredNodeIds.has(l.source) && pipFilteredNodeIds.has(l.target));
+	});
+
+	// PiP legend — only libraries present in filtered nodes
+	const pipLibraryColorMap = $derived.by(() => {
+		const libs = new Set(pipFilteredNodes.map(n => n.libraryName));
+		const map: Record<string, string> = {};
+		for (const lib of libs) {
+			if (libraryColorMap[lib]) map[lib] = libraryColorMap[lib];
+		}
+		return map;
+	});
+
+	// PiP title derived from selection
+	const pipTitle = $derived.by(() => {
+		if (!skyViewSelectedPath) return '';
+		if (Array.isArray(skyViewSelectedPath)) {
+			// cUniverse — find its name from childUniverses
+			const cu = childUniverses.find(c => {
+				const libs = getChildUniverseLibs(c.path);
+				return libs.some(l => skyViewSelectedPath.includes(l.path));
+			});
+			return cu ? cu.name : `${skyViewSelectedPath.length} libraries`;
+		}
+		// Single path — find library or folder name
+		const lib = $libraryStats.find(l => l.path.replace(/\\/g, '/').toLowerCase() === skyViewSelectedPath.replace(/\\/g, '/').toLowerCase());
+		if (lib) return lib.name;
+		// Folder — extract last segment
+		const parts = skyViewSelectedPath.replace(/\\/g, '/').split('/');
+		return parts[parts.length - 1] || skyViewSelectedPath;
+	});
+
+	// Auto-show/hide PiP
+	$effect(() => {
+		if (showStarView && skyViewSelectedPath && pipFilteredNodes.length > 0) {
+			if (!pipInitialized) {
+				// Position at bottom-right of window
+				pipX = Math.max(50, window.innerWidth - pipW - 30);
+				pipY = Math.max(50, window.innerHeight - pipH - 30);
+				pipInitialized = true;
+			}
+			showPiP = true;
+		} else {
+			showPiP = false;
+		}
+	});
+
+	// PiP drag handlers
+	function startPiPDrag(e: MouseEvent) {
+		e.preventDefault();
+		const startX = e.clientX, startY = e.clientY;
+		const startPipX = pipX, startPipY = pipY;
+		function onMove(ev: MouseEvent) {
+			pipX = startPipX + (ev.clientX - startX);
+			pipY = startPipY + (ev.clientY - startY);
+		}
+		function onUp() {
+			window.removeEventListener('mousemove', onMove);
+			window.removeEventListener('mouseup', onUp);
+		}
+		window.addEventListener('mousemove', onMove);
+		window.addEventListener('mouseup', onUp);
+	}
+
+	function startPiPResize(e: MouseEvent, edge: string) {
+		e.preventDefault(); e.stopPropagation();
+		const startX = e.clientX, startY = e.clientY;
+		const sW = pipW, sH = pipH, sX = pipX, sY = pipY;
+		function onMove(ev: MouseEvent) {
+			const dx = ev.clientX - startX, dy = ev.clientY - startY;
+			if (edge.includes('e')) pipW = Math.max(280, sW + dx);
+			if (edge.includes('s')) pipH = Math.max(200, sH + dy);
+			if (edge.includes('w')) { pipW = Math.max(280, sW - dx); pipX = sX + (sW - pipW); }
+			if (edge.includes('n')) { pipH = Math.max(200, sH - dy); pipY = sY + (sH - pipH); }
+		}
+		function onUp() {
+			window.removeEventListener('mousemove', onMove);
+			window.removeEventListener('mouseup', onUp);
+		}
+		window.addEventListener('mousemove', onMove);
+		window.addEventListener('mouseup', onUp);
+	}
 
 	let resizeCleanup: (() => void) | null = null;
 
@@ -1955,6 +2063,7 @@
 						mode="main"
 						{libraryColorMap}
 						onNoteClick={(path, name, lib) => handleNoteClick(path, name, undefined)}
+						onFolderSelect={(path) => { skyViewSelectedPath = path; }}
 					/>
 				{:else if sidebarMode === 'skyview'}
 					<OrgChart
@@ -2032,7 +2141,9 @@
 					{#each childUniverses as child}
 						<div class="library-section">
 							<button class="library-header child-universe-item" onclick={() => {
-								skyViewSelectedPath = child.path;
+								// Pass all child library paths for Star View highlighting
+								const libPaths = getChildUniverseLibs(child.path).map(l => l.path);
+								skyViewSelectedPath = libPaths.length > 0 ? libPaths : child.path;
 								const next = new Set(expandedChildUniverses);
 								if (next.has(child.path)) next.delete(child.path); else next.add(child.path);
 								expandedChildUniverses = next;
@@ -2227,9 +2338,61 @@
 						}, 100);
 					}}
 					activeNodeId={sidebarTab?.name?.toLowerCase() ?? ''}
+					highlightPath={skyViewSelectedPath}
+					highlightColor={(() => {
+						if (!skyViewSelectedPath) return 0x7c3aed;
+						const firstPath = Array.isArray(skyViewSelectedPath) ? skyViewSelectedPath[0] : skyViewSelectedPath;
+						if (!firstPath) return 0x7c3aed;
+						const lib = $libraryStats.find(l => {
+							const norm = firstPath.replace(/\\/g, '/').toLowerCase();
+							return l.path.replace(/\\/g, '/').toLowerCase() === norm || norm.startsWith(l.path.replace(/\\/g, '/').toLowerCase() + '/');
+						});
+						if (lib) {
+							const hex = libraryColorMap[lib.name] || '#7c3aed';
+							return parseInt(hex.replace('#', ''), 16);
+						}
+						return 0x7c3aed;
+					})()}
 					skyViewSettings={$appSettings.skyView}
 					{libraryColorMap}
 				/>
+				<!-- PiP Overlay -->
+				{#if showPiP && pipFilteredNodes.length > 0}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div class="pip-overlay" style="left:{pipX}px; top:{pipY}px; width:{pipW}px; height:{pipH}px;">
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div class="pip-header" onmousedown={startPiPDrag}>
+							<span class="pip-title" dir="auto">{pipTitle}</span>
+							<span class="pip-count">{pipFilteredNodes.length} nodes</span>
+							<button class="pip-close" onclick={() => { showPiP = false; skyViewSelectedPath = null; }}>×</button>
+						</div>
+						<div class="pip-graph">
+							<GraphMindView
+								nodes={pipFilteredNodes}
+								links={pipFilteredLinks}
+								libraryColorMap={pipLibraryColorMap}
+								onNodeClick={handleStarNodeClick}
+							/>
+						</div>
+						<!-- Resize handles -->
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div class="pip-resize pip-resize-n" onmousedown={(e) => startPiPResize(e, 'n')}></div>
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div class="pip-resize pip-resize-s" onmousedown={(e) => startPiPResize(e, 's')}></div>
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div class="pip-resize pip-resize-e" onmousedown={(e) => startPiPResize(e, 'e')}></div>
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div class="pip-resize pip-resize-w" onmousedown={(e) => startPiPResize(e, 'w')}></div>
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div class="pip-resize pip-resize-se" onmousedown={(e) => startPiPResize(e, 'se')}></div>
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div class="pip-resize pip-resize-sw" onmousedown={(e) => startPiPResize(e, 'sw')}></div>
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div class="pip-resize pip-resize-ne" onmousedown={(e) => startPiPResize(e, 'ne')}></div>
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div class="pip-resize pip-resize-nw" onmousedown={(e) => startPiPResize(e, 'nw')}></div>
+					</div>
+				{/if}
 				</div>
 			{:else if showGlobalTasks}
 				<GlobalTasksView
@@ -3024,6 +3187,48 @@
 		font-size: 1.2rem;
 	}
 	.star-close:hover { background: var(--border); color: var(--text); }
+
+	/* PiP overlay */
+	.pip-overlay {
+		position: fixed; z-index: 1000; display: flex; flex-direction: column;
+		border: 2px solid var(--interactive-accent);
+		border-radius: 10px; overflow: hidden;
+		box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+		background: var(--background-primary);
+	}
+	.pip-header {
+		display: flex; align-items: center; gap: 8px;
+		padding: 5px 10px;
+		background: var(--background-secondary);
+		border-bottom: 1px solid var(--background-modifier-border);
+		cursor: move; user-select: none;
+	}
+	.pip-title {
+		flex: 1; font-size: 12px; font-weight: 600;
+		color: var(--text-normal);
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	.pip-count {
+		font-size: 10px; color: var(--text-faint);
+		background: var(--background-modifier-hover);
+		padding: 1px 6px; border-radius: 8px; flex-shrink: 0;
+	}
+	.pip-close {
+		width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+		border: none; background: none; border-radius: 3px;
+		color: var(--text-muted); cursor: pointer; font-size: 14px; flex-shrink: 0;
+	}
+	.pip-close:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.pip-graph { flex: 1; overflow: hidden; }
+	.pip-resize { position: absolute; z-index: 1; }
+	.pip-resize-n { top: 0; left: 6px; right: 6px; height: 4px; cursor: n-resize; }
+	.pip-resize-s { bottom: 0; left: 6px; right: 6px; height: 4px; cursor: s-resize; }
+	.pip-resize-e { top: 6px; right: 0; bottom: 6px; width: 4px; cursor: e-resize; }
+	.pip-resize-w { top: 6px; left: 0; bottom: 6px; width: 4px; cursor: w-resize; }
+	.pip-resize-se { bottom: 0; right: 0; width: 10px; height: 10px; cursor: se-resize; }
+	.pip-resize-sw { bottom: 0; left: 0; width: 10px; height: 10px; cursor: sw-resize; }
+	.pip-resize-ne { top: 0; right: 0; width: 10px; height: 10px; cursor: ne-resize; }
+	.pip-resize-nw { top: 0; left: 0; width: 10px; height: 10px; cursor: nw-resize; }
 
 	/* Index split view */
 	.index-split {
