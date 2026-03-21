@@ -11,21 +11,20 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 1. [Getting Started](#getting-started)
 2. [Universe and Libraries](#universe-and-libraries)
 3. [Creating and Editing Notes](#creating-and-editing-notes)
-4. [Star View (GraphMind)](#star-view-graphmind)
-5. [Second Screen](#second-screen)
-6. [Notebook Navigator](#notebook-navigator)
-7. [Organization Chart](#organization-chart)
-8. [Properties and Frontmatter](#properties-and-frontmatter)
-9. [Templates](#templates)
-10. [Tables](#tables)
-11. [Tasks](#tasks)
-12. [Importer](#importer)
-13. [Calendar](#calendar)
-14. [Lens](#lens)
-15. [Settings](#settings)
-16. [Keyboard Shortcuts](#keyboard-shortcuts)
-17. [RTL and Arabic Support](#rtl-and-arabic-support)
-18. [Security and Privacy](#security-and-privacy)
+4. [Notes Management Sidebar](#notes-management-sidebar)
+5. [Star View (GraphMind)](#star-view-graphmind)
+6. [Second Screen](#second-screen)
+7. [Properties and Frontmatter](#properties-and-frontmatter)
+8. [Templates](#templates)
+9. [Tables](#tables)
+10. [Tasks](#tasks)
+11. [Importer](#importer)
+12. [Calendar](#calendar)
+13. [Lens](#lens)
+14. [Settings](#settings)
+15. [Keyboard Shortcuts](#keyboard-shortcuts)
+16. [RTL and Arabic Support](#rtl-and-arabic-support)
+17. [Security and Privacy](#security-and-privacy)
 
 ---
 
@@ -51,8 +50,8 @@ When you first open Constellation, the **Universe Setup Wizard** guides you thro
 
 | Element | Description |
 |---------|-------------|
-| **Sidebar (Ribbon)** | Navigation buttons: File tree, Search, Star View, Calendar, Templates, Settings |
-| **File Tree** | Browse notes and folders within your libraries |
+| **Sidebar (Ribbon)** | Navigation buttons: Notes Management, Search, Calendar, Templates, Settings |
+| **Notes Management** | Unified sidebar with mode tabs: Tree (File Explorer), List (Notes Navigator), OrgChart (Sky View) |
 | **Editor** | Read and edit your Markdown notes |
 | **Tab Bar** | Open multiple notes in tabs |
 | **Status Bar** | Word count, character count, reading time |
@@ -139,13 +138,90 @@ You can also link to specific headings: `[[Note Name#Heading]]`.
 
 ---
 
-## 4. Star View (GraphMind)
+## 4. Notes Management Sidebar
+
+The Notes Management sidebar unifies three browsing modes into a single panel, replacing the separate File Explorer, Notebook Navigator, and Organization Chart (Sky View) with a tabbed interface.
+
+### Elements Toolbar
+
+The top row of the sidebar always shows the **Elements toolbar** with quick-action buttons:
+
+| Button | Action |
+|--------|--------|
+| **New Note** | Create a new note in the selected folder |
+| **New Base** | Create a new base (structured data note) |
+| **New Folder** | Create a new folder in the selected library |
+
+### Mode Tabs
+
+The second row contains three mode tabs to switch how your notes are displayed:
+
+| Tab | Icon | Description |
+|-----|------|-------------|
+| **Tree** | Folder tree icon | Classic File Explorer — browse your libraries as a folder hierarchy |
+| **List** | List icon | Notes Navigator — dual-pane file browser with folder, tag, and property browsing |
+| **OrgChart** | Tree diagram icon | Sky View — interactive hierarchy tree visualization |
+
+Click a tab to switch modes. Your selection and scroll position are preserved when switching back.
+
+### Adaptive Sidebar Width
+
+The sidebar automatically adjusts its width to fit the longest library or child universe name visible in the current view. This ensures all names are readable without manual resizing.
+
+### Child Universe Grouping
+
+Across all three modes, content is organized with consistent grouping:
+
+1. **Child universes first** — each child universe appears as a collapsible group with its libraries nested inside
+2. **Own libraries below** — the parent universe's own libraries appear below a visual separator
+
+This grouping is consistent across Tree, List, and OrgChart modes.
+
+### Cross-Mode Selection Sync
+
+Clicking a child universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Star View graph. This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base.
+
+### Picture-in-Picture (PiP) Overlay
+
+When Star View is open and you click a child universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay. The PiP shows a filtered sub-graph containing only the nodes belonging to the selected scope, with its own legend showing only the relevant entries. You can resize and reposition the PiP window freely.
+
+### Tree Mode (File Explorer)
+
+The classic file tree for browsing notes and folders:
+
+- Expand/collapse folders with click or arrow keys
+- Right-click for context menu (New Note, New Folder, Rename, Delete)
+- Drag and drop to move notes between folders
+
+### List Mode (Notes Navigator)
+
+A dual-pane browser for advanced note browsing:
+
+| Pane | Content |
+|------|---------|
+| **Left pane** | Folder tree, tag browser, or property browser (switchable) |
+| **Right pane** | Matching notes with title, preview snippet, tags, and date |
+
+Sorting options: Name (alphabetical), Last modified, File size.
+
+Batch operations: Select multiple files with checkboxes, then tag, move, or delete.
+
+### OrgChart Mode (Sky View)
+
+An interactive tree-list visualization of your entire knowledge base hierarchy:
+
+- Click to expand/collapse branches
+- Click a note to open it in the editor
+- Supports folder, tag, MOC link, and parent-property hierarchy sources
+
+---
+
+## 5. Star View (GraphMind)
 
 Star View visualizes your notes as an interactive 3D graph powered by the **GraphMind** engine (Pixi.js WebGL).
 
 ### Opening Star View
 
-- Click the graph icon in the sidebar
 - Press `Ctrl+G`
 - Mission Control (`Ctrl+P`) > "Star View"
 
@@ -196,7 +272,7 @@ Bottom-right legend shows library/folder colors with checkboxes to toggle visibi
 
 ---
 
-## 5. Second Screen
+## 6. Second Screen
 
 Open a separate window for side-by-side note viewing.
 
@@ -206,109 +282,7 @@ Open a separate window for side-by-side note viewing.
 
 ---
 
-## 6. Notebook Navigator
-
-The Notebook Navigator is a dual-pane file browser that replaces the classic sidebar for advanced note browsing.
-
-### Opening the Navigator
-
-Click the dual-pane icon (⊞) in the sidebar toolbar. The sidebar auto-expands to fit the two panes. Click again to return to the classic file tree.
-
-### Browse Modes
-
-| Mode | Description |
-|------|-------------|
-| **Folders** | Navigate your library folder tree. Click a folder to see its notes. |
-| **Tags** | Hierarchical tag browser. Click a tag to see all notes with that tag. |
-| **Properties** | Search notes by frontmatter property key/value pairs. |
-
-### File List
-
-The right pane shows matching notes with:
-- **Title** and **preview snippet** (first 100 characters)
-- **Tag badges** (colored pills)
-- **Relative date** (e.g., "2d ago", "3mo")
-- **Library color dot**
-
-### Sorting
-
-Click the sort buttons to order by:
-- **A** — Name (alphabetical)
-- **⏱** — Last modified
-- **##** — File size
-
-### Batch Operations
-
-Select multiple files using checkboxes, then use the batch bar:
-- **Tag** — Add a tag to all selected notes' frontmatter
-- **Move** — Move selected notes to a different folder
-- **Delete** — Delete selected notes (with confirmation)
-
-### Keyboard Navigation
-
-| Key | Action |
-|-----|--------|
-| **Arrow Up/Down** | Navigate file list |
-| **Enter** | Open focused note |
-| **Space** | Toggle checkbox on focused note |
-
-### Second Screen
-
-The Navigator is also available on the second screen — click the dual-pane icon in the second screen toolbar. Single click sends the note to the main editor.
-
----
-
-## 7. Organization Chart
-
-The Organization Chart visualizes your entire knowledge base as an interactive hierarchy tree.
-
-### Opening the Org Chart
-
-Click the org chart icon (tree diagram) in the sidebar dock, or use Mission Control (`Ctrl+P` → "org chart").
-
-### Hierarchy Sources
-
-Switch the hierarchy source using the dropdown in the toolbar:
-
-| Source | What it shows |
-|--------|---------------|
-| **Folders** | Library → Folder → Subfolder → Note (default) |
-| **Tags** | Tag taxonomy tree (nested tags like `#science/physics` become branches) |
-| **MOC Links** | Hub notes with 5+ outgoing links and their targets |
-| **Parent Property** | Notes with `parent: [[X]]` in frontmatter form a chain |
-
-### Layout Modes
-
-| Mode | Description |
-|------|-------------|
-| **Tree** | Classic top-down org chart (toggle vertical/horizontal) |
-| **Radial** | Branches radiate outward from the center |
-| **Sunburst** | Concentric rings — inner = top folders, outer = notes |
-| **Treemap** | Rectangle packing — size represents note count |
-
-### Interactions
-
-| Action | Effect |
-|--------|--------|
-| **Click a folder** | Expand/collapse its children |
-| **Click a note** | Opens it in the editor |
-| **Double-click a folder** | Drill down — re-roots the chart at that folder |
-| **Breadcrumb trail** | Navigate back up after drilling down |
-| **Ctrl+F** | Search — highlights the path from root to matching nodes |
-| **Scroll** | Zoom in/out |
-| **Drag** | Pan the view |
-| **Fit to screen** | Button in toolbar resets the view |
-
-### Color Coding
-
-Switch color mode using the dropdown:
-- **Library** — each library gets its own color
-- **Status** — seedling (blue), growing (amber), evergreen (green)
-- **Depth** — rainbow gradient by tree depth level
-
----
-
-## 9. Properties and Frontmatter
+## 7. Properties and Frontmatter
 
 Notes can have YAML frontmatter at the top:
 
@@ -335,7 +309,7 @@ Toggle property display in **Settings > Editor > Properties in document** (Visib
 
 ---
 
-## 8. Templates
+## 8. Templates (unchanged numbering)
 
 Create reusable note templates:
 
