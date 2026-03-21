@@ -6,6 +6,7 @@
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
 	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats } from '$lib/libraries/store';
+	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
 	import { PROVIDER_INFO, DEFAULT_MODELS, type ProviderId } from '$lib/ai/provider';
@@ -106,7 +107,9 @@
 	}
 
 	function handleLangChange(e: Event) {
-		setLocale((e.target as HTMLSelectElement).value as Locale);
+		const newLocale = (e.target as HTMLSelectElement).value as Locale;
+		setLocale(newLocale);
+		notifySettingsChanged({ locale: newLocale });
 	}
 
 	let updateAvailable = $state<any>(null);

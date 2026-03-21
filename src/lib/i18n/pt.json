@@ -838,8 +838,8 @@
     "grid": "Grade",
     "graph": "Gráfico",
     "detail": "Detalhe",
-    "loading": "Carregando notas...",
-    "linked": "Vinculado",
+    "loading": "Carregando...",
+    "linked": "● Vinculado",
     "linkedOn": "Navegação vinculada ativada",
     "linkedOff": "Navegação vinculada desativada",
     "searchNotes": "Pesquisar notas...",
@@ -851,7 +851,19 @@
     "allLibraries": "Todos os cofres",
     "sortLibrary": "Ordenar por cofre",
     "skyviewHint": "Passe o mouse sobre um nó na Visão do Céu para ver seus detalhes aqui",
-    "skyviewMode": "Acompanhante da Visão do Céu"
+    "skyviewMode": "Acompanhante da Visão do Céu",
+    "selectNote": "Selecione uma nota na janela principal para pré-visualizá-la aqui",
+    "dashboard": {
+      "universe": "Universo",
+      "childUniverses": "Sub-universos",
+      "libraries": "Bibliotecas",
+      "folders": "Pastas",
+      "notes": "Notas",
+      "libraryBreakdown": "Bibliotecas",
+      "recentlyOpened": "Abertos recentemente",
+      "recentlyEdited": "Editadas recentemente",
+      "tags": "Tags"
+    }
   },
   "importer": {
     "title": "Importar notas",

@@ -838,8 +838,8 @@
     "grid": "گرڈ",
     "graph": "گراف",
     "detail": "تفصیلات",
-    "loading": "نوٹس لوڈ ہو رہے ہیں...",
-    "linked": "منسلک",
+    "loading": "لوڈ ہو رہا ہے...",
+    "linked": "● مربوط",
     "linkedOn": "منسلک براؤزنگ آن",
     "linkedOff": "منسلک براؤزنگ آف",
     "searchNotes": "نوٹس تلاش کریں...",
@@ -851,7 +851,19 @@
     "allLibraries": "تمام والٹس",
     "sortLibrary": "والٹ سے ترتیب",
     "skyviewHint": "اسکائی ویو میں کسی نوڈ پر ماؤس لے جائیں تاکہ اس کی تفصیلات یہاں دیکھیں",
-    "skyviewMode": "اسکائی ویو ساتھی"
+    "skyviewMode": "اسکائی ویو ساتھی",
+    "selectNote": "مرکزی ونڈو میں ایک نوٹ منتخب کریں تاکہ اسے یہاں دیکھا جا سکے",
+    "dashboard": {
+      "universe": "کائنات",
+      "childUniverses": "ذیلی کائناتیں",
+      "libraries": "لائبریریاں",
+      "folders": "فولڈرز",
+      "notes": "نوٹس",
+      "libraryBreakdown": "لائبریریاں",
+      "recentlyOpened": "حال ہی میں کھولے گئے",
+      "recentlyEdited": "حال ہی میں ترمیم شدہ",
+      "tags": "ٹیگز"
+    }
   },
   "importer": {
     "title": "نوٹس درآمد کریں",

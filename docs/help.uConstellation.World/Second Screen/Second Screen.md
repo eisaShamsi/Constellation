@@ -5,12 +5,13 @@ aliases:
   - Second screen
   - Multi-window
   - Companion window
-description: Use Constellation's Second Screen feature to expand your workspace across two monitors — browse and navigate on one screen, read and edit on the other.
+  - Dashboard
+description: Use Constellation's Second Screen as a mode-based companion — showing a Universe Dashboard in File Explorer mode, Navigator, Sky View, or Star View companion depending on the active sidebar.
 ---
 
 # Second Screen
 
-Second Screen opens a dedicated companion window that you can drag to a second monitor. Inspired by Adobe Lightroom's secondary display, it gives you three switchable view modes for maximum flexibility.
+The Second Screen is a mode-based companion window that adapts to your current sidebar mode. Instead of duplicating the main editor, it provides contextual views and information relevant to what you're doing.
 
 ## Opening the Second Screen
 
@@ -22,123 +23,134 @@ Second Screen opens a dedicated companion window that you can drag to a second m
 
 The second screen opens as an independent window. Drag it to your second monitor for a dual-screen workflow.
 
----
-
-## View Modes
-
-The second screen has three modes, switchable from the toolbar:
-
-### Grid (G)
-
-A searchable card grid of all notes across all libraries.
-
-- Each card shows the note name, folder path, and library (with color indicator).
-- **Search** to filter notes by name or path.
-- **Library filter** dropdown to show notes from a specific library.
-- **Sort** by name or library.
-- **Click** a card to open the note in the main window.
-- **Double-click** a card to open it in the second screen's Detail mode.
-
-### Sky View (E)
-
-The full interactive [[Sky View]] rendered in the second screen. Use it as a navigation tool — click any node to open the note in the main window. All sky view controls (filters, groups, display, forces) are available.
-
-### Detail (D)
-
-A focused note reader/editor with its own tab bar. Notes sent from the main window appear here. You get the full editing experience — properties, CodeMirror editor, live preview, markdown rendering — in a distraction-free window without sidebars.
+When you close the main window, the second screen closes automatically.
 
 ---
 
-## Linked Browsing
+## Mode-Based Companion
 
-Toggle the **link icon** in the toolbar to enable or disable linked browsing.
+The second screen automatically adapts its content based on the active sidebar mode in the main window:
 
-| State | Behavior |
-|-------|----------|
-| **On** (default) | When the main window sends a note, the second screen automatically switches to Detail mode and shows it. |
-| **Off** | Notes sent from the main window are opened silently in the second screen's tabs, but the current mode doesn't change. |
+| Main Sidebar Mode | Second Screen Shows |
+|---|---|
+| **File Explorer** (tree) | Universe Dashboard |
+| **Navigator** (list) | Full Navigator view |
+| **Sky View** (skyview) | Sky View tree |
+| **Star View** (graph) | Star View companion with backlinks, forward links, tags, and local graph |
 
----
-
-## Sending Notes Between Windows
-
-| Action | Result |
-|--------|--------|
-| **Main → Second Screen** | Use Mission Control "Send to Second Screen" to send the active note. |
-| **Second Screen → Main** | Click a card in Grid mode or a node in Sky View mode — the note opens in the main window. |
+Switching sidebar modes in the main window instantly updates the second screen.
 
 ---
 
-## Keyboard Shortcuts
+## Universe Dashboard (File Explorer Mode)
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+Shift+2` | Toggle second screen window |
-| `G` | Switch to Grid mode (when second screen is focused) |
-| `E` | Switch to Sky View mode (when second screen is focused) |
-| `D` | Switch to Detail mode (when second screen is focused) |
+When the main window is in File Explorer mode, the second screen displays a comprehensive Universe Dashboard.
+
+### Stat Cards
+
+At the top, large stat cards show:
+
+- **Universe** name
+- **Child Universes** count
+- **Libraries** count
+- **Folders** count
+- **Notes** count
+
+### Child Universes
+
+Each child universe is listed with:
+
+- The child universe icon and name
+- Stat boxes showing the number of libraries, folders, and notes (in the universe accent color)
+- Expandable list of linked libraries underneath, each with their own folder/note counts
+
+### Libraries
+
+Libraries not belonging to a child universe are listed separately. Each library shows:
+
+- Library name with its color dot
+- Folder and note counts in color-coded stat boxes matching the library's theme color
+
+### Recently Edited / Recently Opened
+
+Two side-by-side columns track your session activity:
+
+| Column | Rule |
+|--------|------|
+| **Recently Edited** | Notes you opened and modified (content was saved) during the current session |
+| **Recently Opened** | Notes you opened but did not edit during the current session |
+
+Each entry shows the note name, library color dot, and timestamp. Click any entry to open the note in the main window.
+
+> [!note]
+> These lists are session-based. They reset when you restart the application.
+
+### Tags
+
+All tags across all libraries, sorted by usage count. Each tag shows its name and count.
+
+**Click a tag** to expand a split view:
+- Left side: the tag list (with the selected tag highlighted)
+- Right side: all notes using that tag, grouped by library
+
+Click the close button (×) to collapse the tag notes panel.
 
 ---
 
-## Workflow Examples
+## Star View Companion
 
-### Research workflow
-- **Main window:** Editor with your current draft open.
-- **Second screen (Grid):** Browse all reference notes. Click to open them in the main editor.
+When the main window is in Star View mode, the second screen becomes a Star View companion that shows detailed information about the node you hover or click.
 
-### Sky View exploration
-- **Main window:** Read/edit notes as you go.
-- **Second screen (Sky View):** Navigate the knowledge sky view. Click nodes to open them in the main editor.
+### Hover Preview
 
-### Side-by-side reading
-- **Main window:** Edit one note.
-- **Second screen (Detail):** Read a reference note for comparison.
+Hover over a node in the main window's Star View to see its details in the second screen:
+
+- Note name, library, and markdown preview
+- Backlinks and forward links
+- Tags
+- Local graph showing direct connections
+
+### Pinned Selection
+
+Click a node to pin it. The companion stays focused on the pinned note even when you move the mouse away. Navigation history (back/forward) lets you browse through pinned nodes.
+
+### Peek Preview
+
+Click any backlink or forward link in the companion to open a full editable preview in the left panel.
 
 ---
 
-## Single-Monitor Users
+## Navigator Companion
 
-Don't have a second monitor? The same NoteGrid and SkyView panels are available directly in the **right sidebar** of the main window.
+When the main window is in Navigator mode, the second screen shows a full Navigator view. Click notes to open them in the main window. Double-click to send them to the main window.
 
-| Sidebar Tab | Description |
-|-------------|-------------|
-| **Grid** (grid icon) | Searchable card grid of all notes — same as second screen's Grid mode |
-| **Sky View** (network icon) | Interactive link sky view — same as second screen's Sky View mode |
+---
 
-Open the right sidebar with the sidebar toggle button, then click the Grid or Sky View tab icon.
+## Sky View Companion
 
-> [!tip]
-> These sidebar panels work alongside the existing Properties, Backlinks, Tags, and Link Dashboard tabs. You can switch between all six tabs freely.
+When the main window is in Sky View mode, the second screen shows the Sky View tree with the full directory structure.
+
+---
+
+## Settings Sync
+
+All settings changes propagate instantly to the second screen:
+
+| Setting | Sync |
+|---------|------|
+| **Language** | Instant — UI text updates without restart |
+| **Theme** (light/dark/system) | Instant |
+| **Fonts** (interface, text, mono, script) | Instant |
+| **Font size** | Instant |
 
 ---
 
 ## Workspace Integration
 
-Workspaces now save and restore the **complete UI state**, including the second screen.
-
-### What gets saved
-
-| State | Details |
-|-------|---------|
-| **Editor tabs** | Open notes, active tab, split view |
-| **Left sidebar** | Open/closed, width |
-| **Right sidebar** | Open/closed, active tab, width |
-| **Second screen** | Open/closed, current mode (Grid/Sky View/Detail), linked browsing state, open tabs |
-
-### How it works
-
-1. Open the Workspace Manager from Mission Control or sidebar.
-2. **Save** a workspace — the full UI layout including second screen state is captured.
-3. **Restore** a workspace — sidebars, tabs, and the second screen are all restored to their saved state.
-
-> [!tip]
-> If you restore a workspace that had the second screen open, it will automatically open and switch to the saved mode with the saved tabs.
-
-> [!warning]
-> Workspaces saved before this update will still restore correctly — only tabs and split state are restored, and the new sidebar/screen fields are ignored if absent.
+Workspaces save and restore the second screen state, including whether it was open and its current mode.
 
 ---
 
 ## RTL Support
 
-The Second Screen fully supports right-to-left (RTL) languages including Arabic, Hebrew, Persian, and Urdu. All modes — Grid, Sky View, and Detail — render correctly in RTL.
+The Second Screen fully supports right-to-left (RTL) languages including Arabic, Hebrew, Persian, and Urdu. The dashboard, tags, and all companion modes render correctly in RTL.

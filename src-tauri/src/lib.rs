@@ -133,6 +133,7 @@ pub fn run() {
             universe::get_templates_dir,
             universe::list_templates,
             libraries::get_file_metadata,
+            libraries::notes_by_tag,
             dataview::execute_dataview_query,
             tasks::scan_library_tasks,
             tasks::scan_note_tasks,
@@ -146,13 +147,18 @@ pub fn run() {
             is_second_screen_open
         ])
         .on_window_event(|window, event| {
-            // Intercept close on second-screen: hide instead of destroy
-            if window.label() == "second-screen" {
-                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "second-screen" {
+                    // Intercept close on second-screen: hide instead of destroy
                     api.prevent_close();
                     let _ = window.hide();
                     // Notify frontend that screen was closed
                     let _ = window.emit("screen-hidden", ());
+                } else if window.label() == "main" {
+                    // Main window closing: also close the second screen
+                    if let Some(second) = window.app_handle().get_webview_window("second-screen") {
+                        let _ = second.destroy();
+                    }
                 }
             }
         })

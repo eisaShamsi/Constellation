@@ -838,8 +838,8 @@
     "grid": "网格",
     "graph": "图谱",
     "detail": "详情",
-    "loading": "正在加载笔记...",
-    "linked": "已链接",
+    "loading": "加载中...",
+    "linked": "● 已链接",
     "linkedOn": "链接浏览已开启",
     "linkedOff": "链接浏览已关闭",
     "searchNotes": "搜索笔记...",
@@ -851,7 +851,19 @@
     "allLibraries": "所有仓库",
     "sortLibrary": "按仓库排序",
     "skyviewHint": "将鼠标悬停在天空视图中的节点上，即可在此查看其详情",
-    "skyviewMode": "天空视图伴侣"
+    "skyviewMode": "天空视图伴侣",
+    "selectNote": "在主窗口中选择一个笔记以在此预览",
+    "dashboard": {
+      "universe": "宇宙",
+      "childUniverses": "子宇宙",
+      "libraries": "资料库",
+      "folders": "文件夹",
+      "notes": "笔记",
+      "libraryBreakdown": "资料库",
+      "recentlyOpened": "最近打开",
+      "recentlyEdited": "最近编辑",
+      "tags": "标签"
+    }
   },
   "importer": {
     "title": "导入笔记",

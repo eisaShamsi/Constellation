@@ -838,8 +838,8 @@
     "grid": "グリッド",
     "graph": "グラフ",
     "detail": "詳細",
-    "loading": "ノートを読み込み中...",
-    "linked": "リンク済み",
+    "loading": "読み込み中...",
+    "linked": "● リンク済み",
     "linkedOn": "リンクブラウジングON",
     "linkedOff": "リンクブラウジングOFF",
     "searchNotes": "ノートを検索...",
@@ -851,7 +851,19 @@
     "allLibraries": "すべての保管庫",
     "sortLibrary": "保管庫順",
     "skyviewHint": "スカイビューのノードにカーソルを合わせると、ここに詳細が表示されます",
-    "skyviewMode": "スカイビューコンパニオン"
+    "skyviewMode": "スカイビューコンパニオン",
+    "selectNote": "メインウィンドウでノートを選択すると、ここでプレビューされます",
+    "dashboard": {
+      "universe": "ユニバース",
+      "childUniverses": "サブユニバース",
+      "libraries": "ライブラリ",
+      "folders": "フォルダ",
+      "notes": "ノート",
+      "libraryBreakdown": "ライブラリ",
+      "recentlyOpened": "最近開いたノート",
+      "recentlyEdited": "最近編集したノート",
+      "tags": "タグ"
+    }
   },
   "importer": {
     "title": "ノートをインポート",

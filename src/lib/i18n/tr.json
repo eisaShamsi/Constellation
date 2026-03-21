@@ -838,8 +838,8 @@
     "grid": "Izgara",
     "graph": "Grafik",
     "detail": "Detay",
-    "loading": "Notlar yükleniyor...",
-    "linked": "Bağlantılı",
+    "loading": "Yükleniyor...",
+    "linked": "● Bağlı",
     "linkedOn": "Bağlantılı gezinme açık",
     "linkedOff": "Bağlantılı gezinme kapalı",
     "searchNotes": "Notlarda ara...",
@@ -851,7 +851,19 @@
     "allLibraries": "Tüm kasalar",
     "sortLibrary": "Kasaya göre sırala",
     "skyviewHint": "Gökyüzü Görünümünde bir düğümün üzerine gelin ve ayrıntılarını burada görün",
-    "skyviewMode": "Gökyüzü Görünümü Eşlikçisi"
+    "skyviewMode": "Gökyüzü Görünümü Eşlikçisi",
+    "selectNote": "Ana pencerede bir not seçerek burada önizleyin",
+    "dashboard": {
+      "universe": "Evren",
+      "childUniverses": "Alt evrenler",
+      "libraries": "Kütüphaneler",
+      "folders": "Klasörler",
+      "notes": "Notlar",
+      "libraryBreakdown": "Kütüphaneler",
+      "recentlyOpened": "Son açılan",
+      "recentlyEdited": "Son düzenlenen",
+      "tags": "Etiketler"
+    }
   },
   "importer": {
     "title": "Notları İçe Aktar",

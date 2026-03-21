@@ -838,8 +838,8 @@
     "grid": "רשת",
     "graph": "גרף",
     "detail": "פרטים",
-    "loading": "טוען הערות...",
-    "linked": "מקושר",
+    "loading": "טוען...",
+    "linked": "● מקושר",
     "linkedOn": "גלישה מקושרת פעילה",
     "linkedOff": "גלישה מקושרת כבויה",
     "searchNotes": "חפש הערות...",
@@ -851,7 +851,19 @@
     "allLibraries": "כל הכספות",
     "sortLibrary": "מיין לפי כספת",
     "skyviewHint": "העבר את העכבר מעל צומת בתצוגת השמיים כדי לראות את הפרטים כאן",
-    "skyviewMode": "מלווה תצוגת שמיים"
+    "skyviewMode": "מלווה תצוגת שמיים",
+    "selectNote": "בחר פתק בחלון הראשי כדי לצפות בו כאן",
+    "dashboard": {
+      "universe": "יקום",
+      "childUniverses": "יקומים משניים",
+      "libraries": "ספריות",
+      "folders": "תיקיות",
+      "notes": "פתקים",
+      "libraryBreakdown": "ספריות",
+      "recentlyOpened": "נפתחו לאחרונה",
+      "recentlyEdited": "נערכו לאחרונה",
+      "tags": "תגיות"
+    }
   },
   "importer": {
     "title": "ייבוא הערות",

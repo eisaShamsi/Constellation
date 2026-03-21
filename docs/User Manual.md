@@ -274,11 +274,36 @@ Bottom-right legend shows library/folder colors with checkboxes to toggle visibi
 
 ## 6. Second Screen
 
-Open a separate window for side-by-side note viewing.
+The Second Screen is a mode-based companion window that adapts to your current sidebar mode.
 
-- **Open**: Click the second screen icon in the sidebar, or `Ctrl+Shift+N`
-- **Sync**: Notes open in the second screen independently. Font and theme settings apply to both windows.
-- **Note width**: Adjustable via the width slider in the toolbar
+- **Open**: Click the second screen icon in the sidebar, or `Ctrl+Shift+2`
+- **Auto-closes**: When you close the main window, the second screen closes automatically
+
+### Mode-Based Companion
+
+The second screen changes its content based on the active sidebar mode in the main window:
+
+| Main Sidebar Mode | Second Screen Shows |
+|---|---|
+| **File Explorer** | Universe Dashboard — stats, library breakdown, child universes, tags, recently edited/opened notes |
+| **Navigator** | Full Navigator view for browsing notes |
+| **Sky View** | Sky View tree with directory structure |
+| **Star View** | Star View companion with backlinks, forward links, tags, and local graph |
+
+### Universe Dashboard (File Explorer Mode)
+
+When the main window is in File Explorer mode, the second screen displays a dashboard with:
+
+- **Stat cards** — Universe name, child universe count, total libraries, folders, and notes
+- **Child Universes** — Each child universe with its linked libraries and folder/note counts
+- **Libraries** — Each library with folder/note counts in color-coded stat boxes
+- **Recently Edited** — Notes you modified in the current session (tracked when you save changes)
+- **Recently Opened** — Notes you opened but did not edit in the current session
+- **Tags** — All tags across libraries sorted by count; click a tag to see all notes using it
+
+### Settings Sync
+
+Theme, font, and **language** changes in Settings instantly propagate to the second screen — no restart needed.
 
 ---
 
@@ -309,7 +334,7 @@ Toggle property display in **Settings > Editor > Properties in document** (Visib
 
 ---
 
-## 8. Templates (unchanged numbering)
+## 8. Templates
 
 Create reusable note templates:
 

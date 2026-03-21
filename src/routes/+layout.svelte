@@ -81,7 +81,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitClipboardCopy, emitNoteContentUpdate, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -197,9 +197,10 @@
 			if (mode === 'editor' && $activeTab?.path) {
 				sendNoteToScreen({
 					path: $activeTab.path,
-					body: '',
-					libraryName: $activeTab.libraryName,
 					name: $activeTab.name,
+					libraryName: $activeTab.libraryName,
+					libraryPath: $activeTab.libraryPath ?? '',
+					libraryColor: $activeTab.libraryColor ?? '#7c3aed',
 				});
 			}
 		}
@@ -209,22 +210,30 @@
 		if (secondScreenOpen && !showStarView && $activeTab?.path) {
 			sendNoteToScreen({
 				path: $activeTab.path,
-				body: '',
-				libraryName: $activeTab.libraryName,
 				name: $activeTab.name,
+				libraryName: $activeTab.libraryName,
+				libraryPath: $activeTab.libraryPath ?? '',
+				libraryColor: $activeTab.libraryColor ?? '#7c3aed',
 			});
 		}
+	});
+	// Track recently opened notes in localStorage for the second screen dashboard
+	$effect(() => {
+		const tab = $activeTab;
+		if (!tab?.path) return;
+		try {
+			const key = 'constellation-recent-opened';
+			const existing: { name: string; path: string; libraryName: string; openedAt: number }[] = JSON.parse(localStorage.getItem(key) || '[]');
+			const filtered = existing.filter(n => n.path !== tab.path);
+			filtered.unshift({ name: tab.name, path: tab.path, libraryName: tab.libraryName, openedAt: Date.now() });
+			localStorage.setItem(key, JSON.stringify(filtered.slice(0, 20)));
+		} catch {}
 	});
 	// Clipboard monitoring: send copy events to second screen
 	let lastSavedContent = $state('');
 	$effect(() => {
 		if (!secondScreenOpen || showStarView) return;
-		const tab = $activeTab;
-		if (!tab?.content) return;
-		// Send content updates for diff + word count (debounced by Svelte's batching)
-		console.log('[Main] Sending note content to second screen:', tab.name, 'words:', tab.content.split(/\s+/).length);
-		emitNoteContentUpdate(tab.content, lastSavedContent || tab.content, tab.name);
-		// Also emit editor context mode
+		// Emit editor context mode when not in Star View
 		emitContextChanged('editor');
 	});
 	// Track initial content for diff baseline
@@ -322,21 +331,22 @@
 
 	// PiP title derived from selection
 	const pipTitle = $derived.by(() => {
-		if (!skyViewSelectedPath) return '';
-		if (Array.isArray(skyViewSelectedPath)) {
+		const sel = skyViewSelectedPath;
+		if (!sel) return '';
+		if (Array.isArray(sel)) {
 			// cUniverse — find its name from childUniverses
 			const cu = childUniverses.find(c => {
 				const libs = getChildUniverseLibs(c.path);
-				return libs.some(l => skyViewSelectedPath.includes(l.path));
+				return libs.some(l => sel.includes(l.path));
 			});
-			return cu ? cu.name : `${skyViewSelectedPath.length} libraries`;
+			return cu ? cu.name : `${sel.length} libraries`;
 		}
 		// Single path — find library or folder name
-		const lib = $libraryStats.find(l => l.path.replace(/\\/g, '/').toLowerCase() === skyViewSelectedPath.replace(/\\/g, '/').toLowerCase());
+		const lib = $libraryStats.find(l => l.path.replace(/\\/g, '/').toLowerCase() === sel.replace(/\\/g, '/').toLowerCase());
 		if (lib) return lib.name;
 		// Folder — extract last segment
-		const parts = skyViewSelectedPath.replace(/\\/g, '/').split('/');
-		return parts[parts.length - 1] || skyViewSelectedPath;
+		const parts = sel.replace(/\\/g, '/').split('/');
+		return parts[parts.length - 1] || sel;
 	});
 
 	// Auto-show/hide PiP
@@ -913,17 +923,6 @@
 
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
-
-		// Clipboard monitoring for second screen
-		document.addEventListener('copy', () => {
-			if (!secondScreenOpen) return;
-			setTimeout(async () => {
-				try {
-					const text = await navigator.clipboard.readText();
-					if (text) emitClipboardCopy(text, $activeTab?.name?.replace(/\.md$/, '') || 'unknown');
-				} catch {}
-			}, 100);
-		});
 
 		// 1. Check universe state
 		let universes: UniverseEntry[] = [];
@@ -2014,47 +2013,46 @@
 						<input type="text" placeholder={$t('sidebar.searchPlaceholder')} value={searchQuery} oninput={handleSearch}/>
 						<button class="search-clear" onclick={clearSearch}>×</button>
 					</div>
-				{:else}
-					<!-- Row 1: New Elements (new note, new base, new folder) -->
-					<div class="toolbar-actions new-elements">
-						<button class="tb-btn" onclick={handleNewNote} title={$t('sidebar.newNote')}>
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
-						</button>
-						<button class="tb-btn" onclick={handleNewBase} title={$t('sidebar.newBase')}>
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-						</button>
-						<button class="tb-btn" onclick={handleNewFolder} title={$t('sidebar.newFolder')}>
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
-						</button>
-					</div>
-					<!-- Row 2: Notes Management (File Explorer, Notes Navigator, Org Chart + tree-specific sort/collapse) -->
-					<div class="toolbar-modes notes-management">
-						<button class="mode-tab" class:active={sidebarMode === 'tree'} onclick={() => { if (sidebarMode !== 'tree') { sidebarMode = 'tree'; leftSidebarWidth = calcContentWidth(100); } }} title={$t('navigator.fileExplorer') || 'File Explorer'}>
-							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-						</button>
-						<button class="mode-tab" class:active={sidebarMode === 'list'} onclick={() => { if (sidebarMode !== 'list') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'list'; leftSidebarWidth = Math.max(leftSidebarWidth, 450); } }} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
-							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
-						</button>
-						<button class="mode-tab" class:active={sidebarMode === 'skyview'} onclick={() => { if (sidebarMode !== 'skyview') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'skyview'; leftSidebarWidth = calcContentWidth(130); } }} title={$t('navigator.orgChart') || 'Organization Chart'}>
-							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
-						</button>
-						<button class="mode-tab" class:active={showStarView} onclick={() => { showStarView = !showStarView; showGlobalTasks = false; showIndex = false; }} title={$t('ribbon.graphView')}>
-							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
-						</button>
-						{#if sidebarMode === 'tree'}
-							<button class="mode-tab" onclick={cycleSortOrder} title={getSortTooltip()}>
-								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/></svg>
-							</button>
-							<button class="mode-tab" onclick={toggleCollapseAll} title={expandedLibraries.size > 0 ? $t('sidebar.collapseAll') : $t('sidebar.expandAll')}>
-								{#if expandedLibraries.size > 0}
-									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/></svg>
-								{:else}
-									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
-								{/if}
-							</button>
-						{/if}
-					</div>
 				{/if}
+				<!-- Row 1: New Elements — always visible -->
+				<div class="toolbar-actions new-elements">
+					<button class="tb-btn" onclick={handleNewNote} title={$t('sidebar.newNote')}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
+					</button>
+					<button class="tb-btn" onclick={handleNewBase} title={$t('sidebar.newBase')}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+					</button>
+					<button class="tb-btn" onclick={handleNewFolder} title={$t('sidebar.newFolder')}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+					</button>
+				</div>
+				<!-- Row 2: Notes Management — always visible, even during search -->
+				<div class="toolbar-modes notes-management">
+					<button class="mode-tab" class:active={sidebarMode === 'tree'} onclick={() => { searchMode = false; searchQuery = ''; if (sidebarMode !== 'tree') { sidebarMode = 'tree'; leftSidebarWidth = calcContentWidth(100); emitSidebarModeChanged('tree'); } }} title={$t('navigator.fileExplorer') || 'File Explorer'}>
+						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+					</button>
+					<button class="mode-tab" class:active={sidebarMode === 'list'} onclick={() => { searchMode = false; searchQuery = ''; if (sidebarMode !== 'list') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'list'; leftSidebarWidth = Math.max(leftSidebarWidth, 450); emitSidebarModeChanged('list'); } }} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
+						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+					</button>
+					<button class="mode-tab" class:active={sidebarMode === 'skyview'} onclick={() => { searchMode = false; searchQuery = ''; if (sidebarMode !== 'skyview') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'skyview'; leftSidebarWidth = calcContentWidth(130); emitSidebarModeChanged('skyview'); } }} title={$t('navigator.orgChart') || 'Organization Chart'}>
+						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
+					</button>
+					<button class="mode-tab" class:active={showStarView} onclick={() => { showStarView = !showStarView; showGlobalTasks = false; showIndex = false; }} title={$t('ribbon.graphView')}>
+						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
+					</button>
+					{#if sidebarMode === 'tree' && !searchMode}
+						<button class="mode-tab" onclick={cycleSortOrder} title={getSortTooltip()}>
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/></svg>
+						</button>
+						<button class="mode-tab" onclick={toggleCollapseAll} title={expandedLibraries.size > 0 ? $t('sidebar.collapseAll') : $t('sidebar.expandAll')}>
+							{#if expandedLibraries.size > 0}
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/></svg>
+							{:else}
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+							{/if}
+						</button>
+					{/if}
+				</div>
 			</div>
 
 			<div class="sidebar-content">

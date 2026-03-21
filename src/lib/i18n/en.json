@@ -844,8 +844,8 @@
     "grid": "Grid",
     "graph": "Graph",
     "detail": "Detail",
-    "loading": "Loading notes...",
-    "linked": "Linked",
+    "loading": "Loading...",
+    "linked": "● Linked",
     "linkedOn": "Linked browsing on",
     "linkedOff": "Linked browsing off",
     "searchNotes": "Search notes...",
@@ -857,7 +857,19 @@
     "detailEmpty": "Select a note to view here",
     "sendToScreen": "Send to Second Screen",
     "skyviewHint": "Hover over a node in Sky View to see its details here",
-    "skyviewMode": "Sky View Companion"
+    "skyviewMode": "Sky View Companion",
+    "selectNote": "Select a note in the main window to preview it here",
+    "dashboard": {
+      "universe": "Universe",
+      "childUniverses": "Child Universes",
+      "libraries": "Libraries",
+      "folders": "Folders",
+      "notes": "Notes",
+      "libraryBreakdown": "Libraries",
+      "recentlyOpened": "Recently Opened",
+      "recentlyEdited": "Recently Edited",
+      "tags": "Tags"
+    }
   },
   "importer": {
     "title": "Import Notes",

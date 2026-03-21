@@ -838,8 +838,8 @@
     "grid": "ग्रिड",
     "graph": "ग्राफ",
     "detail": "विवरण",
-    "loading": "नोट्स लोड हो रहे हैं...",
-    "linked": "लिंक्ड",
+    "loading": "लोड हो रहा है...",
+    "linked": "● लिंक्ड",
     "linkedOn": "लिंक्ड ब्राउज़िंग चालू",
     "linkedOff": "लिंक्ड ब्राउज़िंग बंद",
     "searchNotes": "नोट्स खोजें...",
@@ -851,7 +851,19 @@
     "allLibraries": "सभी वॉल्ट",
     "sortLibrary": "वॉल्ट से क्रमबद्ध",
     "skyviewHint": "स्काई व्यू में किसी नोड पर माउस ले जाएं और उसकी जानकारी यहाँ देखें",
-    "skyviewMode": "स्काई व्यू साथी"
+    "skyviewMode": "स्काई व्यू साथी",
+    "selectNote": "मुख्य विंडो में एक नोट चुनें ताकि उसे यहाँ देखा जा सके",
+    "dashboard": {
+      "universe": "ब्रह्मांड",
+      "childUniverses": "उप-ब्रह्मांड",
+      "libraries": "पुस्तकालय",
+      "folders": "फ़ोल्डर",
+      "notes": "नोट्स",
+      "libraryBreakdown": "पुस्तकालय",
+      "recentlyOpened": "हाल ही में खोले गए",
+      "recentlyEdited": "हाल ही में संपादित",
+      "tags": "टैग्स"
+    }
   },
   "importer": {
     "title": "नोट्स आयात करें",

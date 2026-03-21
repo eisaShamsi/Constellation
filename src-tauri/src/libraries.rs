@@ -285,7 +285,7 @@ pub fn get_all_library_stats(app: tauri::AppHandle) -> Vec<LibraryStats> {
     let libraries = load_all_libraries(&app);
     libraries.iter().map(|v| {
         let (star_count, folder_count) = count_contents(Path::new(&v.path));
-        let recent_stars = get_recent_notes(Path::new(&v.path), &v.id, &v.name, 5);
+        let recent_stars = get_recent_notes(Path::new(&v.path), &v.id, &v.name, 10);
         LibraryStats {
             library_id: v.id.clone(),
             name: v.name.clone(),
@@ -1328,6 +1328,57 @@ fn scan_tags_recursive(dir: &Path, re: &regex::Regex, tags: &mut std::collection
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/// Return notes that contain a given tag (inline `#tag` or YAML frontmatter).
+#[tauri::command]
+pub fn notes_by_tag(app: tauri::AppHandle, library_path: String, tag: String) -> Result<Vec<StarInfo>, String> {
+    let libraries = load_all_libraries(&app);
+    if !libraries.iter().any(|v| v.path == library_path) {
+        return Err("Access denied: not a registered library.".to_string());
+    }
+    let lib = libraries.iter().find(|v| v.path == library_path).unwrap();
+    let re = regex::Regex::new(r"(?:^|\s)#([a-zA-Z\p{Arabic}][\w\p{Arabic}/\-]*)").unwrap();
+    let mut results = Vec::new();
+    collect_notes_with_tag(Path::new(&library_path), &lib.id, &lib.name, &re, &tag, &mut results);
+    results.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(results)
+}
+
+fn collect_notes_with_tag(dir: &Path, lib_id: &str, lib_name: &str, re: &regex::Regex, tag: &str, results: &mut Vec<StarInfo>) {
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(_) => return,
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') { continue; }
+        if path.is_dir() {
+            collect_notes_with_tag(&path, lib_id, lib_name, re, tag, results);
+        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            if let Ok(content) = fs::read_to_string(&path) {
+                let has_tag = re.captures_iter(&content).any(|cap| cap[1].eq_ignore_ascii_case(tag));
+                if has_tag {
+                    let modified = fs::metadata(&path)
+                        .and_then(|m| m.modified())
+                        .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
+                        .unwrap_or(0);
+                    let preview = safe_truncate(content.lines()
+                        .find(|l| !l.starts_with('#') && !l.starts_with("---") && !l.trim().is_empty())
+                        .unwrap_or(""), 80);
+                    results.push(StarInfo {
+                        name: name.clone(),
+                        path: path.to_string_lossy().to_string(),
+                        library_id: lib_id.to_string(),
+                        library_name: lib_name.to_string(),
+                        modified,
+                        preview,
+                    });
                 }
             }
         }

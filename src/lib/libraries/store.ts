@@ -165,6 +165,18 @@ export async function saveTabContent(
 		updateTabContent(tabId, newContent);
 		recentWrites.set(filePath, Date.now());
 		await writeNote(filePath, newContent);
+		emit('screen:note-saved', { path: filePath }).catch(() => {});
+		// Track as recently edited in localStorage for second screen dashboard
+		try {
+			const key = 'constellation-recent-edited';
+			const existing: { name: string; path: string; libraryName: string; editedAt: number }[] = JSON.parse(localStorage.getItem(key) || '[]');
+			const tab = get(openTabs).find(t => t.path === filePath);
+			if (tab) {
+				const filtered = existing.filter(n => n.path !== filePath);
+				filtered.unshift({ name: tab.name, path: filePath, libraryName: tab.libraryName, editedAt: Date.now() });
+				localStorage.setItem(key, JSON.stringify(filtered.slice(0, 20)));
+			}
+		} catch {}
 		setTimeout(() => recentWrites.delete(filePath), 2000);
 	} finally {
 		saveLocks.set(tabId, false);

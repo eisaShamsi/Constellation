@@ -849,8 +849,8 @@
     "grid": "Raster",
     "graph": "Graph",
     "detail": "Detail",
-    "loading": "Notizen werden geladen...",
-    "linked": "Verknüpft",
+    "loading": "Wird geladen...",
+    "linked": "● Verknüpft",
     "linkedOn": "Verknüpftes Browsen ein",
     "linkedOff": "Verknüpftes Browsen aus",
     "searchNotes": "Notizen durchsuchen...",
@@ -862,7 +862,19 @@
     "detailEmpty": "Wähle eine Notiz zur Ansicht",
     "sendToScreen": "An zweiten Bildschirm senden",
     "skyviewHint": "Bewegen Sie den Mauszeiger über einen Knoten in der Himmelsansicht, um seine Details hier zu sehen",
-    "skyviewMode": "Himmelsansicht-Begleiter"
+    "skyviewMode": "Himmelsansicht-Begleiter",
+    "selectNote": "Wählen Sie eine Notiz im Hauptfenster, um sie hier anzuzeigen",
+    "dashboard": {
+      "universe": "Universum",
+      "childUniverses": "Unter-Universen",
+      "libraries": "Bibliotheken",
+      "folders": "Ordner",
+      "notes": "Notizen",
+      "libraryBreakdown": "Bibliotheken",
+      "recentlyOpened": "Kürzlich geöffnet",
+      "recentlyEdited": "Kürzlich bearbeitet",
+      "tags": "Tags"
+    }
   },
   "importer": {
     "title": "Notizen importieren",

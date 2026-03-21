@@ -849,8 +849,8 @@
     "grid": "Cuadrícula",
     "graph": "Gráfico",
     "detail": "Detalle",
-    "loading": "Cargando notas...",
-    "linked": "Vinculado",
+    "loading": "Cargando...",
+    "linked": "● Vinculado",
     "linkedOn": "Navegación vinculada activada",
     "linkedOff": "Navegación vinculada desactivada",
     "searchNotes": "Buscar notas...",
@@ -862,7 +862,19 @@
     "detailEmpty": "Selecciona una nota para verla aquí",
     "sendToScreen": "Enviar a segunda pantalla",
     "skyviewHint": "Pasa el cursor sobre un nodo en Vista del cielo para ver sus detalles aquí",
-    "skyviewMode": "Acompañante de Vista del cielo"
+    "skyviewMode": "Acompañante de Vista del cielo",
+    "selectNote": "Selecciona una nota en la ventana principal para previsualizarla aquí",
+    "dashboard": {
+      "universe": "Universo",
+      "childUniverses": "Sub-universos",
+      "libraries": "Bibliotecas",
+      "folders": "Carpetas",
+      "notes": "Notas",
+      "libraryBreakdown": "Bibliotecas",
+      "recentlyOpened": "Abiertos recientemente",
+      "recentlyEdited": "Editadas recientemente",
+      "tags": "Etiquetas"
+    }
   },
   "importer": {
     "title": "Importar notas",
