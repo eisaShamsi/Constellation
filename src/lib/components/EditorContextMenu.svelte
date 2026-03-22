@@ -84,6 +84,10 @@
 			<span class="ecm-label">{$t('contextMenu.strikethrough')}</span>
 			<span class="ecm-shortcut">Ctrl+Shift+S</span>
 		</button>
+		<button class="ecm-item" onclick={() => act(() => onFormat('underline'))}>
+			<span class="ecm-label">{$t('contextMenu.underline')}</span>
+			<span class="ecm-shortcut">Ctrl+U</span>
+		</button>
 		<button class="ecm-item" onclick={() => act(() => onFormat('highlight'))}>
 			<span class="ecm-label">{$t('contextMenu.highlight')}</span>
 			<span class="ecm-shortcut">Ctrl+Shift+H</span>
@@ -91,6 +95,12 @@
 		<button class="ecm-item" onclick={() => act(() => onFormat('code'))}>
 			<span class="ecm-label">{$t('contextMenu.inlineCode')}</span>
 			<span class="ecm-shortcut">Ctrl+`</span>
+		</button>
+		<button class="ecm-item" onclick={() => act(() => onFormat('subscript'))}>
+			<span class="ecm-label">{$t('contextMenu.subscript') || 'Subscript'}</span>
+		</button>
+		<button class="ecm-item" onclick={() => act(() => onFormat('superscript'))}>
+			<span class="ecm-label">{$t('contextMenu.superscript') || 'Superscript'}</span>
 		</button>
 		<button class="ecm-item" onclick={() => act(() => onFormat('clear'))}>
 			<span class="ecm-label">{$t('contextMenu.clearFormatting')}</span>

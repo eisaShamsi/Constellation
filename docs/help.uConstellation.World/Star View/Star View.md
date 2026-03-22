@@ -20,10 +20,12 @@ Star View displays your notes as an interactive network of nodes and links, powe
 | Method | Action |
 |--------|--------|
 | **Mission Control** | Press `Ctrl+P`, type "star view" |
-| **Ribbon** | Click the graph icon in the sidebar |
 | **Keyboard** | `Ctrl+G` |
 
 Press `Escape` to close the Star View.
+
+> [!note]
+> The Star View ribbon icon has been removed from the left dock. Star View is now accessible via keyboard shortcut or Mission Control. The Sky View (OrgChart) mode is available as a tab in the Notes Management sidebar.
 
 ---
 
@@ -243,6 +245,29 @@ Star View provides first-class support for Arabic, Hebrew, and other RTL scripts
 - **Legend items** flip dot/text order based on content language
 - **Tooltips and panels** respect RTL layout
 - **Arabic font fallback** — labels use system Arabic fonts (Noto Naskh Arabic, Segoe UI) when the primary font lacks Arabic glyph coverage
+
+---
+
+## Picture-in-Picture (PiP) overlay
+
+When Star View is open and you click a child universe, library, or folder in the Notes Management sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay on top of the main graph.
+
+### What the PiP shows
+
+The PiP displays a filtered sub-graph containing only the nodes that belong to the selected scope. For example, clicking a library shows only that library's notes and their interconnections.
+
+### PiP features
+
+| Feature | Description |
+|---------|-------------|
+| **Filtered graph** | Only nodes from the selected scope appear |
+| **Filtered legend** | The PiP has its own legend showing only the relevant entries |
+| **Resizable** | Drag the edges or corners to resize the PiP window |
+| **Repositionable** | Drag the title bar to move the PiP anywhere on screen |
+
+### Cross-mode selection sync
+
+Clicking a child universe, library, folder, or note in any sidebar mode (Tree, List, or OrgChart) highlights the corresponding nodes in the Star View graph. This bidirectional sync helps you maintain spatial awareness while browsing in the sidebar.
 
 ---
 

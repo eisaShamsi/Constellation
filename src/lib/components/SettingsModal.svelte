@@ -646,39 +646,6 @@
 						</label>
 					</div>
 
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.editor.defaultView')}</div>
-							<div class="setting-desc">{$t('settings.editor.defaultViewDesc')}</div>
-						</div>
-						<select class="setting-control" value={$appSettings.defaultView} onchange={(e) => updateSettings({ defaultView: (e.target as HTMLSelectElement).value as any })}>
-							<option value="reading">{$t('settings.editor.readingView')}</option>
-							<option value="editing">{$t('settings.editor.editingView')}</option>
-						</select>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.editor.defaultEditingMode')}</div>
-							<div class="setting-desc">{$t('settings.editor.defaultEditingModeDesc')}</div>
-						</div>
-						<select class="setting-control" value={$appSettings.defaultEditingMode} onchange={(e) => updateSettings({ defaultEditingMode: (e.target as HTMLSelectElement).value as any })}>
-							<option value="livePreview">{$t('settings.editor.livePreview')}</option>
-							<option value="source">{$t('settings.editor.sourceMode')}</option>
-						</select>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.editor.editorType')}</div>
-							<div class="setting-desc">{$t('settings.editor.editorTypeDesc')}</div>
-						</div>
-						<select class="setting-control" value={$appSettings.editorType} onchange={(e) => updateSettings({ editorType: (e.target as HTMLSelectElement).value as any })}>
-							<option value="markdown">{$t('settings.editor.markdownEditor')}</option>
-							<option value="document">{$t('settings.editor.documentEditor')}</option>
-						</select>
-					</div>
-
 					<div class="setting-section-heading">{$t('settings.editor.display')}</div>
 
 					<div class="setting-item">

@@ -256,7 +256,10 @@
 			case 'code': wrapSelection(view, '`', '`'); break;
 			case 'toggleComment': toggleComment(view); break;
 			case 'toggleCheckbox': toggleCheckbox(view); break;
-			case 'clear': clearFormatting(view); break;
+			case 'underline': applyUnderline(view); break;
+		case 'subscript': applySubscript(view); break;
+		case 'superscript': applySuperscript(view); break;
+		case 'clear': clearFormatting(view); break;
 		}
 		view.focus();
 	}
@@ -891,6 +894,110 @@
 		return true;
 	}
 
+	// HTML tag wrapping (for font, color, sub, sup, underline)
+	function wrapWithHtmlTag(view: EditorView, tagOpen: string, tagClose: string): boolean {
+		const { state } = view;
+		const { from, to } = state.selection.main;
+		if (from === to) {
+			view.dispatch({
+				changes: { from, to, insert: tagOpen + tagClose },
+				selection: { anchor: from + tagOpen.length }
+			});
+		} else {
+			const selected = state.sliceDoc(from, to);
+			// Check if already wrapped with this tag — unwrap
+			if (selected.startsWith(tagOpen) && selected.endsWith(tagClose)) {
+				const inner = selected.slice(tagOpen.length, -tagClose.length);
+				view.dispatch({
+					changes: { from, to, insert: inner },
+					selection: { anchor: from, head: from + inner.length }
+				});
+			} else {
+				view.dispatch({
+					changes: { from, to, insert: tagOpen + selected + tagClose },
+					selection: { anchor: from + tagOpen.length, head: to + tagOpen.length }
+				});
+			}
+		}
+		return true;
+	}
+
+	function applyFontFamily(view: EditorView, fontValue: string): boolean {
+		if (!fontValue) {
+			// Remove font-family span if selection is inside one
+			const { from, to } = view.state.selection.main;
+			const selected = view.state.sliceDoc(from, to);
+			const spanMatch = selected.match(/^<span style="font-family:[^"]*">([\s\S]*)<\/span>$/);
+			if (spanMatch) {
+				view.dispatch({
+					changes: { from, to, insert: spanMatch[1] },
+					selection: { anchor: from, head: from + spanMatch[1].length }
+				});
+				return true;
+			}
+			return false;
+		}
+		const safeFont = fontValue.replace(/"/g, "'");
+		return wrapWithHtmlTag(view, `<span style="font-family: ${safeFont}">`, '</span>');
+	}
+
+	function applyTextColor(view: EditorView, color: string): boolean {
+		return wrapWithHtmlTag(view, `<span style="color: ${color}">`, '</span>');
+	}
+
+	function removeTextColor(view: EditorView): boolean {
+		const { from, to } = view.state.selection.main;
+		const selected = view.state.sliceDoc(from, to);
+		const spanMatch = selected.match(/^<span style="color:[^"]*">([\s\S]*)<\/span>$/);
+		if (spanMatch) {
+			view.dispatch({
+				changes: { from, to, insert: spanMatch[1] },
+				selection: { anchor: from, head: from + spanMatch[1].length }
+			});
+			return true;
+		}
+		return false;
+	}
+
+	function applySubscript(view: EditorView): boolean {
+		return wrapWithHtmlTag(view, '<sub>', '</sub>');
+	}
+
+	function applySuperscript(view: EditorView): boolean {
+		return wrapWithHtmlTag(view, '<sup>', '</sup>');
+	}
+
+	function applyUnderline(view: EditorView): boolean {
+		return wrapWithHtmlTag(view, '<u>', '</u>');
+	}
+
+	// Font picker state
+	let showFontPicker = $state(false);
+	let showColorPicker = $state(false);
+
+	const fontFamilies = [
+		{ label: 'Default', value: '' },
+		{ label: 'Sans Serif', value: "Inter, -apple-system, sans-serif" },
+		{ label: 'Serif', value: "Georgia, 'Times New Roman', serif" },
+		{ label: 'Monospace', value: "'Cascadia Code', 'Fira Code', Consolas, monospace" },
+		{ label: 'Amiri', value: "Amiri, serif" },
+		{ label: 'Noto Sans Arabic', value: "'Noto Sans Arabic', sans-serif" },
+		{ label: 'Noto Naskh Arabic', value: "'Noto Naskh Arabic', serif" },
+		{ label: 'Cairo', value: "Cairo, sans-serif" },
+		{ label: 'Tajawal', value: "Tajawal, sans-serif" },
+		{ label: 'Lora', value: "Lora, serif" },
+		{ label: 'Merriweather', value: "Merriweather, serif" },
+		{ label: 'Roboto', value: "Roboto, sans-serif" },
+		{ label: 'Open Sans', value: "'Open Sans', sans-serif" },
+	];
+
+	const colorPalette = [
+		'#000000', '#434343', '#666666', '#999999', '#cccccc',
+		'#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6',
+		'#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#f43f5e',
+		'#7c2d12', '#854d0e', '#166534', '#1e40af', '#581c87',
+	];
+
 	// Duplicate current line
 	function duplicateLine(view: EditorView): boolean {
 		const { state } = view;
@@ -991,6 +1098,7 @@
 		{ key: 'Ctrl-Enter', run: toggleCheckbox },
 		{ key: 'Ctrl-b', run: (v) => wrapSelection(v, '**', '**') },
 		{ key: 'Ctrl-i', run: (v) => wrapSelection(v, '_', '_') },
+		{ key: 'Ctrl-u', run: (v) => applyUnderline(v) },
 		{ key: 'Ctrl-Shift-s', run: (v) => wrapSelection(v, '~~', '~~') },
 		{ key: 'Ctrl-Shift-h', run: (v) => wrapSelection(v, '==', '==') },
 		{ key: 'Ctrl-`', run: (v) => wrapSelection(v, '`', '`') },
@@ -1462,6 +1570,37 @@
 			onClose={() => contextMenuVisible = false}
 		/>
 	{/if}
+	<!-- Font picker dropdown -->
+	{#if showFontPicker && view}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<div class="cm-dropdown-overlay" onclick={() => showFontPicker = false}>
+			<div class="cm-dropdown-menu cm-font-menu" onclick={(e) => e.stopPropagation()}>
+				{#each fontFamilies as font}
+					<button
+						class="cm-dropdown-item"
+						style={font.value ? `font-family: ${font.value}` : ''}
+						onclick={() => { showFontPicker = false; if (view) applyFontFamily(view, font.value); view?.focus(); }}
+					>
+						{font.label}
+					</button>
+				{/each}
+			</div>
+		</div>
+	{/if}
+	<!-- Color picker dropdown -->
+	{#if showColorPicker && view}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<div class="cm-dropdown-overlay" onclick={() => showColorPicker = false}>
+			<div class="cm-dropdown-menu cm-color-grid" onclick={(e) => e.stopPropagation()}>
+				{#each colorPalette as c}
+					<button class="cm-color-swatch" style="background:{c}" onclick={() => { showColorPicker = false; if (view) applyTextColor(view, c); view?.focus(); }} title={c}></button>
+				{/each}
+				<button class="cm-dropdown-item" onclick={() => { showColorPicker = false; if (view) removeTextColor(view); view?.focus(); }}>Remove color</button>
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -1519,4 +1658,31 @@
 	.cm-wrapper :global(.cm-indent-8::before) { left: calc(8 * 2em); }
 	.cm-wrapper :global(.cm-indent-9::before) { left: calc(9 * 2em); }
 	.cm-wrapper :global(.cm-indent-10::before) { left: calc(10 * 2em); }
+	/* Font/Color picker dropdowns */
+	.cm-dropdown-overlay {
+		position: fixed; inset: 0; z-index: 1000;
+	}
+	.cm-dropdown-menu {
+		position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+		padding: 4px; min-width: 180px; max-height: 320px; overflow-y: auto;
+		font-family: var(--font-interface-theme);
+	}
+	.cm-font-menu { min-width: 220px; }
+	.cm-dropdown-item {
+		display: block; width: 100%; padding: 6px 12px; border: none; background: none;
+		color: var(--text-normal); cursor: pointer; text-align: start; border-radius: 4px;
+		font-size: 13px; font-family: var(--font-interface-theme);
+	}
+	.cm-dropdown-item:hover { background: var(--background-modifier-hover); }
+	.cm-color-grid {
+		display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+		padding: 8px; min-width: 180px;
+	}
+	.cm-color-swatch {
+		width: 28px; height: 28px; border-radius: 4px; border: 2px solid transparent;
+		cursor: pointer; transition: border-color 0.15s;
+	}
+	.cm-color-swatch:hover { border-color: var(--text-normal); }
 </style>

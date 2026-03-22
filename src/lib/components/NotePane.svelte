@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { parseFrontmatter, extractHeadings, editingTabIds, toggleEditMode, saveTabContent, resolveWikilinkCrossLibrary, openNoteTab, openTabs, libraryAppearances, libraries, navigateBack, navigateForward, readNote, appSettings, renameItem } from '$lib/libraries/store';
+	import { parseFrontmatter, extractHeadings, editingTabIds, toggleEditMode, saveTabContent, resolveWikilinkCrossLibrary, openNoteTab, openTabs, libraryAppearances, libraries, navigateBack, navigateForward, readNote, appSettings, updateSettings, renameItem } from '$lib/libraries/store';
 	import type { OpenTab } from '$lib/libraries/store';
 	import { detectDir, renderMarkdown, postProcessRenderedContent, collectNoteNames } from '$lib/utils';
 	import { dir, t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import CodeMirrorEditor from './CodeMirrorEditor.svelte';
-	import TipTapEditor from './TipTapEditor.svelte';
 	import BaseView from './BaseView.svelte';
 	import type { BaseDefinition } from '$lib/bases/types';
 
@@ -427,6 +426,16 @@ ${contentEl.innerHTML}
 						<input type="range" class="bc-width-slider" min="50" max="100" step="5" bind:value={noteWidth} />
 					</div>
 					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
+					<button
+						class="bc-editor-switch"
+						class:source={!livePreviewEnabled}
+						onclick={() => livePreviewEnabled = !livePreviewEnabled}
+						title={livePreviewEnabled ? 'Source mode' : 'Live Preview'}
+					>
+						<span class="switch-track">
+							<span class="switch-thumb"></span>
+						</span>
+					</button>
 					<button class="bc-edit-btn" onclick={handleExportHTML} title={$t('notePane.exportHtml')}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 					</button>
@@ -509,35 +518,26 @@ ${contentEl.innerHTML}
 				{/if}
 			{/if}
 			{#if editing}
-				{#if $appSettings.editorType === 'document'}
-					<TipTapEditor
-						value={editBody}
-						dir={noteDir}
-						placeholder={$t('notePane.placeholder')}
-						onchange={handleEditorChange}
-					/>
-				{:else}
-					<CodeMirrorEditor
-						value={editBody}
-						dir={noteDir}
-						placeholder={$t('notePane.placeholder')}
-						onchange={handleEditorChange}
-						{noteNames}
-						{allTags}
-						livePreview={livePreviewEnabled}
-						showLineNumbers={$appSettings.showLineNumbers}
-						foldHeading={$appSettings.foldHeading}
-						foldIndent={$appSettings.foldIndent}
-						indentationGuides={$appSettings.indentationGuides}
-						indentWithTabs={$appSettings.indentWithTabs}
-						tabSize={$appSettings.tabSize}
-						autoPairMarkdown={$appSettings.autoPairMarkdown}
-						initialCursorPos={tab?.cursorPos ?? 0}
-						initialScrollTop={tab?.scrollTop ?? 0}
-						onCursorChange={(pos) => { if (tab) tab.cursorPos = pos; }}
-						onScrollChange={(top) => { if (tab) tab.scrollTop = top; }}
-					/>
-				{/if}
+				<CodeMirrorEditor
+					value={editBody}
+					dir={noteDir}
+					placeholder={$t('notePane.placeholder')}
+					onchange={handleEditorChange}
+					{noteNames}
+					{allTags}
+					livePreview={livePreviewEnabled}
+					showLineNumbers={$appSettings.showLineNumbers}
+					foldHeading={$appSettings.foldHeading}
+					foldIndent={$appSettings.foldIndent}
+					indentationGuides={$appSettings.indentationGuides}
+					indentWithTabs={$appSettings.indentWithTabs}
+					tabSize={$appSettings.tabSize}
+					autoPairMarkdown={$appSettings.autoPairMarkdown}
+					initialCursorPos={tab?.cursorPos ?? 0}
+					initialScrollTop={tab?.scrollTop ?? 0}
+					onCursorChange={(pos) => { if (tab) tab.cursorPos = pos; }}
+					onScrollChange={(top) => { if (tab) tab.scrollTop = top; }}
+				/>
 			{:else}
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -621,6 +621,26 @@ ${contentEl.innerHTML}
 		border: none; background: none; border-radius: 3px; color: var(--text-faint); cursor: pointer;
 	}
 	.bc-edit-btn:hover { background: var(--background-modifier-border); color: var(--text-normal); }
+
+	.bc-editor-switch {
+		display: flex; align-items: center; padding: 0; border: none;
+		background: none; cursor: pointer;
+	}
+	.switch-track {
+		width: 28px; height: 16px; border-radius: 8px; position: relative;
+		background: var(--interactive-accent);
+		box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+		transition: background 0.25s;
+	}
+	.bc-editor-switch.source .switch-track { background: var(--text-muted); }
+	.switch-thumb {
+		width: 12px; height: 12px; border-radius: 50%; position: absolute;
+		top: 2px; left: 2px;
+		background: white;
+		box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+		transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+	.bc-editor-switch.source .switch-thumb { transform: translateX(12px); }
 	.note-scroll {
 		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 100%; align-self: center; width: 100%;
 		font-size: var(--library-font-size, 0.95rem);
