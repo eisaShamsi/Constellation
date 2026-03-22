@@ -14,8 +14,10 @@
 	import TableToolbar from './TableToolbar.svelte';
 	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, generateTable, detectTabularText, tabularTextToTable, type ParsedTable } from '$lib/editor/tableUtils';
 	import { evaluateTableFormulas, indexToCol } from '$lib/editor/tableFormulas';
-	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
+	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath } from '$lib/editor/livePreview';
 	import TableGridPicker from './TableGridPicker.svelte';
+	import EditorContextMenu from './EditorContextMenu.svelte';
+	import { syntaxTree } from '@codemirror/language';
 
 	let {
 		value = '',
@@ -146,6 +148,278 @@
 	let gridPickerVisible = $state(false);
 	let gridPickerX = $state(0);
 	let gridPickerY = $state(0);
+
+	// ─── Context menu state ───
+	let contextMenuVisible = $state(false);
+	let contextMenuX = $state(0);
+	let contextMenuY = $state(0);
+	let contextMenuHasSelection = $state(false);
+	let contextMenuCursorContext = $state<'normal' | 'heading' | 'table' | 'checkbox' | 'link' | 'codeblock'>('normal');
+	let contextMenuHeadingLevel = $state<number | null>(null);
+
+	function detectCursorContext(editorView: EditorView): { context: typeof contextMenuCursorContext; headingLevel: number | null } {
+		const pos = editorView.state.selection.main.head;
+		const tree = syntaxTree(editorView.state);
+		let node = tree.resolve(pos, -1);
+		let context: typeof contextMenuCursorContext = 'normal';
+		let headingLevel: number | null = null;
+
+		while (node) {
+			const name = node.name;
+			if (name === 'Table') { context = 'table'; break; }
+			if (name === 'FencedCode' || name === 'CodeBlock') { context = 'codeblock'; break; }
+			if (name.startsWith('ATXHeading')) {
+				context = 'heading';
+				const match = name.match(/(\d)/);
+				headingLevel = match ? parseInt(match[1]) : null;
+				// Also check from line text
+				if (!headingLevel) {
+					const line = editorView.state.doc.lineAt(pos);
+					const hm = line.text.match(/^(#{1,6})\s/);
+					headingLevel = hm ? hm[1].length : null;
+				}
+				break;
+			}
+			if (name === 'Link' || name === 'WikiLink') { context = 'link'; break; }
+			if (name === 'TaskMarker') { context = 'checkbox'; break; }
+			if (node.parent) { node = node.parent; } else { break; }
+		}
+
+		// Also check for task markers via line text
+		if (context === 'normal') {
+			const line = editorView.state.doc.lineAt(pos);
+			if (/^\s*- \[[ x]\]/i.test(line.text)) context = 'checkbox';
+		}
+
+		return { context, headingLevel };
+	}
+
+	function editorEventHandlers() {
+		return EditorView.domEventHandlers({
+			// Ctrl+Click to follow links
+			click: (event: MouseEvent, editorView: EditorView) => {
+				if (!(event.ctrlKey || event.metaKey)) return false;
+				const pos = editorView.posAtCoords({ x: event.clientX, y: event.clientY });
+				if (pos === null) return false;
+				const line = editorView.state.doc.lineAt(pos);
+				const offset = pos - line.from;
+				// Check for wikilink at click position
+				const wikiRe = /\[\[([^\]]+)\]\]/g;
+				let match;
+				while ((match = wikiRe.exec(line.text)) !== null) {
+					if (offset >= match.index && offset <= match.index + match[0].length) {
+						event.preventDefault();
+						const link = match[1].split('|')[0].split('#')[0];
+						document.dispatchEvent(new CustomEvent('constellation:navigate-link', { detail: { link } }));
+						return true;
+					}
+				}
+				// Check for markdown link at click position
+				const mdRe = /\[([^\]]+)\]\(([^)]+)\)/g;
+				while ((match = mdRe.exec(line.text)) !== null) {
+					if (offset >= match.index && offset <= match.index + match[0].length) {
+						event.preventDefault();
+						const url = match[2];
+						if (url.startsWith('http://') || url.startsWith('https://')) {
+							window.open(url, '_blank');
+						}
+						return true;
+					}
+				}
+				return false;
+			},
+			contextmenu: (event: MouseEvent, editorView: EditorView) => {
+				event.preventDefault();
+				// Hide formatting toolbar
+				toolbarVisible = false;
+				if (toolbarTimeout) { clearTimeout(toolbarTimeout); toolbarTimeout = null; }
+
+				const { context, headingLevel } = detectCursorContext(editorView);
+				const sel = editorView.state.selection.main;
+				contextMenuHasSelection = sel.from !== sel.to;
+				contextMenuCursorContext = context;
+				contextMenuHeadingLevel = headingLevel;
+				contextMenuX = event.clientX;
+				contextMenuY = event.clientY;
+				contextMenuVisible = true;
+			}
+		});
+	}
+
+	function handleContextFormat(type: string) {
+		if (!view) return;
+		switch (type) {
+			case 'bold': wrapSelection(view, '**', '**'); break;
+			case 'italic': wrapSelection(view, '_', '_'); break;
+			case 'strikethrough': wrapSelection(view, '~~', '~~'); break;
+			case 'highlight': wrapSelection(view, '==', '=='); break;
+			case 'code': wrapSelection(view, '`', '`'); break;
+			case 'toggleComment': toggleComment(view); break;
+			case 'toggleCheckbox': toggleCheckbox(view); break;
+			case 'clear': clearFormatting(view); break;
+		}
+		view.focus();
+	}
+
+	function handleContextInsert(type: string) {
+		if (!view) return;
+		const pos = view.state.selection.main.head;
+		const line = view.state.doc.lineAt(pos);
+		const atLineStart = line.text.trim() === '';
+		const nl = atLineStart ? '' : '\n';
+
+		switch (type) {
+			case 'link': wrapSelection(view, '[[', ']]'); break;
+			case 'image': {
+				const insert = nl + '![[]]' + '\n';
+				view.dispatch({ changes: { from: atLineStart ? line.from : pos, insert }, selection: { anchor: (atLineStart ? line.from : pos) + nl.length + 3 } });
+				break;
+			}
+			case 'table': showTableGridPicker(); return; // Don't focus yet
+			case 'horizontalRule': {
+				const insert = nl + '---\n';
+				view.dispatch({ changes: { from: atLineStart ? line.from : pos, insert } });
+				break;
+			}
+			case 'codeBlock': {
+				const insert = nl + '```\n\n```\n';
+				view.dispatch({ changes: { from: atLineStart ? line.from : pos, insert }, selection: { anchor: (atLineStart ? line.from : pos) + nl.length + 4 } });
+				break;
+			}
+			case 'callout': {
+				const insert = nl + '> [!note]\n> ';
+				view.dispatch({ changes: { from: atLineStart ? line.from : pos, insert }, selection: { anchor: (atLineStart ? line.from : pos) + nl.length + insert.length - nl.length } });
+				break;
+			}
+			case 'mathBlock': {
+				const insert = nl + '$$\n\n$$\n';
+				view.dispatch({ changes: { from: atLineStart ? line.from : pos, insert }, selection: { anchor: (atLineStart ? line.from : pos) + nl.length + 3 } });
+				break;
+			}
+			case 'blockquote': {
+				const text = line.text;
+				if (text.startsWith('> ')) {
+					view.dispatch({ changes: { from: line.from, to: line.from + 2, insert: '' } });
+				} else {
+					view.dispatch({ changes: { from: line.from, insert: '> ' } });
+				}
+				break;
+			}
+		}
+		view.focus();
+	}
+
+	function handleContextHeading(level: number) {
+		if (level === 0) {
+			// Remove heading
+			if (!view) return;
+			const line = view.state.doc.lineAt(view.state.selection.main.from);
+			const match = line.text.match(/^#{1,6}\s/);
+			if (match) {
+				view.dispatch({ changes: { from: line.from, to: line.from + match[0].length, insert: '' } });
+			}
+			view.focus();
+		} else {
+			applyHeading(level);
+		}
+	}
+
+	function handleContextList(type: string) {
+		if (!view) return;
+		const line = view.state.doc.lineAt(view.state.selection.main.from);
+		const text = line.text;
+		// Remove existing list prefix
+		const cleaned = text.replace(/^\s*([-*+]|\d+\.)\s(\[[ x]\]\s)?/, '');
+		let prefix = '';
+		switch (type) {
+			case 'bullet': prefix = '- '; break;
+			case 'numbered': prefix = '1. '; break;
+			case 'task': prefix = '- [ ] '; break;
+		}
+		view.dispatch({ changes: { from: line.from, to: line.to, insert: prefix + cleaned } });
+		view.focus();
+	}
+
+	function handleContextClipboard(action: string) {
+		if (!view) return;
+		switch (action) {
+			case 'cut':
+				document.execCommand('cut');
+				break;
+			case 'copy':
+				document.execCommand('copy');
+				break;
+			case 'paste':
+				navigator.clipboard.readText().then(text => {
+					if (text) {
+						const { from, to } = view!.state.selection.main;
+						view!.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } });
+					}
+				}).catch(() => {});
+				break;
+			case 'pastePlain':
+				pasteAsPlainText(view);
+				break;
+		}
+		view.focus();
+	}
+
+	function handleContextTableAction(action: string) {
+		if (!currentTable) return;
+		switch (action) {
+			case 'addRow': applyTableChange(addRow(currentTable, currentTable.cursorRow)); break;
+			case 'addColumn': applyTableChange(addColumn(currentTable, currentTable.cursorCol)); break;
+			case 'deleteRow': applyTableChange(deleteRow(currentTable, currentTable.cursorRow)); break;
+			case 'deleteColumn': applyTableChange(deleteColumn(currentTable, currentTable.cursorCol)); break;
+			case 'sortAsc': applyTableChange(sortByColumn(currentTable, currentTable.cursorCol, 'asc')); break;
+			case 'sortDesc': applyTableChange(sortByColumn(currentTable, currentTable.cursorCol, 'desc')); break;
+		}
+	}
+
+	function handleContextLinkAction(action: string) {
+		if (!view) return;
+		const pos = view.state.selection.main.head;
+		const line = view.state.doc.lineAt(pos);
+		const text = line.text;
+
+		if (action === 'open') {
+			// Find wikilink under cursor
+			const wikiMatch = text.match(/\[\[([^\]]+)\]\]/);
+			if (wikiMatch) {
+				// Dispatch a custom event — NotePane handles wikilink navigation
+				const event = new CustomEvent('constellation:navigate-link', { detail: { link: wikiMatch[1] } });
+				document.dispatchEvent(event);
+			}
+		} else if (action === 'remove') {
+			// Remove link syntax, keep text
+			const newText = text.replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, '$1')
+				.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+			view.dispatch({ changes: { from: line.from, to: line.to, insert: newText } });
+		} else if (action === 'edit') {
+			// Select the link for editing — find the link bounds
+			const wikiStart = text.indexOf('[[');
+			const wikiEnd = text.indexOf(']]');
+			if (wikiStart >= 0 && wikiEnd >= 0) {
+				view.dispatch({ selection: { anchor: line.from + wikiStart, head: line.from + wikiEnd + 2 } });
+			}
+		}
+		view.focus();
+	}
+
+	function clearFormatting(v: EditorView) {
+		const { from, to } = v.state.selection.main;
+		if (from === to) return;
+		let text = v.state.sliceDoc(from, to);
+		// Strip markdown formatting markers
+		text = text.replace(/\*\*(.+?)\*\*/g, '$1')
+			.replace(/__(.+?)__/g, '$1')
+			.replace(/~~(.+?)~~/g, '$1')
+			.replace(/==(.+?)==/g, '$1')
+			.replace(/`(.+?)`/g, '$1')
+			.replace(/_(.+?)_/g, '$1')
+			.replace(/\*(.+?)\*/g, '$1');
+		v.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from, head: from + text.length } });
+	}
 
 	function showTableGridPicker() {
 		if (!view || !containerEl) return;
@@ -960,10 +1234,12 @@
 				]),
 				indentGuidesCompartment.of(indentationGuides ? [indentGuidesPlugin] : []),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir })),
+				libraryPathField,
 				livePreviewCompartment.of(livePreview ? [livePreviewPlugin, livePreviewTheme] : []),
 				cmPlaceholder(placeholder),
 				editorTheme,
 				clipboardImagePaste(),
+				editorEventHandlers(),
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged && !updating) {
@@ -984,6 +1260,11 @@
 			]
 		});
 		view = new EditorView({ state: startState, parent: containerEl });
+
+		// Set initial library path for image resolution
+		if (libraryPath) {
+			view.dispatch({ effects: setLibraryPath.of(libraryPath) });
+		}
 
 		// Restore cursor position and scroll
 		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
@@ -1162,6 +1443,23 @@
 			y={gridPickerY}
 			onInsert={insertTableFromGrid}
 			onClose={() => gridPickerVisible = false}
+		/>
+	{/if}
+	{#if contextMenuVisible && view}
+		<EditorContextMenu
+			x={contextMenuX}
+			y={contextMenuY}
+			hasSelection={contextMenuHasSelection}
+			cursorContext={contextMenuCursorContext}
+			currentHeadingLevel={contextMenuHeadingLevel}
+			onFormat={handleContextFormat}
+			onInsert={handleContextInsert}
+			onHeading={handleContextHeading}
+			onList={handleContextList}
+			onClipboard={handleContextClipboard}
+			onTableAction={handleContextTableAction}
+			onLinkAction={handleContextLinkAction}
+			onClose={() => contextMenuVisible = false}
 		/>
 	{/if}
 </div>

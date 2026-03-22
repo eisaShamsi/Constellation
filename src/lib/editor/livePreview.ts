@@ -12,7 +12,34 @@ import {
 	WidgetType,
 } from '@codemirror/view';
 import { syntaxTree } from '@codemirror/language';
-import { RangeSetBuilder } from '@codemirror/state';
+import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
+import { convertFileSrc } from '@tauri-apps/api/core';
+
+// ─── Library path state field (for resolving image embeds) ───
+export const setLibraryPath = StateEffect.define<string>();
+
+export const libraryPathField = StateField.define<string>({
+	create: () => '',
+	update(value, tr) {
+		for (const effect of tr.effects) {
+			if (effect.is(setLibraryPath)) return effect.value;
+		}
+		return value;
+	},
+});
+
+function resolveEmbedImage(view: EditorView, filename: string): string | null {
+	const libPath = view.state.field(libraryPathField, false);
+	if (!libPath) return null;
+	// Build absolute path and convert for webview
+	const sep = libPath.includes('\\') ? '\\' : '/';
+	const fullPath = libPath + sep + filename;
+	try {
+		return convertFileSrc(fullPath);
+	} catch {
+		return null;
+	}
+}
 
 // CSS classes for live preview decorations
 const headingClasses = [
@@ -48,6 +75,51 @@ class CheckboxWidget extends WidgetType {
 		return cb;
 	}
 	eq(other: CheckboxWidget) { return this.checked === other.checked; }
+}
+
+/** Widget for inline images when cursor is off the line */
+class ImageWidget extends WidgetType {
+	src: string;
+	alt: string;
+	constructor(src: string, alt: string) {
+		super();
+		this.src = src;
+		this.alt = alt;
+	}
+	toDOM() {
+		const wrap = document.createElement('div');
+		wrap.className = 'cm-md-image-widget';
+		const img = document.createElement('img');
+		img.src = this.src;
+		img.alt = this.alt || '';
+		img.loading = 'lazy';
+		img.onerror = () => {
+			wrap.innerHTML = '';
+			const fallback = document.createElement('span');
+			fallback.className = 'cm-md-image-fallback';
+			fallback.textContent = `📷 ${this.alt || this.src}`;
+			wrap.appendChild(fallback);
+		};
+		wrap.appendChild(img);
+		return wrap;
+	}
+	eq(other: ImageWidget) { return this.src === other.src; }
+}
+
+/** Widget for code block language label */
+class CodeBlockLabelWidget extends WidgetType {
+	lang: string;
+	constructor(lang: string) {
+		super();
+		this.lang = lang;
+	}
+	toDOM() {
+		const badge = document.createElement('span');
+		badge.className = 'cm-md-codeblock-lang';
+		badge.textContent = this.lang;
+		return badge;
+	}
+	eq(other: CodeBlockLabelWidget) { return this.lang === other.lang; }
 }
 
 /** Widget shown for dataview code blocks when cursor is outside */
@@ -162,23 +234,86 @@ function buildDecorations(view: EditorView): DecorationSet {
 					}
 				}
 
-				// Dataview fenced code blocks — show label widget when cursor is outside
-				if (node.name === 'FencedCode' && !cursorInBlock) {
+				// Highlight (==text==)
+				if (node.name === 'Highlight') {
+					ranges.push({ from: node.from, to: node.to, deco: highlightDeco });
+				}
+				if (node.name === 'HighlightMark' && !onCursorLine) {
+					ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({}) });
+				}
+
+				// Fenced code blocks
+				if (node.name === 'FencedCode') {
 					const firstLine = doc.lineAt(node.from);
 					const info = firstLine.text.trim();
-					if (/^```+\s*dataview\s*$/i.test(info)) {
-						// Extract the query text (between opening and closing fence)
-						const innerFrom = firstLine.to + 1;
-						const lastLine = doc.lineAt(node.to);
-						const innerTo = lastLine.text.trim().startsWith('```') ? lastLine.from : node.to;
-						const queryText = innerTo > innerFrom ? doc.sliceString(innerFrom, innerTo).trim() : '';
+
+					if (!cursorInBlock) {
+						// Dataview — show label widget
+						if (/^```+\s*dataview\s*$/i.test(info)) {
+							const innerFrom = firstLine.to + 1;
+							const lastLine = doc.lineAt(node.to);
+							const innerTo = lastLine.text.trim().startsWith('```') ? lastLine.from : node.to;
+							const queryText = innerTo > innerFrom ? doc.sliceString(innerFrom, innerTo).trim() : '';
+							ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
+								widget: new DataviewLabelWidget(queryText),
+							}) });
+						}
+					}
+
+					// Language label for non-dataview code blocks
+					if (!cursorInBlock) {
+						const langMatch = info.match(/^```+\s*(\S+)/);
+						if (langMatch && !/^dataview$/i.test(langMatch[1])) {
+							ranges.push({ from: firstLine.to, to: firstLine.to, deco: Decoration.widget({
+								widget: new CodeBlockLabelWidget(langMatch[1]),
+								side: 1,
+							}) });
+						}
+					}
+				}
+
+				// Inline images: ![[file.png]] or ![alt](url)
+				if (node.name === 'Image' && !onCursorLine) {
+					const text = doc.sliceString(node.from, node.to);
+					// Standard markdown: ![alt](url)
+					const mdMatch = text.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
+					if (mdMatch) {
 						ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
-							widget: new DataviewLabelWidget(queryText),
+							widget: new ImageWidget(mdMatch[2], mdMatch[1]),
 						}) });
 					}
 				}
 			}
 		});
+	}
+
+	// Wikilink image embeds: ![[file.png]] — handled via line text scan
+	// (These aren't parsed as Image nodes by the markdown parser)
+	for (const { from: vFrom, to: vTo } of view.visibleRanges) {
+		for (let pos = vFrom; pos < vTo;) {
+			const line = doc.lineAt(pos);
+			if (line.number !== cursorLine) {
+				const lineText = line.text;
+				const embedRe = /!\[\[([^\]]+)\]\]/g;
+				let m;
+				while ((m = embedRe.exec(lineText)) !== null) {
+					const target = m[1];
+					const ext = target.split('.').pop()?.toLowerCase() || '';
+					if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'avif'].includes(ext)) {
+						// Try to resolve as a file URL — the libraryPath will be injected via state field
+						const imgSrc = resolveEmbedImage(view, target);
+						if (imgSrc) {
+							const absFrom = line.from + m.index;
+							const absTo = absFrom + m[0].length;
+							ranges.push({ from: absFrom, to: absTo, deco: Decoration.replace({
+								widget: new ImageWidget(imgSrc, target),
+							}) });
+						}
+					}
+				}
+			}
+			pos = line.to + 1;
+		}
 	}
 
 	// Sort by from position, then by length (shorter ranges first for proper nesting)
@@ -313,5 +448,35 @@ export const livePreviewTheme = EditorView.theme({
 		background: 'none',
 		padding: '0',
 		fontFamily: 'var(--font-monospace-theme)',
+	},
+	'.cm-md-image-widget': {
+		display: 'block',
+		margin: '8px 0',
+	},
+	'.cm-md-image-widget img': {
+		maxWidth: '100%',
+		borderRadius: '6px',
+		border: '1px solid var(--background-modifier-border)',
+	},
+	'.cm-md-image-fallback': {
+		display: 'inline-block',
+		padding: '4px 8px',
+		fontSize: '12px',
+		color: 'var(--text-muted)',
+		background: 'var(--background-secondary)',
+		borderRadius: '4px',
+	},
+	'.cm-md-codeblock-lang': {
+		display: 'inline-block',
+		fontSize: '10px',
+		fontWeight: '600',
+		color: 'var(--text-muted)',
+		textTransform: 'uppercase',
+		letterSpacing: '0.5px',
+		padding: '1px 6px',
+		marginLeft: '8px',
+		background: 'var(--background-secondary)',
+		borderRadius: '3px',
+		verticalAlign: 'middle',
 	},
 });
