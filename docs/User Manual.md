@@ -74,6 +74,14 @@ A **Library** is a folder on your computer containing Markdown (`.md`) files. Yo
 - **Remove a library**: Settings > Libraries > click the remove button next to the library name
 - **Library settings**: Each library can have its own appearance settings (fonts, colors)
 
+### Universe Notes Folder
+
+Every universe automatically gets a **Universe Notes** folder at its root, named after the universe. This folder holds cross-library notes — MOCs (Maps of Content), dashboards, indexes, and any notes that don't belong to a single library.
+
+- Appears at the top of the File Explorer, above child universes and libraries
+- Included in search, Star View, and all features
+- When creating a new note (`Ctrl+N`), the Universe Notes folder appears as the first option
+
 ### Child Universes
 
 You can nest universes inside universes. A **Child Universe** is another universe folder referenced by your parent universe. Notes from child universes appear in Star View alongside your own notes, with cross-library links shown as dashed lines.

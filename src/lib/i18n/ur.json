@@ -986,5 +986,9 @@
     "colorLibrary": "رنگ: لائبریری",
     "colorStatus": "رنگ: حالت",
     "colorDepth": "رنگ: گہرائی"
+  },
+  "universeNotes": {
+    "title": "کائنات نوٹس",
+    "description": "لائبریریوں کے درمیان نوٹس اور فہرستیں"
   }
 }

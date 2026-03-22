@@ -986,5 +986,9 @@
     "colorLibrary": "Renk: Kütüphane",
     "colorStatus": "Renk: Durum",
     "colorDepth": "Renk: Derinlik"
+  },
+  "universeNotes": {
+    "title": "Evren Notları",
+    "description": "Kütüphaneler arası notlar ve dizinler"
   }
 }

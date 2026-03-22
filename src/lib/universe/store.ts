@@ -41,6 +41,11 @@ export async function removeUniverseFromRegistry(id: string): Promise<void> {
 	return await invoke('remove_universe_from_registry', { id });
 }
 
+/** Rename the active universe — updates registry, notes folder, and library entries. */
+export async function renameUniverse(newName: string): Promise<void> {
+	return await invoke('rename_universe', { newName });
+}
+
 /** Check if migration from legacy app_data_dir storage is needed. */
 export async function checkMigrationNeeded(): Promise<boolean> {
 	return await invoke('check_migration_needed');

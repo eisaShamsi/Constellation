@@ -93,7 +93,8 @@
 		}
 		return names;
 	});
-	let topLevelStats = $derived($libraryStats.filter((s: any) => !cuLibNames.has(s.name)));
+	let topLevelStats = $derived($libraryStats.filter((s: any) => !cuLibNames.has(s.name) && !s.is_universe_notes));
+	let universeNotesStats = $derived($libraryStats.find((s: any) => s.is_universe_notes) ?? null);
 
 	// ─── Recently opened/edited (read from localStorage, shared with main window) ───
 	let recentOpenedRaw = $state<{ name: string; path: string; libraryName: string; openedAt: number }[]>([]);
@@ -829,6 +830,29 @@
 								<span class="stat-label">{$t('secondScreen.dashboard.notes')}</span>
 							</div>
 						</div>
+
+						{#if universeNotesStats}
+							<div class="dashboard-section">
+								<h3 class="dashboard-section-title">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--interactive-accent)" stroke-width="1.5" style="flex-shrink: 0;">
+										<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
+										<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
+										<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
+									</svg>
+									{universeNotesStats.name}
+								</h3>
+								<div class="library-card-stats" style="--lib-color: var(--interactive-accent)">
+									<div class="lib-stat-box">
+										<span class="lib-stat-value">{universeNotesStats.folder_count}</span>
+										<span class="lib-stat-label">{$t('secondScreen.dashboard.folders')}</span>
+									</div>
+									<div class="lib-stat-box">
+										<span class="lib-stat-value">{universeNotesStats.star_count}</span>
+										<span class="lib-stat-label">{$t('secondScreen.dashboard.notes')}</span>
+									</div>
+								</div>
+							</div>
+						{/if}
 
 						{#if childUniverses.length > 0}
 							<div class="dashboard-section">

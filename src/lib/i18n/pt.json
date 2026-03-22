@@ -986,5 +986,9 @@
     "colorLibrary": "Cor: Biblioteca",
     "colorStatus": "Cor: Status",
     "colorDepth": "Cor: Profundidade"
+  },
+  "universeNotes": {
+    "title": "Notas do Universo",
+    "description": "Notas e índices entre bibliotecas"
   }
 }

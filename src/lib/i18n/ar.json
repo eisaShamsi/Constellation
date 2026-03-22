@@ -986,5 +986,9 @@
     "colorLibrary": "اللون: المكتبة",
     "colorStatus": "اللون: الحالة",
     "colorDepth": "اللون: العمق"
+  },
+  "universeNotes": {
+    "title": "ملاحظات الكون",
+    "description": "ملاحظات وفهارس عابرة للمكتبات"
   }
 }

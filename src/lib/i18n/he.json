@@ -986,5 +986,9 @@
     "colorLibrary": "צבע: ספרייה",
     "colorStatus": "צבע: סטטוס",
     "colorDepth": "צבע: עומק"
+  },
+  "universeNotes": {
+    "title": "הערות היקום",
+    "description": "הערות ואינדקסים חוצי ספריות"
   }
 }

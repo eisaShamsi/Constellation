@@ -36,7 +36,17 @@
 	<div class="vp-modal">
 		<div class="vp-title">{$t('notePane.selectLibrary')}</div>
 		<div class="vp-list">
-			{#each $libraries as lib}
+			{#each $libraries.filter(l => l.is_universe_notes) as lib}
+				<button class="vp-item" onclick={() => { onSelect(lib); onClose(); }}>
+					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--interactive-accent)" stroke-width="2" style="flex-shrink: 0;">
+						<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
+						<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
+						<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
+					</svg>
+					<span class="vp-name">{lib.name}</span>
+				</button>
+			{/each}
+			{#each $libraries.filter(l => !l.is_universe_notes) as lib}
 				<button class="vp-item" onclick={() => { onSelect(lib); onClose(); }}>
 					<span class="vp-dot" style="background: {colorMap[lib.name] || '#7c3aed'}"></span>
 					<span class="vp-name">{lib.name}</span>

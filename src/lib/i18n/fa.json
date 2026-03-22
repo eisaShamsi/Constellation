@@ -986,5 +986,9 @@
     "colorLibrary": "رنگ: کتابخانه",
     "colorStatus": "رنگ: وضعیت",
     "colorDepth": "رنگ: عمق"
+  },
+  "universeNotes": {
+    "title": "یادداشت‌های جهان",
+    "description": "یادداشت‌ها و فهرست‌های میان‌کتابخانه‌ای"
   }
 }

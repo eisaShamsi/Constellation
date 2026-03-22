@@ -986,5 +986,9 @@
     "colorLibrary": "Цвет: Библиотека",
     "colorStatus": "Цвет: Статус",
     "colorDepth": "Цвет: Глубина"
+  },
+  "universeNotes": {
+    "title": "Заметки Вселенной",
+    "description": "Межбиблиотечные заметки и индексы"
   }
 }

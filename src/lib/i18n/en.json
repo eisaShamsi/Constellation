@@ -981,5 +981,9 @@
     "colorLibrary": "Color: Library",
     "colorStatus": "Color: Status",
     "colorDepth": "Color: Depth"
+  },
+  "universeNotes": {
+    "title": "Universe Notes",
+    "description": "Cross-library notes and indexes"
   }
 }

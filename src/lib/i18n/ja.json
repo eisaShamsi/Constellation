@@ -986,5 +986,9 @@
     "colorLibrary": "色: ライブラリ",
     "colorStatus": "色: ステータス",
     "colorDepth": "色: 深さ"
+  },
+  "universeNotes": {
+    "title": "ユニバースノート",
+    "description": "ライブラリ横断ノートとインデックス"
   }
 }

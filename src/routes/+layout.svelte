@@ -471,7 +471,8 @@
 		return $libraryStats.filter(lib => paths.has(lib.path.replace(/\\/g, '/').toLowerCase()));
 	}
 
-	const ownLibraries = $derived($libraryStats.filter(lib => !isChildUniverseLib(lib.path)));
+	const ownLibraries = $derived($libraryStats.filter(lib => !isChildUniverseLib(lib.path) && !lib.is_universe_notes));
+	const universeNotesStats = $derived($libraryStats.find(lib => lib.is_universe_notes) ?? null);
 
 	// Library color palette
 	const LIBRARY_COLORS = ['#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#8b5cf6'];
@@ -2135,6 +2136,42 @@
 						</div>
 					{/if}
 
+					<!-- Universe Notes — folder named after the universe, shown above everything -->
+					{#if universeNotesStats}
+						<div class="library-section">
+							<button class="library-header universe-notes-item" onclick={() => toggleLibrary(universeNotesStats)}>
+								<svg class="v-chev" class:expanded={expandedLibraries.has(universeNotesStats.library_id)} width="8" height="8" viewBox="0 0 10 10">
+									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+								</svg>
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--interactive-accent)" stroke-width="1.5" style="flex-shrink: 0;">
+									<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
+									<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
+									<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
+								</svg>
+								<span class="library-name">{universeNotesStats.name}</span>
+								{#if universeNotesStats.star_count > 0}
+									<span class="child-universe-count">{universeNotesStats.star_count}</span>
+								{/if}
+							</button>
+							{#if expandedLibraries.has(universeNotesStats.library_id) && libraryTrees[universeNotesStats.library_id]}
+								<div class="library-tree">
+									<FileTree
+									entries={sortEntries(libraryTrees[universeNotesStats.library_id])}
+									libraryId={universeNotesStats.library_id}
+									libraryName={universeNotesStats.name}
+									color={libraryColorMap[universeNotesStats.name] || 'var(--interactive-accent)'}
+									onNoteClick={handleNoteClick}
+									onFolderClick={(path) => { skyViewSelectedPath = path; }}
+									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, universeNotesStats.library_id)}
+									{renamingPath}
+									onRenameComplete={handleRenameComplete}
+									{allExpanded}
+								/>
+								</div>
+							{/if}
+						</div>
+					{/if}
+
 					<!-- Child Universes — expandable, with their libraries nested inside -->
 					{#each childUniverses as child}
 						<div class="library-section">
@@ -3023,6 +3060,15 @@
 	/* Child universe items in sidebar */
 	.child-universe-header {
 		opacity: 0.85;
+	}
+	.universe-notes-item {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 3px 12px;
+		font-size: 0.8rem;
+		color: var(--interactive-accent);
+		font-weight: 600;
 	}
 	.child-universe-item {
 		display: flex;

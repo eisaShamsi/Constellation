@@ -132,6 +132,7 @@ pub fn run() {
             universe::scaffold_starter_library,
             universe::get_templates_dir,
             universe::list_templates,
+            universe::rename_universe,
             libraries::get_file_metadata,
             libraries::notes_by_tag,
             dataview::execute_dataview_query,

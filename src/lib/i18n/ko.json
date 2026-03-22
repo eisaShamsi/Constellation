@@ -986,5 +986,9 @@
     "colorLibrary": "색상: 라이브러리",
     "colorStatus": "색상: 상태",
     "colorDepth": "색상: 깊이"
+  },
+  "universeNotes": {
+    "title": "유니버스 노트",
+    "description": "라이브러리 간 노트 및 색인"
   }
 }

@@ -986,5 +986,9 @@
     "colorLibrary": "रंग: लाइब्रेरी",
     "colorStatus": "रंग: स्थिति",
     "colorDepth": "रंग: गहराई"
+  },
+  "universeNotes": {
+    "title": "ब्रह्मांड नोट्स",
+    "description": "क्रॉस-लाइब्रेरी नोट्स और अनुक्रमणिकाएँ"
   }
 }

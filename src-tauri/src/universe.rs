@@ -16,6 +16,9 @@ pub struct UniverseMeta {
     pub version: u32,
     #[serde(default)]
     pub children: Vec<String>,
+    /// Relative folder name for universe-level notes (e.g., "كون عيسى")
+    #[serde(default)]
+    pub notes_folder: Option<String>,
 }
 
 /// Entry in the global registry (app_data_dir/universes.json).
@@ -189,6 +192,95 @@ fn migrate_to_constellation(universe_root: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Ensure the universe notes folder exists for existing universes (migration).
+fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
+    let cdir = constellation_dir(universe_root);
+    let meta_path = cdir.join("universe.json");
+
+    if !meta_path.exists() {
+        return Ok(());
+    }
+
+    let data = fs::read_to_string(&meta_path)
+        .map_err(|e| format!("Failed to read universe.json: {}", e))?;
+    let mut meta: UniverseMeta = serde_json::from_str(&data)
+        .map_err(|e| format!("Failed to parse universe.json: {}", e))?;
+
+    // Already has notes_folder set — check it exists on disk
+    if let Some(ref folder_name) = meta.notes_folder {
+        let folder_path = universe_root.join(folder_name);
+        if !folder_path.exists() {
+            fs::create_dir_all(&folder_path)
+                .map_err(|e| format!("Failed to create universe notes folder: {}", e))?;
+        }
+        // Ensure it's registered as a library
+        let libs_path = cdir.join("libraries.json");
+        let folder_path_str = folder_path.to_string_lossy().to_string();
+        if libs_path.exists() {
+            if let Ok(libs_data) = fs::read_to_string(&libs_path) {
+                if let Ok(libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
+                    if !libs.iter().any(|l| l.is_universe_notes) {
+                        let mut libs = libs;
+                        libs.insert(0, crate::libraries::LibraryInfo {
+                            id: format!("universe_notes_{}", uuid_simple()),
+                            name: meta.name.clone(),
+                            path: folder_path_str,
+                            is_universe_notes: true,
+                        });
+                        if let Ok(json) = serde_json::to_string_pretty(&libs) {
+                            let _ = fs::write(&libs_path, json);
+                        }
+                    }
+                }
+            }
+        }
+        return Ok(());
+    }
+
+    // No notes_folder yet — create one using the universe name
+    let folder_name = meta.name.clone();
+    let folder_path = universe_root.join(&folder_name);
+
+    // Check for naming conflict (a library might already use this name)
+    if !folder_path.exists() {
+        fs::create_dir_all(&folder_path)
+            .map_err(|e| format!("Failed to create universe notes folder: {}", e))?;
+    }
+
+    // Update universe.json
+    meta.notes_folder = Some(folder_name.clone());
+    let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
+    fs::write(&meta_path, &meta_json)
+        .map_err(|e| format!("Failed to update universe.json: {}", e))?;
+
+    // Register as library (insert at beginning so it appears first)
+    let libs_path = cdir.join("libraries.json");
+    let folder_path_str = folder_path.to_string_lossy().to_string();
+    let mut libs: Vec<crate::libraries::LibraryInfo> = if libs_path.exists() {
+        fs::read_to_string(&libs_path)
+            .ok()
+            .and_then(|d| serde_json::from_str(&d).ok())
+            .unwrap_or_default()
+    } else {
+        vec![]
+    };
+
+    if !libs.iter().any(|l| l.is_universe_notes) {
+        libs.insert(0, crate::libraries::LibraryInfo {
+            id: format!("universe_notes_{}", uuid_simple()),
+            name: meta.name.clone(),
+            path: folder_path_str,
+            is_universe_notes: true,
+        });
+        if let Ok(json) = serde_json::to_string_pretty(&libs) {
+            let _ = fs::write(&libs_path, json);
+        }
+    }
+
+    eprintln!("[universe] Created universe notes folder: {}", folder_path.display());
+    Ok(())
+}
+
 // ─── Library Resolution (Universe of Universes) ───
 
 /// Recursively resolve all libraries accessible from a universe directory.
@@ -282,6 +374,11 @@ pub fn create_universe(
     fs::create_dir_all(cdir.join("templates"))
         .map_err(|e| format!("Failed to create templates directory: {}", e))?;
 
+    // Create universe notes folder (named after the universe)
+    let notes_folder_path = universe_dir.join(&name);
+    fs::create_dir_all(&notes_folder_path)
+        .map_err(|e| format!("Failed to create universe notes folder: {}", e))?;
+
     // Write universe.json into .constellation/
     let now = chrono::Local::now().to_rfc3339();
     let meta = UniverseMeta {
@@ -289,13 +386,21 @@ pub fn create_universe(
         created: now.clone(),
         version: 2,
         children: vec![],
+        notes_folder: Some(name.clone()),
     };
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
     fs::write(cdir.join("universe.json"), &meta_json)
         .map_err(|e| format!("Failed to write universe.json: {}", e))?;
 
-    // Write empty data files into .constellation/
-    fs::write(cdir.join("libraries.json"), "[]")
+    // Register universe notes folder as a special library
+    let notes_library = crate::libraries::LibraryInfo {
+        id: format!("universe_notes_{}", uuid_simple()),
+        name: name.clone(),
+        path: notes_folder_path.to_string_lossy().to_string(),
+        is_universe_notes: true,
+    };
+    let libraries_json = serde_json::to_string_pretty(&vec![&notes_library]).map_err(|e| e.to_string())?;
+    fs::write(cdir.join("libraries.json"), &libraries_json)
         .map_err(|e| format!("Failed to write libraries.json: {}", e))?;
     fs::write(cdir.join("bookmarks.json"), "[]")
         .map_err(|e| format!("Failed to write bookmarks.json: {}", e))?;
@@ -343,6 +448,9 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
     // Auto-migrate old flat format to .constellation/
     migrate_to_constellation(&universe_path)?;
 
+    // Ensure universe notes folder exists (migration for existing universes)
+    ensure_universe_notes_folder(&universe_path)?;
+
     // Update managed state
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
@@ -372,6 +480,68 @@ pub fn remove_universe_from_registry(app: tauri::AppHandle, id: String) -> Resul
         registry.active_id = registry.entries.first().map(|e| e.id.clone());
     }
     save_registry(&app, &registry)
+}
+
+/// Rename the active universe — updates registry, universe.json, notes folder, and library entry.
+#[tauri::command]
+pub fn rename_universe(app: tauri::AppHandle, new_name: String) -> Result<(), String> {
+    let universe_dir = active_universe_dir(&app)?;
+    let cdir = constellation_dir(&universe_dir);
+
+    // 1. Read current universe.json
+    let meta_path = cdir.join("universe.json");
+    let data = fs::read_to_string(&meta_path)
+        .map_err(|e| format!("Failed to read universe.json: {}", e))?;
+    let mut meta: UniverseMeta = serde_json::from_str(&data)
+        .map_err(|e| format!("Failed to parse universe.json: {}", e))?;
+
+    let old_name = meta.name.clone();
+
+    // 2. Rename the notes folder on disk (if it exists)
+    if let Some(ref old_folder) = meta.notes_folder {
+        let old_path = universe_dir.join(old_folder);
+        let new_path = universe_dir.join(&new_name);
+        if old_path.exists() && !new_path.exists() {
+            fs::rename(&old_path, &new_path)
+                .map_err(|e| format!("Failed to rename notes folder: {}", e))?;
+        }
+        // Update the library entry path
+        let libs_path = cdir.join("libraries.json");
+        if libs_path.exists() {
+            if let Ok(libs_data) = fs::read_to_string(&libs_path) {
+                if let Ok(mut libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
+                    for lib in &mut libs {
+                        if lib.is_universe_notes {
+                            lib.name = new_name.clone();
+                            lib.path = new_path.to_string_lossy().to_string();
+                        }
+                    }
+                    if let Ok(json) = serde_json::to_string_pretty(&libs) {
+                        let _ = fs::write(&libs_path, json);
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Update universe.json
+    meta.name = new_name.clone();
+    meta.notes_folder = Some(new_name.clone());
+    let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
+    fs::write(&meta_path, &meta_json)
+        .map_err(|e| format!("Failed to write universe.json: {}", e))?;
+
+    // 4. Update global registry
+    let mut registry = load_registry(&app);
+    for entry in &mut registry.entries {
+        if entry.path == universe_dir.to_string_lossy().to_string() {
+            entry.name = new_name.clone();
+        }
+    }
+    save_registry(&app, &registry)?;
+
+    eprintln!("[universe] Renamed universe '{}' → '{}'", old_name, new_name);
+    Ok(())
 }
 
 /// Open an existing universe directory (must contain .constellation/universe.json).
@@ -478,6 +648,7 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
         created: now.clone(),
         version: 2,
         children: vec![],
+        notes_folder: None,
     };
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
     fs::write(cdir.join("universe.json"), &meta_json)
@@ -489,6 +660,7 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
         id: lib_id,
         name: name.clone(),
         path: path.clone(),
+        is_universe_notes: false,
     };
     let libs_json = serde_json::to_string_pretty(&vec![library_entry]).map_err(|e| e.to_string())?;
     fs::write(cdir.join("libraries.json"), &libs_json)
@@ -833,6 +1005,7 @@ pub fn migrate_legacy_data(app: tauri::AppHandle, name: String, universe_path: S
         created: now.clone(),
         version: 2,
         children: vec![],
+        notes_folder: None,
     };
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
     fs::write(cdir.join("universe.json"), &meta_json)

@@ -10,6 +10,7 @@ export interface LibraryInfo {
 	id: string;
 	name: string;
 	path: string;
+	is_universe_notes?: boolean;
 }
 
 export interface StarInfo {
@@ -28,6 +29,7 @@ export interface LibraryStats {
 	star_count: number;
 	folder_count: number;
 	recent_stars: StarInfo[];
+	is_universe_notes?: boolean;
 }
 
 export interface FileEntry {
@@ -124,6 +126,9 @@ function detectPropertyType(key: string, value: string): PropertyType {
 export const libraries = writable<LibraryInfo[]>([]);
 export const libraryStats = writable<LibraryStats[]>([]);
 export const searchResults = writable<StarInfo[]>([]);
+export const universeNotesLibrary = derived(libraries, ($libs) =>
+	$libs.find(l => l.is_universe_notes) ?? null
+);
 
 // ─── Editing mode state ───
 export const editingTabIds = writable<Set<string>>(new Set());

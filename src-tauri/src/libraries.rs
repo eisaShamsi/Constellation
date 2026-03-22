@@ -8,6 +8,8 @@ pub struct LibraryInfo {
     pub id: String,
     pub name: String,
     pub path: String,
+    #[serde(default)]
+    pub is_universe_notes: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -162,6 +164,7 @@ pub fn add_library(app: tauri::AppHandle, path: String) -> Result<LibraryInfo, S
         id: id.clone(),
         name,
         path: path.clone(),
+        is_universe_notes: false,
     };
 
     libraries.push(library.clone());
@@ -267,6 +270,8 @@ pub struct LibraryStats {
     pub star_count: u32,
     pub folder_count: u32,
     pub recent_stars: Vec<StarInfo>,
+    #[serde(default)]
+    pub is_universe_notes: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -293,6 +298,7 @@ pub fn get_all_library_stats(app: tauri::AppHandle) -> Vec<LibraryStats> {
             star_count,
             folder_count,
             recent_stars,
+            is_universe_notes: v.is_universe_notes,
         }
     }).collect()
 }

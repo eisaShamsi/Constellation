@@ -986,5 +986,9 @@
     "colorLibrary": "颜色：资料库",
     "colorStatus": "颜色：状态",
     "colorDepth": "颜色：深度"
+  },
+  "universeNotes": {
+    "title": "宇宙笔记",
+    "description": "跨库笔记和索引"
   }
 }
