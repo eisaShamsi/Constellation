@@ -62,7 +62,7 @@
 	} = $props();
 
 	let containerEl: HTMLDivElement;
-	let view: EditorView | undefined;
+	let view = $state<EditorView | undefined>(undefined);
 	let dirCompartment = new Compartment();
 	let livePreviewCompartment = new Compartment();
 	let lineNumbersCompartment = new Compartment();
