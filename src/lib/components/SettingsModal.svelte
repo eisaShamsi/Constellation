@@ -674,6 +674,7 @@
 							<div class="setting-desc">{$t('settings.editor.editorTypeDesc')}</div>
 						</div>
 						<select class="setting-control" value={$appSettings.editorType} onchange={(e) => updateSettings({ editorType: (e.target as HTMLSelectElement).value as any })}>
+							<option value="constellation">{$t('settings.editor.constellationEditor')}</option>
 							<option value="markdown">{$t('settings.editor.markdownEditor')}</option>
 							<option value="document">{$t('settings.editor.documentEditor')}</option>
 						</select>

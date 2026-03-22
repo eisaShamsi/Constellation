@@ -1061,7 +1061,7 @@ export interface AppSettings {
 	// Editor
 	defaultView: 'reading' | 'editing';
 	defaultEditingMode: 'livePreview' | 'source';
-	editorType: 'markdown' | 'document';
+	editorType: 'markdown' | 'document' | 'constellation';
 	showLineNumbers: boolean;
 	readableLineLength: boolean;
 	tabSize: number;

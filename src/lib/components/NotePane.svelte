@@ -8,6 +8,7 @@
 	import PropertyEditor from './PropertyEditor.svelte';
 	import CodeMirrorEditor from './CodeMirrorEditor.svelte';
 	import TipTapEditor from './TipTapEditor.svelte';
+	import ConstellationEditor from '$lib/editor/ConstellationEditor.svelte';
 	import BaseView from './BaseView.svelte';
 	import type { BaseDefinition } from '$lib/bases/types';
 
@@ -509,7 +510,21 @@ ${contentEl.innerHTML}
 				{/if}
 			{/if}
 			{#if editing}
-				{#if $appSettings.editorType === 'document'}
+				{#if $appSettings.editorType === 'constellation'}
+					<ConstellationEditor
+						value={editBody}
+						dir={noteDir}
+						placeholder={$t('notePane.placeholder')}
+						onchange={handleEditorChange}
+						{noteNames}
+						{allTags}
+						showLineNumbers={$appSettings.showLineNumbers}
+						initialCursorPos={tab?.cursorPos ?? 0}
+						initialScrollTop={tab?.scrollTop ?? 0}
+						onCursorChange={(pos) => { if (tab) tab.cursorPos = pos; }}
+						onScrollChange={(top) => { if (tab) tab.scrollTop = top; }}
+					/>
+				{:else if $appSettings.editorType === 'document'}
 					<TipTapEditor
 						value={editBody}
 						dir={noteDir}

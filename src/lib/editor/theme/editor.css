@@ -1,0 +1,116 @@
+/* Constellation Editor — Base Styles */
+
+.ce-scroller {
+	position: relative;
+	overflow-y: auto;
+	height: 100%;
+}
+
+.ce-content {
+	position: relative;
+	width: 100%;
+}
+
+/* Lines */
+.ce-line {
+	position: absolute;
+	left: 0;
+	right: 0;
+	min-height: 24px;
+	padding: 0 24px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+/* Cursor */
+.ce-cursor {
+	position: absolute;
+	width: 2px;
+	background: var(--accent-color, #7c3aed);
+	animation: ce-blink 1s step-end infinite;
+	z-index: 10;
+	pointer-events: none;
+}
+
+@keyframes ce-blink {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0; }
+}
+
+/* Selection */
+.ce-selection {
+	position: absolute;
+	background: var(--selection-bg, rgba(124, 58, 237, 0.15));
+	z-index: 5;
+	pointer-events: none;
+	border-radius: 2px;
+}
+
+/* Hidden syntax characters */
+.ce-syntax-hidden {
+	font-size: 0;
+	width: 0;
+	overflow: hidden;
+	display: inline;
+	color: transparent;
+}
+
+/* Checkbox */
+.ce-checkbox {
+	width: 16px;
+	height: 16px;
+	margin-right: 8px;
+	vertical-align: middle;
+	cursor: pointer;
+	accent-color: var(--accent-color, #7c3aed);
+}
+
+[dir="rtl"] .ce-checkbox {
+	margin-right: 0;
+	margin-left: 8px;
+}
+
+.ce-task-done {
+	text-decoration: line-through;
+	color: var(--text-muted, #8b8b8b);
+}
+
+/* Image widget */
+.ce-image {
+	max-width: 100%;
+	border-radius: 6px;
+	margin: 4px 0;
+	cursor: pointer;
+}
+
+.ce-image:hover {
+	outline: 2px solid var(--accent-color, #7c3aed);
+}
+
+/* Table widget */
+.ce-table {
+	border-collapse: collapse;
+	width: 100%;
+	margin: 8px 0;
+	font-size: 14px;
+}
+
+.ce-table th,
+.ce-table td {
+	border: 1px solid var(--border-color, #e0e0e4);
+	padding: 6px 10px;
+	text-align: start;
+}
+
+.ce-table th {
+	background: var(--bg-secondary, #f6f6f9);
+	font-weight: 600;
+}
+
+/* Placeholder for empty editor */
+.ce-editor:empty::before {
+	content: attr(data-placeholder);
+	color: var(--text-muted, #8b8b8b);
+	pointer-events: none;
+}
