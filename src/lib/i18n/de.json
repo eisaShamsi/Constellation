@@ -146,7 +146,9 @@
       "monoFont": "Monospace-Schriftart",
       "monoFontDesc": "Schriftart für Codeblöcke und Inline-Code",
       "fontSize": "Schriftgröße",
-      "fontSizeDesc": "Basis-Schriftgröße für den Notizinhalt"
+      "fontSizeDesc": "Basis-Schriftgröße für den Notizinhalt",
+      "interfaceFontSize": "Schriftgröße der Oberfläche",
+      "interfaceFontSizeDesc": "Größe von Seitenleiste, Symbolleiste, Menüs und UI-Elementen"
     },
     "ai": {
       "provider": "Anbieter",

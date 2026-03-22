@@ -146,7 +146,9 @@
       "monoFont": "גופן חד-רוחבי",
       "monoFontDesc": "גופן לבלוקי קוד וקוד בתוך שורה",
       "fontSize": "גודל גופן",
-      "fontSizeDesc": "גודל גופן בסיסי לתוכן הפתקים"
+      "fontSizeDesc": "גודל גופן בסיסי לתוכן הפתקים",
+      "interfaceFontSize": "גודל גופן ממשק",
+      "interfaceFontSizeDesc": "גודל סרגל צד, סרגל כלים, תפריטים ורכיבי ממשק"
     },
     "ai": {
       "provider": "ספק",

@@ -146,7 +146,9 @@
       "monoFont": "Fonte monoespaçada",
       "monoFontDesc": "Fonte para blocos de código e código em linha",
       "fontSize": "Tamanho da fonte",
-      "fontSizeDesc": "Tamanho base da fonte para o conteúdo das notas"
+      "fontSizeDesc": "Tamanho base da fonte para o conteúdo das notas",
+      "interfaceFontSize": "Tamanho da fonte da interface",
+      "interfaceFontSizeDesc": "Tamanho da barra lateral, barra de ferramentas, menus e elementos da interface"
     },
     "ai": {
       "provider": "Provedor",

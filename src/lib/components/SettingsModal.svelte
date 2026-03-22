@@ -1219,7 +1219,20 @@
 						</div>
 					{/if}
 
-					<!-- Font Size -->
+					<!-- Interface Font Size -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.interfaceFontSize') || 'Interface font size'}</div>
+							<div class="setting-desc">{$t('settings.appearance.interfaceFontSizeDesc') || 'Size of sidebar, toolbar, menus, and UI elements'}</div>
+						</div>
+						<div class="slider-row">
+							<input type="range" class="setting-slider" min="11" max="18" step="1" value={$appSettings.interfaceFontSize || 14}
+								oninput={(e) => updateSettings({ interfaceFontSize: parseInt((e.target as HTMLInputElement).value) })} />
+							<span class="slider-val">{$appSettings.interfaceFontSize || 14}px</span>
+						</div>
+					</div>
+
+					<!-- Note Content Font Size -->
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.appearance.fontSize')}</div>

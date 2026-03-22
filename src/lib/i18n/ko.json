@@ -146,7 +146,9 @@
       "monoFont": "고정폭 글꼴",
       "monoFontDesc": "코드 블록 및 인라인 코드에 사용되는 글꼴",
       "fontSize": "글꼴 크기",
-      "fontSizeDesc": "노트 내용의 기본 글꼴 크기"
+      "fontSizeDesc": "노트 내용의 기본 글꼴 크기",
+      "interfaceFontSize": "인터페이스 글꼴 크기",
+      "interfaceFontSizeDesc": "사이드바, 도구 모음, 메뉴 및 UI 요소의 크기"
     },
     "ai": {
       "provider": "제공자",

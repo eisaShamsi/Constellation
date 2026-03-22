@@ -146,7 +146,9 @@
       "monoFont": "等幅フォント",
       "monoFontDesc": "コードブロックとインラインコードのフォント",
       "fontSize": "フォントサイズ",
-      "fontSizeDesc": "ノートコンテンツの基本フォントサイズ"
+      "fontSizeDesc": "ノートコンテンツの基本フォントサイズ",
+      "interfaceFontSize": "インターフェースのフォントサイズ",
+      "interfaceFontSizeDesc": "サイドバー、ツールバー、メニュー、UI要素のサイズ"
     },
     "ai": {
       "provider": "プロバイダー",

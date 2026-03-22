@@ -1090,6 +1090,7 @@ export interface AppSettings {
 	colorScheme: 'light' | 'dark' | 'system';
 	accentColor: string;
 	interfaceFont: string;
+	interfaceFontSize: number;
 	textFont: string;
 	monoFont: string;
 	fontSize: number;
@@ -1192,6 +1193,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	colorScheme: 'light',
 	accentColor: '#7c3aed',
 	interfaceFont: '',
+	interfaceFontSize: 14,
 	textFont: '',
 	monoFont: '',
 	fontSize: 17,

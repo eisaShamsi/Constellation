@@ -146,7 +146,9 @@
       "monoFont": "مونو اسپیس فونٹ",
       "monoFontDesc": "کوڈ بلاکس اور ان لائن کوڈ کے لیے فونٹ",
       "fontSize": "فونٹ سائز",
-      "fontSizeDesc": "نوٹ کے مواد کا بنیادی فونٹ سائز"
+      "fontSizeDesc": "نوٹ کے مواد کا بنیادی فونٹ سائز",
+      "interfaceFontSize": "انٹرفیس فونٹ سائز",
+      "interfaceFontSizeDesc": "سائڈبار، ٹول بار، مینیوز اور UI عناصر کا سائز"
     },
     "ai": {
       "provider": "فراہم کنندہ",

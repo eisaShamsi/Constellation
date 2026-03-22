@@ -146,7 +146,9 @@
       "monoFont": "Police à chasse fixe",
       "monoFontDesc": "Police pour les blocs de code et le code en ligne",
       "fontSize": "Taille de police",
-      "fontSizeDesc": "Taille de police de base pour le contenu des notes"
+      "fontSizeDesc": "Taille de police de base pour le contenu des notes",
+      "interfaceFontSize": "Taille de police de l'interface",
+      "interfaceFontSizeDesc": "Taille de la barre latérale, de la barre d'outils, des menus et des éléments d'interface"
     },
     "ai": {
       "provider": "Fournisseur",

@@ -182,7 +182,9 @@
       "monoFont": "Monospace font",
       "monoFontDesc": "Font for code blocks and inline code",
       "fontSize": "Font size",
-      "fontSizeDesc": "Base font size for note content"
+      "fontSizeDesc": "Base font size for note content",
+      "interfaceFontSize": "Interface font size",
+      "interfaceFontSizeDesc": "Size of sidebar, toolbar, menus, and UI elements"
     },
     "keyboard": {
       "filter": "Filter commands...",

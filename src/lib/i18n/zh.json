@@ -146,7 +146,9 @@
       "monoFont": "等宽字体",
       "monoFontDesc": "代码块和行内代码使用的字体",
       "fontSize": "字体大小",
-      "fontSizeDesc": "笔记内容的基础字体大小"
+      "fontSizeDesc": "笔记内容的基础字体大小",
+      "interfaceFontSize": "界面字体大小",
+      "interfaceFontSizeDesc": "侧边栏、工具栏、菜单和界面元素的大小"
     },
     "ai": {
       "provider": "服务商",

@@ -683,6 +683,8 @@
 		const defaultMono = '"Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace';
 
 		root.setProperty('--font-text-size', s.fontSize + 'px');
+		root.setProperty('--font-ui-size', (s.interfaceFontSize || 14) + 'px');
+		document.documentElement.style.fontSize = (s.interfaceFontSize || 14) + 'px';
 
 		const fontMode = s.fontMode || 'per-language';
 		let css = '';

@@ -146,7 +146,9 @@
       "monoFont": "Sabit genişlikli yazı tipi",
       "monoFontDesc": "Kod blokları ve satır içi kod için yazı tipi",
       "fontSize": "Yazı tipi boyutu",
-      "fontSizeDesc": "Not içeriği için temel yazı tipi boyutu"
+      "fontSizeDesc": "Not içeriği için temel yazı tipi boyutu",
+      "interfaceFontSize": "Arayüz yazı tipi boyutu",
+      "interfaceFontSizeDesc": "Kenar çubuğu, araç çubuğu, menüler ve arayüz öğelerinin boyutu"
     },
     "ai": {
       "provider": "Sağlayıcı",
