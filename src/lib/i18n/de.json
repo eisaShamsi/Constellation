@@ -28,7 +28,9 @@
       "downloadAndInstall": "Herunterladen & Installieren",
       "updateError": "Fehler beim Suchen nach Updates",
       "autoUpdate": "Automatische Updates",
-      "autoUpdateDesc": "Updates automatisch herunterladen und installieren"
+      "autoUpdateDesc": "Updates automatisch herunterladen und installieren",
+      "githubToken": "GitHub-Token",
+      "githubTokenDesc": "Persönliches Zugriffstoken für Update-Downloads"
     },
     "security": {
       "intro": "Schütze deine Daten, sichere API-Schlüssel und sperre die App bei Inaktivität.",
@@ -540,7 +542,23 @@
   },
   "editor": {
     "undo": "Rückgängig",
-    "redo": "Wiederherstellen"
+    "redo": "Wiederherstellen",
+    "inlineCode": "Inline-Code",
+    "subscript": "Tiefgestellt",
+    "superscript": "Hochgestellt",
+    "callout": "Hervorhebung",
+    "textColor": "Textfarbe",
+    "removeColor": "Farbe entfernen",
+    "clearFormatting": "Formatierung löschen",
+    "indent": "Einrücken",
+    "outdent": "Ausrücken",
+    "findReplace": "Suchen & Ersetzen",
+    "find": "Suchen",
+    "replace": "Ersetzen",
+    "replaceAll": "Alle ersetzen",
+    "next": "Weiter",
+    "words": "Wörter",
+    "characters": "Zeichen"
   },
   "graphView": {
     "nodes": "Knoten",
@@ -995,6 +1013,7 @@
     "bold": "Fett",
     "italic": "Kursiv",
     "strikethrough": "Durchgestrichen",
+    "underline": "Unterstreichen",
     "highlight": "Hervorheben",
     "inlineCode": "Inline-Code",
     "clearFormatting": "Formatierung löschen",
@@ -1025,6 +1044,42 @@
     "deleteRow": "Zeile löschen",
     "deleteColumn": "Spalte löschen",
     "sortAscending": "Aufsteigend sortieren",
-    "sortDescending": "Absteigend sortieren"
+    "sortDescending": "Absteigend sortieren",
+    "selectAll": "Alles auswählen"
+  },
+  "fontSets": {
+    "title": "Schriftarten-Sets",
+    "fontMode": "Schriftmodus",
+    "universal": "Universal",
+    "perLanguage": "Pro Sprache",
+    "universalDesc": "Ein Schriftarten-Set für alle Sprachen",
+    "perLanguageDesc": "Jedem Schriftsystem/jeder Sprache ein Schriftarten-Set zuweisen",
+    "activeFontSet": "Aktives Schriftarten-Set",
+    "scriptAssignment": "Schriftsystem-Zuweisung",
+    "customFontSets": "Benutzerdefinierte Schriftarten-Sets",
+    "createFontSet": "Schriftarten-Set erstellen",
+    "editFontSet": "Schriftarten-Set bearbeiten",
+    "deleteFontSet": "Schriftarten-Set löschen",
+    "fontSetName": "Name des Schriftarten-Sets",
+    "interfaceFont": "Oberflächenschrift",
+    "textFont": "Textschrift",
+    "monoFont": "Monospace-Schrift",
+    "preview": "Vorschau",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "latin": "Lateinisch / English",
+    "arabic": "Arabisch / العربية",
+    "hebrew": "Hebräisch / עברית",
+    "cjk": "CJK / 中日韩",
+    "devanagari": "Devanagari / देवनागरी",
+    "cyrillic": "Kyrillisch / Кириллица",
+    "systemDefault": "Systemstandard",
+    "modern": "Modern",
+    "classicSerif": "Klassische Serifenschrift",
+    "arabicNaskh": "Arabisch Naskh",
+    "arabicAmiri": "Arabisch Amiri",
+    "arabicModern": "Arabisch Modern",
+    "persian": "Persisch",
+    "fontSize": "Schriftgröße"
   }
 }

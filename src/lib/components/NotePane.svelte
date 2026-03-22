@@ -9,7 +9,6 @@
 	import CodeMirrorEditor from './CodeMirrorEditor.svelte';
 	import TipTapEditor from './TipTapEditor.svelte';
 	import BaseView from './BaseView.svelte';
-	import TableGridPicker from './TableGridPicker.svelte';
 	import type { BaseDefinition } from '$lib/bases/types';
 
 	let {
@@ -84,7 +83,6 @@
 	let saveTimeout: ReturnType<typeof setTimeout>;
 	let saving = $state(false);
 	let propsCollapsed = $state(false);
-	let showTablePicker = $state(false);
 	let noteWidth = $state(100); // percentage 50-100
 	let rafId: number | null = null;
 	let rafId2: number | null = null;
@@ -210,10 +208,6 @@
 			await saveTabContent(tab.id, tab.path, currentParsed.properties, editBody);
 			saving = false;
 		}, 800);
-	}
-
-	function handleToggleEdit() {
-		if (tab) toggleEditMode(tab.id);
 	}
 
 	async function handleExportHTML() {
@@ -410,20 +404,6 @@ ${contentEl.innerHTML}
 				</div>
 				<div class="pane-tab-actions">
 					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
-					<button class="bc-edit-btn" class:active={editing} onclick={handleToggleEdit}
-						title={editing ? $t('notePane.readingMode') : $t('notePane.editingMode')}>
-						{#if editing}
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-						{:else}
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-						{/if}
-					</button>
-					{#if editing}
-						<button class="bc-edit-btn" class:active={livePreviewEnabled} onclick={() => livePreviewEnabled = !livePreviewEnabled}
-							title={$t('notePane.livePreview')}>
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-						</button>
-					{/if}
 				</div>
 			</div>
 		{:else}
@@ -447,40 +427,9 @@ ${contentEl.innerHTML}
 						<input type="range" class="bc-width-slider" min="50" max="100" step="5" bind:value={noteWidth} />
 					</div>
 					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
-					{#if editing}
-						<button class="bc-edit-btn" onclick={() => window.dispatchEvent(new Event('constellation:open-template-picker'))}
-							title={$t('notePane.insertTemplate')}>
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-						</button>
-						<button class="bc-edit-btn" onclick={() => showTablePicker = !showTablePicker}
-							title={$t('toolbar.table')}>
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
-						</button>
-						{#if showTablePicker}
-							<div class="bc-table-picker">
-								<TableGridPicker x={0} y={0}
-									onInsert={(rows, cols) => { showTablePicker = false; document.dispatchEvent(new CustomEvent('constellation:insert-table', { detail: { rows, cols } })); }}
-									onClose={() => showTablePicker = false} />
-							</div>
-						{/if}
-					{/if}
 					<button class="bc-edit-btn" onclick={handleExportHTML} title={$t('notePane.exportHtml')}>
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-				</button>
-				<button class="bc-edit-btn" class:active={editing} onclick={handleToggleEdit}
-						title={editing ? $t('notePane.readingMode') : $t('notePane.editingMode')}>
-						{#if editing}
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-						{:else}
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-						{/if}
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 					</button>
-					{#if editing}
-						<button class="bc-edit-btn" class:active={livePreviewEnabled} onclick={() => livePreviewEnabled = !livePreviewEnabled}
-							title={$t('notePane.livePreview')}>
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-						</button>
-					{/if}
 				</div>
 			</div>
 		{/if}
@@ -672,16 +621,6 @@ ${contentEl.innerHTML}
 		border: none; background: none; border-radius: 3px; color: var(--text-faint); cursor: pointer;
 	}
 	.bc-edit-btn:hover { background: var(--background-modifier-border); color: var(--text-normal); }
-	.bc-edit-btn.active { color: var(--interactive-accent); }
-
-	.bc-table-picker {
-		position: absolute; top: 100%; right: 0; z-index: 50;
-		background: var(--background-primary);
-		border: 1px solid var(--background-modifier-border);
-		border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-		padding: 8px;
-	}
-
 	.note-scroll {
 		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 100%; align-self: center; width: 100%;
 		font-size: var(--library-font-size, 0.95rem);

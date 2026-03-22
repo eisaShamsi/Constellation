@@ -5,7 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet } from '$lib/libraries/store';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -111,6 +111,86 @@
 		setLocale(newLocale);
 		notifySettingsChanged({ locale: newLocale });
 	}
+
+	// Font Sets state
+	let showCustomFontSetEditor = $state(false);
+	let editingFontSet = $state<FontSet | null>(null);
+	let customSetName = $state('');
+	let customSetInterface = $state('');
+	let customSetText = $state('');
+	let customSetMono = $state('');
+
+	function startCreateFontSet() {
+		editingFontSet = null;
+		customSetName = '';
+		customSetInterface = '';
+		customSetText = '';
+		customSetMono = '';
+		showCustomFontSetEditor = true;
+	}
+
+	function startEditFontSet(set: FontSet) {
+		editingFontSet = set;
+		customSetName = set.name;
+		customSetInterface = set.interfaceFont;
+		customSetText = set.textFont;
+		customSetMono = set.monoFont;
+		showCustomFontSetEditor = true;
+	}
+
+	function saveCustomFontSet() {
+		const existing = $appSettings.customFontSets || [];
+		if (editingFontSet) {
+			// Update existing
+			const updated = existing.map(s => s.id === editingFontSet!.id
+				? { ...s, name: customSetName, interfaceFont: customSetInterface, textFont: customSetText, monoFont: customSetMono }
+				: s
+			);
+			updateSettings({ customFontSets: updated });
+		} else {
+			// Create new
+			const id = 'custom-' + Date.now();
+			const newSet: FontSet = { id, name: customSetName, interfaceFont: customSetInterface, textFont: customSetText, monoFont: customSetMono, isBuiltIn: false };
+			updateSettings({ customFontSets: [...existing, newSet] });
+		}
+		showCustomFontSetEditor = false;
+	}
+
+	function deleteCustomFontSet(id: string) {
+		const existing = $appSettings.customFontSets || [];
+		const updates: Record<string, any> = { customFontSets: existing.filter(s => s.id !== id) };
+
+		// Reset activeFontSetId if it points to the deleted set
+		if ($appSettings.activeFontSetId === id) {
+			updates.activeFontSetId = 'system';
+		}
+
+		// Reset any languageFontSets entries pointing to the deleted set
+		const langSets = $appSettings.languageFontSets;
+		if (langSets) {
+			const cleaned = { ...langSets };
+			let changed = false;
+			for (const [script, setId] of Object.entries(cleaned)) {
+				if (setId === id) {
+					cleaned[script] = 'system';
+					changed = true;
+				}
+			}
+			if (changed) {
+				updates.languageFontSets = cleaned;
+			}
+		}
+
+		updateSettings(updates);
+	}
+
+	function setLanguageFontSet(script: string, fontSetId: string) {
+		const current = { ...($appSettings.languageFontSets || {}) };
+		current[script] = fontSetId;
+		updateSettings({ languageFontSets: current });
+	}
+
+	let allFontSets = $derived(getAllFontSets($appSettings.customFontSets || []));
 
 	let updateAvailable = $state<any>(null);
 	let updateDownloading = $state(false);
@@ -1101,36 +1181,78 @@
 
 					<div class="setting-heading">{$t('settings.appearance.fonts')}</div>
 
+					<!-- Font Mode Toggle -->
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.interfaceFont')}</div>
-							<div class="setting-desc">{$t('settings.appearance.interfaceFontDesc')}</div>
+							<div class="setting-name">{$t('fontSets.fontMode') || 'Font Mode'}</div>
+							<div class="setting-desc">{$appSettings.fontMode === 'universal' ? ($t('fontSets.universalDesc') || 'One font set for all languages') : ($t('fontSets.perLanguageDesc') || 'Assign a font set to each script/language')}</div>
 						</div>
-						<input class="setting-input" type="text" value={$appSettings.interfaceFont}
-							placeholder={$t('settings.appearance.systemDefault')}
-							oninput={(e) => updateSettings({ interfaceFont: (e.target as HTMLInputElement).value })} />
+						<div class="font-mode-toggle">
+							<button class="font-mode-btn" class:active={$appSettings.fontMode === 'universal'} onclick={() => updateSettings({ fontMode: 'universal' })}>
+								{$t('fontSets.universal') || 'Universal'}
+							</button>
+							<button class="font-mode-btn" class:active={$appSettings.fontMode !== 'universal'} onclick={() => updateSettings({ fontMode: 'per-language' })}>
+								{$t('fontSets.perLanguage') || 'Per-Language'}
+							</button>
+						</div>
 					</div>
 
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.textFont')}</div>
-							<div class="setting-desc">{$t('settings.appearance.textFontDesc')}</div>
-						</div>
-						<input class="setting-input" type="text" value={$appSettings.textFont}
-							placeholder={$t('settings.appearance.systemDefault')}
-							oninput={(e) => updateSettings({ textFont: (e.target as HTMLInputElement).value })} />
-					</div>
+					{#if $appSettings.fontMode === 'universal'}
+							<!-- Universal: single font set picker -->
+							<div class="setting-item">
+								<div class="setting-info">
+									<div class="setting-name">{$t('fontSets.activeFontSet') || 'Active Font Set'}</div>
+								</div>
+								<select class="setting-control" value={$appSettings.activeFontSetId || 'system'}
+									onchange={(e) => updateSettings({ activeFontSetId: (e.target as HTMLSelectElement).value })}>
+									{#each allFontSets as set}
+										<option value={set.id}>{set.name}</option>
+									{/each}
+								</select>
+							</div>
+							<!-- Preview -->
+							{@const activeSet = getFontSetById($appSettings.activeFontSetId || 'system', $appSettings.customFontSets || [])}
+							{#if activeSet}
+								<div class="font-preview-box">
+									<div class="font-preview-row">
+										<span class="font-preview-label">Interface:</span>
+										<span style="font-family: {activeSet.interfaceFont || 'inherit'}">{activeSet.interfaceFont || 'System Default'}</span>
+									</div>
+									<div class="font-preview-row">
+										<span class="font-preview-label">Text:</span>
+										<span style="font-family: {activeSet.textFont || 'inherit'}">The quick brown fox — نص عربي تجريبي</span>
+									</div>
+									<div class="font-preview-row">
+										<span class="font-preview-label">Mono:</span>
+										<span style="font-family: {activeSet.monoFont || 'monospace'}">const x = 42;</span>
+									</div>
+								</div>
+							{/if}
+						{/if}
 
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.monoFont')}</div>
-							<div class="setting-desc">{$t('settings.appearance.monoFontDesc')}</div>
+					{#if $appSettings.fontMode !== 'universal'}
+						<!-- Per-Language: script → font set assignment table -->
+						<div class="font-script-table">
+							{#each Object.keys(SCRIPT_UNICODE_RANGES) as script}
+								{@const setId = ($appSettings.languageFontSets || {})[script] || 'system'}
+								{@const set = getFontSetById(setId, $appSettings.customFontSets || [])}
+								<div class="font-script-row">
+									<div class="font-script-label">{SCRIPT_LABELS[script] || script}</div>
+									<select class="font-script-select" value={setId}
+										onchange={(e) => setLanguageFontSet(script, (e.target as HTMLSelectElement).value)}>
+										{#each allFontSets as fs}
+											<option value={fs.id}>{fs.name}</option>
+										{/each}
+									</select>
+									<div class="font-script-preview" style="font-family: {set?.textFont || 'inherit'}">
+										{SCRIPT_SAMPLES[script] || ''}
+									</div>
+								</div>
+							{/each}
 						</div>
-						<input class="setting-input" type="text" value={$appSettings.monoFont}
-							placeholder="Cascadia Code, Fira Code, Consolas"
-							oninput={(e) => updateSettings({ monoFont: (e.target as HTMLInputElement).value })} />
-					</div>
+					{/if}
 
+					<!-- Font Size -->
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.appearance.fontSize')}</div>
@@ -1142,6 +1264,61 @@
 							<span class="slider-val">{$appSettings.fontSize}px</span>
 						</div>
 					</div>
+
+					<!-- Custom Font Sets -->
+					<div class="setting-heading">{$t('fontSets.customFontSets') || 'Custom Font Sets'}</div>
+
+					{#each ($appSettings.customFontSets || []) as customSet}
+						<div class="custom-fontset-row">
+							<span class="custom-fontset-name">{customSet.name}</span>
+							<div class="custom-fontset-actions">
+								<button class="custom-fontset-btn" onclick={() => startEditFontSet(customSet)}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+								</button>
+								<button class="custom-fontset-btn custom-fontset-delete" onclick={() => deleteCustomFontSet(customSet.id)}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+								</button>
+							</div>
+						</div>
+					{/each}
+
+					<button class="create-fontset-btn" onclick={startCreateFontSet}>
+						+ {$t('fontSets.createFontSet') || 'Create Font Set'}
+					</button>
+
+					{#if showCustomFontSetEditor}
+						<div class="fontset-editor">
+							<div class="fontset-editor-field">
+								<label>{$t('fontSets.fontSetName') || 'Name'}</label>
+								<input type="text" bind:value={customSetName} placeholder="My Font Set" />
+							</div>
+							<div class="fontset-editor-field">
+								<label>{$t('fontSets.interfaceFont') || 'Interface Font'}</label>
+								<input type="text" bind:value={customSetInterface} placeholder="Inter, sans-serif" />
+							</div>
+							<div class="fontset-editor-field">
+								<label>{$t('fontSets.textFont') || 'Text Font'}</label>
+								<input type="text" bind:value={customSetText} placeholder="Georgia, serif" />
+							</div>
+							<div class="fontset-editor-field">
+								<label>{$t('fontSets.monoFont') || 'Monospace Font'}</label>
+								<input type="text" bind:value={customSetMono} placeholder="Fira Code, monospace" />
+							</div>
+							{#if customSetText}
+								<div class="fontset-editor-preview" style="font-family: {customSetText}">
+									Preview: The quick brown fox — نص عربي تجريبي
+								</div>
+							{/if}
+							<div class="fontset-editor-actions">
+								<button class="fontset-save-btn" onclick={saveCustomFontSet} disabled={!customSetName}>
+									{$t('fontSets.save') || 'Save'}
+								</button>
+								<button class="fontset-cancel-btn" onclick={() => showCustomFontSetEditor = false}>
+									{$t('fontSets.cancel') || 'Cancel'}
+								</button>
+							</div>
+						</div>
+					{/if}
 
 				<!-- ═══ KEYBOARD ═══ -->
 				{:else if activeSection === 'keyboard'}
@@ -1394,6 +1571,82 @@
 	.slider-row { display: flex; align-items: center; gap: 10px; min-width: 180px; }
 	.setting-slider { flex: 1; accent-color: var(--interactive-accent); }
 	.slider-val { font-size: 0.82rem; color: var(--text-muted); min-width: 38px; text-align: end; }
+
+	/* ═══ FONT SETS ═══ */
+	.font-mode-toggle { display: flex; gap: 2px; background: var(--background-secondary); border-radius: 6px; padding: 2px; }
+	.font-mode-btn {
+		padding: 5px 14px; border: none; border-radius: 5px; cursor: pointer;
+		background: transparent; color: var(--text-muted); font-size: 0.82rem;
+		font-family: var(--font-interface-theme); transition: all 0.15s;
+	}
+	.font-mode-btn.active { background: var(--interactive-accent); color: white; }
+	.font-preview-box {
+		background: var(--background-secondary); border-radius: 8px; padding: 12px 16px;
+		display: flex; flex-direction: column; gap: 6px; margin: 4px 0;
+	}
+	.font-preview-row { display: flex; align-items: baseline; gap: 10px; font-size: 0.85rem; }
+	.font-preview-label { color: var(--text-muted); font-size: 0.75rem; min-width: 60px; text-transform: uppercase; }
+	.font-script-table { display: flex; flex-direction: column; gap: 8px; margin: 4px 0; }
+	.font-script-row {
+		display: grid; grid-template-columns: 160px 1fr; gap: 10px; align-items: center;
+		padding: 8px 12px; background: var(--background-secondary); border-radius: 8px;
+	}
+	.font-script-label { font-size: 0.82rem; font-weight: 500; color: var(--text-normal); }
+	.font-script-select {
+		padding: 4px 8px; border: 1px solid var(--background-modifier-border); border-radius: 6px;
+		background: var(--background-primary); color: var(--text-normal); font-size: 0.82rem;
+		font-family: var(--font-interface-theme);
+	}
+	.font-script-preview {
+		grid-column: 1 / -1; font-size: 0.85rem; color: var(--text-muted);
+		padding-top: 4px; border-top: 1px solid var(--background-modifier-border);
+		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	}
+	.custom-fontset-row {
+		display: flex; justify-content: space-between; align-items: center;
+		padding: 8px 12px; background: var(--background-secondary); border-radius: 8px;
+	}
+	.custom-fontset-name { font-size: 0.85rem; font-weight: 500; }
+	.custom-fontset-actions { display: flex; gap: 4px; }
+	.custom-fontset-btn {
+		padding: 4px 6px; border: none; border-radius: 4px; cursor: pointer;
+		background: transparent; color: var(--text-muted);
+	}
+	.custom-fontset-btn:hover { background: var(--background-modifier-hover); }
+	.custom-fontset-delete:hover { color: var(--text-error, #e53e3e); }
+	.create-fontset-btn {
+		padding: 6px 12px; border: 1px dashed var(--background-modifier-border); border-radius: 8px;
+		background: transparent; color: var(--text-muted); cursor: pointer; width: 100%;
+		font-family: var(--font-interface-theme); font-size: 0.82rem;
+	}
+	.create-fontset-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.fontset-editor {
+		background: var(--background-secondary); border-radius: 8px; padding: 16px;
+		display: flex; flex-direction: column; gap: 10px; margin: 4px 0;
+		border: 1px solid var(--interactive-accent);
+	}
+	.fontset-editor-field { display: flex; flex-direction: column; gap: 4px; }
+	.fontset-editor-field label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+	.fontset-editor-field input {
+		padding: 6px 10px; border: 1px solid var(--background-modifier-border); border-radius: 6px;
+		background: var(--background-primary); color: var(--text-normal); font-size: 0.85rem;
+		font-family: var(--font-interface-theme);
+	}
+	.fontset-editor-preview {
+		padding: 8px 12px; background: var(--background-primary); border-radius: 6px;
+		font-size: 0.9rem; color: var(--text-normal);
+	}
+	.fontset-editor-actions { display: flex; gap: 8px; justify-content: flex-end; }
+	.fontset-save-btn {
+		padding: 6px 16px; border: none; border-radius: 6px; cursor: pointer;
+		background: var(--interactive-accent); color: white; font-family: var(--font-interface-theme);
+	}
+	.fontset-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+	.fontset-cancel-btn {
+		padding: 6px 16px; border: 1px solid var(--background-modifier-border); border-radius: 6px;
+		cursor: pointer; background: transparent; color: var(--text-muted);
+		font-family: var(--font-interface-theme);
+	}
 
 	/* ═══ DASHBOARD ═══ */
 	.dashboard { }

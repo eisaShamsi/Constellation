@@ -28,7 +28,9 @@
       "downloadAndInstall": "تنزيل وتثبيت",
       "updateError": "فشل التحقق من التحديثات",
       "autoUpdate": "التحديث التلقائي",
-      "autoUpdateDesc": "تنزيل التحديثات وتثبيتها تلقائيا"
+      "autoUpdateDesc": "تنزيل التحديثات وتثبيتها تلقائيا",
+      "githubToken": "رمز GitHub",
+      "githubTokenDesc": "رمز الوصول الشخصي لتنزيل التحديثات"
     },
     "security": {
       "intro": "حماية بياناتك وتأمين مفاتيح API وقفل التطبيق عند الخمول.",
@@ -540,7 +542,23 @@
   },
   "editor": {
     "undo": "تراجع",
-    "redo": "إعادة"
+    "redo": "إعادة",
+    "inlineCode": "كود مضمّن",
+    "subscript": "نص سفلي",
+    "superscript": "نص علوي",
+    "callout": "تنويه",
+    "textColor": "لون النص",
+    "removeColor": "إزالة اللون",
+    "clearFormatting": "مسح التنسيق",
+    "indent": "مسافة بادئة",
+    "outdent": "إزالة المسافة البادئة",
+    "findReplace": "بحث واستبدال",
+    "find": "بحث",
+    "replace": "استبدال",
+    "replaceAll": "استبدال الكل",
+    "next": "التالي",
+    "words": "كلمات",
+    "characters": "أحرف"
   },
   "graphView": {
     "nodes": "عقد",
@@ -995,6 +1013,7 @@
     "bold": "غامق",
     "italic": "مائل",
     "strikethrough": "يتوسطه خط",
+    "underline": "تسطير",
     "highlight": "تمييز",
     "inlineCode": "كود مضمن",
     "clearFormatting": "مسح التنسيق",
@@ -1025,6 +1044,42 @@
     "deleteRow": "حذف صف",
     "deleteColumn": "حذف عمود",
     "sortAscending": "ترتيب تصاعدي",
-    "sortDescending": "ترتيب تنازلي"
+    "sortDescending": "ترتيب تنازلي",
+    "selectAll": "تحديد الكل"
+  },
+  "fontSets": {
+    "title": "مجموعات الخطوط",
+    "fontMode": "وضع الخط",
+    "universal": "موحّد",
+    "perLanguage": "حسب اللغة",
+    "universalDesc": "مجموعة خطوط واحدة لجميع اللغات",
+    "perLanguageDesc": "تعيين مجموعة خطوط لكل نظام كتابة/لغة",
+    "activeFontSet": "مجموعة الخطوط النشطة",
+    "scriptAssignment": "تعيين نظام الكتابة",
+    "customFontSets": "مجموعات خطوط مخصصة",
+    "createFontSet": "إنشاء مجموعة خطوط",
+    "editFontSet": "تعديل مجموعة خطوط",
+    "deleteFontSet": "حذف مجموعة خطوط",
+    "fontSetName": "اسم مجموعة الخطوط",
+    "interfaceFont": "خط الواجهة",
+    "textFont": "خط النص",
+    "monoFont": "خط ثابت العرض",
+    "preview": "معاينة",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "latin": "لاتيني / English",
+    "arabic": "عربي / العربية",
+    "hebrew": "عبري / עברית",
+    "cjk": "CJK / 中日韩",
+    "devanagari": "ديفاناغاري / देवनागरी",
+    "cyrillic": "سيريلي / Кириллица",
+    "systemDefault": "الافتراضي للنظام",
+    "modern": "حديث",
+    "classicSerif": "كلاسيكي مذيّل",
+    "arabicNaskh": "نسخ عربي",
+    "arabicAmiri": "أميري عربي",
+    "arabicModern": "عربي حديث",
+    "persian": "فارسي",
+    "fontSize": "حجم الخط"
   }
 }

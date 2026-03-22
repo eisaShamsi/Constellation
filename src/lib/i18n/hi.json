@@ -28,7 +28,9 @@
       "downloadAndInstall": "डाउनलोड और इंस्टॉल करें",
       "updateError": "अपडेट की जाँच विफल रही",
       "autoUpdate": "स्वचालित अपडेट",
-      "autoUpdateDesc": "अपडेट स्वचालित रूप से डाउनलोड और इंस्टॉल करें"
+      "autoUpdateDesc": "अपडेट स्वचालित रूप से डाउनलोड और इंस्टॉल करें",
+      "githubToken": "GitHub टोकन",
+      "githubTokenDesc": "अपडेट डाउनलोड के लिए व्यक्तिगत एक्सेस टोकन"
     },
     "security": {
       "intro": "अपने डेटा की सुरक्षा करें, API कुंजियाँ सुरक्षित रखें और निष्क्रिय होने पर ऐप लॉक करें।",
@@ -540,7 +542,23 @@
   },
   "editor": {
     "undo": "पूर्ववत करें",
-    "redo": "फिर से करें"
+    "redo": "फिर से करें",
+    "inlineCode": "इनलाइन कोड",
+    "subscript": "सबस्क्रिप्ट",
+    "superscript": "सुपरस्क्रिप्ट",
+    "callout": "कॉलआउट",
+    "textColor": "टेक्स्ट रंग",
+    "removeColor": "रंग हटाएँ",
+    "clearFormatting": "फ़ॉर्मेटिंग साफ़ करें",
+    "indent": "इंडेंट",
+    "outdent": "आउटडेंट",
+    "findReplace": "खोजें और बदलें",
+    "find": "खोजें",
+    "replace": "बदलें",
+    "replaceAll": "सभी बदलें",
+    "next": "अगला",
+    "words": "शब्द",
+    "characters": "अक्षर"
   },
   "graphView": {
     "nodes": "नोड्स",
@@ -995,6 +1013,7 @@
     "bold": "बोल्ड",
     "italic": "इटैलिक",
     "strikethrough": "स्ट्राइकथ्रू",
+    "underline": "रेखांकित",
     "highlight": "हाइलाइट",
     "inlineCode": "इनलाइन कोड",
     "clearFormatting": "फ़ॉर्मेटिंग साफ़ करें",
@@ -1025,6 +1044,42 @@
     "deleteRow": "पंक्ति हटाएं",
     "deleteColumn": "कॉलम हटाएं",
     "sortAscending": "आरोही क्रम",
-    "sortDescending": "अवरोही क्रम"
+    "sortDescending": "अवरोही क्रम",
+    "selectAll": "सभी चुनें"
+  },
+  "fontSets": {
+    "title": "फ़ॉन्ट सेट",
+    "fontMode": "फ़ॉन्ट मोड",
+    "universal": "सार्वभौमिक",
+    "perLanguage": "भाषा अनुसार",
+    "universalDesc": "सभी भाषाओं के लिए एक फ़ॉन्ट सेट",
+    "perLanguageDesc": "प्रत्येक लिपि/भाषा को एक फ़ॉन्ट सेट असाइन करें",
+    "activeFontSet": "सक्रिय फ़ॉन्ट सेट",
+    "scriptAssignment": "लिपि असाइनमेंट",
+    "customFontSets": "कस्टम फ़ॉन्ट सेट",
+    "createFontSet": "फ़ॉन्ट सेट बनाएं",
+    "editFontSet": "फ़ॉन्ट सेट संपादित करें",
+    "deleteFontSet": "फ़ॉन्ट सेट हटाएं",
+    "fontSetName": "फ़ॉन्ट सेट का नाम",
+    "interfaceFont": "इंटरफ़ेस फ़ॉन्ट",
+    "textFont": "टेक्स्ट फ़ॉन्ट",
+    "monoFont": "मोनोस्पेस फ़ॉन्ट",
+    "preview": "पूर्वावलोकन",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "latin": "लैटिन / English",
+    "arabic": "अरबी / العربية",
+    "hebrew": "हिब्रू / עברית",
+    "cjk": "CJK / 中日韩",
+    "devanagari": "देवनागरी / देवनागरी",
+    "cyrillic": "सिरिलिक / Кириллица",
+    "systemDefault": "सिस्टम डिफ़ॉल्ट",
+    "modern": "आधुनिक",
+    "classicSerif": "क्लासिक सेरिफ़",
+    "arabicNaskh": "अरबी नस्ख़",
+    "arabicAmiri": "अरबी अमीरी",
+    "arabicModern": "अरबी आधुनिक",
+    "persian": "फ़ारसी",
+    "fontSize": "फ़ॉन्ट आकार"
   }
 }

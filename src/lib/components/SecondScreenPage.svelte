@@ -6,19 +6,18 @@
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { dir, t, setLocale, type Locale } from '$lib/i18n';
 	import {
-		libraries, loadLibraries, appSettings, loadSettings, updateSettings,
+		libraries, loadLibraries, appSettings, loadSettings,
 		loadLibraryAppearance,
 		openNoteTab, openTabs, activeTabId, activeTab,
-		switchTab, closeTab, createEmptyTab,
-		parseFrontmatter, editingTabIds, toggleEditMode,
-		navigateBack, navigateForward,
-		scanLibraryLinks, scanLibraryTags, scanLibraryIndex,
-		buildStarData, readNotePreview,
+		switchTab, closeTab,
+		parseFrontmatter,
+		scanLibraryLinks, scanLibraryTags,
+		buildStarData,
 		libraryStats, loadAllStats,
-		type NoteLink, type StarNode, type StarLink, type IndexEntry
+		SCRIPT_UNICODE_RANGES, getFontSetById,
+		type StarNode, type StarLink
 	} from '$lib/libraries/store';
 	import { get } from 'svelte/store';
-	import { detectDir } from '$lib/utils';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
@@ -342,41 +341,60 @@
 		}
 	}
 
-	// ─── Apply global font settings ───
+	// ─── Apply global font settings (mirrors +layout.svelte) ───
 	$effect(() => {
 		if (typeof document === 'undefined') return;
 		const s = $appSettings;
 		const root = document.documentElement.style;
 		const defaultUI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans CJK SC", sans-serif';
 		const defaultMono = '"Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace';
-		const uiFont = s.interfaceFont || defaultUI;
-		const txtFont = s.textFont || uiFont;
-		const mono = s.monoFont || defaultMono;
+
 		root.setProperty('--font-text-size', s.fontSize + 'px');
-		root.setProperty('--font-monospace-theme', mono);
-		const scripts = s.scriptFonts || {};
+		const fontMode = s.fontMode || 'per-language';
 		let css = '';
-		const ranges: Record<string, string> = {
-			arabic: 'U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF',
-			hebrew: 'U+0590-05FF, U+FB1D-FB4F',
-			cjk: 'U+4E00-9FFF, U+3000-303F, U+30A0-30FF, U+3040-309F, U+AC00-D7AF',
-		};
-		let hasScriptFont = false;
-		for (const [script, range] of Object.entries(ranges)) {
-			const fontName = scripts[script];
-			if (fontName) {
-				hasScriptFont = true;
-				css += `@font-face { font-family: "ConstellationUI"; src: local("${fontName}"); unicode-range: ${range}; }\n`;
-				css += `@font-face { font-family: "ConstellationText"; src: local("${fontName}"); unicode-range: ${range}; }\n`;
-			}
-		}
-		if (hasScriptFont) {
-			root.setProperty('--font-interface-theme', `"ConstellationUI", ${uiFont}`);
-			root.setProperty('--font-text-theme', `"ConstellationText", ${txtFont}`);
-		} else {
+
+		if (fontMode === 'universal') {
+			const set = getFontSetById(s.activeFontSetId || 'system', s.customFontSets || []);
+			const uiFont = set?.interfaceFont || s.interfaceFont || defaultUI;
+			const txtFont = set?.textFont || s.textFont || uiFont;
+			const mono = set?.monoFont || s.monoFont || defaultMono;
 			root.setProperty('--font-interface-theme', uiFont);
 			root.setProperty('--font-text-theme', txtFont);
+			root.setProperty('--font-monospace-theme', mono);
+		} else {
+			const langSets = s.languageFontSets || {};
+			const customSets = s.customFontSets || [];
+			let hasPerScript = false;
+			const latinSet = getFontSetById(langSets.latin || 'system', customSets);
+			const baseUI = latinSet?.interfaceFont || s.interfaceFont || defaultUI;
+			const baseTxt = latinSet?.textFont || s.textFont || baseUI;
+			const baseMono = latinSet?.monoFont || s.monoFont || defaultMono;
+			root.setProperty('--font-monospace-theme', baseMono);
+
+			for (const [script, range] of Object.entries(SCRIPT_UNICODE_RANGES)) {
+				if (script === 'latin') continue;
+				const setId = langSets[script];
+				if (!setId || setId === 'system') continue;
+				const set = getFontSetById(setId, customSets);
+				if (!set) continue;
+				hasPerScript = true;
+				if (set.interfaceFont) {
+					css += `@font-face { font-family: "ConstellationUI"; src: local("${set.interfaceFont.split(',')[0].trim().replace(/"/g, '')}"); unicode-range: ${range}; }\n`;
+				}
+				if (set.textFont) {
+					css += `@font-face { font-family: "ConstellationText"; src: local("${set.textFont.split(',')[0].trim().replace(/"/g, '')}"); unicode-range: ${range}; }\n`;
+				}
+			}
+
+			if (hasPerScript) {
+				root.setProperty('--font-interface-theme', `"ConstellationUI", ${baseUI}`);
+				root.setProperty('--font-text-theme', `"ConstellationText", ${baseTxt}`);
+			} else {
+				root.setProperty('--font-interface-theme', baseUI);
+				root.setProperty('--font-text-theme', baseTxt);
+			}
 		}
+
 		let styleEl = document.getElementById('constellation-script-fonts');
 		if (!styleEl) {
 			styleEl = document.createElement('style');
@@ -394,7 +412,6 @@
 
 	// ─── Event listeners ───
 	let unlisteners: (() => void)[] = [];
-	let pendingTimers: ReturnType<typeof setTimeout>[] = [];
 	let libraryChangeTimer: ReturnType<typeof setTimeout> | null = null;
 
 	onMount(async () => {
@@ -566,7 +583,6 @@
 
 	onDestroy(() => {
 		unlisteners.forEach(u => u());
-		pendingTimers.forEach(t => clearTimeout(t));
 		if (libraryChangeTimer) clearTimeout(libraryChangeTimer);
 	});
 

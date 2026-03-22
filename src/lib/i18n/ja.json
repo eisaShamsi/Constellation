@@ -28,7 +28,9 @@
       "downloadAndInstall": "ダウンロードしてインストール",
       "updateError": "アップデートの確認に失敗しました",
       "autoUpdate": "自動アップデート",
-      "autoUpdateDesc": "アップデートを自動的にダウンロードしてインストール"
+      "autoUpdateDesc": "アップデートを自動的にダウンロードしてインストール",
+      "githubToken": "GitHubトークン",
+      "githubTokenDesc": "アップデートダウンロード用の個人アクセストークン"
     },
     "security": {
       "intro": "データを保護し、APIキーを安全に保管し、アイドル時にアプリをロックします。",
@@ -540,7 +542,23 @@
   },
   "editor": {
     "undo": "元に戻す",
-    "redo": "やり直す"
+    "redo": "やり直す",
+    "inlineCode": "インラインコード",
+    "subscript": "下付き文字",
+    "superscript": "上付き文字",
+    "callout": "コールアウト",
+    "textColor": "文字色",
+    "removeColor": "色を削除",
+    "clearFormatting": "書式をクリア",
+    "indent": "インデント",
+    "outdent": "アウトデント",
+    "findReplace": "検索と置換",
+    "find": "検索",
+    "replace": "置換",
+    "replaceAll": "すべて置換",
+    "next": "次へ",
+    "words": "単語",
+    "characters": "文字"
   },
   "graphView": {
     "nodes": "ノード",
@@ -995,6 +1013,7 @@
     "bold": "太字",
     "italic": "斜体",
     "strikethrough": "取り消し線",
+    "underline": "下線",
     "highlight": "ハイライト",
     "inlineCode": "インラインコード",
     "clearFormatting": "書式をクリア",
@@ -1025,6 +1044,42 @@
     "deleteRow": "行を削除",
     "deleteColumn": "列を削除",
     "sortAscending": "昇順ソート",
-    "sortDescending": "降順ソート"
+    "sortDescending": "降順ソート",
+    "selectAll": "すべて選択"
+  },
+  "fontSets": {
+    "title": "フォントセット",
+    "fontMode": "フォントモード",
+    "universal": "ユニバーサル",
+    "perLanguage": "言語別",
+    "universalDesc": "すべての言語に1つのフォントセット",
+    "perLanguageDesc": "各文字体系/言語にフォントセットを割り当て",
+    "activeFontSet": "アクティブなフォントセット",
+    "scriptAssignment": "文字体系の割り当て",
+    "customFontSets": "カスタムフォントセット",
+    "createFontSet": "フォントセットを作成",
+    "editFontSet": "フォントセットを編集",
+    "deleteFontSet": "フォントセットを削除",
+    "fontSetName": "フォントセット名",
+    "interfaceFont": "インターフェースフォント",
+    "textFont": "テキストフォント",
+    "monoFont": "等幅フォント",
+    "preview": "プレビュー",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "latin": "ラテン / English",
+    "arabic": "アラビア / العربية",
+    "hebrew": "ヘブライ / עברית",
+    "cjk": "CJK / 中日韩",
+    "devanagari": "デーヴァナーガリー / देवनागरी",
+    "cyrillic": "キリル / Кириллица",
+    "systemDefault": "システムデフォルト",
+    "modern": "モダン",
+    "classicSerif": "クラシックセリフ",
+    "arabicNaskh": "アラビアナスフ",
+    "arabicAmiri": "アラビアアミリ",
+    "arabicModern": "アラビアモダン",
+    "persian": "ペルシア",
+    "fontSize": "フォントサイズ"
   }
 }

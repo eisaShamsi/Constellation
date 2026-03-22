@@ -483,6 +483,8 @@ export function createEmptyTab() {
 		history: [], historyIndex: -1,
 	};
 	openTabs.update(tabs => [...tabs, tab]);
+	// Auto-enable editing mode (WYSIWYG is always edit-ready)
+	editingTabIds.update(set => { const next = new Set(set); next.add(id); return next; });
 	if (get(splitActive)) {
 		focusedTabId.set(id);
 	} else {
@@ -538,6 +540,8 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 				historyIndex: newHistoryIndex,
 			};
 		}));
+		// Auto-enable editing mode (WYSIWYG is always edit-ready)
+		editingTabIds.update(set => { const next = new Set(set); next.add(currentTab.id); return next; });
 		return;
 	}
 
@@ -548,6 +552,9 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		history: [filePath], historyIndex: 0,
 	};
 	openTabs.update(tabs => [...tabs, tab]);
+
+	// Auto-enable editing mode (WYSIWYG is always edit-ready)
+	editingTabIds.update(set => { const next = new Set(set); next.add(id); return next; });
 
 	// Only focus the new tab if alwaysFocusNewTabs is enabled
 	const settings = get(appSettings);
@@ -989,6 +996,66 @@ export async function readNotePreview(filePath: string, maxChars = 500): Promise
 	return await invoke('read_note_preview', { filePath, maxChars });
 }
 
+// ─── Font Sets ───
+export interface FontSet {
+	id: string;
+	name: string;
+	interfaceFont: string;
+	textFont: string;
+	monoFont: string;
+	isBuiltIn: boolean;
+}
+
+const DEFAULT_UI_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans CJK SC", sans-serif';
+const DEFAULT_MONO_STACK = '"Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace';
+
+export const BUILTIN_FONT_SETS: FontSet[] = [
+	{ id: 'system', name: 'System Default', interfaceFont: '', textFont: '', monoFont: '', isBuiltIn: true },
+	{ id: 'modern', name: 'Modern', interfaceFont: 'Inter, sans-serif', textFont: 'Inter, sans-serif', monoFont: '"Fira Code", monospace', isBuiltIn: true },
+	{ id: 'serif', name: 'Classic Serif', interfaceFont: 'Inter, sans-serif', textFont: 'Georgia, "Times New Roman", serif', monoFont: 'Consolas, monospace', isBuiltIn: true },
+	{ id: 'arabic-naskh', name: 'Arabic Naskh', interfaceFont: '"Noto Sans Arabic", sans-serif', textFont: '"Noto Naskh Arabic", serif', monoFont: '"Cascadia Code", monospace', isBuiltIn: true },
+	{ id: 'arabic-amiri', name: 'Arabic Amiri', interfaceFont: 'Cairo, sans-serif', textFont: 'Amiri, serif', monoFont: '"Cascadia Code", monospace', isBuiltIn: true },
+	{ id: 'arabic-modern', name: 'Arabic Modern', interfaceFont: 'Tajawal, sans-serif', textFont: 'Cairo, sans-serif', monoFont: '"Fira Code", monospace', isBuiltIn: true },
+	{ id: 'cjk', name: 'CJK', interfaceFont: '"Noto Sans CJK SC", sans-serif', textFont: '"Noto Serif CJK SC", serif', monoFont: '"Noto Sans Mono CJK SC", monospace', isBuiltIn: true },
+	{ id: 'hebrew', name: 'Hebrew', interfaceFont: '"Noto Sans Hebrew", sans-serif', textFont: '"Noto Serif Hebrew", serif', monoFont: '"Cascadia Code", monospace', isBuiltIn: true },
+	{ id: 'persian', name: 'Persian', interfaceFont: 'Vazirmatn, sans-serif', textFont: 'Vazirmatn, sans-serif', monoFont: '"Cascadia Code", monospace', isBuiltIn: true },
+];
+
+export const SCRIPT_UNICODE_RANGES: Record<string, string> = {
+	latin: 'U+0000-024F, U+1E00-1EFF, U+2000-206F',
+	arabic: 'U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF',
+	hebrew: 'U+0590-05FF, U+FB1D-FB4F',
+	cjk: 'U+4E00-9FFF, U+3000-303F, U+30A0-30FF, U+3040-309F, U+AC00-D7AF',
+	devanagari: 'U+0900-097F',
+	cyrillic: 'U+0400-04FF, U+0500-052F',
+};
+
+export const SCRIPT_LABELS: Record<string, string> = {
+	latin: 'Latin / English',
+	arabic: 'Arabic / العربية',
+	hebrew: 'Hebrew / עברית',
+	cjk: 'CJK / 中日韩',
+	devanagari: 'Devanagari / देवनागरी',
+	cyrillic: 'Cyrillic / Кириллица',
+};
+
+export const SCRIPT_SAMPLES: Record<string, string> = {
+	latin: 'The quick brown fox jumps over the lazy dog',
+	arabic: 'نص عربي تجريبي لعرض الخط',
+	hebrew: 'טקסט עברי לדוגמה',
+	cjk: '中文日本語한국어示例文字',
+	devanagari: 'हिन्दी में नमूना पाठ',
+	cyrillic: 'Пример текста на кириллице',
+};
+
+export function getFontSetById(id: string, customSets: FontSet[] = []): FontSet | undefined {
+	return BUILTIN_FONT_SETS.find(s => s.id === id) || customSets.find(s => s.id === id);
+}
+
+export function getAllFontSets(customSets: FontSet[] = []): FontSet[] {
+	return [...BUILTIN_FONT_SETS, ...customSets];
+}
+
 // ─── Settings store ───
 export interface AppSettings {
 	// Editor
@@ -1027,6 +1094,12 @@ export interface AppSettings {
 	monoFont: string;
 	fontSize: number;
 	scriptFonts: Record<string, string>;
+
+	// Font Sets
+	fontMode: 'universal' | 'per-language';
+	activeFontSetId: string;
+	languageFontSets: Record<string, string>;
+	customFontSets: FontSet[];
 
 	// Quick Capture
 	inboxFolder: string;
@@ -1123,6 +1196,10 @@ const DEFAULT_SETTINGS: AppSettings = {
 	monoFont: '',
 	fontSize: 15,
 	scriptFonts: {},
+	fontMode: 'per-language',
+	activeFontSetId: 'system',
+	languageFontSets: { latin: 'system', arabic: 'arabic-naskh', hebrew: 'hebrew', cjk: 'cjk' },
+	customFontSets: [],
 	inboxFolder: '+',
 	dailyNoteFormat: '%Y-%m-%d',
 	dailyNoteFolder: '',

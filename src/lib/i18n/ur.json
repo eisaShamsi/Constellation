@@ -28,7 +28,9 @@
       "downloadAndInstall": "ڈاؤن لوڈ اور انسٹال کریں",
       "updateError": "اپ ڈیٹس کی جانچ ناکام ہوگئی",
       "autoUpdate": "خودکار اپ ڈیٹس",
-      "autoUpdateDesc": "خودکار طور پر اپ ڈیٹس ڈاؤن لوڈ اور انسٹال کریں"
+      "autoUpdateDesc": "خودکار طور پر اپ ڈیٹس ڈاؤن لوڈ اور انسٹال کریں",
+      "githubToken": "GitHub ٹوکن",
+      "githubTokenDesc": "اپ ڈیٹس ڈاؤن لوڈ کے لیے ذاتی رسائی ٹوکن"
     },
     "security": {
       "intro": "اپنے ڈیٹا کی حفاظت کریں، API کیز محفوظ رکھیں اور بیکار ہونے پر ایپ لاک کریں۔",
@@ -540,7 +542,23 @@
   },
   "editor": {
     "undo": "واپس کریں",
-    "redo": "دوبارہ کریں"
+    "redo": "دوبارہ کریں",
+    "inlineCode": "ان لائن کوڈ",
+    "subscript": "زیریں متن",
+    "superscript": "بالائی متن",
+    "callout": "نمایاں نوٹ",
+    "textColor": "متن کا رنگ",
+    "removeColor": "رنگ ہٹائیں",
+    "clearFormatting": "فارمیٹنگ صاف کریں",
+    "indent": "حاشیہ بڑھائیں",
+    "outdent": "حاشیہ کم کریں",
+    "findReplace": "تلاش اور تبدیل",
+    "find": "تلاش",
+    "replace": "تبدیل",
+    "replaceAll": "سب تبدیل کریں",
+    "next": "اگلا",
+    "words": "الفاظ",
+    "characters": "حروف"
   },
   "graphView": {
     "nodes": "نوڈز",
@@ -995,6 +1013,7 @@
     "bold": "بولڈ",
     "italic": "ترچھا",
     "strikethrough": "خط کشیدہ",
+    "underline": "خط کشیدہ",
     "highlight": "نمایاں",
     "inlineCode": "ان لائن کوڈ",
     "clearFormatting": "فارمیٹنگ صاف کریں",
@@ -1025,6 +1044,42 @@
     "deleteRow": "قطار حذف",
     "deleteColumn": "کالم حذف",
     "sortAscending": "صعودی ترتیب",
-    "sortDescending": "نزولی ترتیب"
+    "sortDescending": "نزولی ترتیب",
+    "selectAll": "سب منتخب کریں"
+  },
+  "fontSets": {
+    "title": "فونٹ سیٹس",
+    "fontMode": "فونٹ موڈ",
+    "universal": "آفاقی",
+    "perLanguage": "زبان کے مطابق",
+    "universalDesc": "تمام زبانوں کے لیے ایک فونٹ سیٹ",
+    "perLanguageDesc": "ہر رسم الخط/زبان کو ایک فونٹ سیٹ تفویض کریں",
+    "activeFontSet": "فعال فونٹ سیٹ",
+    "scriptAssignment": "رسم الخط تفویض",
+    "customFontSets": "حسب ضرورت فونٹ سیٹس",
+    "createFontSet": "فونٹ سیٹ بنائیں",
+    "editFontSet": "فونٹ سیٹ میں ترمیم",
+    "deleteFontSet": "فونٹ سیٹ حذف کریں",
+    "fontSetName": "فونٹ سیٹ کا نام",
+    "interfaceFont": "انٹرفیس فونٹ",
+    "textFont": "متن فونٹ",
+    "monoFont": "مونو اسپیس فونٹ",
+    "preview": "پیش نظارہ",
+    "save": "محفوظ کریں",
+    "cancel": "منسوخ",
+    "latin": "لاطینی / English",
+    "arabic": "عربی / العربية",
+    "hebrew": "عبرانی / עברית",
+    "cjk": "CJK / 中日韩",
+    "devanagari": "دیوناگری / देवनागरी",
+    "cyrillic": "سیریلک / Кириллица",
+    "systemDefault": "سسٹم ڈیفالٹ",
+    "modern": "جدید",
+    "classicSerif": "کلاسیکی سیرف",
+    "arabicNaskh": "عربی نسخ",
+    "arabicAmiri": "عربی امیری",
+    "arabicModern": "عربی جدید",
+    "persian": "فارسی",
+    "fontSize": "فونٹ سائز"
   }
 }

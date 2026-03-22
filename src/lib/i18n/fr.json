@@ -28,7 +28,9 @@
       "downloadAndInstall": "Télécharger et installer",
       "updateError": "Échec de la vérification des mises à jour",
       "autoUpdate": "Mises à jour automatiques",
-      "autoUpdateDesc": "Télécharger et installer les mises à jour automatiquement"
+      "autoUpdateDesc": "Télécharger et installer les mises à jour automatiquement",
+      "githubToken": "Jeton GitHub",
+      "githubTokenDesc": "Jeton d'accès personnel pour télécharger les mises à jour"
     },
     "security": {
       "intro": "Protégez vos données, sécurisez les clés API et verrouillez l'application en cas d'inactivité.",
@@ -540,7 +542,23 @@
   },
   "editor": {
     "undo": "Annuler",
-    "redo": "Rétablir"
+    "redo": "Rétablir",
+    "inlineCode": "Code en ligne",
+    "subscript": "Indice",
+    "superscript": "Exposant",
+    "callout": "Encadré",
+    "textColor": "Couleur du texte",
+    "removeColor": "Supprimer la couleur",
+    "clearFormatting": "Effacer la mise en forme",
+    "indent": "Augmenter le retrait",
+    "outdent": "Diminuer le retrait",
+    "findReplace": "Rechercher et remplacer",
+    "find": "Rechercher",
+    "replace": "Remplacer",
+    "replaceAll": "Tout remplacer",
+    "next": "Suivant",
+    "words": "mots",
+    "characters": "caractères"
   },
   "graphView": {
     "nodes": "n\u0153uds",
@@ -995,6 +1013,7 @@
     "bold": "Gras",
     "italic": "Italique",
     "strikethrough": "Barré",
+    "underline": "Souligner",
     "highlight": "Surligné",
     "inlineCode": "Code en ligne",
     "clearFormatting": "Effacer le formatage",
@@ -1025,6 +1044,42 @@
     "deleteRow": "Supprimer la ligne",
     "deleteColumn": "Supprimer la colonne",
     "sortAscending": "Tri croissant",
-    "sortDescending": "Tri décroissant"
+    "sortDescending": "Tri décroissant",
+    "selectAll": "Tout sélectionner"
+  },
+  "fontSets": {
+    "title": "Jeux de polices",
+    "fontMode": "Mode de police",
+    "universal": "Universel",
+    "perLanguage": "Par langue",
+    "universalDesc": "Un jeu de polices pour toutes les langues",
+    "perLanguageDesc": "Attribuer un jeu de polices à chaque écriture/langue",
+    "activeFontSet": "Jeu de polices actif",
+    "scriptAssignment": "Attribution d'écriture",
+    "customFontSets": "Jeux de polices personnalisés",
+    "createFontSet": "Créer un jeu de polices",
+    "editFontSet": "Modifier le jeu de polices",
+    "deleteFontSet": "Supprimer le jeu de polices",
+    "fontSetName": "Nom du jeu de polices",
+    "interfaceFont": "Police d'interface",
+    "textFont": "Police de texte",
+    "monoFont": "Police à chasse fixe",
+    "preview": "Aperçu",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "latin": "Latin / English",
+    "arabic": "Arabe / العربية",
+    "hebrew": "Hébreu / עברית",
+    "cjk": "CJK / 中日韩",
+    "devanagari": "Dévanâgarî / देवनागरी",
+    "cyrillic": "Cyrillique / Кириллица",
+    "systemDefault": "Par défaut du système",
+    "modern": "Moderne",
+    "classicSerif": "Sérif classique",
+    "arabicNaskh": "Naskh arabe",
+    "arabicAmiri": "Amiri arabe",
+    "arabicModern": "Arabe moderne",
+    "persian": "Persan",
+    "fontSize": "Taille de police"
   }
 }

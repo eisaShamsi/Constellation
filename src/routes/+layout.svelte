@@ -31,7 +31,8 @@
 		type FrontmatterProperty, type HeadingItem, type NoteLink, type StarNode, type StarLink,
 		type IndexEntry
 	} from '$lib/libraries/store';
-	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen } from '$lib/libraries/store';
+	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet } from '$lib/libraries/store';
+	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, getFontSetById } from '$lib/libraries/store';
 	import { get } from 'svelte/store';
 	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
@@ -680,39 +681,74 @@
 		// Apply base font settings to CSS variables
 		const defaultUI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans CJK SC", sans-serif';
 		const defaultMono = '"Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace';
-		const uiFont = s.interfaceFont || defaultUI;
-		const txtFont = s.textFont || uiFont;
-		const mono = s.monoFont || defaultMono;
 
 		root.setProperty('--font-text-size', s.fontSize + 'px');
-		root.setProperty('--font-monospace-theme', mono);
 
-		// Build per-script @font-face rules using unicode-range
-		const scripts = s.scriptFonts || {};
+		const fontMode = s.fontMode || 'per-language';
 		let css = '';
-		const ranges: Record<string, string> = {
-			arabic: 'U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF',
-			hebrew: 'U+0590-05FF, U+FB1D-FB4F',
-			cjk: 'U+4E00-9FFF, U+3000-303F, U+30A0-30FF, U+3040-309F, U+AC00-D7AF',
-		};
 
-		let hasScriptFont = false;
-		for (const [script, range] of Object.entries(ranges)) {
-			const fontName = scripts[script];
-			if (fontName) {
-				hasScriptFont = true;
-				css += `@font-face { font-family: "ConstellationUI"; src: local("${fontName}"); unicode-range: ${range}; }\n`;
-				css += `@font-face { font-family: "ConstellationText"; src: local("${fontName}"); unicode-range: ${range}; }\n`;
-			}
-		}
-
-		// Prepend virtual font families so script-specific fonts are tried first
-		if (hasScriptFont) {
-			root.setProperty('--font-interface-theme', `"ConstellationUI", ${uiFont}`);
-			root.setProperty('--font-text-theme', `"ConstellationText", ${txtFont}`);
-		} else {
+		if (fontMode === 'universal') {
+			// Universal mode: one font set for everything
+			const set = getFontSetById(s.activeFontSetId || 'system', s.customFontSets || []);
+			const uiFont = set?.interfaceFont || s.interfaceFont || defaultUI;
+			const txtFont = set?.textFont || s.textFont || uiFont;
+			const mono = set?.monoFont || s.monoFont || defaultMono;
 			root.setProperty('--font-interface-theme', uiFont);
 			root.setProperty('--font-text-theme', txtFont);
+			root.setProperty('--font-monospace-theme', mono);
+		} else {
+			// Per-language mode: each script gets its own font set via unicode-range
+			const langSets = s.languageFontSets || {};
+			const customSets = s.customFontSets || [];
+			let hasPerScript = false;
+
+			// Determine the base (Latin) font set for defaults
+			const latinSet = getFontSetById(langSets.latin || 'system', customSets);
+			const baseUI = latinSet?.interfaceFont || s.interfaceFont || defaultUI;
+			const baseTxt = latinSet?.textFont || s.textFont || baseUI;
+			const baseMono = latinSet?.monoFont || s.monoFont || defaultMono;
+			root.setProperty('--font-monospace-theme', baseMono);
+
+			// Generate @font-face rules for non-latin scripts
+			for (const [script, range] of Object.entries(SCRIPT_UNICODE_RANGES)) {
+				if (script === 'latin') continue;
+				const setId = langSets[script];
+				if (!setId || setId === 'system') continue;
+				const set = getFontSetById(setId, customSets);
+				if (!set) continue;
+
+				hasPerScript = true;
+				if (set.interfaceFont) {
+					css += `@font-face { font-family: "ConstellationUI"; src: local("${set.interfaceFont.split(',')[0].trim().replace(/"/g, '')}"); unicode-range: ${range}; }\n`;
+				}
+				if (set.textFont) {
+					css += `@font-face { font-family: "ConstellationText"; src: local("${set.textFont.split(',')[0].trim().replace(/"/g, '')}"); unicode-range: ${range}; }\n`;
+				}
+			}
+
+			// Also support legacy scriptFonts for backward compatibility
+			const legacyScripts = s.scriptFonts || {};
+			const legacyRanges: Record<string, string> = {
+				arabic: SCRIPT_UNICODE_RANGES.arabic,
+				hebrew: SCRIPT_UNICODE_RANGES.hebrew,
+				cjk: SCRIPT_UNICODE_RANGES.cjk,
+			};
+			for (const [script, range] of Object.entries(legacyRanges)) {
+				const fontName = legacyScripts[script];
+				if (fontName && !langSets[script]) {
+					hasPerScript = true;
+					css += `@font-face { font-family: "ConstellationUI"; src: local("${fontName}"); unicode-range: ${range}; }\n`;
+					css += `@font-face { font-family: "ConstellationText"; src: local("${fontName}"); unicode-range: ${range}; }\n`;
+				}
+			}
+
+			if (hasPerScript) {
+				root.setProperty('--font-interface-theme', `"ConstellationUI", ${baseUI}`);
+				root.setProperty('--font-text-theme', `"ConstellationText", ${baseTxt}`);
+			} else {
+				root.setProperty('--font-interface-theme', baseUI);
+				root.setProperty('--font-text-theme', baseTxt);
+			}
 		}
 
 		// Inject or update the style element
@@ -1011,7 +1047,7 @@
 
 		// Second screen event listeners
 		const unlistenScreenNote = await onNoteToMain(async (note: ScreenNote) => {
-			await openNoteTab(note.path, note.libraryName, note.libraryPath, note.libraryColor);
+			await openNoteTab(note.path, note.libraryName, note.libraryColor);
 		});
 		const unlistenScreenClosed = await onScreenClosed(() => {
 			secondScreenOpen = false;
@@ -1040,6 +1076,7 @@
 		clearTimeout(_localStarTimer);
 		clearTimeout(_tasksTimer);
 		clearTimeout(_calTimer);
+		if (skyviewHoverTimer) clearTimeout(skyviewHoverTimer);
 		resizeCleanup?.();
 		window.removeEventListener('unhandledrejection', handleUnhandledRejection);
 		window.removeEventListener('error', handleUncaughtError);

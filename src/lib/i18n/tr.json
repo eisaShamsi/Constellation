@@ -28,7 +28,9 @@
       "downloadAndInstall": "İndir ve Kur",
       "updateError": "Güncelleme kontrolü başarısız oldu",
       "autoUpdate": "Otomatik güncelleme",
-      "autoUpdateDesc": "Güncellemeleri otomatik olarak indir ve yükle"
+      "autoUpdateDesc": "Güncellemeleri otomatik olarak indir ve yükle",
+      "githubToken": "GitHub Jetonu",
+      "githubTokenDesc": "Güncellemeleri indirmek için kişisel erişim jetonu"
     },
     "security": {
       "intro": "Verilerinizi koruyun, API anahtarlarını güvence altına alın ve boşta kaldığında uygulamayı kilitleyin.",
@@ -540,7 +542,23 @@
   },
   "editor": {
     "undo": "Geri al",
-    "redo": "Yinele"
+    "redo": "Yinele",
+    "inlineCode": "Satır İçi Kod",
+    "subscript": "Alt Simge",
+    "superscript": "Üst Simge",
+    "callout": "Bilgi Notu",
+    "textColor": "Metin Rengi",
+    "removeColor": "Rengi Kaldır",
+    "clearFormatting": "Biçimlendirmeyi Temizle",
+    "indent": "Girintiyi Artır",
+    "outdent": "Girintiyi Azalt",
+    "findReplace": "Bul ve Değiştir",
+    "find": "Bul",
+    "replace": "Değiştir",
+    "replaceAll": "Tümünü Değiştir",
+    "next": "Sonraki",
+    "words": "kelime",
+    "characters": "karakter"
   },
   "graphView": {
     "nodes": "düğümler",
@@ -995,6 +1013,7 @@
     "bold": "Kalın",
     "italic": "İtalik",
     "strikethrough": "Üstü çizili",
+    "underline": "Altı Çizili",
     "highlight": "Vurgula",
     "inlineCode": "Satır içi kod",
     "clearFormatting": "Biçimlendirmeyi temizle",
@@ -1025,6 +1044,42 @@
     "deleteRow": "Satırı sil",
     "deleteColumn": "Sütunu sil",
     "sortAscending": "Artan sıralama",
-    "sortDescending": "Azalan sıralama"
+    "sortDescending": "Azalan sıralama",
+    "selectAll": "Tümünü seç"
+  },
+  "fontSets": {
+    "title": "Yazı Tipi Setleri",
+    "fontMode": "Yazı Tipi Modu",
+    "universal": "Evrensel",
+    "perLanguage": "Dil Bazında",
+    "universalDesc": "Tüm diller için tek bir yazı tipi seti",
+    "perLanguageDesc": "Her yazı sistemi/dile bir yazı tipi seti ata",
+    "activeFontSet": "Etkin Yazı Tipi Seti",
+    "scriptAssignment": "Yazı Sistemi Ataması",
+    "customFontSets": "Özel Yazı Tipi Setleri",
+    "createFontSet": "Yazı Tipi Seti Oluştur",
+    "editFontSet": "Yazı Tipi Setini Düzenle",
+    "deleteFontSet": "Yazı Tipi Setini Sil",
+    "fontSetName": "Yazı Tipi Seti Adı",
+    "interfaceFont": "Arayüz Yazı Tipi",
+    "textFont": "Metin Yazı Tipi",
+    "monoFont": "Sabit Genişlikli Yazı Tipi",
+    "preview": "Önizleme",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "latin": "Latin / English",
+    "arabic": "Arapça / العربية",
+    "hebrew": "İbranice / עברית",
+    "cjk": "CJK / 中日韩",
+    "devanagari": "Devanagari / देवनागरी",
+    "cyrillic": "Kiril / Кириллица",
+    "systemDefault": "Sistem Varsayılanı",
+    "modern": "Modern",
+    "classicSerif": "Klasik Serif",
+    "arabicNaskh": "Arapça Nesih",
+    "arabicAmiri": "Arapça Amiri",
+    "arabicModern": "Arapça Modern",
+    "persian": "Farsça",
+    "fontSize": "Yazı Tipi Boyutu"
   }
 }

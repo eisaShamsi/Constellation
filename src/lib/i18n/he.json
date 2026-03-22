@@ -28,7 +28,9 @@
       "downloadAndInstall": "הורדה והתקנה",
       "updateError": "בדיקת העדכונים נכשלה",
       "autoUpdate": "עדכונים אוטומטיים",
-      "autoUpdateDesc": "הורד והתקן עדכונים אוטומטית"
+      "autoUpdateDesc": "הורד והתקן עדכונים אוטומטית",
+      "githubToken": "אסימון GitHub",
+      "githubTokenDesc": "אסימון גישה אישי להורדת עדכונים"
     },
     "security": {
       "intro": "הגן על הנתונים שלך, אבטח מפתחות API ונעל את האפליקציה בזמן חוסר פעילות.",
@@ -540,7 +542,23 @@
   },
   "editor": {
     "undo": "ביטול",
-    "redo": "שחזור"
+    "redo": "שחזור",
+    "inlineCode": "קוד מוטבע",
+    "subscript": "כתב תחתי",
+    "superscript": "כתב עילי",
+    "callout": "הדגשה",
+    "textColor": "צבע טקסט",
+    "removeColor": "הסרת צבע",
+    "clearFormatting": "ניקוי עיצוב",
+    "indent": "הזחה",
+    "outdent": "הקטנת הזחה",
+    "findReplace": "חיפוש והחלפה",
+    "find": "חיפוש",
+    "replace": "החלפה",
+    "replaceAll": "החלפת הכל",
+    "next": "הבא",
+    "words": "מילים",
+    "characters": "תווים"
   },
   "graphView": {
     "nodes": "צמתים",
@@ -995,6 +1013,7 @@
     "bold": "מודגש",
     "italic": "נטוי",
     "strikethrough": "קו חוצה",
+    "underline": "קו תחתון",
     "highlight": "סימון",
     "inlineCode": "קוד בשורה",
     "clearFormatting": "נקה עיצוב",
@@ -1025,6 +1044,42 @@
     "deleteRow": "מחק שורה",
     "deleteColumn": "מחק עמודה",
     "sortAscending": "מיון עולה",
-    "sortDescending": "מיון יורד"
+    "sortDescending": "מיון יורד",
+    "selectAll": "בחר הכל"
+  },
+  "fontSets": {
+    "title": "ערכות גופנים",
+    "fontMode": "מצב גופן",
+    "universal": "אוניברסלי",
+    "perLanguage": "לפי שפה",
+    "universalDesc": "ערכת גופנים אחת לכל השפות",
+    "perLanguageDesc": "הקצאת ערכת גופנים לכל כתב/שפה",
+    "activeFontSet": "ערכת גופנים פעילה",
+    "scriptAssignment": "הקצאת כתב",
+    "customFontSets": "ערכות גופנים מותאמות אישית",
+    "createFontSet": "יצירת ערכת גופנים",
+    "editFontSet": "עריכת ערכת גופנים",
+    "deleteFontSet": "מחיקת ערכת גופנים",
+    "fontSetName": "שם ערכת הגופנים",
+    "interfaceFont": "גופן ממשק",
+    "textFont": "גופן טקסט",
+    "monoFont": "גופן ברוחב קבוע",
+    "preview": "תצוגה מקדימה",
+    "save": "שמירה",
+    "cancel": "ביטול",
+    "latin": "לטינית / English",
+    "arabic": "ערבית / العربية",
+    "hebrew": "עברית / עברית",
+    "cjk": "CJK / 中日韩",
+    "devanagari": "דוונאגרי / देवनागरी",
+    "cyrillic": "קירילית / Кириллица",
+    "systemDefault": "ברירת מחדל של המערכת",
+    "modern": "מודרני",
+    "classicSerif": "סריף קלאסי",
+    "arabicNaskh": "נסח׳ ערבי",
+    "arabicAmiri": "אמירי ערבי",
+    "arabicModern": "ערבי מודרני",
+    "persian": "פרסית",
+    "fontSize": "גודל גופן"
   }
 }

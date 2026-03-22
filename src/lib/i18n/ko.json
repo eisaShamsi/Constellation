@@ -28,7 +28,9 @@
       "downloadAndInstall": "다운로드 및 설치",
       "updateError": "업데이트 확인 실패",
       "autoUpdate": "자동 업데이트",
-      "autoUpdateDesc": "업데이트를 자동으로 다운로드하고 설치"
+      "autoUpdateDesc": "업데이트를 자동으로 다운로드하고 설치",
+      "githubToken": "GitHub 토큰",
+      "githubTokenDesc": "업데이트 다운로드를 위한 개인 액세스 토큰"
     },
     "security": {
       "intro": "데이터를 보호하고, API 키를 안전하게 보관하며, 유휴 시 앱을 잠급니다.",
@@ -540,7 +542,23 @@
   },
   "editor": {
     "undo": "실행 취소",
-    "redo": "다시 실행"
+    "redo": "다시 실행",
+    "inlineCode": "인라인 코드",
+    "subscript": "아래 첨자",
+    "superscript": "위 첨자",
+    "callout": "콜아웃",
+    "textColor": "글자 색상",
+    "removeColor": "색상 제거",
+    "clearFormatting": "서식 지우기",
+    "indent": "들여쓰기",
+    "outdent": "내어쓰기",
+    "findReplace": "찾기 및 바꾸기",
+    "find": "찾기",
+    "replace": "바꾸기",
+    "replaceAll": "모두 바꾸기",
+    "next": "다음",
+    "words": "단어",
+    "characters": "문자"
   },
   "graphView": {
     "nodes": "노드",
@@ -995,6 +1013,7 @@
     "bold": "굵게",
     "italic": "기울임",
     "strikethrough": "취소선",
+    "underline": "밑줄",
     "highlight": "하이라이트",
     "inlineCode": "인라인 코드",
     "clearFormatting": "서식 지우기",
@@ -1025,6 +1044,42 @@
     "deleteRow": "행 삭제",
     "deleteColumn": "열 삭제",
     "sortAscending": "오름차순 정렬",
-    "sortDescending": "내림차순 정렬"
+    "sortDescending": "내림차순 정렬",
+    "selectAll": "모두 선택"
+  },
+  "fontSets": {
+    "title": "글꼴 세트",
+    "fontMode": "글꼴 모드",
+    "universal": "범용",
+    "perLanguage": "언어별",
+    "universalDesc": "모든 언어에 하나의 글꼴 세트",
+    "perLanguageDesc": "각 문자 체계/언어에 글꼴 세트 지정",
+    "activeFontSet": "활성 글꼴 세트",
+    "scriptAssignment": "문자 체계 지정",
+    "customFontSets": "사용자 정의 글꼴 세트",
+    "createFontSet": "글꼴 세트 만들기",
+    "editFontSet": "글꼴 세트 편집",
+    "deleteFontSet": "글꼴 세트 삭제",
+    "fontSetName": "글꼴 세트 이름",
+    "interfaceFont": "인터페이스 글꼴",
+    "textFont": "텍스트 글꼴",
+    "monoFont": "고정폭 글꼴",
+    "preview": "미리보기",
+    "save": "저장",
+    "cancel": "취소",
+    "latin": "라틴 / English",
+    "arabic": "아랍 / العربية",
+    "hebrew": "히브리 / עברית",
+    "cjk": "CJK / 中日韩",
+    "devanagari": "데바나가리 / देवनागरी",
+    "cyrillic": "키릴 / Кириллица",
+    "systemDefault": "시스템 기본값",
+    "modern": "모던",
+    "classicSerif": "클래식 세리프",
+    "arabicNaskh": "아랍 나스크",
+    "arabicAmiri": "아랍 아미리",
+    "arabicModern": "아랍 모던",
+    "persian": "페르시아",
+    "fontSize": "글꼴 크기"
   }
 }

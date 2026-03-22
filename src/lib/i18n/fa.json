@@ -28,7 +28,9 @@
       "downloadAndInstall": "دانلود و نصب",
       "updateError": "خطا در بررسی به‌روزرسانی‌ها",
       "autoUpdate": "به‌روزرسانی خودکار",
-      "autoUpdateDesc": "دانلود و نصب خودکار به‌روزرسانی‌ها"
+      "autoUpdateDesc": "دانلود و نصب خودکار به‌روزرسانی‌ها",
+      "githubToken": "توکن GitHub",
+      "githubTokenDesc": "توکن دسترسی شخصی برای دانلود به‌روزرسانی‌ها"
     },
     "security": {
       "intro": "از داده‌های خود محافظت کنید، کلیدهای API را ایمن کنید و برنامه را در حالت بیکار قفل کنید.",
@@ -540,7 +542,23 @@
   },
   "editor": {
     "undo": "واگرد",
-    "redo": "ازنو"
+    "redo": "ازنو",
+    "inlineCode": "کد درون‌خطی",
+    "subscript": "زیرنویس",
+    "superscript": "بالانویس",
+    "callout": "یادداشت برجسته",
+    "textColor": "رنگ متن",
+    "removeColor": "حذف رنگ",
+    "clearFormatting": "پاک کردن قالب‌بندی",
+    "indent": "تورفتگی",
+    "outdent": "کاهش تورفتگی",
+    "findReplace": "جستجو و جایگزینی",
+    "find": "جستجو",
+    "replace": "جایگزینی",
+    "replaceAll": "جایگزینی همه",
+    "next": "بعدی",
+    "words": "کلمات",
+    "characters": "نویسه‌ها"
   },
   "graphView": {
     "nodes": "گره‌ها",
@@ -995,6 +1013,7 @@
     "bold": "پررنگ",
     "italic": "مورب",
     "strikethrough": "خط‌خورده",
+    "underline": "زیرخط",
     "highlight": "برجسته",
     "inlineCode": "کد درون‌خطی",
     "clearFormatting": "پاک کردن قالب‌بندی",
@@ -1025,6 +1044,42 @@
     "deleteRow": "حذف ردیف",
     "deleteColumn": "حذف ستون",
     "sortAscending": "مرتب‌سازی صعودی",
-    "sortDescending": "مرتب‌سازی نزولی"
+    "sortDescending": "مرتب‌سازی نزولی",
+    "selectAll": "انتخاب همه"
+  },
+  "fontSets": {
+    "title": "مجموعه فونت‌ها",
+    "fontMode": "حالت فونت",
+    "universal": "یکپارچه",
+    "perLanguage": "بر اساس زبان",
+    "universalDesc": "یک مجموعه فونت برای همه زبان‌ها",
+    "perLanguageDesc": "تخصیص یک مجموعه فونت به هر خط/زبان",
+    "activeFontSet": "مجموعه فونت فعال",
+    "scriptAssignment": "تخصیص خط",
+    "customFontSets": "مجموعه فونت‌های سفارشی",
+    "createFontSet": "ایجاد مجموعه فونت",
+    "editFontSet": "ویرایش مجموعه فونت",
+    "deleteFontSet": "حذف مجموعه فونت",
+    "fontSetName": "نام مجموعه فونت",
+    "interfaceFont": "فونت رابط کاربری",
+    "textFont": "فونت متن",
+    "monoFont": "فونت تک‌عرض",
+    "preview": "پیش‌نمایش",
+    "save": "ذخیره",
+    "cancel": "لغو",
+    "latin": "لاتین / English",
+    "arabic": "عربی / العربية",
+    "hebrew": "عبری / עברית",
+    "cjk": "CJK / 中日韩",
+    "devanagari": "دیواناگری / देवनागरी",
+    "cyrillic": "سیریلیک / Кириллица",
+    "systemDefault": "پیش‌فرض سیستم",
+    "modern": "مدرن",
+    "classicSerif": "سریف کلاسیک",
+    "arabicNaskh": "نسخ عربی",
+    "arabicAmiri": "امیری عربی",
+    "arabicModern": "عربی مدرن",
+    "persian": "فارسی",
+    "fontSize": "اندازه فونت"
   }
 }
