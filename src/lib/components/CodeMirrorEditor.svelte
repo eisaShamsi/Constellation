@@ -63,6 +63,8 @@
 
 	let containerEl: HTMLDivElement;
 	let view = $state<EditorView | undefined>(undefined);
+	let onchangeTimer: ReturnType<typeof setTimeout> | null = null;
+	let toolbarRafPending = false;
 	let dirCompartment = new Compartment();
 	let livePreviewCompartment = new Compartment();
 	let lineNumbersCompartment = new Compartment();
@@ -1351,12 +1353,27 @@
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged && !updating) {
-						onchange(update.state.doc.toString());
+						// Debounce the expensive doc.toString() + onchange
+						if (onchangeTimer) clearTimeout(onchangeTimer);
+						onchangeTimer = setTimeout(() => {
+							if (update.view && !update.view.destroyed) {
+								onchange(update.view.state.doc.toString());
+							}
+						}, 500);
 					}
 					if (update.selectionSet || update.docChanged) {
-						updateToolbar(update.view);
-						updateTableToolbar(update.view);
-						checkSelectionTabular(update.view);
+						// Batch toolbar updates to next animation frame
+						if (!toolbarRafPending) {
+							toolbarRafPending = true;
+							requestAnimationFrame(() => {
+								toolbarRafPending = false;
+								if (update.view && !update.view.destroyed) {
+									updateToolbar(update.view);
+									updateTableToolbar(update.view);
+									checkSelectionTabular(update.view);
+								}
+							});
+						}
 						if (update.selectionSet && onCursorChange) {
 							onCursorChange(update.state.selection.main.head);
 						}
@@ -1493,6 +1510,7 @@
 
 	onDestroy(() => {
 		if (toolbarTimeout) clearTimeout(toolbarTimeout);
+		if (onchangeTimer) clearTimeout(onchangeTimer);
 		document.removeEventListener('constellation:fold-all', handleFoldAll);
 		document.removeEventListener('constellation:unfold-all', handleUnfoldAll);
 		document.removeEventListener('constellation:insert-table', handleInsertTable);
