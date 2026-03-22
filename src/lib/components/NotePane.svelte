@@ -202,10 +202,8 @@
 		clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(async () => {
 			if (!tab) return;
-			saving = true;
 			const currentParsed = parseFrontmatter(tab.content);
 			await saveTabContent(tab.id, tab.path, currentParsed.properties, editBody);
-			saving = false;
 		}, 800);
 	}
 
@@ -402,8 +400,7 @@ ${contentEl.innerHTML}
 					<span class="pane-tab-title">{tab.name.replace(/\.md$/, '')}</span>
 				</div>
 				<div class="pane-tab-actions">
-					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
-				</div>
+									</div>
 			</div>
 		{:else}
 			<div class="pane-breadcrumb">
@@ -425,8 +422,7 @@ ${contentEl.innerHTML}
 						</svg>
 						<input type="range" class="bc-width-slider" min="50" max="100" step="5" bind:value={noteWidth} />
 					</div>
-					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
-					<button
+										<button
 						class="bc-editor-switch"
 						class:source={!livePreviewEnabled}
 						onclick={() => livePreviewEnabled = !livePreviewEnabled}
