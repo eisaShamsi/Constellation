@@ -1508,7 +1508,111 @@
 	}
 </script>
 
-<div class="cm-wrapper" bind:this={containerEl}>
+<div class="cm-wrapper">
+	<!-- Persistent toolbar -->
+	{#if view}
+		<div class="cm-toolbar" dir={dir} style="direction: {dir}">
+			<!-- Undo/Redo -->
+			<button class="cm-tb" title="Undo (Ctrl+Z)" onclick={() => { import('@codemirror/commands').then(m => m.undo(view!)); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.69 3L3 13"/></svg>
+			</button>
+			<button class="cm-tb" title="Redo (Ctrl+Y)" onclick={() => { import('@codemirror/commands').then(m => m.redo(view!)); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.69 3L21 13"/></svg>
+			</button>
+			<span class="cm-tb-sep"></span>
+			<!-- Heading -->
+			<button class="cm-tb" title="Heading" onclick={() => applyHeading(1)}>H1</button>
+			<button class="cm-tb" title="Heading 2" onclick={() => applyHeading(2)}>H2</button>
+			<button class="cm-tb" title="Heading 3" onclick={() => applyHeading(3)}>H3</button>
+			<span class="cm-tb-sep"></span>
+			<!-- Text formatting -->
+			<button class="cm-tb" title="Bold (Ctrl+B)" onclick={() => { wrapSelection(view!, '**', '**'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>
+			</button>
+			<button class="cm-tb" title="Italic (Ctrl+I)" onclick={() => { wrapSelection(view!, '_', '_'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
+			</button>
+			<button class="cm-tb" title="Underline (Ctrl+U)" onclick={() => { applyUnderline(view!); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg>
+			</button>
+			<button class="cm-tb" title="Strikethrough" onclick={() => { wrapSelection(view!, '~~', '~~'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+			</button>
+			<button class="cm-tb" title="Highlight" onclick={() => { wrapSelection(view!, '==', '=='); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
+			</button>
+			<button class="cm-tb" title="Text color" onclick={() => showColorPicker = !showColorPicker}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><path d="M9.5 4L4.5 16h2l1-3h7l1 3h2L12.5 4z"/></svg>
+			</button>
+			<span class="cm-tb-sep"></span>
+			<!-- Alignment -->
+			<button class="cm-tb" title="Align left" onclick={() => { /* future */ }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+			</button>
+			<button class="cm-tb" title="Align center" onclick={() => { /* future */ }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
+			</button>
+			<button class="cm-tb" title="Align right" onclick={() => { /* future */ }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+			</button>
+			<span class="cm-tb-sep"></span>
+			<!-- Lists -->
+			<button class="cm-tb" title="Bullet list" onclick={() => { handleContextList('bullet'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+			</button>
+			<button class="cm-tb" title="Numbered list" onclick={() => { handleContextList('numbered'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+			</button>
+			<button class="cm-tb" title="Task list" onclick={() => { handleContextList('task'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+			</button>
+			<span class="cm-tb-sep"></span>
+			<!-- Blocks & inserts -->
+			<button class="cm-tb" title="Blockquote" onclick={() => { handleContextInsert('blockquote'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+			</button>
+			<button class="cm-tb" title="Code block" onclick={() => { handleContextInsert('codeBlock'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+			</button>
+			<button class="cm-tb" title="Horizontal rule" onclick={() => { handleContextInsert('horizontalRule'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/></svg>
+			</button>
+			<button class="cm-tb" title="Table" onclick={() => showTableGridPicker()}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+			</button>
+			<span class="cm-tb-sep"></span>
+			<!-- Link & Image -->
+			<button class="cm-tb" title="Link (Ctrl+K)" onclick={() => { wrapSelection(view!, '[[', ']]'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+			</button>
+			<button class="cm-tb" title="Image" onclick={() => { handleContextInsert('image'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+			</button>
+			<span class="cm-tb-sep"></span>
+			<!-- Inline code, sub, sup -->
+			<button class="cm-tb" title="Inline code" onclick={() => { wrapSelection(view!, '`', '`'); view!.focus(); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+			</button>
+			<button class="cm-tb" title="Subscript" onclick={() => { applySubscript(view!); view!.focus(); }}>
+				<span style="font-size:11px;font-weight:600;">X<sub style="font-size:8px">₂</sub></span>
+			</button>
+			<button class="cm-tb" title="Superscript" onclick={() => { applySuperscript(view!); view!.focus(); }}>
+				<span style="font-size:11px;font-weight:600;">X<sup style="font-size:8px">²</sup></span>
+			</button>
+			<span class="cm-tb-sep"></span>
+			<!-- Font picker -->
+			<button class="cm-tb cm-tb-text" title="Font" onclick={() => showFontPicker = !showFontPicker}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+			</button>
+			<!-- Find -->
+			<button class="cm-tb" title="Find (Ctrl+F)" onclick={() => { if (view) openSearchPanel(view); }}>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+			</button>
+		</div>
+	{/if}
+
+	<div class="cm-editor-area" bind:this={containerEl}></div>
+
 	{#if toolbarVisible && view}
 		<FormattingToolbar
 			x={toolbarX}
@@ -1611,6 +1715,57 @@
 		position: relative;
 		display: flex;
 		flex-direction: column;
+	}
+	.cm-editor-area {
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+	/* Persistent toolbar */
+	.cm-toolbar {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		padding: 4px 8px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		background: var(--background-primary);
+		flex-wrap: wrap;
+		flex-shrink: 0;
+		font-family: var(--font-interface-theme);
+	}
+	.cm-tb {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border: none;
+		background: none;
+		border-radius: 4px;
+		cursor: pointer;
+		color: var(--text-muted);
+		font-size: 12px;
+		font-weight: 600;
+		font-family: var(--font-interface-theme);
+		padding: 0;
+	}
+	.cm-tb:hover {
+		background: var(--background-modifier-hover);
+		color: var(--text-normal);
+	}
+	.cm-tb-text {
+		width: auto;
+		padding: 0 6px;
+		gap: 4px;
+	}
+	.cm-tb-sep {
+		width: 1px;
+		height: 18px;
+		background: var(--background-modifier-border);
+		margin: 0 3px;
+		flex-shrink: 0;
 	}
 	.cm-wrapper :global(.cm-editor) {
 		flex: 1;
