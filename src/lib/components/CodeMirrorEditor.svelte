@@ -1119,11 +1119,11 @@
 	// Editor theme
 	const editorTheme = EditorView.theme({
 		'&': {
-			fontSize: '0.92rem',
+			fontSize: 'var(--font-text-size, 17px)',
 		},
 		'.cm-content': {
 			fontFamily: 'var(--library-text-font, var(--font-text-theme, inherit))',
-			fontSize: 'var(--library-font-size, var(--font-text-size, 0.95rem))',
+			fontSize: 'var(--library-font-size, var(--font-text-size, 17px))',
 			lineHeight: '1.7',
 			padding: '0',
 			caretColor: 'var(--interactive-accent)',

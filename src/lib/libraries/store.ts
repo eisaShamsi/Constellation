@@ -1194,7 +1194,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	interfaceFont: '',
 	textFont: '',
 	monoFont: '',
-	fontSize: 15,
+	fontSize: 17,
 	scriptFonts: {},
 	fontMode: 'per-language',
 	activeFontSetId: 'system',
