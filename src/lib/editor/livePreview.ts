@@ -316,6 +316,31 @@ function buildDecorations(view: EditorView): DecorationSet {
 		}
 	}
 
+	// Wikilinks: [[note name]] — hide brackets, style as link
+	for (const { from: vFrom, to: vTo } of view.visibleRanges) {
+		for (let pos = vFrom; pos < vTo;) {
+			const line = doc.lineAt(pos);
+			if (line.number !== cursorLine) {
+				const lineText = line.text;
+				const wikiRe = /(?<!!)\[\[([^\]]+)\]\]/g;
+				let m;
+				while ((m = wikiRe.exec(lineText)) !== null) {
+					const absFrom = line.from + m.index;
+					const absTo = absFrom + m[0].length;
+					const innerFrom = absFrom + 2;  // after [[
+					const innerTo = absTo - 2;       // before ]]
+					// Hide [[
+					ranges.push({ from: absFrom, to: innerFrom, deco: Decoration.replace({}) });
+					// Style the link text
+					ranges.push({ from: innerFrom, to: innerTo, deco: linkDeco });
+					// Hide ]]
+					ranges.push({ from: innerTo, to: absTo, deco: Decoration.replace({}) });
+				}
+			}
+			pos = line.to + 1;
+		}
+	}
+
 	// Sort by from position, then by length (shorter ranges first for proper nesting)
 	ranges.sort((a, b) => a.from - b.from || a.to - b.to);
 
