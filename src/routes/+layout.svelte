@@ -104,6 +104,10 @@
 		const onMove = (me: MouseEvent) => {
 			if (!isDragging && Math.abs(me.clientX - dragStartX) > 5) {
 				isDragging = true;
+				document.body.style.cursor = 'grabbing';
+				// Add dragging class to the source tab
+				const srcEl = document.querySelector(`.tab[data-tab-id="${dragTabId}"]`) as HTMLElement;
+				if (srcEl) srcEl.classList.add('tab-dragging');
 			}
 			if (!isDragging) return;
 			// Find which tab element we're over
@@ -123,6 +127,10 @@
 			if (isDragging && dragTabId && dragOverTabId) {
 				reorderTab(dragTabId, dragOverTabId);
 			}
+			// Clean up dragging visuals
+			document.body.style.cursor = '';
+			const srcEl = document.querySelector('.tab-dragging');
+			if (srcEl) srcEl.classList.remove('tab-dragging');
 			dragTabId = null;
 			dragOverTabId = null;
 			isDragging = false;
@@ -3349,7 +3357,10 @@
 	.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 	.tab.pinned { min-width: 36px; padding: 0 8px; }
 	.tab-pin { font-size: 0.65rem; flex-shrink: 0; pointer-events: none; }
-	.tab.drag-over { border-inline-start: 3px solid var(--interactive-accent); }
+	.tab { cursor: grab; }
+	.tab:active { cursor: grabbing; }
+	.tab-dragging { opacity: 0.5; transform: scale(0.95); transition: opacity 0.1s, transform 0.1s; cursor: grabbing !important; }
+	.tab.drag-over { border-inline-start: 3px solid var(--interactive-accent); background: color-mix(in srgb, var(--interactive-accent) 10%, transparent); }
 	.tab-close {
 		background: none; border: none; color: var(--text-muted);
 		cursor: pointer; font-size: 0.85rem; padding: 0; line-height: 1;
