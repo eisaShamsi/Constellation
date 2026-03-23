@@ -1244,25 +1244,69 @@
 						{/if}
 
 					{#if $appSettings.fontMode !== 'universal'}
-						<!-- Per-Language: script → font set assignment table -->
-						<div class="font-script-table">
-							{#each Object.keys(SCRIPT_UNICODE_RANGES) as script}
-								{@const setId = ($appSettings.languageFontSets || {})[script] || 'system'}
-								{@const set = getFontSetById(setId, $appSettings.customFontSets || [])}
-								<div class="font-script-row">
-									<div class="font-script-label">{SCRIPT_LABELS[script] || script}</div>
-									<select class="font-script-select" value={setId}
-										onchange={(e) => setLanguageFontSet(script, (e.target as HTMLSelectElement).value)}>
-										{#each allFontSets as fs}
-											<option value={fs.id}>{fs.name}</option>
-										{/each}
-									</select>
-									<div class="font-script-preview" style="font-family: {set?.textFont || 'inherit'}">
-										{SCRIPT_SAMPLES[script] || ''}
-									</div>
-								</div>
-							{/each}
+						<!-- Per-Language: contextual primary + optional secondary -->
+						{@const scripts = Object.keys(SCRIPT_UNICODE_RANGES)}
+						{@const primaryScript = $appSettings.primaryScript || 'latin'}
+						{@const primarySetId = ($appSettings.languageFontSets || {})[primaryScript] || 'system'}
+						{@const primarySet = getFontSetById(primarySetId, $appSettings.customFontSets || [])}
+						{@const hasSecondary = $appSettings.enableSecondaryScript ?? false}
+						{@const secondaryScript = $appSettings.secondaryScript || 'arabic'}
+						{@const secondarySetId = ($appSettings.languageFontSets || {})[secondaryScript] || 'system'}
+						{@const secondarySet = getFontSetById(secondarySetId, $appSettings.customFontSets || [])}
+
+						<!-- Primary Language -->
+						<div class="font-lang-section">
+							<div class="font-lang-header">
+								<span class="font-lang-label">{$t('fontSets.primaryLanguage') || 'Primary Language'}</span>
+							</div>
+							<select class="font-lang-select" value={primaryScript}
+								onchange={(e) => updateSettings({ primaryScript: (e.target as HTMLSelectElement).value })}>
+								{#each scripts as script}
+									<option value={script}>{SCRIPT_LABELS[script] || script}</option>
+								{/each}
+							</select>
+							<select class="font-lang-font-select" value={primarySetId}
+								onchange={(e) => setLanguageFontSet(primaryScript, (e.target as HTMLSelectElement).value)}>
+								{#each allFontSets as fs}
+									<option value={fs.id}>{fs.name}</option>
+								{/each}
+							</select>
+							<div class="font-lang-preview" style="font-family: {primarySet?.textFont || primarySet?.name || 'inherit'}">
+								{SCRIPT_SAMPLES[primaryScript] || ''}
+							</div>
 						</div>
+
+						<!-- Secondary Language Toggle -->
+						<div class="font-lang-toggle">
+							<label class="font-lang-check">
+								<input type="checkbox" checked={hasSecondary}
+									onchange={(e) => updateSettings({ enableSecondaryScript: (e.target as HTMLInputElement).checked })} />
+								<span>{$t('fontSets.enableSecondLanguage') || 'Enable second language'}</span>
+							</label>
+						</div>
+
+						{#if hasSecondary}
+							<div class="font-lang-section">
+								<div class="font-lang-header">
+									<span class="font-lang-label">{$t('fontSets.secondaryLanguage') || 'Secondary Language'}</span>
+								</div>
+								<select class="font-lang-select" value={secondaryScript}
+									onchange={(e) => updateSettings({ secondaryScript: (e.target as HTMLSelectElement).value })}>
+									{#each scripts.filter(s => s !== primaryScript) as script}
+										<option value={script}>{SCRIPT_LABELS[script] || script}</option>
+									{/each}
+								</select>
+								<select class="font-lang-font-select" value={secondarySetId}
+									onchange={(e) => setLanguageFontSet(secondaryScript, (e.target as HTMLSelectElement).value)}>
+									{#each allFontSets as fs}
+										<option value={fs.id}>{fs.name}</option>
+									{/each}
+								</select>
+								<div class="font-lang-preview" style="font-family: {secondarySet?.textFont || secondarySet?.name || 'inherit'}">
+									{SCRIPT_SAMPLES[secondaryScript] || ''}
+								</div>
+							</div>
+						{/if}
 					{/if}
 
 					<!-- Interface Font Size -->
@@ -1646,6 +1690,29 @@
 		grid-column: 1 / -1; font-size: 0.85rem; color: var(--text-muted);
 		padding-top: 4px; border-top: 1px solid var(--background-modifier-border);
 		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	}
+
+	/* Contextual font language selector */
+	.font-lang-section {
+		padding: 12px; background: var(--background-secondary); border-radius: 10px;
+		margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px;
+	}
+	.font-lang-header { display: flex; align-items: center; gap: 8px; }
+	.font-lang-label { font-size: 0.82rem; font-weight: 600; color: var(--text-normal); text-transform: uppercase; letter-spacing: 0.5px; }
+	.font-lang-select, .font-lang-font-select {
+		width: 100%; padding: 6px 10px; border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; background: var(--background-primary); color: var(--text-normal);
+		font-size: 0.85rem; font-family: var(--font-interface-theme);
+	}
+	.font-lang-preview {
+		font-size: 0.9rem; color: var(--text-muted); padding: 6px 0;
+		border-top: 1px solid var(--background-modifier-border);
+		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	}
+	.font-lang-toggle { padding: 4px 0; }
+	.font-lang-check {
+		display: flex; align-items: center; gap: 8px; cursor: pointer;
+		font-size: 0.85rem; color: var(--text-normal);
 	}
 	.custom-fontset-row {
 		display: flex; justify-content: space-between; align-items: center;

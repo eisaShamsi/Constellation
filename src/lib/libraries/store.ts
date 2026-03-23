@@ -1102,6 +1102,9 @@ export interface AppSettings {
 	activeFontSetId: string;
 	languageFontSets: Record<string, string>;
 	customFontSets: FontSet[];
+	primaryScript: string;
+	enableSecondaryScript: boolean;
+	secondaryScript: string;
 
 	// Quick Capture
 	inboxFolder: string;
@@ -1204,6 +1207,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 	activeFontSetId: 'system',
 	languageFontSets: { latin: 'system', arabic: 'arabic-naskh', hebrew: 'hebrew', cjk: 'cjk' },
 	customFontSets: [],
+	primaryScript: 'latin',
+	enableSecondaryScript: false,
+	secondaryScript: 'arabic',
 	inboxFolder: '+',
 	dailyNoteFormat: '%Y-%m-%d',
 	dailyNoteFolder: '',
