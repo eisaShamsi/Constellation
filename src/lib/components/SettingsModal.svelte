@@ -825,68 +825,40 @@
 				<!-- ═══ LANGUAGE ═══ -->
 				{:else if activeSection === 'language'}
 
-					<!-- ── Interface Language ── -->
+					<!-- ── Language & Font ── -->
 					<div class="setting-heading">{$t('settings.language.interfaceLanguage')}</div>
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.language.interfaceLanguageDesc')}</div>
-						</div>
-						<select class="setting-control" value={$locale} onchange={handleLangChange}>
-							{#each SUPPORTED_LOCALES as loc}
-								<option value={loc.code}>{loc.label}</option>
-							{/each}
-						</select>
-					</div>
 
-					<!-- ── Writing Languages & Fonts ── -->
-					<div class="setting-heading">{$t('settings.language.writingLanguages')}</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('fontSets.fontMode') || 'Font Mode'}</div>
-							<div class="setting-desc">{$t('fontSets.perLanguageDesc') || 'Assign a font set to each script/language'}</div>
-						</div>
-						<div class="font-mode-toggle">
-							<button class="font-mode-btn" class:active={$appSettings.fontMode === 'universal'} onclick={() => updateSettings({ fontMode: 'universal' })}>{$t('fontSets.universal') || 'Universal'}</button>
-							<button class="font-mode-btn" class:active={$appSettings.fontMode !== 'universal'} onclick={() => updateSettings({ fontMode: 'per-language' })}>{$t('fontSets.perLanguage') || 'Per-Language'}</button>
-						</div>
-					</div>
-
-					{#if $appSettings.fontMode !== 'universal'}
-						<!-- Primary Language -->
-						{#each [($appSettings.primaryScript || 'latin')] as ps}
-							{@const psSetId = ($appSettings.languageFontSets || {})[ps] || 'system'}
-							{@const psSet = getFontSetById(psSetId, $appSettings.customFontSets || [])}
-							<div class="lang-card">
-								<div class="lang-card-title">{$t('fontSets.primaryLanguage') || 'Primary Language'}</div>
-								<div class="lang-card-row">
-									<select class="lang-card-select" value={ps}
-										onchange={(e) => { const v = (e.target as HTMLSelectElement).value; updateSettings({ primaryScript: v }); syncScriptToolbars(v); }}>
-										{#each Object.keys(SCRIPT_UNICODE_RANGES) as script}
-											<option value={script}>{SCRIPT_LABELS[script] || script}</option>
-										{/each}
-									</select>
-									<select class="lang-card-select" value={psSetId}
-										onchange={(e) => setLanguageFontSet(ps, (e.target as HTMLSelectElement).value)}>
-										{#each allFontSets as fs}
-											<option value={fs.id}>{fs.name}</option>
-										{/each}
-									</select>
-								</div>
-								<div class="lang-card-preview" style="font-family: {psSet?.textFont || psSet?.name || 'inherit'}">
-									{SCRIPT_SAMPLES[ps] || ''}
-								</div>
+					{#each [($appSettings.primaryScript || 'latin')] as ps}
+						{@const psSetId = ($appSettings.languageFontSets || {})[ps] || 'system'}
+						{@const psSet = getFontSetById(psSetId, $appSettings.customFontSets || [])}
+						<div class="lang-card">
+							<div class="lang-card-row">
+								<select class="lang-card-select" value={$locale} onchange={handleLangChange}>
+									{#each SUPPORTED_LOCALES as loc}
+										<option value={loc.code}>{loc.label}</option>
+									{/each}
+								</select>
+								<select class="lang-card-select" value={psSetId}
+									onchange={(e) => setLanguageFontSet(ps, (e.target as HTMLSelectElement).value)}>
+									{#each allFontSets as fs}
+										<option value={fs.id}>{fs.name}</option>
+									{/each}
+								</select>
 							</div>
-						{/each}
-
-						<!-- Secondary Language Toggle -->
-						<div class="setting-item" style="margin-top: 4px;">
-							<label class="setting-checkbox">
-								<input type="checkbox" checked={$appSettings.enableSecondaryScript}
-									onchange={(e) => { const v = (e.target as HTMLInputElement).checked; updateSettings({ enableSecondaryScript: v }); syncScriptToolbars(undefined, v ? $appSettings.secondaryScript : ''); }} />
-								<span>{$t('fontSets.enableSecondLanguage') || 'Enable second language'}</span>
-							</label>
+							<div class="lang-card-preview" style="font-family: {psSet?.textFont || psSet?.name || 'inherit'}">
+								{SCRIPT_SAMPLES[ps] || ''}
+							</div>
 						</div>
+					{/each}
+
+					<!-- Enable second language -->
+					<div class="setting-item" style="margin-top: 4px;">
+						<label class="setting-checkbox">
+							<input type="checkbox" checked={$appSettings.enableSecondaryScript}
+								onchange={(e) => { const v = (e.target as HTMLInputElement).checked; updateSettings({ enableSecondaryScript: v }); syncScriptToolbars(undefined, v ? $appSettings.secondaryScript : ''); }} />
+							<span>{$t('fontSets.enableSecondLanguage') || 'Enable second language'}</span>
+						</label>
+					</div>
 
 						{#if $appSettings.enableSecondaryScript}
 							{#each [($appSettings.secondaryScript || 'arabic')] as ss}
@@ -914,20 +886,6 @@
 								</div>
 							{/each}
 						{/if}
-					{:else}
-						<!-- Universal mode -->
-						<div class="setting-item">
-							<div class="setting-info">
-								<div class="setting-name">{$t('fontSets.activeFontSet') || 'Active Font Set'}</div>
-							</div>
-							<select class="setting-control" value={$appSettings.activeFontSetId || 'system'}
-								onchange={(e) => updateSettings({ activeFontSetId: (e.target as HTMLSelectElement).value })}>
-								{#each allFontSets as fs}
-									<option value={fs.id}>{fs.name}</option>
-								{/each}
-							</select>
-						</div>
-					{/if}
 
 					<!-- ── Date & Numbers ── -->
 					<div class="setting-heading">{$t('settings.language.dateAndNumbers')}</div>
