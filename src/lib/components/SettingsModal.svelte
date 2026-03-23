@@ -106,10 +106,25 @@
 		if (value) setProvider(value);
 	}
 
+	// Map locale → primary script for font auto-sync
+	const localeToScript: Record<string, string> = {
+		en: 'latin', de: 'latin', es: 'latin', fr: 'latin', pt: 'latin', tr: 'latin',
+		ar: 'arabic', fa: 'arabic', ur: 'arabic',
+		he: 'hebrew',
+		hi: 'devanagari',
+		ja: 'cjk', ko: 'cjk', zh: 'cjk',
+		ru: 'cyrillic',
+	};
+
 	function handleLangChange(e: Event) {
 		const newLocale = (e.target as HTMLSelectElement).value as Locale;
 		setLocale(newLocale);
 		notifySettingsChanged({ locale: newLocale });
+		// Auto-sync primary script to match the interface language
+		const script = localeToScript[newLocale] || 'latin';
+		if ($appSettings.primaryScript !== script) {
+			updateSettings({ primaryScript: script });
+		}
 	}
 
 	// System fonts detection — start with curated list, then enhance with system fonts
