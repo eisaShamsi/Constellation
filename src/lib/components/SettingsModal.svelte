@@ -825,7 +825,7 @@
 				<!-- ═══ LANGUAGE ═══ -->
 				{:else if activeSection === 'language'}
 
-					<!-- Interface Language -->
+					<!-- ── Interface Language ── -->
 					<div class="setting-heading">{$t('settings.language.interfaceLanguage')}</div>
 					<div class="setting-item">
 						<div class="setting-info">
@@ -838,11 +838,9 @@
 						</select>
 					</div>
 
-					<!-- Writing Languages -->
+					<!-- ── Writing Languages & Fonts ── -->
 					<div class="setting-heading">{$t('settings.language.writingLanguages')}</div>
-					<div class="setting-desc" style="padding: 0 16px 8px;">{$t('settings.language.writingLanguagesDesc')}</div>
 
-					<!-- Font Mode -->
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('fontSets.fontMode') || 'Font Mode'}</div>
@@ -856,63 +854,68 @@
 
 					{#if $appSettings.fontMode !== 'universal'}
 						<!-- Primary Language -->
-						<div class="setting-heading" style="font-size: 12px;">{$t('fontSets.primaryLanguage') || 'PRIMARY LANGUAGE'}</div>
-						<div class="font-script-row">
-							<select class="font-script-select" value={$appSettings.primaryScript || 'latin'}
-								onchange={(e) => updateSettings({ primaryScript: (e.target as HTMLSelectElement).value })}>
-								{#each Object.keys(SCRIPT_UNICODE_RANGES) as script}
-									<option value={script}>{SCRIPT_LABELS[script] || script}</option>
-								{/each}
-							</select>
-						</div>
-						{@const primarySetId = ($appSettings.languageFontSets || {})[$appSettings.primaryScript || 'latin'] || 'system'}
-						{@const primarySet = getFontSetById(primarySetId, $appSettings.customFontSets || [])}
-						<div class="font-script-row">
-							<select class="font-script-select" value={primarySetId}
-								onchange={(e) => setLanguageFontSet($appSettings.primaryScript || 'latin', (e.target as HTMLSelectElement).value)}>
-								{#each allFontSets as fs}
-									<option value={fs.id}>{fs.name}</option>
-								{/each}
-							</select>
-						</div>
-						<div class="font-script-preview" style="font-family: {primarySet?.textFont || 'inherit'}">
-							{SCRIPT_SAMPLES[$appSettings.primaryScript || 'latin'] || ''}
-						</div>
+						{#each [($appSettings.primaryScript || 'latin')] as ps}
+							{@const psSetId = ($appSettings.languageFontSets || {})[ps] || 'system'}
+							{@const psSet = getFontSetById(psSetId, $appSettings.customFontSets || [])}
+							<div class="lang-card">
+								<div class="lang-card-title">{$t('fontSets.primaryLanguage') || 'Primary Language'}</div>
+								<div class="lang-card-row">
+									<select class="lang-card-select" value={ps}
+										onchange={(e) => { const v = (e.target as HTMLSelectElement).value; updateSettings({ primaryScript: v }); syncScriptToolbars(v); }}>
+										{#each Object.keys(SCRIPT_UNICODE_RANGES) as script}
+											<option value={script}>{SCRIPT_LABELS[script] || script}</option>
+										{/each}
+									</select>
+									<select class="lang-card-select" value={psSetId}
+										onchange={(e) => setLanguageFontSet(ps, (e.target as HTMLSelectElement).value)}>
+										{#each allFontSets as fs}
+											<option value={fs.id}>{fs.name}</option>
+										{/each}
+									</select>
+								</div>
+								<div class="lang-card-preview" style="font-family: {psSet?.textFont || psSet?.name || 'inherit'}">
+									{SCRIPT_SAMPLES[ps] || ''}
+								</div>
+							</div>
+						{/each}
 
-						<!-- Secondary Language -->
-						<div class="setting-item" style="margin-top: 8px;">
+						<!-- Secondary Language Toggle -->
+						<div class="setting-item" style="margin-top: 4px;">
 							<label class="setting-checkbox">
 								<input type="checkbox" checked={$appSettings.enableSecondaryScript}
-									onchange={(e) => updateSettings({ enableSecondaryScript: (e.target as HTMLInputElement).checked })} />
+									onchange={(e) => { const v = (e.target as HTMLInputElement).checked; updateSettings({ enableSecondaryScript: v }); syncScriptToolbars(undefined, v ? $appSettings.secondaryScript : ''); }} />
 								<span>{$t('fontSets.enableSecondLanguage') || 'Enable second language'}</span>
 							</label>
 						</div>
+
 						{#if $appSettings.enableSecondaryScript}
-							<div class="setting-heading" style="font-size: 12px;">{$t('fontSets.secondaryLanguage') || 'SECONDARY LANGUAGE'}</div>
-							<div class="font-script-row">
-								<select class="font-script-select" value={$appSettings.secondaryScript || ''}
-									onchange={(e) => updateSettings({ secondaryScript: (e.target as HTMLSelectElement).value })}>
-									{#each Object.keys(SCRIPT_UNICODE_RANGES).filter(s => s !== ($appSettings.primaryScript || 'latin')) as script}
-										<option value={script}>{SCRIPT_LABELS[script] || script}</option>
-									{/each}
-								</select>
-							</div>
-							{@const secSetId = ($appSettings.languageFontSets || {})[$appSettings.secondaryScript || ''] || 'system'}
-							{@const secSet = getFontSetById(secSetId, $appSettings.customFontSets || [])}
-							<div class="font-script-row">
-								<select class="font-script-select" value={secSetId}
-									onchange={(e) => setLanguageFontSet($appSettings.secondaryScript || '', (e.target as HTMLSelectElement).value)}>
-									{#each allFontSets as fs}
-										<option value={fs.id}>{fs.name}</option>
-									{/each}
-								</select>
-							</div>
-							<div class="font-script-preview" style="font-family: {secSet?.textFont || 'inherit'}">
-								{SCRIPT_SAMPLES[$appSettings.secondaryScript || ''] || ''}
-							</div>
+							{#each [($appSettings.secondaryScript || 'arabic')] as ss}
+								{@const ssSetId = ($appSettings.languageFontSets || {})[ss] || 'system'}
+								{@const ssSet = getFontSetById(ssSetId, $appSettings.customFontSets || [])}
+								<div class="lang-card">
+									<div class="lang-card-title">{$t('fontSets.secondaryLanguage') || 'Secondary Language'}</div>
+									<div class="lang-card-row">
+										<select class="lang-card-select" value={ss}
+											onchange={(e) => { const v = (e.target as HTMLSelectElement).value; updateSettings({ secondaryScript: v }); syncScriptToolbars(undefined, v); }}>
+											{#each Object.keys(SCRIPT_UNICODE_RANGES).filter(s => s !== ($appSettings.primaryScript || 'latin')) as script}
+												<option value={script}>{SCRIPT_LABELS[script] || script}</option>
+											{/each}
+										</select>
+										<select class="lang-card-select" value={ssSetId}
+											onchange={(e) => setLanguageFontSet(ss, (e.target as HTMLSelectElement).value)}>
+											{#each allFontSets as fs}
+												<option value={fs.id}>{fs.name}</option>
+											{/each}
+										</select>
+									</div>
+									<div class="lang-card-preview" style="font-family: {ssSet?.textFont || ssSet?.name || 'inherit'}">
+										{SCRIPT_SAMPLES[ss] || ''}
+									</div>
+								</div>
+							{/each}
 						{/if}
 					{:else}
-						<!-- Universal mode: single font set -->
+						<!-- Universal mode -->
 						<div class="setting-item">
 							<div class="setting-info">
 								<div class="setting-name">{$t('fontSets.activeFontSet') || 'Active Font Set'}</div>
@@ -926,7 +929,7 @@
 						</div>
 					{/if}
 
-					<!-- Date & Numbers -->
+					<!-- ── Date & Numbers ── -->
 					<div class="setting-heading">{$t('settings.language.dateAndNumbers')}</div>
 
 					<div class="setting-item">
@@ -941,13 +944,12 @@
 						</select>
 					</div>
 
-					<!-- Date Format per language -->
 					{#each [$appSettings.primaryScript || 'latin', ...(($appSettings.enableSecondaryScript && $appSettings.secondaryScript) ? [$appSettings.secondaryScript] : [])].filter(Boolean) as script}
 						{@const fmt = ($appSettings.scriptDateFormats || {})[script] || $appSettings.dateFormat || 'DD/MM/YYYY'}
 						{@const isContextual = ($appSettings.contextualDates || {})[script] ?? false}
-						<div class="font-script-row" style="flex-wrap: wrap;">
-							<div class="font-script-label" style="min-width: 140px;">{SCRIPT_LABELS[script] || script}</div>
-							<select class="font-script-select" value={fmt}
+						<div class="lang-card-row" style="padding: 4px 16px;">
+							<span class="lang-card-label">{SCRIPT_LABELS[script] || script}</span>
+							<select class="lang-card-select" value={fmt}
 								onchange={(e) => {
 									const current = { ...($appSettings.scriptDateFormats || {}) };
 									current[script] = (e.target as HTMLSelectElement).value;
@@ -968,25 +970,31 @@
 										current[script] = (e.target as HTMLInputElement).checked;
 										updateSettings({ contextualDates: current });
 									}} />
-								<span style="font-size: 13px; color: var(--text-muted);">Contextual</span>
+								<span style="font-size: 12px; color: var(--text-muted);">{$t('settings.appearance.contextual') || 'Contextual'}</span>
 							</label>
 						</div>
 					{/each}
 
-					<!-- Script Tools -->
+					<!-- ── Script Tools ── -->
 					<div class="setting-heading">{$t('settings.language.scriptTools')}</div>
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.language.scriptToolsDesc')}</div>
 						</div>
 						<label class="toggle">
-							<input type="checkbox" checked={$appSettings.showScriptToolbar}
-								onchange={(e) => updateSettings({ showScriptToolbar: (e.target as HTMLInputElement).checked })} />
+							<input type="checkbox" checked={$appSettings.enableScriptToolbar}
+								onchange={(e) => {
+									const enabled = (e.target as HTMLInputElement).checked;
+									const scripts: string[] = [];
+									if ($appSettings.primaryScript) scripts.push($appSettings.primaryScript);
+									if ($appSettings.enableSecondaryScript && $appSettings.secondaryScript) scripts.push($appSettings.secondaryScript);
+									updateSettings({ enableScriptToolbar: enabled, scriptToolbarScripts: scripts });
+								}} />
 							<span class="toggle-slider"></span>
 						</label>
 					</div>
 
-					<!-- Custom Font Sets -->
+					<!-- ── Custom Font Sets ── -->
 					<div class="setting-heading">{$t('fontSets.customFontSets') || 'Custom Font Sets'}</div>
 					{#each ($appSettings.customFontSets || []) as customSet}
 						<div class="fontset-item">
@@ -1012,8 +1020,8 @@
 							</div>
 							<div class="fontset-editor-field">
 								<label>{$t('fontSets.interfaceFont') || 'Interface Font'}</label>
-								<select bind:value={customSetInterface}>
-									<option value="">System Default</option>
+								<select value={customSetInterface} onchange={(e) => { customSetInterface = (e.target as HTMLSelectElement).value; if (!customSetName) customSetName = customSetInterface; }}>
+									<option value="">{$t('fontSets.systemDefault') || 'System Default'}</option>
 									{#each systemFonts as font}
 										<option value={font}>{font}</option>
 									{/each}
@@ -1021,8 +1029,8 @@
 							</div>
 							<div class="fontset-editor-field">
 								<label>{$t('fontSets.textFont') || 'Text Font'}</label>
-								<select bind:value={customSetText}>
-									<option value="">System Default</option>
+								<select value={customSetText} onchange={(e) => customSetText = (e.target as HTMLSelectElement).value}>
+									<option value="">{$t('fontSets.systemDefault') || 'System Default'}</option>
 									{#each systemFonts as font}
 										<option value={font}>{font}</option>
 									{/each}
@@ -1030,8 +1038,8 @@
 							</div>
 							<div class="fontset-editor-field">
 								<label>{$t('fontSets.monoFont') || 'Monospace Font'}</label>
-								<select bind:value={customSetMono}>
-									<option value="">System Default</option>
+								<select value={customSetMono} onchange={(e) => customSetMono = (e.target as HTMLSelectElement).value}>
+									<option value="">{$t('fontSets.systemDefault') || 'System Default'}</option>
 									{#each systemFonts as font}
 										<option value={font}>{font}</option>
 									{/each}
@@ -1760,6 +1768,28 @@
 	.font-lang-section {
 		padding: 12px; background: var(--background-secondary); border-radius: 10px;
 		margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px;
+	}
+	.lang-card {
+		padding: 12px 16px; background: var(--background-secondary); border-radius: 10px;
+		margin: 4px 16px; border-left: 3px solid var(--interactive-accent);
+	}
+	.lang-card-title {
+		font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+		color: var(--text-muted); margin-bottom: 8px;
+	}
+	.lang-card-row {
+		display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+	}
+	.lang-card-select {
+		flex: 1; min-width: 120px; padding: 6px 10px; border: 1px solid var(--background-modifier-border);
+		border-radius: 6px; background: var(--background-primary); color: var(--text-normal);
+		font-size: 13px; font-family: var(--font-interface-theme);
+	}
+	.lang-card-preview {
+		font-size: 13px; color: var(--text-muted); margin-top: 6px; padding: 4px 0;
+	}
+	.lang-card-label {
+		font-size: 13px; font-weight: 500; min-width: 100px; color: var(--text-normal);
 	}
 	.date-format-grid { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 8px; }
 	.date-format-row { display: flex; align-items: center; gap: 12px; }
