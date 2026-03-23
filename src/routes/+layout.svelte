@@ -3309,15 +3309,17 @@
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 		max-width: 100%; pointer-events: none;
 	}
-	.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 	.tab.pinned { min-width: 36px; padding: 0 8px; }
-	.tab-pin { font-size: 0.65rem; flex-shrink: 0; }
+	.tab-pin { font-size: 0.65rem; flex-shrink: 0; pointer-events: none; }
+	.tab.drag-over { border-inline-start: 2px solid var(--interactive-accent); }
 	.tab-close {
 		background: none; border: none; color: var(--text-muted);
 		cursor: pointer; font-size: 0.85rem; padding: 0; line-height: 1;
 		border-radius: 3px; text-decoration: none;
 		display: flex; align-items: center; justify-content: center;
 		width: 16px; height: 16px; flex-shrink: 0;
+		pointer-events: auto;
 	}
 	.tab-close:hover { background: var(--border); color: var(--text); }
 	.tab-action {
