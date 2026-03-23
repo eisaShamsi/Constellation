@@ -2440,21 +2440,22 @@
 
 				<!-- Tab context menu -->
 				{#if tabCtxMenu}
-					<div class="tab-ctx-menu" style="left:{tabCtxMenu.x}px;top:{tabCtxMenu.y}px">
-						{@const ctxTab = $openTabs.find(t => t.id === tabCtxMenu?.tabId)}
-						<button class="tab-ctx-item" onclick={() => tabCtxAction('pin')}>
-							{ctxTab?.pinned ? 'Unpin' : 'Pin'}
-						</button>
-						<div class="tab-ctx-sep"></div>
-						<button class="tab-ctx-item" onclick={() => tabCtxAction('close')} disabled={ctxTab?.pinned}>Close</button>
-						<button class="tab-ctx-item" onclick={() => tabCtxAction('closeOthers')}>Close Others</button>
-						<button class="tab-ctx-item" onclick={() => tabCtxAction('closeRight')}>Close to the Right</button>
-						<button class="tab-ctx-item" onclick={() => tabCtxAction('closeLeft')}>Close to the Left</button>
-						<button class="tab-ctx-item" onclick={() => tabCtxAction('closeAll')}>Close All</button>
-						<div class="tab-ctx-sep"></div>
-						<button class="tab-ctx-item" onclick={() => tabCtxAction('copyPath')}>Copy Path</button>
-						<button class="tab-ctx-item" onclick={() => tabCtxAction('copyName')}>Copy Name</button>
-					</div>
+					{#each [$openTabs.find(t => t.id === tabCtxMenu.tabId)] as ctxTab}
+						<div class="tab-ctx-menu" style="left:{tabCtxMenu.x}px;top:{tabCtxMenu.y}px">
+							<button class="tab-ctx-item" onclick={() => tabCtxAction('pin')}>
+								{ctxTab?.pinned ? 'Unpin' : 'Pin'}
+							</button>
+							<div class="tab-ctx-sep"></div>
+							<button class="tab-ctx-item" onclick={() => tabCtxAction('close')} disabled={ctxTab?.pinned}>Close</button>
+							<button class="tab-ctx-item" onclick={() => tabCtxAction('closeOthers')}>Close Others</button>
+							<button class="tab-ctx-item" onclick={() => tabCtxAction('closeRight')}>Close to the Right</button>
+							<button class="tab-ctx-item" onclick={() => tabCtxAction('closeLeft')}>Close to the Left</button>
+							<button class="tab-ctx-item" onclick={() => tabCtxAction('closeAll')}>Close All</button>
+							<div class="tab-ctx-sep"></div>
+							<button class="tab-ctx-item" onclick={() => tabCtxAction('copyPath')}>Copy Path</button>
+							<button class="tab-ctx-item" onclick={() => tabCtxAction('copyName')}>Copy Name</button>
+						</div>
+					{/each}
 				{/if}
 			{:else}
 				<div class="tab-spacer"></div>
