@@ -92,6 +92,47 @@
 	let sidebarOpen = $state(true);
 	let dragTabId: string | null = $state(null);
 	let dragOverTabId: string | null = $state(null);
+	let dragStartX = 0;
+	let isDragging = false;
+
+	function startTabDrag(e: MouseEvent, tabId: string) {
+		if (e.button !== 0) return; // left click only
+		dragTabId = tabId;
+		dragStartX = e.clientX;
+		isDragging = false;
+
+		const onMove = (me: MouseEvent) => {
+			if (!isDragging && Math.abs(me.clientX - dragStartX) > 5) {
+				isDragging = true;
+			}
+			if (!isDragging) return;
+			// Find which tab element we're over
+			const els = document.querySelectorAll('.tab-scroll .tab');
+			let found: string | null = null;
+			els.forEach((el) => {
+				const rect = el.getBoundingClientRect();
+				if (me.clientX >= rect.left && me.clientX <= rect.right && me.clientY >= rect.top && me.clientY <= rect.bottom) {
+					const id = el.getAttribute('data-tab-id');
+					if (id && id !== dragTabId) found = id;
+				}
+			});
+			dragOverTabId = found;
+		};
+
+		const onUp = () => {
+			if (isDragging && dragTabId && dragOverTabId) {
+				reorderTab(dragTabId, dragOverTabId);
+			}
+			dragTabId = null;
+			dragOverTabId = null;
+			isDragging = false;
+			window.removeEventListener('mousemove', onMove);
+			window.removeEventListener('mouseup', onUp);
+		};
+
+		window.addEventListener('mousemove', onMove);
+		window.addEventListener('mouseup', onUp);
+	}
 
 	// Tab context menu
 	let tabCtxMenu = $state<{ x: number; y: number; tabId: string } | null>(null);
@@ -2399,22 +2440,16 @@
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
 			{#if !$splitActive}
-				<div class="tab-scroll"
-					ondragover={(e) => e.preventDefault()}
-					ondrop={(e) => { e.preventDefault(); dragTabId = null; dragOverTabId = null; }}>
+				<div class="tab-scroll">
 					{#each $openTabs as tab (tab.id)}
 						<button class="tab"
 							class:active={$activeTabId === tab.id}
 							class:pinned={tab.pinned}
 							class:drag-over={dragOverTabId === tab.id}
 							style:--library-color={libraryColorMap[tab.libraryName]}
-							draggable={true}
-							ondragstart={(e) => { dragTabId = tab.id; e.dataTransfer?.setData('text/plain', tab.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'; }}
-							ondragover={(e) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'; dragOverTabId = tab.id; }}
-							ondragleave={() => { if (dragOverTabId === tab.id) dragOverTabId = null; }}
-							ondrop={(e) => { e.preventDefault(); if (dragTabId && dragTabId !== tab.id) reorderTab(dragTabId, tab.id); dragTabId = null; dragOverTabId = null; }}
-							ondragend={() => { dragTabId = null; dragOverTabId = null; }}
-							onclick={() => switchTab(tab.id)}
+							data-tab-id={tab.id}
+							onmousedown={(e) => startTabDrag(e, tab.id)}
+							onclick={() => { if (!isDragging) switchTab(tab.id); }}
 							onauxclick={(e) => { if (e.button === 1 && !tab.pinned) { e.preventDefault(); closeTab(tab.id); } }}
 							oncontextmenu={(e) => showTabContextMenu(e, tab.id)}>
 							{#if tab.pinned}
@@ -3314,7 +3349,7 @@
 	.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 	.tab.pinned { min-width: 36px; padding: 0 8px; }
 	.tab-pin { font-size: 0.65rem; flex-shrink: 0; pointer-events: none; }
-	.tab.drag-over { border-inline-start: 2px solid var(--interactive-accent); }
+	.tab.drag-over { border-inline-start: 3px solid var(--interactive-accent); }
 	.tab-close {
 		background: none; border: none; color: var(--text-muted);
 		cursor: pointer; font-size: 0.85rem; padding: 0; line-height: 1;
