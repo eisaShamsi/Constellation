@@ -459,6 +459,7 @@
 						tabId={tab.id}
 						filePath={tab.path}
 						libraryName={tab.libraryName}
+						noteDir={noteDir}
 						collapsed={propsCollapsed}
 						onToggle={() => propsCollapsed = !propsCollapsed}
 						onNoteClick={async (noteName) => {

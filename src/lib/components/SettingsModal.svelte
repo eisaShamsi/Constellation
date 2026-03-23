@@ -1376,21 +1376,44 @@
 						</select>
 					</div>
 
-					<!-- Date Format -->
+					<!-- Date Format — per language -->
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.appearance.dateFormat') || 'Date format'}</div>
-							<div class="setting-desc">{$t('settings.appearance.dateFormatDesc') || 'Choose how dates are displayed'}</div>
+							<div class="setting-desc">{$t('settings.appearance.dateFormatDesc') || 'Choose how dates are displayed per language'}</div>
 						</div>
-						<select class="setting-control" value={$appSettings.dateFormat || 'DD/MM/YYYY'}
-							onchange={(e) => updateSettings({ dateFormat: (e.target as HTMLSelectElement).value as any })}>
-							<option value="DD/MM/YYYY">DD/MM/YYYY</option>
-							<option value="MM/DD/YYYY">MM/DD/YYYY</option>
-							<option value="YYYY-MM-DD">YYYY-MM-DD</option>
-							<option value="YYYY/MM/DD">YYYY/MM/DD</option>
-							<option value="D MMMM YYYY">D MMMM YYYY</option>
-							<option value="MMMM D, YYYY">MMMM D, YYYY</option>
-						</select>
+					</div>
+					<div class="date-format-grid">
+						{#each [$appSettings.primaryScript || 'latin', ...(($appSettings.enableSecondaryScript && $appSettings.secondaryScript) ? [$appSettings.secondaryScript] : [])].filter(Boolean) as script}
+							{@const fmt = ($appSettings.scriptDateFormats || {})[script] || $appSettings.dateFormat || 'DD/MM/YYYY'}
+							{@const isContextual = ($appSettings.contextualDates || {})[script] ?? false}
+							<div class="date-format-row">
+								<span class="date-format-label">{SCRIPT_LABELS[script] || script}</span>
+								<select class="date-format-select" value={fmt}
+									onchange={(e) => {
+										const current = { ...($appSettings.scriptDateFormats || {}) };
+										current[script] = (e.target as HTMLSelectElement).value;
+										updateSettings({ scriptDateFormats: current });
+									}}>
+									<option value="DD/MM/YYYY">DD/MM/YYYY</option>
+									<option value="MM/DD/YYYY">MM/DD/YYYY</option>
+									<option value="YYYY-MM-DD">YYYY-MM-DD</option>
+									<option value="YYYY/MM/DD">YYYY/MM/DD</option>
+									<option value="DD.MM.YYYY">DD.MM.YYYY</option>
+									<option value="D MMMM YYYY">D MMMM YYYY</option>
+									<option value="MMMM D, YYYY">MMMM D, YYYY</option>
+								</select>
+								<label class="date-contextual-check">
+									<input type="checkbox" checked={isContextual}
+										onchange={(e) => {
+											const current = { ...($appSettings.contextualDates || {}) };
+											current[script] = (e.target as HTMLInputElement).checked;
+											updateSettings({ contextualDates: current });
+										}} />
+									<span>Contextual</span>
+								</label>
+							</div>
+						{/each}
 					</div>
 
 					<!-- Custom Font Sets -->
@@ -1793,6 +1816,19 @@
 		padding: 12px; background: var(--background-secondary); border-radius: 10px;
 		margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px;
 	}
+	.date-format-grid { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 8px; }
+	.date-format-row { display: flex; align-items: center; gap: 12px; }
+	.date-format-label { font-size: 13px; font-weight: 500; min-width: 120px; color: var(--text-normal); }
+	.date-format-select {
+		flex: 1; padding: 6px 10px; border: 1px solid var(--background-modifier-border);
+		border-radius: 6px; background: var(--background-primary); color: var(--text-normal);
+		font-size: 13px;
+	}
+	.date-contextual-check {
+		display: flex; align-items: center; gap: 4px; font-size: 12px;
+		color: var(--text-muted); cursor: pointer; white-space: nowrap;
+	}
+	.date-contextual-check input { margin: 0; }
 	.font-lang-header { display: flex; align-items: center; gap: 8px; }
 	.font-lang-label { font-size: 0.82rem; font-weight: 600; color: var(--text-normal); text-transform: uppercase; letter-spacing: 0.5px; }
 	.font-lang-select, .font-lang-font-select {

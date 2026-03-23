@@ -15,6 +15,7 @@
 		filePath,
 		onNoteClick,
 		libraryName = '',
+		noteDir = 'ltr' as 'ltr' | 'rtl',
 		collapsed = false,
 		onToggle,
 	}: {
@@ -24,6 +25,7 @@
 		filePath: string;
 		onNoteClick?: (noteName: string) => void;
 		libraryName?: string;
+		noteDir?: 'ltr' | 'rtl';
 		collapsed?: boolean;
 		onToggle?: () => void;
 	} = $props();
@@ -299,9 +301,32 @@
 		);
 	}
 
+	function getDateScript(): string {
+		const s = get(appSettings);
+		const loc = get(locale);
+		return noteDir === 'rtl'
+			? (loc === 'he' ? 'hebrew' : 'arabic')
+			: (s.primaryScript || 'latin');
+	}
+
 	function formatDateLocale(value: string): string {
 		const s = get(appSettings);
-		return formatDate(value, s.dateFormat || 'DD/MM/YYYY', get(locale), s.numeralStyle || 'arabic');
+		const loc = get(locale);
+		const script = getDateScript();
+		const fmt = (s.scriptDateFormats || {})[script] || s.dateFormat || 'DD/MM/YYYY';
+		const dateLocale = noteDir === 'rtl' ? (loc === 'he' ? 'he' : loc === 'fa' ? 'fa' : loc === 'ur' ? 'ur' : 'ar') : loc;
+		return formatDate(value, fmt, dateLocale, s.numeralStyle || 'arabic');
+	}
+
+	function isDateContextual(): boolean {
+		const s = get(appSettings);
+		const script = getDateScript();
+		return (s.contextualDates || {})[script] ?? false;
+	}
+
+	function getDateDir(): string {
+		if (!isDateContextual()) return 'ltr';
+		return noteDir;
 	}
 
 	function handleLinkClick(value: string) {
@@ -448,14 +473,12 @@
 					oninput={(e) => updateValue(idx, (e.target as HTMLInputElement).value)} />
 			{:else if prop.type === 'date'}
 				<div class="pe-date-wrap">
-					<input class="pe-val pe-date-input" type="date" value={prop.value}
+					<input class="pe-date-hidden" type="date" value={prop.value}
 						oninput={(e) => updateValue(idx, (e.target as HTMLInputElement).value)} />
-					{#if prop.value}
-						{@const formatted = formatDateLocale(prop.value)}
-						{#if formatted}
-							<span class="pe-date-display">{formatted}</span>
-						{/if}
-					{/if}
+					<span class="pe-date-display" dir={getDateDir()} onclick={(e) => {
+						const input = (e.currentTarget as HTMLElement).previousElementSibling as HTMLInputElement;
+						input?.showPicker?.();
+					}}>{prop.value ? formatDateLocale(prop.value) : $t('propertyEditor.empty')}</span>
 				</div>
 			{:else if prop.type === 'number'}
 				<input class="pe-val" type="number" value={prop.value}
@@ -654,11 +677,18 @@
 	.pe-date-wrap {
 		flex: 1; min-width: 0;
 		display: flex; align-items: center; gap: 6px;
+		position: relative;
 	}
-	.pe-date-input { flex: 0 1 auto; max-width: 150px; }
+	.pe-date-hidden {
+		position: absolute; opacity: 0; width: 0; height: 0; overflow: hidden; pointer-events: none;
+	}
 	.pe-date-display {
-		font-size: 0.76rem; color: var(--text-faint);
-		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+		font-size: 0.85rem; color: var(--text-normal);
+		cursor: pointer; padding: 2px 4px; border-radius: 4px;
+		white-space: nowrap;
+	}
+	.pe-date-display:hover {
+		background: var(--background-modifier-hover);
 	}
 
 	/* Tags/List */

@@ -1093,7 +1093,9 @@ export interface AppSettings {
 	monoFont: string;
 	fontSize: number;
 	numeralStyle: 'arabic' | 'hindi';
-	dateFormat: 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD' | 'YYYY/MM/DD' | 'D MMMM YYYY' | 'MMMM D, YYYY';
+	dateFormat: string;
+	scriptDateFormats: Record<string, string>;
+	contextualDates: Record<string, boolean>;
 	scriptFonts: Record<string, string>;
 
 	// Font Sets
@@ -1204,7 +1206,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 	fontSize: 17,
 	scriptFonts: {},
 	numeralStyle: 'arabic' as 'arabic' | 'hindi',
-	dateFormat: 'DD/MM/YYYY' as 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD' | 'YYYY/MM/DD' | 'D MMMM YYYY' | 'MMMM D, YYYY',
+	dateFormat: 'DD/MM/YYYY',
+	scriptDateFormats: {} as Record<string, string>,
+	contextualDates: {} as Record<string, boolean>,
 	fontMode: 'per-language',
 	activeFontSetId: 'system',
 	languageFontSets: { latin: 'system', arabic: 'arabic-modern', hebrew: 'hebrew', cjk: 'cjk' },
