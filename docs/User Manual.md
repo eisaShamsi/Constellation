@@ -112,13 +112,16 @@ Shows raw Markdown syntax for full control. Ideal for power users who prefer to 
 
 Both modes share these features:
 
-- **Persistent toolbar** — formatting buttons always visible (Bold, Italic, Underline, Headings, Lists, Tables, etc.)
-- **Floating toolbar** — appears on text selection (can be disabled in Settings)
+- **Persistent toolbar** — formatting buttons always visible in Google Docs-style order (Bold, Italic, Underline, Headings, Lists, Tables, etc.)
+- **Floating toolbar** — appears on text selection (can be disabled in Settings > Editor)
+- **Right-click context menu** — full formatting options in a contextual menu
+- **Find & Replace** — `Ctrl+F` to find, `Ctrl+H` to find and replace
 - **Slash commands** — type `/` for quick insertions
 - **Wikilink autocomplete** — type `[[` to link notes
-- **Right-click context menu** — contextual formatting options
-- **RTL support** — toolbar and content adapt to text direction
-- **Font sets** — per-language font customization via Settings
+- **RTL support** — toolbar icons flip for RTL content, layout adapts to text direction
+- **Font sets** — per-language font customization via Settings > Language
+- **Script toolbars** — language-specific symbol and punctuation toolbars (Arabic symbols, Hebrew, CJK punctuation, etc.)
+- **Tashkeel highlighting** — optional Arabic diacritics highlighting toggle in the toolbar
 
 ### Text Formatting Shortcuts
 
@@ -129,6 +132,8 @@ Both modes share these features:
 | `Ctrl+Shift+S` | Strikethrough |
 | `Ctrl+Shift+H` | Highlight |
 | `Ctrl+K` | Insert wikilink |
+| `Ctrl+F` | Find |
+| `Ctrl+H` | Find & Replace |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Shift+Z` | Redo |
 
@@ -375,14 +380,6 @@ When your cursor is inside a table, a floating toolbar appears with:
 - Align columns (left, center, right)
 - Navigate cells with `Tab` / `Shift+Tab`
 
-### Tables in Document Editor
-
-The Document editor (TipTap) provides a visual table experience:
-
-- Click the table button to insert
-- Use the dropdown for row/column management
-- Resize columns by dragging borders
-
 ---
 
 ## 10. Tasks
@@ -436,19 +433,35 @@ Lens provides filtered views of your notes:
 
 Access Settings from the sidebar gear icon or `Ctrl+,`.
 
-### General
+### Dashboard
 
-- Language (15 languages)
-- Theme (Light / Dark)
-- Interface font, Text font, Mono font, Font size
+- Universe overview and statistics
+
+### Appearance
+
+- Color scheme (Light / Dark / System)
+- Accent color
+- Interface font size (11–18px)
+- Note font size
+
+### Language
+
+A dedicated tab consolidating all language-related settings:
+
+- **Interface language** — select from 15 supported languages
+- **Writing languages** — set a Primary language and an optional Secondary language, each with its own font set
+- **Font Mode** — Universal (one font for all) or Per-Language (separate fonts per writing language)
+- **Custom Font Sets** — system font dropdown for interface, text, and mono fonts per language
+- **Date & Numbers** — numeral style (Arabic 0-9 or Hindi numerals), per-language date format with a Contextual checkbox for direction-aware rendering
+- **Script Tools** — language-specific symbol and punctuation toolbars (Arabic, Hebrew, CJK, etc.)
 
 ### Editor
 
-- Editor type (Markdown / Document)
-- Default view (Reading / Editing)
-- Live Preview mode
+- Floating toolbar toggle (show/hide toolbar on text selection)
+- Tashkeel highlight (Arabic diacritics highlighting)
 - Line numbers, Indentation guides, Spellcheck
 - Auto-pair brackets, Smart lists
+- Properties in document (Visible / Hidden / Source)
 
 ### Libraries
 
@@ -484,6 +497,8 @@ Access Settings from the sidebar gear icon or `Ctrl+,`.
 | `Ctrl+B` | Bold |
 | `Ctrl+I` | Italic |
 | `Ctrl+K` | Insert wikilink |
+| `Ctrl+F` | Find |
+| `Ctrl+H` | Find & Replace |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Shift+Z` | Redo |
 | `Ctrl+D` | Select next occurrence |
@@ -512,13 +527,16 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 - **Editor**: RTL text editing with correct cursor movement and selection
 - **Star View**: Arabic labels render right-to-left with proper font fallback
 - **Legend**: Items flip dot/text order based on content language
-- **Script fonts**: Configure Arabic, Hebrew, and CJK fonts independently in Settings
+- **Script fonts**: Configure Arabic, Hebrew, and CJK fonts independently in Settings > Language
+- **Script toolbars**: Language-specific symbol and punctuation buttons (Arabic symbols, Hebrew, CJK punctuation)
+- **Tashkeel highlighting**: Toggle Arabic diacritics highlighting from the editor toolbar
 
 ### Setting Up for Arabic
 
-1. Go to **Settings > General > Language** and select Arabic
-2. Optionally set a dedicated Arabic font in **Settings > General > Script fonts**
-3. Notes with Arabic content will automatically render RTL
+1. Go to **Settings > Language** and select Arabic as your interface or writing language
+2. Optionally set a dedicated Arabic font set in **Settings > Language > Custom Font Sets**
+3. Enable Script Tools for Arabic symbol toolbar access
+4. Notes with Arabic content will automatically render RTL
 
 ---
 

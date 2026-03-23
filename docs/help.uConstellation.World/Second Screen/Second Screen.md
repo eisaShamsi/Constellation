@@ -11,7 +11,7 @@ description: Use Constellation's Second Screen as a mode-based companion — sho
 
 # Second Screen
 
-The Second Screen is a mode-based companion window that adapts to your current sidebar mode. Instead of duplicating the main editor, it provides contextual views and information relevant to what you're doing.
+The Second Screen is a mode-based companion window that adapts to your current sidebar mode. Instead of duplicating the main CodeMirror 6 editor, it provides contextual views and information relevant to what you're doing.
 
 ## Opening the Second Screen
 
