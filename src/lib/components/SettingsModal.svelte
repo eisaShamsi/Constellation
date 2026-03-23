@@ -955,18 +955,20 @@
 					<!-- ── Custom Font Sets ── -->
 					<div class="setting-heading">{$t('fontSets.customFontSets') || 'Custom Font Sets'}</div>
 					{#each ($appSettings.customFontSets || []) as customSet}
-						<div class="fontset-item">
-							<span class="fontset-name">{customSet.name}</span>
-							<button class="fontset-action" onclick={() => startEditFontSet(customSet)}>
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-							</button>
-							<button class="fontset-action" onclick={() => deleteCustomFontSet(customSet.id)}>
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-							</button>
+						<div class="custom-fontset-row">
+							<span class="custom-fontset-name">{customSet.name}</span>
+							<div class="custom-fontset-actions">
+								<button class="custom-fontset-btn" onclick={() => startEditFontSet(customSet)}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+								</button>
+								<button class="custom-fontset-btn custom-fontset-delete" onclick={() => deleteCustomFontSet(customSet.id)}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+								</button>
+							</div>
 						</div>
 					{/each}
 
-					<button class="fontset-create-btn" onclick={startCreateFontSet}>
+					<button class="create-fontset-btn" onclick={startCreateFontSet}>
 						+ {$t('fontSets.createFontSet') || 'Create Font Set'}
 					</button>
 
