@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { get } from 'svelte/store';
 	import { EditorView, ViewPlugin, Decoration, keymap, placeholder as cmPlaceholder, drawSelection, dropCursor, highlightActiveLine, highlightActiveLineGutter, lineNumbers, highlightSpecialChars, rectangularSelection, type ViewUpdate, type DecorationSet } from '@codemirror/view';
 	import { EditorState, Compartment, type Range } from '@codemirror/state';
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
@@ -71,7 +72,61 @@
 	let foldGutterCompartment = new Compartment();
 	let indentGuidesCompartment = new Compartment();
 	let tabConfigCompartment = new Compartment();
+	let fontCompartment = new Compartment();
 	let updating = false;
+
+	function buildFontTheme(): ReturnType<typeof EditorView.theme> {
+		const s = get(appSettings);
+		const defaultUI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif';
+		const defaultMono = '"Cascadia Code", "Fira Code", Consolas, monospace';
+		let fontFamily = defaultUI;
+		let monoFont = defaultMono;
+		let fontSize = (s.fontSize || 17) + 'px';
+
+		if (s.fontMode === 'universal') {
+			const set = getFontSetById(s.activeFontSetId || 'system', s.customFontSets || []);
+			fontFamily = set?.textFont || set?.name || s.textFont || defaultUI;
+			monoFont = set?.monoFont || s.monoFont || defaultMono;
+		} else {
+			const langSets = s.languageFontSets || {};
+			const customSets = s.customFontSets || [];
+			const latinSet = getFontSetById(langSets.latin || 'system', customSets);
+			fontFamily = latinSet?.textFont || latinSet?.name || s.textFont || defaultUI;
+			monoFont = latinSet?.monoFont || s.monoFont || defaultMono;
+
+			// Generate @font-face for per-language scripts
+			let css = '';
+			let hasPerScript = false;
+			for (const [script, range] of Object.entries(SCRIPT_UNICODE_RANGES)) {
+				if (script === 'latin') continue;
+				const setId = langSets[script];
+				if (!setId || setId === 'system') continue;
+				const set = getFontSetById(setId, customSets);
+				if (!set) continue;
+				hasPerScript = true;
+				const txtName = (set.textFont || set.name || '').split(',')[0].trim().replace(/"/g, '');
+				if (txtName) {
+					css += `@font-face { font-family: "ConstellationEditor"; src: local("${txtName}"); unicode-range: ${range}; }\n`;
+				}
+			}
+			let editorStyleEl = document.getElementById('constellation-editor-fonts');
+			if (!editorStyleEl) {
+				editorStyleEl = document.createElement('style');
+				editorStyleEl.id = 'constellation-editor-fonts';
+				document.head.appendChild(editorStyleEl);
+			}
+			editorStyleEl.textContent = css;
+			if (hasPerScript) {
+				fontFamily = `"ConstellationEditor", ${fontFamily}`;
+			}
+		}
+
+		return EditorView.theme({
+			'.cm-content': { fontFamily, fontSize, lineHeight: '1.7' },
+			'.cm-content .cm-line': { fontFamily },
+			'&': { fontSize },
+		});
+	}
 
 	// Formatting toolbar state
 	let toolbarVisible = $state(false);
@@ -1348,6 +1403,7 @@
 				livePreviewCompartment.of(livePreview ? [livePreviewPlugin, livePreviewTheme] : []),
 				cmPlaceholder(placeholder),
 				editorTheme,
+				fontCompartment.of(buildFontTheme()),
 				clipboardImagePaste(),
 				editorEventHandlers(),
 				EditorView.lineWrapping,
@@ -1426,60 +1482,14 @@
 		}
 	});
 
-	// Sync font settings → editor container (bypass CSS cascade issues)
+	// Sync font settings → editor via Compartment (direct CSS injection, bypasses cascade)
 	$effect(() => {
-		if (!containerEl) return;
-		const s = $appSettings;
-		const defaultUI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif';
-		const defaultMono = '"Cascadia Code", "Fira Code", Consolas, monospace';
-
-		if (s.fontMode === 'universal') {
-			const set = getFontSetById(s.activeFontSetId || 'system', s.customFontSets || []);
-			const txtFont = set?.textFont || set?.name || s.textFont || defaultUI;
-			const mono = set?.monoFont || s.monoFont || defaultMono;
-			containerEl.style.setProperty('--font-text-theme', txtFont);
-			containerEl.style.setProperty('--font-monospace-theme', mono);
-		} else {
-			// Per-language: build @font-face CSS and set on container
-			const langSets = s.languageFontSets || {};
-			const customSets = s.customFontSets || [];
-			const latinSet = getFontSetById(langSets.latin || 'system', customSets);
-			const baseTxt = latinSet?.textFont || latinSet?.name || s.textFont || defaultUI;
-			const baseMono = latinSet?.monoFont || s.monoFont || defaultMono;
-			let css = '';
-			let hasPerScript = false;
-
-			for (const [script, range] of Object.entries(SCRIPT_UNICODE_RANGES)) {
-				if (script === 'latin') continue;
-				const setId = langSets[script];
-				if (!setId || setId === 'system') continue;
-				const set = getFontSetById(setId, customSets);
-				if (!set) continue;
-				hasPerScript = true;
-				const txtName = (set.textFont || set.name || '').split(',')[0].trim().replace(/"/g, '');
-				if (txtName) {
-					css += `@font-face { font-family: "ConstellationEditor"; src: local("${txtName}"); unicode-range: ${range}; }\n`;
-				}
-			}
-
-			// Inject editor-specific @font-face
-			let editorStyleEl = document.getElementById('constellation-editor-fonts');
-			if (!editorStyleEl) {
-				editorStyleEl = document.createElement('style');
-				editorStyleEl.id = 'constellation-editor-fonts';
-				document.head.appendChild(editorStyleEl);
-			}
-			editorStyleEl.textContent = css;
-
-			if (hasPerScript) {
-				containerEl.style.setProperty('--font-text-theme', `"ConstellationEditor", ${baseTxt}`);
-			} else {
-				containerEl.style.setProperty('--font-text-theme', baseTxt);
-			}
-			containerEl.style.setProperty('--font-monospace-theme', baseMono);
+		const _s = $appSettings; // track reactivity
+		if (view) {
+			view.dispatch({
+				effects: fontCompartment.reconfigure(buildFontTheme())
+			});
 		}
-
-		containerEl.style.setProperty('--font-text-size', (s.fontSize || 17) + 'px');
 	});
 
 	// Sync livePreview prop → editor
