@@ -4,6 +4,7 @@
 	import type { OpenTab } from '$lib/libraries/store';
 	import { detectDir, renderMarkdown, postProcessRenderedContent, collectNoteNames } from '$lib/utils';
 	import { dir, t } from '$lib/i18n';
+	import { getAtmosphereConfig, getAtmosphereFont, type AtmosphereType } from '$lib/atmosphere';
 	import { get } from 'svelte/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import CodeMirrorEditor from './CodeMirrorEditor.svelte';
@@ -60,6 +61,17 @@
 	const noteDir = $derived(noteBody ? detectDir(noteBody) : $dir);
 	const editing = $derived(tab ? $editingTabIds.has(tab.id) : false);
 	let livePreviewEnabled = $state(true);
+
+	// Atmosphere
+	const atmosphereType = $derived(($appSettings.atmosphere || 'none') as AtmosphereType);
+	const atmosphereConfig = $derived(getAtmosphereConfig(atmosphereType));
+	const isAtmosphere = $derived(atmosphereType !== 'none');
+	const primaryScript = $derived($appSettings.primaryScript || 'latin');
+	const atmosphereFont = $derived(isAtmosphere ? getAtmosphereFont(atmosphereType, primaryScript) : '');
+
+	function exitAtmosphere() {
+		updateSettings({ atmosphere: 'none' });
+	}
 
 	// More options menu
 	let showMoreMenu = $state(false);
@@ -394,7 +406,10 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="pane" class:focused={isFocused} onclick={onFocus} dir={noteDir}>
+<div class="pane" class:focused={isFocused} class:atm-active={isAtmosphere} class:atm-blank-page={atmosphereType === 'blankPage'} class:atm-typewriter={atmosphereType === 'typewriter'} class:atm-manuscript={atmosphereType === 'manuscript'} class:atm-flow={atmosphereType === 'flow'} style:--atm-font={atmosphereFont || 'inherit'} onclick={onFocus} dir={noteDir} onkeydown={(e) => { if (isAtmosphere && e.key === 'Escape') exitAtmosphere(); }}>
+{#if isAtmosphere}
+	<div class="atm-exit-hint">{$t('atmosphere.exitHint')}</div>
+{/if}
 	{#if tab}
 		{#if isEmptyTab}
 			<div class="pane-breadcrumb">
@@ -503,6 +518,29 @@
 									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
 									{$t('contextMenu.copyName') || 'Copy name'}
 								</button>
+								<div class="bc-more-sep"></div>
+								<!-- Atmosphere -->
+								<div class="bc-more-sub">
+									<span class="bc-more-sub-label">
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20M2 12h20"/></svg>
+										{$t('atmosphere.title')}
+									</span>
+									<button class="bc-more-item" class:active={atmosphereType === 'none'} onclick={() => { updateSettings({ atmosphere: 'none' }); showMoreMenu = false; }}>
+										{$t('atmosphere.none')}
+									</button>
+									<button class="bc-more-item" class:active={atmosphereType === 'blankPage'} onclick={() => { updateSettings({ atmosphere: 'blankPage' }); showMoreMenu = false; }}>
+										🌫️ {$t('atmosphere.blankPage')}
+									</button>
+									<button class="bc-more-item" class:active={atmosphereType === 'typewriter'} onclick={() => { updateSettings({ atmosphere: 'typewriter' }); showMoreMenu = false; }}>
+										⌨️ {$t('atmosphere.typewriter')}
+									</button>
+									<button class="bc-more-item" class:active={atmosphereType === 'manuscript'} onclick={() => { updateSettings({ atmosphere: 'manuscript' }); showMoreMenu = false; }}>
+										📜 {$t('atmosphere.manuscript')}
+									</button>
+									<button class="bc-more-item" class:active={atmosphereType === 'flow'} onclick={() => { updateSettings({ atmosphere: 'flow' }); showMoreMenu = false; }}>
+										🌊 {$t('atmosphere.flow')}
+									</button>
+								</div>
 								<div class="bc-more-sep"></div>
 								<button class="bc-more-item bc-more-danger" onclick={() => moreAction('delete')}>
 									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -1094,5 +1132,77 @@
 	.pane-empty {
 		flex: 1; display: flex; align-items: center; justify-content: center;
 		color: var(--color-base-40); font-size: 0.85rem;
+	}
+
+	/* Atmosphere submenu in More Options */
+	.bc-more-sub { padding: 4px 0; }
+	.bc-more-sub-label {
+		display: flex; align-items: center; gap: 8px;
+		padding: 6px 14px; font-size: 11px; font-weight: 600;
+		text-transform: uppercase; letter-spacing: 0.5px;
+		color: var(--text-muted);
+	}
+	.bc-more-item.active {
+		background: var(--interactive-accent);
+		color: white;
+	}
+
+	/* ═══ Atmosphere Styles ═══ */
+	.pane.atm-active :global(.pane-breadcrumb),
+	.pane.atm-active :global(.pane-tab-bar) { display: none !important; }
+
+	.pane.atm-active :global(.note-scroll) {
+		display: flex; justify-content: center;
+	}
+
+	.pane.atm-active :global(.note-title) {
+		text-align: center;
+	}
+
+	/* Blank Page — absolute minimal */
+	.pane.atm-blank-page { background: var(--background-primary); }
+	.pane.atm-blank-page :global(.props-wrap) { display: none !important; }
+	.pane.atm-blank-page :global(.cm-editor) {
+		max-width: 720px; margin: 0 auto;
+		padding: 80px 40px;
+		font-family: var(--atm-font, inherit);
+		line-height: 2;
+	}
+
+	/* Typewriter — centered current line */
+	.pane.atm-typewriter { background: var(--background-primary); }
+	.pane.atm-typewriter :global(.cm-editor) {
+		max-width: 680px; margin: 0 auto;
+		padding: 60px 40px;
+		font-family: var(--atm-font, inherit);
+		line-height: 1.8;
+	}
+
+	/* Manuscript — narrow elegant column */
+	.pane.atm-manuscript { background: var(--background-primary); }
+	.pane.atm-manuscript :global(.cm-editor) {
+		max-width: 560px; margin: 0 auto;
+		padding: 80px 60px;
+		font-family: var(--atm-font, inherit);
+		line-height: 2.2;
+	}
+
+	/* Flow — no boundaries */
+	.pane.atm-flow { background: var(--background-primary); }
+	.pane.atm-flow :global(.props-wrap) { display: none !important; }
+	.pane.atm-flow :global(.cm-editor) {
+		max-width: 100%; margin: 0 auto;
+		padding: 40px 60px;
+		font-family: var(--atm-font, inherit);
+		line-height: 1.9;
+	}
+
+	/* Atmosphere exit hint */
+	.atm-exit-hint {
+		position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+		padding: 6px 16px; border-radius: 20px;
+		background: var(--background-secondary); color: var(--text-muted);
+		font-size: 12px; opacity: 0.6; pointer-events: none; z-index: 100;
+		transition: opacity 0.3s;
 	}
 </style>

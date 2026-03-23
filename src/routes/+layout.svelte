@@ -771,6 +771,13 @@
 		}
 	});
 
+	// Atmosphere — toggle body class to hide sidebar/tabs/statusbar
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		const atm = $appSettings.atmosphere || 'none';
+		document.body.classList.toggle('atm-active', atm !== 'none');
+	});
+
 	// Apply custom fonts at runtime
 	$effect(() => {
 		if (typeof document === 'undefined') return;
@@ -3693,4 +3700,11 @@
 	@keyframes spin {
 		to { transform: rotate(360deg); }
 	}
+
+	/* ═══ Atmosphere — hide UI elements ═══ */
+	:global(body.atm-active) .sidebar { display: none !important; }
+	:global(body.atm-active) .ribbon { display: none !important; }
+	:global(body.atm-active) .tab-bar { display: none !important; }
+	:global(body.atm-active) .status-bar { display: none !important; }
+	:global(body.atm-active) .pip-overlay { display: none !important; }
 </style>
