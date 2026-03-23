@@ -1056,6 +1056,16 @@
     "deleteColumn": "Supprimer la colonne",
     "sortAscending": "Tri croissant",
     "sortDescending": "Tri décroissant",
+    "rename": "Renommer",
+    "addProperty": "Ajouter une propriété",
+    "exportPdf": "Exporter en PDF",
+    "openNewWindow": "Ouvrir dans le second écran",
+    "revealInTree": "Révéler dans l'arborescence",
+    "showInExplorer": "Afficher dans l'explorateur",
+    "openDefaultApp": "Ouvrir dans l'app par défaut",
+    "copyPath": "Copier le chemin",
+    "copyName": "Copier le nom",
+    "deleteFile": "Supprimer le fichier",
     "selectAll": "Tout sélectionner"
   },
   "fontSets": {

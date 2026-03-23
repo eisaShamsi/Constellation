@@ -1056,6 +1056,16 @@
     "deleteColumn": "Удалить столбец",
     "sortAscending": "Сортировка по возрастанию",
     "sortDescending": "Сортировка по убыванию",
+    "rename": "Переименовать",
+    "addProperty": "Добавить свойство",
+    "exportPdf": "Экспорт в PDF",
+    "openNewWindow": "Открыть на втором экране",
+    "revealInTree": "Показать в дереве файлов",
+    "showInExplorer": "Показать в проводнике",
+    "openDefaultApp": "Открыть в приложении по умолчанию",
+    "copyPath": "Копировать путь",
+    "copyName": "Копировать имя",
+    "deleteFile": "Удалить файл",
     "selectAll": "Выбрать всё"
   },
   "fontSets": {

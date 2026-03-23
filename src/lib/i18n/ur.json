@@ -1056,6 +1056,16 @@
     "deleteColumn": "کالم حذف",
     "sortAscending": "صعودی ترتیب",
     "sortDescending": "نزولی ترتیب",
+    "rename": "نام تبدیل کریں",
+    "addProperty": "خاصیت شامل کریں",
+    "exportPdf": "PDF میں برآمد کریں",
+    "openNewWindow": "دوسری سکرین میں کھولیں",
+    "revealInTree": "فائل ٹری میں دکھائیں",
+    "showInExplorer": "سسٹم ایکسپلورر میں دکھائیں",
+    "openDefaultApp": "ڈیفالٹ ایپ میں کھولیں",
+    "copyPath": "راستہ کاپی کریں",
+    "copyName": "نام کاپی کریں",
+    "deleteFile": "فائل حذف کریں",
     "selectAll": "سب منتخب کریں"
   },
   "fontSets": {

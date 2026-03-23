@@ -1056,6 +1056,16 @@
     "deleteColumn": "حذف ستون",
     "sortAscending": "مرتب‌سازی صعودی",
     "sortDescending": "مرتب‌سازی نزولی",
+    "rename": "تغییر نام",
+    "addProperty": "افزودن ویژگی",
+    "exportPdf": "صدور به PDF",
+    "openNewWindow": "باز کردن در صفحه دوم",
+    "revealInTree": "نمایش در درخت فایل",
+    "showInExplorer": "نمایش در فایل اکسپلورر",
+    "openDefaultApp": "باز کردن در برنامه پیش‌فرض",
+    "copyPath": "کپی مسیر",
+    "copyName": "کپی نام",
+    "deleteFile": "حذف فایل",
     "selectAll": "انتخاب همه"
   },
   "fontSets": {

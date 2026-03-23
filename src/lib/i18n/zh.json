@@ -1056,6 +1056,16 @@
     "deleteColumn": "删除列",
     "sortAscending": "升序排列",
     "sortDescending": "降序排列",
+    "rename": "重命名",
+    "addProperty": "添加属性",
+    "exportPdf": "导出为PDF",
+    "openNewWindow": "在第二屏幕中打开",
+    "revealInTree": "在文件树中显示",
+    "showInExplorer": "在系统资源管理器中显示",
+    "openDefaultApp": "在默认应用中打开",
+    "copyPath": "复制路径",
+    "copyName": "复制名称",
+    "deleteFile": "删除文件",
     "selectAll": "全选"
   },
   "fontSets": {

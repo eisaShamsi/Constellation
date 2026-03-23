@@ -1055,6 +1055,16 @@
     "deleteColumn": "Delete Column",
     "sortAscending": "Sort Ascending",
     "sortDescending": "Sort Descending",
+    "rename": "Rename",
+    "addProperty": "Add property",
+    "exportPdf": "Export to PDF",
+    "openNewWindow": "Open in second screen",
+    "revealInTree": "Reveal in file tree",
+    "showInExplorer": "Show in system explorer",
+    "openDefaultApp": "Open in default app",
+    "copyPath": "Copy path",
+    "copyName": "Copy name",
+    "deleteFile": "Delete file",
     "selectAll": "Select All"
   },
   "fontSets": {

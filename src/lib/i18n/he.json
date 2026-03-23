@@ -1056,6 +1056,16 @@
     "deleteColumn": "מחק עמודה",
     "sortAscending": "מיון עולה",
     "sortDescending": "מיון יורד",
+    "rename": "שנה שם",
+    "addProperty": "הוסף מאפיין",
+    "exportPdf": "ייצוא ל-PDF",
+    "openNewWindow": "פתח במסך השני",
+    "revealInTree": "הצג בעץ הקבצים",
+    "showInExplorer": "הצג בסייר המערכת",
+    "openDefaultApp": "פתח באפליקציה ברירת מחדל",
+    "copyPath": "העתק נתיב",
+    "copyName": "העתק שם",
+    "deleteFile": "מחק קובץ",
     "selectAll": "בחר הכל"
   },
   "fontSets": {

@@ -1056,6 +1056,16 @@
     "deleteColumn": "कॉलम हटाएं",
     "sortAscending": "आरोही क्रम",
     "sortDescending": "अवरोही क्रम",
+    "rename": "नाम बदलें",
+    "addProperty": "गुण जोड़ें",
+    "exportPdf": "PDF में निर्यात",
+    "openNewWindow": "दूसरी स्क्रीन में खोलें",
+    "revealInTree": "फ़ाइल ट्री में दिखाएँ",
+    "showInExplorer": "सिस्टम एक्सप्लोरर में दिखाएँ",
+    "openDefaultApp": "डिफ़ॉल्ट ऐप में खोलें",
+    "copyPath": "पथ कॉपी करें",
+    "copyName": "नाम कॉपी करें",
+    "deleteFile": "फ़ाइल हटाएँ",
     "selectAll": "सभी चुनें"
   },
   "fontSets": {

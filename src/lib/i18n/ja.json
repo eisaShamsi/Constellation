@@ -1056,6 +1056,16 @@
     "deleteColumn": "列を削除",
     "sortAscending": "昇順ソート",
     "sortDescending": "降順ソート",
+    "rename": "名前変更",
+    "addProperty": "プロパティを追加",
+    "exportPdf": "PDFにエクスポート",
+    "openNewWindow": "セカンドスクリーンで開く",
+    "revealInTree": "ファイルツリーに表示",
+    "showInExplorer": "システムエクスプローラーで表示",
+    "openDefaultApp": "デフォルトアプリで開く",
+    "copyPath": "パスをコピー",
+    "copyName": "名前をコピー",
+    "deleteFile": "ファイルを削除",
     "selectAll": "すべて選択"
   },
   "fontSets": {

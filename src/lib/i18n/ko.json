@@ -1056,6 +1056,16 @@
     "deleteColumn": "열 삭제",
     "sortAscending": "오름차순 정렬",
     "sortDescending": "내림차순 정렬",
+    "rename": "이름 변경",
+    "addProperty": "속성 추가",
+    "exportPdf": "PDF로 내보내기",
+    "openNewWindow": "두 번째 화면에서 열기",
+    "revealInTree": "파일 트리에 표시",
+    "showInExplorer": "시스템 탐색기에서 표시",
+    "openDefaultApp": "기본 앱에서 열기",
+    "copyPath": "경로 복사",
+    "copyName": "이름 복사",
+    "deleteFile": "파일 삭제",
     "selectAll": "모두 선택"
   },
   "fontSets": {

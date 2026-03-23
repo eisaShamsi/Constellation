@@ -1056,6 +1056,16 @@
     "deleteColumn": "حذف عمود",
     "sortAscending": "ترتيب تصاعدي",
     "sortDescending": "ترتيب تنازلي",
+    "rename": "إعادة تسمية",
+    "addProperty": "إضافة خاصية",
+    "exportPdf": "تصدير إلى PDF",
+    "openNewWindow": "فتح في الشاشة الثانية",
+    "revealInTree": "إظهار في شجرة الملفات",
+    "showInExplorer": "إظهار في مستكشف النظام",
+    "openDefaultApp": "فتح في التطبيق الافتراضي",
+    "copyPath": "نسخ المسار",
+    "copyName": "نسخ الاسم",
+    "deleteFile": "حذف الملف",
     "selectAll": "تحديد الكل"
   },
   "fontSets": {

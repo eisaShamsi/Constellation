@@ -1056,6 +1056,16 @@
     "deleteColumn": "Sütunu sil",
     "sortAscending": "Artan sıralama",
     "sortDescending": "Azalan sıralama",
+    "rename": "Yeniden adlandır",
+    "addProperty": "Özellik ekle",
+    "exportPdf": "PDF olarak dışa aktar",
+    "openNewWindow": "İkinci ekranda aç",
+    "revealInTree": "Dosya ağacında göster",
+    "showInExplorer": "Sistem gezgininde göster",
+    "openDefaultApp": "Varsayılan uygulamada aç",
+    "copyPath": "Yolu kopyala",
+    "copyName": "Adı kopyala",
+    "deleteFile": "Dosyayı sil",
     "selectAll": "Tümünü seç"
   },
   "fontSets": {
