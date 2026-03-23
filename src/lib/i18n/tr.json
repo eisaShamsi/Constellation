@@ -1113,5 +1113,22 @@
     "numerals": "Rakamlar",
     "tashkeel": "Teşkil",
     "quranSymbols": "Kur'an sembolleri"
+  },
+  "atmosphere": {
+    "title": "Atmosfer",
+    "description": "Yazma atmosferinizi seçin",
+    "none": "Standart",
+    "noneDesc": "Araç çubuğu ve kontrollü varsayılan düzenleyici",
+    "blankPage": "Boş Sayfa",
+    "blankPageDesc": "Boş tuval — sadece siz ve kelimeleriniz",
+    "typewriter": "Daktilo",
+    "typewriterDesc": "Mevcut satır merkezde kalır, metin yukarı kayar",
+    "manuscript": "El Yazması",
+    "manuscriptDesc": "Kaligrafi hissi veren zarif dar sütun",
+    "flow": "Akış",
+    "flowDesc": "Kesintisiz akış — sınır yok, dikkat dağıtma yok",
+    "exitHint": "Çıkmak için Escape'e basın",
+    "activate": "Atmosfere gir",
+    "wordCount": "kelime"
   }
 }

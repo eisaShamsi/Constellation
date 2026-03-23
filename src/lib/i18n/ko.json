@@ -1113,5 +1113,22 @@
     "numerals": "숫자",
     "tashkeel": "타쉬킬",
     "quranSymbols": "쿠란 기호"
+  },
+  "atmosphere": {
+    "title": "분위기",
+    "description": "글쓰기 분위기를 선택하세요",
+    "none": "표준",
+    "noneDesc": "도구 모음과 컨트롤이 있는 기본 편집기",
+    "blankPage": "빈 페이지",
+    "blankPageDesc": "빈 캔버스 — 당신과 당신의 글만",
+    "typewriter": "타자기",
+    "typewriterDesc": "현재 줄이 중앙에 유지되고 텍스트가 위로 스크롤",
+    "manuscript": "원고",
+    "manuscriptDesc": "서예 느낌의 우아한 좁은 단",
+    "flow": "흐름",
+    "flowDesc": "끊김 없는 흐름 — 경계 없이, 방해 없이",
+    "exitHint": "Escape를 눌러 종료",
+    "activate": "분위기 시작",
+    "wordCount": "단어"
   }
 }

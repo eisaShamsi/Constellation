@@ -1112,5 +1112,22 @@
     "numerals": "Numerals",
     "tashkeel": "Tashkeel",
     "quranSymbols": "Quran Symbols"
+  },
+  "atmosphere": {
+    "title": "Atmosphere",
+    "description": "Choose your writing atmosphere",
+    "none": "Standard",
+    "noneDesc": "Default editor with full toolbar and controls",
+    "blankPage": "Blank Page",
+    "blankPageDesc": "Empty canvas — just you and your words",
+    "typewriter": "Typewriter",
+    "typewriterDesc": "Current line stays centered, text scrolls up",
+    "manuscript": "Manuscript",
+    "manuscriptDesc": "Elegant narrow column with calligraphic feel",
+    "flow": "Flow",
+    "flowDesc": "Continuous stream — no boundaries, no distractions",
+    "exitHint": "Press Escape to exit",
+    "activate": "Enter Atmosphere",
+    "wordCount": "words"
   }
 }

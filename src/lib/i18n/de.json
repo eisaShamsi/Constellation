@@ -1113,5 +1113,22 @@
     "numerals": "Ziffern",
     "tashkeel": "Tashkeel",
     "quranSymbols": "Koransymbole"
+  },
+  "atmosphere": {
+    "title": "Atmosphäre",
+    "description": "Wählen Sie Ihre Schreibatmosphäre",
+    "none": "Standard",
+    "noneDesc": "Standard-Editor mit Symbolleiste und Steuerungen",
+    "blankPage": "Leere Seite",
+    "blankPageDesc": "Leere Leinwand — nur Sie und Ihre Worte",
+    "typewriter": "Schreibmaschine",
+    "typewriterDesc": "Aktuelle Zeile bleibt zentriert, Text scrollt nach oben",
+    "manuscript": "Manuskript",
+    "manuscriptDesc": "Elegante schmale Spalte mit kalligrafischem Gefühl",
+    "flow": "Fluss",
+    "flowDesc": "Ununterbrochener Strom — keine Grenzen, keine Ablenkung",
+    "exitHint": "Escape drücken zum Beenden",
+    "activate": "Atmosphäre betreten",
+    "wordCount": "Wörter"
   }
 }

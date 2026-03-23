@@ -1113,5 +1113,22 @@
     "numerals": "ספרות",
     "tashkeel": "תשכיל",
     "quranSymbols": "סמלי קוראן"
+  },
+  "atmosphere": {
+    "title": "אווירה",
+    "description": "בחרו את אווירת הכתיבה שלכם",
+    "none": "רגיל",
+    "noneDesc": "עורך ברירת מחדל עם סרגל כלים ופקדים",
+    "blankPage": "דף ריק",
+    "blankPageDesc": "בד ריק — רק אתם והמילים שלכם",
+    "typewriter": "מכונת כתיבה",
+    "typewriterDesc": "השורה הנוכחית נשארת במרכז, הטקסט גולל למעלה",
+    "manuscript": "כתב יד",
+    "manuscriptDesc": "טור צר ואלגנטי בסגנון קליגרפי",
+    "flow": "זרימה",
+    "flowDesc": "זרם רציף — ללא גבולות, ללא הסחות דעת",
+    "exitHint": "לחצו Escape ליציאה",
+    "activate": "כניסה לאווירה",
+    "wordCount": "מילים"
   }
 }

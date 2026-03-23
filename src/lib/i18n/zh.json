@@ -1113,5 +1113,22 @@
     "numerals": "数字",
     "tashkeel": "标音符号",
     "quranSymbols": "古兰经符号"
+  },
+  "atmosphere": {
+    "title": "氛围",
+    "description": "选择你的写作氛围",
+    "none": "标准",
+    "noneDesc": "带工具栏和控件的默认编辑器",
+    "blankPage": "空白页",
+    "blankPageDesc": "空白画布 — 只有你和你的文字",
+    "typewriter": "打字机",
+    "typewriterDesc": "当前行保持居中，文本向上滚动",
+    "manuscript": "手稿",
+    "manuscriptDesc": "优雅的窄栏，带有书法韵味",
+    "flow": "心流",
+    "flowDesc": "不间断的流动 — 无边界，无干扰",
+    "exitHint": "按 Escape 退出",
+    "activate": "进入氛围",
+    "wordCount": "字"
   }
 }

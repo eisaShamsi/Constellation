@@ -1113,5 +1113,22 @@
     "numerals": "数字",
     "tashkeel": "タシュキール",
     "quranSymbols": "コーラン記号"
+  },
+  "atmosphere": {
+    "title": "雰囲気",
+    "description": "執筆の雰囲気を選択",
+    "none": "標準",
+    "noneDesc": "ツールバーとコントロール付きのデフォルトエディタ",
+    "blankPage": "白紙",
+    "blankPageDesc": "空のキャンバス — あなたと言葉だけ",
+    "typewriter": "タイプライター",
+    "typewriterDesc": "現在の行が中央に留まり、テキストが上にスクロール",
+    "manuscript": "原稿",
+    "manuscriptDesc": "書道の趣きがある優雅な狭い段組",
+    "flow": "フロー",
+    "flowDesc": "途切れない流れ — 境界なし、気を散らすものなし",
+    "exitHint": "Escapeで終了",
+    "activate": "雰囲気に入る",
+    "wordCount": "語"
   }
 }

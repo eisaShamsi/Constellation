@@ -1113,5 +1113,22 @@
     "numerals": "أرقام",
     "tashkeel": "تشكيل",
     "quranSymbols": "رموز قرآنية"
+  },
+  "atmosphere": {
+    "title": "أجواء",
+    "description": "اختر أجواء الكتابة",
+    "none": "عادي",
+    "noneDesc": "المحرر الافتراضي مع شريط الأدوات والأدوات",
+    "blankPage": "صفحة بيضاء",
+    "blankPageDesc": "لوحة فارغة — أنت وكلماتك فقط",
+    "typewriter": "آلة كاتبة",
+    "typewriterDesc": "السطر الحالي يبقى في المنتصف، والنص يتحرك للأعلى",
+    "manuscript": "مخطوطة",
+    "manuscriptDesc": "عمود أنيق ضيق بإحساس خطّي",
+    "flow": "تدفّق",
+    "flowDesc": "تيار متواصل — بلا حدود، بلا تشتيت",
+    "exitHint": "اضغط Escape للخروج",
+    "activate": "ادخل الأجواء",
+    "wordCount": "كلمة"
   }
 }
