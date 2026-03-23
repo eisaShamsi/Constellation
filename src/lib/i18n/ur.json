@@ -91,6 +91,19 @@
       "tabSize": "ٹیب سائز",
       "tabSizeDesc": "ٹیب کیریکٹر کتنی خالی جگہوں کے طور پر ظاہر ہوگا"
     },
+    "language": {
+      "title": "زبان",
+      "interfaceLanguage": "انٹرفیس زبان",
+      "interfaceLanguageDesc": "ایپ کی ڈسپلے زبان منتخب کریں",
+      "writingLanguages": "تحریری زبانیں",
+      "writingLanguagesDesc": "اپنے نوٹس کے لیے زبانیں ترتیب دیں",
+      "fonts": "فونٹس",
+      "fontsDesc": "ہر تحریری زبان کے لیے فونٹ سیٹ",
+      "dateAndNumbers": "تاریخ اور نمبر",
+      "dateAndNumbersDesc": "زبان کے مطابق تاریخ اور نمبر فارمیٹ",
+      "scriptTools": "تحریری ٹولز",
+      "scriptToolsDesc": "زبان کے مخصوص علامات اور اوقاف"
+    },
     "files": {
       "defaultLocation": "نئے نوٹس کے لیے ڈیفالٹ مقام",
       "defaultLocationDesc": "نئے نوٹس کہاں رکھے جاتے ہیں",

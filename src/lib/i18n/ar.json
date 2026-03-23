@@ -91,6 +91,19 @@
       "tabSize": "حجم التبويب",
       "tabSizeDesc": "عدد المسافات التي يعرضها حرف التبويب"
     },
+    "language": {
+      "title": "اللغة",
+      "interfaceLanguage": "لغة الواجهة",
+      "interfaceLanguageDesc": "اختيار لغة عرض التطبيق",
+      "writingLanguages": "لغات الكتابة",
+      "writingLanguagesDesc": "إعداد اللغات لملاحظاتك",
+      "fonts": "الخطوط",
+      "fontsDesc": "مجموعات الخطوط لكل لغة كتابة",
+      "dateAndNumbers": "التاريخ والأرقام",
+      "dateAndNumbersDesc": "تنسيق التاريخ والأرقام حسب اللغة",
+      "scriptTools": "أدوات الكتابة",
+      "scriptToolsDesc": "رموز وعلامات ترقيم خاصة بكل لغة"
+    },
     "files": {
       "defaultLocation": "موقع الملاحظات الجديدة",
       "defaultLocationDesc": "أين يتم إنشاء الملاحظات الجديدة",

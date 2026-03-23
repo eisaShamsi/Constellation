@@ -91,6 +91,19 @@
       "tabSize": "टैब का आकार",
       "tabSizeDesc": "एक टैब वर्ण कितने स्पेस के रूप में प्रदर्शित होगा"
     },
+    "language": {
+      "title": "भाषा",
+      "interfaceLanguage": "इंटरफ़ेस भाषा",
+      "interfaceLanguageDesc": "ऐप की प्रदर्शन भाषा चुनें",
+      "writingLanguages": "लेखन भाषाएँ",
+      "writingLanguagesDesc": "अपने नोट्स के लिए भाषाएँ कॉन्फ़िगर करें",
+      "fonts": "फ़ॉन्ट",
+      "fontsDesc": "प्रत्येक लेखन भाषा के लिए फ़ॉन्ट सेट",
+      "dateAndNumbers": "दिनांक और संख्याएँ",
+      "dateAndNumbersDesc": "भाषा के अनुसार दिनांक और संख्याएँ स्वरूपित करें",
+      "scriptTools": "लिपि उपकरण",
+      "scriptToolsDesc": "भाषा-विशिष्ट प्रतीक और विराम चिह्न"
+    },
     "files": {
       "defaultLocation": "नए नोट्स का डिफ़ॉल्ट स्थान",
       "defaultLocationDesc": "नए नोट्स कहाँ रखे जाते हैं",

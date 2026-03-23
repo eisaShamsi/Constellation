@@ -91,6 +91,19 @@
       "tabSize": "Tamanho da tabulação",
       "tabSizeDesc": "Número de espaços que um caractere de tabulação representa"
     },
+    "language": {
+      "title": "Idioma",
+      "interfaceLanguage": "Idioma da interface",
+      "interfaceLanguageDesc": "Escolher o idioma de exibição do aplicativo",
+      "writingLanguages": "Idiomas de escrita",
+      "writingLanguagesDesc": "Configurar idiomas para suas notas",
+      "fonts": "Fontes",
+      "fontsDesc": "Conjuntos de fontes para cada idioma de escrita",
+      "dateAndNumbers": "Data e números",
+      "dateAndNumbersDesc": "Formatar datas e números por idioma",
+      "scriptTools": "Ferramentas de escrita",
+      "scriptToolsDesc": "Símbolos e pontuação específicos do idioma"
+    },
     "files": {
       "defaultLocation": "Localização padrão para novas notas",
       "defaultLocationDesc": "Onde as novas notas são colocadas",

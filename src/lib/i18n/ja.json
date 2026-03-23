@@ -91,6 +91,19 @@
       "tabSize": "タブサイズ",
       "tabSizeDesc": "タブ文字が表示されるスペース数"
     },
+    "language": {
+      "title": "言語",
+      "interfaceLanguage": "インターフェース言語",
+      "interfaceLanguageDesc": "アプリの表示言語を選択",
+      "writingLanguages": "筆記言語",
+      "writingLanguagesDesc": "ノートの言語を設定",
+      "fonts": "フォント",
+      "fontsDesc": "各筆記言語のフォントセット",
+      "dateAndNumbers": "日付と数字",
+      "dateAndNumbersDesc": "言語ごとの日付と数字の形式",
+      "scriptTools": "スクリプトツール",
+      "scriptToolsDesc": "言語固有の記号と句読点"
+    },
     "files": {
       "defaultLocation": "新しいノートのデフォルト保存先",
       "defaultLocationDesc": "新しいノートが保存される場所",

@@ -91,6 +91,19 @@
       "tabSize": "Размер табуляции",
       "tabSizeDesc": "Количество пробелов, которые отображает символ табуляции"
     },
+    "language": {
+      "title": "Язык",
+      "interfaceLanguage": "Язык интерфейса",
+      "interfaceLanguageDesc": "Выберите язык отображения приложения",
+      "writingLanguages": "Языки письма",
+      "writingLanguagesDesc": "Настроить языки для ваших заметок",
+      "fonts": "Шрифты",
+      "fontsDesc": "Наборы шрифтов для каждого языка письма",
+      "dateAndNumbers": "Дата и числа",
+      "dateAndNumbersDesc": "Формат даты и чисел по языкам",
+      "scriptTools": "Инструменты письма",
+      "scriptToolsDesc": "Символы и пунктуация для каждого языка"
+    },
     "files": {
       "defaultLocation": "Расположение новых заметок по умолчанию",
       "defaultLocationDesc": "Где размещаются новые заметки",

@@ -91,6 +91,19 @@
       "tabSize": "制表符大小",
       "tabSizeDesc": "一个制表符字符显示的空格数"
     },
+    "language": {
+      "title": "语言",
+      "interfaceLanguage": "界面语言",
+      "interfaceLanguageDesc": "选择应用显示语言",
+      "writingLanguages": "书写语言",
+      "writingLanguagesDesc": "配置笔记语言",
+      "fonts": "字体",
+      "fontsDesc": "每种书写语言的字体集",
+      "dateAndNumbers": "日期和数字",
+      "dateAndNumbersDesc": "按语言格式化日期和数字",
+      "scriptTools": "脚本工具",
+      "scriptToolsDesc": "特定语言的符号和标点"
+    },
     "files": {
       "defaultLocation": "新笔记的默认位置",
       "defaultLocationDesc": "新笔记存放的位置",

@@ -39,6 +39,7 @@
 		{ id: 'dashboard', label: $t('settings.sections.dashboard'), icon: 'dashboard' },
 		{ id: 'universe', label: $t('settings.sections.universe'), icon: 'universe' },
 		{ id: 'editor', label: $t('settings.sections.editor'), icon: 'edit' },
+		{ id: 'language', label: $t('settings.language.title') || 'Language', icon: 'translate' },
 		{ id: 'skyview', label: $t('settings.sections.skyview'), icon: 'graph' },
 		{ id: 'intelligence', label: $t('settings.sections.intelligence'), icon: 'bot' },
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
@@ -356,6 +357,7 @@
 			grid: 'M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z',
 			shield: 'M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z',
 			bot: 'M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1H3a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM9 14a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z',
+			translate: 'M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z',
 		};
 		return icons[icon] || icons.dashboard;
 	}
@@ -830,6 +832,232 @@
 							<option value="4">4</option>
 						</select>
 					</div>
+
+				<!-- ═══ LANGUAGE ═══ -->
+				{:else if activeSection === 'language'}
+
+					<!-- Interface Language -->
+					<div class="setting-heading">{$t('settings.language.interfaceLanguage')}</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.language.interfaceLanguageDesc')}</div>
+						</div>
+						<select class="setting-control" value={$locale} onchange={handleLangChange}>
+							{#each SUPPORTED_LOCALES as loc}
+								<option value={loc.code}>{loc.label}</option>
+							{/each}
+						</select>
+					</div>
+
+					<!-- Writing Languages -->
+					<div class="setting-heading">{$t('settings.language.writingLanguages')}</div>
+					<div class="setting-desc" style="padding: 0 16px 8px;">{$t('settings.language.writingLanguagesDesc')}</div>
+
+					<!-- Font Mode -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('fontSets.fontMode') || 'Font Mode'}</div>
+							<div class="setting-desc">{$t('fontSets.perLanguageDesc') || 'Assign a font set to each script/language'}</div>
+						</div>
+						<div class="font-mode-toggle">
+							<button class="font-mode-btn" class:active={$appSettings.fontMode === 'universal'} onclick={() => updateSettings({ fontMode: 'universal' })}>{$t('fontSets.universal') || 'Universal'}</button>
+							<button class="font-mode-btn" class:active={$appSettings.fontMode !== 'universal'} onclick={() => updateSettings({ fontMode: 'per-language' })}>{$t('fontSets.perLanguage') || 'Per-Language'}</button>
+						</div>
+					</div>
+
+					{#if $appSettings.fontMode !== 'universal'}
+						<!-- Primary Language -->
+						<div class="setting-heading" style="font-size: 12px;">{$t('fontSets.primaryLanguage') || 'PRIMARY LANGUAGE'}</div>
+						<div class="font-script-row">
+							<select class="font-script-select" value={$appSettings.primaryScript || 'latin'}
+								onchange={(e) => updateSettings({ primaryScript: (e.target as HTMLSelectElement).value })}>
+								{#each Object.keys(SCRIPT_UNICODE_RANGES) as script}
+									<option value={script}>{SCRIPT_LABELS[script] || script}</option>
+								{/each}
+							</select>
+						</div>
+						{@const primarySetId = ($appSettings.languageFontSets || {})[$appSettings.primaryScript || 'latin'] || 'system'}
+						{@const primarySet = getFontSetById(primarySetId, $appSettings.customFontSets || [])}
+						<div class="font-script-row">
+							<select class="font-script-select" value={primarySetId}
+								onchange={(e) => setLanguageFontSet($appSettings.primaryScript || 'latin', (e.target as HTMLSelectElement).value)}>
+								{#each allFontSets as fs}
+									<option value={fs.id}>{fs.name}</option>
+								{/each}
+							</select>
+						</div>
+						<div class="font-script-preview" style="font-family: {primarySet?.textFont || 'inherit'}">
+							{SCRIPT_SAMPLES[$appSettings.primaryScript || 'latin'] || ''}
+						</div>
+
+						<!-- Secondary Language -->
+						<div class="setting-item" style="margin-top: 8px;">
+							<label class="setting-checkbox">
+								<input type="checkbox" checked={$appSettings.enableSecondaryScript}
+									onchange={(e) => updateSettings({ enableSecondaryScript: (e.target as HTMLInputElement).checked })} />
+								<span>{$t('fontSets.enableSecondLanguage') || 'Enable second language'}</span>
+							</label>
+						</div>
+						{#if $appSettings.enableSecondaryScript}
+							<div class="setting-heading" style="font-size: 12px;">{$t('fontSets.secondaryLanguage') || 'SECONDARY LANGUAGE'}</div>
+							<div class="font-script-row">
+								<select class="font-script-select" value={$appSettings.secondaryScript || ''}
+									onchange={(e) => updateSettings({ secondaryScript: (e.target as HTMLSelectElement).value })}>
+									{#each Object.keys(SCRIPT_UNICODE_RANGES).filter(s => s !== ($appSettings.primaryScript || 'latin')) as script}
+										<option value={script}>{SCRIPT_LABELS[script] || script}</option>
+									{/each}
+								</select>
+							</div>
+							{@const secSetId = ($appSettings.languageFontSets || {})[$appSettings.secondaryScript || ''] || 'system'}
+							{@const secSet = getFontSetById(secSetId, $appSettings.customFontSets || [])}
+							<div class="font-script-row">
+								<select class="font-script-select" value={secSetId}
+									onchange={(e) => setLanguageFontSet($appSettings.secondaryScript || '', (e.target as HTMLSelectElement).value)}>
+									{#each allFontSets as fs}
+										<option value={fs.id}>{fs.name}</option>
+									{/each}
+								</select>
+							</div>
+							<div class="font-script-preview" style="font-family: {secSet?.textFont || 'inherit'}">
+								{SCRIPT_SAMPLES[$appSettings.secondaryScript || ''] || ''}
+							</div>
+						{/if}
+					{:else}
+						<!-- Universal mode: single font set -->
+						<div class="setting-item">
+							<div class="setting-info">
+								<div class="setting-name">{$t('fontSets.activeFontSet') || 'Active Font Set'}</div>
+							</div>
+							<select class="setting-control" value={$appSettings.activeFontSetId || 'system'}
+								onchange={(e) => updateSettings({ activeFontSetId: (e.target as HTMLSelectElement).value })}>
+								{#each allFontSets as fs}
+									<option value={fs.id}>{fs.name}</option>
+								{/each}
+							</select>
+						</div>
+					{/if}
+
+					<!-- Date & Numbers -->
+					<div class="setting-heading">{$t('settings.language.dateAndNumbers')}</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.numeralStyle') || 'Numeral style'}</div>
+							<div class="setting-desc">{$t('settings.appearance.numeralStyleDesc')}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.numeralStyle || 'arabic'}
+							onchange={(e) => updateSettings({ numeralStyle: (e.target as HTMLSelectElement).value as any })}>
+							<option value="arabic">{$t('settings.appearance.arabicNumerals') || 'Arabic (0-9)'}</option>
+							<option value="hindi">{$t('settings.appearance.hindiNumerals')}</option>
+						</select>
+					</div>
+
+					<!-- Date Format per language -->
+					{#each [$appSettings.primaryScript || 'latin', ...(($appSettings.enableSecondaryScript && $appSettings.secondaryScript) ? [$appSettings.secondaryScript] : [])].filter(Boolean) as script}
+						{@const fmt = ($appSettings.scriptDateFormats || {})[script] || $appSettings.dateFormat || 'DD/MM/YYYY'}
+						{@const isContextual = ($appSettings.contextualDates || {})[script] ?? false}
+						<div class="font-script-row" style="flex-wrap: wrap;">
+							<div class="font-script-label" style="min-width: 140px;">{SCRIPT_LABELS[script] || script}</div>
+							<select class="font-script-select" value={fmt}
+								onchange={(e) => {
+									const current = { ...($appSettings.scriptDateFormats || {}) };
+									current[script] = (e.target as HTMLSelectElement).value;
+									updateSettings({ scriptDateFormats: current });
+								}}>
+								<option value="DD/MM/YYYY">DD/MM/YYYY</option>
+								<option value="MM/DD/YYYY">MM/DD/YYYY</option>
+								<option value="YYYY-MM-DD">YYYY-MM-DD</option>
+								<option value="YYYY/MM/DD">YYYY/MM/DD</option>
+								<option value="DD.MM.YYYY">DD.MM.YYYY</option>
+								<option value="D MMMM YYYY">D MMMM YYYY</option>
+								<option value="MMMM D, YYYY">MMMM D, YYYY</option>
+							</select>
+							<label style="display: flex; align-items: center; gap: 6px; margin-inline-start: 8px;">
+								<input type="checkbox" checked={isContextual}
+									onchange={(e) => {
+										const current = { ...($appSettings.contextualDates || {}) };
+										current[script] = (e.target as HTMLInputElement).checked;
+										updateSettings({ contextualDates: current });
+									}} />
+								<span style="font-size: 13px; color: var(--text-muted);">Contextual</span>
+							</label>
+						</div>
+					{/each}
+
+					<!-- Script Tools -->
+					<div class="setting-heading">{$t('settings.language.scriptTools')}</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.language.scriptToolsDesc')}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox" checked={$appSettings.showScriptToolbar}
+								onchange={(e) => updateSettings({ showScriptToolbar: (e.target as HTMLInputElement).checked })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+
+					<!-- Custom Font Sets -->
+					<div class="setting-heading">{$t('fontSets.customFontSets') || 'Custom Font Sets'}</div>
+					{#each ($appSettings.customFontSets || []) as customSet}
+						<div class="fontset-item">
+							<span class="fontset-name">{customSet.name}</span>
+							<button class="fontset-action" onclick={() => startEditFontSet(customSet)}>
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+							</button>
+							<button class="fontset-action" onclick={() => deleteCustomFontSet(customSet.id)}>
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+							</button>
+						</div>
+					{/each}
+
+					<button class="fontset-create-btn" onclick={startCreateFontSet}>
+						+ {$t('fontSets.createFontSet') || 'Create Font Set'}
+					</button>
+
+					{#if showCustomFontSetEditor}
+						<div class="fontset-editor">
+							<div class="fontset-editor-field">
+								<label>{$t('fontSets.fontSetName') || 'Name'}</label>
+								<input type="text" bind:value={customSetName} placeholder="My Font Set" />
+							</div>
+							<div class="fontset-editor-field">
+								<label>{$t('fontSets.interfaceFont') || 'Interface Font'}</label>
+								<select bind:value={customSetInterface}>
+									<option value="">System Default</option>
+									{#each systemFonts as font}
+										<option value={font}>{font}</option>
+									{/each}
+								</select>
+							</div>
+							<div class="fontset-editor-field">
+								<label>{$t('fontSets.textFont') || 'Text Font'}</label>
+								<select bind:value={customSetText}>
+									<option value="">System Default</option>
+									{#each systemFonts as font}
+										<option value={font}>{font}</option>
+									{/each}
+								</select>
+							</div>
+							<div class="fontset-editor-field">
+								<label>{$t('fontSets.monoFont') || 'Monospace Font'}</label>
+								<select bind:value={customSetMono}>
+									<option value="">System Default</option>
+									{#each systemFonts as font}
+										<option value={font}>{font}</option>
+									{/each}
+								</select>
+							</div>
+							<div class="fontset-editor-actions">
+								<button class="fontset-save-btn" onclick={saveCustomFontSet} disabled={!customSetName}>
+									{$t('fontSets.save') || 'Save'}
+								</button>
+								<button class="fontset-cancel-btn" onclick={() => showCustomFontSetEditor = false}>
+									{$t('fontSets.cancel') || 'Cancel'}
+								</button>
+							</div>
+						</div>
+					{/if}
 
 				<!-- ═══ SKY VIEW & LINKS ═══ -->
 				{:else if activeSection === 'skyview'}

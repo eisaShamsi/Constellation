@@ -91,6 +91,19 @@
       "tabSize": "גודל טאב",
       "tabSizeDesc": "מספר הרווחים שתו טאב יוצג בהם"
     },
+    "language": {
+      "title": "שפה",
+      "interfaceLanguage": "שפת הממשק",
+      "interfaceLanguageDesc": "בחירת שפת התצוגה של האפליקציה",
+      "writingLanguages": "שפות כתיבה",
+      "writingLanguagesDesc": "הגדרת שפות להערות שלך",
+      "fonts": "גופנים",
+      "fontsDesc": "ערכות גופנים לכל שפת כתיבה",
+      "dateAndNumbers": "תאריך ומספרים",
+      "dateAndNumbersDesc": "עיצוב תאריכים ומספרים לפי שפה",
+      "scriptTools": "כלי כתיבה",
+      "scriptToolsDesc": "סמלים ופיסוק ייחודיים לכל שפה"
+    },
     "files": {
       "defaultLocation": "מיקום ברירת מחדל לפתקים חדשים",
       "defaultLocationDesc": "היכן פתקים חדשים ממוקמים",

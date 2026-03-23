@@ -91,6 +91,19 @@
       "tabSize": "탭 크기",
       "tabSizeDesc": "탭 문자가 표시되는 공백 수"
     },
+    "language": {
+      "title": "언어",
+      "interfaceLanguage": "인터페이스 언어",
+      "interfaceLanguageDesc": "앱 표시 언어 선택",
+      "writingLanguages": "쓰기 언어",
+      "writingLanguagesDesc": "노트 언어 설정",
+      "fonts": "글꼴",
+      "fontsDesc": "각 쓰기 언어의 글꼴 세트",
+      "dateAndNumbers": "날짜 및 숫자",
+      "dateAndNumbersDesc": "언어별 날짜 및 숫자 형식",
+      "scriptTools": "스크립트 도구",
+      "scriptToolsDesc": "언어별 기호 및 구두점"
+    },
     "files": {
       "defaultLocation": "새 노트의 기본 위치",
       "defaultLocationDesc": "새 노트가 저장되는 위치",

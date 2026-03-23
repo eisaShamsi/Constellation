@@ -91,6 +91,19 @@
       "tabSize": "Tab-Größe",
       "tabSizeDesc": "Anzahl der Leerzeichen, die ein Tabulator-Zeichen darstellt"
     },
+    "language": {
+      "title": "Sprache",
+      "interfaceLanguage": "Oberflächensprache",
+      "interfaceLanguageDesc": "Anzeigesprache der App wählen",
+      "writingLanguages": "Schreibsprachen",
+      "writingLanguagesDesc": "Sprachen für Ihre Notizen konfigurieren",
+      "fonts": "Schriftarten",
+      "fontsDesc": "Schriftsets für jede Schreibsprache",
+      "dateAndNumbers": "Datum & Zahlen",
+      "dateAndNumbersDesc": "Datum und Zahlen je Sprache formatieren",
+      "scriptTools": "Schriftwerkzeuge",
+      "scriptToolsDesc": "Sprachspezifische Symbole und Satzzeichen"
+    },
     "files": {
       "defaultLocation": "Standardort für neue Notizen",
       "defaultLocationDesc": "Wo neue Notizen abgelegt werden",

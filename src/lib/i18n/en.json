@@ -103,6 +103,19 @@
       "indentWithTabs": "Indent with tabs",
       "indentWithTabsDesc": "Use tabs instead of spaces for indentation"
     },
+    "language": {
+      "title": "Language",
+      "interfaceLanguage": "Interface language",
+      "interfaceLanguageDesc": "Choose the display language for the app",
+      "writingLanguages": "Writing languages",
+      "writingLanguagesDesc": "Configure languages for your notes",
+      "fonts": "Fonts",
+      "fontsDesc": "Font sets for each writing language",
+      "dateAndNumbers": "Date & Numbers",
+      "dateAndNumbersDesc": "Format dates and numbers per language",
+      "scriptTools": "Script Tools",
+      "scriptToolsDesc": "Language-specific symbols and punctuation"
+    },
     "files": {
       "defaultLocation": "Default location for new notes",
       "defaultLocationDesc": "Where new notes are placed",

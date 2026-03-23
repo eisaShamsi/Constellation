@@ -91,6 +91,19 @@
       "tabSize": "اندازه تب",
       "tabSizeDesc": "تعداد فاصله‌هایی که یک کاراکتر تب نمایش می‌دهد"
     },
+    "language": {
+      "title": "زبان",
+      "interfaceLanguage": "زبان رابط",
+      "interfaceLanguageDesc": "انتخاب زبان نمایش برنامه",
+      "writingLanguages": "زبان‌های نوشتاری",
+      "writingLanguagesDesc": "پیکربندی زبان‌ها برای یادداشت‌ها",
+      "fonts": "فونت‌ها",
+      "fontsDesc": "مجموعه فونت‌ها برای هر زبان نوشتاری",
+      "dateAndNumbers": "تاریخ و اعداد",
+      "dateAndNumbersDesc": "قالب‌بندی تاریخ و اعداد بر اساس زبان",
+      "scriptTools": "ابزارهای نوشتاری",
+      "scriptToolsDesc": "نمادها و علائم نگارشی مخصوص هر زبان"
+    },
     "files": {
       "defaultLocation": "مکان پیش‌فرض برای یادداشت‌های جدید",
       "defaultLocationDesc": "محل قرارگیری یادداشت‌های جدید",

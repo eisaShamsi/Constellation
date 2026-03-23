@@ -91,6 +91,19 @@
       "tabSize": "Sekme boyutu",
       "tabSizeDesc": "Bir sekme karakterinin görüntüleneceği boşluk sayısı"
     },
+    "language": {
+      "title": "Dil",
+      "interfaceLanguage": "Arayüz dili",
+      "interfaceLanguageDesc": "Uygulama görüntüleme dilini seçin",
+      "writingLanguages": "Yazı dilleri",
+      "writingLanguagesDesc": "Notlarınız için dilleri yapılandırın",
+      "fonts": "Yazı tipleri",
+      "fontsDesc": "Her yazı dili için yazı tipi setleri",
+      "dateAndNumbers": "Tarih ve sayılar",
+      "dateAndNumbersDesc": "Dile göre tarih ve sayı biçimi",
+      "scriptTools": "Yazı araçları",
+      "scriptToolsDesc": "Dile özgü semboller ve noktalama"
+    },
     "files": {
       "defaultLocation": "Yeni notlar için varsayılan konum",
       "defaultLocationDesc": "Yeni notların kaydedileceği yer",
