@@ -59,7 +59,7 @@
 	const noteBody = $derived(parsed?.body ?? '');
 	const noteDir = $derived(noteBody ? detectDir(noteBody) : $dir);
 	const editing = $derived(tab ? $editingTabIds.has(tab.id) : false);
-	let livePreviewEnabled = $state($appSettings.defaultEditingMode === 'livePreview');
+	let livePreviewEnabled = $state(true);
 
 	// Library appearance
 	const libraryId = $derived(tab ? get(libraries).find(v => tab!.libraryPath === v.path)?.id : null);
