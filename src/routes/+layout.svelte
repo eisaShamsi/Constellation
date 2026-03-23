@@ -693,9 +693,9 @@
 		if (fontMode === 'universal') {
 			// Universal mode: one font set for everything
 			const set = getFontSetById(s.activeFontSetId || 'system', s.customFontSets || []);
-			const uiFont = set?.interfaceFont || s.interfaceFont || defaultUI;
-			const txtFont = set?.textFont || s.textFont || uiFont;
-			const mono = set?.monoFont || s.monoFont || defaultMono;
+			const uiFont = set?.interfaceFont || defaultUI;
+			const txtFont = set?.textFont || defaultUI;
+			const mono = set?.monoFont || defaultMono;
 			root.setProperty('--font-interface-theme', uiFont);
 			root.setProperty('--font-text-theme', txtFont);
 			root.setProperty('--font-monospace-theme', mono);
@@ -707,9 +707,9 @@
 
 			// Determine the base (Latin) font set for defaults
 			const latinSet = getFontSetById(langSets.latin || 'system', customSets);
-			const baseUI = latinSet?.interfaceFont || s.interfaceFont || defaultUI;
-			const baseTxt = latinSet?.textFont || s.textFont || baseUI;
-			const baseMono = latinSet?.monoFont || s.monoFont || defaultMono;
+			const baseUI = latinSet?.interfaceFont || defaultUI;
+			const baseTxt = latinSet?.textFont || defaultUI;
+			const baseMono = latinSet?.monoFont || defaultMono;
 			root.setProperty('--font-monospace-theme', baseMono);
 
 			// Generate @font-face rules for non-latin scripts
