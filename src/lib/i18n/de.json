@@ -138,7 +138,13 @@
       "fontSize": "Schriftgröße",
       "fontSizeDesc": "Basis-Schriftgröße für den Notizinhalt",
       "interfaceFontSize": "Schriftgröße der Oberfläche",
-      "interfaceFontSizeDesc": "Größe von Seitenleiste, Symbolleiste, Menüs und UI-Elementen"
+      "interfaceFontSizeDesc": "Größe von Seitenleiste, Symbolleiste, Menüs und UI-Elementen",
+      "numeralStyle": "Zahlenstil",
+      "numeralStyleDesc": "Zwischen arabischen (0-9) und arabisch-indischen (٠-٩) Ziffern wählen",
+      "arabicNumerals": "Arabisch (0-9)",
+      "hindiNumerals": "Arabisch-Indisch (٠-٩)",
+      "dateFormat": "Datumsformat",
+      "dateFormatDesc": "Wählen Sie die Datumsanzeige"
     },
     "ai": {
       "provider": "Anbieter",

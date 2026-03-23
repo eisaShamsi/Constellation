@@ -124,6 +124,7 @@
 		const script = localeToScript[newLocale] || 'latin';
 		if ($appSettings.primaryScript !== script) {
 			updateSettings({ primaryScript: script });
+			syncScriptToolbars(script);
 		}
 	}
 
@@ -231,6 +232,16 @@
 		}
 
 		updateSettings(updates);
+	}
+
+	function syncScriptToolbars(primary?: string, secondary?: string) {
+		if (!$appSettings.enableScriptToolbar) return;
+		const scripts: string[] = [];
+		const p = primary ?? $appSettings.primaryScript;
+		const s = secondary ?? ($appSettings.enableSecondaryScript ? $appSettings.secondaryScript : '');
+		if (p) scripts.push(p);
+		if (s) scripts.push(s);
+		updateSettings({ scriptToolbarScripts: scripts });
 	}
 
 	function setLanguageFontSet(script: string, fontSetId: string) {
@@ -771,41 +782,7 @@
 						</label>
 					</div>
 
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('scriptToolbar.title') || 'Script Tools'}</div>
-							<div class="setting-desc">Show language-specific symbol and punctuation toolbars</div>
-						</div>
-						<label class="toggle">
-							<input type="checkbox" checked={$appSettings.enableScriptToolbar}
-								onchange={(e) => updateSettings({ enableScriptToolbar: (e.target as HTMLInputElement).checked })} />
-							<span class="toggle-slider"></span>
-						</label>
-					</div>
-
-					{#if $appSettings.enableScriptToolbar}
-						<div class="setting-item">
-							<div class="setting-info">
-								<div class="setting-name">Script toolbars to show</div>
-								<div class="setting-desc">Select which language toolbars appear in the editor</div>
-							</div>
-							<div class="script-toolbar-checkboxes">
-								{#each Object.keys(SCRIPT_UNICODE_RANGES) as script}
-									<label class="script-check">
-										<input type="checkbox"
-											checked={($appSettings.scriptToolbarScripts || []).includes(script)}
-											onchange={(e) => {
-												const current = $appSettings.scriptToolbarScripts || [];
-												const checked = (e.target as HTMLInputElement).checked;
-												const updated = checked ? [...current, script] : current.filter(s => s !== script);
-												updateSettings({ scriptToolbarScripts: updated });
-											}} />
-										<span>{SCRIPT_LABELS[script] || script}</span>
-									</label>
-								{/each}
-							</div>
-						</div>
-					{/if}
+					<!-- Script Tools moved to Appearance section -->
 
 					<div class="setting-item">
 						<div class="setting-info">
@@ -1311,7 +1288,7 @@
 								<span class="font-lang-label">{$t('fontSets.primaryLanguage') || 'Primary Language'}</span>
 							</div>
 							<select class="font-lang-select" value={primaryScript}
-								onchange={(e) => updateSettings({ primaryScript: (e.target as HTMLSelectElement).value })}>
+								onchange={(e) => { const v = (e.target as HTMLSelectElement).value; updateSettings({ primaryScript: v }); syncScriptToolbars(v); }}>
 								{#each scripts as script}
 									<option value={script}>{SCRIPT_LABELS[script] || script}</option>
 								{/each}
@@ -1331,7 +1308,7 @@
 						<div class="font-lang-toggle">
 							<label class="font-lang-check">
 								<input type="checkbox" checked={hasSecondary}
-									onchange={(e) => updateSettings({ enableSecondaryScript: (e.target as HTMLInputElement).checked })} />
+									onchange={(e) => { const v = (e.target as HTMLInputElement).checked; updateSettings({ enableSecondaryScript: v }); syncScriptToolbars(undefined, v ? $appSettings.secondaryScript : ''); }} />
 								<span>{$t('fontSets.enableSecondLanguage') || 'Enable second language'}</span>
 							</label>
 						</div>
@@ -1342,7 +1319,7 @@
 									<span class="font-lang-label">{$t('fontSets.secondaryLanguage') || 'Secondary Language'}</span>
 								</div>
 								<select class="font-lang-select" value={secondaryScript}
-									onchange={(e) => updateSettings({ secondaryScript: (e.target as HTMLSelectElement).value })}>
+									onchange={(e) => { const v = (e.target as HTMLSelectElement).value; updateSettings({ secondaryScript: v }); syncScriptToolbars(undefined, v); }}>
 									{#each scripts.filter(s => s !== primaryScript) as script}
 										<option value={script}>{SCRIPT_LABELS[script] || script}</option>
 									{/each}
@@ -1384,6 +1361,36 @@
 								oninput={(e) => updateSettings({ fontSize: parseInt((e.target as HTMLInputElement).value) })} />
 							<span class="slider-val">{$appSettings.fontSize}px</span>
 						</div>
+					</div>
+
+					<!-- Numeral Style -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.numeralStyle') || 'Numeral style'}</div>
+							<div class="setting-desc">{$t('settings.appearance.numeralStyleDesc') || 'Choose between Arabic (0-9) or Arabic-Indic numerals'}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.numeralStyle || 'arabic'}
+							onchange={(e) => updateSettings({ numeralStyle: (e.target as HTMLSelectElement).value as any })}>
+							<option value="arabic">{$t('settings.appearance.arabicNumerals') || 'Arabic (0-9)'}</option>
+							<option value="hindi">{$t('settings.appearance.hindiNumerals') || 'Arabic-Indic (\u0660-\u0669)'}</option>
+						</select>
+					</div>
+
+					<!-- Date Format -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.dateFormat') || 'Date format'}</div>
+							<div class="setting-desc">{$t('settings.appearance.dateFormatDesc') || 'Choose how dates are displayed'}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.dateFormat || 'DD/MM/YYYY'}
+							onchange={(e) => updateSettings({ dateFormat: (e.target as HTMLSelectElement).value as any })}>
+							<option value="DD/MM/YYYY">DD/MM/YYYY</option>
+							<option value="MM/DD/YYYY">MM/DD/YYYY</option>
+							<option value="YYYY-MM-DD">YYYY-MM-DD</option>
+							<option value="YYYY/MM/DD">YYYY/MM/DD</option>
+							<option value="D MMMM YYYY">D MMMM YYYY</option>
+							<option value="MMMM D, YYYY">MMMM D, YYYY</option>
+						</select>
 					</div>
 
 					<!-- Custom Font Sets -->
@@ -1457,6 +1464,34 @@
 									{$t('fontSets.cancel') || 'Cancel'}
 								</button>
 							</div>
+						</div>
+					{/if}
+
+				<!-- Script Tools — contextual, auto-derived from selected languages -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('scriptToolbar.title') || 'Script Tools'}</div>
+							<div class="setting-desc">{$t('scriptToolbar.description') || 'Show language-specific symbol and punctuation toolbars for your selected languages'}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox" checked={$appSettings.enableScriptToolbar}
+								onchange={(e) => {
+									const enabled = (e.target as HTMLInputElement).checked;
+									// Auto-set scripts from primary + secondary language
+									const scripts: string[] = [];
+									if ($appSettings.primaryScript) scripts.push($appSettings.primaryScript);
+									if ($appSettings.enableSecondaryScript && $appSettings.secondaryScript) scripts.push($appSettings.secondaryScript);
+									updateSettings({ enableScriptToolbar: enabled, scriptToolbarScripts: scripts });
+								}} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+					{#if $appSettings.enableScriptToolbar}
+						<div class="setting-note" style="padding: 0 16px 8px; color: var(--text-muted); font-size: 12px;">
+							Active: {[
+								$appSettings.primaryScript ? (SCRIPT_LABELS[$appSettings.primaryScript] || $appSettings.primaryScript) : '',
+								$appSettings.enableSecondaryScript && $appSettings.secondaryScript ? (SCRIPT_LABELS[$appSettings.secondaryScript] || $appSettings.secondaryScript) : ''
+							].filter(Boolean).join(', ') || 'None'}
 						</div>
 					{/if}
 

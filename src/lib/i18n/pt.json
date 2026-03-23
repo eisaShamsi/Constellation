@@ -138,7 +138,13 @@
       "fontSize": "Tamanho da fonte",
       "fontSizeDesc": "Tamanho base da fonte para o conteúdo das notas",
       "interfaceFontSize": "Tamanho da fonte da interface",
-      "interfaceFontSizeDesc": "Tamanho da barra lateral, barra de ferramentas, menus e elementos da interface"
+      "interfaceFontSizeDesc": "Tamanho da barra lateral, barra de ferramentas, menus e elementos da interface",
+      "numeralStyle": "Estilo de números",
+      "numeralStyleDesc": "Escolher entre numerais arábicos (0-9) ou arábico-índicos (٠-٩)",
+      "arabicNumerals": "Arábicos (0-9)",
+      "hindiNumerals": "Arábico-índicos (٠-٩)",
+      "dateFormat": "Formato de data",
+      "dateFormatDesc": "Escolher como as datas são exibidas"
     },
     "ai": {
       "provider": "Provedor",

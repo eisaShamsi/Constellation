@@ -207,41 +207,6 @@
 		}, 800);
 	}
 
-	async function handleExportHTML() {
-		if (!tab || !contentEl) return;
-		const htmlContent = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>${tab.name.replace(/\.md$/, '')}</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; line-height: 1.7; color: #1f2328; }
-h1, h2, h3, h4, h5, h6 { margin-top: 1.5em; }
-code { background: #f0f0f4; padding: 2px 4px; border-radius: 3px; font-size: 0.9em; }
-pre { background: #f6f6f9; padding: 12px; border-radius: 6px; overflow-x: auto; }
-pre code { background: none; padding: 0; }
-blockquote { border-left: 3px solid #7c3aed; margin: 0; padding: 4px 16px; color: #5c5c66; }
-img { max-width: 100%; }
-a { color: #7c3aed; }
-mark { background: #fff3a3; padding: 1px 2px; }
-table { border-collapse: collapse; width: 100%; }
-th, td { border: 1px solid #e0e0e4; padding: 6px 10px; text-align: start; }
-th { background: #f6f6f9; font-weight: 600; }
-.task-list-item { list-style: none; }
-</style>
-</head>
-<body>
-${contentEl.innerHTML}
-</body>
-</html>`;
-		const blob = new Blob([htmlContent], { type: 'text/html' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `${tab.name.replace(/\.md$/, '')}.html`;
-		a.click();
-		URL.revokeObjectURL(url);
-	}
 
 	// Process note embeds (![[note]])
 	async function processEmbeds(container: HTMLElement, depth: number) {
@@ -431,9 +396,6 @@ ${contentEl.innerHTML}
 						<span class="switch-track">
 							<span class="switch-thumb"></span>
 						</span>
-					</button>
-					<button class="bc-edit-btn" onclick={handleExportHTML} title={$t('notePane.exportHtml')}>
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 					</button>
 				</div>
 			</div>

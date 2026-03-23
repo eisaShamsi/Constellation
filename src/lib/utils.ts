@@ -309,6 +309,63 @@ export function detectDir(text: string): 'rtl' | 'ltr' {
 	return rtlChars > sample.length * 0.3 ? 'rtl' : 'ltr';
 }
 
+/** Convert digits to Arabic-Indic numerals */
+const HINDI_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+
+export function formatNumerals(value: string | number, style: 'arabic' | 'hindi' = 'arabic'): string {
+	const str = String(value);
+	if (style !== 'hindi') return str;
+	return str.replace(/[0-9]/g, (d) => HINDI_DIGITS[parseInt(d)]);
+}
+
+/** Format a date string according to user preferences */
+const MONTH_NAMES: Record<string, string[]> = {
+	en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+	ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+	fa: ['ژانویه','فوریه','مارس','آوریل','مه','ژوئن','ژوئیه','اوت','سپتامبر','اکتبر','نوامبر','دسامبر'],
+	he: ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'],
+	de: ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
+	fr: ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'],
+	es: ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'],
+	pt: ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'],
+	tr: ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
+	ru: ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'],
+	ja: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+	ko: ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+	zh: ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'],
+	hi: ['जनवरी','फरवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितम्बर','अक्टूबर','नवम्बर','दिसम्बर'],
+	ur: ['جنوری','فروری','مارچ','اپریل','مئی','جون','جولائی','اگست','ستمبر','اکتوبر','نومبر','دسمبر'],
+};
+
+export function formatDate(
+	value: string,
+	format: string = 'DD/MM/YYYY',
+	locale: string = 'en',
+	numeralStyle: 'arabic' | 'hindi' = 'arabic'
+): string {
+	if (!value) return '';
+	try {
+		const d = new Date(value + 'T00:00:00');
+		if (isNaN(d.getTime())) return value;
+		const day = d.getDate();
+		const month = d.getMonth();
+		const year = d.getFullYear();
+		const pad = (n: number) => String(n).padStart(2, '0');
+		const months = MONTH_NAMES[locale] || MONTH_NAMES.en;
+		let result = '';
+		switch (format) {
+			case 'DD/MM/YYYY': result = `${pad(day)}/${pad(month + 1)}/${year}`; break;
+			case 'MM/DD/YYYY': result = `${pad(month + 1)}/${pad(day)}/${year}`; break;
+			case 'YYYY-MM-DD': result = `${year}-${pad(month + 1)}-${pad(day)}`; break;
+			case 'YYYY/MM/DD': result = `${year}/${pad(month + 1)}/${pad(day)}`; break;
+			case 'D MMMM YYYY': result = `${day} ${months[month]} ${year}`; break;
+			case 'MMMM D, YYYY': result = `${months[month]} ${day}, ${year}`; break;
+			default: result = `${pad(day)}/${pad(month + 1)}/${year}`;
+		}
+		return formatNumerals(result, numeralStyle);
+	} catch { return value; }
+}
+
 /** Simple hash for cache key */
 function quickHash(s: string): string {
 	let h = 0;

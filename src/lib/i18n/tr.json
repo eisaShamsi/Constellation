@@ -138,7 +138,13 @@
       "fontSize": "Yazı tipi boyutu",
       "fontSizeDesc": "Not içeriği için temel yazı tipi boyutu",
       "interfaceFontSize": "Arayüz yazı tipi boyutu",
-      "interfaceFontSizeDesc": "Kenar çubuğu, araç çubuğu, menüler ve arayüz öğelerinin boyutu"
+      "interfaceFontSizeDesc": "Kenar çubuğu, araç çubuğu, menüler ve arayüz öğelerinin boyutu",
+      "numeralStyle": "Rakam stili",
+      "numeralStyleDesc": "Arap (0-9) veya Arap-Hint (٠-٩) rakamları arasında seçim",
+      "arabicNumerals": "Arap (0-9)",
+      "hindiNumerals": "Arap-Hint (٠-٩)",
+      "dateFormat": "Tarih biçimi",
+      "dateFormatDesc": "Tarihlerin nasıl görüntüleneceğini seçin"
     },
     "ai": {
       "provider": "Sağlayıcı",

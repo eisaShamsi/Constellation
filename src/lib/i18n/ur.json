@@ -138,7 +138,13 @@
       "fontSize": "فونٹ سائز",
       "fontSizeDesc": "نوٹ کے مواد کا بنیادی فونٹ سائز",
       "interfaceFontSize": "انٹرفیس فونٹ سائز",
-      "interfaceFontSizeDesc": "سائڈبار، ٹول بار، مینیوز اور UI عناصر کا سائز"
+      "interfaceFontSizeDesc": "سائڈبار، ٹول بار، مینیوز اور UI عناصر کا سائز",
+      "numeralStyle": "نمبروں کا انداز",
+      "numeralStyleDesc": "عربی (0-9) یا ہندی (٠-٩) نمبروں میں سے انتخاب کریں",
+      "arabicNumerals": "عربی (0-9)",
+      "hindiNumerals": "ہندی (٠-٩)",
+      "dateFormat": "تاریخ کی شکل",
+      "dateFormatDesc": "تاریخ کی نمائش کا طریقہ منتخب کریں"
     },
     "ai": {
       "provider": "فراہم کنندہ",

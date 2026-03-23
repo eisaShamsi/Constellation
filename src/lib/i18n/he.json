@@ -138,7 +138,13 @@
       "fontSize": "גודל גופן",
       "fontSizeDesc": "גודל גופן בסיסי לתוכן הפתקים",
       "interfaceFontSize": "גודל גופן ממשק",
-      "interfaceFontSizeDesc": "גודל סרגל צד, סרגל כלים, תפריטים ורכיבי ממשק"
+      "interfaceFontSizeDesc": "גודל סרגל צד, סרגל כלים, תפריטים ורכיבי ממשק",
+      "numeralStyle": "סגנון מספרים",
+      "numeralStyleDesc": "בחירה בין ספרות ערביות (0-9) לספרות הודיות-ערביות (٠-٩)",
+      "arabicNumerals": "ערביות (0-9)",
+      "hindiNumerals": "הודיות-ערביות (٠-٩)",
+      "dateFormat": "תבנית תאריך",
+      "dateFormatDesc": "בחירת אופן הצגת התאריכים"
     },
     "ai": {
       "provider": "ספק",

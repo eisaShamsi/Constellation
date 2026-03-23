@@ -138,7 +138,13 @@
       "fontSize": "फ़ॉन्ट आकार",
       "fontSizeDesc": "नोट सामग्री का आधार फ़ॉन्ट आकार",
       "interfaceFontSize": "इंटरफ़ेस फ़ॉन्ट आकार",
-      "interfaceFontSizeDesc": "साइडबार, टूलबार, मेनू और UI तत्वों का आकार"
+      "interfaceFontSizeDesc": "साइडबार, टूलबार, मेनू और UI तत्वों का आकार",
+      "numeralStyle": "अंक शैली",
+      "numeralStyleDesc": "अरबी (0-9) या अरबी-हिंदी (٠-٩) अंकों में चुनें",
+      "arabicNumerals": "अरबी (0-9)",
+      "hindiNumerals": "अरबी-हिंदी (٠-٩)",
+      "dateFormat": "दिनांक प्रारूप",
+      "dateFormatDesc": "तिथि प्रदर्शन का तरीका चुनें"
     },
     "ai": {
       "provider": "प्रदाता",

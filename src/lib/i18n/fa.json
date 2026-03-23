@@ -138,7 +138,13 @@
       "fontSize": "اندازه فونت",
       "fontSizeDesc": "اندازه پایه فونت برای محتوای یادداشت",
       "interfaceFontSize": "اندازه قلم رابط",
-      "interfaceFontSizeDesc": "اندازه نوار کناری، نوار ابزار، منوها و عناصر رابط کاربری"
+      "interfaceFontSizeDesc": "اندازه نوار کناری، نوار ابزار، منوها و عناصر رابط کاربری",
+      "numeralStyle": "سبک اعداد",
+      "numeralStyleDesc": "انتخاب بین اعداد عربی (0-9) یا هندی (٠-٩)",
+      "arabicNumerals": "عربی (0-9)",
+      "hindiNumerals": "هندی (٠-٩)",
+      "dateFormat": "قالب تاریخ",
+      "dateFormatDesc": "انتخاب نحوه نمایش تاریخ"
     },
     "ai": {
       "provider": "ارائه‌دهنده",

@@ -138,7 +138,13 @@
       "fontSize": "حجم الخط",
       "fontSizeDesc": "حجم الخط الأساسي لمحتوى الملاحظات",
       "interfaceFontSize": "حجم خط الواجهة",
-      "interfaceFontSizeDesc": "حجم الشريط الجانبي وشريط الأدوات والقوائم وعناصر الواجهة"
+      "interfaceFontSizeDesc": "حجم الشريط الجانبي وشريط الأدوات والقوائم وعناصر الواجهة",
+      "numeralStyle": "نمط الأرقام",
+      "numeralStyleDesc": "الاختيار بين الأرقام العربية (0-9) أو الأرقام الهندية (٠-٩)",
+      "arabicNumerals": "عربية (0-9)",
+      "hindiNumerals": "هندية (٠-٩)",
+      "dateFormat": "تنسيق التاريخ",
+      "dateFormatDesc": "اختيار طريقة عرض التاريخ"
     },
     "ai": {
       "provider": "المزود",

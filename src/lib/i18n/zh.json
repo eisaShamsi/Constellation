@@ -138,7 +138,13 @@
       "fontSize": "字体大小",
       "fontSizeDesc": "笔记内容的基础字体大小",
       "interfaceFontSize": "界面字体大小",
-      "interfaceFontSizeDesc": "侧边栏、工具栏、菜单和界面元素的大小"
+      "interfaceFontSizeDesc": "侧边栏、工具栏、菜单和界面元素的大小",
+      "numeralStyle": "数字样式",
+      "numeralStyleDesc": "选择阿拉伯数字 (0-9) 或阿拉伯-印度数字 (٠-٩)",
+      "arabicNumerals": "阿拉伯 (0-9)",
+      "hindiNumerals": "阿拉伯-印度 (٠-٩)",
+      "dateFormat": "日期格式",
+      "dateFormatDesc": "选择日期显示方式"
     },
     "ai": {
       "provider": "服务商",

@@ -138,7 +138,13 @@
       "fontSize": "글꼴 크기",
       "fontSizeDesc": "노트 내용의 기본 글꼴 크기",
       "interfaceFontSize": "인터페이스 글꼴 크기",
-      "interfaceFontSizeDesc": "사이드바, 도구 모음, 메뉴 및 UI 요소의 크기"
+      "interfaceFontSizeDesc": "사이드바, 도구 모음, 메뉴 및 UI 요소의 크기",
+      "numeralStyle": "숫자 스타일",
+      "numeralStyleDesc": "아라비아 숫자 (0-9) 또는 아라비아-인도 숫자 (٠-٩) 선택",
+      "arabicNumerals": "아라비아 (0-9)",
+      "hindiNumerals": "아라비아-인도 (٠-٩)",
+      "dateFormat": "날짜 형식",
+      "dateFormatDesc": "날짜 표시 방법 선택"
     },
     "ai": {
       "provider": "제공자",

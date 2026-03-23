@@ -138,7 +138,13 @@
       "fontSize": "Taille de police",
       "fontSizeDesc": "Taille de police de base pour le contenu des notes",
       "interfaceFontSize": "Taille de police de l'interface",
-      "interfaceFontSizeDesc": "Taille de la barre latérale, de la barre d'outils, des menus et des éléments d'interface"
+      "interfaceFontSizeDesc": "Taille de la barre latérale, de la barre d'outils, des menus et des éléments d'interface",
+      "numeralStyle": "Style de chiffres",
+      "numeralStyleDesc": "Choisir entre chiffres arabes (0-9) ou indo-arabes (٠-٩)",
+      "arabicNumerals": "Arabes (0-9)",
+      "hindiNumerals": "Indo-arabes (٠-٩)",
+      "dateFormat": "Format de date",
+      "dateFormatDesc": "Choisir l'affichage des dates"
     },
     "ai": {
       "provider": "Fournisseur",

@@ -3,7 +3,10 @@
 	import { saveTabContent, normalizeDateValue } from '$lib/libraries/store';
 	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
+	import { get } from 'svelte/store';
 	import { onMount, onDestroy } from 'svelte';
+	import { appSettings } from '$lib/libraries/store';
+	import { formatDate } from '$lib/utils';
 
 	let {
 		properties,
@@ -297,12 +300,8 @@
 	}
 
 	function formatDateLocale(value: string): string {
-		if (!value) return '';
-		try {
-			const d = new Date(value + 'T00:00:00');
-			if (isNaN(d.getTime())) return '';
-			return d.toLocaleDateString($locale === 'ar' ? 'ar-SA' : $locale === 'fa' ? 'fa-IR' : $locale === 'he' ? 'he-IL' : $locale === 'ja' ? 'ja-JP' : $locale === 'ko' ? 'ko-KR' : $locale === 'zh' ? 'zh-CN' : $locale === 'hi' ? 'hi-IN' : $locale === 'ur' ? 'ur-PK' : $locale === 'ru' ? 'ru-RU' : $locale === 'de' ? 'de-DE' : $locale === 'fr' ? 'fr-FR' : $locale === 'es' ? 'es-ES' : $locale === 'pt' ? 'pt-BR' : $locale === 'tr' ? 'tr-TR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-		} catch { return ''; }
+		const s = get(appSettings);
+		return formatDate(value, s.dateFormat || 'DD/MM/YYYY', get(locale), s.numeralStyle || 'arabic');
 	}
 
 	function handleLinkClick(value: string) {

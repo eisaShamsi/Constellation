@@ -138,7 +138,13 @@
       "fontSize": "フォントサイズ",
       "fontSizeDesc": "ノートコンテンツの基本フォントサイズ",
       "interfaceFontSize": "インターフェースのフォントサイズ",
-      "interfaceFontSizeDesc": "サイドバー、ツールバー、メニュー、UI要素のサイズ"
+      "interfaceFontSizeDesc": "サイドバー、ツールバー、メニュー、UI要素のサイズ",
+      "numeralStyle": "数字スタイル",
+      "numeralStyleDesc": "アラビア数字 (0-9) またはアラビア・インド数字 (٠-٩) を選択",
+      "arabicNumerals": "アラビア (0-9)",
+      "hindiNumerals": "アラビア・インド (٠-٩)",
+      "dateFormat": "日付形式",
+      "dateFormatDesc": "日付の表示方法を選択"
     },
     "ai": {
       "provider": "プロバイダー",

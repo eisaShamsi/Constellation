@@ -174,7 +174,13 @@
       "fontSize": "Font size",
       "fontSizeDesc": "Base font size for note content",
       "interfaceFontSize": "Interface font size",
-      "interfaceFontSizeDesc": "Size of sidebar, toolbar, menus, and UI elements"
+      "interfaceFontSizeDesc": "Size of sidebar, toolbar, menus, and UI elements",
+      "numeralStyle": "Numeral style",
+      "numeralStyleDesc": "Choose between Arabic (0-9) or Arabic-Indic (٠-٩) numerals",
+      "arabicNumerals": "Arabic (0-9)",
+      "hindiNumerals": "Arabic-Indic (٠-٩)",
+      "dateFormat": "Date format",
+      "dateFormatDesc": "Choose how dates are displayed"
     },
     "keyboard": {
       "filter": "Filter commands...",
