@@ -1156,7 +1156,7 @@
 	.pane.atm-active :global(.props-toggle),
 	.pane.atm-active :global(.props-source),
 	.pane.atm-active :global(.props-divider),
-	.pane.atm-active :global(.pe-container),
+	.pane.atm-active :global(.property-editor),
 	.pane.atm-active :global(.note-title),
 	.pane.atm-active :global(.cm-gutters) { display: none !important; }
 
@@ -1166,6 +1166,8 @@
 	}
 	.pane.atm-active :global(.note-scroll) {
 		padding: 0 !important;
+		max-width: 100% !important;
+		width: 100% !important;
 	}
 	.pane.atm-active :global(.cm-editor) {
 		margin: 0 auto;
@@ -1173,6 +1175,7 @@
 		border: none !important;
 		box-shadow: none !important;
 		background: transparent !important;
+		width: 100% !important;
 	}
 	.pane.atm-active :global(.cm-scroller) {
 		padding-top: 20vh !important;
@@ -1180,27 +1183,24 @@
 	}
 	.pane.atm-active :global(.cm-content) {
 		max-width: 100%;
+		margin: 0 auto;
 	}
 
 	/* ─── Blank Page — pure white paper ─── */
-	.pane.atm-blank-page :global(.cm-editor) { max-width: 720px; }
-	.pane.atm-blank-page :global(.cm-content) { line-height: 2; }
+	.pane.atm-blank-page :global(.cm-content) { max-width: 720px; margin: 0 auto; line-height: 2; }
 
 	/* ─── Typewriter — centered current line, monospace ─── */
-	.pane.atm-typewriter :global(.cm-editor) { max-width: 680px; }
-	.pane.atm-typewriter :global(.cm-content) { line-height: 1.8; }
+	.pane.atm-typewriter :global(.cm-content) { max-width: 680px; margin: 0 auto; line-height: 1.8; }
 	.pane.atm-typewriter :global(.cm-activeLine) {
 		background: color-mix(in srgb, var(--interactive-accent) 6%, transparent) !important;
 		border-radius: 2px;
 	}
 
 	/* ─── Manuscript — narrow elegant column ─── */
-	.pane.atm-manuscript :global(.cm-editor) { max-width: 520px; }
-	.pane.atm-manuscript :global(.cm-content) { line-height: 2.2; letter-spacing: 0.015em; }
+	.pane.atm-manuscript :global(.cm-content) { max-width: 520px; margin: 0 auto; line-height: 2.2; letter-spacing: 0.015em; }
 
 	/* ─── Flow — no boundaries, full width ─── */
-	.pane.atm-flow :global(.cm-editor) { max-width: 100%; padding: 0 60px; }
-	.pane.atm-flow :global(.cm-content) { line-height: 1.9; }
+	.pane.atm-flow :global(.cm-content) { max-width: 100%; padding: 0 60px; line-height: 1.9; }
 
 	/* Atmosphere exit hint */
 	.atm-exit-hint {
