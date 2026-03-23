@@ -1377,44 +1377,38 @@
 					</div>
 
 					<!-- Date Format — per language -->
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.dateFormat') || 'Date format'}</div>
-							<div class="setting-desc">{$t('settings.appearance.dateFormatDesc') || 'Choose how dates are displayed per language'}</div>
-						</div>
-					</div>
-					<div class="date-format-grid">
-						{#each [$appSettings.primaryScript || 'latin', ...(($appSettings.enableSecondaryScript && $appSettings.secondaryScript) ? [$appSettings.secondaryScript] : [])].filter(Boolean) as script}
-							{@const fmt = ($appSettings.scriptDateFormats || {})[script] || $appSettings.dateFormat || 'DD/MM/YYYY'}
-							{@const isContextual = ($appSettings.contextualDates || {})[script] ?? false}
-							<div class="date-format-row">
-								<span class="date-format-label">{SCRIPT_LABELS[script] || script}</span>
-								<select class="date-format-select" value={fmt}
+					<div class="setting-heading">{$t('settings.appearance.dateFormat') || 'Date format'}</div>
+					<div class="setting-desc" style="padding: 0 16px 8px; margin-top: -4px;">{$t('settings.appearance.dateFormatDesc') || 'Choose how dates are displayed per language'}</div>
+					{#each [$appSettings.primaryScript || 'latin', ...(($appSettings.enableSecondaryScript && $appSettings.secondaryScript) ? [$appSettings.secondaryScript] : [])].filter(Boolean) as script}
+						{@const fmt = ($appSettings.scriptDateFormats || {})[script] || $appSettings.dateFormat || 'DD/MM/YYYY'}
+						{@const isContextual = ($appSettings.contextualDates || {})[script] ?? false}
+						<div class="font-script-row" style="flex-wrap: wrap;">
+							<div class="font-script-label" style="min-width: 140px;">{SCRIPT_LABELS[script] || script}</div>
+							<select class="font-script-select" value={fmt}
+								onchange={(e) => {
+									const current = { ...($appSettings.scriptDateFormats || {}) };
+									current[script] = (e.target as HTMLSelectElement).value;
+									updateSettings({ scriptDateFormats: current });
+								}}>
+								<option value="DD/MM/YYYY">DD/MM/YYYY</option>
+								<option value="MM/DD/YYYY">MM/DD/YYYY</option>
+								<option value="YYYY-MM-DD">YYYY-MM-DD</option>
+								<option value="YYYY/MM/DD">YYYY/MM/DD</option>
+								<option value="DD.MM.YYYY">DD.MM.YYYY</option>
+								<option value="D MMMM YYYY">D MMMM YYYY</option>
+								<option value="MMMM D, YYYY">MMMM D, YYYY</option>
+							</select>
+							<label class="date-contextual-check" style="display: flex; align-items: center; gap: 6px; margin-inline-start: 8px;">
+								<input type="checkbox" checked={isContextual}
 									onchange={(e) => {
-										const current = { ...($appSettings.scriptDateFormats || {}) };
-										current[script] = (e.target as HTMLSelectElement).value;
-										updateSettings({ scriptDateFormats: current });
-									}}>
-									<option value="DD/MM/YYYY">DD/MM/YYYY</option>
-									<option value="MM/DD/YYYY">MM/DD/YYYY</option>
-									<option value="YYYY-MM-DD">YYYY-MM-DD</option>
-									<option value="YYYY/MM/DD">YYYY/MM/DD</option>
-									<option value="DD.MM.YYYY">DD.MM.YYYY</option>
-									<option value="D MMMM YYYY">D MMMM YYYY</option>
-									<option value="MMMM D, YYYY">MMMM D, YYYY</option>
-								</select>
-								<label class="date-contextual-check">
-									<input type="checkbox" checked={isContextual}
-										onchange={(e) => {
-											const current = { ...($appSettings.contextualDates || {}) };
-											current[script] = (e.target as HTMLInputElement).checked;
-											updateSettings({ contextualDates: current });
-										}} />
-									<span>Contextual</span>
-								</label>
-							</div>
-						{/each}
-					</div>
+										const current = { ...($appSettings.contextualDates || {}) };
+										current[script] = (e.target as HTMLInputElement).checked;
+										updateSettings({ contextualDates: current });
+									}} />
+								<span style="font-size: 13px; color: var(--text-muted);">Contextual</span>
+							</label>
+						</div>
+					{/each}
 
 					<!-- Custom Font Sets -->
 					<div class="setting-heading">{$t('fontSets.customFontSets') || 'Custom Font Sets'}</div>
