@@ -1013,12 +1013,12 @@ export const BUILTIN_FONT_SETS: FontSet[] = [
 	{ id: 'system', name: 'System Default', interfaceFont: '', textFont: '', monoFont: '', isBuiltIn: true },
 	{ id: 'modern', name: 'Modern', interfaceFont: 'Inter, sans-serif', textFont: 'Inter, sans-serif', monoFont: '"Fira Code", monospace', isBuiltIn: true },
 	{ id: 'serif', name: 'Classic Serif', interfaceFont: 'Inter, sans-serif', textFont: 'Georgia, "Times New Roman", serif', monoFont: 'Consolas, monospace', isBuiltIn: true },
-	{ id: 'arabic-naskh', name: 'Arabic Naskh', interfaceFont: '"Noto Sans Arabic", sans-serif', textFont: '"Noto Naskh Arabic", serif', monoFont: '"Cascadia Code", monospace', isBuiltIn: true },
-	{ id: 'arabic-amiri', name: 'Arabic Amiri', interfaceFont: 'Cairo, sans-serif', textFont: 'Amiri, serif', monoFont: '"Cascadia Code", monospace', isBuiltIn: true },
-	{ id: 'arabic-modern', name: 'Arabic Modern', interfaceFont: 'Tajawal, sans-serif', textFont: 'Cairo, sans-serif', monoFont: '"Fira Code", monospace', isBuiltIn: true },
-	{ id: 'cjk', name: 'CJK', interfaceFont: '"Noto Sans CJK SC", sans-serif', textFont: '"Noto Serif CJK SC", serif', monoFont: '"Noto Sans Mono CJK SC", monospace', isBuiltIn: true },
-	{ id: 'hebrew', name: 'Hebrew', interfaceFont: '"Noto Sans Hebrew", sans-serif', textFont: '"Noto Serif Hebrew", serif', monoFont: '"Cascadia Code", monospace', isBuiltIn: true },
-	{ id: 'persian', name: 'Persian', interfaceFont: 'Vazirmatn, sans-serif', textFont: 'Vazirmatn, sans-serif', monoFont: '"Cascadia Code", monospace', isBuiltIn: true },
+	{ id: 'arabic-traditional', name: 'Arabic Traditional', interfaceFont: '"Sakkal Majalla", "Traditional Arabic", sans-serif', textFont: '"Traditional Arabic", "Sakkal Majalla", serif', monoFont: '"Cascadia Code", Consolas, monospace', isBuiltIn: true },
+	{ id: 'arabic-modern', name: 'Arabic Modern', interfaceFont: 'Dubai, "Segoe UI", sans-serif', textFont: 'Dubai, "Segoe UI", sans-serif', monoFont: '"Cascadia Code", Consolas, monospace', isBuiltIn: true },
+	{ id: 'arabic-sakkal', name: 'Arabic Sakkal', interfaceFont: '"Sakkal Majalla", sans-serif', textFont: '"Sakkal Majalla", sans-serif', monoFont: '"Cascadia Code", Consolas, monospace', isBuiltIn: true },
+	{ id: 'cjk', name: 'CJK', interfaceFont: '"Microsoft YaHei", "Malgun Gothic", "Yu Gothic", sans-serif', textFont: '"Microsoft YaHei", "Malgun Gothic", "Yu Gothic", serif', monoFont: '"MS Gothic", monospace', isBuiltIn: true },
+	{ id: 'hebrew', name: 'Hebrew', interfaceFont: '"Segoe UI", "Arial Hebrew", sans-serif', textFont: '"Segoe UI", "Arial Hebrew", serif', monoFont: '"Cascadia Code", Consolas, monospace', isBuiltIn: true },
+	{ id: 'persian', name: 'Persian', interfaceFont: '"Sakkal Majalla", "Arabic Typesetting", sans-serif', textFont: '"Arabic Typesetting", "Sakkal Majalla", sans-serif', monoFont: '"Cascadia Code", Consolas, monospace', isBuiltIn: true },
 ];
 
 export const SCRIPT_UNICODE_RANGES: Record<string, string> = {
@@ -1205,7 +1205,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	scriptFonts: {},
 	fontMode: 'per-language',
 	activeFontSetId: 'system',
-	languageFontSets: { latin: 'system', arabic: 'arabic-naskh', hebrew: 'hebrew', cjk: 'cjk' },
+	languageFontSets: { latin: 'system', arabic: 'arabic-modern', hebrew: 'hebrew', cjk: 'cjk' },
 	customFontSets: [],
 	primaryScript: 'latin',
 	enableSecondaryScript: false,
