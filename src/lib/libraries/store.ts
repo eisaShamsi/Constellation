@@ -596,15 +596,17 @@ export function closeTab(tabId: string) {
 		}
 	}
 
-	// Update focused tab if it was closed
-	if (get(focusedTabId) === tabId) {
-		if (newTabs.length > 0) {
-			const newIdx = Math.min(idx, newTabs.length - 1);
-			focusedTabId.set(newTabs[newIdx].id);
-		} else {
-			focusedTabId.set(null);
-		}
-	}
+}
+
+/** Reorder tabs by moving a tab from one index to another */
+export function reorderTab(fromId: string, toId: string) {
+	const tabs = [...get(openTabs)];
+	const fromIdx = tabs.findIndex(t => t.id === fromId);
+	const toIdx = tabs.findIndex(t => t.id === toId);
+	if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+	const [moved] = tabs.splice(fromIdx, 1);
+	tabs.splice(toIdx, 0, moved);
+	openTabs.set(tabs);
 }
 
 export function switchTab(tabId: string) {

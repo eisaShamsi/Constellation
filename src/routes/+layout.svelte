@@ -11,7 +11,7 @@
 		activeTab, openTabs, activeTabId,
 		splitActive, splitDirection, focusedTabId, focusedTab,
 		loadLibraries, loadAllStats, addLibrary, createNewLibrary, searchAllStars,
-		openNoteTab, closeTab, switchTab, closeNote, createEmptyTab,
+		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings,
 		createNote, createFolder, renameItem, deleteItem,
@@ -90,6 +90,8 @@
 
 	// Sidebar state
 	let sidebarOpen = $state(true);
+	let dragTabId: string | null = $state(null);
+	let dragOverTabId: string | null = $state(null);
 	let searchMode = $state(false);
 	let sidebarMode = $state<'tree' | 'list' | 'skyview'>('tree');
 	let preTreeWidth = 240; // Saved sidebar width before wider modes expanded it
@@ -2354,7 +2356,14 @@
 						<button class="tab"
 							class:active={$activeTabId === tab.id}
 							class:pinned={tab.pinned}
+							class:drag-over={dragOverTabId === tab.id}
 							style:--library-color={libraryColorMap[tab.libraryName]}
+							draggable="true"
+							ondragstart={(e) => { dragTabId = tab.id; e.dataTransfer?.setData('text/plain', tab.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'; }}
+							ondragover={(e) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'; dragOverTabId = tab.id; }}
+							ondragleave={() => { if (dragOverTabId === tab.id) dragOverTabId = null; }}
+							ondrop={(e) => { e.preventDefault(); if (dragTabId && dragTabId !== tab.id) reorderTab(dragTabId, tab.id); dragTabId = null; dragOverTabId = null; }}
+							ondragend={() => { dragTabId = null; dragOverTabId = null; }}
 							onclick={() => switchTab(tab.id)}
 							onauxclick={(e) => { if (e.button === 1 && !tab.pinned) { e.preventDefault(); closeTab(tab.id); } }}
 							oncontextmenu={(e) => { e.preventDefault(); tab.pinned = !tab.pinned; }}>
@@ -3215,6 +3224,12 @@
 		border-bottom: 1px solid var(--bg);
 		margin-bottom: -1px;
 	}
+	.tab.drag-over {
+		border-inline-start: 3px solid var(--interactive-accent);
+		background: color-mix(in srgb, var(--interactive-accent) 10%, var(--background-primary));
+	}
+	.tab[draggable="true"] { cursor: grab; }
+	.tab[draggable="true"]:active { cursor: grabbing; }
 	.tab-lib-name {
 		position: absolute; bottom: 100%; inset-inline-end: 8px;
 		font-size: 0.55rem; line-height: 1.3; letter-spacing: 0.02em;
