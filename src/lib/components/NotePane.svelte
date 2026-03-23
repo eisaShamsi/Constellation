@@ -1148,61 +1148,67 @@
 	}
 
 	/* ═══ Atmosphere Styles ═══ */
+
+	/* HIDE EVERYTHING — pure blank paper */
 	.pane.atm-active :global(.pane-breadcrumb),
-	.pane.atm-active :global(.pane-tab-bar) { display: none !important; }
+	.pane.atm-active :global(.pane-tab-bar),
+	.pane.atm-active :global(.cm-toolbar),
+	.pane.atm-active :global(.props-toggle),
+	.pane.atm-active :global(.props-source),
+	.pane.atm-active :global(.props-divider),
+	.pane.atm-active :global(.pe-container),
+	.pane.atm-active :global(.note-title),
+	.pane.atm-active :global(.cm-gutters) { display: none !important; }
 
+	/* Pure blank canvas */
+	.pane.atm-active {
+		background: var(--background-primary);
+	}
 	.pane.atm-active :global(.note-scroll) {
-		display: flex; justify-content: center;
+		padding: 0 !important;
 	}
-
-	.pane.atm-active :global(.note-title) {
-		text-align: center;
-	}
-
-	/* Blank Page — absolute minimal */
-	.pane.atm-blank-page { background: var(--background-primary); }
-	.pane.atm-blank-page :global(.props-wrap) { display: none !important; }
-	.pane.atm-blank-page :global(.cm-editor) {
-		max-width: 720px; margin: 0 auto;
-		padding: 80px 40px;
+	.pane.atm-active :global(.cm-editor) {
+		margin: 0 auto;
 		font-family: var(--atm-font, inherit);
-		line-height: 2;
+		border: none !important;
+		box-shadow: none !important;
+		background: transparent !important;
+	}
+	.pane.atm-active :global(.cm-scroller) {
+		padding-top: 20vh !important;
+		padding-bottom: 40vh !important;
+	}
+	.pane.atm-active :global(.cm-content) {
+		max-width: 100%;
 	}
 
-	/* Typewriter — centered current line */
-	.pane.atm-typewriter { background: var(--background-primary); }
-	.pane.atm-typewriter :global(.cm-editor) {
-		max-width: 680px; margin: 0 auto;
-		padding: 60px 40px;
-		font-family: var(--atm-font, inherit);
-		line-height: 1.8;
+	/* ─── Blank Page — pure white paper ─── */
+	.pane.atm-blank-page :global(.cm-editor) { max-width: 720px; }
+	.pane.atm-blank-page :global(.cm-content) { line-height: 2; }
+
+	/* ─── Typewriter — centered current line, monospace ─── */
+	.pane.atm-typewriter :global(.cm-editor) { max-width: 680px; }
+	.pane.atm-typewriter :global(.cm-content) { line-height: 1.8; }
+	.pane.atm-typewriter :global(.cm-activeLine) {
+		background: color-mix(in srgb, var(--interactive-accent) 6%, transparent) !important;
+		border-radius: 2px;
 	}
 
-	/* Manuscript — narrow elegant column */
-	.pane.atm-manuscript { background: var(--background-primary); }
-	.pane.atm-manuscript :global(.cm-editor) {
-		max-width: 560px; margin: 0 auto;
-		padding: 80px 60px;
-		font-family: var(--atm-font, inherit);
-		line-height: 2.2;
-	}
+	/* ─── Manuscript — narrow elegant column ─── */
+	.pane.atm-manuscript :global(.cm-editor) { max-width: 520px; }
+	.pane.atm-manuscript :global(.cm-content) { line-height: 2.2; letter-spacing: 0.015em; }
 
-	/* Flow — no boundaries */
-	.pane.atm-flow { background: var(--background-primary); }
-	.pane.atm-flow :global(.props-wrap) { display: none !important; }
-	.pane.atm-flow :global(.cm-editor) {
-		max-width: 100%; margin: 0 auto;
-		padding: 40px 60px;
-		font-family: var(--atm-font, inherit);
-		line-height: 1.9;
-	}
+	/* ─── Flow — no boundaries, full width ─── */
+	.pane.atm-flow :global(.cm-editor) { max-width: 100%; padding: 0 60px; }
+	.pane.atm-flow :global(.cm-content) { line-height: 1.9; }
 
 	/* Atmosphere exit hint */
 	.atm-exit-hint {
 		position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
 		padding: 6px 16px; border-radius: 20px;
 		background: var(--background-secondary); color: var(--text-muted);
-		font-size: 12px; opacity: 0.6; pointer-events: none; z-index: 100;
-		transition: opacity 0.3s;
+		font-size: 12px; opacity: 0; pointer-events: none; z-index: 100;
+		transition: opacity 0.5s;
 	}
+	.pane.atm-active:hover .atm-exit-hint { opacity: 0.5; }
 </style>
