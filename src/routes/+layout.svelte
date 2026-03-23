@@ -748,11 +748,19 @@
 			}
 
 			if (hasPerScript) {
-				root.setProperty('--font-interface-theme', `"ConstellationUI", ${baseUI}`);
-				root.setProperty('--font-text-theme', `"ConstellationText", ${baseTxt}`);
+				const uiStack = `"ConstellationUI", ${baseUI}`;
+				const txtStack = `"ConstellationText", ${baseTxt}`;
+				root.setProperty('--font-interface-theme', uiStack);
+				root.setProperty('--font-text-theme', txtStack);
+				// Directly target CM6 editor elements — CSS variables don't cascade
+				// into CodeMirror's scoped styles for @font-face virtual fonts
+				css += `.cm-editor .cm-content { font-family: ${txtStack} !important; }\n`;
+				css += `.cm-editor .cm-scroller { font-family: ${txtStack}; }\n`;
 			} else {
 				root.setProperty('--font-interface-theme', baseUI);
 				root.setProperty('--font-text-theme', baseTxt);
+				css += `.cm-editor .cm-content { font-family: ${baseTxt} !important; }\n`;
+				css += `.cm-editor .cm-scroller { font-family: ${baseTxt}; }\n`;
 			}
 		}
 
