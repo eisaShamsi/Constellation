@@ -92,6 +92,54 @@
 	let sidebarOpen = $state(true);
 	let dragTabId: string | null = $state(null);
 	let dragOverTabId: string | null = $state(null);
+
+	// Tab context menu
+	let tabCtxMenu = $state<{ x: number; y: number; tabId: string } | null>(null);
+
+	function showTabContextMenu(e: MouseEvent, tabId: string) {
+		e.preventDefault();
+		tabCtxMenu = { x: e.clientX, y: e.clientY, tabId };
+		const close = () => { tabCtxMenu = null; window.removeEventListener('click', close); };
+		setTimeout(() => window.addEventListener('click', close), 0);
+	}
+
+	function tabCtxAction(action: string) {
+		if (!tabCtxMenu) return;
+		const id = tabCtxMenu.tabId;
+		const tabs = get(openTabs);
+		const tab = tabs.find(t => t.id === id);
+		switch (action) {
+			case 'close':
+				if (tab && !tab.pinned) closeTab(id);
+				break;
+			case 'closeOthers':
+				tabs.filter(t => t.id !== id && !t.pinned).forEach(t => closeTab(t.id));
+				break;
+			case 'closeRight': {
+				const idx = tabs.findIndex(t => t.id === id);
+				tabs.filter((t, i) => i > idx && !t.pinned).forEach(t => closeTab(t.id));
+				break;
+			}
+			case 'closeLeft': {
+				const idx = tabs.findIndex(t => t.id === id);
+				tabs.filter((t, i) => i < idx && !t.pinned).forEach(t => closeTab(t.id));
+				break;
+			}
+			case 'closeAll':
+				tabs.filter(t => !t.pinned).forEach(t => closeTab(t.id));
+				break;
+			case 'pin':
+				if (tab) tab.pinned = !tab.pinned;
+				break;
+			case 'copyPath':
+				if (tab) navigator.clipboard.writeText(tab.path).catch(() => {});
+				break;
+			case 'copyName':
+				if (tab) navigator.clipboard.writeText(tab.name).catch(() => {});
+				break;
+		}
+		tabCtxMenu = null;
+	}
 	let searchMode = $state(false);
 	let sidebarMode = $state<'tree' | 'list' | 'skyview'>('tree');
 	let preTreeWidth = 240; // Saved sidebar width before wider modes expanded it
@@ -2358,7 +2406,7 @@
 							class:pinned={tab.pinned}
 							class:drag-over={dragOverTabId === tab.id}
 							style:--library-color={libraryColorMap[tab.libraryName]}
-							draggable="true"
+							draggable={true}
 							ondragstart={(e) => { dragTabId = tab.id; e.dataTransfer?.setData('text/plain', tab.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'; }}
 							ondragover={(e) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'; dragOverTabId = tab.id; }}
 							ondragleave={() => { if (dragOverTabId === tab.id) dragOverTabId = null; }}
@@ -2366,7 +2414,7 @@
 							ondragend={() => { dragTabId = null; dragOverTabId = null; }}
 							onclick={() => switchTab(tab.id)}
 							onauxclick={(e) => { if (e.button === 1 && !tab.pinned) { e.preventDefault(); closeTab(tab.id); } }}
-							oncontextmenu={(e) => { e.preventDefault(); tab.pinned = !tab.pinned; }}>
+							oncontextmenu={(e) => showTabContextMenu(e, tab.id)}>
 							{#if tab.pinned}
 								<span class="tab-pin" title={$t('layout.pinned')}>📌</span>
 							{:else if tab.libraryName}
@@ -2389,6 +2437,25 @@
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
 				</button>
 				<div class="tab-spacer"></div>
+
+				<!-- Tab context menu -->
+				{#if tabCtxMenu}
+					<div class="tab-ctx-menu" style="left:{tabCtxMenu.x}px;top:{tabCtxMenu.y}px">
+						{@const ctxTab = $openTabs.find(t => t.id === tabCtxMenu?.tabId)}
+						<button class="tab-ctx-item" onclick={() => tabCtxAction('pin')}>
+							{ctxTab?.pinned ? 'Unpin' : 'Pin'}
+						</button>
+						<div class="tab-ctx-sep"></div>
+						<button class="tab-ctx-item" onclick={() => tabCtxAction('close')} disabled={ctxTab?.pinned}>Close</button>
+						<button class="tab-ctx-item" onclick={() => tabCtxAction('closeOthers')}>Close Others</button>
+						<button class="tab-ctx-item" onclick={() => tabCtxAction('closeRight')}>Close to the Right</button>
+						<button class="tab-ctx-item" onclick={() => tabCtxAction('closeLeft')}>Close to the Left</button>
+						<button class="tab-ctx-item" onclick={() => tabCtxAction('closeAll')}>Close All</button>
+						<div class="tab-ctx-sep"></div>
+						<button class="tab-ctx-item" onclick={() => tabCtxAction('copyPath')}>Copy Path</button>
+						<button class="tab-ctx-item" onclick={() => tabCtxAction('copyName')}>Copy Name</button>
+					</div>
+				{/if}
 			{:else}
 				<div class="tab-spacer"></div>
 			{/if}
@@ -3260,6 +3327,25 @@
 	.tab-action:hover { background: var(--border); color: var(--text); }
 	.tab-action.active { color: var(--accent); }
 	.tab-spacer { flex: 1; }
+	.tab-ctx-menu {
+		position: fixed; z-index: 9999;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; padding: 4px 0;
+		min-width: 180px;
+		box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+		direction: ltr;
+	}
+	.tab-ctx-item {
+		display: block; width: 100%; padding: 6px 14px;
+		border: none; background: none; cursor: pointer;
+		font-size: 13px; color: var(--text-normal);
+		text-align: left; font-family: var(--font-interface-theme);
+	}
+	.tab-ctx-item:hover { background: var(--background-modifier-hover); }
+	.tab-ctx-item:disabled { opacity: 0.4; cursor: default; }
+	.tab-ctx-item:disabled:hover { background: none; }
+	.tab-ctx-sep { height: 1px; margin: 4px 8px; background: var(--background-modifier-border); }
 	.tab-new-btn {
 		width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 4px;
