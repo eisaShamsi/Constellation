@@ -1076,5 +1076,13 @@
     "arabicModern": "阿拉伯现代",
     "persian": "波斯",
     "fontSize": "字体大小"
+  },
+  "scriptToolbar": {
+    "title": "文字工具",
+    "symbols": "符号",
+    "punctuation": "标点",
+    "numerals": "数字",
+    "tashkeel": "标音符号",
+    "quranSymbols": "古兰经符号"
   }
 }

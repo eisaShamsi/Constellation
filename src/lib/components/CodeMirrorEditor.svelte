@@ -11,6 +11,7 @@
 	import { syntaxHighlighting, defaultHighlightStyle, bracketMatching, indentOnInput, foldGutter, foldKeymap, foldService, foldAll, unfoldAll, indentUnit } from '@codemirror/language';
 	import type { FileEntry } from '$lib/libraries/store';
 	import { saveClipboardImage, resolveWikilinkCrossLibrary, getNoteHeadings, appSettings, getFontSetById, SCRIPT_UNICODE_RANGES } from '$lib/libraries/store';
+	import { t } from '$lib/i18n';
 	import FormattingToolbar from './FormattingToolbar.svelte';
 	import TableToolbar from './TableToolbar.svelte';
 	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, generateTable, detectTabularText, tabularTextToTable, type ParsedTable } from '$lib/editor/tableUtils';
@@ -1032,6 +1033,96 @@
 	let showFontPicker = $state(false);
 	let showColorPicker = $state(false);
 
+	// ─── Tashkeel (Arabic diacritics) highlighting ───
+	let tashkeelHighlight = $state(false);
+	const tashkeelCompartment = new Compartment();
+
+	// Regex matching Arabic diacritical marks (harakat)
+	const TASHKEEL_REGEX = /[\u064B-\u0652\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g;
+
+	const tashkeelDeco = Decoration.mark({ class: 'cm-tashkeel' });
+
+	const tashkeelPlugin = ViewPlugin.fromClass(class {
+		decorations: DecorationSet;
+		constructor(view: EditorView) {
+			this.decorations = this.buildDecos(view);
+		}
+		update(update: ViewUpdate) {
+			if (update.docChanged || update.viewportChanged) {
+				this.decorations = this.buildDecos(update.view);
+			}
+		}
+		buildDecos(view: EditorView): DecorationSet {
+			const builder: Range<Decoration>[] = [];
+			const { from, to } = view.viewport;
+			const text = view.state.doc.sliceString(from, to);
+			let match: RegExpExecArray | null;
+			TASHKEEL_REGEX.lastIndex = 0;
+			while ((match = TASHKEEL_REGEX.exec(text)) !== null) {
+				const pos = from + match.index;
+				builder.push(tashkeelDeco.range(pos, pos + match[0].length));
+			}
+			return Decoration.set(builder, true);
+		}
+	}, { decorations: v => v.decorations });
+
+	// ─── Script-specific symbol toolbars ───
+	const SCRIPT_TOOLBARS: Record<string, { symbols: string[]; punctuation: string[]; numerals?: string[]; quran?: string[] }> = {
+		arabic: {
+			symbols: ['﷽', 'ﷺ', 'ﷻ', '۞', '﴿', '﴾', 'ۖ', 'ۗ', 'ۘ', 'ۙ', 'ۚ', 'ۛ', 'ۜ'],
+			punctuation: ['،', '؛', '؟', '٪', '«', '»', 'ـ', '﴾﴿'],
+			numerals: ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'],
+			quran: ['﴿', '﴾', '۞', 'ۖ', 'ۗ', 'ۘ', 'ۙ', 'ۚ', 'ۛ', 'ۜ', '﷽', 'ﷺ', 'ﷻ'],
+		},
+		hebrew: {
+			symbols: ['׳', '״', '־', '׀', '׆'],
+			punctuation: ['׃', '׳', '״', '־', '–', '—'],
+			numerals: [],
+		},
+		cjk: {
+			symbols: ['〇', '々', '〆', '〒', '〓', '〔', '〕', '〖', '〗'],
+			punctuation: ['。', '、', '！', '？', '「', '」', '『', '』', '【', '】', '（', '）', '《', '》', '〈', '〉', '・', '：', '；'],
+			numerals: [],
+		},
+		cyrillic: {
+			symbols: ['№', '§', '©', '®', '™', '°'],
+			punctuation: ['«', '»', '—', '–', '…', '„', '"'],
+			numerals: [],
+		},
+		devanagari: {
+			symbols: ['ॐ', '॰', '₹', '꣸', '꣹', '꣺'],
+			punctuation: ['।', '॥', '॰'],
+			numerals: ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'],
+		},
+		latin: {
+			symbols: ['©', '®', '™', '†', '‡', '§', '¶', '•', '°', '′', '″', '∞', '√', '∑', '∏', '∫', 'Δ', 'π', 'Ω'],
+			punctuation: ['–', '—', '…', '«', '»', '"', '"', ''', ''', '‹', '›'],
+			numerals: [],
+		},
+	};
+
+	let showScriptToolbar = $state(false);
+	let scriptToolbarScript = $state('');
+
+	function insertSymbol(sym: string) {
+		if (!view) return;
+		const { from, to } = view.state.selection.main;
+		view.dispatch({ changes: { from, to, insert: sym } });
+		view.focus();
+	}
+
+	// Determine which script toolbars to show based on settings and note direction
+	let activeScriptToolbars = $derived.by(() => {
+		const s = get(appSettings);
+		if (!s.enableScriptToolbar) return [];
+		const scripts = s.scriptToolbarScripts || [];
+		// If note is RTL and arabic is in the list, prioritize it
+		if (dir === 'rtl' && scripts.includes('arabic')) {
+			return ['arabic', ...scripts.filter(sc => sc !== 'arabic')];
+		}
+		return scripts;
+	});
+
 	const fontFamilies = [
 		{ label: 'Default', value: '' },
 		{ label: 'Sans Serif', value: "Inter, -apple-system, sans-serif" },
@@ -1597,12 +1688,12 @@
 	{#if view}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="cm-toolbar" dir={dir} style="direction: {dir}" onmousedown={(e) => e.preventDefault()}>
-			<!-- Undo/Redo -->
+			<!-- Undo/Redo — arrows flip in RTL -->
 			<button class="cm-tb" title="Undo (Ctrl+Z)" onclick={() => { undo(view!) }}>
-				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.69 3L3 13"/></svg>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="cm-icon-dir"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.69 3L3 13"/></svg>
 			</button>
 			<button class="cm-tb" title="Redo (Ctrl+Y)" onclick={() => { redo(view!) }}>
-				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.69 3L21 13"/></svg>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="cm-icon-dir"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.69 3L21 13"/></svg>
 			</button>
 			<span class="cm-tb-sep"></span>
 			<!-- Heading -->
@@ -1630,23 +1721,23 @@
 				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><path d="M9.5 4L4.5 16h2l1-3h7l1 3h2L12.5 4z"/></svg>
 			</button>
 			<span class="cm-tb-sep"></span>
-			<!-- Alignment -->
+			<!-- Alignment — icons mirror in RTL -->
 			<button class="cm-tb" title="Align left" onclick={() => { /* future */ }}>
-				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="cm-icon-dir"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
 			</button>
 			<button class="cm-tb" title="Align center" onclick={() => { /* future */ }}>
 				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
 			</button>
 			<button class="cm-tb" title="Align right" onclick={() => { /* future */ }}>
-				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="cm-icon-dir"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
 			</button>
 			<span class="cm-tb-sep"></span>
-			<!-- Lists -->
+			<!-- Lists — markers flip in RTL -->
 			<button class="cm-tb" title="Bullet list" onclick={() => { handleContextList('bullet') }}>
-				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="cm-icon-dir"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
 			</button>
 			<button class="cm-tb" title="Numbered list" onclick={() => { handleContextList('numbered') }}>
-				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="cm-icon-dir"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
 			</button>
 			<button class="cm-tb" title="Task list" onclick={() => { handleContextList('task') }}>
 				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -1693,6 +1784,63 @@
 			<button class="cm-tb" title="Find (Ctrl+F)" onclick={() => { if (view) openSearchPanel(view); }}>
 				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 			</button>
+		</div>
+	{/if}
+
+	<!-- Script-specific symbol toolbar -->
+	{#if view && activeScriptToolbars.length > 0}
+		<div class="cm-script-toolbar" dir="ltr">
+			{#each activeScriptToolbars as script}
+				{@const data = SCRIPT_TOOLBARS[script]}
+				{#if data}
+					<div class="cm-script-group">
+						<button class="cm-script-label" onclick={() => { scriptToolbarScript = scriptToolbarScript === script ? '' : script; }}>
+							{script === 'arabic' ? 'عربي' : script === 'hebrew' ? 'עברית' : script === 'cjk' ? '中日韩' : script === 'cyrillic' ? 'Кир' : script === 'devanagari' ? 'देव' : 'Aa'}
+							<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={scriptToolbarScript === script}><path d="M6 9l6 6 6-6"/></svg>
+						</button>
+						{#if scriptToolbarScript === script}
+							<div class="cm-script-panel">
+								{#if data.quran && script === 'arabic'}
+									<div class="cm-script-section">
+										<span class="cm-script-section-label">{$t('scriptToolbar.quranSymbols')}</span>
+										<div class="cm-script-chars">
+											{#each data.quran as sym}
+												<button class="cm-script-char" onclick={() => insertSymbol(sym)} title={sym}>{sym}</button>
+											{/each}
+										</div>
+									</div>
+								{/if}
+								<div class="cm-script-section">
+									<span class="cm-script-section-label">{$t('scriptToolbar.symbols')}</span>
+									<div class="cm-script-chars">
+										{#each data.symbols as sym}
+											<button class="cm-script-char" onclick={() => insertSymbol(sym)} title={sym}>{sym}</button>
+										{/each}
+									</div>
+								</div>
+								<div class="cm-script-section">
+									<span class="cm-script-section-label">{$t('scriptToolbar.punctuation')}</span>
+									<div class="cm-script-chars">
+										{#each data.punctuation as sym}
+											<button class="cm-script-char" onclick={() => insertSymbol(sym)} title={sym}>{sym}</button>
+										{/each}
+									</div>
+								</div>
+								{#if data.numerals && data.numerals.length > 0}
+									<div class="cm-script-section">
+										<span class="cm-script-section-label">{$t('scriptToolbar.numerals')}</span>
+										<div class="cm-script-chars">
+											{#each data.numerals as sym}
+												<button class="cm-script-char" onclick={() => insertSymbol(sym)} title={sym}>{sym}</button>
+											{/each}
+										</div>
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/if}
+			{/each}
 		</div>
 	{/if}
 
@@ -1845,6 +1993,9 @@
 		padding: 0 6px;
 		gap: 4px;
 	}
+	/* Flip directional icons in RTL toolbar */
+	.cm-toolbar[dir="rtl"] .cm-icon-dir { transform: scaleX(-1); }
+
 	.cm-tb-sep {
 		width: 1px;
 		height: 18px;
@@ -1925,4 +2076,47 @@
 		cursor: pointer; transition: border-color 0.15s;
 	}
 	.cm-color-swatch:hover { border-color: var(--text-normal); }
+
+	/* Script toolbar */
+	.cm-script-toolbar {
+		display: flex; align-items: center; gap: 4px; padding: 2px 8px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+		flex-wrap: wrap;
+	}
+	.cm-script-group { position: relative; }
+	.cm-script-label {
+		display: flex; align-items: center; gap: 3px;
+		padding: 3px 8px; border-radius: 4px; border: none;
+		background: var(--background-modifier-hover); color: var(--text-normal);
+		font-size: 12px; font-weight: 600; cursor: pointer;
+		font-family: var(--font-interface-theme);
+	}
+	.cm-script-label:hover { background: var(--interactive-accent); color: white; }
+	.cm-script-label svg { transition: transform 0.15s; }
+	.cm-script-label svg.rotated { transform: rotate(180deg); }
+	.cm-script-panel {
+		position: absolute; top: 100%; left: 0; z-index: 100;
+		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+		padding: 8px; min-width: 280px; max-width: 400px;
+	}
+	.cm-script-section { margin-bottom: 6px; }
+	.cm-script-section:last-child { margin-bottom: 0; }
+	.cm-script-section-label {
+		display: block; font-size: 10px; font-weight: 600; text-transform: uppercase;
+		color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 4px;
+		font-family: var(--font-interface-theme);
+	}
+	.cm-script-chars { display: flex; flex-wrap: wrap; gap: 2px; }
+	.cm-script-char {
+		display: flex; align-items: center; justify-content: center;
+		width: 32px; height: 32px; border-radius: 4px; border: 1px solid var(--background-modifier-border);
+		background: var(--background-primary); color: var(--text-normal);
+		font-size: 16px; cursor: pointer; transition: all 0.1s;
+	}
+	.cm-script-char:hover {
+		background: var(--interactive-accent); color: white;
+		border-color: var(--interactive-accent);
+	}
 </style>

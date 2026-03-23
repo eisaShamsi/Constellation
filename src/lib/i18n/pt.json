@@ -1076,5 +1076,13 @@
     "arabicModern": "Árabe moderno",
     "persian": "Persa",
     "fontSize": "Tamanho da fonte"
+  },
+  "scriptToolbar": {
+    "title": "Ferramentas de escrita",
+    "symbols": "Símbolos",
+    "punctuation": "Pontuação",
+    "numerals": "Numerais",
+    "tashkeel": "Tashkeel",
+    "quranSymbols": "Símbolos corânicos"
   }
 }

@@ -1076,5 +1076,13 @@
     "arabicModern": "عربی جدید",
     "persian": "فارسی",
     "fontSize": "فونٹ سائز"
+  },
+  "scriptToolbar": {
+    "title": "تحریری اوزار",
+    "symbols": "علامات",
+    "punctuation": "رموزِ اوقاف",
+    "numerals": "ہندسے",
+    "tashkeel": "تشکیل",
+    "quranSymbols": "قرآنی علامات"
   }
 }

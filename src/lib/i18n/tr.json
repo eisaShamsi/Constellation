@@ -1076,5 +1076,13 @@
     "arabicModern": "Arapça Modern",
     "persian": "Farsça",
     "fontSize": "Yazı Tipi Boyutu"
+  },
+  "scriptToolbar": {
+    "title": "Yazı araçları",
+    "symbols": "Semboller",
+    "punctuation": "Noktalama",
+    "numerals": "Rakamlar",
+    "tashkeel": "Teşkil",
+    "quranSymbols": "Kur'an sembolleri"
   }
 }

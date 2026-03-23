@@ -1076,5 +1076,13 @@
     "arabicModern": "अरबी आधुनिक",
     "persian": "फ़ारसी",
     "fontSize": "फ़ॉन्ट आकार"
+  },
+  "scriptToolbar": {
+    "title": "लिपि उपकरण",
+    "symbols": "प्रतीक",
+    "punctuation": "विराम चिह्न",
+    "numerals": "अंक",
+    "tashkeel": "तशकील",
+    "quranSymbols": "कुरान प्रतीक"
   }
 }

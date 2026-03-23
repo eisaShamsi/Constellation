@@ -1103,6 +1103,10 @@ export interface AppSettings {
 	enableSecondaryScript: boolean;
 	secondaryScript: string;
 
+	// Script toolbars — language-specific symbol/tool panels
+	enableScriptToolbar: boolean;
+	scriptToolbarScripts: string[];  // which scripts to show toolbars for
+
 	// Quick Capture
 	inboxFolder: string;
 
@@ -1204,6 +1208,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 	primaryScript: 'latin',
 	enableSecondaryScript: false,
 	secondaryScript: 'arabic',
+	enableScriptToolbar: true,
+	scriptToolbarScripts: ['arabic', 'latin'],
 	inboxFolder: '+',
 	dailyNoteFormat: '%Y-%m-%d',
 	dailyNoteFolder: '',

@@ -773,6 +773,42 @@
 
 					<div class="setting-item">
 						<div class="setting-info">
+							<div class="setting-name">{$t('scriptToolbar.title') || 'Script Tools'}</div>
+							<div class="setting-desc">Show language-specific symbol and punctuation toolbars</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox" checked={$appSettings.enableScriptToolbar}
+								onchange={(e) => updateSettings({ enableScriptToolbar: (e.target as HTMLInputElement).checked })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+
+					{#if $appSettings.enableScriptToolbar}
+						<div class="setting-item">
+							<div class="setting-info">
+								<div class="setting-name">Script toolbars to show</div>
+								<div class="setting-desc">Select which language toolbars appear in the editor</div>
+							</div>
+							<div class="script-toolbar-checkboxes">
+								{#each Object.keys(SCRIPT_UNICODE_RANGES) as script}
+									<label class="script-check">
+										<input type="checkbox"
+											checked={($appSettings.scriptToolbarScripts || []).includes(script)}
+											onchange={(e) => {
+												const current = $appSettings.scriptToolbarScripts || [];
+												const checked = (e.target as HTMLInputElement).checked;
+												const updated = checked ? [...current, script] : current.filter(s => s !== script);
+												updateSettings({ scriptToolbarScripts: updated });
+											}} />
+										<span>{SCRIPT_LABELS[script] || script}</span>
+									</label>
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					<div class="setting-item">
+						<div class="setting-info">
 							<div class="setting-name">{$t('settings.editor.autoPairBrackets')}</div>
 							<div class="setting-desc">{$t('settings.editor.autoPairBracketsDesc')}</div>
 						</div>
@@ -1662,6 +1698,16 @@
 	}
 	.toggle input:checked + .toggle-slider { background: var(--interactive-accent); }
 	.toggle input:checked + .toggle-slider::after { transform: translateX(18px); }
+
+	/* Script toolbar checkboxes */
+	.script-toolbar-checkboxes {
+		display: flex; flex-wrap: wrap; gap: 8px;
+	}
+	.script-check {
+		display: flex; align-items: center; gap: 4px;
+		font-size: 13px; cursor: pointer;
+	}
+	.script-check input { cursor: pointer; }
 
 	/* Color Picker */
 	.color-row { display: flex; align-items: center; gap: 8px; }

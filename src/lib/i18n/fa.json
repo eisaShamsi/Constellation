@@ -1076,5 +1076,13 @@
     "arabicModern": "عربی مدرن",
     "persian": "فارسی",
     "fontSize": "اندازه فونت"
+  },
+  "scriptToolbar": {
+    "title": "ابزارهای نوشتاری",
+    "symbols": "نمادها",
+    "punctuation": "نشانه‌گذاری",
+    "numerals": "اعداد",
+    "tashkeel": "اعراب",
+    "quranSymbols": "نمادهای قرآنی"
   }
 }

@@ -1076,5 +1076,13 @@
     "arabicModern": "عربي حديث",
     "persian": "فارسي",
     "fontSize": "حجم الخط"
+  },
+  "scriptToolbar": {
+    "title": "أدوات الكتابة",
+    "symbols": "رموز",
+    "punctuation": "علامات الترقيم",
+    "numerals": "أرقام",
+    "tashkeel": "تشكيل",
+    "quranSymbols": "رموز قرآنية"
   }
 }

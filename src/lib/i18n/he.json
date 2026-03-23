@@ -1076,5 +1076,13 @@
     "arabicModern": "ערבי מודרני",
     "persian": "פרסית",
     "fontSize": "גודל גופן"
+  },
+  "scriptToolbar": {
+    "title": "כלי כתיבה",
+    "symbols": "סמלים",
+    "punctuation": "פיסוק",
+    "numerals": "ספרות",
+    "tashkeel": "תשכיל",
+    "quranSymbols": "סמלי קוראן"
   }
 }
