@@ -90,6 +90,8 @@
       "behavior": "התנהגות",
       "spellcheck": "בדיקת איות",
       "spellcheckDesc": "הפעל את בודק האיות",
+      "floatingToolbar": "סרגל כלים צף",
+      "floatingToolbarDesc": "הצג סרגל עיצוב בעת בחירת טקסט",
       "autoPairBrackets": "סוגריים אוטומטיים",
       "autoPairBracketsDesc": "התאם סוגריים ומירכאות אוטומטית",
       "autoPairMarkdown": "התאמה אוטומטית של תחביר Markdown",

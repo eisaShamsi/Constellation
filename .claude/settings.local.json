@@ -208,7 +208,8 @@
       "Bash(taskkill /IM constellation.exe /F)",
       "Bash(ls -la \"E:/مشاريع كلاود/Constellation/src-tauri/target/release/bundle/msi/\"*.msi)",
       "Bash(start \"\" \"E:/مشاريع كلاود/Constellation/src-tauri/target/release/bundle/msi/Constellation_0.3.4_x64_en-US.msi\")",
-      "Bash(TASKKILL //IM constellation.exe //F)"
+      "Bash(TASKKILL //IM constellation.exe //F)",
+      "Bash(grep -oE '\"\"turndown\"\"' package.json)"
     ]
   }
 }

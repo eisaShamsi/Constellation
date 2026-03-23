@@ -98,6 +98,8 @@
       "behavior": "Behavior",
       "spellcheck": "Spellcheck",
       "spellcheckDesc": "Turn on the spellchecker",
+      "floatingToolbar": "Floating toolbar",
+      "floatingToolbarDesc": "Show formatting toolbar when text is selected",
       "autoPairBrackets": "Auto-pair brackets",
       "autoPairBracketsDesc": "Pair brackets and quotes automatically",
       "autoPairMarkdown": "Auto-pair Markdown syntax",

@@ -90,6 +90,8 @@
       "behavior": "Verhalten",
       "spellcheck": "Rechtschreibprüfung",
       "spellcheckDesc": "Rechtschreibprüfung aktivieren",
+      "floatingToolbar": "Schwebende Symbolleiste",
+      "floatingToolbarDesc": "Formatierungsleiste bei Textauswahl anzeigen",
       "autoPairBrackets": "Klammern automatisch schließen",
       "autoPairBracketsDesc": "Klammern und Anführungszeichen automatisch schließen",
       "autoPairMarkdown": "Markdown-Syntax automatisch schließen",

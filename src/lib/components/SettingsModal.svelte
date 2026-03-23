@@ -112,6 +112,35 @@
 		notifySettingsChanged({ locale: newLocale });
 	}
 
+	// System fonts detection — start with curated list, then enhance with system fonts
+	const CURATED_FONTS = [
+		'Arial', 'Calibri', 'Cambria', 'Cascadia Code', 'Comic Sans MS', 'Consolas',
+		'Constantia', 'Corbel', 'Courier New', 'Dubai', 'Fira Code',
+		'Georgia', 'Impact', 'Inter', 'JetBrains Mono', 'Lucida Console',
+		'Noto Sans', 'Noto Sans Arabic', 'Noto Naskh Arabic', 'Noto Serif',
+		'Open Sans', 'Palatino Linotype', 'Roboto', 'Segoe UI',
+		'Tahoma', 'Times New Roman', 'Trebuchet MS', 'Verdana',
+		'Amiri', 'Cairo', 'Tajawal', 'Lora', 'Merriweather',
+		'Sakkal Majalla', 'Traditional Arabic', 'Simplified Arabic',
+	].sort((a, b) => a.localeCompare(b));
+
+	let systemFonts = $state<string[]>(CURATED_FONTS);
+
+	async function loadSystemFonts() {
+		try {
+			if ('queryLocalFonts' in window) {
+				const fonts = await (window as any).queryLocalFonts();
+				const families = new Set<string>();
+				for (const font of fonts) {
+					families.add(font.family);
+				}
+				if (families.size > 0) {
+					systemFonts = [...families].sort((a, b) => a.localeCompare(b));
+				}
+			}
+		} catch {}
+	}
+
 	// Font Sets state
 	let showCustomFontSetEditor = $state(false);
 	let editingFontSet = $state<FontSet | null>(null);
@@ -127,6 +156,7 @@
 		customSetText = '';
 		customSetMono = '';
 		showCustomFontSetEditor = true;
+		loadSystemFonts();
 	}
 
 	function startEditFontSet(set: FontSet) {
@@ -136,21 +166,25 @@
 		customSetText = set.textFont;
 		customSetMono = set.monoFont;
 		showCustomFontSetEditor = true;
+		loadSystemFonts();
 	}
 
 	function saveCustomFontSet() {
 		const existing = $appSettings.customFontSets || [];
+		// Auto-fill empty font fields from the set name
+		const iFont = customSetInterface || customSetName;
+		const tFont = customSetText || customSetName;
 		if (editingFontSet) {
 			// Update existing
 			const updated = existing.map(s => s.id === editingFontSet!.id
-				? { ...s, name: customSetName, interfaceFont: customSetInterface, textFont: customSetText, monoFont: customSetMono }
+				? { ...s, name: customSetName, interfaceFont: iFont, textFont: tFont, monoFont: customSetMono }
 				: s
 			);
 			updateSettings({ customFontSets: updated });
 		} else {
 			// Create new
 			const id = 'custom-' + Date.now();
-			const newSet: FontSet = { id, name: customSetName, interfaceFont: customSetInterface, textFont: customSetText, monoFont: customSetMono, isBuiltIn: false };
+			const newSet: FontSet = { id, name: customSetName, interfaceFont: iFont, textFont: tFont, monoFont: customSetMono, isBuiltIn: false };
 			updateSettings({ customFontSets: [...existing, newSet] });
 		}
 		showCustomFontSetEditor = false;
@@ -706,6 +740,18 @@
 						<label class="toggle">
 							<input type="checkbox" checked={$appSettings.spellcheck}
 								onchange={(e) => updateSettings({ spellcheck: (e.target as HTMLInputElement).checked })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.editor.floatingToolbar') || 'Floating toolbar'}</div>
+							<div class="setting-desc">{$t('settings.editor.floatingToolbarDesc') || 'Show formatting toolbar when text is selected'}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox" checked={$appSettings.showFloatingToolbar}
+								onchange={(e) => updateSettings({ showFloatingToolbar: (e.target as HTMLInputElement).checked })} />
 							<span class="toggle-slider"></span>
 						</label>
 					</div>
@@ -1274,19 +1320,38 @@
 							</div>
 							<div class="fontset-editor-field">
 								<label>{$t('fontSets.interfaceFont') || 'Interface Font'}</label>
-								<input type="text" bind:value={customSetInterface} placeholder="Inter, sans-serif" />
+								<select class="fontset-select" value={customSetInterface} onchange={(e) => { customSetInterface = (e.target as HTMLSelectElement).value; if (!customSetName) customSetName = customSetInterface; }}>
+									<option value="">— {$t('fontSets.systemDefault') || 'System Default'} —</option>
+									{#each systemFonts as font}
+										<option value={font} style="font-family: '{font}'">{font}</option>
+									{/each}
+								</select>
 							</div>
 							<div class="fontset-editor-field">
 								<label>{$t('fontSets.textFont') || 'Text Font'}</label>
-								<input type="text" bind:value={customSetText} placeholder="Georgia, serif" />
+								<select class="fontset-select" value={customSetText} onchange={(e) => customSetText = (e.target as HTMLSelectElement).value}>
+									<option value="">— {$t('fontSets.systemDefault') || 'System Default'} —</option>
+									{#each systemFonts as font}
+										<option value={font} style="font-family: '{font}'">{font}</option>
+									{/each}
+								</select>
 							</div>
 							<div class="fontset-editor-field">
 								<label>{$t('fontSets.monoFont') || 'Monospace Font'}</label>
-								<input type="text" bind:value={customSetMono} placeholder="Fira Code, monospace" />
+								<select class="fontset-select" value={customSetMono} onchange={(e) => customSetMono = (e.target as HTMLSelectElement).value}>
+									<option value="">— {$t('fontSets.systemDefault') || 'System Default'} —</option>
+									{#each systemFonts.filter(f => /mono|code|consol|courier/i.test(f)) as font}
+										<option value={font} style="font-family: '{font}'">{font}</option>
+									{/each}
+									<option disabled>───</option>
+									{#each systemFonts.filter(f => !/mono|code|consol|courier/i.test(f)) as font}
+										<option value={font} style="font-family: '{font}'">{font}</option>
+									{/each}
+								</select>
 							</div>
-							{#if customSetText}
-								<div class="fontset-editor-preview" style="font-family: {customSetText}">
-									Preview: The quick brown fox — نص عربي تجريبي
+							{#if customSetText || customSetInterface}
+								<div class="fontset-editor-preview" style="font-family: '{customSetText || customSetInterface}'">
+									Preview: The quick brown fox — نص عربي تجريبي لعرض الخط
 								</div>
 							{/if}
 							<div class="fontset-editor-actions">
@@ -1607,11 +1672,12 @@
 	}
 	.fontset-editor-field { display: flex; flex-direction: column; gap: 4px; }
 	.fontset-editor-field label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-	.fontset-editor-field input {
+	.fontset-editor-field input, .fontset-select {
 		padding: 6px 10px; border: 1px solid var(--background-modifier-border); border-radius: 6px;
 		background: var(--background-primary); color: var(--text-normal); font-size: 0.85rem;
-		font-family: var(--font-interface-theme);
+		font-family: var(--font-interface-theme); width: 100%;
 	}
+	.fontset-select { cursor: pointer; }
 	.fontset-editor-preview {
 		padding: 8px 12px; background: var(--background-primary); border-radius: 6px;
 		font-size: 0.9rem; color: var(--text-normal);

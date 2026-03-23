@@ -90,6 +90,8 @@
       "behavior": "Поведение",
       "spellcheck": "Проверка орфографии",
       "spellcheckDesc": "Включить проверку орфографии",
+      "floatingToolbar": "Плавающая панель",
+      "floatingToolbarDesc": "Показывать панель форматирования при выделении текста",
       "autoPairBrackets": "Автозакрытие скобок",
       "autoPairBracketsDesc": "Автоматически закрывать скобки и кавычки",
       "autoPairMarkdown": "Автозакрытие синтаксиса Markdown",

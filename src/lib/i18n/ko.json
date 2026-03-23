@@ -90,6 +90,8 @@
       "behavior": "동작",
       "spellcheck": "맞춤법 검사",
       "spellcheckDesc": "맞춤법 검사기 켜기",
+      "floatingToolbar": "플로팅 툴바",
+      "floatingToolbarDesc": "텍스트 선택 시 서식 도구 모음 표시",
       "autoPairBrackets": "괄호 자동 완성",
       "autoPairBracketsDesc": "괄호와 따옴표를 자동으로 쌍으로 만들기",
       "autoPairMarkdown": "Markdown 구문 자동 완성",

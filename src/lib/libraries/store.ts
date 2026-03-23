@@ -1070,6 +1070,7 @@ export interface AppSettings {
 	autoPairBrackets: boolean;
 	autoPairMarkdown: boolean;
 	spellcheck: boolean;
+	showFloatingToolbar: boolean;
 	foldHeading: boolean;
 	foldIndent: boolean;
 	indentationGuides: boolean;
@@ -1177,6 +1178,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	autoPairBrackets: true,
 	autoPairMarkdown: true,
 	spellcheck: false,
+	showFloatingToolbar: true,
 	foldHeading: true,
 	foldIndent: true,
 	indentationGuides: false,

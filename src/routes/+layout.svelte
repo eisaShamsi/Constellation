@@ -676,7 +676,8 @@
 	$effect(() => {
 		if (typeof document === 'undefined') return;
 		const s = $appSettings;
-		const root = document.documentElement.style;
+		// Set font variables on <body> to override .theme-light/.theme-dark class rules
+		const root = document.body.style;
 
 		// Apply base font settings to CSS variables
 		const defaultUI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans CJK SC", sans-serif';
@@ -720,11 +721,13 @@
 				if (!set) continue;
 
 				hasPerScript = true;
-				if (set.interfaceFont) {
-					css += `@font-face { font-family: "ConstellationUI"; src: local("${set.interfaceFont.split(',')[0].trim().replace(/"/g, '')}"); unicode-range: ${range}; }\n`;
+				const uiName = (set.interfaceFont || set.name || '').split(',')[0].trim().replace(/"/g, '');
+				const txtName = (set.textFont || set.name || '').split(',')[0].trim().replace(/"/g, '');
+				if (uiName) {
+					css += `@font-face { font-family: "ConstellationUI"; src: local("${uiName}"); unicode-range: ${range}; }\n`;
 				}
-				if (set.textFont) {
-					css += `@font-face { font-family: "ConstellationText"; src: local("${set.textFont.split(',')[0].trim().replace(/"/g, '')}"); unicode-range: ${range}; }\n`;
+				if (txtName) {
+					css += `@font-face { font-family: "ConstellationText"; src: local("${txtName}"); unicode-range: ${range}; }\n`;
 				}
 			}
 

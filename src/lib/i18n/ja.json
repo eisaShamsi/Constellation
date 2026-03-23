@@ -90,6 +90,8 @@
       "behavior": "動作",
       "spellcheck": "スペルチェック",
       "spellcheckDesc": "スペルチェッカーを有効にする",
+      "floatingToolbar": "フローティングツールバー",
+      "floatingToolbarDesc": "テキスト選択時に書式ツールバーを表示",
       "autoPairBrackets": "括弧の自動補完",
       "autoPairBracketsDesc": "括弧と引用符を自動的にペアにする",
       "autoPairMarkdown": "Markdown構文の自動補完",

@@ -90,6 +90,8 @@
       "behavior": "السلوك",
       "spellcheck": "التدقيق الإملائي",
       "spellcheckDesc": "تشغيل المدقق الإملائي",
+      "floatingToolbar": "شريط الأدوات العائم",
+      "floatingToolbarDesc": "إظهار شريط التنسيق عند تحديد النص",
       "autoPairBrackets": "إغلاق الأقواس تلقائياً",
       "autoPairBracketsDesc": "إقران الأقواس وعلامات الاقتباس تلقائياً",
       "autoPairMarkdown": "إقران رموز Markdown تلقائياً",

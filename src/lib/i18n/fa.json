@@ -90,6 +90,8 @@
       "behavior": "رفتار",
       "spellcheck": "غلط‌یاب",
       "spellcheckDesc": "فعال‌سازی غلط‌یاب",
+      "floatingToolbar": "نوار ابزار شناور",
+      "floatingToolbarDesc": "نمایش نوار قالب‌بندی هنگام انتخاب متن",
       "autoPairBrackets": "جفت‌سازی خودکار کروشه‌ها",
       "autoPairBracketsDesc": "جفت‌سازی خودکار کروشه‌ها و نقل‌قول‌ها",
       "autoPairMarkdown": "جفت‌سازی خودکار نحو Markdown",

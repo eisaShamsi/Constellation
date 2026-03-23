@@ -90,6 +90,8 @@
       "behavior": "Comportamiento",
       "spellcheck": "Corrector ortográfico",
       "spellcheckDesc": "Activar el corrector ortográfico",
+      "floatingToolbar": "Barra flotante",
+      "floatingToolbarDesc": "Mostrar barra de formato al seleccionar texto",
       "autoPairBrackets": "Auto-completar paréntesis",
       "autoPairBracketsDesc": "Emparejar paréntesis y comillas automáticamente",
       "autoPairMarkdown": "Auto-completar sintaxis Markdown",

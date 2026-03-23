@@ -90,6 +90,8 @@
       "behavior": "व्यवहार",
       "spellcheck": "वर्तनी जाँच",
       "spellcheckDesc": "वर्तनी जाँचकर्ता सक्षम करें",
+      "floatingToolbar": "फ़्लोटिंग टूलबार",
+      "floatingToolbarDesc": "टेक्स्ट चुनने पर फ़ॉर्मेटिंग टूलबार दिखाएं",
       "autoPairBrackets": "स्वचालित ब्रैकेट जोड़ी",
       "autoPairBracketsDesc": "ब्रैकेट और उद्धरण चिह्न स्वचालित रूप से जोड़ें",
       "autoPairMarkdown": "स्वचालित Markdown सिंटैक्स जोड़ी",

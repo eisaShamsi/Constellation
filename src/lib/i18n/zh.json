@@ -90,6 +90,8 @@
       "behavior": "行为",
       "spellcheck": "拼写检查",
       "spellcheckDesc": "开启拼写检查器",
+      "floatingToolbar": "浮动工具栏",
+      "floatingToolbarDesc": "选中文本时显示格式工具栏",
       "autoPairBrackets": "自动配对括号",
       "autoPairBracketsDesc": "自动配对括号和引号",
       "autoPairMarkdown": "自动配对 Markdown 语法",

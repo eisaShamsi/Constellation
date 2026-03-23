@@ -98,33 +98,27 @@ You can nest universes inside universes. A **Child Universe** is another univers
 | **File Tree** | Right-click a folder > New Note |
 | **Mission Control** | `Ctrl+P` > "New note" |
 
-### Editor Modes
+### Editor
 
-Constellation offers two editor modes, selectable in **Settings > Editor > Editor type**:
+Constellation uses a high-performance CodeMirror 6 editor with two modes, switchable via the toggle in the breadcrumb bar:
 
-#### Markdown Editor (CodeMirror)
+#### Live Preview (default)
 
-The default editor for power users. Write Markdown directly with:
+Renders Markdown formatting inline while you type — bold text appears bold, headings render as headings, links become clickable. Click on formatted text to reveal the Markdown syntax for editing.
 
-- **Live Preview** — renders formatting inline while you type
-- **Source Mode** — shows raw Markdown syntax
-- **Formatting toolbar** — appears on text selection
+#### Source Mode
+
+Shows raw Markdown syntax for full control. Ideal for power users who prefer to see and type Markdown directly.
+
+Both modes share these features:
+
+- **Persistent toolbar** — formatting buttons always visible (Bold, Italic, Underline, Headings, Lists, Tables, etc.)
+- **Floating toolbar** — appears on text selection (can be disabled in Settings)
 - **Slash commands** — type `/` for quick insertions
 - **Wikilink autocomplete** — type `[[` to link notes
-- **Multiple cursors** — `Alt+Click` or `Ctrl+D`
-
-#### Document Editor (TipTap)
-
-A WYSIWYG word-processor experience with a visual toolbar:
-
-- Bold, Italic, Underline, Strikethrough, Highlight
-- Headings (H1–H3), Text alignment
-- Bullet lists, Numbered lists, Task lists
-- Blockquotes, Code blocks, Horizontal rules
-- Tables (insert, add/remove rows and columns)
-- Links and Images
-
-Both editors save as standard Markdown files. You can switch between them at any time without data loss.
+- **Right-click context menu** — contextual formatting options
+- **RTL support** — toolbar and content adapt to text direction
+- **Font sets** — per-language font customization via Settings
 
 ### Text Formatting Shortcuts
 

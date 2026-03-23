@@ -90,6 +90,8 @@
       "behavior": "رویہ",
       "spellcheck": "اسپیل چیک",
       "spellcheckDesc": "اسپیل چیکر فعال کریں",
+      "floatingToolbar": "تیرتا ٹول بار",
+      "floatingToolbarDesc": "متن منتخب کرنے پر فارمیٹنگ ٹول بار دکھائیں",
       "autoPairBrackets": "خودکار جوڑے دار بریکٹس",
       "autoPairBracketsDesc": "بریکٹس اور اقتباسات خودکار طور پر جوڑا بنائیں",
       "autoPairMarkdown": "خودکار Markdown نحو جوڑی",

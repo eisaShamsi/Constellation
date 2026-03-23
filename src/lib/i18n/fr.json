@@ -90,6 +90,8 @@
       "behavior": "Comportement",
       "spellcheck": "Correcteur orthographique",
       "spellcheckDesc": "Activer le correcteur orthographique",
+      "floatingToolbar": "Barre d'outils flottante",
+      "floatingToolbarDesc": "Afficher la barre de mise en forme lors de la sélection",
       "autoPairBrackets": "Fermeture automatique des crochets",
       "autoPairBracketsDesc": "Fermer automatiquement les crochets et les guillemets",
       "autoPairMarkdown": "Fermeture automatique de la syntaxe Markdown",

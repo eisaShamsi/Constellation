@@ -90,6 +90,8 @@
       "behavior": "Davranış",
       "spellcheck": "Yazım denetimi",
       "spellcheckDesc": "Yazım denetleyicisini aç",
+      "floatingToolbar": "Kayan araç çubuğu",
+      "floatingToolbarDesc": "Metin seçildiğinde biçimlendirme çubuğunu göster",
       "autoPairBrackets": "Otomatik parantez eşleştirme",
       "autoPairBracketsDesc": "Parantezleri ve tırnak işaretlerini otomatik olarak eşleştir",
       "autoPairMarkdown": "Otomatik Markdown sözdizimi eşleştirme",
