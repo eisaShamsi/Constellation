@@ -21,6 +21,60 @@ fn open_second_screen(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn constellation_show_in_folder(path: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(format!("/select,{}", path))
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .args(["-R", &path])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        if let Some(parent) = std::path::Path::new(&path).parent() {
+            std::process::Command::new("xdg-open")
+                .arg(parent)
+                .spawn()
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn open_path(path: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("cmd")
+            .args(["/c", "start", "", &path])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 fn close_second_screen(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(win) = app.get_webview_window("second-screen") {
         win.hide().map_err(|e| e.to_string())?;
@@ -143,6 +197,8 @@ pub fn run() {
             importers::import_pick_source,
             importers::import_preview,
             importers::import_execute,
+            constellation_show_in_folder,
+            open_path,
             open_second_screen,
             close_second_screen,
             is_second_screen_open

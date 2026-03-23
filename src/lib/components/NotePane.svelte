@@ -61,6 +61,66 @@
 	const editing = $derived(tab ? $editingTabIds.has(tab.id) : false);
 	let livePreviewEnabled = $state(true);
 
+	// More options menu
+	let showMoreMenu = $state(false);
+	let moreMenuEl: HTMLDivElement | undefined;
+
+	function toggleMoreMenu() {
+		showMoreMenu = !showMoreMenu;
+		if (showMoreMenu) {
+			const close = (e: MouseEvent) => {
+				if (moreMenuEl && !moreMenuEl.contains(e.target as Node)) {
+					showMoreMenu = false;
+					window.removeEventListener('click', close);
+				}
+			};
+			setTimeout(() => window.addEventListener('click', close), 0);
+		}
+	}
+
+	async function moreAction(action: string) {
+		showMoreMenu = false;
+		if (!tab) return;
+		const { invoke } = await import('@tauri-apps/api/core');
+		switch (action) {
+			case 'rename': {
+				const input = document.querySelector('.note-title') as HTMLInputElement;
+				if (input) { input.focus(); input.select(); }
+				break;
+			}
+			case 'showInExplorer':
+				try { await invoke('constellation_show_in_folder', { path: tab.path }); } catch {}
+				break;
+			case 'openDefaultApp':
+				try { await invoke('open_path', { path: tab.path }); } catch {}
+				break;
+			case 'revealInTree':
+				window.dispatchEvent(new CustomEvent('constellation:reveal-in-tree', { detail: { path: tab.path } }));
+				break;
+			case 'exportPdf':
+				window.dispatchEvent(new CustomEvent('constellation:export-pdf', { detail: { path: tab.path, name: tab.name } }));
+				break;
+			case 'openNewWindow':
+				try {
+					const { sendNoteToScreen } = await import('$lib/secondScreen');
+					await sendNoteToScreen({ path: tab.path, name: tab.name, libraryName: tab.libraryName, libraryPath: tab.libraryPath ?? '', libraryColor: tab.libraryColor ?? '#7c3aed' });
+				} catch {}
+				break;
+			case 'copyPath':
+				navigator.clipboard.writeText(tab.path).catch(() => {});
+				break;
+			case 'copyName':
+				navigator.clipboard.writeText(tab.name).catch(() => {});
+				break;
+			case 'delete':
+				window.dispatchEvent(new CustomEvent('constellation:delete-note', { detail: { path: tab.path, name: tab.name } }));
+				break;
+			case 'addProperty':
+				window.dispatchEvent(new CustomEvent('constellation:add-property', { detail: { path: tab.path } }));
+				break;
+		}
+	}
+
 	// Library appearance
 	const libraryId = $derived(tab ? get(libraries).find(v => tab!.libraryPath === v.path)?.id : null);
 	const appearance = $derived(libraryId ? $libraryAppearances[libraryId] : null);
@@ -397,6 +457,60 @@
 							<span class="switch-thumb"></span>
 						</span>
 					</button>
+					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
+					<!-- More options (three dots) -->
+					<div class="bc-more-wrap" bind:this={moreMenuEl}>
+						<button class="bc-edit-btn" onclick={toggleMoreMenu} title="More options">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+						</button>
+						{#if showMoreMenu}
+							<div class="bc-more-menu">
+								<button class="bc-more-item" onclick={() => moreAction('rename')}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+									{$t('contextMenu.rename') || 'Rename'}
+								</button>
+								<button class="bc-more-item" onclick={() => moreAction('addProperty')}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+									{$t('contextMenu.addProperty') || 'Add property'}
+								</button>
+								<button class="bc-more-item" onclick={() => moreAction('exportPdf')}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+									{$t('contextMenu.exportPdf') || 'Export to PDF'}
+								</button>
+								<div class="bc-more-sep"></div>
+								<button class="bc-more-item" onclick={() => moreAction('openNewWindow')}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+									{$t('contextMenu.openNewWindow') || 'Open in second screen'}
+								</button>
+								<button class="bc-more-item" onclick={() => moreAction('revealInTree')}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/><path d="M9 22V12h6v10"/></svg>
+									{$t('contextMenu.revealInTree') || 'Reveal in file tree'}
+								</button>
+								<button class="bc-more-item" onclick={() => moreAction('showInExplorer')}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v11z"/></svg>
+									{$t('contextMenu.showInExplorer') || 'Show in system explorer'}
+								</button>
+								<button class="bc-more-item" onclick={() => moreAction('openDefaultApp')}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>
+									{$t('contextMenu.openDefaultApp') || 'Open in default app'}
+								</button>
+								<div class="bc-more-sep"></div>
+								<button class="bc-more-item" onclick={() => moreAction('copyPath')}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+									{$t('contextMenu.copyPath') || 'Copy path'}
+								</button>
+								<button class="bc-more-item" onclick={() => moreAction('copyName')}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+									{$t('contextMenu.copyName') || 'Copy name'}
+								</button>
+								<div class="bc-more-sep"></div>
+								<button class="bc-more-item bc-more-danger" onclick={() => moreAction('delete')}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+									{$t('contextMenu.deleteFile') || 'Delete file'}
+								</button>
+							</div>
+						{/if}
+					</div>
 				</div>
 			</div>
 		{/if}
@@ -580,6 +694,31 @@
 		border: none; background: none; border-radius: 3px; color: var(--text-faint); cursor: pointer;
 	}
 	.bc-edit-btn:hover { background: var(--background-modifier-border); color: var(--text-normal); }
+
+	/* More options menu */
+	.bc-more-wrap { position: relative; }
+	.bc-more-menu {
+		position: absolute; top: 100%; right: 0; z-index: 100;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; padding: 4px 0;
+		min-width: 220px; max-height: 80vh; overflow-y: auto;
+		box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+		direction: ltr;
+	}
+	:global([dir="rtl"]) .bc-more-menu { right: auto; left: 0; direction: rtl; }
+	.bc-more-item {
+		display: flex; align-items: center; gap: 10px;
+		width: 100%; padding: 7px 14px;
+		border: none; background: none; cursor: pointer;
+		font-size: 13px; color: var(--text-normal);
+		text-align: start; font-family: var(--font-interface-theme);
+	}
+	.bc-more-item:hover { background: var(--background-modifier-hover); }
+	.bc-more-item svg { flex-shrink: 0; opacity: 0.6; }
+	.bc-more-danger { color: var(--text-error, #e53935); }
+	.bc-more-danger:hover { background: color-mix(in srgb, var(--text-error, #e53935) 10%, transparent); }
+	.bc-more-sep { height: 1px; margin: 4px 10px; background: var(--background-modifier-border); }
 
 	.bc-editor-switch {
 		display: flex; align-items: center; padding: 0; border: none;
