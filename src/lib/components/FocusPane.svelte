@@ -9,6 +9,7 @@
 	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, calloutClickHandler } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
+	import { bidiPlugin, bidiTheme, scriptFontsField } from '$lib/editor/bidiPlugin';
 	import { t } from '$lib/i18n';
 
 	let {
@@ -178,6 +179,9 @@
 				calloutClickHandler,
 				lineDecoPlugin,
 				lineDecoTheme,
+				scriptFontsField,
+				bidiPlugin,
+				bidiTheme,
 				keymap.of([
 					...defaultKeymap,
 					...historyKeymap,
@@ -418,26 +422,29 @@
 		outline: none !important;
 		overflow: auto !important;
 	}
-	/* I-beam cursor with serifs */
+	/* Classic I-beam cursor with hooked serifs */
 	.focus-editor :global(.cm-cursor) {
-		border-left: 1.5px solid var(--text-normal, #333) !important;
+		border-left: 1.5px solid var(--text-normal, #1a1a1a) !important;
 		position: relative !important;
 	}
 	.focus-editor :global(.cm-cursor)::before,
 	.focus-editor :global(.cm-cursor)::after {
 		content: '';
 		position: absolute;
-		left: -4px;
-		width: 8px;
-		height: 1.5px;
-		background: var(--text-normal, #333);
-		border-radius: 1px;
+		left: -5px;
+		width: 10px;
+		height: 3px;
+		background: transparent;
 	}
 	.focus-editor :global(.cm-cursor)::before {
-		top: 0;
+		top: -1px;
+		border-bottom: 1.5px solid var(--text-normal, #1a1a1a);
+		border-radius: 0 0 3px 3px;
 	}
 	.focus-editor :global(.cm-cursor)::after {
-		bottom: 0;
+		bottom: -1px;
+		border-top: 1.5px solid var(--text-normal, #1a1a1a);
+		border-radius: 3px 3px 0 0;
 	}
 
 	/* ─── Footer ─── */

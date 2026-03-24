@@ -94,6 +94,35 @@
 	let dragOverTabId: string | null = $state(null);
 	let dragStartX = 0;
 	let isDragging = false;
+	let tabScrollEl: HTMLDivElement;
+	let canScrollStart = $state(false);
+	let canScrollEnd = $state(false);
+
+	function updateTabScrollArrows() {
+		if (!tabScrollEl) return;
+		const { scrollLeft, scrollWidth, clientWidth } = tabScrollEl;
+		const isRTL = document.dir === 'rtl' || document.documentElement.dir === 'rtl';
+		if (isRTL) {
+			canScrollEnd = scrollLeft < 0;
+			canScrollStart = scrollLeft > -(scrollWidth - clientWidth);
+		} else {
+			canScrollStart = scrollLeft > 0;
+			canScrollEnd = scrollLeft + clientWidth < scrollWidth - 1;
+		}
+	}
+
+	function scrollTabs(direction: 'start' | 'end') {
+		if (!tabScrollEl) return;
+		const amount = direction === 'end' ? 150 : -150;
+		tabScrollEl.scrollBy({ left: amount, behavior: 'smooth' });
+		setTimeout(updateTabScrollArrows, 200);
+	}
+
+	$effect(() => {
+		// Re-check arrows when tabs change
+		const _tabs = $openTabs;
+		setTimeout(updateTabScrollArrows, 50);
+	});
 
 	function startTabDrag(e: MouseEvent, tabId: string) {
 		if (e.button !== 0) return; // left click only
@@ -2456,7 +2485,13 @@
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
 			{#if !$splitActive}
-				<div class="tab-scroll" class:no-tabs={$openTabs.length === 0}>
+				<div class="tab-scroll-wrap">
+				{#if canScrollStart}
+					<button class="tab-scroll-arrow tab-scroll-start" onclick={() => scrollTabs('start')}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+					</button>
+				{/if}
+				<div class="tab-scroll" class:no-tabs={$openTabs.length === 0} bind:this={tabScrollEl} onscroll={updateTabScrollArrows}>
 					{#each $openTabs as tab (tab.id)}
 						<button class="tab"
 							class:active={$activeTabId === tab.id}
@@ -2486,9 +2521,15 @@
 						</div>
 					{/if}
 				</div>
+				{#if canScrollEnd}
+					<button class="tab-scroll-arrow tab-scroll-end" onclick={() => scrollTabs('end')}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+					</button>
+				{/if}
 				<button class="tab-new-btn" class:no-tabs={$openTabs.length === 0} onclick={() => createEmptyTab()} title="New tab">
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
 				</button>
+				</div>
 
 				<!-- Tab context menu -->
 				{#if tabCtxMenu}
@@ -3334,12 +3375,30 @@
 		margin-inline-start: auto;
 		flex-shrink: 0;
 	}
+	.tab-scroll-wrap {
+		display: flex; align-items: center;
+		min-width: 0;
+		margin-inline-start: max(0px, calc(50% - 469px));
+		max-width: 860px;
+		gap: 2px;
+	}
 	.tab-scroll {
 		min-width: 0; display: flex; align-items: flex-end;
 		gap: 1px; padding: 12px 4px 0; overflow-x: auto;
-		margin-inline-start: max(0px, calc(50% - 469px));
+		flex: 1;
 	}
 	.tab-scroll::-webkit-scrollbar { height: 0; }
+	.tab-scroll { scrollbar-width: none; }
+	.tab-scroll-arrow {
+		flex-shrink: 0; width: 28px; height: 32px;
+		display: flex; align-items: center; justify-content: center;
+		border: none; background: rgba(0,0,0,0.08); border-radius: 6px;
+		color: var(--text-normal); cursor: pointer;
+	}
+	.tab-scroll-end { margin-inline-end: 8px; }
+	.tab-scroll-arrow svg { width: 16px; height: 16px; }
+	.tab-scroll-arrow:hover { background: rgba(0,0,0,0.15); }
+	:global([dir="rtl"]) .tab-scroll-arrow svg { transform: scaleX(-1); }
 	.tab-scroll.no-tabs { margin-inline-start: 0; padding: 0; }
 	.tab {
 		display: flex; align-items: center; gap: 6px;
