@@ -17,6 +17,8 @@
 	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, generateTable, detectTabularText, tabularTextToTable, type ParsedTable } from '$lib/editor/tableUtils';
 	import { evaluateTableFormulas, indexToCol } from '$lib/editor/tableFormulas';
 	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath } from '$lib/editor/livePreview';
+	import { calloutPlugin, calloutTheme, calloutCollapseField, calloutClickHandler } from '$lib/editor/calloutPlugin';
+	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import TableGridPicker from './TableGridPicker.svelte';
 	import EditorContextMenu from './EditorContextMenu.svelte';
 	import { syntaxTree } from '@codemirror/language';
@@ -1491,7 +1493,7 @@
 				indentGuidesCompartment.of(indentationGuides ? [indentGuidesPlugin] : []),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir })),
 				libraryPathField,
-				livePreviewCompartment.of(livePreview ? [livePreviewPlugin, livePreviewTheme] : []),
+				livePreviewCompartment.of(livePreview ? [livePreviewPlugin, livePreviewTheme, calloutCollapseField, calloutPlugin, calloutTheme, calloutClickHandler, lineDecoPlugin, lineDecoTheme] : []),
 				cmPlaceholder(placeholder),
 				editorTheme,
 				fontCompartment.of(buildFontTheme()),
@@ -1587,7 +1589,7 @@
 	$effect(() => {
 		if (view) {
 			view.dispatch({
-				effects: livePreviewCompartment.reconfigure(livePreview ? [livePreviewPlugin, livePreviewTheme] : [])
+				effects: livePreviewCompartment.reconfigure(livePreview ? [livePreviewPlugin, livePreviewTheme, calloutCollapseField, calloutPlugin, calloutTheme, calloutClickHandler, lineDecoPlugin, lineDecoTheme] : [])
 			});
 		}
 	});

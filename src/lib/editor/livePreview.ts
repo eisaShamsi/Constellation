@@ -59,6 +59,7 @@ const linkDeco = Decoration.mark({ class: 'cm-md-link' });
 const highlightDeco = Decoration.mark({ class: 'cm-md-highlight' });
 const hrDeco = Decoration.mark({ class: 'cm-md-hr' });
 const blockquoteDeco = Decoration.mark({ class: 'cm-md-blockquote' });
+const tagDeco = Decoration.mark({ class: 'cm-md-tag' });
 
 class CheckboxWidget extends WidgetType {
 	checked: boolean;
@@ -316,7 +317,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 		}
 	}
 
-	// Wikilinks: [[note name]] — hide brackets, style as link
+	// Wikilinks: [[note name]] or [[note|display]] — hide brackets, show display text, style as link
 	for (const { from: vFrom, to: vTo } of view.visibleRanges) {
 		for (let pos = vFrom; pos < vTo;) {
 			const line = doc.lineAt(pos);
@@ -329,12 +330,42 @@ function buildDecorations(view: EditorView): DecorationSet {
 					const absTo = absFrom + m[0].length;
 					const innerFrom = absFrom + 2;  // after [[
 					const innerTo = absTo - 2;       // before ]]
-					// Hide [[
-					ranges.push({ from: absFrom, to: innerFrom, deco: Decoration.replace({}) });
-					// Style the link text
-					ranges.push({ from: innerFrom, to: innerTo, deco: linkDeco });
-					// Hide ]]
-					ranges.push({ from: innerTo, to: absTo, deco: Decoration.replace({}) });
+					const innerText = m[1];
+					const pipeIndex = innerText.indexOf('|');
+
+					if (pipeIndex >= 0) {
+						// [[note|display]] — hide everything except display text
+						const displayFrom = innerFrom + pipeIndex + 1;
+						// Hide [[ + note name + |
+						ranges.push({ from: absFrom, to: displayFrom, deco: Decoration.replace({}) });
+						// Style display text
+						ranges.push({ from: displayFrom, to: innerTo, deco: linkDeco });
+						// Hide ]]
+						ranges.push({ from: innerTo, to: absTo, deco: Decoration.replace({}) });
+					} else {
+						// [[note name]] — hide brackets only
+						ranges.push({ from: absFrom, to: innerFrom, deco: Decoration.replace({}) });
+						ranges.push({ from: innerFrom, to: innerTo, deco: linkDeco });
+						ranges.push({ from: innerTo, to: absTo, deco: Decoration.replace({}) });
+					}
+				}
+			}
+			pos = line.to + 1;
+		}
+	}
+
+	// Tags: #tag-name — style when cursor is off the line
+	for (const { from: vFrom, to: vTo } of view.visibleRanges) {
+		for (let pos = vFrom; pos < vTo;) {
+			const line = doc.lineAt(pos);
+			if (line.number !== cursorLine) {
+				const lineText = line.text;
+				const tagRe = /(?:^|\s)(#[a-zA-Z\u0600-\u06FF][\w\u0600-\u06FF/-]*)/g;
+				let m;
+				while ((m = tagRe.exec(lineText)) !== null) {
+					const tagStart = line.from + m.index + (m[0].length - m[1].length);
+					const tagEnd = tagStart + m[1].length;
+					ranges.push({ from: tagStart, to: tagEnd, deco: tagDeco });
 				}
 			}
 			pos = line.to + 1;
@@ -437,6 +468,13 @@ export const livePreviewTheme = EditorView.theme({
 	},
 	'.cm-md-blockquote': {
 		color: 'var(--text-muted)',
+	},
+	'.cm-md-tag': {
+		color: 'var(--library-accent, var(--interactive-accent))',
+		backgroundColor: 'color-mix(in srgb, var(--library-accent, var(--interactive-accent)) 10%, transparent)',
+		borderRadius: '3px',
+		padding: '1px 4px',
+		fontSize: '0.9em',
 	},
 	'.cm-md-checkbox': {
 		verticalAlign: 'middle',

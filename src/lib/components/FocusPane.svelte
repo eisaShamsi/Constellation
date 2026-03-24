@@ -7,6 +7,8 @@
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
+	import { calloutPlugin, calloutTheme, calloutCollapseField, calloutClickHandler } from '$lib/editor/calloutPlugin';
+	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { t } from '$lib/i18n';
 
 	let {
@@ -170,6 +172,12 @@
 				markdown({ base: markdownLanguage, codeLanguages: languages }),
 				livePreviewPlugin,
 				livePreviewTheme,
+				calloutCollapseField,
+				calloutPlugin,
+				calloutTheme,
+				calloutClickHandler,
+				lineDecoPlugin,
+				lineDecoTheme,
 				keymap.of([
 					...defaultKeymap,
 					...historyKeymap,
