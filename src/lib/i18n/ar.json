@@ -1114,9 +1114,9 @@
     "tashkeel": "تشكيل",
     "quranSymbols": "رموز قرآنية"
   },
-  "atmosphere": {
-    "title": "أجواء",
-    "description": "اختر أجواء الكتابة",
+  "focus": {
+    "title": "تركيز",
+    "description": "اختر وضع التركيز",
     "none": "عادي",
     "noneDesc": "المحرر الافتراضي مع شريط الأدوات والأدوات",
     "blankPage": "صفحة بيضاء",
@@ -1128,7 +1128,7 @@
     "flow": "تدفّق",
     "flowDesc": "تيار متواصل — بلا حدود، بلا تشتيت",
     "exitHint": "اضغط Escape للخروج",
-    "activate": "ادخل الأجواء",
+    "activate": "ادخل التركيز",
     "wordCount": "كلمة"
   }
 }

@@ -771,11 +771,11 @@
 		}
 	});
 
-	// Atmosphere — toggle body class to hide sidebar/tabs/statusbar
+	// Focus — toggle body class to hide sidebar/tabs/statusbar
 	$effect(() => {
 		if (typeof document === 'undefined') return;
-		const atm = $appSettings.atmosphere || 'none';
-		document.body.classList.toggle('atm-active', atm !== 'none');
+		const atm = $appSettings.focus || 'none';
+		document.body.classList.toggle('focus-active', atm !== 'none');
 	});
 
 	// Apply custom fonts at runtime
@@ -3701,10 +3701,10 @@
 		to { transform: rotate(360deg); }
 	}
 
-	/* ═══ Atmosphere — hide UI elements ═══ */
-	:global(body.atm-active) .sidebar { display: none !important; }
-	:global(body.atm-active) .ribbon { display: none !important; }
-	:global(body.atm-active) .tab-bar { display: none !important; }
-	:global(body.atm-active) .status-bar { display: none !important; }
-	:global(body.atm-active) .pip-overlay { display: none !important; }
+	/* ═══ Focus — hide UI elements ═══ */
+	:global(body.focus-active) .sidebar { display: none !important; }
+	:global(body.focus-active) .ribbon { display: none !important; }
+	:global(body.focus-active) .tab-bar { display: none !important; }
+	:global(body.focus-active) .status-bar { display: none !important; }
+	:global(body.focus-active) .pip-overlay { display: none !important; }
 </style>

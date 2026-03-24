@@ -4,8 +4,8 @@
 	import type { OpenTab } from '$lib/libraries/store';
 	import { detectDir, renderMarkdown, postProcessRenderedContent, collectNoteNames } from '$lib/utils';
 	import { dir, t } from '$lib/i18n';
-	import { getAtmosphereConfig, getAtmosphereFont, type AtmosphereType } from '$lib/atmosphere';
-	import AtmospherePane from './AtmospherePane.svelte';
+	import { getFocusConfig, getFocusFont, type FocusType } from '$lib/focus';
+	import FocusPane from './FocusPane.svelte';
 	import { get } from 'svelte/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import CodeMirrorEditor from './CodeMirrorEditor.svelte';
@@ -63,15 +63,15 @@
 	const editing = $derived(tab ? $editingTabIds.has(tab.id) : false);
 	let livePreviewEnabled = $state(true);
 
-	// Atmosphere
-	const atmosphereType = $derived(($appSettings.atmosphere || 'none') as AtmosphereType);
-	const atmosphereConfig = $derived(getAtmosphereConfig(atmosphereType));
-	const isAtmosphere = $derived(atmosphereType !== 'none');
+	// Focus
+	const focusType = $derived(($appSettings.focus || 'none') as FocusType);
+	const focusConfig = $derived(getFocusConfig(focusType));
+	const isFocus = $derived(focusType !== 'none');
 	const primaryScript = $derived($appSettings.primaryScript || 'latin');
-	const atmosphereFont = $derived(isAtmosphere ? getAtmosphereFont(atmosphereType, primaryScript) : '');
+	const focusFont = $derived(isFocus ? getFocusFont(focusType, primaryScript) : '');
 
-	function exitAtmosphere() {
-		updateSettings({ atmosphere: 'none' });
+	function exitFocus() {
+		updateSettings({ focus: 'none' });
 	}
 
 	// More options menu
@@ -407,11 +407,11 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-{#if isAtmosphere && tab}
-	<AtmospherePane
+{#if isFocus && tab}
+	<FocusPane
 		value={editBody}
 		title={tab.name.replace(/\.md$/, '')}
-		mode={atmosphereType === 'blankPage' ? 'blank-page' : atmosphereType === 'typewriter' ? 'typewriter' : atmosphereType === 'manuscript' ? 'manuscript' : 'flow'}
+		mode={focusType === 'blankPage' ? 'blank-page' : focusType === 'typewriter' ? 'typewriter' : focusType === 'manuscript' ? 'manuscript' : 'flow'}
 		dir={noteDir}
 		onchange={handleEditorChange}
 		ontitlechange={(newTitle) => {
@@ -420,10 +420,10 @@
 			}
 		}}
 		onaddproperty={() => {
-			exitAtmosphere();
+			exitFocus();
 			// Properties will show in normal mode
 		}}
-		onexit={exitAtmosphere}
+		onexit={exitFocus}
 	/>
 {:else}
 <div class="pane" class:focused={isFocused} onclick={onFocus} dir={noteDir}>
@@ -536,26 +536,26 @@
 									{$t('contextMenu.copyName') || 'Copy name'}
 								</button>
 								<div class="bc-more-sep"></div>
-								<!-- Atmosphere -->
+								<!-- Focus -->
 								<div class="bc-more-sub">
 									<span class="bc-more-sub-label">
 										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20M2 12h20"/></svg>
-										{$t('atmosphere.title')}
+										{$t('focus.title')}
 									</span>
-									<button class="bc-more-item" class:active={atmosphereType === 'none'} onclick={() => { updateSettings({ atmosphere: 'none' }); showMoreMenu = false; }}>
-										{$t('atmosphere.none')}
+									<button class="bc-more-item" class:active={focusType === 'none'} onclick={() => { updateSettings({ focus: 'none' }); showMoreMenu = false; }}>
+										{$t('focus.none')}
 									</button>
-									<button class="bc-more-item" class:active={atmosphereType === 'blankPage'} onclick={() => { updateSettings({ atmosphere: 'blankPage' }); showMoreMenu = false; }}>
-										🌫️ {$t('atmosphere.blankPage')}
+									<button class="bc-more-item" class:active={focusType === 'blankPage'} onclick={() => { updateSettings({ focus: 'blankPage' }); showMoreMenu = false; }}>
+										🌫️ {$t('focus.blankPage')}
 									</button>
-									<button class="bc-more-item" class:active={atmosphereType === 'typewriter'} onclick={() => { updateSettings({ atmosphere: 'typewriter' }); showMoreMenu = false; }}>
-										⌨️ {$t('atmosphere.typewriter')}
+									<button class="bc-more-item" class:active={focusType === 'typewriter'} onclick={() => { updateSettings({ focus: 'typewriter' }); showMoreMenu = false; }}>
+										⌨️ {$t('focus.typewriter')}
 									</button>
-									<button class="bc-more-item" class:active={atmosphereType === 'manuscript'} onclick={() => { updateSettings({ atmosphere: 'manuscript' }); showMoreMenu = false; }}>
-										📜 {$t('atmosphere.manuscript')}
+									<button class="bc-more-item" class:active={focusType === 'manuscript'} onclick={() => { updateSettings({ focus: 'manuscript' }); showMoreMenu = false; }}>
+										📜 {$t('focus.manuscript')}
 									</button>
-									<button class="bc-more-item" class:active={atmosphereType === 'flow'} onclick={() => { updateSettings({ atmosphere: 'flow' }); showMoreMenu = false; }}>
-										🌊 {$t('atmosphere.flow')}
+									<button class="bc-more-item" class:active={focusType === 'flow'} onclick={() => { updateSettings({ focus: 'flow' }); showMoreMenu = false; }}>
+										🌊 {$t('focus.flow')}
 									</button>
 								</div>
 								<div class="bc-more-sep"></div>
@@ -583,7 +583,7 @@
 				}}
 			/>
 		{:else if !isEmptyTab}
-		<div class="note-scroll" class:editing dir={noteDir} style="{paneStyle}; max-width: {isAtmosphere ? '100%' : noteWidth + '%'}">
+		<div class="note-scroll" class:editing dir={noteDir} style="{paneStyle}; max-width: {isFocus ? '100%' : noteWidth + '%'}">
 			{#if tab}
 				<input class="note-title" dir="auto" spellcheck="false"
 					bind:this={titleInputEl}
@@ -1152,7 +1152,7 @@
 		color: var(--color-base-40); font-size: 0.85rem;
 	}
 
-	/* Atmosphere submenu in More Options */
+	/* Focus submenu in More Options */
 	.bc-more-sub { padding: 4px 0; }
 	.bc-more-sub-label {
 		display: flex; align-items: center; gap: 8px;
@@ -1165,72 +1165,72 @@
 		color: white;
 	}
 
-	/* ═══ Atmosphere Styles ═══ */
+	/* ═══ Focus Styles ═══ */
 
 	/* HIDE EVERYTHING — pure blank paper */
-	.pane.atm-active :global(.pane-breadcrumb),
-	.pane.atm-active :global(.pane-tab-bar),
-	.pane.atm-active :global(.cm-toolbar),
-	.pane.atm-active :global(.props-toggle),
-	.pane.atm-active :global(.props-source),
-	.pane.atm-active :global(.props-divider),
-	.pane.atm-active :global(.property-editor),
-	.pane.atm-active :global(.note-title),
-	.pane.atm-active :global(.cm-gutters) { display: none !important; }
+	.pane.focus-active :global(.pane-breadcrumb),
+	.pane.focus-active :global(.pane-tab-bar),
+	.pane.focus-active :global(.cm-toolbar),
+	.pane.focus-active :global(.props-toggle),
+	.pane.focus-active :global(.props-source),
+	.pane.focus-active :global(.props-divider),
+	.pane.focus-active :global(.property-editor),
+	.pane.focus-active :global(.note-title),
+	.pane.focus-active :global(.cm-gutters) { display: none !important; }
 
 	/* Pure blank canvas */
-	.pane.atm-active {
+	.pane.focus-active {
 		background: var(--background-primary);
 	}
-	.pane.atm-active :global(.note-scroll) {
+	.pane.focus-active :global(.note-scroll) {
 		padding: 0 !important;
 		max-width: 100% !important;
 		width: 100% !important;
 	}
-	.pane.atm-active :global(.cm-editor) {
-		font-family: var(--atm-font, inherit);
+	.pane.focus-active :global(.cm-editor) {
+		font-family: var(--focus-font, inherit);
 		border: none !important;
 		box-shadow: none !important;
 		background: transparent !important;
 	}
-	.pane.atm-active :global(.cm-scroller) {
+	.pane.focus-active :global(.cm-scroller) {
 		padding-top: 15vh !important;
 		padding-bottom: 40vh !important;
 	}
-	/* Hide active line highlight in atmosphere */
-	.pane.atm-active :global(.cm-activeLine) {
+	/* Hide active line highlight in focus */
+	.pane.focus-active :global(.cm-activeLine) {
 		background: transparent !important;
 	}
-	.pane.atm-active :global(.cm-activeLineGutter) {
+	.pane.focus-active :global(.cm-activeLineGutter) {
 		background: transparent !important;
 	}
 
 	/* ─── Blank Page — pure white paper ─── */
-	.pane.atm-blank-page :global(.cm-editor) { max-width: 720px; margin: 0 auto !important; }
-	.pane.atm-blank-page :global(.cm-content) { line-height: 2; }
+	.pane.focus-blank-page :global(.cm-editor) { max-width: 720px; margin: 0 auto !important; }
+	.pane.focus-blank-page :global(.cm-content) { line-height: 2; }
 
 	/* ─── Typewriter — centered current line, monospace ─── */
-	.pane.atm-typewriter :global(.cm-editor) { max-width: 680px; margin: 0 auto !important; }
-	.pane.atm-typewriter :global(.cm-content) { line-height: 1.8; }
-	.pane.atm-typewriter :global(.cm-activeLine) {
+	.pane.focus-typewriter :global(.cm-editor) { max-width: 680px; margin: 0 auto !important; }
+	.pane.focus-typewriter :global(.cm-content) { line-height: 1.8; }
+	.pane.focus-typewriter :global(.cm-activeLine) {
 		background: color-mix(in srgb, var(--interactive-accent) 6%, transparent) !important;
 		border-radius: 2px;
 	}
 
 	/* ─── Manuscript — narrow elegant column ─── */
-	.pane.atm-manuscript :global(.cm-editor) { max-width: 520px; margin: 0 auto !important; }
-	.pane.atm-manuscript :global(.cm-content) { line-height: 2.2; letter-spacing: 0.015em; }
+	.pane.focus-manuscript :global(.cm-editor) { max-width: 520px; margin: 0 auto !important; }
+	.pane.focus-manuscript :global(.cm-content) { line-height: 2.2; letter-spacing: 0.015em; }
 
 	/* ─── Flow — no boundaries, full width ─── */
-	.pane.atm-flow :global(.cm-content) { max-width: 100%; padding: 0 60px; line-height: 1.9; }
+	.pane.focus-flow :global(.cm-content) { max-width: 100%; padding: 0 60px; line-height: 1.9; }
 
-	/* Atmosphere exit hint */
-	.atm-exit-hint {
+	/* Focus exit hint */
+	.focus-exit-hint {
 		position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
 		padding: 6px 16px; border-radius: 20px;
 		background: var(--background-secondary); color: var(--text-muted);
 		font-size: 12px; opacity: 0; pointer-events: none; z-index: 100;
 		transition: opacity 0.5s;
 	}
-	.pane.atm-active:hover .atm-exit-hint { opacity: 0.5; }
+	.pane.focus-active:hover .focus-exit-hint { opacity: 0.5; }
 </style>

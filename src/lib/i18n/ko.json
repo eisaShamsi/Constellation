@@ -1114,9 +1114,9 @@
     "tashkeel": "타쉬킬",
     "quranSymbols": "쿠란 기호"
   },
-  "atmosphere": {
-    "title": "분위기",
-    "description": "글쓰기 분위기를 선택하세요",
+  "focus": {
+    "title": "집중",
+    "description": "글쓰기 집중 모드를 선택하세요",
     "none": "표준",
     "noneDesc": "도구 모음과 컨트롤이 있는 기본 편집기",
     "blankPage": "빈 페이지",
@@ -1128,7 +1128,7 @@
     "flow": "흐름",
     "flowDesc": "끊김 없는 흐름 — 경계 없이, 방해 없이",
     "exitHint": "Escape를 눌러 종료",
-    "activate": "분위기 시작",
+    "activate": "집중 시작",
     "wordCount": "단어"
   }
 }

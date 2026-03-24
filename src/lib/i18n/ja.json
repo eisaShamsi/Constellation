@@ -1114,9 +1114,9 @@
     "tashkeel": "タシュキール",
     "quranSymbols": "コーラン記号"
   },
-  "atmosphere": {
-    "title": "雰囲気",
-    "description": "執筆の雰囲気を選択",
+  "focus": {
+    "title": "フォーカス",
+    "description": "執筆のフォーカスを選択",
     "none": "標準",
     "noneDesc": "ツールバーとコントロール付きのデフォルトエディタ",
     "blankPage": "白紙",
@@ -1128,7 +1128,7 @@
     "flow": "フロー",
     "flowDesc": "途切れない流れ — 境界なし、気を散らすものなし",
     "exitHint": "Escapeで終了",
-    "activate": "雰囲気に入る",
+    "activate": "フォーカスに入る",
     "wordCount": "語"
   }
 }

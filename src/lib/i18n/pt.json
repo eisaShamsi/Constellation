@@ -1114,9 +1114,9 @@
     "tashkeel": "Tashkeel",
     "quranSymbols": "Símbolos corânicos"
   },
-  "atmosphere": {
-    "title": "Atmosfera",
-    "description": "Escolha sua atmosfera de escrita",
+  "focus": {
+    "title": "Foco",
+    "description": "Escolha seu foco de escrita",
     "none": "Padrão",
     "noneDesc": "Editor padrão com barra de ferramentas e controles",
     "blankPage": "Página em branco",
@@ -1128,7 +1128,7 @@
     "flow": "Fluxo",
     "flowDesc": "Fluxo contínuo — sem limites, sem distrações",
     "exitHint": "Pressione Escape para sair",
-    "activate": "Entrar na atmosfera",
+    "activate": "Entrar no foco",
     "wordCount": "palavras"
   }
 }

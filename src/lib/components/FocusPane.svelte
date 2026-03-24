@@ -235,13 +235,13 @@
 	});
 </script>
 
-<div class="atm" class:rtl={dir === 'rtl'}>
-	<div class="atm-paper">
+<div class="focus-pane" class:rtl={dir === 'rtl'}>
+	<div class="focus-paper">
 		<!-- Title — appears faintly when user pauses writing -->
-		<div class="atm-title-area" style="max-width: {mode === 'blank-page' ? '720px' : mode === 'typewriter' ? '680px' : mode === 'manuscript' ? '520px' : '100%'}">
+		<div class="focus-title-area" style="max-width: {mode === 'blank-page' ? '720px' : mode === 'typewriter' ? '680px' : mode === 'manuscript' ? '520px' : '100%'}">
 			{#if showTitle || titleEditing}
 				<input
-					class="atm-title"
+					class="focus-title"
 					class:ghost={!titleEditing && !hasTitleContent}
 					class:editing={titleEditing}
 					bind:value={titleValue}
@@ -255,7 +255,7 @@
 				/>
 				{#if showAddProps && hasTitleContent}
 					<button
-						class="atm-props-btn"
+						class="focus-props-btn"
 						class:ghost={!titleEditing}
 						onclick={onaddproperty}
 					>+</button>
@@ -264,20 +264,20 @@
 		</div>
 
 		<!-- The blank page — editor -->
-		<div class="atm-editor" bind:this={editorEl}></div>
+		<div class="focus-editor" bind:this={editorEl}></div>
 	</div>
 
 	<!-- Word count — barely visible -->
-	<div class="atm-footer">
+	<div class="focus-footer">
 		{#if wordCount > 0}
-			<span>{wordCount} {$t('atmosphere.wordCount')}</span>
+			<span>{wordCount} {$t('focus.wordCount')}</span>
 		{/if}
 	</div>
 </div>
 
 <style>
 	/* The table — gray surface filling the entire window */
-	.atm {
+	.focus-pane {
 		position: fixed;
 		inset: 0;
 		z-index: 100;
@@ -287,10 +287,10 @@
 		overflow: hidden;
 		padding: 24px 32px 0 32px;
 	}
-	.atm.rtl { direction: rtl; }
+	.focus-pane.rtl { direction: rtl; }
 
 	/* The paper — white sheet centered on the table */
-	.atm-paper {
+	.focus-paper {
 		width: 100%;
 		max-width: 1000px;
 		height: 100%;
@@ -307,7 +307,7 @@
 	}
 
 	/* ─── Title area ─── */
-	.atm-title-area {
+	.focus-title-area {
 		margin: 0 auto;
 		width: 100%;
 		padding-top: 12vh;
@@ -316,7 +316,7 @@
 		min-height: 0;
 	}
 
-	.atm-title {
+	.focus-title {
 		display: block;
 		width: 100%;
 		border: none;
@@ -329,26 +329,26 @@
 		padding: 0 4px;
 		transition: opacity 0.8s ease;
 	}
-	.atm-title::placeholder {
+	.focus-title::placeholder {
 		color: var(--text-faint, #ddd);
 		font-weight: 300;
 	}
 	/* Ghost: barely visible, like fog */
-	.atm-title.ghost {
+	.focus-title.ghost {
 		opacity: 0.08;
 		transition: opacity 1.2s ease;
 	}
-	.atm-title.ghost:hover {
+	.focus-title.ghost:hover {
 		opacity: 0.25;
 		transition: opacity 0.3s ease;
 	}
-	.atm-title.editing {
+	.focus-title.editing {
 		opacity: 1;
 		transition: opacity 0.3s ease;
 	}
 
 	/* (+) Properties button */
-	.atm-props-btn {
+	.focus-props-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -363,60 +363,60 @@
 		margin: 6px 4px 0;
 		transition: opacity 0.8s ease;
 	}
-	.atm-props-btn.ghost {
+	.focus-props-btn.ghost {
 		opacity: 0.08;
 		transition: opacity 1.2s ease;
 	}
-	.atm-props-btn.ghost:hover {
+	.focus-props-btn.ghost:hover {
 		opacity: 0.5;
 	}
-	.atm-props-btn:hover {
+	.focus-props-btn:hover {
 		opacity: 1;
 		border-color: var(--interactive-accent, #7c3aed);
 		color: var(--interactive-accent, #7c3aed);
 	}
 
 	/* ─── Editor ─── */
-	.atm-editor {
+	.focus-editor {
 		flex: 1;
 		overflow: auto;
 		padding-top: 20px;
 		min-height: 0;
 	}
 	/* Kill lines, borders, outlines — but NOT the cursor */
-	.atm-editor :global(.cm-editor) {
+	.focus-editor :global(.cm-editor) {
 		border: none !important;
 		outline: none !important;
 		box-shadow: none !important;
 	}
-	.atm-editor :global(.cm-editor:focus),
-	.atm-editor :global(.cm-editor.cm-focused) {
+	.focus-editor :global(.cm-editor:focus),
+	.focus-editor :global(.cm-editor.cm-focused) {
 		outline: none !important;
 		border: none !important;
 	}
-	.atm-editor :global(.cm-content) {
+	.focus-editor :global(.cm-content) {
 		border: none !important;
 		outline: none !important;
 	}
-	.atm-editor :global(.cm-activeLine) {
+	.focus-editor :global(.cm-activeLine) {
 		background: transparent !important;
 	}
-	.atm-editor :global(.cm-line) {
+	.focus-editor :global(.cm-line) {
 		border-top: none !important;
 		border-bottom: none !important;
 	}
-	.atm-editor :global(.cm-scroller) {
+	.focus-editor :global(.cm-scroller) {
 		border: none !important;
 		outline: none !important;
 		overflow: auto !important;
 	}
 	/* I-beam cursor with serifs */
-	.atm-editor :global(.cm-cursor) {
+	.focus-editor :global(.cm-cursor) {
 		border-left: 1.5px solid var(--text-normal, #333) !important;
 		position: relative !important;
 	}
-	.atm-editor :global(.cm-cursor)::before,
-	.atm-editor :global(.cm-cursor)::after {
+	.focus-editor :global(.cm-cursor)::before,
+	.focus-editor :global(.cm-cursor)::after {
 		content: '';
 		position: absolute;
 		left: -4px;
@@ -425,15 +425,15 @@
 		background: var(--text-normal, #333);
 		border-radius: 1px;
 	}
-	.atm-editor :global(.cm-cursor)::before {
+	.focus-editor :global(.cm-cursor)::before {
 		top: 0;
 	}
-	.atm-editor :global(.cm-cursor)::after {
+	.focus-editor :global(.cm-cursor)::after {
 		bottom: 0;
 	}
 
 	/* ─── Footer ─── */
-	.atm-footer {
+	.focus-footer {
 		position: fixed;
 		bottom: 0;
 		left: 0;
@@ -442,7 +442,7 @@
 		padding: 8px;
 		pointer-events: none;
 	}
-	.atm-footer span {
+	.focus-footer span {
 		font-size: 11px;
 		color: var(--text-faint, #ccc);
 		opacity: 0.3;

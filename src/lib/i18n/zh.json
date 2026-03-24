@@ -1114,9 +1114,9 @@
     "tashkeel": "标音符号",
     "quranSymbols": "古兰经符号"
   },
-  "atmosphere": {
-    "title": "氛围",
-    "description": "选择你的写作氛围",
+  "focus": {
+    "title": "专注",
+    "description": "选择你的写作专注模式",
     "none": "标准",
     "noneDesc": "带工具栏和控件的默认编辑器",
     "blankPage": "空白页",
@@ -1128,7 +1128,7 @@
     "flow": "心流",
     "flowDesc": "不间断的流动 — 无边界，无干扰",
     "exitHint": "按 Escape 退出",
-    "activate": "进入氛围",
+    "activate": "进入专注",
     "wordCount": "字"
   }
 }

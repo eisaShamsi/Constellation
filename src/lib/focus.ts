@@ -1,11 +1,11 @@
 /**
- * Atmosphere — Writing mode system for Constellation.
- * Each atmosphere provides a unique writing experience, adapted per culture/script.
+ * Focus — Writing mode system for Constellation.
+ * Each focus provides a unique writing experience, adapted per culture/script.
  */
 
-export type AtmosphereType = 'none' | 'blankPage' | 'typewriter' | 'manuscript' | 'flow';
+export type FocusType = 'none' | 'blankPage' | 'typewriter' | 'manuscript' | 'flow';
 
-export interface AtmosphereConfig {
+export interface FocusConfig {
 	/** CSS class applied to the editor wrapper */
 	className: string;
 	/** Whether to hide the toolbar */
@@ -34,8 +34,8 @@ export interface AtmosphereConfig {
 	background: string;
 }
 
-/** Culture-adaptive font maps for each atmosphere */
-const ATMOSPHERE_FONTS: Record<AtmosphereType, Record<string, string>> = {
+/** Culture-adaptive font maps for each focus */
+const FOCUS_FONTS: Record<FocusType, Record<string, string>> = {
 	none: {},
 	blankPage: {
 		latin: 'Inter, -apple-system, sans-serif',
@@ -71,12 +71,12 @@ const ATMOSPHERE_FONTS: Record<AtmosphereType, Record<string, string>> = {
 	},
 };
 
-/** Get the atmosphere configuration */
-export function getAtmosphereConfig(type: AtmosphereType): AtmosphereConfig {
+/** Get the focus configuration */
+export function getFocusConfig(type: FocusType): FocusConfig {
 	switch (type) {
 		case 'blankPage':
 			return {
-				className: 'atm-blank-page',
+				className: 'focus-blank-page',
 				hideToolbar: true,
 				hideBreadcrumb: true,
 				hideProperties: true,
@@ -85,14 +85,14 @@ export function getAtmosphereConfig(type: AtmosphereType): AtmosphereConfig {
 				hideStatusBar: true,
 				typewriterScroll: false,
 				maxWidth: '720px',
-				fonts: ATMOSPHERE_FONTS.blankPage,
+				fonts: FOCUS_FONTS.blankPage,
 				lineHeight: '2',
 				padding: '80px 40px',
 				background: 'var(--background-primary)',
 			};
 		case 'typewriter':
 			return {
-				className: 'atm-typewriter',
+				className: 'focus-typewriter',
 				hideToolbar: true,
 				hideBreadcrumb: true,
 				hideProperties: false,
@@ -101,14 +101,14 @@ export function getAtmosphereConfig(type: AtmosphereType): AtmosphereConfig {
 				hideStatusBar: false,
 				typewriterScroll: true,
 				maxWidth: '680px',
-				fonts: ATMOSPHERE_FONTS.typewriter,
+				fonts: FOCUS_FONTS.typewriter,
 				lineHeight: '1.8',
 				padding: '60px 40px',
 				background: 'var(--background-primary)',
 			};
 		case 'manuscript':
 			return {
-				className: 'atm-manuscript',
+				className: 'focus-manuscript',
 				hideToolbar: true,
 				hideBreadcrumb: true,
 				hideProperties: false,
@@ -117,14 +117,14 @@ export function getAtmosphereConfig(type: AtmosphereType): AtmosphereConfig {
 				hideStatusBar: false,
 				typewriterScroll: false,
 				maxWidth: '560px',
-				fonts: ATMOSPHERE_FONTS.manuscript,
+				fonts: FOCUS_FONTS.manuscript,
 				lineHeight: '2.2',
 				padding: '80px 60px',
 				background: 'var(--background-primary)',
 			};
 		case 'flow':
 			return {
-				className: 'atm-flow',
+				className: 'focus-flow',
 				hideToolbar: true,
 				hideBreadcrumb: true,
 				hideProperties: true,
@@ -133,7 +133,7 @@ export function getAtmosphereConfig(type: AtmosphereType): AtmosphereConfig {
 				hideStatusBar: true,
 				typewriterScroll: false,
 				maxWidth: '100%',
-				fonts: ATMOSPHERE_FONTS.flow,
+				fonts: FOCUS_FONTS.flow,
 				lineHeight: '1.9',
 				padding: '40px 60px',
 				background: 'var(--background-primary)',
@@ -157,7 +157,7 @@ export function getAtmosphereConfig(type: AtmosphereType): AtmosphereConfig {
 	}
 }
 
-/** Get the font for a specific atmosphere and script */
-export function getAtmosphereFont(type: AtmosphereType, script: string): string {
-	return ATMOSPHERE_FONTS[type]?.[script] || '';
+/** Get the font for a specific focus and script */
+export function getFocusFont(type: FocusType, script: string): string {
+	return FOCUS_FONTS[type]?.[script] || '';
 }

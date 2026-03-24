@@ -16,6 +16,11 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - **CSS**: NotePane uses `.pane` (not `.note-pane`). Override child styles with `:global()` + `!important` when needed.
 - **Fonts**: Global fonts from `appSettings` (interfaceFont, textFont, monoFont, fontSize, scriptFonts). Per-library fonts from `libraryAppearances`. Both must be applied in main window AND second screen.
 
+## Editor Parity Rule
+- **All note views must have identical markdown rendering.** Standard NotePane, Focus mode (PaperOnDesk), and any future note types must share the same CM6 extensions (livePreview, callouts, syntax highlighting, etc.).
+- New markdown features added to the editor MUST work in ALL note modes — never add a feature to only one view.
+- The shared extension set lives in `$lib/editor/` and is imported by every editor instance.
+
 ## Don't
 - Don't use preview/screenshot tools unless essential.
 - Don't add unnecessary abstractions or over-engineer.

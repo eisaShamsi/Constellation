@@ -1113,8 +1113,8 @@ export interface AppSettings {
 	enableScriptToolbar: boolean;
 	scriptToolbarScripts: string[];  // which scripts to show toolbars for
 
-	// Atmosphere (writing modes)
-	atmosphere: 'none' | 'blankPage' | 'typewriter' | 'manuscript' | 'flow';
+	// Focus (writing modes)
+	focus: 'none' | 'blankPage' | 'typewriter' | 'manuscript' | 'flow';
 
 	// Quick Capture
 	inboxFolder: string;
@@ -1223,7 +1223,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	secondaryScript: 'arabic',
 	enableScriptToolbar: true,
 	scriptToolbarScripts: ['arabic', 'latin'],
-	atmosphere: 'none' as const,
+	focus: 'none' as const,
 	inboxFolder: '+',
 	dailyNoteFormat: '%Y-%m-%d',
 	dailyNoteFolder: '',

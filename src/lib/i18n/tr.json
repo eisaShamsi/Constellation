@@ -1114,9 +1114,9 @@
     "tashkeel": "Teşkil",
     "quranSymbols": "Kur'an sembolleri"
   },
-  "atmosphere": {
-    "title": "Atmosfer",
-    "description": "Yazma atmosferinizi seçin",
+  "focus": {
+    "title": "Odak",
+    "description": "Yazma odağınızı seçin",
     "none": "Standart",
     "noneDesc": "Araç çubuğu ve kontrollü varsayılan düzenleyici",
     "blankPage": "Boş Sayfa",
@@ -1128,7 +1128,7 @@
     "flow": "Akış",
     "flowDesc": "Kesintisiz akış — sınır yok, dikkat dağıtma yok",
     "exitHint": "Çıkmak için Escape'e basın",
-    "activate": "Atmosfere gir",
+    "activate": "Odağa gir",
     "wordCount": "kelime"
   }
 }

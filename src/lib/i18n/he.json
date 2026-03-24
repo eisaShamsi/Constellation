@@ -1114,9 +1114,9 @@
     "tashkeel": "תשכיל",
     "quranSymbols": "סמלי קוראן"
   },
-  "atmosphere": {
-    "title": "אווירה",
-    "description": "בחרו את אווירת הכתיבה שלכם",
+  "focus": {
+    "title": "מיקוד",
+    "description": "בחרו את מצב המיקוד שלכם",
     "none": "רגיל",
     "noneDesc": "עורך ברירת מחדל עם סרגל כלים ופקדים",
     "blankPage": "דף ריק",
@@ -1128,7 +1128,7 @@
     "flow": "זרימה",
     "flowDesc": "זרם רציף — ללא גבולות, ללא הסחות דעת",
     "exitHint": "לחצו Escape ליציאה",
-    "activate": "כניסה לאווירה",
+    "activate": "כניסה למיקוד",
     "wordCount": "מילים"
   }
 }
