@@ -5,6 +5,7 @@
 	import { detectDir, renderMarkdown, postProcessRenderedContent, collectNoteNames } from '$lib/utils';
 	import { dir, t } from '$lib/i18n';
 	import { getAtmosphereConfig, getAtmosphereFont, type AtmosphereType } from '$lib/atmosphere';
+	import AtmospherePane from './AtmospherePane.svelte';
 	import { get } from 'svelte/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import CodeMirrorEditor from './CodeMirrorEditor.svelte';
@@ -406,10 +407,26 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="pane" class:focused={isFocused} class:atm-active={isAtmosphere} class:atm-blank-page={atmosphereType === 'blankPage'} class:atm-typewriter={atmosphereType === 'typewriter'} class:atm-manuscript={atmosphereType === 'manuscript'} class:atm-flow={atmosphereType === 'flow'} style:--atm-font={atmosphereFont || 'inherit'} onclick={onFocus} dir={noteDir} onkeydown={(e) => { if (isAtmosphere && e.key === 'Escape') exitAtmosphere(); }}>
-{#if isAtmosphere}
-	<div class="atm-exit-hint">{$t('atmosphere.exitHint')}</div>
-{/if}
+{#if isAtmosphere && tab}
+	<AtmospherePane
+		value={editBody}
+		title={tab.name.replace(/\.md$/, '')}
+		mode={atmosphereType === 'blankPage' ? 'blank-page' : atmosphereType === 'typewriter' ? 'typewriter' : atmosphereType === 'manuscript' ? 'manuscript' : 'flow'}
+		dir={noteDir}
+		onchange={handleEditorChange}
+		ontitlechange={(newTitle) => {
+			if (tab && newTitle !== tab.name.replace(/\.md$/, '')) {
+				renameNote(tab.path, newTitle + '.md', tab.libraryName);
+			}
+		}}
+		onaddproperty={() => {
+			exitAtmosphere();
+			// Properties will show in normal mode
+		}}
+		onexit={exitAtmosphere}
+	/>
+{:else}
+<div class="pane" class:focused={isFocused} onclick={onFocus} dir={noteDir}>
 	{#if tab}
 		{#if isEmptyTab}
 			<div class="pane-breadcrumb">
@@ -566,7 +583,7 @@
 				}}
 			/>
 		{:else if !isEmptyTab}
-		<div class="note-scroll" class:editing dir={noteDir} style="{paneStyle}; max-width: {noteWidth}%">
+		<div class="note-scroll" class:editing dir={noteDir} style="{paneStyle}; max-width: {isAtmosphere ? '100%' : noteWidth + '%'}">
 			{#if tab}
 				<input class="note-title" dir="auto" spellcheck="false"
 					bind:this={titleInputEl}
@@ -664,6 +681,7 @@
 		</div>
 	{/if}
 </div>
+{/if}
 
 <style>
 	.pane {
@@ -1170,34 +1188,38 @@
 		width: 100% !important;
 	}
 	.pane.atm-active :global(.cm-editor) {
-		margin: 0 auto;
 		font-family: var(--atm-font, inherit);
 		border: none !important;
 		box-shadow: none !important;
 		background: transparent !important;
-		width: 100% !important;
 	}
 	.pane.atm-active :global(.cm-scroller) {
-		padding-top: 20vh !important;
+		padding-top: 15vh !important;
 		padding-bottom: 40vh !important;
 	}
-	.pane.atm-active :global(.cm-content) {
-		max-width: 100%;
-		margin: 0 auto;
+	/* Hide active line highlight in atmosphere */
+	.pane.atm-active :global(.cm-activeLine) {
+		background: transparent !important;
+	}
+	.pane.atm-active :global(.cm-activeLineGutter) {
+		background: transparent !important;
 	}
 
 	/* ─── Blank Page — pure white paper ─── */
-	.pane.atm-blank-page :global(.cm-content) { max-width: 720px; margin: 0 auto; line-height: 2; }
+	.pane.atm-blank-page :global(.cm-editor) { max-width: 720px; margin: 0 auto !important; }
+	.pane.atm-blank-page :global(.cm-content) { line-height: 2; }
 
 	/* ─── Typewriter — centered current line, monospace ─── */
-	.pane.atm-typewriter :global(.cm-content) { max-width: 680px; margin: 0 auto; line-height: 1.8; }
+	.pane.atm-typewriter :global(.cm-editor) { max-width: 680px; margin: 0 auto !important; }
+	.pane.atm-typewriter :global(.cm-content) { line-height: 1.8; }
 	.pane.atm-typewriter :global(.cm-activeLine) {
 		background: color-mix(in srgb, var(--interactive-accent) 6%, transparent) !important;
 		border-radius: 2px;
 	}
 
 	/* ─── Manuscript — narrow elegant column ─── */
-	.pane.atm-manuscript :global(.cm-content) { max-width: 520px; margin: 0 auto; line-height: 2.2; letter-spacing: 0.015em; }
+	.pane.atm-manuscript :global(.cm-editor) { max-width: 520px; margin: 0 auto !important; }
+	.pane.atm-manuscript :global(.cm-content) { line-height: 2.2; letter-spacing: 0.015em; }
 
 	/* ─── Flow — no boundaries, full width ─── */
 	.pane.atm-flow :global(.cm-content) { max-width: 100%; padding: 0 60px; line-height: 1.9; }
