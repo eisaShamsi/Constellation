@@ -3419,7 +3419,8 @@
 	.tab-new-btn {
 		width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 4px;
-		color: var(--text-muted); cursor: pointer; flex-shrink: 0; align-self: flex-end; margin-bottom: 2px;
+		color: var(--text-muted); cursor: pointer; flex-shrink: 0; align-self: flex-end; margin-bottom: 0px;
+		margin-inline-start: -20px;
 	}
 	.tab-new-btn:hover { background: var(--border); color: var(--text); }
 
