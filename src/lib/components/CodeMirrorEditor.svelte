@@ -19,6 +19,7 @@
 	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, calloutClickHandler } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
+	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import TableGridPicker from './TableGridPicker.svelte';
 	import EditorContextMenu from './EditorContextMenu.svelte';
 	import { syntaxTree } from '@codemirror/language';
@@ -214,7 +215,10 @@
 	let contextMenuX = $state(0);
 	let contextMenuY = $state(0);
 	let contextMenuHasSelection = $state(false);
-	let contextMenuCursorContext = $state<'normal' | 'heading' | 'table' | 'checkbox' | 'link' | 'codeblock'>('normal');
+	let contextMenuCursorContext = $state<'normal' | 'heading' | 'table' | 'checkbox' | 'link' | 'codeblock' | 'list' | 'blockquote'>('normal');
+	// Toolbar context — tracks what cursor context the toolbar should show
+	let toolbarContext = $state<'normal' | 'heading' | 'table' | 'codeblock' | 'list' | 'blockquote'>('normal');
+	let toolbarHeadingLevel = $state<number | null>(null);
 	let contextMenuHeadingLevel = $state<number | null>(null);
 
 	function detectCursorContext(editorView: EditorView): { context: typeof contextMenuCursorContext; headingLevel: number | null } {
@@ -232,7 +236,6 @@
 				context = 'heading';
 				const match = name.match(/(\d)/);
 				headingLevel = match ? parseInt(match[1]) : null;
-				// Also check from line text
 				if (!headingLevel) {
 					const line = editorView.state.doc.lineAt(pos);
 					const hm = line.text.match(/^(#{1,6})\s/);
@@ -242,6 +245,8 @@
 			}
 			if (name === 'Link' || name === 'WikiLink') { context = 'link'; break; }
 			if (name === 'TaskMarker') { context = 'checkbox'; break; }
+			if (name === 'BulletList' || name === 'OrderedList' || name === 'ListItem') { context = 'list' as any; break; }
+			if (name === 'Blockquote') { context = 'blockquote' as any; break; }
 			if (node.parent) { node = node.parent; } else { break; }
 		}
 
@@ -249,6 +254,8 @@
 		if (context === 'normal') {
 			const line = editorView.state.doc.lineAt(pos);
 			if (/^\s*- \[[ x]\]/i.test(line.text)) context = 'checkbox';
+			else if (/^\s*[-*+]\s/.test(line.text) || /^\s*\d+\.\s/.test(line.text)) context = 'list' as any;
+			else if (/^>\s?/.test(line.text)) context = 'blockquote' as any;
 		}
 
 		return { context, headingLevel };
@@ -1494,6 +1501,10 @@
 				dirCompartment.of(EditorView.editorAttributes.of({ dir })),
 				libraryPathField,
 				livePreviewCompartment.of(livePreview ? [livePreviewPlugin, livePreviewTheme, calloutCollapseField, calloutPlugin, calloutTheme, calloutClickHandler, lineDecoPlugin, lineDecoTheme] : []),
+				// Per-line bidi direction detection (always active)
+				scriptFontsField,
+				bidiPlugin,
+				bidiTheme,
 				cmPlaceholder(placeholder),
 				editorTheme,
 				fontCompartment.of(buildFontTheme()),
@@ -1520,6 +1531,10 @@
 									updateToolbar(update.view);
 									updateTableToolbar(update.view);
 									checkSelectionTabular(update.view);
+									// Update toolbar context for contextual buttons
+									const ctx = detectCursorContext(update.view);
+									toolbarContext = (['heading', 'table', 'codeblock', 'list', 'blockquote'].includes(ctx.context) ? ctx.context : 'normal') as any;
+									toolbarHeadingLevel = ctx.headingLevel;
 								}
 							});
 						}
@@ -1549,6 +1564,9 @@
 				view?.scrollDOM.scrollTo({ top: initialScrollTop });
 			});
 		}
+
+		// Auto-focus editor so cursor is visible
+		requestAnimationFrame(() => view?.focus());
 
 		document.addEventListener('constellation:fold-all', handleFoldAll);
 		document.addEventListener('constellation:unfold-all', handleUnfoldAll);
@@ -1699,9 +1717,9 @@
 			</button>
 			<span class="cm-tb-sep"></span>
 			<!-- Heading -->
-			<button class="cm-tb" title="Heading" onclick={() => applyHeading(1)}>H1</button>
-			<button class="cm-tb" title="Heading 2" onclick={() => applyHeading(2)}>H2</button>
-			<button class="cm-tb" title="Heading 3" onclick={() => applyHeading(3)}>H3</button>
+			<button class="cm-tb" class:cm-tb-active={toolbarContext === 'heading' && toolbarHeadingLevel === 1} title="Heading" onclick={() => applyHeading(1)}>H1</button>
+			<button class="cm-tb" class:cm-tb-active={toolbarContext === 'heading' && toolbarHeadingLevel === 2} title="Heading 2" onclick={() => applyHeading(2)}>H2</button>
+			<button class="cm-tb" class:cm-tb-active={toolbarContext === 'heading' && toolbarHeadingLevel === 3} title="Heading 3" onclick={() => applyHeading(3)}>H3</button>
 			<span class="cm-tb-sep"></span>
 			<!-- Text formatting -->
 			<button class="cm-tb" title="Bold (Ctrl+B)" onclick={() => { wrapSelection(view!, '**', '**') }}>
@@ -1786,63 +1804,61 @@
 			<button class="cm-tb" title="Find (Ctrl+F)" onclick={() => { if (view) openSearchPanel(view); }}>
 				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 			</button>
-		</div>
-	{/if}
-
-	<!-- Script-specific symbol toolbar -->
-	{#if view && activeScriptToolbars.length > 0}
-		<div class="cm-script-toolbar" dir="ltr">
-			{#each activeScriptToolbars as script}
-				{@const data = SCRIPT_TOOLBARS[script]}
-				{#if data}
-					<div class="cm-script-group">
-						<button class="cm-script-label" onclick={() => { scriptToolbarScript = scriptToolbarScript === script ? '' : script; }}>
-							{script === 'arabic' ? 'عربي' : script === 'hebrew' ? 'עברית' : script === 'cjk' ? '中日韩' : script === 'cyrillic' ? 'Кир' : script === 'devanagari' ? 'देव' : 'Aa'}
-							<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={scriptToolbarScript === script}><path d="M6 9l6 6 6-6"/></svg>
-						</button>
-						{#if scriptToolbarScript === script}
-							<div class="cm-script-panel">
-								{#if data.quran && script === 'arabic'}
+			<!-- Script-specific symbols integrated into toolbar -->
+			{#if activeScriptToolbars.length > 0}
+				<span class="cm-tb-sep"></span>
+				{#each activeScriptToolbars as script}
+					{@const data = SCRIPT_TOOLBARS[script]}
+					{#if data}
+						<div class="cm-script-group">
+							<button class="cm-script-label" onclick={() => { scriptToolbarScript = scriptToolbarScript === script ? '' : script; }}>
+								{script === 'arabic' ? 'عربي' : script === 'hebrew' ? 'עברית' : script === 'cjk' ? '中日韩' : script === 'cyrillic' ? 'Кир' : script === 'devanagari' ? 'देव' : 'Aa'}
+								<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={scriptToolbarScript === script}><path d="M6 9l6 6 6-6"/></svg>
+							</button>
+							{#if scriptToolbarScript === script}
+								<div class="cm-script-panel">
+									{#if data.quran && script === 'arabic'}
+										<div class="cm-script-section">
+											<span class="cm-script-section-label">{$t('scriptToolbar.quranSymbols')}</span>
+											<div class="cm-script-chars">
+												{#each data.quran as sym}
+													<button class="cm-script-char" onclick={() => insertSymbol(sym)} title={sym}>{sym}</button>
+												{/each}
+											</div>
+										</div>
+									{/if}
 									<div class="cm-script-section">
-										<span class="cm-script-section-label">{$t('scriptToolbar.quranSymbols')}</span>
+										<span class="cm-script-section-label">{$t('scriptToolbar.symbols')}</span>
 										<div class="cm-script-chars">
-											{#each data.quran as sym}
+											{#each data.symbols as sym}
 												<button class="cm-script-char" onclick={() => insertSymbol(sym)} title={sym}>{sym}</button>
 											{/each}
 										</div>
 									</div>
-								{/if}
-								<div class="cm-script-section">
-									<span class="cm-script-section-label">{$t('scriptToolbar.symbols')}</span>
-									<div class="cm-script-chars">
-										{#each data.symbols as sym}
-											<button class="cm-script-char" onclick={() => insertSymbol(sym)} title={sym}>{sym}</button>
-										{/each}
-									</div>
-								</div>
-								<div class="cm-script-section">
-									<span class="cm-script-section-label">{$t('scriptToolbar.punctuation')}</span>
-									<div class="cm-script-chars">
-										{#each data.punctuation as sym}
-											<button class="cm-script-char" onclick={() => insertSymbol(sym)} title={sym}>{sym}</button>
-										{/each}
-									</div>
-								</div>
-								{#if data.numerals && data.numerals.length > 0}
 									<div class="cm-script-section">
-										<span class="cm-script-section-label">{$t('scriptToolbar.numerals')}</span>
+										<span class="cm-script-section-label">{$t('scriptToolbar.punctuation')}</span>
 										<div class="cm-script-chars">
-											{#each data.numerals as sym}
+											{#each data.punctuation as sym}
 												<button class="cm-script-char" onclick={() => insertSymbol(sym)} title={sym}>{sym}</button>
 											{/each}
 										</div>
 									</div>
-								{/if}
-							</div>
-						{/if}
-					</div>
-				{/if}
-			{/each}
+									{#if data.numerals && data.numerals.length > 0}
+										<div class="cm-script-section">
+											<span class="cm-script-section-label">{$t('scriptToolbar.numerals')}</span>
+											<div class="cm-script-chars">
+												{#each data.numerals as sym}
+													<button class="cm-script-char" onclick={() => insertSymbol(sym)} title={sym}>{sym}</button>
+												{/each}
+											</div>
+										</div>
+									{/if}
+								</div>
+							{/if}
+						</div>
+					{/if}
+				{/each}
+			{/if}
 		</div>
 	{/if}
 
@@ -1985,6 +2001,11 @@
 		font-weight: 600;
 		font-family: var(--font-interface-theme);
 		padding: 0;
+	}
+	.cm-tb-active {
+		background: var(--interactive-accent) !important;
+		color: white !important;
+		border-radius: 4px;
 	}
 	.cm-tb:hover {
 		background: var(--background-modifier-hover);
