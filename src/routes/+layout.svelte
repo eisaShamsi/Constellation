@@ -2521,7 +2521,8 @@
 						</div>
 					{/if}
 					<button class="tab tab-new" onclick={() => createEmptyTab()} title="New tab">
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+						<svg class="tab-plus-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+						<svg class="tab-bulb-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
 					</button>
 				</div>
 				{#if canScrollEnd}
@@ -3481,9 +3482,48 @@
 		padding: 4px 0 !important; justify-content: center;
 		background: transparent !important; color: var(--text-muted);
 		border: 1px solid #4caf50 !important; border-bottom: none !important; border-radius: 6px 6px 0 0;
-		cursor: pointer;
+		cursor: pointer; position: relative;
+	}
+	.tab-bulb-icon {
+		position: absolute; opacity: 0;
+		color: #ff9800;
 	}
 	.tab-new:hover { background: color-mix(in srgb, #4caf50 10%, transparent) !important; color: #4caf50; }
+
+	/* Slow pulse: 3 blinks of +, then 2 blinks of bulb. Total cycle = 15s (5 blinks × 3s each) */
+	.tab-scroll.no-tabs .tab-new svg.tab-plus-icon {
+		animation: plus-cycle 15s ease-in-out infinite;
+	}
+	.tab-scroll.no-tabs .tab-new svg.tab-bulb-icon {
+		animation: bulb-cycle 15s ease-in-out infinite;
+	}
+	/* Plus: blinks at 0-9s (3 blinks), hidden at 9-15s */
+	@keyframes plus-cycle {
+		0% { opacity: 0.3; }
+		3% { opacity: 1; }
+		10% { opacity: 0.3; }
+		13% { opacity: 0.3; }
+		16% { opacity: 1; }
+		23% { opacity: 0.3; }
+		26% { opacity: 0.3; }
+		29% { opacity: 1; }
+		36% { opacity: 0.3; }
+		58% { opacity: 0.3; }
+		59% { opacity: 0; }
+		99% { opacity: 0; }
+		100% { opacity: 0.3; }
+	}
+	/* Bulb: hidden at 0-9s, blinks at 9-15s (2 blinks) */
+	@keyframes bulb-cycle {
+		0%, 59% { opacity: 0; }
+		62% { opacity: 1; }
+		72% { opacity: 0.2; }
+		75% { opacity: 0.2; }
+		78% { opacity: 1; }
+		88% { opacity: 0.2; }
+		95% { opacity: 0; }
+		100% { opacity: 0; }
+	}
 
 	/* Content */
 	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #e8e8ec; }
