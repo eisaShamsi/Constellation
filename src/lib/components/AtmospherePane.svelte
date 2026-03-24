@@ -127,8 +127,8 @@
 				outline: 'none !important',
 			},
 			'.cm-cursor': {
-				borderLeftColor: 'var(--interactive-accent, #7c3aed)',
-				borderLeftWidth: '2px',
+				borderLeftColor: 'var(--text-normal, #333)',
+				borderLeftWidth: '1.5px',
 			},
 			'.cm-line': {
 				padding: '0 4px',
@@ -386,9 +386,26 @@
 		border: none !important;
 		outline: none !important;
 	}
-	/* Ensure cursor stays visible */
+	/* I-beam cursor with serifs */
 	.atm-editor :global(.cm-cursor) {
-		border-left: 2px solid var(--interactive-accent, #7c3aed) !important;
+		border-left: 1.5px solid var(--text-normal, #333) !important;
+		position: relative !important;
+	}
+	.atm-editor :global(.cm-cursor)::before,
+	.atm-editor :global(.cm-cursor)::after {
+		content: '';
+		position: absolute;
+		left: -4px;
+		width: 8px;
+		height: 1.5px;
+		background: var(--text-normal, #333);
+		border-radius: 1px;
+	}
+	.atm-editor :global(.cm-cursor)::before {
+		top: 0;
+	}
+	.atm-editor :global(.cm-cursor)::after {
+		bottom: 0;
 	}
 
 	/* ─── Footer ─── */
