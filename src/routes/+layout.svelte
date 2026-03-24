@@ -2520,15 +2520,15 @@
 							<a class="tab-close" href="/">×</a>
 						</div>
 					{/if}
+					<button class="tab tab-new" onclick={() => createEmptyTab()} title="New tab">
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+					</button>
 				</div>
 				{#if canScrollEnd}
 					<button class="tab-scroll-arrow tab-scroll-end" onclick={() => scrollTabs('end')}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
 					</button>
 				{/if}
-				<button class="tab-new-btn" class:no-tabs={$openTabs.length === 0} onclick={() => createEmptyTab()} title="New tab">
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-				</button>
 				</div>
 
 				<!-- Tab context menu -->
@@ -3476,14 +3476,14 @@
 	.tab-ctx-item:disabled { opacity: 0.4; cursor: default; }
 	.tab-ctx-item:disabled:hover { background: none; }
 	.tab-ctx-sep { height: 1px; margin: 4px 8px; background: var(--background-modifier-border); }
-	.tab-new-btn {
-		width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-		border: none; background: none; border-radius: 4px;
-		color: var(--text-muted); cursor: pointer; flex-shrink: 0; align-self: flex-end; margin-bottom: 0px;
-		margin-inline-start: -20px;
+	.tab-new {
+		min-width: 32px !important; max-width: 32px;
+		padding: 4px 0 !important; justify-content: center;
+		background: transparent !important; color: var(--text-muted);
+		border: 1px solid #4caf50 !important; border-bottom: none !important; border-radius: 6px 6px 0 0;
+		cursor: pointer;
 	}
-	.tab-new-btn:hover { background: var(--border); color: var(--text); }
-	.tab-new-btn.no-tabs { margin-inline-start: -2px; margin-top: -5px; }
+	.tab-new:hover { background: color-mix(in srgb, #4caf50 10%, transparent) !important; color: #4caf50; }
 
 	/* Content */
 	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #e8e8ec; }
