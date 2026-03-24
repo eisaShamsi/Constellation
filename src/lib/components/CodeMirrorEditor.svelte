@@ -1120,16 +1120,21 @@
 		view.focus();
 	}
 
-	// Determine which script toolbars to show based on settings and note direction
+	// Determine which script toolbars to show — contextual based on note direction
+	const rtlScripts = ['arabic', 'hebrew'];
 	let activeScriptToolbars = $derived.by(() => {
-		const s = get(appSettings);
+		const s = $appSettings;
 		if (!s.enableScriptToolbar) return [];
 		const scripts = s.scriptToolbarScripts || [];
-		// If note is RTL and arabic is in the list, prioritize it
-		if (dir === 'rtl' && scripts.includes('arabic')) {
-			return ['arabic', ...scripts.filter(sc => sc !== 'arabic')];
+		if (dir === 'rtl') {
+			// RTL notes: show Arabic/Hebrew if in user's scripts
+			return scripts.filter(sc => rtlScripts.includes(sc));
+		} else {
+			// LTR notes: always show latin, plus any non-RTL scripts the user enabled
+			const ltr = scripts.filter(sc => !rtlScripts.includes(sc));
+			if (!ltr.includes('latin')) ltr.unshift('latin');
+			return ltr;
 		}
-		return scripts;
 	});
 
 	const fontFamilies = [
