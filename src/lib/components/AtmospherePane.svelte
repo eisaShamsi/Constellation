@@ -30,19 +30,71 @@
 	} = $props();
 
 	let editorEl: HTMLDivElement;
-	let titleEl: HTMLInputElement;
 	let view: EditorView | null = null;
 	let updating = false;
 	let wordCount = $state(0);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-	// Progressive disclosure states
-	let hasContent = $state(value.trim().length > 0);
+	// ─── Progressive disclosure state ───
+	let isTyping = $state(false);
+	let pauseTimer: ReturnType<typeof setTimeout> | null = null;
+	let showTitle = $state(false);
+	let titleEditing = $state(false);
 	let titleValue = $state(title);
-	let titleFocused = $state(false);
 	let hasTitleContent = $derived(titleValue.trim().length > 0);
+	let showAddProps = $state(false);
+
+	const PAUSE_DELAY = 3000; // 3 seconds of no typing → show title
 
 	const dirCompartment = new Compartment();
+
+	function onUserTyping() {
+		isTyping = true;
+		// If not editing the title, hide it while typing
+		if (!titleEditing) {
+			showTitle = false;
+			showAddProps = false;
+		}
+		// Reset pause timer
+		if (pauseTimer) clearTimeout(pauseTimer);
+		pauseTimer = setTimeout(() => {
+			isTyping = false;
+			// User paused — show title faintly if content exists
+			if (wordCount > 0) {
+				showTitle = true;
+			}
+		}, PAUSE_DELAY);
+	}
+
+	function handleTitleFocus() {
+		titleEditing = true;
+		showTitle = true;
+	}
+
+	function handleTitleBlur() {
+		titleEditing = false;
+		if (titleValue !== title) {
+			ontitlechange?.(titleValue);
+		}
+		// If title is empty and user isn't typing, keep showing
+		// If title has content, keep showing
+	}
+
+	function handleTitleInput() {
+		if (hasTitleContent) {
+			showAddProps = true;
+		}
+	}
+
+	function handleTitleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			view?.focus();
+		}
+		if (e.key === 'Escape') {
+			onexit?.();
+		}
+	}
 
 	function getTheme(m: string) {
 		const maxWidth = m === 'blank-page' ? '720px' : m === 'typewriter' ? '680px' : m === 'manuscript' ? '520px' : '100%';
@@ -58,7 +110,6 @@
 			'.cm-scroller': {
 				overflow: 'auto',
 				fontFamily: 'var(--font-text-theme, inherit)',
-				paddingBottom: '40vh',
 			},
 			'.cm-content': {
 				lineHeight,
@@ -80,12 +131,6 @@
 			},
 			'.cm-gutters': {
 				display: 'none !important',
-			},
-			'.cm-selectionBackground': {
-				background: 'rgba(124, 58, 237, 0.15) !important',
-			},
-			'&.cm-focused .cm-selectionBackground': {
-				background: 'rgba(124, 58, 237, 0.2) !important',
 			},
 		});
 	}
@@ -111,9 +156,11 @@
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged && !updating) {
 						const text = update.state.doc.toString();
-						hasContent = text.trim().length > 0;
 						const words = text.trim().split(/\s+/).filter(w => w.length > 0);
 						wordCount = text.trim() ? words.length : 0;
+						// Trigger typing behavior
+						onUserTyping();
+						// Debounced save
 						if (saveTimer) clearTimeout(saveTimer);
 						saveTimer = setTimeout(() => onchange?.(text), 1500);
 					}
@@ -124,11 +171,15 @@
 		view = new EditorView({ state, parent: editorEl });
 
 		// Initial state
-		hasContent = value.trim().length > 0;
 		const words = value.trim().split(/\s+/).filter(w => w.length > 0);
 		wordCount = value.trim() ? words.length : 0;
 
-		// Auto-focus the editor
+		// If opening an existing note with content, show title
+		if (wordCount > 0) {
+			showTitle = true;
+			if (hasTitleContent) showAddProps = true;
+		}
+
 		view.focus();
 	});
 
@@ -145,30 +196,13 @@
 				updating = true;
 				view.dispatch({ changes: { from: 0, to: current.length, insert: value } });
 				updating = false;
-				hasContent = value.trim().length > 0;
 			}
 		}
 	});
 
-	function handleTitleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Enter') {
-			e.preventDefault();
-			view?.focus();
-		}
-		if (e.key === 'Escape') {
-			onexit?.();
-		}
-	}
-
-	function handleTitleBlur() {
-		titleFocused = false;
-		if (titleValue !== title) {
-			ontitlechange?.(titleValue);
-		}
-	}
-
 	onDestroy(() => {
 		if (saveTimer) clearTimeout(saveTimer);
+		if (pauseTimer) clearTimeout(pauseTimer);
 		if (view) {
 			const text = view.state.doc.toString();
 			onchange?.(text);
@@ -178,40 +212,41 @@
 </script>
 
 <div class="atm" class:rtl={dir === 'rtl'}>
-	<!-- Title area — appears faintly when user starts writing -->
-	<div class="atm-header" style="max-width: {mode === 'blank-page' ? '720px' : mode === 'typewriter' ? '680px' : mode === 'manuscript' ? '520px' : '100%'}">
-		{#if hasContent || titleFocused || hasTitleContent}
+	<!-- Title — appears faintly when user pauses writing -->
+	<div class="atm-title-area" style="max-width: {mode === 'blank-page' ? '720px' : mode === 'typewriter' ? '680px' : mode === 'manuscript' ? '520px' : '100%'}">
+		{#if showTitle || titleEditing}
 			<input
 				class="atm-title"
-				class:ghost={!hasTitleContent && !titleFocused}
-				class:visible={hasTitleContent || titleFocused}
-				bind:this={titleEl}
+				class:ghost={!titleEditing && !hasTitleContent}
+				class:editing={titleEditing}
 				bind:value={titleValue}
 				dir="auto"
-				placeholder={$t('notePane.untitled') || 'Untitled'}
+				placeholder={dir === 'rtl' ? 'العنوان' : 'Title'}
 				spellcheck="false"
-				onfocus={() => titleFocused = true}
+				onfocus={handleTitleFocus}
 				onblur={handleTitleBlur}
+				oninput={handleTitleInput}
 				onkeydown={handleTitleKeydown}
 			/>
-			<!-- (+) button for properties — appears when title has content -->
-			{#if hasTitleContent}
-				<button class="atm-add-props" onclick={onaddproperty} title={$t('contextMenu.addProperty') || 'Add property'}>
-					+
-				</button>
+			<!-- (+) for properties — appears when title has content, same foggy style -->
+			{#if showAddProps && hasTitleContent}
+				<button
+					class="atm-props-btn"
+					class:ghost={!titleEditing}
+					onclick={onaddproperty}
+				>+</button>
 			{/if}
 		{/if}
 	</div>
 
-	<!-- Editor — the blank page -->
+	<!-- The blank page — editor -->
 	<div class="atm-editor" bind:this={editorEl}></div>
 
-	<!-- Subtle status -->
-	<div class="atm-status">
+	<!-- Word count — barely visible -->
+	<div class="atm-footer">
 		{#if wordCount > 0}
-			<span class="atm-words">{wordCount} {$t('atmosphere.wordCount')}</span>
+			<span>{wordCount} {$t('atmosphere.wordCount')}</span>
 		{/if}
-		<span class="atm-hint">{$t('atmosphere.exitHint')}</span>
 	</div>
 </div>
 
@@ -223,15 +258,17 @@
 		flex-direction: column;
 		background: var(--background-primary, #ffffff);
 		overflow: hidden;
+		position: relative;
 	}
 	.atm.rtl { direction: rtl; }
 
-	/* ─── Title ─── */
-	.atm-header {
+	/* ─── Title area ─── */
+	.atm-title-area {
 		margin: 0 auto;
 		width: 100%;
-		padding: 60px 4px 0;
+		padding-top: 12vh;
 		flex-shrink: 0;
+		min-height: 0;
 	}
 
 	.atm-title {
@@ -241,41 +278,54 @@
 		outline: none;
 		background: transparent;
 		font-family: var(--font-text-theme, inherit);
-		font-size: calc(var(--font-text-size, 17px) * 1.6);
+		font-size: calc(var(--font-text-size, 17px) * 1.5);
 		font-weight: 700;
 		color: var(--text-normal, #333);
 		padding: 0 4px;
-		transition: opacity 0.5s ease;
+		transition: opacity 0.8s ease;
 	}
 	.atm-title::placeholder {
 		color: var(--text-faint, #ddd);
-		font-weight: 400;
+		font-weight: 300;
 	}
+	/* Ghost: barely visible, like fog */
 	.atm-title.ghost {
-		opacity: 0.15;
+		opacity: 0.08;
+		transition: opacity 1.2s ease;
 	}
-	.atm-title.visible {
+	.atm-title.ghost:hover {
+		opacity: 0.25;
+		transition: opacity 0.3s ease;
+	}
+	.atm-title.editing {
 		opacity: 1;
+		transition: opacity 0.3s ease;
 	}
 
-	/* (+) Add properties button */
-	.atm-add-props {
+	/* (+) Properties button */
+	.atm-props-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 24px;
-		height: 24px;
+		width: 22px;
+		height: 22px;
 		border: 1px dashed var(--text-faint, #ddd);
 		border-radius: 4px;
 		background: transparent;
 		color: var(--text-faint, #ccc);
-		font-size: 16px;
+		font-size: 15px;
 		cursor: pointer;
-		margin: 8px 4px;
-		opacity: 0.4;
-		transition: opacity 0.3s;
+		margin: 6px 4px 0;
+		transition: opacity 0.8s ease;
 	}
-	.atm-add-props:hover {
+	.atm-props-btn.ghost {
+		opacity: 0.08;
+		transition: opacity 1.2s ease;
+	}
+	.atm-props-btn.ghost:hover {
+		opacity: 0.5;
+	}
+	.atm-props-btn:hover {
 		opacity: 1;
 		border-color: var(--interactive-accent, #7c3aed);
 		color: var(--interactive-accent, #7c3aed);
@@ -285,30 +335,23 @@
 	.atm-editor {
 		flex: 1;
 		overflow: hidden;
-		padding-top: 16px;
+		padding-top: 20px;
 	}
 
-	/* ─── Status bar ─── */
-	.atm-status {
+	/* ─── Footer ─── */
+	.atm-footer {
 		position: fixed;
 		bottom: 0;
 		left: 0;
 		right: 0;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		gap: 24px;
-		padding: 10px;
+		text-align: center;
+		padding: 8px;
 		pointer-events: none;
+	}
+	.atm-footer span {
+		font-size: 11px;
+		color: var(--text-faint, #ccc);
 		opacity: 0.3;
-		transition: opacity 0.3s;
-	}
-	.atm-status:hover {
-		opacity: 0.6;
-	}
-	.atm-words, .atm-hint {
-		font-size: 12px;
-		color: var(--text-muted, #999);
 		font-family: var(--font-interface-theme, sans-serif);
 	}
 </style>
