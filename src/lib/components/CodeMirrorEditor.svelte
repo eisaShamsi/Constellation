@@ -1288,7 +1288,7 @@
 		},
 		'.cm-gutters': {
 			backgroundColor: 'transparent',
-			borderRight: '1px solid var(--background-modifier-border-focus)',
+			border: 'none',
 			color: 'var(--color-base-40)',
 			fontSize: '0.75rem',
 		},
@@ -1297,7 +1297,7 @@
 			color: 'var(--text-faint)',
 		},
 		'.cm-activeLine': {
-			backgroundColor: 'var(--background-primary-alt)',
+			backgroundColor: 'transparent',
 		},
 		'&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
 			backgroundColor: 'rgba(255, 170, 0, 0.35) !important',
@@ -1972,6 +1972,7 @@
 		min-height: 0;
 		overflow: hidden;
 		display: flex;
+		margin-top: 40px;
 		flex-direction: column;
 	}
 	/* Persistent toolbar */
@@ -1980,7 +1981,7 @@
 		align-items: center;
 		gap: 2px;
 		padding: 4px 8px;
-		border-bottom: 1px solid var(--background-modifier-border);
+		border-bottom: none;
 		background: var(--background-primary);
 		flex-wrap: wrap;
 		flex-shrink: 0;

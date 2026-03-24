@@ -678,6 +678,7 @@
 		overflow: hidden; min-width: 0; min-height: 0;
 		background: #e8e8ec;
 		align-items: center;
+		padding: 0 32px;
 	}
 	.pane.focused { box-shadow: none; }
 
@@ -796,13 +797,25 @@
 		font-family: var(--library-text-font, inherit);
 		display: flex; flex-direction: column;
 		background: #ffffff;
-		box-shadow: -2px 0 8px rgba(0,0,0,0.04), 2px 0 8px rgba(0,0,0,0.04);
+		box-shadow: none;
+		scrollbar-width: none;
 	}
+	.note-scroll::-webkit-scrollbar { display: none; }
+	.note-scroll :global(.cm-scroller) { scrollbar-width: none; }
+	.note-scroll :global(.cm-scroller)::-webkit-scrollbar { display: none; }
 	.note-scroll.editing {
 		overflow: hidden;
 	}
 	.note-scroll :global(.cm-editor) {
 		font-family: var(--library-text-font, var(--font-text-theme, inherit));
+		border: none !important;
+		outline: none !important;
+		box-shadow: none !important;
+	}
+	.note-scroll :global(.cm-editor.cm-focused) {
+		border: none !important;
+		outline: none !important;
+		box-shadow: none !important;
 	}
 	.note-scroll :global(.cm-editor .cm-content) {
 		font-family: var(--library-text-font, var(--font-text-theme, inherit)) !important;
@@ -1138,7 +1151,7 @@
 		flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
 		width: 100%; max-width: 860px;
 		background: #ffffff;
-		box-shadow: -2px 0 8px rgba(0,0,0,0.04), 2px 0 8px rgba(0,0,0,0.04);
+		box-shadow: none;
 	}
 	.empty-tab-title {
 		font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;

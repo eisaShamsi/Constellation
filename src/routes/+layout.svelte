@@ -3315,7 +3315,7 @@
 	/* ═══ MAIN AREA ═══ */
 	.main-area {
 		grid-row: 1; display: flex; flex-direction: column;
-		overflow: hidden; background: var(--bg);
+		overflow: hidden; background: #e8e8ec;
 	}
 
 	/* Tab bar (unified with layout controls) */
@@ -3427,11 +3427,11 @@
 	.tab-new-btn.no-tabs { margin-inline-start: -2px; margin-top: -5px; }
 
 	/* Content */
-	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #e8e8ec; }
 
 	/* Pane container */
 	.pane-container {
-		flex: 1; display: flex; flex-direction: row; overflow: hidden;
+		flex: 1; display: flex; flex-direction: row; overflow: hidden; background: #e8e8ec;
 	}
 	.pane-container.horizontal { flex-direction: column; }
 	.pane-divider { flex-shrink: 0; background: var(--border); }
