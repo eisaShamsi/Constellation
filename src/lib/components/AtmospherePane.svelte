@@ -115,6 +115,7 @@
 			'.cm-scroller': {
 				overflow: 'auto',
 				fontFamily: 'var(--font-text-theme, inherit)',
+				paddingInline: '140px',
 			},
 			'.cm-content': {
 				lineHeight,
@@ -283,24 +284,25 @@
 		overflow: hidden;
 		position: relative;
 	}
-	/* Fog margins — subtle gray edges fading into white paper */
+	/* Fog margins — gray edges fading into white paper */
 	.atm::before,
 	.atm::after {
 		content: '';
 		position: fixed;
 		top: 0;
 		bottom: 0;
-		width: 80px;
-		z-index: 1;
+		z-index: 2;
 		pointer-events: none;
 	}
 	.atm::before {
 		left: 0;
-		background: linear-gradient(to right, rgba(0,0,0,0.03) 0%, transparent 100%);
+		width: 120px;
+		background: linear-gradient(to right, rgba(200,200,210,0.25) 0%, rgba(200,200,210,0.08) 40%, transparent 100%);
 	}
 	.atm::after {
 		right: 0;
-		background: linear-gradient(to left, rgba(0,0,0,0.03) 0%, transparent 100%);
+		width: 120px;
+		background: linear-gradient(to left, rgba(200,200,210,0.25) 0%, rgba(200,200,210,0.08) 40%, transparent 100%);
 	}
 	.atm.rtl { direction: rtl; }
 
@@ -309,6 +311,7 @@
 		margin: 0 auto;
 		width: 100%;
 		padding-top: 12vh;
+		padding-inline: 140px;
 		flex-shrink: 0;
 		min-height: 0;
 	}
