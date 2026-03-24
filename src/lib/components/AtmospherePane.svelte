@@ -283,6 +283,25 @@
 		overflow: hidden;
 		position: relative;
 	}
+	/* Fog margins — subtle gray edges fading into white paper */
+	.atm::before,
+	.atm::after {
+		content: '';
+		position: fixed;
+		top: 0;
+		bottom: 0;
+		width: 80px;
+		z-index: 1;
+		pointer-events: none;
+	}
+	.atm::before {
+		left: 0;
+		background: linear-gradient(to right, rgba(0,0,0,0.03) 0%, transparent 100%);
+	}
+	.atm::after {
+		right: 0;
+		background: linear-gradient(to left, rgba(0,0,0,0.03) 0%, transparent 100%);
+	}
 	.atm.rtl { direction: rtl; }
 
 	/* ─── Title area ─── */
