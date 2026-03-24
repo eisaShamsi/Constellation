@@ -105,7 +105,12 @@
 			'&': {
 				background: 'transparent !important',
 				border: 'none !important',
+				outline: 'none !important',
 				fontSize: 'var(--font-text-size, 17px)',
+			},
+			'&.cm-focused': {
+				outline: 'none !important',
+				border: 'none !important',
 			},
 			'.cm-scroller': {
 				overflow: 'auto',
@@ -118,6 +123,8 @@
 				padding: '0',
 				maxWidth,
 				margin: '0 auto',
+				border: 'none !important',
+				outline: 'none !important',
 			},
 			'.cm-cursor': {
 				borderLeftColor: 'var(--interactive-accent, #7c3aed)',
@@ -125,12 +132,28 @@
 			},
 			'.cm-line': {
 				padding: '0 4px',
+				border: 'none !important',
 			},
 			'.cm-activeLine': {
-				background: m === 'typewriter' ? 'rgba(124, 58, 237, 0.03)' : 'transparent',
+				background: m === 'typewriter' ? 'rgba(124, 58, 237, 0.03)' : 'transparent !important',
+				borderLeft: 'none !important',
+				borderRight: 'none !important',
+			},
+			'.cm-activeLineGutter': {
+				display: 'none !important',
 			},
 			'.cm-gutters': {
 				display: 'none !important',
+			},
+			'.cm-foldGutter': {
+				display: 'none !important',
+			},
+			'.cm-selectionLayer': {
+				border: 'none !important',
+			},
+			'.cm-content *': {
+				borderTop: 'none !important',
+				borderBottom: 'none !important',
 			},
 		});
 	}
@@ -336,6 +359,26 @@
 		flex: 1;
 		overflow: hidden;
 		padding-top: 20px;
+	}
+	/* Kill ALL lines, borders, outlines in the editor */
+	.atm-editor :global(.cm-editor),
+	.atm-editor :global(.cm-editor *) {
+		border: none !important;
+		outline: none !important;
+		box-shadow: none !important;
+	}
+	.atm-editor :global(.cm-content) {
+		border: none !important;
+	}
+	.atm-editor :global(.cm-activeLine) {
+		background: transparent !important;
+	}
+	.atm-editor :global(.cm-line) {
+		border: none !important;
+	}
+	.atm-editor :global(hr),
+	.atm-editor :global(.cm-hr) {
+		display: none !important;
 	}
 
 	/* ─── Footer ─── */
