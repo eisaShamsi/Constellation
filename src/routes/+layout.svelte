@@ -2456,7 +2456,7 @@
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
 			{#if !$splitActive}
-				<div class="tab-scroll">
+				<div class="tab-scroll" class:no-tabs={$openTabs.length === 0}>
 					{#each $openTabs as tab (tab.id)}
 						<button class="tab"
 							class:active={$activeTabId === tab.id}
@@ -2486,7 +2486,7 @@
 						</div>
 					{/if}
 				</div>
-				<button class="tab-new-btn" onclick={() => createEmptyTab()} title="New tab">
+				<button class="tab-new-btn" class:no-tabs={$openTabs.length === 0} onclick={() => createEmptyTab()} title="New tab">
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
 				</button>
 
@@ -3340,6 +3340,7 @@
 		margin-inline-start: max(0px, calc(50% - 469px));
 	}
 	.tab-scroll::-webkit-scrollbar { height: 0; }
+	.tab-scroll.no-tabs { margin-inline-start: 0; padding: 0; }
 	.tab {
 		display: flex; align-items: center; gap: 6px;
 		padding: 5px 10px; font-size: 0.8rem; color: var(--text-secondary);
@@ -3423,6 +3424,7 @@
 		margin-inline-start: -20px;
 	}
 	.tab-new-btn:hover { background: var(--border); color: var(--text); }
+	.tab-new-btn.no-tabs { margin-inline-start: -2px; margin-top: -5px; }
 
 	/* Content */
 	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
