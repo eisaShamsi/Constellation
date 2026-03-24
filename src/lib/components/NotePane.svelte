@@ -473,22 +473,6 @@
 				<span class="bc-sep">/</span>
 				<span class="bc-note">{tab.name.replace(/\.md$/, '')}</span>
 				<div class="bc-actions">
-					<div class="bc-width-control" title="Note width: {noteWidth}%">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-							<path d="M21 12H3M21 12l-4-4m4 4l-4 4M3 12l4-4m-4 4l4 4"/>
-						</svg>
-						<input type="range" class="bc-width-slider" min="50" max="100" step="5" bind:value={noteWidth} />
-					</div>
-										<button
-						class="bc-editor-switch"
-						class:source={!livePreviewEnabled}
-						onclick={() => livePreviewEnabled = !livePreviewEnabled}
-						title={livePreviewEnabled ? 'Source mode' : 'Live Preview'}
-					>
-						<span class="switch-track">
-							<span class="switch-thumb"></span>
-						</span>
-					</button>
 					{#if saving}<span class="bc-saving">{$t('notePane.saving')}</span>{/if}
 					<!-- More options (three dots) -->
 					<div class="bc-more-wrap" bind:this={moreMenuEl}>
@@ -497,6 +481,11 @@
 						</button>
 						{#if showMoreMenu}
 							<div class="bc-more-menu">
+								<button class="bc-more-item" onclick={() => { livePreviewEnabled = !livePreviewEnabled; showMoreMenu = false; }}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+									{livePreviewEnabled ? ($t('notePane.editingMode') || 'Source mode') : ($t('notePane.livePreview') || 'Live Preview')}
+								</button>
+								<div class="bc-more-sep"></div>
 								<button class="bc-more-item" onclick={() => moreAction('rename')}>
 									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
 									{$t('contextMenu.rename') || 'Rename'}
@@ -539,7 +528,7 @@
 								<!-- Focus -->
 								<div class="bc-more-sub">
 									<span class="bc-more-sub-label">
-										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20M2 12h20"/></svg>
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
 										{$t('focus.title')}
 									</span>
 									<button class="bc-more-item" class:active={focusType === 'none'} onclick={() => { updateSettings({ focus: 'none' }); showMoreMenu = false; }}>
@@ -583,7 +572,7 @@
 				}}
 			/>
 		{:else if !isEmptyTab}
-		<div class="note-scroll" class:editing dir={noteDir} style="{paneStyle}; max-width: {isFocus ? '100%' : noteWidth + '%'}">
+		<div class="note-scroll" class:editing dir={noteDir} style="{paneStyle}">
 			{#if tab}
 				<input class="note-title" dir="auto" spellcheck="false"
 					bind:this={titleInputEl}
@@ -687,8 +676,10 @@
 	.pane {
 		flex: 1; display: flex; flex-direction: column;
 		overflow: hidden; min-width: 0; min-height: 0;
+		background: #e8e8ec;
+		align-items: center;
 	}
-	.pane.focused { box-shadow: inset 0 0 0 2px hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.2); }
+	.pane.focused { box-shadow: none; }
 
 	.pane-tab-bar {
 		display: flex; align-items: flex-end;
@@ -727,9 +718,13 @@
 	}
 
 	.pane-breadcrumb {
-		padding: 4px 16px; border-bottom: 1px solid var(--background-secondary-alt);
+		padding: 4px 16px; border-bottom: 1px solid var(--background-modifier-border);
 		font-size: 0.78rem; color: var(--text-faint); flex-shrink: 0;
 		display: flex; align-items: center; min-height: 28px;
+		width: 100%; max-width: 860px;
+		background: #ffffff;
+		border-radius: 0;
+		margin-top: 0;
 	}
 	.bc-lib-name { color: var(--text-muted); }
 	.bc-sep { margin: 0 4px; color: var(--background-modifier-border-focus); }
@@ -796,10 +791,12 @@
 	}
 	.bc-editor-switch.source .switch-thumb { transform: translateX(12px); }
 	.note-scroll {
-		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; max-width: 100%; align-self: center; width: 100%;
+		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; width: 100%; max-width: 860px;
 		font-size: var(--library-font-size, 0.95rem);
 		font-family: var(--library-text-font, inherit);
 		display: flex; flex-direction: column;
+		background: #ffffff;
+		box-shadow: -2px 0 8px rgba(0,0,0,0.04), 2px 0 8px rgba(0,0,0,0.04);
 	}
 	.note-scroll.editing {
 		overflow: hidden;

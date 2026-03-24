@@ -2449,11 +2449,27 @@
 
 	<!-- ═══ MAIN AREA ═══ -->
 	<div class="main-area">
-		<!-- Tab Bar -->
-		<div class="tab-bar">
+		<!-- Layout Ribbon -->
+		<div class="layout-ribbon">
 			<button class="tab-action" class:active={sidebarOpen} onclick={() => sidebarOpen = !sidebarOpen} title={$t('layout.leftSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
+			<div class="ribbon-end">
+				<button class="tab-action" class:active={$splitActive} onclick={cycleSplit} title={$t('layout.splitView')}>
+					{#if $splitActive && $splitDirection === 'horizontal'}
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/></svg>
+					{:else}
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
+					{/if}
+				</button>
+				<button class="tab-action" class:active={rightSidebarOpen} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={$t('layout.rightSidebar')}>
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+				</button>
+			</div>
+		</div>
+
+		<!-- Tab Bar -->
+		<div class="tab-bar">
 			{#if !$splitActive}
 				<div class="tab-scroll">
 					{#each $openTabs as tab (tab.id)}
@@ -2488,7 +2504,6 @@
 				<button class="tab-new-btn" onclick={() => createEmptyTab()} title="New tab">
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
 				</button>
-				<div class="tab-spacer"></div>
 
 				<!-- Tab context menu -->
 				{#if tabCtxMenu}
@@ -2509,19 +2524,7 @@
 						</div>
 					{/each}
 				{/if}
-			{:else}
-				<div class="tab-spacer"></div>
 			{/if}
-			<button class="tab-action" class:active={$splitActive} onclick={cycleSplit} title={$t('layout.splitView')}>
-				{#if $splitActive && $splitDirection === 'horizontal'}
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/></svg>
-				{:else}
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
-				{/if}
-			</button>
-			<button class="tab-action" class:active={rightSidebarOpen} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={$t('layout.rightSidebar')}>
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
-			</button>
 		</div>
 
 		<!-- Content -->
@@ -3317,11 +3320,24 @@
 		overflow: hidden; background: var(--bg);
 	}
 
+	/* Layout ribbon */
+	.layout-ribbon {
+		display: flex; align-items: center; justify-content: space-between;
+		padding: 4px 8px;
+		background: var(--bg-secondary, #f5f5f5);
+		border-bottom: 1px solid var(--border, #e0e0e0);
+		flex-shrink: 0;
+	}
+	.ribbon-end {
+		display: flex; align-items: center; gap: 2px;
+	}
+
 	/* Tab bar */
 	.tab-bar {
 		display: flex; align-items: flex-end;
-		background: var(--bg-tertiary); border-bottom: 1px solid var(--border);
+		background: #e8e8ec; border-bottom: none;
 		min-height: 36px; flex-shrink: 0;
+		padding-inline-start: calc((100% - 860px) / 2);
 	}
 	.tab-scroll {
 		min-width: 0; display: flex; align-items: flex-end;
@@ -3331,17 +3347,17 @@
 	.tab {
 		display: flex; align-items: center; gap: 6px;
 		padding: 5px 10px; font-size: 0.8rem; color: var(--text-secondary);
-		background: var(--bg-hover); border-radius: 6px 6px 0 0;
+		background: #dcdce0; border-radius: 6px 6px 0 0;
 		cursor: pointer; min-width: 0;
 		border: none; font-family: inherit; flex-shrink: 0;
 		border-top: 3px solid var(--library-color, transparent);
 		position: relative;
 	}
 	.tab.active, .tab.focused {
-		background: var(--bg); color: var(--text);
-		border: 1px solid var(--border);
+		background: #ffffff; color: var(--text);
+		border: 1px solid #d0d0d0;
 		border-top: 3px solid var(--library-color, var(--accent));
-		border-bottom: 1px solid var(--bg);
+		border-bottom: 1px solid #ffffff;
 		margin-bottom: -1px;
 	}
 	.tab.drag-over {
@@ -3354,10 +3370,10 @@
 		position: absolute; bottom: 100%; inset-inline-end: 8px;
 		font-size: 0.55rem; line-height: 1.3; letter-spacing: 0.02em;
 		color: var(--text);
-		background: var(--bg-tertiary);
+		background: #e8e8ec;
 		padding: 0 5px;
 		border-radius: 3px 3px 0 0;
-		border: 1px solid var(--border); border-bottom: none;
+		border: 1px solid #d0d0d0; border-bottom: none;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 		max-width: 100%; pointer-events: none;
 	}
@@ -3704,6 +3720,7 @@
 	/* ═══ Focus — hide UI elements ═══ */
 	:global(body.focus-active) .sidebar { display: none !important; }
 	:global(body.focus-active) .ribbon { display: none !important; }
+	:global(body.focus-active) .layout-ribbon { display: none !important; }
 	:global(body.focus-active) .tab-bar { display: none !important; }
 	:global(body.focus-active) .status-bar { display: none !important; }
 	:global(body.focus-active) .pip-overlay { display: none !important; }
