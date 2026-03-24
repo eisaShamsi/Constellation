@@ -811,6 +811,10 @@
 	.note-scroll :global(.cm-editor .cm-line) {
 		font-family: inherit;
 	}
+	/* Thin line cursor */
+	.note-scroll :global(.cm-cursor) {
+		border-left: 1.5px solid var(--text-normal, #1a1a1a) !important;
+	}
 
 	.props-toggle {
 		display: flex; align-items: center; gap: 4px;
