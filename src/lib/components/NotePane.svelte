@@ -1132,6 +1132,9 @@
 
 	.empty-tab {
 		flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+		width: 100%; max-width: 860px;
+		background: #ffffff;
+		box-shadow: -2px 0 8px rgba(0,0,0,0.04), 2px 0 8px rgba(0,0,0,0.04);
 	}
 	.empty-tab-title {
 		font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;
