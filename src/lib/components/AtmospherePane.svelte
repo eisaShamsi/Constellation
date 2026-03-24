@@ -360,25 +360,35 @@
 		overflow: hidden;
 		padding-top: 20px;
 	}
-	/* Kill ALL lines, borders, outlines in the editor */
-	.atm-editor :global(.cm-editor),
-	.atm-editor :global(.cm-editor *) {
+	/* Kill lines, borders, outlines — but NOT the cursor */
+	.atm-editor :global(.cm-editor) {
 		border: none !important;
 		outline: none !important;
 		box-shadow: none !important;
 	}
+	.atm-editor :global(.cm-editor:focus),
+	.atm-editor :global(.cm-editor.cm-focused) {
+		outline: none !important;
+		border: none !important;
+	}
 	.atm-editor :global(.cm-content) {
 		border: none !important;
+		outline: none !important;
 	}
 	.atm-editor :global(.cm-activeLine) {
 		background: transparent !important;
 	}
 	.atm-editor :global(.cm-line) {
-		border: none !important;
+		border-top: none !important;
+		border-bottom: none !important;
 	}
-	.atm-editor :global(hr),
-	.atm-editor :global(.cm-hr) {
-		display: none !important;
+	.atm-editor :global(.cm-scroller) {
+		border: none !important;
+		outline: none !important;
+	}
+	/* Ensure cursor stays visible */
+	.atm-editor :global(.cm-cursor) {
+		border-left: 2px solid var(--interactive-accent, #7c3aed) !important;
 	}
 
 	/* ─── Footer ─── */
