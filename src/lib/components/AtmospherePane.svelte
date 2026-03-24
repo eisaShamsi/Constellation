@@ -236,35 +236,36 @@
 </script>
 
 <div class="atm" class:rtl={dir === 'rtl'}>
-	<!-- Title — appears faintly when user pauses writing -->
-	<div class="atm-title-area" style="max-width: {mode === 'blank-page' ? '720px' : mode === 'typewriter' ? '680px' : mode === 'manuscript' ? '520px' : '100%'}">
-		{#if showTitle || titleEditing}
-			<input
-				class="atm-title"
-				class:ghost={!titleEditing && !hasTitleContent}
-				class:editing={titleEditing}
-				bind:value={titleValue}
-				dir="auto"
-				placeholder={dir === 'rtl' ? 'العنوان' : 'Title'}
-				spellcheck="false"
-				onfocus={handleTitleFocus}
-				onblur={handleTitleBlur}
-				oninput={handleTitleInput}
-				onkeydown={handleTitleKeydown}
-			/>
-			<!-- (+) for properties — appears when title has content, same foggy style -->
-			{#if showAddProps && hasTitleContent}
-				<button
-					class="atm-props-btn"
-					class:ghost={!titleEditing}
-					onclick={onaddproperty}
-				>+</button>
+	<div class="atm-paper">
+		<!-- Title — appears faintly when user pauses writing -->
+		<div class="atm-title-area" style="max-width: {mode === 'blank-page' ? '720px' : mode === 'typewriter' ? '680px' : mode === 'manuscript' ? '520px' : '100%'}">
+			{#if showTitle || titleEditing}
+				<input
+					class="atm-title"
+					class:ghost={!titleEditing && !hasTitleContent}
+					class:editing={titleEditing}
+					bind:value={titleValue}
+					dir="auto"
+					placeholder={dir === 'rtl' ? 'العنوان' : 'Title'}
+					spellcheck="false"
+					onfocus={handleTitleFocus}
+					onblur={handleTitleBlur}
+					oninput={handleTitleInput}
+					onkeydown={handleTitleKeydown}
+				/>
+				{#if showAddProps && hasTitleContent}
+					<button
+						class="atm-props-btn"
+						class:ghost={!titleEditing}
+						onclick={onaddproperty}
+					>+</button>
+				{/if}
 			{/if}
-		{/if}
-	</div>
+		</div>
 
-	<!-- The blank page — editor -->
-	<div class="atm-editor" bind:this={editorEl}></div>
+		<!-- The blank page — editor -->
+		<div class="atm-editor" bind:this={editorEl}></div>
+	</div>
 
 	<!-- Word count — barely visible -->
 	<div class="atm-footer">
@@ -275,36 +276,35 @@
 </div>
 
 <style>
+	/* The table — gray surface filling the entire window */
 	.atm {
-		width: 100%;
-		height: 100vh;
-		display: flex;
-		flex-direction: column;
-		background: var(--background-primary, #ffffff);
-		overflow: hidden;
-		position: relative;
-	}
-	/* Fog margins — gray edges fading into white paper */
-	.atm::before,
-	.atm::after {
-		content: '';
 		position: fixed;
-		top: 0;
-		bottom: 0;
-		z-index: 2;
-		pointer-events: none;
-	}
-	.atm::before {
-		left: 0;
-		width: 120px;
-		background: linear-gradient(to right, rgba(200,200,210,0.25) 0%, rgba(200,200,210,0.08) 40%, transparent 100%);
-	}
-	.atm::after {
-		right: 0;
-		width: 120px;
-		background: linear-gradient(to left, rgba(200,200,210,0.25) 0%, rgba(200,200,210,0.08) 40%, transparent 100%);
+		inset: 0;
+		z-index: 100;
+		display: flex;
+		justify-content: center;
+		background: #e8e8ec;
+		overflow: hidden;
+		padding: 24px 32px 0 32px;
 	}
 	.atm.rtl { direction: rtl; }
+
+	/* The paper — white sheet centered on the table */
+	.atm-paper {
+		width: 100%;
+		max-width: 1000px;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		background: #ffffff;
+		border-radius: 6px 6px 0 0;
+		box-shadow:
+			-2px 0 8px rgba(0,0,0,0.04),
+			2px 0 8px rgba(0,0,0,0.04),
+			0 -2px 8px rgba(0,0,0,0.03);
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
 
 	/* ─── Title area ─── */
 	.atm-title-area {
@@ -379,8 +379,9 @@
 	/* ─── Editor ─── */
 	.atm-editor {
 		flex: 1;
-		overflow: hidden;
+		overflow: auto;
 		padding-top: 20px;
+		min-height: 0;
 	}
 	/* Kill lines, borders, outlines — but NOT the cursor */
 	.atm-editor :global(.cm-editor) {
@@ -407,6 +408,7 @@
 	.atm-editor :global(.cm-scroller) {
 		border: none !important;
 		outline: none !important;
+		overflow: auto !important;
 	}
 	/* I-beam cursor with serifs */
 	.atm-editor :global(.cm-cursor) {
