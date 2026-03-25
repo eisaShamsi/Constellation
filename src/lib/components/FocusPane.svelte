@@ -28,6 +28,7 @@
 	let editorEl: HTMLDivElement;
 	let view: EditorView | null = null;
 	let updating = false;
+	let lastInternalValue = value;
 	let wordCount = $state(0);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -173,7 +174,10 @@
 						onUserTyping();
 						// Debounced save
 						if (saveTimer) clearTimeout(saveTimer);
-						saveTimer = setTimeout(() => onchange?.(text), 1500);
+						saveTimer = setTimeout(() => {
+							lastInternalValue = text;
+							onchange?.(text);
+						}, 1500);
 					}
 				}),
 			],
@@ -200,12 +204,15 @@
 	});
 
 	$effect(() => {
-		if (view && value !== undefined) {
+		if (view && value !== undefined && !updating) {
+			// Skip if this value came from our own onchange (avoid loop)
+			if (value === lastInternalValue) return;
 			const current = view.state.doc.toString();
 			if (value !== current) {
 				updating = true;
 				view.dispatch({ changes: { from: 0, to: current.length, insert: value } });
 				updating = false;
+				lastInternalValue = value;
 			}
 		}
 	});

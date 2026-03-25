@@ -15,13 +15,101 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - **Cross-window sync**: Second screen is a separate Tauri window. Use `emit`/`listen` from `@tauri-apps/api/event` for communication. Settings changes must call `notifySettingsChanged()` to propagate.
 - **CSS**: NotePane uses `.pane` (not `.note-pane`). Override child styles with `:global()` + `!important` when needed.
 - **Fonts**: Global fonts from `appSettings` (interfaceFont, textFont, monoFont, fontSize, scriptFonts). Per-library fonts from `libraryAppearances`. Both must be applied in main window AND second screen.
+- **Units**: Use `px` for layout discussions. Code may use `rem`/`em` for font accessibility.
 
 ## Editor Parity Rule
-- **All note views must have identical markdown rendering.** Standard NotePane, Focus mode (PaperOnDesk), and any future note types must share the same CM6 extensions (livePreview, callouts, syntax highlighting, etc.).
-- New markdown features added to the editor MUST work in ALL note modes — never add a feature to only one view.
+- **All note views must have identical markdown rendering.** Standard NotePane and any future note types must share the same CM6 extensions (livePreview, callouts, syntax highlighting, etc.).
+- **Exception**: FocusPane is plain text only — no markdown parser, no syntax highlighting, no decorations. Focus = capture ideas fast.
+- New markdown features added to the editor MUST work in ALL note modes (except FocusPane) — never add a feature to only one view.
 - The shared extension set lives in `$lib/editor/` and is imported by every editor instance.
+
+---
+
+## ⚡ Performance Rules — "Fast Software, the Best Software"
+
+> "Speed and reliability are often intuited hand-in-hand. Speed is a proxy for general engineering quality." — Craig Mod
+> "If you want to create digital artifacts that last, they must be files you can control." — Steph Ango (kepano)
+
+### Rule 1: Every Keystroke Must Be Instant
+- **Zero perceptible lag** between typing and screen update. If the user notices delay, it's a bug.
+- FocusPane: NO markdown parser, NO syntax highlighting, NO decorations. Plain CM6 + history + line wrapping only.
+- NotePane: Decorations rebuild only on `docChanged`, `selectionSet`, or `viewportChanged` — never on every frame.
+- ViewPlugin `update()` must check conditions before rebuilding: `if (update.docChanged || update.selectionSet) { ... }` — not unconditionally.
+
+### Rule 2: No $effect Loops
+- **NEVER** write a `$effect` that reads and writes the same reactive variable.
+- **NEVER** write a `$effect` that watches a prop it also modifies via callback (the FocusPane value sync bug).
+- Use `$derived` for computed values, `$effect` only for side effects (DOM manipulation, Tauri IPC, timers).
+- When syncing editor content with a prop, use a `lastInternalValue` guard to prevent echo loops.
+- If you must write to `$state` inside `$effect`, wrap the write in `untrack()`.
+
+### Rule 3: No Heavy Work on the Main Thread
+- Vault indexing, search, file I/O → **Rust side** via Tauri commands. Never parse 1000+ notes in JS.
+- CM6 syntax tree iteration: only process `view.visibleRanges`, never the full document.
+- Large decoration sets: use `RangeSetBuilder` (sorted insert), never `Decoration.set()` with unsorted arrays.
+- Debounce saves: 1500ms minimum. Never save on every keystroke.
+
+### Rule 4: No Memory Leaks
+- Every `setTimeout`/`setInterval` → clear in `onDestroy`.
+- Every `addEventListener` → remove in `onDestroy`.
+- Every `EditorView` → `.destroy()` in `onDestroy`.
+- Every Tauri `listen()` → call the unlisten function in `onDestroy`.
+- `requestAnimationFrame` → cancel with `cancelAnimationFrame` in `onDestroy`.
+- Never create circular references with `Rc`/`Arc` in Rust without `Weak`.
+
+### Rule 5: Minimal DOM
+- CM6 handles its own DOM — don't fight it with extra wrappers.
+- Hide elements with `display: none`, not by removing/re-adding DOM nodes.
+- Avoid `:global()` CSS that triggers layout recalculation across the tree.
+- Use `flex` and `grid` for layout — no JavaScript-based positioning.
+- Tab scroll: use native CSS `overflow-x: auto`, not JS scroll emulation.
+
+### Rule 6: No Unnecessary Imports
+- Don't import `@codemirror/language-data` (all languages) in FocusPane — it pulls 500KB+ of parsers.
+- Don't import full icon libraries — use inline SVGs.
+- Tree-shake aggressively: import only what you use from each package.
+- Lazy-load heavy features (graph view, PDF export, AI) — don't bundle them in the main chunk.
+
+### Rule 7: Test Before Commit
+- After every code change: type 10 characters rapidly in both NotePane and FocusPane. If there's lag, fix it before committing.
+- After adding a `$effect`: verify it doesn't fire in a loop by adding a temporary `console.log` and checking it fires ≤2 times on load.
+- After adding a CM6 extension: open a 5000-word note and scroll. If scrolling stutters, optimize or remove.
+- After adding CSS: resize the window from max to min. If layout breaks, fix before committing.
+
+---
+
+## 🏗️ Architecture Principles
+
+### File Over App
+- `.md` files on disk are the source of truth. The app is just a window.
+- Never modify file content silently. Every change must come from explicit user action.
+- Never lock files in proprietary formats. Everything is standard Markdown + YAML frontmatter.
+- The vault index is ephemeral — rebuilt from files at startup, updated incrementally at runtime.
+
+### Local-First
+- All data stays on the user's device. No telemetry, no tracking, no cloud dependency.
+- Sync is the user's choice (Git, Syncthing, iCloud) — Constellation doesn't own it.
+- The app must work fully offline, instantly, always.
+
+### Constraint as Design
+- Don't add features just because you can. Every feature must justify its existence.
+- FocusPane has no toolbar, no properties, no markdown rendering — that IS the design.
+- Prefer CSS-only solutions over JavaScript. Prefer Rust over JavaScript for computation.
+- When in doubt, do less.
+
+### Smooth Transitions
+- NotePane and FocusPane edit the same `.md` file. Switching between them must be seamless.
+- What the user types in Focus (plain text markdown) renders beautifully in NotePane.
+- No data loss on mode switch. Save before transition, load after.
+
+---
 
 ## Don't
 - Don't use preview/screenshot tools unless essential.
 - Don't add unnecessary abstractions or over-engineer.
 - Don't use "vault" terminology in new code.
+- Don't add a feature that makes the app slower.
+- Don't commit code with known `$effect` loops.
+- Don't import heavy libraries in FocusPane.
+- Don't use `position: absolute` for layout — use flexbox/grid.
+- Don't write CSS with magic pixel numbers without documenting why (e.g., `margin-inline-start: -9px /* align tab to paper edge */`).
