@@ -1576,87 +1576,72 @@
 		document.addEventListener('constellation:insert-table', handleInsertTable);
 	});
 
-	// Sync value prop → editor (only for external changes like switching notes)
+	// ─── Prop→Editor sync: NO $effect for value ───
+	// Editor owns its content after mount. Value prop only used in onMount.
+	// Tab switches destroy/recreate the component with new value.
+
+	// ─── Settings sync: batched, guarded, no $effect loops ───
+	// Track previous values to avoid unnecessary dispatches
+	let prevDir = dir;
+	let prevLivePreview = livePreview;
+	let prevShowLineNumbers = showLineNumbers;
+	let prevFoldHeading = foldHeading;
+	let prevFoldIndent = foldIndent;
+	let prevIndentationGuides = indentationGuides;
+	let prevTabSize = tabSize;
+	let prevIndentWithTabs = indentWithTabs;
+
+	// Single $effect for ALL settings — batches dispatches, only fires on actual changes
 	$effect(() => {
-		if (view && value !== undefined && !updating) {
-			// Skip if this value came from our own onchange (prevent echo loop)
-			if (value === lastInternalValue) return;
-			const current = view.state.doc.toString();
-			if (value !== current) {
-				updating = true;
-				view.dispatch({
-					changes: { from: 0, to: current.length, insert: value }
-				});
-				updating = false;
-				lastInternalValue = value;
-			}
+		if (!view) return;
+		const effects: any[] = [];
+
+		if (dir !== prevDir) {
+			effects.push(dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })));
+			prevDir = dir;
+		}
+		if (livePreview !== prevLivePreview) {
+			effects.push(livePreviewCompartment.reconfigure(livePreview ? [livePreviewPlugin, livePreviewTheme, calloutCollapseField, calloutPlugin, calloutTheme, calloutClickHandler, lineDecoPlugin, lineDecoTheme] : []));
+			prevLivePreview = livePreview;
+		}
+		if (showLineNumbers !== prevShowLineNumbers) {
+			effects.push(lineNumbersCompartment.reconfigure(showLineNumbers ? [lineNumbers(), highlightActiveLineGutter()] : []));
+			prevShowLineNumbers = showLineNumbers;
+		}
+		if (foldHeading !== prevFoldHeading || foldIndent !== prevFoldIndent) {
+			effects.push(foldGutterCompartment.reconfigure((foldHeading || foldIndent) ? [foldGutter(), foldService.of(markdownFoldService)] : []));
+			prevFoldHeading = foldHeading;
+			prevFoldIndent = foldIndent;
+		}
+		if (indentationGuides !== prevIndentationGuides) {
+			effects.push(indentGuidesCompartment.reconfigure(indentationGuides ? [indentGuidesPlugin] : []));
+			prevIndentationGuides = indentationGuides;
+		}
+		if (tabSize !== prevTabSize || indentWithTabs !== prevIndentWithTabs) {
+			effects.push(tabConfigCompartment.reconfigure([
+				EditorState.tabSize.of(tabSize),
+				indentUnit.of(indentWithTabs ? '\t' : ' '.repeat(tabSize)),
+			]));
+			prevTabSize = tabSize;
+			prevIndentWithTabs = indentWithTabs;
+		}
+
+		// Batch all changes into one dispatch
+		if (effects.length > 0) {
+			view.dispatch({ effects });
 		}
 	});
 
-	// Sync dir prop → editor
+	// Font sync: separate because it reads $appSettings store (different reactivity)
+	let prevFontKey = '';
 	$effect(() => {
-		if (view) {
-			view.dispatch({
-				effects: dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir }))
-			});
-		}
-	});
-
-	// Sync font settings → editor via Compartment (direct CSS injection, bypasses cascade)
-	$effect(() => {
-		const _s = $appSettings; // track reactivity
-		if (view) {
-			view.dispatch({
-				effects: fontCompartment.reconfigure(buildFontTheme())
-			});
-		}
-	});
-
-	// Sync livePreview prop → editor
-	$effect(() => {
-		if (view) {
-			view.dispatch({
-				effects: livePreviewCompartment.reconfigure(livePreview ? [livePreviewPlugin, livePreviewTheme, calloutCollapseField, calloutPlugin, calloutTheme, calloutClickHandler, lineDecoPlugin, lineDecoTheme] : [])
-			});
-		}
-	});
-
-	// Sync showLineNumbers prop → editor
-	$effect(() => {
-		if (view) {
-			view.dispatch({
-				effects: lineNumbersCompartment.reconfigure(showLineNumbers ? [lineNumbers(), highlightActiveLineGutter()] : [])
-			});
-		}
-	});
-
-	// Sync fold settings → editor
-	$effect(() => {
-		if (view) {
-			view.dispatch({
-				effects: foldGutterCompartment.reconfigure((foldHeading || foldIndent) ? [foldGutter(), foldService.of(markdownFoldService)] : [])
-			});
-		}
-	});
-
-	// Sync indentation guides → editor
-	$effect(() => {
-		if (view) {
-			view.dispatch({
-				effects: indentGuidesCompartment.reconfigure(indentationGuides ? [indentGuidesPlugin] : [])
-			});
-		}
-	});
-
-	// Sync tab config → editor
-	$effect(() => {
-		if (view) {
-			view.dispatch({
-				effects: tabConfigCompartment.reconfigure([
-					EditorState.tabSize.of(tabSize),
-					indentUnit.of(indentWithTabs ? '\t' : ' '.repeat(tabSize)),
-				])
-			});
+		const s = $appSettings;
+		if (!view) return;
+		// Build a key from font-relevant settings to detect actual changes
+		const fontKey = `${s.textFont}|${s.monoFont}|${s.fontSize}|${s.fontMode}|${s.activeFontSetId}|${JSON.stringify(s.scriptFonts)}`;
+		if (fontKey !== prevFontKey) {
+			prevFontKey = fontKey;
+			view.dispatch({ effects: fontCompartment.reconfigure(buildFontTheme()) });
 		}
 	});
 
