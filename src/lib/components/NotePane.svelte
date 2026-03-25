@@ -59,7 +59,8 @@
 	const parsed = $derived(tab ? parseFrontmatter(tab.content) : null);
 	const properties = $derived(parsed?.properties ?? []);
 	const noteBody = $derived(parsed?.body ?? '');
-	const noteDir = $derived(noteBody ? detectDir(noteBody) : $dir);
+	// Direction: set once on tab load, not recalculated during typing
+	let noteDir = $state<'ltr' | 'rtl'>($dir as 'ltr' | 'rtl');
 	const editing = $derived(tab ? $editingTabIds.has(tab.id) : false);
 	let livePreviewEnabled = $state(true);
 
@@ -184,11 +185,13 @@
 	let contentEl: HTMLDivElement | undefined;
 	let titleInputEl: HTMLInputElement | undefined;
 
-	// Sync editBody when tab changes
+	// Sync editBody + direction when tab changes
 	$effect(() => {
 		if (tab && tab.id !== prevTabId) {
-			editBody = parseFrontmatter(tab.content).body;
+			const body = parseFrontmatter(tab.content).body;
+			editBody = body;
 			latestEditorText = editBody;
+			noteDir = body ? detectDir(body) : ($dir as 'ltr' | 'rtl');
 			prevTabId = tab.id;
 		}
 	});

@@ -199,19 +199,8 @@
 		}
 	});
 
-	$effect(() => {
-		if (view && value !== undefined && !updating) {
-			// Skip if this value came from our own onchange (avoid loop)
-			if (value === lastInternalValue) return;
-			const current = view.state.doc.toString();
-			if (value !== current) {
-				updating = true;
-				view.dispatch({ changes: { from: 0, to: current.length, insert: value } });
-				updating = false;
-				lastInternalValue = value;
-			}
-		}
-	});
+	// No $effect for value→editor sync. Editor owns its content after mount.
+	// Tab switches destroy/recreate FocusPane with new value prop.
 
 	onDestroy(() => {
 		if (saveTimer) clearTimeout(saveTimer);
