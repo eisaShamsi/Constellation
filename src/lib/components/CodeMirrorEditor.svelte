@@ -78,6 +78,7 @@
 	let tabConfigCompartment = new Compartment();
 	let fontCompartment = new Compartment();
 	let updating = false;
+	let lastInternalValue = value;
 
 	function buildFontTheme(): ReturnType<typeof EditorView.theme> {
 		const s = get(appSettings);
@@ -1522,7 +1523,9 @@
 						if (onchangeTimer) clearTimeout(onchangeTimer);
 						onchangeTimer = setTimeout(() => {
 							if (update.view && !update.view.destroyed) {
-								onchange(update.view.state.doc.toString());
+								const text = update.view.state.doc.toString();
+								lastInternalValue = text;
+								onchange(text);
 							}
 						}, 500);
 					}
@@ -1578,14 +1581,20 @@
 		document.addEventListener('constellation:insert-table', handleInsertTable);
 	});
 
-	// Sync value prop → editor
+	// Sync value prop → editor (only for external changes like switching notes)
 	$effect(() => {
-		if (view && value !== view.state.doc.toString()) {
-			updating = true;
-			view.dispatch({
-				changes: { from: 0, to: view.state.doc.length, insert: value }
-			});
-			updating = false;
+		if (view && value !== undefined && !updating) {
+			// Skip if this value came from our own onchange (prevent echo loop)
+			if (value === lastInternalValue) return;
+			const current = view.state.doc.toString();
+			if (value !== current) {
+				updating = true;
+				view.dispatch({
+					changes: { from: 0, to: current.length, insert: value }
+				});
+				updating = false;
+				lastInternalValue = value;
+			}
 		}
 	});
 
