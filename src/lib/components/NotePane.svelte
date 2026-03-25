@@ -56,11 +56,23 @@
 		}
 	});
 
-	const parsed = $derived(tab ? parseFrontmatter(tab.content) : null);
+	// Parsed frontmatter: cached, only recomputed on tab switch or mode change
+	// NOT on every save (which would trigger cascading $derived recalculations during typing)
+	let parsed = $state<ReturnType<typeof parseFrontmatter> | null>(null);
+	let parsedTabId = '';
+	let parsedContent = '';
 	const properties = $derived(parsed?.properties ?? []);
 	const noteBody = $derived(parsed?.body ?? '');
 	// Direction: set once on tab load, not recalculated during typing
 	let noteDir = $state<'ltr' | 'rtl'>($dir as 'ltr' | 'rtl');
+
+	function reparse() {
+		if (!tab) { parsed = null; return; }
+		if (tab.id === parsedTabId && tab.content === parsedContent) return;
+		parsed = parseFrontmatter(tab.content);
+		parsedTabId = tab.id;
+		parsedContent = tab.content;
+	}
 	const editing = $derived(tab ? $editingTabIds.has(tab.id) : false);
 	let livePreviewEnabled = $state(true);
 
@@ -188,7 +200,8 @@
 	// Sync editBody + direction when tab changes
 	$effect(() => {
 		if (tab && tab.id !== prevTabId) {
-			const body = parseFrontmatter(tab.content).body;
+			reparse();
+			const body = parsed?.body ?? '';
 			editBody = body;
 			latestEditorText = editBody;
 			noteDir = body ? detectDir(body) : ($dir as 'ltr' | 'rtl');
@@ -199,9 +212,16 @@
 	// Re-sync only when ENTERING edit mode (transition from reading to editing)
 	let prevEditing = false;
 	$effect(() => {
-		if (editing && !prevEditing && tab) {
-			editBody = parseFrontmatter(tab.content).body;
-			latestEditorText = editBody;
+		if (tab) {
+			if (editing && !prevEditing) {
+				// Entering edit mode: sync editor content
+				reparse();
+				editBody = parsed?.body ?? '';
+				latestEditorText = editBody;
+			} else if (!editing && prevEditing) {
+				// Leaving edit mode: reparse for reading view
+				reparse();
+			}
 		}
 		prevEditing = editing;
 	});

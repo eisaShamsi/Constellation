@@ -193,8 +193,11 @@
 		view.focus();
 	});
 
+	// Dir sync: guarded, only dispatches when dir actually changes
+	let prevDir = dir;
 	$effect(() => {
-		if (view) {
+		if (view && dir !== prevDir) {
+			prevDir = dir;
 			view.dispatch({ effects: dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })) });
 		}
 	});
