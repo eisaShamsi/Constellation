@@ -286,7 +286,7 @@
 			if (!tab) return;
 			const currentParsed = parseFrontmatter(tab.content);
 			await saveTabContent(tab.id, tab.path, currentParsed.properties, latestEditorText);
-		}, 800);
+		}, 1500);
 	}
 
 
