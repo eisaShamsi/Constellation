@@ -118,10 +118,12 @@
 		setTimeout(updateTabScrollArrows, 200);
 	}
 
+	let _tabScrollTimer: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
 		// Re-check arrows when tabs change
 		const _tabs = $openTabs;
-		setTimeout(updateTabScrollArrows, 50);
+		clearTimeout(_tabScrollTimer);
+		_tabScrollTimer = setTimeout(updateTabScrollArrows, 50);
 	});
 
 	function startTabDrag(e: MouseEvent, tabId: string) {
@@ -2992,11 +2994,13 @@
 					try {
 						const screenState = await new Promise<ScreenState>((resolve, reject) => {
 							const timeout = setTimeout(() => reject(new Error('timeout')), 2000);
+							let unlistenFn: (() => void) | null = null;
 							onStateResponse((state) => {
 								clearTimeout(timeout);
+								unlistenFn?.();
 								resolve(state);
 							}).then((unlisten) => {
-								setTimeout(() => unlisten(), 2500);
+								unlistenFn = unlisten;
 							});
 							requestScreenState();
 						});

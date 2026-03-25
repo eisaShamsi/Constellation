@@ -312,7 +312,9 @@ export const calloutPlugin = ViewPlugin.fromClass(CalloutPluginClass, {
 				const lineNum = parseInt(chevron.dataset.calloutLine, 10);
 				if (!isNaN(lineNum)) {
 					setTimeout(() => {
-						view.dispatch({ effects: toggleCallout.of(lineNum) });
+						if (!view.destroyed) {
+							view.dispatch({ effects: toggleCallout.of(lineNum) });
+						}
 					}, 0);
 				}
 				return true;
