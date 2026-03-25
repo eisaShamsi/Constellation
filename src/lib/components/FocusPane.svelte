@@ -168,6 +168,8 @@
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged && !updating) {
 						const text = update.state.doc.toString();
+						// Update guard IMMEDIATELY to prevent $effect echo loop
+						lastInternalValue = text;
 						const words = text.trim().split(/\s+/).filter(w => w.length > 0);
 						wordCount = text.trim() ? words.length : 0;
 						// Trigger typing behavior
@@ -175,7 +177,6 @@
 						// Debounced save
 						if (saveTimer) clearTimeout(saveTimer);
 						saveTimer = setTimeout(() => {
-							lastInternalValue = text;
 							onchange?.(text);
 						}, 1500);
 					}

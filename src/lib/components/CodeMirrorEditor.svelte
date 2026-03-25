@@ -1519,12 +1519,13 @@
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged && !updating) {
-						// Debounce the expensive doc.toString() + onchange
+						// Update guard IMMEDIATELY to prevent $effect echo loop
+						const text = update.state.doc.toString();
+						lastInternalValue = text;
+						// Debounce the onchange callback to parent
 						if (onchangeTimer) clearTimeout(onchangeTimer);
 						onchangeTimer = setTimeout(() => {
 							if (update.view && !update.view.destroyed) {
-								const text = update.view.state.doc.toString();
-								lastInternalValue = text;
 								onchange(text);
 							}
 						}, 500);

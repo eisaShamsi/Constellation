@@ -190,11 +190,13 @@
 		}
 	});
 
-	// Re-sync when entering edit mode
+	// Re-sync only when ENTERING edit mode (transition from reading to editing)
+	let prevEditing = false;
 	$effect(() => {
-		if (editing && tab) {
+		if (editing && !prevEditing && tab) {
 			editBody = parseFrontmatter(tab.content).body;
 		}
+		prevEditing = editing;
 	});
 
 	// Post-process rendered content (math, mermaid, callout toggles, embeds)
