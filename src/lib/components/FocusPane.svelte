@@ -100,7 +100,6 @@
 	}
 
 	function getTheme(m: string) {
-		const maxWidth = m === 'blank-page' ? '720px' : m === 'typewriter' ? '680px' : m === 'manuscript' ? '520px' : '100%';
 		const lineHeight = m === 'blank-page' ? '2' : m === 'typewriter' ? '1.8' : m === 'manuscript' ? '2.2' : '1.9';
 		const letterSpacing = m === 'manuscript' ? '0.015em' : 'normal';
 
@@ -118,15 +117,13 @@
 			'.cm-scroller': {
 				overflow: 'auto',
 				fontFamily: 'var(--font-text-theme, inherit)',
-				paddingInline: '140px',
+				paddingInline: '48px',
 			},
 			'.cm-content': {
 				lineHeight,
 				letterSpacing,
 				caretColor: 'var(--interactive-accent, #7c3aed)',
 				padding: '0',
-				maxWidth,
-				margin: '0 auto',
 				border: 'none !important',
 				outline: 'none !important',
 			},
@@ -250,7 +247,7 @@
 <div class="focus-pane" class:rtl={dir === 'rtl'}>
 	<div class="focus-paper">
 		<!-- Title — appears faintly when user pauses writing -->
-		<div class="focus-title-area" style="max-width: {mode === 'blank-page' ? '720px' : mode === 'typewriter' ? '680px' : mode === 'manuscript' ? '520px' : '100%'}">
+		<div class="focus-title-area">
 			{#if showTitle || titleEditing}
 				<input
 					class="focus-title"
@@ -304,7 +301,7 @@
 	/* The paper — white sheet centered on the table */
 	.focus-paper {
 		width: 100%;
-		max-width: 1000px;
+		max-width: 1200px;
 		height: 100%;
 		display: flex;
 		flex-direction: column;
@@ -320,10 +317,9 @@
 
 	/* ─── Title area ─── */
 	.focus-title-area {
-		margin: 0 auto;
 		width: 100%;
-		padding-top: 12vh;
-		padding-inline: 140px;
+		padding-top: 48px;
+		padding-inline: 48px;
 		flex-shrink: 0;
 		min-height: 0;
 	}

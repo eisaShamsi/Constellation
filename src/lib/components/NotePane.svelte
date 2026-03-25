@@ -722,7 +722,7 @@
 		padding: 4px 16px; border-bottom: 1px solid var(--background-modifier-border);
 		font-size: 0.78rem; color: var(--text-faint); flex-shrink: 0;
 		display: flex; align-items: center; min-height: 28px;
-		width: 100%; max-width: 860px;
+		width: 100%; max-width: 1200px;
 		background: #ffffff;
 		border-radius: 0;
 		margin-top: 0;
@@ -792,7 +792,7 @@
 	}
 	.bc-editor-switch.source .switch-thumb { transform: translateX(12px); }
 	.note-scroll {
-		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; width: 100%; max-width: 860px;
+		flex: 1; overflow-y: auto; padding: 1.5rem 3rem; width: 100%; max-width: 1200px;
 		font-size: var(--library-font-size, 0.95rem);
 		font-family: var(--library-text-font, inherit);
 		display: flex; flex-direction: column;
@@ -1149,7 +1149,7 @@
 
 	.empty-tab {
 		flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-		width: 100%; max-width: 860px;
+		width: 100%; max-width: 1200px;
 		background: #ffffff;
 		box-shadow: none;
 	}
