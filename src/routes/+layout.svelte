@@ -2479,11 +2479,26 @@
 	<!-- ═══ MAIN AREA ═══ -->
 	<div class="main-area">
 		<!-- Tab Bar (unified with layout controls) -->
-		<div class="tab-bar">
-			<!-- Left: sidebar toggle -->
-			<button class="tab-action tab-bar-layout" class:active={sidebarOpen} onclick={() => sidebarOpen = !sidebarOpen} title={$t('layout.leftSidebar')}>
+		<!-- Layout bar: sidebar + split controls (independent from tabs/paper) -->
+		<div class="layout-bar">
+			<button class="tab-action" class:active={sidebarOpen} onclick={() => sidebarOpen = !sidebarOpen} title={$t('layout.leftSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
+			<div style="flex:1"></div>
+			<button class="tab-action" class:active={$splitActive} onclick={cycleSplit} title={$t('layout.splitView')}>
+				{#if $splitActive && $splitDirection === 'horizontal'}
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/></svg>
+				{:else}
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
+				{/if}
+			</button>
+			<button class="tab-action" class:active={rightSidebarOpen} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={$t('layout.rightSidebar')}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+			</button>
+		</div>
+
+		<!-- Tab bar (locked to paper) -->
+		<div class="tab-bar">
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
 				{#if canScrollStart}
@@ -2557,19 +2572,6 @@
 					{/each}
 				{/if}
 			{/if}
-			<!-- Right: layout controls -->
-			<div class="tab-bar-end">
-				<button class="tab-action tab-bar-layout" class:active={$splitActive} onclick={cycleSplit} title={$t('layout.splitView')}>
-					{#if $splitActive && $splitDirection === 'horizontal'}
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/></svg>
-					{:else}
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
-					{/if}
-				</button>
-				<button class="tab-action tab-bar-layout" class:active={rightSidebarOpen} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={$t('layout.rightSidebar')}>
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
-				</button>
-			</div>
 		</div>
 
 		<!-- Content -->
@@ -3365,27 +3367,22 @@
 		overflow: hidden; background: #e8e8ec;
 	}
 
-	/* Tab bar (unified with layout controls) */
+	/* Layout bar (sidebar + split controls, independent from tabs) */
+	.layout-bar {
+		display: flex; align-items: center;
+		background: var(--bg-secondary);
+		padding: 4px 8px;
+		flex-shrink: 0;
+		gap: 4px;
+		box-shadow: 0 -1px 0 0 rgba(0,0,0,0.08) inset;
+	}
+
+	/* Tab bar (locked to paper edge) */
 	.tab-bar {
 		display: flex; flex-direction: column; align-items: center;
 		background: #e8e8ec; border-bottom: none;
-		min-height: 36px; flex-shrink: 0;
-		position: relative;
-		padding: 0 32px;
-	}
-	.tab-bar-layout {
 		flex-shrink: 0;
-		position: absolute;
-		inset-inline-start: 8px;
-		top: 50%;
-		transform: translateY(-50%);
-	}
-	.tab-bar-end {
-		display: flex; align-items: center; gap: 2px;
-		position: absolute;
-		inset-inline-end: 8px;
-		top: 50%;
-		transform: translateY(-50%);
+		padding: 5px 32px 0;
 	}
 	.tab-scroll-wrap {
 		display: flex; align-items: center;
@@ -3435,15 +3432,16 @@
 	.tab[draggable="true"] { cursor: grab; }
 	.tab[draggable="true"]:active { cursor: grabbing; }
 	.tab-lib-name {
-		position: absolute; bottom: 100%; inset-inline-end: 8px;
+		position: absolute; bottom: calc(100% + 4px); inset-inline-end: 8px;
 		font-size: 0.55rem; line-height: 1.3; letter-spacing: 0.02em;
 		color: var(--text);
 		background: #e8e8ec;
 		padding: 0 5px;
 		border-radius: 3px 3px 0 0;
-		border: 1px solid #d0d0d0; border-bottom: none;
+		border: none;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 		max-width: 100%; pointer-events: none;
+		z-index: 1;
 	}
 	.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 	.tab.pinned { min-width: 36px; padding: 0 8px; }
