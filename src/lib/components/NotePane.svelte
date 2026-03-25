@@ -419,10 +419,6 @@
 				renameNote(tab.path, newTitle + '.md', tab.libraryName);
 			}
 		}}
-		onaddproperty={() => {
-			exitFocus();
-			// Properties will show in normal mode
-		}}
 		onexit={exitFocus}
 	/>
 {:else}
@@ -574,7 +570,7 @@
 		{:else if !isEmptyTab}
 		<div class="note-scroll" class:editing dir={noteDir} style="{paneStyle}">
 			{#if tab}
-				<input class="note-title" dir="auto" spellcheck="false"
+				<input class="note-title" dir="auto" spellcheck="false" style="text-align: {$appSettings.titleAlignment === 'center' ? 'center' : 'start'}"
 					bind:this={titleInputEl}
 					value={tab.name.replace(/\.md$/, '')}
 					onfocus={(e) => (e.target as HTMLInputElement).select()}
@@ -861,7 +857,7 @@
 		font-size: 1.8rem; font-weight: 700; margin: 0 0 0.5rem;
 		color: var(--text-normal); line-height: 1.3;
 		outline: none; border: none; border-radius: 4px;
-		padding: 2px 4px; margin-inline: -4px;
+		padding: 2px 4px;
 		background: transparent; font-family: inherit;
 		transition: background 0.15s;
 	}

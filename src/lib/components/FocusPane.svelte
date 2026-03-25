@@ -2,13 +2,8 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { EditorView, keymap, drawSelection } from '@codemirror/view';
 	import { EditorState, Compartment } from '@codemirror/state';
-	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
-	import { languages } from '@codemirror/language-data';
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
-	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
-	import { calloutPlugin, calloutTheme, calloutCollapseField, calloutClickHandler } from '$lib/editor/calloutPlugin';
-	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
+	import { appSettings } from '$lib/libraries/store';
 	import { bidiPlugin, bidiTheme, scriptFontsField } from '$lib/editor/bidiPlugin';
 	import { t } from '$lib/i18n';
 
@@ -19,7 +14,6 @@
 		dir = 'ltr' as 'ltr' | 'rtl',
 		onchange,
 		ontitlechange,
-		onaddproperty,
 		onexit,
 	}: {
 		value: string;
@@ -28,7 +22,6 @@
 		dir?: 'ltr' | 'rtl';
 		onchange?: (value: string) => void;
 		ontitlechange?: (title: string) => void;
-		onaddproperty?: () => void;
 		onexit?: () => void;
 	} = $props();
 
@@ -45,7 +38,6 @@
 	let titleEditing = $state(false);
 	let titleValue = $state(title);
 	let hasTitleContent = $derived(titleValue.trim().length > 0);
-	let showAddProps = $state(false);
 
 	const PAUSE_DELAY = 3000; // 3 seconds of no typing → show title
 
@@ -53,16 +45,13 @@
 
 	function onUserTyping() {
 		isTyping = true;
-		// If not editing the title, hide it while typing
 		if (!titleEditing) {
 			showTitle = false;
-			showAddProps = false;
 		}
 		// Reset pause timer
 		if (pauseTimer) clearTimeout(pauseTimer);
 		pauseTimer = setTimeout(() => {
 			isTyping = false;
-			// User paused — show title faintly if content exists
 			if (wordCount > 0) {
 				showTitle = true;
 			}
@@ -84,20 +73,21 @@
 	}
 
 	function handleTitleInput() {
-		if (hasTitleContent) {
-			showAddProps = true;
-		}
+		// Title content changed
 	}
 
 	function handleTitleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') {
 			e.preventDefault();
-			view?.focus();
+			if (!showProperties) {
+				view?.focus();
+			}
 		}
 		if (e.key === 'Escape') {
 			onexit?.();
 		}
 	}
+
 
 	function getTheme(m: string) {
 		const lineHeight = m === 'blank-page' ? '2' : m === 'typewriter' ? '1.8' : m === 'manuscript' ? '2.2' : '1.9';
@@ -166,16 +156,6 @@
 				getTheme(mode),
 				history(),
 				drawSelection(),
-				syntaxHighlighting(defaultHighlightStyle),
-				markdown({ base: markdownLanguage, codeLanguages: languages }),
-				livePreviewPlugin,
-				livePreviewTheme,
-				calloutCollapseField,
-				calloutPlugin,
-				calloutTheme,
-				calloutClickHandler,
-				lineDecoPlugin,
-				lineDecoTheme,
 				scriptFontsField,
 				bidiPlugin,
 				bidiTheme,
@@ -255,6 +235,7 @@
 					class:editing={titleEditing}
 					bind:value={titleValue}
 					dir="auto"
+					style="text-align: {$appSettings.titleAlignment === 'center' ? 'center' : 'start'}"
 					placeholder={dir === 'rtl' ? 'العنوان' : 'Title'}
 					spellcheck="false"
 					onfocus={handleTitleFocus}
@@ -262,14 +243,7 @@
 					oninput={handleTitleInput}
 					onkeydown={handleTitleKeydown}
 				/>
-				{#if showAddProps && hasTitleContent}
-					<button
-						class="focus-props-btn"
-						class:ghost={!titleEditing}
-						onclick={onaddproperty}
-					>+</button>
 				{/if}
-			{/if}
 		</div>
 
 		<!-- The blank page — editor -->
@@ -356,34 +330,6 @@
 	}
 
 	/* (+) Properties button */
-	.focus-props-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 22px;
-		height: 22px;
-		border: 1px dashed var(--text-faint, #ddd);
-		border-radius: 4px;
-		background: transparent;
-		color: var(--text-faint, #ccc);
-		font-size: 15px;
-		cursor: pointer;
-		margin: 6px 4px 0;
-		transition: opacity 0.8s ease;
-	}
-	.focus-props-btn.ghost {
-		opacity: 0.08;
-		transition: opacity 1.2s ease;
-	}
-	.focus-props-btn.ghost:hover {
-		opacity: 0.5;
-	}
-	.focus-props-btn:hover {
-		opacity: 1;
-		border-color: var(--interactive-accent, #7c3aed);
-		color: var(--interactive-accent, #7c3aed);
-	}
-
 	/* ─── Editor ─── */
 	.focus-editor {
 		flex: 1;
