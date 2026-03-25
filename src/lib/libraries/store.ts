@@ -1087,6 +1087,7 @@ export interface AppSettings {
 	trashDestination: 'system' | 'local' | 'permanent';
 
 	// Appearance
+	titleAlignment: 'start' | 'center';
 	colorScheme: 'light' | 'dark' | 'system';
 	accentColor: string;
 	interfaceFont: string;
@@ -1202,6 +1203,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	useWikilinks: true,
 	confirmDelete: true,
 	trashDestination: 'system',
+	titleAlignment: 'center',
 	colorScheme: 'light',
 	accentColor: '#7c3aed',
 	interfaceFont: '',

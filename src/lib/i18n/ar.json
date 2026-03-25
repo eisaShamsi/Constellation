@@ -138,6 +138,10 @@
       "light": "فاتح",
       "dark": "داكن",
       "system": "مطابقة النظام",
+      "titleAlignment": "محاذاة العنوان",
+      "titleAlignmentDesc": "موضع عنوان الملاحظة على الورقة",
+      "titleAlignStart": "البداية",
+      "titleAlignCenter": "الوسط",
       "accentColor": "اللون التمييزي",
       "accentColorDesc": "يُستخدم للعناصر التفاعلية كالروابط والأزرار",
       "fonts": "الخطوط",
@@ -384,7 +388,8 @@
     "skills": "المهارات",
     "graphViewTitle": "الرسم البياني",
     "pinned": "مثبت",
-    "starViewTitle": "Star View"
+    "starViewTitle": "Star View",
+    "clickToStart": "اضغط هنا للبدء"
   },
   "welcome": {
     "title": "مرحبا بك في كونستليشن",

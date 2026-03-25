@@ -2520,10 +2520,15 @@
 							<a class="tab-close" href="/">×</a>
 						</div>
 					{/if}
+					<div class="tab-new-wrap">
 					<button class="tab tab-new" onclick={() => createEmptyTab()} title="New tab">
 						<svg class="tab-plus-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
 						<svg class="tab-bulb-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
 					</button>
+					{#if $openTabs.length === 0}
+						<span class="tab-new-hint">{$t('layout.clickToStart')}</span>
+					{/if}
+				</div>
 				</div>
 				{#if canScrollEnd}
 					<button class="tab-scroll-arrow tab-scroll-end" onclick={() => scrollTabs('end')}>
@@ -3379,8 +3384,8 @@
 	.tab-scroll-wrap {
 		display: flex; align-items: center;
 		min-width: 0;
-		margin-inline-start: max(0px, calc(50% - 469px));
-		max-width: 860px;
+		margin-inline-start: max(0px, calc(50% - 639px));
+		max-width: 1200px;
 		gap: 2px;
 	}
 	.tab-scroll {
@@ -3489,6 +3494,35 @@
 		color: #ff9800;
 	}
 	.tab-new:hover { background: color-mix(in srgb, #4caf50 10%, transparent) !important; color: #4caf50; }
+
+	/* When no tabs open: full circle centered in bar */
+	.tab-scroll.no-tabs {
+		justify-content: center; align-items: center;
+	}
+	.tab-scroll.no-tabs ~ .tab-scroll-arrow { display: none; }
+	.tab-bar:has(.tab-scroll.no-tabs) .tab-scroll-wrap {
+		flex: 1;
+		margin-inline-start: 0 !important;
+		max-width: none !important;
+		justify-content: center;
+	}
+	.tab-new-wrap {
+		display: flex; flex-direction: column; align-items: center;
+		flex-shrink: 0;
+	}
+	.tab-new-hint {
+		font-size: 11px; color: var(--text-faint); margin-top: 4px;
+		white-space: nowrap;
+	}
+	.tab-scroll.no-tabs .tab-new {
+		min-width: 26px !important; max-width: 26px;
+		height: 26px;
+		border-radius: 50% !important;
+		border: 1px solid #4caf50 !important;
+		border-bottom: 1px solid #4caf50 !important;
+		padding: 0 !important;
+		margin-top: 20px;
+	}
 
 	/* Slow pulse: 3 blinks of +, then 2 blinks of bulb. Total cycle = 15s (5 blinks × 3s each) */
 	.tab-scroll.no-tabs .tab-new svg.tab-plus-icon {

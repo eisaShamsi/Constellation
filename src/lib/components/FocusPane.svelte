@@ -45,10 +45,10 @@
 
 	function onUserTyping() {
 		isTyping = true;
-		if (!titleEditing) {
-			showTitle = false;
+		// Once title has content, it stays visible forever
+		if (hasTitleContent) {
+			showTitle = true;
 		}
-		// Reset pause timer
 		if (pauseTimer) clearTimeout(pauseTimer);
 		pauseTimer = setTimeout(() => {
 			isTyping = false;
@@ -79,9 +79,7 @@
 	function handleTitleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') {
 			e.preventDefault();
-			if (!showProperties) {
-				view?.focus();
-			}
+			view?.focus();
 		}
 		if (e.key === 'Escape') {
 			onexit?.();
@@ -188,9 +186,8 @@
 		wordCount = value.trim() ? words.length : 0;
 
 		// If opening an existing note with content, show title
-		if (wordCount > 0) {
+		if (wordCount > 0 || hasTitleContent) {
 			showTitle = true;
-			if (hasTitleContent) showAddProps = true;
 		}
 
 		view.focus();
