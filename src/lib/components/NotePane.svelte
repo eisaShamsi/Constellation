@@ -151,7 +151,9 @@
 	const noteNames = $derived(allNotes.map(n => ({ name: n.name, path: n.path, libraryName: n.libraryName })));
 
 	// Edit mode state
+	// editBody is ONLY for initial load / tab switch — NOT continuously synced from editor
 	let editBody = $state('');
+	let latestEditorText = ''; // non-reactive, for saving only
 	let saveTimeout: ReturnType<typeof setTimeout>;
 	let saving = $state(false);
 	let propsCollapsed = $state(false);
@@ -171,7 +173,7 @@
 			clearTimeout(saveTimeout);
 			if (tab) {
 				const currentParsed = parseFrontmatter(tab.content);
-				saveTabContent(tab.id, tab.path, currentParsed.properties, editBody).catch((e) => console.error('[NotePane] Flush save failed:', e));
+				saveTabContent(tab.id, tab.path, currentParsed.properties, latestEditorText || editBody).catch((e) => console.error('[NotePane] Flush save failed:', e));
 			}
 		}
 		if (rafId !== null) cancelAnimationFrame(rafId);
@@ -186,6 +188,7 @@
 	$effect(() => {
 		if (tab && tab.id !== prevTabId) {
 			editBody = parseFrontmatter(tab.content).body;
+			latestEditorText = editBody;
 			prevTabId = tab.id;
 		}
 	});
@@ -195,6 +198,7 @@
 	$effect(() => {
 		if (editing && !prevEditing && tab) {
 			editBody = parseFrontmatter(tab.content).body;
+			latestEditorText = editBody;
 		}
 		prevEditing = editing;
 	});
@@ -269,7 +273,7 @@
 	}
 
 	function handleEditorChange(newValue: string) {
-		editBody = newValue;
+		latestEditorText = newValue;
 		debouncedSaveBody();
 	}
 
@@ -278,7 +282,7 @@
 		saveTimeout = setTimeout(async () => {
 			if (!tab) return;
 			const currentParsed = parseFrontmatter(tab.content);
-			await saveTabContent(tab.id, tab.path, currentParsed.properties, editBody);
+			await saveTabContent(tab.id, tab.path, currentParsed.properties, latestEditorText);
 		}, 800);
 	}
 

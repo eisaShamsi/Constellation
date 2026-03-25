@@ -1519,16 +1519,10 @@
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged && !updating) {
-						// Update guard IMMEDIATELY to prevent $effect echo loop
 						const text = update.state.doc.toString();
 						lastInternalValue = text;
-						// Debounce the onchange callback to parent
-						if (onchangeTimer) clearTimeout(onchangeTimer);
-						onchangeTimer = setTimeout(() => {
-							if (update.view && !update.view.destroyed) {
-								onchange(text);
-							}
-						}, 500);
+						// Fire immediately — parent handles save debounce
+						onchange(text);
 					}
 					if (update.selectionSet || update.docChanged) {
 						// Batch toolbar updates to next animation frame
