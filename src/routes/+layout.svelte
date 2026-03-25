@@ -478,18 +478,18 @@
 		return parts[parts.length - 1] || sel;
 	});
 
-	// Auto-show/hide PiP
+	// Auto-show/hide PiP (guarded to avoid redundant writes)
 	$effect(() => {
-		if (showStarView && skyViewSelectedPath && pipFilteredNodes.length > 0) {
+		const shouldShow = showStarView && skyViewSelectedPath && pipFilteredNodes.length > 0;
+		if (shouldShow) {
 			if (!pipInitialized) {
-				// Position at bottom-right of window
 				pipX = Math.max(50, window.innerWidth - pipW - 30);
 				pipY = Math.max(50, window.innerHeight - pipH - 30);
 				pipInitialized = true;
 			}
-			showPiP = true;
+			if (!showPiP) showPiP = true;
 		} else {
-			showPiP = false;
+			if (showPiP) showPiP = false;
 		}
 	});
 
@@ -718,12 +718,9 @@
 		if (!isVisible || !tab?.path) {
 			return;
 		}
-		console.log('[Tasks] Effect fired, scheduling scan for:', tab.path);
 		_tasksTimer = setTimeout(async () => {
 			try {
-				console.log('[Tasks] Scanning note tasks...');
 				const result = await scanNoteTasks(tab.path, tab.libraryName, tab.libraryPath);
-				console.log('[Tasks] Scan complete, found', result.tasks.length, 'tasks');
 				sidebarTasks = result.tasks;
 			} catch (e) {
 				console.error('[Tasks] Scan failed:', e);
@@ -738,11 +735,9 @@
 		const isVisible = rightSidebarOpen && rightSidebarTab === 'calendar';
 		clearTimeout(_calTimer);
 		if (!isVisible) return;
-		console.log('[Calendar] Effect fired, scheduling scan...');
 		_calTimer = setTimeout(async () => {
 			try {
 				const libraryList = get(libraries);
-				console.log('[Calendar] Scanning', libraryList.length, 'libraries...');
 				const dateCounts: Record<string, number> = {};
 				const taskCounts: Record<string, number> = {};
 				const results = await Promise.all(
@@ -767,8 +762,7 @@
 				}
 				calendarNoteDates = dateCounts;
 				calendarTaskDates = taskCounts;
-				console.log('[Calendar] Scan complete');
-			} catch (e) { console.error('[Calendar] Scan failed:', e); }
+			} catch { /* Calendar scan failed */ }
 		}, 200);
 	});
 

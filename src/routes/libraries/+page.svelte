@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { marked } from 'marked';
@@ -53,6 +53,10 @@
 
 	// Configure marked for safe rendering
 	marked.setOptions({ breaks: true, gfm: true });
+
+	onDestroy(() => {
+		clearTimeout(searchTimeout);
+	});
 
 	onMount(async () => {
 		await loadLibraries();

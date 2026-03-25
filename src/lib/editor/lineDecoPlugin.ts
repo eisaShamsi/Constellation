@@ -3,6 +3,9 @@
  * - Blockquote lines (non-callout): left border + subtle background
  * - Fenced code blocks: background shading
  * Separate plugin to avoid conflicts with mark/replace decorations in livePreview.
+ *
+ * Performance: Only processes visible ranges. Callout detection uses
+ * a single upward scan with early termination.
  */
 import {
 	ViewPlugin,
@@ -16,47 +19,56 @@ import { RangeSetBuilder } from '@codemirror/state';
 const codeBlockLineDeco = Decoration.line({ class: 'cm-codeblock-line' });
 const blockquoteLineDeco = Decoration.line({ class: 'cm-blockquote-line' });
 
+/** Check if a blockquote line belongs to a callout block by scanning upward (max 50 lines) */
+function isInsideCallout(doc: { line(n: number): { text: string }}, lineNum: number): boolean {
+	for (let j = lineNum - 1; j >= Math.max(1, lineNum - 50); j--) {
+		const prevText = doc.line(j).text;
+		if (/^>\s*\[!\w+\]/.test(prevText)) return true;
+		if (!/^>\s?/.test(prevText)) return false;
+	}
+	return false;
+}
+
 function buildLineDecorations(view: EditorView): DecorationSet {
 	const doc = view.state.doc;
 	const builder = new RangeSetBuilder<Decoration>();
 
-	// Track code block regions and blockquote lines
-	let inCodeBlock = false;
+	// Pre-scan: determine if visible ranges start inside a code block
+	// by counting ``` fences from document start to first visible line
+	for (const { from, to } of view.visibleRanges) {
+		const startLine = doc.lineAt(from).number;
+		const endLine = doc.lineAt(to).number;
 
-	for (let i = 1; i <= doc.lines; i++) {
-		const line = doc.line(i);
-		const text = line.text;
-
-		// Toggle fenced code blocks
-		if (/^```/.test(text)) {
-			// Add decoration to the fence line itself
-			builder.add(line.from, line.from, codeBlockLineDeco);
-			inCodeBlock = !inCodeBlock;
-			continue;
-		}
-
-		if (inCodeBlock) {
-			builder.add(line.from, line.from, codeBlockLineDeco);
-			continue;
-		}
-
-		// Blockquote lines (only non-callout: skip lines that are part of > [!type] blocks)
-		if (/^>\s?/.test(text) && !/^>\s*\[!\w+\]/.test(text)) {
-			// Check if this is a continuation of a callout (previous line was > [!type] or > content)
-			let isCalloutContent = false;
-			for (let j = i - 1; j >= 1; j--) {
-				const prevText = doc.line(j).text;
-				if (/^>\s*\[!\w+\]/.test(prevText)) {
-					isCalloutContent = true;
-					break;
-				}
-				if (/^>\s?/.test(prevText)) {
-					continue; // keep checking upward
-				}
-				break; // non-blockquote line, stop
+		// Determine code block state at startLine by scanning from doc start
+		// (code blocks can span viewport boundaries)
+		let inCodeBlock = false;
+		for (let i = 1; i < startLine; i++) {
+			if (/^```/.test(doc.line(i).text)) {
+				inCodeBlock = !inCodeBlock;
 			}
-			if (!isCalloutContent) {
-				builder.add(line.from, line.from, blockquoteLineDeco);
+		}
+
+		for (let i = startLine; i <= endLine; i++) {
+			const line = doc.line(i);
+			const text = line.text;
+
+			// Toggle fenced code blocks
+			if (/^```/.test(text)) {
+				builder.add(line.from, line.from, codeBlockLineDeco);
+				inCodeBlock = !inCodeBlock;
+				continue;
+			}
+
+			if (inCodeBlock) {
+				builder.add(line.from, line.from, codeBlockLineDeco);
+				continue;
+			}
+
+			// Blockquote lines (skip callout content — handled by calloutPlugin)
+			if (/^>\s?/.test(text) && !/^>\s*\[!\w+\]/.test(text)) {
+				if (!isInsideCallout(doc, i)) {
+					builder.add(line.from, line.from, blockquoteLineDeco);
+				}
 			}
 		}
 	}
@@ -72,7 +84,7 @@ class LineDecoPluginClass {
 	}
 
 	update(update: ViewUpdate) {
-		if (update.docChanged || update.viewportChanged) {
+		if (update.docChanged || update.viewportChanged || update.selectionSet) {
 			this.decorations = buildLineDecorations(update.view);
 		}
 	}
