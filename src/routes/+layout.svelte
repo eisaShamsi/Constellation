@@ -3367,26 +3367,32 @@
 
 	/* Tab bar (unified with layout controls) */
 	.tab-bar {
-		display: flex; align-items: center;
+		display: flex; flex-direction: column; align-items: center;
 		background: #e8e8ec; border-bottom: none;
 		min-height: 36px; flex-shrink: 0;
-		padding: 0 8px;
-		gap: 2px;
+		position: relative;
+		padding: 0 32px;
 	}
 	.tab-bar-layout {
 		flex-shrink: 0;
+		position: absolute;
+		inset-inline-start: 8px;
+		top: 50%;
+		transform: translateY(-50%);
 	}
 	.tab-bar-end {
 		display: flex; align-items: center; gap: 2px;
-		margin-inline-start: auto;
-		flex-shrink: 0;
+		position: absolute;
+		inset-inline-end: 8px;
+		top: 50%;
+		transform: translateY(-50%);
 	}
 	.tab-scroll-wrap {
 		display: flex; align-items: center;
-		min-width: 0;
-		margin-inline-start: max(0px, calc(50% - 639px));
+		width: 100%;
 		max-width: 1200px;
 		gap: 2px;
+		margin-inline-start: -9px;
 	}
 	.tab-scroll {
 		min-width: 0; display: flex; align-items: flex-end;
