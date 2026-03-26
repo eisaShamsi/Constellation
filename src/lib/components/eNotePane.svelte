@@ -1,32 +1,93 @@
 <script lang="ts">
 	/**
-	 * eNotePane — Phase 0: The Skeleton
-	 * Gray desk + white paper + editable title. Nothing else.
+	 * eNotePane — Phase 1: The Bare Editor
+	 * Gray desk + white paper + editable title + CM6 editor.
+	 * Zero custom plugins. Typing must be instant.
 	 * Spec: docs/eNotePane-spec.md
 	 */
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { appSettings } from '$lib/libraries/store';
+	import { EditorView, keymap, drawSelection } from '@codemirror/view';
+	import { EditorState, Compartment } from '@codemirror/state';
+	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 
 	let {
+		value = '',
 		title = '',
 		dir = 'ltr' as 'ltr' | 'rtl',
+		onchange,
 		ontitlechange,
 	}: {
+		value?: string;
 		title?: string;
 		dir?: 'ltr' | 'rtl';
+		onchange?: (value: string) => void;
 		ontitlechange?: (newTitle: string) => void;
 	} = $props();
 
 	let titleValue = $state(title);
 	let titleEl: HTMLInputElement | undefined;
+	let editorEl: HTMLDivElement | undefined;
+	let view: EditorView | null = null;
+	const dirCompartment = new Compartment();
 
-	/* Auto-focus title on mount so user can type immediately (UXA requirement) */
+	/* ─── Mount: create editor, focus title ─── */
 	onMount(() => {
+		const state = EditorState.create({
+			doc: value,
+			extensions: [
+				/* Phase 1: bare minimum for instant typing */
+				history(),
+				drawSelection(),
+				markdown({ base: markdownLanguage }), /* no codeLanguages — saves 500KB+ */
+				keymap.of([...defaultKeymap, ...historyKeymap]),
+				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
+				EditorView.contentAttributes.of({ dir: 'auto' }), /* browser auto-detects per paragraph */
+				EditorView.lineWrapping,
+				EditorView.updateListener.of((update) => {
+					if (update.docChanged) {
+						/* One-way: editor → parent. No debounce. Parent handles save. */
+						onchange?.(update.state.doc.toString());
+					}
+				}),
+				/* Minimal theme: transparent bg, no borders, no gutters */
+				EditorView.theme({
+					'&': { background: 'transparent', border: 'none', outline: 'none' },
+					'&.cm-focused': { outline: 'none' },
+					'.cm-scroller': { overflow: 'auto', fontFamily: 'inherit', fontSize: '16px', lineHeight: '1.75' },
+					'.cm-content': { padding: '0', caretColor: 'var(--text-normal, #1a1a1a)' },
+					'.cm-cursor': { borderLeftColor: 'var(--text-normal, #1a1a1a)', borderLeftWidth: '1.5px' },
+					'.cm-line': { padding: '0' },
+					'.cm-activeLine': { background: 'transparent' },
+					'.cm-activeLineGutter': { display: 'none' },
+					'.cm-gutters': { display: 'none' },
+					'.cm-selectionBackground': { background: 'color-mix(in srgb, var(--interactive-accent, #7c3aed) 20%, transparent)' },
+				}),
+			],
+		});
+
+		view = new EditorView({ state, parent: editorEl! });
 		titleEl?.focus();
 	});
 
-	/** Auto-generate title: CoNoteDDMMYYYY.HH:MM (spec Section 0.3) */
+	/* ─── Destroy: clean up editor ─── */
+	onDestroy(() => {
+		view?.destroy();
+		view = null;
+	});
+
+	/* ─── Dir sync: only fires when dir actually changes ─── */
+	let prevDir = dir;
+	$effect(() => {
+		if (view && dir !== prevDir) {
+			prevDir = dir;
+			view.dispatch({ effects: dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })) });
+		}
+	});
+
+	/* ─── Title ─── */
 	function generateAutoTitle(): string {
 		const now = new Date();
 		const dd = String(now.getDate()).padStart(2, '0');
@@ -50,12 +111,15 @@
 	function handleTitleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') {
 			e.preventDefault();
-			(e.target as HTMLInputElement).blur();
-			// Phase 1: will focus the editor here
+			view?.focus(); /* Enter in title → focus editor */
 		}
 	}
 
 	const titleAlignment = $derived($appSettings.titleAlignment ?? 'center');
+
+	/* ─── Exported methods for parent ─── */
+	export function focus() { view?.focus(); }
+	export function getText(): string { return view?.state.doc.toString() ?? ''; }
 </script>
 
 <div class="e-desk" dir={dir}>
@@ -72,10 +136,8 @@
 			onkeydown={handleTitleKeydown}
 		/>
 
-		<!-- Phase 1: Editor goes here -->
-		<div class="e-body-placeholder">
-			{$t('eNotePane.bodyPlaceholder')}
-		</div>
+		<!-- CM6 Editor -->
+		<div class="e-editor" bind:this={editorEl}></div>
 	</div>
 </div>
 
@@ -87,7 +149,9 @@
 		flex-direction: column;
 		align-items: center;
 		background: #e8e8ec; /* desk surface color */
-		overflow: hidden;
+		padding-inline: 24px; /* minimum 24px gray desk visible on each side */
+		overflow-y: auto;
+		overflow-x: hidden;
 		min-width: 0;
 		min-height: 0;
 	}
@@ -101,6 +165,7 @@
 		flex-direction: column;
 		background: #ffffff; /* paper color */
 		padding: 48px; /* paper padding from spec */
+		min-width: 0; /* allow flex shrink below content size */
 		overflow-y: auto;
 		overflow-x: hidden;
 	}
@@ -117,7 +182,7 @@
 		font-family: inherit;
 		color: var(--text-normal, #1a1a1a);
 		padding: 0;
-		margin-block: 0 24px; /* space below title before content */
+		margin-block: 0 24px; /* 24px space below title before editor */
 		margin-inline: 0;
 		text-align: start;
 	}
@@ -129,11 +194,23 @@
 		font-weight: 400;
 	}
 
-	/* ─── Body Placeholder (Phase 0 only — replaced by editor in Phase 1) ─── */
-	.e-body-placeholder {
+	/* ─── Editor: fills remaining paper space ─── */
+	.e-editor {
 		flex: 1;
-		color: var(--text-faint, #ccc);
-		font-size: 16px; /* base body text size */
-		font-family: inherit;
+		min-height: 0; /* allow flex shrink */
+	}
+	/* Ensure CM6 fills the container */
+	.e-editor :global(.cm-editor) {
+		height: 100%;
+	}
+	/* Per-line bidi: each line auto-detects its direction from content — zero JS cost */
+	.e-editor :global(.cm-line) {
+		unicode-bidi: plaintext;
+	}
+	/* Remove any borders/outlines from CM6 */
+	.e-editor :global(.cm-editor),
+	.e-editor :global(.cm-editor.cm-focused) {
+		outline: none !important;
+		border: none !important;
 	}
 </style>

@@ -2697,12 +2697,26 @@
 							{/if}
 							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} color={libraryColorMap[tab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
 						{/each}
-					{:else}
-						<NotePane tab={$activeTab} isFocused={true} onFocus={() => {}} {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap}
-						onCreateNote={handleNewNote}
-						onQuickSwitch={() => showQuickSwitcher = true}
-						onCloseTab={() => { if ($activeTab) closeTab($activeTab.id); }}
-					/>
+					{:else if $activeTab}
+						{@const _parsed = parseFrontmatter($activeTab.content || '')}
+						{@const _body = _parsed.body}
+						{@const _noteDir = _body ? detectDir(_body) : ($dir as 'ltr' | 'rtl')}
+						{#key $activeTab.id + '|' + $activeTab.path}
+						<ENotePane
+							value={_body}
+							title={$activeTab.name.replace(/\.md$/, '')}
+							dir={_noteDir}
+							onchange={(text) => {
+								/* Phase 1: just receive changes. Save in Phase 2. */
+							}}
+							ontitlechange={(newTitle) => {
+								const t = $activeTab;
+								if (t && newTitle !== t.name.replace(/\.md$/, '')) {
+									renameItem(t.path, t.path.replace(/[^/\\]+$/, newTitle + '.md'));
+								}
+							}}
+						/>
+						{/key}
 					{/if}
 				</div>
 			{:else if isHome}
