@@ -13,7 +13,7 @@
 		loadLibraries, loadAllStats, addLibrary, createNewLibrary, searchAllStars,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
-		parseFrontmatter, extractHeadings,
+		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent,
 		createNote, createFolder, renameItem, deleteItem,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
@@ -41,6 +41,7 @@
 	import FileTree from '$lib/components/FileTree.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
+	import eNotePane from '$lib/components/eNotePane.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
@@ -2697,11 +2698,76 @@
 							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} color={libraryColorMap[tab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
 						{/each}
 					{:else}
-						<NotePane tab={$activeTab} isFocused={true} onFocus={() => {}} {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap}
-						onCreateNote={handleNewNote}
-						onQuickSwitch={() => showQuickSwitcher = true}
-						onCloseTab={() => { if ($activeTab) closeTab($activeTab.id); }}
-					/>
+						{@const tab = $activeTab}
+						{@const parsed = tab ? parseFrontmatter(tab.content) : null}
+						{@const body = parsed?.body ?? ''}
+						{@const noteDir = body ? detectDir(body) : ($dir as 'ltr' | 'rtl')}
+						{@const libPath = tab ? ($libraries.find(l => l.name === tab.libraryName)?.path ?? '') : ''}
+						{@const notePath = tab ? tab.name.replace(/\.md$/, '') : ''}
+						{#if tab}
+						{#key tab.id}
+						<eNotePane
+							value={body}
+							title={tab.name.replace(/\.md$/, '')}
+							dir={noteDir}
+							libraryName={tab.libraryName}
+							breadcrumbPath={notePath}
+							libraryPath={libPath}
+							properties={parsed?.properties?.map(p => ({ key: p.key, value: String(p.value ?? ''), type: p.type })) ?? []}
+							noteNames={allNotes.map(n => ({ name: n.name.replace(/\.md$/, ''), path: n.path, libraryName: n.libraryName }))}
+							allTags={allTagsList}
+							initialCursorPos={tab.cursorPos ?? 0}
+							initialScrollTop={tab.scrollTop ?? 0}
+							onchange={(text) => { /* non-reactive — eNotePane handles save internally */ }}
+							ontitlechange={(newTitle) => {
+								if (tab && newTitle !== tab.name.replace(/\.md$/, '')) {
+									renameItem(tab.path, tab.path.replace(/[^/\\]+$/, newTitle + '.md'));
+								}
+							}}
+							onpropertieschange={(props) => {
+								if (tab) {
+									const newContent = buildFullContent(
+										props.map(p => ({ key: p.key, value: p.value, type: (p.type || 'text') as any })),
+										body
+									);
+									updateTabContent(tab.id, newContent);
+									saveTabContent(tab.id, tab.path,
+										props.map(p => ({ key: p.key, value: p.value, type: (p.type || 'text') as any })),
+										body
+									);
+								}
+							}}
+							oncursorchange={(pos) => { if (tab) tab.cursorPos = pos; }}
+							onscrollchange={(top) => { if (tab) tab.scrollTop = top; }}
+							onsave={(text) => {
+								if (tab) {
+									const currentParsed = parseFrontmatter(tab.content);
+									saveTabContent(tab.id, tab.path, currentParsed.properties, text);
+								}
+							}}
+							onflush={(text) => {
+								if (tab) {
+									const currentParsed = parseFrontmatter(tab.content);
+									const newContent = buildFullContent(currentParsed.properties, text);
+									updateTabContent(tab.id, newContent);
+									saveTabContent(tab.id, tab.path, currentParsed.properties, text);
+								}
+							}}
+							onnavigateback={() => navigateBack()}
+							onnavigateforward={() => navigateForward()}
+							onmoreoptions={() => { /* TODO: wire to context menu */ }}
+							onwikilinkclick={async (noteName) => {
+								if (tab) {
+									const resolved = await resolveWikilinkCrossLibrary(libPath, noteName);
+									if (resolved) {
+										const vc = libraryColorMap[resolved.library_name] || '#7c3aed';
+										await openNoteTab(resolved.path, resolved.library_name, vc);
+									}
+								}
+							}}
+						/>
+						{/key}
+						{/if}
 					{/if}
 				</div>
 			{:else if isHome}
