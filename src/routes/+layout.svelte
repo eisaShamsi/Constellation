@@ -2701,7 +2701,7 @@
 						{@const _parsed = parseFrontmatter($activeTab.content || '')}
 						{@const _body = _parsed.body}
 						{@const _noteDir = _body ? detectDir(_body) : ($dir as 'ltr' | 'rtl')}
-						{#key $activeTab.id}
+						{#key $activeTab.id + '|' + $activeTab.path}
 						<ENotePane
 							value={_body}
 							title={$activeTab.name.replace(/\.md$/, '')}
