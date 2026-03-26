@@ -2702,19 +2702,31 @@
 						{@const _body = _parsed.body}
 						{@const _noteDir = _body ? detectDir(_body) : ($dir as 'ltr' | 'rtl')}
 						{#key $activeTab.id + '|' + $activeTab.path}
+						{@const _mountedTab = $activeTab}
 						<ENotePane
 							value={_body}
-							title={$activeTab.name.replace(/\.md$/, '')}
+							title={_mountedTab.name.replace(/\.md$/, '')}
 							dir={_noteDir}
-							onchange={(text) => {
-								/* Phase 1: just receive changes. Save in Phase 2. */
+							initialCursorPos={_mountedTab.cursorPos ?? 0}
+							initialScrollTop={_mountedTab.scrollTop ?? 0}
+							onchange={() => { /* parent tracks nothing during typing */ }}
+							onsave={(text) => {
+								const p = parseFrontmatter(_mountedTab.content || '');
+								saveTabContent(_mountedTab.id, _mountedTab.path, p.properties, text);
+							}}
+							onflush={(text) => {
+								const p = parseFrontmatter(_mountedTab.content || '');
+								const nc = buildFullContent(p.properties, text);
+								updateTabContent(_mountedTab.id, nc);
+								saveTabContent(_mountedTab.id, _mountedTab.path, p.properties, text);
 							}}
 							ontitlechange={(newTitle) => {
-								const t = $activeTab;
-								if (t && newTitle !== t.name.replace(/\.md$/, '')) {
-									renameItem(t.path, t.path.replace(/[^/\\]+$/, newTitle + '.md'));
+								if (newTitle !== _mountedTab.name.replace(/\.md$/, '')) {
+									renameItem(_mountedTab.path, _mountedTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
 								}
 							}}
+							oncursorchange={(pos) => { const t = get(openTabs).find(x => x.id === _mountedTab.id); if (t) t.cursorPos = pos; }}
+							onscrollchange={(top) => { const t = get(openTabs).find(x => x.id === _mountedTab.id); if (t) t.scrollTop = top; }}
 						/>
 						{/key}
 					{/if}
