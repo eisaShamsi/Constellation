@@ -1,8 +1,8 @@
 <script lang="ts">
 	/**
-	 * eNotePane — Phase 1: The Bare Editor
-	 * Desk + paper + title + CM6 editor. Must be < 5ms latency.
-	 * Spec: docs/eNotePane-spec.md, Section 3.3 Phase 1
+	 * eNotePane — Phase 2: Save & Restore
+	 * Desk + paper + title + CM6 editor + persistent save.
+	 * Spec: docs/eNotePane-spec.md, Section 4.2, 4.3
 	 */
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -16,14 +16,26 @@
 		value = '',
 		title = '',
 		dir = 'ltr' as 'ltr' | 'rtl',
+		initialCursorPos = 0,
+		initialScrollTop = 0,
 		onchange,
 		ontitlechange,
+		oncursorchange,
+		onscrollchange,
+		onsave,
+		onflush,
 	}: {
 		value?: string;
 		title?: string;
 		dir?: 'ltr' | 'rtl';
+		initialCursorPos?: number;
+		initialScrollTop?: number;
 		onchange?: (value: string) => void;
 		ontitlechange?: (newTitle: string) => void;
+		oncursorchange?: (pos: number) => void;
+		onscrollchange?: (top: number) => void;
+		onsave?: (text: string) => void;       /* debounced save to disk */
+		onflush?: (text: string) => void;      /* immediate save on destroy/tab switch */
 	} = $props();
 
 	/* ─── State ─── */
@@ -31,9 +43,12 @@
 	let titleEl: HTMLInputElement | undefined;
 	let editorEl: HTMLDivElement | undefined;
 	let view: EditorView | null = null;
+	let latestText = value;             /* non-reactive: tracks latest content for saving */
+	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 	const dirCompartment = new Compartment();
+	const SAVE_DEBOUNCE = 1500;         /* ms — spec Section 4.2 */
 
-	/* ─── Mount: create editor + focus title ─── */
+	/* ─── Mount: create editor, restore cursor/scroll, focus title ─── */
 	onMount(() => {
 		/* Focus title first — user types title, then Enter to body */
 		titleEl?.focus();
@@ -52,11 +67,29 @@
 				dirCompartment.of(EditorView.editorAttributes.of({ dir })),
 				EditorView.lineWrapping,
 				EditorView.contentAttributes.of({ dir }),
-				/* One-way: editor → parent. No debounce. Parent handles save. */
+				/* One-way: editor → parent. Immediate notify + debounced save. */
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
-						onchange?.(update.state.doc.toString());
+						const text = update.state.doc.toString();
+						latestText = text;
+						onchange?.(text);
+						/* Debounced save to disk — spec 4.2 */
+						if (saveTimer) clearTimeout(saveTimer);
+						saveTimer = setTimeout(() => {
+							onsave?.(latestText);
+						}, SAVE_DEBOUNCE);
 					}
+					/* Track cursor position for restore on tab switch — spec 4.3 */
+					if (update.selectionSet) {
+						oncursorchange?.(update.state.selection.main.head);
+					}
+				}),
+				/* Track scroll position */
+				EditorView.domEventHandlers({
+					scroll(event, editorView) {
+						onscrollchange?.(editorView.scrollDOM.scrollTop);
+						return false; /* don't consume the event */
+					},
 				}),
 				/* Clean editor theme — no borders, no gutters, no highlights */
 				EditorView.theme({
@@ -96,10 +129,31 @@
 		});
 
 		view = new EditorView({ state, parent: editorEl! });
+
+		/* Restore cursor position — spec 4.3 */
+		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
+			view.dispatch({ selection: { anchor: initialCursorPos } });
+		}
+
+		/* Restore scroll position — spec 4.3 */
+		if (initialScrollTop > 0) {
+			requestAnimationFrame(() => {
+				view?.scrollDOM.scrollTo({ top: initialScrollTop });
+			});
+		}
 	});
 
-	/* ─── Destroy: clean up editor (MA requirement) ─── */
+	/* ─── Destroy: flush save + clean up (spec 4.2, 4.3, MA requirement) ─── */
 	onDestroy(() => {
+		/* Cancel pending debounced save */
+		if (saveTimer) clearTimeout(saveTimer);
+
+		/* Flush: save latest content immediately (spec 4.2) */
+		if (latestText !== value) {
+			onflush?.(latestText);
+		}
+
+		/* Clean up EditorView (MA requirement) */
 		view?.destroy();
 		view = null;
 	});
@@ -153,6 +207,11 @@
 	/** Expose focus method for parent to call */
 	export function focus() {
 		view?.focus();
+	}
+
+	/** Expose current text for parent to read without reactive binding */
+	export function getText(): string {
+		return latestText;
 	}
 </script>
 
