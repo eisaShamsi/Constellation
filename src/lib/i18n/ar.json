@@ -486,6 +486,10 @@
     "libraries": "مكتبات",
     "notes": "ملاحظات"
   },
+  "eNotePane": {
+    "titlePlaceholder": "العنوان",
+    "bodyPlaceholder": "...ابدأ الكتابة"
+  },
   "notePane": {
     "saving": "جارٍ الحفظ...",
     "readingMode": "وضع القراءة",
