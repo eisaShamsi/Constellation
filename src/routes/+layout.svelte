@@ -2736,8 +2736,8 @@
 									renameItem(t.path, t.path.replace(/[^/\\]+$/, newTitle + '.md'));
 								}
 							}}
-							oncursorchange={(pos) => { if ($activeTab) $activeTab.cursorPos = pos; }}
-							onscrollchange={(top) => { if ($activeTab) $activeTab.scrollTop = top; }}
+							oncursorchange={(pos) => { const t = get(openTabs).find(x => x.id === $activeTab?.id); if (t) t.cursorPos = pos; }}
+							onscrollchange={(top) => { const t = get(openTabs).find(x => x.id === $activeTab?.id); if (t) t.scrollTop = top; }}
 							onnavigateback={() => navigateBack()}
 							onnavigateforward={() => navigateForward()}
 							onmoreoptions={() => {}}

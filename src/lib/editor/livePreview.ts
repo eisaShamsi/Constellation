@@ -386,15 +386,38 @@ function buildDecorations(view: EditorView): DecorationSet {
 // The ViewPlugin class
 class LivePreviewPlugin {
 	decorations: DecorationSet;
+	rebuildTimer: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(view: EditorView) {
 		this.decorations = buildDecorations(view);
 	}
 
 	update(update: ViewUpdate) {
-		if (update.docChanged || update.selectionSet || update.viewportChanged) {
+		if (update.viewportChanged) {
+			// Viewport scroll — rebuild immediately (no typing involved)
 			this.decorations = buildDecorations(update.view);
+		} else if (update.selectionSet && !update.docChanged) {
+			// Cursor moved without typing — rebuild immediately (show/hide markers)
+			this.decorations = buildDecorations(update.view);
+		} else if (update.docChanged) {
+			// Map existing decorations through changes instantly (~0.05ms)
+			this.decorations = this.decorations.map(update.changes);
+			// Full rebuild after typing pause — rAF ensures it yields to input
+			if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
+			const view = update.view;
+			this.rebuildTimer = setTimeout(() => {
+				this.rebuildTimer = null;
+				requestAnimationFrame(() => {
+					if (!view.destroyed) {
+						this.decorations = buildDecorations(view);
+					}
+				});
+			}, 300);
 		}
+	}
+
+	destroy() {
+		if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
 	}
 }
 

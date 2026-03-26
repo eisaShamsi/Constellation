@@ -166,6 +166,11 @@
 	onDestroy(() => {
 		if (saveTimer) clearTimeout(saveTimer);
 		if (latestText !== value) onflush?.(latestText);
+		// Save cursor + scroll position on destroy (not during typing)
+		if (view) {
+			oncursorchange?.(view.state.selection.main.head);
+			onscrollchange?.(view.scrollDOM.scrollTop);
+		}
 		view?.destroy();
 		view = null;
 	});
@@ -508,7 +513,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		background: #e8e8ec; /* desk surface */
+		background: #e8e8ec; /* desk surface — same as pane-container */
 		overflow: hidden;
 		min-width: 0;
 		min-height: 0;

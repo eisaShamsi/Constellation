@@ -288,15 +288,37 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 class CalloutPluginClass {
 	decorations: DecorationSet;
 
+	rebuildTimer: ReturnType<typeof setTimeout> | null = null;
+
 	constructor(view: EditorView) {
 		this.decorations = buildCalloutDecorations(view);
 	}
 
 	update(update: ViewUpdate) {
-		if (update.docChanged || update.selectionSet || update.viewportChanged
-			|| update.transactions.some(t => t.effects.some(e => e.is(toggleCallout)))) {
+		// Toggle effect or viewport change — rebuild immediately
+		if (update.transactions.some(t => t.effects.some(e => e.is(toggleCallout)))
+			|| update.viewportChanged
+			|| (update.selectionSet && !update.docChanged)) {
 			this.decorations = buildCalloutDecorations(update.view);
+			return;
 		}
+		if (update.docChanged) {
+			this.decorations = this.decorations.map(update.changes);
+			if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
+			const view = update.view;
+			this.rebuildTimer = setTimeout(() => {
+				this.rebuildTimer = null;
+				requestAnimationFrame(() => {
+					if (!view.destroyed) {
+						this.decorations = buildCalloutDecorations(view);
+					}
+				});
+			}, 350);
+		}
+	}
+
+	destroy() {
+		if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
 	}
 }
 
