@@ -1,8 +1,8 @@
 <script lang="ts">
 	/**
-	 * eNotePane — Phase 7: Callouts & Blockquotes
-	 * Desk + paper + breadcrumb + title + properties + toolbar + syntax + live preview + callouts + CM6 editor + save.
-	 * Spec: docs/eNotePane-spec.md, Sections 3.2, 3.3, 3.6, 3.7, 0.3.1
+	 * eNotePane — Phase 8: Wikilinks, Tags, Embeds
+	 * Full-featured note with knowledge linking.
+	 * Spec: docs/eNotePane-spec.md, Sections 3.2, 3.3, 3.6, 3.7, 3.8, 0.3.1
 	 */
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -12,7 +12,8 @@
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
-	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
+	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath } from '$lib/editor/livePreview';
+	import { autocompletion, type CompletionContext, type Completion } from '@codemirror/autocomplete';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, calloutClickHandler } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 
@@ -28,7 +29,10 @@
 		dir = 'ltr' as 'ltr' | 'rtl',
 		libraryName = '',
 		breadcrumbPath = '',
+		libraryPath = '',
 		properties = [] as NoteProperty[],
+		noteNames = [] as { name: string; path: string; libraryName?: string }[],
+		allTags = [] as string[],
 		initialCursorPos = 0,
 		initialScrollTop = 0,
 		onchange,
@@ -41,13 +45,17 @@
 		onnavigateback,
 		onnavigateforward,
 		onmoreoptions,
+		onwikilinkclick,
 	}: {
 		value?: string;
 		title?: string;
 		dir?: 'ltr' | 'rtl';
 		libraryName?: string;
 		breadcrumbPath?: string;
+		libraryPath?: string;
 		properties?: NoteProperty[];
+		noteNames?: { name: string; path: string; libraryName?: string }[];
+		allTags?: string[];
 		initialCursorPos?: number;
 		initialScrollTop?: number;
 		onchange?: (value: string) => void;
@@ -60,6 +68,7 @@
 		onnavigateback?: () => void;
 		onnavigateforward?: () => void;
 		onmoreoptions?: () => void;
+		onwikilinkclick?: (noteName: string) => void;
 	} = $props();
 
 	/* ─── State ─── */
@@ -92,6 +101,8 @@
 				calloutClickHandler,
 				lineDecoPlugin,       /* Phase 7: blockquote + code block line decorations */
 				lineDecoTheme,
+				libraryPathField,     /* Phase 8: for resolving ![[image.png]] embeds */
+				autocompletion({ override: [wikilinkCompletion, tagCompletion] }), /* Phase 8: [[note]] and #tag suggestions */
 				keymap.of([...defaultKeymap, ...historyKeymap]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir })),
 				EditorView.lineWrapping,
@@ -137,6 +148,11 @@
 		});
 
 		view = new EditorView({ state, parent: editorEl! });
+
+		/* Set library path for image embed resolution */
+		if (libraryPath) {
+			view.dispatch({ effects: setLibraryPath.of(libraryPath) });
+		}
 
 		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
 			view.dispatch({ selection: { anchor: initialCursorPos } });
@@ -202,6 +218,53 @@
 	const titleAlignment = $derived($appSettings.titleAlignment ?? 'center');
 	/* Cache properties length at mount — parent controls properties, not typing (PA requirement) */
 	let hasProperties = properties.length > 0;
+
+	/* ─── Autocomplete: wikilinks [[note]] and tags #tag (spec 3.8) ─── */
+	function wikilinkCompletion(context: CompletionContext) {
+		const before = context.matchBefore(/\[\[[^\]]*$/);
+		if (!before) return null;
+		const query = before.text.slice(2).toLowerCase();
+		const options: Completion[] = noteNames
+			.filter(n => n.name.toLowerCase().includes(query))
+			.slice(0, 20)
+			.map(n => ({ label: n.name, type: 'text', apply: `${n.name}]]` }));
+		return { from: before.from + 2, options };
+	}
+
+	function tagCompletion(context: CompletionContext) {
+		const before = context.matchBefore(/#[\w\u0600-\u06FF/-]*$/);
+		if (!before) return null;
+		const query = before.text.slice(1).toLowerCase();
+		const options: Completion[] = allTags
+			.filter(t => t.toLowerCase().includes(query))
+			.slice(0, 20)
+			.map(t => ({ label: t, type: 'keyword', apply: t }));
+		return { from: before.from + 1, options };
+	}
+
+	/* ─── Wikilink click handler (spec 3.8) ─── */
+	function handleEditorClick(e: MouseEvent) {
+		if (!onwikilinkclick) return;
+		const target = e.target as HTMLElement;
+		if (target.classList.contains('cm-md-link') || target.closest('.cm-md-link')) {
+			/* Check if it's a wikilink by looking at surrounding text */
+			if (!view) return;
+			const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
+			if (pos === null) return;
+			const line = view.state.doc.lineAt(pos);
+			const re = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g;
+			let m;
+			while ((m = re.exec(line.text)) !== null) {
+				const linkStart = line.from + m.index;
+				const linkEnd = linkStart + m[0].length;
+				if (pos >= linkStart && pos <= linkEnd) {
+					e.preventDefault();
+					onwikilinkclick(m[1]);
+					return;
+				}
+			}
+		}
+	}
 
 	/* ─── Toolbar — CM6 commands, NO DOM manipulation (spec 3.6) ─── */
 
@@ -432,7 +495,9 @@
 		{/if}
 
 		<!-- CM6 Editor -->
-		<div class="e-editor" bind:this={editorEl}></div>
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="e-editor" bind:this={editorEl} onclick={handleEditorClick}></div>
 	</div>
 </div>
 
