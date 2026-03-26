@@ -2697,62 +2697,12 @@
 							{/if}
 							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} color={libraryColorMap[tab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
 						{/each}
-					{:else if $activeTab}
-						{@const _parsed = parseFrontmatter($activeTab.content || '')}
-						{@const _body = _parsed.body}
-						{@const _noteDir = _body ? detectDir(_body) : ($dir as 'ltr' | 'rtl')}
-						{#key $activeTab.id + '|' + $activeTab.path}
-						<ENotePane
-							value={_body}
-							title={$activeTab.name.replace(/\.md$/, '')}
-							dir={_noteDir}
-							libraryName={$activeTab.libraryName}
-							breadcrumbPath={$activeTab.name.replace(/\.md$/, '')}
-							libraryPath={$libraries.find(l => l.name === $activeTab?.libraryName)?.path ?? ''}
-							properties={_parsed.properties?.map(p => ({ key: p.key, value: String(p.value ?? ''), type: p.type })) ?? []}
-							noteNames={allNotes.map(n => ({ name: n.name.replace(/\.md$/, ''), path: n.path, libraryName: n.libraryName }))}
-							allTags={allTagsList}
-							initialCursorPos={$activeTab.cursorPos ?? 0}
-							initialScrollTop={$activeTab.scrollTop ?? 0}
-							onsave={(text) => {
-								const t = $activeTab;
-								if (t) {
-									const p = parseFrontmatter(t.content || '');
-									saveTabContent(t.id, t.path, p.properties, text);
-								}
-							}}
-							onflush={(text) => {
-								const t = $activeTab;
-								if (t) {
-									const p = parseFrontmatter(t.content || '');
-									const nc = buildFullContent(p.properties, text);
-									updateTabContent(t.id, nc);
-									saveTabContent(t.id, t.path, p.properties, text);
-								}
-							}}
-							ontitlechange={(newTitle) => {
-								const t = $activeTab;
-								if (t && newTitle !== t.name.replace(/\.md$/, '')) {
-									renameItem(t.path, t.path.replace(/[^/\\]+$/, newTitle + '.md'));
-								}
-							}}
-							oncursorchange={(pos) => { const t = get(openTabs).find(x => x.id === $activeTab?.id); if (t) t.cursorPos = pos; }}
-							onscrollchange={(top) => { const t = get(openTabs).find(x => x.id === $activeTab?.id); if (t) t.scrollTop = top; }}
-							onnavigateback={() => navigateBack()}
-							onnavigateforward={() => navigateForward()}
-							onmoreoptions={() => {}}
-							onwikilinkclick={async (noteName) => {
-								const t = $activeTab;
-								if (t) {
-									const lp = $libraries.find(l => l.name === t.libraryName)?.path ?? '';
-									const resolved = await resolveWikilinkCrossLibrary(lp, noteName);
-									if (resolved) {
-										await openNoteTab(resolved.path, resolved.library_name, libraryColorMap[resolved.library_name] || '#7c3aed');
-									}
-								}
-							}}
-						/>
-						{/key}
+					{:else}
+						<NotePane tab={$activeTab} isFocused={true} onFocus={() => {}} {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap}
+						onCreateNote={handleNewNote}
+						onQuickSwitch={() => showQuickSwitcher = true}
+						onCloseTab={() => { if ($activeTab) closeTab($activeTab.id); }}
+					/>
 					{/if}
 				</div>
 			{:else if isHome}
