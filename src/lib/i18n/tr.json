@@ -138,6 +138,10 @@
       "light": "Açık",
       "dark": "Koyu",
       "system": "Sisteme uyum sağla",
+      "titleAlignment": "Başlık hizalama",
+      "titleAlignmentDesc": "Not başlığının kağıt üzerindeki konumu",
+      "titleAlignStart": "Başlangıç",
+      "titleAlignCenter": "Orta",
       "accentColor": "Vurgu rengi",
       "accentColorDesc": "Bağlantılar ve düğmeler gibi etkileşimli öğeler için kullanılır",
       "fonts": "Yazı tipleri",
@@ -480,6 +484,10 @@
     "characters": "karakter",
     "libraries": "kasa",
     "notes": "not"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "Başlık",
+    "bodyPlaceholder": "Yazmaya başlayın..."
   },
   "notePane": {
     "saving": "Kaydediliyor...",

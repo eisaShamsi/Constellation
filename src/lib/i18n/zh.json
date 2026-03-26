@@ -138,6 +138,10 @@
       "light": "浅色",
       "dark": "深色",
       "system": "跟随系统",
+      "titleAlignment": "标题对齐",
+      "titleAlignmentDesc": "笔记标题在纸张上的位置",
+      "titleAlignStart": "起始",
+      "titleAlignCenter": "居中",
       "accentColor": "强调色",
       "accentColorDesc": "用于链接和按钮等交互元素",
       "fonts": "字体",
@@ -480,6 +484,10 @@
     "characters": "个字符",
     "libraries": "个仓库",
     "notes": "篇笔记"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "标题",
+    "bodyPlaceholder": "开始写作..."
   },
   "notePane": {
     "saving": "正在保存...",

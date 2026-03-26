@@ -138,6 +138,10 @@
       "light": "Claro",
       "dark": "Escuro",
       "system": "Adaptar ao sistema",
+      "titleAlignment": "Alinhamento do título",
+      "titleAlignmentDesc": "Posição do título da nota no papel",
+      "titleAlignStart": "Início",
+      "titleAlignCenter": "Centro",
       "accentColor": "Cor de destaque",
       "accentColorDesc": "Usada para elementos interativos como links e botões",
       "fonts": "Fontes",
@@ -480,6 +484,10 @@
     "characters": "caracteres",
     "libraries": "cofres",
     "notes": "notas"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "Título",
+    "bodyPlaceholder": "Comece a escrever..."
   },
   "notePane": {
     "saving": "Salvando...",

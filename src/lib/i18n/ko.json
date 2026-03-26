@@ -138,6 +138,10 @@
       "light": "라이트",
       "dark": "다크",
       "system": "시스템 설정 따르기",
+      "titleAlignment": "제목 정렬",
+      "titleAlignmentDesc": "노트 제목의 위치",
+      "titleAlignStart": "시작",
+      "titleAlignCenter": "가운데",
       "accentColor": "강조 색상",
       "accentColorDesc": "링크와 버튼 같은 인터랙티브 요소에 사용",
       "fonts": "글꼴",
@@ -480,6 +484,10 @@
     "characters": "글자",
     "libraries": "보관함",
     "notes": "노트"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "제목",
+    "bodyPlaceholder": "글을 쓰기 시작..."
   },
   "notePane": {
     "saving": "저장 중...",

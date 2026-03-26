@@ -138,6 +138,10 @@
       "light": "लाइट",
       "dark": "डार्क",
       "system": "सिस्टम के अनुसार",
+      "titleAlignment": "शीर्षक संरेखण",
+      "titleAlignmentDesc": "कागज़ पर नोट शीर्षक की स्थिति",
+      "titleAlignStart": "आरंभ",
+      "titleAlignCenter": "केंद्र",
       "accentColor": "एक्सेंट रंग",
       "accentColorDesc": "लिंक और बटन जैसे इंटरैक्टिव तत्वों के लिए उपयोग होता है",
       "fonts": "फ़ॉन्ट",
@@ -480,6 +484,10 @@
     "characters": "अक्षर",
     "libraries": "तिजोरियाँ",
     "notes": "नोट्स"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "शीर्षक",
+    "bodyPlaceholder": "लिखना शुरू करें..."
   },
   "notePane": {
     "saving": "सहेजा जा रहा है...",

@@ -138,6 +138,10 @@
       "light": "Hell",
       "dark": "Dunkel",
       "system": "An System anpassen",
+      "titleAlignment": "Titelausrichtung",
+      "titleAlignmentDesc": "Position des Notiz-Titels auf dem Papier",
+      "titleAlignStart": "Anfang",
+      "titleAlignCenter": "Mitte",
       "accentColor": "Akzentfarbe",
       "accentColorDesc": "Wird für interaktive Elemente wie Links und Schaltflächen verwendet",
       "fonts": "Schriftarten",
@@ -480,6 +484,10 @@
     "characters": "Zeichen",
     "libraries": "Bibliotheken",
     "notes": "Notizen"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "Titel",
+    "bodyPlaceholder": "Schreiben Sie los..."
   },
   "notePane": {
     "saving": "Wird gespeichert...",

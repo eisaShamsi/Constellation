@@ -138,6 +138,10 @@
       "light": "ライト",
       "dark": "ダーク",
       "system": "システムに合わせる",
+      "titleAlignment": "タイトル配置",
+      "titleAlignmentDesc": "ノートタイトルの配置位置",
+      "titleAlignStart": "開始位置",
+      "titleAlignCenter": "中央",
       "accentColor": "アクセントカラー",
       "accentColorDesc": "リンクやボタンなどのインタラクティブ要素に使用",
       "fonts": "フォント",
@@ -480,6 +484,10 @@
     "characters": "文字",
     "libraries": "保管庫",
     "notes": "ノート"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "タイトル",
+    "bodyPlaceholder": "書き始める..."
   },
   "notePane": {
     "saving": "保存中...",

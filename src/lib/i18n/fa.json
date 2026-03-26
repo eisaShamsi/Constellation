@@ -138,6 +138,10 @@
       "light": "روشن",
       "dark": "تاریک",
       "system": "تطبیق با سیستم",
+      "titleAlignment": "تراز عنوان",
+      "titleAlignmentDesc": "موقعیت عنوان یادداشت روی کاغذ",
+      "titleAlignStart": "ابتدا",
+      "titleAlignCenter": "وسط",
       "accentColor": "رنگ تأکیدی",
       "accentColorDesc": "استفاده در عناصر تعاملی مانند لینک‌ها و دکمه‌ها",
       "fonts": "فونت‌ها",
@@ -480,6 +484,10 @@
     "characters": "نویسه",
     "libraries": "کتابخانه‌ها",
     "notes": "یادداشت"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "عنوان",
+    "bodyPlaceholder": "...شروع به نوشتن"
   },
   "notePane": {
     "saving": "در حال ذخیره...",

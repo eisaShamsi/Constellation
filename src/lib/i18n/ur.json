@@ -138,6 +138,10 @@
       "light": "روشن",
       "dark": "تاریک",
       "system": "سسٹم کے مطابق",
+      "titleAlignment": "عنوان کی سیدھ",
+      "titleAlignmentDesc": "کاغذ پر نوٹ کے عنوان کی جگہ",
+      "titleAlignStart": "شروع",
+      "titleAlignCenter": "درمیان",
       "accentColor": "نمایاں رنگ",
       "accentColorDesc": "لنکس اور بٹنز جیسے تعاملی عناصر کے لیے استعمال ہوتا ہے",
       "fonts": "فونٹس",
@@ -480,6 +484,10 @@
     "characters": "حروف",
     "libraries": "خزانے",
     "notes": "نوٹس"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "عنوان",
+    "bodyPlaceholder": "...لکھنا شروع کریں"
   },
   "notePane": {
     "saving": "محفوظ ہو رہا ہے...",

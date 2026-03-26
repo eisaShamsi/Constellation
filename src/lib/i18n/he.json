@@ -138,6 +138,10 @@
       "light": "בהיר",
       "dark": "כהה",
       "system": "התאם למערכת",
+      "titleAlignment": "יישור כותרת",
+      "titleAlignmentDesc": "מיקום כותרת הפתק על הנייר",
+      "titleAlignStart": "התחלה",
+      "titleAlignCenter": "מרכז",
       "accentColor": "צבע הדגשה",
       "accentColorDesc": "משמש לאלמנטים אינטראקטיביים כמו קישורים וכפתורים",
       "fonts": "גופנים",
@@ -480,6 +484,10 @@
     "characters": "תווים",
     "libraries": "כספות",
     "notes": "פתקים"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "כותרת",
+    "bodyPlaceholder": "...התחל לכתוב"
   },
   "notePane": {
     "saving": "שומר...",

@@ -138,6 +138,10 @@
       "light": "Светлая",
       "dark": "Тёмная",
       "system": "Как в системе",
+      "titleAlignment": "Выравнивание заголовка",
+      "titleAlignmentDesc": "Расположение заголовка заметки на листе",
+      "titleAlignStart": "Начало",
+      "titleAlignCenter": "По центру",
       "accentColor": "Акцентный цвет",
       "accentColorDesc": "Используется для интерактивных элементов, таких как ссылки и кнопки",
       "fonts": "Шрифты",
@@ -480,6 +484,10 @@
     "characters": "символов",
     "libraries": "хранилищ",
     "notes": "заметок"
+  },
+  "eNotePane": {
+    "titlePlaceholder": "Заголовок",
+    "bodyPlaceholder": "Начните писать..."
   },
   "notePane": {
     "saving": "Сохранение...",
