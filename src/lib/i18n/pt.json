@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "Título",
-    "bodyPlaceholder": "Comece a escrever..."
+    "bodyPlaceholder": "Comece a escrever...",
+    "propertyKey": "Chave",
+    "propertyValue": "Valor"
   },
   "notePane": {
     "saving": "Salvando...",
@@ -501,7 +503,12 @@
     "createNote": "Criar nova nota",
     "goToFile": "Ir para arquivo",
     "close": "Fechar",
-    "selectLibrary": "Selecionar cofre"
+    "selectLibrary": "Selecionar cofre",
+    "back": "Voltar",
+    "forward": "Avançar",
+    "moreOptions": "Mais opções",
+    "properties": "Propriedades",
+    "addProperty": "Adicionar propriedade"
   },
   "commandPalette": {
     "placeholder": "Digite um comando...",

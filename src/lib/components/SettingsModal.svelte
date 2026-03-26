@@ -1395,6 +1395,17 @@
 
 					<div class="setting-item">
 						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.titleAlignment')}</div>
+							<div class="setting-desc">{$t('settings.appearance.titleAlignmentDesc')}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.titleAlignment} onchange={(e) => updateSettings({ titleAlignment: (e.target as HTMLSelectElement).value as any })}>
+							<option value="start">{$t('settings.appearance.titleAlignStart')}</option>
+							<option value="center">{$t('settings.appearance.titleAlignCenter')}</option>
+						</select>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
 							<div class="setting-name">{$t('settings.appearance.accentColor')}</div>
 							<div class="setting-desc">{$t('settings.appearance.accentColorDesc')}</div>
 						</div>

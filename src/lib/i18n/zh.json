@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "标题",
-    "bodyPlaceholder": "开始写作..."
+    "bodyPlaceholder": "开始写作...",
+    "propertyKey": "键",
+    "propertyValue": "值"
   },
   "notePane": {
     "saving": "正在保存...",
@@ -501,7 +503,12 @@
     "createNote": "创建新笔记",
     "goToFile": "跳转到文件",
     "close": "关闭",
-    "selectLibrary": "选择保险库"
+    "selectLibrary": "选择保险库",
+    "back": "返回",
+    "forward": "前进",
+    "moreOptions": "更多选项",
+    "properties": "属性",
+    "addProperty": "添加属性"
   },
   "commandPalette": {
     "placeholder": "输入命令...",

@@ -167,7 +167,8 @@ export async function saveTabContent(
 		});
 
 		const newContent = buildFullContent(updatedProps, body);
-		updateTabContent(tabId, newContent);
+		// Do NOT update the store during autosave — it triggers full reactivity cascade.
+		// The editor owns the content. Store is synced on tab switch / note reload.
 		recentWrites.set(filePath, Date.now());
 		await writeNote(filePath, newContent);
 		emit('screen:note-saved', { path: filePath }).catch(() => {});

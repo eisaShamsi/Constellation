@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "タイトル",
-    "bodyPlaceholder": "書き始める..."
+    "bodyPlaceholder": "書き始める...",
+    "propertyKey": "キー",
+    "propertyValue": "値"
   },
   "notePane": {
     "saving": "保存中...",
@@ -501,7 +503,12 @@
     "createNote": "新規ノート作成",
     "goToFile": "ファイルに移動",
     "close": "閉じる",
-    "selectLibrary": "保管庫を選択"
+    "selectLibrary": "保管庫を選択",
+    "back": "戻る",
+    "forward": "進む",
+    "moreOptions": "その他のオプション",
+    "properties": "プロパティ",
+    "addProperty": "プロパティを追加"
   },
   "commandPalette": {
     "placeholder": "コマンドを入力...",

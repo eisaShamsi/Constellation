@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "Title",
-    "bodyPlaceholder": "Start writing..."
+    "bodyPlaceholder": "Start writing...",
+    "propertyKey": "Key",
+    "propertyValue": "Value"
   },
   "notePane": {
     "saving": "Saving...",
@@ -501,7 +503,12 @@
     "createNote": "Create new note",
     "goToFile": "Go to file",
     "close": "Close",
-    "selectLibrary": "Select library"
+    "selectLibrary": "Select library",
+    "back": "Back",
+    "forward": "Forward",
+    "moreOptions": "More options",
+    "properties": "Properties",
+    "addProperty": "Add property"
   },
   "commandPalette": {
     "placeholder": "Type a command...",

@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "عنوان",
-    "bodyPlaceholder": "...شروع به نوشتن"
+    "bodyPlaceholder": "...شروع به نوشتن",
+    "propertyKey": "کلید",
+    "propertyValue": "مقدار"
   },
   "notePane": {
     "saving": "در حال ذخیره...",
@@ -501,7 +503,12 @@
     "createNote": "ایجاد یادداشت جدید",
     "goToFile": "رفتن به فایل",
     "close": "بستن",
-    "selectLibrary": "انتخاب کتابخانه"
+    "selectLibrary": "انتخاب کتابخانه",
+    "back": "بازگشت",
+    "forward": "جلو",
+    "moreOptions": "گزینه‌های بیشتر",
+    "properties": "ویژگی‌ها",
+    "addProperty": "افزودن ویژگی"
   },
   "commandPalette": {
     "placeholder": "یک دستور تایپ کنید...",

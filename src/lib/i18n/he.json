@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "כותרת",
-    "bodyPlaceholder": "...התחל לכתוב"
+    "bodyPlaceholder": "...התחל לכתוב",
+    "propertyKey": "מפתח",
+    "propertyValue": "ערך"
   },
   "notePane": {
     "saving": "שומר...",
@@ -501,7 +503,12 @@
     "createNote": "צור פתק חדש",
     "goToFile": "עבור לקובץ",
     "close": "סגור",
-    "selectLibrary": "בחר כספת"
+    "selectLibrary": "בחר כספת",
+    "back": "אחורה",
+    "forward": "קדימה",
+    "moreOptions": "אפשרויות נוספות",
+    "properties": "מאפיינים",
+    "addProperty": "הוסף מאפיין"
   },
   "commandPalette": {
     "placeholder": "הקלד פקודה...",

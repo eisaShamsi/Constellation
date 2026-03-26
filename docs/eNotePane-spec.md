@@ -114,6 +114,61 @@ Example: `CoNote26032026.14:35`
 
 This means: every untitled note has a **unique, chronologically sortable, informative name**.
 
+### 0.3.1 Note Metadata (YAML Frontmatter)
+
+The filename stays simple and human-readable. Rich metadata lives inside the file as YAML frontmatter:
+
+```yaml
+---
+created: 2026-03-26T14:35:00
+modified: 2026-03-26T15:22:00
+title: CoNote26032026.14:35
+type: fleeting
+os: Windows 11 (22H2)
+device: DESKTOP-A1B2C3
+deviceName: Eisa's PC
+universe: Two Universe UNIVERSE
+library: كون عيسى
+folder: /Research/Notes
+tags: []
+source: ""
+author: ""
+---
+```
+
+**Auto-populated on note creation (user never needs to type these):**
+
+| Field | Source | Description |
+|---|---|---|
+| `created` | `new Date().toISOString()` | Full timestamp with seconds |
+| `modified` | Updated on every save | Last modification time |
+| `title` | Filename without `.md` | Note identity |
+| `type` | `fleeting` (FocusPane) / `permanent` (eNotePane) | Note type for Zettelkasten workflow |
+| `os` | Tauri `os.type()` + `os.version()` | Which OS created this note |
+| `device` | Tauri `os.hostname()` | Unique machine identifier |
+| `deviceName` | From system or settings | Human-readable device name |
+| `universe` | Current universe context | Which universe this belongs to |
+| `library` | Current library context | Which library within the universe |
+| `folder` | File path relative to library root | Location within library |
+
+**User-populated (optional, added via Properties panel):**
+
+| Field | Description |
+|---|---|
+| `tags` | Classification tags |
+| `source` | For literature notes — where the idea came from |
+| `author` | Who wrote this note |
+| `prev` / `next` | Zettelkasten sequence links |
+| Custom keys | Any user-defined properties |
+
+**Principles:**
+- Filename stays clean — `CoNote26032026.14:35.md` or user's own title
+- Metadata is searchable — Rust-side indexer reads YAML frontmatter
+- Metadata is portable — standard YAML, readable by any tool
+- Auto-populated silently — user never sees the machinery
+- User-editable — Properties panel in eNotePane lets users add/edit
+- Invisible by default — frontmatter hidden in editor, shown in Properties panel
+
 ### 0.4 Why People Take Notes
 
 | Reason | Example | Speed Need |

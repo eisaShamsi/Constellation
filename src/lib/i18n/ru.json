@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "Заголовок",
-    "bodyPlaceholder": "Начните писать..."
+    "bodyPlaceholder": "Начните писать...",
+    "propertyKey": "Ключ",
+    "propertyValue": "Значение"
   },
   "notePane": {
     "saving": "Сохранение...",
@@ -501,7 +503,12 @@
     "createNote": "Создать новую заметку",
     "goToFile": "Перейти к файлу",
     "close": "Закрыть",
-    "selectLibrary": "Выбрать хранилище"
+    "selectLibrary": "Выбрать хранилище",
+    "back": "Назад",
+    "forward": "Вперёд",
+    "moreOptions": "Дополнительно",
+    "properties": "Свойства",
+    "addProperty": "Добавить свойство"
   },
   "commandPalette": {
     "placeholder": "Введите команду...",

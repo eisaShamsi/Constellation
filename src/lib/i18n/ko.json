@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "제목",
-    "bodyPlaceholder": "글을 쓰기 시작..."
+    "bodyPlaceholder": "글을 쓰기 시작...",
+    "propertyKey": "키",
+    "propertyValue": "값"
   },
   "notePane": {
     "saving": "저장 중...",
@@ -501,7 +503,12 @@
     "createNote": "새 노트 만들기",
     "goToFile": "파일로 이동",
     "close": "닫기",
-    "selectLibrary": "금고 선택"
+    "selectLibrary": "금고 선택",
+    "back": "뒤로",
+    "forward": "앞으로",
+    "moreOptions": "더 많은 옵션",
+    "properties": "속성",
+    "addProperty": "속성 추가"
   },
   "commandPalette": {
     "placeholder": "명령어 입력...",

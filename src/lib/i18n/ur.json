@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "عنوان",
-    "bodyPlaceholder": "...لکھنا شروع کریں"
+    "bodyPlaceholder": "...لکھنا شروع کریں",
+    "propertyKey": "کلید",
+    "propertyValue": "قدر"
   },
   "notePane": {
     "saving": "محفوظ ہو رہا ہے...",
@@ -501,7 +503,12 @@
     "createNote": "نیا نوٹ بنائیں",
     "goToFile": "فائل پر جائیں",
     "close": "بند کریں",
-    "selectLibrary": "والٹ منتخب کریں"
+    "selectLibrary": "والٹ منتخب کریں",
+    "back": "واپس",
+    "forward": "آگے",
+    "moreOptions": "مزید اختیارات",
+    "properties": "خصوصیات",
+    "addProperty": "خصوصیت شامل کریں"
   },
   "commandPalette": {
     "placeholder": "کمانڈ ٹائپ کریں...",

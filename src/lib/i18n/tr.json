@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "Başlık",
-    "bodyPlaceholder": "Yazmaya başlayın..."
+    "bodyPlaceholder": "Yazmaya başlayın...",
+    "propertyKey": "Anahtar",
+    "propertyValue": "Değer"
   },
   "notePane": {
     "saving": "Kaydediliyor...",
@@ -501,7 +503,12 @@
     "createNote": "Yeni not oluştur",
     "goToFile": "Dosyaya git",
     "close": "Kapat",
-    "selectLibrary": "Kasa seç"
+    "selectLibrary": "Kasa seç",
+    "back": "Geri",
+    "forward": "İleri",
+    "moreOptions": "Daha fazla seçenek",
+    "properties": "Özellikler",
+    "addProperty": "Özellik ekle"
   },
   "commandPalette": {
     "placeholder": "Bir komut yazın...",

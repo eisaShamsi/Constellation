@@ -488,7 +488,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "العنوان",
-    "bodyPlaceholder": "...ابدأ الكتابة"
+    "bodyPlaceholder": "...ابدأ الكتابة",
+    "propertyKey": "المفتاح",
+    "propertyValue": "القيمة"
   },
   "notePane": {
     "saving": "جارٍ الحفظ...",
@@ -502,7 +504,12 @@
     "createNote": "إنشاء ملاحظة جديدة",
     "goToFile": "الانتقال إلى ملف",
     "close": "إغلاق",
-    "selectLibrary": "اختر المكتبة"
+    "selectLibrary": "اختر المكتبة",
+    "back": "رجوع",
+    "forward": "تقدم",
+    "moreOptions": "خيارات إضافية",
+    "properties": "الخصائص",
+    "addProperty": "إضافة خاصية"
   },
   "commandPalette": {
     "placeholder": "أدخل أمر...",

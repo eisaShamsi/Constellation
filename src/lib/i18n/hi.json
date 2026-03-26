@@ -487,7 +487,9 @@
   },
   "eNotePane": {
     "titlePlaceholder": "शीर्षक",
-    "bodyPlaceholder": "लिखना शुरू करें..."
+    "bodyPlaceholder": "लिखना शुरू करें...",
+    "propertyKey": "कुंजी",
+    "propertyValue": "मान"
   },
   "notePane": {
     "saving": "सहेजा जा रहा है...",
@@ -501,7 +503,12 @@
     "createNote": "नया नोट बनाएं",
     "goToFile": "फाइल पर जाएं",
     "close": "बंद करें",
-    "selectLibrary": "वॉल्ट चुनें"
+    "selectLibrary": "वॉल्ट चुनें",
+    "back": "पीछे",
+    "forward": "आगे",
+    "moreOptions": "अधिक विकल्प",
+    "properties": "गुण",
+    "addProperty": "गुण जोड़ें"
   },
   "commandPalette": {
     "placeholder": "कमांड टाइप करें...",
