@@ -41,7 +41,7 @@
 	import FileTree from '$lib/components/FileTree.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
-	import eNotePane from '$lib/components/eNotePane.svelte';
+	import ENotePane from '$lib/components/eNotePane.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
@@ -2697,77 +2697,62 @@
 							{/if}
 							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} color={libraryColorMap[tab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
 						{/each}
-					{:else}
-						{@const tab = $activeTab}
-						{@const parsed = tab ? parseFrontmatter(tab.content) : null}
-						{@const body = parsed?.body ?? ''}
-						{@const noteDir = body ? detectDir(body) : ($dir as 'ltr' | 'rtl')}
-						{@const libPath = tab ? ($libraries.find(l => l.name === tab.libraryName)?.path ?? '') : ''}
-						{@const notePath = tab ? tab.name.replace(/\.md$/, '') : ''}
-						{#if tab}
-						{#key tab.id}
-						<eNotePane
-							value={body}
-							title={tab.name.replace(/\.md$/, '')}
-							dir={noteDir}
-							libraryName={tab.libraryName}
-							breadcrumbPath={notePath}
-							libraryPath={libPath}
-							properties={parsed?.properties?.map(p => ({ key: p.key, value: String(p.value ?? ''), type: p.type })) ?? []}
+					{:else if $activeTab}
+						{@const _parsed = parseFrontmatter($activeTab.content || '')}
+						{@const _body = _parsed.body}
+						{@const _noteDir = _body ? detectDir(_body) : ($dir as 'ltr' | 'rtl')}
+						{#key $activeTab.id}
+						<ENotePane
+							value={_body}
+							title={$activeTab.name.replace(/\.md$/, '')}
+							dir={_noteDir}
+							libraryName={$activeTab.libraryName}
+							breadcrumbPath={$activeTab.name.replace(/\.md$/, '')}
+							libraryPath={$libraries.find(l => l.name === $activeTab?.libraryName)?.path ?? ''}
+							properties={_parsed.properties?.map(p => ({ key: p.key, value: String(p.value ?? ''), type: p.type })) ?? []}
 							noteNames={allNotes.map(n => ({ name: n.name.replace(/\.md$/, ''), path: n.path, libraryName: n.libraryName }))}
 							allTags={allTagsList}
-							initialCursorPos={tab.cursorPos ?? 0}
-							initialScrollTop={tab.scrollTop ?? 0}
-							onchange={(text) => { /* non-reactive — eNotePane handles save internally */ }}
-							ontitlechange={(newTitle) => {
-								if (tab && newTitle !== tab.name.replace(/\.md$/, '')) {
-									renameItem(tab.path, tab.path.replace(/[^/\\]+$/, newTitle + '.md'));
-								}
-							}}
-							onpropertieschange={(props) => {
-								if (tab) {
-									const newContent = buildFullContent(
-										props.map(p => ({ key: p.key, value: p.value, type: (p.type || 'text') as any })),
-										body
-									);
-									updateTabContent(tab.id, newContent);
-									saveTabContent(tab.id, tab.path,
-										props.map(p => ({ key: p.key, value: p.value, type: (p.type || 'text') as any })),
-										body
-									);
-								}
-							}}
-							oncursorchange={(pos) => { if (tab) tab.cursorPos = pos; }}
-							onscrollchange={(top) => { if (tab) tab.scrollTop = top; }}
+							initialCursorPos={$activeTab.cursorPos ?? 0}
+							initialScrollTop={$activeTab.scrollTop ?? 0}
 							onsave={(text) => {
-								if (tab) {
-									const currentParsed = parseFrontmatter(tab.content);
-									saveTabContent(tab.id, tab.path, currentParsed.properties, text);
+								const t = $activeTab;
+								if (t) {
+									const p = parseFrontmatter(t.content || '');
+									saveTabContent(t.id, t.path, p.properties, text);
 								}
 							}}
 							onflush={(text) => {
-								if (tab) {
-									const currentParsed = parseFrontmatter(tab.content);
-									const newContent = buildFullContent(currentParsed.properties, text);
-									updateTabContent(tab.id, newContent);
-									saveTabContent(tab.id, tab.path, currentParsed.properties, text);
+								const t = $activeTab;
+								if (t) {
+									const p = parseFrontmatter(t.content || '');
+									const nc = buildFullContent(p.properties, text);
+									updateTabContent(t.id, nc);
+									saveTabContent(t.id, t.path, p.properties, text);
 								}
 							}}
+							ontitlechange={(newTitle) => {
+								const t = $activeTab;
+								if (t && newTitle !== t.name.replace(/\.md$/, '')) {
+									renameItem(t.path, t.path.replace(/[^/\\]+$/, newTitle + '.md'));
+								}
+							}}
+							oncursorchange={(pos) => { if ($activeTab) $activeTab.cursorPos = pos; }}
+							onscrollchange={(top) => { if ($activeTab) $activeTab.scrollTop = top; }}
 							onnavigateback={() => navigateBack()}
 							onnavigateforward={() => navigateForward()}
-							onmoreoptions={() => { /* TODO: wire to context menu */ }}
+							onmoreoptions={() => {}}
 							onwikilinkclick={async (noteName) => {
-								if (tab) {
-									const resolved = await resolveWikilinkCrossLibrary(libPath, noteName);
+								const t = $activeTab;
+								if (t) {
+									const lp = $libraries.find(l => l.name === t.libraryName)?.path ?? '';
+									const resolved = await resolveWikilinkCrossLibrary(lp, noteName);
 									if (resolved) {
-										const vc = libraryColorMap[resolved.library_name] || '#7c3aed';
-										await openNoteTab(resolved.path, resolved.library_name, vc);
+										await openNoteTab(resolved.path, resolved.library_name, libraryColorMap[resolved.library_name] || '#7c3aed');
 									}
 								}
 							}}
 						/>
 						{/key}
-						{/if}
 					{/if}
 				</div>
 			{:else if isHome}
@@ -3634,6 +3619,7 @@
 	.pane-container {
 		flex: 1; display: flex; flex-direction: row; overflow: hidden; background: #e8e8ec;
 	}
+	.pane-container > :global(*) { flex: 1; min-width: 0; min-height: 0; }
 	.pane-container.horizontal { flex-direction: column; }
 	.pane-divider { flex-shrink: 0; background: var(--border); }
 	.pane-container:not(.horizontal) > .pane-divider { width: 3px; cursor: col-resize; }
