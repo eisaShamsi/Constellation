@@ -60,6 +60,7 @@ const highlightDeco = Decoration.mark({ class: 'cm-md-highlight' });
 const hrDeco = Decoration.mark({ class: 'cm-md-hr' });
 const blockquoteDeco = Decoration.mark({ class: 'cm-md-blockquote' });
 const tagDeco = Decoration.mark({ class: 'cm-md-tag' });
+const replaceDeco = Decoration.replace({}); /* cached — avoids allocation per decoration */
 
 class CheckboxWidget extends WidgetType {
 	checked: boolean;
@@ -172,7 +173,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 				// Hide heading markers (# characters) when cursor is not on that line
 				if (node.name === 'HeaderMark' && !onCursorLine) {
 					const end = Math.min(node.to + 1, doc.lineAt(node.from).to);
-					ranges.push({ from: node.from, to: end, deco: Decoration.replace({}) });
+					ranges.push({ from: node.from, to: end, deco: replaceDeco });
 				}
 
 				// Strong emphasis (bold)
@@ -187,7 +188,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 
 				// Hide emphasis markers when not on cursor line
 				if (node.name === 'EmphasisMark' && !onCursorLine) {
-					ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({}) });
+					ranges.push({ from: node.from, to: node.to, deco: replaceDeco });
 				}
 
 				// Strikethrough
@@ -195,7 +196,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 					ranges.push({ from: node.from, to: node.to, deco: strikeDeco });
 				}
 				if (node.name === 'StrikethroughMark' && !onCursorLine) {
-					ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({}) });
+					ranges.push({ from: node.from, to: node.to, deco: replaceDeco });
 				}
 
 				// Inline code
@@ -205,7 +206,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 				if (node.name === 'CodeMark' && !onCursorLine) {
 					const text = doc.sliceString(node.from, node.to);
 					if (text === '`') {
-						ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({}) });
+						ranges.push({ from: node.from, to: node.to, deco: replaceDeco });
 					}
 				}
 
@@ -240,7 +241,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 					ranges.push({ from: node.from, to: node.to, deco: highlightDeco });
 				}
 				if (node.name === 'HighlightMark' && !onCursorLine) {
-					ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({}) });
+					ranges.push({ from: node.from, to: node.to, deco: replaceDeco });
 				}
 
 				// Fenced code blocks
@@ -337,16 +338,16 @@ function buildDecorations(view: EditorView): DecorationSet {
 						// [[note|display]] — hide everything except display text
 						const displayFrom = innerFrom + pipeIndex + 1;
 						// Hide [[ + note name + |
-						ranges.push({ from: absFrom, to: displayFrom, deco: Decoration.replace({}) });
+						ranges.push({ from: absFrom, to: displayFrom, deco: replaceDeco });
 						// Style display text
 						ranges.push({ from: displayFrom, to: innerTo, deco: linkDeco });
 						// Hide ]]
-						ranges.push({ from: innerTo, to: absTo, deco: Decoration.replace({}) });
+						ranges.push({ from: innerTo, to: absTo, deco: replaceDeco });
 					} else {
 						// [[note name]] — hide brackets only
-						ranges.push({ from: absFrom, to: innerFrom, deco: Decoration.replace({}) });
+						ranges.push({ from: absFrom, to: innerFrom, deco: replaceDeco });
 						ranges.push({ from: innerFrom, to: innerTo, deco: linkDeco });
-						ranges.push({ from: innerTo, to: absTo, deco: Decoration.replace({}) });
+						ranges.push({ from: innerTo, to: absTo, deco: replaceDeco });
 					}
 				}
 			}
@@ -478,7 +479,7 @@ export const livePreviewTheme = EditorView.theme({
 	},
 	'.cm-md-checkbox': {
 		verticalAlign: 'middle',
-		marginRight: '4px',
+		marginInlineEnd: '4px',
 		cursor: 'pointer',
 		accentColor: 'var(--library-accent, var(--interactive-accent))',
 	},

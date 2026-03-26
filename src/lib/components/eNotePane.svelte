@@ -1,7 +1,7 @@
 <script lang="ts">
 	/**
-	 * eNotePane — Phase 5: Syntax Highlighting
-	 * Desk + paper + breadcrumb + title + properties + toolbar + syntax colors + CM6 editor + save.
+	 * eNotePane — Phase 6: Live Preview
+	 * Desk + paper + breadcrumb + title + properties + toolbar + syntax + live preview + CM6 editor + save.
 	 * Spec: docs/eNotePane-spec.md, Sections 3.2, 3.3, 3.6, 0.3.1
 	 */
 	import { onMount, onDestroy } from 'svelte';
@@ -12,6 +12,7 @@
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
+	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
 
 	interface NoteProperty {
 		key: string;
@@ -81,6 +82,8 @@
 				drawSelection(),
 				syntaxHighlighting(defaultHighlightStyle, { fallback: true }), /* Phase 5: colors for md syntax */
 				markdown({ base: markdownLanguage }), /* no codeLanguages — saves 500KB+ */
+				livePreviewPlugin, /* Phase 6: hide markers, render inline when cursor off line */
+				livePreviewTheme,
 				keymap.of([...defaultKeymap, ...historyKeymap]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir })),
 				EditorView.lineWrapping,
