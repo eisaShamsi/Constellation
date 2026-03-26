@@ -1,8 +1,8 @@
 <script lang="ts">
 	/**
-	 * eNotePane — Phase 6: Live Preview
-	 * Desk + paper + breadcrumb + title + properties + toolbar + syntax + live preview + CM6 editor + save.
-	 * Spec: docs/eNotePane-spec.md, Sections 3.2, 3.3, 3.6, 0.3.1
+	 * eNotePane — Phase 7: Callouts & Blockquotes
+	 * Desk + paper + breadcrumb + title + properties + toolbar + syntax + live preview + callouts + CM6 editor + save.
+	 * Spec: docs/eNotePane-spec.md, Sections 3.2, 3.3, 3.6, 3.7, 0.3.1
 	 */
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -13,6 +13,8 @@
 	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
 	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
+	import { calloutPlugin, calloutTheme, calloutCollapseField, calloutClickHandler } from '$lib/editor/calloutPlugin';
+	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 
 	interface NoteProperty {
 		key: string;
@@ -84,6 +86,12 @@
 				markdown({ base: markdownLanguage }), /* no codeLanguages — saves 500KB+ */
 				livePreviewPlugin, /* Phase 6: hide markers, render inline when cursor off line */
 				livePreviewTheme,
+				calloutCollapseField, /* Phase 7: callout collapse state */
+				calloutPlugin,        /* Phase 7: callout decorations + click handler */
+				calloutTheme,
+				calloutClickHandler,
+				lineDecoPlugin,       /* Phase 7: blockquote + code block line decorations */
+				lineDecoTheme,
 				keymap.of([...defaultKeymap, ...historyKeymap]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir })),
 				EditorView.lineWrapping,
