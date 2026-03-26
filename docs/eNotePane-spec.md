@@ -351,7 +351,72 @@ Features are added in phases. Each phase must pass the typing test before procee
 
 ---
 
-## 5. Anti-Patterns (Never Do These)
+## 5. Knowledge Organization
+
+### 5.1 Philosophy: Enable, Don't Enforce
+
+Zettelkasten, PARA, MOC, Johnny Decimal, GTD — these are knowledge organization systems created by users over decades. Constellation does not pick one. It provides the **infrastructure** that makes ALL of them possible.
+
+> Zettelkasten is not a feature to build. It's an **emergent property** of a note system that has: atomic notes + links + backlinks + properties + search.
+
+### 5.2 Zettelkasten Mapping
+
+Niklas Luhmann's slip-box had two principles: one idea per note, and notes connected by links rather than categorized by folders. Constellation's architecture naturally supports this:
+
+| Zettelkasten Concept | Constellation Implementation |
+|---|---|
+| **Fleeting note** (quick capture) | FocusPane — write fast, refine later |
+| **Literature note** (source summary) | eNotePane — with `source` property, citations |
+| **Permanent note** (refined idea) | eNotePane — with wikilinks, tags, properties |
+| **Index note** (topic entry point) | MOC — a regular note filled with organized `[[links]]` |
+| **Structure note** (thought sequence) | Outline note — numbered links in order |
+| **Unique ID** | `CoNoteDDMMYYYY.HH:MM` — auto-generated, chronologically sortable |
+| **Cross-references** | `[[wikilinks]]` — bidirectional connections |
+| **Reverse lookup** | Backlinks panel — "what links to this note?" |
+
+### 5.3 Infrastructure for Any System
+
+The following capabilities enable Zettelkasten AND any other knowledge system:
+
+1. **Links are first-class** — `[[wikilinks]]` are fast to create, visually distinct, clickable, and searchable
+2. **Backlinks are always available** — every note shows what links to it
+3. **Properties support note typing** — YAML frontmatter can carry:
+   ```yaml
+   type: fleeting | literature | permanent | index | log
+   source: "Book Title, Author"
+   prev: "[[previous thought]]"
+   next: "[[continuation]]"
+   ```
+4. **FocusPane → eNotePane = fleeting → permanent** — the transition from quick capture to refined note is seamless. Same `.md` file, different editing experience
+5. **Search across all notes is instant** — Rust-side indexing enables finding any note among thousands in milliseconds
+6. **Graph view shows the connection web** — visual map of how ideas relate
+7. **Unlinked mentions** — surface notes that reference this note's title without a formal `[[link]]`, helping discover hidden connections
+8. **MOC needs no special feature** — a Map of Content is just a note with organized links. The system already supports it
+9. **Tags for lightweight categorization** — `#topic` groups notes without rigid hierarchy
+10. **Libraries as separate knowledge domains** — like Luhmann's multiple slip-boxes for different projects
+
+### 5.4 The Promote Workflow
+
+The natural knowledge lifecycle in Constellation:
+
+```
+Thought → FocusPane (fleeting) → eNotePane (refine) → Link → Connect → Knowledge
+```
+
+1. **Capture** — FocusPane: type the raw idea, fast, no friction
+2. **Refine** — switch to eNotePane: add title, structure, formatting
+3. **Type** — set `type: permanent` in properties (optional)
+4. **Link** — add `[[wikilinks]]` to related notes
+5. **Connect** — backlinks and graph reveal the web of ideas
+6. **Discover** — unlinked mentions surface forgotten connections
+7. **Build** — MOC/index notes emerge as topics accumulate
+
+No step is required. A note can stay fleeting forever. The system enables growth, not forces it.
+
+---
+
+## 6. Anti-Patterns (Never Do These)
+
 
 | Anti-Pattern | Why It's Bad | What To Do Instead |
 |---|---|---|
@@ -366,7 +431,7 @@ Features are added in phases. Each phase must pass the typing test before procee
 
 ---
 
-## 6. Experiment Lab
+## 7. Experiment Lab
 
 ### 6.1 Purpose
 Every feature, extension, or change is tested in isolation BEFORE entering production. Nothing goes into `src/` without passing the lab.
@@ -394,7 +459,7 @@ lab/
 
 ---
 
-## 7. Audit System
+## 8. Audit System
 
 ### 7.1 Purpose
 Independent, unbiased validation of every change against this spec. The auditors don't accept work that fails their criteria. They are adversarial by design.
@@ -429,7 +494,7 @@ When a bug is found and fixed in one file, **immediately search the ENTIRE codeb
 
 ---
 
-## 8. Testing Protocol
+## 9. Testing Protocol
 
 Before committing any editor change:
 
@@ -442,7 +507,158 @@ Before committing any editor change:
 
 ---
 
-## 9. Sources & References
+## 10. Build Plan — Phases
+
+### Overview
+
+Each phase builds on the previous. No phase starts until the previous passes all 7 audit agents + the testing protocol. This is not a sprint — it's a craft.
+
+```
+Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+  ↑                                        |
+  └── If ANY phase fails, stop, fix, re-audit
+```
+
+### Phase 0: The Skeleton
+**Goal:** An empty eNotePane component that renders the PaperOnDesk layout with NO editor.
+**What we build:**
+- `eNotePane.svelte` — the component file
+- Gray desk (`#e8e8ec`) with centered white paper (`max-width: 1200px`, `padding: 48px`)
+- Title input (editable, dir="auto", centered/start per setting)
+- Auto-title: `CoNoteDDMMYYYY.HH:MM` if empty on blur
+- No editor, no toolbar, no properties — just desk + paper + title
+**Pass criteria:** Renders correctly, title editable, auto-title works, RTL/LTR correct
+**Audit focus:** SCA, RA, CQA
+
+### Phase 1: The Bare Editor
+**Goal:** Type text. That's it. Must be instant.
+**What we build:**
+- CM6 EditorView inside the paper
+- Extensions: `history()`, `drawSelection()`, `markdown()` (no codeLanguages), `keymap`, `lineWrapping`, `dir`, `updateListener`
+- One-way communication: editor → `onchange(text)` → parent stores in non-reactive variable
+- No `$effect` for value sync
+- `{#key tab.id}` for tab switch
+**Pass criteria:** Type 20 Arabic characters rapidly with ZERO lag. < 5ms average latency.
+**Audit focus:** PA, AA, MA, UXA
+
+### Phase 2: Save & Restore
+**Goal:** Notes persist across sessions.
+**What we build:**
+- Debounced save (1500ms) → writes to disk via Rust IPC
+- NO store update during autosave
+- onDestroy: flush save + update store
+- Tab switch: destroy + recreate editor with new content
+- Cursor position + scroll position preserved per tab
+**Pass criteria:** Type → close tab → reopen → content is there. Switch tabs 10 times → no content loss.
+**Audit focus:** AA, UXA, MA
+
+### Phase 3: Breadcrumb & Properties
+**Goal:** Note navigation and metadata editing.
+**What we build:**
+- Breadcrumb bar: library / note name, back/forward navigation, more options (⋮)
+- Properties: collapsible YAML frontmatter editor
+- Note type property support: `type: fleeting | literature | permanent | index | log`
+- Source property for literature notes
+**Pass criteria:** Properties save correctly, breadcrumb navigation works, collapse/expand smooth
+**Audit focus:** SCA, UXA, CQA
+
+### Phase 4: Toolbar
+**Goal:** Formatting controls for the editor.
+**What we build:**
+- Toolbar with: H1/H2/H3, Bold, Italic, Underline, Strikethrough, Highlight
+- Lists: ordered, unordered, task
+- Insert: link, image, table, code, blockquote, horizontal rule
+- Undo/Redo
+- Contextual script symbols (Arabic عربي, English Aa, etc.)
+- Toolbar dispatches CM6 commands — does NOT modify editor state directly
+**Pass criteria:** Each button applies correct markdown syntax. Typing speed unaffected (< 5ms).
+**Audit focus:** PA, UXA, SCA
+
+### Phase 5: Syntax Highlighting
+**Goal:** Markdown syntax gets visual treatment.
+**What we build:**
+- `syntaxHighlighting(defaultHighlightStyle)` extension
+- Headings, bold, italic, code, links — colored in source mode
+- Benchmark: confirm < 5ms after adding
+**Pass criteria:** Syntax colored. Typing still instant.
+**Audit focus:** PA, SCA
+
+### Phase 6: Live Preview (Incremental)
+**Goal:** WYSIWYG-like experience using `MatchDecorator` (incremental updates, NOT full rebuilds).
+**What we build — one at a time, benchmarked individually:**
+1. Headings: hide `#` marks, apply font size
+2. Bold/Italic: hide `**`/`_` marks, apply style
+3. Strikethrough: hide `~~` marks, apply line-through
+4. Highlights: hide `==` marks, apply background
+5. Inline code: hide backticks, apply monospace style
+6. Links: style `[text](url)`
+7. Wikilinks: hide `[[` `]]`, show display text, style as link
+8. Checkboxes: replace `[ ]`/`[x]` with interactive checkbox
+9. Horizontal rules: style `---`
+10. Tags: style `#tag` with accent background
+
+**Each sub-feature:**
+- Built in `lab/experiments/`
+- Benchmarked with `typing-latency.ts`
+- Must add < 1ms to average latency
+- Uses `MatchDecorator.updateDeco()` — NEVER full rebuild
+
+**Pass criteria:** Each decoration works. Typing still < 5ms total.
+**Audit focus:** PA (critical), SCA, UXA
+
+### Phase 7: Advanced Features (Incremental)
+**Goal:** Rich document features, each benchmarked individually.
+**What we build — one at a time:**
+1. Callouts: `> [!type]` with colored borders, icons, collapse/expand
+2. Code blocks: background coloring, language label
+3. Images: inline preview for `![](url)` and `![[file.png]]`
+4. Blockquote line decorations: left border + background
+5. Tables: table toolbar (add/remove row/column, sort)
+6. Embeds: `![[note]]` transclusion preview
+
+**Each sub-feature must pass PA audit (< 1ms added latency).**
+
+**Pass criteria:** All features work. Typing still < 5ms total.
+**Audit focus:** PA, SCA, UXA, MA
+
+### Phase 8: Knowledge Infrastructure
+**Goal:** Enable Zettelkasten and all knowledge systems.
+**What we build:**
+1. Wikilink autocomplete: type `[[` → instant search across all notes
+2. Tag autocomplete: type `#` → instant search across all tags
+3. Backlinks panel: show notes that link to this note
+4. Unlinked mentions: show notes that mention this note's title
+5. Graph integration: visual map of connections
+6. Search: Rust-side full-text search with instant results
+7. Note type workflow: FocusPane (fleeting) → eNotePane (permanent) transition
+
+**Pass criteria:** Autocomplete responds in < 50ms. Backlinks load in < 100ms. Graph renders smoothly.
+**Audit focus:** PA, AA, UXA, SCA
+
+### Phase Summary
+
+| Phase | What | Key Metric |
+|---|---|---|
+| 0 | Skeleton (desk + paper + title) | Renders correctly |
+| 1 | Bare editor (type text) | < 5ms latency |
+| 2 | Save & restore | Zero data loss |
+| 3 | Breadcrumb & properties | Correct metadata |
+| 4 | Toolbar | Formatting works, < 5ms |
+| 5 | Syntax highlighting | Colors correct, < 5ms |
+| 6 | Live preview (10 features) | Each < 1ms added, total < 5ms |
+| 7 | Advanced features (6 features) | Each < 1ms added, total < 5ms |
+| 8 | Knowledge infrastructure | Autocomplete < 50ms, backlinks < 100ms |
+
+### Timeline Estimate
+
+- Phase 0-2: **Foundation** — get this RIGHT, no shortcuts
+- Phase 3-5: **Core experience** — the note becomes useful
+- Phase 6-7: **Polish** — the note becomes beautiful
+- Phase 8: **Knowledge** — the note becomes powerful
+
+---
+
+## 11. Sources & References
 
 - [Craig Mod — Fast Software, the Best Software](https://craigmod.com/essays/fast_software/)
 - [Pavel Fatin — Typing with Pleasure (Latency Research)](https://pavelfatin.com/typing-with-pleasure/)
