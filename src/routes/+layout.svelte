@@ -2719,11 +2719,15 @@
 							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} color={libraryColorMap[tab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
 						{/each}
 					{:else if $activeTab}
+						{@const _parsed = parseFrontmatter($activeTab.content || '')}
+						{@const _body = _parsed.body}
 						{#key $activeTab.id + '|' + $activeTab.path}
 						{@const _mountedTab = $activeTab}
 						<ENotePane
+							value={_body}
 							title={_mountedTab.name.replace(/\.md$/, '')}
 							dir={noteDir}
+							onchange={() => { /* Phase 1: parent tracks nothing during typing */ }}
 							ontitlechange={(newTitle) => {
 								if (newTitle !== _mountedTab.name.replace(/\.md$/, '')) {
 									renameItem(_mountedTab.path, _mountedTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
