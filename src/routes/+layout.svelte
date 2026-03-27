@@ -2723,7 +2723,6 @@
 						{@const _body = _parsed.body}
 						{#key $activeTab.id + '|' + $activeTab.path}
 						{@const _mountedTab = $activeTab}
-						{@const _mountedProps = _parsed.properties}
 						{@const _saveGuard = { saving: false }}
 						<ENotePane
 							value={_body}
@@ -2731,31 +2730,37 @@
 							dir={noteDir}
 							initialCursorPos={_mountedTab.cursorPos ?? 0}
 							initialScrollTop={_mountedTab.scrollTop ?? 0}
-							onchange={() => { /* parent tracks nothing during typing — spec 2.2 */ }}
+							libraryName={_mountedTab.libraryName}
+							tabId={_mountedTab.id}
+							filePath={_mountedTab.path}
+							properties={_parsed.properties}
+							rawYaml={_parsed.rawYaml ?? ''}
+							canGoBack={(_mountedTab.historyIndex ?? 0) > 0}
+							canGoForward={(_mountedTab.historyIndex ?? 0) < (_mountedTab.history?.length ?? 1) - 1}
+							onchange={() => {}}
 							onsave={(text) => {
-								/* At most ONE save in flight — prevents IPC congestion.
-								   If a save is running, this pause is skipped; onflush catches it on destroy. */
 								if (_saveGuard.saving) return;
 								_saveGuard.saving = true;
+								/* Re-read properties from store (PropertyEditor may have updated them) */
+								const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
+								const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
 								markRecentWrite(_mountedTab.path);
-								const content = buildFullContent(_mountedProps, text);
+								const content = buildFullContent(props, text);
 								writeNote(_mountedTab.path, content)
 									.catch(() => {})
 									.finally(() => { _saveGuard.saving = false; });
 							}}
 							onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
-								const content = buildFullContent(_mountedProps, text);
-								/* Direct mutation for tab switch (tab still in store) */
-								const tab = get(openTabs).find(x => x.id === _mountedTab.id);
-								if (tab) {
-									tab.content = content;
-									tab.cursorPos = cursorPos;
-									tab.scrollTop = scrollTop;
+								/* Re-read properties from store (PropertyEditor may have updated them) */
+								const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
+								const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
+								const content = buildFullContent(props, text);
+								if (currentTab) {
+									currentTab.content = content;
+									currentTab.cursorPos = cursorPos;
+									currentTab.scrollTop = scrollTop;
 								}
-								/* Write-ahead buffer with correct cursor+scroll (synchronous).
-								   Also persists to localStorage — survives app restart. */
 								setWriteAhead(_mountedTab.path, content, cursorPos, scrollTop);
-								/* Write to disk (fire-and-forget). WAB ensures no data loss. */
 								if (needsDiskSave) {
 									markRecentWrite(_mountedTab.path);
 									writeNote(_mountedTab.path, content)
@@ -2766,6 +2771,38 @@
 							ontitlechange={(newTitle) => {
 								if (newTitle !== _mountedTab.name.replace(/\.md$/, '')) {
 									renameItem(_mountedTab.path, _mountedTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
+								}
+							}}
+							onnavigateback={() => navigateBack()}
+							onnavigateforward={() => navigateForward()}
+							onmoreaction={async (action) => {
+								switch (action) {
+									case 'rename': {
+										const input = document.querySelector('.e-title') as HTMLInputElement;
+										if (input) { input.focus(); input.select(); }
+										break;
+									}
+									case 'showInExplorer':
+										try { await invoke('constellation_show_in_folder', { path: _mountedTab.path }); } catch {}
+										break;
+									case 'openDefaultApp':
+										try { await invoke('open_path', { path: _mountedTab.path }); } catch {}
+										break;
+									case 'revealInTree':
+										window.dispatchEvent(new CustomEvent('constellation:reveal-in-tree', { detail: { path: _mountedTab.path } }));
+										break;
+									case 'copyPath':
+										navigator.clipboard.writeText(_mountedTab.path).catch(() => {});
+										break;
+									case 'copyName':
+										navigator.clipboard.writeText(_mountedTab.name).catch(() => {});
+										break;
+									case 'delete':
+										window.dispatchEvent(new CustomEvent('constellation:delete-note', { detail: { path: _mountedTab.path, name: _mountedTab.name } }));
+										break;
+									case 'addProperty':
+										window.dispatchEvent(new CustomEvent('constellation:add-property', { detail: { path: _mountedTab.path } }));
+										break;
 								}
 							}}
 						/>

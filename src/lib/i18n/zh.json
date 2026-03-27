@@ -489,7 +489,12 @@
     "titlePlaceholder": "标题",
     "bodyPlaceholder": "开始写作...",
     "propertyKey": "键",
-    "propertyValue": "值"
+    "propertyValue": "值",
+    "saving": "保存中...",
+    "properties": "属性",
+    "moreOptions": "更多选项",
+    "back": "后退",
+    "forward": "前进"
   },
   "notePane": {
     "saving": "正在保存...",

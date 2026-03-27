@@ -489,7 +489,12 @@
     "titlePlaceholder": "Title",
     "bodyPlaceholder": "Start writing...",
     "propertyKey": "Key",
-    "propertyValue": "Value"
+    "propertyValue": "Value",
+    "saving": "Saving...",
+    "properties": "Properties",
+    "moreOptions": "More options",
+    "back": "Back",
+    "forward": "Forward"
   },
   "notePane": {
     "saving": "Saving...",

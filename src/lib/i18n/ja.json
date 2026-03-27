@@ -489,7 +489,12 @@
     "titlePlaceholder": "タイトル",
     "bodyPlaceholder": "書き始める...",
     "propertyKey": "キー",
-    "propertyValue": "値"
+    "propertyValue": "値",
+    "saving": "保存中...",
+    "properties": "プロパティ",
+    "moreOptions": "その他のオプション",
+    "back": "戻る",
+    "forward": "進む"
   },
   "notePane": {
     "saving": "保存中...",

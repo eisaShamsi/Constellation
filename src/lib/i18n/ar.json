@@ -490,7 +490,12 @@
     "titlePlaceholder": "العنوان",
     "bodyPlaceholder": "...ابدأ الكتابة",
     "propertyKey": "المفتاح",
-    "propertyValue": "القيمة"
+    "propertyValue": "القيمة",
+    "saving": "جارٍ الحفظ...",
+    "properties": "الخصائص",
+    "moreOptions": "خيارات أخرى",
+    "back": "رجوع",
+    "forward": "تقدّم"
   },
   "notePane": {
     "saving": "جارٍ الحفظ...",

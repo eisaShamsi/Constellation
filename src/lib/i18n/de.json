@@ -489,7 +489,12 @@
     "titlePlaceholder": "Titel",
     "bodyPlaceholder": "Schreiben Sie los...",
     "propertyKey": "Schlüssel",
-    "propertyValue": "Wert"
+    "propertyValue": "Wert",
+    "saving": "Speichern...",
+    "properties": "Eigenschaften",
+    "moreOptions": "Weitere Optionen",
+    "back": "Zurück",
+    "forward": "Vorwärts"
   },
   "notePane": {
     "saving": "Wird gespeichert...",

@@ -489,7 +489,12 @@
     "titlePlaceholder": "Başlık",
     "bodyPlaceholder": "Yazmaya başlayın...",
     "propertyKey": "Anahtar",
-    "propertyValue": "Değer"
+    "propertyValue": "Değer",
+    "saving": "Kaydediliyor...",
+    "properties": "Özellikler",
+    "moreOptions": "Daha fazla seçenek",
+    "back": "Geri",
+    "forward": "İleri"
   },
   "notePane": {
     "saving": "Kaydediliyor...",

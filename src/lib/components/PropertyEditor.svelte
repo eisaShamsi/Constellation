@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
-	import { saveTabContent, normalizeDateValue } from '$lib/libraries/store';
+	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs } from '$lib/libraries/store';
 	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
 	import { get } from 'svelte/store';
@@ -169,6 +169,9 @@
 		if (saveTimeout) {
 			clearTimeout(saveTimeout);
 			if (tabId && filePath) {
+				/* Direct mutation so onflush reads fresh properties */
+				const tab = get(openTabs).find(t => t.id === tabId);
+				if (tab) tab.content = buildFullContent(editableProps, body);
 				saveTabContent(tabId, filePath, editableProps, body).catch((e) => console.error('[PropertyEditor] Flush save failed:', e));
 			}
 		}
@@ -371,6 +374,10 @@
 		saveTimeout = setTimeout(async () => {
 			saving = true;
 			try {
+				/* Update tab content in store via direct mutation (no store.update = no cascade).
+				   This ensures onflush reads fresh properties when the tab is closed. */
+				const tab = get(openTabs).find(t => t.id === tabId);
+				if (tab) tab.content = buildFullContent(editableProps, body);
 				await saveTabContent(tabId, filePath, editableProps, body);
 			} catch (err) {
 				console.error('Failed to save:', err);

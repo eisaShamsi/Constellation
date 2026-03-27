@@ -489,7 +489,12 @@
     "titlePlaceholder": "عنوان",
     "bodyPlaceholder": "...شروع به نوشتن",
     "propertyKey": "کلید",
-    "propertyValue": "مقدار"
+    "propertyValue": "مقدار",
+    "saving": "در حال ذخیره...",
+    "properties": "ویژگی‌ها",
+    "moreOptions": "گزینه‌های بیشتر",
+    "back": "بازگشت",
+    "forward": "جلو"
   },
   "notePane": {
     "saving": "در حال ذخیره...",

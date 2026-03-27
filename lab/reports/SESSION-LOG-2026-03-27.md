@@ -626,11 +626,96 @@ Debug logs removed. Ready for final clean confirmation run.
 
 ---
 
+## Step 40: Phase 2 — Commit & Push
+
+**Commit:** `c72b2f8` — eNotePane Phase 2: Save & Restore — ALL 8 AUDITORS + 6 USER TESTS PASS
+**Pushed to:** `origin/main`
+
+---
+
+## Step 41: Phase 3 — Implementation
+
+**Action:** Implemented breadcrumb + properties for eNotePane.
+
+**Changes to `src/lib/components/eNotePane.svelte` (291 → 411 lines):**
+- New props: `libraryName`, `tabId`, `filePath`, `properties`, `rawYaml`, `canGoBack`, `canGoForward`, `saving`, `onnavigateback`, `onnavigateforward`, `onmoreaction`
+- Breadcrumb bar (above paper): back/forward nav, library/note name, saving indicator, more menu
+- More menu: addProperty, rename, revealInTree, showInExplorer, openDefaultApp, copyPath, copyName, delete
+- Properties: reuses existing PropertyEditor component, supports 'source' (raw YAML) and 'visible' (form) modes
+- Collapsible with chevron animation, RTL support
+- All user-facing strings via $t()
+
+**Changes to `src/routes/+layout.svelte`:**
+- Passes all new props + callbacks to eNotePane
+- `onmoreaction` handler mirrors NotePane's moreAction pattern
+- `onsave`/`onflush` now re-read properties from store (fixes stale _mountedProps after PropertyEditor edits)
+
+**Changes to `src/lib/i18n/*.json` (all 15 locales):**
+- Added: `eNotePane.saving`, `eNotePane.properties`, `eNotePane.moreOptions`, `eNotePane.back`, `eNotePane.forward`
+
+**Build:** 30 errors (all pre-existing). Zero new. 411 lines (under 500 CQA limit).
+
+---
+
+## Step 42: Phase 3 — User Test Round 1
+
+| Test | Result | Notes |
+|---|---|---|
+| 1. Breadcrumb shows Library / NoteName | PASS | Arabic RTL breadcrumb correct |
+| 2. Back/Forward buttons work | PASS | Tested via sidebar navigation |
+| 3. More menu opens, items work | PASS | Bug: `contextMenu.delete` shows raw i18n key |
+| 4. Properties panel visible | PASS | PropertyEditor renders correctly with Arabic labels |
+| 5. Edit property → save → reopen → persisted | FAIL | Property edits not persisted |
+| 6. Collapse/expand properties smooth | PASS | |
+| 7. RTL: breadcrumb/chevrons correct | PASS | |
+| 8. Rapid typing → zero lag | PASS | |
+
+**Issues found:**
+1. `contextMenu.delete` raw key visible in more menu — missing i18n translation
+2. Property edits don't persist after close/reopen — PropertyEditor saves to disk but not to store
+
+---
+
+## Step 43: Phase 3 — Bug Fix Round 1
+
+**Fix 1 — i18n key:** Changed `$t('contextMenu.delete')` to `$t('contextMenu.deleteFile')` in eNotePane.svelte.
+
+**Fix 2 — Property persistence:** PropertyEditor calls `saveTabContent` (disk only) but never updates the store. When `onflush` reads `currentTab.content`, it gets stale properties. Fix: added direct mutation `tab.content = buildFullContent(editableProps, body)` in PropertyEditor's `debouncedSave()` and `onDestroy` flush. Same pattern as eNotePane's flush — direct mutation avoids reactivity cascade.
+
+**Files changed:**
+- `src/lib/components/eNotePane.svelte` — `contextMenu.deleteFile`
+- `src/lib/components/PropertyEditor.svelte` — added `buildFullContent` + `openTabs` imports, direct mutation in debouncedSave + onDestroy
+
+**Build:** 30 errors (all pre-existing). Zero new.
+
+---
+
+## Step 44: Phase 3 — User Test Round 2
+
+| Test | Result |
+|---|---|
+| 3. More menu delete label | PASS — shows "Delete file" correctly |
+| 5. Edit property → close → reopen → persisted | PASS |
+
+**Phase 3: ALL 8 TESTS PASS. APPROVED.**
+
+---
+
+## Step 45: Phase 3 — Commit & Push (PENDING)
+
+---
+
+## Standing Orders
+- **SO-1:** Update session log after every test/request
+
+---
+
 ## Current State
 - **Phase 0:** APPROVED (`a14923a`)
 - **Phase 1:** APPROVED (`2c8b76b`)
-- **Phase 2:** APPROVED (pending commit)
+- **Phase 2:** APPROVED (`c72b2f8`)
+- **Phase 3:** APPROVED — awaiting commit
 - **BLOCKING-001:** RESOLVED
 - **BLOCKING-002:** RESOLVED
 - **BLOCKING-003:** RESOLVED
-- **Next:** Commit & push Phase 2, then begin Phase 3
+- **Next:** Commit Phase 3, then begin Phase 4
