@@ -488,10 +488,10 @@ No step is required. A note can stay fleeting forever. The system enables growth
 
 ## 7. Experiment Lab
 
-### 6.1 Purpose
+### 7.1 Purpose
 Every feature, extension, or change is tested in isolation BEFORE entering production. Nothing goes into `src/` without passing the lab.
 
-### 6.2 Location
+### 7.2 Location
 ```
 lab/
   experiments/    — one file per feature experiment
@@ -499,27 +499,27 @@ lab/
   reports/        — audit results and experiment logs
 ```
 
-### 6.3 Workflow
+### 7.3 Workflow
 ```
 1. PROPOSE  → describe what and why
 2. EXPERIMENT → build in lab/experiments/ (isolated)
 3. BENCHMARK → measure with lab/benchmarks/typing-latency.ts
-4. AUDIT    → run all 7 audit agents
+4. AUDIT    → run all 8 audit agents
 5. APPROVE  → all agents must PASS
 6. IMPLEMENT → merge to src/
 ```
 
-### 6.4 Rule
+### 7.4 Rule
 **Nothing enters production without passing the lab.** If an experiment fails benchmarks or audit, it goes back to the drawing board.
 
 ---
 
 ## 8. Audit System
 
-### 7.1 Purpose
+### 8.1 Purpose
 Independent, unbiased validation of every change against this spec. The auditors don't accept work that fails their criteria. They are adversarial by design.
 
-### 7.2 Audit Agents (7 total)
+### 8.2 Audit Agents (8 total)
 
 | # | Agent | Mission |
 |---|---|---|
@@ -530,22 +530,32 @@ Independent, unbiased validation of every change against this spec. The auditors
 | 5 | **RTL/Bidi Auditor (RA)** | Perfect bidirectional text. CM6 built-in bidi. No custom plugin overhead. |
 | 6 | **UX Auditor (UXA)** | Instant feel. No friction. Tab switch instant. Save reliable. |
 | 7 | **Code Quality Auditor (CQA)** | Clean code. No dead code. No TS errors. < 500 lines per component. |
+| 8 | **Environment Auditor (EA)** | The app environment must be healthy before phase work begins. No pre-existing lag, no unresponsive UI, no memory leaks from other components. If the environment is degraded, STOP — identify, document, and fix the issue before continuing. |
 
-### 7.3 Audit Protocol
+### 8.3 Audit Protocol
 ```
 Developer submits code
     ↓
-All 7 agents run in PARALLEL
+All 8 agents run in PARALLEL
     ↓
 Each returns PASS or FAIL with evidence
     ↓
-ALL 7 must PASS to merge
+ALL 8 must PASS to merge
     ↓
 Any FAIL → fix → re-audit from scratch
 ```
 
-### 7.4 Fix One, Search All
+### 8.4 Fix One, Search All
 When a bug is found and fixed in one file, **immediately search the ENTIRE codebase** for the same pattern. If FocusPane had the bug, check eNotePane, CodeMirrorEditor, SecondScreenPage, and every other editor. No exception.
+
+### 8.5 Blocking Issue Rule
+**If at any point during development or testing, an issue is discovered that degrades app responsiveness, causes lag, freezes, or otherwise violates the performance contract — ALL phase work STOPS immediately.** The issue must be:
+1. **Identified** — root cause documented with evidence (line numbers, reactive chains, profiling data)
+2. **Documented** — written up in `lab/reports/` with severity, impact, and proposed fix
+3. **Fixed** — the fix must pass the Environment Auditor (EA) before phase work resumes
+4. **Verified** — the user confirms the app is responsive again
+
+No phase work continues until the environment is healthy. A fast editor inside a slow app is still a slow app.
 
 ---
 
@@ -566,7 +576,7 @@ Before committing any editor change:
 
 ### Overview
 
-Each phase builds on the previous. No phase starts until the previous passes all 7 audit agents + the testing protocol. This is not a sprint — it's a craft.
+Each phase builds on the previous. No phase starts until the previous passes all 8 audit agents + the testing protocol. This is not a sprint — it's a craft.
 
 ```
 Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8

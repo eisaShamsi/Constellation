@@ -619,16 +619,69 @@
 	const sidebarParsed = $derived(sidebarTab ? parseFrontmatter(sidebarTab.content) : null);
 	const sidebarProperties = $derived<FrontmatterProperty[]>(sidebarParsed?.properties ?? []);
 	const sidebarBody = $derived(sidebarParsed?.body ?? '');
-	const sidebarHeadings = $derived<HeadingItem[]>(sidebarBody ? extractHeadings(sidebarBody) : []);
-	const noteDir = $derived(sidebarBody ? detectDir(sidebarBody) : $dir);
 
-	// Backlinks for current note
-	const currentBacklinks = $derived.by(() => {
-		if (!sidebarTab) return [];
-		return getBacklinks(allLibraryLinks, sidebarTab.name);
+	// ─── Debounced sidebar computations (BLOCKING-001 fix) ───
+	// These are expensive and sidebar-only — they don't need to run synchronously.
+	// Debouncing at 500ms prevents them from firing on every keystroke.
+	let sidebarHeadings = $state<HeadingItem[]>([]);
+	let noteDir = $state<'ltr' | 'rtl'>($dir as 'ltr' | 'rtl');
+	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string }[]>([]);
+	let currentOutgoing = $state<{ target: string; context: string }[]>([]);
+	let activeNoteTags = $state<string[]>([]);
+	let _sidebarDebounce: ReturnType<typeof setTimeout> | undefined;
+
+	$effect(() => {
+		const body = sidebarBody;
+		const tab = sidebarTab;
+		const props = sidebarProperties;
+		const dirFallback = $dir as 'ltr' | 'rtl';
+		clearTimeout(_sidebarDebounce);
+
+		// Immediate reset when no tab
+		if (!tab) {
+			sidebarHeadings = [];
+			noteDir = dirFallback;
+			currentBacklinks = [];
+			currentOutgoing = [];
+			activeNoteTags = [];
+			return;
+		}
+
+		_sidebarDebounce = setTimeout(() => {
+			// Headings
+			sidebarHeadings = body ? extractHeadings(body) : [];
+			// Direction
+			noteDir = body ? detectDir(body) : dirFallback;
+			// Backlinks
+			currentBacklinks = getBacklinks(allLibraryLinks, tab.name);
+			// Outgoing links
+			currentOutgoing = getOutgoingLinks(allLibraryLinks, tab.path).map(l => ({
+				target: l.target,
+				context: l.context,
+			}));
+			// Tags (from frontmatter + inline)
+			const tags: string[] = [];
+			for (const p of props) {
+				if (p.key === 'tags' || p.key === 'tag') {
+					if (Array.isArray(p.value)) {
+						tags.push(...p.value.map((v: string) => String(v).trim()).filter(Boolean));
+					} else if (typeof p.value === 'string') {
+						tags.push(...p.value.split(',').map(v => v.trim()).filter(Boolean));
+					}
+				}
+			}
+			const bodyText = body || '';
+			const inlineMatches = bodyText.match(/(?:^|\s)#([a-zA-Z\u0600-\u06FF][\w\u0600-\u06FF/\-]*)/g);
+			if (inlineMatches) {
+				for (const m of inlineMatches) {
+					tags.push(m.trim().replace(/^#/, ''));
+				}
+			}
+			activeNoteTags = [...new Set(tags)];
+		}, 500);
 	});
 
-	// Unlinked mentions for current note
+	// Unlinked mentions for current note (already debounced — no change needed)
 	let currentUnlinkedMentions: { name: string; path: string; context: string; libraryName: string }[] = $state([]);
 	let unlinkedDebounce: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
@@ -640,40 +693,6 @@
 				currentUnlinkedMentions = await scanUnlinkedMentions(tab.name, tab.path);
 			} catch { currentUnlinkedMentions = []; }
 		}, 500);
-	});
-
-	// Outgoing links for current note
-	const currentOutgoing = $derived.by(() => {
-		if (!sidebarTab) return [];
-		return getOutgoingLinks(allLibraryLinks, sidebarTab.path).map(l => ({
-			target: l.target,
-			context: l.context,
-		}));
-	});
-
-	// Tags for the active note (from frontmatter + inline #tags)
-	const activeNoteTags = $derived.by(() => {
-		if (!sidebarTab) return [];
-		const tags: string[] = [];
-		// From frontmatter properties
-		for (const p of sidebarProperties) {
-			if (p.key === 'tags' || p.key === 'tag') {
-				if (Array.isArray(p.value)) {
-					tags.push(...p.value.map((v: string) => String(v).trim()).filter(Boolean));
-				} else if (typeof p.value === 'string') {
-					tags.push(...p.value.split(',').map(v => v.trim()).filter(Boolean));
-				}
-			}
-		}
-		// From inline #tags in body
-		const bodyText = sidebarBody || '';
-		const inlineMatches = bodyText.match(/(?:^|\s)#([a-zA-Z\u0600-\u06FF][\w\u0600-\u06FF/\-]*)/g);
-		if (inlineMatches) {
-			for (const m of inlineMatches) {
-				tags.push(m.trim().replace(/^#/, ''));
-			}
-		}
-		return [...new Set(tags)];
 	});
 
 	// Local star: nodes/links for the active note and its direct connections
@@ -1222,6 +1241,8 @@
 		clearTimeout(_tasksTimer);
 		clearTimeout(_calTimer);
 		if (skyviewHoverTimer) clearTimeout(skyviewHoverTimer);
+		if (idleTimer) clearTimeout(idleTimer);
+		clearTimeout(_sidebarDebounce);
 		resizeCleanup?.();
 		window.removeEventListener('unhandledrejection', handleUnhandledRejection);
 		window.removeEventListener('error', handleUncaughtError);
@@ -2698,35 +2719,16 @@
 							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} color={libraryColorMap[tab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
 						{/each}
 					{:else if $activeTab}
-						{@const _parsed = parseFrontmatter($activeTab.content || '')}
-						{@const _body = _parsed.body}
-						{@const _noteDir = _body ? detectDir(_body) : ($dir as 'ltr' | 'rtl')}
 						{#key $activeTab.id + '|' + $activeTab.path}
 						{@const _mountedTab = $activeTab}
 						<ENotePane
-							value={_body}
 							title={_mountedTab.name.replace(/\.md$/, '')}
-							dir={_noteDir}
-							initialCursorPos={_mountedTab.cursorPos ?? 0}
-							initialScrollTop={_mountedTab.scrollTop ?? 0}
-							onchange={() => { /* parent tracks nothing during typing */ }}
-							onsave={(text) => {
-								const p = parseFrontmatter(_mountedTab.content || '');
-								saveTabContent(_mountedTab.id, _mountedTab.path, p.properties, text);
-							}}
-							onflush={(text) => {
-								const p = parseFrontmatter(_mountedTab.content || '');
-								const nc = buildFullContent(p.properties, text);
-								updateTabContent(_mountedTab.id, nc);
-								saveTabContent(_mountedTab.id, _mountedTab.path, p.properties, text);
-							}}
+							dir={noteDir}
 							ontitlechange={(newTitle) => {
 								if (newTitle !== _mountedTab.name.replace(/\.md$/, '')) {
 									renameItem(_mountedTab.path, _mountedTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
 								}
 							}}
-							oncursorchange={(pos) => { const t = get(openTabs).find(x => x.id === _mountedTab.id); if (t) t.cursorPos = pos; }}
-							onscrollchange={(top) => { const t = get(openTabs).find(x => x.id === _mountedTab.id); if (t) t.scrollTop = top; }}
 						/>
 						{/key}
 					{/if}
