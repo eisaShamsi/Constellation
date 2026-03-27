@@ -1,9 +1,9 @@
 <script lang="ts">
 	/**
-	 * eNotePane — Phase 1: The Bare Editor
-	 * Gray desk + white paper + title + CM6 editor.
+	 * eNotePane — Phase 2: Save & Restore
+	 * Gray desk + white paper + title + CM6 editor + persistence.
 	 * Zero custom plugins. Typing must be instant.
-	 * Spec: docs/eNotePane-spec.md, Section 10 (Phase 1)
+	 * Spec: docs/eNotePane-spec.md, Section 10 (Phase 2)
 	 */
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -13,17 +13,27 @@
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 
+	const IDLE_SAVE_INTERVAL = 30_000; /* ms — periodic background save when idle */
+
 	let {
 		value = '',
 		title = '',
 		dir = 'ltr' as 'ltr' | 'rtl',
+		initialCursorPos = 0,
+		initialScrollTop = 0,
 		onchange,
+		onsave,
+		onflush, /* (text, needsDiskSave, cursorPos, scrollTop) → parent updates store + WAB + disk */
 		ontitlechange,
 	}: {
 		value?: string;
 		title?: string;
 		dir?: 'ltr' | 'rtl';
+		initialCursorPos?: number;
+		initialScrollTop?: number;
 		onchange?: (value: string) => void;
+		onsave?: (value: string) => void;
+		onflush?: (text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number) => void;
 		ontitlechange?: (newTitle: string) => void;
 	} = $props();
 
@@ -31,9 +41,36 @@
 	let titleEl: HTMLInputElement | undefined;
 	let editorEl: HTMLDivElement | undefined;
 	let view: EditorView | null = null;
+	let latestText = value; /* non-reactive: tracks current content for saving */
+	let dirty = false; /* true when text changed since last save */
+	let idleSaveTimer: ReturnType<typeof setInterval> | null = null;
+	let rafHandle: number | null = null;
 	const dirCompartment = new Compartment();
 
-	/* ─── Mount: create editor ─── */
+	/* ─── Background save: periodic idle save + visibility change + beforeunload ─── */
+	function doSave() {
+		if (!dirty) return;
+		dirty = false;
+		onsave?.(latestText);
+	}
+
+	function doFlush() {
+		const cursorPos = view ? view.state.selection.main.head : 0;
+		const scrollTop = view ? view.scrollDOM.scrollTop : 0;
+		onflush?.(latestText, dirty, cursorPos, scrollTop);
+	}
+
+	function handleVisibilityChange() {
+		if (document.hidden && dirty) doSave();
+	}
+
+	function handleBeforeUnload() {
+		/* Safety net: flush to WAB (localStorage) before app exit.
+		   onDestroy may not fire reliably when Tauri window closes. */
+		doFlush();
+	}
+
+	/* ─── Mount: create editor, restore cursor/scroll ─── */
 	onMount(() => {
 		const state = EditorState.create({
 			doc: value,
@@ -47,7 +84,15 @@
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
-						onchange?.(update.state.doc.toString());
+						const text = update.state.doc.toString();
+						latestText = text;
+						dirty = true;
+						onchange?.(text);
+						/* NO debounce timer — saves happen on:
+						   1. Tab switch/close (onflush in onDestroy)
+						   2. App losing focus (visibilitychange)
+						   3. Periodic idle save (every 30s)
+						   This keeps the typing path 100% free of IPC overhead. */
 					}
 				}),
 				/* Minimal theme — spec 3.1 */
@@ -67,11 +112,47 @@
 		});
 
 		view = new EditorView({ state, parent: editorEl! });
-		titleEl?.focus();
+
+		/* Restore cursor + scroll OR focus title (spec 4.3) */
+		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
+			/* Returning to a note — restore cursor in editor */
+			view.dispatch({ selection: { anchor: initialCursorPos } });
+			view.focus();
+		} else {
+			/* New note or no saved position — focus title */
+			titleEl?.focus();
+		}
+		/* Scroll restore is independent of cursor (a note can be scrolled with cursor at 0).
+		   Double-rAF: first frame lets CM6 measure + render, second frame scrolls safely. */
+		if (initialScrollTop > 0) {
+			rafHandle = requestAnimationFrame(() => {
+				rafHandle = requestAnimationFrame(() => {
+					rafHandle = null;
+					view?.scrollDOM.scrollTo({ top: initialScrollTop });
+				});
+			});
+		}
+
+		/* Start periodic idle save + visibility listener + beforeunload safety net */
+		idleSaveTimer = setInterval(() => {
+			requestIdleCallback(() => doSave());
+		}, IDLE_SAVE_INTERVAL);
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+		window.addEventListener('beforeunload', handleBeforeUnload);
 	});
 
-	/* ─── Destroy: clean up editor ─── */
+	/* ─── Destroy: flush content + cursor/scroll, clean up ─── */
 	onDestroy(() => {
+		/* Cancel timers, remove listeners, cancel rAF (spec Rule 4) */
+		if (idleSaveTimer) clearInterval(idleSaveTimer);
+		document.removeEventListener('visibilitychange', handleVisibilityChange);
+		window.removeEventListener('beforeunload', handleBeforeUnload);
+		if (rafHandle !== null) { cancelAnimationFrame(rafHandle); rafHandle = null; }
+
+		/* Single flush call with content + cursor + scroll.
+		   Parent handles: store mutation + WAB (localStorage) + disk write. */
+		doFlush();
+
 		view?.destroy();
 		view = null;
 	});
@@ -86,6 +167,7 @@
 	});
 
 	/* No $effect for value→editor sync. Editor owns content after mount. (spec 2.1) */
+	/* Tab switches use {#key tab.id} to destroy/recreate with new value. */
 
 	/* ─── Title ─── */
 	function generateAutoTitle(): string {

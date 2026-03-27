@@ -146,6 +146,51 @@ export function toggleEditMode(tabId: string) {
 const saveLocks = new Map<string, boolean>();
 const recentWrites = new Map<string, number>();
 
+/** Mark a file as recently written so the file watcher ignores it. */
+export function markRecentWrite(filePath: string) {
+	recentWrites.set(filePath, Date.now());
+	setTimeout(() => recentWrites.delete(filePath), 2000);
+}
+
+/** Write-ahead buffer: holds content/cursor/scroll that hasn't been written to disk yet.
+ *  When opening a note, check this first — it's synchronous and always has the latest data. */
+const writeAheadBuffer = new Map<string, { content: string; cursorPos: number; scrollTop: number }>();
+
+export function setWriteAhead(filePath: string, content: string, cursorPos: number, scrollTop: number) {
+	const entry = { content, cursorPos, scrollTop };
+	writeAheadBuffer.set(filePath, entry);
+	/* Also persist to localStorage as crash-safe backup (survives app restart).
+	   This is synchronous and fast for single-note content. */
+	try {
+		const key = 'constellation-wab';
+		const existing = JSON.parse(localStorage.getItem(key) || '{}');
+		existing[filePath] = entry;
+		localStorage.setItem(key, JSON.stringify(existing));
+	} catch {}
+}
+
+export function getWriteAhead(filePath: string): { content: string; cursorPos: number; scrollTop: number } | undefined {
+	/* Check in-memory buffer first (faster), fall back to localStorage */
+	const mem = writeAheadBuffer.get(filePath);
+	if (mem) return mem;
+	try {
+		const key = 'constellation-wab';
+		const all = JSON.parse(localStorage.getItem(key) || '{}');
+		return all[filePath];
+	} catch {}
+	return undefined;
+}
+
+export function clearWriteAhead(filePath: string) {
+	writeAheadBuffer.delete(filePath);
+	try {
+		const key = 'constellation-wab';
+		const all = JSON.parse(localStorage.getItem(key) || '{}');
+		delete all[filePath];
+		localStorage.setItem(key, JSON.stringify(all));
+	} catch {}
+}
+
 export async function saveTabContent(
 	tabId: string,
 	filePath: string,
@@ -422,8 +467,13 @@ export async function writeNote(filePath: string, content: string): Promise<void
 }
 
 export function updateTabContent(tabId: string, newContent: string) {
-	openTabs.update(tabs =>
-		tabs.map(t => t.id === tabId ? { ...t, content: newContent } : t)
+	const tabs = get(openTabs);
+	const tab = tabs.find(t => t.id === tabId);
+	/* Skip store update if tab doesn't exist or content is unchanged —
+	   avoids triggering a full reactivity cascade (3800+ line layout) */
+	if (!tab || tab.content === newContent) return;
+	openTabs.update(ts =>
+		ts.map(t => t.id === tabId ? { ...t, content: newContent } : t)
 	);
 }
 
@@ -505,11 +555,19 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		return;
 	}
 
+	/* Check write-ahead buffer first — it has the latest content if the
+	   async disk write from a previous close hasn't completed yet. */
+	const wab = getWriteAhead(filePath);
 	let content: string;
-	try {
-		content = await invoke('read_note', { filePath });
-	} catch {
-		return; // File may not exist or be readable
+	if (wab) {
+		content = wab.content;
+		clearWriteAhead(filePath);
+	} else {
+		try {
+			content = await invoke('read_note', { filePath });
+		} catch {
+			return; // File may not exist or be readable
+		}
 	}
 	const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
 
@@ -539,6 +597,9 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 				highlightTerm,
 				history: trimmedHistory,
 				historyIndex: newHistoryIndex,
+				/* Restore cursor/scroll from write-ahead buffer if available */
+				cursorPos: wab?.cursorPos ?? 0,
+				scrollTop: wab?.scrollTop ?? 0,
 			};
 		}));
 		// Auto-enable editing mode (WYSIWYG is always edit-ready)
@@ -551,6 +612,9 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	const tab: OpenTab = {
 		id, path: filePath, content, libraryName, libraryPath, name, libraryColor: color, highlightTerm,
 		history: [filePath], historyIndex: 0,
+		/* Restore cursor/scroll from write-ahead buffer if available */
+		cursorPos: wab?.cursorPos ?? 0,
+		scrollTop: wab?.scrollTop ?? 0,
 	};
 	openTabs.update(tabs => [...tabs, tab]);
 
@@ -575,28 +639,31 @@ export function closeTab(tabId: string) {
 
 	const currentActive = get(activeTabId);
 	const newTabs = tabs.filter(t => t.id !== tabId);
-	openTabs.set(newTabs);
 
-	// Clean up editing state and save locks for closed tab
-	editingTabIds.update(set => {
-		if (set.has(tabId)) {
-			const next = new Set(set);
-			next.delete(tabId);
-			return next;
-		}
-		return set;
-	});
+	// Clean up non-reactive state first (no cascade)
 	saveLocks.delete(tabId);
-
-	if (currentActive === tabId) {
-		if (newTabs.length > 0) {
-			const newIdx = Math.min(idx, newTabs.length - 1);
-			activeTabId.set(newTabs[newIdx].id);
-		} else {
-			activeTabId.set(null);
-		}
+	const editSet = get(editingTabIds);
+	if (editSet.has(tabId)) {
+		const next = new Set(editSet);
+		next.delete(tabId);
+		editingTabIds.set(next);
 	}
 
+	// Determine new active tab BEFORE touching openTabs
+	let newActiveId: string | null = currentActive;
+	if (currentActive === tabId) {
+		newActiveId = newTabs.length > 0
+			? newTabs[Math.min(idx, newTabs.length - 1)].id
+			: null;
+	}
+
+	/* Batch: set activeTabId FIRST (so $activeTab derives correctly when openTabs fires),
+	   then set openTabs. This reduces from 3 cascades to at most 2,
+	   and the activeTabId change is a cheap scalar update. */
+	if (newActiveId !== currentActive) {
+		activeTabId.set(newActiveId);
+	}
+	openTabs.set(newTabs);
 }
 
 /** Reorder tabs by moving a tab from one index to another */

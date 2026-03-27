@@ -13,7 +13,7 @@
 		loadLibraries, loadAllStats, addLibrary, createNewLibrary, searchAllStars,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
-		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent,
+		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, writeNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
 		createNote, createFolder, renameItem, deleteItem,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
@@ -2723,11 +2723,46 @@
 						{@const _body = _parsed.body}
 						{#key $activeTab.id + '|' + $activeTab.path}
 						{@const _mountedTab = $activeTab}
+						{@const _mountedProps = _parsed.properties}
+						{@const _saveGuard = { saving: false }}
 						<ENotePane
 							value={_body}
 							title={_mountedTab.name.replace(/\.md$/, '')}
 							dir={noteDir}
-							onchange={() => { /* Phase 1: parent tracks nothing during typing */ }}
+							initialCursorPos={_mountedTab.cursorPos ?? 0}
+							initialScrollTop={_mountedTab.scrollTop ?? 0}
+							onchange={() => { /* parent tracks nothing during typing — spec 2.2 */ }}
+							onsave={(text) => {
+								/* At most ONE save in flight — prevents IPC congestion.
+								   If a save is running, this pause is skipped; onflush catches it on destroy. */
+								if (_saveGuard.saving) return;
+								_saveGuard.saving = true;
+								markRecentWrite(_mountedTab.path);
+								const content = buildFullContent(_mountedProps, text);
+								writeNote(_mountedTab.path, content)
+									.catch(() => {})
+									.finally(() => { _saveGuard.saving = false; });
+							}}
+							onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
+								const content = buildFullContent(_mountedProps, text);
+								/* Direct mutation for tab switch (tab still in store) */
+								const tab = get(openTabs).find(x => x.id === _mountedTab.id);
+								if (tab) {
+									tab.content = content;
+									tab.cursorPos = cursorPos;
+									tab.scrollTop = scrollTop;
+								}
+								/* Write-ahead buffer with correct cursor+scroll (synchronous).
+								   Also persists to localStorage — survives app restart. */
+								setWriteAhead(_mountedTab.path, content, cursorPos, scrollTop);
+								/* Write to disk (fire-and-forget). WAB ensures no data loss. */
+								if (needsDiskSave) {
+									markRecentWrite(_mountedTab.path);
+									writeNote(_mountedTab.path, content)
+										.then(() => clearWriteAhead(_mountedTab.path))
+										.catch(() => {});
+								}
+							}}
 							ontitlechange={(newTitle) => {
 								if (newTitle !== _mountedTab.name.replace(/\.md$/, '')) {
 									renameItem(_mountedTab.path, _mountedTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
