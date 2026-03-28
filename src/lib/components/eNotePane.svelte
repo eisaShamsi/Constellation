@@ -23,7 +23,7 @@
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
 	import { generateTable } from '$lib/editor/tableUtils';
 
-	/* Phase 5: Markdown syntax colors */
+	/* Markdown syntax colors */
 	const markdownHighlightStyle = HighlightStyle.define([
 		{ tag: tags.heading1, color: '#d73a49', fontWeight: '700' },
 		{ tag: tags.heading2, color: '#d73a49', fontWeight: '700' },
@@ -42,6 +42,22 @@
 	]);
 
 	const IDLE_SAVE_INTERVAL = 30_000; /* ms — periodic background save when idle */
+
+	const SLASH_COMMANDS: { label: string; detail: string; apply: string }[] = [
+		{ label: '/heading1', detail: 'H1', apply: '# ' },
+		{ label: '/heading2', detail: 'H2', apply: '## ' },
+		{ label: '/heading3', detail: 'H3', apply: '### ' },
+		{ label: '/bullet', detail: 'Bullet list', apply: '- ' },
+		{ label: '/numbered', detail: 'Numbered list', apply: '1. ' },
+		{ label: '/task', detail: 'Task', apply: '- [ ] ' },
+		{ label: '/code', detail: 'Code block', apply: '```\n\n```' },
+		{ label: '/quote', detail: 'Blockquote', apply: '> ' },
+		{ label: '/divider', detail: 'Horizontal rule', apply: '---\n' },
+		{ label: '/table', detail: 'Table (or /table 3x4)', apply: '' },
+		{ label: '/callout', detail: 'Callout', apply: '> [!note] Title\n> Content\n' },
+		{ label: '/math', detail: 'Math block', apply: '$$\n\n$$' },
+		{ label: '/mermaid', detail: 'Mermaid diagram', apply: '```mermaid\ngraph TD\n  A --> B\n```\n' },
+	];
 
 	let {
 		value = '',
@@ -106,6 +122,8 @@
 	let dirty = false;
 	let idleSaveTimer: ReturnType<typeof setInterval> | null = null;
 	let rafHandle: number | null = null;
+	let checkboxHandler: EventListener | null = null;
+	let chevronHandler: EventListener | null = null;
 	const dirCompartment = new Compartment();
 	const livePreviewCompartment = new Compartment();
 	let livePreviewEnabled = $state(true);
@@ -144,72 +162,62 @@
 	function handleVisibilityChange() { if (document.hidden && dirty) doSave(); }
 	function handleBeforeUnload() { doFlush(); }
 
-	/* ─── Phase 8: Autocomplete functions ─── */
-	function wikilinkCompletion(context: CompletionContext): any {
+	/* ─── Autocomplete functions ─── */
+	function wikilinkCompletion(context: CompletionContext) {
 		const before = context.matchBefore(/\[\[[^\]]*$/);
 		if (!before) return null;
 		const query = before.text.slice(2).toLowerCase();
-		const options: Completion[] = noteNames
-			.filter(n => n.name.toLowerCase().includes(query))
-			.slice(0, 20)
-			.map(n => ({
-				label: n.name,
-				detail: n.libraryName ? ` — ${n.libraryName}` : undefined,
-				type: 'text',
-				apply: (v: EditorView, _c: Completion, from: number, to: number) => {
-					/* Consume any trailing ]] left by closeBrackets */
-					let end = to;
-					const after = v.state.doc.sliceString(to, Math.min(to + 2, v.state.doc.length));
-					if (after === ']]') end = to + 2;
-					else if (after[0] === ']') end = to + 1;
-					const insert = `[[${n.name}]]`;
-					v.dispatch({ changes: { from: before.from, to: end, insert }, selection: { anchor: before.from + insert.length } });
-				}
-			}));
+		const options: Completion[] = [];
+		for (const n of noteNames) {
+			if (n.name.toLowerCase().includes(query)) {
+				options.push({
+					label: n.name,
+					detail: n.libraryName ? ` — ${n.libraryName}` : undefined,
+					type: 'text',
+					apply: (v: EditorView, _c: Completion, from: number, to: number) => {
+						/* Consume any trailing ]] left by closeBrackets */
+						let end = to;
+						const after = v.state.doc.sliceString(to, Math.min(to + 2, v.state.doc.length));
+						if (after === ']]') end = to + 2;
+						else if (after[0] === ']') end = to + 1;
+						const insert = `[[${n.name}]]`;
+						v.dispatch({ changes: { from: before.from, to: end, insert }, selection: { anchor: before.from + insert.length } });
+					}
+				});
+				if (options.length >= 20) break;
+			}
+		}
 		return { from: before.from, options, filter: false };
 	}
 
-	function tagCompletion(context: CompletionContext): any {
+	function tagCompletion(context: CompletionContext) {
 		const before = context.matchBefore(/#[\w\u0600-\u06FF/\-]*$/);
 		if (!before) return null;
 		const query = before.text.slice(1).toLowerCase();
-		const options: Completion[] = allTags
-			.filter(t => t.toLowerCase().includes(query))
-			.slice(0, 20)
-			.map(t => ({
-				label: '#' + t,
-				type: 'keyword',
-				apply: (v: EditorView, _c: Completion, from: number, to: number) => {
-					v.dispatch({ changes: { from: before.from, to, insert: '#' + t }, selection: { anchor: before.from + t.length + 1 } });
-				}
-			}));
+		const options: Completion[] = [];
+		for (const t of allTags) {
+			if (t.toLowerCase().includes(query)) {
+				options.push({
+					label: '#' + t,
+					type: 'keyword',
+					apply: (v: EditorView, _c: Completion, from: number, to: number) => {
+						v.dispatch({ changes: { from: before.from, to, insert: '#' + t }, selection: { anchor: before.from + t.length + 1 } });
+					}
+				});
+				if (options.length >= 20) break;
+			}
+		}
 		return { from: before.from, options, filter: false };
 	}
 
-	function slashCompletion(context: CompletionContext): any {
+	function slashCompletion(context: CompletionContext) {
 		const line = context.state.doc.lineAt(context.pos);
-		const lineStart = line.text.trimStart();
-		if (!lineStart.startsWith('/')) return null;
+		if (!line.text.trimStart().startsWith('/')) return null;
 		const before = context.matchBefore(/\/\w*$/);
 		if (!before) return null;
-		const commands: { label: string; detail: string; apply: string }[] = [
-			{ label: '/heading1', detail: 'H1', apply: '# ' },
-			{ label: '/heading2', detail: 'H2', apply: '## ' },
-			{ label: '/heading3', detail: 'H3', apply: '### ' },
-			{ label: '/bullet', detail: 'Bullet list', apply: '- ' },
-			{ label: '/numbered', detail: 'Numbered list', apply: '1. ' },
-			{ label: '/task', detail: 'Task', apply: '- [ ] ' },
-			{ label: '/code', detail: 'Code block', apply: '```\n\n```' },
-			{ label: '/quote', detail: 'Blockquote', apply: '> ' },
-			{ label: '/divider', detail: 'Horizontal rule', apply: '---\n' },
-			{ label: '/table', detail: 'Table (or /table 3x4)', apply: '' },
-			{ label: '/callout', detail: 'Callout', apply: '> [!note] Title\n> Content\n' },
-			{ label: '/math', detail: 'Math block', apply: '$$\n\n$$' },
-			{ label: '/mermaid', detail: 'Mermaid diagram', apply: '```mermaid\ngraph TD\n  A --> B\n```\n' },
-		];
 		return {
 			from: before.from,
-			options: commands.map(c => ({
+			options: SLASH_COMMANDS.map(c => ({
 				...c,
 				apply: (v: EditorView, _comp: Completion, from: number, to: number) => {
 					if (c.label === '/table') {
@@ -236,14 +244,13 @@
 				history(),
 				drawSelection(),
 				markdown({ base: markdownLanguage, extensions: [HighlightExt] }),
-				syntaxHighlighting(markdownHighlightStyle), /* Phase 5 */
-				calloutCollapseField, /* Phase 7: required by calloutPlugin */
-				livePreviewCompartment.of(livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme, calloutPlugin, calloutTheme] : []), /* Phase 6+7 */
-				lineDecoPlugin, lineDecoTheme, /* Phase 7: code block bg + blockquote border */
-				libraryPathField, /* Phase 7: image path resolution */
-				/* Phase 6: checkbox click handler is added via capture-phase listener below */
-				closeBrackets(), /* Phase 8 */
-				autocompletion({ override: [wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }), /* Phase 8 */
+				syntaxHighlighting(markdownHighlightStyle),
+				calloutCollapseField,
+				livePreviewCompartment.of(livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme, calloutPlugin, calloutTheme] : []),
+				lineDecoPlugin, lineDecoTheme,
+				libraryPathField, /* image path resolution */
+				closeBrackets(),
+				autocompletion({ override: [wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
 				keymap.of([...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
 				EditorView.contentAttributes.of({ dir: 'auto' }),
@@ -273,37 +280,31 @@
 
 		view = new EditorView({ state, parent: editorEl! });
 
-		/* Phase 7: set library path for image resolution */
+		/* Set library path for image resolution */
 		if (libraryPath) {
 			view.dispatch({ effects: setLibraryPath.of(libraryPath) });
 		}
 
-		/* Phase 6: checkbox toggle — capture-phase listener fires BEFORE CM6 processes the click */
-		editorEl!.addEventListener('mousedown', (event) => {
+		/* Checkbox toggle — capture phase, O(1) via posAtCoords */
+		checkboxHandler = ((event: MouseEvent) => {
 			const target = event.target as HTMLElement;
 			if (!(target.tagName === 'INPUT' && target.classList.contains('cm-md-checkbox'))) return;
 			event.preventDefault();
 			event.stopPropagation();
 			if (!view) return;
-			const doc = view.state.doc;
-			const clickY = event.clientY;
-			for (let ln = 1; ln <= doc.lines; ln++) {
-				const l = doc.line(ln);
-				const m = l.text.match(/^(\s*[-*+]\s)\[( |x|X)\]/);
-				if (!m) continue;
-				const coords = view.coordsAtPos(l.from);
-				if (!coords) continue;
-				if (clickY >= coords.top && clickY <= coords.bottom) {
-					const checkStart = l.from + m[1].length + 1;
-					const newChar = (m[2] === ' ') ? 'x' : ' ';
-					view.dispatch({ changes: { from: checkStart, to: checkStart + 1, insert: newChar } });
-					return;
-				}
-			}
-		}, true); /* capture phase */
+			const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+			if (pos == null) return;
+			const line = view.state.doc.lineAt(pos);
+			const m = line.text.match(/^(\s*[-*+]\s)\[( |x|X)\]/);
+			if (!m) return;
+			const checkStart = line.from + m[1].length + 1;
+			const newChar = (m[2] === ' ') ? 'x' : ' ';
+			view.dispatch({ changes: { from: checkStart, to: checkStart + 1, insert: newChar } });
+		}) as EventListener;
+		editorEl!.addEventListener('mousedown', checkboxHandler, true);
 
-		/* Phase 7: callout chevron toggle — capture-phase for reliable click handling */
-		editorEl!.addEventListener('mousedown', (event) => {
+		/* Callout chevron toggle — capture phase */
+		chevronHandler = ((event: MouseEvent) => {
 			const target = event.target as HTMLElement;
 			const chevron = target.closest?.('.cm-callout-chevron') as HTMLElement | null;
 			if (!chevron || !chevron.dataset.calloutLine || !view) return;
@@ -313,7 +314,8 @@
 			if (!isNaN(lineNum)) {
 				view.dispatch({ effects: toggleCallout.of(lineNum) });
 			}
-		}, true); /* capture phase */
+		}) as EventListener;
+		editorEl!.addEventListener('mousedown', chevronHandler, true);
 
 		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
 			view.dispatch({ selection: { anchor: initialCursorPos } });
@@ -340,6 +342,8 @@
 		if (idleSaveTimer) clearInterval(idleSaveTimer);
 		document.removeEventListener('visibilitychange', handleVisibilityChange);
 		window.removeEventListener('beforeunload', handleBeforeUnload);
+		if (checkboxHandler && editorEl) editorEl.removeEventListener('mousedown', checkboxHandler, true);
+		if (chevronHandler && editorEl) editorEl.removeEventListener('mousedown', chevronHandler, true);
 		if (rafHandle !== null) { cancelAnimationFrame(rafHandle); rafHandle = null; }
 		doFlush();
 		view?.destroy();
