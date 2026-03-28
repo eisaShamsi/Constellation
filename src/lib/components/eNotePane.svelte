@@ -131,10 +131,10 @@
 	let livePreviewEnabled = $state(true);
 
 	/* ─── Table toolbar state ─── */
-	let tableToolbarVisible = $state(false);
 	let tableToolbarX = $state(0);
 	let tableToolbarY = $state(0);
 	let currentTable = $state<ParsedTable | null>(null);
+	let tableToolbarVisible = $derived(currentTable !== null);
 
 	/* ─── Phase 3 state ─── */
 	let propsCollapsed = $state(false);
@@ -181,13 +181,10 @@
 			const startCoords = editorView.coordsAtPos(firstLine.from);
 			const endCoords = editorView.coordsAtPos(lastLine.to);
 			if (startCoords && endCoords) {
-				/* Viewport coordinates — center between table edges, float above header */
 				tableToolbarX = (startCoords.left + endCoords.right) / 2;
 				tableToolbarY = startCoords.top - 44;
 			}
-			tableToolbarVisible = true;
 		} else {
-			tableToolbarVisible = false;
 			currentTable = null;
 		}
 	}
@@ -686,32 +683,30 @@
 			<button class="e-tb" title="Redo" onclick={tbRedo}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.69 3L21 13"/></svg></button>
 		</div>
 
-		<div class="e-editor-wrap">
-			{#if tableToolbarVisible && view && currentTable}
-				<div class="e-table-toolbar-fixed" style="position: fixed; left: {tableToolbarX}px; top: {tableToolbarY}px; transform: translateX(-50%); z-index: 200;">
-				<TableToolbar
-					x={0}
-					y={0}
-					onAddRow={() => { if (currentTable) applyTableChange(addRow(currentTable, currentTable.cursorRow)); }}
-					onAddColumn={() => { if (currentTable) applyTableChange(addColumn(currentTable, currentTable.cursorCol)); }}
-					onDeleteRow={() => { if (currentTable) applyTableChange(deleteRow(currentTable, currentTable.cursorRow)); }}
-					onDeleteColumn={() => { if (currentTable) applyTableChange(deleteColumn(currentTable, currentTable.cursorCol)); }}
-					onAlignLeft={() => { if (currentTable) applyTableChange(setAlignment(currentTable, currentTable.cursorCol, 'left')); }}
-					onAlignCenter={() => { if (currentTable) applyTableChange(setAlignment(currentTable, currentTable.cursorCol, 'center')); }}
-					onAlignRight={() => { if (currentTable) applyTableChange(setAlignment(currentTable, currentTable.cursorCol, 'right')); }}
-					onMoveRowUp={() => { if (currentTable) applyTableChange(moveRow(currentTable, currentTable.cursorRow, 'up')); }}
-					onMoveRowDown={() => { if (currentTable) applyTableChange(moveRow(currentTable, currentTable.cursorRow, 'down')); }}
-					onMoveColLeft={() => { if (currentTable) applyTableChange(moveColumn(currentTable, currentTable.cursorCol, 'left')); }}
-					onMoveColRight={() => { if (currentTable) applyTableChange(moveColumn(currentTable, currentTable.cursorCol, 'right')); }}
-					onSortAsc={() => { if (currentTable) applyTableChange(sortByColumn(currentTable, currentTable.cursorCol, 'asc')); }}
-					onSortDesc={() => { if (currentTable) applyTableChange(sortByColumn(currentTable, currentTable.cursorCol, 'desc')); }}
-					onInsertFormula={() => { if (currentTable && view) insertFormulaAtCursor(view, currentTable); }}
-					onEvaluateFormulas={() => { if (currentTable) applyTableChange({ ...currentTable, rows: evaluateTableFormulas(currentTable.rows) }); }}
-				/>
-				</div>
-			{/if}
-			<div class="e-editor" bind:this={editorEl}></div>
-		</div>
+		{#if tableToolbarVisible && view && currentTable}
+			<div class="e-table-toolbar-float" style="position: fixed; left: {tableToolbarX}px; top: {tableToolbarY}px; transform: translateX(-50%); z-index: 200;">
+			<TableToolbar
+				x={0}
+				y={0}
+				onAddRow={() => applyTableChange(addRow(currentTable!, currentTable!.cursorRow))}
+				onAddColumn={() => applyTableChange(addColumn(currentTable!, currentTable!.cursorCol))}
+				onDeleteRow={() => applyTableChange(deleteRow(currentTable!, currentTable!.cursorRow))}
+				onDeleteColumn={() => applyTableChange(deleteColumn(currentTable!, currentTable!.cursorCol))}
+				onAlignLeft={() => applyTableChange(setAlignment(currentTable!, currentTable!.cursorCol, 'left'))}
+				onAlignCenter={() => applyTableChange(setAlignment(currentTable!, currentTable!.cursorCol, 'center'))}
+				onAlignRight={() => applyTableChange(setAlignment(currentTable!, currentTable!.cursorCol, 'right'))}
+				onMoveRowUp={() => applyTableChange(moveRow(currentTable!, currentTable!.cursorRow, 'up'))}
+				onMoveRowDown={() => applyTableChange(moveRow(currentTable!, currentTable!.cursorRow, 'down'))}
+				onMoveColLeft={() => applyTableChange(moveColumn(currentTable!, currentTable!.cursorCol, 'left'))}
+				onMoveColRight={() => applyTableChange(moveColumn(currentTable!, currentTable!.cursorCol, 'right'))}
+				onSortAsc={() => applyTableChange(sortByColumn(currentTable!, currentTable!.cursorCol, 'asc'))}
+				onSortDesc={() => applyTableChange(sortByColumn(currentTable!, currentTable!.cursorCol, 'desc'))}
+				onInsertFormula={() => { if (view) insertFormulaAtCursor(view, currentTable!); }}
+				onEvaluateFormulas={() => applyTableChange({ ...currentTable!, rows: evaluateTableFormulas(currentTable!.rows) })}
+			/>
+			</div>
+		{/if}
+		<div class="e-editor" bind:this={editorEl}></div>
 	</div>
 </div>
 
@@ -818,7 +813,6 @@
 	.e-tb-menu-item:hover { background: var(--background-modifier-hover); }
 
 	/* ─── Editor ─── */
-	.e-editor-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 	.e-editor { flex: 1; min-height: 0; }
 	.e-editor :global(.cm-editor) { height: 100%; }
 	.e-editor :global(.cm-line) { unicode-bidi: plaintext; }
