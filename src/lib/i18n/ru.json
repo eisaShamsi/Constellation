@@ -500,6 +500,7 @@
     "saving": "Сохранение...",
     "readingMode": "Режим чтения",
     "editingMode": "Режим редактирования",
+    "sourceMode": "Режим исходного кода",
     "exportHtml": "Экспорт в HTML",
     "insertTemplate": "Вставить шаблон",
     "livePreview": "Предпросмотр",

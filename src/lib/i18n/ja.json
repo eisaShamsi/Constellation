@@ -500,6 +500,7 @@
     "saving": "保存中...",
     "readingMode": "閲覧モード",
     "editingMode": "編集モード",
+    "sourceMode": "ソースモード",
     "exportHtml": "HTMLとしてエクスポート",
     "insertTemplate": "テンプレートを挿入",
     "livePreview": "ライブプレビュー",

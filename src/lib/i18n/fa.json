@@ -500,6 +500,7 @@
     "saving": "در حال ذخیره...",
     "readingMode": "حالت خواندن",
     "editingMode": "حالت ویرایش",
+    "sourceMode": "حالت منبع",
     "exportHtml": "خروجی به HTML",
     "insertTemplate": "درج الگو",
     "livePreview": "پیش‌نمایش زنده",

@@ -501,6 +501,7 @@
     "saving": "جارٍ الحفظ...",
     "readingMode": "وضع القراءة",
     "editingMode": "وضع التحرير",
+    "sourceMode": "الوضع المصدري",
     "exportHtml": "تصدير HTML",
     "insertTemplate": "إدراج قالب",
     "livePreview": "معاينة حية",

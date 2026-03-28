@@ -1,8 +1,8 @@
 <script lang="ts">
 	/**
-	 * eNotePane — Phase 5: Syntax Highlighting
+	 * eNotePane — Phase 6: Live Preview
 	 * Gray desk + breadcrumb + white paper + title + properties + CM6 editor + persistence.
-	 * Zero custom plugins. Typing must be instant.
+	 * Live preview decorations via shared livePreview plugin. Typing must be instant.
 	 * Spec: docs/eNotePane-spec.md, Section 10 (Phase 3)
 	 */
 	import { onMount, onDestroy } from 'svelte';
@@ -16,6 +16,8 @@
 	import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 	import { tags } from '@lezer/highlight';
 	import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
+	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
+	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
 
 	/* Phase 5: Markdown syntax colors */
 	const markdownHighlightStyle = HighlightStyle.define([
@@ -94,6 +96,8 @@
 	let idleSaveTimer: ReturnType<typeof setInterval> | null = null;
 	let rafHandle: number | null = null;
 	const dirCompartment = new Compartment();
+	const livePreviewCompartment = new Compartment();
+	let livePreviewEnabled = $state(true);
 
 	/* ─── Phase 3 state ─── */
 	let propsCollapsed = $state(false);
@@ -136,8 +140,10 @@
 			extensions: [
 				history(),
 				drawSelection(),
-				markdown({ base: markdownLanguage }),
+				markdown({ base: markdownLanguage, extensions: [HighlightExt] }),
 				syntaxHighlighting(markdownHighlightStyle), /* Phase 5 */
+				livePreviewCompartment.of(livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme] : []), /* Phase 6 */
+				/* Phase 6: checkbox click handler is added via capture-phase listener below */
 				keymap.of([...defaultKeymap, ...historyKeymap]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
 				EditorView.contentAttributes.of({ dir: 'auto' }),
@@ -166,6 +172,30 @@
 		});
 
 		view = new EditorView({ state, parent: editorEl! });
+
+		/* Phase 6: checkbox toggle — capture-phase listener fires BEFORE CM6 processes the click */
+		editorEl!.addEventListener('mousedown', (event) => {
+			const target = event.target as HTMLElement;
+			if (!(target.tagName === 'INPUT' && target.classList.contains('cm-md-checkbox'))) return;
+			event.preventDefault();
+			event.stopPropagation();
+			if (!view) return;
+			const doc = view.state.doc;
+			const clickY = event.clientY;
+			for (let ln = 1; ln <= doc.lines; ln++) {
+				const l = doc.line(ln);
+				const m = l.text.match(/^(\s*[-*+]\s)\[( |x|X)\]/);
+				if (!m) continue;
+				const coords = view.coordsAtPos(l.from);
+				if (!coords) continue;
+				if (clickY >= coords.top && clickY <= coords.bottom) {
+					const checkStart = l.from + m[1].length + 1;
+					const newChar = (m[2] === ' ') ? 'x' : ' ';
+					view.dispatch({ changes: { from: checkStart, to: checkStart + 1, insert: newChar } });
+					return;
+				}
+			}
+		}, true); /* capture phase */
 
 		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
 			view.dispatch({ selection: { anchor: initialCursorPos } });
@@ -204,6 +234,19 @@
 		if (view && dir !== prevDir) {
 			prevDir = dir;
 			view.dispatch({ effects: dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })) });
+		}
+	});
+
+	/* ─── Live Preview toggle ─── */
+	let prevLivePreview = livePreviewEnabled;
+	$effect(() => {
+		if (view && livePreviewEnabled !== prevLivePreview) {
+			prevLivePreview = livePreviewEnabled;
+			view.dispatch({
+				effects: livePreviewCompartment.reconfigure(
+					livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme] : []
+				)
+			});
 		}
 	});
 
@@ -302,6 +345,11 @@
 				</button>
 				{#if showMoreMenu}
 					<div class="e-bc-menu">
+						<button class="e-bc-menu-item" onclick={() => { livePreviewEnabled = !livePreviewEnabled; showMoreMenu = false; }}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{#if livePreviewEnabled}<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>{:else}<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>{/if}</svg>
+							{livePreviewEnabled ? ($t('notePane.sourceMode') || 'Source mode') : ($t('notePane.livePreview') || 'Live preview')}
+						</button>
+						<div class="e-bc-menu-sep"></div>
 						<button class="e-bc-menu-item" onclick={() => handleMoreAction('addProperty')}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
 							{$t('contextMenu.addProperty')}

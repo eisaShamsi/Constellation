@@ -500,6 +500,7 @@
     "saving": "正在保存...",
     "readingMode": "阅读模式",
     "editingMode": "编辑模式",
+    "sourceMode": "源码模式",
     "exportHtml": "导出为 HTML",
     "insertTemplate": "插入模板",
     "livePreview": "实时预览",

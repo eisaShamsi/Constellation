@@ -500,6 +500,7 @@
     "saving": "Guardando...",
     "readingMode": "Modo lectura",
     "editingMode": "Modo edición",
+    "sourceMode": "Modo fuente",
     "exportHtml": "Exportar como HTML",
     "insertTemplate": "Insertar plantilla",
     "livePreview": "Vista previa en vivo",

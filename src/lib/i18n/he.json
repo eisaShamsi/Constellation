@@ -500,6 +500,7 @@
     "saving": "שומר...",
     "readingMode": "מצב קריאה",
     "editingMode": "מצב עריכה",
+    "sourceMode": "מצב מקור",
     "exportHtml": "ייצא כ-HTML",
     "insertTemplate": "הוסף תבנית",
     "livePreview": "תצוגה מקדימה חיה",

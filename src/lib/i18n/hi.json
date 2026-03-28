@@ -500,6 +500,7 @@
     "saving": "सहेजा जा रहा है...",
     "readingMode": "पठन मोड",
     "editingMode": "संपादन मोड",
+    "sourceMode": "स्रोत मोड",
     "exportHtml": "HTML के रूप में निर्यात करें",
     "insertTemplate": "टेम्पलेट डालें",
     "livePreview": "लाइव पूर्वावलोकन",

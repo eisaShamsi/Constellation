@@ -500,6 +500,7 @@
     "saving": "Enregistrement...",
     "readingMode": "Mode lecture",
     "editingMode": "Mode édition",
+    "sourceMode": "Mode source",
     "exportHtml": "Exporter en HTML",
     "insertTemplate": "Insérer un modèle",
     "livePreview": "Aperçu en direct",

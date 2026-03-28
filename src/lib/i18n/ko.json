@@ -500,6 +500,7 @@
     "saving": "저장 중...",
     "readingMode": "읽기 모드",
     "editingMode": "편집 모드",
+    "sourceMode": "소스 모드",
     "exportHtml": "HTML로 내보내기",
     "insertTemplate": "템플릿 삽입",
     "livePreview": "실시간 미리보기",

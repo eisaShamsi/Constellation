@@ -500,6 +500,7 @@
     "saving": "Kaydediliyor...",
     "readingMode": "Okuma modu",
     "editingMode": "Düzenleme modu",
+    "sourceMode": "Kaynak modu",
     "exportHtml": "HTML olarak dışa aktar",
     "insertTemplate": "Şablon ekle",
     "livePreview": "Canlı önizleme",
