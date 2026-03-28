@@ -43,7 +43,7 @@ const calloutIcons: Record<string, string> = {
 };
 
 // ─── Collapse/Expand state ───
-const toggleCallout = StateEffect.define<number>(); // line number to toggle
+export const toggleCallout = StateEffect.define<number>(); // line number to toggle
 
 // Tracks which callout start lines are collapsed (by line number)
 const calloutCollapseField = StateField.define<Set<number>>({
@@ -85,20 +85,18 @@ const calloutCollapseField = StateField.define<Set<number>>({
 	},
 });
 
-/** Widget that replaces the > [!type] title line with styled title + chevron */
-class CalloutTitleWidget extends WidgetType {
+/** Small widget that replaces only the "> [!type]+/- " prefix with an icon + optional chevron */
+class CalloutIconWidget extends WidgetType {
 	type: string;
-	title: string;
 	color: string;
 	icon: string;
 	foldable: boolean;
 	collapsed: boolean;
 	lineNum: number;
 
-	constructor(type: string, title: string, foldable: boolean, collapsed: boolean, lineNum: number) {
+	constructor(type: string, foldable: boolean, collapsed: boolean, lineNum: number) {
 		super();
 		this.type = type;
-		this.title = title;
 		this.color = calloutColors[type] || '#448aff';
 		this.icon = calloutIcons[type] || 'ℹ️';
 		this.foldable = foldable;
@@ -106,12 +104,12 @@ class CalloutTitleWidget extends WidgetType {
 		this.lineNum = lineNum;
 	}
 
-	toDOM(view: EditorView) {
+	toDOM() {
 		const span = document.createElement('span');
-		span.className = 'cm-callout-title';
+		span.className = 'cm-callout-icon';
 		span.style.color = this.color;
 
-		const titleText = this.title || this.type.charAt(0).toUpperCase() + this.type.slice(1);
+		span.appendChild(document.createTextNode(`${this.icon} `));
 
 		if (this.foldable) {
 			const chevron = document.createElement('span');
@@ -120,26 +118,17 @@ class CalloutTitleWidget extends WidgetType {
 			chevron.style.cursor = 'pointer';
 			chevron.style.fontSize = '0.7em';
 			chevron.style.opacity = '0.6';
-			chevron.style.transition = 'transform 0.15s ease';
 			chevron.style.display = 'inline-block';
 			chevron.style.marginInlineEnd = '4px';
-
 			chevron.dataset.calloutLine = String(this.lineNum);
-
-			span.appendChild(document.createTextNode(`${this.icon}  `));
-			span.appendChild(document.createTextNode(titleText));
-			span.appendChild(document.createTextNode('  '));
 			span.appendChild(chevron);
-		} else {
-			span.textContent = `${this.icon}  ${titleText}`;
 		}
 
 		return span;
 	}
 
-	eq(other: CalloutTitleWidget) {
-		return this.type === other.type && this.title === other.title
-			&& this.foldable === other.foldable && this.collapsed === other.collapsed;
+	eq(other: CalloutIconWidget) {
+		return this.type === other.type && this.foldable === other.foldable && this.collapsed === other.collapsed;
 	}
 }
 
@@ -243,14 +232,20 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 			}
 		}
 
-		if (showWidget) {
-			// Replace title line with widget
-			all.push({
-				from: titleLine.from, to: titleLine.to,
-				deco: Decoration.replace({
-					widget: new CalloutTitleWidget(callout.type, callout.title, foldable, isCollapsed, callout.startLine),
-				}),
-			});
+		// When cursor is outside callout: hide only the "> [!type]+/- " prefix, keep title text editable
+		if (!cursorInCallout) {
+			// Find the prefix length: "> [!type]+/- " (everything before the title text)
+			const prefixMatch = titleLine.text.match(/^>\s*\[!\w+\][+-]?\s*/);
+			if (prefixMatch) {
+				const prefixEnd = titleLine.from + prefixMatch[0].length;
+				// Replace prefix with icon + optional chevron
+				all.push({
+					from: titleLine.from, to: prefixEnd,
+					deco: Decoration.replace({
+						widget: new CalloutIconWidget(callout.type, foldable, isCollapsed, callout.startLine),
+					}),
+				});
+			}
 
 			if (isCollapsed && callout.endLine > callout.startLine) {
 				// Hide all content lines when collapsed
@@ -259,7 +254,7 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 					from: titleLine.to, to: lastContentLine.to,
 					deco: Decoration.replace({}),
 				});
-			} else if (!cursorInCallout) {
+			} else {
 				// Show content but hide > markers
 				for (let l = callout.startLine + 1; l <= callout.endLine; l++) {
 					const line = doc.line(l);
@@ -358,12 +353,11 @@ export const calloutTheme = EditorView.theme({
 	'.cm-callout-title-line': {
 		fontWeight: '500',
 	},
-	'.cm-callout-title': {
+	'.cm-callout-icon': {
 		fontWeight: '600',
 		fontSize: '0.95em',
-		display: 'inline-flex',
-		alignItems: 'center',
-		gap: '4px',
+		display: 'inline',
+		verticalAlign: 'middle',
 	},
 	'.cm-callout-chevron': {
 		userSelect: 'none',

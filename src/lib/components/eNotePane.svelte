@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * eNotePane — Phase 6: Live Preview
+	 * eNotePane — Phase 7: Advanced Features
 	 * Gray desk + breadcrumb + white paper + title + properties + CM6 editor + persistence.
 	 * Live preview decorations via shared livePreview plugin. Typing must be instant.
 	 * Spec: docs/eNotePane-spec.md, Section 10 (Phase 3)
@@ -16,7 +16,9 @@
 	import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 	import { tags } from '@lezer/highlight';
 	import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
-	import { livePreviewPlugin, livePreviewTheme } from '$lib/editor/livePreview';
+	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath } from '$lib/editor/livePreview';
+	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
+	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
 
 	/* Phase 5: Markdown syntax colors */
@@ -49,6 +51,7 @@
 		libraryName = '',
 		tabId = '',
 		filePath = '',
+		libraryPath = '',
 		properties = [] as FrontmatterProperty[],
 		rawYaml = '',
 		canGoBack = false,
@@ -72,6 +75,7 @@
 		libraryName?: string;
 		tabId?: string;
 		filePath?: string;
+		libraryPath?: string;
 		properties?: FrontmatterProperty[];
 		rawYaml?: string;
 		canGoBack?: boolean;
@@ -142,7 +146,10 @@
 				drawSelection(),
 				markdown({ base: markdownLanguage, extensions: [HighlightExt] }),
 				syntaxHighlighting(markdownHighlightStyle), /* Phase 5 */
-				livePreviewCompartment.of(livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme] : []), /* Phase 6 */
+				calloutCollapseField, /* Phase 7: required by calloutPlugin */
+				livePreviewCompartment.of(livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme, calloutPlugin, calloutTheme] : []), /* Phase 6+7 */
+				lineDecoPlugin, lineDecoTheme, /* Phase 7: code block bg + blockquote border */
+				libraryPathField, /* Phase 7: image path resolution */
 				/* Phase 6: checkbox click handler is added via capture-phase listener below */
 				keymap.of([...defaultKeymap, ...historyKeymap]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
@@ -173,6 +180,11 @@
 
 		view = new EditorView({ state, parent: editorEl! });
 
+		/* Phase 7: set library path for image resolution */
+		if (libraryPath) {
+			view.dispatch({ effects: setLibraryPath.of(libraryPath) });
+		}
+
 		/* Phase 6: checkbox toggle — capture-phase listener fires BEFORE CM6 processes the click */
 		editorEl!.addEventListener('mousedown', (event) => {
 			const target = event.target as HTMLElement;
@@ -194,6 +206,19 @@
 					view.dispatch({ changes: { from: checkStart, to: checkStart + 1, insert: newChar } });
 					return;
 				}
+			}
+		}, true); /* capture phase */
+
+		/* Phase 7: callout chevron toggle — capture-phase for reliable click handling */
+		editorEl!.addEventListener('mousedown', (event) => {
+			const target = event.target as HTMLElement;
+			const chevron = target.closest?.('.cm-callout-chevron') as HTMLElement | null;
+			if (!chevron || !chevron.dataset.calloutLine || !view) return;
+			event.preventDefault();
+			event.stopPropagation();
+			const lineNum = parseInt(chevron.dataset.calloutLine, 10);
+			if (!isNaN(lineNum)) {
+				view.dispatch({ effects: toggleCallout.of(lineNum) });
 			}
 		}, true); /* capture phase */
 
@@ -244,7 +269,7 @@
 			prevLivePreview = livePreviewEnabled;
 			view.dispatch({
 				effects: livePreviewCompartment.reconfigure(
-					livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme] : []
+					livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme, calloutPlugin, calloutTheme] : []
 				)
 			});
 		}

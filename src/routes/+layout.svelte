@@ -2733,6 +2733,7 @@
 							libraryName={_mountedTab.libraryName}
 							tabId={_mountedTab.id}
 							filePath={_mountedTab.path}
+							libraryPath={_mountedTab.libraryPath || ''}
 							properties={_parsed.properties}
 							rawYaml={_parsed.rawYaml ?? ''}
 							canGoBack={(_mountedTab.historyIndex ?? 0) > 0}
