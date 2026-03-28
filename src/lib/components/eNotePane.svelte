@@ -13,7 +13,7 @@
 	import { EditorView, keymap, drawSelection } from '@codemirror/view';
 	import { EditorState, Compartment } from '@codemirror/state';
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
-	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+	import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
 
 	const IDLE_SAVE_INTERVAL = 30_000; /* ms — periodic background save when idle */
 
@@ -206,6 +206,57 @@
 	}
 
 	const titleAlignment = $derived($appSettings.titleAlignment ?? 'center');
+
+	/* ─── Phase 4: Toolbar helpers ─── */
+	function wrapSelection(before: string, after: string) {
+		if (!view) return;
+		const { from, to } = view.state.selection.main;
+		if (from === to) {
+			view.dispatch({ changes: { from, to, insert: before + after }, selection: { anchor: from + before.length } });
+		} else {
+			const sel = view.state.sliceDoc(from, to);
+			if (sel.startsWith(before) && sel.endsWith(after)) {
+				const inner = sel.slice(before.length, -after.length);
+				view.dispatch({ changes: { from, to, insert: inner }, selection: { anchor: from, head: from + inner.length } });
+			} else {
+				view.dispatch({ changes: { from, to, insert: before + sel + after }, selection: { anchor: from + before.length, head: from + before.length + sel.length } });
+			}
+		}
+		view.focus();
+	}
+	function insertLinePrefix(prefix: string) {
+		if (!view) return;
+		const { from } = view.state.selection.main;
+		const line = view.state.doc.lineAt(from);
+		if (line.text.startsWith(prefix)) {
+			view.dispatch({ changes: { from: line.from, to: line.from + prefix.length, insert: '' } });
+		} else {
+			view.dispatch({ changes: { from: line.from, insert: prefix } });
+		}
+		view.focus();
+	}
+	function insertAtCursor(text: string) {
+		if (!view) return;
+		const { from } = view.state.selection.main;
+		view.dispatch({ changes: { from, insert: text }, selection: { anchor: from + text.length } });
+		view.focus();
+	}
+	function tbUndo() { if (view) { undo(view); view.focus(); } }
+	function tbRedo() { if (view) { redo(view); view.focus(); } }
+	let showHeadingMenu = $state(false);
+	let showListMenu = $state(false);
+	let showInsertMenu = $state(false);
+	function closeMenus() { showHeadingMenu = false; showListMenu = false; showInsertMenu = false; }
+	function toggleMenu(menu: 'heading' | 'list' | 'insert') {
+		const was = menu === 'heading' ? showHeadingMenu : menu === 'list' ? showListMenu : showInsertMenu;
+		closeMenus();
+		if (!was) {
+			if (menu === 'heading') showHeadingMenu = true;
+			else if (menu === 'list') showListMenu = true;
+			else showInsertMenu = true;
+			setTimeout(() => window.addEventListener('click', closeMenus, { once: true }), 0);
+		}
+	}
 </script>
 
 <div class="e-desk" dir={dir}>
@@ -310,6 +361,28 @@
 			<hr class="e-props-divider" />
 		{/if}
 
+		<!-- ─── Toolbar (Phase 4) — dispatches CM6 commands, never modifies state directly ─── -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="e-toolbar" onmousedown={(e) => e.preventDefault()}>
+			<button class="e-tb" title={$t('toolbar.bold')} onclick={() => wrapSelection('**', '**')}><strong>B</strong></button>
+			<button class="e-tb" title={$t('toolbar.italic')} onclick={() => wrapSelection('_', '_')}><em>I</em></button>
+			<button class="e-tb" title={$t('toolbar.strikethrough')} onclick={() => wrapSelection('~~', '~~')}><s>S</s></button>
+			<button class="e-tb" title={$t('toolbar.highlight')} onclick={() => wrapSelection('==', '==')}><span class="e-tb-hl">H</span></button>
+			<button class="e-tb mono" title={$t('toolbar.code')} onclick={() => wrapSelection('`', '`')}>&lt;/&gt;</button>
+			<div class="e-tb-sep"></div>
+			<div class="e-tb-drop"><button class="e-tb" onclick={() => toggleMenu('heading')}>H<span class="e-tb-caret">▾</span></button>
+				{#if showHeadingMenu}<div class="e-tb-menu">{#each [1,2,3,4,5,6] as lv}<button class="e-tb-menu-item" onclick={() => { closeMenus(); insertLinePrefix('#'.repeat(lv) + ' '); }}>H{lv}</button>{/each}</div>{/if}</div>
+			<div class="e-tb-drop"><button class="e-tb" onclick={() => toggleMenu('list')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span class="e-tb-caret">▾</span></button>
+				{#if showListMenu}<div class="e-tb-menu"><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertLinePrefix('- '); }}>• Bullet</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertLinePrefix('1. '); }}>1. Numbered</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertLinePrefix('- [ ] '); }}>☐ Task</button></div>{/if}</div>
+			<div class="e-tb-sep"></div>
+			<button class="e-tb" title={$t('toolbar.link')} onclick={() => wrapSelection('[[', ']]')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+			<div class="e-tb-drop"><button class="e-tb" onclick={() => toggleMenu('insert')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg><span class="e-tb-caret">▾</span></button>
+				{#if showInsertMenu}<div class="e-tb-menu"><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertAtCursor('\n> '); }}>❝ Blockquote</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertAtCursor('\n```\n\n```\n'); }}>⌨ Code block</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertAtCursor('\n---\n'); }}>― Rule</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertAtCursor('\n| Col 1 | Col 2 |\n| --- | --- |\n| | |\n'); }}>{$t('toolbar.table')}</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertAtCursor('![](url)'); }}>🖼 Image</button></div>{/if}</div>
+			<div class="e-tb-sep"></div>
+			<button class="e-tb" title="Undo" onclick={tbUndo}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.69 3L3 13"/></svg></button>
+			<button class="e-tb" title="Redo" onclick={tbRedo}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.69 3L21 13"/></svg></button>
+		</div>
+
 		<div class="e-editor" bind:this={editorEl}></div>
 	</div>
 </div>
@@ -401,6 +474,20 @@
 		border: none; border-top: 1px solid var(--background-modifier-border, #e8e8e8);
 		margin: 12px 0;
 	}
+
+	/* ─── Toolbar (Phase 4) ─── */
+	.e-toolbar { display: flex; align-items: center; gap: 2px; padding: 4px 0; margin-bottom: 8px; border-bottom: 1px solid var(--background-modifier-border, #e8e8e8); flex-wrap: wrap; }
+	.e-tb { display: flex; align-items: center; justify-content: center; gap: 2px; width: 28px; height: 28px; border: none; background: none; border-radius: 4px; color: var(--text-muted); cursor: pointer; font-size: 13px; font-family: inherit; }
+	.e-tb:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.e-tb.mono { font-family: var(--font-monospace-theme, monospace); font-size: 11px; }
+	.e-tb-hl { background: #fef08a; padding: 0 3px; border-radius: 2px; color: #1a1a1a; font-size: 12px; }
+	.e-tb-sep { width: 1px; height: 18px; background: var(--background-modifier-border); margin: 0 4px; }
+	.e-tb-caret { font-size: 8px; opacity: 0.5; margin-inline-start: -2px; }
+	.e-tb-drop { position: relative; }
+	.e-tb-menu { position: absolute; top: 100%; left: 0; z-index: 100; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 6px; padding: 4px 0; min-width: 140px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+	:global([dir="rtl"]) .e-tb-menu { left: auto; right: 0; }
+	.e-tb-menu-item { display: block; width: 100%; padding: 5px 12px; border: none; background: none; cursor: pointer; font-size: 13px; color: var(--text-normal); text-align: start; font-family: inherit; }
+	.e-tb-menu-item:hover { background: var(--background-modifier-hover); }
 
 	/* ─── Editor ─── */
 	.e-editor { flex: 1; min-height: 0; }

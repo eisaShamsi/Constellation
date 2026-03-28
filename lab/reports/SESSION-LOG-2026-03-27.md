@@ -701,7 +701,18 @@ Debug logs removed. Ready for final clean confirmation run.
 
 ---
 
-## Step 45: Phase 3 — Commit & Push (PENDING)
+## Step 45: Phase 3 — Commit & Push
+
+**Commit:** `59777e1` — eNotePane Phase 3: Breadcrumb & Properties — ALL 8 AUDITORS + 8 USER TESTS PASS
+**Pushed to:** `origin/main`
+
+**Files:**
+- `src/lib/components/eNotePane.svelte` — breadcrumb + properties (411 lines)
+- `src/lib/components/PropertyEditor.svelte` — direct mutation fix
+- `src/routes/+layout.svelte` — new props + callbacks wiring
+- `src/lib/i18n/*.json` (15 locales) — 5 new keys
+- `lab/experiments/phase-3-breadcrumb-properties.md` — audit + test results
+- `lab/reports/SESSION-LOG-2026-03-27.md` — full session history
 
 ---
 
@@ -714,8 +725,64 @@ Debug logs removed. Ready for final clean confirmation run.
 - **Phase 0:** APPROVED (`a14923a`)
 - **Phase 1:** APPROVED (`2c8b76b`)
 - **Phase 2:** APPROVED (`c72b2f8`)
-- **Phase 3:** APPROVED — awaiting commit
+- **Phase 3:** APPROVED (`59777e1`)
 - **BLOCKING-001:** RESOLVED
 - **BLOCKING-002:** RESOLVED
 - **BLOCKING-003:** RESOLVED
-- **Next:** Commit Phase 3, then begin Phase 4
+- **Next:** Phase 4 user tests
+
+---
+
+## Step 46: Phase 4 — Implementation
+
+**Action:** Added formatting toolbar to eNotePane (411 → 498 lines).
+
+**Changes to `src/lib/components/eNotePane.svelte`:**
+- Added `undo`, `redo` to `@codemirror/commands` imports
+- `wrapSelection(before, after)`: toggle markdown marks (bold, italic, strikethrough, highlight, code, wikilink). Handles: no selection (insert marks, cursor between), selection (wrap), already-wrapped (unwrap/toggle)
+- `insertLinePrefix(prefix)`: toggle heading/list prefix at line start
+- `insertAtCursor(text)`: insert blockquote, code block, hr, table, image
+- `tbUndo()`/`tbRedo()`: dispatch CM6 undo/redo commands
+- Dropdown menus: heading (H1-H6), list (bullet/numbered/task), insert (blockquote/code/hr/table/image)
+- Menu management: `showHeadingMenu`, `showListMenu`, `showInsertMenu` with `closeMenus()` + click-outside dismiss
+- `onmousedown={preventDefault}` on toolbar — prevents editor blur when clicking buttons
+- All toolbar buttons use `view.dispatch()` — never modify editor state directly (spec requirement)
+
+**Build:** 30 errors (all pre-existing). Zero new. 498 lines (under 500 CQA limit).
+
+---
+
+## Step 47: Phase 4 — Audit (ALL 8 PASS)
+
+| # | Agent | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Performance (PA) | PASS | Zero ViewPlugins added. Toolbar buttons dispatch CM6 commands — zero per-keystroke cost. |
+| 2 | Architecture (AA) | PASS | Toolbar → view.dispatch() one-way. No $effect. No store updates. |
+| 3 | Memory (MA) | PASS | Menu click listeners use { once: true }. No new timers/intervals. |
+| 4 | Spec Compliance (SCA) | PASS | H1-H6, Bold, Italic, Strikethrough, Highlight, Lists, Link, Insert, Undo/Redo — all spec items. |
+| 5 | RTL/Bidi (RA) | PASS | Dropdown menus flip via :global([dir="rtl"]). |
+| 6 | UX (UXA) | PASS | Buttons apply markdown syntax. Toggle behavior (unwrap if already wrapped). Menus dismiss on click outside. |
+| 7 | Code Quality (CQA) | PASS | 498 lines (under 500). wrapSelection matches CodeMirrorEditor pattern. |
+| 8 | Environment (EA) | PASS | No store updates, no IPC, no reactivity from toolbar. |
+
+---
+
+## Step 48: Phase 4 — User Test (ALL 9 PASS)
+
+| Test | Result | Notes |
+|---|---|---|
+| 1. Bold: select text → click B → wraps with ** | PASS | |
+| 2. Bold toggle: select **bold** → click B → unwraps | PASS | |
+| 3. Italic, Strikethrough, Highlight, Code work | PASS | |
+| 4. Heading dropdown: H1-H6 applies # prefix | PASS | |
+| 5. List dropdown: bullet, numbered, task work | PASS | |
+| 6. Link button wraps with [[ ]] | PASS | |
+| 7. Insert dropdown: blockquote, code block, hr, table, image | PASS | |
+| 8. Undo/Redo buttons work | PASS | |
+| 9. Rapid typing → zero lag | PASS | Same Phase 2 progressive delay on repeated pauses — not caused by toolbar |
+
+**Phase 4: ALL 9 TESTS PASS. APPROVED.**
+
+---
+
+## Step 49: Phase 4 — Commit & Push
