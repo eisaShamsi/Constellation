@@ -48,19 +48,15 @@ function parseAlignments(text: string): ('left' | 'center' | 'right' | 'none')[]
 
 /** Determine which cell column the cursor is in */
 function getCursorColumn(lineText: string, cursorOffset: number): number {
-	let col = 0;
-	let inCell = false;
+	/* Count how many pipe characters appear before the cursor offset.
+	   If the line starts with |, the first pipe is a leading delimiter (not a cell separator),
+	   so the column index = (pipes before cursor) - 1. */
+	const startsWithPipe = lineText.trimStart().startsWith('|');
+	let pipes = 0;
 	for (let i = 0; i < cursorOffset && i < lineText.length; i++) {
-		if (lineText[i] === '|') {
-			if (inCell) col++;
-			inCell = true;
-		}
+		if (lineText[i] === '|') pipes++;
 	}
-	// If line starts with |, first | is not a separator but the start
-	if (lineText.trimStart().startsWith('|')) {
-		return Math.max(0, col - 1);
-	}
-	return col;
+	return Math.max(0, startsWithPipe ? pipes - 1 : pipes);
 }
 
 /** Parse a markdown table around the given cursor position */

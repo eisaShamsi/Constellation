@@ -15,13 +15,15 @@
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 	import { tags } from '@lezer/highlight';
-	import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
+	import { defaultKeymap, history, historyKeymap, undo, redo, indentWithTab } from '@codemirror/commands';
 	import { autocompletion, closeBrackets, closeBracketsKeymap, type CompletionContext, type Completion } from '@codemirror/autocomplete';
 	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
-	import { generateTable } from '$lib/editor/tableUtils';
+	import TableToolbar from './TableToolbar.svelte';
+	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, generateTable, type ParsedTable } from '$lib/editor/tableUtils';
+	import { evaluateTableFormulas, indexToCol } from '$lib/editor/tableFormulas';
 
 	/* Markdown syntax colors */
 	const markdownHighlightStyle = HighlightStyle.define([
@@ -128,6 +130,12 @@
 	const livePreviewCompartment = new Compartment();
 	let livePreviewEnabled = $state(true);
 
+	/* ─── Table toolbar state ─── */
+	let tableToolbarVisible = $state(false);
+	let tableToolbarX = $state(0);
+	let tableToolbarY = $state(0);
+	let currentTable = $state<ParsedTable | null>(null);
+
 	/* ─── Phase 3 state ─── */
 	let propsCollapsed = $state(false);
 	let showMoreMenu = $state(false);
@@ -161,6 +169,102 @@
 	}
 	function handleVisibilityChange() { if (document.hidden && dirty) doSave(); }
 	function handleBeforeUnload() { doFlush(); }
+
+	/* ─── Table toolbar ─── */
+	function updateTableToolbar(editorView: EditorView) {
+		const pos = editorView.state.selection.main.head;
+		const table = parseTable(editorView.state, pos);
+		if (table) {
+			currentTable = table;
+			const firstLine = editorView.state.doc.line(table.startLine);
+			const lastLine = editorView.state.doc.line(table.endLine);
+			const startCoords = editorView.coordsAtPos(firstLine.from);
+			const endCoords = editorView.coordsAtPos(lastLine.to);
+			if (startCoords && endCoords) {
+				/* Viewport coordinates — center between table edges, float above header */
+				tableToolbarX = (startCoords.left + endCoords.right) / 2;
+				tableToolbarY = startCoords.top - 44;
+			}
+			tableToolbarVisible = true;
+		} else {
+			tableToolbarVisible = false;
+			currentTable = null;
+		}
+	}
+
+	function applyTableChange(newTable: ParsedTable | null) {
+		if (!view || !newTable || !currentTable) return;
+		const startLine = view.state.doc.line(currentTable.startLine);
+		const endLine = view.state.doc.line(currentTable.endLine);
+		view.dispatch({ changes: { from: startLine.from, to: endLine.to, insert: formatTable(newTable.rows, newTable.alignments) } });
+		currentTable = newTable;
+		view.focus();
+	}
+
+	function insertFormulaAtCursor(editorView: EditorView, table: ParsedTable) {
+		const col = table.cursorCol;
+		const formula = `=SUM(${indexToCol(col)}1:${indexToCol(col)}${table.rows.length - 1})`;
+		const newRows = table.rows.map(r => [...r]);
+		newRows[table.cursorRow][col] = formula;
+		applyTableChange({ ...table, rows: newRows });
+	}
+
+	/** Map a rows[] index to a document line number, skipping the separator line */
+	function tableRowToLineNum(table: ParsedTable, row: number): number {
+		/* row 0 = header = startLine. row 1+ = data lines after separator. */
+		return row === 0 ? table.startLine : table.separatorLineNum + row;
+	}
+
+	/** Move cursor to the given cell (row, col) */
+	function moveCursorToCell(editorView: EditorView, table: ParsedTable, row: number, col: number) {
+		const lineNum = tableRowToLineNum(table, row);
+		if (lineNum < 1 || lineNum > editorView.state.doc.lines) return;
+		const line = editorView.state.doc.line(lineNum);
+		/* Find the col-th cell by counting pipes */
+		const startsWithPipe = line.text.trimStart().startsWith('|');
+		const targetPipe = col + (startsWithPipe ? 1 : 0); /* pipe index before target cell */
+		let pipeCount = 0;
+		let offset = startsWithPipe ? 2 : 0; /* default: after first pipe + space */
+		for (let i = 0; i < line.text.length; i++) {
+			if (line.text[i] === '|') {
+				pipeCount++;
+				if (pipeCount > targetPipe) break;
+				offset = i + 2; /* after pipe + space */
+			}
+		}
+		editorView.dispatch({ selection: { anchor: line.from + Math.min(offset, line.text.length) } });
+	}
+
+	function tableTab(editorView: EditorView): boolean {
+		const table = parseTable(editorView.state, editorView.state.selection.main.head);
+		if (!table) return false;
+		let nextRow = table.cursorRow;
+		let nextCol = table.cursorCol + 1;
+		if (nextCol >= table.columnCount) {
+			nextCol = 0;
+			nextRow++;
+			if (nextRow >= table.rows.length) {
+				applyTableChange(addRow(table, table.rows.length - 1));
+				return true;
+			}
+		}
+		moveCursorToCell(editorView, table, nextRow, nextCol);
+		return true;
+	}
+
+	function tableShiftTab(editorView: EditorView): boolean {
+		const table = parseTable(editorView.state, editorView.state.selection.main.head);
+		if (!table) return false;
+		let prevRow = table.cursorRow;
+		let prevCol = table.cursorCol - 1;
+		if (prevCol < 0) {
+			prevCol = table.columnCount - 1;
+			prevRow--;
+			if (prevRow < 0) return true; /* already at first cell */
+		}
+		moveCursorToCell(editorView, table, prevRow, prevCol);
+		return true;
+	}
 
 	/* ─── Autocomplete functions ─── */
 	function wikilinkCompletion(context: CompletionContext) {
@@ -251,7 +355,12 @@
 				libraryPathField, /* image path resolution */
 				closeBrackets(),
 				autocompletion({ override: [wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
-				keymap.of([...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap]),
+				keymap.of([
+					{ key: 'Tab', run: tableTab },
+					{ key: 'Shift-Tab', run: tableShiftTab },
+					indentWithTab,
+					...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap,
+				]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
 				EditorView.contentAttributes.of({ dir: 'auto' }),
 				EditorView.lineWrapping,
@@ -261,6 +370,9 @@
 						latestText = text;
 						dirty = true;
 						onchange?.(text);
+					}
+					if (update.selectionSet && !update.docChanged) {
+						updateTableToolbar(update.view);
 					}
 				}),
 				EditorView.theme({
@@ -574,7 +686,32 @@
 			<button class="e-tb" title="Redo" onclick={tbRedo}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.69 3L21 13"/></svg></button>
 		</div>
 
-		<div class="e-editor" bind:this={editorEl}></div>
+		<div class="e-editor-wrap">
+			{#if tableToolbarVisible && view && currentTable}
+				<div class="e-table-toolbar-fixed" style="position: fixed; left: {tableToolbarX}px; top: {tableToolbarY}px; transform: translateX(-50%); z-index: 200;">
+				<TableToolbar
+					x={0}
+					y={0}
+					onAddRow={() => { if (currentTable) applyTableChange(addRow(currentTable, currentTable.cursorRow)); }}
+					onAddColumn={() => { if (currentTable) applyTableChange(addColumn(currentTable, currentTable.cursorCol)); }}
+					onDeleteRow={() => { if (currentTable) applyTableChange(deleteRow(currentTable, currentTable.cursorRow)); }}
+					onDeleteColumn={() => { if (currentTable) applyTableChange(deleteColumn(currentTable, currentTable.cursorCol)); }}
+					onAlignLeft={() => { if (currentTable) applyTableChange(setAlignment(currentTable, currentTable.cursorCol, 'left')); }}
+					onAlignCenter={() => { if (currentTable) applyTableChange(setAlignment(currentTable, currentTable.cursorCol, 'center')); }}
+					onAlignRight={() => { if (currentTable) applyTableChange(setAlignment(currentTable, currentTable.cursorCol, 'right')); }}
+					onMoveRowUp={() => { if (currentTable) applyTableChange(moveRow(currentTable, currentTable.cursorRow, 'up')); }}
+					onMoveRowDown={() => { if (currentTable) applyTableChange(moveRow(currentTable, currentTable.cursorRow, 'down')); }}
+					onMoveColLeft={() => { if (currentTable) applyTableChange(moveColumn(currentTable, currentTable.cursorCol, 'left')); }}
+					onMoveColRight={() => { if (currentTable) applyTableChange(moveColumn(currentTable, currentTable.cursorCol, 'right')); }}
+					onSortAsc={() => { if (currentTable) applyTableChange(sortByColumn(currentTable, currentTable.cursorCol, 'asc')); }}
+					onSortDesc={() => { if (currentTable) applyTableChange(sortByColumn(currentTable, currentTable.cursorCol, 'desc')); }}
+					onInsertFormula={() => { if (currentTable && view) insertFormulaAtCursor(view, currentTable); }}
+					onEvaluateFormulas={() => { if (currentTable) applyTableChange({ ...currentTable, rows: evaluateTableFormulas(currentTable.rows) }); }}
+				/>
+				</div>
+			{/if}
+			<div class="e-editor" bind:this={editorEl}></div>
+		</div>
 	</div>
 </div>
 
@@ -681,6 +818,7 @@
 	.e-tb-menu-item:hover { background: var(--background-modifier-hover); }
 
 	/* ─── Editor ─── */
+	.e-editor-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 	.e-editor { flex: 1; min-height: 0; }
 	.e-editor :global(.cm-editor) { height: 100%; }
 	.e-editor :global(.cm-line) { unicode-bidi: plaintext; }
