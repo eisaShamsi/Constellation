@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * eNotePane — Phase 7: Advanced Features
+	 * eNotePane — Phase 8: Knowledge Infrastructure
 	 * Gray desk + breadcrumb + white paper + title + properties + CM6 editor + persistence.
 	 * Live preview decorations via shared livePreview plugin. Typing must be instant.
 	 * Spec: docs/eNotePane-spec.md, Section 10 (Phase 3)
@@ -16,10 +16,12 @@
 	import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 	import { tags } from '@lezer/highlight';
 	import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
+	import { autocompletion, closeBrackets, closeBracketsKeymap, type CompletionContext, type Completion } from '@codemirror/autocomplete';
 	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
+	import { generateTable } from '$lib/editor/tableUtils';
 
 	/* Phase 5: Markdown syntax colors */
 	const markdownHighlightStyle = HighlightStyle.define([
@@ -57,6 +59,9 @@
 		canGoBack = false,
 		canGoForward = false,
 		saving = false,
+		/* Phase 8: autocomplete data */
+		noteNames = [] as { name: string; path: string; libraryName?: string }[],
+		allTags = [] as string[],
 		/* Callbacks */
 		onchange,
 		onsave,
@@ -81,6 +86,8 @@
 		canGoBack?: boolean;
 		canGoForward?: boolean;
 		saving?: boolean;
+		noteNames?: { name: string; path: string; libraryName?: string }[];
+		allTags?: string[];
 		onchange?: (value: string) => void;
 		onsave?: (value: string) => void;
 		onflush?: (text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number) => void;
@@ -137,6 +144,90 @@
 	function handleVisibilityChange() { if (document.hidden && dirty) doSave(); }
 	function handleBeforeUnload() { doFlush(); }
 
+	/* ─── Phase 8: Autocomplete functions ─── */
+	function wikilinkCompletion(context: CompletionContext): any {
+		const before = context.matchBefore(/\[\[[^\]]*$/);
+		if (!before) return null;
+		const query = before.text.slice(2).toLowerCase();
+		const options: Completion[] = noteNames
+			.filter(n => n.name.toLowerCase().includes(query))
+			.slice(0, 20)
+			.map(n => ({
+				label: n.name,
+				detail: n.libraryName ? ` — ${n.libraryName}` : undefined,
+				type: 'text',
+				apply: (v: EditorView, _c: Completion, from: number, to: number) => {
+					/* Consume any trailing ]] left by closeBrackets */
+					let end = to;
+					const after = v.state.doc.sliceString(to, Math.min(to + 2, v.state.doc.length));
+					if (after === ']]') end = to + 2;
+					else if (after[0] === ']') end = to + 1;
+					const insert = `[[${n.name}]]`;
+					v.dispatch({ changes: { from: before.from, to: end, insert }, selection: { anchor: before.from + insert.length } });
+				}
+			}));
+		return { from: before.from, options, filter: false };
+	}
+
+	function tagCompletion(context: CompletionContext): any {
+		const before = context.matchBefore(/#[\w\u0600-\u06FF/\-]*$/);
+		if (!before) return null;
+		const query = before.text.slice(1).toLowerCase();
+		const options: Completion[] = allTags
+			.filter(t => t.toLowerCase().includes(query))
+			.slice(0, 20)
+			.map(t => ({
+				label: '#' + t,
+				type: 'keyword',
+				apply: (v: EditorView, _c: Completion, from: number, to: number) => {
+					v.dispatch({ changes: { from: before.from, to, insert: '#' + t }, selection: { anchor: before.from + t.length + 1 } });
+				}
+			}));
+		return { from: before.from, options, filter: false };
+	}
+
+	function slashCompletion(context: CompletionContext): any {
+		const line = context.state.doc.lineAt(context.pos);
+		const lineStart = line.text.trimStart();
+		if (!lineStart.startsWith('/')) return null;
+		const before = context.matchBefore(/\/\w*$/);
+		if (!before) return null;
+		const commands: { label: string; detail: string; apply: string }[] = [
+			{ label: '/heading1', detail: 'H1', apply: '# ' },
+			{ label: '/heading2', detail: 'H2', apply: '## ' },
+			{ label: '/heading3', detail: 'H3', apply: '### ' },
+			{ label: '/bullet', detail: 'Bullet list', apply: '- ' },
+			{ label: '/numbered', detail: 'Numbered list', apply: '1. ' },
+			{ label: '/task', detail: 'Task', apply: '- [ ] ' },
+			{ label: '/code', detail: 'Code block', apply: '```\n\n```' },
+			{ label: '/quote', detail: 'Blockquote', apply: '> ' },
+			{ label: '/divider', detail: 'Horizontal rule', apply: '---\n' },
+			{ label: '/table', detail: 'Table (or /table 3x4)', apply: '' },
+			{ label: '/callout', detail: 'Callout', apply: '> [!note] Title\n> Content\n' },
+			{ label: '/math', detail: 'Math block', apply: '$$\n\n$$' },
+			{ label: '/mermaid', detail: 'Mermaid diagram', apply: '```mermaid\ngraph TD\n  A --> B\n```\n' },
+		];
+		return {
+			from: before.from,
+			options: commands.map(c => ({
+				...c,
+				apply: (v: EditorView, _comp: Completion, from: number, to: number) => {
+					if (c.label === '/table') {
+						const typed = line.text.trim();
+						const dimMatch = typed.match(/\/table\s+(\d+)\s*[x×X]\s*(\d+)/);
+						const tableStr = dimMatch
+							? generateTable(Math.max(1, Math.min(parseInt(dimMatch[1]), 20)), Math.max(2, Math.min(parseInt(dimMatch[2]), 50)))
+							: generateTable(2, 2);
+						v.dispatch({ changes: { from: line.from, to, insert: tableStr + '\n' } });
+						return;
+					}
+					v.dispatch({ changes: { from: line.from, to, insert: c.apply } });
+				}
+			})),
+			filter: true
+		};
+	}
+
 	/* ─── Mount ─── */
 	onMount(() => {
 		const state = EditorState.create({
@@ -151,7 +242,9 @@
 				lineDecoPlugin, lineDecoTheme, /* Phase 7: code block bg + blockquote border */
 				libraryPathField, /* Phase 7: image path resolution */
 				/* Phase 6: checkbox click handler is added via capture-phase listener below */
-				keymap.of([...defaultKeymap, ...historyKeymap]),
+				closeBrackets(), /* Phase 8 */
+				autocompletion({ override: [wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }), /* Phase 8 */
+				keymap.of([...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
 				EditorView.contentAttributes.of({ dir: 'auto' }),
 				EditorView.lineWrapping,
