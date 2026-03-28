@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * eNotePane — Phase 3: Breadcrumb & Properties
+	 * eNotePane — Phase 5: Syntax Highlighting
 	 * Gray desk + breadcrumb + white paper + title + properties + CM6 editor + persistence.
 	 * Zero custom plugins. Typing must be instant.
 	 * Spec: docs/eNotePane-spec.md, Section 10 (Phase 3)
@@ -13,7 +13,27 @@
 	import { EditorView, keymap, drawSelection } from '@codemirror/view';
 	import { EditorState, Compartment } from '@codemirror/state';
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+	import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
+	import { tags } from '@lezer/highlight';
 	import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
+
+	/* Phase 5: Markdown syntax colors */
+	const markdownHighlightStyle = HighlightStyle.define([
+		{ tag: tags.heading1, color: '#d73a49', fontWeight: '700' },
+		{ tag: tags.heading2, color: '#d73a49', fontWeight: '700' },
+		{ tag: tags.heading3, color: '#d73a49', fontWeight: '600' },
+		{ tag: tags.heading4, color: '#d73a49', fontWeight: '600' },
+		{ tag: tags.heading5, color: '#d73a49', fontWeight: '600' },
+		{ tag: tags.heading6, color: '#d73a49', fontWeight: '600' },
+		{ tag: tags.strong, color: '#e36209' },
+		{ tag: tags.emphasis, color: '#7c3aed' },
+		{ tag: tags.strikethrough, textDecoration: 'line-through' },
+		{ tag: tags.monospace, color: '#16a34a' },
+		{ tag: tags.link, color: '#2563eb' },
+		{ tag: tags.url, color: '#0891b2' },
+		{ tag: tags.processingInstruction, color: '#888' }, /* frontmatter fences */
+		{ tag: tags.meta, color: '#888' },
+	]);
 
 	const IDLE_SAVE_INTERVAL = 30_000; /* ms — periodic background save when idle */
 
@@ -117,6 +137,7 @@
 				history(),
 				drawSelection(),
 				markdown({ base: markdownLanguage }),
+				syntaxHighlighting(markdownHighlightStyle), /* Phase 5 */
 				keymap.of([...defaultKeymap, ...historyKeymap]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
 				EditorView.contentAttributes.of({ dir: 'auto' }),
@@ -495,4 +516,5 @@
 	.e-editor :global(.cm-line) { unicode-bidi: plaintext; }
 	.e-editor :global(.cm-editor),
 	.e-editor :global(.cm-editor.cm-focused) { outline: none !important; border: none !important; }
+
 </style>
