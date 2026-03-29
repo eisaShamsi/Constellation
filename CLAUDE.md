@@ -111,6 +111,12 @@ After every phase, step, or significant commit:
 2. This is the safety net — if the session is cleared or restarted, the next session can pick up exactly where this one left off.
 3. The SO also includes running `/simplify` (code review) after each phase.
 
+## Backup Routine
+After each successful milestone:
+1. **Git tag**: `git tag milestone/<name> <commit>` then `git push origin --tags`
+2. **ZIP archive**: `git archive --format=zip --prefix=Constellation-<name>/ HEAD -o "E:/Backups/Constellation/Constellation-<name>-YYYYMMDD.zip"`
+3. To restore: `git checkout milestone/<name>` or unzip the archive.
+
 ---
 
 ## Don't
