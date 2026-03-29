@@ -117,6 +117,66 @@ Görsel araç çubuğuyla WYSIWYG kelime işlemci deneyimi:
 
 Her iki düzenleyici de standart Markdown dosyaları olarak kaydeder. Veri kaybı olmadan istediğiniz zaman aralarında geçiş yapabilirsiniz.
 
+### Bilgi Kutuları (Callouts)
+
+Notlar, uyarılar, ipuçları ve diğer açıklamalar için stillendirilmiş bilgi kutusu blokları oluşturun:
+
+```markdown
+> [!note] Önemli bilgi
+> Bilgi kutusunun içeriği buraya yazılır.
+
+> [!warning] Dikkatli olun
+> Bu işlem geri alınamaz.
+
+> [!tip]- Genişletmek için tıklayın
+> Daraltılabilir bilgi kutusu içeriği.
+```
+
+Desteklenen türler: `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Her türün kendine özgü bir rengi ve simgesi vardır. Daraltılabilir yapmak için türden sonra `-` ekleyin (daraltılmış başlar), veya `+` (genişletilmiş başlar).
+
+### Vurgulama Sözdizimi
+
+Metni vurgulamak için çift eşittir işaretiyle sarın:
+
+```markdown
+Bu, notunuzdaki ==vurgulanan metin== örneğidir.
+```
+
+Canlı Önizleme'de `==` işaretleri gizlenir ve metin sarı arka planla görüntülenir.
+
+### Kod Blokları
+
+Çitli kod blokları bir arka plan rengi ve dil etiketiyle görüntülenir:
+
+````markdown
+```javascript
+const greeting = "Hello, world!";
+```
+````
+
+Dil adı kod bloğunun üzerinde bir rozet olarak görünür.
+
+### Görsel Yerleştirme
+
+Notlarınıza doğrudan görsel yerleştirin:
+
+```markdown
+![Alternatif metin](https://example.com/image.png)   — harici URL
+![[photo.jpg]]                                         — kütüphaneden yerel dosya
+```
+
+Canlı Önizleme'de görseller satır içi olarak işlenir. Yerel görseller kütüphane klasörünüzde olmalıdır. Harici görseller internet bağlantısı gerektirir.
+
+### Tablo Araç Çubuğu
+
+İmleciniz bir markdown tablosunun içindeyken, kayan bir araç çubuğu görünür:
+
+- **+ Satır / + Sütun** — satır veya sütun ekleme
+- **- Satır / - Sütun** — satır veya sütun kaldırma
+- **Hizalama** — sütun başına sola, ortaya veya sağa hizalama
+- **Sıralama** — geçerli sütuna göre artan veya azalan sıralama
+- **Tab / Shift+Tab** — tablo hücreleri arasında gezinme
+
 ### Metin Biçimlendirme Kısayolları
 
 | Kısayol | İşlem |

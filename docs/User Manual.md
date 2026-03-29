@@ -121,7 +121,68 @@ Both modes share these features:
 - **RTL support** — toolbar icons flip for RTL content, layout adapts to text direction
 - **Font sets** — per-language font customization via Settings > Language
 - **Script toolbars** — language-specific symbol and punctuation toolbars (Arabic symbols, Hebrew, CJK punctuation, etc.)
+- **Tag autocomplete** — type `#` to search and insert tags
 - **Tashkeel highlighting** — optional Arabic diacritics highlighting toggle in the toolbar
+
+### Callouts
+
+Create styled callout blocks for notes, warnings, tips, and other admonitions:
+
+```markdown
+> [!note] Important information
+> The content of the callout goes here.
+
+> [!warning] Be careful
+> This action cannot be undone.
+
+> [!tip]- Click to expand
+> Collapsible callout content.
+```
+
+Supported types: `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Each type has a distinct color and icon. Add `-` after the type to make it collapsible (starts collapsed), or `+` (starts expanded).
+
+### Highlight Syntax
+
+Wrap text in double equals to highlight it:
+
+```markdown
+This is ==highlighted text== in your note.
+```
+
+In Live Preview, the `==` marks are hidden and the text appears with a yellow background.
+
+### Code Blocks
+
+Fenced code blocks display with a background color and language label:
+
+````markdown
+```javascript
+const greeting = "Hello, world!";
+```
+````
+
+The language name appears as a badge above the code block.
+
+### Image Embeds
+
+Embed images inline in your notes:
+
+```markdown
+![Alt text](https://example.com/image.png)   — external URL
+![[photo.jpg]]                                 — local file from library
+```
+
+In Live Preview, images render inline. Local images must be in your library folder. External images require an internet connection.
+
+### Table Toolbar
+
+When your cursor is inside a markdown table, a floating toolbar appears with:
+
+- **+ Row / + Col** — add rows or columns
+- **- Row / - Col** — remove rows or columns
+- **Alignment** — left, center, right alignment per column
+- **Sort** — sort rows ascending or descending by the current column
+- **Tab / Shift+Tab** — navigate between table cells
 
 ### Text Formatting Shortcuts
 

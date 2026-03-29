@@ -117,6 +117,66 @@ Uma experiencia WYSIWYG estilo processador de texto com barra visual:
 
 Ambos os editores salvam como arquivos Markdown padrao. Voce pode alternar entre eles a qualquer momento sem perda de dados.
 
+### Callouts (Destaques)
+
+Crie blocos de destaque estilizados para notas, avisos, dicas e outras indicacoes:
+
+```markdown
+> [!note] Informacao importante
+> O conteudo do callout vai aqui.
+
+> [!warning] Tenha cuidado
+> Esta acao nao pode ser desfeita.
+
+> [!tip]- Clique para expandir
+> Conteudo de callout recolhivel.
+```
+
+Tipos suportados: `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Cada tipo tem uma cor e icone distintos. Adicione `-` apos o tipo para torna-lo recolhivel (inicia recolhido), ou `+` (inicia expandido).
+
+### Sintaxe de Realce
+
+Envolva o texto com duplo sinal de igual para realca-lo:
+
+```markdown
+Este e ==texto realcado== na sua nota.
+```
+
+Na Visualizacao ao Vivo, as marcas `==` ficam ocultas e o texto aparece com fundo amarelo.
+
+### Blocos de Codigo
+
+Blocos de codigo delimitados sao exibidos com cor de fundo e rotulo de linguagem:
+
+````markdown
+```javascript
+const greeting = "Hello, world!";
+```
+````
+
+O nome da linguagem aparece como um selo acima do bloco de codigo.
+
+### Incorporacao de Imagens
+
+Incorpore imagens diretamente nas suas notas:
+
+```markdown
+![Texto alternativo](https://example.com/image.png)   — URL externa
+![[photo.jpg]]                                          — arquivo local da biblioteca
+```
+
+Na Visualizacao ao Vivo, as imagens sao renderizadas em linha. Imagens locais devem estar na pasta da sua biblioteca. Imagens externas requerem conexao com a internet.
+
+### Barra de Ferramentas de Tabela
+
+Quando o cursor esta dentro de uma tabela markdown, uma barra de ferramentas flutuante aparece com:
+
+- **+ Linha / + Coluna** — adicionar linhas ou colunas
+- **- Linha / - Coluna** — remover linhas ou colunas
+- **Alinhamento** — alinhamento a esquerda, centro ou direita por coluna
+- **Ordenar** — ordenar linhas em ordem crescente ou decrescente pela coluna atual
+- **Tab / Shift+Tab** — navegar entre celulas da tabela
+
 ### Atalhos de Formatacao de Texto
 
 | Atalho | Acao |

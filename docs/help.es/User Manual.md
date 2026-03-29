@@ -117,6 +117,66 @@ Una experiencia WYSIWYG tipo procesador de texto con barra visual:
 
 Ambos editores guardan como archivos Markdown estandar. Puedes cambiar entre ellos en cualquier momento sin perder datos.
 
+### Callouts (Avisos)
+
+Crea bloques de aviso estilizados para notas, advertencias, consejos y otras indicaciones:
+
+```markdown
+> [!note] Informacion importante
+> El contenido del callout va aqui.
+
+> [!warning] Ten cuidado
+> Esta accion no se puede deshacer.
+
+> [!tip]- Haz clic para expandir
+> Contenido de callout plegable.
+```
+
+Tipos soportados: `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Cada tipo tiene un color e icono distintivo. Agrega `-` despues del tipo para hacerlo plegable (inicia colapsado), o `+` (inicia expandido).
+
+### Sintaxis de Resaltado
+
+Envuelve el texto con doble signo igual para resaltarlo:
+
+```markdown
+Este es ==texto resaltado== en tu nota.
+```
+
+En Vista Previa en Vivo, las marcas `==` se ocultan y el texto aparece con fondo amarillo.
+
+### Bloques de Codigo
+
+Los bloques de codigo delimitados se muestran con un color de fondo y etiqueta de lenguaje:
+
+````markdown
+```javascript
+const greeting = "Hello, world!";
+```
+````
+
+El nombre del lenguaje aparece como una insignia sobre el bloque de codigo.
+
+### Insercion de Imagenes
+
+Inserta imagenes directamente en tus notas:
+
+```markdown
+![Texto alternativo](https://example.com/image.png)   — URL externa
+![[photo.jpg]]                                          — archivo local de la biblioteca
+```
+
+En Vista Previa en Vivo, las imagenes se renderizan en linea. Las imagenes locales deben estar en la carpeta de tu biblioteca. Las imagenes externas requieren conexion a internet.
+
+### Barra de Herramientas de Tabla
+
+Cuando tu cursor esta dentro de una tabla markdown, aparece una barra de herramientas flotante con:
+
+- **+ Fila / + Columna** — agregar filas o columnas
+- **- Fila / - Columna** — eliminar filas o columnas
+- **Alineacion** — alineacion izquierda, centro o derecha por columna
+- **Ordenar** — ordenar filas ascendente o descendente por la columna actual
+- **Tab / Shift+Tab** — navegar entre celdas de la tabla
+
 ### Atajos de Formato de Texto
 
 | Atajo | Accion |

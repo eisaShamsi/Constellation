@@ -117,6 +117,66 @@ Une experience de traitement de texte WYSIWYG avec une barre d'outils visuelle :
 
 Les deux editeurs enregistrent au format Markdown standard. Vous pouvez passer de l'un a l'autre a tout moment sans perte de donnees.
 
+### Callouts (Encadres)
+
+Creez des blocs d'encadre stylises pour les notes, avertissements, astuces et autres indications :
+
+```markdown
+> [!note] Information importante
+> Le contenu du callout se place ici.
+
+> [!warning] Attention
+> Cette action ne peut pas etre annulee.
+
+> [!tip]- Cliquez pour developper
+> Contenu de callout repliable.
+```
+
+Types pris en charge : `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Chaque type a une couleur et une icone distinctes. Ajoutez `-` apres le type pour le rendre repliable (demarre replie), ou `+` (demarre deploye).
+
+### Syntaxe de surlignage
+
+Entourez le texte de doubles signes egaux pour le surligner :
+
+```markdown
+Ceci est du ==texte surligne== dans votre note.
+```
+
+En apercu en direct, les marques `==` sont masquees et le texte apparait avec un fond jaune.
+
+### Blocs de code
+
+Les blocs de code delimites s'affichent avec une couleur de fond et une etiquette de langage :
+
+````markdown
+```javascript
+const greeting = "Hello, world!";
+```
+````
+
+Le nom du langage apparait sous forme de badge au-dessus du bloc de code.
+
+### Integration d'images
+
+Integrez des images directement dans vos notes :
+
+```markdown
+![Texte alternatif](https://example.com/image.png)   — URL externe
+![[photo.jpg]]                                         — fichier local de la bibliotheque
+```
+
+En apercu en direct, les images sont rendues en ligne. Les images locales doivent se trouver dans le dossier de votre bibliotheque. Les images externes necessitent une connexion internet.
+
+### Barre d'outils de tableau
+
+Lorsque votre curseur se trouve dans un tableau markdown, une barre d'outils flottante apparait avec :
+
+- **+ Ligne / + Colonne** — ajouter des lignes ou des colonnes
+- **- Ligne / - Colonne** — supprimer des lignes ou des colonnes
+- **Alignement** — alignement gauche, centre ou droite par colonne
+- **Tri** — trier les lignes par ordre croissant ou decroissant selon la colonne actuelle
+- **Tab / Shift+Tab** — naviguer entre les cellules du tableau
+
 ### Raccourcis de formatage du texte
 
 | Raccourci | Action |

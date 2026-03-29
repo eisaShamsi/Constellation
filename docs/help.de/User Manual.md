@@ -117,6 +117,66 @@ Ein WYSIWYG-Textverarbeitungserlebnis mit visueller Symbolleiste:
 
 Beide Editoren speichern als Standard-Markdown-Dateien. Sie koennen jederzeit zwischen ihnen wechseln, ohne Datenverlust.
 
+### Callouts (Hinweisbloecke)
+
+Erstellen Sie gestaltete Hinweisbloecke fuer Notizen, Warnungen, Tipps und andere Hinweise:
+
+```markdown
+> [!note] Wichtige Information
+> Der Inhalt des Callouts steht hier.
+
+> [!warning] Vorsicht
+> Diese Aktion kann nicht rueckgaengig gemacht werden.
+
+> [!tip]- Klicken zum Aufklappen
+> Einklappbarer Callout-Inhalt.
+```
+
+Unterstuetzte Typen: `note`, `tip`, `warning`, `danger`, `success`, `question`, `failure`, `bug`, `example`, `quote`, `abstract`. Jeder Typ hat eine eigene Farbe und ein eigenes Symbol. Fuegen Sie `-` nach dem Typ hinzu, um ihn einklappbar zu machen (startet eingeklappt), oder `+` (startet ausgeklappt).
+
+### Hervorhebungssyntax
+
+Umschliessen Sie Text mit doppelten Gleichheitszeichen, um ihn hervorzuheben:
+
+```markdown
+Dies ist ==hervorgehobener Text== in Ihrer Notiz.
+```
+
+In der Live-Vorschau werden die `==`-Zeichen ausgeblendet und der Text erscheint mit gelbem Hintergrund.
+
+### Codebloecke
+
+Umzaeunte Codebloecke werden mit einer Hintergrundfarbe und Sprachbezeichnung angezeigt:
+
+````markdown
+```javascript
+const greeting = "Hello, world!";
+```
+````
+
+Der Sprachname erscheint als Badge ueber dem Codeblock.
+
+### Bildeinbettungen
+
+Betten Sie Bilder direkt in Ihre Notizen ein:
+
+```markdown
+![Alt-Text](https://example.com/image.png)   — externe URL
+![[photo.jpg]]                                 — lokale Datei aus der Bibliothek
+```
+
+In der Live-Vorschau werden Bilder inline gerendert. Lokale Bilder muessen sich in Ihrem Bibliotheksordner befinden. Externe Bilder erfordern eine Internetverbindung.
+
+### Tabellen-Symbolleiste
+
+Wenn sich Ihr Cursor innerhalb einer Markdown-Tabelle befindet, erscheint eine schwebende Symbolleiste mit:
+
+- **+ Zeile / + Spalte** — Zeilen oder Spalten hinzufuegen
+- **- Zeile / - Spalte** — Zeilen oder Spalten entfernen
+- **Ausrichtung** — Links-, Mitte-, Rechtsausrichtung pro Spalte
+- **Sortierung** — Zeilen aufsteigend oder absteigend nach der aktuellen Spalte sortieren
+- **Tab / Shift+Tab** — Zwischen Tabellenzellen navigieren
+
 ### Textformatierungs-Kuerzel
 
 | Kuerzel | Aktion |
