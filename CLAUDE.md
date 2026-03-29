@@ -6,6 +6,7 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 ## Before Starting Work
 1. Always `git pull origin main` first to sync changes from other devices/sessions.
 2. Check `git log --oneline -5` to understand recent work.
+3. Consult `docs/LESSONS-LEARNED.md` — hard-won rules from iterative testing. These override assumptions.
 
 ## Conventions
 - **Terminology**: Use "Library" everywhere, never "vault" (except for Obsidian import compatibility).
@@ -101,6 +102,14 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - NotePane and FocusPane edit the same `.md` file. Switching between them must be seamless.
 - What the user types in Focus (plain text markdown) renders beautifully in NotePane.
 - No data loss on mode switch. Save before transition, load after.
+
+---
+
+## Standing Order (SO)
+After every phase, step, or significant commit:
+1. Update `lab/reports/SESSION-LOG-YYYY-MM-DD.md` with: phase name, commit hash, test results, bugs fixed, open items.
+2. This is the safety net — if the session is cleared or restarted, the next session can pick up exactly where this one left off.
+3. The SO also includes running `/simplify` (code review) after each phase.
 
 ---
 
