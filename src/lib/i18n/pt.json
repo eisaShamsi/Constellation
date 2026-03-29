@@ -485,17 +485,6 @@
     "libraries": "cofres",
     "notes": "notas"
   },
-  "eNotePane": {
-    "titlePlaceholder": "Título",
-    "bodyPlaceholder": "Comece a escrever...",
-    "propertyKey": "Chave",
-    "propertyValue": "Valor",
-    "saving": "Salvando...",
-    "properties": "Propriedades",
-    "moreOptions": "Mais opções",
-    "back": "Voltar",
-    "forward": "Avançar"
-  },
   "notePane": {
     "saving": "Salvando...",
     "readingMode": "Modo leitura",
@@ -514,7 +503,11 @@
     "forward": "Avançar",
     "moreOptions": "Mais opções",
     "properties": "Propriedades",
-    "addProperty": "Adicionar propriedade"
+    "addProperty": "Adicionar propriedade",
+    "titlePlaceholder": "Título",
+    "bodyPlaceholder": "Comece a escrever...",
+    "propertyKey": "Chave",
+    "propertyValue": "Valor"
   },
   "commandPalette": {
     "placeholder": "Digite um comando...",

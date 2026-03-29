@@ -485,17 +485,6 @@
     "libraries": "libraries",
     "notes": "notes"
   },
-  "eNotePane": {
-    "titlePlaceholder": "Title",
-    "bodyPlaceholder": "Start writing...",
-    "propertyKey": "Key",
-    "propertyValue": "Value",
-    "saving": "Saving...",
-    "properties": "Properties",
-    "moreOptions": "More options",
-    "back": "Back",
-    "forward": "Forward"
-  },
   "notePane": {
     "saving": "Saving...",
     "readingMode": "Reading mode",
@@ -514,7 +503,11 @@
     "forward": "Forward",
     "moreOptions": "More options",
     "properties": "Properties",
-    "addProperty": "Add property"
+    "addProperty": "Add property",
+    "titlePlaceholder": "Title",
+    "bodyPlaceholder": "Start writing...",
+    "propertyKey": "Key",
+    "propertyValue": "Value"
   },
   "commandPalette": {
     "placeholder": "Type a command...",

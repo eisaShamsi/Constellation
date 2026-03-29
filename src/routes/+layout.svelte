@@ -41,7 +41,6 @@
 	import FileTree from '$lib/components/FileTree.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
-	import ENotePane from '$lib/components/eNotePane.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
@@ -2724,7 +2723,7 @@
 						{#key $activeTab.id + '|' + $activeTab.path}
 						{@const _mountedTab = $activeTab}
 						{@const _saveGuard = { saving: false }}
-						<ENotePane
+						<NotePane
 							value={_body}
 							title={_mountedTab.name.replace(/\.md$/, '')}
 							dir={noteDir}

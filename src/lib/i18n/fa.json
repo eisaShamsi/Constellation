@@ -485,17 +485,6 @@
     "libraries": "کتابخانه‌ها",
     "notes": "یادداشت"
   },
-  "eNotePane": {
-    "titlePlaceholder": "عنوان",
-    "bodyPlaceholder": "...شروع به نوشتن",
-    "propertyKey": "کلید",
-    "propertyValue": "مقدار",
-    "saving": "در حال ذخیره...",
-    "properties": "ویژگی‌ها",
-    "moreOptions": "گزینه‌های بیشتر",
-    "back": "بازگشت",
-    "forward": "جلو"
-  },
   "notePane": {
     "saving": "در حال ذخیره...",
     "readingMode": "حالت خواندن",
@@ -514,7 +503,11 @@
     "forward": "جلو",
     "moreOptions": "گزینه‌های بیشتر",
     "properties": "ویژگی‌ها",
-    "addProperty": "افزودن ویژگی"
+    "addProperty": "افزودن ویژگی",
+    "titlePlaceholder": "عنوان",
+    "bodyPlaceholder": "...شروع به نوشتن",
+    "propertyKey": "کلید",
+    "propertyValue": "مقدار"
   },
   "commandPalette": {
     "placeholder": "یک دستور تایپ کنید...",

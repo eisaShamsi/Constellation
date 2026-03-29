@@ -486,17 +486,6 @@
     "libraries": "مكتبات",
     "notes": "ملاحظات"
   },
-  "eNotePane": {
-    "titlePlaceholder": "العنوان",
-    "bodyPlaceholder": "...ابدأ الكتابة",
-    "propertyKey": "المفتاح",
-    "propertyValue": "القيمة",
-    "saving": "جارٍ الحفظ...",
-    "properties": "الخصائص",
-    "moreOptions": "خيارات أخرى",
-    "back": "رجوع",
-    "forward": "تقدّم"
-  },
   "notePane": {
     "saving": "جارٍ الحفظ...",
     "readingMode": "وضع القراءة",
@@ -515,7 +504,11 @@
     "forward": "تقدم",
     "moreOptions": "خيارات إضافية",
     "properties": "الخصائص",
-    "addProperty": "إضافة خاصية"
+    "addProperty": "إضافة خاصية",
+    "titlePlaceholder": "العنوان",
+    "bodyPlaceholder": "...ابدأ الكتابة",
+    "propertyKey": "المفتاح",
+    "propertyValue": "القيمة"
   },
   "commandPalette": {
     "placeholder": "أدخل أمر...",

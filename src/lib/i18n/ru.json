@@ -485,17 +485,6 @@
     "libraries": "хранилищ",
     "notes": "заметок"
   },
-  "eNotePane": {
-    "titlePlaceholder": "Заголовок",
-    "bodyPlaceholder": "Начните писать...",
-    "propertyKey": "Ключ",
-    "propertyValue": "Значение",
-    "saving": "Сохранение...",
-    "properties": "Свойства",
-    "moreOptions": "Дополнительные параметры",
-    "back": "Назад",
-    "forward": "Вперёд"
-  },
   "notePane": {
     "saving": "Сохранение...",
     "readingMode": "Режим чтения",
@@ -514,7 +503,11 @@
     "forward": "Вперёд",
     "moreOptions": "Дополнительно",
     "properties": "Свойства",
-    "addProperty": "Добавить свойство"
+    "addProperty": "Добавить свойство",
+    "titlePlaceholder": "Заголовок",
+    "bodyPlaceholder": "Начните писать...",
+    "propertyKey": "Ключ",
+    "propertyValue": "Значение"
   },
   "commandPalette": {
     "placeholder": "Введите команду...",

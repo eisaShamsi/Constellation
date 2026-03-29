@@ -485,17 +485,6 @@
     "libraries": "保管庫",
     "notes": "ノート"
   },
-  "eNotePane": {
-    "titlePlaceholder": "タイトル",
-    "bodyPlaceholder": "書き始める...",
-    "propertyKey": "キー",
-    "propertyValue": "値",
-    "saving": "保存中...",
-    "properties": "プロパティ",
-    "moreOptions": "その他のオプション",
-    "back": "戻る",
-    "forward": "進む"
-  },
   "notePane": {
     "saving": "保存中...",
     "readingMode": "閲覧モード",
@@ -514,7 +503,11 @@
     "forward": "進む",
     "moreOptions": "その他のオプション",
     "properties": "プロパティ",
-    "addProperty": "プロパティを追加"
+    "addProperty": "プロパティを追加",
+    "titlePlaceholder": "タイトル",
+    "bodyPlaceholder": "書き始める...",
+    "propertyKey": "キー",
+    "propertyValue": "値"
   },
   "commandPalette": {
     "placeholder": "コマンドを入力...",

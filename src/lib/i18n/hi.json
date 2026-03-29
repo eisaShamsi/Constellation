@@ -485,17 +485,6 @@
     "libraries": "तिजोरियाँ",
     "notes": "नोट्स"
   },
-  "eNotePane": {
-    "titlePlaceholder": "शीर्षक",
-    "bodyPlaceholder": "लिखना शुरू करें...",
-    "propertyKey": "कुंजी",
-    "propertyValue": "मान",
-    "saving": "सहेजा जा रहा है...",
-    "properties": "गुण",
-    "moreOptions": "अधिक विकल्प",
-    "back": "पीछे",
-    "forward": "आगे"
-  },
   "notePane": {
     "saving": "सहेजा जा रहा है...",
     "readingMode": "पठन मोड",
@@ -514,7 +503,11 @@
     "forward": "आगे",
     "moreOptions": "अधिक विकल्प",
     "properties": "गुण",
-    "addProperty": "गुण जोड़ें"
+    "addProperty": "गुण जोड़ें",
+    "titlePlaceholder": "शीर्षक",
+    "bodyPlaceholder": "लिखना शुरू करें...",
+    "propertyKey": "कुंजी",
+    "propertyValue": "मान"
   },
   "commandPalette": {
     "placeholder": "कमांड टाइप करें...",

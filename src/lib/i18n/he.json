@@ -485,17 +485,6 @@
     "libraries": "כספות",
     "notes": "פתקים"
   },
-  "eNotePane": {
-    "titlePlaceholder": "כותרת",
-    "bodyPlaceholder": "...התחל לכתוב",
-    "propertyKey": "מפתח",
-    "propertyValue": "ערך",
-    "saving": "שומר...",
-    "properties": "מאפיינים",
-    "moreOptions": "אפשרויות נוספות",
-    "back": "חזרה",
-    "forward": "קדימה"
-  },
   "notePane": {
     "saving": "שומר...",
     "readingMode": "מצב קריאה",
@@ -514,7 +503,11 @@
     "forward": "קדימה",
     "moreOptions": "אפשרויות נוספות",
     "properties": "מאפיינים",
-    "addProperty": "הוסף מאפיין"
+    "addProperty": "הוסף מאפיין",
+    "titlePlaceholder": "כותרת",
+    "bodyPlaceholder": "...התחל לכתוב",
+    "propertyKey": "מפתח",
+    "propertyValue": "ערך"
   },
   "commandPalette": {
     "placeholder": "הקלד פקודה...",

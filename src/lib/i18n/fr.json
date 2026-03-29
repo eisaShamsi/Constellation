@@ -485,17 +485,6 @@
     "libraries": "coffres",
     "notes": "notes"
   },
-  "eNotePane": {
-    "titlePlaceholder": "Titre",
-    "bodyPlaceholder": "Commencez à écrire...",
-    "propertyKey": "Clé",
-    "propertyValue": "Valeur",
-    "saving": "Enregistrement...",
-    "properties": "Propriétés",
-    "moreOptions": "Plus d'options",
-    "back": "Retour",
-    "forward": "Avancer"
-  },
   "notePane": {
     "saving": "Enregistrement...",
     "readingMode": "Mode lecture",
@@ -514,7 +503,11 @@
     "forward": "Avancer",
     "moreOptions": "Plus d'options",
     "properties": "Propriétés",
-    "addProperty": "Ajouter une propriété"
+    "addProperty": "Ajouter une propriété",
+    "titlePlaceholder": "Titre",
+    "bodyPlaceholder": "Commencez à écrire...",
+    "propertyKey": "Clé",
+    "propertyValue": "Valeur"
   },
   "commandPalette": {
     "placeholder": "Tapez une commande...",
@@ -593,7 +586,7 @@
     "characters": "caractères"
   },
   "graphView": {
-    "nodes": "n\u0153uds",
+    "nodes": "nœuds",
     "edges": "liens",
     "open": "Ouvrir",
     "focus": "Centrer",

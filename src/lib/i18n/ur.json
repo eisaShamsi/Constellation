@@ -485,17 +485,6 @@
     "libraries": "خزانے",
     "notes": "نوٹس"
   },
-  "eNotePane": {
-    "titlePlaceholder": "عنوان",
-    "bodyPlaceholder": "...لکھنا شروع کریں",
-    "propertyKey": "کلید",
-    "propertyValue": "قدر",
-    "saving": "محفوظ ہو رہا ہے...",
-    "properties": "خصوصیات",
-    "moreOptions": "مزید اختیارات",
-    "back": "واپس",
-    "forward": "آگے"
-  },
   "notePane": {
     "saving": "محفوظ ہو رہا ہے...",
     "readingMode": "پڑھنے کا موڈ",
@@ -514,7 +503,11 @@
     "forward": "آگے",
     "moreOptions": "مزید اختیارات",
     "properties": "خصوصیات",
-    "addProperty": "خصوصیت شامل کریں"
+    "addProperty": "خصوصیت شامل کریں",
+    "titlePlaceholder": "عنوان",
+    "bodyPlaceholder": "...لکھنا شروع کریں",
+    "propertyKey": "کلید",
+    "propertyValue": "قدر"
   },
   "commandPalette": {
     "placeholder": "کمانڈ ٹائپ کریں...",

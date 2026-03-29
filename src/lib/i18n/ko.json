@@ -485,17 +485,6 @@
     "libraries": "보관함",
     "notes": "노트"
   },
-  "eNotePane": {
-    "titlePlaceholder": "제목",
-    "bodyPlaceholder": "글을 쓰기 시작...",
-    "propertyKey": "키",
-    "propertyValue": "값",
-    "saving": "저장 중...",
-    "properties": "속성",
-    "moreOptions": "더 많은 옵션",
-    "back": "뒤로",
-    "forward": "앞으로"
-  },
   "notePane": {
     "saving": "저장 중...",
     "readingMode": "읽기 모드",
@@ -514,7 +503,11 @@
     "forward": "앞으로",
     "moreOptions": "더 많은 옵션",
     "properties": "속성",
-    "addProperty": "속성 추가"
+    "addProperty": "속성 추가",
+    "titlePlaceholder": "제목",
+    "bodyPlaceholder": "글을 쓰기 시작...",
+    "propertyKey": "키",
+    "propertyValue": "값"
   },
   "commandPalette": {
     "placeholder": "명령어 입력...",

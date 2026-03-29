@@ -485,17 +485,6 @@
     "libraries": "个仓库",
     "notes": "篇笔记"
   },
-  "eNotePane": {
-    "titlePlaceholder": "标题",
-    "bodyPlaceholder": "开始写作...",
-    "propertyKey": "键",
-    "propertyValue": "值",
-    "saving": "保存中...",
-    "properties": "属性",
-    "moreOptions": "更多选项",
-    "back": "后退",
-    "forward": "前进"
-  },
   "notePane": {
     "saving": "正在保存...",
     "readingMode": "阅读模式",
@@ -514,7 +503,11 @@
     "forward": "前进",
     "moreOptions": "更多选项",
     "properties": "属性",
-    "addProperty": "添加属性"
+    "addProperty": "添加属性",
+    "titlePlaceholder": "标题",
+    "bodyPlaceholder": "开始写作...",
+    "propertyKey": "键",
+    "propertyValue": "值"
   },
   "commandPalette": {
     "placeholder": "输入命令...",

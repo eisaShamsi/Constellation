@@ -485,17 +485,6 @@
     "libraries": "kasa",
     "notes": "not"
   },
-  "eNotePane": {
-    "titlePlaceholder": "Başlık",
-    "bodyPlaceholder": "Yazmaya başlayın...",
-    "propertyKey": "Anahtar",
-    "propertyValue": "Değer",
-    "saving": "Kaydediliyor...",
-    "properties": "Özellikler",
-    "moreOptions": "Daha fazla seçenek",
-    "back": "Geri",
-    "forward": "İleri"
-  },
   "notePane": {
     "saving": "Kaydediliyor...",
     "readingMode": "Okuma modu",
@@ -514,7 +503,11 @@
     "forward": "İleri",
     "moreOptions": "Daha fazla seçenek",
     "properties": "Özellikler",
-    "addProperty": "Özellik ekle"
+    "addProperty": "Özellik ekle",
+    "titlePlaceholder": "Başlık",
+    "bodyPlaceholder": "Yazmaya başlayın...",
+    "propertyKey": "Anahtar",
+    "propertyValue": "Değer"
   },
   "commandPalette": {
     "placeholder": "Bir komut yazın...",

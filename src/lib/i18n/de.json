@@ -485,17 +485,6 @@
     "libraries": "Bibliotheken",
     "notes": "Notizen"
   },
-  "eNotePane": {
-    "titlePlaceholder": "Titel",
-    "bodyPlaceholder": "Schreiben Sie los...",
-    "propertyKey": "Schlüssel",
-    "propertyValue": "Wert",
-    "saving": "Speichern...",
-    "properties": "Eigenschaften",
-    "moreOptions": "Weitere Optionen",
-    "back": "Zurück",
-    "forward": "Vorwärts"
-  },
   "notePane": {
     "saving": "Wird gespeichert...",
     "readingMode": "Lesemodus",
@@ -514,7 +503,11 @@
     "forward": "Vorwärts",
     "moreOptions": "Weitere Optionen",
     "properties": "Eigenschaften",
-    "addProperty": "Eigenschaft hinzufügen"
+    "addProperty": "Eigenschaft hinzufügen",
+    "titlePlaceholder": "Titel",
+    "bodyPlaceholder": "Schreiben Sie los...",
+    "propertyKey": "Schlüssel",
+    "propertyValue": "Wert"
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben...",
