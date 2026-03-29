@@ -288,84 +288,57 @@ function buildDecorations(view: EditorView): DecorationSet {
 		});
 	}
 
-	// Wikilink image embeds: ![[file.png]] — handled via line text scan
-	// (These aren't parsed as Image nodes by the markdown parser)
+	// Single-pass line scan for wikilink embeds, wikilinks, and tags
+	// (Merged from 3 separate loops to reduce iteration overhead)
+	const IMG_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'avif']);
 	for (const { from: vFrom, to: vTo } of view.visibleRanges) {
 		for (let pos = vFrom; pos < vTo;) {
 			const line = doc.lineAt(pos);
 			if (line.number !== cursorLine) {
 				const lineText = line.text;
+
+				// Image embeds: ![[file.png]]
 				const embedRe = /!\[\[([^\]]+)\]\]/g;
 				let m;
 				while ((m = embedRe.exec(lineText)) !== null) {
 					const target = m[1];
 					const ext = target.split('.').pop()?.toLowerCase() || '';
-					if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'avif'].includes(ext)) {
-						// Try to resolve as a file URL — the libraryPath will be injected via state field
+					if (IMG_EXTS.has(ext)) {
 						const imgSrc = resolveEmbedImage(view, target);
 						if (imgSrc) {
 							const absFrom = line.from + m.index;
-							const absTo = absFrom + m[0].length;
-							ranges.push({ from: absFrom, to: absTo, deco: Decoration.replace({
+							ranges.push({ from: absFrom, to: absFrom + m[0].length, deco: Decoration.replace({
 								widget: new ImageWidget(imgSrc, target),
 							}) });
 						}
 					}
 				}
-			}
-			pos = line.to + 1;
-		}
-	}
 
-	// Wikilinks: [[note name]] or [[note|display]] — hide brackets, show display text, style as link
-	for (const { from: vFrom, to: vTo } of view.visibleRanges) {
-		for (let pos = vFrom; pos < vTo;) {
-			const line = doc.lineAt(pos);
-			if (line.number !== cursorLine) {
-				const lineText = line.text;
+				// Wikilinks: [[note]] or [[note|display]]
 				const wikiRe = /(?<!!)\[\[([^\]]+)\]\]/g;
-				let m;
 				while ((m = wikiRe.exec(lineText)) !== null) {
 					const absFrom = line.from + m.index;
 					const absTo = absFrom + m[0].length;
-					const innerFrom = absFrom + 2;  // after [[
-					const innerTo = absTo - 2;       // before ]]
-					const innerText = m[1];
-					const pipeIndex = innerText.indexOf('|');
-
+					const innerFrom = absFrom + 2;
+					const innerTo = absTo - 2;
+					const pipeIndex = m[1].indexOf('|');
 					if (pipeIndex >= 0) {
-						// [[note|display]] — hide everything except display text
 						const displayFrom = innerFrom + pipeIndex + 1;
-						// Hide [[ + note name + |
 						ranges.push({ from: absFrom, to: displayFrom, deco: replaceDeco });
-						// Style display text
 						ranges.push({ from: displayFrom, to: innerTo, deco: linkDeco });
-						// Hide ]]
 						ranges.push({ from: innerTo, to: absTo, deco: replaceDeco });
 					} else {
-						// [[note name]] — hide brackets only
 						ranges.push({ from: absFrom, to: innerFrom, deco: replaceDeco });
 						ranges.push({ from: innerFrom, to: innerTo, deco: linkDeco });
 						ranges.push({ from: innerTo, to: absTo, deco: replaceDeco });
 					}
 				}
-			}
-			pos = line.to + 1;
-		}
-	}
 
-	// Tags: #tag-name — style when cursor is off the line
-	for (const { from: vFrom, to: vTo } of view.visibleRanges) {
-		for (let pos = vFrom; pos < vTo;) {
-			const line = doc.lineAt(pos);
-			if (line.number !== cursorLine) {
-				const lineText = line.text;
+				// Tags: #tag-name
 				const tagRe = /(?:^|\s)(#[a-zA-Z\u0600-\u06FF][\w\u0600-\u06FF/-]*)/g;
-				let m;
 				while ((m = tagRe.exec(lineText)) !== null) {
 					const tagStart = line.from + m.index + (m[0].length - m[1].length);
-					const tagEnd = tagStart + m[1].length;
-					ranges.push({ from: tagStart, to: tagEnd, deco: tagDeco });
+					ranges.push({ from: tagStart, to: tagStart + m[1].length, deco: tagDeco });
 				}
 			}
 			pos = line.to + 1;
@@ -411,7 +384,7 @@ class LivePreviewPlugin {
 						this.decorations = buildDecorations(view);
 					}
 				});
-			}, 300);
+			}, 500);
 		}
 	}
 
