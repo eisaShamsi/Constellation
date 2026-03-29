@@ -20,6 +20,8 @@
 	import { calloutPlugin, calloutTheme, calloutCollapseField, calloutClickHandler } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
+	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
+	import { createTagCompletion, createSlashCompletion } from '$lib/editor/completions';
 	import TableGridPicker from './TableGridPicker.svelte';
 	import EditorContextMenu from './EditorContextMenu.svelte';
 	import { syntaxTree } from '@codemirror/language';
@@ -778,9 +780,15 @@
 				detail: n.libraryName ? ` — ${n.libraryName}` : undefined,
 				type: 'text',
 				apply: (view: EditorView, _completion: Completion, from: number, to: number) => {
+					/* Consume any trailing ]] left by closeBrackets */
+					let end = to;
+					const after = view.state.doc.sliceString(to, Math.min(to + 2, view.state.doc.length));
+					if (after === ']]') end = to + 2;
+					else if (after[0] === ']') end = to + 1;
+					const insert = `[[${n.name}]]`;
 					view.dispatch({
-						changes: { from: before.from, to, insert: `[[${n.name}]]` },
-						selection: { anchor: before.from + n.name.length + 4 }
+						changes: { from: before.from, to: end, insert },
+						selection: { anchor: before.from + insert.length }
 					});
 				}
 			}));
@@ -811,85 +819,9 @@
 		return { from: before.from, options, filter: false };
 	}
 
-	// Tag autocomplete
-	function tagCompletion(context: CompletionContext) {
-		const before = context.matchBefore(/#[\w\u0600-\u06FF/\-]*$/);
-		if (!before) return null;
-		const query = before.text.slice(1).toLowerCase();
-		const options: Completion[] = allTags
-			.filter(t => t.toLowerCase().includes(query))
-			.slice(0, 20)
-			.map(t => ({
-				label: '#' + t,
-				type: 'keyword',
-				apply: (view: EditorView, _completion: Completion, from: number, to: number) => {
-					view.dispatch({
-						changes: { from: before.from, to, insert: '#' + t },
-						selection: { anchor: before.from + t.length + 1 }
-					});
-				}
-			}));
-		return { from: before.from, options, filter: false };
-	}
-
-	// Slash commands
-	function slashCompletion(context: CompletionContext) {
-		const line = context.state.doc.lineAt(context.pos);
-		const lineStart = line.text.trimStart();
-		if (!lineStart.startsWith('/')) return null;
-		const before = context.matchBefore(/\/\w*$/);
-		if (!before) return null;
-		const commands: Completion[] = [
-			{ label: '/heading1', detail: 'H1', apply: '# ' },
-			{ label: '/heading2', detail: 'H2', apply: '## ' },
-			{ label: '/heading3', detail: 'H3', apply: '### ' },
-			{ label: '/bullet', detail: 'Bullet list', apply: '- ' },
-			{ label: '/numbered', detail: 'Numbered list', apply: '1. ' },
-			{ label: '/task', detail: 'Task', apply: '- [ ] ' },
-			{ label: '/code', detail: 'Code block', apply: '```\n\n```' },
-			{ label: '/quote', detail: 'Blockquote', apply: '> ' },
-			{ label: '/divider', detail: 'Horizontal rule', apply: '---\n' },
-			{ label: '/table', detail: 'Table (or /table 3x4)', apply: '' },
-			{ label: '/callout', detail: 'Callout', apply: '> [!note] Title\n> Content\n' },
-			{ label: '/math', detail: 'Math block', apply: '$$\n\n$$' },
-			{ label: '/mermaid', detail: 'Mermaid diagram', apply: '```mermaid\ngraph TD\n  A --> B\n```\n' },
-			{ label: '/template', detail: 'Insert template', apply: '' },
-		];
-		return {
-			from: before.from,
-			options: commands.map(c => ({
-				...c,
-				apply: (view: EditorView, _completion: Completion, from: number, to: number) => {
-					if (c.label === '/template') {
-						// Clear the slash command text and trigger template picker
-						view.dispatch({ changes: { from: line.from, to } });
-						window.dispatchEvent(new CustomEvent('constellation:open-template-picker'));
-						return;
-					}
-					if (c.label === '/table') {
-						// Parse optional NxM dimensions from the typed text, e.g. "/table 3x4"
-						const typed = line.text.trim();
-						const dimMatch = typed.match(/\/table\s+(\d+)\s*[x×X]\s*(\d+)/);
-						let tableStr: string;
-						if (dimMatch) {
-							const cols = Math.max(1, Math.min(parseInt(dimMatch[1]), 20));
-							const rows = Math.max(2, Math.min(parseInt(dimMatch[2]), 50));
-							tableStr = generateTable(rows, cols);
-						} else {
-							tableStr = generateTable(2, 2);
-						}
-						view.dispatch({ changes: { from: line.from, to, insert: tableStr + '\n' } });
-						return;
-					}
-					// Replace the slash command (and any leading whitespace on the line) with the content
-					view.dispatch({
-						changes: { from: line.from, to, insert: c.apply as string }
-					});
-				}
-			})),
-			filter: true
-		};
-	}
+	// Tag + slash autocomplete (shared factories from $lib/editor/completions)
+	const tagCompletion = createTagCompletion(() => allTags);
+	const slashCompletion = createSlashCompletion();
 
 	// Line operations
 	function deleteLine(view: EditorView): boolean {
@@ -1471,92 +1403,30 @@
 		const startState = EditorState.create({
 			doc: value,
 			extensions: [
-				lineNumbersCompartment.of(showLineNumbers ? [lineNumbers(), highlightActiveLineGutter()] : []),
-				highlightSpecialChars(),
+				// ─── CORE ONLY: bare minimum for fast typing ───
 				history(),
-				foldGutterCompartment.of((foldHeading || foldIndent) ? [foldGutter(), foldService.of(markdownFoldService)] : []),
 				drawSelection(),
-				rectangularSelection(),
-				dropCursor(),
-				indentOnInput(),
-				bracketMatching(),
-				highlightActiveLine(),
 				syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-				markdown({ base: markdownLanguage, codeLanguages: languages }),
-				autocompletion({
-					override: [wikilinkCompletion, tagCompletion, slashCompletion],
-					activateOnTyping: true,
-					maxRenderedOptions: 20,
-				}),
-				editorKeymap,
+				markdown({ base: markdownLanguage, extensions: [HighlightExt] }),
 				keymap.of([
-					{ key: 'Tab', run: tableTab },
-					{ key: 'Shift-Tab', run: tableShiftTab },
 					indentWithTab,
 					...defaultKeymap,
 					...historyKeymap,
-					...searchKeymap,
-					...foldKeymap,
-					...closeBracketsKeymap,
 				]),
-				tabConfigCompartment.of([
-					EditorState.tabSize.of(tabSize),
-					indentUnit.of(indentWithTabs ? '\t' : ' '.repeat(tabSize)),
-				]),
-				indentGuidesCompartment.of(indentationGuides ? [indentGuidesPlugin] : []),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir })),
-				libraryPathField,
-				livePreviewCompartment.of(livePreview ? [livePreviewPlugin, livePreviewTheme, calloutCollapseField, calloutPlugin, calloutTheme, calloutClickHandler, lineDecoPlugin, lineDecoTheme] : []),
-				// Per-line bidi direction detection (always active)
-				scriptFontsField,
-				bidiPlugin,
-				bidiTheme,
 				cmPlaceholder(placeholder),
 				editorTheme,
-				fontCompartment.of(buildFontTheme()),
-				clipboardImagePaste(),
-				editorEventHandlers(),
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged && !updating) {
 						const text = update.state.doc.toString();
 						lastInternalValue = text;
-						// Fire immediately — parent handles save debounce
 						onchange(text);
-					}
-					if (update.selectionSet || update.docChanged) {
-						// Batch toolbar updates to next animation frame
-						if (!toolbarRafPending) {
-							toolbarRafPending = true;
-							requestAnimationFrame(() => {
-								toolbarRafPending = false;
-								if (update.view && !update.view.destroyed) {
-									updateToolbar(update.view);
-									updateTableToolbar(update.view);
-									checkSelectionTabular(update.view);
-									// Update toolbar context for contextual buttons
-									const ctx = detectCursorContext(update.view);
-									toolbarContext = (['heading', 'table', 'codeblock', 'list', 'blockquote'].includes(ctx.context) ? ctx.context : 'normal') as any;
-									toolbarHeadingLevel = ctx.headingLevel;
-								}
-							});
-						}
-						if (update.selectionSet && onCursorChange) {
-							onCursorChange(update.state.selection.main.head);
-						}
-					}
-					if (update.geometryChanged && onScrollChange) {
-						onScrollChange(update.view.scrollDOM.scrollTop);
 					}
 				}),
 			]
 		});
 		view = new EditorView({ state: startState, parent: containerEl });
-
-		// Set initial library path for image resolution
-		if (libraryPath) {
-			view.dispatch({ effects: setLibraryPath.of(libraryPath) });
-		}
 
 		// Restore cursor position and scroll
 		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
@@ -1571,65 +1441,19 @@
 		// Auto-focus editor so cursor is visible
 		requestAnimationFrame(() => view?.focus());
 
-		document.addEventListener('constellation:fold-all', handleFoldAll);
-		document.addEventListener('constellation:unfold-all', handleUnfoldAll);
-		document.addEventListener('constellation:insert-table', handleInsertTable);
+		// Event listeners disabled — plugins stripped for performance baseline
 	});
 
 	// ─── Prop→Editor sync: NO $effect for value ───
 	// Editor owns its content after mount. Value prop only used in onMount.
 	// Tab switches destroy/recreate the component with new value.
 
-	// ─── Settings sync: batched, guarded, no $effect loops ───
-	// Track previous values to avoid unnecessary dispatches
+	// Only sync dir changes (rare — user switches note direction)
 	let prevDir = dir;
-	let prevLivePreview = livePreview;
-	let prevShowLineNumbers = showLineNumbers;
-	let prevFoldHeading = foldHeading;
-	let prevFoldIndent = foldIndent;
-	let prevIndentationGuides = indentationGuides;
-	let prevTabSize = tabSize;
-	let prevIndentWithTabs = indentWithTabs;
-
-	// Single $effect for ALL settings — batches dispatches, only fires on actual changes
 	$effect(() => {
-		if (!view) return;
-		const effects: any[] = [];
-
-		if (dir !== prevDir) {
-			effects.push(dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })));
-			prevDir = dir;
-		}
-		if (livePreview !== prevLivePreview) {
-			effects.push(livePreviewCompartment.reconfigure(livePreview ? [livePreviewPlugin, livePreviewTheme, calloutCollapseField, calloutPlugin, calloutTheme, calloutClickHandler, lineDecoPlugin, lineDecoTheme] : []));
-			prevLivePreview = livePreview;
-		}
-		if (showLineNumbers !== prevShowLineNumbers) {
-			effects.push(lineNumbersCompartment.reconfigure(showLineNumbers ? [lineNumbers(), highlightActiveLineGutter()] : []));
-			prevShowLineNumbers = showLineNumbers;
-		}
-		if (foldHeading !== prevFoldHeading || foldIndent !== prevFoldIndent) {
-			effects.push(foldGutterCompartment.reconfigure((foldHeading || foldIndent) ? [foldGutter(), foldService.of(markdownFoldService)] : []));
-			prevFoldHeading = foldHeading;
-			prevFoldIndent = foldIndent;
-		}
-		if (indentationGuides !== prevIndentationGuides) {
-			effects.push(indentGuidesCompartment.reconfigure(indentationGuides ? [indentGuidesPlugin] : []));
-			prevIndentationGuides = indentationGuides;
-		}
-		if (tabSize !== prevTabSize || indentWithTabs !== prevIndentWithTabs) {
-			effects.push(tabConfigCompartment.reconfigure([
-				EditorState.tabSize.of(tabSize),
-				indentUnit.of(indentWithTabs ? '\t' : ' '.repeat(tabSize)),
-			]));
-			prevTabSize = tabSize;
-			prevIndentWithTabs = indentWithTabs;
-		}
-
-		// Batch all changes into one dispatch
-		if (effects.length > 0) {
-			view.dispatch({ effects });
-		}
+		if (!view || dir === prevDir) return;
+		view.dispatch({ effects: dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })) });
+		prevDir = dir;
 	});
 
 	// Font sync: separate because it reads $appSettings store (different reactivity)
@@ -1680,11 +1504,6 @@
 	}
 
 	onDestroy(() => {
-		if (toolbarTimeout) clearTimeout(toolbarTimeout);
-		if (onchangeTimer) clearTimeout(onchangeTimer);
-		document.removeEventListener('constellation:fold-all', handleFoldAll);
-		document.removeEventListener('constellation:unfold-all', handleUnfoldAll);
-		document.removeEventListener('constellation:insert-table', handleInsertTable);
 		view?.destroy();
 	});
 
