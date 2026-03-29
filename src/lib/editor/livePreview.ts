@@ -31,7 +31,6 @@ export const libraryPathField = StateField.define<string>({
 function resolveEmbedImage(view: EditorView, filename: string): string | null {
 	const libPath = view.state.field(libraryPathField, false);
 	if (!libPath) return null;
-	// Build absolute path and convert for webview
 	const sep = libPath.includes('\\') ? '\\' : '/';
 	const fullPath = libPath + sep + filename;
 	try {

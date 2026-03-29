@@ -7,7 +7,8 @@
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
-    "frontendDist": "../build"
+    "frontendDist": "../build",
+    "features": ["protocol-asset"]
   },
   "app": {
     "windows": [
@@ -28,7 +29,14 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset: https:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost"
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset: https: http: http://asset.localhost; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https: http://asset.localhost",
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": ["**/*"],
+          "requireLiteralLeadingDot": false
+        }
+      }
     }
   },
   "bundle": {
