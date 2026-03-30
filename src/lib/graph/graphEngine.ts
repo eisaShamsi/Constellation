@@ -977,10 +977,24 @@ export class GraphEngine {
 		this.themeObserver?.disconnect();
 		this.resizeObserver?.disconnect();
 
+		// Destroy small, fixed-count text objects explicitly
 		this.labelPool.forEach((t) => t.destroy());
 		this.labelPool.clear();
+		this.gizmoLabels.forEach((t) => t.destroy());
+		this.gizmoLabels = [];
 
-		this.app?.destroy(true, { children: true, texture: true });
+		// ⚡ PERF: Remove all node Graphics from their container WITHOUT destroying
+		// them. app.destroy({ children: true }) would synchronously call .destroy()
+		// on every Graphics object (one per node) — for a 1000-node graph that means
+		// 1000+ synchronous WebGL buffer disposals, blocking the main thread for
+		// several seconds and making the app appear frozen.
+		// By clearing the hierarchy first, app.destroy({ children: false }) completes
+		// in O(1). The orphaned Graphics objects are garbage-collected by the JS runtime.
+		this.nodeContainer.removeChildren();
+		this.nodeGfx = [];
+		this.app?.stage.removeChildren();
+
+		this.app?.destroy(true, { children: false, texture: true });
 		this.app = null;
 	}
 
