@@ -301,7 +301,8 @@
       "organization": "정리"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -310,7 +311,7 @@
     "quickSwitcher": "빠른 전환",
     "dailyNote": "일일 노트 열기",
     "toggleEdit": "편집/읽기 모드 전환",
-    "graphView": "그래프 보기 열기",
+    "graphView": "Sky View 열기",
     "globalTasks": "글로벌 작업 열기",
     "toggleBold": "굵게 전환",
     "toggleItalic": "기울임 전환",
@@ -379,7 +380,8 @@
     "expandAll": "모두 펼치기",
     "addLibrary": "보관함 추가",
     "addLibraryButton": "+ 보관함 추가",
-    "noLibraries": "보관함이 아직 없습니다"
+    "noLibraries": "보관함이 아직 없습니다",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "왼쪽 사이드바",
@@ -906,7 +908,8 @@
       "recentlyOpened": "최근 열린 노트",
       "recentlyEdited": "최근 편집한 노트",
       "tags": "태그"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "노트 가져오기",

@@ -301,7 +301,8 @@
       "organization": "Organisation"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -311,7 +312,7 @@
     "searchLibrary": "Bibliothek durchsuchen",
     "dailyNote": "Tägliche Notiz öffnen",
     "toggleEdit": "Bearbeitungs-/Lesemodus umschalten",
-    "graphView": "Graphansicht öffnen",
+    "graphView": "Sky View öffnen",
     "globalTasks": "Globale Aufgaben öffnen",
     "toggleBold": "Fett umschalten",
     "toggleItalic": "Kursiv umschalten",
@@ -379,7 +380,8 @@
     "sortModifiedDesc": "Sortierung: Geändert (neueste)",
     "sortModifiedAsc": "Sortierung: Geändert (älteste)",
     "collapseAll": "Alle einklappen",
-    "expandAll": "Alle aufklappen"
+    "expandAll": "Alle aufklappen",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "Linke Seitenleiste",
@@ -917,7 +919,8 @@
       "recentlyOpened": "Kürzlich geöffnet",
       "recentlyEdited": "Kürzlich bearbeitet",
       "tags": "Tags"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "Notizen importieren",

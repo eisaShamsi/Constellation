@@ -300,7 +300,8 @@
       "noFolderTemplates": "No folder templates configured"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -310,7 +311,7 @@
     "searchLibrary": "Search library",
     "dailyNote": "Open daily note",
     "toggleEdit": "Toggle edit/reading mode",
-    "graphView": "Open graph view",
+    "graphView": "Open Sky View",
     "globalTasks": "Open global tasks",
     "toggleBold": "Toggle bold",
     "toggleItalic": "Toggle italic",
@@ -378,7 +379,8 @@
     "sortModifiedDesc": "Sort: Modified (newest)",
     "sortModifiedAsc": "Sort: Modified (oldest)",
     "collapseAll": "Collapse all",
-    "expandAll": "Expand all"
+    "expandAll": "Expand all",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "Left sidebar",
@@ -917,7 +919,8 @@
       "recentlyOpened": "Recently Opened",
       "recentlyEdited": "Recently Edited",
       "tags": "Tags"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "Import Notes",

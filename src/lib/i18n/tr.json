@@ -301,7 +301,8 @@
       "organization": "Düzenleme"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -310,7 +311,7 @@
     "quickSwitcher": "Hızlı geçiş",
     "dailyNote": "Günlük notu aç",
     "toggleEdit": "Düzenleme/okuma modunu değiştir",
-    "graphView": "Grafik görünümünü aç",
+    "graphView": "Sky View aç",
     "globalTasks": "Genel görevleri aç",
     "toggleBold": "Kalın yazıyı değiştir",
     "toggleItalic": "İtalik yazıyı değiştir",
@@ -379,7 +380,8 @@
     "expandAll": "Tümünü genişlet",
     "addLibrary": "Kasa ekle",
     "addLibraryButton": "+ Kasa ekle",
-    "noLibraries": "Henüz kasa yok"
+    "noLibraries": "Henüz kasa yok",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "Sol kenar çubuğu",
@@ -906,7 +908,8 @@
       "recentlyOpened": "Son açılan",
       "recentlyEdited": "Son düzenlenen",
       "tags": "Etiketler"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "Notları İçe Aktar",

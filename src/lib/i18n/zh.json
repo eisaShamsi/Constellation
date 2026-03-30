@@ -301,7 +301,8 @@
       "organization": "组织"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -310,7 +311,7 @@
     "quickSwitcher": "快速切换",
     "dailyNote": "打开日记",
     "toggleEdit": "切换编辑/阅读模式",
-    "graphView": "打开关系图谱",
+    "graphView": "打开 Sky View",
     "globalTasks": "打开全局任务",
     "toggleBold": "切换粗体",
     "toggleItalic": "切换斜体",
@@ -379,7 +380,8 @@
     "expandAll": "全部展开",
     "addLibrary": "添加仓库",
     "addLibraryButton": "+ 添加仓库",
-    "noLibraries": "暂无仓库"
+    "noLibraries": "暂无仓库",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "左侧边栏",
@@ -906,7 +908,8 @@
       "recentlyOpened": "最近打开",
       "recentlyEdited": "最近编辑",
       "tags": "标签"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "导入笔记",

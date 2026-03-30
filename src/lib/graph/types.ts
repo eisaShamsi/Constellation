@@ -1,5 +1,5 @@
 /**
- * GraphMind — Type definitions for the graph view engine.
+ * GraphMind — Type definitions for the Sky View engine.
  */
 
 export interface GraphMindNode {

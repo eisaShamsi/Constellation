@@ -301,7 +301,8 @@
       "organization": "التنظيم"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -311,7 +312,7 @@
     "searchLibrary": "بحث في المكتبة",
     "dailyNote": "ملاحظة اليوم",
     "toggleEdit": "تبديل وضع التحرير",
-    "graphView": "عرض الرسم البياني",
+    "graphView": "فتح عرض السماء",
     "globalTasks": "فتح المهام العامة",
     "toggleBold": "تبديل الخط العريض",
     "toggleItalic": "تبديل المائل",
@@ -379,7 +380,8 @@
     "sortModifiedDesc": "ترتيب: التعديل (الأحدث)",
     "sortModifiedAsc": "ترتيب: التعديل (الأقدم)",
     "collapseAll": "طي الكل",
-    "expandAll": "توسيع الكل"
+    "expandAll": "توسيع الكل",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "الشريط الأيسر",
@@ -918,7 +920,8 @@
       "recentlyOpened": "المفتوحة مؤخراً",
       "recentlyEdited": "المحررة مؤخراً",
       "tags": "الوسوم"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "استيراد الملاحظات",

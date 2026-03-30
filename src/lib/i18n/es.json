@@ -301,7 +301,8 @@
       "organization": "Organización"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -311,7 +312,7 @@
     "searchLibrary": "Buscar en la biblioteca",
     "dailyNote": "Abrir nota diaria",
     "toggleEdit": "Alternar modo edición/lectura",
-    "graphView": "Abrir vista de grafo",
+    "graphView": "Abrir Sky View",
     "globalTasks": "Abrir tareas globales",
     "toggleBold": "Alternar negrita",
     "toggleItalic": "Alternar cursiva",
@@ -379,7 +380,8 @@
     "sortModifiedDesc": "Orden: Modificado (más reciente)",
     "sortModifiedAsc": "Orden: Modificado (más antiguo)",
     "collapseAll": "Contraer todo",
-    "expandAll": "Expandir todo"
+    "expandAll": "Expandir todo",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "Barra lateral izquierda",
@@ -917,7 +919,8 @@
       "recentlyOpened": "Abiertos recientemente",
       "recentlyEdited": "Editadas recientemente",
       "tags": "Etiquetas"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "Importar notas",

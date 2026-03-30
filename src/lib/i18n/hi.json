@@ -301,7 +301,8 @@
       "organization": "संगठन"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -310,7 +311,7 @@
     "quickSwitcher": "त्वरित स्विचर",
     "dailyNote": "दैनिक नोट खोलें",
     "toggleEdit": "संपादन/पठन मोड टॉगल करें",
-    "graphView": "ग्राफ़ दृश्य खोलें",
+    "graphView": "Sky View खोलें",
     "globalTasks": "वैश्विक कार्य खोलें",
     "toggleBold": "बोल्ड टॉगल करें",
     "toggleItalic": "इटैलिक टॉगल करें",
@@ -379,7 +380,8 @@
     "expandAll": "सभी विस्तृत करें",
     "addLibrary": "तिजोरी जोड़ें",
     "addLibraryButton": "+ तिजोरी जोड़ें",
-    "noLibraries": "अभी कोई तिजोरी नहीं"
+    "noLibraries": "अभी कोई तिजोरी नहीं",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "बायाँ साइडबार",
@@ -906,7 +908,8 @@
       "recentlyOpened": "हाल ही में खोले गए",
       "recentlyEdited": "हाल ही में संपादित",
       "tags": "टैग्स"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "नोट्स आयात करें",

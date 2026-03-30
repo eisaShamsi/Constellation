@@ -301,7 +301,8 @@
       "organization": "Организация"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -310,7 +311,7 @@
     "quickSwitcher": "Быстрый переключатель",
     "dailyNote": "Открыть ежедневную заметку",
     "toggleEdit": "Переключить режим редактирования/чтения",
-    "graphView": "Открыть граф",
+    "graphView": "Открыть Sky View",
     "globalTasks": "Открыть глобальные задачи",
     "toggleBold": "Переключить жирный",
     "toggleItalic": "Переключить курсив",
@@ -379,7 +380,8 @@
     "expandAll": "Развернуть всё",
     "addLibrary": "Добавить хранилище",
     "addLibraryButton": "+ Добавить хранилище",
-    "noLibraries": "Хранилищ пока нет"
+    "noLibraries": "Хранилищ пока нет",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "Левая панель",
@@ -906,7 +908,8 @@
       "recentlyOpened": "Недавно открытые",
       "recentlyEdited": "Недавно отредактированные",
       "tags": "Теги"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "Импорт заметок",

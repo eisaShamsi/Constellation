@@ -301,7 +301,8 @@
       "organization": "سازمان‌دهی"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -311,7 +312,7 @@
     "searchLibrary": "جستجوی کتابخانه",
     "dailyNote": "باز کردن یادداشت روزانه",
     "toggleEdit": "تغییر حالت ویرایش/خواندن",
-    "graphView": "باز کردن نمای گراف",
+    "graphView": "باز کردن Sky View",
     "globalTasks": "باز کردن وظایف کلی",
     "toggleBold": "تغییر حالت درشت",
     "toggleItalic": "تغییر حالت مورب",
@@ -379,7 +380,8 @@
     "sortModifiedDesc": "مرتب‌سازی: تغییر (جدیدترین)",
     "sortModifiedAsc": "مرتب‌سازی: تغییر (قدیمی‌ترین)",
     "collapseAll": "جمع کردن همه",
-    "expandAll": "باز کردن همه"
+    "expandAll": "باز کردن همه",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "نوار کناری چپ",
@@ -917,7 +919,8 @@
       "recentlyOpened": "اخیراً باز شده",
       "recentlyEdited": "اخیراً ویرایش شده",
       "tags": "برچسب‌ها"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "وارد کردن یادداشت‌ها",

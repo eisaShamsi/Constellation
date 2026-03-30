@@ -301,7 +301,8 @@
       "organization": "ארגון"
     },
     "plugins": {
-      "commandPalette": "Command Palette"
+      "commandPalette": "Command Palette",
+      "graphView": "Sky View"
     }
   },
   "commands": {
@@ -310,7 +311,7 @@
     "quickSwitcher": "מעבר מהיר",
     "dailyNote": "פתח פתק יומי",
     "toggleEdit": "החלף מצב עריכה/קריאה",
-    "graphView": "פתח תצוגת גרף",
+    "graphView": "פתח Sky View",
     "globalTasks": "פתח משימות גלובליות",
     "toggleBold": "החלף מודגש",
     "toggleItalic": "החלף נטוי",
@@ -379,7 +380,8 @@
     "expandAll": "הרחב הכל",
     "addLibrary": "הוסף כספת",
     "addLibraryButton": "+ הוסף כספת",
-    "noLibraries": "אין כספות עדיין"
+    "noLibraries": "אין כספות עדיין",
+    "graphViewTitle": "Sky View"
   },
   "layout": {
     "leftSidebar": "סרגל צד שמאלי",
@@ -906,7 +908,8 @@
       "recentlyOpened": "נפתחו לאחרונה",
       "recentlyEdited": "נערכו לאחרונה",
       "tags": "תגיות"
-    }
+    },
+    "graphView": "Sky View"
   },
   "importer": {
     "title": "ייבוא הערות",
