@@ -1027,7 +1027,8 @@ export function buildStarData(allLinks: NoteLink[], allNotes: { name: string; pa
 
 		if (!nodeMap.has(sourceId) || !nodeMap.has(targetId)) continue;
 
-		const key = `${sourceId}->${targetId}`;
+		// Include link_type in key so typed links with different types are kept as distinct edges
+		const key = `${sourceId}->${targetId}:${link.link_type ?? ''}`;
 		if (seen.has(key)) continue;
 		seen.add(key);
 
