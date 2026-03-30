@@ -133,6 +133,19 @@ Derived from the "The Cognitive Engine v2.1" architecture paper.
 
 ---
 
+## UX Enhancement — Sky View PiP Hint
+
+**Commit**: `dd3880e`
+
+**What was done**:
+- Added centered subtitle to the Sky View topbar: "Click a note in the sidebar to see its connections"
+- CSS class `.star-pip-hint`: small muted text, `pointer-events: none`, `flex: 1; text-align: center`
+- i18n key `layout.starViewPipHint` added to all 15 locale files with native-language translations
+
+**Status**: ✅ Pushed
+
+---
+
 ## Open Items / Next Session
 
 1. **Phase 1 GO/NO-GO**: User has not yet tested Phase 1 (Typed Links). Must test before proceeding to Phase 2.
