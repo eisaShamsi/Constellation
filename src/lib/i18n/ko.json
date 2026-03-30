@@ -390,7 +390,8 @@
     "skills": "스킬",
     "graphViewTitle": "그래프 보기",
     "pinned": "고정됨",
-    "starViewTitle": "Star View"
+    "starViewTitle": "Star View",
+    "starViewPipHint": "사이드바에서 노트를 클릭하면 연결을 볼 수 있습니다"
   },
   "welcome": {
     "title": "Constellation에 오신 것을 환영합니다",

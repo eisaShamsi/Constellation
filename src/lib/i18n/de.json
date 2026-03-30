@@ -390,7 +390,8 @@
     "skills": "Fähigkeiten",
     "graphViewTitle": "Graphansicht",
     "pinned": "Angeheftet",
-    "starViewTitle": "Star View"
+    "starViewTitle": "Star View",
+    "starViewPipHint": "Klicke auf eine Notiz in der Seitenleiste, um ihre Verbindungen zu sehen"
   },
   "welcome": {
     "title": "Willkommen bei Constellation",

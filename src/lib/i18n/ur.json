@@ -390,7 +390,8 @@
     "skills": "مہارتیں",
     "graphViewTitle": "گراف ویو",
     "pinned": "پن کیا گیا",
-    "starViewTitle": "Star View"
+    "starViewTitle": "Star View",
+    "starViewPipHint": "سائیڈ بار میں نوٹ کلک کریں اس کے روابط دیکھنے کے لیے"
   },
   "welcome": {
     "title": "Constellation میں خوش آمدید",

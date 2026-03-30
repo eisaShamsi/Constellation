@@ -390,7 +390,8 @@
     "skills": "כישורים",
     "graphViewTitle": "תצוגת גרף",
     "pinned": "מוצמד",
-    "starViewTitle": "Star View"
+    "starViewTitle": "Star View",
+    "starViewPipHint": "לחץ על פתק בסרגל הצד כדי לראות את הקשרים שלו"
   },
   "welcome": {
     "title": "ברוכים הבאים ל-Constellation",

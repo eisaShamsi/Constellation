@@ -390,7 +390,8 @@
     "skills": "مهارت‌ها",
     "graphViewTitle": "نمای گراف",
     "pinned": "سنجاق شده",
-    "starViewTitle": "Star View"
+    "starViewTitle": "Star View",
+    "starViewPipHint": "روی یک یادداشت در نوار کناری کلیک کنید تا ارتباطات آن را ببینید"
   },
   "welcome": {
     "title": "به Constellation خوش آمدید",

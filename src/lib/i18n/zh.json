@@ -390,7 +390,8 @@
     "skills": "技能",
     "graphViewTitle": "关系图谱",
     "pinned": "已固定",
-    "starViewTitle": "Star View"
+    "starViewTitle": "Star View",
+    "starViewPipHint": "点击侧边栏中的笔记以查看其连接"
   },
   "welcome": {
     "title": "欢迎使用 Constellation",

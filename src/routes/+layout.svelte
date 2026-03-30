@@ -2597,6 +2597,7 @@
 				<div class="star-fullscreen">
 					<div class="star-header">
 						<span class="star-title">{$t('layout.starViewTitle')}</span>
+						<span class="star-pip-hint">{$t('layout.starViewPipHint')}</span>
 						<button class="star-close" onclick={() => showStarView = false}>×</button>
 					</div>
 					<GraphMindView
@@ -3706,6 +3707,7 @@
 		background: var(--bg-secondary);
 	}
 	.star-title { font-weight: 600; font-size: 0.9rem; }
+	.star-pip-hint { flex: 1; text-align: center; font-size: 0.75rem; color: var(--text-muted); opacity: 0.7; pointer-events: none; }
 	.star-close {
 		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 3px; color: var(--text-muted); cursor: pointer;

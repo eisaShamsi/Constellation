@@ -390,7 +390,8 @@
     "skills": "Beceriler",
     "graphViewTitle": "Grafik Görünümü",
     "pinned": "Sabitlendi",
-    "starViewTitle": "Star View"
+    "starViewTitle": "Star View",
+    "starViewPipHint": "Bağlantılarını görmek için kenar çubuğunda bir nota tıklayın"
   },
   "welcome": {
     "title": "Constellation'a Hoş Geldiniz",

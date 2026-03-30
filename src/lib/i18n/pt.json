@@ -390,7 +390,8 @@
     "skills": "Habilidades",
     "graphViewTitle": "Visualização em grafo",
     "pinned": "Fixada",
-    "starViewTitle": "Star View"
+    "starViewTitle": "Star View",
+    "starViewPipHint": "Clique em uma nota na barra lateral para ver suas conexões"
   },
   "welcome": {
     "title": "Bem-vindo ao Constellation",
