@@ -986,7 +986,9 @@
     "skills": "Skills"
   },
   "tabs": {
-    "newTab": "New Tab"
+    "newTab": "New Tab",
+    "closeTab": "탭 닫기",
+    "openNote": "노트 열기"
   },
   "navigator": {
     "title": "네비게이터",

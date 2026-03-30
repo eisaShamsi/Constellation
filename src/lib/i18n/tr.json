@@ -986,7 +986,9 @@
     "skills": "Skills"
   },
   "tabs": {
-    "newTab": "New Tab"
+    "newTab": "New Tab",
+    "closeTab": "Sekmeyi kapat",
+    "openNote": "Not aç"
   },
   "navigator": {
     "title": "Gezgin",

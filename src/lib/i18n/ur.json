@@ -986,7 +986,9 @@
     "skills": "Skills"
   },
   "tabs": {
-    "newTab": "New Tab"
+    "newTab": "New Tab",
+    "closeTab": "ٹیب بند کریں",
+    "openNote": "نوٹ کھولیں"
   },
   "navigator": {
     "title": "نیویگیٹر",

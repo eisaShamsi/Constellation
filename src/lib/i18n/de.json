@@ -986,7 +986,9 @@
     "skills": "Skills"
   },
   "tabs": {
-    "newTab": "New Tab"
+    "newTab": "New Tab",
+    "closeTab": "Tab schließen",
+    "openNote": "Notiz öffnen"
   },
   "navigator": {
     "title": "Navigator",

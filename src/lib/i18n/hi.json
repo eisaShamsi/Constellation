@@ -986,7 +986,9 @@
     "skills": "Skills"
   },
   "tabs": {
-    "newTab": "New Tab"
+    "newTab": "New Tab",
+    "closeTab": "टैब बंद करें",
+    "openNote": "नोट खोलें"
   },
   "navigator": {
     "title": "नेविगेटर",

@@ -52,6 +52,27 @@ Derived from the "The Cognitive Engine v2.1" architecture paper.
 
 ---
 
+---
+
+## NotePane Regression — Bug Fixes
+
+### Bug #1: New Tab opens NotePane editor instead of home screen
+
+**Symptom**: Clicking `+` tab button opened a full NotePane with "New tab" as the heading.
+
+**Root cause**: In `+layout.svelte` the condition `{:else if $activeTab}` rendered NotePane for ALL active tabs, including empty ones where `path: ''`.
+
+**Fix** (`src/routes/+layout.svelte`):
+- Split the condition into two branches:
+  - `{:else if $activeTab && !$activeTab.path}` → shows **new tab home screen**
+  - `{:else if $activeTab && $activeTab.path}` → renders **NotePane** (unchanged)
+- New tab home screen: centered layout with star icon, "Open note" (quick switcher) button, and "New note" button
+- Added `.new-tab-screen`, `.nt-btn`, `.nt-actions`, `.nt-hint` CSS classes
+
+**Status**: Fixed, svelte-check clean (no new errors)
+
+---
+
 ## Open Items / Next Session
 
 1. **Phase 1 GO/NO-GO**: User has not yet tested Phase 1 (Typed Links). Must test before proceeding to Phase 2.

@@ -986,7 +986,9 @@
     "skills": "Skills"
   },
   "tabs": {
-    "newTab": "New Tab"
+    "newTab": "New Tab",
+    "closeTab": "タブを閉じる",
+    "openNote": "ノートを開く"
   },
   "navigator": {
     "title": "ナビゲーター",

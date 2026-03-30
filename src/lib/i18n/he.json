@@ -986,7 +986,9 @@
     "skills": "Skills"
   },
   "tabs": {
-    "newTab": "New Tab"
+    "newTab": "New Tab",
+    "closeTab": "סגור לשונית",
+    "openNote": "פתח פתק"
   },
   "navigator": {
     "title": "נווט",

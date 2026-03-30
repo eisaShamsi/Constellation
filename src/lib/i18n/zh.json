@@ -986,7 +986,9 @@
     "skills": "Skills"
   },
   "tabs": {
-    "newTab": "New Tab"
+    "newTab": "New Tab",
+    "closeTab": "关闭标签页",
+    "openNote": "打开笔记"
   },
   "navigator": {
     "title": "导航器",

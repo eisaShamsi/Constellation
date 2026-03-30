@@ -2717,7 +2717,21 @@
 							{/if}
 							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} color={libraryColorMap[tab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
 						{/each}
-					{:else if $activeTab}
+					{:else if $activeTab && !$activeTab.path}
+						<div class="new-tab-screen">
+							<div class="nt-commands">
+								<button class="nt-command" onclick={handleNewNote}>
+									{$t('commands.newNote')} ({sc('new-note')})
+								</button>
+								<button class="nt-command" onclick={() => { showQuickSwitcher = true; }}>
+									{$t('tabs.openNote')} ({sc('quick-switch')})
+								</button>
+								<button class="nt-command" onclick={closeNote}>
+									{$t('tabs.closeTab')}
+								</button>
+							</div>
+						</div>
+					{:else if $activeTab && $activeTab.path}
 						{@const _parsed = parseFrontmatter($activeTab.content || '')}
 						{@const _body = _parsed.body}
 						{#key $activeTab.id + '|' + $activeTab.path}
@@ -3784,6 +3798,23 @@
 	.index-body {
 		flex: 1; overflow: auto;
 	}
+
+	/* New tab screen */
+	.new-tab-screen {
+		flex: 1; display: flex; flex-direction: column;
+		align-items: center; justify-content: center;
+		padding: 2rem;
+	}
+	.nt-commands {
+		display: flex; flex-direction: column; align-items: center; gap: 14px;
+	}
+	.nt-command {
+		background: none; border: none; padding: 0;
+		color: var(--accent); font-size: 1rem;
+		font-family: inherit; cursor: pointer; opacity: 0.75;
+		transition: opacity 0.12s;
+	}
+	.nt-command:hover { opacity: 1; }
 
 	/* Welcome */
 	.welcome {
