@@ -444,7 +444,7 @@ The following capabilities enable Zettelkasten AND any other knowledge system:
    ```
 4. **FocusPane → eNotePane = fleeting → permanent** — the transition from quick capture to refined note is seamless. Same `.md` file, different editing experience
 5. **Search across all notes is instant** — Rust-side indexing enables finding any note among thousands in milliseconds
-6. **Graph view shows the connection web** — visual map of how ideas relate
+6. **Sky View shows the connection web** — visual map of how ideas relate
 7. **Unlinked mentions** — surface notes that reference this note's title without a formal `[[link]]`, helping discover hidden connections
 8. **MOC needs no special feature** — a Map of Content is just a note with organized links. The system already supports it
 9. **Tags for lightweight categorization** — `#topic` groups notes without rigid hierarchy

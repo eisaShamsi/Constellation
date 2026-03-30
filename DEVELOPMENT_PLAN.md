@@ -220,7 +220,7 @@ The editor needs several features to match the best-in-class editing experience.
 ## Phase 4: Built-in Features
 **Priority: High | Effort: Large | Impact: High**
 
-### 4.1 Graph View
+### 4.1 Sky View
 - Interactive force-directed graph visualization
 - Each note = node, each `[[link]]` = edge
 - Node size proportional to number of connections
@@ -229,7 +229,7 @@ The editor needs several features to match the best-in-class editing experience.
 - **Groups**: Color nodes by folder, tag, or custom query
 - **Local Graph**: Show connections for just the active note
 - Use D3.js force simulation or vis.js/cytoscape.js
-- Toggle between global and local graph views
+- Toggle between global and local Sky Views
 
 ### 4.2 Command Palette
 - `Ctrl+P` to open command palette overlay
@@ -645,7 +645,7 @@ Expand the settings page to include all configurable options:
 - **Why third**: Knowledge graph features are a core differentiator
 
 ### Sprint 4 (Discovery) — Phases 4.1-4.5
-- Graph view, command palette, quick switcher, daily notes, templates
+- Sky View, command palette, quick switcher, daily notes, templates
 - **Why fourth**: These are the most-used knowledge management features
 
 ### Sprint 5 (Organization) — Phases 4.6-4.10 + 5
@@ -673,7 +673,7 @@ Expand the settings page to include all configurable options:
    - Custom decorations (inline rendering)
    - Better performance for large files
 
-2. **Graph library**: For the Graph View, evaluate:
+2. **Graph library**: For the Sky View, evaluate:
    - **D3.js force-layout** — Most flexible, but complex
    - **Cytoscape.js** — Purpose-built for graphs, good performance
    - **vis.js Network** — Easy to use, good interactivity

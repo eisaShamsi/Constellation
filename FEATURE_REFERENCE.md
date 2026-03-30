@@ -412,7 +412,7 @@ Each core plugin can be individually enabled or disabled.
 - **Configure search settings**: Match case, explain search term, collapse results, extra context, sort order
 - **Embed search results**: Use ` ```query ` code block to embed live search results in notes
 
-### 6.2 Graph View
+### 6.2 Sky View
 - Visualize note relationships as an interactive node graph
 - Nodes = notes, Edges = internal links
 - Node size proportional to number of connections

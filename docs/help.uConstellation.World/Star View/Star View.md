@@ -3,7 +3,7 @@ aliases:
   - Star View
   - Sky View
   - GraphMind
-  - Graph View
+  - Sky View
   - Link star view
   - Network view
   - Note connections
@@ -133,7 +133,7 @@ When in focus mode, a control bar appears at the top:
 |---------|-------------|
 | **Depth slider** (1–5) | How many hops of connections to show. 1 = direct links only, 5 = five levels deep. |
 | **Direction filter** (↔ / ← / →) | Show all links, incoming only, or outgoing only. |
-| **Exit button** (×) | Return to the full graph view |
+| **Exit button** (×) | Return to the full Sky View |
 
 ### Navigation breadcrumb
 

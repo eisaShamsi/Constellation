@@ -103,7 +103,7 @@ Constellation's core differentiator — your `[[wikilinks]]` work across every l
 #### Typed Links
 - **`[[note|type:related-to]]`** — adds a semantic type to the link
 - Built-in types: `related-to`, `prerequisite`, `see-also`, `contradicts`, `supports`, `extends`
-- Typed links appear with distinct colors in the graph view
+- Typed links appear with distinct colors in the Sky View
 - Autocomplete: type `[[note|type:` to see available link types
 
 #### Smart Auto-Linker (Unlinked Mentions)

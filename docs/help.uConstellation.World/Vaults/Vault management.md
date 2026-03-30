@@ -109,7 +109,7 @@ Each library is automatically assigned a distinct color when added. These colors
 
 - The file explorer sidebar (color dot next to the library name)
 - The vault dropdown and vault manager
-- The graph view (nodes are colored by library)
+- The Sky View (nodes are colored by library)
 - Tab labels in the editor
 
 Library colors help you visually distinguish which library a note belongs to when working across multiple libraries.
