@@ -80,6 +80,37 @@ Derived from the "The Cognitive Engine v2.1" architecture paper.
 
 ---
 
+---
+
+## NotePane Regression — Bug #2: "Graph View" label leak
+
+**Symptom**: "Graph View" text still appeared throughout the app despite renaming to Sky View.
+
+**Fix** (commit `e59d057`):
+- All 15 i18n locale files: updated `plugins.graphView`, `commands.graphView`, `ribbon.graphView`, `sidebar.graphViewTitle`, `secondScreen.graphView` → "Sky View"
+- `src/lib/graph/types.ts`: fixed code comment
+
+**Fix** (commit `5f716f0`):
+- 6 doc/spec files: Star View.md, Vault management.md, NotePane-spec.md, DEVELOPMENT_PLAN.md, FEATURE_REFERENCE.md, README.md
+
+**Status**: ✅ Closed
+
+---
+
+## NotePane Regression — Bug #3: "vault" terminology leak in docs
+
+**Symptom**: `Vault management.md`, `Vaults/` folder, and "vault" references throughout docs violated the Library naming rule.
+
+**Fix** (commit `e8c08dc`):
+- Renamed `docs/help.uConstellation.World/Vaults/` → `Libraries/`
+- Renamed `Vault management.md` → `Library management.md`
+- Replaced all vault→library in: Library management.md, BASES_MVP_SPEC.md, User Manual.md, FEATURE_REFERENCE.md, DEVELOPMENT_PLAN.md
+- Preserved proper nouns: FileVault (Apple), Obsidian vault (import compat)
+
+**Status**: ✅ Closed
+
+---
+
 ## Open Items / Next Session
 
 1. **Phase 1 GO/NO-GO**: User has not yet tested Phase 1 (Typed Links). Must test before proceeding to Phase 2.
