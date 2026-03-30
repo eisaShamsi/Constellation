@@ -35,7 +35,7 @@ LAYER 2 — AI Discovery (reads Layer 1 structures)
 
 | Phase | Name | Status | Commit | Date |
 |---|---|---|---|---|
-| 1 | Typed Links | ✅ Implemented — pending GO/NO-GO | `d7edc6d` | 2026-03-30 |
+| 1 | Typed Links | ✅ GO — user tested | `d7edc6d` | 2026-03-30 |
 | 2 | Knowledge Strata | 🔲 Not started | — | — |
 | 3 | Maturity Lifecycle | 🔲 Not started | — | — |
 | 4 | Tension Detector | 🔲 Not started | — | — |
