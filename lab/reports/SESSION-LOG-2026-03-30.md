@@ -111,6 +111,28 @@ Derived from the "The Cognitive Engine v2.1" architecture paper.
 
 ---
 
+---
+
+## NotePane Regression — Bug #4: Sky View freezes app on node click or close
+
+**Symptom**: Clicking any node or the close button in Sky View caused the application to stop responding completely.
+
+**Root cause**: `app.destroy({ children: true, texture: true })` in `GraphEngine.destroy()` synchronously called `.destroy()` on every Pixi.js `Graphics` object in the stage — one per node. For a 1000-node graph, that's 1000+ WebGL buffer disposals in a tight loop on the main thread, blocking it for several seconds.
+
+**Fix** (`src/lib/graph/graphEngine.ts`, commit `adf48fc`):
+- Before calling `app.destroy()`, manually clear the display hierarchy:
+  - `nodeContainer.removeChildren()` — detaches all node Graphics (O(1), no WebGL calls)
+  - `app.stage.removeChildren()` — detaches remaining stage children
+  - `nodeGfx = []` — releases engine references
+- Call `app.destroy(true, { children: false, texture: true })` — destroys only the renderer, not children
+- Orphaned Graphics objects are GC'd by the JS runtime (WebGL buffers released lazily)
+- Also explicitly destroy `gizmoLabels` (previously leaked)
+- Result: `destroy()` completes in O(1) regardless of graph size
+
+**Status**: ✅ Closed
+
+---
+
 ## Open Items / Next Session
 
 1. **Phase 1 GO/NO-GO**: User has not yet tested Phase 1 (Typed Links). Must test before proceeding to Phase 2.
