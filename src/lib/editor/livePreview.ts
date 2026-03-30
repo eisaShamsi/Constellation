@@ -61,6 +61,22 @@ const blockquoteDeco = Decoration.mark({ class: 'cm-md-blockquote' });
 const tagDeco = Decoration.mark({ class: 'cm-md-tag' });
 const replaceDeco = Decoration.replace({}); /* cached — avoids allocation per decoration */
 
+// Typed link decorations — one per semantic link type (CE Phase 1)
+const TYPED_LINK_TYPES = new Set([
+	'supports', 'contradicts', 'causes', 'exemplifies',
+	'generalizes', 'derives-from', 'part-of', 'associative',
+]);
+const typedLinkDecos: Record<string, ReturnType<typeof Decoration.mark>> = {
+	supports:       Decoration.mark({ class: 'cm-md-link cm-link-supports' }),
+	contradicts:    Decoration.mark({ class: 'cm-md-link cm-link-contradicts' }),
+	causes:         Decoration.mark({ class: 'cm-md-link cm-link-causes' }),
+	exemplifies:    Decoration.mark({ class: 'cm-md-link cm-link-exemplifies' }),
+	generalizes:    Decoration.mark({ class: 'cm-md-link cm-link-generalizes' }),
+	'derives-from': Decoration.mark({ class: 'cm-md-link cm-link-derives-from' }),
+	'part-of':      Decoration.mark({ class: 'cm-md-link cm-link-part-of' }),
+	associative:    linkDeco,
+};
+
 class CheckboxWidget extends WidgetType {
 	checked: boolean;
 	constructor(checked: boolean) {
@@ -314,7 +330,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 					}
 				}
 
-				// Wikilinks: [[note]] or [[note|display]]
+				// Wikilinks: [[note]], [[note|display]], or [[note|link-type]] (CE typed links)
 				const wikiRe = /(?<!!)\[\[([^\]]+)\]\]/g;
 				while ((m = wikiRe.exec(lineText)) !== null) {
 					const absFrom = line.from + m.index;
@@ -323,10 +339,20 @@ function buildDecorations(view: EditorView): DecorationSet {
 					const innerTo = absTo - 2;
 					const pipeIndex = m[1].indexOf('|');
 					if (pipeIndex >= 0) {
-						const displayFrom = innerFrom + pipeIndex + 1;
-						ranges.push({ from: absFrom, to: displayFrom, deco: replaceDeco });
-						ranges.push({ from: displayFrom, to: innerTo, deco: linkDeco });
-						ranges.push({ from: innerTo, to: absTo, deco: replaceDeco });
+						const afterPipe = m[1].slice(pipeIndex + 1).trim().toLowerCase();
+						if (TYPED_LINK_TYPES.has(afterPipe)) {
+							// Typed link: show note name in type color, hide [[, |type, ]]
+							const noteEnd = innerFrom + pipeIndex;
+							ranges.push({ from: absFrom, to: innerFrom, deco: replaceDeco }); // hide [[
+							ranges.push({ from: innerFrom, to: noteEnd, deco: typedLinkDecos[afterPipe] ?? linkDeco }); // note name
+							ranges.push({ from: noteEnd, to: absTo, deco: replaceDeco }); // hide |type]]
+						} else {
+							// Display alias: [[note|alias]] — show alias as link text
+							const displayFrom = innerFrom + pipeIndex + 1;
+							ranges.push({ from: absFrom, to: displayFrom, deco: replaceDeco });
+							ranges.push({ from: displayFrom, to: innerTo, deco: linkDeco });
+							ranges.push({ from: innerTo, to: absTo, deco: replaceDeco });
+						}
 					} else {
 						ranges.push({ from: absFrom, to: innerFrom, deco: replaceDeco });
 						ranges.push({ from: innerFrom, to: innerTo, deco: linkDeco });
@@ -452,6 +478,14 @@ export const livePreviewTheme = EditorView.theme({
 		textDecoration: 'underline',
 		textDecorationColor: 'color-mix(in srgb, var(--library-accent, var(--interactive-accent)) 40%, transparent)',
 	},
+	// CE Phase 1 — Typed Link colors (underline tint matches GraphMind + BacklinksPanel badges)
+	'.cm-link-supports':     { color: '#4A9EFF', textDecorationColor: '#4A9EFF66' },
+	'.cm-link-contradicts':  { color: '#FF4A4A', textDecorationColor: '#FF4A4A66' },
+	'.cm-link-causes':       { color: '#FF8C42', textDecorationColor: '#FF8C4266' },
+	'.cm-link-exemplifies':  { color: '#4AFF88', textDecorationColor: '#4AFF8866' },
+	'.cm-link-generalizes':  { color: '#A44AFF', textDecorationColor: '#A44AFF66' },
+	'.cm-link-derives-from': { color: '#FFD700', textDecorationColor: '#FFD70066' },
+	'.cm-link-part-of':      { color: '#AAAAAA', textDecorationColor: '#AAAAAA66' },
 	'.cm-md-highlight': {
 		backgroundColor: 'color-mix(in srgb, var(--color-yellow) 35%, transparent)',
 		borderRadius: '2px',

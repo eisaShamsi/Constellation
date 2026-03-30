@@ -21,7 +21,7 @@
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
-	import { createWikilinkCompletion, createTagCompletion, createSlashCompletion } from '$lib/editor/completions';
+	import { createWikilinkCompletion, createTagCompletion, createSlashCompletion, createTypedLinkCompletion } from '$lib/editor/completions';
 	import TableToolbar from './TableToolbar.svelte';
 	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, type ParsedTable } from '$lib/editor/tableUtils';
 	import { evaluateTableFormulas, indexToCol } from '$lib/editor/tableFormulas';
@@ -253,6 +253,7 @@
 	const wikilinkCompletion = createWikilinkCompletion(() => noteNames);
 	const tagCompletion = createTagCompletion(() => allTags);
 	const slashCompletion = createSlashCompletion();
+	const typedLinkCompletion = createTypedLinkCompletion(); // CE Phase 1: [[note|type]]
 
 	/* ─── Mount ─── */
 	onMount(() => {
@@ -268,7 +269,7 @@
 				lineDecoPlugin, lineDecoTheme,
 				libraryPathField, /* image path resolution */
 				closeBrackets(),
-				autocompletion({ override: [wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
+				autocompletion({ override: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
 				keymap.of([
 					{ key: 'Tab', run: tableTab },
 					{ key: 'Shift-Tab', run: tableShiftTab },

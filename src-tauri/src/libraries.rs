@@ -1160,11 +1160,21 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
                     .unwrap_or_default();
                 for cap in re.captures_iter(&content) {
                     let target = cap[1].trim().to_string();
-                    // Extract link type from alias: [[note|type:related-to]]
+                    // Extract link type from alias:
+                    //   [[note|causes]]          → direct type name
+                    //   [[note|type:causes]]      → legacy explicit prefix (backward compat)
+                    //   [[note|Display Text]]     → display alias, not a type → None
+                    const KNOWN_LINK_TYPES: &[&str] = &[
+                        "supports", "contradicts", "causes", "exemplifies",
+                        "generalizes", "derives-from", "part-of", "associative",
+                    ];
                     let link_type = cap.get(2).and_then(|alias| {
                         let alias_str = alias.as_str().trim();
-                        if alias_str.to_lowercase().starts_with("type:") {
-                            Some(alias_str[5..].trim().to_string())
+                        let lower = alias_str.to_lowercase();
+                        if lower.starts_with("type:") {
+                            Some(lower[5..].trim().to_string())
+                        } else if KNOWN_LINK_TYPES.contains(&lower.as_str()) {
+                            Some(lower)
                         } else {
                             None
                         }

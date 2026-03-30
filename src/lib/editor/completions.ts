@@ -78,6 +78,48 @@ export function createTagCompletion(getTags: () => string[]) {
 	};
 }
 
+/** Typed link autocomplete: [[note| → suggests semantic link types (CE Phase 1) */
+export function createTypedLinkCompletion() {
+	const LINK_TYPES = [
+		{ label: 'supports',     detail: 'Evidence for a claim'      },
+		{ label: 'contradicts',  detail: 'Tension / opposition'       },
+		{ label: 'causes',       detail: 'Causal relationship'        },
+		{ label: 'exemplifies',  detail: 'Instance-of'                },
+		{ label: 'generalizes',  detail: 'Abstraction'                },
+		{ label: 'derives-from', detail: 'Provenance / source'        },
+		{ label: 'part-of',      detail: 'Compositional hierarchy'    },
+	];
+	return function typedLinkCompletion(context: CompletionContext) {
+		// Match [[note_name| with optional partial type already typed
+		const before = context.matchBefore(/\[\[[^\]\|]+\|[^\]]*$/);
+		if (!before) return null;
+		const pipeIdx = before.text.lastIndexOf('|');
+		const typed = before.text.slice(pipeIdx + 1).toLowerCase();
+		const from = before.from + pipeIdx + 1;
+		const options = LINK_TYPES
+			.filter(t => t.label.startsWith(typed))
+			.map(t => ({
+				label: t.label,
+				detail: t.detail,
+				type: 'keyword',
+				apply: (v: EditorView, _c: Completion, f: number, to: number) => {
+					// Consume existing ]] if present, then re-add after type
+					let end = to;
+					const after = v.state.doc.sliceString(to, Math.min(to + 2, v.state.doc.length));
+					if (after === ']]') end = to + 2;
+					else if (after[0] === ']') end = to + 1;
+					const insert = t.label + ']]';
+					v.dispatch({
+						changes: { from: f, to: end, insert },
+						selection: { anchor: f + insert.length }
+					});
+				}
+			}));
+		if (options.length === 0) return null;
+		return { from, options, filter: false };
+	};
+}
+
 /** Slash command autocomplete: type / → command palette */
 export function createSlashCompletion() {
 	return function slashCompletion(context: CompletionContext) {

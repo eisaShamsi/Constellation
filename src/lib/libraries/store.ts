@@ -929,7 +929,8 @@ export function getBacklinks(allLinks: NoteLink[], noteName: string) {
 		name: l.source_name,
 		path: l.source_path,
 		context: l.context,
-		libraryName: l.library_name
+		libraryName: l.library_name,
+		linkType: l.link_type ?? undefined,
 	}));
 }
 

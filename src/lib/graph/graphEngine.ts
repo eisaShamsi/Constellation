@@ -70,6 +70,18 @@ interface EngineLink {
 
 const DEFAULT_NODE_COLOR = 0xa78bfa;
 const HIGHLIGHT_EDGE_COLOR = 0xf97316;
+
+// CE Phase 1 — typed link colors (matches livePreview.ts + BacklinksPanel)
+const TYPED_LINK_COLORS: Record<string, number> = {
+	supports:       0x4A9EFF,
+	contradicts:    0xFF4A4A,
+	causes:         0xFF8C42,
+	exemplifies:    0x4AFF88,
+	generalizes:    0xA44AFF,
+	'derives-from': 0xFFD700,
+	'part-of':      0xAAAAAA,
+	associative:    0x888888,
+};
 const DIM_ALPHA = 0.12;
 const MOC_RING_COLOR = 0xf59e0b;
 const RTL_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/;
@@ -1515,19 +1527,29 @@ export class GraphEngine {
 				if (!srcMatch && !tgtMatch) continue;
 			}
 
+			// Resolve typed link color (CE Phase 1)
+			const typedColor = link.linkType ? (TYPED_LINK_COLORS[link.linkType] ?? null) : null;
+
 			if (isNeighborEdge) {
+				const edgeColor = typedColor ?? HIGHLIGHT_EDGE_COLOR;
 				this.linkGfx.moveTo(sx, sy);
 				this.linkGfx.lineTo(tx, ty);
-				this.linkGfx.stroke({ width: this.config.linkThickness * 2, color: HIGHLIGHT_EDGE_COLOR, alpha: 0.9 });
+				this.linkGfx.stroke({ width: this.config.linkThickness * 2, color: edgeColor, alpha: 0.9 });
+
+				// For contradicts: draw reverse arrow too (bidirectional tension)
+				if (link.linkType === 'contradicts') {
+					this.linkGfx.moveTo(tx, ty);
+					this.linkGfx.lineTo(sx, sy);
+					this.linkGfx.stroke({ width: this.config.linkThickness * 2, color: edgeColor, alpha: 0.6 });
+				}
 
 				// Render edge label if linkType exists
 				if (link.linkType) {
 					const mx = (sx + tx) / 2, my = (sy + ty) / 2;
-					const key = `edge_${link.sourceIdx}_${link.targetIdx}`;
 					if (!this.labelPool.has(-link.sourceIdx - 1000)) {
 						const label = new Text({
 							text: link.linkType,
-							style: { fontSize: 9, fill: HIGHLIGHT_EDGE_COLOR, fontFamily: 'system-ui' },
+							style: { fontSize: 9, fill: edgeColor, fontFamily: 'system-ui' },
 						});
 						label.anchor.set(0.5, 0.5);
 						this.app!.stage.addChild(label);
@@ -1537,9 +1559,15 @@ export class GraphEngine {
 					if (label) { label.x = mx; label.y = my - 8; label.visible = true; }
 				}
 			} else {
+				// Normal state: typed links show their color at low opacity; untyped use normalEdgeColor
+				const edgeColor = typedColor ?? normalEdgeColor;
+				const edgeAlpha = typedColor ? (normalEdgeAlpha * 2.5) : normalEdgeAlpha; // typed links slightly more visible
+				const edgeWidth = link.linkType === 'causes'
+					? this.config.linkThickness * 0.8   // causes = thicker
+					: this.config.linkThickness * 0.5;
 				this.linkGfx.moveTo(sx, sy);
 				this.linkGfx.lineTo(tx, ty);
-				this.linkGfx.stroke({ width: this.config.linkThickness * 0.5, color: normalEdgeColor, alpha: normalEdgeAlpha });
+				this.linkGfx.stroke({ width: edgeWidth, color: edgeColor, alpha: edgeAlpha });
 			}
 		}
 

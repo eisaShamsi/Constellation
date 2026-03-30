@@ -624,7 +624,7 @@
 	// Debouncing at 500ms prevents them from firing on every keystroke.
 	let sidebarHeadings = $state<HeadingItem[]>([]);
 	let noteDir = $state<'ltr' | 'rtl'>($dir as 'ltr' | 'rtl');
-	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string }[]>([]);
+	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string }[]>([]);
 	let currentOutgoing = $state<{ target: string; context: string }[]>([]);
 	let activeNoteTags = $state<string[]>([]);
 	let _sidebarDebounce: ReturnType<typeof setTimeout> | undefined;

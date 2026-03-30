@@ -4,13 +4,25 @@
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
 
+	// Link type color palette — matches GraphMind + livePreview typed link colors
+	const LINK_TYPE_COLORS: Record<string, string> = {
+		supports:     '#4A9EFF',
+		contradicts:  '#FF4A4A',
+		causes:       '#FF8C42',
+		exemplifies:  '#4AFF88',
+		generalizes:  '#A44AFF',
+		'derives-from': '#FFD700',
+		'part-of':    '#AAAAAA',
+		associative:  '#888888',
+	};
+
 	let {
-		backlinks = [] as { name: string; path: string; context: string; libraryName: string }[],
+		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string }[],
 		unlinkedMentions = [] as { name: string; path: string; context: string; libraryName: string }[],
 		activeNoteName = '',
 		libraryColorMap = {} as Record<string, string>,
 	}: {
-		backlinks: { name: string; path: string; context: string; libraryName: string }[];
+		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string }[];
 		unlinkedMentions: { name: string; path: string; context: string; libraryName: string }[];
 		activeNoteName?: string;
 		libraryColorMap?: Record<string, string>;
@@ -56,6 +68,11 @@
 							<span class="bl-library-dot" style="background:{getLibraryColor(bl.libraryName)}"></span>
 						{/if}
 						<span class="bl-name">{bl.name}</span>
+						{#if bl.linkType}
+							<span class="bl-link-type-badge"
+								style="color:{LINK_TYPE_COLORS[bl.linkType] ?? '#888'};border-color:{LINK_TYPE_COLORS[bl.linkType] ?? '#888'}20"
+							>{bl.linkType}</span>
+						{/if}
 						{#if bl.libraryName}
 							<span class="bl-library-label">{bl.libraryName}</span>
 						{/if}
@@ -137,4 +154,9 @@
 		color: var(--text-muted); margin-top: 4px;
 	}
 	.bl-link-btn:hover { color: var(--interactive-accent); border-color: var(--interactive-accent); }
+	.bl-link-type-badge {
+		font-size: 0.65rem; font-weight: 500; padding: 0 5px;
+		border-radius: 8px; border: 1px solid; white-space: nowrap; flex-shrink: 0;
+		text-transform: lowercase; letter-spacing: 0.02em;
+	}
 </style>
