@@ -73,6 +73,13 @@ Derived from the "The Cognitive Engine v2.1" architecture paper.
 
 ---
 
+### Commit `3fdf55b` — New tab screen
+- `src/routes/+layout.svelte`: guard NotePane on `$activeTab.path`; new-tab branch renders plain Obsidian-style command list
+- All 15 i18n files: added `tabs.closeTab` and `tabs.openNote` keys
+- **Status**: pushed, user-confirmed working ✅
+
+---
+
 ## Open Items / Next Session
 
 1. **Phase 1 GO/NO-GO**: User has not yet tested Phase 1 (Typed Links). Must test before proceeding to Phase 2.

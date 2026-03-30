@@ -62,7 +62,7 @@ When you first open Constellation, the **Universe Setup Wizard** guides you thro
 
 ### What is a Universe?
 
-A **Universe** is the top-level container that holds all your libraries. Think of it as your workspace or vault collection.
+A **Universe** is the top-level container that holds all your libraries. Think of it as your workspace or library collection.
 
 ### What is a Library?
 
@@ -460,7 +460,7 @@ In Live Preview mode, checkboxes are clickable. Tasks can be searched and filter
 
 Import notes from other PKM tools:
 
-- **Obsidian** — imports vaults with full wikilink compatibility
+- **Obsidian** — imports libraries with full wikilink compatibility
 - **Markdown folders** — import any folder of `.md` files
 - **Other formats** — HTML, text files
 

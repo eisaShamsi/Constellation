@@ -2,7 +2,7 @@
 
 **Codename: Star Charts**
 
-> "If a Star is a note and a Universe is a vault, then a **Star Chart** is a structured view of your stars — filtered, sorted, grouped, and displayed the way your mind organizes them."
+> "If a Star is a note and a Universe is a library, then a **Star Chart** is a structured view of your stars — filtered, sorted, grouped, and displayed the way your mind organizes them."
 
 ---
 
@@ -12,7 +12,7 @@ Every decision in this spec is constrained by Constellation's four non-negotiabl
 
 | Principle | Implication for Bases |
 |---|---|
-| **You own everything** | `.base` files are plain YAML/JSON stored in the vault. No proprietary binary formats. |
+| **You own everything** | `.base` files are plain YAML/JSON stored in the library. No proprietary binary formats. |
 | **All local** | All queries, filtering, and sorting happen on-device in Rust. Zero network calls. |
 | **Read and write in place** | Editing a cell writes directly to the note's YAML frontmatter. No shadow database. |
 | **Non-destructive** | Delete Constellation → `.base` files are inert text files. Your notes are untouched. |
@@ -39,17 +39,17 @@ Every decision in this spec is constrained by Constellation's four non-negotiabl
 
 ## File Format: `.base`
 
-A `.base` file lives in the vault like any other file. It is plain YAML that defines what to show and how.
+A `.base` file lives in the library like any other file. It is plain YAML that defines what to show and how.
 
 ```yaml
 # books.base
 version: 1
 name: "📚 مكتبتي"       # Display name (supports Arabic/emoji)
 source:
-  type: folder           # folder | tag | vault | all
-  path: "Books"          # Folder path (relative to vault root)
+  type: folder           # folder | tag | library | all
+  path: "Books"          # Folder path (relative to library root)
   # tag: "#research"     # Alternative: filter by tag
-  # vault: "Islamic Sources"  # Alternative: specific vault
+  # library: "Islamic Sources"  # Alternative: specific library
   includeSubfolders: true
 
 columns:
@@ -113,11 +113,11 @@ Write YAML frontmatter change → Rust save_note → file watcher triggers refre
 
 1. **Rust does the heavy lifting.** Scanning 10,000 notes and extracting frontmatter properties is a Rust task, not a TypeScript task. The IPC returns structured row data.
 
-2. **No shadow state.** There is no in-memory database. Every query re-scans the source (with filesystem caching in Rust for performance). The vault files are the single source of truth.
+2. **No shadow state.** There is no in-memory database. Every query re-scans the source (with filesystem caching in Rust for performance). The library files are the single source of truth.
 
 3. **Incremental indexing.** The Rust file watcher already exists. When a note changes, only that row is re-read, not the entire Base.
 
-4. **Cross-vault support.** Since Constellation's core differentiator is multi-vault, Bases can query across vaults: `source.type: all` scans every registered vault.
+4. **Cross-library support.** Since Constellation's core differentiator is multi-library, Bases can query across libraries: `source.type: all` scans every registered library.
 
 ---
 
@@ -140,7 +140,7 @@ Write YAML frontmatter change → Rust save_note → file watcher triggers refre
 | File tree integration (`.base` files show with icon) | Must |
 | Embed Base in note (`![[books.base]]`) | Should |
 | Source types: folder, tag | Must |
-| Source types: vault, all (cross-vault) | Should |
+| Source types: library, all (cross-library) | Should |
 | Column types: text, number, date, checkbox, list, link | Must |
 | Empty state with "Create your first Base" wizard | Must |
 
@@ -177,7 +177,7 @@ fn parse_base_file(file_path: String) -> Result<BaseDefinition, String>
 
 #[tauri::command]
 fn query_base(definition: BaseDefinition, vault_paths: Vec<String>) -> Result<BaseQueryResult, String>
-// Scans source (folder/tag/vault), extracts frontmatter from each note,
+// Scans source (folder/tag/library), extracts frontmatter from each note,
 // applies filters, applies sorts, returns structured rows
 
 #[tauri::command]
@@ -262,7 +262,7 @@ The table view is the most complex and most important view. Requirements:
 A responsive CSS Grid of cards. Each card shows:
 - Note title (header)
 - 3-4 configurable property values
-- Vault color indicator
+- Library color indicator
 - Click to open note
 
 ### Step 6: List View
@@ -329,7 +329,7 @@ RTL is not a feature flag — it's woven into every component:
 
 ## Property Type System
 
-Bases leverages the existing property type registry (`src/lib/vaults/propertyTypeRegistry.ts`). The type system:
+Bases leverages the existing property type registry (`src/lib/libraries/propertyTypeRegistry.ts`). The type system:
 
 | Type | Cell Renderer | Cell Editor | Sort Logic |
 |---|---|---|---|
@@ -354,7 +354,7 @@ Bases leverages the existing property type registry (`src/lib/vaults/propertyTyp
 | Query 10,000 notes | < 200ms | Rust with filesystem cache |
 | Render 100 rows | < 16ms (one frame) | Virtual scrolling, Svelte 5 reactivity |
 | Cell edit → save | < 100ms | Direct Rust file write |
-| Cross-vault query (5 vaults, 50K notes) | < 500ms | Parallel vault scan |
+| Cross-library query (5 libraries, 50K notes) | < 500ms | Parallel library scan |
 
 ---
 
@@ -392,7 +392,7 @@ The MVP is complete when:
 2. The Base renders as an interactive table with sortable, filterable columns
 3. Editing a cell in the table updates the source note's YAML frontmatter
 4. Card and List views work with the same data
-5. An Arabic-language vault can create an RTL Base with Arabic headers and content that renders correctly without any CSS workarounds
+5. An Arabic-language library can create an RTL Base with Arabic headers and content that renders correctly without any CSS workarounds
 6. Creating a new note from a Base pre-populates the frontmatter
 7. Performance meets the budget above
 8. `.base` files are plain YAML readable in any text editor

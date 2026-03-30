@@ -164,7 +164,7 @@ The editor needs several features to match the best-in-class editing experience.
 - `src/lib/components/NotePane.svelte` — Editor keydown handlers, autocomplete logic
 - New `src/lib/components/AutocompleteDropdown.svelte` — Reusable autocomplete component
 - New `src/lib/components/FindReplace.svelte` — Find/replace bar
-- `src/lib/vaults/store.ts` — Functions to get all note names, all tags for autocomplete
+- `src/lib/libraries/store.ts` — Functions to get all note names, all tags for autocomplete
 
 ---
 
@@ -212,8 +212,8 @@ The editor needs several features to match the best-in-class editing experience.
 - New `src/lib/components/BacklinksPanel.svelte`
 - New `src/lib/components/OutgoingLinksPanel.svelte`
 - `src/routes/+layout.svelte` — Add new panels to right sidebar
-- `src/lib/vaults/store.ts` — Backlink scanning, alias resolution, link update on rename
-- `src-tauri/src/vaults.rs` — Batch scan notes for links, batch update links
+- `src/lib/libraries/store.ts` — Backlink scanning, alias resolution, link update on rename
+- `src-tauri/src/libraries.rs` — Batch scan notes for links, batch update links
 
 ---
 
@@ -302,8 +302,8 @@ The editor needs several features to match the best-in-class editing experience.
 - New `src/lib/components/PagePreview.svelte` — Hover preview popup
 - New `src/lib/components/DailyNotes.svelte` — Daily notes config/button
 - `src/routes/+layout.svelte` — Register global hotkeys, add panels
-- `src/lib/vaults/store.ts` — Graph data computation, bookmark store, tag index
-- `src-tauri/src/vaults.rs` — Scan all notes for links (graph data), tag indexing
+- `src/lib/libraries/store.ts` — Graph data computation, bookmark store, tag index
+- `src-tauri/src/libraries.rs` — Scan all notes for links (graph data), tag indexing
 - `package.json` — Add d3.js dependency
 
 ---
@@ -346,8 +346,8 @@ The editor needs several features to match the best-in-class editing experience.
 
 ### Files to modify:
 - `src/lib/components/FileTree.svelte` — Drag/drop, sort controls
-- `src/lib/vaults/store.ts` — File move with link updates, attachment handling
-- `src-tauri/src/vaults.rs` — Move file command, trash handling, snapshot system
+- `src/lib/libraries/store.ts` — File move with link updates, attachment handling
+- `src-tauri/src/libraries.rs` — Move file command, trash handling, snapshot system
 - `src/routes/+layout.svelte` — Attachment paste handler, reveal in explorer
 - New `src/lib/components/FileHistory.svelte` — Version history browser
 
@@ -398,7 +398,7 @@ The editor needs several features to match the best-in-class editing experience.
 ### Files to modify:
 - `src/app.css` or new `src/lib/theme.css` — Dark mode variables, base theme
 - `src/routes/+layout.svelte` — Theme toggle, system theme detection
-- `src/lib/vaults/store.ts` — Theme/snippet loading
+- `src/lib/libraries/store.ts` — Theme/snippet loading
 - `src/lib/components/NotePane.svelte` — Line numbers, readable width
 - Settings page — Theme section
 
@@ -449,7 +449,7 @@ The editor needs several features to match the best-in-class editing experience.
 - New `src/lib/hotkeys.ts` — Hotkey registry, default bindings, conflict detection
 - `src/routes/+layout.svelte` — Global keydown listener
 - Settings page — Hotkeys section
-- `src/lib/vaults/store.ts` — Navigation history stack
+- `src/lib/libraries/store.ts` — Navigation history stack
 
 ---
 
@@ -556,7 +556,7 @@ Expand the settings page to include all configurable options:
 ### Files to modify:
 - `src/routes/settings/+page.svelte` — Major expansion
 - New `src/lib/settings/store.ts` — Settings store with persistence
-- `src-tauri/src/vaults.rs` — Settings read/write commands
+- `src-tauri/src/libraries.rs` — Settings read/write commands
 
 ---
 

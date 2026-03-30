@@ -11,7 +11,7 @@
 1. [Core Architecture](#1-core-architecture)
 2. [Editing and Formatting](#2-editing-and-formatting)
 3. [Linking System](#3-linking-system)
-4. [File and Vault Management](#4-file-and-vault-management)
+4. [File and Library Management](#4-file-and-library-management)
 5. [User Interface](#5-user-interface)
 6. [Core Plugins](#6-core-plugins)
 7. [Bases (Database Views)](#7-bases-database-views)
@@ -26,14 +26,14 @@
 
 ## 1. CORE ARCHITECTURE
 
-### 1.1 Vault System
-- A vault is a folder on the local filesystem containing notes, attachments, and a configuration folder
-- Vaults are fully local-first; all data stored as plain files
-- Multiple vaults supported, switched via Vault Switcher
-- Create new vault or open existing folder as vault
-- Rename, move, or remove vaults from the vault list
-- Transfer settings between vaults
-- Configuration stored in `.obsidian/` folder within each vault
+### 1.1 Library System
+- A library is a folder on the local filesystem containing notes, attachments, and a configuration folder
+- Libraries are fully local-first; all data stored as plain files
+- Multiple libraries supported, switched via Library Switcher
+- Create new library or open existing folder as library
+- Rename, move, or remove libraries from the library list
+- Transfer settings between libraries
+- Configuration stored in `.obsidian/` folder within each library
 
 ### 1.2 How Obsidian Stores Data
 - Notes stored as plain Markdown (`.md`) files
@@ -62,7 +62,7 @@
 - Extensible via community plugins
 
 ### 1.4 Symbolic Links and Junctions
-- Support for symlinks and junctions to reference external folders/files inside a vault
+- Support for symlinks and junctions to reference external folders/files inside a library
 
 ---
 
@@ -165,7 +165,7 @@
 - **Display Modes**: Source view or rendered properties view
 - Search properties with `[property:value]` syntax
 - Use in templates
-- Rename properties globally across vault
+- Rename properties globally across library
 - CSS snippets can style properties
 - **Default properties**: `tags`, `aliases`, `cssclasses`
 - **Publish properties**: `publish`, `permalink`, `description`, `image`, `cover`
@@ -210,10 +210,10 @@
 - Strikethrough via `<s>` tag
 
 ### 2.13 Attachments
-- Import supported file formats into vault
+- Import supported file formats into library
 - Configurable default attachment location:
-  - Vault root folder
-  - Subfolder within vault
+  - Library root folder
+  - Subfolder within library
   - Same folder as current note
   - Subfolder under current note's folder
 
@@ -254,7 +254,7 @@
 
 ---
 
-## 4. FILE AND VAULT MANAGEMENT
+## 4. FILE AND LIBRARY MANAGEMENT
 
 ### 4.1 Note Management
 - **Create note**: `Ctrl+N` / `Cmd+N`, or via File Explorer, or Command Palette
@@ -263,14 +263,14 @@
 - Deleted files go to system trash, Obsidian trash (`.trash/`), or permanent delete (configurable)
 - Confirm deletion option
 
-### 4.2 Vault Management
-- **Create new vault**: Empty vault with default settings
-- **Create vault from existing folder**: Open any folder as a vault
-- **Rename vault**: Only renames the folder on disk
-- **Move vault**: Move to a different folder location
-- **Remove vault**: Remove from vault list (does not delete files)
-- **Transfer settings**: Copy `.obsidian/` configuration between vaults
-- **Vault Switcher**: UI for managing all vaults
+### 4.2 Library Management
+- **Create new library**: Empty library with default settings
+- **Create library from existing folder**: Open any folder as a library
+- **Rename library**: Only renames the folder on disk
+- **Move library**: Move to a different folder location
+- **Remove library**: Remove from library list (does not delete files)
+- **Transfer settings**: Copy `.obsidian/` configuration between libraries
+- **Library Switcher**: UI for managing all libraries
 
 ### 4.3 File Explorer (Core Plugin)
 - Tree view of all files and folders in sidebar
@@ -392,7 +392,7 @@
 Each core plugin can be individually enabled or disabled.
 
 ### 6.1 Search
-- Full-text search across entire vault
+- Full-text search across entire library
 - Opens in left sidebar by default (`Ctrl+Shift+F`)
 - **Search terms**: Words, phrases (quoted), logical operators (OR)
 - **Search operators**:
@@ -509,7 +509,7 @@ Each core plugin can be individually enabled or disabled.
 - Save audio recording as attachment in current note
 
 ### 6.12 File Explorer
-- Sidebar panel showing vault file/folder tree
+- Sidebar panel showing library file/folder tree
 - Create, rename, delete, move files and folders
 - Drag and drop support
 - Context menu with full operations
@@ -528,7 +528,7 @@ Each core plugin can be individually enabled or disabled.
 - Convert Markdown from other apps to Obsidian format
 - Supported source formats: Roam Research, Bear, Zettelkasten
 - Convert properties to current format
-- Vault-wide batch conversion
+- Library-wide batch conversion
 
 ### 6.15 Note Composer
 - **Merge notes**: Combine two notes into one, update all links
@@ -548,12 +548,12 @@ Each core plugin can be individually enabled or disabled.
 
 ### 6.18 Properties View
 - Dedicated sidebar panel for viewing/editing note properties
-- Shows all properties across the vault
+- Shows all properties across the library
 - Browse properties by name
 - View all values for a given property
 
 ### 6.19 Random Note
-- Open a random note from the vault
+- Open a random note from the library
 - Accessible via Command Palette or ribbon icon
 
 ### 6.20 Slash Commands
@@ -567,7 +567,7 @@ Each core plugin can be individually enabled or disabled.
 - Presentation mode with navigation controls
 
 ### 6.22 Tags View
-- Sidebar panel listing all tags in vault
+- Sidebar panel listing all tags in library
 - Shows tag counts (number of notes per tag)
 - Click tag to search
 - Ctrl/Cmd+click to toggle in search
@@ -582,7 +582,7 @@ Each core plugin can be individually enabled or disabled.
 ### 6.24 Web Viewer
 - Open external links within Obsidian (desktop only)
 - **Reader view**: Simplified reading mode for web pages
-- **Save to vault**: Save web content as Markdown note
+- **Save to library**: Save web content as Markdown note
 - **Ad blocking** support
 - **Security**: Sandboxed browsing
 
@@ -673,18 +673,18 @@ Each core plugin can be individually enabled or disabled.
 ### 8.4 Obsidian URI Protocol
 - Custom `obsidian://` URL scheme for deep linking
 - **Actions**:
-  - `obsidian://open` -- Open a note (by vault, file, path)
+  - `obsidian://open` -- Open a note (by library, file, path)
   - `obsidian://new` -- Create a new note with optional content
   - `obsidian://daily` -- Open or create today's daily note
   - `obsidian://search` -- Open search with a query
-  - `obsidian://vault` -- Open the vault manager
-- **Parameters**: vault, file, path, content, append, overwrite, heading, block
+  - `obsidian://library` -- Open the library manager
+- **Parameters**: library, file, path, content, append, overwrite, heading, block
 - x-callback-url support
 - Shorthand formats for convenience
 - Integration with Hook and other apps
 
 ### 8.5 Obsidian CLI
-- Command-line interface for terminal-based vault interaction
+- Command-line interface for terminal-based library interaction
 - **General commands**: help, version, reload, restart
 - **File operations**: create, read, append, prepend, move, rename, delete, open
 - **File listing**: file, files, folder, folders
@@ -705,10 +705,10 @@ Each core plugin can be individually enabled or disabled.
 - **Publish commands**: publish:site, publish:list, publish:status, publish:add, publish:remove, publish:open
 - **Random**: random, random:read
 - **Command palette**: commands, command, hotkeys, hotkey
-- **Vault management**: vault:list, vault:path, vault:open, vault:config
+- **Library management**: library:list, library:path, library:open, library:config
 - **Developer**: devtools, console, screenshot
 - TUI (terminal user interface) mode
-- Target specific vaults and files
+- Target specific libraries and files
 - Copy output support
 - Parameters and flags system
 
@@ -726,12 +726,12 @@ Each core plugin can be individually enabled or disabled.
 - Not dependent on third-party cloud storage
 
 ### 9.2 Features
-- Local and remote vault pairing
+- Local and remote library pairing
 - Selective syncing (choose what to sync)
 - **Sync settings**: Sync app settings, hotkeys, themes, CSS snippets, plugins
 - **Version history**: Browse and restore previous versions of notes
 - **Status icon and messages**: Visual sync status in status bar
-- **Collaborate**: Share vaults with team members
+- **Collaborate**: Share libraries with team members
 - **Plans and storage limits**: Different tiers
 - **Security and privacy**: End-to-end encryption, zero-knowledge
 - **Sync regions**: Choose data center region
@@ -850,7 +850,7 @@ Each core plugin can be individually enabled or disabled.
   - Excluded files (pattern-based exclusion)
   - Override config folder location
   - Allow URI callbacks
-  - Rebuild vault cache
+  - Rebuild library cache
 
 ### 13.4 Appearance Settings
 - Base color scheme (light/dark/system)
