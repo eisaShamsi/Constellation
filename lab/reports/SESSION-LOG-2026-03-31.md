@@ -14,6 +14,14 @@
 | `2b6f5bb` | Fix: rebuild calloutPlugin from scratch + remove async rebuild from all 3 plugins |
 | `8f1900d` | Fix: map+debounce perf, all callouts foldable, RTL Enter cursor via bidiPlugin |
 | `fe2707a` | Fix: click→selection, callout sync rebuild, RTL Enter cursor, Obsidian foldable standard |
+| `5fa9589` | Fix: replace Decoration.replace body collapse with per-line CSS hiding |
+| `ae4b7b5` | Fix: chevron collapse moves cursor out of body in same transaction |
+| `1026905` | Fix: calloutExitOnEnter needs Prec.highest to beat lang-markdown keymap |
+| `c24ee30` | Fix: callout Enter exit + 1500ms debounced save + collapse freeze guard |
+| `64b6bd2` | Fix: rebuild calloutPlugin with Obsidian full-line widget pattern |
+| `42fe06c` | Redesign calloutPlugin: explicit Rule A + Rule B freeze-proof architecture |
+| `f30805a` | LL-014: Three strikes — fix from the root, don't patch |
+| `a7cfdff` | Perf: cache decorations + codify performance architecture rules |
 
 ---
 
@@ -77,26 +85,66 @@
 
 ---
 
+## Callout Plugin — Permanent Freeze Fix (this session)
+
+### Root Cause (LL-014 applied)
+After 7+ patch attempts, stopped patching and diagnosed root cause:
+`Decoration.replace([from, to])` creates a cursor-exclusion range. Cursor inside → CM6 nudges cursor out → `selectionSet` fires → plugin rebuilds → range restored → nudge again → **infinite freeze loop**.
+
+### Permanent Fix — Two Rules
+- **Rule A**: `Decoration.replace` only added when cursor is on a **different line** (title widget + `>` prefix removal). Provably safe at line granularity.
+- **Rule B**: Collapsed body uses `Decoration.line` at `(line.from, line.from)` — zero-length, no range, cursor can never be "inside" it. CSS `display:none` hides lines. Freeze loop architecturally impossible.
+
+### New Lesson
+**LL-014**: If a bug survives three fix attempts, stop patching. Find root cause and redesign from that level.
+
+---
+
+## Performance Architecture (this session)
+
+### livePreview.ts — Allocation fix
+- `headingDecos[]` — 6 `Decoration.mark()` objects pre-cached at module load (were recreated on every `buildDecorations()` call)
+- `checkboxCheckedDeco` / `checkboxUncheckedDeco` — pre-cached (only 2 states)
+
+### CLAUDE.md — New enforced rules
+- ViewPlugin line-change guard pattern (copy-paste template)
+- Decoration pre-cache rule
+- IPC boundary rules
+- Virtual scrolling requirement for lists > 50 items
+- Three-strikes patch rule (LL-014)
+
+### docs/IPC-CONTRACT.md (NEW)
+- Full registry of all 60+ `invoke()` calls
+- Hot-path watch list with mitigation
+- Design rules: payload budgets, debounce minimums, push-over-poll
+
+---
+
 ## Test Results
 
 | Section | Result |
 |---------|--------|
 | R1 Basic Editing & Performance | ✅ PASS |
 | R2 Tab Switching & Save/Restore | ✅ PASS |
-| R3 Live Preview | 🔄 In Progress |
-| R4–R13 | Not yet started |
+| R3 Live Preview | 🔄 Pending |
+| R4 Callout Rendering | 🔄 Pending (redesigned — needs re-test) |
+| R5–R13 | Not yet started |
 
 ---
 
 ## Open Items
 
-- R3–R13 regression testing still pending
-- Autocomplete popup: user asked whether it should show in Arabic for Arabic interface — needs clarification on what content is expected to be translated (UI chrome vs. note names)
+- R3–R13 regression testing pending
+- Autocomplete popup: Arabic interface — UI chrome vs. note names (needs clarification)
+- `+layout.svelte` decomposition into reactive islands (Priority 3 from perf plan) — future session
+- Rust-side search with tantivy — future session
+- Graph force simulation in Rust — future session
+- Performance regression infrastructure (synthetic vault generator, frame budget overlay) — future session
 
 ---
 
 ## Next Session Pickup
 
-1. Continue regression testing from R3
-2. After all R-sections pass → milestone tag + ZIP backup
+1. Run regression tests R3–R13 in the app
+2. After all pass → milestone tag `milestone/notepane-stable` + ZIP backup
 3. After milestone → `/simplify` code review pass
