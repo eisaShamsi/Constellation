@@ -11,7 +11,7 @@
 	import type { FrontmatterProperty } from '$lib/libraries/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import { EditorView, keymap, drawSelection } from '@codemirror/view';
-	import { EditorState, Compartment } from '@codemirror/state';
+	import { EditorState, Compartment, Prec } from '@codemirror/state';
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 	import { tags } from '@lezer/highlight';
@@ -294,10 +294,12 @@
 				libraryPathField, /* image path resolution */
 				closeBrackets(),
 				autocompletion({ override: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
+				// Prec.highest: runs before @codemirror/lang-markdown's built-in
+				// blockquote-continue keymap (which auto-adds "> " on every Enter).
+				Prec.highest(keymap.of([{ key: 'Enter', run: calloutExitOnEnter }])),
 				keymap.of([
 					{ key: 'Tab', run: tableTab },
 					{ key: 'Shift-Tab', run: tableShiftTab },
-					{ key: 'Enter', run: calloutExitOnEnter },
 					indentWithTab,
 					...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap,
 				]),
