@@ -235,8 +235,8 @@ function buildDecorations(view: EditorView): DecorationSet {
 					ranges.push({ from: node.from, to: node.to, deco: linkDeco });
 				}
 
-				// Blockquote markers
-				if (node.name === 'QuoteMark') {
+				// Blockquote — muted color on the entire block (text + marker)
+				if (node.name === 'Blockquote') {
 					ranges.push({ from: node.from, to: node.to, deco: blockquoteDeco });
 				}
 
