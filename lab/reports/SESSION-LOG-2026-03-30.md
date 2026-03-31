@@ -146,6 +146,31 @@ Derived from the "The Cognitive Engine v2.1" architecture paper.
 
 ---
 
+## WiW Rename + Sky View Freeze (Round 2) + Empty Page on Node Click
+
+**Commits**: `2fc491a`, `c5b574b`, `5a976c2`
+
+### WiW Rename (`2fc491a`)
+- Renamed all `pip`/`PiP` identifiers → `wiw`/`WiW` (Window in Window)
+- Variables, functions, CSS classes, comments, i18n key (`starViewWiWHint`) — all 15 locale files
+
+### WiW hint moved + toggle added (`e8968fc`)
+- Hint moved from main Sky View topbar → WiW mini-window header (as subtitle row)
+- PiP/WiW on/off toggle button added to main Sky View topbar (icon button, accent when active)
+
+### Sky View Freeze Round 2 (`c5b574b` → reverted by `5a976c2`)
+- **Root cause**: previous fix called `stage.removeChildren()` while `nodeContainer` still held all node Graphics → Pixi traversed full render-group tree → O(N) freeze
+- **Fix**: restore correct order: `nodeContainer.removeChildren()` first (detaches node Graphics cheaply), then `stage.removeChildren()` (trivially O(1))
+- **Also fixed**: `ticker.stop()` as very first step prevents BatcherPipe from accessing null geometry during teardown
+- **Also fixed**: dropped `t.destroy()` on pooled label/gizmo objects — was throwing "push of undefined" because Pixi's destroy() pushes to render pipeline arrays mid-teardown
+
+### Empty Page on Node Click (`5a976c2`)
+- **Root cause**: `handleStarNodeClick` called `openNoteTab()` (async) without `await`, then immediately set `showStarView = false` — tab had empty path, new-tab guard rendered blank screen
+- **Fix**: `await openNoteTab()` before `showStarView = false`
+- **Status**: ✅ User confirmed: "Solved!"
+
+---
+
 ## Open Items / Next Session
 
 1. **Phase 1 GO/NO-GO**: User has not yet tested Phase 1 (Typed Links). Must test before proceeding to Phase 2.
