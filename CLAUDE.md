@@ -35,7 +35,18 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - **Zero perceptible lag** between typing and screen update. If the user notices delay, it's a bug.
 - FocusPane: NO markdown parser, NO syntax highlighting, NO decorations. Plain CM6 + history + line wrapping only.
 - NotePane: Decorations rebuild only on `docChanged`, `selectionSet`, or `viewportChanged` — never on every frame.
-- ViewPlugin `update()` must check conditions before rebuilding: `if (update.docChanged || update.selectionSet) { ... }` — not unconditionally.
+- ViewPlugin `update()` must use a **line-change guard** for selectionSet — never rebuild on every cursor move:
+  ```typescript
+  update(update: ViewUpdate) {
+      if (update.docChanged || update.viewportChanged) { this.decorations = rebuild(update.view); return; }
+      if (update.selectionSet) {
+          const newLine = currentLine(update.view);
+          if (newLine !== this.lastLine) { this.lastLine = newLine; this.decorations = rebuild(update.view); }
+      }
+  }
+  ```
+- **Pre-cache module-level Decoration objects** — never create `Decoration.mark()` / `Decoration.replace()` inside `buildDecorations()`. Allocate once at module load, reuse on every rebuild.
+- **Fast-path on docChanged**: call `this.decorations.map(update.changes)` first, then debounce the full rebuild (≥300ms). This keeps typing instant even before the rebuild fires.
 
 ### Rule 2: No $effect Loops
 - **NEVER** write a `$effect` that reads and writes the same reactive variable.
@@ -49,6 +60,12 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - CM6 syntax tree iteration: only process `view.visibleRanges`, never the full document.
 - Large decoration sets: use `RangeSetBuilder` (sorted insert), never `Decoration.set()` with unsorted arrays.
 - Debounce saves: 1500ms minimum. Never save on every keystroke.
+- **IPC boundary rules** (see `docs/IPC-CONTRACT.md`):
+  - Zero `invoke()` calls on the keystroke hot path — ever.
+  - Debounce search queries ≥300ms; cancel the previous call if a new one arrives.
+  - Batch index update events — never one IPC call per character typed.
+  - Prefer Tauri events (Rust → frontend push) over polling `invoke()`.
+- **Virtualize every list** that can exceed 50 items: file tree, search results, backlinks, tag browser, command palette. Render only visible rows regardless of vault size.
 
 ### Rule 4: No Memory Leaks
 - Every `setTimeout`/`setInterval` → clear in `onDestroy`.
@@ -128,3 +145,6 @@ After each successful milestone:
 - Don't import heavy libraries in FocusPane.
 - Don't use `position: absolute` for layout — use flexbox/grid.
 - Don't write CSS with magic pixel numbers without documenting why (e.g., `margin-inline-start: -9px /* align tab to paper edge */`).
+- **Don't patch the same bug more than three times.** If three attempts fail, stop and find the root cause (LL-014).
+- Don't create `Decoration.mark/replace/widget` inside a decoration builder function — pre-cache at module level.
+- Don't call `invoke()` from a CM6 ViewPlugin, an input event handler, or any synchronous hot path.

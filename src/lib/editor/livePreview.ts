@@ -40,14 +40,16 @@ function resolveEmbedImage(view: EditorView, filename: string): string | null {
 	}
 }
 
-// CSS classes for live preview decorations
-const headingClasses = [
-	'cm-md-heading1',
-	'cm-md-heading2',
-	'cm-md-heading3',
-	'cm-md-heading4',
-	'cm-md-heading5',
-	'cm-md-heading6',
+// Pre-cached module-level decorations — allocated once, reused every rebuild.
+// Creating new Decoration objects on every buildDecorations() call generates GC
+// pressure and wastes CPU; CM6 already uses eq() to avoid DOM rebuilds.
+const headingDecos = [
+	Decoration.mark({ class: 'cm-md-heading1' }),
+	Decoration.mark({ class: 'cm-md-heading2' }),
+	Decoration.mark({ class: 'cm-md-heading3' }),
+	Decoration.mark({ class: 'cm-md-heading4' }),
+	Decoration.mark({ class: 'cm-md-heading5' }),
+	Decoration.mark({ class: 'cm-md-heading6' }),
 ];
 
 const boldDeco = Decoration.mark({ class: 'cm-md-bold' });
@@ -93,6 +95,9 @@ class CheckboxWidget extends WidgetType {
 	}
 	eq(other: CheckboxWidget) { return this.checked === other.checked; }
 }
+// Pre-cached checkbox replacement decorations — only two possible states exist
+const checkboxCheckedDeco   = Decoration.replace({ widget: new CheckboxWidget(true) });
+const checkboxUncheckedDeco = Decoration.replace({ widget: new CheckboxWidget(false) });
 
 /** Widget for inline images when cursor is off the line */
 class ImageWidget extends WidgetType {
@@ -181,7 +186,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 				if (node.name.startsWith('ATXHeading') && node.name.length === 11) {
 					const level = parseInt(node.name[10]) - 1;
 					if (level >= 0 && level < 6) {
-						ranges.push({ from: node.from, to: node.to, deco: Decoration.mark({ class: headingClasses[level] }) });
+						ranges.push({ from: node.from, to: node.to, deco: headingDecos[level] });
 					}
 				}
 
@@ -245,9 +250,8 @@ function buildDecorations(view: EditorView): DecorationSet {
 					const text = doc.sliceString(node.from, node.to);
 					const checked = text.includes('x') || text.includes('X');
 					if (!onCursorLine) {
-						ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
-							widget: new CheckboxWidget(checked),
-						}) });
+						ranges.push({ from: node.from, to: node.to,
+							deco: checked ? checkboxCheckedDeco : checkboxUncheckedDeco });
 					}
 				}
 
