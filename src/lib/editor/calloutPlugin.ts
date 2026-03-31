@@ -1,25 +1,33 @@
 /**
  * Callout Plugin — Obsidian-compatible callout rendering for CodeMirror 6.
  *
- * Architecture (matches Obsidian's proven approach):
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │  FREEZE-PROOF ARCHITECTURE — Two inviolable rules                           │
+ * │                                                                             │
+ * │  ROOT CAUSE of CM6 freeze:                                                  │
+ * │  Decoration.replace([from, to]) creates a cursor-exclusion range.           │
+ * │  If the cursor is inside that range, CM6 nudges it out → selectionSet       │
+ * │  fires → plugin rebuilds → range is restored → CM6 nudges again → loop.    │
+ * │  The editor freezes permanently.                                            │
+ * │                                                                             │
+ * │  RULE A — Cursor-safe replace (title widget + ">" prefix removal):          │
+ * │    Decoration.replace is ONLY added when the cursor is on a DIFFERENT line. │
+ * │    At line granularity this is provably safe: a cursor on line N cannot     │
+ * │    be inside a replace range that covers exclusively line M (M ≠ N).       │
+ * │                                                                             │
+ * │  RULE B — Zero-length line decoration (collapsed body hiding):              │
+ * │    Decoration.line({ class }) is added at (line.from, line.from).           │
+ * │    from === to → no range → cursor can never be "inside" it → CM6          │
+ * │    never nudges → freeze loop is architecturally impossible.                │
+ * │    CSS display:none on .cm-callout-body-collapsed does the actual hiding.   │
+ * └─────────────────────────────────────────────────────────────────────────────┘
  *
- * 1. FULL LINE replacement: when cursor is NOT on the title line, the entire
- *    line content is replaced by a CalloutTitleWidget. This makes the cursor
- *    provably safe — it is on a different line → can never be inside the
- *    replace range → no "cursor in replaced range" freeze loop.
- *    When cursor IS on the title line → no replace → raw markdown for editing.
- *
- * 2. SEPARATE domEventHandlers for fold click: registered as a standalone
- *    EditorView extension, not embedded in the ViewPlugin. Avoids the
- *    stopImmediatePropagation / priority issues that silently break
- *    ViewPlugin.eventHandlers for widget clicks.
- *
- * 3. CSS-driven colors via data-callout="type" + --callout-color variable.
- *    No color values in JS — any new type is one CSS rule.
- *
- * 4. eq() on widget prevents DOM rebuilds when nothing changed.
- * 5. Viewport-only scan — O(visible_lines), never O(document).
- * 6. Synchronous rebuild — regex-only, no syntaxTree, <1ms per update.
+ * Other design decisions:
+ *   - Per-type color via CSS --callout-color (no color values in JS)
+ *   - Fold state: StateField<Set<number>> survives doc changes via pos mapping
+ *   - Chevron click: handled by NotePane's capture-phase mousedown — NOT here
+ *     (avoids double-dispatch when both a plugin handler and a native handler exist)
+ *   - Viewport-only scan: O(visible_lines), never O(document)
  */
 import {
 	ViewPlugin,
@@ -31,52 +39,59 @@ import {
 } from '@codemirror/view';
 import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 
-// ─── Icon map ───
-const calloutIcons: Record<string, string> = {
-	note: 'ℹ️',    info: 'ℹ️',
-	tip: '💡',     hint: '💡',     important: '💡',
-	success: '✅',  check: '✅',   done: '✅',
-	question: '❓', help: '❓',    faq: '❓',
-	warning: '⚠️',  caution: '⚠️', attention: '⚠️',
-	failure: '❌',  fail: '❌',    missing: '❌',
-	danger: '⛔',   error: '⛔',
+// ─── Icon map ─────────────────────────────────────────────────────────────────
+const CALLOUT_ICONS: Record<string, string> = {
+	note: 'ℹ️',      info: 'ℹ️',
+	tip: '💡',       hint: '💡',       important: '💡',
+	success: '✅',   check: '✅',      done: '✅',
+	question: '❓',  help: '❓',       faq: '❓',
+	warning: '⚠️',   caution: '⚠️',    attention: '⚠️',
+	failure: '❌',   fail: '❌',       missing: '❌',
+	danger: '⛔',    error: '⛔',
 	bug: '🐛',
 	example: '📝',
-	quote: '💬',    cite: '💬',
-	abstract: '📋', summary: '📋', tldr: '📋',
+	quote: '💬',     cite: '💬',
+	abstract: '📋',  summary: '📋',    tldr: '📋',
 };
 
-// ─── Fold state ───
+// ─── Fold state ───────────────────────────────────────────────────────────────
+// Dispatch toggleCallout.of(startLineNumber) to toggle a callout open/closed.
+// The field stores a Set of *toggled* line numbers — flipped from their default state.
+// (A "-" marker means defaultCollapsed=true. Adding its line to the Set means open.)
 export const toggleCallout = StateEffect.define<number>();
 
 export const calloutCollapseField = StateField.define<Set<number>>({
 	create: () => new Set(),
 	update(collapsed, tr) {
 		let next = collapsed;
+
+		// Remap stored line numbers through document edits so fold state survives typing
 		if (tr.docChanged) {
-			const newSet = new Set<number>();
-			for (const oldLine of collapsed) {
+			const mapped = new Set<number>();
+			for (const ln of collapsed) {
 				try {
-					const oldPos = tr.startState.doc.line(oldLine).from;
-					newSet.add(tr.state.doc.lineAt(tr.changes.mapPos(oldPos)).number);
-				} catch { /* line gone */ }
+					const oldPos = tr.startState.doc.line(ln).from;
+					mapped.add(tr.state.doc.lineAt(tr.changes.mapPos(oldPos)).number);
+				} catch { /* line was deleted — drop it */ }
 			}
-			next = newSet;
+			next = mapped;
 		}
+
+		// Apply toggle effects from this transaction
 		for (const e of tr.effects) {
 			if (e.is(toggleCallout)) {
 				next = new Set(next);
-				if (next.has(e.value)) next.delete(e.value);
-				else next.add(e.value);
+				next.has(e.value) ? next.delete(e.value) : next.add(e.value);
 			}
 		}
+
 		return next;
 	},
 });
 
-// ─── Widget: renders the entire title line content ───
-// Replaces the full "> [!type]- My Title" line when cursor is elsewhere.
-// Safe: cursor is on a DIFFERENT line → never inside this replace range.
+// ─── Title widget ─────────────────────────────────────────────────────────────
+// Replaces the raw "> [!type]- My Title" line with a styled widget.
+// Only added when the cursor is on a DIFFERENT line (RULE A).
 class CalloutTitleWidget extends WidgetType {
 	constructor(
 		readonly type: string,
@@ -93,11 +108,13 @@ class CalloutTitleWidget extends WidgetType {
 		wrap.setAttribute('dir', 'auto');
 		wrap.setAttribute('data-callout', this.type);
 
+		// Icon
 		const iconEl = document.createElement('span');
 		iconEl.className = 'cm-callout-icon';
 		iconEl.textContent = this.icon;
 		wrap.appendChild(iconEl);
 
+		// Fold chevron (only rendered if the callout has a +/- marker)
 		if (this.foldable) {
 			const chevron = document.createElement('span');
 			chevron.className = 'cm-callout-chevron';
@@ -106,6 +123,7 @@ class CalloutTitleWidget extends WidgetType {
 			wrap.appendChild(chevron);
 		}
 
+		// Title text
 		const titleEl = document.createElement('span');
 		titleEl.className = 'cm-callout-title-text';
 		titleEl.textContent = this.title ? ' ' + this.title : '';
@@ -114,8 +132,8 @@ class CalloutTitleWidget extends WidgetType {
 		return wrap;
 	}
 
-	// eq() prevents CM6 from destroying/recreating the DOM node when unchanged
-	eq(other: CalloutTitleWidget) {
+	// CM6 reuses existing DOM if eq() returns true — no needless rebuilds
+	eq(other: CalloutTitleWidget): boolean {
 		return (
 			this.type === other.type &&
 			this.title === other.title &&
@@ -125,18 +143,22 @@ class CalloutTitleWidget extends WidgetType {
 		);
 	}
 
-	// true = CM6 does not consume this widget's events → they bubble normally
+	// true → CM6 does not swallow events from this widget → they bubble to NotePane
 	ignoreEvent() { return true; }
 }
 
-// ─── Callout block ───
+// ─── Callout detection ────────────────────────────────────────────────────────
 interface CalloutBlock {
 	type: string;
-	foldMarker: string;
+	foldMarker: string; // '+' | '-' | ''
 	startLine: number;
 	endLine: number;
 }
 
+/**
+ * Finds every callout block whose *start* line falls within [fromLine, toLine].
+ * A callout block is a run of contiguous "> " lines starting with "> [!type]".
+ */
 function findCalloutsInRange(
 	doc: EditorView['state']['doc'],
 	fromLine: number,
@@ -144,50 +166,60 @@ function findCalloutsInRange(
 ): CalloutBlock[] {
 	const result: CalloutBlock[] = [];
 	let ln = fromLine;
+
 	while (ln <= toLine) {
 		const text = doc.line(ln).text;
 		const m = text.match(/^>\s*\[!(\w+)\]([+-])?\s*/);
 		if (m) {
 			const type = m[1].toLowerCase();
-			const foldMarker = m[2] || '';
+			const foldMarker = m[2] ?? '';
+
+			// Walk forward to find the last body line
 			const cap = Math.min(doc.lines, ln + 200);
-			let last = ln;
+			let endLine = ln;
 			for (let l = ln + 1; l <= cap; l++) {
 				const t = doc.line(l).text;
 				if (!/^>\s?/.test(t) || /^>\s*\[!\w+\]/.test(t)) break;
-				last = l;
+				endLine = l;
 			}
-			result.push({ type, foldMarker, startLine: ln, endLine: last });
-			ln = last + 1;
+
+			result.push({ type, foldMarker, startLine: ln, endLine });
+			ln = endLine + 1; // skip to after this callout
 		} else {
 			ln++;
 		}
 	}
+
 	return result;
 }
 
+// ─── Decoration builder ───────────────────────────────────────────────────────
 function buildCalloutDecorations(view: EditorView): DecorationSet {
-	const doc = view.state.doc;
+	const { doc } = view.state;
 	const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 	const collapsed = view.state.field(calloutCollapseField);
+
+	// Collect then sort — RangeSetBuilder requires strictly ascending positions
 	const all: { from: number; to: number; deco: Decoration }[] = [];
 
 	for (const { from, to } of view.visibleRanges) {
+		// Scan a few lines above viewport so callouts starting just off-screen render correctly
 		const startLine = Math.max(1, doc.lineAt(from).number - 5);
 		const endLine = doc.lineAt(to).number;
 
 		for (const callout of findCalloutsInRange(doc, startLine, endLine)) {
-			const icon = calloutIcons[callout.type] || 'ℹ️';
+			const icon = CALLOUT_ICONS[callout.type] ?? 'ℹ️';
 			const foldable = callout.foldMarker === '-' || callout.foldMarker === '+';
 			const defaultCollapsed = callout.foldMarker === '-';
+
+			// XOR toggle: if the line is in the Set, its visible state is flipped
 			const isCollapsed = collapsed.has(callout.startLine)
 				? !defaultCollapsed
 				: defaultCollapsed;
 
 			const titleLine = doc.line(callout.startLine);
-			const cursorOnTitle = cursorLine === callout.startLine;
 
-			// ── Title line: border + tinted background (always) ──
+			// ── 1. Title line border + tint (always, even when cursor is on it) ──
 			all.push({
 				from: titleLine.from, to: titleLine.from,
 				deco: Decoration.line({
@@ -196,10 +228,8 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 				}),
 			});
 
-			// ── Full-line widget: shown when cursor is on a different line ──
-			// SAFE: cursor is on another line → provably outside this replace range.
-			// When cursor IS on title line → no replace → raw markdown for editing.
-			if (!cursorOnTitle) {
+			// ── 2. Title widget (RULE A: only when cursor is elsewhere) ──
+			if (cursorLine !== callout.startLine) {
 				const rawTitle = titleLine.text
 					.replace(/^>\s*\[!\w+\][+-]?\s*/, '')
 					.trim();
@@ -216,9 +246,11 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 			}
 
 			if (!isCollapsed) {
-				// ── Body lines: border + lighter tint ──
+				// ── 3. Body lines: border + tint + ">" prefix removal ──
 				for (let l = callout.startLine + 1; l <= callout.endLine; l++) {
 					const line = doc.line(l);
+
+					// Border + tint (zero-length — always safe)
 					all.push({
 						from: line.from, to: line.from,
 						deco: Decoration.line({
@@ -226,29 +258,27 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 							attributes: { 'data-callout': callout.type },
 						}),
 					});
-					// Remove "> " prefix — skip if cursor is on this line
+
+					// ">" prefix removal (RULE A: skip cursor line)
 					if (cursorLine !== l) {
-						const qm = line.text.match(/^>\s?/);
-						if (qm) {
+						const prefix = line.text.match(/^>\s?/);
+						if (prefix) {
 							all.push({
 								from: line.from,
-								to: line.from + qm[0].length,
+								to: line.from + prefix[0].length,
 								deco: Decoration.replace({}),
 							});
 						}
 					}
 				}
 			} else {
-				// ── Collapsed body: per-line CSS hiding ──
-				// PERMANENT FREEZE FIX: use zero-length Decoration.line (not Decoration.replace).
-				// A line deco has from===to — no range → cursor can never be "inside" it →
-				// CM6 never nudges the cursor → the nudge→rebuild→nudge freeze loop is impossible.
-				// CSS display:none hides each line. The cursor line is left visible for editing.
+				// ── 4. Collapsed body: hide with CSS (RULE B: zero-length line deco) ──
+				// The cursor's own line is always kept visible so the cursor never disappears.
 				for (let l = callout.startLine + 1; l <= callout.endLine; l++) {
-					if (cursorLine === l) continue; // cursor line stays visible
+					if (cursorLine === l) continue; // never hide cursor line
 					const line = doc.line(l);
 					all.push({
-						from: line.from, to: line.from,
+						from: line.from, to: line.from,  // from === to = zero-length
 						deco: Decoration.line({ class: 'cm-callout-body-collapsed' }),
 					});
 				}
@@ -256,13 +286,15 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 		}
 	}
 
-	// RangeSetBuilder requires ascending order; line decos (from===to) before inline
+	// Sort ascending by position; line decos (to===from) before inline decos at same pos
 	all.sort((a, b) => a.from - b.from || a.to - b.to);
+
 	const builder = new RangeSetBuilder<Decoration>();
-	for (const r of all) builder.add(r.from, r.to, r.deco);
+	for (const { from, to, deco } of all) builder.add(from, to, deco);
 	return builder.finish();
 }
 
+// ─── ViewPlugin ───────────────────────────────────────────────────────────────
 class CalloutDecoPlugin {
 	decorations: DecorationSet;
 	private lastCursorLine = -1;
@@ -276,12 +308,17 @@ class CalloutDecoPlugin {
 		const hasToggle = update.transactions.some(
 			t => t.effects.some(e => e.is(toggleCallout))
 		);
+
+		// Full rebuild on: fold toggle, doc edit, or viewport scroll
 		if (hasToggle || update.docChanged || update.viewportChanged) {
 			this.decorations = buildCalloutDecorations(update.view);
 			this.lastCursorLine = update.view.state.doc
 				.lineAt(update.view.state.selection.main.head).number;
 			return;
 		}
+
+		// Cursor move: only rebuild when cursor crosses a line boundary
+		// (title widget visibility depends on which line the cursor is on)
 		if (update.selectionSet) {
 			const newLine = update.view.state.doc
 				.lineAt(update.view.state.selection.main.head).number;
@@ -297,36 +334,36 @@ const calloutDecoPlugin = ViewPlugin.fromClass(CalloutDecoPlugin, {
 	decorations: v => v.decorations,
 });
 
-// ─── Exports ───
-// Fold click is handled by NotePane's native chevronHandler (capture phase).
-// We don't register a duplicate domEventHandlers here — two handlers on the same
-// event would cause double dispatches in some edge cases.
+// ─── Exports ──────────────────────────────────────────────────────────────────
+// Chevron click is handled by NotePane's chevronHandler (capture-phase mousedown).
+// We do NOT register a domEventHandlers here — two handlers on the same element
+// would cause double-dispatch in edge cases.
 export const calloutPlugin = [calloutDecoPlugin];
-
-// Backward compat (NotePane / CodeMirrorEditor import these individually)
-export const calloutClickHandler = EditorView.domEventHandlers({});
+export const calloutClickHandler = EditorView.domEventHandlers({}); // kept for import compat
 
 export const calloutTheme = EditorView.theme({
+	// Left border on every callout line
 	'.cm-callout-line': {
 		borderInlineStart: '3px solid var(--callout-color, #448aff)',
 		paddingInlineStart: '12px !important',
 	},
+	// Title line: stronger background + bold
 	'.cm-callout-title-line': {
 		background: 'color-mix(in srgb, var(--callout-color, #448aff) 8%, transparent)',
 		fontWeight: '500',
 	},
+	// Body line: lighter background
 	'.cm-callout-body-line': {
 		background: 'color-mix(in srgb, var(--callout-color, #448aff) 4%, transparent)',
 	},
-	// Collapsed body lines — hidden via CSS, not Decoration.replace.
-	// display:none is safe here: CM6 sees the lines as normal (no range decoration),
-	// cursor navigation through them is allowed and the cursor line is always visible.
+	// RULE B — collapsed body lines: hidden by CSS, not by Decoration.replace.
+	// CM6 sees these lines as normal (zero-length deco) so the cursor can move
+	// through them freely and the cursor's own line is always kept visible above.
 	'.cm-callout-body-collapsed': {
 		display: 'none',
 	},
-	'.cm-callout-title-widget': {
-		display: 'inline',
-	},
+	// Widget layout
+	'.cm-callout-title-widget': { display: 'inline' },
 	'.cm-callout-icon': {
 		fontWeight: '600',
 		fontSize: '0.95em',
@@ -340,10 +377,9 @@ export const calloutTheme = EditorView.theme({
 		userSelect: 'none',
 		verticalAlign: 'middle',
 	},
-	'.cm-callout-title-text': {
-		fontWeight: '600',
-	},
-	// Per-type color variables
+	'.cm-callout-title-text': { fontWeight: '600' },
+
+	// Per-type color variables — add any new type here, never in JS
 	'[data-callout="note"]':      { '--callout-color': '#448aff' },
 	'[data-callout="info"]':      { '--callout-color': '#448aff' },
 	'[data-callout="abstract"]':  { '--callout-color': '#00b0ff' },
