@@ -155,9 +155,6 @@
 				getTheme(mode),
 				history(),
 				drawSelection(),
-				scriptFontsField,
-				bidiPlugin,
-				bidiTheme,
 				keymap.of([
 					...defaultKeymap,
 					...historyKeymap,
