@@ -384,17 +384,36 @@ function buildDecorations(view: EditorView): DecorationSet {
 // The ViewPlugin class
 class LivePreviewPlugin {
 	decorations: DecorationSet;
+	private rebuildTimer: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(view: EditorView) {
 		this.decorations = buildDecorations(view);
 	}
 
 	update(update: ViewUpdate) {
-		// Rebuild synchronously on any visible change — visible ranges only so this is fast.
-		// No timers / rAF / view.dispatch: those caused stutter-on-resume and callout freeze.
-		if (update.docChanged || update.viewportChanged || (update.selectionSet && !update.docChanged)) {
+		if (update.viewportChanged || (update.selectionSet && !update.docChanged)) {
+			// Scroll or cursor moved — sync rebuild (show/hide markers immediately)
+			if (this.rebuildTimer) { clearTimeout(this.rebuildTimer); this.rebuildTimer = null; }
 			this.decorations = buildDecorations(update.view);
+			return;
 		}
+		if (update.docChanged) {
+			// ⚡ Fast path: map existing decorations — O(changes), ~0ms, keeps typing instant
+			this.decorations = this.decorations.map(update.changes);
+			// Debounced full rebuild — no view.dispatch (fresh decos apply on next natural update)
+			if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
+			const view = update.view;
+			this.rebuildTimer = setTimeout(() => {
+				this.rebuildTimer = null;
+				if (!view.destroyed) {
+					this.decorations = buildDecorations(view);
+				}
+			}, 300);
+		}
+	}
+
+	destroy() {
+		if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
 	}
 }
 

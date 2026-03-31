@@ -20,6 +20,7 @@
 	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
+	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
 	import { createWikilinkCompletion, createTagCompletion, createSlashCompletion, createTypedLinkCompletion } from '$lib/editor/completions';
 	import TableToolbar from './TableToolbar.svelte';
@@ -271,6 +272,7 @@
 				calloutCollapseField,
 				livePreviewCompartment.of(livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme, calloutPlugin, calloutTheme] : []),
 				lineDecoPlugin, lineDecoTheme,
+				scriptFontsField, bidiPlugin, bidiTheme, /* per-line RTL/LTR direction + cursor positioning */
 				libraryPathField, /* image path resolution */
 				closeBrackets(),
 				autocompletion({ override: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
@@ -389,6 +391,12 @@
 			prevDir = dir;
 			view.dispatch({ effects: dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })) });
 		}
+	});
+
+	/* ─── Script fonts sync (for per-line RTL font override in bidiPlugin) ─── */
+	$effect(() => {
+		const fonts = $appSettings.scriptFonts ?? {};
+		if (view) view.dispatch({ effects: setScriptFonts.of(fonts) });
 	});
 
 	/* ─── Live Preview toggle ─── */
