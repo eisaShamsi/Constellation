@@ -957,6 +957,10 @@ export class GraphEngine {
 	}
 
 	destroy(): void {
+		// ⚡ Stop the render ticker IMMEDIATELY — prevents BatcherPipe from accessing
+		// geometry on objects we're about to orphan, which caused the freeze + null errors.
+		this.app?.ticker?.stop();
+
 		if (this.worker) {
 			this.worker.postMessage({ type: 'stop' });
 			this.worker.terminate();
@@ -977,22 +981,17 @@ export class GraphEngine {
 		this.themeObserver?.disconnect();
 		this.resizeObserver?.disconnect();
 
-		// Destroy small, fixed-count text objects explicitly
-		this.labelPool.forEach((t) => t.destroy());
-		this.labelPool.clear();
-		this.gizmoLabels.forEach((t) => t.destroy());
-		this.gizmoLabels = [];
-
-		// ⚡ PERF: Remove all node Graphics from their container WITHOUT destroying
-		// them. app.destroy({ children: true }) would synchronously call .destroy()
-		// on every Graphics object (one per node) — for a 1000-node graph that means
-		// 1000+ synchronous WebGL buffer disposals, blocking the main thread for
-		// several seconds and making the app appear frozen.
-		// By clearing the hierarchy first, app.destroy({ children: false }) completes
-		// in O(1). The orphaned Graphics objects are garbage-collected by the JS runtime.
-		this.nodeContainer.removeChildren();
-		this.nodeGfx = [];
+		// ⚡ PERF: Clear ALL stage children first — before destroying any individual
+		// objects. This orphans every Graphics/Text from the render tree so that
+		// app.destroy({ children: false }) completes in O(1).
+		// Do NOT call t.destroy() on label/gizmo objects before clearing the stage:
+		// Pixi's destroy() interacts with the render pipeline (pushes to internal arrays)
+		// and will throw if called while objects are still in the render hierarchy.
+		// Orphaned objects are garbage-collected by JS; textures are freed by app.destroy().
 		this.app?.stage.removeChildren();
+		this.nodeGfx = [];
+		this.labelPool.clear();
+		this.gizmoLabels = [];
 
 		this.app?.destroy(true, { children: false, texture: true });
 		this.app = null;
