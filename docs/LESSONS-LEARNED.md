@@ -130,5 +130,16 @@ The original `getCursorColumn` in `tableUtils.ts` used a stateful `inCell` flag 
 
 ---
 
-*Last updated: 2026-03-28*
+## LL-014: Three Strikes — Fix From the Root
+**Discovered:** 2026-03-31 (callout plugin freeze — 7+ patch iterations)
+
+Applying a patch when a fix fails is reasonable once, maybe twice. By the third failure, patching is the wrong strategy — the root cause has not been found. Every additional patch builds on a broken foundation and compounds the debt.
+
+In the callout freeze case: seven rounds of patches addressed symptoms (cursor guard, batch collapse, replace-range trimming) while the true cause — `Decoration.replace` creating a cursor-exclusion range that triggers an infinite selectionSet→rebuild loop — went undiagnosed. One correct diagnosis → one correct fix (`Decoration.line` zero-length + CSS) → problem eliminated permanently.
+
+**Rule:** If a bug is not resolved after three distinct attempts, **stop patching**. Step back, identify the actual root cause, and redesign from that level. A correct fix at the root is always shorter, cleaner, and more permanent than accumulated workarounds.
+
+---
+
+*Last updated: 2026-03-31*
 *For: Constellation — eNotePane development cycle*
