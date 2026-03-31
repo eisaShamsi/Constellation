@@ -190,14 +190,11 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 		const color = calloutColors[callout.type] || '#448aff';
 		const cursorInCallout = cursorLine >= callout.startLine && cursorLine <= callout.endLine;
 
-		const foldable = callout.foldMarker === '-' || callout.foldMarker === '+';
-		// Default: '-' starts collapsed, '+' starts expanded. User toggle flips it.
-		let isCollapsed: boolean;
-		if (collapsed.has(callout.startLine)) {
-			isCollapsed = callout.foldMarker !== '-'; // toggled: flip the default
-		} else {
-			isCollapsed = callout.foldMarker === '-'; // default from marker
-		}
+		// All callouts are foldable — chevron always shown (like Obsidian).
+		// '-' marker = starts collapsed, '+' or no marker = starts expanded.
+		const foldable = true;
+		const defaultCollapsed = callout.foldMarker === '-';
+		const isCollapsed = collapsed.has(callout.startLine) ? !defaultCollapsed : defaultCollapsed;
 
 		const titleLine = doc.line(callout.startLine);
 
@@ -212,9 +209,10 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 			}),
 		});
 
-		// When collapsed: ALWAYS show widget (even when cursor is on title line)
-		// so the user can click the chevron to expand
-		const showWidget = isCollapsed || !cursorInCallout;
+		// Show the icon+chevron widget when:
+		//   - cursor is outside the callout (normal preview mode), OR
+		//   - callout is collapsed (must always show chevron so user can re-expand)
+		const showWidget = !cursorInCallout || isCollapsed;
 
 		// Content lines — border + lighter background (only if expanded)
 		if (!isCollapsed) {
@@ -232,8 +230,8 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 			}
 		}
 
-		// When cursor is outside callout: hide only the "> [!type]+/- " prefix, keep title text editable
-		if (!cursorInCallout) {
+		// Hide "> [!type]+/- " prefix and replace with icon+chevron widget
+		if (showWidget) {
 			// Find the prefix length: "> [!type]+/- " (everything before the title text)
 			const prefixMatch = titleLine.text.match(/^>\s*\[!\w+\][+-]?\s*/);
 			if (prefixMatch) {

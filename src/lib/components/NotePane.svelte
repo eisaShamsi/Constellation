@@ -146,9 +146,13 @@
 	function doSave() {
 		if (!dirty) return;
 		dirty = false;
+		// Snapshot text here — the one place we pay the O(N) toString() cost,
+		// at most once per autosave cycle (1.5s), never on individual keystrokes.
+		if (view) latestText = view.state.doc.toString();
 		onsave?.(latestText);
 	}
 	function doFlush() {
+		if (view) latestText = view.state.doc.toString();
 		const cursorPos = view ? view.state.selection.main.head : 0;
 		const scrollTop = view ? view.scrollDOM.scrollTop : 0;
 		onflush?.(latestText, dirty, cursorPos, scrollTop);
@@ -281,10 +285,11 @@
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
-						const text = update.state.doc.toString();
-						latestText = text;
+						// ⚡ PERF: do NOT call doc.toString() here — it's O(N) on every keystroke
+						// and causes progressive lag as the document grows.
+						// latestText is refreshed in doSave/doFlush at the moment of writing.
 						dirty = true;
-						onchange?.(text);
+						onchange?.('');
 					}
 					if (update.selectionSet && !update.docChanged) {
 						updateTableToolbar(update.view);
