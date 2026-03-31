@@ -110,6 +110,7 @@
 	let latestText = value;
 	let dirty = false;
 	let idleSaveTimer: ReturnType<typeof setInterval> | null = null;
+	let debouncedSaveTimer: ReturnType<typeof setTimeout> | null = null;
 	let rafHandle: number | null = null;
 	let checkboxHandler: EventListener | null = null;
 	let chevronHandler: EventListener | null = null;
@@ -141,6 +142,23 @@
 	function handleMoreAction(action: string) {
 		showMoreMenu = false;
 		onmoreaction?.(action);
+	}
+
+	/* ─── Callout-aware Enter: exit empty blockquote lines ─── */
+	// When cursor is on a line that is only "> " or ">", pressing Enter should
+	// exit the callout rather than continue adding empty ">" lines.
+	function calloutExitOnEnter(view: EditorView): boolean {
+		const { state } = view;
+		const range = state.selection.main;
+		if (!range.empty) return false;
+		const line = state.doc.lineAt(range.head);
+		if (!/^>\s*$/.test(line.text)) return false;
+		// Replace the empty blockquote line with an empty line (exit callout)
+		view.dispatch({
+			changes: { from: line.from, to: line.to, insert: '' },
+			selection: { anchor: line.from },
+		});
+		return true;
 	}
 
 	/* ─── Background save ─── */
@@ -279,6 +297,7 @@
 				keymap.of([
 					{ key: 'Tab', run: tableTab },
 					{ key: 'Shift-Tab', run: tableShiftTab },
+					{ key: 'Enter', run: calloutExitOnEnter },
 					indentWithTab,
 					...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap,
 				]),
@@ -292,6 +311,10 @@
 						// latestText is refreshed in doSave/doFlush at the moment of writing.
 						dirty = true;
 						onchange?.('');
+						// Debounced save: 1500ms after last keystroke.
+						// Ensures content is saved even if the idle timer (30s) hasn't fired.
+						if (debouncedSaveTimer) clearTimeout(debouncedSaveTimer);
+						debouncedSaveTimer = setTimeout(() => { debouncedSaveTimer = null; doSave(); }, 1500);
 					}
 					if (update.selectionSet && !update.docChanged) {
 						updateTableToolbar(update.view);
@@ -374,6 +397,7 @@
 	/* ─── Destroy ─── */
 	onDestroy(() => {
 		if (idleSaveTimer) clearInterval(idleSaveTimer);
+		if (debouncedSaveTimer) { clearTimeout(debouncedSaveTimer); debouncedSaveTimer = null; }
 		document.removeEventListener('visibilitychange', handleVisibilityChange);
 		window.removeEventListener('beforeunload', handleBeforeUnload);
 		if (checkboxHandler && editorEl) editorEl.removeEventListener('mousedown', checkboxHandler, true);

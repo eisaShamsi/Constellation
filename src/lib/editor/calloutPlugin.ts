@@ -240,8 +240,12 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 						}
 					}
 				}
-			} else if (!cursorInBody && callout.endLine > callout.startLine) {
-				// ── Collapse body — only safe when cursor is NOT in the hidden range ──
+			} else if (!cursorOnTitle && !cursorInBody && callout.endLine > callout.startLine) {
+				// ── Collapse body ──
+				// Safe guards: cursor NOT on title (so cursor < titleLine.to, safely before
+				// the range start) AND cursor NOT in body (so cursor not inside range).
+				// If cursor is on the title line, titleLine.to is the range boundary — CM6
+				// may nudge cursor there → rebuild → nudge loop → freeze. Skip collapse.
 				all.push({
 					from: titleLine.to,
 					to: doc.line(callout.endLine).to,
@@ -292,32 +296,14 @@ const calloutDecoPlugin = ViewPlugin.fromClass(CalloutDecoPlugin, {
 	decorations: v => v.decorations,
 });
 
-// ─── Fold click handler ───
-// Registered as a standalone domEventHandlers extension — NOT inside ViewPlugin.
-// This avoids the silent breakage from ViewPlugin.eventHandlers priority issues.
-const calloutFoldHandler = EditorView.domEventHandlers({
-	mousedown(event, view) {
-		const target = event.target as HTMLElement;
-		if (!target?.closest) return false;
-		const chevron = target.closest('.cm-callout-chevron') as HTMLElement | null;
-		if (!chevron?.dataset.calloutLine) return false;
-
-		event.preventDefault();
-		const lineNum = parseInt(chevron.dataset.calloutLine, 10);
-		if (!isNaN(lineNum)) {
-			view.dispatch({ effects: toggleCallout.of(lineNum) });
-		}
-		return true;
-	},
-});
-
 // ─── Exports ───
-// calloutPlugin is an array — spread it into extensions
-export const calloutPlugin = [calloutDecoPlugin, calloutFoldHandler];
+// Fold click is handled by NotePane's native chevronHandler (capture phase).
+// We don't register a duplicate domEventHandlers here — two handlers on the same
+// event would cause double dispatches in some edge cases.
+export const calloutPlugin = [calloutDecoPlugin];
 
 // Backward compat (NotePane / CodeMirrorEditor import these individually)
 export const calloutClickHandler = EditorView.domEventHandlers({});
-export { calloutCollapseField };
 
 export const calloutTheme = EditorView.theme({
 	'.cm-callout-line': {
