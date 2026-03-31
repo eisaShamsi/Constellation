@@ -394,9 +394,16 @@
 	});
 
 	/* ─── Script fonts sync (for per-line RTL font override in bidiPlugin) ─── */
+	// Guard: appSettings is a Svelte store — $effect would re-run on ANY settings change.
+	// Only dispatch when scriptFonts actually changes to avoid spurious DOM mutations.
+	let _prevScriptFontsKey = '{}';
 	$effect(() => {
 		const fonts = $appSettings.scriptFonts ?? {};
-		if (view) view.dispatch({ effects: setScriptFonts.of(fonts) });
+		const key = JSON.stringify(fonts);
+		if (view && key !== _prevScriptFontsKey) {
+			_prevScriptFontsKey = key;
+			view.dispatch({ effects: setScriptFonts.of(fonts) });
+		}
 	});
 
 	/* ─── Live Preview toggle ─── */
@@ -747,6 +754,9 @@
 	.e-editor { flex: 1; min-height: 0; }
 	.e-editor :global(.cm-editor) { height: 100%; }
 	.e-editor :global(.cm-line) { unicode-bidi: plaintext; }
+	/* Lines with an explicit dir attribute (set by bidiPlugin) use isolate so dir='rtl'
+	   actually governs cursor placement — higher specificity overrides the plaintext above */
+	.e-editor :global(.cm-line[dir]) { unicode-bidi: isolate; }
 	.e-editor :global(.cm-editor),
 	.e-editor :global(.cm-editor.cm-focused) { outline: none !important; border: none !important; }
 

@@ -194,9 +194,8 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 			const icon = calloutIcons[callout.type] || 'ℹ️';
 			const cursorInCallout = cursorLine >= callout.startLine && cursorLine <= callout.endLine;
 
-			// All callouts are foldable — chevron always shown.
-			// +/- markers set the initial collapsed state (Obsidian compat).
-			const foldable = true;
+			// Obsidian standard: only explicit +/- markers make a callout foldable
+			const foldable = callout.foldMarker === '-' || callout.foldMarker === '+';
 			const defaultCollapsed = callout.foldMarker === '-';
 			// Toggle flips the default: if default=collapsed, toggle=expanded, and vice versa
 			const isCollapsed = collapsed.has(callout.startLine) ? !defaultCollapsed : defaultCollapsed;
@@ -284,7 +283,6 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 class CalloutPluginClass {
 	decorations: DecorationSet;
 	private lastCursorLine = -1;
-	private rebuildTimer: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(view: EditorView) {
 		this.decorations = buildCalloutDecorations(view);
@@ -294,41 +292,23 @@ class CalloutPluginClass {
 	update(update: ViewUpdate) {
 		const hasToggle = update.transactions.some(t => t.effects.some(e => e.is(toggleCallout)));
 
-		if (hasToggle || update.viewportChanged) {
-			// Toggle or scroll — sync rebuild required
-			if (this.rebuildTimer) { clearTimeout(this.rebuildTimer); this.rebuildTimer = null; }
+		// calloutPlugin is regex-only (no syntaxTree) so sync rebuild is fast (<1ms).
+		// No debounce needed — callout visuals must appear immediately when user types them.
+		if (hasToggle || update.docChanged || update.viewportChanged) {
 			this.decorations = buildCalloutDecorations(update.view);
 			this.lastCursorLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
 			return;
 		}
 
-		if (update.selectionSet && !update.docChanged) {
+		if (update.selectionSet) {
 			const newCursorLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
-			// Rebuild when cursor crosses a line boundary — needed to show/hide the icon widget
+			// Rebuild only when cursor crosses a line boundary — avoids redundant rebuilds
+			// on same-line cursor movements (word navigation, char-by-char within a line)
 			if (newCursorLine !== this.lastCursorLine) {
 				this.lastCursorLine = newCursorLine;
 				this.decorations = buildCalloutDecorations(update.view);
 			}
-			return;
 		}
-
-		if (update.docChanged) {
-			// ⚡ Fast path: map existing decorations through the change — O(changes), ~0ms
-			this.decorations = this.decorations.map(update.changes);
-			// Debounced full rebuild — no view.dispatch (CM6 picks up fresh decos on next update)
-			if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
-			const view = update.view;
-			this.rebuildTimer = setTimeout(() => {
-				this.rebuildTimer = null;
-				if (!view.destroyed) {
-					this.decorations = buildCalloutDecorations(view);
-				}
-			}, 250);
-		}
-	}
-
-	destroy() {
-		if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
 	}
 }
 
