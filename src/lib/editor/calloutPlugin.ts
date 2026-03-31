@@ -1,16 +1,25 @@
 /**
- * Callout Plugin — CodeMirror ViewPlugin that renders Obsidian-style callouts.
+ * Callout Plugin — Obsidian-compatible callout rendering for CodeMirror 6.
  *
- * Architecture (per reference doc):
- * - Colors driven entirely by CSS via data-callout="type" attribute + --callout-color variable.
- *   No color values in JS. Any callout type works automatically via CSS cascade.
- * - Icons remain as emoji text nodes in the widget (CSS ::before is messier for emoji).
- * - dir="auto" on the widget container for correct RTL icon/chevron placement.
- * - Fold state in CM6 StateField — survives virtualization / offscreen destruction.
- * - eq() on WidgetType prevents unnecessary DOM rebuilds when decoration content is unchanged.
- * - eventHandlers in ViewPlugin spec for chevron clicks — CM6 manages listener cleanup.
- * - Viewport-only processing — O(visible_lines), never O(document).
- * - Synchronous rebuild — regex-only, no syntaxTree, so <1ms per rebuild.
+ * Architecture (matches Obsidian's proven approach):
+ *
+ * 1. FULL LINE replacement: when cursor is NOT on the title line, the entire
+ *    line content is replaced by a CalloutTitleWidget. This makes the cursor
+ *    provably safe — it is on a different line → can never be inside the
+ *    replace range → no "cursor in replaced range" freeze loop.
+ *    When cursor IS on the title line → no replace → raw markdown for editing.
+ *
+ * 2. SEPARATE domEventHandlers for fold click: registered as a standalone
+ *    EditorView extension, not embedded in the ViewPlugin. Avoids the
+ *    stopImmediatePropagation / priority issues that silently break
+ *    ViewPlugin.eventHandlers for widget clicks.
+ *
+ * 3. CSS-driven colors via data-callout="type" + --callout-color variable.
+ *    No color values in JS — any new type is one CSS rule.
+ *
+ * 4. eq() on widget prevents DOM rebuilds when nothing changed.
+ * 5. Viewport-only scan — O(visible_lines), never O(document).
+ * 6. Synchronous rebuild — regex-only, no syntaxTree, <1ms per update.
  */
 import {
 	ViewPlugin,
@@ -22,24 +31,23 @@ import {
 } from '@codemirror/view';
 import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 
-// ─── Icon map (type → emoji) ───
-// Colors intentionally absent — handled by CSS via --callout-color custom property
+// ─── Icon map ───
 const calloutIcons: Record<string, string> = {
-	note: 'ℹ️',   info: 'ℹ️',
-	tip: '💡',    hint: '💡',    important: '💡',
-	success: '✅', check: '✅',  done: '✅',
-	question: '❓', help: '❓',  faq: '❓',
-	warning: '⚠️', caution: '⚠️', attention: '⚠️',
-	failure: '❌', fail: '❌',   missing: '❌',
-	danger: '⛔',  error: '⛔',
+	note: 'ℹ️',    info: 'ℹ️',
+	tip: '💡',     hint: '💡',     important: '💡',
+	success: '✅',  check: '✅',   done: '✅',
+	question: '❓', help: '❓',    faq: '❓',
+	warning: '⚠️',  caution: '⚠️', attention: '⚠️',
+	failure: '❌',  fail: '❌',    missing: '❌',
+	danger: '⛔',   error: '⛔',
 	bug: '🐛',
 	example: '📝',
-	quote: '💬',   cite: '💬',
+	quote: '💬',    cite: '💬',
 	abstract: '📋', summary: '📋', tldr: '📋',
 };
 
-// ─── Collapse/Expand state ───
-export const toggleCallout = StateEffect.define<number>(); // line number to toggle
+// ─── Fold state ───
+export const toggleCallout = StateEffect.define<number>();
 
 export const calloutCollapseField = StateField.define<Set<number>>({
 	create: () => new Set(),
@@ -47,114 +55,115 @@ export const calloutCollapseField = StateField.define<Set<number>>({
 		let next = collapsed;
 		if (tr.docChanged) {
 			const newSet = new Set<number>();
-			const doc = tr.state.doc;
 			for (const oldLine of collapsed) {
 				try {
 					const oldPos = tr.startState.doc.line(oldLine).from;
-					const newPos = tr.changes.mapPos(oldPos);
-					newSet.add(doc.lineAt(newPos).number);
-				} catch {
-					// line no longer exists — discard
-				}
+					newSet.add(tr.state.doc.lineAt(tr.changes.mapPos(oldPos)).number);
+				} catch { /* line gone */ }
 			}
 			next = newSet;
 		}
-		for (const effect of tr.effects) {
-			if (effect.is(toggleCallout)) {
+		for (const e of tr.effects) {
+			if (e.is(toggleCallout)) {
 				next = new Set(next);
-				if (next.has(effect.value)) next.delete(effect.value);
-				else next.add(effect.value);
+				if (next.has(e.value)) next.delete(e.value);
+				else next.add(e.value);
 			}
 		}
 		return next;
 	},
 });
 
-// ─── Widget: replaces "> [!type]+/- " prefix with icon + optional chevron ───
-class CalloutIconWidget extends WidgetType {
+// ─── Widget: renders the entire title line content ───
+// Replaces the full "> [!type]- My Title" line when cursor is elsewhere.
+// Safe: cursor is on a DIFFERENT line → never inside this replace range.
+class CalloutTitleWidget extends WidgetType {
 	constructor(
 		readonly type: string,
 		readonly icon: string,
+		readonly title: string,
 		readonly foldable: boolean,
 		readonly collapsed: boolean,
 		readonly lineNum: number,
 	) { super(); }
 
 	toDOM() {
-		// dir="auto" — correct icon/chevron placement in both LTR and RTL notes
-		const span = document.createElement('span');
-		span.className = 'cm-callout-icon';
-		span.setAttribute('dir', 'auto');
-		span.setAttribute('data-callout', this.type); // CSS hook for --callout-color
+		const wrap = document.createElement('span');
+		wrap.className = 'cm-callout-title-widget';
+		wrap.setAttribute('dir', 'auto');
+		wrap.setAttribute('data-callout', this.type);
 
-		span.appendChild(document.createTextNode(`${this.icon} `));
+		const iconEl = document.createElement('span');
+		iconEl.className = 'cm-callout-icon';
+		iconEl.textContent = this.icon;
+		wrap.appendChild(iconEl);
 
 		if (this.foldable) {
 			const chevron = document.createElement('span');
 			chevron.className = 'cm-callout-chevron';
-			chevron.textContent = this.collapsed ? '▶' : '▼';
+			chevron.textContent = this.collapsed ? ' ▶' : ' ▼';
 			chevron.dataset.calloutLine = String(this.lineNum);
-			span.appendChild(chevron);
+			wrap.appendChild(chevron);
 		}
 
-		return span;
+		const titleEl = document.createElement('span');
+		titleEl.className = 'cm-callout-title-text';
+		titleEl.textContent = this.title ? ' ' + this.title : '';
+		wrap.appendChild(titleEl);
+
+		return wrap;
 	}
 
-	// eq() prevents CM6 from destroying and recreating the DOM node when nothing changed
-	eq(other: CalloutIconWidget) {
+	// eq() prevents CM6 from destroying/recreating the DOM node when unchanged
+	eq(other: CalloutTitleWidget) {
 		return (
 			this.type === other.type &&
-			this.icon === other.icon &&
+			this.title === other.title &&
 			this.foldable === other.foldable &&
 			this.collapsed === other.collapsed &&
 			this.lineNum === other.lineNum
 		);
 	}
 
-	ignoreEvent() { return false; }
+	// true = CM6 does not consume this widget's events → they bubble normally
+	ignoreEvent() { return true; }
 }
 
-// ─── Callout block data ───
+// ─── Callout block ───
 interface CalloutBlock {
 	type: string;
-	foldMarker: string; // '+' | '-' | ''
+	foldMarker: string;
 	startLine: number;
 	endLine: number;
 }
 
-/** Scan lines [fromLine, toLine] for callout headers. Cap body scan at startLine+200. */
 function findCalloutsInRange(
 	doc: EditorView['state']['doc'],
 	fromLine: number,
 	toLine: number,
 ): CalloutBlock[] {
-	const callouts: CalloutBlock[] = [];
-	let lineNum = fromLine;
-
-	while (lineNum <= toLine) {
-		const text = doc.line(lineNum).text;
-		const match = text.match(/^>\s*\[!(\w+)\]([+-])?\s*/);
-
-		if (match) {
-			const type = match[1].toLowerCase();
-			const foldMarker = match[2] || '';
-
-			const scanLimit = Math.min(doc.lines, lineNum + 200);
-			let lastLine = lineNum;
-			for (let l = lineNum + 1; l <= scanLimit; l++) {
-				const next = doc.line(l).text;
-				if (!/^>\s?/.test(next) || /^>\s*\[!\w+\]/.test(next)) break;
-				lastLine = l;
+	const result: CalloutBlock[] = [];
+	let ln = fromLine;
+	while (ln <= toLine) {
+		const text = doc.line(ln).text;
+		const m = text.match(/^>\s*\[!(\w+)\]([+-])?\s*/);
+		if (m) {
+			const type = m[1].toLowerCase();
+			const foldMarker = m[2] || '';
+			const cap = Math.min(doc.lines, ln + 200);
+			let last = ln;
+			for (let l = ln + 1; l <= cap; l++) {
+				const t = doc.line(l).text;
+				if (!/^>\s?/.test(t) || /^>\s*\[!\w+\]/.test(t)) break;
+				last = l;
 			}
-
-			callouts.push({ type, foldMarker, startLine: lineNum, endLine: lastLine });
-			lineNum = lastLine + 1;
+			result.push({ type, foldMarker, startLine: ln, endLine: last });
+			ln = last + 1;
 		} else {
-			lineNum++;
+			ln++;
 		}
 	}
-
-	return callouts;
+	return result;
 }
 
 function buildCalloutDecorations(view: EditorView): DecorationSet {
@@ -164,43 +173,23 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 	const all: { from: number; to: number; deco: Decoration }[] = [];
 
 	for (const { from, to } of view.visibleRanges) {
-		// Look slightly above the viewport to catch callouts that start just off-screen
 		const startLine = Math.max(1, doc.lineAt(from).number - 5);
 		const endLine = doc.lineAt(to).number;
 
 		for (const callout of findCalloutsInRange(doc, startLine, endLine)) {
 			const icon = calloutIcons[callout.type] || 'ℹ️';
-
-			// Obsidian standard: +/- markers control foldability and initial state
 			const foldable = callout.foldMarker === '-' || callout.foldMarker === '+';
 			const defaultCollapsed = callout.foldMarker === '-';
-			// Toggle flips the default
-			const isCollapsed = collapsed.has(callout.startLine) ? !defaultCollapsed : defaultCollapsed;
+			const isCollapsed = collapsed.has(callout.startLine)
+				? !defaultCollapsed
+				: defaultCollapsed;
 
 			const titleLine = doc.line(callout.startLine);
+			const cursorOnTitle = cursorLine === callout.startLine;
+			const cursorInBody = cursorLine > callout.startLine
+				&& cursorLine <= callout.endLine;
 
-			// ── Precise cursor checks ──
-			// We check at character level, not line level, to avoid placing
-			// Decoration.replace ranges over the cursor (which causes CM6 to
-			// loop trying to push the cursor out → freeze).
-			const prefixMatch = titleLine.text.match(/^>\s*\[!\w+\][+-]?\s*/);
-			const prefixEnd = prefixMatch ? titleLine.from + prefixMatch[0].length : titleLine.from;
-			const cursorPos = view.state.selection.main.head;
-
-			// Cursor is inside the "> [!type]- " prefix span being replaced
-			const cursorInPrefix = cursorPos >= titleLine.from && cursorPos < prefixEnd;
-
-			// Cursor is inside the body lines being collapsed
-			const bodyFrom = titleLine.to + 1;
-			const bodyTo = callout.endLine > callout.startLine
-				? doc.line(callout.endLine).to : titleLine.to;
-			const cursorInBody = callout.endLine > callout.startLine
-				&& cursorPos > titleLine.to && cursorPos <= bodyTo;
-
-			// Used for non-foldable callout widget suppression (show raw when editing title)
-			const cursorOnTitleLine = cursorLine === callout.startLine;
-
-			// ── Title line decoration ──
+			// ── Title line: border + tinted background (always) ──
 			all.push({
 				from: titleLine.from, to: titleLine.from,
 				deco: Decoration.line({
@@ -209,16 +198,27 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 				}),
 			});
 
-			// ── Show widget? ──
-			// • Never when cursor is literally inside the prefix span (prevents freeze)
-			// • Foldable callouts: show widget even when cursor is on title line
-			//   so ▶/▼ remains clickable at all times
-			// • Non-foldable callouts: hide widget when cursor is on title line
-			//   so the user can see and edit the raw "> [!type] Title" text
-			const showWidget = !cursorInPrefix && (foldable || !cursorOnTitleLine || isCollapsed);
+			// ── Full-line widget: shown when cursor is on a different line ──
+			// SAFE: cursor is on another line → provably outside this replace range.
+			// When cursor IS on title line → no replace → raw markdown for editing.
+			if (!cursorOnTitle) {
+				const rawTitle = titleLine.text
+					.replace(/^>\s*\[!\w+\][+-]?\s*/, '')
+					.trim();
+				all.push({
+					from: titleLine.from,
+					to: titleLine.to,
+					deco: Decoration.replace({
+						widget: new CalloutTitleWidget(
+							callout.type, icon, rawTitle,
+							foldable, isCollapsed, callout.startLine,
+						),
+					}),
+				});
+			}
 
 			if (!isCollapsed) {
-				// Body lines: lighter tint + border
+				// ── Body lines: border + lighter tint ──
 				for (let l = callout.startLine + 1; l <= callout.endLine; l++) {
 					const line = doc.line(l);
 					all.push({
@@ -228,29 +228,8 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 							attributes: { 'data-callout': callout.type },
 						}),
 					});
-				}
-			}
-
-			if (showWidget && prefixMatch) {
-				all.push({
-					from: titleLine.from,
-					to: prefixEnd,
-					deco: Decoration.replace({
-						widget: new CalloutIconWidget(callout.type, icon, foldable, isCollapsed, callout.startLine),
-					}),
-				});
-
-				// Collapse body — only safe when cursor is NOT inside the hidden range
-				if (isCollapsed && callout.endLine > callout.startLine && !cursorInBody) {
-					all.push({
-						from: titleLine.to,
-						to: bodyTo,
-						deco: Decoration.replace({}),
-					});
-				} else if (!isCollapsed) {
-					// Expanded: hide "> " blockquote marker on each body line
-					for (let l = callout.startLine + 1; l <= callout.endLine; l++) {
-						const line = doc.line(l);
+					// Remove "> " prefix — skip if cursor is on this line
+					if (cursorLine !== l) {
 						const qm = line.text.match(/^>\s?/);
 						if (qm) {
 							all.push({
@@ -261,19 +240,25 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 						}
 					}
 				}
+			} else if (!cursorInBody && callout.endLine > callout.startLine) {
+				// ── Collapse body — only safe when cursor is NOT in the hidden range ──
+				all.push({
+					from: titleLine.to,
+					to: doc.line(callout.endLine).to,
+					deco: Decoration.replace({}),
+				});
 			}
 		}
 	}
 
-	// RangeSetBuilder requires ascending order; line decos (from===to) before inline at same pos
+	// RangeSetBuilder requires ascending order; line decos (from===to) before inline
 	all.sort((a, b) => a.from - b.from || a.to - b.to);
-
 	const builder = new RangeSetBuilder<Decoration>();
 	for (const r of all) builder.add(r.from, r.to, r.deco);
 	return builder.finish();
 }
 
-class CalloutPluginClass {
+class CalloutDecoPlugin {
 	decorations: DecorationSet;
 	private lastCursorLine = -1;
 
@@ -283,16 +268,18 @@ class CalloutPluginClass {
 	}
 
 	update(update: ViewUpdate) {
-		const hasToggle = update.transactions.some(t => t.effects.some(e => e.is(toggleCallout)));
-
+		const hasToggle = update.transactions.some(
+			t => t.effects.some(e => e.is(toggleCallout))
+		);
 		if (hasToggle || update.docChanged || update.viewportChanged) {
 			this.decorations = buildCalloutDecorations(update.view);
-			this.lastCursorLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
+			this.lastCursorLine = update.view.state.doc
+				.lineAt(update.view.state.selection.main.head).number;
 			return;
 		}
-
 		if (update.selectionSet) {
-			const newLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
+			const newLine = update.view.state.doc
+				.lineAt(update.view.state.selection.main.head).number;
 			if (newLine !== this.lastCursorLine) {
 				this.lastCursorLine = newLine;
 				this.decorations = buildCalloutDecorations(update.view);
@@ -301,31 +288,38 @@ class CalloutPluginClass {
 	}
 }
 
-export const calloutPlugin = ViewPlugin.fromClass(CalloutPluginClass, {
-	decorations: (v) => v.decorations,
-	// eventHandlers in spec — CM6 manages listener cleanup automatically (no memory leaks)
-	eventHandlers: {
-		mousedown(event, view) {
-			const target = event.target as HTMLElement;
-			const chevron = target.closest?.('.cm-callout-chevron') as HTMLElement | null;
-			if (chevron?.dataset.calloutLine) {
-				event.preventDefault();
-				event.stopImmediatePropagation();
-				const lineNum = parseInt(chevron.dataset.calloutLine, 10);
-				if (!isNaN(lineNum)) view.dispatch({ effects: toggleCallout.of(lineNum) });
-				return true;
-			}
-			return false;
-		},
+const calloutDecoPlugin = ViewPlugin.fromClass(CalloutDecoPlugin, {
+	decorations: v => v.decorations,
+});
+
+// ─── Fold click handler ───
+// Registered as a standalone domEventHandlers extension — NOT inside ViewPlugin.
+// This avoids the silent breakage from ViewPlugin.eventHandlers priority issues.
+const calloutFoldHandler = EditorView.domEventHandlers({
+	mousedown(event, view) {
+		const target = event.target as HTMLElement;
+		if (!target?.closest) return false;
+		const chevron = target.closest('.cm-callout-chevron') as HTMLElement | null;
+		if (!chevron?.dataset.calloutLine) return false;
+
+		event.preventDefault();
+		const lineNum = parseInt(chevron.dataset.calloutLine, 10);
+		if (!isNaN(lineNum)) {
+			view.dispatch({ effects: toggleCallout.of(lineNum) });
+		}
+		return true;
 	},
 });
 
-// Backward compat export (CodeMirrorEditor.svelte imports this)
+// ─── Exports ───
+// calloutPlugin is an array — spread it into extensions
+export const calloutPlugin = [calloutDecoPlugin, calloutFoldHandler];
+
+// Backward compat (NotePane / CodeMirrorEditor import these individually)
 export const calloutClickHandler = EditorView.domEventHandlers({});
+export { calloutCollapseField };
 
 export const calloutTheme = EditorView.theme({
-	// ── Base callout line (title + body) ──
-	// --callout-color is set per-type below; CSS cascade handles all visual treatment.
 	'.cm-callout-line': {
 		borderInlineStart: '3px solid var(--callout-color, #448aff)',
 		paddingInlineStart: '12px !important',
@@ -337,8 +331,9 @@ export const calloutTheme = EditorView.theme({
 	'.cm-callout-body-line': {
 		background: 'color-mix(in srgb, var(--callout-color, #448aff) 4%, transparent)',
 	},
-
-	// ── Widget styles ──
+	'.cm-callout-title-widget': {
+		display: 'inline',
+	},
 	'.cm-callout-icon': {
 		fontWeight: '600',
 		fontSize: '0.95em',
@@ -347,40 +342,39 @@ export const calloutTheme = EditorView.theme({
 	},
 	'.cm-callout-chevron': {
 		cursor: 'pointer',
-		fontSize: '0.7em',
-		opacity: '0.6',
-		display: 'inline-block',
-		marginInlineEnd: '4px',
+		fontSize: '0.8em',
+		opacity: '0.7',
 		userSelect: 'none',
 		verticalAlign: 'middle',
 	},
-
-	// ── Per-type color variables ──
-	// Any unknown type falls back to --callout-color: #448aff (note/info blue)
-	'[data-callout="note"]':     { '--callout-color': '#448aff' },
-	'[data-callout="info"]':     { '--callout-color': '#448aff' },
-	'[data-callout="abstract"]': { '--callout-color': '#00b0ff' },
-	'[data-callout="summary"]':  { '--callout-color': '#00b0ff' },
-	'[data-callout="tldr"]':     { '--callout-color': '#00b0ff' },
-	'[data-callout="tip"]':      { '--callout-color': '#00bfa5' },
-	'[data-callout="hint"]':     { '--callout-color': '#00bfa5' },
-	'[data-callout="important"]':{ '--callout-color': '#00bfa5' },
-	'[data-callout="success"]':  { '--callout-color': '#00c853' },
-	'[data-callout="check"]':    { '--callout-color': '#00c853' },
-	'[data-callout="done"]':     { '--callout-color': '#00c853' },
-	'[data-callout="question"]': { '--callout-color': '#ff9100' },
-	'[data-callout="help"]':     { '--callout-color': '#ff9100' },
-	'[data-callout="faq"]':      { '--callout-color': '#ff9100' },
-	'[data-callout="warning"]':  { '--callout-color': '#ff9100' },
-	'[data-callout="caution"]':  { '--callout-color': '#ff9100' },
-	'[data-callout="attention"]':{ '--callout-color': '#ff9100' },
-	'[data-callout="failure"]':  { '--callout-color': '#ff5252' },
-	'[data-callout="fail"]':     { '--callout-color': '#ff5252' },
-	'[data-callout="missing"]':  { '--callout-color': '#ff5252' },
-	'[data-callout="danger"]':   { '--callout-color': '#ff1744' },
-	'[data-callout="error"]':    { '--callout-color': '#ff1744' },
-	'[data-callout="bug"]':      { '--callout-color': '#ff1744' },
-	'[data-callout="example"]':  { '--callout-color': '#7c4dff' },
-	'[data-callout="quote"]':    { '--callout-color': '#9e9e9e' },
-	'[data-callout="cite"]':     { '--callout-color': '#9e9e9e' },
+	'.cm-callout-title-text': {
+		fontWeight: '600',
+	},
+	// Per-type color variables
+	'[data-callout="note"]':      { '--callout-color': '#448aff' },
+	'[data-callout="info"]':      { '--callout-color': '#448aff' },
+	'[data-callout="abstract"]':  { '--callout-color': '#00b0ff' },
+	'[data-callout="summary"]':   { '--callout-color': '#00b0ff' },
+	'[data-callout="tldr"]':      { '--callout-color': '#00b0ff' },
+	'[data-callout="tip"]':       { '--callout-color': '#00bfa5' },
+	'[data-callout="hint"]':      { '--callout-color': '#00bfa5' },
+	'[data-callout="important"]': { '--callout-color': '#00bfa5' },
+	'[data-callout="success"]':   { '--callout-color': '#00c853' },
+	'[data-callout="check"]':     { '--callout-color': '#00c853' },
+	'[data-callout="done"]':      { '--callout-color': '#00c853' },
+	'[data-callout="question"]':  { '--callout-color': '#ff9100' },
+	'[data-callout="help"]':      { '--callout-color': '#ff9100' },
+	'[data-callout="faq"]':       { '--callout-color': '#ff9100' },
+	'[data-callout="warning"]':   { '--callout-color': '#ff9100' },
+	'[data-callout="caution"]':   { '--callout-color': '#ff9100' },
+	'[data-callout="attention"]': { '--callout-color': '#ff9100' },
+	'[data-callout="failure"]':   { '--callout-color': '#ff5252' },
+	'[data-callout="fail"]':      { '--callout-color': '#ff5252' },
+	'[data-callout="missing"]':   { '--callout-color': '#ff5252' },
+	'[data-callout="danger"]':    { '--callout-color': '#ff1744' },
+	'[data-callout="error"]':     { '--callout-color': '#ff1744' },
+	'[data-callout="bug"]':       { '--callout-color': '#ff1744' },
+	'[data-callout="example"]':   { '--callout-color': '#7c4dff' },
+	'[data-callout="quote"]':     { '--callout-color': '#9e9e9e' },
+	'[data-callout="cite"]':      { '--callout-color': '#9e9e9e' },
 });
