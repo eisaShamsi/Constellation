@@ -186,8 +186,6 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 
 			const titleLine = doc.line(callout.startLine);
 			const cursorOnTitle = cursorLine === callout.startLine;
-			const cursorInBody = cursorLine > callout.startLine
-				&& cursorLine <= callout.endLine;
 
 			// ── Title line: border + tinted background (always) ──
 			all.push({
@@ -240,17 +238,20 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 						}
 					}
 				}
-			} else if (!cursorOnTitle && !cursorInBody && callout.endLine > callout.startLine) {
-				// ── Collapse body ──
-				// Safe guards: cursor NOT on title (so cursor < titleLine.to, safely before
-				// the range start) AND cursor NOT in body (so cursor not inside range).
-				// If cursor is on the title line, titleLine.to is the range boundary — CM6
-				// may nudge cursor there → rebuild → nudge loop → freeze. Skip collapse.
-				all.push({
-					from: titleLine.to,
-					to: doc.line(callout.endLine).to,
-					deco: Decoration.replace({}),
-				});
+			} else {
+				// ── Collapsed body: per-line CSS hiding ──
+				// PERMANENT FREEZE FIX: use zero-length Decoration.line (not Decoration.replace).
+				// A line deco has from===to — no range → cursor can never be "inside" it →
+				// CM6 never nudges the cursor → the nudge→rebuild→nudge freeze loop is impossible.
+				// CSS display:none hides each line. The cursor line is left visible for editing.
+				for (let l = callout.startLine + 1; l <= callout.endLine; l++) {
+					if (cursorLine === l) continue; // cursor line stays visible
+					const line = doc.line(l);
+					all.push({
+						from: line.from, to: line.from,
+						deco: Decoration.line({ class: 'cm-callout-body-collapsed' }),
+					});
+				}
 			}
 		}
 	}
@@ -316,6 +317,12 @@ export const calloutTheme = EditorView.theme({
 	},
 	'.cm-callout-body-line': {
 		background: 'color-mix(in srgb, var(--callout-color, #448aff) 4%, transparent)',
+	},
+	// Collapsed body lines — hidden via CSS, not Decoration.replace.
+	// display:none is safe here: CM6 sees the lines as normal (no range decoration),
+	// cursor navigation through them is allowed and the cursor line is always visible.
+	'.cm-callout-body-collapsed': {
+		display: 'none',
 	},
 	'.cm-callout-title-widget': {
 		display: 'inline',
