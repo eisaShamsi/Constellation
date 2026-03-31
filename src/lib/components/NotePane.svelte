@@ -370,9 +370,34 @@
 			event.preventDefault();
 			event.stopPropagation();
 			const lineNum = parseInt(chevron.dataset.calloutLine, 10);
-			if (!isNaN(lineNum)) {
-				view.dispatch({ effects: toggleCallout.of(lineNum) });
+			if (isNaN(lineNum)) return;
+
+			const state = view.state;
+			// Determine if this click will collapse (new isCollapsed = true)
+			const collapseSet = state.field(calloutCollapseField, false);
+			const currentlyToggled = collapseSet?.has(lineNum) ?? false;
+			const titleText = state.doc.line(lineNum).text;
+			const foldMatch = titleText.match(/^>\s*\[!\w+\]([+-])/);
+			const defaultCollapsed = foldMatch?.[1] === '-';
+			const willCollapse = currentlyToggled ? !defaultCollapsed : defaultCollapsed;
+
+			// Find the callout end line
+			let endLine = lineNum;
+			for (let l = lineNum + 1; l <= Math.min(state.doc.lines, lineNum + 200); l++) {
+				const t = state.doc.line(l).text;
+				if (!/^>\s?/.test(t) || /^>\s*\[!\w+\]/.test(t)) break;
+				endLine = l;
 			}
+
+			// If collapsing with cursor inside body: move cursor to after callout
+			// in the SAME transaction so buildCalloutDecorations sees cursor outside.
+			const cursorLine = state.doc.lineAt(state.selection.main.head).number;
+			const cursorInBody = cursorLine > lineNum && cursorLine <= endLine;
+			const moveSelection = (willCollapse && cursorInBody && endLine < state.doc.lines)
+				? { anchor: state.doc.line(endLine + 1).from }
+				: undefined;
+
+			view.dispatch({ effects: toggleCallout.of(lineNum), selection: moveSelection });
 		}) as EventListener;
 		editorEl!.addEventListener('mousedown', chevronHandler, true);
 
