@@ -15,6 +15,7 @@ import {
 	EditorView,
 } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
+import { syntaxTree } from '@codemirror/language';
 
 const codeBlockLineDeco = Decoration.line({ class: 'cm-codeblock-line' });
 const blockquoteLineDeco = Decoration.line({ class: 'cm-blockquote-line' });
@@ -32,20 +33,22 @@ function isInsideCallout(doc: { line(n: number): { text: string }}, lineNum: num
 function buildLineDecorations(view: EditorView): DecorationSet {
 	const doc = view.state.doc;
 	const builder = new RangeSetBuilder<Decoration>();
+	// Use syntax tree once for the whole build — O(log n) node lookups vs O(N) line scan
+	const tree = syntaxTree(view.state);
 
-	// Pre-scan: determine if visible ranges start inside a code block
-	// by counting ``` fences from document start to first visible line
 	for (const { from, to } of view.visibleRanges) {
 		const startLine = doc.lineAt(from).number;
 		const endLine = doc.lineAt(to).number;
 
-		// Determine code block state at startLine by scanning from doc start
-		// (code blocks can span viewport boundaries)
+		// ⚡ Check if viewport start sits inside a FencedCode node using the syntax tree.
+		// This replaces the old O(N) forward scan from line 1 which became slow when
+		// the user had scrolled far into a large document.
+		let node = tree.resolve(from, 1);
 		let inCodeBlock = false;
-		for (let i = 1; i < startLine; i++) {
-			if (/^```/.test(doc.line(i).text)) {
-				inCodeBlock = !inCodeBlock;
-			}
+		while (node) {
+			if (node.name === 'FencedCode') { inCodeBlock = true; break; }
+			if (!node.parent) break;
+			node = node.parent;
 		}
 
 		for (let i = startLine; i <= endLine; i++) {
@@ -98,6 +101,7 @@ class LineDecoPluginClass {
 				requestAnimationFrame(() => {
 					if (!view.destroyed) {
 						this.decorations = buildLineDecorations(view);
+						view.dispatch({});
 					}
 				});
 			}, 400);

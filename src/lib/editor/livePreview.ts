@@ -408,6 +408,9 @@ class LivePreviewPlugin {
 				requestAnimationFrame(() => {
 					if (!view.destroyed) {
 						this.decorations = buildDecorations(view);
+						// Force CM6 to sync the DOM now — prevents a stale-DOM reconciliation
+						// stutter on the first keystroke after the pause.
+						view.dispatch({});
 					}
 				});
 			}, 500);

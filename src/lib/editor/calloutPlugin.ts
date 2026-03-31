@@ -190,9 +190,11 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 		const color = calloutColors[callout.type] || '#448aff';
 		const cursorInCallout = cursorLine >= callout.startLine && cursorLine <= callout.endLine;
 
-		// All callouts are foldable — chevron always shown (like Obsidian).
-		// '-' marker = starts collapsed, '+' or no marker = starts expanded.
-		const foldable = true;
+		// Obsidian standard: only explicit +/- markers make a callout foldable.
+		// > [!info]-  → foldable, starts collapsed
+		// > [!info]+  → foldable, starts expanded
+		// > [!info]   → not foldable, no chevron
+		const foldable = callout.foldMarker === '-' || callout.foldMarker === '+';
 		const defaultCollapsed = callout.foldMarker === '-';
 		const isCollapsed = collapsed.has(callout.startLine) ? !defaultCollapsed : defaultCollapsed;
 
@@ -304,6 +306,7 @@ class CalloutPluginClass {
 				requestAnimationFrame(() => {
 					if (!view.destroyed) {
 						this.decorations = buildCalloutDecorations(view);
+						view.dispatch({});
 					}
 				});
 			}, 350);
