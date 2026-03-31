@@ -317,6 +317,7 @@
 	let pipW = $state(420);
 	let pipH = $state(320);
 	let pipInitialized = $state(false);
+	let pipEnabled = $state(true);
 
 	// Emit context change to second screen when Sky View toggles or active tab changes
 	let skyviewHoverTimer: ReturnType<typeof setTimeout> | null = null;
@@ -482,7 +483,7 @@
 
 	// Auto-show/hide PiP (guarded to avoid redundant writes)
 	$effect(() => {
-		const shouldShow = showStarView && skyViewSelectedPath && pipFilteredNodes.length > 0;
+		const shouldShow = showStarView && pipEnabled && skyViewSelectedPath && pipFilteredNodes.length > 0;
 		if (shouldShow) {
 			if (!pipInitialized) {
 				pipX = Math.max(50, window.innerWidth - pipW - 30);
@@ -2597,7 +2598,12 @@
 				<div class="star-fullscreen">
 					<div class="star-header">
 						<span class="star-title">{$t('layout.starViewTitle')}</span>
-						<span class="star-pip-hint">{$t('layout.starViewPipHint')}</span>
+						<button class="star-pip-toggle" class:active={pipEnabled} onclick={() => { pipEnabled = !pipEnabled; if (!pipEnabled) showPiP = false; }} title="Picture-in-Picture">
+							<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<rect x="0.75" y="1.75" width="12.5" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+								<rect x="7" y="5" width="5" height="3.5" rx="0.75" fill="currentColor"/>
+							</svg>
+						</button>
 						<button class="star-close" onclick={() => showStarView = false}>×</button>
 					</div>
 					<GraphMindView
@@ -2644,9 +2650,12 @@
 					<div class="pip-overlay" style="left:{pipX}px; top:{pipY}px; width:{pipW}px; height:{pipH}px;">
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div class="pip-header" onmousedown={startPiPDrag}>
-							<span class="pip-title" dir="auto">{pipTitle}</span>
-							<span class="pip-count">{pipFilteredNodes.length} nodes</span>
-							<button class="pip-close" onclick={() => { showPiP = false; skyViewSelectedPath = null; }}>×</button>
+							<div class="pip-header-row">
+								<span class="pip-title" dir="auto">{pipTitle}</span>
+								<span class="pip-count">{pipFilteredNodes.length} nodes</span>
+								<button class="pip-close" onclick={() => { showPiP = false; skyViewSelectedPath = null; }}>×</button>
+							</div>
+							<span class="pip-subtitle">{$t('layout.starViewPipHint')}</span>
 						</div>
 						<div class="pip-graph">
 							<GraphMindView
@@ -3702,12 +3711,18 @@
 		flex: 1; display: flex; flex-direction: column; overflow: hidden;
 	}
 	.star-header {
-		display: flex; align-items: center; justify-content: space-between;
+		display: flex; align-items: center; gap: 4px;
 		padding: 8px 16px; border-bottom: 1px solid var(--border);
 		background: var(--bg-secondary);
 	}
-	.star-title { font-weight: 600; font-size: 0.9rem; }
-	.star-pip-hint { flex: 1; text-align: center; font-size: 0.75rem; color: var(--text-muted); opacity: 0.7; pointer-events: none; }
+	.star-title { font-weight: 600; font-size: 0.9rem; flex: 1; }
+	.star-pip-toggle {
+		width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+		border: none; background: none; border-radius: 4px; color: var(--text-muted); cursor: pointer;
+		opacity: 0.5; transition: opacity 0.12s, color 0.12s; margin-inline-end: 2px;
+	}
+	.star-pip-toggle:hover { opacity: 0.9; }
+	.star-pip-toggle.active { color: var(--interactive-accent); opacity: 1; }
 	.star-close {
 		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 3px; color: var(--text-muted); cursor: pointer;
@@ -3724,17 +3739,19 @@
 		background: var(--background-primary);
 	}
 	.pip-header {
-		display: flex; align-items: center; gap: 8px;
+		display: flex; flex-direction: column; align-items: stretch; gap: 2px;
 		padding: 5px 10px;
 		background: var(--background-secondary);
 		border-bottom: 1px solid var(--background-modifier-border);
 		cursor: move; user-select: none;
 	}
+	.pip-header-row { display: flex; align-items: center; gap: 8px; }
 	.pip-title {
 		flex: 1; font-size: 12px; font-weight: 600;
 		color: var(--text-normal);
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
+	.pip-subtitle { font-size: 10px; color: var(--text-muted); opacity: 0.65; pointer-events: none; line-height: 1.2; }
 	.pip-count {
 		font-size: 10px; color: var(--text-faint);
 		background: var(--background-modifier-hover);
