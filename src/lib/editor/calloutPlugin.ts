@@ -190,9 +190,11 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 				}),
 			});
 
-			// Widget: hide the raw "> [!type]+/- " prefix, show icon + chevron
-			// Show when cursor is outside the callout, or when collapsed (so user can re-expand)
-			const showWidget = !cursorInCallout || isCollapsed;
+			// Widget: hide the raw "> [!type]+/- " prefix, show icon + chevron.
+			// Foldable callouts (with +/-) ALWAYS show the widget regardless of cursor position —
+			// the user must be able to see and click ▶/▼ even while typing on the title line.
+			// Non-foldable callouts show the widget only when cursor is away (for inline editing).
+			const showWidget = foldable || !cursorInCallout || isCollapsed;
 
 			if (!isCollapsed) {
 				// Body lines: lighter tint + border
