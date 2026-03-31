@@ -1759,7 +1759,7 @@
 		await openNoteTab(path, libraryName, libraryColor);
 	}
 
-	function handleStarNodeClick(path: string, libraryName: string) {
+	async function handleStarNodeClick(path: string, libraryName: string) {
 		const lib = $libraries.find(v => v.name === libraryName);
 		const color = libraryColorMap[libraryName] ?? '#7c3aed';
 
@@ -1775,8 +1775,9 @@
 			return; // Don't leave Sky View
 		}
 
-		// No second screen — open note in main and exit Sky View
-		openNoteTab(path, libraryName, color);
+		// No second screen — open note in main, THEN exit Sky View so the tab
+		// has a path before the new-tab guard renders an empty screen.
+		await openNoteTab(path, libraryName, color);
 		showStarView = false;
 	}
 

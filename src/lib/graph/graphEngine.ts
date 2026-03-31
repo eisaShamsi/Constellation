@@ -981,15 +981,18 @@ export class GraphEngine {
 		this.themeObserver?.disconnect();
 		this.resizeObserver?.disconnect();
 
-		// ⚡ PERF: Clear ALL stage children first — before destroying any individual
-		// objects. This orphans every Graphics/Text from the render tree so that
-		// app.destroy({ children: false }) completes in O(1).
-		// Do NOT call t.destroy() on label/gizmo objects before clearing the stage:
-		// Pixi's destroy() interacts with the render pipeline (pushes to internal arrays)
-		// and will throw if called while objects are still in the render hierarchy.
-		// Orphaned objects are garbage-collected by JS; textures are freed by app.destroy().
-		this.app?.stage.removeChildren();
+		// ⚡ PERF: Order matters critically here.
+		// 1. Clear nodeContainer FIRST — this orphans all node Graphics objects from
+		//    their parent WITHOUT Pixi traversing their render groups (O(1) per node).
+		//    If we called stage.removeChildren() first while nodeContainer still had
+		//    children, Pixi would recursively clean up render groups for every node → O(N) freeze.
+		// 2. Then clear stage — now nodeContainer is empty so this is cheap (O(1)).
+		// 3. Drop individual t.destroy() calls — Pixi's destroy() pushes to internal render
+		//    pipeline arrays and throws if called while still in the hierarchy.
+		//    Textures are freed by app.destroy({ texture: true }); objects are GC'd by JS.
+		this.nodeContainer.removeChildren();
 		this.nodeGfx = [];
+		this.app?.stage.removeChildren();
 		this.labelPool.clear();
 		this.gizmoLabels = [];
 
