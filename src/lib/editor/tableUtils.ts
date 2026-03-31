@@ -120,8 +120,10 @@ export function parseTable(state: EditorState, pos: number): ParsedTable | null 
 	const alignments = parseAlignments(state.doc.line(separatorLineNum).text);
 	while (alignments.length < maxCols) alignments.push('none');
 
-	// Calculate cursor position in table
-	const cursorRow = cursorLine.number < separatorLineNum
+	// Calculate cursor position in table.
+	// Separator line is treated as the first data row so Delete Row works
+	// when the cursor is on the | --- | --- | line (not silently blocked).
+	const cursorRow = cursorLine.number <= separatorLineNum
 		? cursorLine.number - startLineNum
 		: cursorLine.number - startLineNum - 1; // Subtract 1 for separator
 	const cursorCol = getCursorColumn(cursorLine.text, pos - cursorLine.from);

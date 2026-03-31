@@ -679,6 +679,8 @@
 				y={0}
 				onAddRow={() => applyTableChange(addRow(currentTable!, currentTable!.cursorRow))}
 				onAddColumn={() => applyTableChange(addColumn(currentTable!, currentTable!.cursorCol))}
+				canDeleteRow={currentTable!.cursorRow > 0 && currentTable!.rows.length > 1}
+				canDeleteColumn={currentTable!.columnCount > 1}
 				onDeleteRow={() => applyTableChange(deleteRow(currentTable!, currentTable!.cursorRow))}
 				onDeleteColumn={() => applyTableChange(deleteColumn(currentTable!, currentTable!.cursorCol))}
 				onAlignLeft={() => applyTableChange(setAlignment(currentTable!, currentTable!.cursorCol, 'left'))}

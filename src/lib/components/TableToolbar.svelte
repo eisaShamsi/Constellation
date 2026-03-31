@@ -19,6 +19,8 @@
 		onSortDesc,
 		onInsertFormula,
 		onEvaluateFormulas,
+		canDeleteRow = true,
+		canDeleteColumn = true,
 	}: {
 		x: number;
 		y: number;
@@ -26,6 +28,8 @@
 		onAddColumn: () => void;
 		onDeleteRow: () => void;
 		onDeleteColumn: () => void;
+		canDeleteRow?: boolean;
+		canDeleteColumn?: boolean;
 		onAlignLeft: () => void;
 		onAlignCenter: () => void;
 		onAlignRight: () => void;
@@ -55,11 +59,11 @@
 		<span class="tt-label">Col</span>
 	</button>
 	<div class="tt-separator"></div>
-	<button class="tt-btn danger" title={$t('tableToolbar.deleteRow')} onmousedown={prevent} onclick={onDeleteRow}>
+	<button class="tt-btn danger" title={$t('tableToolbar.deleteRow')} onmousedown={prevent} onclick={onDeleteRow} disabled={!canDeleteRow}>
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
 		<span class="tt-label">Row</span>
 	</button>
-	<button class="tt-btn danger" title={$t('tableToolbar.deleteColumn')} onmousedown={prevent} onclick={onDeleteColumn}>
+	<button class="tt-btn danger" title={$t('tableToolbar.deleteColumn')} onmousedown={prevent} onclick={onDeleteColumn} disabled={!canDeleteColumn}>
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
 		<span class="tt-label">Col</span>
 	</button>
@@ -172,6 +176,14 @@
 	.tt-btn.danger:hover {
 		background: color-mix(in srgb, var(--color-red) 15%, transparent);
 		color: var(--color-red);
+	}
+	.tt-btn:disabled {
+		opacity: 0.3;
+		cursor: not-allowed;
+	}
+	.tt-btn:disabled:hover {
+		background: transparent;
+		color: var(--text-normal);
 	}
 
 	.tt-label {
