@@ -385,18 +385,35 @@ function buildDecorations(view: EditorView): DecorationSet {
 class LivePreviewPlugin {
 	decorations: DecorationSet;
 	private rebuildTimer: ReturnType<typeof setTimeout> | null = null;
+	private lastCursorLine = -1;
 
 	constructor(view: EditorView) {
 		this.decorations = buildDecorations(view);
+		this.lastCursorLine = view.state.doc.lineAt(view.state.selection.main.head).number;
 	}
 
 	update(update: ViewUpdate) {
-		if (update.viewportChanged || (update.selectionSet && !update.docChanged)) {
-			// Scroll or cursor moved — sync rebuild (show/hide markers immediately)
+		if (update.viewportChanged) {
+			// Scroll — always rebuild, clear any pending debounce
 			if (this.rebuildTimer) { clearTimeout(this.rebuildTimer); this.rebuildTimer = null; }
 			this.decorations = buildDecorations(update.view);
+			this.lastCursorLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
 			return;
 		}
+
+		if (update.selectionSet && !update.docChanged) {
+			// Cursor moved — live preview markers are LINE-based (hide when cursor leaves the line),
+			// so rebuilding on same-line cursor moves (word nav, char nav) is redundant and causes
+			// perceptible lag. Only rebuild when the cursor crosses a line boundary.
+			const newLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
+			if (newLine !== this.lastCursorLine) {
+				this.lastCursorLine = newLine;
+				if (this.rebuildTimer) { clearTimeout(this.rebuildTimer); this.rebuildTimer = null; }
+				this.decorations = buildDecorations(update.view);
+			}
+			return;
+		}
+
 		if (update.docChanged) {
 			// ⚡ Fast path: map existing decorations — O(changes), ~0ms, keeps typing instant
 			this.decorations = this.decorations.map(update.changes);
