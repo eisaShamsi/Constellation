@@ -384,41 +384,17 @@ function buildDecorations(view: EditorView): DecorationSet {
 // The ViewPlugin class
 class LivePreviewPlugin {
 	decorations: DecorationSet;
-	rebuildTimer: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(view: EditorView) {
 		this.decorations = buildDecorations(view);
 	}
 
 	update(update: ViewUpdate) {
-		if (update.viewportChanged) {
-			// Viewport scroll — rebuild immediately (no typing involved)
+		// Rebuild synchronously on any visible change — visible ranges only so this is fast.
+		// No timers / rAF / view.dispatch: those caused stutter-on-resume and callout freeze.
+		if (update.docChanged || update.viewportChanged || (update.selectionSet && !update.docChanged)) {
 			this.decorations = buildDecorations(update.view);
-		} else if (update.selectionSet && !update.docChanged) {
-			// Cursor moved without typing — rebuild immediately (show/hide markers)
-			this.decorations = buildDecorations(update.view);
-		} else if (update.docChanged) {
-			// Map existing decorations through changes instantly (~0.05ms)
-			this.decorations = this.decorations.map(update.changes);
-			// Full rebuild after typing pause — rAF ensures it yields to input
-			if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
-			const view = update.view;
-			this.rebuildTimer = setTimeout(() => {
-				this.rebuildTimer = null;
-				requestAnimationFrame(() => {
-					if (!view.destroyed) {
-						this.decorations = buildDecorations(view);
-						// Force CM6 to sync the DOM now — prevents a stale-DOM reconciliation
-						// stutter on the first keystroke after the pause.
-						view.dispatch({});
-					}
-				});
-			}, 500);
 		}
-	}
-
-	destroy() {
-		if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
 	}
 }
 

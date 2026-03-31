@@ -81,35 +81,18 @@ function buildLineDecorations(view: EditorView): DecorationSet {
 
 class LineDecoPluginClass {
 	decorations: DecorationSet;
-	rebuildTimer: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(view: EditorView) {
 		this.decorations = buildLineDecorations(view);
 	}
 
 	update(update: ViewUpdate) {
-		if (update.viewportChanged || (update.selectionSet && !update.docChanged)) {
+		// Line decorations (blockquote border, code background) don't depend on cursor position,
+		// so skip selectionSet-only updates. Rebuild synchronously on doc/viewport changes.
+		// No timers / rAF / view.dispatch: those caused stutter-on-resume.
+		if (update.docChanged || update.viewportChanged) {
 			this.decorations = buildLineDecorations(update.view);
-			return;
 		}
-		if (update.docChanged) {
-			this.decorations = this.decorations.map(update.changes);
-			if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
-			const view = update.view;
-			this.rebuildTimer = setTimeout(() => {
-				this.rebuildTimer = null;
-				requestAnimationFrame(() => {
-					if (!view.destroyed) {
-						this.decorations = buildLineDecorations(view);
-						view.dispatch({});
-					}
-				});
-			}, 400);
-		}
-	}
-
-	destroy() {
-		if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
 	}
 }
 
