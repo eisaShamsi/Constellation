@@ -170,7 +170,6 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 
 		for (const callout of findCalloutsInRange(doc, startLine, endLine)) {
 			const icon = calloutIcons[callout.type] || 'ℹ️';
-			const cursorInCallout = cursorLine >= callout.startLine && cursorLine <= callout.endLine;
 
 			// Obsidian standard: +/- markers control foldability and initial state
 			const foldable = callout.foldMarker === '-' || callout.foldMarker === '+';
@@ -180,8 +179,28 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 
 			const titleLine = doc.line(callout.startLine);
 
-			// ── Title line: border + tinted background ──
-			// data-callout sets --callout-color via CSS; no color values in JS
+			// ── Precise cursor checks ──
+			// We check at character level, not line level, to avoid placing
+			// Decoration.replace ranges over the cursor (which causes CM6 to
+			// loop trying to push the cursor out → freeze).
+			const prefixMatch = titleLine.text.match(/^>\s*\[!\w+\][+-]?\s*/);
+			const prefixEnd = prefixMatch ? titleLine.from + prefixMatch[0].length : titleLine.from;
+			const cursorPos = view.state.selection.main.head;
+
+			// Cursor is inside the "> [!type]- " prefix span being replaced
+			const cursorInPrefix = cursorPos >= titleLine.from && cursorPos < prefixEnd;
+
+			// Cursor is inside the body lines being collapsed
+			const bodyFrom = titleLine.to + 1;
+			const bodyTo = callout.endLine > callout.startLine
+				? doc.line(callout.endLine).to : titleLine.to;
+			const cursorInBody = callout.endLine > callout.startLine
+				&& cursorPos > titleLine.to && cursorPos <= bodyTo;
+
+			// Used for non-foldable callout widget suppression (show raw when editing title)
+			const cursorOnTitleLine = cursorLine === callout.startLine;
+
+			// ── Title line decoration ──
 			all.push({
 				from: titleLine.from, to: titleLine.from,
 				deco: Decoration.line({
@@ -190,11 +209,13 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 				}),
 			});
 
-			// Widget: hide the raw "> [!type]+/- " prefix, show icon + chevron.
-			// Foldable callouts (with +/-) ALWAYS show the widget regardless of cursor position —
-			// the user must be able to see and click ▶/▼ even while typing on the title line.
-			// Non-foldable callouts show the widget only when cursor is away (for inline editing).
-			const showWidget = foldable || !cursorInCallout || isCollapsed;
+			// ── Show widget? ──
+			// • Never when cursor is literally inside the prefix span (prevents freeze)
+			// • Foldable callouts: show widget even when cursor is on title line
+			//   so ▶/▼ remains clickable at all times
+			// • Non-foldable callouts: hide widget when cursor is on title line
+			//   so the user can see and edit the raw "> [!type] Title" text
+			const showWidget = !cursorInPrefix && (foldable || !cursorOnTitleLine || isCollapsed);
 
 			if (!isCollapsed) {
 				// Body lines: lighter tint + border
@@ -210,27 +231,24 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 				}
 			}
 
-			if (showWidget) {
-				const prefixMatch = titleLine.text.match(/^>\s*\[!\w+\][+-]?\s*/);
-				if (prefixMatch) {
-					all.push({
-						from: titleLine.from,
-						to: titleLine.from + prefixMatch[0].length,
-						deco: Decoration.replace({
-							widget: new CalloutIconWidget(callout.type, icon, foldable, isCollapsed, callout.startLine),
-						}),
-					});
-				}
+			if (showWidget && prefixMatch) {
+				all.push({
+					from: titleLine.from,
+					to: prefixEnd,
+					deco: Decoration.replace({
+						widget: new CalloutIconWidget(callout.type, icon, foldable, isCollapsed, callout.startLine),
+					}),
+				});
 
-				if (isCollapsed && callout.endLine > callout.startLine) {
-					// Collapse: hide all body lines
+				// Collapse body — only safe when cursor is NOT inside the hidden range
+				if (isCollapsed && callout.endLine > callout.startLine && !cursorInBody) {
 					all.push({
 						from: titleLine.to,
-						to: doc.line(callout.endLine).to,
+						to: bodyTo,
 						deco: Decoration.replace({}),
 					});
-				} else {
-					// Expanded: hide "> " prefix on each body line
+				} else if (!isCollapsed) {
+					// Expanded: hide "> " blockquote marker on each body line
 					for (let l = callout.startLine + 1; l <= callout.endLine; l++) {
 						const line = doc.line(l);
 						const qm = line.text.match(/^>\s?/);
