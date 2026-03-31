@@ -125,7 +125,7 @@
 	let tableToolbarVisible = $derived(currentTable !== null);
 
 	/* ─── Phase 3 state ─── */
-	let propsCollapsed = $state(false);
+	let propsCollapsed = $state(true);
 	let showMoreMenu = $state(false);
 	let moreMenuEl: HTMLDivElement | undefined;
 	const hasHistory = $derived(canGoBack || canGoForward);
