@@ -310,14 +310,14 @@
 	// Shared selection path — when an item is clicked in any sidebar mode, OrgChart highlights it
 	let skyViewSelectedPath = $state<string | string[] | null>(null);
 
-	// PiP (Picture-in-Picture) overlay state
-	let showPiP = $state(false);
-	let pipX = $state(0); // will be set on first show
-	let pipY = $state(0);
-	let pipW = $state(420);
-	let pipH = $state(320);
-	let pipInitialized = $state(false);
-	let pipEnabled = $state(true);
+	// WiW (Window in Window) overlay state
+	let showWiW = $state(false);
+	let wiwX = $state(0); // will be set on first show
+	let wiwY = $state(0);
+	let wiwW = $state(420);
+	let wiwH = $state(320);
+	let wiwInitialized = $state(false);
+	let wiwEnabled = $state(true);
 
 	// Emit context change to second screen when Sky View toggles or active tab changes
 	let skyviewHoverTimer: ReturnType<typeof setTimeout> | null = null;
@@ -432,9 +432,9 @@
 	// make iteration extremely slow. Instead, starVersion ($state) triggers re-render
 	// and StarView reads the plain starNodes/starLinks directly.
 
-	// PiP filtered data — recomputed when selection or star data changes
+	// WiW filtered data — recomputed when selection or star data changes
 	// Uses starVersion as reactive trigger since starNodes/starLinks are plain arrays
-	const pipFilteredNodes = $derived.by(() => {
+	const wiwFilteredNodes = $derived.by(() => {
 		const _ver = starVersion; // reactive trigger
 		if (!skyViewSelectedPath || !showStarView) return [];
 		const paths = Array.isArray(skyViewSelectedPath) ? skyViewSelectedPath : [skyViewSelectedPath];
@@ -444,16 +444,16 @@
 			return norms.some(norm => np.startsWith(norm + '/') || np === norm);
 		});
 	});
-	const pipFilteredNodeIds = $derived(new Set(pipFilteredNodes.map(n => n.id)));
-	const pipFilteredLinks = $derived.by(() => {
+	const wiwFilteredNodeIds = $derived(new Set(wiwFilteredNodes.map(n => n.id)));
+	const wiwFilteredLinks = $derived.by(() => {
 		const _ver = starVersion;
-		if (pipFilteredNodes.length === 0) return [];
-		return starLinks.filter(l => pipFilteredNodeIds.has(l.source) && pipFilteredNodeIds.has(l.target));
+		if (wiwFilteredNodes.length === 0) return [];
+		return starLinks.filter(l => wiwFilteredNodeIds.has(l.source) && wiwFilteredNodeIds.has(l.target));
 	});
 
-	// PiP legend — only libraries present in filtered nodes
-	const pipLibraryColorMap = $derived.by(() => {
-		const libs = new Set(pipFilteredNodes.map(n => n.libraryName));
+	// WiW legend — only libraries present in filtered nodes
+	const wiwLibraryColorMap = $derived.by(() => {
+		const libs = new Set(wiwFilteredNodes.map(n => n.libraryName));
 		const map: Record<string, string> = {};
 		for (const lib of libs) {
 			if (libraryColorMap[lib]) map[lib] = libraryColorMap[lib];
@@ -461,8 +461,8 @@
 		return map;
 	});
 
-	// PiP title derived from selection
-	const pipTitle = $derived.by(() => {
+	// WiW title derived from selection
+	const wiwTitle = $derived.by(() => {
 		const sel = skyViewSelectedPath;
 		if (!sel) return '';
 		if (Array.isArray(sel)) {
@@ -481,29 +481,29 @@
 		return parts[parts.length - 1] || sel;
 	});
 
-	// Auto-show/hide PiP (guarded to avoid redundant writes)
+	// Auto-show/hide WiW (guarded to avoid redundant writes)
 	$effect(() => {
-		const shouldShow = showStarView && pipEnabled && skyViewSelectedPath && pipFilteredNodes.length > 0;
+		const shouldShow = showStarView && wiwEnabled && skyViewSelectedPath && wiwFilteredNodes.length > 0;
 		if (shouldShow) {
-			if (!pipInitialized) {
-				pipX = Math.max(50, window.innerWidth - pipW - 30);
-				pipY = Math.max(50, window.innerHeight - pipH - 30);
-				pipInitialized = true;
+			if (!wiwInitialized) {
+				wiwX = Math.max(50, window.innerWidth - wiwW - 30);
+				wiwY = Math.max(50, window.innerHeight - wiwH - 30);
+				wiwInitialized = true;
 			}
-			if (!showPiP) showPiP = true;
+			if (!showWiW) showWiW = true;
 		} else {
-			if (showPiP) showPiP = false;
+			if (showWiW) showWiW = false;
 		}
 	});
 
-	// PiP drag handlers
-	function startPiPDrag(e: MouseEvent) {
+	// WiW drag handlers
+	function startWiWDrag(e: MouseEvent) {
 		e.preventDefault();
 		const startX = e.clientX, startY = e.clientY;
-		const startPipX = pipX, startPipY = pipY;
+		const startPipX = wiwX, startPipY = wiwY;
 		function onMove(ev: MouseEvent) {
-			pipX = startPipX + (ev.clientX - startX);
-			pipY = startPipY + (ev.clientY - startY);
+			wiwX = startPipX + (ev.clientX - startX);
+			wiwY = startPipY + (ev.clientY - startY);
 		}
 		function onUp() {
 			window.removeEventListener('mousemove', onMove);
@@ -513,16 +513,16 @@
 		window.addEventListener('mouseup', onUp);
 	}
 
-	function startPiPResize(e: MouseEvent, edge: string) {
+	function startWiWResize(e: MouseEvent, edge: string) {
 		e.preventDefault(); e.stopPropagation();
 		const startX = e.clientX, startY = e.clientY;
-		const sW = pipW, sH = pipH, sX = pipX, sY = pipY;
+		const sW = wiwW, sH = wiwH, sX = wiwX, sY = wiwY;
 		function onMove(ev: MouseEvent) {
 			const dx = ev.clientX - startX, dy = ev.clientY - startY;
-			if (edge.includes('e')) pipW = Math.max(280, sW + dx);
-			if (edge.includes('s')) pipH = Math.max(200, sH + dy);
-			if (edge.includes('w')) { pipW = Math.max(280, sW - dx); pipX = sX + (sW - pipW); }
-			if (edge.includes('n')) { pipH = Math.max(200, sH - dy); pipY = sY + (sH - pipH); }
+			if (edge.includes('e')) wiwW = Math.max(280, sW + dx);
+			if (edge.includes('s')) wiwH = Math.max(200, sH + dy);
+			if (edge.includes('w')) { wiwW = Math.max(280, sW - dx); wiwX = sX + (sW - wiwW); }
+			if (edge.includes('n')) { wiwH = Math.max(200, sH - dy); wiwY = sY + (sH - wiwH); }
 		}
 		function onUp() {
 			window.removeEventListener('mousemove', onMove);
@@ -2598,7 +2598,7 @@
 				<div class="star-fullscreen">
 					<div class="star-header">
 						<span class="star-title">{$t('layout.starViewTitle')}</span>
-						<button class="star-pip-toggle" class:active={pipEnabled} onclick={() => { pipEnabled = !pipEnabled; if (!pipEnabled) showPiP = false; }} title="Picture-in-Picture">
+						<button class="star-wiw-toggle" class:active={wiwEnabled} onclick={() => { wiwEnabled = !wiwEnabled; if (!wiwEnabled) showWiW = false; }} title="Window in Window">
 							<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<rect x="0.75" y="1.75" width="12.5" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
 								<rect x="7" y="5" width="5" height="3.5" rx="0.75" fill="currentColor"/>
@@ -2644,44 +2644,44 @@
 					skyViewSettings={$appSettings.skyView}
 					{libraryColorMap}
 				/>
-				<!-- PiP Overlay -->
-				{#if showPiP && pipFilteredNodes.length > 0}
+				<!-- WiW Overlay -->
+				{#if showWiW && wiwFilteredNodes.length > 0}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div class="pip-overlay" style="left:{pipX}px; top:{pipY}px; width:{pipW}px; height:{pipH}px;">
+					<div class="wiw-overlay" style="left:{wiwX}px; top:{wiwY}px; width:{wiwW}px; height:{wiwH}px;">
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div class="pip-header" onmousedown={startPiPDrag}>
-							<div class="pip-header-row">
-								<span class="pip-title" dir="auto">{pipTitle}</span>
-								<span class="pip-count">{pipFilteredNodes.length} nodes</span>
-								<button class="pip-close" onclick={() => { showPiP = false; skyViewSelectedPath = null; }}>×</button>
+						<div class="wiw-header" onmousedown={startWiWDrag}>
+							<div class="wiw-header-row">
+								<span class="wiw-title" dir="auto">{wiwTitle}</span>
+								<span class="wiw-count">{wiwFilteredNodes.length} nodes</span>
+								<button class="wiw-close" onclick={() => { showWiW = false; skyViewSelectedPath = null; }}>×</button>
 							</div>
-							<span class="pip-subtitle">{$t('layout.starViewPipHint')}</span>
+							<span class="wiw-subtitle">{$t('layout.starViewWiWHint')}</span>
 						</div>
-						<div class="pip-graph">
+						<div class="wiw-graph">
 							<GraphMindView
-								nodes={pipFilteredNodes}
-								links={pipFilteredLinks}
-								libraryColorMap={pipLibraryColorMap}
+								nodes={wiwFilteredNodes}
+								links={wiwFilteredLinks}
+								libraryColorMap={wiwLibraryColorMap}
 								onNodeClick={handleStarNodeClick}
 							/>
 						</div>
 						<!-- Resize handles -->
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div class="pip-resize pip-resize-n" onmousedown={(e) => startPiPResize(e, 'n')}></div>
+						<div class="wiw-resize wiw-resize-n" onmousedown={(e) => startWiWResize(e, 'n')}></div>
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div class="pip-resize pip-resize-s" onmousedown={(e) => startPiPResize(e, 's')}></div>
+						<div class="wiw-resize wiw-resize-s" onmousedown={(e) => startWiWResize(e, 's')}></div>
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div class="pip-resize pip-resize-e" onmousedown={(e) => startPiPResize(e, 'e')}></div>
+						<div class="wiw-resize wiw-resize-e" onmousedown={(e) => startWiWResize(e, 'e')}></div>
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div class="pip-resize pip-resize-w" onmousedown={(e) => startPiPResize(e, 'w')}></div>
+						<div class="wiw-resize wiw-resize-w" onmousedown={(e) => startWiWResize(e, 'w')}></div>
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div class="pip-resize pip-resize-se" onmousedown={(e) => startPiPResize(e, 'se')}></div>
+						<div class="wiw-resize wiw-resize-se" onmousedown={(e) => startWiWResize(e, 'se')}></div>
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div class="pip-resize pip-resize-sw" onmousedown={(e) => startPiPResize(e, 'sw')}></div>
+						<div class="wiw-resize wiw-resize-sw" onmousedown={(e) => startWiWResize(e, 'sw')}></div>
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div class="pip-resize pip-resize-ne" onmousedown={(e) => startPiPResize(e, 'ne')}></div>
+						<div class="wiw-resize wiw-resize-ne" onmousedown={(e) => startWiWResize(e, 'ne')}></div>
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div class="pip-resize pip-resize-nw" onmousedown={(e) => startPiPResize(e, 'nw')}></div>
+						<div class="wiw-resize wiw-resize-nw" onmousedown={(e) => startWiWResize(e, 'nw')}></div>
 					</div>
 				{/if}
 				</div>
@@ -3716,13 +3716,13 @@
 		background: var(--bg-secondary);
 	}
 	.star-title { font-weight: 600; font-size: 0.9rem; flex: 1; }
-	.star-pip-toggle {
+	.star-wiw-toggle {
 		width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 4px; color: var(--text-muted); cursor: pointer;
 		opacity: 0.5; transition: opacity 0.12s, color 0.12s; margin-inline-end: 2px;
 	}
-	.star-pip-toggle:hover { opacity: 0.9; }
-	.star-pip-toggle.active { color: var(--interactive-accent); opacity: 1; }
+	.star-wiw-toggle:hover { opacity: 0.9; }
+	.star-wiw-toggle.active { color: var(--interactive-accent); opacity: 1; }
 	.star-close {
 		width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 3px; color: var(--text-muted); cursor: pointer;
@@ -3730,49 +3730,49 @@
 	}
 	.star-close:hover { background: var(--border); color: var(--text); }
 
-	/* PiP overlay */
-	.pip-overlay {
+	/* WiW overlay */
+	.wiw-overlay {
 		position: fixed; z-index: 1000; display: flex; flex-direction: column;
 		border: 2px solid var(--interactive-accent);
 		border-radius: 10px; overflow: hidden;
 		box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 		background: var(--background-primary);
 	}
-	.pip-header {
+	.wiw-header {
 		display: flex; flex-direction: column; align-items: stretch; gap: 2px;
 		padding: 5px 10px;
 		background: var(--background-secondary);
 		border-bottom: 1px solid var(--background-modifier-border);
 		cursor: move; user-select: none;
 	}
-	.pip-header-row { display: flex; align-items: center; gap: 8px; }
-	.pip-title {
+	.wiw-header-row { display: flex; align-items: center; gap: 8px; }
+	.wiw-title {
 		flex: 1; font-size: 12px; font-weight: 600;
 		color: var(--text-normal);
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
-	.pip-subtitle { font-size: 10px; color: var(--text-muted); opacity: 0.65; pointer-events: none; line-height: 1.2; }
-	.pip-count {
+	.wiw-subtitle { font-size: 10px; color: var(--text-muted); opacity: 0.65; pointer-events: none; line-height: 1.2; }
+	.wiw-count {
 		font-size: 10px; color: var(--text-faint);
 		background: var(--background-modifier-hover);
 		padding: 1px 6px; border-radius: 8px; flex-shrink: 0;
 	}
-	.pip-close {
+	.wiw-close {
 		width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 3px;
 		color: var(--text-muted); cursor: pointer; font-size: 14px; flex-shrink: 0;
 	}
-	.pip-close:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-	.pip-graph { flex: 1; overflow: hidden; }
-	.pip-resize { position: absolute; z-index: 1; }
-	.pip-resize-n { top: 0; left: 6px; right: 6px; height: 4px; cursor: n-resize; }
-	.pip-resize-s { bottom: 0; left: 6px; right: 6px; height: 4px; cursor: s-resize; }
-	.pip-resize-e { top: 6px; right: 0; bottom: 6px; width: 4px; cursor: e-resize; }
-	.pip-resize-w { top: 6px; left: 0; bottom: 6px; width: 4px; cursor: w-resize; }
-	.pip-resize-se { bottom: 0; right: 0; width: 10px; height: 10px; cursor: se-resize; }
-	.pip-resize-sw { bottom: 0; left: 0; width: 10px; height: 10px; cursor: sw-resize; }
-	.pip-resize-ne { top: 0; right: 0; width: 10px; height: 10px; cursor: ne-resize; }
-	.pip-resize-nw { top: 0; left: 0; width: 10px; height: 10px; cursor: nw-resize; }
+	.wiw-close:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.wiw-graph { flex: 1; overflow: hidden; }
+	.wiw-resize { position: absolute; z-index: 1; }
+	.wiw-resize-n { top: 0; left: 6px; right: 6px; height: 4px; cursor: n-resize; }
+	.wiw-resize-s { bottom: 0; left: 6px; right: 6px; height: 4px; cursor: s-resize; }
+	.wiw-resize-e { top: 6px; right: 0; bottom: 6px; width: 4px; cursor: e-resize; }
+	.wiw-resize-w { top: 6px; left: 0; bottom: 6px; width: 4px; cursor: w-resize; }
+	.wiw-resize-se { bottom: 0; right: 0; width: 10px; height: 10px; cursor: se-resize; }
+	.wiw-resize-sw { bottom: 0; left: 0; width: 10px; height: 10px; cursor: sw-resize; }
+	.wiw-resize-ne { top: 0; right: 0; width: 10px; height: 10px; cursor: ne-resize; }
+	.wiw-resize-nw { top: 0; left: 0; width: 10px; height: 10px; cursor: nw-resize; }
 
 	/* Index split view */
 	.index-split {
@@ -4015,5 +4015,5 @@
 	/* layout-ribbon removed — controls merged into tab-bar */
 	:global(body.focus-active) .tab-bar { display: none !important; }
 	:global(body.focus-active) .status-bar { display: none !important; }
-	:global(body.focus-active) .pip-overlay { display: none !important; }
+	:global(body.focus-active) .wiw-overlay { display: none !important; }
 </style>

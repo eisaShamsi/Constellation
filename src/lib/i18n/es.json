@@ -391,7 +391,7 @@
     "graphViewTitle": "Vista de grafo",
     "pinned": "Fijada",
     "starViewTitle": "Star View",
-    "starViewPipHint": "Haz clic en una nota en la barra lateral para ver sus conexiones"
+    "starViewWiWHint": "Haz clic en una nota en la barra lateral para ver sus conexiones"
   },
   "welcome": {
     "title": "Bienvenido a Constellation",

@@ -391,7 +391,7 @@
     "graphViewTitle": "ग्राफ़ दृश्य",
     "pinned": "पिन किया गया",
     "starViewTitle": "Star View",
-    "starViewPipHint": "साइडबार में एक नोट पर क्लिक करें, उसके कनेक्शन देखने के लिए"
+    "starViewWiWHint": "साइडबार में एक नोट पर क्लिक करें, उसके कनेक्शन देखने के लिए"
   },
   "welcome": {
     "title": "Constellation में आपका स्वागत है",

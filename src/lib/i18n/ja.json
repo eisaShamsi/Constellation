@@ -391,7 +391,7 @@
     "graphViewTitle": "グラフビュー",
     "pinned": "ピン留め",
     "starViewTitle": "Star View",
-    "starViewPipHint": "サイドバーのノートをクリックして接続を表示"
+    "starViewWiWHint": "サイドバーのノートをクリックして接続を表示"
   },
   "welcome": {
     "title": "Constellation へようこそ",

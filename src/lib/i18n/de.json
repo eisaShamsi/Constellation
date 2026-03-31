@@ -391,7 +391,7 @@
     "graphViewTitle": "Graphansicht",
     "pinned": "Angeheftet",
     "starViewTitle": "Star View",
-    "starViewPipHint": "Klicke auf eine Notiz in der Seitenleiste, um ihre Verbindungen zu sehen"
+    "starViewWiWHint": "Klicke auf eine Notiz in der Seitenleiste, um ihre Verbindungen zu sehen"
   },
   "welcome": {
     "title": "Willkommen bei Constellation",

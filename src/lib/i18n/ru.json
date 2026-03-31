@@ -391,7 +391,7 @@
     "graphViewTitle": "Граф",
     "pinned": "Закреплено",
     "starViewTitle": "Star View",
-    "starViewPipHint": "Нажмите на заметку в боковой панели, чтобы увидеть её связи"
+    "starViewWiWHint": "Нажмите на заметку в боковой панели, чтобы увидеть её связи"
   },
   "welcome": {
     "title": "Добро пожаловать в Constellation",

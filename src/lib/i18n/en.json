@@ -390,7 +390,7 @@
     "graphViewTitle": "Graph View",
     "pinned": "Pinned",
     "starViewTitle": "Star View",
-    "starViewPipHint": "Click a note in the sidebar to see its connections",
+    "starViewWiWHint": "Click a note in the sidebar to see its connections",
     "clickToStart": "Click me to start"
   },
   "welcome": {
