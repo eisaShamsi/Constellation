@@ -110,6 +110,7 @@ const hrDeco = Decoration.mark({ class: 'cm-md-hr' });
 const blockquoteDeco = Decoration.mark({ class: 'cm-md-blockquote' });
 const tagDeco = Decoration.mark({ class: 'cm-md-tag' });
 const replaceDeco = Decoration.replace({}); /* cached — avoids allocation per decoration */
+const htmlHiddenDeco = Decoration.mark({ class: 'cm-html-hidden' }); /* hide HTML tags without breaking bidi */
 
 // Typed link decorations — one per semantic link type (CE Phase 1)
 const TYPED_LINK_TYPES = new Set([
@@ -518,15 +519,18 @@ function buildDecorations(view: EditorView): DecorationSet {
 				}
 
 				// Inline HTML: <u>...</u>, <sub>...</sub>, <sup>...</sup>
+				// Use Decoration.mark (not replace) to preserve bidi text flow within the line.
 				const htmlInlineRe = /<(u|sub|sup|mark)>(.*?)<\/\1>/gi;
 				while ((m = htmlInlineRe.exec(lineText)) !== null) {
 					const tag = m[1].toLowerCase();
 					const absFrom = line.from + m.index;
+					const openEnd = absFrom + tag.length + 2; // after <tag>
+					const closeStart = absFrom + m[0].length - tag.length - 3; // before </tag>
 					const absTo = absFrom + m[0].length;
-					const content = m[2];
-					ranges.push({ from: absFrom, to: absTo, deco: Decoration.replace({
-						widget: new InlineHtmlWidget(content, tag),
-					}) });
+					const cls = tag === 'u' ? 'cm-html-u' : tag === 'sub' ? 'cm-html-sub' : tag === 'sup' ? 'cm-html-sup' : 'cm-html-mark';
+					ranges.push({ from: absFrom, to: openEnd, deco: htmlHiddenDeco }); // hide <tag>
+					ranges.push({ from: openEnd, to: closeStart, deco: Decoration.mark({ class: cls }) }); // style content
+					ranges.push({ from: closeStart, to: absTo, deco: htmlHiddenDeco }); // hide </tag>
 				}
 
 				// Alignment divs: <div style="text-align: center">...</div>
@@ -680,6 +684,7 @@ export const livePreviewTheme = EditorView.theme({
 	'.cm-link-derives-from': { color: '#FFD700', textDecorationColor: '#FFD70066' },
 	'.cm-link-part-of':      { color: '#AAAAAA', textDecorationColor: '#AAAAAA66' },
 	'.cm-md-align':  { display: 'block', width: '100%' },
+	'.cm-html-hidden': { fontSize: '0', lineHeight: '0', overflow: 'hidden', display: 'inline', width: '0' },
 	'.cm-html-u':    { textDecoration: 'underline' },
 	'.cm-html-sub':  { fontSize: '0.75em', verticalAlign: 'sub' },
 	'.cm-html-sup':  { fontSize: '0.75em', verticalAlign: 'super' },
