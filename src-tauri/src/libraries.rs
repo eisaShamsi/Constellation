@@ -1984,6 +1984,67 @@ pub fn save_clipboard_image(app: tauri::AppHandle, library_path: String, image_d
     Ok(filename)
 }
 
+/// Resolve an image embed filename to a base64 data URL.
+/// Searches: note's folder → library/attachments/ → library root.
+/// Returns `data:image/...;base64,...` or an empty string if not found.
+#[tauri::command]
+pub fn resolve_embed_image(
+    library_path: String,
+    note_path: String,
+    filename: String,
+) -> String {
+    let note_dir = Path::new(&note_path).parent().map(|p| p.to_path_buf());
+
+    // Candidate paths in priority order
+    let mut candidates: Vec<std::path::PathBuf> = Vec::new();
+    if let Some(ref nd) = note_dir {
+        candidates.push(nd.join(&filename));
+    }
+    if !library_path.is_empty() {
+        candidates.push(Path::new(&library_path).join("attachments").join(&filename));
+        candidates.push(Path::new(&library_path).join("images").join(&filename));
+        candidates.push(Path::new(&library_path).join("assets").join(&filename));
+        candidates.push(Path::new(&library_path).join(&filename));
+    }
+
+    for cand in &candidates {
+        if cand.is_file() {
+            if let Ok(bytes) = fs::read(cand) {
+                let ext = cand.extension().and_then(|e| e.to_str()).unwrap_or("png").to_lowercase();
+                let mime = match ext.as_str() {
+                    "jpg" | "jpeg" => "image/jpeg",
+                    "gif" => "image/gif",
+                    "svg" => "image/svg+xml",
+                    "webp" => "image/webp",
+                    "bmp" => "image/bmp",
+                    "ico" => "image/x-icon",
+                    "avif" => "image/avif",
+                    _ => "image/png",
+                };
+                return format!("data:{};base64,{}", mime, base64_encode(&bytes));
+            }
+        }
+    }
+    String::new()
+}
+
+/// Simple base64 encoder
+fn base64_encode(input: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut result = String::with_capacity((input.len() + 2) / 3 * 4);
+    for chunk in input.chunks(3) {
+        let b0 = chunk[0] as u32;
+        let b1 = if chunk.len() > 1 { chunk[1] as u32 } else { 0 };
+        let b2 = if chunk.len() > 2 { chunk[2] as u32 } else { 0 };
+        let n = (b0 << 16) | (b1 << 8) | b2;
+        result.push(TABLE[((n >> 18) & 0x3F) as usize] as char);
+        result.push(TABLE[((n >> 12) & 0x3F) as usize] as char);
+        if chunk.len() > 1 { result.push(TABLE[((n >> 6) & 0x3F) as usize] as char); } else { result.push('='); }
+        if chunk.len() > 2 { result.push(TABLE[(n & 0x3F) as usize] as char); } else { result.push('='); }
+    }
+    result
+}
+
 /// Simple base64 decoder (no external crate needed)
 fn base64_decode(input: &str) -> Result<Vec<u8>, String> {
     let table: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

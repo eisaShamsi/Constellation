@@ -146,6 +146,7 @@ pub fn run() {
             libraries::update_links_on_rename,
             libraries::read_note_preview,
             libraries::save_clipboard_image,
+            libraries::resolve_embed_image,
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::scan_library_index,

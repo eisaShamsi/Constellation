@@ -13,7 +13,7 @@ import {
 } from '@codemirror/view';
 import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 
 // ─── Path state fields (for resolving image embeds) ───
 export const setLibraryPath       = StateEffect.define<string>();
@@ -147,42 +147,92 @@ class CheckboxWidget extends WidgetType {
 const checkboxCheckedDeco   = Decoration.replace({ widget: new CheckboxWidget(true) });
 const checkboxUncheckedDeco = Decoration.replace({ widget: new CheckboxWidget(false) });
 
-/** Widget for inline images when cursor is off the line.
- *  Accepts ordered src candidates — tries each on error before showing text fallback. */
+// Cache resolved image data URLs to avoid repeated IPC calls.
+// Key: "libraryPath|notePath|filename", Value: data URL or '' (not found).
+const _imageCache = new Map<string, string>();
+
+/** Widget for inline images — resolves via Rust IPC (handles non-ASCII paths correctly). */
 class ImageWidget extends WidgetType {
-	srcs: string[];
+	filename: string;
 	alt: string;
-	constructor(srcs: string[], alt: string) {
+	libraryPath: string;
+	notePath: string;
+	constructor(filename: string, alt: string, libraryPath: string, notePath: string) {
 		super();
-		this.srcs = srcs;
+		this.filename = filename;
 		this.alt = alt;
+		this.libraryPath = libraryPath;
+		this.notePath = notePath;
 	}
 	toDOM() {
 		const wrap = document.createElement('div');
 		wrap.className = 'cm-md-image-widget';
-		const img = document.createElement('img');
-		let attempt = 0;
-		const tryNext = () => {
-			attempt++;
-			if (attempt < this.srcs.length) {
-				img.src = this.srcs[attempt];
-			} else {
-				// All candidates exhausted — show text fallback
-				wrap.innerHTML = '';
-				const fallback = document.createElement('span');
-				fallback.className = 'cm-md-image-fallback';
-				fallback.textContent = `📷 ${this.alt || this.srcs[0] || ''}`;
-				wrap.appendChild(fallback);
-			}
-		};
-		img.src = this.srcs[0] || '';
-		img.alt = this.alt || '';
-		img.loading = 'lazy';
-		img.onerror = tryNext;
-		wrap.appendChild(img);
+
+		// Absolute URL (http/data) — render directly, no Rust resolution
+		if (!this.libraryPath && !this.notePath) {
+			const img = document.createElement('img');
+			img.src = this.filename;
+			img.alt = this.alt || '';
+			img.loading = 'lazy';
+			img.onerror = () => this._showFallback(wrap);
+			wrap.appendChild(img);
+			return wrap;
+		}
+
+		const cacheKey = `${this.libraryPath}|${this.notePath}|${this.filename}`;
+		const cached = _imageCache.get(cacheKey);
+
+		if (cached) {
+			// Cache hit — render immediately
+			const img = document.createElement('img');
+			img.src = cached;
+			img.alt = this.alt || '';
+			wrap.appendChild(img);
+		} else if (cached === '') {
+			// Cached as not-found
+			this._showFallback(wrap);
+		} else {
+			// Cache miss — show placeholder, resolve async via Rust
+			const placeholder = document.createElement('span');
+			placeholder.className = 'cm-md-image-fallback';
+			placeholder.textContent = `⏳ ${this.alt || this.filename}`;
+			wrap.appendChild(placeholder);
+
+			invoke<string>('resolve_embed_image', {
+				libraryPath: this.libraryPath,
+				notePath: this.notePath,
+				filename: this.filename,
+			}).then(dataUrl => {
+				if (dataUrl) {
+					_imageCache.set(cacheKey, dataUrl);
+					wrap.innerHTML = '';
+					const img = document.createElement('img');
+					img.src = dataUrl;
+					img.alt = this.alt || '';
+					wrap.appendChild(img);
+				} else {
+					_imageCache.set(cacheKey, '');
+					this._showFallback(wrap);
+				}
+			}).catch(() => {
+				_imageCache.set(cacheKey, '');
+				this._showFallback(wrap);
+			});
+		}
 		return wrap;
 	}
-	eq(other: ImageWidget) { return this.srcs[0] === other.srcs[0]; }
+	private _showFallback(wrap: HTMLDivElement) {
+		wrap.innerHTML = '';
+		const fallback = document.createElement('span');
+		fallback.className = 'cm-md-image-fallback';
+		fallback.textContent = `📷 ${this.alt || this.filename}`;
+		wrap.appendChild(fallback);
+	}
+	eq(other: ImageWidget) {
+		return this.filename === other.filename
+			&& this.libraryPath === other.libraryPath
+			&& this.notePath === other.notePath;
+	}
 }
 
 /** Widget for code block language label */
@@ -227,6 +277,8 @@ class DataviewLabelWidget extends WidgetType {
 function buildDecorations(view: EditorView): DecorationSet {
 	const doc = view.state.doc;
 	const cursorLine = doc.lineAt(view.state.selection.main.head).number;
+	const libPath  = view.state.field(libraryPathField, false) || '';
+	const notePath = view.state.field(notePathField,    false) || '';
 	const ranges: { from: number; to: number; deco: Decoration }[] = [];
 
 	// Process only visible ranges for performance
@@ -357,13 +409,14 @@ function buildDecorations(view: EditorView): DecorationSet {
 					const mdMatch = text.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
 					if (mdMatch) {
 						const url = mdMatch[2];
-						// Absolute URL (http/https/data) — use directly; relative path — resolve candidates
-						const srcs = /^https?:\/\/|^data:/.test(url)
-							? [url]
-							: resolveEmbedCandidates(view, url);
-						if (srcs.length > 0) {
+						if (/^https?:\/\/|^data:/.test(url)) {
+							// Absolute URL — use directly (no Rust resolution needed)
 							ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
-								widget: new ImageWidget(srcs, mdMatch[1]),
+								widget: new ImageWidget(url, mdMatch[1], '', ''),
+							}) });
+						} else {
+							ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
+								widget: new ImageWidget(url, mdMatch[1], libPath, notePath),
 							}) });
 						}
 					}
@@ -388,13 +441,10 @@ function buildDecorations(view: EditorView): DecorationSet {
 					const target = m[1];
 					const ext = target.split('.').pop()?.toLowerCase() || '';
 					if (IMG_EXTS.has(ext)) {
-						const srcs = resolveEmbedCandidates(view, target);
-						if (srcs.length > 0) {
-							const absFrom = line.from + m.index;
-							ranges.push({ from: absFrom, to: absFrom + m[0].length, deco: Decoration.replace({
-								widget: new ImageWidget(srcs, target),
-							}) });
-						}
+						const absFrom = line.from + m.index;
+						ranges.push({ from: absFrom, to: absFrom + m[0].length, deco: Decoration.replace({
+							widget: new ImageWidget(target, target, libPath, notePath),
+						}) });
 					}
 				}
 

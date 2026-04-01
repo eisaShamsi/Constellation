@@ -322,9 +322,20 @@
 					}
 					if (update.selectionSet || update.docChanged) {
 						updateTableToolbar(update.view);
-						// Update toolbar direction based on current line's script
-						const line = update.state.doc.lineAt(update.state.selection.main.head);
-						toolbarDir = RTL_DETECT.test(line.text) ? 'rtl' : 'ltr';
+						// Update toolbar direction based on current line's script.
+						// Empty lines inherit direction from the nearest non-empty line above.
+						const doc = update.state.doc;
+						const curLine = doc.lineAt(update.state.selection.main.head);
+						let detectedDir: 'ltr' | 'rtl' | null = null;
+						if (curLine.text.trim()) {
+							detectedDir = RTL_DETECT.test(curLine.text) ? 'rtl' : 'ltr';
+						} else {
+							for (let n = curLine.number - 1; n >= 1; n--) {
+								const prev = doc.line(n).text;
+								if (prev.trim()) { detectedDir = RTL_DETECT.test(prev) ? 'rtl' : 'ltr'; break; }
+							}
+						}
+						if (detectedDir) toolbarDir = detectedDir;
 					}
 				}),
 				EditorView.theme({
