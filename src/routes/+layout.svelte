@@ -2553,7 +2553,7 @@
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
 					</button>
 				{/if}
-				<div class="tab-scroll" class:no-tabs={$openTabs.length === 0 && !showStarView && !showGlobalTasks && !showIndex} bind:this={tabScrollEl} onscroll={updateTabScrollArrows}>
+				<div class="tab-scroll" class:no-tabs={$openTabs.length === 0} bind:this={tabScrollEl} onscroll={updateTabScrollArrows}>
 					{#each $openTabs as tab (tab.id)}
 						<button class="tab"
 							class:active={$activeTabId === tab.id}
@@ -2587,7 +2587,7 @@
 						<svg class="tab-plus-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
 						<svg class="tab-bulb-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
 					</button>
-					{#if $openTabs.length === 0 && !showStarView && !showGlobalTasks && !showIndex}
+					{#if $openTabs.length === 0}
 						<span class="tab-new-hint">{$t('layout.clickToStart')}</span>
 					{/if}
 				</div>
@@ -3755,9 +3755,11 @@
 	.pane-container.horizontal > .pane-divider { height: 3px; cursor: row-resize; }
 	.pane-divider:hover { background: var(--accent); }
 
-	/* Star fullscreen */
+	/* Star fullscreen — covers the entire window above tab bar and content */
 	.star-fullscreen {
-		flex: 1; display: flex; flex-direction: column; overflow: hidden;
+		position: fixed; inset: 0; z-index: 50;
+		display: flex; flex-direction: column; overflow: hidden;
+		background: var(--background-primary, #fff);
 	}
 	.star-header {
 		display: flex; align-items: center; gap: 4px;
