@@ -901,8 +901,43 @@ Image embed bug (separate from R13): **FAIL** → Fixed `efeb31d`
 
 **Commit:** `efeb31d` — pushed to `origin/main`
 
+### Toolbar Enhancement
+
+**New buttons:** Underline, Subscript, Superscript, Alignment (Start/Center/End), Clear Formatting, Find & Replace, Toolbar On/Off toggle.
+
+**RTL-aware toolbar:**
+- Toolbar flips to RTL when cursor is on Arabic/Hebrew line
+- Empty lines inherit direction from nearest non-empty line above
+- Alignment start/end maps to right/left in RTL
+- Undo/redo + alignment SVGs mirror via `scaleX(-1)` in RTL
+- Table toolbar also RTL-aware (dir prop from NotePane)
+
+**Live preview for HTML tags:**
+- `<u>`, `<sub>`, `<sup>` rendered via `Decoration.mark` with `cm-html-hidden` (font-size:0) for tags — preserves bidi text flow
+- `<div style="text-align:...">` rendered via `AlignmentWidget` (dir=auto)
+
+**i18n:** 8 new toolbar keys + toggle key in all 15 locales.
+
+**Commits:** `bf0e13e` through `2f96306` (12 commits)
+
+---
+
+### Star View Fixes
+
+- `cf90297`: Tab bar hidden during Star View overlay
+- `90b37c7` → `cf90297`: Fixed Svelte parse error (missing `>`)
+- `efeb31d`: Deferred PIXI destroy on close (no freeze)
+
+---
+
+### Milestone: toolbar-rtl-typewriter
+
+**Tag:** `milestone/toolbar-rtl-typewriter` at `2f96306`
+**ZIP:** `E:/Backups/Constellation/Constellation-toolbar-rtl-typewriter-20260401.zip`
+**Pushed to:** `origin/main` + `origin --tags`
+
+---
+
 ### Open Items
-- Re-verify R13.3 + image embed fix in live app
-- Milestone tag + ZIP backup — after R13 full pass
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session
