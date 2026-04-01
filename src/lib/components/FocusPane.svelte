@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { EditorView, keymap, drawSelection } from '@codemirror/view';
-	import { EditorState, Compartment } from '@codemirror/state';
+	import { EditorState } from '@codemirror/state';
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 	import { appSettings } from '$lib/libraries/store';
-	import { bidiPlugin, bidiTheme, scriptFontsField } from '$lib/editor/bidiPlugin';
+	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import { t } from '$lib/i18n';
 
 	let {
@@ -27,7 +27,6 @@
 
 	let editorEl: HTMLDivElement;
 	let view: EditorView | null = null;
-	let updating = false;
 	let lastInternalValue = value;
 	let wordCount = $state(0);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -41,8 +40,6 @@
 	let hasTitleContent = $derived(titleValue.trim().length > 0);
 
 	const PAUSE_DELAY = 3000; // 3 seconds of no typing → show title
-
-	const dirCompartment = new Compartment();
 
 	function onUserTyping() {
 		isTyping = true;
@@ -160,10 +157,12 @@
 					...historyKeymap,
 					{ key: 'Escape', run: () => { onexit?.(); return true; } },
 				]),
-				dirCompartment.of(EditorView.editorAttributes.of({ dir })),
+				scriptFontsField,
+				bidiPlugin,
+				bidiTheme,
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
-					if (update.docChanged && !updating) {
+					if (update.docChanged) {
 						const text = update.state.doc.toString();
 						lastInternalValue = text;
 						const words = text.trim().split(/\s+/).filter(w => w.length > 0);
@@ -190,12 +189,11 @@
 		view.focus();
 	});
 
-	// Dir sync: guarded, only dispatches when dir actually changes
-	let prevDir = dir;
+	// Script fonts — dispatch to bidiPlugin whenever appSettings changes
 	$effect(() => {
-		if (view && dir !== prevDir) {
-			prevDir = dir;
-			view.dispatch({ effects: dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })) });
+		const sf = $appSettings.scriptFonts ?? {};
+		if (view) {
+			view.dispatch({ effects: setScriptFonts.of(sf) });
 		}
 	});
 
@@ -353,29 +351,9 @@
 		outline: none !important;
 		overflow: auto !important;
 	}
-	/* Classic I-beam cursor with hooked serifs */
+	/* Plain hairline cursor */
 	.focus-editor :global(.cm-cursor) {
 		border-left: 1.5px solid var(--text-normal, #1a1a1a) !important;
-		position: relative !important;
-	}
-	.focus-editor :global(.cm-cursor)::before,
-	.focus-editor :global(.cm-cursor)::after {
-		content: '';
-		position: absolute;
-		left: -5px;
-		width: 10px;
-		height: 3px;
-		background: transparent;
-	}
-	.focus-editor :global(.cm-cursor)::before {
-		top: -1px;
-		border-bottom: 1.5px solid var(--text-normal, #1a1a1a);
-		border-radius: 0 0 3px 3px;
-	}
-	.focus-editor :global(.cm-cursor)::after {
-		bottom: -1px;
-		border-top: 1.5px solid var(--text-normal, #1a1a1a);
-		border-radius: 3px 3px 0 0;
 	}
 
 	/* ─── Footer ─── */

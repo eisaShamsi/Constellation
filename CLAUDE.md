@@ -115,6 +115,12 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - Prefer CSS-only solutions over JavaScript. Prefer Rust over JavaScript for computation.
 - When in doubt, do less.
 
+### Language-First by Design
+- Constellation supports all languages simultaneously, from the ground up by design.
+- Per-line bidirectional text (bidiPlugin) is a core architectural feature, not an add-on.
+- Every editor view — NotePane, FocusPane, and any future view — must support multilingual, mixed-script content natively.
+- Never build a single-language assumption into layout, fonts, cursor behavior, or input handling.
+
 ### Smooth Transitions
 - NotePane and FocusPane edit the same `.md` file. Switching between them must be seamless.
 - What the user types in Focus (plain text markdown) renders beautifully in NotePane.
