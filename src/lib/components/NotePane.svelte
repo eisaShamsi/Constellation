@@ -18,7 +18,7 @@
 	import { defaultKeymap, history, historyKeymap, undo, redo, indentWithTab } from '@codemirror/commands';
 	import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 	import { search, openSearchPanel, searchKeymap } from '@codemirror/search';
-	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath, notePathField, setNotePath } from '$lib/editor/livePreview';
+	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath, notePathField, setNotePath, attachmentFolderField, setAttachmentFolder } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
@@ -292,7 +292,7 @@
 				livePreviewCompartment.of(livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme, calloutPlugin, calloutTheme] : []),
 				lineDecoPlugin, lineDecoTheme,
 				scriptFontsField, bidiPlugin, bidiTheme, /* per-line RTL/LTR direction + cursor positioning */
-				libraryPathField, notePathField, /* image path resolution */
+				libraryPathField, notePathField, attachmentFolderField, /* image path resolution */
 				closeBrackets(),
 				search({ top: true }),
 				autocompletion({ override: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
@@ -345,12 +345,11 @@
 		view = new EditorView({ state, parent: editorEl! });
 
 		/* Set library + note paths for image resolution */
-		if (libraryPath) {
-			view.dispatch({ effects: setLibraryPath.of(libraryPath) });
-		}
-		if (filePath) {
-			view.dispatch({ effects: setNotePath.of(filePath) });
-		}
+		const imgEffects: any[] = [];
+		if (libraryPath) imgEffects.push(setLibraryPath.of(libraryPath));
+		if (filePath) imgEffects.push(setNotePath.of(filePath));
+		imgEffects.push(setAttachmentFolder.of($appSettings.defaultAttachmentFolder || ''));
+		if (imgEffects.length) view.dispatch({ effects: imgEffects });
 
 		/* Checkbox toggle — capture phase, O(1) via posAtCoords */
 		checkboxHandler = ((event: MouseEvent) => {

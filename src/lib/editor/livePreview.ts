@@ -16,8 +16,9 @@ import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
 // ─── Path state fields (for resolving image embeds) ───
-export const setLibraryPath = StateEffect.define<string>();
-export const setNotePath    = StateEffect.define<string>();
+export const setLibraryPath       = StateEffect.define<string>();
+export const setNotePath          = StateEffect.define<string>();
+export const setAttachmentFolder  = StateEffect.define<string>();
 
 export const libraryPathField = StateField.define<string>({
 	create: () => '',
@@ -39,12 +40,23 @@ export const notePathField = StateField.define<string>({
 	},
 });
 
+export const attachmentFolderField = StateField.define<string>({
+	create: () => '',
+	update(value, tr) {
+		for (const effect of tr.effects) {
+			if (effect.is(setAttachmentFolder)) return effect.value;
+		}
+		return value;
+	},
+});
+
 /** Returns ordered list of candidate absolute paths for an embedded image.
  *  Search order: note's folder → library root.
  *  We return all candidates so ImageWidget can try each via onerror chaining. */
 function resolveEmbedCandidates(view: EditorView, filename: string): string[] {
 	const libPath  = view.state.field(libraryPathField, false) || '';
 	const notePath = view.state.field(notePathField,    false) || '';
+	const attachFolder = view.state.field(attachmentFolderField, false) || '';
 	if (!libPath && !notePath) return [];
 
 	const sep = (libPath || notePath).includes('\\') ? '\\' : '/';
@@ -56,17 +68,24 @@ function resolveEmbedCandidates(view: EditorView, filename: string): string[] {
 		if (noteDir) candidates.push(noteDir + sep + filename);
 	}
 
-	// 2. Library-level attachments folder (per appSettings.defaultAttachmentFolder default '+')
+	// 2. Custom attachment folder from settings (if configured)
+	if (libPath && attachFolder) {
+		candidates.push(libPath + sep + attachFolder + sep + filename);
+	}
+
+	// 3. Common attachment folders + library root
 	if (libPath) {
-		candidates.push(libPath + sep + 'attachments' + sep + filename);
+		if (attachFolder !== 'attachments') candidates.push(libPath + sep + 'attachments' + sep + filename);
+		if (attachFolder !== 'images')      candidates.push(libPath + sep + 'images' + sep + filename);
+		if (attachFolder !== 'assets')      candidates.push(libPath + sep + 'assets' + sep + filename);
 		candidates.push(libPath + sep + filename);
 	}
 
-	try {
-		return candidates.map(p => convertFileSrc(p));
-	} catch {
-		return [];
+	const results: string[] = [];
+	for (const p of candidates) {
+		try { results.push(convertFileSrc(p)); } catch { /* skip invalid path */ }
 	}
+	return results;
 }
 
 // Pre-cached module-level decorations — allocated once, reused every rebuild.
