@@ -583,6 +583,7 @@
         "outdent": "アウトデント",
         "findReplace": "検索と置換",
         "find": "検索",
+        "toggle": "ツールバー オン/オフ",
         "replace": "置換",
         "replaceAll": "すべて置換",
         "next": "次へ",

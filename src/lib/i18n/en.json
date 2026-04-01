@@ -583,6 +583,7 @@
         "outdent": "Outdent",
         "findReplace": "Find & Replace",
         "find": "Find",
+        "toggle": "Toolbar On/Off",
         "replace": "Replace",
         "replaceAll": "Replace All",
         "next": "Next",
