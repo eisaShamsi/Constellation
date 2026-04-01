@@ -3742,7 +3742,7 @@
 	}
 
 	/* Content */
-	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #e8e8ec; }
+	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #e8e8ec; position: relative; }
 
 	/* Pane container */
 	.pane-container {
@@ -3755,9 +3755,9 @@
 	.pane-container.horizontal > .pane-divider { height: 3px; cursor: row-resize; }
 	.pane-divider:hover { background: var(--accent); }
 
-	/* Star fullscreen — covers the entire window above tab bar and content */
+	/* Star fullscreen — fills the content area (between tab bar and bottom), sidebars untouched */
 	.star-fullscreen {
-		position: fixed; inset: 0; z-index: 50;
+		position: absolute; inset: 0; z-index: 10;
 		display: flex; flex-direction: column; overflow: hidden;
 		background: var(--background-primary, #fff);
 	}
