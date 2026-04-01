@@ -2545,7 +2545,7 @@
 		</div>
 
 		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
-		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex}
+		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex}>
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
 				{#if canScrollStart}
