@@ -729,7 +729,8 @@ Debug logs removed. Ready for final clean confirmation run.
 - **BLOCKING-001:** RESOLVED
 - **BLOCKING-002:** RESOLVED
 - **BLOCKING-003:** RESOLVED
-- **Next:** Phase 4 user tests
+- **Phase 4:** APPROVED (`df3b24b`)
+- **Next:** Phase 5 — Syntax Highlighting
 
 ---
 
@@ -786,3 +787,104 @@ Debug logs removed. Ready for final clean confirmation run.
 ---
 
 ## Step 49: Phase 4 — Commit & Push
+
+**Commit:** `df3b24b` — eNotePane Phase 4: Toolbar — ALL 8 AUDITORS + 9 USER TESTS PASS
+**Pushed to:** `origin/main`
+
+**Files:**
+- `src/lib/components/eNotePane.svelte` — toolbar added (498 lines)
+- `lab/experiments/phase-4-toolbar.md` — audit + test results
+- `lab/reports/SESSION-LOG-2026-03-27.md` — full session history
+
+---
+
+## Session Continuation — 2026-04-01
+
+### Regression Tests (continued from previous session)
+
+| Test | Result | Commits |
+|------|--------|---------|
+| R3 | PASS | — |
+| R4 | PASS | — |
+| R5 | PASS | — |
+| R6 (except R6.3) | PASS | — |
+| R6.3 Blockquote muted color | PASS after fix | `5c1e384` |
+| R6.6 | PASS | — |
+| R7 | PASS | — |
+| R8 (except R8.4) | PASS | — |
+| R8.4 Delete Row disabled on header/separator | PASS after fix | `2b6754b` |
+| R9.2 Properties panel collapsed by default | PASS after fix | `83fdca9` |
+| R10 | PASS | — |
+| R11 | PASS | — |
+| R11 RTL triple-click (intermittent) | Known WebView2 bidi bug — no code fix; documented | — |
+| R12 FocusPane multilingual + plain cursor | PASS after redesign | `17719fc`, `e211abf` |
+
+**R13 (Sky View Integration) — not yet tested.**
+
+---
+
+### Philosophy & Architecture
+
+- Added **"Language-First by Design"** as a named Architecture Principle in CLAUDE.md (`17719fc`)
+- Added **LL-014: Three Strikes** rule to LESSONS-LEARNED.md (`f30805a`)
+- Full IPC contract documented in `docs/IPC-CONTRACT.md` (`a7cfdff`)
+- Performance rules (ViewPlugin line-change guard, decoration pre-cache, IPC boundary) added to CLAUDE.md (`a7cfdff`)
+
+---
+
+### FocusPane Multilingual Redesign (R12)
+
+**Problem:** FocusPane used a global `dirCompartment` for direction — not per-line contextual.
+
+**Fix:**
+- Replaced `dirCompartment` with `bidiPlugin` + `bidiTheme` + `scriptFontsField`
+- Added `EditorView.editorAttributes.of({ dir: 'auto' })` so `bidiPlugin.resolveEditorDir()` works correctly
+- FocusPane now handles all languages per-line simultaneously (Language-First by Design)
+- Plain hairline cursor — removed serif hook `::before`/`::after` pseudo-elements
+
+**Commits:** `17719fc`, `e211abf`
+
+---
+
+### Callout Plugin Redesign
+
+**Problem:** 7+ failed patch attempts (violated LL-014). Root cause: `Decoration.replace` on the cursor line caused CM6 freeze.
+
+**Fix (from scratch):**
+- Rule A: `Decoration.replace` only when cursor is on a DIFFERENT line
+- Rule B: Collapsed body uses `Decoration.line` (zero-length, `from===to`) — architecturally freeze-proof
+
+**Commit:** `42fe06c`
+
+---
+
+### Typewriter Font Theme
+
+**Feature:** Settings → Language → Font Theme — visual card selector (Default / Typewriter).
+
+**Fonts bundled (WOFF2, ~230KB):**
+| Font | Script | Historical machine |
+|------|--------|--------------------|
+| Special Elite | Latin | Smith Corona / Remington |
+| Miriam Libre | Hebrew | Remington / Olivetti Hebrew |
+| PT Mono | Cyrillic | Soviet Robotron / Olympia |
+| Tiro Devanagari Hindi | Devanagari | Godrej typewriters |
+| Courier Prime | Latin | IBM Selectric (pre-existing) |
+| Noto Naskh Arabic | Arabic | Adler / Olivetti Arabic (pre-existing) |
+| CJK | Japanese/Korean/Chinese | System: MS Mincho, Batang, Songti SC |
+
+**Architecture:**
+- `AppSettings.fontTheme: 'default' | 'typewriter'`
+- `TYPEWRITER_FONTS` preset in store.ts
+- `getEffectiveScriptFonts()` — NotePane + FocusPane use this instead of raw `scriptFonts`
+- `bidiPlugin` extended to detect hebrew / devanagari / cjk (japanese, korean, chinese) / cyrillic
+
+**Commit:** `068b217`
+
+---
+
+### Open Items
+- R13 Sky View Integration — 6 tests pending
+- Milestone tag + ZIP backup — after R13
+- Virtual scrolling (Priority 4) — future session
+- Decompose +layout.svelte (Priority 3) — future session
