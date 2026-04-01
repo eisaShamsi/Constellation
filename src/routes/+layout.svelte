@@ -2544,8 +2544,8 @@
 			</button>
 		</div>
 
-		<!-- Tab bar (locked to paper) -->
-		<div class="tab-bar">
+		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
+		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex}
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
 				{#if canScrollStart}
@@ -3742,7 +3742,7 @@
 	}
 
 	/* Content */
-	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #e8e8ec; position: relative; }
+	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #e8e8ec; }
 
 	/* Pane container */
 	.pane-container {
@@ -3755,12 +3755,12 @@
 	.pane-container.horizontal > .pane-divider { height: 3px; cursor: row-resize; }
 	.pane-divider:hover { background: var(--accent); }
 
-	/* Star fullscreen — fills the content area (between tab bar and bottom), sidebars untouched */
+	/* Star fullscreen */
 	.star-fullscreen {
-		position: absolute; inset: 0; z-index: 10;
-		display: flex; flex-direction: column; overflow: hidden;
+		flex: 1; display: flex; flex-direction: column; overflow: hidden;
 		background: var(--background-primary, #fff);
 	}
+	.tab-bar-hidden { display: none !important; }
 	.star-header {
 		display: flex; align-items: center; gap: 4px;
 		padding: 8px 16px; border-bottom: 1px solid var(--border);
