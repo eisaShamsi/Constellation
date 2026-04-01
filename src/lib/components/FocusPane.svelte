@@ -157,6 +157,7 @@
 					...historyKeymap,
 					{ key: 'Escape', run: () => { onexit?.(); return true; } },
 				]),
+				EditorView.editorAttributes.of({ dir: 'auto' }),
 				scriptFontsField,
 				bidiPlugin,
 				bidiTheme,
