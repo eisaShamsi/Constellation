@@ -41,6 +41,7 @@
 	import FileTree from '$lib/components/FileTree.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
+	import FocusPane from '$lib/components/FocusPane.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
@@ -625,6 +626,9 @@
 	// Debouncing at 500ms prevents them from firing on every keystroke.
 	let sidebarHeadings = $state<HeadingItem[]>([]);
 	let noteDir = $state<'ltr' | 'rtl'>($dir as 'ltr' | 'rtl');
+	let focusMode = $state(false);
+	let _focusModeTabId = '';
+	$effect(() => { const id = $activeTab?.id ?? ''; if (id !== _focusModeTabId) { _focusModeTabId = id; focusMode = false; } });
 	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string }[]>([]);
 	let currentOutgoing = $state<{ target: string; context: string }[]>([]);
 	let activeNoteTags = $state<string[]>([]);
@@ -2748,6 +2752,22 @@
 						{#key $activeTab.id + '|' + $activeTab.path}
 						{@const _mountedTab = $activeTab}
 						{@const _saveGuard = { saving: false }}
+						{#if focusMode}
+							<FocusPane
+								value={_body}
+								title={_mountedTab.name.replace(/\.md$/, '')}
+								dir={noteDir}
+								onchange={(text) => {
+									const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
+									const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
+									const fc = buildFullContent(props, text);
+									if (currentTab) currentTab.content = fc;
+									markRecentWrite(_mountedTab.path);
+									writeNote(_mountedTab.path, fc).catch(() => {});
+								}}
+								onexit={() => { focusMode = false; }}
+							/>
+						{:else}
 						<NotePane
 							value={_body}
 							title={_mountedTab.name.replace(/\.md$/, '')}
@@ -2830,9 +2850,13 @@
 									case 'addProperty':
 										window.dispatchEvent(new CustomEvent('constellation:add-property', { detail: { path: _mountedTab.path } }));
 										break;
+									case 'switchToFocus':
+										focusMode = true;
+										break;
 								}
 							}}
 						/>
+						{/if}
 						{/key}
 					{/if}
 				</div>

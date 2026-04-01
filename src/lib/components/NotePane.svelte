@@ -570,6 +570,11 @@
 							{livePreviewEnabled ? ($t('notePane.sourceMode') || 'Source mode') : ($t('notePane.livePreview') || 'Live preview')}
 						</button>
 						<div class="e-bc-menu-sep"></div>
+						<button class="e-bc-menu-item" onclick={() => handleMoreAction('switchToFocus')}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+							{$t('notePane.focusMode') || 'Focus mode'}
+						</button>
+						<div class="e-bc-menu-sep"></div>
 						<button class="e-bc-menu-item" onclick={() => handleMoreAction('addProperty')}>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
 							{$t('contextMenu.addProperty')}
