@@ -235,6 +235,26 @@ class ImageWidget extends WidgetType {
 	}
 }
 
+/** Widget for text alignment — replaces <div style="text-align:...">content</div> */
+class AlignmentWidget extends WidgetType {
+	content: string;
+	align: string;
+	constructor(content: string, align: string) {
+		super();
+		this.content = content;
+		this.align = align;
+	}
+	toDOM() {
+		const div = document.createElement('div');
+		div.className = 'cm-md-align';
+		div.style.textAlign = this.align;
+		div.dir = 'auto';
+		div.textContent = this.content;
+		return div;
+	}
+	eq(other: AlignmentWidget) { return this.content === other.content && this.align === other.align; }
+}
+
 /** Widget for code block language label */
 class CodeBlockLabelWidget extends WidgetType {
 	lang: string;
@@ -496,15 +516,8 @@ function buildDecorations(view: EditorView): DecorationSet {
 				const alignRe = /^<div style="text-align:\s*(left|center|right)">(.*)<\/div>$/;
 				const alignMatch = lineText.match(alignRe);
 				if (alignMatch) {
-					const align = alignMatch[1];
-					const openLen = alignMatch[0].indexOf('>') + 1;
-					const closeLen = 6; // </div>
-					const absFrom = line.from;
-					const absTo = line.to;
-					ranges.push({ from: absFrom, to: absFrom + openLen, deco: replaceDeco }); // hide <div...>
-					ranges.push({ from: absTo - closeLen, to: absTo, deco: replaceDeco }); // hide </div>
-					ranges.push({ from: absFrom, to: absFrom, deco: Decoration.line({
-						attributes: { style: `text-align: ${align}` },
+					ranges.push({ from: line.from, to: line.to, deco: Decoration.replace({
+						widget: new AlignmentWidget(alignMatch[2], alignMatch[1]),
 					}) });
 				}
 
@@ -649,6 +662,7 @@ export const livePreviewTheme = EditorView.theme({
 	'.cm-link-generalizes':  { color: '#A44AFF', textDecorationColor: '#A44AFF66' },
 	'.cm-link-derives-from': { color: '#FFD700', textDecorationColor: '#FFD70066' },
 	'.cm-link-part-of':      { color: '#AAAAAA', textDecorationColor: '#AAAAAA66' },
+	'.cm-md-align':  { display: 'block', width: '100%' },
 	'.cm-html-u':    { textDecoration: 'underline' },
 	'.cm-html-sub':  { fontSize: '0.75em', verticalAlign: 'sub' },
 	'.cm-html-sup':  { fontSize: '0.75em', verticalAlign: 'super' },
