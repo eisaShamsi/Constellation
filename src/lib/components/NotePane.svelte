@@ -727,13 +727,14 @@
 			<hr class="e-props-divider" />
 		{/if}
 
-		<!-- ─── Toolbar toggle + toolbar ─── -->
+		<!-- ─── Toolbar ─── -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<button class="e-toolbar-toggle" title={$t('toolbar.toggle') || 'Toggle toolbar'} onmousedown={(e) => e.preventDefault()} onclick={() => { toolbarVisible = !toolbarVisible; view?.focus(); }}>
-			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={!toolbarVisible}><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-		</button>
-		{#if toolbarVisible}
 		<div class="e-toolbar" dir={toolbarDir} onmousedown={(e) => e.preventDefault()}>
+			<button class="e-tb e-toolbar-toggle" class:e-tb-off={!toolbarVisible} title={$t('toolbar.toggle') || 'Toolbar On/Off'} onclick={() => { toolbarVisible = !toolbarVisible; view?.focus(); }}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+			</button>
+		{#if toolbarVisible}
+			<div class="e-tb-sep"></div>
 			<button class="e-tb" title={$t('toolbar.bold')} onclick={() => wrapSelection('**', '**')}><strong>B</strong></button>
 			<button class="e-tb" title={$t('toolbar.italic')} onclick={() => wrapSelection('_', '_')}><em>I</em></button>
 			<button class="e-tb" title={$t('toolbar.strikethrough')} onclick={() => wrapSelection('~~', '~~')}><s>S</s></button>
@@ -761,8 +762,8 @@
 			<div class="e-tb-sep"></div>
 			<button class="e-tb e-tb-flip" title="Undo" onclick={tbUndo}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.69 3L3 13"/></svg></button>
 			<button class="e-tb e-tb-flip" title="Redo" onclick={tbRedo}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.69 3L21 13"/></svg></button>
-		</div>
 		{/if}
+		</div>
 
 		{#if tableToolbarVisible && view && currentTable}
 			<div class="e-table-toolbar-float" style="position: fixed; left: {tableToolbarX}px; top: {tableToolbarY}px; transform: translateX(-50%); z-index: 200;">
@@ -881,15 +882,6 @@
 		margin: 12px 0;
 	}
 
-	/* ─── Toolbar toggle ─── */
-	.e-toolbar-toggle {
-		display: flex; align-items: center; justify-content: center;
-		width: 24px; height: 24px; border: none; background: none; border-radius: 4px;
-		color: var(--text-faint); cursor: pointer; margin-bottom: 4px; align-self: flex-start;
-	}
-	.e-toolbar-toggle:hover { color: var(--text-muted); background: var(--background-modifier-hover); }
-	.e-toolbar-toggle svg.rotated { opacity: 0.4; }
-
 	/* ─── Toolbar (Phase 4) ─── */
 	.e-toolbar { display: flex; align-items: center; gap: 2px; padding: 4px 0; margin-bottom: 8px; border-bottom: 1px solid var(--background-modifier-border, #e8e8e8); flex-wrap: wrap; }
 	.e-tb { display: flex; align-items: center; justify-content: center; gap: 2px; width: 28px; height: 28px; border: none; background: none; border-radius: 4px; color: var(--text-muted); cursor: pointer; font-size: 13px; font-family: inherit; }
@@ -897,6 +889,7 @@
 	.e-tb.mono { font-family: var(--font-monospace-theme, monospace); font-size: 11px; }
 	.e-tb-hl { background: #fef08a; padding: 0 3px; border-radius: 2px; color: #1a1a1a; font-size: 12px; }
 	.e-tb-sep { width: 1px; height: 18px; background: var(--background-modifier-border); margin: 0 4px; }
+	.e-tb.e-tb-off { opacity: 0.35; }
 	.e-toolbar[dir="rtl"] .e-tb-flip svg { transform: scaleX(-1); }
 	.e-tb-caret { font-size: 8px; opacity: 0.5; margin-inline-start: -2px; }
 	.e-tb-drop { position: relative; }
