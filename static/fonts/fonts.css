@@ -65,3 +65,67 @@
   font-style: normal;
   font-display: swap;
 }
+
+/* ═══ Typewriter Fonts ═══ */
+
+/* Special Elite — Vintage typewriter (Latin/Western European) */
+@font-face {
+  font-family: 'Special Elite';
+  src: url('/fonts/SpecialElite-Regular.woff2') format('woff2'),
+       url('/fonts/SpecialElite-LatinExt.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Miriam Libre — Hebrew typewriter (Remington/Olivetti Hebrew) */
+@font-face {
+  font-family: 'Miriam Libre';
+  src: url('/fonts/MiriamLibre-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Miriam Libre';
+  src: url('/fonts/MiriamLibre-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* PT Mono — Cyrillic typewriter (Soviet office/document standard) */
+@font-face {
+  font-family: 'PT Mono';
+  src: url('/fonts/PTMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0100-024F;
+}
+@font-face {
+  font-family: 'PT Mono';
+  src: url('/fonts/PTMono-LatinExt.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-024F, U+1E00-1EFF;
+}
+@font-face {
+  font-family: 'PT Mono';
+  src: url('/fonts/PTMono-Cyrillic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0400-04FF, U+0500-052F;
+}
+
+/* Tiro Devanagari Hindi — Devanagari typewriter (Godrej-era standard) */
+@font-face {
+  font-family: 'Tiro Devanagari Hindi';
+  src: url('/fonts/TiroDevanagariHindi-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0900-097F, U+1CD0-1CFF;
+}

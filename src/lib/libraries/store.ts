@@ -1093,6 +1093,21 @@ export const BUILTIN_FONT_SETS: FontSet[] = [
 	{ id: 'persian', name: 'Persian', interfaceFont: '"Sakkal Majalla", "Arabic Typesetting", sans-serif', textFont: '"Arabic Typesetting", "Sakkal Majalla", sans-serif', monoFont: '"Cascadia Code", Consolas, monospace', isBuiltIn: true },
 ];
 
+/** Typewriter font preset — authentic pre-PC-era fonts for each script */
+export const TYPEWRITER_FONTS: { textFont: string; scriptFonts: Record<string, string> } = {
+	textFont: '"Courier Prime", "PT Mono", monospace',
+	scriptFonts: {
+		arabic:     'Noto Naskh Arabic, serif',
+		hebrew:     '"Miriam Libre", serif',
+		devanagari: '"Tiro Devanagari Hindi", serif',
+		cyrillic:   '"PT Mono", monospace',
+		// CJK: system typewriter fonts — MS Mincho (Windows), Hiragino Mincho (macOS), Batang (Korean)
+		japanese:   '"Shippori Mincho", "MS Mincho", "Hiragino Mincho Pro", serif',
+		korean:     '"Gowun Batang", Batang, "AppleMyungjo", serif',
+		chinese:    '"ZCOOL XiaoWei", NSimSun, "Songti SC", serif',
+	},
+};
+
 export const SCRIPT_UNICODE_RANGES: Record<string, string> = {
 	latin: 'U+0000-024F, U+1E00-1EFF, U+2000-206F',
 	arabic: 'U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF',
@@ -1119,6 +1134,11 @@ export const SCRIPT_SAMPLES: Record<string, string> = {
 	devanagari: 'हिन्दी में नमूना पाठ',
 	cyrillic: 'Пример текста на кириллице',
 };
+
+/** Returns the effective per-script fonts — typewriter preset overrides user scriptFonts */
+export function getEffectiveScriptFonts(s: AppSettings): Record<string, string> {
+	return s.fontTheme === 'typewriter' ? TYPEWRITER_FONTS.scriptFonts : (s.scriptFonts || {});
+}
 
 export function getFontSetById(id: string, customSets: FontSet[] = []): FontSet | undefined {
 	return BUILTIN_FONT_SETS.find(s => s.id === id) || customSets.find(s => s.id === id);
@@ -1173,6 +1193,7 @@ export interface AppSettings {
 
 	// Font Sets
 	fontMode: 'universal' | 'per-language';
+	fontTheme: 'default' | 'typewriter';
 	activeFontSetId: string;
 	languageFontSets: Record<string, string>;
 	customFontSets: FontSet[];
@@ -1287,6 +1308,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	scriptDateFormats: {} as Record<string, string>,
 	contextualDates: {} as Record<string, boolean>,
 	fontMode: 'per-language',
+	fontTheme: 'default',
 	activeFontSetId: 'system',
 	languageFontSets: { latin: 'system', arabic: 'arabic-modern', hebrew: 'hebrew', cjk: 'cjk' },
 	customFontSets: [],

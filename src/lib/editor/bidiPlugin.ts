@@ -21,8 +21,12 @@ import { RangeSetBuilder, StateEffect, StateField } from '@codemirror/state';
 const RTL_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF\uFB1D-\uFB4F]/;
 const LTR_RE = /[A-Za-z\u00C0-\u024F\u1E00-\u1EFF\u0400-\u04FF]/;
 
-// Arabic-specific range for font detection
-const ARABIC_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+// Script-specific ranges for per-line font detection
+const ARABIC_RE    = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+const HEBREW_RE    = /[\u0590-\u05FF\uFB1D-\uFB4F]/;
+const DEVANAGARI_RE = /[\u0900-\u097F]/;
+const CYRILLIC_RE  = /[\u0400-\u04FF]/;
+const CJK_RE       = /[\u4E00-\u9FFF\u3400-\u4DBF\u3000-\u303F\u30A0-\u30FF\u3040-\u309F\uAC00-\uD7AF]/;
 
 /** Detect direction of a single line by first strong directional character */
 function detectLineDir(text: string): 'rtl' | 'ltr' | null {
@@ -37,10 +41,19 @@ function detectLineDir(text: string): 'rtl' | 'ltr' | null {
 	return null; // no strong directional characters (numbers, symbols only)
 }
 
-/** Detect dominant script for font selection */
+/** Detect dominant script for font selection — returns key matching TYPEWRITER_FONTS.scriptFonts */
 function detectLineScript(text: string): string | null {
-	if (ARABIC_RE.test(text)) return 'arabic';
-	return null; // default font
+	if (ARABIC_RE.test(text))    return 'arabic';
+	if (HEBREW_RE.test(text))    return 'hebrew';
+	if (DEVANAGARI_RE.test(text)) return 'devanagari';
+	// CJK: distinguish Japanese (has kana) vs Korean (has Hangul) vs Chinese
+	if (CJK_RE.test(text)) {
+		if (/[\u3040-\u30FF]/.test(text)) return 'japanese';  // Hiragana/Katakana → Japanese
+		if (/[\uAC00-\uD7AF]/.test(text)) return 'korean';    // Hangul → Korean
+		return 'chinese';                                        // CJK only → Chinese
+	}
+	if (CYRILLIC_RE.test(text))  return 'cyrillic';
+	return null; // default font (Latin)
 }
 
 /** Resolve the editor's effective base direction, treating 'auto' as 'ltr' unless content says otherwise */

@@ -32,7 +32,7 @@
 		type IndexEntry
 	} from '$lib/libraries/store';
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet } from '$lib/libraries/store';
-	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, getFontSetById } from '$lib/libraries/store';
+	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById } from '$lib/libraries/store';
 	import { get } from 'svelte/store';
 	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
@@ -843,7 +843,31 @@
 		document.documentElement.style.fontSize = (s.interfaceFontSize || 14) + 'px';
 
 		const fontMode = s.fontMode || 'per-language';
+		const isTypewriter = s.fontTheme === 'typewriter';
 		let css = '';
+
+		// Typewriter preset: inject @font-face rules for all scripts
+		if (isTypewriter) {
+			const twRanges: Record<string, string> = {
+				arabic:     SCRIPT_UNICODE_RANGES.arabic,
+				hebrew:     SCRIPT_UNICODE_RANGES.hebrew,
+				devanagari: SCRIPT_UNICODE_RANGES.devanagari,
+				cyrillic:   SCRIPT_UNICODE_RANGES.cyrillic,
+				cjk:        SCRIPT_UNICODE_RANGES.cjk,
+			};
+			for (const [script, range] of Object.entries(twRanges)) {
+				const fontStack = TYPEWRITER_FONTS.scriptFonts[script];
+				if (fontStack && range) {
+					const firstName = fontStack.split(',')[0].trim();
+					css += `@font-face { font-family: "ConstellationTypewriter"; src: local(${firstName}); unicode-range: ${range}; }\n`;
+				}
+			}
+			const twStack = `"ConstellationTypewriter", ${TYPEWRITER_FONTS.textFont}`;
+			root.setProperty('--font-text-theme', twStack);
+			root.setProperty('--font-interface-theme', twStack);
+			css += `.cm-editor .cm-content { font-family: ${twStack} !important; }\n`;
+			css += `.cm-editor .cm-scroller { font-family: ${twStack}; }\n`;
+		}
 
 		if (fontMode === 'universal') {
 			// Universal mode: one font set for everything

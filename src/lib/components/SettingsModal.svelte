@@ -5,7 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS } from '$lib/libraries/store';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -952,6 +952,27 @@
 						</label>
 					</div>
 
+					<!-- ── Font Theme ── -->
+					<div class="setting-heading">{$t('settings.appearance.fontTheme') || 'Font Theme'}</div>
+					<div class="font-theme-cards">
+						<button class="font-theme-card" class:active={($appSettings.fontTheme || 'default') === 'default'}
+							onclick={() => updateSettings({ fontTheme: 'default' })}>
+							<div class="font-theme-preview" style="font-family: inherit;">Aa</div>
+							<div class="font-theme-label">{$t('settings.appearance.fontThemeDefault') || 'Default'}</div>
+						</button>
+						<button class="font-theme-card" class:active={$appSettings.fontTheme === 'typewriter'}
+							onclick={() => updateSettings({ fontTheme: $appSettings.fontTheme === 'typewriter' ? 'default' : 'typewriter' })}>
+							<div class="font-theme-preview" style="font-family: 'Courier Prime', monospace;">Aa</div>
+							<div class="font-theme-label">{$t('settings.appearance.fontThemeTypewriter') || 'Typewriter'}</div>
+							<div class="font-theme-scripts">en · ar · עב · हि · Ру · 中 · 日 · 한</div>
+						</button>
+					</div>
+					{#if $appSettings.fontTheme === 'typewriter'}
+					<div class="font-theme-info">
+						<span>Courier Prime · Noto Naskh · Miriam Libre · PT Mono · Tiro Devanagari · system CJK</span>
+					</div>
+					{/if}
+
 					<!-- ── Custom Font Sets ── -->
 					<div class="setting-heading">{$t('fontSets.customFontSets') || 'Custom Font Sets'}</div>
 					{#each ($appSettings.customFontSets || []) as customSet}
@@ -1792,6 +1813,35 @@
 		display: flex; align-items: center; gap: 8px; cursor: pointer;
 		font-size: 0.85rem; color: var(--text-normal);
 	}
+	/* ── Font Theme Cards ── */
+	.font-theme-cards {
+		display: flex; gap: 10px; padding: 0 16px; margin-bottom: 4px;
+	}
+	.font-theme-card {
+		flex: 1; padding: 12px 10px; border-radius: 10px; border: 2px solid var(--background-modifier-border);
+		background: var(--background-secondary); cursor: pointer; text-align: center;
+		display: flex; flex-direction: column; gap: 4px; align-items: center;
+		transition: border-color 0.15s, background 0.15s;
+	}
+	.font-theme-card:hover { border-color: var(--interactive-accent); }
+	.font-theme-card.active {
+		border-color: var(--interactive-accent);
+		background: color-mix(in srgb, var(--interactive-accent) 8%, var(--background-secondary));
+	}
+	.font-theme-preview {
+		font-size: 28px; line-height: 1; color: var(--text-normal); font-weight: 400;
+	}
+	.font-theme-label {
+		font-size: 12px; font-weight: 600; color: var(--text-normal);
+	}
+	.font-theme-scripts {
+		font-size: 10px; color: var(--text-muted); letter-spacing: 0.5px;
+	}
+	.font-theme-info {
+		margin: 0 16px 8px; padding: 8px 12px; background: var(--background-secondary);
+		border-radius: 8px; font-size: 11px; color: var(--text-muted); font-family: 'Courier Prime', monospace;
+	}
+
 	.custom-fontset-row {
 		display: flex; justify-content: space-between; align-items: center;
 		padding: 8px 12px; background: var(--background-secondary); border-radius: 8px;

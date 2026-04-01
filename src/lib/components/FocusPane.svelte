@@ -3,7 +3,7 @@
 	import { EditorView, keymap, drawSelection } from '@codemirror/view';
 	import { EditorState } from '@codemirror/state';
 	import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-	import { appSettings } from '$lib/libraries/store';
+	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import { t } from '$lib/i18n';
 
@@ -190,9 +190,9 @@
 		view.focus();
 	});
 
-	// Script fonts — dispatch to bidiPlugin whenever appSettings changes
+	// Script fonts — dispatch to bidiPlugin whenever appSettings changes (typewriter preset aware)
 	$effect(() => {
-		const sf = $appSettings.scriptFonts ?? {};
+		const sf = getEffectiveScriptFonts($appSettings);
 		if (view) {
 			view.dispatch({ effects: setScriptFonts.of(sf) });
 		}

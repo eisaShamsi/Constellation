@@ -7,7 +7,7 @@
 	 */
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { appSettings } from '$lib/libraries/store';
+	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import type { FrontmatterProperty } from '$lib/libraries/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import { EditorView, keymap, drawSelection } from '@codemirror/view';
@@ -449,7 +449,7 @@
 	// Only dispatch when scriptFonts actually changes to avoid spurious DOM mutations.
 	let _prevScriptFontsKey = '{}';
 	$effect(() => {
-		const fonts = $appSettings.scriptFonts ?? {};
+		const fonts = getEffectiveScriptFonts($appSettings);
 		const key = JSON.stringify(fonts);
 		if (view && key !== _prevScriptFontsKey) {
 			_prevScriptFontsKey = key;
