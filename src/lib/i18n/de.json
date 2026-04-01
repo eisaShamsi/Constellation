@@ -713,7 +713,15 @@
         "link": "Link",
         "heading": "Überschrift",
         "table": "Tabelle",
-        "convertToTable": "In Tabelle umwandeln"
+        "convertToTable": "In Tabelle umwandeln",
+        "underline": "Unterstreichen",
+        "subscript": "Tiefgestellt",
+        "superscript": "Hochgestellt",
+        "alignStart": "Anfang ausrichten",
+        "alignCenter": "Zentrieren",
+        "alignEnd": "Ende ausrichten",
+        "clearFormatting": "Formatierung entfernen",
+        "find": "Suchen & Ersetzen"
     },
     "tableToolbar": {
         "addRow": "Zeile hinzufügen",

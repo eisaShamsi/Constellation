@@ -478,6 +478,36 @@ function buildDecorations(view: EditorView): DecorationSet {
 					}
 				}
 
+				// Inline HTML: <u>...</u>, <sub>...</sub>, <sup>...</sup>
+				const htmlInlineRe = /<(u|sub|sup|mark)>(.*?)<\/\1>/gi;
+				while ((m = htmlInlineRe.exec(lineText)) !== null) {
+					const tag = m[1].toLowerCase();
+					const absFrom = line.from + m.index;
+					const openEnd = absFrom + tag.length + 2; // after <tag>
+					const closeStart = absFrom + m[0].length - tag.length - 3; // before </tag>
+					const absTo = absFrom + m[0].length;
+					const cls = tag === 'u' ? 'cm-html-u' : tag === 'sub' ? 'cm-html-sub' : tag === 'sup' ? 'cm-html-sup' : 'cm-html-mark';
+					ranges.push({ from: absFrom, to: openEnd, deco: replaceDeco }); // hide <tag>
+					ranges.push({ from: openEnd, to: closeStart, deco: Decoration.mark({ class: cls }) }); // style content
+					ranges.push({ from: closeStart, to: absTo, deco: replaceDeco }); // hide </tag>
+				}
+
+				// Alignment divs: <div style="text-align: center">...</div>
+				const alignRe = /^<div style="text-align:\s*(left|center|right)">(.*)<\/div>$/;
+				const alignMatch = lineText.match(alignRe);
+				if (alignMatch) {
+					const align = alignMatch[1];
+					const openLen = alignMatch[0].indexOf('>') + 1;
+					const closeLen = 6; // </div>
+					const absFrom = line.from;
+					const absTo = line.to;
+					ranges.push({ from: absFrom, to: absFrom + openLen, deco: replaceDeco }); // hide <div...>
+					ranges.push({ from: absTo - closeLen, to: absTo, deco: replaceDeco }); // hide </div>
+					ranges.push({ from: absFrom, to: absFrom, deco: Decoration.line({
+						attributes: { style: `text-align: ${align}` },
+					}) });
+				}
+
 				// Tags: #tag-name
 				const tagRe = /(?:^|\s)(#[a-zA-Z\u0600-\u06FF][\w\u0600-\u06FF/-]*)/g;
 				while ((m = tagRe.exec(lineText)) !== null) {
@@ -619,6 +649,10 @@ export const livePreviewTheme = EditorView.theme({
 	'.cm-link-generalizes':  { color: '#A44AFF', textDecorationColor: '#A44AFF66' },
 	'.cm-link-derives-from': { color: '#FFD700', textDecorationColor: '#FFD70066' },
 	'.cm-link-part-of':      { color: '#AAAAAA', textDecorationColor: '#AAAAAA66' },
+	'.cm-html-u':    { textDecoration: 'underline' },
+	'.cm-html-sub':  { fontSize: '0.75em', verticalAlign: 'sub' },
+	'.cm-html-sup':  { fontSize: '0.75em', verticalAlign: 'super' },
+	'.cm-html-mark': { backgroundColor: '#fef08a', borderRadius: '2px' },
 	'.cm-md-highlight': {
 		backgroundColor: 'color-mix(in srgb, var(--color-yellow) 35%, transparent)',
 		borderRadius: '2px',

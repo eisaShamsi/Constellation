@@ -713,7 +713,15 @@
         "link": "Link",
         "heading": "Heading",
         "table": "Table",
-        "convertToTable": "Convert to table"
+        "convertToTable": "Convert to table",
+        "underline": "Underline",
+        "subscript": "Subscript",
+        "superscript": "Superscript",
+        "alignStart": "Align start",
+        "alignCenter": "Align center",
+        "alignEnd": "Align end",
+        "clearFormatting": "Clear formatting",
+        "find": "Find & Replace"
     },
     "tableToolbar": {
         "addRow": "Add row",

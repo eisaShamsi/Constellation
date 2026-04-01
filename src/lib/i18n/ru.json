@@ -702,7 +702,15 @@
         "link": "Ссылка",
         "heading": "Заголовок",
         "table": "Таблица",
-        "convertToTable": "Преобразовать в таблицу"
+        "convertToTable": "Преобразовать в таблицу",
+        "underline": "Подчёркивание",
+        "subscript": "Подстрочный",
+        "superscript": "Надстрочный",
+        "alignStart": "Выровнять по началу",
+        "alignCenter": "По центру",
+        "alignEnd": "Выровнять по концу",
+        "clearFormatting": "Очистить форматирование",
+        "find": "Поиск и замена"
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

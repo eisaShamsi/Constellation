@@ -702,7 +702,15 @@
         "link": "קישור",
         "heading": "כותרת",
         "table": "טבלה",
-        "convertToTable": "המר לטבלה"
+        "convertToTable": "המר לטבלה",
+        "underline": "קו תחתון",
+        "subscript": "כתב תחתי",
+        "superscript": "כתב עילי",
+        "alignStart": "יישור להתחלה",
+        "alignCenter": "יישור למרכז",
+        "alignEnd": "יישור לסוף",
+        "clearFormatting": "נקה עיצוב",
+        "find": "חיפוש והחלפה"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

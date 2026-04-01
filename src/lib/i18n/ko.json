@@ -702,7 +702,15 @@
         "link": "링크",
         "heading": "제목",
         "table": "표",
-        "convertToTable": "표로 변환"
+        "convertToTable": "표로 변환",
+        "underline": "밑줄",
+        "subscript": "아래 첨자",
+        "superscript": "위 첨자",
+        "alignStart": "시작 정렬",
+        "alignCenter": "가운데 정렬",
+        "alignEnd": "끝 정렬",
+        "clearFormatting": "서식 지우기",
+        "find": "찾기 및 바꾸기"
     },
     "tableToolbar": {
         "addRow": "행 추가",

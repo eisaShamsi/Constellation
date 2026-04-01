@@ -702,7 +702,15 @@
         "link": "लिंक",
         "heading": "शीर्षक",
         "table": "तालिका",
-        "convertToTable": "तालिका में बदलें"
+        "convertToTable": "तालिका में बदलें",
+        "underline": "रेखांकन",
+        "subscript": "सबस्क्रिप्ट",
+        "superscript": "सुपरस्क्रिप्ट",
+        "alignStart": "आरंभ संरेखण",
+        "alignCenter": "केंद्र संरेखण",
+        "alignEnd": "अंत संरेखण",
+        "clearFormatting": "फ़ॉर्मेटिंग साफ़ करें",
+        "find": "खोजें और बदलें"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",

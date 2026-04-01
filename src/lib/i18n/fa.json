@@ -713,7 +713,15 @@
         "link": "پیوند",
         "heading": "سرعنوان",
         "table": "جدول",
-        "convertToTable": "تبدیل به جدول"
+        "convertToTable": "تبدیل به جدول",
+        "underline": "زیرخط",
+        "subscript": "زیرنویس",
+        "superscript": "بالانویس",
+        "alignStart": "تراز آغاز",
+        "alignCenter": "تراز وسط",
+        "alignEnd": "تراز پایان",
+        "clearFormatting": "پاک کردن قالب‌بندی",
+        "find": "جستجو و جایگزینی"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

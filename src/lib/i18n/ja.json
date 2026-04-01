@@ -702,7 +702,15 @@
         "link": "リンク",
         "heading": "見出し",
         "table": "テーブル",
-        "convertToTable": "テーブルに変換"
+        "convertToTable": "テーブルに変換",
+        "underline": "下線",
+        "subscript": "下付き",
+        "superscript": "上付き",
+        "alignStart": "先頭揃え",
+        "alignCenter": "中央揃え",
+        "alignEnd": "末尾揃え",
+        "clearFormatting": "書式をクリア",
+        "find": "検索と置換"
     },
     "tableToolbar": {
         "addRow": "行を追加",

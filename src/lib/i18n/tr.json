@@ -702,7 +702,15 @@
         "link": "Bağlantı",
         "heading": "Başlık",
         "table": "Tablo",
-        "convertToTable": "Tabloya dönüştür"
+        "convertToTable": "Tabloya dönüştür",
+        "underline": "Altı çizili",
+        "subscript": "Alt simge",
+        "superscript": "Üst simge",
+        "alignStart": "Başa hizala",
+        "alignCenter": "Ortala",
+        "alignEnd": "Sona hizala",
+        "clearFormatting": "Biçimlendirmeyi temizle",
+        "find": "Bul ve değiştir"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

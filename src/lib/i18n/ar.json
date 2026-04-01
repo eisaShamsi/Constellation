@@ -714,7 +714,15 @@
         "link": "رابط",
         "heading": "عنوان",
         "table": "جدول",
-        "convertToTable": "تحويل إلى جدول"
+        "convertToTable": "تحويل إلى جدول",
+        "underline": "تسطير",
+        "subscript": "نص سفلي",
+        "superscript": "نص علوي",
+        "alignStart": "محاذاة للبداية",
+        "alignCenter": "محاذاة للوسط",
+        "alignEnd": "محاذاة للنهاية",
+        "clearFormatting": "إزالة التنسيق",
+        "find": "بحث واستبدال"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

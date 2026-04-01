@@ -702,7 +702,15 @@
         "link": "لنک",
         "heading": "سرخی",
         "table": "ٹیبل",
-        "convertToTable": "ٹیبل میں تبدیل کریں"
+        "convertToTable": "ٹیبل میں تبدیل کریں",
+        "underline": "خط کشیدہ",
+        "subscript": "ذیلی متن",
+        "superscript": "بالائی متن",
+        "alignStart": "شروع سے سیدھ",
+        "alignCenter": "درمیان سیدھ",
+        "alignEnd": "آخر سے سیدھ",
+        "clearFormatting": "فارمیٹنگ صاف کریں",
+        "find": "تلاش اور تبدیل"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

@@ -713,7 +713,15 @@
         "link": "Enlace",
         "heading": "Encabezado",
         "table": "Tabla",
-        "convertToTable": "Convertir a tabla"
+        "convertToTable": "Convertir a tabla",
+        "underline": "Subrayado",
+        "subscript": "Subíndice",
+        "superscript": "Superíndice",
+        "alignStart": "Alinear al inicio",
+        "alignCenter": "Alinear al centro",
+        "alignEnd": "Alinear al final",
+        "clearFormatting": "Limpiar formato",
+        "find": "Buscar y reemplazar"
     },
     "tableToolbar": {
         "addRow": "Agregar fila",

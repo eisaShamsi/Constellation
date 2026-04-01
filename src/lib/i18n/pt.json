@@ -702,7 +702,15 @@
         "link": "Link",
         "heading": "Título",
         "table": "Tabela",
-        "convertToTable": "Converter em tabela"
+        "convertToTable": "Converter em tabela",
+        "underline": "Sublinhado",
+        "subscript": "Subscrito",
+        "superscript": "Sobrescrito",
+        "alignStart": "Alinhar ao início",
+        "alignCenter": "Centralizar",
+        "alignEnd": "Alinhar ao final",
+        "clearFormatting": "Limpar formatação",
+        "find": "Pesquisar e substituir"
     },
     "tableToolbar": {
         "addRow": "Adicionar linha",

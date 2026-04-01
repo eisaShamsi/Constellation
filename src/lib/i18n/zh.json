@@ -702,7 +702,15 @@
         "link": "链接",
         "heading": "标题",
         "table": "表格",
-        "convertToTable": "转换为表格"
+        "convertToTable": "转换为表格",
+        "underline": "下划线",
+        "subscript": "下标",
+        "superscript": "上标",
+        "alignStart": "起始对齐",
+        "alignCenter": "居中对齐",
+        "alignEnd": "末尾对齐",
+        "clearFormatting": "清除格式",
+        "find": "查找和替换"
     },
     "tableToolbar": {
         "addRow": "添加行",
