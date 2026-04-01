@@ -598,6 +598,7 @@
 	const RTL_DETECT = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF\uFB1D-\uFB4F]/;
 	let toolbarDir = $state<'ltr' | 'rtl'>('ltr');
 
+	let toolbarVisible = $state($appSettings.showFloatingToolbar !== false);
 	let showHeadingMenu = $state(false);
 	let showListMenu = $state(false);
 	let showInsertMenu = $state(false);
@@ -726,8 +727,12 @@
 			<hr class="e-props-divider" />
 		{/if}
 
-		<!-- ─── Toolbar (Phase 4) — dispatches CM6 commands, never modifies state directly ─── -->
+		<!-- ─── Toolbar toggle + toolbar ─── -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<button class="e-toolbar-toggle" title={$t('toolbar.toggle') || 'Toggle toolbar'} onmousedown={(e) => e.preventDefault()} onclick={() => { toolbarVisible = !toolbarVisible; view?.focus(); }}>
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={!toolbarVisible}><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+		</button>
+		{#if toolbarVisible}
 		<div class="e-toolbar" dir={toolbarDir} onmousedown={(e) => e.preventDefault()}>
 			<button class="e-tb" title={$t('toolbar.bold')} onclick={() => wrapSelection('**', '**')}><strong>B</strong></button>
 			<button class="e-tb" title={$t('toolbar.italic')} onclick={() => wrapSelection('_', '_')}><em>I</em></button>
@@ -757,6 +762,7 @@
 			<button class="e-tb e-tb-flip" title="Undo" onclick={tbUndo}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.69 3L3 13"/></svg></button>
 			<button class="e-tb e-tb-flip" title="Redo" onclick={tbRedo}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.69 3L21 13"/></svg></button>
 		</div>
+		{/if}
 
 		{#if tableToolbarVisible && view && currentTable}
 			<div class="e-table-toolbar-float" style="position: fixed; left: {tableToolbarX}px; top: {tableToolbarY}px; transform: translateX(-50%); z-index: 200;">
@@ -874,6 +880,15 @@
 		border: none; border-top: 1px solid var(--background-modifier-border, #e8e8e8);
 		margin: 12px 0;
 	}
+
+	/* ─── Toolbar toggle ─── */
+	.e-toolbar-toggle {
+		display: flex; align-items: center; justify-content: center;
+		width: 24px; height: 24px; border: none; background: none; border-radius: 4px;
+		color: var(--text-faint); cursor: pointer; margin-bottom: 4px; align-self: flex-start;
+	}
+	.e-toolbar-toggle:hover { color: var(--text-muted); background: var(--background-modifier-hover); }
+	.e-toolbar-toggle svg.rotated { opacity: 0.4; }
 
 	/* ─── Toolbar (Phase 4) ─── */
 	.e-toolbar { display: flex; align-items: center; gap: 2px; padding: 4px 0; margin-bottom: 8px; border-bottom: 1px solid var(--background-modifier-border, #e8e8e8); flex-wrap: wrap; }
