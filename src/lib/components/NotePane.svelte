@@ -728,7 +728,7 @@
 
 		<!-- ─── Toolbar (Phase 4) — dispatches CM6 commands, never modifies state directly ─── -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="e-toolbar" dir="ltr" onmousedown={(e) => e.preventDefault()}>
+		<div class="e-toolbar" dir={toolbarDir} onmousedown={(e) => e.preventDefault()}>
 			<button class="e-tb" title={$t('toolbar.bold')} onclick={() => wrapSelection('**', '**')}><strong>B</strong></button>
 			<button class="e-tb" title={$t('toolbar.italic')} onclick={() => wrapSelection('_', '_')}><em>I</em></button>
 			<button class="e-tb" title={$t('toolbar.strikethrough')} onclick={() => wrapSelection('~~', '~~')}><s>S</s></button>
