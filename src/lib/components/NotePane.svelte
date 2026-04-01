@@ -17,6 +17,7 @@
 	import { tags } from '@lezer/highlight';
 	import { defaultKeymap, history, historyKeymap, undo, redo, indentWithTab } from '@codemirror/commands';
 	import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
+	import { search, openSearchPanel, searchKeymap } from '@codemirror/search';
 	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath, notePathField, setNotePath } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
@@ -293,6 +294,7 @@
 				scriptFontsField, bidiPlugin, bidiTheme, /* per-line RTL/LTR direction + cursor positioning */
 				libraryPathField, notePathField, /* image path resolution */
 				closeBrackets(),
+				search({ top: true }),
 				autocompletion({ override: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
 				// Prec.highest: runs before @codemirror/lang-markdown's built-in
 				// blockquote-continue keymap (which auto-adds "> " on every Enter).
@@ -301,7 +303,7 @@
 					{ key: 'Tab', run: tableTab },
 					{ key: 'Shift-Tab', run: tableShiftTab },
 					indentWithTab,
-					...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap,
+					...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap, ...searchKeymap,
 				]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
 				EditorView.contentAttributes.of({ dir: 'auto' }),
@@ -318,8 +320,11 @@
 						if (debouncedSaveTimer) clearTimeout(debouncedSaveTimer);
 						debouncedSaveTimer = setTimeout(() => { debouncedSaveTimer = null; doSave(); }, 1500);
 					}
-					if (update.selectionSet && !update.docChanged) {
+					if (update.selectionSet || update.docChanged) {
 						updateTableToolbar(update.view);
+						// Update toolbar direction based on current line's script
+						const line = update.state.doc.lineAt(update.state.selection.main.head);
+						toolbarDir = RTL_DETECT.test(line.text) ? 'rtl' : 'ltr';
 					}
 				}),
 				EditorView.theme({
@@ -530,6 +535,59 @@
 	}
 	function tbUndo() { if (view) { undo(view); view.focus(); } }
 	function tbRedo() { if (view) { redo(view); view.focus(); } }
+	function tbFind() { if (view) openSearchPanel(view); }
+
+	/** Strip all markdown/HTML formatting marks from selection */
+	function clearFormatting() {
+		if (!view) return;
+		const { from, to } = view.state.selection.main;
+		if (from === to) return;
+		let text = view.state.sliceDoc(from, to);
+		text = text
+			.replace(/\*\*(.+?)\*\*/g, '$1')
+			.replace(/__(.+?)__/g, '$1')
+			.replace(/~~(.+?)~~/g, '$1')
+			.replace(/==(.+?)==/g, '$1')
+			.replace(/`(.+?)`/g, '$1')
+			.replace(/_(.+?)_/g, '$1')
+			.replace(/\*(.+?)\*/g, '$1')
+			.replace(/<u>(.*?)<\/u>/gi, '$1')
+			.replace(/<sub>(.*?)<\/sub>/gi, '$1')
+			.replace(/<sup>(.*?)<\/sup>/gi, '$1')
+			.replace(/<span[^>]*>(.*?)<\/span>/gi, '$1')
+			.replace(/<div[^>]*>(.*?)<\/div>/gi, '$1');
+		view.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from, head: from + text.length } });
+		view.focus();
+	}
+
+	/** Wrap current line in an alignment div, or toggle alignment */
+	function setLineAlignment(align: 'left' | 'center' | 'right') {
+		if (!view) return;
+		const { from } = view.state.selection.main;
+		const line = view.state.doc.lineAt(from);
+		const text = line.text;
+		// Remove existing alignment wrapper if present
+		const alignRe = /^<div style="text-align:\s*(left|center|right)">(.*)<\/div>$/;
+		const match = text.match(alignRe);
+		if (match) {
+			if (match[1] === align) {
+				// Same alignment: remove wrapper (toggle off)
+				view.dispatch({ changes: { from: line.from, to: line.to, insert: match[2] } });
+			} else {
+				// Different alignment: replace
+				view.dispatch({ changes: { from: line.from, to: line.to, insert: `<div style="text-align: ${align}">${match[2]}</div>` } });
+			}
+		} else {
+			// No wrapper: add alignment
+			view.dispatch({ changes: { from: line.from, to: line.to, insert: `<div style="text-align: ${align}">${text}</div>` } });
+		}
+		view.focus();
+	}
+
+	// ─── RTL-aware toolbar: detect current line direction ───
+	const RTL_DETECT = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF\uFB1D-\uFB4F]/;
+	let toolbarDir = $state<'ltr' | 'rtl'>('ltr');
+
 	let showHeadingMenu = $state(false);
 	let showListMenu = $state(false);
 	let showInsertMenu = $state(false);
@@ -660,21 +718,31 @@
 
 		<!-- ─── Toolbar (Phase 4) — dispatches CM6 commands, never modifies state directly ─── -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="e-toolbar" onmousedown={(e) => e.preventDefault()}>
+		<div class="e-toolbar" dir={toolbarDir} onmousedown={(e) => e.preventDefault()}>
 			<button class="e-tb" title={$t('toolbar.bold')} onclick={() => wrapSelection('**', '**')}><strong>B</strong></button>
 			<button class="e-tb" title={$t('toolbar.italic')} onclick={() => wrapSelection('_', '_')}><em>I</em></button>
 			<button class="e-tb" title={$t('toolbar.strikethrough')} onclick={() => wrapSelection('~~', '~~')}><s>S</s></button>
+			<button class="e-tb" title={$t('toolbar.underline') || 'Underline'} onclick={() => wrapSelection('<u>', '</u>')}><span style="text-decoration:underline">U</span></button>
 			<button class="e-tb" title={$t('toolbar.highlight')} onclick={() => wrapSelection('==', '==')}><span class="e-tb-hl">H</span></button>
 			<button class="e-tb mono" title={$t('toolbar.code')} onclick={() => wrapSelection('`', '`')}>&lt;/&gt;</button>
+			<button class="e-tb" title={$t('toolbar.subscript') || 'Subscript'} onclick={() => wrapSelection('<sub>', '</sub>')}><span style="font-size:11px">X<sub style="font-size:9px">2</sub></span></button>
+			<button class="e-tb" title={$t('toolbar.superscript') || 'Superscript'} onclick={() => wrapSelection('<sup>', '</sup>')}><span style="font-size:11px">X<sup style="font-size:9px">2</sup></span></button>
 			<div class="e-tb-sep"></div>
 			<div class="e-tb-drop"><button class="e-tb" onclick={() => toggleMenu('heading')}>H<span class="e-tb-caret">▾</span></button>
 				{#if showHeadingMenu}<div class="e-tb-menu">{#each [1,2,3,4,5,6] as lv}<button class="e-tb-menu-item" onclick={() => { closeMenus(); insertLinePrefix('#'.repeat(lv) + ' '); }}>H{lv}</button>{/each}</div>{/if}</div>
 			<div class="e-tb-drop"><button class="e-tb" onclick={() => toggleMenu('list')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span class="e-tb-caret">▾</span></button>
 				{#if showListMenu}<div class="e-tb-menu"><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertLinePrefix('- '); }}>• Bullet</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertLinePrefix('1. '); }}>1. Numbered</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertLinePrefix('- [ ] '); }}>☐ Task</button></div>{/if}</div>
 			<div class="e-tb-sep"></div>
+			<button class="e-tb" title={$t('toolbar.alignStart') || 'Align start'} onclick={() => setLineAlignment('left')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 10H3M21 6H3M21 14H3M17 18H3"/></svg></button>
+			<button class="e-tb" title={$t('toolbar.alignCenter') || 'Align center'} onclick={() => setLineAlignment('center')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10H6M21 6H3M21 14H3M18 18H6"/></svg></button>
+			<button class="e-tb" title={$t('toolbar.alignEnd') || 'Align end'} onclick={() => setLineAlignment('right')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10H7M21 6H3M21 14H3M21 18H7"/></svg></button>
+			<div class="e-tb-sep"></div>
 			<button class="e-tb" title={$t('toolbar.link')} onclick={() => wrapSelection('[[', ']]')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
 			<div class="e-tb-drop"><button class="e-tb" onclick={() => toggleMenu('insert')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg><span class="e-tb-caret">▾</span></button>
 				{#if showInsertMenu}<div class="e-tb-menu"><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertAtCursor('\n> '); }}>❝ Blockquote</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertAtCursor('\n```\n\n```\n'); }}>⌨ Code block</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertAtCursor('\n---\n'); }}>― Rule</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertAtCursor('\n| Col 1 | Col 2 |\n| --- | --- |\n| | |\n'); }}>{$t('toolbar.table')}</button><button class="e-tb-menu-item" onclick={() => { closeMenus(); insertAtCursor('![](url)'); }}>🖼 Image</button></div>{/if}</div>
+			<div class="e-tb-sep"></div>
+			<button class="e-tb" title={$t('toolbar.clearFormatting') || 'Clear formatting'} onclick={clearFormatting}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/><path d="M5 19L19 5" stroke-opacity="0.4"/></svg></button>
+			<button class="e-tb" title={$t('toolbar.find') || 'Find & Replace'} onclick={tbFind}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg></button>
 			<div class="e-tb-sep"></div>
 			<button class="e-tb" title="Undo" onclick={tbUndo}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.69 3L3 13"/></svg></button>
 			<button class="e-tb" title="Redo" onclick={tbRedo}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.69 3L21 13"/></svg></button>
