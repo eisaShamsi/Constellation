@@ -883,8 +883,26 @@ Debug logs removed. Ready for final clean confirmation run.
 
 ---
 
+### R13 — Sky View Integration
+
+R13.1–R13.2, R13.4–R13.6: PASS
+
+R13.3 (close Sky View → no freeze): **FAIL** → Fixed `efeb31d`
+- Root cause: `GraphMindView.onDestroy` called `engine.destroy()` synchronously.
+  `PIXI.app.destroy()` takes ~100ms, blocking the render frame → visible freeze.
+- Fix: capture engine reference, null it immediately, defer `destroy()` via `setTimeout(0)`.
+
+Image embed bug (separate from R13): **FAIL** → Fixed `efeb31d`
+- Root cause: `resolveEmbedImage` only tried `libRoot/filename`. Images in note's folder
+  or `attachments/` subfolder were not found → `img.onerror` fired → showed filename text.
+- Fix: Added `notePathField` + `setNotePath` StateEffect. `resolveEmbedCandidates()` tries
+  note folder → `library/attachments/` → library root in order. `ImageWidget` chains
+  `onerror` across candidates before showing text fallback.
+
+**Commit:** `efeb31d` — pushed to `origin/main`
+
 ### Open Items
-- R13 Sky View Integration — 6 tests pending
-- Milestone tag + ZIP backup — after R13
+- Re-verify R13.3 + image embed fix in live app
+- Milestone tag + ZIP backup — after R13 full pass
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session
