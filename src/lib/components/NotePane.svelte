@@ -770,6 +770,7 @@
 			<TableToolbar
 				x={0}
 				y={0}
+				dir={toolbarDir}
 				onAddRow={() => applyTableChange(addRow(currentTable!, currentTable!.cursorRow))}
 				onAddColumn={() => applyTableChange(addColumn(currentTable!, currentTable!.cursorCol))}
 				canDeleteRow={currentTable!.cursorRow > 0 && currentTable!.rows.length > 1}

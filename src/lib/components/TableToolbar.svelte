@@ -4,6 +4,7 @@
 	let {
 		x = 0,
 		y = 0,
+		dir = 'ltr' as 'ltr' | 'rtl',
 		onAddRow,
 		onAddColumn,
 		onDeleteRow,
@@ -24,6 +25,7 @@
 	}: {
 		x: number;
 		y: number;
+		dir?: 'ltr' | 'rtl';
 		onAddRow: () => void;
 		onAddColumn: () => void;
 		onDeleteRow: () => void;
@@ -49,7 +51,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="table-toolbar" style="left: {x}px; top: {y}px;" onmousedown={prevent}>
+<div class="table-toolbar" {dir} style="left: {x}px; top: {y}px;" onmousedown={prevent}>
 	<button class="tt-btn" title={$t('tableToolbar.addRow')} onmousedown={prevent} onclick={onAddRow}>
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
 		<span class="tt-label">Row</span>
@@ -86,7 +88,7 @@
 
 {#if showMore}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="tt-more-menu" style="left: {x}px; top: {y + 36}px;" onmousedown={prevent}>
+	<div class="tt-more-menu" {dir} style="left: {x}px; top: {y + 36}px;" onmousedown={prevent}>
 		<!-- Move -->
 		<div class="tt-menu-group">
 			<span class="tt-menu-label">{$t('tableToolbar.move')}</span>
@@ -238,4 +240,8 @@
 		background: var(--background-modifier-border);
 		margin: 2px 0;
 	}
+
+	/* RTL: flip move col arrows and alignment icons */
+	.table-toolbar[dir="rtl"] .tt-btn svg { transform: scaleX(-1); }
+	.tt-more-menu[dir="rtl"] .tt-btn svg { transform: scaleX(-1); }
 </style>
