@@ -235,6 +235,25 @@ class ImageWidget extends WidgetType {
 	}
 }
 
+/** Widget for inline HTML tags (<u>, <sub>, <sup>) — preserves bidi with dir=auto */
+class InlineHtmlWidget extends WidgetType {
+	content: string;
+	tag: string;
+	constructor(content: string, tag: string) {
+		super();
+		this.content = content;
+		this.tag = tag;
+	}
+	toDOM() {
+		const el = document.createElement(this.tag === 'mark' ? 'mark' : 'span');
+		el.className = this.tag === 'u' ? 'cm-html-u' : this.tag === 'sub' ? 'cm-html-sub' : this.tag === 'sup' ? 'cm-html-sup' : 'cm-html-mark';
+		el.dir = 'auto';
+		el.textContent = this.content;
+		return el;
+	}
+	eq(other: InlineHtmlWidget) { return this.content === other.content && this.tag === other.tag; }
+}
+
 /** Widget for text alignment — replaces <div style="text-align:...">content</div> */
 class AlignmentWidget extends WidgetType {
 	content: string;
@@ -503,13 +522,11 @@ function buildDecorations(view: EditorView): DecorationSet {
 				while ((m = htmlInlineRe.exec(lineText)) !== null) {
 					const tag = m[1].toLowerCase();
 					const absFrom = line.from + m.index;
-					const openEnd = absFrom + tag.length + 2; // after <tag>
-					const closeStart = absFrom + m[0].length - tag.length - 3; // before </tag>
 					const absTo = absFrom + m[0].length;
-					const cls = tag === 'u' ? 'cm-html-u' : tag === 'sub' ? 'cm-html-sub' : tag === 'sup' ? 'cm-html-sup' : 'cm-html-mark';
-					ranges.push({ from: absFrom, to: openEnd, deco: replaceDeco }); // hide <tag>
-					ranges.push({ from: openEnd, to: closeStart, deco: Decoration.mark({ class: cls }) }); // style content
-					ranges.push({ from: closeStart, to: absTo, deco: replaceDeco }); // hide </tag>
+					const content = m[2];
+					ranges.push({ from: absFrom, to: absTo, deco: Decoration.replace({
+						widget: new InlineHtmlWidget(content, tag),
+					}) });
 				}
 
 				// Alignment divs: <div style="text-align: center">...</div>
