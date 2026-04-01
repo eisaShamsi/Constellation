@@ -711,7 +711,8 @@
         "alignCenter": "יישור למרכז",
         "alignEnd": "יישור לסוף",
         "clearFormatting": "נקה עיצוב",
-        "find": "חיפוש והחלפה"
+        "find": "חיפוש והחלפה",
+        "toggle": "סרגל כלים הפעל/כבה"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

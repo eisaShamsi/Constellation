@@ -711,7 +711,8 @@
         "alignCenter": "中央揃え",
         "alignEnd": "末尾揃え",
         "clearFormatting": "書式をクリア",
-        "find": "検索と置換"
+        "find": "検索と置換",
+        "toggle": "ツールバー オン/オフ"
     },
     "tableToolbar": {
         "addRow": "行を追加",

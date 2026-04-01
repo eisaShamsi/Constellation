@@ -711,7 +711,8 @@
         "alignCenter": "درمیان سیدھ",
         "alignEnd": "آخر سے سیدھ",
         "clearFormatting": "فارمیٹنگ صاف کریں",
-        "find": "تلاش اور تبدیل"
+        "find": "تلاش اور تبدیل",
+        "toggle": "ٹول بار آن/آف"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

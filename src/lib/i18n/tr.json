@@ -711,7 +711,8 @@
         "alignCenter": "Ortala",
         "alignEnd": "Sona hizala",
         "clearFormatting": "Biçimlendirmeyi temizle",
-        "find": "Bul ve değiştir"
+        "find": "Bul ve değiştir",
+        "toggle": "Araç çubuğu Aç/Kapat"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

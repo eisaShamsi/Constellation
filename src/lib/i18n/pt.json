@@ -711,7 +711,8 @@
         "alignCenter": "Centralizar",
         "alignEnd": "Alinhar ao final",
         "clearFormatting": "Limpar formatação",
-        "find": "Pesquisar e substituir"
+        "find": "Pesquisar e substituir",
+        "toggle": "Barra de ferramentas On/Off"
     },
     "tableToolbar": {
         "addRow": "Adicionar linha",

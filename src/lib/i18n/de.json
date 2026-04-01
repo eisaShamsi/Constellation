@@ -722,7 +722,8 @@
         "alignCenter": "Zentrieren",
         "alignEnd": "Ende ausrichten",
         "clearFormatting": "Formatierung entfernen",
-        "find": "Suchen & Ersetzen"
+        "find": "Suchen & Ersetzen",
+        "toggle": "Symbolleiste Ein/Aus"
     },
     "tableToolbar": {
         "addRow": "Zeile hinzufügen",

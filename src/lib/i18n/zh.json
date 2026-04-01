@@ -711,7 +711,8 @@
         "alignCenter": "居中对齐",
         "alignEnd": "末尾对齐",
         "clearFormatting": "清除格式",
-        "find": "查找和替换"
+        "find": "查找和替换",
+        "toggle": "工具栏 开/关"
     },
     "tableToolbar": {
         "addRow": "添加行",

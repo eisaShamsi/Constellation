@@ -723,7 +723,8 @@
         "alignCenter": "محاذاة للوسط",
         "alignEnd": "محاذاة للنهاية",
         "clearFormatting": "إزالة التنسيق",
-        "find": "بحث واستبدال"
+        "find": "بحث واستبدال",
+        "toggle": "إظهار/إخفاء شريط الأدوات"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

@@ -722,7 +722,8 @@
         "alignCenter": "Align center",
         "alignEnd": "Align end",
         "clearFormatting": "Clear formatting",
-        "find": "Find & Replace"
+        "find": "Find & Replace",
+        "toggle": "Toolbar On/Off"
     },
     "tableToolbar": {
         "addRow": "Add row",

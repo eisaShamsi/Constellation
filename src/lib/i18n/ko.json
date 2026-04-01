@@ -711,7 +711,8 @@
         "alignCenter": "가운데 정렬",
         "alignEnd": "끝 정렬",
         "clearFormatting": "서식 지우기",
-        "find": "찾기 및 바꾸기"
+        "find": "찾기 및 바꾸기",
+        "toggle": "도구 모음 켜기/끄기"
     },
     "tableToolbar": {
         "addRow": "행 추가",
