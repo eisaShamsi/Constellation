@@ -440,8 +440,12 @@
 	onDestroy(() => {
 		window.removeEventListener('keydown', handleKeydown);
 		window.removeEventListener('click', handleGlobalClick);
-		engine?.destroy();
+		// Defer PIXI teardown — app.destroy() is synchronous and expensive (~100ms).
+		// Running it on the same frame as unmount causes a visible freeze.
+		// Capture and null the reference first so nothing can call it after this point.
+		const capturedEngine = engine;
 		engine = null;
+		setTimeout(() => capturedEngine?.destroy(), 0);
 	});
 </script>
 

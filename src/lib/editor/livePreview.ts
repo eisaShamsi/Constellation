@@ -15,8 +15,9 @@ import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
-// ─── Library path state field (for resolving image embeds) ───
+// ─── Path state fields (for resolving image embeds) ───
 export const setLibraryPath = StateEffect.define<string>();
+export const setNotePath    = StateEffect.define<string>();
 
 export const libraryPathField = StateField.define<string>({
 	create: () => '',
@@ -28,15 +29,43 @@ export const libraryPathField = StateField.define<string>({
 	},
 });
 
-function resolveEmbedImage(view: EditorView, filename: string): string | null {
-	const libPath = view.state.field(libraryPathField, false);
-	if (!libPath) return null;
-	const sep = libPath.includes('\\') ? '\\' : '/';
-	const fullPath = libPath + sep + filename;
+export const notePathField = StateField.define<string>({
+	create: () => '',
+	update(value, tr) {
+		for (const effect of tr.effects) {
+			if (effect.is(setNotePath)) return effect.value;
+		}
+		return value;
+	},
+});
+
+/** Returns ordered list of candidate absolute paths for an embedded image.
+ *  Search order: note's folder → library root.
+ *  We return all candidates so ImageWidget can try each via onerror chaining. */
+function resolveEmbedCandidates(view: EditorView, filename: string): string[] {
+	const libPath  = view.state.field(libraryPathField, false) || '';
+	const notePath = view.state.field(notePathField,    false) || '';
+	if (!libPath && !notePath) return [];
+
+	const sep = (libPath || notePath).includes('\\') ? '\\' : '/';
+	const candidates: string[] = [];
+
+	// 1. Folder containing the current note (most common: image next to note)
+	if (notePath) {
+		const noteDir = notePath.substring(0, notePath.lastIndexOf(sep));
+		if (noteDir) candidates.push(noteDir + sep + filename);
+	}
+
+	// 2. Library-level attachments folder (per appSettings.defaultAttachmentFolder default '+')
+	if (libPath) {
+		candidates.push(libPath + sep + 'attachments' + sep + filename);
+		candidates.push(libPath + sep + filename);
+	}
+
 	try {
-		return convertFileSrc(fullPath);
+		return candidates.map(p => convertFileSrc(p));
 	} catch {
-		return null;
+		return [];
 	}
 }
 
@@ -99,33 +128,42 @@ class CheckboxWidget extends WidgetType {
 const checkboxCheckedDeco   = Decoration.replace({ widget: new CheckboxWidget(true) });
 const checkboxUncheckedDeco = Decoration.replace({ widget: new CheckboxWidget(false) });
 
-/** Widget for inline images when cursor is off the line */
+/** Widget for inline images when cursor is off the line.
+ *  Accepts ordered src candidates — tries each on error before showing text fallback. */
 class ImageWidget extends WidgetType {
-	src: string;
+	srcs: string[];
 	alt: string;
-	constructor(src: string, alt: string) {
+	constructor(srcs: string[], alt: string) {
 		super();
-		this.src = src;
+		this.srcs = srcs;
 		this.alt = alt;
 	}
 	toDOM() {
 		const wrap = document.createElement('div');
 		wrap.className = 'cm-md-image-widget';
 		const img = document.createElement('img');
-		img.src = this.src;
+		let attempt = 0;
+		const tryNext = () => {
+			attempt++;
+			if (attempt < this.srcs.length) {
+				img.src = this.srcs[attempt];
+			} else {
+				// All candidates exhausted — show text fallback
+				wrap.innerHTML = '';
+				const fallback = document.createElement('span');
+				fallback.className = 'cm-md-image-fallback';
+				fallback.textContent = `📷 ${this.alt || this.srcs[0] || ''}`;
+				wrap.appendChild(fallback);
+			}
+		};
+		img.src = this.srcs[0] || '';
 		img.alt = this.alt || '';
 		img.loading = 'lazy';
-		img.onerror = () => {
-			wrap.innerHTML = '';
-			const fallback = document.createElement('span');
-			fallback.className = 'cm-md-image-fallback';
-			fallback.textContent = `📷 ${this.alt || this.src}`;
-			wrap.appendChild(fallback);
-		};
+		img.onerror = tryNext;
 		wrap.appendChild(img);
 		return wrap;
 	}
-	eq(other: ImageWidget) { return this.src === other.src; }
+	eq(other: ImageWidget) { return this.srcs[0] === other.srcs[0]; }
 }
 
 /** Widget for code block language label */
@@ -299,9 +337,16 @@ function buildDecorations(view: EditorView): DecorationSet {
 					// Standard markdown: ![alt](url)
 					const mdMatch = text.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
 					if (mdMatch) {
-						ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
-							widget: new ImageWidget(mdMatch[2], mdMatch[1]),
-						}) });
+						const url = mdMatch[2];
+						// Absolute URL (http/https/data) — use directly; relative path — resolve candidates
+						const srcs = /^https?:\/\/|^data:/.test(url)
+							? [url]
+							: resolveEmbedCandidates(view, url);
+						if (srcs.length > 0) {
+							ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
+								widget: new ImageWidget(srcs, mdMatch[1]),
+							}) });
+						}
 					}
 				}
 			}
@@ -324,11 +369,11 @@ function buildDecorations(view: EditorView): DecorationSet {
 					const target = m[1];
 					const ext = target.split('.').pop()?.toLowerCase() || '';
 					if (IMG_EXTS.has(ext)) {
-						const imgSrc = resolveEmbedImage(view, target);
-						if (imgSrc) {
+						const srcs = resolveEmbedCandidates(view, target);
+						if (srcs.length > 0) {
 							const absFrom = line.from + m.index;
 							ranges.push({ from: absFrom, to: absFrom + m[0].length, deco: Decoration.replace({
-								widget: new ImageWidget(imgSrc, target),
+								widget: new ImageWidget(srcs, target),
 							}) });
 						}
 					}

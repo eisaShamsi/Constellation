@@ -17,7 +17,7 @@
 	import { tags } from '@lezer/highlight';
 	import { defaultKeymap, history, historyKeymap, undo, redo, indentWithTab } from '@codemirror/commands';
 	import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
-	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath } from '$lib/editor/livePreview';
+	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath, notePathField, setNotePath } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
@@ -291,7 +291,7 @@
 				livePreviewCompartment.of(livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme, calloutPlugin, calloutTheme] : []),
 				lineDecoPlugin, lineDecoTheme,
 				scriptFontsField, bidiPlugin, bidiTheme, /* per-line RTL/LTR direction + cursor positioning */
-				libraryPathField, /* image path resolution */
+				libraryPathField, notePathField, /* image path resolution */
 				closeBrackets(),
 				autocompletion({ override: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
 				// Prec.highest: runs before @codemirror/lang-markdown's built-in
@@ -339,9 +339,12 @@
 
 		view = new EditorView({ state, parent: editorEl! });
 
-		/* Set library path for image resolution */
+		/* Set library + note paths for image resolution */
 		if (libraryPath) {
 			view.dispatch({ effects: setLibraryPath.of(libraryPath) });
+		}
+		if (filePath) {
+			view.dispatch({ effects: setNotePath.of(filePath) });
 		}
 
 		/* Checkbox toggle — capture phase, O(1) via posAtCoords */
