@@ -751,6 +751,7 @@
 					noteDir={dir}
 					collapsed={propsCollapsed}
 					onToggle={() => propsCollapsed = !propsCollapsed}
+					onstagechange={(s) => { currentStage = s; onpromote?.(s); }}
 				/>
 			{/if}
 			<hr class="e-props-divider" />

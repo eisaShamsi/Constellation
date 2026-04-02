@@ -18,6 +18,7 @@
 		noteDir = 'ltr' as 'ltr' | 'rtl',
 		collapsed = false,
 		onToggle,
+		onstagechange,
 	}: {
 		properties: FrontmatterProperty[];
 		body: string;
@@ -28,6 +29,7 @@
 		noteDir?: 'ltr' | 'rtl';
 		collapsed?: boolean;
 		onToggle?: () => void;
+		onstagechange?: (stage: string) => void;
 	} = $props();
 
 	const TYPE_ICONS: Record<PropertyType, string> = {
@@ -470,7 +472,7 @@
 			<!-- Value input by type -->
 			{#if prop.key.toLowerCase() === 'stage'}
 				<select class="pe-val pe-stage-select" value={prop.value.toLowerCase()}
-					onchange={(e) => updateValue(idx, (e.target as HTMLSelectElement).value)}>
+					onchange={(e) => { const v = (e.target as HTMLSelectElement).value; updateValue(idx, v); onstagechange?.(v); }}>
 					<option value="fleeting">🌱 Fleeting</option>
 					<option value="literature">📖 Literature</option>
 					<option value="permanent">🔗 Permanent</option>
