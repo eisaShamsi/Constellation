@@ -938,6 +938,27 @@ Image embed bug (separate from R13): **FAIL** → Fixed `efeb31d`
 
 ---
 
+### Cognitive Engine Phase 2: Knowledge Strata
+
+**Commit:** `0f6d4bf` | **Tag:** `milestone/CE-phase-2-knowledge-strata`
+
+- New Rust module `src-tauri/src/strata.rs`: `compute_note_strata()` command
+- Auto-classifies notes into 8-level hierarchy (Datum → Worldview) via structural signals
+- Word count + link count + link types + centrality proxy → stratum (1–8)
+- GraphMind: stratum-based radius (2 + (stratum-1) × 2.5), glow halo on stratum ≥ 4
+- Earned complexity: below 20 nodes, all same size
+- **Test: PASS** — graduated node sizes visible in Star View
+
+---
+
+### Milestone: CE-phase-2-knowledge-strata
+
+**Tag:** `milestone/CE-phase-2-knowledge-strata` at `0f6d4bf`
+**ZIP:** `E:/Backups/Constellation/Constellation-CE-phase-2-20260402.zip`
+
+---
+
 ### Open Items
+- CE Phase 3: Maturity Lifecycle — next
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session
