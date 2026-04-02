@@ -630,14 +630,14 @@
 	.pe-type-option-label { flex: 1; }
 
 	/* Key input + suggestions */
-	.pe-key-wrap { position: relative; flex-shrink: 0; width: 100px; min-width: 70px; }
+	.pe-key-wrap { position: relative; flex-shrink: 0; width: auto; min-width: 50px; max-width: 100px; }
 
 	.pe-key {
 		width: 100%; box-sizing: border-box;
 		border: none; background: none; padding: 3px 4px;
 		font-size: 0.82rem; font-weight: 500; color: var(--text-muted);
 		font-family: inherit; outline: none;
-		border-radius: 3px; text-align: end;
+		border-radius: 3px; text-align: start;
 	}
 	.pe-key:focus { background: var(--background-primary); box-shadow: 0 0 0 1px hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.27); }
 	.pe-key-special {
