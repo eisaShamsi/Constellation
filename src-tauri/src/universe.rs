@@ -213,19 +213,55 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
         let nested_path = universe_root.join(folder_name);
         // If nested folder exists AND has the same name as the universe → migrate to flat
         if nested_path.is_dir() && folder_name == &meta.name {
-            eprintln!("[universe] Migrating nested folder to flat: {}", nested_path.display());
-            // Move all contents from nested folder up to universe root
-            if let Ok(entries) = fs::read_dir(&nested_path) {
+            // Walk down the chain of same-name nesting: root/Name/Name/Name/...
+            // Find the deepest level, then move everything up to root.
+            let mut deepest = nested_path.clone();
+            loop {
+                let next = deepest.join(folder_name);
+                if next.is_dir() { deepest = next; } else { break; }
+            }
+            eprintln!("[universe] Migrating nested folders to flat (deepest: {})", deepest.display());
+
+            // Move contents from deepest level up to universe root
+            if let Ok(entries) = fs::read_dir(&deepest) {
                 for entry in entries.flatten() {
                     let src = entry.path();
-                    let dest = universe_root.join(entry.file_name());
+                    let fname = entry.file_name();
+                    // Skip if it's another same-name directory (already traversed)
+                    if src.is_dir() && fname.to_string_lossy() == folder_name.as_str() { continue; }
+                    let dest = universe_root.join(&fname);
                     if !dest.exists() {
                         let _ = fs::rename(&src, &dest);
                     }
                 }
             }
-            // Remove the now-empty nested folder (ok if it still has items)
-            let _ = fs::remove_dir(&nested_path);
+
+            // Also move contents from intermediate levels (they may have files too)
+            let mut level = nested_path.clone();
+            while level != *universe_root {
+                if let Ok(entries) = fs::read_dir(&level) {
+                    for entry in entries.flatten() {
+                        let src = entry.path();
+                        let fname = entry.file_name();
+                        if src.is_dir() && fname.to_string_lossy() == folder_name.as_str() { continue; }
+                        let dest = universe_root.join(&fname);
+                        if !dest.exists() {
+                            let _ = fs::rename(&src, &dest);
+                        }
+                    }
+                }
+                let next = level.join(folder_name);
+                if next.is_dir() { level = next; } else { break; }
+            }
+
+            // Remove empty nested folders bottom-up
+            let mut cleanup = deepest.clone();
+            while cleanup != *universe_root {
+                let _ = fs::remove_dir(&cleanup); // only removes if empty
+                if let Some(parent) = cleanup.parent() {
+                    cleanup = parent.to_path_buf();
+                } else { break; }
+            }
 
             // Update metadata to flat (notes_folder = None)
             meta.notes_folder = None;
