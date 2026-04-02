@@ -24,6 +24,7 @@ Constellation est une application de bureau de gestion des connaissances personn
 14. [Raccourcis clavier](#raccourcis-clavier)
 15. [Prise en charge RTL et arabe](#prise-en-charge-rtl-et-arabe)
 16. [Securite et confidentialite](#securite-et-confidentialite)
+17. [Moteur Cognitif](#moteur-cognitif)
 
 ---
 
@@ -252,6 +253,34 @@ Cliquez sur l'icone d'engrenage pour :
 
 La legende en bas a droite affiche les couleurs des bibliotheques/dossiers avec des cases a cocher pour basculer la visibilite.
 
+### Strates de Connaissance
+
+La Vue Etoiles classe automatiquement vos notes en huit strates de connaissance selon le niveau d'abstraction :
+
+| Strate | Description |
+|--------|-------------|
+| **Instantane** | Notes rapides et ephemeres |
+| **Journal** | Evenements dates et entrees de journal |
+| **Sujet** | Concepts atomiques autour d'une seule idee |
+| **Carte** | Notes organisatrices reliant d'autres sujets |
+| **Cadre** | Modeles et cadres de reflexion |
+| **Principe** | Regles et axiomes verifies |
+| **Conviction** | Valeurs et croyances fondamentales |
+| **Artefact** | Oeuvres achevees et definitives |
+
+La strate est determinee automatiquement a partir du frontmatter, de la structure et des liens de la note. Vous pouvez outrepasser la classification manuellement en ajoutant une propriete `stratum` dans le frontmatter.
+
+### Cycle de Maturite
+
+Chaque note traverse un cycle de maturite refletant son degre de developpement :
+
+- **Graine** — Idee initiale ou brouillon brut
+- **Pousse** — La note prend forme et possede quelques liens
+- **Persistant** — Note mature, revisee et bien reliee
+- **Canonique** — Reference definitive et faisant autorite
+
+Le niveau de maturite est mis a jour automatiquement en fonction du nombre de liens, de la date de revision et de la frequence d'edition. Vous pouvez egalement le definir manuellement via la propriete `maturity` dans le frontmatter.
+
 ---
 
 ## 5. Second ecran
@@ -396,6 +425,7 @@ Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctr
 - Langue (15 langues)
 - Theme (Clair / Sombre)
 - Police d'interface, Police de texte, Police monospace, Taille de police
+- Theme de police — combinaisons de polices predefinies (Machine a ecrire, Classique, Moderne, etc.) pour un changement rapide
 
 ### Editeur
 
@@ -484,6 +514,31 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 - **Aucun compte requis** — Constellation fonctionne entierement hors ligne
 - **Mises a jour optionnelles** — verifiez les mises a jour manuellement via les Parametres
 - **Open source** — consultez le code sur [github.com/eisaShamsi/Constellation](https://github.com/eisaShamsi/Constellation)
+
+---
+
+## 17. Moteur Cognitif
+
+Le Moteur Cognitif est le systeme d'intelligence integre de Constellation qui analyse vos notes et revele les motifs caches et les relations entre vos idees.
+
+### Strates de Connaissance
+
+Le Moteur Cognitif classe automatiquement chaque note dans l'une des huit strates de connaissance (Instantane, Journal, Sujet, Carte, Cadre, Principe, Conviction, Artefact) en fonction de la structure, du contenu et des liens de la note. Cette classification vous aide a comprendre la repartition des connaissances dans votre bibliotheque et a identifier les lacunes.
+
+### Cycle de Maturite
+
+Le moteur suit le niveau de maturite de chaque note en quatre etapes : **Graine** → **Pousse** → **Persistant** → **Canonique**. Le niveau evolue automatiquement avec l'ajout de liens et de revisions.
+
+### Liens Types
+
+Le Moteur Cognitif decouvre des connexions semantiques entre les notes basees sur la similarite du contenu, meme si elles ne sont pas explicitement liees par des wikilinks. Ces connexions apparaissent sous forme de lignes pointillees dans la Vue Etoiles ; leur sensibilite peut etre ajustee dans les parametres de la Vue Etoiles.
+
+### Parametres du Moteur Cognitif
+
+- **Classification des strates** — Activer ou desactiver la classification automatique
+- **Suivi de maturite** — Activer ou desactiver le suivi du cycle de maturite
+- **Liens types** — Ajuster le seuil de sensibilite pour la detection des liens (0.0 – 1.0)
+- **Substitution manuelle** — Ajoutez les proprietes `stratum` et `maturity` dans le frontmatter pour outrepasser la classification automatique
 
 ---
 

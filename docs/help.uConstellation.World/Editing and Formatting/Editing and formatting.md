@@ -356,6 +356,21 @@ You can customize the editor behavior in **Settings > Editor**. Settings are org
 
 ---
 
+## Enhanced Toolbar
+
+The toolbar includes a toggle button (≡) to show/hide all buttons. New formatting options:
+
+- **Underline** (`<u>`) — renders underlined in Live Preview
+- **Subscript** (`<sub>`) — for chemical formulas, footnotes
+- **Superscript** (`<sup>`) — for exponents, ordinals
+- **Text Alignment** — Align Start, Center, End (direction-aware for RTL)
+- **Clear Formatting** — removes all markdown and HTML marks from selection
+- **Find & Replace** — opens search panel (also Ctrl+F)
+
+The toolbar is RTL-aware: when your cursor is on an Arabic or Hebrew line, the toolbar flips to match the text direction. Undo/redo arrows and alignment icons mirror automatically.
+
+---
+
 ## Tips
 
 > [!tip] Formatting shortcuts work on selections

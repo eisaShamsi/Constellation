@@ -130,9 +130,9 @@ Untyped links default to `associative`. Power users type; beginners never need t
 
 ---
 
-## Phase 2: Knowledge Strata (طبقات المعرفة)
+## Phase 2: Knowledge Strata (طبقات المعرفة) ✅ COMPLETE
 
-**Status**: 🔲 Not started
+**Commit**: `0f6d4bf` | **Date**: 2026-04-02
 **Depends on**: Phase 1 (link types enrich stratum signals)
 **Unlocks**: Tension Detector (strata-aware orphans), Review Pulse (priority by stratum)
 
@@ -219,9 +219,9 @@ GO if tests 1–7 pass and no typing lag introduced.
 
 ---
 
-## Phase 3: Maturity Lifecycle (دورة النضج)
+## Phase 3: Maturity Lifecycle (دورة النضج) ✅ COMPLETE
 
-**Status**: 🔲 Not started
+**Commit**: `5cf4283` | **Date**: 2026-04-02
 **Depends on**: Wikilinks (existing), file metadata (existing)
 **Unlocks**: Review Pulse (staleness source), Tension Detector (orphan severity)
 

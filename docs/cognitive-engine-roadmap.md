@@ -9,8 +9,8 @@
 LAYER 1 — Structural Cognition (zero AI dependency)
 
   Phase 1:  Typed Links         ✅  [[note|link-type]] — keystone, unlocks all below
-  Phase 2:  Knowledge Strata    🔲  auto-classify notes by abstraction level
-  Phase 3:  Maturity Lifecycle  🔲  Seed → Sapling → Evergreen → Canonical
+  Phase 2:  Knowledge Strata    ✅  auto-classify notes by abstraction level (8 levels)
+  Phase 3:  Maturity Lifecycle  ✅  Seed → Sapling → Evergreen → Canonical
   Phase 4:  Tension Detector    🔲  contradictions, orphans, structural gaps
   Phase 5:  Provenance Chain    🔲  isnad-inspired source lineage
   Phase 6:  Externalization     🔲  fleeting → literature → permanent → synthesis
@@ -36,8 +36,8 @@ LAYER 2 — AI Discovery (reads Layer 1 structures)
 | Phase | Name | Status | Commit | Date |
 |---|---|---|---|---|
 | 1 | Typed Links | ✅ GO — user tested | `d7edc6d` | 2026-03-30 |
-| 2 | Knowledge Strata | 🔲 Not started | — | — |
-| 3 | Maturity Lifecycle | 🔲 Not started | — | — |
+| 2 | Knowledge Strata | ✅ GO — user tested | `0f6d4bf` | 2026-04-02 |
+| 3 | Maturity Lifecycle | ✅ GO — user tested | `5cf4283` | 2026-04-02 |
 | 4 | Tension Detector | 🔲 Not started | — | — |
 | 5 | Provenance Chain | 🔲 Not started | — | — |
 | 6 | Externalization Engine | 🔲 Not started | — | — |

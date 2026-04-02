@@ -25,6 +25,7 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 15. [Keyboard Shortcuts](#keyboard-shortcuts)
 16. [RTL and Arabic Support](#rtl-and-arabic-support)
 17. [Security and Privacy](#security-and-privacy)
+18. [Cognitive Engine](#cognitive-engine)
 
 ---
 
@@ -184,6 +185,26 @@ When your cursor is inside a markdown table, a floating toolbar appears with:
 - **Sort** — sort rows ascending or descending by the current column
 - **Tab / Shift+Tab** — navigate between table cells
 
+### Toolbar Toggle
+
+The toolbar has a toggle button (≡) as its first item. Click to show/hide all toolbar buttons. When hidden, only the toggle remains visible.
+
+### Text Alignment
+
+Three alignment buttons in the toolbar: Align Start, Align Center, Align End.
+
+- In LTR: Start = left, End = right
+- In RTL: Start = right, End = left (buttons adapt automatically)
+- Alignment wraps the line in `<div style="text-align: ...">` — visible in Live Preview as aligned text
+
+### Additional Formatting
+
+- **Underline** — wraps text in `<u>...</u>`, renders underlined in Live Preview
+- **Subscript** — wraps in `<sub>...</sub>`, renders as subscript
+- **Superscript** — wraps in `<sup>...</sup>`, renders as superscript
+- **Clear Formatting** — strips all markdown and HTML formatting marks from selected text
+- **Find & Replace** — opens the CodeMirror search panel (`Ctrl+F`)
+
 ### Text Formatting Shortcuts
 
 | Shortcut | Action |
@@ -337,6 +358,41 @@ Click the gear icon for:
 ### Legend
 
 Bottom-right legend shows library/folder colors with checkboxes to toggle visibility.
+
+### Knowledge Strata (Cognitive Engine)
+
+Constellation automatically classifies every note into an 8-level knowledge hierarchy based on structural signals — no manual tagging required.
+
+| Level | Name | How it's determined |
+|-------|------|-------------------|
+| 1 | Datum | Short note (≤50 words), no links |
+| 2 | Information | 50–200 words, few links |
+| 3 | Proposition | 200+ words or 2+ links |
+| 4 | Concept | 3+ outgoing links, has `generalizes` links |
+| 5 | Principle | Has `causes` or `supports` typed links |
+| 6 | Theory | 8+ outgoing links (Map of Content) |
+| 7 | Paradigm | Referenced by 3+ high-level notes |
+| 8 | Worldview | Highest centrality in the graph |
+
+**Visual**: Higher-level notes appear as larger nodes with a complementary-colored glow halo. Notes below level 4 are small dots. This activates automatically when a library has 20+ notes.
+
+### Note Maturity Lifecycle (Cognitive Engine)
+
+Notes grow through 4 maturity states, computed from inbound links and file age:
+
+| State | Visual | Conditions |
+|-------|--------|-----------|
+| 🌱 Seed | No indicator | New note, no inbound links |
+| 🌿 Sapling | Light green border | 1–3 inbound links or 2+ days old |
+| 🌳 Evergreen | Rich green border | 4+ inbound links, 7+ days old |
+| ⭐ Canonical | Gold border | 10+ inbound links, untouched 30+ days |
+
+**Decay**: An Evergreen note untouched for 90+ days enters a "wilting" state (dimmed border).
+
+Maturity appears in three places:
+- **File tree**: colored left border on note names
+- **Star View**: colored ring around nodes
+- **Tab bar**: small colored dot (●) before the note title
 
 ---
 
@@ -515,6 +571,7 @@ A dedicated tab consolidating all language-related settings:
 - **Custom Font Sets** — system font dropdown for interface, text, and mono fonts per language
 - **Date & Numbers** — numeral style (Arabic 0-9 or Hindi numerals), per-language date format with a Contextual checkbox for direction-aware rendering
 - **Script Tools** — language-specific symbol and punctuation toolbars (Arabic, Hebrew, CJK, etc.)
+- **Font Theme** — choose between Default and Typewriter font themes. The Typewriter theme applies authentic pre-PC-era fonts for each script (Courier Prime for Latin, Noto Naskh Arabic for Arabic, Miriam Libre for Hebrew, PT Mono for Cyrillic, Tiro Devanagari Hindi for Hindi, and system CJK fonts for Chinese/Japanese/Korean)
 
 ### Editor
 
@@ -608,6 +665,26 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 - **No account required** — Constellation works entirely offline
 - **Optional updates** — check for updates manually via Settings
 - **Open source** — inspect the code at [github.com/eisaShamsi/Constellation](https://github.com/eisaShamsi/Constellation)
+
+---
+
+## 18. Cognitive Engine
+
+The Cognitive Engine is a two-layer architecture that transforms Constellation from a note-taking app into a knowledge cognition instrument.
+
+**Layer 1 — Structural Cognition** (zero AI dependency): Tools that analyze your notes' structure, connections, and metadata to surface insights. Works fully offline.
+
+**Layer 2 — AI Discovery** (coming soon): AI reads Layer 1's structures to find patterns you cannot see from inside your own knowledge.
+
+### Currently Available (Layer 1)
+
+| Feature | What it does |
+|---------|-------------|
+| **Typed Links** | Add semantic meaning to links: `[[note\|supports]]`, `[[note\|contradicts]]`, etc. 7 link types with distinct colors in Star View |
+| **Knowledge Strata** | Auto-classifies notes into 8 levels (Datum → Worldview) based on word count, link count, and link types |
+| **Maturity Lifecycle** | Tracks note growth: Seed → Sapling → Evergreen → Canonical. Shown in file tree, Star View, and tab bar |
+
+These features require no configuration — they activate automatically as your library grows.
 
 ---
 

@@ -271,6 +271,31 @@ Clicking a child universe, library, folder, or note in any sidebar mode (Tree, L
 
 ---
 
+## Knowledge Strata
+
+Star View automatically sizes nodes based on their knowledge level (1-8):
+
+- Small dots: simple notes (Datum, Information)
+- Medium nodes: connected notes (Proposition, Concept)
+- Large glowing hubs: synthesis notes (Theory, Paradigm, Worldview)
+
+Higher-level nodes have a complementary-colored glow halo for visual contrast. This activates when a library has 20+ notes.
+
+---
+
+## Note Maturity
+
+Nodes display a colored ring indicating maturity:
+
+- No ring: Seed (new note)
+- Light green ring: Sapling (growing)
+- Rich green ring: Evergreen (well-established)
+- Gold ring: Canonical (authoritative reference)
+
+Maturity is also shown in the file tree (left border) and tab bar (colored dot).
+
+---
+
 ## Technical notes
 
 Star View is powered by the **GraphMind** engine, a Pixi.js WebGL renderer with a d3-force simulation running in a dedicated Web Worker. This architecture ensures:

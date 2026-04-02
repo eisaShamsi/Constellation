@@ -24,6 +24,7 @@ Constellation, Markdown not kütüphanelerini yönetmek için tasarlanmış bir 
 14. [Klavye Kısayolları](#klavye-kısayolları)
 15. [RTL ve Arapça Desteği](#rtl-ve-arapça-desteği)
 16. [Güvenlik ve Gizlilik](#güvenlik-ve-gizlilik)
+17. [Bilişsel Motor](#bilişsel-motor)
 
 ---
 
@@ -252,6 +253,34 @@ Dişli simgesine tıklayın:
 
 Sağ alt köşedeki açıklama, görünürlüğü değiştirmek için onay kutuları ile kütüphane/klasör renklerini gösterir.
 
+### Bilgi Katmanları
+
+Star View, notlarınızı soyutlama düzeyine göre otomatik olarak sekiz bilgi katmanına sınıflandırır:
+
+| Katman | Açıklama |
+|--------|----------|
+| **Anlık Görüntü** | Hızlı, geçici notlar |
+| **Günlük** | Tarihli olaylar ve günlük kayıtları |
+| **Konu** | Tek bir fikir hakkında atomik kavramlar |
+| **Harita** | Diğer konuları birbirine bağlayan organizasyon notları |
+| **Çerçeve** | Modeller ve düşünce çerçeveleri |
+| **İlke** | Doğrulanmış kurallar ve aksiyomlar |
+| **İnanç** | Temel değerler ve inançlar |
+| **Eser** | Tamamlanmış ve nihai çalışmalar |
+
+Katman, notun frontmatter bilgisi, yapısı ve bağlantılarından otomatik olarak belirlenir. Frontmatter'a `stratum` özelliği ekleyerek sınıflandırmayı elle geçersiz kılabilirsiniz.
+
+### Olgunluk Yaşam Döngüsü
+
+Her not, gelişim derecesini yansıtan bir olgunluk yaşam döngüsünden geçer:
+
+- **Tohum** — İlk fikir veya ham taslak
+- **Fidan** — Not şekillenmeye başlar ve bazı bağlantıları vardır
+- **Yaprak Dökmeyen** — Olgun, gözden geçirilmiş ve iyi bağlantılı not
+- **Kanonik** — Alanında nihai ve yetkili bir referans
+
+Olgunluk seviyesi, bağlantı sayısı, gözden geçirme tarihi ve düzenleme sıklığına göre otomatik olarak güncellenir. Ayrıca frontmatter'daki `maturity` özelliği ile elle de ayarlayabilirsiniz.
+
 ---
 
 ## 5. İkinci Ekran
@@ -396,6 +425,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 - Dil (15 dil)
 - Tema (Açık / Koyu)
 - Arayüz yazı tipi, Metin yazı tipi, Mono yazı tipi, Yazı tipi boyutu
+- Yazı tipi teması — hazır yazı tipi kombinasyonları (Daktilo, Klasik, Modern vb.) hızlı geçiş için
 
 ### Düzenleyici
 
@@ -484,6 +514,31 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 - **Hesap gerekmez** — Constellation tamamen çevrimdışı çalışır
 - **İsteğe bağlı güncellemeler** — Ayarlar üzerinden güncellemeleri elle kontrol edin
 - **Açık kaynak** — kodu [github.com/eisaShamsi/Constellation](https://github.com/eisaShamsi/Constellation) adresinden inceleyin
+
+---
+
+## 17. Bilişsel Motor
+
+Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz arasındaki gizli kalıpları ve ilişkileri ortaya çıkaran yerleşik zeka sistemidir.
+
+### Bilgi Katmanları
+
+Bilişsel Motor, her notu yapı, içerik ve bağlantılarına göre otomatik olarak sekiz bilgi katmanından (Anlık Görüntü, Günlük, Konu, Harita, Çerçeve, İlke, İnanç, Eser) birine sınıflandırır. Bu sınıflandırma, kütüphanenizdeki bilgi dağılımını anlamanıza ve boşlukları tespit etmenize yardımcı olur.
+
+### Olgunluk Yaşam Döngüsü
+
+Motor, her notun olgunluk seviyesini dört aşamada takip eder: **Tohum** → **Fidan** → **Yaprak Dökmeyen** → **Kanonik**. Bağlantılar ve gözden geçirmeler eklendikçe seviye otomatik olarak değişir.
+
+### Tipli Bağlantılar
+
+Bilişsel Motor, wikilink'lerle açıkça bağlanmamış olsalar bile içerik benzerliğine dayalı olarak notlar arasındaki anlamsal bağlantıları keşfeder. Bu bağlantılar Star View'da noktalı çizgiler olarak görünür; hassasiyetleri Star View ayarlarından ayarlanabilir.
+
+### Bilişsel Motor Ayarları
+
+- **Katman sınıflandırması** — Otomatik sınıflandırmayı etkinleştir veya devre dışı bırak
+- **Olgunluk takibi** — Olgunluk yaşam döngüsü takibini etkinleştir veya devre dışı bırak
+- **Tipli bağlantılar** — Bağlantı algılama hassasiyet eşiğini ayarla (0.0 – 1.0)
+- **Elle geçersiz kılma** — Otomatik sınıflandırmayı geçersiz kılmak için frontmatter'a `stratum` ve `maturity` özelliklerini ekleyin
 
 ---
 

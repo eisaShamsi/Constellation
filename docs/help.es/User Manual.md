@@ -24,6 +24,7 @@ Constellation es una aplicacion de escritorio para la Gestion del Conocimiento P
 14. [Atajos de Teclado](#atajos-de-teclado)
 15. [Soporte RTL y Arabe](#soporte-rtl-y-arabe)
 16. [Seguridad y Privacidad](#seguridad-y-privacidad)
+17. [Motor Cognitivo](#motor-cognitivo)
 
 ---
 
@@ -252,6 +253,34 @@ Haz clic en el icono de engranaje para:
 
 La leyenda en la esquina inferior derecha muestra los colores de biblioteca/carpeta con casillas para alternar la visibilidad.
 
+### Estratos del Conocimiento
+
+La Vista Estelar clasifica automaticamente tus notas en ocho estratos de conocimiento segun el nivel de abstraccion:
+
+| Estrato | Descripcion |
+|---------|-------------|
+| **Instantanea** | Notas rapidas y efimeras |
+| **Registro** | Eventos con fecha y entradas de diario |
+| **Tema** | Conceptos atomicos sobre una sola idea |
+| **Mapa** | Notas organizativas que conectan otros temas |
+| **Marco** | Modelos y marcos de pensamiento |
+| **Principio** | Reglas y axiomas verificados |
+| **Conviccion** | Valores y creencias fundamentales |
+| **Artefacto** | Obras completadas y definitivas |
+
+El estrato se determina automaticamente a partir del frontmatter, la estructura y los enlaces de la nota. Puedes sobrescribir la clasificacion manualmente agregando una propiedad `stratum` en el frontmatter.
+
+### Ciclo de Madurez
+
+Cada nota atraviesa un ciclo de madurez que refleja su grado de desarrollo:
+
+- **Semilla** — Idea inicial o borrador en bruto
+- **Plantula** — La nota toma forma y tiene algunos enlaces
+- **Perenne** — Nota madura, revisada y bien enlazada
+- **Canonica** — Referencia definitiva y autorizada en su tema
+
+El nivel de madurez se actualiza automaticamente segun el numero de enlaces, la fecha de revision y la frecuencia de edicion. Tambien puedes establecerlo manualmente a traves de la propiedad `maturity` en el frontmatter.
+
 ---
 
 ## 5. Segunda Pantalla
@@ -396,6 +425,7 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 - Idioma (15 idiomas)
 - Tema (Claro / Oscuro)
 - Fuente de interfaz, Fuente de texto, Fuente monoespaciada, Tamano de fuente
+- Tema de fuente — combinaciones de fuentes predefinidas (Maquina de escribir, Clasico, Moderno, etc.) para cambio rapido
 
 ### Editor
 
@@ -484,6 +514,31 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 - **Sin cuenta requerida** — Constellation funciona completamente sin conexion
 - **Actualizaciones opcionales** — busca actualizaciones manualmente desde Configuracion
 - **Codigo abierto** — inspecciona el codigo en [github.com/eisaShamsi/Constellation](https://github.com/eisaShamsi/Constellation)
+
+---
+
+## 17. Motor Cognitivo
+
+El Motor Cognitivo es el sistema de inteligencia integrado de Constellation que analiza tus notas y descubre patrones ocultos y relaciones entre tus ideas.
+
+### Estratos del Conocimiento
+
+El Motor Cognitivo clasifica automaticamente cada nota en uno de ocho estratos de conocimiento (Instantanea, Registro, Tema, Mapa, Marco, Principio, Conviccion, Artefacto) segun la estructura, contenido y enlaces de la nota. Esta clasificacion te ayuda a comprender la distribucion del conocimiento en tu biblioteca e identificar vacios.
+
+### Ciclo de Madurez
+
+El motor rastrea el nivel de madurez de cada nota en cuatro etapas: **Semilla** → **Plantula** → **Perenne** → **Canonica**. El nivel cambia automaticamente a medida que se agregan enlaces y revisiones.
+
+### Enlaces Tipados
+
+El Motor Cognitivo descubre conexiones semanticas entre notas basandose en la similitud del contenido, incluso si no estan vinculadas explicitamente mediante wikilinks. Estas conexiones aparecen como lineas punteadas en la Vista Estelar; su sensibilidad se puede ajustar en la configuracion de la Vista Estelar.
+
+### Configuracion del Motor Cognitivo
+
+- **Clasificacion de estratos** — Activar o desactivar la clasificacion automatica
+- **Seguimiento de madurez** — Activar o desactivar el seguimiento del ciclo de madurez
+- **Enlaces tipados** — Ajustar el umbral de sensibilidad para la deteccion de enlaces (0.0 – 1.0)
+- **Sobrescritura manual** — Agrega propiedades `stratum` y `maturity` en el frontmatter para sobrescribir la clasificacion automatica
 
 ---
 

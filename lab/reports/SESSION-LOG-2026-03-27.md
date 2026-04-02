@@ -958,7 +958,27 @@ Image embed bug (separate from R13): **FAIL** → Fixed `efeb31d`
 
 ---
 
+### Cognitive Engine Phase 3: Maturity Lifecycle
+
+**Commit:** `5cf4283` + `74d2156` + `ecffe84` | **Tag:** `milestone/CE-phase-3-maturity-lifecycle`
+
+- New Rust module `src-tauri/src/maturity.rs`: `compute_note_maturity()` command
+- 5 states: seed, sapling (green), evergreen (rich green), canonical (gold), wilting (dimmed)
+- Signals: inbound link count + file age (created/modified timestamps)
+- Visual: file tree colored left border, GraphMind maturity ring, tab bar colored dot
+- Phase 2 fix: stratum halo uses complementary colors (180° HSL rotation)
+- **Test: PASS** — borders visible in file tree, maturity rings in Star View
+
+---
+
+### Milestone: CE-phase-3-maturity-lifecycle
+
+**Tag:** `milestone/CE-phase-3-maturity-lifecycle` at `ecffe84`
+**ZIP:** `E:/Backups/Constellation/Constellation-CE-phase-3-20260402.zip`
+
+---
+
 ### Open Items
-- CE Phase 3: Maturity Lifecycle — next
+- CE Phase 4: Tension Detector — next
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session

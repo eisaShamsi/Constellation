@@ -24,6 +24,7 @@ Constellation ist eine Desktop-Anwendung fuer persoenliches Wissensmanagement (P
 14. [Tastenkuerzel](#tastenkuerzel)
 15. [RTL- und Arabisch-Unterstuetzung](#rtl--und-arabisch-unterstuetzung)
 16. [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
+17. [Kognitive Engine](#kognitive-engine)
 
 ---
 
@@ -252,6 +253,34 @@ Klicken Sie auf das Zahnrad-Symbol fuer:
 
 Die Legende unten rechts zeigt Bibliotheks-/Ordnerfarben mit Kontrollkaestchen zum Umschalten der Sichtbarkeit.
 
+### Wissensschichten
+
+Die Sternenansicht klassifiziert Ihre Notizen automatisch in acht Wissensschichten basierend auf dem Abstraktionsgrad:
+
+| Schicht | Beschreibung |
+|---------|--------------|
+| **Schnappschuss** | Schnelle, fluechtige Notizen |
+| **Protokoll** | Datierte Ereignisse und Tagebucheintraege |
+| **Thema** | Atomare Konzepte zu einer einzelnen Idee |
+| **Karte** | Organisationsnotizen, die andere Themen verbinden |
+| **Rahmen** | Modelle und Denkrahmen |
+| **Prinzip** | Verifizierte Regeln und Axiome |
+| **Ueberzeugung** | Grundlegende Werte und Ueberzeugungen |
+| **Artefakt** | Abgeschlossene, endgueltige Werke |
+
+Die Schicht wird automatisch aus Frontmatter, Struktur und Verlinkungen der Notiz bestimmt. Sie koennen die Klassifizierung manuell ueberschreiben, indem Sie eine `stratum`-Eigenschaft in Frontmatter hinzufuegen.
+
+### Reifelebenszyklus
+
+Jede Notiz durchlaeuft einen Reifelebenszyklus, der ihren Entwicklungsstand widerspiegelt:
+
+- **Samen** — Erste Idee oder Rohentwurf
+- **Setzling** — Notiz nimmt Form an und hat einige Verlinkungen
+- **Immergruen** — Ausgereifte, ueberpruefte und gut verlinkte Notiz
+- **Kanonisch** — Endgueltiges, autoritatives Nachschlagewerk
+
+Der Reifegrad wird automatisch basierend auf Anzahl der Verlinkungen, Ueberarbeitungsdatum und Bearbeitungshaeufigkeit aktualisiert. Sie koennen ihn auch manuell ueber die `maturity`-Eigenschaft in Frontmatter festlegen.
+
 ---
 
 ## 5. Zweiter Bildschirm
@@ -396,6 +425,7 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 - Sprache (15 Sprachen)
 - Thema (Hell / Dunkel)
 - Oberflaechen-Schriftart, Textschriftart, Monospace-Schriftart, Schriftgroesse
+- Schriftthema — vorgefertigte Schriftkombinationen (Schreibmaschine, Klassisch, Modern usw.) fuer schnellen Wechsel
 
 ### Editor
 
@@ -484,6 +514,31 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 - **Kein Konto erforderlich** — Constellation funktioniert vollstaendig offline
 - **Optionale Updates** — suchen Sie manuell nach Updates ueber die Einstellungen
 - **Open Source** — pruefen Sie den Code unter [github.com/eisaShamsi/Constellation](https://github.com/eisaShamsi/Constellation)
+
+---
+
+## 17. Kognitive Engine
+
+Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das Ihre Notizen analysiert und verborgene Muster und Zusammenhaenge zwischen Ihren Ideen aufdeckt.
+
+### Wissensschichten
+
+Die Kognitive Engine klassifiziert jede Notiz automatisch in eine von acht Wissensschichten (Schnappschuss, Protokoll, Thema, Karte, Rahmen, Prinzip, Ueberzeugung, Artefakt) basierend auf Struktur, Inhalt und Verlinkungen der Notiz. Diese Klassifizierung hilft Ihnen, die Wissensverteilung Ihrer Bibliothek zu verstehen und Luecken zu identifizieren.
+
+### Reifelebenszyklus
+
+Die Engine verfolgt den Reifegrad jeder Notiz in vier Stufen: **Samen** → **Setzling** → **Immergruen** → **Kanonisch**. Der Grad aendert sich automatisch mit zunehmenden Verlinkungen und Ueberarbeitungen.
+
+### Typisierte Links
+
+Die Kognitive Engine erkennt semantische Verbindungen zwischen Notizen basierend auf inhaltlicher Aehnlichkeit, auch wenn sie nicht explizit durch Wikilinks verbunden sind. Diese Verbindungen erscheinen als gepunktete Linien in der Sternenansicht; ihre Empfindlichkeit kann in den Sternenansicht-Einstellungen angepasst werden.
+
+### Einstellungen der Kognitiven Engine
+
+- **Schicht-Klassifizierung** — Automatische Klassifizierung aktivieren oder deaktivieren
+- **Reife-Tracking** — Reifelebenszyklus-Tracking aktivieren oder deaktivieren
+- **Typisierte Links** — Empfindlichkeitsschwelle fuer Link-Erkennung anpassen (0.0 – 1.0)
+- **Manuelle Ueberschreibung** — Fuegen Sie `stratum`- und `maturity`-Eigenschaften in Frontmatter hinzu, um die automatische Klassifizierung zu ueberschreiben
 
 ---
 

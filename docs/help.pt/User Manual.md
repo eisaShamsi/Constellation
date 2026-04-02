@@ -24,6 +24,7 @@ Constellation e um aplicativo de desktop para Gestao do Conhecimento Pessoal (PK
 14. [Atalhos de Teclado](#atalhos-de-teclado)
 15. [Suporte RTL e Arabe](#suporte-rtl-e-arabe)
 16. [Seguranca e Privacidade](#seguranca-e-privacidade)
+17. [Motor Cognitivo](#motor-cognitivo)
 
 ---
 
@@ -252,6 +253,34 @@ Clique no icone de engrenagem para:
 
 A legenda no canto inferior direito mostra as cores de biblioteca/pasta com caixas de selecao para alternar a visibilidade.
 
+### Estratos de Conhecimento
+
+A Vista Estelar classifica automaticamente suas notas em oito estratos de conhecimento com base no nivel de abstracao:
+
+| Estrato | Descricao |
+|---------|-----------|
+| **Instantaneo** | Notas rapidas e efemeras |
+| **Registro** | Eventos datados e entradas de diario |
+| **Topico** | Conceitos atomicos sobre uma unica ideia |
+| **Mapa** | Notas organizativas que conectam outros topicos |
+| **Estrutura** | Modelos e estruturas de pensamento |
+| **Principio** | Regras e axiomas verificados |
+| **Conviccao** | Valores e crencas fundamentais |
+| **Artefato** | Obras concluidas e definitivas |
+
+O estrato e determinado automaticamente a partir do frontmatter, estrutura e links da nota. Voce pode substituir a classificacao manualmente adicionando uma propriedade `stratum` no frontmatter.
+
+### Ciclo de Maturidade
+
+Cada nota passa por um ciclo de maturidade que reflete seu grau de desenvolvimento:
+
+- **Semente** — Ideia inicial ou rascunho bruto
+- **Muda** — A nota comeca a tomar forma e tem alguns links
+- **Perene** — Nota madura, revisada e bem conectada
+- **Canonica** — Referencia definitiva e autoritativa em seu tema
+
+O nivel de maturidade e atualizado automaticamente com base no numero de links, data de revisao e frequencia de edicao. Voce tambem pode defini-lo manualmente atraves da propriedade `maturity` no frontmatter.
+
 ---
 
 ## 5. Segunda Tela
@@ -396,6 +425,7 @@ Acesse as Configuracoes pelo icone de engrenagem na barra lateral ou `Ctrl+,`.
 - Idioma (15 idiomas)
 - Tema (Claro / Escuro)
 - Fonte da interface, Fonte de texto, Fonte monoespcada, Tamanho da fonte
+- Tema de fonte — combinacoes de fontes predefinidas (Maquina de escrever, Classico, Moderno, etc.) para troca rapida
 
 ### Editor
 
@@ -484,6 +514,31 @@ Constellation oferece suporte de primeira classe para arabe, hebraico, persa, ur
 - **Sem conta necessaria** — Constellation funciona completamente offline
 - **Atualizacoes opcionais** — verifique atualizacoes manualmente nas Configuracoes
 - **Codigo aberto** — inspecione o codigo em [github.com/eisaShamsi/Constellation](https://github.com/eisaShamsi/Constellation)
+
+---
+
+## 17. Motor Cognitivo
+
+O Motor Cognitivo e o sistema de inteligencia integrado do Constellation que analisa suas notas e revela padroes ocultos e relacoes entre suas ideias.
+
+### Estratos de Conhecimento
+
+O Motor Cognitivo classifica automaticamente cada nota em um dos oito estratos de conhecimento (Instantaneo, Registro, Topico, Mapa, Estrutura, Principio, Conviccao, Artefato) com base na estrutura, conteudo e links da nota. Esta classificacao ajuda voce a entender a distribuicao do conhecimento na sua biblioteca e identificar lacunas.
+
+### Ciclo de Maturidade
+
+O motor acompanha o nivel de maturidade de cada nota em quatro estagios: **Semente** → **Muda** → **Perene** → **Canonica**. O nivel muda automaticamente conforme links e revisoes sao adicionados.
+
+### Links Tipados
+
+O Motor Cognitivo descobre conexoes semanticas entre notas baseadas na similaridade de conteudo, mesmo que nao estejam explicitamente vinculadas por wikilinks. Essas conexoes aparecem como linhas pontilhadas na Vista Estelar; sua sensibilidade pode ser ajustada nas configuracoes da Vista Estelar.
+
+### Configuracoes do Motor Cognitivo
+
+- **Classificacao de estratos** — Ativar ou desativar a classificacao automatica
+- **Rastreamento de maturidade** — Ativar ou desativar o rastreamento do ciclo de maturidade
+- **Links tipados** — Ajustar o limiar de sensibilidade para deteccao de links (0.0 – 1.0)
+- **Substituicao manual** — Adicione propriedades `stratum` e `maturity` no frontmatter para substituir a classificacao automatica
 
 ---
 
