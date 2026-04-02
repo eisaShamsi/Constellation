@@ -1051,9 +1051,35 @@ Fixes:
 
 ---
 
+### CE Phase 6: Externalization Engine (محرك التجسيد)
+
+**Commit:** `87d21d7` | **Tag:** `milestone/CE-phase-6-externalization`
+
+- New Rust command `scan_note_stages` — lightweight frontmatter scan
+- Stage dropdown in breadcrumb (🌱📖🔗✨) + Properties panel
+- FocusPane "Promote to Permanent" button
+- FileTree stage icons from stageMap (instant update on promote)
+- All three locations sync from either dropdown
+- Backward compatible — notes without stage work normally
+- **Test: PASS** — 6/6 tests passed
+
+### Bug fixes during Phase 6 testing
+- Cursor invisible on click → removed $effect loop (`3441358`)
+- Properties→breadcrumb sync → onstagechange callback (`407d1b4`)
+- File tree 13s delay → instant stageMap update (`adbdc87`)
+- FocusPane promote button too faint → increased visibility (`d62893c`)
+
+---
+
+### Milestone: CE-phase-6-externalization
+
+**Tag:** `milestone/CE-phase-6-externalization` at `d62893c`
+**ZIP:** `E:/Backups/Constellation/Constellation-CE-phase-6-20260402.zip`
+
+---
+
 ### Open Items
 - CE Phase 4 user testing — pending larger library
-- CE Phase 5 user testing — pending
-- CE Phase 6: Externalization Engine — next
+- CE Phase 7: Review Pulse — next
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session
