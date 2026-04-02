@@ -30,7 +30,7 @@
             "autoUpdate": "自动更新",
             "autoUpdateDesc": "自动下载并安装更新",
             "githubToken": "GitHub 令牌",
-            "githubTokenDesc": "用于下载更新的个人访问令牌"
+            "githubTokenDesc": "用于私有仓库更新的个人访问令牌（需要 repo 权限）"
         },
         "security": {
             "intro": "保护数据、安全存储API密钥，并在空闲时锁定应用。",
@@ -161,7 +161,11 @@
             "arabicNumerals": "阿拉伯 (0-9)",
             "hindiNumerals": "阿拉伯-印度 (٠-٩)",
             "dateFormat": "日期格式",
-            "dateFormatDesc": "选择日期显示方式"
+            "dateFormatDesc": "选择日期显示方式",
+            "fontTheme": "字体主题",
+            "fontThemeDefault": "默认",
+            "fontThemeTypewriter": "打字机",
+            "contextual": "上下文"
         },
         "ai": {
             "provider": "服务商",
@@ -391,7 +395,9 @@
         "graphViewTitle": "关系图谱",
         "pinned": "已固定",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "点击侧边栏中的笔记以查看其连接"
+        "starViewWiWHint": "点击侧边栏中的笔记以查看其连接",
+        "clickToStart": "点击开始",
+        "search": "搜索..."
     },
     "welcome": {
         "title": "欢迎使用 Constellation",
@@ -1045,7 +1051,10 @@
         "treemap": "矩形树图",
         "colorLibrary": "颜色：资料库",
         "colorStatus": "颜色：状态",
-        "colorDepth": "颜色：深度"
+        "colorDepth": "颜色：深度",
+        "universe": "宇宙",
+        "libraries": "库",
+        "notes": "笔记"
     },
     "universeNotes": {
         "title": "宇宙笔记",
@@ -1097,7 +1106,9 @@
         "copyPath": "复制路径",
         "copyName": "复制名称",
         "deleteFile": "删除文件",
-        "selectAll": "全选"
+        "selectAll": "全选",
+        "subscript": "下标",
+        "superscript": "上标"
     },
     "fontSets": {
         "title": "字体集",

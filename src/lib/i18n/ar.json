@@ -30,7 +30,7 @@
             "autoUpdate": "التحديث التلقائي",
             "autoUpdateDesc": "تنزيل التحديثات وتثبيتها تلقائيا",
             "githubToken": "رمز GitHub",
-            "githubTokenDesc": "رمز الوصول الشخصي لتنزيل التحديثات"
+            "githubTokenDesc": "رمز الوصول الشخصي لتحديثات المستودع الخاص (يتطلب صلاحية repo)"
         },
         "security": {
             "intro": "حماية بياناتك وتأمين مفاتيح API وقفل التطبيق عند الخمول.",
@@ -161,7 +161,11 @@
             "arabicNumerals": "عربية (0-9)",
             "hindiNumerals": "هندية (٠-٩)",
             "dateFormat": "تنسيق التاريخ",
-            "dateFormatDesc": "اختيار طريقة عرض التاريخ"
+            "dateFormatDesc": "اختيار طريقة عرض التاريخ",
+            "fontTheme": "سمة الخط",
+            "fontThemeDefault": "افتراضي",
+            "fontThemeTypewriter": "آلة كاتبة",
+            "contextual": "سياقي"
         },
         "ai": {
             "provider": "المزود",
@@ -392,7 +396,8 @@
         "pinned": "مثبت",
         "starViewTitle": "Star View",
         "starViewWiWHint": "انقر على ملاحظة في الشريط الجانبي لعرض ارتباطاتها",
-        "clickToStart": "اضغط هنا للبدء"
+        "clickToStart": "اضغط هنا للبدء",
+        "search": "بحث..."
     },
     "welcome": {
         "title": "مرحبا بك في كونستليشن",
@@ -1046,7 +1051,10 @@
         "treemap": "خريطة شجرية",
         "colorLibrary": "اللون: المكتبة",
         "colorStatus": "اللون: الحالة",
-        "colorDepth": "اللون: العمق"
+        "colorDepth": "اللون: العمق",
+        "universe": "الكون",
+        "libraries": "مكتبات",
+        "notes": "ملاحظات"
     },
     "universeNotes": {
         "title": "ملاحظات الكون",
@@ -1098,7 +1106,9 @@
         "copyPath": "نسخ المسار",
         "copyName": "نسخ الاسم",
         "deleteFile": "حذف الملف",
-        "selectAll": "تحديد الكل"
+        "selectAll": "تحديد الكل",
+        "subscript": "نص سفلي",
+        "superscript": "نص علوي"
     },
     "fontSets": {
         "title": "مجموعات الخطوط",

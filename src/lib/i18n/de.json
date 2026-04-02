@@ -30,7 +30,7 @@
             "autoUpdate": "Automatische Updates",
             "autoUpdateDesc": "Updates automatisch herunterladen und installieren",
             "githubToken": "GitHub-Token",
-            "githubTokenDesc": "Persönliches Zugriffstoken für Update-Downloads"
+            "githubTokenDesc": "Persönliches Zugriffstoken für Updates privater Repos (Repo-Berechtigung erforderlich)"
         },
         "security": {
             "intro": "Schütze deine Daten, sichere API-Schlüssel und sperre die App bei Inaktivität.",
@@ -161,7 +161,11 @@
             "arabicNumerals": "Arabisch (0-9)",
             "hindiNumerals": "Arabisch-Indisch (٠-٩)",
             "dateFormat": "Datumsformat",
-            "dateFormatDesc": "Wählen Sie die Datumsanzeige"
+            "dateFormatDesc": "Wählen Sie die Datumsanzeige",
+            "fontTheme": "Schriftart-Design",
+            "fontThemeDefault": "Standard",
+            "fontThemeTypewriter": "Schreibmaschine",
+            "contextual": "Kontextabhängig"
         },
         "ai": {
             "provider": "Anbieter",
@@ -391,7 +395,9 @@
         "graphViewTitle": "Graphansicht",
         "pinned": "Angeheftet",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "Klicke auf eine Notiz in der Seitenleiste, um ihre Verbindungen zu sehen"
+        "starViewWiWHint": "Klicke auf eine Notiz in der Seitenleiste, um ihre Verbindungen zu sehen",
+        "clickToStart": "Klicke hier, um zu beginnen",
+        "search": "Suchen..."
     },
     "welcome": {
         "title": "Willkommen bei Constellation",
@@ -1045,7 +1051,10 @@
         "treemap": "Treemap",
         "colorLibrary": "Farbe: Bibliothek",
         "colorStatus": "Farbe: Status",
-        "colorDepth": "Farbe: Tiefe"
+        "colorDepth": "Farbe: Tiefe",
+        "universe": "Universum",
+        "libraries": "Bibliotheken",
+        "notes": "Notizen"
     },
     "universeNotes": {
         "title": "Universum-Notizen",
@@ -1097,7 +1106,9 @@
         "copyPath": "Pfad kopieren",
         "copyName": "Name kopieren",
         "deleteFile": "Datei löschen",
-        "selectAll": "Alles auswählen"
+        "selectAll": "Alles auswählen",
+        "subscript": "Tiefgestellt",
+        "superscript": "Hochgestellt"
     },
     "fontSets": {
         "title": "Schriftarten-Sets",

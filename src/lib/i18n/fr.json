@@ -30,7 +30,7 @@
             "autoUpdate": "Mises à jour automatiques",
             "autoUpdateDesc": "Télécharger et installer les mises à jour automatiquement",
             "githubToken": "Jeton GitHub",
-            "githubTokenDesc": "Jeton d'accès personnel pour télécharger les mises à jour"
+            "githubTokenDesc": "Jeton d'accès personnel pour les mises à jour du dépôt privé (portée repo requise)"
         },
         "security": {
             "intro": "Protégez vos données, sécurisez les clés API et verrouillez l'application en cas d'inactivité.",
@@ -161,7 +161,11 @@
             "arabicNumerals": "Arabes (0-9)",
             "hindiNumerals": "Indo-arabes (٠-٩)",
             "dateFormat": "Format de date",
-            "dateFormatDesc": "Choisir l'affichage des dates"
+            "dateFormatDesc": "Choisir l'affichage des dates",
+            "fontTheme": "Thème de police",
+            "fontThemeDefault": "Par défaut",
+            "fontThemeTypewriter": "Machine à écrire",
+            "contextual": "Contextuel"
         },
         "ai": {
             "provider": "Fournisseur",
@@ -391,7 +395,9 @@
         "graphViewTitle": "Vue en graphe",
         "pinned": "Épinglé",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "Cliquez sur une note dans la barre latérale pour voir ses connexions"
+        "starViewWiWHint": "Cliquez sur une note dans la barre latérale pour voir ses connexions",
+        "clickToStart": "Cliquez ici pour commencer",
+        "search": "Rechercher..."
     },
     "welcome": {
         "title": "Bienvenue dans Constellation",
@@ -1045,7 +1051,10 @@
         "treemap": "Treemap",
         "colorLibrary": "Couleur : Bibliothèque",
         "colorStatus": "Couleur : Statut",
-        "colorDepth": "Couleur : Profondeur"
+        "colorDepth": "Couleur : Profondeur",
+        "universe": "Univers",
+        "libraries": "bibliothèques",
+        "notes": "notes"
     },
     "universeNotes": {
         "title": "Notes de l'Univers",
@@ -1097,7 +1106,9 @@
         "copyPath": "Copier le chemin",
         "copyName": "Copier le nom",
         "deleteFile": "Supprimer le fichier",
-        "selectAll": "Tout sélectionner"
+        "selectAll": "Tout sélectionner",
+        "subscript": "Indice",
+        "superscript": "Exposant"
     },
     "fontSets": {
         "title": "Jeux de polices",

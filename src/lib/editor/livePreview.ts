@@ -111,6 +111,11 @@ const blockquoteDeco = Decoration.mark({ class: 'cm-md-blockquote' });
 const tagDeco = Decoration.mark({ class: 'cm-md-tag' });
 const replaceDeco = Decoration.replace({}); /* cached — avoids allocation per decoration */
 const htmlHiddenDeco = Decoration.mark({ class: 'cm-html-hidden' }); /* hide HTML tags without breaking bidi */
+const htmlUDeco    = Decoration.mark({ class: 'cm-html-u' });
+const htmlSubDeco  = Decoration.mark({ class: 'cm-html-sub' });
+const htmlSupDeco  = Decoration.mark({ class: 'cm-html-sup' });
+const htmlMarkDeco = Decoration.mark({ class: 'cm-html-mark' });
+const htmlDecoMap: Record<string, Decoration> = { u: htmlUDeco, sub: htmlSubDeco, sup: htmlSupDeco, mark: htmlMarkDeco };
 
 // Typed link decorations — one per semantic link type (CE Phase 1)
 const TYPED_LINK_TYPES = new Set([
@@ -527,9 +532,8 @@ function buildDecorations(view: EditorView): DecorationSet {
 					const openEnd = absFrom + tag.length + 2; // after <tag>
 					const closeStart = absFrom + m[0].length - tag.length - 3; // before </tag>
 					const absTo = absFrom + m[0].length;
-					const cls = tag === 'u' ? 'cm-html-u' : tag === 'sub' ? 'cm-html-sub' : tag === 'sup' ? 'cm-html-sup' : 'cm-html-mark';
 					ranges.push({ from: absFrom, to: openEnd, deco: htmlHiddenDeco }); // hide <tag>
-					ranges.push({ from: openEnd, to: closeStart, deco: Decoration.mark({ class: cls }) }); // style content
+					ranges.push({ from: openEnd, to: closeStart, deco: htmlDecoMap[tag] ?? htmlUDeco }); // style content (pre-cached)
 					ranges.push({ from: closeStart, to: absTo, deco: htmlHiddenDeco }); // hide </tag>
 				}
 

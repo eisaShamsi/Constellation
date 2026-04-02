@@ -197,7 +197,11 @@
             "arabicNumerals": "Arabic (0-9)",
             "hindiNumerals": "Arabic-Indic (٠-٩)",
             "dateFormat": "Date format",
-            "dateFormatDesc": "Choose how dates are displayed"
+            "dateFormatDesc": "Choose how dates are displayed",
+            "fontTheme": "Font Theme",
+            "fontThemeDefault": "Default",
+            "fontThemeTypewriter": "Typewriter",
+            "contextual": "Contextual"
         },
         "keyboard": {
             "filter": "Filter commands...",
@@ -391,7 +395,8 @@
         "pinned": "Pinned",
         "starViewTitle": "Star View",
         "starViewWiWHint": "Click a note in the sidebar to see its connections",
-        "clickToStart": "Click me to start"
+        "clickToStart": "Click me to start",
+        "search": "Search..."
     },
     "welcome": {
         "title": "Welcome to Constellation",
@@ -1045,7 +1050,10 @@
         "treemap": "Treemap",
         "colorLibrary": "Color: Library",
         "colorStatus": "Color: Status",
-        "colorDepth": "Color: Depth"
+        "colorDepth": "Color: Depth",
+        "universe": "Universe",
+        "libraries": "libraries",
+        "notes": "notes"
     },
     "universeNotes": {
         "title": "Universe Notes",
@@ -1097,7 +1105,9 @@
         "copyPath": "Copy path",
         "copyName": "Copy name",
         "deleteFile": "Delete file",
-        "selectAll": "Select All"
+        "selectAll": "Select All",
+        "subscript": "Subscript",
+        "superscript": "Superscript"
     },
     "fontSets": {
         "title": "Font Sets",

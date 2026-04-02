@@ -30,7 +30,7 @@
             "autoUpdate": "स्वचालित अपडेट",
             "autoUpdateDesc": "अपडेट स्वचालित रूप से डाउनलोड और इंस्टॉल करें",
             "githubToken": "GitHub टोकन",
-            "githubTokenDesc": "अपडेट डाउनलोड के लिए व्यक्तिगत एक्सेस टोकन"
+            "githubTokenDesc": "निजी रेपो अपडेट के लिए व्यक्तिगत एक्सेस टोकन (repo स्कोप आवश्यक)"
         },
         "security": {
             "intro": "अपने डेटा की सुरक्षा करें, API कुंजियाँ सुरक्षित रखें और निष्क्रिय होने पर ऐप लॉक करें।",
@@ -161,7 +161,11 @@
             "arabicNumerals": "अरबी (0-9)",
             "hindiNumerals": "अरबी-हिंदी (٠-٩)",
             "dateFormat": "दिनांक प्रारूप",
-            "dateFormatDesc": "तिथि प्रदर्शन का तरीका चुनें"
+            "dateFormatDesc": "तिथि प्रदर्शन का तरीका चुनें",
+            "fontTheme": "फ़ॉन्ट थीम",
+            "fontThemeDefault": "डिफ़ॉल्ट",
+            "fontThemeTypewriter": "टाइपराइटर",
+            "contextual": "प्रासंगिक"
         },
         "ai": {
             "provider": "प्रदाता",
@@ -391,7 +395,9 @@
         "graphViewTitle": "ग्राफ़ दृश्य",
         "pinned": "पिन किया गया",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "साइडबार में एक नोट पर क्लिक करें, उसके कनेक्शन देखने के लिए"
+        "starViewWiWHint": "साइडबार में एक नोट पर क्लिक करें, उसके कनेक्शन देखने के लिए",
+        "clickToStart": "शुरू करने के लिए क्लिक करें",
+        "search": "खोजें..."
     },
     "welcome": {
         "title": "Constellation में आपका स्वागत है",
@@ -1045,7 +1051,10 @@
         "treemap": "ट्रीमैप",
         "colorLibrary": "रंग: लाइब्रेरी",
         "colorStatus": "रंग: स्थिति",
-        "colorDepth": "रंग: गहराई"
+        "colorDepth": "रंग: गहराई",
+        "universe": "ब्रह्मांड",
+        "libraries": "पुस्तकालय",
+        "notes": "नोट्स"
     },
     "universeNotes": {
         "title": "ब्रह्मांड नोट्स",
@@ -1097,7 +1106,9 @@
         "copyPath": "पथ कॉपी करें",
         "copyName": "नाम कॉपी करें",
         "deleteFile": "फ़ाइल हटाएँ",
-        "selectAll": "सभी चुनें"
+        "selectAll": "सभी चुनें",
+        "subscript": "सबस्क्रिप्ट",
+        "superscript": "सुपरस्क्रिप्ट"
     },
     "fontSets": {
         "title": "फ़ॉन्ट सेट",

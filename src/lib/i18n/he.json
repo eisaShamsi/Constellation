@@ -30,7 +30,7 @@
             "autoUpdate": "עדכונים אוטומטיים",
             "autoUpdateDesc": "הורד והתקן עדכונים אוטומטית",
             "githubToken": "אסימון GitHub",
-            "githubTokenDesc": "אסימון גישה אישי להורדת עדכונים"
+            "githubTokenDesc": "אסימון גישה אישי לעדכוני מאגר פרטי (נדרשת הרשאת repo)"
         },
         "security": {
             "intro": "הגן על הנתונים שלך, אבטח מפתחות API ונעל את האפליקציה בזמן חוסר פעילות.",
@@ -161,7 +161,11 @@
             "arabicNumerals": "ערביות (0-9)",
             "hindiNumerals": "הודיות-ערביות (٠-٩)",
             "dateFormat": "תבנית תאריך",
-            "dateFormatDesc": "בחירת אופן הצגת התאריכים"
+            "dateFormatDesc": "בחירת אופן הצגת התאריכים",
+            "fontTheme": "ערכת גופן",
+            "fontThemeDefault": "ברירת מחדל",
+            "fontThemeTypewriter": "מכונת כתיבה",
+            "contextual": "הקשרי"
         },
         "ai": {
             "provider": "ספק",
@@ -391,7 +395,9 @@
         "graphViewTitle": "תצוגת גרף",
         "pinned": "מוצמד",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "לחץ על פתק בסרגל הצד כדי לראות את הקשרים שלו"
+        "starViewWiWHint": "לחץ על פתק בסרגל הצד כדי לראות את הקשרים שלו",
+        "clickToStart": "לחץ כאן כדי להתחיל",
+        "search": "חיפוש..."
     },
     "welcome": {
         "title": "ברוכים הבאים ל-Constellation",
@@ -1045,7 +1051,10 @@
         "treemap": "Treemap",
         "colorLibrary": "צבע: ספרייה",
         "colorStatus": "צבע: סטטוס",
-        "colorDepth": "צבע: עומק"
+        "colorDepth": "צבע: עומק",
+        "universe": "יקום",
+        "libraries": "ספריות",
+        "notes": "פתקים"
     },
     "universeNotes": {
         "title": "הערות היקום",
@@ -1097,7 +1106,9 @@
         "copyPath": "העתק נתיב",
         "copyName": "העתק שם",
         "deleteFile": "מחק קובץ",
-        "selectAll": "בחר הכל"
+        "selectAll": "בחר הכל",
+        "subscript": "כתב תחתי",
+        "superscript": "כתב עילי"
     },
     "fontSets": {
         "title": "ערכות גופנים",

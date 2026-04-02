@@ -30,7 +30,7 @@
             "autoUpdate": "به‌روزرسانی خودکار",
             "autoUpdateDesc": "دانلود و نصب خودکار به‌روزرسانی‌ها",
             "githubToken": "توکن GitHub",
-            "githubTokenDesc": "توکن دسترسی شخصی برای دانلود به‌روزرسانی‌ها"
+            "githubTokenDesc": "توکن دسترسی شخصی برای به‌روزرسانی مخزن خصوصی (نیاز به دسترسی repo)"
         },
         "security": {
             "intro": "از داده‌های خود محافظت کنید، کلیدهای API را ایمن کنید و برنامه را در حالت بیکار قفل کنید.",
@@ -161,7 +161,11 @@
             "arabicNumerals": "عربی (0-9)",
             "hindiNumerals": "هندی (٠-٩)",
             "dateFormat": "قالب تاریخ",
-            "dateFormatDesc": "انتخاب نحوه نمایش تاریخ"
+            "dateFormatDesc": "انتخاب نحوه نمایش تاریخ",
+            "fontTheme": "طرح قلم",
+            "fontThemeDefault": "پیش‌فرض",
+            "fontThemeTypewriter": "ماشین تحریر",
+            "contextual": "زمینه‌ای"
         },
         "ai": {
             "provider": "ارائه‌دهنده",
@@ -391,7 +395,9 @@
         "graphViewTitle": "نمای گراف",
         "pinned": "سنجاق شده",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "روی یک یادداشت در نوار کناری کلیک کنید تا ارتباطات آن را ببینید"
+        "starViewWiWHint": "روی یک یادداشت در نوار کناری کلیک کنید تا ارتباطات آن را ببینید",
+        "clickToStart": "برای شروع کلیک کنید",
+        "search": "جستجو..."
     },
     "welcome": {
         "title": "به Constellation خوش آمدید",
@@ -1045,7 +1051,10 @@
         "treemap": "نقشه درختی",
         "colorLibrary": "رنگ: کتابخانه",
         "colorStatus": "رنگ: وضعیت",
-        "colorDepth": "رنگ: عمق"
+        "colorDepth": "رنگ: عمق",
+        "universe": "جهان",
+        "libraries": "کتابخانه‌ها",
+        "notes": "یادداشت‌ها"
     },
     "universeNotes": {
         "title": "یادداشت‌های جهان",
@@ -1097,7 +1106,9 @@
         "copyPath": "کپی مسیر",
         "copyName": "کپی نام",
         "deleteFile": "حذف فایل",
-        "selectAll": "انتخاب همه"
+        "selectAll": "انتخاب همه",
+        "subscript": "زیرنویس",
+        "superscript": "بالانویس"
     },
     "fontSets": {
         "title": "مجموعه فونت‌ها",

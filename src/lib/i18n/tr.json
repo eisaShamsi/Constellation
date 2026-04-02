@@ -30,7 +30,7 @@
             "autoUpdate": "Otomatik güncelleme",
             "autoUpdateDesc": "Güncellemeleri otomatik olarak indir ve yükle",
             "githubToken": "GitHub Jetonu",
-            "githubTokenDesc": "Güncellemeleri indirmek için kişisel erişim jetonu"
+            "githubTokenDesc": "Özel repo güncellemeleri için kişisel erişim jetonu (repo kapsamı gerekli)"
         },
         "security": {
             "intro": "Verilerinizi koruyun, API anahtarlarını güvence altına alın ve boşta kaldığında uygulamayı kilitleyin.",
@@ -161,7 +161,11 @@
             "arabicNumerals": "Arap (0-9)",
             "hindiNumerals": "Arap-Hint (٠-٩)",
             "dateFormat": "Tarih biçimi",
-            "dateFormatDesc": "Tarihlerin nasıl görüntüleneceğini seçin"
+            "dateFormatDesc": "Tarihlerin nasıl görüntüleneceğini seçin",
+            "fontTheme": "Yazı tipi teması",
+            "fontThemeDefault": "Varsayılan",
+            "fontThemeTypewriter": "Daktilo",
+            "contextual": "Bağlamsal"
         },
         "ai": {
             "provider": "Sağlayıcı",
@@ -391,7 +395,9 @@
         "graphViewTitle": "Grafik Görünümü",
         "pinned": "Sabitlendi",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "Bağlantılarını görmek için kenar çubuğunda bir nota tıklayın"
+        "starViewWiWHint": "Bağlantılarını görmek için kenar çubuğunda bir nota tıklayın",
+        "clickToStart": "Başlamak için tıklayın",
+        "search": "Ara..."
     },
     "welcome": {
         "title": "Constellation'a Hoş Geldiniz",
@@ -1045,7 +1051,10 @@
         "treemap": "Treemap",
         "colorLibrary": "Renk: Kütüphane",
         "colorStatus": "Renk: Durum",
-        "colorDepth": "Renk: Derinlik"
+        "colorDepth": "Renk: Derinlik",
+        "universe": "Evren",
+        "libraries": "kütüphaneler",
+        "notes": "notlar"
     },
     "universeNotes": {
         "title": "Evren Notları",
@@ -1097,7 +1106,9 @@
         "copyPath": "Yolu kopyala",
         "copyName": "Adı kopyala",
         "deleteFile": "Dosyayı sil",
-        "selectAll": "Tümünü seç"
+        "selectAll": "Tümünü seç",
+        "subscript": "Alt simge",
+        "superscript": "Üst simge"
     },
     "fontSets": {
         "title": "Yazı Tipi Setleri",

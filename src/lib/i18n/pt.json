@@ -30,7 +30,7 @@
             "autoUpdate": "Atualizações automáticas",
             "autoUpdateDesc": "Baixar e instalar atualizações automaticamente",
             "githubToken": "Token do GitHub",
-            "githubTokenDesc": "Token de acesso pessoal para download de atualizações"
+            "githubTokenDesc": "Token de acesso pessoal para atualizações de repositório privado (escopo repo necessário)"
         },
         "security": {
             "intro": "Proteja seus dados, proteja chaves API e bloqueie o app quando inativo.",
@@ -161,7 +161,11 @@
             "arabicNumerals": "Arábicos (0-9)",
             "hindiNumerals": "Arábico-índicos (٠-٩)",
             "dateFormat": "Formato de data",
-            "dateFormatDesc": "Escolher como as datas são exibidas"
+            "dateFormatDesc": "Escolher como as datas são exibidas",
+            "fontTheme": "Tema de fonte",
+            "fontThemeDefault": "Padrão",
+            "fontThemeTypewriter": "Máquina de escrever",
+            "contextual": "Contextual"
         },
         "ai": {
             "provider": "Provedor",
@@ -391,7 +395,9 @@
         "graphViewTitle": "Visualização em grafo",
         "pinned": "Fixada",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "Clique em uma nota na barra lateral para ver suas conexões"
+        "starViewWiWHint": "Clique em uma nota na barra lateral para ver suas conexões",
+        "clickToStart": "Clique para começar",
+        "search": "Pesquisar..."
     },
     "welcome": {
         "title": "Bem-vindo ao Constellation",
@@ -1045,7 +1051,10 @@
         "treemap": "Treemap",
         "colorLibrary": "Cor: Biblioteca",
         "colorStatus": "Cor: Status",
-        "colorDepth": "Cor: Profundidade"
+        "colorDepth": "Cor: Profundidade",
+        "universe": "Universo",
+        "libraries": "bibliotecas",
+        "notes": "notas"
     },
     "universeNotes": {
         "title": "Notas do Universo",
@@ -1097,7 +1106,9 @@
         "copyPath": "Copiar caminho",
         "copyName": "Copiar nome",
         "deleteFile": "Excluir arquivo",
-        "selectAll": "Selecionar tudo"
+        "selectAll": "Selecionar tudo",
+        "subscript": "Subscrito",
+        "superscript": "Sobrescrito"
     },
     "fontSets": {
         "title": "Conjuntos de fontes",

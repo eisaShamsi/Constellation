@@ -426,11 +426,11 @@
 			titleEl?.focus();
 		}
 		if (initialScrollTop > 0) {
+			// Single RAF — double-RAF leaked the outer handle on cleanup.
+			// setTimeout(0) gives CM6 one frame to layout, then we scroll.
 			rafHandle = requestAnimationFrame(() => {
-				rafHandle = requestAnimationFrame(() => {
-					rafHandle = null;
-					view?.scrollDOM.scrollTo({ top: initialScrollTop });
-				});
+				rafHandle = null;
+				view?.scrollDOM.scrollTo({ top: initialScrollTop });
 			});
 		}
 

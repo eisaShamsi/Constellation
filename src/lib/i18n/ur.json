@@ -30,7 +30,7 @@
             "autoUpdate": "خودکار اپ ڈیٹس",
             "autoUpdateDesc": "خودکار طور پر اپ ڈیٹس ڈاؤن لوڈ اور انسٹال کریں",
             "githubToken": "GitHub ٹوکن",
-            "githubTokenDesc": "اپ ڈیٹس ڈاؤن لوڈ کے لیے ذاتی رسائی ٹوکن"
+            "githubTokenDesc": "پرائیویٹ ریپو اپ ڈیٹس کے لیے ذاتی رسائی ٹوکن (repo اسکوپ درکار)"
         },
         "security": {
             "intro": "اپنے ڈیٹا کی حفاظت کریں، API کیز محفوظ رکھیں اور بیکار ہونے پر ایپ لاک کریں۔",
@@ -161,7 +161,11 @@
             "arabicNumerals": "عربی (0-9)",
             "hindiNumerals": "ہندی (٠-٩)",
             "dateFormat": "تاریخ کی شکل",
-            "dateFormatDesc": "تاریخ کی نمائش کا طریقہ منتخب کریں"
+            "dateFormatDesc": "تاریخ کی نمائش کا طریقہ منتخب کریں",
+            "fontTheme": "فونٹ تھیم",
+            "fontThemeDefault": "ڈیفالٹ",
+            "fontThemeTypewriter": "ٹائپ رائٹر",
+            "contextual": "سیاقی"
         },
         "ai": {
             "provider": "فراہم کنندہ",
@@ -391,7 +395,9 @@
         "graphViewTitle": "گراف ویو",
         "pinned": "پن کیا گیا",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "سائیڈ بار میں نوٹ کلک کریں اس کے روابط دیکھنے کے لیے"
+        "starViewWiWHint": "سائیڈ بار میں نوٹ کلک کریں اس کے روابط دیکھنے کے لیے",
+        "clickToStart": "شروع کرنے کے لیے کلک کریں",
+        "search": "تلاش..."
     },
     "welcome": {
         "title": "Constellation میں خوش آمدید",
@@ -1045,7 +1051,10 @@
         "treemap": "ٹری میپ",
         "colorLibrary": "رنگ: لائبریری",
         "colorStatus": "رنگ: حالت",
-        "colorDepth": "رنگ: گہرائی"
+        "colorDepth": "رنگ: گہرائی",
+        "universe": "کائنات",
+        "libraries": "لائبریریاں",
+        "notes": "نوٹس"
     },
     "universeNotes": {
         "title": "کائنات نوٹس",
@@ -1097,7 +1106,9 @@
         "copyPath": "راستہ کاپی کریں",
         "copyName": "نام کاپی کریں",
         "deleteFile": "فائل حذف کریں",
-        "selectAll": "سب منتخب کریں"
+        "selectAll": "سب منتخب کریں",
+        "subscript": "ذیلی متن",
+        "superscript": "بالائی متن"
     },
     "fontSets": {
         "title": "فونٹ سیٹس",

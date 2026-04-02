@@ -30,7 +30,7 @@
             "autoUpdate": "Автоматические обновления",
             "autoUpdateDesc": "Автоматически загружать и устанавливать обновления",
             "githubToken": "Токен GitHub",
-            "githubTokenDesc": "Персональный токен доступа для загрузки обновлений"
+            "githubTokenDesc": "Персональный токен доступа для обновлений приватного репозитория (требуется область repo)"
         },
         "security": {
             "intro": "Защитите данные, обезопасьте ключи API и блокируйте приложение при бездействии.",
@@ -161,7 +161,11 @@
             "arabicNumerals": "Арабские (0-9)",
             "hindiNumerals": "Арабско-индийские (٠-٩)",
             "dateFormat": "Формат даты",
-            "dateFormatDesc": "Выберите формат отображения дат"
+            "dateFormatDesc": "Выберите формат отображения дат",
+            "fontTheme": "Тема шрифта",
+            "fontThemeDefault": "По умолчанию",
+            "fontThemeTypewriter": "Печатная машинка",
+            "contextual": "Контекстный"
         },
         "ai": {
             "provider": "Поставщик",
@@ -391,7 +395,9 @@
         "graphViewTitle": "Граф",
         "pinned": "Закреплено",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "Нажмите на заметку в боковой панели, чтобы увидеть её связи"
+        "starViewWiWHint": "Нажмите на заметку в боковой панели, чтобы увидеть её связи",
+        "clickToStart": "Нажмите, чтобы начать",
+        "search": "Поиск..."
     },
     "welcome": {
         "title": "Добро пожаловать в Constellation",
@@ -1045,7 +1051,10 @@
         "treemap": "Treemap",
         "colorLibrary": "Цвет: Библиотека",
         "colorStatus": "Цвет: Статус",
-        "colorDepth": "Цвет: Глубина"
+        "colorDepth": "Цвет: Глубина",
+        "universe": "Вселенная",
+        "libraries": "библиотеки",
+        "notes": "заметки"
     },
     "universeNotes": {
         "title": "Заметки Вселенной",
@@ -1097,7 +1106,9 @@
         "copyPath": "Копировать путь",
         "copyName": "Копировать имя",
         "deleteFile": "Удалить файл",
-        "selectAll": "Выбрать всё"
+        "selectAll": "Выбрать всё",
+        "subscript": "Подстрочный",
+        "superscript": "Надстрочный"
     },
     "fontSets": {
         "title": "Наборы шрифтов",

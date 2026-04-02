@@ -3173,8 +3173,8 @@
 					// Request state from second screen via IPC
 					try {
 						const screenState = await new Promise<ScreenState>((resolve, reject) => {
-							const timeout = setTimeout(() => reject(new Error('timeout')), 2000);
 							let unlistenFn: (() => void) | null = null;
+							const timeout = setTimeout(() => { unlistenFn?.(); reject(new Error('timeout')); }, 2000);
 							onStateResponse((state) => {
 								clearTimeout(timeout);
 								unlistenFn?.();

@@ -30,7 +30,7 @@
             "autoUpdate": "自動アップデート",
             "autoUpdateDesc": "アップデートを自動的にダウンロードしてインストール",
             "githubToken": "GitHubトークン",
-            "githubTokenDesc": "アップデートダウンロード用の個人アクセストークン"
+            "githubTokenDesc": "プライベートリポジトリ更新用の個人アクセストークン（repoスコープが必要）"
         },
         "security": {
             "intro": "データを保護し、APIキーを安全に保管し、アイドル時にアプリをロックします。",
@@ -161,7 +161,11 @@
             "arabicNumerals": "アラビア (0-9)",
             "hindiNumerals": "アラビア・インド (٠-٩)",
             "dateFormat": "日付形式",
-            "dateFormatDesc": "日付の表示方法を選択"
+            "dateFormatDesc": "日付の表示方法を選択",
+            "fontTheme": "フォントテーマ",
+            "fontThemeDefault": "デフォルト",
+            "fontThemeTypewriter": "タイプライター",
+            "contextual": "コンテキスト"
         },
         "ai": {
             "provider": "プロバイダー",
@@ -391,7 +395,9 @@
         "graphViewTitle": "グラフビュー",
         "pinned": "ピン留め",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "サイドバーのノートをクリックして接続を表示"
+        "starViewWiWHint": "サイドバーのノートをクリックして接続を表示",
+        "clickToStart": "クリックして開始",
+        "search": "検索..."
     },
     "welcome": {
         "title": "Constellation へようこそ",
@@ -1045,7 +1051,10 @@
         "treemap": "ツリーマップ",
         "colorLibrary": "色: ライブラリ",
         "colorStatus": "色: ステータス",
-        "colorDepth": "色: 深さ"
+        "colorDepth": "色: 深さ",
+        "universe": "ユニバース",
+        "libraries": "ライブラリ",
+        "notes": "ノート"
     },
     "universeNotes": {
         "title": "ユニバースノート",
@@ -1097,7 +1106,9 @@
         "copyPath": "パスをコピー",
         "copyName": "名前をコピー",
         "deleteFile": "ファイルを削除",
-        "selectAll": "すべて選択"
+        "selectAll": "すべて選択",
+        "subscript": "下付き",
+        "superscript": "上付き"
     },
     "fontSets": {
         "title": "フォントセット",

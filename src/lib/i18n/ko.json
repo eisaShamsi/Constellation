@@ -30,7 +30,7 @@
             "autoUpdate": "자동 업데이트",
             "autoUpdateDesc": "업데이트를 자동으로 다운로드하고 설치",
             "githubToken": "GitHub 토큰",
-            "githubTokenDesc": "업데이트 다운로드를 위한 개인 액세스 토큰"
+            "githubTokenDesc": "비공개 저장소 업데이트용 개인 액세스 토큰 (repo 범위 필요)"
         },
         "security": {
             "intro": "데이터를 보호하고, API 키를 안전하게 보관하며, 유휴 시 앱을 잠급니다.",
@@ -161,7 +161,11 @@
             "arabicNumerals": "아라비아 (0-9)",
             "hindiNumerals": "아라비아-인도 (٠-٩)",
             "dateFormat": "날짜 형식",
-            "dateFormatDesc": "날짜 표시 방법 선택"
+            "dateFormatDesc": "날짜 표시 방법 선택",
+            "fontTheme": "글꼴 테마",
+            "fontThemeDefault": "기본",
+            "fontThemeTypewriter": "타자기",
+            "contextual": "상황별"
         },
         "ai": {
             "provider": "제공자",
@@ -391,7 +395,9 @@
         "graphViewTitle": "그래프 보기",
         "pinned": "고정됨",
         "starViewTitle": "Star View",
-        "starViewWiWHint": "사이드바에서 노트를 클릭하면 연결을 볼 수 있습니다"
+        "starViewWiWHint": "사이드바에서 노트를 클릭하면 연결을 볼 수 있습니다",
+        "clickToStart": "클릭하여 시작",
+        "search": "검색..."
     },
     "welcome": {
         "title": "Constellation에 오신 것을 환영합니다",
@@ -1045,7 +1051,10 @@
         "treemap": "트리맵",
         "colorLibrary": "색상: 라이브러리",
         "colorStatus": "색상: 상태",
-        "colorDepth": "색상: 깊이"
+        "colorDepth": "색상: 깊이",
+        "universe": "유니버스",
+        "libraries": "라이브러리",
+        "notes": "노트"
     },
     "universeNotes": {
         "title": "유니버스 노트",
@@ -1097,7 +1106,9 @@
         "copyPath": "경로 복사",
         "copyName": "이름 복사",
         "deleteFile": "파일 삭제",
-        "selectAll": "모두 선택"
+        "selectAll": "모두 선택",
+        "subscript": "아래 첨자",
+        "superscript": "위 첨자"
     },
     "fontSets": {
         "title": "글꼴 세트",
