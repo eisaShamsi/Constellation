@@ -468,7 +468,15 @@
 			{/if}
 
 			<!-- Value input by type -->
-			{#if prop.type === 'checkbox'}
+			{#if prop.key.toLowerCase() === 'stage'}
+				<select class="pe-val pe-stage-select" value={prop.value.toLowerCase()}
+					onchange={(e) => updateValue(idx, (e.target as HTMLSelectElement).value)}>
+					<option value="fleeting">🌱 Fleeting</option>
+					<option value="literature">📖 Literature</option>
+					<option value="permanent">🔗 Permanent</option>
+					<option value="synthesis">✨ Synthesis</option>
+				</select>
+			{:else if prop.type === 'checkbox'}
 				<label class="pe-checkbox-wrap">
 					<input type="checkbox" class="pe-checkbox"
 						checked={prop.value === 'true'}
