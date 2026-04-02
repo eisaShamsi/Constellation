@@ -428,7 +428,8 @@
         "tasksHeader": "משימות",
         "calendar": "לוח שנה",
         "calendarHeader": "לוח שנה",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "בריאות ידע"
     },
     "tasksPanel": {
         "all": "הכל",
@@ -719,6 +720,17 @@
         "clearFormatting": "נקה עיצוב",
         "find": "חיפוש והחלפה",
         "toggle": "סרגל כלים הפעל/כבה"
+    },
+    "tensionPanel": {
+        "loading": "טוען...",
+        "inactive": "הוסף קישורים נוספים כדי להפעיל ניטור בריאות ידע.",
+        "linkedNotes": "פתקים מקושרים",
+        "contradictions": "סתירות",
+        "orphans": "פתקים יתומים",
+        "structuralGaps": "פערים מבניים",
+        "singlePoints": "נקודות כשל בודדות",
+        "none": "לא נמצאו",
+        "more": "עוד"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

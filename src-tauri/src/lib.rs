@@ -5,6 +5,7 @@ mod importers;
 mod libraries;
 mod maturity;
 mod strata;
+mod tension;
 mod tasks;
 mod universe;
 mod watcher;
@@ -151,6 +152,7 @@ pub fn run() {
             libraries::resolve_embed_image,
             strata::compute_note_strata,
             maturity::compute_note_maturity,
+            tension::detect_tensions,
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::scan_library_index,

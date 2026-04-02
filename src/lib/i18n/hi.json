@@ -428,7 +428,8 @@
         "tasksHeader": "कार्य",
         "calendar": "कैलेंडर",
         "calendarHeader": "कैलेंडर",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "ज्ञान स्वास्थ्य"
     },
     "tasksPanel": {
         "all": "सभी",
@@ -719,6 +720,17 @@
         "clearFormatting": "फ़ॉर्मेटिंग साफ़ करें",
         "find": "खोजें और बदलें",
         "toggle": "टूलबार चालू/बंद"
+    },
+    "tensionPanel": {
+        "loading": "लोड हो रहा है...",
+        "inactive": "ज्ञान स्वास्थ्य निगरानी सक्रिय करने के लिए अधिक लिंक जोड़ें।",
+        "linkedNotes": "लिंक किए गए नोट्स",
+        "contradictions": "विरोधाभास",
+        "orphans": "अनाथ नोट्स",
+        "structuralGaps": "संरचनात्मक अंतराल",
+        "singlePoints": "एकल विफलता बिंदु",
+        "none": "कोई नहीं मिला",
+        "more": "और"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",

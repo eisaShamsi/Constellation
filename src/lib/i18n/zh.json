@@ -428,7 +428,8 @@
         "tasksHeader": "任务",
         "calendar": "日历",
         "calendarHeader": "日历",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "知识健康"
     },
     "tasksPanel": {
         "all": "全部",
@@ -719,6 +720,17 @@
         "clearFormatting": "清除格式",
         "find": "查找和替换",
         "toggle": "工具栏 开/关"
+    },
+    "tensionPanel": {
+        "loading": "加载中...",
+        "inactive": "添加更多链接以激活知识健康监控。",
+        "linkedNotes": "已链接笔记",
+        "contradictions": "矛盾",
+        "orphans": "孤立笔记",
+        "structuralGaps": "结构性缺口",
+        "singlePoints": "单点故障",
+        "none": "未找到",
+        "more": "更多"
     },
     "tableToolbar": {
         "addRow": "添加行",

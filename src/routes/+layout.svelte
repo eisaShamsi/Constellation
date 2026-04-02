@@ -60,6 +60,7 @@
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
+	import TensionPanel from '$lib/components/TensionPanel.svelte';
 	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
@@ -268,7 +269,8 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health'>('properties');
+	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(240);
@@ -1359,7 +1361,14 @@
 					} catch { /* maturity computation failed */ }
 				}
 				maturityMap = newMatMap;
-				starVersion++; // signal strata + maturity data merged
+
+				// CE Phase 4: Detect tensions (first library only for performance)
+				if (libraryList.length > 0) {
+					try {
+						tensionReport = await invoke('detect_tensions', { libraryPath: libraryList[0].path, libraryName: libraryList[0].name });
+					} catch { tensionReport = null; }
+				}
+				starVersion++; // signal strata + maturity + tension data ready
 			}
 		} finally {
 			cacheRefreshing = false;
@@ -3016,6 +3025,9 @@
 				<button class="rs-tab" class:active={rightSidebarTab === 'calendar'} onclick={() => rightSidebarTab = 'calendar'} title={$t('panels.calendar')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
 				</button>
+				<button class="rs-tab" class:active={rightSidebarTab === 'health'} onclick={() => rightSidebarTab = 'health'} title={$t('panels.health') || 'Knowledge Health'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+				</button>
 			</div>
 
 			{#if isHome && sidebarTab}
@@ -3146,6 +3158,17 @@
 									const vc = libraryColorMap[lib.name] || '#7c3aed';
 									await openNoteTab(dailyPath, lib.name, vc);
 								} catch (e) { console.error('Daily note failed:', e); }
+							}}
+						/>
+					</div>
+				{:else if rightSidebarTab === 'health'}
+					<div class="rs-section rs-full-height">
+						<TensionPanel
+							report={tensionReport}
+							{libraryColorMap}
+							onNoteClick={(path, name) => {
+								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 							}}
 						/>
 					</div>

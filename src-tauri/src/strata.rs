@@ -209,6 +209,8 @@ fn compute_stratum(n: &NoteRecord) -> u8 {
 }
 
 /// Strip YAML frontmatter (--- delimited) from content, return body.
+/// Also exposed as `strip_frontmatter_pub` for use by other modules.
+pub fn strip_frontmatter_pub(content: &str) -> &str { strip_frontmatter(content) }
 fn strip_frontmatter(content: &str) -> &str {
     if content.starts_with("---") {
         if let Some(end) = content[3..].find("\n---") {

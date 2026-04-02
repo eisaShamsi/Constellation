@@ -428,7 +428,8 @@
         "tasksHeader": "Tareas",
         "calendar": "Calendario",
         "calendarHeader": "Calendario",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "Salud del conocimiento"
     },
     "tasksPanel": {
         "all": "Todas",
@@ -730,6 +731,17 @@
         "clearFormatting": "Limpiar formato",
         "find": "Buscar y reemplazar",
         "toggle": "Barra de herramientas On/Off"
+    },
+    "tensionPanel": {
+        "loading": "Cargando...",
+        "inactive": "Agregue más enlaces para activar el monitoreo de salud del conocimiento.",
+        "linkedNotes": "notas enlazadas",
+        "contradictions": "Contradicciones",
+        "orphans": "Notas huérfanas",
+        "structuralGaps": "Brechas estructurales",
+        "singlePoints": "Puntos únicos de falla",
+        "none": "No se encontró ninguno",
+        "more": "más"
     },
     "tableToolbar": {
         "addRow": "Agregar fila",

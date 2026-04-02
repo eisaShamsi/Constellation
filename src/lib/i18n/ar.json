@@ -428,7 +428,8 @@
         "tasksHeader": "المهام",
         "calendar": "التقويم",
         "calendarHeader": "التقويم",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "صحة المعرفة"
     },
     "tasksPanel": {
         "all": "الكل",
@@ -730,6 +731,17 @@
         "clearFormatting": "إزالة التنسيق",
         "find": "بحث واستبدال",
         "toggle": "إظهار/إخفاء شريط الأدوات"
+    },
+    "tensionPanel": {
+        "loading": "جارٍ التحميل...",
+        "inactive": "أضف المزيد من الروابط لتفعيل مراقبة صحة المعرفة.",
+        "linkedNotes": "ملاحظات مرتبطة",
+        "contradictions": "تناقضات",
+        "orphans": "ملاحظات يتيمة",
+        "structuralGaps": "فجوات هيكلية",
+        "singlePoints": "نقاط ضعف وحيدة",
+        "none": "لم يتم العثور على أي شيء",
+        "more": "المزيد"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

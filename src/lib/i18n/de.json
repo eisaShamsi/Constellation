@@ -428,7 +428,8 @@
         "tasksHeader": "Aufgaben",
         "calendar": "Kalender",
         "calendarHeader": "Kalender",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "Wissensgesundheit"
     },
     "tasksPanel": {
         "all": "Alle",
@@ -730,6 +731,17 @@
         "clearFormatting": "Formatierung entfernen",
         "find": "Suchen & Ersetzen",
         "toggle": "Symbolleiste Ein/Aus"
+    },
+    "tensionPanel": {
+        "loading": "Wird geladen...",
+        "inactive": "Fügen Sie mehr Links hinzu, um die Wissensgesundheitsüberwachung zu aktivieren.",
+        "linkedNotes": "verknüpfte Notizen",
+        "contradictions": "Widersprüche",
+        "orphans": "Verwaiste Notizen",
+        "structuralGaps": "Strukturelle Lücken",
+        "singlePoints": "Einzelne Ausfallpunkte",
+        "none": "Keine gefunden",
+        "more": "mehr"
     },
     "tableToolbar": {
         "addRow": "Zeile hinzufügen",

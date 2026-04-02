@@ -428,7 +428,8 @@
         "tasksHeader": "작업",
         "calendar": "캘린더",
         "calendarHeader": "캘린더",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "지식 건강"
     },
     "tasksPanel": {
         "all": "전체",
@@ -719,6 +720,17 @@
         "clearFormatting": "서식 지우기",
         "find": "찾기 및 바꾸기",
         "toggle": "도구 모음 켜기/끄기"
+    },
+    "tensionPanel": {
+        "loading": "로딩 중...",
+        "inactive": "지식 건강 모니터링을 활성화하려면 더 많은 링크를 추가하세요.",
+        "linkedNotes": "연결된 노트",
+        "contradictions": "모순",
+        "orphans": "고립 노트",
+        "structuralGaps": "구조적 격차",
+        "singlePoints": "단일 실패 지점",
+        "none": "발견되지 않음",
+        "more": "더 보기"
     },
     "tableToolbar": {
         "addRow": "행 추가",

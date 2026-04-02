@@ -428,7 +428,8 @@
         "tasksHeader": "وظایف",
         "calendar": "تقویم",
         "calendarHeader": "تقویم",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "سلامت دانش"
     },
     "tasksPanel": {
         "all": "همه",
@@ -730,6 +731,17 @@
         "clearFormatting": "پاک کردن قالب‌بندی",
         "find": "جستجو و جایگزینی",
         "toggle": "نوار ابزار روشن/خاموش"
+    },
+    "tensionPanel": {
+        "loading": "در حال بارگذاری...",
+        "inactive": "برای فعال‌سازی نظارت بر سلامت دانش، پیوندهای بیشتری اضافه کنید.",
+        "linkedNotes": "یادداشت‌های مرتبط",
+        "contradictions": "تناقضات",
+        "orphans": "یادداشت‌های یتیم",
+        "structuralGaps": "شکاف‌های ساختاری",
+        "singlePoints": "نقاط شکست تکی",
+        "none": "هیچ موردی یافت نشد",
+        "more": "بیشتر"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

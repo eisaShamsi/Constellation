@@ -428,7 +428,8 @@
         "tasksHeader": "کام",
         "calendar": "کیلنڈر",
         "calendarHeader": "کیلنڈر",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "علم کی صحت"
     },
     "tasksPanel": {
         "all": "سب",
@@ -719,6 +720,17 @@
         "clearFormatting": "فارمیٹنگ صاف کریں",
         "find": "تلاش اور تبدیل",
         "toggle": "ٹول بار آن/آف"
+    },
+    "tensionPanel": {
+        "loading": "لوڈ ہو رہا ہے...",
+        "inactive": "علم کی صحت کی نگرانی فعال کرنے کے لیے مزید لنکس شامل کریں۔",
+        "linkedNotes": "مربوط نوٹس",
+        "contradictions": "تضادات",
+        "orphans": "یتیم نوٹس",
+        "structuralGaps": "ساختی خلا",
+        "singlePoints": "واحد ناکامی کے مقامات",
+        "none": "کچھ نہیں ملا",
+        "more": "مزید"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

@@ -428,7 +428,8 @@
         "tasksHeader": "Задачи",
         "calendar": "Календарь",
         "calendarHeader": "Календарь",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "Здоровье знаний"
     },
     "tasksPanel": {
         "all": "Все",
@@ -719,6 +720,17 @@
         "clearFormatting": "Очистить форматирование",
         "find": "Поиск и замена",
         "toggle": "Панель инструментов Вкл/Выкл"
+    },
+    "tensionPanel": {
+        "loading": "Загрузка...",
+        "inactive": "Добавьте больше связей, чтобы активировать мониторинг здоровья знаний.",
+        "linkedNotes": "связанных заметок",
+        "contradictions": "Противоречия",
+        "orphans": "Заметки-сироты",
+        "structuralGaps": "Структурные пробелы",
+        "singlePoints": "Единственные точки отказа",
+        "none": "Ничего не найдено",
+        "more": "ещё"
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

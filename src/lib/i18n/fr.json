@@ -428,7 +428,8 @@
         "tasksHeader": "Tâches",
         "calendar": "Calendrier",
         "calendarHeader": "Calendrier",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "Santé des connaissances"
     },
     "tasksPanel": {
         "all": "Toutes",
@@ -730,6 +731,17 @@
         "clearFormatting": "Effacer le formatage",
         "find": "Rechercher et remplacer",
         "toggle": "Barre d'outils On/Off"
+    },
+    "tensionPanel": {
+        "loading": "Chargement...",
+        "inactive": "Ajoutez plus de liens pour activer la surveillance de la santé des connaissances.",
+        "linkedNotes": "notes liées",
+        "contradictions": "Contradictions",
+        "orphans": "Notes orphelines",
+        "structuralGaps": "Lacunes structurelles",
+        "singlePoints": "Points de défaillance uniques",
+        "none": "Aucun trouvé",
+        "more": "plus"
     },
     "tableToolbar": {
         "addRow": "Ajouter une ligne",

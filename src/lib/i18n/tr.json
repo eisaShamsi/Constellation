@@ -428,7 +428,8 @@
         "tasksHeader": "Görevler",
         "calendar": "Takvim",
         "calendarHeader": "Takvim",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "Bilgi sağlığı"
     },
     "tasksPanel": {
         "all": "Tümü",
@@ -719,6 +720,17 @@
         "clearFormatting": "Biçimlendirmeyi temizle",
         "find": "Bul ve değiştir",
         "toggle": "Araç çubuğu Aç/Kapat"
+    },
+    "tensionPanel": {
+        "loading": "Yükleniyor...",
+        "inactive": "Bilgi sağlığı izlemesini etkinleştirmek için daha fazla bağlantı ekleyin.",
+        "linkedNotes": "bağlı notlar",
+        "contradictions": "Çelişkiler",
+        "orphans": "Yetim notlar",
+        "structuralGaps": "Yapısal boşluklar",
+        "singlePoints": "Tek hata noktaları",
+        "none": "Hiçbiri bulunamadı",
+        "more": "daha fazla"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

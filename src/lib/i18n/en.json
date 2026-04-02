@@ -427,7 +427,8 @@
         "tasksHeader": "Tasks",
         "calendar": "Calendar",
         "calendarHeader": "Calendar",
-        "starView": "Star View"
+        "starView": "Star View",
+        "health": "Knowledge Health"
     },
     "tasksPanel": {
         "all": "All",
@@ -729,6 +730,17 @@
         "clearFormatting": "Clear formatting",
         "find": "Find & Replace",
         "toggle": "Toolbar On/Off"
+    },
+    "tensionPanel": {
+        "loading": "Loading...",
+        "inactive": "Add more links to activate knowledge health monitoring.",
+        "linkedNotes": "linked notes",
+        "contradictions": "Contradictions",
+        "orphans": "Orphan Notes",
+        "structuralGaps": "Structural Gaps",
+        "singlePoints": "Single Points of Failure",
+        "none": "None found",
+        "more": "more"
     },
     "tableToolbar": {
         "addRow": "Add row",
