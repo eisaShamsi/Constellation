@@ -371,16 +371,16 @@
 		pointer-events: none;
 	}
 	.focus-footer span {
-		font-size: 11px;
-		color: var(--text-faint, #ccc);
-		opacity: 0.3;
+		font-size: 12px;
+		color: var(--text-muted, #888);
+		opacity: 0.6;
 		font-family: var(--font-interface-theme, sans-serif);
 	}
 	.focus-footer { pointer-events: auto; display: flex; justify-content: center; gap: 16px; align-items: center; }
 	.focus-promote {
-		font-size: 11px; color: var(--text-faint, #999); background: none;
-		border: 1px solid var(--text-faint, #ccc); border-radius: 4px;
-		padding: 2px 8px; cursor: pointer; opacity: 0.4; transition: opacity 0.2s;
+		font-size: 12px; color: var(--text-muted, #666); background: var(--background-primary, #fff);
+		border: 1px solid var(--background-modifier-border, #ccc); border-radius: 6px;
+		padding: 4px 12px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s, border-color 0.2s;
 		font-family: var(--font-interface-theme, sans-serif);
 	}
 	.focus-promote:hover { opacity: 1; color: var(--interactive-accent); border-color: var(--interactive-accent); }
