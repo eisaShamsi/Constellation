@@ -13,7 +13,8 @@
 		onContextMenu,
 		renamingPath = '',
 		onRenameComplete,
-		allExpanded = true
+		allExpanded = true,
+		maturityMap = new Map() as Map<string, string>,
 	}: {
 		entries: FileEntry[];
 		depth?: number;
@@ -26,7 +27,12 @@
 		renamingPath?: string;
 		onRenameComplete?: (oldPath: string, newName: string) => void;
 		allExpanded?: boolean;
+		maturityMap?: Map<string, string>;
 	} = $props();
+
+	const MATURITY_COLORS: Record<string, string> = {
+		sapling: '#4ade80', evergreen: '#16a34a', canonical: '#f59e0b', wilting: 'rgba(22, 163, 74, 0.4)',
+	};
 
 	function handleClick(entry: FileEntry, e: MouseEvent) {
 		if (!entry.is_dir && onNoteClick) {
@@ -108,11 +114,13 @@
 						/>
 					</div>
 				{:else}
+					{@const entryMat = maturityMap.get(entry.path.replace(/\\/g, '/').toLowerCase())}
 					<button
 						class="note"
 						class:active={$splitActive ? $openTabs.some(t => t.path === entry.path) : $activeTab?.path === entry.path}
 						class:base-file={entry.name.endsWith('.base')}
 						style:--library-color={color}
+						style:border-inline-start={entryMat && MATURITY_COLORS[entryMat] ? `3px solid ${MATURITY_COLORS[entryMat]}` : 'none'}
 						onclick={(e) => handleClick(entry, e)}
 						oncontextmenu={(e) => handleRightClick(e, entry)}
 					>

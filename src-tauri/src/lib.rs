@@ -3,6 +3,7 @@ mod bases;
 mod dataview;
 mod importers;
 mod libraries;
+mod maturity;
 mod strata;
 mod tasks;
 mod universe;
@@ -149,6 +150,7 @@ pub fn run() {
             libraries::save_clipboard_image,
             libraries::resolve_embed_image,
             strata::compute_note_strata,
+            maturity::compute_note_maturity,
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::scan_library_index,

@@ -428,6 +428,7 @@
 	let starNodes: StarNode[] = [];
 	let starLinks: StarLink[] = [];
 	let starVersion = $state(0);
+	let maturityMap = $state(new Map<string, string>()); // path → maturity state (CE Phase 3)
 	// Star data is passed to StarView as plain arrays.
 	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
 	// make iteration extremely slow. Instead, starVersion ($state) triggers re-render
@@ -1339,7 +1340,26 @@
 						}
 					} catch { /* strata computation failed — nodes stay without stratum */ }
 				}
-				starVersion++; // signal strata data merged
+				// CE Phase 3: Fetch Maturity Lifecycle per library, merge into starNodes + maturityMap
+				const newMatMap = new Map<string, string>();
+				for (const lib of libraryList) {
+					try {
+						const maturities = await invoke<{ note_path: string; state: string }[]>(
+							'compute_note_maturity', { libraryPath: lib.path, libraryName: lib.name }
+						);
+						for (const m of maturities) {
+							const key = m.note_path.replace(/\\/g, '/').toLowerCase();
+							newMatMap.set(key, m.state);
+						}
+						for (const node of starNodes) {
+							const key = node.path.replace(/\\/g, '/').toLowerCase();
+							const m = newMatMap.get(key);
+							if (m) node.maturity = m;
+						}
+					} catch { /* maturity computation failed */ }
+				}
+				maturityMap = newMatMap;
+				starVersion++; // signal strata + maturity data merged
 			}
 		} finally {
 			cacheRefreshing = false;
@@ -2408,6 +2428,7 @@
 									libraryId={universeNotesStats.library_id}
 									libraryName={universeNotesStats.name}
 									color={libraryColorMap[universeNotesStats.name] || 'var(--interactive-accent)'}
+									{maturityMap}
 									onNoteClick={handleNoteClick}
 									onFolderClick={(path) => { skyViewSelectedPath = path; }}
 									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, universeNotesStats.library_id)}
@@ -2460,6 +2481,7 @@
 													libraryId={lib.library_id}
 													libraryName={lib.name}
 													color={libraryColorMap[lib.name]}
+													{maturityMap}
 													onNoteClick={handleNoteClick}
 													onFolderClick={(path) => { skyViewSelectedPath = path; }}
 													onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, lib.library_id)}
@@ -2492,6 +2514,7 @@
 									libraryId={lib.library_id}
 									libraryName={lib.name}
 									color={libraryColorMap[lib.name]}
+									{maturityMap}
 									onNoteClick={handleNoteClick}
 									onFolderClick={(path) => { skyViewSelectedPath = path; }}
 									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, lib.library_id)}
@@ -2586,6 +2609,7 @@
 							{:else if tab.libraryName}
 								<span class="tab-lib-name">{tab.libraryName}</span>
 							{/if}
+							{#if (() => { const m = maturityMap.get(tab.path?.replace(/\\/g, '/').toLowerCase() ?? ''); return m && m !== 'seed'; })()}<span class="tab-maturity" class:mat-sapling={maturityMap.get(tab.path?.replace(/\\/g, '/').toLowerCase() ?? '') === 'sapling'} class:mat-evergreen={maturityMap.get(tab.path?.replace(/\\/g, '/').toLowerCase() ?? '') === 'evergreen'} class:mat-canonical={maturityMap.get(tab.path?.replace(/\\/g, '/').toLowerCase() ?? '') === 'canonical'} class:mat-wilting={maturityMap.get(tab.path?.replace(/\\/g, '/').toLowerCase() ?? '') === 'wilting'}>●</span>{/if}
 							<span class="tab-title">{tab.name}</span>
 							{#if !tab.pinned}
 								<span class="tab-close" role="button" onclick={(e) => { e.stopPropagation(); closeTab(tab.id); }}>×</span>
@@ -3638,6 +3662,11 @@
 		z-index: 1;
 	}
 	.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+	.tab-maturity { font-size: 6px; flex-shrink: 0; margin-inline-end: 3px; }
+	.tab-maturity.mat-sapling { color: #4ade80; }
+	.tab-maturity.mat-evergreen { color: #16a34a; }
+	.tab-maturity.mat-canonical { color: #f59e0b; }
+	.tab-maturity.mat-wilting { color: #16a34a; opacity: 0.4; }
 	.tab.pinned { min-width: 36px; padding: 0 8px; }
 	.tab-pin { font-size: 0.65rem; flex-shrink: 0; pointer-events: none; }
 	.tab { cursor: grab; }

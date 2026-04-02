@@ -57,6 +57,7 @@ interface EngineNode {
 	isRTL: boolean;
 	createdAt: number; // epoch ms (0 if unknown)
 	stratum: number; // 1–8, Knowledge Strata (CE Phase 2)
+	maturity: string; // seed|sapling|evergreen|canonical|wilting (CE Phase 3)
 }
 
 interface EngineLink {
@@ -85,6 +86,13 @@ const TYPED_LINK_COLORS: Record<string, number> = {
 };
 const DIM_ALPHA = 0.12;
 const MOC_RING_COLOR = 0xf59e0b;
+const MATURITY_COLORS: Record<string, number> = {
+	seed: 0x999999,       // gray
+	sapling: 0x4ade80,    // light green
+	evergreen: 0x16a34a,  // rich green
+	canonical: 0xf59e0b,  // gold
+	wilting: 0x16a34a,    // green (dimmed via alpha)
+};
 const RTL_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/;
 const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 const HEBREW_REGEX = /[\u0590-\u05FF]/;
@@ -313,7 +321,7 @@ export class GraphEngine {
 	// ─── Public API ────────────────────────────────────────────────
 
 	setData(
-		rawNodes: { id: string; name: string; path: string; libraryName: string; linkCount: number; outgoingCount: number; createdAt?: number; stratum?: number }[],
+		rawNodes: { id: string; name: string; path: string; libraryName: string; linkCount: number; outgoingCount: number; createdAt?: number; stratum?: number; maturity?: string }[],
 		rawLinks: { source: string; target: string; linkType?: string }[],
 		colorMap: Record<string, string>
 	): void {
@@ -366,6 +374,7 @@ export class GraphEngine {
 				isRTL: RTL_REGEX.test(n.name),
 				createdAt: n.createdAt ?? 0,
 				stratum,
+				maturity: (n as any).maturity ?? 'seed',
 			};
 		});
 
@@ -1708,10 +1717,18 @@ export class GraphEngine {
 				gfx.stroke({ width: 2, color: 0x06b6d4, alpha: alpha });
 			}
 
-			// CE Phase 2: Stratum glow halo — higher strata glow brighter
+			// CE Phase 2: Stratum glow halo — complementary color for max contrast
 			if (n.stratum >= 4 && this.nodes.length >= 20) {
-				gfx.circle(sx, sy, r + 4);
-				gfx.fill({ color: n.color, alpha: (n.stratum - 3) * 0.04 * alpha });
+				gfx.circle(sx, sy, r + 5);
+				gfx.fill({ color: complementaryColor(n.color), alpha: (n.stratum - 3) * 0.08 * alpha });
+			}
+
+			// CE Phase 3: Maturity ring — colored inner ring by lifecycle state
+			if (n.maturity && n.maturity !== 'seed') {
+				const mColor = MATURITY_COLORS[n.maturity] ?? 0x999999;
+				const mAlpha = n.maturity === 'wilting' ? 0.3 : 0.7;
+				gfx.circle(sx, sy, r + 1);
+				gfx.stroke({ width: 1.5, color: mColor, alpha: mAlpha * alpha });
 			}
 
 			// MOC gold ring
@@ -1870,4 +1887,38 @@ export class GraphEngine {
 
 function hexToInt(hex: string): number {
 	return parseInt(hex.replace('#', ''), 16);
+}
+
+/** Compute the complementary color (180° hue rotation) for maximum contrast. */
+function complementaryColor(hex: number): number {
+	let r = ((hex >> 16) & 0xFF) / 255;
+	let g = ((hex >> 8) & 0xFF) / 255;
+	let b = (hex & 0xFF) / 255;
+	const max = Math.max(r, g, b), min = Math.min(r, g, b);
+	let h = 0, s = 0;
+	const l = (max + min) / 2;
+	if (max !== min) {
+		const d = max - min;
+		s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+		if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+		else if (max === g) h = ((b - r) / d + 2) / 6;
+		else h = ((r - g) / d + 4) / 6;
+	}
+	h = (h + 0.5) % 1; // rotate 180°
+	// HSL to RGB
+	const hue2rgb = (p: number, q: number, t: number) => {
+		if (t < 0) t += 1; if (t > 1) t -= 1;
+		if (t < 1/6) return p + (q - p) * 6 * t;
+		if (t < 1/2) return q;
+		if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+		return p;
+	};
+	if (s === 0) { r = g = b = l; } else {
+		const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+		const p = 2 * l - q;
+		r = hue2rgb(p, q, h + 1/3);
+		g = hue2rgb(p, q, h);
+		b = hue2rgb(p, q, h - 1/3);
+	}
+	return ((Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255));
 }
