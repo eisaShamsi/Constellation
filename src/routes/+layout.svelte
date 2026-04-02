@@ -276,8 +276,8 @@
 	let _lastProvenancePath = ''; // cache guard — only re-fetch when note changes
 
 	// Sidebar resizing
-	let leftSidebarWidth = $state(240);
-	let rightSidebarWidth = $state(290);
+	let leftSidebarWidth = $state(300);
+	let rightSidebarWidth = $state(300);
 	let resizing = $state<'left' | 'right' | null>(null);
 
 	// Command palette & quick switcher
