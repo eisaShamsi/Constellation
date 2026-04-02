@@ -2896,7 +2896,10 @@
 										});
 										if (!updated) newProps.push({ key: 'stage', value: promote, type: 'text' as any });
 										const fc = buildFullContent(newProps, body);
-										if (currentTab) { currentTab.content = fc; }
+										if (currentTab) {
+											currentTab.content = fc;
+											openTabs.update(tabs => tabs);
+										}
 										markRecentWrite(_mountedTab.path);
 										writeNote(_mountedTab.path, fc).catch(() => {});
 									}
@@ -2938,7 +2941,11 @@
 									if (!updated) newProps.push({ key: 'stage', value: nextStage, type: 'text' as any });
 								}
 								const fc = buildFullContent(newProps, body);
-								if (currentTab) { currentTab.content = fc; }
+								if (currentTab) {
+									currentTab.content = fc;
+									// Force store reactivity so Properties panel refreshes
+									openTabs.update(tabs => tabs);
+								}
 								markRecentWrite(_mountedTab.path);
 								writeNote(_mountedTab.path, fc).catch(() => {});
 							}}
