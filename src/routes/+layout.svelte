@@ -1189,12 +1189,21 @@
 			return;
 		}
 
-		// Activate the last-active universe (or first one)
-		const activeEntry = universes[0]; // registry stores active_id, set_active_universe handles it
-		try {
-			await setActiveUniverse(activeEntry.id);
-			activeUniverseName = activeEntry.name;
-		} catch {
+		// Activate the last-active universe — try each entry until one succeeds.
+		// If a universe was moved/deleted, skip it and try the next.
+		let activated = false;
+		for (const entry of universes) {
+			try {
+				await setActiveUniverse(entry.id);
+				activeUniverseName = entry.name;
+				activated = true;
+				break;
+			} catch {
+				// This universe's path doesn't exist — try next
+				continue;
+			}
+		}
+		if (!activated) {
 			showUniverseSetup = true;
 			return;
 		}

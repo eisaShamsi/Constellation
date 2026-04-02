@@ -499,11 +499,29 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
         .entries
         .iter()
         .find(|e| e.id == id)
-        .ok_or_else(|| "Universe not found in registry.".to_string())?;
+        .ok_or_else(|| "Universe not found in registry.".to_string())?
+        .clone();
 
-    let universe_path = PathBuf::from(&entry.path);
+    let mut universe_path = PathBuf::from(&entry.path);
     if !universe_path.is_dir() {
-        return Err(format!("Universe directory does not exist: {}", entry.path));
+        // Path doesn't exist — check if it was consolidated (CT\CT → CT)
+        // by looking for .constellation in the parent directory
+        let mut healed = false;
+        if let Some(parent) = universe_path.parent() {
+            if parent.is_dir() && constellation_dir(parent).join("universe.json").exists() {
+                eprintln!("[universe] Healing stale path: {} → {}", universe_path.display(), parent.display());
+                universe_path = parent.to_path_buf();
+                // Update registry with healed path
+                for e in &mut registry.entries {
+                    if e.id == id { e.path = universe_path.to_string_lossy().to_string(); }
+                }
+                let _ = save_registry(&app, &registry);
+                healed = true;
+            }
+        }
+        if !healed {
+            return Err(format!("Universe directory does not exist: {}", entry.path));
+        }
     }
 
     // Auto-migrate old flat format to .constellation/
