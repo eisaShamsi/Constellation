@@ -206,16 +206,59 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
     let mut meta: UniverseMeta = serde_json::from_str(&data)
         .map_err(|e| format!("Failed to parse universe.json: {}", e))?;
 
-    // Already has notes_folder set — check it exists on disk
+    // ─── Migration: flatten nested universe folder ───
+    // Old behavior created UniverseName/UniverseName/ (nested). New behavior uses
+    // the universe root directly as the library (Obsidian-style flat).
     if let Some(ref folder_name) = meta.notes_folder {
-        let folder_path = universe_root.join(folder_name);
-        if !folder_path.exists() {
-            fs::create_dir_all(&folder_path)
+        let nested_path = universe_root.join(folder_name);
+        // If nested folder exists AND has the same name as the universe → migrate to flat
+        if nested_path.is_dir() && folder_name == &meta.name {
+            eprintln!("[universe] Migrating nested folder to flat: {}", nested_path.display());
+            // Move all contents from nested folder up to universe root
+            if let Ok(entries) = fs::read_dir(&nested_path) {
+                for entry in entries.flatten() {
+                    let src = entry.path();
+                    let dest = universe_root.join(entry.file_name());
+                    if !dest.exists() {
+                        let _ = fs::rename(&src, &dest);
+                    }
+                }
+            }
+            // Remove the now-empty nested folder (ok if it still has items)
+            let _ = fs::remove_dir(&nested_path);
+
+            // Update metadata to flat (notes_folder = None)
+            meta.notes_folder = None;
+            if let Ok(json) = serde_json::to_string_pretty(&meta) {
+                let _ = fs::write(&meta_path, json);
+            }
+
+            // Update libraries.json: point universe_notes library to root
+            let libs_path = cdir.join("libraries.json");
+            if let Ok(libs_data) = fs::read_to_string(&libs_path) {
+                if let Ok(mut libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
+                    for lib in &mut libs {
+                        if lib.is_universe_notes {
+                            lib.path = universe_root.to_string_lossy().to_string();
+                        }
+                    }
+                    if let Ok(json) = serde_json::to_string_pretty(&libs) {
+                        let _ = fs::write(&libs_path, json);
+                    }
+                }
+            }
+            eprintln!("[universe] Migration to flat structure complete");
+            return Ok(());
+        }
+
+        // Non-matching subfolder (e.g. user renamed) — leave as-is, just ensure it exists
+        if !nested_path.exists() {
+            fs::create_dir_all(&nested_path)
                 .map_err(|e| format!("Failed to create universe notes folder: {}", e))?;
         }
-        // Ensure it's registered as a library
+        // Ensure registered as library
         let libs_path = cdir.join("libraries.json");
-        let folder_path_str = folder_path.to_string_lossy().to_string();
+        let folder_path_str = nested_path.to_string_lossy().to_string();
         if libs_path.exists() {
             if let Ok(libs_data) = fs::read_to_string(&libs_path) {
                 if let Ok(libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
@@ -237,25 +280,10 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
         return Ok(());
     }
 
-    // No notes_folder yet — create one using the universe name
-    let folder_name = meta.name.clone();
-    let folder_path = universe_root.join(&folder_name);
-
-    // Check for naming conflict (a library might already use this name)
-    if !folder_path.exists() {
-        fs::create_dir_all(&folder_path)
-            .map_err(|e| format!("Failed to create universe notes folder: {}", e))?;
-    }
-
-    // Update universe.json
-    meta.notes_folder = Some(folder_name.clone());
-    let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
-    fs::write(&meta_path, &meta_json)
-        .map_err(|e| format!("Failed to update universe.json: {}", e))?;
-
-    // Register as library (insert at beginning so it appears first)
+    // notes_folder is None → universe root IS the library (flat/Obsidian-style)
+    // Just ensure it's registered as a library
     let libs_path = cdir.join("libraries.json");
-    let folder_path_str = folder_path.to_string_lossy().to_string();
+    let root_path_str = universe_root.to_string_lossy().to_string();
     let mut libs: Vec<crate::libraries::LibraryInfo> = if libs_path.exists() {
         fs::read_to_string(&libs_path)
             .ok()
@@ -269,7 +297,7 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
         libs.insert(0, crate::libraries::LibraryInfo {
             id: format!("universe_notes_{}", uuid_simple()),
             name: meta.name.clone(),
-            path: folder_path_str,
+            path: root_path_str,
             is_universe_notes: true,
         });
         if let Ok(json) = serde_json::to_string_pretty(&libs) {
@@ -277,7 +305,6 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
         }
     }
 
-    eprintln!("[universe] Created universe notes folder: {}", folder_path.display());
     Ok(())
 }
 
@@ -374,10 +401,8 @@ pub fn create_universe(
     fs::create_dir_all(cdir.join("templates"))
         .map_err(|e| format!("Failed to create templates directory: {}", e))?;
 
-    // Create universe notes folder (named after the universe)
-    let notes_folder_path = universe_dir.join(&name);
-    fs::create_dir_all(&notes_folder_path)
-        .map_err(|e| format!("Failed to create universe notes folder: {}", e))?;
+    // Universe root IS the notes folder (Obsidian-style flat structure).
+    // No nested subfolder — notes go directly in the universe root.
 
     // Write universe.json into .constellation/
     let now = chrono::Local::now().to_rfc3339();
@@ -386,17 +411,17 @@ pub fn create_universe(
         created: now.clone(),
         version: 2,
         children: vec![],
-        notes_folder: Some(name.clone()),
+        notes_folder: None, // None = universe root is the library (flat)
     };
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
     fs::write(cdir.join("universe.json"), &meta_json)
         .map_err(|e| format!("Failed to write universe.json: {}", e))?;
 
-    // Register universe notes folder as a special library
+    // Register universe root as the notes library
     let notes_library = crate::libraries::LibraryInfo {
         id: format!("universe_notes_{}", uuid_simple()),
         name: name.clone(),
-        path: notes_folder_path.to_string_lossy().to_string(),
+        path: universe_dir.to_string_lossy().to_string(), // root, not nested
         is_universe_notes: true,
     };
     let libraries_json = serde_json::to_string_pretty(&vec![&notes_library]).map_err(|e| e.to_string())?;
@@ -497,7 +522,7 @@ pub fn rename_universe(app: tauri::AppHandle, new_name: String) -> Result<(), St
 
     let old_name = meta.name.clone();
 
-    // 2. Rename the notes folder on disk (if it exists)
+    // 2. Rename the notes folder on disk (only if a subfolder exists — legacy nested layout)
     if let Some(ref old_folder) = meta.notes_folder {
         let old_path = universe_dir.join(old_folder);
         let new_path = universe_dir.join(&new_name);
@@ -522,11 +547,32 @@ pub fn rename_universe(app: tauri::AppHandle, new_name: String) -> Result<(), St
                 }
             }
         }
+    } else {
+        // Flat layout (notes_folder = None): just update the library name
+        let libs_path = cdir.join("libraries.json");
+        if libs_path.exists() {
+            if let Ok(libs_data) = fs::read_to_string(&libs_path) {
+                if let Ok(mut libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
+                    for lib in &mut libs {
+                        if lib.is_universe_notes {
+                            lib.name = new_name.clone();
+                            // Path stays as universe root — no subfolder to rename
+                        }
+                    }
+                    if let Ok(json) = serde_json::to_string_pretty(&libs) {
+                        let _ = fs::write(&libs_path, json);
+                    }
+                }
+            }
+        }
     }
 
-    // 3. Update universe.json
+    // 3. Update universe.json (preserve notes_folder — None for flat, Some for legacy)
     meta.name = new_name.clone();
-    meta.notes_folder = Some(new_name.clone());
+    // Don't overwrite notes_folder — keep None if flat, keep old value if legacy subfolder
+    if meta.notes_folder.is_some() {
+        meta.notes_folder = Some(new_name.clone());
+    }
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
     fs::write(&meta_path, &meta_json)
         .map_err(|e| format!("Failed to write universe.json: {}", e))?;
