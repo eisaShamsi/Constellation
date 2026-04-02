@@ -56,6 +56,7 @@ interface EngineNode {
 	outgoingCount: number;
 	isRTL: boolean;
 	createdAt: number; // epoch ms (0 if unknown)
+	stratum: number; // 1–8, Knowledge Strata (CE Phase 2)
 }
 
 interface EngineLink {
@@ -312,7 +313,7 @@ export class GraphEngine {
 	// ─── Public API ────────────────────────────────────────────────
 
 	setData(
-		rawNodes: { id: string; name: string; path: string; libraryName: string; linkCount: number; outgoingCount: number; createdAt?: number }[],
+		rawNodes: { id: string; name: string; path: string; libraryName: string; linkCount: number; outgoingCount: number; createdAt?: number; stratum?: number }[],
 		rawLinks: { source: string; target: string; linkType?: string }[],
 		colorMap: Record<string, string>
 	): void {
@@ -343,12 +344,18 @@ export class GraphEngine {
 		this.nodes = filteredNodes.map((n, i) => {
 			nodeIdMap.set(n.id, i);
 			const hexStr = this.config.colorByLibrary ? (colorMap[n.libraryName] || '#a78bfa') : '#a78bfa';
+			const stratum = (n as any).stratum ?? 2;
+			// CE Phase 2: Earned complexity — strata sizing activates at 20+ nodes
+			const useStrata = rawNodes.length >= 20 && stratum > 0;
+			const baseR = useStrata
+				? (2 + (stratum - 1) * 2.5)                          // stratum-based radius
+				: (2 + Math.sqrt(n.linkCount) * 1.5);                // fallback: link-count
 			return {
 				id: n.id,
 				x: (Math.random() - 0.5) * 800,
 				y: (Math.random() - 0.5) * 800,
 				z: (Math.random() - 0.5) * 400, // 3D depth spread
-				r: Math.max(2, (2 + Math.sqrt(n.linkCount) * 1.5) * (n.outgoingCount >= 5 ? 1.6 : 1) * sizeMul),
+				r: Math.max(2, baseR * (n.outgoingCount >= 5 ? 1.6 : 1) * sizeMul),
 				color: hexToInt(hexStr),
 				colorHex: hexStr,
 				name: n.name.replace(/\.md$/, ''),
@@ -358,6 +365,7 @@ export class GraphEngine {
 				outgoingCount: n.outgoingCount,
 				isRTL: RTL_REGEX.test(n.name),
 				createdAt: n.createdAt ?? 0,
+				stratum,
 			};
 		});
 
@@ -1698,6 +1706,12 @@ export class GraphEngine {
 			if (isPinned) {
 				gfx.circle(sx, sy, r + 2.5);
 				gfx.stroke({ width: 2, color: 0x06b6d4, alpha: alpha });
+			}
+
+			// CE Phase 2: Stratum glow halo — higher strata glow brighter
+			if (n.stratum >= 4 && this.nodes.length >= 20) {
+				gfx.circle(sx, sy, r + 4);
+				gfx.fill({ color: n.color, alpha: (n.stratum - 3) * 0.04 * alpha });
 			}
 
 			// MOC gold ring

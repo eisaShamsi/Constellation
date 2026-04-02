@@ -996,6 +996,7 @@ export interface StarNode {
 	linkCount: number;
 	outgoingCount: number;
 	createdAt?: number; // epoch ms from file metadata
+	stratum?: number;   // 1–8, from compute_note_strata (CE Phase 2)
 }
 
 export interface StarLink {

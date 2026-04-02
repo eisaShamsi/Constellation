@@ -1324,6 +1324,22 @@
 				starNodes = nodes;
 				starLinks = gLinks;
 				starVersion++;
+
+				// CE Phase 2: Fetch Knowledge Strata per library, merge into starNodes
+				for (const lib of libraryList) {
+					try {
+						const strata = await invoke<{ note_path: string; stratum: number }[]>(
+							'compute_note_strata', { libraryPath: lib.path, libraryName: lib.name }
+						);
+						const strataMap = new Map(strata.map(s => [s.note_path.replace(/\\/g, '/').toLowerCase(), s.stratum]));
+						for (const node of starNodes) {
+							const key = node.path.replace(/\\/g, '/').toLowerCase();
+							const s = strataMap.get(key);
+							if (s !== undefined) node.stratum = s;
+						}
+					} catch { /* strata computation failed — nodes stay without stratum */ }
+				}
+				starVersion++; // signal strata data merged
 			}
 		} finally {
 			cacheRefreshing = false;

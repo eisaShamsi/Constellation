@@ -3,6 +3,7 @@ mod bases;
 mod dataview;
 mod importers;
 mod libraries;
+mod strata;
 mod tasks;
 mod universe;
 mod watcher;
@@ -147,6 +148,7 @@ pub fn run() {
             libraries::read_note_preview,
             libraries::save_clipboard_image,
             libraries::resolve_embed_image,
+            strata::compute_note_strata,
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::scan_library_index,
