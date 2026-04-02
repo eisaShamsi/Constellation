@@ -429,7 +429,8 @@
         "calendar": "캘린더",
         "calendarHeader": "캘린더",
         "starView": "Star View",
-        "health": "지식 건강"
+        "health": "지식 건강",
+        "provenance": "출처"
     },
     "tasksPanel": {
         "all": "전체",
@@ -731,6 +732,17 @@
         "singlePoints": "단일 실패 지점",
         "none": "발견되지 않음",
         "more": "더 보기"
+    },
+    "provenancePanel": {
+        "loading": "로딩 중...",
+        "noDerivesFrom": "출처 체인을 찾을 수 없습니다.",
+        "hint": "출처 계보를 추적하려면 [[노트|derives-from]] 링크를 추가하세요.",
+        "received": "수신",
+        "discovered": "발견",
+        "mixed": "혼합",
+        "noChain": "체인 없음",
+        "depth": "깊이",
+        "external": "외부"
     },
     "tableToolbar": {
         "addRow": "행 추가",

@@ -58,6 +58,7 @@ interface EngineNode {
 	createdAt: number; // epoch ms (0 if unknown)
 	stratum: number; // 1–8, Knowledge Strata (CE Phase 2)
 	maturity: string; // seed|sapling|evergreen|canonical|wilting (CE Phase 3)
+	originType: string; // received|discovered|mixed|none (CE Phase 5)
 }
 
 interface EngineLink {
@@ -321,7 +322,7 @@ export class GraphEngine {
 	// ─── Public API ────────────────────────────────────────────────
 
 	setData(
-		rawNodes: { id: string; name: string; path: string; libraryName: string; linkCount: number; outgoingCount: number; createdAt?: number; stratum?: number; maturity?: string }[],
+		rawNodes: { id: string; name: string; path: string; libraryName: string; linkCount: number; outgoingCount: number; createdAt?: number; stratum?: number; maturity?: string; originType?: string }[],
 		rawLinks: { source: string; target: string; linkType?: string }[],
 		colorMap: Record<string, string>
 	): void {
@@ -375,6 +376,7 @@ export class GraphEngine {
 				createdAt: n.createdAt ?? 0,
 				stratum,
 				maturity: (n as any).maturity ?? 'seed',
+				originType: (n as any).originType ?? 'none',
 			};
 		});
 
@@ -1721,6 +1723,13 @@ export class GraphEngine {
 			if (n.stratum >= 4 && this.nodes.length >= 20) {
 				gfx.circle(sx, sy, r + 5);
 				gfx.fill({ color: complementaryColor(n.color), alpha: (n.stratum - 3) * 0.08 * alpha });
+			}
+
+			// CE Phase 5: Provenance origin glow — blue (received) / amber (discovered)
+			if (n.originType === 'received' || n.originType === 'discovered') {
+				const oColor = n.originType === 'received' ? 0x4A9EFF : 0xFFB347;
+				gfx.circle(sx, sy, r + 6);
+				gfx.fill({ color: oColor, alpha: 0.06 * alpha });
 			}
 
 			// CE Phase 3: Maturity ring — colored inner ring by lifecycle state

@@ -428,7 +428,8 @@
         "calendar": "Calendar",
         "calendarHeader": "Calendar",
         "starView": "Star View",
-        "health": "Knowledge Health"
+        "health": "Knowledge Health",
+        "provenance": "Provenance"
     },
     "tasksPanel": {
         "all": "All",
@@ -741,6 +742,17 @@
         "singlePoints": "Single Points of Failure",
         "none": "None found",
         "more": "more"
+    },
+    "provenancePanel": {
+        "loading": "Loading...",
+        "noDerivesFrom": "No derives-from chain found.",
+        "hint": "Add [[note|derives-from]] links to trace source lineage.",
+        "received": "Received",
+        "discovered": "Discovered",
+        "mixed": "Mixed",
+        "noChain": "No chain",
+        "depth": "Depth",
+        "external": "external"
     },
     "tableToolbar": {
         "addRow": "Add row",

@@ -4,6 +4,7 @@ mod dataview;
 mod importers;
 mod libraries;
 mod maturity;
+mod provenance;
 mod strata;
 mod tension;
 mod tasks;
@@ -153,6 +154,8 @@ pub fn run() {
             strata::compute_note_strata,
             maturity::compute_note_maturity,
             tension::detect_tensions,
+            provenance::get_provenance_chain,
+            provenance::compute_note_origins,
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::scan_library_index,

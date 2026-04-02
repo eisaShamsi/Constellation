@@ -429,7 +429,8 @@
         "calendar": "Календарь",
         "calendarHeader": "Календарь",
         "starView": "Star View",
-        "health": "Здоровье знаний"
+        "health": "Здоровье знаний",
+        "provenance": "Происхождение"
     },
     "tasksPanel": {
         "all": "Все",
@@ -731,6 +732,17 @@
         "singlePoints": "Единственные точки отказа",
         "none": "Ничего не найдено",
         "more": "ещё"
+    },
+    "provenancePanel": {
+        "loading": "Загрузка...",
+        "noDerivesFrom": "Цепочка происхождения не найдена.",
+        "hint": "Добавьте ссылки [[заметка|derives-from]] для отслеживания линии источников.",
+        "received": "Полученное",
+        "discovered": "Открытое",
+        "mixed": "Смешанное",
+        "noChain": "Нет цепочки",
+        "depth": "Глубина",
+        "external": "внешний"
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

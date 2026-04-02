@@ -38,7 +38,7 @@ LAYER 2 — AI Discovery (reads Layer 1 structures)
 | 1 | Typed Links | ✅ GO — user tested | `d7edc6d` | 2026-03-30 |
 | 2 | Knowledge Strata | ✅ GO — user tested | `0f6d4bf` | 2026-04-02 |
 | 3 | Maturity Lifecycle | ✅ GO — user tested | `5cf4283` | 2026-04-02 |
-| 4 | Tension Detector | 🔲 Not started | — | — |
+| 4 | Tension Detector | ⏳ Built — pending large library test | `88f8ddb` | 2026-04-02 |
 | 5 | Provenance Chain | 🔲 Not started | — | — |
 | 6 | Externalization Engine | 🔲 Not started | — | — |
 | 7 | Review Pulse | 🔲 Not started | — | — |

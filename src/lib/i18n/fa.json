@@ -429,7 +429,8 @@
         "calendar": "تقویم",
         "calendarHeader": "تقویم",
         "starView": "Star View",
-        "health": "سلامت دانش"
+        "health": "سلامت دانش",
+        "provenance": "اسناد"
     },
     "tasksPanel": {
         "all": "همه",
@@ -742,6 +743,17 @@
         "singlePoints": "نقاط شکست تکی",
         "none": "هیچ موردی یافت نشد",
         "more": "بیشتر"
+    },
+    "provenancePanel": {
+        "loading": "در حال بارگذاری...",
+        "noDerivesFrom": "هیچ زنجیره اسنادی یافت نشد.",
+        "hint": "پیوندهای [[یادداشت|derives-from]] اضافه کنید تا نسب منبع را ردیابی کنید.",
+        "received": "دریافتی",
+        "discovered": "کشف شده",
+        "mixed": "ترکیبی",
+        "noChain": "بدون زنجیره",
+        "depth": "عمق",
+        "external": "خارجی"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

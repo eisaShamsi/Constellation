@@ -429,7 +429,8 @@
         "calendar": "कैलेंडर",
         "calendarHeader": "कैलेंडर",
         "starView": "Star View",
-        "health": "ज्ञान स्वास्थ्य"
+        "health": "ज्ञान स्वास्थ्य",
+        "provenance": "उत्पत्ति"
     },
     "tasksPanel": {
         "all": "सभी",
@@ -731,6 +732,17 @@
         "singlePoints": "एकल विफलता बिंदु",
         "none": "कोई नहीं मिला",
         "more": "और"
+    },
+    "provenancePanel": {
+        "loading": "लोड हो रहा है...",
+        "noDerivesFrom": "कोई उत्पत्ति श्रृंखला नहीं मिली।",
+        "hint": "स्रोत वंश का पता लगाने के लिए [[नोट|derives-from]] लिंक जोड़ें।",
+        "received": "प्राप्त",
+        "discovered": "खोजा गया",
+        "mixed": "मिश्रित",
+        "noChain": "कोई श्रृंखला नहीं",
+        "depth": "गहराई",
+        "external": "बाहरी"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",

@@ -429,7 +429,8 @@
         "calendar": "Takvim",
         "calendarHeader": "Takvim",
         "starView": "Star View",
-        "health": "Bilgi sağlığı"
+        "health": "Bilgi sağlığı",
+        "provenance": "Köken"
     },
     "tasksPanel": {
         "all": "Tümü",
@@ -731,6 +732,17 @@
         "singlePoints": "Tek hata noktaları",
         "none": "Hiçbiri bulunamadı",
         "more": "daha fazla"
+    },
+    "provenancePanel": {
+        "loading": "Yükleniyor...",
+        "noDerivesFrom": "Köken zinciri bulunamadı.",
+        "hint": "Kaynak soyunu izlemek için [[not|derives-from]] bağlantıları ekleyin.",
+        "received": "Alınan",
+        "discovered": "Keşfedilen",
+        "mixed": "Karma",
+        "noChain": "Zincir yok",
+        "depth": "Derinlik",
+        "external": "harici"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

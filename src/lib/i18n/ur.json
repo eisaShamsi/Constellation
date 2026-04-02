@@ -429,7 +429,8 @@
         "calendar": "کیلنڈر",
         "calendarHeader": "کیلنڈر",
         "starView": "Star View",
-        "health": "علم کی صحت"
+        "health": "علم کی صحت",
+        "provenance": "اسناد"
     },
     "tasksPanel": {
         "all": "سب",
@@ -731,6 +732,17 @@
         "singlePoints": "واحد ناکامی کے مقامات",
         "none": "کچھ نہیں ملا",
         "more": "مزید"
+    },
+    "provenancePanel": {
+        "loading": "لوڈ ہو رہا ہے...",
+        "noDerivesFrom": "کوئی اسناد سلسلہ نہیں ملا۔",
+        "hint": "ماخذ کا نسب نامہ ٹریس کرنے کے لیے [[نوٹ|derives-from]] لنکس شامل کریں۔",
+        "received": "وصول شدہ",
+        "discovered": "دریافت شدہ",
+        "mixed": "ملا جلا",
+        "noChain": "کوئی سلسلہ نہیں",
+        "depth": "گہرائی",
+        "external": "خارجی"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

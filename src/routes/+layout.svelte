@@ -61,6 +61,7 @@
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
 	import TensionPanel from '$lib/components/TensionPanel.svelte';
+	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
 	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
@@ -269,8 +270,9 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance'>('properties');
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
+	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(240);
@@ -661,6 +663,12 @@
 			noteDir = body ? detectDir(body) : dirFallback;
 			// Backlinks
 			currentBacklinks = getBacklinks(allLibraryLinks, tab.name);
+			// CE Phase 5: Fetch provenance chain for active note
+			if (tab.path && tab.libraryPath) {
+				invoke<any>('get_provenance_chain', {
+					libraryPath: tab.libraryPath, notePath: tab.path, maxDepth: 10,
+				}).then(chain => { provenanceChain = chain; }).catch(() => { provenanceChain = null; });
+			} else { provenanceChain = null; }
 			// Outgoing links
 			currentOutgoing = getOutgoingLinks(allLibraryLinks, tab.path).map(l => ({
 				target: l.target,
@@ -1361,6 +1369,21 @@
 					} catch { /* maturity computation failed */ }
 				}
 				maturityMap = newMatMap;
+
+				// CE Phase 5: Fetch provenance origins per library, merge into starNodes
+				for (const lib of libraryList) {
+					try {
+						const origins = await invoke<{ note_path: string; origin_type: string }[]>(
+							'compute_note_origins', { libraryPath: lib.path, libraryName: lib.name }
+						);
+						const originMap = new Map(origins.map(o => [o.note_path.replace(/\\/g, '/').toLowerCase(), o.origin_type]));
+						for (const node of starNodes) {
+							const key = node.path.replace(/\\/g, '/').toLowerCase();
+							const o = originMap.get(key);
+							if (o && o !== 'none') node.originType = o;
+						}
+					} catch { /* origins failed */ }
+				}
 
 				// CE Phase 4: Detect tensions (first library only for performance)
 				if (libraryList.length > 0) {
@@ -3028,6 +3051,9 @@
 				<button class="rs-tab" class:active={rightSidebarTab === 'health'} onclick={() => rightSidebarTab = 'health'} title={$t('panels.health') || 'Knowledge Health'}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
 				</button>
+				<button class="rs-tab" class:active={rightSidebarTab === 'provenance'} onclick={() => rightSidebarTab = 'provenance'} title={$t('panels.provenance') || 'Provenance'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M12 22v-6M2 12h6M22 12h-6"/><circle cx="12" cy="12" r="3"/></svg>
+				</button>
 			</div>
 
 			{#if isHome && sidebarTab}
@@ -3165,6 +3191,17 @@
 					<div class="rs-section rs-full-height">
 						<TensionPanel
 							report={tensionReport}
+							{libraryColorMap}
+							onNoteClick={(path, name) => {
+								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+							}}
+						/>
+					</div>
+				{:else if rightSidebarTab === 'provenance'}
+					<div class="rs-section rs-full-height">
+						<ProvenancePanel
+							chain={provenanceChain}
 							{libraryColorMap}
 							onNoteClick={(path, name) => {
 								const lib = $libraryStats.find(l => path.startsWith(l.path));

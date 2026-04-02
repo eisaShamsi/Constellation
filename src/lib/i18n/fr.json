@@ -429,7 +429,8 @@
         "calendar": "Calendrier",
         "calendarHeader": "Calendrier",
         "starView": "Star View",
-        "health": "Santé des connaissances"
+        "health": "Santé des connaissances",
+        "provenance": "Provenance"
     },
     "tasksPanel": {
         "all": "Toutes",
@@ -742,6 +743,17 @@
         "singlePoints": "Points de défaillance uniques",
         "none": "Aucun trouvé",
         "more": "plus"
+    },
+    "provenancePanel": {
+        "loading": "Chargement...",
+        "noDerivesFrom": "Aucune chaîne de provenance trouvée.",
+        "hint": "Ajoutez des liens [[note|derives-from]] pour tracer la lignée des sources.",
+        "received": "Reçu",
+        "discovered": "Découvert",
+        "mixed": "Mixte",
+        "noChain": "Pas de chaîne",
+        "depth": "Profondeur",
+        "external": "externe"
     },
     "tableToolbar": {
         "addRow": "Ajouter une ligne",

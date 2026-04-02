@@ -429,7 +429,8 @@
         "calendar": "Kalender",
         "calendarHeader": "Kalender",
         "starView": "Star View",
-        "health": "Wissensgesundheit"
+        "health": "Wissensgesundheit",
+        "provenance": "Herkunft"
     },
     "tasksPanel": {
         "all": "Alle",
@@ -742,6 +743,17 @@
         "singlePoints": "Einzelne Ausfallpunkte",
         "none": "Keine gefunden",
         "more": "mehr"
+    },
+    "provenancePanel": {
+        "loading": "Wird geladen...",
+        "noDerivesFrom": "Keine Herkunftskette gefunden.",
+        "hint": "Fügen Sie [[Notiz|derives-from]]-Links hinzu, um die Quellherkunft zu verfolgen.",
+        "received": "Empfangen",
+        "discovered": "Entdeckt",
+        "mixed": "Gemischt",
+        "noChain": "Keine Kette",
+        "depth": "Tiefe",
+        "external": "extern"
     },
     "tableToolbar": {
         "addRow": "Zeile hinzufügen",

@@ -429,7 +429,8 @@
         "calendar": "לוח שנה",
         "calendarHeader": "לוח שנה",
         "starView": "Star View",
-        "health": "בריאות ידע"
+        "health": "בריאות ידע",
+        "provenance": "מקור"
     },
     "tasksPanel": {
         "all": "הכל",
@@ -731,6 +732,17 @@
         "singlePoints": "נקודות כשל בודדות",
         "none": "לא נמצאו",
         "more": "עוד"
+    },
+    "provenancePanel": {
+        "loading": "טוען...",
+        "noDerivesFrom": "לא נמצאה שרשרת מקור.",
+        "hint": "הוסף קישורי [[פתק|derives-from]] כדי לעקוב אחר שושלת המקורות.",
+        "received": "מקובל",
+        "discovered": "מגולה",
+        "mixed": "מעורב",
+        "noChain": "אין שרשרת",
+        "depth": "עומק",
+        "external": "חיצוני"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

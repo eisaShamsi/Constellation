@@ -429,7 +429,8 @@
         "calendar": "التقويم",
         "calendarHeader": "التقويم",
         "starView": "Star View",
-        "health": "صحة المعرفة"
+        "health": "صحة المعرفة",
+        "provenance": "سلسلة الإسناد"
     },
     "tasksPanel": {
         "all": "الكل",
@@ -742,6 +743,17 @@
         "singlePoints": "نقاط ضعف وحيدة",
         "none": "لم يتم العثور على أي شيء",
         "more": "المزيد"
+    },
+    "provenancePanel": {
+        "loading": "جارٍ التحميل...",
+        "noDerivesFrom": "لم يتم العثور على سلسلة إسناد.",
+        "hint": "أضف روابط [[ملاحظة|derives-from]] لتتبع سلسلة المصادر.",
+        "received": "متلقّاة",
+        "discovered": "مُكتشَفة",
+        "mixed": "مختلطة",
+        "noChain": "بدون سلسلة",
+        "depth": "العمق",
+        "external": "خارجي"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

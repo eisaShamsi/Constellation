@@ -998,6 +998,7 @@ export interface StarNode {
 	createdAt?: number; // epoch ms from file metadata
 	stratum?: number;   // 1–8, from compute_note_strata (CE Phase 2)
 	maturity?: string;  // seed|sapling|evergreen|canonical|wilting (CE Phase 3)
+	originType?: string; // received|discovered|mixed|none (CE Phase 5)
 }
 
 export interface StarLink {

@@ -429,7 +429,8 @@
         "calendar": "日历",
         "calendarHeader": "日历",
         "starView": "Star View",
-        "health": "知识健康"
+        "health": "知识健康",
+        "provenance": "来源"
     },
     "tasksPanel": {
         "all": "全部",
@@ -731,6 +732,17 @@
         "singlePoints": "单点故障",
         "none": "未找到",
         "more": "更多"
+    },
+    "provenancePanel": {
+        "loading": "加载中...",
+        "noDerivesFrom": "未找到来源链。",
+        "hint": "添加 [[笔记|derives-from]] 链接以追溯来源谱系。",
+        "received": "接收",
+        "discovered": "发现",
+        "mixed": "混合",
+        "noChain": "无链",
+        "depth": "深度",
+        "external": "外部"
     },
     "tableToolbar": {
         "addRow": "添加行",
