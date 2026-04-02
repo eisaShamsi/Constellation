@@ -644,11 +644,11 @@
 					onpromote?.(val);
 					view?.focus();
 				}}>
-				<option value="">{$t('notePane.stage.none') || '— Stage —'}</option>
-				<option value="fleeting">🌱 {$t('notePane.stage.fleeting') || 'Fleeting'}</option>
-				<option value="literature">📖 {$t('notePane.stage.literature') || 'Literature'}</option>
-				<option value="permanent">🔗 {$t('notePane.stage.permanent') || 'Permanent'}</option>
-				<option value="synthesis">✨ {$t('notePane.stage.synthesis') || 'Synthesis'}</option>
+				<option value="">— Stage —</option>
+				<option value="fleeting">🌱 Fleeting</option>
+				<option value="literature">📖 Literature</option>
+				<option value="permanent">🔗 Permanent</option>
+				<option value="synthesis">✨ Synthesis</option>
 			</select>
 		</div>
 		<div class="e-bc-actions">
