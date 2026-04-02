@@ -273,6 +273,7 @@
 	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance'>('properties');
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
+	let _lastProvenancePath = ''; // cache guard — only re-fetch when note changes
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(240);
@@ -663,8 +664,10 @@
 			noteDir = body ? detectDir(body) : dirFallback;
 			// Backlinks
 			currentBacklinks = getBacklinks(allLibraryLinks, tab.name);
-			// CE Phase 5: Fetch provenance chain only when Provenance tab is visible
-			if (rightSidebarTab === 'provenance' && tab.path && tab.libraryPath) {
+			// CE Phase 5: Fetch provenance only when tab visible AND note changed
+			if (rightSidebarTab === 'provenance' && tab.path && tab.libraryPath
+				&& tab.path !== _lastProvenancePath) {
+				_lastProvenancePath = tab.path;
 				invoke<any>('get_provenance_chain', {
 					libraryPath: tab.libraryPath, notePath: tab.path, maxDepth: 10,
 				}).then(chain => { provenanceChain = chain; }).catch(() => { provenanceChain = null; });
@@ -3062,8 +3065,10 @@
 				</button>
 				<button class="rs-tab" class:active={rightSidebarTab === 'provenance'} onclick={() => {
 					rightSidebarTab = 'provenance';
+					_lastProvenancePath = ''; // reset cache to force fresh fetch
 					const tab = $focusedTab;
 					if (tab?.path && tab?.libraryPath) {
+						_lastProvenancePath = tab.path;
 						invoke<any>('get_provenance_chain', { libraryPath: tab.libraryPath, notePath: tab.path, maxDepth: 10 })
 							.then(chain => { provenanceChain = chain; }).catch(() => { provenanceChain = null; });
 					}
