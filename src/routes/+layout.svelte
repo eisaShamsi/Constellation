@@ -277,7 +277,7 @@
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(240);
-	let rightSidebarWidth = $state(260);
+	let rightSidebarWidth = $state(290);
 	let resizing = $state<'left' | 'right' | null>(null);
 
 	// Command palette & quick switcher
