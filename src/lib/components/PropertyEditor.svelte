@@ -586,8 +586,8 @@
 
 	/* Drag handle */
 	.pe-drag-handle {
-		flex-shrink: 0; width: 14px;
-		font-size: 0.9rem; color: var(--text-faint);
+		flex-shrink: 0; width: 10px;
+		font-size: 0.8rem; color: var(--text-faint);
 		cursor: grab; opacity: 0; transition: opacity 0.15s;
 		user-select: none; text-align: center;
 	}
@@ -598,10 +598,10 @@
 	.pe-type-dropdown-wrap { position: relative; flex-shrink: 0; }
 
 	.pe-type-btn {
-		width: 24px; height: 24px;
+		width: 20px; height: 20px;
 		display: flex; align-items: center; justify-content: center;
 		border: none; background: none; border-radius: 3px;
-		color: var(--text-faint); cursor: pointer; font-size: 0.85rem;
+		color: var(--text-faint); cursor: pointer; font-size: 0.8rem;
 		padding: 0;
 	}
 	.pe-type-btn:hover { background: var(--background-modifier-border); color: var(--text-muted); }
