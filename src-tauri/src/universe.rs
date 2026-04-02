@@ -733,6 +733,51 @@ pub fn open_existing_universe(app: tauri::AppHandle, path: String) -> Result<Uni
     registry.active_id = Some(entry.id.clone());
     save_registry(&app, &registry)?;
 
+    // ─── Fix library paths after universe move ───
+    // libraries.json stores absolute paths from the old location. After a move,
+    // update is_universe_notes library to point to the new universe root.
+    // Also update any library whose old path no longer exists but whose folder
+    // name exists under the new universe root.
+    let libs_path = cdir.join("libraries.json");
+    if libs_path.exists() {
+        if let Ok(libs_data) = fs::read_to_string(&libs_path) {
+            if let Ok(mut libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
+                let root_str = universe_dir.to_string_lossy().to_string();
+                let mut changed = false;
+                for lib in &mut libs {
+                    let old_path = Path::new(&lib.path);
+                    if lib.is_universe_notes {
+                        // Universe notes library always points to root
+                        if lib.path != root_str {
+                            eprintln!("[universe] Fixing universe notes path: {} → {}", lib.path, root_str);
+                            lib.path = root_str.clone();
+                            changed = true;
+                        }
+                    } else if !old_path.exists() {
+                        // Non-universe library with stale path — try to find it under new root
+                        if let Some(folder_name) = old_path.file_name() {
+                            let candidate = universe_dir.join(folder_name);
+                            if candidate.is_dir() {
+                                let new_path = candidate.to_string_lossy().to_string();
+                                eprintln!("[universe] Fixing library path: {} → {}", lib.path, new_path);
+                                lib.path = new_path;
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+                if changed {
+                    if let Ok(json) = serde_json::to_string_pretty(&libs) {
+                        let _ = fs::write(&libs_path, json);
+                    }
+                }
+            }
+        }
+    }
+
+    // Ensure universe notes folder is registered
+    ensure_universe_notes_folder(universe_dir)?;
+
     // Set managed state
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
