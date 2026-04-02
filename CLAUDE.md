@@ -131,8 +131,11 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 ## Standing Order (SO)
 After every phase, step, or significant commit:
 1. Update `lab/reports/SESSION-LOG-YYYY-MM-DD.md` with: phase name, commit hash, test results, bugs fixed, open items.
-2. This is the safety net — if the session is cleared or restarted, the next session can pick up exactly where this one left off.
-3. The SO also includes running `/simplify` (code review) after each phase.
+2. Update **help files** (`docs/help.uConstellation.World/`) and **User Manual** (`docs/User Manual.md` + all 14 translations in `docs/help.{lang}/`) with any user-facing changes.
+3. This is the safety net — if the session is cleared or restarted, the next session can pick up exactly where this one left off.
+4. The SO also includes running `/simplify` (code review) after each phase.
+
+**PCS = Push + Commit + SO** — always includes help files and user manual updates.
 
 ## Backup Routine
 After each successful milestone:
