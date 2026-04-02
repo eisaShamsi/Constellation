@@ -562,6 +562,42 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
         }
     }
 
+    // ─── Fix stale library paths on every activation ───
+    // If the universe was moved, libraries.json still has old absolute paths.
+    // Fix is_universe_notes to point to current root, and resolve other stale paths.
+    let cdir_fix = constellation_dir(&final_path);
+    let libs_fix_path = cdir_fix.join("libraries.json");
+    if libs_fix_path.exists() {
+        if let Ok(libs_data) = fs::read_to_string(&libs_fix_path) {
+            if let Ok(mut libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
+                let root_str = final_path.to_string_lossy().to_string();
+                let mut changed = false;
+                for lib in &mut libs {
+                    if lib.is_universe_notes && lib.path != root_str {
+                        eprintln!("[universe] Fixing universe notes path: {} → {}", lib.path, root_str);
+                        lib.path = root_str.clone();
+                        changed = true;
+                    } else if !lib.is_universe_notes && !Path::new(&lib.path).exists() {
+                        if let Some(folder_name) = Path::new(&lib.path).file_name() {
+                            let candidate = final_path.join(folder_name);
+                            if candidate.is_dir() {
+                                let new_path = candidate.to_string_lossy().to_string();
+                                eprintln!("[universe] Fixing library path: {} → {}", lib.path, new_path);
+                                lib.path = new_path;
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+                if changed {
+                    if let Ok(json) = serde_json::to_string_pretty(&libs) {
+                        let _ = fs::write(&libs_fix_path, json);
+                    }
+                }
+            }
+        }
+    }
+
     // Update managed state
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
