@@ -138,7 +138,10 @@ After every phase, step, or significant commit:
 **PCS = Push + Commit + SO** — always includes help files and user manual updates.
 
 ## Testing Instructions Rule
-When asking the user to test ANY feature (new, updated, or fixed), provide **detailed step-by-step walkthrough instructions**. Explain every click, every field, every expected result in plain language. Never assume the user knows internal syntax, component names, or can set up test scenarios from brief descriptions. The user is a human, not an AI.
+When asking the user to test ANY feature (new, updated, or fixed):
+1. **Define the feature first** — explain what it is, why it exists, and why it matters (as it would appear in the help files / User Manual)
+2. **Then walk through step by step** — explain every click, every field, every expected result in plain language
+Never assume the user knows internal syntax, component names, or can set up test scenarios from brief descriptions. The user is a human, not an AI.
 
 ## Backup Routine
 After each successful milestone:
