@@ -569,7 +569,7 @@
 		padding: 6px 0;
 		border-bottom: 1px solid var(--background-secondary-alt);
 		transition: opacity 0.15s, border-color 0.1s;
-		overflow: hidden; min-width: 0;
+		min-width: 0; flex-wrap: wrap;
 	}
 	.pe-row:last-of-type { border-bottom: none; }
 	.pe-row.pe-dragging { opacity: 0.35; }
