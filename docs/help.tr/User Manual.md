@@ -536,29 +536,151 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 
 ## 17. Bilişsel Motor
 
-Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz arasındaki gizli kalıpları ve ilişkileri ortaya çıkaran yerleşik zeka sistemidir.
+Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz arasındaki gizli kalıpları ve ilişkileri ortaya çıkaran yerleşik zeka sistemidir. Temel felsefesi:
 
-### Bilgi Katmanları
+> "Verilerinizin miktarı önemli değil. Önemli olan kaç kaynak sakladığınız değil, onlardan bilginizi nasıl şekillendirdiğiniz ve anlamlı tek bir farkındalıkta nasıl birleştirdiğinizdir."
 
-Bilişsel Motor, her notu yapı, içerik ve bağlantılarına göre otomatik olarak sekiz bilgi katmanından (Anlık Görüntü, Günlük, Konu, Harita, Çerçeve, İlke, İnanç, Eser) birine sınıflandırır. Bu sınıflandırma, kütüphanenizdeki bilgi dağılımını anlamanıza ve boşlukları tespit etmenize yardımcı olur.
+Bilişsel Motor beş entegre araçtan oluşur: Tipli bağlantılar, Bilgi katmanları, Olgunluk döngüsü, Gerilim algılayıcı ve Köken zinciri.
 
-### Olgunluk Yaşam Döngüsü
+---
 
-Motor, her notun olgunluk seviyesini dört aşamada takip eder: **Tohum** → **Fidan** → **Yaprak Dökmeyen** → **Kanonik**. Bağlantılar ve gözden geçirmeler eklendikçe seviye otomatik olarak değişir.
+### 17.1 Tipli bağlantılar
 
-### Tipli Bağlantılar
+#### Nedir?
 
-Bilişsel Motor, wikilink'lerle açıkça bağlanmamış olsalar bile içerik benzerliğine dayalı olarak notlar arasındaki anlamsal bağlantıları keşfeder. Bu bağlantılar Star View'da noktalı çizgiler olarak görünür; hassasiyetleri Star View ayarlarından ayarlanabilir.
+Tipli bağlantılar, iki not arasındaki ilişkinin türünü tanımlayan wiki bağlantılarıdır. Sadece `[[not]]` yazmak yerine, `[[not|ilişki-türü]]` yazarak bağlantının doğasını ifade edersiniz — ondan mı türetilmiş? Onu mu çürütüyor? Onu mu genişletiyor?
 
-### Köken zinciri
+#### Neden önemli?
 
-Köken zinciri, `[[not|derives-from]]` bağlantıları aracılığıyla kaynak kökenini izler. Bilgiyi "alınmış" (dış kaynaklardan) veya "keşfedilmiş" (kullanıcının kendi notlarından) olarak sınıflandırır. Kenar çubuğundaki Köken sekmesinde soy ağacını gösterir.
+Normal bir bağlantı yalnızca "bir bağlantı var" der ama ne tür olduğunu söylemez. Tipli bağlantılar, not ağınızı referans yığınından düşünce yapılarını, bağımlılıkları ve çıkarımları görünür kılan gerçek bir bilgi haritasına dönüştürür.
+
+#### Nasıl kullanılır
+
+1. Düzenleyicide bir not açın
+2. İlişki türü ile wiki bağlantısı yazın: `[[Hedef not|derives-from]]`
+3. Desteklenen türler: `derives-from` (türetilmiş), `supports` (destekler), `contradicts` (çelişir), `extends` (genişletir), `exemplifies` (örneklendirir), `questions` (sorgular)
+4. Sağ kenar çubuğundaki not özelliklerinden de tür ekleyebilirsiniz
+
+#### Nerede görülür?
+
+- **Yıldız Görünümü (GraphMind)**: Düğümler arasında renkli ve etiketli çizgiler olarak
+- **Sağ kenar çubuğu**: "Geri bağlantılar" sekmesinde her bağlantının türü ile
+- **Köken sekmesi**: Bilgi soy ağacı oluşturmak için kullanılır
+
+---
+
+### 17.2 Bilgi katmanları
+
+#### Nedir?
+
+Bilişsel Motor her notu otomatik olarak sekiz bilgi katmanından birine sınıflandırır: Anlık Görüntü, Günlük, Konu, Harita, Çerçeve, İlke, İnanç, Eser. Sınıflandırma notun yapısına, içeriğine ve bağlantı sayısına dayanır.
+
+#### Neden önemli?
+
+Her notun türünü bilmek kütüphanenizdeki bilgi dengesini ortaya koyar. Notlarınızın çoğu gelip geçici anlık görüntüler mi yoksa ilkelere ve çerçevelere mi evrilmiş? İçeriğin doğasına dair bu farkındalık, yalnızca bilgi biriktirmek yerine gerçek bilgi inşa etmenin ilk adımıdır.
+
+#### Nasıl kullanılır
+
+1. Sınıflandırma otomatik olarak yapılır — herhangi bir işlem gerekmez
+2. Otomatik sınıflandırmayı geçersiz kılmak için frontmatter'a `stratum` özelliğini ekleyin:
+   ```yaml
+   ---
+   stratum: framework
+   ---
+   ```
+3. Kullanılabilir değerler: `snapshot`, `log`, `topic`, `map`, `framework`, `principle`, `conviction`, `artifact`
+
+#### Nerede görülür?
+
+- **Sağ kenar çubuğu**: Not özellikleri bölümünde "Katman" altında
+- **Yıldız Görünümü**: Katmana göre farklı düğüm renkleri olarak
+- **Ayarlar > Bilişsel Motor**: Otomatik sınıflandırmayı etkinleştirme/devre dışı bırakma
+
+---
+
+### 17.3 Olgunluk döngüsü
+
+#### Nedir?
+
+Motor her notun olgunluk seviyesini dört aşamada takip eder: **Tohum** → **Fidan** → **Yaprak Dökmeyen** → **Kanonik**. Her not tohum olarak başlar ve içerik, bağlantı ve gözden geçirme eklendikçe kademeli olarak büyür.
+
+#### Neden önemli?
+
+Olgunluk, ham bir fikir ile rafine edilmiş bilgi arasındaki farkı ortaya koyar. Bugünün tohumu, yeterli ilgiyi gösterirseniz yarının referansı olabilir. Olgunluk takibi, daha fazla geliştirme ve ilgiyi hak eden notları belirlemenize yardımcı olur.
+
+#### Nasıl kullanılır
+
+1. Olgunluk şunlara göre otomatik olarak değişir: kelime sayısı, gelen ve giden bağlantı sayısı, son değişiklik tarihi
+2. Olgunluğu elle ayarlamak için frontmatter'a `maturity` özelliğini ekleyin:
+   ```yaml
+   ---
+   maturity: evergreen
+   ---
+   ```
+3. Kullanılabilir değerler: `seed` (Tohum), `sapling` (Fidan), `evergreen` (Yaprak Dökmeyen), `canonical` (Kanonik)
+
+#### Nerede görülür?
+
+- **Sağ kenar çubuğu**: Başlığın yanındaki simge mevcut olgunluk aşamasını gösterir
+- **Yıldız Görünümü**: Düğüm boyutu olarak — not ne kadar olgunsa düğüm o kadar büyük
+- **Ayarlar > Bilişsel Motor**: Olgunluk takibini etkinleştirme/devre dışı bırakma
+
+---
+
+### 17.4 Gerilim algılayıcı
+
+#### Nedir?
+
+Gerilim algılayıcı bağlantılı notları inceler ve iki veya daha fazla not arasında iddialar veya sonuçlar çeliştiğinde sizi uyarır. `contradicts` türündeki tipli bağlantı analizine ve notlar arasındaki tematik benzerliğe dayanır.
+
+#### Neden önemli?
+
+Gerilimler mutlaka hata değildir — daha derin düşünmeye bir davettir. Kütüphanenizde iki fikir birbiriyle çeliştiğinde, bu anlayışınızın evrildiği veya keşfedilmeye değer bir karmaşıklığın var olduğu anlamına gelir. Gerilim algılama, bilinçsizce çelişkili temeller üzerine bilgi inşa etmenizi önler.
+
+#### Nasıl kullanılır
+
+1. Çelişen notlar arasına `contradicts` tipli bağlantı ekleyin: `[[Diğer not|contradicts]]`
+2. Motor, içerik analizi yoluyla örtük gerilimleri de algılar
+3. Kenar çubuğundan algılanan gerilimlerin listesini inceleyin
+
+#### Nerede görülür?
+
+- **Sağ kenar çubuğu**: Çelişkiler algılandığında "Gerilimler" sekmesinde
+- **Yıldız Görünümü**: Çelişen düğümler arasında kırmızı noktalı çizgiler olarak
+- **Bildirim paneli**: Yeni gerilim algılandığında uyarılar
+
+---
+
+### 17.5 Köken zinciri
+
+#### Nedir?
+
+Köken zinciri her fikrin kökenini izler — nereden geldiğini ve neyden türetildiğini. `[[not|derives-from]]` bağlantılarını kullanarak orijinal kaynaktan mevcut formülasyona kadar bilginin gelişim yolunu gösteren bir soy ağacı oluşturur.
+
+#### Neden önemli?
+
+Fikirlerinizin nereden geldiğini bilmek, alınan bilgiyi (kitaplar, makaleler, konferanslardan) keşfedilen bilgiden (kendi çıkarımlarınız ve düşünceleriniz) ayırır. Bilginin kaynağına dair bu farkındalık, fikirlerinizin güvenilirliğini değerlendirmenize ve düşüncenizin zaman içinde nasıl şekillendiğini anlamanıza yardımcı olur.
+
+#### Nasıl kullanılır
+
+1. Bir kaynaktan türetilen not oluştururken bağlantı ekleyin: `[[Orijinal kaynak|derives-from]]`
+2. Çok seviyeli zincirler oluşturulabilir: not ← türetilmiş ← türetilmiş ← orijinal kaynak
+3. Dış kaynakları frontmatter'a `source-type: received` ekleyerek sınıflandırın
+
+#### Nerede görülür?
+
+- **Sağ kenar çubuğu**: "Köken" sekmesi tam soy ağacını gösterir
+- **Yıldız Görünümü**: Bağlantılardaki ok yönleri olarak (kaynaktan türetilene)
+- **Not özellikleri**: Köken zincirine göre "alınmış" veya "keşfedilmiş" sınıflandırması
 
 ### Bilişsel Motor Ayarları
+
+Bilişsel Motor'un tüm araçları **Ayarlar > Bilişsel Motor** bölümünden yapılandırılabilir:
 
 - **Katman sınıflandırması** — Otomatik sınıflandırmayı etkinleştir veya devre dışı bırak
 - **Olgunluk takibi** — Olgunluk yaşam döngüsü takibini etkinleştir veya devre dışı bırak
 - **Tipli bağlantılar** — Bağlantı algılama hassasiyet eşiğini ayarla (0.0 – 1.0)
+- **Gerilim algılayıcı** — Otomatik gerilim algılamayı etkinleştir veya devre dışı bırak
 - **Elle geçersiz kılma** — Otomatik sınıflandırmayı geçersiz kılmak için frontmatter'a `stratum` ve `maturity` özelliklerini ekleyin
 
 ---

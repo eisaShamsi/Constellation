@@ -687,22 +687,224 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 
 ## 18. Cognitive Engine
 
-The Cognitive Engine is a two-layer architecture that transforms Constellation from a note-taking app into a knowledge cognition instrument.
+> "The quantity of your data and information doesn't matter. It is NOT about how many references or sources you keep or store; it is about how you formulate your KNOWLEDGE from them, and how to link all of it into one meaningful awareness."
 
-**Layer 1 — Structural Cognition** (zero AI dependency): Tools that analyze your notes' structure, connections, and metadata to surface insights. Works fully offline.
+The Cognitive Engine is a two-layer architecture that transforms Constellation from a note-taking app into a knowledge cognition instrument. Most note apps help you store and retrieve information. The Cognitive Engine goes further: it helps you understand what your knowledge actually means, where it comes from, how mature it is, and where the gaps lie.
 
-**Layer 2 — AI Discovery** (coming soon): AI reads Layer 1's structures to find patterns you cannot see from inside your own knowledge.
+**Layer 1 — Structural Cognition** (zero AI dependency): Five tools that analyze your notes' structure, connections, and metadata to surface insights. Everything runs locally on your machine, fully offline, with no AI dependency. The engine reads the shape of your library — word counts, link counts, link types, and graph topology — to tell you things about your knowledge that you cannot easily see yourself.
 
-### Currently Available (Layer 1)
+**Layer 2 — AI Discovery** (coming soon): AI will read Layer 1's structures to find patterns you cannot see from inside your own knowledge.
 
-| Feature | What it does |
-|---------|-------------|
-| **Typed Links** | Add semantic meaning to links: `[[note\|supports]]`, `[[note\|contradicts]]`, etc. 7 link types with distinct colors in Star View |
-| **Knowledge Strata** | Auto-classifies notes into 8 levels (Datum → Worldview) based on word count, link count, and link types |
-| **Maturity Lifecycle** | Tracks note growth: Seed → Sapling → Evergreen → Canonical. Shown in file tree, Star View, and tab bar |
-| **Provenance Chain** | Traces source lineage via `[[note\|derives-from]]` links. Classifies knowledge as "received" (from external sources) or "discovered" (user's own). Shows ancestry tree in the Provenance sidebar tab |
+All five Cognitive Engine features require no configuration. They activate automatically as your library grows. You do not need to enable them or install anything extra.
 
-These features require no configuration — they activate automatically as your library grows.
+---
+
+### 18.1 Typed Links
+
+**What it is**
+
+Typed Links let you add semantic meaning to the connections between your notes. Instead of a plain link like `[[Climate Change]]` that only says "these two notes are related somehow," a Typed Link says exactly how they are related: `[[Climate Change|type:supports]]` means "this note provides evidence for the claims in Climate Change." Constellation supports seven link types, each with a distinct color in Star View.
+
+**Why it matters for knowledge**
+
+A library full of plain links is like a map with roads but no signs. You can see that places are connected, but you cannot tell whether a road goes uphill or downhill, whether it carries agreement or disagreement. Typed Links turn your library from a web of vague associations into a network of explicit reasoning. When you mark one note as supporting another, or contradicting it, you are doing the real work of knowledge: deciding what relates to what, and how.
+
+**How to use it**
+
+1. Open a note in the editor (NotePane or FocusPane).
+2. Type `[[` to begin a wiki-link, then type the name of the target note.
+3. After the note name, type `|type:` — an autocomplete menu will appear showing all seven link types.
+4. Select the type that describes the relationship. The full syntax is:
+   - `[[Target Note|type:supports]]` — this note provides evidence for Target Note
+   - `[[Target Note|type:contradicts]]` — this note disagrees with or challenges Target Note
+   - `[[Target Note|type:causes]]` — this note describes a cause of what Target Note describes
+   - `[[Target Note|type:exemplifies]]` — this note is a concrete instance of Target Note's concept
+   - `[[Target Note|type:generalizes]]` — this note abstracts or broadens Target Note's idea
+   - `[[Target Note|type:derives-from]]` — this note's knowledge originates from Target Note
+   - `[[Target Note|type:part-of]]` — this note is a component or subsection of Target Note
+5. Press Enter to confirm.
+
+**Where you see it**
+
+- **In the editor**: Typed links render as colored text with a tooltip showing the link type. Hover over any typed link to see its semantic label.
+- **In Star View (GraphMind)**: Each link type has a distinct color, so you can visually trace chains of support, contradiction, or derivation across your entire library.
+- **In the autocomplete menu**: When you type `|type:` inside a wiki-link, all seven types appear with short descriptions.
+
+**Tips**
+
+- You do not need to type every link. Start by typing the links that carry the strongest meaning — the ones where you know "this supports that" or "this contradicts that." Even a handful of typed links will light up your Star View.
+- The `contradicts` type is especially powerful. It forces you to acknowledge tensions in your thinking, which is where real learning happens.
+- You can always add a type to an existing link later. Just open the note, find the plain `[[link]]`, and add `|type:supports` (or whichever type applies).
+- Typed Links feed into three other Cognitive Engine features: Knowledge Strata uses them to determine note depth, the Tension Detector watches for contradictions, and the Provenance Chain follows `derives-from` links.
+
+---
+
+### 18.2 Knowledge Strata
+
+**What it is**
+
+Knowledge Strata automatically classifies every note in your library into one of eight levels, from raw data to worldview. The classification is computed from structural signals — word count, link count, and which typed links a note uses — with no AI and no manual tagging. The eight levels are:
+
+| Level | Name | What it means |
+|-------|------|---------------|
+| 1 | **Datum** | A brief note (50 words or fewer), no links. A raw fact or observation. |
+| 2 | **Information** | A note of 50-200 words with 0-1 links. A single topic, lightly developed. |
+| 3 | **Proposition** | A note with 200+ words or 2+ links. An argument or explanation taking shape. |
+| 4 | **Concept** | Links to 3+ notes and uses `generalizes` links. An abstraction that unifies ideas. |
+| 5 | **Principle** | Links to 3+ concepts and uses `causes` or `supports` links. A rule or pattern you have identified. |
+| 6 | **Theory** | A Map of Content (8+ outgoing links) with many `part-of` inbound links. A structured framework. |
+| 7 | **Paradigm** | Referenced by 3+ high-stratum notes with high centrality. A lens through which you see a domain. |
+| 8 | **Worldview** | Highest centrality in your library, deepest `derives-from` chain root. Your most foundational belief. |
+
+**Why it matters for knowledge**
+
+Most people cannot tell you the difference between a fact they jotted down and a principle they have tested over years. Knowledge Strata makes that difference visible. When you see that 80% of your notes are at level 1-2 (raw data), you know you are collecting but not synthesizing. When you see a note climb from Proposition to Principle, you know your understanding of that topic is deepening. The strata are not a judgment — they are a mirror.
+
+**How to use it**
+
+1. Simply write notes and create links as you normally would. Knowledge Strata computes automatically.
+2. To see a note's stratum, check the **right sidebar** — the stratum level appears in the note's properties section.
+3. In **Star View**, nodes are sized and layered by stratum. Higher-stratum notes appear larger and more prominent.
+4. To raise a note's stratum naturally:
+   - Write more (expand from a short fact into a developed explanation).
+   - Link it to other notes (connect it to the broader web of your knowledge).
+   - Use Typed Links (adding `supports`, `generalizes`, or `causes` links signals deeper structural relationships).
+
+**Where you see it**
+
+- **Right sidebar**: The note's stratum level is shown in the properties area.
+- **Star View (GraphMind)**: Node size reflects stratum. Datum notes appear as small dots; Worldview notes appear as large, prominent nodes.
+- **Strata are recalculated** each time you open a library, so they always reflect the current state of your notes.
+
+**Tips**
+
+- Do not chase high strata for their own sake. A library of all level-8 notes would be meaningless. The value is in seeing the distribution — a healthy library has notes at every level.
+- If you notice an important topic stuck at Datum or Information, that is a signal to develop it further: write more, link it to related ideas, explain why it matters.
+- Strata reward genuine intellectual work. You cannot game the system by adding meaningless links — the engine checks for specific link types (`generalizes`, `supports`, `causes`) that indicate real conceptual relationships.
+
+---
+
+### 18.3 Maturity Lifecycle
+
+**What it is**
+
+The Maturity Lifecycle tracks how developed each note is over time. Every note begins as a **Seed** (a fresh idea, just planted) and can grow through four stages as you revisit, expand, and refine it:
+
+| Stage | Meaning |
+|-------|---------|
+| **Seed** | A new note, recently created, still brief and unconnected. |
+| **Sapling** | The note is growing — it has some content and a few links, but is still developing. |
+| **Evergreen** | A well-developed note with substantial content, multiple links, and clear structure. Reliable reference material. |
+| **Canonical** | Your most authoritative notes — deeply linked, frequently referenced by other notes, and representing your settled understanding of a topic. |
+
+There is also a **Wilting** state for notes that were once active but have become disconnected or outdated.
+
+**Why it matters for knowledge**
+
+Ideas do not arrive fully formed. They start as fragments, grow through revision, and eventually become pillars of your understanding. The Maturity Lifecycle makes this growth visible. When you see a Seed, you know it needs attention. When you see an Evergreen, you know you can trust it as a reference. This is the difference between a pile of notes and a living, growing body of knowledge.
+
+**How to use it**
+
+1. Maturity is computed automatically based on word count, link count, creation date, and how frequently other notes reference it. You do not need to set it manually.
+2. To grow a note's maturity:
+   - **Seed to Sapling**: Add content (expand beyond a brief jotting) and create at least one link to another note.
+   - **Sapling to Evergreen**: Develop the note into a substantial piece — add structure, link it to multiple related notes, and revisit it over time.
+   - **Evergreen to Canonical**: This happens naturally when other notes in your library frequently link to it. A Canonical note is one that your own knowledge graph treats as a hub.
+
+**Where you see it**
+
+- **File tree**: Each note shows a small maturity indicator (icon or color) so you can scan your library and see which notes are Seeds, Saplings, Evergreens, or Canonical.
+- **Star View (GraphMind)**: Maturity affects the visual appearance of nodes, helping you see at a glance which parts of your knowledge are well-developed and which are still germinating.
+- **Tab bar**: The active note's maturity stage is visible in the tab, so you always know the state of the note you are editing.
+
+**Tips**
+
+- Treat Seeds as a to-do list for your thinking. Periodically review your Seeds and decide: develop this further, or let it go.
+- Do not worry about Wilting notes. They may represent ideas you explored and moved past — that is a normal part of intellectual growth.
+- The most valuable moment is when a Sapling becomes an Evergreen. That transition means you have taken a half-formed idea and turned it into a reliable piece of your knowledge base.
+
+---
+
+### 18.4 Tension Detector
+
+**What it is**
+
+The Tension Detector is a knowledge health monitor that scans your library for structural problems: contradictions between notes, orphan notes with no connections, structural gaps where clusters of notes lack bridges between them, and single points of failure where removing one note would disconnect an entire branch of your knowledge. It activates automatically once your library has at least 50 linked notes.
+
+The Tension Detector identifies four types of issues:
+
+| Issue | What it means |
+|-------|---------------|
+| **Contradictions** | Two notes linked with `contradicts` typed links. These are not errors — they are valuable tensions in your thinking that deserve attention. |
+| **Orphan Notes** | Notes with zero incoming or outgoing links. They exist in isolation, disconnected from everything else you know. |
+| **Structural Gaps** | Groups of notes that share a tag or topic but have no links between them. They should be connected but are not. |
+| **Single Points of Failure** | A note that is the only bridge between two clusters. If you removed it, an entire section of your knowledge would become disconnected. |
+
+**Why it matters for knowledge**
+
+A library of notes can develop blind spots just like a person's thinking can. You might have two notes that directly contradict each other without realizing it. You might have an important idea sitting in isolation, never connected to the rest of your work. The Tension Detector surfaces these structural weaknesses so you can address them deliberately. Contradictions are especially valuable — acknowledging where your ideas conflict is often where the deepest learning happens.
+
+**How to use it**
+
+1. Open the **Tension** tab in the right sidebar (it appears as a panel alongside your note properties).
+2. If your library has fewer than 50 linked notes, you will see a progress indicator showing how close you are to activation.
+3. Once active, the panel shows four collapsible sections: Contradictions, Orphan Notes, Structural Gaps, and Single Points of Failure.
+4. Each issue has a severity indicator (red for high, amber for medium, gray for low).
+5. Click any item to open the relevant note directly.
+6. To resolve issues:
+   - **Contradictions**: Read both notes. Decide if the contradiction is genuine (keep both and explore the tension) or accidental (update one to be consistent).
+   - **Orphans**: Link the orphan note to at least one related note, or decide it does not belong in your library.
+   - **Structural Gaps**: Create links between notes that share a topic but are not yet connected.
+   - **Single Points of Failure**: Add alternative connections so that no single note is the only bridge.
+
+**Where you see it**
+
+- **Right sidebar — Tension tab**: The main interface for the Tension Detector, showing all four issue types with counts and clickable items.
+- **Star View**: Contradiction links appear in a distinct color, making tension lines visible in your knowledge graph.
+
+**Tips**
+
+- Do not try to eliminate all tensions. A library with zero contradictions might mean you are not thinking critically enough. The goal is awareness, not perfection.
+- Check the Tension panel once a week as part of a review routine. It is like a health checkup for your knowledge.
+- Orphan notes are the easiest issue to fix and often the most rewarding. A single link can integrate a forgotten idea back into your thinking.
+- Single Points of Failure are the most dangerous structural issue. If a key bridging note is deleted or corrupted, you could lose the connection between two important areas of your knowledge.
+
+---
+
+### 18.5 Provenance Chain
+
+**What it is**
+
+The Provenance Chain traces where your knowledge comes from by following `derives-from` typed links. When you write a note that is based on a book, a lecture, a conversation, or another note, you can mark that relationship with `[[Source Note|type:derives-from]]`. The Provenance Chain follows these links backward to build a complete ancestry tree for any note, and classifies your knowledge as either **Received** (originating from external sources) or **Discovered** (your own original thinking).
+
+**Why it matters for knowledge**
+
+Knowing what you think is only half the picture. Knowing where your ideas came from — and whether they are truly yours or inherited — is what turns information into genuine understanding. The Provenance Chain makes this lineage visible. When you see that a note's ancestry traces back through three levels to an external source, you understand that it is received knowledge that you have processed and transformed. When a note has no external sources in its chain, you know it represents your own original synthesis. This distinction matters because received knowledge and discovered knowledge serve different roles in your thinking.
+
+**How to use it**
+
+1. When you create a note based on an external source (a book, article, lecture, or someone else's idea), add a `derives-from` link:
+   - Example: `[[Thinking Fast and Slow|type:derives-from]]`
+   - This tells Constellation that your current note's knowledge originates from that source.
+2. You can chain derivations: Note C derives from Note B, which derives from Note A. The Provenance Chain will trace the entire lineage.
+3. To mark a source as external (not part of your library), simply note it in the source note's content — the Provenance Chain will recognize sources that have no further `derives-from` links as root sources.
+4. Open the **Provenance** tab in the right sidebar to see:
+   - The ancestry tree of the current note, showing every source in the chain.
+   - The **depth** of the chain (how many levels back the derivation goes).
+   - The **origin classification**: Received, Discovered, or Mixed.
+
+**Where you see it**
+
+- **Right sidebar — Provenance tab**: Shows the full ancestry tree for the currently open note, with depth count and origin classification (Received / Discovered / Mixed).
+- **Star View (GraphMind)**: `derives-from` links appear as distinct edges, so you can visually trace provenance chains across your library.
+- **Note properties**: The origin type (Received / Discovered / Mixed) appears in the note's metadata in the right sidebar.
+
+**Tips**
+
+- You do not need to add `derives-from` links to every note. Focus on the notes where source attribution matters — where you want to remember "this idea came from that book" or "this argument builds on that conversation."
+- A note classified as "Discovered" is not necessarily better than "Received." The most powerful knowledge often comes from deeply processing received ideas until they become your own. The classification helps you see the balance.
+- If the Provenance tab shows "No derives-from chain found," it means the current note has no provenance links yet. The panel will display a hint reminding you of the syntax.
+- Provenance Chains are especially valuable for academic work, research projects, or any context where you need to trace an idea back to its original source.
 
 ---
 

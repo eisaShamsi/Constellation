@@ -536,29 +536,151 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 
 ## 17. Kognitive Engine
 
-Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das Ihre Notizen analysiert und verborgene Muster und Zusammenhaenge zwischen Ihren Ideen aufdeckt.
+Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das Ihre Notizen analysiert und verborgene Muster und Zusammenhaenge zwischen Ihren Ideen aufdeckt. Ihre Kernphilosophie:
 
-### Wissensschichten
+> „Es kommt nicht auf die Menge Ihrer Daten an. Entscheidend ist nicht, wie viele Quellen Sie speichern, sondern wie Sie daraus Wissen formen und zu einem sinnvollen Bewusstsein verknuepfen."
 
-Die Kognitive Engine klassifiziert jede Notiz automatisch in eine von acht Wissensschichten (Schnappschuss, Protokoll, Thema, Karte, Rahmen, Prinzip, Ueberzeugung, Artefakt) basierend auf Struktur, Inhalt und Verlinkungen der Notiz. Diese Klassifizierung hilft Ihnen, die Wissensverteilung Ihrer Bibliothek zu verstehen und Luecken zu identifizieren.
+Die Kognitive Engine besteht aus fuenf integrierten Werkzeugen: Typisierte Links, Wissensschichten, Reifelebenszyklus, Spannungsdetektor und Herkunftskette.
 
-### Reifelebenszyklus
+---
 
-Die Engine verfolgt den Reifegrad jeder Notiz in vier Stufen: **Samen** → **Setzling** → **Immergruen** → **Kanonisch**. Der Grad aendert sich automatisch mit zunehmenden Verlinkungen und Ueberarbeitungen.
+### 17.1 Typisierte Links
 
-### Typisierte Links
+#### Was ist das?
 
-Die Kognitive Engine erkennt semantische Verbindungen zwischen Notizen basierend auf inhaltlicher Aehnlichkeit, auch wenn sie nicht explizit durch Wikilinks verbunden sind. Diese Verbindungen erscheinen als gepunktete Linien in der Sternenansicht; ihre Empfindlichkeit kann in den Sternenansicht-Einstellungen angepasst werden.
+Typisierte Links sind Wikilinks, die eine Beziehungsart tragen und beschreiben, wie zwei Notizen zueinander stehen. Statt einfach `[[Notiz]]` schreiben Sie `[[Notiz|Beziehungstyp]]`, um die Art der Verbindung auszudruecken — baut sie darauf auf? Widerspricht sie? Erweitert sie?
 
-### Herkunftskette
+#### Warum ist das wichtig?
 
-Die Herkunftskette verfolgt die Quellenherkunft über `[[Notiz|derives-from]]`-Links. Sie klassifiziert Wissen als "empfangen" (von externen Quellen) oder "entdeckt" (eigene Notizen des Benutzers). Ein Abstammungsbaum wird im Herkunfts-Tab der Seitenleiste angezeigt.
+Ein normaler Link sagt nur „es gibt eine Verbindung", aber nicht welche. Typisierte Links verwandeln Ihr Notiznetzwerk von einer losen Sammlung in eine echte Wissenslandkarte, die Denkstrukturen, Abhaengigkeiten und Schlussfolgerungen sichtbar macht.
+
+#### So verwenden Sie es
+
+1. Oeffnen Sie eine Notiz im Editor
+2. Schreiben Sie einen Wikilink mit Beziehungstyp: `[[Zielnotiz|derives-from]]`
+3. Unterstuetzte Typen: `derives-from` (abgeleitet von), `supports` (unterstuetzt), `contradicts` (widerspricht), `extends` (erweitert), `exemplifies` (veranschaulicht), `questions` (hinterfragt)
+4. Alternativ koennen Sie Typen ueber die Notizeigenschaften in der rechten Seitenleiste hinzufuegen
+
+#### Wo sehen Sie es?
+
+- **Sternenansicht (GraphMind)**: Als farbige, beschriftete Linien zwischen den Knoten
+- **Rechte Seitenleiste**: Im Tab „Backlinks" mit Angabe des jeweiligen Linktyps
+- **Herkunfts-Tab**: Wird zum Aufbau des Wissens-Stammbaums verwendet
+
+---
+
+### 17.2 Wissensschichten
+
+#### Was ist das?
+
+Die Kognitive Engine klassifiziert jede Notiz automatisch in eine von acht Wissensschichten: Schnappschuss, Protokoll, Thema, Karte, Rahmen, Prinzip, Ueberzeugung, Artefakt. Die Einordnung basiert auf Struktur, Inhalt und Verlinkungsgrad der Notiz.
+
+#### Warum ist das wichtig?
+
+Die Schicht-Zuordnung zeigt Ihnen die Wissensbalance Ihrer Bibliothek. Bestehen Ihre Notizen hauptsaechlich aus fluechtige Schnappschuessen oder haben sie sich zu Prinzipien und Rahmenwerken entwickelt? Dieses Bewusstsein fuer die Art des Inhalts ist der erste Schritt, um echtes Wissen aufzubauen statt nur Informationen zu sammeln.
+
+#### So verwenden Sie es
+
+1. Die Klassifizierung erfolgt automatisch — Sie muessen nichts tun
+2. Um die automatische Einstufung zu ueberschreiben, fuegen Sie die Eigenschaft `stratum` im Frontmatter hinzu:
+   ```yaml
+   ---
+   stratum: framework
+   ---
+   ```
+3. Verfuegbare Werte: `snapshot`, `log`, `topic`, `map`, `framework`, `principle`, `conviction`, `artifact`
+
+#### Wo sehen Sie es?
+
+- **Rechte Seitenleiste**: Im Bereich Notizeigenschaften unter „Schicht"
+- **Sternenansicht**: Als unterschiedliche Farben der Knoten je nach Schicht
+- **Einstellungen > Kognitive Engine**: Automatische Klassifizierung aktivieren/deaktivieren
+
+---
+
+### 17.3 Reifelebenszyklus
+
+#### Was ist das?
+
+Die Engine verfolgt den Reifegrad jeder Notiz in vier Stufen: **Samen** → **Setzling** → **Immergruen** → **Kanonisch**. Jede Notiz beginnt als Samen und waechst schrittweise mit zunehmendem Inhalt, mehr Verlinkungen und Ueberarbeitungen.
+
+#### Warum ist das wichtig?
+
+Der Reifegrad unterscheidet zwischen einem rohen Gedanken und ausgereiftem Wissen. Der Samen von heute kann morgen zum Referenzwerk werden, wenn Sie ihn pflegen. Die Reifeverfolgung hilft Ihnen, Notizen zu identifizieren, die weitere Aufmerksamkeit und Ausarbeitung verdienen.
+
+#### So verwenden Sie es
+
+1. Der Reifegrad aendert sich automatisch basierend auf: Wortanzahl, Anzahl ein- und ausgehender Links und Datum der letzten Bearbeitung
+2. Um den Reifegrad manuell festzulegen, fuegen Sie die Eigenschaft `maturity` im Frontmatter hinzu:
+   ```yaml
+   ---
+   maturity: evergreen
+   ---
+   ```
+3. Verfuegbare Werte: `seed` (Samen), `sapling` (Setzling), `evergreen` (Immergruen), `canonical` (Kanonisch)
+
+#### Wo sehen Sie es?
+
+- **Rechte Seitenleiste**: Ein Symbol neben dem Notiztitel zeigt die aktuelle Reifestufe
+- **Sternenansicht**: Als Knotengroesse — je reifer die Notiz, desto groesser der Knoten
+- **Einstellungen > Kognitive Engine**: Reife-Tracking aktivieren/deaktivieren
+
+---
+
+### 17.4 Spannungsdetektor
+
+#### Was ist das?
+
+Der Spannungsdetektor prueft verknuepfte Notizen und warnt Sie, wenn Behauptungen oder Schlussfolgerungen zwischen zwei oder mehr Notizen im Widerspruch stehen. Er stuetzt sich auf die Analyse von `contradicts`-Links und thematische Aehnlichkeit.
+
+#### Warum ist das wichtig?
+
+Spannungen sind nicht unbedingt Fehler — sie sind Anstoesse zum tieferen Nachdenken. Wenn sich zwei Ideen in Ihrer Bibliothek widersprechen, bedeutet das, dass sich Ihr Verstaendnis weiterentwickelt hat oder eine Komplexitaet vorliegt, die es zu erforschen lohnt. Der Spannungsdetektor schuetzt Sie davor, unbewusst Wissen auf widersprüchlichen Grundlagen aufzubauen.
+
+#### So verwenden Sie es
+
+1. Fuegen Sie einen typisierten Link `contradicts` zwischen widersprüchlichen Notizen ein: `[[Andere Notiz|contradicts]]`
+2. Die Engine erkennt auch implizite Spannungen durch Inhaltsanalyse
+3. Pruefen Sie die Liste der erkannten Spannungen in der Seitenleiste
+
+#### Wo sehen Sie es?
+
+- **Rechte Seitenleiste**: Im Tab „Spannungen", wenn Widersprueche erkannt wurden
+- **Sternenansicht**: Als rote gestrichelte Linien zwischen widersprüchlichen Knoten
+- **Benachrichtigungen**: Hinweise bei neu erkannten Spannungen
+
+---
+
+### 17.5 Herkunftskette
+
+#### Was ist das?
+
+Die Herkunftskette verfolgt den Ursprung jeder Idee — woher sie stammt und woraus sie abgeleitet wurde. Sie nutzt `[[Notiz|derives-from]]`-Links, um einen Stammbaum aufzubauen, der den Entwicklungsweg des Wissens von der Originalquelle bis zur aktuellen Formulierung zeigt.
+
+#### Warum ist das wichtig?
+
+Zu wissen, woher Ihre Ideen kommen, unterscheidet empfangenes Wissen (aus Buechern, Artikeln, Vortraegen) von entdecktem Wissen (Ihre eigenen Schlussfolgerungen und Ueberlegungen). Dieses Quellenbewusstsein hilft Ihnen, die Zuverlaessigkeit Ihrer Ideen einzuschaetzen und nachzuvollziehen, wie sich Ihr Denken ueber die Zeit geformt hat.
+
+#### So verwenden Sie es
+
+1. Wenn Sie eine Notiz aus einer Quelle ableiten, fuegen Sie einen Link hinzu: `[[Originalquelle|derives-from]]`
+2. Mehrstufige Ketten sind moeglich: Notiz ← abgeleitet von ← abgeleitet von ← Originalquelle
+3. Klassifizieren Sie externe Quellen mit `source-type: received` im Frontmatter
+
+#### Wo sehen Sie es?
+
+- **Rechte Seitenleiste**: Der Tab „Herkunft" zeigt den vollstaendigen Stammbaum
+- **Sternenansicht**: Als Pfeilrichtungen auf den Links (von Quelle zum Abgeleiteten)
+- **Notizeigenschaften**: Klassifizierung als „empfangen" oder „entdeckt" basierend auf der Herkunftskette
 
 ### Einstellungen der Kognitiven Engine
+
+Alle Werkzeuge der Kognitiven Engine koennen unter **Einstellungen > Kognitive Engine** konfiguriert werden:
 
 - **Schicht-Klassifizierung** — Automatische Klassifizierung aktivieren oder deaktivieren
 - **Reife-Tracking** — Reifelebenszyklus-Tracking aktivieren oder deaktivieren
 - **Typisierte Links** — Empfindlichkeitsschwelle fuer Link-Erkennung anpassen (0.0 – 1.0)
+- **Spannungsdetektor** — Automatische Spannungserkennung aktivieren oder deaktivieren
 - **Manuelle Ueberschreibung** — Fuegen Sie `stratum`- und `maturity`-Eigenschaften in Frontmatter hinzu, um die automatische Klassifizierung zu ueberschreiben
 
 ---

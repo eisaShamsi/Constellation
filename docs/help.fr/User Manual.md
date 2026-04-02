@@ -536,29 +536,151 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 
 ## 17. Moteur Cognitif
 
-Le Moteur Cognitif est le systeme d'intelligence integre de Constellation qui analyse vos notes et revele les motifs caches et les relations entre vos idees.
+Le Moteur Cognitif est le systeme d'intelligence integre de Constellation qui analyse vos notes et revele les motifs caches et les relations entre vos idees. Sa philosophie fondamentale :
 
-### Strates de Connaissance
+> « La quantite de vos donnees n'a pas d'importance. Ce qui compte, ce n'est pas combien de sources vous stockez, mais comment vous formulez votre connaissance a partir d'elles et la reliez en une conscience unique et significative. »
 
-Le Moteur Cognitif classe automatiquement chaque note dans l'une des huit strates de connaissance (Instantane, Journal, Sujet, Carte, Cadre, Principe, Conviction, Artefact) en fonction de la structure, du contenu et des liens de la note. Cette classification vous aide a comprendre la repartition des connaissances dans votre bibliotheque et a identifier les lacunes.
+Le Moteur Cognitif se compose de cinq outils integres : Liens types, Strates de connaissance, Cycle de maturite, Detecteur de tensions et Chaine de provenance.
 
-### Cycle de Maturite
+---
 
-Le moteur suit le niveau de maturite de chaque note en quatre etapes : **Graine** → **Pousse** → **Persistant** → **Canonique**. Le niveau evolue automatiquement avec l'ajout de liens et de revisions.
+### 17.1 Liens types
 
-### Liens Types
+#### De quoi s'agit-il ?
 
-Le Moteur Cognitif decouvre des connexions semantiques entre les notes basees sur la similarite du contenu, meme si elles ne sont pas explicitement liees par des wikilinks. Ces connexions apparaissent sous forme de lignes pointillees dans la Vue Etoiles ; leur sensibilite peut etre ajustee dans les parametres de la Vue Etoiles.
+Les liens types sont des wikilinks portant un type de relation qui decrit la nature du lien entre deux notes. Au lieu d'ecrire simplement `[[note]]`, vous ecrivez `[[note|type-de-relation]]` pour exprimer la nature du lien : est-elle derivee ? La contredit-elle ? L'etend-elle ?
 
-### Chaîne de provenance
+#### Pourquoi est-ce important ?
 
-La Chaîne de provenance retrace la lignée des sources via des liens `[[note|derives-from]]`. Elle classe les connaissances en « reçues » (provenant de sources externes) ou « découvertes » (notes propres de l'utilisateur). Un arbre d'ascendance est affiché dans l'onglet Provenance de la barre latérale.
+Un lien ordinaire dit « il y a une connexion » sans preciser laquelle. Les liens types transforment votre reseau de notes d'un amas de references en une veritable carte du savoir qui rend visibles les structures de pensee, les dependances et les raisonnements entre les idees.
+
+#### Comment l'utiliser
+
+1. Ouvrez une note dans l'editeur
+2. Ecrivez un wikilink avec un type de relation : `[[Note cible|derives-from]]`
+3. Types pris en charge : `derives-from` (derive de), `supports` (soutient), `contradicts` (contredit), `extends` (etend), `exemplifies` (illustre), `questions` (questionne)
+4. Vous pouvez egalement ajouter des types via les proprietes de la note dans la barre laterale droite
+
+#### Ou le voir ?
+
+- **Vue Etoiles (GraphMind)** : Sous forme de lignes colorees et etiquetees entre les noeuds
+- **Barre laterale droite** : Dans l'onglet « Retrolinks » avec indication du type de chaque lien
+- **Onglet Provenance** : Utilise pour construire l'arbre genealogique du savoir
+
+---
+
+### 17.2 Strates de connaissance
+
+#### De quoi s'agit-il ?
+
+Le Moteur Cognitif classe automatiquement chaque note dans l'une des huit strates : Instantane, Journal, Sujet, Carte, Cadre, Principe, Conviction, Artefact. Le classement repose sur la structure, le contenu et le nombre de liens de la note.
+
+#### Pourquoi est-ce important ?
+
+Connaitre le type de chaque note revele l'equilibre des connaissances dans votre bibliotheque. Vos notes sont-elles principalement des instantanes ephemeres ou ont-elles evolue vers des principes et des cadres ? Cette prise de conscience de la nature du contenu est le premier pas vers la construction d'un savoir veritable plutot que la simple accumulation d'informations.
+
+#### Comment l'utiliser
+
+1. La classification se fait automatiquement — aucune action de votre part n'est necessaire
+2. Pour outrepasser la classification automatique, ajoutez la propriete `stratum` dans le frontmatter :
+   ```yaml
+   ---
+   stratum: framework
+   ---
+   ```
+3. Valeurs disponibles : `snapshot`, `log`, `topic`, `map`, `framework`, `principle`, `conviction`, `artifact`
+
+#### Ou le voir ?
+
+- **Barre laterale droite** : Dans la section proprietes sous « Strate »
+- **Vue Etoiles** : Sous forme de couleurs differentes des noeuds selon la strate
+- **Parametres > Moteur Cognitif** : Pour activer ou desactiver la classification automatique
+
+---
+
+### 17.3 Cycle de maturite
+
+#### De quoi s'agit-il ?
+
+Le moteur suit le niveau de maturite de chaque note en quatre etapes : **Graine** → **Pousse** → **Persistant** → **Canonique**. Chaque note commence comme graine et murit progressivement avec l'ajout de contenu, de liens et de revisions.
+
+#### Pourquoi est-ce important ?
+
+La maturite distingue une idee brute d'un savoir abouti. La graine d'aujourd'hui peut devenir la reference de demain si vous lui accordez l'attention necessaire. Le suivi de maturite vous aide a identifier les notes qui meritent davantage de developpement et d'attention.
+
+#### Comment l'utiliser
+
+1. La maturite evolue automatiquement selon : le nombre de mots, le nombre de liens entrants et sortants, et la date de derniere modification
+2. Pour definir la maturite manuellement, ajoutez la propriete `maturity` dans le frontmatter :
+   ```yaml
+   ---
+   maturity: evergreen
+   ---
+   ```
+3. Valeurs disponibles : `seed` (Graine), `sapling` (Pousse), `evergreen` (Persistant), `canonical` (Canonique)
+
+#### Ou le voir ?
+
+- **Barre laterale droite** : Une icone a cote du titre indique le stade de maturite actuel
+- **Vue Etoiles** : Sous forme de taille du noeud — plus la note est mature, plus le noeud est grand
+- **Parametres > Moteur Cognitif** : Pour activer ou desactiver le suivi de maturite
+
+---
+
+### 17.4 Detecteur de tensions
+
+#### De quoi s'agit-il ?
+
+Le Detecteur de tensions examine les notes liees et vous alerte lorsque des affirmations ou conclusions sont contradictoires entre deux notes ou plus. Il s'appuie sur l'analyse des liens types `contradicts` et la similarite thematique entre les notes.
+
+#### Pourquoi est-ce important ?
+
+Les tensions ne sont pas necessairement des erreurs — ce sont des invitations a une reflexion plus profonde. Lorsque deux idees dans votre bibliotheque se contredisent, cela signifie que votre comprehension a evolue ou qu'il existe une complexite qui merite d'etre exploree. Detecter les tensions vous empeche de construire inconsciemment un savoir sur des bases contradictoires.
+
+#### Comment l'utiliser
+
+1. Ajoutez un lien type `contradicts` entre les notes en conflit : `[[Autre note|contradicts]]`
+2. Le moteur detecte egalement les tensions implicites par analyse du contenu
+3. Consultez la liste des tensions detectees dans la barre laterale
+
+#### Ou le voir ?
+
+- **Barre laterale droite** : Dans l'onglet « Tensions » quand des contradictions sont detectees
+- **Vue Etoiles** : Sous forme de lignes rouges pointillees entre les noeuds en conflit
+- **Panneau de notifications** : Alertes lors de la detection d'une nouvelle tension
+
+---
+
+### 17.5 Chaine de provenance
+
+#### De quoi s'agit-il ?
+
+La Chaine de provenance retrace l'origine de chaque idee — d'ou elle vient et de quoi elle derive. Elle utilise les liens `[[note|derives-from]]` pour construire un arbre genealogique montrant le chemin d'evolution du savoir depuis la source originale jusqu'a la formulation actuelle.
+
+#### Pourquoi est-ce important ?
+
+Connaitre l'origine de vos idees distingue le savoir recu (de livres, articles, conferences) du savoir decouvert (vos propres conclusions et reflexions). Cette conscience de la source du savoir vous aide a evaluer la fiabilite de vos idees et a comprendre comment votre pensee s'est formee au fil du temps.
+
+#### Comment l'utiliser
+
+1. Lorsque vous creez une note derivee d'une source, ajoutez un lien : `[[Source originale|derives-from]]`
+2. Des chaines a plusieurs niveaux sont possibles : note ← derivee de ← derivee de ← source originale
+3. Classez les sources externes en ajoutant `source-type: received` dans le frontmatter
+
+#### Ou le voir ?
+
+- **Barre laterale droite** : L'onglet « Provenance » affiche l'arbre genealogique complet
+- **Vue Etoiles** : Sous forme de direction des fleches sur les liens (de la source au derive)
+- **Proprietes de la note** : Classification comme « recu » ou « decouvert » selon la chaine de provenance
 
 ### Parametres du Moteur Cognitif
+
+Tous les outils du Moteur Cognitif se configurent dans **Parametres > Moteur Cognitif** :
 
 - **Classification des strates** — Activer ou desactiver la classification automatique
 - **Suivi de maturite** — Activer ou desactiver le suivi du cycle de maturite
 - **Liens types** — Ajuster le seuil de sensibilite pour la detection des liens (0.0 – 1.0)
+- **Detecteur de tensions** — Activer ou desactiver la detection automatique des tensions
 - **Substitution manuelle** — Ajoutez les proprietes `stratum` et `maturity` dans le frontmatter pour outrepasser la classification automatique
 
 ---

@@ -536,29 +536,151 @@ Constellation oferece suporte de primeira classe para arabe, hebraico, persa, ur
 
 ## 17. Motor Cognitivo
 
-O Motor Cognitivo e o sistema de inteligencia integrado do Constellation que analisa suas notas e revela padroes ocultos e relacoes entre suas ideias.
+O Motor Cognitivo e o sistema de inteligencia integrado do Constellation que analisa suas notas e revela padroes ocultos e relacoes entre suas ideias. Sua filosofia fundamental:
 
-### Estratos de Conhecimento
+> "A quantidade dos seus dados nao importa. Nao se trata de quantas fontes voce armazena, mas de como voce formula seu conhecimento a partir delas e o conecta em uma consciencia unica e significativa."
 
-O Motor Cognitivo classifica automaticamente cada nota em um dos oito estratos de conhecimento (Instantaneo, Registro, Topico, Mapa, Estrutura, Principio, Conviccao, Artefato) com base na estrutura, conteudo e links da nota. Esta classificacao ajuda voce a entender a distribuicao do conhecimento na sua biblioteca e identificar lacunas.
+O Motor Cognitivo e composto por cinco ferramentas integradas: Links tipados, Estratos de conhecimento, Ciclo de maturidade, Detector de tensoes e Cadeia de proveniencia.
 
-### Ciclo de Maturidade
+---
 
-O motor acompanha o nivel de maturidade de cada nota em quatro estagios: **Semente** → **Muda** → **Perene** → **Canonica**. O nivel muda automaticamente conforme links e revisoes sao adicionados.
+### 17.1 Links tipados
 
-### Links Tipados
+#### O que e?
 
-O Motor Cognitivo descobre conexoes semanticas entre notas baseadas na similaridade de conteudo, mesmo que nao estejam explicitamente vinculadas por wikilinks. Essas conexoes aparecem como linhas pontilhadas na Vista Estelar; sua sensibilidade pode ser ajustada nas configuracoes da Vista Estelar.
+Links tipados sao wikilinks que carregam um tipo de relacao descrevendo como duas notas se conectam. Em vez de simplesmente escrever `[[nota]]`, voce escreve `[[nota|tipo-de-relacao]]` para expressar a natureza do vinculo — e derivada dela? Contradiz? Estende?
 
-### Cadeia de proveniência
+#### Por que importa?
 
-A Cadeia de proveniência rastreia a linhagem das fontes através de links `[[nota|derives-from]]`. Classifica o conhecimento como "recebido" (de fontes externas) ou "descoberto" (notas próprias do usuário). Exibe uma árvore de ancestralidade na aba Proveniência da barra lateral.
+Um link comum diz "ha uma conexao" sem dizer qual. Links tipados transformam sua rede de notas de um amontoado de referencias em um verdadeiro mapa de conhecimento que torna visiveis as estruturas de pensamento, dependencias e raciocínios entre ideias.
+
+#### Como usar
+
+1. Abra uma nota no editor
+2. Escreva um wikilink com tipo de relacao: `[[Nota destino|derives-from]]`
+3. Tipos suportados: `derives-from` (derivado de), `supports` (apoia), `contradicts` (contradiz), `extends` (estende), `exemplifies` (exemplifica), `questions` (questiona)
+4. Voce tambem pode adicionar tipos atraves das propriedades da nota na barra lateral direita
+
+#### Onde aparece?
+
+- **Vista Estelar (GraphMind)**: Como linhas coloridas e rotuladas entre os nos
+- **Barra lateral direita**: Na aba "Backlinks" com indicacao do tipo de cada link
+- **Aba Proveniencia**: Usada para construir a arvore genealogica do conhecimento
+
+---
+
+### 17.2 Estratos de conhecimento
+
+#### O que e?
+
+O Motor Cognitivo classifica automaticamente cada nota em um dos oito estratos: Instantaneo, Registro, Topico, Mapa, Estrutura, Principio, Conviccao, Artefato. A classificacao baseia-se na estrutura, conteudo e numero de links da nota.
+
+#### Por que importa?
+
+Conhecer o tipo de cada nota revela o equilibrio do conhecimento na sua biblioteca. A maioria das suas notas sao meros instantaneos fugaces ou evoluiram para principios e estruturas? Essa consciencia sobre a natureza do conteudo e o primeiro passo para construir conhecimento real em vez de apenas acumular informacoes.
+
+#### Como usar
+
+1. A classificacao ocorre automaticamente — nao e necessario fazer nada
+2. Para substituir a classificacao automatica, adicione a propriedade `stratum` no frontmatter:
+   ```yaml
+   ---
+   stratum: framework
+   ---
+   ```
+3. Valores disponiveis: `snapshot`, `log`, `topic`, `map`, `framework`, `principle`, `conviction`, `artifact`
+
+#### Onde aparece?
+
+- **Barra lateral direita**: Na secao de propriedades sob "Estrato"
+- **Vista Estelar**: Como cores diferentes dos nos conforme o estrato
+- **Configuracoes > Motor Cognitivo**: Para ativar ou desativar a classificacao automatica
+
+---
+
+### 17.3 Ciclo de maturidade
+
+#### O que e?
+
+O motor acompanha o nivel de maturidade de cada nota em quatro estagios: **Semente** → **Muda** → **Perene** → **Canonica**. Cada nota comeca como semente e cresce gradualmente com mais conteudo, links e revisoes.
+
+#### Por que importa?
+
+A maturidade distingue uma ideia bruta de conhecimento refinado. A semente de hoje pode se tornar referencia amanha se voce dedicar a atencao necessaria. O rastreamento de maturidade ajuda a identificar notas que merecem mais desenvolvimento e atencao.
+
+#### Como usar
+
+1. A maturidade muda automaticamente com base em: contagem de palavras, numero de links de entrada e saida e data da ultima modificacao
+2. Para definir a maturidade manualmente, adicione a propriedade `maturity` no frontmatter:
+   ```yaml
+   ---
+   maturity: evergreen
+   ---
+   ```
+3. Valores disponiveis: `seed` (Semente), `sapling` (Muda), `evergreen` (Perene), `canonical` (Canonica)
+
+#### Onde aparece?
+
+- **Barra lateral direita**: Um icone ao lado do titulo mostra o estagio de maturidade atual
+- **Vista Estelar**: Como tamanho do no — quanto mais madura a nota, maior o no
+- **Configuracoes > Motor Cognitivo**: Para ativar ou desativar o rastreamento de maturidade
+
+---
+
+### 17.4 Detector de tensoes
+
+#### O que e?
+
+O Detector de tensoes examina notas vinculadas e alerta quando ha afirmacoes ou conclusoes contraditorias entre duas ou mais notas. Baseia-se na analise de links tipados `contradicts` e na similaridade tematica entre notas.
+
+#### Por que importa?
+
+Tensoes nao sao necessariamente erros — sao convites para pensar mais profundamente. Quando duas ideias na sua biblioteca se contradizem, isso significa que sua compreensao evoluiu ou que existe uma complexidade que vale a pena explorar. Detectar tensoes protege voce de construir conhecimento inconscientemente sobre bases contraditorias.
+
+#### Como usar
+
+1. Adicione um link tipado `contradicts` entre notas conflitantes: `[[Outra nota|contradicts]]`
+2. O motor tambem detecta tensoes implicitas por analise de conteudo
+3. Consulte a lista de tensoes detectadas na barra lateral
+
+#### Onde aparece?
+
+- **Barra lateral direita**: Na aba "Tensoes" quando contradicoes sao detectadas
+- **Vista Estelar**: Como linhas vermelhas tracejadas entre nos conflitantes
+- **Painel de notificacoes**: Alertas quando uma nova tensao e detectada
+
+---
+
+### 17.5 Cadeia de proveniencia
+
+#### O que e?
+
+A Cadeia de proveniencia rastreia a origem de cada ideia — de onde veio e do que foi derivada. Utiliza links `[[nota|derives-from]]` para construir uma arvore genealogica que mostra o caminho de evolucao do conhecimento desde a fonte original ate a formulacao atual.
+
+#### Por que importa?
+
+Saber de onde vem suas ideias distingue conhecimento recebido (de livros, artigos, palestras) de conhecimento descoberto (suas proprias conclusoes e reflexoes). Essa consciencia sobre a origem do conhecimento ajuda a avaliar a confiabilidade das suas ideias e entender como seu pensamento se formou ao longo do tempo.
+
+#### Como usar
+
+1. Ao criar uma nota derivada de uma fonte, adicione um link: `[[Fonte original|derives-from]]`
+2. Cadeias de multiplos niveis podem ser construidas: nota ← derivada de ← derivada de ← fonte original
+3. Classifique fontes externas adicionando `source-type: received` no frontmatter
+
+#### Onde aparece?
+
+- **Barra lateral direita**: A aba "Proveniencia" exibe a arvore genealogica completa
+- **Vista Estelar**: Como direcao das setas nos links (da fonte para o derivado)
+- **Propriedades da nota**: Classificacao como "recebido" ou "descoberto" com base na cadeia de proveniencia
 
 ### Configuracoes do Motor Cognitivo
+
+Todas as ferramentas do Motor Cognitivo podem ser configuradas em **Configuracoes > Motor Cognitivo**:
 
 - **Classificacao de estratos** — Ativar ou desativar a classificacao automatica
 - **Rastreamento de maturidade** — Ativar ou desativar o rastreamento do ciclo de maturidade
 - **Links tipados** — Ajustar o limiar de sensibilidade para deteccao de links (0.0 – 1.0)
+- **Detector de tensoes** — Ativar ou desativar a deteccao automatica de tensoes
 - **Substituicao manual** — Adicione propriedades `stratum` e `maturity` no frontmatter para substituir a classificacao automatica
 
 ---
