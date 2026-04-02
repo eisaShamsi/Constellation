@@ -2925,12 +2925,18 @@
 								const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
 								const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
 								const body = currentTab ? parseFrontmatter(currentTab.content || '').body : _parsed.body;
-								let updated = false;
-								const newProps = props.map(p => {
-									if (p.key.toLowerCase() === 'stage') { updated = true; return { ...p, value: nextStage }; }
-									return p;
-								});
-								if (!updated) newProps.push({ key: 'stage', value: nextStage, type: 'text' as any });
+								let newProps;
+								if (!nextStage) {
+									// Remove stage property when "— Stage —" selected
+									newProps = props.filter(p => p.key.toLowerCase() !== 'stage');
+								} else {
+									let updated = false;
+									newProps = props.map(p => {
+										if (p.key.toLowerCase() === 'stage') { updated = true; return { ...p, value: nextStage }; }
+										return p;
+									});
+									if (!updated) newProps.push({ key: 'stage', value: nextStage, type: 'text' as any });
+								}
 								const fc = buildFullContent(newProps, body);
 								if (currentTab) { currentTab.content = fc; }
 								markRecentWrite(_mountedTab.path);

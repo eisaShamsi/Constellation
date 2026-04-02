@@ -635,19 +635,22 @@
 		<span class="e-bc-lib">{libraryName}</span>
 		<span class="e-bc-sep">/</span>
 		<span class="e-bc-note">{title}</span>
-		{#if currentStage}
-			<span class="e-bc-stage" title={$t(`notePane.stage.${currentStage}`) || currentStage}>
-				{currentStage === 'fleeting' ? '🌱' : currentStage === 'literature' ? '📖' : currentStage === 'permanent' ? '🔗' : currentStage === 'synthesis' ? '✨' : ''}
-			</span>
-		{/if}
-		{#if currentStage && currentStage !== 'synthesis'}
-			<button class="e-bc-promote" onmousedown={(e) => e.preventDefault()} onclick={() => {
-				const next = currentStage === 'fleeting' ? 'literature' : currentStage === 'literature' ? 'permanent' : currentStage === 'permanent' ? 'synthesis' : '';
-				if (next) { currentStage = next; onpromote?.(next); }
-			}}>
-				{$t('notePane.promote') || 'Promote'} →
-			</button>
-		{/if}
+		<div class="e-bc-stage-wrap">
+			<select class="e-bc-stage-select" value={currentStage}
+				onmousedown={(e) => e.stopPropagation()}
+				onchange={(e) => {
+					const val = (e.target as HTMLSelectElement).value;
+					currentStage = val;
+					onpromote?.(val);
+					view?.focus();
+				}}>
+				<option value="">{$t('notePane.stage.none') || '— Stage —'}</option>
+				<option value="fleeting">🌱 {$t('notePane.stage.fleeting') || 'Fleeting'}</option>
+				<option value="literature">📖 {$t('notePane.stage.literature') || 'Literature'}</option>
+				<option value="permanent">🔗 {$t('notePane.stage.permanent') || 'Permanent'}</option>
+				<option value="synthesis">✨ {$t('notePane.stage.synthesis') || 'Synthesis'}</option>
+			</select>
+		</div>
 		<div class="e-bc-actions">
 			{#if saving}<span class="e-bc-saving">{$t('notePane.saving')}</span>{/if}
 			<div class="e-bc-more-wrap" bind:this={moreMenuEl}>
@@ -832,12 +835,15 @@
 	.e-bc-lib { color: var(--text-muted); }
 	.e-bc-sep { margin: 0 4px; color: var(--background-modifier-border-focus); }
 	.e-bc-note { color: var(--text-normal); }
-	.e-bc-stage { font-size: 0.72rem; margin-inline-start: 4px; }
-	.e-bc-promote {
-		font-size: 0.68rem; color: var(--interactive-accent); background: none; border: 1px solid var(--interactive-accent);
-		border-radius: 4px; padding: 1px 6px; cursor: pointer; margin-inline-start: 4px; font-family: inherit;
+	.e-bc-stage-wrap { margin-inline-start: 6px; }
+	.e-bc-stage-select {
+		font-size: 0.72rem; color: var(--text-muted); background: none;
+		border: 1px solid var(--background-modifier-border); border-radius: 4px;
+		padding: 1px 4px; cursor: pointer; font-family: inherit;
+		outline: none;
 	}
-	.e-bc-promote:hover { background: var(--interactive-accent); color: white; }
+	.e-bc-stage-select:hover { border-color: var(--interactive-accent); color: var(--text-normal); }
+	.e-bc-stage-select:focus { border-color: var(--interactive-accent); }
 	.e-bc-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 4px; position: relative; }
 	.e-bc-saving { font-size: 0.7rem; color: var(--interactive-accent); }
 	.e-bc-nav {
