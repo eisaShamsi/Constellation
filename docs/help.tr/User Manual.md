@@ -78,6 +78,19 @@ Constellation'ı ilk kez açtığınızda, **Evren Kurulum Sihirbazı** sizi şu
 
 Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Star View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.
 
+### Taşınabilir Evrenler
+
+Constellation evrenleri tamamen taşınabilirdir. Evren klasörünü herhangi bir konuma taşıyabilirsiniz — farklı bir sürücü, USB bellek veya başka bir bilgisayar — ve Constellation yeniden açıldığında tüm dahili yolları otomatik olarak algılar ve düzeltir.
+
+Bir evreni taşımak için:
+1. Constellation'ı kapatın
+2. Evren klasörünü yeni konuma taşıyın veya kopyalayın
+3. Constellation'ı açın → Karşılama ekranı görünür (eski yol artık geçerli değil)
+4. **Mevcut Evreni Aç**'ı seçin ve yeni konumu gösterin
+5. Tüm notlar ve kütüphaneler anında görünür — yollar otomatik olarak düzeltilir
+
+Evren klasör yapısı Obsidian modelini takip eder: notlar doğrudan kök klasörde yer alır, yapılandırma `.constellation/` içinde bulunur.
+
 ---
 
 ## 3. Not Oluşturma ve Düzenleme

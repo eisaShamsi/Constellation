@@ -87,6 +87,19 @@ Every universe automatically gets a **Universe Notes** folder at its root, named
 
 You can nest universes inside universes. A **Child Universe** is another universe folder referenced by your parent universe. Notes from child universes appear in Star View alongside your own notes, with cross-library links shown as dashed lines.
 
+### Portable Universes
+
+Constellation universes are fully portable. You can move a universe folder to any location — a different drive, USB stick, or another computer — and Constellation will automatically detect and fix all internal paths when you reopen it.
+
+To move a universe:
+1. Close Constellation
+2. Move or copy the universe folder to the new location
+3. Open Constellation → it shows the Welcome screen (old path no longer valid)
+4. Choose **Open Existing Universe** and point to the new location
+5. All notes and libraries appear immediately — paths are auto-fixed
+
+The universe folder structure follows the Obsidian model: notes go directly in the root folder, configuration lives in `.constellation/`.
+
 ---
 
 ## 3. Creating and Editing Notes

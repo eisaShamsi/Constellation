@@ -78,6 +78,19 @@ Eine **Bibliothek** ist ein Ordner auf Ihrem Computer, der Markdown-Dateien (`.m
 
 Sie koennen Universen in Universen verschachteln. Ein **Kind-Universum** ist ein weiterer Universumsordner, auf den Ihr uebergeordnetes Universum verweist. Notizen aus Kind-Universen erscheinen in der Sternenansicht neben Ihren eigenen Notizen, wobei bibliotheksuebergreifende Links als gestrichelte Linien dargestellt werden.
 
+### Portable Universen
+
+Constellation-Universen sind vollstaendig portabel. Sie koennen einen Universumsordner an einen beliebigen Ort verschieben — ein anderes Laufwerk, einen USB-Stick oder einen anderen Computer — und Constellation erkennt und repariert automatisch alle internen Pfade beim erneuten Oeffnen.
+
+So verschieben Sie ein Universum:
+1. Schliessen Sie Constellation
+2. Verschieben oder kopieren Sie den Universumsordner an den neuen Speicherort
+3. Oeffnen Sie Constellation → der Willkommensbildschirm erscheint (alter Pfad nicht mehr gueltig)
+4. Waehlen Sie **Vorhandenes Universum oeffnen** und navigieren Sie zum neuen Speicherort
+5. Alle Notizen und Bibliotheken erscheinen sofort — Pfade werden automatisch korrigiert
+
+Die Ordnerstruktur des Universums folgt dem Obsidian-Modell: Notizen befinden sich direkt im Stammordner, die Konfiguration befindet sich in `.constellation/`.
+
 ---
 
 ## 3. Notizen erstellen und bearbeiten

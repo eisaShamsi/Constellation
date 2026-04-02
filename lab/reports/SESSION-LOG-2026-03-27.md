@@ -978,7 +978,48 @@ Image embed bug (separate from R13): **FAIL** → Fixed `efeb31d`
 
 ---
 
+### CE Phase 4: Tension Detector
+
+**Commit:** `88f8ddb` | Pushed to `origin/main`
+
+- New Rust module `src-tauri/src/tension.rs`: `detect_tensions()` command
+- 4 detection types: contradictions, orphans, structural gaps, single points of failure
+- Earned complexity: activates at 50+ linked notes
+- New component `TensionPanel.svelte` — accordion sections with severity dots
+- Right sidebar "Health" tab (pulse icon)
+- i18n: `panels.health` + `tensionPanel.*` keys in all 15 locales
+- **Test: pending user testing**
+
+---
+
+### Universe Folder Nesting Fix (Obsidian-style flat structure)
+
+**Commits:** `822d02b`, `a34eafe`, `a4483d5`, `ed7d9c8`, `90d4beb`
+**Tag:** `milestone/universe-flat-portable`
+
+Root cause: `create_universe()` created `UniverseName/UniverseName/` (nested).
+
+Fixes:
+- New universes → flat (root IS the library, no nesting)
+- Deep nesting migration: `CT/CT/CT/` → flattened all the way to root
+- Parent consolidation: `CT/CT/` → moves everything up to `CT/`
+- Portable paths: `libraries.json` auto-fixes on every activation
+  (move universe to USB, new drive, new location → paths resolve automatically)
+- `open_existing_universe` + `set_active_universe` both fix stale paths
+
+**Test: PASS** — universe moved to new location, reopened, all notes visible.
+
+---
+
+### Milestone: universe-flat-portable
+
+**Tag:** `milestone/universe-flat-portable` at `90d4beb`
+**ZIP:** `E:/Backups/Constellation/Constellation-universe-flat-portable-20260402.zip`
+
+---
+
 ### Open Items
-- CE Phase 4: Tension Detector — next
+- CE Phase 4 user testing — pending
+- CE Phase 5: Provenance Chain — next after Phase 4
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session

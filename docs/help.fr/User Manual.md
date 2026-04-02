@@ -78,6 +78,19 @@ Une **Bibliotheque** est un dossier sur votre ordinateur contenant des fichiers 
 
 Vous pouvez imbriquer des univers dans des univers. Un **Univers enfant** est un autre dossier d'univers reference par votre univers parent. Les notes des univers enfants apparaissent dans la Vue Etoiles aux cotes de vos propres notes, avec les liens inter-bibliotheques affiches en lignes pointillees.
 
+### Univers portables
+
+Les univers de Constellation sont entierement portables. Vous pouvez deplacer le dossier d'un univers n'importe ou — un autre disque, une cle USB ou un autre ordinateur — et Constellation detectera et corrigera automatiquement tous les chemins internes lors de la reouverture.
+
+Pour deplacer un univers :
+1. Fermez Constellation
+2. Deplacez ou copiez le dossier de l'univers vers le nouvel emplacement
+3. Ouvrez Constellation → l'ecran d'accueil s'affiche (l'ancien chemin n'est plus valide)
+4. Choisissez **Ouvrir un univers existant** et pointez vers le nouvel emplacement
+5. Toutes les notes et bibliotheques apparaissent immediatement — les chemins sont corriges automatiquement
+
+La structure du dossier univers suit le modele Obsidian : les notes vont directement dans le dossier racine, la configuration reside dans `.constellation/`.
+
 ---
 
 ## 3. Creer et modifier des notes

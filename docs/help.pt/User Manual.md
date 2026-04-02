@@ -78,6 +78,19 @@ Uma **Biblioteca** e uma pasta no seu computador contendo arquivos Markdown (`.m
 
 Voce pode aninhar universos dentro de outros universos. Um **Universo Secundario** e outra pasta de universo referenciada pelo seu universo principal. As notas dos universos secundarios aparecem na Vista Estelar junto com suas proprias notas, com links entre bibliotecas exibidos como linhas tracejadas.
 
+### Universos portáteis
+
+Os universos do Constellation sao totalmente portáteis. Voce pode mover a pasta do universo para qualquer local — uma unidade diferente, pen drive USB ou outro computador — e o Constellation detectara e corrigira automaticamente todos os caminhos internos ao reabri-lo.
+
+Para mover um universo:
+1. Feche o Constellation
+2. Mova ou copie a pasta do universo para o novo local
+3. Abra o Constellation → a tela de boas-vindas aparece (o caminho antigo nao e mais valido)
+4. Escolha **Abrir Universo Existente** e aponte para o novo local
+5. Todas as notas e bibliotecas aparecem imediatamente — os caminhos sao corrigidos automaticamente
+
+A estrutura de pastas do universo segue o modelo Obsidian: as notas ficam diretamente na pasta raiz, a configuracao reside em `.constellation/`.
+
 ---
 
 ## 3. Criar e Editar Notas

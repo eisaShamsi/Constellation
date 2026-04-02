@@ -78,6 +78,19 @@ Una **Biblioteca** es una carpeta en tu computadora que contiene archivos Markdo
 
 Puedes anidar universos dentro de otros universos. Un **Universo Secundario** es otra carpeta de universo referenciada por tu universo principal. Las notas de los universos secundarios aparecen en la Vista Estelar junto a tus propias notas, con enlaces entre bibliotecas mostrados como lineas discontinuas.
 
+### Universos portátiles
+
+Los universos de Constellation son completamente portátiles. Puedes mover la carpeta del universo a cualquier ubicacion — una unidad diferente, una memoria USB u otra computadora — y Constellation detectara y corregira automaticamente todas las rutas internas al reabrirlo.
+
+Para mover un universo:
+1. Cierra Constellation
+2. Mueve o copia la carpeta del universo a la nueva ubicacion
+3. Abre Constellation → aparece la pantalla de bienvenida (la ruta anterior ya no es valida)
+4. Elige **Abrir Universo Existente** y apunta a la nueva ubicacion
+5. Todas las notas y bibliotecas aparecen inmediatamente — las rutas se corrigen automaticamente
+
+La estructura de carpetas del universo sigue el modelo de Obsidian: las notas van directamente en la carpeta raiz, la configuracion reside en `.constellation/`.
+
 ---
 
 ## 3. Crear y Editar Notas
