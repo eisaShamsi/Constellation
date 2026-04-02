@@ -78,6 +78,10 @@ Una **Biblioteca** es una carpeta en tu computadora que contiene archivos Markdo
 
 Puedes anidar universos dentro de otros universos. Un **Universo Secundario** es otra carpeta de universo referenciada por tu universo principal. Las notas de los universos secundarios aparecen en la Vista Estelar junto a tus propias notas, con enlaces entre bibliotecas mostrados como lineas discontinuas.
 
+### Reapertura automática
+
+Constellation recuerda tu último universo activo y lo reabre automáticamente al iniciar. Si el universo fue movido o su ruta cambió, Constellation lo detecta y corrige la ruta automáticamente.
+
 ### Universos portátiles
 
 Los universos de Constellation son completamente portátiles. Puedes mover la carpeta del universo a cualquier ubicacion — una unidad diferente, una memoria USB u otra computadora — y Constellation detectara y corregira automaticamente todas las rutas internas al reabrirlo.
@@ -545,6 +549,10 @@ El motor rastrea el nivel de madurez de cada nota en cuatro etapas: **Semilla** 
 ### Enlaces Tipados
 
 El Motor Cognitivo descubre conexiones semanticas entre notas basandose en la similitud del contenido, incluso si no estan vinculadas explicitamente mediante wikilinks. Estas conexiones aparecen como lineas punteadas en la Vista Estelar; su sensibilidad se puede ajustar en la configuracion de la Vista Estelar.
+
+### Cadena de procedencia
+
+La Cadena de procedencia rastrea el linaje de las fuentes a través de enlaces `[[nota|derives-from]]`. Clasifica el conocimiento como "recibido" (de fuentes externas) o "descubierto" (notas propias del usuario). Muestra un árbol de ascendencia en la pestaña de Procedencia de la barra lateral.
 
 ### Configuracion del Motor Cognitivo
 

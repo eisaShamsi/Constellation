@@ -296,6 +296,15 @@ Maturity is also shown in the file tree (left border) and tab bar (colored dot).
 
 ---
 
+## Provenance Glow
+
+Nodes in Star View show a subtle color glow indicating the origin of knowledge:
+
+- **Blue glow**: Received knowledge — the note's source chain traces to an external reference (a note with url, author, or doi in its frontmatter)
+- **Amber glow**: Discovered knowledge — the note's source chain originates from the user's own notes
+
+---
+
 ## Technical notes
 
 Star View is powered by the **GraphMind** engine, a Pixi.js WebGL renderer with a d3-force simulation running in a dedicated Web Worker. This architecture ensures:

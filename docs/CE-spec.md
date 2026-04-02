@@ -355,9 +355,9 @@ GO if tests 1–8 pass.
 
 ---
 
-## Phase 5: Provenance Chain (سلسلة الإسناد)
+## Phase 5: Provenance Chain (سلسلة الإسناد) ✅ COMPLETE
 
-**Status**: 🔲 Not started
+**Commit**: `2de0c15` | **Date**: 2026-04-02
 **Depends on**: Phase 1 (`derives-from` typed link)
 **Unlocks**: Layer 2 Blind Spot Detection (Phase 13 uses weak-provenance signals)
 

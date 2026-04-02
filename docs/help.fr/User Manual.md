@@ -78,6 +78,10 @@ Une **Bibliotheque** est un dossier sur votre ordinateur contenant des fichiers 
 
 Vous pouvez imbriquer des univers dans des univers. Un **Univers enfant** est un autre dossier d'univers reference par votre univers parent. Les notes des univers enfants apparaissent dans la Vue Etoiles aux cotes de vos propres notes, avec les liens inter-bibliotheques affiches en lignes pointillees.
 
+### Réouverture automatique
+
+Constellation se souvient de votre dernier univers actif et le rouvre automatiquement au lancement. Si l'univers a été déplacé ou si son chemin a changé, Constellation le détecte et corrige automatiquement le chemin.
+
 ### Univers portables
 
 Les univers de Constellation sont entierement portables. Vous pouvez deplacer le dossier d'un univers n'importe ou — un autre disque, une cle USB ou un autre ordinateur — et Constellation detectera et corrigera automatiquement tous les chemins internes lors de la reouverture.
@@ -545,6 +549,10 @@ Le moteur suit le niveau de maturite de chaque note en quatre etapes : **Graine*
 ### Liens Types
 
 Le Moteur Cognitif decouvre des connexions semantiques entre les notes basees sur la similarite du contenu, meme si elles ne sont pas explicitement liees par des wikilinks. Ces connexions apparaissent sous forme de lignes pointillees dans la Vue Etoiles ; leur sensibilite peut etre ajustee dans les parametres de la Vue Etoiles.
+
+### Chaîne de provenance
+
+La Chaîne de provenance retrace la lignée des sources via des liens `[[note|derives-from]]`. Elle classe les connaissances en « reçues » (provenant de sources externes) ou « découvertes » (notes propres de l'utilisateur). Un arbre d'ascendance est affiché dans l'onglet Provenance de la barre latérale.
 
 ### Parametres du Moteur Cognitif
 

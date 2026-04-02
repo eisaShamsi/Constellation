@@ -1018,8 +1018,42 @@ Fixes:
 
 ---
 
+### CE Phase 5: Provenance Chain (سلسلة الإسناد)
+
+**Commit:** `2de0c15` | **Tag:** `milestone/CE-phase-5-provenance`
+
+- New Rust module `src-tauri/src/provenance.rs`
+  - `get_provenance_chain()`: walks `derives-from` links, builds ancestry tree
+  - `compute_note_origins()`: batch origin classification for GraphMind
+  - Detects received (external: url/author/doi) vs discovered (user's own)
+  - Trust depth: chain length (direct=1, fourth-hand=4)
+- New component `ProvenancePanel.svelte` — vertical ancestor tree with origin badges
+- Right sidebar "Provenance" tab
+- GraphMind: received → blue glow, discovered → amber glow
+- i18n: `panels.provenance` + `provenancePanel.*` in all 15 locales
+- **Test: pending user testing**
+
+### Universe auto-reopen fixes
+
+**Commits:** `7f56213`, `5574187`
+
+- Frontend retries all registry entries (not just first)
+- Rust heals stale paths (checks parent for .constellation)
+- `list_universes()` sorts active universe first
+- **Test: PASS** — switching universes persists across restarts
+
+---
+
+### Milestone: CE-phase-5-provenance
+
+**Tag:** `milestone/CE-phase-5-provenance` at `2de0c15`
+**ZIP:** `E:/Backups/Constellation/Constellation-CE-phase-5-20260402.zip`
+
+---
+
 ### Open Items
-- CE Phase 4 user testing — pending
-- CE Phase 5: Provenance Chain — next after Phase 4
+- CE Phase 4 user testing — pending larger library
+- CE Phase 5 user testing — pending
+- CE Phase 6: Externalization Engine — next
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session

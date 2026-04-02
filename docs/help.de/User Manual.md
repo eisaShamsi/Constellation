@@ -78,6 +78,10 @@ Eine **Bibliothek** ist ein Ordner auf Ihrem Computer, der Markdown-Dateien (`.m
 
 Sie koennen Universen in Universen verschachteln. Ein **Kind-Universum** ist ein weiterer Universumsordner, auf den Ihr uebergeordnetes Universum verweist. Notizen aus Kind-Universen erscheinen in der Sternenansicht neben Ihren eigenen Notizen, wobei bibliotheksuebergreifende Links als gestrichelte Linien dargestellt werden.
 
+### Automatisches Wiedereröffnen
+
+Constellation merkt sich das zuletzt aktive Universum und öffnet es beim Start automatisch wieder. Wenn das Universum verschoben wurde oder sich sein Pfad geändert hat, erkennt Constellation dies und korrigiert den Pfad automatisch.
+
 ### Portable Universen
 
 Constellation-Universen sind vollstaendig portabel. Sie koennen einen Universumsordner an einen beliebigen Ort verschieben — ein anderes Laufwerk, einen USB-Stick oder einen anderen Computer — und Constellation erkennt und repariert automatisch alle internen Pfade beim erneuten Oeffnen.
@@ -545,6 +549,10 @@ Die Engine verfolgt den Reifegrad jeder Notiz in vier Stufen: **Samen** → **Se
 ### Typisierte Links
 
 Die Kognitive Engine erkennt semantische Verbindungen zwischen Notizen basierend auf inhaltlicher Aehnlichkeit, auch wenn sie nicht explizit durch Wikilinks verbunden sind. Diese Verbindungen erscheinen als gepunktete Linien in der Sternenansicht; ihre Empfindlichkeit kann in den Sternenansicht-Einstellungen angepasst werden.
+
+### Herkunftskette
+
+Die Herkunftskette verfolgt die Quellenherkunft über `[[Notiz|derives-from]]`-Links. Sie klassifiziert Wissen als "empfangen" (von externen Quellen) oder "entdeckt" (eigene Notizen des Benutzers). Ein Abstammungsbaum wird im Herkunfts-Tab der Seitenleiste angezeigt.
 
 ### Einstellungen der Kognitiven Engine
 

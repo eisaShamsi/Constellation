@@ -78,6 +78,10 @@ Uma **Biblioteca** e uma pasta no seu computador contendo arquivos Markdown (`.m
 
 Voce pode aninhar universos dentro de outros universos. Um **Universo Secundario** e outra pasta de universo referenciada pelo seu universo principal. As notas dos universos secundarios aparecem na Vista Estelar junto com suas proprias notas, com links entre bibliotecas exibidos como linhas tracejadas.
 
+### Reabertura automática
+
+O Constellation lembra o último universo ativo e o reabre automaticamente ao iniciar. Se o universo foi movido ou seu caminho mudou, o Constellation detecta e corrige o caminho automaticamente.
+
 ### Universos portáteis
 
 Os universos do Constellation sao totalmente portáteis. Voce pode mover a pasta do universo para qualquer local — uma unidade diferente, pen drive USB ou outro computador — e o Constellation detectara e corrigira automaticamente todos os caminhos internos ao reabri-lo.
@@ -545,6 +549,10 @@ O motor acompanha o nivel de maturidade de cada nota em quatro estagios: **Semen
 ### Links Tipados
 
 O Motor Cognitivo descobre conexoes semanticas entre notas baseadas na similaridade de conteudo, mesmo que nao estejam explicitamente vinculadas por wikilinks. Essas conexoes aparecem como linhas pontilhadas na Vista Estelar; sua sensibilidade pode ser ajustada nas configuracoes da Vista Estelar.
+
+### Cadeia de proveniência
+
+A Cadeia de proveniência rastreia a linhagem das fontes através de links `[[nota|derives-from]]`. Classifica o conhecimento como "recebido" (de fontes externas) ou "descoberto" (notas próprias do usuário). Exibe uma árvore de ancestralidade na aba Proveniência da barra lateral.
 
 ### Configuracoes do Motor Cognitivo
 

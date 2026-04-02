@@ -87,6 +87,10 @@ Every universe automatically gets a **Universe Notes** folder at its root, named
 
 You can nest universes inside universes. A **Child Universe** is another universe folder referenced by your parent universe. Notes from child universes appear in Star View alongside your own notes, with cross-library links shown as dashed lines.
 
+### Auto-Reopen
+
+Constellation remembers your last active universe and reopens it automatically on launch. If the universe was moved or its path changed, Constellation detects and heals the path automatically.
+
 ### Portable Universes
 
 Constellation universes are fully portable. You can move a universe folder to any location — a different drive, USB stick, or another computer — and Constellation will automatically detect and fix all internal paths when you reopen it.
@@ -696,6 +700,7 @@ The Cognitive Engine is a two-layer architecture that transforms Constellation f
 | **Typed Links** | Add semantic meaning to links: `[[note\|supports]]`, `[[note\|contradicts]]`, etc. 7 link types with distinct colors in Star View |
 | **Knowledge Strata** | Auto-classifies notes into 8 levels (Datum → Worldview) based on word count, link count, and link types |
 | **Maturity Lifecycle** | Tracks note growth: Seed → Sapling → Evergreen → Canonical. Shown in file tree, Star View, and tab bar |
+| **Provenance Chain** | Traces source lineage via `[[note\|derives-from]]` links. Classifies knowledge as "received" (from external sources) or "discovered" (user's own). Shows ancestry tree in the Provenance sidebar tab |
 
 These features require no configuration — they activate automatically as your library grows.
 

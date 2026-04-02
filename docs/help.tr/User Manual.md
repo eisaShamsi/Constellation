@@ -78,6 +78,10 @@ Constellation'ı ilk kez açtığınızda, **Evren Kurulum Sihirbazı** sizi şu
 
 Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Star View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.
 
+### Otomatik yeniden açma
+
+Constellation son aktif evreninizi hatırlar ve başlatıldığında otomatik olarak yeniden açar. Evren taşınmışsa veya yolu değişmişse, Constellation bunu algılar ve yolu otomatik olarak düzeltir.
+
 ### Taşınabilir Evrenler
 
 Constellation evrenleri tamamen taşınabilirdir. Evren klasörünü herhangi bir konuma taşıyabilirsiniz — farklı bir sürücü, USB bellek veya başka bir bilgisayar — ve Constellation yeniden açıldığında tüm dahili yolları otomatik olarak algılar ve düzeltir.
@@ -545,6 +549,10 @@ Motor, her notun olgunluk seviyesini dört aşamada takip eder: **Tohum** → **
 ### Tipli Bağlantılar
 
 Bilişsel Motor, wikilink'lerle açıkça bağlanmamış olsalar bile içerik benzerliğine dayalı olarak notlar arasındaki anlamsal bağlantıları keşfeder. Bu bağlantılar Star View'da noktalı çizgiler olarak görünür; hassasiyetleri Star View ayarlarından ayarlanabilir.
+
+### Köken zinciri
+
+Köken zinciri, `[[not|derives-from]]` bağlantıları aracılığıyla kaynak kökenini izler. Bilgiyi "alınmış" (dış kaynaklardan) veya "keşfedilmiş" (kullanıcının kendi notlarından) olarak sınıflandırır. Kenar çubuğundaki Köken sekmesinde soy ağacını gösterir.
 
 ### Bilişsel Motor Ayarları
 

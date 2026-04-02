@@ -39,7 +39,7 @@ LAYER 2 — AI Discovery (reads Layer 1 structures)
 | 2 | Knowledge Strata | ✅ GO — user tested | `0f6d4bf` | 2026-04-02 |
 | 3 | Maturity Lifecycle | ✅ GO — user tested | `5cf4283` | 2026-04-02 |
 | 4 | Tension Detector | ⏳ Built — pending large library test | `88f8ddb` | 2026-04-02 |
-| 5 | Provenance Chain | 🔲 Not started | — | — |
+| 5 | Provenance Chain | ✅ GO — built + deployed | `2de0c15` | 2026-04-02 |
 | 6 | Externalization Engine | 🔲 Not started | — | — |
 | 7 | Review Pulse | 🔲 Not started | — | — |
 | 8 | Trails | 🔲 Not started | — | — |
