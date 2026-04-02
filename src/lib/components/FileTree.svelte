@@ -114,13 +114,16 @@
 						/>
 					</div>
 				{:else}
-					{@const entryMat = maturityMap.get(entry.path.replace(/\\/g, '/').toLowerCase())}
+					{@const entryMat = maturityMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) ?? ''}
 					<button
 						class="note"
 						class:active={$splitActive ? $openTabs.some(t => t.path === entry.path) : $activeTab?.path === entry.path}
 						class:base-file={entry.name.endsWith('.base')}
+						class:mat-sapling={entryMat === 'sapling'}
+						class:mat-evergreen={entryMat === 'evergreen'}
+						class:mat-canonical={entryMat === 'canonical'}
+						class:mat-wilting={entryMat === 'wilting'}
 						style:--library-color={color}
-						style:border-inline-start={entryMat && MATURITY_COLORS[entryMat] ? `3px solid ${MATURITY_COLORS[entryMat]}` : 'none'}
 						onclick={(e) => handleClick(entry, e)}
 						oncontextmenu={(e) => handleRightClick(e, entry)}
 					>
@@ -189,6 +192,11 @@
 	.note.active { background: color-mix(in srgb, var(--library-color) 8%, transparent); color: var(--library-color); }
 
 	.note-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* CE Phase 3: Maturity left border */
+	.note.mat-sapling   { border-inline-start: 3px solid #4ade80 !important; }
+	.note.mat-evergreen  { border-inline-start: 3px solid #16a34a !important; }
+	.note.mat-canonical  { border-inline-start: 3px solid #f59e0b !important; }
+	.note.mat-wilting    { border-inline-start: 3px solid rgba(22, 163, 74, 0.4) !important; }
 	.note-status { font-size: 0.75rem; flex-shrink: 0; margin-inline-end: 1px; }
 
 	.base-file {
