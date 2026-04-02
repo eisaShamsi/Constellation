@@ -109,6 +109,7 @@
 	} = $props();
 
 	let titleValue = $state(title);
+	let currentStage = $state(stage);
 	let titleEl: HTMLInputElement | undefined;
 	let editorEl: HTMLDivElement | undefined;
 	let view: EditorView | null = null;
@@ -634,15 +635,15 @@
 		<span class="e-bc-lib">{libraryName}</span>
 		<span class="e-bc-sep">/</span>
 		<span class="e-bc-note">{title}</span>
-		{#if stage}
-			<span class="e-bc-stage" title={$t(`notePane.stage.${stage}`) || stage}>
-				{stage === 'fleeting' ? '🌱' : stage === 'literature' ? '📖' : stage === 'permanent' ? '🔗' : stage === 'synthesis' ? '✨' : ''}
+		{#if currentStage}
+			<span class="e-bc-stage" title={$t(`notePane.stage.${currentStage}`) || currentStage}>
+				{currentStage === 'fleeting' ? '🌱' : currentStage === 'literature' ? '📖' : currentStage === 'permanent' ? '🔗' : currentStage === 'synthesis' ? '✨' : ''}
 			</span>
 		{/if}
-		{#if stage && stage !== 'synthesis'}
+		{#if currentStage && currentStage !== 'synthesis'}
 			<button class="e-bc-promote" onmousedown={(e) => e.preventDefault()} onclick={() => {
-				const next = stage === 'fleeting' ? 'literature' : stage === 'literature' ? 'permanent' : stage === 'permanent' ? 'synthesis' : '';
-				if (next) onpromote?.(next);
+				const next = currentStage === 'fleeting' ? 'literature' : currentStage === 'literature' ? 'permanent' : currentStage === 'permanent' ? 'synthesis' : '';
+				if (next) { currentStage = next; onpromote?.(next); }
 			}}>
 				{$t('notePane.promote') || 'Promote'} →
 			</button>
