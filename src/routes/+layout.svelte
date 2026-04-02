@@ -664,14 +664,7 @@
 			noteDir = body ? detectDir(body) : dirFallback;
 			// Backlinks
 			currentBacklinks = getBacklinks(allLibraryLinks, tab.name);
-			// CE Phase 5: Fetch provenance only when tab visible AND note changed
-			if (rightSidebarTab === 'provenance' && tab.path && tab.libraryPath
-				&& tab.path !== _lastProvenancePath) {
-				_lastProvenancePath = tab.path;
-				invoke<any>('get_provenance_chain', {
-					libraryPath: tab.libraryPath, notePath: tab.path, maxDepth: 10,
-				}).then(chain => { provenanceChain = chain; }).catch(() => { provenanceChain = null; });
-			}
+			// CE Phase 5: Provenance fetched on tab click only (not here — no IPC on typing path)
 			// Outgoing links
 			currentOutgoing = getOutgoingLinks(allLibraryLinks, tab.path).map(l => ({
 				target: l.target,

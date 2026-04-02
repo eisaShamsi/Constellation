@@ -320,18 +320,19 @@
 						if (debouncedSaveTimer) clearTimeout(debouncedSaveTimer);
 						debouncedSaveTimer = setTimeout(() => { debouncedSaveTimer = null; doSave(); }, 1500);
 					}
-					if (update.selectionSet || update.docChanged) {
+					// Table toolbar: only on cursor move, NOT on every keystroke (parseTable is expensive)
+					if (update.selectionSet && !update.docChanged) {
 						updateTableToolbar(update.view);
-						// Update toolbar direction based on current line's script.
-						// Empty lines inherit direction from the nearest non-empty line above.
-						const doc = update.state.doc;
-						const curLine = doc.lineAt(update.state.selection.main.head);
+					}
+					// Toolbar direction: lightweight check on selection or doc change
+					if (update.selectionSet || update.docChanged) {
+						const curLine = update.state.doc.lineAt(update.state.selection.main.head);
 						let detectedDir: 'ltr' | 'rtl' | null = null;
 						if (curLine.text.trim()) {
 							detectedDir = RTL_DETECT.test(curLine.text) ? 'rtl' : 'ltr';
 						} else {
 							for (let n = curLine.number - 1; n >= 1; n--) {
-								const prev = doc.line(n).text;
+								const prev = update.state.doc.line(n).text;
 								if (prev.trim()) { detectedDir = RTL_DETECT.test(prev) ? 'rtl' : 'ltr'; break; }
 							}
 						}
