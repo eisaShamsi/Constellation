@@ -2948,6 +2948,11 @@
 								}
 								markRecentWrite(_mountedTab.path);
 								writeNote(_mountedTab.path, fc).catch(() => {});
+								// Update stageMap immediately (don't wait for full library refresh)
+								const key = _mountedTab.path.replace(/\\/g, '/').toLowerCase();
+								const newMap = new Map(stageMap);
+								if (nextStage) { newMap.set(key, nextStage); } else { newMap.delete(key); }
+								stageMap = newMap;
 							}}
 							onsave={(text) => {
 								if (_saveGuard.saving) return;
