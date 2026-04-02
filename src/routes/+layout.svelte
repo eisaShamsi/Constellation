@@ -3319,6 +3319,22 @@
 						/>
 					</div>
 				{/if}
+			{:else if rightSidebarTab === 'review'}
+				<!-- Review Pulse works without a note open (library-level feature) -->
+				<div class="rs-section rs-full-height">
+					<ReviewPulsePanel
+						{dueNotes}
+						onNoteClick={(path, name) => {
+							const lib = $libraryStats.find(l => path.startsWith(l.path));
+							if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						}}
+						onRefresh={() => {
+							const lib = get(libraries)[0];
+							if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path })
+								.then(notes => { dueNotes = notes; }).catch(() => {});
+						}}
+					/>
+				</div>
 			{:else}
 				<div class="rs-empty-full">{$t('panels.noNoteSelected')}</div>
 			{/if}
