@@ -540,7 +540,7 @@ Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz ar
 
 > "Verilerinizin miktarı önemli değil. Önemli olan kaç kaynak sakladığınız değil, onlardan bilginizi nasıl şekillendirdiğiniz ve anlamlı tek bir farkındalıkta nasıl birleştirdiğinizdir."
 
-Bilişsel Motor beş entegre araçtan oluşur: Tipli bağlantılar, Bilgi katmanları, Olgunluk döngüsü, Gerilim algılayıcı ve Köken zinciri.
+Bilişsel Motor altı entegre araçtan oluşur: Tipli bağlantılar, Bilgi katmanları, Olgunluk döngüsü, Gerilim algılayıcı, Köken zinciri ve Dışsallaştırma motoru.
 
 ---
 
@@ -672,6 +672,37 @@ Fikirlerinizin nereden geldiğini bilmek, alınan bilgiyi (kitaplar, makaleler, 
 - **Sağ kenar çubuğu**: "Köken" sekmesi tam soy ağacını gösterir
 - **Yıldız Görünümü**: Bağlantılardaki ok yönleri olarak (kaynaktan türetilene)
 - **Not özellikleri**: Köken zincirine göre "alınmış" veya "keşfedilmiş" sınıflandırması
+
+### 17.6 Dışsallaştırma motoru
+
+#### Nedir?
+
+Notlarınızın ham yakalamadardan kristalleşmiş içgörülere nasıl olgunlaştığını izleyen aşamalı bir biçimlendirme hattıdır. Her nota dört aşamadan biri atanabilir:
+
+| Aşama | Simge | Anlam |
+|-------|-------|-------|
+| Geçici | 🌱 | Hızlı yakalama, geçici düşünce |
+| Literatür | 📖 | Bir kaynaktan kendi sözlerinizle yeniden yazılmış |
+| Kalıcı | 🔗 | Atomik fikir, tek kavram, grafiğinize bağlı |
+| Sentez | ✨ | Birden fazla kalıcı notu birleştiren özgün içgörü |
+
+#### Neden önemli?
+
+Çoğu uygulama tüm notlara eşit davranır. Dışsallaştırma motoru bu farkı görünür kılar — kütüphanenizin ne kadarının ham yakalama, ne kadarının gerçek anlayış olduğunu bir bakışta görebilirsiniz.
+
+#### Nasıl kullanılır
+
+1. İçerik haritası çubuğunda (editörün üstünde), aşama açılır menüsünü kullanarak bir aşama seçin.
+2. Veya Özellikleri genişletin ve oradaki aşama açılır menüsünü kullanın. Her ikisi de dosya ağacıyla anında senkronize olur.
+3. Bir notu terfi ettirmek için açılır menüyü bir aşamadan diğerine değiştirin. Odak modunda, altta "Kalıcıya Terfi Et"e tıklayın.
+4. Bir aşamayı kaldırmak için açılır menüden "— Aşama —" seçin.
+
+#### Nerede görülür?
+
+- **İçerik haritası çubuğu**: emoji + aşama adı içeren açılır menü
+- **Özellikler paneli**: `stage` özelliği mevcut olduğunda açılır menü
+- **Dosya ağacı**: not adının yanında emoji simgesi
+- **Odak modu alt bilgisi**: "Kalıcıya Terfi Et" düğmesi
 
 ### Bilişsel Motor Ayarları
 

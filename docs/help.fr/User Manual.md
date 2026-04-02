@@ -540,7 +540,7 @@ Le Moteur Cognitif est le systeme d'intelligence integre de Constellation qui an
 
 > « La quantite de vos donnees n'a pas d'importance. Ce qui compte, ce n'est pas combien de sources vous stockez, mais comment vous formulez votre connaissance a partir d'elles et la reliez en une conscience unique et significative. »
 
-Le Moteur Cognitif se compose de cinq outils integres : Liens types, Strates de connaissance, Cycle de maturite, Detecteur de tensions et Chaine de provenance.
+Le Moteur Cognitif se compose de six outils integres : Liens types, Strates de connaissance, Cycle de maturite, Detecteur de tensions, Chaine de provenance et Moteur d'externalisation.
 
 ---
 
@@ -672,6 +672,37 @@ Connaitre l'origine de vos idees distingue le savoir recu (de livres, articles, 
 - **Barre laterale droite** : L'onglet « Provenance » affiche l'arbre genealogique complet
 - **Vue Etoiles** : Sous forme de direction des fleches sur les liens (de la source au derive)
 - **Proprietes de la note** : Classification comme « recu » ou « decouvert » selon la chaine de provenance
+
+### 17.6 Moteur d'externalisation
+
+#### De quoi s'agit-il ?
+
+Un pipeline de formalisation progressive qui suit la maturation de vos notes, des captures brutes aux idees cristallisees. Chaque note peut se voir attribuer l'une des quatre etapes :
+
+| Etape | Icone | Signification |
+|-------|-------|---------------|
+| Ephemere | 🌱 | Capture rapide, pensee passagere |
+| Litterature | 📖 | Reecrite a partir d'une source dans vos propres mots |
+| Permanent | 🔗 | Idee atomique, un concept, connectee a votre graphe |
+| Synthese | ✨ | Idee originale combinant plusieurs notes permanentes |
+
+#### Pourquoi est-ce important ?
+
+La plupart des apps traitent toutes les notes de la meme facon. Le Moteur d'externalisation rend la distinction visible — vous pouvez voir d'un coup d'oeil quelle part de votre bibliotheque est une capture brute et quelle part est une comprehension veritable.
+
+#### Comment l'utiliser
+
+1. Dans la barre de navigation (au-dessus de l'editeur), utilisez le menu deroulant des etapes pour selectionner une etape.
+2. Ou developpez les Proprietes et utilisez le menu deroulant des etapes. Les deux se synchronisent instantanement avec l'arborescence des fichiers.
+3. Pour promouvoir une note, changez le menu deroulant d'une etape a la suivante. En mode Focus, cliquez sur « Promouvoir en Permanent » en bas.
+4. Pour supprimer une etape, selectionnez « — Etape — » dans le menu deroulant.
+
+#### Ou le voir ?
+
+- **Barre de navigation** : menu deroulant avec emoji + nom de l'etape
+- **Panneau des proprietes** : menu deroulant quand la propriete `stage` existe
+- **Arborescence des fichiers** : icone emoji a cote du nom de la note
+- **Pied de page du mode Focus** : bouton « Promouvoir en Permanent »
 
 ### Parametres du Moteur Cognitif
 

@@ -540,7 +540,7 @@ Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das
 
 > „Es kommt nicht auf die Menge Ihrer Daten an. Entscheidend ist nicht, wie viele Quellen Sie speichern, sondern wie Sie daraus Wissen formen und zu einem sinnvollen Bewusstsein verknuepfen."
 
-Die Kognitive Engine besteht aus fuenf integrierten Werkzeugen: Typisierte Links, Wissensschichten, Reifelebenszyklus, Spannungsdetektor und Herkunftskette.
+Die Kognitive Engine besteht aus sechs integrierten Werkzeugen: Typisierte Links, Wissensschichten, Reifelebenszyklus, Spannungsdetektor, Herkunftskette und Externalisierungsmaschine.
 
 ---
 
@@ -672,6 +672,37 @@ Zu wissen, woher Ihre Ideen kommen, unterscheidet empfangenes Wissen (aus Bueche
 - **Rechte Seitenleiste**: Der Tab „Herkunft" zeigt den vollstaendigen Stammbaum
 - **Sternenansicht**: Als Pfeilrichtungen auf den Links (von Quelle zum Abgeleiteten)
 - **Notizeigenschaften**: Klassifizierung als „empfangen" oder „entdeckt" basierend auf der Herkunftskette
+
+### 17.6 Externalisierungsmaschine
+
+#### Was ist das?
+
+Eine progressive Formalisierungspipeline, die verfolgt, wie Ihre Notizen von rohen Erfassungen zu kristallisierten Erkenntnissen reifen. Jede Notiz kann einer von vier Stufen zugewiesen werden:
+
+| Stufe | Symbol | Bedeutung |
+|-------|--------|-----------|
+| Fluechtig | 🌱 | Schnelle Erfassung, fluechtige Idee |
+| Literatur | 📖 | In eigenen Worten aus einer Quelle umgeschrieben |
+| Permanent | 🔗 | Atomare Idee, ein Konzept, mit Ihrem Graphen verbunden |
+| Synthese | ✨ | Originale Erkenntnis aus mehreren permanenten Notizen |
+
+#### Warum ist das wichtig?
+
+Die meisten Apps behandeln alle Notizen gleich. Die Externalisierungsmaschine macht den Unterschied sichtbar — Sie koennen auf einen Blick sehen, wie viel Ihrer Bibliothek aus rohen Erfassungen besteht und wie viel echtes Verstaendnis ist.
+
+#### So verwenden Sie es
+
+1. Verwenden Sie in der Breadcrumb-Leiste (ueber dem Editor) das Stufen-Dropdown, um eine Stufe auszuwaehlen.
+2. Oder erweitern Sie die Eigenschaften und verwenden Sie das Stufen-Dropdown dort. Beides synchronisiert sich sofort mit dem Dateibaum.
+3. Um eine Notiz hochzustufen, aendern Sie das Dropdown von einer Stufe zur naechsten. Im Fokus-Modus klicken Sie unten auf „Hochstufen zu Permanent".
+4. Um eine Stufe zu entfernen, waehlen Sie „— Stufe —" aus dem Dropdown.
+
+#### Wo sehen Sie es?
+
+- **Breadcrumb-Leiste**: Dropdown mit Symbol + Stufenname
+- **Eigenschaftenpanel**: Dropdown, wenn die `stage`-Eigenschaft vorhanden ist
+- **Dateibaum**: Emoji-Symbol neben dem Notiznamen
+- **Fokus-Modus-Fusszeile**: Schaltflaeche „Hochstufen zu Permanent"
 
 ### Einstellungen der Kognitiven Engine
 

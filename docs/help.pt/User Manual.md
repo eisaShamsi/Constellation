@@ -540,7 +540,7 @@ O Motor Cognitivo e o sistema de inteligencia integrado do Constellation que ana
 
 > "A quantidade dos seus dados nao importa. Nao se trata de quantas fontes voce armazena, mas de como voce formula seu conhecimento a partir delas e o conecta em uma consciencia unica e significativa."
 
-O Motor Cognitivo e composto por cinco ferramentas integradas: Links tipados, Estratos de conhecimento, Ciclo de maturidade, Detector de tensoes e Cadeia de proveniencia.
+O Motor Cognitivo e composto por seis ferramentas integradas: Links tipados, Estratos de conhecimento, Ciclo de maturidade, Detector de tensoes, Cadeia de proveniencia e Motor de externalizacao.
 
 ---
 
@@ -672,6 +672,37 @@ Saber de onde vem suas ideias distingue conhecimento recebido (de livros, artigo
 - **Barra lateral direita**: A aba "Proveniencia" exibe a arvore genealogica completa
 - **Vista Estelar**: Como direcao das setas nos links (da fonte para o derivado)
 - **Propriedades da nota**: Classificacao como "recebido" ou "descoberto" com base na cadeia de proveniencia
+
+### 17.6 Motor de externalizacao
+
+#### O que e?
+
+Um pipeline de formalizacao progressiva que rastreia como suas notas amadurecem de capturas brutas a insights cristalizados. Cada nota pode ser atribuida a um de quatro estagios:
+
+| Estagio | Icone | Significado |
+|---------|-------|-------------|
+| Fugaz | 🌱 | Captura rapida, pensamento passageiro |
+| Literatura | 📖 | Reescrita de uma fonte em suas proprias palavras |
+| Permanente | 🔗 | Ideia atomica, um conceito, conectada ao seu grafo |
+| Sintese | ✨ | Insight original combinando multiplas notas permanentes |
+
+#### Por que importa?
+
+A maioria dos apps trata todas as notas igualmente. O Motor de externalizacao torna a distincao visivel — voce pode ver de relance quanto da sua biblioteca e captura bruta versus compreensao genuina.
+
+#### Como usar
+
+1. Na barra de navegacao (acima do editor), use o menu suspenso de estagios para selecionar um estagio.
+2. Ou expanda as Propriedades e use o menu suspenso de estagios la. Ambos sincronizam instantaneamente com a arvore de arquivos.
+3. Para promover uma nota, mude o menu suspenso de um estagio para o proximo. No modo Foco, clique em "Promover para Permanente" na parte inferior.
+4. Para remover um estagio, selecione "— Estagio —" no menu suspenso.
+
+#### Onde aparece?
+
+- **Barra de navegacao**: menu suspenso com emoji + nome do estagio
+- **Painel de propriedades**: menu suspenso quando a propriedade `stage` existe
+- **Arvore de arquivos**: icone emoji ao lado do nome da nota
+- **Rodape do modo Foco**: botao "Promover para Permanente"
 
 ### Configuracoes do Motor Cognitivo
 

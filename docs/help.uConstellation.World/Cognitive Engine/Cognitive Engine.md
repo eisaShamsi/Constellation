@@ -384,15 +384,62 @@ Any note containing one or more of these keys with a non-empty value is treated 
 
 ---
 
+## Feature 6: Externalization Engine (محرك التجسيد)
+
+### What it is
+
+A progressive formalization pipeline that tracks how your notes mature from raw captures to crystallized insights. Every note can be assigned one of four stages:
+
+| Stage | Icon | Meaning |
+|-------|------|---------|
+| Fleeting | 🌱 | Quick capture, passing thought |
+| Literature | 📖 | Rewritten from a source in your own words |
+| Permanent | 🔗 | Atomic idea, one concept, connected to your graph |
+| Synthesis | ✨ | Original insight combining multiple permanent notes |
+
+### Why it matters
+
+Most apps treat all notes equally. The Externalization Engine makes the distinction visible — you can see at a glance how much of your library is raw capture versus genuine understanding.
+
+### How to use it
+
+**Setting a stage:**
+- In the breadcrumb bar (above the editor), use the stage dropdown to select a stage
+- Or expand Properties and use the stage dropdown there
+- Both sync instantly with the file tree
+
+**Promoting a note:**
+- Change the dropdown from one stage to the next
+- In Focus mode, click "🔗 Promote to Permanent" at the bottom
+
+**Removing a stage:**
+- Select "— Stage —" from the dropdown to remove the stage entirely
+
+### Where you see it
+
+- **Breadcrumb bar**: dropdown with emoji + stage name
+- **Properties panel**: dropdown when `stage` property exists
+- **File tree**: emoji icon next to the note name
+- **Focus mode footer**: "Promote to Permanent" button
+
+### Tips
+
+- Stages are completely optional — notes without a stage work normally
+- Start by marking your most important notes as Permanent or Synthesis
+- Use Fleeting for quick captures in Focus mode
+
+---
+
 ## The Big Picture
 
-These 5 features work together as a unified system:
+These 6 features work together as a unified system:
 
 1. **Typed Links** give your connections meaning — not just "related" but "supports," "contradicts," "derives-from."
 2. **Knowledge Strata** reveals the depth of your understanding — from raw facts to synthesized paradigms.
 3. **Maturity Lifecycle** tracks how your notes grow over time — from fresh seeds to authoritative references.
 4. **Tension Detector** surfaces what is disconnected, contradictory, or fragile — the structural weaknesses in your thinking.
 5. **Provenance Chain** traces where your knowledge comes from — external evidence or personal insight, and how many steps removed.
+6. **Externalization Engine** makes the formalization journey visible — from fleeting capture to synthesized insight.
 
 Together, they answer the question every knowledge worker eventually asks: *Do I truly understand what I think I understand?*
 
@@ -401,7 +448,8 @@ The Cognitive Engine does not answer that question for you. It gives you the str
 ### How it all connects
 
 - When you add a **typed link**, that link feeds into **Strata** (certain types like `generalizes` and `supports` boost your note's level), **Maturity** (each inbound link brings a note closer to Evergreen), **Tension** (a `contradicts` link registers as a detected contradiction), and **Provenance** (a `derives-from` link extends the source chain).
-- A single action — typing `[[note|derives-from]]` — simultaneously enriches all five systems. You do not need to think about the CE explicitly. Just write, link, and think. The engine observes and reflects.
+- When you set a **stage** on a note, the Externalization Engine tracks its formalization progress. A Fleeting note promoted to Permanent signals that a raw idea has been refined into a standalone concept.
+- A single action — typing `[[note|derives-from]]` — simultaneously enriches all six systems. You do not need to think about the CE explicitly. Just write, link, and think. The engine observes and reflects.
 
 ### Earned Complexity
 

@@ -540,7 +540,7 @@ El Motor Cognitivo es el sistema de inteligencia integrado de Constellation que 
 
 > «La cantidad de datos no importa. No se trata de cuantas fuentes almacenas, sino de como formulas tu conocimiento a partir de ellas y lo enlazas en una conciencia unica y significativa.»
 
-El Motor Cognitivo esta compuesto por cinco herramientas integradas: Enlaces tipados, Estratos del conocimiento, Ciclo de madurez, Detector de tensiones y Cadena de procedencia.
+El Motor Cognitivo esta compuesto por seis herramientas integradas: Enlaces tipados, Estratos del conocimiento, Ciclo de madurez, Detector de tensiones, Cadena de procedencia y Motor de externalizacion.
 
 ---
 
@@ -672,6 +672,37 @@ Saber de donde vienen tus ideas distingue el conocimiento recibido (de libros, a
 - **Barra lateral derecha**: La pestana «Procedencia» muestra el arbol genealogico completo
 - **Vista Estelar**: Como direccion de las flechas en los enlaces (de fuente a derivado)
 - **Propiedades de la nota**: Clasificacion como «recibido» o «descubierto» segun la cadena de procedencia
+
+### 17.6 Motor de externalizacion
+
+#### Que es?
+
+Un pipeline de formalizacion progresiva que rastrea como tus notas maduran desde capturas sin procesar hasta ideas cristalizadas. Cada nota puede asignarse a una de cuatro etapas:
+
+| Etapa | Icono | Significado |
+|-------|-------|-------------|
+| Fugaz | 🌱 | Captura rapida, pensamiento pasajero |
+| Literatura | 📖 | Reescrita desde una fuente en tus propias palabras |
+| Permanente | 🔗 | Idea atomica, un concepto, conectada a tu grafo |
+| Sintesis | ✨ | Idea original que combina multiples notas permanentes |
+
+#### Por que importa?
+
+La mayoria de las apps tratan todas las notas por igual. El Motor de externalizacion hace visible la distincion — puedes ver de un vistazo cuanto de tu biblioteca es captura sin procesar frente a comprension genuina.
+
+#### Como usarlo
+
+1. En la barra de migas (sobre el editor), usa el desplegable de etapas para seleccionar una etapa.
+2. O expande Propiedades y usa el desplegable de etapas alli. Ambos se sincronizan instantaneamente con el arbol de archivos.
+3. Para promover una nota, cambia el desplegable de una etapa a la siguiente. En modo Enfoque, haz clic en "Promover a Permanente" en la parte inferior.
+4. Para eliminar una etapa, selecciona "— Etapa —" del desplegable.
+
+#### Donde se ve?
+
+- **Barra de migas**: desplegable con emoji + nombre de etapa
+- **Panel de propiedades**: desplegable cuando existe la propiedad `stage`
+- **Arbol de archivos**: icono emoji junto al nombre de la nota
+- **Pie del modo Enfoque**: boton "Promover a Permanente"
 
 ### Configuracion del Motor Cognitivo
 

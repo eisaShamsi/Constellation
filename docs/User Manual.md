@@ -695,7 +695,7 @@ The Cognitive Engine is a two-layer architecture that transforms Constellation f
 
 **Layer 2 — AI Discovery** (coming soon): AI will read Layer 1's structures to find patterns you cannot see from inside your own knowledge.
 
-All five Cognitive Engine features require no configuration. They activate automatically as your library grows. You do not need to enable them or install anything extra.
+All six Cognitive Engine features require no configuration. They activate automatically as your library grows. You do not need to enable them or install anything extra.
 
 ---
 
@@ -905,6 +905,44 @@ Knowing what you think is only half the picture. Knowing where your ideas came f
 - A note classified as "Discovered" is not necessarily better than "Received." The most powerful knowledge often comes from deeply processing received ideas until they become your own. The classification helps you see the balance.
 - If the Provenance tab shows "No derives-from chain found," it means the current note has no provenance links yet. The panel will display a hint reminding you of the syntax.
 - Provenance Chains are especially valuable for academic work, research projects, or any context where you need to trace an idea back to its original source.
+
+### 18.6 Externalization Engine
+
+**What it is**
+
+A progressive formalization pipeline that tracks how your notes mature from raw captures to crystallized insights. Every note can be assigned one of four stages:
+
+| Stage | Icon | Meaning |
+|-------|------|---------|
+| Fleeting | 🌱 | Quick capture, passing thought |
+| Literature | 📖 | Rewritten from a source in your own words |
+| Permanent | 🔗 | Atomic idea, one concept, connected to your graph |
+| Synthesis | ✨ | Original insight combining multiple permanent notes |
+
+**Why it matters**
+
+Most apps treat all notes equally. The Externalization Engine makes the distinction visible — you can see at a glance how much of your library is raw capture versus genuine understanding.
+
+**How to use it**
+
+1. In the breadcrumb bar (above the editor), use the stage dropdown to select a stage for the current note.
+2. Or expand Properties and use the stage dropdown there. Both sync instantly with the file tree.
+3. To promote a note, change the dropdown from one stage to the next. In Focus mode, click "Promote to Permanent" at the bottom.
+4. To remove a stage, select "— Stage —" from the dropdown.
+
+**Where you see it**
+
+- **Breadcrumb bar**: A dropdown with emoji + stage name appears above the editor.
+- **Properties panel**: A stage dropdown appears when the `stage` property exists on the note.
+- **File tree**: An emoji icon appears next to the note name matching its stage.
+- **Focus mode footer**: A "Promote to Permanent" button for quick stage advancement.
+
+**Tips**
+
+- Stages are completely optional — notes without a stage work normally.
+- Start by marking your most important notes as Permanent or Synthesis.
+- Use Fleeting for quick captures in Focus mode.
+- The four stages follow the Zettelkasten progression: fleeting thoughts become literature notes, which become permanent atomic ideas, which combine into original synthesis.
 
 ---
 
