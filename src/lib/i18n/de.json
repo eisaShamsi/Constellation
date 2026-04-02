@@ -345,7 +345,8 @@
         "importNotes": "Notizen importieren",
         "insertTable": "Tabelle einfügen",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "Fällige Notizen überprüfen"
     },
     "actions": {
         "untitled": "Unbenannt",
@@ -430,7 +431,8 @@
         "calendarHeader": "Kalender",
         "starView": "Star View",
         "health": "Wissensgesundheit",
-        "provenance": "Herkunft"
+        "provenance": "Herkunft",
+        "review": "Überprüfungspuls"
     },
     "tasksPanel": {
         "all": "Alle",
@@ -762,6 +764,16 @@
         "noChain": "Keine Kette",
         "depth": "Tiefe",
         "external": "extern"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "Alles erledigt! Keine Notizen zur Überprüfung fällig.",
+        "resurfacing": "Zur Überprüfung fällig",
+        "checkpoints": "Denkmodell-Checkpoints",
+        "neverReviewed": "Nie überprüft",
+        "reviewed": "Überprüft",
+        "snooze": "7 Tage zurückstellen",
+        "dismiss": "Verwerfen",
+        "checkpointHint": "Halten Sie noch an dieser Ansicht fest?"
     },
     "tableToolbar": {
         "addRow": "Zeile hinzufügen",

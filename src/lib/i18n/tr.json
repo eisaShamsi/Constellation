@@ -345,7 +345,8 @@
         "addLibrary": "Kasa ekle",
         "searchLibrary": "Kasada ara",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "Vadesi gelen notları gözden geçir"
     },
     "actions": {
         "untitled": "Başlıksız",
@@ -430,7 +431,8 @@
         "calendarHeader": "Takvim",
         "starView": "Star View",
         "health": "Bilgi sağlığı",
-        "provenance": "Köken"
+        "provenance": "Köken",
+        "review": "Gözden Geçirme Nabzı"
     },
     "tasksPanel": {
         "all": "Tümü",
@@ -751,6 +753,16 @@
         "noChain": "Zincir yok",
         "depth": "Derinlik",
         "external": "harici"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "Her şey güncel! İncelenecek not yok.",
+        "resurfacing": "İnceleme zamanı",
+        "checkpoints": "Zihinsel model kontrol noktaları",
+        "neverReviewed": "Hiç incelenmedi",
+        "reviewed": "İncelendi",
+        "snooze": "7 gün ertele",
+        "dismiss": "Kaldır",
+        "checkpointHint": "Bu görüşü hâlâ paylaşıyor musunuz?"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

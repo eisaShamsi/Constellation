@@ -345,7 +345,8 @@
         "addLibrary": "הוסף כספת",
         "searchLibrary": "חפש בכספת",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "סקור פתקים שהגיע מועדם"
     },
     "actions": {
         "untitled": "ללא כותרת",
@@ -430,7 +431,8 @@
         "calendarHeader": "לוח שנה",
         "starView": "Star View",
         "health": "בריאות ידע",
-        "provenance": "מקור"
+        "provenance": "מקור",
+        "review": "פולס סקירה"
     },
     "tasksPanel": {
         "all": "הכל",
@@ -751,6 +753,16 @@
         "noChain": "אין שרשרת",
         "depth": "עומק",
         "external": "חיצוני"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "הכל מעודכן! אין פתקים לסקירה.",
+        "resurfacing": "לסקירה",
+        "checkpoints": "נקודות ביקורת מודל מנטלי",
+        "neverReviewed": "לא נסקר מעולם",
+        "reviewed": "נסקר",
+        "snooze": "דחה 7 ימים",
+        "dismiss": "בטל",
+        "checkpointHint": "האם אתה עדיין מחזיק בעמדה זו?"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

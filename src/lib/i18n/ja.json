@@ -345,7 +345,8 @@
         "addLibrary": "保管庫を追加",
         "searchLibrary": "保管庫を検索",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "期限のノートを確認"
     },
     "actions": {
         "untitled": "無題",
@@ -430,7 +431,8 @@
         "calendarHeader": "カレンダー",
         "starView": "Star View",
         "health": "知識の健全性",
-        "provenance": "来歴"
+        "provenance": "来歴",
+        "review": "レビューパルス"
     },
     "tasksPanel": {
         "all": "すべて",
@@ -751,6 +753,16 @@
         "noChain": "チェーンなし",
         "depth": "深さ",
         "external": "外部"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "すべて最新！レビュー予定のノートはありません。",
+        "resurfacing": "レビュー予定",
+        "checkpoints": "メンタルモデルチェックポイント",
+        "neverReviewed": "未レビュー",
+        "reviewed": "レビュー済み",
+        "snooze": "7日後に通知",
+        "dismiss": "却下",
+        "checkpointHint": "この見解はまだ有効ですか？"
     },
     "tableToolbar": {
         "addRow": "行を追加",

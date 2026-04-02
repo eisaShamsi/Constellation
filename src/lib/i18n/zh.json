@@ -345,7 +345,8 @@
         "addLibrary": "添加仓库",
         "searchLibrary": "搜索仓库",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "复习到期笔记"
     },
     "actions": {
         "untitled": "未命名",
@@ -430,7 +431,8 @@
         "calendarHeader": "日历",
         "starView": "Star View",
         "health": "知识健康",
-        "provenance": "来源"
+        "provenance": "来源",
+        "review": "复习脉搏"
     },
     "tasksPanel": {
         "all": "全部",
@@ -751,6 +753,16 @@
         "noChain": "无链",
         "depth": "深度",
         "external": "外部"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "全部更新！没有待复习的笔记。",
+        "resurfacing": "待复习",
+        "checkpoints": "心智模型检查点",
+        "neverReviewed": "从未复习",
+        "reviewed": "已复习",
+        "snooze": "推迟7天",
+        "dismiss": "忽略",
+        "checkpointHint": "你还持有这个观点吗？"
     },
     "tableToolbar": {
         "addRow": "添加行",

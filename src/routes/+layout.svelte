@@ -62,6 +62,7 @@
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
 	import TensionPanel from '$lib/components/TensionPanel.svelte';
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
+	import ReviewPulsePanel from '$lib/components/ReviewPulsePanel.svelte';
 	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
@@ -270,7 +271,8 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review'>('properties');
+	let dueNotes = $state<any[]>([]); // CE Phase 7: ReviewPulse due notes
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
 	let _lastProvenancePath = ''; // cache guard — only re-fetch when note changes
@@ -1000,6 +1002,7 @@
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showStarView = false; showGlobalTasks = false; }, category: 'Navigation' },
+			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
@@ -3136,6 +3139,15 @@
 				}} title={$t('panels.provenance') || 'Provenance'}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M12 22v-6M2 12h6M22 12h-6"/><circle cx="12" cy="12" r="3"/></svg>
 				</button>
+				<button class="rs-tab" class:active={rightSidebarTab === 'review'} onclick={() => {
+					rightSidebarTab = 'review';
+					const lib = get(libraries)[0];
+					if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path })
+						.then(notes => { dueNotes = notes; }).catch(() => { dueNotes = []; });
+				}} title={$t('panels.review') || 'Review Pulse'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+					{#if dueNotes.length > 0}<span class="rs-tab-badge">{dueNotes.length}</span>{/if}
+				</button>
 			</div>
 
 			{#if isHome && sidebarTab}
@@ -3288,6 +3300,21 @@
 							onNoteClick={(path, name) => {
 								const lib = $libraryStats.find(l => path.startsWith(l.path));
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+							}}
+						/>
+					</div>
+				{:else if rightSidebarTab === 'review'}
+					<div class="rs-section rs-full-height">
+						<ReviewPulsePanel
+							{dueNotes}
+							onNoteClick={(path, name) => {
+								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+							}}
+							onRefresh={() => {
+								const lib = get(libraries)[0];
+								if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path })
+									.then(notes => { dueNotes = notes; }).catch(() => {});
 							}}
 						/>
 					</div>
@@ -4152,6 +4179,13 @@
 	}
 	.rs-tab:hover { background: var(--bg-hover); color: var(--text); }
 	.rs-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+	.rs-tab-badge {
+		position: absolute; top: -2px; inset-inline-end: -2px;
+		font-size: 0.55rem; background: var(--interactive-accent); color: white;
+		border-radius: 6px; padding: 0 3px; min-width: 12px; text-align: center;
+		line-height: 1.3;
+	}
+	.rs-tab { position: relative; }
 
 	.rs-section {
 		padding: 12px; border-bottom: 1px solid var(--border-light);

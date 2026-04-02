@@ -345,7 +345,8 @@
         "addLibrary": "خزانہ شامل کریں",
         "searchLibrary": "خزانے میں تلاش",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "واجب الاداء نوٹس کا جائزہ"
     },
     "actions": {
         "untitled": "بغیر عنوان",
@@ -430,7 +431,8 @@
         "calendarHeader": "کیلنڈر",
         "starView": "Star View",
         "health": "علم کی صحت",
-        "provenance": "اسناد"
+        "provenance": "اسناد",
+        "review": "جائزہ نبض"
     },
     "tasksPanel": {
         "all": "سب",
@@ -751,6 +753,16 @@
         "noChain": "کوئی سلسلہ نہیں",
         "depth": "گہرائی",
         "external": "خارجی"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "سب تازہ ہے! جائزے کے لیے کوئی نوٹ نہیں۔",
+        "resurfacing": "جائزے کے لیے",
+        "checkpoints": "ذہنی ماڈل چیک پوائنٹس",
+        "neverReviewed": "کبھی جائزہ نہیں لیا",
+        "reviewed": "جائزہ لیا گیا",
+        "snooze": "7 دن کے لیے ملتوی",
+        "dismiss": "خارج کریں",
+        "checkpointHint": "کیا آپ ابھی بھی یہ رائے رکھتے ہیں؟"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

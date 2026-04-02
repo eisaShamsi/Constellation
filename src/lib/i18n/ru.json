@@ -345,7 +345,8 @@
         "addLibrary": "Добавить хранилище",
         "searchLibrary": "Поиск по хранилищу",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "Просмотреть просроченные заметки"
     },
     "actions": {
         "untitled": "Без названия",
@@ -430,7 +431,8 @@
         "calendarHeader": "Календарь",
         "starView": "Star View",
         "health": "Здоровье знаний",
-        "provenance": "Происхождение"
+        "provenance": "Происхождение",
+        "review": "Пульс обзора"
     },
     "tasksPanel": {
         "all": "Все",
@@ -751,6 +753,16 @@
         "noChain": "Нет цепочки",
         "depth": "Глубина",
         "external": "внешний"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "Всё актуально! Нет заметок для обзора.",
+        "resurfacing": "К обзору",
+        "checkpoints": "Контрольные точки ментальных моделей",
+        "neverReviewed": "Не просмотрено",
+        "reviewed": "Просмотрено",
+        "snooze": "Отложить 7д",
+        "dismiss": "Отклонить",
+        "checkpointHint": "Вы всё ещё придерживаетесь этой точки зрения?"
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

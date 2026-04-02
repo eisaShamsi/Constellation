@@ -345,7 +345,8 @@
         "importNotes": "وارد کردن یادداشت‌ها",
         "insertTable": "درج جدول",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "بازبینی یادداشت‌های موعد"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -430,7 +431,8 @@
         "calendarHeader": "تقویم",
         "starView": "Star View",
         "health": "سلامت دانش",
-        "provenance": "اسناد"
+        "provenance": "اسناد",
+        "review": "نبض بازبینی"
     },
     "tasksPanel": {
         "all": "همه",
@@ -762,6 +764,16 @@
         "noChain": "بدون زنجیره",
         "depth": "عمق",
         "external": "خارجی"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "همه چیز به‌روز است! هیچ یادداشتی برای بازبینی نیست.",
+        "resurfacing": "موعد بازبینی",
+        "checkpoints": "بازرسی مدل‌های ذهنی",
+        "neverReviewed": "هرگز بازبینی نشده",
+        "reviewed": "بازبینی شد",
+        "snooze": "تعویق ۷ روزه",
+        "dismiss": "رد کردن",
+        "checkpointHint": "آیا هنوز این نظر را دارید؟"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

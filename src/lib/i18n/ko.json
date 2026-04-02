@@ -345,7 +345,8 @@
         "addLibrary": "보관함 추가",
         "searchLibrary": "보관함 검색",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "만기 노트 검토"
     },
     "actions": {
         "untitled": "제목 없음",
@@ -430,7 +431,8 @@
         "calendarHeader": "캘린더",
         "starView": "Star View",
         "health": "지식 건강",
-        "provenance": "출처"
+        "provenance": "출처",
+        "review": "리뷰 펄스"
     },
     "tasksPanel": {
         "all": "전체",
@@ -751,6 +753,16 @@
         "noChain": "체인 없음",
         "depth": "깊이",
         "external": "외부"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "모두 완료! 검토할 노트가 없습니다.",
+        "resurfacing": "검토 예정",
+        "checkpoints": "멘탈 모델 체크포인트",
+        "neverReviewed": "미검토",
+        "reviewed": "검토 완료",
+        "snooze": "7일 스누즈",
+        "dismiss": "무시",
+        "checkpointHint": "아직 이 견해를 유지하고 있습니까?"
     },
     "tableToolbar": {
         "addRow": "행 추가",

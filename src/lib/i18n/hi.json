@@ -345,7 +345,8 @@
         "addLibrary": "तिजोरी जोड़ें",
         "searchLibrary": "तिजोरी में खोजें",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "देय नोट्स की समीक्षा करें"
     },
     "actions": {
         "untitled": "बिना शीर्षक",
@@ -430,7 +431,8 @@
         "calendarHeader": "कैलेंडर",
         "starView": "Star View",
         "health": "ज्ञान स्वास्थ्य",
-        "provenance": "उत्पत्ति"
+        "provenance": "उत्पत्ति",
+        "review": "समीक्षा पल्स"
     },
     "tasksPanel": {
         "all": "सभी",
@@ -751,6 +753,16 @@
         "noChain": "कोई श्रृंखला नहीं",
         "depth": "गहराई",
         "external": "बाहरी"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "सब अपडेट! समीक्षा के लिए कोई नोट नहीं।",
+        "resurfacing": "समीक्षा के लिए",
+        "checkpoints": "मानसिक मॉडल चेकपॉइंट",
+        "neverReviewed": "कभी समीक्षा नहीं",
+        "reviewed": "समीक्षा की गई",
+        "snooze": "7 दिन स्नूज़",
+        "dismiss": "खारिज करें",
+        "checkpointHint": "क्या आप अभी भी यह विचार रखते हैं?"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",

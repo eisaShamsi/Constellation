@@ -345,7 +345,8 @@
         "importNotes": "استيراد الملاحظات",
         "insertTable": "إدراج جدول",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "مراجعة الملاحظات المستحقة"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -430,7 +431,8 @@
         "calendarHeader": "التقويم",
         "starView": "Star View",
         "health": "صحة المعرفة",
-        "provenance": "سلسلة الإسناد"
+        "provenance": "سلسلة الإسناد",
+        "review": "نبض المراجعة"
     },
     "tasksPanel": {
         "all": "الكل",
@@ -762,6 +764,16 @@
         "noChain": "بدون سلسلة",
         "depth": "العمق",
         "external": "خارجي"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "كل شيء محدّث! لا توجد ملاحظات مستحقة للمراجعة.",
+        "resurfacing": "مستحقة للمراجعة",
+        "checkpoints": "نقاط فحص النماذج الذهنية",
+        "neverReviewed": "لم تتم مراجعتها",
+        "reviewed": "تمت المراجعة",
+        "snooze": "تأجيل 7 أيام",
+        "dismiss": "رفض",
+        "checkpointHint": "هل ما زلت تتبنى هذا الرأي؟"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

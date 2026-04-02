@@ -344,7 +344,8 @@
         "importNotes": "Import notes",
         "insertTable": "Insert table",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "Review due notes"
     },
     "actions": {
         "untitled": "Untitled",
@@ -429,7 +430,8 @@
         "calendarHeader": "Calendar",
         "starView": "Star View",
         "health": "Knowledge Health",
-        "provenance": "Provenance"
+        "provenance": "Provenance",
+        "review": "Review Pulse"
     },
     "tasksPanel": {
         "all": "All",
@@ -761,6 +763,16 @@
         "noChain": "No chain",
         "depth": "Depth",
         "external": "external"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "All caught up! No notes due for review.",
+        "resurfacing": "Due for Review",
+        "checkpoints": "Mental Model Checkpoints",
+        "neverReviewed": "Never Reviewed",
+        "reviewed": "Reviewed",
+        "snooze": "Snooze 7d",
+        "dismiss": "Dismiss",
+        "checkpointHint": "Do you still hold this view?"
     },
     "tableToolbar": {
         "addRow": "Add row",

@@ -345,7 +345,8 @@
         "importNotes": "Importar notas",
         "insertTable": "Insertar tabla",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "Revisar notas pendientes"
     },
     "actions": {
         "untitled": "Sin título",
@@ -430,7 +431,8 @@
         "calendarHeader": "Calendario",
         "starView": "Star View",
         "health": "Salud del conocimiento",
-        "provenance": "Procedencia"
+        "provenance": "Procedencia",
+        "review": "Pulso de revisión"
     },
     "tasksPanel": {
         "all": "Todas",
@@ -762,6 +764,16 @@
         "noChain": "Sin cadena",
         "depth": "Profundidad",
         "external": "externo"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "¡Todo al día! No hay notas pendientes de revisión.",
+        "resurfacing": "Pendiente de revisión",
+        "checkpoints": "Puntos de control de modelos mentales",
+        "neverReviewed": "Nunca revisado",
+        "reviewed": "Revisado",
+        "snooze": "Posponer 7d",
+        "dismiss": "Descartar",
+        "checkpointHint": "¿Sigues manteniendo esta opinión?"
     },
     "tableToolbar": {
         "addRow": "Agregar fila",

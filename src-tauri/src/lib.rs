@@ -5,6 +5,7 @@ mod importers;
 mod libraries;
 mod maturity;
 mod provenance;
+mod review;
 mod strata;
 mod tension;
 mod tasks;
@@ -157,6 +158,11 @@ pub fn run() {
             tension::detect_tensions,
             provenance::get_provenance_chain,
             provenance::compute_note_origins,
+            review::get_due_notes,
+            review::mark_reviewed,
+            review::snooze_note,
+            review::dismiss_note,
+            review::record_note_visit,
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::scan_library_index,

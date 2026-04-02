@@ -345,7 +345,8 @@
         "addLibrary": "Adicionar cofre",
         "searchLibrary": "Pesquisar no cofre",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "Revisar notas vencidas"
     },
     "actions": {
         "untitled": "Sem título",
@@ -430,7 +431,8 @@
         "calendarHeader": "Calendário",
         "starView": "Star View",
         "health": "Saúde do conhecimento",
-        "provenance": "Proveniência"
+        "provenance": "Proveniência",
+        "review": "Pulso de revisão"
     },
     "tasksPanel": {
         "all": "Todas",
@@ -751,6 +753,16 @@
         "noChain": "Sem cadeia",
         "depth": "Profundidade",
         "external": "externo"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "Tudo em dia! Nenhuma nota para revisão.",
+        "resurfacing": "Para revisão",
+        "checkpoints": "Pontos de controle de modelos mentais",
+        "neverReviewed": "Nunca revisado",
+        "reviewed": "Revisado",
+        "snooze": "Adiar 7d",
+        "dismiss": "Descartar",
+        "checkpointHint": "Você ainda mantém essa visão?"
     },
     "tableToolbar": {
         "addRow": "Adicionar linha",

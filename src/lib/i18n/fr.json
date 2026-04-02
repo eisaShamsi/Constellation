@@ -345,7 +345,8 @@
         "importNotes": "Importer des notes",
         "insertTable": "Insérer un tableau",
         "quickCapture": "Quick Capture",
-        "starView": "Star View"
+        "starView": "Star View",
+        "reviewDueNotes": "Réviser les notes dues"
     },
     "actions": {
         "untitled": "Sans titre",
@@ -430,7 +431,8 @@
         "calendarHeader": "Calendrier",
         "starView": "Star View",
         "health": "Santé des connaissances",
-        "provenance": "Provenance"
+        "provenance": "Provenance",
+        "review": "Impulsion de révision"
     },
     "tasksPanel": {
         "all": "Toutes",
@@ -762,6 +764,16 @@
         "noChain": "Pas de chaîne",
         "depth": "Profondeur",
         "external": "externe"
+    },
+    "reviewPanel": {
+        "allCaughtUp": "Tout est à jour ! Aucune note à réviser.",
+        "resurfacing": "À réviser",
+        "checkpoints": "Points de contrôle des modèles mentaux",
+        "neverReviewed": "Jamais révisé",
+        "reviewed": "Révisé",
+        "snooze": "Reporter 7j",
+        "dismiss": "Ignorer",
+        "checkpointHint": "Maintenez-vous toujours ce point de vue ?"
     },
     "tableToolbar": {
         "addRow": "Ajouter une ligne",
