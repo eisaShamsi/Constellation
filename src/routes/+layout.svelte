@@ -663,12 +663,12 @@
 			noteDir = body ? detectDir(body) : dirFallback;
 			// Backlinks
 			currentBacklinks = getBacklinks(allLibraryLinks, tab.name);
-			// CE Phase 5: Fetch provenance chain for active note
-			if (tab.path && tab.libraryPath) {
+			// CE Phase 5: Fetch provenance chain only when Provenance tab is visible
+			if (rightSidebarTab === 'provenance' && tab.path && tab.libraryPath) {
 				invoke<any>('get_provenance_chain', {
 					libraryPath: tab.libraryPath, notePath: tab.path, maxDepth: 10,
 				}).then(chain => { provenanceChain = chain; }).catch(() => { provenanceChain = null; });
-			} else { provenanceChain = null; }
+			}
 			// Outgoing links
 			currentOutgoing = getOutgoingLinks(allLibraryLinks, tab.path).map(l => ({
 				target: l.target,
@@ -3060,7 +3060,14 @@
 				<button class="rs-tab" class:active={rightSidebarTab === 'health'} onclick={() => rightSidebarTab = 'health'} title={$t('panels.health') || 'Knowledge Health'}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
 				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'provenance'} onclick={() => rightSidebarTab = 'provenance'} title={$t('panels.provenance') || 'Provenance'}>
+				<button class="rs-tab" class:active={rightSidebarTab === 'provenance'} onclick={() => {
+					rightSidebarTab = 'provenance';
+					const tab = $focusedTab;
+					if (tab?.path && tab?.libraryPath) {
+						invoke<any>('get_provenance_chain', { libraryPath: tab.libraryPath, notePath: tab.path, maxDepth: 10 })
+							.then(chain => { provenanceChain = chain; }).catch(() => { provenanceChain = null; });
+					}
+				}} title={$t('panels.provenance') || 'Provenance'}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M12 22v-6M2 12h6M22 12h-6"/><circle cx="12" cy="12" r="3"/></svg>
 				</button>
 			</div>
