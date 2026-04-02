@@ -109,7 +109,7 @@
 	} = $props();
 
 	let titleValue = $state(title);
-	let currentStage = $state(stage);
+	let currentStage = $state(stage?.toLowerCase() ?? '');
 	let titleEl: HTMLInputElement | undefined;
 	let editorEl: HTMLDivElement | undefined;
 	let view: EditorView | null = null;
