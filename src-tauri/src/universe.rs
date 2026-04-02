@@ -409,10 +409,21 @@ fn resolve_libraries_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>)
 
 // ─── Tauri Commands ───
 
-/// List all known universes from the registry.
+/// List all known universes from the registry, with the active one first.
 #[tauri::command]
 pub fn list_universes(app: tauri::AppHandle) -> Vec<UniverseEntry> {
-    load_registry(&app).entries
+    let registry = load_registry(&app);
+    let active_id = registry.active_id.clone();
+    let mut entries = registry.entries;
+    // Sort: active universe first, so the frontend tries it first on startup
+    if let Some(ref aid) = active_id {
+        entries.sort_by(|a, b| {
+            let a_active = a.id == *aid;
+            let b_active = b.id == *aid;
+            b_active.cmp(&a_active)
+        });
+    }
+    entries
 }
 
 /// Create a new universe: .constellation/ directory structure + config files.
