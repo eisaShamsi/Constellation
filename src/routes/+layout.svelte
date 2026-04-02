@@ -3662,7 +3662,7 @@
 		z-index: 1;
 	}
 	.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
-	.tab-maturity { font-size: 6px; flex-shrink: 0; margin-inline-end: 3px; }
+	.tab-maturity { font-size: 12px; flex-shrink: 0; margin-inline-end: 3px; }
 	.tab-maturity.mat-sapling { color: #4ade80; }
 	.tab-maturity.mat-evergreen { color: #16a34a; }
 	.tab-maturity.mat-canonical { color: #f59e0b; }
