@@ -512,10 +512,60 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
     // Ensure universe notes folder exists (migration for existing universes)
     ensure_universe_notes_folder(&universe_path)?;
 
+    // ─── Migration: consolidate same-name parent nesting ───
+    // If universe is at C:\Name\Name\ and parent is C:\Name\, move everything up
+    // and update the registry to point to C:\Name\.
+    let mut final_path = universe_path.clone();
+    if let (Some(parent), Some(dir_name)) = (universe_path.parent(), universe_path.file_name()) {
+        let parent_name = parent.file_name().map(|n| n.to_string_lossy().to_string());
+        let this_name = dir_name.to_string_lossy().to_string();
+        if parent_name.as_deref() == Some(&this_name) && parent.join(".constellation").exists() == false {
+            // Parent has same name and no .constellation of its own → consolidate
+            eprintln!("[universe] Consolidating nested universe: {} → {}", universe_path.display(), parent.display());
+            // Move .constellation/ and all contents up to parent
+            if let Ok(entries) = fs::read_dir(&universe_path) {
+                for entry in entries.flatten() {
+                    let src = entry.path();
+                    let dest = parent.join(entry.file_name());
+                    if !dest.exists() {
+                        let _ = fs::rename(&src, &dest);
+                    }
+                }
+            }
+            // Remove the now-empty nested directory
+            let _ = fs::remove_dir(&universe_path);
+
+            // Update registry path
+            let parent_str = parent.to_string_lossy().to_string();
+            for e in &mut registry.entries {
+                if e.id == id {
+                    e.path = parent_str.clone();
+                }
+            }
+            // Update library paths in .constellation/libraries.json
+            let cdir = constellation_dir(parent);
+            let libs_path = cdir.join("libraries.json");
+            if let Ok(libs_data) = fs::read_to_string(&libs_path) {
+                if let Ok(mut libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&libs_data) {
+                    for lib in &mut libs {
+                        if lib.is_universe_notes {
+                            lib.path = parent_str.clone();
+                        }
+                    }
+                    if let Ok(json) = serde_json::to_string_pretty(&libs) {
+                        let _ = fs::write(&libs_path, json);
+                    }
+                }
+            }
+            final_path = parent.to_path_buf();
+            eprintln!("[universe] Consolidation complete: {}", final_path.display());
+        }
+    }
+
     // Update managed state
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
-    *lock = Some(universe_path);
+    *lock = Some(final_path);
 
     // Update registry
     registry.active_id = Some(id);
