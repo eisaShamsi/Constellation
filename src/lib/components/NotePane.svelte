@@ -110,13 +110,7 @@
 
 	let titleValue = $state(title);
 	let currentStage = $state(stage?.toLowerCase() ?? '');
-	// Sync currentStage from properties array (covers both prop changes AND PropertyEditor edits)
-	$effect(() => {
-		const fromProps = properties.find(p => p.key.toLowerCase() === 'stage')?.value?.toLowerCase() ?? '';
-		if (fromProps !== currentStage) {
-			currentStage = fromProps;
-		}
-	});
+	// Stage sync: breadcrumb ← Properties panel via onstagechange callback (no $effect needed)
 	let titleEl: HTMLInputElement | undefined;
 	let editorEl: HTMLDivElement | undefined;
 	let view: EditorView | null = null;
