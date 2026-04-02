@@ -110,12 +110,11 @@
 
 	let titleValue = $state(title);
 	let currentStage = $state(stage?.toLowerCase() ?? '');
-	// Sync currentStage when stage prop changes (e.g. store reactivity after promote)
-	let _prevStageProp = stage;
+	// Sync currentStage from properties array (covers both prop changes AND PropertyEditor edits)
 	$effect(() => {
-		if (stage !== _prevStageProp) {
-			_prevStageProp = stage;
-			currentStage = stage?.toLowerCase() ?? '';
+		const fromProps = properties.find(p => p.key.toLowerCase() === 'stage')?.value?.toLowerCase() ?? '';
+		if (fromProps !== currentStage) {
+			currentStage = fromProps;
 		}
 	});
 	let titleEl: HTMLInputElement | undefined;
