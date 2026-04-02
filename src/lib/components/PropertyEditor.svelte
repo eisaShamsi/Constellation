@@ -573,7 +573,7 @@
 	.pe-saving { font-size: 0.7rem; color: var(--interactive-accent); }
 
 	.pe-row {
-		display: flex; align-items: center; gap: 6px;
+		display: flex; align-items: center; gap: 5px;
 		padding: 6px 0;
 		border-bottom: 1px solid var(--background-secondary-alt);
 		transition: opacity 0.15s, border-color 0.1s;
