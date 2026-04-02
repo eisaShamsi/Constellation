@@ -110,6 +110,14 @@
 
 	let titleValue = $state(title);
 	let currentStage = $state(stage?.toLowerCase() ?? '');
+	// Sync currentStage when stage prop changes (e.g. store reactivity after promote)
+	let _prevStageProp = stage;
+	$effect(() => {
+		if (stage !== _prevStageProp) {
+			_prevStageProp = stage;
+			currentStage = stage?.toLowerCase() ?? '';
+		}
+	});
 	let titleEl: HTMLInputElement | undefined;
 	let editorEl: HTMLDivElement | undefined;
 	let view: EditorView | null = null;
