@@ -62,7 +62,7 @@
 			</div>
 
 			<!-- Ancestor tree -->
-			{#each chain.ancestors.sort((a, b) => a.depth - b.depth) as ancestor}
+			{#each [...chain.ancestors].sort((a, b) => a.depth - b.depth) as ancestor}
 				<div class="prov-node" style="padding-inline-start:{ancestor.depth * 16}px">
 					<span class="prov-connector">↳</span>
 					<button class="prov-ancestor" onclick={() => onNoteClick?.(ancestor.path, ancestor.name)}>
