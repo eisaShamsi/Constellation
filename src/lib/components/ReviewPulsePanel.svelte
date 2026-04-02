@@ -133,6 +133,7 @@
 						<span class="rp-detail">{note.days_overdue}d old</span>
 						<div class="rp-actions">
 							<button class="rp-action" title={$t('reviewPanel.reviewed') || 'Reviewed'} onclick={() => markReviewed(note.note_path)}>✓</button>
+							<button class="rp-action" title={$t('reviewPanel.snooze') || 'Snooze 7d'} onclick={() => snooze(note.note_path)}>👁</button>
 							<button class="rp-action" title={$t('reviewPanel.dismiss') || 'Dismiss'} onclick={() => dismiss(note.note_path)}>🗄️</button>
 						</div>
 					</div>
