@@ -519,7 +519,15 @@
         "titlePlaceholder": "Başlık",
         "bodyPlaceholder": "Yazmaya başlayın...",
         "propertyKey": "Anahtar",
-        "propertyValue": "Değer"
+        "propertyValue": "Değer",
+        "promote": "Yükselt",
+        "stage.fleeting": "Geçici",
+        "stage.literature": "Literatür",
+        "stage.permanent": "Kalıcı",
+        "stage.synthesis": "Sentez"
+    },
+    "focusPane": {
+        "promote": "Kalıcıya yükselt"
     },
     "commandPalette": {
         "placeholder": "Bir komut yazın...",

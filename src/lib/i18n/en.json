@@ -518,7 +518,15 @@
         "titlePlaceholder": "Title",
         "bodyPlaceholder": "Start writing...",
         "propertyKey": "Key",
-        "propertyValue": "Value"
+        "propertyValue": "Value",
+        "promote": "Promote",
+        "stage.fleeting": "Fleeting",
+        "stage.literature": "Literature",
+        "stage.permanent": "Permanent",
+        "stage.synthesis": "Synthesis"
+    },
+    "focusPane": {
+        "promote": "Promote to Permanent"
     },
     "commandPalette": {
         "placeholder": "Type a command...",

@@ -15,6 +15,7 @@
 		onRenameComplete,
 		allExpanded = true,
 		maturityMap = new Map() as Map<string, string>,
+		stageMap = new Map() as Map<string, string>,
 	}: {
 		entries: FileEntry[];
 		depth?: number;
@@ -28,6 +29,7 @@
 		onRenameComplete?: (oldPath: string, newName: string) => void;
 		allExpanded?: boolean;
 		maturityMap?: Map<string, string>;
+		stageMap?: Map<string, string>;
 	} = $props();
 
 	const MATURITY_COLORS: Record<string, string> = {
@@ -130,7 +132,7 @@
 						{#if entry.name.endsWith('.base')}
 							<svg class="base-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
 						{/if}
-						{#if entry.status === 'seedling'}<span class="note-status" title="Seedling">🌱</span>{:else if entry.status === 'growing'}<span class="note-status" title="Growing">🌿</span>{:else if entry.status === 'evergreen'}<span class="note-status" title="Evergreen">🌲</span>{/if}
+						{#if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'fleeting'}<span class="note-stage">🌱</span>{:else if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'literature'}<span class="note-stage">📖</span>{:else if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'permanent'}<span class="note-stage">🔗</span>{:else if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'synthesis'}<span class="note-stage">✨</span>{/if}
 						<span class="note-name">{entry.name.replace(/\.(md|base)$/, '')}</span>
 					</button>
 				{/if}
@@ -192,6 +194,7 @@
 	.note.active { background: color-mix(in srgb, var(--library-color) 8%, transparent); color: var(--library-color); }
 
 	.note-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.note-stage { font-size: 0.7rem; flex-shrink: 0; margin-inline-end: 2px; }
 	/* CE Phase 3: Maturity left border */
 	.note.mat-sapling   { border-inline-start: 3px solid #4ade80 !important; }
 	.note.mat-evergreen  { border-inline-start: 3px solid #16a34a !important; }

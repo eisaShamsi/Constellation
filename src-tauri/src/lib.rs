@@ -151,6 +151,7 @@ pub fn run() {
             libraries::read_note_preview,
             libraries::save_clipboard_image,
             libraries::resolve_embed_image,
+            libraries::scan_note_stages,
             strata::compute_note_strata,
             maturity::compute_note_maturity,
             tension::detect_tensions,

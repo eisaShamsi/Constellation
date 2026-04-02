@@ -1474,6 +1474,49 @@ fn build_stopwords() -> std::collections::HashSet<&'static str> {
     words.iter().copied().collect()
 }
 
+/// CE Phase 6: Scan all notes for `stage:` frontmatter property.
+/// Returns a map of note_path → stage value (fleeting|literature|permanent|synthesis).
+#[tauri::command]
+pub fn scan_note_stages(app: tauri::AppHandle, library_path: String) -> Result<Vec<(String, String)>, String> {
+    let libraries = load_all_libraries(&app);
+    if !libraries.iter().any(|v| v.path == library_path) {
+        return Err("Access denied: not a registered library.".to_string());
+    }
+    let mut stages: Vec<(String, String)> = Vec::new();
+    scan_stages_recursive(Path::new(&library_path), &mut stages);
+    Ok(stages)
+}
+
+fn scan_stages_recursive(dir: &Path, stages: &mut Vec<(String, String)>) {
+    let read_dir = match fs::read_dir(dir) { Ok(rd) => rd, Err(_) => return };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') { continue; }
+        if path.is_dir() {
+            scan_stages_recursive(&path, stages);
+        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            if let Ok(content) = fs::read_to_string(&path) {
+                if content.starts_with("---") {
+                    if let Some(end) = content[3..].find("\n---") {
+                        let yaml = &content[3..3 + end];
+                        for line in yaml.lines() {
+                            let trimmed = line.trim().to_lowercase();
+                            if let Some(val) = trimmed.strip_prefix("stage:") {
+                                let stage = val.trim().to_string();
+                                if !stage.is_empty() {
+                                    stages.push((path.to_string_lossy().to_string(), stage));
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// Scan all notes in a library and build a word index.
 #[tauri::command]
 pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result<Vec<IndexEntry>, String> {

@@ -434,6 +434,7 @@
 	let starLinks: StarLink[] = [];
 	let starVersion = $state(0);
 	let maturityMap = $state(new Map<string, string>()); // path → maturity state (CE Phase 3)
+	let stageMap = $state(new Map<string, string>()); // path → stage (CE Phase 6)
 	// Star data is passed to StarView as plain arrays.
 	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
 	// make iteration extremely slow. Instead, starVersion ($state) triggers re-render
@@ -1389,6 +1390,18 @@
 						}
 					} catch { /* origins failed */ }
 				}
+
+				// CE Phase 6: Scan note stages per library
+				const newStageMap = new Map<string, string>();
+				for (const lib of libraryList) {
+					try {
+						const stages = await invoke<[string, string][]>('scan_note_stages', { libraryPath: lib.path });
+						for (const [path, stage] of stages) {
+							newStageMap.set(path.replace(/\\/g, '/').toLowerCase(), stage);
+						}
+					} catch { /* stages scan failed */ }
+				}
+				stageMap = newStageMap;
 
 				// CE Phase 4: Detect tensions (first library only for performance)
 				if (libraryList.length > 0) {
@@ -2466,6 +2479,7 @@
 									libraryName={universeNotesStats.name}
 									color={libraryColorMap[universeNotesStats.name] || 'var(--interactive-accent)'}
 									{maturityMap}
+									{stageMap}
 									onNoteClick={handleNoteClick}
 									onFolderClick={(path) => { skyViewSelectedPath = path; }}
 									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, universeNotesStats.library_id)}
@@ -2519,6 +2533,7 @@
 													libraryName={lib.name}
 													color={libraryColorMap[lib.name]}
 													{maturityMap}
+									{stageMap}
 													onNoteClick={handleNoteClick}
 													onFolderClick={(path) => { skyViewSelectedPath = path; }}
 													onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, lib.library_id)}
@@ -2552,6 +2567,7 @@
 									libraryName={lib.name}
 									color={libraryColorMap[lib.name]}
 									{maturityMap}
+									{stageMap}
 									onNoteClick={handleNoteClick}
 									onFolderClick={(path) => { skyViewSelectedPath = path; }}
 									onContextMenu={(entry, x, y) => handleContextMenu(entry, x, y, lib.library_id)}
@@ -2866,7 +2882,25 @@
 									markRecentWrite(_mountedTab.path);
 									writeNote(_mountedTab.path, fc).catch(() => {});
 								}}
-								onexit={() => { focusMode = false; }}
+								onexit={(promote) => {
+									focusMode = false;
+									if (promote) {
+										// CE Phase 6: promote to permanent on FocusPane exit
+										const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
+										const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
+										const body = currentTab ? parseFrontmatter(currentTab.content || '').body : _parsed.body;
+										let updated = false;
+										const newProps = props.map(p => {
+											if (p.key.toLowerCase() === 'stage') { updated = true; return { ...p, value: promote }; }
+											return p;
+										});
+										if (!updated) newProps.push({ key: 'stage', value: promote, type: 'text' as any });
+										const fc = buildFullContent(newProps, body);
+										if (currentTab) { currentTab.content = fc; }
+										markRecentWrite(_mountedTab.path);
+										writeNote(_mountedTab.path, fc).catch(() => {});
+									}
+								}}
 							/>
 						{:else}
 						<NotePane
@@ -2883,9 +2917,25 @@
 							allTags={allTagsList}
 							properties={_parsed.properties}
 							rawYaml={_parsed.rawYaml ?? ''}
+							stage={_parsed.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
 							canGoBack={(_mountedTab.historyIndex ?? 0) > 0}
 							canGoForward={(_mountedTab.historyIndex ?? 0) < (_mountedTab.history?.length ?? 1) - 1}
 							onchange={() => {}}
+							onpromote={(nextStage) => {
+								const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
+								const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
+								const body = currentTab ? parseFrontmatter(currentTab.content || '').body : _parsed.body;
+								let updated = false;
+								const newProps = props.map(p => {
+									if (p.key.toLowerCase() === 'stage') { updated = true; return { ...p, value: nextStage }; }
+									return p;
+								});
+								if (!updated) newProps.push({ key: 'stage', value: nextStage, type: 'text' as any });
+								const fc = buildFullContent(newProps, body);
+								if (currentTab) { currentTab.content = fc; }
+								markRecentWrite(_mountedTab.path);
+								writeNote(_mountedTab.path, fc).catch(() => {});
+							}}
 							onsave={(text) => {
 								if (_saveGuard.saving) return;
 								_saveGuard.saving = true;

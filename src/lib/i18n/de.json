@@ -519,7 +519,15 @@
         "titlePlaceholder": "Titel",
         "bodyPlaceholder": "Schreiben Sie los...",
         "propertyKey": "Schlüssel",
-        "propertyValue": "Wert"
+        "propertyValue": "Wert",
+        "promote": "Hochstufen",
+        "stage.fleeting": "Flüchtig",
+        "stage.literature": "Literatur",
+        "stage.permanent": "Permanent",
+        "stage.synthesis": "Synthese"
+    },
+    "focusPane": {
+        "promote": "Zu Permanent hochstufen"
     },
     "commandPalette": {
         "placeholder": "Befehl eingeben...",

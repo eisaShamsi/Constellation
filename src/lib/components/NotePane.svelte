@@ -77,6 +77,8 @@
 		onnavigateforward,
 		onmoreaction,
 		onpropschange,
+		stage = '',
+		onpromote,
 	}: {
 		value?: string;
 		title?: string;
@@ -102,6 +104,8 @@
 		onnavigateforward?: () => void;
 		onmoreaction?: (action: string) => void;
 		onpropschange?: () => void;
+		stage?: string;
+		onpromote?: (nextStage: string) => void;
 	} = $props();
 
 	let titleValue = $state(title);
@@ -630,6 +634,19 @@
 		<span class="e-bc-lib">{libraryName}</span>
 		<span class="e-bc-sep">/</span>
 		<span class="e-bc-note">{title}</span>
+		{#if stage}
+			<span class="e-bc-stage" title={$t(`notePane.stage.${stage}`) || stage}>
+				{stage === 'fleeting' ? '🌱' : stage === 'literature' ? '📖' : stage === 'permanent' ? '🔗' : stage === 'synthesis' ? '✨' : ''}
+			</span>
+		{/if}
+		{#if stage && stage !== 'synthesis'}
+			<button class="e-bc-promote" onmousedown={(e) => e.preventDefault()} onclick={() => {
+				const next = stage === 'fleeting' ? 'literature' : stage === 'literature' ? 'permanent' : stage === 'permanent' ? 'synthesis' : '';
+				if (next) onpromote?.(next);
+			}}>
+				{$t('notePane.promote') || 'Promote'} →
+			</button>
+		{/if}
 		<div class="e-bc-actions">
 			{#if saving}<span class="e-bc-saving">{$t('notePane.saving')}</span>{/if}
 			<div class="e-bc-more-wrap" bind:this={moreMenuEl}>
@@ -814,6 +831,12 @@
 	.e-bc-lib { color: var(--text-muted); }
 	.e-bc-sep { margin: 0 4px; color: var(--background-modifier-border-focus); }
 	.e-bc-note { color: var(--text-normal); }
+	.e-bc-stage { font-size: 0.72rem; margin-inline-start: 4px; }
+	.e-bc-promote {
+		font-size: 0.68rem; color: var(--interactive-accent); background: none; border: 1px solid var(--interactive-accent);
+		border-radius: 4px; padding: 1px 6px; cursor: pointer; margin-inline-start: 4px; font-family: inherit;
+	}
+	.e-bc-promote:hover { background: var(--interactive-accent); color: white; }
 	.e-bc-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 4px; position: relative; }
 	.e-bc-saving { font-size: 0.7rem; color: var(--interactive-accent); }
 	.e-bc-nav {

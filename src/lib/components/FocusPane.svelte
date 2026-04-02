@@ -22,7 +22,7 @@
 		dir?: 'ltr' | 'rtl';
 		onchange?: (value: string) => void;
 		ontitlechange?: (title: string) => void;
-		onexit?: () => void;
+		onexit?: (promote?: string) => void;
 	} = $props();
 
 	let editorEl: HTMLDivElement;
@@ -238,11 +238,14 @@
 		<div class="focus-editor" bind:this={editorEl}></div>
 	</div>
 
-	<!-- Word count — barely visible -->
+	<!-- Word count + promote -->
 	<div class="focus-footer">
 		{#if wordCount > 0}
 			<span>{wordCount} {$t('focus.wordCount')}</span>
 		{/if}
+		<button class="focus-promote" onmousedown={(e) => e.preventDefault()} onclick={() => { onexit?.('permanent'); }}>
+			🔗 {$t('focusPane.promote') || 'Promote to Permanent'}
+		</button>
 	</div>
 </div>
 
@@ -373,4 +376,12 @@
 		opacity: 0.3;
 		font-family: var(--font-interface-theme, sans-serif);
 	}
+	.focus-footer { pointer-events: auto; display: flex; justify-content: center; gap: 16px; align-items: center; }
+	.focus-promote {
+		font-size: 11px; color: var(--text-faint, #999); background: none;
+		border: 1px solid var(--text-faint, #ccc); border-radius: 4px;
+		padding: 2px 8px; cursor: pointer; opacity: 0.4; transition: opacity 0.2s;
+		font-family: var(--font-interface-theme, sans-serif);
+	}
+	.focus-promote:hover { opacity: 1; color: var(--interactive-accent); border-color: var(--interactive-accent); }
 </style>

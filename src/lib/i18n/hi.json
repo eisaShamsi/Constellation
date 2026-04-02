@@ -519,7 +519,15 @@
         "titlePlaceholder": "शीर्षक",
         "bodyPlaceholder": "लिखना शुरू करें...",
         "propertyKey": "कुंजी",
-        "propertyValue": "मान"
+        "propertyValue": "मान",
+        "promote": "प्रमोट",
+        "stage.fleeting": "क्षणिक",
+        "stage.literature": "साहित्य",
+        "stage.permanent": "स्थायी",
+        "stage.synthesis": "संश्लेषण"
+    },
+    "focusPane": {
+        "promote": "स्थायी में प्रमोट करें"
     },
     "commandPalette": {
         "placeholder": "कमांड टाइप करें...",

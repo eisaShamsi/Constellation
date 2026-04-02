@@ -519,7 +519,15 @@
         "titlePlaceholder": "عنوان",
         "bodyPlaceholder": "...لکھنا شروع کریں",
         "propertyKey": "کلید",
-        "propertyValue": "قدر"
+        "propertyValue": "قدر",
+        "promote": "ترقی",
+        "stage.fleeting": "عارضی",
+        "stage.literature": "ادب",
+        "stage.permanent": "مستقل",
+        "stage.synthesis": "ترکیب"
+    },
+    "focusPane": {
+        "promote": "مستقل میں ترقی"
     },
     "commandPalette": {
         "placeholder": "کمانڈ ٹائپ کریں...",

@@ -519,7 +519,15 @@
         "titlePlaceholder": "כותרת",
         "bodyPlaceholder": "...התחל לכתוב",
         "propertyKey": "מפתח",
-        "propertyValue": "ערך"
+        "propertyValue": "ערך",
+        "promote": "קדם",
+        "stage.fleeting": "חולף",
+        "stage.literature": "ספרות",
+        "stage.permanent": "קבוע",
+        "stage.synthesis": "סינתזה"
+    },
+    "focusPane": {
+        "promote": "קדם לקבוע"
     },
     "commandPalette": {
         "placeholder": "הקלד פקודה...",

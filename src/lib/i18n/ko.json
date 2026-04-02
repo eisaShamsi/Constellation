@@ -519,7 +519,15 @@
         "titlePlaceholder": "제목",
         "bodyPlaceholder": "글을 쓰기 시작...",
         "propertyKey": "키",
-        "propertyValue": "값"
+        "propertyValue": "값",
+        "promote": "승격",
+        "stage.fleeting": "순간",
+        "stage.literature": "문헌",
+        "stage.permanent": "영구",
+        "stage.synthesis": "종합"
+    },
+    "focusPane": {
+        "promote": "영구로 승격"
     },
     "commandPalette": {
         "placeholder": "명령어 입력...",

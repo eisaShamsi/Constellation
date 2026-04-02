@@ -519,7 +519,15 @@
         "titlePlaceholder": "Titre",
         "bodyPlaceholder": "Commencez à écrire...",
         "propertyKey": "Clé",
-        "propertyValue": "Valeur"
+        "propertyValue": "Valeur",
+        "promote": "Promouvoir",
+        "stage.fleeting": "Éphémère",
+        "stage.literature": "Littérature",
+        "stage.permanent": "Permanent",
+        "stage.synthesis": "Synthèse"
+    },
+    "focusPane": {
+        "promote": "Promouvoir en permanent"
     },
     "commandPalette": {
         "placeholder": "Tapez une commande...",

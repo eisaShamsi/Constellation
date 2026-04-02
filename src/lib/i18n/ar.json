@@ -519,7 +519,15 @@
         "titlePlaceholder": "العنوان",
         "bodyPlaceholder": "...ابدأ الكتابة",
         "propertyKey": "المفتاح",
-        "propertyValue": "القيمة"
+        "propertyValue": "القيمة",
+        "promote": "ترقية",
+        "stage.fleeting": "عابرة",
+        "stage.literature": "مرجعية",
+        "stage.permanent": "دائمة",
+        "stage.synthesis": "تركيبية"
+    },
+    "focusPane": {
+        "promote": "ترقية إلى دائمة"
     },
     "commandPalette": {
         "placeholder": "أدخل أمر...",

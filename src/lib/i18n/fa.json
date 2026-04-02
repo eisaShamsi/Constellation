@@ -519,7 +519,15 @@
         "titlePlaceholder": "عنوان",
         "bodyPlaceholder": "...شروع به نوشتن",
         "propertyKey": "کلید",
-        "propertyValue": "مقدار"
+        "propertyValue": "مقدار",
+        "promote": "ارتقا",
+        "stage.fleeting": "گذرا",
+        "stage.literature": "ادبیات",
+        "stage.permanent": "دائمی",
+        "stage.synthesis": "ترکیب"
+    },
+    "focusPane": {
+        "promote": "ارتقا به دائمی"
     },
     "commandPalette": {
         "placeholder": "یک دستور تایپ کنید...",

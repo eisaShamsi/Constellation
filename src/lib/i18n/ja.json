@@ -519,7 +519,15 @@
         "titlePlaceholder": "タイトル",
         "bodyPlaceholder": "書き始める...",
         "propertyKey": "キー",
-        "propertyValue": "値"
+        "propertyValue": "値",
+        "promote": "昇格",
+        "stage.fleeting": "一時的",
+        "stage.literature": "文献",
+        "stage.permanent": "永続",
+        "stage.synthesis": "統合"
+    },
+    "focusPane": {
+        "promote": "永続に昇格"
     },
     "commandPalette": {
         "placeholder": "コマンドを入力...",

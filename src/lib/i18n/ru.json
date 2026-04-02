@@ -519,7 +519,15 @@
         "titlePlaceholder": "Заголовок",
         "bodyPlaceholder": "Начните писать...",
         "propertyKey": "Ключ",
-        "propertyValue": "Значение"
+        "propertyValue": "Значение",
+        "promote": "Повысить",
+        "stage.fleeting": "Мимолётная",
+        "stage.literature": "Литература",
+        "stage.permanent": "Постоянная",
+        "stage.synthesis": "Синтез"
+    },
+    "focusPane": {
+        "promote": "Повысить до постоянной"
     },
     "commandPalette": {
         "placeholder": "Введите команду...",

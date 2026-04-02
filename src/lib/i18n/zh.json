@@ -519,7 +519,15 @@
         "titlePlaceholder": "标题",
         "bodyPlaceholder": "开始写作...",
         "propertyKey": "键",
-        "propertyValue": "值"
+        "propertyValue": "值",
+        "promote": "提升",
+        "stage.fleeting": "闪念",
+        "stage.literature": "文献",
+        "stage.permanent": "永久",
+        "stage.synthesis": "综合"
+    },
+    "focusPane": {
+        "promote": "提升为永久"
     },
     "commandPalette": {
         "placeholder": "输入命令...",
