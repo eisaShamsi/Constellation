@@ -221,20 +221,30 @@ fn classify_origin(ancestors: &[AncestorNode]) -> String {
 }
 
 /// Check if frontmatter contains external source properties.
+/// Robust: handles \r\n (Windows) and \n (Unix) line endings.
 fn check_external_frontmatter(content: &str) -> bool {
-    if !content.starts_with("---") { return false; }
-    let end = match content[3..].find("\n---") {
-        Some(i) => i + 3,
+    // Normalize line endings for reliable parsing
+    let normalized = content.replace("\r\n", "\n").replace('\r', "\n");
+    if !normalized.starts_with("---") { return false; }
+    // Find closing --- (must be on its own line)
+    let after_open = &normalized[3..];
+    let end = match after_open.find("\n---") {
+        Some(i) => i,
         None => return false,
     };
-    let yaml = &content[3..end].to_lowercase();
-    EXTERNAL_KEYS.iter().any(|key| {
-        // Match "key:" at start of line with a non-empty value
-        yaml.lines().any(|line| {
-            let trimmed = line.trim();
-            trimmed.starts_with(key) && trimmed.len() > key.len() + 1
-                && trimmed.as_bytes()[key.len()] == b':'
-                && trimmed[key.len() + 1..].trim().len() > 0
-        })
-    })
+    let yaml = after_open[..end].to_lowercase();
+    for line in yaml.lines() {
+        let trimmed = line.trim();
+        for key in EXTERNAL_KEYS {
+            // Match "key: value" where value is non-empty
+            if let Some(rest) = trimmed.strip_prefix(key) {
+                if let Some(value) = rest.strip_prefix(':') {
+                    if !value.trim().is_empty() {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    false
 }
