@@ -364,7 +364,8 @@
         "reviewDueNotes": "देय नोट्स की समीक्षा करें",
         "openTrail": "ट्रेल खोलें",
         "openLens": "लेंस बदलें",
-        "createLens": "लेंस बनाएं"
+        "createLens": "लेंस बनाएं",
+        "expressionForge": "अभिव्यक्ति फोर्ज"
     },
     "actions": {
         "untitled": "बिना शीर्षक",
@@ -795,6 +796,17 @@
         "unclassified": "अवर्गीकृत",
         "untagged": "बिना टैग",
         "switchLens": "दृश्य बदलें"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "रचना शीर्षक...",
+        "export": "नोट के रूप में निर्यात",
+        "allNotes": "सभी नोट्स",
+        "conceptPlus": "अवधारणा+ (4+)",
+        "theoryPlus": "सिद्धांत+ (6+)",
+        "search": "खोजें...",
+        "noNotes": "कोई नोट नहीं मिला",
+        "emptyCanvas": "अपनी रचना बनाने के लिए बाएं पैनल से नोट्स पर क्लिक करें।",
+        "writeTransition": "संक्रमण या टिप्पणी लिखें..."
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",

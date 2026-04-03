@@ -364,7 +364,8 @@
         "reviewDueNotes": "Fällige Notizen überprüfen",
         "openTrail": "Trail öffnen",
         "openLens": "Linse wechseln",
-        "createLens": "Linse erstellen"
+        "createLens": "Linse erstellen",
+        "expressionForge": "Ausdrucksschmiede"
     },
     "actions": {
         "untitled": "Unbenannt",
@@ -806,6 +807,17 @@
         "unclassified": "Nicht klassifiziert",
         "untagged": "Ohne Tag",
         "switchLens": "Ansicht wechseln"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "Kompositionstitel...",
+        "export": "Als Notiz exportieren",
+        "allNotes": "Alle Notizen",
+        "conceptPlus": "Konzept+ (4+)",
+        "theoryPlus": "Theorie+ (6+)",
+        "search": "Suchen...",
+        "noNotes": "Keine Notizen gefunden",
+        "emptyCanvas": "Klicken Sie auf Notizen im linken Panel, um Ihre Komposition zu erstellen.",
+        "writeTransition": "Übergang oder Anmerkung schreiben..."
     },
     "tableToolbar": {
         "addRow": "Zeile hinzufügen",

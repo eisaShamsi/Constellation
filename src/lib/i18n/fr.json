@@ -364,7 +364,8 @@
         "reviewDueNotes": "Réviser les notes dues",
         "openTrail": "Ouvrir un parcours",
         "openLens": "Changer de lentille",
-        "createLens": "Créer une lentille"
+        "createLens": "Créer une lentille",
+        "expressionForge": "Forge d'expression"
     },
     "actions": {
         "untitled": "Sans titre",
@@ -806,6 +807,17 @@
         "unclassified": "Non classé",
         "untagged": "Sans étiquette",
         "switchLens": "Changer de vue"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "Titre de la composition...",
+        "export": "Exporter comme note",
+        "allNotes": "Toutes les notes",
+        "conceptPlus": "Concept+ (4+)",
+        "theoryPlus": "Théorie+ (6+)",
+        "search": "Rechercher...",
+        "noNotes": "Aucune note trouvée",
+        "emptyCanvas": "Cliquez sur les notes du panneau gauche pour construire votre composition.",
+        "writeTransition": "Écrire une transition ou annotation..."
     },
     "tableToolbar": {
         "addRow": "Ajouter une ligne",

@@ -364,7 +364,8 @@
         "reviewDueNotes": "Revisar notas pendientes",
         "openTrail": "Abrir ruta",
         "openLens": "Cambiar lente",
-        "createLens": "Crear lente"
+        "createLens": "Crear lente",
+        "expressionForge": "Fragua de expresión"
     },
     "actions": {
         "untitled": "Sin título",
@@ -806,6 +807,17 @@
         "unclassified": "Sin clasificar",
         "untagged": "Sin etiqueta",
         "switchLens": "Cambiar vista"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "Título de la composición...",
+        "export": "Exportar como nota",
+        "allNotes": "Todas las notas",
+        "conceptPlus": "Concepto+ (4+)",
+        "theoryPlus": "Teoría+ (6+)",
+        "search": "Buscar...",
+        "noNotes": "No se encontraron notas",
+        "emptyCanvas": "Haga clic en las notas del panel izquierdo para construir su composición.",
+        "writeTransition": "Escribir transición o anotación..."
     },
     "tableToolbar": {
         "addRow": "Agregar fila",

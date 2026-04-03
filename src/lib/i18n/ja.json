@@ -364,7 +364,8 @@
         "reviewDueNotes": "期限のノートを確認",
         "openTrail": "トレイルを開く",
         "openLens": "レンズ切替",
-        "createLens": "レンズ作成"
+        "createLens": "レンズ作成",
+        "expressionForge": "表現フォージ"
     },
     "actions": {
         "untitled": "無題",
@@ -795,6 +796,17 @@
         "unclassified": "未分類",
         "untagged": "タグなし",
         "switchLens": "ビュー切替"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "作品タイトル...",
+        "export": "ノートとしてエクスポート",
+        "allNotes": "すべてのノート",
+        "conceptPlus": "コンセプト+ (4+)",
+        "theoryPlus": "理論+ (6+)",
+        "search": "検索...",
+        "noNotes": "ノートが見つかりません",
+        "emptyCanvas": "左パネルのノートをクリックして作品を構築してください。",
+        "writeTransition": "トランジションまたは注釈を書く..."
     },
     "tableToolbar": {
         "addRow": "行を追加",

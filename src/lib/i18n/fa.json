@@ -364,7 +364,8 @@
         "reviewDueNotes": "بازبینی یادداشت‌های موعد",
         "openTrail": "باز کردن مسیر",
         "openLens": "تغییر عدسی",
-        "createLens": "ایجاد عدسی"
+        "createLens": "ایجاد عدسی",
+        "expressionForge": "کارگاه بیان"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -806,6 +807,17 @@
         "unclassified": "طبقه‌بندی نشده",
         "untagged": "بدون برچسب",
         "switchLens": "تغییر نما"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "عنوان ترکیب...",
+        "export": "صادرات به عنوان یادداشت",
+        "allNotes": "همه یادداشت‌ها",
+        "conceptPlus": "مفهوم+ (4+)",
+        "theoryPlus": "نظریه+ (6+)",
+        "search": "جستجو...",
+        "noNotes": "هیچ یادداشتی یافت نشد",
+        "emptyCanvas": "برای ساخت ترکیب خود روی یادداشت‌ها در پنل سمت چپ کلیک کنید.",
+        "writeTransition": "متن انتقالی یا حاشیه بنویسید..."
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

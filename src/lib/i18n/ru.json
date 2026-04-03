@@ -364,7 +364,8 @@
         "reviewDueNotes": "Просмотреть просроченные заметки",
         "openTrail": "Открыть маршрут",
         "openLens": "Сменить линзу",
-        "createLens": "Создать линзу"
+        "createLens": "Создать линзу",
+        "expressionForge": "Кузница выражения"
     },
     "actions": {
         "untitled": "Без названия",
@@ -795,6 +796,17 @@
         "unclassified": "Без категории",
         "untagged": "Без тегов",
         "switchLens": "Сменить вид"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "Название композиции...",
+        "export": "Экспорт как заметку",
+        "allNotes": "Все заметки",
+        "conceptPlus": "Концепт+ (4+)",
+        "theoryPlus": "Теория+ (6+)",
+        "search": "Поиск...",
+        "noNotes": "Заметки не найдены",
+        "emptyCanvas": "Нажимайте на заметки в левой панели, чтобы построить композицию.",
+        "writeTransition": "Написать переход или аннотацию..."
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

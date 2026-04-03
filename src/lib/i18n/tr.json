@@ -364,7 +364,8 @@
         "reviewDueNotes": "Vadesi gelen notları gözden geçir",
         "openTrail": "Yolu aç",
         "openLens": "Lens değiştir",
-        "createLens": "Lens oluştur"
+        "createLens": "Lens oluştur",
+        "expressionForge": "İfade Dökümhanesi"
     },
     "actions": {
         "untitled": "Başlıksız",
@@ -795,6 +796,17 @@
         "unclassified": "Sınıflandırılmamış",
         "untagged": "Etiketsiz",
         "switchLens": "Görünüm değiştir"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "Kompozisyon başlığı...",
+        "export": "Not olarak dışa aktar",
+        "allNotes": "Tüm notlar",
+        "conceptPlus": "Kavram+ (4+)",
+        "theoryPlus": "Teori+ (6+)",
+        "search": "Ara...",
+        "noNotes": "Not bulunamadı",
+        "emptyCanvas": "Kompozisyonunuzu oluşturmak için sol paneldeki notlara tıklayın.",
+        "writeTransition": "Geçiş veya açıklama yazın..."
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

@@ -364,7 +364,8 @@
         "reviewDueNotes": "만기 노트 검토",
         "openTrail": "트레일 열기",
         "openLens": "렌즈 전환",
-        "createLens": "렌즈 만들기"
+        "createLens": "렌즈 만들기",
+        "expressionForge": "표현 포지"
     },
     "actions": {
         "untitled": "제목 없음",
@@ -795,6 +796,17 @@
         "unclassified": "미분류",
         "untagged": "태그 없음",
         "switchLens": "보기 전환"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "작품 제목...",
+        "export": "노트로 내보내기",
+        "allNotes": "모든 노트",
+        "conceptPlus": "개념+ (4+)",
+        "theoryPlus": "이론+ (6+)",
+        "search": "검색...",
+        "noNotes": "노트를 찾을 수 없습니다",
+        "emptyCanvas": "왼쪽 패널에서 노트를 클릭하여 작품을 만드세요.",
+        "writeTransition": "전환 또는 주석 작성..."
     },
     "tableToolbar": {
         "addRow": "행 추가",

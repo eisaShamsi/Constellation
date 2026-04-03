@@ -364,7 +364,8 @@
         "reviewDueNotes": "סקור פתקים שהגיע מועדם",
         "openTrail": "פתח שביל",
         "openLens": "החלף עדשה",
-        "createLens": "צור עדשה"
+        "createLens": "צור עדשה",
+        "expressionForge": "מפעל ביטוי"
     },
     "actions": {
         "untitled": "ללא כותרת",
@@ -795,6 +796,17 @@
         "unclassified": "לא מסווג",
         "untagged": "ללא תגית",
         "switchLens": "החלף תצוגה"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "כותרת ההרכב...",
+        "export": "ייצא כפתק",
+        "allNotes": "כל הפתקים",
+        "conceptPlus": "מושג+ (4+)",
+        "theoryPlus": "תיאוריה+ (6+)",
+        "search": "חיפוש...",
+        "noNotes": "לא נמצאו פתקים",
+        "emptyCanvas": "לחץ על פתקים מהפאנל השמאלי כדי לבנות את ההרכב שלך.",
+        "writeTransition": "כתוב מעבר או הערה..."
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

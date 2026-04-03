@@ -364,7 +364,8 @@
         "reviewDueNotes": "مراجعة الملاحظات المستحقة",
         "openTrail": "فتح مسار",
         "openLens": "تبديل العدسة",
-        "createLens": "إنشاء عدسة"
+        "createLens": "إنشاء عدسة",
+        "expressionForge": "مصنع التعبير"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -806,6 +807,17 @@
         "unclassified": "غير مصنف",
         "untagged": "بدون وسم",
         "switchLens": "تبديل العرض"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "عنوان التأليف...",
+        "export": "تصدير كملاحظة",
+        "allNotes": "كل الملاحظات",
+        "conceptPlus": "مفهوم+ (4+)",
+        "theoryPlus": "نظرية+ (6+)",
+        "search": "بحث...",
+        "noNotes": "لم يتم العثور على ملاحظات",
+        "emptyCanvas": "انقر على الملاحظات من اللوحة اليسرى لبناء تأليفك.",
+        "writeTransition": "اكتب نص انتقالي أو تعليق..."
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

@@ -364,7 +364,8 @@
         "reviewDueNotes": "واجب الاداء نوٹس کا جائزہ",
         "openTrail": "پگڈنڈی کھولیں",
         "openLens": "لینز تبدیل کریں",
-        "createLens": "لینز بنائیں"
+        "createLens": "لینز بنائیں",
+        "expressionForge": "اظہار فورج"
     },
     "actions": {
         "untitled": "بغیر عنوان",
@@ -795,6 +796,17 @@
         "unclassified": "غیر درجہ بند",
         "untagged": "بغیر ٹیگ",
         "switchLens": "نظارہ تبدیل کریں"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "تحریر کا عنوان...",
+        "export": "نوٹ کے طور پر برآمد",
+        "allNotes": "تمام نوٹس",
+        "conceptPlus": "تصور+ (4+)",
+        "theoryPlus": "نظریہ+ (6+)",
+        "search": "تلاش...",
+        "noNotes": "کوئی نوٹ نہیں ملا",
+        "emptyCanvas": "اپنی تحریر بنانے کے لیے بائیں پینل سے نوٹس پر کلک کریں۔",
+        "writeTransition": "منتقلی یا تشریح لکھیں..."
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

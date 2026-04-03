@@ -363,7 +363,8 @@
         "reviewDueNotes": "Review due notes",
         "openTrail": "Open Trail",
         "openLens": "Switch Lens",
-        "createLens": "Create Lens"
+        "createLens": "Create Lens",
+        "expressionForge": "Expression Forge"
     },
     "actions": {
         "untitled": "Untitled",
@@ -805,6 +806,17 @@
         "unclassified": "Unclassified",
         "untagged": "Untagged",
         "switchLens": "Switch view"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "Composition title...",
+        "export": "Export as Note",
+        "allNotes": "All notes",
+        "conceptPlus": "Concept+ (4+)",
+        "theoryPlus": "Theory+ (6+)",
+        "search": "Search...",
+        "noNotes": "No notes found",
+        "emptyCanvas": "Click notes from the left panel to build your composition.",
+        "writeTransition": "Write transition or annotation..."
     },
     "tableToolbar": {
         "addRow": "Add row",

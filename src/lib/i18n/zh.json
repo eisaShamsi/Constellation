@@ -364,7 +364,8 @@
         "reviewDueNotes": "复习到期笔记",
         "openTrail": "打开路径",
         "openLens": "切换镜头",
-        "createLens": "创建镜头"
+        "createLens": "创建镜头",
+        "expressionForge": "表达锻造"
     },
     "actions": {
         "untitled": "未命名",
@@ -795,6 +796,17 @@
         "unclassified": "未分类",
         "untagged": "无标签",
         "switchLens": "切换视图"
+    },
+    "expressionForge": {
+        "titlePlaceholder": "作品标题...",
+        "export": "导出为笔记",
+        "allNotes": "所有笔记",
+        "conceptPlus": "概念+ (4+)",
+        "theoryPlus": "理论+ (6+)",
+        "search": "搜索...",
+        "noNotes": "未找到笔记",
+        "emptyCanvas": "点击左侧面板中的笔记来构建您的作品。",
+        "writeTransition": "写过渡或注释..."
     },
     "tableToolbar": {
         "addRow": "添加行",
