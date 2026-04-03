@@ -540,7 +540,7 @@ Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das
 
 > „Es kommt nicht auf die Menge Ihrer Daten an. Entscheidend ist nicht, wie viele Quellen Sie speichern, sondern wie Sie daraus Wissen formen und zu einem sinnvollen Bewusstsein verknuepfen."
 
-Die Kognitive Engine besteht aus sechs integrierten Werkzeugen: Typisierte Links, Wissensschichten, Reifelebenszyklus, Spannungsdetektor, Herkunftskette und Externalisierungsmaschine.
+Die Kognitive Engine besteht aus acht integrierten Werkzeugen: Typisierte Links, Wissensschichten, Reifelebenszyklus, Spannungsdetektor, Herkunftskette, Externalisierungsmaschine, Überprüfungspuls und Pfade.
 
 ---
 
@@ -703,6 +703,53 @@ Die meisten Apps behandeln alle Notizen gleich. Die Externalisierungsmaschine ma
 - **Eigenschaftenpanel**: Dropdown, wenn die `stage`-Eigenschaft vorhanden ist
 - **Dateibaum**: Emoji-Symbol neben dem Notiznamen
 - **Fokus-Modus-Fusszeile**: Schaltflaeche „Hochstufen zu Permanent"
+
+### 17.7 Überprüfungspuls
+
+#### Was ist das?
+
+Der Überprüfungspuls ist ein System zur zeitversetzten Wiedervorlage, das Notizen in wachsenden Abstaenden wieder in Ihre Aufmerksamkeit bringt: 1 Tag, dann 3, dann 7, dann 14, dann 30 Tage nach der letzten Ueberpruefung. Es ueberwacht auch Notizen mit den Tags `#assumption` oder `#model` als Denkmodell-Checkpoints und fuehrt eine "Nie ueberprueft"-Warteschlange fuer erfasste aber nie wiederbesuchte Notizen.
+
+#### Warum ist das wichtig?
+
+Wissen verfaellt ohne Wiederholung. Sie schreiben heute eine Notiz und haben in drei Wochen vergessen, dass sie existiert. Verteilte Wiederholung ist die am besten belegte Technik der Kognitionswissenschaft gegen diesen Verfall. Der Überprüfungspuls wendet dieses Prinzip auf Ihre tatsaechlichen Notizen an.
+
+#### So verwenden Sie es
+
+1. Klicken Sie auf den **Überprüfungspuls**-Tab in der linken Seitenleiste. Sie sehen drei Bereiche: Faellig zur Ueberpruefung, Denkmodell-Checkpoints (`#assumption` / `#model`), und Nie ueberprueft.
+2. Klicken Sie auf eine Notiz, um sie zu oeffnen und durchzulesen.
+3. Waehlen Sie eine der drei Aktionen:
+   - **Ueberprueft** (Haekchen) — plant die naechste Ueberpruefung im naechsten Intervall (1 → 3 → 7 → 14 → 30 Tage).
+   - **7 Tage zurueckstellen** (Augensymbol) — verschiebt die Notiz um 7 Tage ohne das Intervall voranzutreiben.
+   - **Verwerfen** (Archivsymbol) — entfernt die Notiz dauerhaft aus der Ueberpruefungsliste.
+4. Oeffnen Sie die Befehlspalette und geben Sie "Review due notes" ein.
+
+#### Wo sehen Sie es?
+
+- **Linke Seitenleiste**: Der Überprüfungspuls-Tab mit Badge-Zaehler fuer faellige Notizen
+- **Befehlspalette**: Befehl "Review due notes" fuer schnellen Zugriff
+
+### 17.8 Pfade
+
+#### Was ist das?
+
+Pfade sind benannte, geordnete Sequenzen von Notizen — wie Kapitel in einem Buch oder Stationen einer gefuehrten Tour durch Ihr Wissen. Ein Pfad wird definiert durch `trail: true` im Frontmatter einer Notiz, gefolgt von einer geordneten Liste von Wikilinks im Notiztext.
+
+#### Warum ist das wichtig?
+
+Wissen ist nicht immer ein Netz. Manchmal ist es ein Weg — eine Lernsequenz, eine Argumentationskette, eine Erzaehlung. Pfade erfassen diese Reihenfolge explizit und fuegen Ihrer nicht-linearen Bibliothek eine lineare Dimension hinzu.
+
+#### So verwenden Sie es
+
+1. Erstellen Sie eine neue Notiz mit `trail: true` im Frontmatter.
+2. Listen Sie im Notiztext Wikilinks in der gewuenschten Reihenfolge auf.
+3. Wenn Sie eine Notiz oeffnen, die zu einem Pfad gehoert, zeigt die Breadcrumb-Leiste einen Pfad-Indikator mit Name und Position (z.B. "Mein Pfad 2/5"). Pfeiltasten navigieren zur vorherigen und naechsten Notiz.
+4. Oeffnen Sie die Befehlspalette und geben Sie "Open Trail" ein, um alle Pfade anzuzeigen.
+
+#### Wo sehen Sie es?
+
+- **Breadcrumb-Leiste**: Pfad-Indikator mit Name, Position und Navigationspfeilen
+- **Befehlspalette**: Befehl "Open Trail" listet alle Pfade auf
 
 ### Einstellungen der Kognitiven Engine
 

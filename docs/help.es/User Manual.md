@@ -540,7 +540,7 @@ El Motor Cognitivo es el sistema de inteligencia integrado de Constellation que 
 
 > «La cantidad de datos no importa. No se trata de cuantas fuentes almacenas, sino de como formulas tu conocimiento a partir de ellas y lo enlazas en una conciencia unica y significativa.»
 
-El Motor Cognitivo esta compuesto por seis herramientas integradas: Enlaces tipados, Estratos del conocimiento, Ciclo de madurez, Detector de tensiones, Cadena de procedencia y Motor de externalizacion.
+El Motor Cognitivo esta compuesto por ocho herramientas integradas: Enlaces tipados, Estratos del conocimiento, Ciclo de madurez, Detector de tensiones, Cadena de procedencia, Motor de externalizacion, Pulso de revision y Senderos.
 
 ---
 
@@ -703,6 +703,53 @@ La mayoria de las apps tratan todas las notas por igual. El Motor de externaliza
 - **Panel de propiedades**: desplegable cuando existe la propiedad `stage`
 - **Arbol de archivos**: icono emoji junto al nombre de la nota
 - **Pie del modo Enfoque**: boton "Promover a Permanente"
+
+### 17.7 Pulso de revision
+
+#### Que es?
+
+El Pulso de revision es un sistema de resurgimiento espaciado que trae notas de vuelta a tu atencion en intervalos crecientes: 1 dia, luego 3, luego 7, luego 14, luego 30 dias despues de la ultima revision. Tambien monitorea notas etiquetadas con `#assumption` o `#model` como puntos de control de modelos mentales, y mantiene una cola de "Nunca revisadas" para notas capturadas pero nunca revisitadas.
+
+#### Por que importa?
+
+El conocimiento se desvanece sin revisitacion. Escribes una nota hoy y en tres semanas olvidas que existe. La repeticion espaciada es la tecnica mas establecida en ciencias cognitivas para combatir este deterioro. El Pulso de revision aplica este principio a tus notas reales.
+
+#### Como usarlo
+
+1. Haz clic en la pestana **Pulso de revision** en la barra lateral izquierda. Veras tres secciones: Pendientes de revision, Puntos de control de modelos mentales (`#assumption` / `#model`), y Nunca revisadas.
+2. Haz clic en cualquier nota para abrirla y leerla.
+3. Elige una de tres acciones:
+   - **Revisada** (marca de verificacion) — programa la siguiente revision en el proximo intervalo (1 → 3 → 7 → 14 → 30 dias).
+   - **Posponer 7d** (icono de ojo) — pospone la nota 7 dias sin avanzar el intervalo.
+   - **Descartar** (icono de archivo) — elimina la nota de la cola de revision permanentemente.
+4. Abre la Paleta de Comandos y escribe "Review due notes" para ir directamente a las notas pendientes.
+
+#### Donde se ve?
+
+- **Barra lateral izquierda**: La pestana Pulso de revision con contador de notas pendientes
+- **Paleta de Comandos**: Comando "Review due notes" para acceso rapido
+
+### 17.8 Senderos
+
+#### Que es?
+
+Los Senderos son secuencias ordenadas y nombradas de notas — como capitulos de un libro o paradas en un recorrido guiado por tu conocimiento. Se definen agregando `trail: true` al frontmatter de una nota, y luego listando wikilinks en orden en el cuerpo de la nota.
+
+#### Por que importa?
+
+El conocimiento no siempre es una red. A veces es un camino — una secuencia de aprendizaje, una progresion de argumentos, una narrativa. Los Senderos capturan ese orden explicitamente, anadiendo una dimension lineal a tu biblioteca no lineal.
+
+#### Como usarlo
+
+1. Crea una nueva nota con `trail: true` en el frontmatter.
+2. En el cuerpo de la nota, lista wikilinks en el orden deseado.
+3. Al abrir cualquier nota que pertenezca a un sendero, la barra de migas muestra un indicador con el nombre del sendero y la posicion (ej. "Mi Sendero 2/5"). Flechas de navegacion permiten ir a la nota anterior y siguiente.
+4. Abre la Paleta de Comandos y escribe "Open Trail" para ver todos los senderos.
+
+#### Donde se ve?
+
+- **Barra de migas**: Indicador del sendero con nombre, posicion y flechas de navegacion
+- **Paleta de Comandos**: Comando "Open Trail" lista todos los senderos
 
 ### Configuracion del Motor Cognitivo
 

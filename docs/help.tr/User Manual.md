@@ -540,7 +540,7 @@ Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz ar
 
 > "Verilerinizin miktarı önemli değil. Önemli olan kaç kaynak sakladığınız değil, onlardan bilginizi nasıl şekillendirdiğiniz ve anlamlı tek bir farkındalıkta nasıl birleştirdiğinizdir."
 
-Bilişsel Motor altı entegre araçtan oluşur: Tipli bağlantılar, Bilgi katmanları, Olgunluk döngüsü, Gerilim algılayıcı, Köken zinciri ve Dışsallaştırma motoru.
+Bilişsel Motor sekiz entegre araçtan oluşur: Tipli bağlantılar, Bilgi katmanları, Olgunluk döngüsü, Gerilim algılayıcı, Köken zinciri, Dışsallaştırma motoru, Gözden Geçirme Nabzı ve Yollar.
 
 ---
 
@@ -703,6 +703,53 @@ Notlarınızın ham yakalamadardan kristalleşmiş içgörülere nasıl olgunla�
 - **Özellikler paneli**: `stage` özelliği mevcut olduğunda açılır menü
 - **Dosya ağacı**: not adının yanında emoji simgesi
 - **Odak modu alt bilgisi**: "Kalıcıya Terfi Et" düğmesi
+
+### 17.7 Gözden Geçirme Nabzı
+
+#### Nedir?
+
+Gözden Geçirme Nabzı, notları artan aralıklarla dikkatinize geri getiren aralıklı yeniden yüzeyleme sistemidir: son gözden geçirmeden 1 gün, sonra 3, sonra 7, sonra 14, sonra 30 gün sonra. Ayrıca `#assumption` veya `#model` etiketli notları zihinsel model kontrol noktaları olarak izler ve yakalanmış ancak hiç tekrar ziyaret edilmemiş notlar için bir "Hiç gözden geçirilmemiş" kuyruğu tutar.
+
+#### Neden önemli?
+
+Bilgi, tekrar ziyaret edilmeden zayıflar. Bugün bir not yazarsınız ve üç hafta sonra var olduğunu unutursunuz. Aralıklı tekrar, bilişsel bilimde bu zayıflamayla savaşmak için en yerleşik tekniktir. Gözden Geçirme Nabzı bu ilkeyi gerçek notlarınıza uygular.
+
+#### Nasıl kullanılır
+
+1. Sol kenar çubuğunda **Gözden Geçirme Nabzı** sekmesine tıklayın. Üç bölüm göreceksiniz: Gözden geçirilmesi gereken, Zihinsel model kontrol noktaları (`#assumption` / `#model`), ve Hiç gözden geçirilmemiş.
+2. Herhangi bir nota tıklayarak açın ve okuyun.
+3. Üç eylemden birini seçin:
+   - **Gözden geçirildi** (onay işareti) — bir sonraki aralıkta bir sonraki gözden geçirmeyi planlar (1 → 3 → 7 → 14 → 30 gün).
+   - **7 gün ertele** (göz simgesi) — aralığı ilerletmeden notu 7 gün erteler.
+   - **Kaldır** (arşiv simgesi) — notu gözden geçirme kuyruğundan kalıcı olarak kaldırır.
+4. Komut Paletini açın ve "Review due notes" yazın.
+
+#### Nerede görülür?
+
+- **Sol kenar çubuğu**: Bekleyen not sayısını gösteren rozetli Gözden Geçirme Nabzı sekmesi
+- **Komut Paleti**: Hızlı erişim için "Review due notes" komutu
+
+### 17.8 Yollar
+
+#### Nedir?
+
+Yollar, notların adlandırılmış ve sıralı dizileridir — bir kitabın bölümleri veya bilginiz boyunca rehberli bir turun durakları gibi. Bir notun frontmatter'ına `trail: true` eklenerek ve not gövdesinde wikilinklerin sırayla listelenmesiyle tanımlanır.
+
+#### Neden önemli?
+
+Bilgi her zaman bir ağ değildir. Bazen bir yoldur — bir öğrenme dizisi, argüman ilerlemesi, bir anlatı. Yollar bu sırayı açıkça yakalar ve doğrusal olmayan kütüphanenize doğrusal bir boyut ekler.
+
+#### Nasıl kullanılır
+
+1. Frontmatter'da `trail: true` olan yeni bir not oluşturun.
+2. Not gövdesinde, wikilinkleri istenen sırada listeleyin.
+3. Bir yola ait bir notu açtığınızda, içerik haritası çubuğu yol adını ve konumu gösteren bir gösterge gösterir (ör. "Yolum 2/5"). Ok düğmeleri önceki ve sonraki nota gitmenizi sağlar.
+4. Komut Paletini açın ve "Open Trail" yazarak tüm yolları görüntüleyin.
+
+#### Nerede görülür?
+
+- **İçerik haritası çubuğu**: Ad, konum ve gezinme okları içeren yol göstergesi
+- **Komut Paleti**: Tüm yolları listeleyen "Open Trail" komutu
 
 ### Bilişsel Motor Ayarları
 

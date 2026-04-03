@@ -540,7 +540,7 @@ Le Moteur Cognitif est le systeme d'intelligence integre de Constellation qui an
 
 > « La quantite de vos donnees n'a pas d'importance. Ce qui compte, ce n'est pas combien de sources vous stockez, mais comment vous formulez votre connaissance a partir d'elles et la reliez en une conscience unique et significative. »
 
-Le Moteur Cognitif se compose de six outils integres : Liens types, Strates de connaissance, Cycle de maturite, Detecteur de tensions, Chaine de provenance et Moteur d'externalisation.
+Le Moteur Cognitif se compose de huit outils integres : Liens types, Strates de connaissance, Cycle de maturite, Detecteur de tensions, Chaine de provenance, Moteur d'externalisation, Impulsion de revision et Sentiers.
 
 ---
 
@@ -703,6 +703,53 @@ La plupart des apps traitent toutes les notes de la meme facon. Le Moteur d'exte
 - **Panneau des proprietes** : menu deroulant quand la propriete `stage` existe
 - **Arborescence des fichiers** : icone emoji a cote du nom de la note
 - **Pied de page du mode Focus** : bouton « Promouvoir en Permanent »
+
+### 17.7 Impulsion de revision
+
+#### Qu'est-ce que c'est ?
+
+L'Impulsion de revision est un systeme de resurgissement espace qui ramene les notes a votre attention a des intervalles croissants : 1 jour, puis 3, puis 7, puis 14, puis 30 jours apres la derniere revision. Il surveille egalement les notes etiquetees avec `#assumption` ou `#model` comme points de controle des modeles mentaux, et maintient une file « Jamais revisees » pour les notes capturees mais jamais revisitees.
+
+#### Pourquoi c'est important ?
+
+La connaissance se dissipe sans revisitation. Vous ecrivez une note aujourd'hui et dans trois semaines vous avez oublie qu'elle existe. La repetition espacee est la technique la mieux etablie en sciences cognitives pour combattre ce declin. L'Impulsion de revision applique ce principe a vos notes reelles.
+
+#### Comment l'utiliser
+
+1. Cliquez sur l'onglet **Impulsion de revision** dans la barre laterale gauche. Vous verrez trois sections : A reviser, Points de controle des modeles mentaux (`#assumption` / `#model`), et Jamais revisees.
+2. Cliquez sur une note pour l'ouvrir et la lire.
+3. Choisissez l'une des trois actions :
+   - **Revisee** (coche) — planifie la prochaine revision au prochain intervalle (1 → 3 → 7 → 14 → 30 jours).
+   - **Reporter 7j** (icone oeil) — reporte la note de 7 jours sans avancer l'intervalle.
+   - **Rejeter** (icone archive) — retire la note de la file de revision definitivement.
+4. Ouvrez la Palette de Commandes et tapez "Review due notes" pour acceder directement aux notes en attente.
+
+#### Ou le voir ?
+
+- **Barre laterale gauche** : L'onglet Impulsion de revision avec un compteur de notes en attente
+- **Palette de Commandes** : Commande "Review due notes" pour un acces rapide
+
+### 17.8 Sentiers
+
+#### Qu'est-ce que c'est ?
+
+Les Sentiers sont des sequences nommees et ordonnees de notes — comme les chapitres d'un livre ou les etapes d'une visite guidee de vos connaissances. Ils sont definis en ajoutant `trail: true` au frontmatter d'une note, puis en listant les wikiliens dans l'ordre dans le corps de la note.
+
+#### Pourquoi c'est important ?
+
+La connaissance n'est pas toujours un reseau. Parfois c'est un chemin — une sequence d'apprentissage, une progression d'arguments, un recit. Les Sentiers capturent cet ordre explicitement, ajoutant une dimension lineaire a votre bibliotheque non lineaire.
+
+#### Comment l'utiliser
+
+1. Creez une nouvelle note avec `trail: true` dans le frontmatter.
+2. Dans le corps de la note, listez les wikiliens dans l'ordre souhaite.
+3. Lorsque vous ouvrez une note appartenant a un sentier, la barre de navigation affiche un indicateur avec le nom du sentier et la position (ex. « Mon Sentier 2/5 »). Des fleches de navigation permettent d'aller a la note precedente et suivante.
+4. Ouvrez la Palette de Commandes et tapez "Open Trail" pour voir tous les sentiers.
+
+#### Ou le voir ?
+
+- **Barre de navigation** : Indicateur du sentier avec nom, position et fleches de navigation
+- **Palette de Commandes** : Commande "Open Trail" liste tous les sentiers
 
 ### Parametres du Moteur Cognitif
 

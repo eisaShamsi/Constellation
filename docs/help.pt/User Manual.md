@@ -540,7 +540,7 @@ O Motor Cognitivo e o sistema de inteligencia integrado do Constellation que ana
 
 > "A quantidade dos seus dados nao importa. Nao se trata de quantas fontes voce armazena, mas de como voce formula seu conhecimento a partir delas e o conecta em uma consciencia unica e significativa."
 
-O Motor Cognitivo e composto por seis ferramentas integradas: Links tipados, Estratos de conhecimento, Ciclo de maturidade, Detector de tensoes, Cadeia de proveniencia e Motor de externalizacao.
+O Motor Cognitivo e composto por oito ferramentas integradas: Links tipados, Estratos de conhecimento, Ciclo de maturidade, Detector de tensoes, Cadeia de proveniencia, Motor de externalizacao, Pulso de revisao e Trilhas.
 
 ---
 
@@ -703,6 +703,53 @@ A maioria dos apps trata todas as notas igualmente. O Motor de externalizacao to
 - **Painel de propriedades**: menu suspenso quando a propriedade `stage` existe
 - **Arvore de arquivos**: icone emoji ao lado do nome da nota
 - **Rodape do modo Foco**: botao "Promover para Permanente"
+
+### 17.7 Pulso de revisao
+
+#### O que e?
+
+O Pulso de revisao e um sistema de ressurgimento espacado que traz notas de volta a sua atencao em intervalos crescentes: 1 dia, depois 3, depois 7, depois 14, depois 30 dias apos a ultima revisao. Tambem monitora notas com as tags `#assumption` ou `#model` como pontos de verificacao de modelos mentais, e mantem uma fila "Nunca revisadas" para notas capturadas mas nunca revisitadas.
+
+#### Por que importa?
+
+O conhecimento se dissipa sem revisitacao. Voce escreve uma nota hoje e em tres semanas esquece que ela existe. A repeticao espacada e a tecnica mais estabelecida na ciencia cognitiva para combater essa degradacao. O Pulso de revisao aplica esse principio as suas notas reais.
+
+#### Como usar
+
+1. Clique na aba **Pulso de revisao** na barra lateral esquerda. Voce vera tres secoes: Pendentes de revisao, Pontos de verificacao de modelos mentais (`#assumption` / `#model`), e Nunca revisadas.
+2. Clique em qualquer nota para abri-la e ler.
+3. Escolha uma das tres acoes:
+   - **Revisada** (marca de verificacao) — agenda a proxima revisao no proximo intervalo (1 → 3 → 7 → 14 → 30 dias).
+   - **Adiar 7d** (icone de olho) — adia a nota por 7 dias sem avancar o intervalo.
+   - **Descartar** (icone de arquivo) — remove a nota da fila de revisao permanentemente.
+4. Abra a Paleta de Comandos e digite "Review due notes" para ir direto as notas pendentes.
+
+#### Onde aparece?
+
+- **Barra lateral esquerda**: Aba Pulso de revisao com contador de notas pendentes
+- **Paleta de Comandos**: Comando "Review due notes" para acesso rapido
+
+### 17.8 Trilhas
+
+#### O que e?
+
+Trilhas sao sequencias nomeadas e ordenadas de notas — como capitulos de um livro ou paradas em um tour guiado pelo seu conhecimento. Sao definidas adicionando `trail: true` ao frontmatter de uma nota, e listando wikilinks em ordem no corpo da nota.
+
+#### Por que importa?
+
+O conhecimento nem sempre e uma rede. As vezes e um caminho — uma sequencia de aprendizado, uma progressao de argumentos, uma narrativa. As Trilhas capturam essa ordem explicitamente, adicionando uma dimensao linear a sua biblioteca nao linear.
+
+#### Como usar
+
+1. Crie uma nova nota com `trail: true` no frontmatter.
+2. No corpo da nota, liste wikilinks na ordem desejada.
+3. Ao abrir qualquer nota que pertenca a uma trilha, a barra de navegacao mostra um indicador com o nome da trilha e a posicao (ex. "Minha Trilha 2/5"). Setas de navegacao permitem ir para a nota anterior e proxima.
+4. Abra a Paleta de Comandos e digite "Open Trail" para ver todas as trilhas.
+
+#### Onde aparece?
+
+- **Barra de navegacao**: Indicador da trilha com nome, posicao e setas de navegacao
+- **Paleta de Comandos**: Comando "Open Trail" lista todas as trilhas
 
 ### Configuracoes do Motor Cognitivo
 

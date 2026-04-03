@@ -430,9 +430,127 @@ Most apps treat all notes equally. The Externalization Engine makes the distinct
 
 ---
 
+## Feature 7: Review Pulse
+
+### What it is
+
+Review Pulse is a spaced resurfacing system that brings notes back to your attention at expanding intervals. Instead of letting knowledge fade after you write it, Review Pulse nudges you to revisit notes on a schedule: 1 day, then 3 days, then 7, then 14, then 30 days after last review. Each review is a checkpoint — a moment to confirm that you still understand what you wrote and that it still holds true.
+
+Review Pulse also monitors notes tagged with `#assumption` or `#model` as mental model checkpoints. These are ideas that shape how you interpret everything else, so they deserve deliberate periodic re-examination.
+
+Finally, Review Pulse maintains a "Never Reviewed" queue — notes that have existed in your library but have never been explicitly reviewed. These are the ideas you captured and forgot.
+
+### Why it matters
+
+Knowledge decays without revisitation. You write a note today, and in three weeks you have forgotten not just the details but that the note exists at all. Spaced repetition is the most well-established technique in cognitive science for fighting this decay. Review Pulse applies this principle not to flashcards but to your actual notes — the knowledge artifacts you created yourself.
+
+The mental model checkpoint feature is especially important. Your assumptions and mental models are the invisible lenses through which you see everything. If an assumption becomes outdated and you never notice, every conclusion built on top of it is compromised. Review Pulse ensures your foundations get regular inspection.
+
+### How to use it
+
+**Step 1: Open the Review Pulse panel**
+
+Click the **Review Pulse** tab in the left sidebar. You will see three sections:
+
+- **Due for Review** — notes whose next review date has arrived, sorted by urgency
+- **Mental Model Checkpoints** — notes tagged `#assumption` or `#model` that are due for re-examination
+- **Never Reviewed** — notes that have never been explicitly reviewed
+
+**Step 2: Review a note**
+
+Click any note in the list to open it. Read through it. Then choose one of three actions:
+
+- **Reviewed** (checkmark) — confirms you have re-read the note. The next review is scheduled at the next interval in the sequence (1 → 3 → 7 → 14 → 30 days).
+- **Snooze 7d** (eye icon) — pushes the note back by 7 days without advancing the interval. Use this when you do not have time to review properly right now.
+- **Dismiss** (archive icon) — removes the note from the review queue entirely. Use this for notes you no longer need to revisit.
+
+**Step 3: Use the Command Palette**
+
+Open the Command Palette and type "Review due notes" to jump directly to notes that are due for review.
+
+### Where you see it
+
+- **Left sidebar**: The Review Pulse tab shows all pending reviews with a badge count indicating how many notes are due.
+- **Sidebar badge**: A number badge appears on the Review Pulse tab icon when reviews are pending, so you always know at a glance.
+- **Command Palette**: "Review due notes" command for quick access.
+
+### Tips
+
+- Make reviewing a daily habit. Open the Review Pulse tab each morning and spend a few minutes with your due notes. The intervals are designed so this never takes long.
+- Tag your core beliefs and working assumptions with `#assumption` or `#model` so they appear in the Mental Model Checkpoints section. These are the notes most worth revisiting.
+- Use Snooze sparingly. If you snooze a note repeatedly, consider whether it belongs in your review queue at all — Dismiss might be more honest.
+- The Never Reviewed section is a powerful discovery tool. Notes you have never reviewed are notes you have never truly integrated into your thinking.
+
+---
+
+## Feature 8: Trails
+
+### What it is
+
+Trails are named, ordered sequences of notes — like chapters in a book or stops on a guided tour through your knowledge. When you create a trail, you define a specific path through your library: "read this note first, then this one, then this one." Each note in a trail knows its position and provides navigation to the previous and next note in the sequence.
+
+A trail is defined by adding `trail: true` to a note's frontmatter. The note's content then serves as the trail definition — an ordered list of wikilinks that form the sequence.
+
+### Why it matters
+
+Knowledge is not always a web. Sometimes it is a path. When you learn a new subject, you follow a sequence: fundamentals first, then intermediate concepts, then advanced applications. When you explain something to someone else, you choose an order. Trails let you capture that order explicitly.
+
+Without trails, your library is a non-linear web of connections — powerful for exploration, but unhelpful when you need to say "start here and follow this path." Trails add the linear dimension back, giving you the ability to create guided tours, reading sequences, learning paths, and argument progressions through your existing notes.
+
+### How to use it
+
+**Step 1: Create a trail note**
+
+Create a new note and add `trail: true` to the frontmatter:
+
+```yaml
+---
+trail: true
+---
+```
+
+**Step 2: Define the sequence**
+
+In the note body, list wikilinks in the order you want them to be followed:
+
+```markdown
+# Introduction to Epistemology
+
+1. [[What is Knowledge]]
+2. [[The Problem of Justification]]
+3. [[Foundationalism vs Coherentism]]
+4. [[The Gettier Problem]]
+5. [[Virtue Epistemology]]
+```
+
+Each wikilink becomes a stop on the trail. The order in the note defines the order of the trail.
+
+**Step 3: Navigate the trail**
+
+When you open any note that belongs to a trail, the breadcrumb bar shows a trail indicator with the trail name. Arrow buttons let you navigate to the previous and next note in the sequence without leaving the editor.
+
+**Step 4: Open a trail from the Command Palette**
+
+Open the Command Palette and type "Open Trail" to see a list of all trails in your library. Select one to open the trail definition note.
+
+### Where you see it
+
+- **Breadcrumb bar**: When viewing a note that belongs to a trail, a trail indicator appears showing the trail name and position (e.g., "Epistemology 3/5"). Previous and next navigation arrows let you move along the trail.
+- **Trail definition note**: The note with `trail: true` in frontmatter serves as the trail's table of contents.
+- **Command Palette**: "Open Trail" command lists all trails for quick access.
+
+### Tips
+
+- Use trails for onboarding sequences: create a "Start Here" trail that walks a newcomer through the most important notes in your library.
+- Use trails for argument construction: lay out the steps of a complex argument in order, so you can walk through the reasoning from premise to conclusion.
+- A note can belong to multiple trails. The breadcrumb shows whichever trail you navigated from.
+- Trail notes themselves can be linked to from anywhere. They serve as curated entry points into specific topics or narratives in your knowledge.
+
+---
+
 ## The Big Picture
 
-These 6 features work together as a unified system:
+These 8 features work together as a unified system:
 
 1. **Typed Links** give your connections meaning — not just "related" but "supports," "contradicts," "derives-from."
 2. **Knowledge Strata** reveals the depth of your understanding — from raw facts to synthesized paradigms.
@@ -440,6 +558,8 @@ These 6 features work together as a unified system:
 4. **Tension Detector** surfaces what is disconnected, contradictory, or fragile — the structural weaknesses in your thinking.
 5. **Provenance Chain** traces where your knowledge comes from — external evidence or personal insight, and how many steps removed.
 6. **Externalization Engine** makes the formalization journey visible — from fleeting capture to synthesized insight.
+7. **Review Pulse** ensures you revisit what you know — spaced resurfacing that fights knowledge decay and keeps your mental models honest.
+8. **Trails** add the linear dimension — named ordered sequences that turn your web of knowledge into guided paths.
 
 Together, they answer the question every knowledge worker eventually asks: *Do I truly understand what I think I understand?*
 
@@ -449,7 +569,9 @@ The Cognitive Engine does not answer that question for you. It gives you the str
 
 - When you add a **typed link**, that link feeds into **Strata** (certain types like `generalizes` and `supports` boost your note's level), **Maturity** (each inbound link brings a note closer to Evergreen), **Tension** (a `contradicts` link registers as a detected contradiction), and **Provenance** (a `derives-from` link extends the source chain).
 - When you set a **stage** on a note, the Externalization Engine tracks its formalization progress. A Fleeting note promoted to Permanent signals that a raw idea has been refined into a standalone concept.
-- A single action — typing `[[note|derives-from]]` — simultaneously enriches all six systems. You do not need to think about the CE explicitly. Just write, link, and think. The engine observes and reflects.
+- When **Review Pulse** resurfaces a note, you have the opportunity to add new links, update stale content, or re-evaluate assumptions — feeding back into every other CE feature.
+- When you create a **Trail**, you impose narrative order on your knowledge web, making it possible to walk through complex ideas step by step.
+- A single action — typing `[[note|derives-from]]` — simultaneously enriches all eight systems. You do not need to think about the CE explicitly. Just write, link, and think. The engine observes and reflects.
 
 ### Earned Complexity
 

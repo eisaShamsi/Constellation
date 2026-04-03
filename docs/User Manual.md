@@ -691,11 +691,11 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 
 The Cognitive Engine is a two-layer architecture that transforms Constellation from a note-taking app into a knowledge cognition instrument. Most note apps help you store and retrieve information. The Cognitive Engine goes further: it helps you understand what your knowledge actually means, where it comes from, how mature it is, and where the gaps lie.
 
-**Layer 1 — Structural Cognition** (zero AI dependency): Five tools that analyze your notes' structure, connections, and metadata to surface insights. Everything runs locally on your machine, fully offline, with no AI dependency. The engine reads the shape of your library — word counts, link counts, link types, and graph topology — to tell you things about your knowledge that you cannot easily see yourself.
+**Layer 1 — Structural Cognition** (zero AI dependency): Eight tools that analyze your notes' structure, connections, and metadata to surface insights. Everything runs locally on your machine, fully offline, with no AI dependency. The engine reads the shape of your library — word counts, link counts, link types, and graph topology — to tell you things about your knowledge that you cannot easily see yourself.
 
 **Layer 2 — AI Discovery** (coming soon): AI will read Layer 1's structures to find patterns you cannot see from inside your own knowledge.
 
-All six Cognitive Engine features require no configuration. They activate automatically as your library grows. You do not need to enable them or install anything extra.
+All eight Cognitive Engine features require no configuration. They activate automatically as your library grows. You do not need to enable them or install anything extra.
 
 ---
 
@@ -943,6 +943,79 @@ Most apps treat all notes equally. The Externalization Engine makes the distinct
 - Start by marking your most important notes as Permanent or Synthesis.
 - Use Fleeting for quick captures in Focus mode.
 - The four stages follow the Zettelkasten progression: fleeting thoughts become literature notes, which become permanent atomic ideas, which combine into original synthesis.
+
+---
+
+### 18.7 Review Pulse
+
+**What it is**
+
+Review Pulse is a spaced resurfacing system that brings notes back to your attention at expanding intervals: 1 day, then 3, then 7, then 14, then 30 days after your last review. It also monitors notes tagged with `#assumption` or `#model` as mental model checkpoints and maintains a "Never Reviewed" queue for notes you captured but never revisited.
+
+**Why it matters**
+
+Knowledge decays without revisitation. You write a note today, and in three weeks you have forgotten it exists. Spaced repetition is the most well-established technique in cognitive science for fighting this decay. Review Pulse applies this principle to your actual notes — not flashcards, but the knowledge artifacts you created yourself. The mental model checkpoint feature ensures your foundational assumptions get regular inspection.
+
+**How to use it**
+
+1. Click the **Review Pulse** tab in the left sidebar. You will see three sections: Due for Review, Mental Model Checkpoints (`#assumption` / `#model` tagged notes), and Never Reviewed.
+2. Click any note in the list to open it and read through it.
+3. Choose one of three actions:
+   - **Reviewed** (checkmark) — confirms you have re-read the note. The next review is scheduled at the next interval (1 → 3 → 7 → 14 → 30 days).
+   - **Snooze 7d** (eye icon) — pushes the note back by 7 days without advancing the interval.
+   - **Dismiss** (archive icon) — removes the note from the review queue entirely.
+4. Open the Command Palette and type "Review due notes" to jump directly to due notes.
+
+**Where you see it**
+
+- **Left sidebar**: The Review Pulse tab with a badge count showing how many notes are due.
+- **Command Palette**: "Review due notes" command for quick access.
+
+**Tips**
+
+- Make reviewing a daily habit. The intervals are designed so this never takes long.
+- Tag your core beliefs and working assumptions with `#assumption` or `#model` so they appear in Mental Model Checkpoints.
+- The Never Reviewed section surfaces notes you captured but never integrated into your thinking.
+
+---
+
+### 18.8 Trails
+
+**What it is**
+
+Trails are named, ordered sequences of notes — like chapters in a book or stops on a guided tour through your knowledge. A trail is defined by adding `trail: true` to a note's frontmatter, then listing wikilinks in order in the note body. Each note in a trail knows its position and provides navigation to the previous and next note.
+
+**Why it matters**
+
+Knowledge is not always a web. Sometimes it is a path — a learning sequence, an argument progression, a narrative. Trails let you capture that order explicitly, adding a linear dimension to your non-linear library.
+
+**How to use it**
+
+1. Create a new note with `trail: true` in the frontmatter:
+   ```yaml
+   ---
+   trail: true
+   ---
+   ```
+2. In the note body, list wikilinks in the order you want them followed:
+   ```markdown
+   1. [[First Note]]
+   2. [[Second Note]]
+   3. [[Third Note]]
+   ```
+3. When you open any note that belongs to a trail, the breadcrumb bar shows a trail indicator with the trail name and position (e.g., "My Trail 2/5"). Arrow buttons navigate to the previous and next note.
+4. Open the Command Palette and type "Open Trail" to see all trails in your library.
+
+**Where you see it**
+
+- **Breadcrumb bar**: Trail indicator with name, position, and prev/next navigation arrows.
+- **Command Palette**: "Open Trail" command lists all trails.
+
+**Tips**
+
+- Use trails for onboarding: create a "Start Here" trail that walks newcomers through your most important notes.
+- Use trails for argument construction: lay out reasoning from premise to conclusion.
+- A note can belong to multiple trails. The breadcrumb shows whichever trail you navigated from.
 
 ---
 
