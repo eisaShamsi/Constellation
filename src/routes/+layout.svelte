@@ -1499,6 +1499,11 @@
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if (isLocked) { e.preventDefault(); e.stopPropagation(); return; }
 
+		// Block browser defaults for known shortcuts (e.g., Ctrl+P = print → command palette)
+		if ((e.ctrlKey || e.metaKey) && e.key === 'p' && !e.shiftKey && !e.altKey) {
+			e.preventDefault();
+		}
+
 		// Escape always closes overlays (not remappable)
 		if (e.key === 'Escape') {
 			if (showCommandPalette) { showCommandPalette = false; return; }
