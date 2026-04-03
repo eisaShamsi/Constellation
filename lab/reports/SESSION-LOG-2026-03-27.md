@@ -1198,9 +1198,19 @@ All 11 phases built and tested in a single session:
 
 ---
 
+### Layer 1 Final — All i18n fixes
+
+**Tag:** `milestone/CE-layer1-final` at `f51c7ea`
+**ZIP:** `E:/Backups/Constellation/Constellation-CE-layer1-final-20260403.zip`
+
+Canvas fully localized: quadrant labels, card tags, settings presets,
+promote dialog — all translated in 15 languages. RTL layout working.
+
+---
+
 ### Open Items
 - CE Phase 4 user testing — pending larger library
-- CE Phase 12: 360.3D — new phase (user's concept: spherical knowledge inspector)
+- CE Phase 12: 360.3D — new phase (spherical knowledge inspector)
 - CE Phases 13-17: Layer 2 (AI Discovery) — after 360.3D
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session
