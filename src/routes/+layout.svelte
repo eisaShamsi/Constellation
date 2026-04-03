@@ -1312,12 +1312,12 @@
 			secondScreenOpen = false;
 		});
 
-		// Global keyboard shortcuts
-		document.addEventListener('keydown', handleGlobalKeydown);
+		// Global keyboard shortcuts — capture phase to beat browser defaults
+		document.addEventListener('keydown', handleGlobalKeydown, true);
 
 		// Cleanup on destroy
 		cleanupFns.push(
-			() => document.removeEventListener('keydown', handleGlobalKeydown),
+			() => document.removeEventListener('keydown', handleGlobalKeydown, true),
 			unlistenWatcher,
 			unlistenScreenNote,
 			unlistenScreenClosed,
