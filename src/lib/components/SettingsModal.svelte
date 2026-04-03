@@ -43,6 +43,7 @@
 		{ id: 'skyview', label: $t('settings.sections.skyview'), icon: 'graph' },
 		{ id: 'intelligence', label: $t('settings.sections.intelligence'), icon: 'bot' },
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
+		{ id: 'knowledge', label: $t('settings.sections.knowledge') || 'Knowledge Management', icon: 'brain' },
 		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
 		{ id: 'keyboard', label: $t('settings.sections.keyboard'), icon: 'keyboard' },
 		{ id: 'features', label: $t('settings.sections.features'), icon: 'grid' },
@@ -1072,54 +1073,6 @@
 						</div>
 					{/if}
 
-				<!-- ── Lenses (CE Phase 9) ── -->
-					<div class="setting-heading">{$t('lensPanel.switchLens') || 'Lenses'}</div>
-					{#if !lensesLoaded}
-						<button class="w-btn" style="font-size:0.8rem; padding:4px 12px;" onclick={loadLenses}>{$t('lensPanel.switchLens') || 'Load Lenses'}</button>
-					{:else}
-						{#each lensesList as lens}
-							<div class="custom-fontset-row">
-								<span class="custom-fontset-name">{lens.built_in ? '🔒' : '🔍'} {lens.name}</span>
-								<div class="custom-fontset-actions">
-									{#if !lens.built_in}
-										<button class="custom-fontset-btn" onclick={() => {
-											editLensId = lens.id; editLensName = lens.name;
-											editLensType = lens.lens_type;
-											editLensProperty = lens.property ?? '';
-											editLensValues = (lens.values ?? lens.root_tags ?? []).join(', ');
-											showLensEditor = true;
-										}}>
-											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-										</button>
-										<button class="custom-fontset-btn custom-fontset-delete" onclick={() => deleteLens(lens.id)}>
-											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-										</button>
-									{/if}
-								</div>
-							</div>
-						{/each}
-						<button class="w-btn" style="font-size:0.8rem; padding:4px 12px; margin-top:8px;" onclick={() => { editLensId = ''; editLensName = ''; editLensType = 'property-query'; editLensProperty = ''; editLensValues = ''; showLensEditor = true; }}>+ {$t('commands.createLens') || 'Create Lens'}</button>
-						{#if showLensEditor}
-							<div class="custom-fontset-editor" style="margin-top:8px;">
-								<input class="setting-control" type="text" placeholder="Lens name" bind:value={editLensName} style="margin-bottom:6px;" />
-								<select class="setting-control" bind:value={editLensType} style="margin-bottom:6px;">
-									<option value="property-query">Group by property</option>
-									<option value="tag-hierarchy">Group by tags</option>
-								</select>
-								{#if editLensType === 'property-query'}
-									<input class="setting-control" type="text" placeholder="Property key (e.g., stage, certainty)" bind:value={editLensProperty} style="margin-bottom:6px;" />
-									<input class="setting-control" type="text" placeholder="Values (comma-separated, e.g., high, medium, low)" bind:value={editLensValues} style="margin-bottom:6px;" />
-								{:else}
-									<input class="setting-control" type="text" placeholder="Root tags (comma-separated, leave empty for all)" bind:value={editLensValues} style="margin-bottom:6px;" />
-								{/if}
-								<div style="display:flex; gap:6px;">
-									<button class="w-btn" style="font-size:0.8rem; padding:4px 12px;" onclick={saveLensItem}>{editLensId ? 'Save' : 'Create'}</button>
-									<button class="w-btn" style="font-size:0.8rem; padding:4px 12px; background:none; border:1px solid var(--background-modifier-border); color:var(--text-muted);" onclick={() => showLensEditor = false}>Cancel</button>
-								</div>
-							</div>
-						{/if}
-					{/if}
-
 				<!-- ═══ SKY VIEW & LINKS ═══ -->
 				{:else if activeSection === 'skyview'}
 					<p class="section-intro">{$t('settings.skyview.intro')}</p>
@@ -1482,6 +1435,64 @@
 							</label>
 						</div>
 					</div>
+
+				<!-- ═══ KNOWLEDGE MANAGEMENT ═══ -->
+				{:else if activeSection === 'knowledge'}
+					<p class="section-intro">{$t('settings.knowledge.intro') || 'Configure how your knowledge is organized, viewed, and analyzed.'}</p>
+
+					<!-- ── Lenses ── -->
+					<div class="setting-heading">{$t('lensPanel.switchLens') || 'Lenses'}</div>
+					<p class="setting-desc" style="padding:0 0 8px; font-size:0.8rem;">{$t('settings.knowledge.lensDesc') || 'View your library through different classification schemes — by topic, stage, or any custom property.'}</p>
+
+					{#if !lensesLoaded}
+						<button class="w-btn" style="font-size:0.8rem; padding:6px 16px;" onclick={loadLenses}>{$t('settings.knowledge.loadLenses') || 'Load Lenses'}</button>
+					{:else}
+						{#each lensesList as lens}
+							<div class="custom-fontset-row">
+								<span class="custom-fontset-name">{lens.built_in ? '🔒' : '🔍'} {lens.name}</span>
+								<span class="custom-fontset-type" style="font-size:0.7rem; color:var(--text-faint); margin-inline-start:auto; margin-inline-end:8px;">
+									{lens.lens_type === 'property-query' ? (lens.property ?? '') : 'tags'}
+								</span>
+								<div class="custom-fontset-actions">
+									{#if !lens.built_in}
+										<button class="custom-fontset-btn" onclick={() => {
+											editLensId = lens.id; editLensName = lens.name;
+											editLensType = lens.lens_type;
+											editLensProperty = lens.property ?? '';
+											editLensValues = (lens.values ?? lens.root_tags ?? []).join(', ');
+											showLensEditor = true;
+										}}>
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+										</button>
+										<button class="custom-fontset-btn custom-fontset-delete" onclick={() => deleteLens(lens.id)}>
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+										</button>
+									{/if}
+								</div>
+							</div>
+						{/each}
+						<button class="w-btn" style="font-size:0.8rem; padding:6px 16px; margin-top:8px;" onclick={() => { editLensId = ''; editLensName = ''; editLensType = 'property-query'; editLensProperty = ''; editLensValues = ''; showLensEditor = true; }}>+ {$t('commands.createLens') || 'Create Lens'}</button>
+						{#if showLensEditor}
+							<div class="custom-fontset-editor" style="margin-top:12px; padding:12px; background:var(--background-secondary); border-radius:8px;">
+								<div style="font-weight:600; font-size:0.85rem; margin-bottom:8px;">{editLensId ? 'Edit Lens' : 'New Lens'}</div>
+								<input class="setting-control" type="text" placeholder={$t('settings.knowledge.lensName') || 'Lens name'} bind:value={editLensName} style="margin-bottom:8px;" />
+								<select class="setting-control" bind:value={editLensType} style="margin-bottom:8px;">
+									<option value="property-query">{$t('settings.knowledge.groupByProperty') || 'Group by property'}</option>
+									<option value="tag-hierarchy">{$t('settings.knowledge.groupByTags') || 'Group by tags'}</option>
+								</select>
+								{#if editLensType === 'property-query'}
+									<input class="setting-control" type="text" placeholder={$t('settings.knowledge.propertyKey') || 'Property key (e.g., stage, certainty, priority)'} bind:value={editLensProperty} style="margin-bottom:8px;" />
+									<input class="setting-control" type="text" placeholder={$t('settings.knowledge.propertyValues') || 'Values (comma-separated, e.g., high, medium, low)'} bind:value={editLensValues} style="margin-bottom:8px;" />
+								{:else}
+									<input class="setting-control" type="text" placeholder={$t('settings.knowledge.rootTags') || 'Root tags (comma-separated, leave empty for all tags)'} bind:value={editLensValues} style="margin-bottom:8px;" />
+								{/if}
+								<div style="display:flex; gap:8px;">
+									<button class="w-btn" style="font-size:0.8rem; padding:6px 16px;" onclick={saveLensItem}>{editLensId ? ($t('settings.knowledge.save') || 'Save') : ($t('settings.knowledge.create') || 'Create')}</button>
+									<button class="w-btn" style="font-size:0.8rem; padding:6px 16px; background:none; border:1px solid var(--background-modifier-border); color:var(--text-muted);" onclick={() => showLensEditor = false}>{$t('settings.knowledge.cancel') || 'Cancel'}</button>
+								</div>
+							</div>
+						{/if}
+					{/if}
 
 				<!-- ═══ APPEARANCE ═══ -->
 				{:else if activeSection === 'appearance'}
