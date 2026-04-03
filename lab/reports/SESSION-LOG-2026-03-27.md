@@ -1123,10 +1123,32 @@ Review Pulse, Trails. Three phases remain before Layer 2 (AI Discovery).
 
 ---
 
+### CE Phase 9: Multi-Lens Views (العدسات المتعددة)
+
+**Commit:** `4b72c0c` + `6708338` + `2869763` | **Tag:** `milestone/CE-phase-9-lenses`
+
+- New Rust module `src-tauri/src/lenses.rs`: list/save/apply lenses
+- 2 built-in lenses: "By Stage" (property) + "By Topic" (tags)
+- Sidebar lens dropdown (📁 Folders / 🔍 By Stage / 🔍 By Topic)
+- Virtual FileEntry tree from lens groups
+- Settings > Knowledge Management: lens manager (create/edit/delete)
+- Command palette: "Create Lens"
+- New "Knowledge Management" settings section (eye icon)
+- i18n: lensPanel.* + settings.knowledge.* in all 15 locales
+- **Test: PASS** — lens switching reorganizes file tree
+
+---
+
+### Milestone: CE-phase-9-lenses
+
+**Tag:** `milestone/CE-phase-9-lenses` at `c8df136`
+**ZIP:** `E:/Backups/Constellation/Constellation-CE-phase-9-20260403.zip`
+
+---
+
 ### Open Items
 - CE Phase 4 user testing — pending larger library
-- CE Phase 9: Multi-Lens Views — next
-- CE Phase 10: Expression Forge
+- CE Phase 10: Expression Forge — next
 - CE Phase 11: Sense-Making Canvas (heaviest engineering)
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session
