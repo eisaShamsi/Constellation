@@ -977,5 +977,10 @@
 	.e-editor :global(.cm-line[dir]) { unicode-bidi: isolate; }
 	.e-editor :global(.cm-editor),
 	.e-editor :global(.cm-editor.cm-focused) { outline: none !important; border: none !important; }
+	/* Force cursor visibility — prevents invisible cursor on click */
+	.e-editor :global(.cm-cursor) {
+		border-left: 1.5px solid var(--text-normal, #1a1a1a) !important;
+		visibility: visible !important;
+	}
 
 </style>
