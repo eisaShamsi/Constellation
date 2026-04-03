@@ -14,7 +14,8 @@
             "security": "보안 & 개인정보",
             "appearance": "외관",
             "keyboard": "키보드",
-            "features": "기능"
+            "features": "기능",
+            "knowledge": "지식 관리"
         },
         "general": {
             "language": "언어",
@@ -303,6 +304,20 @@
             "navigation": "탐색",
             "discovery": "발견",
             "organization": "정리"
+        },
+        "knowledge": {
+            "intro": "지식이 구성, 표시 및 분석되는 방식을 구성합니다.",
+            "lensDesc": "주제, 단계 또는 사용자 지정 속성 등 다양한 분류 체계로 라이브러리를 봅니다.",
+            "loadLenses": "렌즈 로드",
+            "lensName": "렌즈 이름",
+            "groupByProperty": "속성별 그룹화",
+            "groupByTags": "태그별 그룹화",
+            "propertyKey": "속성 키 (예: stage, certainty, priority)",
+            "propertyValues": "값 (쉼표로 구분)",
+            "rootTags": "루트 태그 (쉼표로 구분, 전체는 비워두기)",
+            "save": "저장",
+            "create": "만들기",
+            "cancel": "취소"
         },
         "plugins": {
             "commandPalette": "Command Palette",

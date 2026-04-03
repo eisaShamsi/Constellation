@@ -14,7 +14,8 @@
             "security": "الأمان والخصوصية",
             "appearance": "المظهر",
             "keyboard": "لوحة المفاتيح",
-            "features": "الميزات"
+            "features": "الميزات",
+            "knowledge": "إدارة المعرفة"
         },
         "general": {
             "language": "اللغة",
@@ -303,6 +304,20 @@
             "navigation": "التنقل",
             "discovery": "الاكتشاف",
             "organization": "التنظيم"
+        },
+        "knowledge": {
+            "intro": "اضبط كيفية تنظيم معرفتك وعرضها وتحليلها.",
+            "lensDesc": "اعرض مكتبتك من خلال مخططات تصنيف مختلفة — حسب الموضوع أو المرحلة أو أي خاصية مخصصة.",
+            "loadLenses": "تحميل العدسات",
+            "lensName": "اسم العدسة",
+            "groupByProperty": "تجميع حسب الخاصية",
+            "groupByTags": "تجميع حسب الوسوم",
+            "propertyKey": "مفتاح الخاصية (مثل: stage, certainty, priority)",
+            "propertyValues": "القيم (مفصولة بفواصل)",
+            "rootTags": "الوسوم الجذرية (مفصولة بفواصل، اتركها فارغة للكل)",
+            "save": "حفظ",
+            "create": "إنشاء",
+            "cancel": "إلغاء"
         },
         "plugins": {
             "commandPalette": "Command Palette",

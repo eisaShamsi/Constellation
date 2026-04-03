@@ -14,7 +14,8 @@
             "security": "सुरक्षा और गोपनीयता",
             "appearance": "दिखावट",
             "keyboard": "कीबोर्ड",
-            "features": "सुविधाएँ"
+            "features": "सुविधाएँ",
+            "knowledge": "ज्ञान प्रबंधन"
         },
         "general": {
             "language": "भाषा",
@@ -303,6 +304,20 @@
             "navigation": "नेविगेशन",
             "discovery": "खोज",
             "organization": "संगठन"
+        },
+        "knowledge": {
+            "intro": "कॉन्फ़िगर करें कि आपका ज्ञान कैसे व्यवस्थित, देखा और विश्लेषित किया जाता है।",
+            "lensDesc": "अपनी लाइब्रेरी को विभिन्न वर्गीकरण योजनाओं से देखें — विषय, चरण, या किसी भी कस्टम प्रॉपर्टी के अनुसार।",
+            "loadLenses": "लेंस लोड करें",
+            "lensName": "लेंस का नाम",
+            "groupByProperty": "प्रॉपर्टी के अनुसार समूहित करें",
+            "groupByTags": "टैग के अनुसार समूहित करें",
+            "propertyKey": "प्रॉपर्टी कुंजी (जैसे, stage, certainty, priority)",
+            "propertyValues": "मान (अल्पविराम से अलग)",
+            "rootTags": "रूट टैग (अल्पविराम से अलग, सभी के लिए खाली छोड़ें)",
+            "save": "सहेजें",
+            "create": "बनाएं",
+            "cancel": "रद्द करें"
         },
         "plugins": {
             "commandPalette": "Command Palette",

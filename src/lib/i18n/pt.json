@@ -14,7 +14,8 @@
             "security": "Segurança & Privacidade",
             "appearance": "Aparência",
             "keyboard": "Teclado",
-            "features": "Funcionalidades"
+            "features": "Funcionalidades",
+            "knowledge": "Gestão do conhecimento"
         },
         "general": {
             "language": "Idioma",
@@ -303,6 +304,20 @@
             "navigation": "Navegação",
             "discovery": "Descoberta",
             "organization": "Organização"
+        },
+        "knowledge": {
+            "intro": "Configure como seu conhecimento é organizado, visualizado e analisado.",
+            "lensDesc": "Visualize sua biblioteca através de diferentes esquemas de classificação — por tópico, etapa ou qualquer propriedade personalizada.",
+            "loadLenses": "Carregar lentes",
+            "lensName": "Nome da lente",
+            "groupByProperty": "Agrupar por propriedade",
+            "groupByTags": "Agrupar por etiquetas",
+            "propertyKey": "Chave da propriedade (ex., stage, certainty, priority)",
+            "propertyValues": "Valores (separados por vírgula)",
+            "rootTags": "Tags raiz (separadas por vírgula, deixar vazio para todas)",
+            "save": "Salvar",
+            "create": "Criar",
+            "cancel": "Cancelar"
         },
         "plugins": {
             "commandPalette": "Command Palette",

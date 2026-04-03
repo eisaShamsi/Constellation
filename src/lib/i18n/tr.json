@@ -14,7 +14,8 @@
             "security": "Güvenlik & Gizlilik",
             "appearance": "Görünüm",
             "keyboard": "Klavye",
-            "features": "Özellikler"
+            "features": "Özellikler",
+            "knowledge": "Bilgi Yönetimi"
         },
         "general": {
             "language": "Dil",
@@ -303,6 +304,20 @@
             "navigation": "Gezinme",
             "discovery": "Keşif",
             "organization": "Düzenleme"
+        },
+        "knowledge": {
+            "intro": "Bilginizin nasıl düzenlendiğini, görüntülendiğini ve analiz edildiğini yapılandırın.",
+            "lensDesc": "Kütüphanenizi farklı sınıflandırma şemalarıyla görüntüleyin — konuya, aşamaya veya herhangi bir özel özelliğe göre.",
+            "loadLenses": "Lensleri yükle",
+            "lensName": "Lens adı",
+            "groupByProperty": "Özelliğe göre grupla",
+            "groupByTags": "Etiketlere göre grupla",
+            "propertyKey": "Özellik anahtarı (ör. stage, certainty, priority)",
+            "propertyValues": "Değerler (virgülle ayrılmış)",
+            "rootTags": "Kök etiketler (virgülle ayrılmış, hepsi için boş bırakın)",
+            "save": "Kaydet",
+            "create": "Oluştur",
+            "cancel": "İptal"
         },
         "plugins": {
             "commandPalette": "Command Palette",

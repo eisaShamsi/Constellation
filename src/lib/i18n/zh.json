@@ -14,7 +14,8 @@
             "security": "安全与隐私",
             "appearance": "外观",
             "keyboard": "键盘",
-            "features": "功能"
+            "features": "功能",
+            "knowledge": "知识管理"
         },
         "general": {
             "language": "语言",
@@ -303,6 +304,20 @@
             "navigation": "导航",
             "discovery": "发现",
             "organization": "组织"
+        },
+        "knowledge": {
+            "intro": "配置知识的组织、查看和分析方式。",
+            "lensDesc": "通过不同的分类方案查看您的库——按主题、阶段或任何自定义属性。",
+            "loadLenses": "加载镜头",
+            "lensName": "镜头名称",
+            "groupByProperty": "按属性分组",
+            "groupByTags": "按标签分组",
+            "propertyKey": "属性键（如 stage, certainty, priority）",
+            "propertyValues": "值（逗号分隔）",
+            "rootTags": "根标签（逗号分隔，留空表示全部）",
+            "save": "保存",
+            "create": "创建",
+            "cancel": "取消"
         },
         "plugins": {
             "commandPalette": "Command Palette",

@@ -14,7 +14,8 @@
             "security": "سیکیورٹی اور رازداری",
             "appearance": "ظاہری شکل",
             "keyboard": "کی بورڈ",
-            "features": "خصوصیات"
+            "features": "خصوصیات",
+            "knowledge": "علم کا انتظام"
         },
         "general": {
             "language": "زبان",
@@ -303,6 +304,20 @@
             "navigation": "نیویگیشن",
             "discovery": "دریافت",
             "organization": "تنظیم"
+        },
+        "knowledge": {
+            "intro": "ترتیب دیں کہ آپ کا علم کیسے منظم، دکھایا اور تجزیہ کیا جائے۔",
+            "lensDesc": "اپنی لائبریری کو مختلف درجہ بندی اسکیموں سے دیکھیں — موضوع، مرحلے، یا کسی بھی حسب ضرورت خاصیت کے مطابق۔",
+            "loadLenses": "لینز لوڈ کریں",
+            "lensName": "لینز کا نام",
+            "groupByProperty": "خاصیت کے مطابق گروپ",
+            "groupByTags": "ٹیگز کے مطابق گروپ",
+            "propertyKey": "خاصیت کی کلید (مثلاً stage, certainty, priority)",
+            "propertyValues": "اقدار (کاما سے الگ)",
+            "rootTags": "جڑ ٹیگز (کاما سے الگ، سب کے لیے خالی چھوڑیں)",
+            "save": "محفوظ کریں",
+            "create": "بنائیں",
+            "cancel": "منسوخ"
         },
         "plugins": {
             "commandPalette": "Command Palette",

@@ -14,7 +14,8 @@
             "security": "امنیت و حریم خصوصی",
             "appearance": "ظاهر",
             "keyboard": "صفحه‌کلید",
-            "features": "ویژگی‌ها"
+            "features": "ویژگی‌ها",
+            "knowledge": "مدیریت دانش"
         },
         "general": {
             "language": "زبان",
@@ -303,6 +304,20 @@
             "navigation": "ناوبری",
             "discovery": "کشف",
             "organization": "سازمان‌دهی"
+        },
+        "knowledge": {
+            "intro": "نحوه سازماندهی، نمایش و تحلیل دانش خود را تنظیم کنید.",
+            "lensDesc": "کتابخانه خود را از طریق طرح‌های طبقه‌بندی مختلف ببینید — بر اساس موضوع، مرحله یا هر ویژگی دلخواه.",
+            "loadLenses": "بارگذاری عدسی‌ها",
+            "lensName": "نام عدسی",
+            "groupByProperty": "گروه‌بندی بر اساس ویژگی",
+            "groupByTags": "گروه‌بندی بر اساس برچسب‌ها",
+            "propertyKey": "کلید ویژگی (مثلاً stage, certainty, priority)",
+            "propertyValues": "مقادیر (جدا شده با کاما)",
+            "rootTags": "برچسب‌های ریشه (جدا شده با کاما، برای همه خالی بگذارید)",
+            "save": "ذخیره",
+            "create": "ایجاد",
+            "cancel": "لغو"
         },
         "plugins": {
             "commandPalette": "Command Palette",

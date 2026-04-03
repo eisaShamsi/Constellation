@@ -14,7 +14,8 @@
             "security": "Security & Privacy",
             "appearance": "Appearance",
             "keyboard": "Keyboard",
-            "features": "Features"
+            "features": "Features",
+            "knowledge": "Knowledge Management"
         },
         "dashboard": {
             "libraries": "Libraries",
@@ -302,6 +303,20 @@
             "folderPath": "Folder path",
             "templateName": "Template name",
             "noFolderTemplates": "No folder templates configured"
+        },
+        "knowledge": {
+            "intro": "Configure how your knowledge is organized, viewed, and analyzed.",
+            "lensDesc": "View your library through different classification schemes — by topic, stage, or any custom property.",
+            "loadLenses": "Load Lenses",
+            "lensName": "Lens name",
+            "groupByProperty": "Group by property",
+            "groupByTags": "Group by tags",
+            "propertyKey": "Property key (e.g., stage, certainty, priority)",
+            "propertyValues": "Values (comma-separated)",
+            "rootTags": "Root tags (comma-separated, leave empty for all)",
+            "save": "Save",
+            "create": "Create",
+            "cancel": "Cancel"
         },
         "plugins": {
             "commandPalette": "Command Palette",

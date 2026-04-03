@@ -14,7 +14,8 @@
             "security": "אבטחה ופרטיות",
             "appearance": "מראה",
             "keyboard": "מקלדת",
-            "features": "תכונות"
+            "features": "תכונות",
+            "knowledge": "ניהול ידע"
         },
         "general": {
             "language": "שפה",
@@ -303,6 +304,20 @@
             "navigation": "ניווט",
             "discovery": "גילוי",
             "organization": "ארגון"
+        },
+        "knowledge": {
+            "intro": "הגדר כיצד הידע שלך מאורגן, מוצג ומנותח.",
+            "lensDesc": "צפה בספרייה שלך דרך סכמות סיווג שונות — לפי נושא, שלב או כל מאפיין מותאם אישית.",
+            "loadLenses": "טען עדשות",
+            "lensName": "שם העדשה",
+            "groupByProperty": "קבץ לפי מאפיין",
+            "groupByTags": "קבץ לפי תגיות",
+            "propertyKey": "מפתח מאפיין (למשל stage, certainty, priority)",
+            "propertyValues": "ערכים (מופרדים בפסיקים)",
+            "rootTags": "תגיות שורש (מופרדות בפסיקים, השאר ריק לכולם)",
+            "save": "שמור",
+            "create": "צור",
+            "cancel": "ביטול"
         },
         "plugins": {
             "commandPalette": "Command Palette",

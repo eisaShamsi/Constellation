@@ -14,7 +14,8 @@
             "security": "セキュリティ＆プライバシー",
             "appearance": "外観",
             "keyboard": "キーボード",
-            "features": "機能"
+            "features": "機能",
+            "knowledge": "ナレッジ管理"
         },
         "general": {
             "language": "言語",
@@ -303,6 +304,20 @@
             "navigation": "ナビゲーション",
             "discovery": "ディスカバリー",
             "organization": "整理"
+        },
+        "knowledge": {
+            "intro": "知識の整理、表示、分析の方法を設定します。",
+            "lensDesc": "トピック、ステージ、またはカスタムプロパティなど、さまざまな分類スキームでライブラリを表示します。",
+            "loadLenses": "レンズを読み込む",
+            "lensName": "レンズ名",
+            "groupByProperty": "プロパティでグループ化",
+            "groupByTags": "タグでグループ化",
+            "propertyKey": "プロパティキー（例：stage, certainty, priority）",
+            "propertyValues": "値（カンマ区切り）",
+            "rootTags": "ルートタグ（カンマ区切り、すべての場合は空白）",
+            "save": "保存",
+            "create": "作成",
+            "cancel": "キャンセル"
         },
         "plugins": {
             "commandPalette": "Command Palette",
