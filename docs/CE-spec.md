@@ -695,9 +695,9 @@ GO if tests 1–7 pass.
 
 ---
 
-## Phase 11: Sense-Making Canvas (لوحة الإدراك)
+## Phase 11: Sense-Making Canvas (لوحة الإدراك) ✅ COMPLETE
 
-**Status**: 🔲 Not started
+**Commit**: `bec8e3d` | **Date**: 2026-04-03
 **Depends on**: Frontmatter system (existing), NotePane (existing)
 **Note**: Most engineering-intensive phase. Scoped for last in Layer 1.
 

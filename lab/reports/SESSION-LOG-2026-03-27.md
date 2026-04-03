@@ -1169,9 +1169,38 @@ Review Pulse, Trails. Three phases remain before Layer 2 (AI Discovery).
 
 ---
 
+### CE Phase 11: Sense-Making Canvas (لوحة الإدراك)
+
+**Commit:** `bec8e3d` | **Tag:** `milestone/CE-phase-11-canvas`
+
+- New Rust module `src-tauri/src/canvas.rs`: .canvas JSON CRUD
+- SenseMakingCanvas.svelte: infinite canvas with Cynefin quadrants
+- Post-it style cards (yellow, tilted, shadow)
+- Pan (shift+drag) + zoom (scroll) + fit to screen
+- Settings: zone color presets (Default/Muted/Bold/Warm/Invisible)
+- Promote dialog with library selector
+- Full i18n: quadrant labels + settings + promote dialog in 15 locales
+- Command palette: "Sense-Making Canvas"
+- **Test: PASS** — cards, quadrants, promote, pan/zoom all working
+
+---
+
+### 🎉 LAYER 1 COMPLETE — All 11 Structural Cognition Phases Built
+
+**Tag:** `milestone/CE-phase-11-canvas` at `ef5beb6`
+**ZIP:** `E:/Backups/Constellation/Constellation-CE-layer1-complete-20260403.zip`
+
+All 11 phases built and tested in a single session:
+1. Typed Links → 2. Knowledge Strata → 3. Maturity Lifecycle →
+4. Tension Detector → 5. Provenance Chain → 6. Externalization →
+7. Review Pulse → 8. Trails → 9. Multi-Lens Views →
+10. Expression Forge → 11. Sense-Making Canvas
+
+---
+
 ### Open Items
 - CE Phase 4 user testing — pending larger library
-- CE Phase 11: Sense-Making Canvas — LAST Layer 1 phase (heaviest engineering)
-- CE Phases 12-16: Layer 2 (AI Discovery) — after all Layer 1 complete
+- CE Phase 12: 360.3D — new phase (user's concept: spherical knowledge inspector)
+- CE Phases 13-17: Layer 2 (AI Discovery) — after 360.3D
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session
