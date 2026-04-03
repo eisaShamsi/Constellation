@@ -603,7 +603,13 @@ export function eventToShortcut(e: KeyboardEvent): string {
 	if (e.shiftKey) parts.push('Shift');
 	if (e.altKey) parts.push('Alt');
 
+	// Use e.code (physical key) for letter keys when a modifier is held.
+	// This ensures shortcuts work on non-Latin keyboard layouts (Arabic, Hebrew, etc.)
+	// where e.key returns the locale character instead of the Latin letter.
 	let key = e.key;
+	if (e.code && e.code.startsWith('Key') && (e.ctrlKey || e.metaKey || e.altKey)) {
+		key = e.code.slice(3); // 'KeyP' → 'P'
+	}
 	if (key === ' ') key = 'Space';
 	if (/^[a-zA-Z]$/.test(key)) key = key.toUpperCase();
 
