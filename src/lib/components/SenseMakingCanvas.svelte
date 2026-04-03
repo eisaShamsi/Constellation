@@ -240,24 +240,32 @@
 	// ─── Promote dialog state ───
 	let promoteDialogItem = $state<CanvasItem | null>(null);
 	let promoteNoteName = $state('');
-	let promoteFolder = $state('');
+	let promoteSelectedLib = $state({ name: libraryName, path: libraryPath, color: libraryColor });
+	let promoteLibraries = $state<{ name: string; path: string; color: string }[]>([]);
 
-	function startPromote(item: CanvasItem) {
+	async function startPromote(item: CanvasItem) {
 		promoteDialogItem = item;
 		promoteNoteName = item.content.trim().slice(0, 100).replace(/[<>:"/\\|?*\n]/g, '_');
-		promoteFolder = '';
+		promoteSelectedLib = { name: libraryName, path: libraryPath, color: libraryColor };
+		// Load all libraries
+		try {
+			const libs: any[] = await invoke('resolve_universe_libraries');
+			promoteLibraries = libs.map((l: any) => ({ name: l.name, path: l.path, color: '#7c3aed' }));
+		} catch {
+			promoteLibraries = [{ name: libraryName, path: libraryPath, color: libraryColor }];
+		}
 	}
 
 	async function confirmPromote() {
 		const item = promoteDialogItem;
-		if (!item || !libraryPath || !promoteNoteName.trim()) return;
-		const folderPath = promoteFolder.trim()
-			? libraryPath + (libraryPath.includes('\\') ? '\\' : '/') + promoteFolder.trim()
-			: libraryPath;
+		if (!item || !promoteNoteName.trim()) return;
+		const targetPath = promoteSelectedLib.path;
+		const targetName = promoteSelectedLib.name;
+		const targetColor = promoteSelectedLib.color;
 		const fileName = promoteNoteName.trim() + '.md';
 		const frontmatter = `---\nstage: permanent\ncanvas_origin: "${canvasTitle}"\n${item.quadrant ? `canvas_quadrant: ${item.quadrant}\n` : ''}---\n`;
 		try {
-			const newPath = await createNote(folderPath, fileName);
+			const newPath = await createNote(targetPath, fileName);
 			await writeNote(newPath, frontmatter + item.content);
 			const noteName = promoteNoteName.trim();
 			item.content = `[[${noteName}]]`;
@@ -265,7 +273,7 @@
 			items = [...items];
 			debouncedSave();
 			promoteDialogItem = null;
-			await openNoteTab(newPath, libraryName, libraryColor);
+			await openNoteTab(newPath, targetName, targetColor);
 		} catch (e) {
 			console.error('Promote failed:', e);
 		}
@@ -391,21 +399,28 @@
 		<div class="smc-promote-overlay" onclick={() => promoteDialogItem = null}>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="smc-promote-dialog" onclick={(e) => e.stopPropagation()}>
-				<div class="smc-promote-title">{$t('senseMakingCanvas.promote') || 'Promote to Note'}</div>
+				<div class="smc-promote-title">Promote to Note</div>
 				<div class="smc-promote-preview" dir="auto">"{promoteDialogItem.content.slice(0, 80)}{promoteDialogItem.content.length > 80 ? '...' : ''}"</div>
 				<label class="smc-promote-label">
-					<span>{$t('senseMakingCanvas.noteName') || 'Note name'}</span>
+					<span>Note name</span>
 					<input class="smc-promote-input" type="text" dir="auto" bind:value={promoteNoteName}
 						onkeydown={(e) => e.key === 'Enter' && confirmPromote()} />
 				</label>
-				<label class="smc-promote-label">
-					<span>{$t('senseMakingCanvas.folder') || 'Folder (leave empty for library root)'}</span>
-					<input class="smc-promote-input" type="text" dir="auto" placeholder="e.g., ideas, research"
-						bind:value={promoteFolder} onkeydown={(e) => e.key === 'Enter' && confirmPromote()} />
-				</label>
+				<div class="smc-promote-label">
+					<span>Select library</span>
+					<div class="smc-promote-libs">
+						{#each promoteLibraries as lib}
+							<button class="smc-promote-lib" class:selected={promoteSelectedLib.path === lib.path}
+								onclick={() => promoteSelectedLib = lib}>
+								<span class="smc-promote-lib-dot" style="background:{lib.color}"></span>
+								<span dir="auto">{lib.name}</span>
+							</button>
+						{/each}
+					</div>
+				</div>
 				<div class="smc-promote-actions">
-					<button class="smc-promote-btn primary" onclick={confirmPromote}>{$t('senseMakingCanvas.promoteConfirm') || 'Create Note'}</button>
-					<button class="smc-promote-btn" onclick={() => promoteDialogItem = null}>{$t('settings.knowledge.cancel') || 'Cancel'}</button>
+					<button class="smc-promote-btn primary" onclick={confirmPromote}>Create Note</button>
+					<button class="smc-promote-btn" onclick={() => promoteDialogItem = null}>Cancel</button>
 				</div>
 			</div>
 		</div>
@@ -485,6 +500,19 @@
 		background: var(--interactive-accent); color: white; border-color: var(--interactive-accent);
 	}
 	.smc-promote-btn.primary:hover { opacity: 0.9; }
+	.smc-promote-libs { display: flex; flex-direction: column; gap: 4px; }
+	.smc-promote-lib {
+		display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+		border: 1px solid var(--background-modifier-border); border-radius: 6px;
+		background: var(--background-primary); cursor: pointer; font-size: 0.85rem;
+		font-family: inherit; color: var(--text-normal); text-align: start;
+	}
+	.smc-promote-lib:hover { background: var(--background-modifier-hover); }
+	.smc-promote-lib.selected {
+		border-color: var(--interactive-accent);
+		background: color-mix(in srgb, var(--interactive-accent) 8%, var(--background-primary));
+	}
+	.smc-promote-lib-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
 	.smc-viewport { flex: 1; overflow: hidden; position: relative; cursor: crosshair; }
 	.smc-world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
