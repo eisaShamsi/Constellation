@@ -79,6 +79,11 @@
 		onpropschange,
 		stage = '',
 		onpromote,
+		trail = '',
+		trailIndex = 0,
+		trailTotal = 0,
+		onTrailPrev,
+		onTrailNext,
 	}: {
 		value?: string;
 		title?: string;
@@ -106,6 +111,11 @@
 		onpropschange?: () => void;
 		stage?: string;
 		onpromote?: (nextStage: string) => void;
+		trail?: string;
+		trailIndex?: number;
+		trailTotal?: number;
+		onTrailPrev?: () => void;
+		onTrailNext?: () => void;
 	} = $props();
 
 	let titleValue = $state(title);
@@ -652,6 +662,18 @@
 				<option value="synthesis">✨ Synthesis</option>
 			</select>
 		</div>
+		{#if trail}
+			<div class="e-bc-trail">
+				<span class="e-bc-trail-label">🛤️ {trail}</span>
+				<span class="e-bc-trail-pos">— {trailIndex + 1} / {trailTotal}</span>
+				<button class="e-bc-trail-btn" disabled={trailIndex === 0} onmousedown={(e) => e.preventDefault()} onclick={() => onTrailPrev?.()}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+				</button>
+				<button class="e-bc-trail-btn" disabled={trailIndex >= trailTotal - 1} onmousedown={(e) => e.preventDefault()} onclick={() => onTrailNext?.()}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+				</button>
+			</div>
+		{/if}
 		<div class="e-bc-actions">
 			{#if saving}<span class="e-bc-saving">{$t('notePane.saving')}</span>{/if}
 			<div class="e-bc-more-wrap" bind:this={moreMenuEl}>
@@ -846,6 +868,20 @@
 	}
 	.e-bc-stage-select:hover { border-color: var(--interactive-accent); color: var(--text-normal); }
 	.e-bc-stage-select:focus { border-color: var(--interactive-accent); }
+	.e-bc-trail {
+		display: flex; align-items: center; gap: 4px; margin-inline-start: 8px;
+		font-size: 0.72rem; color: var(--text-muted);
+		background: var(--background-secondary); border-radius: 4px; padding: 2px 6px;
+	}
+	.e-bc-trail-label { font-weight: 600; color: var(--interactive-accent); }
+	.e-bc-trail-pos { color: var(--text-faint); }
+	.e-bc-trail-btn {
+		width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+		border: none; background: none; border-radius: 3px; cursor: pointer;
+		color: var(--text-muted);
+	}
+	.e-bc-trail-btn:hover:not(:disabled) { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.e-bc-trail-btn:disabled { opacity: 0.3; cursor: default; }
 	.e-bc-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 4px; position: relative; }
 	.e-bc-saving { font-size: 0.7rem; color: var(--interactive-accent); }
 	.e-bc-nav {

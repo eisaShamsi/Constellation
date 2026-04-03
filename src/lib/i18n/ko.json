@@ -346,7 +346,8 @@
         "searchLibrary": "보관함 검색",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "만기 노트 검토"
+        "reviewDueNotes": "만기 노트 검토",
+        "openTrail": "트레일 열기"
     },
     "actions": {
         "untitled": "제목 없음",
@@ -763,6 +764,12 @@
         "snooze": "7일 스누즈",
         "dismiss": "무시",
         "checkpointHint": "아직 이 견해를 유지하고 있습니까?"
+    },
+    "trailNav": {
+        "trail": "트레일",
+        "noteOf": "중",
+        "prev": "이전",
+        "next": "다음"
     },
     "tableToolbar": {
         "addRow": "행 추가",

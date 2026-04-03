@@ -8,6 +8,7 @@ mod provenance;
 mod review;
 mod strata;
 mod tension;
+mod trails;
 mod tasks;
 mod universe;
 mod watcher;
@@ -163,6 +164,8 @@ pub fn run() {
             review::snooze_note,
             review::dismiss_note,
             review::record_note_visit,
+            trails::list_trails,
+            trails::read_trail,
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::scan_library_index,

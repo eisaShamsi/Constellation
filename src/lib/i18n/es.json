@@ -346,7 +346,8 @@
         "insertTable": "Insertar tabla",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "Revisar notas pendientes"
+        "reviewDueNotes": "Revisar notas pendientes",
+        "openTrail": "Abrir ruta"
     },
     "actions": {
         "untitled": "Sin título",
@@ -774,6 +775,12 @@
         "snooze": "Posponer 7d",
         "dismiss": "Descartar",
         "checkpointHint": "¿Sigues manteniendo esta opinión?"
+    },
+    "trailNav": {
+        "trail": "Ruta",
+        "noteOf": "de",
+        "prev": "Anterior",
+        "next": "Siguiente"
     },
     "tableToolbar": {
         "addRow": "Agregar fila",

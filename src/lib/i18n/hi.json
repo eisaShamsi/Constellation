@@ -346,7 +346,8 @@
         "searchLibrary": "तिजोरी में खोजें",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "देय नोट्स की समीक्षा करें"
+        "reviewDueNotes": "देय नोट्स की समीक्षा करें",
+        "openTrail": "ट्रेल खोलें"
     },
     "actions": {
         "untitled": "बिना शीर्षक",
@@ -763,6 +764,12 @@
         "snooze": "7 दिन स्नूज़",
         "dismiss": "खारिज करें",
         "checkpointHint": "क्या आप अभी भी यह विचार रखते हैं?"
+    },
+    "trailNav": {
+        "trail": "ट्रेल",
+        "noteOf": "में से",
+        "prev": "पिछला",
+        "next": "अगला"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",

@@ -345,7 +345,8 @@
         "insertTable": "Insert table",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "Review due notes"
+        "reviewDueNotes": "Review due notes",
+        "openTrail": "Open Trail"
     },
     "actions": {
         "untitled": "Untitled",
@@ -773,6 +774,12 @@
         "snooze": "Snooze 7d",
         "dismiss": "Dismiss",
         "checkpointHint": "Do you still hold this view?"
+    },
+    "trailNav": {
+        "trail": "Trail",
+        "noteOf": "of",
+        "prev": "Previous",
+        "next": "Next"
     },
     "tableToolbar": {
         "addRow": "Add row",

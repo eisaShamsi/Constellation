@@ -346,7 +346,8 @@
         "searchLibrary": "خزانے میں تلاش",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "واجب الاداء نوٹس کا جائزہ"
+        "reviewDueNotes": "واجب الاداء نوٹس کا جائزہ",
+        "openTrail": "پگڈنڈی کھولیں"
     },
     "actions": {
         "untitled": "بغیر عنوان",
@@ -763,6 +764,12 @@
         "snooze": "7 دن کے لیے ملتوی",
         "dismiss": "خارج کریں",
         "checkpointHint": "کیا آپ ابھی بھی یہ رائے رکھتے ہیں؟"
+    },
+    "trailNav": {
+        "trail": "پگڈنڈی",
+        "noteOf": "میں سے",
+        "prev": "پچھلا",
+        "next": "اگلا"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

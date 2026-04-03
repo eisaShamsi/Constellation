@@ -346,7 +346,8 @@
         "insertTable": "إدراج جدول",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "مراجعة الملاحظات المستحقة"
+        "reviewDueNotes": "مراجعة الملاحظات المستحقة",
+        "openTrail": "فتح مسار"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -774,6 +775,12 @@
         "snooze": "تأجيل 7 أيام",
         "dismiss": "رفض",
         "checkpointHint": "هل ما زلت تتبنى هذا الرأي؟"
+    },
+    "trailNav": {
+        "trail": "مسار",
+        "noteOf": "من",
+        "prev": "السابق",
+        "next": "التالي"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

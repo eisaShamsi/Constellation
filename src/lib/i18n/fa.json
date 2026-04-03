@@ -346,7 +346,8 @@
         "insertTable": "درج جدول",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "بازبینی یادداشت‌های موعد"
+        "reviewDueNotes": "بازبینی یادداشت‌های موعد",
+        "openTrail": "باز کردن مسیر"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -774,6 +775,12 @@
         "snooze": "تعویق ۷ روزه",
         "dismiss": "رد کردن",
         "checkpointHint": "آیا هنوز این نظر را دارید؟"
+    },
+    "trailNav": {
+        "trail": "مسیر",
+        "noteOf": "از",
+        "prev": "قبلی",
+        "next": "بعدی"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

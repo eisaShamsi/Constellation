@@ -346,7 +346,8 @@
         "searchLibrary": "Поиск по хранилищу",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "Просмотреть просроченные заметки"
+        "reviewDueNotes": "Просмотреть просроченные заметки",
+        "openTrail": "Открыть маршрут"
     },
     "actions": {
         "untitled": "Без названия",
@@ -763,6 +764,12 @@
         "snooze": "Отложить 7д",
         "dismiss": "Отклонить",
         "checkpointHint": "Вы всё ещё придерживаетесь этой точки зрения?"
+    },
+    "trailNav": {
+        "trail": "Маршрут",
+        "noteOf": "из",
+        "prev": "Предыдущая",
+        "next": "Следующая"
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

@@ -273,6 +273,8 @@
 	let rightSidebarOpen = $state(false);
 	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review'>('properties');
 	let dueNotes = $state<any[]>([]); // CE Phase 7: ReviewPulse due notes
+	let activeTrail = $state<any>(null); // CE Phase 8: active trail data
+	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
 	let _lastProvenancePath = ''; // cache guard — only re-fetch when note changes
@@ -1003,6 +1005,22 @@
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showStarView = false; showGlobalTasks = false; }, category: 'Navigation' },
 			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
+			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
+				showCommandPalette = false;
+				const lib = get(libraries)[0];
+				if (!lib) return;
+				try {
+					const trails = await invoke<any[]>('list_trails', { libraryPath: lib.path });
+					if (trails.length === 0) return;
+					// For now, open first trail found (TODO: trail picker)
+					const trail = await invoke<any>('read_trail', { trailPath: trails[0].trail_path, libraryPath: lib.path });
+					activeTrail = trail;
+					trailIndex = 0;
+					if (trail.notes.length > 0 && trail.notes[0].exists) {
+						await openNoteTab(trail.notes[0].path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+					}
+				} catch {}
+			}, category: 'Navigation' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
@@ -2924,6 +2942,29 @@
 							properties={_parsed.properties}
 							rawYaml={_parsed.rawYaml ?? ''}
 							stage={_parsed.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
+							trail={activeTrail ? activeTrail.title : ''}
+							trailIndex={trailIndex}
+							trailTotal={activeTrail ? activeTrail.notes.length : 0}
+							onTrailPrev={async () => {
+								if (activeTrail && trailIndex > 0) {
+									trailIndex--;
+									const note = activeTrail.notes[trailIndex];
+									if (note.exists) {
+										const lib = get(libraries)[0];
+										if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+									}
+								}
+							}}
+							onTrailNext={async () => {
+								if (activeTrail && trailIndex < activeTrail.notes.length - 1) {
+									trailIndex++;
+									const note = activeTrail.notes[trailIndex];
+									if (note.exists) {
+										const lib = get(libraries)[0];
+										if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+									}
+								}
+							}}
 							canGoBack={(_mountedTab.historyIndex ?? 0) > 0}
 							canGoForward={(_mountedTab.historyIndex ?? 0) < (_mountedTab.history?.length ?? 1) - 1}
 							onchange={() => {}}

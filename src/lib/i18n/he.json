@@ -346,7 +346,8 @@
         "searchLibrary": "חפש בכספת",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "סקור פתקים שהגיע מועדם"
+        "reviewDueNotes": "סקור פתקים שהגיע מועדם",
+        "openTrail": "פתח שביל"
     },
     "actions": {
         "untitled": "ללא כותרת",
@@ -763,6 +764,12 @@
         "snooze": "דחה 7 ימים",
         "dismiss": "בטל",
         "checkpointHint": "האם אתה עדיין מחזיק בעמדה זו?"
+    },
+    "trailNav": {
+        "trail": "שביל",
+        "noteOf": "מתוך",
+        "prev": "הקודם",
+        "next": "הבא"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

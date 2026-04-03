@@ -346,7 +346,8 @@
         "searchLibrary": "Kasada ara",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "Vadesi gelen notları gözden geçir"
+        "reviewDueNotes": "Vadesi gelen notları gözden geçir",
+        "openTrail": "Yolu aç"
     },
     "actions": {
         "untitled": "Başlıksız",
@@ -763,6 +764,12 @@
         "snooze": "7 gün ertele",
         "dismiss": "Kaldır",
         "checkpointHint": "Bu görüşü hâlâ paylaşıyor musunuz?"
+    },
+    "trailNav": {
+        "trail": "Yol",
+        "noteOf": "/",
+        "prev": "Önceki",
+        "next": "Sonraki"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

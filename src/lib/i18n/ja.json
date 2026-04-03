@@ -346,7 +346,8 @@
         "searchLibrary": "保管庫を検索",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "期限のノートを確認"
+        "reviewDueNotes": "期限のノートを確認",
+        "openTrail": "トレイルを開く"
     },
     "actions": {
         "untitled": "無題",
@@ -763,6 +764,12 @@
         "snooze": "7日後に通知",
         "dismiss": "却下",
         "checkpointHint": "この見解はまだ有効ですか？"
+    },
+    "trailNav": {
+        "trail": "トレイル",
+        "noteOf": "の",
+        "prev": "前へ",
+        "next": "次へ"
     },
     "tableToolbar": {
         "addRow": "行を追加",

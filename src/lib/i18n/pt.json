@@ -346,7 +346,8 @@
         "searchLibrary": "Pesquisar no cofre",
         "quickCapture": "Quick Capture",
         "starView": "Star View",
-        "reviewDueNotes": "Revisar notas vencidas"
+        "reviewDueNotes": "Revisar notas vencidas",
+        "openTrail": "Abrir trilha"
     },
     "actions": {
         "untitled": "Sem título",
@@ -763,6 +764,12 @@
         "snooze": "Adiar 7d",
         "dismiss": "Descartar",
         "checkpointHint": "Você ainda mantém essa visão?"
+    },
+    "trailNav": {
+        "trail": "Trilha",
+        "noteOf": "de",
+        "prev": "Anterior",
+        "next": "Próximo"
     },
     "tableToolbar": {
         "addRow": "Adicionar linha",
