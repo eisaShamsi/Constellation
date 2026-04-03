@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "Fällige Notizen überprüfen",
-        "openTrail": "Trail öffnen"
+        "openTrail": "Trail öffnen",
+        "openLens": "Linse wechseln",
+        "createLens": "Linse erstellen"
     },
     "actions": {
         "untitled": "Unbenannt",
@@ -781,6 +783,14 @@
         "noteOf": "von",
         "prev": "Zurück",
         "next": "Weiter"
+    },
+    "lensPanel": {
+        "default": "Ordner",
+        "byStage": "Nach Stufe",
+        "byTopic": "Nach Thema",
+        "unclassified": "Nicht klassifiziert",
+        "untagged": "Ohne Tag",
+        "switchLens": "Ansicht wechseln"
     },
     "tableToolbar": {
         "addRow": "Zeile hinzufügen",

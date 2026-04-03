@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "देय नोट्स की समीक्षा करें",
-        "openTrail": "ट्रेल खोलें"
+        "openTrail": "ट्रेल खोलें",
+        "openLens": "लेंस बदलें",
+        "createLens": "लेंस बनाएं"
     },
     "actions": {
         "untitled": "बिना शीर्षक",
@@ -770,6 +772,14 @@
         "noteOf": "में से",
         "prev": "पिछला",
         "next": "अगला"
+    },
+    "lensPanel": {
+        "default": "फ़ोल्डर",
+        "byStage": "चरण के अनुसार",
+        "byTopic": "विषय के अनुसार",
+        "unclassified": "अवर्गीकृत",
+        "untagged": "बिना टैग",
+        "switchLens": "दृश्य बदलें"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",

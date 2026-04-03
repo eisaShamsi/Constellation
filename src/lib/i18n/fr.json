@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "Réviser les notes dues",
-        "openTrail": "Ouvrir un parcours"
+        "openTrail": "Ouvrir un parcours",
+        "openLens": "Changer de lentille",
+        "createLens": "Créer une lentille"
     },
     "actions": {
         "untitled": "Sans titre",
@@ -781,6 +783,14 @@
         "noteOf": "de",
         "prev": "Précédent",
         "next": "Suivant"
+    },
+    "lensPanel": {
+        "default": "Dossiers",
+        "byStage": "Par étape",
+        "byTopic": "Par sujet",
+        "unclassified": "Non classé",
+        "untagged": "Sans étiquette",
+        "switchLens": "Changer de vue"
     },
     "tableToolbar": {
         "addRow": "Ajouter une ligne",

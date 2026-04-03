@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "Vadesi gelen notları gözden geçir",
-        "openTrail": "Yolu aç"
+        "openTrail": "Yolu aç",
+        "openLens": "Lens değiştir",
+        "createLens": "Lens oluştur"
     },
     "actions": {
         "untitled": "Başlıksız",
@@ -770,6 +772,14 @@
         "noteOf": "/",
         "prev": "Önceki",
         "next": "Sonraki"
+    },
+    "lensPanel": {
+        "default": "Klasörler",
+        "byStage": "Aşamaya göre",
+        "byTopic": "Konuya göre",
+        "unclassified": "Sınıflandırılmamış",
+        "untagged": "Etiketsiz",
+        "switchLens": "Görünüm değiştir"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

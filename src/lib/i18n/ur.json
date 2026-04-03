@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "واجب الاداء نوٹس کا جائزہ",
-        "openTrail": "پگڈنڈی کھولیں"
+        "openTrail": "پگڈنڈی کھولیں",
+        "openLens": "لینز تبدیل کریں",
+        "createLens": "لینز بنائیں"
     },
     "actions": {
         "untitled": "بغیر عنوان",
@@ -770,6 +772,14 @@
         "noteOf": "میں سے",
         "prev": "پچھلا",
         "next": "اگلا"
+    },
+    "lensPanel": {
+        "default": "فولڈرز",
+        "byStage": "مرحلے کے مطابق",
+        "byTopic": "موضوع کے مطابق",
+        "unclassified": "غیر درجہ بند",
+        "untagged": "بغیر ٹیگ",
+        "switchLens": "نظارہ تبدیل کریں"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

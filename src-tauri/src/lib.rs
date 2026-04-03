@@ -3,6 +3,7 @@ mod bases;
 mod dataview;
 mod importers;
 mod libraries;
+mod lenses;
 mod maturity;
 mod provenance;
 mod review;
@@ -166,6 +167,9 @@ pub fn run() {
             review::record_note_visit,
             trails::list_trails,
             trails::read_trail,
+            lenses::list_lenses,
+            lenses::save_lenses,
+            lenses::apply_lens,
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::scan_library_index,

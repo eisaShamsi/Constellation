@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "بازبینی یادداشت‌های موعد",
-        "openTrail": "باز کردن مسیر"
+        "openTrail": "باز کردن مسیر",
+        "openLens": "تغییر عدسی",
+        "createLens": "ایجاد عدسی"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -781,6 +783,14 @@
         "noteOf": "از",
         "prev": "قبلی",
         "next": "بعدی"
+    },
+    "lensPanel": {
+        "default": "پوشه‌ها",
+        "byStage": "بر اساس مرحله",
+        "byTopic": "بر اساس موضوع",
+        "unclassified": "طبقه‌بندی نشده",
+        "untagged": "بدون برچسب",
+        "switchLens": "تغییر نما"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

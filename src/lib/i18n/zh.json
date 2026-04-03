@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "复习到期笔记",
-        "openTrail": "打开路径"
+        "openTrail": "打开路径",
+        "openLens": "切换镜头",
+        "createLens": "创建镜头"
     },
     "actions": {
         "untitled": "未命名",
@@ -770,6 +772,14 @@
         "noteOf": "/",
         "prev": "上一个",
         "next": "下一个"
+    },
+    "lensPanel": {
+        "default": "文件夹",
+        "byStage": "按阶段",
+        "byTopic": "按主题",
+        "unclassified": "未分类",
+        "untagged": "无标签",
+        "switchLens": "切换视图"
     },
     "tableToolbar": {
         "addRow": "添加行",

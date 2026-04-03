@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "סקור פתקים שהגיע מועדם",
-        "openTrail": "פתח שביל"
+        "openTrail": "פתח שביל",
+        "openLens": "החלף עדשה",
+        "createLens": "צור עדשה"
     },
     "actions": {
         "untitled": "ללא כותרת",
@@ -770,6 +772,14 @@
         "noteOf": "מתוך",
         "prev": "הקודם",
         "next": "הבא"
+    },
+    "lensPanel": {
+        "default": "תיקיות",
+        "byStage": "לפי שלב",
+        "byTopic": "לפי נושא",
+        "unclassified": "לא מסווג",
+        "untagged": "ללא תגית",
+        "switchLens": "החלף תצוגה"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

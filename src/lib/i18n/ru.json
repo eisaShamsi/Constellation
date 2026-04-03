@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "Просмотреть просроченные заметки",
-        "openTrail": "Открыть маршрут"
+        "openTrail": "Открыть маршрут",
+        "openLens": "Сменить линзу",
+        "createLens": "Создать линзу"
     },
     "actions": {
         "untitled": "Без названия",
@@ -770,6 +772,14 @@
         "noteOf": "из",
         "prev": "Предыдущая",
         "next": "Следующая"
+    },
+    "lensPanel": {
+        "default": "Папки",
+        "byStage": "По этапу",
+        "byTopic": "По теме",
+        "unclassified": "Без категории",
+        "untagged": "Без тегов",
+        "switchLens": "Сменить вид"
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

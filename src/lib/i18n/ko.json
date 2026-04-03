@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "만기 노트 검토",
-        "openTrail": "트레일 열기"
+        "openTrail": "트레일 열기",
+        "openLens": "렌즈 전환",
+        "createLens": "렌즈 만들기"
     },
     "actions": {
         "untitled": "제목 없음",
@@ -770,6 +772,14 @@
         "noteOf": "중",
         "prev": "이전",
         "next": "다음"
+    },
+    "lensPanel": {
+        "default": "폴더",
+        "byStage": "단계별",
+        "byTopic": "주제별",
+        "unclassified": "미분류",
+        "untagged": "태그 없음",
+        "switchLens": "보기 전환"
     },
     "tableToolbar": {
         "addRow": "행 추가",

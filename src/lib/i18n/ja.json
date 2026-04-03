@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "期限のノートを確認",
-        "openTrail": "トレイルを開く"
+        "openTrail": "トレイルを開く",
+        "openLens": "レンズ切替",
+        "createLens": "レンズ作成"
     },
     "actions": {
         "untitled": "無題",
@@ -770,6 +772,14 @@
         "noteOf": "の",
         "prev": "前へ",
         "next": "次へ"
+    },
+    "lensPanel": {
+        "default": "フォルダ",
+        "byStage": "ステージ別",
+        "byTopic": "トピック別",
+        "unclassified": "未分類",
+        "untagged": "タグなし",
+        "switchLens": "ビュー切替"
     },
     "tableToolbar": {
         "addRow": "行を追加",

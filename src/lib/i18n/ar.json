@@ -347,7 +347,9 @@
         "quickCapture": "Quick Capture",
         "starView": "Star View",
         "reviewDueNotes": "مراجعة الملاحظات المستحقة",
-        "openTrail": "فتح مسار"
+        "openTrail": "فتح مسار",
+        "openLens": "تبديل العدسة",
+        "createLens": "إنشاء عدسة"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -781,6 +783,14 @@
         "noteOf": "من",
         "prev": "السابق",
         "next": "التالي"
+    },
+    "lensPanel": {
+        "default": "المجلدات",
+        "byStage": "حسب المرحلة",
+        "byTopic": "حسب الموضوع",
+        "unclassified": "غير مصنف",
+        "untagged": "بدون وسم",
+        "switchLens": "تبديل العرض"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",
