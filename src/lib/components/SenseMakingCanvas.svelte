@@ -237,21 +237,38 @@
 		debouncedSave();
 	}
 
-	async function promoteItem(item: CanvasItem) {
-		if (!libraryPath || !item.content.trim()) return;
-		const fileName = item.content.trim().slice(0, 100).replace(/[<>:"/\\|?*\n]/g, '_') + '.md';
+	// ─── Promote dialog state ───
+	let promoteDialogItem = $state<CanvasItem | null>(null);
+	let promoteNoteName = $state('');
+	let promoteFolder = $state('');
+
+	function startPromote(item: CanvasItem) {
+		promoteDialogItem = item;
+		promoteNoteName = item.content.trim().slice(0, 100).replace(/[<>:"/\\|?*\n]/g, '_');
+		promoteFolder = '';
+	}
+
+	async function confirmPromote() {
+		const item = promoteDialogItem;
+		if (!item || !libraryPath || !promoteNoteName.trim()) return;
+		const folderPath = promoteFolder.trim()
+			? libraryPath + (libraryPath.includes('\\') ? '\\' : '/') + promoteFolder.trim()
+			: libraryPath;
+		const fileName = promoteNoteName.trim() + '.md';
 		const frontmatter = `---\nstage: permanent\ncanvas_origin: "${canvasTitle}"\n${item.quadrant ? `canvas_quadrant: ${item.quadrant}\n` : ''}---\n`;
 		try {
-			const newPath = await createNote(libraryPath, fileName);
+			const newPath = await createNote(folderPath, fileName);
 			await writeNote(newPath, frontmatter + item.content);
-			// Replace item content with wikilink
-			const noteName = fileName.replace(/\.md$/, '');
+			const noteName = promoteNoteName.trim();
 			item.content = `[[${noteName}]]`;
 			item.type = 'link';
 			items = [...items];
 			debouncedSave();
+			promoteDialogItem = null;
 			await openNoteTab(newPath, libraryName, libraryColor);
-		} catch {}
+		} catch (e) {
+			console.error('Promote failed:', e);
+		}
 	}
 
 	function updateItemContent(id: string, content: string) {
@@ -345,7 +362,7 @@
 								<span class="smc-item-quad">{item.quadrant}</span>
 							{/if}
 							<div class="smc-item-actions">
-								<button class="smc-item-btn" title={$t('senseMakingCanvas.promote') || 'Promote to note'} onclick={() => promoteItem(item)}>🔗</button>
+								<button class="smc-item-btn" title={$t('senseMakingCanvas.promote') || 'Promote to note'} onclick={() => startPromote(item)}>🔗</button>
 								<button class="smc-item-btn" onclick={() => { editingItem = editingItem === item.id ? null : item.id; }}>✏️</button>
 								<button class="smc-item-btn smc-item-del" onclick={() => deleteItem(item.id)}>×</button>
 							</div>
@@ -364,6 +381,32 @@
 						{/if}
 					</div>
 				{/each}
+			</div>
+		</div>
+	{/if}
+
+	<!-- Promote dialog -->
+	{#if promoteDialogItem}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="smc-promote-overlay" onclick={() => promoteDialogItem = null}>
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="smc-promote-dialog" onclick={(e) => e.stopPropagation()}>
+				<div class="smc-promote-title">{$t('senseMakingCanvas.promote') || 'Promote to Note'}</div>
+				<div class="smc-promote-preview" dir="auto">"{promoteDialogItem.content.slice(0, 80)}{promoteDialogItem.content.length > 80 ? '...' : ''}"</div>
+				<label class="smc-promote-label">
+					<span>{$t('senseMakingCanvas.noteName') || 'Note name'}</span>
+					<input class="smc-promote-input" type="text" dir="auto" bind:value={promoteNoteName}
+						onkeydown={(e) => e.key === 'Enter' && confirmPromote()} />
+				</label>
+				<label class="smc-promote-label">
+					<span>{$t('senseMakingCanvas.folder') || 'Folder (leave empty for library root)'}</span>
+					<input class="smc-promote-input" type="text" dir="auto" placeholder="e.g., ideas, research"
+						bind:value={promoteFolder} onkeydown={(e) => e.key === 'Enter' && confirmPromote()} />
+				</label>
+				<div class="smc-promote-actions">
+					<button class="smc-promote-btn primary" onclick={confirmPromote}>{$t('senseMakingCanvas.promoteConfirm') || 'Create Note'}</button>
+					<button class="smc-promote-btn" onclick={() => promoteDialogItem = null}>{$t('settings.knowledge.cancel') || 'Cancel'}</button>
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -404,6 +447,44 @@
 	.smc-preset-dots { display: flex; gap: 2px; }
 	.smc-preset-dots span { width: 10px; height: 10px; border-radius: 2px; display: block; }
 	.smc-preset-name { font-size: 0.68rem; }
+
+	/* Promote dialog */
+	.smc-promote-overlay {
+		position: fixed; inset: 0; z-index: 200;
+		background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;
+	}
+	.smc-promote-dialog {
+		background: var(--background-primary); border-radius: 12px;
+		box-shadow: 0 12px 40px rgba(0,0,0,0.2); padding: 20px 24px;
+		width: 400px; max-width: 90vw;
+	}
+	.smc-promote-title { font-weight: 700; font-size: 1rem; margin-bottom: 8px; color: var(--text-normal); }
+	.smc-promote-preview {
+		font-size: 0.78rem; color: var(--text-muted); font-style: italic;
+		margin-bottom: 16px; padding: 8px; background: var(--background-secondary);
+		border-radius: 6px; line-height: 1.4;
+	}
+	.smc-promote-label {
+		display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px;
+		font-size: 0.78rem; color: var(--text-muted); font-weight: 500;
+	}
+	.smc-promote-input {
+		padding: 6px 10px; border: 1px solid var(--background-modifier-border);
+		border-radius: 6px; font-size: 0.85rem; font-family: inherit;
+		outline: none; color: var(--text-normal); background: var(--background-primary);
+	}
+	.smc-promote-input:focus { border-color: var(--interactive-accent); }
+	.smc-promote-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+	.smc-promote-btn {
+		padding: 6px 16px; border: 1px solid var(--background-modifier-border); border-radius: 6px;
+		background: none; cursor: pointer; font-size: 0.82rem; font-family: inherit;
+		color: var(--text-normal);
+	}
+	.smc-promote-btn:hover { background: var(--background-modifier-hover); }
+	.smc-promote-btn.primary {
+		background: var(--interactive-accent); color: white; border-color: var(--interactive-accent);
+	}
+	.smc-promote-btn.primary:hover { opacity: 0.9; }
 
 	.smc-viewport { flex: 1; overflow: hidden; position: relative; cursor: crosshair; }
 	.smc-world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
