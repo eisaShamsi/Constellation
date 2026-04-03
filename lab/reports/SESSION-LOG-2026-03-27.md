@@ -1100,7 +1100,8 @@ Fixes:
 - Command palette: "Open Trail"
 - Recursive note path resolution (case-insensitive)
 - Cursor visibility fix (CSS !important)
-- **Test: pending user testing**
+- Trail detection fix: scan ALL frontmatter blocks (double-frontmatter issue)
+- **Test: PASS** — trail navigation working (1/3 → 2/3 → 3/3)
 
 ---
 
@@ -1111,9 +1112,21 @@ Fixes:
 
 ---
 
+### Major Milestone: CE Layer 1 — 8 of 11 phases complete
+
+**Tag:** `milestone/CE-layer1-8of11` at `90f43ec`
+**ZIP:** `E:/Backups/Constellation/Constellation-CE-layer1-8of11-20260403.zip`
+
+Completed in a single session: Typed Links, Knowledge Strata, Maturity
+Lifecycle, Tension Detector, Provenance Chain, Externalization Engine,
+Review Pulse, Trails. Three phases remain before Layer 2 (AI Discovery).
+
+---
+
 ### Open Items
 - CE Phase 4 user testing — pending larger library
-- CE Phase 8 user testing — pending
 - CE Phase 9: Multi-Lens Views — next
+- CE Phase 10: Expression Forge
+- CE Phase 11: Sense-Making Canvas (heaviest engineering)
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session
