@@ -103,6 +103,42 @@
 		} catch {}
 	}
 
+	// ─── Settings ───
+	let showSettings = $state(false);
+	let quadrantColors = $state({
+		complex: 'rgba(124, 58, 237, 0.06)',
+		complicated: 'rgba(59, 130, 246, 0.06)',
+		chaotic: 'rgba(239, 68, 68, 0.06)',
+		clear: 'rgba(34, 197, 94, 0.06)',
+	});
+	const COLOR_PRESETS = [
+		{ name: 'Default', complex: 'rgba(124,58,237,0.06)', complicated: 'rgba(59,130,246,0.06)', chaotic: 'rgba(239,68,68,0.06)', clear: 'rgba(34,197,94,0.06)' },
+		{ name: 'Muted', complex: 'rgba(124,58,237,0.03)', complicated: 'rgba(59,130,246,0.03)', chaotic: 'rgba(239,68,68,0.03)', clear: 'rgba(34,197,94,0.03)' },
+		{ name: 'Bold', complex: 'rgba(124,58,237,0.12)', complicated: 'rgba(59,130,246,0.12)', chaotic: 'rgba(239,68,68,0.12)', clear: 'rgba(34,197,94,0.12)' },
+		{ name: 'Warm', complex: 'rgba(217,119,6,0.06)', complicated: 'rgba(245,158,11,0.06)', chaotic: 'rgba(239,68,68,0.06)', clear: 'rgba(16,185,129,0.06)' },
+		{ name: 'Invisible', complex: 'transparent', complicated: 'transparent', chaotic: 'transparent', clear: 'transparent' },
+	];
+
+	function fitToScreen() {
+		if (!viewportEl) return;
+		const w = viewportEl.clientWidth;
+		const h = viewportEl.clientHeight;
+		// Bounding box: quadrants span -500,-500 to 500,500 + any items outside
+		let minX = -500, minY = -500, maxX = 500, maxY = 500;
+		for (const item of items) {
+			minX = Math.min(minX, item.x - 20);
+			minY = Math.min(minY, item.y - 20);
+			maxX = Math.max(maxX, item.x + 240);
+			maxY = Math.max(maxY, item.y + 100);
+		}
+		const contentW = maxX - minX;
+		const contentH = maxY - minY;
+		const scale = Math.min(w / contentW, h / contentH) * 0.9; // 90% to add padding
+		viewScale = Math.max(0.1, Math.min(5, scale));
+		viewX = (w - contentW * viewScale) / 2 - minX * viewScale;
+		viewY = (h - contentH * viewScale) / 2 - minY * viewScale;
+	}
+
 	function debouncedSave() {
 		if (saveTimer) clearTimeout(saveTimer);
 		saveTimer = setTimeout(async () => {
@@ -252,9 +288,35 @@
 			<span class="smc-header-title">🎨 {canvasTitle}</span>
 			<span class="smc-header-count">{items.length} {$t('senseMakingCanvas.items') || 'items'}</span>
 			<span class="smc-header-hint">{$t('senseMakingCanvas.hint') || 'Double-click to add • Shift+drag to pan • Scroll to zoom'}</span>
+			<button class="smc-header-btn" title="Fit to screen" onclick={fitToScreen}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+			</button>
+			<button class="smc-header-btn" title="Settings" onclick={() => showSettings = !showSettings}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+			</button>
 			<button class="smc-header-btn" onclick={() => { showCanvasPicker = true; }}>{$t('senseMakingCanvas.switchCanvas') || 'Switch'}</button>
 			<button class="smc-header-btn smc-close" onclick={() => onClose?.()}>×</button>
 		</div>
+		{#if showSettings}
+			<div class="smc-settings">
+				<div class="smc-settings-title">Zone Color Presets</div>
+				<div class="smc-settings-presets">
+					{#each COLOR_PRESETS as preset}
+						<button class="smc-preset-btn" onclick={() => {
+							quadrantColors = { complex: preset.complex, complicated: preset.complicated, chaotic: preset.chaotic, clear: preset.clear };
+						}}>
+							<div class="smc-preset-dots">
+								<span style="background:{preset.complex}; border:1px solid rgba(0,0,0,0.1);"></span>
+								<span style="background:{preset.complicated}; border:1px solid rgba(0,0,0,0.1);"></span>
+								<span style="background:{preset.chaotic}; border:1px solid rgba(0,0,0,0.1);"></span>
+								<span style="background:{preset.clear}; border:1px solid rgba(0,0,0,0.1);"></span>
+							</div>
+							<span class="smc-preset-name">{preset.name}</span>
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="smc-viewport" bind:this={viewportEl}
 			onwheel={onWheel}
@@ -266,7 +328,7 @@
 			<div class="smc-world" style="transform: translate({viewX}px, {viewY}px) scale({viewScale})">
 				<!-- Cynefin quadrants -->
 				{#each QUADRANTS as q}
-					<div class="smc-quadrant" style="left:{q.x}px; top:{q.y}px; width:500px; height:500px; background:{q.color};">
+					<div class="smc-quadrant" style="left:{q.x}px; top:{q.y}px; width:500px; height:500px; background:{quadrantColors[q.id as keyof typeof quadrantColors] ?? q.color};">
 						<span class="smc-quadrant-label">{q.label}</span>
 					</div>
 				{/each}
@@ -324,6 +386,25 @@
 	.smc-header-btn:hover { background: var(--background-modifier-hover); }
 	.smc-close { font-size: 1.1rem; padding: 2px 8px; }
 
+	/* Settings panel */
+	.smc-settings {
+		padding: 8px 16px; background: var(--background-secondary);
+		border-bottom: 1px solid var(--background-modifier-border);
+		display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+	}
+	.smc-settings-title { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+	.smc-settings-presets { display: flex; gap: 6px; }
+	.smc-preset-btn {
+		display: flex; align-items: center; gap: 4px; padding: 4px 8px;
+		border: 1px solid var(--background-modifier-border); border-radius: 4px;
+		background: var(--background-primary); cursor: pointer; font-size: 0.7rem;
+		font-family: inherit; color: var(--text-normal);
+	}
+	.smc-preset-btn:hover { border-color: var(--interactive-accent); }
+	.smc-preset-dots { display: flex; gap: 2px; }
+	.smc-preset-dots span { width: 10px; height: 10px; border-radius: 2px; display: block; }
+	.smc-preset-name { font-size: 0.68rem; }
+
 	.smc-viewport { flex: 1; overflow: hidden; position: relative; cursor: crosshair; }
 	.smc-world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
 
@@ -337,19 +418,33 @@
 		pointer-events: none; user-select: none;
 	}
 
-	/* Items */
+	/* Items — Post-it sticky note style */
 	.smc-item {
-		position: absolute; width: 220px; min-height: 60px;
-		background: white; border: 1px solid #ddd; border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: grab;
-		transition: box-shadow 0.15s;
+		position: absolute; width: 200px; min-height: 80px;
+		background: #fff9c4; /* Post-it yellow */
+		border: none; border-radius: 2px;
+		box-shadow: 2px 3px 8px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1);
+		cursor: grab;
+		transition: box-shadow 0.15s, transform 0.1s;
+		transform: rotate(-1deg); /* slight tilt like a real sticky note */
 	}
-	.smc-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-	.smc-item.dragging { opacity: 0.7; cursor: grabbing; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
-	.smc-item.editing { cursor: auto; }
+	.smc-item:nth-child(even) { transform: rotate(0.5deg); }
+	.smc-item:nth-child(3n) { transform: rotate(-0.8deg); }
+	.smc-item:hover {
+		box-shadow: 4px 6px 20px rgba(0,0,0,0.2);
+		transform: rotate(0deg) scale(1.02);
+		z-index: 10;
+	}
+	.smc-item.dragging {
+		opacity: 0.85; cursor: grabbing;
+		box-shadow: 8px 10px 30px rgba(0,0,0,0.25);
+		transform: rotate(0deg) scale(1.05);
+		z-index: 100;
+	}
+	.smc-item.editing { cursor: auto; transform: rotate(0deg); }
 	.smc-item-header {
 		display: flex; align-items: center; gap: 4px; padding: 4px 8px;
-		border-bottom: 1px solid #eee; font-size: 0.68rem;
+		border-bottom: 1px dashed rgba(0,0,0,0.08); font-size: 0.68rem;
 	}
 	.smc-item-quad {
 		color: var(--text-faint); font-weight: 500; text-transform: capitalize;
@@ -365,14 +460,16 @@
 	.smc-item-btn:hover { background: var(--background-modifier-hover); }
 	.smc-item-del:hover { color: #ef4444; }
 	.smc-item-content {
-		padding: 8px 10px; font-size: 0.82rem; color: var(--text-normal);
-		white-space: pre-wrap; line-height: 1.4; cursor: text; min-height: 30px;
+		padding: 10px 12px; font-size: 0.82rem; color: #333;
+		white-space: pre-wrap; line-height: 1.5; cursor: text; min-height: 40px;
+		font-family: 'Segoe UI', system-ui, sans-serif;
 	}
 	.smc-item-edit {
-		width: 100%; box-sizing: border-box; border: none; padding: 8px 10px;
-		font-size: 0.82rem; font-family: inherit; resize: vertical; outline: none;
-		line-height: 1.4; color: var(--text-normal); background: #fafafa;
-		border-radius: 0 0 8px 8px;
+		width: 100%; box-sizing: border-box; border: none; padding: 10px 12px;
+		font-size: 0.82rem; font-family: 'Segoe UI', system-ui, sans-serif;
+		resize: vertical; outline: none;
+		line-height: 1.5; color: #333; background: rgba(255,255,255,0.3);
+		border-radius: 0 0 2px 2px;
 	}
 
 	/* Picker */
