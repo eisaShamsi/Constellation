@@ -2,6 +2,7 @@ mod ai;
 mod bases;
 mod canvas;
 mod dataview;
+mod inspector360;
 mod importers;
 mod libraries;
 mod lenses;
@@ -169,6 +170,7 @@ pub fn run() {
             trails::list_trails,
             trails::read_trail,
             canvas::list_canvases,
+            inspector360::get_360_view,
             canvas::read_canvas,
             canvas::write_canvas,
             canvas::create_canvas,

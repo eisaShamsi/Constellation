@@ -65,6 +65,7 @@
 	import ReviewPulsePanel from '$lib/components/ReviewPulsePanel.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
+	import Inspector360 from '$lib/components/Inspector360.svelte';
 	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
@@ -298,11 +299,12 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'inspector360'>('properties');
 	let dueNotes = $state<any[]>([]); // CE Phase 7: ReviewPulse due notes
 	let activeTrail = $state<any>(null); // CE Phase 8: active trail data
 	let showExpressionForge = $state(false); // CE Phase 10
 	let showSenseMakingCanvas = $state(false); // CE Phase 11
+	let inspector360Data = $state<any>(null); // CE Phase 12
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
@@ -1052,6 +1054,7 @@
 			}, category: 'Navigation' },
 			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
 			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showStarView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; }, category: 'View' },
+			{ id: 'inspector-360', name: $t('commands.inspector360') || '360.3D Inspector', icon: '🔮', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'inspector360'; const tab = get(focusedTab); if (tab?.path && tab?.libraryPath) { invoke<any>('get_360_view', { libraryPath: tab.libraryPath, notePath: tab.path }).then(d => { inspector360Data = d; }).catch(() => {}); } }, category: 'View' },
 			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; }, category: 'View' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
@@ -3278,6 +3281,16 @@
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 					{#if dueNotes.length > 0}<span class="rs-tab-badge">{dueNotes.length}</span>{/if}
 				</button>
+				<button class="rs-tab" class:active={rightSidebarTab === 'inspector360'} onclick={() => {
+					rightSidebarTab = 'inspector360';
+					const tab = $focusedTab;
+					if (tab?.path && tab?.libraryPath) {
+						invoke<any>('get_360_view', { libraryPath: tab.libraryPath, notePath: tab.path })
+							.then(d => { inspector360Data = d; }).catch(() => { inspector360Data = null; });
+					}
+				}} title={$t('panels.inspector360') || '360.3D'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+				</button>
 			</div>
 
 			{#if isHome && sidebarTab}
@@ -3427,6 +3440,17 @@
 						<ProvenancePanel
 							chain={provenanceChain}
 							{libraryColorMap}
+							onNoteClick={(path, name) => {
+								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+							}}
+						/>
+					</div>
+				{:else if rightSidebarTab === 'inspector360'}
+					<div class="rs-section rs-full-height">
+						<Inspector360
+							data={inspector360Data}
+							compact={true}
 							onNoteClick={(path, name) => {
 								const lib = $libraryStats.find(l => path.startsWith(l.path));
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');

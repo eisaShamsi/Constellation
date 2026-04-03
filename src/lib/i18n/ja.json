@@ -366,7 +366,8 @@
         "openLens": "レンズ切替",
         "createLens": "レンズ作成",
         "expressionForge": "表現フォージ",
-        "senseMakingCanvas": "センスメイキングキャンバス"
+        "senseMakingCanvas": "センスメイキングキャンバス",
+        "inspector360": "360.3Dインスペクター"
     },
     "actions": {
         "untitled": "無題",
@@ -452,7 +453,8 @@
         "starView": "Star View",
         "health": "知識の健全性",
         "provenance": "来歴",
-        "review": "レビューパルス"
+        "review": "レビューパルス",
+        "inspector360": "360.3D"
     },
     "tasksPanel": {
         "all": "すべて",
@@ -832,6 +834,17 @@
         "preset_bold": "ボールド",
         "preset_warm": "ウォーム",
         "preset_invisible": "非表示"
+    },
+    "inspector360": {
+        "noData": "360°ビューを表示するにはノートを開いてください",
+        "gaps": "ギャップ",
+        "link_supports": "支持",
+        "link_contradicts": "矛盾",
+        "link_causes": "原因",
+        "link_derives_from": "由来",
+        "link_generalizes": "一般化",
+        "link_exemplifies": "例示",
+        "link_part_of": "一部"
     },
     "tableToolbar": {
         "addRow": "行を追加",

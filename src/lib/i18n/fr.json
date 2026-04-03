@@ -366,7 +366,8 @@
         "openLens": "Changer de lentille",
         "createLens": "Créer une lentille",
         "expressionForge": "Forge d'expression",
-        "senseMakingCanvas": "Canevas de sens"
+        "senseMakingCanvas": "Canevas de sens",
+        "inspector360": "Inspecteur 360.3D"
     },
     "actions": {
         "untitled": "Sans titre",
@@ -452,7 +453,8 @@
         "starView": "Star View",
         "health": "Santé des connaissances",
         "provenance": "Provenance",
-        "review": "Impulsion de révision"
+        "review": "Impulsion de révision",
+        "inspector360": "360.3D"
     },
     "tasksPanel": {
         "all": "Toutes",
@@ -843,6 +845,17 @@
         "preset_bold": "Vif",
         "preset_warm": "Chaud",
         "preset_invisible": "Invisible"
+    },
+    "inspector360": {
+        "noData": "Ouvrez une note pour voir sa vue 360°",
+        "gaps": "lacunes",
+        "link_supports": "Soutient",
+        "link_contradicts": "Contredit",
+        "link_causes": "Cause",
+        "link_derives_from": "Dérive de",
+        "link_generalizes": "Généralise",
+        "link_exemplifies": "Illustre",
+        "link_part_of": "Partie de"
     },
     "tableToolbar": {
         "addRow": "Ajouter une ligne",

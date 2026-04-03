@@ -366,7 +366,8 @@
         "openLens": "تبديل العدسة",
         "createLens": "إنشاء عدسة",
         "expressionForge": "مصنع التعبير",
-        "senseMakingCanvas": "لوحة الإدراك"
+        "senseMakingCanvas": "لوحة الإدراك",
+        "inspector360": "المنظار الكروي"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -452,7 +453,8 @@
         "starView": "Star View",
         "health": "صحة المعرفة",
         "provenance": "سلسلة الإسناد",
-        "review": "نبض المراجعة"
+        "review": "نبض المراجعة",
+        "inspector360": "360.3D"
     },
     "tasksPanel": {
         "all": "الكل",
@@ -843,6 +845,17 @@
         "preset_bold": "غامق",
         "preset_warm": "دافئ",
         "preset_invisible": "مخفي"
+    },
+    "inspector360": {
+        "noData": "افتح ملاحظة لرؤية منظورها الكروي",
+        "gaps": "فجوات",
+        "link_supports": "يدعم",
+        "link_contradicts": "يناقض",
+        "link_causes": "يسبب",
+        "link_derives_from": "مشتق من",
+        "link_generalizes": "يعمم",
+        "link_exemplifies": "يمثل",
+        "link_part_of": "جزء من"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

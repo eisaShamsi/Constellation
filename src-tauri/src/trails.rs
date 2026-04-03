@@ -113,6 +113,8 @@ fn scan_trails_recursive(dir: &Path, trails: &mut Vec<TrailInfo>) {
 
 /// Check if a file has `trail: true` in ANY frontmatter block.
 /// Handles double frontmatter (auto-generated created: block + user block).
+/// Public wrapper for trail detection (used by inspector360).
+pub fn is_trail_file_pub(content: &str) -> bool { is_trail_file(content) }
 fn is_trail_file(content: &str) -> bool {
     let normalized = content.replace("\r\n", "\n").to_lowercase();
     // Check all ---...--- blocks, not just the first

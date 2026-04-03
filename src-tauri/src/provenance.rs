@@ -220,6 +220,9 @@ fn classify_origin(ancestors: &[AncestorNode]) -> String {
     else { "discovered".to_string() }
 }
 
+/// Public wrapper for external check (used by inspector360).
+pub fn check_external_pub(content: &str) -> bool { check_external_frontmatter(content) }
+
 /// Check if frontmatter contains external source properties.
 /// Robust: handles \r\n (Windows) and \n (Unix) line endings.
 fn check_external_frontmatter(content: &str) -> bool {

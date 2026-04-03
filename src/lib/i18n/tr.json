@@ -366,7 +366,8 @@
         "openLens": "Lens değiştir",
         "createLens": "Lens oluştur",
         "expressionForge": "İfade Dökümhanesi",
-        "senseMakingCanvas": "Anlam Oluşturma Tuvali"
+        "senseMakingCanvas": "Anlam Oluşturma Tuvali",
+        "inspector360": "360.3D Denetçi"
     },
     "actions": {
         "untitled": "Başlıksız",
@@ -452,7 +453,8 @@
         "starView": "Star View",
         "health": "Bilgi sağlığı",
         "provenance": "Köken",
-        "review": "Gözden Geçirme Nabzı"
+        "review": "Gözden Geçirme Nabzı",
+        "inspector360": "360.3D"
     },
     "tasksPanel": {
         "all": "Tümü",
@@ -832,6 +834,17 @@
         "preset_bold": "Kalın",
         "preset_warm": "Sıcak",
         "preset_invisible": "Görünmez"
+    },
+    "inspector360": {
+        "noData": "360° görünümü görmek için bir not açın",
+        "gaps": "boşluklar",
+        "link_supports": "Destekler",
+        "link_contradicts": "Çelişir",
+        "link_causes": "Neden olur",
+        "link_derives_from": "Türetilmiş",
+        "link_generalizes": "Geneller",
+        "link_exemplifies": "Örnekler",
+        "link_part_of": "Parçası"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

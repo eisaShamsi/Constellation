@@ -366,7 +366,8 @@
         "openLens": "लेंस बदलें",
         "createLens": "लेंस बनाएं",
         "expressionForge": "अभिव्यक्ति फोर्ज",
-        "senseMakingCanvas": "अर्थ-निर्माण कैनवास"
+        "senseMakingCanvas": "अर्थ-निर्माण कैनवास",
+        "inspector360": "360.3D इंस्पेक्टर"
     },
     "actions": {
         "untitled": "बिना शीर्षक",
@@ -452,7 +453,8 @@
         "starView": "Star View",
         "health": "ज्ञान स्वास्थ्य",
         "provenance": "उत्पत्ति",
-        "review": "समीक्षा पल्स"
+        "review": "समीक्षा पल्स",
+        "inspector360": "360.3D"
     },
     "tasksPanel": {
         "all": "सभी",
@@ -832,6 +834,17 @@
         "preset_bold": "बोल्ड",
         "preset_warm": "गर्म",
         "preset_invisible": "अदृश्य"
+    },
+    "inspector360": {
+        "noData": "360° दृश्य देखने के लिए एक नोट खोलें",
+        "gaps": "अंतराल",
+        "link_supports": "समर्थन",
+        "link_contradicts": "विरोधाभास",
+        "link_causes": "कारण",
+        "link_derives_from": "से व्युत्पन्न",
+        "link_generalizes": "सामान्यीकरण",
+        "link_exemplifies": "उदाहरण",
+        "link_part_of": "का हिस्सा"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",

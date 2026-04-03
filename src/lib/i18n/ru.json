@@ -366,7 +366,8 @@
         "openLens": "Сменить линзу",
         "createLens": "Создать линзу",
         "expressionForge": "Кузница выражения",
-        "senseMakingCanvas": "Холст осмысления"
+        "senseMakingCanvas": "Холст осмысления",
+        "inspector360": "Инспектор 360.3D"
     },
     "actions": {
         "untitled": "Без названия",
@@ -452,7 +453,8 @@
         "starView": "Star View",
         "health": "Здоровье знаний",
         "provenance": "Происхождение",
-        "review": "Пульс обзора"
+        "review": "Пульс обзора",
+        "inspector360": "360.3D"
     },
     "tasksPanel": {
         "all": "Все",
@@ -832,6 +834,17 @@
         "preset_bold": "Яркий",
         "preset_warm": "Тёплый",
         "preset_invisible": "Невидимый"
+    },
+    "inspector360": {
+        "noData": "Откройте заметку, чтобы увидеть обзор 360°",
+        "gaps": "пробелы",
+        "link_supports": "Поддерживает",
+        "link_contradicts": "Противоречит",
+        "link_causes": "Вызывает",
+        "link_derives_from": "Происходит от",
+        "link_generalizes": "Обобщает",
+        "link_exemplifies": "Иллюстрирует",
+        "link_part_of": "Часть"
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

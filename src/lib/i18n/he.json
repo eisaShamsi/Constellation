@@ -366,7 +366,8 @@
         "openLens": "החלף עדשה",
         "createLens": "צור עדשה",
         "expressionForge": "מפעל ביטוי",
-        "senseMakingCanvas": "קנבס יצירת משמעות"
+        "senseMakingCanvas": "קנבס יצירת משמעות",
+        "inspector360": "מפקח 360.3D"
     },
     "actions": {
         "untitled": "ללא כותרת",
@@ -452,7 +453,8 @@
         "starView": "Star View",
         "health": "בריאות ידע",
         "provenance": "מקור",
-        "review": "פולס סקירה"
+        "review": "פולס סקירה",
+        "inspector360": "360.3D"
     },
     "tasksPanel": {
         "all": "הכל",
@@ -832,6 +834,17 @@
         "preset_bold": "בולט",
         "preset_warm": "חם",
         "preset_invisible": "בלתי נראה"
+    },
+    "inspector360": {
+        "noData": "פתח פתק כדי לראות את התצוגה ב-360°",
+        "gaps": "פערים",
+        "link_supports": "תומך",
+        "link_contradicts": "סותר",
+        "link_causes": "גורם",
+        "link_derives_from": "נגזר מ",
+        "link_generalizes": "מכליל",
+        "link_exemplifies": "ממחיש",
+        "link_part_of": "חלק מ"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

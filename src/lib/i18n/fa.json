@@ -366,7 +366,8 @@
         "openLens": "تغییر عدسی",
         "createLens": "ایجاد عدسی",
         "expressionForge": "کارگاه بیان",
-        "senseMakingCanvas": "بوم معنایابی"
+        "senseMakingCanvas": "بوم معنایابی",
+        "inspector360": "بازرس کروی"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -452,7 +453,8 @@
         "starView": "Star View",
         "health": "سلامت دانش",
         "provenance": "اسناد",
-        "review": "نبض بازبینی"
+        "review": "نبض بازبینی",
+        "inspector360": "360.3D"
     },
     "tasksPanel": {
         "all": "همه",
@@ -843,6 +845,17 @@
         "preset_bold": "پررنگ",
         "preset_warm": "گرم",
         "preset_invisible": "نامرئی"
+    },
+    "inspector360": {
+        "noData": "یک یادداشت باز کنید تا نمای کروی آن را ببینید",
+        "gaps": "شکاف‌ها",
+        "link_supports": "پشتیبانی",
+        "link_contradicts": "تناقض",
+        "link_causes": "باعث",
+        "link_derives_from": "مشتق از",
+        "link_generalizes": "تعمیم",
+        "link_exemplifies": "نمونه",
+        "link_part_of": "بخشی از"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",
