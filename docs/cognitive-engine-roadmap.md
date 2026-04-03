@@ -44,6 +44,7 @@ LAYER 2 — AI Discovery (reads Layer 1 structures)
 | 7 | Review Pulse | ✅ GO — user tested | `b2bbed0` | 2026-04-02 |
 | 8 | Trails | ✅ GO — user tested | `96d7f3e` | 2026-04-03 |
 | 9 | Multi-Lens Views | ✅ GO — user tested | `4b72c0c` | 2026-04-03 |
+| 10 | Expression Forge | ✅ GO — user tested | `e6e4966` | 2026-04-03 |
 | 6 | Externalization Engine | 🔲 Not started | — | — |
 | 7 | Review Pulse | 🔲 Not started | — | — |
 | 8 | Trails | 🔲 Not started | — | — |

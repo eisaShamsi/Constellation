@@ -1146,9 +1146,32 @@ Review Pulse, Trails. Three phases remain before Layer 2 (AI Discovery).
 
 ---
 
+### CE Phase 10: Expression Forge (مصنع التعبير)
+
+**Commit:** `e6e4966` | **Tag:** `milestone/CE-phase-10-expression-forge`
+
+- New component `ExpressionForge.svelte`: full synthesis workspace
+- Split-pane: left note browser (filtered by strata) + right composition canvas
+- Add notes as collapsible blocks, reorder with up/down, write transitions
+- Import active trail as backbone
+- Export as Markdown with `stage: synthesis` frontmatter
+- Command palette: "Expression Forge"
+- Keyboard shortcut fix: all shortcuts work on Arabic/non-Latin keyboards (e.code)
+- i18n: commands.expressionForge + expressionForge.* in 15 locales
+- **Test: PASS** — full knowledge cycle: capture → cognition → expression
+
+---
+
+### Milestone: CE-phase-10-expression-forge
+
+**Tag:** `milestone/CE-phase-10-expression-forge` at `3cb0948`
+**ZIP:** `E:/Backups/Constellation/Constellation-CE-phase-10-20260403.zip`
+
+---
+
 ### Open Items
 - CE Phase 4 user testing — pending larger library
-- CE Phase 10: Expression Forge — next
-- CE Phase 11: Sense-Making Canvas (heaviest engineering)
+- CE Phase 11: Sense-Making Canvas — LAST Layer 1 phase (heaviest engineering)
+- CE Phases 12-16: Layer 2 (AI Discovery) — after all Layer 1 complete
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session
