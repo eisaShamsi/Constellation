@@ -548,9 +548,68 @@ Open the Command Palette and type "Open Trail" to see a list of all trails in yo
 
 ---
 
+## Feature 9: Multi-Lens Views
+
+### What it is
+
+Multi-Lens Views let you view your library through different classification schemes — without changing your folder structure or duplicating any notes. A "lens" is a virtual grouping that reorganizes your notes based on a property or tag, showing you the same library from a different perspective.
+
+Constellation ships with two built-in lenses:
+
+| Lens | Grouping | What it shows |
+|------|----------|---------------|
+| **By Stage** | `stage` frontmatter property | Groups notes into Fleeting, Literature, Permanent, and Synthesis — the four stages of the Externalization Engine |
+| **By Topic** | Tags | Groups notes by their tags, so you can see all notes about a topic in one place |
+
+You can also create custom lenses that group notes by any frontmatter property you choose.
+
+### Why it matters
+
+Folder structures impose a single organizational hierarchy. But knowledge does not fit neatly into one tree. A note about "Climate Policy" might belong in a "Politics" folder, but it is equally relevant to "Environment" and "Economics." Traditional folders force you to pick one.
+
+Multi-Lens Views solve this by letting you switch between different organizational perspectives without moving files. Your folder structure stays intact — it is the default view ("Folders"). But with one click, you can see the same library grouped by stage, by topic, or by any custom property. The same notes, viewed through different lenses.
+
+### How to use it
+
+**Switching lenses:**
+
+1. Look at the **sidebar** where your file tree lives.
+2. At the top, find the **lens dropdown** (it defaults to "Folders").
+3. Click the dropdown and select a lens: "By Stage," "By Topic," or any custom lens you have created.
+4. The sidebar reorganizes instantly — notes are grouped by the selected property. Notes without a value for that property appear in an "Unclassified" group.
+5. Select "Folders" to return to the default file tree.
+
+**Creating a custom lens:**
+
+1. Open **Settings > Knowledge Management**.
+2. In the Lenses section, click **Create Lens**.
+3. Give it a name (e.g., "By Priority") and choose which frontmatter property to group by (e.g., `priority`).
+4. The new lens appears in the sidebar dropdown immediately.
+
+**Using the Command Palette:**
+
+Open the Command Palette and type "Create Lens" to create a new lens directly.
+
+### Where you see it
+
+- **Sidebar dropdown**: The lens selector at the top of the file tree lets you switch between "Folders" and any configured lens.
+- **Settings > Knowledge Management**: Create, edit, and delete custom lenses.
+- **Command Palette**: "Create Lens" command for quick lens creation.
+
+### Tips
+
+- The "Folders" option is always available — it shows the normal file tree. Lenses are additive, not replacements.
+- The "By Stage" lens pairs naturally with the Externalization Engine. Use it to see how much of your library is still Fleeting versus Permanent or Synthesis.
+- The "By Topic" lens is especially useful for large libraries where notes about the same topic are scattered across different folders.
+- Custom lenses can group by any frontmatter property: `project`, `status`, `priority`, `category` — whatever fits your workflow.
+- No notes are duplicated or moved. Lenses are purely virtual views. Your files stay exactly where they are on disk.
+- A note can appear in multiple groups within a lens if it has multiple tags (in the "By Topic" lens) or multiple values for the grouped property.
+
+---
+
 ## The Big Picture
 
-These 8 features work together as a unified system:
+These 9 features work together as a unified system:
 
 1. **Typed Links** give your connections meaning — not just "related" but "supports," "contradicts," "derives-from."
 2. **Knowledge Strata** reveals the depth of your understanding — from raw facts to synthesized paradigms.
@@ -560,6 +619,7 @@ These 8 features work together as a unified system:
 6. **Externalization Engine** makes the formalization journey visible — from fleeting capture to synthesized insight.
 7. **Review Pulse** ensures you revisit what you know — spaced resurfacing that fights knowledge decay and keeps your mental models honest.
 8. **Trails** add the linear dimension — named ordered sequences that turn your web of knowledge into guided paths.
+9. **Multi-Lens Views** offer multiple perspectives — view the same library grouped by stage, topic, or any custom property without moving files.
 
 Together, they answer the question every knowledge worker eventually asks: *Do I truly understand what I think I understand?*
 
@@ -571,7 +631,8 @@ The Cognitive Engine does not answer that question for you. It gives you the str
 - When you set a **stage** on a note, the Externalization Engine tracks its formalization progress. A Fleeting note promoted to Permanent signals that a raw idea has been refined into a standalone concept.
 - When **Review Pulse** resurfaces a note, you have the opportunity to add new links, update stale content, or re-evaluate assumptions — feeding back into every other CE feature.
 - When you create a **Trail**, you impose narrative order on your knowledge web, making it possible to walk through complex ideas step by step.
-- A single action — typing `[[note|derives-from]]` — simultaneously enriches all eight systems. You do not need to think about the CE explicitly. Just write, link, and think. The engine observes and reflects.
+- When you switch a **Lens**, you see the same library from a different angle — by formalization stage, by topic, or by any property you define. No files move; only the perspective changes.
+- A single action — typing `[[note|derives-from]]` — simultaneously enriches all nine systems. You do not need to think about the CE explicitly. Just write, link, and think. The engine observes and reflects.
 
 ### Earned Complexity
 

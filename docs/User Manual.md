@@ -691,11 +691,11 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 
 The Cognitive Engine is a two-layer architecture that transforms Constellation from a note-taking app into a knowledge cognition instrument. Most note apps help you store and retrieve information. The Cognitive Engine goes further: it helps you understand what your knowledge actually means, where it comes from, how mature it is, and where the gaps lie.
 
-**Layer 1 — Structural Cognition** (zero AI dependency): Eight tools that analyze your notes' structure, connections, and metadata to surface insights. Everything runs locally on your machine, fully offline, with no AI dependency. The engine reads the shape of your library — word counts, link counts, link types, and graph topology — to tell you things about your knowledge that you cannot easily see yourself.
+**Layer 1 — Structural Cognition** (zero AI dependency): Nine tools that analyze your notes' structure, connections, and metadata to surface insights. Everything runs locally on your machine, fully offline, with no AI dependency. The engine reads the shape of your library — word counts, link counts, link types, and graph topology — to tell you things about your knowledge that you cannot easily see yourself.
 
 **Layer 2 — AI Discovery** (coming soon): AI will read Layer 1's structures to find patterns you cannot see from inside your own knowledge.
 
-All eight Cognitive Engine features require no configuration. They activate automatically as your library grows. You do not need to enable them or install anything extra.
+All nine Cognitive Engine features require no configuration. They activate automatically as your library grows. You do not need to enable them or install anything extra.
 
 ---
 
@@ -1016,6 +1016,38 @@ Knowledge is not always a web. Sometimes it is a path — a learning sequence, a
 - Use trails for onboarding: create a "Start Here" trail that walks newcomers through your most important notes.
 - Use trails for argument construction: lay out reasoning from premise to conclusion.
 - A note can belong to multiple trails. The breadcrumb shows whichever trail you navigated from.
+
+### 18.9 Multi-Lens Views
+
+**What it is**
+
+Multi-Lens Views let you view your library through different classification schemes without changing your folder structure or duplicating notes. A "lens" is a virtual grouping that reorganizes notes based on a property or tag. Built-in lenses: "By Stage" (groups by Fleeting/Literature/Permanent/Synthesis) and "By Topic" (groups by tags). You can create custom lenses in Settings.
+
+**Why it matters**
+
+Folder structures impose a single hierarchy, but knowledge does not fit one tree. Multi-Lens Views let you switch between perspectives without moving files. The same notes, viewed through different organizational lenses.
+
+**How to use it**
+
+1. In the sidebar, find the **lens dropdown** at the top of the file tree (defaults to "Folders").
+2. Select a lens: "By Stage," "By Topic," or a custom lens. The sidebar reorganizes instantly.
+3. Select "Folders" to return to the default file tree.
+4. To create a custom lens: open **Settings > Knowledge Management**, click **Create Lens**, name it, and choose which frontmatter property to group by.
+5. Or use the Command Palette: type "Create Lens" to create a lens directly.
+
+**Where you see it**
+
+- **Sidebar dropdown**: Lens selector at the top of the file tree.
+- **Settings > Knowledge Management**: Create, edit, and delete custom lenses.
+- **Command Palette**: "Create Lens" command.
+
+**Tips**
+
+- "Folders" is always available as the default file tree. Lenses are additive, not replacements.
+- "By Stage" pairs with the Externalization Engine to show your formalization progress.
+- "By Topic" is useful for large libraries where related notes are scattered across folders.
+- Custom lenses can group by any frontmatter property: `project`, `status`, `priority`, etc.
+- No notes are duplicated or moved. Lenses are purely virtual views.
 
 ---
 

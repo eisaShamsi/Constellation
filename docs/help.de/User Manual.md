@@ -540,7 +540,7 @@ Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das
 
 > „Es kommt nicht auf die Menge Ihrer Daten an. Entscheidend ist nicht, wie viele Quellen Sie speichern, sondern wie Sie daraus Wissen formen und zu einem sinnvollen Bewusstsein verknuepfen."
 
-Die Kognitive Engine besteht aus acht integrierten Werkzeugen: Typisierte Links, Wissensschichten, Reifelebenszyklus, Spannungsdetektor, Herkunftskette, Externalisierungsmaschine, Überprüfungspuls und Pfade.
+Die Kognitive Engine besteht aus neun integrierten Werkzeugen: Typisierte Links, Wissensschichten, Reifelebenszyklus, Spannungsdetektor, Herkunftskette, Externalisierungsmaschine, Überprüfungspuls, Pfade und Multi-Linsen-Ansichten.
 
 ---
 
@@ -750,6 +750,30 @@ Wissen ist nicht immer ein Netz. Manchmal ist es ein Weg — eine Lernsequenz, e
 
 - **Breadcrumb-Leiste**: Pfad-Indikator mit Name, Position und Navigationspfeilen
 - **Befehlspalette**: Befehl "Open Trail" listet alle Pfade auf
+
+### 17.9 Multi-Linsen-Ansichten
+
+#### Was ist das?
+
+Multi-Linsen-Ansichten ermoeglichen es, Ihre Bibliothek durch verschiedene Klassifikationsschemata zu betrachten — ohne die Ordnerstruktur zu aendern oder Notizen zu duplizieren. Eine "Linse" ist eine virtuelle Gruppierung, die Notizen basierend auf einer Eigenschaft oder einem Tag neu organisiert. Integrierte Linsen: "Nach Stadium" (Fluechtig/Literatur/Permanent/Synthese) und "Nach Thema" (Gruppierung nach Tags). Benutzerdefinierte Linsen koennen in den Einstellungen erstellt werden.
+
+#### Warum ist das wichtig?
+
+Ordnerstrukturen erzwingen eine einzelne Hierarchie, aber Wissen passt nicht in einen einzigen Baum. Multi-Linsen-Ansichten ermoeglichen den Wechsel zwischen verschiedenen Perspektiven, ohne Dateien zu verschieben. Dieselben Notizen, durch verschiedene organisatorische Linsen betrachtet.
+
+#### So verwenden Sie es
+
+1. Finden Sie im Seitenleiste das **Linsen-Dropdown** oben im Dateibaum (Standard: "Ordner").
+2. Waehlen Sie eine Linse: "Nach Stadium", "Nach Thema" oder eine benutzerdefinierte Linse. Die Seitenleiste organisiert sich sofort neu.
+3. Waehlen Sie "Ordner", um zum Standard-Dateibaum zurueckzukehren.
+4. Um eine benutzerdefinierte Linse zu erstellen: Oeffnen Sie **Einstellungen > Wissensmanagement**, klicken Sie auf **Linse erstellen**, benennen Sie sie und waehlen Sie die Frontmatter-Eigenschaft fuer die Gruppierung.
+5. Oder verwenden Sie die Befehlspalette: Geben Sie "Create Lens" ein.
+
+#### Wo sehen Sie es?
+
+- **Seitenleisten-Dropdown**: Linsen-Auswahl oben im Dateibaum
+- **Einstellungen > Wissensmanagement**: Benutzerdefinierte Linsen erstellen, bearbeiten und loeschen
+- **Befehlspalette**: Befehl "Create Lens"
 
 ### Einstellungen der Kognitiven Engine
 

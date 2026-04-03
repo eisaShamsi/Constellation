@@ -540,7 +540,7 @@ Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz ar
 
 > "Verilerinizin miktarı önemli değil. Önemli olan kaç kaynak sakladığınız değil, onlardan bilginizi nasıl şekillendirdiğiniz ve anlamlı tek bir farkındalıkta nasıl birleştirdiğinizdir."
 
-Bilişsel Motor sekiz entegre araçtan oluşur: Tipli bağlantılar, Bilgi katmanları, Olgunluk döngüsü, Gerilim algılayıcı, Köken zinciri, Dışsallaştırma motoru, Gözden Geçirme Nabzı ve Yollar.
+Bilişsel Motor dokuz entegre araçtan oluşur: Tipli bağlantılar, Bilgi katmanları, Olgunluk döngüsü, Gerilim algılayıcı, Köken zinciri, Dışsallaştırma motoru, Gözden Geçirme Nabzı, Yollar ve Çoklu Lens Görünümleri.
 
 ---
 
@@ -750,6 +750,30 @@ Bilgi her zaman bir ağ değildir. Bazen bir yoldur — bir öğrenme dizisi, ar
 
 - **İçerik haritası çubuğu**: Ad, konum ve gezinme okları içeren yol göstergesi
 - **Komut Paleti**: Tüm yolları listeleyen "Open Trail" komutu
+
+### 17.9 Çoklu Lens Görünümleri
+
+#### Nedir?
+
+Çoklu Lens Görünümleri, klasör yapısını değiştirmeden veya notları çoğaltmadan kütüphanenizi farklı sınıflandırma şemaları aracılığıyla görüntülemenizi sağlar. Bir "lens", notları bir özelliğe veya etikete göre yeniden düzenleyen sanal bir gruplamadır. Yerleşik lensler: "Aşamaya göre" (Geçici/Literatür/Kalıcı/Sentez) ve "Konuya göre" (etiketlere göre gruplama). Ayarlarda özel lensler oluşturulabilir.
+
+#### Neden önemli?
+
+Klasör yapıları tek bir hiyerarşi dayatır, ancak bilgi tek bir ağaca sığmaz. Çoklu Lens Görünümleri, dosyaları taşımadan farklı bakış açıları arasında geçiş yapmanızı sağlar. Aynı notlar, farklı organizasyonel lenslerle görüntülenir.
+
+#### Nasıl kullanılır
+
+1. Kenar çubuğunda, dosya ağacının üstündeki **lens açılır menüsünü** bulun (varsayılan "Klasörler").
+2. Bir lens seçin: "Aşamaya göre", "Konuya göre" veya özel bir lens. Kenar çubuğu anında yeniden düzenlenir.
+3. Varsayılan dosya ağacına dönmek için "Klasörler"i seçin.
+4. Özel lens oluşturmak için: **Ayarlar > Bilgi Yönetimi** açın, **Lens Oluştur** tıklayın, adlandırın ve gruplama için frontmatter özelliğini seçin.
+5. Veya Komut Paletini kullanın: "Create Lens" yazın.
+
+#### Nerede görülür?
+
+- **Kenar çubuğu açılır menüsü**: Dosya ağacının üstünde lens seçici
+- **Ayarlar > Bilgi Yönetimi**: Özel lensleri oluşturun, düzenleyin ve silin
+- **Komut Paleti**: "Create Lens" komutu
 
 ### Bilişsel Motor Ayarları
 

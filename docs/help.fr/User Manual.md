@@ -540,7 +540,7 @@ Le Moteur Cognitif est le systeme d'intelligence integre de Constellation qui an
 
 > « La quantite de vos donnees n'a pas d'importance. Ce qui compte, ce n'est pas combien de sources vous stockez, mais comment vous formulez votre connaissance a partir d'elles et la reliez en une conscience unique et significative. »
 
-Le Moteur Cognitif se compose de huit outils integres : Liens types, Strates de connaissance, Cycle de maturite, Detecteur de tensions, Chaine de provenance, Moteur d'externalisation, Impulsion de revision et Sentiers.
+Le Moteur Cognitif se compose de neuf outils integres : Liens types, Strates de connaissance, Cycle de maturite, Detecteur de tensions, Chaine de provenance, Moteur d'externalisation, Impulsion de revision, Sentiers et Vues multi-lentilles.
 
 ---
 
@@ -750,6 +750,30 @@ La connaissance n'est pas toujours un reseau. Parfois c'est un chemin — une se
 
 - **Barre de navigation** : Indicateur du sentier avec nom, position et fleches de navigation
 - **Palette de Commandes** : Commande "Open Trail" liste tous les sentiers
+
+### 17.9 Vues multi-lentilles
+
+#### Qu'est-ce que c'est ?
+
+Les Vues multi-lentilles permettent de visualiser votre bibliotheque a travers differents schemas de classification — sans modifier la structure des dossiers ni dupliquer de notes. Une "lentille" est un regroupement virtuel qui reorganise vos notes selon une propriete ou un tag. Lentilles integrees : "Par etape" (Fugace/Litterature/Permanent/Synthese) et "Par sujet" (regroupement par tags). Des lentilles personnalisees peuvent etre creees dans les Parametres.
+
+#### Pourquoi c'est important ?
+
+Les structures de dossiers imposent une seule hierarchie, mais la connaissance ne tient pas dans un seul arbre. Les Vues multi-lentilles permettent de basculer entre differentes perspectives sans deplacer de fichiers. Les memes notes, vues a travers differentes lentilles organisationnelles.
+
+#### Comment l'utiliser
+
+1. Dans la barre laterale, trouvez le **selecteur de lentilles** en haut de l'arborescence (par defaut "Dossiers").
+2. Selectionnez une lentille : "Par etape", "Par sujet" ou une lentille personnalisee. La barre laterale se reorganise instantanement.
+3. Selectionnez "Dossiers" pour revenir a l'arborescence par defaut.
+4. Pour creer une lentille personnalisee : ouvrez **Parametres > Gestion des connaissances**, cliquez sur **Creer une lentille**, nommez-la et choisissez la propriete frontmatter pour le regroupement.
+5. Ou utilisez la Palette de Commandes : tapez "Create Lens".
+
+#### Ou le voir ?
+
+- **Selecteur dans la barre laterale** : Selecteur de lentilles en haut de l'arborescence
+- **Parametres > Gestion des connaissances** : Creer, modifier et supprimer des lentilles personnalisees
+- **Palette de Commandes** : Commande "Create Lens"
 
 ### Parametres du Moteur Cognitif
 

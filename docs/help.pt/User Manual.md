@@ -540,7 +540,7 @@ O Motor Cognitivo e o sistema de inteligencia integrado do Constellation que ana
 
 > "A quantidade dos seus dados nao importa. Nao se trata de quantas fontes voce armazena, mas de como voce formula seu conhecimento a partir delas e o conecta em uma consciencia unica e significativa."
 
-O Motor Cognitivo e composto por oito ferramentas integradas: Links tipados, Estratos de conhecimento, Ciclo de maturidade, Detector de tensoes, Cadeia de proveniencia, Motor de externalizacao, Pulso de revisao e Trilhas.
+O Motor Cognitivo e composto por nove ferramentas integradas: Links tipados, Estratos de conhecimento, Ciclo de maturidade, Detector de tensoes, Cadeia de proveniencia, Motor de externalizacao, Pulso de revisao, Trilhas e Visoes multi-lente.
 
 ---
 
@@ -750,6 +750,30 @@ O conhecimento nem sempre e uma rede. As vezes e um caminho — uma sequencia de
 
 - **Barra de navegacao**: Indicador da trilha com nome, posicao e setas de navegacao
 - **Paleta de Comandos**: Comando "Open Trail" lista todas as trilhas
+
+### 17.9 Visoes multi-lente
+
+#### O que e?
+
+Visoes multi-lente permitem visualizar sua biblioteca atraves de diferentes esquemas de classificacao — sem alterar a estrutura de pastas ou duplicar notas. Uma "lente" e um agrupamento virtual que reorganiza notas com base em uma propriedade ou tag. Lentes integradas: "Por estagio" (Fugaz/Literatura/Permanente/Sintese) e "Por topico" (agrupamento por tags). Lentes personalizadas podem ser criadas nas Configuracoes.
+
+#### Por que importa?
+
+Estruturas de pastas impoem uma unica hierarquia, mas o conhecimento nao cabe em uma unica arvore. Visoes multi-lente permitem alternar entre perspectivas sem mover arquivos. As mesmas notas, vistas atraves de diferentes lentes organizacionais.
+
+#### Como usar
+
+1. Na barra lateral, encontre o **seletor de lentes** no topo da arvore de arquivos (padrao "Pastas").
+2. Selecione uma lente: "Por estagio", "Por topico" ou uma lente personalizada. A barra lateral se reorganiza instantaneamente.
+3. Selecione "Pastas" para retornar a arvore de arquivos padrao.
+4. Para criar uma lente personalizada: abra **Configuracoes > Gestao de conhecimento**, clique em **Criar lente**, nomeie e escolha a propriedade frontmatter para agrupamento.
+5. Ou use a Paleta de Comandos: digite "Create Lens".
+
+#### Onde aparece?
+
+- **Seletor na barra lateral**: Seletor de lentes no topo da arvore de arquivos
+- **Configuracoes > Gestao de conhecimento**: Criar, editar e excluir lentes personalizadas
+- **Paleta de Comandos**: Comando "Create Lens"
 
 ### Configuracoes do Motor Cognitivo
 
