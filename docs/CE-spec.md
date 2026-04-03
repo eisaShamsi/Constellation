@@ -530,9 +530,9 @@ GO if tests 1–7 pass.
 
 ---
 
-## Phase 8: Trails (المسارات)
+## Phase 8: Trails (المسارات) ✅ COMPLETE
 
-**Status**: 🔲 Not started
+**Commit**: `96d7f3e` | **Date**: 2026-04-03
 **Depends on**: GraphMind (existing), Wikilinks (existing)
 
 ### Goal

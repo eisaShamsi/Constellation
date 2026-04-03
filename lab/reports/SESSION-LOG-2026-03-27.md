@@ -1078,8 +1078,42 @@ Fixes:
 
 ---
 
+### CE Phase 7: Review Pulse (نبض المراجعة)
+
+**Commit:** `b2bbed0` | **Tag:** `milestone/CE-phase-7-review-pulse`
+
+- New Rust module `src-tauri/src/review.rs`: spaced resurfacing schedule
+- ReviewPulsePanel.svelte: 3 sections (Due/Checkpoints/Never Reviewed)
+- Actions: ✓ Reviewed, 👁 Snooze 7d, 🗄️ Dismiss
+- Right sidebar Review tab with badge count
+- Command palette: "Review due notes"
+- Works without a note open (library-level feature)
+- **Test: PASS**
+
+### CE Phase 8: Trails (المسارات)
+
+**Commit:** `96d7f3e` | **Tag:** `milestone/CE-phase-8-trails`
+
+- New Rust module `src-tauri/src/trails.rs`: list_trails + read_trail
+- Trail = .md file with `trail: true` frontmatter + ordered wikilinks
+- NotePane breadcrumb: 🛤️ trail indicator with prev/next navigation
+- Command palette: "Open Trail"
+- Recursive note path resolution (case-insensitive)
+- Cursor visibility fix (CSS !important)
+- **Test: pending user testing**
+
+---
+
+### Milestone: CE-phase-8-trails
+
+**Tag:** `milestone/CE-phase-8-trails` at `96d7f3e`
+**ZIP:** `E:/Backups/Constellation/Constellation-CE-phase-8-20260403.zip`
+
+---
+
 ### Open Items
 - CE Phase 4 user testing — pending larger library
-- CE Phase 7: Review Pulse — next
+- CE Phase 8 user testing — pending
+- CE Phase 9: Multi-Lens Views — next
 - Virtual scrolling (Priority 4) — future session
 - Decompose +layout.svelte (Priority 3) — future session
