@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
+	import { t, isRTL as isRTLStore } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { createNote, writeNote, openNoteTab } from '$lib/libraries/store';
 
@@ -285,7 +285,7 @@
 	}
 </script>
 
-<div class="smc">
+<div class="smc" dir={$isRTLStore ? 'rtl' : 'ltr'}>
 	{#if showCanvasPicker}
 		<!-- Canvas picker -->
 		<div class="smc-picker">
@@ -354,7 +354,7 @@
 				<!-- Cynefin quadrants -->
 				{#each QUADRANTS as q}
 					<div class="smc-quadrant" style="left:{q.x}px; top:{q.y}px; width:500px; height:500px; background:{quadrantColors[q.id as keyof typeof quadrantColors] ?? q.color};">
-						<span class="smc-quadrant-label">{$t(`senseMakingCanvas.quadrant.${q.id}`) || q.id}</span>
+						<span class="smc-quadrant-label">{$t(`senseMakingCanvas.q_${q.id}`) || q.id}</span>
 					</div>
 				{/each}
 
@@ -367,7 +367,7 @@
 					>
 						<div class="smc-item-header" style="background:{item.quadrant === 'complex' ? 'rgba(124,58,237,0.15)' : item.quadrant === 'complicated' ? 'rgba(59,130,246,0.15)' : item.quadrant === 'chaotic' ? 'rgba(239,68,68,0.15)' : item.quadrant === 'clear' ? 'rgba(34,197,94,0.15)' : 'transparent'}">
 							{#if item.quadrant}
-								<span class="smc-item-quad">{item.quadrant}</span>
+								<span class="smc-item-quad">{$t(`senseMakingCanvas.q_${item.quadrant}`) || item.quadrant}</span>
 							{/if}
 							<div class="smc-item-actions">
 								<button class="smc-item-btn" title={$t('senseMakingCanvas.promote') || 'Promote to note'} onclick={() => startPromote(item)}>🔗</button>
