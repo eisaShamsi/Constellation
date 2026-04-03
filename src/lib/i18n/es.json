@@ -828,7 +828,16 @@
         "items": "elementos",
         "hint": "Doble clic para agregar • Shift+arrastrar para mover • Desplazar para zoom",
         "switchCanvas": "Cambiar",
-        "promote": "Promover a nota"
+        "promote": "Promover a nota",
+        "quadrant.complex": "Complejo",
+        "quadrant.complicated": "Complicado",
+        "quadrant.chaotic": "Caótico",
+        "quadrant.clear": "Claro",
+        "colorPresets": "Preajustes de color de zona",
+        "noteName": "Nombre de la nota",
+        "folder": "Carpeta (vacío para raíz)",
+        "promoteConfirm": "Crear nota",
+        "selectLibrary": "Seleccionar biblioteca"
     },
     "tableToolbar": {
         "addRow": "Agregar fila",

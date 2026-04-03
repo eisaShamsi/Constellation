@@ -828,7 +828,16 @@
         "items": "عناصر",
         "hint": "دوبار کلیک برای افزودن • Shift+کشیدن برای جابجایی • اسکرول برای بزرگنمایی",
         "switchCanvas": "تغییر",
-        "promote": "ارتقا به یادداشت"
+        "promote": "ارتقا به یادداشت",
+        "quadrant.complex": "پیچیده",
+        "quadrant.complicated": "دشوار",
+        "quadrant.chaotic": "آشوبناک",
+        "quadrant.clear": "واضح",
+        "colorPresets": "پیش‌تنظیم رنگ ناحیه",
+        "noteName": "نام یادداشت",
+        "folder": "پوشه (برای ریشه خالی بگذارید)",
+        "promoteConfirm": "ایجاد یادداشت",
+        "selectLibrary": "انتخاب کتابخانه"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

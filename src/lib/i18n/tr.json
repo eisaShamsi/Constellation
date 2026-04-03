@@ -817,7 +817,16 @@
         "items": "öğe",
         "hint": "Eklemek için çift tıkla • Shift+sürükle kaydır • Yakınlaştırmak için kaydır",
         "switchCanvas": "Değiştir",
-        "promote": "Nota yükselt"
+        "promote": "Nota yükselt",
+        "quadrant.complex": "Karmaşık",
+        "quadrant.complicated": "Karışık",
+        "quadrant.chaotic": "Kaotik",
+        "quadrant.clear": "Açık",
+        "colorPresets": "Bölge renk ön ayarları",
+        "noteName": "Not adı",
+        "folder": "Klasör (kök için boş)",
+        "promoteConfirm": "Not oluştur",
+        "selectLibrary": "Kütüphane seçin"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

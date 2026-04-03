@@ -817,7 +817,16 @@
         "items": "आइटम",
         "hint": "जोड़ने के लिए डबल-क्लिक • Shift+खींचें पैन करने के लिए • ज़ूम के लिए स्क्रॉल",
         "switchCanvas": "बदलें",
-        "promote": "नोट में प्रमोट करें"
+        "promote": "नोट में प्रमोट करें",
+        "quadrant.complex": "जटिल",
+        "quadrant.complicated": "कठिन",
+        "quadrant.chaotic": "अराजक",
+        "quadrant.clear": "स्पष्ट",
+        "colorPresets": "ज़ोन रंग प्रीसेट",
+        "noteName": "नोट का नाम",
+        "folder": "फ़ोल्डर (रूट के लिए खाली)",
+        "promoteConfirm": "नोट बनाएं",
+        "selectLibrary": "लाइब्रेरी चुनें"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",

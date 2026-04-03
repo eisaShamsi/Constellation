@@ -827,7 +827,16 @@
         "items": "items",
         "hint": "Double-click to add • Shift+drag to pan • Scroll to zoom",
         "switchCanvas": "Switch",
-        "promote": "Promote to note"
+        "promote": "Promote to note",
+        "quadrant.complex": "Complex",
+        "quadrant.complicated": "Complicated",
+        "quadrant.chaotic": "Chaotic",
+        "quadrant.clear": "Clear",
+        "colorPresets": "Zone Color Presets",
+        "noteName": "Note name",
+        "folder": "Folder (leave empty for library root)",
+        "promoteConfirm": "Create Note",
+        "selectLibrary": "Select library"
     },
     "tableToolbar": {
         "addRow": "Add row",

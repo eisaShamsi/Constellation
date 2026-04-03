@@ -817,7 +817,16 @@
         "items": "itens",
         "hint": "Duplo clique para adicionar • Shift+arrastar para mover • Rolar para zoom",
         "switchCanvas": "Trocar",
-        "promote": "Promover a nota"
+        "promote": "Promover a nota",
+        "quadrant.complex": "Complexo",
+        "quadrant.complicated": "Complicado",
+        "quadrant.chaotic": "Caótico",
+        "quadrant.clear": "Claro",
+        "colorPresets": "Predefinições de cor de zona",
+        "noteName": "Nome da nota",
+        "folder": "Pasta (vazio para raiz)",
+        "promoteConfirm": "Criar nota",
+        "selectLibrary": "Selecionar biblioteca"
     },
     "tableToolbar": {
         "addRow": "Adicionar linha",

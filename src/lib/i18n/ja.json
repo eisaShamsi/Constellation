@@ -817,7 +817,16 @@
         "items": "アイテム",
         "hint": "ダブルクリックで追加 • Shift+ドラッグでパン • スクロールでズーム",
         "switchCanvas": "切替",
-        "promote": "ノートに昇格"
+        "promote": "ノートに昇格",
+        "quadrant.complex": "複雑",
+        "quadrant.complicated": "煩雑",
+        "quadrant.chaotic": "混沌",
+        "quadrant.clear": "明確",
+        "colorPresets": "ゾーンカラープリセット",
+        "noteName": "ノート名",
+        "folder": "フォルダ（空白でルート）",
+        "promoteConfirm": "ノート作成",
+        "selectLibrary": "ライブラリを選択"
     },
     "tableToolbar": {
         "addRow": "行を追加",

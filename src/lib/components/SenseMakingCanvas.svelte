@@ -54,10 +54,10 @@
 
 	// ─── Cynefin quadrants (positioned at fixed world coordinates) ───
 	const QUADRANTS = [
-		{ id: 'complex', label: 'Complex', labelAr: 'معقد', x: -500, y: -500, color: 'rgba(124, 58, 237, 0.06)' },
-		{ id: 'complicated', label: 'Complicated', labelAr: 'مُعَقَّد', x: 0, y: -500, color: 'rgba(59, 130, 246, 0.06)' },
-		{ id: 'chaotic', label: 'Chaotic', labelAr: 'فوضوي', x: -500, y: 0, color: 'rgba(239, 68, 68, 0.06)' },
-		{ id: 'clear', label: 'Clear', labelAr: 'واضح', x: 0, y: 0, color: 'rgba(34, 197, 94, 0.06)' },
+		{ id: 'complex', x: -500, y: -500, color: 'rgba(124, 58, 237, 0.06)' },
+		{ id: 'complicated', x: 0, y: -500, color: 'rgba(59, 130, 246, 0.06)' },
+		{ id: 'chaotic', x: -500, y: 0, color: 'rgba(239, 68, 68, 0.06)' },
+		{ id: 'clear', x: 0, y: 0, color: 'rgba(34, 197, 94, 0.06)' },
 	];
 
 	// ─── Load canvases ───
@@ -324,7 +324,7 @@
 		</div>
 		{#if showSettings}
 			<div class="smc-settings">
-				<div class="smc-settings-title">Zone Color Presets</div>
+				<div class="smc-settings-title">{$t('senseMakingCanvas.colorPresets') || 'Zone Color Presets'}</div>
 				<div class="smc-settings-presets">
 					{#each COLOR_PRESETS as preset}
 						<button class="smc-preset-btn" onclick={() => {
@@ -354,7 +354,7 @@
 				<!-- Cynefin quadrants -->
 				{#each QUADRANTS as q}
 					<div class="smc-quadrant" style="left:{q.x}px; top:{q.y}px; width:500px; height:500px; background:{quadrantColors[q.id as keyof typeof quadrantColors] ?? q.color};">
-						<span class="smc-quadrant-label">{q.label}</span>
+						<span class="smc-quadrant-label">{$t(`senseMakingCanvas.quadrant.${q.id}`) || q.id}</span>
 					</div>
 				{/each}
 

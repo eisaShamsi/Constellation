@@ -817,7 +817,16 @@
         "items": "элементов",
         "hint": "Двойной клик для добавления • Shift+перетаскивание для панорамы • Прокрутка для масштаба",
         "switchCanvas": "Сменить",
-        "promote": "Повысить до заметки"
+        "promote": "Повысить до заметки",
+        "quadrant.complex": "Сложный",
+        "quadrant.complicated": "Запутанный",
+        "quadrant.chaotic": "Хаотичный",
+        "quadrant.clear": "Ясный",
+        "colorPresets": "Цветовые пресеты зон",
+        "noteName": "Название заметки",
+        "folder": "Папка (пусто для корня)",
+        "promoteConfirm": "Создать заметку",
+        "selectLibrary": "Выбрать библиотеку"
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

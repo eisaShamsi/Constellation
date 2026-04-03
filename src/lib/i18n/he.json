@@ -817,7 +817,16 @@
         "items": "פריטים",
         "hint": "לחיצה כפולה להוספה • Shift+גרירה לגלילה • גלגל לזום",
         "switchCanvas": "החלף",
-        "promote": "קדם לפתק"
+        "promote": "קדם לפתק",
+        "quadrant.complex": "מורכב",
+        "quadrant.complicated": "מסובך",
+        "quadrant.chaotic": "כאוטי",
+        "quadrant.clear": "ברור",
+        "colorPresets": "ערכות צבע אזור",
+        "noteName": "שם הפתק",
+        "folder": "תיקייה (ריק לשורש)",
+        "promoteConfirm": "צור פתק",
+        "selectLibrary": "בחר ספרייה"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

@@ -817,7 +817,16 @@
         "items": "项目",
         "hint": "双击添加 • Shift+拖动平移 • 滚轮缩放",
         "switchCanvas": "切换",
-        "promote": "提升为笔记"
+        "promote": "提升为笔记",
+        "quadrant.complex": "复杂",
+        "quadrant.complicated": "繁杂",
+        "quadrant.chaotic": "混乱",
+        "quadrant.clear": "清晰",
+        "colorPresets": "区域颜色预设",
+        "noteName": "笔记名称",
+        "folder": "文件夹（留空为根）",
+        "promoteConfirm": "创建笔记",
+        "selectLibrary": "选择库"
     },
     "tableToolbar": {
         "addRow": "添加行",

@@ -817,7 +817,16 @@
         "items": "آئٹمز",
         "hint": "شامل کرنے کے لیے ڈبل کلک • Shift+گھسیٹیں پین کے لیے • زوم کے لیے اسکرول",
         "switchCanvas": "تبدیل",
-        "promote": "نوٹ میں ترقی"
+        "promote": "نوٹ میں ترقی",
+        "quadrant.complex": "پیچیدہ",
+        "quadrant.complicated": "مشکل",
+        "quadrant.chaotic": "افراتفری",
+        "quadrant.clear": "واضح",
+        "colorPresets": "زون رنگ پری سیٹس",
+        "noteName": "نوٹ کا نام",
+        "folder": "فولڈر (روٹ کے لیے خالی)",
+        "promoteConfirm": "نوٹ بنائیں",
+        "selectLibrary": "لائبریری منتخب کریں"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",
