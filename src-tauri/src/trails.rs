@@ -111,40 +111,52 @@ fn scan_trails_recursive(dir: &Path, trails: &mut Vec<TrailInfo>) {
     }
 }
 
-/// Check if a file has `trail: true` in frontmatter.
+/// Check if a file has `trail: true` in ANY frontmatter block.
+/// Handles double frontmatter (auto-generated created: block + user block).
 fn is_trail_file(content: &str) -> bool {
-    let normalized = content.replace("\r\n", "\n");
-    if !normalized.starts_with("---") { return false; }
-    if let Some(end) = normalized[3..].find("\n---") {
-        let yaml = &normalized[3..3 + end].to_lowercase();
-        yaml.lines().any(|line| {
-            let trimmed = line.trim();
-            trimmed == "trail: true" || trimmed == "trail: yes"
-        })
-    } else {
-        false
+    let normalized = content.replace("\r\n", "\n").to_lowercase();
+    // Check all ---...--- blocks, not just the first
+    let mut pos = 0;
+    while let Some(start) = normalized[pos..].find("---") {
+        let block_start = pos + start + 3;
+        if let Some(end) = normalized[block_start..].find("\n---") {
+            let yaml = &normalized[block_start..block_start + end];
+            if yaml.lines().any(|line| {
+                let t = line.trim();
+                t == "trail: true" || t == "trail: yes"
+            }) {
+                return true;
+            }
+            pos = block_start + end + 4;
+        } else {
+            break;
+        }
     }
+    false
 }
 
-/// Parse title and description from trail frontmatter.
+/// Parse title and description from ALL frontmatter blocks.
 fn parse_trail_frontmatter(content: &str) -> (String, String) {
     let normalized = content.replace("\r\n", "\n");
-    if !normalized.starts_with("---") { return (String::new(), String::new()); }
-    let end = match normalized[3..].find("\n---") {
-        Some(i) => i,
-        None => return (String::new(), String::new()),
-    };
-    let yaml = &normalized[3..3 + end];
-
     let mut title = String::new();
     let mut description = String::new();
 
-    for line in yaml.lines() {
-        let trimmed = line.trim();
-        if let Some(val) = trimmed.strip_prefix("title:") {
-            title = val.trim().trim_matches('"').trim_matches('\'').to_string();
-        } else if let Some(val) = trimmed.strip_prefix("description:") {
-            description = val.trim().trim_matches('"').trim_matches('\'').to_string();
+    let mut pos = 0;
+    while let Some(start) = normalized[pos..].find("---") {
+        let block_start = pos + start + 3;
+        if let Some(end) = normalized[block_start..].find("\n---") {
+            let yaml = &normalized[block_start..block_start + end];
+            for line in yaml.lines() {
+                let trimmed = line.trim();
+                if let Some(val) = trimmed.strip_prefix("title:") {
+                    title = val.trim().trim_matches('"').trim_matches('\'').to_string();
+                } else if let Some(val) = trimmed.strip_prefix("description:") {
+                    description = val.trim().trim_matches('"').trim_matches('\'').to_string();
+                }
+            }
+            pos = block_start + end + 4;
+        } else {
+            break;
         }
     }
 
