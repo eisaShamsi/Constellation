@@ -203,7 +203,7 @@
 
 	async function promoteItem(item: CanvasItem) {
 		if (!libraryPath || !item.content.trim()) return;
-		const fileName = item.content.trim().slice(0, 40).replace(/[<>:"/\\|?*\n]/g, '_') + '.md';
+		const fileName = item.content.trim().slice(0, 100).replace(/[<>:"/\\|?*\n]/g, '_') + '.md';
 		const frontmatter = `---\nstage: permanent\ncanvas_origin: "${canvasTitle}"\n${item.quadrant ? `canvas_quadrant: ${item.quadrant}\n` : ''}---\n`;
 		try {
 			const newPath = await createNote(libraryPath, fileName);
@@ -278,7 +278,7 @@
 						style="left:{item.x}px; top:{item.y}px;"
 						onpointerdown={(e) => startDragItem(e, item)}
 					>
-						<div class="smc-item-header">
+						<div class="smc-item-header" style="background:{item.quadrant === 'complex' ? 'rgba(124,58,237,0.15)' : item.quadrant === 'complicated' ? 'rgba(59,130,246,0.15)' : item.quadrant === 'chaotic' ? 'rgba(239,68,68,0.15)' : item.quadrant === 'clear' ? 'rgba(34,197,94,0.15)' : 'transparent'}">
 							{#if item.quadrant}
 								<span class="smc-item-quad">{item.quadrant}</span>
 							{/if}
