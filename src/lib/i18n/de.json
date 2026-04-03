@@ -365,7 +365,8 @@
         "openTrail": "Trail öffnen",
         "openLens": "Linse wechseln",
         "createLens": "Linse erstellen",
-        "expressionForge": "Ausdrucksschmiede"
+        "expressionForge": "Ausdrucksschmiede",
+        "senseMakingCanvas": "Sinngebungsleinwand"
     },
     "actions": {
         "untitled": "Unbenannt",
@@ -818,6 +819,16 @@
         "noNotes": "Keine Notizen gefunden",
         "emptyCanvas": "Klicken Sie auf Notizen im linken Panel, um Ihre Komposition zu erstellen.",
         "writeTransition": "Übergang oder Anmerkung schreiben..."
+    },
+    "senseMakingCanvas": {
+        "title": "Sinngebungsleinwand",
+        "openExisting": "Vorhandene Leinwand öffnen:",
+        "createNew": "Neue Leinwand erstellen:",
+        "canvasName": "Leinwandname...",
+        "items": "Elemente",
+        "hint": "Doppelklick zum Hinzufügen • Shift+Ziehen zum Verschieben • Scrollen zum Zoomen",
+        "switchCanvas": "Wechseln",
+        "promote": "Zu Notiz hochstufen"
     },
     "tableToolbar": {
         "addRow": "Zeile hinzufügen",

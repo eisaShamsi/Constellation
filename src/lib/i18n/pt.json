@@ -365,7 +365,8 @@
         "openTrail": "Abrir trilha",
         "openLens": "Trocar lente",
         "createLens": "Criar lente",
-        "expressionForge": "Forja de expressão"
+        "expressionForge": "Forja de expressão",
+        "senseMakingCanvas": "Tela de sentido"
     },
     "actions": {
         "untitled": "Sem título",
@@ -807,6 +808,16 @@
         "noNotes": "Nenhuma nota encontrada",
         "emptyCanvas": "Clique nas notas do painel esquerdo para construir sua composição.",
         "writeTransition": "Escrever transição ou anotação..."
+    },
+    "senseMakingCanvas": {
+        "title": "Tela de sentido",
+        "openExisting": "Abrir tela existente:",
+        "createNew": "Criar nova tela:",
+        "canvasName": "Nome da tela...",
+        "items": "itens",
+        "hint": "Duplo clique para adicionar • Shift+arrastar para mover • Rolar para zoom",
+        "switchCanvas": "Trocar",
+        "promote": "Promover a nota"
     },
     "tableToolbar": {
         "addRow": "Adicionar linha",

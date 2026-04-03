@@ -1,5 +1,6 @@
 mod ai;
 mod bases;
+mod canvas;
 mod dataview;
 mod importers;
 mod libraries;
@@ -167,6 +168,10 @@ pub fn run() {
             review::record_note_visit,
             trails::list_trails,
             trails::read_trail,
+            canvas::list_canvases,
+            canvas::read_canvas,
+            canvas::write_canvas,
+            canvas::create_canvas,
             lenses::list_lenses,
             lenses::save_lenses,
             lenses::apply_lens,

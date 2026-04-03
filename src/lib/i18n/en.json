@@ -364,7 +364,8 @@
         "openTrail": "Open Trail",
         "openLens": "Switch Lens",
         "createLens": "Create Lens",
-        "expressionForge": "Expression Forge"
+        "expressionForge": "Expression Forge",
+        "senseMakingCanvas": "Sense-Making Canvas"
     },
     "actions": {
         "untitled": "Untitled",
@@ -817,6 +818,16 @@
         "noNotes": "No notes found",
         "emptyCanvas": "Click notes from the left panel to build your composition.",
         "writeTransition": "Write transition or annotation..."
+    },
+    "senseMakingCanvas": {
+        "title": "Sense-Making Canvas",
+        "openExisting": "Open existing canvas:",
+        "createNew": "Create new canvas:",
+        "canvasName": "Canvas name...",
+        "items": "items",
+        "hint": "Double-click to add • Shift+drag to pan • Scroll to zoom",
+        "switchCanvas": "Switch",
+        "promote": "Promote to note"
     },
     "tableToolbar": {
         "addRow": "Add row",

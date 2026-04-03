@@ -365,7 +365,8 @@
         "openTrail": "פתח שביל",
         "openLens": "החלף עדשה",
         "createLens": "צור עדשה",
-        "expressionForge": "מפעל ביטוי"
+        "expressionForge": "מפעל ביטוי",
+        "senseMakingCanvas": "קנבס יצירת משמעות"
     },
     "actions": {
         "untitled": "ללא כותרת",
@@ -807,6 +808,16 @@
         "noNotes": "לא נמצאו פתקים",
         "emptyCanvas": "לחץ על פתקים מהפאנל השמאלי כדי לבנות את ההרכב שלך.",
         "writeTransition": "כתוב מעבר או הערה..."
+    },
+    "senseMakingCanvas": {
+        "title": "קנבס יצירת משמעות",
+        "openExisting": "פתח קנבס קיים:",
+        "createNew": "צור קנבס חדש:",
+        "canvasName": "שם הקנבס...",
+        "items": "פריטים",
+        "hint": "לחיצה כפולה להוספה • Shift+גרירה לגלילה • גלגל לזום",
+        "switchCanvas": "החלף",
+        "promote": "קדם לפתק"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

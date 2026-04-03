@@ -365,7 +365,8 @@
         "openTrail": "트레일 열기",
         "openLens": "렌즈 전환",
         "createLens": "렌즈 만들기",
-        "expressionForge": "표현 포지"
+        "expressionForge": "표현 포지",
+        "senseMakingCanvas": "센스메이킹 캔버스"
     },
     "actions": {
         "untitled": "제목 없음",
@@ -807,6 +808,16 @@
         "noNotes": "노트를 찾을 수 없습니다",
         "emptyCanvas": "왼쪽 패널에서 노트를 클릭하여 작품을 만드세요.",
         "writeTransition": "전환 또는 주석 작성..."
+    },
+    "senseMakingCanvas": {
+        "title": "센스메이킹 캔버스",
+        "openExisting": "기존 캔버스 열기:",
+        "createNew": "새 캔버스 만들기:",
+        "canvasName": "캔버스 이름...",
+        "items": "항목",
+        "hint": "더블클릭으로 추가 • Shift+드래그로 이동 • 스크롤로 확대/축소",
+        "switchCanvas": "전환",
+        "promote": "노트로 승격"
     },
     "tableToolbar": {
         "addRow": "행 추가",

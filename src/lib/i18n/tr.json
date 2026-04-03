@@ -365,7 +365,8 @@
         "openTrail": "Yolu aç",
         "openLens": "Lens değiştir",
         "createLens": "Lens oluştur",
-        "expressionForge": "İfade Dökümhanesi"
+        "expressionForge": "İfade Dökümhanesi",
+        "senseMakingCanvas": "Anlam Oluşturma Tuvali"
     },
     "actions": {
         "untitled": "Başlıksız",
@@ -807,6 +808,16 @@
         "noNotes": "Not bulunamadı",
         "emptyCanvas": "Kompozisyonunuzu oluşturmak için sol paneldeki notlara tıklayın.",
         "writeTransition": "Geçiş veya açıklama yazın..."
+    },
+    "senseMakingCanvas": {
+        "title": "Anlam Oluşturma Tuvali",
+        "openExisting": "Mevcut tuvali aç:",
+        "createNew": "Yeni tuval oluştur:",
+        "canvasName": "Tuval adı...",
+        "items": "öğe",
+        "hint": "Eklemek için çift tıkla • Shift+sürükle kaydır • Yakınlaştırmak için kaydır",
+        "switchCanvas": "Değiştir",
+        "promote": "Nota yükselt"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

@@ -365,7 +365,8 @@
         "openTrail": "ट्रेल खोलें",
         "openLens": "लेंस बदलें",
         "createLens": "लेंस बनाएं",
-        "expressionForge": "अभिव्यक्ति फोर्ज"
+        "expressionForge": "अभिव्यक्ति फोर्ज",
+        "senseMakingCanvas": "अर्थ-निर्माण कैनवास"
     },
     "actions": {
         "untitled": "बिना शीर्षक",
@@ -807,6 +808,16 @@
         "noNotes": "कोई नोट नहीं मिला",
         "emptyCanvas": "अपनी रचना बनाने के लिए बाएं पैनल से नोट्स पर क्लिक करें।",
         "writeTransition": "संक्रमण या टिप्पणी लिखें..."
+    },
+    "senseMakingCanvas": {
+        "title": "अर्थ-निर्माण कैनवास",
+        "openExisting": "मौजूदा कैनवास खोलें:",
+        "createNew": "नया कैनवास बनाएं:",
+        "canvasName": "कैनवास का नाम...",
+        "items": "आइटम",
+        "hint": "जोड़ने के लिए डबल-क्लिक • Shift+खींचें पैन करने के लिए • ज़ूम के लिए स्क्रॉल",
+        "switchCanvas": "बदलें",
+        "promote": "नोट में प्रमोट करें"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",

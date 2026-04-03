@@ -365,7 +365,8 @@
         "openTrail": "Abrir ruta",
         "openLens": "Cambiar lente",
         "createLens": "Crear lente",
-        "expressionForge": "Fragua de expresión"
+        "expressionForge": "Fragua de expresión",
+        "senseMakingCanvas": "Lienzo de sentido"
     },
     "actions": {
         "untitled": "Sin título",
@@ -818,6 +819,16 @@
         "noNotes": "No se encontraron notas",
         "emptyCanvas": "Haga clic en las notas del panel izquierdo para construir su composición.",
         "writeTransition": "Escribir transición o anotación..."
+    },
+    "senseMakingCanvas": {
+        "title": "Lienzo de sentido",
+        "openExisting": "Abrir lienzo existente:",
+        "createNew": "Crear nuevo lienzo:",
+        "canvasName": "Nombre del lienzo...",
+        "items": "elementos",
+        "hint": "Doble clic para agregar • Shift+arrastrar para mover • Desplazar para zoom",
+        "switchCanvas": "Cambiar",
+        "promote": "Promover a nota"
     },
     "tableToolbar": {
         "addRow": "Agregar fila",

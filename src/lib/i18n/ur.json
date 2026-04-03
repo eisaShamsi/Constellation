@@ -365,7 +365,8 @@
         "openTrail": "پگڈنڈی کھولیں",
         "openLens": "لینز تبدیل کریں",
         "createLens": "لینز بنائیں",
-        "expressionForge": "اظہار فورج"
+        "expressionForge": "اظہار فورج",
+        "senseMakingCanvas": "معنی سازی کینوس"
     },
     "actions": {
         "untitled": "بغیر عنوان",
@@ -807,6 +808,16 @@
         "noNotes": "کوئی نوٹ نہیں ملا",
         "emptyCanvas": "اپنی تحریر بنانے کے لیے بائیں پینل سے نوٹس پر کلک کریں۔",
         "writeTransition": "منتقلی یا تشریح لکھیں..."
+    },
+    "senseMakingCanvas": {
+        "title": "معنی سازی کینوس",
+        "openExisting": "موجودہ کینوس کھولیں:",
+        "createNew": "نیا کینوس بنائیں:",
+        "canvasName": "کینوس کا نام...",
+        "items": "آئٹمز",
+        "hint": "شامل کرنے کے لیے ڈبل کلک • Shift+گھسیٹیں پین کے لیے • زوم کے لیے اسکرول",
+        "switchCanvas": "تبدیل",
+        "promote": "نوٹ میں ترقی"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

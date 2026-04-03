@@ -64,6 +64,7 @@
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
 	import ReviewPulsePanel from '$lib/components/ReviewPulsePanel.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
+	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
 	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
@@ -301,6 +302,7 @@
 	let dueNotes = $state<any[]>([]); // CE Phase 7: ReviewPulse due notes
 	let activeTrail = $state<any>(null); // CE Phase 8: active trail data
 	let showExpressionForge = $state(false); // CE Phase 10
+	let showSenseMakingCanvas = $state(false); // CE Phase 11
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
@@ -1049,7 +1051,8 @@
 				} catch {}
 			}, category: 'Navigation' },
 			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
-			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showStarView = false; showGlobalTasks = false; showIndex = false; }, category: 'View' },
+			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showStarView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; }, category: 'View' },
+			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; }, category: 'View' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
@@ -2729,7 +2732,7 @@
 		</div>
 
 		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
-		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge}>
+		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas}>
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
 				{#if canScrollStart}
@@ -2903,6 +2906,13 @@
 				<GlobalTasksView
 					{libraryColorMap}
 					onClose={() => showGlobalTasks = false}
+				/>
+			{:else if showSenseMakingCanvas}
+				<SenseMakingCanvas
+					libraryPath={get(libraries)[0]?.path ?? ''}
+					libraryName={get(libraries)[0]?.name ?? ''}
+					libraryColor={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}
+					onClose={() => showSenseMakingCanvas = false}
 				/>
 			{:else if showExpressionForge}
 				<ExpressionForge

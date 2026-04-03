@@ -365,7 +365,8 @@
         "openTrail": "فتح مسار",
         "openLens": "تبديل العدسة",
         "createLens": "إنشاء عدسة",
-        "expressionForge": "مصنع التعبير"
+        "expressionForge": "مصنع التعبير",
+        "senseMakingCanvas": "لوحة الإدراك"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -818,6 +819,16 @@
         "noNotes": "لم يتم العثور على ملاحظات",
         "emptyCanvas": "انقر على الملاحظات من اللوحة اليسرى لبناء تأليفك.",
         "writeTransition": "اكتب نص انتقالي أو تعليق..."
+    },
+    "senseMakingCanvas": {
+        "title": "لوحة الإدراك",
+        "openExisting": "فتح لوحة موجودة:",
+        "createNew": "إنشاء لوحة جديدة:",
+        "canvasName": "اسم اللوحة...",
+        "items": "عناصر",
+        "hint": "انقر مرتين للإضافة • Shift+سحب للتحريك • تمرير للتكبير",
+        "switchCanvas": "تبديل",
+        "promote": "ترقية إلى ملاحظة"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

@@ -365,7 +365,8 @@
         "openTrail": "باز کردن مسیر",
         "openLens": "تغییر عدسی",
         "createLens": "ایجاد عدسی",
-        "expressionForge": "کارگاه بیان"
+        "expressionForge": "کارگاه بیان",
+        "senseMakingCanvas": "بوم معنایابی"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -818,6 +819,16 @@
         "noNotes": "هیچ یادداشتی یافت نشد",
         "emptyCanvas": "برای ساخت ترکیب خود روی یادداشت‌ها در پنل سمت چپ کلیک کنید.",
         "writeTransition": "متن انتقالی یا حاشیه بنویسید..."
+    },
+    "senseMakingCanvas": {
+        "title": "بوم معنایابی",
+        "openExisting": "باز کردن بوم موجود:",
+        "createNew": "ایجاد بوم جدید:",
+        "canvasName": "نام بوم...",
+        "items": "عناصر",
+        "hint": "دوبار کلیک برای افزودن • Shift+کشیدن برای جابجایی • اسکرول برای بزرگنمایی",
+        "switchCanvas": "تغییر",
+        "promote": "ارتقا به یادداشت"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

@@ -365,7 +365,8 @@
         "openTrail": "打开路径",
         "openLens": "切换镜头",
         "createLens": "创建镜头",
-        "expressionForge": "表达锻造"
+        "expressionForge": "表达锻造",
+        "senseMakingCanvas": "意义构建画布"
     },
     "actions": {
         "untitled": "未命名",
@@ -807,6 +808,16 @@
         "noNotes": "未找到笔记",
         "emptyCanvas": "点击左侧面板中的笔记来构建您的作品。",
         "writeTransition": "写过渡或注释..."
+    },
+    "senseMakingCanvas": {
+        "title": "意义构建画布",
+        "openExisting": "打开现有画布：",
+        "createNew": "创建新画布：",
+        "canvasName": "画布名称...",
+        "items": "项目",
+        "hint": "双击添加 • Shift+拖动平移 • 滚轮缩放",
+        "switchCanvas": "切换",
+        "promote": "提升为笔记"
     },
     "tableToolbar": {
         "addRow": "添加行",

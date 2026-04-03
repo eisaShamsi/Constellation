@@ -365,7 +365,8 @@
         "openTrail": "トレイルを開く",
         "openLens": "レンズ切替",
         "createLens": "レンズ作成",
-        "expressionForge": "表現フォージ"
+        "expressionForge": "表現フォージ",
+        "senseMakingCanvas": "センスメイキングキャンバス"
     },
     "actions": {
         "untitled": "無題",
@@ -807,6 +808,16 @@
         "noNotes": "ノートが見つかりません",
         "emptyCanvas": "左パネルのノートをクリックして作品を構築してください。",
         "writeTransition": "トランジションまたは注釈を書く..."
+    },
+    "senseMakingCanvas": {
+        "title": "センスメイキングキャンバス",
+        "openExisting": "既存のキャンバスを開く:",
+        "createNew": "新しいキャンバスを作成:",
+        "canvasName": "キャンバス名...",
+        "items": "アイテム",
+        "hint": "ダブルクリックで追加 • Shift+ドラッグでパン • スクロールでズーム",
+        "switchCanvas": "切替",
+        "promote": "ノートに昇格"
     },
     "tableToolbar": {
         "addRow": "行を追加",
