@@ -522,7 +522,7 @@
 		position: absolute; border: 1px dashed rgba(0,0,0,0.08); border-radius: 8px;
 	}
 	.smc-quadrant-label {
-		position: absolute; top: 8px; left: 12px;
+		position: absolute; top: 8px; inset-inline-start: 12px;
 		font-size: 14px; font-weight: 600; color: rgba(0,0,0,0.12);
 		pointer-events: none; user-select: none;
 	}
