@@ -837,7 +837,12 @@
         "noteName": "Nom de la note",
         "folder": "Dossier (vide pour la racine)",
         "promoteConfirm": "Créer une note",
-        "selectLibrary": "Sélectionner la bibliothèque"
+        "selectLibrary": "Sélectionner la bibliothèque",
+        "preset_default": "Par défaut",
+        "preset_muted": "Atténué",
+        "preset_bold": "Vif",
+        "preset_warm": "Chaud",
+        "preset_invisible": "Invisible"
     },
     "tableToolbar": {
         "addRow": "Ajouter une ligne",

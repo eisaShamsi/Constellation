@@ -826,7 +826,12 @@
         "noteName": "노트 이름",
         "folder": "폴더 (루트는 비워두기)",
         "promoteConfirm": "노트 만들기",
-        "selectLibrary": "라이브러리 선택"
+        "selectLibrary": "라이브러리 선택",
+        "preset_default": "기본",
+        "preset_muted": "음소거",
+        "preset_bold": "굵게",
+        "preset_warm": "따뜻한",
+        "preset_invisible": "투명"
     },
     "tableToolbar": {
         "addRow": "행 추가",

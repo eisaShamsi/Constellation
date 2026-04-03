@@ -826,7 +826,12 @@
         "noteName": "Not adı",
         "folder": "Klasör (kök için boş)",
         "promoteConfirm": "Not oluştur",
-        "selectLibrary": "Kütüphane seçin"
+        "selectLibrary": "Kütüphane seçin",
+        "preset_default": "Varsayılan",
+        "preset_muted": "Soluk",
+        "preset_bold": "Kalın",
+        "preset_warm": "Sıcak",
+        "preset_invisible": "Görünmez"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

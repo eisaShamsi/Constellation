@@ -837,7 +837,12 @@
         "noteName": "Nombre de la nota",
         "folder": "Carpeta (vacío para raíz)",
         "promoteConfirm": "Crear nota",
-        "selectLibrary": "Seleccionar biblioteca"
+        "selectLibrary": "Seleccionar biblioteca",
+        "preset_default": "Predeterminado",
+        "preset_muted": "Atenuado",
+        "preset_bold": "Intenso",
+        "preset_warm": "Cálido",
+        "preset_invisible": "Invisible"
     },
     "tableToolbar": {
         "addRow": "Agregar fila",

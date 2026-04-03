@@ -112,11 +112,11 @@
 		clear: 'rgba(34, 197, 94, 0.06)',
 	});
 	const COLOR_PRESETS = [
-		{ name: 'Default', complex: 'rgba(124,58,237,0.06)', complicated: 'rgba(59,130,246,0.06)', chaotic: 'rgba(239,68,68,0.06)', clear: 'rgba(34,197,94,0.06)' },
-		{ name: 'Muted', complex: 'rgba(124,58,237,0.03)', complicated: 'rgba(59,130,246,0.03)', chaotic: 'rgba(239,68,68,0.03)', clear: 'rgba(34,197,94,0.03)' },
-		{ name: 'Bold', complex: 'rgba(124,58,237,0.12)', complicated: 'rgba(59,130,246,0.12)', chaotic: 'rgba(239,68,68,0.12)', clear: 'rgba(34,197,94,0.12)' },
-		{ name: 'Warm', complex: 'rgba(217,119,6,0.06)', complicated: 'rgba(245,158,11,0.06)', chaotic: 'rgba(239,68,68,0.06)', clear: 'rgba(16,185,129,0.06)' },
-		{ name: 'Invisible', complex: 'transparent', complicated: 'transparent', chaotic: 'transparent', clear: 'transparent' },
+		{ id: 'default', complex: 'rgba(124,58,237,0.06)', complicated: 'rgba(59,130,246,0.06)', chaotic: 'rgba(239,68,68,0.06)', clear: 'rgba(34,197,94,0.06)' },
+		{ id: 'muted', complex: 'rgba(124,58,237,0.03)', complicated: 'rgba(59,130,246,0.03)', chaotic: 'rgba(239,68,68,0.03)', clear: 'rgba(34,197,94,0.03)' },
+		{ id: 'bold', complex: 'rgba(124,58,237,0.12)', complicated: 'rgba(59,130,246,0.12)', chaotic: 'rgba(239,68,68,0.12)', clear: 'rgba(34,197,94,0.12)' },
+		{ id: 'warm', complex: 'rgba(217,119,6,0.06)', complicated: 'rgba(245,158,11,0.06)', chaotic: 'rgba(239,68,68,0.06)', clear: 'rgba(16,185,129,0.06)' },
+		{ id: 'invisible', complex: 'transparent', complicated: 'transparent', chaotic: 'transparent', clear: 'transparent' },
 	];
 
 	function fitToScreen() {
@@ -336,7 +336,7 @@
 								<span style="background:{preset.chaotic}; border:1px solid rgba(0,0,0,0.1);"></span>
 								<span style="background:{preset.clear}; border:1px solid rgba(0,0,0,0.1);"></span>
 							</div>
-							<span class="smc-preset-name">{preset.name}</span>
+							<span class="smc-preset-name">{$t(`senseMakingCanvas.preset_${preset.id}`) || preset.id}</span>
 						</button>
 					{/each}
 				</div>

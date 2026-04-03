@@ -826,7 +826,12 @@
         "noteName": "笔记名称",
         "folder": "文件夹（留空为根）",
         "promoteConfirm": "创建笔记",
-        "selectLibrary": "选择库"
+        "selectLibrary": "选择库",
+        "preset_default": "默认",
+        "preset_muted": "柔和",
+        "preset_bold": "鲜明",
+        "preset_warm": "暖色",
+        "preset_invisible": "透明"
     },
     "tableToolbar": {
         "addRow": "添加行",

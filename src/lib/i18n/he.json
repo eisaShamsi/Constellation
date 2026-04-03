@@ -826,7 +826,12 @@
         "noteName": "שם הפתק",
         "folder": "תיקייה (ריק לשורש)",
         "promoteConfirm": "צור פתק",
-        "selectLibrary": "בחר ספרייה"
+        "selectLibrary": "בחר ספרייה",
+        "preset_default": "ברירת מחדל",
+        "preset_muted": "עמום",
+        "preset_bold": "בולט",
+        "preset_warm": "חם",
+        "preset_invisible": "בלתי נראה"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

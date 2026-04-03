@@ -826,7 +826,12 @@
         "noteName": "نوٹ کا نام",
         "folder": "فولڈر (روٹ کے لیے خالی)",
         "promoteConfirm": "نوٹ بنائیں",
-        "selectLibrary": "لائبریری منتخب کریں"
+        "selectLibrary": "لائبریری منتخب کریں",
+        "preset_default": "ڈیفالٹ",
+        "preset_muted": "دھیما",
+        "preset_bold": "گہرا",
+        "preset_warm": "گرم",
+        "preset_invisible": "پوشیدہ"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

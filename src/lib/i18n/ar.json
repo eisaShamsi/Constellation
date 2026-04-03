@@ -837,7 +837,12 @@
         "noteName": "اسم الملاحظة",
         "folder": "المجلد (اتركه فارغاً لجذر المكتبة)",
         "promoteConfirm": "إنشاء ملاحظة",
-        "selectLibrary": "اختر المكتبة"
+        "selectLibrary": "اختر المكتبة",
+        "preset_default": "افتراضي",
+        "preset_muted": "خافت",
+        "preset_bold": "غامق",
+        "preset_warm": "دافئ",
+        "preset_invisible": "مخفي"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

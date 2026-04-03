@@ -826,7 +826,12 @@
         "noteName": "ノート名",
         "folder": "フォルダ（空白でルート）",
         "promoteConfirm": "ノート作成",
-        "selectLibrary": "ライブラリを選択"
+        "selectLibrary": "ライブラリを選択",
+        "preset_default": "デフォルト",
+        "preset_muted": "ミュート",
+        "preset_bold": "ボールド",
+        "preset_warm": "ウォーム",
+        "preset_invisible": "非表示"
     },
     "tableToolbar": {
         "addRow": "行を追加",

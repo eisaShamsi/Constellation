@@ -826,7 +826,12 @@
         "noteName": "Название заметки",
         "folder": "Папка (пусто для корня)",
         "promoteConfirm": "Создать заметку",
-        "selectLibrary": "Выбрать библиотеку"
+        "selectLibrary": "Выбрать библиотеку",
+        "preset_default": "По умолчанию",
+        "preset_muted": "Приглушённый",
+        "preset_bold": "Яркий",
+        "preset_warm": "Тёплый",
+        "preset_invisible": "Невидимый"
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

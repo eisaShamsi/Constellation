@@ -837,7 +837,12 @@
         "noteName": "Notizname",
         "folder": "Ordner (leer für Bibliotheksstamm)",
         "promoteConfirm": "Notiz erstellen",
-        "selectLibrary": "Bibliothek wählen"
+        "selectLibrary": "Bibliothek wählen",
+        "preset_default": "Standard",
+        "preset_muted": "Gedämpft",
+        "preset_bold": "Kräftig",
+        "preset_warm": "Warm",
+        "preset_invisible": "Unsichtbar"
     },
     "tableToolbar": {
         "addRow": "Zeile hinzufügen",

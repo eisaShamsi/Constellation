@@ -836,7 +836,12 @@
         "noteName": "Note name",
         "folder": "Folder (leave empty for library root)",
         "promoteConfirm": "Create Note",
-        "selectLibrary": "Select library"
+        "selectLibrary": "Select library",
+        "preset_default": "Default",
+        "preset_muted": "Muted",
+        "preset_bold": "Bold",
+        "preset_warm": "Warm",
+        "preset_invisible": "Invisible"
     },
     "tableToolbar": {
         "addRow": "Add row",

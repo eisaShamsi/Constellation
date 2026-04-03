@@ -837,7 +837,12 @@
         "noteName": "نام یادداشت",
         "folder": "پوشه (برای ریشه خالی بگذارید)",
         "promoteConfirm": "ایجاد یادداشت",
-        "selectLibrary": "انتخاب کتابخانه"
+        "selectLibrary": "انتخاب کتابخانه",
+        "preset_default": "پیش‌فرض",
+        "preset_muted": "ملایم",
+        "preset_bold": "پررنگ",
+        "preset_warm": "گرم",
+        "preset_invisible": "نامرئی"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

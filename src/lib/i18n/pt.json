@@ -826,7 +826,12 @@
         "noteName": "Nome da nota",
         "folder": "Pasta (vazio para raiz)",
         "promoteConfirm": "Criar nota",
-        "selectLibrary": "Selecionar biblioteca"
+        "selectLibrary": "Selecionar biblioteca",
+        "preset_default": "Padrão",
+        "preset_muted": "Suave",
+        "preset_bold": "Intenso",
+        "preset_warm": "Quente",
+        "preset_invisible": "Invisível"
     },
     "tableToolbar": {
         "addRow": "Adicionar linha",

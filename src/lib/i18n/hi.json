@@ -826,7 +826,12 @@
         "noteName": "नोट का नाम",
         "folder": "फ़ोल्डर (रूट के लिए खाली)",
         "promoteConfirm": "नोट बनाएं",
-        "selectLibrary": "लाइब्रेरी चुनें"
+        "selectLibrary": "लाइब्रेरी चुनें",
+        "preset_default": "डिफ़ॉल्ट",
+        "preset_muted": "म्यूटेड",
+        "preset_bold": "बोल्ड",
+        "preset_warm": "गर्म",
+        "preset_invisible": "अदृश्य"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",
