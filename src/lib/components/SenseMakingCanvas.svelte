@@ -31,9 +31,12 @@
 	let canvasPath = $state('');
 	let canvasTitle = $state('');
 	let items = $state<CanvasItem[]>([]);
+	// Center the view on the quadrant grid (quadrants span -500,-500 to 500,500)
+	// Initial offset calculated after mount to center in viewport
 	let viewX = $state(0);
 	let viewY = $state(0);
-	let viewScale = $state(1);
+	let viewScale = $state(0.7); // zoom out slightly to show all quadrants
+	let viewInitialized = false;
 	let isPanning = $state(false);
 	let panStartX = 0;
 	let panStartY = 0;
@@ -43,6 +46,7 @@
 	let dragOffsetX = 0;
 	let dragOffsetY = 0;
 	let editingItem = $state<string | null>(null);
+	let viewportEl: HTMLDivElement | undefined;
 	let showCanvasPicker = $state(true);
 	let availableCanvases = $state<any[]>([]);
 	let newCanvasName = $state('');
@@ -64,6 +68,18 @@
 		} catch { availableCanvases = []; }
 	}
 	loadCanvases();
+
+	// Center view on quadrant grid when viewport becomes visible
+	$effect(() => {
+		if (!showCanvasPicker && viewportEl && !viewInitialized) {
+			viewInitialized = true;
+			const w = viewportEl.clientWidth;
+			const h = viewportEl.clientHeight;
+			// Quadrant center is at (0, 0) in world space — offset view to center it
+			viewX = w / 2;
+			viewY = h / 2;
+		}
+	});
 
 	async function openCanvas(path: string) {
 		try {
@@ -240,7 +256,7 @@
 			<button class="smc-header-btn smc-close" onclick={() => onClose?.()}>×</button>
 		</div>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="smc-viewport"
+		<div class="smc-viewport" bind:this={viewportEl}
 			onwheel={onWheel}
 			onpointerdown={onPointerDown}
 			onpointermove={onPointerMove}
