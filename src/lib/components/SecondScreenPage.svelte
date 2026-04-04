@@ -701,10 +701,9 @@
 			{@const _dnGuard = { saving: false }}
 			<div class="dash-note-companion">
 				<div class="dash-note-header">
-					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardNoteTab = null; }}>
+					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardNoteTab = null; }} title={$t('notePane.back') || 'Back to Dashboard'}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					</button>
-					<span class="dash-note-name" dir="auto">{dashboardNoteTab.name.replace(/\.md$/, '')}</span>
 				</div>
 				<div class="dash-note-editor">
 					{#key dashboardNoteTab.id + '|' + dashboardNoteTab.path}
@@ -1627,8 +1626,8 @@
 	}
 	.dash-note-header, .dash-tag-header {
 		display: flex; align-items: center; gap: 10px;
-		padding: 10px 16px; flex-shrink: 0;
-		border-bottom: 1px solid var(--background-modifier-border);
+		padding: 6px 16px; flex-shrink: 0;
+		background: #e8e8ec;
 	}
 	.dash-back-btn {
 		width: 28px; height: 28px; border-radius: 6px;
