@@ -56,9 +56,11 @@
 			selectedTagNotes = [];
 		}
 		loadingTagNotes = false;
-		// Emit to second screen if callback provided
+		// If SS is available, send there and don't show local split panel
 		if (onTagSelect && selectedTagNotes.length > 0) {
 			onTagSelect(tag, selectedTagNotes);
+			selectedTag = null;
+			selectedTagNotes = [];
 		}
 	}
 
