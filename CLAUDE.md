@@ -164,3 +164,4 @@ After each successful milestone:
 - Don't create `Decoration.mark/replace/widget` inside a decoration builder function — pre-cache at module level.
 - Don't call `invoke()` from a CM6 ViewPlugin, an input event handler, or any synchronous hot path.
 - **Don't duplicate working code by copy-pasting and adapting.** If a feature works in one place, extract it into a shared component and reuse it everywhere. Secure the winning — one source of truth, tested once, used many times.
+- **Additional screens are displays, not domains.** Second screen (and any future screens) mount core components and display them — they NEVER re-implement save/load/edit operations. The core editor handles all operations regardless of which window it's in. No `onNoteSaved` re-reads, no `loading = true` on file changes, no competing tab management.

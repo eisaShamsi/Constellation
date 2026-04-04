@@ -331,8 +331,10 @@
 	});
 
 	// ─── Data loading ───
+	let initialLoadDone = false;
 	async function loadAllData() {
-		loading = true;
+		// Only show loading spinner on first startup — never interrupt an active editor
+		if (!initialLoadDone) loading = true;
 		try {
 			await loadSettings();
 			await loadLibraries();
@@ -348,6 +350,7 @@
 			allNotes = notes;
 		} finally {
 			loading = false;
+			initialLoadDone = true;
 		}
 	}
 
@@ -457,16 +460,8 @@
 
 		// Listen for note saves
 		const u2 = await onNoteSaved(async (path) => {
+			// NoteEditor handles its own content — we only refresh recent lists
 			refreshRecentLists();
-			// Skip re-read if we just wrote this file (prevents edit interruption loop)
-			if (wasRecentlyWritten(path)) return;
-			const tab = get(activeTab);
-			if (tab?.path === path) {
-				try {
-					const content = await invoke<string>('read_note', { filePath: tab.path });
-					tab.content = content;
-				} catch {}
-			}
 		});
 		unlisteners.push(u2);
 
