@@ -695,6 +695,10 @@
 			</div>
 		{:else if dashboardMode === 'note' && dashboardNoteTab}
 			<!-- Dashboard: single note editor -->
+			{@const _dnp = parseFrontmatter(dashboardNoteTab.content || '')}
+			{@const _dnbody = _dnp.body}
+			{@const _dndir = detectDir(_dnbody) || $dir}
+			{@const _dnGuard = { saving: false }}
 			<div class="dash-note-companion">
 				<div class="dash-note-header">
 					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardNoteTab = null; }}>
@@ -703,10 +707,6 @@
 					<span class="dash-note-name" dir="auto">{dashboardNoteTab.name.replace(/\.md$/, '')}</span>
 				</div>
 				<div class="dash-note-editor">
-					{@const _dnp = parseFrontmatter(dashboardNoteTab.content || '')}
-					{@const _dnbody = _dnp.body}
-					{@const _dndir = detectDir(_dnbody) || $dir}
-					{@const _dnGuard = { saving: false }}
 					{#key dashboardNoteTab.id + '|' + dashboardNoteTab.path}
 					<NotePane
 						value={_dnbody}
