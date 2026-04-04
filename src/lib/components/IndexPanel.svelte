@@ -328,7 +328,7 @@
 		return groups;
 	});
 
-	const totalTerms = $derived(entries.length);
+	const totalTerms = $derived(scriptFilteredEntries.length);
 	const hiddenCount = $derived(entries.filter(e => excludedTerms.has(e.term.toLowerCase())).length);
 
 	function toggleExpand(term: string) {
