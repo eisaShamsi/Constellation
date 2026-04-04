@@ -31,9 +31,10 @@
 		onStateRequest, onWorkspaceRestore,
 		onContextChanged, onSkyViewHover, onSkyViewClick,
 		onSidebarModeChanged, onSplitModeChanged,
+		onDashboardOpenNote, onDashboardTagSelected,
 		sendNoteToMain, notifyScreenClosed, sendScreenState,
 		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo, type SidebarMode,
-		type SplitCompanionData
+		type SplitCompanionData, type DashboardTagData
 	} from '$lib/secondScreen';
 	import {
 		setActiveUniverse, listUniverses, getChildUniverses,
@@ -57,6 +58,13 @@
 	let splitCompanionData = $state<SplitCompanionData | null>(null);
 	let splitCompanionTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks'>('properties');
 	let preSplitSidebarMode = $state<SidebarMode>('tree');
+
+	// Dashboard companion mode
+	let dashboardMode = $state<'none' | 'note' | 'tag'>('none');
+	let dashboardNoteTab = $state<any>(null); // OpenTab-like object for note editor
+	let dashboardTagName = $state('');
+	let dashboardTagNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
+	let dashboardSelectedNote = $state<any>(null); // OpenTab-like for selected tag note
 
 	// ─── Data state ───
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
@@ -578,6 +586,37 @@
 		});
 		unlisteners.push(u11);
 
+		const u13 = await onDashboardOpenNote(async (note) => {
+			dashboardMode = 'note';
+			dashboardTagName = '';
+			dashboardTagNotes = [];
+			dashboardSelectedNote = null;
+			try {
+				const content = await invoke<string>('read_note', { notePath: note.path });
+				dashboardNoteTab = {
+					id: `dash-note-${Date.now()}`,
+					path: note.path,
+					content,
+					name: note.name.endsWith('.md') ? note.name : note.name + '.md',
+					libraryName: note.libraryName,
+					libraryPath: note.libraryPath,
+					libraryColor: note.libraryColor,
+					history: [note.path],
+					historyIndex: 0,
+				};
+			} catch { dashboardNoteTab = null; }
+		});
+		unlisteners.push(u13);
+
+		const u14 = await onDashboardTagSelected(async (data) => {
+			dashboardMode = 'tag';
+			dashboardNoteTab = null;
+			dashboardSelectedNote = null;
+			dashboardTagName = data.tag;
+			dashboardTagNotes = data.notes;
+		});
+		unlisteners.push(u14);
+
 		const u12 = await onSplitModeChanged((data) => {
 			if (data.active) {
 				if (!splitCompanionActive) preSplitSidebarMode = mainSidebarMode;
@@ -654,6 +693,152 @@
 				<div class="spinner"></div>
 				<p>{$t('secondScreen.loading')}</p>
 			</div>
+		{:else if dashboardMode === 'note' && dashboardNoteTab}
+			<!-- Dashboard: single note editor -->
+			<div class="dash-note-companion">
+				<div class="dash-note-header">
+					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardNoteTab = null; }}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					</button>
+					<span class="dash-note-name" dir="auto">{dashboardNoteTab.name.replace(/\.md$/, '')}</span>
+				</div>
+				<div class="dash-note-editor">
+					{@const _dnp = parseFrontmatter(dashboardNoteTab.content || '')}
+					{@const _dnbody = _dnp.body}
+					{@const _dndir = detectDir(_dnbody) || $dir}
+					{@const _dnGuard = { saving: false }}
+					{#key dashboardNoteTab.id + '|' + dashboardNoteTab.path}
+					<NotePane
+						value={_dnbody}
+						title={dashboardNoteTab.name.replace(/\.md$/, '')}
+						dir={_dndir}
+						libraryName={dashboardNoteTab.libraryName}
+						tabId={dashboardNoteTab.id}
+						filePath={dashboardNoteTab.path}
+						libraryPath={dashboardNoteTab.libraryPath || ''}
+						noteNames={allNotes}
+						allTags={[]}
+						properties={_dnp.properties}
+						rawYaml={_dnp.rawYaml ?? ''}
+						stage={_dnp.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
+						onchange={() => {}}
+						onsave={(text) => {
+							if (_dnGuard.saving) return;
+							_dnGuard.saving = true;
+							const pr = parseFrontmatter(dashboardNoteTab?.content || '').properties;
+							markRecentWrite(dashboardNoteTab!.path);
+							const content = buildFullContent(pr, text);
+							writeNote(dashboardNoteTab!.path, content).catch(() => {}).finally(() => { _dnGuard.saving = false; });
+						}}
+						onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
+							const pr = parseFrontmatter(dashboardNoteTab?.content || '').properties;
+							const content = buildFullContent(pr, text);
+							if (dashboardNoteTab) dashboardNoteTab.content = content;
+							if (needsDiskSave) {
+								markRecentWrite(dashboardNoteTab!.path);
+								writeNote(dashboardNoteTab!.path, content).catch(() => {});
+							}
+						}}
+						ontitlechange={(newTitle) => {
+							if (dashboardNoteTab && newTitle !== dashboardNoteTab.name.replace(/\.md$/, '')) {
+								renameItem(dashboardNoteTab.path, dashboardNoteTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
+							}
+						}}
+						onpropschange={() => {}}
+					/>
+					{/key}
+				</div>
+			</div>
+
+		{:else if dashboardMode === 'tag' && dashboardTagNotes.length > 0}
+			<!-- Dashboard: tag notes split view -->
+			<div class="dash-tag-companion">
+				<div class="dash-tag-header">
+					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardTagName = ''; dashboardTagNotes = []; dashboardSelectedNote = null; }}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					</button>
+					<span class="dash-tag-badge">#{dashboardTagName}</span>
+					<span class="dash-tag-count">{dashboardTagNotes.length} {$t('secondScreen.dashboard.notes') || 'notes'}</span>
+				</div>
+				<div class="dash-tag-split">
+					<div class="dash-tag-list">
+						{#each dashboardTagNotes as note}
+							<button class="dash-tag-note" class:active={dashboardSelectedNote?.path === note.path}
+								onclick={async () => {
+									try {
+										const content = await invoke('read_note', { notePath: note.path });
+										const lib = $libraries.find(l => l.name === note.libraryName);
+										dashboardSelectedNote = {
+											id: `dash-tag-${Date.now()}`,
+											path: note.path,
+											content,
+											name: note.name.endsWith('.md') ? note.name : note.name + '.md',
+											libraryName: note.libraryName,
+											libraryPath: lib?.path ?? '',
+											libraryColor: libraryColorMap[note.libraryName] || '#7c3aed',
+										};
+									} catch { dashboardSelectedNote = null; }
+								}}>
+								<span class="lib-dot" style="background:{libraryColorMap[note.libraryName] || '#7c3aed'}"></span>
+								<span class="dash-tag-note-name" dir="auto">{note.name.replace(/\.md$/, '')}</span>
+							</button>
+						{/each}
+					</div>
+					<div class="dash-tag-editor">
+						{#if dashboardSelectedNote}
+							{@const _dtp = parseFrontmatter(dashboardSelectedNote.content || '')}
+							{@const _dtbody = _dtp.body}
+							{@const _dtdir = detectDir(_dtbody) || $dir}
+							{@const _dtGuard = { saving: false }}
+							{#key dashboardSelectedNote.id + '|' + dashboardSelectedNote.path}
+							<NotePane
+								value={_dtbody}
+								title={dashboardSelectedNote.name.replace(/\.md$/, '')}
+								dir={_dtdir}
+								libraryName={dashboardSelectedNote.libraryName}
+								tabId={dashboardSelectedNote.id}
+								filePath={dashboardSelectedNote.path}
+								libraryPath={dashboardSelectedNote.libraryPath || ''}
+								noteNames={allNotes}
+								allTags={[]}
+								properties={_dtp.properties}
+								rawYaml={_dtp.rawYaml ?? ''}
+								stage={_dtp.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
+								onchange={() => {}}
+								onsave={(text) => {
+									if (_dtGuard.saving) return;
+									_dtGuard.saving = true;
+									const pr = parseFrontmatter(dashboardSelectedNote?.content || '').properties;
+									markRecentWrite(dashboardSelectedNote!.path);
+									const content = buildFullContent(pr, text);
+									writeNote(dashboardSelectedNote!.path, content).catch(() => {}).finally(() => { _dtGuard.saving = false; });
+								}}
+								onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
+									const pr = parseFrontmatter(dashboardSelectedNote?.content || '').properties;
+									const content = buildFullContent(pr, text);
+									if (dashboardSelectedNote) dashboardSelectedNote.content = content;
+									if (needsDiskSave) {
+										markRecentWrite(dashboardSelectedNote!.path);
+										writeNote(dashboardSelectedNote!.path, content).catch(() => {});
+									}
+								}}
+								ontitlechange={(newTitle) => {
+									if (dashboardSelectedNote && newTitle !== dashboardSelectedNote.name.replace(/\.md$/, '')) {
+										renameItem(dashboardSelectedNote.path, dashboardSelectedNote.path.replace(/[^/\\]+$/, newTitle + '.md'));
+									}
+								}}
+								onpropschange={() => {}}
+							/>
+							{/key}
+						{:else}
+							<div class="dash-tag-empty">
+								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+
 		{:else if splitCompanionActive && splitCompanionData}
 			<!-- Split View Panels Companion -->
 			<div class="split-companion">
@@ -1434,6 +1619,64 @@
 	}
 	.status-linked::before {
 		content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+	}
+
+	/* Dashboard Companion — note editor mode */
+	.dash-note-companion, .dash-tag-companion {
+		display: flex; flex-direction: column; height: 100%; overflow: hidden;
+	}
+	.dash-note-header, .dash-tag-header {
+		display: flex; align-items: center; gap: 10px;
+		padding: 10px 16px; flex-shrink: 0;
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+	.dash-back-btn {
+		width: 28px; height: 28px; border-radius: 6px;
+		border: 1px solid var(--background-modifier-border);
+		background: transparent; color: var(--text-muted);
+		cursor: pointer; display: flex; align-items: center; justify-content: center;
+	}
+	.dash-back-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.dash-note-name {
+		font-size: 15px; font-weight: 600; color: var(--text-normal);
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	.dash-note-editor { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+	/* Dashboard Companion — tag split view */
+	.dash-tag-badge {
+		padding: 2px 10px; border-radius: 12px;
+		background: var(--interactive-accent); color: white; font-size: 13px; font-weight: 600;
+	}
+	.dash-tag-count { font-size: 12px; color: var(--text-faint); }
+	.dash-tag-split {
+		flex: 1; display: flex; overflow: hidden;
+	}
+	.dash-tag-list {
+		width: 280px; min-width: 220px; max-width: 360px;
+		border-right: 1px solid var(--background-modifier-border);
+		overflow-y: auto; flex-shrink: 0;
+	}
+	.dash-tag-note {
+		display: flex; align-items: center; gap: 8px;
+		padding: 8px 14px; width: 100%; border: none;
+		background: transparent; color: var(--text-normal);
+		cursor: pointer; text-align: start; font-family: inherit;
+		transition: background 0.12s;
+	}
+	.dash-tag-note:hover { background: var(--background-modifier-hover); }
+	.dash-tag-note.active { background: var(--interactive-accent); color: white; }
+	.dash-tag-note.active .lib-dot { box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
+	.dash-tag-note-name {
+		flex: 1; font-size: 13px; overflow: hidden;
+		text-overflow: ellipsis; white-space: nowrap;
+	}
+	.dash-tag-editor {
+		flex: 1; overflow: hidden; display: flex; flex-direction: column;
+	}
+	.dash-tag-empty {
+		flex: 1; display: flex; align-items: center; justify-content: center;
+		color: var(--text-faint); font-size: 14px;
 	}
 
 	/* Split Companion */

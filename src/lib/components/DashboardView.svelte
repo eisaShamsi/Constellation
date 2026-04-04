@@ -16,11 +16,15 @@
 		libraryColorMap = {} as Record<string, string>,
 		onNoteClick,
 		onNoteToMain,
+		onNoteToScreen,
+		onTagSelect,
 	}: {
 		universeName?: string;
 		libraryColorMap?: Record<string, string>;
 		onNoteClick?: (path: string, name: string, libraryName: string) => void;
 		onNoteToMain?: (note: { path: string; name: string; libraryName: string; libraryPath: string; libraryColor: string }) => void;
+		onNoteToScreen?: (note: { path: string; name: string; libraryName: string; libraryPath: string; libraryColor: string }) => void;
+		onTagSelect?: (tag: string, notes: { name: string; path: string; libraryName: string }[]) => void;
 	} = $props();
 
 	// Dashboard state
@@ -51,6 +55,10 @@
 			selectedTagNotes = [];
 		}
 		loadingTagNotes = false;
+		// Emit to second screen if callback provided
+		if (onTagSelect && selectedTagNotes.length > 0) {
+			onTagSelect(tag, selectedTagNotes);
+		}
 	}
 
 	let totalNotes = $derived($libraryStats.reduce((sum: number, s: any) => sum + s.star_count, 0));
@@ -109,7 +117,10 @@
 	}
 
 	function handleNoteClick(path: string, name: string, libraryName: string) {
-		if (onNoteClick) {
+		if (onNoteToScreen) {
+			const lib = get(libraries).find(l => l.name === libraryName);
+			onNoteToScreen({ path, name, libraryName, libraryPath: lib?.path ?? '', libraryColor: libraryColorMap[libraryName] || '#7c3aed' });
+		} else if (onNoteClick) {
 			onNoteClick(path, name, libraryName);
 		} else {
 			openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed');
