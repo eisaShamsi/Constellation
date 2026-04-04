@@ -91,7 +91,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -1376,6 +1376,18 @@
 		const unlistenScreenClosed = await onScreenClosed(() => {
 			secondScreenOpen = false;
 		});
+		// When the second screen saves a note, reload it in the main window if open
+		const unlistenNoteSaved = await onNoteSaved(async (path) => {
+			if (wasRecentlyWritten(path)) return; // we wrote it ourselves
+			const tab = get(openTabs).find(t => t.path === path);
+			if (tab) {
+				try {
+					const content = await invoke<string>('read_note', { filePath: path });
+					tab.content = content;
+					openTabs.update(tabs => tabs);
+				} catch {}
+			}
+		});
 
 		// Global keyboard shortcuts — capture phase to beat browser defaults
 		document.addEventListener('keydown', handleGlobalKeydown, true);
@@ -1386,6 +1398,7 @@
 			unlistenWatcher,
 			unlistenScreenNote,
 			unlistenScreenClosed,
+			unlistenNoteSaved,
 		);
 	});
 
