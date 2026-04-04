@@ -41,6 +41,7 @@
 	import FileTree from '$lib/components/FileTree.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
+	import NoteEditor from '$lib/components/NoteEditor.svelte';
 	import FocusPane from '$lib/components/FocusPane.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
@@ -2995,72 +2996,12 @@
 			{:else if showIndex}
 				<div class="index-split" class:has-note={indexNoteTab}>
 					{#if indexNoteTab}
-						{@const _ip = parseFrontmatter(indexNoteTab.content || '')}
-						{@const _ibody = _ip.body}
-						{@const _idir = detectDir(_ibody) || $dir}
-						{@const _iGuard = { saving: false }}
 						<div class="index-note-pane">
 							<div class="index-note-header">
 								<span class="index-note-name" dir="auto">{indexNoteTab.name}</span>
 								<button class="index-close" onclick={() => { indexNoteTab = null; indexActiveNotePath = ''; }} title="Close note">×</button>
 							</div>
-							{#key indexNoteTab.id + '|' + indexNoteTab.path}
-							<NotePane
-								value={_ibody}
-								title={indexNoteTab.name.replace(/\.md$/, '')}
-								dir={_idir}
-								initialCursorPos={indexNoteTab.cursorPos ?? 0}
-								initialScrollTop={indexNoteTab.scrollTop ?? 0}
-								libraryName={indexNoteTab.libraryName}
-								tabId={indexNoteTab.id}
-								filePath={indexNoteTab.path}
-								libraryPath={indexNoteTab.libraryPath || ''}
-								noteNames={allNotes}
-								allTags={allTagsList}
-								properties={_ip.properties}
-								rawYaml={_ip.rawYaml ?? ''}
-								stage={_ip.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
-								onchange={() => {}}
-								onpromote={(nextStage) => {
-									const pr = parseFrontmatter(indexNoteTab?.content || '').properties;
-									const bd = parseFrontmatter(indexNoteTab?.content || '').body;
-									let np;
-									if (!nextStage) { np = pr.filter(p => p.key.toLowerCase() !== 'stage'); }
-									else {
-										let u = false;
-										np = pr.map(p => { if (p.key.toLowerCase() === 'stage') { u = true; return { ...p, value: nextStage }; } return p; });
-										if (!u) np.push({ key: 'stage', value: nextStage, type: 'text' as any });
-									}
-									const fc = buildFullContent(np, bd);
-									if (indexNoteTab) indexNoteTab.content = fc;
-									markRecentWrite(indexNoteTab!.path);
-									writeNote(indexNoteTab!.path, fc).catch(() => {});
-								}}
-								onsave={(text) => {
-									if (_iGuard.saving) return;
-									_iGuard.saving = true;
-									const pr = parseFrontmatter(indexNoteTab?.content || '').properties;
-									markRecentWrite(indexNoteTab!.path);
-									const content = buildFullContent(pr, text);
-									writeNote(indexNoteTab!.path, content).catch(() => {}).finally(() => { _iGuard.saving = false; });
-								}}
-								onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
-									const pr = parseFrontmatter(indexNoteTab?.content || '').properties;
-									const content = buildFullContent(pr, text);
-									if (indexNoteTab) { indexNoteTab.content = content; indexNoteTab.cursorPos = cursorPos; indexNoteTab.scrollTop = scrollTop; }
-									if (needsDiskSave) {
-										markRecentWrite(indexNoteTab!.path);
-										writeNote(indexNoteTab!.path, content).catch(() => {});
-									}
-								}}
-								ontitlechange={(newTitle) => {
-									if (indexNoteTab && newTitle !== indexNoteTab.name.replace(/\.md$/, '')) {
-										renameItem(indexNoteTab.path, indexNoteTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
-									}
-								}}
-								onpropschange={() => {}}
-							/>
-							{/key}
+							<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} />
 						</div>
 						<div class="index-split-divider"></div>
 					{/if}
@@ -3091,79 +3032,19 @@
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<div class="split-pane-wrap" style="flex:{splitPaneSizes[i] ?? 1}" onclick={() => setFocusedTab(tab.id)}>
 							{#if tab.path}
-								{@const _sp = parseFrontmatter(tab.content || '')}
-								{@const _sbody = _sp.body}
-								{@const _sdir = detectDir(_sbody) || $dir}
-								{@const _sGuard = { saving: false }}
-								{#key tab.id + '|' + tab.path}
-								<NotePane
-									value={_sbody}
-									title={tab.name.replace(/\.md$/, '')}
-									dir={_sdir}
-									initialCursorPos={tab.cursorPos ?? 0}
-									initialScrollTop={tab.scrollTop ?? 0}
-									libraryName={tab.libraryName}
-									tabId={tab.id}
-									filePath={tab.path}
-									libraryPath={tab.libraryPath || ''}
+								<NoteEditor
+									{tab}
 									noteNames={allNotes}
 									allTags={allTagsList}
-									properties={_sp.properties}
-									rawYaml={_sp.rawYaml ?? ''}
-									stage={_sp.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
-									canGoBack={(tab.historyIndex ?? 0) > 0}
-									canGoForward={(tab.historyIndex ?? 0) < (tab.history?.length ?? 1) - 1}
-									onchange={() => {}}
-									onpromote={(nextStage) => {
-										const ct = get(openTabs).find(x => x.id === tab.id);
-										const pr = ct ? parseFrontmatter(ct.content || '').properties : _sp.properties;
-										const bd = ct ? parseFrontmatter(ct.content || '').body : _sbody;
-										let np;
-										if (!nextStage) { np = pr.filter(p => p.key.toLowerCase() !== 'stage'); }
-										else {
-											let u = false;
-											np = pr.map(p => { if (p.key.toLowerCase() === 'stage') { u = true; return { ...p, value: nextStage }; } return p; });
-											if (!u) np.push({ key: 'stage', value: nextStage, type: 'text' as any });
-										}
-										const fc = buildFullContent(np, bd);
-										if (ct) { ct.content = fc; openTabs.update(tabs => tabs); }
-										markRecentWrite(tab.path);
-										writeNote(tab.path, fc).catch(() => {});
-										const key = tab.path.replace(/\\/g, '/').toLowerCase();
-										const nm = new Map(stageMap);
-										if (nextStage) { nm.set(key, nextStage); } else { nm.delete(key); }
-										stageMap = nm;
-									}}
-									onsave={(text) => {
-										if (_sGuard.saving) return;
-										_sGuard.saving = true;
-										const ct = get(openTabs).find(x => x.id === tab.id);
-										const pr = ct ? parseFrontmatter(ct.content || '').properties : _sp.properties;
-										markRecentWrite(tab.path);
-										const content = buildFullContent(pr, text);
-										writeNote(tab.path, content).catch(() => {}).finally(() => { _sGuard.saving = false; });
-									}}
-									onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
-										const ct = get(openTabs).find(x => x.id === tab.id);
-										const pr = ct ? parseFrontmatter(ct.content || '').properties : _sp.properties;
-										const content = buildFullContent(pr, text);
-										if (ct) { ct.content = content; ct.cursorPos = cursorPos; ct.scrollTop = scrollTop; }
-										setWriteAhead(tab.path, content, cursorPos, scrollTop);
-										if (needsDiskSave) {
-											markRecentWrite(tab.path);
-											writeNote(tab.path, content).then(() => clearWriteAhead(tab.path)).catch(() => {});
-										}
-									}}
-									ontitlechange={(newTitle) => {
-										if (newTitle !== tab.name.replace(/\.md$/, '')) {
-											renameItem(tab.path, tab.path.replace(/[^/\\]+$/, newTitle + '.md'));
-										}
-									}}
 									onnavigateback={() => { setFocusedTab(tab.id); navigateBack(); }}
 									onnavigateforward={() => { setFocusedTab(tab.id); navigateForward(); }}
-									onpropschange={() => { openTabs.update(tabs => tabs); }}
+									onStageChanged={(path, stage) => {
+										const key = path.replace(/\\/g, '/').toLowerCase();
+										const nm = new Map(stageMap);
+										if (stage) { nm.set(key, stage); } else { nm.delete(key); }
+										stageMap = nm;
+									}}
 								/>
-								{/key}
 							{:else}
 								<div class="new-tab-screen"><p>{$t('tabs.newTab')}</p></div>
 							{/if}
@@ -3184,29 +3065,24 @@
 							</div>
 						</div>
 					{:else if $activeTab && $activeTab.path}
-						{@const _parsed = parseFrontmatter($activeTab.content || '')}
-						{@const _body = _parsed.body}
-						{#key $activeTab.id + '|' + $activeTab.path}
-						{@const _mountedTab = $activeTab}
-						{@const _saveGuard = { saving: false }}
 						{#if focusMode}
+							{@const _parsed = parseFrontmatter($activeTab.content || '')}
 							<FocusPane
-								value={_body}
-								title={_mountedTab.name.replace(/\.md$/, '')}
+								value={_parsed.body}
+								title={$activeTab.name.replace(/\.md$/, '')}
 								dir={noteDir}
 								onchange={(text) => {
-									const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
+									const currentTab = get(openTabs).find(x => x.id === $activeTab!.id);
 									const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
 									const fc = buildFullContent(props, text);
 									if (currentTab) currentTab.content = fc;
-									markRecentWrite(_mountedTab.path);
-									writeNote(_mountedTab.path, fc).catch(() => {});
+									markRecentWrite($activeTab!.path);
+									writeNote($activeTab!.path, fc).catch(() => {});
 								}}
 								onexit={(promote) => {
 									focusMode = false;
 									if (promote) {
-										// CE Phase 6: promote to permanent on FocusPane exit
-										const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
+										const currentTab = get(openTabs).find(x => x.id === $activeTab!.id);
 										const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
 										const body = currentTab ? parseFrontmatter(currentTab.content || '').body : _parsed.body;
 										let updated = false;
@@ -3216,160 +3092,71 @@
 										});
 										if (!updated) newProps.push({ key: 'stage', value: promote, type: 'text' as any });
 										const fc = buildFullContent(newProps, body);
-										if (currentTab) {
-											currentTab.content = fc;
-											openTabs.update(tabs => tabs);
-										}
-										markRecentWrite(_mountedTab.path);
-										writeNote(_mountedTab.path, fc).catch(() => {});
+										if (currentTab) { currentTab.content = fc; openTabs.update(tabs => tabs); }
+										markRecentWrite($activeTab!.path);
+										writeNote($activeTab!.path, fc).catch(() => {});
 									}
 								}}
 							/>
 						{:else}
-						<NotePane
-							value={_body}
-							title={_mountedTab.name.replace(/\.md$/, '')}
-							dir={noteDir}
-							initialCursorPos={_mountedTab.cursorPos ?? 0}
-							initialScrollTop={_mountedTab.scrollTop ?? 0}
-							libraryName={_mountedTab.libraryName}
-							tabId={_mountedTab.id}
-							filePath={_mountedTab.path}
-							libraryPath={_mountedTab.libraryPath || ''}
-							noteNames={allNotes}
-							allTags={allTagsList}
-							properties={_parsed.properties}
-							rawYaml={_parsed.rawYaml ?? ''}
-							stage={_parsed.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
-							trail={activeTrail ? activeTrail.title : ''}
-							trailIndex={trailIndex}
-							trailTotal={activeTrail ? activeTrail.notes.length : 0}
-							onTrailPrev={async () => {
-								if (activeTrail && trailIndex > 0) {
-									trailIndex--;
-									const note = activeTrail.notes[trailIndex];
-									if (note.exists) {
-										const lib = get(libraries)[0];
-										if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+							<NoteEditor
+								tab={$activeTab}
+								noteNames={allNotes}
+								allTags={allTagsList}
+								trail={activeTrail ? activeTrail.title : ''}
+								{trailIndex}
+								trailTotal={activeTrail ? activeTrail.notes.length : 0}
+								onTrailPrev={async () => {
+									if (activeTrail && trailIndex > 0) {
+										trailIndex--;
+										const note = activeTrail.notes[trailIndex];
+										if (note.exists) {
+											const lib = get(libraries)[0];
+											if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+										}
 									}
-								}
-							}}
-							onTrailNext={async () => {
-								if (activeTrail && trailIndex < activeTrail.notes.length - 1) {
-									trailIndex++;
-									const note = activeTrail.notes[trailIndex];
-									if (note.exists) {
-										const lib = get(libraries)[0];
-										if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+								}}
+								onTrailNext={async () => {
+									if (activeTrail && trailIndex < activeTrail.notes.length - 1) {
+										trailIndex++;
+										const note = activeTrail.notes[trailIndex];
+										if (note.exists) {
+											const lib = get(libraries)[0];
+											if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+										}
 									}
-								}
-							}}
-							canGoBack={(_mountedTab.historyIndex ?? 0) > 0}
-							canGoForward={(_mountedTab.historyIndex ?? 0) < (_mountedTab.history?.length ?? 1) - 1}
-							onchange={() => {}}
-							onpromote={(nextStage) => {
-								const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
-								const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
-								const body = currentTab ? parseFrontmatter(currentTab.content || '').body : _parsed.body;
-								let newProps;
-								if (!nextStage) {
-									// Remove stage property when "— Stage —" selected
-									newProps = props.filter(p => p.key.toLowerCase() !== 'stage');
-								} else {
-									let updated = false;
-									newProps = props.map(p => {
-										if (p.key.toLowerCase() === 'stage') { updated = true; return { ...p, value: nextStage }; }
-										return p;
-									});
-									if (!updated) newProps.push({ key: 'stage', value: nextStage, type: 'text' as any });
-								}
-								const fc = buildFullContent(newProps, body);
-								if (currentTab) {
-									currentTab.content = fc;
-									// Force store reactivity so Properties panel refreshes
-									openTabs.update(tabs => tabs);
-								}
-								markRecentWrite(_mountedTab.path);
-								writeNote(_mountedTab.path, fc).catch(() => {});
-								// Update stageMap immediately (don't wait for full library refresh)
-								const key = _mountedTab.path.replace(/\\/g, '/').toLowerCase();
-								const newMap = new Map(stageMap);
-								if (nextStage) { newMap.set(key, nextStage); } else { newMap.delete(key); }
-								stageMap = newMap;
-							}}
-							onsave={(text) => {
-								if (_saveGuard.saving) return;
-								_saveGuard.saving = true;
-								/* Re-read properties from store (PropertyEditor may have updated them) */
-								const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
-								const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
-								markRecentWrite(_mountedTab.path);
-								const content = buildFullContent(props, text);
-								writeNote(_mountedTab.path, content)
-									.catch(() => {})
-									.finally(() => { _saveGuard.saving = false; });
-							}}
-							onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
-								/* Re-read properties from store (PropertyEditor may have updated them) */
-								const currentTab = get(openTabs).find(x => x.id === _mountedTab.id);
-								const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
-								const content = buildFullContent(props, text);
-								if (currentTab) {
-									currentTab.content = content;
-									currentTab.cursorPos = cursorPos;
-									currentTab.scrollTop = scrollTop;
-								}
-								setWriteAhead(_mountedTab.path, content, cursorPos, scrollTop);
-								if (needsDiskSave) {
-									markRecentWrite(_mountedTab.path);
-									writeNote(_mountedTab.path, content)
-										.then(() => clearWriteAhead(_mountedTab.path))
-										.catch(() => {});
-								}
-							}}
-							ontitlechange={(newTitle) => {
-								if (newTitle !== _mountedTab.name.replace(/\.md$/, '')) {
-									renameItem(_mountedTab.path, _mountedTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
-								}
-							}}
-							onnavigateback={() => navigateBack()}
-							onnavigateforward={() => navigateForward()}
-							onmoreaction={async (action) => {
-								switch (action) {
-									case 'rename': {
-										const input = document.querySelector('.e-title') as HTMLInputElement;
-										if (input) { input.focus(); input.select(); }
-										break;
+								}}
+								onnavigateback={() => navigateBack()}
+								onnavigateforward={() => navigateForward()}
+								onStageChanged={(path, stage) => {
+									const key = path.replace(/\\/g, '/').toLowerCase();
+									const nm = new Map(stageMap);
+									if (stage) { nm.set(key, stage); } else { nm.delete(key); }
+									stageMap = nm;
+								}}
+								onmoreaction={async (action) => {
+									switch (action) {
+										case 'rename': {
+											const input = document.querySelector('.e-title') as HTMLInputElement;
+											if (input) { input.focus(); input.select(); }
+											break;
+										}
+										case 'revealInTree':
+											window.dispatchEvent(new CustomEvent('constellation:reveal-in-tree', { detail: { path: $activeTab!.path } }));
+											break;
+										case 'delete':
+											window.dispatchEvent(new CustomEvent('constellation:delete-note', { detail: { path: $activeTab!.path, name: $activeTab!.name } }));
+											break;
+										case 'addProperty':
+											window.dispatchEvent(new CustomEvent('constellation:add-property', { detail: { path: $activeTab!.path } }));
+											break;
+										case 'switchToFocus':
+											focusMode = true;
+											break;
 									}
-									case 'showInExplorer':
-										try { await invoke('constellation_show_in_folder', { path: _mountedTab.path }); } catch {}
-										break;
-									case 'openDefaultApp':
-										try { await invoke('open_path', { path: _mountedTab.path }); } catch {}
-										break;
-									case 'revealInTree':
-										window.dispatchEvent(new CustomEvent('constellation:reveal-in-tree', { detail: { path: _mountedTab.path } }));
-										break;
-									case 'copyPath':
-										navigator.clipboard.writeText(_mountedTab.path).catch(() => {});
-										break;
-									case 'copyName':
-										navigator.clipboard.writeText(_mountedTab.name).catch(() => {});
-										break;
-									case 'delete':
-										window.dispatchEvent(new CustomEvent('constellation:delete-note', { detail: { path: _mountedTab.path, name: _mountedTab.name } }));
-										break;
-									case 'addProperty':
-										window.dispatchEvent(new CustomEvent('constellation:add-property', { detail: { path: _mountedTab.path } }));
-										break;
-									case 'switchToFocus':
-										focusMode = true;
-										break;
-								}
-							}}
-						/>
+								}}
+							/>
 						{/if}
-						{/key}
 					{/if}
 				</div>
 			{:else if isHome}

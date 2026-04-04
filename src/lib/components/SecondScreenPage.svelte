@@ -22,6 +22,7 @@
 	import { detectDir } from '$lib/utils';
 	import { get } from 'svelte/store';
 	import NotePane from '$lib/components/NotePane.svelte';
+	import NoteEditor from '$lib/components/NoteEditor.svelte';
 	import DashboardView from '$lib/components/DashboardView.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
@@ -695,10 +696,6 @@
 			</div>
 		{:else if dashboardMode === 'note' && dashboardNoteTab}
 			<!-- Dashboard: single note editor -->
-			{@const _dnp = parseFrontmatter(dashboardNoteTab.content || '')}
-			{@const _dnbody = _dnp.body}
-			{@const _dndir = detectDir(_dnbody) || $dir}
-			{@const _dnGuard = { saving: false }}
 			<div class="dash-note-companion">
 				<div class="dash-note-header">
 					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardNoteTab = null; }} title={$t('notePane.back') || 'Back to Dashboard'}>
@@ -706,46 +703,7 @@
 					</button>
 				</div>
 				<div class="dash-note-editor">
-					{#key dashboardNoteTab.id + '|' + dashboardNoteTab.path}
-					<NotePane
-						value={_dnbody}
-						title={dashboardNoteTab.name.replace(/\.md$/, '')}
-						dir={_dndir}
-						libraryName={dashboardNoteTab.libraryName}
-						tabId={dashboardNoteTab.id}
-						filePath={dashboardNoteTab.path}
-						libraryPath={dashboardNoteTab.libraryPath || ''}
-						noteNames={allNotes}
-						allTags={[]}
-						properties={_dnp.properties}
-						rawYaml={_dnp.rawYaml ?? ''}
-						stage={_dnp.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
-						onchange={() => {}}
-						onsave={(text) => {
-							if (_dnGuard.saving) return;
-							_dnGuard.saving = true;
-							const pr = parseFrontmatter(dashboardNoteTab?.content || '').properties;
-							markRecentWrite(dashboardNoteTab!.path);
-							const content = buildFullContent(pr, text);
-							writeNote(dashboardNoteTab!.path, content).catch(() => {}).finally(() => { _dnGuard.saving = false; });
-						}}
-						onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
-							const pr = parseFrontmatter(dashboardNoteTab?.content || '').properties;
-							const content = buildFullContent(pr, text);
-							if (dashboardNoteTab) dashboardNoteTab.content = content;
-							if (needsDiskSave) {
-								markRecentWrite(dashboardNoteTab!.path);
-								writeNote(dashboardNoteTab!.path, content).catch(() => {});
-							}
-						}}
-						ontitlechange={(newTitle) => {
-							if (dashboardNoteTab && newTitle !== dashboardNoteTab.name.replace(/\.md$/, '')) {
-								renameItem(dashboardNoteTab.path, dashboardNoteTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
-							}
-						}}
-						onpropschange={() => {}}
-					/>
-					{/key}
+					<NoteEditor tab={dashboardNoteTab} noteNames={allNotes} />
 				</div>
 			</div>
 
@@ -785,50 +743,7 @@
 					</div>
 					<div class="dash-tag-editor">
 						{#if dashboardSelectedNote}
-							{@const _dtp = parseFrontmatter(dashboardSelectedNote.content || '')}
-							{@const _dtbody = _dtp.body}
-							{@const _dtdir = detectDir(_dtbody) || $dir}
-							{@const _dtGuard = { saving: false }}
-							{#key dashboardSelectedNote.id + '|' + dashboardSelectedNote.path}
-							<NotePane
-								value={_dtbody}
-								title={dashboardSelectedNote.name.replace(/\.md$/, '')}
-								dir={_dtdir}
-								libraryName={dashboardSelectedNote.libraryName}
-								tabId={dashboardSelectedNote.id}
-								filePath={dashboardSelectedNote.path}
-								libraryPath={dashboardSelectedNote.libraryPath || ''}
-								noteNames={allNotes}
-								allTags={[]}
-								properties={_dtp.properties}
-								rawYaml={_dtp.rawYaml ?? ''}
-								stage={_dtp.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
-								onchange={() => {}}
-								onsave={(text) => {
-									if (_dtGuard.saving) return;
-									_dtGuard.saving = true;
-									const pr = parseFrontmatter(dashboardSelectedNote?.content || '').properties;
-									markRecentWrite(dashboardSelectedNote!.path);
-									const content = buildFullContent(pr, text);
-									writeNote(dashboardSelectedNote!.path, content).catch(() => {}).finally(() => { _dtGuard.saving = false; });
-								}}
-								onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
-									const pr = parseFrontmatter(dashboardSelectedNote?.content || '').properties;
-									const content = buildFullContent(pr, text);
-									if (dashboardSelectedNote) dashboardSelectedNote.content = content;
-									if (needsDiskSave) {
-										markRecentWrite(dashboardSelectedNote!.path);
-										writeNote(dashboardSelectedNote!.path, content).catch(() => {});
-									}
-								}}
-								ontitlechange={(newTitle) => {
-									if (dashboardSelectedNote && newTitle !== dashboardSelectedNote.name.replace(/\.md$/, '')) {
-										renameItem(dashboardSelectedNote.path, dashboardSelectedNote.path.replace(/[^/\\]+$/, newTitle + '.md'));
-									}
-								}}
-								onpropschange={() => {}}
-							/>
-							{/key}
+							<NoteEditor tab={dashboardSelectedNote} noteNames={allNotes} />
 						{:else}
 							<div class="dash-tag-empty">
 								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
@@ -937,50 +852,7 @@
 									</div>
 									<div class="peek-editor">
 										{#if peekTab.path}
-											{@const _pp = parseFrontmatter(peekTab.content || '')}
-											{@const _pbody = _pp.body}
-											{@const _pdir = detectDir(_pbody) || $dir}
-											{@const _pGuard = { saving: false }}
-											{#key peekTab.id + '|' + peekTab.path}
-											<NotePane
-												value={_pbody}
-												title={peekTab.name.replace(/\.md$/, '')}
-												dir={_pdir}
-												libraryName={peekTab.libraryName}
-												tabId={peekTab.id}
-												filePath={peekTab.path}
-												libraryPath={peekTab.libraryPath || ''}
-												noteNames={allNotes}
-												allTags={[]}
-												properties={_pp.properties}
-												rawYaml={_pp.rawYaml ?? ''}
-												stage={_pp.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
-												onchange={() => {}}
-												onsave={(text) => {
-													if (_pGuard.saving) return;
-													_pGuard.saving = true;
-													const pr = parseFrontmatter(peekTab?.content || '').properties;
-													markRecentWrite(peekTab!.path);
-													const content = buildFullContent(pr, text);
-													writeNote(peekTab!.path, content).catch(() => {}).finally(() => { _pGuard.saving = false; });
-												}}
-												onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
-													const pr = parseFrontmatter(peekTab?.content || '').properties;
-													const content = buildFullContent(pr, text);
-													if (peekTab) { peekTab.content = content; }
-													if (needsDiskSave) {
-														markRecentWrite(peekTab!.path);
-														writeNote(peekTab!.path, content).catch(() => {});
-													}
-												}}
-												ontitlechange={(newTitle) => {
-													if (peekTab && newTitle !== peekTab.name.replace(/\.md$/, '')) {
-														renameItem(peekTab.path, peekTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
-													}
-												}}
-												onpropschange={() => {}}
-											/>
-											{/key}
+											<NoteEditor tab={peekTab} noteNames={allNotes} />
 										{/if}
 									</div>
 								</div>
@@ -1178,78 +1050,7 @@
 				{/if}
 				<div class="note-area" style="--note-width:{noteWidth}%">
 					{#if $activeTab?.path}
-						{@const _dp = parseFrontmatter($activeTab.content || '')}
-						{@const _dbody = _dp.body}
-						{@const _ddir = detectDir(_dbody) || $dir}
-						{@const _dGuard = { saving: false }}
-						{#key $activeTab.id + '|' + $activeTab.path}
-						<NotePane
-							value={_dbody}
-							title={$activeTab.name.replace(/\.md$/, '')}
-							dir={_ddir}
-							initialCursorPos={$activeTab.cursorPos ?? 0}
-							initialScrollTop={$activeTab.scrollTop ?? 0}
-							libraryName={$activeTab.libraryName}
-							tabId={$activeTab.id}
-							filePath={$activeTab.path}
-							libraryPath={$activeTab.libraryPath || ''}
-							noteNames={allNotes}
-							allTags={[]}
-							properties={_dp.properties}
-							rawYaml={_dp.rawYaml ?? ''}
-							stage={_dp.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
-							onchange={() => {}}
-							onpromote={(nextStage) => {
-								const ct = get(activeTab);
-								if (!ct) return;
-								const pr = parseFrontmatter(ct.content || '').properties;
-								const bd = parseFrontmatter(ct.content || '').body;
-								let np;
-								if (!nextStage) { np = pr.filter(p => p.key.toLowerCase() !== 'stage'); }
-								else {
-									let u = false;
-									np = pr.map(p => { if (p.key.toLowerCase() === 'stage') { u = true; return { ...p, value: nextStage }; } return p; });
-									if (!u) np.push({ key: 'stage', value: nextStage, type: 'text' as any });
-								}
-								const fc = buildFullContent(np, bd);
-								ct.content = fc;
-								openTabs.update(tabs => tabs);
-								markRecentWrite(ct.path);
-								writeNote(ct.path, fc).catch(() => {});
-							}}
-							onsave={(text) => {
-								if (_dGuard.saving) return;
-								_dGuard.saving = true;
-								const ct = get(activeTab);
-								if (!ct) { _dGuard.saving = false; return; }
-								const pr = parseFrontmatter(ct.content || '').properties;
-								markRecentWrite(ct.path);
-								const content = buildFullContent(pr, text);
-								writeNote(ct.path, content).catch(() => {}).finally(() => { _dGuard.saving = false; });
-							}}
-							onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
-								const ct = get(activeTab);
-								if (!ct) return;
-								const pr = parseFrontmatter(ct.content || '').properties;
-								const content = buildFullContent(pr, text);
-								ct.content = content;
-								ct.cursorPos = cursorPos;
-								ct.scrollTop = scrollTop;
-								setWriteAhead(ct.path, content, cursorPos, scrollTop);
-								if (needsDiskSave) {
-									markRecentWrite(ct.path);
-									writeNote(ct.path, content).then(() => clearWriteAhead(ct.path)).catch(() => {});
-								}
-							}}
-							ontitlechange={(newTitle) => {
-								const ct = get(activeTab);
-								if (ct && newTitle !== ct.name.replace(/\.md$/, '')) {
-									renameItem(ct.path, ct.path.replace(/[^/\\]+$/, newTitle + '.md'));
-								}
-							}}
-							onpropschange={() => { openTabs.update(tabs => tabs); }}
-						/>
-						{/key}
+						<NoteEditor tab={$activeTab} noteNames={allNotes} />
 					{/if}
 				</div>
 			</div>

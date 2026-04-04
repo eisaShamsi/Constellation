@@ -163,3 +163,4 @@ After each successful milestone:
 - **Don't patch the same bug more than three times.** If three attempts fail, stop and find the root cause (LL-014).
 - Don't create `Decoration.mark/replace/widget` inside a decoration builder function — pre-cache at module level.
 - Don't call `invoke()` from a CM6 ViewPlugin, an input event handler, or any synchronous hot path.
+- **Don't duplicate working code by copy-pasting and adapting.** If a feature works in one place, extract it into a shared component and reuse it everywhere. Secure the winning — one source of truth, tested once, used many times.
