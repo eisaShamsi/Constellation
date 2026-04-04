@@ -11,7 +11,7 @@
 		openNoteTab, openTabs, activeTabId, activeTab,
 		switchTab, closeTab,
 		parseFrontmatter, buildFullContent,
-		writeNote, markRecentWrite, setWriteAhead, clearWriteAhead,
+		writeNote, markRecentWrite, wasRecentlyWritten, setWriteAhead, clearWriteAhead,
 		renameItem,
 		scanLibraryLinks, scanLibraryTags,
 		buildStarData,
@@ -458,6 +458,8 @@
 		// Listen for note saves
 		const u2 = await onNoteSaved(async (path) => {
 			refreshRecentLists();
+			// Skip re-read if we just wrote this file (prevents edit interruption loop)
+			if (wasRecentlyWritten(path)) return;
 			const tab = get(activeTab);
 			if (tab?.path === path) {
 				try {

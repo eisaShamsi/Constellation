@@ -103,9 +103,13 @@ class CalloutTitleWidget extends WidgetType {
 	) { super(); }
 
 	toDOM() {
+		// Detect direction from title text (RTL scripts → rtl, else ltr)
+		const isRtl = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(this.title);
+		const titleDir = isRtl ? 'rtl' : 'ltr';
+
 		const wrap = document.createElement('span');
 		wrap.className = 'cm-callout-title-widget';
-		wrap.setAttribute('dir', 'auto');
+		wrap.setAttribute('dir', titleDir);
 		wrap.setAttribute('data-callout', this.type);
 
 		// Icon
@@ -126,7 +130,6 @@ class CalloutTitleWidget extends WidgetType {
 		// Title text
 		const titleEl = document.createElement('span');
 		titleEl.className = 'cm-callout-title-text';
-		titleEl.setAttribute('dir', 'auto');
 		titleEl.textContent = this.title ? ' ' + this.title : '';
 		wrap.appendChild(titleEl);
 
