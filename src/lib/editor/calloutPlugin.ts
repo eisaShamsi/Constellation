@@ -222,21 +222,24 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 				: defaultCollapsed;
 
 			const titleLine = doc.line(callout.startLine);
+			const rawTitle = titleLine.text
+				.replace(/^>\s*\[!\w+\][+-]?\s*/, '')
+				.trim();
+			// Detect direction from title text content
+			const titleIsRtl = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(rawTitle);
+			const titleDir = titleIsRtl ? 'rtl' : 'ltr';
 
 			// ── 1. Title line border + tint (always, even when cursor is on it) ──
 			all.push({
 				from: titleLine.from, to: titleLine.from,
 				deco: Decoration.line({
 					class: 'cm-callout-line cm-callout-title-line',
-					attributes: { 'data-callout': callout.type, dir: 'auto' },
+					attributes: { 'data-callout': callout.type, dir: titleDir },
 				}),
 			});
 
 			// ── 2. Title widget (RULE A: only when cursor is elsewhere) ──
 			if (cursorLine !== callout.startLine) {
-				const rawTitle = titleLine.text
-					.replace(/^>\s*\[!\w+\][+-]?\s*/, '')
-					.trim();
 				all.push({
 					from: titleLine.from,
 					to: titleLine.to,
@@ -255,11 +258,13 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 					const line = doc.line(l);
 
 					// Border + tint (zero-length — always safe)
+					const bodyText = line.text.replace(/^>\s?/, '');
+					const bodyIsRtl = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(bodyText);
 					all.push({
 						from: line.from, to: line.from,
 						deco: Decoration.line({
 							class: 'cm-callout-line cm-callout-body-line',
-							attributes: { 'data-callout': callout.type, dir: 'auto' },
+							attributes: { 'data-callout': callout.type, dir: bodyIsRtl ? 'rtl' : 'ltr' },
 						}),
 					});
 
