@@ -217,7 +217,7 @@
 		skyviewNode = node;
 
 		try {
-			const content = await invoke<string>('read_note', { notePath: node.path });
+			const content = await invoke<string>('read_note', { filePath: node.path });
 			if (gen !== skyviewGeneration) return;
 			skyviewPreview = content.slice(0, 2000);
 			const fm = parseFrontmatter(content);
@@ -468,7 +468,7 @@
 			const tab = get(activeTab);
 			if (tab?.path === path) {
 				try {
-					const content = await invoke<string>('read_note', { notePath: tab.path });
+					const content = await invoke<string>('read_note', { filePath: tab.path });
 					tab.content = content;
 				} catch {}
 			}
@@ -592,7 +592,7 @@
 			dashboardTagNotes = [];
 			dashboardSelectedNote = null;
 			try {
-				const content = await invoke<string>('read_note', { notePath: note.path });
+				const content = await invoke<string>('read_note', { filePath: note.path });
 				dashboardNoteTab = {
 					id: `dash-note-${Date.now()}`,
 					path: note.path,
@@ -766,7 +766,7 @@
 							<button class="dash-tag-note" class:active={dashboardSelectedNote?.path === note.path}
 								onclick={async () => {
 									try {
-										const content = await invoke('read_note', { notePath: note.path });
+										const content = await invoke('read_note', { filePath: note.path });
 										const lib = $libraries.find(l => l.name === note.libraryName);
 										dashboardSelectedNote = {
 											id: `dash-tag-${Date.now()}`,
