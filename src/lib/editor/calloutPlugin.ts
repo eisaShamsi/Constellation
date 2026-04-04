@@ -225,7 +225,7 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 				from: titleLine.from, to: titleLine.from,
 				deco: Decoration.line({
 					class: 'cm-callout-line cm-callout-title-line',
-					attributes: { 'data-callout': callout.type },
+					attributes: { 'data-callout': callout.type, dir: 'auto' },
 				}),
 			});
 
@@ -256,7 +256,7 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
 						from: line.from, to: line.from,
 						deco: Decoration.line({
 							class: 'cm-callout-line cm-callout-body-line',
-							attributes: { 'data-callout': callout.type },
+							attributes: { 'data-callout': callout.type, dir: 'auto' },
 						}),
 					});
 
