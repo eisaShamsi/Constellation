@@ -959,8 +959,8 @@
 				/>
 			</div>
 
-		{:else if mainSidebarMode === 'tree'}
-			<!-- File Explorer companion — Universe Dashboard -->
+		{:else if mainSidebarMode === 'tree' && $activeTab}
+			<!-- File Explorer companion — Universe Dashboard (only when main window has a note open) -->
 			<DashboardView
 				{universeName}
 				{libraryColorMap}

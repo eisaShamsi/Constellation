@@ -3373,7 +3373,7 @@
 					{/if}
 				</div>
 			{:else if isHome}
-				<div class="welcome">
+				<div class="welcome" class:welcome-dashboard={$libraryStats.length > 0 && $appSettings.showDashboard}>
 					{#if $libraryStats.length === 0}
 						<svg class="w-icon" width="80" height="80" viewBox="0 0 160 160" fill="none">
 								<defs>
@@ -4487,6 +4487,11 @@
 	.welcome {
 		flex: 1; display: flex; flex-direction: column;
 		align-items: center; justify-content: center; text-align: center; padding: 2rem; color: var(--text-muted);
+		overflow: hidden;
+	}
+	.welcome.welcome-dashboard {
+		align-items: stretch; justify-content: stretch;
+		text-align: start; padding: 0; overflow: hidden;
 	}
 	.w-icon { margin-bottom: 20px; opacity: 0.7; }
 	.w-title { color: var(--text); font-size: 1.2rem; font-weight: 600; margin: 0 0 4px; }
