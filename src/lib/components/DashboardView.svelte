@@ -4,11 +4,12 @@
 	import { onMount } from 'svelte';
 	import {
 		libraries, libraryStats, loadAllStats,
-		scanLibraryTags,
 		openNoteTab,
 		type LibraryStats
 	} from '$lib/libraries/store';
 	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
+	import { getRecentLists, type RecentOpenedNote, type RecentEditedNote } from '$lib/libraries/recentNotes';
+	import { scanAllLibraryTags, type DashboardTag } from '$lib/libraries/tagUtils';
 	import { get } from 'svelte/store';
 
 	let {
@@ -30,7 +31,7 @@
 	// Dashboard state
 	let childUniverses = $state<ChildUniverseInfo[]>([]);
 	let childUniverseLibs = $state<Record<string, { name: string; path: string }[]>>({});
-	let dashboardTags = $state<{ tag: string; count: number }[]>([]);
+	let dashboardTags = $state<DashboardTag[]>([]);
 	let selectedTag = $state<string | null>(null);
 	let selectedTagNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let loadingTagNotes = $state(false);
@@ -73,18 +74,15 @@
 	let topLevelStats = $derived($libraryStats.filter((s: any) => !cuLibNames.has(s.name) && !s.is_universe_notes));
 	let universeNotesStats = $derived($libraryStats.find((s: any) => s.is_universe_notes) ?? null);
 
-	// Recently opened/edited (read from localStorage)
-	let recentOpenedRaw = $state<{ name: string; path: string; libraryName: string; openedAt: number }[]>([]);
-	let recentEditedRaw = $state<{ name: string; path: string; libraryName: string; editedAt: number }[]>([]);
+	// Recently opened/edited (shared utility)
+	let recentlyEdited = $state<RecentEditedNote[]>([]);
+	let recentlyOpened = $state<RecentOpenedNote[]>([]);
 
 	function refreshRecentLists() {
-		try { recentOpenedRaw = JSON.parse(localStorage.getItem('constellation-recent-opened') || '[]'); } catch { recentOpenedRaw = []; }
-		try { recentEditedRaw = JSON.parse(localStorage.getItem('constellation-recent-edited') || '[]'); } catch { recentEditedRaw = []; }
+		const lists = getRecentLists();
+		recentlyEdited = lists.recentlyEdited;
+		recentlyOpened = lists.recentlyOpened;
 	}
-
-	let editedPathSet = $derived(new Set(recentEditedRaw.map(n => n.path)));
-	let recentlyOpened = $derived(recentOpenedRaw.filter(n => !editedPathSet.has(n.path)).slice(0, 10));
-	let recentlyEdited = $derived(recentEditedRaw.slice(0, 10));
 
 	async function loadDashboardData() {
 		try {
@@ -101,16 +99,7 @@
 				childUniverseLibs = libMap;
 			} catch { childUniverses = []; childUniverseLibs = {}; }
 			try {
-				const merged: Record<string, number> = {};
-				for (const lib of get(libraries)) {
-					const tags = await scanLibraryTags(lib.path);
-					for (const [tag, count] of Object.entries(tags)) {
-						merged[tag] = (merged[tag] || 0) + count;
-					}
-				}
-				dashboardTags = Object.entries(merged)
-					.map(([tag, count]) => ({ tag, count }))
-					.sort((a, b) => b.count - a.count);
+				dashboardTags = await scanAllLibraryTags();
 			} catch { dashboardTags = []; }
 		} catch {}
 		loaded = true;

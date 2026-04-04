@@ -393,17 +393,12 @@
 			});
 		}
 	});
-	// Track recently opened notes in localStorage for the second screen dashboard
+	// Track recently opened notes in localStorage (shared utility)
+	import { addRecentOpened } from '$lib/libraries/recentNotes';
 	$effect(() => {
 		const tab = $activeTab;
 		if (!tab?.path) return;
-		try {
-			const key = 'constellation-recent-opened';
-			const existing: { name: string; path: string; libraryName: string; openedAt: number }[] = JSON.parse(localStorage.getItem(key) || '[]');
-			const filtered = existing.filter(n => n.path !== tab.path);
-			filtered.unshift({ name: tab.name, path: tab.path, libraryName: tab.libraryName, openedAt: Date.now() });
-			localStorage.setItem(key, JSON.stringify(filtered.slice(0, 20)));
-		} catch {}
+		addRecentOpened({ name: tab.name, path: tab.path, libraryName: tab.libraryName });
 	});
 	// Clipboard monitoring: send copy events to second screen
 	let lastSavedContent = $state('');
@@ -717,13 +712,9 @@
 	const ownLibraries = $derived($libraryStats.filter(lib => !isChildUniverseLib(lib.path) && !lib.is_universe_notes));
 	const universeNotesStats = $derived($libraryStats.find(lib => lib.is_universe_notes) ?? null);
 
-	// Library color palette
-	const LIBRARY_COLORS = ['#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#8b5cf6'];
-	const libraryColorMap = $derived.by(() => {
-		const map: Record<string, string> = {};
-		$libraries.forEach((v, i) => { map[v.name] = LIBRARY_COLORS[i % LIBRARY_COLORS.length]; });
-		return map;
-	});
+	// Library color palette (shared utility)
+	import { buildLibraryColorMap } from '$lib/libraries/colors';
+	const libraryColorMap = $derived(buildLibraryColorMap($libraries));
 
 	// Sidebar data: derived from focused tab (whichever pane has focus)
 	const sidebarTab = $derived($focusedTab);

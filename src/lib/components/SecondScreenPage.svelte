@@ -309,17 +309,9 @@
 		peekTab = null;
 	}
 
-	// ─── Library color map ───
-	const libraryColors = [
-		'#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-		'#ec4899', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
-	];
-	let libraryColorMap = $derived.by(() => {
-		const map: Record<string, string> = {};
-		const v = $libraries;
-		v.forEach((lib, i) => { map[lib.name] = libraryColors[i % libraryColors.length]; });
-		return map;
-	});
+	// ─── Library color map (shared utility) ───
+	import { buildLibraryColorMap } from '$lib/libraries/colors';
+	let libraryColorMap = $derived(buildLibraryColorMap($libraries));
 
 	// ─── Theme sync ───
 	if (typeof document !== 'undefined') {
