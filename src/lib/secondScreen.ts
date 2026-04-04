@@ -198,3 +198,25 @@ export async function emitSidebarModeChanged(mode: SidebarMode): Promise<void> {
 export function onSidebarModeChanged(callback: (mode: SidebarMode) => void): Promise<UnlistenFn> {
 	return listen<{ mode: SidebarMode }>('screen:sidebar-mode-changed', (event) => callback(event.payload.mode));
 }
+
+/* ------------------------------------------------------------------ */
+/*  Split view companion events                                        */
+/* ------------------------------------------------------------------ */
+
+export interface SplitCompanionData {
+	active: boolean;
+	notePath?: string;
+	noteName?: string;
+	libraryName?: string;
+	libraryPath?: string;
+	content?: string;
+}
+
+/** Main → Second Screen: split view state changed */
+export async function emitSplitModeChanged(data: SplitCompanionData): Promise<void> {
+	await emit('screen:split-mode-changed', data);
+}
+
+export function onSplitModeChanged(callback: (data: SplitCompanionData) => void): Promise<UnlistenFn> {
+	return listen<SplitCompanionData>('screen:split-mode-changed', (event) => callback(event.payload));
+}

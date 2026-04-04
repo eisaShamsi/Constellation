@@ -1068,7 +1068,10 @@
             "recentlyEdited": "Son düzenlenen",
             "tags": "Etiketler"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "Eşlik paneli",
+        "noProperties": "Özellik yok",
+        "backlinksFor": "Geri bağlantılar"
     },
     "importer": {
         "title": "Notları İçe Aktar",
@@ -1313,5 +1316,9 @@
         "exitHint": "Çıkmak için Escape'e basın",
         "activate": "Odağa gir",
         "wordCount": "kelime"
+    },
+    "dashboard": {
+        "show": "Panoyu göster",
+        "hide": "Panoyu gizle"
     }
 }

@@ -1068,7 +1068,10 @@
             "recentlyEdited": "최근 편집한 노트",
             "tags": "태그"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "패널 동반자",
+        "noProperties": "속성 없음",
+        "backlinksFor": "백링크"
     },
     "importer": {
         "title": "노트 가져오기",
@@ -1313,5 +1316,9 @@
         "exitHint": "Escape를 눌러 종료",
         "activate": "집중 시작",
         "wordCount": "단어"
+    },
+    "dashboard": {
+        "show": "대시보드 표시",
+        "hide": "대시보드 숨기기"
     }
 }

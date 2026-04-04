@@ -1068,7 +1068,10 @@
             "recentlyEdited": "最近编辑",
             "tags": "标签"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "面板伴侣",
+        "noProperties": "无属性",
+        "backlinksFor": "反向链接"
     },
     "importer": {
         "title": "导入笔记",
@@ -1313,5 +1316,9 @@
         "exitHint": "按 Escape 退出",
         "activate": "进入专注",
         "wordCount": "字"
+    },
+    "dashboard": {
+        "show": "显示仪表盘",
+        "hide": "隐藏仪表盘"
     }
 }

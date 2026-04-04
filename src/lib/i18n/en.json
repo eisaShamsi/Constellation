@@ -1078,7 +1078,14 @@
             "recentlyEdited": "Recently Edited",
             "tags": "Tags"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "Panels Companion",
+        "noProperties": "No properties",
+        "backlinksFor": "Backlinks for"
+    },
+    "dashboard": {
+        "show": "Show Dashboard",
+        "hide": "Hide Dashboard"
     },
     "importer": {
         "title": "Import Notes",

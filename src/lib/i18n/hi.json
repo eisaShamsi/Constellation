@@ -1068,7 +1068,10 @@
             "recentlyEdited": "हाल ही में संपादित",
             "tags": "टैग्स"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "साथी पैनल",
+        "noProperties": "कोई गुण नहीं",
+        "backlinksFor": "बैकलिंक्स"
     },
     "importer": {
         "title": "नोट्स आयात करें",
@@ -1313,5 +1316,9 @@
         "exitHint": "बाहर निकलने के लिए Escape दबाएँ",
         "activate": "फ़ोकस में प्रवेश करें",
         "wordCount": "शब्द"
+    },
+    "dashboard": {
+        "show": "डैशबोर्ड दिखाएं",
+        "hide": "डैशबोर्ड छुपाएं"
     }
 }

@@ -22,6 +22,7 @@
 	import { detectDir } from '$lib/utils';
 	import { get } from 'svelte/store';
 	import NotePane from '$lib/components/NotePane.svelte';
+	import DashboardView from '$lib/components/DashboardView.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import LocalStarView from '$lib/components/LocalStarView.svelte';
@@ -29,9 +30,10 @@
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
 		onStateRequest, onWorkspaceRestore,
 		onContextChanged, onSkyViewHover, onSkyViewClick,
-		onSidebarModeChanged,
+		onSidebarModeChanged, onSplitModeChanged,
 		sendNoteToMain, notifyScreenClosed, sendScreenState,
-		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo, type SidebarMode
+		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo, type SidebarMode,
+		type SplitCompanionData
 	} from '$lib/secondScreen';
 	import {
 		setActiveUniverse, listUniverses, getChildUniverses,
@@ -51,6 +53,10 @@
 	// ─── State ───
 	let noteWidth = $state(100);
 	let mainSidebarMode = $state<SidebarMode>('tree');
+	let splitCompanionActive = $state(false);
+	let splitCompanionData = $state<SplitCompanionData | null>(null);
+	let splitCompanionTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks'>('properties');
+	let preSplitSidebarMode = $state<SidebarMode>('tree');
 
 	// ─── Data state ───
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
@@ -572,6 +578,19 @@
 		});
 		unlisteners.push(u11);
 
+		const u12 = await onSplitModeChanged((data) => {
+			if (data.active) {
+				if (!splitCompanionActive) preSplitSidebarMode = mainSidebarMode;
+				splitCompanionActive = true;
+				splitCompanionData = data;
+			} else {
+				splitCompanionActive = false;
+				splitCompanionData = null;
+				mainSidebarMode = preSplitSidebarMode;
+			}
+		});
+		unlisteners.push(u12);
+
 		// Now load data (after listeners are set up so no events are missed)
 		try {
 			const universes = await listUniverses();
@@ -635,6 +654,88 @@
 				<div class="spinner"></div>
 				<p>{$t('secondScreen.loading')}</p>
 			</div>
+		{:else if splitCompanionActive && splitCompanionData}
+			<!-- Split View Panels Companion -->
+			<div class="split-companion">
+				<div class="split-companion-header">
+					<span class="split-companion-label">{$t('secondScreen.splitCompanion') || 'Panels Companion'}</span>
+					{#if splitCompanionData.noteName}
+						<span class="split-companion-note" dir="auto">{splitCompanionData.noteName.replace(/\.md$/, '')}</span>
+					{/if}
+				</div>
+				<div class="split-companion-tabs">
+					{#each [
+						{ id: 'properties', icon: '⚙', label: $t('panels.properties') || 'Properties' },
+						{ id: 'backlinks', icon: '🔗', label: $t('panels.backlinks') || 'Backlinks' },
+						{ id: 'tags', icon: '🏷', label: $t('panels.tags') || 'Tags' },
+						{ id: 'star', icon: '⭐', label: $t('panels.starView') || 'Star' },
+						{ id: 'tasks', icon: '☑', label: $t('panels.tasks') || 'Tasks' },
+					] as tab}
+						<button class="sc-tab" class:active={splitCompanionTab === tab.id}
+							onclick={() => splitCompanionTab = tab.id as any}>
+							{tab.icon} {tab.label}
+						</button>
+					{/each}
+				</div>
+				<div class="split-companion-body">
+					{#if splitCompanionData.notePath}
+						{#if splitCompanionTab === 'properties'}
+							{@const parsed = parseFrontmatter(splitCompanionData.content || '')}
+							<div class="sc-panel">
+								<div class="sc-props-list">
+									{#each parsed.properties as prop}
+										<div class="sc-prop">
+											<span class="sc-prop-key">{prop.key}</span>
+											<span class="sc-prop-val">{prop.value}</span>
+										</div>
+									{/each}
+									{#if parsed.properties.length === 0}
+										<p class="sc-empty">{$t('secondScreen.noProperties') || 'No properties'}</p>
+									{/if}
+								</div>
+							</div>
+						{:else if splitCompanionTab === 'backlinks'}
+							<div class="sc-panel">
+								<p class="sc-info">{$t('secondScreen.backlinksFor') || 'Backlinks for'} <strong>{splitCompanionData.noteName?.replace(/\.md$/, '')}</strong></p>
+								<!-- Backlinks loaded from library scan -->
+							</div>
+						{:else if splitCompanionTab === 'tags'}
+							{@const parsed = parseFrontmatter(splitCompanionData.content || '')}
+							{@const tags = parsed.properties.filter(p => p.key.toLowerCase() === 'tags').map(p => String(p.value)).flatMap(v => v.split(',').map(t => t.trim())).filter(Boolean)}
+							<div class="sc-panel">
+								{#if tags.length > 0}
+									<div class="sc-tags">
+										{#each tags as tag}
+											<span class="sc-tag">#{tag}</span>
+										{/each}
+									</div>
+								{:else}
+									<p class="sc-empty">{$t('panels.noTags') || 'No tags'}</p>
+								{/if}
+							</div>
+						{:else if splitCompanionTab === 'star'}
+							<div class="sc-panel sc-star-panel">
+								<LocalStarView
+									nodes={[]}
+									links={[]}
+									activeNodeId={splitCompanionData.notePath}
+									onNodeClick={(id) => {
+										const note = allNotes.find(n => n.path === id);
+										if (note) sendNoteToMain({ path: note.path, name: note.name, libraryName: note.libraryName, libraryPath: '', libraryColor: libraryColorMap[note.libraryName] || '#7c3aed' });
+									}}
+								/>
+							</div>
+						{:else if splitCompanionTab === 'tasks'}
+							<div class="sc-panel">
+								<p class="sc-empty">{$t('panels.noTasks') || 'No tasks in this note'}</p>
+							</div>
+						{/if}
+					{:else}
+						<p class="sc-empty">{$t('panels.noNoteSelected') || 'No note selected'}</p>
+					{/if}
+				</div>
+			</div>
+
 		{:else if contextMode === 'skyview'}
 			<!-- Sky View Companion — kept as-is -->
 			<div class="skyview-companion">
@@ -859,237 +960,17 @@
 			</div>
 
 		{:else if mainSidebarMode === 'tree'}
-			<!-- File Explorer companion — Universe Dashboard (always visible) -->
-			<div class="dashboard-companion">
-					<div class="dashboard-scroll">
-						<div class="dashboard-header">
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.5">
-								<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-							</svg>
-							<h2>{universeName || $t('secondScreen.dashboard.universe')}</h2>
-						</div>
-
-						<div class="dashboard-stats">
-							{#if childUniverses.length > 0}
-								<div class="stat-card">
-									<span class="stat-value">{childUniverses.length}</span>
-									<span class="stat-label">{$t('secondScreen.dashboard.childUniverses')}</span>
-								</div>
-							{/if}
-							<div class="stat-card">
-								<span class="stat-value">{$libraries.length}</span>
-								<span class="stat-label">{$t('secondScreen.dashboard.libraries')}</span>
-							</div>
-							<div class="stat-card">
-								<span class="stat-value">{totalFolders}</span>
-								<span class="stat-label">{$t('secondScreen.dashboard.folders')}</span>
-							</div>
-							<div class="stat-card">
-								<span class="stat-value">{totalNotes}</span>
-								<span class="stat-label">{$t('secondScreen.dashboard.notes')}</span>
-							</div>
-						</div>
-
-						{#if universeNotesStats}
-							<div class="dashboard-section">
-								<h3 class="dashboard-section-title">
-									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--interactive-accent)" stroke-width="1.5" style="flex-shrink: 0;">
-										<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
-										<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
-										<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
-									</svg>
-									{universeNotesStats.name}
-								</h3>
-								<div class="library-card-stats" style="--lib-color: var(--interactive-accent)">
-									<div class="lib-stat-box">
-										<span class="lib-stat-value">{universeNotesStats.folder_count}</span>
-										<span class="lib-stat-label">{$t('secondScreen.dashboard.folders')}</span>
-									</div>
-									<div class="lib-stat-box">
-										<span class="lib-stat-value">{universeNotesStats.star_count}</span>
-										<span class="lib-stat-label">{$t('secondScreen.dashboard.notes')}</span>
-									</div>
-								</div>
-							</div>
-						{/if}
-
-						{#if childUniverses.length > 0}
-							<div class="dashboard-section">
-								<h3 class="dashboard-section-title">{$t('secondScreen.dashboard.childUniverses')}</h3>
-								<div class="cu-list">
-									{#each childUniverses as cu}
-										{@const cuLibs = childUniverseLibs[cu.path] || []}
-										{@const cuStats = cuLibs.map(l => $libraryStats.find(s => s.name === l.name)).filter(Boolean)}
-										{@const cuFolders = cuStats.reduce((sum, s) => sum + (s?.folder_count ?? 0), 0)}
-										{@const cuNotes = cuStats.reduce((sum, s) => sum + (s?.star_count ?? 0), 0)}
-										<div class="cu-group">
-											<div class="cu-header">
-												<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.5" style="flex-shrink: 0;">
-													<circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/>
-													<path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/>
-													<ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/>
-												</svg>
-												<span class="cu-name">{cu.name}</span>
-											</div>
-											<div class="cu-stat-boxes">
-												<div class="cu-stat-box">
-													<span class="cu-stat-value">{cu.library_count}</span>
-													<span class="cu-stat-label">{$t('secondScreen.dashboard.libraries')}</span>
-												</div>
-												<div class="cu-stat-box">
-													<span class="cu-stat-value">{cuFolders}</span>
-													<span class="cu-stat-label">{$t('secondScreen.dashboard.folders')}</span>
-												</div>
-												<div class="cu-stat-box">
-													<span class="cu-stat-value">{cuNotes}</span>
-													<span class="cu-stat-label">{$t('secondScreen.dashboard.notes')}</span>
-												</div>
-											</div>
-											{#if childUniverseLibs[cu.path]?.length}
-												<div class="cu-libs">
-													{#each childUniverseLibs[cu.path] as lib}
-														{@const stats = $libraryStats.find(s => s.name === lib.name)}
-														{@const color = libraryColorMap[lib.name] || '#7c3aed'}
-														<div class="library-card">
-															<div class="library-card-header">
-																<span class="lib-dot" style="background:{color}"></span>
-																<span class="lib-name">{lib.name}</span>
-															</div>
-															<div class="library-card-stats">
-																<div class="lib-stat-box" style="--lib-color:{color}">
-																	<span class="lib-stat-value">{stats?.folder_count ?? 0}</span>
-																	<span class="lib-stat-label">{$t('secondScreen.dashboard.folders')}</span>
-																</div>
-																<div class="lib-stat-box" style="--lib-color:{color}">
-																	<span class="lib-stat-value">{stats?.star_count ?? 0}</span>
-																	<span class="lib-stat-label">{$t('secondScreen.dashboard.notes')}</span>
-																</div>
-															</div>
-														</div>
-													{/each}
-												</div>
-											{/if}
-										</div>
-									{/each}
-								</div>
-							</div>
-						{/if}
-
-						<div class="dashboard-section">
-							<h3 class="dashboard-section-title">{$t('secondScreen.dashboard.libraryBreakdown')}</h3>
-							<div class="library-list">
-								{#each topLevelStats as lib}
-									{@const color = libraryColorMap[lib.name] || '#7c3aed'}
-									<div class="library-card">
-										<div class="library-card-header">
-											<span class="lib-dot" style="background:{color}"></span>
-											<span class="lib-name">{lib.name}</span>
-										</div>
-										<div class="library-card-stats">
-											<div class="lib-stat-box" style="--lib-color:{color}">
-												<span class="lib-stat-value">{lib.folder_count}</span>
-												<span class="lib-stat-label">{$t('secondScreen.dashboard.folders')}</span>
-											</div>
-											<div class="lib-stat-box" style="--lib-color:{color}">
-												<span class="lib-stat-value">{lib.star_count}</span>
-												<span class="lib-stat-label">{$t('secondScreen.dashboard.notes')}</span>
-											</div>
-										</div>
-									</div>
-								{/each}
-							</div>
-						</div>
-
-						<div class="recent-columns">
-							<div class="recent-column">
-								<h3 class="dashboard-section-title">{$t('secondScreen.dashboard.recentlyEdited')}</h3>
-								{#if recentlyEdited.length > 0}
-									<div class="recent-list">
-										{#each recentlyEdited as note}
-											<button class="recent-note" onclick={() => {
-												openNoteTab(note.path, note.libraryName, libraryColorMap[note.libraryName] || '#7c3aed');
-											}}>
-												<span class="lib-dot" style="background:{libraryColorMap[note.libraryName] || '#7c3aed'}"></span>
-												<span class="recent-name">{note.name.replace(/\.md$/, '')}</span>
-												<span class="recent-time">{new Date(note.editedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-											</button>
-										{/each}
-									</div>
-								{:else}
-									<p class="recent-empty">&mdash;</p>
-								{/if}
-							</div>
-							<div class="recent-column">
-								<h3 class="dashboard-section-title">{$t('secondScreen.dashboard.recentlyOpened')}</h3>
-								{#if recentlyOpened.length > 0}
-									<div class="recent-list">
-										{#each recentlyOpened as note}
-											<button class="recent-note" onclick={() => {
-												openNoteTab(note.path, note.libraryName, libraryColorMap[note.libraryName] || '#7c3aed');
-											}}>
-												<span class="lib-dot" style="background:{libraryColorMap[note.libraryName] || '#7c3aed'}"></span>
-												<span class="recent-name">{note.name.replace(/\.md$/, '')}</span>
-												<span class="recent-time">{new Date(note.openedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-											</button>
-										{/each}
-									</div>
-								{:else}
-									<p class="recent-empty">&mdash;</p>
-								{/if}
-							</div>
-						</div>
-
-						{#if dashboardTags.length > 0}
-							<div class="dashboard-section">
-								<h3 class="dashboard-section-title">{$t('secondScreen.dashboard.tags')}</h3>
-								<div class="tags-layout" class:tags-split={selectedTag}>
-									<div class="tags-list-col">
-										<div class="dashboard-tags">
-											{#each dashboardTags as { tag, count }}
-												<button
-													class="dashboard-tag"
-													class:tag-selected={selectedTag === tag}
-													onclick={() => selectTag(tag)}
-												>
-													<span class="tag-name">#{tag}</span>
-													<span class="tag-count">{count}</span>
-												</button>
-											{/each}
-										</div>
-									</div>
-									{#if selectedTag}
-										<div class="tags-notes-col">
-											<h4 class="tags-notes-title">
-												<span class="tag-badge">#{selectedTag}</span>
-												<span class="tags-notes-count">{selectedTagNotes.length}</span>
-												<button class="tags-notes-close" onclick={() => { selectedTag = null; selectedTagNotes = []; }}>
-													<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-												</button>
-											</h4>
-											{#if loadingTagNotes}
-												<p class="recent-empty">{$t('secondScreen.loading')}</p>
-											{:else if selectedTagNotes.length > 0}
-												<div class="recent-list">
-													{#each selectedTagNotes as note}
-														<button class="recent-note" onclick={() => {
-															const lib = $libraries.find(v => v.name === note.libraryName);
-															sendNoteToMain({ path: note.path, name: note.name, libraryName: note.libraryName, libraryPath: lib?.path ?? '', libraryColor: libraryColorMap[note.libraryName] || '#7c3aed' });
-														}}>
-															<span class="lib-dot" style="background:{libraryColorMap[note.libraryName] || '#7c3aed'}"></span>
-															<span class="recent-name">{note.name.replace(/\.md$/, '')}</span>
-														</button>
-													{/each}
-												</div>
-											{:else}
-												<p class="recent-empty">&mdash;</p>
-											{/if}
-										</div>
-									{/if}
-								</div>
-							</div>
-						{/if}
-					</div>
-			</div>
+			<!-- File Explorer companion — Universe Dashboard -->
+			<DashboardView
+				{universeName}
+				{libraryColorMap}
+				onNoteClick={(path, name, libraryName) => {
+					openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed');
+				}}
+				onNoteToMain={(note) => {
+					sendNoteToMain(note);
+				}}
+			/>
 
 		{:else if $activeTab}
 			<!-- Fallback note companion -->
@@ -1553,5 +1434,51 @@
 	}
 	.status-linked::before {
 		content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+	}
+
+	/* Split Companion */
+	.split-companion { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+	.split-companion-header {
+		padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		flex-shrink: 0;
+	}
+	.split-companion-label {
+		font-size: 11px; font-weight: 700; color: var(--interactive-accent);
+		text-transform: uppercase; letter-spacing: 1px;
+	}
+	.split-companion-note {
+		font-size: 14px; font-weight: 600; color: var(--text-normal);
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	.split-companion-tabs {
+		display: flex; gap: 2px; padding: 6px 12px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		flex-shrink: 0; overflow-x: auto;
+	}
+	.sc-tab {
+		padding: 5px 10px; border-radius: 6px; border: none;
+		background: transparent; color: var(--text-muted);
+		font-size: 12px; cursor: pointer; white-space: nowrap;
+	}
+	.sc-tab:hover { background: var(--background-modifier-hover); }
+	.sc-tab.active { background: var(--interactive-accent); color: white; }
+	.split-companion-body { flex: 1; overflow-y: auto; padding: 12px 16px; }
+	.sc-panel { min-height: 100px; }
+	.sc-star-panel { height: 300px; }
+	.sc-empty { color: var(--text-faint); font-size: 13px; padding: 16px 0; text-align: center; }
+	.sc-info { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+	.sc-props-list { display: flex; flex-direction: column; gap: 6px; }
+	.sc-prop {
+		display: flex; gap: 10px; padding: 6px 10px; border-radius: 6px;
+		background: var(--background-secondary);
+	}
+	.sc-prop-key { font-size: 12px; font-weight: 600; color: var(--text-muted); min-width: 80px; }
+	.sc-prop-val { font-size: 12px; color: var(--text-normal); flex: 1; word-break: break-word; }
+	.sc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+	.sc-tag {
+		padding: 3px 10px; border-radius: 12px; font-size: 12px;
+		background: var(--background-secondary); color: var(--text-normal);
+		border: 1px solid var(--background-modifier-border);
 	}
 </style>

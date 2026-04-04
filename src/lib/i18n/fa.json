@@ -1079,7 +1079,10 @@
             "recentlyEdited": "اخیراً ویرایش شده",
             "tags": "برچسب‌ها"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "پنل همراه",
+        "noProperties": "بدون ویژگی",
+        "backlinksFor": "بک‌لینک‌ها برای"
     },
     "importer": {
         "title": "وارد کردن یادداشت‌ها",
@@ -1313,5 +1316,9 @@
         "exitHint": "برای خروج Escape را فشار دهید",
         "activate": "ورود به تمرکز",
         "wordCount": "کلمه"
+    },
+    "dashboard": {
+        "show": "نمایش داشبورد",
+        "hide": "مخفی کردن داشبورد"
     }
 }

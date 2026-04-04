@@ -57,6 +57,7 @@
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
 
+	import DashboardView from '$lib/components/DashboardView.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
@@ -89,7 +90,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -417,6 +418,25 @@
 			invoke<string>('read_note', { filePath: tab.path }).then(saved => {
 				lastSavedContent = saved;
 			}).catch(() => {});
+		}
+	});
+
+	// Sync split view state to second screen
+	$effect(() => {
+		if (!secondScreenOpen) return;
+		const active = $splitActive;
+		const tab = $focusedTab;
+		if (active && tab?.path) {
+			emitSplitModeChanged({
+				active: true,
+				notePath: tab.path,
+				noteName: tab.name,
+				libraryName: tab.libraryName,
+				libraryPath: tab.libraryPath ?? '',
+				content: tab.content ?? '',
+			});
+		} else if (!active) {
+			emitSplitModeChanged({ active: false });
 		}
 	});
 
@@ -3407,8 +3427,27 @@
 							<p class="w-error">{error}</p>
 						{/if}
 					{:else}
-						<p class="w-hint">{$t('welcome.selectNote')}</p>
-						<p class="w-hint-sub">{$t('welcome.quickSwitchHint')}</p>
+						{#if $appSettings.showDashboard}
+							<div class="home-dashboard">
+								<div class="home-dashboard-header">
+									<button class="home-dashboard-toggle" onclick={() => updateSettings({ showDashboard: false })} title={$t('dashboard.hide') || 'Hide Dashboard'}>
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+									</button>
+								</div>
+								<DashboardView
+									universeName={activeUniverseName}
+									{libraryColorMap}
+									onNoteClick={(path, name, libraryName) => openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed')}
+								/>
+							</div>
+						{:else}
+							<p class="w-hint">{$t('welcome.selectNote')}</p>
+							<p class="w-hint-sub">{$t('welcome.quickSwitchHint')}</p>
+							<button class="w-dashboard-btn" onclick={() => updateSettings({ showDashboard: true })}>
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+								{$t('dashboard.show') || 'Show Dashboard'}
+							</button>
+						{/if}
 					{/if}
 				</div>
 			{:else}
@@ -4454,6 +4493,26 @@
 	.w-sub { font-size: 0.9rem; margin: 0 0 16px; }
 	.w-hint { font-size: 0.9rem; }
 	.w-hint-sub { font-size: 0.78rem; color: var(--text-faint); margin-top: 4px; }
+	.w-dashboard-btn {
+		margin-top: 16px; padding: 8px 16px; border-radius: 8px;
+		border: 1px solid var(--border); background: var(--bg-secondary);
+		color: var(--text-muted); cursor: pointer; font-size: 0.82rem;
+		display: flex; align-items: center; gap: 6px;
+		transition: all 0.15s;
+	}
+	.w-dashboard-btn:hover { border-color: var(--accent); color: var(--text); }
+	.home-dashboard { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+	.home-dashboard-header {
+		display: flex; justify-content: flex-end; padding: 6px 12px 0;
+		flex-shrink: 0;
+	}
+	.home-dashboard-toggle {
+		width: 28px; height: 28px; border-radius: 6px;
+		border: 1px solid var(--border); background: transparent;
+		color: var(--text-muted); cursor: pointer;
+		display: flex; align-items: center; justify-content: center;
+	}
+	.home-dashboard-toggle:hover { background: var(--border); color: var(--text); }
 	.w-btn {
 		background: var(--accent); border: none; color: var(--text-on-accent);
 		padding: 8px 20px; border-radius: 6px; cursor: pointer;

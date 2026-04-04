@@ -1068,7 +1068,10 @@
             "recentlyEdited": "נערכו לאחרונה",
             "tags": "תגיות"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "לוח לוואי",
+        "noProperties": "אין מאפיינים",
+        "backlinksFor": "קישורים נכנסים ל"
     },
     "importer": {
         "title": "ייבוא הערות",
@@ -1313,5 +1316,9 @@
         "exitHint": "לחצו Escape ליציאה",
         "activate": "כניסה למיקוד",
         "wordCount": "מילים"
+    },
+    "dashboard": {
+        "show": "הצג לוח בקרה",
+        "hide": "הסתר לוח בקרה"
     }
 }

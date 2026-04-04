@@ -1208,6 +1208,9 @@ export interface AppSettings {
 	enableScriptToolbar: boolean;
 	scriptToolbarScripts: string[];  // which scripts to show toolbars for
 
+	// Dashboard
+	showDashboard: boolean;
+
 	// Focus (writing modes)
 	focus: 'none' | 'blankPage' | 'typewriter' | 'manuscript' | 'flow';
 
@@ -1320,6 +1323,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	secondaryScript: 'arabic',
 	enableScriptToolbar: true,
 	scriptToolbarScripts: ['arabic', 'latin'],
+	showDashboard: false,
 	focus: 'none' as const,
 	inboxFolder: '+',
 	dailyNoteFormat: '%Y-%m-%d',

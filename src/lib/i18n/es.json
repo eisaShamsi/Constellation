@@ -1079,7 +1079,10 @@
             "recentlyEdited": "Editadas recientemente",
             "tags": "Etiquetas"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "Panel acompañante",
+        "noProperties": "Sin propiedades",
+        "backlinksFor": "Enlaces entrantes para"
     },
     "importer": {
         "title": "Importar notas",
@@ -1313,5 +1316,9 @@
         "exitHint": "Pulsa Escape para salir",
         "activate": "Entrar en enfoque",
         "wordCount": "palabras"
+    },
+    "dashboard": {
+        "show": "Mostrar panel",
+        "hide": "Ocultar panel"
     }
 }

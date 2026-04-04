@@ -1068,7 +1068,10 @@
             "recentlyEdited": "最近編集したノート",
             "tags": "タグ"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "パネルコンパニオン",
+        "noProperties": "プロパティなし",
+        "backlinksFor": "バックリンク"
     },
     "importer": {
         "title": "ノートをインポート",
@@ -1313,5 +1316,9 @@
         "exitHint": "Escapeで終了",
         "activate": "フォーカスに入る",
         "wordCount": "語"
+    },
+    "dashboard": {
+        "show": "ダッシュボード表示",
+        "hide": "ダッシュボード非表示"
     }
 }

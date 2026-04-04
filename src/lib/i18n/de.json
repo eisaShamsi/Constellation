@@ -1079,7 +1079,10 @@
             "recentlyEdited": "Kürzlich bearbeitet",
             "tags": "Tags"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "Begleitpanels",
+        "noProperties": "Keine Eigenschaften",
+        "backlinksFor": "Rückverweise für"
     },
     "importer": {
         "title": "Notizen importieren",
@@ -1313,5 +1316,9 @@
         "exitHint": "Escape drücken zum Beenden",
         "activate": "Fokus betreten",
         "wordCount": "Wörter"
+    },
+    "dashboard": {
+        "show": "Dashboard anzeigen",
+        "hide": "Dashboard ausblenden"
     }
 }

@@ -1068,7 +1068,10 @@
             "recentlyEdited": "Недавно отредактированные",
             "tags": "Теги"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "Панель-компаньон",
+        "noProperties": "Нет свойств",
+        "backlinksFor": "Обратные ссылки для"
     },
     "importer": {
         "title": "Импорт заметок",
@@ -1313,5 +1316,9 @@
         "exitHint": "Нажмите Escape для выхода",
         "activate": "Войти в фокус",
         "wordCount": "слов"
+    },
+    "dashboard": {
+        "show": "Показать панель",
+        "hide": "Скрыть панель"
     }
 }

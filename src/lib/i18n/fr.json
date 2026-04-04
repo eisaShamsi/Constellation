@@ -1079,7 +1079,10 @@
             "recentlyEdited": "Récemment éditées",
             "tags": "Tags"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "Panneaux compagnon",
+        "noProperties": "Aucune propriété",
+        "backlinksFor": "Liens entrants pour"
     },
     "importer": {
         "title": "Importer des notes",
@@ -1313,5 +1316,9 @@
         "exitHint": "Appuyez sur Échap pour quitter",
         "activate": "Entrer en concentration",
         "wordCount": "mots"
+    },
+    "dashboard": {
+        "show": "Afficher le tableau de bord",
+        "hide": "Masquer le tableau de bord"
     }
 }

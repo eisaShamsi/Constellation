@@ -1068,7 +1068,10 @@
             "recentlyEdited": "حال ہی میں ترمیم شدہ",
             "tags": "ٹیگز"
         },
-        "graphView": "Sky View"
+        "graphView": "Sky View",
+        "splitCompanion": "ساتھی پینل",
+        "noProperties": "کوئی خصوصیات نہیں",
+        "backlinksFor": "بیک لنکس برائے"
     },
     "importer": {
         "title": "نوٹس درآمد کریں",
@@ -1313,5 +1316,9 @@
         "exitHint": "باہر نکلنے کے لیے Escape دبائیں",
         "activate": "توجہ میں داخل ہوں",
         "wordCount": "الفاظ"
+    },
+    "dashboard": {
+        "show": "ڈیش بورڈ دکھائیں",
+        "hide": "ڈیش بورڈ چھپائیں"
     }
 }
