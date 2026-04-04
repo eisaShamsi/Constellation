@@ -126,6 +126,7 @@ class CalloutTitleWidget extends WidgetType {
 		// Title text
 		const titleEl = document.createElement('span');
 		titleEl.className = 'cm-callout-title-text';
+		titleEl.setAttribute('dir', 'auto');
 		titleEl.textContent = this.title ? ' ' + this.title : '';
 		wrap.appendChild(titleEl);
 
@@ -363,7 +364,7 @@ export const calloutTheme = EditorView.theme({
 		display: 'none',
 	},
 	// Widget layout
-	'.cm-callout-title-widget': { display: 'inline' },
+	'.cm-callout-title-widget': { display: 'inline', direction: 'inherit' },
 	'.cm-callout-icon': {
 		fontWeight: '600',
 		fontSize: '0.95em',
