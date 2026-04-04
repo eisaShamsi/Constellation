@@ -382,6 +382,15 @@ Wenn das Hauptfenster im Datei-Explorer-Modus ist, zeigt der zweite Bildschirm e
 - **Zuletzt geoeffnet** — Notizen, die Sie geoeffnet, aber nicht bearbeitet haben
 - **Tags** — Alle Tags ueber Bibliotheken hinweg nach Haeufigkeit sortiert; klicken Sie auf einen Tag, um alle zugehoerigen Notizen zu sehen
 
+### Dashboard-Interaktion
+
+Wenn das Dashboard im Hauptfenster aktiv ist, werden durch Klicken auf Elemente diese an den zweiten Bildschirm gesendet:
+
+- **Zuletzt bearbeitet/geoeffnet**: Klicken Sie auf eine Notiz, um sie als vollstaendigen Editor auf dem zweiten Bildschirm zu oeffnen
+- **Tags**: Klicken Sie auf einen Tag, um alle Notizen mit diesem Tag in einer geteilten Ansicht anzuzeigen — Notizliste links, vollstaendiger Editor rechts
+
+Alle Bearbeitungen auf dem zweiten Bildschirm werden automatisch mit dem Hauptfenster synchronisiert.
+
 ### Notizen im zweiten Bildschirm bearbeiten
 
 Der zweite Bildschirm unterstuetzt die vollstaendige Notizbearbeitung — tippen, speichern, umbenennen und Eigenschaften aendern, genau wie im Hauptfenster. Aenderungen werden automatisch mit dem Hauptfenster synchronisiert.

@@ -382,6 +382,15 @@ Quando a janela principal esta no modo Explorador de Arquivos, a segunda tela ex
 - **Abertas Recentemente** — Notas que voce abriu mas nao editou na sessao atual
 - **Tags** — Todas as tags de todas as bibliotecas ordenadas por quantidade; clique em uma tag para ver todas as notas que a utilizam
 
+### Interacao do painel
+
+Quando o painel esta ativo na janela principal, clicar nos itens os envia para a segunda tela:
+
+- **Editadas/Abertas Recentemente**: Clique em uma nota para abri-la como editor completo na segunda tela
+- **Tags**: Clique em uma tag para mostrar todas as notas que a utilizam em uma visualizacao dividida — lista de notas a esquerda, editor completo a direita
+
+Todas as edicoes na segunda tela sao sincronizadas automaticamente com a janela principal.
+
 ### Edicao de Notas na Segunda Tela
 
 A segunda tela suporta edicao completa de notas — digite, salve, renomeie e altere propriedades da mesma forma que na janela principal. As alteracoes sao sincronizadas automaticamente com a janela principal.

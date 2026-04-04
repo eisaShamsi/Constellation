@@ -92,7 +92,64 @@ All were passing legacy `tab={tabObj}` + invalid props (`isFocused`, `color`, `s
 - `docs/User Manual.md` + 14 translations
 - `docs/help.uConstellation.World/Second Screen/Second Screen.md`
 
+---
+
+## Phase: NoteEditor Extraction + Shared Utilities + SS Architecture Fix
+
+### Commits: `40950e8` → `48405ca`
+**Tag:** `milestone/dashboard-ss-interaction`
+
+### Architectural Principles Established
+
+1. **"Secure the winning"** — If a feature works, extract into a shared component. Never copy-paste and adapt. (CLAUDE.md rule + memory)
+2. **"Screens are displays, not domains"** — Second screen mounts core components, never re-implements save/load/edit. (CLAUDE.md rule + memory)
+
+### NoteEditor Wrapper
+- Created `NoteEditor.svelte` — accepts a tab-like object, handles all save/flush/rename/stage internally
+- Replaced all 7 NotePane call sites (main editor, split view, index preview, SS detail, SS peek, dashboard note, dashboard tag note)
+- Net: **291 added, 490 removed** — eliminated ~200 lines of duplicated callback code
+
+### Shared Utilities Extracted
+- `colors.ts` — `buildLibraryColorMap()` replaces duplicate color arrays
+- `recentNotes.ts` — `getRecentLists()`, `addRecentOpened()`, `addRecentEdited()`
+- `tagUtils.ts` — `scanAllLibraryTags()` replaces duplicate merge loops
+
+### Second Screen Architecture Fix
+- Removed `onNoteSaved` content re-read (NoteEditor handles its own state)
+- `loadAllData()` only shows spinner on first startup (`initialLoadDone` guard)
+- Main window now listens for `screen:note-saved` to sync SS edits back
+- Dashboard tag click: sends to SS when open, no local split panel duplication
+
+### Callout RTL Fix
+- Detect RTL script from title/body text content explicitly
+- Set `dir="rtl"` or `dir="ltr"` on callout line decorations — no more `dir="auto"` fooled by emoji icons
+
+### Breadcrumb Alignment
+- Matched `.e-breadcrumb` padding to `.e-paper` padding (16px → 48px)
+
+### Dashboard → SS Interaction (Tested & Confirmed)
+- Click recently edited/opened note → opens as full editor on SS ✓
+- Click tag → SS shows split view (note list + editor) ✓
+- Tag click with SS open → no duplicate panel on Dashboard ✓
+- Edits on SS persist and sync back to main window ✓
+- No "Loading..." flash during editing ✓
+- No editor slowness ✓
+
+### Files Created
+- `src/lib/components/NoteEditor.svelte`
+- `src/lib/libraries/colors.ts`
+- `src/lib/libraries/recentNotes.ts`
+- `src/lib/libraries/tagUtils.ts`
+
+### Files Modified
+- `src/routes/+layout.svelte` — NoteEditor usage, onNoteSaved listener, breadcrumb padding
+- `src/lib/components/SecondScreenPage.svelte` — NoteEditor usage, architecture fix
+- `src/lib/components/DashboardView.svelte` — shared utilities, tag-to-SS logic
+- `src/lib/components/NotePane.svelte` — breadcrumb padding
+- `src/lib/editor/calloutPlugin.ts` — RTL direction detection
+- `CLAUDE.md` — two new principle rules
+
 ### Open Items
 - CE Layer 2: Pending
-- Dashboard in second screen: test tag interaction and note clicking
-- Split companion: backlinks/tasks panels need library scan integration
+- Font theme application: still duplicated between +layout.svelte and SecondScreenPage (~65 lines)
+- SS dead code cleanup: loadDashboardData, tag/recent state variables still present

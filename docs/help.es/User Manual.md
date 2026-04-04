@@ -382,6 +382,15 @@ Cuando la ventana principal esta en modo Explorador de archivos, la segunda pant
 - **Abiertas recientemente** — Notas que abriste pero no editaste en la sesion actual
 - **Etiquetas** — Todas las etiquetas de todas las bibliotecas ordenadas por cantidad; haz clic en una etiqueta para ver todas las notas que la usan
 
+### Interaccion del panel
+
+Cuando el panel esta activo en la ventana principal, al hacer clic en los elementos se envian a la segunda pantalla:
+
+- **Editadas/Abiertas recientemente**: Haz clic en una nota para abrirla como editor completo en la segunda pantalla
+- **Etiquetas**: Haz clic en una etiqueta para mostrar todas las notas que la usan en una vista dividida — lista de notas a la izquierda, editor completo a la derecha
+
+Todas las ediciones en la segunda pantalla se sincronizan automaticamente con la ventana principal.
+
 ### Edicion de notas en la Segunda Pantalla
 
 La segunda pantalla soporta edicion completa de notas — escribe, guarda, renombra y cambia propiedades igual que en la ventana principal. Los cambios se sincronizan automaticamente con la ventana principal.

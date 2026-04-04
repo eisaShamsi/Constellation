@@ -132,6 +132,27 @@ The second screen supports full note editing in all modes:
 
 ---
 
+## Dashboard Interaction
+
+When the Dashboard is active on the main window (no notes open), clicking items on the Dashboard sends them to the second screen:
+
+### Recently Edited/Opened Notes
+
+Click any note in the Recently Edited or Recently Opened section. The second screen opens that note as a full editor — you can read, edit, save, and change properties without leaving the Dashboard.
+
+### Tag Browsing
+
+Click any tag on the Dashboard. The second screen switches to a split view:
+
+- **Left column**: All notes containing that tag, with library color dots
+- **Right column**: Click any note in the list to open it as a full editor
+
+The Dashboard stays clean — the tag split panel only appears on the second screen, not on the main window.
+
+All edits made on the second screen are saved to disk and synced back to the main window automatically.
+
+---
+
 ## Navigator Companion
 
 When the main window is in Navigator mode, the second screen shows a full Navigator view. Click notes to open them in the main window. Double-click to send them to the main window.

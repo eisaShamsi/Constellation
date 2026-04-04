@@ -495,6 +495,15 @@ When the main window is in File Explorer mode, the second screen displays a dash
 - **Recently Opened** — Notes you opened but did not edit in the current session
 - **Tags** — All tags across libraries sorted by count; click a tag to see all notes using it
 
+### Dashboard Interaction
+
+When the Dashboard is active on the main window, clicking items sends them to the second screen:
+
+- **Recently Edited/Opened**: Click a note to open it as a full editor on the second screen
+- **Tags**: Click a tag to show all notes using it in a split view — note list on the left, full editor on the right
+
+All edits on the second screen sync back to the main window automatically.
+
 ### Note Editing in Second Screen
 
 The second screen supports full note editing — type, save, rename, and change properties just like the main window. Changes sync back to the main window automatically.

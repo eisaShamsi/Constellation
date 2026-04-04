@@ -382,6 +382,15 @@ Lorsque la fenetre principale est en mode Explorateur de fichiers, le second ecr
 - **Recemment ouvertes** — Notes que vous avez ouvertes mais pas modifiees dans la session actuelle
 - **Etiquettes** — Toutes les etiquettes de toutes les bibliotheques triees par nombre ; cliquez sur une etiquette pour voir toutes les notes associees
 
+### Interaction du tableau de bord
+
+Lorsque le tableau de bord est actif dans la fenetre principale, cliquer sur les elements les envoie au second ecran :
+
+- **Recemment modifiees/ouvertes** : Cliquez sur une note pour l'ouvrir en tant qu'editeur complet sur le second ecran
+- **Etiquettes** : Cliquez sur une etiquette pour afficher toutes les notes l'utilisant en vue fractionnee — liste de notes a gauche, editeur complet a droite
+
+Toutes les modifications sur le second ecran sont synchronisees automatiquement avec la fenetre principale.
+
 ### Modification de notes dans le second ecran
 
 Le second ecran prend en charge la modification complete des notes — tapez, sauvegardez, renommez et modifiez les proprietes comme dans la fenetre principale. Les modifications se synchronisent automatiquement avec la fenetre principale.

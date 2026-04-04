@@ -382,6 +382,15 @@ Ana pencere Dosya Gezgini modundayken, ikinci ekran aşağıdakileri içeren bir
 - **Son Açılan** — Geçerli oturumda açtığınız ancak düzenlemediğiniz notlar
 - **Etiketler** — Tüm kütüphanelerdeki tüm etiketler sayıya göre sıralanmış; bir etikete tıklayarak onu kullanan tüm notları görün
 
+### Pano etkileşimi
+
+Ana pencerede pano etkinken, öğelere tıklamak onları ikinci ekrana gönderir:
+
+- **Son Düzenlenen/Açılan**: Bir nota tıklayarak ikinci ekranda tam düzenleyici olarak açın
+- **Etiketler**: Bir etikete tıklayarak onu kullanan tüm notları bölünmüş görünümde gösterin — solda not listesi, sağda tam düzenleyici
+
+İkinci ekrandaki tüm düzenlemeler otomatik olarak ana pencereyle senkronize edilir.
+
 ### İkinci Ekranda Not Düzenleme
 
 İkinci ekran tam not düzenlemeyi destekler — ana penceredeki gibi yazın, kaydedin, yeniden adlandırın ve özellikleri değiştirin. Değişiklikler otomatik olarak ana pencereyle senkronize edilir.
