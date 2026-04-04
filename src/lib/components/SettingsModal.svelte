@@ -130,6 +130,22 @@
 		}
 	}
 
+	// Propagate visual settings changes to second screen
+	let _lastSettingsHash = '';
+	$effect(() => {
+		const s = $appSettings;
+		const hash = `${s.colorScheme}|${s.fontSize}|${s.interfaceFontSize}|${s.readableLineLength}|${s.showLineNumbers}|${s.showFloatingToolbar}|${s.fontTheme}|${s.primaryScript}|${s.accentColor}`;
+		if (_lastSettingsHash && hash !== _lastSettingsHash) {
+			notifySettingsChanged({
+				colorScheme: s.colorScheme, fontSize: s.fontSize, interfaceFontSize: s.interfaceFontSize,
+				readableLineLength: s.readableLineLength, showLineNumbers: s.showLineNumbers,
+				showFloatingToolbar: s.showFloatingToolbar, fontTheme: s.fontTheme,
+				primaryScript: s.primaryScript, accentColor: s.accentColor,
+			});
+		}
+		_lastSettingsHash = hash;
+	});
+
 	// System fonts detection — start with curated list, then enhance with system fonts
 	const CURATED_FONTS = [
 		'Arial', 'Calibri', 'Cambria', 'Cascadia Code', 'Comic Sans MS', 'Consolas',

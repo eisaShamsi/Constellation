@@ -56,7 +56,7 @@
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
-	import LinkDashboard from '$lib/components/LinkDashboard.svelte';
+
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
@@ -65,7 +65,7 @@
 	import ReviewPulsePanel from '$lib/components/ReviewPulsePanel.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
-	import Inspector360 from '$lib/components/Inspector360.svelte';
+	// import Inspector360 from '$lib/components/Inspector360.svelte'; // CE Phase 12: disabled — revisit later
 	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
@@ -299,12 +299,12 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'inspector360'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review'>('properties');
 	let dueNotes = $state<any[]>([]); // CE Phase 7: ReviewPulse due notes
 	let activeTrail = $state<any>(null); // CE Phase 8: active trail data
 	let showExpressionForge = $state(false); // CE Phase 10
 	let showSenseMakingCanvas = $state(false); // CE Phase 11
-	let inspector360Data = $state<any>(null); // CE Phase 12
+	// let inspector360Data = $state<any>(null); // CE Phase 12: disabled — revisit later
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
@@ -314,6 +314,7 @@
 	let leftSidebarWidth = $state(300);
 	let rightSidebarWidth = $state(300);
 	let resizing = $state<'left' | 'right' | null>(null);
+	let splitPaneSizes = $state<number[]>([]); // flex values per pane in split view
 
 	// Command palette & quick switcher
 	let showCommandPalette = $state(false);
@@ -606,6 +607,52 @@
 			document.removeEventListener('mousemove', onMouseMove);
 			document.removeEventListener('mouseup', onMouseUp);
 		};
+	}
+
+	function ensureSplitSizes(count: number) {
+		if (splitPaneSizes.length !== count) {
+			splitPaneSizes = Array(count).fill(1);
+		}
+	}
+
+	function startSplitResize(dividerIndex: number, e: MouseEvent) {
+		e.preventDefault();
+		const container = (e.target as HTMLElement).parentElement;
+		if (!container) return;
+		ensureSplitSizes(get(openTabs).length);
+		const isHoriz = $splitActive && $splitDirection === 'horizontal';
+		const isRtl = $dir === 'rtl';
+		// Get the two pane elements adjacent to this divider
+		const panes = container.querySelectorAll('.split-pane-wrap');
+		const paneA = panes[dividerIndex] as HTMLElement;
+		const paneB = panes[dividerIndex + 1] as HTMLElement;
+		if (!paneA || !paneB) return;
+		const totalSize = isHoriz
+			? paneA.offsetHeight + paneB.offsetHeight
+			: paneA.offsetWidth + paneB.offsetWidth;
+		const startPos = isHoriz ? e.clientY : e.clientX;
+		const startSizeA = isHoriz ? paneA.offsetHeight : paneA.offsetWidth;
+
+		function onMouseMove(ev: MouseEvent) {
+			let delta = (isHoriz ? ev.clientY : ev.clientX) - startPos;
+			if (!isHoriz && isRtl) delta = -delta;
+			const newA = Math.max(100, Math.min(totalSize - 100, startSizeA + delta));
+			const newB = totalSize - newA;
+			// Update flex ratios for these two panes only
+			const sizes = [...splitPaneSizes];
+			const totalFlex = sizes[dividerIndex] + sizes[dividerIndex + 1];
+			sizes[dividerIndex] = (newA / totalSize) * totalFlex;
+			sizes[dividerIndex + 1] = (newB / totalSize) * totalFlex;
+			splitPaneSizes = sizes;
+		}
+
+		function onMouseUp() {
+			document.removeEventListener('mousemove', onMouseMove);
+			document.removeEventListener('mouseup', onMouseUp);
+		}
+
+		document.addEventListener('mousemove', onMouseMove);
+		document.addEventListener('mouseup', onMouseUp);
 	}
 
 	// Library trees
@@ -1016,7 +1063,7 @@
 			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { sidebarOpen = true; searchMode = true; }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
-			{ id: 'star-view', name: $t('commands.starView'), shortcut: sc('star-view'), icon: '🕸️', action: () => showStarView = !showStarView, category: 'View' },
+			{ id: 'star-view', name: $t('commands.starView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showStarView = !showStarView; }, category: 'View' },
 			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showStarView = false; }, category: 'View' },
 			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
 			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: sc('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
@@ -1054,7 +1101,7 @@
 			}, category: 'Navigation' },
 			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
 			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showStarView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; }, category: 'View' },
-			{ id: 'inspector-360', name: $t('commands.inspector360') || '360.3D Inspector', icon: '🔮', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'inspector360'; const tab = get(focusedTab); if (tab?.path && tab?.libraryPath) { invoke<any>('get_360_view', { libraryPath: tab.libraryPath, notePath: tab.path }).then(d => { inspector360Data = d; }).catch(() => {}); } }, category: 'View' },
+
 			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; }, category: 'View' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
@@ -2928,12 +2975,72 @@
 			{:else if showIndex}
 				<div class="index-split" class:has-note={indexNoteTab}>
 					{#if indexNoteTab}
+						{@const _ip = parseFrontmatter(indexNoteTab.content || '')}
+						{@const _ibody = _ip.body}
+						{@const _idir = detectDir(_ibody) || $dir}
+						{@const _iGuard = { saving: false }}
 						<div class="index-note-pane">
 							<div class="index-note-header">
 								<span class="index-note-name" dir="auto">{indexNoteTab.name}</span>
 								<button class="index-close" onclick={() => { indexNoteTab = null; indexActiveNotePath = ''; }} title="Close note">×</button>
 							</div>
-							<NotePane tab={indexNoteTab} isFocused={true} onFocus={() => {}} color={libraryColorMap[indexNoteTab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
+							{#key indexNoteTab.id + '|' + indexNoteTab.path}
+							<NotePane
+								value={_ibody}
+								title={indexNoteTab.name.replace(/\.md$/, '')}
+								dir={_idir}
+								initialCursorPos={indexNoteTab.cursorPos ?? 0}
+								initialScrollTop={indexNoteTab.scrollTop ?? 0}
+								libraryName={indexNoteTab.libraryName}
+								tabId={indexNoteTab.id}
+								filePath={indexNoteTab.path}
+								libraryPath={indexNoteTab.libraryPath || ''}
+								noteNames={allNotes}
+								allTags={allTagsList}
+								properties={_ip.properties}
+								rawYaml={_ip.rawYaml ?? ''}
+								stage={_ip.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
+								onchange={() => {}}
+								onpromote={(nextStage) => {
+									const pr = parseFrontmatter(indexNoteTab?.content || '').properties;
+									const bd = parseFrontmatter(indexNoteTab?.content || '').body;
+									let np;
+									if (!nextStage) { np = pr.filter(p => p.key.toLowerCase() !== 'stage'); }
+									else {
+										let u = false;
+										np = pr.map(p => { if (p.key.toLowerCase() === 'stage') { u = true; return { ...p, value: nextStage }; } return p; });
+										if (!u) np.push({ key: 'stage', value: nextStage, type: 'text' as any });
+									}
+									const fc = buildFullContent(np, bd);
+									if (indexNoteTab) indexNoteTab.content = fc;
+									markRecentWrite(indexNoteTab!.path);
+									writeNote(indexNoteTab!.path, fc).catch(() => {});
+								}}
+								onsave={(text) => {
+									if (_iGuard.saving) return;
+									_iGuard.saving = true;
+									const pr = parseFrontmatter(indexNoteTab?.content || '').properties;
+									markRecentWrite(indexNoteTab!.path);
+									const content = buildFullContent(pr, text);
+									writeNote(indexNoteTab!.path, content).catch(() => {}).finally(() => { _iGuard.saving = false; });
+								}}
+								onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
+									const pr = parseFrontmatter(indexNoteTab?.content || '').properties;
+									const content = buildFullContent(pr, text);
+									if (indexNoteTab) { indexNoteTab.content = content; indexNoteTab.cursorPos = cursorPos; indexNoteTab.scrollTop = scrollTop; }
+									if (needsDiskSave) {
+										markRecentWrite(indexNoteTab!.path);
+										writeNote(indexNoteTab!.path, content).catch(() => {});
+									}
+								}}
+								ontitlechange={(newTitle) => {
+									if (indexNoteTab && newTitle !== indexNoteTab.name.replace(/\.md$/, '')) {
+										renameItem(indexNoteTab.path, indexNoteTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
+									}
+								}}
+								onpropschange={() => {}}
+							/>
+							{/key}
 						</div>
 						<div class="index-split-divider"></div>
 					{/if}
@@ -2958,9 +3065,89 @@
 					{#if $splitActive}
 						{#each $openTabs as tab, i (tab.id)}
 							{#if i > 0}
-								<div class="pane-divider"></div>
+								<!-- svelte-ignore a11y_no_static_element_interactions -->
+								<div class="pane-divider" onmousedown={(e) => startSplitResize(i - 1, e)}></div>
 							{/if}
-							<NotePane {tab} isFocused={$focusedTabId === tab.id} onFocus={() => setFocusedTab(tab.id)} color={libraryColorMap[tab.libraryName]} splitView {libraryTrees} allTags={allTagsList} {allNotes} {libraryColorMap} />
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<div class="split-pane-wrap" style="flex:{splitPaneSizes[i] ?? 1}" onclick={() => setFocusedTab(tab.id)}>
+							{#if tab.path}
+								{@const _sp = parseFrontmatter(tab.content || '')}
+								{@const _sbody = _sp.body}
+								{@const _sdir = detectDir(_sbody) || $dir}
+								{@const _sGuard = { saving: false }}
+								{#key tab.id + '|' + tab.path}
+								<NotePane
+									value={_sbody}
+									title={tab.name.replace(/\.md$/, '')}
+									dir={_sdir}
+									initialCursorPos={tab.cursorPos ?? 0}
+									initialScrollTop={tab.scrollTop ?? 0}
+									libraryName={tab.libraryName}
+									tabId={tab.id}
+									filePath={tab.path}
+									libraryPath={tab.libraryPath || ''}
+									noteNames={allNotes}
+									allTags={allTagsList}
+									properties={_sp.properties}
+									rawYaml={_sp.rawYaml ?? ''}
+									stage={_sp.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
+									canGoBack={(tab.historyIndex ?? 0) > 0}
+									canGoForward={(tab.historyIndex ?? 0) < (tab.history?.length ?? 1) - 1}
+									onchange={() => {}}
+									onpromote={(nextStage) => {
+										const ct = get(openTabs).find(x => x.id === tab.id);
+										const pr = ct ? parseFrontmatter(ct.content || '').properties : _sp.properties;
+										const bd = ct ? parseFrontmatter(ct.content || '').body : _sbody;
+										let np;
+										if (!nextStage) { np = pr.filter(p => p.key.toLowerCase() !== 'stage'); }
+										else {
+											let u = false;
+											np = pr.map(p => { if (p.key.toLowerCase() === 'stage') { u = true; return { ...p, value: nextStage }; } return p; });
+											if (!u) np.push({ key: 'stage', value: nextStage, type: 'text' as any });
+										}
+										const fc = buildFullContent(np, bd);
+										if (ct) { ct.content = fc; openTabs.update(tabs => tabs); }
+										markRecentWrite(tab.path);
+										writeNote(tab.path, fc).catch(() => {});
+										const key = tab.path.replace(/\\/g, '/').toLowerCase();
+										const nm = new Map(stageMap);
+										if (nextStage) { nm.set(key, nextStage); } else { nm.delete(key); }
+										stageMap = nm;
+									}}
+									onsave={(text) => {
+										if (_sGuard.saving) return;
+										_sGuard.saving = true;
+										const ct = get(openTabs).find(x => x.id === tab.id);
+										const pr = ct ? parseFrontmatter(ct.content || '').properties : _sp.properties;
+										markRecentWrite(tab.path);
+										const content = buildFullContent(pr, text);
+										writeNote(tab.path, content).catch(() => {}).finally(() => { _sGuard.saving = false; });
+									}}
+									onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
+										const ct = get(openTabs).find(x => x.id === tab.id);
+										const pr = ct ? parseFrontmatter(ct.content || '').properties : _sp.properties;
+										const content = buildFullContent(pr, text);
+										if (ct) { ct.content = content; ct.cursorPos = cursorPos; ct.scrollTop = scrollTop; }
+										setWriteAhead(tab.path, content, cursorPos, scrollTop);
+										if (needsDiskSave) {
+											markRecentWrite(tab.path);
+											writeNote(tab.path, content).then(() => clearWriteAhead(tab.path)).catch(() => {});
+										}
+									}}
+									ontitlechange={(newTitle) => {
+										if (newTitle !== tab.name.replace(/\.md$/, '')) {
+											renameItem(tab.path, tab.path.replace(/[^/\\]+$/, newTitle + '.md'));
+										}
+									}}
+									onnavigateback={() => { setFocusedTab(tab.id); navigateBack(); }}
+									onnavigateforward={() => { setFocusedTab(tab.id); navigateForward(); }}
+									onpropschange={() => { openTabs.update(tabs => tabs); }}
+								/>
+								{/key}
+							{:else}
+								<div class="new-tab-screen"><p>{$t('tabs.newTab')}</p></div>
+							{/if}
+							</div>
 						{/each}
 					{:else if $activeTab && !$activeTab.path}
 						<div class="new-tab-screen">
@@ -3281,16 +3468,6 @@
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 					{#if dueNotes.length > 0}<span class="rs-tab-badge">{dueNotes.length}</span>{/if}
 				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'inspector360'} onclick={() => {
-					rightSidebarTab = 'inspector360';
-					const tab = $focusedTab;
-					if (tab?.path && tab?.libraryPath) {
-						invoke<any>('get_360_view', { libraryPath: tab.libraryPath, notePath: tab.path })
-							.then(d => { inspector360Data = d; }).catch(() => { inspector360Data = null; });
-					}
-				}} title={$t('panels.inspector360') || '360.3D'}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
-				</button>
 			</div>
 
 			{#if isHome && sidebarTab}
@@ -3446,17 +3623,6 @@
 							}}
 						/>
 					</div>
-				{:else if rightSidebarTab === 'inspector360'}
-					<div class="rs-section rs-full-height">
-						<Inspector360
-							data={inspector360Data}
-							compact={true}
-							onNoteClick={(path, name) => {
-								const lib = $libraryStats.find(l => path.startsWith(l.path));
-								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-							}}
-						/>
-					</div>
 				{:else if rightSidebarTab === 'review'}
 					<div class="rs-section rs-full-height">
 						<ReviewPulsePanel
@@ -3582,7 +3748,7 @@
 					sidebarOpen = layout.leftSidebarOpen;
 					leftSidebarWidth = layout.leftSidebarWidth;
 					rightSidebarOpen = layout.rightSidebarOpen;
-					const validTabs = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar'] as const;
+					const validTabs = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review'] as const;
 					rightSidebarTab = validTabs.includes(layout.rightSidebarTab as any) ? layout.rightSidebarTab as typeof rightSidebarTab : 'properties';
 					rightSidebarWidth = layout.rightSidebarWidth;
 				}
@@ -4140,10 +4306,12 @@
 	}
 	.pane-container > :global(*) { flex: 1; min-width: 0; min-height: 0; }
 	.pane-container.horizontal { flex-direction: column; }
-	.pane-divider { flex-shrink: 0; background: var(--border); }
+	.pane-divider { flex: 0 0 auto !important; background: var(--border); }
 	.pane-container:not(.horizontal) > .pane-divider { width: 3px; cursor: col-resize; }
 	.pane-container.horizontal > .pane-divider { height: 3px; cursor: row-resize; }
 	.pane-divider:hover { background: var(--accent); }
+	.split-pane-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
+	.split-pane-wrap :global(.e-desk) { padding-inline: 8px !important; }
 
 	/* Star fullscreen */
 	.star-fullscreen {

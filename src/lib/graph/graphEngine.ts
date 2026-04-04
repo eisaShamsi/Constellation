@@ -146,6 +146,9 @@ export class GraphEngine {
 	private highlightSet: Set<number> = new Set();
 	private highlightColor: number = 0x7c3aed;
 
+	// CE Phase 8: Trail path overlay
+	private trailNodeIndices: number[] = [];
+
 	// Focus mode
 	private focusNodeIdx: number = -1;
 	private focusDepth: number = 2;
@@ -550,6 +553,17 @@ export class GraphEngine {
 		this.clusterAssignments.clear();
 		this.clusterColors.clear();
 		this.showClusters = false;
+		this.needsRedraw = true;
+	}
+
+	/** CE Phase 8: Set trail path for overlay rendering. Paths are note file paths in order. */
+	setTrailPath(notePaths: string[]): void {
+		this.trailNodeIndices = [];
+		for (const p of notePaths) {
+			const norm = p.replace(/\\/g, '/').toLowerCase();
+			const idx = this.nodes.findIndex(n => n.path.replace(/\\/g, '/').toLowerCase() === norm);
+			if (idx >= 0) this.trailNodeIndices.push(idx);
+		}
 		this.needsRedraw = true;
 	}
 
@@ -1744,6 +1758,23 @@ export class GraphEngine {
 			if (n.outgoingCount >= 5) {
 				gfx.circle(sx, sy, r + 1.5);
 				gfx.stroke({ width: 1.5, color: MOC_RING_COLOR, alpha: alpha });
+			}
+		}
+
+		// CE Phase 8: Trail path overlay — thick colored line connecting trail notes in order
+		if (this.trailNodeIndices.length >= 2 && this.app) {
+			const TRAIL_COLOR = 0xFF6B6B;
+			const w = this.app.screen.width;
+			const h = this.app.screen.height;
+			for (let i = 0; i < this.trailNodeIndices.length - 1; i++) {
+				const a = this.nodes[this.trailNodeIndices[i]];
+				const b = this.nodes[this.trailNodeIndices[i + 1]];
+				if (!a || !b) continue;
+				const pa = this.project3D(a.x + this.viewX, a.y + this.viewY, a.z, w, h);
+				const pb = this.project3D(b.x + this.viewX, b.y + this.viewY, b.z, w, h);
+				this.linkGfx.moveTo(pa.sx, pa.sy);
+				this.linkGfx.lineTo(pb.sx, pb.sy);
+				this.linkGfx.stroke({ width: 3, color: TRAIL_COLOR, alpha: 0.8 });
 			}
 		}
 

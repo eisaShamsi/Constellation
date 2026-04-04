@@ -10,13 +10,16 @@
 		loadLibraryAppearance,
 		openNoteTab, openTabs, activeTabId, activeTab,
 		switchTab, closeTab,
-		parseFrontmatter,
+		parseFrontmatter, buildFullContent,
+		writeNote, markRecentWrite, setWriteAhead, clearWriteAhead,
+		renameItem,
 		scanLibraryLinks, scanLibraryTags,
 		buildStarData,
 		libraryStats, loadAllStats,
 		SCRIPT_UNICODE_RANGES, getFontSetById,
 		type StarNode, type StarLink
 	} from '$lib/libraries/store';
+	import { detectDir } from '$lib/utils';
 	import { get } from 'svelte/store';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
@@ -648,14 +651,52 @@
 										</button>
 									</div>
 									<div class="peek-editor">
-										<NotePane
-											tab={peekTab}
-											isFocused={true}
-											onFocus={() => {}}
-											color={peekNote?.libraryColor || '#7c3aed'}
-											allNotes={allNotes}
-											{libraryColorMap}
-										/>
+										{#if peekTab.path}
+											{@const _pp = parseFrontmatter(peekTab.content || '')}
+											{@const _pbody = _pp.body}
+											{@const _pdir = detectDir(_pbody) || $dir}
+											{@const _pGuard = { saving: false }}
+											{#key peekTab.id + '|' + peekTab.path}
+											<NotePane
+												value={_pbody}
+												title={peekTab.name.replace(/\.md$/, '')}
+												dir={_pdir}
+												libraryName={peekTab.libraryName}
+												tabId={peekTab.id}
+												filePath={peekTab.path}
+												libraryPath={peekTab.libraryPath || ''}
+												noteNames={allNotes}
+												allTags={[]}
+												properties={_pp.properties}
+												rawYaml={_pp.rawYaml ?? ''}
+												stage={_pp.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
+												onchange={() => {}}
+												onsave={(text) => {
+													if (_pGuard.saving) return;
+													_pGuard.saving = true;
+													const pr = parseFrontmatter(peekTab?.content || '').properties;
+													markRecentWrite(peekTab!.path);
+													const content = buildFullContent(pr, text);
+													writeNote(peekTab!.path, content).catch(() => {}).finally(() => { _pGuard.saving = false; });
+												}}
+												onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
+													const pr = parseFrontmatter(peekTab?.content || '').properties;
+													const content = buildFullContent(pr, text);
+													if (peekTab) { peekTab.content = content; }
+													if (needsDiskSave) {
+														markRecentWrite(peekTab!.path);
+														writeNote(peekTab!.path, content).catch(() => {});
+													}
+												}}
+												ontitlechange={(newTitle) => {
+													if (peekTab && newTitle !== peekTab.name.replace(/\.md$/, '')) {
+														renameItem(peekTab.path, peekTab.path.replace(/[^/\\]+$/, newTitle + '.md'));
+													}
+												}}
+												onpropschange={() => {}}
+											/>
+											{/key}
+										{/if}
 									</div>
 								</div>
 							{:else}
@@ -1071,14 +1112,80 @@
 					</div>
 				{/if}
 				<div class="note-area" style="--note-width:{noteWidth}%">
-					<NotePane
-						tab={$activeTab}
-						isFocused={true}
-						onFocus={() => {}}
-						color={$activeTab?.libraryColor || '#7c3aed'}
-						allNotes={allNotes}
-						{libraryColorMap}
-					/>
+					{#if $activeTab?.path}
+						{@const _dp = parseFrontmatter($activeTab.content || '')}
+						{@const _dbody = _dp.body}
+						{@const _ddir = detectDir(_dbody) || $dir}
+						{@const _dGuard = { saving: false }}
+						{#key $activeTab.id + '|' + $activeTab.path}
+						<NotePane
+							value={_dbody}
+							title={$activeTab.name.replace(/\.md$/, '')}
+							dir={_ddir}
+							initialCursorPos={$activeTab.cursorPos ?? 0}
+							initialScrollTop={$activeTab.scrollTop ?? 0}
+							libraryName={$activeTab.libraryName}
+							tabId={$activeTab.id}
+							filePath={$activeTab.path}
+							libraryPath={$activeTab.libraryPath || ''}
+							noteNames={allNotes}
+							allTags={[]}
+							properties={_dp.properties}
+							rawYaml={_dp.rawYaml ?? ''}
+							stage={_dp.properties.find(p => p.key.toLowerCase() === 'stage')?.value ?? ''}
+							onchange={() => {}}
+							onpromote={(nextStage) => {
+								const ct = get(activeTab);
+								if (!ct) return;
+								const pr = parseFrontmatter(ct.content || '').properties;
+								const bd = parseFrontmatter(ct.content || '').body;
+								let np;
+								if (!nextStage) { np = pr.filter(p => p.key.toLowerCase() !== 'stage'); }
+								else {
+									let u = false;
+									np = pr.map(p => { if (p.key.toLowerCase() === 'stage') { u = true; return { ...p, value: nextStage }; } return p; });
+									if (!u) np.push({ key: 'stage', value: nextStage, type: 'text' as any });
+								}
+								const fc = buildFullContent(np, bd);
+								ct.content = fc;
+								openTabs.update(tabs => tabs);
+								markRecentWrite(ct.path);
+								writeNote(ct.path, fc).catch(() => {});
+							}}
+							onsave={(text) => {
+								if (_dGuard.saving) return;
+								_dGuard.saving = true;
+								const ct = get(activeTab);
+								if (!ct) { _dGuard.saving = false; return; }
+								const pr = parseFrontmatter(ct.content || '').properties;
+								markRecentWrite(ct.path);
+								const content = buildFullContent(pr, text);
+								writeNote(ct.path, content).catch(() => {}).finally(() => { _dGuard.saving = false; });
+							}}
+							onflush={(text, needsDiskSave, cursorPos, scrollTop) => {
+								const ct = get(activeTab);
+								if (!ct) return;
+								const pr = parseFrontmatter(ct.content || '').properties;
+								const content = buildFullContent(pr, text);
+								ct.content = content;
+								ct.cursorPos = cursorPos;
+								ct.scrollTop = scrollTop;
+								setWriteAhead(ct.path, content, cursorPos, scrollTop);
+								if (needsDiskSave) {
+									markRecentWrite(ct.path);
+									writeNote(ct.path, content).then(() => clearWriteAhead(ct.path)).catch(() => {});
+								}
+							}}
+							ontitlechange={(newTitle) => {
+								const ct = get(activeTab);
+								if (ct && newTitle !== ct.name.replace(/\.md$/, '')) {
+									renameItem(ct.path, ct.path.replace(/[^/\\]+$/, newTitle + '.md'));
+								}
+							}}
+							onpropschange={() => { openTabs.update(tabs => tabs); }}
+						/>
+						{/key}
+					{/if}
 				</div>
 			</div>
 
