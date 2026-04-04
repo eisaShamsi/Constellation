@@ -1420,7 +1420,134 @@ pub struct IndexEntry {
     pub is_compound: bool,
 }
 
-fn build_stopwords() -> std::collections::HashSet<&'static str> {
+/// Normalize Arabic text: unify hamza forms, remove tashkeel, normalize ta marbuta
+fn normalize_arabic(word: &str) -> String {
+    let mut result = String::with_capacity(word.len());
+    for ch in word.chars() {
+        match ch {
+            // Remove tashkeel (diacritics)
+            '\u{064B}'..='\u{065F}' | '\u{0670}' | '\u{06D6}'..='\u{06ED}' => continue,
+            // Normalize hamza variants → ا
+            'أ' | 'إ' | 'آ' | 'ٱ' => result.push('ا'),
+            // Normalize ta marbuta → ه
+            'ة' => result.push('ه'),
+            // Normalize alef maqsura → ي
+            'ى' => result.push('ي'),
+            // Tatweel (kashida) — remove
+            '\u{0640}' => continue,
+            _ => result.push(ch),
+        }
+    }
+    result
+}
+
+/// Remove common Arabic prefixes: و ف بـ كـ لـ الـ وال فال بال كال لل
+fn strip_arabic_prefix(word: &str) -> &str {
+    let chars: Vec<char> = word.chars().collect();
+    let len = chars.len();
+    if len < 3 { return word; } // don't strip very short words
+
+    // Three-char prefixes: وال فال بال كال
+    if len > 4 {
+        if (chars[0] == 'و' || chars[0] == 'ف' || chars[0] == 'ب' || chars[0] == 'ك')
+            && chars[1] == 'ا' && chars[2] == 'ل' {
+            let rest: String = chars[3..].iter().collect();
+            let byte_offset = word.len() - rest.len();
+            return &word[byte_offset..];
+        }
+    }
+
+    // Two-char prefixes: ال لل
+    if len > 3 {
+        if (chars[0] == 'ا' && chars[1] == 'ل') || (chars[0] == 'ل' && chars[1] == 'ل') {
+            let rest: String = chars[2..].iter().collect();
+            let byte_offset = word.len() - rest.len();
+            return &word[byte_offset..];
+        }
+    }
+
+    // Single-char prefixes: و ف بـ كـ لـ
+    if len > 3 {
+        if chars[0] == 'و' || chars[0] == 'ف' || chars[0] == 'ب' || chars[0] == 'ك' || chars[0] == 'ل' {
+            let rest: String = chars[1..].iter().collect();
+            let byte_offset = word.len() - rest.len();
+            return &word[byte_offset..];
+        }
+    }
+
+    word
+}
+
+/// Remove common Hebrew prefixes: ב ל מ ה ו כ ש
+fn strip_hebrew_prefix(word: &str) -> &str {
+    let chars: Vec<char> = word.chars().collect();
+    let len = chars.len();
+    if len < 3 { return word; }
+
+    // Two-char prefix: וה (and the)
+    if len > 3 && chars[0] == 'ו' && (chars[1] == 'ה' || chars[1] == 'ב' || chars[1] == 'ל' || chars[1] == 'מ' || chars[1] == 'כ') {
+        let rest: String = chars[2..].iter().collect();
+        let byte_offset = word.len() - rest.len();
+        return &word[byte_offset..];
+    }
+
+    // Single-char prefixes
+    if len > 3 {
+        match chars[0] {
+            'ב' | 'ל' | 'מ' | 'ה' | 'ו' | 'כ' | 'ש' => {
+                let rest: String = chars[1..].iter().collect();
+                let byte_offset = word.len() - rest.len();
+                return &word[byte_offset..];
+            }
+            _ => {}
+        }
+    }
+
+    word
+}
+
+/// Basic Arabic stemming: remove common suffixes
+fn stem_arabic(word: &str) -> String {
+    let chars: Vec<char> = word.chars().collect();
+    let len = chars.len();
+    if len < 4 { return word.to_string(); }
+
+    // Remove plural/dual/feminine suffixes
+    // ات ون ين ان ية ها هم كم نا تم
+    if len > 4 {
+        let last2: String = chars[len-2..].iter().collect();
+        match last2.as_str() {
+            "ات" | "ون" | "ين" | "ان" | "يه" | "ها" | "هم" | "كم" | "نا" | "تم" | "يا" | "وا" => {
+                return chars[..len-2].iter().collect();
+            }
+            _ => {}
+        }
+    }
+
+    // Remove single suffix: ة ه ي
+    if len > 3 {
+        match chars[len-1] {
+            'ه' | 'ي' => {
+                return chars[..len-1].iter().collect();
+            }
+            _ => {}
+        }
+    }
+
+    word.to_string()
+}
+
+/// Detect if a word is Arabic script
+fn is_arabic(word: &str) -> bool {
+    word.chars().any(|c| ('\u{0600}'..='\u{06FF}').contains(&c) || ('\u{0750}'..='\u{077F}').contains(&c) || ('\u{FB50}'..='\u{FDFF}').contains(&c) || ('\u{FE70}'..='\u{FEFF}').contains(&c))
+}
+
+/// Detect if a word is Hebrew script
+fn is_hebrew(word: &str) -> bool {
+    word.chars().any(|c| ('\u{0590}'..='\u{05FF}').contains(&c) || ('\u{FB1D}'..='\u{FB4F}').contains(&c))
+}
+
+fn build_stopwords() -> std::collections::HashSet<String> {
     let words: &[&str] = &[
         // English
         "the","be","to","of","and","a","in","that","have","i","it","for","not","on","with",
@@ -1434,14 +1561,27 @@ fn build_stopwords() -> std::collections::HashSet<&'static str> {
         "did","does","may","might","must","shall","should","being","is","am","very","too",
         "each","every","both","few","more","much","own","same","such","where","here","let",
         "still","yet","while","per","via","etc","else","done","got","put","set","run",
-        // Arabic
-        "في","من","على","إلى","هذا","هذه","التي","الذي","عن","مع","هو","هي","كان","كانت",
-        "ذلك","تلك","ما","لا","أن","إن","لم","لن","قد","ثم","أو","حتى","بين","عند","كل",
-        "بعد","قبل","بعض","نحو","أي","أنه","أنها","لقد","فقط","هنا","هناك","منذ","حيث",
-        "كما","إذا","عبر","ضد","خلال","حول","فيه","فيها","عليه","عليها","منه","منها",
-        "به","بها","له","لها","لهم","هؤلاء","أولئك","وهو","وهي","ولا","ولم","إلا",
-        "أما","إما","سوف","لكن","ليس","ليست","كذلك","أيضا","مثل","غير","دون","ضمن",
-        "تلك","ذات","ذو","ذي","التي","اللذين","اللتين","اللواتي","الذين",
+        // Arabic (including normalized forms)
+        "في","من","على","الى","هذا","هذه","التي","الذي","عن","مع","هو","هي","كان","كانت",
+        "ذلك","تلك","ما","لا","ان","ان","لم","لن","قد","ثم","او","حتى","بين","عند","كل",
+        "بعد","قبل","بعض","نحو","اي","انه","انها","لقد","فقط","هنا","هناك","منذ","حيث",
+        "كما","اذا","عبر","ضد","خلال","حول","فيه","فيها","عليه","عليها","منه","منها",
+        "به","بها","له","لها","لهم","هولاء","اولئك","وهو","وهي","ولا","ولم","الا",
+        "اما","سوف","لكن","ليس","ليست","كذلك","ايضا","مثل","غير","دون","ضمن",
+        "ذات","ذو","ذي","اللذين","اللتين","اللواتي","الذين","عليهم","لديه","لديها",
+        "وقد","ولقد","والتي","والذي","ومن","وعلى","وفي","ومع","وعن","والى",
+        // Hebrew
+        "של","הוא","היא","את","זה","זו","אני","אנחנו","הם","הן","אתה","את","אתם","אתן",
+        "יש","אין","לא","כי","גם","או","עם","על","אל","מן","אם","כל","עוד","רק","אבל",
+        "היה","היתה","היו","יהיה","כמו","אחר","אחרי","לפני","בין","אצל","עד","מאד","כבר",
+        "אז","שם","פה","למה","איך","מה","מי","איפה","מתי","כאשר","אשר","שלו","שלה","שלהם",
+        // Persian/Farsi
+        "از","به","در","با","که","این","آن","را","است","بر","تا","هم","و","یا","اما",
+        "برای","اگر","هر","یک","شد","بود","خود","ما","شما","او","آنها","ایشان","هیچ",
+        "چون","پس","زیرا","ولی","نه","بلکه","همه","بعد","قبل","بین","روی","زیر","کنار",
+        // Urdu
+        "کا","کی","کے","میں","ہے","کو","اور","سے","پر","نے","یہ","وہ","ایک","ہیں","تھا",
+        "اس","جو","بھی","نہیں","کر","ہو","تو","ہی","یا","اپنے","سب","کچھ","لیے","ساتھ",
         // French
         "le","la","les","de","des","du","un","une","et","est","en","que","qui","dans","pour",
         "sur","avec","par","pas","il","elle","ce","se","au","aux","son","sa","ses","ont","sont",
@@ -1460,7 +1600,7 @@ fn build_stopwords() -> std::collections::HashSet<&'static str> {
         "и","в","не","на","я","что","он","с","это","а","как","но","она","по","к","из","у",
         "за","так","то","все","мы","бы","от","до","же","вы","ее","его","для","их","уже",
         "при","без","ни","тот","эти","вот","чем","где","быть","был","была","были","нет",
-        "или","если","них","нас","вас","ему","ней","ним","них","себя","есть","очень","еще",
+        "или","если","них","нас","вас","ему","ней","ним","себя","есть","очень","еще",
         // Portuguese
         "o","a","os","as","de","da","do","em","no","na","um","uma","que","para","com","por",
         "se","mais","não","como","mas","foi","ao","dos","das","nos","nas","seu","sua","esse",
@@ -1470,8 +1610,23 @@ fn build_stopwords() -> std::collections::HashSet<&'static str> {
         // Hindi
         "का","के","की","में","है","को","और","से","पर","ने","यह","वह","एक","हैं","था",
         "इस","उस","कि","जो","भी","नहीं","कर","हो","तो","ही","या","अपने","सब","कुछ",
+        // Japanese (particles and common function words)
+        "の","に","は","を","た","が","で","て","と","し","れ","さ","ある","いる","も",
+        "する","から","な","こと","として","い","や","れる","など","なっ","ない","この",
+        "ため","その","あっ","よう","また","もの","という","あり","まで","られ","なる",
+        // Korean (particles and common function words)
+        "이","그","저","것","수","등","들","및","에","를","의","는","은","로","와","과",
+        "도","가","한","할","하는","하고","하여","되","된","되는","있","없","않","위",
+        // Chinese (common function words — particles, conjunctions, pronouns)
+        "的","了","在","是","我","有","和","就","不","人","都","一","一个","上","也","很",
+        "到","说","要","去","你","会","着","没有","看","好","自己","这","那","她","他",
+        "它","我们","你们","他们","什么","怎么","哪","为什么","因为","所以","但是","而且",
     ];
-    words.iter().copied().collect()
+    // Normalize Arabic words in stopwords list too
+    words.iter().map(|w| {
+        let s = w.to_string();
+        if is_arabic(&s) { normalize_arabic(&s) } else { s }
+    }).collect()
 }
 
 /// CE Phase 6: Scan all notes for `stage:` frontmatter property.
@@ -1608,7 +1763,7 @@ fn is_same_script(a: &str, b: &str) -> bool {
 fn scan_index_words_recursive(
     dir: &Path,
     md_strip: &regex::Regex,
-    stopwords: &std::collections::HashSet<&str>,
+    stopwords: &std::collections::HashSet<String>,
     index: &mut std::collections::HashMap<String, (
         std::collections::HashMap<String, u32>, u32, Vec<(String, String)>,
     )>,
@@ -1666,6 +1821,8 @@ fn scan_index_words_recursive(
                         continue;
                     }
                     let char_count = word.chars().count();
+                    let word_is_arabic = is_arabic(word);
+                    let word_is_hebrew = is_hebrew(word);
                     let is_non_latin = word.chars().any(|c| !c.is_ascii_alphabetic());
                     if is_non_latin && char_count < 2 {
                         prev_word = None;
@@ -1678,10 +1835,35 @@ fn scan_index_words_recursive(
                         continue;
                     }
 
-                    let key = word.to_lowercase();
+                    // Phase 1: Normalize Arabic (hamza, tashkeel, ta marbuta)
+                    let normalized = if word_is_arabic {
+                        normalize_arabic(word)
+                    } else {
+                        word.to_string()
+                    };
 
-                    // Skip stopwords for single-word index (but still use for bigram detection)
-                    let is_stop = stopwords.contains(key.as_str());
+                    // Phase 3 & 4: Strip prefixes for Semitic languages
+                    let stripped = if word_is_arabic {
+                        strip_arabic_prefix(&normalized).to_string()
+                    } else if word_is_hebrew {
+                        strip_hebrew_prefix(&normalized).to_string()
+                    } else {
+                        normalized.clone()
+                    };
+
+                    // Phase 5: Basic Arabic stemming (suffix removal)
+                    let stemmed = if word_is_arabic && stripped.chars().count() >= 3 {
+                        stem_arabic(&stripped)
+                    } else {
+                        stripped.clone()
+                    };
+
+                    // Use stemmed form as index key, but keep original display form
+                    let key = stemmed.to_lowercase();
+
+                    // Skip stopwords (check both original normalized and stemmed forms)
+                    let norm_lower = normalized.to_lowercase();
+                    let is_stop = stopwords.contains(&key) || stopwords.contains(&norm_lower);
 
                     if !is_stop {
                         let entry = index.entry(key.clone()).or_insert_with(|| {
