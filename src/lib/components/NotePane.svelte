@@ -851,7 +851,7 @@
 
 	/* ─── Breadcrumb (above paper) ─── */
 	.e-breadcrumb {
-		padding: 4px 16px; font-size: 0.78rem; color: var(--text-faint);
+		padding: 4px 48px; font-size: 0.78rem; color: var(--text-faint);
 		display: flex; align-items: center; min-height: 28px; flex-shrink: 0;
 		width: 100%; max-width: 1200px; background: #ffffff;
 		border-bottom: 1px solid var(--background-modifier-border, #e0e0e0);
