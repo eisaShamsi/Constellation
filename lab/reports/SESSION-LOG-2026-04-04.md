@@ -52,7 +52,47 @@ All were passing legacy `tab={tabObj}` + invalid props (`isFocused`, `color`, `s
 - `src/lib/i18n/*.json` (15 files) — Inspector360 expanded keys
 - `src/lib/graph/graphEngine.ts` — Minor updates
 
+---
+
+## Phase: Dashboard Home Screen + Split View Panels Companion
+
+### Commit: `a122598`
+**Tag:** `milestone/dashboard-split-companion`
+
+### Changes Made
+
+#### Dashboard as Optional Home Screen
+- Extracted `DashboardView.svelte` component from SecondScreenPage (~360 lines → shared component)
+- Added `showDashboard` setting to `appSettings` (default: off)
+- Main window shows Dashboard when no tabs open + toggle enabled
+- "Show Dashboard" button on home screen, × button to hide
+- SecondScreenPage now uses the shared DashboardView component
+
+#### Split View Panels Companion (Second Screen)
+- Added `emitSplitModeChanged` / `onSplitModeChanged` events to secondScreen.ts
+- Main window emits split state + focused tab data to second screen via $effect
+- Second screen switches to "Panels Companion" mode when split view is active
+- Shows Properties, Backlinks, Tags, Star, Tasks tabs for the focused note
+- Auto-reverts to previous mode when split view is turned off
+
+#### Documentation
+- User Manual: Added Split View (§6) and Index (§7) sections, renumbered §8-§20
+- Second Screen help file: Added Note Editing + expanded Settings Sync
+- All 14 translations updated
+
+### Files Created
+- `src/lib/components/DashboardView.svelte` — extracted dashboard component
+
+### Files Modified
+- `src/routes/+layout.svelte` — Dashboard home, split state emission
+- `src/lib/components/SecondScreenPage.svelte` — DashboardView usage, split companion mode
+- `src/lib/libraries/store.ts` — showDashboard setting
+- `src/lib/secondScreen.ts` — SplitCompanionData type + events
+- `src/lib/i18n/*.json` (15 files) — dashboard + splitCompanion keys
+- `docs/User Manual.md` + 14 translations
+- `docs/help.uConstellation.World/Second Screen/Second Screen.md`
+
 ### Open Items
-- Dashboard: Move to main window as optional home screen (user toggle, default off)
-- Second Screen: Switch to "panels companion" mode when split view is active
-- CE Layer 2: Pending (after current audit complete)
+- CE Layer 2: Pending
+- Dashboard in second screen: test tag interaction and note clicking
+- Split companion: backlinks/tasks panels need library scan integration
