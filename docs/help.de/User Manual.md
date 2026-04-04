@@ -12,19 +12,21 @@ Constellation ist eine Desktop-Anwendung fuer persoenliches Wissensmanagement (P
 2. [Universum und Bibliotheken](#universum-und-bibliotheken)
 3. [Notizen erstellen und bearbeiten](#notizen-erstellen-und-bearbeiten)
 4. [Sternenansicht (GraphMind)](#sternenansicht-graphmind)
-5. [Zweiter Bildschirm](#zweiter-bildschirm)
-6. [Eigenschaften und Frontmatter](#eigenschaften-und-frontmatter)
-7. [Vorlagen](#vorlagen)
-8. [Tabellen](#tabellen)
-9. [Aufgaben](#aufgaben)
-10. [Importer](#importer)
-11. [Kalender](#kalender)
-12. [Lens](#lens)
-13. [Einstellungen](#einstellungen)
-14. [Tastenkuerzel](#tastenkuerzel)
-15. [RTL- und Arabisch-Unterstuetzung](#rtl--und-arabisch-unterstuetzung)
-16. [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
-17. [Kognitive Engine](#kognitive-engine)
+5. [Geteilte Ansicht](#geteilte-ansicht)
+6. [Index](#index)
+7. [Zweiter Bildschirm](#zweiter-bildschirm)
+8. [Eigenschaften und Frontmatter](#eigenschaften-und-frontmatter)
+9. [Vorlagen](#vorlagen)
+10. [Tabellen](#tabellen)
+11. [Aufgaben](#aufgaben)
+12. [Importer](#importer)
+13. [Kalender](#kalender)
+14. [Lens](#lens)
+15. [Einstellungen](#einstellungen)
+16. [Tastenkuerzel](#tastenkuerzel)
+17. [RTL- und Arabisch-Unterstuetzung](#rtl--und-arabisch-unterstuetzung)
+18. [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
+19. [Kognitive Engine](#kognitive-engine)
 
 ---
 
@@ -300,17 +302,104 @@ Der Reifegrad wird automatisch basierend auf Anzahl der Verlinkungen, Ueberarbei
 
 ---
 
-## 5. Zweiter Bildschirm
+## 5. Geteilte Ansicht
 
-Oeffnen Sie ein separates Fenster fuer die Nebeneinander-Ansicht von Notizen.
+Die geteilte Ansicht ermoeglicht es Ihnen, mehrere Notizen nebeneinander im Hauptfenster zu bearbeiten.
 
-- **Oeffnen**: Klicken Sie auf das Zweitbildschirm-Symbol in der Seitenleiste oder druecken Sie `Ctrl+Shift+N`
-- **Synchronisierung**: Notizen werden im zweiten Bildschirm unabhaengig geoeffnet. Schrift- und Themeneinstellungen gelten fuer beide Fenster.
-- **Notizbreite**: Einstellbar ueber den Breitenregler in der Symbolleiste
+### Geteilte Ansicht oeffnen
+
+- **Befehlspalette**: `Ctrl+P` und dann "Split View" eingeben
+- **Tastenkuerzel**: Verwenden Sie das zugewiesene Kuerzel, um zwischen den Modi zu wechseln
+- **Zyklus**: Aus → Vertikal (nebeneinander) → Horizontal (uebereinander) → Aus
+
+### Bearbeiten in der geteilten Ansicht
+
+Jedes Feld ist ein vollstaendig unabhaengiger Editor mit:
+- Vollstaendiger Symbolleiste (Fett, Kursiv, Ueberschriften, Ausrichtung usw.)
+- Breadcrumb-Navigation (Bibliothek / Notizname)
+- Eigenschaftenpanel und Stufen-Dropdown
+- Speicherunterstuetzung (`Ctrl+S` speichert das fokussierte Feld)
+- Titelbearbeitung und Dateiumbenennung
+
+### Felder in der Groesse aendern
+
+Ziehen Sie den Teiler zwischen den Feldern, um ihre Groesse zu aendern. Jeder Teiler ist unabhaengig — bei 3 oder mehr geoeffneten Notizen koennen Sie jedes benachbarte Paar anpassen, ohne die anderen zu beeinflussen. Funktioniert sowohl im vertikalen als auch im horizontalen Modus.
+
+### Fokus
+
+Klicken Sie auf ein beliebiges Feld, um es zu fokussieren. Das fokussierte Feld empfaengt Tastenkuerzel und wird von den Panels der rechten Seitenleiste (Eigenschaften, Rueckverweise usw.) verfolgt.
 
 ---
 
-## 6. Eigenschaften und Frontmatter
+## 6. Index
+
+Der Index ist ein umfassendes Begriffsverzeichnis ueber alle Ihre Bibliotheken — jedes Wort, jeder Tag und jede Ueberschrift, alphabetisch sortiert mit Vorkommenshaeufigkeiten.
+
+### Index oeffnen
+
+- **Dock-Schaltflaeche**: Klicken Sie auf das Index-Symbol (Buch) im linken Dock
+- **Befehlspalette**: `Ctrl+P` und dann "Index" eingeben
+
+### Durchsuchen
+
+- **Filtern**: Verwenden Sie die Suchleiste, um Begriffe zu filtern
+- **Sprach-Tabs**: Wechseln Sie zwischen Alle, Arabisch, Hebraeisch, Englisch oder # (Sonderzeichen)
+- **Alphabetleiste**: Klicken Sie auf einen Buchstaben, um zu diesem Abschnitt zu springen
+- **Begriffsanzahl**: Jeder Begriff zeigt an, in wie vielen Notizen er vorkommt
+
+### Bearbeiten aus dem Index
+
+Klicken Sie auf eine Notiz im Index, um sie in einem geteilten Vorschaufeld neben dem Index zu oeffnen. Das Vorschaufeld ist ein vollstaendiger Editor — Sie koennen bearbeiten, speichern, Eigenschaften aendern und die Stufe hochsetzen. Druecken Sie `Ctrl+Klick`, um die Notiz stattdessen als normalen Tab zu oeffnen.
+
+---
+
+## 7. Zweiter Bildschirm
+
+Der Zweite Bildschirm ist ein modusbasiertes Begleitfenster, das sich an Ihren aktuellen Seitenleistenmodus anpasst.
+
+- **Oeffnen**: Klicken Sie auf das Zweitbildschirm-Symbol in der Seitenleiste, oder `Ctrl+Shift+2`
+- **Automatisches Schliessen**: Wenn Sie das Hauptfenster schliessen, wird der zweite Bildschirm automatisch geschlossen
+
+### Modusbasierter Begleiter
+
+Der zweite Bildschirm aendert seinen Inhalt basierend auf dem aktiven Seitenleistenmodus im Hauptfenster:
+
+| Hauptseitenleistenmodus | Zweiter Bildschirm zeigt |
+|---|---|
+| **Datei-Explorer** | Universum-Dashboard — Statistiken, Bibliotheksaufschluesselung, Kind-Universen, Tags, zuletzt bearbeitete/geoeffnete Notizen |
+| **Navigator** | Vollstaendige Navigator-Ansicht zum Durchsuchen von Notizen |
+| **Himmelsansicht** | Himmelsansicht-Baum mit Verzeichnisstruktur |
+| **Sternenansicht** | Sternenansicht-Begleiter mit Rueckverweisen, Vorwaertsverweisen, Tags und lokalem Graph |
+
+### Universum-Dashboard (Datei-Explorer-Modus)
+
+Wenn das Hauptfenster im Datei-Explorer-Modus ist, zeigt der zweite Bildschirm ein Dashboard mit:
+
+- **Statistikkarten** — Universumsname, Anzahl der Kind-Universen, Gesamtbibliotheken, Ordner und Notizen
+- **Kind-Universen** — Jedes Kind-Universum mit seinen verknuepften Bibliotheken und Ordner-/Notizanzahlen
+- **Bibliotheken** — Jede Bibliothek mit Ordner-/Notizanzahlen in farbcodierten Statistikboxen
+- **Zuletzt bearbeitet** — Notizen, die Sie in der aktuellen Sitzung geaendert haben (verfolgt beim Speichern)
+- **Zuletzt geoeffnet** — Notizen, die Sie geoeffnet, aber nicht bearbeitet haben
+- **Tags** — Alle Tags ueber Bibliotheken hinweg nach Haeufigkeit sortiert; klicken Sie auf einen Tag, um alle zugehoerigen Notizen zu sehen
+
+### Notizen im zweiten Bildschirm bearbeiten
+
+Der zweite Bildschirm unterstuetzt die vollstaendige Notizbearbeitung — tippen, speichern, umbenennen und Eigenschaften aendern, genau wie im Hauptfenster. Aenderungen werden automatisch mit dem Hauptfenster synchronisiert.
+
+### Einstellungssynchronisierung
+
+Alle visuellen Einstellungen werden sofort auf den zweiten Bildschirm uebertragen — kein Neustart erforderlich:
+
+- **Sprache**: Aenderungen der Oberflaechensprache werden sofort angewendet
+- **Thema**: Hell/Dunkel/System-Modus wechselt sofort
+- **Schriften**: Oberflaechenschrift, Textschrift, Monospace-Schrift und schriftartspezifische Schriften
+- **Schriftgroesse**: Sowohl Oberflaechen- als auch Editor-Schriftgroessen
+- **Editor**: Lesbare Zeilenlaenge, Zeilennummern, schwebende Symbolleiste
+- **Akzentfarbe**: Aenderungen der Themen-Akzentfarbe
+
+---
+
+## 8. Eigenschaften und Frontmatter
 
 Notizen koennen YAML-Frontmatter am Anfang enthalten:
 
@@ -337,7 +426,7 @@ Eigenschaftsanzeige umschalten unter **Einstellungen > Editor > Eigenschaften im
 
 ---
 
-## 7. Vorlagen
+## 9. Vorlagen
 
 Erstellen Sie wiederverwendbare Notizvorlagen:
 
@@ -356,7 +445,7 @@ Vorlagen unterstuetzen Variablen:
 
 ---
 
-## 8. Tabellen
+## 10. Tabellen
 
 ### Markdown-Tabellen
 
@@ -386,7 +475,7 @@ Der Dokument-Editor (TipTap) bietet eine visuelle Tabellenerfahrung:
 
 ---
 
-## 9. Aufgaben
+## 11. Aufgaben
 
 Constellation unterstuetzt Aufgaben-Kontrollkaestchen in Notizen:
 
@@ -399,7 +488,7 @@ Im Live-Vorschau-Modus sind Kontrollkaestchen anklickbar. Aufgaben koennen bibli
 
 ---
 
-## 10. Importer
+## 12. Importer
 
 Importieren Sie Notizen aus anderen PKM-Tools:
 
@@ -411,7 +500,7 @@ Gehen Sie zu **Einstellungen > Importer**, um einen Import zu starten.
 
 ---
 
-## 11. Kalender
+## 13. Kalender
 
 Die Kalenderansicht zeigt Notizen nach Datum geordnet:
 
@@ -423,7 +512,7 @@ Oeffnen Sie den Kalender ueber die Seitenleiste.
 
 ---
 
-## 12. Lens
+## 14. Lens
 
 Lens bietet gefilterte Ansichten Ihrer Notizen:
 
@@ -433,7 +522,7 @@ Lens bietet gefilterte Ansichten Ihrer Notizen:
 
 ---
 
-## 13. Einstellungen
+## 15. Einstellungen
 
 Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder `Ctrl+,`.
 
@@ -465,7 +554,7 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 
 ---
 
-## 14. Tastenkuerzel
+## 16. Tastenkuerzel
 
 ### Global
 
@@ -505,7 +594,7 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 
 ---
 
-## 15. RTL- und Arabisch-Unterstuetzung
+## 17. RTL- und Arabisch-Unterstuetzung
 
 Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Persisch, Urdu und andere RTL-Schriften:
 
@@ -524,7 +613,7 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 
 ---
 
-## 16. Sicherheit und Datenschutz
+## 18. Sicherheit und Datenschutz
 
 - **Alle Daten bleiben lokal** — keine Cloud-Synchronisierung, keine Telemetrie, kein Tracking
 - **Markdown-Dateien** — Ihre Notizen sind einfache Textdateien, die Ihnen vollstaendig gehoeren
@@ -534,7 +623,7 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 
 ---
 
-## 17. Kognitive Engine
+## 19. Kognitive Engine
 
 Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das Ihre Notizen analysiert und verborgene Muster und Zusammenhaenge zwischen Ihren Ideen aufdeckt. Ihre Kernphilosophie:
 

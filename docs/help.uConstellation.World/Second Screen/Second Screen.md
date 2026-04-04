@@ -116,7 +116,19 @@ Click a node to pin it. The companion stays focused on the pinned note even when
 
 ### Peek Preview
 
-Click any backlink or forward link in the companion to open a full editable preview in the left panel.
+Click any backlink or forward link in the companion to open a full editable preview in the left panel. The peek editor is fully functional — you can type, save, change properties, and promote stage directly from the preview.
+
+---
+
+## Note Editing in Second Screen
+
+The second screen supports full note editing in all modes:
+
+- **Editor mode**: The detail view is a complete editor with toolbar, properties, stage dropdown, and save support
+- **Star View peek**: Click a link in the companion to open a full editor in the peek panel
+- **Save**: Press Ctrl+S or the editor auto-saves — changes sync back to the main window automatically
+- **Rename**: Edit the title to rename the file
+- **Properties**: Expand the Properties panel to edit frontmatter
 
 ---
 
@@ -134,14 +146,17 @@ When the main window is in Sky View mode, the second screen shows the Sky View t
 
 ## Settings Sync
 
-All settings changes propagate instantly to the second screen:
+All visual settings changes propagate instantly to the second screen:
 
 | Setting | Sync |
 |---------|------|
 | **Language** | Instant — UI text updates without restart |
 | **Theme** (light/dark/system) | Instant |
 | **Fonts** (interface, text, mono, script) | Instant |
-| **Font size** | Instant |
+| **Font size** (interface and editor) | Instant |
+| **Accent color** | Instant |
+| **Editor settings** (readable line length, line numbers, floating toolbar) | Instant |
+| **Primary script** | Instant |
 
 ---
 

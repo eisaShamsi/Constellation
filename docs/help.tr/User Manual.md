@@ -12,19 +12,21 @@ Constellation, Markdown not kütüphanelerini yönetmek için tasarlanmış bir 
 2. [Evren ve Kütüphaneler](#evren-ve-kütüphaneler)
 3. [Not Oluşturma ve Düzenleme](#not-oluşturma-ve-düzenleme)
 4. [Star View (GraphMind)](#star-view-graphmind)
-5. [İkinci Ekran](#ikinci-ekran)
-6. [Özellikler ve Frontmatter](#özellikler-ve-frontmatter)
-7. [Şablonlar](#şablonlar)
-8. [Tablolar](#tablolar)
-9. [Görevler](#görevler)
-10. [İçe Aktarıcı](#içe-aktarıcı)
-11. [Takvim](#takvim)
-12. [Lens](#lens)
-13. [Ayarlar](#ayarlar)
-14. [Klavye Kısayolları](#klavye-kısayolları)
-15. [RTL ve Arapça Desteği](#rtl-ve-arapça-desteği)
-16. [Güvenlik ve Gizlilik](#güvenlik-ve-gizlilik)
-17. [Bilişsel Motor](#bilişsel-motor)
+5. [Bölünmüş Görünüm](#bölünmüş-görünüm)
+6. [Dizin](#dizin)
+7. [İkinci Ekran](#ikinci-ekran)
+8. [Özellikler ve Frontmatter](#özellikler-ve-frontmatter)
+9. [Şablonlar](#şablonlar)
+10. [Tablolar](#tablolar)
+11. [Görevler](#görevler)
+12. [İçe Aktarıcı](#içe-aktarıcı)
+13. [Takvim](#takvim)
+14. [Lens](#lens)
+15. [Ayarlar](#ayarlar)
+16. [Klavye Kısayolları](#klavye-kısayolları)
+17. [RTL ve Arapça Desteği](#rtl-ve-arapça-desteği)
+18. [Güvenlik ve Gizlilik](#güvenlik-ve-gizlilik)
+19. [Bilişsel Motor](#bilişsel-motor)
 
 ---
 
@@ -300,17 +302,104 @@ Olgunluk seviyesi, bağlantı sayısı, gözden geçirme tarihi ve düzenleme s�
 
 ---
 
-## 5. İkinci Ekran
+## 5. Bölünmüş Görünüm
 
-Yan yana not görüntüleme için ayrı bir pencere açın.
+Bölünmüş görünüm, birden fazla notu ana pencerede yan yana düzenlemenizi sağlar.
 
-- **Açma**: Kenar çubuğundaki ikinci ekran simgesine tıklayın veya `Ctrl+Shift+N`
-- **Senkronizasyon**: Notlar ikinci ekranda bağımsız olarak açılır. Yazı tipi ve tema ayarları her iki pencereye de uygulanır.
-- **Not genişliği**: Araç çubuğundaki genişlik kaydırıcısı ile ayarlanabilir
+### Bölünmüş Görünümü Açma
+
+- **Komut Paleti**: `Ctrl+P` ve ardından "Split View" yazın
+- **Klavye kısayolu**: Modlar arasında geçiş yapmak için atanmış kısayolu kullanın
+- **Döngü**: Kapalı → Dikey (yan yana) → Yatay (üst ve alt) → Kapalı
+
+### Bölünmüş Görünümde Düzenleme
+
+Her panel, aşağıdakilere sahip tamamen bağımsız bir düzenleyicidir:
+- Tam araç çubuğu (kalın, italik, başlıklar, hizalama vb.)
+- Breadcrumb gezinmesi (kütüphane / not adı)
+- Özellikler paneli ve aşama açılır menüsü
+- Kaydetme desteği (`Ctrl+S` odaklanmış paneli kaydeder)
+- Başlık düzenleme ve dosya yeniden adlandırma
+
+### Panelleri Yeniden Boyutlandırma
+
+Paneller arasındaki ayırıcıyı sürükleyerek yeniden boyutlandırın. Her ayırıcı bağımsızdır — 3 veya daha fazla not açıkken, diğerlerini etkilemeden herhangi bir komşu çifti yeniden boyutlandırabilirsiniz. Hem dikey hem de yatay modlarda çalışır.
+
+### Odak
+
+Herhangi bir panele tıklayarak odaklayın. Odaklanan panel klavye kısayollarını alır ve sağ kenar çubuğu panelleri (Özellikler, Geri Bağlantılar vb.) tarafından izlenir.
 
 ---
 
-## 6. Özellikler ve Frontmatter
+## 6. Dizin
+
+Dizin, tüm kütüphaneleriniz genelinde kapsamlı bir terim dizinidir — her kelime, etiket ve başlık, oluşum sayılarıyla birlikte alfabetik olarak sıralanmıştır.
+
+### Dizini Açma
+
+- **Dock düğmesi**: Sol docktaki Dizin simgesine (kitap) tıklayın
+- **Komut Paleti**: `Ctrl+P` ve ardından "Index" yazın
+
+### Göz Atma
+
+- **Filtreleme**: Terimleri filtrelemek için arama çubuğunu kullanın
+- **Dil sekmeleri**: Tümü, Arapça, İbranice, İngilizce veya # (özel karakterler) arasında geçiş yapın
+- **Alfabe çubuğu**: Bir harfe tıklayarak o bölüme atlayın
+- **Terim sayısı**: Her terim, kaç notta geçtiğini gösterir
+
+### Dizinden Düzenleme
+
+Dizindeki herhangi bir nota tıklayarak Dizinin yanında bölünmüş bir önizleme panelinde açın. Önizleme paneli tam bir düzenleyicidir — düzenleyebilir, kaydedebilir, özellikleri değiştirebilir ve aşamayı yükseltebilirsiniz. Notu normal bir sekme olarak açmak için `Ctrl+Tıklama` yapın.
+
+---
+
+## 7. İkinci Ekran
+
+İkinci Ekran, geçerli kenar çubuğu modunuza uyum sağlayan mod tabanlı bir eşlik penceresidir.
+
+- **Açma**: Kenar çubuğundaki ikinci ekran simgesine tıklayın veya `Ctrl+Shift+2`
+- **Otomatik kapanma**: Ana pencereyi kapattığınızda ikinci ekran otomatik olarak kapanır
+
+### Mod Tabanlı Eşlik
+
+İkinci ekran, ana penceredeki aktif kenar çubuğu moduna göre içeriğini değiştirir:
+
+| Kenar Çubuğu Modu | İkinci Ekran Gösterir |
+|---|---|
+| **Dosya Gezgini** | Evren Paneli — istatistikler, kütüphane dağılımı, alt evrenler, etiketler, son düzenlenen/açılan notlar |
+| **Gezgin** | Notlara göz atmak için tam Gezgin görünümü |
+| **Gökyüzü Görünümü** | Dizin yapısıyla Gökyüzü Görünümü ağacı |
+| **Star View** | Geri bağlantılar, ileri bağlantılar, etiketler ve yerel grafik ile Star View eşliği |
+
+### Evren Paneli (Dosya Gezgini Modu)
+
+Ana pencere Dosya Gezgini modundayken, ikinci ekran aşağıdakileri içeren bir panel görüntüler:
+
+- **İstatistik kartları** — Evren adı, alt evren sayısı, toplam kütüphane, klasör ve not sayısı
+- **Alt Evrenler** — Her alt evren, bağlı kütüphaneleri ve klasör/not sayılarıyla
+- **Kütüphaneler** — Her kütüphane, renk kodlu istatistik kutularında klasör/not sayılarıyla
+- **Son Düzenlenen** — Geçerli oturumda değiştirdiğiniz notlar (kaydettiğinizde izlenir)
+- **Son Açılan** — Geçerli oturumda açtığınız ancak düzenlemediğiniz notlar
+- **Etiketler** — Tüm kütüphanelerdeki tüm etiketler sayıya göre sıralanmış; bir etikete tıklayarak onu kullanan tüm notları görün
+
+### İkinci Ekranda Not Düzenleme
+
+İkinci ekran tam not düzenlemeyi destekler — ana penceredeki gibi yazın, kaydedin, yeniden adlandırın ve özellikleri değiştirin. Değişiklikler otomatik olarak ana pencereyle senkronize edilir.
+
+### Ayar Senkronizasyonu
+
+Tüm görsel ayarlar anında ikinci ekrana yansıtılır — yeniden başlatma gerekmez:
+
+- **Dil**: Arayüz dili değişiklikleri hemen uygulanır
+- **Tema**: Açık/koyu/sistem modu anında değişir
+- **Yazı tipleri**: Arayüz yazı tipi, metin yazı tipi, monospace yazı tipi ve scripte özgü yazı tipleri
+- **Yazı tipi boyutu**: Hem arayüz hem de düzenleyici yazı tipi boyutları
+- **Düzenleyici**: Okunabilir satır uzunluğu, satır numaraları, kayan araç çubuğu
+- **Vurgu rengi**: Tema vurgu rengi değişiklikleri
+
+---
+
+## 8. Özellikler ve Frontmatter
 
 Notların üst kısmında YAML frontmatter bulunabilir:
 
@@ -337,7 +426,7 @@ Constellation özellik türlerini otomatik olarak algılar:
 
 ---
 
-## 7. Şablonlar
+## 9. Şablonlar
 
 Yeniden kullanılabilir not şablonları oluşturun:
 
@@ -356,7 +445,7 @@ Yeniden kullanılabilir not şablonları oluşturun:
 
 ---
 
-## 8. Tablolar
+## 10. Tablolar
 
 ### Markdown Tabloları
 
@@ -386,7 +475,7 @@ Belge düzenleyici (TipTap) görsel bir tablo deneyimi sunar:
 
 ---
 
-## 9. Görevler
+## 11. Görevler
 
 Constellation, notlarda görev onay kutularını destekler:
 
@@ -399,7 +488,7 @@ Canlı Önizleme modunda, onay kutuları tıklanabilirdir. Görevler, kütüphan
 
 ---
 
-## 10. İçe Aktarıcı
+## 12. İçe Aktarıcı
 
 Diğer PKM araçlarından notları içe aktarın:
 
@@ -411,7 +500,7 @@ Diğer PKM araçlarından notları içe aktarın:
 
 ---
 
-## 11. Takvim
+## 13. Takvim
 
 Takvim görünümü, notları tarihe göre düzenlenmiş olarak gösterir:
 
@@ -423,7 +512,7 @@ Takvimi kenar çubuğundan açın.
 
 ---
 
-## 12. Lens
+## 14. Lens
 
 Lens, notlarınızın filtrelenmiş görünümlerini sağlar:
 
@@ -433,7 +522,7 @@ Lens, notlarınızın filtrelenmiş görünümlerini sağlar:
 
 ---
 
-## 13. Ayarlar
+## 15. Ayarlar
 
 Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
@@ -465,7 +554,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
 ---
 
-## 14. Klavye Kısayolları
+## 16. Klavye Kısayolları
 
 ### Genel
 
@@ -505,7 +594,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
 ---
 
-## 15. RTL ve Arapça Desteği
+## 17. RTL ve Arapça Desteği
 
 Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemleri için birinci sınıf destek sunar:
 
@@ -524,7 +613,7 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 
 ---
 
-## 16. Güvenlik ve Gizlilik
+## 18. Güvenlik ve Gizlilik
 
 - **Tüm veriler yerelde kalır** — bulut senkronizasyonu yok, telemetri yok, izleme yok
 - **Markdown dosyaları** — notlarınız tamamen size ait düz metin dosyalarıdır
@@ -534,7 +623,7 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 
 ---
 
-## 17. Bilişsel Motor
+## 19. Bilişsel Motor
 
 Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz arasındaki gizli kalıpları ve ilişkileri ortaya çıkaran yerleşik zeka sistemidir. Temel felsefesi:
 

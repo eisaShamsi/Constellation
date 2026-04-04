@@ -12,19 +12,21 @@ Constellation es una aplicacion de escritorio para la Gestion del Conocimiento P
 2. [Universo y Bibliotecas](#universo-y-bibliotecas)
 3. [Crear y Editar Notas](#crear-y-editar-notas)
 4. [Vista Estelar (GraphMind)](#vista-estelar-graphmind)
-5. [Segunda Pantalla](#segunda-pantalla)
-6. [Propiedades y Frontmatter](#propiedades-y-frontmatter)
-7. [Plantillas](#plantillas)
-8. [Tablas](#tablas)
-9. [Tareas](#tareas)
-10. [Importador](#importador)
-11. [Calendario](#calendario)
-12. [Lens](#lens)
-13. [Configuracion](#configuracion)
-14. [Atajos de Teclado](#atajos-de-teclado)
-15. [Soporte RTL y Arabe](#soporte-rtl-y-arabe)
-16. [Seguridad y Privacidad](#seguridad-y-privacidad)
-17. [Motor Cognitivo](#motor-cognitivo)
+5. [Vista Dividida](#vista-dividida)
+6. [Indice](#indice)
+7. [Segunda Pantalla](#segunda-pantalla)
+8. [Propiedades y Frontmatter](#propiedades-y-frontmatter)
+9. [Plantillas](#plantillas)
+10. [Tablas](#tablas)
+11. [Tareas](#tareas)
+12. [Importador](#importador)
+13. [Calendario](#calendario)
+14. [Lens](#lens)
+15. [Configuracion](#configuracion)
+16. [Atajos de Teclado](#atajos-de-teclado)
+17. [Soporte RTL y Arabe](#soporte-rtl-y-arabe)
+18. [Seguridad y Privacidad](#seguridad-y-privacidad)
+19. [Motor Cognitivo](#motor-cognitivo)
 
 ---
 
@@ -300,17 +302,104 @@ El nivel de madurez se actualiza automaticamente segun el numero de enlaces, la 
 
 ---
 
-## 5. Segunda Pantalla
+## 5. Vista Dividida
 
-Abre una ventana separada para ver notas lado a lado.
+La Vista Dividida te permite editar multiples notas lado a lado en la ventana principal.
 
-- **Abrir**: Haz clic en el icono de segunda pantalla en la barra lateral, o `Ctrl+Shift+N`
-- **Sincronizacion**: Las notas se abren en la segunda pantalla de forma independiente. La configuracion de fuentes y tema se aplica a ambas ventanas.
-- **Ancho de nota**: Ajustable mediante el control deslizante en la barra de herramientas
+### Abrir la Vista Dividida
+
+- **Paleta de Comandos**: `Ctrl+P` y luego escribe "Split View"
+- **Atajo de teclado**: Usa el atajo asignado para alternar entre modos
+- **Ciclo**: Desactivado → Vertical (lado a lado) → Horizontal (arriba y abajo) → Desactivado
+
+### Editar en Vista Dividida
+
+Cada panel es un editor completamente independiente con:
+- Barra de herramientas completa (negrita, cursiva, encabezados, alineacion, etc.)
+- Navegacion de ruta (biblioteca / nombre de nota)
+- Panel de propiedades y menu desplegable de etapa
+- Soporte de guardado (`Ctrl+S` guarda el panel enfocado)
+- Edicion de titulo y renombrado de archivo
+
+### Redimensionar Paneles
+
+Arrastra el divisor entre paneles para redimensionarlos. Cada divisor es independiente — con 3 o mas notas abiertas, puedes redimensionar cualquier par adyacente sin afectar a los demas. Funciona tanto en modo vertical como horizontal.
+
+### Enfoque
+
+Haz clic en cualquier panel para enfocarlo. El panel enfocado recibe los atajos de teclado y es rastreado por los paneles de la barra lateral derecha (Propiedades, Retroenlaces, etc.).
 
 ---
 
-## 6. Propiedades y Frontmatter
+## 6. Indice
+
+El Indice es un indice de terminos completo de todas tus bibliotecas — cada palabra, etiqueta y encabezado, ordenado alfabeticamente con conteos de apariciones.
+
+### Abrir el Indice
+
+- **Boton del dock**: Haz clic en el icono del Indice (libro) en el dock izquierdo
+- **Paleta de Comandos**: `Ctrl+P` y luego escribe "Index"
+
+### Navegacion
+
+- **Filtrar**: Usa la barra de busqueda para filtrar terminos
+- **Pestanas de idioma**: Alterna entre Todos, Arabe, Hebreo, Ingles o # (caracteres especiales)
+- **Barra alfabetica**: Haz clic en una letra para saltar a esa seccion
+- **Conteo de terminos**: Cada termino muestra cuantas notas lo contienen
+
+### Editar desde el Indice
+
+Haz clic en cualquier nota en el Indice para abrirla en un panel de vista previa dividido junto al Indice. El panel de vista previa es un editor completo — puedes editar, guardar, cambiar propiedades y promover la etapa. Presiona `Ctrl+Clic` para abrir la nota como una pestana regular en su lugar.
+
+---
+
+## 7. Segunda Pantalla
+
+La Segunda Pantalla es una ventana complementaria basada en modos que se adapta al modo actual de tu barra lateral.
+
+- **Abrir**: Haz clic en el icono de segunda pantalla en la barra lateral, o `Ctrl+Shift+2`
+- **Cierre automatico**: Cuando cierras la ventana principal, la segunda pantalla se cierra automaticamente
+
+### Complemento basado en modos
+
+La segunda pantalla cambia su contenido segun el modo activo de la barra lateral en la ventana principal:
+
+| Modo de barra lateral | La segunda pantalla muestra |
+|---|---|
+| **Explorador de archivos** | Panel del universo — estadisticas, desglose de bibliotecas, universos hijos, etiquetas, notas editadas/abiertas recientemente |
+| **Navegador** | Vista completa del Navegador para explorar notas |
+| **Vista del cielo** | Arbol de Vista del cielo con estructura de directorios |
+| **Vista estelar** | Complemento de Vista estelar con retroenlaces, enlaces hacia adelante, etiquetas y grafo local |
+
+### Panel del Universo (Modo Explorador de Archivos)
+
+Cuando la ventana principal esta en modo Explorador de archivos, la segunda pantalla muestra un panel con:
+
+- **Tarjetas de estadisticas** — Nombre del universo, cantidad de universos hijos, total de bibliotecas, carpetas y notas
+- **Universos hijos** — Cada universo hijo con sus bibliotecas vinculadas y conteos de carpetas/notas
+- **Bibliotecas** — Cada biblioteca con conteos de carpetas/notas en cajas de estadisticas con codigo de colores
+- **Editadas recientemente** — Notas que modificaste en la sesion actual (rastreadas al guardar)
+- **Abiertas recientemente** — Notas que abriste pero no editaste en la sesion actual
+- **Etiquetas** — Todas las etiquetas de todas las bibliotecas ordenadas por cantidad; haz clic en una etiqueta para ver todas las notas que la usan
+
+### Edicion de notas en la Segunda Pantalla
+
+La segunda pantalla soporta edicion completa de notas — escribe, guarda, renombra y cambia propiedades igual que en la ventana principal. Los cambios se sincronizan automaticamente con la ventana principal.
+
+### Sincronizacion de configuracion
+
+Todas las configuraciones visuales se propagan instantaneamente a la segunda pantalla — sin necesidad de reiniciar:
+
+- **Idioma**: Los cambios de idioma de la interfaz se aplican inmediatamente
+- **Tema**: El modo claro/oscuro/sistema cambia instantaneamente
+- **Fuentes**: Fuente de interfaz, fuente de texto, fuente monoespaciada y fuentes especificas por escritura
+- **Tamano de fuente**: Tamanos de fuente de interfaz y editor
+- **Editor**: Ancho de linea legible, numeros de linea, barra de herramientas flotante
+- **Color de acento**: Cambios de color de acento del tema
+
+---
+
+## 8. Propiedades y Frontmatter
 
 Las notas pueden tener frontmatter YAML en la parte superior:
 
@@ -337,7 +426,7 @@ Alterna la visualizacion de propiedades en **Configuracion > Editor > Propiedade
 
 ---
 
-## 7. Plantillas
+## 9. Plantillas
 
 Crea plantillas de notas reutilizables:
 
@@ -356,7 +445,7 @@ Las plantillas admiten variables:
 
 ---
 
-## 8. Tablas
+## 10. Tablas
 
 ### Tablas Markdown
 
@@ -386,7 +475,7 @@ El editor de Documentos (TipTap) ofrece una experiencia visual de tablas:
 
 ---
 
-## 9. Tareas
+## 11. Tareas
 
 Constellation admite casillas de tareas en las notas:
 
@@ -399,7 +488,7 @@ En el modo de Vista Previa en Vivo, las casillas son clicables. Las tareas se pu
 
 ---
 
-## 10. Importador
+## 12. Importador
 
 Importa notas desde otras herramientas PKM:
 
@@ -411,7 +500,7 @@ Ve a **Configuracion > Importador** para iniciar una importacion.
 
 ---
 
-## 11. Calendario
+## 13. Calendario
 
 La vista de Calendario muestra las notas organizadas por fecha:
 
@@ -423,7 +512,7 @@ Abre el Calendario desde la barra lateral.
 
 ---
 
-## 12. Lens
+## 14. Lens
 
 Lens proporciona vistas filtradas de tus notas:
 
@@ -433,7 +522,7 @@ Lens proporciona vistas filtradas de tus notas:
 
 ---
 
-## 13. Configuracion
+## 15. Configuracion
 
 Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctrl+,`.
 
@@ -465,7 +554,7 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 
 ---
 
-## 14. Atajos de Teclado
+## 16. Atajos de Teclado
 
 ### Globales
 
@@ -505,7 +594,7 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 
 ---
 
-## 15. Soporte RTL y Arabe
+## 17. Soporte RTL y Arabe
 
 Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y otros idiomas con escritura RTL:
 
@@ -524,7 +613,7 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 
 ---
 
-## 16. Seguridad y Privacidad
+## 18. Seguridad y Privacidad
 
 - **Todos los datos permanecen locales** — sin sincronizacion en la nube, sin telemetria, sin rastreo
 - **Archivos Markdown** — tus notas son archivos de texto plano que te pertenecen completamente
@@ -534,7 +623,7 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 
 ---
 
-## 17. Motor Cognitivo
+## 19. Motor Cognitivo
 
 El Motor Cognitivo es el sistema de inteligencia integrado de Constellation que analiza tus notas y descubre patrones ocultos y relaciones entre tus ideas. Su filosofia fundamental:
 

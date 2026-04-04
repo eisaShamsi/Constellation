@@ -12,19 +12,21 @@ Constellation est une application de bureau de gestion des connaissances personn
 2. [Univers et bibliotheques](#univers-et-bibliotheques)
 3. [Creer et modifier des notes](#creer-et-modifier-des-notes)
 4. [Vue Etoiles (GraphMind)](#vue-etoiles-graphmind)
-5. [Second ecran](#second-ecran)
-6. [Proprietes et Frontmatter](#proprietes-et-frontmatter)
-7. [Modeles](#modeles)
-8. [Tableaux](#tableaux)
-9. [Taches](#taches)
-10. [Importateur](#importateur)
-11. [Calendrier](#calendrier)
-12. [Lens](#lens)
-13. [Parametres](#parametres)
-14. [Raccourcis clavier](#raccourcis-clavier)
-15. [Prise en charge RTL et arabe](#prise-en-charge-rtl-et-arabe)
-16. [Securite et confidentialite](#securite-et-confidentialite)
-17. [Moteur Cognitif](#moteur-cognitif)
+5. [Vue fractionnee](#vue-fractionnee)
+6. [Index](#index)
+7. [Second ecran](#second-ecran)
+8. [Proprietes et Frontmatter](#proprietes-et-frontmatter)
+9. [Modeles](#modeles)
+10. [Tableaux](#tableaux)
+11. [Taches](#taches)
+12. [Importateur](#importateur)
+13. [Calendrier](#calendrier)
+14. [Lens](#lens)
+15. [Parametres](#parametres)
+16. [Raccourcis clavier](#raccourcis-clavier)
+17. [Prise en charge RTL et arabe](#prise-en-charge-rtl-et-arabe)
+18. [Securite et confidentialite](#securite-et-confidentialite)
+19. [Moteur Cognitif](#moteur-cognitif)
 
 ---
 
@@ -300,17 +302,104 @@ Le niveau de maturite est mis a jour automatiquement en fonction du nombre de li
 
 ---
 
-## 5. Second ecran
+## 5. Vue fractionnee
 
-Ouvrez une fenetre separee pour une visualisation cote a cote des notes.
+La vue fractionnee vous permet de modifier plusieurs notes cote a cote dans la fenetre principale.
 
-- **Ouvrir** : Cliquez sur l'icone du second ecran dans la barre laterale, ou `Ctrl+Shift+N`
-- **Synchronisation** : Les notes s'ouvrent independamment dans le second ecran. Les parametres de police et de theme s'appliquent aux deux fenetres.
-- **Largeur de la note** : Ajustable via le curseur de largeur dans la barre d'outils
+### Ouvrir la vue fractionnee
+
+- **Palette de commandes** : `Ctrl+P` puis tapez "Split View"
+- **Raccourci clavier** : Utilisez le raccourci assigne pour alterner entre les modes
+- **Cycle** : Desactive → Vertical (cote a cote) → Horizontal (haut et bas) → Desactive
+
+### Modifier en vue fractionnee
+
+Chaque volet est un editeur entierement independant avec :
+- Barre d'outils complete (gras, italique, titres, alignement, etc.)
+- Navigation par fil d'Ariane (bibliotheque / nom de la note)
+- Panneau de proprietes et menu deroulant de stade
+- Support de sauvegarde (`Ctrl+S` sauvegarde le volet actif)
+- Modification du titre et renommage du fichier
+
+### Redimensionner les volets
+
+Faites glisser le separateur entre les volets pour les redimensionner. Chaque separateur est independant — avec 3 notes ou plus ouvertes, vous pouvez redimensionner n'importe quelle paire adjacente sans affecter les autres. Fonctionne en mode vertical et horizontal.
+
+### Focus
+
+Cliquez sur n'importe quel volet pour le mettre au premier plan. Le volet actif recoit les raccourcis clavier et est suivi par les panneaux de la barre laterale droite (Proprietes, Retroliens, etc.).
 
 ---
 
-## 6. Proprietes et Frontmatter
+## 6. Index
+
+L'Index est un index terminologique complet de toutes vos bibliotheques — chaque mot, etiquette et titre, classes par ordre alphabetique avec le nombre d'occurrences.
+
+### Ouvrir l'Index
+
+- **Bouton du dock** : Cliquez sur l'icone de l'Index (livre) dans le dock gauche
+- **Palette de commandes** : `Ctrl+P` puis tapez "Index"
+
+### Navigation
+
+- **Filtrer** : Utilisez la barre de recherche pour filtrer les termes
+- **Onglets de langue** : Basculez entre Tous, Arabe, Hebreu, Anglais ou # (caracteres speciaux)
+- **Barre alphabetique** : Cliquez sur une lettre pour acceder a cette section
+- **Nombre de termes** : Chaque terme indique le nombre de notes qui le contiennent
+
+### Modifier depuis l'Index
+
+Cliquez sur une note dans l'Index pour l'ouvrir dans un volet d'apercu fractionne a cote de l'Index. Le volet d'apercu est un editeur complet — vous pouvez modifier, sauvegarder, changer les proprietes et promouvoir le stade. Appuyez sur `Ctrl+Clic` pour ouvrir la note comme un onglet normal a la place.
+
+---
+
+## 7. Second ecran
+
+Le second ecran est une fenetre complementaire basee sur les modes qui s'adapte au mode actuel de votre barre laterale.
+
+- **Ouvrir** : Cliquez sur l'icone du second ecran dans la barre laterale, ou `Ctrl+Shift+2`
+- **Fermeture automatique** : Lorsque vous fermez la fenetre principale, le second ecran se ferme automatiquement
+
+### Complementaire base sur les modes
+
+Le second ecran modifie son contenu en fonction du mode actif de la barre laterale dans la fenetre principale :
+
+| Mode de la barre laterale | Le second ecran affiche |
+|---|---|
+| **Explorateur de fichiers** | Tableau de bord de l'univers — statistiques, repartition des bibliotheques, univers enfants, etiquettes, notes recemment modifiees/ouvertes |
+| **Navigateur** | Vue complete du Navigateur pour parcourir les notes |
+| **Vue du ciel** | Arbre de la Vue du ciel avec structure des repertoires |
+| **Vue Etoiles** | Complementaire Vue Etoiles avec retroliens, liens avant, etiquettes et graphe local |
+
+### Tableau de bord de l'univers (Mode Explorateur de fichiers)
+
+Lorsque la fenetre principale est en mode Explorateur de fichiers, le second ecran affiche un tableau de bord avec :
+
+- **Cartes de statistiques** — Nom de l'univers, nombre d'univers enfants, total des bibliotheques, dossiers et notes
+- **Univers enfants** — Chaque univers enfant avec ses bibliotheques liees et le nombre de dossiers/notes
+- **Bibliotheques** — Chaque bibliotheque avec le nombre de dossiers/notes dans des boites statistiques colorees
+- **Recemment modifiees** — Notes que vous avez modifiees dans la session actuelle (suivies lors de la sauvegarde)
+- **Recemment ouvertes** — Notes que vous avez ouvertes mais pas modifiees dans la session actuelle
+- **Etiquettes** — Toutes les etiquettes de toutes les bibliotheques triees par nombre ; cliquez sur une etiquette pour voir toutes les notes associees
+
+### Modification de notes dans le second ecran
+
+Le second ecran prend en charge la modification complete des notes — tapez, sauvegardez, renommez et modifiez les proprietes comme dans la fenetre principale. Les modifications se synchronisent automatiquement avec la fenetre principale.
+
+### Synchronisation des parametres
+
+Tous les parametres visuels se propagent instantanement au second ecran — aucun redemarrage necessaire :
+
+- **Langue** : Les changements de langue de l'interface s'appliquent immediatement
+- **Theme** : Le mode clair/sombre/systeme bascule instantanement
+- **Polices** : Police d'interface, police de texte, police monospace et polices specifiques aux ecritures
+- **Taille de police** : Tailles de police d'interface et d'editeur
+- **Editeur** : Largeur de ligne lisible, numeros de ligne, barre d'outils flottante
+- **Couleur d'accent** : Changements de couleur d'accent du theme
+
+---
+
+## 8. Proprietes et Frontmatter
 
 Les notes peuvent contenir du YAML Frontmatter en en-tete :
 
@@ -337,7 +426,7 @@ Basculez l'affichage des proprietes dans **Parametres > Editeur > Proprietes dan
 
 ---
 
-## 7. Modeles
+## 9. Modeles
 
 Creez des modeles de notes reutilisables :
 
@@ -356,7 +445,7 @@ Les modeles prennent en charge les variables :
 
 ---
 
-## 8. Tableaux
+## 10. Tableaux
 
 ### Tableaux Markdown
 
@@ -386,7 +475,7 @@ L'editeur de document (TipTap) offre une experience de tableau visuelle :
 
 ---
 
-## 9. Taches
+## 11. Taches
 
 Constellation prend en charge les cases a cocher de taches dans les notes :
 
@@ -399,7 +488,7 @@ En mode Apercu en direct, les cases a cocher sont cliquables. Les taches peuvent
 
 ---
 
-## 10. Importateur
+## 12. Importateur
 
 Importez des notes depuis d'autres outils PKM :
 
@@ -411,7 +500,7 @@ Allez dans **Parametres > Importateur** pour lancer un import.
 
 ---
 
-## 11. Calendrier
+## 13. Calendrier
 
 La vue Calendrier affiche les notes organisees par date :
 
@@ -423,7 +512,7 @@ Ouvrez le Calendrier depuis la barre laterale.
 
 ---
 
-## 12. Lens
+## 14. Lens
 
 Lens fournit des vues filtrees de vos notes :
 
@@ -433,7 +522,7 @@ Lens fournit des vues filtrees de vos notes :
 
 ---
 
-## 13. Parametres
+## 15. Parametres
 
 Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctrl+,`.
 
@@ -465,7 +554,7 @@ Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctr
 
 ---
 
-## 14. Raccourcis clavier
+## 16. Raccourcis clavier
 
 ### Globaux
 
@@ -505,7 +594,7 @@ Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctr
 
 ---
 
-## 15. Prise en charge RTL et arabe
+## 17. Prise en charge RTL et arabe
 
 Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu, le persan, l'ourdou et les autres ecritures RTL :
 
@@ -524,7 +613,7 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 
 ---
 
-## 16. Securite et confidentialite
+## 18. Securite et confidentialite
 
 - **Toutes les donnees restent locales** — pas de synchronisation cloud, pas de telemetrie, pas de suivi
 - **Fichiers Markdown** — vos notes sont des fichiers texte brut qui vous appartiennent entierement
@@ -534,7 +623,7 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 
 ---
 
-## 17. Moteur Cognitif
+## 19. Moteur Cognitif
 
 Le Moteur Cognitif est le systeme d'intelligence integre de Constellation qui analyse vos notes et revele les motifs caches et les relations entre vos idees. Sa philosophie fondamentale :
 

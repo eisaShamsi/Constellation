@@ -13,19 +13,21 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 3. [Creating and Editing Notes](#creating-and-editing-notes)
 4. [Notes Management Sidebar](#notes-management-sidebar)
 5. [Star View (GraphMind)](#star-view-graphmind)
-6. [Second Screen](#second-screen)
-7. [Properties and Frontmatter](#properties-and-frontmatter)
-8. [Templates](#templates)
-9. [Tables](#tables)
-10. [Tasks](#tasks)
-11. [Importer](#importer)
-12. [Calendar](#calendar)
-13. [Lens](#lens)
-14. [Settings](#settings)
-15. [Keyboard Shortcuts](#keyboard-shortcuts)
-16. [RTL and Arabic Support](#rtl-and-arabic-support)
-17. [Security and Privacy](#security-and-privacy)
-18. [Cognitive Engine](#cognitive-engine)
+6. [Split View](#split-view)
+7. [Index](#index)
+8. [Second Screen](#second-screen)
+9. [Properties and Frontmatter](#properties-and-frontmatter)
+10. [Templates](#templates)
+11. [Tables](#tables)
+12. [Tasks](#tasks)
+13. [Importer](#importer)
+14. [Calendar](#calendar)
+15. [Lens](#lens)
+16. [Settings](#settings)
+17. [Keyboard Shortcuts](#keyboard-shortcuts)
+18. [RTL and Arabic Support](#rtl-and-arabic-support)
+19. [Security and Privacy](#security-and-privacy)
+20. [Cognitive Engine](#cognitive-engine)
 
 ---
 
@@ -413,7 +415,58 @@ Maturity appears in three places:
 
 ---
 
-## 6. Second Screen
+## 6. Split View
+
+Split View lets you edit multiple notes side by side in the main window.
+
+### Opening Split View
+
+- **Command Palette**: `Ctrl+P` then type "Split View"
+- **Keyboard shortcut**: Use the assigned shortcut to cycle through modes
+- **Cycle**: Off → Vertical (side by side) → Horizontal (top and bottom) → Off
+
+### Editing in Split View
+
+Each pane is a fully independent editor with:
+- Full toolbar (bold, italic, headings, alignment, etc.)
+- Breadcrumb navigation (library / note name)
+- Properties panel and stage dropdown
+- Save support (Ctrl+S saves the focused pane)
+- Title editing and file rename
+
+### Resizing Panes
+
+Drag the divider between panes to resize them. Each divider is independent — with 3+ notes open, you can resize any adjacent pair without affecting the others. Works in both vertical and horizontal modes.
+
+### Focus
+
+Click any pane to focus it. The focused pane receives keyboard shortcuts and is tracked by the right sidebar panels (Properties, Backlinks, etc.).
+
+---
+
+## 7. Index
+
+The Index is a comprehensive term index across all your libraries — every word, tag, and heading, sorted alphabetically with occurrence counts.
+
+### Opening the Index
+
+- **Dock button**: Click the Index icon (book) in the left dock
+- **Command Palette**: `Ctrl+P` then type "Index"
+
+### Browsing
+
+- **Filter**: Use the search bar to filter terms
+- **Language tabs**: Switch between All, Arabic, Hebrew, English, or # (special characters)
+- **Alphabet bar**: Click a letter to jump to that section
+- **Term count**: Each term shows how many notes contain it
+
+### Editing from the Index
+
+Click any note in the Index to open it in a split preview pane alongside the Index. The preview pane is a full editor — you can edit, save, change properties, and promote stage. Press `Ctrl+Click` to open the note as a regular tab instead.
+
+---
+
+## 8. Second Screen
 
 The Second Screen is a mode-based companion window that adapts to your current sidebar mode.
 
@@ -442,13 +495,24 @@ When the main window is in File Explorer mode, the second screen displays a dash
 - **Recently Opened** — Notes you opened but did not edit in the current session
 - **Tags** — All tags across libraries sorted by count; click a tag to see all notes using it
 
+### Note Editing in Second Screen
+
+The second screen supports full note editing — type, save, rename, and change properties just like the main window. Changes sync back to the main window automatically.
+
 ### Settings Sync
 
-Theme, font, and **language** changes in Settings instantly propagate to the second screen — no restart needed.
+All visual settings instantly propagate to the second screen — no restart needed:
+
+- **Language**: Interface language changes apply immediately
+- **Theme**: Light/dark/system mode switches instantly
+- **Fonts**: Interface font, text font, mono font, and script-specific fonts
+- **Font size**: Both interface and editor font sizes
+- **Editor**: Readable line length, line numbers, floating toolbar
+- **Accent color**: Theme accent color changes
 
 ---
 
-## 7. Properties and Frontmatter
+## 9. Properties and Frontmatter
 
 Notes can have YAML frontmatter at the top:
 
@@ -475,7 +539,7 @@ Toggle property display in **Settings > Editor > Properties in document** (Visib
 
 ---
 
-## 8. Templates
+## 10. Templates
 
 Create reusable note templates:
 
@@ -494,7 +558,7 @@ Templates support variables:
 
 ---
 
-## 9. Tables
+## 11. Tables
 
 ### Markdown Tables
 
@@ -516,7 +580,7 @@ When your cursor is inside a table, a floating toolbar appears with:
 
 ---
 
-## 10. Tasks
+## 12. Tasks
 
 Constellation supports task checkboxes in notes:
 
@@ -529,7 +593,7 @@ In Live Preview mode, checkboxes are clickable. Tasks can be searched and filter
 
 ---
 
-## 11. Importer
+## 13. Importer
 
 Import notes from other PKM tools:
 
@@ -541,7 +605,7 @@ Go to **Settings > Importer** to start an import.
 
 ---
 
-## 12. Calendar
+## 14. Calendar
 
 The Calendar view shows notes organized by date:
 
@@ -553,7 +617,7 @@ Open the Calendar from the sidebar.
 
 ---
 
-## 13. Lens
+## 15. Lens
 
 Lens provides filtered views of your notes:
 
@@ -563,7 +627,7 @@ Lens provides filtered views of your notes:
 
 ---
 
-## 14. Settings
+## 16. Settings
 
 Access Settings from the sidebar gear icon or `Ctrl+,`.
 
@@ -611,7 +675,7 @@ A dedicated tab consolidating all language-related settings:
 
 ---
 
-## 15. Keyboard Shortcuts
+## 17. Keyboard Shortcuts
 
 ### Global
 
@@ -653,7 +717,7 @@ A dedicated tab consolidating all language-related settings:
 
 ---
 
-## 16. RTL and Arabic Support
+## 18. RTL and Arabic Support
 
 Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, and other RTL scripts:
 
@@ -675,7 +739,7 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 
 ---
 
-## 17. Security and Privacy
+## 19. Security and Privacy
 
 - **All data stays local** — no cloud sync, no telemetry, no tracking
 - **Markdown files** — your notes are plain text files you own completely
@@ -685,7 +749,7 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 
 ---
 
-## 18. Cognitive Engine
+## 20. Cognitive Engine
 
 > "The quantity of your data and information doesn't matter. It is NOT about how many references or sources you keep or store; it is about how you formulate your KNOWLEDGE from them, and how to link all of it into one meaningful awareness."
 
