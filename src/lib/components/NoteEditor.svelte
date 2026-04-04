@@ -32,6 +32,7 @@
 		scrollTop?: number;
 		historyIndex?: number;
 		history?: string[];
+		highlightTerm?: string;
 	}
 
 	let {
@@ -208,5 +209,6 @@
 	onnavigateback={onnavigateback}
 	onnavigateforward={onnavigateforward}
 	onmoreaction={handleMoreAction}
+	highlightTerm={tab.highlightTerm ?? ''}
 />
 {/key}

@@ -17,7 +17,7 @@
 	import { tags } from '@lezer/highlight';
 	import { defaultKeymap, history, historyKeymap, undo, redo, indentWithTab } from '@codemirror/commands';
 	import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
-	import { search, openSearchPanel, searchKeymap } from '@codemirror/search';
+	import { search, openSearchPanel, searchKeymap, SearchQuery, setSearchQuery, findNext } from '@codemirror/search';
 	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath, notePathField, setNotePath, attachmentFolderField, setAttachmentFolder } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
@@ -84,6 +84,7 @@
 		trailTotal = 0,
 		onTrailPrev,
 		onTrailNext,
+		highlightTerm = '',
 	}: {
 		value?: string;
 		title?: string;
@@ -116,6 +117,7 @@
 		trailTotal?: number;
 		onTrailPrev?: () => void;
 		onTrailNext?: () => void;
+		highlightTerm?: string;
 	} = $props();
 
 	let titleValue = $state(title);
@@ -378,6 +380,14 @@
 		if (filePath) imgEffects.push(setNotePath.of(filePath));
 		imgEffects.push(setAttachmentFolder.of($appSettings.defaultAttachmentFolder || ''));
 		if (imgEffects.length) view.dispatch({ effects: imgEffects });
+
+		/* Highlight term from Index — open search panel with pre-filled query */
+		if (highlightTerm && view) {
+			const q = new SearchQuery({ search: highlightTerm, caseSensitive: false, literal: true });
+			view.dispatch({ effects: setSearchQuery.of(q) });
+			// Scroll to first occurrence
+			setTimeout(() => { if (view) findNext(view); }, 100);
+		}
 
 		/* Checkbox toggle — capture phase, O(1) via posAtCoords */
 		checkboxHandler = ((event: MouseEvent) => {
