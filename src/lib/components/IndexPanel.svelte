@@ -236,7 +236,7 @@
 			if (terms.length === 0) return result;
 			return result.filter(e => {
 				const lower = e.term.toLowerCase();
-				return terms.some(t => lower === t);
+				return terms.some(t => lower.includes(t) || t.includes(lower));
 			});
 		} else {
 			const q = raw.toLowerCase();
