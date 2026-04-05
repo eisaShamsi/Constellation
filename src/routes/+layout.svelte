@@ -2360,8 +2360,11 @@
 	}
 
 	async function handleIndexNoteClick(filePath: string, noteName: string, highlightTerm?: string, e?: MouseEvent) {
-		// Ctrl+click or middle-click: open in a real tab (existing behavior)
+		// Ctrl+click or middle-click: open in a real tab and close the Index
 		if (e && (e.ctrlKey || e.metaKey || e.button === 1)) {
+			showIndex = false;
+			indexNoteTab = null;
+			indexActiveNotePath = '';
 			return handleNoteClick(filePath, noteName, highlightTerm, e);
 		}
 		// Bold the active link in the index
