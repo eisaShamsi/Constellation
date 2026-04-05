@@ -384,12 +384,24 @@
 		/* Highlight term from Index — open search panel with pre-filled query */
 		if (highlightTerm && view) {
 			const isArabic = /[\u0600-\u06FF]/.test(highlightTerm);
-			const q = new SearchQuery({
-				search: highlightTerm,
-				caseSensitive: false,
-				literal: true,
-				wholeWord: true,
-			});
+			let q: SearchQuery;
+			if (isArabic) {
+				// Reverse normalization: expand each char to match original variants
+				// Allow optional tashkeel (diacritics) between characters
+				const d = '[\u064B-\u065F\u0670]*'; // optional diacritics class
+				const expanded = highlightTerm.split('').map(ch => {
+					if (ch === 'ه') return `[هة]${d}`;
+					if (ch === 'ا') return `[اأإآٱ]${d}`;
+					if (ch === 'ي') return `[يى]${d}`;
+					return ch + d;
+				}).join('');
+				// Allow optional الـ prefix before the word
+				// Use space/punctuation/start/end as word boundaries (not \b which fails for Arabic)
+				const pattern = `(?:^|[\\s.,;:!?()\\[\\]{}«»"'،؛؟])(?:ال)?${expanded}(?=$|[\\s.,;:!?()\\[\\]{}«»"'،؛؟])`;
+				q = new SearchQuery({ search: pattern, caseSensitive: false, regexp: true });
+			} else {
+				q = new SearchQuery({ search: highlightTerm, caseSensitive: false, literal: true, wholeWord: true });
+			}
 			view.dispatch({ effects: setSearchQuery.of(q) });
 			// Scroll to first occurrence — needs delay for editor to fully render
 			setTimeout(() => {
