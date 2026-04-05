@@ -395,8 +395,19 @@
 			const searchTerm = isArabic ? arabicPattern : highlightTerm;
 			const q = new SearchQuery({ search: searchTerm, caseSensitive: false, literal: !isArabic, regexp: isArabic });
 			view.dispatch({ effects: setSearchQuery.of(q) });
-			// Scroll to first occurrence
-			setTimeout(() => { if (view) findNext(view); }, 100);
+			// Scroll to first occurrence — needs delay for editor to fully render
+			setTimeout(() => {
+				if (!view) return;
+				findNext(view);
+				// Ensure the match is scrolled into view
+				setTimeout(() => {
+					if (!view) return;
+					const sel = view.state.selection.main;
+					if (sel.from !== sel.to) {
+						view.dispatch({ effects: EditorView.scrollIntoView(sel.from, { y: 'center' }) });
+					}
+				}, 50);
+			}, 300);
 		}
 
 		/* Checkbox toggle — capture phase, O(1) via posAtCoords */
