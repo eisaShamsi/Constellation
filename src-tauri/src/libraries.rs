@@ -1547,6 +1547,236 @@ fn is_hebrew(word: &str) -> bool {
     word.chars().any(|c| ('\u{0590}'..='\u{05FF}').contains(&c) || ('\u{FB1D}'..='\u{FB4F}').contains(&c))
 }
 
+fn is_latin(word: &str) -> bool {
+    word.chars().any(|c| c.is_ascii_alphabetic())
+}
+fn is_cyrillic(word: &str) -> bool {
+    word.chars().any(|c| ('\u{0400}'..='\u{04FF}').contains(&c))
+}
+fn is_devanagari(word: &str) -> bool {
+    word.chars().any(|c| ('\u{0900}'..='\u{097F}').contains(&c))
+}
+fn is_persian(word: &str) -> bool {
+    // Persian uses Arabic script but with specific chars: پ چ ژ گ
+    is_arabic(word) && word.chars().any(|c| c == 'پ' || c == 'چ' || c == 'ژ' || c == 'گ' || c == 'ک' || c == 'ی')
+}
+
+/// English stemmer (Porter-like light stemming)
+fn stem_english(word: &str) -> String {
+    let w = word.to_lowercase();
+    let len = w.len();
+    if len < 4 { return w; }
+
+    // Step 1: plurals and past tense
+    if w.ends_with("sses") { return w[..len-2].to_string(); }
+    if w.ends_with("ies") && len > 4 { return format!("{}y", &w[..len-3]); }
+    if w.ends_with("ness") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("ment") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("tion") { return w[..len-3].to_string(); }
+    if w.ends_with("sion") { return w[..len-3].to_string(); }
+    if w.ends_with("ling") && len > 5 { return w[..len-3].to_string(); }
+    if w.ends_with("ings") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("ing") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("ated") && len > 5 { return w[..len-2].to_string(); }
+    if w.ends_with("ized") && len > 5 { return w[..len-1].to_string(); }
+    if w.ends_with("ened") && len > 5 { return w[..len-2].to_string(); }
+    if w.ends_with("ed") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("ly") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("er") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("es") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("s") && !w.ends_with("ss") && len > 3 { return w[..len-1].to_string(); }
+
+    w
+}
+
+/// French stemmer (light suffix removal)
+fn stem_french(word: &str) -> String {
+    let w = word.to_lowercase();
+    let len = w.len();
+    if len < 4 { return w; }
+
+    if w.ends_with("euses") && len > 6 { return w[..len-5].to_string(); }
+    if w.ends_with("euse") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("ments") && len > 6 { return w[..len-5].to_string(); }
+    if w.ends_with("ment") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("tion") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("ence") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("ance") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("eux") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("ées") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("ée") && len > 3 { return w[..len-2].to_string(); }
+    if w.ends_with("és") && len > 3 { return w[..len-2].to_string(); }
+    if w.ends_with("er") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("es") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("é") { return w[..len-2].to_string(); } // é is 2 bytes
+    if w.ends_with("s") && !w.ends_with("ss") && len > 3 { return w[..len-1].to_string(); }
+
+    w
+}
+
+/// Spanish stemmer (light suffix removal)
+fn stem_spanish(word: &str) -> String {
+    let w = word.to_lowercase();
+    let len = w.len();
+    if len < 4 { return w; }
+
+    if w.ends_with("iones") && len > 6 { return w[..len-5].to_string(); }
+    if w.ends_with("ción") && len > 5 { return w[..len-4].to_string(); } // multibyte ó
+    if w.ends_with("mente") && len > 6 { return w[..len-5].to_string(); }
+    if w.ends_with("idad") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("ando") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("endo") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("ado") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("ido") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("ada") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("osa") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("oso") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("es") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("s") && len > 3 { return w[..len-1].to_string(); }
+
+    w
+}
+
+/// Portuguese stemmer (light suffix removal)
+fn stem_portuguese(word: &str) -> String {
+    let w = word.to_lowercase();
+    let len = w.len();
+    if len < 4 { return w; }
+
+    if w.ends_with("ções") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("mente") && len > 6 { return w[..len-5].to_string(); }
+    if w.ends_with("idade") && len > 6 { return w[..len-5].to_string(); }
+    if w.ends_with("ando") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("endo") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("ado") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("ido") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("ada") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("osa") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("oso") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("es") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("s") && len > 3 { return w[..len-1].to_string(); }
+
+    w
+}
+
+/// German stemmer (light suffix removal + umlaut normalization)
+fn stem_german(word: &str) -> String {
+    // Normalize umlauts
+    let w = word.to_lowercase()
+        .replace("ä", "a").replace("ö", "o").replace("ü", "u")
+        .replace("ß", "ss");
+    let len = w.len();
+    if len < 4 { return w; }
+
+    if w.ends_with("ungen") && len > 6 { return w[..len-5].to_string(); }
+    if w.ends_with("ung") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("heit") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("keit") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("lich") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("isch") && len > 5 { return w[..len-4].to_string(); }
+    if w.ends_with("ern") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("eln") && len > 4 { return w[..len-3].to_string(); }
+    if w.ends_with("en") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("er") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("es") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("em") && len > 4 { return w[..len-2].to_string(); }
+    if w.ends_with("e") && len > 4 { return w[..len-1].to_string(); }
+    if w.ends_with("s") && len > 3 { return w[..len-1].to_string(); }
+
+    w
+}
+
+/// Russian stemmer (light suffix removal for cases/gender/number)
+fn stem_russian(word: &str) -> String {
+    let chars: Vec<char> = word.chars().collect();
+    let len = chars.len();
+    if len < 4 { return word.to_string(); }
+
+    // Participial/adjectival suffixes
+    let last3: String = if len >= 3 { chars[len-3..].iter().collect() } else { String::new() };
+    let last2: String = if len >= 2 { chars[len-2..].iter().collect() } else { String::new() };
+
+    // Long suffixes (4+ chars)
+    if len > 5 {
+        let last4: String = chars[len-4..].iter().collect();
+        match last4.as_str() {
+            "ость" | "ными" | "ного" | "ному" | "ской" | "ских" | "ским" => return chars[..len-4].iter().collect(),
+            _ => {}
+        }
+    }
+    if len > 4 {
+        match last3.as_str() {
+            "ого" | "ому" | "ные" | "ных" | "ной" | "ами" | "ями" | "ить" | "ать" | "ять" | "ств" | "ски" => return chars[..len-3].iter().collect(),
+            _ => {}
+        }
+    }
+    if len > 3 {
+        match last2.as_str() {
+            "ов" | "ев" | "ий" | "ый" | "ая" | "ое" | "ые" | "ей" | "ям" | "ах" | "ом" | "ем" | "ой" | "ую" | "ие" | "ия" | "ть" | "ут" | "ют" | "ат" | "ят" | "ет" | "ит" | "ал" | "ил" | "ел" => return chars[..len-2].iter().collect(),
+            _ => {}
+        }
+    }
+
+    word.to_string()
+}
+
+/// Turkish stemmer (light agglutinative suffix removal)
+fn stem_turkish(word: &str) -> String {
+    let w = word.to_lowercase();
+    let len = w.len();
+    if len < 4 { return w; }
+
+    // Long suffixes first
+    if w.ends_with("ları") || w.ends_with("leri") { let blen = w.len() - "ları".len(); return w[..blen].to_string(); }
+    if w.ends_with("lar") || w.ends_with("ler") { let blen = w.len() - 3; if blen >= 2 { return w[..blen].to_string(); } }
+    if w.ends_with("lık") || w.ends_with("lik") || w.ends_with("luk") || w.ends_with("lük") { let blen = w.len() - "lık".len(); if blen >= 2 { return w[..blen].to_string(); } }
+    if w.ends_with("dan") || w.ends_with("den") || w.ends_with("tan") || w.ends_with("ten") { let blen = w.len() - 3; if blen >= 2 { return w[..blen].to_string(); } }
+
+    w
+}
+
+/// Hindi stemmer (light suffix removal for postpositions/verb forms)
+fn stem_hindi(word: &str) -> String {
+    let chars: Vec<char> = word.chars().collect();
+    let len = chars.len();
+    if len < 3 { return word.to_string(); }
+
+    if len > 3 {
+        let last2: String = chars[len-2..].iter().collect();
+        match last2.as_str() {
+            "ों" | "ें" | "ाँ" | "ता" | "ती" | "ते" | "ना" | "ने" | "नी" | "ाए" | "ाओ" | "ाई" => return chars[..len-2].iter().collect(),
+            _ => {}
+        }
+    }
+
+    word.to_string()
+}
+
+/// Persian stemmer (light suffix removal + normalize ی/ک)
+fn stem_persian(word: &str) -> String {
+    // Normalize Persian-specific chars
+    let normalized = word.replace('ي', "ی").replace('ك', "ک");
+    let chars: Vec<char> = normalized.chars().collect();
+    let len = chars.len();
+    if len < 4 { return normalized; }
+
+    if len > 4 {
+        let last2: String = chars[len-2..].iter().collect();
+        match last2.as_str() {
+            "ها" | "ان" | "ات" | "ین" | "ون" | "گی" | "شی" => return chars[..len-2].iter().collect(),
+            _ => {}
+        }
+    }
+    if len > 3 {
+        match chars[len-1] {
+            'ی' | 'ه' => return chars[..len-1].iter().collect(),
+            _ => {}
+        }
+    }
+
+    normalized
+}
+
 fn build_stopwords() -> std::collections::HashSet<String> {
     let words: &[&str] = &[
         // English
@@ -1851,9 +2081,35 @@ fn scan_index_words_recursive(
                         normalized.clone()
                     };
 
-                    // Phase 5: Basic Arabic stemming (suffix removal)
+                    // Phase 5: Stemming for all supported languages
                     let stemmed = if word_is_arabic && stripped.chars().count() >= 3 {
-                        stem_arabic(&stripped)
+                        if is_persian(&stripped) { stem_persian(&stripped) } else { stem_arabic(&stripped) }
+                    } else if word_is_hebrew {
+                        stripped.clone() // Hebrew stemming requires morphological analyzer — keep as-is after prefix removal
+                    } else if is_cyrillic(&stripped) {
+                        stem_russian(&stripped)
+                    } else if is_devanagari(&stripped) {
+                        stem_hindi(&stripped)
+                    } else if is_latin(&stripped) {
+                        // Detect Latin sub-language by checking against language-specific stopwords
+                        // For now, apply English stemming as default for Latin scripts
+                        // (French/Spanish/Portuguese/German/Turkish words will still benefit
+                        //  from English-like suffix removal for plurals/verb forms)
+                        let lower = stripped.to_lowercase();
+                        // Quick heuristic: German umlauts → German stemmer
+                        if lower.contains('ä') || lower.contains('ö') || lower.contains('ü') || lower.contains('ß') {
+                            stem_german(&stripped)
+                        } else if lower.contains('ñ') || lower.ends_with("ción") || lower.ends_with("ando") {
+                            stem_spanish(&stripped)
+                        } else if lower.contains('ç') || lower.contains('ã') || lower.contains('õ') {
+                            stem_portuguese(&stripped)
+                        } else if lower.contains('é') || lower.contains('è') || lower.contains('ê') || lower.ends_with("ment") || lower.ends_with("tion") {
+                            stem_french(&stripped)
+                        } else if lower.contains('ş') || lower.contains('ğ') || lower.contains('ı') || lower.contains('ü') {
+                            stem_turkish(&stripped)
+                        } else {
+                            stem_english(&stripped)
+                        }
                     } else {
                         stripped.clone()
                     };
