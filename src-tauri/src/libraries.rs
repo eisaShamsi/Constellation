@@ -1440,23 +1440,31 @@ pub struct IndexEntry {
 /// - Apache Lucene ArabicStemmer.java / ArabicNormalizer.java
 /// - CondLight: Conditional Arabic Light Stemmer (IAJIT 2018)
 
-/// Step 1: Normalize Arabic text (Lucene ArabicNormalizer model)
+/// Display normalization: remove diacritics + tatweel only.
+/// Preserves original character identity (ة stays ة, أ stays أ).
+/// Used for the display form shown in the Index.
+fn normalize_arabic_display(word: &str) -> String {
+    let mut result = String::with_capacity(word.len());
+    for ch in word.chars() {
+        match ch {
+            // Remove tashkeel diacritics
+            '\u{064B}'..='\u{065F}' | '\u{0670}' | '\u{06D6}'..='\u{06ED}' => continue,
+            // Remove tatweel (kashida)
+            '\u{0640}' => continue,
+            _ => result.push(ch),
+        }
+    }
+    result
+}
+
+/// Full normalization: remove diacritics + unify character variants.
+/// Used for the index KEY (grouping different forms of the same word).
 fn normalize_arabic(word: &str) -> String {
     let mut result = String::with_capacity(word.len());
     for ch in word.chars() {
         match ch {
             // Remove ALL tashkeel diacritics (harakat)
-            '\u{064B}' => continue, // fathatan
-            '\u{064C}' => continue, // dammatan
-            '\u{064D}' => continue, // kasratan
-            '\u{064E}' => continue, // fatha
-            '\u{064F}' => continue, // damma
-            '\u{0650}' => continue, // kasra
-            '\u{0651}' => continue, // shadda
-            '\u{0652}' => continue, // sukun
-            '\u{0653}'..='\u{065F}' => continue, // other combining marks
-            '\u{0670}' => continue, // superscript alef
-            '\u{06D6}'..='\u{06ED}' => continue, // Quranic marks
+            '\u{064B}'..='\u{065F}' | '\u{0670}' | '\u{06D6}'..='\u{06ED}' => continue,
             // Remove tatweel (kashida)
             '\u{0640}' => continue,
             // Normalize alef variants → bare alef
@@ -1552,13 +1560,14 @@ fn stem_arabic_light10(word: &str) -> String {
 }
 
 /// Combined Arabic processing: normalize + stem
+/// Returns (display_form, index_key)
+/// - display: original word with tashkeel removed (ة stays ة, أ stays أ)
+/// - key: fully normalized + stemmed (for grouping variants)
 fn process_arabic_word(word: &str) -> (String, String) {
-    let normalized = normalize_arabic(word);
+    let display = normalize_arabic_display(word); // preserve ة أ إ آ ى
+    let normalized = normalize_arabic(word);       // unify ة→ه أ→ا etc.
     let stemmed = stem_arabic_light10(&normalized);
-    // Return (display_form, index_key)
-    // Display: normalized form (readable, no tashkeel)
-    // Key: stemmed form (for grouping variants)
-    (normalized, stemmed)
+    (display, stemmed)
 }
 
 /// Remove common Hebrew prefixes: ב ל מ ה ו כ ש
@@ -2157,11 +2166,13 @@ fn scan_index_words_recursive(
                     // Process word through language-specific pipeline
                     let (normalized, stripped, stemmed);
                     if word_is_arabic {
-                        // Arabic: Lucene Light10 pipeline (normalize → prefix → suffix)
-                        let (norm, stem) = process_arabic_word(word);
-                        normalized = norm.clone();
-                        stripped = norm; // display = normalized (readable, no tashkeel)
-                        stemmed = stem; // key = stemmed (grouped by Light10)
+                        // Arabic: Lucene Light10 pipeline
+                        // display = original with tashkeel removed (ة أ إ preserved)
+                        // key = fully normalized + stemmed (for grouping)
+                        let (disp, stem) = process_arabic_word(word);
+                        normalized = normalize_arabic(word); // full normalization for stopword check
+                        stripped = disp; // display = original chars preserved
+                        stemmed = stem;  // key = grouped by Light10
                     } else if word_is_hebrew {
                         normalized = word.to_string();
                         let s = strip_hebrew_prefix(&normalized).to_string();
