@@ -278,3 +278,24 @@ export function onIndexTermSelected(callback: (data: IndexTermData) => void): Pr
 export function onIndexCompare(callback: (data: IndexCompareData) => void): Promise<UnlistenFn> {
 	return listen<IndexCompareData>('screen:index-compare', (event) => callback(event.payload));
 }
+
+/* ------------------------------------------------------------------ */
+/*  Constellation Map → Second Screen events                           */
+/* ------------------------------------------------------------------ */
+
+export interface MapCompanionData {
+	active: boolean;
+	colorMode: 'maturity' | 'stratum' | 'library';
+	focusNode: any | null;        // MapNode — the current drill-down node
+	parentNode: any | null;       // MapNode — 2 levels up (for note context)
+	clickedNote: { path: string; name: string; libraryName: string; libraryPath: string } | null;
+}
+
+/** Main → Second Screen: Map state changed */
+export async function emitMapCompanion(data: MapCompanionData): Promise<void> {
+	await emit('screen:map-companion', data);
+}
+
+export function onMapCompanion(callback: (data: MapCompanionData) => void): Promise<UnlistenFn> {
+	return listen<MapCompanionData>('screen:map-companion', (event) => callback(event.payload));
+}

@@ -30,16 +30,24 @@
 		libraryName = '',
 		libraryColor = '#7c3aed',
 		libraryColorMap = {} as Record<string, string>,
+		initialData = null as MapNode | null,
+		compact = false,
 		onNoteClick,
 		onClose,
+		onDrillDown,
+		onColorModeChange,
 	}: {
 		universeName?: string;
 		libraryPath?: string;
 		libraryName?: string;
 		libraryColor?: string;
 		libraryColorMap?: Record<string, string>;
+		initialData?: MapNode | null;
+		compact?: boolean;
 		onNoteClick?: (path: string, name: string) => void;
 		onClose?: () => void;
+		onDrillDown?: (node: MapNode, breadcrumbNames: string[]) => void;
+		onColorModeChange?: (mode: string) => void;
 	} = $props();
 
 	let containerEl: HTMLDivElement | undefined;
@@ -179,6 +187,7 @@
 					// Drill down
 					breadcrumb = [...breadcrumb, { name: data.name, node: d }];
 					renderSunburst(data);
+					onDrillDown?.(data, breadcrumb.map(b => b.name));
 				} else if (!data.is_dir && onNoteClick) {
 					onNoteClick(data.path, data.name);
 				}
@@ -253,7 +262,10 @@
 
 	function zoomToRoot() {
 		breadcrumb = [];
-		if (mapData) renderSunburst(mapData);
+		if (mapData) {
+			renderSunburst(mapData);
+			onDrillDown?.(mapData, []);
+		}
 	}
 
 	function zoomToBreadcrumb(idx: number) {
@@ -263,18 +275,27 @@
 		}
 		breadcrumb = breadcrumb.slice(0, idx + 1);
 		const target = breadcrumb[idx];
-		if (target) renderSunburst(target.node.data);
+		if (target) {
+			renderSunburst(target.node.data);
+			onDrillDown?.(target.node.data as MapNode, breadcrumb.map(b => b.name));
+		}
 	}
 
 	async function loadData() {
 		loading = true;
 		error = '';
 		try {
-			// Load universe-level map (all libraries)
-			const data = await invoke<MapNode>('constellation_map_universe', {
-				universeName: universeName || 'Universe',
-				maxDepth: 5,
-			});
+			let data: MapNode;
+			if (initialData) {
+				// Use pre-provided data (for SS companion mini-maps)
+				data = initialData;
+			} else {
+				// Load universe-level map (all libraries)
+				data = await invoke<MapNode>('constellation_map_universe', {
+					universeName: universeName || 'Universe',
+					maxDepth: 5,
+				});
+			}
 			mapData = data;
 			breadcrumb = [];
 			requestAnimationFrame(() => renderSunburst(data));
@@ -316,6 +337,7 @@
 		if (mapData && svgEl) {
 			const current = breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1].node.data : mapData;
 			renderSunburst(current);
+			onColorModeChange?.(colorMode);
 		}
 	});
 
@@ -332,8 +354,9 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="cmap">
+<div class="cmap" class:cmap-compact={compact}>
 	<!-- Header -->
+	{#if !compact}
 	<div class="cmap-header">
 		<div class="cmap-header-left">
 			<span class="cmap-icon">🗺️</span>
@@ -351,6 +374,7 @@
 			{/if}
 		</div>
 	</div>
+	{/if}
 
 	<!-- Breadcrumb -->
 	{#if breadcrumb.length > 0}
@@ -412,6 +436,7 @@
 	{/if}
 
 	<!-- Legend -->
+	{#if !compact}
 	<div class="cmap-legend">
 		{#if colorMode === 'maturity'}
 			{#each Object.entries(MATURITY_COLORS) as [label, color]}
@@ -423,6 +448,7 @@
 			{/each}
 		{/if}
 	</div>
+	{/if}
 </div>
 
 <style>

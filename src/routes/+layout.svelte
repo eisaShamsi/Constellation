@@ -92,7 +92,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -445,6 +445,8 @@
 	let indexSelectedTerms = $state<Set<string>>(new Set());
 	let indexReturnPending = $state(false); // show "Return to Index" button on note tab
 	let mapReturnPending = $state(false); // show "Return to Map" button on note tab
+	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
+	let mapFocusNode = $state<any>(null); // current MapNode being viewed
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -2967,8 +2969,29 @@
 					if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 					showConstellationMap = false;
 					mapReturnPending = true;
+					if (secondScreenOpen) {
+						emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: mapFocusNode, parentNode: null, clickedNote: { path, name, libraryName: lib?.name ?? '', libraryPath: lib?.path ?? '' } });
+					}
 				}}
-				onClose={() => { showConstellationMap = false; mapReturnPending = false; }}
+				onDrillDown={(node, bcNames) => {
+					mapFocusNode = node;
+					if (secondScreenOpen) {
+						emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: node, parentNode: null, clickedNote: null });
+					}
+				}}
+				onColorModeChange={(mode) => {
+					mapColorMode = mode as any;
+					if (secondScreenOpen) {
+						emitMapCompanion({ active: true, colorMode: mode as any, focusNode: mapFocusNode, parentNode: null, clickedNote: null });
+					}
+				}}
+				onClose={() => {
+					showConstellationMap = false;
+					mapReturnPending = false;
+					if (secondScreenOpen) {
+						emitMapCompanion({ active: false, colorMode: mapColorMode, focusNode: null, parentNode: null, clickedNote: null });
+					}
+				}}
 			/>
 		</div>
 

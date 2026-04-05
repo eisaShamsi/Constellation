@@ -23,6 +23,7 @@
 	import { get } from 'svelte/store';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
+	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
 	import DashboardView from '$lib/components/DashboardView.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
@@ -34,10 +35,12 @@
 		onSidebarModeChanged, onSplitModeChanged,
 		onDashboardOpenNote, onDashboardTagSelected,
 		onIndexTermSelected, onIndexCompare,
+		onMapCompanion,
 		sendNoteToMain, notifyScreenClosed, sendScreenState,
 		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo, type SidebarMode,
 		type SplitCompanionData, type DashboardTagData,
-		type IndexTermData, type IndexCompareData
+		type IndexTermData, type IndexCompareData,
+		type MapCompanionData
 	} from '$lib/secondScreen';
 	import {
 		setActiveUniverse, listUniverses, getChildUniverses,
@@ -75,6 +78,11 @@
 	let indexCompareData = $state<IndexCompareData | null>(null);
 	let indexSelectedNote = $state<any>(null); // OpenTab-like for selected note
 	let indexActiveCompareIdx = $state(0); // which term column is active in compare mode
+
+	// Map companion mode
+	let mapCompanionActive = $state(false);
+	let mapCompanionData = $state<MapCompanionData | null>(null);
+	let mapCompanionNoteTab = $state<any>(null); // for note click
 
 	// ─── Data state ───
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
@@ -635,6 +643,38 @@
 		});
 		unlisteners.push(u16);
 
+		const u17 = await onMapCompanion(async (data) => {
+			if (!data.active) {
+				mapCompanionActive = false;
+				mapCompanionData = null;
+				mapCompanionNoteTab = null;
+				return;
+			}
+			mapCompanionActive = true;
+			mapCompanionData = data;
+			// Reset other modes
+			dashboardMode = 'none';
+			indexMode = 'none';
+
+			// If a note was clicked, load it for editing
+			if (data.clickedNote) {
+				try {
+					const content = await invoke<string>('read_note', { filePath: data.clickedNote.path });
+					mapCompanionNoteTab = {
+						id: `map-note-${Date.now()}`,
+						path: data.clickedNote.path,
+						content,
+						name: data.clickedNote.name.endsWith('.md') ? data.clickedNote.name : data.clickedNote.name + '.md',
+						libraryName: data.clickedNote.libraryName,
+						libraryPath: data.clickedNote.libraryPath,
+					};
+				} catch { mapCompanionNoteTab = null; }
+			} else {
+				mapCompanionNoteTab = null;
+			}
+		});
+		unlisteners.push(u17);
+
 		const u12 = await onSplitModeChanged((data) => {
 			if (data.active) {
 				if (!splitCompanionActive) preSplitSidebarMode = mainSidebarMode;
@@ -869,6 +909,69 @@
 						{/if}
 					</div>
 				</div>
+			</div>
+
+		{:else if mapCompanionActive && mapCompanionData}
+			<!-- Constellation Map companion -->
+			<div class="map-companion">
+				{#if mapCompanionData.clickedNote && mapCompanionNoteTab}
+					<!-- Note view: editor + context mini-map -->
+					<div class="map-companion-note">
+						<div class="map-companion-editor">
+							<NoteEditor tab={mapCompanionNoteTab} noteNames={allNotes} />
+						</div>
+						{#if mapCompanionData.focusNode}
+							<div class="map-companion-context">
+								<ConstellationMap
+									initialData={mapCompanionData.focusNode}
+									{libraryColorMap}
+									compact={true}
+									onNoteClick={(path, name) => {
+										sendNoteToMain({ path, name, libraryName: '', libraryPath: '', libraryColor: '#7c3aed' });
+									}}
+								/>
+							</div>
+						{/if}
+					</div>
+				{:else if mapCompanionData.focusNode?.children}
+					<!-- Drill-down view: grid of child mini-maps -->
+					{@const focusNode = mapCompanionData.focusNode}
+					{@const children = focusNode.children || []}
+					{@const dirChildren = children.filter((c: any) => c.is_dir)}
+					<div class="map-companion-grid-header">
+						<span class="map-companion-title" dir="auto">{focusNode.name}</span>
+						<span class="map-companion-stats">{focusNode.note_count} notes · {focusNode.word_count?.toLocaleString()} words</span>
+					</div>
+					{#if dirChildren.length > 0}
+						<div class="map-companion-grid">
+							{#each dirChildren as child (child.path || child.name)}
+								<div class="map-companion-card">
+									<div class="map-companion-card-label" dir="auto">{child.name}</div>
+									<div class="map-companion-card-chart">
+										<ConstellationMap
+											initialData={child}
+											{libraryColorMap}
+											compact={true}
+										/>
+									</div>
+									<div class="map-companion-card-stats">{child.note_count} notes</div>
+								</div>
+							{/each}
+						</div>
+					{:else}
+						<div class="map-companion-full">
+							<ConstellationMap
+								initialData={focusNode}
+								{libraryColorMap}
+								compact={true}
+							/>
+						</div>
+					{/if}
+				{:else}
+					<div class="dash-tag-empty">
+						<p>Map companion</p>
+					</div>
+				{/if}
 			</div>
 
 		{:else if splitCompanionActive && splitCompanionData}
@@ -1596,6 +1699,40 @@
 		flex: 1; display: flex; align-items: center; justify-content: center;
 		color: var(--text-faint); font-size: 14px;
 	}
+
+	/* Map Companion */
+	.map-companion { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+	.map-companion-note { display: flex; flex: 1; overflow: hidden; }
+	.map-companion-editor { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+	.map-companion-context { width: 300px; min-width: 250px; border-left: 1px solid var(--background-modifier-border); overflow: hidden; }
+	.map-companion-grid-header {
+		padding: 12px 16px; flex-shrink: 0;
+		border-bottom: 1px solid var(--background-modifier-border);
+		display: flex; align-items: center; gap: 10px;
+	}
+	.map-companion-title { font-size: 16px; font-weight: 700; color: var(--text-normal); }
+	.map-companion-stats { font-size: 12px; color: var(--text-muted); }
+	.map-companion-grid {
+		flex: 1; overflow-y: auto; padding: 16px;
+		display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+		gap: 16px; align-content: start;
+	}
+	.map-companion-card {
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 10px; overflow: hidden;
+		background: var(--background-secondary);
+	}
+	.map-companion-card-label {
+		padding: 8px 12px; font-size: 13px; font-weight: 600;
+		color: var(--text-normal);
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+	.map-companion-card-chart { height: 200px; }
+	.map-companion-card-stats {
+		padding: 4px 12px; font-size: 11px; color: var(--text-muted);
+		border-top: 1px solid var(--background-modifier-border);
+	}
+	.map-companion-full { flex: 1; overflow: hidden; }
 
 	/* Index Compare */
 	.index-compare { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
