@@ -1816,7 +1816,7 @@ fn build_stopwords() -> std::collections::HashSet<String> {
         "كما","اذا","عبر","ضد","خلال","حول","فيه","فيها","عليه","عليها","منه","منها",
         "به","بها","له","لها","لهم","هولاء","اولئك","وهو","وهي","ولا","ولم","الا",
         "اما","سوف","لكن","ليس","ليست","كذلك","ايضا","مثل","غير","دون","ضمن",
-        "ذات","ذو","ذي","اللذين","اللتين","اللواتي","الذين","عليهم","لديه","لديها",
+        "ال","ذات","ذو","ذي","اللذين","اللتين","اللواتي","الذين","عليهم","لديه","لديها",
         "وقد","ولقد","والتي","والذي","ومن","وعلى","وفي","ومع","وعن","والى",
         // Hebrew
         "של","הוא","היא","את","זה","זו","אני","אנחנו","הם","הן","אתה","את","אתם","אתן",
@@ -2061,7 +2061,13 @@ fn scan_index_words_recursive(
                 let mut prev_word: Option<String> = None;
                 let mut prev_key: Option<String> = None;
 
-                for word in cleaned.split(|c: char| !c.is_alphabetic() && c != '\'') {
+                for word in cleaned.split(|c: char| {
+                    // Split on non-alphabetic chars (except apostrophe)
+                    // Also split on dashes, underscores, and special Unicode chars
+                    if c == '\'' { return false; }
+                    if c == '—' || c == '–' || c == '-' || c == '_' { return true; }
+                    !c.is_alphabetic()
+                }) {
                     let word = word.trim_matches('\'');
                     if word.is_empty() {
                         prev_word = None;
@@ -2140,11 +2146,14 @@ fn scan_index_words_recursive(
                     let is_stop = stopwords.contains(&key) || stopwords.contains(&norm_lower);
 
                     if !is_stop {
+                        // Skip if stemmed result is too short (e.g., "ال" → "")
+                        if key.chars().count() < 2 { prev_word = Some(normalized.clone()); prev_key = Some(key); continue; }
+
                         let entry = index.entry(key.clone()).or_insert_with(|| {
                             (std::collections::HashMap::new(), 0, Vec::new())
                         });
-                        // Track casing variant
-                        *entry.0.entry(word.to_string()).or_insert(0) += 1;
+                        // Track display variant (use stripped form, not raw word with tashkeel)
+                        *entry.0.entry(stripped.clone()).or_insert(0) += 1;
                         entry.1 += 1;
 
                         if !seen_in_note.contains(&key) {
@@ -2156,9 +2165,9 @@ fn scan_index_words_recursive(
                     // Bigram detection: pair with previous non-stop word if same script
                     if let (Some(pw), Some(pk)) = (&prev_word, &prev_key) {
                         let prev_is_stop = stopwords.contains(pk.as_str());
-                        if !is_stop && !prev_is_stop && is_same_script(pw, word) {
+                        if !is_stop && !prev_is_stop && is_same_script(pw, &stripped) {
                             let bi_key = format!("{} {}", pk, key);
-                            let bi_display = format!("{} {}", pw, word);
+                            let bi_display = format!("{} {}", pw, stripped);
                             let bi_entry = bigrams.entry(bi_key.clone())
                                 .or_insert_with(|| (bi_display, 0, Vec::new()));
                             bi_entry.1 += 1;
@@ -2169,7 +2178,7 @@ fn scan_index_words_recursive(
                         }
                     }
 
-                    prev_word = Some(word.to_string());
+                    prev_word = Some(stripped.clone());
                     prev_key = Some(key);
                 }
             }
