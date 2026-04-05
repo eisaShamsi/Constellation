@@ -196,8 +196,24 @@ All were passing legacy `tab={tabObj}` + invalid props (`isFocused`, `color`, `s
 - `src/lib/secondScreen.ts` — IndexTermData, IndexCompareData events
 - `src/routes/+layout.svelte` — Index overlay (display:none), Return button, Ctrl+Click
 
+---
+
+## Phase: Index Polish — SS Integration, Anchor Bar, Arabic Display
+
+### Commits: `695042e` → `99a8eb6`
+**Tag:** `milestone/index-arabic-display`
+
+### Changes
+- **Selected terms anchor bar**: persistent chip bar at top of Index showing all Ctrl+Click selected terms — click × to deselect, "Clear all" to reset, always visible while scrolling
+- **Arabic display fix**: split normalization into two levels — display preserves original chars (ة أ إ آ ى), index key unifies for grouping. "تربة" now displays correctly (not "تربه")
+- **Term highlight**: Arabic regex with word boundaries, scroll to first match centered
+
+### Files Modified
+- `src-tauri/src/libraries.rs` — Two-level Arabic normalization (display vs key)
+- `src/lib/components/IndexPanel.svelte` — Anchor bar UI + CSS
+
 ### Open Items
 - CE Layer 2: Pending
 - Font theme application: still duplicated between +layout.svelte and SecondScreenPage
 - SS dead code cleanup: loadDashboardData, tag/recent state variables
-- Index: virtual scrolling for 60k+ terms (lazy load works but not true virtualization)
+- Index: virtual scrolling for 60k+ terms
