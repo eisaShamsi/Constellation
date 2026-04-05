@@ -178,12 +178,21 @@
 		}
 	}
 
-	async function handleLinkClick(link: string) {
+	async function handleLinkClick(link: string, newTab?: boolean) {
 		if (!tab.libraryPath) return;
 		try {
 			const resolved = await resolveWikilinkCrossLibrary(tab.libraryPath, link);
 			if (resolved) {
-				await openNoteTab(resolved.path, resolved.libraryName, resolved.libraryColor || '#7c3aed');
+				await openNoteTab(resolved.path, resolved.libraryName, resolved.libraryColor || '#7c3aed', undefined, newTab);
+			} else {
+				// Note doesn't exist — create it in the same library/folder
+				const dir = tab.path.replace(/[/\\][^/\\]+$/, '');
+				const newPath = `${dir}/${link}.md`;
+				const content = '';
+				await invoke('write_note', { filePath: newPath, content });
+				const libName = tab.libraryName;
+				const colors = buildLibraryColorMap([{ name: libName }]);
+				await openNoteTab(newPath, libName, colors[libName] || '#7c3aed', undefined, newTab);
 			}
 		} catch {}
 	}

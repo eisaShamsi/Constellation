@@ -119,7 +119,7 @@
 		onTrailPrev?: () => void;
 		onTrailNext?: () => void;
 		highlightTerm?: string;
-		onlinkclick?: (link: string) => void;
+		onlinkclick?: (link: string, newTab?: boolean) => void;
 	} = $props();
 
 	let titleValue = $state(title);
@@ -500,10 +500,11 @@
 					event.preventDefault();
 					event.stopPropagation();
 					const link = match[1].split('|')[0].split('#')[0].trim();
+					const newTab = event.ctrlKey || event.metaKey;
 					if (onlinkclick) {
-						onlinkclick(link);
+						onlinkclick(link, newTab);
 					} else {
-						document.dispatchEvent(new CustomEvent('constellation:navigate-link', { detail: { link } }));
+						document.dispatchEvent(new CustomEvent('constellation:navigate-link', { detail: { link, newTab } }));
 					}
 					return;
 				}
