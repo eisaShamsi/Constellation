@@ -333,23 +333,42 @@ Klicken Sie auf ein beliebiges Feld, um es zu fokussieren. Das fokussierte Feld 
 
 ## 6. Index
 
-Der Index ist ein umfassendes Begriffsverzeichnis ueber alle Ihre Bibliotheken — jedes Wort, jeder Tag und jede Ueberschrift, alphabetisch sortiert mit Vorkommenshaeufigkeiten.
+Der Index ist ein umfassendes Begriffsglossar ueber alle Ihre Bibliotheken — jedes bedeutungsvolle Wort, alphabetisch sortiert mit Vorkommenshaeufigkeiten.
 
 ### Index oeffnen
 
 - **Dock-Schaltflaeche**: Klicken Sie auf das Index-Symbol (Buch) im linken Dock
 - **Befehlspalette**: `Ctrl+P` und dann "Index" eingeben
 
+### Mehrsprachige NLP-Pipeline
+
+Der Index verarbeitet Text durch eine sprachbewusste Pipeline vor der Indexierung:
+
+- **Arabisch**: Lucene Light10-Algorithmus — entfernt Tashkeel, vereinheitlicht Hamza, entfernt bestimmten Artikel (الـ), entfernt grammatische Suffixe
+- **Hebraeisch**: Praefixentfernung (ב/ל/מ/ה/ו/כ/ש)
+- **Englisch**: Porter-aehnliches Stemming (Pluralformen, Verbformen, Suffixe)
+- **Franzoesisch/Spanisch/Portugiesisch/Deutsch**: Sprachspezifische Suffixentfernung
+- **Russisch/Tuerkisch/Hindi/Persisch**: Morphologische Suffixentfernung
+- **Alle 15 Sprachen**: Stoppwortfilterung (Artikel, Praepositionen, Konjunktionen)
+
 ### Durchsuchen
 
-- **Filtern**: Verwenden Sie die Suchleiste, um Begriffe zu filtern
 - **Sprach-Tabs**: Wechseln Sie zwischen Alle, Arabisch, Hebraeisch, Englisch oder # (Sonderzeichen)
-- **Alphabetleiste**: Klicken Sie auf einen Buchstaben, um zu diesem Abschnitt zu springen
-- **Begriffsanzahl**: Jeder Begriff zeigt an, in wie vielen Notizen er vorkommt
+- **Alphabetleiste**: Klicken Sie auf einen Buchstaben, um Begriffe zu filtern, die mit diesem Buchstaben beginnen — die Begriffsanzahl aktualisiert sich entsprechend
+- **Klicken Sie erneut auf denselben Buchstaben**, um den Filter zu loeschen und alle Begriffe anzuzeigen
+- **Sortiermodi**: Alphabetisch (Standard) oder nach Haeufigkeit (haeufigste zuerst)
 
 ### Bearbeiten aus dem Index
 
-Klicken Sie auf eine Notiz im Index, um sie in einem geteilten Vorschaufeld neben dem Index zu oeffnen. Das Vorschaufeld ist ein vollstaendiger Editor — Sie koennen bearbeiten, speichern, Eigenschaften aendern und die Stufe hochsetzen. Druecken Sie `Ctrl+Klick`, um die Notiz stattdessen als normalen Tab zu oeffnen.
+Klicken Sie auf eine Notiz in den Referenzen eines Begriffs, um sie in einem geteilten Vorschaufeld neben dem Index zu oeffnen. Das Vorschaufeld ist ein vollstaendiger Editor — Sie koennen bearbeiten, speichern, Eigenschaften aendern und die Stufe hochsetzen. Der Suchbegriff wird in der Notiz hervorgehoben und automatisch dorthin gescrollt.
+
+Druecken Sie `Ctrl+Klick`, um die Notiz als normalen Tab zu oeffnen. Eine Schaltflaeche "Zurueck zum Index" erscheint in der Tab-Leiste — klicken Sie darauf, um genau an die Stelle im Index zurueckzukehren, an der Sie aufgehoert haben.
+
+### Integration mit dem Zweiten Bildschirm
+
+Wenn der Zweite Bildschirm geoeffnet ist:
+- **Klicken Sie auf einen Begriff** → Der Zweite Bildschirm zeigt alle Notizen mit diesem Begriff in einer geteilten Ansicht (Notizliste + Editor)
+- **Ctrl+Klick auf mehrere Begriffe** → Der Zweite Bildschirm zeigt den Vergleichsmodus mit jedem Begriff in einer eigenen Spalte
 
 ---
 

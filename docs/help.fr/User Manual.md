@@ -333,23 +333,42 @@ Cliquez sur n'importe quel volet pour le mettre au premier plan. Le volet actif 
 
 ## 6. Index
 
-L'Index est un index terminologique complet de toutes vos bibliotheques — chaque mot, etiquette et titre, classes par ordre alphabetique avec le nombre d'occurrences.
+L'Index est un glossaire complet de termes de toutes vos bibliotheques — chaque mot significatif, classe par ordre alphabetique avec le nombre d'occurrences.
 
 ### Ouvrir l'Index
 
 - **Bouton du dock** : Cliquez sur l'icone de l'Index (livre) dans le dock gauche
 - **Palette de commandes** : `Ctrl+P` puis tapez "Index"
 
+### Pipeline NLP Multilingue
+
+L'Index traite le texte via un pipeline sensible a la langue avant l'indexation :
+
+- **Arabe** : Algorithme Lucene Light10 — supprime le tashkeel, unifie le hamza, supprime l'article defini (الـ), supprime les suffixes grammaticaux
+- **Hebreu** : Suppression des prefixes (ב/ל/מ/ה/ו/כ/ש)
+- **Anglais** : Racinisation de type Porter (pluriels, formes verbales, suffixes)
+- **Francais/Espagnol/Portugais/Allemand** : Suppression de suffixes specifiques a la langue
+- **Russe/Turc/Hindi/Persan** : Suppression de suffixes morphologiques
+- **Les 15 langues** : Filtrage des mots vides (articles, prepositions, conjonctions)
+
 ### Navigation
 
-- **Filtrer** : Utilisez la barre de recherche pour filtrer les termes
 - **Onglets de langue** : Basculez entre Tous, Arabe, Hebreu, Anglais ou # (caracteres speciaux)
-- **Barre alphabetique** : Cliquez sur une lettre pour acceder a cette section
-- **Nombre de termes** : Chaque terme indique le nombre de notes qui le contiennent
+- **Barre alphabetique** : Cliquez sur une lettre pour filtrer les termes commencant par cette lettre — le compteur de termes se met a jour pour afficher le nombre de correspondances
+- **Cliquez a nouveau sur la meme lettre** pour effacer le filtre et afficher tous les termes
+- **Modes de tri** : Alphabetique (par defaut) ou par frequence (les plus courants en premier)
 
 ### Modifier depuis l'Index
 
-Cliquez sur une note dans l'Index pour l'ouvrir dans un volet d'apercu fractionne a cote de l'Index. Le volet d'apercu est un editeur complet — vous pouvez modifier, sauvegarder, changer les proprietes et promouvoir le stade. Appuyez sur `Ctrl+Clic` pour ouvrir la note comme un onglet normal a la place.
+Cliquez sur une note dans les references d'un terme pour l'ouvrir dans un volet d'apercu fractionne a cote de l'Index. Le volet d'apercu est un editeur complet — vous pouvez modifier, sauvegarder, changer les proprietes et promouvoir le stade. Le terme recherche est surligne dans la note et deplace automatiquement a sa position.
+
+Appuyez sur `Ctrl+Clic` pour ouvrir la note comme un onglet normal. Un bouton « Retour a l'Index » apparait dans la barre d'onglets — cliquez dessus pour revenir exactement ou vous etiez dans l'Index.
+
+### Integration avec le Second Ecran
+
+Lorsque le Second Ecran est ouvert :
+- **Cliquez sur un terme** → Le Second Ecran affiche toutes les notes contenant ce terme dans une vue fractionnee (liste de notes + editeur)
+- **Ctrl+Clic sur plusieurs termes** → Le Second Ecran affiche le mode comparaison avec chaque terme dans sa propre colonne
 
 ---
 

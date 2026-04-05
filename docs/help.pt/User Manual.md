@@ -333,23 +333,42 @@ Clique em qualquer painel para foca-lo. O painel focado recebe os atalhos de tec
 
 ## 6. Indice
 
-O Indice e um indice de termos abrangente de todas as suas bibliotecas — cada palavra, tag e titulo, ordenados alfabeticamente com contagens de ocorrencias.
+O Indice e um glossario abrangente de termos de todas as suas bibliotecas — cada palavra significativa, ordenada alfabeticamente com contagens de ocorrencias.
 
 ### Abrir o Indice
 
 - **Botao do dock**: Clique no icone do Indice (livro) no dock esquerdo
 - **Paleta de Comandos**: `Ctrl+P` e digite "Index"
 
+### Pipeline NLP Multilingue
+
+O Indice processa o texto atraves de um pipeline consciente do idioma antes da indexacao:
+
+- **Arabe**: Algoritmo Lucene Light10 — remove tashkeel, unifica hamza, remove artigo definido (الـ), remove sufixos gramaticais
+- **Hebraico**: Remocao de prefixos (ב/ל/מ/ה/ו/כ/ש)
+- **Ingles**: Stemming tipo Porter (plurais, formas verbais, sufixos)
+- **Frances/Espanhol/Portugues/Alemao**: Remocao de sufixos especificos do idioma
+- **Russo/Turco/Hindi/Persa**: Remocao de sufixos morfologicos
+- **Todos os 15 idiomas**: Filtragem de palavras vazias (artigos, preposicoes, conjuncoes)
+
 ### Navegacao
 
-- **Filtrar**: Use a barra de pesquisa para filtrar termos
 - **Abas de idioma**: Alterne entre Todos, Arabe, Hebraico, Ingles ou # (caracteres especiais)
-- **Barra alfabetica**: Clique em uma letra para pular para essa secao
-- **Contagem de termos**: Cada termo mostra quantas notas o contem
+- **Barra alfabetica**: Clique em uma letra para filtrar termos que comecam com essa letra — a contagem de termos e atualizada para mostrar quantos correspondem
+- **Clique na mesma letra novamente** para limpar o filtro e mostrar todos os termos
+- **Modos de ordenacao**: Alfabetico (padrao) ou por frequencia (mais comuns primeiro)
 
 ### Editar a partir do Indice
 
-Clique em qualquer nota no Indice para abri-la em um painel de pre-visualizacao dividido ao lado do Indice. O painel de pre-visualizacao e um editor completo — voce pode editar, salvar, alterar propriedades e promover o estagio. Pressione `Ctrl+Clique` para abrir a nota como uma aba regular.
+Clique em qualquer nota nas referencias de um termo para abri-la em um painel de pre-visualizacao dividido ao lado do Indice. O painel de pre-visualizacao e um editor completo — voce pode editar, salvar, alterar propriedades e promover o estagio. O termo de pesquisa e destacado na nota e rolado automaticamente.
+
+Pressione `Ctrl+Clique` para abrir a nota como uma aba regular. Um botao "Voltar ao Indice" aparece na barra de abas — clique nele para retornar exatamente onde voce parou no Indice.
+
+### Integracao com a Segunda Tela
+
+Quando a Segunda Tela esta aberta:
+- **Clique em um termo** → A Segunda Tela mostra todas as notas contendo esse termo em uma visualizacao dividida (lista de notas + editor)
+- **Ctrl+Clique em varios termos** → A Segunda Tela mostra o modo de comparacao com cada termo em sua propria coluna
 
 ---
 

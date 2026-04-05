@@ -333,23 +333,42 @@ Herhangi bir panele tıklayarak odaklayın. Odaklanan panel klavye kısayolları
 
 ## 6. Dizin
 
-Dizin, tüm kütüphaneleriniz genelinde kapsamlı bir terim dizinidir — her kelime, etiket ve başlık, oluşum sayılarıyla birlikte alfabetik olarak sıralanmıştır.
+Dizin, tüm kütüphaneleriniz genelinde kapsamlı bir terim sözlüğüdür — her anlamlı kelime, oluşum sayılarıyla birlikte alfabetik olarak sıralanmıştır.
 
 ### Dizini Açma
 
 - **Dock düğmesi**: Sol docktaki Dizin simgesine (kitap) tıklayın
 - **Komut Paleti**: `Ctrl+P` ve ardından "Index" yazın
 
+### Çok Dilli NLP İşlem Hattı
+
+Dizin, dizinlemeden önce metni dil farkındalıklı bir işlem hattından geçirir:
+
+- **Arapça**: Lucene Light10 algoritması — teşkili kaldırır, hemzeyi birleştirir, belirli tanımlığı (الـ) kaldırır, dilbilgisi eklerini kaldırır
+- **İbranice**: Önek kaldırma (ב/ל/מ/ה/ו/כ/ש)
+- **İngilizce**: Porter benzeri kök bulma (çoğullar, fiil formları, ekler)
+- **Fransızca/İspanyolca/Portekizce/Almanca**: Dile özgü ek kaldırma
+- **Rusça/Türkçe/Hintçe/Farsça**: Morfolojik ek kaldırma
+- **Tüm 15 dil**: Etkisiz kelime filtreleme (tanımlıklar, edatlar, bağlaçlar)
+
 ### Göz Atma
 
-- **Filtreleme**: Terimleri filtrelemek için arama çubuğunu kullanın
 - **Dil sekmeleri**: Tümü, Arapça, İbranice, İngilizce veya # (özel karakterler) arasında geçiş yapın
-- **Alfabe çubuğu**: Bir harfe tıklayarak o bölüme atlayın
-- **Terim sayısı**: Her terim, kaç notta geçtiğini gösterir
+- **Alfabe çubuğu**: Bir harfe tıklayarak o harfle başlayan terimleri filtreleyin — terim sayısı güncellenerek kaç eşleşme olduğunu gösterir
+- **Aynı harfe tekrar tıklayın** filtreyi temizleyip tüm terimleri göstermek için
+- **Sıralama modları**: Alfabetik (varsayılan) veya sıklığa göre (en yaygınlar önce)
 
 ### Dizinden Düzenleme
 
-Dizindeki herhangi bir nota tıklayarak Dizinin yanında bölünmüş bir önizleme panelinde açın. Önizleme paneli tam bir düzenleyicidir — düzenleyebilir, kaydedebilir, özellikleri değiştirebilir ve aşamayı yükseltebilirsiniz. Notu normal bir sekme olarak açmak için `Ctrl+Tıklama` yapın.
+Bir terimin referanslarındaki herhangi bir nota tıklayarak Dizinin yanında bölünmüş bir önizleme panelinde açın. Önizleme paneli tam bir düzenleyicidir — düzenleyebilir, kaydedebilir, özellikleri değiştirebilir ve aşamayı yükseltebilirsiniz. Arama terimi notta vurgulanır ve otomatik olarak kaydırılır.
+
+Notu normal bir sekme olarak açmak için `Ctrl+Tıklama` yapın. Sekme çubuğunda "Dizine Dön" düğmesi görünür — Dizinde kaldığınız yere tam olarak dönmek için tıklayın.
+
+### İkinci Ekran Entegrasyonu
+
+İkinci Ekran açıkken:
+- **Bir terime tıklayın** → İkinci Ekran o terimi içeren tüm notları bölünmüş görünümde gösterir (not listesi + düzenleyici)
+- **Birden fazla terime Ctrl+Tıklama** → İkinci Ekran her terimi kendi sütununda karşılaştırma modunda gösterir
 
 ---
 

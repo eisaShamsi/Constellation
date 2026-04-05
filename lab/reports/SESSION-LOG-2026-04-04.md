@@ -149,7 +149,55 @@ All were passing legacy `tab={tabObj}` + invalid props (`isFocused`, `color`, `s
 - `src/lib/editor/calloutPlugin.ts` — RTL direction detection
 - `CLAUDE.md` — two new principle rules
 
+---
+
+## Phase: Index — Full NLP Pipeline + SS Interaction + UX Polish
+
+### Commits: `d754659` → `7756f01`
+**Tag:** `milestone/index-nlp-complete`
+
+### Full NLP Pipeline (Rust Backend)
+- **Arabic**: Lucene Light10 algorithm (normalize → prefix → suffix)
+  - Normalization: tashkeel removal, hamza unification, ة→ه, ى→ي
+  - Prefix: وال/بال/كال/فال (3-char), ال/لل (2-char), و only (1-char)
+  - Suffix: ها/ان/ات/ون/ين/يه/يت/ته (2-char), ه/ي (1-char)
+  - "بن"/"ابن" as stopwords, skip words >15 chars
+- **English**: Porter-like (plurals, -ing, -ed, -tion, -ness, -ment, -ly)
+- **French/Spanish/Portuguese**: suffix removal (char-safe UTF-8)
+- **German**: umlaut normalization + suffix removal
+- **Russian**: case/gender/number suffixes
+- **Turkish**: agglutinative suffix removal
+- **Hindi/Persian**: suffix removal with normalization
+- **Hebrew**: prefix removal (ב/ל/מ/ה/ו/כ/ש)
+- **Japanese/Korean/Chinese**: stopword filtering
+- **All 15 languages**: comprehensive stop word lists
+- **UTF-8 safety**: all stemmers use char-based operations (not byte slicing)
+
+### Index → Second Screen Interaction
+- **Term click** → SS shows note list + editor (same pattern as Dashboard tags)
+- **Ctrl+Click multi-term** → SS shows compare mode (columns per term)
+- Events: emitIndexTermSelected, emitIndexCompare
+
+### Index UX Polish
+- **Letter filtering**: click letter → shows only that letter's terms + count
+- **Term count updates** with language and letter filters
+- **One term expanded at a time** (clicking new term collapses previous)
+- **Comma-separated search**: substring match (finds stemmed forms)
+- **Ctrl+Click opens as tab**: closes Index, shows "Return to Index" button
+- **Return to Index**: preserves exact state (scroll, filter, letter, expanded term) via display:none instead of unmount
+- **Term highlight**: wholeWord search for non-Arabic, regex with word boundaries for Arabic
+- **Callout RTL**: explicit dir detection from text content
+
+### Files Modified
+- `src-tauri/src/libraries.rs` — Full NLP pipeline rewrite
+- `src/lib/components/IndexPanel.svelte` — Letter filtering, term expand, chevron/name split
+- `src/lib/components/NotePane.svelte` — Term highlight with Arabic normalization reversal
+- `src/lib/components/SecondScreenPage.svelte` — Index term + compare modes
+- `src/lib/secondScreen.ts` — IndexTermData, IndexCompareData events
+- `src/routes/+layout.svelte` — Index overlay (display:none), Return button, Ctrl+Click
+
 ### Open Items
 - CE Layer 2: Pending
-- Font theme application: still duplicated between +layout.svelte and SecondScreenPage (~65 lines)
-- SS dead code cleanup: loadDashboardData, tag/recent state variables still present
+- Font theme application: still duplicated between +layout.svelte and SecondScreenPage
+- SS dead code cleanup: loadDashboardData, tag/recent state variables
+- Index: virtual scrolling for 60k+ terms (lazy load works but not true virtualization)

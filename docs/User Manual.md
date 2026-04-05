@@ -446,23 +446,42 @@ Click any pane to focus it. The focused pane receives keyboard shortcuts and is 
 
 ## 7. Index
 
-The Index is a comprehensive term index across all your libraries — every word, tag, and heading, sorted alphabetically with occurrence counts.
+The Index is a comprehensive term glossary across all your libraries — every meaningful word, sorted alphabetically with occurrence counts.
 
 ### Opening the Index
 
 - **Dock button**: Click the Index icon (book) in the left dock
 - **Command Palette**: `Ctrl+P` then type "Index"
 
+### Multilingual NLP Pipeline
+
+The Index processes text through a language-aware pipeline before indexing:
+
+- **Arabic**: Lucene Light10 algorithm — removes tashkeel, unifies hamza, strips definite article (الـ), removes grammatical suffixes
+- **Hebrew**: Prefix removal (ב/ל/מ/ה/ו/כ/ש)
+- **English**: Porter-like stemming (plurals, verb forms, suffixes)
+- **French/Spanish/Portuguese/German**: Language-specific suffix removal
+- **Russian/Turkish/Hindi/Persian**: Morphological suffix removal
+- **All 15 languages**: Stop word filtering (articles, prepositions, conjunctions)
+
 ### Browsing
 
-- **Filter**: Use the search bar to filter terms
 - **Language tabs**: Switch between All, Arabic, Hebrew, English, or # (special characters)
-- **Alphabet bar**: Click a letter to jump to that section
-- **Term count**: Each term shows how many notes contain it
+- **Alphabet bar**: Click a letter to filter to terms starting with that letter — the term count updates to show how many terms match
+- **Click the same letter again** to clear the filter and show all terms
+- **Sort modes**: Alphabetical (default) or by frequency (most common first)
 
 ### Editing from the Index
 
-Click any note in the Index to open it in a split preview pane alongside the Index. The preview pane is a full editor — you can edit, save, change properties, and promote stage. Press `Ctrl+Click` to open the note as a regular tab instead.
+Click any note in a term's references to open it in a split preview pane alongside the Index. The preview pane is a full editor — you can edit, save, change properties, and promote stage. The search term is highlighted in the note and scrolled to automatically.
+
+Press `Ctrl+Click` to open the note as a regular tab. A "Return to Index" button appears in the tab bar — click it to return to exactly where you left off in the Index.
+
+### Second Screen Integration
+
+When the Second Screen is open:
+- **Click a term** → Second Screen shows all notes containing that term in a split view (note list + editor)
+- **Ctrl+Click multiple terms** → Second Screen shows compare mode with each term in its own column
 
 ---
 

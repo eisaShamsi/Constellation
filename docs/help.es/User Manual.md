@@ -333,23 +333,42 @@ Haz clic en cualquier panel para enfocarlo. El panel enfocado recibe los atajos 
 
 ## 6. Indice
 
-El Indice es un indice de terminos completo de todas tus bibliotecas — cada palabra, etiqueta y encabezado, ordenado alfabeticamente con conteos de apariciones.
+El Indice es un glosario completo de terminos de todas tus bibliotecas — cada palabra significativa, ordenada alfabeticamente con conteos de apariciones.
 
 ### Abrir el Indice
 
 - **Boton del dock**: Haz clic en el icono del Indice (libro) en el dock izquierdo
 - **Paleta de Comandos**: `Ctrl+P` y luego escribe "Index"
 
+### Pipeline NLP Multilingue
+
+El Indice procesa el texto a traves de un pipeline consciente del idioma antes de indexar:
+
+- **Arabe**: Algoritmo Lucene Light10 — elimina tashkeel, unifica hamza, elimina el articulo definido (الـ), elimina sufijos gramaticales
+- **Hebreo**: Eliminacion de prefijos (ב/ל/מ/ה/ו/כ/ש)
+- **Ingles**: Stemming tipo Porter (plurales, formas verbales, sufijos)
+- **Frances/Espanol/Portugues/Aleman**: Eliminacion de sufijos especificos del idioma
+- **Ruso/Turco/Hindi/Persa**: Eliminacion de sufijos morfologicos
+- **Los 15 idiomas**: Filtrado de palabras vacias (articulos, preposiciones, conjunciones)
+
 ### Navegacion
 
-- **Filtrar**: Usa la barra de busqueda para filtrar terminos
 - **Pestanas de idioma**: Alterna entre Todos, Arabe, Hebreo, Ingles o # (caracteres especiales)
-- **Barra alfabetica**: Haz clic en una letra para saltar a esa seccion
-- **Conteo de terminos**: Cada termino muestra cuantas notas lo contienen
+- **Barra alfabetica**: Haz clic en una letra para filtrar terminos que comienzan con esa letra — el conteo de terminos se actualiza para mostrar cuantos coinciden
+- **Haz clic en la misma letra de nuevo** para borrar el filtro y mostrar todos los terminos
+- **Modos de ordenacion**: Alfabetico (predeterminado) o por frecuencia (mas comunes primero)
 
 ### Editar desde el Indice
 
-Haz clic en cualquier nota en el Indice para abrirla en un panel de vista previa dividido junto al Indice. El panel de vista previa es un editor completo — puedes editar, guardar, cambiar propiedades y promover la etapa. Presiona `Ctrl+Clic` para abrir la nota como una pestana regular en su lugar.
+Haz clic en cualquier nota en las referencias de un termino para abrirla en un panel de vista previa dividido junto al Indice. El panel de vista previa es un editor completo — puedes editar, guardar, cambiar propiedades y promover la etapa. El termino de busqueda se resalta en la nota y se desplaza automaticamente.
+
+Presiona `Ctrl+Clic` para abrir la nota como una pestana regular. Aparece un boton "Volver al Indice" en la barra de pestanas — haz clic para volver exactamente donde lo dejaste en el Indice.
+
+### Integracion con la Segunda Pantalla
+
+Cuando la Segunda Pantalla esta abierta:
+- **Haz clic en un termino** → La Segunda Pantalla muestra todas las notas que contienen ese termino en una vista dividida (lista de notas + editor)
+- **Ctrl+Clic en multiples terminos** → La Segunda Pantalla muestra el modo de comparacion con cada termino en su propia columna
 
 ---
 
