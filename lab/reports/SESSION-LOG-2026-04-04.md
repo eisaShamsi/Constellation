@@ -212,6 +212,26 @@ All were passing legacy `tab={tabObj}` + invalid props (`isFocused`, `color`, `s
 - `src-tauri/src/libraries.rs` — Two-level Arabic normalization (display vs key)
 - `src/lib/components/IndexPanel.svelte` — Anchor bar UI + CSS
 
+---
+
+## Phase: Wikilink Navigation
+
+### Commits: `fbe1e2c` → `1e98682`
+**Tag:** `milestone/wikilink-navigation`
+
+### Changes
+- **Pointer cursor**: wikilinks show pointing finger on hover (`.cm-md-link { cursor: pointer }`)
+- **Single click**: opens linked note in same tab
+- **Ctrl+Click**: opens in new tab
+- **Non-existent note**: creates it with default frontmatter (`created:` date + user defaults)
+- **Root cause fix**: uses `mousedown` instead of `click` — CM6 strips livePreview decorations on click (moves cursor → triggers decoration rebuild), so the handler must fire BEFORE CM6 processes the event
+- **Secured in NoteEditor**: `onlinkclick` callback resolves wikilinks via `resolveWikilinkCrossLibrary`, works in every editor instance automatically
+
+### Files Modified
+- `src/lib/components/NotePane.svelte` — mousedown handler, `onlinkclick` prop
+- `src/lib/components/NoteEditor.svelte` — `handleLinkClick` with resolve + create
+- `src/lib/editor/livePreview.ts` — `cursor: pointer` on `.cm-md-link`
+
 ### Open Items
 - CE Layer 2: Pending
 - Font theme application: still duplicated between +layout.svelte and SecondScreenPage
