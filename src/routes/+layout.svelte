@@ -2954,8 +2954,26 @@
 			</div>
 		</div>
 
+		<!-- Constellation Map (always rendered, hidden with CSS to preserve drill-down state) -->
+		<div class="map-overlay" class:map-visible={showConstellationMap}>
+			<ConstellationMap
+				universeName={activeUniverseName}
+				libraryPath={get(libraries)[0]?.path ?? ''}
+				libraryName={get(libraries)[0]?.name ?? ''}
+				libraryColor={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}
+				{libraryColorMap}
+				onNoteClick={(path, name) => {
+					const lib = $libraryStats.find(l => path.startsWith(l.path));
+					if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+					showConstellationMap = false;
+					mapReturnPending = true;
+				}}
+				onClose={() => { showConstellationMap = false; mapReturnPending = false; }}
+			/>
+		</div>
+
 		<!-- Content -->
-		<div class="content-area" class:content-hidden={showIndex} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+		<div class="content-area" class:content-hidden={showIndex || showConstellationMap} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
 			{#if showStarView}
 				<div class="star-fullscreen">
 					<div class="star-header">
@@ -3047,21 +3065,6 @@
 					</div>
 				{/if}
 				</div>
-			{:else if showConstellationMap}
-				<ConstellationMap
-					universeName={activeUniverseName}
-					libraryPath={get(libraries)[0]?.path ?? ''}
-					libraryName={get(libraries)[0]?.name ?? ''}
-					libraryColor={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}
-					{libraryColorMap}
-					onNoteClick={(path, name) => {
-						const lib = $libraryStats.find(l => path.startsWith(l.path));
-						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-						showConstellationMap = false;
-						mapReturnPending = true;
-					}}
-					onClose={() => { showConstellationMap = false; mapReturnPending = false; }}
-				/>
 			{:else if showGlobalTasks}
 				<GlobalTasksView
 					{libraryColorMap}
@@ -4213,11 +4216,11 @@
 	.split-pane-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
 	.split-pane-wrap :global(.e-desk) { padding-inline: 8px !important; }
 
-	.index-overlay {
+	.index-overlay, .map-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary, #fff);
 	}
-	.index-overlay.index-visible { display: flex; }
+	.index-overlay.index-visible, .map-overlay.map-visible { display: flex; }
 
 	.index-return-btn {
 		display: flex; align-items: center; gap: 4px;
