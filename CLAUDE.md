@@ -165,3 +165,9 @@ After each successful milestone:
 - Don't call `invoke()` from a CM6 ViewPlugin, an input event handler, or any synchronous hot path.
 - **Don't duplicate working code by copy-pasting and adapting.** If a feature works in one place, extract it into a shared component and reuse it everywhere. Secure the winning — one source of truth, tested once, used many times.
 - **Additional screens are displays, not domains.** Second screen (and any future screens) mount core components and display them — they NEVER re-implement save/load/edit operations. The core editor handles all operations regardless of which window it's in. No `onNoteSaved` re-reads, no `loading = true` on file changes, no competing tab management.
+
+## Testing Instructions Rule
+When asking the user to test ANY feature (new, updated, or fixed):
+1. **Define the feature first** — explain what it is, why it exists, and why it matters (as it would appear in the help files / User Manual)
+2. **Then walk through step by step** — explain every click, every field, every expected result in plain language
+Never assume the user knows internal syntax, component names, or can set up test scenarios from brief descriptions. The user is a human, not an AI.

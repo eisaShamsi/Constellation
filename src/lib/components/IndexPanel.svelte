@@ -26,6 +26,7 @@
 	let expandedTerms = $state<Set<string>>(new Set());
 	let visibleCount = $state(200);
 	let activeScript = $state<string>('all');
+	let activeLetter = $state<string | null>(null);
 	let sortMode = $state<'alpha' | 'freq'>('alpha');
 	let excludedTerms = $state<Set<string>>(loadExcluded());
 	let showHidden = $state(false);
@@ -260,11 +261,23 @@
 	});
 
 	const scriptFilteredEntries = $derived.by(() => {
-		if (activeScript === 'all') return filteredEntries;
-		return filteredEntries.filter(e => {
-			const first = e.term[0];
-			return first && getScript(first) === activeScript;
-		});
+		let result = filteredEntries;
+		if (activeScript !== 'all') {
+			result = result.filter(e => {
+				const first = e.term[0];
+				return first && getScript(first) === activeScript;
+			});
+		}
+		if (activeLetter) {
+			result = result.filter(e => getIndexInfo(e.term).letter === activeLetter);
+		}
+		return result;
+	});
+
+	// Reset active letter when switching scripts
+	$effect(() => {
+		activeScript;
+		activeLetter = null;
 	});
 
 	const visibleEntries = $derived(scriptFilteredEntries.slice(0, visibleCount));
@@ -350,15 +363,14 @@
 		}
 	}
 
-	function scrollToLetter(letter: string) {
-		const idx = scriptFilteredEntries.findIndex(e => getIndexInfo(e.term).letter === letter);
-		if (idx >= 0 && idx >= visibleCount) {
-			visibleCount = idx + 200;
+	function selectLetter(letter: string) {
+		if (activeLetter === letter) {
+			activeLetter = null; // toggle off — show all
+		} else {
+			activeLetter = letter;
+			visibleCount = 200; // reset lazy load
+			if (listEl) listEl.scrollTop = 0; // scroll to top
 		}
-		requestAnimationFrame(() => {
-			const el = listEl?.querySelector(`[data-letter="${CSS.escape(letter)}"]`);
-			if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		});
 	}
 
 	function handleContextMenu(e: MouseEvent, term: string) {
@@ -469,7 +481,7 @@
 			{#each groupedLetters as group}
 				<div class="gp-alpha-row" dir={group.dir}>
 					{#each group.letters as letter}
-						<button class="gp-alpha-btn" onclick={() => scrollToLetter(letter)}>{letter}</button>
+						<button class="gp-alpha-btn" class:active={activeLetter === letter} onclick={() => selectLetter(letter)}>{letter}</button>
 					{/each}
 				</div>
 			{/each}
@@ -721,6 +733,11 @@
 	.gp-alpha-btn:hover {
 		background: var(--background-modifier-hover);
 		color: var(--text-normal);
+	}
+	.gp-alpha-btn.active {
+		background: var(--interactive-accent);
+		color: white;
+		border-radius: 4px;
 	}
 
 	/* ── List ── */
