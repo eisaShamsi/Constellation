@@ -1873,7 +1873,7 @@ fn build_stopwords() -> std::collections::HashSet<String> {
         "كما","اذا","عبر","ضد","خلال","حول","فيه","فيها","عليه","عليها","منه","منها",
         "به","بها","له","لها","لهم","هولاء","اولئك","وهو","وهي","ولا","ولم","الا",
         "اما","سوف","لكن","ليس","ليست","كذلك","ايضا","مثل","غير","دون","ضمن",
-        "ال","ذات","ذو","ذي","اللذين","اللتين","اللواتي","الذين","عليهم","لديه","لديها",
+        "ال","بن","ابن","ذات","ذو","ذي","اللذين","اللتين","اللواتي","الذين","عليهم","لديه","لديها",
         "وقد","ولقد","والتي","والذي","ومن","وعلى","وفي","ومع","وعن","والى",
         // Hebrew
         "של","הוא","היא","את","זה","זו","אני","אנחנו","הם","הן","אתה","את","אתם","אתן",
@@ -2135,6 +2135,14 @@ fn scan_index_words_recursive(
                     let word_is_arabic = is_arabic(word);
                     let word_is_hebrew = is_hebrew(word);
                     let is_non_latin = word.chars().any(|c| !c.is_ascii_alphabetic());
+
+                    // Skip abnormally long words — likely concatenation errors
+                    // Arabic words rarely exceed 12 chars; Latin rarely exceeds 25
+                    if word_is_arabic && char_count > 15 {
+                        prev_word = None;
+                        prev_key = None;
+                        continue;
+                    }
                     if is_non_latin && char_count < 2 {
                         prev_word = None;
                         prev_key = None;
