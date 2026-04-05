@@ -14,6 +14,7 @@
 		writeNote, markRecentWrite, setWriteAhead, clearWriteAhead,
 		renameItem, openTabs, openNoteTab,
 		resolveWikilinkCrossLibrary,
+		createNote, buildDefaultFrontmatter, appSettings,
 		type FrontmatterProperty
 	} from '$lib/libraries/store';
 	import { buildLibraryColorMap } from '$lib/libraries/colors';
@@ -185,11 +186,10 @@
 			if (resolved) {
 				await openNoteTab(resolved.path, resolved.libraryName, resolved.libraryColor || '#7c3aed', undefined, newTab);
 			} else {
-				// Note doesn't exist — create it in the same library/folder
-				const dir = tab.path.replace(/[/\\][^/\\]+$/, '');
-				const newPath = `${dir}/${link}.md`;
-				const content = '';
-				await invoke('write_note', { filePath: newPath, content });
+				// Note doesn't exist — create it in the same folder with default frontmatter
+				const folder = tab.path.replace(/[/\\][^/\\]+$/, '');
+				const frontmatter = buildDefaultFrontmatter(get(appSettings));
+				const newPath = await createNote(folder, link + '.md', frontmatter);
 				const libName = tab.libraryName;
 				const colors = buildLibraryColorMap([{ name: libName }]);
 				await openNoteTab(newPath, libName, colors[libName] || '#7c3aed', undefined, newTab);
