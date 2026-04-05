@@ -478,53 +478,56 @@
 		}) as EventListener;
 		editorEl!.addEventListener('mousedown', chevronHandler, true);
 
-		/* Wikilink / Markdown link click — single click on rendered link opens the note */
+		/* Wikilink / Markdown link click — uses mousedown (before CM6 moves cursor and strips decorations) */
 		linkClickHandler = ((event: MouseEvent) => {
 			if (!view) return;
-			const target = event.target as HTMLElement;
-			// Only handle clicks on rendered link elements (pointer cursor)
-			const isLink = target.closest('.cm-md-link') || target.classList.contains('cm-md-link');
-			const isCtrlClick = event.ctrlKey || event.metaKey;
-			// Navigate if: clicking a rendered link, OR Ctrl+Click anywhere on a wikilink line
-			if (!isLink && !isCtrlClick) return;
+			// Only left-click
+			if (event.button !== 0) return;
 
 			const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
 			if (pos === null) return;
 			const line = view.state.doc.lineAt(pos);
 			const offset = pos - line.from;
+
 			// Check for wikilink [[target|alias]] or [[target]]
 			const wikiRe = /\[\[([^\]]+)\]\]/g;
 			let match;
 			while ((match = wikiRe.exec(line.text)) !== null) {
-				if (offset >= match.index && offset <= match.index + match[0].length) {
+				// Click must be inside the inner text (between [[ and ]])
+				const innerStart = match.index + 2;
+				const innerEnd = match.index + match[0].length - 2;
+				if (offset >= innerStart && offset <= innerEnd) {
 					event.preventDefault();
 					event.stopPropagation();
 					const link = match[1].split('|')[0].split('#')[0].trim();
 					const newTab = event.ctrlKey || event.metaKey;
 					if (onlinkclick) {
 						onlinkclick(link, newTab);
-					} else {
-						document.dispatchEvent(new CustomEvent('constellation:navigate-link', { detail: { link, newTab } }));
 					}
 					return;
 				}
 			}
-			// Check for markdown link [text](url)
-			const mdRe = /\[([^\]]+)\]\(([^)]+)\)/g;
-			while ((match = mdRe.exec(line.text)) !== null) {
-				if (offset >= match.index && offset <= match.index + match[0].length) {
-					event.preventDefault();
-					const url = match[2];
-					if (url.startsWith('http://') || url.startsWith('https://')) {
-						window.open(url, '_blank');
-					} else if (onlinkclick) {
-						onlinkclick(url);
+
+			// Check for markdown link [text](url) — only on Ctrl+Click
+			if (event.ctrlKey || event.metaKey) {
+				const mdRe = /\[([^\]]+)\]\(([^)]+)\)/g;
+				while ((match = mdRe.exec(line.text)) !== null) {
+					if (offset >= match.index && offset <= match.index + match[0].length) {
+						event.preventDefault();
+						const url = match[2];
+						if (url.startsWith('http://') || url.startsWith('https://')) {
+							window.open(url, '_blank');
+						} else if (onlinkclick) {
+							onlinkclick(url, true);
+						}
+						return;
 					}
-					return;
 				}
 			}
 		}) as EventListener;
-		editorEl!.addEventListener('click', linkClickHandler, true);
+		// Use mousedown instead of click — fires BEFORE CM6 processes the event
+		// and strips livePreview decorations from the clicked line
+		editorEl!.addEventListener('mousedown', linkClickHandler, true);
 
 		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
 			view.dispatch({ selection: { anchor: initialCursorPos } });
@@ -554,7 +557,7 @@
 		window.removeEventListener('beforeunload', handleBeforeUnload);
 		if (checkboxHandler && editorEl) editorEl.removeEventListener('mousedown', checkboxHandler, true);
 		if (chevronHandler && editorEl) editorEl.removeEventListener('mousedown', chevronHandler, true);
-		if (linkClickHandler && editorEl) editorEl.removeEventListener('click', linkClickHandler, true);
+		if (linkClickHandler && editorEl) editorEl.removeEventListener('mousedown', linkClickHandler, true);
 		if (rafHandle !== null) { cancelAnimationFrame(rafHandle); rafHandle = null; }
 		doFlush();
 		view?.destroy();
