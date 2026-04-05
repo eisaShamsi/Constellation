@@ -126,6 +126,8 @@
 
 		const width = containerEl.clientWidth;
 		const height = containerEl.clientHeight;
+		// Skip render if container is hidden (display:none gives 0 dimensions)
+		if (width < 10 || height < 10) return;
 		const radius = Math.min(width, height) / 2 - 20;
 
 		// Build hierarchy
