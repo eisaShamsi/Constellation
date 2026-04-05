@@ -1561,30 +1561,42 @@ fn is_persian(word: &str) -> bool {
     is_arabic(word) && word.chars().any(|c| c == 'پ' || c == 'چ' || c == 'ژ' || c == 'گ' || c == 'ک' || c == 'ی')
 }
 
+/// Helper: strip N chars from the end of a char slice, return as String
+fn chars_strip_end(chars: &[char], n: usize) -> String {
+    chars[..chars.len() - n].iter().collect()
+}
+
+/// Helper: check if char slice ends with a given suffix
+fn chars_ends_with(chars: &[char], suffix: &[char]) -> bool {
+    if chars.len() < suffix.len() { return false; }
+    &chars[chars.len() - suffix.len()..] == suffix
+}
+
 /// English stemmer (Porter-like light stemming)
 fn stem_english(word: &str) -> String {
     let w = word.to_lowercase();
-    let len = w.len();
-    if len < 4 { return w; }
+    let c: Vec<char> = w.chars().collect();
+    let n = c.len();
+    if n < 4 { return w; }
 
     // Step 1: plurals and past tense
-    if w.ends_with("sses") { return w[..len-2].to_string(); }
-    if w.ends_with("ies") && len > 4 { return format!("{}y", &w[..len-3]); }
-    if w.ends_with("ness") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("ment") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("tion") { return w[..len-3].to_string(); }
-    if w.ends_with("sion") { return w[..len-3].to_string(); }
-    if w.ends_with("ling") && len > 5 { return w[..len-3].to_string(); }
-    if w.ends_with("ings") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("ing") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("ated") && len > 5 { return w[..len-2].to_string(); }
-    if w.ends_with("ized") && len > 5 { return w[..len-1].to_string(); }
-    if w.ends_with("ened") && len > 5 { return w[..len-2].to_string(); }
-    if w.ends_with("ed") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("ly") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("er") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("es") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("s") && !w.ends_with("ss") && len > 3 { return w[..len-1].to_string(); }
+    if chars_ends_with(&c, &['s','s','e','s']) { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['i','e','s']) && n > 4 { return format!("{}y", chars_strip_end(&c, 3)); }
+    if chars_ends_with(&c, &['n','e','s','s']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['m','e','n','t']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['t','i','o','n']) { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['s','i','o','n']) { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['l','i','n','g']) && n > 5 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['i','n','g','s']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['i','n','g']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['a','t','e','d']) && n > 5 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['i','z','e','d']) && n > 5 { return chars_strip_end(&c, 1); }
+    if chars_ends_with(&c, &['e','n','e','d']) && n > 5 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['e','d']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['l','y']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['e','r']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['e','s']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['s']) && !chars_ends_with(&c, &['s','s']) && n > 3 { return chars_strip_end(&c, 1); }
 
     w
 }
@@ -1592,24 +1604,25 @@ fn stem_english(word: &str) -> String {
 /// French stemmer (light suffix removal)
 fn stem_french(word: &str) -> String {
     let w = word.to_lowercase();
-    let len = w.len();
-    if len < 4 { return w; }
+    let c: Vec<char> = w.chars().collect();
+    let n = c.len();
+    if n < 4 { return w; }
 
-    if w.ends_with("euses") && len > 6 { return w[..len-5].to_string(); }
-    if w.ends_with("euse") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("ments") && len > 6 { return w[..len-5].to_string(); }
-    if w.ends_with("ment") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("tion") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("ence") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("ance") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("eux") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("ées") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("ée") && len > 3 { return w[..len-2].to_string(); }
-    if w.ends_with("és") && len > 3 { return w[..len-2].to_string(); }
-    if w.ends_with("er") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("es") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("é") { return w[..len-2].to_string(); } // é is 2 bytes
-    if w.ends_with("s") && !w.ends_with("ss") && len > 3 { return w[..len-1].to_string(); }
+    if chars_ends_with(&c, &['e','u','s','e','s']) && n > 6 { return chars_strip_end(&c, 5); }
+    if chars_ends_with(&c, &['e','u','s','e']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['m','e','n','t','s']) && n > 6 { return chars_strip_end(&c, 5); }
+    if chars_ends_with(&c, &['m','e','n','t']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['t','i','o','n']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['e','n','c','e']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['a','n','c','e']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['e','u','x']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['é','e','s']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['é','e']) && n > 3 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['é','s']) && n > 3 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['e','r']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['e','s']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['é']) { return chars_strip_end(&c, 1); }
+    if chars_ends_with(&c, &['s']) && !chars_ends_with(&c, &['s','s']) && n > 3 { return chars_strip_end(&c, 1); }
 
     w
 }
@@ -1617,22 +1630,23 @@ fn stem_french(word: &str) -> String {
 /// Spanish stemmer (light suffix removal)
 fn stem_spanish(word: &str) -> String {
     let w = word.to_lowercase();
-    let len = w.len();
-    if len < 4 { return w; }
+    let c: Vec<char> = w.chars().collect();
+    let n = c.len();
+    if n < 4 { return w; }
 
-    if w.ends_with("iones") && len > 6 { return w[..len-5].to_string(); }
-    if w.ends_with("ción") && len > 5 { return w[..len-4].to_string(); } // multibyte ó
-    if w.ends_with("mente") && len > 6 { return w[..len-5].to_string(); }
-    if w.ends_with("idad") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("ando") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("endo") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("ado") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("ido") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("ada") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("osa") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("oso") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("es") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("s") && len > 3 { return w[..len-1].to_string(); }
+    if chars_ends_with(&c, &['i','o','n','e','s']) && n > 6 { return chars_strip_end(&c, 5); }
+    if chars_ends_with(&c, &['c','i','ó','n']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['m','e','n','t','e']) && n > 6 { return chars_strip_end(&c, 5); }
+    if chars_ends_with(&c, &['i','d','a','d']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['a','n','d','o']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['e','n','d','o']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['a','d','o']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['i','d','o']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['a','d','a']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['o','s','a']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['o','s','o']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['e','s']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['s']) && n > 3 { return chars_strip_end(&c, 1); }
 
     w
 }
@@ -1640,21 +1654,22 @@ fn stem_spanish(word: &str) -> String {
 /// Portuguese stemmer (light suffix removal)
 fn stem_portuguese(word: &str) -> String {
     let w = word.to_lowercase();
-    let len = w.len();
-    if len < 4 { return w; }
+    let c: Vec<char> = w.chars().collect();
+    let n = c.len();
+    if n < 4 { return w; }
 
-    if w.ends_with("ções") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("mente") && len > 6 { return w[..len-5].to_string(); }
-    if w.ends_with("idade") && len > 6 { return w[..len-5].to_string(); }
-    if w.ends_with("ando") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("endo") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("ado") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("ido") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("ada") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("osa") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("oso") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("es") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("s") && len > 3 { return w[..len-1].to_string(); }
+    if chars_ends_with(&c, &['ç','õ','e','s']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['m','e','n','t','e']) && n > 6 { return chars_strip_end(&c, 5); }
+    if chars_ends_with(&c, &['i','d','a','d','e']) && n > 6 { return chars_strip_end(&c, 5); }
+    if chars_ends_with(&c, &['a','n','d','o']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['e','n','d','o']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['a','d','o']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['i','d','o']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['a','d','a']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['o','s','a']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['o','s','o']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['e','s']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['s']) && n > 3 { return chars_strip_end(&c, 1); }
 
     w
 }
@@ -1665,23 +1680,24 @@ fn stem_german(word: &str) -> String {
     let w = word.to_lowercase()
         .replace("ä", "a").replace("ö", "o").replace("ü", "u")
         .replace("ß", "ss");
-    let len = w.len();
-    if len < 4 { return w; }
+    let c: Vec<char> = w.chars().collect();
+    let n = c.len();
+    if n < 4 { return w; }
 
-    if w.ends_with("ungen") && len > 6 { return w[..len-5].to_string(); }
-    if w.ends_with("ung") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("heit") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("keit") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("lich") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("isch") && len > 5 { return w[..len-4].to_string(); }
-    if w.ends_with("ern") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("eln") && len > 4 { return w[..len-3].to_string(); }
-    if w.ends_with("en") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("er") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("es") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("em") && len > 4 { return w[..len-2].to_string(); }
-    if w.ends_with("e") && len > 4 { return w[..len-1].to_string(); }
-    if w.ends_with("s") && len > 3 { return w[..len-1].to_string(); }
+    if chars_ends_with(&c, &['u','n','g','e','n']) && n > 6 { return chars_strip_end(&c, 5); }
+    if chars_ends_with(&c, &['u','n','g']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['h','e','i','t']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['k','e','i','t']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['l','i','c','h']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['i','s','c','h']) && n > 5 { return chars_strip_end(&c, 4); }
+    if chars_ends_with(&c, &['e','r','n']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['e','l','n']) && n > 4 { return chars_strip_end(&c, 3); }
+    if chars_ends_with(&c, &['e','n']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['e','r']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['e','s']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['e','m']) && n > 4 { return chars_strip_end(&c, 2); }
+    if chars_ends_with(&c, &['e']) && n > 4 { return chars_strip_end(&c, 1); }
+    if chars_ends_with(&c, &['s']) && n > 3 { return chars_strip_end(&c, 1); }
 
     w
 }
@@ -1723,14 +1739,16 @@ fn stem_russian(word: &str) -> String {
 /// Turkish stemmer (light agglutinative suffix removal)
 fn stem_turkish(word: &str) -> String {
     let w = word.to_lowercase();
-    let len = w.len();
-    if len < 4 { return w; }
+    let c: Vec<char> = w.chars().collect();
+    let n = c.len();
+    if n < 4 { return w; }
 
-    // Long suffixes first
-    if w.ends_with("ları") || w.ends_with("leri") { let blen = w.len() - "ları".len(); return w[..blen].to_string(); }
-    if w.ends_with("lar") || w.ends_with("ler") { let blen = w.len() - 3; if blen >= 2 { return w[..blen].to_string(); } }
-    if w.ends_with("lık") || w.ends_with("lik") || w.ends_with("luk") || w.ends_with("lük") { let blen = w.len() - "lık".len(); if blen >= 2 { return w[..blen].to_string(); } }
-    if w.ends_with("dan") || w.ends_with("den") || w.ends_with("tan") || w.ends_with("ten") { let blen = w.len() - 3; if blen >= 2 { return w[..blen].to_string(); } }
+    // Long suffixes first (4 chars)
+    if chars_ends_with(&c, &['l','a','r','ı']) || chars_ends_with(&c, &['l','e','r','i']) { return chars_strip_end(&c, 4); }
+    // 3-char suffixes
+    if chars_ends_with(&c, &['l','a','r']) || chars_ends_with(&c, &['l','e','r']) { if n - 3 >= 2 { return chars_strip_end(&c, 3); } }
+    if chars_ends_with(&c, &['l','ı','k']) || chars_ends_with(&c, &['l','i','k']) || chars_ends_with(&c, &['l','u','k']) || chars_ends_with(&c, &['l','ü','k']) { if n - 3 >= 2 { return chars_strip_end(&c, 3); } }
+    if chars_ends_with(&c, &['d','a','n']) || chars_ends_with(&c, &['d','e','n']) || chars_ends_with(&c, &['t','a','n']) || chars_ends_with(&c, &['t','e','n']) { if n - 3 >= 2 { return chars_strip_end(&c, 3); } }
 
     w
 }
