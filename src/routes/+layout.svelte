@@ -2894,8 +2894,56 @@
 			{/if}
 		</div>
 
+		<!-- Index (always rendered, hidden with CSS to preserve state) -->
+		<div class="index-overlay" class:index-visible={showIndex}>
+			<div class="index-split" class:has-note={indexNoteTab}>
+				{#if indexNoteTab}
+					<div class="index-note-pane">
+						<div class="index-note-header">
+							<span class="index-note-name" dir="auto">{indexNoteTab.name}</span>
+							<button class="index-close" onclick={() => { indexNoteTab = null; indexActiveNotePath = ''; }} title="Close note">×</button>
+						</div>
+						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} />
+					</div>
+					<div class="index-split-divider"></div>
+				{/if}
+				<div class="index-panel-pane">
+					<div class="index-header">
+						<span class="index-title">{$t('ribbon.index')}</span>
+						<button class="index-close" onclick={() => { showIndex = false; indexNoteTab = null; indexActiveNotePath = ''; }}>×</button>
+					</div>
+					<div class="index-body">
+						<IndexPanel
+							entries={allIndexEntries}
+							onNoteClick={handleIndexNoteClick}
+							onNoteHover={handleIndexNoteHover}
+							onNoteLeave={handleIndexNoteLeave}
+							activeNotePath={indexActiveNotePath}
+							selectedTerms={indexSelectedTerms}
+							onTermClick={(term, mentions) => {
+								if (secondScreenOpen) {
+									emitIndexTermSelected({ term, notes: mentions });
+								}
+							}}
+							onTermSelect={(term, mentions, selected) => {
+								const next = new Set(indexSelectedTerms);
+								if (selected) { next.add(term); } else { next.delete(term); }
+								indexSelectedTerms = next;
+								if (secondScreenOpen) {
+									const terms = allIndexEntries
+										.filter(e => next.has(e.term))
+										.map(e => ({ term: e.term, notes: e.mentions }));
+									emitIndexCompare({ terms });
+								}
+							}}
+						/>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<!-- Content -->
-		<div class="content-area" onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+		<div class="content-area" class:content-hidden={showIndex} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
 			{#if showStarView}
 				<div class="star-fullscreen">
 					<div class="star-header">
@@ -3007,53 +3055,6 @@
 					libraryName={get(libraries)[0]?.name ?? ''}
 					onClose={() => showExpressionForge = false}
 				/>
-			{:else if showIndex}
-				<div class="index-split" class:has-note={indexNoteTab}>
-					{#if indexNoteTab}
-						<div class="index-note-pane">
-							<div class="index-note-header">
-								<span class="index-note-name" dir="auto">{indexNoteTab.name}</span>
-								<button class="index-close" onclick={() => { indexNoteTab = null; indexActiveNotePath = ''; }} title="Close note">×</button>
-							</div>
-							<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} />
-						</div>
-						<div class="index-split-divider"></div>
-					{/if}
-					<div class="index-panel-pane">
-						<div class="index-header">
-							<span class="index-title">{$t('ribbon.index')}</span>
-							<button class="index-close" onclick={() => { showIndex = false; indexNoteTab = null; indexActiveNotePath = ''; }}>×</button>
-						</div>
-						<div class="index-body">
-							<IndexPanel
-								entries={allIndexEntries}
-								onNoteClick={handleIndexNoteClick}
-								onNoteHover={handleIndexNoteHover}
-								onNoteLeave={handleIndexNoteLeave}
-								activeNotePath={indexActiveNotePath}
-								selectedTerms={indexSelectedTerms}
-								onTermClick={(term, mentions) => {
-									if (secondScreenOpen) {
-										emitIndexTermSelected({ term, notes: mentions });
-									} else {
-										// No SS: just expand the term locally
-									}
-								}}
-								onTermSelect={(term, mentions, selected) => {
-									const next = new Set(indexSelectedTerms);
-									if (selected) { next.add(term); } else { next.delete(term); }
-									indexSelectedTerms = next;
-									if (secondScreenOpen) {
-										const terms = allIndexEntries
-											.filter(e => next.has(e.term))
-											.map(e => ({ term: e.term, notes: e.mentions }));
-										emitIndexCompare({ terms });
-									}
-								}}
-							/>
-						</div>
-					</div>
-				</div>
 			{:else if isHome && ($activeTab || $splitActive)}
 				<div class="pane-container" class:horizontal={$splitActive && $splitDirection === 'horizontal'}>
 					{#if $splitActive}
@@ -4170,6 +4171,7 @@
 
 	/* Content */
 	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #e8e8ec; }
+	.content-area.content-hidden { display: none; }
 
 	/* Pane container */
 	.pane-container {
@@ -4183,6 +4185,12 @@
 	.pane-divider:hover { background: var(--accent); }
 	.split-pane-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
 	.split-pane-wrap :global(.e-desk) { padding-inline: 8px !important; }
+
+	.index-overlay {
+		display: none; flex: 1; overflow: hidden;
+		background: var(--background-primary, #fff);
+	}
+	.index-overlay.index-visible { display: flex; }
 
 	.index-return-btn {
 		display: flex; align-items: center; gap: 4px;
