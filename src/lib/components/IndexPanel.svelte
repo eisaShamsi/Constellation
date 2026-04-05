@@ -490,6 +490,34 @@
 		</div>
 	{/if}
 
+	<!-- Selected terms anchor bar -->
+	{#if selectedTerms.size > 0}
+		<div class="gp-anchor-bar">
+			<span class="gp-anchor-label">{$t('indexPanel.comparing') || 'Comparing'}:</span>
+			{#each [...selectedTerms] as term}
+				<button class="gp-anchor-chip" onclick={() => {
+					if (onTermSelect) {
+						const entry = entries.find(e => e.term === term);
+						onTermSelect(term, entry?.mentions ?? [], false);
+					}
+				}}>
+					<span dir="auto">{term}</span>
+					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+				</button>
+			{/each}
+			<button class="gp-anchor-clear" onclick={() => {
+				if (onTermSelect) {
+					for (const term of selectedTerms) {
+						const entry = entries.find(e => e.term === term);
+						onTermSelect(term, entry?.mentions ?? [], false);
+					}
+				}
+			}}>
+				{$t('indexPanel.clearAll') || 'Clear all'}
+			</button>
+		</div>
+	{/if}
+
 	<!-- Term list -->
 	<div class="gp-list" bind:this={listEl} onscroll={handleScroll}>
 		{#if scriptFilteredEntries.length === 0}
@@ -844,6 +872,36 @@
 	.gp-term-name.term-selected {
 		color: var(--interactive-accent); font-weight: 700;
 	}
+
+	/* Anchor bar for selected terms */
+	.gp-anchor-bar {
+		display: flex; align-items: center; gap: 6px;
+		padding: 6px 12px; flex-shrink: 0;
+		background: color-mix(in srgb, var(--interactive-accent) 6%, var(--background-primary));
+		border-bottom: 1px solid color-mix(in srgb, var(--interactive-accent) 20%, transparent);
+		flex-wrap: wrap;
+	}
+	.gp-anchor-label {
+		font-size: 11px; font-weight: 600; color: var(--text-muted);
+		white-space: nowrap;
+	}
+	.gp-anchor-chip {
+		display: inline-flex; align-items: center; gap: 4px;
+		padding: 2px 8px; border-radius: 12px;
+		background: var(--interactive-accent); color: white;
+		border: none; font-size: 12px; font-weight: 600;
+		cursor: pointer; font-family: inherit;
+		transition: opacity 0.15s;
+	}
+	.gp-anchor-chip:hover { opacity: 0.8; }
+	.gp-anchor-chip svg { opacity: 0.7; }
+	.gp-anchor-chip:hover svg { opacity: 1; }
+	.gp-anchor-clear {
+		font-size: 11px; color: var(--text-muted);
+		background: none; border: none; cursor: pointer;
+		text-decoration: underline; padding: 2px 4px;
+	}
+	.gp-anchor-clear:hover { color: var(--text-normal); }
 	.gp-compound-badge {
 		font-size: 0.55rem;
 		font-weight: 700;
