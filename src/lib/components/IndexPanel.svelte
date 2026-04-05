@@ -499,20 +499,25 @@
 					{#each group as entry}
 						{@const isHidden = excludedTerms.has(entry.term.toLowerCase())}
 						<div class="gp-entry" class:hidden-term={isHidden}>
-							<button class="gp-term-row" onclick={(e) => {
-								if ((e.ctrlKey || e.metaKey) && onTermSelect) {
-									const isSelected = selectedTerms.has(entry.term);
-									onTermSelect(entry.term, entry.mentions, !isSelected);
-								} else if (onTermClick) {
-									onTermClick(entry.term, entry.mentions);
-								} else {
-									toggleExpand(entry.term);
-								}
-							}} oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
-								<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
-									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
-								</svg>
-								<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}>
+							<button class="gp-term-row" oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
+								<!-- svelte-ignore a11y_no_static_element_interactions -->
+								<span class="gp-chev-btn" onclick={() => toggleExpand(entry.term)}>
+									<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
+										<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+									</svg>
+								</span>
+								<!-- svelte-ignore a11y_no_static_element_interactions -->
+								<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}
+									onclick={(e) => {
+										if ((e.ctrlKey || e.metaKey) && onTermSelect) {
+											onTermSelect(entry.term, entry.mentions, !selectedTerms.has(entry.term));
+										} else if (onTermClick) {
+											onTermClick(entry.term, entry.mentions);
+											toggleExpand(entry.term);
+										} else {
+											toggleExpand(entry.term);
+										}
+									}}>
 									{entry.term}
 									{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
 								</span>
@@ -542,20 +547,25 @@
 			{#each freqEntries as entry}
 				{@const isHidden = excludedTerms.has(entry.term.toLowerCase())}
 				<div class="gp-entry" class:hidden-term={isHidden}>
-					<button class="gp-term-row" onclick={(e) => {
-						if ((e.ctrlKey || e.metaKey) && onTermSelect) {
-							const isSelected = selectedTerms.has(entry.term);
-							onTermSelect(entry.term, entry.mentions, !isSelected);
-						} else if (onTermClick) {
-							onTermClick(entry.term, entry.mentions);
-						} else {
-							toggleExpand(entry.term);
-						}
-					}} oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
-						<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
-							<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
-						</svg>
-						<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}>
+					<button class="gp-term-row" oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<span class="gp-chev-btn" onclick={() => toggleExpand(entry.term)}>
+							<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
+								<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+							</svg>
+						</span>
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}
+							onclick={(e) => {
+								if ((e.ctrlKey || e.metaKey) && onTermSelect) {
+									onTermSelect(entry.term, entry.mentions, !selectedTerms.has(entry.term));
+								} else if (onTermClick) {
+									onTermClick(entry.term, entry.mentions);
+									toggleExpand(entry.term);
+								} else {
+									toggleExpand(entry.term);
+								}
+							}}>
 							{entry.term}
 							{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
 						</span>
@@ -804,6 +814,12 @@
 	.gp-term-row:hover {
 		background: var(--background-modifier-hover);
 	}
+	.gp-chev-btn {
+		display: flex; align-items: center; justify-content: center;
+		width: 20px; height: 20px; flex-shrink: 0; cursor: pointer;
+		border-radius: 3px;
+	}
+	.gp-chev-btn:hover { background: var(--background-modifier-hover); }
 	.gp-chev {
 		transition: transform 0.15s ease;
 		flex-shrink: 0;
