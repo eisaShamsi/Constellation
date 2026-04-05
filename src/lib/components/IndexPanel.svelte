@@ -5,15 +5,21 @@
 	let {
 		entries = [] as IndexEntry[],
 		onNoteClick,
+		onTermClick,
 		onNoteHover = (_path: string, _e: MouseEvent) => {},
 		onNoteLeave = () => {},
 		activeNotePath = '',
+		selectedTerms = new Set<string>(),
+		onTermSelect,
 	}: {
 		entries: IndexEntry[];
 		onNoteClick: (filePath: string, noteName: string, term?: string, e?: MouseEvent) => void;
+		onTermClick?: (term: string, mentions: { note_path: string; note_name: string }[]) => void;
 		onNoteHover?: (filePath: string, e: MouseEvent) => void;
 		onNoteLeave?: () => void;
 		activeNotePath?: string;
+		selectedTerms?: Set<string>;
+		onTermSelect?: (term: string, mentions: { note_path: string; note_name: string }[], selected: boolean) => void;
 	} = $props();
 
 	let filterQuery = $state('');
@@ -481,11 +487,20 @@
 					{#each group as entry}
 						{@const isHidden = excludedTerms.has(entry.term.toLowerCase())}
 						<div class="gp-entry" class:hidden-term={isHidden}>
-							<button class="gp-term-row" onclick={() => toggleExpand(entry.term)} oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
+							<button class="gp-term-row" onclick={(e) => {
+								if ((e.ctrlKey || e.metaKey) && onTermSelect) {
+									const isSelected = selectedTerms.has(entry.term);
+									onTermSelect(entry.term, entry.mentions, !isSelected);
+								} else if (onTermClick) {
+									onTermClick(entry.term, entry.mentions);
+								} else {
+									toggleExpand(entry.term);
+								}
+							}} oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
 								<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
-								<span class="gp-term-name" dir="auto">
+								<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}>
 									{entry.term}
 									{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
 								</span>
@@ -515,11 +530,20 @@
 			{#each freqEntries as entry}
 				{@const isHidden = excludedTerms.has(entry.term.toLowerCase())}
 				<div class="gp-entry" class:hidden-term={isHidden}>
-					<button class="gp-term-row" onclick={() => toggleExpand(entry.term)} oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
+					<button class="gp-term-row" onclick={(e) => {
+						if ((e.ctrlKey || e.metaKey) && onTermSelect) {
+							const isSelected = selectedTerms.has(entry.term);
+							onTermSelect(entry.term, entry.mentions, !isSelected);
+						} else if (onTermClick) {
+							onTermClick(entry.term, entry.mentions);
+						} else {
+							toggleExpand(entry.term);
+						}
+					}} oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
 						<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
 							<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 						</svg>
-						<span class="gp-term-name" dir="auto">
+						<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}>
 							{entry.term}
 							{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
 						</span>
@@ -781,6 +805,9 @@
 		display: flex;
 		align-items: center;
 		gap: 4px;
+	}
+	.gp-term-name.term-selected {
+		color: var(--interactive-accent); font-weight: 700;
 	}
 	.gp-compound-badge {
 		font-size: 0.55rem;

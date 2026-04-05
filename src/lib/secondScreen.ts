@@ -247,3 +247,34 @@ export function onDashboardOpenNote(callback: (note: ScreenNote) => void): Promi
 export function onDashboardTagSelected(callback: (data: DashboardTagData) => void): Promise<UnlistenFn> {
 	return listen<DashboardTagData>('screen:dashboard-tag-selected', (event) => callback(event.payload));
 }
+
+/* ------------------------------------------------------------------ */
+/*  Index → Second Screen events                                       */
+/* ------------------------------------------------------------------ */
+
+export interface IndexTermData {
+	term: string;
+	notes: { note_path: string; note_name: string }[];
+}
+
+export interface IndexCompareData {
+	terms: IndexTermData[];
+}
+
+/** Main → Second Screen: term clicked in Index — show notes for that term */
+export async function emitIndexTermSelected(data: IndexTermData): Promise<void> {
+	await emit('screen:index-term-selected', data);
+}
+
+/** Main → Second Screen: multi-term compare mode */
+export async function emitIndexCompare(data: IndexCompareData): Promise<void> {
+	await emit('screen:index-compare', data);
+}
+
+export function onIndexTermSelected(callback: (data: IndexTermData) => void): Promise<UnlistenFn> {
+	return listen<IndexTermData>('screen:index-term-selected', (event) => callback(event.payload));
+}
+
+export function onIndexCompare(callback: (data: IndexCompareData) => void): Promise<UnlistenFn> {
+	return listen<IndexCompareData>('screen:index-compare', (event) => callback(event.payload));
+}

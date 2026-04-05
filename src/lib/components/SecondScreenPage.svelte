@@ -33,9 +33,11 @@
 		onContextChanged, onSkyViewHover, onSkyViewClick,
 		onSidebarModeChanged, onSplitModeChanged,
 		onDashboardOpenNote, onDashboardTagSelected,
+		onIndexTermSelected, onIndexCompare,
 		sendNoteToMain, notifyScreenClosed, sendScreenState,
 		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo, type SidebarMode,
-		type SplitCompanionData, type DashboardTagData
+		type SplitCompanionData, type DashboardTagData,
+		type IndexTermData, type IndexCompareData
 	} from '$lib/secondScreen';
 	import {
 		setActiveUniverse, listUniverses, getChildUniverses,
@@ -66,6 +68,13 @@
 	let dashboardTagName = $state('');
 	let dashboardTagNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let dashboardSelectedNote = $state<any>(null); // OpenTab-like for selected tag note
+
+	// Index companion mode
+	let indexMode = $state<'none' | 'term' | 'compare'>('none');
+	let indexTermData = $state<IndexTermData | null>(null);
+	let indexCompareData = $state<IndexCompareData | null>(null);
+	let indexSelectedNote = $state<any>(null); // OpenTab-like for selected note
+	let indexActiveCompareIdx = $state(0); // which term column is active in compare mode
 
 	// ─── Data state ───
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
@@ -607,6 +616,25 @@
 		});
 		unlisteners.push(u14);
 
+		const u15 = await onIndexTermSelected(async (data) => {
+			indexMode = 'term';
+			indexTermData = data;
+			indexCompareData = null;
+			indexSelectedNote = null;
+			dashboardMode = 'none';
+		});
+		unlisteners.push(u15);
+
+		const u16 = await onIndexCompare(async (data) => {
+			indexMode = 'compare';
+			indexCompareData = data;
+			indexTermData = null;
+			indexSelectedNote = null;
+			indexActiveCompareIdx = 0;
+			dashboardMode = 'none';
+		});
+		unlisteners.push(u16);
+
 		const u12 = await onSplitModeChanged((data) => {
 			if (data.active) {
 				if (!splitCompanionActive) preSplitSidebarMode = mainSidebarMode;
@@ -733,6 +761,107 @@
 					<div class="dash-tag-editor">
 						{#if dashboardSelectedNote}
 							<NoteEditor tab={dashboardSelectedNote} noteNames={allNotes} />
+						{:else}
+							<div class="dash-tag-empty">
+								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+
+		{:else if indexMode === 'term' && indexTermData}
+			<!-- Index: single term → note list + editor -->
+			<div class="dash-tag-companion">
+				<div class="dash-tag-header">
+					<button class="dash-back-btn" onclick={() => { indexMode = 'none'; indexTermData = null; indexSelectedNote = null; }}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					</button>
+					<span class="dash-tag-badge">{indexTermData.term}</span>
+					<span class="dash-tag-count">{indexTermData.notes.length} {$t('secondScreen.dashboard.notes') || 'notes'}</span>
+				</div>
+				<div class="dash-tag-split">
+					<div class="dash-tag-list">
+						{#each indexTermData.notes as note}
+							<button class="dash-tag-note" class:active={indexSelectedNote?.path === note.note_path}
+								onclick={async () => {
+									try {
+										const content = await invoke('read_note', { filePath: note.note_path });
+										const lib = $libraries.find(l => note.note_path.startsWith(l.path));
+										indexSelectedNote = {
+											id: `idx-term-${Date.now()}`,
+											path: note.note_path,
+											content,
+											name: note.note_name.endsWith('.md') ? note.note_name : note.note_name + '.md',
+											libraryName: lib?.name ?? '',
+											libraryPath: lib?.path ?? '',
+											highlightTerm: indexTermData?.term ?? '',
+										};
+									} catch { indexSelectedNote = null; }
+								}}>
+								<span class="lib-dot" style="background:{libraryColorMap[$libraries.find(l => note.note_path.startsWith(l.path))?.name ?? ''] || '#7c3aed'}"></span>
+								<span class="dash-tag-note-name" dir="auto">{note.note_name}</span>
+							</button>
+						{/each}
+					</div>
+					<div class="dash-tag-editor">
+						{#if indexSelectedNote}
+							<NoteEditor tab={indexSelectedNote} noteNames={allNotes} />
+						{:else}
+							<div class="dash-tag-empty">
+								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+
+		{:else if indexMode === 'compare' && indexCompareData && indexCompareData.terms.length > 0}
+			<!-- Index: multi-term compare -->
+			<div class="index-compare">
+				<div class="dash-tag-header">
+					<button class="dash-back-btn" onclick={() => { indexMode = 'none'; indexCompareData = null; indexSelectedNote = null; }}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					</button>
+					<span class="index-compare-label">{$t('secondScreen.comparingTerms') || 'Comparing'} {indexCompareData.terms.length} {$t('secondScreen.dashboard.notes') || 'terms'}</span>
+				</div>
+				<div class="index-compare-body">
+					<div class="index-compare-columns">
+						{#each indexCompareData.terms as termData, idx}
+							<div class="index-compare-col" class:active={indexActiveCompareIdx === idx}>
+								<div class="index-compare-col-header" onclick={() => indexActiveCompareIdx = idx}>
+									<span class="dash-tag-badge">{termData.term}</span>
+									<span class="dash-tag-count">{termData.notes.length}</span>
+								</div>
+								<div class="index-compare-col-list">
+									{#each termData.notes as note}
+										<button class="dash-tag-note" class:active={indexSelectedNote?.path === note.note_path}
+											onclick={async () => {
+												indexActiveCompareIdx = idx;
+												try {
+													const content = await invoke('read_note', { filePath: note.note_path });
+													const lib = $libraries.find(l => note.note_path.startsWith(l.path));
+													indexSelectedNote = {
+														id: `idx-cmp-${Date.now()}`,
+														path: note.note_path,
+														content,
+														name: note.note_name.endsWith('.md') ? note.note_name : note.note_name + '.md',
+														libraryName: lib?.name ?? '',
+														libraryPath: lib?.path ?? '',
+														highlightTerm: termData.term,
+													};
+												} catch { indexSelectedNote = null; }
+											}}>
+											<span class="dash-tag-note-name" dir="auto">{note.note_name}</span>
+										</button>
+									{/each}
+								</div>
+							</div>
+						{/each}
+					</div>
+					<div class="index-compare-editor">
+						{#if indexSelectedNote}
+							<NoteEditor tab={indexSelectedNote} noteNames={allNotes} />
 						{:else}
 							<div class="dash-tag-empty">
 								<p>{$t('secondScreen.selectNote') || 'Select a note to view here'}</p>
@@ -1467,6 +1596,26 @@
 		flex: 1; display: flex; align-items: center; justify-content: center;
 		color: var(--text-faint); font-size: 14px;
 	}
+
+	/* Index Compare */
+	.index-compare { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+	.index-compare-label { font-size: 13px; font-weight: 600; color: var(--text-normal); }
+	.index-compare-body { flex: 1; display: flex; overflow: hidden; }
+	.index-compare-columns {
+		width: 320px; min-width: 240px; max-width: 400px;
+		display: flex; flex-direction: column; overflow-y: auto;
+		border-right: 1px solid var(--background-modifier-border);
+	}
+	.index-compare-col { border-bottom: 1px solid var(--background-modifier-border); }
+	.index-compare-col.active { background: color-mix(in srgb, var(--interactive-accent) 5%, transparent); }
+	.index-compare-col-header {
+		display: flex; align-items: center; gap: 8px;
+		padding: 8px 12px; cursor: pointer;
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+	.index-compare-col-header:hover { background: var(--background-modifier-hover); }
+	.index-compare-col-list { max-height: 200px; overflow-y: auto; }
+	.index-compare-editor { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
 
 	/* Split Companion */
 	.split-companion { display: flex; flex-direction: column; height: 100%; overflow: hidden; }

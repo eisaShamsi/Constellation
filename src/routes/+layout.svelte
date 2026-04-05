@@ -91,7 +91,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -440,6 +440,7 @@
 	let showIndex = $state(false);
 	let indexNoteTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
 	let indexActiveNotePath = $state('');
+	let indexSelectedTerms = $state<Set<string>>(new Set());
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -3021,6 +3022,25 @@
 								onNoteHover={handleIndexNoteHover}
 								onNoteLeave={handleIndexNoteLeave}
 								activeNotePath={indexActiveNotePath}
+								selectedTerms={indexSelectedTerms}
+								onTermClick={(term, mentions) => {
+									if (secondScreenOpen) {
+										emitIndexTermSelected({ term, notes: mentions });
+									} else {
+										// No SS: just expand the term locally
+									}
+								}}
+								onTermSelect={(term, mentions, selected) => {
+									const next = new Set(indexSelectedTerms);
+									if (selected) { next.add(term); } else { next.delete(term); }
+									indexSelectedTerms = next;
+									if (secondScreenOpen) {
+										const terms = allIndexEntries
+											.filter(e => next.has(e.term))
+											.map(e => ({ term: e.term, notes: e.mentions }));
+										emitIndexCompare({ terms });
+									}
+								}}
 							/>
 						</div>
 					</div>
