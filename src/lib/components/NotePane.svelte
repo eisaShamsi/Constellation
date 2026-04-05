@@ -85,6 +85,7 @@
 		onTrailPrev,
 		onTrailNext,
 		highlightTerm = '',
+		onlinkclick,
 	}: {
 		value?: string;
 		title?: string;
@@ -118,6 +119,7 @@
 		onTrailPrev?: () => void;
 		onTrailNext?: () => void;
 		highlightTerm?: string;
+		onlinkclick?: (link: string) => void;
 	} = $props();
 
 	let titleValue = $state(title);
@@ -133,6 +135,7 @@
 	let rafHandle: number | null = null;
 	let checkboxHandler: EventListener | null = null;
 	let chevronHandler: EventListener | null = null;
+	let linkClickHandler: EventListener | null = null;
 	const dirCompartment = new Compartment();
 	const livePreviewCompartment = new Compartment();
 	let livePreviewEnabled = $state(true);
@@ -475,6 +478,47 @@
 		}) as EventListener;
 		editorEl!.addEventListener('mousedown', chevronHandler, true);
 
+		/* Wikilink / Markdown link click — Ctrl+Click (Cmd+Click on Mac) opens linked note */
+		linkClickHandler = ((event: MouseEvent) => {
+			if (!(event.ctrlKey || event.metaKey)) return;
+			if (!view) return;
+			const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+			if (pos === null) return;
+			const line = view.state.doc.lineAt(pos);
+			const offset = pos - line.from;
+			// Check for wikilink [[target|alias]] or [[target]]
+			const wikiRe = /\[\[([^\]]+)\]\]/g;
+			let match;
+			while ((match = wikiRe.exec(line.text)) !== null) {
+				if (offset >= match.index && offset <= match.index + match[0].length) {
+					event.preventDefault();
+					event.stopPropagation();
+					const link = match[1].split('|')[0].split('#')[0].trim();
+					if (onlinkclick) {
+						onlinkclick(link);
+					} else {
+						document.dispatchEvent(new CustomEvent('constellation:navigate-link', { detail: { link } }));
+					}
+					return;
+				}
+			}
+			// Check for markdown link [text](url)
+			const mdRe = /\[([^\]]+)\]\(([^)]+)\)/g;
+			while ((match = mdRe.exec(line.text)) !== null) {
+				if (offset >= match.index && offset <= match.index + match[0].length) {
+					event.preventDefault();
+					const url = match[2];
+					if (url.startsWith('http://') || url.startsWith('https://')) {
+						window.open(url, '_blank');
+					} else if (onlinkclick) {
+						onlinkclick(url);
+					}
+					return;
+				}
+			}
+		}) as EventListener;
+		editorEl!.addEventListener('click', linkClickHandler, true);
+
 		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
 			view.dispatch({ selection: { anchor: initialCursorPos } });
 			view.focus();
@@ -503,6 +547,7 @@
 		window.removeEventListener('beforeunload', handleBeforeUnload);
 		if (checkboxHandler && editorEl) editorEl.removeEventListener('mousedown', checkboxHandler, true);
 		if (chevronHandler && editorEl) editorEl.removeEventListener('mousedown', chevronHandler, true);
+		if (linkClickHandler && editorEl) editorEl.removeEventListener('click', linkClickHandler, true);
 		if (rafHandle !== null) { cancelAnimationFrame(rafHandle); rafHandle = null; }
 		doFlush();
 		view?.destroy();

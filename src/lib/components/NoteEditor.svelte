@@ -12,9 +12,11 @@
 	import {
 		parseFrontmatter, buildFullContent,
 		writeNote, markRecentWrite, setWriteAhead, clearWriteAhead,
-		renameItem, openTabs,
+		renameItem, openTabs, openNoteTab,
+		resolveWikilinkCrossLibrary,
 		type FrontmatterProperty
 	} from '$lib/libraries/store';
+	import { buildLibraryColorMap } from '$lib/libraries/colors';
 	import { detectDir } from '$lib/utils';
 	import { get } from 'svelte/store';
 	import NotePane from './NotePane.svelte';
@@ -175,6 +177,16 @@
 			}
 		}
 	}
+
+	async function handleLinkClick(link: string) {
+		if (!tab.libraryPath) return;
+		try {
+			const resolved = await resolveWikilinkCrossLibrary(tab.libraryPath, link);
+			if (resolved) {
+				await openNoteTab(resolved.path, resolved.libraryName, resolved.libraryColor || '#7c3aed');
+			}
+		} catch {}
+	}
 </script>
 
 {#key tab.id + '|' + tab.path}
@@ -210,5 +222,6 @@
 	onnavigateforward={onnavigateforward}
 	onmoreaction={handleMoreAction}
 	highlightTerm={tab.highlightTerm ?? ''}
+	onlinkclick={handleLinkClick}
 />
 {/key}
