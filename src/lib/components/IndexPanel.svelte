@@ -351,9 +351,11 @@
 	const hiddenCount = $derived(entries.filter(e => excludedTerms.has(e.term.toLowerCase())).length);
 
 	function toggleExpand(term: string) {
-		if (expandedTerms.has(term)) expandedTerms.delete(term);
-		else expandedTerms.add(term);
-		expandedTerms = new Set(expandedTerms);
+		if (expandedTerms.has(term)) {
+			expandedTerms = new Set();
+		} else {
+			expandedTerms = new Set([term]);
+		}
 	}
 
 	function handleScroll(e: Event) {
