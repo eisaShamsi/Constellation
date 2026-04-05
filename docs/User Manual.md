@@ -27,7 +27,8 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 17. [Keyboard Shortcuts](#keyboard-shortcuts)
 18. [RTL and Arabic Support](#rtl-and-arabic-support)
 19. [Security and Privacy](#security-and-privacy)
-20. [Cognitive Engine](#cognitive-engine)
+20. [Constellation Map](#constellation-map)
+21. [Cognitive Engine](#cognitive-engine)
 
 ---
 
@@ -777,7 +778,40 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 
 ---
 
-## 20. Cognitive Engine
+## 20. Constellation Map
+
+The Constellation Map is a radial sunburst visualization that shows the structure, density, and maturity of your entire knowledge universe.
+
+### Opening the Map
+
+- **Dock button**: Click the Constellation Map icon in the left dock
+- **Command Palette**: `Ctrl+P` then type "Constellation Map"
+
+### What You See
+
+- **Center**: Your Universe name with total note and word counts
+- **First ring**: Libraries (each colored with its library color). If your universe has child universes, they appear here too.
+- **Deeper rings**: Folders and subfolders within each library
+- **Outermost segments**: Individual notes
+
+### Color Modes
+
+Switch between three modes via the dropdown:
+- **Maturity**: seed (gray) → sapling (light green) → evergreen (green) → canonical (gold) → wilting
+- **Stratum**: L1 (blue) → L8 (red) — showing knowledge complexity
+- **Library**: all segments inherit their parent library's color
+
+### Drill-Down Navigation
+
+Click any folder segment to zoom in. A breadcrumb trail shows your path. Click any breadcrumb item to zoom back, or press Escape. Click a note segment to open it in the editor.
+
+### Return to Map
+
+After opening a note from the Map, a "Return to Map" button appears in the tab bar. Click it to return to exactly where you were — same drill-down level preserved.
+
+---
+
+## 21. Cognitive Engine
 
 > "The quantity of your data and information doesn't matter. It is NOT about how many references or sources you keep or store; it is about how you formulate your KNOWLEDGE from them, and how to link all of it into one meaningful awareness."
 

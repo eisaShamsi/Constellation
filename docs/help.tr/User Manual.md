@@ -26,7 +26,8 @@ Constellation, Markdown not kütüphanelerini yönetmek için tasarlanmış bir 
 16. [Klavye Kısayolları](#klavye-kısayolları)
 17. [RTL ve Arapça Desteği](#rtl-ve-arapça-desteği)
 18. [Güvenlik ve Gizlilik](#güvenlik-ve-gizlilik)
-19. [Bilişsel Motor](#bilişsel-motor)
+19. [Bilgi Haritası](#bilgi-haritası)
+20. [Bilişsel Motor](#bilişsel-motor)
 
 ---
 
@@ -651,7 +652,40 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 
 ---
 
-## 19. Bilişsel Motor
+## 19. Bilgi Haritası
+
+Bilgi Haritası, tum bilgi evreninizin yapisini, yogunlugunu ve olgunlugunu gosteren radyal bir sunburst gorsellestirmesidir.
+
+### Haritayi Acma
+
+- **Dock dugmesi**: Sol dokta Bilgi Haritasi simgesine tiklayin
+- **Komut Paleti**: `Ctrl+P` ardindan "Constellation Map" yazin
+
+### Ne Gorursunuz
+
+- **Merkez**: Evren adiniz, toplam not ve kelime sayisiyla
+- **Ilk halka**: Kutuphaneler (her biri kendi rengiyle). Evreninizde alt evrenler varsa, burada da gorunurler.
+- **Derin halkalar**: Her kutuphanedeki klasorler ve alt klasorler
+- **En dis segmentler**: Bireysel notlar
+
+### Renk Modlari
+
+Acilir menuyle uc mod arasinda gecis yapin:
+- **Olgunluk**: tohum (gri) → fide (acik yesil) → her dem yesil (yesil) → kanonik (altin) → solmus
+- **Katman**: L1 (mavi) → L8 (kirmizi) — bilgi karmasikligini gosterir
+- **Kutuphane**: tum segmentler ust kutuphanenin rengini devralir
+
+### Derinlesme Gezintisi
+
+Yakinlastirmak icin herhangi bir klasor segmentine tiklayin. Icerik yolu izinizi gosterir. Geri donmek icin herhangi bir yol ogesine tiklayin veya Escape'e basin. Editorde acmak icin not segmentine tiklayin.
+
+### Haritaya Don
+
+Haritadan bir not actiktan sonra, sekme cubugunda "Haritaya Don" dugmesi gorunur. Tam olarak bulundugunuz yere donmek icin tiklayin — ayni derinlesme seviyesi korunur.
+
+---
+
+## 20. Bilişsel Motor
 
 Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz arasındaki gizli kalıpları ve ilişkileri ortaya çıkaran yerleşik zeka sistemidir. Temel felsefesi:
 

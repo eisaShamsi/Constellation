@@ -232,8 +232,51 @@ All were passing legacy `tab={tabObj}` + invalid props (`isFocused`, `color`, `s
 - `src/lib/components/NoteEditor.svelte` — `handleLinkClick` with resolve + create
 - `src/lib/editor/livePreview.ts` — `cursor: pointer` on `.cm-md-link`
 
+---
+
+## Phase: CE Layer 2 — Constellation Map Phase 1 (Static Universe Overview)
+
+### Commits: `acd23f3` → `4625c9e`
+**Tag:** `milestone/constellation-map-phase1`
+
+### What Was Built
+Radial sunburst visualization showing knowledge structure, density, and maturity across the entire universe. Inspired by Goalscape, adapted for PKM.
+
+### Architecture
+- **Rust backend** (`map.rs`): `constellation_map_data` (single library) + `constellation_map_universe` (full universe with child universes). Recursive filesystem walk computing word count, link count, maturity (CE Phase 3 logic), stratum (simplified 1-8), and knowledge weight per note.
+- **Svelte component** (`ConstellationMap.svelte`): D3.js `d3.partition()` sunburst with interactive drill-down, breadcrumb, 3 color modes (maturity/stratum/library), hover tooltips, click-to-navigate.
+- **Layout**: always-rendered overlay (display:none when hidden, preserves drill-down state on Return to Map).
+
+### Full Hierarchy
+- Center = Universe
+- Ring 1 = Child Universes (purple) + Libraries (library colors) — adapts if no child universes
+- Ring 2+ = Folders → Notes
+- `node_type` field distinguishes universe/child_universe/library/folder/note
+
+### Key Features
+- **Auto-computed weight**: word_count + link_count + recency
+- **3 color modes**: Maturity (seed→canonical), Stratum (L1→L8), Library
+- **Drill-down**: click folder to zoom, breadcrumb to navigate back, Escape to go up
+- **Return to Map button**: preserves drill-down state (same pattern as Return to Index)
+- **Center text**: stacked (title / notes / words), clipped to ring boundary, adaptive font
+- **Direction-neutral**: radial = no LTR/RTL bias
+- **Legend bar**: shows color meanings per mode
+- **i18n**: all 15 locales
+
+### Files Created
+- `src-tauri/src/map.rs` — Rust backend (MapNode + 2 commands)
+- `src/lib/components/ConstellationMap.svelte` — D3.js sunburst component
+
+### Files Modified
+- `src-tauri/src/lib.rs` — module + command registration
+- `src/routes/+layout.svelte` — overlay, dock button, command palette, Return to Map
+- `src/lib/i18n/*.json` (15 files) — constellationMap keys
+
 ### Open Items
-- CE Layer 2: Pending
-- Font theme application: still duplicated between +layout.svelte and SecondScreenPage
-- SS dead code cleanup: loadDashboardData, tag/recent state variables
-- Index: virtual scrolling for 60k+ terms
+- Constellation Map Phase 2: maturity inference + interactive drill-down animation
+- Constellation Map Phase 3: manual mode (draggable segment borders)
+- CE Layer 3: Constellation Lens (graph analytics — betweenness centrality, Louvain)
+- CE Layer 4: AI Discovery (embeddings, semantic links)
+- Font theme duplication cleanup
+- SS dead code cleanup
+- Index virtual scrolling for 60k+ terms

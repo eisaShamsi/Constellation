@@ -26,7 +26,8 @@ Constellation est une application de bureau de gestion des connaissances personn
 16. [Raccourcis clavier](#raccourcis-clavier)
 17. [Prise en charge RTL et arabe](#prise-en-charge-rtl-et-arabe)
 18. [Securite et confidentialite](#securite-et-confidentialite)
-19. [Moteur Cognitif](#moteur-cognitif)
+19. [Carte des connaissances](#carte-des-connaissances)
+20. [Moteur Cognitif](#moteur-cognitif)
 
 ---
 
@@ -651,7 +652,40 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 
 ---
 
-## 19. Moteur Cognitif
+## 19. Carte des connaissances
+
+La Carte des connaissances est une visualisation radiale (sunburst) qui montre la structure, la densite et la maturite de votre univers de connaissances.
+
+### Ouvrir la Carte
+
+- **Bouton du dock**: Cliquez sur l'icone Carte des connaissances dans la barre laterale gauche
+- **Palette de commandes**: `Ctrl+P` puis tapez "Constellation Map"
+
+### Ce que vous voyez
+
+- **Centre**: Le nom de votre Univers avec le nombre total de notes et de mots
+- **Premier anneau**: Les bibliotheques (chacune avec sa couleur). Si votre univers a des univers enfants, ils apparaissent ici aussi.
+- **Anneaux plus profonds**: Dossiers et sous-dossiers dans chaque bibliotheque
+- **Segments exterieurs**: Notes individuelles
+
+### Modes de couleur
+
+Basculez entre trois modes via le menu deroulant:
+- **Maturite**: graine (gris) → jeune pousse (vert clair) → persistant (vert) → canonique (or) → fane
+- **Strate**: L1 (bleu) → L8 (rouge) — montre la complexite des connaissances
+- **Bibliotheque**: tous les segments heritent de la couleur de leur bibliotheque
+
+### Navigation par exploration
+
+Cliquez sur un segment de dossier pour zoomer. Un fil d'Ariane montre votre chemin. Cliquez sur un element du fil pour revenir, ou appuyez sur Echap. Cliquez sur un segment de note pour l'ouvrir dans l'editeur.
+
+### Retour a la Carte
+
+Apres avoir ouvert une note depuis la Carte, un bouton "Retour a la Carte" apparait dans la barre d'onglets. Cliquez pour revenir exactement ou vous etiez — meme niveau d'exploration preserve.
+
+---
+
+## 20. Moteur Cognitif
 
 Le Moteur Cognitif est le systeme d'intelligence integre de Constellation qui analyse vos notes et revele les motifs caches et les relations entre vos idees. Sa philosophie fondamentale :
 

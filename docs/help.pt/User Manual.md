@@ -26,7 +26,8 @@ Constellation e um aplicativo de desktop para Gestao do Conhecimento Pessoal (PK
 16. [Atalhos de Teclado](#atalhos-de-teclado)
 17. [Suporte RTL e Arabe](#suporte-rtl-e-arabe)
 18. [Seguranca e Privacidade](#seguranca-e-privacidade)
-19. [Motor Cognitivo](#motor-cognitivo)
+19. [Mapa do conhecimento](#mapa-do-conhecimento)
+20. [Motor Cognitivo](#motor-cognitivo)
 
 ---
 
@@ -651,7 +652,40 @@ Constellation oferece suporte de primeira classe para arabe, hebraico, persa, ur
 
 ---
 
-## 19. Motor Cognitivo
+## 19. Mapa do conhecimento
+
+O Mapa do conhecimento e uma visualizacao radial (sunburst) que mostra a estrutura, densidade e maturidade de todo o seu universo de conhecimento.
+
+### Abrir o Mapa
+
+- **Botao do dock**: Clique no icone do Mapa do conhecimento na barra lateral esquerda
+- **Paleta de comandos**: `Ctrl+P` e digite "Constellation Map"
+
+### O que voce ve
+
+- **Centro**: Nome do seu Universo com total de notas e palavras
+- **Primeiro anel**: Bibliotecas (cada uma com sua cor). Se seu universo tem universos filhos, eles aparecem aqui tambem.
+- **Aneis mais profundos**: Pastas e subpastas dentro de cada biblioteca
+- **Segmentos externos**: Notas individuais
+
+### Modos de cor
+
+Alterne entre tres modos pelo menu:
+- **Maturidade**: semente (cinza) → muda (verde claro) → perene (verde) → canonico (dourado) → murcho
+- **Estrato**: L1 (azul) → L8 (vermelho) — mostra complexidade do conhecimento
+- **Biblioteca**: todos os segmentos herdam a cor da sua biblioteca
+
+### Navegacao por aprofundamento
+
+Clique em qualquer segmento de pasta para ampliar. Uma trilha de migalhas mostra seu caminho. Clique em qualquer item da trilha para voltar, ou pressione Escape. Clique em um segmento de nota para abri-la no editor.
+
+### Voltar ao Mapa
+
+Apos abrir uma nota a partir do Mapa, um botao "Voltar ao Mapa" aparece na barra de abas. Clique para retornar exatamente onde estava — mesmo nivel de aprofundamento preservado.
+
+---
+
+## 20. Motor Cognitivo
 
 O Motor Cognitivo e o sistema de inteligencia integrado do Constellation que analisa suas notas e revela padroes ocultos e relacoes entre suas ideias. Sua filosofia fundamental:
 

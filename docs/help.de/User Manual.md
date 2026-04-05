@@ -26,7 +26,8 @@ Constellation ist eine Desktop-Anwendung fuer persoenliches Wissensmanagement (P
 16. [Tastenkuerzel](#tastenkuerzel)
 17. [RTL- und Arabisch-Unterstuetzung](#rtl--und-arabisch-unterstuetzung)
 18. [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
-19. [Kognitive Engine](#kognitive-engine)
+19. [Wissenskarte](#wissenskarte)
+20. [Kognitive Engine](#kognitive-engine)
 
 ---
 
@@ -651,7 +652,40 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 
 ---
 
-## 19. Kognitive Engine
+## 19. Wissenskarte
+
+Die Wissenskarte ist eine radiale Sunburst-Visualisierung, die Struktur, Dichte und Reifegrad Ihres gesamten Wissensuniversums zeigt.
+
+### Karte oeffnen
+
+- **Dock-Schaltflaeche**: Klicken Sie auf das Wissenskarte-Symbol in der linken Leiste
+- **Befehlspalette**: `Ctrl+P` dann "Constellation Map" eingeben
+
+### Was Sie sehen
+
+- **Mitte**: Ihr Universums-Name mit Gesamtzahl der Notizen und Woerter
+- **Erster Ring**: Bibliotheken (jeweils in ihrer Bibliotheksfarbe). Wenn Ihr Universum Unteruniversen hat, erscheinen sie hier.
+- **Tiefere Ringe**: Ordner und Unterordner innerhalb jeder Bibliothek
+- **Aeusserste Segmente**: Einzelne Notizen
+
+### Farbmodi
+
+Wechseln Sie zwischen drei Modi ueber das Dropdown:
+- **Reife**: Samen (grau) → Saemling (hellgruen) → Immergruen (gruen) → Kanonisch (gold) → Welkend
+- **Schicht**: L1 (blau) → L8 (rot) — zeigt Wissenskomplexitaet
+- **Bibliothek**: Alle Segmente erben die Farbe ihrer Bibliothek
+
+### Drill-Down-Navigation
+
+Klicken Sie auf ein Ordner-Segment zum Hineinzoomen. Ein Breadcrumb-Pfad zeigt Ihren Weg. Klicken Sie auf ein Breadcrumb-Element zum Zuruecknavigieren, oder druecken Sie Escape. Klicken Sie auf ein Notiz-Segment, um es im Editor zu oeffnen.
+
+### Zurueck zur Karte
+
+Nach dem Oeffnen einer Notiz aus der Karte erscheint eine "Zurueck zur Karte"-Schaltflaeche in der Tab-Leiste. Klicken Sie darauf, um genau dorthin zurueckzukehren — gleiche Drill-Down-Ebene beibehalten.
+
+---
+
+## 20. Kognitive Engine
 
 Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das Ihre Notizen analysiert und verborgene Muster und Zusammenhaenge zwischen Ihren Ideen aufdeckt. Ihre Kernphilosophie:
 

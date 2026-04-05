@@ -26,7 +26,8 @@ Constellation es una aplicacion de escritorio para la Gestion del Conocimiento P
 16. [Atajos de Teclado](#atajos-de-teclado)
 17. [Soporte RTL y Arabe](#soporte-rtl-y-arabe)
 18. [Seguridad y Privacidad](#seguridad-y-privacidad)
-19. [Motor Cognitivo](#motor-cognitivo)
+19. [Mapa del conocimiento](#mapa-del-conocimiento)
+20. [Motor Cognitivo](#motor-cognitivo)
 
 ---
 
@@ -651,7 +652,40 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 
 ---
 
-## 19. Motor Cognitivo
+## 19. Mapa del conocimiento
+
+El Mapa del conocimiento es una visualizacion radial (sunburst) que muestra la estructura, densidad y madurez de todo tu universo de conocimiento.
+
+### Abrir el Mapa
+
+- **Boton del dock**: Haz clic en el icono del Mapa del conocimiento en la barra lateral izquierda
+- **Paleta de comandos**: `Ctrl+P` y escribe "Constellation Map"
+
+### Lo que ves
+
+- **Centro**: El nombre de tu Universo con el total de notas y palabras
+- **Primer anillo**: Bibliotecas (cada una con su color). Si tu universo tiene universos hijos, aparecen aqui tambien.
+- **Anillos mas profundos**: Carpetas y subcarpetas dentro de cada biblioteca
+- **Segmentos exteriores**: Notas individuales
+
+### Modos de color
+
+Cambia entre tres modos con el desplegable:
+- **Madurez**: semilla (gris) → plantula (verde claro) → perenne (verde) → canonico (dorado) → marchito
+- **Estrato**: L1 (azul) → L8 (rojo) — muestra la complejidad del conocimiento
+- **Biblioteca**: todos los segmentos heredan el color de su biblioteca
+
+### Navegacion por profundizacion
+
+Haz clic en cualquier segmento de carpeta para acercarte. Una ruta de migas muestra tu camino. Haz clic en cualquier miga para volver, o presiona Escape. Haz clic en un segmento de nota para abrirla en el editor.
+
+### Volver al Mapa
+
+Despues de abrir una nota desde el Mapa, aparece un boton "Volver al Mapa" en la barra de pestanas. Haz clic para volver exactamente donde estabas — mismo nivel de profundizacion preservado.
+
+---
+
+## 20. Motor Cognitivo
 
 El Motor Cognitivo es el sistema de inteligencia integrado de Constellation que analiza tus notas y descubre patrones ocultos y relaciones entre tus ideas. Su filosofia fundamental:
 
