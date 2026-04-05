@@ -367,7 +367,8 @@
         "createLens": "Создать линзу",
         "expressionForge": "Кузница выражения",
         "senseMakingCanvas": "Холст осмысления",
-        "inspector360": "Инспектор 360.3D"
+        "inspector360": "Инспектор 360.3D",
+        "constellationMap": "Карта знаний"
     },
     "actions": {
         "untitled": "Без названия",
@@ -386,6 +387,7 @@
         "aiSkills": "Навыки ИИ",
         "toggleTheme": "Сменить тему",
         "index": "Указатель",
+        "constellationMap": "Карта знаний",
         "settings": "Настройки",
         "importNotes": "Импорт заметок"
     },
@@ -860,6 +862,21 @@
         "link_generalizes": "Обобщает",
         "link_exemplifies": "Иллюстрирует",
         "link_part_of": "Часть"
+    },
+    "constellationMap": {
+        "title": "Карта знаний",
+        "loading": "Построение карты...",
+        "noData": "Нет данных",
+        "words": "слов",
+        "links": "ссылок",
+        "notes": "заметок",
+        "maturity": "Зрелость",
+        "stratum": "Уровень",
+        "colorByMaturity": "По зрелости",
+        "colorByStratum": "По уровню",
+        "colorByLibrary": "По библиотеке",
+        "zoomIn": "Нажмите для увеличения",
+        "zoomOut": "Нажмите для уменьшения"
     },
     "tableToolbar": {
         "addRow": "Добавить строку",

@@ -67,6 +67,7 @@
 	import ReviewPulsePanel from '$lib/components/ReviewPulsePanel.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
+	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
 	// import Inspector360 from '$lib/components/Inspector360.svelte'; // CE Phase 12: disabled — revisit later
 	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
@@ -306,6 +307,7 @@
 	let activeTrail = $state<any>(null); // CE Phase 8: active trail data
 	let showExpressionForge = $state(false); // CE Phase 10
 	let showSenseMakingCanvas = $state(false); // CE Phase 11
+	let showConstellationMap = $state(false);
 	// let inspector360Data = $state<any>(null); // CE Phase 12: disabled — revisit later
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
@@ -1077,8 +1079,8 @@
 			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { sidebarOpen = true; searchMode = true; }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
-			{ id: 'star-view', name: $t('commands.starView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showStarView = !showStarView; }, category: 'View' },
-			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showStarView = false; }, category: 'View' },
+			{ id: 'star-view', name: $t('commands.starView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showStarView = !showStarView; showConstellationMap = false; }, category: 'View' },
+			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showStarView = false; showConstellationMap = false; }, category: 'View' },
 			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
 			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: sc('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
@@ -1095,7 +1097,7 @@
 			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: sc('nav-back'), icon: '←', action: navigateBack, category: 'Navigation' },
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
-			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showStarView = false; showGlobalTasks = false; indexReturnPending = false; }, category: 'Navigation' },
+			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showStarView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
@@ -1114,9 +1116,9 @@
 				} catch {}
 			}, category: 'Navigation' },
 			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
-			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showStarView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; }, category: 'View' },
-
-			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; }, category: 'View' },
+			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showStarView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; }, category: 'View' },
+			{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; }, category: 'View' },
+			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; }, category: 'View' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
@@ -2434,7 +2436,7 @@
 			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = true; }} title={$t('ribbon.search')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</button>
-			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => { showGlobalTasks = !showGlobalTasks; showStarView = false; showIndex = false; }} title={$t('ribbon.globalTasks')}>
+			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => { showGlobalTasks = !showGlobalTasks; showStarView = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.globalTasks')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 			</button>
 			<button class="dock-btn" onclick={handleOpenDailyNote} title={$t('ribbon.dailyNote')}>
@@ -2443,8 +2445,11 @@
 			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('ribbon.aiSkills')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
 			</a>
-			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showStarView = false; showGlobalTasks = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
+			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showStarView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
+			</button>
+			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 			</button>
 		</div>
 		<div class="dock-bottom">
@@ -2811,7 +2816,7 @@
 		</div>
 
 		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
-		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas}>
+		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap}>
 			{#if indexReturnPending}
 				<button class="index-return-btn" onclick={() => { showIndex = true; indexReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -3035,6 +3040,19 @@
 					</div>
 				{/if}
 				</div>
+			{:else if showConstellationMap}
+				<ConstellationMap
+					libraryPath={get(libraries)[0]?.path ?? ''}
+					libraryName={get(libraries)[0]?.name ?? ''}
+					libraryColor={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}
+					{libraryColorMap}
+					onNoteClick={(path, name) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						showConstellationMap = false;
+					}}
+					onClose={() => showConstellationMap = false}
+				/>
 			{:else if showGlobalTasks}
 				<GlobalTasksView
 					{libraryColorMap}

@@ -366,7 +366,8 @@
         "createLens": "Create Lens",
         "expressionForge": "Expression Forge",
         "senseMakingCanvas": "Sense-Making Canvas",
-        "inspector360": "360.3D Inspector"
+        "inspector360": "360.3D Inspector",
+        "constellationMap": "Constellation Map"
     },
     "actions": {
         "untitled": "Untitled",
@@ -385,6 +386,7 @@
         "aiSkills": "AI Skills",
         "toggleTheme": "Toggle theme",
         "index": "Index",
+        "constellationMap": "Constellation Map",
         "settings": "Settings",
         "importNotes": "Import notes"
     },
@@ -1319,5 +1321,20 @@
         "exitHint": "Press Escape to exit",
         "activate": "Enter Focus",
         "wordCount": "words"
+    },
+    "constellationMap": {
+        "title": "Constellation Map",
+        "loading": "Building knowledge map...",
+        "noData": "No data available",
+        "words": "words",
+        "links": "links",
+        "notes": "notes",
+        "maturity": "Maturity",
+        "stratum": "Stratum",
+        "colorByMaturity": "Color by Maturity",
+        "colorByStratum": "Color by Stratum",
+        "colorByLibrary": "Color by Library",
+        "zoomIn": "Click to zoom in",
+        "zoomOut": "Click to zoom out"
     }
 }

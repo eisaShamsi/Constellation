@@ -367,7 +367,8 @@
         "createLens": "レンズ作成",
         "expressionForge": "表現フォージ",
         "senseMakingCanvas": "センスメイキングキャンバス",
-        "inspector360": "360.3Dインスペクター"
+        "inspector360": "360.3Dインスペクター",
+        "constellationMap": "ナレッジマップ"
     },
     "actions": {
         "untitled": "無題",
@@ -386,6 +387,7 @@
         "aiSkills": "AIスキル",
         "toggleTheme": "テーマを切り替え",
         "index": "索引",
+        "constellationMap": "ナレッジマップ",
         "settings": "設定",
         "importNotes": "ノートをインポート"
     },
@@ -860,6 +862,21 @@
         "link_generalizes": "一般化",
         "link_exemplifies": "例示",
         "link_part_of": "一部"
+    },
+    "constellationMap": {
+        "title": "ナレッジマップ",
+        "loading": "マップを構築中...",
+        "noData": "データなし",
+        "words": "語",
+        "links": "リンク",
+        "notes": "ノート",
+        "maturity": "成熟度",
+        "stratum": "階層",
+        "colorByMaturity": "成熟度別",
+        "colorByStratum": "階層別",
+        "colorByLibrary": "ライブラリ別",
+        "zoomIn": "クリックで拡大",
+        "zoomOut": "クリックで縮小"
     },
     "tableToolbar": {
         "addRow": "行を追加",

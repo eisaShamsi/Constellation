@@ -367,7 +367,8 @@
         "createLens": "Linse erstellen",
         "expressionForge": "Ausdrucksschmiede",
         "senseMakingCanvas": "Sinngebungsleinwand",
-        "inspector360": "360.3D-Inspektor"
+        "inspector360": "360.3D-Inspektor",
+        "constellationMap": "Wissenskarte"
     },
     "actions": {
         "untitled": "Unbenannt",
@@ -386,6 +387,7 @@
         "aiSkills": "KI-Fähigkeiten",
         "toggleTheme": "Design umschalten",
         "index": "Index",
+        "constellationMap": "Wissenskarte",
         "settings": "Einstellungen",
         "importNotes": "Notizen importieren"
     },
@@ -871,6 +873,21 @@
         "link_generalizes": "Verallgemeinert",
         "link_exemplifies": "Veranschaulicht",
         "link_part_of": "Teil von"
+    },
+    "constellationMap": {
+        "title": "Wissenskarte",
+        "loading": "Wissenskarte wird erstellt...",
+        "noData": "Keine Daten",
+        "words": "Wörter",
+        "links": "Links",
+        "notes": "Notizen",
+        "maturity": "Reife",
+        "stratum": "Stratum",
+        "colorByMaturity": "Nach Reife",
+        "colorByStratum": "Nach Stratum",
+        "colorByLibrary": "Nach Bibliothek",
+        "zoomIn": "Klicken zum Vergrößern",
+        "zoomOut": "Klicken zum Verkleinern"
     },
     "tableToolbar": {
         "addRow": "Zeile hinzufügen",

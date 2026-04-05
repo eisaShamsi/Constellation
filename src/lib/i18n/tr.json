@@ -367,7 +367,8 @@
         "createLens": "Lens oluştur",
         "expressionForge": "İfade Dökümhanesi",
         "senseMakingCanvas": "Anlam Oluşturma Tuvali",
-        "inspector360": "360.3D Denetçi"
+        "inspector360": "360.3D Denetçi",
+        "constellationMap": "Bilgi Haritası"
     },
     "actions": {
         "untitled": "Başlıksız",
@@ -386,6 +387,7 @@
         "aiSkills": "Yapay Zeka Becerileri",
         "toggleTheme": "Temayı değiştir",
         "index": "Dizin",
+        "constellationMap": "Bilgi Haritası",
         "settings": "Ayarlar",
         "importNotes": "Notları içe aktar"
     },
@@ -860,6 +862,21 @@
         "link_generalizes": "Geneller",
         "link_exemplifies": "Örnekler",
         "link_part_of": "Parçası"
+    },
+    "constellationMap": {
+        "title": "Bilgi Haritası",
+        "loading": "Harita oluşturuluyor...",
+        "noData": "Veri yok",
+        "words": "kelime",
+        "links": "bağlantı",
+        "notes": "not",
+        "maturity": "Olgunluk",
+        "stratum": "Katman",
+        "colorByMaturity": "Olgunluğa göre",
+        "colorByStratum": "Katmana göre",
+        "colorByLibrary": "Kütüphaneye göre",
+        "zoomIn": "Yakınlaştırmak için tıklayın",
+        "zoomOut": "Uzaklaştırmak için tıklayın"
     },
     "tableToolbar": {
         "addRow": "Satır ekle",

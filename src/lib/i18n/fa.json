@@ -367,7 +367,8 @@
         "createLens": "ایجاد عدسی",
         "expressionForge": "کارگاه بیان",
         "senseMakingCanvas": "بوم معنایابی",
-        "inspector360": "بازرس کروی"
+        "inspector360": "بازرس کروی",
+        "constellationMap": "نقشه دانش"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -386,6 +387,7 @@
         "aiSkills": "مهارت‌های هوش مصنوعی",
         "toggleTheme": "تغییر پوسته",
         "index": "فهرست",
+        "constellationMap": "نقشه دانش",
         "settings": "تنظیمات",
         "importNotes": "وارد کردن یادداشت‌ها"
     },
@@ -871,6 +873,21 @@
         "link_generalizes": "تعمیم",
         "link_exemplifies": "نمونه",
         "link_part_of": "بخشی از"
+    },
+    "constellationMap": {
+        "title": "نقشه دانش",
+        "loading": "در حال ساخت نقشه...",
+        "noData": "بدون داده",
+        "words": "کلمه",
+        "links": "لینک",
+        "notes": "یادداشت",
+        "maturity": "بلوغ",
+        "stratum": "سطح",
+        "colorByMaturity": "بر اساس بلوغ",
+        "colorByStratum": "بر اساس سطح",
+        "colorByLibrary": "بر اساس کتابخانه",
+        "zoomIn": "برای بزرگنمایی کلیک کنید",
+        "zoomOut": "برای کوچک‌نمایی کلیک کنید"
     },
     "tableToolbar": {
         "addRow": "افزودن سطر",

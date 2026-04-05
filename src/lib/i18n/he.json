@@ -367,7 +367,8 @@
         "createLens": "צור עדשה",
         "expressionForge": "מפעל ביטוי",
         "senseMakingCanvas": "קנבס יצירת משמעות",
-        "inspector360": "מפקח 360.3D"
+        "inspector360": "מפקח 360.3D",
+        "constellationMap": "מפת ידע"
     },
     "actions": {
         "untitled": "ללא כותרת",
@@ -386,6 +387,7 @@
         "aiSkills": "כישורי AI",
         "toggleTheme": "החלף ערכת נושא",
         "index": "מפתח",
+        "constellationMap": "מפת ידע",
         "settings": "הגדרות",
         "importNotes": "ייבוא הערות"
     },
@@ -860,6 +862,21 @@
         "link_generalizes": "מכליל",
         "link_exemplifies": "ממחיש",
         "link_part_of": "חלק מ"
+    },
+    "constellationMap": {
+        "title": "מפת ידע",
+        "loading": "בונה מפת ידע...",
+        "noData": "אין נתונים",
+        "words": "מילים",
+        "links": "קישורים",
+        "notes": "פתקים",
+        "maturity": "בשלות",
+        "stratum": "שכבה",
+        "colorByMaturity": "לפי בשלות",
+        "colorByStratum": "לפי שכבה",
+        "colorByLibrary": "לפי ספרייה",
+        "zoomIn": "לחץ להגדלה",
+        "zoomOut": "לחץ להקטנה"
     },
     "tableToolbar": {
         "addRow": "הוסף שורה",

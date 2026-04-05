@@ -367,7 +367,8 @@
         "createLens": "렌즈 만들기",
         "expressionForge": "표현 포지",
         "senseMakingCanvas": "센스메이킹 캔버스",
-        "inspector360": "360.3D 인스펙터"
+        "inspector360": "360.3D 인스펙터",
+        "constellationMap": "지식 맵"
     },
     "actions": {
         "untitled": "제목 없음",
@@ -386,6 +387,7 @@
         "aiSkills": "AI 스킬",
         "toggleTheme": "테마 전환",
         "index": "색인",
+        "constellationMap": "지식 맵",
         "settings": "설정",
         "importNotes": "노트 가져오기"
     },
@@ -860,6 +862,21 @@
         "link_generalizes": "일반화",
         "link_exemplifies": "예시",
         "link_part_of": "부분"
+    },
+    "constellationMap": {
+        "title": "지식 맵",
+        "loading": "맵 구축 중...",
+        "noData": "데이터 없음",
+        "words": "단어",
+        "links": "링크",
+        "notes": "노트",
+        "maturity": "성숙도",
+        "stratum": "계층",
+        "colorByMaturity": "성숙도별",
+        "colorByStratum": "계층별",
+        "colorByLibrary": "라이브러리별",
+        "zoomIn": "확대 클릭",
+        "zoomOut": "축소 클릭"
     },
     "tableToolbar": {
         "addRow": "행 추가",

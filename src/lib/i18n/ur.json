@@ -367,7 +367,8 @@
         "createLens": "لینز بنائیں",
         "expressionForge": "اظہار فورج",
         "senseMakingCanvas": "معنی سازی کینوس",
-        "inspector360": "360.3D معائنہ کار"
+        "inspector360": "360.3D معائنہ کار",
+        "constellationMap": "علم کا نقشہ"
     },
     "actions": {
         "untitled": "بغیر عنوان",
@@ -386,6 +387,7 @@
         "aiSkills": "AI مہارتیں",
         "toggleTheme": "تھیم تبدیل کریں",
         "index": "فہرست",
+        "constellationMap": "علم کا نقشہ",
         "settings": "ترتیبات",
         "importNotes": "نوٹس درآمد کریں"
     },
@@ -860,6 +862,21 @@
         "link_generalizes": "تعمیم",
         "link_exemplifies": "مثال",
         "link_part_of": "حصہ"
+    },
+    "constellationMap": {
+        "title": "علم کا نقشہ",
+        "loading": "نقشہ بنایا جا رہا ہے...",
+        "noData": "کوئی ڈیٹا نہیں",
+        "words": "الفاظ",
+        "links": "لنکس",
+        "notes": "نوٹس",
+        "maturity": "پختگی",
+        "stratum": "سطح",
+        "colorByMaturity": "پختگی کے مطابق",
+        "colorByStratum": "سطح کے مطابق",
+        "colorByLibrary": "لائبریری کے مطابق",
+        "zoomIn": "زوم ان کریں",
+        "zoomOut": "زوم آؤٹ کریں"
     },
     "tableToolbar": {
         "addRow": "قطار شامل کریں",

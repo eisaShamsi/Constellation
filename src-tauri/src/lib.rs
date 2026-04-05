@@ -6,6 +6,7 @@ mod inspector360;
 mod importers;
 mod libraries;
 mod lenses;
+mod map;
 mod maturity;
 mod provenance;
 mod review;
@@ -171,6 +172,7 @@ pub fn run() {
             trails::read_trail,
             canvas::list_canvases,
             inspector360::get_360_view,
+            map::constellation_map_data,
             canvas::read_canvas,
             canvas::write_canvas,
             canvas::create_canvas,

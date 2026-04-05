@@ -367,7 +367,8 @@
         "createLens": "Créer une lentille",
         "expressionForge": "Forge d'expression",
         "senseMakingCanvas": "Canevas de sens",
-        "inspector360": "Inspecteur 360.3D"
+        "inspector360": "Inspecteur 360.3D",
+        "constellationMap": "Carte des connaissances"
     },
     "actions": {
         "untitled": "Sans titre",
@@ -386,6 +387,7 @@
         "aiSkills": "Compétences IA",
         "toggleTheme": "Basculer le thème",
         "index": "Index",
+        "constellationMap": "Carte des connaissances",
         "settings": "Paramètres",
         "importNotes": "Importer des notes"
     },
@@ -871,6 +873,21 @@
         "link_generalizes": "Généralise",
         "link_exemplifies": "Illustre",
         "link_part_of": "Partie de"
+    },
+    "constellationMap": {
+        "title": "Carte des connaissances",
+        "loading": "Construction de la carte...",
+        "noData": "Aucune donnée",
+        "words": "mots",
+        "links": "liens",
+        "notes": "notes",
+        "maturity": "Maturité",
+        "stratum": "Strate",
+        "colorByMaturity": "Par maturité",
+        "colorByStratum": "Par strate",
+        "colorByLibrary": "Par bibliothèque",
+        "zoomIn": "Cliquer pour agrandir",
+        "zoomOut": "Cliquer pour réduire"
     },
     "tableToolbar": {
         "addRow": "Ajouter une ligne",

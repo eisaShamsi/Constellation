@@ -367,7 +367,8 @@
         "createLens": "创建镜头",
         "expressionForge": "表达锻造",
         "senseMakingCanvas": "意义构建画布",
-        "inspector360": "360.3D检查器"
+        "inspector360": "360.3D检查器",
+        "constellationMap": "知识地图"
     },
     "actions": {
         "untitled": "未命名",
@@ -386,6 +387,7 @@
         "aiSkills": "AI 技能",
         "toggleTheme": "切换主题",
         "index": "索引",
+        "constellationMap": "知识地图",
         "settings": "设置",
         "importNotes": "导入笔记"
     },
@@ -860,6 +862,21 @@
         "link_generalizes": "概括",
         "link_exemplifies": "例证",
         "link_part_of": "部分"
+    },
+    "constellationMap": {
+        "title": "知识地图",
+        "loading": "构建知识地图...",
+        "noData": "无数据",
+        "words": "字",
+        "links": "链接",
+        "notes": "笔记",
+        "maturity": "成熟度",
+        "stratum": "层次",
+        "colorByMaturity": "按成熟度",
+        "colorByStratum": "按层次",
+        "colorByLibrary": "按库",
+        "zoomIn": "点击放大",
+        "zoomOut": "点击缩小"
     },
     "tableToolbar": {
         "addRow": "添加行",

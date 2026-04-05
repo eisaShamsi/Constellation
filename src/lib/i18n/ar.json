@@ -367,7 +367,8 @@
         "createLens": "إنشاء عدسة",
         "expressionForge": "مصنع التعبير",
         "senseMakingCanvas": "لوحة الإدراك",
-        "inspector360": "المنظار الكروي"
+        "inspector360": "المنظار الكروي",
+        "constellationMap": "خريطة المعرفة"
     },
     "actions": {
         "untitled": "بدون عنوان",
@@ -386,6 +387,7 @@
         "aiSkills": "مهارات الذكاء الاصطناعي",
         "toggleTheme": "تبديل المظهر",
         "index": "الفهرس",
+        "constellationMap": "خريطة المعرفة",
         "settings": "الإعدادات",
         "importNotes": "استيراد الملاحظات"
     },
@@ -871,6 +873,21 @@
         "link_generalizes": "يعمم",
         "link_exemplifies": "يمثل",
         "link_part_of": "جزء من"
+    },
+    "constellationMap": {
+        "title": "خريطة المعرفة",
+        "loading": "جارٍ بناء خريطة المعرفة...",
+        "noData": "لا توجد بيانات",
+        "words": "كلمة",
+        "links": "رابط",
+        "notes": "ملاحظة",
+        "maturity": "النضج",
+        "stratum": "المستوى",
+        "colorByMaturity": "حسب النضج",
+        "colorByStratum": "حسب المستوى",
+        "colorByLibrary": "حسب المكتبة",
+        "zoomIn": "انقر للتكبير",
+        "zoomOut": "انقر للتصغير"
     },
     "tableToolbar": {
         "addRow": "إضافة صف",

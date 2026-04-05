@@ -367,7 +367,8 @@
         "createLens": "Criar lente",
         "expressionForge": "Forja de expressão",
         "senseMakingCanvas": "Tela de sentido",
-        "inspector360": "Inspetor 360.3D"
+        "inspector360": "Inspetor 360.3D",
+        "constellationMap": "Mapa do conhecimento"
     },
     "actions": {
         "untitled": "Sem título",
@@ -386,6 +387,7 @@
         "aiSkills": "Habilidades de IA",
         "toggleTheme": "Alternar tema",
         "index": "Índice",
+        "constellationMap": "Mapa do conhecimento",
         "settings": "Configurações",
         "importNotes": "Importar notas"
     },
@@ -860,6 +862,21 @@
         "link_generalizes": "Generaliza",
         "link_exemplifies": "Exemplifica",
         "link_part_of": "Parte de"
+    },
+    "constellationMap": {
+        "title": "Mapa do conhecimento",
+        "loading": "Construindo mapa...",
+        "noData": "Sem dados",
+        "words": "palavras",
+        "links": "links",
+        "notes": "notas",
+        "maturity": "Maturidade",
+        "stratum": "Estrato",
+        "colorByMaturity": "Por maturidade",
+        "colorByStratum": "Por estrato",
+        "colorByLibrary": "Por biblioteca",
+        "zoomIn": "Clique para ampliar",
+        "zoomOut": "Clique para reduzir"
     },
     "tableToolbar": {
         "addRow": "Adicionar linha",

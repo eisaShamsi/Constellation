@@ -367,7 +367,8 @@
         "createLens": "लेंस बनाएं",
         "expressionForge": "अभिव्यक्ति फोर्ज",
         "senseMakingCanvas": "अर्थ-निर्माण कैनवास",
-        "inspector360": "360.3D इंस्पेक्टर"
+        "inspector360": "360.3D इंस्पेक्टर",
+        "constellationMap": "ज्ञान मानचित्र"
     },
     "actions": {
         "untitled": "बिना शीर्षक",
@@ -386,6 +387,7 @@
         "aiSkills": "AI कौशल",
         "toggleTheme": "थीम बदलें",
         "index": "अनुक्रमणिका",
+        "constellationMap": "ज्ञान मानचित्र",
         "settings": "सेटिंग्स",
         "importNotes": "नोट्स आयात करें"
     },
@@ -860,6 +862,21 @@
         "link_generalizes": "सामान्यीकरण",
         "link_exemplifies": "उदाहरण",
         "link_part_of": "का हिस्सा"
+    },
+    "constellationMap": {
+        "title": "ज्ञान मानचित्र",
+        "loading": "ज्ञान मानचित्र बना रहा...",
+        "noData": "कोई डेटा नहीं",
+        "words": "शब्द",
+        "links": "लिंक",
+        "notes": "नोट्स",
+        "maturity": "परिपक्वता",
+        "stratum": "स्तर",
+        "colorByMaturity": "परिपक्वता के अनुसार",
+        "colorByStratum": "स्तर के अनुसार",
+        "colorByLibrary": "पुस्तकालय के अनुसार",
+        "zoomIn": "ज़ूम इन करें",
+        "zoomOut": "ज़ूम आउट करें"
     },
     "tableToolbar": {
         "addRow": "पंक्ति जोड़ें",
