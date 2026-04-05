@@ -1335,6 +1335,8 @@
         "colorByStratum": "Color by Stratum",
         "colorByLibrary": "Color by Library",
         "zoomIn": "Click to zoom in",
-        "zoomOut": "Click to zoom out"
+        "zoomOut": "Click to zoom out",
+        "childUniverse": "Child Universe",
+        "library": "Library"
     }
 }

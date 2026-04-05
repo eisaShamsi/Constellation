@@ -13,6 +13,7 @@
 		name: string;
 		path: string;
 		is_dir: boolean;
+		node_type: string; // "universe" | "child_universe" | "library" | "folder" | "note"
 		weight: number;
 		note_count: number;
 		word_count: number;
@@ -74,13 +75,24 @@
 
 	function getNodeColor(d: any): string {
 		const data = d.data as MapNode;
+
+		// Child universe: distinct purple tint
+		if (data.node_type === 'child_universe') return '#6366f1';
+
+		// Library: use library color
+		if (data.node_type === 'library') {
+			return libraryColorMap[data.name] || libraryColor;
+		}
+
+		// Folder: inherit from parent library color, with slight depth fade
 		if (data.is_dir) {
-			// Library-level folders (depth 1) use library color
-			const libName = d.depth === 1 ? data.name : getLibraryName(d);
+			const libName = getLibraryName(d);
 			const libColor = libraryColorMap[libName];
 			if (libColor) return libColor;
 			return DEPTH_COLORS[Math.min(d.depth, DEPTH_COLORS.length - 1)];
 		}
+
+		// Notes: depends on color mode
 		if (colorMode === 'maturity') {
 			return MATURITY_COLORS[data.maturity || 'seed'] || '#d1d5db';
 		}
@@ -341,7 +353,16 @@
 	{#if tooltip.visible && tooltip.node}
 		<div class="cmap-tooltip" style="left:{tooltip.x + 12}px;top:{tooltip.y - 8}px" dir="auto">
 			<div class="cmap-tt-name">{tooltip.node.name}</div>
-			{#if tooltip.node.is_dir}
+			{#if tooltip.node.node_type === 'child_universe'}
+				<div class="cmap-tt-type">{$t('constellationMap.childUniverse') || 'Child Universe'}</div>
+				<div class="cmap-tt-row">{tooltip.node.note_count} {$t('constellationMap.notes') || 'notes'}</div>
+				<div class="cmap-tt-row">{tooltip.node.word_count.toLocaleString()} {$t('constellationMap.words') || 'words'}</div>
+			{:else if tooltip.node.node_type === 'library'}
+				<div class="cmap-tt-type">{$t('constellationMap.library') || 'Library'}</div>
+				<div class="cmap-tt-row">{tooltip.node.note_count} {$t('constellationMap.notes') || 'notes'}</div>
+				<div class="cmap-tt-row">{tooltip.node.word_count.toLocaleString()} {$t('constellationMap.words') || 'words'}</div>
+				<div class="cmap-tt-row">{tooltip.node.link_count} {$t('constellationMap.links') || 'links'}</div>
+			{:else if tooltip.node.is_dir}
 				<div class="cmap-tt-row">{tooltip.node.note_count} {$t('constellationMap.notes') || 'notes'}</div>
 				<div class="cmap-tt-row">{tooltip.node.word_count.toLocaleString()} {$t('constellationMap.words') || 'words'}</div>
 				<div class="cmap-tt-row">{tooltip.node.link_count} {$t('constellationMap.links') || 'links'}</div>
@@ -434,7 +455,8 @@
 		box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 12px;
 		pointer-events: none; max-width: 250px;
 	}
-	.cmap-tt-name { font-weight: 700; margin-bottom: 4px; color: var(--text-normal, #333); }
+	.cmap-tt-name { font-weight: 700; margin-bottom: 2px; color: var(--text-normal, #333); }
+	.cmap-tt-type { font-size: 10px; color: var(--interactive-accent, #7c3aed); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 	.cmap-tt-row { color: var(--text-muted, #666); display: flex; align-items: center; gap: 4px; }
 	.cmap-tt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 

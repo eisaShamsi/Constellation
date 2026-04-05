@@ -17,12 +17,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::strata::strip_frontmatter_pub;
 
-/// A node in the Map tree — either a folder (with children) or a note (leaf).
+/// A node in the Map tree — universe, child_universe, library, folder, or note.
 #[derive(Debug, Clone, Serialize)]
 pub struct MapNode {
     pub name: String,
     pub path: String,
     pub is_dir: bool,
+    pub node_type: String, // "universe" | "child_universe" | "library" | "folder" | "note"
     pub weight: f64,
     pub note_count: u32,
     pub word_count: u32,
@@ -110,12 +111,56 @@ pub fn constellation_map_data(
     }
 
     // Pass 2: Build the MapNode tree
-    let tree = build_tree(root, &note_meta, 0, depth_limit);
+    let mut tree = build_tree(root, &note_meta, 0, depth_limit);
+    tree.node_type = "library".to_string();
 
     Ok(tree)
 }
 
-/// Compute the Constellation Map tree for the entire universe (all libraries).
+/// Build a library MapNode from a library path — reusable for both top-level and child universe libs.
+fn build_library_node(lib_path: &str, lib_name: &str, depth_limit: u32) -> Option<MapNode> {
+    let root = Path::new(lib_path);
+    if !root.is_dir() { return None; }
+
+    let mut all_notes: Vec<NoteRecord> = Vec::new();
+    collect_notes_recursive(root, &mut all_notes);
+
+    let mut inbound_map: HashMap<String, usize> = HashMap::new();
+    for note in &all_notes {
+        for target in &note.outgoing_links {
+            *inbound_map.entry(target.clone()).or_insert(0) += 1;
+        }
+    }
+
+    let now_secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let mut note_meta: HashMap<String, (u32, u32, String, Option<u8>, u64)> = HashMap::new();
+    for note in &all_notes {
+        let key = note.path.replace('\\', "/").to_lowercase();
+        let inbound = *inbound_map.get(&note.name.to_lowercase()).unwrap_or(&0);
+        let days_since_created = (now_secs.saturating_sub(note.created)) / 86400;
+        let days_since_modified = (now_secs.saturating_sub(note.modified)) / 86400;
+        let maturity = compute_maturity(inbound, days_since_created, days_since_modified);
+        let stratum = compute_simple_stratum(note.word_count, note.outgoing_links.len(), inbound);
+        note_meta.insert(key, (
+            note.word_count,
+            note.outgoing_links.len() as u32,
+            maturity,
+            Some(stratum),
+            note.modified,
+        ));
+    }
+
+    let mut tree = build_tree(root, &note_meta, 0, depth_limit);
+    tree.name = lib_name.to_string();
+    tree.node_type = "library".to_string();
+    Some(tree)
+}
+
+/// Compute the Constellation Map tree for the entire universe (all libraries + child universes).
 #[tauri::command]
 pub fn constellation_map_universe(
     app: tauri::AppHandle,
@@ -123,73 +168,98 @@ pub fn constellation_map_universe(
     max_depth: Option<u32>,
 ) -> Result<MapNode, String> {
     let libraries = crate::libraries::load_all_libraries(&app);
-    if libraries.is_empty() {
-        return Err("No libraries found.".to_string());
-    }
-
     let depth_limit = max_depth.unwrap_or(5);
-    let mut lib_trees: Vec<MapNode> = Vec::new();
+
+    // Get child universes
+    let child_universes = crate::universe::get_child_universes(app.clone()).unwrap_or_default();
+
+    // Collect library paths that belong to child universes (to exclude from top-level)
+    let mut child_lib_paths: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    // Build child universe nodes
+    let mut top_children: Vec<MapNode> = Vec::new();
     let mut total_weight: f64 = 0.0;
     let mut total_notes: u32 = 0;
     let mut total_words: u32 = 0;
     let mut total_links: u32 = 0;
     let mut latest_modified: u64 = 0;
 
-    for lib in &libraries {
-        let root = Path::new(&lib.path);
-        if !root.is_dir() { continue; }
+    for cu in &child_universes {
+        // Get libraries in this child universe
+        let cu_libs = crate::universe::read_child_universe_libraries(app.clone(), cu.path.clone())
+            .unwrap_or_default();
 
-        // Collect notes for this library
-        let mut all_notes: Vec<NoteRecord> = Vec::new();
-        collect_notes_recursive(root, &mut all_notes);
+        let mut cu_lib_nodes: Vec<MapNode> = Vec::new();
+        let mut cu_weight: f64 = 0.0;
+        let mut cu_notes: u32 = 0;
+        let mut cu_words: u32 = 0;
+        let mut cu_links: u32 = 0;
+        let mut cu_modified: u64 = 0;
 
-        // Build inbound map
-        let mut inbound_map: HashMap<String, usize> = HashMap::new();
-        for note in &all_notes {
-            for target in &note.outgoing_links {
-                *inbound_map.entry(target.clone()).or_insert(0) += 1;
+        for lib in &cu_libs {
+            child_lib_paths.insert(lib.path.replace('\\', "/").to_lowercase());
+            if let Some(node) = build_library_node(&lib.path, &lib.name, depth_limit) {
+                cu_weight += node.weight;
+                cu_notes += node.note_count;
+                cu_words += node.word_count;
+                cu_links += node.link_count;
+                if node.modified.unwrap_or(0) > cu_modified {
+                    cu_modified = node.modified.unwrap_or(0);
+                }
+                cu_lib_nodes.push(node);
             }
         }
 
-        let now_secs = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
+        if !cu_lib_nodes.is_empty() {
+            total_weight += cu_weight;
+            total_notes += cu_notes;
+            total_words += cu_words;
+            total_links += cu_links;
+            if cu_modified > latest_modified { latest_modified = cu_modified; }
 
-        let mut note_meta: HashMap<String, (u32, u32, String, Option<u8>, u64)> = HashMap::new();
-        for note in &all_notes {
-            let key = note.path.replace('\\', "/").to_lowercase();
-            let inbound = *inbound_map.get(&note.name.to_lowercase()).unwrap_or(&0);
-            let days_since_created = (now_secs.saturating_sub(note.created)) / 86400;
-            let days_since_modified = (now_secs.saturating_sub(note.modified)) / 86400;
-            let maturity = compute_maturity(inbound, days_since_created, days_since_modified);
-            let stratum = compute_simple_stratum(note.word_count, note.outgoing_links.len(), inbound);
-            note_meta.insert(key, (
-                note.word_count,
-                note.outgoing_links.len() as u32,
-                maturity,
-                Some(stratum),
-                note.modified,
-            ));
+            top_children.push(MapNode {
+                name: cu.name.clone(),
+                path: cu.path.clone(),
+                is_dir: true,
+                node_type: "child_universe".to_string(),
+                weight: cu_weight.max(0.1),
+                note_count: cu_notes,
+                word_count: cu_words,
+                link_count: cu_links,
+                maturity: None,
+                stratum: None,
+                modified: if cu_modified > 0 { Some(cu_modified) } else { None },
+                children: Some(cu_lib_nodes),
+            });
         }
-
-        let mut tree = build_tree(root, &note_meta, 0, depth_limit);
-        tree.name = lib.name.clone(); // Use library name, not folder name
-        total_weight += tree.weight;
-        total_notes += tree.note_count;
-        total_words += tree.word_count;
-        total_links += tree.link_count;
-        if tree.modified.unwrap_or(0) > latest_modified {
-            latest_modified = tree.modified.unwrap_or(0);
-        }
-        lib_trees.push(tree);
     }
 
-    // Wrap all libraries under a universe root
+    // Build top-level library nodes (excluding those in child universes)
+    for lib in &libraries {
+        let key = lib.path.replace('\\', "/").to_lowercase();
+        if child_lib_paths.contains(&key) { continue; }
+
+        if let Some(node) = build_library_node(&lib.path, &lib.name, depth_limit) {
+            total_weight += node.weight;
+            total_notes += node.note_count;
+            total_words += node.word_count;
+            total_links += node.link_count;
+            if node.modified.unwrap_or(0) > latest_modified {
+                latest_modified = node.modified.unwrap_or(0);
+            }
+            top_children.push(node);
+        }
+    }
+
+    if top_children.is_empty() {
+        return Err("No libraries found.".to_string());
+    }
+
     Ok(MapNode {
         name: universe_name,
         path: String::new(),
         is_dir: true,
+        node_type: "universe".to_string(),
         weight: total_weight.max(0.1),
         note_count: total_notes,
         word_count: total_words,
@@ -197,7 +267,7 @@ pub fn constellation_map_universe(
         maturity: None,
         stratum: None,
         modified: if latest_modified > 0 { Some(latest_modified) } else { None },
-        children: if lib_trees.is_empty() { None } else { Some(lib_trees) },
+        children: Some(top_children),
     })
 }
 
@@ -320,6 +390,7 @@ fn build_tree(
                             name: note_name,
                             path: path.to_string_lossy().to_string(),
                             is_dir: false,
+                            node_type: "note".to_string(),
                             weight,
                             note_count: 1,
                             word_count: *wc,
@@ -339,7 +410,8 @@ fn build_tree(
         name: dir_name,
         path: dir.to_string_lossy().to_string(),
         is_dir: true,
-        weight: total_weight.max(0.1), // minimum weight so empty folders still visible
+        node_type: "folder".to_string(),
+        weight: total_weight.max(0.1),
         note_count: total_notes,
         word_count: total_words,
         link_count: total_links,
