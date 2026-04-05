@@ -444,6 +444,7 @@
 	let indexActiveNotePath = $state('');
 	let indexSelectedTerms = $state<Set<string>>(new Set());
 	let indexReturnPending = $state(false); // show "Return to Index" button on note tab
+	let mapReturnPending = $state(false); // show "Return to Map" button on note tab
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -1117,7 +1118,7 @@
 			}, category: 'Navigation' },
 			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
 			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showStarView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; }, category: 'View' },
-			{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; }, category: 'View' },
+			{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; mapReturnPending = false; }, category: 'View' },
 			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; }, category: 'View' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
@@ -2448,7 +2449,7 @@
 			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showStarView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
 			</button>
-			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
+			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 			</button>
 		</div>
@@ -2823,6 +2824,12 @@
 					{$t('indexPanel.returnToIndex') || 'Return to Index'}
 				</button>
 			{/if}
+			{#if mapReturnPending}
+				<button class="index-return-btn" onclick={() => { showConstellationMap = true; mapReturnPending = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('constellationMap.returnToMap') || 'Return to Map'}
+				</button>
+			{/if}
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
 				{#if canScrollStart}
@@ -3051,8 +3058,9 @@
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showConstellationMap = false;
+						mapReturnPending = true;
 					}}
-					onClose={() => showConstellationMap = false}
+					onClose={() => { showConstellationMap = false; mapReturnPending = false; }}
 				/>
 			{:else if showGlobalTasks}
 				<GlobalTasksView

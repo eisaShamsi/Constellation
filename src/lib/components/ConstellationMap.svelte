@@ -203,22 +203,50 @@
 					.attr('stroke-width', 0.5);
 			});
 
-		// Center label
-		g.append('text')
+		// Center circle radius = inner edge of the first ring
+		const innerRadius = nodes.length > 0 ? (nodes[0] as any).y0 : radius * 0.3;
+
+		// Center background circle
+		g.append('circle')
+			.attr('cx', 0).attr('cy', 0).attr('r', innerRadius)
+			.attr('fill', 'var(--background-primary, #fff)');
+
+		// Center label — clipped to inner ring boundary
+		const clipId = `center-clip-${Date.now()}`;
+		svg.append('defs').append('clipPath').attr('id', clipId)
+			.append('circle').attr('cx', 0).attr('cy', 0).attr('r', innerRadius * 0.85);
+
+		const centerG = g.append('g').attr('clip-path', `url(#${clipId})`);
+
+		// Adaptive font size based on name length and available space
+		const maxTextWidth = innerRadius * 1.6;
+		const nameFontSize = Math.min(16, Math.max(9, maxTextWidth / Math.max(data.name.length * 0.55, 1)));
+
+		// Line 1: Title
+		centerG.append('text')
 			.attr('text-anchor', 'middle')
-			.attr('dy', '-0.3em')
-			.attr('font-size', '14px')
+			.attr('y', -nameFontSize * 0.6)
+			.attr('font-size', `${nameFontSize}px`)
 			.attr('font-weight', '700')
 			.attr('fill', 'var(--text-normal, #333)')
 			.attr('dir', 'auto')
 			.text(data.name);
 
-		g.append('text')
+		// Line 2: Note count
+		centerG.append('text')
 			.attr('text-anchor', 'middle')
-			.attr('dy', '1.2em')
-			.attr('font-size', '11px')
+			.attr('y', nameFontSize * 0.5)
+			.attr('font-size', '10px')
 			.attr('fill', 'var(--text-muted, #888)')
-			.text(`${data.note_count} ${$t('constellationMap.notes') || 'notes'} · ${data.word_count.toLocaleString()} ${$t('constellationMap.words') || 'words'}`);
+			.text(`${data.note_count} ${$t('constellationMap.notes') || 'notes'}`);
+
+		// Line 3: Word count
+		centerG.append('text')
+			.attr('text-anchor', 'middle')
+			.attr('y', nameFontSize * 0.5 + 14)
+			.attr('font-size', '10px')
+			.attr('fill', 'var(--text-muted, #888)')
+			.text(`${data.word_count.toLocaleString()} ${$t('constellationMap.words') || 'words'}`);
 	}
 
 	function zoomToRoot() {

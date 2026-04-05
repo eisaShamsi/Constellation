@@ -1337,6 +1337,7 @@
         "zoomIn": "Click to zoom in",
         "zoomOut": "Click to zoom out",
         "childUniverse": "Child Universe",
-        "library": "Library"
+        "library": "Library",
+        "returnToMap": "Return to Map"
     }
 }
