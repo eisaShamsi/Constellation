@@ -441,6 +441,7 @@
 	let indexNoteTab = $state<import('$lib/libraries/store').OpenTab | null>(null);
 	let indexActiveNotePath = $state('');
 	let indexSelectedTerms = $state<Set<string>>(new Set());
+	let indexReturnPending = $state(false); // show "Return to Index" button on note tab
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -1094,7 +1095,7 @@
 			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: sc('nav-back'), icon: '←', action: navigateBack, category: 'Navigation' },
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
-			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showStarView = false; showGlobalTasks = false; }, category: 'Navigation' },
+			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showStarView = false; showGlobalTasks = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
@@ -2360,11 +2361,10 @@
 	}
 
 	async function handleIndexNoteClick(filePath: string, noteName: string, highlightTerm?: string, e?: MouseEvent) {
-		// Ctrl+click or middle-click: open in a real tab and close the Index
+		// Ctrl+click or middle-click: open in a real tab, hide Index but keep state for return
 		if (e && (e.ctrlKey || e.metaKey || e.button === 1)) {
 			showIndex = false;
-			indexNoteTab = null;
-			indexActiveNotePath = '';
+			indexReturnPending = true; // show "Return to Index" button
 			return handleNoteClick(filePath, noteName, highlightTerm, e);
 		}
 		// Bold the active link in the index
@@ -2443,7 +2443,7 @@
 			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('ribbon.aiSkills')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
 			</a>
-			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showStarView = false; showGlobalTasks = false; }} title={$t('ribbon.index')}>
+			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showStarView = false; showGlobalTasks = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
 			</button>
 		</div>
@@ -2812,6 +2812,12 @@
 
 		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
 		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas}>
+			{#if indexReturnPending}
+				<button class="index-return-btn" onclick={() => { showIndex = true; indexReturnPending = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('indexPanel.returnToIndex') || 'Return to Index'}
+				</button>
+			{/if}
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
 				{#if canScrollStart}
@@ -4177,6 +4183,20 @@
 	.pane-divider:hover { background: var(--accent); }
 	.split-pane-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
 	.split-pane-wrap :global(.e-desk) { padding-inline: 8px !important; }
+
+	.index-return-btn {
+		display: flex; align-items: center; gap: 4px;
+		padding: 3px 10px; margin-inline-start: 4px;
+		border: 1px solid var(--interactive-accent);
+		background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
+		color: var(--interactive-accent); font-size: 11px; font-weight: 600;
+		border-radius: 4px; cursor: pointer; white-space: nowrap;
+		flex-shrink: 0;
+	}
+	.index-return-btn:hover {
+		background: var(--interactive-accent); color: white;
+	}
+	:global([dir="rtl"]) .index-return-btn svg { transform: scaleX(-1); }
 
 	/* Star fullscreen */
 	.star-fullscreen {
