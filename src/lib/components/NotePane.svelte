@@ -383,7 +383,17 @@
 
 		/* Highlight term from Index — open search panel with pre-filled query */
 		if (highlightTerm && view) {
-			const q = new SearchQuery({ search: highlightTerm, caseSensitive: false, literal: true });
+			// Convert normalized Arabic back to regex that matches original forms:
+			// ه → [هة]  (teh marbuta or heh)
+			// ا → [اأإآٱ] (all alef variants)
+			// ي → [يى]  (yeh or alef maqsura)
+			const arabicPattern = highlightTerm
+				.replace(/ه/g, '[هة]')
+				.replace(/ا/g, '[اأإآٱ]')
+				.replace(/ي/g, '[يى]');
+			const isArabic = /[\u0600-\u06FF]/.test(highlightTerm);
+			const searchTerm = isArabic ? arabicPattern : highlightTerm;
+			const q = new SearchQuery({ search: searchTerm, caseSensitive: false, literal: !isArabic, regexp: isArabic });
 			view.dispatch({ effects: setSearchQuery.of(q) });
 			// Scroll to first occurrence
 			setTimeout(() => { if (view) findNext(view); }, 100);
