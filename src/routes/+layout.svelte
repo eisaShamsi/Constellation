@@ -4219,8 +4219,9 @@
 	.index-overlay, .map-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary, #fff);
+		min-height: 0;
 	}
-	.index-overlay.index-visible, .map-overlay.map-visible { display: flex; }
+	.index-overlay.index-visible, .map-overlay.map-visible { display: flex; flex-direction: column; }
 
 	.index-return-btn {
 		display: flex; align-items: center; gap: 4px;
