@@ -1441,14 +1441,17 @@ fn normalize_arabic(word: &str) -> String {
     result
 }
 
-/// Remove common Arabic prefixes: و ف بـ كـ لـ الـ وال فال بال كال لل
+/// Remove Arabic definite article only: الـ (and combined forms وال، بال، فال، كال، لل)
+/// Conservative approach: only strip the definite article, NOT single-char prefixes
+/// (single-char prefix stripping destroys proper nouns and many valid words)
 fn strip_arabic_prefix(word: &str) -> &str {
     let chars: Vec<char> = word.chars().collect();
     let len = chars.len();
-    if len < 3 { return word; } // don't strip very short words
+    // Need at least 2 chars remaining after stripping
+    if len < 4 { return word; }
 
-    // Three-char prefixes: وال فال بال كال
-    if len > 4 {
+    // Three-char definite article combos: وال فال بال كال (conjunction + ال)
+    if len > 5 {
         if (chars[0] == 'و' || chars[0] == 'ف' || chars[0] == 'ب' || chars[0] == 'ك')
             && chars[1] == 'ا' && chars[2] == 'ل' {
             let rest: String = chars[3..].iter().collect();
@@ -1457,19 +1460,10 @@ fn strip_arabic_prefix(word: &str) -> &str {
         }
     }
 
-    // Two-char prefixes: ال لل
-    if len > 3 {
+    // Two-char definite article: ال لل
+    if len > 4 {
         if (chars[0] == 'ا' && chars[1] == 'ل') || (chars[0] == 'ل' && chars[1] == 'ل') {
             let rest: String = chars[2..].iter().collect();
-            let byte_offset = word.len() - rest.len();
-            return &word[byte_offset..];
-        }
-    }
-
-    // Single-char prefixes: و ف بـ كـ لـ
-    if len > 3 {
-        if chars[0] == 'و' || chars[0] == 'ف' || chars[0] == 'ب' || chars[0] == 'ك' || chars[0] == 'ل' {
-            let rest: String = chars[1..].iter().collect();
             let byte_offset = word.len() - rest.len();
             return &word[byte_offset..];
         }
@@ -1506,34 +1500,12 @@ fn strip_hebrew_prefix(word: &str) -> &str {
     word
 }
 
-/// Basic Arabic stemming: remove common suffixes
+/// Arabic stemming: DISABLED — light stemming without a morphological dictionary
+/// produces garbage (e.g., "إبراهيم" → "براه", "آمنوا" → "اء").
+/// Arabic words are indexed in their normalized form (tashkeel removed,
+/// hamza unified, ta marbuta → ha) with only the definite article stripped.
+/// Full stemming requires a proper Arabic morphological analyzer (future work).
 fn stem_arabic(word: &str) -> String {
-    let chars: Vec<char> = word.chars().collect();
-    let len = chars.len();
-    if len < 4 { return word.to_string(); }
-
-    // Remove plural/dual/feminine suffixes
-    // ات ون ين ان ية ها هم كم نا تم
-    if len > 4 {
-        let last2: String = chars[len-2..].iter().collect();
-        match last2.as_str() {
-            "ات" | "ون" | "ين" | "ان" | "يه" | "ها" | "هم" | "كم" | "نا" | "تم" | "يا" | "وا" => {
-                return chars[..len-2].iter().collect();
-            }
-            _ => {}
-        }
-    }
-
-    // Remove single suffix: ة ه ي
-    if len > 3 {
-        match chars[len-1] {
-            'ه' | 'ي' => {
-                return chars[..len-1].iter().collect();
-            }
-            _ => {}
-        }
-    }
-
     word.to_string()
 }
 
@@ -1770,10 +1742,13 @@ fn stem_hindi(word: &str) -> String {
     word.to_string()
 }
 
-/// Persian stemmer (light suffix removal + normalize ی/ک)
+/// Persian stemmer: normalize ی/ک only, no suffix removal (same reasoning as Arabic)
 fn stem_persian(word: &str) -> String {
-    // Normalize Persian-specific chars
+    // Normalize Persian-specific chars only
     let normalized = word.replace('ي', "ی").replace('ك', "ک");
+    return normalized;
+    // Suffix removal disabled — causes same problems as Arabic stemming
+    #[allow(unreachable_code)]
     let chars: Vec<char> = normalized.chars().collect();
     let len = chars.len();
     if len < 4 { return normalized; }
@@ -2146,8 +2121,9 @@ fn scan_index_words_recursive(
                     let is_stop = stopwords.contains(&key) || stopwords.contains(&norm_lower);
 
                     if !is_stop {
-                        // Skip if stemmed result is too short (e.g., "ال" → "")
-                        if key.chars().count() < 2 { prev_word = Some(normalized.clone()); prev_key = Some(key); continue; }
+                        // Skip if result is too short — 3 chars min for Arabic/Hebrew, 2 for others
+                        let min_len = if word_is_arabic || word_is_hebrew { 3 } else { 2 };
+                        if key.chars().count() < min_len { prev_word = Some(stripped.clone()); prev_key = Some(key); continue; }
 
                         let entry = index.entry(key.clone()).or_insert_with(|| {
                             (std::collections::HashMap::new(), 0, Vec::new())
