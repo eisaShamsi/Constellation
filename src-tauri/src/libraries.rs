@@ -1420,56 +1420,145 @@ pub struct IndexEntry {
     pub is_compound: bool,
 }
 
-/// Normalize Arabic text: unify hamza forms, remove tashkeel, normalize ta marbuta
+/// ─── Arabic Indexing Pipeline ───────────────────────────────────────────────
+///
+/// Based on Apache Lucene's ArabicNormalizer + ArabicStemmer (Light10 model),
+/// the gold standard for Arabic information retrieval.
+///
+/// Pipeline: normalize → stem (prefix removal → suffix removal)
+///
+/// Design principles (from research):
+/// 1. NORMALIZE first: remove diacritics, unify character variants
+/// 2. STEM conservatively: only remove affixes when the remaining word
+///    is long enough to be meaningful (minimum 2 chars after removal)
+/// 3. NEVER strip a word below 3 chars total
+/// 4. Prefix removal order: longest first (3-char → 2-char → 1-char)
+/// 5. Suffix removal: only common grammatical suffixes, not root patterns
+///
+/// Sources:
+/// - Larkey et al., "Light stemming for Arabic information retrieval" (2007)
+/// - Apache Lucene ArabicStemmer.java / ArabicNormalizer.java
+/// - CondLight: Conditional Arabic Light Stemmer (IAJIT 2018)
+
+/// Step 1: Normalize Arabic text (Lucene ArabicNormalizer model)
 fn normalize_arabic(word: &str) -> String {
     let mut result = String::with_capacity(word.len());
     for ch in word.chars() {
         match ch {
-            // Remove tashkeel (diacritics)
-            '\u{064B}'..='\u{065F}' | '\u{0670}' | '\u{06D6}'..='\u{06ED}' => continue,
-            // Normalize hamza variants → ا
-            'أ' | 'إ' | 'آ' | 'ٱ' => result.push('ا'),
-            // Normalize ta marbuta → ه
-            'ة' => result.push('ه'),
-            // Normalize alef maqsura → ي
-            'ى' => result.push('ي'),
-            // Tatweel (kashida) — remove
+            // Remove ALL tashkeel diacritics (harakat)
+            '\u{064B}' => continue, // fathatan
+            '\u{064C}' => continue, // dammatan
+            '\u{064D}' => continue, // kasratan
+            '\u{064E}' => continue, // fatha
+            '\u{064F}' => continue, // damma
+            '\u{0650}' => continue, // kasra
+            '\u{0651}' => continue, // shadda
+            '\u{0652}' => continue, // sukun
+            '\u{0653}'..='\u{065F}' => continue, // other combining marks
+            '\u{0670}' => continue, // superscript alef
+            '\u{06D6}'..='\u{06ED}' => continue, // Quranic marks
+            // Remove tatweel (kashida)
             '\u{0640}' => continue,
+            // Normalize alef variants → bare alef
+            'أ' | 'إ' | 'آ' | 'ٱ' => result.push('ا'),
+            // Normalize alef maqsura → yeh
+            'ى' => result.push('ي'),
+            // Normalize teh marbuta → heh
+            'ة' => result.push('ه'),
             _ => result.push(ch),
         }
     }
     result
 }
 
-/// Remove Arabic definite article only: الـ (and combined forms وال، بال، فال، كال، لل)
-/// Conservative approach: only strip the definite article, NOT single-char prefixes
-/// (single-char prefix stripping destroys proper nouns and many valid words)
-fn strip_arabic_prefix(word: &str) -> &str {
-    let chars: Vec<char> = word.chars().collect();
-    let len = chars.len();
-    // Need at least 2 chars remaining after stripping
-    if len < 4 { return word; }
+/// Step 2: Arabic Light Stemmer (Lucene Light10 model)
+/// Removes prefixes then suffixes with strict length constraints.
+fn stem_arabic_light10(word: &str) -> String {
+    let mut chars: Vec<char> = word.chars().collect();
+    let mut len = chars.len();
 
-    // Three-char definite article combos: وال فال بال كال (conjunction + ال)
-    if len > 5 {
-        if (chars[0] == 'و' || chars[0] == 'ف' || chars[0] == 'ب' || chars[0] == 'ك')
-            && chars[1] == 'ا' && chars[2] == 'ل' {
-            let rest: String = chars[3..].iter().collect();
-            let byte_offset = word.len() - rest.len();
-            return &word[byte_offset..];
+    // === PREFIX REMOVAL (longest first) ===
+    // Each prefix requires that the remaining stem is at least 2 chars.
+
+    // 3-char prefixes: وال فال بال كال (conjunction/preposition + definite article)
+    if len >= 6 {
+        let p3 = (chars[0], chars[1], chars[2]);
+        match p3 {
+            ('و','ا','ل') | ('ب','ا','ل') | ('ك','ا','ل') | ('ف','ا','ل') => {
+                chars = chars[3..].to_vec();
+                len = chars.len();
+            }
+            _ => {}
         }
     }
 
-    // Two-char definite article: ال لل
-    if len > 4 {
-        if (chars[0] == 'ا' && chars[1] == 'ل') || (chars[0] == 'ل' && chars[1] == 'ل') {
-            let rest: String = chars[2..].iter().collect();
-            let byte_offset = word.len() - rest.len();
-            return &word[byte_offset..];
+    // 2-char prefixes: ال لل (definite article, emphatic lam)
+    if len >= 4 {
+        let p2 = (chars[0], chars[1]);
+        match p2 {
+            ('ا','ل') | ('ل','ل') => {
+                chars = chars[2..].to_vec();
+                len = chars.len();
+            }
+            _ => {}
         }
     }
 
-    word
+    // 1-char prefix: و (conjunction "and") — only if word is long enough
+    // NOTE: و is the ONLY safe single-char prefix to remove.
+    // ف/ب/ك/ل are NOT removed — they destroy too many proper nouns
+    // (e.g., بدر، كريم، لبنان، فلسطين)
+    if len >= 4 && chars[0] == 'و' {
+        chars = chars[1..].to_vec();
+        len = chars.len();
+    }
+
+    // === SUFFIX REMOVAL ===
+    // Each suffix requires that the remaining stem is at least 2 chars.
+
+    // 2-char suffixes (remove first — more specific)
+    if len >= 4 {
+        let s2 = (chars[len-2], chars[len-1]);
+        match s2 {
+            ('ه','ا') |  // ها (her/possessive)
+            ('ا','ن') |  // ان (dual/indefinite)
+            ('ا','ت') |  // ات (feminine plural)
+            ('و','ن') |  // ون (masculine plural nominative)
+            ('ي','ن') |  // ين (masculine plural accusative/genitive)
+            ('ي','ه') |  // يه (possessive)
+            ('ي','ت') |  // ية → يت after normalization (feminine adjective)
+            ('ت','ه')    // ته → ته (his, possessive)
+            => {
+                chars.truncate(len - 2);
+                len = chars.len();
+            }
+            _ => {}
+        }
+    }
+
+    // 1-char suffixes (only if still long enough)
+    if len >= 3 {
+        match chars[len-1] {
+            'ه' |  // ه/ة (feminine marker, after normalization ة→ه)
+            'ي'    // ي (possessive/nisba)
+            => {
+                chars.truncate(len - 1);
+            }
+            _ => {}
+        }
+    }
+
+    chars.iter().collect()
+}
+
+/// Combined Arabic processing: normalize + stem
+fn process_arabic_word(word: &str) -> (String, String) {
+    let normalized = normalize_arabic(word);
+    let stemmed = stem_arabic_light10(&normalized);
+    // Return (display_form, index_key)
+    // Display: normalized form (readable, no tashkeel)
+    // Key: stemmed form (for grouping variants)
+    (normalized, stemmed)
 }
 
 /// Remove common Hebrew prefixes: ב ל מ ה ו כ ש
@@ -1500,14 +1589,7 @@ fn strip_hebrew_prefix(word: &str) -> &str {
     word
 }
 
-/// Arabic stemming: DISABLED — light stemming without a morphological dictionary
-/// produces garbage (e.g., "إبراهيم" → "براه", "آمنوا" → "اء").
-/// Arabic words are indexed in their normalized form (tashkeel removed,
-/// hamza unified, ta marbuta → ha) with only the definite article stripped.
-/// Full stemming requires a proper Arabic morphological analyzer (future work).
-fn stem_arabic(word: &str) -> String {
-    word.to_string()
-}
+// stem_arabic is now replaced by stem_arabic_light10 above
 
 /// Detect if a word is Arabic script
 fn is_arabic(word: &str) -> bool {
@@ -2064,54 +2146,47 @@ fn scan_index_words_recursive(
                         continue;
                     }
 
-                    // Phase 1: Normalize Arabic (hamza, tashkeel, ta marbuta)
-                    let normalized = if word_is_arabic {
-                        normalize_arabic(word)
-                    } else {
-                        word.to_string()
-                    };
-
-                    // Phase 3 & 4: Strip prefixes for Semitic languages
-                    let stripped = if word_is_arabic {
-                        strip_arabic_prefix(&normalized).to_string()
+                    // Process word through language-specific pipeline
+                    let (normalized, stripped, stemmed);
+                    if word_is_arabic {
+                        // Arabic: Lucene Light10 pipeline (normalize → prefix → suffix)
+                        let (norm, stem) = process_arabic_word(word);
+                        normalized = norm.clone();
+                        stripped = norm; // display = normalized (readable, no tashkeel)
+                        stemmed = stem; // key = stemmed (grouped by Light10)
                     } else if word_is_hebrew {
-                        strip_hebrew_prefix(&normalized).to_string()
+                        normalized = word.to_string();
+                        let s = strip_hebrew_prefix(&normalized).to_string();
+                        stripped = s.clone();
+                        stemmed = s;
                     } else {
-                        normalized.clone()
-                    };
-
-                    // Phase 5: Stemming for all supported languages
-                    let stemmed = if word_is_arabic && stripped.chars().count() >= 3 {
-                        if is_persian(&stripped) { stem_persian(&stripped) } else { stem_arabic(&stripped) }
-                    } else if word_is_hebrew {
-                        stripped.clone() // Hebrew stemming requires morphological analyzer — keep as-is after prefix removal
-                    } else if is_cyrillic(&stripped) {
-                        stem_russian(&stripped)
-                    } else if is_devanagari(&stripped) {
-                        stem_hindi(&stripped)
-                    } else if is_latin(&stripped) {
-                        // Detect Latin sub-language by checking against language-specific stopwords
-                        // For now, apply English stemming as default for Latin scripts
-                        // (French/Spanish/Portuguese/German/Turkish words will still benefit
-                        //  from English-like suffix removal for plurals/verb forms)
-                        let lower = stripped.to_lowercase();
-                        // Quick heuristic: German umlauts → German stemmer
-                        if lower.contains('ä') || lower.contains('ö') || lower.contains('ü') || lower.contains('ß') {
-                            stem_german(&stripped)
-                        } else if lower.contains('ñ') || lower.ends_with("ción") || lower.ends_with("ando") {
-                            stem_spanish(&stripped)
-                        } else if lower.contains('ç') || lower.contains('ã') || lower.contains('õ') {
-                            stem_portuguese(&stripped)
-                        } else if lower.contains('é') || lower.contains('è') || lower.contains('ê') || lower.ends_with("ment") || lower.ends_with("tion") {
-                            stem_french(&stripped)
-                        } else if lower.contains('ş') || lower.contains('ğ') || lower.contains('ı') || lower.contains('ü') {
-                            stem_turkish(&stripped)
+                        normalized = word.to_string();
+                        stripped = normalized.clone();
+                        stemmed = if is_persian(&stripped) {
+                            stem_persian(&stripped)
+                        } else if is_cyrillic(&stripped) {
+                            stem_russian(&stripped)
+                        } else if is_devanagari(&stripped) {
+                            stem_hindi(&stripped)
+                        } else if is_latin(&stripped) {
+                            let lower = stripped.to_lowercase();
+                            if lower.contains('ä') || lower.contains('ö') || lower.contains('ü') || lower.contains('ß') {
+                                stem_german(&stripped)
+                            } else if lower.contains('ñ') || lower.ends_with("ción") || lower.ends_with("ando") {
+                                stem_spanish(&stripped)
+                            } else if lower.contains('ç') || lower.contains('ã') || lower.contains('õ') {
+                                stem_portuguese(&stripped)
+                            } else if lower.contains('é') || lower.contains('è') || lower.contains('ê') || lower.ends_with("ment") || lower.ends_with("tion") {
+                                stem_french(&stripped)
+                            } else if lower.contains('ş') || lower.contains('ğ') || lower.contains('ı') || lower.contains('ü') {
+                                stem_turkish(&stripped)
+                            } else {
+                                stem_english(&stripped)
+                            }
                         } else {
-                            stem_english(&stripped)
-                        }
-                    } else {
-                        stripped.clone()
-                    };
+                            stripped.clone()
+                        };
+                    }
 
                     // Use stemmed form as index key, but keep original display form
                     let key = stemmed.to_lowercase();
