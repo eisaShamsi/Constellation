@@ -24,6 +24,7 @@
 	}
 
 	let {
+		universeName = '',
 		libraryPath = '',
 		libraryName = '',
 		libraryColor = '#7c3aed',
@@ -31,6 +32,7 @@
 		onNoteClick,
 		onClose,
 	}: {
+		universeName?: string;
 		libraryPath?: string;
 		libraryName?: string;
 		libraryColor?: string;
@@ -63,9 +65,20 @@
 	// Folder colors (depth-based)
 	const DEPTH_COLORS = ['#7c3aed', '#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd'];
 
+	/** Find the library name for a node by walking up to depth 1 */
+	function getLibraryName(d: any): string {
+		let node = d;
+		while (node && node.depth > 1) node = node.parent;
+		return node?.data?.name || '';
+	}
+
 	function getNodeColor(d: any): string {
 		const data = d.data as MapNode;
 		if (data.is_dir) {
+			// Library-level folders (depth 1) use library color
+			const libName = d.depth === 1 ? data.name : getLibraryName(d);
+			const libColor = libraryColorMap[libName];
+			if (libColor) return libColor;
 			return DEPTH_COLORS[Math.min(d.depth, DEPTH_COLORS.length - 1)];
 		}
 		if (colorMode === 'maturity') {
@@ -75,8 +88,9 @@
 			const s = (data.stratum || 1) - 1;
 			return STRATUM_COLORS[Math.min(s, 7)];
 		}
-		// Library color
-		return libraryColor;
+		// Library color — inherit from parent library
+		const libName = getLibraryName(d);
+		return libraryColorMap[libName] || libraryColor;
 	}
 
 	function getNodeOpacity(d: any): number {
@@ -211,12 +225,12 @@
 	}
 
 	async function loadData() {
-		if (!libraryPath) return;
 		loading = true;
 		error = '';
 		try {
-			const data = await invoke<MapNode>('constellation_map_data', {
-				libraryPath,
+			// Load universe-level map (all libraries)
+			const data = await invoke<MapNode>('constellation_map_universe', {
+				universeName: universeName || 'Universe',
 				maxDepth: 5,
 			});
 			mapData = data;

@@ -3042,6 +3042,7 @@
 				</div>
 			{:else if showConstellationMap}
 				<ConstellationMap
+					universeName={activeUniverseName}
 					libraryPath={get(libraries)[0]?.path ?? ''}
 					libraryName={get(libraries)[0]?.name ?? ''}
 					libraryColor={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}

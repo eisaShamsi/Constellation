@@ -173,6 +173,7 @@ pub fn run() {
             canvas::list_canvases,
             inspector360::get_360_view,
             map::constellation_map_data,
+            map::constellation_map_universe,
             canvas::read_canvas,
             canvas::write_canvas,
             canvas::create_canvas,

@@ -115,6 +115,92 @@ pub fn constellation_map_data(
     Ok(tree)
 }
 
+/// Compute the Constellation Map tree for the entire universe (all libraries).
+#[tauri::command]
+pub fn constellation_map_universe(
+    app: tauri::AppHandle,
+    universe_name: String,
+    max_depth: Option<u32>,
+) -> Result<MapNode, String> {
+    let libraries = crate::libraries::load_all_libraries(&app);
+    if libraries.is_empty() {
+        return Err("No libraries found.".to_string());
+    }
+
+    let depth_limit = max_depth.unwrap_or(5);
+    let mut lib_trees: Vec<MapNode> = Vec::new();
+    let mut total_weight: f64 = 0.0;
+    let mut total_notes: u32 = 0;
+    let mut total_words: u32 = 0;
+    let mut total_links: u32 = 0;
+    let mut latest_modified: u64 = 0;
+
+    for lib in &libraries {
+        let root = Path::new(&lib.path);
+        if !root.is_dir() { continue; }
+
+        // Collect notes for this library
+        let mut all_notes: Vec<NoteRecord> = Vec::new();
+        collect_notes_recursive(root, &mut all_notes);
+
+        // Build inbound map
+        let mut inbound_map: HashMap<String, usize> = HashMap::new();
+        for note in &all_notes {
+            for target in &note.outgoing_links {
+                *inbound_map.entry(target.clone()).or_insert(0) += 1;
+            }
+        }
+
+        let now_secs = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        let mut note_meta: HashMap<String, (u32, u32, String, Option<u8>, u64)> = HashMap::new();
+        for note in &all_notes {
+            let key = note.path.replace('\\', "/").to_lowercase();
+            let inbound = *inbound_map.get(&note.name.to_lowercase()).unwrap_or(&0);
+            let days_since_created = (now_secs.saturating_sub(note.created)) / 86400;
+            let days_since_modified = (now_secs.saturating_sub(note.modified)) / 86400;
+            let maturity = compute_maturity(inbound, days_since_created, days_since_modified);
+            let stratum = compute_simple_stratum(note.word_count, note.outgoing_links.len(), inbound);
+            note_meta.insert(key, (
+                note.word_count,
+                note.outgoing_links.len() as u32,
+                maturity,
+                Some(stratum),
+                note.modified,
+            ));
+        }
+
+        let mut tree = build_tree(root, &note_meta, 0, depth_limit);
+        tree.name = lib.name.clone(); // Use library name, not folder name
+        total_weight += tree.weight;
+        total_notes += tree.note_count;
+        total_words += tree.word_count;
+        total_links += tree.link_count;
+        if tree.modified.unwrap_or(0) > latest_modified {
+            latest_modified = tree.modified.unwrap_or(0);
+        }
+        lib_trees.push(tree);
+    }
+
+    // Wrap all libraries under a universe root
+    Ok(MapNode {
+        name: universe_name,
+        path: String::new(),
+        is_dir: true,
+        weight: total_weight.max(0.1),
+        note_count: total_notes,
+        word_count: total_words,
+        link_count: total_links,
+        maturity: None,
+        stratum: None,
+        modified: if latest_modified > 0 { Some(latest_modified) } else { None },
+        children: if lib_trees.is_empty() { None } else { Some(lib_trees) },
+    })
+}
+
 /// Recursively collect all .md notes with word count, links, and timestamps.
 fn collect_notes_recursive(dir: &Path, notes: &mut Vec<NoteRecord>) {
     let read_dir = match fs::read_dir(dir) {
