@@ -678,6 +678,7 @@ export const livePreviewTheme = EditorView.theme({
 		color: 'var(--library-accent, var(--interactive-accent))',
 		textDecoration: 'underline',
 		textDecorationColor: 'color-mix(in srgb, var(--library-accent, var(--interactive-accent)) 40%, transparent)',
+		cursor: 'pointer',
 	},
 	// CE Phase 1 — Typed Link colors (underline tint matches GraphMind + BacklinksPanel badges)
 	'.cm-link-supports':     { color: '#4A9EFF', textDecorationColor: '#4A9EFF66' },

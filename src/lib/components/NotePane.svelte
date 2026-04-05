@@ -478,10 +478,16 @@
 		}) as EventListener;
 		editorEl!.addEventListener('mousedown', chevronHandler, true);
 
-		/* Wikilink / Markdown link click — Ctrl+Click (Cmd+Click on Mac) opens linked note */
+		/* Wikilink / Markdown link click — single click on rendered link opens the note */
 		linkClickHandler = ((event: MouseEvent) => {
-			if (!(event.ctrlKey || event.metaKey)) return;
 			if (!view) return;
+			const target = event.target as HTMLElement;
+			// Only handle clicks on rendered link elements (pointer cursor)
+			const isLink = target.closest('.cm-md-link') || target.classList.contains('cm-md-link');
+			const isCtrlClick = event.ctrlKey || event.metaKey;
+			// Navigate if: clicking a rendered link, OR Ctrl+Click anywhere on a wikilink line
+			if (!isLink && !isCtrlClick) return;
+
 			const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
 			if (pos === null) return;
 			const line = view.state.doc.lineAt(pos);
