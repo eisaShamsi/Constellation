@@ -134,16 +134,26 @@ fn open_second_screen_on_monitor(app: tauri::AppHandle) -> Result<(), String> {
     let win = app.get_webview_window("second-screen")
         .ok_or_else(|| "second-screen window not found".to_string())?;
 
-    let monitors = app.available_monitors().map_err(|e| e.to_string())?;
+    let monitors: Vec<_> = app.available_monitors().map_err(|e| e.to_string())?
+        .into_iter().collect();
     let primary = app.primary_monitor().ok().flatten();
     let primary_name = primary.as_ref().and_then(|m| m.name().map(|n| n.to_string()));
 
-    // Find the first non-primary monitor
-    let secondary = monitors.into_iter().find(|m| {
+    // Strategy 1: Find monitor by name (different from primary)
+    let secondary = monitors.iter().find(|m| {
         match (m.name().map(|n| n.to_string()), &primary_name) {
             (Some(n), Some(pn)) => n != *pn,
-            _ => true,
+            _ => false, // Don't assume unnamed monitors are secondary
         }
+    }).or_else(|| {
+        // Strategy 2: Pick the monitor NOT at origin (0,0) — primary is usually there
+        monitors.iter().find(|m| {
+            let pos = m.position();
+            pos.x != 0 || pos.y != 0
+        })
+    }).or_else(|| {
+        // Strategy 3: If all monitors are at (0,0), pick the second one
+        if monitors.len() > 1 { Some(&monitors[1]) } else { None }
     });
 
     if let Some(mon) = secondary {

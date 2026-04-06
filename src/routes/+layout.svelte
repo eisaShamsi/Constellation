@@ -473,32 +473,6 @@
 	let secondScreenOpen = $state(false);
 	let rightSidebarBeforeSS = $state(false); // remember right sidebar state before SS hid it
 
-	// When SS opens: hide right sidebar, emit editor panels. When SS closes: restore.
-	$effect(() => {
-		if (secondScreenOpen) {
-			rightSidebarBeforeSS = rightSidebarOpen;
-			rightSidebarOpen = false;
-			// Emit current active note as editor panels data
-			const tab = get(activeTab);
-			if (tab?.path) {
-				emitEditorPanels({
-					active: true,
-					notePath: tab.path,
-					noteName: tab.name,
-					libraryName: tab.libraryName,
-					libraryPath: tab.libraryPath,
-					content: tab.content,
-				});
-			}
-		} else {
-			// SS closed — restore right sidebar if it was open before
-			if (rightSidebarBeforeSS) {
-				rightSidebarOpen = true;
-			}
-			emitEditorPanels({ active: false });
-		}
-	});
-
 	// Library management
 	let showLibrarySwitcher = $state(false);
 	let showLibraryManager = $state(false);
@@ -1418,6 +1392,9 @@
 		});
 		const unlistenScreenClosed = await onScreenClosed(() => {
 			secondScreenOpen = false;
+			// Restore right sidebar when SS is closed via its own × button
+			if (rightSidebarBeforeSS) rightSidebarOpen = true;
+			emitEditorPanels({ active: false });
 		});
 		// When the second screen saves a note, reload it in the main window if open
 		const unlistenNoteSaved = await onNoteSaved(async (path) => {
@@ -2020,14 +1997,32 @@
 	}
 
 	async function handleToggleSecondScreen() {
-		// Check actual window state (not just local flag) to handle native X close
 		const isOpen = await invoke<boolean>('is_second_screen_open');
 		if (isOpen) {
 			await invoke('close_second_screen');
 			secondScreenOpen = false;
+			// Restore right sidebar if it was open before SS
+			if (rightSidebarBeforeSS) rightSidebarOpen = true;
+			emitEditorPanels({ active: false });
 		} else {
+			// Remember sidebar state, then hide it — main window becomes clean writing space
+			rightSidebarBeforeSS = rightSidebarOpen;
+			rightSidebarOpen = false;
 			await openSecondScreenSmart();
 			secondScreenOpen = true;
+			// Wait for SS to initialize its event listeners, then emit editor panels
+			await new Promise(r => setTimeout(r, 600));
+			const tab = get(activeTab);
+			if (tab?.path) {
+				emitEditorPanels({
+					active: true,
+					notePath: tab.path,
+					noteName: tab.name,
+					libraryName: tab.libraryName,
+					libraryPath: tab.libraryPath ?? '',
+					content: tab.content,
+				});
+			}
 		}
 	}
 
@@ -2035,10 +2030,11 @@
 		const tab = get(activeTab);
 		if (!tab?.path) return;
 		if (!secondScreenOpen) {
+			rightSidebarBeforeSS = rightSidebarOpen;
+			rightSidebarOpen = false;
 			await openSecondScreenSmart();
 			secondScreenOpen = true;
-			// Small delay to let window open
-			await new Promise(r => setTimeout(r, 500));
+			await new Promise(r => setTimeout(r, 600));
 		}
 		await sendNoteToScreen({
 			path: tab.path,
@@ -2046,6 +2042,15 @@
 			libraryName: tab.libraryName,
 			libraryPath: tab.libraryPath,
 			libraryColor: tab.libraryColor,
+		});
+		// Also emit editor panels so SS shows context
+		emitEditorPanels({
+			active: true,
+			notePath: tab.path,
+			noteName: tab.name,
+			libraryName: tab.libraryName,
+			libraryPath: tab.libraryPath ?? '',
+			content: tab.content,
 		});
 	}
 
