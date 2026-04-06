@@ -12,7 +12,7 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 2. [Universe and Libraries](#universe-and-libraries)
 3. [Creating and Editing Notes](#creating-and-editing-notes)
 4. [Notes Management Sidebar](#notes-management-sidebar)
-5. [Star View (GraphMind)](#star-view-graphmind)
+5. [Sky View (GraphMind)](#star-view-graphmind)
 6. [Split View](#split-view)
 7. [Index](#index)
 8. [Second Screen](#second-screen)
@@ -83,12 +83,12 @@ A **Library** is a folder on your computer containing Markdown (`.md`) files. Yo
 Every universe automatically gets a **Universe Notes** folder at its root, named after the universe. This folder holds cross-library notes — MOCs (Maps of Content), dashboards, indexes, and any notes that don't belong to a single library.
 
 - Appears at the top of the File Explorer, above child universes and libraries
-- Included in search, Star View, and all features
+- Included in search, Sky View, and all features
 - When creating a new note (`Ctrl+N`), the Universe Notes folder appears as the first option
 
 ### Child Universes
 
-You can nest universes inside universes. A **Child Universe** is another universe folder referenced by your parent universe. Notes from child universes appear in Star View alongside your own notes, with cross-library links shown as dashed lines.
+You can nest universes inside universes. A **Child Universe** is another universe folder referenced by your parent universe. Notes from child universes appear in Sky View alongside your own notes, with cross-library links shown as dashed lines.
 
 ### Auto-Reopen
 
@@ -288,11 +288,11 @@ This grouping is consistent across Tree, List, and OrgChart modes.
 
 ### Cross-Mode Selection Sync
 
-Clicking a child universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Star View graph. This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base.
+Clicking a child universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Sky View graph. This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base.
 
 ### Picture-in-Picture (PiP) Overlay
 
-When Star View is open and you click a child universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay. The PiP shows a filtered sub-graph containing only the nodes belonging to the selected scope, with its own legend showing only the relevant entries. You can resize and reposition the PiP window freely.
+When Sky View is open and you click a child universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay. The PiP shows a filtered sub-graph containing only the nodes belonging to the selected scope, with its own legend showing only the relevant entries. You can resize and reposition the PiP window freely.
 
 ### Tree Mode (File Explorer)
 
@@ -325,14 +325,14 @@ An interactive tree-list visualization of your entire knowledge base hierarchy:
 
 ---
 
-## 5. Star View (GraphMind)
+## 5. Sky View (GraphMind)
 
-Star View visualizes your notes as an interactive 3D graph powered by the **GraphMind** engine (Pixi.js WebGL).
+Sky View visualizes your notes as an interactive 3D graph powered by the **GraphMind** engine (Pixi.js WebGL).
 
-### Opening Star View
+### Opening Sky View
 
 - Press `Ctrl+G`
-- Mission Control (`Ctrl+P`) > "Star View"
+- Mission Control (`Ctrl+P`) > "Sky View"
 
 ### Navigation
 
@@ -411,7 +411,7 @@ Notes grow through 4 maturity states, computed from inbound links and file age:
 
 Maturity appears in three places:
 - **File tree**: colored left border on note names
-- **Star View**: colored ring around nodes
+- **Sky View**: colored ring around nodes
 - **Tab bar**: small colored dot (●) before the note title
 
 ---
@@ -490,8 +490,12 @@ When the Second Screen is open:
 
 The Second Screen is a mode-based companion window that adapts to your current sidebar mode.
 
-- **Open**: Click the second screen icon in the sidebar, or `Ctrl+Shift+2`
+> **Requires Two Monitors** — The Second Screen is only available when two or more monitors are connected. With a single monitor, the button, keyboard shortcut, and command palette entries are hidden. The right sidebar provides the same panels inline.
+
+- **Open**: Click the monitor icon in the bottom dock bar, or `Ctrl+Shift+2`
+- **Auto-positions**: Centered on your secondary monitor at ~80% of the display
 - **Auto-closes**: When you close the main window, the second screen closes automatically
+- **Right sidebar auto-hides**: When the Second Screen opens, the right sidebar hides; when it closes, the sidebar returns
 
 ### Mode-Based Companion
 
@@ -502,7 +506,10 @@ The second screen changes its content based on the active sidebar mode in the ma
 | **File Explorer** | Universe Dashboard — stats, library breakdown, child universes, tags, recently edited/opened notes |
 | **Navigator** | Full Navigator view for browsing notes |
 | **Sky View** | Sky View tree with directory structure |
-| **Star View** | Star View companion with backlinks, forward links, tags, and local graph |
+| **Sky View** (graph) | Sky View companion with backlinks, forward links, tags, and local graph |
+| **Split View** | Comparison panels — all split notes side by side with shared panel selector |
+| **Constellation Map** | Map companion with mini-maps, color dropdown, and legend |
+| **Index** | Term exploration — note list + editor for clicked terms |
 
 ### Universe Dashboard (File Explorer Mode)
 
@@ -713,7 +720,7 @@ A dedicated tab consolidating all language-related settings:
 | `Ctrl+N` | New note |
 | `Ctrl+O` | Star Jump (quick open) |
 | `Ctrl+P` | Mission Control |
-| `Ctrl+G` | Open Star View |
+| `Ctrl+G` | Open Sky View |
 | `Ctrl+,` | Settings |
 | `Ctrl+Shift+F` | Search library |
 | `Ctrl+Shift+N` | Second screen |
@@ -733,7 +740,7 @@ A dedicated tab consolidating all language-related settings:
 | `Ctrl+/` | Toggle comment |
 | `Tab` | Indent / next table cell |
 
-### Star View
+### Sky View
 
 | Shortcut | Action |
 |----------|--------|
@@ -742,7 +749,7 @@ A dedicated tab consolidating all language-related settings:
 | `Space` | Toggle focus mode |
 | `0` | Reset 3D rotation |
 | `W/A/S/D/Q/E` | Fly through 3D |
-| `Escape` | Close Star View |
+| `Escape` | Close Sky View |
 
 ---
 
@@ -753,7 +760,7 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 - **Auto-detection**: Note direction is detected automatically from content
 - **Interface**: Full RTL interface when Arabic/Hebrew language is selected
 - **Editor**: RTL text editing with correct cursor movement and selection
-- **Star View**: Arabic labels render right-to-left with proper font fallback
+- **Sky View**: Arabic labels render right-to-left with proper font fallback
 - **Legend**: Items flip dot/text order based on content language
 - **Script fonts**: Configure Arabic, Hebrew, and CJK fonts independently in Settings > Language
 - **Script toolbars**: Language-specific symbol and punctuation buttons (Arabic symbols, Hebrew, CJK punctuation)
@@ -829,7 +836,7 @@ All nine Cognitive Engine features require no configuration. They activate autom
 
 **What it is**
 
-Typed Links let you add semantic meaning to the connections between your notes. Instead of a plain link like `[[Climate Change]]` that only says "these two notes are related somehow," a Typed Link says exactly how they are related: `[[Climate Change|type:supports]]` means "this note provides evidence for the claims in Climate Change." Constellation supports seven link types, each with a distinct color in Star View.
+Typed Links let you add semantic meaning to the connections between your notes. Instead of a plain link like `[[Climate Change]]` that only says "these two notes are related somehow," a Typed Link says exactly how they are related: `[[Climate Change|type:supports]]` means "this note provides evidence for the claims in Climate Change." Constellation supports seven link types, each with a distinct color in Sky View.
 
 **Why it matters for knowledge**
 
@@ -853,12 +860,12 @@ A library full of plain links is like a map with roads but no signs. You can see
 **Where you see it**
 
 - **In the editor**: Typed links render as colored text with a tooltip showing the link type. Hover over any typed link to see its semantic label.
-- **In Star View (GraphMind)**: Each link type has a distinct color, so you can visually trace chains of support, contradiction, or derivation across your entire library.
+- **In Sky View (GraphMind)**: Each link type has a distinct color, so you can visually trace chains of support, contradiction, or derivation across your entire library.
 - **In the autocomplete menu**: When you type `|type:` inside a wiki-link, all seven types appear with short descriptions.
 
 **Tips**
 
-- You do not need to type every link. Start by typing the links that carry the strongest meaning — the ones where you know "this supports that" or "this contradicts that." Even a handful of typed links will light up your Star View.
+- You do not need to type every link. Start by typing the links that carry the strongest meaning — the ones where you know "this supports that" or "this contradicts that." Even a handful of typed links will light up your Sky View.
 - The `contradicts` type is especially powerful. It forces you to acknowledge tensions in your thinking, which is where real learning happens.
 - You can always add a type to an existing link later. Just open the note, find the plain `[[link]]`, and add `|type:supports` (or whichever type applies).
 - Typed Links feed into three other Cognitive Engine features: Knowledge Strata uses them to determine note depth, the Tension Detector watches for contradictions, and the Provenance Chain follows `derives-from` links.
@@ -890,7 +897,7 @@ Most people cannot tell you the difference between a fact they jotted down and a
 
 1. Simply write notes and create links as you normally would. Knowledge Strata computes automatically.
 2. To see a note's stratum, check the **right sidebar** — the stratum level appears in the note's properties section.
-3. In **Star View**, nodes are sized and layered by stratum. Higher-stratum notes appear larger and more prominent.
+3. In **Sky View**, nodes are sized and layered by stratum. Higher-stratum notes appear larger and more prominent.
 4. To raise a note's stratum naturally:
    - Write more (expand from a short fact into a developed explanation).
    - Link it to other notes (connect it to the broader web of your knowledge).
@@ -899,7 +906,7 @@ Most people cannot tell you the difference between a fact they jotted down and a
 **Where you see it**
 
 - **Right sidebar**: The note's stratum level is shown in the properties area.
-- **Star View (GraphMind)**: Node size reflects stratum. Datum notes appear as small dots; Worldview notes appear as large, prominent nodes.
+- **Sky View (GraphMind)**: Node size reflects stratum. Datum notes appear as small dots; Worldview notes appear as large, prominent nodes.
 - **Strata are recalculated** each time you open a library, so they always reflect the current state of your notes.
 
 **Tips**
@@ -940,7 +947,7 @@ Ideas do not arrive fully formed. They start as fragments, grow through revision
 **Where you see it**
 
 - **File tree**: Each note shows a small maturity indicator (icon or color) so you can scan your library and see which notes are Seeds, Saplings, Evergreens, or Canonical.
-- **Star View (GraphMind)**: Maturity affects the visual appearance of nodes, helping you see at a glance which parts of your knowledge are well-developed and which are still germinating.
+- **Sky View (GraphMind)**: Maturity affects the visual appearance of nodes, helping you see at a glance which parts of your knowledge are well-developed and which are still germinating.
 - **Tab bar**: The active note's maturity stage is visible in the tab, so you always know the state of the note you are editing.
 
 **Tips**
@@ -986,7 +993,7 @@ A library of notes can develop blind spots just like a person's thinking can. Yo
 **Where you see it**
 
 - **Right sidebar — Tension tab**: The main interface for the Tension Detector, showing all four issue types with counts and clickable items.
-- **Star View**: Contradiction links appear in a distinct color, making tension lines visible in your knowledge graph.
+- **Sky View**: Contradiction links appear in a distinct color, making tension lines visible in your knowledge graph.
 
 **Tips**
 
@@ -1022,7 +1029,7 @@ Knowing what you think is only half the picture. Knowing where your ideas came f
 **Where you see it**
 
 - **Right sidebar — Provenance tab**: Shows the full ancestry tree for the currently open note, with depth count and origin classification (Received / Discovered / Mixed).
-- **Star View (GraphMind)**: `derives-from` links appear as distinct edges, so you can visually trace provenance chains across your library.
+- **Sky View (GraphMind)**: `derives-from` links appear as distinct edges, so you can visually trace provenance chains across your library.
 - **Note properties**: The origin type (Received / Discovered / Mixed) appears in the note's metadata in the right sidebar.
 
 **Tips**

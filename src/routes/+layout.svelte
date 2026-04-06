@@ -467,6 +467,7 @@
 	// Importer modal
 	let showImporter = $state(false);
 	let secondScreenOpen = $state(false);
+	let hasMultipleDisplays = $state(false); // gate SS features behind 2+ monitors
 	let rightSidebarBeforeSS = $state(false); // remember right sidebar state before SS hid it
 
 	// Library management
@@ -1101,8 +1102,10 @@
 			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), shortcut: sc('toggle-bookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
 			{ id: 'random-note', name: $t('commands.randomNote'), shortcut: sc('random-note'), icon: '🎲', action: handleRandomNote, category: 'Navigation' },
 			{ id: 'toggle-theme', name: $t('commands.toggleTheme'), shortcut: sc('toggle-theme'), icon: '🌗', action: handleToggleTheme, category: 'Appearance' },
-			{ id: 'second-screen', name: $t('secondScreen.title'), shortcut: sc('second-screen'), icon: '🖥️', action: handleToggleSecondScreen, category: 'View' },
-			{ id: 'send-to-screen', name: $t('secondScreen.sendToScreen'), shortcut: sc('send-to-screen'), icon: '📤', action: handleSendToSecondScreen, category: 'View' },
+			...(hasMultipleDisplays ? [
+				{ id: 'second-screen', name: $t('secondScreen.title'), shortcut: sc('second-screen'), icon: '🖥️', action: handleToggleSecondScreen, category: 'View' },
+				{ id: 'send-to-screen', name: $t('secondScreen.sendToScreen'), shortcut: sc('send-to-screen'), icon: '📤', action: handleSendToSecondScreen, category: 'View' },
+			] : []),
 			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: sc('nav-back'), icon: '←', action: navigateBack, category: 'Navigation' },
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
@@ -1381,6 +1384,9 @@
 		if ($libraryStats.length === 1) {
 			await toggleLibrary($libraryStats[0]);
 		}
+
+		// Detect multiple monitors — gate SS features
+		hasMultipleDisplays = await hasMultipleMonitors().catch(() => false);
 
 		// Second screen event listeners
 		const unlistenScreenNote = await onNoteToMain(async (note: ScreenNote) => {
@@ -1993,6 +1999,7 @@
 	}
 
 	async function handleToggleSecondScreen() {
+		if (!hasMultipleDisplays) return; // SS requires 2+ monitors
 		const isOpen = await invoke<boolean>('is_second_screen_open');
 		if (isOpen) {
 			await invoke('close_second_screen');
@@ -2023,6 +2030,7 @@
 	}
 
 	async function handleSendToSecondScreen() {
+		if (!hasMultipleDisplays) return; // SS requires 2+ monitors
 		const tab = get(activeTab);
 		if (!tab?.path) return;
 		if (!secondScreenOpen) {
@@ -2493,9 +2501,11 @@
 			</button>
 		</div>
 		<div class="dock-bottom">
-			<button class="dock-btn" class:active={secondScreenOpen} onclick={handleToggleSecondScreen} title={$t('secondScreen.title')}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/><rect x="9" y="10" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/></svg>
-			</button>
+			{#if hasMultipleDisplays}
+				<button class="dock-btn" class:active={secondScreenOpen} onclick={handleToggleSecondScreen} title={$t('secondScreen.title')}>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/><rect x="9" y="10" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/></svg>
+				</button>
+			{/if}
 			<!-- Universe manager moved to sidebar -->
 			<button class="dock-btn" onclick={handleToggleTheme} title={$t('ribbon.toggleTheme')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>

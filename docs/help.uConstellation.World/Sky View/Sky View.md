@@ -1,6 +1,6 @@
 ---
 aliases:
-  - Star View
+  - Sky View
   - Sky View
   - GraphMind
   - Sky View
@@ -8,24 +8,24 @@ aliases:
   - Network view
   - Note connections
   - 3D graph
-description: Visualize and explore the connections between your notes using Constellation's interactive Star View powered by the GraphMind engine.
+description: Visualize and explore the connections between your notes using Constellation's interactive Sky View powered by the GraphMind engine.
 ---
 
-# Star View
+# Sky View
 
-Star View displays your notes as an interactive network of nodes and links, powered by the **GraphMind** engine (Pixi.js WebGL). Each node is a note, and each line represents a `[[wikilink]]` between notes. The more connections a note has, the larger its node appears.
+Sky View displays your notes as an interactive network of nodes and links, powered by the **GraphMind** engine (Pixi.js WebGL). Each node is a note, and each line represents a `[[wikilink]]` between notes. The more connections a note has, the larger its node appears.
 
-## Opening Star View
+## Opening Sky View
 
 | Method | Action |
 |--------|--------|
 | **Mission Control** | Press `Ctrl+P`, type "star view" |
 | **Keyboard** | `Ctrl+G` |
 
-Press `Escape` to close the Star View.
+Press `Escape` to close the Sky View.
 
 > [!note]
-> The Star View ribbon icon has been removed from the left dock. Star View is now accessible via keyboard shortcut or Mission Control. The Sky View (OrgChart) mode is available as a tab in the Notes Management sidebar.
+> The Sky View ribbon icon has been removed from the left dock. Sky View is now accessible via keyboard shortcut or Mission Control. The Sky View (OrgChart) mode is available as a tab in the Notes Management sidebar.
 
 ---
 
@@ -58,7 +58,7 @@ Right-click any node to access:
 
 ## 3D navigation
 
-Star View supports full 3D navigation — fly through your notes like navigating through stars.
+Sky View supports full 3D navigation — fly through your notes like navigating through stars.
 
 ### Entering 3D mode
 
@@ -101,7 +101,7 @@ You can hover over and click nodes while navigating in 3D. The note name appears
 
 ## Layout modes
 
-Star View offers three layout algorithms. Switch between them by pressing `Ctrl+L` or using the layout button in the toolbar.
+Sky View offers three layout algorithms. Switch between them by pressing `Ctrl+L` or using the layout button in the toolbar.
 
 | Mode | Description | Best for |
 |------|-------------|----------|
@@ -226,8 +226,8 @@ The bottom-left status bar shows:
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+G` | Open Star View |
-| `Escape` | Close Star View |
+| `Ctrl+G` | Open Sky View |
+| `Escape` | Close Sky View |
 | `Ctrl+F` | Toggle search-to-highlight |
 | `Ctrl+L` | Cycle layout mode (Organic → Hierarchical → Temporal) |
 | `Space` | Toggle focus mode on active note |
@@ -239,7 +239,7 @@ The bottom-left status bar shows:
 
 ## RTL support
 
-Star View provides first-class support for Arabic, Hebrew, and other RTL scripts:
+Sky View provides first-class support for Arabic, Hebrew, and other RTL scripts:
 
 - **Node labels** auto-detect script direction — Arabic titles render right-to-left
 - **Legend items** flip dot/text order based on content language
@@ -250,7 +250,7 @@ Star View provides first-class support for Arabic, Hebrew, and other RTL scripts
 
 ## Picture-in-Picture (PiP) overlay
 
-When Star View is open and you click a child universe, library, or folder in the Notes Management sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay on top of the main graph.
+When Sky View is open and you click a child universe, library, or folder in the Notes Management sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay on top of the main graph.
 
 ### What the PiP shows
 
@@ -267,13 +267,13 @@ The PiP displays a filtered sub-graph containing only the nodes that belong to t
 
 ### Cross-mode selection sync
 
-Clicking a child universe, library, folder, or note in any sidebar mode (Tree, List, or OrgChart) highlights the corresponding nodes in the Star View graph. This bidirectional sync helps you maintain spatial awareness while browsing in the sidebar.
+Clicking a child universe, library, folder, or note in any sidebar mode (Tree, List, or OrgChart) highlights the corresponding nodes in the Sky View graph. This bidirectional sync helps you maintain spatial awareness while browsing in the sidebar.
 
 ---
 
 ## Knowledge Strata
 
-Star View automatically sizes nodes based on their knowledge level (1-8):
+Sky View automatically sizes nodes based on their knowledge level (1-8):
 
 - Small dots: simple notes (Datum, Information)
 - Medium nodes: connected notes (Proposition, Concept)
@@ -298,7 +298,7 @@ Maturity is also shown in the file tree (left border) and tab bar (colored dot).
 
 ## Provenance Glow
 
-Nodes in Star View show a subtle color glow indicating the origin of knowledge:
+Nodes in Sky View show a subtle color glow indicating the origin of knowledge:
 
 - **Blue glow**: Received knowledge — the note's source chain traces to an external reference (a note with url, author, or doi in its frontmatter)
 - **Amber glow**: Discovered knowledge — the note's source chain originates from the user's own notes
@@ -307,7 +307,7 @@ Nodes in Star View show a subtle color glow indicating the origin of knowledge:
 
 ## Technical notes
 
-Star View is powered by the **GraphMind** engine, a Pixi.js WebGL renderer with a d3-force simulation running in a dedicated Web Worker. This architecture ensures:
+Sky View is powered by the **GraphMind** engine, a Pixi.js WebGL renderer with a d3-force simulation running in a dedicated Web Worker. This architecture ensures:
 
 - **60fps rendering** even with thousands of nodes
 - **Non-blocking layout** — force simulation never freezes the UI

@@ -11,7 +11,7 @@ Constellation, Markdown not kütüphanelerini yönetmek için tasarlanmış bir 
 1. [Başlarken](#başlarken)
 2. [Evren ve Kütüphaneler](#evren-ve-kütüphaneler)
 3. [Not Oluşturma ve Düzenleme](#not-oluşturma-ve-düzenleme)
-4. [Star View (GraphMind)](#star-view-graphmind)
+4. [Sky View (GraphMind)](#star-view-graphmind)
 5. [Bölünmüş Görünüm](#bölünmüş-görünüm)
 6. [Dizin](#dizin)
 7. [İkinci Ekran](#ikinci-ekran)
@@ -53,7 +53,7 @@ Constellation'ı ilk kez açtığınızda, **Evren Kurulum Sihirbazı** sizi şu
 
 | Öğe | Açıklama |
 |-----|----------|
-| **Kenar Çubuğu (Şerit)** | Gezinme düğmeleri: Dosya ağacı, Arama, Star View, Takvim, Şablonlar, Ayarlar |
+| **Kenar Çubuğu (Şerit)** | Gezinme düğmeleri: Dosya ağacı, Arama, Sky View, Takvim, Şablonlar, Ayarlar |
 | **Dosya Ağacı** | Kütüphanelerinizdeki notları ve klasörleri tarayın |
 | **Düzenleyici** | Markdown notlarınızı okuyun ve düzenleyin |
 | **Sekme Çubuğu** | Birden fazla notu sekmelerde açın |
@@ -79,7 +79,7 @@ Constellation'ı ilk kez açtığınızda, **Evren Kurulum Sihirbazı** sizi şu
 
 ### Alt Evrenler
 
-Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Star View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.
+Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Sky View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.
 
 ### Otomatik yeniden açma
 
@@ -218,15 +218,15 @@ Belirli başlıklara da bağlantı verebilirsiniz: `[[Note Name#Heading]]`.
 
 ---
 
-## 4. Star View (GraphMind)
+## 4. Sky View (GraphMind)
 
-Star View, notlarınızı **GraphMind** motoru (Pixi.js WebGL) tarafından desteklenen etkileşimli bir 3D grafik olarak görselleştirir.
+Sky View, notlarınızı **GraphMind** motoru (Pixi.js WebGL) tarafından desteklenen etkileşimli bir 3D grafik olarak görselleştirir.
 
-### Star View'ı Açma
+### Sky View'ı Açma
 
 - Kenar çubuğundaki grafik simgesine tıklayın
 - `Ctrl+G` tuşuna basın
-- Mission Control (`Ctrl+P`) > "Star View"
+- Mission Control (`Ctrl+P`) > "Sky View"
 
 ### Gezinme
 
@@ -275,7 +275,7 @@ Sağ alt köşedeki açıklama, görünürlüğü değiştirmek için onay kutul
 
 ### Bilgi Katmanları
 
-Star View, notlarınızı soyutlama düzeyine göre otomatik olarak sekiz bilgi katmanına sınıflandırır:
+Sky View, notlarınızı soyutlama düzeyine göre otomatik olarak sekiz bilgi katmanına sınıflandırır:
 
 | Katman | Açıklama |
 |--------|----------|
@@ -389,7 +389,7 @@ Notu normal bir sekme olarak açmak için `Ctrl+Tıklama` yapın. Sekme çubuğu
 | **Dosya Gezgini** | Evren Paneli — istatistikler, kütüphane dağılımı, alt evrenler, etiketler, son düzenlenen/açılan notlar |
 | **Gezgin** | Notlara göz atmak için tam Gezgin görünümü |
 | **Gökyüzü Görünümü** | Dizin yapısıyla Gökyüzü Görünümü ağacı |
-| **Star View** | Geri bağlantılar, ileri bağlantılar, etiketler ve yerel grafik ile Star View eşliği |
+| **Sky View** | Geri bağlantılar, ileri bağlantılar, etiketler ve yerel grafik ile Sky View eşliği |
 
 ### Evren Paneli (Dosya Gezgini Modu)
 
@@ -592,7 +592,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 | `Ctrl+N` | Yeni not |
 | `Ctrl+O` | Star Jump (hızlı açma) |
 | `Ctrl+P` | Mission Control |
-| `Ctrl+G` | Star View'ı aç |
+| `Ctrl+G` | Sky View'ı aç |
 | `Ctrl+,` | Ayarlar |
 | `Ctrl+Shift+F` | Kütüphanede ara |
 | `Ctrl+Shift+N` | İkinci ekran |
@@ -610,7 +610,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 | `Ctrl+/` | Yorumu aç/kapat |
 | `Tab` | Girinti / sonraki tablo hücresi |
 
-### Star View
+### Sky View
 
 | Kısayol | İşlem |
 |---------|-------|
@@ -619,7 +619,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 | `Space` | Odak modunu aç/kapat |
 | `0` | 3D döndürmeyi sıfırla |
 | `W/A/S/D/Q/E` | 3D'de uç |
-| `Escape` | Star View'ı kapat |
+| `Escape` | Sky View'ı kapat |
 
 ---
 
@@ -630,7 +630,7 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 - **Otomatik algılama**: Not yönü içerikten otomatik olarak algılanır
 - **Arayüz**: Arapça/İbranice dil seçildiğinde tam RTL arayüz
 - **Düzenleyici**: Doğru imleç hareketi ve seçim ile RTL metin düzenleme
-- **Star View**: Arapça etiketler uygun yazı tipi geri dönüşü ile sağdan sola oluşturulur
+- **Sky View**: Arapça etiketler uygun yazı tipi geri dönüşü ile sağdan sola oluşturulur
 - **Açıklama**: Öğeler, içerik diline göre nokta/metin sırasını çevirir
 - **Yazı tipi betikleri**: Ayarlar'da Arapça, İbranice ve CJK yazı tiplerini bağımsız olarak yapılandırın
 

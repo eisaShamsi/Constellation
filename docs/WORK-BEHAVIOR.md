@@ -192,7 +192,7 @@ Constellation is an **extension of the mind**. It serves the user's thinking, no
 **Natural flow:**
 1. User opens Constellation → **focus on writing**. No clutter, no distractions.
 2. With a second monitor → **distractions move to the Second Screen**. The main window becomes pure writing space.
-3. When the user **deliberately** activates a capability (Map, Index, Star View) → the Second Screen provides the **extended experience**.
+3. When the user **deliberately** activates a capability (Map, Index, Sky View) → the Second Screen provides the **extended experience**.
 
 **Simple by default, powerful on demand.**
 
