@@ -272,11 +272,51 @@ Radial sunburst visualization showing knowledge structure, density, and maturity
 - `src/routes/+layout.svelte` — overlay, dock button, command palette, Return to Map
 - `src/lib/i18n/*.json` (15 files) — constellationMap keys
 
+---
+
+## Phase: Constellation Map → Second Screen Companion
+
+### Commits: `4b0ad8a` → `36cfff2`
+**Tag:** `milestone/map-ss-companion`
+
+### What Was Built
+When the Map is open on the main window with SS active:
+- **Universe level**: SS shows grid of library mini-sunburst cards
+- **Library/folder drill-down**: SS shows child folder mini-maps in grid
+- **Note click**: SS shows NoteEditor (left) + context mini-map (right)
+- **Color mode syncs** across all maps on both screens
+- **Closing Map** deactivates SS companion
+
+### Architecture
+- New event: `emitMapCompanion` / `onMapCompanion` (MapCompanionData)
+- ConstellationMap: new props (`initialData`, `compact`, `onDrillDown`, `onColorModeChange`)
+- Compact mode: no header/breadcrumb/legend — for mini-maps in SS grid
+- Grid cards: auto-fit 400px min, fill full SS screen
+- Only emits when Map is actually visible (not on hidden initial load)
+
+### Files Modified
+- `src/lib/secondScreen.ts` — MapCompanionData + events
+- `src/lib/components/ConstellationMap.svelte` — new props/callbacks, compact mode
+- `src/lib/components/SecondScreenPage.svelte` — map companion rendering + CSS
+- `src/routes/+layout.svelte` — emit on drill/color/note/close
+
+### Next Session: SS Architecture Redesign
+The user defined Constellation's core purpose: **an extension of the mind**.
+
+The SS redesign principles:
+1. **Hardware-first**: SS only available when 2+ monitors detected
+2. **No auto-restore**: SS always starts closed
+3. **Focus by default**: With SS, the main window becomes a clean writing space (no right sidebar)
+4. **Panels migrate to SS**: Properties, Backlinks, Tags, Star, Tasks, Health, Provenance, Review
+5. **Context-aware**: SS adapts to current workflow (editing → panels, Map → companion, Index → exploration)
+6. **User in control**: SS never initiates — it serves the deliberate workflow
+7. **Simple default, powerful on demand**
+
 ### Open Items
-- Constellation Map Phase 2: maturity inference + interactive drill-down animation
+- SS architecture redesign (monitor detection, auto-panel migration, context-aware)
+- Constellation Map Phase 2: maturity inference + drill-down animation
 - Constellation Map Phase 3: manual mode (draggable segment borders)
-- CE Layer 3: Constellation Lens (graph analytics — betweenness centrality, Louvain)
-- CE Layer 4: AI Discovery (embeddings, semantic links)
+- CE Layer 3: Constellation Lens (graph analytics)
+- CE Layer 4: AI Discovery
 - Font theme duplication cleanup
-- SS dead code cleanup
 - Index virtual scrolling for 60k+ terms
