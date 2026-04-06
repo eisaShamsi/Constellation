@@ -13,6 +13,37 @@ This document defines how we work on Constellation. Every session must follow th
 5. **Read `CLAUDE.md`** — project conventions and principle rules.
 6. **Read memory files** — check MEMORY.md for cross-session context.
 
+## 1.1 Environment & Push/Pull Protocol
+
+**CRITICAL: This project has TWO environments:**
+
+1. **Local machine** — `E:\مشاريع كلاود\Constellation` on the user's Windows PC. This is where the Tauri app is built and tested. This directory is a git repo synced with GitHub.
+
+2. **Cloud session** — Where Claude Code runs. This is a SEPARATE environment. It can push to GitHub but CANNOT directly access the user's local filesystem.
+
+**The workflow is:**
+- Claude codes, commits, and pushes to `origin/main`
+- The user's local machine must `git pull origin main` to receive the changes
+- The user builds and tests locally (`cargo tauri dev`)
+
+**If Claude is running ON the user's local machine** (indicated by being able to read/write `E:\مشاريع كلاود\Constellation` directly), then push AND pull happen in the same environment — no manual step needed.
+
+**If Claude is running in a cloud environment** (indicated by NOT being able to access `E:\` paths), then after every push, Claude MUST instruct the user to pull. Better yet: ask the user if a previous session is still running locally that can do the pull.
+
+**How to detect which environment you're in:**
+```bash
+# Try to access the local directory
+ls "E:\مشاريع كلاود\Constellation\CLAUDE.md"
+# If this succeeds → you're on the local machine
+# If this fails → you're in the cloud, user must pull manually
+```
+
+**After EVERY push from a cloud session, remind the user:**
+```
+Pushed to origin/main. On your machine, run:
+cd "E:\مشاريع كلاود\Constellation" && git pull origin main
+```
+
 ---
 
 ## 2. Testing Protocol — The Tutorial Rule
