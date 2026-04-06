@@ -11,6 +11,7 @@
 		libraryColorMap = {} as Record<string, string>,
 		universeName = '',
 		embedded = false,
+		fullscreen = false,
 		selectedPath = $bindable(null as string | string[] | null),
 		onNoteClick,
 		onClose,
@@ -18,6 +19,7 @@
 		libraryColorMap?: Record<string, string>;
 		universeName?: string;
 		embedded?: boolean;
+		fullscreen?: boolean;
 		selectedPath?: string | string[] | null;
 		onNoteClick?: (path: string, name: string, highlightTerm?: string, e?: MouseEvent) => void;
 		onClose?: () => void;
@@ -355,8 +357,332 @@
 	onDestroy(() => {
 		window.removeEventListener('keydown', handleKeydown);
 	});
+
+	// ─── Fullscreen Mode (Card-Based) ──────────────────────
+	interface MapNode {
+		name: string;
+		path: string;
+		is_dir: boolean;
+		node_type: string;
+		weight: number;
+		note_count: number;
+		word_count: number;
+		link_count: number;
+		maturity: string | null;
+		stratum: number | null;
+		modified: number | null;
+		children: MapNode[] | null;
+	}
+
+	let mapRoot = $state<MapNode | null>(null);
+	let fsSearchQuery = $state('');
+	let fsMaturityFilter = $state<Set<string>>(new Set());
+	let fsExpandedPaths = $state<Set<string>>(new Set());
+
+	// Pan & zoom state
+	let canvasEl: HTMLDivElement | undefined;
+	let innerEl: HTMLDivElement | undefined;
+	let panX = $state(0);
+	let panY = $state(0);
+	let zoom = $state(1);
+	let isPanning = $state(false);
+	let userHasPanned = false;
+	let hasAutoFit = false;
+	let userHasZoomed = false; // true once user manually scrolls to zoom
+	let panStartX = 0;
+	let panStartY = 0;
+
+	function onCanvasMouseDown(e: MouseEvent) {
+		if (e.button !== 0) return;
+		if ((e.target as HTMLElement).closest('.oc-org-box')) return;
+		isPanning = true;
+		panStartX = e.clientX - panX;
+		panStartY = e.clientY - panY;
+		e.preventDefault();
+	}
+	function onCanvasMouseMove(e: MouseEvent) {
+		if (!isPanning) return;
+		userHasPanned = true;
+		panX = e.clientX - panStartX;
+		panY = e.clientY - panStartY;
+	}
+	function onCanvasMouseUp() { isPanning = false; }
+	function onCanvasWheel(e: WheelEvent) {
+		e.preventDefault();
+		userHasZoomed = true;
+		const delta = e.deltaY > 0 ? -0.08 : 0.08;
+		zoom = Math.max(0.2, Math.min(3, zoom + delta));
+	}
+
+	// Context menu
+	let ctxMenu = $state<{ x: number; y: number; node: MapNode } | null>(null);
+
+	const MATURITY_COLORS: Record<string, string> = {
+		seed: '#d1d5db', sapling: '#86efac', evergreen: '#16a34a',
+		canonical: '#f59e0b', wilting: '#a3e635',
+	};
+	const ALL_MATURITIES = ['seed', 'sapling', 'evergreen', 'canonical', 'wilting'];
+
+	async function loadFullscreenData() {
+		loading = true;
+		hasAutoFit = false;
+		userHasPanned = false;
+		userHasZoomed = false;
+		try {
+			mapRoot = await invoke<MapNode>('constellation_map_universe', {
+				universeName: universeName || 'Universe',
+				maxDepth: 20,
+			});
+			// Auto-expand the root
+			if (mapRoot) {
+				fsExpandedPaths = new Set([mapRoot.path]);
+			}
+		} catch (e) {
+			console.error('[OrgChart] loadFullscreenData failed:', e);
+		}
+		loading = false;
+	}
+
+	function toggleFsExpand(path: string) {
+		const s = new Set(fsExpandedPaths);
+		if (s.has(path)) s.delete(path); else s.add(path);
+		fsExpandedPaths = s;
+		userHasPanned = false; // allow re-centering
+		// Center on this node after DOM update (double-rAF for layout)
+		requestAnimationFrame(() => requestAnimationFrame(() => centerOnNode(path)));
+	}
+
+	/** Center the canvas viewport on a specific node by data-path. */
+	function centerOnNode(path: string) {
+		if (!canvasEl) return;
+		const el = canvasEl.querySelector(`[data-path="${CSS.escape(path)}"]`) as HTMLElement | null;
+		const innerEl = canvasEl.querySelector('.oc-canvas-inner') as HTMLElement | null;
+		if (!el || !innerEl) return;
+		const innerRect = innerEl.getBoundingClientRect();
+		const elRect = el.getBoundingClientRect();
+		// Element center relative to inner element center (in screen coords)
+		const innerCX = innerRect.left + innerRect.width / 2;
+		const innerCY = innerRect.top + innerRect.height / 2;
+		const elCX = elRect.left + elRect.width / 2;
+		const elCY = elRect.top + elRect.height / 2;
+		// Offset pan so clicked element moves to where the inner center currently is
+		panX += (innerCX - elCX);
+		panY += (innerCY - elCY);
+	}
+
+
+	function fsMatchesSearch(node: MapNode): boolean {
+		if (!fsSearchQuery) return true;
+		const q = fsSearchQuery.toLowerCase();
+		if (node.name.toLowerCase().includes(q)) return true;
+		if (node.children) return node.children.some(c => fsMatchesSearch(c));
+		return false;
+	}
+
+	function fsMatchesFilter(node: MapNode): boolean {
+		if (fsMaturityFilter.size === 0) return true;
+		if (node.node_type === 'note') return fsMaturityFilter.has(node.maturity || 'seed');
+		if (node.children) return node.children.some(c => fsMatchesFilter(c));
+		return true;
+	}
+
+	function toggleMaturityFilter(m: string) {
+		const s = new Set(fsMaturityFilter);
+		if (s.has(m)) s.delete(m); else s.add(m);
+		fsMaturityFilter = s;
+	}
+
+	function formatDate(ts: number | null): string {
+		if (!ts) return '';
+		return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+	}
+
+	function countMaturities(node: MapNode): Record<string, number> {
+		const counts: Record<string, number> = {};
+		function walk(n: MapNode) {
+			if (n.node_type === 'note') {
+				const m = n.maturity || 'seed';
+				counts[m] = (counts[m] || 0) + 1;
+			}
+			if (n.children) n.children.forEach(walk);
+		}
+		walk(node);
+		return counts;
+	}
+
+	function formatWordCount(wc: number): string {
+		if (wc >= 1000) return (wc / 1000).toFixed(1) + 'k';
+		return String(wc);
+	}
+
+	function handleContextMenu(e: MouseEvent, node: MapNode) {
+		e.preventDefault();
+		ctxMenu = { x: e.clientX, y: e.clientY, node };
+	}
+
+	function closeContextMenu() {
+		ctxMenu = null;
+	}
+
+	async function handleCtxAction(action: string) {
+		if (!ctxMenu) return;
+		const node = ctxMenu.node;
+		closeContextMenu();
+		if (action === 'open') {
+			onNoteClick?.(node.path, node.name + '.md');
+		} else if (action === 'open-tab') {
+			onNoteClick?.(node.path, node.name + '.md', undefined, undefined);
+		}
+	}
+
+	// Load fullscreen data on mount if fullscreen mode
+	$effect(() => {
+		if (fullscreen && !mapRoot && !loading) loadFullscreenData();
+	});
+
+	/** Compute zoom to fit inner content to canvas width. */
+	function fitToWidth(innerNode: HTMLElement) {
+		if (!canvasEl) return;
+		const canvasW = canvasEl.clientWidth;
+		const innerW = innerNode.scrollWidth;
+		if (canvasW > 0 && innerW > 0) {
+			zoom = Math.min(3, Math.max(0.2, (canvasW * 0.92) / innerW));
+		}
+	}
+
+	/** Svelte action: auto-fit on mount + re-fit on canvas resize. */
+	function autoFitWidth(node: HTMLElement) {
+		requestAnimationFrame(() => {
+			fitToWidth(node);
+			hasAutoFit = true;
+		});
+		// Re-fit when canvas resizes (window maximize/minimize) unless user manually zoomed
+		const obs = new ResizeObserver(() => {
+			if (!userHasZoomed && hasAutoFit) {
+				fitToWidth(node);
+				panX = 0; panY = 0; // reset pan to re-center via CSS
+			}
+		});
+		if (canvasEl) obs.observe(canvasEl);
+		return { destroy() { obs.disconnect(); } };
+	}
+
+	// Close context menu on click outside
+	function handleGlobalClick() { if (ctxMenu) closeContextMenu(); }
 </script>
 
+{#if fullscreen}
+<!-- ═══════ FULLSCREEN VISUAL ORG CHART ═══════ -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="oc-fs" style="font-family:{uiFont};" dir={isRTL ? 'rtl' : 'ltr'} onclick={handleGlobalClick}>
+	<!-- Header bar -->
+	<div class="oc-fs-header">
+		<svg class="oc-fs-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
+		<span class="oc-fs-title">{universeName || $t('orgChart.universe') || 'Universe'}</span>
+		{#if mapRoot}
+			<span class="oc-fs-stat">{mapRoot.note_count} {$t('secondScreen.dashboard.notes') || 'notes'} · {formatWordCount(mapRoot.word_count)} words</span>
+		{/if}
+		<div class="oc-fs-actions">
+			<input class="oc-fs-search" type="text" dir="auto" placeholder={$t('layout.search') || 'Search...'} bind:value={fsSearchQuery} />
+			{#each ALL_MATURITIES as m}
+				<button class="oc-fs-chip" class:active={fsMaturityFilter.has(m)} onclick={() => toggleMaturityFilter(m)}>
+					<span class="oc-fs-chip-dot" style="background:{MATURITY_COLORS[m]}"></span>
+					{m}
+				</button>
+			{/each}
+			{#if fsMaturityFilter.size > 0}
+				<button class="oc-fs-chip oc-fs-chip-clear" onclick={() => { fsMaturityFilter = new Set(); }}>✕</button>
+			{/if}
+		</div>
+		<button class="oc-fs-close" onclick={() => onClose?.()}>✕</button>
+	</div>
+
+	<!-- Pannable org chart canvas -->
+	<div class="oc-canvas" bind:this={canvasEl}
+		onmousedown={onCanvasMouseDown} onmousemove={onCanvasMouseMove} onmouseup={onCanvasMouseUp}
+		onwheel={onCanvasWheel}>
+		{#if loading}
+			<div class="oc-fs-loading">{$t('layout.loading') || 'Loading...'}</div>
+		{:else if mapRoot}
+			<div class="oc-canvas-inner" bind:this={innerEl} use:autoFitWidth style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: center center;">
+				{#snippet orgNode(node: MapNode, depth: number)}
+					{#if fsMatchesSearch(node) && fsMatchesFilter(node)}
+						<div class="oc-org-group">
+							<!-- The box -->
+							<div class="oc-org-box"
+								data-path={node.path}
+								class:oc-org-root={node.node_type === 'universe'}
+								class:oc-org-lib={node.node_type === 'library' || node.node_type === 'child_universe'}
+								class:oc-org-folder={node.node_type === 'folder'}
+								class:oc-org-note={node.node_type === 'note'}
+								style="--node-color: {node.node_type === 'library' ? (libraryColorMap[node.name] || '#7c3aed') : node.node_type === 'child_universe' ? '#6366f1' : node.node_type === 'note' ? (MATURITY_COLORS[node.maturity || 'seed']) : 'var(--interactive-accent)'}"
+								onclick={(e) => {
+									e.stopPropagation();
+									if (node.node_type === 'note') { onNoteClick?.(node.path, node.name + '.md'); }
+									else { toggleFsExpand(node.path); }
+								}}
+								oncontextmenu={(e) => handleContextMenu(e, node)}
+								dir={detectDir(node.name)}
+							>
+								<div class="oc-org-box-name">{node.name}</div>
+								{#if node.node_type !== 'note'}
+									<div class="oc-org-box-meta">
+										<span>{node.note_count} notes</span>
+										{#if node.word_count > 0}<span>· {formatWordCount(node.word_count)}w</span>{/if}
+									</div>
+								{:else}
+									<div class="oc-org-box-meta">
+										{#if node.word_count > 0}<span>{formatWordCount(node.word_count)}w</span>{/if}
+										{#if node.maturity}<span class="oc-org-maturity-dot" style="background:{MATURITY_COLORS[node.maturity]}"></span>{/if}
+									</div>
+								{/if}
+							</div>
+							<!-- Children row with connector lines -->
+							{#if fsExpandedPaths.has(node.path) && node.children && node.children.length > 0 && node.node_type !== 'note'}
+								{@const visibleChildren = node.children.filter(c => fsMatchesSearch(c) && fsMatchesFilter(c))}
+								{#if visibleChildren.length > 0}
+									<div class="oc-org-connector">
+										<div class="oc-org-vline"></div>
+										<div class="oc-org-hline-row">
+											{#each visibleChildren as child, i (child.path)}
+												<div class="oc-org-hline-seg" class:first={i === 0} class:last={i === visibleChildren.length - 1} class:single={visibleChildren.length === 1}></div>
+											{/each}
+										</div>
+									</div>
+									<div class="oc-org-children">
+										{#each visibleChildren as child (child.path)}
+											<div class="oc-org-child-wrap">
+												<div class="oc-org-child-vline"></div>
+												{@render orgNode(child, depth + 1)}
+											</div>
+										{/each}
+									</div>
+								{/if}
+							{/if}
+						</div>
+					{/if}
+				{/snippet}
+
+				{@render orgNode(mapRoot, 0)}
+			</div>
+		{/if}
+	</div>
+
+	<!-- Context menu -->
+	{#if ctxMenu}
+		<div class="oc-fs-ctx" style="left:{ctxMenu.x}px; top:{ctxMenu.y}px">
+			{#if ctxMenu.node.node_type === 'note'}
+				<button onclick={() => handleCtxAction('open')}>{$t('contextMenu.open') || 'Open'}</button>
+			{:else}
+				<button onclick={() => toggleFsExpand(ctxMenu.node.path)}>{fsExpandedPaths.has(ctxMenu.node.path) ? ($t('sidebar.collapseAll') || 'Collapse') : ($t('sidebar.expandAll') || 'Expand')}</button>
+			{/if}
+		</div>
+	{/if}
+</div>
+
+{:else}
+<!-- ═══════ SIDEBAR VIEW (Original) ═══════ -->
 <div class="oc-container" style="font-family:{uiFont};" dir={isRTL ? 'rtl' : 'ltr'}>
 	<!-- Header -->
 	<div class="oc-header" class:oc-header-embedded={embedded}>
@@ -508,6 +834,7 @@
 		</div>
 	{/if}
 </div>
+{/if}
 
 <style>
 	.oc-container {
@@ -686,4 +1013,151 @@
 		font-size: 11px; color: var(--text-faint); flex-shrink: 0;
 	}
 	.oc-sep { opacity: 0.3; }
+
+	/* ═══════════════════════════════════════════ */
+	/* Fullscreen visual org chart                */
+	/* ═══════════════════════════════════════════ */
+
+	.oc-fs {
+		width: 100%; height: 100%; display: flex; flex-direction: column;
+		background: var(--background-primary); overflow: hidden;
+	}
+	.oc-fs-header {
+		display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+		border-bottom: 1px solid var(--background-modifier-border); flex-shrink: 0;
+	}
+	.oc-fs-icon { color: var(--text-muted); flex-shrink: 0; }
+	.oc-fs-title { font-size: 16px; font-weight: 700; color: var(--text-normal); }
+	.oc-fs-stat { font-size: 12px; color: var(--text-muted); }
+	.oc-fs-actions { display: flex; align-items: center; gap: 6px; margin-inline-start: auto; }
+	.oc-fs-search {
+		font-size: 12px; padding: 4px 10px; border-radius: 6px; width: 180px;
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-primary); color: var(--text-normal);
+		font-family: inherit;
+	}
+	.oc-fs-search:focus { border-color: var(--interactive-accent); outline: none; }
+	.oc-fs-chip {
+		display: flex; align-items: center; gap: 3px; padding: 2px 8px;
+		border-radius: 10px; font-size: 11px; cursor: pointer;
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-primary); color: var(--text-muted);
+		font-family: inherit; text-transform: capitalize;
+	}
+	.oc-fs-chip:hover { background: var(--background-modifier-hover); }
+	.oc-fs-chip.active { background: var(--interactive-accent); color: white; border-color: var(--interactive-accent); }
+	.oc-fs-chip-dot { width: 6px; height: 6px; border-radius: 50%; }
+	.oc-fs-chip-clear { font-size: 11px; padding: 2px 6px; }
+	.oc-fs-close {
+		width: 28px; height: 28px; border: none; border-radius: 6px;
+		background: none; color: var(--text-muted); cursor: pointer; font-size: 16px;
+		display: flex; align-items: center; justify-content: center;
+	}
+	.oc-fs-close:hover { background: #ef4444; color: white; }
+	.oc-fs-loading { color: var(--text-muted); font-size: 14px; padding: 40px; text-align: center; }
+
+	/* Pannable canvas — CSS centers content; JS pan offsets from center */
+	.oc-canvas {
+		flex: 1; overflow: hidden; cursor: grab; position: relative;
+		display: flex; align-items: center; justify-content: center;
+	}
+	.oc-canvas:active { cursor: grabbing; }
+	.oc-canvas-inner {
+		padding: 40px; flex-shrink: 0;
+	}
+
+	/* ─── Org chart boxes and connectors ─── */
+	.oc-org-group {
+		display: flex; flex-direction: column; align-items: center;
+	}
+
+	/* The box itself */
+	.oc-org-box {
+		border: 2px solid var(--node-color, var(--background-modifier-border));
+		border-radius: 8px; padding: 8px 16px; cursor: pointer;
+		background: var(--background-primary);
+		min-width: 100px; max-width: 200px; text-align: center;
+		transition: box-shadow 0.15s, transform 0.1s;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+		user-select: none;
+	}
+	.oc-org-box:hover {
+		box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+		transform: translateY(-1px);
+	}
+	.oc-org-root {
+		background: var(--interactive-accent); color: white;
+		border-color: var(--interactive-accent);
+		min-width: 140px; font-weight: 700;
+	}
+	.oc-org-root .oc-org-box-meta { color: rgba(255,255,255,0.8); }
+	.oc-org-lib {
+		border-width: 2px;
+		background: color-mix(in srgb, var(--node-color) 8%, var(--background-primary));
+	}
+	.oc-org-folder {
+		border-width: 1px; border-style: dashed;
+		background: var(--background-secondary);
+	}
+	.oc-org-note {
+		border-width: 1px; min-width: 80px; max-width: 160px;
+		padding: 5px 10px; font-size: 12px;
+	}
+	.oc-org-box-name {
+		font-size: 13px; font-weight: 600; color: var(--text-normal);
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	.oc-org-root .oc-org-box-name { color: white; font-size: 14px; }
+	.oc-org-note .oc-org-box-name { font-weight: 500; font-size: 12px; }
+	.oc-org-box-meta {
+		font-size: 10px; color: var(--text-muted); margin-top: 2px;
+		display: flex; align-items: center; justify-content: center; gap: 4px;
+	}
+	.oc-org-maturity-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+	/* ─── Connector lines ─── */
+	.oc-org-connector {
+		display: flex; flex-direction: column; align-items: center;
+	}
+	/* Vertical line from parent box down */
+	.oc-org-vline {
+		width: 1px; height: 16px;
+		background: var(--background-modifier-border);
+	}
+	/* Horizontal line spanning all children */
+	.oc-org-hline-row {
+		display: flex; height: 1px;
+	}
+	.oc-org-hline-seg {
+		flex: 1; height: 1px; background: var(--background-modifier-border);
+	}
+	.oc-org-hline-seg.first { border-start-start-radius: 1px; margin-inline-start: 50%; }
+	.oc-org-hline-seg.last { margin-inline-end: 50%; }
+	.oc-org-hline-seg.single { background: none; }
+
+	/* Children row */
+	.oc-org-children {
+		display: flex; gap: 12px; align-items: flex-start;
+	}
+	.oc-org-child-wrap {
+		display: flex; flex-direction: column; align-items: center;
+	}
+	/* Vertical line from h-line down to child box */
+	.oc-org-child-vline {
+		width: 1px; height: 16px;
+		background: var(--background-modifier-border);
+	}
+
+	/* Context menu */
+	.oc-fs-ctx {
+		position: fixed; z-index: 9999; min-width: 140px;
+		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
+		border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px;
+	}
+	.oc-fs-ctx button {
+		display: block; width: 100%; text-align: start; padding: 6px 12px;
+		border: none; border-radius: 4px; background: none; cursor: pointer;
+		font-size: 13px; color: var(--text-normal); font-family: inherit;
+	}
+	.oc-fs-ctx button:hover { background: var(--background-modifier-hover); }
 </style>

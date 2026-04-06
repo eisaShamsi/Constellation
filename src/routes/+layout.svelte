@@ -352,7 +352,9 @@
 		};
 	}
 	let showStarView = $state(false);
-	// showOrgChart removed — now sidebarMode === 'skyview'
+	let showOrgChart = $state(false);
+	let sidebarBeforeOC = $state(false); // remember left sidebar state
+	let rightSidebarBeforeOC = $state(false); // remember right sidebar state
 	// Shared selection path — when an item is clicked in any sidebar mode, OrgChart highlights it
 	let skyViewSelectedPath = $state<string | string[] | null>(null);
 
@@ -1609,6 +1611,7 @@
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showStarView) { showStarView = false; return; }
+			if (showOrgChart) { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
 			if (showIndex) { showIndex = false; return; }
@@ -2484,6 +2487,21 @@
 			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = true; }} title={$t('ribbon.search')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</button>
+			<button class="dock-btn" class:active={showOrgChart} onclick={() => {
+				showOrgChart = !showOrgChart;
+				if (showOrgChart) {
+					showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false;
+					sidebarBeforeOC = sidebarOpen; rightSidebarBeforeOC = rightSidebarOpen;
+					sidebarOpen = false; rightSidebarOpen = false;
+				} else {
+					sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC;
+				}
+			}} title={$t('navigator.orgChart') || 'Organization Chart'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
+			</button>
+			<button class="dock-btn" class:active={showStarView} onclick={() => { showStarView = !showStarView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
+			</button>
 			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => { showGlobalTasks = !showGlobalTasks; showStarView = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.globalTasks')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 			</button>
@@ -2550,12 +2568,7 @@
 					<button class="mode-tab" class:active={sidebarMode === 'list'} onclick={() => { searchMode = false; searchQuery = ''; if (sidebarMode !== 'list') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'list'; leftSidebarWidth = Math.max(leftSidebarWidth, 450); emitSidebarModeChanged('list'); } }} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
 					</button>
-					<button class="mode-tab" class:active={sidebarMode === 'skyview'} onclick={() => { searchMode = false; searchQuery = ''; if (sidebarMode !== 'skyview') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'skyview'; leftSidebarWidth = calcContentWidth(130); emitSidebarModeChanged('skyview'); } }} title={$t('navigator.orgChart') || 'Organization Chart'}>
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
-					</button>
-					<button class="mode-tab" class:active={showStarView} onclick={() => { showStarView = !showStarView; showGlobalTasks = false; showIndex = false; }} title={$t('ribbon.graphView')}>
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
-					</button>
+					<!-- OrgChart and Sky View buttons moved to left dock bar -->
 					{#if sidebarMode === 'tree' && !searchMode}
 						<button class="mode-tab" onclick={cycleSortOrder} title={getSortTooltip()}>
 							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/></svg>
@@ -2866,7 +2879,7 @@
 		</div>
 
 		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
-		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap}>
+		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart}>
 			{#if indexReturnPending}
 				<button class="index-return-btn" onclick={() => { showIndex = true; indexReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -3042,8 +3055,24 @@
 			/>
 		</div>
 
+		<!-- OrgChart overlay -->
+		<div class="orgchart-overlay" class:orgchart-visible={showOrgChart}>
+			<OrgChart
+				universeName={activeUniverseName}
+				{libraryColorMap}
+				fullscreen={true}
+				onNoteClick={(path, name) => {
+					const lib = $libraryStats.find(l => path.startsWith(l.path));
+					if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+					showOrgChart = false;
+					sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC;
+				}}
+				onClose={() => { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; }}
+			/>
+		</div>
+
 		<!-- Content -->
-		<div class="content-area" class:content-hidden={showIndex || showConstellationMap} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
 			{#if showStarView}
 				<div class="star-fullscreen">
 					<div class="star-header">
@@ -4276,12 +4305,12 @@
 	.split-pane-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
 	.split-pane-wrap :global(.e-desk) { padding-inline: 8px !important; }
 
-	.index-overlay, .map-overlay {
+	.index-overlay, .map-overlay, .orgchart-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary, #fff);
 		min-height: 0;
 	}
-	.index-overlay.index-visible, .map-overlay.map-visible { display: flex; flex-direction: column; }
+	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible { display: flex; flex-direction: column; }
 
 	.index-return-btn {
 		display: flex; align-items: center; gap: 4px;
