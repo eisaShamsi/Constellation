@@ -21,9 +21,30 @@ The Second Screen is a mode-based companion window that adapts to your current s
 | **Mission Control** | Press `Ctrl+P`, type "Second Screen" |
 | **Keyboard shortcut** | `Ctrl+Shift+2` |
 
-The second screen opens as an independent window. Drag it to your second monitor for a dual-screen workflow.
+If you have two or more monitors connected, the second screen automatically positions itself centered on your secondary display. On a single monitor, it opens as a standard window.
+
+When the Second Screen opens, the main window's right sidebar automatically hides — its panels (Properties, Backlinks, Tags, Star, Tasks) migrate to the Second Screen. When you close the Second Screen, the right sidebar returns.
+
+The Second Screen always starts closed — it is never auto-restored from workspaces. You open it deliberately when you need it.
 
 When you close the main window, the second screen closes automatically.
+
+---
+
+## Editor Panels Companion
+
+When you're editing a note with the Second Screen open, it shows the panels that would normally appear in the right sidebar:
+
+| Panel | What It Shows |
+|-------|---------------|
+| **Properties** | Frontmatter key-value pairs from the active note |
+| **Backlinks** | Notes that link TO the current note, with library color dots |
+| **Forward Links** | Notes that the current note links TO |
+| **Tags** | Tags from frontmatter, displayed as badges |
+| **Star** | Local graph showing the note and its direct connections |
+| **Tasks** | Tasks found in the note |
+
+The panels update automatically when you switch between tabs in the main window. Click any backlink or forward link to open that note in the main window.
 
 ---
 
