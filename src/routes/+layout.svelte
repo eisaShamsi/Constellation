@@ -422,19 +422,21 @@
 		}
 	});
 
-	// Sync split view state to second screen
+	// Sync split view state to second screen — send ALL open tabs for comparison
 	$effect(() => {
 		if (!secondScreenOpen) return;
 		const active = $splitActive;
-		const tab = $focusedTab;
-		if (active && tab?.path) {
+		const tabs = $openTabs;
+		if (active && tabs.length > 0) {
 			emitSplitModeChanged({
 				active: true,
-				notePath: tab.path,
-				noteName: tab.name,
-				libraryName: tab.libraryName,
-				libraryPath: tab.libraryPath ?? '',
-				content: tab.content ?? '',
+				notes: tabs.filter(t => t.path).map(t => ({
+					notePath: t.path,
+					noteName: t.name,
+					libraryName: t.libraryName,
+					libraryPath: t.libraryPath ?? '',
+					content: t.content ?? '',
+				})),
 			});
 		} else if (!active) {
 			emitSplitModeChanged({ active: false });

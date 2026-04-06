@@ -241,13 +241,17 @@ export function onSidebarModeChanged(callback: (mode: SidebarMode) => void): Pro
 /*  Split view companion events                                        */
 /* ------------------------------------------------------------------ */
 
+export interface SplitNoteEntry {
+	notePath: string;
+	noteName: string;
+	libraryName: string;
+	libraryPath: string;
+	content: string;
+}
+
 export interface SplitCompanionData {
 	active: boolean;
-	notePath?: string;
-	noteName?: string;
-	libraryName?: string;
-	libraryPath?: string;
-	content?: string;
+	notes?: SplitNoteEntry[];
 }
 
 /** Main → Second Screen: split view state changed */

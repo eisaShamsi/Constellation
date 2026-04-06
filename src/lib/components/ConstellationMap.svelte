@@ -32,6 +32,7 @@
 		libraryColorMap = {} as Record<string, string>,
 		initialData = null as MapNode | null,
 		compact = false,
+		initialColorMode,
 		onNoteClick,
 		onClose,
 		onDrillDown,
@@ -44,6 +45,7 @@
 		libraryColorMap?: Record<string, string>;
 		initialData?: MapNode | null;
 		compact?: boolean;
+		initialColorMode?: 'maturity' | 'stratum' | 'library';
 		onNoteClick?: (path: string, name: string) => void;
 		onClose?: () => void;
 		onDrillDown?: (node: MapNode, breadcrumbNames: string[]) => void;
@@ -55,7 +57,7 @@
 	let loading = $state(true);
 	let error = $state('');
 	let mapData = $state<MapNode | null>(null);
-	let colorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
+	let colorMode = $state<'maturity' | 'stratum' | 'library'>(initialColorMode ?? 'maturity');
 	let breadcrumb = $state<{ name: string; node: any }[]>([]);
 	let tooltip = $state<{ x: number; y: number; node: MapNode; visible: boolean }>({ x: 0, y: 0, node: null as any, visible: false });
 
@@ -329,6 +331,11 @@
 	onDestroy(() => {
 		if (resizeObserver) resizeObserver.disconnect();
 		if (resizeTimer) clearTimeout(resizeTimer);
+	});
+
+	// Sync external color mode prop
+	$effect(() => {
+		if (initialColorMode && initialColorMode !== colorMode) colorMode = initialColorMode;
 	});
 
 	// Re-render when color mode changes
