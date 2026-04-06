@@ -139,15 +139,6 @@ fn open_second_screen_on_monitor(app: tauri::AppHandle) -> Result<(), String> {
     let primary = app.primary_monitor().ok().flatten();
     let primary_name = primary.as_ref().and_then(|m| m.name().map(|n| n.to_string()));
 
-    // Debug: log all monitors
-    println!("[SS] Found {} monitors. Primary: {:?}", monitors.len(), primary_name);
-    for (i, mon) in monitors.iter().enumerate() {
-        let pos = mon.position();
-        let size = mon.size();
-        println!("[SS]   Monitor {}: name={:?}, pos=({},{}), size={}x{}, scale={}",
-            i, mon.name(), pos.x, pos.y, size.width, size.height, mon.scale_factor());
-    }
-
     // Strategy 1: Find monitor by name (different from primary)
     let secondary = monitors.iter().find(|m| {
         match (m.name().map(|n| n.to_string()), &primary_name) {
@@ -173,14 +164,10 @@ fn open_second_screen_on_monitor(app: tauri::AppHandle) -> Result<(), String> {
         let win_x = pos.x + ((size.width - win_w) / 2) as i32;
         let win_y = pos.y + ((size.height - win_h) / 2) as i32;
 
-        println!("[SS] Positioning on secondary: pos=({},{}), size={}x{}", win_x, win_y, win_w, win_h);
-
         use tauri::PhysicalPosition;
         use tauri::PhysicalSize;
         let _ = win.set_position(PhysicalPosition::new(win_x, win_y));
         let _ = win.set_size(PhysicalSize::new(win_w, win_h));
-    } else {
-        println!("[SS] No secondary monitor found — using default position");
     }
 
     win.show().map_err(|e| e.to_string())?;

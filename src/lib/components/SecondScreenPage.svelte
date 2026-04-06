@@ -20,6 +20,9 @@
 		type StarNode, type StarLink
 	} from '$lib/libraries/store';
 	import { detectDir } from '$lib/utils';
+	import { scanNoteTasks, toggleTask } from '$lib/tasks/store';
+	import type { TaskItem } from '$lib/tasks/types';
+	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import { get } from 'svelte/store';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
@@ -37,7 +40,7 @@
 		onIndexTermSelected, onIndexCompare,
 		onMapCompanion, onEditorPanels,
 		listMonitors,
-		sendNoteToMain, notifyScreenClosed, sendScreenState,
+		sendNoteToMain, notifyScreenClosed, sendScreenState, emitScreenReady,
 		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo, type SidebarMode,
 		type SplitCompanionData, type DashboardTagData,
 		type IndexTermData, type IndexCompareData,
@@ -95,6 +98,16 @@
 	let epProperties = $state<{ key: string; value: any }[]>([]);
 	let epLocalStarNodes = $state<StarNode[]>([]);
 	let epLocalStarLinks = $state<StarLink[]>([]);
+	let epTasks = $state<TaskItem[]>([]);
+
+	// Split companion panel data (mirrors ep* for editor panels)
+	let scBacklinks = $state<{ name: string; path: string; context: string; libraryName: string }[]>([]);
+	let scForwardLinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
+	let scTags = $state<string[]>([]);
+	let scProperties = $state<{ key: string; value: any }[]>([]);
+	let scLocalStarNodes = $state<StarNode[]>([]);
+	let scLocalStarLinks = $state<StarLink[]>([]);
+	let scTasks = $state<TaskItem[]>([]);
 
 	// Monitor info
 	let monitorCount = $state(0);
@@ -415,9 +428,88 @@
 			}
 			epLocalStarNodes = nodes.filter(n => connectedIds.has(n.id));
 			epLocalStarLinks = starLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
-		} catch {
+		// Tasks
+			if (data.notePath && data.libraryPath) {
+				const taskResult = await scanNoteTasks(data.notePath, data.libraryName || '', data.libraryPath).catch(() => null);
+				epTasks = taskResult?.tasks ?? [];
+			} else {
+				epTasks = [];
+			}
+		} catch (e) {
+			console.error('[SS] loadEditorPanelsData failed:', e);
 			epBacklinks = []; epForwardLinks = []; epTags = []; epProperties = [];
-			epLocalStarNodes = []; epLocalStarLinks = [];
+			epLocalStarNodes = []; epLocalStarLinks = []; epTasks = [];
+		}
+	}
+
+	/** Load panel data for split companion — mirrors loadEditorPanelsData pattern. */
+	async function loadSplitCompanionPanelData(data: SplitCompanionData) {
+		if (!data.notePath || !data.libraryName) {
+			scBacklinks = []; scForwardLinks = []; scTags = []; scProperties = [];
+			scLocalStarNodes = []; scLocalStarLinks = []; scTasks = [];
+			return;
+		}
+		try {
+			// Resolve library path from name
+			const lib = $libraries.find(l => l.name === data.libraryName);
+			const libraryPath = data.libraryPath || lib?.path || '';
+			if (!libraryPath) {
+				scBacklinks = []; scForwardLinks = []; scTags = []; scProperties = [];
+				scLocalStarNodes = []; scLocalStarLinks = []; scTasks = [];
+				return;
+			}
+
+			// Frontmatter
+			const fm = parseFrontmatter(data.content || '');
+			scProperties = fm.properties;
+			const tagProp = fm.properties.find(p => p.key === 'tags');
+			scTags = Array.isArray(tagProp?.value) ? tagProp.value : [];
+
+			// Links
+			const links = await scanLibraryLinks(libraryPath, data.libraryName || '').catch(() => []);
+			const noteName = data.noteName?.replace(/\.md$/, '').toLowerCase() || '';
+
+			scBacklinks = links
+				.filter(l => l.target.toLowerCase() === noteName)
+				.map(l => {
+					const match = allNotes.find(n => n.path === l.source_path);
+					return {
+						name: match?.name || l.source_path.split(/[\\/]/).pop()?.replace(/\.md$/, '') || '',
+						path: l.source_path,
+						context: '',
+						libraryName: data.libraryName || '',
+					};
+				})
+				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
+
+			scForwardLinks = links
+				.filter(l => l.source_path === data.notePath)
+				.map(l => {
+					const match = allNotes.find(n => n.name.toLowerCase() === l.target.toLowerCase());
+					return match || { name: l.target, path: '', libraryName: data.libraryName || '' };
+				})
+				.filter(l => l.path)
+				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
+
+			// Local star
+			const { nodes, links: starLinks } = buildStarData(links, allNotes);
+			const connectedIds = new Set<string>([noteName]);
+			for (const link of starLinks) {
+				if (link.source === noteName || link.target === noteName) {
+					connectedIds.add(link.source);
+					connectedIds.add(link.target);
+				}
+			}
+			scLocalStarNodes = nodes.filter(n => connectedIds.has(n.id));
+			scLocalStarLinks = starLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
+
+			// Tasks
+			const taskResult = await scanNoteTasks(data.notePath, data.libraryName || '', libraryPath).catch(() => null);
+			scTasks = taskResult?.tasks ?? [];
+		} catch (e) {
+			console.error('[SS] loadSplitCompanionPanelData failed:', e);
+			scBacklinks = []; scForwardLinks = []; scTags = []; scProperties = [];
+			scLocalStarNodes = []; scLocalStarLinks = []; scTasks = [];
 		}
 	}
 
@@ -565,6 +657,7 @@
 					getCurrentWindow().setTitle(`Constellation - ${universeName}`).catch(() => {});
 				}
 			} catch {}
+			allNotes = []; // Clear stale notes before rebuild
 			await loadAllData();
 			await loadDashboardData();
 		});
@@ -749,11 +842,12 @@
 		});
 		unlisteners.push(u17);
 
-		const u12 = await onSplitModeChanged((data) => {
+		const u12 = await onSplitModeChanged(async (data) => {
 			if (data.active) {
 				if (!splitCompanionActive) preSplitSidebarMode = mainSidebarMode;
 				splitCompanionActive = true;
 				splitCompanionData = data;
+				await loadSplitCompanionPanelData(data);
 			} else {
 				splitCompanionActive = false;
 				splitCompanionData = null;
@@ -784,6 +878,9 @@
 
 		// Detect monitors
 		try { monitorCount = (await listMonitors()).length; } catch { monitorCount = 1; }
+
+		// Signal main window that all listeners are ready
+		await emitScreenReady();
 
 		// Now load data (after listeners are set up so no events are missed)
 		try {
@@ -850,7 +947,7 @@
 			</div>
 		{:else if dashboardMode === 'note' && dashboardNoteTab}
 			<!-- Dashboard: single note editor -->
-			<div class="dash-note-companion">
+			<div class="dash-note-companion" dir={detectDir(dashboardNoteTab?.name || '')}>
 				<div class="dash-note-header">
 					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardNoteTab = null; }} title={$t('notePane.back') || 'Back to Dashboard'}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -863,7 +960,7 @@
 
 		{:else if dashboardMode === 'tag' && dashboardTagNotes.length > 0}
 			<!-- Dashboard: tag notes split view -->
-			<div class="dash-tag-companion">
+			<div class="dash-tag-companion" dir={detectDir(dashboardTagName)}>
 				<div class="dash-tag-header">
 					<button class="dash-back-btn" onclick={() => { dashboardMode = 'none'; dashboardTagName = ''; dashboardTagNotes = []; dashboardSelectedNote = null; }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -909,7 +1006,7 @@
 
 		{:else if indexMode === 'term' && indexTermData}
 			<!-- Index: single term → note list + editor -->
-			<div class="dash-tag-companion">
+			<div class="dash-tag-companion" dir={detectDir(indexTermData.term)}>
 				<div class="dash-tag-header">
 					<button class="dash-back-btn" onclick={() => { indexMode = 'none'; indexTermData = null; indexSelectedNote = null; }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -920,11 +1017,12 @@
 				<div class="dash-tag-split">
 					<div class="dash-tag-list">
 						{#each indexTermData.notes as note}
+							{@const matched = allNotes.find(n => n.path === note.note_path)}
+							{@const lib = matched ? $libraries.find(l => l.name === matched.libraryName) : null}
 							<button class="dash-tag-note" class:active={indexSelectedNote?.path === note.note_path}
 								onclick={async () => {
 									try {
 										const content = await invoke('read_note', { filePath: note.note_path });
-										const lib = $libraries.find(l => note.note_path.startsWith(l.path));
 										indexSelectedNote = {
 											id: `idx-term-${Date.now()}`,
 											path: note.note_path,
@@ -936,7 +1034,7 @@
 										};
 									} catch { indexSelectedNote = null; }
 								}}>
-								<span class="lib-dot" style="background:{libraryColorMap[$libraries.find(l => note.note_path.startsWith(l.path))?.name ?? ''] || '#7c3aed'}"></span>
+								<span class="lib-dot" style="background:{libraryColorMap[matched?.libraryName ?? ''] || '#7c3aed'}"></span>
 								<span class="dash-tag-note-name" dir="auto">{note.note_name}</span>
 							</button>
 						{/each}
@@ -965,19 +1063,20 @@
 				<div class="index-compare-body">
 					<div class="index-compare-columns">
 						{#each indexCompareData.terms as termData, idx}
-							<div class="index-compare-col" class:active={indexActiveCompareIdx === idx}>
+							<div class="index-compare-col" class:active={indexActiveCompareIdx === idx} dir={detectDir(termData.term)}>
 								<div class="index-compare-col-header" onclick={() => indexActiveCompareIdx = idx}>
 									<span class="dash-tag-badge">{termData.term}</span>
 									<span class="dash-tag-count">{termData.notes.length}</span>
 								</div>
 								<div class="index-compare-col-list">
 									{#each termData.notes as note}
+										{@const matched = allNotes.find(n => n.path === note.note_path)}
+										{@const lib = matched ? $libraries.find(l => l.name === matched.libraryName) : null}
 										<button class="dash-tag-note" class:active={indexSelectedNote?.path === note.note_path}
 											onclick={async () => {
 												indexActiveCompareIdx = idx;
 												try {
 													const content = await invoke('read_note', { filePath: note.note_path });
-													const lib = $libraries.find(l => note.note_path.startsWith(l.path));
 													indexSelectedNote = {
 														id: `idx-cmp-${Date.now()}`,
 														path: note.note_path,
@@ -1010,7 +1109,7 @@
 
 		{:else if mapCompanionActive && mapCompanionData}
 			<!-- Constellation Map companion -->
-			<div class="map-companion">
+			<div class="map-companion" dir={detectDir(mapCompanionData?.focusNode?.name || '')}>
 				{#if mapCompanionData.clickedNote && mapCompanionNoteTab}
 					<!-- Note view: editor + context mini-map -->
 					<div class="map-companion-note">
@@ -1024,7 +1123,9 @@
 									{libraryColorMap}
 									compact={true}
 									onNoteClick={(path, name) => {
-										sendNoteToMain({ path, name, libraryName: '', libraryPath: '', libraryColor: '#7c3aed' });
+										const n = allNotes.find(x => x.path === path);
+										const lb = n ? $libraries.find(l => l.name === n.libraryName) : null;
+										sendNoteToMain({ path, name, libraryName: n?.libraryName ?? '', libraryPath: lb?.path ?? '', libraryColor: libraryColorMap[n?.libraryName ?? ''] || '#7c3aed' });
 									}}
 								/>
 							</div>
@@ -1097,32 +1198,60 @@
 				<div class="split-companion-body">
 					{#if splitCompanionData.notePath}
 						{#if splitCompanionTab === 'properties'}
-							{@const parsed = parseFrontmatter(splitCompanionData.content || '')}
 							<div class="sc-panel">
 								<div class="sc-props-list">
-									{#each parsed.properties as prop}
+									{#each scProperties as prop}
 										<div class="sc-prop">
 											<span class="sc-prop-key">{prop.key}</span>
-											<span class="sc-prop-val">{prop.value}</span>
+											<span class="sc-prop-val">
+												{#if Array.isArray(prop.value)}
+													{prop.value.join(', ')}
+												{:else}
+													{prop.value}
+												{/if}
+											</span>
 										</div>
 									{/each}
-									{#if parsed.properties.length === 0}
+									{#if scProperties.length === 0}
 										<p class="sc-empty">{$t('secondScreen.noProperties') || 'No properties'}</p>
 									{/if}
 								</div>
 							</div>
 						{:else if splitCompanionTab === 'backlinks'}
 							<div class="sc-panel">
-								<p class="sc-info">{$t('secondScreen.backlinksFor') || 'Backlinks for'} <strong>{splitCompanionData.noteName?.replace(/\.md$/, '')}</strong></p>
-								<!-- Backlinks loaded from library scan -->
+								{#if scBacklinks.length > 0}
+									<ul class="sc-link-list">
+										{#each scBacklinks as bl}
+											<li>
+												<button class="sc-link-item" onclick={() => sendNoteToMain({ path: bl.path, name: bl.name, libraryName: bl.libraryName, libraryPath: '', libraryColor: libraryColorMap[bl.libraryName] || '#7c3aed' })}>
+													<span class="sc-dot" style="background:{libraryColorMap[bl.libraryName] || '#7c3aed'}"></span>
+													{bl.name}
+												</button>
+											</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="sc-empty">{$t('backlinksPanel.noBacklinks') || 'No backlinks'}</p>
+								{/if}
+								{#if scForwardLinks.length > 0}
+									<h4 class="sc-section-title">{$t('secondScreen.forwardLinks') || 'Forward Links'} <span class="sc-count">{scForwardLinks.length}</span></h4>
+									<ul class="sc-link-list">
+										{#each scForwardLinks as fl}
+											<li>
+												<button class="sc-link-item" onclick={() => sendNoteToMain({ path: fl.path, name: fl.name, libraryName: fl.libraryName, libraryPath: '', libraryColor: libraryColorMap[fl.libraryName] || '#7c3aed' })}>
+													<span class="sc-dot" style="background:{libraryColorMap[fl.libraryName] || '#7c3aed'}"></span>
+													{fl.name}
+												</button>
+											</li>
+										{/each}
+									</ul>
+								{/if}
 							</div>
 						{:else if splitCompanionTab === 'tags'}
-							{@const parsed = parseFrontmatter(splitCompanionData.content || '')}
-							{@const tags = parsed.properties.filter(p => p.key.toLowerCase() === 'tags').map(p => String(p.value)).flatMap(v => v.split(',').map(t => t.trim())).filter(Boolean)}
 							<div class="sc-panel">
-								{#if tags.length > 0}
+								{#if scTags.length > 0}
 									<div class="sc-tags">
-										{#each tags as tag}
+										{#each scTags as tag}
 											<span class="sc-tag">#{tag}</span>
 										{/each}
 									</div>
@@ -1133,18 +1262,31 @@
 						{:else if splitCompanionTab === 'star'}
 							<div class="sc-panel sc-star-panel">
 								<LocalStarView
-									nodes={[]}
-									links={[]}
-									activeNodeId={splitCompanionData.notePath}
+									nodes={scLocalStarNodes}
+									links={scLocalStarLinks}
+									activeNodeId={splitCompanionData.noteName?.replace(/\.md$/, '').toLowerCase() || ''}
 									onNodeClick={(id) => {
-										const note = allNotes.find(n => n.path === id);
+										const note = allNotes.find(n => n.name.toLowerCase() === id);
 										if (note) sendNoteToMain({ path: note.path, name: note.name, libraryName: note.libraryName, libraryPath: '', libraryColor: libraryColorMap[note.libraryName] || '#7c3aed' });
 									}}
 								/>
 							</div>
 						{:else if splitCompanionTab === 'tasks'}
 							<div class="sc-panel">
-								<p class="sc-empty">{$t('panels.noTasks') || 'No tasks in this note'}</p>
+								{#if scTasks.length > 0}
+									<TasksPanel
+										tasks={scTasks}
+										{libraryColorMap}
+										onToggle={async (filePath, lineNumber) => {
+											try {
+												await toggleTask(filePath, lineNumber);
+												if (splitCompanionData) await loadSplitCompanionPanelData(splitCompanionData);
+											} catch {}
+										}}
+									/>
+								{:else}
+									<p class="sc-empty">{$t('panels.noTasks') || 'No tasks in this note'}</p>
+								{/if}
 							</div>
 						{/if}
 					{:else}
@@ -1261,7 +1403,20 @@
 							</div>
 						{:else if editorPanelsTab === 'tasks'}
 							<div class="sc-panel">
-								<p class="sc-empty">{$t('panels.noTasks') || 'No tasks in this note'}</p>
+								{#if epTasks.length > 0}
+									<TasksPanel
+										tasks={epTasks}
+										{libraryColorMap}
+										onToggle={async (filePath, lineNumber) => {
+											try {
+												await toggleTask(filePath, lineNumber);
+												if (editorPanelsData) await loadEditorPanelsData(editorPanelsData);
+											} catch {}
+										}}
+									/>
+								{:else}
+									<p class="sc-empty">{$t('panels.noTasks') || 'No tasks in this note'}</p>
+								{/if}
 							</div>
 						{/if}
 					{:else}

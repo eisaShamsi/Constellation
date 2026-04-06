@@ -67,13 +67,10 @@ export async function openSecondScreen(): Promise<void> {
  * Falls back to normal open if only one monitor.
  */
 export async function openSecondScreenSmart(): Promise<void> {
-	const monitors = await listMonitors().catch(() => []);
-	console.log('[SS] Monitors detected:', monitors.length, monitors);
-	if (monitors.length > 1) {
-		console.log('[SS] Using smart positioning on secondary monitor');
+	const multi = await hasMultipleMonitors().catch(() => false);
+	if (multi) {
 		await invoke('open_second_screen_on_monitor');
 	} else {
-		console.log('[SS] Single monitor — using default open');
 		await invoke('open_second_screen');
 	}
 }
@@ -361,4 +358,26 @@ export async function emitEditorPanels(data: EditorPanelsData): Promise<void> {
 
 export function onEditorPanels(callback: (data: EditorPanelsData) => void): Promise<UnlistenFn> {
 	return listen<EditorPanelsData>('screen:editor-panels', (event) => callback(event.payload));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Ready signal — SS tells main it has registered all listeners       */
+/* ------------------------------------------------------------------ */
+
+/** SS → Main: all listeners registered, safe to send data. */
+export async function emitScreenReady(): Promise<void> {
+	await emit('screen:ready', {});
+}
+
+/** Wait for screen:ready with a timeout fallback. */
+export function waitForScreenReady(timeoutMs = 2000): Promise<void> {
+	return new Promise((resolve) => {
+		let resolved = false;
+		const unsub = listen('screen:ready', () => {
+			if (!resolved) { resolved = true; unsub.then(u => u()); resolve(); }
+		});
+		setTimeout(() => {
+			if (!resolved) { resolved = true; unsub.then(u => u()); resolve(); }
+		}, timeoutMs);
+	});
 }

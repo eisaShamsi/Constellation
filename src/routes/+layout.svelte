@@ -92,7 +92,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -411,14 +411,8 @@
 		if (!tab?.path) return;
 		addRecentOpened({ name: tab.name, path: tab.path, libraryName: tab.libraryName });
 	});
-	// Clipboard monitoring: send copy events to second screen
-	let lastSavedContent = $state('');
-	$effect(() => {
-		if (!secondScreenOpen || showStarView) return;
-		// Emit editor context mode when not in Star View
-		emitContextChanged('editor');
-	});
 	// Track initial content for diff baseline
+	let lastSavedContent = $state('');
 	$effect(() => {
 		const tab = $activeTab;
 		if (tab?.path) {
@@ -2010,8 +2004,8 @@
 			rightSidebarOpen = false;
 			await openSecondScreenSmart();
 			secondScreenOpen = true;
-			// Wait for SS to initialize its event listeners, then emit editor panels
-			await new Promise(r => setTimeout(r, 600));
+			// Wait for SS to signal it has registered all listeners
+			await waitForScreenReady();
 			const tab = get(activeTab);
 			if (tab?.path) {
 				emitEditorPanels({
@@ -2034,7 +2028,7 @@
 			rightSidebarOpen = false;
 			await openSecondScreenSmart();
 			secondScreenOpen = true;
-			await new Promise(r => setTimeout(r, 600));
+			await waitForScreenReady();
 		}
 		await sendNoteToScreen({
 			path: tab.path,
