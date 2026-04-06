@@ -2975,13 +2975,13 @@
 				}}
 				onDrillDown={(node, bcNames) => {
 					mapFocusNode = node;
-					if (secondScreenOpen) {
+					if (secondScreenOpen && showConstellationMap) {
 						emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: node, parentNode: null, clickedNote: null });
 					}
 				}}
 				onColorModeChange={(mode) => {
 					mapColorMode = mode as any;
-					if (secondScreenOpen) {
+					if (secondScreenOpen && showConstellationMap) {
 						emitMapCompanion({ active: true, colorMode: mode as any, focusNode: mapFocusNode, parentNode: null, clickedNote: null });
 					}
 				}}
