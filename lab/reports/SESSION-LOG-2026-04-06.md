@@ -267,6 +267,30 @@ All 10 tests passing:
 - User Manual (en + ar + hi + ru + tr), help files all updated
 - Second Screen help: new sections for Split Comparison, Index Companion, Map Companion + multi-monitor callout
 
+---
+
+## Phase: OrgChart Redesign — Full-Screen Visual Hierarchy
+
+### Commit: `d64a9b2`
+
+### What Was Built
+- **Full-screen overlay**: OrgChart dock button opens overlay (like Map/Index pattern)
+- **Visual org chart**: Real hierarchy diagram — boxes connected by CSS connector lines
+  - Universe (purple root) → Libraries (colored) → Folders (dashed) → Notes (small)
+  - Each box: name, note count, word count, maturity dot
+- **Data source**: Reuses `constellation_map_universe` MapNode for metadata (maturity, word_count, stratum)
+- **CSS-first centering**: Flexbox centers content — no JS measurement timing issues
+- **Auto-fit width**: Svelte action + ResizeObserver scales to fill canvas; re-fits on window maximize/minimize
+- **Pan & zoom**: Drag background to pan, scroll wheel to zoom
+- **Node interaction**: Click expand/collapse, click note opens in editor
+- **Sidebar collapse**: Both sidebars hide on open, restore on close
+- **Context menu, search, maturity filter chips**
+- **RTL**: detectDir on all node names
+
+### Key Lesson
+Centering a component inside a `display: none` overlay cannot rely on JS measurement (getBoundingClientRect returns 0x0). CSS flexbox centering is the correct approach — no timing issues, works at any window size, survives resize.
+
 ### Open Items
 - Constellation Map Phase 2
 - CE Layer 3: Constellation Lens
+- OrgChart: drag-drop to move notes/folders between libraries
