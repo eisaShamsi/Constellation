@@ -1073,7 +1073,7 @@
 
 		{:else if splitCompanionActive && splitCompanionData}
 			<!-- Split View Panels Companion -->
-			<div class="split-companion">
+			<div class="split-companion" dir={detectDir(splitCompanionData.noteName || '')}>
 				<div class="split-companion-header">
 					<span class="split-companion-label">{$t('secondScreen.splitCompanion') || 'Panels Companion'}</span>
 					{#if splitCompanionData.noteName}
@@ -1155,14 +1155,14 @@
 
 		{:else if editorPanelsActive && editorPanelsData}
 			<!-- Editor Panels Companion (migrated right sidebar) -->
-			<div class="split-companion">
+			<div class="split-companion" dir={detectDir(editorPanelsData.noteName || editorPanelsData.content || '')}>
 				<div class="split-companion-header">
 					<span class="split-companion-label">{$t('secondScreen.editorPanels') || 'Panels'}</span>
 					{#if editorPanelsData.noteName}
-						<span class="split-companion-note" dir="auto">{editorPanelsData.noteName.replace(/\.md$/, '')}</span>
+						<span class="split-companion-note">{editorPanelsData.noteName.replace(/\.md$/, '')}</span>
 					{/if}
 					{#if monitorCount > 1}
-						<span class="monitor-badge">{monitorCount} displays</span>
+						<span class="monitor-badge">2nd Display</span>
 					{/if}
 				</div>
 				<div class="split-companion-tabs">
@@ -1187,7 +1187,7 @@
 									{#each epProperties as prop}
 										<div class="sc-prop">
 											<span class="sc-prop-key">{prop.key}</span>
-											<span class="sc-prop-val" dir="auto">
+											<span class="sc-prop-val">
 												{#if Array.isArray(prop.value)}
 													{prop.value.join(', ')}
 												{:else}
@@ -1207,7 +1207,7 @@
 									<ul class="sc-link-list">
 										{#each epBacklinks as bl}
 											<li>
-												<button class="sc-link-item" dir="auto" onclick={() => sendNoteToMain({ path: bl.path, name: bl.name, libraryName: bl.libraryName, libraryPath: '', libraryColor: libraryColorMap[bl.libraryName] || '#7c3aed' })}>
+												<button class="sc-link-item" onclick={() => sendNoteToMain({ path: bl.path, name: bl.name, libraryName: bl.libraryName, libraryPath: '', libraryColor: libraryColorMap[bl.libraryName] || '#7c3aed' })}>
 													<span class="sc-dot" style="background:{libraryColorMap[bl.libraryName] || '#7c3aed'}"></span>
 													{bl.name}
 												</button>
@@ -1222,7 +1222,7 @@
 									<ul class="sc-link-list">
 										{#each epForwardLinks as fl}
 											<li>
-												<button class="sc-link-item" dir="auto" onclick={() => sendNoteToMain({ path: fl.path, name: fl.name, libraryName: fl.libraryName, libraryPath: '', libraryColor: libraryColorMap[fl.libraryName] || '#7c3aed' })}>
+												<button class="sc-link-item" onclick={() => sendNoteToMain({ path: fl.path, name: fl.name, libraryName: fl.libraryName, libraryPath: '', libraryColor: libraryColorMap[fl.libraryName] || '#7c3aed' })}>
 													<span class="sc-dot" style="background:{libraryColorMap[fl.libraryName] || '#7c3aed'}"></span>
 													{fl.name}
 												</button>
@@ -2036,7 +2036,8 @@
 	}
 	.sc-count { font-weight: 400; opacity: 0.6; font-size: 10px; }
 	.monitor-badge {
-		font-size: 10px; color: var(--text-faint); margin-inline-start: auto;
-		background: var(--background-modifier-border); border-radius: 8px; padding: 1px 6px;
+		font-size: 12px; color: var(--text-muted); margin-inline-start: auto;
+		background: var(--background-modifier-border); border-radius: 10px; padding: 3px 10px;
+		font-weight: 500;
 	}
 </style>

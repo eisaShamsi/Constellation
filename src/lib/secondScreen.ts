@@ -67,10 +67,13 @@ export async function openSecondScreen(): Promise<void> {
  * Falls back to normal open if only one monitor.
  */
 export async function openSecondScreenSmart(): Promise<void> {
-	const multi = await hasMultipleMonitors().catch(() => false);
-	if (multi) {
+	const monitors = await listMonitors().catch(() => []);
+	console.log('[SS] Monitors detected:', monitors.length, monitors);
+	if (monitors.length > 1) {
+		console.log('[SS] Using smart positioning on secondary monitor');
 		await invoke('open_second_screen_on_monitor');
 	} else {
+		console.log('[SS] Single monitor — using default open');
 		await invoke('open_second_screen');
 	}
 }
