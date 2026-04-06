@@ -92,7 +92,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, closeSecondScreen, isSecondScreenOpen, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -393,6 +393,15 @@
 				libraryPath: $activeTab.libraryPath ?? '',
 				libraryColor: $activeTab.libraryColor ?? '#7c3aed',
 			});
+			// Send editor panels data so SS can show properties/backlinks/tags
+			emitEditorPanels({
+				active: true,
+				notePath: $activeTab.path,
+				noteName: $activeTab.name,
+				libraryName: $activeTab.libraryName,
+				libraryPath: $activeTab.libraryPath ?? '',
+				content: $activeTab.content,
+			});
 		}
 	});
 	// Track recently opened notes in localStorage (shared utility)
@@ -462,6 +471,33 @@
 	// Importer modal
 	let showImporter = $state(false);
 	let secondScreenOpen = $state(false);
+	let rightSidebarBeforeSS = $state(false); // remember right sidebar state before SS hid it
+
+	// When SS opens: hide right sidebar, emit editor panels. When SS closes: restore.
+	$effect(() => {
+		if (secondScreenOpen) {
+			rightSidebarBeforeSS = rightSidebarOpen;
+			rightSidebarOpen = false;
+			// Emit current active note as editor panels data
+			const tab = get(activeTab);
+			if (tab?.path) {
+				emitEditorPanels({
+					active: true,
+					notePath: tab.path,
+					noteName: tab.name,
+					libraryName: tab.libraryName,
+					libraryPath: tab.libraryPath,
+					content: tab.content,
+				});
+			}
+		} else {
+			// SS closed — restore right sidebar if it was open before
+			if (rightSidebarBeforeSS) {
+				rightSidebarOpen = true;
+			}
+			emitEditorPanels({ active: false });
+		}
+	});
 
 	// Library management
 	let showLibrarySwitcher = $state(false);
@@ -1990,7 +2026,7 @@
 			await invoke('close_second_screen');
 			secondScreenOpen = false;
 		} else {
-			await openSecondScreen();
+			await openSecondScreenSmart();
 			secondScreenOpen = true;
 		}
 	}
@@ -1999,7 +2035,7 @@
 		const tab = get(activeTab);
 		if (!tab?.path) return;
 		if (!secondScreenOpen) {
-			await openSecondScreen();
+			await openSecondScreenSmart();
 			secondScreenOpen = true;
 			// Small delay to let window open
 			await new Promise(r => setTimeout(r, 500));
@@ -3677,21 +3713,9 @@
 					rightSidebarTab = validTabs.includes(layout.rightSidebarTab as any) ? layout.rightSidebarTab as typeof rightSidebarTab : 'properties';
 					rightSidebarWidth = layout.rightSidebarWidth;
 				}
-				if (screen?.open) {
-					if (!secondScreenOpen) {
-						await openSecondScreen();
-						secondScreenOpen = true;
-					}
-					// Give second screen time to initialize, then send restore
-					setTimeout(() => {
-						sendWorkspaceRestore({
-							mode: screen.mode as any,
-							linkedBrowsing: screen.linkedBrowsing,
-							tabs: screen.tabs,
-							activeTabPath: screen.activeTabPath,
-						});
-					}, 500);
-				} else if (screen && !screen.open && secondScreenOpen) {
+				// SS always starts closed — never auto-restore from workspace.
+				// User deliberately opens it when needed.
+				if (secondScreenOpen) {
 					await closeSecondScreen();
 					secondScreenOpen = false;
 				}

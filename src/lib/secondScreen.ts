@@ -30,11 +30,49 @@ export interface SkyViewNodeInfo {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Monitor / display detection                                        */
+/* ------------------------------------------------------------------ */
+
+export interface MonitorInfo {
+	name: string | null;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	scale_factor: number;
+	is_primary: boolean;
+}
+
+/** List all connected monitors. */
+export async function listMonitors(): Promise<MonitorInfo[]> {
+	return invoke<MonitorInfo[]>('list_monitors');
+}
+
+/** Returns true if 2+ monitors are connected. */
+export async function hasMultipleMonitors(): Promise<boolean> {
+	const monitors = await listMonitors();
+	return monitors.length > 1;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Window management                                                  */
 /* ------------------------------------------------------------------ */
 
 export async function openSecondScreen(): Promise<void> {
 	await invoke('open_second_screen');
+}
+
+/**
+ * Open SS and auto-position on secondary monitor.
+ * Falls back to normal open if only one monitor.
+ */
+export async function openSecondScreenSmart(): Promise<void> {
+	const multi = await hasMultipleMonitors().catch(() => false);
+	if (multi) {
+		await invoke('open_second_screen_on_monitor');
+	} else {
+		await invoke('open_second_screen');
+	}
 }
 
 export async function closeSecondScreen(): Promise<void> {
@@ -298,4 +336,26 @@ export async function emitMapCompanion(data: MapCompanionData): Promise<void> {
 
 export function onMapCompanion(callback: (data: MapCompanionData) => void): Promise<UnlistenFn> {
 	return listen<MapCompanionData>('screen:map-companion', (event) => callback(event.payload));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Editor panels companion (right sidebar migration to SS)            */
+/* ------------------------------------------------------------------ */
+
+export interface EditorPanelsData {
+	active: boolean;
+	notePath?: string;
+	noteName?: string;
+	libraryName?: string;
+	libraryPath?: string;
+	content?: string;
+}
+
+/** Main → SS: editor panels companion state (mirrors right sidebar data) */
+export async function emitEditorPanels(data: EditorPanelsData): Promise<void> {
+	await emit('screen:editor-panels', data);
+}
+
+export function onEditorPanels(callback: (data: EditorPanelsData) => void): Promise<UnlistenFn> {
+	return listen<EditorPanelsData>('screen:editor-panels', (event) => callback(event.payload));
 }

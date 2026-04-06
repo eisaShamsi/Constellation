@@ -84,6 +84,88 @@ fn open_path(path: String) -> Result<(), String> {
     Ok(())
 }
 
+/* ------------------------------------------------------------------ */
+/*  Monitor / display detection                                        */
+/* ------------------------------------------------------------------ */
+
+#[derive(serde::Serialize, Clone)]
+pub struct MonitorInfo {
+    pub name: Option<String>,
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    pub scale_factor: f64,
+    pub is_primary: bool,
+}
+
+#[tauri::command]
+fn list_monitors(app: tauri::AppHandle) -> Vec<MonitorInfo> {
+    let mut monitors = Vec::new();
+    let primary = app.primary_monitor().ok().flatten();
+    let primary_name = primary.as_ref().and_then(|m| m.name().map(|n| n.to_string()));
+
+    if let Ok(available) = app.available_monitors() {
+        for mon in available {
+            let pos = mon.position();
+            let size = mon.size();
+            let name = mon.name().map(|n| n.to_string());
+            let is_primary = match (&name, &primary_name) {
+                (Some(n), Some(pn)) => n == pn,
+                _ => false,
+            };
+            monitors.push(MonitorInfo {
+                name,
+                x: pos.x,
+                y: pos.y,
+                width: size.width,
+                height: size.height,
+                scale_factor: mon.scale_factor(),
+                is_primary,
+            });
+        }
+    }
+    monitors
+}
+
+/// Open the second screen, auto-positioning on a secondary monitor if available.
+#[tauri::command]
+fn open_second_screen_on_monitor(app: tauri::AppHandle) -> Result<(), String> {
+    let win = app.get_webview_window("second-screen")
+        .ok_or_else(|| "second-screen window not found".to_string())?;
+
+    let monitors = app.available_monitors().map_err(|e| e.to_string())?;
+    let primary = app.primary_monitor().ok().flatten();
+    let primary_name = primary.as_ref().and_then(|m| m.name().map(|n| n.to_string()));
+
+    // Find the first non-primary monitor
+    let secondary = monitors.into_iter().find(|m| {
+        match (m.name().map(|n| n.to_string()), &primary_name) {
+            (Some(n), Some(pn)) => n != *pn,
+            _ => true,
+        }
+    });
+
+    if let Some(mon) = secondary {
+        let pos = mon.position();
+        let size = mon.size();
+        let win_w = (size.width as f64 * 0.8) as u32;
+        let win_h = (size.height as f64 * 0.8) as u32;
+        let win_x = pos.x + ((size.width - win_w) / 2) as i32;
+        let win_y = pos.y + ((size.height - win_h) / 2) as i32;
+
+        use tauri::PhysicalPosition;
+        use tauri::PhysicalSize;
+        let _ = win.set_position(PhysicalPosition::new(win_x, win_y));
+        let _ = win.set_size(PhysicalSize::new(win_w, win_h));
+    }
+
+    win.show().map_err(|e| e.to_string())?;
+    win.set_focus().map_err(|e| e.to_string())?;
+    let _ = win.eval("void(0)");
+    Ok(())
+}
+
 #[tauri::command]
 fn close_second_screen(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(win) = app.get_webview_window("second-screen") {
@@ -233,7 +315,9 @@ pub fn run() {
             importers::import_execute,
             constellation_show_in_folder,
             open_path,
+            list_monitors,
             open_second_screen,
+            open_second_screen_on_monitor,
             close_second_screen,
             is_second_screen_open
         ])

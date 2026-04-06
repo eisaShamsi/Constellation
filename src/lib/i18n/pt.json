@@ -1087,6 +1087,8 @@
         },
         "graphView": "Sky View",
         "splitCompanion": "Painel acompanhante",
+        "editorPanels": "Painéis",
+        "forwardLinks": "Ligações directas",
         "noProperties": "Sem propriedades",
         "backlinksFor": "Links de entrada para"
     },

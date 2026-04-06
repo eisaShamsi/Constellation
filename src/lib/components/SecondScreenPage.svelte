@@ -35,12 +35,13 @@
 		onSidebarModeChanged, onSplitModeChanged,
 		onDashboardOpenNote, onDashboardTagSelected,
 		onIndexTermSelected, onIndexCompare,
-		onMapCompanion,
+		onMapCompanion, onEditorPanels,
+		listMonitors,
 		sendNoteToMain, notifyScreenClosed, sendScreenState,
 		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo, type SidebarMode,
 		type SplitCompanionData, type DashboardTagData,
 		type IndexTermData, type IndexCompareData,
-		type MapCompanionData
+		type MapCompanionData, type EditorPanelsData, type MonitorInfo
 	} from '$lib/secondScreen';
 	import {
 		setActiveUniverse, listUniverses, getChildUniverses,
@@ -83,6 +84,20 @@
 	let mapCompanionActive = $state(false);
 	let mapCompanionData = $state<MapCompanionData | null>(null);
 	let mapCompanionNoteTab = $state<any>(null); // for note click
+
+	// Editor panels companion mode (migrated right sidebar)
+	let editorPanelsActive = $state(false);
+	let editorPanelsData = $state<EditorPanelsData | null>(null);
+	let editorPanelsTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks'>('properties');
+	let epBacklinks = $state<{ name: string; path: string; context: string; libraryName: string }[]>([]);
+	let epForwardLinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
+	let epTags = $state<string[]>([]);
+	let epProperties = $state<{ key: string; value: any }[]>([]);
+	let epLocalStarNodes = $state<StarNode[]>([]);
+	let epLocalStarLinks = $state<StarLink[]>([]);
+
+	// Monitor info
+	let monitorCount = $state(0);
 
 	// ─── Data state ───
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
@@ -346,6 +361,65 @@
 			document.body.classList.add(`theme-${resolved}`);
 		}
 	});
+
+	// ─── Load editor panels data for a note ───
+	async function loadEditorPanelsData(data: EditorPanelsData) {
+		if (!data.notePath || !data.libraryPath) {
+			epBacklinks = []; epForwardLinks = []; epTags = []; epProperties = [];
+			epLocalStarNodes = []; epLocalStarLinks = [];
+			return;
+		}
+		try {
+			// Parse frontmatter for properties and tags
+			const fm = parseFrontmatter(data.content || '');
+			epProperties = fm.properties;
+			const tagProp = fm.properties.find(p => p.key === 'tags');
+			epTags = Array.isArray(tagProp?.value) ? tagProp.value : [];
+
+			// Scan links
+			const links = await scanLibraryLinks(data.libraryPath, data.libraryName || '').catch(() => []);
+			const noteName = data.noteName?.replace(/\.md$/, '').toLowerCase() || '';
+
+			// Backlinks
+			epBacklinks = links
+				.filter(l => l.target.toLowerCase() === noteName)
+				.map(l => {
+					const match = allNotes.find(n => n.path === l.source_path);
+					return {
+						name: match?.name || l.source_path.split(/[\\/]/).pop()?.replace(/\.md$/, '') || '',
+						path: l.source_path,
+						context: '',
+						libraryName: data.libraryName || '',
+					};
+				})
+				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
+
+			// Forward links
+			epForwardLinks = links
+				.filter(l => l.source_path === data.notePath)
+				.map(l => {
+					const match = allNotes.find(n => n.name.toLowerCase() === l.target.toLowerCase());
+					return match || { name: l.target, path: '', libraryName: data.libraryName || '' };
+				})
+				.filter(l => l.path)
+				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
+
+			// Local star
+			const { nodes, links: starLinks } = buildStarData(links, allNotes);
+			const connectedIds = new Set<string>([noteName]);
+			for (const link of starLinks) {
+				if (link.source === noteName || link.target === noteName) {
+					connectedIds.add(link.source);
+					connectedIds.add(link.target);
+				}
+			}
+			epLocalStarNodes = nodes.filter(n => connectedIds.has(n.id));
+			epLocalStarLinks = starLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
+		} catch {
+			epBacklinks = []; epForwardLinks = []; epTags = []; epProperties = [];
+			epLocalStarNodes = []; epLocalStarLinks = [];
+		}
+	}
 
 	// ─── Data loading ───
 	let initialLoadDone = false;
@@ -687,6 +761,29 @@
 			}
 		});
 		unlisteners.push(u12);
+
+		// Editor panels companion (migrated right sidebar)
+		const u18 = await onEditorPanels(async (data) => {
+			if (!data.active) {
+				editorPanelsActive = false;
+				editorPanelsData = null;
+				return;
+			}
+			editorPanelsActive = true;
+			editorPanelsData = data;
+			// Reset other companion modes
+			dashboardMode = 'none';
+			indexMode = 'none';
+			mapCompanionActive = false;
+			mapCompanionData = null;
+			mapCompanionNoteTab = null;
+			// Load panel data
+			await loadEditorPanelsData(data);
+		});
+		unlisteners.push(u18);
+
+		// Detect monitors
+		try { monitorCount = (await listMonitors()).length; } catch { monitorCount = 1; }
 
 		// Now load data (after listeners are set up so no events are missed)
 		try {
@@ -1046,6 +1143,123 @@
 								/>
 							</div>
 						{:else if splitCompanionTab === 'tasks'}
+							<div class="sc-panel">
+								<p class="sc-empty">{$t('panels.noTasks') || 'No tasks in this note'}</p>
+							</div>
+						{/if}
+					{:else}
+						<p class="sc-empty">{$t('panels.noNoteSelected') || 'No note selected'}</p>
+					{/if}
+				</div>
+			</div>
+
+		{:else if editorPanelsActive && editorPanelsData}
+			<!-- Editor Panels Companion (migrated right sidebar) -->
+			<div class="split-companion">
+				<div class="split-companion-header">
+					<span class="split-companion-label">{$t('secondScreen.editorPanels') || 'Panels'}</span>
+					{#if editorPanelsData.noteName}
+						<span class="split-companion-note" dir="auto">{editorPanelsData.noteName.replace(/\.md$/, '')}</span>
+					{/if}
+					{#if monitorCount > 1}
+						<span class="monitor-badge">{monitorCount} displays</span>
+					{/if}
+				</div>
+				<div class="split-companion-tabs">
+					{#each [
+						{ id: 'properties', icon: '⚙', label: $t('panels.properties') || 'Properties' },
+						{ id: 'backlinks', icon: '🔗', label: $t('panels.backlinks') || 'Backlinks' },
+						{ id: 'tags', icon: '🏷', label: $t('panels.tags') || 'Tags' },
+						{ id: 'star', icon: '⭐', label: $t('panels.starView') || 'Star' },
+						{ id: 'tasks', icon: '☑', label: $t('panels.tasks') || 'Tasks' },
+					] as tab}
+						<button class="sc-tab" class:active={editorPanelsTab === tab.id}
+							onclick={() => editorPanelsTab = tab.id as any}>
+							{tab.icon} {tab.label}
+						</button>
+					{/each}
+				</div>
+				<div class="split-companion-body">
+					{#if editorPanelsData.notePath}
+						{#if editorPanelsTab === 'properties'}
+							<div class="sc-panel">
+								<div class="sc-props-list">
+									{#each epProperties as prop}
+										<div class="sc-prop">
+											<span class="sc-prop-key">{prop.key}</span>
+											<span class="sc-prop-val" dir="auto">
+												{#if Array.isArray(prop.value)}
+													{prop.value.join(', ')}
+												{:else}
+													{prop.value}
+												{/if}
+											</span>
+										</div>
+									{/each}
+									{#if epProperties.length === 0}
+										<p class="sc-empty">{$t('secondScreen.noProperties') || 'No properties'}</p>
+									{/if}
+								</div>
+							</div>
+						{:else if editorPanelsTab === 'backlinks'}
+							<div class="sc-panel">
+								{#if epBacklinks.length > 0}
+									<ul class="sc-link-list">
+										{#each epBacklinks as bl}
+											<li>
+												<button class="sc-link-item" dir="auto" onclick={() => sendNoteToMain({ path: bl.path, name: bl.name, libraryName: bl.libraryName, libraryPath: '', libraryColor: libraryColorMap[bl.libraryName] || '#7c3aed' })}>
+													<span class="sc-dot" style="background:{libraryColorMap[bl.libraryName] || '#7c3aed'}"></span>
+													{bl.name}
+												</button>
+											</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="sc-empty">{$t('backlinksPanel.noBacklinks') || 'No backlinks'}</p>
+								{/if}
+								{#if epForwardLinks.length > 0}
+									<h4 class="sc-section-title">{$t('secondScreen.forwardLinks') || 'Forward Links'} <span class="sc-count">{epForwardLinks.length}</span></h4>
+									<ul class="sc-link-list">
+										{#each epForwardLinks as fl}
+											<li>
+												<button class="sc-link-item" dir="auto" onclick={() => sendNoteToMain({ path: fl.path, name: fl.name, libraryName: fl.libraryName, libraryPath: '', libraryColor: libraryColorMap[fl.libraryName] || '#7c3aed' })}>
+													<span class="sc-dot" style="background:{libraryColorMap[fl.libraryName] || '#7c3aed'}"></span>
+													{fl.name}
+												</button>
+											</li>
+										{/each}
+									</ul>
+								{/if}
+							</div>
+						{:else if editorPanelsTab === 'tags'}
+							<div class="sc-panel">
+								{#if epTags.length > 0}
+									<div class="sc-tags">
+										{#each epTags as tag}
+											<span class="sc-tag">#{tag}</span>
+										{/each}
+									</div>
+								{:else}
+									<p class="sc-empty">{$t('panels.noTags') || 'No tags'}</p>
+								{/if}
+							</div>
+						{:else if editorPanelsTab === 'star'}
+							<div class="sc-panel sc-star-panel">
+								{#if epLocalStarNodes.length > 0}
+									<LocalStarView
+										nodes={epLocalStarNodes}
+										links={epLocalStarLinks}
+										activeNodeId={editorPanelsData.noteName?.replace(/\.md$/, '').toLowerCase() || ''}
+										onNodeClick={(id) => {
+											const note = allNotes.find(n => n.name.toLowerCase() === id);
+											if (note) sendNoteToMain({ path: note.path, name: note.name, libraryName: note.libraryName, libraryPath: '', libraryColor: libraryColorMap[note.libraryName] || '#7c3aed' });
+										}}
+									/>
+								{:else}
+									<p class="sc-empty">{$t('panels.noConnections') || 'No connections'}</p>
+								{/if}
+							</div>
+						{:else if editorPanelsTab === 'tasks'}
 							<div class="sc-panel">
 								<p class="sc-empty">{$t('panels.noTasks') || 'No tasks in this note'}</p>
 							</div>
@@ -1804,5 +2018,25 @@
 		padding: 3px 10px; border-radius: 12px; font-size: 12px;
 		background: var(--background-secondary); color: var(--text-normal);
 		border: 1px solid var(--background-modifier-border);
+	}
+	.sc-link-list { list-style: none; margin: 0; padding: 0; }
+	.sc-link-list li { margin: 1px 0; }
+	.sc-link-item {
+		display: flex; align-items: center; gap: 6px; width: 100%;
+		padding: 5px 8px; border: none; border-radius: 4px;
+		background: none; color: var(--interactive-accent); font-size: 13px;
+		font-family: inherit; cursor: pointer; text-align: start;
+	}
+	.sc-link-item:hover { background: var(--background-modifier-hover); text-decoration: underline; }
+	.sc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+	.sc-section-title {
+		font-size: 11px; font-weight: 600; color: var(--text-muted);
+		text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 4px; padding: 0;
+		display: flex; align-items: center; gap: 4px;
+	}
+	.sc-count { font-weight: 400; opacity: 0.6; font-size: 10px; }
+	.monitor-badge {
+		font-size: 10px; color: var(--text-faint); margin-inline-start: auto;
+		background: var(--background-modifier-border); border-radius: 8px; padding: 1px 6px;
 	}
 </style>

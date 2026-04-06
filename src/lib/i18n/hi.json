@@ -1087,6 +1087,8 @@
         },
         "graphView": "Sky View",
         "splitCompanion": "साथी पैनल",
+        "editorPanels": "पैनल",
+        "forwardLinks": "फॉरवर्ड लिंक्स",
         "noProperties": "कोई गुण नहीं",
         "backlinksFor": "बैकलिंक्स"
     },

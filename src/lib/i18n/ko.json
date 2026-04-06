@@ -1087,6 +1087,8 @@
         },
         "graphView": "Sky View",
         "splitCompanion": "패널 동반자",
+        "editorPanels": "패널",
+        "forwardLinks": "포워드 링크",
         "noProperties": "속성 없음",
         "backlinksFor": "백링크"
     },

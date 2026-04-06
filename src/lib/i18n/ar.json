@@ -1098,6 +1098,8 @@
         },
         "graphView": "Sky View",
         "splitCompanion": "لوحة المرافق",
+        "editorPanels": "اللوحات",
+        "forwardLinks": "الروابط الأمامية",
         "noProperties": "لا توجد خصائص",
         "backlinksFor": "روابط خلفية لـ"
     },

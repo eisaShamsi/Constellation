@@ -1087,6 +1087,8 @@
         },
         "graphView": "Sky View",
         "splitCompanion": "Eşlik paneli",
+        "editorPanels": "Paneller",
+        "forwardLinks": "İleri Bağlantılar",
         "noProperties": "Özellik yok",
         "backlinksFor": "Geri bağlantılar"
     },

@@ -1087,6 +1087,8 @@
         },
         "graphView": "Sky View",
         "splitCompanion": "לוח לוואי",
+        "editorPanels": "לוחות",
+        "forwardLinks": "קישורים יוצאים",
         "noProperties": "אין מאפיינים",
         "backlinksFor": "קישורים נכנסים ל"
     },

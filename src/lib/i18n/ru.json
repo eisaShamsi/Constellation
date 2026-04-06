@@ -1087,6 +1087,8 @@
         },
         "graphView": "Sky View",
         "splitCompanion": "Панель-компаньон",
+        "editorPanels": "Панели",
+        "forwardLinks": "Исходящие ссылки",
         "noProperties": "Нет свойств",
         "backlinksFor": "Обратные ссылки для"
     },

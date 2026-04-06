@@ -1087,6 +1087,8 @@
         },
         "graphView": "Sky View",
         "splitCompanion": "面板伴侣",
+        "editorPanels": "面板",
+        "forwardLinks": "正向链接",
         "noProperties": "无属性",
         "backlinksFor": "反向链接"
     },
