@@ -204,6 +204,54 @@ Full audit of SS code after core redesign revealed 14 issues: split companion ha
 - `npx vite build` — clean ✓
 
 ### Open Items
-- Test all companion modes with 2-monitor setup
+- Constellation Map Phase 2: maturity inference + drill-down animation
+- CE Layer 3: Constellation Lens
+
+---
+
+## Phase: SS Enhancements — Sky View, Map Legend, Split Comparison
+
+### Commit: `1edb972`
+
+### What Was Built
+
+#### Sky View Rename
+- "Star View" → "Sky View" across all 15 locale files
+- ⭐ emoji replaced with original connected-nodes SVG icon in SS panel tabs
+
+#### Map Companion — Color Dropdown + Legend
+- Added color mode dropdown (Maturity / Stratum / Library) to SS map companion header
+- Added color legend below header — updates dynamically with dropdown selection
+- ConstellationMap gains `initialColorMode` prop for external color mode control
+- All SS mini-maps sync to selected color mode
+
+#### Split Companion — Comparison Layout
+- `SplitCompanionData` type now carries `notes[]` array (all open split tabs)
+- Main window sends all open tabs when split view active (not just focused tab)
+- SS loads panel data for all notes in parallel via `Promise.all`
+- New comparison UI: one panel tab selector at top, columns per note below
+- Each column: note name header (with library color dot) + selected panel content
+- Per-column RTL detection via `detectDir(noteName)`
+
+#### Task Sync Fix
+- `NoteEditor.handleSave` and `handleFlush` now call `broadcastNoteSaved`
+- Main window sidebar task toggle also broadcasts
+- SS `onNoteSaved` listener reloads panels when active note changes
+- `wasRecentlyWritten` guard prevents SS from reprocessing its own saves
+
+### Test Results (2-Monitor)
+All 10 tests passing:
+1. ✅ Monitor detection + positioning
+2. ✅ Right sidebar auto-hide
+3. ✅ Editor panels (Properties, Backlinks, Tags, Sky View, Tasks)
+4. ✅ Sky View tab with real data
+5. ✅ RTL — Index term
+6. ✅ RTL — Dashboard tag
+7. ✅ RTL — Map companion
+8. ✅ Index library color resolution
+9. ✅ SS open timing (ready signal)
+10. ✅ Split comparison layout
+
+### Open Items
 - Constellation Map Phase 2: maturity inference + drill-down animation
 - CE Layer 3: Constellation Lens
