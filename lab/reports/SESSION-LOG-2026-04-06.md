@@ -252,6 +252,21 @@ All 10 tests passing:
 9. ✅ SS open timing (ready signal)
 10. ✅ Split comparison layout
 
+---
+
+## Phase: SS Multi-Monitor Gating + Star View → Sky View Rename
+
+### Commit: `f26f3b7`
+
+#### SS Gated Behind 2+ Monitors
+- `hasMultipleDisplays` checked on startup — dock button, command palette entries, and functions all gated
+- Design: SS exists for a second display — without one, the right sidebar serves the same purpose
+
+#### Star View → Sky View Rename (All Docs)
+- Help folder/file renamed: `Star View/` → `Sky View/`
+- User Manual (en + ar + hi + ru + tr), help files all updated
+- Second Screen help: new sections for Split Comparison, Index Companion, Map Companion + multi-monitor callout
+
 ### Open Items
-- Constellation Map Phase 2: maturity inference + drill-down animation
+- Constellation Map Phase 2
 - CE Layer 3: Constellation Lens
