@@ -166,5 +166,44 @@ Testing the SS architecture redesign with an actual 2-monitor setup. Primary: 51
 
 ### Open Items
 - Context-aware mode switching (Map/Index companions) — not yet tested with 2 monitors
-- Tasks tab still placeholder (always shows "No tasks")
-- Remove debug logging before release
+
+---
+
+## Phase: SS Audit Fix — Split Companion, RTL, Data Integrity
+
+### Context
+Full audit of SS code after core redesign revealed 14 issues: split companion had no data loading (backlinks/star/tasks empty), RTL detection missing on most companion modes, fragile library resolution, 600ms race condition, duplicate effects.
+
+### Commit: `1937010`
+
+### What Was Fixed
+
+#### Phase 1: Split Companion Data Loading
+- Added `loadSplitCompanionPanelData()` — mirrors `loadEditorPanelsData()` pattern
+- Split companion now loads real backlinks, forward links, star view, properties, tags, tasks
+- Tasks tab works in both editor panels and split companion (TasksPanel with toggle)
+
+#### Phase 2: RTL Across All Companion Modes
+- Dashboard note/tag containers: `dir={detectDir(...)}`
+- Index term container: `dir={detectDir(indexTermData.term)}`
+- Index compare columns: per-term `dir={detectDir(termData.term)}`
+- Map companion container: `dir={detectDir(focusNode.name)}`
+
+#### Phase 3: Data Integrity
+- Index library resolution: replaced fragile `startsWith` with exact `allNotes.find(n => n.path === note.note_path)`
+- Map companion `sendNoteToMain`: resolves actual libraryName/libraryPath/libraryColor from allNotes
+- Replaced 600ms `setTimeout` with `emitScreenReady()` / `waitForScreenReady()` handshake (2s timeout fallback)
+- Removed duplicate `emitContextChanged('editor')` effect
+- Removed all debug logging (Rust println + JS console.log)
+
+#### Phase 4: Minor
+- `loadEditorPanelsData` catch block now logs errors
+- `allNotes = []` cleared before rebuild on universe switch
+
+### Test Results
+- `npx vite build` — clean ✓
+
+### Open Items
+- Test all companion modes with 2-monitor setup
+- Constellation Map Phase 2: maturity inference + drill-down animation
+- CE Layer 3: Constellation Lens
