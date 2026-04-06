@@ -17,6 +17,7 @@
 		createNote, buildDefaultFrontmatter, appSettings,
 		type FrontmatterProperty
 	} from '$lib/libraries/store';
+	import { broadcastNoteSaved } from '$lib/secondScreen';
 	import { buildLibraryColorMap } from '$lib/libraries/colors';
 	import { detectDir } from '$lib/utils';
 	import { get } from 'svelte/store';
@@ -120,6 +121,7 @@
 		markRecentWrite(tab.path);
 		const content = buildFullContent(props, text);
 		writeNote(tab.path, content)
+			.then(() => { broadcastNoteSaved(tab.path); })
 			.catch(() => {})
 			.finally(() => { saving = false; });
 	}
@@ -142,7 +144,7 @@
 		if (needsDiskSave) {
 			markRecentWrite(tab.path);
 			writeNote(tab.path, content)
-				.then(() => clearWriteAhead(tab.path))
+				.then(() => { clearWriteAhead(tab.path); broadcastNoteSaved(tab.path); })
 				.catch(() => {});
 		}
 	}

@@ -643,8 +643,26 @@
 
 		// Listen for note saves
 		const u2 = await onNoteSaved(async (path) => {
-			// NoteEditor handles its own content — we only refresh recent lists
 			refreshRecentLists();
+			if (wasRecentlyWritten(path)) return; // we saved it ourselves — skip reload
+			// Reload editor panels if the saved note is the one we're displaying
+			if (editorPanelsActive && editorPanelsData?.notePath === path) {
+				// Re-read content and reload panels
+				try {
+					const content = await invoke<string>('read_note', { filePath: path });
+					const updated = { ...editorPanelsData, content };
+					editorPanelsData = updated;
+					await loadEditorPanelsData(updated);
+				} catch {}
+			}
+			if (splitCompanionActive && splitCompanionData?.notePath === path) {
+				try {
+					const content = await invoke<string>('read_note', { filePath: path });
+					const updated = { ...splitCompanionData, content };
+					splitCompanionData = updated;
+					await loadSplitCompanionPanelData(updated);
+				} catch {}
+			}
 		});
 		unlisteners.push(u2);
 
