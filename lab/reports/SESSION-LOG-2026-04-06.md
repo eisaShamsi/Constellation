@@ -135,3 +135,36 @@ Constellation is an extension of the mind. The main window is where you think. T
 | 5. Link clicks | Backlink/forward link clicks open note in main window |
 | 6. No auto-restore | Workspace restore does not reopen SS |
 | 7. Context-aware | SS switches between editor/map/index companions automatically |
+
+---
+
+## Phase: 2-Monitor Live Testing & RTL Fix
+
+### Context
+Testing the SS architecture redesign with an actual 2-monitor setup. Primary: 5120×2160 (DISPLAY1), Secondary: 4096×2160 (DISPLAY5, positioned left at x=-4096).
+
+### Commit: `175ff87`
+
+### Test Results (2-Monitor)
+| Test | Result |
+|------|--------|
+| Monitor detection (2 monitors found) | ✅ Pass |
+| Smart positioning on secondary | ✅ Pass — centered on DISPLAY5 |
+| Right sidebar auto-hide | ✅ Pass |
+| Editor panels on SS | ✅ Pass |
+| "2nd Display" badge | ✅ Pass |
+| Tab switch sync | ✅ Pass |
+
+### Bug Found & Fixed: RTL Panels
+- **Issue**: RTL note opened on SS — panel elements (properties, backlinks, tags) displayed LTR. English property values were left-justified instead of right-justified.
+- **Root cause**: Inner `dir="auto"` on individual elements overrode the container direction, causing each element to auto-detect its own script direction.
+- **Fix**: Added `dir={detectDir(noteName || content)}` to the `split-companion` container. Removed all inner `dir="auto"` overrides so elements inherit RTL from container.
+
+### Other Changes
+- Debug logging: Rust `println!` + JS `console.log` for monitor detection diagnostics
+- Badge: "2 displays" → "2nd Display", enlarged (12px, font-weight 500, 10px border-radius)
+
+### Open Items
+- Context-aware mode switching (Map/Index companions) — not yet tested with 2 monitors
+- Tasks tab still placeholder (always shows "No tasks")
+- Remove debug logging before release
