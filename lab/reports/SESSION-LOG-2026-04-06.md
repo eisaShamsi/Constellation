@@ -371,8 +371,36 @@ Centering a component inside a `display: none` overlay cannot rely on JS measure
 - **No new heavy dependencies**: Brandes' algorithm implemented directly (~100 lines Rust), not via rustworkx-core
 - **Existing infrastructure reused**: clusterEngine.ts, GraphEngine, GraphMindView, buildStarData
 
+---
+
+## Phase: Constellation Lens Phases 2-3 — Complete
+
+### Commit: `1df3942`
+
+### Phase 2: Structural Gap Visualization
+- Red dashed lines between community centroids in GraphMind
+- Gap data flows: layout → GraphMindView → GraphEngine render loop
+
+### Phase 3: Shared-Tag Edges
+- `constellation_lens_tag_edges` Rust command: scans all notes for tags, returns note pairs sharing tags
+- Weight: 0.6 × number of shared tags, top 500 edges
+- Toggle in LensPanel Advanced section
+
+### Phase 3: Layer Peeling
+- Slider (0-20) to hide top-N centrality nodes
+- Reveals hidden structure beneath dominant MOC/index notes
+
+### Help & i18n
+- Full documentation: Constellation Lens help file
+- 16 i18n keys across all 15 locale files
+
+### Constellation Lens — COMPLETE
+All 3 phases of the concept paper roadmap implemented:
+- Phase 1: Brandes' centrality + Louvain communities + analytics panel ✅
+- Phase 2: Structural gaps + gap highlighting ✅
+- Phase 3: Shared-tag edges + layer peeling ✅
+
 ### Open Items
-- Lens Phase 2: structural gap highlighting (dashed lines in graph)
-- Lens Phase 3: multi-edge (shared tags, content similarity), layer peeling
 - Constellation Map Phase 2
 - OrgChart: drag-drop to move notes/folders
+- Lens: content similarity edges (optional, requires embeddings — deferred to CE Layer 4)
