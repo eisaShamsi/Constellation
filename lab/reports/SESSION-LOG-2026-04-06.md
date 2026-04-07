@@ -290,7 +290,48 @@ All 10 tests passing:
 ### Key Lesson
 Centering a component inside a `display: none` overlay cannot rely on JS measurement (getBoundingClientRect returns 0x0). CSS flexbox centering is the correct approach — no timing issues, works at any window size, survives resize.
 
+---
+
+## Phase: OrgChart Enhancements + SS Complementary Architecture
+
+### Commit: `09ab54a`
+
+### What Was Built
+
+#### OrgChart Search
+- Full-text search via Rust `search_stars` — searches both note titles AND bodies
+- Enter to execute, prev/next match navigation, match highlights
+- Search results displayed as note lists under parent boxes in the chart
+- Proven search-box pattern replicated from sidebar search (same HTML/CSS)
+
+#### OrgChart Visual Improvements
+- Horizontal connector lines between children (proven CSS ::before/::after from Envato Tuts+)
+- Note children rendered as vertical lists with full titles (not cramped chart boxes)
+- Fit-to-screen button — scales chart to fit both width and height
+- Reset button fix — properly clears all search state
+- Max 5 nodes per row with overflow to next row
+- Return to OrgChart button after clicking a note
+
+#### SS Companion Infrastructure
+- `OrgChartCompanionData` type + emit/listen events
+- Layout syncs OrgChart state to SS on open/close
+- Placeholder for function switcher
+
+### Architecture Principle Established
+**"All Constellation functions are complementing each other, NOT competing"**
+- SS is a lens, not a mirror — offers complementary perspectives
+- When OrgChart is on main window, SS offers Sky View, Index, Map, Editor Panels as alternative lenses
+- Approved SS companions (8 modes) are frozen — new features build on top
+- Function switcher to be implemented: users toggle between complementary views on SS
+
+### Key Lessons
+- Search clear button: use the same pattern already working in the codebase (sidebar search)
+- Connector lines: use proven CSS ::before/::after technique, not custom JS
+- Don't center components inside `display:none` overlays with JS — use CSS flexbox
+- Research first, build from scratch only if no proven solution exists
+
 ### Open Items
+- SS function switcher for complementary views
 - Constellation Map Phase 2
 - CE Layer 3: Constellation Lens
 - OrgChart: drag-drop to move notes/folders between libraries
