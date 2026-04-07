@@ -1341,5 +1341,23 @@
     "dashboard": {
         "show": "Mostrar panel",
         "hide": "Ocultar panel"
+    },
+    "lens": {
+        "title": "Constellation Lens",
+        "universeHealth": "Universe Health",
+        "modularity": "Modularity",
+        "dominance": "Dominance",
+        "entropy": "Entropy",
+        "connectivity": "Links/Note",
+        "nodes": "nodes",
+        "edges": "edges",
+        "topBridges": "Top Bridges",
+        "communities": "Communities",
+        "structuralGaps": "Blind Spots",
+        "noLinks": "No links",
+        "links": "links",
+        "advanced": "Advanced",
+        "layerPeeling": "Layer Peeling",
+        "tagEdges": "Tag Edges"
     }
 }

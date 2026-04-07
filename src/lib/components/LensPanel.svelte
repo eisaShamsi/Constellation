@@ -19,6 +19,10 @@
 		edgeCount = 0,
 		onNoteClick,
 		onNodeHover,
+		showTagEdges = $bindable(false),
+		peelCount = $bindable(0),
+		onPeelChange,
+		onTagEdgesToggle,
 	}: {
 		health?: UniverseHealth | null;
 		bridges?: { id: string; name: string; centrality: number }[];
@@ -28,11 +32,16 @@
 		edgeCount?: number;
 		onNoteClick?: (id: string, name: string) => void;
 		onNodeHover?: (id: string | null) => void;
+		showTagEdges?: boolean;
+		peelCount?: number;
+		onPeelChange?: (count: number) => void;
+		onTagEdgesToggle?: (show: boolean) => void;
 	} = $props();
 
 	let showBridges = $state(true);
 	let showCommunities = $state(true);
 	let showGaps = $state(false);
+	let showAdvanced = $state(false);
 
 	function healthColor(score: number): string {
 		if (score >= 70) return '#16a34a'; // green
@@ -141,6 +150,34 @@
 			{/if}
 		</div>
 	{/if}
+
+	<!-- Advanced: Layer Peeling + Tag Edges -->
+	<div class="lp-section">
+		<button class="lp-header" onclick={() => showAdvanced = !showAdvanced}>
+			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={showAdvanced}><polyline points="6 9 12 15 18 9"/></svg>
+			<span>{$t('lens.advanced') || 'Advanced'}</span>
+		</button>
+		{#if showAdvanced}
+			<div class="lp-advanced">
+				<!-- Layer Peeling -->
+				<div class="lp-adv-row">
+					<label class="lp-adv-label">{$t('lens.layerPeeling') || 'Layer Peeling'}</label>
+					<div class="lp-adv-slider">
+						<input type="range" min="0" max="20" step="1" value={peelCount}
+							oninput={(e) => { const v = parseInt((e.target as HTMLInputElement).value); onPeelChange?.(v); }} />
+						<span class="lp-adv-val">{peelCount === 0 ? 'Off' : `Hide top ${peelCount}`}</span>
+					</div>
+				</div>
+				<!-- Tag Edges Toggle -->
+				<div class="lp-adv-row">
+					<label class="lp-adv-label">{$t('lens.tagEdges') || 'Tag Edges'}</label>
+					<button class="lp-adv-toggle" class:active={showTagEdges} onclick={() => onTagEdgesToggle?.(!showTagEdges)}>
+						{showTagEdges ? 'On' : 'Off'}
+					</button>
+				</div>
+			</div>
+		{/if}
+	</div>
 </div>
 
 <style>
@@ -203,4 +240,18 @@
 	.lp-gap-names { flex: 1; font-size: 11px; color: var(--text-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lp-gap-badge { font-size: 10px; color: var(--text-muted); background: var(--background-secondary); padding: 1px 5px; border-radius: 4px; }
 	.lp-gap-zero { color: #ef4444; background: color-mix(in srgb, #ef4444 10%, transparent); }
+
+	/* Advanced controls */
+	.lp-advanced { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
+	.lp-adv-row { display: flex; align-items: center; gap: 8px; }
+	.lp-adv-label { font-size: 11px; color: var(--text-muted); min-width: 80px; }
+	.lp-adv-slider { display: flex; align-items: center; gap: 6px; flex: 1; }
+	.lp-adv-slider input[type="range"] { flex: 1; height: 4px; }
+	.lp-adv-val { font-size: 10px; color: var(--text-faint); white-space: nowrap; min-width: 70px; }
+	.lp-adv-toggle {
+		padding: 3px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;
+		border: 1px solid var(--background-modifier-border);
+		background: none; color: var(--text-muted); font-family: inherit;
+	}
+	.lp-adv-toggle.active { background: var(--interactive-accent); color: white; border-color: var(--interactive-accent); }
 </style>

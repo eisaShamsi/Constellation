@@ -560,6 +560,7 @@ export class GraphEngine {
 	private lensActive: boolean = false;
 	private lensOriginalColors: number[] = [];
 	private lensOriginalRadii: number[] = [];
+	private lensGaps: { community1: number; community2: number }[] = [];
 
 	/**
 	 * Activate Lens overlay: override node sizes with centrality scores
@@ -569,6 +570,7 @@ export class GraphEngine {
 		centrality: Map<string, number>,
 		communityAssignments: Map<string, number>,
 		communityColors: Map<number, string>,
+		gaps: { community1: number; community2: number }[] = [],
 	): void {
 		// Save originals on first activation
 		if (!this.lensActive) {
@@ -580,6 +582,7 @@ export class GraphEngine {
 		// Also set clusters for boundary rendering
 		this.setClusters(communityAssignments, communityColors);
 
+		this.lensGaps = gaps;
 		const sizeMul = this.config.nodeSize / 4;
 
 		for (let i = 0; i < this.nodes.length; i++) {
@@ -601,6 +604,7 @@ export class GraphEngine {
 	clearLensOverlay(): void {
 		if (!this.lensActive) return;
 		this.lensActive = false;
+		this.lensGaps = [];
 		// Restore originals
 		for (let i = 0; i < this.nodes.length; i++) {
 			if (i < this.lensOriginalColors.length) this.nodes[i].color = this.lensOriginalColors[i];
@@ -1562,9 +1566,10 @@ export class GraphEngine {
 		const normalEdgeAlpha = dark ? 0.25 : 0.15;
 
 		// ─── Cluster boundaries (Phase 2, drawn first so links render on top) ────
+		let clusterPositions: Map<number, { xs: number[]; ys: number[] }> | null = null;
 		if (this.showClusters && this.clusterAssignments.size > 0 && hovered < 0) {
 			// Group node positions by cluster
-			const clusterPositions: Map<number, { xs: number[]; ys: number[] }> = new Map();
+			clusterPositions = new Map();
 			for (const [idx, cid] of this.clusterAssignments) {
 				if (this.hiddenIndices.has(idx)) continue;
 				const n = this.nodes[idx];
@@ -1596,6 +1601,34 @@ export class GraphEngine {
 				this.linkGfx.ellipse(cx, cy, rx, ry);
 				this.linkGfx.fill({ color, alpha: 0.06 });
 				this.linkGfx.stroke({ width: 1, color, alpha: 0.15 });
+			}
+		}
+
+		// ─── Lens: Structural gap dashed lines between community centroids ────
+		if (this.lensActive && this.lensGaps.length > 0 && clusterPositions) {
+			for (const gap of this.lensGaps) {
+				const pos1 = clusterPositions.get(gap.community1);
+				const pos2 = clusterPositions.get(gap.community2);
+				if (!pos1 || !pos2 || pos1.xs.length < 2 || pos2.xs.length < 2) continue;
+				const cx1 = pos1.xs.reduce((a, b) => a + b, 0) / pos1.xs.length;
+				const cy1 = pos1.ys.reduce((a, b) => a + b, 0) / pos1.ys.length;
+				const cx2 = pos2.xs.reduce((a, b) => a + b, 0) / pos2.xs.length;
+				const cy2 = pos2.ys.reduce((a, b) => a + b, 0) / pos2.ys.length;
+				// Draw dashed line
+				const dx = cx2 - cx1, dy = cy2 - cy1;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+				const dashLen = 8, gapLen = 6;
+				const steps = Math.floor(dist / (dashLen + gapLen));
+				const ux = dx / dist, uy = dy / dist;
+				for (let s = 0; s < steps; s++) {
+					const sx = cx1 + ux * s * (dashLen + gapLen);
+					const sy = cy1 + uy * s * (dashLen + gapLen);
+					const ex = sx + ux * dashLen;
+					const ey = sy + uy * dashLen;
+					this.linkGfx.moveTo(sx, sy);
+					this.linkGfx.lineTo(ex, ey);
+				}
+				this.linkGfx.stroke({ width: 1.5, color: 0xef4444, alpha: 0.5 }); // red dashed
 			}
 		}
 

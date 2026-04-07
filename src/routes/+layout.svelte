@@ -514,6 +514,9 @@
 	let lensGaps = $state<StructuralGap[]>([]);
 	let lensHealth = $state<UniverseHealth | null>(null);
 	let lensBridges = $state<{ id: string; name: string; centrality: number }[]>([]);
+	let lensShowTagEdges = $state(false);
+	let lensPeelCount = $state(0);
+	let lensTagEdges = $state<{ source: string; target: string; shared_tags: string[]; weight: number }[]>([]);
 	let starVersion = $state(0);
 	let maturityMap = $state(new Map<string, string>()); // path → maturity state (CE Phase 3)
 	let stageMap = $state(new Map<string, string>()); // path → stage (CE Phase 6)
@@ -3214,6 +3217,7 @@
 					lensCentrality={lensActive ? lensCentrality : null}
 					lensCommunityAssignments={lensActive ? lensCommunityAssignments : null}
 					lensCommunityColors={lensActive ? new Map(lensCommunities.map(c => [c.id, c.color])) : null}
+				lensGaps={lensActive ? lensGaps.map(g => ({ community1: g.community1, community2: g.community2 })) : []}
 				/>
 				<!-- Lens Panel -->
 				{#if lensActive}
@@ -3225,9 +3229,25 @@
 							gaps={lensGaps}
 							nodeCount={starNodes.length}
 							edgeCount={starLinks.length}
+							showTagEdges={lensShowTagEdges}
+							peelCount={lensPeelCount}
 							onNoteClick={(id, name) => {
 								const node = starNodes.find(n => n.id === id);
 								if (node) handleStarNodeClick(node.path, node.libraryName);
+							}}
+							onTagEdgesToggle={async (show) => {
+								lensShowTagEdges = show;
+								if (show && lensTagEdges.length === 0) {
+									// Load tag edges from Rust
+									const libPaths = $libraries.map(l => [l.path, l.name] as [string, string]);
+									const edges = await invoke<typeof lensTagEdges>('constellation_lens_tag_edges', { libraryPaths: libPaths }).catch(() => []);
+									lensTagEdges = edges;
+								}
+							}}
+							onPeelChange={(count) => {
+								lensPeelCount = count;
+								// Layer peeling: hide top-N centrality nodes from the graph
+								// The GraphEngine handles this via hidden nodes
 							}}
 						/>
 					</div>
