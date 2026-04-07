@@ -1361,6 +1361,7 @@
         "advanced": "Advanced",
         "layerPeeling": "Layer Peeling",
         "tagEdges": "Tag Edges",
+        "returnToLens": "Return to Lens",
         "legend": "Legend",
         "legendBridgeLarge": "Large node",
         "legendBridgeDesc": "High centrality — bridges different knowledge areas",

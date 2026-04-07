@@ -57,7 +57,8 @@
 </script>
 
 <div class="lens-panel">
-	<!-- Universe Health -->
+	<!-- Universe Health — frozen/sticky -->
+	<div class="lp-frozen">
 	{#if health}
 		<div class="lp-section lp-health">
 			<div class="lp-health-score" style="color:{healthColor(health.score)}">
@@ -87,7 +88,10 @@
 			</div>
 		</div>
 	{/if}
+	</div>
 
+	<!-- Scrollable categories -->
+	<div class="lp-scrollable">
 	<!-- Top Bridges -->
 	<div class="lp-section">
 		<button class="lp-header" onclick={() => showBridges = !showBridges}>
@@ -224,15 +228,18 @@
 			</div>
 		{/if}
 	</div>
+t</div>
 </div>
 
 <style>
 	.lens-panel {
-		width: 280px; max-height: 100%; overflow-y: auto;
+		width: 280px; height: 100%; overflow: hidden;
 		background: var(--background-primary); border-inline-start: 1px solid var(--background-modifier-border);
-		padding: 12px; display: flex; flex-direction: column; gap: 8px;
+		display: flex; flex-direction: column;
 		font-size: 12px;
 	}
+	.lp-frozen { flex-shrink: 0; padding: 12px 12px 0; }
+	.lp-scrollable { flex: 1; overflow-y: auto; padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
 
 	/* Universe Health */
 	.lp-health { text-align: center; padding-bottom: 8px; border-bottom: 1px solid var(--background-modifier-border); }

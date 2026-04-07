@@ -458,6 +458,7 @@
 	let indexReturnPending = $state(false); // show "Return to Index" button on note tab
 	let mapReturnPending = $state(false); // show "Return to Map" button on note tab
 	let orgChartReturnPending = $state(false); // show "Return to OrgChart" button on note tab
+	let lensReturnPending = $state(false);
 	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 	let mapFocusNode = $state<any>(null); // current MapNode being viewed
 
@@ -2628,7 +2629,7 @@
 			</button>
 			<button class="dock-btn" class:active={lensActive} onclick={() => {
 				if (!lensActive) {
-					toggleLens(); showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false;
+					toggleLens(); showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensReturnPending = false;
 					sidebarBeforeLens = sidebarOpen; rightSidebarBeforeLens = rightSidebarOpen;
 					sidebarOpen = false; rightSidebarOpen = false;
 				} else {
@@ -3019,6 +3020,12 @@
 					{$t('orgChart.returnToOrgChart') || 'Return to OrgChart'}
 				</button>
 			{/if}
+			{#if lensReturnPending}
+				<button class="index-return-btn" onclick={() => { lensActive = true; lensReturnPending = false; sidebarBeforeLens = sidebarOpen; rightSidebarBeforeLens = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('lens.returnToLens') || 'Return to Lens'}
+				</button>
+			{/if}
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
 				{#if canScrollStart}
@@ -3220,8 +3227,9 @@
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						lensActive = false;
 						sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens;
+						lensReturnPending = true;
 					}}
-					onClose={() => { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; }}
+					onClose={() => { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; lensReturnPending = false; }}
 				/>
 			{/if}
 		</div>
