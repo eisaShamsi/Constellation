@@ -84,8 +84,16 @@ pub fn constellation_lens_centrality(
         });
     }
 
-    // 3. Brandes' betweenness centrality algorithm (O(VE))
-    let centrality_scores = brandes_betweenness(&graph);
+    // 3. Brandes' betweenness centrality
+    // For large graphs (>500 nodes), use approximate centrality via sampling
+    // to keep computation under 2 seconds. Sampling-based approximation is
+    // well-established in network science literature.
+    let centrality_scores = if n > 500 {
+        let sample_size = std::cmp::min(200, n); // sample 200 source nodes max
+        brandes_betweenness_approx(&graph, sample_size)
+    } else {
+        brandes_betweenness(&graph)
+    };
 
     // 4. Normalize to 0.0–1.0
     let max_score = centrality_scores.values().cloned().fold(0.0_f64, f64::max);
@@ -174,6 +182,77 @@ fn brandes_betweenness(graph: &UnGraph<String, ()>) -> HashMap<NodeIndex, f64> {
     // For undirected graphs, each shortest path is counted twice
     for score in cb.values_mut() {
         *score /= 2.0;
+    }
+
+    cb
+}
+
+/// Approximate betweenness centrality via random sampling.
+/// Instead of running BFS from ALL nodes, sample `k` random source nodes.
+/// Produces proportionally accurate rankings for large graphs.
+fn brandes_betweenness_approx(graph: &UnGraph<String, ()>, k: usize) -> HashMap<NodeIndex, f64> {
+    let n = graph.node_count();
+    let mut cb: HashMap<NodeIndex, f64> = HashMap::with_capacity(n);
+    for idx in graph.node_indices() { cb.insert(idx, 0.0); }
+
+    // Collect all node indices and sample k of them
+    let all_indices: Vec<NodeIndex> = graph.node_indices().collect();
+    let sample_size = std::cmp::min(k, all_indices.len());
+
+    // Deterministic sampling: pick evenly spaced indices for reproducibility
+    let step = if sample_size > 0 { all_indices.len() / sample_size } else { 1 };
+    let sources: Vec<NodeIndex> = (0..sample_size).map(|i| all_indices[i * step]).collect();
+
+    for s in sources {
+        let mut stack: Vec<NodeIndex> = Vec::with_capacity(n);
+        let mut pred: HashMap<NodeIndex, Vec<NodeIndex>> = HashMap::new();
+        let mut sigma: HashMap<NodeIndex, f64> = HashMap::new();
+        let mut dist: HashMap<NodeIndex, i64> = HashMap::new();
+
+        for v in graph.node_indices() {
+            pred.insert(v, Vec::new());
+            sigma.insert(v, 0.0);
+            dist.insert(v, -1);
+        }
+        *sigma.get_mut(&s).unwrap() = 1.0;
+        *dist.get_mut(&s).unwrap() = 0;
+
+        let mut queue: VecDeque<NodeIndex> = VecDeque::new();
+        queue.push_back(s);
+
+        while let Some(v) = queue.pop_front() {
+            stack.push(v);
+            let d_v = dist[&v];
+            for w in graph.neighbors(v) {
+                if dist[&w] < 0 {
+                    queue.push_back(w);
+                    *dist.get_mut(&w).unwrap() = d_v + 1;
+                }
+                if dist[&w] == d_v + 1 {
+                    *sigma.get_mut(&w).unwrap() += sigma[&v];
+                    pred.get_mut(&w).unwrap().push(v);
+                }
+            }
+        }
+
+        let mut delta: HashMap<NodeIndex, f64> = HashMap::new();
+        for v in graph.node_indices() { delta.insert(v, 0.0); }
+
+        while let Some(w) = stack.pop() {
+            for v in &pred[&w] {
+                let d = (sigma[v] / sigma[&w]) * (1.0 + delta[&w]);
+                *delta.get_mut(v).unwrap() += d;
+            }
+            if w != s {
+                *cb.get_mut(&w).unwrap() += delta[&w];
+            }
+        }
+    }
+
+    // Scale to approximate full centrality
+    let scale = if sample_size > 0 { n as f64 / sample_size as f64 } else { 1.0 };
+    for score in cb.values_mut() {
+        *score = (*score * scale) / 2.0; // /2 for undirected
     }
 
     cb

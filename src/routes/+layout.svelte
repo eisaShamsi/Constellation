@@ -1627,7 +1627,7 @@
 		if (e.key === 'Escape') {
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
-			if (showStarView) { showStarView = false; return; }
+			if (showStarView) { showStarView = false; if (lensActive) toggleLens(); return; }
 			if (showOrgChart) { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
@@ -4465,6 +4465,7 @@
 		display: flex; align-items: center; gap: 4px;
 		padding: 8px 16px; border-bottom: 1px solid var(--border);
 		background: var(--bg-secondary);
+		position: relative; z-index: 20;
 	}
 	.star-title { font-weight: 600; font-size: 0.9rem; flex: 1; }
 	.star-wiw-toggle {
