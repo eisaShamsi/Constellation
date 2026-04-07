@@ -400,7 +400,29 @@ All 3 phases of the concept paper roadmap implemented:
 - Phase 2: Structural gaps + gap highlighting ✅
 - Phase 3: Shared-tag edges + layer peeling ✅
 
+---
+
+## Phase: Constellation Lens — Standalone Rebuild + 7 Unique Features
+
+### Commit: `48eb5f0`
+
+### Standalone Rebuild
+- Created `ConstellationLens.svelte`: D3.js force simulation + HTML5 Canvas 2D
+- Completely separated from Sky View — zero shared rendering code
+- Removed all lens overlay code from GraphMindView and graphEngine
+- Own dock button, overlay, header, legend, D3 force layout
+
+### 7 Features Unique to Constellation (InfraNodus Cannot Do These)
+1. **Typed link weighting**: supports=1.0, causes=0.9, contradicts=0.8, etc.
+2. **Stratum-weighted centrality**: bridges between high-stratum notes matter more
+3. **Contradiction mapping**: tracks "contradicts" links, displays in panel
+4. **Provenance distribution**: per-community received vs discovered breakdown
+5. **Maturity health**: per-community seed/sapling/evergreen/canonical/wilting bars
+6. **Diversivity metric**: BC/degree — identifies VIP nodes (InfraNodus's own metric)
+7. **Gap bridge suggestions**: identifies existing notes that could bridge structural gaps
+
 ### Open Items
 - Constellation Map Phase 2
 - OrgChart: drag-drop to move notes/folders
-- Lens: content similarity edges (optional, requires embeddings — deferred to CE Layer 4)
+- Lens: content similarity edges (deferred to CE Layer 4)
+- Lens: D3+Canvas graph needs further visual polish and testing
