@@ -15,6 +15,9 @@
 		selectedPath = $bindable(null as string | string[] | null),
 		onNoteClick,
 		onClose,
+		onTreeLoaded,
+		onNodeFocus,
+		onSearchUpdate,
 	}: {
 		libraryColorMap?: Record<string, string>;
 		universeName?: string;
@@ -23,6 +26,9 @@
 		selectedPath?: string | string[] | null;
 		onNoteClick?: (path: string, name: string, highlightTerm?: string, e?: MouseEvent) => void;
 		onClose?: () => void;
+		onTreeLoaded?: (tree: any) => void;
+		onNodeFocus?: (path: string | null) => void;
+		onSearchUpdate?: (matchPaths: string[], query: string) => void;
 	} = $props();
 
 	// ─── State ─────────────────────────────────────────────
@@ -441,15 +447,45 @@
 			console.error('[OrgChart] loadFullscreenData failed:', e);
 		}
 		loading = false;
+		if (mapRoot) onTreeLoaded?.(mapRoot);
 	}
 
 	function toggleFsExpand(path: string) {
 		const s = new Set(fsExpandedPaths);
 		if (s.has(path)) s.delete(path); else s.add(path);
 		fsExpandedPaths = s;
-		userHasPanned = false; // allow re-centering
-		// Center on this node after DOM update (double-rAF for layout)
-		requestAnimationFrame(() => requestAnimationFrame(() => centerOnNode(path)));
+		userHasPanned = false;
+		userHasZoomed = false;
+		onNodeFocus?.(s.has(path) ? path : null);
+		// After DOM updates, re-fit width to accommodate new content, then center on node
+		requestAnimationFrame(() => requestAnimationFrame(() => {
+			if (innerEl) fitToWidth(innerEl);
+			panX = 0; panY = 0;
+			requestAnimationFrame(() => centerOnNode(path));
+		}));
+	}
+
+	/** Reset: collapse all, clear search, re-fit to initial view. */
+	function resetView() {
+		if (!mapRoot) return;
+		// Clear search — all state
+		fsSearchQuery = '';
+		searchMatches = [];
+		searchMatchPaths = new Set();
+		searchVisiblePaths = new Set();
+		searchMatchIdx = 0;
+		searchExecuted = false;
+		searchGroups = [];
+		// Clear filters
+		fsMaturityFilter = new Set();
+		// Collapse to root only
+		fsExpandedPaths = new Set([mapRoot.path]);
+		userHasPanned = false;
+		userHasZoomed = false;
+		panX = 0; panY = 0;
+		requestAnimationFrame(() => requestAnimationFrame(() => {
+			if (innerEl) fitToWidth(innerEl);
+		}));
 	}
 
 	/** Center the canvas viewport on a specific node by data-path. */
@@ -471,12 +507,209 @@
 	}
 
 
+	// ─── Search (Enter-driven, proven OrgChart pattern) ───
+	// Pattern: collect → expand ancestors → highlight → center (one at a time)
+	let searchMatches = $state<MapNode[]>([]);  // ordered list of direct matches
+	let searchMatchIdx = $state(0);
+	let searchMatchPaths = $state<Set<string>>(new Set());  // O(1) highlight lookup
+	let searchVisiblePaths = $state<Set<string>>(new Set()); // O(1) visibility lookup (matches + ancestors)
+	let searchExecuted = $state(false);
+
+	/** O(1) visibility check — precomputed set, no tree walking on render. */
 	function fsMatchesSearch(node: MapNode): boolean {
-		if (!fsSearchQuery) return true;
+		if (searchVisiblePaths.size === 0) return true; // no active search = show all
+		return searchVisiblePaths.has(node.path);
+	}
+
+	/** O(1) highlight check. */
+	function isDirectMatch(node: MapNode): boolean {
+		return searchMatchPaths.has(node.path);
+	}
+
+	/** Single tree walk: collect matches + their ancestor paths. Pure function, no state mutation. */
+	function searchTree(root: MapNode, q: string): { matches: MapNode[]; matchPaths: Set<string>; visiblePaths: Set<string>; expandPaths: Set<string> } {
+		const matches: MapNode[] = [];
+		const matchPaths = new Set<string>();
+		const visiblePaths = new Set<string>();
+		const expandPaths = new Set<string>();
+
+		function walk(node: MapNode, ancestors: string[]): boolean {
+			const isMatch = node.name.toLowerCase().includes(q);
+			let hasDescendantMatch = false;
+
+			if (node.children) {
+				for (const c of node.children) {
+					if (walk(c, [...ancestors, node.path])) hasDescendantMatch = true;
+				}
+			}
+
+			if (isMatch) {
+				matches.push(node);
+				matchPaths.add(node.path);
+				visiblePaths.add(node.path);
+				for (const a of ancestors) { visiblePaths.add(a); expandPaths.add(a); }
+			} else if (hasDescendantMatch) {
+				visiblePaths.add(node.path);
+			}
+
+			return isMatch || hasDescendantMatch;
+		}
+		walk(root, []);
+		return { matches, matchPaths, visiblePaths, expandPaths };
+	}
+
+	/** Execute search on Enter: Rust full-text search + tree walk to find matches. */
+	async function executeSearch() {
+		if (!mapRoot || !fsSearchQuery.trim()) {
+			searchMatches = []; searchMatchPaths = new Set();
+			searchVisiblePaths = new Set(); searchMatchIdx = 0;
+			searchExecuted = false;
+			return;
+		}
+		searchExecuted = true;
+
+		// 1. Call Rust full-text search (searches both title AND body)
+		let bodyMatchPaths = new Set<string>();
+		try {
+			const results = await invoke<{ name: string; path: string; library_name: string; modified: number; preview: string }[]>('search_stars', { query: fsSearchQuery });
+			for (const r of results) bodyMatchPaths.add(r.path);
+		} catch { /* fallback to title-only */ }
+
+		// 2. Walk tree: mark nodes whose path is in bodyMatchPaths OR whose name matches
 		const q = fsSearchQuery.toLowerCase();
-		if (node.name.toLowerCase().includes(q)) return true;
-		if (node.children) return node.children.some(c => fsMatchesSearch(c));
-		return false;
+		const matches: MapNode[] = [];
+		const matchPaths = new Set<string>();
+		const visiblePaths = new Set<string>();
+		const expandPaths = new Set<string>();
+
+		function walk(node: MapNode, ancestors: string[]): boolean {
+			const nameMatch = node.name.toLowerCase().includes(q);
+			const bodyMatch = bodyMatchPaths.has(node.path);
+			const isMatch = (nameMatch || bodyMatch) && node.node_type === 'note';
+			// Also match non-note nodes by name (libraries, folders)
+			const isNameMatch = nameMatch && node.node_type !== 'note';
+			let hasDescendantMatch = false;
+
+			if (node.children) {
+				for (const c of node.children) {
+					if (walk(c, [...ancestors, node.path])) hasDescendantMatch = true;
+				}
+			}
+
+			if (isMatch || isNameMatch) {
+				matches.push(node);
+				matchPaths.add(node.path);
+				visiblePaths.add(node.path);
+				for (const a of ancestors) { visiblePaths.add(a); expandPaths.add(a); }
+			} else if (hasDescendantMatch) {
+				visiblePaths.add(node.path);
+			}
+
+			return isMatch || isNameMatch || hasDescendantMatch;
+		}
+		walk(mapRoot, []);
+
+		// 3. Batch state updates
+		searchMatches = matches;
+		searchMatchPaths = matchPaths;
+		searchVisiblePaths = visiblePaths;
+		searchMatchIdx = 0;
+
+		// Expand ancestors of matches
+		const merged = new Set(fsExpandedPaths);
+		for (const p of expandPaths) merged.add(p);
+		fsExpandedPaths = merged;
+
+		// Notify SS of search update
+		onSearchUpdate?.([...matchPaths], fsSearchQuery);
+
+		// Re-fit chart
+		userHasPanned = false;
+		userHasZoomed = false;
+		requestAnimationFrame(() => requestAnimationFrame(() => {
+			if (innerEl) fitToWidth(innerEl);
+			panX = 0; panY = 0;
+		}));
+	}
+
+	function goToMatch(idx: number) {
+		if (searchMatches.length === 0) return;
+		searchMatchIdx = idx;
+		const match = searchMatches[idx];
+		if (match) requestAnimationFrame(() => centerOnNode(match.path));
+	}
+	function nextMatch() { goToMatch((searchMatchIdx + 1) % searchMatches.length); }
+	function prevMatch() { goToMatch((searchMatchIdx - 1 + searchMatches.length) % searchMatches.length); }
+
+	/** Group search matches by their ancestor path (library → folder chain). */
+	interface SearchGroup {
+		name: string;
+		path: string;
+		color: string;
+		nodeType: string;
+		notes: MapNode[];
+		subgroups: SearchGroup[];
+	}
+
+	let searchGroups = $state<SearchGroup[]>([]);
+
+	function buildSearchGroups(): SearchGroup[] {
+		if (!mapRoot || searchMatches.length === 0) return [];
+		// Build a map: path → ancestor chain
+		const ancestorMap = new Map<string, MapNode[]>(); // note path → [root, lib, folder, ...]
+		function walk(node: MapNode, ancestors: MapNode[]) {
+			if (searchMatchPaths.has(node.path) && node.node_type === 'note') {
+				ancestorMap.set(node.path, [...ancestors]);
+			}
+			if (node.children) {
+				for (const c of node.children) walk(c, [...ancestors, node]);
+			}
+		}
+		walk(mapRoot, []);
+
+		// Group by library (depth 1 ancestor, skipping root)
+		const libMap = new Map<string, { lib: MapNode; notes: Map<string, { folder: MapNode; notes: MapNode[] }> }>();
+		for (const match of searchMatches) {
+			if (match.node_type !== 'note') continue;
+			const ancestors = ancestorMap.get(match.path) || [];
+			// Find library ancestor (first non-root)
+			const lib = ancestors.find(a => a.node_type === 'library' || a.node_type === 'child_universe');
+			if (!lib) continue;
+			if (!libMap.has(lib.path)) libMap.set(lib.path, { lib, notes: new Map() });
+			// Find the deepest folder ancestor
+			const folders = ancestors.filter(a => a.node_type === 'folder');
+			const folder = folders.length > 0 ? folders[folders.length - 1] : lib;
+			const entry = libMap.get(lib.path)!;
+			if (!entry.notes.has(folder.path)) entry.notes.set(folder.path, { folder, notes: [] });
+			entry.notes.get(folder.path)!.notes.push(match);
+		}
+
+		// Convert to SearchGroup[]
+		const groups: SearchGroup[] = [];
+		for (const [, { lib, notes }] of libMap) {
+			const subgroups: SearchGroup[] = [];
+			for (const [, { folder, notes: folderNotes }] of notes) {
+				if (folder.path === lib.path) {
+					// Notes directly under library
+					subgroups.push({ name: '(root)', path: lib.path + '/__root__', color: libraryColorMap[lib.name] || '#7c3aed', nodeType: 'folder', notes: folderNotes, subgroups: [] });
+				} else {
+					subgroups.push({ name: folder.name, path: folder.path, color: libraryColorMap[lib.name] || '#7c3aed', nodeType: 'folder', notes: folderNotes, subgroups: [] });
+				}
+			}
+			groups.push({
+				name: lib.name, path: lib.path,
+				color: libraryColorMap[lib.name] || (lib.node_type === 'child_universe' ? '#6366f1' : '#7c3aed'),
+				nodeType: lib.node_type, notes: [], subgroups,
+			});
+		}
+		return groups;
+	}
+
+	function clearSearch() {
+		fsSearchQuery = '';
+		searchMatches = []; searchMatchPaths = new Set();
+		searchVisiblePaths = new Set(); searchMatchIdx = 0;
+		searchExecuted = false; searchGroups = [];
 	}
 
 	function fsMatchesFilter(node: MapNode): boolean {
@@ -508,6 +741,13 @@
 		}
 		walk(node);
 		return counts;
+	}
+
+	/** Split an array into chunks of max size n. */
+	function chunkArray<T>(arr: T[], n: number): T[][] {
+		const chunks: T[][] = [];
+		for (let i = 0; i < arr.length; i += n) chunks.push(arr.slice(i, i + n));
+		return chunks;
 	}
 
 	function formatWordCount(wc: number): string {
@@ -550,6 +790,23 @@
 		}
 	}
 
+	/** Fit both width AND height to fill the viewport. */
+	function fitToScreen() {
+		if (!canvasEl || !innerEl) return;
+		const canvasW = canvasEl.clientWidth;
+		const canvasH = canvasEl.clientHeight;
+		const innerW = innerEl.scrollWidth;
+		const innerH = innerEl.scrollHeight;
+		if (canvasW > 0 && canvasH > 0 && innerW > 0 && innerH > 0) {
+			const scaleW = (canvasW * 0.92) / innerW;
+			const scaleH = (canvasH * 0.92) / innerH;
+			zoom = Math.min(3, Math.max(0.2, Math.min(scaleW, scaleH)));
+			panX = 0; panY = 0;
+			userHasPanned = false;
+			userHasZoomed = false;
+		}
+	}
+
 	/** Svelte action: auto-fit on mount + re-fit on canvas resize. */
 	function autoFitWidth(node: HTMLElement) {
 		requestAnimationFrame(() => {
@@ -584,7 +841,33 @@
 			<span class="oc-fs-stat">{mapRoot.note_count} {$t('secondScreen.dashboard.notes') || 'notes'} · {formatWordCount(mapRoot.word_count)} words</span>
 		{/if}
 		<div class="oc-fs-actions">
-			<input class="oc-fs-search" type="text" dir="auto" placeholder={$t('layout.search') || 'Search...'} bind:value={fsSearchQuery} />
+			<div class="oc-search-box">
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+				<input type="text" dir="auto" placeholder={$t('layout.search') || 'Search... (Enter)'}
+					bind:value={fsSearchQuery}
+					oninput={() => { searchExecuted = false; searchMatches = []; searchMatchPaths = new Set(); searchVisiblePaths = new Set(); }}
+					onkeydown={(e) => {
+						if (e.key === 'Enter') {
+							e.preventDefault();
+							if (!searchExecuted || searchMatches.length === 0) executeSearch();
+							else e.shiftKey ? prevMatch() : nextMatch();
+						}
+						if (e.key === 'Escape') { clearSearch(); e.stopPropagation(); }
+					}} />
+				<button class="oc-search-clear" onclick={clearSearch}>×</button>
+			</div>
+			{#if searchMatches.length > 0}
+				<span class="oc-fs-match-count">{searchMatchIdx + 1}/{searchMatches.length}</span>
+				<button class="oc-fs-match-nav" onclick={prevMatch} title="Previous (Shift+Enter)">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+				</button>
+				<button class="oc-fs-match-nav" onclick={nextMatch} title="Next (Enter)">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+				</button>
+				<button class="oc-fs-match-nav" onclick={clearSearch} title="Clear">✕</button>
+			{:else if searchExecuted && searchMatches.length === 0}
+				<span class="oc-fs-match-count oc-fs-no-match">0 matches</span>
+			{/if}
 			{#each ALL_MATURITIES as m}
 				<button class="oc-fs-chip" class:active={fsMaturityFilter.has(m)} onclick={() => toggleMaturityFilter(m)}>
 					<span class="oc-fs-chip-dot" style="background:{MATURITY_COLORS[m]}"></span>
@@ -595,6 +878,12 @@
 				<button class="oc-fs-chip oc-fs-chip-clear" onclick={() => { fsMaturityFilter = new Set(); }}>✕</button>
 			{/if}
 		</div>
+		<button class="oc-fs-reset" onclick={fitToScreen} title="Fit to screen">
+			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+		</button>
+		<button class="oc-fs-reset" onclick={resetView} title={$t('orgChart.reset') || 'Reset view'}>
+			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+		</button>
 		<button class="oc-fs-close" onclick={() => onClose?.()}>✕</button>
 	</div>
 
@@ -616,6 +905,8 @@
 								class:oc-org-lib={node.node_type === 'library' || node.node_type === 'child_universe'}
 								class:oc-org-folder={node.node_type === 'folder'}
 								class:oc-org-note={node.node_type === 'note'}
+								class:oc-org-match={isDirectMatch(node)}
+								class:oc-org-match-active={searchMatches.length > 0 && searchMatches[searchMatchIdx]?.path === node.path}
 								style="--node-color: {node.node_type === 'library' ? (libraryColorMap[node.name] || '#7c3aed') : node.node_type === 'child_universe' ? '#6366f1' : node.node_type === 'note' ? (MATURITY_COLORS[node.maturity || 'seed']) : 'var(--interactive-accent)'}"
 								onclick={(e) => {
 									e.stopPropagation();
@@ -638,26 +929,52 @@
 									</div>
 								{/if}
 							</div>
-							<!-- Children row with connector lines -->
+							<!-- Children -->
 							{#if fsExpandedPaths.has(node.path) && node.children && node.children.length > 0 && node.node_type !== 'note'}
 								{@const visibleChildren = node.children.filter(c => fsMatchesSearch(c) && fsMatchesFilter(c))}
-								{#if visibleChildren.length > 0}
-									<div class="oc-org-connector">
-										<div class="oc-org-vline"></div>
-										<div class="oc-org-hline-row">
-											{#each visibleChildren as child, i (child.path)}
-												<div class="oc-org-hline-seg" class:first={i === 0} class:last={i === visibleChildren.length - 1} class:single={visibleChildren.length === 1}></div>
-											{/each}
-										</div>
-									</div>
-									<div class="oc-org-children">
-										{#each visibleChildren as child (child.path)}
-											<div class="oc-org-child-wrap">
-												<div class="oc-org-child-vline"></div>
-												{@render orgNode(child, depth + 1)}
-											</div>
+								{@const dirChildren = visibleChildren.filter(c => c.node_type !== 'note')}
+								{@const noteChildren = visibleChildren.filter(c => c.node_type === 'note')}
+
+								<!-- Note children: render as a vertical list (not chart boxes) -->
+								{#if noteChildren.length > 0}
+									<div class="oc-org-connector"><div class="oc-org-vline"></div></div>
+									<div class="oc-org-notelist">
+										{#each noteChildren as note (note.path)}
+											<button class="oc-org-noterow"
+												class:oc-org-match={isDirectMatch(note)}
+												dir={detectDir(note.name)}
+												onclick={() => onNoteClick?.(note.path, note.name + '.md')}
+												oncontextmenu={(e) => handleContextMenu(e, note)}>
+												<span class="oc-org-noterow-dot" style="background:{MATURITY_COLORS[note.maturity || 'seed']}"></span>
+												<span class="oc-org-noterow-name">{note.name}</span>
+												{#if note.word_count > 0}<span class="oc-org-noterow-meta">{formatWordCount(note.word_count)}w</span>{/if}
+												{#if note.modified}<span class="oc-org-noterow-meta">{formatDate(note.modified)}</span>{/if}
+											</button>
 										{/each}
 									</div>
+								{/if}
+
+								<!-- Directory children: render as chart boxes with connectors (max 5 per row) -->
+								{#if dirChildren.length > 0}
+									{@const rows = chunkArray(dirChildren, 5)}
+									{#each rows as row, rowIdx (rowIdx)}
+										<div class="oc-org-connector">
+											<div class="oc-org-vline"></div>
+											<div class="oc-org-hline-row">
+												{#each row as child, i (child.path)}
+													<div class="oc-org-hline-seg" class:first={i === 0} class:last={i === row.length - 1} class:single={row.length === 1}></div>
+												{/each}
+											</div>
+										</div>
+										<div class="oc-org-children" style="--child-count:{row.length}">
+											{#each row as child (child.path)}
+												<div class="oc-org-child-wrap">
+													<div class="oc-org-child-vline"></div>
+													{@render orgNode(child, depth + 1)}
+												</div>
+											{/each}
+										</div>
+									{/each}
 								{/if}
 							{/if}
 						</div>
@@ -1030,13 +1347,28 @@
 	.oc-fs-title { font-size: 16px; font-weight: 700; color: var(--text-normal); }
 	.oc-fs-stat { font-size: 12px; color: var(--text-muted); }
 	.oc-fs-actions { display: flex; align-items: center; gap: 6px; margin-inline-start: auto; }
-	.oc-fs-search {
-		font-size: 12px; padding: 4px 10px; border-radius: 6px; width: 180px;
-		border: 1px solid var(--background-modifier-border);
-		background: var(--background-primary); color: var(--text-normal);
-		font-family: inherit;
+	.oc-search-box {
+		display: flex; align-items: center; gap: 4px;
+		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
+		border-radius: 6px; padding: 0 6px;
 	}
-	.oc-fs-search:focus { border-color: var(--interactive-accent); outline: none; }
+	.oc-search-box:focus-within { border-color: var(--interactive-accent); }
+	.oc-search-box svg { color: var(--text-muted); flex-shrink: 0; }
+	.oc-search-box input {
+		flex: 1; border: none; background: none; padding: 4px 0;
+		font-size: 12px; color: var(--text-normal); font-family: inherit;
+		outline: none; min-width: 140px;
+	}
+	.oc-search-box input::placeholder { color: var(--text-faint); }
+	.oc-search-clear { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 0 2px; }
+	.oc-fs-match-count { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+	.oc-fs-no-match { color: #ef4444; }
+	.oc-fs-match-nav {
+		width: 22px; height: 22px; border: none; border-radius: 4px;
+		background: none; color: var(--text-muted); cursor: pointer;
+		display: flex; align-items: center; justify-content: center; padding: 0;
+	}
+	.oc-fs-match-nav:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 	.oc-fs-chip {
 		display: flex; align-items: center; gap: 3px; padding: 2px 8px;
 		border-radius: 10px; font-size: 11px; cursor: pointer;
@@ -1048,11 +1380,12 @@
 	.oc-fs-chip.active { background: var(--interactive-accent); color: white; border-color: var(--interactive-accent); }
 	.oc-fs-chip-dot { width: 6px; height: 6px; border-radius: 50%; }
 	.oc-fs-chip-clear { font-size: 11px; padding: 2px 6px; }
-	.oc-fs-close {
+	.oc-fs-reset, .oc-fs-close {
 		width: 28px; height: 28px; border: none; border-radius: 6px;
 		background: none; color: var(--text-muted); cursor: pointer; font-size: 16px;
 		display: flex; align-items: center; justify-content: center;
 	}
+	.oc-fs-reset:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 	.oc-fs-close:hover { background: #ef4444; color: white; }
 	.oc-fs-loading { color: var(--text-muted); font-size: 14px; padding: 40px; text-align: center; }
 
@@ -1084,6 +1417,17 @@
 	.oc-org-box:hover {
 		box-shadow: 0 3px 10px rgba(0,0,0,0.15);
 		transform: translateY(-1px);
+	}
+	/* Search match highlight */
+	.oc-org-match {
+		outline: 2px solid var(--interactive-accent);
+		outline-offset: 2px;
+		background: color-mix(in srgb, var(--interactive-accent) 8%, var(--background-primary)) !important;
+	}
+	.oc-org-match-active {
+		outline: 3px solid var(--interactive-accent);
+		outline-offset: 2px;
+		box-shadow: 0 0 12px color-mix(in srgb, var(--interactive-accent) 40%, transparent) !important;
 	}
 	.oc-org-root {
 		background: var(--interactive-accent); color: white;
@@ -1124,29 +1468,113 @@
 		width: 1px; height: 16px;
 		background: var(--background-modifier-border);
 	}
-	/* Horizontal line spanning all children */
-	.oc-org-hline-row {
-		display: flex; height: 1px;
-	}
-	.oc-org-hline-seg {
-		flex: 1; height: 1px; background: var(--background-modifier-border);
-	}
-	.oc-org-hline-seg.first { border-start-start-radius: 1px; margin-inline-start: 50%; }
-	.oc-org-hline-seg.last { margin-inline-end: 50%; }
-	.oc-org-hline-seg.single { background: none; }
+	/* Horizontal line row — hidden, connectors drawn on child-wraps */
+	.oc-org-hline-row { display: none; }
+	.oc-org-hline-seg { display: none; }
 
 	/* Children row */
 	.oc-org-children {
-		display: flex; gap: 12px; align-items: flex-start;
+		display: flex; align-items: flex-start;
 	}
+
+	/* Each child-wrap: vertical drop line + horizontal connector via ::before/::after.
+	   Proven org chart technique from Envato Tuts+ / CodeHim:
+	   - ::before draws left half of horizontal line (border-top from left edge to center)
+	   - ::after draws right half (border-top from center to right edge)
+	   - First child: no ::before (no line to the left)
+	   - Last child: no ::after (no line to the right)
+	   - Single child: neither (just vertical line) */
 	.oc-org-child-wrap {
 		display: flex; flex-direction: column; align-items: center;
+		position: relative;
+		padding: 0 8px; /* spacing between children */
 	}
-	/* Vertical line from h-line down to child box */
+	/* Left half of horizontal line */
+	.oc-org-child-wrap::before {
+		content: ''; position: absolute; top: 0;
+		width: 50%; height: 0;
+		border-top: 1px solid var(--background-modifier-border);
+		inset-inline-start: 0;
+	}
+	/* Right half of horizontal line */
+	.oc-org-child-wrap::after {
+		content: ''; position: absolute; top: 0;
+		width: 50%; height: 0;
+		border-top: 1px solid var(--background-modifier-border);
+		inset-inline-end: 0;
+	}
+	/* First child: no line to the left */
+	.oc-org-child-wrap:first-child::before { display: none; }
+	/* Last child: no line to the right */
+	.oc-org-child-wrap:last-child::after { display: none; }
+	/* Single child: no horizontal line at all */
+	.oc-org-child-wrap:only-child::before,
+	.oc-org-child-wrap:only-child::after { display: none; }
+
+	/* Vertical line from horizontal connector down to child box */
 	.oc-org-child-vline {
 		width: 1px; height: 16px;
 		background: var(--background-modifier-border);
 	}
+
+	/* ─── Note list (under parent boxes) ─── */
+	.oc-org-notelist {
+		display: flex; flex-direction: column; align-items: stretch;
+		background: var(--background-secondary); border-radius: 6px;
+		border: 1px solid var(--background-modifier-border);
+		min-width: 200px; max-width: 400px; max-height: 300px; overflow-y: auto;
+	}
+	.oc-org-noterow {
+		display: flex; align-items: center; gap: 8px;
+		padding: 5px 12px; width: 100%;
+		border: none; border-bottom: 1px solid var(--background-modifier-border);
+		background: none; cursor: pointer;
+		font-family: inherit; font-size: 12px; color: var(--text-normal);
+		text-align: start; transition: background 0.1s;
+	}
+	.oc-org-noterow:last-child { border-bottom: none; }
+	.oc-org-noterow:hover { background: var(--background-modifier-hover); }
+	.oc-org-noterow.oc-org-match { background: color-mix(in srgb, var(--interactive-accent) 10%, transparent); }
+	.oc-org-noterow-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+	.oc-org-noterow-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.oc-org-noterow-meta { font-size: 10px; color: var(--text-faint); flex-shrink: 0; }
+
+	/* ─── Search results (VS Code grouped list pattern) ─── */
+	.oc-search-results {
+		flex: 1; overflow-y: auto; padding: 16px 24px;
+	}
+	.oc-sr-group {
+		margin-bottom: 16px;
+	}
+	.oc-sr-group-header {
+		display: flex; align-items: center; gap: 8px;
+		padding: 8px 12px; font-size: 14px; font-weight: 700;
+		color: var(--text-normal);
+		background: var(--background-secondary); border-radius: 6px;
+		margin-bottom: 4px;
+	}
+	.oc-sr-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+	.oc-sr-group-name { flex: 1; }
+	.oc-sr-group-count {
+		font-size: 11px; font-weight: 400; color: var(--text-muted);
+		background: var(--background-modifier-border); padding: 1px 6px; border-radius: 8px;
+	}
+	.oc-sr-folder {
+		display: flex; align-items: center; gap: 6px;
+		padding: 4px 12px 4px 28px; font-size: 12px; font-weight: 600;
+		color: var(--text-muted);
+	}
+	.oc-sr-note {
+		display: flex; align-items: center; gap: 8px;
+		padding: 5px 12px 5px 44px; width: 100%;
+		border: none; border-radius: 4px; background: none; cursor: pointer;
+		font-family: inherit; font-size: 13px; color: var(--text-normal);
+		text-align: start; transition: background 0.1s;
+	}
+	.oc-sr-note:hover { background: var(--background-modifier-hover); }
+	.oc-sr-note-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+	.oc-sr-note-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.oc-sr-note-meta { font-size: 11px; color: var(--text-faint); flex-shrink: 0; }
 
 	/* Context menu */
 	.oc-fs-ctx {

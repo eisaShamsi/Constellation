@@ -373,6 +373,30 @@ export async function emitScreenReady(): Promise<void> {
 	await emit('screen:ready', {});
 }
 
+/* ------------------------------------------------------------------ */
+/*  OrgChart → Second Screen companion                                 */
+/* ------------------------------------------------------------------ */
+
+export interface OrgChartCompanionData {
+	active: boolean;
+	/** Full tree for the SS to display (from constellation_map_universe). null when closing. */
+	tree?: any;
+	/** If set, SS shows only this subtree (user clicked a node in main). */
+	focusPath?: string | null;
+	/** Search results: paths of matching notes. */
+	searchMatchPaths?: string[];
+	/** Search query (for highlighting). */
+	searchQuery?: string;
+}
+
+export async function emitOrgChartCompanion(data: OrgChartCompanionData): Promise<void> {
+	await emit('screen:orgchart-companion', data);
+}
+
+export function onOrgChartCompanion(callback: (data: OrgChartCompanionData) => void): Promise<UnlistenFn> {
+	return listen<OrgChartCompanionData>('screen:orgchart-companion', (event) => callback(event.payload));
+}
+
 /** Wait for screen:ready with a timeout fallback. */
 export function waitForScreenReady(timeoutMs = 2000): Promise<void> {
 	return new Promise((resolve) => {

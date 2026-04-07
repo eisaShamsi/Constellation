@@ -1205,7 +1205,9 @@
         "colorDepth": "Color: Depth",
         "universe": "Universe",
         "libraries": "libraries",
-        "notes": "notes"
+        "notes": "notes",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "Universe Notes",

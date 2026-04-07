@@ -92,7 +92,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, emitOrgChartCompanion, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -424,6 +424,19 @@
 		}
 	});
 
+	// Sync OrgChart to SS: emit when OrgChart opens/closes while SS is active
+	let prevShowOrgChart = false;
+	$effect(() => {
+		const ocOpen = showOrgChart;
+		const ssOpen = secondScreenOpen;
+		if (ssOpen && ocOpen && orgChartTreeCache) {
+			emitOrgChartCompanion({ active: true, tree: orgChartTreeCache, focusPath: null, searchMatchPaths: [], searchQuery: '' });
+		} else if (ssOpen && prevShowOrgChart && !ocOpen) {
+			emitOrgChartCompanion({ active: false });
+		}
+		prevShowOrgChart = ocOpen;
+	});
+
 	// Sync split view state to second screen — send ALL open tabs for comparison
 	$effect(() => {
 		if (!secondScreenOpen) return;
@@ -452,8 +465,10 @@
 	let indexSelectedTerms = $state<Set<string>>(new Set());
 	let indexReturnPending = $state(false); // show "Return to Index" button on note tab
 	let mapReturnPending = $state(false); // show "Return to Map" button on note tab
+	let orgChartReturnPending = $state(false); // show "Return to OrgChart" button on note tab
 	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 	let mapFocusNode = $state<any>(null); // current MapNode being viewed
+	let orgChartTreeCache = $state<any>(null); // cached tree for SS emit
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -2489,6 +2504,7 @@
 			</button>
 			<button class="dock-btn" class:active={showOrgChart} onclick={() => {
 				showOrgChart = !showOrgChart;
+				orgChartReturnPending = false;
 				if (showOrgChart) {
 					showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false;
 					sidebarBeforeOC = sidebarOpen; rightSidebarBeforeOC = rightSidebarOpen;
@@ -2892,6 +2908,12 @@
 					{$t('constellationMap.returnToMap') || 'Return to Map'}
 				</button>
 			{/if}
+			{#if orgChartReturnPending}
+				<button class="index-return-btn" onclick={() => { showOrgChart = true; orgChartReturnPending = false; sidebarBeforeOC = sidebarOpen; rightSidebarBeforeOC = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('orgChart.returnToOrgChart') || 'Return to OrgChart'}
+				</button>
+			{/if}
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
 				{#if canScrollStart}
@@ -3066,8 +3088,23 @@
 					if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 					showOrgChart = false;
 					sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC;
+					orgChartReturnPending = true;
+					if (secondScreenOpen) emitOrgChartCompanion({ active: false });
 				}}
-				onClose={() => { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; }}
+				onClose={() => {
+					showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; orgChartReturnPending = false;
+					if (secondScreenOpen) emitOrgChartCompanion({ active: false });
+				}}
+				onTreeLoaded={(tree) => {
+					orgChartTreeCache = tree;
+					if (secondScreenOpen) emitOrgChartCompanion({ active: true, tree, focusPath: null, searchMatchPaths: [], searchQuery: '' });
+				}}
+				onNodeFocus={(path) => {
+					if (secondScreenOpen) emitOrgChartCompanion({ active: true, focusPath: path, searchMatchPaths: [], searchQuery: '' });
+				}}
+				onSearchUpdate={(matchPaths, query) => {
+					if (secondScreenOpen) emitOrgChartCompanion({ active: true, focusPath: null, searchMatchPaths: matchPaths, searchQuery: query });
+				}}
 			/>
 		</div>
 
@@ -4314,7 +4351,7 @@
 
 	.index-return-btn {
 		display: flex; align-items: center; gap: 4px;
-		padding: 3px 10px; margin-inline-start: 4px;
+		padding: 3px 10px; margin-inline-start: 8px; margin-inline-end: 4px;
 		border: 1px solid var(--interactive-accent);
 		background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
 		color: var(--interactive-accent); font-size: 11px; font-weight: 600;
