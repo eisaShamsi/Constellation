@@ -330,8 +330,49 @@ Centering a component inside a `display: none` overlay cannot rely on JS measure
 - Don't center components inside `display:none` overlays with JS — use CSS flexbox
 - Research first, build from scratch only if no proven solution exists
 
+---
+
+## Phase: Constellation Lens Phase 1 — CE Layer 3
+
+### Commit: `a14c5c1`
+
+### What Was Built
+
+**CE Layer 3: Constellation Lens** — network analysis engine inspired by InfraNodus (Paranyushkin, WWW'19). Transforms the GraphMind graph from passive visualization into active knowledge discovery.
+
+#### Rust Backend (lens.rs)
+- Brandes' betweenness centrality algorithm (O(VE)) — finds bridge notes
+- Uses `petgraph` crate for graph data structure
+- `constellation_lens_centrality` command: scans all libraries, builds graph, returns per-note scores
+
+#### JS Analytics (clusterEngine.ts)
+- Structural gap detection (Ronald Burt's structural holes theory)
+- Shannon entropy for cognitive diversity
+- Universe health metric (0-100): modularity + dominance + entropy + connectivity
+
+#### GraphEngine Overlay
+- Node sizes override with centrality (bridge notes become larger)
+- Node colors override with community membership (auto-detected clusters)
+- Save/restore original state on toggle
+
+#### LensPanel Sidebar
+- Universe Health score with breakdown
+- Top 10 Bridge notes ranked by centrality
+- Community list with names, colors, member counts
+- Structural Gaps (blind spots) between knowledge areas
+
+#### Integration
+- Lens toggle button in Sky View toolbar
+- Orchestration: Rust centrality → JS Louvain → gaps → health → overlay
+- LensPanel as sidebar overlay inside Sky View
+
+### Architecture
+- **Hybrid Rust + JS**: Centrality in Rust (performance), community detection in existing JS Louvain (reuse)
+- **No new heavy dependencies**: Brandes' algorithm implemented directly (~100 lines Rust), not via rustworkx-core
+- **Existing infrastructure reused**: clusterEngine.ts, GraphEngine, GraphMindView, buildStarData
+
 ### Open Items
-- SS function switcher for complementary views
+- Lens Phase 2: structural gap highlighting (dashed lines in graph)
+- Lens Phase 3: multi-edge (shared tags, content similarity), layer peeling
 - Constellation Map Phase 2
-- CE Layer 3: Constellation Lens
-- OrgChart: drag-drop to move notes/folders between libraries
+- OrgChart: drag-drop to move notes/folders
