@@ -7,13 +7,15 @@
 	 */
 	import { t } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
-	import type { ClusterInfo } from '$lib/graph/clusterEngine';
+	import type { ClusterInfo, CommunityProfile } from '$lib/graph/clusterEngine';
 	import type { StructuralGap, UniverseHealth } from '$lib/graph/clusterEngine';
 
 	let {
 		health = null as UniverseHealth | null,
 		bridges = [] as { id: string; name: string; centrality: number }[],
 		communities = [] as ClusterInfo[],
+		communityProfiles = [] as CommunityProfile[],
+		contradictions = [] as [string, string][],
 		gaps = [] as StructuralGap[],
 		nodeCount = 0,
 		edgeCount = 0,
@@ -27,6 +29,8 @@
 		health?: UniverseHealth | null;
 		bridges?: { id: string; name: string; centrality: number }[];
 		communities?: ClusterInfo[];
+		communityProfiles?: CommunityProfile[];
+		contradictions?: [string, string][];
 		gaps?: StructuralGap[];
 		nodeCount?: number;
 		edgeCount?: number;
@@ -42,6 +46,7 @@
 	let showCommunities = $state(true);
 	let showGaps = $state(false);
 	let showAdvanced = $state(false);
+	let showContradictions = $state(false);
 	let showLegend = $state(false);
 
 	function healthColor(score: number): string {
@@ -116,11 +121,30 @@
 		</button>
 		{#if showCommunities}
 			<div class="lp-list">
-				{#each communities as c (c.id)}
+				{#each communities as c, i (c.id)}
+					{@const profile = communityProfiles.find(p => p.id === c.id)}
 					<div class="lp-comm">
-						<span class="lp-comm-dot" style="background:{c.color}"></span>
-						<span class="lp-comm-name" dir={detectDir(c.suggestedName)}>{c.suggestedName}</span>
-						<span class="lp-comm-count">{c.memberIds.length}</span>
+						<div class="lp-comm-header">
+							<span class="lp-comm-dot" style="background:{c.color}"></span>
+							<span class="lp-comm-name" dir={detectDir(c.suggestedName)}>{c.suggestedName}</span>
+							<span class="lp-comm-count">{c.memberIds.length}</span>
+						</div>
+						{#if profile}
+							<!-- Maturity bar -->
+							<div class="lp-comm-bar">
+								{#each ['seed','sapling','evergreen','canonical','wilting'] as m}
+									{@const count = profile.maturityBreakdown[m] ?? 0}
+									{#if count > 0}
+										<div class="lp-comm-bar-seg" style="width:{(count/profile.memberCount)*100}%; background:{({'seed':'#d1d5db','sapling':'#86efac','evergreen':'#16a34a','canonical':'#f59e0b','wilting':'#a3e635'})[m]}" title="{m}: {count}"></div>
+									{/if}
+								{/each}
+							</div>
+							<div class="lp-comm-meta">
+								<span>L{profile.avgStratum.toFixed(0)}</span>
+								{#if profile.wiltingPercent > 20}<span class="lp-comm-warning">⚠ {profile.wiltingPercent.toFixed(0)}% wilting</span>{/if}
+								{#if profile.provenanceBreakdown['received'] > profile.memberCount * 0.7}<span class="lp-comm-warning">📥 mostly received</span>{/if}
+							</div>
+						{/if}
 					</div>
 				{/each}
 			</div>
@@ -145,6 +169,27 @@
 							{:else}
 								<span class="lp-gap-badge">{gap.interLinkCount} {$t('lens.links') || 'links'}</span>
 							{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
+
+	<!-- Contradictions -->
+	{#if contradictions.length > 0}
+		<div class="lp-section">
+			<button class="lp-header" onclick={() => showContradictions = !showContradictions}>
+				<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={showContradictions}><polyline points="6 9 12 15 18 9"/></svg>
+				<span>{$t('lens.contradictions') || 'Contradictions'}</span>
+				<span class="lp-count">{contradictions.length}</span>
+			</button>
+			{#if showContradictions}
+				<div class="lp-list">
+					{#each contradictions.slice(0, 10) as [a, b]}
+						<div class="lp-contradiction">
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+							<span class="lp-contradiction-text">{a} ↔ {b}</span>
 						</div>
 					{/each}
 				</div>
@@ -241,6 +286,18 @@
 	.lp-gap-names { flex: 1; font-size: 11px; color: var(--text-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lp-gap-badge { font-size: 10px; color: var(--text-muted); background: var(--background-secondary); padding: 1px 5px; border-radius: 4px; }
 	.lp-gap-zero { color: #ef4444; background: color-mix(in srgb, #ef4444 10%, transparent); }
+
+	/* Community profile enhancements */
+	.lp-comm { display: flex; flex-direction: column; gap: 2px; padding: 4px 6px; }
+	.lp-comm-header { display: flex; align-items: center; gap: 6px; }
+	.lp-comm-bar { display: flex; height: 3px; border-radius: 2px; overflow: hidden; margin-top: 1px; }
+	.lp-comm-bar-seg { height: 100%; }
+	.lp-comm-meta { display: flex; gap: 6px; font-size: 9px; color: var(--text-faint); }
+	.lp-comm-warning { color: #ef4444; font-weight: 600; }
+
+	/* Contradictions */
+	.lp-contradiction { display: flex; align-items: center; gap: 6px; padding: 3px 6px; }
+	.lp-contradiction-text { font-size: 11px; color: var(--text-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 	/* Advanced controls */
 	.lp-advanced { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }

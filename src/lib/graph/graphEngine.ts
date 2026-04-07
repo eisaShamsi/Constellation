@@ -556,65 +556,6 @@ export class GraphEngine {
 		this.needsRedraw = true;
 	}
 
-	// ─── Constellation Lens overlay ─────────────────────────────────
-	private lensActive: boolean = false;
-	private lensOriginalColors: number[] = [];
-	private lensOriginalRadii: number[] = [];
-	private lensGaps: { community1: number; community2: number }[] = [];
-
-	/**
-	 * Activate Lens overlay: override node sizes with centrality scores
-	 * and colors with community assignments.
-	 */
-	setLensOverlay(
-		centrality: Map<string, number>,
-		communityAssignments: Map<string, number>,
-		communityColors: Map<number, string>,
-		gaps: { community1: number; community2: number }[] = [],
-	): void {
-		// Save originals on first activation
-		if (!this.lensActive) {
-			this.lensOriginalColors = this.nodes.map(n => n.color);
-			this.lensOriginalRadii = this.nodes.map(n => n.r);
-		}
-		this.lensActive = true;
-
-		// Also set clusters for boundary rendering
-		this.setClusters(communityAssignments, communityColors);
-
-		this.lensGaps = gaps;
-		const sizeMul = this.config.nodeSize / 4;
-
-		for (let i = 0; i < this.nodes.length; i++) {
-			const n = this.nodes[i];
-			const c = centrality.get(n.id) ?? 0;
-			// Centrality-based sizing: min 2px, max ~20px
-			n.r = Math.max(2, (2 + c * 16) * sizeMul);
-
-			// Community-based coloring
-			const cid = this.clusterAssignments.get(i);
-			if (cid !== undefined && this.clusterColors.has(cid)) {
-				n.color = this.clusterColors.get(cid)!;
-			}
-		}
-		this.needsRedraw = true;
-	}
-
-	/** Deactivate Lens overlay — restore original node colors and sizes. */
-	clearLensOverlay(): void {
-		if (!this.lensActive) return;
-		this.lensActive = false;
-		this.lensGaps = [];
-		// Restore originals
-		for (let i = 0; i < this.nodes.length; i++) {
-			if (i < this.lensOriginalColors.length) this.nodes[i].color = this.lensOriginalColors[i];
-			if (i < this.lensOriginalRadii.length) this.nodes[i].r = this.lensOriginalRadii[i];
-		}
-		this.lensOriginalColors = [];
-		this.lensOriginalRadii = [];
-		this.clearClusters();
-	}
-
 	/** CE Phase 8: Set trail path for overlay rendering. Paths are note file paths in order. */
 	setTrailPath(notePaths: string[]): void {
 		this.trailNodeIndices = [];
@@ -1598,40 +1539,9 @@ export class GraphEngine {
 				}
 				const rx = maxDx + 30, ry = maxDy + 30;
 				const color = this.clusterColors.get(cid) ?? 0x7c3aed;
-				const fillAlpha = this.lensActive ? 0.12 : 0.06;
-				const strokeAlpha = this.lensActive ? 0.35 : 0.15;
-				const strokeWidth = this.lensActive ? 2 : 1;
 				this.linkGfx.ellipse(cx, cy, rx, ry);
-				this.linkGfx.fill({ color, alpha: fillAlpha });
-				this.linkGfx.stroke({ width: strokeWidth, color, alpha: strokeAlpha });
-			}
-		}
-
-		// ─── Lens: Structural gap dashed lines between community centroids ────
-		if (this.lensActive && this.lensGaps.length > 0 && clusterPositions) {
-			for (const gap of this.lensGaps) {
-				const pos1 = clusterPositions.get(gap.community1);
-				const pos2 = clusterPositions.get(gap.community2);
-				if (!pos1 || !pos2 || pos1.xs.length < 2 || pos2.xs.length < 2) continue;
-				const cx1 = pos1.xs.reduce((a, b) => a + b, 0) / pos1.xs.length;
-				const cy1 = pos1.ys.reduce((a, b) => a + b, 0) / pos1.ys.length;
-				const cx2 = pos2.xs.reduce((a, b) => a + b, 0) / pos2.xs.length;
-				const cy2 = pos2.ys.reduce((a, b) => a + b, 0) / pos2.ys.length;
-				// Draw dashed line
-				const dx = cx2 - cx1, dy = cy2 - cy1;
-				const dist = Math.sqrt(dx * dx + dy * dy);
-				const dashLen = 8, gapLen = 6;
-				const steps = Math.floor(dist / (dashLen + gapLen));
-				const ux = dx / dist, uy = dy / dist;
-				for (let s = 0; s < steps; s++) {
-					const sx = cx1 + ux * s * (dashLen + gapLen);
-					const sy = cy1 + uy * s * (dashLen + gapLen);
-					const ex = sx + ux * dashLen;
-					const ey = sy + uy * dashLen;
-					this.linkGfx.moveTo(sx, sy);
-					this.linkGfx.lineTo(ex, ey);
-				}
-				this.linkGfx.stroke({ width: 1.5, color: 0xef4444, alpha: 0.5 }); // red dashed
+				this.linkGfx.fill({ color, alpha: 0.06 });
+				this.linkGfx.stroke({ width: 1, color, alpha: 0.15 });
 			}
 		}
 

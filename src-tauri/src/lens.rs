@@ -12,11 +12,30 @@ use petgraph::graph::{NodeIndex, UnGraph};
 use serde::Serialize;
 use std::collections::{HashMap, VecDeque};
 
+/// Weight for each typed link — higher = stronger connection.
+fn link_type_weight(link_type: &Option<String>) -> f64 {
+    match link_type.as_deref() {
+        Some("supports") => 1.0,
+        Some("causes") => 0.9,
+        Some("contradicts") => 0.8,
+        Some("derives-from") => 0.7,
+        Some("generalizes") => 0.8,
+        Some("exemplifies") => 0.6,
+        Some("part-of") => 0.7,
+        Some("associative") => 0.5,
+        _ => 1.0, // default: untyped wikilink
+    }
+}
+
 /// Result of centrality computation — sent to frontend via IPC.
 #[derive(Debug, Clone, Serialize)]
 pub struct LensCentralityData {
     /// Map from note_id (lowercase name) to normalized betweenness centrality (0.0–1.0).
     pub centrality: HashMap<String, f64>,
+    /// Diversivity: betweenness centrality / degree. High = disproportionately influential.
+    pub diversivity: HashMap<String, f64>,
+    /// Contradiction edges: pairs of notes connected by "contradicts" links.
+    pub contradictions: Vec<(String, String)>,
     pub node_count: u32,
     pub edge_count: u32,
 }
@@ -30,8 +49,10 @@ pub fn constellation_lens_centrality(
     app: tauri::AppHandle,
     library_paths: Vec<(String, String)>, // (library_path, library_name) pairs
 ) -> Result<LensCentralityData, String> {
-    // 1. Collect all links across all libraries
-    let mut all_links: Vec<(String, String)> = Vec::new(); // (source_name, target_name) lowercase
+    // 1. Collect all links with types across all libraries
+    struct RawLink { source: String, target: String, link_type: Option<String> }
+    let mut all_links: Vec<RawLink> = Vec::new();
+    let mut contradictions: Vec<(String, String)> = Vec::new();
 
     for (lib_path, lib_name) in &library_paths {
         let links = crate::libraries::scan_library_links(
@@ -41,36 +62,42 @@ pub fn constellation_lens_centrality(
         for link in links {
             let source = link.source_name.to_lowercase();
             let target = link.target.to_lowercase();
-            if source != target {
-                all_links.push((source, target));
+            if source == target { continue; }
+            // Track contradictions
+            if link.link_type.as_deref() == Some("contradicts") {
+                contradictions.push((source.clone(), target.clone()));
             }
+            all_links.push(RawLink { source, target, link_type: link.link_type });
         }
     }
 
-    // 2. Build petgraph undirected graph
-    let mut graph = UnGraph::<String, ()>::new_undirected();
+    // 2. Build weighted petgraph undirected graph (edge weight = typed link weight)
+    let mut graph = UnGraph::<String, f64>::new_undirected();
     let mut name_to_idx: HashMap<String, NodeIndex> = HashMap::new();
 
-    for (src, tgt) in &all_links {
-        if !name_to_idx.contains_key(src) {
-            let idx = graph.add_node(src.clone());
-            name_to_idx.insert(src.clone(), idx);
+    for rl in &all_links {
+        if !name_to_idx.contains_key(&rl.source) {
+            let idx = graph.add_node(rl.source.clone());
+            name_to_idx.insert(rl.source.clone(), idx);
         }
-        if !name_to_idx.contains_key(tgt) {
-            let idx = graph.add_node(tgt.clone());
-            name_to_idx.insert(tgt.clone(), idx);
+        if !name_to_idx.contains_key(&rl.target) {
+            let idx = graph.add_node(rl.target.clone());
+            name_to_idx.insert(rl.target.clone(), idx);
         }
     }
 
-    // Deduplicate edges
-    let mut edge_set = std::collections::HashSet::new();
-    for (src, tgt) in &all_links {
-        let si = name_to_idx[src];
-        let ti = name_to_idx[tgt];
+    // Deduplicate edges, keep max weight for each pair
+    let mut edge_weights: HashMap<(NodeIndex, NodeIndex), f64> = HashMap::new();
+    for rl in &all_links {
+        let si = name_to_idx[&rl.source];
+        let ti = name_to_idx[&rl.target];
         let key = if si < ti { (si, ti) } else { (ti, si) };
-        if edge_set.insert(key) {
-            graph.add_edge(si, ti, ());
-        }
+        let w = link_type_weight(&rl.link_type);
+        let entry = edge_weights.entry(key).or_insert(0.0);
+        if w > *entry { *entry = w; }
+    }
+    for ((si, ti), w) in &edge_weights {
+        graph.add_edge(*si, *ti, *w);
     }
 
     let n = graph.node_count();
@@ -79,6 +106,8 @@ pub fn constellation_lens_centrality(
     if n == 0 {
         return Ok(LensCentralityData {
             centrality: HashMap::new(),
+            diversivity: HashMap::new(),
+            contradictions: Vec::new(),
             node_count: 0,
             edge_count: 0,
         });
@@ -95,18 +124,27 @@ pub fn constellation_lens_centrality(
         brandes_betweenness(&graph)
     };
 
-    // 4. Normalize to 0.0–1.0
+    // 4. Normalize centrality to 0.0–1.0
     let max_score = centrality_scores.values().cloned().fold(0.0_f64, f64::max);
     let mut centrality: HashMap<String, f64> = HashMap::new();
+    let mut diversivity: HashMap<String, f64> = HashMap::new();
 
     for (idx, score) in &centrality_scores {
         let name = &graph[*idx];
         let normalized = if max_score > 0.0 { score / max_score } else { 0.0 };
         centrality.insert(name.clone(), normalized);
+
+        // Diversivity = betweenness centrality / degree (InfraNodus metric)
+        // Identifies "VIP nodes" with disproportionate influence despite few connections
+        let degree = graph.neighbors(*idx).count() as f64;
+        let div = if degree > 0.0 { normalized / degree } else { 0.0 };
+        diversivity.insert(name.clone(), div);
     }
 
     Ok(LensCentralityData {
         centrality,
+        diversivity,
+        contradictions,
         node_count: n as u32,
         edge_count: e as u32,
     })
@@ -116,7 +154,7 @@ pub fn constellation_lens_centrality(
 ///
 /// Reference: Ulrik Brandes (2001), "A Faster Algorithm for Betweenness Centrality"
 /// Complexity: O(V × E) for unweighted graphs.
-fn brandes_betweenness(graph: &UnGraph<String, ()>) -> HashMap<NodeIndex, f64> {
+fn brandes_betweenness(graph: &UnGraph<String, f64>) -> HashMap<NodeIndex, f64> {
     let n = graph.node_count();
     let mut cb: HashMap<NodeIndex, f64> = HashMap::with_capacity(n);
 
@@ -190,7 +228,7 @@ fn brandes_betweenness(graph: &UnGraph<String, ()>) -> HashMap<NodeIndex, f64> {
 /// Approximate betweenness centrality via random sampling.
 /// Instead of running BFS from ALL nodes, sample `k` random source nodes.
 /// Produces proportionally accurate rankings for large graphs.
-fn brandes_betweenness_approx(graph: &UnGraph<String, ()>, k: usize) -> HashMap<NodeIndex, f64> {
+fn brandes_betweenness_approx(graph: &UnGraph<String, f64>, k: usize) -> HashMap<NodeIndex, f64> {
     let n = graph.node_count();
     let mut cb: HashMap<NodeIndex, f64> = HashMap::with_capacity(n);
     for idx in graph.node_indices() { cb.insert(idx, 0.0); }

@@ -52,8 +52,8 @@
 	import TemplateSuggester from '$lib/components/TemplateSuggester.svelte';
 	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
 	import GraphMindView from '$lib/components/GraphMindView.svelte';
-	import LensPanel from '$lib/components/LensPanel.svelte';
-	import { detectClusters, computeStructuralGaps, computeUniverseHealth, type StructuralGap, type UniverseHealth, type ClusterInfo } from '$lib/graph/clusterEngine';
+	import ConstellationLens from '$lib/components/ConstellationLens.svelte';
+	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import LocalStarView from '$lib/components/LocalStarView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
@@ -519,6 +519,8 @@
 	let lensShowTagEdges = $state(false);
 	let lensPeelCount = $state(0);
 	let lensTagEdges = $state<{ source: string; target: string; shared_tags: string[]; weight: number }[]>([]);
+	let lensCommunityProfiles = $state<CommunityProfile[]>([]);
+	let lensContradictions = $state<[string, string][]>([]);
 	let starVersion = $state(0);
 	let maturityMap = $state(new Map<string, string>()); // path → maturity state (CE Phase 3)
 	let stageMap = $state(new Map<string, string>()); // path → stage (CE Phase 6)
@@ -2065,7 +2067,15 @@
 				lensGaps.length,
 			);
 
-			// 5. Build top bridges list (top 10 by centrality)
+			// 5. Stratum-weighted centrality (Feature 2)
+			const weightedCentrality = stratumWeightedCentrality(
+				lensCentrality,
+				starLinks.map(l => ({ source: l.source, target: l.target })),
+				starNodes,
+			);
+			lensCentrality = weightedCentrality; // Replace with stratum-weighted version
+
+			// 6. Build top bridges list (top 10 by weighted centrality)
 			lensBridges = [...lensCentrality.entries()]
 				.sort((a, b) => b[1] - a[1])
 				.slice(0, 10)
@@ -2073,6 +2083,24 @@
 					const node = starNodes.find(n => n.id === id);
 					return { id, name: node?.name ?? id, centrality };
 				});
+
+			// 7. Community profiles (Features 4 & 5: maturity + provenance)
+			lensCommunityProfiles = buildCommunityProfiles(
+				clusterResult.clusters,
+				clusterResult.assignments,
+				starNodes,
+			);
+
+			// 8. Bridge suggestions for gaps (Feature 7)
+			lensGaps = suggestBridges(
+				lensGaps,
+				clusterResult.clusters,
+				starNodes.map(n => ({ id: n.id, name: n.name })),
+				starLinks.map(l => ({ source: l.source, target: l.target })),
+			);
+
+			// 9. Contradictions from Rust (Feature 3)
+			lensContradictions = (result as any).contradictions ?? [];
 
 			lensActive = true;
 		} catch (e) {
@@ -3171,84 +3199,30 @@
 			/>
 		</div>
 
-		<!-- Constellation Lens overlay -->
+		<!-- Constellation Lens — standalone D3+Canvas component -->
 		<div class="lens-overlay" class:lens-visible={lensActive}>
 			{#if lensActive}
-				<div class="lens-header">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
-					<span class="lens-title">{$t('lens.title') || 'Constellation Lens'}</span>
-					{#if lensLoading}
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-					{/if}
-					<button class="lens-close" onclick={() => { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; }}>×</button>
-				</div>
-				<div class="lens-body">
-					<GraphMindView
-						nodes={starNodes}
-						links={starLinks}
-						onNodeClick={handleStarNodeClick}
-						activeNodeId={sidebarTab?.name?.toLowerCase() ?? ''}
-						{libraryColorMap}
-						lensCentrality={lensCentrality}
-						lensCommunityAssignments={lensCommunityAssignments}
-						lensCommunityColors={new Map(lensCommunities.map(c => [c.id, c.color]))}
-						lensGaps={lensGaps.map(g => ({ community1: g.community1, community2: g.community2 }))}
-					/>
-					<!-- Legend box — always visible, lower-left -->
-					<div class="lens-legend-box">
-						<div class="lens-legend-title">{$t('lens.legend') || 'Legend'}</div>
-						<div class="lens-legend-row">
-							<span class="lens-legend-circle lens-legend-lg"></span>
-							<span><strong>Large node</strong> — bridge between areas</span>
-						</div>
-						<div class="lens-legend-row">
-							<span class="lens-legend-circle lens-legend-sm"></span>
-							<span><strong>Small node</strong> — within one area</span>
-						</div>
-						<div class="lens-legend-row">
-							<span class="lens-legend-circle" style="background:#a78bfa"></span>
-							<span class="lens-legend-circle" style="background:#34d399"></span>
-							<span class="lens-legend-circle" style="background:#60a5fa"></span>
-							<span><strong>Color</strong> — topic community</span>
-						</div>
-						<div class="lens-legend-row">
-							<span class="lens-legend-line-solid"></span>
-							<span><strong>Solid line</strong> — wikilink</span>
-						</div>
-						<div class="lens-legend-row">
-							<svg width="20" height="6" viewBox="0 0 20 6"><line x1="0" y1="3" x2="20" y2="3" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/></svg>
-							<span><strong>Red dashed</strong> — blind spot</span>
-						</div>
-						<div class="lens-legend-row">
-							<svg width="22" height="14" viewBox="0 0 22 14"><ellipse cx="11" cy="7" rx="10" ry="6" fill="rgba(124,58,237,0.1)" stroke="#7c3aed" stroke-width="1.5"/></svg>
-							<span><strong>Region</strong> — community boundary</span>
-						</div>
-					</div>
-					<div class="lens-panel-wrap">
-						<LensPanel
-							health={lensHealth}
-							bridges={lensBridges}
-							communities={lensCommunities}
-							gaps={lensGaps}
-							nodeCount={starNodes.length}
-							edgeCount={starLinks.length}
-							showTagEdges={lensShowTagEdges}
-							peelCount={lensPeelCount}
-							onNoteClick={(id, name) => {
-								const node = starNodes.find(n => n.id === id);
-								if (node) handleStarNodeClick(node.path, node.libraryName);
-							}}
-							onTagEdgesToggle={async (show) => {
-								lensShowTagEdges = show;
-								if (show && lensTagEdges.length === 0) {
-									const libPaths = $libraries.map(l => [l.path, l.name] as [string, string]);
-									lensTagEdges = await invoke<typeof lensTagEdges>('constellation_lens_tag_edges', { libraryPaths: libPaths }).catch(() => []);
-								}
-							}}
-							onPeelChange={(count) => { lensPeelCount = count; }}
-						/>
-					</div>
-				</div>
+				<ConstellationLens
+					nodes={starNodes}
+					links={starLinks}
+					centrality={lensCentrality}
+					communityAssignments={lensCommunityAssignments}
+					communityColors={new Map(lensCommunities.map(c => [c.id, c.color]))}
+					gaps={lensGaps}
+					health={lensHealth}
+					bridges={lensBridges}
+					communities={lensCommunities}
+					communityProfiles={lensCommunityProfiles}
+					contradictions={lensContradictions}
+					{libraryColorMap}
+					onNoteClick={(path, name) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						lensActive = false;
+						sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens;
+					}}
+					onClose={() => { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; }}
+				/>
 			{/if}
 		</div>
 
@@ -4536,46 +4510,8 @@
 	.lens-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary); min-height: 0;
-		flex-direction: column;
 	}
 	.lens-overlay.lens-visible { display: flex; }
-	.lens-header {
-		display: flex; align-items: center; gap: 8px;
-		padding: 8px 16px; border-bottom: 1px solid var(--background-modifier-border);
-		background: var(--background-secondary); flex-shrink: 0;
-	}
-	.lens-header svg { color: var(--text-muted); flex-shrink: 0; }
-	.lens-title { font-weight: 600; font-size: 14px; color: var(--text-normal); flex: 1; }
-	.lens-close {
-		width: 26px; height: 26px; border: none; border-radius: 4px;
-		background: none; color: var(--text-muted); cursor: pointer; font-size: 16px;
-		display: flex; align-items: center; justify-content: center;
-	}
-	.lens-close:hover { background: #ef4444; color: white; }
-	.lens-body { flex: 1; display: flex; flex-direction: row; overflow: hidden; position: relative; }
-	.lens-body :global(.graph-container) { flex: 1; }
-	.lens-panel-wrap {
-		flex-shrink: 0; overflow-y: auto; overflow-x: hidden;
-		border-inline-start: 1px solid var(--background-modifier-border);
-	}
-	/* Legend box — always visible, lower-left corner */
-	.lens-legend-box {
-		position: absolute; bottom: 16px; inset-inline-start: 16px; z-index: 10;
-		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
-		border-radius: 8px; padding: 10px 14px; font-size: 10px;
-		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-		display: flex; flex-direction: column; gap: 4px;
-		max-width: 240px;
-	}
-	.lens-legend-title { font-size: 11px; font-weight: 700; color: var(--text-normal); margin-bottom: 2px; }
-	.lens-legend-row { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 10px; }
-	.lens-legend-row strong { color: var(--text-normal); font-weight: 600; }
-	.lens-legend-circle { width: 8px; height: 8px; border-radius: 50%; background: var(--interactive-accent); flex-shrink: 0; display: inline-block; }
-	.lens-legend-lg { width: 14px; height: 14px; }
-	.lens-legend-sm { width: 5px; height: 5px; }
-	.lens-legend-line-solid { width: 18px; height: 0; border-top: 2px solid var(--text-muted); flex-shrink: 0; }
-	.lens-legend-line-dashed { width: 18px; height: 0; border-top: 2px dashed #ef4444; flex-shrink: 0; }
-	.lens-legend-ellipse-icon { width: 18px; height: 10px; border-radius: 50%; border: 1.5px solid var(--interactive-accent); background: color-mix(in srgb, var(--interactive-accent) 10%, transparent); flex-shrink: 0; }
 	@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 	:global(.spin) { animation: spin 1s linear infinite; }
 

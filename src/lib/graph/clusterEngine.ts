@@ -373,3 +373,163 @@ export function computeUniverseHealth(
 		score: Math.max(0, Math.min(100, score)),
 	};
 }
+
+/* ------------------------------------------------------------------ */
+/*  Features 2,4,5,7: Stratum weighting, provenance, maturity, bridges */
+/* ------------------------------------------------------------------ */
+
+export interface CommunityProfile {
+	id: number;
+	name: string;
+	color: string;
+	memberCount: number;
+	/** Maturity breakdown: { seed: 5, sapling: 3, evergreen: 2, ... } */
+	maturityBreakdown: Record<string, number>;
+	/** Provenance breakdown: { received: 4, discovered: 6, mixed: 1, ... } */
+	provenanceBreakdown: Record<string, number>;
+	/** % of notes that are wilting */
+	wiltingPercent: number;
+	/** Average stratum of community members */
+	avgStratum: number;
+}
+
+/**
+ * Build rich profiles for each community — maturity, provenance, stratum.
+ * Uses CE Layer 1 data already on StarNode objects.
+ */
+export function buildCommunityProfiles(
+	clusters: ClusterInfo[],
+	assignments: Map<string, number>,
+	nodes: { id: string; stratum?: number; maturity?: string; originType?: string }[],
+): CommunityProfile[] {
+	const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+	return clusters.map(c => {
+		const maturityBreakdown: Record<string, number> = {};
+		const provenanceBreakdown: Record<string, number> = {};
+		let stratumSum = 0;
+		let stratumCount = 0;
+		let wiltingCount = 0;
+
+		for (const id of c.memberIds) {
+			const node = nodeMap.get(id);
+			if (!node) continue;
+
+			// Maturity
+			const m = node.maturity ?? 'seed';
+			maturityBreakdown[m] = (maturityBreakdown[m] ?? 0) + 1;
+			if (m === 'wilting') wiltingCount++;
+
+			// Provenance
+			const p = node.originType ?? 'none';
+			provenanceBreakdown[p] = (provenanceBreakdown[p] ?? 0) + 1;
+
+			// Stratum
+			const s = node.stratum ?? 1;
+			stratumSum += s;
+			stratumCount++;
+		}
+
+		return {
+			id: c.id,
+			name: c.suggestedName,
+			color: c.color,
+			memberCount: c.memberIds.length,
+			maturityBreakdown,
+			provenanceBreakdown,
+			wiltingPercent: c.memberIds.length > 0 ? (wiltingCount / c.memberIds.length) * 100 : 0,
+			avgStratum: stratumCount > 0 ? stratumSum / stratumCount : 1,
+		};
+	});
+}
+
+/**
+ * Feature 2: Apply stratum weighting to centrality scores.
+ * A bridge between high-stratum notes is more important than between low-stratum.
+ * Multiply centrality by average stratum of the node's neighbors.
+ */
+export function stratumWeightedCentrality(
+	centrality: Map<string, number>,
+	links: { source: string; target: string }[],
+	nodes: { id: string; stratum?: number }[],
+): Map<string, number> {
+	const nodeStratum = new Map(nodes.map(n => [n.id, n.stratum ?? 1]));
+	const neighborStrata = new Map<string, number[]>();
+
+	for (const l of links) {
+		if (!neighborStrata.has(l.source)) neighborStrata.set(l.source, []);
+		if (!neighborStrata.has(l.target)) neighborStrata.set(l.target, []);
+		neighborStrata.get(l.source)!.push(nodeStratum.get(l.target) ?? 1);
+		neighborStrata.get(l.target)!.push(nodeStratum.get(l.source) ?? 1);
+	}
+
+	const weighted = new Map<string, number>();
+	let maxVal = 0;
+
+	for (const [id, c] of centrality) {
+		const ownStratum = nodeStratum.get(id) ?? 1;
+		const neighbors = neighborStrata.get(id) ?? [];
+		const avgNeighborStratum = neighbors.length > 0
+			? neighbors.reduce((s, v) => s + v, 0) / neighbors.length
+			: 1;
+		// Weight: centrality × sqrt(own_stratum × avg_neighbor_stratum)
+		const w = c * Math.sqrt(ownStratum * avgNeighborStratum);
+		weighted.set(id, w);
+		if (w > maxVal) maxVal = w;
+	}
+
+	// Re-normalize to 0-1
+	if (maxVal > 0) {
+		for (const [id, w] of weighted) {
+			weighted.set(id, w / maxVal);
+		}
+	}
+	return weighted;
+}
+
+/**
+ * Feature 7: Suggest bridge notes for each structural gap.
+ * For each gap, find notes that share tags with notes in BOTH communities.
+ */
+export function suggestBridges(
+	gaps: StructuralGap[],
+	clusters: ClusterInfo[],
+	nodes: { id: string; name: string }[],
+	links: { source: string; target: string }[],
+): StructuralGap[] {
+	const clusterMap = new Map(clusters.map(c => [c.id, new Set(c.memberIds)]));
+	// Build neighbor map
+	const neighbors = new Map<string, Set<string>>();
+	for (const l of links) {
+		if (!neighbors.has(l.source)) neighbors.set(l.source, new Set());
+		if (!neighbors.has(l.target)) neighbors.set(l.target, new Set());
+		neighbors.get(l.source)!.add(l.target);
+		neighbors.get(l.target)!.add(l.source);
+	}
+
+	return gaps.map(gap => {
+		const c1Members = clusterMap.get(gap.community1) ?? new Set();
+		const c2Members = clusterMap.get(gap.community2) ?? new Set();
+		const bridges: string[] = [];
+
+		// Find nodes in c1 that have neighbors in c2 (or vice versa)
+		for (const id of c1Members) {
+			const ns = neighbors.get(id);
+			if (ns) {
+				for (const n of ns) {
+					if (c2Members.has(n)) { bridges.push(id); break; }
+				}
+			}
+		}
+		for (const id of c2Members) {
+			const ns = neighbors.get(id);
+			if (ns) {
+				for (const n of ns) {
+					if (c1Members.has(n)) { bridges.push(id); break; }
+				}
+			}
+		}
+
+		return { ...gap, potentialBridges: [...new Set(bridges)].slice(0, 5) };
+	});
+}
