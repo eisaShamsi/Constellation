@@ -52,64 +52,6 @@
 </script>
 
 <div class="lens-panel">
-	<!-- Legend -->
-	<div class="lp-section">
-		<button class="lp-header" onclick={() => showLegend = !showLegend}>
-			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={showLegend}><polyline points="6 9 12 15 18 9"/></svg>
-			<span>{$t('lens.legend') || 'Legend'}</span>
-		</button>
-		{#if showLegend}
-			<div class="lp-legend">
-				<div class="lp-legend-item">
-					<div class="lp-legend-icon"><span class="lp-legend-circle lp-legend-lg"></span></div>
-					<div class="lp-legend-text">
-						<strong>{$t('lens.legendBridgeLarge') || 'Large node'}</strong>
-						<span>{$t('lens.legendBridgeDesc') || 'High centrality — a bridge connecting different knowledge areas'}</span>
-					</div>
-				</div>
-				<div class="lp-legend-item">
-					<div class="lp-legend-icon"><span class="lp-legend-circle lp-legend-sm"></span></div>
-					<div class="lp-legend-text">
-						<strong>{$t('lens.legendSmallNode') || 'Small node'}</strong>
-						<span>{$t('lens.legendSmallDesc') || 'Low centrality — peripheral note within a single area'}</span>
-					</div>
-				</div>
-				<div class="lp-legend-item">
-					<div class="lp-legend-icon">
-						<span class="lp-legend-circle" style="background:#a78bfa"></span>
-						<span class="lp-legend-circle" style="background:#34d399"></span>
-						<span class="lp-legend-circle" style="background:#60a5fa"></span>
-					</div>
-					<div class="lp-legend-text">
-						<strong>{$t('lens.legendCommunityColor') || 'Node color'}</strong>
-						<span>{$t('lens.legendCommunityDesc') || 'Each color = an auto-detected topic cluster (community)'}</span>
-					</div>
-				</div>
-				<div class="lp-legend-item">
-					<div class="lp-legend-icon"><span class="lp-legend-line"></span></div>
-					<div class="lp-legend-text">
-						<strong>{$t('lens.legendEdge') || 'Solid line'}</strong>
-						<span>{$t('lens.legendEdgeDesc') || 'Wikilink connection between two notes'}</span>
-					</div>
-				</div>
-				<div class="lp-legend-item">
-					<div class="lp-legend-icon"><span class="lp-legend-dashed"></span></div>
-					<div class="lp-legend-text">
-						<strong>{$t('lens.legendGapLine') || 'Red dashed line'}</strong>
-						<span>{$t('lens.legendGapDesc') || 'Structural gap — a blind spot between two knowledge areas that could be connected'}</span>
-					</div>
-				</div>
-				<div class="lp-legend-item">
-					<div class="lp-legend-icon"><span class="lp-legend-ellipse"></span></div>
-					<div class="lp-legend-text">
-						<strong>{$t('lens.legendCluster') || 'Colored region'}</strong>
-						<span>{$t('lens.legendClusterDesc') || 'Community boundary — a group of densely connected notes forming a topic cluster'}</span>
-					</div>
-				</div>
-			</div>
-		{/if}
-	</div>
-
 	<!-- Universe Health -->
 	{#if health}
 		<div class="lp-section lp-health">
@@ -299,20 +241,6 @@
 	.lp-gap-names { flex: 1; font-size: 11px; color: var(--text-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lp-gap-badge { font-size: 10px; color: var(--text-muted); background: var(--background-secondary); padding: 1px 5px; border-radius: 4px; }
 	.lp-gap-zero { color: #ef4444; background: color-mix(in srgb, #ef4444 10%, transparent); }
-
-	/* Legend */
-	.lp-legend { display: flex; flex-direction: column; gap: 6px; padding: 4px 0; }
-	.lp-legend-item { display: flex; gap: 8px; align-items: flex-start; }
-	.lp-legend-icon { display: flex; align-items: center; gap: 2px; min-width: 36px; justify-content: center; flex-shrink: 0; padding-top: 2px; }
-	.lp-legend-circle { width: 10px; height: 10px; border-radius: 50%; background: var(--interactive-accent); display: inline-block; }
-	.lp-legend-lg { width: 16px; height: 16px; }
-	.lp-legend-sm { width: 6px; height: 6px; }
-	.lp-legend-line { width: 24px; height: 0; border-top: 2px solid var(--text-muted); display: inline-block; }
-	.lp-legend-dashed { width: 24px; height: 0; border-top: 2px dashed #ef4444; display: inline-block; }
-	.lp-legend-ellipse { width: 24px; height: 14px; border-radius: 50%; border: 1.5px solid var(--interactive-accent); background: color-mix(in srgb, var(--interactive-accent) 10%, transparent); display: inline-block; }
-	.lp-legend-text { display: flex; flex-direction: column; font-size: 11px; }
-	.lp-legend-text strong { font-size: 11px; color: var(--text-normal); font-weight: 600; }
-	.lp-legend-text span { color: var(--text-faint); font-size: 10px; line-height: 1.3; }
 
 	/* Advanced controls */
 	.lp-advanced { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }

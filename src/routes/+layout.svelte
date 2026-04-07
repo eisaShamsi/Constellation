@@ -357,6 +357,8 @@
 	let showOrgChart = $state(false);
 	let sidebarBeforeOC = $state(false); // remember left sidebar state
 	let rightSidebarBeforeOC = $state(false); // remember right sidebar state
+	let sidebarBeforeLens = $state(false);
+	let rightSidebarBeforeLens = $state(false);
 	// Shared selection path — when an item is clicked in any sidebar mode, OrgChart highlights it
 	let skyViewSelectedPath = $state<string | string[] | null>(null);
 
@@ -1628,7 +1630,7 @@
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showStarView) { showStarView = false; return; }
-			if (lensActive) { lensActive = false; return; }
+			if (lensActive) { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; return; }
 			if (showOrgChart) { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
@@ -2596,7 +2598,16 @@
 			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 			</button>
-			<button class="dock-btn" class:active={lensActive} onclick={() => { if (!lensActive) { toggleLens(); showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; } else { lensActive = false; } }} title={$t('lens.title') || 'Constellation Lens'}>
+			<button class="dock-btn" class:active={lensActive} onclick={() => {
+				if (!lensActive) {
+					toggleLens(); showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false;
+					sidebarBeforeLens = sidebarOpen; rightSidebarBeforeLens = rightSidebarOpen;
+					sidebarOpen = false; rightSidebarOpen = false;
+				} else {
+					lensActive = false;
+					sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens;
+				}
+			}} title={$t('lens.title') || 'Constellation Lens'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
 			</button>
 		</div>
@@ -3169,7 +3180,7 @@
 					{#if lensLoading}
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
 					{/if}
-					<button class="lens-close" onclick={() => { lensActive = false; }}>×</button>
+					<button class="lens-close" onclick={() => { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; }}>×</button>
 				</div>
 				<div class="lens-body">
 					<GraphMindView
@@ -3183,6 +3194,36 @@
 						lensCommunityColors={new Map(lensCommunities.map(c => [c.id, c.color]))}
 						lensGaps={lensGaps.map(g => ({ community1: g.community1, community2: g.community2 }))}
 					/>
+					<!-- Legend box — always visible, lower-left -->
+					<div class="lens-legend-box">
+						<div class="lens-legend-title">{$t('lens.legend') || 'Legend'}</div>
+						<div class="lens-legend-row">
+							<span class="lens-legend-circle lens-legend-lg"></span>
+							<span><strong>Large node</strong> — bridge between areas</span>
+						</div>
+						<div class="lens-legend-row">
+							<span class="lens-legend-circle lens-legend-sm"></span>
+							<span><strong>Small node</strong> — within one area</span>
+						</div>
+						<div class="lens-legend-row">
+							<span class="lens-legend-circle" style="background:#a78bfa"></span>
+							<span class="lens-legend-circle" style="background:#34d399"></span>
+							<span class="lens-legend-circle" style="background:#60a5fa"></span>
+							<span><strong>Color</strong> — topic community</span>
+						</div>
+						<div class="lens-legend-row">
+							<span class="lens-legend-line-solid"></span>
+							<span><strong>Solid line</strong> — wikilink</span>
+						</div>
+						<div class="lens-legend-row">
+							<svg width="20" height="6" viewBox="0 0 20 6"><line x1="0" y1="3" x2="20" y2="3" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/></svg>
+							<span><strong>Red dashed</strong> — blind spot</span>
+						</div>
+						<div class="lens-legend-row">
+							<svg width="22" height="14" viewBox="0 0 22 14"><ellipse cx="11" cy="7" rx="10" ry="6" fill="rgba(124,58,237,0.1)" stroke="#7c3aed" stroke-width="1.5"/></svg>
+							<span><strong>Region</strong> — community boundary</span>
+						</div>
+					</div>
 					<div class="lens-panel-wrap">
 						<LensPanel
 							health={lensHealth}
@@ -4511,12 +4552,30 @@
 		display: flex; align-items: center; justify-content: center;
 	}
 	.lens-close:hover { background: #ef4444; color: white; }
-	.lens-body { flex: 1; display: flex; flex-direction: row; overflow: hidden; }
+	.lens-body { flex: 1; display: flex; flex-direction: row; overflow: hidden; position: relative; }
 	.lens-body :global(.graph-container) { flex: 1; }
 	.lens-panel-wrap {
 		flex-shrink: 0; overflow-y: auto; overflow-x: hidden;
 		border-inline-start: 1px solid var(--background-modifier-border);
 	}
+	/* Legend box — always visible, lower-left corner */
+	.lens-legend-box {
+		position: absolute; bottom: 16px; inset-inline-start: 16px; z-index: 10;
+		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; padding: 10px 14px; font-size: 10px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		display: flex; flex-direction: column; gap: 4px;
+		max-width: 240px;
+	}
+	.lens-legend-title { font-size: 11px; font-weight: 700; color: var(--text-normal); margin-bottom: 2px; }
+	.lens-legend-row { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 10px; }
+	.lens-legend-row strong { color: var(--text-normal); font-weight: 600; }
+	.lens-legend-circle { width: 8px; height: 8px; border-radius: 50%; background: var(--interactive-accent); flex-shrink: 0; display: inline-block; }
+	.lens-legend-lg { width: 14px; height: 14px; }
+	.lens-legend-sm { width: 5px; height: 5px; }
+	.lens-legend-line-solid { width: 18px; height: 0; border-top: 2px solid var(--text-muted); flex-shrink: 0; }
+	.lens-legend-line-dashed { width: 18px; height: 0; border-top: 2px dashed #ef4444; flex-shrink: 0; }
+	.lens-legend-ellipse-icon { width: 18px; height: 10px; border-radius: 50%; border: 1.5px solid var(--interactive-accent); background: color-mix(in srgb, var(--interactive-accent) 10%, transparent); flex-shrink: 0; }
 	@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 	:global(.spin) { animation: spin 1s linear infinite; }
 

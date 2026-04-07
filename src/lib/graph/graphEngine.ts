@@ -1598,9 +1598,12 @@ export class GraphEngine {
 				}
 				const rx = maxDx + 30, ry = maxDy + 30;
 				const color = this.clusterColors.get(cid) ?? 0x7c3aed;
+				const fillAlpha = this.lensActive ? 0.12 : 0.06;
+				const strokeAlpha = this.lensActive ? 0.35 : 0.15;
+				const strokeWidth = this.lensActive ? 2 : 1;
 				this.linkGfx.ellipse(cx, cy, rx, ry);
-				this.linkGfx.fill({ color, alpha: 0.06 });
-				this.linkGfx.stroke({ width: 1, color, alpha: 0.15 });
+				this.linkGfx.fill({ color, alpha: fillAlpha });
+				this.linkGfx.stroke({ width: strokeWidth, color, alpha: strokeAlpha });
 			}
 		}
 
