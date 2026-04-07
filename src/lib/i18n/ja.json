@@ -1217,7 +1217,9 @@
         "colorDepth": "色: 深さ",
         "universe": "ユニバース",
         "libraries": "ライブラリ",
-        "notes": "ノート"
+        "notes": "ノート",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "ユニバースノート",

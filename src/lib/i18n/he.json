@@ -1217,7 +1217,9 @@
         "colorDepth": "צבע: עומק",
         "universe": "יקום",
         "libraries": "ספריות",
-        "notes": "פתקים"
+        "notes": "פתקים",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "הערות היקום",

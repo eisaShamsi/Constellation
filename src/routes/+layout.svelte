@@ -92,7 +92,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, emitOrgChartCompanion, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -424,18 +424,6 @@
 		}
 	});
 
-	// Sync OrgChart to SS: emit when OrgChart opens/closes while SS is active
-	let prevShowOrgChart = false;
-	$effect(() => {
-		const ocOpen = showOrgChart;
-		const ssOpen = secondScreenOpen;
-		if (ssOpen && ocOpen && orgChartTreeCache) {
-			emitOrgChartCompanion({ active: true, tree: orgChartTreeCache, focusPath: null, searchMatchPaths: [], searchQuery: '' });
-		} else if (ssOpen && prevShowOrgChart && !ocOpen) {
-			emitOrgChartCompanion({ active: false });
-		}
-		prevShowOrgChart = ocOpen;
-	});
 
 	// Sync split view state to second screen — send ALL open tabs for comparison
 	$effect(() => {
@@ -468,7 +456,6 @@
 	let orgChartReturnPending = $state(false); // show "Return to OrgChart" button on note tab
 	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 	let mapFocusNode = $state<any>(null); // current MapNode being viewed
-	let orgChartTreeCache = $state<any>(null); // cached tree for SS emit
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -3089,22 +3076,8 @@
 					showOrgChart = false;
 					sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC;
 					orgChartReturnPending = true;
-					if (secondScreenOpen) emitOrgChartCompanion({ active: false });
 				}}
-				onClose={() => {
-					showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; orgChartReturnPending = false;
-					if (secondScreenOpen) emitOrgChartCompanion({ active: false });
-				}}
-				onTreeLoaded={(tree) => {
-					orgChartTreeCache = tree;
-					if (secondScreenOpen) emitOrgChartCompanion({ active: true, tree, focusPath: null, searchMatchPaths: [], searchQuery: '' });
-				}}
-				onNodeFocus={(path) => {
-					if (secondScreenOpen) emitOrgChartCompanion({ active: true, focusPath: path, searchMatchPaths: [], searchQuery: '' });
-				}}
-				onSearchUpdate={(matchPaths, query) => {
-					if (secondScreenOpen) emitOrgChartCompanion({ active: true, focusPath: null, searchMatchPaths: matchPaths, searchQuery: query });
-				}}
+				onClose={() => { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; orgChartReturnPending = false; }}
 			/>
 		</div>
 

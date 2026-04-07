@@ -1217,7 +1217,9 @@
         "colorDepth": "रंग: गहराई",
         "universe": "ब्रह्मांड",
         "libraries": "पुस्तकालय",
-        "notes": "नोट्स"
+        "notes": "नोट्स",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "ब्रह्मांड नोट्स",

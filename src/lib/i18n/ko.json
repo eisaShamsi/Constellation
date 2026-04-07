@@ -1217,7 +1217,9 @@
         "colorDepth": "색상: 깊이",
         "universe": "유니버스",
         "libraries": "라이브러리",
-        "notes": "노트"
+        "notes": "노트",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "유니버스 노트",

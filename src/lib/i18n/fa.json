@@ -1217,7 +1217,9 @@
         "colorDepth": "رنگ: عمق",
         "universe": "جهان",
         "libraries": "کتابخانه‌ها",
-        "notes": "یادداشت‌ها"
+        "notes": "یادداشت‌ها",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "یادداشت‌های جهان",

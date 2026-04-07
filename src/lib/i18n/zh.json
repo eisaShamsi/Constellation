@@ -1217,7 +1217,9 @@
         "colorDepth": "颜色：深度",
         "universe": "宇宙",
         "libraries": "库",
-        "notes": "笔记"
+        "notes": "笔记",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "宇宙笔记",

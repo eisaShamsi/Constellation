@@ -1217,7 +1217,9 @@
         "colorDepth": "Renk: Derinlik",
         "universe": "Evren",
         "libraries": "kütüphaneler",
-        "notes": "notlar"
+        "notes": "notlar",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "Evren Notları",

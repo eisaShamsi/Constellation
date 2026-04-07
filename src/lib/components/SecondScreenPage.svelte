@@ -38,13 +38,13 @@
 		onSidebarModeChanged, onSplitModeChanged,
 		onDashboardOpenNote, onDashboardTagSelected,
 		onIndexTermSelected, onIndexCompare,
-		onMapCompanion, onEditorPanels, onOrgChartCompanion,
+		onMapCompanion, onEditorPanels,
 		listMonitors,
 		sendNoteToMain, notifyScreenClosed, sendScreenState, emitScreenReady,
 		type ScreenNote, type ScreenMode, type ScreenState, type ContextMode, type SkyViewNodeInfo, type SidebarMode,
 		type SplitCompanionData, type DashboardTagData,
 		type IndexTermData, type IndexCompareData,
-		type MapCompanionData, type EditorPanelsData, type OrgChartCompanionData, type MonitorInfo
+		type MapCompanionData, type EditorPanelsData, type MonitorInfo
 	} from '$lib/secondScreen';
 	import {
 		setActiveUniverse, listUniverses, getChildUniverses,
@@ -89,12 +89,6 @@
 	let mapCompanionNoteTab = $state<any>(null); // for note click
 	let mapCompanionColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 
-	// OrgChart companion
-	let orgChartActive = $state(false);
-	let orgChartTree = $state<any>(null);
-	let orgChartFocusPath = $state<string | null>(null);
-	let orgChartSearchPaths = $state<Set<string>>(new Set());
-	let orgChartSearchQuery = $state('');
 
 	// Editor panels companion mode (migrated right sidebar)
 	let editorPanelsActive = $state(false);
@@ -392,34 +386,6 @@
 
 	// ─── Load editor panels data for a note ───
 	/** Check if any descendant of a node is in the search match set. */
-	function hasDescendantMatch(node: any): boolean {
-		if (orgChartSearchPaths.has(node.path)) return true;
-		if (node.children) return node.children.some((c: any) => hasDescendantMatch(c));
-		return false;
-	}
-
-	/** Find a subtree node by path. */
-	function findNode(node: any, path: string): any {
-		if (node.path === path) return node;
-		if (node.children) {
-			for (const c of node.children) {
-				const found = findNode(c, path);
-				if (found) return found;
-			}
-		}
-		return null;
-	}
-
-	/** Get the display root for the OrgChart companion — focused subtree or full tree. */
-	function getOrgChartDisplayRoot(): any {
-		if (!orgChartTree) return null;
-		if (orgChartFocusPath) {
-			const found = findNode(orgChartTree, orgChartFocusPath);
-			if (found) return found;
-		}
-		return orgChartTree;
-	}
-
 	async function loadEditorPanelsData(data: EditorPanelsData) {
 		if (!data.notePath || !data.libraryPath) {
 			epBacklinks = []; epForwardLinks = []; epTags = []; epProperties = [];
@@ -929,30 +895,6 @@
 		});
 		unlisteners.push(u18);
 
-		// OrgChart companion
-		const u19 = await onOrgChartCompanion((data) => {
-			if (!data.active) {
-				orgChartActive = false;
-				orgChartTree = null;
-				orgChartFocusPath = null;
-				orgChartSearchPaths = new Set();
-				orgChartSearchQuery = '';
-				return;
-			}
-			orgChartActive = true;
-			if (data.tree) orgChartTree = data.tree;
-			orgChartFocusPath = data.focusPath ?? null;
-			orgChartSearchPaths = new Set(data.searchMatchPaths ?? []);
-			orgChartSearchQuery = data.searchQuery ?? '';
-			// Reset other modes
-			dashboardMode = 'none';
-			indexMode = 'none';
-			mapCompanionActive = false;
-			editorPanelsActive = false;
-			splitCompanionActive = false;
-		});
-		unlisteners.push(u19);
-
 		// Detect monitors
 		try { monitorCount = (await listMonitors()).length; } catch { monitorCount = 1; }
 
@@ -1183,8 +1125,6 @@
 					</div>
 				</div>
 			</div>
-
-		<!-- OrgChart companion removed — Sky View context mode handles it -->
 
 		{:else if mapCompanionActive && mapCompanionData}
 			<!-- Constellation Map companion -->
@@ -2326,8 +2266,6 @@
 		display: flex; align-items: center; gap: 4px;
 	}
 	.sc-count { font-weight: 400; opacity: 0.6; font-size: 10px; }
-	/* OrgChart companion — Sky View filling the SS */
-	.oc-companion { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
 	.monitor-badge {
 		font-size: 12px; color: var(--text-muted); margin-inline-start: auto;

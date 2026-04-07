@@ -15,9 +15,6 @@
 		selectedPath = $bindable(null as string | string[] | null),
 		onNoteClick,
 		onClose,
-		onTreeLoaded,
-		onNodeFocus,
-		onSearchUpdate,
 	}: {
 		libraryColorMap?: Record<string, string>;
 		universeName?: string;
@@ -26,9 +23,6 @@
 		selectedPath?: string | string[] | null;
 		onNoteClick?: (path: string, name: string, highlightTerm?: string, e?: MouseEvent) => void;
 		onClose?: () => void;
-		onTreeLoaded?: (tree: any) => void;
-		onNodeFocus?: (path: string | null) => void;
-		onSearchUpdate?: (matchPaths: string[], query: string) => void;
 	} = $props();
 
 	// ─── State ─────────────────────────────────────────────
@@ -447,7 +441,6 @@
 			console.error('[OrgChart] loadFullscreenData failed:', e);
 		}
 		loading = false;
-		if (mapRoot) onTreeLoaded?.(mapRoot);
 	}
 
 	function toggleFsExpand(path: string) {
@@ -456,7 +449,6 @@
 		fsExpandedPaths = s;
 		userHasPanned = false;
 		userHasZoomed = false;
-		onNodeFocus?.(s.has(path) ? path : null);
 		// After DOM updates, re-fit width to accommodate new content, then center on node
 		requestAnimationFrame(() => requestAnimationFrame(() => {
 			if (innerEl) fitToWidth(innerEl);
@@ -475,7 +467,6 @@
 		searchVisiblePaths = new Set();
 		searchMatchIdx = 0;
 		searchExecuted = false;
-		searchGroups = [];
 		// Clear filters
 		fsMaturityFilter = new Set();
 		// Collapse to root only
@@ -524,38 +515,6 @@
 	/** O(1) highlight check. */
 	function isDirectMatch(node: MapNode): boolean {
 		return searchMatchPaths.has(node.path);
-	}
-
-	/** Single tree walk: collect matches + their ancestor paths. Pure function, no state mutation. */
-	function searchTree(root: MapNode, q: string): { matches: MapNode[]; matchPaths: Set<string>; visiblePaths: Set<string>; expandPaths: Set<string> } {
-		const matches: MapNode[] = [];
-		const matchPaths = new Set<string>();
-		const visiblePaths = new Set<string>();
-		const expandPaths = new Set<string>();
-
-		function walk(node: MapNode, ancestors: string[]): boolean {
-			const isMatch = node.name.toLowerCase().includes(q);
-			let hasDescendantMatch = false;
-
-			if (node.children) {
-				for (const c of node.children) {
-					if (walk(c, [...ancestors, node.path])) hasDescendantMatch = true;
-				}
-			}
-
-			if (isMatch) {
-				matches.push(node);
-				matchPaths.add(node.path);
-				visiblePaths.add(node.path);
-				for (const a of ancestors) { visiblePaths.add(a); expandPaths.add(a); }
-			} else if (hasDescendantMatch) {
-				visiblePaths.add(node.path);
-			}
-
-			return isMatch || hasDescendantMatch;
-		}
-		walk(root, []);
-		return { matches, matchPaths, visiblePaths, expandPaths };
 	}
 
 	/** Execute search on Enter: Rust full-text search + tree walk to find matches. */
@@ -621,8 +580,6 @@
 		fsExpandedPaths = merged;
 
 		// Notify SS of search update
-		onSearchUpdate?.([...matchPaths], fsSearchQuery);
-
 		// Re-fit chart
 		userHasPanned = false;
 		userHasZoomed = false;
@@ -641,75 +598,11 @@
 	function nextMatch() { goToMatch((searchMatchIdx + 1) % searchMatches.length); }
 	function prevMatch() { goToMatch((searchMatchIdx - 1 + searchMatches.length) % searchMatches.length); }
 
-	/** Group search matches by their ancestor path (library → folder chain). */
-	interface SearchGroup {
-		name: string;
-		path: string;
-		color: string;
-		nodeType: string;
-		notes: MapNode[];
-		subgroups: SearchGroup[];
-	}
-
-	let searchGroups = $state<SearchGroup[]>([]);
-
-	function buildSearchGroups(): SearchGroup[] {
-		if (!mapRoot || searchMatches.length === 0) return [];
-		// Build a map: path → ancestor chain
-		const ancestorMap = new Map<string, MapNode[]>(); // note path → [root, lib, folder, ...]
-		function walk(node: MapNode, ancestors: MapNode[]) {
-			if (searchMatchPaths.has(node.path) && node.node_type === 'note') {
-				ancestorMap.set(node.path, [...ancestors]);
-			}
-			if (node.children) {
-				for (const c of node.children) walk(c, [...ancestors, node]);
-			}
-		}
-		walk(mapRoot, []);
-
-		// Group by library (depth 1 ancestor, skipping root)
-		const libMap = new Map<string, { lib: MapNode; notes: Map<string, { folder: MapNode; notes: MapNode[] }> }>();
-		for (const match of searchMatches) {
-			if (match.node_type !== 'note') continue;
-			const ancestors = ancestorMap.get(match.path) || [];
-			// Find library ancestor (first non-root)
-			const lib = ancestors.find(a => a.node_type === 'library' || a.node_type === 'child_universe');
-			if (!lib) continue;
-			if (!libMap.has(lib.path)) libMap.set(lib.path, { lib, notes: new Map() });
-			// Find the deepest folder ancestor
-			const folders = ancestors.filter(a => a.node_type === 'folder');
-			const folder = folders.length > 0 ? folders[folders.length - 1] : lib;
-			const entry = libMap.get(lib.path)!;
-			if (!entry.notes.has(folder.path)) entry.notes.set(folder.path, { folder, notes: [] });
-			entry.notes.get(folder.path)!.notes.push(match);
-		}
-
-		// Convert to SearchGroup[]
-		const groups: SearchGroup[] = [];
-		for (const [, { lib, notes }] of libMap) {
-			const subgroups: SearchGroup[] = [];
-			for (const [, { folder, notes: folderNotes }] of notes) {
-				if (folder.path === lib.path) {
-					// Notes directly under library
-					subgroups.push({ name: '(root)', path: lib.path + '/__root__', color: libraryColorMap[lib.name] || '#7c3aed', nodeType: 'folder', notes: folderNotes, subgroups: [] });
-				} else {
-					subgroups.push({ name: folder.name, path: folder.path, color: libraryColorMap[lib.name] || '#7c3aed', nodeType: 'folder', notes: folderNotes, subgroups: [] });
-				}
-			}
-			groups.push({
-				name: lib.name, path: lib.path,
-				color: libraryColorMap[lib.name] || (lib.node_type === 'child_universe' ? '#6366f1' : '#7c3aed'),
-				nodeType: lib.node_type, notes: [], subgroups,
-			});
-		}
-		return groups;
-	}
-
 	function clearSearch() {
 		fsSearchQuery = '';
 		searchMatches = []; searchMatchPaths = new Set();
 		searchVisiblePaths = new Set(); searchMatchIdx = 0;
-		searchExecuted = false; searchGroups = [];
+		searchExecuted = false;
 	}
 
 	function fsMatchesFilter(node: MapNode): boolean {

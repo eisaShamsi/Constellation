@@ -1217,7 +1217,9 @@
         "colorDepth": "رنگ: گہرائی",
         "universe": "کائنات",
         "libraries": "لائبریریاں",
-        "notes": "نوٹس"
+        "notes": "نوٹس",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "کائنات نوٹس",

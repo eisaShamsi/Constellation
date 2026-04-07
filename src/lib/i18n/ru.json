@@ -1217,7 +1217,9 @@
         "colorDepth": "Цвет: Глубина",
         "universe": "Вселенная",
         "libraries": "библиотеки",
-        "notes": "заметки"
+        "notes": "заметки",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "Заметки Вселенной",

@@ -1217,7 +1217,9 @@
         "colorDepth": "Couleur : Profondeur",
         "universe": "Univers",
         "libraries": "bibliothèques",
-        "notes": "notes"
+        "notes": "notes",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "Notes de l'Univers",

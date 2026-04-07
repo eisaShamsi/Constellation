@@ -1217,7 +1217,9 @@
         "colorDepth": "اللون: العمق",
         "universe": "الكون",
         "libraries": "مكتبات",
-        "notes": "ملاحظات"
+        "notes": "ملاحظات",
+        "returnToOrgChart": "Return to OrgChart",
+        "reset": "Reset view"
     },
     "universeNotes": {
         "title": "ملاحظات الكون",
