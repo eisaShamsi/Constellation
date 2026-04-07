@@ -15,14 +15,15 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 5. [Sky View (GraphMind)](#star-view-graphmind)
 6. [Split View](#split-view)
 7. [Index](#index)
-8. [Second Screen](#second-screen)
-9. [Properties and Frontmatter](#properties-and-frontmatter)
-10. [Templates](#templates)
-11. [Tables](#tables)
-12. [Tasks](#tasks)
-13. [Importer](#importer)
-14. [Calendar](#calendar)
-15. [Lens](#lens)
+8. [Constellation Lens](#constellation-lens)
+9. [Second Screen](#second-screen)
+10. [Properties and Frontmatter](#properties-and-frontmatter)
+11. [Templates](#templates)
+12. [Tables](#tables)
+13. [Tasks](#tasks)
+14. [Importer](#importer)
+15. [Calendar](#calendar)
+16. [Lens (DQL Queries)](#lens)
 16. [Settings](#settings)
 17. [Keyboard Shortcuts](#keyboard-shortcuts)
 18. [RTL and Arabic Support](#rtl-and-arabic-support)
@@ -486,7 +487,57 @@ When the Second Screen is open:
 
 ---
 
-## 8. Second Screen
+## 8. Constellation Lens
+
+The Constellation Lens is a network analysis engine that reveals the hidden structure of your knowledge. It answers: **"What patterns and gaps exist in my thinking?"**
+
+### Opening the Lens
+
+Click the **Lens button** in the left dock bar (magnifier with plus sign). The Lens view appears: a graph on the left, an analytics panel on the right. Press Escape or click × to close.
+
+### What the Graph Shows
+
+| Element | Meaning |
+|---------|---------|
+| **Large node** | Bridge note — connects different knowledge areas |
+| **Small node** | Peripheral note — lives within one topic |
+| **Node color** | Auto-detected topic cluster (community) |
+| **Solid line** | Wikilink between two notes |
+| **Red dashed line** | Structural gap — blind spot between disconnected areas |
+| **Colored region** | Community boundary |
+
+### Universe Health (0-100)
+
+A composite score measuring the diversity and balance of your knowledge:
+
+- **Modularity**: How distinct your topic clusters are (0.3-0.6 is healthy)
+- **Dominance**: % of notes in the largest community (below 35% is healthy)
+- **Entropy**: How evenly knowledge is distributed (higher = more diverse)
+- **Links/Note**: Average connections per note (above 1.0 is healthy)
+
+### Top Bridges
+
+The 10 most structurally important notes — not the most linked, but the most critical connectors between areas. Click to open.
+
+### Communities
+
+Auto-detected topic clusters from your link patterns. Each gets a color, auto-generated name, and member count. These emerge from actual connections, not folder structure.
+
+### Blind Spots
+
+Community pairs with few or no connections. Each is an opportunity: two knowledge areas that could meaningfully connect but don't yet.
+
+### Advanced: Layer Peeling
+
+Temporarily hide the top-N most central notes (MOCs, index pages) to reveal the underlying conceptual structure beneath the dominant layer.
+
+### Advanced: Tag Edges
+
+Toggle on to reveal implicit connections between notes sharing tags but no wikilinks.
+
+---
+
+## 9. Second Screen
 
 The Second Screen is a mode-based companion window that adapts to your current sidebar mode.
 
@@ -548,7 +599,7 @@ All visual settings instantly propagate to the second screen — no restart need
 
 ---
 
-## 9. Properties and Frontmatter
+## 10. Properties and Frontmatter
 
 Notes can have YAML frontmatter at the top:
 
@@ -575,7 +626,7 @@ Toggle property display in **Settings > Editor > Properties in document** (Visib
 
 ---
 
-## 10. Templates
+## 11. Templates
 
 Create reusable note templates:
 
