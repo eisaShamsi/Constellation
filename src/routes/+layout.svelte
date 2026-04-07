@@ -1627,7 +1627,8 @@
 		if (e.key === 'Escape') {
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
-			if (showStarView) { showStarView = false; if (lensActive) toggleLens(); return; }
+			if (showStarView) { showStarView = false; return; }
+			if (lensActive) { lensActive = false; return; }
 			if (showOrgChart) { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
@@ -2595,6 +2596,9 @@
 			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 			</button>
+			<button class="dock-btn" class:active={lensActive} onclick={() => { if (!lensActive) { toggleLens(); showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; } else { lensActive = false; } }} title={$t('lens.title') || 'Constellation Lens'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+			</button>
 		</div>
 		<div class="dock-bottom">
 			{#if hasMultipleDisplays}
@@ -2957,7 +2961,7 @@
 		</div>
 
 		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
-		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart}>
+		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || lensActive}>
 			{#if indexReturnPending}
 				<button class="index-return-btn" onclick={() => { showIndex = true; indexReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -3156,8 +3160,59 @@
 			/>
 		</div>
 
+		<!-- Constellation Lens overlay -->
+		<div class="lens-overlay" class:lens-visible={lensActive}>
+			{#if lensActive}
+				<div class="lens-header">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+					<span class="lens-title">{$t('lens.title') || 'Constellation Lens'}</span>
+					{#if lensLoading}
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+					{/if}
+					<button class="lens-close" onclick={() => { lensActive = false; }}>×</button>
+				</div>
+				<div class="lens-body">
+					<GraphMindView
+						nodes={starNodes}
+						links={starLinks}
+						onNodeClick={handleStarNodeClick}
+						activeNodeId={sidebarTab?.name?.toLowerCase() ?? ''}
+						{libraryColorMap}
+						lensCentrality={lensCentrality}
+						lensCommunityAssignments={lensCommunityAssignments}
+						lensCommunityColors={new Map(lensCommunities.map(c => [c.id, c.color]))}
+						lensGaps={lensGaps.map(g => ({ community1: g.community1, community2: g.community2 }))}
+					/>
+					<div class="lens-panel-wrap">
+						<LensPanel
+							health={lensHealth}
+							bridges={lensBridges}
+							communities={lensCommunities}
+							gaps={lensGaps}
+							nodeCount={starNodes.length}
+							edgeCount={starLinks.length}
+							showTagEdges={lensShowTagEdges}
+							peelCount={lensPeelCount}
+							onNoteClick={(id, name) => {
+								const node = starNodes.find(n => n.id === id);
+								if (node) handleStarNodeClick(node.path, node.libraryName);
+							}}
+							onTagEdgesToggle={async (show) => {
+								lensShowTagEdges = show;
+								if (show && lensTagEdges.length === 0) {
+									const libPaths = $libraries.map(l => [l.path, l.name] as [string, string]);
+									lensTagEdges = await invoke<typeof lensTagEdges>('constellation_lens_tag_edges', { libraryPaths: libPaths }).catch(() => []);
+								}
+							}}
+							onPeelChange={(count) => { lensPeelCount = count; }}
+						/>
+					</div>
+				</div>
+			{/if}
+		</div>
+
 		<!-- Content -->
-		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || lensActive} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
 			{#if showStarView}
 				<div class="star-fullscreen">
 					<div class="star-header">
@@ -3168,14 +3223,7 @@
 								<rect x="7" y="5" width="5" height="3.5" rx="0.75" fill="currentColor"/>
 							</svg>
 						</button>
-						<button class="star-wiw-toggle" class:active={lensActive} onclick={toggleLens} title={$t('lens.title') || 'Constellation Lens'}>
-							{#if lensLoading}
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-							{:else}
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
-							{/if}
-						</button>
-						<button class="star-close" onclick={() => { showStarView = false; if (lensActive) toggleLens(); }}>×</button>
+						<button class="star-close" onclick={() => showStarView = false}>×</button>
 					</div>
 					<GraphMindView
 					nodes={starNodes}
@@ -3214,44 +3262,7 @@
 					})()}
 					skyViewSettings={$appSettings.skyView}
 					{libraryColorMap}
-					lensCentrality={lensActive ? lensCentrality : null}
-					lensCommunityAssignments={lensActive ? lensCommunityAssignments : null}
-					lensCommunityColors={lensActive ? new Map(lensCommunities.map(c => [c.id, c.color])) : null}
-				lensGaps={lensActive ? lensGaps.map(g => ({ community1: g.community1, community2: g.community2 })) : []}
 				/>
-				<!-- Lens Panel -->
-				{#if lensActive}
-					<div class="lens-panel-overlay">
-						<LensPanel
-							health={lensHealth}
-							bridges={lensBridges}
-							communities={lensCommunities}
-							gaps={lensGaps}
-							nodeCount={starNodes.length}
-							edgeCount={starLinks.length}
-							showTagEdges={lensShowTagEdges}
-							peelCount={lensPeelCount}
-							onNoteClick={(id, name) => {
-								const node = starNodes.find(n => n.id === id);
-								if (node) handleStarNodeClick(node.path, node.libraryName);
-							}}
-							onTagEdgesToggle={async (show) => {
-								lensShowTagEdges = show;
-								if (show && lensTagEdges.length === 0) {
-									// Load tag edges from Rust
-									const libPaths = $libraries.map(l => [l.path, l.name] as [string, string]);
-									const edges = await invoke<typeof lensTagEdges>('constellation_lens_tag_edges', { libraryPaths: libPaths }).catch(() => []);
-									lensTagEdges = edges;
-								}
-							}}
-							onPeelChange={(count) => {
-								lensPeelCount = count;
-								// Layer peeling: hide top-N centrality nodes from the graph
-								// The GraphEngine handles this via hidden nodes
-							}}
-						/>
-					</div>
-				{/if}
 				<!-- WiW Overlay -->
 				{#if showWiW && wiwFilteredNodes.length > 0}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -4481,9 +4492,30 @@
 		font-size: 1.2rem;
 	}
 	.star-close:hover { background: var(--border); color: var(--text); }
-	.lens-panel-overlay {
-		position: absolute; inset-inline-end: 0; top: 40px; bottom: 0;
-		z-index: 10; overflow: hidden;
+	.lens-overlay {
+		display: none; flex: 1; overflow: hidden;
+		background: var(--background-primary); min-height: 0;
+		flex-direction: column;
+	}
+	.lens-overlay.lens-visible { display: flex; }
+	.lens-header {
+		display: flex; align-items: center; gap: 8px;
+		padding: 8px 16px; border-bottom: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary); flex-shrink: 0;
+	}
+	.lens-header svg { color: var(--text-muted); flex-shrink: 0; }
+	.lens-title { font-weight: 600; font-size: 14px; color: var(--text-normal); flex: 1; }
+	.lens-close {
+		width: 26px; height: 26px; border: none; border-radius: 4px;
+		background: none; color: var(--text-muted); cursor: pointer; font-size: 16px;
+		display: flex; align-items: center; justify-content: center;
+	}
+	.lens-close:hover { background: #ef4444; color: white; }
+	.lens-body { flex: 1; display: flex; flex-direction: row; overflow: hidden; }
+	.lens-body :global(.graph-container) { flex: 1; }
+	.lens-panel-wrap {
+		flex-shrink: 0; overflow-y: auto; overflow-x: hidden;
+		border-inline-start: 1px solid var(--background-modifier-border);
 	}
 	@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 	:global(.spin) { animation: spin 1s linear infinite; }

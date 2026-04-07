@@ -1358,6 +1358,19 @@
         "links": "links",
         "advanced": "Advanced",
         "layerPeeling": "Layer Peeling",
-        "tagEdges": "Tag Edges"
+        "tagEdges": "Tag Edges",
+        "legend": "Legend",
+        "legendBridgeLarge": "Large node",
+        "legendBridgeDesc": "High centrality — bridges different knowledge areas",
+        "legendSmallNode": "Small node",
+        "legendSmallDesc": "Low centrality — within a single area",
+        "legendCommunityColor": "Node color",
+        "legendCommunityDesc": "Each color = an auto-detected topic cluster",
+        "legendEdge": "Solid line",
+        "legendEdgeDesc": "Wikilink between two notes",
+        "legendGapLine": "Red dashed line",
+        "legendGapDesc": "Structural gap — blind spot between disconnected areas",
+        "legendCluster": "Colored region",
+        "legendClusterDesc": "Community boundary — densely connected topic cluster"
     }
 }
