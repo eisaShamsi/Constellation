@@ -49,6 +49,9 @@
 		highlightColor = 0x7c3aed,
 		skyViewSettings,
 		libraryColorMap = {} as Record<string, string>,
+		lensCentrality = null as Map<string, number> | null,
+		lensCommunityAssignments = null as Map<string, number> | null,
+		lensCommunityColors = null as Map<number, string> | null,
 	}: {
 		nodes: StarNode[];
 		links: StarLink[];
@@ -59,6 +62,9 @@
 		highlightColor?: number;
 		skyViewSettings?: Partial<EngineConfig>;
 		libraryColorMap?: Record<string, string>;
+		lensCentrality?: Map<string, number> | null;
+		lensCommunityAssignments?: Map<string, number> | null;
+		lensCommunityColors?: Map<number, string> | null;
 	} = $props();
 
 	// ─── Layer 1 state: UI only ─────────────────────────────
@@ -405,6 +411,15 @@
 		if (d !== prevFocusDepth) {
 			prevFocusDepth = d;
 			engine?.setFocusDepth(d);
+		}
+	});
+
+	// Constellation Lens overlay — react to lens data changes
+	$effect(() => {
+		if (lensCentrality && lensCommunityAssignments && lensCommunityColors) {
+			engine?.setLensOverlay(lensCentrality, lensCommunityAssignments, lensCommunityColors);
+		} else {
+			engine?.clearLensOverlay();
 		}
 	});
 

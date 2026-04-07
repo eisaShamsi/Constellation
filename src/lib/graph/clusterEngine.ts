@@ -217,3 +217,159 @@ function suggestClusterName(names: string[]): string {
 	// Capitalize first letter
 	return topWords.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' / ');
 }
+
+/* ------------------------------------------------------------------ */
+/*  Constellation Lens — Structural Gaps, Entropy, Universe Health     */
+/* ------------------------------------------------------------------ */
+
+export interface StructuralGap {
+	community1: number;
+	community2: number;
+	community1Name: string;
+	community2Name: string;
+	interLinkCount: number;
+	/** Nodes in either community that could bridge the gap. */
+	potentialBridges: string[];
+}
+
+export interface UniverseHealth {
+	modularity: number;   // 0-1, from Louvain
+	dominance: number;    // % of nodes in largest community (lower = better)
+	entropy: number;      // Shannon entropy of community sizes (higher = more diverse)
+	connectivity: number; // edges / nodes ratio
+	score: number;        // composite 0-100
+}
+
+/**
+ * Detect structural gaps between communities — pairs with high internal
+ * density but low/zero inter-community connectivity.
+ *
+ * Based on Ronald Burt's structural holes theory (1992).
+ */
+export function computeStructuralGaps(
+	clusters: ClusterInfo[],
+	links: { source: string; target: string }[],
+	assignments: Map<string, number>,
+): StructuralGap[] {
+	if (clusters.length < 2) return [];
+
+	// Count inter-community links for each community pair
+	const pairKey = (a: number, b: number) => a < b ? `${a}:${b}` : `${b}:${a}`;
+	const interLinks = new Map<string, number>();
+	const borderNodes = new Map<string, Set<string>>(); // pairKey → set of node IDs near the border
+
+	for (const link of links) {
+		const ca = assignments.get(link.source);
+		const cb = assignments.get(link.target);
+		if (ca === undefined || cb === undefined || ca === cb) continue;
+		const key = pairKey(ca, cb);
+		interLinks.set(key, (interLinks.get(key) ?? 0) + 1);
+		if (!borderNodes.has(key)) borderNodes.set(key, new Set());
+		borderNodes.get(key)!.add(link.source);
+		borderNodes.get(key)!.add(link.target);
+	}
+
+	// Find community pairs with zero or very low inter-connectivity
+	const gaps: StructuralGap[] = [];
+	for (let i = 0; i < clusters.length; i++) {
+		for (let j = i + 1; j < clusters.length; j++) {
+			const ci = clusters[i];
+			const cj = clusters[j];
+			// Only consider communities with 3+ members each
+			if (ci.memberIds.length < 3 || cj.memberIds.length < 3) continue;
+
+			const key = pairKey(ci.id, cj.id);
+			const count = interLinks.get(key) ?? 0;
+			// Expected links = (size_i × size_j) / total_nodes (rough baseline)
+			const expected = (ci.memberIds.length * cj.memberIds.length) / 100;
+
+			// Gap if actual links are much fewer than expected
+			if (count < Math.max(1, expected * 0.3)) {
+				const bridges = borderNodes.has(key) ? [...borderNodes.get(key)!].slice(0, 5) : [];
+				gaps.push({
+					community1: ci.id,
+					community2: cj.id,
+					community1Name: ci.suggestedName,
+					community2Name: cj.suggestedName,
+					interLinkCount: count,
+					potentialBridges: bridges,
+				});
+			}
+		}
+	}
+
+	// Sort by lowest inter-link count (most disconnected first)
+	gaps.sort((a, b) => a.interLinkCount - b.interLinkCount);
+	return gaps.slice(0, 10); // Top 10 gaps
+}
+
+/**
+ * Shannon entropy of community size distribution.
+ * Higher entropy = more diverse/balanced community structure.
+ */
+export function computeEntropy(clusters: ClusterInfo[], totalNodes: number): number {
+	if (clusters.length === 0 || totalNodes === 0) return 0;
+
+	let entropy = 0;
+	for (const c of clusters) {
+		const p = c.memberIds.length / totalNodes;
+		if (p > 0) entropy -= p * Math.log2(p);
+	}
+	return entropy;
+}
+
+/**
+ * Composite universe health metric (0-100).
+ *
+ * Components:
+ * - Modularity (0-1): how distinct the communities are
+ * - Dominance: % of nodes in largest community (lower = better)
+ * - Entropy: Shannon entropy of community distribution (higher = better)
+ * - Connectivity: edge/node ratio (higher = better)
+ *
+ * Formula per concept paper Section 3.4.
+ */
+export function computeUniverseHealth(
+	modularity: number,
+	clusters: ClusterInfo[],
+	totalNodes: number,
+	totalEdges: number,
+	gapCount: number,
+): UniverseHealth {
+	// Dominance: fraction in largest community
+	const largestSize = clusters.reduce((max, c) => Math.max(max, c.memberIds.length), 0);
+	const dominance = totalNodes > 0 ? largestSize / totalNodes : 0;
+
+	// Entropy
+	const entropy = computeEntropy(clusters, totalNodes);
+	const maxEntropy = clusters.length > 1 ? Math.log2(clusters.length) : 1;
+	const normEntropy = maxEntropy > 0 ? Math.min(entropy / maxEntropy, 1) : 0;
+
+	// Connectivity
+	const connectivity = totalNodes > 0 ? totalEdges / totalNodes : 0;
+	const normConnectivity = Math.min(connectivity / 4, 1); // 4 edges/node = fully connected
+
+	// Normalize modularity (0.3-0.6 is healthy per concept paper)
+	const normModularity = Math.min(modularity / 0.6, 1);
+
+	// Gap penalty
+	const possiblePairs = clusters.length * (clusters.length - 1) / 2;
+	const gapPenalty = possiblePairs > 0 ? Math.min(gapCount / possiblePairs, 1) : 0;
+
+	// Composite: weighted sum
+	const score = Math.round(
+		25 * normModularity +
+		25 * (1 - dominance) +
+		25 * normEntropy +
+		15 * normConnectivity +
+		10 * (1 - gapPenalty)
+	);
+
+	return {
+		modularity,
+		dominance,
+		entropy,
+		connectivity,
+		score: Math.max(0, Math.min(100, score)),
+	};
+}

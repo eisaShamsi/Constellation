@@ -52,6 +52,8 @@
 	import TemplateSuggester from '$lib/components/TemplateSuggester.svelte';
 	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
 	import GraphMindView from '$lib/components/GraphMindView.svelte';
+	import LensPanel from '$lib/components/LensPanel.svelte';
+	import { detectClusters, computeStructuralGaps, computeUniverseHealth, type StructuralGap, type UniverseHealth, type ClusterInfo } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import LocalStarView from '$lib/components/LocalStarView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
@@ -502,6 +504,16 @@
 	// on potentially tens of thousands of items. Use starVersion to signal changes.
 	let starNodes: StarNode[] = [];
 	let starLinks: StarLink[] = [];
+
+	// Constellation Lens state
+	let lensActive = $state(false);
+	let lensLoading = $state(false);
+	let lensCentrality = $state<Map<string, number>>(new Map());
+	let lensCommunities = $state<ClusterInfo[]>([]);
+	let lensCommunityAssignments = $state<Map<string, number>>(new Map());
+	let lensGaps = $state<StructuralGap[]>([]);
+	let lensHealth = $state<UniverseHealth | null>(null);
+	let lensBridges = $state<{ id: string; name: string; centrality: number }[]>([]);
 	let starVersion = $state(0);
 	let maturityMap = $state(new Map<string, string>()); // path → maturity state (CE Phase 3)
 	let stageMap = $state(new Map<string, string>()); // path → stage (CE Phase 6)
@@ -2003,6 +2015,66 @@
 		}
 	}
 
+	async function toggleLens() {
+		if (lensActive) {
+			lensActive = false;
+			lensCentrality = new Map();
+			lensCommunities = [];
+			lensCommunityAssignments = new Map();
+			lensGaps = [];
+			lensHealth = null;
+			lensBridges = [];
+			return;
+		}
+		lensLoading = true;
+		try {
+			// 1. Compute centrality in Rust
+			const libPaths = $libraries.map(l => [l.path, l.name] as [string, string]);
+			const result = await invoke<{ centrality: Record<string, number>; node_count: number; edge_count: number }>(
+				'constellation_lens_centrality', { libraryPaths: libPaths }
+			);
+			lensCentrality = new Map(Object.entries(result.centrality));
+
+			// 2. Run community detection (existing JS Louvain)
+			const clusterResult = detectClusters(
+				starNodes.map(n => ({ id: n.id, name: n.name })),
+				starLinks.map(l => ({ source: l.source, target: l.target })),
+			);
+			lensCommunities = clusterResult.clusters;
+			lensCommunityAssignments = clusterResult.assignments;
+
+			// 3. Compute structural gaps
+			lensGaps = computeStructuralGaps(
+				clusterResult.clusters,
+				starLinks.map(l => ({ source: l.source, target: l.target })),
+				clusterResult.assignments,
+			);
+
+			// 4. Compute universe health
+			lensHealth = computeUniverseHealth(
+				clusterResult.modularity,
+				clusterResult.clusters,
+				starNodes.length,
+				starLinks.length,
+				lensGaps.length,
+			);
+
+			// 5. Build top bridges list (top 10 by centrality)
+			lensBridges = [...lensCentrality.entries()]
+				.sort((a, b) => b[1] - a[1])
+				.slice(0, 10)
+				.map(([id, centrality]) => {
+					const node = starNodes.find(n => n.id === id);
+					return { id, name: node?.name ?? id, centrality };
+				});
+
+			lensActive = true;
+		} catch (e) {
+			console.error('[Lens] Failed to compute:', e);
+		}
+		lensLoading = false;
+	}
+
 	async function handleToggleSecondScreen() {
 		if (!hasMultipleDisplays) return; // SS requires 2+ monitors
 		const isOpen = await invoke<boolean>('is_second_screen_open');
@@ -3093,7 +3165,14 @@
 								<rect x="7" y="5" width="5" height="3.5" rx="0.75" fill="currentColor"/>
 							</svg>
 						</button>
-						<button class="star-close" onclick={() => showStarView = false}>×</button>
+						<button class="star-wiw-toggle" class:active={lensActive} onclick={toggleLens} title={$t('lens.title') || 'Constellation Lens'}>
+							{#if lensLoading}
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+							{:else}
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+							{/if}
+						</button>
+						<button class="star-close" onclick={() => { showStarView = false; if (lensActive) toggleLens(); }}>×</button>
 					</div>
 					<GraphMindView
 					nodes={starNodes}
@@ -3132,7 +3211,27 @@
 					})()}
 					skyViewSettings={$appSettings.skyView}
 					{libraryColorMap}
+					lensCentrality={lensActive ? lensCentrality : null}
+					lensCommunityAssignments={lensActive ? lensCommunityAssignments : null}
+					lensCommunityColors={lensActive ? new Map(lensCommunities.map(c => [c.id, c.color])) : null}
 				/>
+				<!-- Lens Panel -->
+				{#if lensActive}
+					<div class="lens-panel-overlay">
+						<LensPanel
+							health={lensHealth}
+							bridges={lensBridges}
+							communities={lensCommunities}
+							gaps={lensGaps}
+							nodeCount={starNodes.length}
+							edgeCount={starLinks.length}
+							onNoteClick={(id, name) => {
+								const node = starNodes.find(n => n.id === id);
+								if (node) handleStarNodeClick(node.path, node.libraryName);
+							}}
+						/>
+					</div>
+				{/if}
 				<!-- WiW Overlay -->
 				{#if showWiW && wiwFilteredNodes.length > 0}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -4361,6 +4460,12 @@
 		font-size: 1.2rem;
 	}
 	.star-close:hover { background: var(--border); color: var(--text); }
+	.lens-panel-overlay {
+		position: absolute; inset-inline-end: 0; top: 40px; bottom: 0;
+		z-index: 10; overflow: hidden;
+	}
+	@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+	:global(.spin) { animation: spin 1s linear infinite; }
 
 	/* WiW overlay */
 	.wiw-overlay {

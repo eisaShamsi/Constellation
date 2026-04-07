@@ -556,6 +556,61 @@ export class GraphEngine {
 		this.needsRedraw = true;
 	}
 
+	// ─── Constellation Lens overlay ─────────────────────────────────
+	private lensActive: boolean = false;
+	private lensOriginalColors: number[] = [];
+	private lensOriginalRadii: number[] = [];
+
+	/**
+	 * Activate Lens overlay: override node sizes with centrality scores
+	 * and colors with community assignments.
+	 */
+	setLensOverlay(
+		centrality: Map<string, number>,
+		communityAssignments: Map<string, number>,
+		communityColors: Map<number, string>,
+	): void {
+		// Save originals on first activation
+		if (!this.lensActive) {
+			this.lensOriginalColors = this.nodes.map(n => n.color);
+			this.lensOriginalRadii = this.nodes.map(n => n.r);
+		}
+		this.lensActive = true;
+
+		// Also set clusters for boundary rendering
+		this.setClusters(communityAssignments, communityColors);
+
+		const sizeMul = this.config.nodeSize / 4;
+
+		for (let i = 0; i < this.nodes.length; i++) {
+			const n = this.nodes[i];
+			const c = centrality.get(n.id) ?? 0;
+			// Centrality-based sizing: min 2px, max ~20px
+			n.r = Math.max(2, (2 + c * 16) * sizeMul);
+
+			// Community-based coloring
+			const cid = this.clusterAssignments.get(i);
+			if (cid !== undefined && this.clusterColors.has(cid)) {
+				n.color = this.clusterColors.get(cid)!;
+			}
+		}
+		this.needsRedraw = true;
+	}
+
+	/** Deactivate Lens overlay — restore original node colors and sizes. */
+	clearLensOverlay(): void {
+		if (!this.lensActive) return;
+		this.lensActive = false;
+		// Restore originals
+		for (let i = 0; i < this.nodes.length; i++) {
+			if (i < this.lensOriginalColors.length) this.nodes[i].color = this.lensOriginalColors[i];
+			if (i < this.lensOriginalRadii.length) this.nodes[i].r = this.lensOriginalRadii[i];
+		}
+		this.lensOriginalColors = [];
+		this.lensOriginalRadii = [];
+		this.clearClusters();
+	}
+
 	/** CE Phase 8: Set trail path for overlay rendering. Paths are note file paths in order. */
 	setTrailPath(notePaths: string[]): void {
 		this.trailNodeIndices = [];

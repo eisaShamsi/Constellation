@@ -5,6 +5,7 @@ mod dataview;
 mod inspector360;
 mod importers;
 mod libraries;
+mod lens;
 mod lenses;
 mod map;
 mod maturity;
@@ -264,6 +265,7 @@ pub fn run() {
             trails::read_trail,
             canvas::list_canvases,
             inspector360::get_360_view,
+            lens::constellation_lens_centrality,
             map::constellation_map_data,
             map::constellation_map_universe,
             canvas::read_canvas,
