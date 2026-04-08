@@ -46,6 +46,56 @@
 
 ---
 
+## Phase: Semantic Search — Rust-Native ONNX (100% Offline)
+**Commit**: `d622fc8` — Semantic search: Rust-native ONNX inference, 100% offline, 100 languages
+
+### What was done
+1. **Rust ONNX engine** (`src-tauri/src/embeddings.rs`):
+   - `ort` crate (ONNX Runtime) + `tokenizers` crate (HuggingFace)
+   - `EmbeddingEngine` struct with `Session` + `Tokenizer`, cached in Tauri state
+   - Lazy loading: model loads on first embed call, not on startup
+   - 4 Tauri commands: `init_embeddings`, `embed_text`, `embed_notes` (batch+force), `embedding_status`
+   - Token truncation to 512 (model max), char-safe UTF-8 truncation for Arabic
+   - Mean pooling + L2 normalization on ONNX output
+   - e5 prefix: "query: " for search queries, "passage: " for documents
+
+2. **Model bundled with app** (Git LFS):
+   - `src-tauri/models/model.onnx` (~113MB) — multilingual-e5-small, 100 languages, 384-dim
+   - `src-tauri/models/tokenizer.json` (~17MB) — HuggingFace tokenizer vocabulary
+   - Tauri resource bundling: `"resources": ["models/*"]`
+   - 100% offline — no internet, no CDN, no downloads at runtime
+
+3. **Universal search integration**:
+   - `UniversalSearchResponse` has 6th `semantic` field
+   - `execute_universal_search` accepts `query_embedding: Option<&[f32]>`
+   - SearchHub embeds query via Rust IPC, shows Semantic (purple S badge) results
+   - Cross-lingual: English "agriculture" finds Arabic الزراعة notes
+
+4. **Frontend**:
+   - Settings → Features → 🧠 Semantic Search toggle
+   - Background indexing: embeds all notes incrementally (skips existing)
+   - Edited notes re-embedded automatically (`force: true`)
+   - `searchEngineReady` changed from `let` to `$state` (was preventing $effect triggers)
+
+5. **Multi-term search**:
+   - Comma-separated queries: `,` (Latin) `،` (Arabic) `、` (CJK)
+   - Rust splits terms, searches each category for all terms, deduplicates
+   - Frontend highlights all terms in results and editor
+
+6. **Editor highlighting fix**:
+   - Added `.cm-searchMatch` styles to NotePane (were missing)
+   - Search panel opened hidden (`display: none`) to activate all-match highlighting
+   - Multi-term support via regex alternation pattern
+
+### Bugs fixed
+- UTF-8 char boundary panic when truncating Arabic text at byte 2000
+- ONNX token sequence > 512 causing broadcast shape error
+- Model path not found in dev mode (now checks multiple locations)
+- `searchEngineReady` not reactive (was plain `let`, now `$state`)
+- Indexing starting before search DB initialized
+
+---
+
 ## Phase: Search UX Enhancements (earlier)
 **Commit**: `214feda` — Search UX: accessible badges, pinned results, search history, highlight term
 
