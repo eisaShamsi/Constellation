@@ -217,6 +217,16 @@ export async function saveTabContent(
 		recentWrites.set(filePath, Date.now());
 		await writeNote(filePath, newContent);
 		emit('screen:note-saved', { path: filePath }).catch(() => {});
+		// Re-embed for semantic search via Rust ONNX (non-blocking)
+		if (get(appSettings).enabledFeatures?.semanticSearch) {
+			const tab = get(openTabs).find(t => t.path === filePath);
+			if (tab) {
+				invoke('constellation_embed_notes', {
+					notes: [{ path: filePath, name: tab.name, content: body }],
+					force: true
+				}).catch(() => {});
+			}
+		}
 		// Track as recently edited in localStorage for second screen dashboard
 		try {
 			const key = 'constellation-recent-edited';
@@ -824,10 +834,31 @@ export interface UniversalSearchResponse {
 	tags: ConstellationSearchResult[];
 	properties: ConstellationSearchResult[];
 	wikilinks: ConstellationSearchResult[];
+	semantic: ConstellationSearchResult[];
 }
 
-export async function universalSearch(query: string, limit?: number): Promise<UniversalSearchResponse> {
-	return invoke('constellation_search_universal', { query, limit: limit ?? 15 });
+export async function universalSearch(query: string, queryEmbedding?: number[] | null, limit?: number): Promise<UniversalSearchResponse> {
+	return invoke('constellation_search_universal', { query, queryEmbedding: queryEmbedding ?? null, limit: limit ?? 15 });
+}
+
+/** Initialize the Rust-native ONNX embedding engine. */
+export async function initEmbeddingEngine(): Promise<string> {
+	return invoke('constellation_init_embeddings');
+}
+
+/** Embed text using the Rust ONNX engine. Returns 384-dim vector. */
+export async function embedText(text: string): Promise<number[]> {
+	return invoke('constellation_embed_text', { text });
+}
+
+/** Batch embed notes and store in search DB. Returns count embedded. */
+export async function embedNotes(notes: { path: string; name: string; content: string }[]): Promise<number> {
+	return invoke('constellation_embed_notes', { notes });
+}
+
+/** Get embedding engine status. */
+export async function embeddingStatus(): Promise<{ ready: boolean; embedded_count: number; model_loaded: boolean }> {
+	return invoke('constellation_embedding_status');
 }
 
 /**
@@ -1441,6 +1472,7 @@ export interface AppSettings {
 		wordCount: boolean;
 		workspaces: boolean;
 		index: boolean;
+		semanticSearch: boolean;
 	};
 }
 
@@ -1534,6 +1566,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 		wordCount: true,
 		workspaces: true,
 		index: true,
+		semanticSearch: false,
 	},
 	customShortcuts: {},
 };

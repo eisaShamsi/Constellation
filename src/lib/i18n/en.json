@@ -242,7 +242,9 @@
             "workspaces": "Workspaces",
             "workspacesDesc": "Save and restore workspace layouts",
             "index": "Index",
-            "indexDesc": "Collect and browse terms from all notes"
+            "indexDesc": "Collect and browse terms from all notes",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)"
         },
         "intelligence": {
             "intro": "Configure AI providers, skills, and privacy controls for your libraries.",
@@ -437,7 +439,8 @@
         "contents": "Contents",
         "tags": "Tags",
         "properties": "Properties",
-        "wikilinks": "Wikilinks"
+        "wikilinks": "Wikilinks",
+        "semantic": "Semantic"
     },
     "layout": {
         "leftSidebar": "Left sidebar",

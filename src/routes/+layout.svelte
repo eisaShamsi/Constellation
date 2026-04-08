@@ -64,6 +64,7 @@
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
 
 	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
+	import { embedNotes, embeddingStatus } from '$lib/libraries/store';
 	import DashboardView from '$lib/components/DashboardView.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
@@ -281,13 +282,15 @@
 	// indexMode removed - index now opens as full page view
 	let searchQuery = $state('');
 	let searchTimeout: ReturnType<typeof setTimeout>;
-	let searchEngineReady = false; // true when SQLite FTS5 index is built
+	let searchEngineReady = $state(false); // true when SQLite FTS5 index is built
 	let advancedSearchResults = $state<ConstellationSearchResult[]>([]);
 	let searchInputFocused = $state(false);
 	let searchHistory = $state<{query: string; timestamp: number}[]>([]);
 	let selectedResultIndex = $state(-1);
 	let wikiAutocomplete = $state<{name: string; path: string; libraryName: string}[]>([]);
 	let wikiAutoIndex = $state(-1);
+	let semanticIndexProgress = $state('');
+	let semanticIndexing = $state(false);
 	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
 	let libraryPickerAction = $state<'note' | 'folder' | 'base'>('note');
 	let allExpanded = $state(true);
@@ -1431,6 +1434,8 @@
 		// Initialize search engine (background, non-blocking)
 		initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
 
+		// Semantic search: ONNX engine lazy-loads on first search/embed call
+
 		// Second screen event listeners
 		const unlistenScreenNote = await onNoteToMain(async (note: ScreenNote) => {
 			await openNoteTab(note.path, note.libraryName, note.libraryColor);
@@ -2328,6 +2333,52 @@
 			}
 			await refreshLibraryCaches();
 		} catch { /* ignore */ }
+	}
+
+	// Trigger semantic indexing when enabled, search DB ready, and notes loaded
+	// Engine lazy-loads on first embed call — no eager init needed
+	let semanticIndexTriggered = false;
+	$effect(() => {
+		const enabled = $appSettings.enabledFeatures?.semanticSearch;
+		const notesReady = allNotes.length > 0;
+		const dbReady = searchEngineReady;
+		if (enabled && dbReady && notesReady && !semanticIndexTriggered && !semanticIndexing) {
+			// Check how many are already embedded
+			embeddingStatus().then(status => {
+				if (status.embedded_count < allNotes.length) {
+					semanticIndexTriggered = true;
+					console.log(`[Semantic] Indexing: ${status.embedded_count}/${allNotes.length} embedded. Starting...`);
+					startSemanticIndexing();
+				} else {
+					console.log(`[Semantic] All ${allNotes.length} notes already embedded.`);
+				}
+			}).catch(() => {});
+		}
+	});
+
+	async function startSemanticIndexing() {
+		if (semanticIndexing || allNotes.length === 0) return;
+		semanticIndexing = true;
+		semanticIndexProgress = 'Loading notes for embedding...';
+		try {
+			// Load note contents for embedding — batch in chunks to avoid memory spike
+			const CHUNK = 50;
+			for (let i = 0; i < allNotes.length; i += CHUNK) {
+				const chunk = allNotes.slice(i, i + CHUNK);
+				const notesWithContent = await Promise.all(
+					chunk.map(async (n) => {
+						try {
+							const content: string = await invoke('read_note', { filePath: n.path });
+							return { path: n.path, name: n.name, content };
+						} catch { return { path: n.path, name: n.name, content: '' }; }
+					})
+				);
+				const done = await embedNotes(notesWithContent);
+				semanticIndexProgress = `Embedding ${Math.min(i + CHUNK, allNotes.length)}/${allNotes.length} notes`;
+			}
+		} catch (err) { console.error('[Semantic] Indexing failed:', err); }
+		semanticIndexing = false;
+		semanticIndexProgress = '';
 	}
 
 	function handleSearch(e: Event) {

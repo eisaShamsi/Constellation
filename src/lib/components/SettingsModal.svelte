@@ -76,6 +76,7 @@
 				{ id: 'pagePreview', name: $t('settings.features.pagePreview'), desc: $t('settings.features.pagePreviewDesc'), icon: '👁️' },
 				{ id: 'tags', name: $t('settings.features.tags'), desc: $t('settings.features.tagsDesc'), icon: '🏷️' },
 				{ id: 'index', name: $t('settings.features.index'), desc: $t('settings.features.indexDesc'), icon: '📑' },
+				{ id: 'semanticSearch', name: $t('settings.features.semanticSearch'), desc: $t('settings.features.semanticSearchDesc'), icon: '🧠' },
 			]
 		},
 		{

@@ -914,12 +914,14 @@ pub struct UniversalSearchResponse {
     pub tags: Vec<SearchResult>,
     pub properties: Vec<SearchResult>,
     pub wikilinks: Vec<SearchResult>,
+    pub semantic: Vec<SearchResult>,
 }
 
 #[tauri::command]
 pub fn constellation_search_universal(
     app: tauri::AppHandle,
     query: String,
+    query_embedding: Option<Vec<f32>>,
     limit: Option<u32>,
 ) -> Result<UniversalSearchResponse, String> {
     let state = app.state::<SearchState>();
@@ -933,37 +935,75 @@ pub fn constellation_search_universal(
             let state = app.state::<SearchState>();
             let db_guard = state.db.lock().map_err(|e| e.to_string())?;
             return match db_guard.as_ref() {
-                Some(c) => execute_universal_search(c, &query, limit.unwrap_or(15)),
+                Some(c) => execute_universal_search(c, &query, query_embedding.as_deref(), limit.unwrap_or(15)),
                 None => Err("Search index not available".to_string()),
             };
         }
     };
 
-    execute_universal_search(conn, &query, limit.unwrap_or(15))
+    execute_universal_search(conn, &query, query_embedding.as_deref(), limit.unwrap_or(15))
 }
 
-fn execute_universal_search(conn: &Connection, query: &str, limit: u32) -> Result<UniversalSearchResponse, String> {
-    let normalized = normalize_arabic_for_search(query);
-    // Use normalized for FTS5 (indexed data is normalized)
-    // Use raw lowercase for LIKE queries (tags/props/links stored as raw lowercase)
-    let raw_lower = query.to_lowercase();
+/// Split query by comma variants: , (Latin) ، (Arabic) 、(CJK)
+fn split_multi_terms(query: &str) -> Vec<String> {
+    query.split(|c| c == ',' || c == '،' || c == '、')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
 
-    // 1. TITLES — FTS5 match filtered to name-only hits
-    let titles = search_titles(conn, &normalized, limit);
+/// Deduplicate results by path, keeping highest score
+fn dedup_results(mut results: Vec<SearchResult>) -> Vec<SearchResult> {
+    let mut seen = std::collections::HashMap::new();
+    let mut deduped = Vec::new();
+    for r in results.drain(..) {
+        let entry = seen.entry(r.path.clone()).or_insert(0.0_f64);
+        if r.score > *entry {
+            *entry = r.score;
+            deduped.retain(|existing: &SearchResult| existing.path != r.path);
+            deduped.push(r);
+        }
+    }
+    deduped
+}
 
-    // 2. CONTENTS — FTS5 match for body with snippets
-    let contents = search_contents(conn, &normalized, limit);
+fn execute_universal_search(conn: &Connection, query: &str, query_embedding: Option<&[f32]>, limit: u32) -> Result<UniversalSearchResponse, String> {
+    let terms = split_multi_terms(query);
 
-    // 3. TAGS — notes with matching tags (raw, not normalized)
-    let tags = search_tags(conn, &raw_lower, limit);
+    let mut all_titles = Vec::new();
+    let mut all_contents = Vec::new();
+    let mut all_tags = Vec::new();
+    let mut all_properties = Vec::new();
+    let mut all_wikilinks = Vec::new();
 
-    // 4. PROPERTIES — notes with matching property keys or values (raw)
-    let properties = search_properties(conn, &raw_lower, limit);
+    for term in &terms {
+        let normalized = normalize_arabic_for_search(term);
+        let raw_lower = term.to_lowercase();
 
-    // 5. WIKILINKS — notes whose outgoing links contain the query (raw)
-    let wikilinks = search_wikilinks(conn, &raw_lower, limit);
+        all_titles.extend(search_titles(conn, &normalized, limit));
+        all_contents.extend(search_contents(conn, &normalized, limit));
+        all_tags.extend(search_tags(conn, &raw_lower, limit));
+        all_properties.extend(search_properties(conn, &raw_lower, limit));
+        all_wikilinks.extend(search_wikilinks(conn, &raw_lower, limit));
+    }
 
-    Ok(UniversalSearchResponse { titles, contents, tags, properties, wikilinks })
+    // 6. SEMANTIC — cosine similarity on stored embeddings (if query embedding provided)
+    let semantic = if let Some(qe) = query_embedding {
+        let mut results = semantic_search(conn, qe, limit);
+        results.truncate(limit as usize);
+        results
+    } else {
+        Vec::new()
+    };
+
+    // Deduplicate and truncate
+    let mut titles = dedup_results(all_titles); titles.truncate(limit as usize);
+    let mut contents = dedup_results(all_contents); contents.truncate(limit as usize);
+    let mut tags = dedup_results(all_tags); tags.truncate(limit as usize);
+    let mut properties = dedup_results(all_properties); properties.truncate(limit as usize);
+    let mut wikilinks = dedup_results(all_wikilinks); wikilinks.truncate(limit as usize);
+
+    Ok(UniversalSearchResponse { titles, contents, tags, properties, wikilinks, semantic })
 }
 
 fn search_titles(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {

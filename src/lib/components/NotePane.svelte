@@ -396,27 +396,26 @@
 		imgEffects.push(setAttachmentFolder.of($appSettings.defaultAttachmentFolder || ''));
 		if (imgEffects.length) view.dispatch({ effects: imgEffects });
 
-		/* Highlight term from Index — open search panel with pre-filled query */
+		/* Highlight term(s) — supports multi-term comma-separated (,،、) */
 		if (highlightTerm && view) {
-			const isArabic = /[\u0600-\u06FF]/.test(highlightTerm);
-			let q: SearchQuery;
-			if (isArabic) {
-				// Reverse normalization: expand each char to match original variants
-				// Allow optional tashkeel (diacritics) between characters
-				const d = '[\u064B-\u065F\u0670]*'; // optional diacritics class
-				const expanded = highlightTerm.split('').map(ch => {
-					if (ch === 'ه') return `[هة]${d}`;
-					if (ch === 'ا') return `[اأإآٱ]${d}`;
-					if (ch === 'ي') return `[يى]${d}`;
-					return ch + d;
-				}).join('');
-				// Allow optional الـ prefix before the word
-				// Use space/punctuation/start/end as word boundaries (not \b which fails for Arabic)
-				const pattern = `(?:^|[\\s.,;:!?()\\[\\]{}«»"'،؛؟])(?:ال)?${expanded}(?=$|[\\s.,;:!?()\\[\\]{}«»"'،؛؟])`;
-				q = new SearchQuery({ search: pattern, caseSensitive: false, regexp: true });
-			} else {
-				q = new SearchQuery({ search: highlightTerm, caseSensitive: false, literal: true, wholeWord: true });
-			}
+			// Split by comma variants
+			const terms = highlightTerm.split(/[,،、]/).map(s => s.trim()).filter(s => s.length > 0);
+			const d = '[\u064B-\u065F\u0670]*'; // optional Arabic diacritics class
+			const termPatterns = terms.map(term => {
+				const isArabic = /[\u0600-\u06FF]/.test(term);
+				if (isArabic) {
+					const expanded = term.split('').map(ch => {
+						if (ch === 'ه') return `[هة]${d}`;
+						if (ch === 'ا') return `[اأإآٱ]${d}`;
+						if (ch === 'ي') return `[يى]${d}`;
+						return ch + d;
+					}).join('');
+					return `(?:ال)?${expanded}`;
+				}
+				return term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			});
+			const pattern = termPatterns.join('|');
+			const q = new SearchQuery({ search: pattern, caseSensitive: false, regexp: true });
 			view.dispatch({ effects: setSearchQuery.of(q) });
 			// Open search panel to activate highlights (panel is hidden via CSS)
 			openSearchPanel(view);

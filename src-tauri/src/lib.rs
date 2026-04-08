@@ -1,6 +1,7 @@
 mod ai;
 mod bases;
 mod canvas;
+mod embeddings;
 mod dataview;
 mod inspector360;
 mod importers;
@@ -217,6 +218,7 @@ pub fn run() {
         .manage(watcher::WatcherState::new())
         .manage(universe::UniverseState::new())
         .manage(search::SearchState::new())
+        .manage(embeddings::EmbeddingState { engine: std::sync::Mutex::new(None) })
         .invoke_handler(tauri::generate_handler![
             ai::ai_send_message,
             ai::ai_validate_connection,
@@ -275,6 +277,10 @@ pub fn run() {
             search::constellation_search_store_embedding,
             search::constellation_search_similar,
             search::constellation_search_universal,
+            embeddings::constellation_init_embeddings,
+            embeddings::constellation_embed_text,
+            embeddings::constellation_embed_notes,
+            embeddings::constellation_embedding_status,
             map::constellation_map_data,
             map::constellation_map_universe,
             canvas::read_canvas,

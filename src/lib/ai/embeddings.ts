@@ -51,9 +51,16 @@ export async function initEmbeddings(): Promise<void> {
 }
 
 /**
- * Compute embedding for a single text
+ * Check if the embedding engine is ready for queries
  */
-async function embed(text: string): Promise<number[]> {
+export function isReady(): boolean {
+	return isInitialized && !isBuilding;
+}
+
+/**
+ * Compute embedding for a single text (exported for query embedding)
+ */
+export async function embed(text: string): Promise<number[]> {
 	if (!extractor) throw new Error('Embeddings not initialized');
 
 	// Truncate to ~256 tokens worth of text (~1000 chars)
@@ -116,6 +123,59 @@ export async function buildIndex(
 	} finally {
 		isBuilding = false;
 	}
+}
+
+/**
+ * Embed a single note and store to Rust backend.
+ * Called after note save when semantic search is enabled.
+ */
+export async function embedAndStore(
+	notePath: string, noteName: string, libraryName: string, content: string
+): Promise<void> {
+	if (!isInitialized) return;
+	try {
+		const { storeNoteEmbedding } = await import('$lib/libraries/store');
+		const text = `${noteName.replace(/\.md$/, '')} ${content}`;
+		const vector = await embed(text);
+		embeddingCache.set(notePath, { id: notePath, name: noteName, libraryName, vector, timestamp: Date.now() });
+		await storeNoteEmbedding(notePath, vector);
+	} catch (err) {
+		console.error('[Embeddings] Failed to embed note:', err);
+	}
+}
+
+/**
+ * Build index and persist each embedding to Rust backend
+ */
+export async function buildAndStoreIndex(
+	notes: { path: string; name: string; libraryName: string; content: string }[],
+	onProgress?: ProgressCallback
+): Promise<void> {
+	if (isBuilding) return;
+	isBuilding = true;
+	try {
+		if (!isInitialized) {
+			onProgress?.(0, notes.length, 'Loading AI model...');
+			await initEmbeddings();
+		}
+		const { storeNoteEmbedding } = await import('$lib/libraries/store');
+		const total = notes.length;
+		let done = 0;
+		for (const note of notes) {
+			const existing = embeddingCache.get(note.path);
+			if (existing) { done++; continue; }
+			const text = `${note.name.replace(/\.md$/, '')} ${note.content}`;
+			const vector = await embed(text);
+			embeddingCache.set(note.path, { id: note.path, name: note.name, libraryName: note.libraryName, vector, timestamp: Date.now() });
+			await storeNoteEmbedding(note.path, vector).catch(() => {});
+			done++;
+			if (done % 5 === 0 || done === total) {
+				onProgress?.(done, total, `Embedding ${done}/${total} notes`);
+			}
+		}
+		saveCache();
+		onProgress?.(total, total, 'Done');
+	} finally { isBuilding = false; }
 }
 
 /**

@@ -438,7 +438,8 @@
         "contents": "Contents",
         "tags": "Tags",
         "properties": "Properties",
-        "wikilinks": "Wikilinks"
+        "wikilinks": "Wikilinks",
+        "semantic": "Semantic"
     },
     "layout": {
         "leftSidebar": "نوار کناری چپ",

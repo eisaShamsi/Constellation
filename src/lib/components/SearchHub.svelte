@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t, dir } from '$lib/i18n';
 	import {
-		universalSearch,
+		universalSearch, appSettings, embedText, embeddingStatus,
 		type UniversalSearchResponse,
 		type ConstellationSearchResult
 	} from '$lib/libraries/store';
@@ -26,14 +26,14 @@
 
 	let searchInput: HTMLInputElement;
 
-	const categories = ['titles', 'contents', 'tags', 'properties', 'wikilinks'] as const;
+	const categories = ['titles', 'contents', 'tags', 'properties', 'wikilinks', 'semantic'] as const;
 
 	const categoryIcons: Record<string, string> = {
-		titles: 'T', contents: 'C', tags: '#', properties: 'P', wikilinks: 'W'
+		titles: 'T', contents: 'C', tags: '#', properties: 'P', wikilinks: 'W', semantic: 'S'
 	};
 
 	const categoryColors: Record<string, string> = {
-		titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa'
+		titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed'
 	};
 
 	let lastAppliedInitial = '';
@@ -52,7 +52,12 @@
 		loading = true;
 		searchTimeout = setTimeout(async () => {
 			try {
-				response = await universalSearch(q, 15);
+				// Embed query for semantic search if enabled and engine ready
+				let qEmbed: number[] | null = null;
+				if ($appSettings.enabledFeatures?.semanticSearch) {
+					try { qEmbed = await embedText(q); } catch { /* no semantic results */ }
+				}
+				response = await universalSearch(q, qEmbed, 15);
 				addSearchHistory(q);
 				history = readSearchHistory();
 			} catch { response = null; }
@@ -122,9 +127,15 @@
 		return `sidebar.match${cap}`;
 	}
 
+	/** Split query by comma variants: , (Latin) ، (Arabic) 、(CJK) */
+	function getSearchTerms(): string[] {
+		return query.split(/[,،、]/).map(s => s.trim()).filter(s => s.length > 0);
+	}
+
 	function highlightInText(text: string, cssClass: string = ''): string {
-		if (!query || query.length < 2) return escapeHtml(text);
-		const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		const terms = getSearchTerms();
+		if (!terms.length) return escapeHtml(text);
+		const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
 		const re = new RegExp(`(${escaped})`, 'gi');
 		const tag = cssClass ? `<mark class="${cssClass}">$1</mark>` : '<mark>$1</mark>';
 		return escapeHtml(text).replace(re, tag);
