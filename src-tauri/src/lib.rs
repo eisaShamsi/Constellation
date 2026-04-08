@@ -7,6 +7,7 @@ mod importers;
 mod libraries;
 mod lens;
 mod lenses;
+mod search;
 mod map;
 mod maturity;
 mod provenance;
@@ -215,6 +216,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(watcher::WatcherState::new())
         .manage(universe::UniverseState::new())
+        .manage(search::SearchState::new())
         .invoke_handler(tauri::generate_handler![
             ai::ai_send_message,
             ai::ai_validate_connection,
@@ -267,6 +269,9 @@ pub fn run() {
             inspector360::get_360_view,
             lens::constellation_lens_centrality,
             lens::constellation_lens_tag_edges,
+            search::constellation_search_init,
+            search::constellation_search,
+            search::constellation_search_reindex,
             map::constellation_map_data,
             map::constellation_map_universe,
             canvas::read_canvas,

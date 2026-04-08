@@ -757,6 +757,107 @@ export async function searchAllStars(query: string) {
 	searchResults.set(results);
 }
 
+// ─── Constellation Search Engine (Phase 1) ───
+
+export interface ConstellationSearchRequest {
+	query?: string;
+	mode: 'lexical' | 'structured' | 'hybrid';
+	filters?: {
+		properties?: { key: string; op: string; value?: string }[];
+		tags?: string[];
+		wikilinks_to?: string[];
+		wikilinks_from?: string[];
+		library_names?: string[];
+		maturity?: string[];
+		path_prefix?: string;
+	};
+	limit?: number;
+	include_snippet?: boolean;
+	include_headings?: boolean;
+}
+
+export interface ConstellationSearchResult {
+	name: string;
+	path: string;
+	library_name: string;
+	score: number;
+	match_type: string;
+	snippet?: string;
+	heading_breadcrumb?: string[];
+	modified: number;
+}
+
+/** Initialize the search index (builds SQLite FTS5 database). */
+export async function initSearchIndex(): Promise<{ note_count: number; index_size_bytes: number }> {
+	return invoke('constellation_search_init');
+}
+
+/** Main search command — supports lexical, structured, and hybrid modes. */
+export async function constellationSearch(request: ConstellationSearchRequest): Promise<ConstellationSearchResult[]> {
+	return invoke('constellation_search', { request });
+}
+
+/** Reindex a single note after file change. */
+export async function reindexNote(notePath: string, libraryName: string): Promise<void> {
+	return invoke('constellation_search_reindex', { notePath, libraryName });
+}
+
+/**
+ * Parse a search query string into a SearchRequest.
+ * Recognizes: #tag, property=value, links to [[X]], in:Library, free text.
+ */
+export function parseSearchQuery(raw: string): ConstellationSearchRequest {
+	const filters: ConstellationSearchRequest['filters'] = {};
+	let freeText = '';
+
+	const parts = raw.split(/\s+/);
+	for (const part of parts) {
+		// Tag: #project
+		if (part.startsWith('#') && part.length > 1) {
+			if (!filters.tags) filters.tags = [];
+			filters.tags.push(part.slice(1).toLowerCase());
+			continue;
+		}
+		// Library scope: in:LibraryName
+		if (part.startsWith('in:') && part.length > 3) {
+			if (!filters.library_names) filters.library_names = [];
+			filters.library_names.push(part.slice(3));
+			continue;
+		}
+		// Property: key=value
+		if (part.includes('=') && !part.startsWith('=')) {
+			const [key, ...valueParts] = part.split('=');
+			const value = valueParts.join('=');
+			if (!filters.properties) filters.properties = [];
+			filters.properties.push({ key, op: '=', value: value || undefined });
+			continue;
+		}
+		freeText += (freeText ? ' ' : '') + part;
+	}
+
+	// Wikilink: "links to [[X]]"
+	const wikiRe = /links?\s+to\s+\[\[([^\]]+)\]\]/gi;
+	let match;
+	while ((match = wikiRe.exec(raw)) !== null) {
+		if (!filters.wikilinks_to) filters.wikilinks_to = [];
+		filters.wikilinks_to.push(match[1].toLowerCase());
+		// Remove from free text
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	const hasFilters = Object.values(filters).some(v => v && (Array.isArray(v) ? v.length > 0 : true));
+	const hasQuery = freeText.trim().length > 0;
+
+	return {
+		query: hasQuery ? freeText.trim() : undefined,
+		mode: hasQuery && hasFilters ? 'hybrid' : hasQuery ? 'lexical' : 'structured',
+		filters: hasFilters ? filters : undefined,
+		limit: 50,
+		include_snippet: true,
+		include_headings: true,
+	};
+}
+
 /** Close the current note (closes active tab). */
 export function closeNote() {
 	const id = get(activeTabId);
