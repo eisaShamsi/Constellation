@@ -761,7 +761,8 @@ export async function searchAllStars(query: string) {
 
 export interface ConstellationSearchRequest {
 	query?: string;
-	mode: 'lexical' | 'structured' | 'hybrid';
+	query_embedding?: number[];  // pre-computed embedding for semantic mode
+	mode: 'lexical' | 'structured' | 'semantic' | 'hybrid';
 	filters?: {
 		properties?: { key: string; op: string; value?: string }[];
 		tags?: string[];
@@ -800,6 +801,16 @@ export async function constellationSearch(request: ConstellationSearchRequest): 
 /** Reindex a single note after file change. */
 export async function reindexNote(notePath: string, libraryName: string): Promise<void> {
 	return invoke('constellation_search_reindex', { notePath, libraryName });
+}
+
+/** Store a pre-computed embedding vector for a note (from JS semantic engine). */
+export async function storeNoteEmbedding(notePath: string, embedding: number[]): Promise<void> {
+	return invoke('constellation_search_store_embedding', { notePath, embedding });
+}
+
+/** Find notes semantically similar to a given note. */
+export async function searchSimilarNotes(notePath: string, limit?: number): Promise<ConstellationSearchResult[]> {
+	return invoke('constellation_search_similar', { notePath, limit: limit ?? 20 });
 }
 
 /**

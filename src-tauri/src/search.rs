@@ -21,7 +21,8 @@ use tauri::Manager;
 #[derive(Debug, Deserialize)]
 pub struct SearchRequest {
     pub query: Option<String>,
-    pub mode: String,           // "lexical" | "structured" | "hybrid" (future)
+    pub query_embedding: Option<Vec<f32>>,  // pre-computed embedding for semantic search
+    pub mode: String,           // "lexical" | "structured" | "semantic" | "hybrid"
     pub filters: Option<SearchFilters>,
     pub limit: Option<u32>,
     pub include_snippet: Option<bool>,
@@ -104,6 +105,16 @@ fn init_db(path: &Path) -> Result<Connection, String> {
             body_text TEXT DEFAULT ''
         );
     ").map_err(|e| format!("Failed to create note_meta: {}", e))?;
+
+    // Create embeddings table for semantic search (Phase 2)
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS note_embeddings (
+            path TEXT PRIMARY KEY,
+            embedding BLOB NOT NULL,
+            dimensions INTEGER NOT NULL DEFAULT 384,
+            model_id TEXT DEFAULT 'all-MiniLM-L6-v2'
+        );
+    ").map_err(|e| format!("Failed to create note_embeddings: {}", e))?;
 
     // Create FTS5 virtual table for full-text search
     conn.execute_batch("
@@ -524,33 +535,197 @@ fn execute_search(conn: &Connection, request: &SearchRequest) -> Result<Vec<Sear
                 results = structured_search(conn, filters, limit);
             }
         }
+        "semantic" => {
+            // Semantic-only search using stored embeddings
+            if let Some(q_embedding) = request.query_embedding.as_ref() {
+                results = semantic_search(conn, q_embedding, limit);
+            }
+        }
         "hybrid" | _ => {
-            // Combine lexical + structured
+            // Full hybrid: RRF fusion of lexical + semantic + structured
             let mut lexical_results = Vec::new();
+            let mut semantic_results = Vec::new();
             let mut structured_results = Vec::new();
 
             if let Some(q) = &request.query {
                 if !q.trim().is_empty() {
-                    lexical_results = lexical_search(conn, q, limit);
+                    lexical_results = lexical_search(conn, q, limit * 2);
                 }
+            }
+
+            if let Some(q_embedding) = request.query_embedding.as_ref() {
+                semantic_results = semantic_search(conn, q_embedding, limit * 2);
             }
 
             if let Some(filters) = &request.filters {
                 structured_results = structured_search(conn, filters, limit);
             }
 
-            // Merge: deduplicate by path, prefer higher score
-            let mut seen = std::collections::HashSet::new();
-            for r in lexical_results {
-                if seen.insert(r.path.clone()) { results.push(r); }
+            // RRF fusion: score(d) = Σ 1/(k + rank_i(d)), k=60
+            if !lexical_results.is_empty() || !semantic_results.is_empty() {
+                results = rrf_fuse(lexical_results, semantic_results, 60);
             }
+
+            // Merge structured results (they're filter-based, not ranked)
+            let seen: std::collections::HashSet<String> = results.iter().map(|r| r.path.clone()).collect();
             for r in structured_results {
-                if seen.insert(r.path.clone()) { results.push(r); }
+                if !seen.contains(&r.path) { results.push(r); }
             }
         }
     }
 
-    // Apply limit
     results.truncate(limit as usize);
+    Ok(results)
+}
+
+// ─── Semantic Search ───────────────────────────────────────────
+
+/// Cosine similarity between two float vectors.
+fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
+    if a.len() != b.len() || a.is_empty() { return 0.0; }
+    let mut dot = 0.0_f32;
+    let mut norm_a = 0.0_f32;
+    let mut norm_b = 0.0_f32;
+    for i in 0..a.len() {
+        dot += a[i] * b[i];
+        norm_a += a[i] * a[i];
+        norm_b += b[i] * b[i];
+    }
+    let denom = norm_a.sqrt() * norm_b.sqrt();
+    if denom == 0.0 { 0.0 } else { dot / denom }
+}
+
+/// Search for notes similar to a query embedding using cosine similarity.
+fn semantic_search(conn: &Connection, query_embedding: &[f32], limit: u32) -> Vec<SearchResult> {
+    // Load all embeddings and compute similarity
+    let mut stmt = match conn.prepare(
+        "SELECT e.path, m.name, m.library_name, m.modified, e.embedding, e.dimensions
+         FROM note_embeddings e
+         JOIN note_meta m ON e.path = m.path"
+    ) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut scored: Vec<(SearchResult, f32)> = Vec::new();
+
+    let rows = stmt.query_map([], |row| {
+        let path: String = row.get(0)?;
+        let name: String = row.get(1)?;
+        let library_name: String = row.get(2)?;
+        let modified: u64 = row.get(3)?;
+        let embedding_blob: Vec<u8> = row.get(4)?;
+        let dimensions: usize = row.get::<_, u32>(5)? as usize;
+
+        // Convert blob to f32 vector
+        let embedding: Vec<f32> = embedding_blob
+            .chunks_exact(4)
+            .take(dimensions)
+            .map(|chunk| f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
+            .collect();
+
+        Ok((path, name, library_name, modified, embedding))
+    }).ok();
+
+    if let Some(rows) = rows {
+        for row in rows.flatten() {
+            let (path, name, library_name, modified, embedding) = row;
+            let sim = cosine_similarity(query_embedding, &embedding);
+            if sim > 0.3 { // minimum threshold
+                scored.push((SearchResult {
+                    path, name, library_name, modified,
+                    score: sim as f64,
+                    match_type: "semantic".to_string(),
+                    snippet: None,
+                    heading_breadcrumb: None,
+                }, sim));
+            }
+        }
+    }
+
+    scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    scored.truncate(limit as usize);
+    scored.into_iter().map(|(r, _)| r).collect()
+}
+
+/// Reciprocal Rank Fusion: merges two ranked result lists.
+/// RRF_score(d) = Σ 1/(k + rank_i(d))
+fn rrf_fuse(list_a: Vec<SearchResult>, list_b: Vec<SearchResult>, k: u32) -> Vec<SearchResult> {
+    let mut scores: HashMap<String, (f64, SearchResult)> = HashMap::new();
+
+    for (rank, r) in list_a.into_iter().enumerate() {
+        let rrf = 1.0 / (k as f64 + rank as f64 + 1.0);
+        scores.entry(r.path.clone()).or_insert((0.0, r)).0 += rrf;
+    }
+
+    for (rank, r) in list_b.into_iter().enumerate() {
+        let rrf = 1.0 / (k as f64 + rank as f64 + 1.0);
+        let path = r.path.clone();
+        let mt = r.match_type.clone();
+        let entry = scores.entry(path).or_insert((0.0, r));
+        entry.0 += rrf;
+        if entry.1.match_type == "content" && mt == "semantic" {
+            entry.1.match_type = "hybrid".to_string();
+        }
+    }
+
+    let mut fused: Vec<SearchResult> = scores.into_iter().map(|(_, (score, mut r))| {
+        r.score = score;
+        r
+    }).collect();
+
+    fused.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+    fused
+}
+
+// ─── Embedding Storage Commands ────────────────────────────────
+
+/// Store a pre-computed embedding vector for a note (called from JS semantic engine).
+#[tauri::command]
+pub fn constellation_search_store_embedding(
+    app: tauri::AppHandle,
+    note_path: String,
+    embedding: Vec<f32>,
+) -> Result<(), String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    if let Some(conn) = db.as_ref() {
+        let dimensions = embedding.len() as u32;
+        // Convert f32 vec to blob (little-endian bytes)
+        let blob: Vec<u8> = embedding.iter().flat_map(|f| f.to_le_bytes()).collect();
+        conn.execute(
+            "INSERT OR REPLACE INTO note_embeddings (path, embedding, dimensions) VALUES (?1, ?2, ?3)",
+            params![note_path, blob, dimensions],
+        ).map_err(|e| format!("Failed to store embedding: {}", e))?;
+    }
+    Ok(())
+}
+
+/// Find notes semantically similar to a given note.
+#[tauri::command]
+pub fn constellation_search_similar(
+    app: tauri::AppHandle,
+    note_path: String,
+    limit: Option<u32>,
+) -> Result<Vec<SearchResult>, String> {
+    let state = app.state::<SearchState>();
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard.as_ref().ok_or("Search index not initialized")?;
+
+    // Get the note's embedding
+    let embedding_blob: Vec<u8> = conn.query_row(
+        "SELECT embedding FROM note_embeddings WHERE path = ?1",
+        params![note_path],
+        |row| row.get(0),
+    ).map_err(|_| "Note has no embedding".to_string())?;
+
+    let query_embedding: Vec<f32> = embedding_blob
+        .chunks_exact(4)
+        .map(|chunk| f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
+        .collect();
+
+    let mut results = semantic_search(conn, &query_embedding, limit.unwrap_or(20));
+    // Remove the query note itself from results
+    results.retain(|r| r.path != note_path);
     Ok(results)
 }
