@@ -530,7 +530,9 @@
 		// 1. Call Rust full-text search (searches both title AND body)
 		let bodyMatchPaths = new Set<string>();
 		try {
-			const results = await invoke<{ name: string; path: string; library_name: string; modified: number; preview: string }[]>('search_stars', { query: fsSearchQuery });
+			const results = await invoke<{ name: string; path: string; library_name: string; modified: number; snippet: string }[]>('constellation_search', {
+				request: { query: fsSearchQuery, mode: 'lexical', limit: 200, include_snippet: true }
+			}).catch(() => []);
 			for (const r of results) bodyMatchPaths.add(r.path);
 		} catch { /* fallback to title-only */ }
 

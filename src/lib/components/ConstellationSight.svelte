@@ -414,7 +414,9 @@
 		const contentMatchIds = new Set<string>();
 		if (searchScope !== 'title') {
 			try {
-				const results = await invoke<{ name: string; path: string }[]>('search_stars', { query: searchQuery });
+				const results = await invoke<{ name: string; path: string }[]>('constellation_search', {
+					request: { query: searchQuery, mode: 'lexical', limit: 200 }
+				}).catch(() => []);
 				for (const r of results) contentMatchIds.add(r.name.toLowerCase());
 			} catch { /* fallback */ }
 		}

@@ -333,13 +333,26 @@
 		contextMenu = null;
 	}
 
-	// Search → engine (one-way)
+	// Search → engine (one-way) + async hybrid search
 	let prevSearch = '';
+	let searchDebounce: ReturnType<typeof setTimeout>;
 	$effect(() => {
 		const q = searchQuery;
 		if (q !== prevSearch) {
 			prevSearch = q;
-			engine?.setSearch(q);
+			engine?.setSearch(q); // instant client-side name filter
+			// Also fire hybrid search for content/semantic matches (async)
+			clearTimeout(searchDebounce);
+			if (q.trim().length >= 3) {
+				searchDebounce = setTimeout(async () => {
+					try {
+						const { constellationSearch } = await import('$lib/libraries/store');
+						const results = await constellationSearch({ query: q, mode: 'lexical', limit: 30 });
+						const matchedIds = new Set(results.map(r => r.name.toLowerCase()));
+						engine?.setSearchExtended(matchedIds);
+					} catch { /* search engine not ready, client-side only */ }
+				}, 300);
+			}
 		}
 	});
 

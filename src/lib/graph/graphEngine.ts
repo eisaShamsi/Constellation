@@ -509,6 +509,16 @@ export class GraphEngine {
 		this.needsRedraw = true;
 	}
 
+	/** Add extended search matches from IPC hybrid search (content/semantic hits). */
+	setSearchExtended(matchedIds: Set<string>): void {
+		for (let i = 0; i < this.nodes.length; i++) {
+			if (matchedIds.has(this.nodes[i].id)) {
+				this.searchMatchSet.add(i);
+			}
+		}
+		this.needsRedraw = true;
+	}
+
 	/** Inject AI-detected semantic links (Phase 2) */
 	setSemanticLinks(links: { source: string; target: string; similarity: number }[]): void {
 		const nodeIdMap = new Map<string, number>();

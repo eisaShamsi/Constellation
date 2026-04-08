@@ -228,6 +228,25 @@ fn extract_headings(content: &str) -> Vec<String> {
     headings
 }
 
+/// Arabic text normalization for consistent FTS matching.
+/// Removes diacritics, normalizes Alef variants, Teh marbuta, Alef maqsura.
+fn normalize_arabic_for_search(text: &str) -> String {
+    text.chars().filter_map(|c| {
+        // Remove diacritics (tashkeel)
+        if ('\u{064B}'..='\u{065F}').contains(&c) || c == '\u{0670}'
+            || ('\u{06D6}'..='\u{06ED}').contains(&c) { return None; }
+        // Remove tatweel
+        if c == '\u{0640}' { return None; }
+        // Normalize Alef variants → ا
+        if c == 'أ' || c == 'إ' || c == 'آ' || c == '\u{0671}' { return Some('ا'); }
+        // Alef maqsura → ي
+        if c == 'ى' { return Some('ي'); }
+        // Teh marbuta → ه
+        if c == 'ة' { return Some('ه'); }
+        Some(c)
+    }).collect()
+}
+
 /// Strip markdown syntax for plain-text indexing.
 fn strip_markdown(text: &str) -> String {
     let mut result = text.to_string();
@@ -283,6 +302,11 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
     let headings = extract_headings(&content);
     let plain_body = strip_markdown(&body);
 
+    // Arabic normalization for better FTS matching (Phase 4)
+    // Normalize diacritics, Alef variants, Teh marbuta for consistent indexing
+    let plain_body = normalize_arabic_for_search(&plain_body);
+    let name = normalize_arabic_for_search(&name);
+
     let props_json = serde_json::to_string(&properties).unwrap_or_default();
     let tags_json = serde_json::to_string(&tags).unwrap_or_default();
     let links_json = serde_json::to_string(&wikilinks).unwrap_or_default();
@@ -320,8 +344,9 @@ fn index_library_recursive(conn: &Connection, dir: &Path, library_name: &str, de
 
 /// Lexical search using FTS5 BM25 ranking.
 fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
-    // FTS5 query: match against name and body_text
-    let fts_query = format!("{}*", query.replace('"', ""));
+    // Normalize query for Arabic consistency (same normalization as indexed text)
+    let normalized = normalize_arabic_for_search(query);
+    let fts_query = format!("{}*", normalized.replace('"', ""));
 
     let mut stmt = match conn.prepare(
         "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified,
