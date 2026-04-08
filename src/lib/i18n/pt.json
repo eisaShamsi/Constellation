@@ -409,7 +409,15 @@
         "addLibrary": "Adicionar cofre",
         "addLibraryButton": "+ Adicionar cofre",
         "noLibraries": "Nenhum cofre ainda",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "T",
+        "matchContent": "C",
+        "matchSemantic": "S",
+        "matchProperty": "P",
+        "matchTag": "#",
+        "matchWikilink": "W",
+        "searchHistory": "Pesquisas recentes",
+        "clearHistory": "Limpar histórico"
     },
     "layout": {
         "leftSidebar": "Barra lateral esquerda",

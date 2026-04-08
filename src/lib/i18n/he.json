@@ -409,7 +409,15 @@
         "addLibrary": "הוסף כספת",
         "addLibraryButton": "+ הוסף כספת",
         "noLibraries": "אין כספות עדיין",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "כ",
+        "matchContent": "ת",
+        "matchSemantic": "ס",
+        "matchProperty": "מ",
+        "matchTag": "#",
+        "matchWikilink": "ק",
+        "searchHistory": "חיפושים אחרונים",
+        "clearHistory": "נקה היסטוריה"
     },
     "layout": {
         "leftSidebar": "סרגל צד שמאלי",

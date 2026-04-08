@@ -409,7 +409,15 @@
         "addLibrary": "保管庫を追加",
         "addLibraryButton": "+ 保管庫を追加",
         "noLibraries": "保管庫はまだありません",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "タ",
+        "matchContent": "コ",
+        "matchSemantic": "セ",
+        "matchProperty": "プ",
+        "matchTag": "#",
+        "matchWikilink": "ウ",
+        "searchHistory": "最近の検索",
+        "clearHistory": "履歴を消去"
     },
     "layout": {
         "leftSidebar": "左サイドバー",

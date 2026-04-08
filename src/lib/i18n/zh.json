@@ -409,7 +409,15 @@
         "addLibrary": "添加仓库",
         "addLibraryButton": "+ 添加仓库",
         "noLibraries": "暂无仓库",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "标",
+        "matchContent": "内",
+        "matchSemantic": "语",
+        "matchProperty": "属",
+        "matchTag": "#",
+        "matchWikilink": "维",
+        "searchHistory": "最近搜索",
+        "clearHistory": "清除历史"
     },
     "layout": {
         "leftSidebar": "左侧边栏",

@@ -409,7 +409,15 @@
         "addLibrary": "보관함 추가",
         "addLibraryButton": "+ 보관함 추가",
         "noLibraries": "보관함이 아직 없습니다",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "제",
+        "matchContent": "내",
+        "matchSemantic": "의",
+        "matchProperty": "속",
+        "matchTag": "#",
+        "matchWikilink": "위",
+        "searchHistory": "최근 검색",
+        "clearHistory": "기록 삭제"
     },
     "layout": {
         "leftSidebar": "왼쪽 사이드바",

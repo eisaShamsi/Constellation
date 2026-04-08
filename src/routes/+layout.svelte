@@ -62,6 +62,7 @@
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
 
+	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
 	import DashboardView from '$lib/components/DashboardView.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
@@ -281,6 +282,9 @@
 	let searchTimeout: ReturnType<typeof setTimeout>;
 	let searchEngineReady = false; // true when SQLite FTS5 index is built
 	let advancedSearchResults = $state<ConstellationSearchResult[]>([]);
+	let searchInputFocused = $state(false);
+	let searchHistory = $state<{query: string; timestamp: number}[]>([]);
+	let selectedResultIndex = $state(-1);
 	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
 	let libraryPickerAction = $state<'note' | 'folder' | 'base'>('note');
 	let allExpanded = $state(true);
@@ -2321,6 +2325,7 @@
 	function handleSearch(e: Event) {
 		searchQuery = (e.target as HTMLInputElement).value;
 		clearTimeout(searchTimeout);
+		selectedResultIndex = -1;
 		if (searchQuery.trim()) {
 			searchMode = true;
 			if (searchEngineReady) {
@@ -2336,6 +2341,8 @@
 							library_id: '', library_name: r.library_name,
 							modified: r.modified, preview: r.snippet ?? '',
 						})));
+						// Save to search history
+						addSearchHistory(searchQuery);
 					} catch {
 						// Fallback to legacy search on error
 						searchAllStars(searchQuery);
@@ -2355,6 +2362,7 @@
 				} else {
 					searchTimeout = setTimeout(() => searchAllStars(searchQuery), 300);
 				}
+				addSearchHistory(searchQuery);
 			}
 		} else {
 			searchMode = false;
@@ -2367,6 +2375,81 @@
 		searchQuery = '';
 		searchMode = false;
 		searchResults.set([]);
+		advancedSearchResults = [];
+		selectedResultIndex = -1;
+	}
+
+	function handleSearchKeydown(e: KeyboardEvent) {
+		const results = advancedSearchResults.length > 0 ? advancedSearchResults : get(searchResults);
+		if (e.key === 'Escape') {
+			clearSearch();
+			(e.target as HTMLInputElement)?.blur();
+			return;
+		}
+		if (!results.length) return;
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			selectedResultIndex = Math.min(selectedResultIndex + 1, results.length - 1);
+			scrollResultIntoView();
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			selectedResultIndex = Math.max(selectedResultIndex - 1, 0);
+			scrollResultIntoView();
+		} else if (e.key === 'Enter' && selectedResultIndex >= 0) {
+			e.preventDefault();
+			const r = results[selectedResultIndex] as any;
+			handleSearchResultClick(r.path, r.library_name ?? r.library_name);
+		}
+	}
+
+	function scrollResultIntoView() {
+		requestAnimationFrame(() => {
+			const el = document.querySelector(`.s-result[data-idx="${selectedResultIndex}"]`);
+			el?.scrollIntoView({ block: 'nearest' });
+		});
+	}
+
+	function handleSearchFocus() {
+		searchInputFocused = true;
+		searchHistory = readSearchHistory();
+	}
+
+	function handleSearchBlur() {
+		// Delay to allow click on history item
+		setTimeout(() => { searchInputFocused = false; }, 200);
+	}
+
+	function selectHistoryItem(query: string) {
+		searchQuery = query;
+		searchMode = true;
+		searchInputFocused = false;
+		// Trigger the search
+		if (searchEngineReady) {
+			setTimeout(async () => {
+				try {
+					const req = parseSearchQuery(query);
+					const results = await constellationSearch(req);
+					advancedSearchResults = results;
+					searchResults.set(results.map(r => ({
+						name: r.name, path: r.path,
+						library_id: '', library_name: r.library_name,
+						modified: r.modified, preview: r.snippet ?? '',
+					})));
+				} catch { searchAllStars(query); advancedSearchResults = []; }
+			}, 50);
+		} else {
+			searchAllStars(query);
+		}
+	}
+
+	function handleClearHistory() {
+		clearSearchHistory();
+		searchHistory = [];
+	}
+
+	function matchBadgeKey(type: string): string {
+		const cap = type.charAt(0).toUpperCase() + type.slice(1);
+		return `sidebar.match${cap}`;
 	}
 
 	function cycleSplit() {
@@ -2599,8 +2682,10 @@
 	async function handleSearchResultClick(path: string, libraryName: string, e?: MouseEvent) {
 		const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		await openNoteTab(path, libraryName, libraryColor, undefined, newTab);
-		clearSearch();
+		// Extract raw search text (strip structured prefixes) for highlighting
+		const rawQuery = searchQuery.replace(/^(#|links to \[\[|in:)\S*/i, '').trim();
+		await openNoteTab(path, libraryName, libraryColor, rawQuery || undefined, newTab);
+		// Don't clear search — keep results pinned for navigation
 		if (!isHome) window.location.href = '/';
 	}
 
@@ -2695,7 +2780,7 @@
 				{#if searchMode}
 					<div class="search-box">
 						<svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-						<input type="text" placeholder={$t('sidebar.searchPlaceholder')} value={searchQuery} oninput={handleSearch}/>
+						<input type="text" placeholder={$t('sidebar.searchPlaceholder')} value={searchQuery} oninput={handleSearch} onkeydown={handleSearchKeydown} onfocus={handleSearchFocus} onblur={handleSearchBlur}/>
 						<button class="search-clear" onclick={clearSearch}>×</button>
 					</div>
 				{/if}
@@ -2776,14 +2861,14 @@
 				{:else if searchMode && searchQuery}
 					{#if $searchResults.length > 0}
 						<div class="section-label">{$searchResults.length} {$t('sidebar.results')}</div>
-						{#each advancedSearchResults.length > 0 ? advancedSearchResults : $searchResults as result}
+						{#each advancedSearchResults.length > 0 ? advancedSearchResults : $searchResults as result, idx}
 							{@const isAdvanced = advancedSearchResults.length > 0}
 							{@const star = isAdvanced ? result : result}
-							<button class="s-result" class:active={$activeTab?.path === star.path}
+							<button class="s-result" class:active={$activeTab?.path === star.path} class:s-selected={idx === selectedResultIndex} data-idx={idx}
 								onclick={(e) => handleSearchResultClick(star.path, star.library_name, e)}>
 								<div class="s-result-top">
 									{#if isAdvanced && (result as ConstellationSearchResult).match_type}
-										<span class="s-match-type s-match-{(result as ConstellationSearchResult).match_type}"></span>
+										<span class="s-match-badge s-match-{(result as ConstellationSearchResult).match_type}">{$t(matchBadgeKey((result as ConstellationSearchResult).match_type))}</span>
 									{/if}
 									<div class="s-name" dir="auto">{star.name}</div>
 								</div>
@@ -2803,6 +2888,18 @@
 					{:else}
 						<div class="no-results">{$t('sidebar.noResults')}</div>
 					{/if}
+				{:else if searchMode && !searchQuery && searchInputFocused && searchHistory.length > 0}
+					<div class="section-label">{$t('sidebar.searchHistory')}</div>
+					{#each searchHistory as entry}
+						<button class="s-result s-history-item" onclick={() => selectHistoryItem(entry.query)}>
+							<div class="s-result-top">
+								<svg class="sh-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+								<div class="s-name" dir="auto">{entry.query}</div>
+								<span class="sh-time">{relativeTime(entry.timestamp)}</span>
+							</div>
+						</button>
+					{/each}
+					<button class="s-history-clear" onclick={handleClearHistory}>{$t('sidebar.clearHistory')}</button>
 				{:else if activeLensId && lensEntries}
 					<!-- CE Phase 9: Lens view -->
 					<div class="section-label">🔍 {availableLenses.find((l: any) => l.id === activeLensId)?.name ?? 'Lens'}</div>
@@ -4194,7 +4291,12 @@
 	.s-lib-name { color: var(--accent); flex-shrink: 0; }
 	.s-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.s-result-top { display: flex; align-items: center; gap: 4px; }
-	.s-match-type { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+	.s-result.s-selected { background: var(--bg-hover); outline: 1px solid var(--interactive-accent); outline-offset: -1px; }
+	.s-match-badge {
+		min-width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;
+		font-size: 9px; font-weight: 700; line-height: 14px; text-align: center;
+		color: #fff; display: inline-block;
+	}
 	.s-match-title { background: #3b82f6; }
 	.s-match-content { background: #16a34a; }
 	.s-match-semantic { background: #7c3aed; }
@@ -4202,6 +4304,15 @@
 	.s-match-tag { background: #f472b6; }
 	.s-match-wikilink { background: #60a5fa; }
 	.s-match-structured { background: #94a3b8; }
+	/* Search history */
+	.sh-icon { color: var(--text-faint); flex-shrink: 0; }
+	.sh-time { margin-inline-start: auto; font-size: 0.65rem; color: var(--text-faint); flex-shrink: 0; }
+	.s-history-clear {
+		display: block; width: 100%; padding: 4px 12px; background: none; border: none;
+		color: var(--text-faint); font-size: 0.7rem; cursor: pointer; text-align: start;
+		font-family: inherit;
+	}
+	.s-history-clear:hover { color: var(--text-muted); text-decoration: underline; }
 	.s-breadcrumb { font-size: 0.65rem; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.s-snippet { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.s-snippet :global(mark) { background: color-mix(in srgb, var(--interactive-accent) 25%, transparent); color: var(--text-normal); border-radius: 2px; padding: 0 1px; }

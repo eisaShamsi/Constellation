@@ -409,7 +409,15 @@
         "sortModifiedAsc": "مرتب‌سازی: تغییر (قدیمی‌ترین)",
         "collapseAll": "جمع کردن همه",
         "expandAll": "باز کردن همه",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "ع",
+        "matchContent": "م",
+        "matchSemantic": "م",
+        "matchProperty": "و",
+        "matchTag": "#",
+        "matchWikilink": "پ",
+        "searchHistory": "جستجوهای اخیر",
+        "clearHistory": "پاک کردن تاریخچه"
     },
     "layout": {
         "leftSidebar": "نوار کناری چپ",

@@ -409,7 +409,15 @@
         "addLibrary": "خزانہ شامل کریں",
         "addLibraryButton": "+ خزانہ شامل کریں",
         "noLibraries": "ابھی کوئی خزانہ نہیں",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "س",
+        "matchContent": "م",
+        "matchSemantic": "م",
+        "matchProperty": "خ",
+        "matchTag": "#",
+        "matchWikilink": "و",
+        "searchHistory": "حالیہ تلاشیں",
+        "clearHistory": "تاریخ صاف کریں"
     },
     "layout": {
         "leftSidebar": "بایاں سائڈبار",

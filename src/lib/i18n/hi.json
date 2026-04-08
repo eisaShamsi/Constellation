@@ -409,7 +409,15 @@
         "addLibrary": "तिजोरी जोड़ें",
         "addLibraryButton": "+ तिजोरी जोड़ें",
         "noLibraries": "अभी कोई तिजोरी नहीं",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "श",
+        "matchContent": "स",
+        "matchSemantic": "अ",
+        "matchProperty": "ग",
+        "matchTag": "#",
+        "matchWikilink": "व",
+        "searchHistory": "हाल की खोजें",
+        "clearHistory": "इतिहास मिटाएं"
     },
     "layout": {
         "leftSidebar": "बायाँ साइडबार",

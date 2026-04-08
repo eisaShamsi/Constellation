@@ -409,7 +409,15 @@
         "addLibrary": "Добавить хранилище",
         "addLibraryButton": "+ Добавить хранилище",
         "noLibraries": "Хранилищ пока нет",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "Н",
+        "matchContent": "С",
+        "matchSemantic": "С",
+        "matchProperty": "С",
+        "matchTag": "#",
+        "matchWikilink": "В",
+        "searchHistory": "Недавние поиски",
+        "clearHistory": "Очистить историю"
     },
     "layout": {
         "leftSidebar": "Левая панель",

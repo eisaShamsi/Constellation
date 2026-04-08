@@ -409,7 +409,15 @@
         "sortModifiedAsc": "ترتيب: التعديل (الأقدم)",
         "collapseAll": "طي الكل",
         "expandAll": "توسيع الكل",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "ع",
+        "matchContent": "م",
+        "matchSemantic": "د",
+        "matchProperty": "خ",
+        "matchTag": "#",
+        "matchWikilink": "ر",
+        "searchHistory": "عمليات البحث الأخيرة",
+        "clearHistory": "مسح السجل"
     },
     "layout": {
         "leftSidebar": "الشريط الأيسر",

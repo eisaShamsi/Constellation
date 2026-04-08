@@ -409,7 +409,15 @@
         "sortModifiedAsc": "Orden: Modificado (más antiguo)",
         "collapseAll": "Contraer todo",
         "expandAll": "Expandir todo",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "T",
+        "matchContent": "C",
+        "matchSemantic": "S",
+        "matchProperty": "P",
+        "matchTag": "#",
+        "matchWikilink": "W",
+        "searchHistory": "Búsquedas recientes",
+        "clearHistory": "Borrar historial"
     },
     "layout": {
         "leftSidebar": "Barra lateral izquierda",

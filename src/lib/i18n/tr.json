@@ -409,7 +409,15 @@
         "addLibrary": "Kasa ekle",
         "addLibraryButton": "+ Kasa ekle",
         "noLibraries": "Henüz kasa yok",
-        "graphViewTitle": "Sky View"
+        "graphViewTitle": "Sky View",
+        "matchTitle": "B",
+        "matchContent": "İ",
+        "matchSemantic": "A",
+        "matchProperty": "Ö",
+        "matchTag": "#",
+        "matchWikilink": "V",
+        "searchHistory": "Son aramalar",
+        "clearHistory": "Geçmişi temizle"
     },
     "layout": {
         "leftSidebar": "Sol kenar çubuğu",

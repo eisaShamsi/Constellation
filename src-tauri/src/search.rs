@@ -362,15 +362,31 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
         Err(_) => return Vec::new(),
     };
 
+    let query_lower = normalized.to_lowercase();
+
     let results = stmt.query_map(params![fts_query, limit], |row| {
+        let name: String = row.get(1)?;
+        let name_lower = name.to_lowercase();
+        let title_hit = name_lower.contains(&query_lower);
+        let snippet: Option<String> = row.get(5).ok();
+        let body_hit = snippet.as_ref().map_or(false, |s| s.contains("<mark>"));
+
+        let match_type = if title_hit && body_hit {
+            "title".to_string() // prioritize title when both match
+        } else if title_hit {
+            "title".to_string()
+        } else {
+            "content".to_string()
+        };
+
         Ok(SearchResult {
             path: row.get(0)?,
-            name: row.get(1)?,
+            name,
             library_name: row.get(2)?,
             modified: row.get(3)?,
-            score: row.get::<_, f64>(4)?.abs(), // BM25 returns negative (lower = better)
-            snippet: row.get(5).ok(),
-            match_type: "content".to_string(),
+            score: row.get::<_, f64>(4)?.abs(),
+            snippet,
+            match_type,
             heading_breadcrumb: None,
         })
     }).ok();
@@ -444,6 +460,17 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
         return Vec::new();
     }
 
+    // Determine the dominant filter type for match_type coloring
+    let dominant_type = if filters.tags.as_ref().map_or(false, |t| !t.is_empty()) {
+        "tag"
+    } else if filters.wikilinks_to.as_ref().map_or(false, |w| !w.is_empty()) {
+        "wikilink"
+    } else if filters.properties.as_ref().map_or(false, |p| !p.is_empty()) {
+        "property"
+    } else {
+        "structured"
+    };
+
     let where_clause = conditions.join(" AND ");
     let sql = format!(
         "SELECT path, name, library_name, modified FROM note_meta WHERE {} ORDER BY modified DESC LIMIT {}",
@@ -456,6 +483,7 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     };
 
     let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let mt = dominant_type.to_string();
 
     let results = stmt.query_map(param_refs.as_slice(), |row| {
         Ok(SearchResult {
@@ -464,7 +492,7 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
             library_name: row.get(2)?,
             modified: row.get(3)?,
             score: 1.0,
-            match_type: "structured".to_string(),
+            match_type: mt.clone(),
             snippet: None,
             heading_breadcrumb: None,
         })
