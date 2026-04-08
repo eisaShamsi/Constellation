@@ -11,6 +11,8 @@
 		activeTab, openTabs, activeTabId,
 		splitActive, splitDirection, focusedTabId, focusedTab,
 		loadLibraries, loadAllStats, addLibrary, createNewLibrary, searchAllStars,
+		initSearchIndex, constellationSearch, parseSearchQuery,
+		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, writeNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
@@ -277,6 +279,8 @@
 	// indexMode removed - index now opens as full page view
 	let searchQuery = $state('');
 	let searchTimeout: ReturnType<typeof setTimeout>;
+	let searchEngineReady = false; // true when SQLite FTS5 index is built
+	let advancedSearchResults = $state<ConstellationSearchResult[]>([]);
 	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
 	let libraryPickerAction = $state<'note' | 'folder' | 'base'>('note');
 	let allExpanded = $state(true);
@@ -1412,6 +1416,9 @@
 		// Detect multiple monitors — gate SS features
 		hasMultipleDisplays = await hasMultipleMonitors().catch(() => false);
 
+		// Initialize search engine (background, non-blocking)
+		initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
+
 		// Second screen event listeners
 		const unlistenScreenNote = await onNoteToMain(async (note: ScreenNote) => {
 			await openNoteTab(note.path, note.libraryName, note.libraryColor);
@@ -2316,21 +2323,43 @@
 		clearTimeout(searchTimeout);
 		if (searchQuery.trim()) {
 			searchMode = true;
-			// Property-based search: [key:value] or [key]
-			const propMatch = searchQuery.trim().match(/^\[([^\]:]+)(?::(.+))?\]$/);
-			if (propMatch) {
-				const key = propMatch[1].trim();
-				const value = propMatch[2]?.trim() ?? '';
+			if (searchEngineReady) {
+				// Use new Constellation Search Engine
 				searchTimeout = setTimeout(async () => {
-					const results = await searchByProperty(key, value);
-					searchResults.set(results);
+					try {
+						const req = parseSearchQuery(searchQuery);
+						const results = await constellationSearch(req);
+						advancedSearchResults = results;
+						// Also update legacy store for backward compat
+						searchResults.set(results.map(r => ({
+							name: r.name, path: r.path,
+							library_id: '', library_name: r.library_name,
+							modified: r.modified, preview: r.snippet ?? '',
+						})));
+					} catch {
+						// Fallback to legacy search on error
+						searchAllStars(searchQuery);
+						advancedSearchResults = [];
+					}
 				}, 300);
 			} else {
-				searchTimeout = setTimeout(() => searchAllStars(searchQuery), 300);
+				// Legacy fallback: property-based or full-text
+				const propMatch = searchQuery.trim().match(/^\[([^\]:]+)(?::(.+))?\]$/);
+				if (propMatch) {
+					const key = propMatch[1].trim();
+					const value = propMatch[2]?.trim() ?? '';
+					searchTimeout = setTimeout(async () => {
+						const results = await searchByProperty(key, value);
+						searchResults.set(results);
+					}, 300);
+				} else {
+					searchTimeout = setTimeout(() => searchAllStars(searchQuery), 300);
+				}
 			}
 		} else {
 			searchMode = false;
 			searchResults.set([]);
+			advancedSearchResults = [];
 		}
 	}
 
@@ -2747,13 +2776,28 @@
 				{:else if searchMode && searchQuery}
 					{#if $searchResults.length > 0}
 						<div class="section-label">{$searchResults.length} {$t('sidebar.results')}</div>
-						{#each $searchResults as star}
-							<button class="s-result" class:active={$activeTab?.path === star.path} onclick={(e) => handleSearchResultClick(star.path, star.library_name, e)}>
-								<div class="s-name">{star.name}</div>
+						{#each advancedSearchResults.length > 0 ? advancedSearchResults : $searchResults as result}
+							{@const isAdvanced = advancedSearchResults.length > 0}
+							{@const star = isAdvanced ? result : result}
+							<button class="s-result" class:active={$activeTab?.path === star.path}
+								onclick={(e) => handleSearchResultClick(star.path, star.library_name, e)}>
+								<div class="s-result-top">
+									{#if isAdvanced && (result as ConstellationSearchResult).match_type}
+										<span class="s-match-type s-match-{(result as ConstellationSearchResult).match_type}"></span>
+									{/if}
+									<div class="s-name" dir="auto">{star.name}</div>
+								</div>
 								<div class="s-meta">
 									<span class="s-lib-name">{star.library_name}</span>
-									<span class="s-preview">{star.preview}</span>
+									{#if isAdvanced && (result as ConstellationSearchResult).heading_breadcrumb?.length}
+										<span class="s-breadcrumb">{(result as ConstellationSearchResult).heading_breadcrumb?.join(' › ')}</span>
+									{/if}
 								</div>
+								{#if isAdvanced && (result as ConstellationSearchResult).snippet}
+									<div class="s-snippet" dir="auto">{@html (result as ConstellationSearchResult).snippet}</div>
+								{:else if !isAdvanced && star.preview}
+									<div class="s-snippet" dir="auto">{star.preview}</div>
+								{/if}
 							</button>
 						{/each}
 					{:else}
@@ -4149,6 +4193,18 @@
 	.s-meta { display: flex; gap: 4px; font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
 	.s-lib-name { color: var(--accent); flex-shrink: 0; }
 	.s-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.s-result-top { display: flex; align-items: center; gap: 4px; }
+	.s-match-type { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+	.s-match-title { background: #3b82f6; }
+	.s-match-content { background: #16a34a; }
+	.s-match-semantic { background: #7c3aed; }
+	.s-match-property { background: #f59e0b; }
+	.s-match-tag { background: #f472b6; }
+	.s-match-wikilink { background: #60a5fa; }
+	.s-match-structured { background: #94a3b8; }
+	.s-breadcrumb { font-size: 0.65rem; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.s-snippet { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.s-snippet :global(mark) { background: color-mix(in srgb, var(--interactive-accent) 25%, transparent); color: var(--text-normal); border-radius: 2px; padding: 0 1px; }
 	.no-results { padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.82rem; }
 
 	.library-header {
