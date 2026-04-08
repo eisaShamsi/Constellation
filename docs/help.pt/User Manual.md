@@ -278,6 +278,25 @@ Clique no campo de pesquisa quando estiver vazio para ver suas pesquisas recente
 
 O historico de pesquisa e armazenado localmente no seu dispositivo e persiste entre reinicializacoes.
 
+### Search Hub
+
+O Search Hub e uma experiencia de pesquisa em tela cheia. Clique no icone da lupa na barra do dock para abri-lo. Ambas as barras laterais se recolhem para dar espaco maximo. Digite qualquer termo e o Constellation pesquisa em todos os lugares simultaneamente, agrupando resultados em 5 categorias: Titulos, Conteudos, Tags, Propriedades e Wikilinks. Cada categoria tem uma secao recolhivel com um badge de contagem. Clique em qualquer resultado para abri-lo no editor com todas as ocorrencias destacadas. Um botao "Voltar ao Search Hub" aparece para que voce possa voltar sem pesquisar novamente.
+
+### Operadores de link
+
+O Constellation suporta 6 operadores de pesquisa de topologia de links:
+
+| Sintaxe | O que encontra |
+|---------|----------------|
+| `links to [[X]]` | Notas que linkam para X (backlinks) |
+| `links from [[X]]` | Notas para as quais X linka (links de saida) |
+| `mutual [[X]]` | Notas linkadas a X E X linka de volta (bidirecional) |
+| `mentions [[X]]` | Notas contendo o nome de X sem um [[wikilink]] |
+| `orphans` | Notas sem links de entrada ou saida |
+| `links between [[X]] and [[Y]]` | Notas que linkam para X e Y |
+
+Ao digitar qualquer operador de link, o autocomplete `[[` mostra todas as notas no universo. Apos selecionar uma nota, digite `#` para completar titulos ou `|type:` para completar o tipo de link.
+
 ---
 
 ## 5. Vista Estelar (GraphMind)

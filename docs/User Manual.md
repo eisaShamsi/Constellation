@@ -386,6 +386,25 @@ Click on the search field when it is empty to see your recent searches (last 20 
 
 Search history is stored locally on your device and persists across app restarts.
 
+### Search Hub
+
+The Search Hub is a full-screen search experience. Click the magnifying glass icon in the dock bar to open it. Both sidebars collapse to give maximum space. Type any term and Constellation searches everywhere simultaneously, grouping results into 5 categories: Titles, Contents, Tags, Properties, and Wikilinks. Each category has a collapsible section with a count badge. Click any result to open it in the editor with all occurrences highlighted. A "Return to Search Hub" button appears so you can go back without re-searching.
+
+### Link Operators
+
+Constellation supports 6 link-topology search operators:
+
+| Syntax | What it finds |
+|--------|---------------|
+| `links to [[X]]` | Notes that link to X (backlinks) |
+| `links from [[X]]` | Notes that X links to (outgoing links) |
+| `mutual [[X]]` | Notes linked to X AND X links back (bidirectional) |
+| `mentions [[X]]` | Notes containing X's name without a [[wikilink]] |
+| `orphans` | Notes with no incoming or outgoing links |
+| `links between [[X]] and [[Y]]` | Notes that link to both X and Y |
+
+When typing any link operator, the `[[` autocomplete shows all notes in the universe. After selecting a note, type `#` for heading completion or `|type:` for link type completion.
+
 ---
 
 ## 6. Sky View (GraphMind)

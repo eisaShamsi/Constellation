@@ -278,6 +278,25 @@ Boş olduğunda arama alanına tıklayarak son aramalarınızı (son 20 sorgu) g
 
 Arama geçmişi cihazınızda yerel olarak depolanır ve uygulama yeniden başlatmaları arasında korunur.
 
+### Search Hub
+
+Search Hub, tam ekran bir arama deneyimidir. Açmak için dock çubuğundaki büyüteç simgesine tıklayın. Maksimum alan sağlamak için her iki kenar çubuğu da kapanır. Herhangi bir terim yazın ve Constellation her yerde aynı anda arar, sonuçları 5 kategoriye gruplar: Başlıklar, İçerikler, Etiketler, Özellikler ve Wikilink'ler. Her kategorinin sayı rozeti olan daraltılabilir bir bölümü vardır. Herhangi bir sonuca tıklayarak tüm geçişlerin vurgulandığı editörde açın. "Search Hub'a Dön" düğmesi görünerek yeniden aramadan geri dönmenizi sağlar.
+
+### Bağlantı operatörleri
+
+Constellation 6 bağlantı topolojisi arama operatörünü destekler:
+
+| Söz dizimi | Ne bulur |
+|------------|----------|
+| `links to [[X]]` | X'e bağlantı veren notlar (geri bağlantılar) |
+| `links from [[X]]` | X'in bağlantı verdiği notlar (giden bağlantılar) |
+| `mutual [[X]]` | X'e bağlı ve X geri bağlantı veren notlar (çift yönlü) |
+| `mentions [[X]]` | [[wikilink]] olmadan X'in adını içeren notlar |
+| `orphans` | Gelen veya giden bağlantısı olmayan notlar |
+| `links between [[X]] and [[Y]]` | Hem X hem de Y'ye bağlantı veren notlar |
+
+Herhangi bir bağlantı operatörü yazarken, `[[` otomatik tamamlama evrendeki tüm notları gösterir. Bir not seçtikten sonra, başlık tamamlama için `#` veya bağlantı türü tamamlama için `|type:` yazın.
+
 ---
 
 ## 5. Sky View (GraphMind)

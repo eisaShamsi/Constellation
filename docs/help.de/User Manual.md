@@ -278,6 +278,25 @@ Klicken Sie auf das Suchfeld, wenn es leer ist, um Ihre letzten Suchen (letzte 2
 
 Der Suchverlauf wird lokal auf Ihrem Geraet gespeichert und bleibt ueber Neustarts erhalten.
 
+### Search Hub
+
+Der Search Hub ist eine Vollbild-Sucherfahrung. Klicken Sie auf das Lupensymbol in der Dock-Leiste, um ihn zu oeffnen. Beide Seitenleisten klappen ein, um maximalen Platz zu bieten. Geben Sie einen beliebigen Begriff ein und Constellation durchsucht gleichzeitig alles und gruppiert Ergebnisse in 5 Kategorien: Titel, Inhalte, Tags, Eigenschaften und Wikilinks. Jede Kategorie hat einen aufklappbaren Abschnitt mit einem Zaehler-Badge. Klicken Sie auf ein Ergebnis, um es im Editor zu oeffnen, wobei alle Vorkommen hervorgehoben werden. Eine Schaltflaeche "Zurueck zum Search Hub" erscheint, damit Sie zurueckkehren koennen, ohne erneut zu suchen.
+
+### Link-Operatoren
+
+Constellation unterstuetzt 6 Link-Topologie-Suchoperatoren:
+
+| Syntax | Was es findet |
+|--------|---------------|
+| `links to [[X]]` | Notizen, die auf X verlinken (Backlinks) |
+| `links from [[X]]` | Notizen, auf die X verlinkt (ausgehende Links) |
+| `mutual [[X]]` | Notizen, die mit X verlinkt sind UND X verlinkt zurueck (bidirektional) |
+| `mentions [[X]]` | Notizen, die den Namen von X ohne [[Wikilink]] enthalten |
+| `orphans` | Notizen ohne eingehende oder ausgehende Links |
+| `links between [[X]] and [[Y]]` | Notizen, die sowohl auf X als auch auf Y verlinken |
+
+Bei der Eingabe eines Link-Operators zeigt die `[[`-Autovervollstaendigung alle Notizen im Universum. Nach Auswahl einer Notiz geben Sie `#` fuer Ueberschriften-Vervollstaendigung oder `|type:` fuer Linktyp-Vervollstaendigung ein.
+
 ---
 
 ## 5. Sternenansicht (GraphMind)
