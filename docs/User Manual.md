@@ -12,7 +12,8 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 2. [Universe and Libraries](#universe-and-libraries)
 3. [Creating and Editing Notes](#creating-and-editing-notes)
 4. [Notes Management Sidebar](#notes-management-sidebar)
-5. [Sky View (GraphMind)](#star-view-graphmind)
+5. [Search](#search)
+6. [Sky View (GraphMind)](#star-view-graphmind)
 6. [Split View](#split-view)
 7. [Index](#index)
 8. [Constellation Sight](#constellation-lens)
@@ -326,7 +327,68 @@ An interactive tree-list visualization of your entire knowledge base hierarchy:
 
 ---
 
-## 5. Sky View (GraphMind)
+## 5. Search
+
+Constellation includes a hybrid multilingual search engine powered by SQLite FTS5 with BM25 ranking, structured query filters, and Arabic-optimized normalization. Search is accessible from the sidebar toolbar.
+
+### How to Search
+
+Click the search icon in the sidebar toolbar or use `Ctrl+Shift+F` to activate search mode. Type your query and results appear after a brief debounce (300ms). Press `Escape` or click the `×` button to clear the search and return to the file tree.
+
+### Search Syntax
+
+| Syntax | Example | What it finds |
+|--------|---------|---------------|
+| Free text | `project management` | Notes containing those words in title or body |
+| Tag filter | `#research` | Notes tagged with `#research` |
+| Property filter | `status=active` | Notes with frontmatter property `status` equal to `active` |
+| Wikilink filter | `links to [[Climate]]` | Notes that link to `[[Climate]]` |
+| Library scope | `in:MyLibrary` | Restricts results to a specific library |
+| Combined | `#research status=active economy` | All filters applied together |
+
+### Match-Type Badges
+
+Each search result displays a colored badge indicating how the match was found. The badge shows a localized letter from your language for accessibility (color-blind safe):
+
+| Badge | Color | Meaning |
+|-------|-------|---------|
+| **T** (en) / **ع** (ar) | Blue | Title match — the search term appears in the note's name |
+| **C** (en) / **م** (ar) | Green | Content match — the search term appears in the note's body |
+| **S** (en) / **د** (ar) | Purple | Semantic match — conceptually related (requires embedding model) |
+| **P** (en) / **خ** (ar) | Amber | Property match — matched via frontmatter property filter |
+| **#** | Pink | Tag match — matched via tag filter |
+| **W** (en) / **ر** (ar) | Light blue | Wikilink match — matched via wikilink filter |
+
+Badge letters are localized for all 15 supported languages.
+
+### Pinned Results (Navigate Through Results)
+
+Search results stay visible after you click one. The opened note is highlighted in the result list so you can see which result you are viewing. Click another result to navigate to it without re-searching. This lets you browse through multiple results from a single search.
+
+To clear the search, press `Escape` or click the `×` button.
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Arrow Down` | Select next result |
+| `Arrow Up` | Select previous result |
+| `Enter` | Open the selected result |
+| `Escape` | Clear search and return to file tree |
+
+### Search Term Highlighting
+
+When you open a note from search results, all occurrences of your search term are highlighted in the editor. This works with Arabic-aware diacritic-insensitive matching — searching for "ادارة" will highlight "إدارة" and all diacritical variants.
+
+### Search History
+
+Click on the search field when it is empty to see your recent searches (last 20 queries). Each entry shows the query text and how long ago it was performed. Click any history entry to re-run that search instantly. Use the "Clear history" link at the bottom to erase all history.
+
+Search history is stored locally on your device and persists across app restarts.
+
+---
+
+## 6. Sky View (GraphMind)
 
 Sky View visualizes your notes as an interactive 3D graph powered by the **GraphMind** engine (Pixi.js WebGL).
 

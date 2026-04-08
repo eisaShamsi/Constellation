@@ -11,23 +11,24 @@ Constellation es una aplicacion de escritorio para la Gestion del Conocimiento P
 1. [Primeros Pasos](#primeros-pasos)
 2. [Universo y Bibliotecas](#universo-y-bibliotecas)
 3. [Crear y Editar Notas](#crear-y-editar-notas)
-4. [Vista Estelar (GraphMind)](#vista-estelar-graphmind)
-5. [Vista Dividida](#vista-dividida)
-6. [Indice](#indice)
-7. [Segunda Pantalla](#segunda-pantalla)
-8. [Propiedades y Frontmatter](#propiedades-y-frontmatter)
-9. [Plantillas](#plantillas)
-10. [Tablas](#tablas)
-11. [Tareas](#tareas)
-12. [Importador](#importador)
-13. [Calendario](#calendario)
-14. [Lens](#lens)
-15. [Configuracion](#configuracion)
-16. [Atajos de Teclado](#atajos-de-teclado)
-17. [Soporte RTL y Arabe](#soporte-rtl-y-arabe)
-18. [Seguridad y Privacidad](#seguridad-y-privacidad)
-19. [Mapa del conocimiento](#mapa-del-conocimiento)
-20. [Motor Cognitivo](#motor-cognitivo)
+4. [Busqueda](#busqueda)
+5. [Vista Estelar (GraphMind)](#vista-estelar-graphmind)
+6. [Vista Dividida](#vista-dividida)
+7. [Indice](#indice)
+8. [Segunda Pantalla](#segunda-pantalla)
+9. [Propiedades y Frontmatter](#propiedades-y-frontmatter)
+10. [Plantillas](#plantillas)
+11. [Tablas](#tablas)
+12. [Tareas](#tareas)
+13. [Importador](#importador)
+14. [Calendario](#calendario)
+15. [Lens](#lens)
+16. [Configuracion](#configuracion)
+17. [Atajos de Teclado](#atajos-de-teclado)
+18. [Soporte RTL y Arabe](#soporte-rtl-y-arabe)
+19. [Seguridad y Privacidad](#seguridad-y-privacidad)
+20. [Mapa del conocimiento](#mapa-del-conocimiento)
+21. [Motor Cognitivo](#motor-cognitivo)
 
 ---
 
@@ -218,7 +219,68 @@ Tambien puedes enlazar a encabezados especificos: `[[Nombre de la Nota#Encabezad
 
 ---
 
-## 4. Vista Estelar (GraphMind)
+## 4. Busqueda
+
+Constellation incluye un motor de busqueda hibrido multilingue basado en SQLite FTS5 con clasificacion BM25, filtros de consulta estructurados y normalizacion optimizada para arabe. La busqueda es accesible desde la barra lateral.
+
+### Como buscar
+
+Haga clic en el icono de busqueda en la barra lateral o use `Ctrl+Shift+F` para activar el modo de busqueda. Escriba su consulta y los resultados aparecen tras un breve retardo (300ms). Presione `Escape` o haga clic en `x` para limpiar la busqueda y volver al arbol de archivos.
+
+### Sintaxis de busqueda
+
+| Sintaxis | Ejemplo | Que encuentra |
+|----------|---------|---------------|
+| Texto libre | `gestion de proyectos` | Notas que contienen esas palabras en titulo o cuerpo |
+| Filtro de etiqueta | `#investigacion` | Notas etiquetadas con `#investigacion` |
+| Filtro de propiedad | `status=activo` | Notas con propiedad frontmatter `status` igual a `activo` |
+| Filtro de wikilink | `links to [[Clima]]` | Notas que enlazan a `[[Clima]]` |
+| Ambito de biblioteca | `in:MiBiblioteca` | Restringe resultados a una biblioteca especifica |
+| Combinado | `#investigacion status=activo economia` | Todos los filtros aplicados juntos |
+
+### Insignias de tipo de coincidencia
+
+Cada resultado muestra una insignia de color que indica como se encontro la coincidencia. La insignia muestra una letra localizada para accesibilidad (segura para daltonicos):
+
+| Insignia | Color | Significado |
+|----------|-------|-------------|
+| **T** | Azul | Coincidencia de titulo — el termino aparece en el nombre de la nota |
+| **C** | Verde | Coincidencia de contenido — el termino aparece en el cuerpo de la nota |
+| **S** | Purpura | Coincidencia semantica — relacionado conceptualmente (requiere modelo de embeddings) |
+| **P** | Ambar | Coincidencia de propiedad — encontrado via filtro de propiedad frontmatter |
+| **#** | Rosa | Coincidencia de etiqueta — encontrado via filtro de etiqueta |
+| **W** | Azul claro | Coincidencia de wikilink — encontrado via filtro de wikilink |
+
+Las letras de las insignias estan localizadas para los 15 idiomas soportados.
+
+### Resultados fijados (Navegar entre resultados)
+
+Los resultados permanecen visibles despues de hacer clic en uno. La nota abierta se resalta en la lista de resultados para que vea cual esta visualizando. Haga clic en otro resultado para navegar a el sin repetir la busqueda.
+
+Para limpiar la busqueda, presione `Escape` o haga clic en `x`.
+
+### Navegacion por teclado
+
+| Tecla | Accion |
+|-------|--------|
+| `Flecha abajo` | Seleccionar siguiente resultado |
+| `Flecha arriba` | Seleccionar resultado anterior |
+| `Enter` | Abrir el resultado seleccionado |
+| `Escape` | Limpiar busqueda y volver al arbol de archivos |
+
+### Resaltado del termino de busqueda
+
+Al abrir una nota desde los resultados, todas las apariciones del termino se resaltan en el editor. Funciona con deteccion de diacriticos arabes — buscar "ادارة" resaltara "إدارة" y todas las variantes diacriticas.
+
+### Historial de busqueda
+
+Haga clic en el campo de busqueda cuando este vacio para ver sus busquedas recientes (ultimas 20 consultas). Cada entrada muestra el texto y hace cuanto se realizo. Haga clic en cualquier entrada para repetir esa busqueda. Use el enlace "Borrar historial" en la parte inferior para eliminar todo el historial.
+
+El historial se almacena localmente en su dispositivo y persiste entre reinicios de la aplicacion.
+
+---
+
+## 5. Vista Estelar (GraphMind)
 
 La Vista Estelar visualiza tus notas como un grafo 3D interactivo impulsado por el motor **GraphMind** (Pixi.js WebGL).
 
@@ -303,7 +365,7 @@ El nivel de madurez se actualiza automaticamente segun el numero de enlaces, la 
 
 ---
 
-## 5. Vista Dividida
+## 6. Vista Dividida
 
 La Vista Dividida te permite editar multiples notas lado a lado en la ventana principal.
 
@@ -332,7 +394,7 @@ Haz clic en cualquier panel para enfocarlo. El panel enfocado recibe los atajos 
 
 ---
 
-## 6. Indice
+## 7. Indice
 
 El Indice es un glosario completo de terminos de todas tus bibliotecas — cada palabra significativa, ordenada alfabeticamente con conteos de apariciones.
 
@@ -373,7 +435,7 @@ Cuando la Segunda Pantalla esta abierta:
 
 ---
 
-## 7. Segunda Pantalla
+## 8. Segunda Pantalla
 
 La Segunda Pantalla es una ventana complementaria basada en modos que se adapta al modo actual de tu barra lateral.
 
@@ -428,7 +490,7 @@ Todas las configuraciones visuales se propagan instantaneamente a la segunda pan
 
 ---
 
-## 8. Propiedades y Frontmatter
+## 9. Propiedades y Frontmatter
 
 Las notas pueden tener frontmatter YAML en la parte superior:
 
@@ -455,7 +517,7 @@ Alterna la visualizacion de propiedades en **Configuracion > Editor > Propiedade
 
 ---
 
-## 9. Plantillas
+## 10. Plantillas
 
 Crea plantillas de notas reutilizables:
 
@@ -474,7 +536,7 @@ Las plantillas admiten variables:
 
 ---
 
-## 10. Tablas
+## 11. Tablas
 
 ### Tablas Markdown
 
@@ -504,7 +566,7 @@ El editor de Documentos (TipTap) ofrece una experiencia visual de tablas:
 
 ---
 
-## 11. Tareas
+## 12. Tareas
 
 Constellation admite casillas de tareas en las notas:
 
@@ -517,7 +579,7 @@ En el modo de Vista Previa en Vivo, las casillas son clicables. Las tareas se pu
 
 ---
 
-## 12. Importador
+## 13. Importador
 
 Importa notas desde otras herramientas PKM:
 
@@ -529,7 +591,7 @@ Ve a **Configuracion > Importador** para iniciar una importacion.
 
 ---
 
-## 13. Calendario
+## 14. Calendario
 
 La vista de Calendario muestra las notas organizadas por fecha:
 
@@ -541,7 +603,7 @@ Abre el Calendario desde la barra lateral.
 
 ---
 
-## 14. Lens
+## 15. Lens
 
 Lens proporciona vistas filtradas de tus notas:
 
@@ -551,7 +613,7 @@ Lens proporciona vistas filtradas de tus notas:
 
 ---
 
-## 15. Configuracion
+## 16. Configuracion
 
 Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctrl+,`.
 
@@ -583,7 +645,7 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 
 ---
 
-## 16. Atajos de Teclado
+## 17. Atajos de Teclado
 
 ### Globales
 
@@ -623,7 +685,7 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 
 ---
 
-## 17. Soporte RTL y Arabe
+## 18. Soporte RTL y Arabe
 
 Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y otros idiomas con escritura RTL:
 
@@ -642,7 +704,7 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 
 ---
 
-## 18. Seguridad y Privacidad
+## 19. Seguridad y Privacidad
 
 - **Todos los datos permanecen locales** — sin sincronizacion en la nube, sin telemetria, sin rastreo
 - **Archivos Markdown** — tus notas son archivos de texto plano que te pertenecen completamente
@@ -652,7 +714,7 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 
 ---
 
-## 19. Mapa del conocimiento
+## 20. Mapa del conocimiento
 
 El Mapa del conocimiento es una visualizacion radial (sunburst) que muestra la estructura, densidad y madurez de todo tu universo de conocimiento.
 
@@ -685,7 +747,7 @@ Despues de abrir una nota desde el Mapa, aparece un boton "Volver al Mapa" en la
 
 ---
 
-## 20. Motor Cognitivo
+## 21. Motor Cognitivo
 
 El Motor Cognitivo es el sistema de inteligencia integrado de Constellation que analiza tus notas y descubre patrones ocultos y relaciones entre tus ideas. Su filosofia fundamental:
 

@@ -11,23 +11,24 @@ Constellation ist eine Desktop-Anwendung fuer persoenliches Wissensmanagement (P
 1. [Erste Schritte](#erste-schritte)
 2. [Universum und Bibliotheken](#universum-und-bibliotheken)
 3. [Notizen erstellen und bearbeiten](#notizen-erstellen-und-bearbeiten)
-4. [Sternenansicht (GraphMind)](#sternenansicht-graphmind)
-5. [Geteilte Ansicht](#geteilte-ansicht)
-6. [Index](#index)
-7. [Zweiter Bildschirm](#zweiter-bildschirm)
-8. [Eigenschaften und Frontmatter](#eigenschaften-und-frontmatter)
-9. [Vorlagen](#vorlagen)
-10. [Tabellen](#tabellen)
-11. [Aufgaben](#aufgaben)
-12. [Importer](#importer)
-13. [Kalender](#kalender)
-14. [Lens](#lens)
-15. [Einstellungen](#einstellungen)
-16. [Tastenkuerzel](#tastenkuerzel)
-17. [RTL- und Arabisch-Unterstuetzung](#rtl--und-arabisch-unterstuetzung)
-18. [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
-19. [Wissenskarte](#wissenskarte)
-20. [Kognitive Engine](#kognitive-engine)
+4. [Suche](#suche)
+5. [Sternenansicht (GraphMind)](#sternenansicht-graphmind)
+6. [Geteilte Ansicht](#geteilte-ansicht)
+7. [Index](#index)
+8. [Zweiter Bildschirm](#zweiter-bildschirm)
+9. [Eigenschaften und Frontmatter](#eigenschaften-und-frontmatter)
+10. [Vorlagen](#vorlagen)
+11. [Tabellen](#tabellen)
+12. [Aufgaben](#aufgaben)
+13. [Importer](#importer)
+14. [Kalender](#kalender)
+15. [Lens](#lens)
+16. [Einstellungen](#einstellungen)
+17. [Tastenkuerzel](#tastenkuerzel)
+18. [RTL- und Arabisch-Unterstuetzung](#rtl--und-arabisch-unterstuetzung)
+19. [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
+20. [Wissenskarte](#wissenskarte)
+21. [Kognitive Engine](#kognitive-engine)
 
 ---
 
@@ -218,7 +219,68 @@ Sie koennen auch auf bestimmte Ueberschriften verlinken: `[[Notizname#Ueberschri
 
 ---
 
-## 4. Sternenansicht (GraphMind)
+## 4. Suche
+
+Constellation verfuegt ueber eine hybride mehrsprachige Suchmaschine auf Basis von SQLite FTS5 mit BM25-Ranking, strukturierten Abfragefiltern und arabisch-optimierter Normalisierung. Die Suche ist ueber die Seitenleiste erreichbar.
+
+### So suchen Sie
+
+Klicken Sie auf das Suchsymbol in der Seitenleiste oder verwenden Sie `Ctrl+Shift+F`, um den Suchmodus zu aktivieren. Geben Sie Ihre Abfrage ein und Ergebnisse erscheinen nach einer kurzen Verzoegerung (300ms). Druecken Sie `Escape` oder klicken Sie auf die Schaltflaeche `x`, um die Suche zu loeschen und zum Dateibaum zurueckzukehren.
+
+### Suchsyntax
+
+| Syntax | Beispiel | Was gefunden wird |
+|--------|----------|-------------------|
+| Freitext | `Projektmanagement` | Notizen mit diesen Woertern in Titel oder Text |
+| Tag-Filter | `#forschung` | Notizen mit dem Tag `#forschung` |
+| Eigenschaftsfilter | `status=aktiv` | Notizen mit Frontmatter-Eigenschaft `status` gleich `aktiv` |
+| Wikilink-Filter | `links to [[Klima]]` | Notizen mit Verweis auf `[[Klima]]` |
+| Bibliotheksbereich | `in:MeineBibliothek` | Ergebnisse auf eine bestimmte Bibliothek beschraenken |
+| Kombiniert | `#forschung status=aktiv Wirtschaft` | Alle Filter gemeinsam angewendet |
+
+### Treffer-Badges
+
+Jedes Suchergebnis zeigt ein farbiges Badge, das angibt, wie der Treffer gefunden wurde. Das Badge zeigt einen lokalisierten Buchstaben fuer Barrierefreiheit (farbenblind-sicher):
+
+| Badge | Farbe | Bedeutung |
+|-------|-------|-----------|
+| **T** | Blau | Titeltreffer — der Suchbegriff erscheint im Notiznamen |
+| **I** | Gruen | Inhaltstreffer — der Suchbegriff erscheint im Notiztext |
+| **S** | Lila | Semantischer Treffer — konzeptuell verwandt (erfordert Embedding-Modell) |
+| **E** | Bernstein | Eigenschaftstreffer — ueber Frontmatter-Eigenschaftsfilter gefunden |
+| **#** | Pink | Tag-Treffer — ueber Tag-Filter gefunden |
+| **W** | Hellblau | Wikilink-Treffer — ueber Wikilink-Filter gefunden |
+
+Badge-Buchstaben sind fuer alle 15 unterstuetzten Sprachen lokalisiert.
+
+### Angeheftete Ergebnisse (Durch Ergebnisse navigieren)
+
+Suchergebnisse bleiben nach dem Anklicken sichtbar. Die geoeffnete Notiz wird in der Ergebnisliste hervorgehoben, sodass Sie sehen koennen, welches Ergebnis Sie gerade betrachten. Klicken Sie auf ein anderes Ergebnis, um dorthin zu navigieren, ohne erneut zu suchen.
+
+Um die Suche zu loeschen, druecken Sie `Escape` oder klicken Sie auf `x`.
+
+### Tastaturnavigation
+
+| Taste | Aktion |
+|-------|--------|
+| `Pfeil nach unten` | Naechstes Ergebnis auswaehlen |
+| `Pfeil nach oben` | Vorheriges Ergebnis auswaehlen |
+| `Enter` | Ausgewaehltes Ergebnis oeffnen |
+| `Escape` | Suche loeschen und zum Dateibaum zurueckkehren |
+
+### Suchbegriff-Hervorhebung
+
+Wenn Sie eine Notiz aus den Suchergebnissen oeffnen, werden alle Vorkommen des Suchbegriffs im Editor hervorgehoben. Dies funktioniert mit arabischer diakritischer Erkennung — die Suche nach "ادارة" hebt "إدارة" und alle diakritischen Varianten hervor.
+
+### Suchverlauf
+
+Klicken Sie auf das Suchfeld, wenn es leer ist, um Ihre letzten Suchen (letzte 20 Abfragen) anzuzeigen. Jeder Eintrag zeigt den Abfragetext und den Zeitpunkt der Ausfuehrung. Klicken Sie auf einen Eintrag, um die Suche sofort erneut auszufuehren. Nutzen Sie den Link "Verlauf loeschen" am Ende, um den gesamten Verlauf zu entfernen.
+
+Der Suchverlauf wird lokal auf Ihrem Geraet gespeichert und bleibt ueber Neustarts erhalten.
+
+---
+
+## 5. Sternenansicht (GraphMind)
 
 Die Sternenansicht visualisiert Ihre Notizen als interaktiven 3D-Graphen, angetrieben von der **GraphMind**-Engine (Pixi.js WebGL).
 
@@ -303,7 +365,7 @@ Der Reifegrad wird automatisch basierend auf Anzahl der Verlinkungen, Ueberarbei
 
 ---
 
-## 5. Geteilte Ansicht
+## 6. Geteilte Ansicht
 
 Die geteilte Ansicht ermoeglicht es Ihnen, mehrere Notizen nebeneinander im Hauptfenster zu bearbeiten.
 
@@ -332,7 +394,7 @@ Klicken Sie auf ein beliebiges Feld, um es zu fokussieren. Das fokussierte Feld 
 
 ---
 
-## 6. Index
+## 7. Index
 
 Der Index ist ein umfassendes Begriffsglossar ueber alle Ihre Bibliotheken — jedes bedeutungsvolle Wort, alphabetisch sortiert mit Vorkommenshaeufigkeiten.
 
@@ -373,7 +435,7 @@ Wenn der Zweite Bildschirm geoeffnet ist:
 
 ---
 
-## 7. Zweiter Bildschirm
+## 8. Zweiter Bildschirm
 
 Der Zweite Bildschirm ist ein modusbasiertes Begleitfenster, das sich an Ihren aktuellen Seitenleistenmodus anpasst.
 
@@ -428,7 +490,7 @@ Alle visuellen Einstellungen werden sofort auf den zweiten Bildschirm uebertrage
 
 ---
 
-## 8. Eigenschaften und Frontmatter
+## 9. Eigenschaften und Frontmatter
 
 Notizen koennen YAML-Frontmatter am Anfang enthalten:
 
@@ -455,7 +517,7 @@ Eigenschaftsanzeige umschalten unter **Einstellungen > Editor > Eigenschaften im
 
 ---
 
-## 9. Vorlagen
+## 10. Vorlagen
 
 Erstellen Sie wiederverwendbare Notizvorlagen:
 
@@ -474,7 +536,7 @@ Vorlagen unterstuetzen Variablen:
 
 ---
 
-## 10. Tabellen
+## 11. Tabellen
 
 ### Markdown-Tabellen
 
@@ -504,7 +566,7 @@ Der Dokument-Editor (TipTap) bietet eine visuelle Tabellenerfahrung:
 
 ---
 
-## 11. Aufgaben
+## 12. Aufgaben
 
 Constellation unterstuetzt Aufgaben-Kontrollkaestchen in Notizen:
 
@@ -517,7 +579,7 @@ Im Live-Vorschau-Modus sind Kontrollkaestchen anklickbar. Aufgaben koennen bibli
 
 ---
 
-## 12. Importer
+## 13. Importer
 
 Importieren Sie Notizen aus anderen PKM-Tools:
 
@@ -529,7 +591,7 @@ Gehen Sie zu **Einstellungen > Importer**, um einen Import zu starten.
 
 ---
 
-## 13. Kalender
+## 14. Kalender
 
 Die Kalenderansicht zeigt Notizen nach Datum geordnet:
 
@@ -541,7 +603,7 @@ Oeffnen Sie den Kalender ueber die Seitenleiste.
 
 ---
 
-## 14. Lens
+## 15. Lens
 
 Lens bietet gefilterte Ansichten Ihrer Notizen:
 
@@ -551,7 +613,7 @@ Lens bietet gefilterte Ansichten Ihrer Notizen:
 
 ---
 
-## 15. Einstellungen
+## 16. Einstellungen
 
 Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder `Ctrl+,`.
 
@@ -583,7 +645,7 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 
 ---
 
-## 16. Tastenkuerzel
+## 17. Tastenkuerzel
 
 ### Global
 
@@ -623,7 +685,7 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 
 ---
 
-## 17. RTL- und Arabisch-Unterstuetzung
+## 18. RTL- und Arabisch-Unterstuetzung
 
 Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Persisch, Urdu und andere RTL-Schriften:
 
@@ -642,7 +704,7 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 
 ---
 
-## 18. Sicherheit und Datenschutz
+## 19. Sicherheit und Datenschutz
 
 - **Alle Daten bleiben lokal** — keine Cloud-Synchronisierung, keine Telemetrie, kein Tracking
 - **Markdown-Dateien** — Ihre Notizen sind einfache Textdateien, die Ihnen vollstaendig gehoeren
@@ -652,7 +714,7 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 
 ---
 
-## 19. Wissenskarte
+## 20. Wissenskarte
 
 Die Wissenskarte ist eine radiale Sunburst-Visualisierung, die Struktur, Dichte und Reifegrad Ihres gesamten Wissensuniversums zeigt.
 
@@ -685,7 +747,7 @@ Nach dem Oeffnen einer Notiz aus der Karte erscheint eine "Zurueck zur Karte"-Sc
 
 ---
 
-## 20. Kognitive Engine
+## 21. Kognitive Engine
 
 Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das Ihre Notizen analysiert und verborgene Muster und Zusammenhaenge zwischen Ihren Ideen aufdeckt. Ihre Kernphilosophie:
 

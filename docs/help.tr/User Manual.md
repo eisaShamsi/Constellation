@@ -11,23 +11,24 @@ Constellation, Markdown not kütüphanelerini yönetmek için tasarlanmış bir 
 1. [Başlarken](#başlarken)
 2. [Evren ve Kütüphaneler](#evren-ve-kütüphaneler)
 3. [Not Oluşturma ve Düzenleme](#not-oluşturma-ve-düzenleme)
-4. [Sky View (GraphMind)](#star-view-graphmind)
-5. [Bölünmüş Görünüm](#bölünmüş-görünüm)
-6. [Dizin](#dizin)
-7. [İkinci Ekran](#ikinci-ekran)
-8. [Özellikler ve Frontmatter](#özellikler-ve-frontmatter)
-9. [Şablonlar](#şablonlar)
-10. [Tablolar](#tablolar)
-11. [Görevler](#görevler)
-12. [İçe Aktarıcı](#içe-aktarıcı)
-13. [Takvim](#takvim)
-14. [Lens](#lens)
-15. [Ayarlar](#ayarlar)
-16. [Klavye Kısayolları](#klavye-kısayolları)
-17. [RTL ve Arapça Desteği](#rtl-ve-arapça-desteği)
-18. [Güvenlik ve Gizlilik](#güvenlik-ve-gizlilik)
-19. [Bilgi Haritası](#bilgi-haritası)
-20. [Bilişsel Motor](#bilişsel-motor)
+4. [Arama](#arama)
+5. [Sky View (GraphMind)](#star-view-graphmind)
+6. [Bölünmüş Görünüm](#bölünmüş-görünüm)
+7. [Dizin](#dizin)
+8. [İkinci Ekran](#ikinci-ekran)
+9. [Özellikler ve Frontmatter](#özellikler-ve-frontmatter)
+10. [Şablonlar](#şablonlar)
+11. [Tablolar](#tablolar)
+12. [Görevler](#görevler)
+13. [İçe Aktarıcı](#içe-aktarıcı)
+14. [Takvim](#takvim)
+15. [Lens](#lens)
+16. [Ayarlar](#ayarlar)
+17. [Klavye Kısayolları](#klavye-kısayolları)
+18. [RTL ve Arapça Desteği](#rtl-ve-arapça-desteği)
+19. [Güvenlik ve Gizlilik](#güvenlik-ve-gizlilik)
+20. [Bilgi Haritası](#bilgi-haritası)
+21. [Bilişsel Motor](#bilişsel-motor)
 
 ---
 
@@ -218,7 +219,68 @@ Belirli başlıklara da bağlantı verebilirsiniz: `[[Note Name#Heading]]`.
 
 ---
 
-## 4. Sky View (GraphMind)
+## 4. Arama
+
+Constellation, SQLite FTS5 tabanlı BM25 sıralama, yapılandırılmış sorgu filtreleri ve Arapçaya optimize edilmiş normalizasyon ile hibrit çok dilli bir arama motoruna sahiptir. Arama, kenar çubuğu araç çubuğundan erişilebilir.
+
+### Nasıl aranır
+
+Kenar çubuğu araç çubuğundaki arama simgesine tıklayın veya arama modunu etkinleştirmek için `Ctrl+Shift+F` tuşuna basın. Sorgunuzu yazın ve sonuçlar kısa bir gecikmeden (300ms) sonra görünür. Aramayı temizlemek ve dosya ağacına dönmek için `Escape` tuşuna basın veya `×` düğmesine tıklayın.
+
+### Arama sözdizimi
+
+| Sözdizimi | Örnek | Ne bulur |
+|-----------|-------|----------|
+| Serbest metin | `proje yönetimi` | Başlık veya gövdede bu kelimeleri içeren notlar |
+| Etiket filtresi | `#araştırma` | `#araştırma` etiketi olan notlar |
+| Özellik filtresi | `status=aktif` | Frontmatter özelliği `status` değeri `aktif` olan notlar |
+| Vikibağ filtresi | `links to [[İklim]]` | `[[İklim]]`'e bağlantı içeren notlar |
+| Kütüphane kapsamı | `in:Kütüphanem` | Sonuçları belirli bir kütüphaneyle sınırlar |
+| Birleşik | `#araştırma status=aktif ekonomi` | Tüm filtreler birlikte uygulanır |
+
+### Eşleme türü rozetleri
+
+Her arama sonucu, eşleşmenin nasıl bulunduğunu gösteren renkli bir rozet görüntüler. Rozet, erişilebilirlik için yerelleştirilmiş bir harf gösterir (renk körlüğü için güvenli):
+
+| Rozet | Renk | Anlam |
+|-------|------|-------|
+| **B** | Mavi | Başlık eşleşmesi — arama terimi notun adında görünür |
+| **İ** | Yeşil | İçerik eşleşmesi — arama terimi notun gövdesinde görünür |
+| **A** | Mor | Anlamsal eşleme — kavramsal olarak ilişkili (embedding modeli gerektirir) |
+| **Ö** | Kehribar | Özellik eşleşmesi — frontmatter özellik filtresiyle bulundu |
+| **#** | Pembe | Etiket eşleşmesi — etiket filtresiyle bulundu |
+| **V** | Açık mavi | Vikibağ eşleşmesi — vikibağ filtresiyle bulundu |
+
+Rozet harfleri desteklenen 15 dilin tümüne yerelleştirilmiştir.
+
+### Sabitlenmiş sonuçlar (Sonuçlar arasında gezinme)
+
+Arama sonuçları birine tıkladıktan sonra görünür kalır. Açılan not sonuç listesinde vurgulanır, böylece hangi sonucu görüntülediğinizi görebilirsiniz. Yeniden arama yapmadan başka bir sonuca tıklayarak ona gidin.
+
+Aramayı temizlemek için `Escape` tuşuna basın veya `×` düğmesine tıklayın.
+
+### Klavye ile gezinme
+
+| Tuş | Eylem |
+|-----|-------|
+| `Aşağı ok` | Sonraki sonucu seç |
+| `Yukarı ok` | Önceki sonucu seç |
+| `Enter` | Seçili sonucu aç |
+| `Escape` | Aramayı temizle ve dosya ağacına dön |
+
+### Arama terimi vurgulama
+
+Arama sonuçlarından bir notu açtığınızda, arama teriminin tüm geçişleri editörde vurgulanır. Bu, Arapça harekeli harf tanıma ile çalışır — "ادارة" araması "إدارة" ve tüm hareke varyantlarını vurgular.
+
+### Arama geçmişi
+
+Boş olduğunda arama alanına tıklayarak son aramalarınızı (son 20 sorgu) görün. Her girişte sorgu metni ve ne zaman yapıldığı gösterilir. Herhangi bir girişe tıklayarak o aramayı anında yeniden çalıştırın. Tüm geçmişi silmek için alttaki "Geçmişi temizle" bağlantısını kullanın.
+
+Arama geçmişi cihazınızda yerel olarak depolanır ve uygulama yeniden başlatmaları arasında korunur.
+
+---
+
+## 5. Sky View (GraphMind)
 
 Sky View, notlarınızı **GraphMind** motoru (Pixi.js WebGL) tarafından desteklenen etkileşimli bir 3D grafik olarak görselleştirir.
 
@@ -303,7 +365,7 @@ Olgunluk seviyesi, bağlantı sayısı, gözden geçirme tarihi ve düzenleme s�
 
 ---
 
-## 5. Bölünmüş Görünüm
+## 6. Bölünmüş Görünüm
 
 Bölünmüş görünüm, birden fazla notu ana pencerede yan yana düzenlemenizi sağlar.
 
@@ -332,7 +394,7 @@ Herhangi bir panele tıklayarak odaklayın. Odaklanan panel klavye kısayolları
 
 ---
 
-## 6. Dizin
+## 7. Dizin
 
 Dizin, tüm kütüphaneleriniz genelinde kapsamlı bir terim sözlüğüdür — her anlamlı kelime, oluşum sayılarıyla birlikte alfabetik olarak sıralanmıştır.
 
@@ -373,7 +435,7 @@ Notu normal bir sekme olarak açmak için `Ctrl+Tıklama` yapın. Sekme çubuğu
 
 ---
 
-## 7. İkinci Ekran
+## 8. İkinci Ekran
 
 İkinci Ekran, geçerli kenar çubuğu modunuza uyum sağlayan mod tabanlı bir eşlik penceresidir.
 
@@ -428,7 +490,7 @@ Tüm görsel ayarlar anında ikinci ekrana yansıtılır — yeniden başlatma g
 
 ---
 
-## 8. Özellikler ve Frontmatter
+## 9. Özellikler ve Frontmatter
 
 Notların üst kısmında YAML frontmatter bulunabilir:
 
@@ -455,7 +517,7 @@ Constellation özellik türlerini otomatik olarak algılar:
 
 ---
 
-## 9. Şablonlar
+## 10. Şablonlar
 
 Yeniden kullanılabilir not şablonları oluşturun:
 
@@ -474,7 +536,7 @@ Yeniden kullanılabilir not şablonları oluşturun:
 
 ---
 
-## 10. Tablolar
+## 11. Tablolar
 
 ### Markdown Tabloları
 
@@ -504,7 +566,7 @@ Belge düzenleyici (TipTap) görsel bir tablo deneyimi sunar:
 
 ---
 
-## 11. Görevler
+## 12. Görevler
 
 Constellation, notlarda görev onay kutularını destekler:
 
@@ -517,7 +579,7 @@ Canlı Önizleme modunda, onay kutuları tıklanabilirdir. Görevler, kütüphan
 
 ---
 
-## 12. İçe Aktarıcı
+## 13. İçe Aktarıcı
 
 Diğer PKM araçlarından notları içe aktarın:
 
@@ -529,7 +591,7 @@ Diğer PKM araçlarından notları içe aktarın:
 
 ---
 
-## 13. Takvim
+## 14. Takvim
 
 Takvim görünümü, notları tarihe göre düzenlenmiş olarak gösterir:
 
@@ -541,7 +603,7 @@ Takvimi kenar çubuğundan açın.
 
 ---
 
-## 14. Lens
+## 15. Lens
 
 Lens, notlarınızın filtrelenmiş görünümlerini sağlar:
 
@@ -551,7 +613,7 @@ Lens, notlarınızın filtrelenmiş görünümlerini sağlar:
 
 ---
 
-## 15. Ayarlar
+## 16. Ayarlar
 
 Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
@@ -583,7 +645,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
 ---
 
-## 16. Klavye Kısayolları
+## 17. Klavye Kısayolları
 
 ### Genel
 
@@ -623,7 +685,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
 ---
 
-## 17. RTL ve Arapça Desteği
+## 18. RTL ve Arapça Desteği
 
 Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemleri için birinci sınıf destek sunar:
 
@@ -642,7 +704,7 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 
 ---
 
-## 18. Güvenlik ve Gizlilik
+## 19. Güvenlik ve Gizlilik
 
 - **Tüm veriler yerelde kalır** — bulut senkronizasyonu yok, telemetri yok, izleme yok
 - **Markdown dosyaları** — notlarınız tamamen size ait düz metin dosyalarıdır
@@ -652,7 +714,7 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 
 ---
 
-## 19. Bilgi Haritası
+## 20. Bilgi Haritası
 
 Bilgi Haritası, tum bilgi evreninizin yapisini, yogunlugunu ve olgunlugunu gosteren radyal bir sunburst gorsellestirmesidir.
 
@@ -685,7 +747,7 @@ Haritadan bir not actiktan sonra, sekme cubugunda "Haritaya Don" dugmesi gorunur
 
 ---
 
-## 20. Bilişsel Motor
+## 21. Bilişsel Motor
 
 Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz arasındaki gizli kalıpları ve ilişkileri ortaya çıkaran yerleşik zeka sistemidir. Temel felsefesi:
 
