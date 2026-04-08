@@ -325,12 +325,14 @@
 				}
 			}
 
-		// 6. Hover label
+		// 6. Hover label (RTL-aware)
 		if (hoveredNode) {
 			const x = hoveredNode.x ?? 0, y = hoveredNode.y ?? 0;
 			const label = hoveredNode.name.replace(/\.md$/, '');
+			const isRTL = detectDir(label) === 'rtl';
 			const fontSize = Math.max(10, 12 / zoom);
 			ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
+			ctx.direction = isRTL ? 'rtl' : 'ltr';
 			const metrics = ctx.measureText(label);
 			const tw = metrics.width;
 			const th = fontSize + 4;
@@ -345,6 +347,7 @@
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'top';
 			ctx.fillText(label, x, ly + 2);
+		ctx.direction = "ltr"; // reset after RTL label
 		}
 
 		ctx.restore(); // pop pan/zoom
@@ -536,7 +539,7 @@
 				zoom = Math.min(scaleX, scaleY, 3);
 				panX = -(minX + maxX) / 2 * zoom;
 				panY = -(minY + maxY) / 2 * zoom;
-			}} title="Fit to screen">
+			}} title={$t('lens.fitToScreen') || 'Fit to screen'}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
 			</button>
 			<button class="cl-toolbar-btn" class:active={settingsVisible} onclick={() => settingsVisible = !settingsVisible} title={$t('ribbon.settings') || 'Settings'}>
@@ -551,11 +554,11 @@
 			{#if searchVisible}
 				<div class="cl-search-bar">
 					<div class="cl-search-scope">
-						<button class:active={searchScope === 'all'} onclick={() => searchScope = 'all'}>All</button>
-						<button class:active={searchScope === 'title'} onclick={() => searchScope = 'title'}>Title</button>
-						<button class:active={searchScope === 'content'} onclick={() => searchScope = 'content'}>Content</button>
+						<button class:active={searchScope === 'all'} onclick={() => searchScope = 'all'}>{$t("lens.scopeAll") || "All"}</button>
+						<button class:active={searchScope === 'title'} onclick={() => searchScope = 'title'}>{$t("lens.scopeTitle") || "Title"}</button>
+						<button class:active={searchScope === 'content'} onclick={() => searchScope = 'content'}>{$t("lens.scopeContent") || "Content"}</button>
 					</div>
-					<input type="text" dir="auto" placeholder={searchScope === 'title' ? 'Search titles...' : searchScope === 'content' ? 'Search content...' : 'Search all... (Enter)'} bind:value={searchQuery}
+					<input type="text" dir="auto" placeholder={searchScope === 'title' ? ($t('lens.searchTitles') || 'Search titles...') : searchScope === 'content' ? ($t('lens.searchContent') || 'Search content...') : ($t('lens.searchAll') || 'Search all... (Enter)')} bind:value={searchQuery}
 						onkeydown={(e) => {
 							if (e.key === 'Enter') { e.preventDefault(); searchResults.length > 0 ? (e.shiftKey ? prevSearchResult() : nextSearchResult()) : executeSearch(); }
 							if (e.key === 'Escape') clearSearch();
@@ -579,18 +582,18 @@
 			<!-- Settings panel -->
 			{#if settingsVisible}
 				<div class="cl-settings">
-					<div class="cl-settings-title">Display</div>
+					<div class="cl-settings-title">{$t("lens.display") || "Display"}</div>
 					<label class="cl-settings-toggle">
-						<span>Regions</span>
+						<span>{$t("lens.regions") || "Regions"}</span>
 						<button class:active={showRegions} onclick={() => showRegions = !showRegions}>{showRegions ? 'On' : 'Off'}</button>
 					</label>
-					<div class="cl-settings-title">Physics</div>
+					<div class="cl-settings-title">{$t("lens.physics") || "Physics"}</div>
 					<label>
-						<span>Repulsion: {forceStrength}</span>
+						<span>{$t("lens.repulsion") || "Repulsion"}: {forceStrength}</span>
 						<input type="range" min="-200" max="-10" step="5" bind:value={forceStrength} oninput={applySettings} />
 					</label>
 					<label>
-						<span>Link Distance: {linkDistance}</span>
+						<span>{$t("lens.linkDistance") || "Link Distance"}: {linkDistance}</span>
 						<input type="range" min="10" max="150" step="5" bind:value={linkDistance} oninput={applySettings} />
 					</label>
 				</div>
@@ -604,29 +607,29 @@
 				<div class="cl-legend-title">{$t('lens.legend') || 'Legend'}</div>
 				<div class="cl-legend-row">
 					<span class="cl-lg-circle cl-lg-big"></span>
-					<span><strong>Large node</strong> — bridge</span>
+					<span><strong>{$t("lens.largeNode") || "Large node"}</strong> — {$t("lens.bridgeDesc") || "bridge"}</span>
 				</div>
 				<div class="cl-legend-row">
 					<span class="cl-lg-circle cl-lg-small"></span>
-					<span><strong>Small node</strong> — peripheral</span>
+					<span><strong>{$t("lens.smallNode") || "Small node"}</strong> — {$t("lens.peripheralDesc") || "peripheral"}</span>
 				</div>
 				<div class="cl-legend-row">
 					<span class="cl-lg-circle" style="background:#a78bfa"></span>
 					<span class="cl-lg-circle" style="background:#34d399"></span>
 					<span class="cl-lg-circle" style="background:#60a5fa"></span>
-					<span><strong>Color</strong> — community</span>
+					<span><strong>{$t("lens.legendCommunityColor") || "Color"}</strong> — {$t("lens.communityDesc") || "community"}</span>
 				</div>
 				<div class="cl-legend-row">
 					<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/></svg>
-					<span><strong>Dashed</strong> — untyped wikilink</span>
+					<span><strong>{$t("lens.dashedLine") || "Dashed"}</strong> — {$t("lens.untypedWikilink") || "untyped wikilink"}</span>
 				</div>
 				<div class="cl-legend-row">
 					<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/></svg>
-					<span><strong>Red dashed</strong> — blind spot</span>
+					<span><strong>{$t("lens.redDashed") || "Red dashed"}</strong> — {$t("lens.blindSpotDesc") || "blind spot"}</span>
 				</div>
 				<div class="cl-legend-row">
 					<svg width="20" height="12"><polygon points="2,6 6,1 14,1 18,6 14,11 6,11" fill="rgba(124,58,237,0.15)" stroke="#7c3aed" stroke-width="1.5"/></svg>
-					<span><strong>Region</strong> — community</span>
+					<span><strong>{$t("lens.regionLabel") || "Region"}</strong> — {$t("lens.communityDesc") || "community"}</span>
 				</div>
 t			<div class="cl-legend-divider"></div>				<div class="cl-legend-row"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#4A9EFF" stroke-width="1.5"/></svg><span><strong>supports</strong></span></div>				<div class="cl-legend-row"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#FF4A4A" stroke-width="1.5"/></svg><span><strong>contradicts</strong></span></div>				<div class="cl-legend-row"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#FF8C42" stroke-width="1.5"/></svg><span><strong>causes</strong></span></div>				<div class="cl-legend-row"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#4AFF88" stroke-width="1.5"/></svg><span><strong>exemplifies</strong></span></div>				<div class="cl-legend-row"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#C084FC" stroke-width="1.5"/></svg><span><strong>generalizes</strong></span></div>				<div class="cl-legend-row"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#FACC15" stroke-width="1.5"/></svg><span><strong>derives-from</strong></span></div>				<div class="cl-legend-row"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#94A3B8" stroke-width="1.5"/></svg><span><strong>part-of</strong></span></div>
 			</div>
