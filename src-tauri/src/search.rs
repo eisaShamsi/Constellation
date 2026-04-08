@@ -35,6 +35,10 @@ pub struct SearchFilters {
     pub tags: Option<Vec<String>>,
     pub wikilinks_to: Option<Vec<String>>,
     pub wikilinks_from: Option<Vec<String>>,
+    pub mutual: Option<Vec<String>>,
+    pub mentions: Option<Vec<String>>,
+    pub orphans: Option<bool>,
+    pub links_between: Option<Vec<String>>,  // exactly 2 targets
     pub library_names: Option<Vec<String>>,
     pub maturity: Option<Vec<String>>,
     pub path_prefix: Option<String>,
@@ -170,7 +174,9 @@ fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, St
                     in_tags = true;
                     // Inline tags: tags: [a, b] or tags: a, b
                     let val = trimmed[5..].trim();
-                    if !val.is_empty() && !val.starts_with('[') {
+                    if !val.is_empty() {
+                        // Strip brackets for [a, b] format
+                        let val = val.trim_start_matches('[').trim_end_matches(']');
                         for t in val.split(',') {
                             let t = t.trim().trim_matches(|c| c == '"' || c == '\'');
                             if !t.is_empty() { tags.push(t.to_lowercase()); }
@@ -193,6 +199,17 @@ fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, St
                         if !key.is_empty() { properties.insert(key, val); }
                     }
                 }
+            }
+        }
+    }
+
+    // Also extract inline #hashtags from body text
+    let tag_re = regex::Regex::new(r"(?:^|\s)#([\w\p{L}\p{N}_/-]+)").unwrap();
+    for cap in tag_re.captures_iter(&body) {
+        if let Some(m) = cap.get(1) {
+            let tag = m.as_str().trim().to_lowercase();
+            if !tag.is_empty() && !tags.contains(&tag) {
+                tags.push(tag);
             }
         }
     }
@@ -439,6 +456,90 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
         }
     }
 
+    // Wikilink-from filters: find notes that X links TO (outgoing links of X)
+    // This is a two-step query: first find X's outgoing links, then return those notes
+    let mut from_targets: Vec<String> = Vec::new();
+    if let Some(sources) = &filters.wikilinks_from {
+        for source in sources {
+            let source_lower = source.to_lowercase();
+            // Find the note named `source` and read its outgoing_links_json
+            let links: Option<String> = conn.query_row(
+                "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) = ?1",
+                params![source_lower],
+                |row| row.get(0),
+            ).ok();
+            if let Some(links_json) = links {
+                if let Ok(targets) = serde_json::from_str::<Vec<String>>(&links_json) {
+                    from_targets.extend(targets);
+                }
+            }
+        }
+    }
+    if !from_targets.is_empty() {
+        let placeholders: Vec<String> = from_targets.iter().map(|_| "LOWER(name) = ?".to_string()).collect();
+        conditions.push(format!("({})", placeholders.join(" OR ")));
+        for t in &from_targets {
+            params_vec.push(Box::new(t.clone()));
+        }
+    }
+
+    // Mutual filters: notes that link to X AND X links to them
+    if let Some(targets) = &filters.mutual {
+        for target in targets {
+            let target_lower = target.to_lowercase();
+            // Must link TO target
+            conditions.push("outgoing_links_json LIKE '%' || ? || '%'".to_string());
+            params_vec.push(Box::new(target_lower.clone()));
+            // AND target must link back (find target's outgoing links, filter to those)
+            let links: Option<String> = conn.query_row(
+                "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) = ?1",
+                params![target_lower],
+                |row| row.get(0),
+            ).ok();
+            if let Some(links_json) = links {
+                if let Ok(back_targets) = serde_json::from_str::<Vec<String>>(&links_json) {
+                    if !back_targets.is_empty() {
+                        let placeholders: Vec<String> = back_targets.iter().map(|_| "LOWER(name) = ?".to_string()).collect();
+                        conditions.push(format!("({})", placeholders.join(" OR ")));
+                        for bt in &back_targets {
+                            params_vec.push(Box::new(bt.clone()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Mentions filter: notes that contain X's name in body but do NOT have [[X]] wikilink
+    if let Some(names) = &filters.mentions {
+        for name in names {
+            let name_lower = name.to_lowercase();
+            conditions.push("LOWER(body_text) LIKE '%' || ? || '%'".to_string());
+            params_vec.push(Box::new(name_lower.clone()));
+            conditions.push("outgoing_links_json NOT LIKE '%' || ? || '%'".to_string());
+            params_vec.push(Box::new(name_lower.clone()));
+            // Exclude the note itself
+            conditions.push("LOWER(name) != ?".to_string());
+            params_vec.push(Box::new(name_lower));
+        }
+    }
+
+    // Orphans filter: notes with no incoming or outgoing links
+    if filters.orphans.unwrap_or(false) {
+        // No outgoing links
+        conditions.push("(outgoing_links_json IS NULL OR outgoing_links_json = '[]')".to_string());
+        // No incoming links (no other note links to this one)
+        conditions.push("NOT EXISTS (SELECT 1 FROM note_meta AS other WHERE other.outgoing_links_json LIKE '%' || note_meta.name || '%' AND other.path != note_meta.path)".to_string());
+    }
+
+    // Links-between filter: notes that link to BOTH X and Y
+    if let Some(targets) = &filters.links_between {
+        for target in targets {
+            conditions.push("outgoing_links_json LIKE '%' || ? || '%'".to_string());
+            params_vec.push(Box::new(target.to_lowercase()));
+        }
+    }
+
     // Library filter
     if let Some(libs) = &filters.library_names {
         if !libs.is_empty() {
@@ -463,8 +564,15 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     // Determine the dominant filter type for match_type coloring
     let dominant_type = if filters.tags.as_ref().map_or(false, |t| !t.is_empty()) {
         "tag"
-    } else if filters.wikilinks_to.as_ref().map_or(false, |w| !w.is_empty()) {
+    } else if filters.wikilinks_to.as_ref().map_or(false, |w| !w.is_empty())
+           || filters.wikilinks_from.as_ref().map_or(false, |w| !w.is_empty())
+           || filters.mutual.as_ref().map_or(false, |w| !w.is_empty())
+           || filters.links_between.as_ref().map_or(false, |w| !w.is_empty()) {
         "wikilink"
+    } else if filters.mentions.as_ref().map_or(false, |m| !m.is_empty()) {
+        "content"
+    } else if filters.orphans.unwrap_or(false) {
+        "structured"
     } else if filters.properties.as_ref().map_or(false, |p| !p.is_empty()) {
         "property"
     } else {
@@ -507,6 +615,20 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
 #[tauri::command]
 pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexStats, String> {
     let path = db_path(&app)?;
+
+    // Schema v2: force full reindex to pick up bracket-format tags + inline hashtags
+    // Check for version marker; if missing or outdated, delete and rebuild
+    let version_path = path.with_extension("version");
+    let current_version = "2"; // bump this when indexing logic changes
+    let needs_rebuild = match std::fs::read_to_string(&version_path) {
+        Ok(v) => v.trim() != current_version,
+        Err(_) => true,
+    };
+    if needs_rebuild {
+        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::write(&version_path, current_version);
+    }
+
     let conn = init_db(&path)?;
 
     // Index all libraries
@@ -781,4 +903,202 @@ pub fn constellation_search_similar(
     // Remove the query note itself from results
     results.retain(|r| r.path != note_path);
     Ok(results)
+}
+
+// ─── Universal Categorized Search ─────────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct UniversalSearchResponse {
+    pub titles: Vec<SearchResult>,
+    pub contents: Vec<SearchResult>,
+    pub tags: Vec<SearchResult>,
+    pub properties: Vec<SearchResult>,
+    pub wikilinks: Vec<SearchResult>,
+}
+
+#[tauri::command]
+pub fn constellation_search_universal(
+    app: tauri::AppHandle,
+    query: String,
+    limit: Option<u32>,
+) -> Result<UniversalSearchResponse, String> {
+    let state = app.state::<SearchState>();
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+
+    let conn = match db_guard.as_ref() {
+        Some(c) => c,
+        None => {
+            drop(db_guard);
+            constellation_search_init(app.clone())?;
+            let state = app.state::<SearchState>();
+            let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+            return match db_guard.as_ref() {
+                Some(c) => execute_universal_search(c, &query, limit.unwrap_or(15)),
+                None => Err("Search index not available".to_string()),
+            };
+        }
+    };
+
+    execute_universal_search(conn, &query, limit.unwrap_or(15))
+}
+
+fn execute_universal_search(conn: &Connection, query: &str, limit: u32) -> Result<UniversalSearchResponse, String> {
+    let normalized = normalize_arabic_for_search(query);
+    // Use normalized for FTS5 (indexed data is normalized)
+    // Use raw lowercase for LIKE queries (tags/props/links stored as raw lowercase)
+    let raw_lower = query.to_lowercase();
+
+    // 1. TITLES — FTS5 match filtered to name-only hits
+    let titles = search_titles(conn, &normalized, limit);
+
+    // 2. CONTENTS — FTS5 match for body with snippets
+    let contents = search_contents(conn, &normalized, limit);
+
+    // 3. TAGS — notes with matching tags (raw, not normalized)
+    let tags = search_tags(conn, &raw_lower, limit);
+
+    // 4. PROPERTIES — notes with matching property keys or values (raw)
+    let properties = search_properties(conn, &raw_lower, limit);
+
+    // 5. WIKILINKS — notes whose outgoing links contain the query (raw)
+    let wikilinks = search_wikilinks(conn, &raw_lower, limit);
+
+    Ok(UniversalSearchResponse { titles, contents, tags, properties, wikilinks })
+}
+
+fn search_titles(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
+    let fts_query = format!("name:{}*", query.replace('"', ""));
+    let mut stmt = match conn.prepare(
+        "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified,
+                bm25(notes_fts, 10.0, 0.0) as score
+         FROM notes_fts
+         JOIN note_meta ON notes_fts.rowid = note_meta.rowid
+         WHERE notes_fts MATCH ?1
+         ORDER BY score
+         LIMIT ?2"
+    ) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let results = stmt.query_map(params![fts_query, limit], |row| {
+        Ok(SearchResult {
+            path: row.get(0)?,
+            name: row.get(1)?,
+            library_name: row.get(2)?,
+            modified: row.get(3)?,
+            score: row.get::<_, f64>(4)?.abs(),
+            snippet: None,
+            match_type: "title".to_string(),
+            heading_breadcrumb: None,
+        })
+    }).ok();
+    results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
+}
+
+fn search_contents(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
+    let fts_query = format!("body_text:{}*", query.replace('"', ""));
+    let mut stmt = match conn.prepare(
+        "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified,
+                bm25(notes_fts, 0.0, 1.0) as score,
+                snippet(notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip
+         FROM notes_fts
+         JOIN note_meta ON notes_fts.rowid = note_meta.rowid
+         WHERE notes_fts MATCH ?1
+         ORDER BY score
+         LIMIT ?2"
+    ) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let results = stmt.query_map(params![fts_query, limit], |row| {
+        Ok(SearchResult {
+            path: row.get(0)?,
+            name: row.get(1)?,
+            library_name: row.get(2)?,
+            modified: row.get(3)?,
+            score: row.get::<_, f64>(4)?.abs(),
+            snippet: row.get(5).ok(),
+            match_type: "content".to_string(),
+            heading_breadcrumb: None,
+        })
+    }).ok();
+    results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
+}
+
+fn search_tags(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
+    let mut stmt = match conn.prepare(
+        "SELECT path, name, library_name, modified, tags_json FROM note_meta
+         WHERE tags_json LIKE '%' || ?1 || '%'
+         ORDER BY modified DESC
+         LIMIT ?2"
+    ) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let results = stmt.query_map(params![query, limit], |row| {
+        let tags_json: String = row.get(4)?;
+        Ok(SearchResult {
+            path: row.get(0)?,
+            name: row.get(1)?,
+            library_name: row.get(2)?,
+            modified: row.get(3)?,
+            score: 1.0,
+            snippet: Some(tags_json),
+            match_type: "tag".to_string(),
+            heading_breadcrumb: None,
+        })
+    }).ok();
+    results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
+}
+
+fn search_properties(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
+    let mut stmt = match conn.prepare(
+        "SELECT path, name, library_name, modified, properties_json FROM note_meta
+         WHERE properties_json LIKE '%' || ?1 || '%'
+         ORDER BY modified DESC
+         LIMIT ?2"
+    ) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let results = stmt.query_map(params![query, limit], |row| {
+        let props_json: String = row.get(4)?;
+        Ok(SearchResult {
+            path: row.get(0)?,
+            name: row.get(1)?,
+            library_name: row.get(2)?,
+            modified: row.get(3)?,
+            score: 1.0,
+            snippet: Some(props_json),
+            match_type: "property".to_string(),
+            heading_breadcrumb: None,
+        })
+    }).ok();
+    results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
+}
+
+fn search_wikilinks(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
+    let mut stmt = match conn.prepare(
+        "SELECT path, name, library_name, modified, outgoing_links_json FROM note_meta
+         WHERE outgoing_links_json LIKE '%' || ?1 || '%'
+         ORDER BY modified DESC
+         LIMIT ?2"
+    ) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let results = stmt.query_map(params![query, limit], |row| {
+        let links_json: String = row.get(4)?;
+        Ok(SearchResult {
+            path: row.get(0)?,
+            name: row.get(1)?,
+            library_name: row.get(2)?,
+            modified: row.get(3)?,
+            score: 1.0,
+            snippet: Some(links_json),
+            match_type: "wikilink".to_string(),
+            heading_breadcrumb: None,
+        })
+    }).ok();
+    results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
 }

@@ -274,6 +274,7 @@ pub fn run() {
             search::constellation_search_reindex,
             search::constellation_search_store_embedding,
             search::constellation_search_similar,
+            search::constellation_search_universal,
             map::constellation_map_data,
             map::constellation_map_universe,
             canvas::read_canvas,

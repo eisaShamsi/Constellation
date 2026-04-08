@@ -419,6 +419,27 @@
         "searchHistory": "हाल की खोजें",
         "clearHistory": "इतिहास मिटाएं"
     },
+    "searchHub": {
+        "title": "Search Hub",
+        "syntaxHelpers": "Search syntax",
+        "linksTo": "Links to",
+        "linksFrom": "Links from",
+        "mutual": "Mutual",
+        "mentions": "Mentions",
+        "orphans": "Orphans",
+        "linksBetween": "Links between",
+        "tag": "Tag",
+        "property": "Property",
+        "scope": "Library",
+        "preview": "...",
+        "openInEditor": "Open",
+        "expandSearch": "Search Hub",
+        "titles": "Titles",
+        "contents": "Contents",
+        "tags": "Tags",
+        "properties": "Properties",
+        "wikilinks": "Wikilinks"
+    },
     "layout": {
         "leftSidebar": "बायाँ साइडबार",
         "rightSidebar": "दायाँ साइडबार",

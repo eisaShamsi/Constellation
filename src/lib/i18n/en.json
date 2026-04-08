@@ -418,6 +418,27 @@
         "searchHistory": "Recent searches",
         "clearHistory": "Clear history"
     },
+    "searchHub": {
+        "title": "Search Hub",
+        "syntaxHelpers": "Search syntax",
+        "linksTo": "Links to",
+        "linksFrom": "Links from",
+        "mutual": "Mutual",
+        "mentions": "Mentions",
+        "orphans": "Orphans",
+        "linksBetween": "Links between",
+        "tag": "Tag",
+        "property": "Property",
+        "scope": "Library",
+        "preview": "Select a result to preview",
+        "openInEditor": "Open in editor",
+        "expandSearch": "Open Search Hub",
+        "titles": "Titles",
+        "contents": "Contents",
+        "tags": "Tags",
+        "properties": "Properties",
+        "wikilinks": "Wikilinks"
+    },
     "layout": {
         "leftSidebar": "Left sidebar",
         "rightSidebar": "Right sidebar",

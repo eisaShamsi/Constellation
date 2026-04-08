@@ -419,6 +419,27 @@
         "searchHistory": "최근 검색",
         "clearHistory": "기록 삭제"
     },
+    "searchHub": {
+        "title": "Search Hub",
+        "syntaxHelpers": "Search syntax",
+        "linksTo": "Links to",
+        "linksFrom": "Links from",
+        "mutual": "Mutual",
+        "mentions": "Mentions",
+        "orphans": "Orphans",
+        "linksBetween": "Links between",
+        "tag": "Tag",
+        "property": "Property",
+        "scope": "Library",
+        "preview": "...",
+        "openInEditor": "Open",
+        "expandSearch": "Search Hub",
+        "titles": "Titles",
+        "contents": "Contents",
+        "tags": "Tags",
+        "properties": "Properties",
+        "wikilinks": "Wikilinks"
+    },
     "layout": {
         "leftSidebar": "왼쪽 사이드바",
         "rightSidebar": "오른쪽 사이드바",

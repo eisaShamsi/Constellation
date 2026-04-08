@@ -371,6 +371,18 @@
 					'.cm-activeLineGutter': { display: 'none' },
 					'.cm-gutters': { display: 'none' },
 					'.cm-selectionBackground': { background: 'color-mix(in srgb, var(--interactive-accent, #7c3aed) 20%, transparent)' },
+					'.cm-searchMatch': {
+						backgroundColor: 'color-mix(in srgb, var(--interactive-accent, #7c3aed) 25%, transparent)',
+						outline: '1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 50%, transparent)',
+						borderRadius: '2px',
+					},
+					'.cm-searchMatch-selected': {
+						backgroundColor: 'color-mix(in srgb, var(--interactive-accent, #7c3aed) 40%, transparent)',
+						outline: '2px solid var(--interactive-accent, #7c3aed)',
+						borderRadius: '2px',
+					},
+					/* Hide search panel — we only want the highlights, not the UI */
+					'.cm-search.cm-panel': { display: 'none' },
 				}),
 			],
 		});
@@ -406,6 +418,8 @@
 				q = new SearchQuery({ search: highlightTerm, caseSensitive: false, literal: true, wholeWord: true });
 			}
 			view.dispatch({ effects: setSearchQuery.of(q) });
+			// Open search panel to activate highlights (panel is hidden via CSS)
+			openSearchPanel(view);
 			// Scroll to first occurrence — needs delay for editor to fully render
 			setTimeout(() => {
 				if (!view) return;

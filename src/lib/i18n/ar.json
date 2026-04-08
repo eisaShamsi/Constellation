@@ -419,6 +419,27 @@
         "searchHistory": "عمليات البحث الأخيرة",
         "clearHistory": "مسح السجل"
     },
+    "searchHub": {
+        "title": "مركز البحث",
+        "syntaxHelpers": "صيغ البحث",
+        "linksTo": "يشير إلى",
+        "linksFrom": "يشار إليه من",
+        "mutual": "متبادل",
+        "mentions": "يذكر",
+        "orphans": "يتيم",
+        "linksBetween": "روابط بين",
+        "tag": "وسم",
+        "property": "خاصية",
+        "scope": "مكتبة",
+        "preview": "اختر نتيجة لعرضها",
+        "openInEditor": "فتح في المحرر",
+        "expandSearch": "مركز البحث",
+        "titles": "العناوين",
+        "contents": "المحتوى",
+        "tags": "الوسوم",
+        "properties": "الخصائص",
+        "wikilinks": "الروابط"
+    },
     "layout": {
         "leftSidebar": "الشريط الأيسر",
         "rightSidebar": "الشريط الأيمن",

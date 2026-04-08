@@ -28,7 +28,7 @@
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings,
 		loadWorkspaces, workspaces,
-		resolveWikilinkCrossLibrary,
+		resolveWikilinkCrossLibrary, getNoteHeadings,
 		buildDefaultFrontmatter, searchByProperty,
 		type FrontmatterProperty, type HeadingItem, type NoteLink, type StarNode, type StarLink,
 		type IndexEntry
@@ -57,6 +57,7 @@
 	import ConstellationSight from '$lib/components/ConstellationSight.svelte';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
+	import SearchHub from '$lib/components/SearchHub.svelte';
 	import LocalStarView from '$lib/components/LocalStarView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
@@ -285,6 +286,8 @@
 	let searchInputFocused = $state(false);
 	let searchHistory = $state<{query: string; timestamp: number}[]>([]);
 	let selectedResultIndex = $state(-1);
+	let wikiAutocomplete = $state<{name: string; path: string; libraryName: string}[]>([]);
+	let wikiAutoIndex = $state(-1);
 	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
 	let libraryPickerAction = $state<'note' | 'folder' | 'base'>('note');
 	let allExpanded = $state(true);
@@ -318,6 +321,11 @@
 	let showExpressionForge = $state(false); // CE Phase 10
 	let showSenseMakingCanvas = $state(false); // CE Phase 11
 	let showConstellationMap = $state(false);
+	let showSearchHub = $state(false);
+	let searchHubReturnPending = $state(false);
+	let searchHubInitialQuery = $state('');
+	let sidebarBeforeSearch = $state(false);
+	let rightSidebarBeforeSearch = $state(false);
 	// let inspector360Data = $state<any>(null); // CE Phase 12: disabled — revisit later
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
@@ -1118,7 +1126,7 @@
 			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
 			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
 			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { sidebarOpen = true; searchMode = true; }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'star-view', name: $t('commands.starView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showStarView = !showStarView; showConstellationMap = false; }, category: 'View' },
@@ -2326,6 +2334,48 @@
 		searchQuery = (e.target as HTMLInputElement).value;
 		clearTimeout(searchTimeout);
 		selectedResultIndex = -1;
+
+		// Wikilink autocomplete: detect [[...]] in any link-syntax pattern
+		const wikiMatch = searchQuery.match(/(?:links?\s+(?:to|from|between)|mutual|mentions?)\s+(?:.*\[\[(?:[^\]]+\]\]\s+and\s+)?)?\[\[([^\]]*)$/i);
+		if (wikiMatch) {
+			const inner = wikiMatch[1];
+
+			// Sub-state: [[NoteName|type:query → show link types
+			const pipeIdx = inner.indexOf('|');
+			if (pipeIdx >= 0) {
+				const afterPipe = inner.slice(pipeIdx + 1);
+				if (afterPipe.toLowerCase().startsWith('type:')) {
+					const typeQuery = afterPipe.slice(5).toLowerCase();
+					const LINK_TYPES = ['related-to', 'prerequisite', 'see-also', 'contradicts', 'supports', 'extends'];
+					wikiAutocomplete = LINK_TYPES
+						.filter(t => !typeQuery || t.includes(typeQuery))
+						.map(t => ({ name: t, path: '', libraryName: 'link type' }));
+					wikiAutoIndex = -1;
+					return;
+				}
+			}
+
+			// Sub-state: [[NoteName#query → show headings
+			const hashIdx = inner.indexOf('#');
+			if (hashIdx >= 0) {
+				const noteName = inner.slice(0, hashIdx);
+				const headingQuery = inner.slice(hashIdx + 1).toLowerCase();
+				// Async: fetch headings for this note
+				loadWikiHeadings(noteName, headingQuery);
+				return;
+			}
+
+			// Default: show matching note names
+			const partial = inner.toLowerCase();
+			wikiAutocomplete = allNotes
+				.filter(n => !partial || n.name.toLowerCase().includes(partial))
+				.slice(0, 20);
+			wikiAutoIndex = -1;
+			return;
+		} else {
+			wikiAutocomplete = [];
+		}
+
 		if (searchQuery.trim()) {
 			searchMode = true;
 			if (searchEngineReady) {
@@ -2365,13 +2415,23 @@
 				addSearchHistory(searchQuery);
 			}
 		} else {
-			searchMode = false;
+			// Keep searchMode = true so the search box stays visible
+			// User clears with × or Escape
 			searchResults.set([]);
 			advancedSearchResults = [];
 		}
 	}
 
+	/** × button: reset query text but keep search box open */
 	function clearSearch() {
+		searchQuery = '';
+		searchResults.set([]);
+		advancedSearchResults = [];
+		selectedResultIndex = -1;
+	}
+
+	/** Escape: fully exit search mode and return to file tree */
+	function exitSearch() {
 		searchQuery = '';
 		searchMode = false;
 		searchResults.set([]);
@@ -2380,9 +2440,32 @@
 	}
 
 	function handleSearchKeydown(e: KeyboardEvent) {
+		// Wikilink autocomplete takes priority when visible
+		if (wikiAutocomplete.length > 0) {
+			if (e.key === 'ArrowDown') {
+				e.preventDefault();
+				wikiAutoIndex = Math.min(wikiAutoIndex + 1, wikiAutocomplete.length - 1);
+			} else if (e.key === 'ArrowUp') {
+				e.preventDefault();
+				wikiAutoIndex = Math.max(wikiAutoIndex - 1, 0);
+			} else if (e.key === 'Enter') {
+				e.preventDefault();
+				if (wikiAutoIndex >= 0) {
+					insertWikiAutocomplete(wikiAutocomplete[wikiAutoIndex].name);
+				} else if (wikiAutocomplete.length > 0) {
+					insertWikiAutocomplete(wikiAutocomplete[0].name);
+				}
+			} else if (e.key === 'Escape') {
+				e.preventDefault();
+				wikiAutocomplete = [];
+				wikiAutoIndex = -1;
+			}
+			return;
+		}
+
 		const results = advancedSearchResults.length > 0 ? advancedSearchResults : get(searchResults);
 		if (e.key === 'Escape') {
-			clearSearch();
+			exitSearch();
 			(e.target as HTMLInputElement)?.blur();
 			return;
 		}
@@ -2450,6 +2533,80 @@
 	function matchBadgeKey(type: string): string {
 		const cap = type.charAt(0).toUpperCase() + type.slice(1);
 		return `sidebar.match${cap}`;
+	}
+
+	function insertWikiAutocomplete(name: string) {
+		wikiAutocomplete = [];
+		wikiAutoIndex = -1;
+
+		// Detect what we're completing: heading (#), link type (|type:), or note name
+		const wikiMatch = searchQuery.match(/\[\[([^\]]*)$/);
+		if (!wikiMatch) return;
+		const inner = wikiMatch[1];
+		const hashIdx = inner.indexOf('#');
+		const pipeIdx = inner.indexOf('|');
+
+		if (pipeIdx >= 0 && inner.slice(pipeIdx + 1).toLowerCase().startsWith('type:')) {
+			// Completing a link type: replace type:partial with type:name
+			const notePart = inner.slice(0, pipeIdx);
+			searchQuery = searchQuery.replace(/\[\[[^\]]*$/, `[[${notePart}|type:${name}]]`);
+		} else if (hashIdx >= 0) {
+			// Completing a heading: replace #partial with #name
+			const notePart = inner.slice(0, hashIdx);
+			searchQuery = searchQuery.replace(/\[\[[^\]]*$/, `[[${notePart}#${name}]]`);
+		} else {
+			// Completing a note name — just insert, don't close ]] yet so user can add # or |
+			searchQuery = searchQuery.replace(/\[\[[^\]]*$/, `[[${name}]]`);
+		}
+
+		// Trigger search with completed wikilink query
+		searchMode = true;
+		if (searchEngineReady) {
+			setTimeout(async () => {
+				try {
+					const req = parseSearchQuery(searchQuery);
+					const results = await constellationSearch(req);
+					advancedSearchResults = results;
+					searchResults.set(results.map(r => ({
+						name: r.name, path: r.path,
+						library_id: '', library_name: r.library_name,
+						modified: r.modified, preview: r.snippet ?? '',
+					})));
+					addSearchHistory(searchQuery);
+				} catch { searchAllStars(searchQuery); advancedSearchResults = []; }
+			}, 50);
+		} else {
+			searchAllStars(searchQuery);
+		}
+	}
+
+	let wikiHeadingsLoading = false;
+	async function loadWikiHeadings(noteName: string, headingQuery: string) {
+		if (wikiHeadingsLoading) return;
+		wikiHeadingsLoading = true;
+		try {
+			// Find the note path from allNotes
+			const note = allNotes.find(n => n.name.toLowerCase() === noteName.toLowerCase());
+			if (!note) {
+				// Try cross-library resolve
+				const lib = $libraryStats[0];
+				const resolved = lib ? await resolveWikilinkCrossLibrary(lib.path, noteName) : null;
+				if (!resolved) { wikiAutocomplete = []; wikiHeadingsLoading = false; return; }
+				const headings = await getNoteHeadings(resolved.path);
+				wikiAutocomplete = headings
+					.filter(h => !headingQuery || h.toLowerCase().includes(headingQuery))
+					.slice(0, 20)
+					.map(h => ({ name: h, path: '', libraryName: 'heading' }));
+			} else {
+				const headings = await getNoteHeadings(note.path);
+				wikiAutocomplete = headings
+					.filter(h => !headingQuery || h.toLowerCase().includes(headingQuery))
+					.slice(0, 20)
+					.map(h => ({ name: h, path: '', libraryName: 'heading' }));
+			}
+			wikiAutoIndex = -1;
+		} catch { wikiAutocomplete = []; }
+		wikiHeadingsLoading = false;
 	}
 
 	function cycleSplit() {
@@ -2707,7 +2864,18 @@
 	<!-- ═══ DOCK ═══ -->
 	<div class="dock">
 		<div class="dock-top">
-			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = true; }} title={$t('ribbon.search')}>
+			<button class="dock-btn" class:active={showSearchHub} onclick={() => {
+				showSearchHub = !showSearchHub;
+				if (showSearchHub) {
+					searchHubInitialQuery = '';
+					showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
+					sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen;
+					sidebarOpen = false; rightSidebarOpen = false;
+				} else {
+					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
+				}
+				searchHubReturnPending = false;
+			}} title={$t('searchHub.title')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</button>
 			<button class="dock-btn" class:active={showOrgChart} onclick={() => {
@@ -2781,6 +2949,13 @@
 					<div class="search-box">
 						<svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 						<input type="text" placeholder={$t('sidebar.searchPlaceholder')} value={searchQuery} oninput={handleSearch} onkeydown={handleSearchKeydown} onfocus={handleSearchFocus} onblur={handleSearchBlur}/>
+						<button class="search-expand" onclick={() => {
+							searchHubInitialQuery = searchQuery;
+							showSearchHub = true;
+							showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
+						}} title={$t('searchHub.expandSearch')}>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+						</button>
 						<button class="search-clear" onclick={clearSearch}>×</button>
 					</div>
 				{/if}
@@ -2858,6 +3033,17 @@
 						onClose={() => sidebarMode = 'tree'}
 						embedded={true}
 					/>
+				{:else if searchMode && wikiAutocomplete.length > 0}
+					<div class="section-label">[[</div>
+					<div class="wiki-autocomplete">
+						{#each wikiAutocomplete as note, idx}
+							<button class="wa-item" class:wa-selected={idx === wikiAutoIndex}
+								onclick={() => insertWikiAutocomplete(note.name)}>
+								<span class="wa-name" dir="auto">{note.name}</span>
+								<span class="wa-lib">{note.libraryName}</span>
+							</button>
+						{/each}
+					</div>
 				{:else if searchMode && searchQuery}
 					{#if $searchResults.length > 0}
 						<div class="section-label">{$searchResults.length} {$t('sidebar.results')}</div>
@@ -3142,7 +3328,7 @@
 		</div>
 
 		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
-		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || lensActive}>
+		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || lensActive || showSearchHub}>
 			{#if indexReturnPending}
 				<button class="index-return-btn" onclick={() => { showIndex = true; indexReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -3165,6 +3351,12 @@
 				<button class="index-return-btn" onclick={() => { lensActive = true; lensReturnPending = false; sidebarBeforeLens = sidebarOpen; rightSidebarBeforeLens = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('lens.returnToLens') || 'Return to Lens'}
+				</button>
+			{/if}
+			{#if searchHubReturnPending}
+				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('searchHub.title')}
 				</button>
 			{/if}
 			{#if !$splitActive}
@@ -3375,8 +3567,28 @@
 			{/if}
 		</div>
 
+		<!-- Search Hub overlay -->
+		<div class="searchhub-overlay" class:searchhub-visible={showSearchHub}>
+			<SearchHub
+				initialQuery={searchHubInitialQuery}
+				{allNotes}
+				onNoteClick={(path, name, libraryName, hubQuery) => {
+					const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
+					openNoteTab(path, libraryName, libraryColor, hubQuery || undefined);
+					showSearchHub = false;
+					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
+					searchHubReturnPending = true;
+				}}
+				onClose={() => {
+					showSearchHub = false;
+					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
+					searchHubReturnPending = false;
+				}}
+			/>
+		</div>
+
 		<!-- Content -->
-		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || lensActive} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || lensActive || showSearchHub} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
 			{#if showStarView}
 				<div class="star-fullscreen">
 					<div class="star-header">
@@ -4271,10 +4483,16 @@
 	}
 	.search-icon { color: var(--text-muted); flex-shrink: 0; }
 	.search-box input {
-		flex: 1; border: none; background: none; padding: 4px 0;
+		flex: 1; min-width: 0; border: none; background: none; padding: 4px 0;
 		font-size: 0.82rem; color: var(--text); font-family: inherit; outline: none;
+		text-overflow: ellipsis;
 	}
 	.search-box input::placeholder { color: var(--text-faint); }
+	.search-expand {
+		border: none; background: none; color: var(--text-faint); cursor: pointer; padding: 2px;
+		display: flex; align-items: center; justify-content: center; border-radius: 3px;
+	}
+	.search-expand:hover { color: var(--interactive-accent); background: var(--bg-hover); }
 	.search-clear { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 0 2px; }
 
 	.sidebar-content { flex: 1; overflow-y: auto; padding: 2px 0; }
@@ -4313,6 +4531,16 @@
 		font-family: inherit;
 	}
 	.s-history-clear:hover { color: var(--text-muted); text-decoration: underline; }
+	/* Wikilink autocomplete */
+	.wiki-autocomplete { max-height: 300px; overflow-y: auto; }
+	.wa-item {
+		display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 12px;
+		background: none; border: none; color: var(--text); font-family: inherit;
+		cursor: pointer; text-align: start; font-size: 0.82rem;
+	}
+	.wa-item:hover, .wa-item.wa-selected { background: var(--bg-hover); }
+	.wa-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.wa-lib { font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
 	.s-breadcrumb { font-size: 0.65rem; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.s-snippet { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.s-snippet :global(mark) { background: color-mix(in srgb, var(--interactive-accent) 25%, transparent); color: var(--text-normal); border-radius: 2px; padding: 0 1px; }
@@ -4687,6 +4915,11 @@
 		background: var(--background-primary); min-height: 0;
 	}
 	.lens-overlay.lens-visible { display: flex; }
+	.searchhub-overlay {
+		display: none; flex: 1; overflow: hidden;
+		background: var(--background-primary); min-height: 0;
+	}
+	.searchhub-overlay.searchhub-visible { display: flex; }
 	@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 	:global(.spin) { animation: spin 1s linear infinite; }
 

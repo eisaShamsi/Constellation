@@ -419,6 +419,27 @@
         "searchHistory": "Недавние поиски",
         "clearHistory": "Очистить историю"
     },
+    "searchHub": {
+        "title": "Search Hub",
+        "syntaxHelpers": "Search syntax",
+        "linksTo": "Links to",
+        "linksFrom": "Links from",
+        "mutual": "Mutual",
+        "mentions": "Mentions",
+        "orphans": "Orphans",
+        "linksBetween": "Links between",
+        "tag": "Tag",
+        "property": "Property",
+        "scope": "Library",
+        "preview": "...",
+        "openInEditor": "Open",
+        "expandSearch": "Search Hub",
+        "titles": "Titles",
+        "contents": "Contents",
+        "tags": "Tags",
+        "properties": "Properties",
+        "wikilinks": "Wikilinks"
+    },
     "layout": {
         "leftSidebar": "Левая панель",
         "rightSidebar": "Правая панель",

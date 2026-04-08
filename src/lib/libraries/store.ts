@@ -768,6 +768,10 @@ export interface ConstellationSearchRequest {
 		tags?: string[];
 		wikilinks_to?: string[];
 		wikilinks_from?: string[];
+		mutual?: string[];
+		mentions?: string[];
+		orphans?: boolean;
+		links_between?: string[];
 		library_names?: string[];
 		maturity?: string[];
 		path_prefix?: string;
@@ -813,6 +817,19 @@ export async function searchSimilarNotes(notePath: string, limit?: number): Prom
 	return invoke('constellation_search_similar', { notePath, limit: limit ?? 20 });
 }
 
+/** Universal categorized search — searches everywhere at once. */
+export interface UniversalSearchResponse {
+	titles: ConstellationSearchResult[];
+	contents: ConstellationSearchResult[];
+	tags: ConstellationSearchResult[];
+	properties: ConstellationSearchResult[];
+	wikilinks: ConstellationSearchResult[];
+}
+
+export async function universalSearch(query: string, limit?: number): Promise<UniversalSearchResponse> {
+	return invoke('constellation_search_universal', { query, limit: limit ?? 15 });
+}
+
 /**
  * Parse a search query string into a SearchRequest.
  * Recognizes: #tag, property=value, links to [[X]], in:Library, free text.
@@ -847,12 +864,50 @@ export function parseSearchQuery(raw: string): ConstellationSearchRequest {
 	}
 
 	// Wikilink: "links to [[X]]"
-	const wikiRe = /links?\s+to\s+\[\[([^\]]+)\]\]/gi;
+	const wikiToRe = /links?\s+to\s+\[\[([^\]]+)\]\]/gi;
 	let match;
-	while ((match = wikiRe.exec(raw)) !== null) {
+	while ((match = wikiToRe.exec(raw)) !== null) {
 		if (!filters.wikilinks_to) filters.wikilinks_to = [];
 		filters.wikilinks_to.push(match[1].toLowerCase());
-		// Remove from free text
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Wikilink: "links from [[X]]"
+	const wikiFromRe = /links?\s+from\s+\[\[([^\]]+)\]\]/gi;
+	while ((match = wikiFromRe.exec(raw)) !== null) {
+		if (!filters.wikilinks_from) filters.wikilinks_from = [];
+		filters.wikilinks_from.push(match[1].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Mutual: "mutual [[X]]"
+	const mutualRe = /mutual\s+\[\[([^\]]+)\]\]/gi;
+	while ((match = mutualRe.exec(raw)) !== null) {
+		if (!filters.mutual) filters.mutual = [];
+		filters.mutual.push(match[1].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Mentions: "mentions [[X]]"
+	const mentionsRe = /mentions?\s+\[\[([^\]]+)\]\]/gi;
+	while ((match = mentionsRe.exec(raw)) !== null) {
+		if (!filters.mentions) filters.mentions = [];
+		filters.mentions.push(match[1].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Orphans: standalone keyword
+	if (/\borphans?\b/i.test(freeText)) {
+		filters.orphans = true;
+		freeText = freeText.replace(/\borphans?\b/gi, '').trim();
+	}
+
+	// Links between: "links between [[X]] and [[Y]]"
+	const betweenRe = /links?\s+between\s+\[\[([^\]]+)\]\]\s+and\s+\[\[([^\]]+)\]\]/gi;
+	while ((match = betweenRe.exec(raw)) !== null) {
+		if (!filters.links_between) filters.links_between = [];
+		filters.links_between.push(match[1].toLowerCase());
+		filters.links_between.push(match[2].toLowerCase());
 		freeText = freeText.replace(match[0], '').trim();
 	}
 
