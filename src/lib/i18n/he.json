@@ -1396,6 +1396,13 @@
         "blindSpotDesc": "נקודה עיוורת",
         "regionLabel": "אזור",
         "communityDesc": "קהילה",
-        "contradictions": "סתירות"
+        "contradictions": "סתירות",
+        "linkSupports": "תומך",
+        "linkContradicts": "סותר",
+        "linkCauses": "גורם",
+        "linkExemplifies": "מדגים",
+        "linkGeneralizes": "מכליל",
+        "linkDerivesFrom": "נגזר מ",
+        "linkPartOf": "חלק מ"
     }
 }

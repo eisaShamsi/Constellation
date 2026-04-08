@@ -1396,6 +1396,13 @@
         "blindSpotDesc": "blinder Fleck",
         "regionLabel": "Region",
         "communityDesc": "Gemeinschaft",
-        "contradictions": "Widersprüche"
+        "contradictions": "Widersprüche",
+        "linkSupports": "unterstützt",
+        "linkContradicts": "widerspricht",
+        "linkCauses": "verursacht",
+        "linkExemplifies": "veranschaulicht",
+        "linkGeneralizes": "verallgemeinert",
+        "linkDerivesFrom": "abgeleitet von",
+        "linkPartOf": "Teil von"
     }
 }

@@ -1398,6 +1398,13 @@
         "legendGapLine": "Red dashed line",
         "legendGapDesc": "Structural gap — blind spot between disconnected areas",
         "legendCluster": "Colored region",
-        "legendClusterDesc": "Community boundary — densely connected topic cluster"
+        "legendClusterDesc": "Community boundary — densely connected topic cluster",
+        "linkSupports": "supports",
+        "linkContradicts": "contradicts",
+        "linkCauses": "causes",
+        "linkExemplifies": "exemplifies",
+        "linkGeneralizes": "generalizes",
+        "linkDerivesFrom": "derives-from",
+        "linkPartOf": "part-of"
     }
 }

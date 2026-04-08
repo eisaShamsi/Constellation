@@ -1396,6 +1396,13 @@
         "blindSpotDesc": "نقطه کور",
         "regionLabel": "منطقه",
         "communityDesc": "جامعه",
-        "contradictions": "تناقضات"
+        "contradictions": "تناقضات",
+        "linkSupports": "پشتیبانی",
+        "linkContradicts": "تناقض",
+        "linkCauses": "علت",
+        "linkExemplifies": "نمونه",
+        "linkGeneralizes": "تعمیم",
+        "linkDerivesFrom": "مشتق از",
+        "linkPartOf": "بخشی از"
     }
 }

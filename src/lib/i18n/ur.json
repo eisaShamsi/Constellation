@@ -1396,6 +1396,13 @@
         "blindSpotDesc": "اندھا نقطہ",
         "regionLabel": "علاقہ",
         "communityDesc": "برادری",
-        "contradictions": "تضادات"
+        "contradictions": "تضادات",
+        "linkSupports": "تائید",
+        "linkContradicts": "تضاد",
+        "linkCauses": "سبب",
+        "linkExemplifies": "مثال",
+        "linkGeneralizes": "تعمیم",
+        "linkDerivesFrom": "ماخوذ",
+        "linkPartOf": "حصہ"
     }
 }

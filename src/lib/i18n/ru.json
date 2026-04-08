@@ -1396,6 +1396,13 @@
         "blindSpotDesc": "слепая зона",
         "regionLabel": "Регион",
         "communityDesc": "сообщество",
-        "contradictions": "Противоречия"
+        "contradictions": "Противоречия",
+        "linkSupports": "поддерживает",
+        "linkContradicts": "противоречит",
+        "linkCauses": "причина",
+        "linkExemplifies": "иллюстрирует",
+        "linkGeneralizes": "обобщает",
+        "linkDerivesFrom": "производное от",
+        "linkPartOf": "часть"
     }
 }

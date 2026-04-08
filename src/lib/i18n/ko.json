@@ -1396,6 +1396,13 @@
         "blindSpotDesc": "사각지대",
         "regionLabel": "영역",
         "communityDesc": "커뮤니티",
-        "contradictions": "모순"
+        "contradictions": "모순",
+        "linkSupports": "지지",
+        "linkContradicts": "모순",
+        "linkCauses": "원인",
+        "linkExemplifies": "예시",
+        "linkGeneralizes": "일반화",
+        "linkDerivesFrom": "유래",
+        "linkPartOf": "일부"
     }
 }

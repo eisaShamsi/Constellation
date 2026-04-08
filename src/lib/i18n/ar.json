@@ -1396,6 +1396,13 @@
         "blindSpotDesc": "نقطة عمياء",
         "regionLabel": "منطقة",
         "communityDesc": "مجتمع",
-        "contradictions": "التناقضات"
+        "contradictions": "التناقضات",
+        "linkSupports": "يدعم",
+        "linkContradicts": "يتناقض",
+        "linkCauses": "يسبب",
+        "linkExemplifies": "يمثّل",
+        "linkGeneralizes": "يعمّم",
+        "linkDerivesFrom": "مشتق من",
+        "linkPartOf": "جزء من"
     }
 }

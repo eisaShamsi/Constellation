@@ -1396,6 +1396,13 @@
         "blindSpotDesc": "अंधा बिंदु",
         "regionLabel": "क्षेत्र",
         "communityDesc": "समुदाय",
-        "contradictions": "विरोधाभास"
+        "contradictions": "विरोधाभास",
+        "linkSupports": "समर्थन",
+        "linkContradicts": "विरोध",
+        "linkCauses": "कारण",
+        "linkExemplifies": "उदाहरण",
+        "linkGeneralizes": "सामान्यीकरण",
+        "linkDerivesFrom": "व्युत्पन्न",
+        "linkPartOf": "का भाग"
     }
 }

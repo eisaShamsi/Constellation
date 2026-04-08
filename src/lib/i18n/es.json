@@ -1396,6 +1396,13 @@
         "blindSpotDesc": "punto ciego",
         "regionLabel": "Región",
         "communityDesc": "comunidad",
-        "contradictions": "Contradicciones"
+        "contradictions": "Contradicciones",
+        "linkSupports": "apoya",
+        "linkContradicts": "contradice",
+        "linkCauses": "causa",
+        "linkExemplifies": "ejemplifica",
+        "linkGeneralizes": "generaliza",
+        "linkDerivesFrom": "derivado de",
+        "linkPartOf": "parte de"
     }
 }
