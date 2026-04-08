@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>360.3D Concept 2 — Atmospheric Rings</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #080818; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; height: 100vh; }
+
+.container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+/* Gradient background */
+.bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, #12122a 0%, #080818 60%, #040410 100%); }
+
+/* Header */
+.header { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; padding: 14px 24px; z-index: 10; }
+.header-back { width: 32px; height: 32px; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; background: none; color: #888; font-size: 16px; cursor: pointer; margin-right: 12px; }
+.header-title { font-size: 13px; color: #a78bfa; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+.header-note { font-size: 22px; font-weight: 700; margin-left: 16px; background: linear-gradient(135deg, #e0e0e0, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Main sphere area */
+.sphere-area { position: relative; width: 750px; height: 750px; }
+
+/* Atmospheric rings — tilted for 3D perspective */
+.atmo-ring { position: absolute; top: 50%; left: 50%; border-radius: 50%; border: 1px solid; transform: translate(-50%, -50%); }
+.atmo-ring-1 { width: 220px; height: 220px; border-color: rgba(167,139,250,0.15); box-shadow: 0 0 30px rgba(167,139,250,0.05) inset; }
+.atmo-ring-2 { width: 400px; height: 400px; border-color: rgba(167,139,250,0.08); box-shadow: 0 0 50px rgba(167,139,250,0.03) inset; animation: rotate-slow 60s linear infinite; }
+.atmo-ring-3 { width: 600px; height: 600px; border-color: rgba(167,139,250,0.04); box-shadow: 0 0 80px rgba(167,139,250,0.02) inset; animation: rotate-slow 90s linear infinite reverse; }
+
+/* Perspective tilt on middle ring */
+.atmo-ring-2 { transform: translate(-50%, -50%) perspective(800px) rotateX(15deg); }
+.atmo-ring-3 { transform: translate(-50%, -50%) perspective(800px) rotateX(25deg); }
+
+@keyframes rotate-slow { from { transform: translate(-50%, -50%) perspective(800px) rotateX(15deg) rotate(0deg); } to { transform: translate(-50%, -50%) perspective(800px) rotateX(15deg) rotate(360deg); } }
+
+/* Sector arcs (colored atmospheric zones) */
+.sector-arc { position: absolute; top: 50%; left: 50%; width: 300px; height: 300px; border-radius: 50%; transform: translate(-50%, -50%); clip-path: polygon(50% 50%, 50% 0%, 75% 0%); }
+
+/* Center */
+.center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; text-align: center; }
+.center-orb { width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #2a2a5a, #12122a); border: 2px solid rgba(167,139,250,0.4); box-shadow: 0 0 40px rgba(167,139,250,0.2), 0 0 80px rgba(167,139,250,0.1); display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.center-name { font-size: 12px; font-weight: 700; color: #fff; }
+.center-sub { font-size: 9px; color: #a78bfa; margin-top: 3px; }
+.center-stratum { font-size: 8px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+/* Orbital nodes */
+.orbital { position: absolute; border-radius: 50%; cursor: pointer; transition: all 0.3s; }
+.orbital:hover { filter: brightness(1.4); transform: scale(1.3); }
+.orbital-glow { position: absolute; inset: -6px; border-radius: 50%; filter: blur(6px); opacity: 0.4; }
+.orbital-core { position: relative; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.orbital-tooltip { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 8px; color: rgba(255,255,255,0.5); white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.orbital:hover .orbital-tooltip { opacity: 1; }
+
+/* Connection lines */
+.conn-line { position: absolute; top: 50%; left: 50%; height: 1px; transform-origin: 0 0; opacity: 0.15; }
+
+/* Gap zones — faded atmospheric void */
+.gap-void { position: absolute; top: 50%; left: 50%; width: 280px; height: 140px; transform-origin: 0 0; border-radius: 0 140px 140px 0; border: 1px dashed rgba(255,255,255,0.05); }
+
+/* Metadata panel (floating glass card) */
+.meta-card { position: absolute; z-index: 6; padding: 8px 14px; border-radius: 12px; background: rgba(20,20,40,0.7); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(8px); font-size: 10px; line-height: 1.6; }
+.meta-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+/* Bottom bar */
+.bottom-bar { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; gap: 24px; padding: 14px; background: linear-gradient(0deg, rgba(8,8,24,0.9) 0%, transparent 100%); font-size: 11px; color: rgba(255,255,255,0.35); z-index: 10; }
+.bottom-bar .warn { color: #ef4444; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="bg"></div>
+
+  <div class="header">
+    <button class="header-back">←</button>
+    <span class="header-title">360.3D Inspector</span>
+    <span class="header-note">Epistemology Framework</span>
+  </div>
+
+  <div class="sphere-area">
+    <!-- Atmospheric rings -->
+    <div class="atmo-ring atmo-ring-3"></div>
+    <div class="atmo-ring atmo-ring-2"></div>
+    <div class="atmo-ring atmo-ring-1"></div>
+
+    <!-- Connection lines to nodes -->
+    <div class="conn-line" style="width: 150px; background: #4A9EFF; transform: rotate(-80deg);"></div>
+    <div class="conn-line" style="width: 180px; background: #4A9EFF; transform: rotate(-100deg);"></div>
+    <div class="conn-line" style="width: 120px; background: #FF4A4A; transform: rotate(85deg);"></div>
+    <div class="conn-line" style="width: 200px; background: #FF8C42; transform: rotate(-5deg);"></div>
+    <div class="conn-line" style="width: 170px; background: #FFD700; transform: rotate(175deg);"></div>
+    <div class="conn-line" style="width: 140px; background: #A44AFF; transform: rotate(-50deg);"></div>
+
+    <!-- Orbital nodes — Supports (blue) -->
+    <div class="orbital" style="width: 22px; height: 22px; top: 200px; left: 330px;">
+      <div class="orbital-glow" style="background: #4A9EFF;"></div>
+      <div class="orbital-core" style="background: radial-gradient(circle, #4A9EFF, #2a5eaa);"></div>
+      <span class="orbital-tooltip">Evidence Study</span>
+    </div>
+    <div class="orbital" style="width: 18px; height: 18px; top: 170px; left: 400px;">
+      <div class="orbital-glow" style="background: #4A9EFF;"></div>
+      <div class="orbital-core" style="background: radial-gradient(circle, #4A9EFF, #2a5eaa);"></div>
+      <span class="orbital-tooltip">Primary Source</span>
+    </div>
+
+    <!-- Contradicts (red) -->
+    <div class="orbital" style="width: 20px; height: 20px; bottom: 215px; left: 355px;">
+      <div class="orbital-glow" style="background: #FF4A4A;"></div>
+      <div class="orbital-core" style="background: radial-gradient(circle, #FF4A4A, #aa2a2a);"></div>
+      <span class="orbital-tooltip">Opposing View</span>
+    </div>
+
+    <!-- Causes (orange) -->
+    <div class="orbital" style="width: 16px; height: 16px; top: 360px; right: 175px;">
+      <div class="orbital-glow" style="background: #FF8C42;"></div>
+      <div class="orbital-core" style="background: radial-gradient(circle, #FF8C42, #aa6a2a);"></div>
+      <span class="orbital-tooltip">Downstream Impact</span>
+    </div>
+
+    <!-- Derives-from (gold) -->
+    <div class="orbital" style="width: 20px; height: 20px; top: 355px; left: 165px;">
+      <div class="orbital-glow" style="background: #FFD700;"></div>
+      <div class="orbital-core" style="background: radial-gradient(circle, #FFD700, #aa9a00);"></div>
+      <span class="orbital-tooltip">Original Source</span>
+    </div>
+
+    <!-- Generalizes (purple) -->
+    <div class="orbital" style="width: 14px; height: 14px; top: 210px; right: 185px;">
+      <div class="orbital-glow" style="background: #A44AFF;"></div>
+      <div class="orbital-core" style="background: radial-gradient(circle, #A44AFF, #7a2acc);"></div>
+      <span class="orbital-tooltip">Meta-Theory</span>
+    </div>
+
+    <!-- 2nd order nodes (smaller, further out) -->
+    <div class="orbital" style="width: 10px; height: 10px; top: 120px; left: 310px; opacity: 0.5;">
+      <div class="orbital-glow" style="background: #4A9EFF;"></div>
+      <div class="orbital-core" style="background: radial-gradient(circle, #4A9EFF, #2a5eaa);"></div>
+      <span class="orbital-tooltip">2nd-order: Data Set</span>
+    </div>
+    <div class="orbital" style="width: 10px; height: 10px; top: 130px; right: 200px; opacity: 0.5;">
+      <div class="orbital-glow" style="background: #A44AFF;"></div>
+      <div class="orbital-core" style="background: radial-gradient(circle, #A44AFF, #7a2acc);"></div>
+      <span class="orbital-tooltip">2nd-order: Category Theory</span>
+    </div>
+
+    <!-- Center orb -->
+    <div class="center">
+      <div class="center-orb">
+        <span class="center-name">Epistemology</span>
+        <span class="center-sub">Framework</span>
+        <span class="center-stratum">Stratum 7 · Paradigm</span>
+      </div>
+    </div>
+
+    <!-- Floating metadata cards -->
+    <div class="meta-card" style="top: 20px; right: 20px;">
+      <div><span class="meta-dot" style="background: #16a34a;"></span>Evergreen · 142 days</div>
+      <div><span class="meta-dot" style="background: #4A9EFF;"></span>Received · Depth 3</div>
+      <div><span class="meta-dot" style="background: #a78bfa;"></span>Permanent</div>
+    </div>
+    <div class="meta-card" style="bottom: 60px; left: 20px;">
+      <div>🛤️ Trails: "Epistemology Path", "Knowledge Theory"</div>
+      <div>🏷️ Lens: philosophy, cognition</div>
+    </div>
+
+    <!-- Gap zones -->
+    <div style="position:absolute; top: 80px; left: 55px; font-size: 9px; color: rgba(255,255,255,0.12); border: 1px dashed rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px;">
+      ⚠ Gap: Exemplifies
+    </div>
+    <div style="position:absolute; bottom: 100px; right: 55px; font-size: 9px; color: rgba(255,255,255,0.12); border: 1px dashed rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px;">
+      ⚠ Gap: Part-of
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <span>⬆ 6 outbound</span>
+    <span>⬇ 14 inbound</span>
+    <span>📝 3,200 words</span>
+    <span>🔗 Trust: 3</span>
+    <span>🛤️ 2 trails</span>
+    <span class="warn">⚠ 2 blind spots</span>
+  </div>
+</div>
+</body>
+</html>

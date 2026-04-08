@@ -1345,7 +1345,7 @@
         "returnToMap": "Return to Map"
     },
     "lens": {
-        "title": "Constellation Lens",
+        "title": "Constellation Sight",
         "universeHealth": "Universe Health",
         "modularity": "Modularity",
         "dominance": "Dominance",
@@ -1361,7 +1361,7 @@
         "advanced": "Advanced",
         "layerPeeling": "Layer Peeling",
         "tagEdges": "Tag Edges",
-        "returnToLens": "Return to Lens",
+        "returnToLens": "Return to Sight",
         "fitToScreen": "Fit to screen",
         "searchAll": "Search all... (Enter)",
         "searchTitles": "Search titles...",

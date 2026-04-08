@@ -1343,7 +1343,7 @@
         "hide": "مخفی کردن داشبورد"
     },
     "lens": {
-        "title": "عدسه کانستلیشن",
+        "title": "بصیرت کانستلیشن",
         "universeHealth": "سلامت جهان دانش",
         "modularity": "ماژولاریته",
         "dominance": "غلبه",
@@ -1372,7 +1372,7 @@
         "legendGapDesc": "شکاف ساختاری — نقطه کور بین حوزه‌های منفصل",
         "legendCluster": "منطقه رنگی",
         "legendClusterDesc": "مرز جامعه — خوشه موضوعی متراکم",
-        "returnToLens": "بازگشت به عدسه",
+        "returnToLens": "بازگشت به بصیرت",
         "fitToScreen": "تنظیم به صفحه",
         "searchAll": "جستجوی همه... (Enter)",
         "searchTitles": "جستجوی عناوین...",

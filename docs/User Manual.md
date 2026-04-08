@@ -15,7 +15,7 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 5. [Sky View (GraphMind)](#star-view-graphmind)
 6. [Split View](#split-view)
 7. [Index](#index)
-8. [Constellation Lens](#constellation-lens)
+8. [Constellation Sight](#constellation-lens)
 9. [Second Screen](#second-screen)
 10. [Properties and Frontmatter](#properties-and-frontmatter)
 11. [Templates](#templates)
@@ -487,9 +487,9 @@ When the Second Screen is open:
 
 ---
 
-## 8. Constellation Lens
+## 8. Constellation Sight
 
-The Constellation Lens is a network analysis engine that reveals the hidden structure of your knowledge. It answers: **"What patterns and gaps exist in my thinking?"**
+The Constellation Sight is a network analysis engine that reveals the hidden structure of your knowledge. It answers: **"What patterns and gaps exist in my thinking?"**
 
 ### Opening the Lens
 

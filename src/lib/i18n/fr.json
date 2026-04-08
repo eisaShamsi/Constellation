@@ -1343,7 +1343,7 @@
         "hide": "Masquer le tableau de bord"
     },
     "lens": {
-        "title": "Constellation Lens",
+        "title": "Constellation Sight",
         "universeHealth": "Santé de l'univers",
         "modularity": "Modularité",
         "dominance": "Dominance",
@@ -1372,7 +1372,7 @@
         "legendGapDesc": "Lacune structurelle — angle mort entre des domaines déconnectés",
         "legendCluster": "Région colorée",
         "legendClusterDesc": "Frontière de communauté — groupe thématique densément connecté",
-        "returnToLens": "Retour à la Lentille",
+        "returnToLens": "Retour à la Sight",
         "fitToScreen": "Ajuster à l'écran",
         "searchAll": "Tout rechercher... (Entrée)",
         "searchTitles": "Rechercher les titres...",

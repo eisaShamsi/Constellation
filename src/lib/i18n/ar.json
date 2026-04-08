@@ -1343,7 +1343,7 @@
         "hide": "إخفاء لوحة المعلومات"
     },
     "lens": {
-        "title": "عدسة كونستليشن",
+        "title": "بصيرة كونستليشن",
         "universeHealth": "صحة الكون المعرفي",
         "modularity": "التماسك",
         "dominance": "الهيمنة",
@@ -1372,7 +1372,7 @@
         "legendGapDesc": "فجوة هيكلية — نقطة عمياء بين مناطق منفصلة",
         "legendCluster": "منطقة ملونة",
         "legendClusterDesc": "حدود المجتمع — مجموعة موضوعية مترابطة",
-        "returnToLens": "العودة إلى العدسة",
+        "returnToLens": "العودة إلى البصيرة",
         "fitToScreen": "ملاءمة الشاشة",
         "searchAll": "بحث في الكل... (Enter)",
         "searchTitles": "بحث في العناوين...",

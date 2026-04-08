@@ -1,0 +1,140 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      custom_version:
+        description: 'Or enter exact version (e.g. 0.5.0) — overrides bump type'
+        required: false
+        type: string
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Bump version (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        id: bump
+        shell: bash
+        run: |
+          # Read current version
+          CURRENT=$(node -p "require('./package.json').version")
+
+          if [ -n "${{ inputs.custom_version }}" ]; then
+            NEW="${{ inputs.custom_version }}"
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+            case "${{ inputs.bump }}" in
+              patch) PATCH=$((PATCH + 1)) ;;
+              minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+              major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            esac
+            NEW="$MAJOR.$MINOR.$PATCH"
+          fi
+
+          echo "old=$CURRENT" >> $GITHUB_OUTPUT
+          echo "new=$NEW" >> $GITHUB_OUTPUT
+          echo "tag=v$NEW" >> $GITHUB_OUTPUT
+          echo "Bumping $CURRENT → $NEW"
+
+          # Update package.json
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json','utf-8'));
+            pkg.version = '$NEW';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, '\t') + '\n');
+          "
+
+          # Update tauri.conf.json
+          node -e "
+            const fs = require('fs');
+            const conf = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json','utf-8'));
+            conf.version = '$NEW';
+            fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(conf, null, '  ') + '\n');
+          "
+
+          # Update Cargo.toml
+          sed -i "s/^version = \".*\"/version = \"$NEW\"/" src-tauri/Cargo.toml
+
+          # Commit, tag, push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
+          git commit -m "release: v$NEW"
+          git tag "v$NEW"
+          git push origin HEAD "v$NEW"
+
+      - name: Determine tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ steps.bump.outputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ steps.tag.outputs.tag }}
+          releaseName: 'Constellation ${{ steps.tag.outputs.tag }}'
+          releaseBody: |
+            See the assets below to download and install this version.
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+
+      - name: Update public Gist with latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GIST_TOKEN }}
+        shell: bash
+        run: |
+          # Download latest.json from the release
+          gh release download ${{ steps.tag.outputs.tag }} --pattern "latest.json" --output latest.json --clobber --repo eisaShamsi/Constellation || true
+          if [ -f latest.json ]; then
+            gh gist edit d78713095f2bddb26698c9f04a79b2d8 -f latest.json latest.json
+            echo "✅ Updated Gist with latest.json"
+          else
+            echo "⚠️ latest.json not found in release assets"
+          fi

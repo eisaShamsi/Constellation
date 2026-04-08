@@ -1343,7 +1343,7 @@
         "hide": "Panoyu gizle"
     },
     "lens": {
-        "title": "Constellation Lens",
+        "title": "Constellation Sight",
         "universeHealth": "Evren Sağlığı",
         "modularity": "Modülerlik",
         "dominance": "Baskınlık",
@@ -1372,7 +1372,7 @@
         "legendGapDesc": "Yapısal boşluk — bağlantısız alanlar arasındaki kör nokta",
         "legendCluster": "Renkli bölge",
         "legendClusterDesc": "Topluluk sınırı — yoğun bağlantılı konu kümesi",
-        "returnToLens": "Lense Dön",
+        "returnToLens": "Sighte Dön",
         "fitToScreen": "Ekrana sığdır",
         "searchAll": "Tümünde ara... (Enter)",
         "searchTitles": "Başlıklarda ara...",

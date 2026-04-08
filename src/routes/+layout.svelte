@@ -52,7 +52,7 @@
 	import TemplateSuggester from '$lib/components/TemplateSuggester.svelte';
 	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
 	import GraphMindView from '$lib/components/GraphMindView.svelte';
-	import ConstellationLens from '$lib/components/ConstellationLens.svelte';
+	import ConstellationSight from '$lib/components/ConstellationSight.svelte';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import LocalStarView from '$lib/components/LocalStarView.svelte';
@@ -2636,8 +2636,8 @@
 					lensActive = false;
 					sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens;
 				}
-			}} title={$t('lens.title') || 'Constellation Lens'}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+			}} title={$t('lens.title') || 'Constellation Sight'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
 			</button>
 		</div>
 		<div class="dock-bottom">
@@ -3209,7 +3209,7 @@
 		<!-- Constellation Lens — standalone D3+Canvas component -->
 		<div class="lens-overlay" class:lens-visible={lensActive}>
 			{#if lensActive}
-				<ConstellationLens
+				<ConstellationSight
 					nodes={starNodes}
 					links={starLinks}
 					centrality={lensCentrality}

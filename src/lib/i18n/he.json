@@ -1343,7 +1343,7 @@
         "hide": "הסתר לוח בקרה"
     },
     "lens": {
-        "title": "Constellation Lens",
+        "title": "Constellation Sight",
         "universeHealth": "בריאות היקום",
         "modularity": "מודולריות",
         "dominance": "דומיננטיות",
@@ -1372,7 +1372,7 @@
         "legendGapDesc": "פער מבני — נקודה עיוורת בין אזורים מנותקים",
         "legendCluster": "אזור צבעוני",
         "legendClusterDesc": "גבול קהילה — אשכול נושאי מחובר בצפיפות",
-        "returnToLens": "חזרה לעדשה",
+        "returnToLens": "חזרה לSight",
         "fitToScreen": "התאם למסך",
         "searchAll": "...חיפוש בהכל (Enter)",
         "searchTitles": "...חיפוש בכותרות",

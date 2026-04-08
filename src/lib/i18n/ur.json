@@ -1343,7 +1343,7 @@
         "hide": "ڈیش بورڈ چھپائیں"
     },
     "lens": {
-        "title": "کانسٹیلیشن لینز",
+        "title": "کانسٹیلیشن بصیرت",
         "universeHealth": "کائنات کی صحت",
         "modularity": "ماڈیولریٹی",
         "dominance": "غلبہ",
@@ -1372,7 +1372,7 @@
         "legendGapDesc": "ساختی خلا — الگ تھلگ شعبوں کے درمیان اندھا نقطہ",
         "legendCluster": "رنگین علاقہ",
         "legendClusterDesc": "برادری کی حد — گنجان جڑا موضوعی گروہ",
-        "returnToLens": "لینز پر واپسی",
+        "returnToLens": "بصیرت پر واپسی",
         "fitToScreen": "اسکرین پر فٹ",
         "searchAll": "سب تلاش کریں... (Enter)",
         "searchTitles": "عنوانات تلاش کریں...",

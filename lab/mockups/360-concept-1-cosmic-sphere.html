@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>360.3D Concept 1 — Cosmic Sphere</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a1a; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; height: 100vh; }
+
+.container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+/* Starfield background */
+.stars { position: absolute; inset: 0; background: radial-gradient(ellipse at center, #0d0d2b 0%, #050510 70%); }
+.stars::before { content: ''; position: absolute; inset: 0; background-image:
+  radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.3) 0%, transparent 100%),
+  radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.2) 0%, transparent 100%),
+  radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.4) 0%, transparent 100%),
+  radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.15) 0%, transparent 100%),
+  radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.25) 0%, transparent 100%),
+  radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.2) 0%, transparent 100%),
+  radial-gradient(1px 1px at 85% 15%, rgba(255,255,255,0.3) 0%, transparent 100%);
+}
+
+/* Header */
+.header { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; padding: 12px 20px; z-index: 10; background: linear-gradient(180deg, rgba(10,10,26,0.9) 0%, transparent 100%); }
+.header-title { font-size: 14px; font-weight: 600; color: #a78bfa; }
+.header-note { font-size: 20px; font-weight: 700; margin-left: 12px; }
+.header-close { margin-left: auto; width: 32px; height: 32px; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; background: none; color: #999; font-size: 18px; cursor: pointer; }
+.header-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* Sphere container */
+.sphere { position: relative; width: 700px; height: 700px; }
+
+/* Concentric rings */
+.ring { position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,0.06); top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.ring-1 { width: 250px; height: 250px; border-color: rgba(255,255,255,0.08); }
+.ring-2 { width: 420px; height: 420px; border-color: rgba(255,255,255,0.05); }
+.ring-3 { width: 600px; height: 600px; border-color: rgba(255,255,255,0.03); }
+
+/* Sector lines */
+.sector-line { position: absolute; top: 50%; left: 50%; width: 300px; height: 1px; transform-origin: 0 0; opacity: 0.15; }
+.sector-line.active { opacity: 0.4; }
+.sector-line.gap { opacity: 0.06; border-top: 1px dashed rgba(255,255,255,0.2); background: none !important; }
+
+/* Center core */
+.core { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; text-align: center; }
+.core-glow { width: 100px; height: 100px; border-radius: 50%; background: radial-gradient(circle, rgba(167,139,250,0.4) 0%, rgba(167,139,250,0.1) 40%, transparent 70%); display: flex; align-items: center; justify-content: center; animation: pulse 3s ease-in-out infinite; }
+.core-inner { width: 60px; height: 60px; border-radius: 50%; background: radial-gradient(circle, #1a1a3a 0%, #0d0d2b 100%); border: 2px solid rgba(167,139,250,0.6); display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.core-name { font-size: 9px; font-weight: 700; color: #e0e0e0; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.core-stratum { font-size: 7px; color: #a78bfa; margin-top: 2px; }
+
+@keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.05); } }
+
+/* Orbs (connected notes) */
+.orb { position: absolute; border-radius: 50%; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; z-index: 3; display: flex; align-items: center; justify-content: center; }
+.orb:hover { transform: scale(1.3); z-index: 10; }
+.orb-label { position: absolute; top: 100%; margin-top: 4px; font-size: 8px; color: rgba(255,255,255,0.6); white-space: nowrap; text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+.orb:hover .orb-label { opacity: 1; }
+
+/* Sector labels */
+.sector-label { position: absolute; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; opacity: 0.3; }
+
+/* Metadata badges */
+.badge { position: absolute; z-index: 6; padding: 3px 8px; border-radius: 10px; font-size: 9px; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px); }
+
+/* Gap indicator */
+.gap-zone { position: absolute; top: 50%; left: 50%; transform-origin: 0 0; opacity: 0.04; border-radius: 0 300px 300px 0; }
+
+/* Bottom stats */
+.stats { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; font-size: 11px; color: rgba(255,255,255,0.4); z-index: 10; }
+.stat-warn { color: #ef4444; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="stars"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <span class="header-title">🔮 360.3D</span>
+    <span class="header-note">Philosophy of Knowledge</span>
+    <button class="header-close">×</button>
+  </div>
+
+  <div class="sphere">
+    <!-- Rings -->
+    <div class="ring ring-1"></div>
+    <div class="ring ring-2"></div>
+    <div class="ring ring-3"></div>
+
+    <!-- Sector lines (7 directions) -->
+    <div class="sector-line active" style="background: #4A9EFF; transform: rotate(-90deg);"></div>   <!-- N: supports -->
+    <div class="sector-line active" style="background: #FF4A4A; transform: rotate(90deg);"></div>    <!-- S: contradicts -->
+    <div class="sector-line active" style="background: #FF8C42; transform: rotate(0deg);"></div>     <!-- E: causes -->
+    <div class="sector-line active" style="background: #FFD700; transform: rotate(180deg);"></div>   <!-- W: derives-from -->
+    <div class="sector-line active" style="background: #A44AFF; transform: rotate(-45deg);"></div>   <!-- NE: generalizes -->
+    <div class="sector-line gap" style="transform: rotate(-135deg);"></div>                           <!-- NW: exemplifies (GAP) -->
+    <div class="sector-line gap" style="transform: rotate(135deg);"></div>                            <!-- SE: part-of (GAP) -->
+
+    <!-- Sector labels -->
+    <div class="sector-label" style="top: 30px; left: 50%; transform: translateX(-50%); color: #4A9EFF;">SUPPORTS</div>
+    <div class="sector-label" style="bottom: 30px; left: 50%; transform: translateX(-50%); color: #FF4A4A;">CONTRADICTS</div>
+    <div class="sector-label" style="top: 50%; right: 20px; transform: translateY(-50%); color: #FF8C42;">CAUSES</div>
+    <div class="sector-label" style="top: 50%; left: 20px; transform: translateY(-50%); color: #FFD700;">DERIVES</div>
+    <div class="sector-label" style="top: 80px; right: 70px; color: #A44AFF;">GENERALIZES</div>
+    <div class="sector-label" style="top: 80px; left: 70px; color: rgba(255,255,255,0.1);">EXEMPLIFIES ⚠</div>
+    <div class="sector-label" style="bottom: 80px; right: 70px; color: rgba(255,255,255,0.1);">PART-OF ⚠</div>
+
+    <!-- Orbs — Supports (blue, north) -->
+    <div class="orb" style="width:18px; height:18px; background: radial-gradient(circle, #4A9EFF, #2a6ecc); box-shadow: 0 0 12px #4A9EFF80; top: 180px; left: 320px;">
+      <span class="orb-label">Evidence Note</span>
+    </div>
+    <div class="orb" style="width:14px; height:14px; background: radial-gradient(circle, #4A9EFF, #2a6ecc); box-shadow: 0 0 8px #4A9EFF60; top: 200px; left: 380px;">
+      <span class="orb-label">Research Paper</span>
+    </div>
+    <div class="orb" style="width:10px; height:10px; background: radial-gradient(circle, #4A9EFF, #2a6ecc); box-shadow: 0 0 6px #4A9EFF40; top: 120px; left: 340px;">
+      <span class="orb-label">Secondary Source</span>
+    </div>
+
+    <!-- Orbs — Contradicts (red, south) -->
+    <div class="orb" style="width:16px; height:16px; background: radial-gradient(circle, #FF4A4A, #cc2a2a); box-shadow: 0 0 12px #FF4A4A80; bottom: 190px; left: 340px;">
+      <span class="orb-label">Counter Argument</span>
+    </div>
+
+    <!-- Orbs — Causes (orange, east) -->
+    <div class="orb" style="width:14px; height:14px; background: radial-gradient(circle, #FF8C42, #cc6a2a); box-shadow: 0 0 10px #FF8C4260; top: 335px; right: 155px;">
+      <span class="orb-label">Downstream Effect</span>
+    </div>
+    <div class="orb" style="width:12px; height:12px; background: radial-gradient(circle, #FF8C42, #cc6a2a); box-shadow: 0 0 8px #FF8C4240; top: 310px; right: 90px;">
+      <span class="orb-label">Policy Change</span>
+    </div>
+
+    <!-- Orbs — Derives-from (gold, west) -->
+    <div class="orb" style="width:16px; height:16px; background: radial-gradient(circle, #FFD700, #ccaa00); box-shadow: 0 0 12px #FFD70080; top: 330px; left: 155px;">
+      <span class="orb-label">Source Book</span>
+    </div>
+
+    <!-- Orbs — Generalizes (purple, NE) -->
+    <div class="orb" style="width:12px; height:12px; background: radial-gradient(circle, #A44AFF, #7a2acc); box-shadow: 0 0 10px #A44AFF60; top: 170px; right: 140px;">
+      <span class="orb-label">Abstract Theory</span>
+    </div>
+
+    <!-- Center core -->
+    <div class="core">
+      <div class="core-glow">
+        <div class="core-inner">
+          <span class="core-name">Philosophy</span>
+          <span class="core-stratum">L6 · Theory</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metadata badges -->
+    <div class="badge" style="top: 10px; right: 10px; background: rgba(22,163,74,0.2); color: #4ade80; border-color: #16a34a40;">🌳 Evergreen</div>
+    <div class="badge" style="top: 10px; left: 10px; background: rgba(74,158,255,0.2); color: #4A9EFF; border-color: #4A9EFF40;">🔵 Received</div>
+    <div class="badge" style="bottom: 50px; right: 10px; background: rgba(167,139,250,0.2); color: #a78bfa; border-color: #a78bfa40;">🔗 Permanent</div>
+    <div class="badge" style="bottom: 50px; left: 10px; background: rgba(239,68,68,0.15); color: #ef4444; border-color: #ef444440;">📋 Due for Review</div>
+    <div class="badge" style="bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4);">🛤️ Trail: "Causality Path"</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <span>⬆ 8 outbound</span>
+    <span>⬇ 12 inbound</span>
+    <span>📝 2,450 words</span>
+    <span>🔗 Trust depth: 3</span>
+    <span class="stat-warn">⚠ 2 gaps</span>
+  </div>
+</div>
+</body>
+</html>

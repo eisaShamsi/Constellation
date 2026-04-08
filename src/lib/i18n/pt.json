@@ -1343,7 +1343,7 @@
         "hide": "Ocultar painel"
     },
     "lens": {
-        "title": "Constellation Lens",
+        "title": "Constellation Sight",
         "universeHealth": "Saúde do universo",
         "modularity": "Modularidade",
         "dominance": "Dominância",
@@ -1372,7 +1372,7 @@
         "legendGapDesc": "Lacuna estrutural — ponto cego entre áreas desconectadas",
         "legendCluster": "Região colorida",
         "legendClusterDesc": "Limite de comunidade — cluster temático densamente conectado",
-        "returnToLens": "Voltar à Lente",
+        "returnToLens": "Voltar à Sight",
         "fitToScreen": "Ajustar à tela",
         "searchAll": "Pesquisar tudo... (Enter)",
         "searchTitles": "Pesquisar títulos...",
