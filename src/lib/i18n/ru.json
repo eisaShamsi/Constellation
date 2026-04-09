@@ -299,6 +299,8 @@
             "workspacesDesc": "Сохранение и восстановление раскладок рабочих пространств",
             "index": "Указатель",
             "indexDesc": "Сбор и просмотр терминов из всех заметок",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "Вкл",
             "off": "Выкл",
             "navigation": "Навигация",

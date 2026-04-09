@@ -299,6 +299,8 @@
             "workspacesDesc": "Arbeitsbereich-Layouts speichern und wiederherstellen",
             "index": "Index",
             "indexDesc": "Begriffe aus allen Notizen sammeln und durchsuchen",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "An",
             "off": "Aus",
             "navigation": "Navigation",

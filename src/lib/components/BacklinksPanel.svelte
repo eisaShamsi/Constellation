@@ -29,6 +29,17 @@
 	} = $props();
 
 	let showUnlinked = $state(false);
+	let filterQuery = $state('');
+	const filteredBacklinks = $derived(
+		filterQuery.trim()
+			? backlinks.filter(bl => bl.name.toLowerCase().includes(filterQuery.toLowerCase()) || bl.context.toLowerCase().includes(filterQuery.toLowerCase()))
+			: backlinks
+	);
+	const filteredUnlinked = $derived(
+		filterQuery.trim()
+			? unlinkedMentions.filter(m => m.name.toLowerCase().includes(filterQuery.toLowerCase()) || m.context.toLowerCase().includes(filterQuery.toLowerCase()))
+			: unlinkedMentions
+	);
 
 	function getLibraryColor(libraryName: string): string {
 		return libraryColorMap[libraryName] || '#7c3aed';
@@ -55,13 +66,18 @@
 </script>
 
 <div class="backlinks-panel">
+	{#if backlinks.length + unlinkedMentions.length > 3}
+		<div class="bl-filter">
+			<input type="text" dir="auto" placeholder="Filter..." value={filterQuery} oninput={(e) => filterQuery = (e.target as HTMLInputElement).value} />
+		</div>
+	{/if}
 	<div class="bl-section">
 		<div class="bl-header">
 			{$t('backlinksPanel.linkedMentions')}
-			<span class="bl-count">{backlinks.length}</span>
+			<span class="bl-count">{filteredBacklinks.length}</span>
 		</div>
-		{#if backlinks.length > 0}
-			{#each backlinks as bl}
+		{#if filteredBacklinks.length > 0}
+			{#each filteredBacklinks as bl}
 				<button class="bl-item" onclick={(e) => openLink(bl.path, bl.libraryName, e)}>
 					<span class="bl-name-row">
 						{#if bl.libraryName}
@@ -91,10 +107,10 @@
 				<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 			</svg>
 			{$t('backlinksPanel.unlinkedMentions')}
-			<span class="bl-count">{unlinkedMentions.length}</span>
+			<span class="bl-count">{filteredUnlinked.length}</span>
 		</button>
-		{#if showUnlinked && unlinkedMentions.length > 0}
-			{#each unlinkedMentions as ul}
+		{#if showUnlinked && filteredUnlinked.length > 0}
+			{#each filteredUnlinked as ul}
 				<div class="bl-item-row">
 					<button class="bl-item" onclick={(e) => openLink(ul.path, ul.libraryName, e)}>
 						<span class="bl-name-row">
@@ -121,6 +137,13 @@
 
 <style>
 	.backlinks-panel { font-size: 0.8rem; }
+	.bl-filter { padding: 2px 8px 4px; }
+	.bl-filter input {
+		width: 100%; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px;
+		background: var(--bg); color: var(--text); font-size: 0.75rem; font-family: inherit; outline: none;
+	}
+	.bl-filter input:focus { border-color: var(--interactive-accent); }
+	.bl-filter input::placeholder { color: var(--text-faint); }
 	.bl-section { margin-bottom: 4px; }
 	.bl-header {
 		display: flex; align-items: center; gap: 4px;

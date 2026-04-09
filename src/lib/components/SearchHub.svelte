@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t, dir } from '$lib/i18n';
 	import {
-		universalSearch, appSettings, embedText, embeddingStatus,
+		universalSearch, appSettings, embedText, constellationSearch, parseSearchQuery,
 		type UniversalSearchResponse,
 		type ConstellationSearchResult
 	} from '$lib/libraries/store';
@@ -12,14 +12,23 @@
 		allNotes = [] as { name: string; path: string; libraryName: string }[],
 		onNoteClick = (_path: string, _name: string, _libraryName: string, _query: string) => {},
 		onClose = () => {},
+		onResults = (_matchIds: Set<string>) => {},
 	} = $props();
 
 	let query = $state(initialQuery);
 	let response = $state<UniversalSearchResponse | null>(null);
+	let filteredResults = $state<ConstellationSearchResult[]>([]);
+	let isAdvancedMode = $state(false);
+	let selectedResultIdx = $state(-1);
 	let loading = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout>;
 	let showHistory = $state(false);
+	let showChips = $state(false);
 	let history = $state(readSearchHistory());
+
+	// Wikilink autocomplete
+	let wikiAuto = $state<{ name: string; path: string; libraryName: string }[]>([]);
+	let wikiAutoIdx = $state(-1);
 
 	// Category collapse state
 	let collapsed = $state<Record<string, boolean>>({});
@@ -36,9 +45,25 @@
 		titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed'
 	};
 
+	const syntaxChips = [
+		{ label: 'linksTo', syntax: 'links to [[' },
+		{ label: 'linksFrom', syntax: 'links from [[' },
+		{ label: 'mutual', syntax: 'mutual [[' },
+		{ label: 'mentions', syntax: 'mentions [[' },
+		{ label: 'orphans', syntax: 'orphans' },
+		{ label: 'linksBetween', syntax: 'links between [[' },
+		{ label: 'tag', syntax: '#' },
+		{ label: 'property', syntax: 'key=value' },
+		{ label: 'scope', syntax: 'in:' },
+	];
+
+	/** Detect if query uses advanced syntax */
+	function hasAdvancedSyntax(q: string): boolean {
+		return /[#=]|links?\s+(to|from|between)|mutual\s|mentions?\s|orphans?|\bin:/i.test(q);
+	}
+
 	let lastAppliedInitial = '';
 	$effect(() => {
-		// Only apply initialQuery if it changed and is non-empty (new search from outside)
 		if (initialQuery && initialQuery !== lastAppliedInitial) {
 			lastAppliedInitial = initialQuery;
 			query = initialQuery;
@@ -48,19 +73,40 @@
 
 	function triggerSearch(q: string) {
 		clearTimeout(searchTimeout);
-		if (!q.trim()) { response = null; return; }
+		if (!q.trim()) { response = null; filteredResults = []; isAdvancedMode = false; return; }
 		loading = true;
 		searchTimeout = setTimeout(async () => {
 			try {
-				// Embed query for semantic search if enabled and engine ready
-				let qEmbed: number[] | null = null;
-				if ($appSettings.enabledFeatures?.semanticSearch) {
-					try { qEmbed = await embedText(q); } catch { /* no semantic results */ }
+				if (hasAdvancedSyntax(q)) {
+					// Advanced mode: use parseSearchQuery → constellationSearch
+					isAdvancedMode = true;
+					response = null;
+					const req = parseSearchQuery(q);
+					filteredResults = await constellationSearch(req);
+				} else {
+					// Universal mode: search everywhere, categorize results
+					isAdvancedMode = false;
+					filteredResults = [];
+					let qEmbed: number[] | null = null;
+					if ($appSettings.enabledFeatures?.semanticSearch) {
+						try { qEmbed = await embedText(q); } catch {}
+					}
+					response = await universalSearch(q, qEmbed, 15);
 				}
-				response = await universalSearch(q, qEmbed, 15);
 				addSearchHistory(q);
 				history = readSearchHistory();
-			} catch { response = null; }
+				// Emit matched note IDs for graph view highlighting
+				const ids = new Set<string>();
+				if (isAdvancedMode) {
+					filteredResults.forEach(r => ids.add(r.name.toLowerCase()));
+				} else if (response) {
+					for (const cat of categories) {
+						((response as any)[cat] ?? []).forEach((r: ConstellationSearchResult) => ids.add(r.name.toLowerCase()));
+					}
+				}
+				onResults(ids);
+				selectedResultIdx = -1;
+			} catch { response = null; filteredResults = []; }
 			loading = false;
 		}, 300);
 	}
@@ -68,11 +114,64 @@
 	function handleInput(e: Event) {
 		query = (e.target as HTMLInputElement).value;
 		showHistory = false;
+
+		// Wikilink autocomplete detection
+		const wikiMatch = query.match(/(?:links?\s+(?:to|from|between)|mutual|mentions?)\s+(?:.*\[\[(?:[^\]]+\]\]\s+and\s+)?)?\[\[([^\]]*)$/i);
+		if (wikiMatch) {
+			const partial = wikiMatch[1].toLowerCase();
+			wikiAuto = allNotes
+				.filter(n => !partial || n.name.toLowerCase().includes(partial))
+				.slice(0, 20);
+			wikiAutoIdx = -1;
+			return; // Don't trigger search while composing wikilink
+		}
+		wikiAuto = [];
 		triggerSearch(query);
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		// Wikilink autocomplete navigation
+		if (wikiAuto.length > 0) {
+			if (e.key === 'ArrowDown') { e.preventDefault(); wikiAutoIdx = Math.min(wikiAutoIdx + 1, wikiAuto.length - 1); }
+			else if (e.key === 'ArrowUp') { e.preventDefault(); wikiAutoIdx = Math.max(wikiAutoIdx - 1, 0); }
+			else if (e.key === 'Enter') {
+				e.preventDefault();
+				insertWikiName(wikiAuto[Math.max(wikiAutoIdx, 0)].name);
+			}
+			else if (e.key === 'Escape') { e.preventDefault(); wikiAuto = []; }
+			return;
+		}
 		if (e.key === 'Escape') { onClose(); return; }
+		// Result navigation
+		if (allFlatResults.length > 0) {
+			if (e.key === 'ArrowDown') {
+				e.preventDefault();
+				selectedResultIdx = Math.min(selectedResultIdx + 1, allFlatResults.length - 1);
+				scrollSelectedIntoView();
+			} else if (e.key === 'ArrowUp') {
+				e.preventDefault();
+				selectedResultIdx = Math.max(selectedResultIdx - 1, 0);
+				scrollSelectedIntoView();
+			} else if (e.key === 'Enter' && selectedResultIdx >= 0) {
+				e.preventDefault();
+				handleResultClick(allFlatResults[selectedResultIdx]);
+			}
+		}
+	}
+
+	function scrollSelectedIntoView() {
+		requestAnimationFrame(() => {
+			const el = document.querySelector('.sh-item.sh-item-selected');
+			el?.scrollIntoView({ block: 'nearest' });
+		});
+	}
+
+	function insertWikiName(name: string) {
+		query = query.replace(/\[\[[^\]]*$/, `[[${name}]]`);
+		wikiAuto = [];
+		wikiAutoIdx = -1;
+		triggerSearch(query);
+		requestAnimationFrame(() => searchInput?.focus());
 	}
 
 	function handleResultClick(r: ConstellationSearchResult) {
@@ -86,6 +185,32 @@
 		requestAnimationFrame(() => searchInput?.focus());
 	}
 
+	function insertSyntax(syntax: string) {
+		query = query ? query + ' ' + syntax : syntax;
+		showChips = false;
+		requestAnimationFrame(() => {
+			searchInput?.focus();
+			if (syntax.endsWith('[[')) {
+				wikiAuto = allNotes.slice(0, 20);
+				wikiAutoIdx = -1;
+			} else if (syntax === 'orphans') {
+				triggerSearch(query);
+			}
+		});
+	}
+
+	/** Flat list of all results for keyboard navigation */
+	const allFlatResults = $derived.by(() => {
+		if (isAdvancedMode) return filteredResults;
+		if (!response) return [];
+		const flat: ConstellationSearchResult[] = [];
+		for (const cat of categories) {
+			const items = (response as any)[cat] ?? [];
+			if (!collapsed[cat]) flat.push(...items);
+		}
+		return flat;
+	});
+
 	function toggleCategory(cat: string) {
 		collapsed[cat] = !collapsed[cat];
 	}
@@ -96,6 +221,7 @@
 	}
 
 	function totalResults(): number {
+		if (isAdvancedMode) return filteredResults.length;
 		if (!response) return 0;
 		return categories.reduce((sum, c) => sum + getCategoryResults(c).length, 0);
 	}
@@ -127,9 +253,17 @@
 		return `sidebar.match${cap}`;
 	}
 
-	/** Split query by comma variants: , (Latin) ، (Arabic) 、(CJK) */
+	/** Split query by comma variants for multi-term highlight */
 	function getSearchTerms(): string[] {
-		return query.split(/[,،、]/).map(s => s.trim()).filter(s => s.length > 0);
+		// For advanced mode, extract the actual search words (strip operators)
+		const raw = query.replace(/links?\s+(to|from|between)\s+\[\[[^\]]*\]\]/gi, '')
+			.replace(/mutual\s+\[\[[^\]]*\]\]/gi, '')
+			.replace(/mentions?\s+\[\[[^\]]*\]\]/gi, '')
+			.replace(/orphans?/gi, '')
+			.replace(/in:\S+/gi, '')
+			.replace(/#(\S+)/g, '$1')
+			.replace(/\S+=\S+/g, '');
+		return raw.split(/[,،、\s]+/).map(s => s.trim()).filter(s => s.length > 1);
 	}
 
 	function highlightInText(text: string, cssClass: string = ''): string {
@@ -150,19 +284,46 @@
 	<!-- Header bar with search -->
 	<div class="sh-header">
 		<svg class="sh-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-		<input bind:this={searchInput} class="sh-input" type="text"
+		<input bind:this={searchInput} class="sh-input" type="text" dir="auto"
 			placeholder={$t('sidebar.searchPlaceholder')}
 			value={query} oninput={handleInput} onkeydown={handleKeydown}
 			onfocus={() => { if (!query) showHistory = true; }}
-			onblur={() => setTimeout(() => showHistory = false, 200)} />
+			onblur={() => setTimeout(() => { showHistory = false; }, 200)} />
 		{#if query}
-			<button class="sh-clear" onclick={() => { query = ''; response = null; previewContent = ''; previewName = ''; }}>×</button>
+			<button class="sh-clear" onclick={() => { query = ''; response = null; filteredResults = []; isAdvancedMode = false; }}>×</button>
 		{/if}
-		{#if response}
+		<button class="sh-chips-toggle" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers')}>
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+		</button>
+		{#if totalResults() > 0}
 			<span class="sh-total">{totalResults()}</span>
 		{/if}
 		<button class="sh-close" onclick={onClose}>×</button>
 	</div>
+
+	<!-- Syntax helper chips -->
+	{#if showChips}
+		<div class="sh-chips-bar">
+			{#each syntaxChips as chip}
+				<button class="sh-chip" onclick={() => insertSyntax(chip.syntax)}>
+					{$t(`searchHub.${chip.label}`)}
+				</button>
+			{/each}
+		</div>
+	{/if}
+
+	<!-- Wikilink autocomplete dropdown -->
+	{#if wikiAuto.length > 0}
+		<div class="sh-wiki-drop">
+			{#each wikiAuto as note, idx}
+				<button class="sh-wa-item" class:selected={idx === wikiAutoIdx}
+					onclick={() => insertWikiName(note.name)}>
+					<span class="sh-wa-name" dir="auto">{note.name}</span>
+					<span class="sh-wa-lib">{note.libraryName}</span>
+				</button>
+			{/each}
+		</div>
+	{/if}
 
 	<!-- History dropdown -->
 	{#if showHistory && !query && history.length > 0}
@@ -184,7 +345,30 @@
 		<div class="sh-results-area">
 			{#if loading}
 				<div class="sh-loading">...</div>
+
+			{:else if isAdvancedMode && filteredResults.length > 0}
+				<!-- Advanced mode: flat result list with match-type badges -->
+				<div class="sh-section-label">{filteredResults.length} {$t('sidebar.results')}</div>
+				{#each filteredResults as r, idx}
+					<button class="sh-item" class:sh-item-selected={idx === selectedResultIdx} onclick={() => handleResultClick(r)}>
+						<div class="sh-item-top">
+							{#if r.match_type}
+								<span class="sh-cat-badge" style:background={categoryColors[r.match_type] ?? '#94a3b8'}>{categoryIcons[r.match_type] ?? '?'}</span>
+							{/if}
+							<span class="sh-item-name" dir="auto">{@html highlightInText(r.name)}</span>
+							<span class="sh-item-lib">{r.library_name}</span>
+						</div>
+						{#if r.snippet}
+							<div class="sh-item-snippet" dir="auto">{@html highlightInText(r.snippet)}</div>
+						{/if}
+					</button>
+				{/each}
+
+			{:else if isAdvancedMode && filteredResults.length === 0}
+				<div class="sh-empty">{$t('sidebar.noResults')}</div>
+
 			{:else if response}
+				<!-- Universal mode: categorized results -->
 				{#each categories as cat}
 					{@const items = getCategoryResults(cat)}
 					{#if items.length > 0}
@@ -198,7 +382,7 @@
 							{#if !collapsed[cat]}
 								<div class="sh-cat-items">
 									{#each items as r}
-										<button class="sh-item"
+										<button class="sh-item" class:sh-item-selected={selectedResultIdx >= 0 && allFlatResults[selectedResultIdx] === r}
 											onclick={() => handleResultClick(r)}>
 											<div class="sh-item-top">
 												<span class="sh-item-name" dir="auto">{@html highlightInText(r.name)}</span>
@@ -207,7 +391,7 @@
 											{#if r.snippet}
 												<div class="sh-item-snippet" dir="auto">
 													{#if cat === 'contents'}
-														{@html r.snippet}
+														{@html highlightInText(r.snippet ?? '')}
 													{:else if cat === 'tags'}
 														{@html highlightInText(formatSnippetForCategory(cat, r), 'sh-hl-tag')}
 													{:else}
@@ -225,6 +409,7 @@
 				{#if totalResults() === 0}
 					<div class="sh-empty">{$t('sidebar.noResults')}</div>
 				{/if}
+
 			{:else if !query}
 				<div class="sh-empty">{$t('searchHub.preview')}</div>
 			{/if}
@@ -255,11 +440,42 @@
 		font-size: 1.1rem; padding: 2px 6px; border-radius: 4px;
 	}
 	.sh-clear:hover, .sh-close:hover { background: var(--bg-hover); color: var(--text); }
+	.sh-chips-toggle {
+		border: none; background: none; color: var(--text-faint); cursor: pointer;
+		padding: 3px; border-radius: 4px; display: flex; align-items: center;
+	}
+	.sh-chips-toggle:hover, .sh-chips-toggle.active { color: var(--interactive-accent); background: var(--bg-hover); }
 	.sh-total {
 		font-size: 0.72rem; color: var(--interactive-accent); font-weight: 600;
 		background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
-		padding: 2px 8px; border-radius: 10px;
+		padding: 2px 8px; border-radius: 10px; flex-shrink: 0;
 	}
+
+	/* Syntax chips bar */
+	.sh-chips-bar {
+		display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 16px;
+		border-bottom: 1px solid var(--border); background: var(--background-secondary, var(--bg));
+	}
+	.sh-chip {
+		padding: 3px 10px; border-radius: 12px; border: 1px solid var(--border);
+		background: var(--bg); color: var(--text-secondary); font-size: 0.72rem;
+		cursor: pointer; font-family: inherit; white-space: nowrap;
+	}
+	.sh-chip:hover { background: var(--bg-hover); color: var(--text); border-color: var(--interactive-accent); }
+
+	/* Wikilink autocomplete */
+	.sh-wiki-drop {
+		max-height: 250px; overflow-y: auto; border-bottom: 1px solid var(--border);
+		background: var(--background-secondary, var(--bg));
+	}
+	.sh-wa-item {
+		display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 16px;
+		background: none; border: none; color: var(--text); font-family: inherit;
+		cursor: pointer; text-align: start; font-size: 0.82rem;
+	}
+	.sh-wa-item:hover, .sh-wa-item.selected { background: var(--bg-hover); }
+	.sh-wa-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.sh-wa-lib { font-size: 0.65rem; color: var(--text-muted); flex-shrink: 0; }
 
 	/* History dropdown */
 	.sh-history-drop {
@@ -286,7 +502,7 @@
 	/* Body */
 	.sh-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
-	/* Results area — fills entire body */
+	/* Results area */
 	.sh-results-area { flex: 1; overflow-y: auto; }
 
 	/* Category */
@@ -320,7 +536,7 @@
 		cursor: pointer; text-align: start;
 	}
 	.sh-item:hover { background: var(--bg-hover); }
-	.sh-item.sh-item-active { background: var(--accent-bg); }
+	.sh-item.sh-item-selected { background: var(--accent-bg); outline: 1px solid var(--interactive-accent); outline-offset: -1px; }
 	.sh-item-top { display: flex; align-items: center; gap: 6px; }
 	.sh-item-name { font-size: 0.82rem; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sh-item-lib { font-size: 0.68rem; color: var(--accent); flex-shrink: 0; }
@@ -343,4 +559,8 @@
 	.sh-empty, .sh-loading {
 		padding: 40px; text-align: center; color: var(--text-faint); font-size: 0.88rem;
 	}
+
+	/* Advanced mode: items at root level (no category indent) */
+	.sh-results-area > .sh-section-label + .sh-item { padding-inline-start: 16px; }
+	.sh-results-area > .sh-item { padding-inline-start: 16px; }
 </style>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { constellationSearch } from '$lib/libraries/store';
+	import { constellationSearch, parseSearchQuery } from '$lib/libraries/store';
 
 	let {
 		notes = [] as { name: string; path: string; libraryName: string }[],
@@ -42,10 +42,12 @@
 		if (q.trim().length >= 3) {
 			searchTimer = setTimeout(async () => {
 				try {
-					const results = await constellationSearch({ query: q, mode: 'lexical', limit: 10 });
+					const req = parseSearchQuery(q);
+					req.limit = 15;
+					const results = await constellationSearch(req);
 					extendedResults = results.map(r => ({ name: r.name, path: r.path, libraryName: r.library_name }));
 				} catch { extendedResults = []; }
-			}, 200);
+			}, 300);
 		} else {
 			extendedResults = [];
 		}

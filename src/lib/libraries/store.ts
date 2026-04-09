@@ -217,6 +217,11 @@ export async function saveTabContent(
 		recentWrites.set(filePath, Date.now());
 		await writeNote(filePath, newContent);
 		emit('screen:note-saved', { path: filePath }).catch(() => {});
+		// Reindex for search (non-blocking) — updates FTS5, tags, links
+		const tab = get(openTabs).find(t => t.path === filePath);
+		if (tab) {
+			invoke('constellation_search_reindex', { notePath: filePath, libraryName: tab.libraryName }).catch(() => {});
+		}
 		// Re-embed for semantic search via Rust ONNX (non-blocking)
 		if (get(appSettings).enabledFeatures?.semanticSearch) {
 			const tab = get(openTabs).find(t => t.path === filePath);

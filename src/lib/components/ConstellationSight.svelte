@@ -43,6 +43,7 @@
 		libraryColorMap?: Record<string, string>;
 		onNoteClick?: (path: string, name: string) => void;
 		onClose?: () => void;
+		searchMatchIds?: Set<string> | null;
 	} = $props();
 
 	// ─── Canvas state ───
@@ -410,13 +411,14 @@
 			}
 		}
 
-		// 2. Content matches via Rust search_stars
+		// 2. Content + advanced matches via Constellation search (supports #tags, properties, links)
 		const contentMatchIds = new Set<string>();
 		if (searchScope !== 'title') {
 			try {
-				const results = await invoke<{ name: string; path: string }[]>('constellation_search', {
-					request: { query: searchQuery, mode: 'lexical', limit: 200 }
-				}).catch(() => []);
+				const { constellationSearch, parseSearchQuery } = await import('$lib/libraries/store');
+				const req = parseSearchQuery(searchQuery);
+				req.limit = 200;
+				const results = await constellationSearch(req);
 				for (const r of results) contentMatchIds.add(r.name.toLowerCase());
 			} catch { /* fallback */ }
 		}
@@ -505,6 +507,22 @@
 		buildSimData();
 		startSimulation();
 		animFrame = requestAnimationFrame(render);
+	});
+
+	// External search match highlighting (from Search Hub)
+	$effect(() => {
+		if (searchMatchIds && searchMatchIds.size > 0 && simNodes.length > 0) {
+			const matches: SearchMatch[] = [];
+			for (const sn of simNodes) {
+				if (searchMatchIds.has(sn.id) || searchMatchIds.has(sn.name?.toLowerCase())) {
+					matches.push({ node: sn, matchType: 'both' });
+				}
+			}
+			if (matches.length > 0) {
+				searchResults = matches;
+				searchIdx = 0;
+			}
+		}
 	});
 
 	onDestroy(() => {

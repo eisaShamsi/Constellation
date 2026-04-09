@@ -299,6 +299,8 @@
             "workspacesDesc": "ذخیره و بازیابی چیدمان فضای کاری",
             "index": "فهرست",
             "indexDesc": "جمع‌آوری و مرور اصطلاحات از تمام یادداشت‌ها",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "روشن",
             "off": "خاموش",
             "navigation": "ناوبری",

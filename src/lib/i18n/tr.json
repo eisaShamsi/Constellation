@@ -299,6 +299,8 @@
             "workspacesDesc": "Çalışma alanı düzenlerini kaydet ve geri yükle",
             "index": "Dizin",
             "indexDesc": "Tüm notlardan terimleri toplayın ve göz atın",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "Açık",
             "off": "Kapalı",
             "navigation": "Gezinme",

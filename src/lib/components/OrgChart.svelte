@@ -527,12 +527,14 @@
 		}
 		searchExecuted = true;
 
-		// 1. Call Rust full-text search (searches both title AND body)
+		// 1. Call advanced search (supports #tags, property=value, links to [[]], etc.)
 		let bodyMatchPaths = new Set<string>();
 		try {
-			const results = await invoke<{ name: string; path: string; library_name: string; modified: number; snippet: string }[]>('constellation_search', {
-				request: { query: fsSearchQuery, mode: 'lexical', limit: 200, include_snippet: true }
-			}).catch(() => []);
+			const { constellationSearch, parseSearchQuery } = await import('$lib/libraries/store');
+			const req = parseSearchQuery(fsSearchQuery);
+			req.limit = 200;
+			req.include_snippet = true;
+			const results = await constellationSearch(req);
 			for (const r of results) bodyMatchPaths.add(r.path);
 		} catch { /* fallback to title-only */ }
 

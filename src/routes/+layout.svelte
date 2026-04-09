@@ -7,11 +7,11 @@
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { getVersion } from '@tauri-apps/api/app';
 	import {
-		libraries, libraryStats, searchResults, totalStars, libraryCount,
+		libraries, libraryStats, totalStars, libraryCount,
 		activeTab, openTabs, activeTabId,
 		splitActive, splitDirection, focusedTabId, focusedTab,
-		loadLibraries, loadAllStats, addLibrary, createNewLibrary, searchAllStars,
-		initSearchIndex, constellationSearch, parseSearchQuery,
+		loadLibraries, loadAllStats, addLibrary, createNewLibrary,
+		initSearchIndex,
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
@@ -28,8 +28,8 @@
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings,
 		loadWorkspaces, workspaces,
-		resolveWikilinkCrossLibrary, getNoteHeadings,
-		buildDefaultFrontmatter, searchByProperty,
+		resolveWikilinkCrossLibrary,
+		buildDefaultFrontmatter,
 		type FrontmatterProperty, type HeadingItem, type NoteLink, type StarNode, type StarLink,
 		type IndexEntry
 	} from '$lib/libraries/store';
@@ -63,7 +63,6 @@
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
 
-	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
 	import { embedNotes, embeddingStatus } from '$lib/libraries/store';
 	import DashboardView from '$lib/components/DashboardView.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
@@ -237,7 +236,7 @@
 		}
 		tabCtxMenu = null;
 	}
-	let searchMode = $state(false);
+	// searchMode removed — Search Hub is the single search experience
 	let sidebarMode = $state<'tree' | 'list' | 'skyview'>('tree');
 	// CE Phase 9: Multi-Lens Views
 	let availableLenses = $state<any[]>([]);
@@ -280,15 +279,7 @@
 		return Math.min(Math.max(Math.ceil(maxTextWidth) + extraPadding, 200), 500);
 	}
 	// indexMode removed - index now opens as full page view
-	let searchQuery = $state('');
-	let searchTimeout: ReturnType<typeof setTimeout>;
 	let searchEngineReady = $state(false); // true when SQLite FTS5 index is built
-	let advancedSearchResults = $state<ConstellationSearchResult[]>([]);
-	let searchInputFocused = $state(false);
-	let searchHistory = $state<{query: string; timestamp: number}[]>([]);
-	let selectedResultIndex = $state(-1);
-	let wikiAutocomplete = $state<{name: string; path: string; libraryName: string}[]>([]);
-	let wikiAutoIndex = $state(-1);
 	let semanticIndexProgress = $state('');
 	let semanticIndexing = $state(false);
 	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
@@ -325,6 +316,7 @@
 	let showSenseMakingCanvas = $state(false); // CE Phase 11
 	let showConstellationMap = $state(false);
 	let showSearchHub = $state(false);
+	let searchHubMatchIds = $state<Set<string> | null>(null);
 	let searchHubReturnPending = $state(false);
 	let searchHubInitialQuery = $state('');
 	let sidebarBeforeSearch = $state(false);
@@ -2222,10 +2214,11 @@
 	}
 
 	function handleTagClick(tag: string) {
-		searchQuery = `#${tag}`;
-		searchMode = true;
-		sidebarOpen = true;
-		searchAllStars(`#${tag}`);
+		searchHubInitialQuery = `#${tag}`;
+		showSearchHub = true;
+		showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
+		sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen;
+		sidebarOpen = false; rightSidebarOpen = false;
 	}
 
 	// ─── Page Preview (hover) ───
@@ -2379,285 +2372,6 @@
 		} catch (err) { console.error('[Semantic] Indexing failed:', err); }
 		semanticIndexing = false;
 		semanticIndexProgress = '';
-	}
-
-	function handleSearch(e: Event) {
-		searchQuery = (e.target as HTMLInputElement).value;
-		clearTimeout(searchTimeout);
-		selectedResultIndex = -1;
-
-		// Wikilink autocomplete: detect [[...]] in any link-syntax pattern
-		const wikiMatch = searchQuery.match(/(?:links?\s+(?:to|from|between)|mutual|mentions?)\s+(?:.*\[\[(?:[^\]]+\]\]\s+and\s+)?)?\[\[([^\]]*)$/i);
-		if (wikiMatch) {
-			const inner = wikiMatch[1];
-
-			// Sub-state: [[NoteName|type:query → show link types
-			const pipeIdx = inner.indexOf('|');
-			if (pipeIdx >= 0) {
-				const afterPipe = inner.slice(pipeIdx + 1);
-				if (afterPipe.toLowerCase().startsWith('type:')) {
-					const typeQuery = afterPipe.slice(5).toLowerCase();
-					const LINK_TYPES = ['related-to', 'prerequisite', 'see-also', 'contradicts', 'supports', 'extends'];
-					wikiAutocomplete = LINK_TYPES
-						.filter(t => !typeQuery || t.includes(typeQuery))
-						.map(t => ({ name: t, path: '', libraryName: 'link type' }));
-					wikiAutoIndex = -1;
-					return;
-				}
-			}
-
-			// Sub-state: [[NoteName#query → show headings
-			const hashIdx = inner.indexOf('#');
-			if (hashIdx >= 0) {
-				const noteName = inner.slice(0, hashIdx);
-				const headingQuery = inner.slice(hashIdx + 1).toLowerCase();
-				// Async: fetch headings for this note
-				loadWikiHeadings(noteName, headingQuery);
-				return;
-			}
-
-			// Default: show matching note names
-			const partial = inner.toLowerCase();
-			wikiAutocomplete = allNotes
-				.filter(n => !partial || n.name.toLowerCase().includes(partial))
-				.slice(0, 20);
-			wikiAutoIndex = -1;
-			return;
-		} else {
-			wikiAutocomplete = [];
-		}
-
-		if (searchQuery.trim()) {
-			searchMode = true;
-			if (searchEngineReady) {
-				// Use new Constellation Search Engine
-				searchTimeout = setTimeout(async () => {
-					try {
-						const req = parseSearchQuery(searchQuery);
-						const results = await constellationSearch(req);
-						advancedSearchResults = results;
-						// Also update legacy store for backward compat
-						searchResults.set(results.map(r => ({
-							name: r.name, path: r.path,
-							library_id: '', library_name: r.library_name,
-							modified: r.modified, preview: r.snippet ?? '',
-						})));
-						// Save to search history
-						addSearchHistory(searchQuery);
-					} catch {
-						// Fallback to legacy search on error
-						searchAllStars(searchQuery);
-						advancedSearchResults = [];
-					}
-				}, 300);
-			} else {
-				// Legacy fallback: property-based or full-text
-				const propMatch = searchQuery.trim().match(/^\[([^\]:]+)(?::(.+))?\]$/);
-				if (propMatch) {
-					const key = propMatch[1].trim();
-					const value = propMatch[2]?.trim() ?? '';
-					searchTimeout = setTimeout(async () => {
-						const results = await searchByProperty(key, value);
-						searchResults.set(results);
-					}, 300);
-				} else {
-					searchTimeout = setTimeout(() => searchAllStars(searchQuery), 300);
-				}
-				addSearchHistory(searchQuery);
-			}
-		} else {
-			// Keep searchMode = true so the search box stays visible
-			// User clears with × or Escape
-			searchResults.set([]);
-			advancedSearchResults = [];
-		}
-	}
-
-	/** × button: reset query text but keep search box open */
-	function clearSearch() {
-		searchQuery = '';
-		searchResults.set([]);
-		advancedSearchResults = [];
-		selectedResultIndex = -1;
-	}
-
-	/** Escape: fully exit search mode and return to file tree */
-	function exitSearch() {
-		searchQuery = '';
-		searchMode = false;
-		searchResults.set([]);
-		advancedSearchResults = [];
-		selectedResultIndex = -1;
-	}
-
-	function handleSearchKeydown(e: KeyboardEvent) {
-		// Wikilink autocomplete takes priority when visible
-		if (wikiAutocomplete.length > 0) {
-			if (e.key === 'ArrowDown') {
-				e.preventDefault();
-				wikiAutoIndex = Math.min(wikiAutoIndex + 1, wikiAutocomplete.length - 1);
-			} else if (e.key === 'ArrowUp') {
-				e.preventDefault();
-				wikiAutoIndex = Math.max(wikiAutoIndex - 1, 0);
-			} else if (e.key === 'Enter') {
-				e.preventDefault();
-				if (wikiAutoIndex >= 0) {
-					insertWikiAutocomplete(wikiAutocomplete[wikiAutoIndex].name);
-				} else if (wikiAutocomplete.length > 0) {
-					insertWikiAutocomplete(wikiAutocomplete[0].name);
-				}
-			} else if (e.key === 'Escape') {
-				e.preventDefault();
-				wikiAutocomplete = [];
-				wikiAutoIndex = -1;
-			}
-			return;
-		}
-
-		const results = advancedSearchResults.length > 0 ? advancedSearchResults : get(searchResults);
-		if (e.key === 'Escape') {
-			exitSearch();
-			(e.target as HTMLInputElement)?.blur();
-			return;
-		}
-		if (!results.length) return;
-		if (e.key === 'ArrowDown') {
-			e.preventDefault();
-			selectedResultIndex = Math.min(selectedResultIndex + 1, results.length - 1);
-			scrollResultIntoView();
-		} else if (e.key === 'ArrowUp') {
-			e.preventDefault();
-			selectedResultIndex = Math.max(selectedResultIndex - 1, 0);
-			scrollResultIntoView();
-		} else if (e.key === 'Enter' && selectedResultIndex >= 0) {
-			e.preventDefault();
-			const r = results[selectedResultIndex] as any;
-			handleSearchResultClick(r.path, r.library_name ?? r.library_name);
-		}
-	}
-
-	function scrollResultIntoView() {
-		requestAnimationFrame(() => {
-			const el = document.querySelector(`.s-result[data-idx="${selectedResultIndex}"]`);
-			el?.scrollIntoView({ block: 'nearest' });
-		});
-	}
-
-	function handleSearchFocus() {
-		searchInputFocused = true;
-		searchHistory = readSearchHistory();
-	}
-
-	function handleSearchBlur() {
-		// Delay to allow click on history item
-		setTimeout(() => { searchInputFocused = false; }, 200);
-	}
-
-	function selectHistoryItem(query: string) {
-		searchQuery = query;
-		searchMode = true;
-		searchInputFocused = false;
-		// Trigger the search
-		if (searchEngineReady) {
-			setTimeout(async () => {
-				try {
-					const req = parseSearchQuery(query);
-					const results = await constellationSearch(req);
-					advancedSearchResults = results;
-					searchResults.set(results.map(r => ({
-						name: r.name, path: r.path,
-						library_id: '', library_name: r.library_name,
-						modified: r.modified, preview: r.snippet ?? '',
-					})));
-				} catch { searchAllStars(query); advancedSearchResults = []; }
-			}, 50);
-		} else {
-			searchAllStars(query);
-		}
-	}
-
-	function handleClearHistory() {
-		clearSearchHistory();
-		searchHistory = [];
-	}
-
-	function matchBadgeKey(type: string): string {
-		const cap = type.charAt(0).toUpperCase() + type.slice(1);
-		return `sidebar.match${cap}`;
-	}
-
-	function insertWikiAutocomplete(name: string) {
-		wikiAutocomplete = [];
-		wikiAutoIndex = -1;
-
-		// Detect what we're completing: heading (#), link type (|type:), or note name
-		const wikiMatch = searchQuery.match(/\[\[([^\]]*)$/);
-		if (!wikiMatch) return;
-		const inner = wikiMatch[1];
-		const hashIdx = inner.indexOf('#');
-		const pipeIdx = inner.indexOf('|');
-
-		if (pipeIdx >= 0 && inner.slice(pipeIdx + 1).toLowerCase().startsWith('type:')) {
-			// Completing a link type: replace type:partial with type:name
-			const notePart = inner.slice(0, pipeIdx);
-			searchQuery = searchQuery.replace(/\[\[[^\]]*$/, `[[${notePart}|type:${name}]]`);
-		} else if (hashIdx >= 0) {
-			// Completing a heading: replace #partial with #name
-			const notePart = inner.slice(0, hashIdx);
-			searchQuery = searchQuery.replace(/\[\[[^\]]*$/, `[[${notePart}#${name}]]`);
-		} else {
-			// Completing a note name — just insert, don't close ]] yet so user can add # or |
-			searchQuery = searchQuery.replace(/\[\[[^\]]*$/, `[[${name}]]`);
-		}
-
-		// Trigger search with completed wikilink query
-		searchMode = true;
-		if (searchEngineReady) {
-			setTimeout(async () => {
-				try {
-					const req = parseSearchQuery(searchQuery);
-					const results = await constellationSearch(req);
-					advancedSearchResults = results;
-					searchResults.set(results.map(r => ({
-						name: r.name, path: r.path,
-						library_id: '', library_name: r.library_name,
-						modified: r.modified, preview: r.snippet ?? '',
-					})));
-					addSearchHistory(searchQuery);
-				} catch { searchAllStars(searchQuery); advancedSearchResults = []; }
-			}, 50);
-		} else {
-			searchAllStars(searchQuery);
-		}
-	}
-
-	let wikiHeadingsLoading = false;
-	async function loadWikiHeadings(noteName: string, headingQuery: string) {
-		if (wikiHeadingsLoading) return;
-		wikiHeadingsLoading = true;
-		try {
-			// Find the note path from allNotes
-			const note = allNotes.find(n => n.name.toLowerCase() === noteName.toLowerCase());
-			if (!note) {
-				// Try cross-library resolve
-				const lib = $libraryStats[0];
-				const resolved = lib ? await resolveWikilinkCrossLibrary(lib.path, noteName) : null;
-				if (!resolved) { wikiAutocomplete = []; wikiHeadingsLoading = false; return; }
-				const headings = await getNoteHeadings(resolved.path);
-				wikiAutocomplete = headings
-					.filter(h => !headingQuery || h.toLowerCase().includes(headingQuery))
-					.slice(0, 20)
-					.map(h => ({ name: h, path: '', libraryName: 'heading' }));
-			} else {
-				const headings = await getNoteHeadings(note.path);
-				wikiAutocomplete = headings
-					.filter(h => !headingQuery || h.toLowerCase().includes(headingQuery))
-					.slice(0, 20)
-					.map(h => ({ name: h, path: '', libraryName: 'heading' }));
-			}
-			wikiAutoIndex = -1;
-		} catch { wikiAutocomplete = []; }
-		wikiHeadingsLoading = false;
 	}
 
 	function cycleSplit() {
@@ -2887,15 +2601,6 @@
 		} catch { /* ignore read errors */ }
 	}
 
-	async function handleSearchResultClick(path: string, libraryName: string, e?: MouseEvent) {
-		const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
-		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		// Extract raw search text (strip structured prefixes) for highlighting
-		const rawQuery = searchQuery.replace(/^(#|links to \[\[|in:)\S*/i, '').trim();
-		await openNoteTab(path, libraryName, libraryColor, rawQuery || undefined, newTab);
-		// Don't clear search — keep results pinned for navigation
-		if (!isHome) window.location.href = '/';
-	}
 
 	// Get all tags as flat array for editor autocomplete
 	const allTagsList = $derived(Object.keys(allLibraryTags));
@@ -2996,20 +2701,7 @@
 	{#if sidebarOpen}
 		<aside class="sidebar" style:width="{leftSidebarWidth}px">
 			<div class="sidebar-toolbar">
-				{#if searchMode}
-					<div class="search-box">
-						<svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-						<input type="text" placeholder={$t('sidebar.searchPlaceholder')} value={searchQuery} oninput={handleSearch} onkeydown={handleSearchKeydown} onfocus={handleSearchFocus} onblur={handleSearchBlur}/>
-						<button class="search-expand" onclick={() => {
-							searchHubInitialQuery = searchQuery;
-							showSearchHub = true;
-							showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
-						}} title={$t('searchHub.expandSearch')}>
-							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-						</button>
-						<button class="search-clear" onclick={clearSearch}>×</button>
-					</div>
-				{/if}
+				<!-- Sidebar search removed — Search Hub is the single search experience -->
 				<!-- Row 1: New Elements — always visible -->
 				<div class="toolbar-actions new-elements">
 					<button class="tb-btn" onclick={handleNewNote} title={$t('sidebar.newNote')}>
@@ -3024,10 +2716,10 @@
 				</div>
 				<!-- Row 2: Notes Management — always visible, even during search -->
 				<div class="toolbar-modes notes-management">
-					<button class="mode-tab" class:active={sidebarMode === 'tree'} onclick={() => { searchMode = false; searchQuery = ''; if (sidebarMode !== 'tree') { sidebarMode = 'tree'; leftSidebarWidth = calcContentWidth(100); emitSidebarModeChanged('tree'); } }} title={$t('navigator.fileExplorer') || 'File Explorer'}>
+					<button class="mode-tab" class:active={sidebarMode === 'tree'} onclick={() => { if (sidebarMode !== 'tree') { sidebarMode = 'tree'; leftSidebarWidth = calcContentWidth(100); emitSidebarModeChanged('tree'); } }} title={$t('navigator.fileExplorer') || 'File Explorer'}>
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
 					</button>
-					<button class="mode-tab" class:active={sidebarMode === 'list'} onclick={() => { searchMode = false; searchQuery = ''; if (sidebarMode !== 'list') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'list'; leftSidebarWidth = Math.max(leftSidebarWidth, 450); emitSidebarModeChanged('list'); } }} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
+					<button class="mode-tab" class:active={sidebarMode === 'list'} onclick={() => { if (sidebarMode !== 'list') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'list'; leftSidebarWidth = Math.max(leftSidebarWidth, 450); emitSidebarModeChanged('list'); } }} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
 					</button>
 					<!-- OrgChart and Sky View buttons moved to left dock bar -->
@@ -3084,59 +2776,6 @@
 						onClose={() => sidebarMode = 'tree'}
 						embedded={true}
 					/>
-				{:else if searchMode && wikiAutocomplete.length > 0}
-					<div class="section-label">[[</div>
-					<div class="wiki-autocomplete">
-						{#each wikiAutocomplete as note, idx}
-							<button class="wa-item" class:wa-selected={idx === wikiAutoIndex}
-								onclick={() => insertWikiAutocomplete(note.name)}>
-								<span class="wa-name" dir="auto">{note.name}</span>
-								<span class="wa-lib">{note.libraryName}</span>
-							</button>
-						{/each}
-					</div>
-				{:else if searchMode && searchQuery}
-					{#if $searchResults.length > 0}
-						<div class="section-label">{$searchResults.length} {$t('sidebar.results')}</div>
-						{#each advancedSearchResults.length > 0 ? advancedSearchResults : $searchResults as result, idx}
-							{@const isAdvanced = advancedSearchResults.length > 0}
-							{@const star = isAdvanced ? result : result}
-							<button class="s-result" class:active={$activeTab?.path === star.path} class:s-selected={idx === selectedResultIndex} data-idx={idx}
-								onclick={(e) => handleSearchResultClick(star.path, star.library_name, e)}>
-								<div class="s-result-top">
-									{#if isAdvanced && (result as ConstellationSearchResult).match_type}
-										<span class="s-match-badge s-match-{(result as ConstellationSearchResult).match_type}">{$t(matchBadgeKey((result as ConstellationSearchResult).match_type))}</span>
-									{/if}
-									<div class="s-name" dir="auto">{star.name}</div>
-								</div>
-								<div class="s-meta">
-									<span class="s-lib-name">{star.library_name}</span>
-									{#if isAdvanced && (result as ConstellationSearchResult).heading_breadcrumb?.length}
-										<span class="s-breadcrumb">{(result as ConstellationSearchResult).heading_breadcrumb?.join(' › ')}</span>
-									{/if}
-								</div>
-								{#if isAdvanced && (result as ConstellationSearchResult).snippet}
-									<div class="s-snippet" dir="auto">{@html (result as ConstellationSearchResult).snippet}</div>
-								{:else if !isAdvanced && star.preview}
-									<div class="s-snippet" dir="auto">{star.preview}</div>
-								{/if}
-							</button>
-						{/each}
-					{:else}
-						<div class="no-results">{$t('sidebar.noResults')}</div>
-					{/if}
-				{:else if searchMode && !searchQuery && searchInputFocused && searchHistory.length > 0}
-					<div class="section-label">{$t('sidebar.searchHistory')}</div>
-					{#each searchHistory as entry}
-						<button class="s-result s-history-item" onclick={() => selectHistoryItem(entry.query)}>
-							<div class="s-result-top">
-								<svg class="sh-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-								<div class="s-name" dir="auto">{entry.query}</div>
-								<span class="sh-time">{relativeTime(entry.timestamp)}</span>
-							</div>
-						</button>
-					{/each}
-					<button class="s-history-clear" onclick={handleClearHistory}>{$t('sidebar.clearHistory')}</button>
 				{:else if activeLensId && lensEntries}
 					<!-- CE Phase 9: Lens view -->
 					<div class="section-label">🔍 {availableLenses.find((l: any) => l.id === activeLensId)?.name ?? 'Lens'}</div>
@@ -3606,6 +3245,7 @@
 					communityProfiles={lensCommunityProfiles}
 					contradictions={lensContradictions}
 					{libraryColorMap}
+					searchMatchIds={searchHubMatchIds}
 					onNoteClick={(path, name) => {
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
@@ -3635,6 +3275,7 @@
 					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
 					searchHubReturnPending = false;
 				}}
+				onResults={(ids) => { searchHubMatchIds = ids.size > 0 ? ids : null; }}
 			/>
 		</div>
 
@@ -3689,6 +3330,7 @@
 					})()}
 					skyViewSettings={$appSettings.skyView}
 					{libraryColorMap}
+					searchMatchIds={searchHubMatchIds}
 				/>
 				<!-- WiW Overlay -->
 				{#if showWiW && wiwFilteredNodes.length > 0}

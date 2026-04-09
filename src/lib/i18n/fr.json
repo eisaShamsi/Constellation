@@ -299,6 +299,8 @@
             "workspacesDesc": "Sauvegarder et restaurer les dispositions d'espaces de travail",
             "index": "Index",
             "indexDesc": "Collecter et parcourir les termes de toutes les notes",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "Activé",
             "off": "Désactivé",
             "navigation": "Navigation",

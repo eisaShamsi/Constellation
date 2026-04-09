@@ -299,6 +299,8 @@
             "workspacesDesc": "保存和恢复工作区布局",
             "index": "索引",
             "indexDesc": "收集和浏览所有笔记中的术语",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "开启",
             "off": "关闭",
             "navigation": "导航",

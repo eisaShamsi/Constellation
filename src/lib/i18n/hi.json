@@ -299,6 +299,8 @@
             "workspacesDesc": "वर्कस्पेस लेआउट सहेजें और पुनर्स्थापित करें",
             "index": "अनुक्रमणिका",
             "indexDesc": "सभी नोट्स से शब्दों को एकत्र और ब्राउज़ करें",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "चालू",
             "off": "बंद",
             "navigation": "नेविगेशन",

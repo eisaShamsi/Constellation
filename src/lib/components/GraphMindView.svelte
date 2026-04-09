@@ -61,6 +61,7 @@
 		libraryColorMap?: Record<string, string>;
 		lensCentrality?: Map<string, number> | null;
 		lensCommunityAssignments?: Map<string, number> | null;
+		searchMatchIds?: Set<string> | null;
 	} = $props();
 
 	// ─── Layer 1 state: UI only ─────────────────────────────
@@ -341,13 +342,15 @@
 		if (q !== prevSearch) {
 			prevSearch = q;
 			engine?.setSearch(q); // instant client-side name filter
-			// Also fire hybrid search for content/semantic matches (async)
+			// Also fire advanced search for content/structured/semantic matches (async)
 			clearTimeout(searchDebounce);
-			if (q.trim().length >= 3) {
+			if (q.trim().length >= 2) {
 				searchDebounce = setTimeout(async () => {
 					try {
-						const { constellationSearch } = await import('$lib/libraries/store');
-						const results = await constellationSearch({ query: q, mode: 'lexical', limit: 30 });
+						const { constellationSearch, parseSearchQuery } = await import('$lib/libraries/store');
+						const req = parseSearchQuery(q);
+						req.limit = 50;
+						const results = await constellationSearch(req);
 						const matchedIds = new Set(results.map(r => r.name.toLowerCase()));
 						engine?.setSearchExtended(matchedIds);
 					} catch { /* search engine not ready, client-side only */ }
@@ -367,6 +370,13 @@
 		const p = highlightPath;
 		const c = highlightColor;
 		engine?.setHighlightFilter(p, c);
+	});
+
+	// Search Hub match highlighting → engine
+	$effect(() => {
+		if (searchMatchIds && searchMatchIds.size > 0 && engine) {
+			engine.setSearchExtended(searchMatchIds);
+		}
 	});
 
 	// Data changes → engine

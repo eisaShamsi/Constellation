@@ -299,6 +299,8 @@
             "workspacesDesc": "שמור ושחזר פריסות סביבת עבודה",
             "index": "מפתח",
             "indexDesc": "איסוף ועיון במונחים מכל הפתקים",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "פעיל",
             "off": "כבוי",
             "navigation": "ניווט",

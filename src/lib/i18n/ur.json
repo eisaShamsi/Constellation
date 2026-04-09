@@ -299,6 +299,8 @@
             "workspacesDesc": "ورک اسپیس کی ترتیب محفوظ اور بحال کریں",
             "index": "فہرست",
             "indexDesc": "تمام نوٹس سے اصطلاحات جمع اور براؤز کریں",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "آن",
             "off": "آف",
             "navigation": "نیویگیشن",

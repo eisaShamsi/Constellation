@@ -299,6 +299,8 @@
             "workspacesDesc": "ワークスペースレイアウトを保存・復元",
             "index": "索引",
             "indexDesc": "すべてのノートから用語を収集・閲覧",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "オン",
             "off": "オフ",
             "navigation": "ナビゲーション",

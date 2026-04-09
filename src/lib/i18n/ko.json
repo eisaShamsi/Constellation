@@ -299,6 +299,8 @@
             "workspacesDesc": "작업 공간 레이아웃 저장 및 복원",
             "index": "색인",
             "indexDesc": "모든 노트에서 용어를 수집하고 탐색",
+            "semanticSearch": "Semantic Search",
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
             "on": "켜기",
             "off": "끄기",
             "navigation": "탐색",

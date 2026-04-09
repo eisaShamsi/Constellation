@@ -528,8 +528,9 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     if filters.orphans.unwrap_or(false) {
         // No outgoing links
         conditions.push("(outgoing_links_json IS NULL OR outgoing_links_json = '[]')".to_string());
-        // No incoming links (no other note links to this one)
-        conditions.push("NOT EXISTS (SELECT 1 FROM note_meta AS other WHERE other.outgoing_links_json LIKE '%' || note_meta.name || '%' AND other.path != note_meta.path)".to_string());
+        // No incoming links — use JSON-quoted match to avoid substring false positives
+        // Links stored as: ["note1","note2"] — match "\"name\"" for exact element
+        conditions.push("NOT EXISTS (SELECT 1 FROM note_meta AS other WHERE other.outgoing_links_json LIKE '%\"' || LOWER(note_meta.name) || '\"%' AND other.path != note_meta.path)".to_string());
     }
 
     // Links-between filter: notes that link to BOTH X and Y
@@ -792,7 +793,10 @@ fn semantic_search(conn: &Connection, query_embedding: &[f32], limit: u32) -> Ve
         let embedding_blob: Vec<u8> = row.get(4)?;
         let dimensions: usize = row.get::<_, u32>(5)? as usize;
 
-        // Convert blob to f32 vector
+        // Convert blob to f32 vector (safe: skip malformed blobs)
+        if embedding_blob.len() % 4 != 0 || embedding_blob.len() / 4 < dimensions {
+            return Ok(("".to_string(), "".to_string(), "".to_string(), 0, Vec::new()));
+        }
         let embedding: Vec<f32> = embedding_blob
             .chunks_exact(4)
             .take(dimensions)
