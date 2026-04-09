@@ -1466,7 +1466,6 @@
 
 	const cleanupFns: (() => void)[] = [];
 	onDestroy(() => {
-		clearTimeout(searchTimeout);
 		clearTimeout(previewTimeout);
 		clearTimeout(cacheRefreshDebounce);
 		clearTimeout(watcherDebounce);
@@ -2723,7 +2722,7 @@
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
 					</button>
 					<!-- OrgChart and Sky View buttons moved to left dock bar -->
-					{#if sidebarMode === 'tree' && !searchMode}
+					{#if sidebarMode === 'tree' }
 						<button class="mode-tab" onclick={cycleSortOrder} title={getSortTooltip()}>
 							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/></svg>
 						</button>
@@ -2736,7 +2735,7 @@
 						</button>
 					{/if}
 						<!-- CE Phase 9: Lens switcher -->
-						{#if sidebarMode === 'tree' && !searchMode}
+						{#if sidebarMode === 'tree' }
 							<select class="mode-tab lens-select" value={activeLensId}
 								onchange={async (e) => {
 									const id = (e.target as HTMLSelectElement).value;
