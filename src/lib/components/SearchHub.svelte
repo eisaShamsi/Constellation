@@ -229,6 +229,10 @@
 		showChips = false;
 		requestAnimationFrame(() => {
 			searchInput?.focus();
+			// Move cursor to end of input
+			if (searchInput) {
+				searchInput.selectionStart = searchInput.selectionEnd = searchInput.value.length;
+			}
 			if (syntax.endsWith('[[')) {
 				wikiAuto = [...allNotes].sort((a, b) => (linkCounts.get(b.name.toLowerCase())?.incoming ?? 0) - (linkCounts.get(a.name.toLowerCase())?.incoming ?? 0)).slice(0, 20);
 				wikiAutoIdx = -1;
