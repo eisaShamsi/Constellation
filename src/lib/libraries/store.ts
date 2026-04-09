@@ -843,7 +843,7 @@ export interface UniversalSearchResponse {
 }
 
 export async function universalSearch(query: string, queryEmbedding?: number[] | null, limit?: number): Promise<UniversalSearchResponse> {
-	return invoke('constellation_search_universal', { query, queryEmbedding: queryEmbedding ?? null, limit: limit ?? 15 });
+	return invoke('constellation_search_universal', { query, queryEmbedding: queryEmbedding ?? null, limit: limit ?? 0 });
 }
 
 /** Initialize the Rust-native ONNX embedding engine. */
@@ -954,7 +954,7 @@ export function parseSearchQuery(raw: string): ConstellationSearchRequest {
 		query: hasQuery ? freeText.trim() : undefined,
 		mode: hasQuery && hasFilters ? 'hybrid' : hasQuery ? 'lexical' : 'structured',
 		filters: hasFilters ? filters : undefined,
-		limit: 50,
+		limit: 0,
 		include_snippet: true,
 		include_headings: true,
 	};

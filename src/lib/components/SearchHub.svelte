@@ -6,6 +6,7 @@
 		type ConstellationSearchResult
 	} from '$lib/libraries/store';
 	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
+	import { detectDir } from '$lib/utils';
 
 	let {
 		initialQuery = '',
@@ -19,6 +20,7 @@
 	let response = $state<UniversalSearchResponse | null>(null);
 	let filteredResults = $state<ConstellationSearchResult[]>([]);
 	let isAdvancedMode = $state(false);
+	let advancedGroups = $state<{query: string; results: ConstellationSearchResult[]}[]>([]);
 	let selectedResultIdx = $state(-1);
 	let loading = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout>;
@@ -82,11 +84,25 @@
 		searchTimeout = setTimeout(async () => {
 			try {
 				if (hasAdvancedSyntax(q)) {
-					// Advanced mode: use parseSearchQuery → constellationSearch
+					// Advanced mode: split by commas, parse each sub-query
 					isAdvancedMode = true;
 					response = null;
-					const req = parseSearchQuery(q);
-					filteredResults = await constellationSearch(req);
+					const subQueries = q.split(/[,،、]/).map(s => s.trim()).filter(s => s.length > 0);
+					if (subQueries.length > 1) {
+						// Multiple sub-queries: group results by query
+						advancedGroups = [];
+						for (const sub of subQueries) {
+							const req = parseSearchQuery(sub);
+							const results = await constellationSearch(req);
+							advancedGroups.push({ query: sub, results });
+						}
+						filteredResults = [];
+					} else {
+						// Single advanced query: flat list
+						advancedGroups = [];
+						const req = parseSearchQuery(q);
+						filteredResults = await constellationSearch(req);
+					}
 				} else {
 					// Universal mode: search everywhere, categorize results
 					isAdvancedMode = false;
@@ -95,7 +111,7 @@
 					if ($appSettings.enabledFeatures?.semanticSearch) {
 						try { qEmbed = await embedText(q); } catch {}
 					}
-					response = await universalSearch(q, qEmbed, 15);
+					response = await universalSearch(q, qEmbed, 0);
 				}
 				addSearchHistory(q);
 				history = readSearchHistory();
@@ -103,6 +119,7 @@
 				const ids = new Set<string>();
 				if (isAdvancedMode) {
 					filteredResults.forEach(r => ids.add(r.name.toLowerCase()));
+					advancedGroups.forEach(g => g.results.forEach(r => ids.add(r.name.toLowerCase())));
 				} else if (response) {
 					for (const cat of categories) {
 						((response as any)[cat] ?? []).forEach((r: ConstellationSearchResult) => ids.add(r.name.toLowerCase()));
@@ -225,7 +242,10 @@
 	}
 
 	function totalResults(): number {
-		if (isAdvancedMode) return filteredResults.length;
+		if (isAdvancedMode) {
+			if (advancedGroups.length > 0) return advancedGroups.reduce((sum, g) => sum + g.results.length, 0);
+			return filteredResults.length;
+		}
 		if (!response) return 0;
 		return categories.reduce((sum, c) => sum + getCategoryResults(c).length, 0);
 	}
@@ -350,11 +370,41 @@
 			{#if loading}
 				<div class="sh-loading">...</div>
 
+			{:else if isAdvancedMode && advancedGroups.length > 0}
+				<!-- Advanced mode: grouped by sub-query -->
+				{#each advancedGroups as group}
+					{#if group.results.length > 0}
+						<div class="sh-category">
+							<button class="sh-cat-header" dir={detectDir(group.query)} onclick={() => toggleCategory(group.query)}>
+								<svg class="sh-chevron" class:sh-collapsed={collapsed[group.query]} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+								<span class="sh-cat-badge" style:background={categoryColors[group.results[0]?.match_type] ?? '#94a3b8'}>{categoryIcons[group.results[0]?.match_type] ?? '?'}</span>
+								<span class="sh-cat-name">{group.query}</span>
+								<span class="sh-cat-count">{group.results.length}</span>
+							</button>
+							{#if !collapsed[group.query]}
+								<div class="sh-cat-items">
+									{#each group.results as r}
+										<button class="sh-item" onclick={() => handleResultClick(r)} dir={detectDir(r.name)}>
+											<div class="sh-item-top">
+												<span class="sh-item-name">{@html highlightInText(r.name)}</span>
+												<span class="sh-item-lib">{r.library_name}</span>
+											</div>
+											{#if r.snippet}
+												<div class="sh-item-snippet">{@html highlightInText(r.snippet)}</div>
+											{/if}
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{/if}
+				{/each}
+
 			{:else if isAdvancedMode && filteredResults.length > 0}
-				<!-- Advanced mode: flat result list with match-type badges -->
+				<!-- Advanced mode: single query, flat result list -->
 				<div class="sh-section-label">{filteredResults.length} {$t('sidebar.results')}</div>
 				{#each filteredResults as r, idx}
-					<button class="sh-item" style="padding-inline-start:16px" class:sh-item-selected={idx === selectedResultIdx} onclick={() => handleResultClick(r)} dir="auto">
+					<button class="sh-item" style="padding-inline-start:16px" class:sh-item-selected={idx === selectedResultIdx} onclick={() => handleResultClick(r)} dir={detectDir(r.name)}>
 						<div class="sh-item-top">
 							{#if r.match_type}
 								<span class="sh-cat-badge" style:background={categoryColors[r.match_type] ?? '#94a3b8'}>{categoryIcons[r.match_type] ?? '?'}</span>
@@ -368,7 +418,7 @@
 					</button>
 				{/each}
 
-			{:else if isAdvancedMode && filteredResults.length === 0}
+			{:else if isAdvancedMode && filteredResults.length === 0 && advancedGroups.length === 0}
 				<div class="sh-empty">{$t('sidebar.noResults')}</div>
 
 			{:else if response}
@@ -387,7 +437,7 @@
 								<div class="sh-cat-items">
 									{#each items as r}
 										<button class="sh-item" class:sh-item-selected={selectedResultIdx >= 0 && allFlatResults[selectedResultIdx] === r}
-											onclick={() => handleResultClick(r)} dir="auto">
+											onclick={() => handleResultClick(r)} dir={detectDir(r.name)}>
 											<div class="sh-item-top">
 												<span class="sh-item-name">{@html highlightInText(r.name)}</span>
 												<span class="sh-item-lib">{r.library_name}</span>

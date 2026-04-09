@@ -695,7 +695,7 @@ pub fn constellation_search(
 }
 
 fn execute_search(conn: &Connection, request: &SearchRequest) -> Result<Vec<SearchResult>, String> {
-    let limit = request.limit.unwrap_or(50);
+    let limit = if request.limit.unwrap_or(0) == 0 { 100000 } else { request.limit.unwrap() };
     let mut results = Vec::new();
 
     match request.mode.as_str() {
@@ -939,13 +939,13 @@ pub fn constellation_search_universal(
             let state = app.state::<SearchState>();
             let db_guard = state.db.lock().map_err(|e| e.to_string())?;
             return match db_guard.as_ref() {
-                Some(c) => execute_universal_search(c, &query, query_embedding.as_deref(), limit.unwrap_or(15)),
+                Some(c) => execute_universal_search(c, &query, query_embedding.as_deref(), if limit.unwrap_or(0) == 0 { 100000 } else { limit.unwrap() }),
                 None => Err("Search index not available".to_string()),
             };
         }
     };
 
-    execute_universal_search(conn, &query, query_embedding.as_deref(), limit.unwrap_or(15))
+    execute_universal_search(conn, &query, query_embedding.as_deref(), if limit.unwrap_or(0) == 0 { 100000 } else { limit.unwrap() })
 }
 
 /// Split query by comma variants: , (Latin) ، (Arabic) 、(CJK)
