@@ -440,18 +440,18 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
         }
     }
 
-    // Tag filters
+    // Tag filters — JSON-quoted match for exact tag element
     if let Some(tags) = &filters.tags {
         for tag in tags {
-            conditions.push("tags_json LIKE '%' || ? || '%'".to_string());
+            conditions.push("tags_json LIKE '%\"' || ? || '\"%'".to_string());
             params_vec.push(Box::new(tag.to_lowercase()));
         }
     }
 
-    // Wikilink-to filters (find notes that link TO target)
+    // Wikilink-to filters (find notes that link TO target) — JSON-quoted exact match
     if let Some(targets) = &filters.wikilinks_to {
         for target in targets {
-            conditions.push("outgoing_links_json LIKE '%' || ? || '%'".to_string());
+            conditions.push("outgoing_links_json LIKE '%\"' || ? || '\"%'".to_string());
             params_vec.push(Box::new(target.to_lowercase()));
         }
     }
@@ -488,7 +488,7 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
         for target in targets {
             let target_lower = target.to_lowercase();
             // Must link TO target
-            conditions.push("outgoing_links_json LIKE '%' || ? || '%'".to_string());
+            conditions.push("outgoing_links_json LIKE '%\"' || ? || '\"%'".to_string());
             params_vec.push(Box::new(target_lower.clone()));
             // AND target must link back (find target's outgoing links, filter to those)
             let links: Option<String> = conn.query_row(
@@ -516,7 +516,7 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
             let name_lower = name.to_lowercase();
             conditions.push("LOWER(body_text) LIKE '%' || ? || '%'".to_string());
             params_vec.push(Box::new(name_lower.clone()));
-            conditions.push("outgoing_links_json NOT LIKE '%' || ? || '%'".to_string());
+            conditions.push("outgoing_links_json NOT LIKE '%\"' || ? || '\"%'".to_string());
             params_vec.push(Box::new(name_lower.clone()));
             // Exclude the note itself
             conditions.push("LOWER(name) != ?".to_string());
@@ -536,7 +536,7 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     // Links-between filter: notes that link to BOTH X and Y
     if let Some(targets) = &filters.links_between {
         for target in targets {
-            conditions.push("outgoing_links_json LIKE '%' || ? || '%'".to_string());
+            conditions.push("outgoing_links_json LIKE '%\"' || ? || '\"%'".to_string());
             params_vec.push(Box::new(target.to_lowercase()));
         }
     }
@@ -620,7 +620,7 @@ pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexSta
     // Schema v2: force full reindex to pick up bracket-format tags + inline hashtags
     // Check for version marker; if missing or outdated, delete and rebuild
     let version_path = path.with_extension("version");
-    let current_version = "2"; // bump this when indexing logic changes
+    let current_version = "3"; // v3: exact JSON-quoted tag/link matching, inline hashtags, bracket tags
     let needs_rebuild = match std::fs::read_to_string(&version_path) {
         Ok(v) => v.trim() != current_version,
         Err(_) => true,
@@ -1070,9 +1070,11 @@ fn search_contents(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResu
 }
 
 fn search_tags(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
+    // Use JSON-quoted match for exact tag: "tagname" in the JSON array
+    // This avoids substring false positives (e.g., "id" matching "video")
     let mut stmt = match conn.prepare(
         "SELECT path, name, library_name, modified, tags_json FROM note_meta
-         WHERE tags_json LIKE '%' || ?1 || '%'
+         WHERE tags_json LIKE '%\"' || ?1 || '\"%'
          ORDER BY modified DESC
          LIMIT ?2"
     ) {
@@ -1124,7 +1126,7 @@ fn search_properties(conn: &Connection, query: &str, limit: u32) -> Vec<SearchRe
 fn search_wikilinks(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
     let mut stmt = match conn.prepare(
         "SELECT path, name, library_name, modified, outgoing_links_json FROM note_meta
-         WHERE outgoing_links_json LIKE '%' || ?1 || '%'
+         WHERE outgoing_links_json LIKE '%\"' || ?1 || '\"%'
          ORDER BY modified DESC
          LIMIT ?2"
     ) {

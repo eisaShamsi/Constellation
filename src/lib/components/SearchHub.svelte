@@ -38,11 +38,15 @@
 	const categories = ['titles', 'contents', 'tags', 'properties', 'wikilinks', 'semantic'] as const;
 
 	const categoryIcons: Record<string, string> = {
-		titles: 'T', contents: 'C', tags: '#', properties: 'P', wikilinks: 'W', semantic: 'S'
+		titles: 'T', contents: 'C', tags: '#', properties: 'P', wikilinks: 'W', semantic: 'S',
+		// match_type values from advanced/structured search
+		title: 'T', content: 'C', tag: '#', property: 'P', wikilink: 'W', structured: '?'
 	};
 
 	const categoryColors: Record<string, string> = {
-		titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed'
+		titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed',
+		// match_type values from advanced/structured search
+		title: '#3b82f6', content: '#16a34a', tag: '#f472b6', property: '#f59e0b', wikilink: '#60a5fa', structured: '#94a3b8'
 	};
 
 	const syntaxChips = [
@@ -350,16 +354,16 @@
 				<!-- Advanced mode: flat result list with match-type badges -->
 				<div class="sh-section-label">{filteredResults.length} {$t('sidebar.results')}</div>
 				{#each filteredResults as r, idx}
-					<button class="sh-item" class:sh-item-selected={idx === selectedResultIdx} onclick={() => handleResultClick(r)}>
+					<button class="sh-item" style="padding-inline-start:16px" class:sh-item-selected={idx === selectedResultIdx} onclick={() => handleResultClick(r)} dir="auto">
 						<div class="sh-item-top">
 							{#if r.match_type}
 								<span class="sh-cat-badge" style:background={categoryColors[r.match_type] ?? '#94a3b8'}>{categoryIcons[r.match_type] ?? '?'}</span>
 							{/if}
-							<span class="sh-item-name" dir="auto">{@html highlightInText(r.name)}</span>
+							<span class="sh-item-name">{@html highlightInText(r.name)}</span>
 							<span class="sh-item-lib">{r.library_name}</span>
 						</div>
 						{#if r.snippet}
-							<div class="sh-item-snippet" dir="auto">{@html highlightInText(r.snippet)}</div>
+							<div class="sh-item-snippet">{@html highlightInText(r.snippet)}</div>
 						{/if}
 					</button>
 				{/each}
@@ -383,13 +387,13 @@
 								<div class="sh-cat-items">
 									{#each items as r}
 										<button class="sh-item" class:sh-item-selected={selectedResultIdx >= 0 && allFlatResults[selectedResultIdx] === r}
-											onclick={() => handleResultClick(r)}>
+											onclick={() => handleResultClick(r)} dir="auto">
 											<div class="sh-item-top">
-												<span class="sh-item-name" dir="auto">{@html highlightInText(r.name)}</span>
+												<span class="sh-item-name">{@html highlightInText(r.name)}</span>
 												<span class="sh-item-lib">{r.library_name}</span>
 											</div>
 											{#if r.snippet}
-												<div class="sh-item-snippet" dir="auto">
+												<div class="sh-item-snippet">
 													{#if cat === 'contents'}
 														{@html highlightInText(r.snippet ?? '')}
 													{:else if cat === 'tags'}
@@ -531,7 +535,7 @@
 	/* Items */
 	.sh-cat-items { }
 	.sh-item {
-		display: block; width: 100%; padding: 4px 16px 4px 40px;
+		display: block; width: 100%; padding: 4px 16px; padding-inline-start: 40px;
 		background: none; border: none; color: var(--text); font-family: inherit;
 		cursor: pointer; text-align: start;
 	}
@@ -560,7 +564,4 @@
 		padding: 40px; text-align: center; color: var(--text-faint); font-size: 0.88rem;
 	}
 
-	/* Advanced mode: items at root level (no category indent) */
-	.sh-results-area > .sh-section-label + .sh-item { padding-inline-start: 16px; }
-	.sh-results-area > .sh-item { padding-inline-start: 16px; }
 </style>
