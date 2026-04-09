@@ -1,4 +1,33 @@
-# Session Log — 2026-04-08
+# Session Log — 2026-04-08 / 2026-04-09
+
+## Phase: 14-Agent Audit + Search Integration Across All Functions
+**Commit**: `4b70c67` — 14-agent audit: fix XSS, dead code, RTL, data integrity, search integration
+
+### Audit System
+- Created `docs/AUDIT-SYSTEM.md` — spec for 14-agent audit system
+- Ran all 14 agents in parallel (11/14 completed, PA/AA/MA timed out)
+- Consolidated report: 1 CRITICAL, 19 HIGH, 16 MEDIUM, 8 LOW
+
+### Fixes applied
+- **XSS**: All `{@html r.snippet}` in SearchHub now escaped via `highlightInText()`
+- **Orphan detection**: LIKE now matches JSON-quoted `"name"` to avoid substring false positives
+- **Embedding BLOB panic**: Validate blob length before `chunks_exact(4)` — skip malformed
+- **Dead code**: ~250 lines removed from +layout.svelte (sidebar search functions, state, imports)
+- **RTL**: `dir="auto"` added to SearchHub input, BacklinksPanel filter, TagsPanel filter
+- **Keyboard nav**: Arrow Up/Down/Enter for SearchHub results with visual selection
+- **Search integration**: Sky View, OrgChart, Sight, Quick Switcher all use `parseSearchQuery()` — same syntax everywhere (#tags, properties, link operators)
+- **Filter inputs**: BacklinksPanel and TagsPanel now have filter inputs
+- **Note save reindex**: `constellation_search_reindex` called on every save
+- **Debounce**: QuickSwitcher 200ms → 300ms
+- **ort version**: Pinned to 2.0.0-rc.12
+- **Localization**: semanticSearch keys added to all 13 locale files
+- **Tag click**: Now opens Search Hub with `#tag` query
+
+### Deferred
+- Hardcoded English strings in OrgChart/Sight (needs full i18n pass)
+- `@xenova/transformers` removal (still used by Sky View semanticEngine.ts)
+
+---
 
 ## Phase: Search Hub + Universal Categorized Search + Link Operators
 **Commit**: `ea398c4` — Search Hub: full-screen universal categorized search + 6 link operators
