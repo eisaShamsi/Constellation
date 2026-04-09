@@ -743,6 +743,28 @@
 	let newLibraryName = $state('');
 
 	const isHome = $derived(page.url.pathname === '/');
+	const isDashboardVisible = $derived(isHome && !$activeTab && $libraryStats.length > 0 && $appSettings.showDashboard);
+	/** True when any full-page function is active — disables sidebars and split pane */
+	const fullPageActive = $derived(showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || lensActive || showSearchHub || isDashboardVisible);
+
+	// Auto-collapse sidebars when full-page becomes active, restore when deactivated
+	let sidebarBeforeFullPage = false;
+	let rightSidebarBeforeFullPage = false;
+	let fullPageWasActive = false;
+	$effect(() => {
+		if (fullPageActive && !fullPageWasActive) {
+			// Entering full-page: save and collapse
+			sidebarBeforeFullPage = sidebarOpen;
+			rightSidebarBeforeFullPage = rightSidebarOpen;
+			sidebarOpen = false;
+			rightSidebarOpen = false;
+		} else if (!fullPageActive && fullPageWasActive) {
+			// Leaving full-page: restore
+			sidebarOpen = sidebarBeforeFullPage;
+			rightSidebarOpen = rightSidebarBeforeFullPage;
+		}
+		fullPageWasActive = fullPageActive;
+	});
 
 	// Separate own libraries from child universe libraries
 	function isChildUniverseLib(libPath: string): boolean {
@@ -1132,8 +1154,8 @@
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
 			{ id: 'split-view', name: $t('commands.splitView'), shortcut: sc('split-view'), icon: '⊞', action: cycleSplit, category: 'View' },
 			{ id: 'close-note', name: $t('commands.closeNote'), shortcut: sc('close-note'), icon: '✕', action: closeNote, category: 'File' },
-			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: sc('toggle-left'), icon: '◧', action: () => sidebarOpen = !sidebarOpen, category: 'View' },
-			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: sc('toggle-right'), icon: '◨', action: () => rightSidebarOpen = !rightSidebarOpen, category: 'View' },
+			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: sc('toggle-left'), icon: '◧', action: () => { if (!fullPageActive) sidebarOpen = !sidebarOpen; }, category: 'View' },
+			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: sc('toggle-right'), icon: '◨', action: () => { if (!fullPageActive) rightSidebarOpen = !rightSidebarOpen; }, category: 'View' },
 			{ id: 'add-library', name: $t('commands.addLibrary'), shortcut: sc('add-library'), icon: '📁', action: handleAddLibrary, category: 'Library' },
 			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), shortcut: sc('toggle-bookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
 			{ id: 'random-note', name: $t('commands.randomNote'), shortcut: sc('random-note'), icon: '🎲', action: handleRandomNote, category: 'Navigation' },
@@ -3006,26 +3028,26 @@
 	<!-- ═══ MAIN AREA ═══ -->
 	<div class="main-area">
 		<!-- Tab Bar (unified with layout controls) -->
-		<!-- Layout bar: sidebar + split controls (independent from tabs/paper) -->
+		<!-- Layout bar: sidebar + split controls (disabled when full-page overlay active) -->
 		<div class="layout-bar">
-			<button class="tab-action" class:active={sidebarOpen} onclick={() => sidebarOpen = !sidebarOpen} title={$t('layout.leftSidebar')}>
+			<button class="tab-action" class:active={sidebarOpen} disabled={fullPageActive} onclick={() => sidebarOpen = !sidebarOpen} title={$t('layout.leftSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
 			<div style="flex:1"></div>
-			<button class="tab-action" class:active={$splitActive} onclick={cycleSplit} title={$t('layout.splitView')}>
+			<button class="tab-action" class:active={$splitActive} disabled={fullPageActive} onclick={cycleSplit} title={$t('layout.splitView')}>
 				{#if $splitActive && $splitDirection === 'horizontal'}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/></svg>
 				{:else}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
 				{/if}
 			</button>
-			<button class="tab-action" class:active={rightSidebarOpen} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={$t('layout.rightSidebar')}>
+			<button class="tab-action" class:active={rightSidebarOpen} disabled={fullPageActive} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={$t('layout.rightSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
 			</button>
 		</div>
 
 		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
-		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || lensActive || showSearchHub}>
+		<div class="tab-bar" class:tab-bar-hidden={fullPageActive}>
 			{#if indexReturnPending}
 				<button class="index-return-btn" onclick={() => { showIndex = true; indexReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -3612,11 +3634,9 @@
 											openNoteTab(note.path, note.libraryName, note.libraryColor);
 										}
 									}}
-									onTagSelect={(tag, notes) => {
-										if (secondScreenOpen) {
-											emitDashboardTagSelected({ tag, notes });
-										}
-									}}
+									onTagSelect={secondScreenOpen ? (tag, notes) => {
+										emitDashboardTagSelected({ tag, notes });
+									} : undefined}
 								/>
 							</div>
 						{:else}
@@ -4448,8 +4468,9 @@
 		border: none; background: none; border-radius: 4px;
 		color: var(--text-muted); cursor: pointer; flex-shrink: 0; margin: auto 2px;
 	}
-	.tab-action:hover { background: var(--border); color: var(--text); }
+	.tab-action:hover:not(:disabled) { background: var(--border); color: var(--text); }
 	.tab-action.active { color: var(--accent); }
+	.tab-action:disabled { opacity: 0.3; cursor: not-allowed; }
 	.tab-spacer { flex: 1; }
 	.tab-ctx-menu {
 		position: fixed; z-index: 9999;
