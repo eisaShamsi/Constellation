@@ -341,6 +341,7 @@
         "toggleLeftSidebar": "Toggle left sidebar",
         "toggleRightSidebar": "Toggle right sidebar",
         "addLibrary": "Add library",
+        "newLibrary": "New library",
         "toggleBookmark": "Toggle bookmark",
         "randomNote": "Open random note",
         "toggleTheme": "Toggle dark/light mode",
@@ -395,6 +396,7 @@
     "sidebar": {
         "searchPlaceholder": "Search...",
         "addLibrary": "Add library",
+        "newLibrary": "New library",
         "results": "results",
         "noResults": "No results found",
         "bookmarks": "Bookmarks",
@@ -404,6 +406,7 @@
         "newNote": "New note",
         "newBase": "New Base",
         "newFolder": "New folder",
+        "newLibrary": "New Library",
         "sortNameAsc": "Sort: Name (A → Z)",
         "sortNameDesc": "Sort: Name (Z → A)",
         "sortModifiedDesc": "Sort: Modified (newest)",

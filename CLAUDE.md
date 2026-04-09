@@ -121,6 +121,25 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - Every editor view — NotePane, FocusPane, and any future view — must support multilingual, mixed-script content natively.
 - Never build a single-language assumption into layout, fonts, cursor behavior, or input handling.
 
+### Constellation Knowledge Hierarchy
+Constellation organizes knowledge in a five-level hierarchy — no other PKM system has this depth:
+
+```
+Universe (root)
+  └── cUniverse (child universe)
+       └── Library
+            └── Folder
+                 └── Note
+```
+
+- **Universe**: The top-level container. Named by the user. Contains all libraries, settings, bases, bookmarks. One per Constellation instance. Stored as a directory with `universe.json`.
+- **cUniverse (Child Universe)**: A linked Universe that contributes its libraries to a parent. Enables federation — viewing notes from multiple independent Universes in one window.
+- **Library**: A complete, self-contained knowledge base (equivalent to an Obsidian vault). Has its own color, appearance, tags, links, and index. Registered in `libraries.json`. Multiple libraries coexist in one Universe. Libraries are never copied — Constellation reads them in place.
+- **Folder**: A subdirectory within a Library. Organizational structure only. Supports nesting.
+- **Note**: A single `.md` file with optional YAML frontmatter. The atomic unit of knowledge.
+
+**Library ≠ Folder.** A Library is a first-class citizen with its own identity. A Folder is just file organization inside a Library. The "New Library" button in the sidebar toolbar creates or links libraries — distinct from "New Folder".
+
 ### Smooth Transitions
 - NotePane and FocusPane edit the same `.md` file. Switching between them must be seamless.
 - What the user types in Focus (plain text markdown) renders beautifully in NotePane.

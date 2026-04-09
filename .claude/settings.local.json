@@ -279,7 +279,13 @@
       "Bash(npm remove:*)",
       "Bash(sed -i 's/\"linksBetween\": \"Links between\"/\"linksBetween\": \"Links between\",\\\\n        \"linksAll\": \"All links\"/' en.json)",
       "Bash(sed -i 's/\"linksBetween\": \"روابط بين\"/\"linksBetween\": \"روابط بين\",\\\\n        \"linksAll\": \"كل الروابط\"/' ar.json)",
-      "Bash(sed -i 's/\"linksBetween\": \"Links between\"/\"linksBetween\": \"Links between\",\\\\n        \"linksAll\": \"All links\"/' __TRACKED_VAR__.json)"
+      "Bash(sed -i 's/\"linksBetween\": \"Links between\"/\"linksBetween\": \"Links between\",\\\\n        \"linksAll\": \"All links\"/' __TRACKED_VAR__.json)",
+      "Bash(sed -i 's/\"newFolder\": \"New folder\"/\"newFolder\": \"New folder\",\\\\n        \"newLibrary\": \"New Library\"/' en.json)",
+      "Bash(sed -i 's/\"newFolder\": \"مجلد جديد\"/\"newFolder\": \"مجلد جديد\",\\\\n        \"newLibrary\": \"مكتبة جديدة\"/' ar.json)",
+      "Bash(sed -i 's/\"newFolder\": \"New folder\"/\"newFolder\": \"New folder\",\\\\n        \"newLibrary\": \"New Library\"/' __TRACKED_VAR__.json)",
+      "Bash(sed -i 's/\"addLibrary\": \"Add library\"/\"addLibrary\": \"Add library\",\\\\n        \"newLibrary\": \"New library\"/' en.json)",
+      "Bash(sed -i 's/\"addLibrary\": \"إضافة مكتبة\"/\"addLibrary\": \"إضافة مكتبة\",\\\\n        \"newLibrary\": \"مكتبة جديدة\"/' ar.json)",
+      "Bash(sed -i 's/\"addLibrary\": \"Add library\"/\"addLibrary\": \"Add library\",\\\\n        \"newLibrary\": \"New library\"/' __TRACKED_VAR__.json)"
     ]
   }
 }

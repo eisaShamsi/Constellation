@@ -495,6 +495,8 @@
 	let showLibraryManager = $state(false);
 	let showLibraryPicker = $state(false);
 	let showNewBaseDialog = $state(false);
+	let showNewLibraryDropdown = $state(false);
+	let newLibName = $state('');
 
 	// Lock screen
 	let isLocked = $state(false);
@@ -1157,6 +1159,7 @@
 			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: sc('toggle-left'), icon: '◧', action: () => { if (!fullPageActive) sidebarOpen = !sidebarOpen; }, category: 'View' },
 			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: sc('toggle-right'), icon: '◨', action: () => { if (!fullPageActive) rightSidebarOpen = !rightSidebarOpen; }, category: 'View' },
 			{ id: 'add-library', name: $t('commands.addLibrary'), shortcut: sc('add-library'), icon: '📁', action: handleAddLibrary, category: 'Library' },
+			{ id: 'new-library', name: $t('commands.newLibrary'), icon: '📚', action: handleNewLibrary, category: 'Library' },
 			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), shortcut: sc('toggle-bookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
 			{ id: 'random-note', name: $t('commands.randomNote'), shortcut: sc('random-note'), icon: '🎲', action: handleRandomNote, category: 'Navigation' },
 			{ id: 'toggle-theme', name: $t('commands.toggleTheme'), shortcut: sc('toggle-theme'), icon: '🌗', action: handleToggleTheme, category: 'Appearance' },
@@ -1675,6 +1678,7 @@
 
 		// Escape always closes overlays (not remappable)
 		if (e.key === 'Escape') {
+			if (showNewLibraryDropdown) { showNewLibraryDropdown = false; newLibName = ''; return; }
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showStarView) { showStarView = false; return; }
@@ -1873,6 +1877,24 @@
 			libraryPickerAction = 'folder';
 			showLibraryPicker = true;
 		}
+	}
+
+	function handleNewLibrary() {
+		showNewLibraryDropdown = !showNewLibraryDropdown;
+		newLibName = '';
+	}
+
+	async function handleCreateNewLib() {
+		if (!newLibName.trim()) return;
+		showNewLibraryDropdown = false;
+		try {
+			await createNewLibrary(newLibName.trim());
+			await loadLibraries();
+			await refreshLibraryCaches();
+			// Rebuild search index to include new library's notes
+			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
+			newLibName = '';
+		} catch (e) { console.error('[Library] Create failed:', e); }
 	}
 
 	async function createFolderInLibrary(lib: { id: string; name: string; path: string }) {
@@ -2339,6 +2361,7 @@
 			newLibraryName = '';
 			await loadAllStats();
 			await refreshLibraryCaches();
+			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
 		} catch (e) { error = String(e); }
 		creatingNew = false;
 	}
@@ -2732,7 +2755,7 @@
 			<div class="sidebar-toolbar">
 				<!-- Sidebar search removed — Search Hub is the single search experience -->
 				<!-- Row 1: New Elements — always visible -->
-				<div class="toolbar-actions new-elements">
+				<div class="toolbar-actions new-elements" style="position:relative">
 					<button class="tb-btn" onclick={handleNewNote} title={$t('sidebar.newNote')}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
 					</button>
@@ -2742,6 +2765,34 @@
 					<button class="tb-btn" onclick={handleNewFolder} title={$t('sidebar.newFolder')}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
 					</button>
+					<button class="tb-btn" onclick={handleNewLibrary} title={$t('sidebar.newLibrary')}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M12 10v4"/><path d="M10 12h4"/></svg>
+					</button>
+
+					<!-- New Library dropdown -->
+					{#if showNewLibraryDropdown}
+						<div class="new-lib-drop">
+							<div class="nld-option">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+								<div class="nld-text">
+									<span class="nld-title">{$t('libraries.newLibrary')}</span>
+									<div class="nld-input-row">
+										<input class="nld-input" type="text" dir="auto" placeholder={$t('libraries.newLibrary')}
+											bind:value={newLibName}
+											onkeydown={(e) => { if (e.key === 'Enter') handleCreateNewLib(); if (e.key === 'Escape') showNewLibraryDropdown = false; }} />
+										<button class="nld-create" onclick={handleCreateNewLib}>+</button>
+									</div>
+								</div>
+							</div>
+							<button class="nld-option" onclick={async () => { showNewLibraryDropdown = false; await handleAddLibrary(); }}>
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+								<div class="nld-text">
+									<span class="nld-title">{$t('libraries.linkLibrary')}</span>
+									<span class="nld-desc">{$t('libraries.linkLibraryDesc')}</span>
+								</div>
+							</button>
+						</div>
+					{/if}
 				</div>
 				<!-- Row 2: Notes Management — always visible, even during search -->
 				<div class="toolbar-modes notes-management">
@@ -3030,18 +3081,18 @@
 		<!-- Tab Bar (unified with layout controls) -->
 		<!-- Layout bar: sidebar + split controls (disabled when full-page overlay active) -->
 		<div class="layout-bar">
-			<button class="tab-action" class:active={sidebarOpen} disabled={fullPageActive} onclick={() => sidebarOpen = !sidebarOpen} title={$t('layout.leftSidebar')}>
+			<button class="tab-action" class:active={sidebarOpen} disabled={fullPageActive} onclick={() => sidebarOpen = !sidebarOpen} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : $t('layout.leftSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
 			<div style="flex:1"></div>
-			<button class="tab-action" class:active={$splitActive} disabled={fullPageActive} onclick={cycleSplit} title={$t('layout.splitView')}>
+			<button class="tab-action" class:active={$splitActive} disabled={fullPageActive} onclick={cycleSplit} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : $t('layout.splitView')}>
 				{#if $splitActive && $splitDirection === 'horizontal'}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/></svg>
 				{:else}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
 				{/if}
 			</button>
-			<button class="tab-action" class:active={rightSidebarOpen} disabled={fullPageActive} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={$t('layout.rightSidebar')}>
+			<button class="tab-action" class:active={rightSidebarOpen} disabled={fullPageActive} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : $t('layout.rightSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
 			</button>
 		</div>
@@ -4175,6 +4226,36 @@
 	}
 	.tb-btn:hover { background: var(--border); color: var(--text); }
 	.tb-btn.active { color: var(--interactive-accent); }
+
+	/* New Library dropdown */
+	.new-lib-drop {
+		position: absolute; top: 100%; inset-inline: 0; z-index: 100;
+		background: var(--background-primary, #fff); border: 1px solid var(--border);
+		border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+		padding: 4px; margin-top: 2px; min-width: 220px;
+	}
+	.nld-option {
+		display: flex; gap: 8px; align-items: flex-start; padding: 8px;
+		border-radius: 4px; cursor: pointer; border: none; background: none;
+		width: 100%; text-align: start; font-family: inherit; color: var(--text);
+	}
+	.nld-option:hover { background: var(--bg-hover); }
+	.nld-option svg { flex-shrink: 0; margin-top: 2px; color: var(--text-muted); }
+	.nld-text { flex: 1; min-width: 0; }
+	.nld-title { font-size: 0.78rem; font-weight: 500; display: block; }
+	.nld-desc { font-size: 0.68rem; color: var(--text-muted); display: block; margin-top: 1px; }
+	.nld-input-row { display: flex; gap: 4px; margin-top: 4px; }
+	.nld-input {
+		flex: 1; min-width: 0; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px;
+		background: var(--bg); color: var(--text); font-size: 0.75rem; font-family: inherit; outline: none;
+	}
+	.nld-input:focus { border-color: var(--interactive-accent); }
+	.nld-create {
+		padding: 3px 8px; border: 1px solid var(--interactive-accent); border-radius: 4px;
+		background: var(--interactive-accent); color: #fff; font-size: 0.75rem;
+		cursor: pointer; font-weight: 600;
+	}
+	.nld-create:hover { opacity: 0.9; }
 
 	.toolbar-section-label {
 		font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.5px;

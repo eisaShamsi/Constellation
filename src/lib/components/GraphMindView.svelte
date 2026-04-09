@@ -49,6 +49,7 @@
 		highlightColor = 0x7c3aed,
 		skyViewSettings,
 		libraryColorMap = {} as Record<string, string>,
+		searchMatchIds = null as Set<string> | null,
 	}: {
 		nodes: StarNode[];
 		links: StarLink[];
@@ -337,11 +338,13 @@
 	// Search → engine (one-way) + async hybrid search
 	let prevSearch = '';
 	let searchDebounce: ReturnType<typeof setTimeout>;
+	let searchMatches = $state<{ name: string; match_type: string; path: string; libraryName: string }[]>([]);
 	$effect(() => {
 		const q = searchQuery;
 		if (q !== prevSearch) {
 			prevSearch = q;
 			engine?.setSearch(q); // instant client-side name filter
+			if (!q.trim()) { searchMatches = []; }
 			// Also fire advanced search for content/structured/semantic matches (async)
 			clearTimeout(searchDebounce);
 			if (q.trim().length >= 2) {
@@ -353,8 +356,11 @@
 						const results = await constellationSearch(req);
 						const matchedIds = new Set(results.map(r => r.name.toLowerCase()));
 						engine?.setSearchExtended(matchedIds);
+						searchMatches = results.map(r => ({ name: r.name, match_type: r.match_type, path: r.path, libraryName: r.library_name }));
 					} catch { /* search engine not ready, client-side only */ }
 				}, 300);
+			} else {
+				searchMatches = [];
 			}
 		}
 	});
@@ -483,8 +489,26 @@
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 			</button>
 			{#if searchVisible}
-				<input class="gm-search" type="text" dir="auto" placeholder={$t('graphView.controls.searchPlaceholder')}
-					bind:value={searchQuery} autofocus />
+				<div class="gm-search-wrap">
+					<input class="gm-search" type="text" dir="auto" placeholder={$t('graphView.controls.searchPlaceholder')}
+						bind:value={searchQuery} autofocus />
+					{#if searchMatches.length > 0}
+						<div class="gm-matches">
+							<div class="gm-matches-count">{searchMatches.length} matches</div>
+							{#each searchMatches.slice(0, 20) as m}
+								<button class="gm-match-item" onclick={() => onNodeClick?.(m.path, m.libraryName)}>
+									<span class="gm-match-badge" class:gm-badge-title={m.match_type === 'title'} class:gm-badge-content={m.match_type === 'content'} class:gm-badge-tag={m.match_type === 'tag'} class:gm-badge-property={m.match_type === 'property'} class:gm-badge-wikilink={m.match_type === 'wikilink'} class:gm-badge-semantic={m.match_type === 'semantic'}>
+										{m.match_type === 'tag' ? '#' : m.match_type === 'title' ? 'T' : m.match_type === 'content' ? 'C' : m.match_type === 'property' ? 'P' : m.match_type === 'wikilink' ? 'W' : m.match_type === 'semantic' ? 'S' : '?'}
+									</span>
+									<span class="gm-match-name" dir="auto">{m.name}</span>
+								</button>
+							{/each}
+							{#if searchMatches.length > 20}
+								<div class="gm-matches-more">+{searchMatches.length - 20} more</div>
+							{/if}
+						</div>
+					{/if}
+				</div>
 			{/if}
 		</div>
 		<div class="gm-toolbar-right">
@@ -816,6 +840,34 @@
 		min-width: 200px;
 	}
 	.gm-search:focus { border-color: var(--interactive-accent); }
+	.gm-search-wrap { position: relative; }
+	.gm-matches {
+		position: absolute; top: 100%; left: 0; z-index: 50;
+		min-width: 280px; max-height: 300px; overflow-y: auto;
+		background: var(--background-primary); border: 1px solid var(--interactive-accent);
+		border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+		margin-top: 4px; padding: 4px;
+	}
+	.gm-matches-count { padding: 4px 8px; font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+	.gm-match-item {
+		display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 8px;
+		border: none; background: none; border-radius: 4px; cursor: pointer;
+		font-family: inherit; text-align: start; color: var(--text);
+	}
+	.gm-match-item:hover { background: var(--bg-hover); }
+	.gm-match-badge {
+		min-width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0;
+		font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
+		color: #fff; display: inline-block;
+	}
+	.gm-badge-title { background: #3b82f6; }
+	.gm-badge-content { background: #16a34a; }
+	.gm-badge-tag { background: #f472b6; }
+	.gm-badge-property { background: #f59e0b; }
+	.gm-badge-wikilink { background: #60a5fa; }
+	.gm-badge-semantic { background: #7c3aed; }
+	.gm-match-name { font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+	.gm-matches-more { padding: 4px 8px; font-size: 0.68rem; color: var(--text-faint); text-align: center; }
 
 	/* Settings panel */
 	.gm-settings {

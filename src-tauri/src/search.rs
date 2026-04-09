@@ -330,14 +330,22 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
     let links_json = serde_json::to_string(&wikilinks).unwrap_or_default();
     let headings_json = serde_json::to_string(&headings).unwrap_or_default();
 
-    // Upsert: delete old, insert new (triggers handle FTS sync)
-    conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path])
-        .map_err(|e| e.to_string())?;
-    conn.execute(
-        "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-        params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body],
-    ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
+    // Upsert: delete old, insert new (triggers handle FTS sync) — wrapped in transaction for atomicity
+    conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
+    let result = (|| -> Result<(), String> {
+        conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path])
+            .map_err(|e| e.to_string())?;
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body],
+        ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
+        Ok(())
+    })();
+    match result {
+        Ok(()) => { conn.execute_batch("COMMIT").map_err(|e| e.to_string())?; }
+        Err(e) => { let _ = conn.execute_batch("ROLLBACK"); return Err(e); }
+    }
 
     Ok(())
 }
@@ -531,9 +539,8 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     if filters.orphans.unwrap_or(false) {
         // No outgoing links
         conditions.push("(outgoing_links_json IS NULL OR outgoing_links_json = '[]')".to_string());
-        // No incoming links — use JSON-quoted match to avoid substring false positives
-        // Links stored as: ["note1","note2"] — match "\"name\"" for exact element
-        conditions.push("NOT EXISTS (SELECT 1 FROM note_meta AS other WHERE other.outgoing_links_json LIKE '%\"' || LOWER(note_meta.name) || '\"%' AND other.path != note_meta.path)".to_string());
+        // No incoming links — escape quotes in name for safe LIKE matching
+        conditions.push("NOT EXISTS (SELECT 1 FROM note_meta AS other WHERE other.outgoing_links_json LIKE '%\"' || REPLACE(REPLACE(LOWER(note_meta.name), '%', ''), '\"', '') || '\"%' AND other.path != note_meta.path)".to_string());
     }
 
     // Links-between filter: notes that link to BOTH X and Y
@@ -662,7 +669,7 @@ pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexSta
     };
     if needs_rebuild {
         let _ = std::fs::remove_file(&path);
-        let _ = std::fs::write(&version_path, current_version);
+        // Version file written AFTER successful rebuild (below)
     }
 
     let conn = init_db(&path)?;
@@ -683,6 +690,11 @@ pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexSta
     let state = app.state::<SearchState>();
     let mut db = state.db.lock().map_err(|e| e.to_string())?;
     *db = Some(conn);
+
+    // Write version file AFTER successful rebuild (crash-safe)
+    if needs_rebuild {
+        let _ = std::fs::write(&version_path, current_version);
+    }
 
     Ok(SearchIndexStats { note_count, index_size_bytes: index_size })
 }
@@ -1261,7 +1273,7 @@ pub fn constellation_search_link_counts(
     for links_json in &all_links {
         if let Ok(targets) = serde_json::from_str::<Vec<String>>(links_json) {
             for target in &targets {
-                if let Some(count) = counts.get_mut(target) {
+                if let Some(count) = counts.get_mut(&target.to_lowercase()) {
                     *count += 1;
                 }
             }
