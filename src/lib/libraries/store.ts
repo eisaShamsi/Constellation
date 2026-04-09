@@ -787,6 +787,7 @@ export interface ConstellationSearchRequest {
 		mentions?: string[];
 		orphans?: boolean;
 		links_between?: string[];
+		links_all?: string[];
 		library_names?: string[];
 		maturity?: string[];
 		path_prefix?: string;
@@ -944,6 +945,14 @@ export function parseSearchQuery(raw: string): ConstellationSearchRequest {
 		if (!filters.links_between) filters.links_between = [];
 		filters.links_between.push(match[1].toLowerCase());
 		filters.links_between.push(match[2].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Links all: "links all [[X]]" — both incoming and outgoing
+	const allLinksRe = /links?\s+all\s+\[\[([^\]]+)\]\]/gi;
+	while ((match = allLinksRe.exec(raw)) !== null) {
+		if (!filters.links_all) filters.links_all = [];
+		filters.links_all.push(match[1].toLowerCase());
 		freeText = freeText.replace(match[0], '').trim();
 	}
 

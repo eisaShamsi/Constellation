@@ -534,6 +534,7 @@
 	let lensCommunityProfiles = $state<CommunityProfile[]>([]);
 	let lensContradictions = $state<[string, string][]>([]);
 	let starVersion = $state(0);
+	let searchLinkCounts = $state(new Map<string, { incoming: number }>());
 	let maturityMap = $state(new Map<string, string>()); // path → maturity state (CE Phase 3)
 	let stageMap = $state(new Map<string, string>()); // path → stage (CE Phase 6)
 	// Star data is passed to StarView as plain arrays.
@@ -1424,7 +1425,14 @@
 		hasMultipleDisplays = await hasMultipleMonitors().catch(() => false);
 
 		// Initialize search engine (background, non-blocking)
-		initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
+		initSearchIndex().then(async () => {
+			searchEngineReady = true;
+			// Load link counts from search database for Search Hub dropdown
+			try {
+				const counts: Record<string, number> = await invoke('constellation_search_link_counts');
+				searchLinkCounts = new Map(Object.entries(counts).map(([k, v]) => [k, { incoming: v }]));
+			} catch {}
+		}).catch(() => {});
 
 		// Semantic search: ONNX engine lazy-loads on first search/embed call
 
@@ -3262,6 +3270,7 @@
 			<SearchHub
 				initialQuery={searchHubInitialQuery}
 				{allNotes}
+				linkCounts={searchLinkCounts}
 				onNoteClick={(path, name, libraryName, hubQuery) => {
 					const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
 					openNoteTab(path, libraryName, libraryColor, hubQuery || undefined);

@@ -277,6 +277,7 @@ pub fn run() {
             search::constellation_search_store_embedding,
             search::constellation_search_similar,
             search::constellation_search_universal,
+            search::constellation_search_link_counts,
             embeddings::constellation_init_embeddings,
             embeddings::constellation_embed_text,
             embeddings::constellation_embed_notes,

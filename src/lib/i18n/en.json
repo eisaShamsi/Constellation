@@ -429,6 +429,7 @@
         "mentions": "Mentions",
         "orphans": "Orphans",
         "linksBetween": "Links between",
+        "linksAll": "All links",
         "tag": "Tag",
         "property": "Property",
         "scope": "Library",

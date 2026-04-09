@@ -276,7 +276,10 @@
       "Bash(cargo doc:*)",
       "Bash(cargo metadata:*)",
       "Bash(grep -r \"pub fn builder\\\\|pub struct Session\\\\|pub fn commit_from_file\\\\|pub fn run\\\\|pub enum GraphOptimization\" target/debug/build/ort-*/out/bindings.rs)",
-      "Bash(npm remove:*)"
+      "Bash(npm remove:*)",
+      "Bash(sed -i 's/\"linksBetween\": \"Links between\"/\"linksBetween\": \"Links between\",\\\\n        \"linksAll\": \"All links\"/' en.json)",
+      "Bash(sed -i 's/\"linksBetween\": \"روابط بين\"/\"linksBetween\": \"روابط بين\",\\\\n        \"linksAll\": \"كل الروابط\"/' ar.json)",
+      "Bash(sed -i 's/\"linksBetween\": \"Links between\"/\"linksBetween\": \"Links between\",\\\\n        \"linksAll\": \"All links\"/' __TRACKED_VAR__.json)"
     ]
   }
 }

@@ -39,6 +39,7 @@ pub struct SearchFilters {
     pub mentions: Option<Vec<String>>,
     pub orphans: Option<bool>,
     pub links_between: Option<Vec<String>>,  // exactly 2 targets
+    pub links_all: Option<Vec<String>>,     // incoming + outgoing combined
     pub library_names: Option<Vec<String>>,
     pub maturity: Option<Vec<String>>,
     pub path_prefix: Option<String>,
@@ -483,29 +484,31 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
         }
     }
 
-    // Mutual filters: notes that link to X AND X links to them
+    // Mutual filters: notes that link to X AND X links back to them
     if let Some(targets) = &filters.mutual {
         for target in targets {
             let target_lower = target.to_lowercase();
             // Must link TO target
             conditions.push("outgoing_links_json LIKE '%\"' || ? || '\"%'".to_string());
             params_vec.push(Box::new(target_lower.clone()));
-            // AND target must link back (find target's outgoing links, filter to those)
+            // AND this note must be in target's outgoing links (X links back)
             let links: Option<String> = conn.query_row(
                 "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) = ?1",
                 params![target_lower],
                 |row| row.get(0),
             ).ok();
-            if let Some(links_json) = links {
-                if let Ok(back_targets) = serde_json::from_str::<Vec<String>>(&links_json) {
-                    if !back_targets.is_empty() {
-                        let placeholders: Vec<String> = back_targets.iter().map(|_| "LOWER(name) = ?".to_string()).collect();
-                        conditions.push(format!("({})", placeholders.join(" OR ")));
-                        for bt in &back_targets {
-                            params_vec.push(Box::new(bt.clone()));
-                        }
-                    }
+            let back_targets: Vec<String> = links
+                .and_then(|json| serde_json::from_str::<Vec<String>>(&json).ok())
+                .unwrap_or_default();
+            if !back_targets.is_empty() {
+                let placeholders: Vec<String> = back_targets.iter().map(|_| "LOWER(name) = ?".to_string()).collect();
+                conditions.push(format!("({})", placeholders.join(" OR ")));
+                for bt in &back_targets {
+                    params_vec.push(Box::new(bt.clone()));
                 }
+            } else {
+                // Target has no outgoing links → mutual is impossible → return nothing
+                conditions.push("0 = 1".to_string());
             }
         }
     }
@@ -541,6 +544,37 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
         }
     }
 
+    // Links-all filter: notes connected to X in either direction (incoming OR outgoing)
+    // Results get match_type "wikilink" with snippet indicating direction
+    if let Some(targets) = &filters.links_all {
+        for target in targets {
+            let target_lower = target.to_lowercase();
+            // Get X's outgoing links (notes X links to)
+            let outgoing: Vec<String> = conn.query_row(
+                "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) = ?1",
+                params![target_lower],
+                |row| row.get::<_, String>(0),
+            ).ok()
+            .and_then(|json| serde_json::from_str::<Vec<String>>(&json).ok())
+            .unwrap_or_default();
+
+            // Build: (links TO X) OR (X links to this note)
+            let mut sub_conditions: Vec<String> = Vec::new();
+            // Incoming: notes that link to X
+            sub_conditions.push("outgoing_links_json LIKE '%\"' || ? || '\"%'".to_string());
+            params_vec.push(Box::new(target_lower.clone()));
+            // Outgoing: notes that X links to
+            for out_name in &outgoing {
+                sub_conditions.push("LOWER(name) = ?".to_string());
+                params_vec.push(Box::new(out_name.clone()));
+            }
+            conditions.push(format!("({})", sub_conditions.join(" OR ")));
+            // Exclude X itself
+            conditions.push("LOWER(name) != ?".to_string());
+            params_vec.push(Box::new(target_lower));
+        }
+    }
+
     // Library filter
     if let Some(libs) = &filters.library_names {
         if !libs.is_empty() {
@@ -568,7 +602,8 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     } else if filters.wikilinks_to.as_ref().map_or(false, |w| !w.is_empty())
            || filters.wikilinks_from.as_ref().map_or(false, |w| !w.is_empty())
            || filters.mutual.as_ref().map_or(false, |w| !w.is_empty())
-           || filters.links_between.as_ref().map_or(false, |w| !w.is_empty()) {
+           || filters.links_between.as_ref().map_or(false, |w| !w.is_empty())
+           || filters.links_all.as_ref().map_or(false, |w| !w.is_empty()) {
         "wikilink"
     } else if filters.mentions.as_ref().map_or(false, |m| !m.is_empty()) {
         "content"
@@ -709,6 +744,49 @@ fn execute_search(conn: &Connection, request: &SearchRequest) -> Result<Vec<Sear
         "structured" => {
             if let Some(filters) = &request.filters {
                 results = structured_search(conn, filters, limit);
+                // Post-process links_all: tag each result with direction (↑ incoming / ↓ outgoing)
+                if let Some(targets) = &filters.links_all {
+                    for target in targets {
+                        let target_lower = target.to_lowercase();
+                        let outgoing: Vec<String> = conn.query_row(
+                            "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) = ?1",
+                            params![target_lower],
+                            |row| row.get::<_, String>(0),
+                        ).ok()
+                        .and_then(|json| serde_json::from_str::<Vec<String>>(&json).ok())
+                        .unwrap_or_default();
+                        let outgoing_set: std::collections::HashSet<String> = outgoing.into_iter().collect();
+
+                        for r in results.iter_mut() {
+                            let r_lower = r.name.to_lowercase();
+                            let is_outgoing = outgoing_set.contains(&r_lower);
+                            // Check if this result links TO target (incoming to target)
+                            let is_incoming = r.snippet.as_ref()
+                                .and_then(|s| serde_json::from_str::<Vec<String>>(s).ok())
+                                .map(|links| links.contains(&target_lower))
+                                .unwrap_or(false);
+                            // If we can't tell from snippet, check outgoing_links_json
+                            let is_incoming = is_incoming || {
+                                conn.query_row(
+                                    "SELECT outgoing_links_json FROM note_meta WHERE path = ?1",
+                                    params![r.path],
+                                    |row| row.get::<_, String>(0),
+                                ).ok()
+                                .and_then(|json| serde_json::from_str::<Vec<String>>(&json).ok())
+                                .map(|links| links.contains(&target_lower))
+                                .unwrap_or(false)
+                            };
+
+                            r.snippet = Some(if is_incoming && is_outgoing {
+                                "↑↓".to_string()
+                            } else if is_incoming {
+                                "↑".to_string()
+                            } else {
+                                "↓".to_string()
+                            });
+                        }
+                    }
+                }
             }
         }
         "semantic" => {
@@ -1147,4 +1225,48 @@ fn search_wikilinks(conn: &Connection, query: &str, limit: u32) -> Vec<SearchRes
         })
     }).ok();
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
+}
+
+/// Return incoming link counts for all notes from the search database.
+#[tauri::command]
+pub fn constellation_search_link_counts(
+    app: tauri::AppHandle,
+) -> Result<std::collections::HashMap<String, u32>, String> {
+    let state = app.state::<SearchState>();
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = match db_guard.as_ref() {
+        Some(c) => c,
+        None => return Ok(std::collections::HashMap::new()),
+    };
+
+    // Initialize counts for all notes
+    let mut counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    let mut name_stmt = conn.prepare("SELECT LOWER(name) FROM note_meta")
+        .map_err(|e| e.to_string())?;
+    let names: Vec<String> = name_stmt.query_map([], |row| row.get(0))
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+    for name in &names {
+        counts.insert(name.clone(), 0);
+    }
+
+    // Scan all outgoing links and count targets
+    let mut links_stmt = conn.prepare("SELECT outgoing_links_json FROM note_meta")
+        .map_err(|e| e.to_string())?;
+    let all_links: Vec<String> = links_stmt.query_map([], |row| row.get(0))
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+    for links_json in &all_links {
+        if let Ok(targets) = serde_json::from_str::<Vec<String>>(links_json) {
+            for target in &targets {
+                if let Some(count) = counts.get_mut(target) {
+                    *count += 1;
+                }
+            }
+        }
+    }
+
+    Ok(counts)
 }

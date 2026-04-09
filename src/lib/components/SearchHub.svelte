@@ -11,6 +11,7 @@
 	let {
 		initialQuery = '',
 		allNotes = [] as { name: string; path: string; libraryName: string }[],
+		linkCounts = new Map<string, { incoming: number }>(),
 		onNoteClick = (_path: string, _name: string, _libraryName: string, _query: string) => {},
 		onClose = () => {},
 		onResults = (_matchIds: Set<string>) => {},
@@ -42,13 +43,13 @@
 	const categoryIcons: Record<string, string> = {
 		titles: 'T', contents: 'C', tags: '#', properties: 'P', wikilinks: 'W', semantic: 'S',
 		// match_type values from advanced/structured search
-		title: 'T', content: 'C', tag: '#', property: 'P', wikilink: 'W', structured: '?'
+		title: 'T', content: 'C', tag: '#', property: 'P', wikilink: 'W', structured: '0\u0336'
 	};
 
 	const categoryColors: Record<string, string> = {
 		titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed',
 		// match_type values from advanced/structured search
-		title: '#3b82f6', content: '#16a34a', tag: '#f472b6', property: '#f59e0b', wikilink: '#60a5fa', structured: '#94a3b8'
+		title: '#3b82f6', content: '#16a34a', tag: '#f472b6', property: '#f59e0b', wikilink: '#60a5fa', structured: '#ef4444'
 	};
 
 	const syntaxChips = [
@@ -58,6 +59,7 @@
 		{ label: 'mentions', syntax: 'mentions [[' },
 		{ label: 'orphans', syntax: 'orphans' },
 		{ label: 'linksBetween', syntax: 'links between [[' },
+		{ label: 'linksAll', syntax: 'links all [[' },
 		{ label: 'tag', syntax: '#' },
 		{ label: 'property', syntax: 'key=value' },
 		{ label: 'scope', syntax: 'in:' },
@@ -65,7 +67,17 @@
 
 	/** Detect if query uses advanced syntax */
 	function hasAdvancedSyntax(q: string): boolean {
-		return /[#=]|links?\s+(to|from|between)|mutual\s|mentions?\s|orphans?|\bin:/i.test(q);
+		return /[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:/i.test(q);
+	}
+
+	/** Detect link direction from query for arrow display */
+	function queryDirection(q: string): '↑' | '↓' | '↑↓' | null {
+		if (/links?\s+all\s/i.test(q)) return null; // per-result from Rust
+		if (/mutual\s/i.test(q)) return '↑↓';
+		if (/links?\s+to\s/i.test(q)) return '↑';
+		if (/links?\s+from\s/i.test(q)) return '↓';
+		if (/links?\s+between\s/i.test(q)) return '↑';
+		return null;
 	}
 
 	let lastAppliedInitial = '';
@@ -101,7 +113,12 @@
 						// Single advanced query: flat list
 						advancedGroups = [];
 						const req = parseSearchQuery(q);
-						filteredResults = await constellationSearch(req);
+						const raw = await constellationSearch(req);
+					filteredResults = raw.sort((a, b) => {
+						const sd = b.score - a.score;
+						if (Math.abs(sd) > 0.001) return sd;
+						return (linkCounts.get(b.name.toLowerCase())?.incoming ?? 0) - (linkCounts.get(a.name.toLowerCase())?.incoming ?? 0);
+					});
 					}
 				} else {
 					// Universal mode: search everywhere, categorize results
@@ -137,11 +154,12 @@
 		showHistory = false;
 
 		// Wikilink autocomplete detection
-		const wikiMatch = query.match(/(?:links?\s+(?:to|from|between)|mutual|mentions?)\s+(?:.*\[\[(?:[^\]]+\]\]\s+and\s+)?)?\[\[([^\]]*)$/i);
+		const wikiMatch = query.match(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?)\s+(?:.*\[\[(?:[^\]]+\]\]\s+and\s+)?)?\[\[([^\]]*)$/i);
 		if (wikiMatch) {
 			const partial = wikiMatch[1].toLowerCase();
 			wikiAuto = allNotes
 				.filter(n => !partial || n.name.toLowerCase().includes(partial))
+				.sort((a, b) => (linkCounts.get(b.name.toLowerCase())?.incoming ?? 0) - (linkCounts.get(a.name.toLowerCase())?.incoming ?? 0))
 				.slice(0, 20);
 			wikiAutoIdx = -1;
 			return; // Don't trigger search while composing wikilink
@@ -212,7 +230,7 @@
 		requestAnimationFrame(() => {
 			searchInput?.focus();
 			if (syntax.endsWith('[[')) {
-				wikiAuto = allNotes.slice(0, 20);
+				wikiAuto = [...allNotes].sort((a, b) => (linkCounts.get(b.name.toLowerCase())?.incoming ?? 0) - (linkCounts.get(a.name.toLowerCase())?.incoming ?? 0)).slice(0, 20);
 				wikiAutoIdx = -1;
 			} else if (syntax === 'orphans') {
 				triggerSearch(query);
@@ -306,23 +324,44 @@
 
 <div class="sh-root" dir={$dir}>
 	<!-- Header bar with search -->
-	<div class="sh-header">
-		<svg class="sh-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-		<input bind:this={searchInput} class="sh-input" type="text" dir="auto"
-			placeholder={$t('sidebar.searchPlaceholder')}
-			value={query} oninput={handleInput} onkeydown={handleKeydown}
-			onfocus={() => { if (!query) showHistory = true; }}
-			onblur={() => setTimeout(() => { showHistory = false; }, 200)} />
-		{#if query}
-			<button class="sh-clear" onclick={() => { query = ''; response = null; filteredResults = []; isAdvancedMode = false; }}>×</button>
+	<div class="sh-header-wrap">
+		<div class="sh-header">
+			<svg class="sh-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+			<input bind:this={searchInput} class="sh-input" type="text" dir="auto"
+				placeholder={$t('sidebar.searchPlaceholder')}
+				value={query} oninput={handleInput} onkeydown={handleKeydown}
+				onfocus={() => { if (!query) showHistory = true; }}
+				onblur={() => setTimeout(() => { showHistory = false; }, 200)} />
+			{#if query}
+				<button class="sh-clear" onclick={() => { query = ''; response = null; filteredResults = []; isAdvancedMode = false; }}>×</button>
+			{/if}
+			<button class="sh-chips-toggle" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers')}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+			</button>
+			{#if totalResults() > 0}
+				<span class="sh-total">{totalResults()}</span>
+			{/if}
+			<button class="sh-close" onclick={onClose}>×</button>
+		</div>
+
+		<!-- Wikilink autocomplete dropdown (absolute overlay below header) -->
+		{#if wikiAuto.length > 0}
+			<div class="sh-wiki-drop">
+				{#each wikiAuto as note, idx}
+					{@const counts = linkCounts.get(note.name.toLowerCase())}
+					{@const incoming = counts?.incoming ?? 0}
+					<button class="sh-wa-item" class:selected={idx === wikiAutoIdx}
+						onclick={() => insertWikiName(note.name)} dir={detectDir(note.name)}>
+						<span class="sh-wa-name">{note.name}</span>
+						<span class="sh-wa-links" class:sh-wa-zero={incoming === 0}>
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+							{incoming}
+						</span>
+						<span class="sh-wa-lib">{note.libraryName}</span>
+					</button>
+				{/each}
+			</div>
 		{/if}
-		<button class="sh-chips-toggle" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers')}>
-			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-		</button>
-		{#if totalResults() > 0}
-			<span class="sh-total">{totalResults()}</span>
-		{/if}
-		<button class="sh-close" onclick={onClose}>×</button>
 	</div>
 
 	<!-- Syntax helper chips -->
@@ -331,19 +370,6 @@
 			{#each syntaxChips as chip}
 				<button class="sh-chip" onclick={() => insertSyntax(chip.syntax)}>
 					{$t(`searchHub.${chip.label}`)}
-				</button>
-			{/each}
-		</div>
-	{/if}
-
-	<!-- Wikilink autocomplete dropdown -->
-	{#if wikiAuto.length > 0}
-		<div class="sh-wiki-drop">
-			{#each wikiAuto as note, idx}
-				<button class="sh-wa-item" class:selected={idx === wikiAutoIdx}
-					onclick={() => insertWikiName(note.name)}>
-					<span class="sh-wa-name" dir="auto">{note.name}</span>
-					<span class="sh-wa-lib">{note.libraryName}</span>
 				</button>
 			{/each}
 		</div>
@@ -404,15 +430,31 @@
 				<!-- Advanced mode: single query, flat result list -->
 				<div class="sh-section-label">{filteredResults.length} {$t('sidebar.results')}</div>
 				{#each filteredResults as r, idx}
+					{@const rustDir = r.snippet === '↑' || r.snippet === '↓' || r.snippet === '↑↓' ? r.snippet : null}
+					{@const dir = rustDir ?? queryDirection(query)}
+					{@const rCounts = linkCounts.get(r.name.toLowerCase())}
+					{@const rIncoming = rCounts?.incoming ?? 0}
 					<button class="sh-item" style="padding-inline-start:16px" class:sh-item-selected={idx === selectedResultIdx} onclick={() => handleResultClick(r)} dir={detectDir(r.name)}>
 						<div class="sh-item-top">
+							{#if dir}
+								{#if dir === '↑' || dir === '↑↓'}
+									<span class="sh-dir-arrow sh-dir-in" title="Incoming">▲</span>
+								{/if}
+								{#if dir === '↓' || dir === '↑↓'}
+									<span class="sh-dir-arrow sh-dir-out" title="Outgoing">▼</span>
+								{/if}
+							{/if}
 							{#if r.match_type}
 								<span class="sh-cat-badge" style:background={categoryColors[r.match_type] ?? '#94a3b8'}>{categoryIcons[r.match_type] ?? '?'}</span>
 							{/if}
 							<span class="sh-item-name">{@html highlightInText(r.name)}</span>
+							<span class="sh-wa-links" class:sh-wa-zero={rIncoming === 0}>
+								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+								{rIncoming}
+							</span>
 							<span class="sh-item-lib">{r.library_name}</span>
 						</div>
-						{#if r.snippet}
+						{#if r.snippet && !rustDir}
 							<div class="sh-item-snippet">{@html highlightInText(r.snippet)}</div>
 						{/if}
 					</button>
@@ -478,9 +520,12 @@
 	}
 
 	/* Header */
+	.sh-header-wrap {
+		position: relative; flex-shrink: 0; z-index: 10; /* anchor for absolute dropdown */
+	}
 	.sh-header {
 		display: flex; align-items: center; gap: 8px; padding: 8px 16px;
-		border-bottom: 1px solid var(--border); flex-shrink: 0;
+		border-bottom: 1px solid var(--border);
 	}
 	.sh-icon { color: var(--text-muted); flex-shrink: 0; }
 	.sh-input {
@@ -519,8 +564,12 @@
 
 	/* Wikilink autocomplete */
 	.sh-wiki-drop {
-		max-height: 250px; overflow-y: auto; border-bottom: 1px solid var(--border);
-		background: var(--background-secondary, var(--bg));
+		position: absolute; top: 100%; left: 16px; right: 16px; z-index: 200;
+		max-height: 300px; overflow-y: auto;
+		border: 1px solid var(--interactive-accent); border-radius: 8px;
+		background: var(--background-primary, #fff);
+		box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+		margin-top: 4px;
 	}
 	.sh-wa-item {
 		display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 16px;
@@ -529,6 +578,12 @@
 	}
 	.sh-wa-item:hover, .sh-wa-item.selected { background: var(--bg-hover); }
 	.sh-wa-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.sh-wa-links {
+		display: flex; align-items: center; gap: 2px; flex-shrink: 0;
+		font-size: 0.65rem; color: var(--text-muted);
+		background: var(--bg); padding: 1px 5px; border-radius: 8px;
+	}
+	.sh-wa-links.sh-wa-zero { color: #ef4444; background: color-mix(in srgb, #ef4444 10%, transparent); }
 	.sh-wa-lib { font-size: 0.65rem; color: var(--text-muted); flex-shrink: 0; }
 
 	/* History dropdown */
@@ -590,7 +645,10 @@
 		cursor: pointer; text-align: start;
 	}
 	.sh-item:hover { background: var(--bg-hover); }
-	.sh-item.sh-item-selected { background: var(--accent-bg); outline: 1px solid var(--interactive-accent); outline-offset: -1px; }
+	.sh-dir-arrow { font-size: 1rem; font-weight: 900; flex-shrink: 0; line-height: 1; }
+	.sh-dir-in { color: #16a34a; } /* green = incoming (notes link TO X) */
+	.sh-dir-out { color: #ef4444; } /* red = outgoing (X links TO this note) */
+	.sh-item.sh-item-selected { background: transparent; outline: 2px solid var(--interactive-accent); outline-offset: -2px; border-radius: 4px; }
 	.sh-item-top { display: flex; align-items: center; gap: 6px; }
 	.sh-item-name { font-size: 0.82rem; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sh-item-lib { font-size: 0.68rem; color: var(--accent); flex-shrink: 0; }
