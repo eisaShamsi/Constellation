@@ -10,8 +10,8 @@
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import type { FrontmatterProperty } from '$lib/libraries/store';
 	import PropertyEditor from './PropertyEditor.svelte';
-	import { EditorView, keymap, drawSelection } from '@codemirror/view';
-	import { EditorState, Compartment, Prec } from '@codemirror/state';
+	import { EditorView, keymap, drawSelection, Decoration, type DecorationSet } from '@codemirror/view';
+	import { EditorState, Compartment, Prec, StateField, StateEffect, RangeSetBuilder } from '@codemirror/state';
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 	import { tags } from '@lezer/highlight';
@@ -48,6 +48,30 @@
 
 	const IDLE_SAVE_INTERVAL = 30_000; /* ms — periodic background save when idle */
 
+	// Multi-color highlight decorations
+	const setColorHighlights = StateEffect.define<{ ranges: { from: number; to: number; cssClass: string }[] }>();
+	const colorHighlightField = StateField.define<DecorationSet>({
+		create() { return Decoration.none; },
+		update(decos, tr) {
+			for (const e of tr.effects) {
+				if (e.is(setColorHighlights)) {
+					const builder = new RangeSetBuilder<Decoration>();
+					const sorted = [...e.value.ranges].sort((a, b) => a.from - b.from);
+					for (const r of sorted) {
+						builder.add(r.from, r.to, Decoration.mark({ class: r.cssClass }));
+					}
+					return builder.finish();
+				}
+			}
+			return decos.map(tr.changes);
+		},
+		provide: f => EditorView.decorations.from(f),
+	});
+
+	const HIGHLIGHT_TYPE_CLASSES: Record<string, string> = {
+		title: 'cm-hl-title', content: 'cm-hl-content', tag: 'cm-hl-tag',
+		property: 'cm-hl-property', wikilink: 'cm-hl-wikilink', semantic: 'cm-hl-semantic',
+	};
 
 	let {
 		value = '',
@@ -316,6 +340,7 @@
 				libraryPathField, notePathField, attachmentFolderField, /* image path resolution */
 				closeBrackets(),
 				search({ top: true }),
+				colorHighlightField,
 				autocompletion({ override: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
 				// Prec.highest: runs before @codemirror/lang-markdown's built-in
 				// blockquote-continue keymap (which auto-adds "> " on every Enter).
@@ -383,6 +408,13 @@
 					},
 					/* Hide search panel — we only want the highlights, not the UI */
 					'.cm-search.cm-panel': { display: 'none' },
+					/* Multi-color search match highlights per type */
+					'.cm-hl-title': { backgroundColor: 'color-mix(in srgb, #3b82f6 25%, transparent)', outline: '1px solid #3b82f6', borderRadius: '2px' },
+					'.cm-hl-content': { backgroundColor: 'color-mix(in srgb, #16a34a 25%, transparent)', outline: '1px solid #16a34a', borderRadius: '2px' },
+					'.cm-hl-tag': { backgroundColor: 'color-mix(in srgb, #f472b6 25%, transparent)', outline: '1px solid #f472b6', borderRadius: '2px' },
+					'.cm-hl-property': { backgroundColor: 'color-mix(in srgb, #f59e0b 25%, transparent)', outline: '1px solid #f59e0b', borderRadius: '2px' },
+					'.cm-hl-wikilink': { backgroundColor: 'color-mix(in srgb, #60a5fa 25%, transparent)', outline: '1px solid #60a5fa', borderRadius: '2px' },
+					'.cm-hl-semantic': { backgroundColor: 'color-mix(in srgb, #7c3aed 25%, transparent)', outline: '1px solid #7c3aed', borderRadius: '2px' },
 				}),
 			],
 		});
@@ -432,7 +464,45 @@
 					}
 				}, 50);
 			}, 300);
-		}
+
+				// Multi-color decorations: scan doc and classify each match
+				setTimeout(() => {
+					if (!view) return;
+					const doc = view.state.doc.toString();
+					const re = new RegExp(pattern, 'gi');
+					const ranges: { from: number; to: number; cssClass: string }[] = [];
+					let m;
+					// Find YAML frontmatter boundary
+					let fmEnd = 0;
+					if (doc.startsWith('---')) {
+						const idx = doc.indexOf('---', 3);
+						if (idx > 0) fmEnd = idx + 3;
+					}
+					// First heading end (title area)
+					const firstHeading = doc.match(/^#{1,6}\s+.+$/m);
+					const titleEnd = firstHeading ? (doc.indexOf(firstHeading[0]) + firstHeading[0].length) : 0;
+
+					while ((m = re.exec(doc)) !== null) {
+						const pos = m.index;
+						const line = doc.substring(Math.max(0, doc.lastIndexOf('\n', pos)), doc.indexOf('\n', pos + 1) || doc.length);
+						let cssClass = 'cm-hl-content'; // default: green
+						if (pos <= titleEnd && titleEnd > 0) {
+							cssClass = 'cm-hl-title'; // blue: in title
+						} else if (pos < fmEnd) {
+							if (line.includes('#')) cssClass = 'cm-hl-tag'; // pink: tag in frontmatter
+							else cssClass = 'cm-hl-property'; // amber: property in frontmatter
+						} else if (/\[\[.*\]\]/.test(line)) {
+							cssClass = 'cm-hl-wikilink'; // light blue: in wikilink line
+						} else if (/#\S/.test(line)) {
+							cssClass = 'cm-hl-tag'; // pink: inline tag
+						}
+						ranges.push({ from: pos, to: pos + m[0].length, cssClass });
+					}
+					if (ranges.length > 0) {
+						view.dispatch({ effects: setColorHighlights.of({ ranges }) });
+					}
+				}, 500);
+			}
 
 		/* Checkbox toggle — capture phase, O(1) via posAtCoords */
 		checkboxHandler = ((event: MouseEvent) => {

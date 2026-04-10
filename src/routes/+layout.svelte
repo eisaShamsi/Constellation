@@ -470,6 +470,7 @@
 	let mapReturnPending = $state(false); // show "Return to Map" button on note tab
 	let orgChartReturnPending = $state(false); // show "Return to OrgChart" button on note tab
 	let lensReturnPending = $state(false);
+	let starViewReturnPending = $state(false);
 	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 	let mapFocusNode = $state<any>(null); // current MapNode being viewed
 
@@ -2242,7 +2243,7 @@
 		await openNoteTab(path, libraryName, libraryColor);
 	}
 
-	async function handleStarNodeClick(path: string, libraryName: string) {
+	async function handleStarNodeClick(path: string, libraryName: string, highlightTerm?: string) {
 		const lib = $libraries.find(v => v.name === libraryName);
 		const color = libraryColorMap[libraryName] ?? '#7c3aed';
 
@@ -2260,8 +2261,9 @@
 
 		// No second screen — open note in main, THEN exit Sky View so the tab
 		// has a path before the new-tab guard renders an empty screen.
-		await openNoteTab(path, libraryName, color);
+		await openNoteTab(path, libraryName, color, highlightTerm);
 		showStarView = false;
+		if (highlightTerm) starViewReturnPending = true;
 	}
 
 	function handleTagClick(tag: string) {
@@ -3129,6 +3131,12 @@
 					{$t('searchHub.title')}
 				</button>
 			{/if}
+			{#if starViewReturnPending}
+				<button class="index-return-btn" onclick={() => { showStarView = true; starViewReturnPending = false; showSearchHub = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('layout.starViewTitle') || 'Sky View'}
+				</button>
+			{/if}
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
 				{#if canScrollStart}
@@ -3412,6 +3420,7 @@
 					skyViewSettings={$appSettings.skyView}
 					{libraryColorMap}
 					searchMatchIds={searchHubMatchIds}
+					{allNotes}
 				/>
 				<!-- WiW Overlay -->
 				{#if showWiW && wiwFilteredNodes.length > 0}

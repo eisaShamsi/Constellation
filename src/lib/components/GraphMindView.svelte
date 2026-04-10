@@ -12,9 +12,11 @@
 	 *   - Simulation state (owned by forceWorker)
 	 */
 	import { onMount, onDestroy } from 'svelte';
-	import { t, isRTL as isRTLStore } from '$lib/i18n';
+	import { t, dir, isRTL as isRTLStore } from '$lib/i18n';
 	import { GraphEngine, type EngineConfig, type LayoutMode } from '$lib/graph/graphEngine';
 	import type { StarNode, StarLink } from '$lib/libraries/store';
+	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
+	import { detectDir } from '$lib/utils';
 	import { computeSemanticLinks, type EmbeddingProgress } from '$lib/graph/semanticEngine';
 	import { detectClusters, type ClusterResult } from '$lib/graph/clusterEngine';
 	import { invoke } from '@tauri-apps/api/core';
@@ -42,7 +44,7 @@
 	let {
 		nodes = [] as StarNode[],
 		links = [] as StarLink[],
-		onNodeClick = undefined as ((path: string, libraryName: string) => void) | undefined,
+		onNodeClick = undefined as ((path: string, libraryName: string, highlightTerm?: string) => void) | undefined,
 		onNodeHover = undefined as ((node: { name: string; path: string; libraryName: string } | null) => void) | undefined,
 		activeNodeId = '',
 		highlightPath = null as string | string[] | null,
@@ -50,10 +52,11 @@
 		skyViewSettings,
 		libraryColorMap = {} as Record<string, string>,
 		searchMatchIds = null as Set<string> | null,
+		allNotes = [] as {name: string; path: string; libraryName: string}[],
 	}: {
 		nodes: StarNode[];
 		links: StarLink[];
-		onNodeClick?: (path: string, libraryName: string) => void;
+		onNodeClick?: (path: string, libraryName: string, highlightTerm?: string) => void;
 		onNodeHover?: (node: { name: string; path: string; libraryName: string } | null) => void;
 		activeNodeId?: string;
 		highlightPath?: string | string[] | null;
@@ -63,6 +66,7 @@
 		lensCentrality?: Map<string, number> | null;
 		lensCommunityAssignments?: Map<string, number> | null;
 		searchMatchIds?: Set<string> | null;
+		allNotes?: {name: string; path: string; libraryName: string}[];
 	} = $props();
 
 	// ─── Layer 1 state: UI only ─────────────────────────────
@@ -70,6 +74,11 @@
 	let settingsTab: 'appearance' | 'physics' | 'intelligence' = $state('appearance');
 	let searchVisible = $state(false);
 	let searchQuery = $state('');
+	let showSearchHistory = $state(false);
+	let searchHistoryItems = $state(readSearchHistory());
+	let showChips = $state(false);
+	let wikiAuto = $state<{name: string; path: string; libraryName: string}[]>([]);
+	let wikiAutoIdx = $state(-1);
 	let hoveredName = $state<string | null>(null);
 	let nodeCount = $state(0);
 	let edgeCount = $state(0);
@@ -316,7 +325,7 @@
 	// Context menu actions
 	function ctxOpen() {
 		if (!contextMenu) return;
-		onNodeClick?.(contextMenu.node.path, contextMenu.node.libraryName);
+		onNodeClick?.(contextMenu.node.path, contextMenu.node.libraryName, searchVisible && searchQuery ? searchQuery : undefined);
 		contextMenu = null;
 	}
 	function ctxFocus() {
@@ -335,6 +344,72 @@
 		contextMenu = null;
 	}
 
+	// ─── Search bar helpers ─────────────────────────────────
+	const syntaxChips = [
+		{ label: 'linksTo', syntax: 'links to [[' },
+		{ label: 'linksFrom', syntax: 'links from [[' },
+		{ label: 'mutual', syntax: 'mutual [[' },
+		{ label: 'mentions', syntax: 'mentions [[' },
+		{ label: 'orphans', syntax: 'orphans' },
+		{ label: 'linksBetween', syntax: 'links between [[' },
+		{ label: 'linksAll', syntax: 'links all [[' },
+		{ label: 'tag', syntax: '#' },
+		{ label: 'property', syntax: 'key=value' },
+		{ label: 'scope', syntax: 'in:' },
+	];
+
+	function handleSearchInput(e: Event) {
+		searchQuery = (e.target as HTMLInputElement).value;
+		showSearchHistory = false;
+		// Wikilink autocomplete
+		const wikiMatch = searchQuery.match(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?)\s+(?:.*\[\[(?:[^\]]+\]\]\s+and\s+)?)?\[\[([^\]]*)$/i);
+		if (wikiMatch) {
+			const partial = wikiMatch[1].toLowerCase();
+			wikiAuto = allNotes.filter(n => !partial || n.name.toLowerCase().includes(partial)).slice(0, 20);
+			wikiAutoIdx = -1;
+			return;
+		}
+		wikiAuto = [];
+	}
+
+	function handleSearchKeydown(e: KeyboardEvent) {
+		if (wikiAuto.length > 0) {
+			if (e.key === 'ArrowDown') { e.preventDefault(); wikiAutoIdx = Math.min(wikiAutoIdx + 1, wikiAuto.length - 1); }
+			else if (e.key === 'ArrowUp') { e.preventDefault(); wikiAutoIdx = Math.max(wikiAutoIdx - 1, 0); }
+			else if (e.key === 'Enter') { e.preventDefault(); insertWikiName(wikiAuto[Math.max(wikiAutoIdx, 0)].name); }
+			else if (e.key === 'Escape') { e.preventDefault(); wikiAuto = []; }
+			return;
+		}
+		if (e.key === 'Escape') { searchVisible = false; searchQuery = ''; }
+	}
+
+	function insertWikiName(name: string) {
+		searchQuery = searchQuery.replace(/\[\[[^\]]*$/, `[[${name}]]`);
+		wikiAuto = [];
+		wikiAutoIdx = -1;
+	}
+
+	function insertSyntax(syntax: string) {
+		searchQuery = searchQuery ? searchQuery + ' ' + syntax : syntax;
+		showChips = false;
+		if (syntax.endsWith('[[')) {
+			wikiAuto = allNotes.slice(0, 20);
+			wikiAutoIdx = -1;
+		}
+	}
+
+	function selectHistoryItem(q: string) {
+		searchQuery = q;
+		showSearchHistory = false;
+		searchHistoryItems = readSearchHistory();
+	}
+
+	function clearSearch() {
+		searchQuery = '';
+		searchMatches = [];
+		wikiAuto = [];
+	}
+
 	// Search → engine (one-way) + async hybrid search
 	let prevSearch = '';
 	let searchDebounce: ReturnType<typeof setTimeout>;
@@ -344,20 +419,45 @@
 		if (q !== prevSearch) {
 			prevSearch = q;
 			engine?.setSearch(q); // instant client-side name filter
-			if (!q.trim()) { searchMatches = []; }
+			if (!q.trim()) { searchMatches = []; engine?.clearSearchBadges(); }
+			else { setTimeout(() => engine?.renderSearchBadges(), 50); }
 			// Also fire advanced search for content/structured/semantic matches (async)
 			clearTimeout(searchDebounce);
 			if (q.trim().length >= 2) {
 				searchDebounce = setTimeout(async () => {
 					try {
-						const { constellationSearch, parseSearchQuery } = await import('$lib/libraries/store');
-						const req = parseSearchQuery(q);
-						req.limit = 50;
-						const results = await constellationSearch(req);
-						const matchedIds = new Set(results.map(r => r.name.toLowerCase()));
-						engine?.setSearchExtended(matchedIds);
-						searchMatches = results.map(r => ({ name: r.name, match_type: r.match_type, path: r.path, libraryName: r.library_name }));
-					} catch { /* search engine not ready, client-side only */ }
+						const { universalSearch } = await import('$lib/libraries/store');
+						const resp = await universalSearch(q, null, 0);
+						// Collect all match types per note from categorized response
+						const typeMap = new Map<string, Set<string>>();
+						const allIds = new Set<string>();
+						const categoryTypes: [string, string][] = [
+							['titles', 'title'], ['contents', 'content'], ['tags', 'tag'],
+							['properties', 'property'], ['wikilinks', 'wikilink'], ['semantic', 'semantic'],
+						];
+						const flatResults: { name: string; match_type: string; path: string; libraryName: string }[] = [];
+						for (const [cat, mt] of categoryTypes) {
+							const items = (resp as any)[cat] ?? [];
+							for (const r of items) {
+								const id = r.name.toLowerCase();
+								allIds.add(id);
+								if (!typeMap.has(id)) typeMap.set(id, new Set());
+								typeMap.get(id)!.add(mt);
+								if (!flatResults.find(f => f.path === r.path)) {
+									flatResults.push({ name: r.name, match_type: mt, path: r.path, libraryName: r.library_name });
+								}
+							}
+						}
+						// Pass multi-type map to engine
+						const multiTypes = new Map<string, string>();
+						// Engine expects Map<string, string> but we need Set<string>
+						// Use setSearchExtendedMulti instead
+						engine?.setSearchExtendedMulti(allIds, typeMap);
+						setTimeout(() => engine?.renderSearchBadges(), 100);
+						searchMatches = flatResults;
+						addSearchHistory(q);
+						searchHistoryItems = readSearchHistory();
+					} catch (e) { console.error('[SV Search]', e); }
 				}, 300);
 			} else {
 				searchMatches = [];
@@ -450,7 +550,7 @@
 				if (clickedNode && focusActive) {
 					breadcrumb = [...breadcrumb.filter(b => b.id !== clickedNode.id), { id: clickedNode.id, name: clickedNode.name }].slice(-8);
 				}
-				onNodeClick?.(path, lib);
+				onNodeClick?.(path, lib, searchVisible && searchQuery ? searchQuery : undefined);
 			},
 			onNodeHover: (node) => { hoveredName = node?.name ?? null; onNodeHover?.(node); },
 			onStatsReady: (nc, ec, mc) => { nodeCount = nc; edgeCount = ec; mocCount = mc; },
@@ -490,24 +590,62 @@
 			</button>
 			{#if searchVisible}
 				<div class="gm-search-wrap">
-					<input class="gm-search" type="text" dir="auto" placeholder={$t('graphView.controls.searchPlaceholder')}
-						bind:value={searchQuery} autofocus />
-					{#if searchMatches.length > 0}
-						<div class="gm-matches">
-							<div class="gm-matches-count">{searchMatches.length} matches</div>
-							{#each searchMatches.slice(0, 20) as m}
-								<button class="gm-match-item" onclick={() => onNodeClick?.(m.path, m.libraryName)}>
-									<span class="gm-match-badge" class:gm-badge-title={m.match_type === 'title'} class:gm-badge-content={m.match_type === 'content'} class:gm-badge-tag={m.match_type === 'tag'} class:gm-badge-property={m.match_type === 'property'} class:gm-badge-wikilink={m.match_type === 'wikilink'} class:gm-badge-semantic={m.match_type === 'semantic'}>
-										{m.match_type === 'tag' ? '#' : m.match_type === 'title' ? 'T' : m.match_type === 'content' ? 'C' : m.match_type === 'property' ? 'P' : m.match_type === 'wikilink' ? 'W' : m.match_type === 'semantic' ? 'S' : '?'}
-									</span>
-									<span class="gm-match-name" dir="auto">{m.name}</span>
-								</button>
+					<div class="gm-search-bar">
+						<input class="gm-search" type="text" dir="auto" placeholder={$t('graphView.controls.searchPlaceholder')}
+							value={searchQuery} oninput={handleSearchInput} onkeydown={handleSearchKeydown}
+							onfocus={() => { if (!searchQuery) showSearchHistory = true; }}
+							onblur={() => setTimeout(() => showSearchHistory = false, 200)}
+							autofocus />
+						{#if searchQuery}
+							<button class="gm-search-clear" onclick={clearSearch}>×</button>
+						{/if}
+						<button class="gm-search-chips-btn" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers')}>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+						</button>
+						{#if searchMatches.length > 0}
+							<span class="gm-search-count">{searchMatches.length}</span>
+						{/if}
+						<button class="gm-search-close" onclick={() => { searchVisible = false; searchQuery = ''; }}>×</button>
+					</div>
+
+					<!-- Syntax chips -->
+					{#if showChips}
+						<div class="gm-chips">
+							{#each syntaxChips as chip}
+								<button class="gm-chip" onclick={() => insertSyntax(chip.syntax)}>{$t(`searchHub.${chip.label}`)}</button>
 							{/each}
-							{#if searchMatches.length > 20}
-								<div class="gm-matches-more">+{searchMatches.length - 20} more</div>
-							{/if}
 						</div>
 					{/if}
+
+					<!-- Wikilink autocomplete -->
+					{#if wikiAuto.length > 0}
+						<div class="gm-wiki-drop">
+							{#each wikiAuto as note, idx}
+								<button class="gm-wa-item" class:selected={idx === wikiAutoIdx}
+									onclick={() => insertWikiName(note.name)} dir={detectDir(note.name)}>
+									<span class="gm-wa-name">{note.name}</span>
+									<span class="gm-wa-lib">{note.libraryName}</span>
+								</button>
+							{/each}
+						</div>
+					{/if}
+
+					<!-- Search history -->
+					{#if showSearchHistory && !searchQuery && searchHistoryItems.length > 0}
+						<div class="gm-history">
+							{#each searchHistoryItems.slice(0, 10) as entry}
+								<button class="gm-hist-item" onclick={() => selectHistoryItem(entry.query)}>
+									<span dir="auto">{entry.query}</span>
+									<span class="gm-hist-time">{relativeTime(entry.timestamp)}</span>
+								</button>
+							{/each}
+							<button class="gm-hist-clear" onclick={() => { clearSearchHistory(); searchHistoryItems = []; }}>
+								{$t('sidebar.clearHistory')}
+							</button>
+						</div>
+					{/if}
+
+					<!-- Results shown on canvas as badges+arrows, not in a list -->
 				</div>
 			{/if}
 		</div>
@@ -840,34 +978,74 @@
 		min-width: 200px;
 	}
 	.gm-search:focus { border-color: var(--interactive-accent); }
-	.gm-search-wrap { position: relative; }
-	.gm-matches {
-		position: absolute; top: 100%; left: 0; z-index: 50;
-		min-width: 280px; max-height: 300px; overflow-y: auto;
+	.gm-search-wrap { position: relative; min-width: 350px; }
+	.gm-search-bar {
+		display: flex; align-items: center; gap: 4px;
+		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
+		border-radius: 6px; padding: 0 6px;
+	}
+	.gm-search-bar .gm-search { border: none; flex: 1; min-width: 0; }
+	.gm-search-clear, .gm-search-close {
+		border: none; background: none; color: var(--text-muted); cursor: pointer;
+		font-size: 1rem; padding: 2px 4px; border-radius: 3px;
+	}
+	.gm-search-clear:hover, .gm-search-close:hover { background: var(--bg-hover); color: var(--text); }
+	.gm-search-chips-btn {
+		border: none; background: none; color: var(--text-faint); cursor: pointer;
+		padding: 2px; border-radius: 3px; display: flex; align-items: center;
+	}
+	.gm-search-chips-btn:hover, .gm-search-chips-btn.active { color: var(--interactive-accent); }
+	.gm-search-count {
+		font-size: 0.68rem; color: var(--interactive-accent); font-weight: 600;
+		background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+		padding: 1px 6px; border-radius: 8px; flex-shrink: 0;
+	}
+	/* Chips */
+	.gm-chips {
+		display: flex; flex-wrap: wrap; gap: 3px; padding: 4px 0;
+	}
+	.gm-chip {
+		padding: 2px 8px; border-radius: 10px; border: 1px solid var(--background-modifier-border);
+		background: var(--background-primary); color: var(--text-muted); font-size: 0.68rem;
+		cursor: pointer; font-family: inherit; white-space: nowrap;
+	}
+	.gm-chip:hover { background: var(--bg-hover); color: var(--text); border-color: var(--interactive-accent); }
+	/* Wiki autocomplete */
+	.gm-wiki-drop {
+		position: absolute; top: 100%; inset-inline: 0; z-index: 200;
+		max-height: 250px; overflow-y: auto; margin-top: 2px;
 		background: var(--background-primary); border: 1px solid var(--interactive-accent);
-		border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-		margin-top: 4px; padding: 4px;
+		border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); padding: 2px;
 	}
-	.gm-matches-count { padding: 4px 8px; font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-	.gm-match-item {
-		display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 8px;
-		border: none; background: none; border-radius: 4px; cursor: pointer;
-		font-family: inherit; text-align: start; color: var(--text);
+	.gm-wa-item {
+		display: flex; align-items: center; gap: 6px; width: 100%; padding: 3px 8px;
+		background: none; border: none; color: var(--text); font-family: inherit;
+		cursor: pointer; text-align: start; font-size: 0.78rem;
 	}
-	.gm-match-item:hover { background: var(--bg-hover); }
-	.gm-match-badge {
-		min-width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0;
-		font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
-		color: #fff; display: inline-block;
+	.gm-wa-item:hover, .gm-wa-item.selected { background: var(--bg-hover); }
+	.gm-wa-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.gm-wa-lib { font-size: 0.62rem; color: var(--text-muted); flex-shrink: 0; }
+	/* History */
+	.gm-history {
+		position: absolute; top: 100%; inset-inline: 0; z-index: 200;
+		max-height: 250px; overflow-y: auto; margin-top: 2px;
+		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px;
 	}
-	.gm-badge-title { background: #3b82f6; }
-	.gm-badge-content { background: #16a34a; }
-	.gm-badge-tag { background: #f472b6; }
-	.gm-badge-property { background: #f59e0b; }
-	.gm-badge-wikilink { background: #60a5fa; }
-	.gm-badge-semantic { background: #7c3aed; }
-	.gm-match-name { font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-	.gm-matches-more { padding: 4px 8px; font-size: 0.68rem; color: var(--text-faint); text-align: center; }
+	.gm-hist-item {
+		display: flex; align-items: center; gap: 4px; width: 100%; padding: 3px 8px;
+		background: none; border: none; color: var(--text); font-family: inherit;
+		cursor: pointer; text-align: start; font-size: 0.78rem;
+	}
+	.gm-hist-item:hover { background: var(--bg-hover); }
+	.gm-hist-item span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.gm-hist-time { font-size: 0.62rem; color: var(--text-faint); flex-shrink: 0; }
+	.gm-hist-clear {
+		display: block; width: 100%; padding: 2px 8px; background: none; border: none;
+		color: var(--text-faint); font-size: 0.65rem; cursor: pointer; text-align: start; font-family: inherit;
+	}
+	.gm-hist-clear:hover { text-decoration: underline; }
+	/* Match results shown on canvas via GraphEngine badges — no HTML panel needed */
 
 	/* Settings panel */
 	.gm-settings {

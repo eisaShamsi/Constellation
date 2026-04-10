@@ -141,6 +141,7 @@ export class GraphEngine {
 	private activeNodeIdx: number = -1;
 	private searchQuery: string = '';
 	private searchMatchSet: Set<number> = new Set();
+	private searchMatchTypes: Map<number, Set<string>> = new Map(); // index → set of match_types
 
 	// Highlight filter (from sidebar selection)
 	private highlightSet: Set<number> = new Set();
@@ -499,10 +500,13 @@ export class GraphEngine {
 	setSearch(query: string): void {
 		this.searchQuery = query.toLowerCase();
 		this.searchMatchSet.clear();
+		this.searchMatchTypes.clear();
+		this.clearSearchBadges();
 		if (this.searchQuery) {
 			for (let i = 0; i < this.nodes.length; i++) {
 				if (this.nodes[i].name.toLowerCase().includes(this.searchQuery)) {
 					this.searchMatchSet.add(i);
+					this.searchMatchTypes.set(i, new Set(['title']));
 				}
 			}
 		}
@@ -510,11 +514,193 @@ export class GraphEngine {
 	}
 
 	/** Add extended search matches from IPC hybrid search (content/semantic hits). */
-	setSearchExtended(matchedIds: Set<string>): void {
+	setSearchExtended(matchedIds: Set<string>, matchTypes?: Map<string, string>): void {
 		for (let i = 0; i < this.nodes.length; i++) {
 			if (matchedIds.has(this.nodes[i].id)) {
 				this.searchMatchSet.add(i);
+				if (matchTypes) {
+					const mt = matchTypes.get(this.nodes[i].id);
+					if (mt) {
+						const existing = this.searchMatchTypes.get(i);
+						if (existing) { existing.add(mt); } else { this.searchMatchTypes.set(i, new Set([mt])); }
+					}
+				}
 			}
+		}
+		// Stop force simulation so badges stay positioned
+		if (this.searchMatchSet.size > 0) {
+			this.worker?.postMessage({ type: 'stop' });
+		}
+		this.needsRedraw = true;
+	}
+
+	private readonly BADGE_COLORS: Record<string, number> = {
+		title: 0x3b82f6, content: 0x16a34a, tag: 0xf472b6,
+		property: 0xf59e0b, wikilink: 0x60a5fa, semantic: 0x7c3aed, structured: 0x94a3b8,
+	};
+	private readonly BADGE_CHARS: Record<string, string> = {
+		title: 'T', content: 'C', tag: '#', property: 'P', wikilink: 'W', semantic: 'S', structured: '?',
+	};
+
+	/** Badge overlay: one entry per node, with multiple badge+label pairs + name text. */
+	private badgeOverlays: { idx: number; arrowGfx: Graphics; nameLabel: Text; badges: { gfx: Graphics; label: Text; color: number }[] }[] = [];
+
+	/** Create badge objects (once). Positions updated in drawSearchBadges(). */
+	renderSearchBadges(): void {
+		this.clearSearchBadges();
+		if (!this.app || this.searchMatchSet.size === 0) return;
+		const dark = this.isDark;
+
+		for (const idx of this.searchMatchSet) {
+			const n = this.nodes[idx];
+			if (!n) continue;
+			const types = this.searchMatchTypes.get(idx) || new Set(['content']);
+
+			const arrowGfx = new Graphics();
+			this.app.stage.addChild(arrowGfx);
+
+			// Name label
+			const nameLabel = new Text({
+				text: n.name,
+				style: new TextStyle({ fontSize: 11, fill: dark ? '#e2e8f0' : '#1e293b', fontFamily: 'system-ui', fontWeight: '500' }),
+			});
+			nameLabel.anchor.set(0, 0.5);
+			this.app.stage.addChild(nameLabel);
+
+			const badges: { gfx: Graphics; label: Text; color: number }[] = [];
+			for (const mt of types) {
+				const color = this.BADGE_COLORS[mt] ?? 0x94a3b8;
+				const ch = this.BADGE_CHARS[mt] ?? '?';
+				const gfx = new Graphics();
+				this.app.stage.addChild(gfx);
+				const label = new Text({
+					text: ch,
+					style: new TextStyle({ fontSize: 10, fontWeight: 'bold', fill: '#ffffff', fontFamily: 'system-ui' }),
+				});
+				label.anchor.set(0.5, 0.5);
+				this.app.stage.addChild(label);
+				badges.push({ gfx, label, color });
+			}
+
+			this.badgeOverlays.push({ idx, arrowGfx, nameLabel, badges });
+		}
+		this.needsRedraw = true;
+	}
+
+	/** Reposition badges + name labels in the draw loop — follows nodes through pan/zoom/motion. */
+	private drawSearchBadges(w: number, h: number): void {
+		if (this.badgeOverlays.length === 0) return;
+		const is3D = this.isRotated();
+		const badgeSize = 14;
+		const gap = 1;
+
+		for (const b of this.badgeOverlays) {
+			const n = this.nodes[b.idx];
+			if (!n) {
+				b.arrowGfx.visible = false;
+				b.nameLabel.visible = false;
+				for (const bg of b.badges) { bg.gfx.visible = false; bg.label.visible = false; }
+				continue;
+			}
+
+			let sx: number, sy: number;
+			if (is3D) {
+				const p = this.project3D(n.x, n.y, n.z ?? 0, w, h);
+				sx = p.sx; sy = p.sy;
+			} else {
+				sx = n.x * this.viewScale + w / 2 + this.viewX;
+				sy = n.y * this.viewScale + h / 2 + this.viewY;
+			}
+
+			const r = Math.max((n.r ?? 4) * this.viewScale, 3);
+			const count = b.badges.length;
+			const stackHeight = count * (badgeSize + gap) - gap;
+
+			// Badges stacked vertically above the node
+			const topY = sy - r - stackHeight - 12;
+
+			for (let i = 0; i < count; i++) {
+				const bg = b.badges[i];
+				const bx = sx - badgeSize / 2;
+				const by = topY + i * (badgeSize + gap);
+				bg.gfx.clear();
+				bg.gfx.roundRect(bx, by, badgeSize, badgeSize, 3);
+				bg.gfx.fill({ color: bg.color, alpha: 0.95 });
+				bg.gfx.visible = true;
+				bg.label.position.set(bx + badgeSize / 2, by + badgeSize / 2);
+				bg.label.visible = true;
+			}
+
+			// Name label: to the right of the badge stack (or left in RTL)
+			const isRTL = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(n.name);
+			const nameMidY = topY + stackHeight / 2;
+			if (isRTL) {
+				b.nameLabel.anchor.set(1, 0.5);
+				b.nameLabel.position.set(sx - badgeSize / 2 - 4, nameMidY);
+			} else {
+				b.nameLabel.anchor.set(0, 0.5);
+				b.nameLabel.position.set(sx + badgeSize / 2 + 4, nameMidY);
+			}
+			b.nameLabel.visible = true;
+
+			// Black arrow from bottom of badge stack down to node
+			const arrowStartY = topY + stackHeight;
+			b.arrowGfx.clear();
+			b.arrowGfx.moveTo(sx, arrowStartY + 2);
+			b.arrowGfx.lineTo(sx, sy - r);
+			b.arrowGfx.stroke({ width: 1.5, color: 0x000000, alpha: 0.6 });
+			// Arrowhead
+			const aLen = 5;
+			b.arrowGfx.moveTo(sx, sy - r);
+			b.arrowGfx.lineTo(sx - aLen * 0.5, sy - r - aLen);
+			b.arrowGfx.moveTo(sx, sy - r);
+			b.arrowGfx.lineTo(sx + aLen * 0.5, sy - r - aLen);
+			b.arrowGfx.stroke({ width: 1.5, color: 0x000000, alpha: 0.6 });
+			b.arrowGfx.visible = true;
+		}
+	}
+
+	clearSearchBadges(): void {
+		for (const b of this.badgeOverlays) {
+			b.arrowGfx.destroy();
+			b.nameLabel.destroy();
+			for (const bg of b.badges) { bg.gfx.destroy(); bg.label.destroy(); }
+		}
+		this.badgeOverlays = [];
+	}
+
+	/** Set search matches with multiple types per node (from universalSearch categories). */
+	setSearchExtendedMulti(matchedIds: Set<string>, typeMap: Map<string, Set<string>>): void {
+		this.searchMatchSet.clear();
+		// Keep title matches from setSearch()
+		const existingTitles = new Map<number, Set<string>>();
+		for (const [idx, types] of this.searchMatchTypes) {
+			if (types.has('title')) existingTitles.set(idx, types);
+		}
+		this.searchMatchTypes.clear();
+		// Restore title matches
+		for (const [idx, types] of existingTitles) {
+			this.searchMatchSet.add(idx);
+			this.searchMatchTypes.set(idx, new Set(types));
+		}
+		// Add universal search matches
+		for (let i = 0; i < this.nodes.length; i++) {
+			const id = this.nodes[i].id;
+			if (matchedIds.has(id)) {
+				this.searchMatchSet.add(i);
+				const types = typeMap.get(id);
+				if (types) {
+					const existing = this.searchMatchTypes.get(i);
+					if (existing) {
+						for (const t of types) existing.add(t);
+					} else {
+						this.searchMatchTypes.set(i, new Set(types));
+					}
+				}
+			}
+		}
+		if (this.searchMatchSet.size > 0) {
+			this.worker?.postMessage({ type: 'stop' });
 		}
 		this.needsRedraw = true;
 	}
@@ -1799,6 +1985,9 @@ export class GraphEngine {
 
 		// ─── Labels ────
 		this.updateLabels(w, h, hovered, neighbors, dark);
+
+		// ─── Search Badges ────
+		this.drawSearchBadges(w, h);
 	};
 
 	/** Draw 3D axis gizmo in bottom-left corner (only when rotated) */
