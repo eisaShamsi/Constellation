@@ -1,4 +1,54 @@
-# Session Log — 2026-04-08 / 2026-04-09
+# Session Log — 2026-04-08 / 2026-04-09 / 2026-04-10
+
+## Phase: Sky View Full Search + Canvas Badges + Link Visualization + Auto-Brackets
+**Commits**: `1dc859d` → `6e8a514`
+
+### Sky View Search (full SearchHub replication)
+- Wide search bar with ×reset, ⋯chips, count badge, ×close
+- Search history dropdown, wikilink [[autocomplete
+- Advanced syntax routing: #tags, property=value, link operators → constellationSearch; plain text → universalSearch
+- Canvas badges: stacked vertically per node with note title, RTL-aware
+- universalSearch for multi-type badges (T+C+P per node)
+- setSearchExtendedMulti() for Map<string, Set<string>> types
+
+### Canvas Link Visualization
+- setSearchLinkHighlights() colors link lines by direction
+- Green (incoming), Red (outgoing), Purple (bidirectional)
+- Arrowheads: single for to/from, double-ended for all/mutual
+
+### Multi-Color Editor Highlighting
+- Custom StateField + StateEffect + 6 CSS classes
+- Title (blue), Content (green), Tag (pink), Property (amber), Wikilink (light blue), Semantic (purple)
+- Context-aware: classifies each match by position (title area, frontmatter, body, wikilink line, tag line)
+
+### Auto-Bracket Pairing
+- NotePane: conditional on appSettings.autoPairBrackets
+- SearchHub + Sky View: [→[], [[→[[]], (→(), {→{}, "→"", '→''
+- Double [[ places cursor between for wikilink entry
+
+### New Library Button + Knowledge Hierarchy
+- 4th toolbar button (book+ icon) with Create/Link dropdown
+- Constellation Knowledge Hierarchy documented in CLAUDE.md + help file
+- Search index rebuilt after library creation
+
+### Return to Sky View
+- starViewReturnPending button in tab bar
+- Opens note with highlightTerm, return preserves SV state
+
+### Post-Implementation 14-Agent Audit
+- All 14 agents ran: 4 CRITICAL (fixed), 13 HIGH (fixed), 16 MEDIUM, 10 LOW
+- Key fixes: orphan query, version file race, concurrent reindex, XSS, dead code, RTL
+
+### Bugs Fixed
+- SV crash: searchMatchIds prop missing default
+- Tag search substring false positives (JSON-quoted LIKE)
+- Schema v3 forced reindex
+- Dashboard tag click panel not showing (onTagSelect=undefined fix)
+- Startup crash: stale searchMode references
+- Badge direction: detectDir(r.name) instead of dir="auto"
+- fullPage sidebar auto-collapse $effect
+
+---
 
 ## Phase: 14-Agent Audit + Search Integration Across All Functions
 **Commit**: `4b70c67` — 14-agent audit: fix XSS, dead code, RTL, data integrity, search integration
