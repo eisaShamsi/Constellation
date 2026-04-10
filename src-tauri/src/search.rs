@@ -150,6 +150,7 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     conn.execute_batch("
         CREATE INDEX IF NOT EXISTS idx_note_library ON note_meta(library_name);
         CREATE INDEX IF NOT EXISTS idx_note_modified ON note_meta(modified);
+        CREATE INDEX IF NOT EXISTS idx_note_name ON note_meta(name);
     ").map_err(|e| format!("Failed to create indexes: {}", e))?;
 
     Ok(conn)
@@ -266,23 +267,26 @@ fn normalize_arabic_for_search(text: &str) -> String {
 }
 
 /// Strip markdown syntax for plain-text indexing.
+/// Pre-compiled regex patterns for strip_markdown (compiled once, reused on every call).
+fn strip_md_patterns() -> &'static [regex::Regex; 4] {
+    use std::sync::OnceLock;
+    static PATTERNS: OnceLock<[regex::Regex; 4]> = OnceLock::new();
+    PATTERNS.get_or_init(|| [
+        regex::Regex::new(r"(?s)```.*?```").unwrap(),               // code blocks
+        regex::Regex::new(r"`[^`]+`").unwrap(),                     // inline code
+        regex::Regex::new(r"\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]").unwrap(), // wikilinks
+        regex::Regex::new(r"\[([^\]]*)\]\([^)]*\)").unwrap(),      // markdown links
+    ])
+}
+
 fn strip_markdown(text: &str) -> String {
+    let patterns = strip_md_patterns();
     let mut result = text.to_string();
-    // Remove code blocks
-    let code_re = regex::Regex::new(r"(?s)```.*?```").unwrap();
-    result = code_re.replace_all(&result, " ").to_string();
-    // Remove inline code
-    let inline_re = regex::Regex::new(r"`[^`]+`").unwrap();
-    result = inline_re.replace_all(&result, " ").to_string();
-    // Remove wikilinks but keep text
-    let wiki_re = regex::Regex::new(r"\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]").unwrap();
-    result = wiki_re.replace_all(&result, "$1").to_string();
-    // Remove markdown links
-    let link_re = regex::Regex::new(r"\[([^\]]*)\]\([^)]*\)").unwrap();
-    result = link_re.replace_all(&result, "$1").to_string();
-    // Remove headings markers
+    result = patterns[0].replace_all(&result, " ").to_string();
+    result = patterns[1].replace_all(&result, " ").to_string();
+    result = patterns[2].replace_all(&result, "$1").to_string();
+    result = patterns[3].replace_all(&result, "$1").to_string();
     result = result.replace('#', " ");
-    // Remove bold/italic markers
     result = result.replace("**", " ").replace("__", " ").replace('*', " ").replace('_', " ");
     result
 }
@@ -714,9 +718,18 @@ pub fn constellation_search_reindex(
     library_name: String,
 ) -> Result<(), String> {
     let state = app.state::<SearchState>();
+    reindex_single_note(&state, &note_path, &library_name)
+}
+
+/// Reindex a single note — callable from other modules without Tauri command overhead.
+pub fn reindex_single_note(
+    state: &SearchState,
+    note_path: &str,
+    library_name: &str,
+) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     if let Some(conn) = db.as_ref() {
-        index_note(conn, &note_path, &library_name)?;
+        index_note(conn, note_path, library_name)?;
     }
     Ok(())
 }

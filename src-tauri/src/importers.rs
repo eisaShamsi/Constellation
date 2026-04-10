@@ -3,10 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::libraries::validate_path_in_any_library;
-
-const EXCLUDED_DIRS: &[&str] = &[
-    ".obsidian", ".trash", ".git", ".svn", "node_modules", "__MACOSX",
-];
+use crate::file_kinds::EXCLUDED_DIRS;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImportResult {

@@ -722,18 +722,27 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
             .unwrap_or_default()
             .to_string_lossy()
             .to_string();
-        let old_title = old
-            .file_stem()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .to_string();
 
-        // Read content, update frontmatter title, add old title to aliases
+        // Read content and extract current title from frontmatter
         let content = fs::read_to_string(old)
             .map_err(|e| format!("Failed to read note: {}", e))?;
+        let old_title = extract_frontmatter_title(&content)
+            .unwrap_or_else(|| old.file_stem().unwrap_or_default().to_string_lossy().to_string());
+
         let updated = update_frontmatter_title(&content, &new_title, &old_title);
-        fs::write(old, updated)
+        fs::write(old, &updated)
             .map_err(|e| format!("Failed to write note: {}", e))?;
+
+        // Trigger search reindex for this note so the new title is reflected
+        {
+            use tauri::Manager;
+            let search_state = app.state::<crate::search::SearchState>();
+            let note_path = old.to_string_lossy().to_string();
+            let libs = load_all_libraries(&app);
+            if let Some(lib) = libs.iter().find(|l| note_path.starts_with(&l.path)) {
+                let _ = crate::search::reindex_single_note(&search_state, &note_path, &lib.name);
+            }
+        }
 
         // The file stays at old_path — canonical filename doesn't change
         Ok(())
@@ -749,94 +758,126 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
     }
 }
 
+/// Extract the `title:` value from a note's frontmatter.
+fn extract_frontmatter_title(content: &str) -> Option<String> {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") { return None; }
+    let after = &trimmed[3..];
+    let end = after.find("\n---")?;
+    let fm = &after[..end];
+    for line in fm.lines() {
+        let t = line.trim();
+        if t.starts_with("title:") {
+            let val = t["title:".len()..].trim().trim_matches('"').trim_matches('\'');
+            if !val.is_empty() { return Some(val.to_string()); }
+        }
+    }
+    None
+}
+
 /// Update a note's frontmatter title and add the old title to aliases.
 fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> String {
+    let esc_new = new_title.replace('"', "\\\"");
+    let esc_old = old_title.replace('"', "\\\"");
+
     let trimmed = content.trim_start();
     if !trimmed.starts_with("---") {
-        // No frontmatter — add one
         return format!(
             "---\ntitle: \"{}\"\naliases:\n  - \"{}\"\n---\n\n{}",
-            new_title.replace('"', "\\\""),
-            old_title.replace('"', "\\\""),
-            content
+            esc_new, esc_old, content
         );
     }
 
     let after_first = &trimmed[3..];
-    if let Some(end) = after_first.find("\n---") {
-        let fm = &after_first[..end];
-        let body = &after_first[end + 4..];
+    let Some(end) = after_first.find("\n---") else {
+        return content.to_string();
+    };
+    let fm = &after_first[..end];
+    let body = &after_first[end + 4..];
 
-        let mut new_lines: Vec<String> = Vec::new();
-        let mut found_title = false;
-        let mut found_aliases = false;
-        let mut in_aliases = false;
-        let mut aliases_block: Vec<String> = Vec::new();
+    let mut new_lines: Vec<String> = Vec::new();
+    let mut found_title = false;
+    let mut found_aliases = false;
+    let mut old_title_in_aliases = false;
+    let mut in_alias_list = false;
 
-        for line in fm.lines() {
-            let t = line.trim();
+    for line in fm.lines() {
+        let t = line.trim();
 
-            if t.starts_with("title:") {
-                found_title = true;
-                new_lines.push(format!("title: \"{}\"", new_title.replace('"', "\\\"")));
-                continue;
-            }
+        // Replace title field
+        if t.starts_with("title:") {
+            found_title = true;
+            new_lines.push(format!("title: \"{}\"", esc_new));
+            continue;
+        }
 
-            if t.starts_with("aliases:") {
-                found_aliases = true;
-                in_aliases = true;
-                new_lines.push(line.to_string());
-                continue;
-            }
+        // Handle aliases field
+        if t.starts_with("aliases:") {
+            found_aliases = true;
+            let value = t["aliases:".len()..].trim();
 
-            if in_aliases && t.starts_with("- ") {
-                aliases_block.push(line.to_string());
-                continue;
-            }
-
-            if in_aliases && !t.starts_with("- ") {
-                // End of aliases block — insert old title if not present
-                in_aliases = false;
-                let old_exists = aliases_block.iter().any(|a| {
-                    a.trim().trim_start_matches("- ").trim_matches('"').trim_matches('\'') == old_title
-                });
-                for a in &aliases_block {
-                    new_lines.push(a.clone());
+            if value.starts_with('[') && value.ends_with(']') {
+                // Inline array: aliases: [a, b, c]
+                let inner = &value[1..value.len() - 1];
+                let existing: Vec<String> = inner
+                    .split(',')
+                    .map(|s| s.trim().trim_matches('"').trim_matches('\'').to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                old_title_in_aliases = existing.iter().any(|a| a == old_title);
+                // Convert to list format for consistency
+                new_lines.push("aliases:".to_string());
+                for alias in &existing {
+                    new_lines.push(format!("  - \"{}\"", alias.replace('"', "\\\"")));
                 }
-                if !old_exists {
-                    new_lines.push(format!("  - \"{}\"", old_title.replace('"', "\\\"")));
+                if !old_title_in_aliases {
+                    new_lines.push(format!("  - \"{}\"", esc_old));
                 }
+                continue;
             }
 
+            // List format: aliases:\n  - a\n  - b
             new_lines.push(line.to_string());
+            in_alias_list = true;
+            continue;
         }
 
-        // If we were still in aliases block at end
-        if in_aliases {
-            let old_exists = aliases_block.iter().any(|a| {
-                a.trim().trim_start_matches("- ").trim_matches('"').trim_matches('\'') == old_title
-            });
-            for a in &aliases_block {
-                new_lines.push(a.clone());
+        // Collect alias list items
+        if in_alias_list && t.starts_with("- ") {
+            let alias_val = t[2..].trim().trim_matches('"').trim_matches('\'');
+            if alias_val == old_title {
+                old_title_in_aliases = true;
             }
-            if !old_exists {
-                new_lines.push(format!("  - \"{}\"", old_title.replace('"', "\\\"")));
+            new_lines.push(line.to_string());
+            continue;
+        }
+
+        // End of alias list — append old title if missing
+        if in_alias_list {
+            in_alias_list = false;
+            if !old_title_in_aliases {
+                new_lines.push(format!("  - \"{}\"", esc_old));
             }
         }
 
-        // Add missing fields
-        if !found_title {
-            new_lines.insert(0, format!("title: \"{}\"", new_title.replace('"', "\\\"")));
-        }
-        if !found_aliases {
-            new_lines.push("aliases:".to_string());
-            new_lines.push(format!("  - \"{}\"", old_title.replace('"', "\\\"")));
-        }
-
-        format!("---\n{}\n---{}", new_lines.join("\n"), body)
-    } else {
-        content.to_string()
+        new_lines.push(line.to_string());
     }
+
+    // If alias list was the last thing in frontmatter
+    if in_alias_list && !old_title_in_aliases {
+        new_lines.push(format!("  - \"{}\"", esc_old));
+    }
+
+    // Add missing fields
+    if !found_title {
+        new_lines.insert(0, format!("title: \"{}\"", esc_new));
+    }
+    if !found_aliases {
+        new_lines.push("aliases:".to_string());
+        new_lines.push(format!("  - \"{}\"", esc_old));
+    }
+
+    format!("---\n{}\n---{}", new_lines.join("\n"), body)
 }
 
 /// Move a file or folder to a different directory within any registered library.

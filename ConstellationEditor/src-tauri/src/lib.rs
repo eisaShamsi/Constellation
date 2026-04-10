@@ -1,6 +1,8 @@
 mod ai;
 mod bases;
+mod canonical;
 mod dataview;
+mod file_kinds;
 mod importers;
 mod libraries;
 mod tasks;

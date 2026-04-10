@@ -372,6 +372,10 @@
 		line-height: 1.4;
 	}
 
+	/* RTL fixes */
+	:global([dir="rtl"]) .preview-arrow { transform: scaleX(-1); }
+	.preview-size { text-align: end; }
+
 	.importer-actions {
 		display: flex;
 		justify-content: flex-end;
@@ -473,7 +477,7 @@
 		font-size: 0.72rem;
 		color: var(--text-faint);
 		min-width: 50px;
-		text-align: right;
+		text-align: end;
 	}
 
 	.preview-more {
