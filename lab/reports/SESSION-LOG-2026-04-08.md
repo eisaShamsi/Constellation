@@ -1,5 +1,18 @@
 # Session Log — 2026-04-08 / 2026-04-09 / 2026-04-10
 
+## Phase: Semantic Threshold + Sky View Semantic Search
+**Commit**: `9d2a221` — Raise semantic threshold to 0.65, enable semantic search in Sky View
+
+### Changes
+- **Semantic threshold**: Raised from 0.3 → 0.65 in `search.rs:903` — was returning nearly all notes (2180/2181) for any query, now filters to meaningful matches only
+- **Sky View semantic search**: `GraphMindView.svelte` now embeds query via `embedText()` before calling `universalSearch()` — was passing `null`, so semantic results never appeared in Sky View
+
+### Status
+- Code committed and pushed. Rust binary needs recompile (`npx tauri dev`) to activate the 0.65 threshold
+- Full test suite (Tests 1–12) pending after rebuild
+
+---
+
 ## Phase: Sky View Full Search + Canvas Badges + Link Visualization + Auto-Brackets
 **Commits**: `1dc859d` → `6e8a514`
 

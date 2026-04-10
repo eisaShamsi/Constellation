@@ -897,17 +897,34 @@ fn semantic_search(conn: &Connection, query_embedding: &[f32], limit: u32) -> Ve
     }).ok();
 
     if let Some(rows) = rows {
+        // Two-pass approach: collect all (result, similarity) pairs first,
+        // then apply dynamic threshold relative to top score.
+        // e5-small produces compressed similarity ranges (0.72–0.88 typical),
+        // so a fixed threshold fails — we need adaptive filtering.
+        let mut all: Vec<(SearchResult, f32)> = Vec::new();
         for row in rows.flatten() {
             let (path, name, library_name, modified, embedding) = row;
             let sim = cosine_similarity(query_embedding, &embedding);
-            if sim > 0.65 { // minimum threshold — raised from 0.3 to reduce noise
-                scored.push((SearchResult {
+            if sim > 0.5 { // absolute floor — skip completely irrelevant
+                all.push((SearchResult {
                     path, name, library_name, modified,
                     score: sim as f64,
                     match_type: "semantic".to_string(),
                     snippet: None,
                     heading_breadcrumb: None,
                 }, sim));
+            }
+        }
+
+        if !all.is_empty() {
+            let top_score = all.iter().map(|(_, s)| *s).fold(f32::NEG_INFINITY, f32::max);
+            // Dynamic threshold: within 3% of top score, minimum 0.75
+            let dynamic_thresh = f32::max(0.75, top_score - 0.03);
+            eprintln!("[SEMANTIC] top={:.4}, threshold={:.4}, candidates={}", top_score, dynamic_thresh, all.len());
+            for (r, sim) in all {
+                if sim >= dynamic_thresh {
+                    scored.push((r, sim));
+                }
             }
         }
     }
