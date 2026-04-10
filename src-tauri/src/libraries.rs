@@ -708,19 +708,135 @@ pub fn create_folder(app: tauri::AppHandle, parent_path: String, folder_name: St
 #[tauri::command]
 pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) -> Result<(), String> {
     validate_path_in_any_library(&app, &old_path)?;
-    validate_path_in_any_library(&app, &new_path)?;
     let old = Path::new(&old_path);
     if !old.exists() {
         return Err("Item does not exist.".to_string());
     }
 
-    let new_p = Path::new(&new_path);
-    if new_p.exists() {
-        return Err("An item with this name already exists.".to_string());
+    // Check if this is a canonical .md file — if so, rename = update frontmatter title, NOT the filename
+    if old.extension().map(|e| e == "md").unwrap_or(false)
+        && crate::canonical::is_canonical_filename(old)
+    {
+        let new_title = Path::new(&new_path)
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+        let old_title = old
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+
+        // Read content, update frontmatter title, add old title to aliases
+        let content = fs::read_to_string(old)
+            .map_err(|e| format!("Failed to read note: {}", e))?;
+        let updated = update_frontmatter_title(&content, &new_title, &old_title);
+        fs::write(old, updated)
+            .map_err(|e| format!("Failed to write note: {}", e))?;
+
+        // The file stays at old_path — canonical filename doesn't change
+        Ok(())
+    } else {
+        // Legacy behavior: actually rename the file/folder
+        validate_path_in_any_library(&app, &new_path)?;
+        let new_p = Path::new(&new_path);
+        if new_p.exists() {
+            return Err("An item with this name already exists.".to_string());
+        }
+        fs::rename(old, new_p)
+            .map_err(|e| format!("Failed to rename: {}", e))
+    }
+}
+
+/// Update a note's frontmatter title and add the old title to aliases.
+fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> String {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") {
+        // No frontmatter — add one
+        return format!(
+            "---\ntitle: \"{}\"\naliases:\n  - \"{}\"\n---\n\n{}",
+            new_title.replace('"', "\\\""),
+            old_title.replace('"', "\\\""),
+            content
+        );
     }
 
-    fs::rename(old, new_p)
-        .map_err(|e| format!("Failed to rename: {}", e))
+    let after_first = &trimmed[3..];
+    if let Some(end) = after_first.find("\n---") {
+        let fm = &after_first[..end];
+        let body = &after_first[end + 4..];
+
+        let mut new_lines: Vec<String> = Vec::new();
+        let mut found_title = false;
+        let mut found_aliases = false;
+        let mut in_aliases = false;
+        let mut aliases_block: Vec<String> = Vec::new();
+
+        for line in fm.lines() {
+            let t = line.trim();
+
+            if t.starts_with("title:") {
+                found_title = true;
+                new_lines.push(format!("title: \"{}\"", new_title.replace('"', "\\\"")));
+                continue;
+            }
+
+            if t.starts_with("aliases:") {
+                found_aliases = true;
+                in_aliases = true;
+                new_lines.push(line.to_string());
+                continue;
+            }
+
+            if in_aliases && t.starts_with("- ") {
+                aliases_block.push(line.to_string());
+                continue;
+            }
+
+            if in_aliases && !t.starts_with("- ") {
+                // End of aliases block — insert old title if not present
+                in_aliases = false;
+                let old_exists = aliases_block.iter().any(|a| {
+                    a.trim().trim_start_matches("- ").trim_matches('"').trim_matches('\'') == old_title
+                });
+                for a in &aliases_block {
+                    new_lines.push(a.clone());
+                }
+                if !old_exists {
+                    new_lines.push(format!("  - \"{}\"", old_title.replace('"', "\\\"")));
+                }
+            }
+
+            new_lines.push(line.to_string());
+        }
+
+        // If we were still in aliases block at end
+        if in_aliases {
+            let old_exists = aliases_block.iter().any(|a| {
+                a.trim().trim_start_matches("- ").trim_matches('"').trim_matches('\'') == old_title
+            });
+            for a in &aliases_block {
+                new_lines.push(a.clone());
+            }
+            if !old_exists {
+                new_lines.push(format!("  - \"{}\"", old_title.replace('"', "\\\"")));
+            }
+        }
+
+        // Add missing fields
+        if !found_title {
+            new_lines.insert(0, format!("title: \"{}\"", new_title.replace('"', "\\\"")));
+        }
+        if !found_aliases {
+            new_lines.push("aliases:".to_string());
+            new_lines.push(format!("  - \"{}\"", old_title.replace('"', "\\\"")));
+        }
+
+        format!("---\n{}\n---{}", new_lines.join("\n"), body)
+    } else {
+        content.to_string()
+    }
 }
 
 /// Move a file or folder to a different directory within any registered library.

@@ -594,7 +594,7 @@ pub fn generate_canonical_name(
 // ─── Helpers ─────────────────────────────────────────────────────────
 
 /// Check if a filename already follows the canonical pattern.
-fn is_canonical_filename(path: &Path) -> bool {
+pub fn is_canonical_filename(path: &Path) -> bool {
     let stem = path
         .file_stem()
         .map(|s| s.to_string_lossy().to_string())

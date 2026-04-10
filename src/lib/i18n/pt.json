@@ -1145,6 +1145,8 @@
             "txtDesc": "Arquivos de texto convertidos para Markdown"
         },
         "subfolder": "Subpasta",
+        "useCanonical": "Usar nomes de arquivo canônicos",
+        "useCanonicalDesc": "Organizar arquivos com IDs estruturados internamente. Seus títulos permanecem legíveis.",
         "selectSource": "Selecionar fonte",
         "scanning": "Escaneando arquivos...",
         "previewTitle": "Pronto para importar",

@@ -1145,6 +1145,8 @@
             "txtDesc": "转换为 Markdown 的文本文件"
         },
         "subfolder": "子文件夹",
+        "useCanonical": "使用规范文件名",
+        "useCanonicalDesc": "使用结构化ID在内部组织文件。您的标题保持人类可读。",
         "selectSource": "选择来源",
         "scanning": "正在扫描文件...",
         "previewTitle": "准备导入",

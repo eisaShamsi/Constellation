@@ -1157,6 +1157,8 @@
         },
         "targetLibrary": "Ziel-Bibliothek",
         "subfolder": "Unterordner",
+        "useCanonical": "Kanonische Dateinamen verwenden",
+        "useCanonicalDesc": "Dateien intern mit strukturierten IDs organisieren. Ihre Titel bleiben lesbar.",
         "selectSource": "Quelle auswählen",
         "scanning": "Dateien werden gescannt...",
         "previewTitle": "Bereit zum Import",

@@ -294,7 +294,7 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
         return Ok(());
     }
 
-    let name = path.file_stem()
+    let file_stem = path.file_stem()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
 
@@ -319,6 +319,13 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
     let wikilinks = extract_wikilinks(&content);
     let headings = extract_headings(&content);
     let plain_body = strip_markdown(&body);
+
+    // Use frontmatter `title:` as the display name when available (supports canonical filenames).
+    // Falls back to file stem for legacy (human-named) files.
+    let name = properties.get("title")
+        .filter(|t| !t.is_empty())
+        .cloned()
+        .unwrap_or_else(|| file_stem.clone());
 
     // Arabic normalization for better FTS matching (Phase 4)
     // Normalize diacritics, Alef variants, Teh marbuta for consistent indexing
@@ -662,7 +669,7 @@ pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexSta
     // Schema v2: force full reindex to pick up bracket-format tags + inline hashtags
     // Check for version marker; if missing or outdated, delete and rebuild
     let version_path = path.with_extension("version");
-    let current_version = "3"; // v3: exact JSON-quoted tag/link matching, inline hashtags, bracket tags
+    let current_version = "4"; // v4: name field uses frontmatter title (canonical filename support)
     let needs_rebuild = match std::fs::read_to_string(&version_path) {
         Ok(v) => v.trim() != current_version,
         Err(_) => true,

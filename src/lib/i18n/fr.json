@@ -1157,6 +1157,8 @@
         },
         "targetLibrary": "Bibliothèque cible",
         "subfolder": "Sous-dossier",
+        "useCanonical": "Utiliser des noms de fichiers canoniques",
+        "useCanonicalDesc": "Organiser les fichiers avec des identifiants structurés. Vos titres restent lisibles.",
         "selectSource": "Sélectionner la source",
         "scanning": "Analyse des fichiers...",
         "previewTitle": "Prêt à importer",

@@ -1145,6 +1145,8 @@
             "txtDesc": "Markdownに変換されたテキストファイル"
         },
         "subfolder": "サブフォルダ",
+        "useCanonical": "正規ファイル名を使用",
+        "useCanonicalDesc": "構造化されたIDでファイルを内部的に整理します。タイトルは人間が読める形式のままです。",
         "selectSource": "ソースを選択",
         "scanning": "ファイルをスキャン中...",
         "previewTitle": "インポート準備完了",

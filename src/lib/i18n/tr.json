@@ -1145,6 +1145,8 @@
             "txtDesc": "Markdown'a dönüştürülen metin dosyaları"
         },
         "subfolder": "Alt klasör",
+        "useCanonical": "Kanonik dosya adları kullan",
+        "useCanonicalDesc": "Dosyaları yapılandırılmış kimliklerle dahili olarak düzenleyin. Başlıklarınız okunabilir kalır.",
         "selectSource": "Kaynak seç",
         "scanning": "Dosyalar taranıyor...",
         "previewTitle": "İçe aktarmaya hazır",

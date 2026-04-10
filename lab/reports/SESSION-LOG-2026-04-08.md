@@ -1,5 +1,54 @@
 # Session Log — 2026-04-08 / 2026-04-09 / 2026-04-10
 
+## Phase: Canonical Filename Architecture
+**Commit**: `1d6c896`
+
+### New Files
+- `src-tauri/src/file_kinds.rs` — Kind registry + 3-layer classification engine
+- `src-tauri/src/canonical.rs` — YYYYMMDDTHHMMSSZ_KIND_XXXX.ext generator, frontmatter injection, sidecar metadata
+- `docs/CANONICAL-FILENAME-ARCHITECTURE.md` — Full design document
+
+### Architecture
+Every file Constellation manages gets an immutable canonical filename (PK). Users never see it — they work with human titles resolved via frontmatter `title` + `aliases` index.
+
+- **12 core kinds**: NOTE, BASE, TMPL, LINK, IMG, AUD, VID, ATT, CANVAS, DRAW, MARK, CLIP
+- **Auto-generation**: Unknown extensions get auto-generated codes, persisted in per-universe `file_kinds.json`
+- **Classification**: Layer 1 (extension), Layer 2 (markdown content heuristics), Layer 3 (auto-generate)
+- **Frontmatter contract**: `title`, `cid`, `kind`, `created`, `aliases` — cid is immutable PK
+- **Sidecar .meta.json**: For non-markdown files (images, audio, video, attachments)
+- **Wikilinks**: Resolve by title/aliases, not filename — zero broken links on rename
+
+### Tauri Commands
+- `classify_file_cmd` — classify a file by content
+- `generate_canonical_name` — generate canonical filename for new files
+- `canonicalize_preview` — preview library canonicalization (no changes)
+- `canonicalize_execute` — execute canonicalization (rename + enrich)
+
+### Phase 2: Integration (commit `24ecb45`)
+
+**Import Pipeline** (`importers.rs`):
+- `import_with_canonical` — full pipeline: scan → classify → generate canonical → enrich frontmatter → write + sidecars
+- Supports markdown/folder/obsidian/notion formats natively
+- Legacy formats (enex, html, csv, txt) fall back to old pipeline
+- Writes `.constellation/canonical` marker after import
+
+**Wikilink Resolution** (`libraries.rs`):
+- `find_note_by_title_or_alias` — 3-step resolution: filename stem → frontmatter `title:` → `aliases:`
+- `has_title()` function checks frontmatter title field
+- Enables `[[Human Title]]` to resolve to `YYYYMMDDTHHMMSSZ_NOTE_XXXX.md` files
+
+**Note Creation** (`libraries.rs`):
+- `create_note` detects canonical libraries (`.constellation/canonical` marker)
+- Auto-generates canonical filename + full frontmatter (title, cid, kind, created)
+- Legacy libraries keep human filenames (backward compatible)
+
+### Status
+- Compiles clean (zero new warnings from canonical system)
+- All Tauri commands wired: classify_file_cmd, generate_canonical_name, canonicalize_preview, canonicalize_execute, import_with_canonical
+- TypeScript bindings complete in `src/lib/importers/store.ts`
+
+---
+
 ## Phase: Dynamic Semantic Threshold
 **Commits**: `9d2a221` → `8f21f65`
 

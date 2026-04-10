@@ -1148,6 +1148,8 @@
         },
         "targetLibrary": "Target library",
         "subfolder": "Subfolder",
+        "useCanonical": "Use canonical filenames",
+        "useCanonicalDesc": "Organize files with structured IDs internally. Your titles stay human-readable.",
         "selectSource": "Select source",
         "scanning": "Scanning files...",
         "previewTitle": "Ready to import",
