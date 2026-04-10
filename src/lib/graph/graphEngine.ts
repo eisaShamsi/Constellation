@@ -143,6 +143,9 @@ export class GraphEngine {
 	private searchMatchSet: Set<number> = new Set();
 	private searchMatchTypes: Map<number, Set<string>> = new Map(); // index → set of match_types
 
+	// Search link highlights (colored lines between matched nodes)
+	private searchLinkHighlights: Map<string, { color: number; bidir: boolean }> = new Map();
+
 	// Highlight filter (from sidebar selection)
 	private highlightSet: Set<number> = new Set();
 	private highlightColor: number = 0x7c3aed;
@@ -501,6 +504,7 @@ export class GraphEngine {
 		this.searchQuery = query.toLowerCase();
 		this.searchMatchSet.clear();
 		this.searchMatchTypes.clear();
+		this.searchLinkHighlights.clear();
 		this.clearSearchBadges();
 		if (this.searchQuery) {
 			for (let i = 0; i < this.nodes.length; i++) {
@@ -702,6 +706,50 @@ export class GraphEngine {
 		if (this.searchMatchSet.size > 0) {
 			this.worker?.postMessage({ type: 'stop' });
 		}
+		this.needsRedraw = true;
+	}
+
+	/** Set highlighted links between matched nodes and a target, with directional colors. */
+	setSearchLinkHighlights(targetId: string, matchedIds: Set<string>, direction: 'to' | 'from' | 'all' | 'mutual'): void {
+		this.searchLinkHighlights.clear();
+		const GREEN = 0x16a34a; // incoming
+		const RED = 0xef4444;   // outgoing
+		const PURPLE = 0x7c3aed; // bidirectional
+		const targetIdx = this.nodes.findIndex(n => n.id === targetId);
+		if (targetIdx < 0) return;
+
+		const bidir = direction === 'all' || direction === 'mutual';
+
+		for (let li = 0; li < this.links.length; li++) {
+			const link = this.links[li];
+			const srcIdx = link.sourceIdx;
+			const tgtIdx = link.targetIdx;
+
+			if (direction === 'to' || direction === 'all' || direction === 'mutual') {
+				// Incoming: source links TO target — green
+				if (tgtIdx === targetIdx && matchedIds.has(this.nodes[srcIdx]?.id)) {
+					this.searchLinkHighlights.set(`${srcIdx}-${tgtIdx}`, { color: bidir ? PURPLE : GREEN, bidir });
+				}
+			}
+			if (direction === 'from' || direction === 'all' || direction === 'mutual') {
+				// Outgoing: target links TO source — red
+				if (srcIdx === targetIdx && matchedIds.has(this.nodes[tgtIdx]?.id)) {
+					const key = `${srcIdx}-${tgtIdx}`;
+					const existing = this.searchLinkHighlights.get(key);
+					if (existing) {
+						// Already has incoming — make bidirectional
+						this.searchLinkHighlights.set(key, { color: PURPLE, bidir: true });
+					} else {
+						this.searchLinkHighlights.set(key, { color: bidir ? PURPLE : RED, bidir });
+					}
+				}
+			}
+		}
+		this.needsRedraw = true;
+	}
+
+	clearSearchLinkHighlights(): void {
+		this.searchLinkHighlights.clear();
 		this.needsRedraw = true;
 	}
 
@@ -1815,9 +1863,36 @@ export class GraphEngine {
 				this.linkGfx.lineTo(tx, ty);
 				this.linkGfx.stroke({ width: edgeWidth, color: edgeColor, alpha: edgeAlpha });
 			}
-		}
 
-		// ─── Semantic Links (dashed, Phase 2) ────
+				// Search link highlight: thick colored line with directional arrowheads
+				const hlKey = `${link.sourceIdx}-${link.targetIdx}`;
+				const hlData = this.searchLinkHighlights.get(hlKey);
+				if (hlData) {
+					const { color: hlColor, bidir } = hlData;
+					this.linkGfx.moveTo(sx, sy);
+					this.linkGfx.lineTo(tx, ty);
+					this.linkGfx.stroke({ width: 3, color: hlColor, alpha: 0.9 });
+					// Arrowhead at target end
+					const angle = Math.atan2(ty - sy, tx - sx);
+					const aLen = 10;
+					this.linkGfx.moveTo(tx, ty);
+					this.linkGfx.lineTo(tx - aLen * Math.cos(angle - 0.35), ty - aLen * Math.sin(angle - 0.35));
+					this.linkGfx.moveTo(tx, ty);
+					this.linkGfx.lineTo(tx - aLen * Math.cos(angle + 0.35), ty - aLen * Math.sin(angle + 0.35));
+					this.linkGfx.stroke({ width: 3, color: hlColor, alpha: 0.9 });
+					// Arrowhead at source end (for bidir or "links from")
+					if (bidir) {
+						const rAngle = angle + Math.PI;
+						this.linkGfx.moveTo(sx, sy);
+						this.linkGfx.lineTo(sx - aLen * Math.cos(rAngle - 0.35), sy - aLen * Math.sin(rAngle - 0.35));
+						this.linkGfx.moveTo(sx, sy);
+						this.linkGfx.lineTo(sx - aLen * Math.cos(rAngle + 0.35), sy - aLen * Math.sin(rAngle + 0.35));
+						this.linkGfx.stroke({ width: 3, color: hlColor, alpha: 0.9 });
+					}
+				}
+			}
+
+			// ─── Semantic Links (dashed, Phase 2) ────
 		if (this.config.showSemanticLinks && this.semanticLinks.length > 0 && hovered < 0 && !hasSearch) {
 			const semanticColor = dark ? 0x818cf8 : 0x6366f1; // indigo
 			for (const sl of this.semanticLinks) {

@@ -338,7 +338,7 @@
 				lineDecoPlugin, lineDecoTheme,
 				scriptFontsField, bidiPlugin, bidiTheme, /* per-line RTL/LTR direction + cursor positioning */
 				libraryPathField, notePathField, attachmentFolderField, /* image path resolution */
-				closeBrackets(),
+				...($appSettings.autoPairBrackets ? [closeBrackets({ brackets: ['(', '[', '{', '"', "'", '`'] })] : []),
 				search({ top: true }),
 				colorHighlightField,
 				autocompletion({ override: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
@@ -349,7 +349,7 @@
 					{ key: 'Tab', run: tableTab },
 					{ key: 'Shift-Tab', run: tableShiftTab },
 					indentWithTab,
-					...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap, ...searchKeymap,
+					...defaultKeymap, ...historyKeymap, ...($appSettings.autoPairBrackets ? closeBracketsKeymap : []), ...searchKeymap,
 				]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
 				EditorView.contentAttributes.of({ dir: 'auto' }),

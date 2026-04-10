@@ -381,6 +381,23 @@
 			return;
 		}
 		if (e.key === 'Escape') { searchVisible = false; searchQuery = ''; }
+		// Auto-pair brackets (including [[ → [[]])
+		{
+			const input = e.target as HTMLInputElement;
+			const pos = input.selectionStart ?? searchQuery.length;
+			if (e.key === '[' && pos > 0 && searchQuery[pos - 1] === '[') {
+				e.preventDefault();
+				searchQuery = searchQuery.slice(0, pos) + '[]]' + searchQuery.slice(pos);
+				requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
+			} else {
+				const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '`': '`' };
+				if (pairs[e.key]) {
+					e.preventDefault();
+					searchQuery = searchQuery.slice(0, pos) + e.key + pairs[e.key] + searchQuery.slice(pos);
+					requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
+				}
+			}
+		}
 	}
 
 	function insertWikiName(name: string) {
@@ -426,33 +443,64 @@
 			if (q.trim().length >= 2) {
 				searchDebounce = setTimeout(async () => {
 					try {
-						const { universalSearch } = await import('$lib/libraries/store');
-						const resp = await universalSearch(q, null, 0);
-						// Collect all match types per note from categorized response
+						const { universalSearch, constellationSearch, parseSearchQuery } = await import('$lib/libraries/store');
+						const isAdvanced = /[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:/i.test(q);
+
 						const typeMap = new Map<string, Set<string>>();
 						const allIds = new Set<string>();
-						const categoryTypes: [string, string][] = [
-							['titles', 'title'], ['contents', 'content'], ['tags', 'tag'],
-							['properties', 'property'], ['wikilinks', 'wikilink'], ['semantic', 'semantic'],
-						];
 						const flatResults: { name: string; match_type: string; path: string; libraryName: string }[] = [];
-						for (const [cat, mt] of categoryTypes) {
-							const items = (resp as any)[cat] ?? [];
-							for (const r of items) {
+
+						if (isAdvanced) {
+							// Advanced syntax: use parseSearchQuery → constellationSearch
+							const req = parseSearchQuery(q);
+							req.limit = 0;
+							const results = await constellationSearch(req);
+							for (const r of results) {
 								const id = r.name.toLowerCase();
 								allIds.add(id);
 								if (!typeMap.has(id)) typeMap.set(id, new Set());
-								typeMap.get(id)!.add(mt);
-								if (!flatResults.find(f => f.path === r.path)) {
-									flatResults.push({ name: r.name, match_type: mt, path: r.path, libraryName: r.library_name });
+								typeMap.get(id)!.add(r.match_type);
+								flatResults.push({ name: r.name, match_type: r.match_type, path: r.path, libraryName: r.library_name });
+							}
+						} else {
+							// Plain text: use universalSearch for categorized results
+							const resp = await universalSearch(q, null, 0);
+							const categoryTypes: [string, string][] = [
+								['titles', 'title'], ['contents', 'content'], ['tags', 'tag'],
+								['properties', 'property'], ['wikilinks', 'wikilink'], ['semantic', 'semantic'],
+							];
+							for (const [cat, mt] of categoryTypes) {
+								const items = (resp as any)[cat] ?? [];
+								for (const r of items) {
+									const id = r.name.toLowerCase();
+									allIds.add(id);
+									if (!typeMap.has(id)) typeMap.set(id, new Set());
+									typeMap.get(id)!.add(mt);
+									if (!flatResults.find(f => f.path === r.path)) {
+										flatResults.push({ name: r.name, match_type: mt, path: r.path, libraryName: r.library_name });
+									}
 								}
 							}
 						}
-						// Pass multi-type map to engine
-						const multiTypes = new Map<string, string>();
-						// Engine expects Map<string, string> but we need Set<string>
-						// Use setSearchExtendedMulti instead
+
 						engine?.setSearchExtendedMulti(allIds, typeMap);
+
+						// Highlight link lines for link operators
+						engine?.clearSearchLinkHighlights();
+						const linkToMatch = q.match(/links?\s+to\s+\[\[([^\]]+)\]\]/i);
+						const linkFromMatch = q.match(/links?\s+from\s+\[\[([^\]]+)\]\]/i);
+						const linkAllMatch = q.match(/links?\s+all\s+\[\[([^\]]+)\]\]/i);
+						const mutualMatch = q.match(/mutual\s+\[\[([^\]]+)\]\]/i);
+						if (linkToMatch) {
+							engine?.setSearchLinkHighlights(linkToMatch[1].toLowerCase(), allIds, 'to');
+						} else if (linkFromMatch) {
+							engine?.setSearchLinkHighlights(linkFromMatch[1].toLowerCase(), allIds, 'from');
+						} else if (linkAllMatch) {
+							engine?.setSearchLinkHighlights(linkAllMatch[1].toLowerCase(), allIds, 'all');
+						} else if (mutualMatch) {
+							engine?.setSearchLinkHighlights(mutualMatch[1].toLowerCase(), allIds, 'mutual');
+						}
+
 						setTimeout(() => engine?.renderSearchBadges(), 100);
 						searchMatches = flatResults;
 						addSearchHistory(q);

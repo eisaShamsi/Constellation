@@ -285,7 +285,8 @@
       "Bash(sed -i 's/\"newFolder\": \"New folder\"/\"newFolder\": \"New folder\",\\\\n        \"newLibrary\": \"New Library\"/' __TRACKED_VAR__.json)",
       "Bash(sed -i 's/\"addLibrary\": \"Add library\"/\"addLibrary\": \"Add library\",\\\\n        \"newLibrary\": \"New library\"/' en.json)",
       "Bash(sed -i 's/\"addLibrary\": \"إضافة مكتبة\"/\"addLibrary\": \"إضافة مكتبة\",\\\\n        \"newLibrary\": \"مكتبة جديدة\"/' ar.json)",
-      "Bash(sed -i 's/\"addLibrary\": \"Add library\"/\"addLibrary\": \"Add library\",\\\\n        \"newLibrary\": \"New library\"/' __TRACKED_VAR__.json)"
+      "Bash(sed -i 's/\"addLibrary\": \"Add library\"/\"addLibrary\": \"Add library\",\\\\n        \"newLibrary\": \"New library\"/' __TRACKED_VAR__.json)",
+      "Bash(find \"E:\\\\مشاريع كلاود\\\\Constellation\" -type f \\\\\\( -name \"*.rs\" -o -name \"*.ts\" -o -name \"*.js\" \\\\\\) -exec grep -l \"constellation_search_universal\" {} \\\\;)"
     ]
   }
 }

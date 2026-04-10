@@ -181,6 +181,24 @@
 			return;
 		}
 		if (e.key === 'Escape') { onClose(); return; }
+		// Auto-pair brackets (including [[ → [[]])
+		{
+			const input = e.target as HTMLInputElement;
+			const pos = input.selectionStart ?? query.length;
+			// Double bracket: [[ → [[]] (cursor between)
+			if (e.key === '[' && pos > 0 && query[pos - 1] === '[') {
+				e.preventDefault();
+				query = query.slice(0, pos) + '[]]' + query.slice(pos);
+				requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
+			} else {
+				const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '`': '`' };
+				if (pairs[e.key]) {
+					e.preventDefault();
+					query = query.slice(0, pos) + e.key + pairs[e.key] + query.slice(pos);
+					requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
+				}
+			}
+		}
 		// Result navigation
 		if (allFlatResults.length > 0) {
 			if (e.key === 'ArrowDown') {
