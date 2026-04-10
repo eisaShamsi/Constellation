@@ -555,6 +555,16 @@ pub fn canonicalize_execute(
         );
     }
 
+    // Write the canonical marker file so the library is recognized as canonicalized
+    if result.renamed > 0 {
+        let marker_dir = lib_path.join(".constellation");
+        let _ = fs::create_dir_all(&marker_dir);
+        let _ = fs::write(
+            marker_dir.join("canonical"),
+            format!("Canonicalized on {}\nFiles renamed: {}\n", Utc::now().to_rfc3339(), result.renamed),
+        );
+    }
+
     Ok(result)
 }
 

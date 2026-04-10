@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
-// tauri::Manager unused — removed
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LibraryInfo {
@@ -512,34 +511,80 @@ fn search_notes_recursive(dir: &Path, library_id: &str, library_name: &str, quer
 /// `initial_frontmatter` is optional YAML content (without delimiters) to insert between `---` markers.
 #[tauri::command]
 pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String, initial_frontmatter: Option<String>) -> Result<String, String> {
-    let safe_name = sanitize_name(&file_name)?;
     validate_path_in_any_library(&app, &folder_path)?;
     let folder = Path::new(&folder_path);
     if !folder.exists() || !folder.is_dir() {
         return Err("Folder does not exist.".to_string());
     }
 
-    let name = if safe_name.ends_with(".md") {
-        safe_name
-    } else {
-        format!("{}.md", safe_name)
-    };
+    // Check if this library uses canonical filenames
+    let use_canonical = is_library_canonical(&folder_path);
 
-    let file_path = folder.join(&name);
-    if file_path.exists() {
-        return Err("A file with this name already exists.".to_string());
+    if use_canonical {
+        // Generate canonical filename
+        let dt = chrono::Utc::now();
+        let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", Some(folder));
+        let file_path = folder.join(&canonical.full);
+
+        // Build frontmatter with cid + title
+        let display_name = file_name.trim_end_matches(".md");
+        let mut fm_lines: Vec<String> = Vec::new();
+        fm_lines.push(format!("title: \"{}\"", display_name.replace('"', "\\\"")));
+        fm_lines.push(format!("cid: {}", canonical.stem));
+        fm_lines.push("kind: note".to_string());
+        fm_lines.push(format!("created: {}", dt.to_rfc3339()));
+
+        // Append user-provided frontmatter lines
+        if let Some(ref extra) = initial_frontmatter {
+            for line in extra.lines() {
+                let trimmed = line.trim();
+                // Don't duplicate fields we already set
+                if !trimmed.starts_with("title:") && !trimmed.starts_with("cid:")
+                    && !trimmed.starts_with("kind:") && !trimmed.starts_with("created:")
+                    && !trimmed.is_empty()
+                {
+                    fm_lines.push(trimmed.to_string());
+                }
+            }
+        }
+
+        let content = format!("---\n{}\n---\n\n", fm_lines.join("\n"));
+        fs::write(&file_path, &content)
+            .map_err(|e| format!("Failed to create note: {}", e))?;
+
+        Ok(file_path.to_string_lossy().to_string())
+    } else {
+        // Legacy behavior: human-readable filename
+        let safe_name = sanitize_name(&file_name)?;
+        let name = if safe_name.ends_with(".md") {
+            safe_name
+        } else {
+            format!("{}.md", safe_name)
+        };
+
+        let file_path = folder.join(&name);
+        if file_path.exists() {
+            return Err("A file with this name already exists.".to_string());
+        }
+
+        let fm = initial_frontmatter.unwrap_or_default();
+        let initial = if fm.is_empty() {
+            "---\n---\n\n".to_string()
+        } else {
+            format!("---\n{}\n---\n\n", fm.trim())
+        };
+        fs::write(&file_path, &initial)
+            .map_err(|e| format!("Failed to create note: {}", e))?;
+
+        Ok(file_path.to_string_lossy().to_string())
     }
+}
 
-    let fm = initial_frontmatter.unwrap_or_default();
-    let initial = if fm.is_empty() {
-        "---\n---\n\n".to_string()
-    } else {
-        format!("---\n{}\n---\n\n", fm.trim())
-    };
-    fs::write(&file_path, &initial)
-        .map_err(|e| format!("Failed to create note: {}", e))?;
-
-    Ok(file_path.to_string_lossy().to_string())
+/// Check if a library has been canonicalized (contains files with canonical names).
+/// A library is considered canonical if it has a `.constellation/canonical` marker file.
+fn is_library_canonical(library_path: &str) -> bool {
+    let marker = Path::new(library_path).join(".constellation").join("canonical");
+    marker.exists()
 }
 
 /// Search notes by property key/value across all libraries.
@@ -862,17 +907,21 @@ fn find_note_by_name(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth
     }
 }
 
-/// Like find_note_by_name, but also checks frontmatter aliases.
+/// Like find_note_by_name, but also checks frontmatter title and aliases.
+/// Resolution order (first match wins):
+///   1. Filename stem match (fast, no file read)
+///   2. Frontmatter `title:` field match (supports canonical filenames)
+///   3. Frontmatter `aliases:` match
 fn find_note_by_name_or_alias(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth: u32) {
     // First try exact filename match (fast)
     find_note_by_name(dir, target, results, depth);
     if !results.is_empty() { return; }
 
-    // If no filename match, scan for aliases
-    find_note_by_alias(dir, target, results, depth);
+    // If no filename match, scan frontmatter title + aliases
+    find_note_by_title_or_alias(dir, target, results, depth);
 }
 
-fn find_note_by_alias(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth: u32) {
+fn find_note_by_title_or_alias(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth: u32) {
     if depth > 20 { return; }
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
@@ -885,15 +934,34 @@ fn find_note_by_alias(dir: &Path, target: &str, results: &mut Vec<PathBuf>, dept
         if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
 
         if path.is_dir() {
-            find_note_by_alias(&path, target, results, depth + 1);
+            find_note_by_title_or_alias(&path, target, results, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             if let Ok(content) = fs::read_to_string(&path) {
-                if has_alias(&content, target) {
+                if has_title(&content, target) || has_alias(&content, target) {
                     results.push(path);
                 }
             }
         }
     }
+}
+
+/// Check if a note's frontmatter `title:` field matches the target.
+fn has_title(content: &str, target: &str) -> bool {
+    if !content.starts_with("---") { return false; }
+    let end = match content[3..].find("\n---") {
+        Some(pos) => pos + 3,
+        None => return false,
+    };
+    let frontmatter = &content[3..end];
+    for line in frontmatter.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("title:") {
+            let value = trimmed["title:".len()..].trim();
+            let value = value.trim_matches('"').trim_matches('\'').to_lowercase();
+            if value == target { return true; }
+        }
+    }
+    false
 }
 
 /// Check if a note's frontmatter contains a matching alias.

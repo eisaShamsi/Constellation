@@ -343,6 +343,7 @@ pub fn run() {
             importers::import_pick_source,
             importers::import_preview,
             importers::import_execute,
+            importers::import_with_canonical,
             file_kinds::classify_file_cmd,
             canonical::generate_canonical_name,
             canonical::canonicalize_preview,

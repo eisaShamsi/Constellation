@@ -829,3 +829,214 @@ fn parse_csv_row(line: &str) -> Vec<&str> {
     let sep = if line.contains('\t') { '\t' } else { ',' };
     line.split(sep).collect()
 }
+
+// ─── Canonical Import Pipeline ───────────────────────────────────────
+
+use crate::canonical::{
+    file_creation_time, generate_canonical, inject_frontmatter, write_sidecar, FrontmatterFields,
+    SidecarMetadata,
+};
+use crate::file_kinds::{classify_file, KindRegistry};
+
+/// Import files with canonical filenames + classification + frontmatter enrichment.
+/// This is the full pipeline: scan → classify → generate canonical names → enrich → write.
+#[tauri::command]
+pub async fn import_with_canonical(
+    app: tauri::AppHandle,
+    source: String,
+    format: String,
+    target_library: String,
+    subfolder: String,
+) -> Result<ImportResult, String> {
+    crate::libraries::validate_path_in_any_library(&app, &target_library)?;
+
+    let dest = if subfolder.is_empty() {
+        PathBuf::from(&target_library)
+    } else {
+        PathBuf::from(&target_library).join(&subfolder)
+    };
+    fs::create_dir_all(&dest).map_err(|e| format!("Failed to create destination: {}", e))?;
+
+    // Get kind registry config path
+    let config_path = crate::universe::active_constellation_dir(&app)
+        .map(|d| d.join("file_kinds.json"))
+        .ok();
+    let mut registry = KindRegistry::new(config_path.as_deref());
+
+    let mut result = ImportResult {
+        imported: 0,
+        skipped: 0,
+        errors: vec![],
+        files: vec![],
+    };
+
+    // Phase 1: Collect source files based on format
+    let source_files = match format.as_str() {
+        "markdown" | "folder" | "obsidian" => collect_source_files_recursive(Path::new(&source)),
+        "notion" => collect_source_files_recursive(Path::new(&source)),
+        _ => {
+            // For other formats (enex, html, csv, txt), use the legacy pipeline
+            // They already produce .md files which can be canonicalized afterwards
+            return import_execute_legacy(&app, source, format, target_library, subfolder).await;
+        }
+    };
+
+    // Phase 2-5: Classify, generate canonical names, enrich, write
+    for src_file in &source_files {
+        let src_path = Path::new(src_file);
+        if !src_path.is_file() {
+            continue;
+        }
+
+        let ext = src_path
+            .extension()
+            .map(|e| e.to_string_lossy().to_lowercase())
+            .unwrap_or_default();
+
+        // Classify the file
+        let kind = classify_file(src_path, &mut registry);
+
+        // Get creation timestamp
+        let created = file_creation_time(src_path);
+
+        // Generate canonical filename
+        let file_ext = if ext.is_empty() { "bin".to_string() } else { ext.clone() };
+        let canonical = generate_canonical(&kind, &created, &file_ext, Some(&dest));
+        let dest_path = dest.join(&canonical.full);
+
+        // Get human-readable title from original filename
+        let original_name = src_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+        let display_name = src_path
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+
+        // Clean up Notion UUID suffixes if needed
+        let clean_title = if format == "notion" {
+            clean_notion_name(&display_name)
+        } else {
+            display_name.clone()
+        };
+
+        if ext == "md" || ext == "markdown" {
+            // Read content, enrich with frontmatter, write with canonical name
+            match fs::read_to_string(src_path) {
+                Ok(mut content) => {
+                    // Clean Notion content if needed
+                    if format == "notion" {
+                        content = clean_notion_content(&content);
+                    }
+
+                    let fields = FrontmatterFields {
+                        title: clean_title.clone(),
+                        cid: canonical.stem.clone(),
+                        kind: kind.to_lowercase(),
+                        created: created.to_rfc3339(),
+                        aliases: vec![clean_title],
+                        original_filename: Some(original_name),
+                    };
+                    let enriched = inject_frontmatter(&content, &fields);
+
+                    match fs::write(&dest_path, enriched) {
+                        Ok(_) => {
+                            result.imported += 1;
+                            result.files.push(dest_path.to_string_lossy().to_string());
+                        }
+                        Err(e) => result.errors.push(format!("{}: {}", src_path.display(), e)),
+                    }
+                }
+                Err(e) => result.errors.push(format!("{}: {}", src_path.display(), e)),
+            }
+        } else {
+            // Non-markdown: copy file + create sidecar
+            match fs::copy(src_path, &dest_path) {
+                Ok(_) => {
+                    result.imported += 1;
+                    result.files.push(dest_path.to_string_lossy().to_string());
+
+                    // Create sidecar metadata
+                    let sidecar = SidecarMetadata {
+                        title: clean_title.clone(),
+                        cid: canonical.stem.clone(),
+                        kind: kind.to_lowercase(),
+                        created: created.to_rfc3339(),
+                        original_filename: original_name,
+                        aliases: vec![clean_title],
+                        referenced_by: Vec::new(),
+                    };
+                    if let Err(e) = write_sidecar(&dest_path, &sidecar) {
+                        result.errors.push(e);
+                    }
+                }
+                Err(e) => result.errors.push(format!("{}: {}", src_path.display(), e)),
+            }
+        }
+    }
+
+    // Write canonical marker if we imported anything
+    if result.imported > 0 {
+        let marker_dir = PathBuf::from(&target_library).join(".constellation");
+        let _ = fs::create_dir_all(&marker_dir);
+        let _ = fs::write(
+            marker_dir.join("canonical"),
+            format!(
+                "Canonicalized on {}\nFiles imported: {}\n",
+                chrono::Utc::now().to_rfc3339(),
+                result.imported
+            ),
+        );
+    }
+
+    Ok(result)
+}
+
+/// Legacy import (delegates to the original import_execute).
+async fn import_execute_legacy(
+    _app: &tauri::AppHandle,
+    source: String,
+    format: String,
+    target_library: String,
+    subfolder: String,
+) -> Result<ImportResult, String> {
+    let dest = if subfolder.is_empty() {
+        PathBuf::from(&target_library)
+    } else {
+        PathBuf::from(&target_library).join(&subfolder)
+    };
+    fs::create_dir_all(&dest).map_err(|e| format!("Failed to create destination: {}", e))?;
+
+    match format.as_str() {
+        "enex" => import_enex(&source, &dest),
+        "html" => import_html_files(&source, &dest),
+        "csv" => import_csv(&source, &dest),
+        "txt" => import_text_files(&source, &dest),
+        _ => Err(format!("Unknown format for legacy import: {}", format)),
+    }
+}
+
+/// Collect all file paths recursively from a source directory.
+fn collect_source_files_recursive(dir: &Path) -> Vec<String> {
+    let mut files = Vec::new();
+    let entries = match fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(_) => return files,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+        if path.is_dir() {
+            if name.starts_with('.') || EXCLUDED_DIRS.iter().any(|d| name.eq_ignore_ascii_case(d)) {
+                continue;
+            }
+            files.extend(collect_source_files_recursive(&path));
+        } else {
+            files.push(path.to_string_lossy().to_string());
+        }
+    }
+    files
+}

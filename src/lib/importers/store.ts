@@ -61,3 +61,18 @@ export async function canonicalizePreview(libraryPath: string): Promise<Canonica
 export async function canonicalizeExecute(libraryPath: string): Promise<CanonicalizeResult> {
 	return invoke<CanonicalizeResult>('canonicalize_execute', { libraryPath });
 }
+
+/** Import files with canonical filenames + classification + frontmatter enrichment. */
+export async function importWithCanonical(
+	source: string,
+	format: string,
+	targetLibrary: string,
+	subfolder: string
+): Promise<ImportResult> {
+	return invoke<ImportResult>('import_with_canonical', {
+		source,
+		format,
+		targetLibrary,
+		subfolder,
+	});
+}
