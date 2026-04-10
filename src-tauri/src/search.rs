@@ -900,7 +900,7 @@ fn semantic_search(conn: &Connection, query_embedding: &[f32], limit: u32) -> Ve
         for row in rows.flatten() {
             let (path, name, library_name, modified, embedding) = row;
             let sim = cosine_similarity(query_embedding, &embedding);
-            if sim > 0.3 { // minimum threshold
+            if sim > 0.65 { // minimum threshold — raised from 0.3 to reduce noise
                 scored.push((SearchResult {
                     path, name, library_name, modified,
                     score: sim as f64,

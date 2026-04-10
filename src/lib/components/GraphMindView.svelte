@@ -464,7 +464,14 @@
 							}
 						} else {
 							// Plain text: use universalSearch for categorized results
-							const resp = await universalSearch(q, null, 0);
+							// Embed query for semantic search if enabled
+							const { embedText, appSettings } = await import('$lib/libraries/store');
+							const { get } = await import('svelte/store');
+							let qEmbed: number[] | null = null;
+							if (get(appSettings).enabledFeatures?.semanticSearch) {
+								try { qEmbed = await embedText(q); } catch {}
+							}
+							const resp = await universalSearch(q, qEmbed, 0);
 							const categoryTypes: [string, string][] = [
 								['titles', 'title'], ['contents', 'content'], ['tags', 'tag'],
 								['properties', 'property'], ['wikilinks', 'wikilink'], ['semantic', 'semantic'],
