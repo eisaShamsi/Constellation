@@ -1,15 +1,24 @@
 # Session Log — 2026-04-08 / 2026-04-09 / 2026-04-10
 
-## Phase: Semantic Threshold + Sky View Semantic Search
-**Commit**: `9d2a221` — Raise semantic threshold to 0.65, enable semantic search in Sky View
+## Phase: Dynamic Semantic Threshold
+**Commits**: `9d2a221` → `8f21f65`
 
-### Changes
-- **Semantic threshold**: Raised from 0.3 → 0.65 in `search.rs:903` — was returning nearly all notes (2180/2181) for any query, now filters to meaningful matches only
-- **Sky View semantic search**: `GraphMindView.svelte` now embeds query via `embedText()` before calling `universalSearch()` — was passing `null`, so semantic results never appeared in Sky View
+### Problem
+e5-small produces compressed cosine similarity scores (0.73–0.88 range for all notes). Fixed thresholds (0.3, 0.65) either return everything or still return too many.
 
-### Status
-- Code committed and pushed. Rust binary needs recompile (`npx tauri dev`) to activate the 0.65 threshold
-- Full test suite (Tests 1–12) pending after rebuild
+### Solution — Dynamic Threshold
+- Two-pass approach: compute all scores first, then apply `top_score - 0.03` as cutoff (minimum 0.75)
+- This keeps only results within 3% of the best match — the top 20% of the model's effective discrimination range
+- Debug logging: `[SEMANTIC] top=X, threshold=Y, candidates=Z` in stderr
+
+### Results (query: "agriculture")
+- Fixed 0.3 → 2180 results (all notes)
+- Fixed 0.65 → 2180 results (all notes still above)
+- Dynamic 0.05 → 222 results
+- **Dynamic 0.03 → 31 results (Search Hub), 46 results (Sky View)** ✅
+
+### Also in this phase
+- Sky View now embeds query via `embedText()` for semantic search (was passing `null`)
 
 ---
 

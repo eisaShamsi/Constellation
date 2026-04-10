@@ -1,0 +1,717 @@
+//! Canonical Filename Generation & Frontmatter Injection
+//!
+//! Format: YYYYMMDDTHHMMSSZ_KIND_XXXX.ext
+//!
+//! - Timestamp: file creation date (UTC) or fallback to modification date
+//! - KIND: file kind code from classification engine
+//! - XXXX: 4-char uppercase hex suffix for collision avoidance
+//! - ext: original file extension
+
+use chrono::{DateTime, Utc};
+use rand::Rng;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use crate::file_kinds::{classify_file, KindRegistry};
+
+// ─── Canonical Filename ──────────────────────────────────────────────
+
+/// A parsed canonical filename.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CanonicalName {
+    pub timestamp: String, // "20260410T153045Z"
+    pub kind: String,      // "NOTE"
+    pub suffix: String,    // "7F3A"
+    pub extension: String, // "md"
+    pub full: String,      // "20260410T153045Z_NOTE_7F3A.md"
+    pub stem: String,      // "20260410T153045Z_NOTE_7F3A" (= cid)
+}
+
+/// Generate a random 4-char uppercase hex suffix.
+fn random_suffix() -> String {
+    let n: u16 = rand::thread_rng().gen();
+    format!("{:04X}", n)
+}
+
+/// Format a DateTime<Utc> into the canonical timestamp string.
+fn format_timestamp(dt: &DateTime<Utc>) -> String {
+    dt.format("%Y%m%dT%H%M%SZ").to_string()
+}
+
+/// Generate a canonical filename for a file.
+///
+/// - `kind`: the file kind code (e.g., "NOTE", "IMG")
+/// - `created`: the creation timestamp (UTC)
+/// - `extension`: the file extension without dot (e.g., "md", "png")
+/// - `target_dir`: directory to check for collisions (optional)
+pub fn generate_canonical(
+    kind: &str,
+    created: &DateTime<Utc>,
+    extension: &str,
+    target_dir: Option<&Path>,
+) -> CanonicalName {
+    let ts = format_timestamp(created);
+    let ext = extension.trim_start_matches('.');
+
+    // Try up to 10 suffixes to avoid collision
+    for _attempt in 0..10 {
+        let suffix = random_suffix();
+        let stem = format!("{}_{}_{}",ts, kind, suffix);
+        let full = format!("{}.{}", stem, ext);
+
+        if let Some(dir) = target_dir {
+            if dir.join(&full).exists() {
+                continue; // collision, try again
+            }
+        }
+
+        return CanonicalName {
+            timestamp: ts,
+            kind: kind.to_string(),
+            suffix,
+            extension: ext.to_string(),
+            full,
+            stem,
+        };
+    }
+
+    // Fallback: increment timestamp by 1 second
+    let fallback_ts = format_timestamp(&(*created + chrono::Duration::seconds(1)));
+    let suffix = random_suffix();
+    let stem = format!("{}_{}_{}",fallback_ts, kind, suffix);
+    let full = format!("{}.{}", stem, ext);
+    CanonicalName {
+        timestamp: fallback_ts,
+        kind: kind.to_string(),
+        suffix,
+        extension: ext.to_string(),
+        full,
+        stem,
+    }
+}
+
+/// Get the creation timestamp of a file (fallback: modification time, then now).
+pub fn file_creation_time(path: &Path) -> DateTime<Utc> {
+    if let Ok(meta) = fs::metadata(path) {
+        // Try creation time first (available on Windows and macOS)
+        if let Ok(created) = meta.created() {
+            return DateTime::from(created);
+        }
+        // Fallback to modification time
+        if let Ok(modified) = meta.modified() {
+            return DateTime::from(modified);
+        }
+    }
+    Utc::now()
+}
+
+// ─── Frontmatter Injection ───────────────────────────────────────────
+
+/// Fields to inject into a markdown file's frontmatter.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FrontmatterFields {
+    pub title: String,
+    pub cid: String,
+    pub kind: String,
+    pub created: String, // ISO 8601
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub aliases: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub original_filename: Option<String>,
+}
+
+/// Inject or merge Constellation frontmatter fields into a markdown file's content.
+///
+/// - If the file has no frontmatter, creates one.
+/// - If the file has existing frontmatter, merges fields (preserves user fields).
+/// - Never overwrites existing `title`, `tags`, or user-defined fields.
+pub fn inject_frontmatter(content: &str, fields: &FrontmatterFields) -> String {
+    let trimmed = content.trim_start();
+
+    if trimmed.starts_with("---") {
+        // Has existing frontmatter — merge
+        let after_first = &trimmed[3..];
+        if let Some(end_pos) = after_first.find("\n---") {
+            let existing_fm = &after_first[..end_pos];
+            let body = &after_first[end_pos + 4..]; // skip \n---
+
+            let merged = merge_frontmatter(existing_fm, fields);
+            return format!("---\n{}---\n{}", merged, body);
+        }
+    }
+
+    // No frontmatter — create new
+    let fm = build_frontmatter(fields);
+    format!("---\n{}---\n\n{}", fm, content)
+}
+
+/// Build a fresh frontmatter string from fields.
+fn build_frontmatter(fields: &FrontmatterFields) -> String {
+    let mut fm = String::new();
+    fm.push_str(&format!("title: \"{}\"\n", escape_yaml_string(&fields.title)));
+    fm.push_str(&format!("cid: {}\n", fields.cid));
+    fm.push_str(&format!("kind: {}\n", fields.kind.to_lowercase()));
+    fm.push_str(&format!("created: {}\n", fields.created));
+    if !fields.aliases.is_empty() {
+        fm.push_str("aliases:\n");
+        for alias in &fields.aliases {
+            fm.push_str(&format!("  - \"{}\"\n", escape_yaml_string(alias)));
+        }
+    }
+    if let Some(ref orig) = fields.original_filename {
+        fm.push_str(&format!(
+            "original_filename: \"{}\"\n",
+            escape_yaml_string(orig)
+        ));
+    }
+    fm
+}
+
+/// Merge Constellation fields into existing frontmatter, preserving user fields.
+fn merge_frontmatter(existing: &str, fields: &FrontmatterFields) -> String {
+    let mut lines: Vec<String> = Vec::new();
+    let mut has_title = false;
+    let mut has_cid = false;
+    let mut has_kind = false;
+    let mut has_created = false;
+    let mut has_aliases = false;
+    let mut in_aliases_block = false;
+
+    for line in existing.lines() {
+        let trimmed = line.trim_start();
+
+        // Track what already exists
+        if trimmed.starts_with("title:") {
+            has_title = true;
+        }
+        if trimmed.starts_with("cid:") {
+            has_cid = true;
+            // Always overwrite cid with ours
+            lines.push(format!("cid: {}", fields.cid));
+            continue;
+        }
+        if trimmed.starts_with("kind:") {
+            has_kind = true;
+            // Always overwrite kind with ours
+            lines.push(format!("kind: {}", fields.kind.to_lowercase()));
+            continue;
+        }
+        if trimmed.starts_with("created:") && !has_created {
+            has_created = true;
+            // Keep existing created date
+        }
+        if trimmed.starts_with("aliases:") {
+            has_aliases = true;
+            in_aliases_block = true;
+            lines.push(line.to_string());
+            // Append our aliases that aren't already there
+            // (we'll check in a second pass)
+            continue;
+        }
+        if in_aliases_block {
+            if trimmed.starts_with("- ") {
+                lines.push(line.to_string());
+                continue;
+            } else {
+                in_aliases_block = false;
+                // Before leaving aliases block, add our aliases
+                for alias in &fields.aliases {
+                    let alias_line = format!("  - \"{}\"", escape_yaml_string(alias));
+                    // Don't duplicate
+                    if !lines.iter().any(|l| {
+                        l.trim().trim_matches('"').trim_matches('\'')
+                            == alias.as_str()
+                            || l.contains(alias.as_str())
+                    }) {
+                        lines.push(alias_line);
+                    }
+                }
+            }
+        }
+
+        lines.push(line.to_string());
+    }
+
+    // If we were still in aliases block at end of frontmatter
+    if in_aliases_block {
+        for alias in &fields.aliases {
+            let alias_line = format!("  - \"{}\"", escape_yaml_string(alias));
+            if !lines.iter().any(|l| l.contains(alias.as_str())) {
+                lines.push(alias_line);
+            }
+        }
+    }
+
+    // Add missing fields at the end
+    if !has_title {
+        lines.insert(
+            0,
+            format!("title: \"{}\"", escape_yaml_string(&fields.title)),
+        );
+    }
+    if !has_cid {
+        lines.push(format!("cid: {}", fields.cid));
+    }
+    if !has_kind {
+        lines.push(format!("kind: {}", fields.kind.to_lowercase()));
+    }
+    if !has_created {
+        lines.push(format!("created: {}", fields.created));
+    }
+    if !has_aliases && !fields.aliases.is_empty() {
+        lines.push("aliases:".to_string());
+        for alias in &fields.aliases {
+            lines.push(format!("  - \"{}\"", escape_yaml_string(alias)));
+        }
+    }
+    if let Some(ref orig) = fields.original_filename {
+        if !lines.iter().any(|l| l.trim_start().starts_with("original_filename:")) {
+            lines.push(format!(
+                "original_filename: \"{}\"",
+                escape_yaml_string(orig)
+            ));
+        }
+    }
+
+    let mut result = lines.join("\n");
+    result.push('\n');
+    result
+}
+
+/// Escape special YAML characters in a string value.
+fn escape_yaml_string(s: &str) -> String {
+    s.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+// ─── Sidecar Metadata (for non-markdown files) ──────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SidecarMetadata {
+    pub title: String,
+    pub cid: String,
+    pub kind: String,
+    pub created: String,
+    pub original_filename: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub aliases: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub referenced_by: Vec<String>,
+}
+
+/// Create a .meta.json sidecar file path from a canonical file path.
+pub fn sidecar_path(canonical_path: &Path) -> PathBuf {
+    let stem = canonical_path
+        .file_stem()
+        .unwrap_or_default()
+        .to_string_lossy();
+    let ext = canonical_path
+        .extension()
+        .unwrap_or_default()
+        .to_string_lossy();
+    canonical_path.with_file_name(format!("{}.{}.meta.json", stem, ext))
+}
+
+/// Write a sidecar .meta.json file.
+pub fn write_sidecar(canonical_path: &Path, meta: &SidecarMetadata) -> Result<(), String> {
+    let path = sidecar_path(canonical_path);
+    let json = serde_json::to_string_pretty(meta).map_err(|e| e.to_string())?;
+    fs::write(&path, json).map_err(|e| format!("Failed to write sidecar {}: {}", path.display(), e))
+}
+
+// ─── Import Canonicalization Pipeline ────────────────────────────────
+
+/// Result of a canonicalization operation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CanonicalizeResult {
+    pub total_files: usize,
+    pub renamed: usize,
+    pub sidecars_created: usize,
+    pub errors: Vec<String>,
+    pub rename_map: HashMap<String, String>, // old path → new path
+}
+
+/// Preview what canonicalization would do to a directory of files.
+/// Does NOT modify anything — returns the proposed rename map.
+#[tauri::command]
+pub fn canonicalize_preview(
+    app: tauri::AppHandle,
+    library_path: String,
+) -> Result<CanonicalizeResult, String> {
+    let lib_path = Path::new(&library_path);
+    if !lib_path.is_dir() {
+        return Err("Library path is not a directory".to_string());
+    }
+
+    let config_path = crate::universe::active_constellation_dir(&app)
+        .map(|d| d.join("file_kinds.json"))
+        .ok();
+    let mut registry = KindRegistry::new(config_path.as_deref());
+
+    let mut result = CanonicalizeResult {
+        total_files: 0,
+        renamed: 0,
+        sidecars_created: 0,
+        errors: Vec::new(),
+        rename_map: HashMap::new(),
+    };
+
+    // Walk all files
+    let files = collect_files_recursive(lib_path);
+    result.total_files = files.len();
+
+    for file_path in &files {
+        // Skip files that are already canonical
+        if is_canonical_filename(file_path) {
+            continue;
+        }
+        // Skip .meta.json sidecars
+        if file_path
+            .to_string_lossy()
+            .ends_with(".meta.json")
+        {
+            continue;
+        }
+
+        let kind = classify_file(file_path, &mut registry);
+        let created = file_creation_time(file_path);
+        let ext = file_path
+            .extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_else(|| "bin".to_string());
+
+        let parent = file_path.parent().unwrap_or(lib_path);
+        let canonical = generate_canonical(&kind, &created, &ext, Some(parent));
+        let new_path = parent.join(&canonical.full);
+
+        result.rename_map.insert(
+            file_path.to_string_lossy().to_string(),
+            new_path.to_string_lossy().to_string(),
+        );
+        result.renamed += 1;
+
+        // Count sidecars for non-markdown files
+        if ext != "md" && ext != "markdown" {
+            result.sidecars_created += 1;
+        }
+    }
+
+    Ok(result)
+}
+
+/// Execute canonicalization on a library.
+/// Renames files, injects frontmatter, creates sidecars.
+#[tauri::command]
+pub fn canonicalize_execute(
+    app: tauri::AppHandle,
+    library_path: String,
+) -> Result<CanonicalizeResult, String> {
+    let lib_path = Path::new(&library_path);
+    if !lib_path.is_dir() {
+        return Err("Library path is not a directory".to_string());
+    }
+
+    let config_path = crate::universe::active_constellation_dir(&app)
+        .map(|d| d.join("file_kinds.json"))
+        .ok();
+    let mut registry = KindRegistry::new(config_path.as_deref());
+
+    let mut result = CanonicalizeResult {
+        total_files: 0,
+        renamed: 0,
+        sidecars_created: 0,
+        errors: Vec::new(),
+        rename_map: HashMap::new(),
+    };
+
+    // Collect all files first
+    let files = collect_files_recursive(lib_path);
+    result.total_files = files.len();
+
+    // Phase 1: Build the rename map + enriched content
+    struct PendingRename {
+        old_path: PathBuf,
+        new_path: PathBuf,
+        canonical: CanonicalName,
+        kind: String,
+        original_name: String,
+    }
+    let mut pending: Vec<PendingRename> = Vec::new();
+
+    for file_path in &files {
+        if is_canonical_filename(file_path) {
+            continue;
+        }
+        if file_path.to_string_lossy().ends_with(".meta.json") {
+            continue;
+        }
+
+        let kind = classify_file(file_path, &mut registry);
+        let created = file_creation_time(file_path);
+        let ext = file_path
+            .extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_else(|| "bin".to_string());
+
+        let parent = file_path.parent().unwrap_or(lib_path);
+        let canonical = generate_canonical(&kind, &created, &ext, Some(parent));
+        let new_path = parent.join(&canonical.full);
+
+        let original_name = file_path
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+
+        pending.push(PendingRename {
+            old_path: file_path.clone(),
+            new_path,
+            canonical,
+            kind,
+            original_name,
+        });
+    }
+
+    // Phase 2: Enrich and rename
+    for item in &pending {
+        let ext = item
+            .old_path
+            .extension()
+            .map(|e| e.to_string_lossy().to_lowercase())
+            .unwrap_or_default();
+
+        if ext == "md" || ext == "markdown" {
+            // Read content, inject frontmatter, write to new path
+            match fs::read_to_string(&item.old_path) {
+                Ok(content) => {
+                    let created_dt = file_creation_time(&item.old_path);
+                    let fields = FrontmatterFields {
+                        title: item.original_name.clone(),
+                        cid: item.canonical.stem.clone(),
+                        kind: item.kind.to_lowercase(),
+                        created: created_dt.to_rfc3339(),
+                        aliases: vec![item.original_name.clone()],
+                        original_filename: Some(
+                            item.old_path
+                                .file_name()
+                                .unwrap_or_default()
+                                .to_string_lossy()
+                                .to_string(),
+                        ),
+                    };
+                    let enriched = inject_frontmatter(&content, &fields);
+                    if let Err(e) = fs::write(&item.new_path, enriched) {
+                        result
+                            .errors
+                            .push(format!("{}: write failed: {}", item.old_path.display(), e));
+                        continue;
+                    }
+                    // Remove original
+                    let _ = fs::remove_file(&item.old_path);
+                    result.renamed += 1;
+                }
+                Err(e) => {
+                    result
+                        .errors
+                        .push(format!("{}: read failed: {}", item.old_path.display(), e));
+                }
+            }
+        } else {
+            // Non-markdown: rename + create sidecar
+            if let Err(e) = fs::rename(&item.old_path, &item.new_path) {
+                result
+                    .errors
+                    .push(format!("{}: rename failed: {}", item.old_path.display(), e));
+                continue;
+            }
+            result.renamed += 1;
+
+            let created_dt = file_creation_time(&item.new_path);
+            let sidecar = SidecarMetadata {
+                title: item.original_name.clone(),
+                cid: item.canonical.stem.clone(),
+                kind: item.kind.to_lowercase(),
+                created: created_dt.to_rfc3339(),
+                original_filename: item
+                    .old_path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_string(),
+                aliases: vec![item.original_name.clone()],
+                referenced_by: Vec::new(),
+            };
+            if let Err(e) = write_sidecar(&item.new_path, &sidecar) {
+                result.errors.push(e);
+            } else {
+                result.sidecars_created += 1;
+            }
+        }
+
+        result.rename_map.insert(
+            item.old_path.to_string_lossy().to_string(),
+            item.new_path.to_string_lossy().to_string(),
+        );
+    }
+
+    Ok(result)
+}
+
+/// Generate a canonical name for a new note (called from the frontend).
+#[tauri::command]
+pub fn generate_canonical_name(
+    kind: String,
+    created: Option<String>,
+) -> Result<CanonicalName, String> {
+    let dt: DateTime<Utc> = if let Some(ref ts) = created {
+        DateTime::parse_from_rfc3339(ts)
+            .map(|d| d.with_timezone(&Utc))
+            .unwrap_or_else(|_| Utc::now())
+    } else {
+        Utc::now()
+    };
+
+    let ext = match kind.to_uppercase().as_str() {
+        "NOTE" | "BASE" | "TMPL" | "LINK" | "MARK" | "CLIP" => "md",
+        "CANVAS" => "json",
+        _ => "bin",
+    };
+
+    Ok(generate_canonical(&kind.to_uppercase(), &dt, ext, None))
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────
+
+/// Check if a filename already follows the canonical pattern.
+fn is_canonical_filename(path: &Path) -> bool {
+    let stem = path
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    // Pattern: YYYYMMDDTHHMMSSZ_KIND_XXXX
+    // Min length: 16 (timestamp) + 1 (_) + 1 (kind min) + 1 (_) + 4 (suffix) = 23
+    if stem.len() < 23 {
+        return false;
+    }
+    // Check timestamp format: digits, T at pos 8, digits, Z at pos 15
+    let bytes = stem.as_bytes();
+    bytes[8] == b'T'
+        && bytes[15] == b'Z'
+        && bytes[16] == b'_'
+        && bytes.iter().take(8).all(|b| b.is_ascii_digit())
+        && bytes[9..15].iter().all(|b| b.is_ascii_digit())
+}
+
+/// Recursively collect all files in a directory (skipping hidden dirs and excluded dirs).
+fn collect_files_recursive(dir: &Path) -> Vec<PathBuf> {
+    const EXCLUDED: &[&str] = &[
+        ".obsidian",
+        ".trash",
+        ".git",
+        ".svn",
+        "node_modules",
+        "__MACOSX",
+        ".constellation",
+    ];
+
+    let mut files = Vec::new();
+    let entries = match fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(_) => return files,
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let name = path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+
+        if path.is_dir() {
+            if name.starts_with('.') || EXCLUDED.iter().any(|d| name.eq_ignore_ascii_case(d)) {
+                continue;
+            }
+            files.extend(collect_files_recursive(&path));
+        } else {
+            files.push(path);
+        }
+    }
+
+    files
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_canonical_name_format() {
+        let dt = Utc::now();
+        let cn = generate_canonical("NOTE", &dt, "md", None);
+        assert!(cn.full.ends_with(".md"));
+        assert!(cn.stem.contains("_NOTE_"));
+        assert_eq!(cn.suffix.len(), 4);
+        assert!(cn.stem.contains('T'));
+        assert!(cn.stem.contains('Z'));
+    }
+
+    #[test]
+    fn test_is_canonical() {
+        let p = Path::new("20260410T153045Z_NOTE_7F3A.md");
+        assert!(is_canonical_filename(p));
+
+        let p2 = Path::new("Agriculture System.md");
+        assert!(!is_canonical_filename(p2));
+
+        let p3 = Path::new("20260410T153045Z_IMG_E5F6.png");
+        assert!(is_canonical_filename(p3));
+    }
+
+    #[test]
+    fn test_inject_frontmatter_new() {
+        let content = "# Hello World\n\nSome content.";
+        let fields = FrontmatterFields {
+            title: "Hello World".to_string(),
+            cid: "20260410T153045Z_NOTE_7F3A".to_string(),
+            kind: "note".to_string(),
+            created: "2026-04-10T15:30:45Z".to_string(),
+            aliases: vec!["Hello World".to_string()],
+            original_filename: Some("Hello World.md".to_string()),
+        };
+        let result = inject_frontmatter(content, &fields);
+        assert!(result.starts_with("---\n"));
+        assert!(result.contains("cid: 20260410T153045Z_NOTE_7F3A"));
+        assert!(result.contains("kind: note"));
+        assert!(result.contains("# Hello World"));
+    }
+
+    #[test]
+    fn test_inject_frontmatter_merge() {
+        let content = "---\ntitle: My Note\ntags:\n  - rust\n  - code\n---\n\nBody text.";
+        let fields = FrontmatterFields {
+            title: "My Note".to_string(),
+            cid: "20260410T153045Z_NOTE_ABCD".to_string(),
+            kind: "note".to_string(),
+            created: "2026-04-10T15:30:45Z".to_string(),
+            aliases: vec!["My Note".to_string()],
+            original_filename: None,
+        };
+        let result = inject_frontmatter(content, &fields);
+        assert!(result.contains("cid: 20260410T153045Z_NOTE_ABCD"));
+        assert!(result.contains("tags:"));
+        assert!(result.contains("- rust"));
+        assert!(result.contains("Body text."));
+    }
+
+    #[test]
+    fn test_sidecar_path() {
+        let p = Path::new("/lib/20260410T153045Z_IMG_E5F6.png");
+        let sp = sidecar_path(p);
+        assert_eq!(
+            sp.file_name().unwrap().to_str().unwrap(),
+            "20260410T153045Z_IMG_E5F6.png.meta.json"
+        );
+    }
+}

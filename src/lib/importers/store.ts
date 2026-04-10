@@ -22,3 +22,42 @@ export async function importExecute(
 		subfolder,
 	});
 }
+
+// ─── Canonical Filename System ──────────────────────────────────────
+
+export interface CanonicalName {
+	timestamp: string;
+	kind: string;
+	suffix: string;
+	extension: string;
+	full: string;
+	stem: string; // = cid
+}
+
+export interface CanonicalizeResult {
+	total_files: number;
+	renamed: number;
+	sidecars_created: number;
+	errors: string[];
+	rename_map: Record<string, string>;
+}
+
+/** Classify a file by its content and extension. Returns kind code (e.g., "NOTE", "IMG"). */
+export async function classifyFile(path: string): Promise<string> {
+	return invoke<string>('classify_file_cmd', { path });
+}
+
+/** Generate a canonical filename for a new file. */
+export async function generateCanonicalName(kind: string, created?: string): Promise<CanonicalName> {
+	return invoke<CanonicalName>('generate_canonical_name', { kind, created });
+}
+
+/** Preview what canonicalization would do to a library (no changes made). */
+export async function canonicalizePreview(libraryPath: string): Promise<CanonicalizeResult> {
+	return invoke<CanonicalizeResult>('canonicalize_preview', { libraryPath });
+}
+
+/** Execute canonicalization: rename files, inject frontmatter, create sidecars. */
+export async function canonicalizeExecute(libraryPath: string): Promise<CanonicalizeResult> {
+	return invoke<CanonicalizeResult>('canonicalize_execute', { libraryPath });
+}

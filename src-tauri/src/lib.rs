@@ -1,8 +1,10 @@
 mod ai;
 mod bases;
 mod canvas;
+mod canonical;
 mod embeddings;
 mod dataview;
+mod file_kinds;
 mod inspector360;
 mod importers;
 mod libraries;
@@ -341,6 +343,10 @@ pub fn run() {
             importers::import_pick_source,
             importers::import_preview,
             importers::import_execute,
+            file_kinds::classify_file_cmd,
+            canonical::generate_canonical_name,
+            canonical::canonicalize_preview,
+            canonical::canonicalize_execute,
             constellation_show_in_folder,
             open_path,
             list_monitors,

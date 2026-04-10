@@ -29,6 +29,7 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 ort = "2.0.0-rc.12"
 tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
 chrono = "0.4"
+rand = "0.8"
 tauri-plugin-updater = "2.10.0"
 tauri-plugin-process = "2.3.1"
 
