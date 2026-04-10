@@ -693,93 +693,70 @@ fn html_to_markdown(html: &str) -> String {
     md
 }
 
+/// Pre-compiled regex patterns for HTML→Markdown conversion (compiled once via OnceLock).
+struct HtmlPatterns {
+    heading: regex::Regex,
+    bold: regex::Regex,
+    italic: regex::Regex,
+    link: regex::Regex,
+    image: regex::Regex,
+    li: regex::Regex,
+    list_wrap: regex::Regex,
+    code_block: regex::Regex,
+    inline_code: regex::Regex,
+    blockquote: regex::Regex,
+    hr: regex::Regex,
+    br: regex::Regex,
+    p: regex::Regex,
+    div: regex::Regex,
+    strip: regex::Regex,
+}
+
+fn html_patterns() -> &'static HtmlPatterns {
+    use std::sync::OnceLock;
+    static P: OnceLock<HtmlPatterns> = OnceLock::new();
+    P.get_or_init(|| HtmlPatterns {
+        heading: regex::Regex::new(r"<h([1-6])[^>]*>(.*?)</h\1>").unwrap(),
+        bold: regex::Regex::new(r"<(b|strong)[^>]*>(.*?)</\1>").unwrap(),
+        italic: regex::Regex::new(r"<(i|em)[^>]*>(.*?)</\1>").unwrap(),
+        link: regex::Regex::new(r#"<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>"#).unwrap(),
+        image: regex::Regex::new(r#"<img[^>]*src="([^"]*)"[^>]*/?\s*>"#).unwrap(),
+        li: regex::Regex::new(r"<li[^>]*>(.*?)</li>").unwrap(),
+        list_wrap: regex::Regex::new(r"</?[ou]l[^>]*>").unwrap(),
+        code_block: regex::Regex::new(r"<pre[^>]*><code[^>]*>([\s\S]*?)</code></pre>").unwrap(),
+        inline_code: regex::Regex::new(r"<code[^>]*>(.*?)</code>").unwrap(),
+        blockquote: regex::Regex::new(r"<blockquote[^>]*>(.*?)</blockquote>").unwrap(),
+        hr: regex::Regex::new(r"<hr[^>]*/?\s*>").unwrap(),
+        br: regex::Regex::new(r"<br[^>]*/?\s*>").unwrap(),
+        p: regex::Regex::new(r"<p[^>]*>(.*?)</p>").unwrap(),
+        div: regex::Regex::new(r"<div[^>]*>(.*?)</div>").unwrap(),
+        strip: regex::Regex::new(r"<[^>]+>").unwrap(),
+    })
+}
+
 fn convert_html_tags(html: &str) -> String {
+    let p = html_patterns();
     let mut md = html.to_string();
 
-    // Headings
-    let heading_re = regex::Regex::new(r"<h([1-6])[^>]*>(.*?)</h\1>").unwrap();
-    md = heading_re
-        .replace_all(&md, |caps: &regex::Captures| {
-            let level: usize = caps[1].parse().unwrap_or(1);
-            let text = strip_tags(&caps[2]);
-            format!("{} {}", "#".repeat(level), text.trim())
-        })
-        .to_string();
-
-    // Bold
-    md = regex::Regex::new(r"<(b|strong)[^>]*>(.*?)</\1>")
-        .unwrap()
-        .replace_all(&md, "**$2**")
-        .to_string();
-
-    // Italic
-    md = regex::Regex::new(r"<(i|em)[^>]*>(.*?)</\1>")
-        .unwrap()
-        .replace_all(&md, "*$2*")
-        .to_string();
-
-    // Links
-    md = regex::Regex::new(r#"<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>"#)
-        .unwrap()
-        .replace_all(&md, "[$2]($1)")
-        .to_string();
-
-    // Images
-    md = regex::Regex::new(r#"<img[^>]*src="([^"]*)"[^>]*/?\s*>"#)
-        .unwrap()
-        .replace_all(&md, "![]($1)")
-        .to_string();
-
-    // Lists
-    md = regex::Regex::new(r"<li[^>]*>(.*?)</li>")
-        .unwrap()
-        .replace_all(&md, "- $1")
-        .to_string();
-    md = regex::Regex::new(r"</?[ou]l[^>]*>")
-        .unwrap()
-        .replace_all(&md, "")
-        .to_string();
-
-    // Code blocks
-    md = regex::Regex::new(r"<pre[^>]*><code[^>]*>([\s\S]*?)</code></pre>")
-        .unwrap()
-        .replace_all(&md, "```\n$1\n```")
-        .to_string();
-
-    // Inline code
-    md = regex::Regex::new(r"<code[^>]*>(.*?)</code>")
-        .unwrap()
-        .replace_all(&md, "`$1`")
-        .to_string();
-
-    // Blockquotes
-    md = regex::Regex::new(r"<blockquote[^>]*>(.*?)</blockquote>")
-        .unwrap()
-        .replace_all(&md, "> $1")
-        .to_string();
-
-    // HR
-    md = regex::Regex::new(r"<hr[^>]*/?\s*>")
-        .unwrap()
-        .replace_all(&md, "\n---\n")
-        .to_string();
-
-    // Paragraphs and line breaks
-    md = regex::Regex::new(r"<br[^>]*/?\s*>")
-        .unwrap()
-        .replace_all(&md, "\n")
-        .to_string();
-    md = regex::Regex::new(r"<p[^>]*>(.*?)</p>")
-        .unwrap()
-        .replace_all(&md, "$1\n\n")
-        .to_string();
-    md = regex::Regex::new(r"<div[^>]*>(.*?)</div>")
-        .unwrap()
-        .replace_all(&md, "$1\n")
-        .to_string();
-
-    // Strip remaining HTML tags
-    md = strip_tags(&md);
+    md = p.heading.replace_all(&md, |caps: &regex::Captures| {
+        let level: usize = caps[1].parse().unwrap_or(1);
+        let text = p.strip.replace_all(&caps[2], "");
+        format!("{} {}", "#".repeat(level), text.trim())
+    }).to_string();
+    md = p.bold.replace_all(&md, "**$2**").to_string();
+    md = p.italic.replace_all(&md, "*$2*").to_string();
+    md = p.link.replace_all(&md, "[$2]($1)").to_string();
+    md = p.image.replace_all(&md, "![]($1)").to_string();
+    md = p.li.replace_all(&md, "- $1").to_string();
+    md = p.list_wrap.replace_all(&md, "").to_string();
+    md = p.code_block.replace_all(&md, "```\n$1\n```").to_string();
+    md = p.inline_code.replace_all(&md, "`$1`").to_string();
+    md = p.blockquote.replace_all(&md, "> $1").to_string();
+    md = p.hr.replace_all(&md, "\n---\n").to_string();
+    md = p.br.replace_all(&md, "\n").to_string();
+    md = p.p.replace_all(&md, "$1\n\n").to_string();
+    md = p.div.replace_all(&md, "$1\n").to_string();
+    md = p.strip.replace_all(&md, "").to_string();
 
     // Decode common entities
     md = md
@@ -796,13 +773,6 @@ fn convert_html_tags(html: &str) -> String {
     }
 
     md
-}
-
-fn strip_tags(html: &str) -> String {
-    regex::Regex::new(r"<[^>]+>")
-        .unwrap()
-        .replace_all(html, "")
-        .to_string()
 }
 
 fn clean_notion_name(name: &str) -> String {

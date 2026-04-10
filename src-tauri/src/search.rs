@@ -220,12 +220,15 @@ fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, St
 }
 
 /// Extract outgoing wikilinks from note content.
+/// Applies Arabic normalization for consistent matching with title-based names.
 fn extract_wikilinks(content: &str) -> Vec<String> {
-    let re = regex::Regex::new(r"\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]").unwrap();
+    use std::sync::OnceLock;
+    static RE: OnceLock<regex::Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| regex::Regex::new(r"\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]").unwrap());
     let mut links = Vec::new();
     for cap in re.captures_iter(content) {
         if let Some(m) = cap.get(1) {
-            let target = m.as_str().trim().to_lowercase();
+            let target = normalize_arabic_for_search(&m.as_str().trim().to_lowercase());
             if !target.is_empty() && !links.contains(&target) {
                 links.push(target);
             }
@@ -550,8 +553,8 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     if filters.orphans.unwrap_or(false) {
         // No outgoing links
         conditions.push("(outgoing_links_json IS NULL OR outgoing_links_json = '[]')".to_string());
-        // No incoming links — escape quotes in name for safe LIKE matching
-        conditions.push("NOT EXISTS (SELECT 1 FROM note_meta AS other WHERE other.outgoing_links_json LIKE '%\"' || REPLACE(REPLACE(LOWER(note_meta.name), '%', ''), '\"', '') || '\"%' AND other.path != note_meta.path)".to_string());
+        // No incoming links — escape %, ", and _ in name for safe LIKE matching
+        conditions.push("NOT EXISTS (SELECT 1 FROM note_meta AS other WHERE other.outgoing_links_json LIKE '%\"' || REPLACE(REPLACE(REPLACE(LOWER(note_meta.name), '%', ''), '\"', ''), '_', '\\_') || '\"%' ESCAPE '\\' AND other.path != note_meta.path)".to_string());
     }
 
     // Links-between filter: notes that link to BOTH X and Y
@@ -673,7 +676,7 @@ pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexSta
     // Schema v2: force full reindex to pick up bracket-format tags + inline hashtags
     // Check for version marker; if missing or outdated, delete and rebuild
     let version_path = path.with_extension("version");
-    let current_version = "4"; // v4: name field uses frontmatter title (canonical filename support)
+    let current_version = "5"; // v5: name from frontmatter title, Arabic-normalized wikilinks, name index
     let needs_rebuild = match std::fs::read_to_string(&version_path) {
         Ok(v) => v.trim() != current_version,
         Err(_) => true,

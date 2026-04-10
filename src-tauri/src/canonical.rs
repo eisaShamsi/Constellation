@@ -131,15 +131,19 @@ pub fn inject_frontmatter(content: &str, fields: &FrontmatterFields) -> String {
     let trimmed = content.trim_start();
 
     if trimmed.starts_with("---") {
-        // Has existing frontmatter — merge
         let after_first = &trimmed[3..];
         if let Some(end_pos) = after_first.find("\n---") {
+            // Well-formed frontmatter — merge
             let existing_fm = &after_first[..end_pos];
             let body = &after_first[end_pos + 4..]; // skip \n---
-
             let merged = merge_frontmatter(existing_fm, fields);
             return format!("---\n{}---\n{}", merged, body);
         }
+        // Malformed frontmatter (opening --- but no closing ---).
+        // Treat the entire content after --- as body, prepend fresh frontmatter.
+        let body = after_first.trim_start_matches('\n');
+        let fm = build_frontmatter(fields);
+        return format!("---\n{}---\n\n{}", fm, body);
     }
 
     // No frontmatter — create new
@@ -593,6 +597,11 @@ pub fn generate_canonical_name(
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
+/// Check if a library has been canonicalized (has `.constellation/canonical` marker).
+pub fn is_library_canonicalized(library_path: &str) -> bool {
+    Path::new(library_path).join(".constellation").join("canonical").exists()
+}
+
 /// Check if a filename already follows the canonical pattern.
 pub fn is_canonical_filename(path: &Path) -> bool {
     let stem = path
@@ -614,7 +623,13 @@ pub fn is_canonical_filename(path: &Path) -> bool {
 }
 
 /// Recursively collect all files in a directory (skipping hidden dirs and excluded dirs).
+/// Depth-limited to 30 levels to prevent stack overflow on pathological directory structures.
 fn collect_files_recursive(dir: &Path) -> Vec<PathBuf> {
+    collect_files_recursive_depth(dir, 0)
+}
+
+fn collect_files_recursive_depth(dir: &Path, depth: u32) -> Vec<PathBuf> {
+    if depth > 30 { return Vec::new(); }
     let mut files = Vec::new();
     let entries = match fs::read_dir(dir) {
         Ok(e) => e,
@@ -637,7 +652,7 @@ fn collect_files_recursive(dir: &Path) -> Vec<PathBuf> {
             {
                 continue;
             }
-            files.extend(collect_files_recursive(&path));
+            files.extend(collect_files_recursive_depth(&path, depth + 1));
         } else {
             files.push(path);
         }

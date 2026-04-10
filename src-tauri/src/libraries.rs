@@ -20,6 +20,10 @@ pub struct FileEntry {
     pub extension: Option<String>,
     pub modified: Option<u64>,
     pub status: Option<String>,
+    /// For canonical files: the human-readable title from frontmatter.
+    /// Null for non-canonical files or folders.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_title: Option<String>,
 }
 
 /// Get the path to the libraries config file (in .constellation/).
@@ -224,7 +228,9 @@ pub fn get_note_headings(app: tauri::AppHandle, file_path: String) -> Result<Vec
     }
     let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))?;
     let mut headings = Vec::new();
-    let re = regex::Regex::new(r"(?m)^#{1,6}\s+(.+)$").unwrap();
+    use std::sync::OnceLock;
+    static HEADING_RE: OnceLock<regex::Regex> = OnceLock::new();
+    let re = HEADING_RE.get_or_init(|| regex::Regex::new(r"(?m)^#{1,6}\s+(.+)$").unwrap());
     for cap in re.captures_iter(&content) {
         if let Some(m) = cap.get(1) {
             headings.push(m.as_str().trim().to_string());
@@ -580,11 +586,9 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
     }
 }
 
-/// Check if a library has been canonicalized (contains files with canonical names).
-/// A library is considered canonical if it has a `.constellation/canonical` marker file.
+/// Check if a library has been canonicalized. Delegates to canonical module.
 fn is_library_canonical(library_path: &str) -> bool {
-    let marker = Path::new(library_path).join(".constellation").join("canonical");
-    marker.exists()
+    crate::canonical::is_library_canonicalized(library_path)
 }
 
 /// Search notes by property key/value across all libraries.
@@ -1309,6 +1313,19 @@ fn read_dir_recursive(dir: &Path, current_depth: u32, max_depth: u32) -> Vec<Fil
             None
         };
 
+        // For canonical files, extract the frontmatter title as display name
+        let display_title = if !is_dir
+            && extension.as_deref() == Some("md")
+            && crate::canonical::is_canonical_filename(&path)
+        {
+            // Read just the first 1KB to extract title (fast)
+            fs::read_to_string(&path)
+                .ok()
+                .and_then(|c| extract_frontmatter_title(&c))
+        } else {
+            None
+        };
+
         entries.push(FileEntry {
             name,
             path: path.to_string_lossy().to_string(),
@@ -1317,6 +1334,7 @@ fn read_dir_recursive(dir: &Path, current_depth: u32, max_depth: u32) -> Vec<Fil
             extension,
             modified,
             status,
+            display_title,
         });
     }
 
