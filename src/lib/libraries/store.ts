@@ -877,13 +877,23 @@ export async function embeddingStatus(): Promise<{ ready: boolean; embedded_coun
 }
 
 /**
+ * Strip invisible Unicode characters that browsers inject in bidi text inputs.
+ * This is the ROOT fix for manual Arabic typing: RTL inputs insert directional
+ * marks (LRM, RLM, ALM) and joiners (ZWJ, ZWNJ) that are invisible but break
+ * string matching. Must be applied to ALL search input before any processing.
+ */
+export function stripInvisibleChars(text: string): string {
+	return text.replace(/[\u200B-\u200F\u2028-\u202F\u2060-\u2069\u061C\uFEFF\u00AD]/g, '');
+}
+
+/**
  * Normalize Arabic text for fuzzy matching: strip diacritics (tashkeel),
  * normalize Alef variants (أإآٱ→ا), normalize Teh marbuta (ة→ه),
  * normalize Alef Maksura (ى→ي). This ensures manual typing matches
  * regardless of keyboard/input method differences.
  */
 function normalizeArabicLight(text: string): string {
-	return text
+	return stripInvisibleChars(text)
 		// Strip Arabic diacritics (Fathah, Dammah, Kasrah, Shadda, Sukun, etc.)
 		.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g, '')
 		// Normalize Alef variants → bare Alef
@@ -903,7 +913,8 @@ function normalizeArabicLight(text: string): string {
 export function canonicalizeSearchQuery(raw: string, ops: Record<string, string> | null): string {
 	if (!ops) return raw;
 
-	let result = raw;
+	// ROOT FIX: strip invisible bidi characters browsers inject in RTL text inputs
+	let result = stripInvisibleChars(raw);
 
 	// Build replacement pairs: [localized, canonical]
 	// Sorted by localized string length (longest first) to prevent partial matches
@@ -978,15 +989,17 @@ export function canonicalizeSearchQuery(raw: string, ops: Record<string, string>
  * Uses simple string matching with Arabic normalization.
  */
 export function hasAdvancedSyntaxMultilingual(q: string, ops: Record<string, string> | null): boolean {
+	// ROOT FIX: strip invisible bidi characters before checking
+	const clean = stripInvisibleChars(q);
 	// English operators (always checked)
-	if (/[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:/i.test(q)) return true;
+	if (/[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:/i.test(clean)) return true;
 	// Localized operators for current locale
 	if (!ops) return false;
-	const normalized = normalizeArabicLight(q);
+	const normalized = normalizeArabicLight(clean);
 	return Object.values(ops).some(op => {
 		if (!op || op.length < 2) return false;
-		// Exact match
-		if (q.includes(op)) return true;
+		// Exact match (on clean text, no invisible chars)
+		if (clean.includes(op)) return true;
 		// Normalized match (Arabic fuzzy)
 		if (normalized.includes(normalizeArabicLight(op))) return true;
 		return false;

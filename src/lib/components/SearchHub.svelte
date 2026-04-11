@@ -2,7 +2,7 @@
 	import { t, dir, getSearchOps } from '$lib/i18n';
 	import {
 		universalSearch, appSettings, embedText, constellationSearch, parseSearchQuery,
-		canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual,
+		canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual, stripInvisibleChars,
 		type UniversalSearchResponse,
 		type ConstellationSearchResult
 	} from '$lib/libraries/store';
@@ -98,6 +98,7 @@
 
 	function triggerSearch(q: string) {
 		clearTimeout(searchTimeout);
+		q = stripInvisibleChars(q); // Strip bidi marks browsers inject in RTL inputs
 		if (!q.trim()) { response = null; filteredResults = []; isAdvancedMode = false; return; }
 		loading = true;
 		searchTimeout = setTimeout(async () => {

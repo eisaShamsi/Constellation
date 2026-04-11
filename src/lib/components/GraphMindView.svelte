@@ -451,10 +451,11 @@
 			if (q.trim().length >= 2) {
 				searchDebounce = setTimeout(async () => {
 					try {
-						const { universalSearch, constellationSearch, parseSearchQuery, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual } = await import('$lib/libraries/store');
+						const { universalSearch, constellationSearch, parseSearchQuery, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual, stripInvisibleChars } = await import('$lib/libraries/store');
+						const q_clean = stripInvisibleChars(q); // Strip bidi marks from RTL inputs
 						const { getSearchOps } = await import('$lib/i18n');
 						const ops = getSearchOps();
-						const isAdvanced = hasAdvancedSyntaxMultilingual(q, ops);
+						const isAdvanced = hasAdvancedSyntaxMultilingual(q_clean, ops);
 
 						const typeMap = new Map<string, Set<string>>();
 						const allIds = new Set<string>();
@@ -462,7 +463,7 @@
 
 						if (isAdvanced) {
 							// Advanced syntax: canonicalize localized operators → parseSearchQuery → constellationSearch
-							const req = parseSearchQuery(canonicalizeSearchQuery(q, ops));
+							const req = parseSearchQuery(canonicalizeSearchQuery(q_clean, ops));
 							req.limit = 0;
 							const results = await constellationSearch(req);
 							for (const r of results) {
@@ -504,7 +505,7 @@
 
 						// Highlight link lines for link operators (use canonicalized query for matching)
 						engine?.clearSearchLinkHighlights();
-						const cq = canonicalizeSearchQuery(q, ops);
+						const cq = canonicalizeSearchQuery(q_clean, ops);
 						const linkToMatch = cq.match(/links?\s+to\s+\[\[([^\]]+)\]\]/i);
 						const linkFromMatch = cq.match(/links?\s+from\s+\[\[([^\]]+)\]\]/i);
 						const linkAllMatch = cq.match(/links?\s+all\s+\[\[([^\]]+)\]\]/i);
