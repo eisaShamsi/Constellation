@@ -486,11 +486,18 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
         for source in sources {
             let source_lower = source.to_lowercase();
             // Find the note named `source` and read its outgoing_links_json
+            // Try exact match first, then partial (LIKE) for user-typed partial names
             let links: Option<String> = conn.query_row(
                 "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) = ?1",
                 params![source_lower],
                 |row| row.get(0),
-            ).ok();
+            ).ok().or_else(|| {
+                conn.query_row(
+                    "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) LIKE '%' || ?1 || '%' LIMIT 1",
+                    params![source_lower],
+                    |row| row.get(0),
+                ).ok()
+            });
             if let Some(links_json) = links {
                 if let Ok(targets) = serde_json::from_str::<Vec<String>>(&links_json) {
                     from_targets.extend(targets);
@@ -518,7 +525,13 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
                 "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) = ?1",
                 params![target_lower],
                 |row| row.get(0),
-            ).ok();
+            ).ok().or_else(|| {
+                conn.query_row(
+                    "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) LIKE '%' || ?1 || '%' LIMIT 1",
+                    params![target_lower],
+                    |row| row.get(0),
+                ).ok()
+            });
             let back_targets: Vec<String> = links
                 .and_then(|json| serde_json::from_str::<Vec<String>>(&json).ok())
                 .unwrap_or_default();
@@ -571,11 +584,19 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
         for target in targets {
             let target_lower = target.to_lowercase();
             // Get X's outgoing links (notes X links to)
+            // Exact match first, then partial (LIKE) for user-typed partial names
             let outgoing: Vec<String> = conn.query_row(
                 "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) = ?1",
                 params![target_lower],
                 |row| row.get::<_, String>(0),
             ).ok()
+            .or_else(|| {
+                conn.query_row(
+                    "SELECT outgoing_links_json FROM note_meta WHERE LOWER(name) LIKE '%' || ?1 || '%' LIMIT 1",
+                    params![target_lower],
+                    |row| row.get::<_, String>(0),
+                ).ok()
+            })
             .and_then(|json| serde_json::from_str::<Vec<String>>(&json).ok())
             .unwrap_or_default();
 

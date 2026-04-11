@@ -388,7 +388,12 @@
 		{
 			const input = e.target as HTMLInputElement;
 			const pos = input.selectionStart ?? searchQuery.length;
-			if (e.key === '[' && pos > 0 && searchQuery[pos - 1] === '[') {
+			// Skip-over: if typing a closing char that's already at cursor, just move past it
+			if ((e.key === ']' || e.key === ')' || e.key === '}' || e.key === '"' || e.key === "'" || e.key === '`') && searchQuery[pos] === e.key) {
+				e.preventDefault();
+				requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
+			}
+			else if (e.key === '[' && pos > 0 && searchQuery[pos - 1] === '[') {
 				e.preventDefault();
 				searchQuery = searchQuery.slice(0, pos) + '[]]' + searchQuery.slice(pos);
 				requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });

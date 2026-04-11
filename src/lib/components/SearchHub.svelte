@@ -107,12 +107,13 @@
 					isAdvancedMode = true;
 					response = null;
 					const ops = getSearchOps();
-					const subQueries = q.split(/[,،、]/).map(s => s.trim()).filter(s => s.length > 0);
+					const canonicalized = canonicalizeSearchQuery(q, ops);
+					const subQueries = canonicalized.split(/[,،、]/).map(s => s.trim()).filter(s => s.length > 0);
 					if (subQueries.length > 1) {
 						// Multiple sub-queries: group results by query
 						advancedGroups = [];
 						for (const sub of subQueries) {
-							const req = parseSearchQuery(canonicalizeSearchQuery(sub, ops));
+							const req = parseSearchQuery(sub);
 							const results = await constellationSearch(req);
 							advancedGroups.push({ query: sub, results });
 						}
@@ -120,7 +121,7 @@
 					} else {
 						// Single advanced query: flat list
 						advancedGroups = [];
-						const req = parseSearchQuery(canonicalizeSearchQuery(q, ops));
+						const req = parseSearchQuery(canonicalized);
 						const raw = await constellationSearch(req);
 					filteredResults = raw.sort((a, b) => {
 						const sd = b.score - a.score;
@@ -193,8 +194,13 @@
 		{
 			const input = e.target as HTMLInputElement;
 			const pos = input.selectionStart ?? query.length;
+			// Skip-over: if typing a closing char that's already at cursor, just move past it
+			if ((e.key === ']' || e.key === ')' || e.key === '}' || e.key === '"' || e.key === "'" || e.key === '`') && query[pos] === e.key) {
+				e.preventDefault();
+				requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
+			}
 			// Double bracket: [[ → [[]] (cursor between)
-			if (e.key === '[' && pos > 0 && query[pos - 1] === '[') {
+			else if (e.key === '[' && pos > 0 && query[pos - 1] === '[') {
 				e.preventDefault();
 				query = query.slice(0, pos) + '[]]' + query.slice(pos);
 				requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
