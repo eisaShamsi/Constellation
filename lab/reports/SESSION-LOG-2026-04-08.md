@@ -117,6 +117,7 @@ SearchHub + Sky View both wired with canonicalization.
 - Search index name stored ORIGINAL (not Arabic-normalized) — schema v6
 - Dual-form search: queries both original AND normalized Arabic for titles/tags/wikilinks
 - Counts match: Search Hub and Sky View show identical "396 from 181 notes"
+- Sky View category breakdown dropdown: click count badge to see per-category hits
 
 ### Open Items
 - Frontmatter parser unification (3 parsers → 1 shared) — tracked for future
