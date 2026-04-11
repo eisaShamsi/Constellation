@@ -443,7 +443,8 @@
         "properties": "Properties",
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
-        "notes": "not"
+        "notes": "not",
+        "from": "içinden"
     },
     "layout": {
         "leftSidebar": "Sol kenar çubuğu",

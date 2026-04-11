@@ -373,7 +373,7 @@
 			</button>
 			{#if totalResults() > 0}
 				{@const unique = uniqueNoteCount()}
-				<span class="sh-total">{totalResults()}{#if unique < totalResults()}<span class="sh-unique"> · {unique} {$t('searchHub.notes') || 'notes'}</span>{/if}</span>
+				<span class="sh-total">{totalResults()} {#if unique < totalResults()}<span class="sh-unique">{$t('searchHub.from')} {unique} {$t('searchHub.notes')}</span>{/if}</span>
 			{/if}
 			<button class="sh-close" onclick={onClose}>×</button>
 		</div>

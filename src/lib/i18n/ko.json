@@ -443,7 +443,8 @@
         "properties": "Properties",
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
-        "notes": "노트"
+        "notes": "노트",
+        "from": "에서"
     },
     "layout": {
         "leftSidebar": "왼쪽 사이드바",

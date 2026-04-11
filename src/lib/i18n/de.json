@@ -443,7 +443,8 @@
         "properties": "Properties",
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
-        "notes": "Notizen"
+        "notes": "Notizen",
+        "from": "aus"
     },
     "layout": {
         "leftSidebar": "Linke Seitenleiste",

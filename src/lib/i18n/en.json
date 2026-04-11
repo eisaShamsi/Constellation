@@ -444,7 +444,8 @@
         "properties": "Properties",
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
-        "notes": "notes"
+        "notes": "notes",
+        "from": "from"
     },
     "layout": {
         "leftSidebar": "Left sidebar",

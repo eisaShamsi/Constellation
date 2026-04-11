@@ -443,7 +443,8 @@
         "properties": "Properties",
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
-        "notes": "笔记"
+        "notes": "笔记",
+        "from": "来自"
     },
     "layout": {
         "leftSidebar": "左侧边栏",

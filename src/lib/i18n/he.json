@@ -443,7 +443,8 @@
         "properties": "Properties",
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
-        "notes": "פתקים"
+        "notes": "פתקים",
+        "from": "מתוך"
     },
     "layout": {
         "leftSidebar": "סרגל צד שמאלי",

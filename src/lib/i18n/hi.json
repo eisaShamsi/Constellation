@@ -443,7 +443,8 @@
         "properties": "Properties",
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
-        "notes": "नोट्स"
+        "notes": "नोट्स",
+        "from": "से"
     },
     "layout": {
         "leftSidebar": "बायाँ साइडबार",

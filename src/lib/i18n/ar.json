@@ -446,7 +446,8 @@
         "properties": "الخصائص",
         "wikilinks": "الروابط",
         "semantic": "دلالي",
-        "notes": "ملاحظة"
+        "notes": "ملاحظة",
+        "from": "من"
     },
     "layout": {
         "leftSidebar": "الشريط الأيسر",

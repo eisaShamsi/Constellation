@@ -654,7 +654,7 @@
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
 						</button>
 						{#if searchMatches.length > 0}
-							<span class="gm-search-count">{searchTotalHits || searchMatches.length}{#if searchTotalHits > searchMatches.length}<span style="font-weight:400;opacity:0.7"> · {searchMatches.length} {$t('searchHub.notes') || 'notes'}</span>{/if}</span>
+							<span class="gm-search-count">{searchTotalHits || searchMatches.length}{#if searchTotalHits > searchMatches.length}<span style="font-weight:400;opacity:0.7"> {$t('searchHub.from')} {searchMatches.length} {$t('searchHub.notes')}</span>{/if}</span>
 						{/if}
 						<button class="gm-search-close" onclick={() => { searchVisible = false; searchQuery = ''; }}>×</button>
 					</div>

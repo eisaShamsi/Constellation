@@ -443,7 +443,8 @@
         "properties": "Properties",
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
-        "notes": "заметок"
+        "notes": "заметок",
+        "from": "из"
     },
     "layout": {
         "leftSidebar": "Левая панель",
