@@ -1453,5 +1453,16 @@
         "keepTitle": "Mantener archivos intactos",
         "keepDesc": "Tus archivos permanecen exactamente como están. Constellation agrega un pequeño identificador en los metadatos de cada archivo — nada más cambia.",
         "keepNote": "Ideal para usuarios que podrían regresar a Obsidian u otros sistemas PKM."
+    },
+    "searchOps": {
+        "linksTo": "enlaces a",
+        "linksFrom": "enlaces de",
+        "mutual": "mutuo",
+        "mentions": "menciona",
+        "orphans": "huérfanos",
+        "linksBetween": "enlaces entre",
+        "linksAll": "todos los enlaces",
+        "and": "y",
+        "scope": "en"
     }
 }

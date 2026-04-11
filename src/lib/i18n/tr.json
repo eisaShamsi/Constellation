@@ -1453,5 +1453,16 @@
         "keepTitle": "Dosyaları olduğu gibi bırak",
         "keepDesc": "Dosyalarınız tam olarak oldukları gibi kalır. Constellation her dosyanın meta verilerine yalnızca küçük bir tanımlayıcı ekler — başka hiçbir şey değişmez.",
         "keepNote": "Obsidian veya diğer PKM sistemlerine dönebilecek kullanıcılar için en iyisi."
+    },
+    "searchOps": {
+        "linksTo": "bağlantılar",
+        "linksFrom": "bağlantı kaynağı",
+        "mutual": "karşılıklı",
+        "mentions": "bahseder",
+        "orphans": "yetim",
+        "linksBetween": "bağlantı arasında",
+        "linksAll": "tüm bağlantılar",
+        "and": "ve",
+        "scope": "içinde"
     }
 }

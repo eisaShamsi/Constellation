@@ -12,7 +12,7 @@
 	 *   - Simulation state (owned by forceWorker)
 	 */
 	import { onMount, onDestroy } from 'svelte';
-	import { t, dir, isRTL as isRTLStore } from '$lib/i18n';
+	import { t, dir, isRTL as isRTLStore, getSearchOps } from '$lib/i18n';
 	import { GraphEngine, type EngineConfig, type LayoutMode } from '$lib/graph/graphEngine';
 	import type { StarNode, StarLink } from '$lib/libraries/store';
 	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
@@ -345,18 +345,21 @@
 	}
 
 	// ─── Search bar helpers ─────────────────────────────────
-	const syntaxChips = [
-		{ label: 'linksTo', syntax: 'links to [[' },
-		{ label: 'linksFrom', syntax: 'links from [[' },
-		{ label: 'mutual', syntax: 'mutual [[' },
-		{ label: 'mentions', syntax: 'mentions [[' },
-		{ label: 'orphans', syntax: 'orphans' },
-		{ label: 'linksBetween', syntax: 'links between [[' },
-		{ label: 'linksAll', syntax: 'links all [[' },
-		{ label: 'tag', syntax: '#' },
-		{ label: 'property', syntax: 'key=value' },
-		{ label: 'scope', syntax: 'in:' },
-	];
+	const syntaxChips = $derived.by(() => {
+		const ops = getSearchOps();
+		return [
+			{ label: $t('searchHub.linksTo'), syntax: (ops?.linksTo ?? 'links to') + ' [[' },
+			{ label: $t('searchHub.linksFrom'), syntax: (ops?.linksFrom ?? 'links from') + ' [[' },
+			{ label: $t('searchHub.mutual'), syntax: (ops?.mutual ?? 'mutual') + ' [[' },
+			{ label: $t('searchHub.mentions'), syntax: (ops?.mentions ?? 'mentions') + ' [[' },
+			{ label: $t('searchHub.orphans'), syntax: ops?.orphans ?? 'orphans' },
+			{ label: $t('searchHub.linksBetween'), syntax: (ops?.linksBetween ?? 'links between') + ' [[' },
+			{ label: $t('searchHub.linksAll'), syntax: (ops?.linksAll ?? 'links all') + ' [[' },
+			{ label: $t('searchHub.tag'), syntax: '#' },
+			{ label: $t('searchHub.property'), syntax: 'key=value' },
+			{ label: $t('searchHub.scope'), syntax: (ops?.scope ?? 'in') + ':' },
+		];
+	});
 
 	function handleSearchInput(e: Event) {
 		searchQuery = (e.target as HTMLInputElement).value;
@@ -443,16 +446,18 @@
 			if (q.trim().length >= 2) {
 				searchDebounce = setTimeout(async () => {
 					try {
-						const { universalSearch, constellationSearch, parseSearchQuery } = await import('$lib/libraries/store');
-						const isAdvanced = /[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:/i.test(q);
+						const { universalSearch, constellationSearch, parseSearchQuery, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual } = await import('$lib/libraries/store');
+						const { getSearchOps } = await import('$lib/i18n');
+						const ops = getSearchOps();
+						const isAdvanced = hasAdvancedSyntaxMultilingual(q, ops);
 
 						const typeMap = new Map<string, Set<string>>();
 						const allIds = new Set<string>();
 						const flatResults: { name: string; match_type: string; path: string; libraryName: string }[] = [];
 
 						if (isAdvanced) {
-							// Advanced syntax: use parseSearchQuery → constellationSearch
-							const req = parseSearchQuery(q);
+							// Advanced syntax: canonicalize localized operators → parseSearchQuery → constellationSearch
+							const req = parseSearchQuery(canonicalizeSearchQuery(q, ops));
 							req.limit = 0;
 							const results = await constellationSearch(req);
 							for (const r of results) {
@@ -492,12 +497,13 @@
 
 						engine?.setSearchExtendedMulti(allIds, typeMap);
 
-						// Highlight link lines for link operators
+						// Highlight link lines for link operators (use canonicalized query for matching)
 						engine?.clearSearchLinkHighlights();
-						const linkToMatch = q.match(/links?\s+to\s+\[\[([^\]]+)\]\]/i);
-						const linkFromMatch = q.match(/links?\s+from\s+\[\[([^\]]+)\]\]/i);
-						const linkAllMatch = q.match(/links?\s+all\s+\[\[([^\]]+)\]\]/i);
-						const mutualMatch = q.match(/mutual\s+\[\[([^\]]+)\]\]/i);
+						const cq = canonicalizeSearchQuery(q, ops);
+						const linkToMatch = cq.match(/links?\s+to\s+\[\[([^\]]+)\]\]/i);
+						const linkFromMatch = cq.match(/links?\s+from\s+\[\[([^\]]+)\]\]/i);
+						const linkAllMatch = cq.match(/links?\s+all\s+\[\[([^\]]+)\]\]/i);
+						const mutualMatch = cq.match(/mutual\s+\[\[([^\]]+)\]\]/i);
 						if (linkToMatch) {
 							engine?.setSearchLinkHighlights(linkToMatch[1].toLowerCase(), allIds, 'to');
 						} else if (linkFromMatch) {

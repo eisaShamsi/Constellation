@@ -1453,5 +1453,16 @@
         "keepTitle": "ファイルをそのまま保持",
         "keepDesc": "ファイルはそのまま保持されます。Constellationは各ファイルのメタデータに小さな識別子を追加するだけです。",
         "keepNote": "ObsidianやほかのPKMシステムに戻る可能性のあるユーザーに最適。"
+    },
+    "searchOps": {
+        "linksTo": "リンク先",
+        "linksFrom": "リンク元",
+        "mutual": "相互",
+        "mentions": "言及",
+        "orphans": "孤立",
+        "linksBetween": "リンク間",
+        "linksAll": "全リンク",
+        "and": "と",
+        "scope": "内"
     }
 }

@@ -113,3 +113,10 @@ export const t = derived(locale, ($locale) => {
 export function setLocale(newLocale: Locale) {
 	locale.set(newLocale);
 }
+
+/** Get the searchOps map for the current locale (for query canonicalization). */
+export function getSearchOps(): Record<string, string> | null {
+	const loc = get(locale);
+	const trans = translations[loc] as Record<string, unknown>;
+	return (trans?.searchOps as Record<string, string>) ?? null;
+}

@@ -877,6 +877,71 @@ export async function embeddingStatus(): Promise<{ ready: boolean; embedded_coun
 }
 
 /**
+ * Canonicalize a search query: replace localized operators with English equivalents.
+ * Always accepts English in any locale. Only translates the current locale's keywords.
+ * Pattern: Excel/LibreOffice — canonical internal + locale display layer.
+ */
+export function canonicalizeSearchQuery(raw: string, ops: Record<string, string> | null): string {
+	if (!ops) return raw;
+
+	let result = raw;
+
+	// Build replacement pairs: [localized, canonical]
+	// Sorted by localized string length (longest first) to prevent partial matches
+	const replacements: [string, string][] = [
+		[ops.linksBetween, 'links between'],
+		[ops.linksAll, 'links all'],
+		[ops.linksTo, 'links to'],
+		[ops.linksFrom, 'links from'],
+		[ops.mutual, 'mutual'],
+		[ops.mentions, 'mentions'],
+		[ops.orphans, 'orphans'],
+	].filter(([loc, can]) => loc !== can) as [string, string][];
+
+	replacements.sort((a, b) => b[0].length - a[0].length);
+
+	for (const [localized, canonical] of replacements) {
+		const escaped = localized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		// Unicode-aware word boundary: lookbehind/lookahead for any Unicode letter
+		const regex = new RegExp(`(?<!\\p{L})${escaped}(?!\\p{L})`, 'gu');
+		result = result.replace(regex, canonical);
+	}
+
+	// Handle "and" keyword (used in "links between [[X]] and [[Y]]")
+	if (ops.and && ops.and !== 'and') {
+		const andEscaped = ops.and.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		// Only replace "and" between two [[ ]] blocks to avoid false positives
+		const andRegex = new RegExp(`(\\]\\])\\s*${andEscaped}\\s*(\\[\\[)`, 'gu');
+		result = result.replace(andRegex, '$1 and $2');
+	}
+
+	// Handle scope prefix: في: → in:
+	if (ops.scope && ops.scope !== 'in') {
+		const scopeEscaped = ops.scope.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		result = result.replace(new RegExp(`(?<!\\p{L})${scopeEscaped}:`, 'gu'), 'in:');
+	}
+
+	return result;
+}
+
+/**
+ * Check if a query contains advanced syntax in any supported language.
+ */
+export function hasAdvancedSyntaxMultilingual(q: string, ops: Record<string, string> | null): boolean {
+	// English operators (always checked)
+	if (/[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:/i.test(q)) return true;
+	// Localized operators for current locale
+	if (!ops) return false;
+	return Object.values(ops).some(op => {
+		if (!op || op.length < 2) return false;
+		const escaped = op.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		try {
+			return new RegExp(`(?<!\\p{L})${escaped}(?!\\p{L})`, 'u').test(q);
+		} catch { return false; }
+	});
+}
+
+/**
  * Parse a search query string into a SearchRequest.
  * Recognizes: #tag, property=value, links to [[X]], in:Library, free text.
  */

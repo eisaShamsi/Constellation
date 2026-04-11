@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { t, dir } from '$lib/i18n';
+	import { t, dir, getSearchOps } from '$lib/i18n';
 	import {
 		universalSearch, appSettings, embedText, constellationSearch, parseSearchQuery,
+		canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual,
 		type UniversalSearchResponse,
 		type ConstellationSearchResult
 	} from '$lib/libraries/store';
@@ -52,31 +53,35 @@
 		title: '#3b82f6', content: '#16a34a', tag: '#f472b6', property: '#f59e0b', wikilink: '#60a5fa', structured: '#ef4444'
 	};
 
-	const syntaxChips = [
-		{ label: 'linksTo', syntax: 'links to [[' },
-		{ label: 'linksFrom', syntax: 'links from [[' },
-		{ label: 'mutual', syntax: 'mutual [[' },
-		{ label: 'mentions', syntax: 'mentions [[' },
-		{ label: 'orphans', syntax: 'orphans' },
-		{ label: 'linksBetween', syntax: 'links between [[' },
-		{ label: 'linksAll', syntax: 'links all [[' },
-		{ label: 'tag', syntax: '#' },
-		{ label: 'property', syntax: 'key=value' },
-		{ label: 'scope', syntax: 'in:' },
-	];
+	const syntaxChips = $derived.by(() => {
+		const ops = getSearchOps();
+		return [
+			{ label: $t('searchHub.linksTo'), syntax: (ops?.linksTo ?? 'links to') + ' [[' },
+			{ label: $t('searchHub.linksFrom'), syntax: (ops?.linksFrom ?? 'links from') + ' [[' },
+			{ label: $t('searchHub.mutual'), syntax: (ops?.mutual ?? 'mutual') + ' [[' },
+			{ label: $t('searchHub.mentions'), syntax: (ops?.mentions ?? 'mentions') + ' [[' },
+			{ label: $t('searchHub.orphans'), syntax: ops?.orphans ?? 'orphans' },
+			{ label: $t('searchHub.linksBetween'), syntax: (ops?.linksBetween ?? 'links between') + ' [[' },
+			{ label: $t('searchHub.linksAll'), syntax: (ops?.linksAll ?? 'links all') + ' [[' },
+			{ label: $t('searchHub.tag'), syntax: '#' },
+			{ label: $t('searchHub.property'), syntax: 'key=value' },
+			{ label: $t('searchHub.scope'), syntax: (ops?.scope ?? 'in') + ':' },
+		];
+	});
 
-	/** Detect if query uses advanced syntax */
+	/** Detect if query uses advanced syntax (in English or current locale) */
 	function hasAdvancedSyntax(q: string): boolean {
-		return /[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:/i.test(q);
+		return hasAdvancedSyntaxMultilingual(q, getSearchOps());
 	}
 
-	/** Detect link direction from query for arrow display */
+	/** Detect link direction from query for arrow display (handles localized operators) */
 	function queryDirection(q: string): '↑' | '↓' | '↑↓' | null {
-		if (/links?\s+all\s/i.test(q)) return null; // per-result from Rust
-		if (/mutual\s/i.test(q)) return '↑↓';
-		if (/links?\s+to\s/i.test(q)) return '↑';
-		if (/links?\s+from\s/i.test(q)) return '↓';
-		if (/links?\s+between\s/i.test(q)) return '↑';
+		const cq = canonicalizeSearchQuery(q, getSearchOps());
+		if (/links?\s+all\s/i.test(cq)) return null; // per-result from Rust
+		if (/mutual\s/i.test(cq)) return '↑↓';
+		if (/links?\s+to\s/i.test(cq)) return '↑';
+		if (/links?\s+from\s/i.test(cq)) return '↓';
+		if (/links?\s+between\s/i.test(cq)) return '↑';
 		return null;
 	}
 
@@ -99,12 +104,13 @@
 					// Advanced mode: split by commas, parse each sub-query
 					isAdvancedMode = true;
 					response = null;
+					const ops = getSearchOps();
 					const subQueries = q.split(/[,،、]/).map(s => s.trim()).filter(s => s.length > 0);
 					if (subQueries.length > 1) {
 						// Multiple sub-queries: group results by query
 						advancedGroups = [];
 						for (const sub of subQueries) {
-							const req = parseSearchQuery(sub);
+							const req = parseSearchQuery(canonicalizeSearchQuery(sub, ops));
 							const results = await constellationSearch(req);
 							advancedGroups.push({ query: sub, results });
 						}
@@ -112,7 +118,7 @@
 					} else {
 						// Single advanced query: flat list
 						advancedGroups = [];
-						const req = parseSearchQuery(q);
+						const req = parseSearchQuery(canonicalizeSearchQuery(q, ops));
 						const raw = await constellationSearch(req);
 					filteredResults = raw.sort((a, b) => {
 						const sd = b.score - a.score;

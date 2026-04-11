@@ -1453,5 +1453,16 @@
         "keepTitle": "Dateien unverändert lassen",
         "keepDesc": "Ihre Dateien bleiben genau so, wie sie sind. Constellation fügt jeder Datei nur eine kleine Kennung in den Metadaten hinzu — sonst ändert sich nichts.",
         "keepNote": "Am besten für Nutzer, die möglicherweise zu Obsidian oder anderen PKM-Systemen zurückkehren."
+    },
+    "searchOps": {
+        "linksTo": "Links zu",
+        "linksFrom": "Links von",
+        "mutual": "gegenseitig",
+        "mentions": "erwähnt",
+        "orphans": "Waisen",
+        "linksBetween": "Links zwischen",
+        "linksAll": "alle Links",
+        "and": "und",
+        "scope": "in"
     }
 }

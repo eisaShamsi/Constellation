@@ -396,7 +396,7 @@
     "sidebar": {
         "searchPlaceholder": "Search...",
         "addLibrary": "Add library",
-        "newLibrary": "New library",
+        "newLibrary": "New Library",
         "results": "results",
         "noResults": "No results found",
         "bookmarks": "Bookmarks",
@@ -406,7 +406,6 @@
         "newNote": "New note",
         "newBase": "New Base",
         "newFolder": "New folder",
-        "newLibrary": "New Library",
         "sortNameAsc": "Sort: Name (A → Z)",
         "sortNameDesc": "Sort: Name (Z → A)",
         "sortModifiedDesc": "Sort: Modified (newest)",
@@ -1458,5 +1457,16 @@
         "keepTitle": "Keep Files Intact",
         "keepDesc": "Your files stay exactly as they are. Constellation adds a small identifier to each file's metadata — nothing else changes.",
         "keepNote": "Best for users who may return to Obsidian or other PKM systems."
+    },
+    "searchOps": {
+        "linksTo": "links to",
+        "linksFrom": "links from",
+        "mutual": "mutual",
+        "mentions": "mentions",
+        "orphans": "orphans",
+        "linksBetween": "links between",
+        "linksAll": "links all",
+        "and": "and",
+        "scope": "in"
     }
 }

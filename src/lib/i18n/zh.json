@@ -1453,5 +1453,16 @@
         "keepTitle": "保持文件不变",
         "keepDesc": "您的文件完全保持原样。Constellation仅在每个文件的元数据中添加一个小标识符——其他什么都不改变。",
         "keepNote": "最适合可能返回Obsidian或其他PKM系统的用户。"
+    },
+    "searchOps": {
+        "linksTo": "链接到",
+        "linksFrom": "链接自",
+        "mutual": "互链",
+        "mentions": "提及",
+        "orphans": "孤立",
+        "linksBetween": "链接之间",
+        "linksAll": "所有链接",
+        "and": "和",
+        "scope": "在"
     }
 }
