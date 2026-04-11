@@ -348,16 +348,16 @@
 	const syntaxChips = $derived.by(() => {
 		const ops = getSearchOps();
 		return [
-			{ label: $t('searchHub.linksTo'), syntax: (ops?.linksTo ?? 'links to') + ' [[' },
-			{ label: $t('searchHub.linksFrom'), syntax: (ops?.linksFrom ?? 'links from') + ' [[' },
-			{ label: $t('searchHub.mutual'), syntax: (ops?.mutual ?? 'mutual') + ' [[' },
-			{ label: $t('searchHub.mentions'), syntax: (ops?.mentions ?? 'mentions') + ' [[' },
-			{ label: $t('searchHub.orphans'), syntax: ops?.orphans ?? 'orphans' },
-			{ label: $t('searchHub.linksBetween'), syntax: (ops?.linksBetween ?? 'links between') + ' [[' },
-			{ label: $t('searchHub.linksAll'), syntax: (ops?.linksAll ?? 'links all') + ' [[' },
-			{ label: $t('searchHub.tag'), syntax: '#' },
-			{ label: $t('searchHub.property'), syntax: 'key=value' },
-			{ label: $t('searchHub.scope'), syntax: (ops?.scope ?? 'in') + ':' },
+			{ label: 'linksTo', syntax: (ops?.linksTo ?? 'links to') + ' [[' },
+			{ label: 'linksFrom', syntax: (ops?.linksFrom ?? 'links from') + ' [[' },
+			{ label: 'mutual', syntax: (ops?.mutual ?? 'mutual') + ' [[' },
+			{ label: 'mentions', syntax: (ops?.mentions ?? 'mentions') + ' [[' },
+			{ label: 'orphans', syntax: ops?.orphans ?? 'orphans' },
+			{ label: 'linksBetween', syntax: (ops?.linksBetween ?? 'links between') + ' [[' },
+			{ label: 'linksAll', syntax: (ops?.linksAll ?? 'links all') + ' [[' },
+			{ label: 'tag', syntax: '#' },
+			{ label: 'property', syntax: 'key=value' },
+			{ label: 'scope', syntax: (ops?.scope ?? 'in') + ':' },
 		];
 	});
 
