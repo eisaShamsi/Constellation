@@ -384,28 +384,7 @@
 			return;
 		}
 		if (e.key === 'Escape') { searchVisible = false; searchQuery = ''; }
-		// Auto-pair brackets (including [[ → [[]])
-		{
-			const input = e.target as HTMLInputElement;
-			const pos = input.selectionStart ?? searchQuery.length;
-			// Skip-over: if typing a closing char that's already at cursor, just move past it
-			if ((e.key === ']' || e.key === ')' || e.key === '}' || e.key === '"' || e.key === "'" || e.key === '`') && searchQuery[pos] === e.key) {
-				e.preventDefault();
-				requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
-			}
-			else if (e.key === '[' && pos > 0 && searchQuery[pos - 1] === '[') {
-				e.preventDefault();
-				searchQuery = searchQuery.slice(0, pos) + '[]]' + searchQuery.slice(pos);
-				requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
-			} else {
-				const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '`': '`' };
-				if (pairs[e.key]) {
-					e.preventDefault();
-					searchQuery = searchQuery.slice(0, pos) + e.key + pairs[e.key] + searchQuery.slice(pos);
-					requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
-				}
-			}
-		}
+		// No auto-bracket pairing in search inputs — causes extra brackets in RTL/bidi contexts
 	}
 
 	function insertWikiName(name: string) {
