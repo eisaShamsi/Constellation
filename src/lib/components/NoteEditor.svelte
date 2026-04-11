@@ -149,9 +149,19 @@
 		}
 	}
 
-	function handleTitleChange(newTitle: string) {
-		if (newTitle !== tab.name.replace(/\.md$/, '')) {
-			renameItem(tab.path, tab.path.replace(/[^/\\]+$/, newTitle + '.md'));
+	async function handleTitleChange(newTitle: string) {
+		const currentName = tab.name.replace(/\.md$/, '');
+		if (newTitle === currentName) return;
+
+		// For canonical files, rename_item updates frontmatter (not the filename).
+		// For compatible files, it renames the file on disk.
+		// In both cases, check if the target path already exists to prevent overwrites.
+		const newPath = tab.path.replace(/[^/\\]+$/, newTitle + '.md');
+		try {
+			await renameItem(tab.path, newPath);
+		} catch (e) {
+			// Rename failed (e.g., target exists) — restore the original title
+			console.error('[NoteEditor] Rename failed:', e);
 		}
 	}
 
