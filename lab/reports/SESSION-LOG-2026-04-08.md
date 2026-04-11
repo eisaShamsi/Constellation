@@ -88,6 +88,16 @@ Arabic terminology (user-refined):
 Syntax chips localized — show operators in user's language.
 SearchHub + Sky View both wired with canonicalization.
 
+### Multilingual Search — Bug Fixes (commits `af25ee2` → `5023637`)
+
+- Localized search result badges per language (ع م خ ر د for Arabic)
+- Arabic terminology refined: الربط إلى/من, الروابط البينية, جميع الروابط
+- ROOT FIX: Windows keyboard drivers inject invisible bidi chars (U+200F RLM, U+061C ALM) at Arabic→bracket transitions. `stripInvisibleChars()` applied at input source in `handleInput()` — every downstream consumer gets clean text
+- ROOT FIX: Wikilink autocomplete regex was English-only — canonicalize query before matching, so Arabic operators trigger `[[` autocomplete
+- Disabled auto-bracket pairing in all search inputs (caused extra brackets in RTL). Editor keeps CM6 `closeBrackets()`
+- Partial name matching: link operators fall back to LIKE when exact match fails
+- Arabic normalization: أ→ا, ة→ه, ى→ي, strip diacritics for fuzzy matching
+
 ### Open Items
 - Frontmatter parser unification (3 parsers → 1 shared) — tracked for future
 - Vec batch streaming in canonicalize_execute for 100K+ file vaults — optimization
