@@ -2559,15 +2559,27 @@ fn collect_notes_names_recursive(dir: &Path, notes: &mut Vec<serde_json::Value>)
         if path.is_dir() {
             collect_notes_names_recursive(&path, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            let note_name = path.file_stem()
+            // Use frontmatter title for canonical files, file stem for human-named files
+            let file_stem = path.file_stem()
                 .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or_default();
+            let note_name = if crate::canonical::is_canonical_filename(&path) {
+                extract_frontmatter_title_quick(&path).unwrap_or(file_stem)
+            } else {
+                file_stem
+            };
             notes.push(serde_json::json!({
                 "name": note_name,
                 "path": path.to_string_lossy().to_string()
             }));
         }
     }
+}
+
+/// Quick frontmatter title extraction (reads first 1KB only).
+fn extract_frontmatter_title_quick(path: &Path) -> Option<String> {
+    let content = std::fs::read_to_string(path).ok()?;
+    extract_frontmatter_title(&content)
 }
 
 /// Collect all notes with rich metadata (name, path, modified, size, preview, tags, folder).
@@ -2602,9 +2614,16 @@ fn collect_notes_meta_recursive(
         if path.is_dir() {
             collect_notes_meta_recursive(&path, lib_root, tag_re, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            let note_name = path.file_name()
+            // Use frontmatter title for canonical files
+            let file_name = path.file_name()
                 .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or_default();
+            let note_name = if crate::canonical::is_canonical_filename(&path) {
+                extract_frontmatter_title_quick(&path)
+                    .unwrap_or_else(|| file_name.trim_end_matches(".md").to_string())
+            } else {
+                file_name.clone()
+            };
 
             // File metadata
             let meta = fs::metadata(&path).ok();
