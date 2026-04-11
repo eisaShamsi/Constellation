@@ -1464,5 +1464,12 @@
         "linksAll": "все ссылки",
         "and": "и",
         "scope": "в"
+    },
+    "searchBadges": {
+        "title": "З",
+        "content": "С",
+        "property": "С",
+        "wikilink": "С",
+        "semantic": "С"
     }
 }

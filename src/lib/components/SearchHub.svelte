@@ -41,11 +41,13 @@
 
 	const categories = ['titles', 'contents', 'tags', 'properties', 'wikilinks', 'semantic'] as const;
 
-	const categoryIcons: Record<string, string> = {
-		titles: 'T', contents: 'C', tags: '#', properties: 'P', wikilinks: 'W', semantic: 'S',
-		// match_type values from advanced/structured search
-		title: 'T', content: 'C', tag: '#', property: 'P', wikilink: 'W', structured: '0\u0336'
-	};
+	const categoryIcons = $derived.by(() => {
+		const b = (key: string, fallback: string) => $t(`searchBadges.${key}`) !== `searchBadges.${key}` ? $t(`searchBadges.${key}`) : fallback;
+		return {
+			titles: b('title', 'T'), contents: b('content', 'C'), tags: '#', properties: b('property', 'P'), wikilinks: b('wikilink', 'W'), semantic: b('semantic', 'S'),
+			title: b('title', 'T'), content: b('content', 'C'), tag: '#', property: b('property', 'P'), wikilink: b('wikilink', 'W'), structured: '0\u0336'
+		} as Record<string, string>;
+	});
 
 	const categoryColors: Record<string, string> = {
 		titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed',

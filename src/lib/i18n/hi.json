@@ -1464,5 +1464,12 @@
         "linksAll": "सभी लिंक",
         "and": "और",
         "scope": "में"
+    },
+    "searchBadges": {
+        "title": "श",
+        "content": "स",
+        "property": "ग",
+        "wikilink": "ल",
+        "semantic": "अ"
     }
 }

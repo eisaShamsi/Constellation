@@ -1464,5 +1464,12 @@
         "linksAll": "모든 링크",
         "and": "그리고",
         "scope": "내"
+    },
+    "searchBadges": {
+        "title": "제",
+        "content": "내",
+        "property": "속",
+        "wikilink": "링",
+        "semantic": "의"
     }
 }

@@ -1464,5 +1464,12 @@
         "linksAll": "כל הקישורים",
         "and": "ו",
         "scope": "ב"
+    },
+    "searchBadges": {
+        "title": "כ",
+        "content": "ת",
+        "property": "מ",
+        "wikilink": "ק",
+        "semantic": "ס"
     }
 }

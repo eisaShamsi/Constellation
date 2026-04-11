@@ -1468,5 +1468,12 @@
         "linksAll": "links all",
         "and": "and",
         "scope": "in"
+    },
+    "searchBadges": {
+        "title": "T",
+        "content": "C",
+        "property": "P",
+        "wikilink": "W",
+        "semantic": "S"
     }
 }

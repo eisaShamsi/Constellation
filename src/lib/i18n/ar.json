@@ -1468,5 +1468,12 @@
         "linksAll": "جميع الروابط",
         "and": "و",
         "scope": "في"
+    },
+    "searchBadges": {
+        "title": "ع",
+        "content": "م",
+        "property": "خ",
+        "wikilink": "ر",
+        "semantic": "د"
     }
 }

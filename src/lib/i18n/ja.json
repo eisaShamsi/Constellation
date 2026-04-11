@@ -1464,5 +1464,12 @@
         "linksAll": "全リンク",
         "and": "と",
         "scope": "内"
+    },
+    "searchBadges": {
+        "title": "題",
+        "content": "内",
+        "property": "属",
+        "wikilink": "鏈",
+        "semantic": "意"
     }
 }

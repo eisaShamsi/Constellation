@@ -1464,5 +1464,12 @@
         "linksAll": "tüm bağlantılar",
         "and": "ve",
         "scope": "içinde"
+    },
+    "searchBadges": {
+        "title": "B",
+        "content": "İ",
+        "property": "Ö",
+        "wikilink": "B",
+        "semantic": "A"
     }
 }
