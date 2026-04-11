@@ -1439,5 +1439,11 @@
         "linkGeneralizes": "概括",
         "linkDerivesFrom": "源自",
         "linkPartOf": "部分"
+    },
+    "canonical": {
+        "migrationTitle": "正在准备您的资料库",
+        "migrationDesc": "Constellation正在使用规范身份系统组织您的文件。每个文件都会获得一个唯一且不可变的标识符，而您的标题保持不变。",
+        "scanning": "正在扫描资料库...",
+        "migrationNote": "这仅在首次启动或从其他系统导入文件时发生。以后的启动将是即时的。"
     }
 }

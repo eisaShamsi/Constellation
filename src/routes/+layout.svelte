@@ -282,6 +282,10 @@
 	let searchEngineReady = $state(false); // true when SQLite FTS5 index is built
 	let semanticIndexProgress = $state('');
 	let semanticIndexing = $state(false);
+
+	// Canonical auto-migration progress
+	let canonicalizing = $state(false);
+	let canonicalProgress = $state({ current: 0, total: 0, currentFile: '', libraryName: '', phase: '' });
 	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
 	let libraryPickerAction = $state<'note' | 'folder' | 'base'>('note');
 	let allExpanded = $state(true);
@@ -1452,16 +1456,34 @@
 
 		// Auto-canonicalize all non-canonical files before indexing
 		try {
+			const { listen } = await import('@tauri-apps/api/event');
+			const unlisten = await listen<{ phase: string; current: number; total: number; current_file: string; library_name: string }>('canonical-progress', (event) => {
+				const p = event.payload;
+				if (p.phase === 'scanning') {
+					canonicalizing = true;
+					canonicalProgress = { current: 0, total: 0, currentFile: '', libraryName: '', phase: 'scanning' };
+				} else if (p.phase === 'canonicalizing') {
+					canonicalProgress = { current: p.current, total: p.total, currentFile: p.current_file, libraryName: p.library_name, phase: 'canonicalizing' };
+				} else if (p.phase === 'done') {
+					canonicalizing = false;
+				}
+			});
+
 			const { autoCanonicalize } = await import('$lib/importers/store');
 			const canonResult = await autoCanonicalize();
+			unlisten();
+			canonicalizing = false;
+
 			if (canonResult.renamed > 0) {
 				console.log(`[CANONICAL] Auto-canonicalized ${canonResult.renamed} files`);
-				// Refresh file trees since filenames changed
 				for (const lib of $libraries) {
 					await refreshLibraryTree(lib.id);
 				}
 			}
-		} catch (e) { console.error('[CANONICAL] Auto-canonicalize failed:', e); }
+		} catch (e) {
+			canonicalizing = false;
+			console.error('[CANONICAL] Auto-canonicalize failed:', e);
+		}
 
 		// Initialize search engine (background, non-blocking)
 		initSearchIndex().then(async () => {
@@ -4108,6 +4130,39 @@
 		/>
 	{/if}
 
+	{#if canonicalizing}
+		<div class="canonical-overlay">
+			<div class="canonical-modal">
+				<div class="canonical-icon">
+					<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+						<polyline points="14 2 14 8 20 8"/>
+						<path d="M12 18v-6"/>
+						<path d="M9 15l3 3 3-3"/>
+					</svg>
+				</div>
+				<h2>{$t('canonical.migrationTitle')}</h2>
+				<p class="canonical-desc">{$t('canonical.migrationDesc')}</p>
+
+				{#if canonicalProgress.phase === 'scanning'}
+					<div class="canonical-status">{$t('canonical.scanning')}</div>
+					<div class="canonical-bar-track"><div class="canonical-bar-fill scanning"></div></div>
+				{:else if canonicalProgress.phase === 'canonicalizing'}
+					<div class="canonical-status">
+						{canonicalProgress.current} / {canonicalProgress.total}
+						<span class="canonical-lib">— {canonicalProgress.libraryName}</span>
+					</div>
+					<div class="canonical-bar-track">
+						<div class="canonical-bar-fill" style="width: {Math.round((canonicalProgress.current / Math.max(canonicalProgress.total, 1)) * 100)}%"></div>
+					</div>
+					<div class="canonical-file">{canonicalProgress.currentFile}</div>
+				{/if}
+
+				<p class="canonical-note">{$t('canonical.migrationNote')}</p>
+			</div>
+		</div>
+	{/if}
+
 	{#if showImporter}
 		<ImporterModal
 			libraries={$libraries.map(v => ({ name: v.name, path: v.path }))}
@@ -4208,6 +4263,92 @@
 {/if}
 
 <style>
+	/* ─── Canonical Migration Overlay ─── */
+	.canonical-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 99999;
+		background: rgba(0, 0, 0, 0.7);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		animation: canonFadeIn 0.3s ease;
+	}
+	.canonical-modal {
+		background: var(--background-primary, #1e1e2e);
+		border-radius: 16px;
+		padding: 40px 48px;
+		max-width: 520px;
+		width: 90vw;
+		text-align: center;
+		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+	}
+	.canonical-icon { margin-bottom: 16px; }
+	.canonical-modal h2 {
+		margin: 0 0 8px;
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--text-normal);
+	}
+	.canonical-desc {
+		margin: 0 0 24px;
+		font-size: 0.88rem;
+		color: var(--text-muted);
+		line-height: 1.6;
+	}
+	.canonical-status {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--text-normal);
+		margin-bottom: 8px;
+	}
+	.canonical-lib {
+		font-weight: 400;
+		color: var(--text-muted);
+		font-size: 0.82rem;
+	}
+	.canonical-bar-track {
+		width: 100%;
+		height: 6px;
+		background: var(--background-modifier-border);
+		border-radius: 3px;
+		overflow: hidden;
+		margin-bottom: 12px;
+	}
+	.canonical-bar-fill {
+		height: 100%;
+		background: var(--text-accent);
+		border-radius: 3px;
+		transition: width 0.15s ease;
+	}
+	.canonical-bar-fill.scanning {
+		width: 30%;
+		animation: canonScan 1.5s ease-in-out infinite;
+	}
+	.canonical-file {
+		font-size: 0.78rem;
+		color: var(--text-faint);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		margin-bottom: 16px;
+	}
+	.canonical-note {
+		margin: 16px 0 0;
+		font-size: 0.78rem;
+		color: var(--text-faint);
+		line-height: 1.5;
+		font-style: italic;
+	}
+	@keyframes canonFadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+	@keyframes canonScan {
+		0% { transform: translateX(-100%); }
+		100% { transform: translateX(400%); }
+	}
+
 	:global(html) { margin: 0; padding: 0; overflow: hidden; }
 	:global(body) {
 		margin: 0; padding: 0;

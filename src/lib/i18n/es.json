@@ -1439,5 +1439,11 @@
         "linkGeneralizes": "generaliza",
         "linkDerivesFrom": "derivado de",
         "linkPartOf": "parte de"
+    },
+    "canonical": {
+        "migrationTitle": "Preparando tu biblioteca",
+        "migrationDesc": "Constellation está organizando tus archivos con su sistema de identidad canónica. Cada archivo recibe un identificador único e inmutable mientras tus títulos permanecen tal como los nombraste.",
+        "scanning": "Escaneando bibliotecas...",
+        "migrationNote": "Esto ocurre solo en el primer inicio o al importar archivos de otros sistemas. Los próximos inicios serán instantáneos."
     }
 }

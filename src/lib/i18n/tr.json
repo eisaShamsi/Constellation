@@ -1439,5 +1439,11 @@
         "linkGeneralizes": "genelleştirir",
         "linkDerivesFrom": "türetilmiş",
         "linkPartOf": "parçası"
+    },
+    "canonical": {
+        "migrationTitle": "Kütüphaneniz hazırlanıyor",
+        "migrationDesc": "Constellation dosyalarınızı kanonik kimlik sistemiyle düzenliyor. Her dosya benzersiz ve değişmez bir tanımlayıcı alırken başlıklarınız aynen korunuyor.",
+        "scanning": "Kütüphaneler taranıyor...",
+        "migrationNote": "Bu yalnızca ilk çalıştırmada veya diğer sistemlerden dosya içe aktarırken gerçekleşir. Sonraki çalıştırmalar anında olacaktır."
     }
 }

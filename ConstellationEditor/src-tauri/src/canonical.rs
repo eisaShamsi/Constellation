@@ -92,19 +92,64 @@ pub fn generate_canonical(
     }
 }
 
-/// Get the creation timestamp of a file (fallback: modification time, then now).
+/// Get the creation timestamp of a file.
+/// Priority: frontmatter `created:` → filesystem creation time → modification time → now.
 pub fn file_creation_time(path: &Path) -> DateTime<Utc> {
+    // For .md files, try frontmatter `created:` first — most reliable source
+    if path.extension().map(|e| e == "md" || e == "markdown").unwrap_or(false) {
+        if let Ok(content) = crate::file_kinds::read_head_pub(path, 2048) {
+            if let Some(dt) = extract_created_from_frontmatter(&content) {
+                return dt;
+            }
+        }
+    }
+
+    // Filesystem metadata fallback
     if let Ok(meta) = fs::metadata(path) {
-        // Try creation time first (available on Windows and macOS)
         if let Ok(created) = meta.created() {
             return DateTime::from(created);
         }
-        // Fallback to modification time
         if let Ok(modified) = meta.modified() {
             return DateTime::from(modified);
         }
     }
     Utc::now()
+}
+
+/// Extract the `created:` date from frontmatter content.
+/// Supports ISO 8601 (2026-04-10T15:30:45Z), date-only (2026-04-10), and
+/// date+time without T (2026-04-10 15:30:45).
+fn extract_created_from_frontmatter(content: &str) -> Option<DateTime<Utc>> {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") { return None; }
+    let after = &trimmed[3..];
+    let end = after.find("\n---")?;
+    let fm = &after[..end];
+
+    for line in fm.lines() {
+        let t = line.trim();
+        if t.starts_with("created:") {
+            let val = t["created:".len()..].trim().trim_matches('"').trim_matches('\'');
+            // Try full RFC 3339 / ISO 8601
+            if let Ok(dt) = DateTime::parse_from_rfc3339(val) {
+                return Some(dt.with_timezone(&Utc));
+            }
+            // Try "YYYY-MM-DDTHH:MM:SS" without timezone
+            if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(val, "%Y-%m-%dT%H:%M:%S") {
+                return Some(dt.and_utc());
+            }
+            // Try "YYYY-MM-DD HH:MM:SS"
+            if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(val, "%Y-%m-%d %H:%M:%S") {
+                return Some(dt.and_utc());
+            }
+            // Try date-only "YYYY-MM-DD"
+            if let Ok(d) = chrono::NaiveDate::parse_from_str(val, "%Y-%m-%d") {
+                return Some(d.and_hms_opt(0, 0, 0)?.and_utc());
+            }
+            return None;
+        }
+    }
+    None
 }
 
 // ─── Frontmatter Injection ───────────────────────────────────────────
@@ -572,11 +617,23 @@ pub fn canonicalize_execute(
     Ok(result)
 }
 
+/// Progress event payload for auto-canonicalization.
+#[derive(Clone, Serialize)]
+pub struct CanonicalProgress {
+    pub phase: String,         // "scanning" | "canonicalizing" | "done"
+    pub current: usize,
+    pub total: usize,
+    pub current_file: String,  // human-readable name of current file
+    pub library_name: String,
+}
+
 /// Auto-canonicalize all non-canonical files across all libraries in the active universe.
+/// Emits "canonical-progress" events so the frontend can show a progress bar.
 /// Called on startup — skips files that are already canonical.
-/// Returns total files renamed across all libraries.
 #[tauri::command]
 pub fn auto_canonicalize_all(app: tauri::AppHandle) -> Result<CanonicalizeResult, String> {
+    use tauri::Emitter;
+
     let libraries = crate::libraries::load_all_libraries(&app);
     let config_path = crate::universe::active_constellation_dir(&app)
         .map(|d| d.join("file_kinds.json"))
@@ -591,84 +648,136 @@ pub fn auto_canonicalize_all(app: tauri::AppHandle) -> Result<CanonicalizeResult
         rename_map: HashMap::new(),
     };
 
+    // Phase 1: Scan all libraries to find non-canonical files
+    let _ = app.emit("canonical-progress", CanonicalProgress {
+        phase: "scanning".to_string(),
+        current: 0, total: 0,
+        current_file: String::new(),
+        library_name: String::new(),
+    });
+
+    struct PendingFile {
+        path: PathBuf,
+        library_name: String,
+        library_path: PathBuf,
+    }
+    let mut pending: Vec<PendingFile> = Vec::new();
+
     for lib in &libraries {
         let lib_path = Path::new(&lib.path);
         if !lib_path.is_dir() { continue; }
 
         let files = collect_files_recursive(lib_path);
-        for file_path in &files {
-            // Skip already canonical files
-            if is_canonical_filename(file_path) { continue; }
-            // Skip .meta.json sidecars
-            if file_path.to_string_lossy().ends_with(".meta.json") { continue; }
-
-            let kind = crate::file_kinds::classify_file(file_path, &mut registry);
-            let created = file_creation_time(file_path);
-            let ext = file_path.extension()
-                .map(|e| e.to_string_lossy().to_string())
-                .unwrap_or_else(|| "bin".to_string());
-
-            let parent = file_path.parent().unwrap_or(lib_path);
-            let canonical = generate_canonical(&kind, &created, &ext, Some(parent));
-            let new_path = parent.join(&canonical.full);
-
-            let original_name = file_path.file_stem()
-                .unwrap_or_default().to_string_lossy().to_string();
-            let original_filename = file_path.file_name()
-                .unwrap_or_default().to_string_lossy().to_string();
-
-            let ext_lower = ext.to_lowercase();
-            if ext_lower == "md" || ext_lower == "markdown" {
-                match fs::read_to_string(file_path) {
-                    Ok(content) => {
-                        let fields = FrontmatterFields {
-                            title: original_name.clone(),
-                            cid: canonical.stem.clone(),
-                            kind: kind.to_lowercase(),
-                            created: created.to_rfc3339(),
-                            aliases: vec![original_name.clone()],
-                            original_filename: Some(original_filename),
-                        };
-                        let enriched = inject_frontmatter(&content, &fields);
-                        if let Err(e) = fs::write(&new_path, enriched) {
-                            total.errors.push(format!("{}: write: {}", file_path.display(), e));
-                            continue;
-                        }
-                        let _ = fs::remove_file(file_path);
-                        total.renamed += 1;
-                    }
-                    Err(e) => { total.errors.push(format!("{}: read: {}", file_path.display(), e)); }
-                }
-            } else {
-                // Non-markdown: rename + sidecar
-                if let Err(e) = fs::rename(file_path, &new_path) {
-                    total.errors.push(format!("{}: rename: {}", file_path.display(), e));
-                    continue;
-                }
-                total.renamed += 1;
-                let sidecar = SidecarMetadata {
-                    title: original_name.clone(),
-                    cid: canonical.stem.clone(),
-                    kind: kind.to_lowercase(),
-                    created: created.to_rfc3339(),
-                    original_filename: original_filename,
-                    aliases: vec![original_name],
-                    referenced_by: Vec::new(),
-                };
-                if let Err(e) = write_sidecar(&new_path, &sidecar) {
-                    total.errors.push(e);
-                } else {
-                    total.sidecars_created += 1;
-                }
-            }
-
-            total.rename_map.insert(
-                file_path.to_string_lossy().to_string(),
-                new_path.to_string_lossy().to_string(),
-            );
-        }
         total.total_files += files.len();
+        for file_path in files {
+            if is_canonical_filename(&file_path) { continue; }
+            if file_path.to_string_lossy().ends_with(".meta.json") { continue; }
+            pending.push(PendingFile {
+                path: file_path,
+                library_name: lib.name.clone(),
+                library_path: lib_path.to_path_buf(),
+            });
+        }
     }
+
+    // If nothing to canonicalize, return immediately
+    if pending.is_empty() {
+        let _ = app.emit("canonical-progress", CanonicalProgress {
+            phase: "done".to_string(),
+            current: 0, total: 0,
+            current_file: String::new(),
+            library_name: String::new(),
+        });
+        return Ok(total);
+    }
+
+    let pending_count = pending.len();
+
+    // Phase 2: Canonicalize each file, emitting progress
+    for (idx, item) in pending.iter().enumerate() {
+        let file_path = &item.path;
+        let original_name = file_path.file_stem()
+            .unwrap_or_default().to_string_lossy().to_string();
+        let original_filename = file_path.file_name()
+            .unwrap_or_default().to_string_lossy().to_string();
+
+        // Emit progress every file (frontend throttles display)
+        let _ = app.emit("canonical-progress", CanonicalProgress {
+            phase: "canonicalizing".to_string(),
+            current: idx + 1,
+            total: pending_count,
+            current_file: original_name.clone(),
+            library_name: item.library_name.clone(),
+        });
+
+        let kind = crate::file_kinds::classify_file(file_path, &mut registry);
+        let created = file_creation_time(file_path);
+        let ext = file_path.extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_else(|| "bin".to_string());
+
+        let parent = file_path.parent().unwrap_or(&item.library_path);
+        let canonical = generate_canonical(&kind, &created, &ext, Some(parent));
+        let new_path = parent.join(&canonical.full);
+
+        let ext_lower = ext.to_lowercase();
+        if ext_lower == "md" || ext_lower == "markdown" {
+            match fs::read_to_string(file_path) {
+                Ok(content) => {
+                    let fields = FrontmatterFields {
+                        title: original_name.clone(),
+                        cid: canonical.stem.clone(),
+                        kind: kind.to_lowercase(),
+                        created: created.to_rfc3339(),
+                        aliases: vec![original_name.clone()],
+                        original_filename: Some(original_filename),
+                    };
+                    let enriched = inject_frontmatter(&content, &fields);
+                    if let Err(e) = fs::write(&new_path, enriched) {
+                        total.errors.push(format!("{}: write: {}", file_path.display(), e));
+                        continue;
+                    }
+                    let _ = fs::remove_file(file_path);
+                    total.renamed += 1;
+                }
+                Err(e) => { total.errors.push(format!("{}: read: {}", file_path.display(), e)); }
+            }
+        } else {
+            if let Err(e) = fs::rename(file_path, &new_path) {
+                total.errors.push(format!("{}: rename: {}", file_path.display(), e));
+                continue;
+            }
+            total.renamed += 1;
+            let sidecar = SidecarMetadata {
+                title: original_name.clone(),
+                cid: canonical.stem.clone(),
+                kind: kind.to_lowercase(),
+                created: created.to_rfc3339(),
+                original_filename: original_filename,
+                aliases: vec![original_name],
+                referenced_by: Vec::new(),
+            };
+            if let Err(e) = write_sidecar(&new_path, &sidecar) {
+                total.errors.push(e);
+            } else {
+                total.sidecars_created += 1;
+            }
+        }
+
+        total.rename_map.insert(
+            file_path.to_string_lossy().to_string(),
+            new_path.to_string_lossy().to_string(),
+        );
+    }
+
+    // Phase 3: Done
+    let _ = app.emit("canonical-progress", CanonicalProgress {
+        phase: "done".to_string(),
+        current: pending_count,
+        total: pending_count,
+        current_file: String::new(),
+        library_name: String::new(),
+    });
 
     if total.renamed > 0 {
         eprintln!("[CANONICAL] Auto-canonicalized {} files across {} libraries", total.renamed, libraries.len());

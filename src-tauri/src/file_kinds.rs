@@ -339,6 +339,11 @@ fn classify_markdown(file_path: &Path) -> String {
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
+/// Public version of read_head for use by other modules (e.g., canonical.rs).
+pub fn read_head_pub(path: &Path, max_bytes: usize) -> Result<String, std::io::Error> {
+    read_head(path, max_bytes)
+}
+
 /// Read the first `max_bytes` of a file as a UTF-8 string.
 /// Handles UTF-8 boundary safely.
 fn read_head(path: &Path, max_bytes: usize) -> Result<String, std::io::Error> {

@@ -1439,5 +1439,11 @@
         "linkGeneralizes": "一般化",
         "linkDerivesFrom": "由来",
         "linkPartOf": "一部"
+    },
+    "canonical": {
+        "migrationTitle": "ライブラリを準備中",
+        "migrationDesc": "Constellationが正規識別システムでファイルを整理しています。各ファイルに固有の不変識別子が付与されますが、タイトルはそのまま保持されます。",
+        "scanning": "ライブラリをスキャン中...",
+        "migrationNote": "これは初回起動時または他のシステムからファイルをインポートする時のみ発生します。次回以降の起動は即座に完了します。"
     }
 }
