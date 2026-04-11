@@ -877,14 +877,35 @@ export async function embeddingStatus(): Promise<{ ready: boolean; embedded_coun
 }
 
 /**
+ * Normalize Arabic text for fuzzy matching: strip diacritics (tashkeel),
+ * normalize Alef variants (أإآٱ→ا), normalize Teh marbuta (ة→ه),
+ * normalize Alef Maksura (ى→ي). This ensures manual typing matches
+ * regardless of keyboard/input method differences.
+ */
+function normalizeArabicLight(text: string): string {
+	return text
+		// Strip Arabic diacritics (Fathah, Dammah, Kasrah, Shadda, Sukun, etc.)
+		.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g, '')
+		// Normalize Alef variants → bare Alef
+		.replace(/[أإآٱ]/g, 'ا')
+		// Normalize Teh marbuta → Heh
+		.replace(/ة/g, 'ه')
+		// Normalize Alef Maksura → Yeh
+		.replace(/ى/g, 'ي');
+}
+
+/**
  * Canonicalize a search query: replace localized operators with English equivalents.
  * Always accepts English in any locale. Only translates the current locale's keywords.
- * Pattern: Excel/LibreOffice — canonical internal + locale display layer.
+ * Uses Arabic normalization so manual typing always matches regardless of diacritics
+ * or Alef/Teh variants. Pattern: Excel/LibreOffice — canonical internal + locale display layer.
  */
 export function canonicalizeSearchQuery(raw: string, ops: Record<string, string> | null): string {
 	if (!ops) return raw;
 
 	let result = raw;
+	// Normalized version for matching (Arabic-safe)
+	const normalized = normalizeArabicLight(raw);
 
 	// Build replacement pairs: [localized, canonical]
 	// Sorted by localized string length (longest first) to prevent partial matches
@@ -901,16 +922,56 @@ export function canonicalizeSearchQuery(raw: string, ops: Record<string, string>
 	replacements.sort((a, b) => b[0].length - a[0].length);
 
 	for (const [localized, canonical] of replacements) {
+		// Try exact match first (fast path)
 		const escaped = localized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-		// Unicode-aware word boundary: lookbehind/lookahead for any Unicode letter
 		const regex = new RegExp(`(?<!\\p{L})${escaped}(?!\\p{L})`, 'gu');
-		result = result.replace(regex, canonical);
+		if (regex.test(result)) {
+			result = result.replace(new RegExp(`(?<!\\p{L})${escaped}(?!\\p{L})`, 'gu'), canonical);
+			continue;
+		}
+		// Fuzzy match with Arabic normalization (handles أ/ا, ة/ه, ى/ي, diacritics)
+		const normalizedOp = normalizeArabicLight(localized);
+		const normalizedEscaped = normalizedOp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		const normalizedRegex = new RegExp(`(?<!\\p{L})${normalizedEscaped}(?!\\p{L})`, 'gu');
+		if (normalizedRegex.test(normalized)) {
+			// Find the position in normalized string, replace in original
+			const match = normalized.match(normalizedRegex);
+			if (match) {
+				// Replace in the original string by finding the same span
+				for (const m of match) {
+					const idx = normalized.indexOf(m);
+					if (idx >= 0) {
+						// Find corresponding span in original (may differ in length due to diacritics)
+						let origStart = 0, normIdx = 0;
+						for (let i = 0; i < result.length; i++) {
+							if (normIdx === idx) { origStart = i; break; }
+							const ch = result[i];
+							// Skip chars that normalization removes (diacritics)
+							if (/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/.test(ch)) continue;
+							normIdx++;
+						}
+						// Find end of original span
+						let origEnd = origStart, matchNormLen = 0;
+						for (let i = origStart; i < result.length && matchNormLen < m.length; i++) {
+							const ch = result[i];
+							if (/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/.test(ch)) {
+								origEnd = i + 1;
+								continue;
+							}
+							matchNormLen++;
+							origEnd = i + 1;
+						}
+						result = result.slice(0, origStart) + canonical + result.slice(origEnd);
+						break; // one replacement per operator
+					}
+				}
+			}
+		}
 	}
 
 	// Handle "and" keyword (used in "links between [[X]] and [[Y]]")
 	if (ops.and && ops.and !== 'and') {
 		const andEscaped = ops.and.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-		// Only replace "and" between two [[ ]] blocks to avoid false positives
 		const andRegex = new RegExp(`(\\]\\])\\s*${andEscaped}\\s*(\\[\\[)`, 'gu');
 		result = result.replace(andRegex, '$1 and $2');
 	}
@@ -918,7 +979,15 @@ export function canonicalizeSearchQuery(raw: string, ops: Record<string, string>
 	// Handle scope prefix: في: → in:
 	if (ops.scope && ops.scope !== 'in') {
 		const scopeEscaped = ops.scope.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		const normalizedScope = normalizeArabicLight(ops.scope).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		// Try exact, then normalized
 		result = result.replace(new RegExp(`(?<!\\p{L})${scopeEscaped}:`, 'gu'), 'in:');
+		if (normalizedScope !== scopeEscaped) {
+			const normalizedResult = normalizeArabicLight(result);
+			if (new RegExp(`(?<!\\p{L})${normalizedScope}:`, 'u').test(normalizedResult)) {
+				result = result.replace(new RegExp(`(?<!\\p{L})${normalizedScope}:`, 'gu'), 'in:');
+			}
+		}
 	}
 
 	return result;
@@ -926,18 +995,30 @@ export function canonicalizeSearchQuery(raw: string, ops: Record<string, string>
 
 /**
  * Check if a query contains advanced syntax in any supported language.
+ * Uses Arabic normalization for fuzzy matching.
  */
 export function hasAdvancedSyntaxMultilingual(q: string, ops: Record<string, string> | null): boolean {
 	// English operators (always checked)
 	if (/[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:/i.test(q)) return true;
 	// Localized operators for current locale
 	if (!ops) return false;
+	const normalized = normalizeArabicLight(q);
 	return Object.values(ops).some(op => {
 		if (!op || op.length < 2) return false;
+		// Try exact match
 		const escaped = op.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 		try {
-			return new RegExp(`(?<!\\p{L})${escaped}(?!\\p{L})`, 'u').test(q);
-		} catch { return false; }
+			if (new RegExp(`(?<!\\p{L})${escaped}(?!\\p{L})`, 'u').test(q)) return true;
+		} catch { /* skip */ }
+		// Try normalized match (Arabic fuzzy)
+		const normalizedOp = normalizeArabicLight(op);
+		if (normalizedOp !== op) {
+			const normalizedEscaped = normalizedOp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			try {
+				if (new RegExp(`(?<!\\p{L})${normalizedEscaped}(?!\\p{L})`, 'u').test(normalized)) return true;
+			} catch { /* skip */ }
+		}
+		return false;
 	});
 }
 
