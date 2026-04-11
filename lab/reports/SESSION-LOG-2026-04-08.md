@@ -98,10 +98,31 @@ SearchHub + Sky View both wired with canonicalization.
 - Partial name matching: link operators fall back to LIKE when exact match fails
 - Arabic normalization: أ→ا, ة→ه, ى→ي, strip diacritics for fuzzy matching
 
+### Search Engine Testing + Fixes (commits `3d17059` → `ef1de51`)
+
+**Test Results:**
+- Test 1 (Universal search): PASS ✅
+- Test 2 (Advanced syntax English): PASS ✅ (orphans optimized O(n²)→O(n), freeze fixed)
+- Test 3 (Multilingual Arabic): PASS ✅ (chips reactive, bidi chars stripped)
+- Test 4 (Sky View search): IN PROGRESS — badges + counts now match
+
+**Fixes applied:**
+- Orphans query O(n²)→O(n): pre-compute incoming links in HashSet, use temp table (30s→instant)
+- CM6 freeze: try-catch on EditorView creation, fallback editor without livePreview
+- Highlight term: strip operator syntax before passing to editor
+- Chip locale reactivity: $derived.by reads $t for reactive dependency on locale
+- Star*→Sky* rename: 206 occurrences across 25 files + 3 component files renamed
+- All 2999 notes as graph nodes (not just 419 linked)
+- collect_library_notes reads frontmatter title for canonical files
+- Search index name stored ORIGINAL (not Arabic-normalized) — schema v6
+- Dual-form search: queries both original AND normalized Arabic for titles/tags/wikilinks
+- Counts match: Search Hub and Sky View show identical "396 from 181 notes"
+
 ### Open Items
 - Frontmatter parser unification (3 parsers → 1 shared) — tracked for future
 - Vec batch streaming in canonicalize_execute for 100K+ file vaults — optimization
 - De-canonicalize UI button in library settings — not yet wired
+- 7 Cognitive typed-link search operators (15 languages, natural word order) — designed, pending implementation
 
 ---
 
