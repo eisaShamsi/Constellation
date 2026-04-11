@@ -427,13 +427,13 @@
     "searchHub": {
         "title": "مركز البحث",
         "syntaxHelpers": "صيغ البحث",
-        "linksTo": "روابط إلى",
-        "linksFrom": "روابط من",
+        "linksTo": "الربط إلى",
+        "linksFrom": "الربط من",
         "mutual": "متبادل",
         "mentions": "يذكر",
         "orphans": "يتيم",
-        "linksBetween": "روابط بين",
-        "linksAll": "كل الروابط",
+        "linksBetween": "الربط بين",
+        "linksAll": "كل الربط",
         "tag": "وسم",
         "property": "خاصية",
         "scope": "مكتبة",
@@ -1459,13 +1459,13 @@
         "keepNote": "الأفضل للمستخدمين الذين قد يعودون إلى Obsidian أو أنظمة إدارة معرفة أخرى."
     },
     "searchOps": {
-        "linksTo": "روابط إلى",
-        "linksFrom": "روابط من",
+        "linksTo": "الربط إلى",
+        "linksFrom": "الربط من",
         "mutual": "متبادل",
         "mentions": "يذكر",
         "orphans": "يتيم",
-        "linksBetween": "روابط بين",
-        "linksAll": "كل الروابط",
+        "linksBetween": "الربط بين",
+        "linksAll": "كل الربط",
         "and": "و",
         "scope": "في"
     }
