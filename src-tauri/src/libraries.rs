@@ -523,70 +523,43 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
         return Err("Folder does not exist.".to_string());
     }
 
-    // Check if this library uses canonical filenames
-    let use_canonical = is_library_canonical(&folder_path);
+    // Always use canonical filenames — this is Constellation's internal file identity system.
+    // Users see human titles; the canonical filename is the immutable PK on disk.
+    let dt = chrono::Utc::now();
+    let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", Some(folder));
+    let file_path = folder.join(&canonical.full);
 
-    if use_canonical {
-        // Generate canonical filename
-        let dt = chrono::Utc::now();
-        let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", Some(folder));
-        let file_path = folder.join(&canonical.full);
+    // Build frontmatter with cid + title
+    let display_name = file_name.trim_end_matches(".md");
+    let mut fm_lines: Vec<String> = Vec::new();
+    fm_lines.push(format!("title: \"{}\"", display_name.replace('"', "\\\"")));
+    fm_lines.push(format!("cid: {}", canonical.stem));
+    fm_lines.push("kind: note".to_string());
+    fm_lines.push(format!("created: {}", dt.to_rfc3339()));
 
-        // Build frontmatter with cid + title
-        let display_name = file_name.trim_end_matches(".md");
-        let mut fm_lines: Vec<String> = Vec::new();
-        fm_lines.push(format!("title: \"{}\"", display_name.replace('"', "\\\"")));
-        fm_lines.push(format!("cid: {}", canonical.stem));
-        fm_lines.push("kind: note".to_string());
-        fm_lines.push(format!("created: {}", dt.to_rfc3339()));
-
-        // Append user-provided frontmatter lines
-        if let Some(ref extra) = initial_frontmatter {
-            for line in extra.lines() {
-                let trimmed = line.trim();
-                // Don't duplicate fields we already set
-                if !trimmed.starts_with("title:") && !trimmed.starts_with("cid:")
-                    && !trimmed.starts_with("kind:") && !trimmed.starts_with("created:")
-                    && !trimmed.is_empty()
-                {
-                    fm_lines.push(trimmed.to_string());
-                }
+    // Append user-provided frontmatter lines
+    if let Some(ref extra) = initial_frontmatter {
+        for line in extra.lines() {
+            let trimmed = line.trim();
+            // Don't duplicate fields we already set
+            if !trimmed.starts_with("title:") && !trimmed.starts_with("cid:")
+                && !trimmed.starts_with("kind:") && !trimmed.starts_with("created:")
+                && !trimmed.is_empty()
+            {
+                fm_lines.push(trimmed.to_string());
             }
         }
-
-        let content = format!("---\n{}\n---\n\n", fm_lines.join("\n"));
-        fs::write(&file_path, &content)
-            .map_err(|e| format!("Failed to create note: {}", e))?;
-
-        Ok(file_path.to_string_lossy().to_string())
-    } else {
-        // Legacy behavior: human-readable filename
-        let safe_name = sanitize_name(&file_name)?;
-        let name = if safe_name.ends_with(".md") {
-            safe_name
-        } else {
-            format!("{}.md", safe_name)
-        };
-
-        let file_path = folder.join(&name);
-        if file_path.exists() {
-            return Err("A file with this name already exists.".to_string());
-        }
-
-        let fm = initial_frontmatter.unwrap_or_default();
-        let initial = if fm.is_empty() {
-            "---\n---\n\n".to_string()
-        } else {
-            format!("---\n{}\n---\n\n", fm.trim())
-        };
-        fs::write(&file_path, &initial)
-            .map_err(|e| format!("Failed to create note: {}", e))?;
-
-        Ok(file_path.to_string_lossy().to_string())
     }
+
+    let content = format!("---\n{}\n---\n\n", fm_lines.join("\n"));
+    fs::write(&file_path, &content)
+        .map_err(|e| format!("Failed to create note: {}", e))?;
+
+    Ok(file_path.to_string_lossy().to_string())
 }
 
 /// Check if a library has been canonicalized. Delegates to canonical module.
+#[allow(dead_code)]
 fn is_library_canonical(library_path: &str) -> bool {
     crate::canonical::is_library_canonicalized(library_path)
 }

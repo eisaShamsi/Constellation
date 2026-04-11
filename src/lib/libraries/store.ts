@@ -41,6 +41,8 @@ export interface FileEntry {
 	modified: number | null;
 	status: string | null;
 	isCUniverse?: boolean;
+	/** For canonical files: human-readable title from frontmatter. */
+	display_title?: string | null;
 }
 
 export interface OpenTab {
@@ -584,7 +586,12 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 			return; // File may not exist or be readable
 		}
 	}
-	const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
+	// For canonical files, extract title from frontmatter; fallback to filename stem
+	let name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
+	const fmTitleMatch = content.match(/^---[\s\S]*?^title:\s*"?([^"\n]+)"?\s*$/m);
+	if (fmTitleMatch?.[1]) {
+		name = fmTitleMatch[1].trim();
+	}
 
 	// Derive library path from registered libraries
 	const allLibraries = get(libraries);

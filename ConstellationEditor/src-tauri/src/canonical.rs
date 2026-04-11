@@ -598,6 +598,7 @@ pub fn generate_canonical_name(
 // ─── Helpers ─────────────────────────────────────────────────────────
 
 /// Check if a library has been canonicalized (has `.constellation/canonical` marker).
+#[allow(dead_code)]
 pub fn is_library_canonicalized(library_path: &str) -> bool {
     Path::new(library_path).join(".constellation").join("canonical").exists()
 }
