@@ -44,10 +44,34 @@
 - e5-small produces compressed similarity (0.73–0.88 range)
 - "agriculture" went from 2180 → 31 results
 
+### Safety Redesign (commits `1e170d7` → `adacfd6`)
+Canonical filenames redesigned for user choice and safety:
+
+**Library Modes:**
+- `native` — Constellation-created, always canonical (mandatory)
+- `canonical` — external, user chose "Adopt" (reversible)
+- `compatible` — external, user chose "Keep Intact" (cid-only, non-destructive)
+
+**Changes:**
+- `LibraryInfo.canonical_mode` field added to all library constructions
+- `CanonicalChoiceDialog.svelte` — appears when linking external folders
+- `create_note` respects library mode (canonical vs human filename)
+- `inject_cid_library` — non-destructive cid injection for compatible mode
+- `de_canonicalize_library` — restore original filenames for users leaving
+- Removed auto-canonicalize-all on startup (was destructive)
+- Fixed auto-title: restores original title, never generates new names
+- Fixed content replacement bug on title rename (handleTitleChange)
+- i18n: choice dialog keys in all 15 locales
+
+**Test Results:**
+- Test 1 (new note in native library): PASS ✅
+- Test 2 (link external folder, keep intact): PASS ✅
+- Title clear restores original, cid preserves original date: PASS ✅
+
 ### Open Items
-- Test auto-canonicalization on startup with existing libraries
 - Frontmatter parser unification (3 parsers → 1 shared) — tracked for future
 - Vec batch streaming in canonicalize_execute for 100K+ file vaults — optimization
+- De-canonicalize UI button in library settings — not yet wired
 
 ---
 
