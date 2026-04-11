@@ -1,4 +1,55 @@
-# Session Log — 2026-04-08 / 2026-04-09 / 2026-04-10
+# Session Log — 2026-04-08 / 2026-04-09 / 2026-04-10 / 2026-04-11
+
+## Phase: Canonical Filename System — Full Implementation
+**Commits**: `8f21f65` → `005c7a5` (10 commits)
+
+### Design (commit `1d6c896`)
+- `CANONICAL-FILENAME-ARCHITECTURE.md` — full design document
+- Format: `YYYYMMDDTHHMMSSZ_KIND_XXXX.ext`
+- 12 core kinds: NOTE, BASE, TMPL, LINK, IMG, AUD, VID, ATT, CANVAS, DRAW, MARK, CLIP
+- Auto-generate codes for unknown extensions
+- Frontmatter contract: title, cid, kind, created, aliases
+- Sidecar .meta.json for non-markdown files
+- Wikilinks resolve by title/aliases, never by filename
+
+### Core Engine (commits `1d6c896` → `24ecb45`)
+- `file_kinds.rs` — 3-layer classification engine (extension → content heuristics → auto-generate)
+- `canonical.rs` — filename generator, frontmatter injection, sidecar metadata, canonicalize commands
+- `importers.rs` — `import_with_canonical` full pipeline
+- `libraries.rs` — title-based wikilink resolution, canonical note creation, frontmatter rename
+
+### Integration (commits `5a05ec2` → `6393c0b`)
+- Search index uses frontmatter `title:` as display name (not file stem)
+- Rename updates frontmatter title + aliases (file stays put)
+- Reindex triggered after rename
+- Template system preserves canonical frontmatter fields
+- File tree shows `display_title` for canonical files
+- Tab names extracted from frontmatter title
+
+### 14-Agent Audit (commits `fd4823b` → `ebbfbac`)
+- All 14 agents run: PA, AA, MA, SCA, RA, UXA, CQA, EA, LA, SIA, SA, DIA, CFS, OGA
+- LA: full pass (all 15 locales clean)
+- OGA: full pass (100% offline)
+- Fixed: shared EXCLUDED_DIRS, alias duplication bug, regex → OnceLock, RTL arrow flip, orphan LIKE underscore escape, Arabic-normalized wikilinks, malformed frontmatter, depth limits, missing name index, ConstellationEditor sync
+
+### Canonical as Default (commits `aa1adca` → `005c7a5`)
+- `create_note` always generates canonical filenames (not opt-in)
+- Auto-canonicalize ALL existing files on startup (`auto_canonicalize_all`)
+- Import always canonical (toggle removed)
+- `generateAutoTitle()` uses canonical format instead of CoNote pattern
+- Schema v5: frontmatter titles, Arabic-normalized wikilinks, name index
+
+### Semantic Search Threshold (commits `8f21f65`)
+- Dynamic threshold: `top_score - 0.03` instead of fixed cutoff
+- e5-small produces compressed similarity (0.73–0.88 range)
+- "agriculture" went from 2180 → 31 results
+
+### Open Items
+- Test auto-canonicalization on startup with existing libraries
+- Frontmatter parser unification (3 parsers → 1 shared) — tracked for future
+- Vec batch streaming in canonicalize_execute for 100K+ file vaults — optimization
+
+---
 
 ## Phase: Canonical Filename Architecture
 **Commit**: `1d6c896`
