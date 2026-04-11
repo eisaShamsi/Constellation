@@ -964,7 +964,6 @@ fn semantic_search(conn: &Connection, query_embedding: &[f32], limit: u32) -> Ve
             let top_score = all.iter().map(|(_, s)| *s).fold(f32::NEG_INFINITY, f32::max);
             // Dynamic threshold: within 3% of top score, minimum 0.75
             let dynamic_thresh = f32::max(0.75, top_score - 0.03);
-            eprintln!("[SEMANTIC] top={:.4}, threshold={:.4}, candidates={}", top_score, dynamic_thresh, all.len());
             for (r, sim) in all {
                 if sim >= dynamic_thresh {
                     scored.push((r, sim));
