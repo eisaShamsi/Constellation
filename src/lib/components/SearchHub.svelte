@@ -98,7 +98,7 @@
 
 	function triggerSearch(q: string) {
 		clearTimeout(searchTimeout);
-		q = stripInvisibleChars(q); // Strip bidi marks browsers inject in RTL inputs
+		// q is already clean — stripInvisibleChars applied in handleInput
 		if (!q.trim()) { response = null; filteredResults = []; isAdvancedMode = false; return; }
 		loading = true;
 		searchTimeout = setTimeout(async () => {
@@ -160,11 +160,12 @@
 	}
 
 	function handleInput(e: Event) {
-		query = (e.target as HTMLInputElement).value;
+		query = stripInvisibleChars((e.target as HTMLInputElement).value);
 		showHistory = false;
 
-		// Wikilink autocomplete detection
-		const wikiMatch = query.match(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?)\s+(?:.*\[\[(?:[^\]]+\]\]\s+and\s+)?)?\[\[([^\]]*)$/i);
+		// Wikilink autocomplete detection — works with both English and localized operators
+		const canonicalized = canonicalizeSearchQuery(query, getSearchOps());
+		const wikiMatch = canonicalized.match(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?)\s+(?:.*\[\[(?:[^\]]+\]\]\s+and\s+)?)?\[\[([^\]]*)$/i);
 		if (wikiMatch) {
 			const partial = wikiMatch[1].toLowerCase();
 			wikiAuto = allNotes
@@ -191,29 +192,7 @@
 			return;
 		}
 		if (e.key === 'Escape') { onClose(); return; }
-		// Auto-pair brackets (including [[ → [[]])
-		{
-			const input = e.target as HTMLInputElement;
-			const pos = input.selectionStart ?? query.length;
-			// Skip-over: if typing a closing char that's already at cursor, just move past it
-			if ((e.key === ']' || e.key === ')' || e.key === '}' || e.key === '"' || e.key === "'" || e.key === '`') && query[pos] === e.key) {
-				e.preventDefault();
-				requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
-			}
-			// Double bracket: [[ → [[]] (cursor between)
-			else if (e.key === '[' && pos > 0 && query[pos - 1] === '[') {
-				e.preventDefault();
-				query = query.slice(0, pos) + '[]]' + query.slice(pos);
-				requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
-			} else {
-				const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '`': '`' };
-				if (pairs[e.key]) {
-					e.preventDefault();
-					query = query.slice(0, pos) + e.key + pairs[e.key] + query.slice(pos);
-					requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = pos + 1; });
-				}
-			}
-		}
+		// No auto-bracket pairing in search inputs — causes extra brackets in RTL/bidi contexts
 		// Result navigation
 		if (allFlatResults.length > 0) {
 			if (e.key === 'ArrowDown') {
