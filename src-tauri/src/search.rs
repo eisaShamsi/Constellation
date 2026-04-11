@@ -1158,11 +1158,23 @@ fn execute_universal_search(conn: &Connection, query: &str, query_embedding: Opt
         let normalized = normalize_arabic_for_search(term);
         let raw_lower = term.to_lowercase();
 
-        all_titles.extend(search_titles(conn, &normalized, limit));
+        // Title search: try BOTH original AND normalized (name is stored original,
+        // but user might type either form of Arabic)
+        all_titles.extend(search_titles(conn, &raw_lower, limit));
+        if normalized != raw_lower {
+            all_titles.extend(search_titles(conn, &normalized, limit));
+        }
         all_contents.extend(search_contents(conn, &normalized, limit));
+        // Tags and wikilinks: search both original and normalized
         all_tags.extend(search_tags(conn, &raw_lower, limit));
+        if normalized != raw_lower {
+            all_tags.extend(search_tags(conn, &normalized, limit));
+        }
         all_properties.extend(search_properties(conn, &raw_lower, limit));
         all_wikilinks.extend(search_wikilinks(conn, &raw_lower, limit));
+        if normalized != raw_lower {
+            all_wikilinks.extend(search_wikilinks(conn, &normalized, limit));
+        }
     }
 
     // 6. SEMANTIC — cosine similarity on stored embeddings (if query embedding provided)
