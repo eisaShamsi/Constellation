@@ -483,6 +483,7 @@
 								}
 							}
 							searchTotalHits = totalHits;
+
 						}
 
 						engine?.setSearchExtendedMulti(allIds, typeMap);

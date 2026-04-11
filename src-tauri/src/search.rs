@@ -334,10 +334,11 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
         .cloned()
         .unwrap_or_else(|| file_stem.clone());
 
-    // Arabic normalization for better FTS matching (Phase 4)
-    // Normalize diacritics, Alef variants, Teh marbuta for consistent indexing
+    // Arabic normalization for FTS body text (Phase 4)
+    // Normalize diacritics, Alef variants, Teh marbuta for consistent content search.
+    // NOTE: name is stored ORIGINAL (not normalized) so it matches graph node IDs.
+    // Arabic normalization for name matching happens at query time instead.
     let plain_body = normalize_arabic_for_search(&plain_body);
-    let name = normalize_arabic_for_search(&name);
 
     let props_json = serde_json::to_string(&properties).unwrap_or_default();
     let tags_json = serde_json::to_string(&tags).unwrap_or_default();
@@ -720,7 +721,7 @@ pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexSta
     // Schema v2: force full reindex to pick up bracket-format tags + inline hashtags
     // Check for version marker; if missing or outdated, delete and rebuild
     let version_path = path.with_extension("version");
-    let current_version = "5"; // v5: name from frontmatter title, Arabic-normalized wikilinks, name index
+    let current_version = "6"; // v6: name stored original (not Arabic-normalized) for graph ID matching
     let needs_rebuild = match std::fs::read_to_string(&version_path) {
         Ok(v) => v.trim() != current_version,
         Err(_) => true,
