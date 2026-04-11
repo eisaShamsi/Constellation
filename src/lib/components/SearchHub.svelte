@@ -56,6 +56,7 @@
 	};
 
 	const syntaxChips = $derived.by(() => {
+		const _localeTracker = $t('searchHub.linksTo'); // reactive dependency on locale
 		const ops = getSearchOps();
 		return [
 			{ label: 'linksTo', syntax: (ops?.linksTo ?? 'links to') + ' [[' },
