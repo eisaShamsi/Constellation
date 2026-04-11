@@ -285,6 +285,22 @@
 		return categories.reduce((sum, c) => sum + getCategoryResults(c).length, 0);
 	}
 
+	function uniqueNoteCount(): number {
+		const paths = new Set<string>();
+		if (isAdvancedMode) {
+			if (advancedGroups.length > 0) {
+				for (const g of advancedGroups) for (const r of g.results) paths.add(r.path);
+			} else {
+				for (const r of filteredResults) paths.add(r.path);
+			}
+		} else if (response) {
+			for (const cat of categories) {
+				for (const r of getCategoryResults(cat)) paths.add(r.path);
+			}
+		}
+		return paths.size;
+	}
+
 	function formatSnippetForCategory(cat: string, r: ConstellationSearchResult): string {
 		if (cat === 'tags' && r.snippet) {
 			try {
@@ -356,7 +372,8 @@
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
 			</button>
 			{#if totalResults() > 0}
-				<span class="sh-total">{totalResults()}</span>
+				{@const unique = uniqueNoteCount()}
+				<span class="sh-total">{totalResults()}{#if unique < totalResults()}<span class="sh-unique"> · {unique} {$t('searchHub.notes') || 'notes'}</span>{/if}</span>
 			{/if}
 			<button class="sh-close" onclick={onClose}>×</button>
 		</div>
@@ -566,6 +583,7 @@
 		background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
 		padding: 2px 8px; border-radius: 10px; flex-shrink: 0;
 	}
+	.sh-unique { font-weight: 400; opacity: 0.8; }
 
 	/* Syntax chips bar */
 	.sh-chips-bar {

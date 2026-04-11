@@ -419,12 +419,13 @@
 	let prevSearch = '';
 	let searchDebounce: ReturnType<typeof setTimeout>;
 	let searchMatches = $state<{ name: string; match_type: string; path: string; libraryName: string }[]>([]);
+	let searchTotalHits = $state(0);
 	$effect(() => {
 		const q = searchQuery;
 		if (q !== prevSearch) {
 			prevSearch = q;
 			engine?.setSearch(q); // instant client-side name filter
-			if (!q.trim()) { searchMatches = []; engine?.clearSearchBadges(); }
+			if (!q.trim()) { searchMatches = []; searchTotalHits = 0; engine?.clearSearchBadges(); }
 			else { setTimeout(() => engine?.renderSearchBadges(), 50); }
 			// Also fire advanced search for content/structured/semantic matches (async)
 			clearTimeout(searchDebounce);
@@ -467,8 +468,10 @@
 								['titles', 'title'], ['contents', 'content'], ['tags', 'tag'],
 								['properties', 'property'], ['wikilinks', 'wikilink'], ['semantic', 'semantic'],
 							];
+							let totalHits = 0;
 							for (const [cat, mt] of categoryTypes) {
 								const items = (resp as any)[cat] ?? [];
+								totalHits += items.length;
 								for (const r of items) {
 									const id = r.name.toLowerCase();
 									allIds.add(id);
@@ -479,6 +482,7 @@
 									}
 								}
 							}
+							searchTotalHits = totalHits;
 						}
 
 						engine?.setSearchExtendedMulti(allIds, typeMap);
@@ -650,7 +654,7 @@
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
 						</button>
 						{#if searchMatches.length > 0}
-							<span class="gm-search-count">{searchMatches.length}</span>
+							<span class="gm-search-count">{searchTotalHits || searchMatches.length}{#if searchTotalHits > searchMatches.length}<span style="font-weight:400;opacity:0.7"> · {searchMatches.length} {$t('searchHub.notes') || 'notes'}</span>{/if}</span>
 						{/if}
 						<button class="gm-search-close" onclick={() => { searchVisible = false; searchQuery = ''; }}>×</button>
 					</div>

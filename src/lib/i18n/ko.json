@@ -442,7 +442,8 @@
         "tags": "Tags",
         "properties": "Properties",
         "wikilinks": "Wikilinks",
-        "semantic": "Semantic"
+        "semantic": "Semantic",
+        "notes": "노트"
     },
     "layout": {
         "leftSidebar": "왼쪽 사이드바",

@@ -445,7 +445,8 @@
         "tags": "الوسوم",
         "properties": "الخصائص",
         "wikilinks": "الروابط",
-        "semantic": "دلالي"
+        "semantic": "دلالي",
+        "notes": "ملاحظة"
     },
     "layout": {
         "leftSidebar": "الشريط الأيسر",
