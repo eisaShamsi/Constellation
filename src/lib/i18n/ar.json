@@ -427,8 +427,8 @@
     "searchHub": {
         "title": "مركز البحث",
         "syntaxHelpers": "صيغ البحث",
-        "linksTo": "يشير إلى",
-        "linksFrom": "يشار إليه من",
+        "linksTo": "روابط إلى",
+        "linksFrom": "روابط من",
         "mutual": "متبادل",
         "mentions": "يذكر",
         "orphans": "يتيم",
@@ -1459,13 +1459,13 @@
         "keepNote": "الأفضل للمستخدمين الذين قد يعودون إلى Obsidian أو أنظمة إدارة معرفة أخرى."
     },
     "searchOps": {
-        "linksTo": "الوصلات إلى",
-        "linksFrom": "الوصلات من",
+        "linksTo": "روابط إلى",
+        "linksFrom": "روابط من",
         "mutual": "متبادل",
         "mentions": "يذكر",
         "orphans": "يتيم",
-        "linksBetween": "الوصلات بين",
-        "linksAll": "كل الوصلات",
+        "linksBetween": "روابط بين",
+        "linksAll": "كل الروابط",
         "and": "و",
         "scope": "في"
     }
