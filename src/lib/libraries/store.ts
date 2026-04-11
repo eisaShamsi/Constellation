@@ -1393,8 +1393,9 @@ export function buildSkyData(allLinks: NoteLink[], allNotes: { name: string; pat
 		nodeMap.get(targetId)!.linkCount++;
 	}
 
-	// Only include nodes that have at least one link
-	const nodes = Array.from(nodeMap.values()).filter(n => n.linkCount > 0);
+	// Include ALL notes — the graph engine's showOrphans config controls visibility.
+	// During search, orphan nodes that match are highlighted with badges.
+	const nodes = Array.from(nodeMap.values());
 
 	return { nodes, links };
 }
