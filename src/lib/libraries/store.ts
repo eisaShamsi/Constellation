@@ -1013,10 +1013,11 @@ export function buildDefaultFrontmatter(settings: AppSettings): string {
 	// Auto-populate created date
 	lines.push(`created: ${dateStr}`);
 
-	// Add user-defined default properties
+	// Add user-defined default properties (skip canonical fields — handled by Rust)
+	const canonicalKeys = new Set(['created', 'title', 'cid', 'kind']);
 	if (settings.defaultProperties) {
 		for (const prop of settings.defaultProperties) {
-			if (prop.key && prop.key !== 'created') {
+			if (prop.key && !canonicalKeys.has(prop.key)) {
 				lines.push(`${prop.key}: ${prop.value}`);
 			}
 		}

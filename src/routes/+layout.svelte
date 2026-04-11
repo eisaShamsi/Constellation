@@ -1783,13 +1783,31 @@
 				} catch { /* no template — OK */ }
 			}
 
-			// Apply template if found
+			// Apply template if found — preserve canonical frontmatter fields (cid, kind, title)
 			if (templateBody.trim()) {
 				try {
+					// Read back the canonical frontmatter that create_note injected
+					const noteContent: string = await invoke('read_note', { filePath: newPath });
+					const canonicalFields: string[] = [];
+					const fmMatch = noteContent.match(/^---\n([\s\S]*?)\n---/);
+					if (fmMatch) {
+						for (const line of fmMatch[1].split('\n')) {
+							const t = line.trim();
+							if (t.startsWith('title:') || t.startsWith('cid:') || t.startsWith('kind:')) {
+								canonicalFields.push(t);
+							}
+						}
+					}
+
 					const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(-2, -1)[0] || '';
 					const ctx = { title: name, folder: noteFolder, library: lib.name, filePath: newPath };
 					const result = await processTemplateAsync(templateBody, ctx, buildTemplateCallbacks());
-					const fullContent = `---\n${defaultFM}\n---\n${result.content}`;
+					// Merge: canonical fields first, then user defaults (skip duplicates)
+					const mergedFM = [...canonicalFields, ...defaultFM.split('\n').filter(l => {
+						const key = l.split(':')[0]?.trim();
+						return key && !canonicalFields.some(cf => cf.startsWith(key + ':'));
+					})].join('\n');
+					const fullContent = `---\n${mergedFM}\n---\n${result.content}`;
 					await invoke('write_note', { filePath: newPath, content: fullContent });
 				} catch { /* template write failed — note still created */ }
 			}
