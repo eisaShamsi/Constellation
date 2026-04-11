@@ -786,6 +786,275 @@ pub fn auto_canonicalize_all(app: tauri::AppHandle) -> Result<CanonicalizeResult
     Ok(total)
 }
 
+// ─── Compatible Mode: CID-only injection ────────────────────────────
+
+/// Inject `cid` into frontmatter of all .md files in a library that don't have one yet.
+/// Does NOT rename files. Non-destructive — only adds the `cid` field.
+#[tauri::command]
+pub fn inject_cid_library(app: tauri::AppHandle, library_path: String) -> Result<CanonicalizeResult, String> {
+    use tauri::Emitter;
+    let lib_path = Path::new(&library_path);
+    if !lib_path.is_dir() {
+        return Err("Library path is not a directory".to_string());
+    }
+
+    let mut result = CanonicalizeResult {
+        total_files: 0,
+        renamed: 0, // repurposed: counts files with cid injected
+        sidecars_created: 0,
+        errors: Vec::new(),
+        rename_map: HashMap::new(),
+    };
+
+    let files = collect_files_recursive(lib_path);
+    let md_files: Vec<&PathBuf> = files.iter()
+        .filter(|f| f.extension().map(|e| e == "md" || e == "markdown").unwrap_or(false))
+        .collect();
+    result.total_files = md_files.len();
+
+    for (idx, file_path) in md_files.iter().enumerate() {
+        let content = match fs::read_to_string(file_path) {
+            Ok(c) => c,
+            Err(e) => { result.errors.push(format!("{}: {}", file_path.display(), e)); continue; }
+        };
+
+        // Skip if already has a cid
+        if content.contains("\ncid:") || content.starts_with("cid:") {
+            continue;
+        }
+
+        let created = file_creation_time(file_path);
+        let kind_code = "NOTE"; // default for .md
+        let canonical = generate_canonical(kind_code, &created, "md", None);
+
+        // Inject only cid into frontmatter
+        let updated = if content.trim_start().starts_with("---") {
+            let after = &content.trim_start()[3..];
+            if let Some(end) = after.find("\n---") {
+                let fm = &after[..end];
+                let body = &after[end + 4..];
+                format!("---\n{}\ncid: {}\n---{}", fm, canonical.stem, body)
+            } else {
+                format!("---\ncid: {}\n---\n\n{}", canonical.stem, content)
+            }
+        } else {
+            format!("---\ncid: {}\n---\n\n{}", canonical.stem, content)
+        };
+
+        if let Err(e) = fs::write(file_path, &updated) {
+            result.errors.push(format!("{}: write: {}", file_path.display(), e));
+        } else {
+            result.renamed += 1;
+        }
+
+        // Emit progress
+        if idx % 50 == 0 || idx == md_files.len() - 1 {
+            let name = file_path.file_stem().unwrap_or_default().to_string_lossy().to_string();
+            let _ = app.emit("canonical-progress", CanonicalProgress {
+                phase: "canonicalizing".to_string(),
+                current: idx + 1,
+                total: md_files.len(),
+                current_file: name,
+                library_name: String::new(),
+            });
+        }
+    }
+
+    Ok(result)
+}
+
+// ─── De-canonicalize: Restore Original Filenames ─────────────────────
+
+/// Result of a de-canonicalization operation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeCanonicalizeResult {
+    pub restored: usize,
+    pub errors: Vec<String>,
+}
+
+/// Restore original filenames for all canonical files in a library.
+/// Renames files from canonical (20260411T...Z_NOTE_XXXX.md) back to human names.
+/// Uses frontmatter `title` or `original_filename` to determine the target name.
+/// Removes `cid`, `kind`, `original_filename` from frontmatter.
+/// Deletes `.meta.json` sidecars.
+#[tauri::command]
+pub fn de_canonicalize_library(
+    app: tauri::AppHandle,
+    library_path: String,
+) -> Result<DeCanonicalizeResult, String> {
+    use tauri::Emitter;
+    let lib_path = Path::new(&library_path);
+    if !lib_path.is_dir() {
+        return Err("Library path is not a directory".to_string());
+    }
+
+    let files = collect_files_recursive(lib_path);
+    let mut result = DeCanonicalizeResult { restored: 0, errors: Vec::new() };
+
+    // Collect canonical files
+    let canonical_files: Vec<&PathBuf> = files.iter()
+        .filter(|f| is_canonical_filename(f))
+        .filter(|f| !f.to_string_lossy().ends_with(".meta.json"))
+        .collect();
+
+    let total = canonical_files.len();
+
+    for (idx, file_path) in canonical_files.iter().enumerate() {
+        let ext = file_path.extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        // Determine the original/target name and restore
+        let _target_name = if ext == "md" || ext == "markdown" {
+            // Read frontmatter to find title or original_filename
+            match fs::read_to_string(file_path) {
+                Ok(content) => {
+                    let title = extract_fm_field(&content, "original_filename")
+                        .or_else(|| extract_fm_field(&content, "title"))
+                        .unwrap_or_else(|| {
+                            file_path.file_stem().unwrap_or_default()
+                                .to_string_lossy().to_string()
+                        });
+                    let clean = if title.ends_with(".md") { title } else { format!("{}.md", title) };
+
+                    // Clean frontmatter: remove cid, kind, original_filename, aliases
+                    let cleaned = remove_canonical_fields(&content);
+                    let parent = file_path.parent().unwrap_or(lib_path);
+                    let target = unique_path(parent, &clean);
+
+                    if let Err(e) = fs::write(&target, cleaned) {
+                        result.errors.push(format!("{}: write: {}", file_path.display(), e));
+                        continue;
+                    }
+                    let _ = fs::remove_file(file_path);
+                    result.restored += 1;
+
+                    // Emit progress
+                    let _ = app.emit("canonical-progress", CanonicalProgress {
+                        phase: "canonicalizing".to_string(),
+                        current: idx + 1, total,
+                        current_file: target.file_stem().unwrap_or_default().to_string_lossy().to_string(),
+                        library_name: String::new(),
+                    });
+                    continue;
+                }
+                Err(e) => {
+                    result.errors.push(format!("{}: read: {}", file_path.display(), e));
+                    continue;
+                }
+            }
+        } else {
+            // Non-markdown: check sidecar for original name
+            let sc_path = sidecar_path(file_path);
+            let orig = if sc_path.exists() {
+                fs::read_to_string(&sc_path).ok()
+                    .and_then(|json| serde_json::from_str::<SidecarMetadata>(&json).ok())
+                    .map(|m| m.original_filename)
+                    .unwrap_or_else(|| file_path.file_name().unwrap_or_default().to_string_lossy().to_string())
+            } else {
+                file_path.file_name().unwrap_or_default().to_string_lossy().to_string()
+            };
+
+            let parent = file_path.parent().unwrap_or(lib_path);
+            let target = unique_path(parent, &orig);
+
+            if let Err(e) = fs::rename(file_path, &target) {
+                result.errors.push(format!("{}: rename: {}", file_path.display(), e));
+                continue;
+            }
+            // Remove sidecar
+            let _ = fs::remove_file(&sc_path);
+            result.restored += 1;
+            continue;
+        };
+    }
+
+    // Update library mode to compatible
+    let libraries = crate::libraries::load_all_libraries(&app);
+    if let Some(lib) = libraries.iter().find(|l| l.path == library_path) {
+        let _ = crate::libraries::set_library_canonical_mode(
+            app.clone(), lib.id.clone(), "compatible".to_string()
+        );
+    }
+
+    let _ = app.emit("canonical-progress", CanonicalProgress {
+        phase: "done".to_string(),
+        current: total, total,
+        current_file: String::new(),
+        library_name: String::new(),
+    });
+
+    eprintln!("[CANONICAL] De-canonicalized {} files, {} errors", result.restored, result.errors.len());
+    Ok(result)
+}
+
+/// Extract a single frontmatter field value.
+fn extract_fm_field(content: &str, key: &str) -> Option<String> {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") { return None; }
+    let after = &trimmed[3..];
+    let end = after.find("\n---")?;
+    for line in after[..end].lines() {
+        let t = line.trim();
+        if t.starts_with(key) && t[key.len()..].trim_start().starts_with(':') {
+            let val = t[key.len()..].trim_start().trim_start_matches(':').trim();
+            let val = val.trim_matches('"').trim_matches('\'');
+            if !val.is_empty() { return Some(val.to_string()); }
+        }
+    }
+    None
+}
+
+/// Remove canonical fields (cid, kind, original_filename, aliases) from frontmatter.
+fn remove_canonical_fields(content: &str) -> String {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") { return content.to_string(); }
+    let after = &trimmed[3..];
+    let Some(end) = after.find("\n---") else { return content.to_string(); };
+    let fm = &after[..end];
+    let body = &after[end + 4..];
+
+    let canonical_keys = ["cid:", "kind:", "original_filename:"];
+    let mut in_aliases = false;
+    let mut new_lines: Vec<&str> = Vec::new();
+
+    for line in fm.lines() {
+        let t = line.trim();
+        if t.starts_with("aliases:") {
+            in_aliases = true;
+            continue; // remove aliases block header
+        }
+        if in_aliases {
+            if t.starts_with("- ") { continue; } // remove alias items
+            in_aliases = false;
+        }
+        if canonical_keys.iter().any(|k| t.starts_with(k)) { continue; }
+        new_lines.push(line);
+    }
+
+    if new_lines.is_empty() || new_lines.iter().all(|l| l.trim().is_empty()) {
+        // No frontmatter left — return body only
+        body.trim_start().to_string()
+    } else {
+        format!("---\n{}\n---{}", new_lines.join("\n"), body)
+    }
+}
+
+/// Generate a unique path, appending (1), (2), etc. if the target already exists.
+fn unique_path(dir: &Path, filename: &str) -> PathBuf {
+    let target = dir.join(filename);
+    if !target.exists() { return target; }
+
+    let stem = Path::new(filename).file_stem().unwrap_or_default().to_string_lossy().to_string();
+    let ext = Path::new(filename).extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+
+    for i in 1..=999 {
+        let candidate = dir.join(format!("{} ({}){}", stem, i, ext));
+        if !candidate.exists() { return candidate; }
+    }
+    dir.join(format!("{}_restored{}", stem, ext))
+}
+
 /// Generate a canonical name for a new note (called from the frontend).
 #[tauri::command]
 pub fn generate_canonical_name(

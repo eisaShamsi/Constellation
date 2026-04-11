@@ -1444,6 +1444,14 @@
         "migrationTitle": "Kütüphaneniz hazırlanıyor",
         "migrationDesc": "Constellation dosyalarınızı kanonik kimlik sistemiyle düzenliyor. Her dosya benzersiz ve değişmez bir tanımlayıcı alırken başlıklarınız aynen korunuyor.",
         "scanning": "Kütüphaneler taranıyor...",
-        "migrationNote": "Bu yalnızca ilk çalıştırmada veya diğer sistemlerden dosya içe aktarırken gerçekleşir. Sonraki çalıştırmalar anında olacaktır."
+        "migrationNote": "Bu yalnızca ilk çalıştırmada veya diğer sistemlerden dosya içe aktarırken gerçekleşir. Sonraki çalıştırmalar anında olacaktır.",
+        "choiceTitle": "Constellation bu dosyaları nasıl yönetmeli?",
+        "choiceDesc": "Constellation, her dosyaya benzersiz ve kalıcı bir tanımlayıcı vermek için kanonik kimlik sistemi kullanır. Başlıklarınız ve içeriğiniz asla değiştirilmez.",
+        "adoptTitle": "Constellation formatını benimse",
+        "adoptDesc": "Dosyalar dahili olarak yapılandırılmış kimliklerle yeniden adlandırılır. Başlıklarınız her yerde okunabilir kalır. Constellation'a bağlı kullanıcılar için en iyisi.",
+        "adoptNote": "Orijinal dosya adlarını istediğiniz zaman geri yükleyebilirsiniz.",
+        "keepTitle": "Dosyaları olduğu gibi bırak",
+        "keepDesc": "Dosyalarınız tam olarak oldukları gibi kalır. Constellation her dosyanın meta verilerine yalnızca küçük bir tanımlayıcı ekler — başka hiçbir şey değişmez.",
+        "keepNote": "Obsidian veya diğer PKM sistemlerine dönebilecek kullanıcılar için en iyisi."
     }
 }

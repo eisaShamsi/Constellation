@@ -9,7 +9,14 @@ pub struct LibraryInfo {
     pub path: String,
     #[serde(default)]
     pub is_universe_notes: bool,
+    /// "native" = created by Constellation (always canonical filenames)
+    /// "canonical" = external library, user accepted canonicalization
+    /// "compatible" = external library, user chose to keep files intact
+    #[serde(default = "default_canonical_mode")]
+    pub canonical_mode: String,
 }
+
+fn default_canonical_mode() -> String { "native".to_string() }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileEntry {
@@ -168,12 +175,38 @@ pub fn add_library(app: tauri::AppHandle, path: String) -> Result<LibraryInfo, S
         name,
         path: path.clone(),
         is_universe_notes: false,
+        canonical_mode: "compatible".to_string(), // external libraries default to compatible
     };
 
     libraries.push(library.clone());
     save_libraries(&app, &libraries)?;
 
     Ok(library)
+}
+
+/// Update a library's canonical mode ("native", "canonical", or "compatible").
+#[tauri::command]
+pub fn set_library_canonical_mode(app: tauri::AppHandle, library_id: String, mode: String) -> Result<(), String> {
+    if !["native", "canonical", "compatible"].contains(&mode.as_str()) {
+        return Err(format!("Invalid canonical mode: {}", mode));
+    }
+    let mut libraries = load_libraries(&app);
+    if let Some(lib) = libraries.iter_mut().find(|l| l.id == library_id) {
+        lib.canonical_mode = mode;
+        save_libraries(&app, &libraries)?;
+        Ok(())
+    } else {
+        Err("Library not found.".to_string())
+    }
+}
+
+/// Get a library's canonical mode by path.
+pub fn get_library_mode(app: &tauri::AppHandle, folder_path: &str) -> String {
+    let libraries = load_all_libraries(app);
+    libraries.iter()
+        .find(|l| folder_path.starts_with(&l.path))
+        .map(|l| l.canonical_mode.clone())
+        .unwrap_or_else(|| "native".to_string())
 }
 
 /// Remove a library by ID (does NOT delete any files).
@@ -523,39 +556,69 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
         return Err("Folder does not exist.".to_string());
     }
 
-    // Always use canonical filenames — this is Constellation's internal file identity system.
-    // Users see human titles; the canonical filename is the immutable PK on disk.
+    let mode = get_library_mode(&app, &folder_path);
     let dt = chrono::Utc::now();
-    let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", Some(folder));
-    let file_path = folder.join(&canonical.full);
 
-    // Build frontmatter with cid + title
-    let display_name = file_name.trim_end_matches(".md");
-    let mut fm_lines: Vec<String> = Vec::new();
-    fm_lines.push(format!("title: \"{}\"", display_name.replace('"', "\\\"")));
-    fm_lines.push(format!("cid: {}", canonical.stem));
-    fm_lines.push("kind: note".to_string());
-    fm_lines.push(format!("created: {}", dt.to_rfc3339()));
+    if mode == "native" || mode == "canonical" {
+        // Canonical: structured filename + full frontmatter
+        let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", Some(folder));
+        let file_path = folder.join(&canonical.full);
+        let display_name = file_name.trim_end_matches(".md");
 
-    // Append user-provided frontmatter lines
-    if let Some(ref extra) = initial_frontmatter {
-        for line in extra.lines() {
-            let trimmed = line.trim();
-            // Don't duplicate fields we already set
-            if !trimmed.starts_with("title:") && !trimmed.starts_with("cid:")
-                && !trimmed.starts_with("kind:") && !trimmed.starts_with("created:")
-                && !trimmed.is_empty()
-            {
-                fm_lines.push(trimmed.to_string());
+        let mut fm_lines: Vec<String> = Vec::new();
+        fm_lines.push(format!("title: \"{}\"", display_name.replace('"', "\\\"")));
+        fm_lines.push(format!("cid: {}", canonical.stem));
+        fm_lines.push("kind: note".to_string());
+        fm_lines.push(format!("created: {}", dt.to_rfc3339()));
+
+        if let Some(ref extra) = initial_frontmatter {
+            for line in extra.lines() {
+                let trimmed = line.trim();
+                if !trimmed.starts_with("title:") && !trimmed.starts_with("cid:")
+                    && !trimmed.starts_with("kind:") && !trimmed.starts_with("created:")
+                    && !trimmed.is_empty()
+                {
+                    fm_lines.push(trimmed.to_string());
+                }
             }
         }
+
+        let content = format!("---\n{}\n---\n\n", fm_lines.join("\n"));
+        fs::write(&file_path, &content)
+            .map_err(|e| format!("Failed to create note: {}", e))?;
+        Ok(file_path.to_string_lossy().to_string())
+    } else {
+        // Compatible: human-readable filename + only cid in frontmatter
+        let safe_name = sanitize_name(&file_name)?;
+        let name = if safe_name.ends_with(".md") { safe_name } else { format!("{}.md", safe_name) };
+        let file_path = folder.join(&name);
+        if file_path.exists() {
+            return Err("A file with this name already exists.".to_string());
+        }
+
+        // Generate a cid without renaming
+        let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", None);
+        let mut fm_lines: Vec<String> = Vec::new();
+        fm_lines.push(format!("cid: {}", canonical.stem));
+
+        if let Some(ref extra) = initial_frontmatter {
+            for line in extra.lines() {
+                let trimmed = line.trim();
+                if !trimmed.starts_with("cid:") && !trimmed.is_empty() {
+                    fm_lines.push(trimmed.to_string());
+                }
+            }
+        }
+
+        let content = if fm_lines.is_empty() {
+            "---\n---\n\n".to_string()
+        } else {
+            format!("---\n{}\n---\n\n", fm_lines.join("\n"))
+        };
+        fs::write(&file_path, &content)
+            .map_err(|e| format!("Failed to create note: {}", e))?;
+        Ok(file_path.to_string_lossy().to_string())
     }
-
-    let content = format!("---\n{}\n---\n\n", fm_lines.join("\n"));
-    fs::write(&file_path, &content)
-        .map_err(|e| format!("Failed to create note: {}", e))?;
-
-    Ok(file_path.to_string_lossy().to_string())
 }
 
 /// Check if a library has been canonicalized. Delegates to canonical module.

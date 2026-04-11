@@ -67,6 +67,21 @@ export async function autoCanonicalize(): Promise<CanonicalizeResult> {
 	return invoke<CanonicalizeResult>('auto_canonicalize_all');
 }
 
+/** Inject cid-only into all .md files in a library (compatible mode, non-destructive). */
+export async function injectCidLibrary(libraryPath: string): Promise<CanonicalizeResult> {
+	return invoke<CanonicalizeResult>('inject_cid_library', { libraryPath });
+}
+
+/** Restore original filenames for all canonical files in a library. */
+export async function deCanonicalizeLibrary(libraryPath: string): Promise<{ restored: number; errors: string[] }> {
+	return invoke<{ restored: number; errors: string[] }>('de_canonicalize_library', { libraryPath });
+}
+
+/** Set a library's canonical mode ("native", "canonical", or "compatible"). */
+export async function setLibraryCanonicalMode(libraryId: string, mode: string): Promise<void> {
+	return invoke<void>('set_library_canonical_mode', { libraryId, mode });
+}
+
 /** Import files with canonical filenames + classification + frontmatter enrichment. */
 export async function importWithCanonical(
 	source: string,

@@ -11,6 +11,8 @@ export interface LibraryInfo {
 	name: string;
 	path: string;
 	is_universe_notes?: boolean;
+	/** "native" | "canonical" | "compatible" */
+	canonical_mode?: string;
 }
 
 export interface StarInfo {

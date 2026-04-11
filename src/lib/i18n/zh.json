@@ -1444,6 +1444,14 @@
         "migrationTitle": "正在准备您的资料库",
         "migrationDesc": "Constellation正在使用规范身份系统组织您的文件。每个文件都会获得一个唯一且不可变的标识符，而您的标题保持不变。",
         "scanning": "正在扫描资料库...",
-        "migrationNote": "这仅在首次启动或从其他系统导入文件时发生。以后的启动将是即时的。"
+        "migrationNote": "这仅在首次启动或从其他系统导入文件时发生。以后的启动将是即时的。",
+        "choiceTitle": "Constellation应如何管理这些文件？",
+        "choiceDesc": "Constellation使用规范身份系统为每个文件赋予唯一的永久标识符。您的标题和内容永远不会被更改。",
+        "adoptTitle": "采用Constellation格式",
+        "adoptDesc": "文件在内部使用结构化ID重命名。您的标题在任何地方都保持可读。最适合专注于Constellation的用户。",
+        "adoptNote": "您可以随时恢复原始文件名。",
+        "keepTitle": "保持文件不变",
+        "keepDesc": "您的文件完全保持原样。Constellation仅在每个文件的元数据中添加一个小标识符——其他什么都不改变。",
+        "keepNote": "最适合可能返回Obsidian或其他PKM系统的用户。"
     }
 }

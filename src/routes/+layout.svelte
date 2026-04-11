@@ -91,6 +91,7 @@
 	import UniverseSetup from '$lib/components/UniverseSetup.svelte';
 	import UniverseManager from '$lib/components/UniverseManager.svelte';
 	import ImporterModal from '$lib/components/ImporterModal.svelte';
+	import CanonicalChoiceDialog from '$lib/components/CanonicalChoiceDialog.svelte';
 	import {
 		listUniverses, createUniverse, setActiveUniverse,
 		checkMigrationNeeded, migrateLegacyData,
@@ -283,9 +284,11 @@
 	let semanticIndexProgress = $state('');
 	let semanticIndexing = $state(false);
 
-	// Canonical auto-migration progress
+	// Canonical system state
 	let canonicalizing = $state(false);
 	let canonicalProgress = $state({ current: 0, total: 0, currentFile: '', libraryName: '', phase: '' });
+	let showCanonicalChoice = $state(false);
+	let pendingLibraryPath = $state('');
 	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
 	let libraryPickerAction = $state<'note' | 'folder' | 'base'>('note');
 	let allExpanded = $state(true);
@@ -1454,36 +1457,9 @@
 		// Detect multiple monitors — gate SS features
 		hasMultipleDisplays = await hasMultipleMonitors().catch(() => false);
 
-		// Auto-canonicalize all non-canonical files before indexing
-		try {
-			const { listen } = await import('@tauri-apps/api/event');
-			const unlisten = await listen<{ phase: string; current: number; total: number; current_file: string; library_name: string }>('canonical-progress', (event) => {
-				const p = event.payload;
-				if (p.phase === 'scanning') {
-					canonicalizing = true;
-					canonicalProgress = { current: 0, total: 0, currentFile: '', libraryName: '', phase: 'scanning' };
-				} else if (p.phase === 'canonicalizing') {
-					canonicalProgress = { current: p.current, total: p.total, currentFile: p.current_file, libraryName: p.library_name, phase: 'canonicalizing' };
-				} else if (p.phase === 'done') {
-					canonicalizing = false;
-				}
-			});
-
-			const { autoCanonicalize } = await import('$lib/importers/store');
-			const canonResult = await autoCanonicalize();
-			unlisten();
-			canonicalizing = false;
-
-			if (canonResult.renamed > 0) {
-				console.log(`[CANONICAL] Auto-canonicalized ${canonResult.renamed} files`);
-				for (const lib of $libraries) {
-					await refreshLibraryTree(lib.id);
-				}
-			}
-		} catch (e) {
-			canonicalizing = false;
-			console.error('[CANONICAL] Auto-canonicalize failed:', e);
-		}
+		// Canonical system: no startup rename. Canonicalization happens only when
+		// the user explicitly links/imports with "Adopt Constellation Format".
+		// Native libraries (created by Constellation) are born canonical.
 
 		// Initialize search engine (background, non-blocking)
 		initSearchIndex().then(async () => {
@@ -2402,8 +2378,60 @@
 	async function handleAddLibrary() {
 		adding = true;
 		error = '';
-		try { await addLibrary(); await loadAllStats(); await refreshLibraryCaches(); }
-		catch (e) { error = String(e); }
+		try {
+			// Step 1: Pick folder
+			const folderPath: string | null = await invoke('pick_folder');
+			if (!folderPath) { adding = false; return; }
+			// Step 2: Show choice dialog — user decides how to handle files
+			pendingLibraryPath = folderPath;
+			showCanonicalChoice = true;
+			// Flow continues in handleCanonicalChoice / handleKeepIntact
+		} catch (e) { error = String(e); adding = false; }
+	}
+
+	async function handleCanonicalAdopt() {
+		showCanonicalChoice = false;
+		try {
+			// Register library with "canonical" mode
+			const library: LibraryInfo = await invoke('add_library', { path: pendingLibraryPath });
+			const { setLibraryCanonicalMode, canonicalizeExecute } = await import('$lib/importers/store');
+			await setLibraryCanonicalMode(library.id, 'canonical');
+
+			// Canonicalize files with progress
+			const { listen } = await import('@tauri-apps/api/event');
+			const unlisten = await listen<any>('canonical-progress', (event) => {
+				const p = event.payload;
+				if (p.phase === 'scanning') { canonicalizing = true; canonicalProgress = { ...canonicalProgress, phase: 'scanning' }; }
+				else if (p.phase === 'canonicalizing') { canonicalProgress = { current: p.current, total: p.total, currentFile: p.current_file, libraryName: p.library_name, phase: 'canonicalizing' }; }
+				else if (p.phase === 'done') { canonicalizing = false; }
+			});
+			canonicalizing = true;
+			await canonicalizeExecute(pendingLibraryPath);
+			unlisten();
+			canonicalizing = false;
+
+			await loadLibraries();
+			await loadAllStats();
+			await refreshLibraryCaches();
+			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
+		} catch (e) { error = String(e); canonicalizing = false; }
+		adding = false;
+	}
+
+	async function handleKeepIntact() {
+		showCanonicalChoice = false;
+		try {
+			// Register library with "compatible" mode (default)
+			const library: LibraryInfo = await invoke('add_library', { path: pendingLibraryPath });
+			// Inject cid-only (non-destructive, fast)
+			const { injectCidLibrary } = await import('$lib/importers/store');
+			await injectCidLibrary(pendingLibraryPath);
+
+			await loadLibraries();
+			await loadAllStats();
+			await refreshLibraryCaches();
+			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
+		} catch (e) { error = String(e); }
 		adding = false;
 	}
 
@@ -4127,6 +4155,14 @@
 			colorMap={libraryColorMap}
 			onClose={() => showLibraryManager = false}
 			onRefresh={refreshLibraryCaches}
+		/>
+	{/if}
+
+	{#if showCanonicalChoice}
+		<CanonicalChoiceDialog
+			onAdopt={handleCanonicalAdopt}
+			onKeepIntact={handleKeepIntact}
+			onCancel={() => { showCanonicalChoice = false; adding = false; }}
 		/>
 	{/if}
 

@@ -1444,6 +1444,14 @@
         "migrationTitle": "Preparando tu biblioteca",
         "migrationDesc": "Constellation está organizando tus archivos con su sistema de identidad canónica. Cada archivo recibe un identificador único e inmutable mientras tus títulos permanecen tal como los nombraste.",
         "scanning": "Escaneando bibliotecas...",
-        "migrationNote": "Esto ocurre solo en el primer inicio o al importar archivos de otros sistemas. Los próximos inicios serán instantáneos."
+        "migrationNote": "Esto ocurre solo en el primer inicio o al importar archivos de otros sistemas. Los próximos inicios serán instantáneos.",
+        "choiceTitle": "¿Cómo debe Constellation gestionar estos archivos?",
+        "choiceDesc": "Constellation utiliza un sistema de identidad canónica para dar a cada archivo un identificador único y permanente. Tus títulos y contenido nunca se modifican.",
+        "adoptTitle": "Adoptar formato Constellation",
+        "adoptDesc": "Los archivos se renombran internamente con IDs estructurados. Tus títulos siguen siendo legibles en todas partes. Ideal para usuarios comprometidos con Constellation.",
+        "adoptNote": "Puedes restaurar los nombres de archivo originales en cualquier momento.",
+        "keepTitle": "Mantener archivos intactos",
+        "keepDesc": "Tus archivos permanecen exactamente como están. Constellation agrega un pequeño identificador en los metadatos de cada archivo — nada más cambia.",
+        "keepNote": "Ideal para usuarios que podrían regresar a Obsidian u otros sistemas PKM."
     }
 }

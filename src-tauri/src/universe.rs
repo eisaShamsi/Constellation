@@ -305,6 +305,7 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
                             name: meta.name.clone(),
                             path: folder_path_str,
                             is_universe_notes: true,
+                            canonical_mode: "native".to_string(),
                         });
                         if let Ok(json) = serde_json::to_string_pretty(&libs) {
                             let _ = fs::write(&libs_path, json);
@@ -335,6 +336,7 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
             name: meta.name.clone(),
             path: root_path_str,
             is_universe_notes: true,
+            canonical_mode: "native".to_string(),
         });
         if let Ok(json) = serde_json::to_string_pretty(&libs) {
             let _ = fs::write(&libs_path, json);
@@ -470,6 +472,7 @@ pub fn create_universe(
         name: name.clone(),
         path: universe_dir.to_string_lossy().to_string(), // root, not nested
         is_universe_notes: true,
+        canonical_mode: "native".to_string(),
     };
     let libraries_json = serde_json::to_string_pretty(&vec![&notes_library]).map_err(|e| e.to_string())?;
     fs::write(cdir.join("libraries.json"), &libraries_json)
@@ -903,6 +906,7 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
         name: name.clone(),
         path: path.clone(),
         is_universe_notes: false,
+        canonical_mode: "compatible".to_string(), // linked external folder
     };
     let libs_json = serde_json::to_string_pretty(&vec![library_entry]).map_err(|e| e.to_string())?;
     fs::write(cdir.join("libraries.json"), &libs_json)

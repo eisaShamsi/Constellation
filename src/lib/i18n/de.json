@@ -1444,6 +1444,14 @@
         "migrationTitle": "Bibliothek wird vorbereitet",
         "migrationDesc": "Constellation organisiert Ihre Dateien mit dem kanonischen Identitätssystem. Jede Datei erhält eine eindeutige, unveränderliche Kennung, während Ihre Titel unverändert bleiben.",
         "scanning": "Bibliotheken werden gescannt...",
-        "migrationNote": "Dies geschieht nur beim ersten Start oder beim Importieren von Dateien aus anderen Systemen. Zukünftige Starts sind sofort."
+        "migrationNote": "Dies geschieht nur beim ersten Start oder beim Importieren von Dateien aus anderen Systemen. Zukünftige Starts sind sofort.",
+        "choiceTitle": "Wie soll Constellation diese Dateien verwalten?",
+        "choiceDesc": "Constellation verwendet ein kanonisches Identitätssystem, um jeder Datei eine eindeutige, permanente Kennung zu geben. Ihre Titel und Inhalte werden nie verändert.",
+        "adoptTitle": "Constellation-Format übernehmen",
+        "adoptDesc": "Dateien werden intern mit strukturierten IDs umbenannt. Ihre Titel bleiben überall lesbar. Am besten für Nutzer, die sich für Constellation entschieden haben.",
+        "adoptNote": "Sie können die originalen Dateinamen jederzeit wiederherstellen.",
+        "keepTitle": "Dateien unverändert lassen",
+        "keepDesc": "Ihre Dateien bleiben genau so, wie sie sind. Constellation fügt jeder Datei nur eine kleine Kennung in den Metadaten hinzu — sonst ändert sich nichts.",
+        "keepNote": "Am besten für Nutzer, die möglicherweise zu Obsidian oder anderen PKM-Systemen zurückkehren."
     }
 }
