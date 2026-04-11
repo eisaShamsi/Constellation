@@ -432,8 +432,8 @@
         "mutual": "متبادل",
         "mentions": "يذكر",
         "orphans": "يتيم",
-        "linksBetween": "الربط بين",
-        "linksAll": "كل الربط",
+        "linksBetween": "الروابط البينية",
+        "linksAll": "جميع الروابط",
         "tag": "وسم",
         "property": "خاصية",
         "scope": "مكتبة",
@@ -1464,8 +1464,8 @@
         "mutual": "متبادل",
         "mentions": "يذكر",
         "orphans": "يتيم",
-        "linksBetween": "الربط بين",
-        "linksAll": "كل الربط",
+        "linksBetween": "الروابط البينية",
+        "linksAll": "جميع الروابط",
         "and": "و",
         "scope": "في"
     }
