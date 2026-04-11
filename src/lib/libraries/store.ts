@@ -1393,9 +1393,9 @@ export function buildSkyData(allLinks: NoteLink[], allNotes: { name: string; pat
 		nodeMap.get(targetId)!.linkCount++;
 	}
 
-	// Include ALL notes — the graph engine's showOrphans config controls visibility.
-	// During search, orphan nodes that match are highlighted with badges.
-	const nodes = Array.from(nodeMap.values());
+	// Include only linked notes by default (performance: 400 nodes vs 3000+).
+	// Orphans matching a search are added temporarily by the search flow.
+	const nodes = Array.from(nodeMap.values()).filter(n => n.linkCount > 0);
 
 	return { nodes, links };
 }
