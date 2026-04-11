@@ -419,7 +419,27 @@
 			],
 		});
 
-		view = new EditorView({ state, parent: editorEl! });
+		try {
+			view = new EditorView({ state, parent: editorEl! });
+		} catch (e) {
+			// Fallback: create editor without livePreview if decorations fail
+			// (e.g., RangeError on content with line-spanning replace decorations)
+			console.warn('[NotePane] Editor init failed, retrying without livePreview:', e);
+			const fallbackState = EditorState.create({
+				doc: value,
+				extensions: [
+					history(),
+					keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab, ...closeBracketsKeymap, ...searchKeymap]),
+					drawSelection(),
+					markdown({ base: markdownLanguage }),
+					syntaxHighlighting(markdownHighlightStyle),
+					EditorView.lineWrapping,
+					search(),
+					colorHighlightField,
+				],
+			});
+			view = new EditorView({ state: fallbackState, parent: editorEl! });
+		}
 
 		/* Set library + note paths for image resolution */
 		const imgEffects: any[] = [];

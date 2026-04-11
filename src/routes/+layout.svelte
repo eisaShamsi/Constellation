@@ -3435,8 +3435,16 @@
 				linkCounts={searchLinkCounts}
 				onNoteClick={(path, name, libraryName, hubQuery) => {
 					const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
-					// Disable highlight from search to prevent freeze — pass no highlightTerm
-					openNoteTab(path, libraryName, libraryColor);
+					// Strip operator syntax from query for clean highlighting
+					let hl = hubQuery || '';
+					hl = hl.replace(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?)\s*/gi, '');
+					hl = hl.replace(/\[\[|\]\]/g, '');
+					hl = hl.replace(/\band\b/gi, ',');
+					hl = hl.replace(/^\s*#/, '');
+					hl = hl.replace(/^\s*in:\S+\s*/, '');
+					hl = hl.replace(/^\s*\S+=\S+\s*/, '');
+					hl = hl.trim() || undefined;
+					openNoteTab(path, libraryName, libraryColor, hl as string | undefined);
 					showSearchHub = false;
 					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
 					searchHubReturnPending = true;
