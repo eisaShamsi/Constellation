@@ -1393,9 +1393,9 @@ export function buildSkyData(allLinks: NoteLink[], allNotes: { name: string; pat
 		nodeMap.get(targetId)!.linkCount++;
 	}
 
-	// Include only linked notes by default (performance: 400 nodes vs 3000+).
-	// Orphans matching a search are added temporarily by the search flow.
-	const nodes = Array.from(nodeMap.values()).filter(n => n.linkCount > 0);
+	// Include ALL notes — every note in the universe is a node in Sky View.
+	// Orphans appear as smaller dots at the periphery, ready to be connected.
+	const nodes = Array.from(nodeMap.values());
 
 	return { nodes, links };
 }

@@ -424,15 +424,7 @@
 		if (q !== prevSearch) {
 			prevSearch = q;
 			engine?.setSearch(q); // instant client-side name filter
-			if (!q.trim()) {
-				searchMatches = [];
-				engine?.clearSearchBadges();
-				// Rebuild graph without temporary orphan nodes
-				if (engine && nodes.length > 0) {
-					const cmap = Object.fromEntries($libraries.map(l => [l.name, libraryColorMap[l.name] ?? '#a78bfa']));
-					engine.setData(nodes, links, cmap);
-				}
-			}
+			if (!q.trim()) { searchMatches = []; engine?.clearSearchBadges(); }
 			else { setTimeout(() => engine?.renderSearchBadges(), 50); }
 			// Also fire advanced search for content/structured/semantic matches (async)
 			clearTimeout(searchDebounce);
@@ -486,35 +478,6 @@
 										flatResults.push({ name: r.name, match_type: mt, path: r.path, libraryName: r.library_name });
 									}
 								}
-							}
-						}
-
-						// Inject orphan matches: add search-matched notes that aren't in the graph
-						if (engine && allIds.size > 0) {
-							const existingNodeIds = new Set(nodes.map(n => n.id.toLowerCase()));
-							const orphanNodes: typeof nodes = [];
-							for (const id of allIds) {
-								if (!existingNodeIds.has(id)) {
-									const note = allNotes.find(n => n.name.toLowerCase() === id);
-									if (note) {
-										orphanNodes.push({
-											id: note.name.toLowerCase(),
-											name: note.name,
-											path: note.path,
-											libraryName: note.libraryName,
-											linkCount: 0,
-											outgoingCount: 0,
-										});
-									}
-								}
-							}
-							if (orphanNodes.length > 0) {
-								// Rebuild graph data with orphans included temporarily
-								const combinedNodes = [...nodes, ...orphanNodes];
-								const cmap = Object.fromEntries(
-									$libraries.map(l => [l.name, libraryColorMap[l.name] ?? '#a78bfa'])
-								);
-								engine.setData(combinedNodes, links, cmap);
 							}
 						}
 
