@@ -3,7 +3,7 @@
 	import { t } from '$lib/i18n';
 	import * as d3 from 'd3';
 
-	interface StarNode extends d3.SimulationNodeDatum {
+	interface SkyNode extends d3.SimulationNodeDatum {
 		id: string;
 		name: string;
 		path: string;
@@ -12,7 +12,7 @@
 		linkCount: number;
 	}
 
-	interface StarLink {
+	interface SkyLink {
 		source: string;
 		target: string;
 		linkType?: string;
@@ -33,14 +33,14 @@
 	];
 
 	let {
-		nodes = [] as StarNode[],
-		links = [] as StarLink[],
+		nodes = [] as SkyNode[],
+		links = [] as SkyLink[],
 		onNodeClick,
 		activeNodeId = '',
 		compact = false,
 	}: {
-		nodes: StarNode[];
-		links: StarLink[];
+		nodes: SkyNode[];
+		links: SkyLink[];
 		onNodeClick: (path: string, libraryName: string) => void;
 		activeNodeId?: string;
 		compact?: boolean;
@@ -934,7 +934,7 @@
 
 <div class="graph-container" bind:this={containerEl}>
 	{#if nodes.length === 0}
-		<div class="graph-empty">{$t('starView.noNotes')}</div>
+		<div class="graph-empty">{$t('skyView.noNotes')}</div>
 	{:else}
 		<!-- Controls toggle button -->
 		{#if !compact}
@@ -942,7 +942,7 @@
 			class="controls-toggle"
 			class:active={showControls}
 			onclick={() => showControls = !showControls}
-			title={$t('starView.controls.title') ?? 'Sky View Settings'}
+			title={$t('skyView.controls.title') ?? 'Sky View Settings'}
 		>
 			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<circle cx="12" cy="12" r="3"/>
@@ -954,7 +954,7 @@
 		{#if showControls}
 			<div class="controls-panel">
 				<div class="controls-header">
-					<button class="controls-reset" onclick={resetControls} title={$t('starView.controls.reset') ?? 'Reset'}>
+					<button class="controls-reset" onclick={resetControls} title={$t('skyView.controls.reset') ?? 'Reset'}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<polyline points="1 4 1 10 7 10"/>
 							<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
@@ -970,7 +970,7 @@
 				<div class="controls-body">
 					<!-- Filters -->
 					<details bind:open={filtersOpen}>
-						<summary>{$t('starView.controls.filters') ?? 'Filters'}</summary>
+						<summary>{$t('skyView.controls.filters') ?? 'Filters'}</summary>
 						<div class="control-section">
 							<div class="search-input">
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -978,16 +978,16 @@
 								</svg>
 								<input
 									type="text"
-									placeholder={$t('starView.controls.searchPlaceholder') ?? 'Search files...'}
+									placeholder={$t('skyView.controls.searchPlaceholder') ?? 'Search files...'}
 									bind:value={filterQuery}
 								/>
 							</div>
 							<label class="toggle-row">
-								<span>{$t('starView.controls.existingOnly') ?? 'Existing files only'}</span>
+								<span>{$t('skyView.controls.existingOnly') ?? 'Existing files only'}</span>
 								<input type="checkbox" bind:checked={existingOnly} class="toggle" />
 							</label>
 							<label class="toggle-row">
-								<span>{$t('starView.controls.orphans') ?? 'Orphans'}</span>
+								<span>{$t('skyView.controls.orphans') ?? 'Orphans'}</span>
 								<input type="checkbox" bind:checked={showOrphans} class="toggle" />
 							</label>
 						</div>
@@ -995,7 +995,7 @@
 
 					<!-- Groups -->
 					<details bind:open={groupsOpen}>
-						<summary>{$t('starView.controls.groups') ?? 'Groups'}</summary>
+						<summary>{$t('skyView.controls.groups') ?? 'Groups'}</summary>
 						<div class="control-section">
 							{#each groups as group, i}
 								<div class="group-row">
@@ -1020,29 +1020,29 @@
 								</div>
 							{/each}
 							<button class="new-group-btn" onclick={addGroup}>
-								{$t('starView.controls.newGroup') ?? 'New group'}
+								{$t('skyView.controls.newGroup') ?? 'New group'}
 							</button>
 						</div>
 					</details>
 
 					<!-- Display -->
 					<details bind:open={displayOpen}>
-						<summary>{$t('starView.controls.display') ?? 'Display'}</summary>
+						<summary>{$t('skyView.controls.display') ?? 'Display'}</summary>
 						<div class="control-section">
 							<label class="toggle-row">
-								<span>{$t('starView.controls.arrows') ?? 'Arrows'}</span>
+								<span>{$t('skyView.controls.arrows') ?? 'Arrows'}</span>
 								<input type="checkbox" bind:checked={showArrows} class="toggle" />
 							</label>
 							<div class="slider-row">
-								<span>{$t('starView.controls.textFade') ?? 'Text fade threshold'}</span>
+								<span>{$t('skyView.controls.textFade') ?? 'Text fade threshold'}</span>
 								<input type="range" min="0" max="5" step="0.1" bind:value={textFadeThreshold} />
 							</div>
 							<div class="slider-row">
-								<span>{$t('starView.controls.nodeSize') ?? 'Node size'}</span>
+								<span>{$t('skyView.controls.nodeSize') ?? 'Node size'}</span>
 								<input type="range" min="1" max="10" step="0.5" bind:value={nodeSizeMultiplier} />
 							</div>
 							<div class="slider-row">
-								<span>{$t('starView.controls.linkThickness') ?? 'Link thickness'}</span>
+								<span>{$t('skyView.controls.linkThickness') ?? 'Link thickness'}</span>
 								<input type="range" min="0.5" max="5" step="0.25" bind:value={linkThicknessMultiplier} />
 							</div>
 							<button
@@ -1050,29 +1050,29 @@
 								class:active={animating}
 								onclick={() => animating = !animating}
 							>
-								{$t('starView.controls.animate') ?? 'Animate'}
+								{$t('skyView.controls.animate') ?? 'Animate'}
 							</button>
 						</div>
 					</details>
 
 					<!-- Forces -->
 					<details bind:open={forcesOpen}>
-						<summary>{$t('starView.controls.forces') ?? 'Forces'}</summary>
+						<summary>{$t('skyView.controls.forces') ?? 'Forces'}</summary>
 						<div class="control-section">
 							<div class="slider-row">
-								<span>{$t('starView.controls.centerForce') ?? 'Center force'}</span>
+								<span>{$t('skyView.controls.centerForce') ?? 'Center force'}</span>
 								<input type="range" min="0" max="1" step="0.05" bind:value={centerForce} />
 							</div>
 							<div class="slider-row">
-								<span>{$t('starView.controls.repelForce') ?? 'Repel force'}</span>
+								<span>{$t('skyView.controls.repelForce') ?? 'Repel force'}</span>
 								<input type="range" min="0" max="300" step="5" bind:value={repelForce} />
 							</div>
 							<div class="slider-row">
-								<span>{$t('starView.controls.linkForce') ?? 'Link force'}</span>
+								<span>{$t('skyView.controls.linkForce') ?? 'Link force'}</span>
 								<input type="range" min="0" max="1" step="0.05" bind:value={linkForce} />
 							</div>
 							<div class="slider-row">
-								<span>{$t('starView.controls.linkDistance') ?? 'Link distance'}</span>
+								<span>{$t('skyView.controls.linkDistance') ?? 'Link distance'}</span>
 								<input type="range" min="10" max="500" step="10" bind:value={linkDistance} />
 							</div>
 						</div>

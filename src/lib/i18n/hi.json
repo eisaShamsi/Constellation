@@ -362,7 +362,7 @@
         "addLibrary": "तिजोरी जोड़ें",
         "searchLibrary": "तिजोरी में खोजें",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "देय नोट्स की समीक्षा करें",
         "openTrail": "ट्रेल खोलें",
         "openLens": "लेंस बदलें",
@@ -451,8 +451,8 @@
         "skills": "कौशल",
         "graphViewTitle": "ग्राफ़ दृश्य",
         "pinned": "पिन किया गया",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "साइडबार में एक नोट पर क्लिक करें, उसके कनेक्शन देखने के लिए",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "साइडबार में एक नोट पर क्लिक करें, उसके कनेक्शन देखने के लिए",
         "clickToStart": "शुरू करने के लिए क्लिक करें",
         "search": "खोजें..."
     },
@@ -485,11 +485,11 @@
         "tasksHeader": "कार्य",
         "calendar": "कैलेंडर",
         "calendarHeader": "कैलेंडर",
-        "starView": "Sky View",
         "health": "ज्ञान स्वास्थ्य",
         "provenance": "उत्पत्ति",
         "review": "समीक्षा पल्स",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "सभी",
@@ -1173,32 +1173,6 @@
         "noLibraries": "कोई वॉल्ट पंजीकृत नहीं",
         "openLibrary": "+ वॉल्ट खोलें"
     },
-    "starView": {
-        "noNotes": "दिखाने के लिए कोई नोट नहीं",
-        "controls": {
-            "title": "ग्राफ़ सेटिंग्स",
-            "reset": "डिफ़ॉल्ट पर रीसेट करें",
-            "filters": "फ़िल्टर",
-            "searchPlaceholder": "फ़ाइलें खोजें...",
-            "tags": "टैग्स",
-            "attachments": "अटैचमेंट",
-            "existingOnly": "केवल मौजूदा फ़ाइलें",
-            "orphans": "अकेले नोट्स",
-            "groups": "समूह",
-            "newGroup": "नया समूह",
-            "display": "प्रदर्शन",
-            "arrows": "तीर",
-            "textFade": "टेक्स्ट फ़ेड सीमा",
-            "nodeSize": "नोड का आकार",
-            "linkThickness": "लिंक की मोटाई",
-            "animate": "एनिमेट",
-            "forces": "बल",
-            "centerForce": "केंद्र बल",
-            "repelForce": "प्रतिकर्षण बल",
-            "linkForce": "लिंक बल",
-            "linkDistance": "लिंक दूरी"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1471,5 +1445,31 @@
         "property": "ग",
         "wikilink": "ल",
         "semantic": "अ"
+    },
+    "skyView": {
+        "noNotes": "दिखाने के लिए कोई नोट नहीं",
+        "controls": {
+            "title": "ग्राफ़ सेटिंग्स",
+            "reset": "डिफ़ॉल्ट पर रीसेट करें",
+            "filters": "फ़िल्टर",
+            "searchPlaceholder": "फ़ाइलें खोजें...",
+            "tags": "टैग्स",
+            "attachments": "अटैचमेंट",
+            "existingOnly": "केवल मौजूदा फ़ाइलें",
+            "orphans": "अकेले नोट्स",
+            "groups": "समूह",
+            "newGroup": "नया समूह",
+            "display": "प्रदर्शन",
+            "arrows": "तीर",
+            "textFade": "टेक्स्ट फ़ेड सीमा",
+            "nodeSize": "नोड का आकार",
+            "linkThickness": "लिंक की मोटाई",
+            "animate": "एनिमेट",
+            "forces": "बल",
+            "centerForce": "केंद्र बल",
+            "repelForce": "प्रतिकर्षण बल",
+            "linkForce": "लिंक बल",
+            "linkDistance": "लिंक दूरी"
+        }
     }
 }

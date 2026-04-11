@@ -23,14 +23,14 @@
 		navigateBack, navigateForward,
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
 		scanLibraryIndex,
-		buildStarData, readNotePreview,
+		buildSkyData, readNotePreview,
 		getDailyNotePath, updateLinksOnRename, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
 		buildDefaultFrontmatter,
-		type FrontmatterProperty, type HeadingItem, type NoteLink, type StarNode, type StarLink,
+		type FrontmatterProperty, type HeadingItem, type NoteLink, type SkyNode, type SkyLink,
 		type IndexEntry
 	} from '$lib/libraries/store';
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet } from '$lib/libraries/store';
@@ -58,7 +58,7 @@
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import SearchHub from '$lib/components/SearchHub.svelte';
-	import LocalStarView from '$lib/components/LocalStarView.svelte';
+	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
@@ -371,7 +371,7 @@
 			},
 		};
 	}
-	let showStarView = $state(false);
+	let showSkyView = $state(false);
 	let showOrgChart = $state(false);
 	let sidebarBeforeOC = $state(false); // remember left sidebar state
 	let rightSidebarBeforeOC = $state(false); // remember right sidebar state
@@ -393,7 +393,7 @@
 	let skyviewHoverTimer: ReturnType<typeof setTimeout> | null = null;
 	$effect(() => {
 		if (secondScreenOpen) {
-			const mode = showStarView ? 'skyview' : 'editor';
+			const mode = showSkyView ? 'skyview' : 'editor';
 			emitContextChanged(mode);
 			// When switching to editor mode, send the current note to second screen
 			if (mode === 'editor' && $activeTab?.path) {
@@ -409,7 +409,7 @@
 	});
 	// Also sync when the user switches tabs in editor mode
 	$effect(() => {
-		if (secondScreenOpen && !showStarView && $activeTab?.path) {
+		if (secondScreenOpen && !showSkyView && $activeTab?.path) {
 			sendNoteToScreen({
 				path: $activeTab.path,
 				name: $activeTab.name,
@@ -477,7 +477,7 @@
 	let mapReturnPending = $state(false); // show "Return to Map" button on note tab
 	let orgChartReturnPending = $state(false); // show "Return to OrgChart" button on note tab
 	let lensReturnPending = $state(false);
-	let starViewReturnPending = $state(false);
+	let skyViewReturnPending = $state(false);
 	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 	let mapFocusNode = $state<any>(null); // current MapNode being viewed
 
@@ -526,8 +526,8 @@
 	let allIndexEntries = $state<IndexEntry[]>([]);
 	// Star data stored as plain (non-reactive) arrays to avoid $state proxy overhead
 	// on potentially tens of thousands of items. Use starVersion to signal changes.
-	let starNodes: StarNode[] = [];
-	let starLinks: StarLink[] = [];
+	let skyNodes: SkyNode[] = [];
+	let skyLinks: SkyLink[] = [];
 
 	// Constellation Lens state
 	let lensActive = $state(false);
@@ -547,19 +547,19 @@
 	let searchLinkCounts = $state(new Map<string, { incoming: number }>());
 	let maturityMap = $state(new Map<string, string>()); // path → maturity state (CE Phase 3)
 	let stageMap = $state(new Map<string, string>()); // path → stage (CE Phase 6)
-	// Star data is passed to StarView as plain arrays.
+	// Star data is passed to SkyView as plain arrays.
 	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
 	// make iteration extremely slow. Instead, starVersion ($state) triggers re-render
-	// and StarView reads the plain starNodes/starLinks directly.
+	// and SkyView reads the plain skyNodes/skyLinks directly.
 
 	// WiW filtered data — recomputed when selection or star data changes
-	// Uses starVersion as reactive trigger since starNodes/starLinks are plain arrays
+	// Uses starVersion as reactive trigger since skyNodes/skyLinks are plain arrays
 	const wiwFilteredNodes = $derived.by(() => {
 		const _ver = starVersion; // reactive trigger
-		if (!skyViewSelectedPath || !showStarView) return [];
+		if (!skyViewSelectedPath || !showSkyView) return [];
 		const paths = Array.isArray(skyViewSelectedPath) ? skyViewSelectedPath : [skyViewSelectedPath];
 		const norms = paths.map(p => p.replace(/\\/g, '/').toLowerCase());
-		return starNodes.filter(n => {
+		return skyNodes.filter(n => {
 			const np = n.path.replace(/\\/g, '/').toLowerCase();
 			return norms.some(norm => np.startsWith(norm + '/') || np === norm);
 		});
@@ -568,7 +568,7 @@
 	const wiwFilteredLinks = $derived.by(() => {
 		const _ver = starVersion;
 		if (wiwFilteredNodes.length === 0) return [];
-		return starLinks.filter(l => wiwFilteredNodeIds.has(l.source) && wiwFilteredNodeIds.has(l.target));
+		return skyLinks.filter(l => wiwFilteredNodeIds.has(l.source) && wiwFilteredNodeIds.has(l.target));
 	});
 
 	// WiW legend — only libraries present in filtered nodes
@@ -603,7 +603,7 @@
 
 	// Auto-show/hide WiW (guarded to avoid redundant writes)
 	$effect(() => {
-		const shouldShow = showStarView && wiwEnabled && skyViewSelectedPath && wiwFilteredNodes.length > 0;
+		const shouldShow = showSkyView && wiwEnabled && skyViewSelectedPath && wiwFilteredNodes.length > 0;
 		if (shouldShow) {
 			if (!wiwInitialized) {
 				wiwX = Math.max(50, window.innerWidth - wiwW - 30);
@@ -755,7 +755,7 @@
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraryStats.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
-	const fullPageActive = $derived(showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || lensActive || showSearchHub || isDashboardVisible);
+	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || lensActive || showSearchHub || isDashboardVisible);
 
 	// Auto-collapse sidebars when full-page becomes active, restore when deactivated
 	let sidebarBeforeFullPage = false;
@@ -885,21 +885,21 @@
 
 	// Local star: nodes/links for the active note and its direct connections
 	// Uses deferred state to avoid blocking the main thread with heavy iteration
-	let localStarNodes = $state<StarNode[]>([]);
-	let localStarLinks = $state<StarLink[]>([]);
+	let localSkyNodes = $state<SkyNode[]>([]);
+	let localSkyLinks = $state<SkyLink[]>([]);
 	let _localStarTimer: ReturnType<typeof setTimeout> | undefined;
 
 	$effect(() => {
 		// Track reactive dependencies (starVersion signals when plain arrays change)
 		const isVisible = rightSidebarOpen && rightSidebarTab === 'star';
 		const tab = sidebarTab;
-		const _ver = starVersion; // reactive trigger for non-reactive starNodes/starLinks
+		const _ver = starVersion; // reactive trigger for non-reactive skyNodes/skyLinks
 
 		clearTimeout(_localStarTimer);
 
 		if (!isVisible || !tab) {
-			localStarNodes = [];
-			localStarLinks = [];
+			localSkyNodes = [];
+			localSkyLinks = [];
 			return;
 		}
 
@@ -908,14 +908,14 @@
 			const activeId = tab.name.replace(/\.md$/, '').toLowerCase();
 			const connectedIds = new Set<string>();
 			connectedIds.add(activeId);
-			for (const link of starLinks) {
+			for (const link of skyLinks) {
 				if (link.source === activeId || link.target === activeId) {
 					connectedIds.add(link.source);
 					connectedIds.add(link.target);
 				}
 			}
-			localStarNodes = starNodes.filter(n => connectedIds.has(n.id));
-			localStarLinks = starLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
+			localSkyNodes = skyNodes.filter(n => connectedIds.has(n.id));
+			localSkyLinks = skyLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
 		}, 50);
 	});
 
@@ -1154,11 +1154,11 @@
 			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
 			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
 			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
-			{ id: 'star-view', name: $t('commands.starView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showStarView = !showStarView; showConstellationMap = false; }, category: 'View' },
-			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showStarView = false; showConstellationMap = false; }, category: 'View' },
+			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
+			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showSkyView = false; showConstellationMap = false; }, category: 'View' },
 			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
 			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: sc('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
@@ -1178,7 +1178,7 @@
 			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: sc('nav-back'), icon: '←', action: navigateBack, category: 'Navigation' },
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
-			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showStarView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }, category: 'Navigation' },
+			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
@@ -1197,9 +1197,9 @@
 				} catch {}
 			}, category: 'Navigation' },
 			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
-			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showStarView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; }, category: 'View' },
-			{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; mapReturnPending = false; }, category: 'View' },
-			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; }, category: 'View' },
+			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; }, category: 'View' },
+			{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; mapReturnPending = false; }, category: 'View' },
+			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; }, category: 'View' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
@@ -1571,26 +1571,26 @@
 
 			// Build star data from all libraries combined
 			if (libraryList.length > 0) {
-				const { nodes, links: gLinks } = buildStarData(links, notes);
-				starNodes = nodes;
-				starLinks = gLinks;
+				const { nodes, links: gLinks } = buildSkyData(links, notes);
+				skyNodes = nodes;
+				skyLinks = gLinks;
 				starVersion++;
 
-				// CE Phase 2: Fetch Knowledge Strata per library, merge into starNodes
+				// CE Phase 2: Fetch Knowledge Strata per library, merge into skyNodes
 				for (const lib of libraryList) {
 					try {
 						const strata = await invoke<{ note_path: string; stratum: number }[]>(
 							'compute_note_strata', { libraryPath: lib.path, libraryName: lib.name }
 						);
 						const strataMap = new Map(strata.map(s => [s.note_path.replace(/\\/g, '/').toLowerCase(), s.stratum]));
-						for (const node of starNodes) {
+						for (const node of skyNodes) {
 							const key = node.path.replace(/\\/g, '/').toLowerCase();
 							const s = strataMap.get(key);
 							if (s !== undefined) node.stratum = s;
 						}
 					} catch { /* strata computation failed — nodes stay without stratum */ }
 				}
-				// CE Phase 3: Fetch Maturity Lifecycle per library, merge into starNodes + maturityMap
+				// CE Phase 3: Fetch Maturity Lifecycle per library, merge into skyNodes + maturityMap
 				const newMatMap = new Map<string, string>();
 				for (const lib of libraryList) {
 					try {
@@ -1601,7 +1601,7 @@
 							const key = m.note_path.replace(/\\/g, '/').toLowerCase();
 							newMatMap.set(key, m.state);
 						}
-						for (const node of starNodes) {
+						for (const node of skyNodes) {
 							const key = node.path.replace(/\\/g, '/').toLowerCase();
 							const m = newMatMap.get(key);
 							if (m) node.maturity = m;
@@ -1610,14 +1610,14 @@
 				}
 				maturityMap = newMatMap;
 
-				// CE Phase 5: Fetch provenance origins per library, merge into starNodes
+				// CE Phase 5: Fetch provenance origins per library, merge into skyNodes
 				for (const lib of libraryList) {
 					try {
 						const origins = await invoke<{ note_path: string; origin_type: string }[]>(
 							'compute_note_origins', { libraryPath: lib.path, libraryName: lib.name }
 						);
 						const originMap = new Map(origins.map(o => [o.note_path.replace(/\\/g, '/').toLowerCase(), o.origin_type]));
-						for (const node of starNodes) {
+						for (const node of skyNodes) {
 							const key = node.path.replace(/\\/g, '/').toLowerCase();
 							const o = originMap.get(key);
 							if (o && o !== 'none') node.originType = o;
@@ -1693,7 +1693,7 @@
 			if (showNewLibraryDropdown) { showNewLibraryDropdown = false; newLibName = ''; return; }
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
-			if (showStarView) { showStarView = false; return; }
+			if (showSkyView) { showSkyView = false; return; }
 			if (lensActive) { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; return; }
 			if (showOrgChart) { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
@@ -2143,8 +2143,8 @@
 
 			// 2. Run community detection (existing JS Louvain)
 			const clusterResult = detectClusters(
-				starNodes.map(n => ({ id: n.id, name: n.name })),
-				starLinks.map(l => ({ source: l.source, target: l.target })),
+				skyNodes.map(n => ({ id: n.id, name: n.name })),
+				skyLinks.map(l => ({ source: l.source, target: l.target })),
 			);
 			lensCommunities = clusterResult.clusters;
 			lensCommunityAssignments = clusterResult.assignments;
@@ -2152,7 +2152,7 @@
 			// 3. Compute structural gaps
 			lensGaps = computeStructuralGaps(
 				clusterResult.clusters,
-				starLinks.map(l => ({ source: l.source, target: l.target })),
+				skyLinks.map(l => ({ source: l.source, target: l.target })),
 				clusterResult.assignments,
 			);
 
@@ -2160,16 +2160,16 @@
 			lensHealth = computeUniverseHealth(
 				clusterResult.modularity,
 				clusterResult.clusters,
-				starNodes.length,
-				starLinks.length,
+				skyNodes.length,
+				skyLinks.length,
 				lensGaps.length,
 			);
 
 			// 5. Stratum-weighted centrality (Feature 2)
 			const weightedCentrality = stratumWeightedCentrality(
 				lensCentrality,
-				starLinks.map(l => ({ source: l.source, target: l.target })),
-				starNodes,
+				skyLinks.map(l => ({ source: l.source, target: l.target })),
+				skyNodes,
 			);
 			lensCentrality = weightedCentrality; // Replace with stratum-weighted version
 
@@ -2178,7 +2178,7 @@
 				.sort((a, b) => b[1] - a[1])
 				.slice(0, 10)
 				.map(([id, centrality]) => {
-					const node = starNodes.find(n => n.id === id);
+					const node = skyNodes.find(n => n.id === id);
 					return { id, name: node?.name ?? id, centrality };
 				});
 
@@ -2186,15 +2186,15 @@
 			lensCommunityProfiles = buildCommunityProfiles(
 				clusterResult.clusters,
 				clusterResult.assignments,
-				starNodes,
+				skyNodes,
 			);
 
 			// 8. Bridge suggestions for gaps (Feature 7)
 			lensGaps = suggestBridges(
 				lensGaps,
 				clusterResult.clusters,
-				starNodes.map(n => ({ id: n.id, name: n.name })),
-				starLinks.map(l => ({ source: l.source, target: l.target })),
+				skyNodes.map(n => ({ id: n.id, name: n.name })),
+				skyLinks.map(l => ({ source: l.source, target: l.target })),
 			);
 
 			// 9. Contradictions from Rust (Feature 3)
@@ -2272,7 +2272,7 @@
 		await openNoteTab(path, libraryName, libraryColor);
 	}
 
-	async function handleStarNodeClick(path: string, libraryName: string, highlightTerm?: string) {
+	async function handleSkyNodeClick(path: string, libraryName: string, highlightTerm?: string) {
 		const lib = $libraries.find(v => v.name === libraryName);
 		const color = libraryColorMap[libraryName] ?? '#7c3aed';
 
@@ -2291,14 +2291,14 @@
 		// No second screen — open note in main, THEN exit Sky View so the tab
 		// has a path before the new-tab guard renders an empty screen.
 		await openNoteTab(path, libraryName, color, highlightTerm);
-		showStarView = false;
-		if (highlightTerm) starViewReturnPending = true;
+		showSkyView = false;
+		if (highlightTerm) skyViewReturnPending = true;
 	}
 
 	function handleTagClick(tag: string) {
 		searchHubInitialQuery = `#${tag}`;
 		showSearchHub = true;
-		showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
+		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
 		sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen;
 		sidebarOpen = false; rightSidebarOpen = false;
 	}
@@ -2759,7 +2759,7 @@
 				showSearchHub = !showSearchHub;
 				if (showSearchHub) {
 					searchHubInitialQuery = '';
-					showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
 					sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen;
 					sidebarOpen = false; rightSidebarOpen = false;
 				} else {
@@ -2773,7 +2773,7 @@
 				showOrgChart = !showOrgChart;
 				orgChartReturnPending = false;
 				if (showOrgChart) {
-					showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false;
 					sidebarBeforeOC = sidebarOpen; rightSidebarBeforeOC = rightSidebarOpen;
 					sidebarOpen = false; rightSidebarOpen = false;
 				} else {
@@ -2782,10 +2782,10 @@
 			}} title={$t('navigator.orgChart') || 'Organization Chart'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
 			</button>
-			<button class="dock-btn" class:active={showStarView} onclick={() => { showStarView = !showStarView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
+			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
 			</button>
-			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => { showGlobalTasks = !showGlobalTasks; showStarView = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.globalTasks')}>
+			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => { showGlobalTasks = !showGlobalTasks; showSkyView = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.globalTasks')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 			</button>
 			<button class="dock-btn" onclick={handleOpenDailyNote} title={$t('ribbon.dailyNote')}>
@@ -2794,15 +2794,15 @@
 			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('ribbon.aiSkills')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
 			</a>
-			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showStarView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
+			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
 			</button>
-			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
+			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 			</button>
 			<button class="dock-btn" class:active={lensActive} onclick={() => {
 				if (!lensActive) {
-					toggleLens(); showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensReturnPending = false;
+					toggleLens(); showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensReturnPending = false;
 					sidebarBeforeLens = sidebarOpen; rightSidebarBeforeLens = rightSidebarOpen;
 					sidebarOpen = false; rightSidebarOpen = false;
 				} else {
@@ -3207,15 +3207,15 @@
 				</button>
 			{/if}
 			{#if searchHubReturnPending}
-				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showStarView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
+				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('searchHub.title')}
 				</button>
 			{/if}
-			{#if starViewReturnPending}
-				<button class="index-return-btn" onclick={() => { showStarView = true; starViewReturnPending = false; showSearchHub = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; }}>
+			{#if skyViewReturnPending}
+				<button class="index-return-btn" onclick={() => { showSkyView = true; skyViewReturnPending = false; showSearchHub = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-					{$t('layout.starViewTitle') || 'Sky View'}
+					{$t('layout.skyViewTitle') || 'Sky View'}
 				</button>
 			{/if}
 			{#if !$splitActive}
@@ -3402,8 +3402,8 @@
 		<div class="lens-overlay" class:lens-visible={lensActive}>
 			{#if lensActive}
 				<ConstellationSight
-					nodes={starNodes}
-					links={starLinks}
+					nodes={skyNodes}
+					links={skyLinks}
 					centrality={lensCentrality}
 					communityAssignments={lensCommunityAssignments}
 					communityColors={new Map(lensCommunities.map(c => [c.id, c.color]))}
@@ -3451,22 +3451,22 @@
 
 		<!-- Content -->
 		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || lensActive || showSearchHub} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
-			{#if showStarView}
+			{#if showSkyView}
 				<div class="star-fullscreen">
 					<div class="star-header">
-						<span class="star-title">{$t('layout.starViewTitle')}</span>
+						<span class="star-title">{$t('layout.skyViewTitle')}</span>
 						<button class="star-wiw-toggle" class:active={wiwEnabled} onclick={() => { wiwEnabled = !wiwEnabled; if (!wiwEnabled) showWiW = false; }} title="Window in Window">
 							<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<rect x="0.75" y="1.75" width="12.5" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
 								<rect x="7" y="5" width="5" height="3.5" rx="0.75" fill="currentColor"/>
 							</svg>
 						</button>
-						<button class="star-close" onclick={() => showStarView = false}>×</button>
+						<button class="star-close" onclick={() => showSkyView = false}>×</button>
 					</div>
 					<GraphMindView
-					nodes={starNodes}
-					links={starLinks}
-					onNodeClick={handleStarNodeClick}
+					nodes={skyNodes}
+					links={skyLinks}
+					onNodeClick={handleSkyNodeClick}
 					onNodeHover={(node) => {
 						if (!secondScreenOpen) return;
 						if (skyviewHoverTimer) clearTimeout(skyviewHoverTimer);
@@ -3514,14 +3514,14 @@
 								<span class="wiw-count">{wiwFilteredNodes.length} nodes</span>
 								<button class="wiw-close" onclick={() => { showWiW = false; skyViewSelectedPath = null; }}>×</button>
 							</div>
-							<span class="wiw-subtitle">{$t('layout.starViewWiWHint')}</span>
+							<span class="wiw-subtitle">{$t('layout.skyViewWiWHint')}</span>
 						</div>
 						<div class="wiw-graph">
 							<GraphMindView
 								nodes={wiwFilteredNodes}
 								links={wiwFilteredLinks}
 								libraryColorMap={wiwLibraryColorMap}
-								onNodeClick={handleStarNodeClick}
+								onNodeClick={handleSkyNodeClick}
 							/>
 						</div>
 						<!-- Resize handles -->
@@ -3558,7 +3558,7 @@
 				/>
 			{:else if showExpressionForge}
 				<ExpressionForge
-					notes={starNodes}
+					notes={skyNodes}
 					{activeTrail}
 					libraryPath={get(libraries)[0]?.path ?? ''}
 					libraryName={get(libraries)[0]?.name ?? ''}
@@ -3814,7 +3814,7 @@
 				<button class="rs-tab" class:active={rightSidebarTab === 'tags'} onclick={() => rightSidebarTab = 'tags'} title={$t('panels.tags')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
 				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'star'} onclick={() => rightSidebarTab = 'star'} title={$t('panels.starView')}>
+				<button class="rs-tab" class:active={rightSidebarTab === 'star'} onclick={() => rightSidebarTab = 'star'} title={$t('panels.skyView')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg>
 				</button>
 				<button class="rs-tab" class:active={rightSidebarTab === 'tasks'} onclick={() => rightSidebarTab = 'tasks'} title={$t('panels.tasks')}>
@@ -3921,10 +3921,10 @@
 				{:else if rightSidebarTab === 'star'}
 					<!-- Local star centered on the active note -->
 					<div class="rs-section rs-full-height">
-						{#if localStarNodes.length > 0}
-							<LocalStarView
-								nodes={localStarNodes}
-								links={localStarLinks}
+						{#if localSkyNodes.length > 0}
+							<LocalSkyView
+								nodes={localSkyNodes}
+								links={localSkyLinks}
 								onNodeClick={(nodeId) => {
 									const note = allNotes.find(n => n.path === nodeId || n.name.replace(/\.md$/, '').toLowerCase() === nodeId);
 									if (note) openNoteTab(note.path, note.libraryName, libraryColorMap[note.libraryName] || '#7c3aed');

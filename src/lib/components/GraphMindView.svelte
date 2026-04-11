@@ -14,7 +14,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { t, dir, isRTL as isRTLStore, getSearchOps } from '$lib/i18n';
 	import { GraphEngine, type EngineConfig, type LayoutMode } from '$lib/graph/graphEngine';
-	import type { StarNode, StarLink } from '$lib/libraries/store';
+	import type { SkyNode, SkyLink } from '$lib/libraries/store';
 	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
 	import { detectDir } from '$lib/utils';
 	import { computeSemanticLinks, type EmbeddingProgress } from '$lib/graph/semanticEngine';
@@ -42,8 +42,8 @@
 	};
 
 	let {
-		nodes = [] as StarNode[],
-		links = [] as StarLink[],
+		nodes = [] as SkyNode[],
+		links = [] as SkyLink[],
 		onNodeClick = undefined as ((path: string, libraryName: string, highlightTerm?: string) => void) | undefined,
 		onNodeHover = undefined as ((node: { name: string; path: string; libraryName: string } | null) => void) | undefined,
 		activeNodeId = '',
@@ -54,8 +54,8 @@
 		searchMatchIds = null as Set<string> | null,
 		allNotes = [] as {name: string; path: string; libraryName: string}[],
 	}: {
-		nodes: StarNode[];
-		links: StarLink[];
+		nodes: SkyNode[];
+		links: SkyLink[];
 		onNodeClick?: (path: string, libraryName: string, highlightTerm?: string) => void;
 		onNodeHover?: (node: { name: string; path: string; libraryName: string } | null) => void;
 		activeNodeId?: string;

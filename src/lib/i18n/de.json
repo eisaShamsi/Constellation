@@ -362,7 +362,7 @@
         "importNotes": "Notizen importieren",
         "insertTable": "Tabelle einfügen",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "Fällige Notizen überprüfen",
         "openTrail": "Trail öffnen",
         "openLens": "Linse wechseln",
@@ -451,8 +451,8 @@
         "skills": "Fähigkeiten",
         "graphViewTitle": "Graphansicht",
         "pinned": "Angeheftet",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "Klicke auf eine Notiz in der Seitenleiste, um ihre Verbindungen zu sehen",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "Klicke auf eine Notiz in der Seitenleiste, um ihre Verbindungen zu sehen",
         "clickToStart": "Klicke hier, um zu beginnen",
         "search": "Suchen..."
     },
@@ -485,11 +485,11 @@
         "tasksHeader": "Aufgaben",
         "calendar": "Kalender",
         "calendarHeader": "Kalender",
-        "starView": "Sky View",
         "health": "Wissensgesundheit",
         "provenance": "Herkunft",
         "review": "Überprüfungspuls",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "Alle",
@@ -1173,32 +1173,6 @@
         "errors": "Fehler",
         "done": "Fertig"
     },
-    "starView": {
-        "noNotes": "Keine Notizen zum Anzeigen",
-        "controls": {
-            "title": "Graph-Einstellungen",
-            "reset": "Auf Standardwerte zurücksetzen",
-            "filters": "Filter",
-            "searchPlaceholder": "Dateien suchen...",
-            "tags": "Tags",
-            "attachments": "Anhänge",
-            "existingOnly": "Nur vorhandene Dateien",
-            "orphans": "Verwaiste Notizen",
-            "groups": "Gruppen",
-            "newGroup": "Neue Gruppe",
-            "display": "Anzeige",
-            "arrows": "Pfeile",
-            "textFade": "Textausblendungsschwelle",
-            "nodeSize": "Knotengröße",
-            "linkThickness": "Verbindungsstärke",
-            "animate": "Animieren",
-            "forces": "Kräfte",
-            "centerForce": "Zentrierungskraft",
-            "repelForce": "Abstoßungskraft",
-            "linkForce": "Verbindungskraft",
-            "linkDistance": "Verbindungsabstand"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1471,5 +1445,31 @@
         "property": "E",
         "wikilink": "V",
         "semantic": "S"
+    },
+    "skyView": {
+        "noNotes": "Keine Notizen zum Anzeigen",
+        "controls": {
+            "title": "Graph-Einstellungen",
+            "reset": "Auf Standardwerte zurücksetzen",
+            "filters": "Filter",
+            "searchPlaceholder": "Dateien suchen...",
+            "tags": "Tags",
+            "attachments": "Anhänge",
+            "existingOnly": "Nur vorhandene Dateien",
+            "orphans": "Verwaiste Notizen",
+            "groups": "Gruppen",
+            "newGroup": "Neue Gruppe",
+            "display": "Anzeige",
+            "arrows": "Pfeile",
+            "textFade": "Textausblendungsschwelle",
+            "nodeSize": "Knotengröße",
+            "linkThickness": "Verbindungsstärke",
+            "animate": "Animieren",
+            "forces": "Kräfte",
+            "centerForce": "Zentrierungskraft",
+            "repelForce": "Abstoßungskraft",
+            "linkForce": "Verbindungskraft",
+            "linkDistance": "Verbindungsabstand"
+        }
     }
 }

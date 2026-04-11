@@ -362,7 +362,7 @@
         "addLibrary": "Adicionar cofre",
         "searchLibrary": "Pesquisar no cofre",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "Revisar notas vencidas",
         "openTrail": "Abrir trilha",
         "openLens": "Trocar lente",
@@ -451,8 +451,8 @@
         "skills": "Habilidades",
         "graphViewTitle": "Visualização em grafo",
         "pinned": "Fixada",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "Clique em uma nota na barra lateral para ver suas conexões",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "Clique em uma nota na barra lateral para ver suas conexões",
         "clickToStart": "Clique para começar",
         "search": "Pesquisar..."
     },
@@ -485,11 +485,11 @@
         "tasksHeader": "Tarefas",
         "calendar": "Calendário",
         "calendarHeader": "Calendário",
-        "starView": "Sky View",
         "health": "Saúde do conhecimento",
         "provenance": "Proveniência",
         "review": "Pulso de revisão",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "Todas",
@@ -1173,32 +1173,6 @@
         "noLibraries": "Nenhum cofre registrado",
         "openLibrary": "+ Abrir cofre"
     },
-    "starView": {
-        "noNotes": "Nenhuma nota para exibir",
-        "controls": {
-            "title": "Configurações do grafo",
-            "reset": "Redefinir para padrões",
-            "filters": "Filtros",
-            "searchPlaceholder": "Pesquisar arquivos...",
-            "tags": "Tags",
-            "attachments": "Anexos",
-            "existingOnly": "Apenas arquivos existentes",
-            "orphans": "Órfãs",
-            "groups": "Grupos",
-            "newGroup": "Novo grupo",
-            "display": "Exibição",
-            "arrows": "Setas",
-            "textFade": "Limite de esmaecimento do texto",
-            "nodeSize": "Tamanho do nó",
-            "linkThickness": "Espessura do link",
-            "animate": "Animar",
-            "forces": "Forças",
-            "centerForce": "Força central",
-            "repelForce": "Força de repulsão",
-            "linkForce": "Força do link",
-            "linkDistance": "Distância do link"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1471,5 +1445,31 @@
         "property": "P",
         "wikilink": "L",
         "semantic": "S"
+    },
+    "skyView": {
+        "noNotes": "Nenhuma nota para exibir",
+        "controls": {
+            "title": "Configurações do grafo",
+            "reset": "Redefinir para padrões",
+            "filters": "Filtros",
+            "searchPlaceholder": "Pesquisar arquivos...",
+            "tags": "Tags",
+            "attachments": "Anexos",
+            "existingOnly": "Apenas arquivos existentes",
+            "orphans": "Órfãs",
+            "groups": "Grupos",
+            "newGroup": "Novo grupo",
+            "display": "Exibição",
+            "arrows": "Setas",
+            "textFade": "Limite de esmaecimento do texto",
+            "nodeSize": "Tamanho do nó",
+            "linkThickness": "Espessura do link",
+            "animate": "Animar",
+            "forces": "Forças",
+            "centerForce": "Força central",
+            "repelForce": "Força de repulsão",
+            "linkForce": "Força do link",
+            "linkDistance": "Distância do link"
+        }
     }
 }

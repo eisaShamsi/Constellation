@@ -362,7 +362,7 @@
         "addLibrary": "添加仓库",
         "searchLibrary": "搜索仓库",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "复习到期笔记",
         "openTrail": "打开路径",
         "openLens": "切换镜头",
@@ -451,8 +451,8 @@
         "skills": "技能",
         "graphViewTitle": "关系图谱",
         "pinned": "已固定",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "点击侧边栏中的笔记以查看其连接",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "点击侧边栏中的笔记以查看其连接",
         "clickToStart": "点击开始",
         "search": "搜索..."
     },
@@ -485,11 +485,11 @@
         "tasksHeader": "任务",
         "calendar": "日历",
         "calendarHeader": "日历",
-        "starView": "Sky View",
         "health": "知识健康",
         "provenance": "来源",
         "review": "复习脉搏",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "全部",
@@ -1173,32 +1173,6 @@
         "noLibraries": "没有已注册的保险库",
         "openLibrary": "+ 打开保险库"
     },
-    "starView": {
-        "noNotes": "没有可显示的笔记",
-        "controls": {
-            "title": "图谱设置",
-            "reset": "重置为默认值",
-            "filters": "筛选",
-            "searchPlaceholder": "搜索文件...",
-            "tags": "标签",
-            "attachments": "附件",
-            "existingOnly": "仅显示已有文件",
-            "orphans": "孤立笔记",
-            "groups": "分组",
-            "newGroup": "新建分组",
-            "display": "显示",
-            "arrows": "箭头",
-            "textFade": "文字淡出阈值",
-            "nodeSize": "节点大小",
-            "linkThickness": "连线粗细",
-            "animate": "动画",
-            "forces": "力",
-            "centerForce": "中心力",
-            "repelForce": "排斥力",
-            "linkForce": "连接力",
-            "linkDistance": "连接距离"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1471,5 +1445,31 @@
         "property": "属",
         "wikilink": "链",
         "semantic": "义"
+    },
+    "skyView": {
+        "noNotes": "没有可显示的笔记",
+        "controls": {
+            "title": "图谱设置",
+            "reset": "重置为默认值",
+            "filters": "筛选",
+            "searchPlaceholder": "搜索文件...",
+            "tags": "标签",
+            "attachments": "附件",
+            "existingOnly": "仅显示已有文件",
+            "orphans": "孤立笔记",
+            "groups": "分组",
+            "newGroup": "新建分组",
+            "display": "显示",
+            "arrows": "箭头",
+            "textFade": "文字淡出阈值",
+            "nodeSize": "节点大小",
+            "linkThickness": "连线粗细",
+            "animate": "动画",
+            "forces": "力",
+            "centerForce": "中心力",
+            "repelForce": "排斥力",
+            "linkForce": "连接力",
+            "linkDistance": "连接距离"
+        }
     }
 }

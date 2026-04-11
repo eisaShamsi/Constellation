@@ -1340,7 +1340,7 @@ export async function collectLibraryNotesWithMeta(libraryPath: string): Promise<
 }
 
 // ─── Graph data ───
-export interface StarNode {
+export interface SkyNode {
 	id: string;
 	name: string;
 	path: string;
@@ -1353,14 +1353,14 @@ export interface StarNode {
 	originType?: string; // received|discovered|mixed|none (CE Phase 5)
 }
 
-export interface StarLink {
+export interface SkyLink {
 	source: string;
 	target: string;
 	linkType?: string;
 }
 
-export function buildStarData(allLinks: NoteLink[], allNotes: { name: string; path: string; libraryName: string }[]) {
-	const nodeMap = new Map<string, StarNode>();
+export function buildSkyData(allLinks: NoteLink[], allNotes: { name: string; path: string; libraryName: string }[]) {
+	const nodeMap = new Map<string, SkyNode>();
 	// Add all notes as nodes
 	for (const note of allNotes) {
 		nodeMap.set(note.name.toLowerCase(), {
@@ -1373,7 +1373,7 @@ export function buildStarData(allLinks: NoteLink[], allNotes: { name: string; pa
 		});
 	}
 
-	const links: StarLink[] = [];
+	const links: SkyLink[] = [];
 	const seen = new Set<string>();
 
 	for (const link of allLinks) {
@@ -1615,7 +1615,7 @@ export interface AppSettings {
 	enabledFeatures: {
 		dailyNotes: boolean;
 		templates: boolean;
-		starView: boolean;
+		skyView: boolean;
 		backlinks: boolean;
 		outgoingLinks: boolean;
 		tags: boolean;
@@ -1709,7 +1709,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	enabledFeatures: {
 		dailyNotes: true,
 		templates: true,
-		starView: true,
+		skyView: true,
 		backlinks: true,
 		outgoingLinks: true,
 		tags: true,

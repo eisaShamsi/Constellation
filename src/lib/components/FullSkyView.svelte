@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
 
-	interface StarNode {
+	interface SkyNode {
 		id: string;
 		name: string;
 		path: string;
@@ -12,7 +12,7 @@
 		outgoingCount: number;
 	}
 
-	interface StarLink {
+	interface SkyLink {
 		source: string;
 		target: string;
 	}
@@ -43,8 +43,8 @@
 		skyViewSettings = DEFAULT_SKY,
 		libraryColorMap: externalColorMap = {} as Record<string, string>,
 	}: {
-		nodes: StarNode[];
-		links: StarLink[];
+		nodes: SkyNode[];
+		links: SkyLink[];
 		onNodeClick: (path: string, libraryName: string) => void;
 		activeNodeId?: string;
 		skyViewSettings?: SkyViewSettings;
@@ -73,7 +73,7 @@
 	let animFrame = 0;
 
 	// Layout state
-	let nodePos: { x: number; y: number; vx: number; vy: number; node: StarNode; r: number }[] = [];
+	let nodePos: { x: number; y: number; vx: number; vy: number; node: SkyNode; r: number }[] = [];
 	let linkIdx: { si: number; ti: number }[] = [];
 	let hoveredIdx = -1;
 	let showControls = false;
@@ -104,12 +104,12 @@
 		if (!containerEl || !canvasEl) return;
 
 		// Snapshot data to avoid proxy overhead
-		const rawNodes: StarNode[] = [];
+		const rawNodes: SkyNode[] = [];
 		for (let i = 0; i < nodes.length; i++) {
 			const n = nodes[i];
 			rawNodes.push({ id: n.id, name: n.name, path: n.path, libraryName: n.libraryName, group: n.group, linkCount: n.linkCount, outgoingCount: n.outgoingCount ?? 0 });
 		}
-		const rawLinks: StarLink[] = [];
+		const rawLinks: SkyLink[] = [];
 		for (let i = 0; i < links.length; i++) {
 			const l = links[i];
 			rawLinks.push({ source: l.source, target: l.target });

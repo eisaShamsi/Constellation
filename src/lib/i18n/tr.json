@@ -362,7 +362,7 @@
         "addLibrary": "Kasa ekle",
         "searchLibrary": "Kasada ara",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "Vadesi gelen notları gözden geçir",
         "openTrail": "Yolu aç",
         "openLens": "Lens değiştir",
@@ -451,8 +451,8 @@
         "skills": "Beceriler",
         "graphViewTitle": "Grafik Görünümü",
         "pinned": "Sabitlendi",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "Bağlantılarını görmek için kenar çubuğunda bir nota tıklayın",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "Bağlantılarını görmek için kenar çubuğunda bir nota tıklayın",
         "clickToStart": "Başlamak için tıklayın",
         "search": "Ara..."
     },
@@ -485,11 +485,11 @@
         "tasksHeader": "Görevler",
         "calendar": "Takvim",
         "calendarHeader": "Takvim",
-        "starView": "Sky View",
         "health": "Bilgi sağlığı",
         "provenance": "Köken",
         "review": "Gözden Geçirme Nabzı",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "Tümü",
@@ -1173,32 +1173,6 @@
         "noLibraries": "Kayıtlı kasa yok",
         "openLibrary": "+ Kasa aç"
     },
-    "starView": {
-        "noNotes": "Gösterilecek not yok",
-        "controls": {
-            "title": "Grafik Ayarları",
-            "reset": "Varsayılanlara sıfırla",
-            "filters": "Filtreler",
-            "searchPlaceholder": "Dosya ara...",
-            "tags": "Etiketler",
-            "attachments": "Ekler",
-            "existingOnly": "Yalnızca mevcut dosyalar",
-            "orphans": "Yetim notlar",
-            "groups": "Gruplar",
-            "newGroup": "Yeni grup",
-            "display": "Görünüm",
-            "arrows": "Oklar",
-            "textFade": "Metin solma eşiği",
-            "nodeSize": "Düğüm boyutu",
-            "linkThickness": "Bağlantı kalınlığı",
-            "animate": "Animasyon",
-            "forces": "Kuvvetler",
-            "centerForce": "Merkez kuvveti",
-            "repelForce": "İtme kuvveti",
-            "linkForce": "Bağlantı kuvveti",
-            "linkDistance": "Bağlantı mesafesi"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1471,5 +1445,31 @@
         "property": "Ö",
         "wikilink": "B",
         "semantic": "A"
+    },
+    "skyView": {
+        "noNotes": "Gösterilecek not yok",
+        "controls": {
+            "title": "Grafik Ayarları",
+            "reset": "Varsayılanlara sıfırla",
+            "filters": "Filtreler",
+            "searchPlaceholder": "Dosya ara...",
+            "tags": "Etiketler",
+            "attachments": "Ekler",
+            "existingOnly": "Yalnızca mevcut dosyalar",
+            "orphans": "Yetim notlar",
+            "groups": "Gruplar",
+            "newGroup": "Yeni grup",
+            "display": "Görünüm",
+            "arrows": "Oklar",
+            "textFade": "Metin solma eşiği",
+            "nodeSize": "Düğüm boyutu",
+            "linkThickness": "Bağlantı kalınlığı",
+            "animate": "Animasyon",
+            "forces": "Kuvvetler",
+            "centerForce": "Merkez kuvveti",
+            "repelForce": "İtme kuvveti",
+            "linkForce": "Bağlantı kuvveti",
+            "linkDistance": "Bağlantı mesafesi"
+        }
     }
 }

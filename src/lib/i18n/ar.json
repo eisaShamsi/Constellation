@@ -363,7 +363,7 @@
         "importNotes": "استيراد الملاحظات",
         "insertTable": "إدراج جدول",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "مراجعة الملاحظات المستحقة",
         "openTrail": "فتح مسار",
         "openLens": "تبديل العدسة",
@@ -454,8 +454,8 @@
         "skills": "المهارات",
         "graphViewTitle": "الرسم البياني",
         "pinned": "مثبت",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "انقر على ملاحظة في الشريط الجانبي لعرض ارتباطاتها",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "انقر على ملاحظة في الشريط الجانبي لعرض ارتباطاتها",
         "clickToStart": "اضغط هنا للبدء",
         "search": "بحث..."
     },
@@ -488,11 +488,11 @@
         "tasksHeader": "المهام",
         "calendar": "التقويم",
         "calendarHeader": "التقويم",
-        "starView": "Sky View",
         "health": "صحة المعرفة",
         "provenance": "سلسلة الإسناد",
         "review": "نبض المراجعة",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "الكل",
@@ -1177,32 +1177,6 @@
         "errors": "أخطاء",
         "done": "تم"
     },
-    "starView": {
-        "noNotes": "لا توجد ملاحظات لعرضها",
-        "controls": {
-            "title": "إعدادات الرسم البياني",
-            "reset": "إعادة تعيين الافتراضيات",
-            "filters": "المرشحات",
-            "searchPlaceholder": "البحث في الملفات...",
-            "tags": "الوسوم",
-            "attachments": "المرفقات",
-            "existingOnly": "الملفات الموجودة فقط",
-            "orphans": "الملاحظات المعزولة",
-            "groups": "المجموعات",
-            "newGroup": "مجموعة جديدة",
-            "display": "العرض",
-            "arrows": "الأسهم",
-            "textFade": "عتبة تلاشي النص",
-            "nodeSize": "حجم العقدة",
-            "linkThickness": "سمك الرابط",
-            "animate": "تحريك",
-            "forces": "القوى",
-            "centerForce": "قوة المركز",
-            "repelForce": "قوة التنافر",
-            "linkForce": "قوة الرابط",
-            "linkDistance": "مسافة الرابط"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1475,5 +1449,31 @@
         "property": "خ",
         "wikilink": "ر",
         "semantic": "د"
+    },
+    "skyView": {
+        "noNotes": "لا توجد ملاحظات لعرضها",
+        "controls": {
+            "title": "إعدادات الرسم البياني",
+            "reset": "إعادة تعيين الافتراضيات",
+            "filters": "المرشحات",
+            "searchPlaceholder": "البحث في الملفات...",
+            "tags": "الوسوم",
+            "attachments": "المرفقات",
+            "existingOnly": "الملفات الموجودة فقط",
+            "orphans": "الملاحظات المعزولة",
+            "groups": "المجموعات",
+            "newGroup": "مجموعة جديدة",
+            "display": "العرض",
+            "arrows": "الأسهم",
+            "textFade": "عتبة تلاشي النص",
+            "nodeSize": "حجم العقدة",
+            "linkThickness": "سمك الرابط",
+            "animate": "تحريك",
+            "forces": "القوى",
+            "centerForce": "قوة المركز",
+            "repelForce": "قوة التنافر",
+            "linkForce": "قوة الرابط",
+            "linkDistance": "مسافة الرابط"
+        }
     }
 }

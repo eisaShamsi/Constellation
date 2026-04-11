@@ -9,13 +9,13 @@
 	import * as d3 from 'd3';
 	import { t, dir } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
-	import type { StarNode, StarLink } from '$lib/libraries/store';
+	import type { SkyNode, SkyLink } from '$lib/libraries/store';
 	import type { ClusterInfo, StructuralGap, UniverseHealth } from '$lib/graph/clusterEngine';
 	import LensPanel from './LensPanel.svelte';
 
 	let {
-		nodes = [] as StarNode[],
-		links = [] as StarLink[],
+		nodes = [] as SkyNode[],
+		links = [] as SkyLink[],
 		centrality = new Map<string, number>(),
 		communityAssignments = new Map<string, number>(),
 		communityColors = new Map<number, string>(),
@@ -29,8 +29,8 @@
 		onNoteClick,
 		onClose,
 	}: {
-		nodes?: StarNode[];
-		links?: StarLink[];
+		nodes?: SkyNode[];
+		links?: SkyLink[];
 		centrality?: Map<string, number>;
 		communityAssignments?: Map<string, number>;
 		communityColors?: Map<number, string>;

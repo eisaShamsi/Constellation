@@ -362,7 +362,7 @@
         "addLibrary": "Добавить хранилище",
         "searchLibrary": "Поиск по хранилищу",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "Просмотреть просроченные заметки",
         "openTrail": "Открыть маршрут",
         "openLens": "Сменить линзу",
@@ -451,8 +451,8 @@
         "skills": "Навыки",
         "graphViewTitle": "Граф",
         "pinned": "Закреплено",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "Нажмите на заметку в боковой панели, чтобы увидеть её связи",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "Нажмите на заметку в боковой панели, чтобы увидеть её связи",
         "clickToStart": "Нажмите, чтобы начать",
         "search": "Поиск..."
     },
@@ -485,11 +485,11 @@
         "tasksHeader": "Задачи",
         "calendar": "Календарь",
         "calendarHeader": "Календарь",
-        "starView": "Sky View",
         "health": "Здоровье знаний",
         "provenance": "Происхождение",
         "review": "Пульс обзора",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "Все",
@@ -1173,32 +1173,6 @@
         "noLibraries": "Нет зарегистрированных хранилищ",
         "openLibrary": "+ Открыть хранилище"
     },
-    "starView": {
-        "noNotes": "Нет заметок для отображения",
-        "controls": {
-            "title": "Настройки графа",
-            "reset": "Сбросить к значениям по умолчанию",
-            "filters": "Фильтры",
-            "searchPlaceholder": "Поиск файлов...",
-            "tags": "Теги",
-            "attachments": "Вложения",
-            "existingOnly": "Только существующие файлы",
-            "orphans": "Изолированные заметки",
-            "groups": "Группы",
-            "newGroup": "Новая группа",
-            "display": "Отображение",
-            "arrows": "Стрелки",
-            "textFade": "Порог затухания текста",
-            "nodeSize": "Размер узла",
-            "linkThickness": "Толщина связи",
-            "animate": "Анимация",
-            "forces": "Силы",
-            "centerForce": "Сила центрирования",
-            "repelForce": "Сила отталкивания",
-            "linkForce": "Сила связи",
-            "linkDistance": "Расстояние связи"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1471,5 +1445,31 @@
         "property": "С",
         "wikilink": "С",
         "semantic": "С"
+    },
+    "skyView": {
+        "noNotes": "Нет заметок для отображения",
+        "controls": {
+            "title": "Настройки графа",
+            "reset": "Сбросить к значениям по умолчанию",
+            "filters": "Фильтры",
+            "searchPlaceholder": "Поиск файлов...",
+            "tags": "Теги",
+            "attachments": "Вложения",
+            "existingOnly": "Только существующие файлы",
+            "orphans": "Изолированные заметки",
+            "groups": "Группы",
+            "newGroup": "Новая группа",
+            "display": "Отображение",
+            "arrows": "Стрелки",
+            "textFade": "Порог затухания текста",
+            "nodeSize": "Размер узла",
+            "linkThickness": "Толщина связи",
+            "animate": "Анимация",
+            "forces": "Силы",
+            "centerForce": "Сила центрирования",
+            "repelForce": "Сила отталкивания",
+            "linkForce": "Сила связи",
+            "linkDistance": "Расстояние связи"
+        }
     }
 }

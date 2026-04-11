@@ -362,7 +362,7 @@
         "importNotes": "Import notes",
         "insertTable": "Insert table",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "Review due notes",
         "openTrail": "Open Trail",
         "openLens": "Switch Lens",
@@ -452,8 +452,8 @@
         "skills": "Skills",
         "graphViewTitle": "Graph View",
         "pinned": "Pinned",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "Click a note in the sidebar to see its connections",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "Click a note in the sidebar to see its connections",
         "clickToStart": "Click me to start",
         "search": "Search..."
     },
@@ -486,11 +486,11 @@
         "tasksHeader": "Tasks",
         "calendar": "Calendar",
         "calendarHeader": "Calendar",
-        "starView": "Sky View",
         "health": "Knowledge Health",
         "provenance": "Provenance",
         "review": "Review Pulse",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "All",
@@ -1163,32 +1163,6 @@
         "errors": "Errors",
         "done": "Done"
     },
-    "starView": {
-        "noNotes": "No notes to display",
-        "controls": {
-            "title": "Graph Settings",
-            "reset": "Reset to defaults",
-            "filters": "Filters",
-            "searchPlaceholder": "Search files...",
-            "tags": "Tags",
-            "attachments": "Attachments",
-            "existingOnly": "Existing files only",
-            "orphans": "Orphans",
-            "groups": "Groups",
-            "newGroup": "New group",
-            "display": "Display",
-            "arrows": "Arrows",
-            "textFade": "Text fade threshold",
-            "nodeSize": "Node size",
-            "linkThickness": "Link thickness",
-            "animate": "Animate",
-            "forces": "Forces",
-            "centerForce": "Center force",
-            "repelForce": "Repel force",
-            "linkForce": "Link force",
-            "linkDistance": "Link distance"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1475,5 +1449,31 @@
         "property": "P",
         "wikilink": "W",
         "semantic": "S"
+    },
+    "skyView": {
+        "noNotes": "No notes to display",
+        "controls": {
+            "title": "Graph Settings",
+            "reset": "Reset to defaults",
+            "filters": "Filters",
+            "searchPlaceholder": "Search files...",
+            "tags": "Tags",
+            "attachments": "Attachments",
+            "existingOnly": "Existing files only",
+            "orphans": "Orphans",
+            "groups": "Groups",
+            "newGroup": "New group",
+            "display": "Display",
+            "arrows": "Arrows",
+            "textFade": "Text fade threshold",
+            "nodeSize": "Node size",
+            "linkThickness": "Link thickness",
+            "animate": "Animate",
+            "forces": "Forces",
+            "centerForce": "Center force",
+            "repelForce": "Repel force",
+            "linkForce": "Link force",
+            "linkDistance": "Link distance"
+        }
     }
 }

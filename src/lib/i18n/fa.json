@@ -362,7 +362,7 @@
         "importNotes": "وارد کردن یادداشت‌ها",
         "insertTable": "درج جدول",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "بازبینی یادداشت‌های موعد",
         "openTrail": "باز کردن مسیر",
         "openLens": "تغییر عدسی",
@@ -451,8 +451,8 @@
         "skills": "مهارت‌ها",
         "graphViewTitle": "نمای گراف",
         "pinned": "سنجاق شده",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "روی یک یادداشت در نوار کناری کلیک کنید تا ارتباطات آن را ببینید",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "روی یک یادداشت در نوار کناری کلیک کنید تا ارتباطات آن را ببینید",
         "clickToStart": "برای شروع کلیک کنید",
         "search": "جستجو..."
     },
@@ -485,11 +485,11 @@
         "tasksHeader": "وظایف",
         "calendar": "تقویم",
         "calendarHeader": "تقویم",
-        "starView": "Sky View",
         "health": "سلامت دانش",
         "provenance": "اسناد",
         "review": "نبض بازبینی",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "همه",
@@ -1173,32 +1173,6 @@
         "done": "انجام",
         "targetLibrary": "صندوق مقصد"
     },
-    "starView": {
-        "noNotes": "یادداشتی برای نمایش وجود ندارد",
-        "controls": {
-            "title": "تنظیمات گراف",
-            "reset": "بازنشانی به پیش‌فرض",
-            "filters": "فیلترها",
-            "searchPlaceholder": "جستجوی فایل‌ها...",
-            "tags": "برچسب‌ها",
-            "attachments": "پیوست‌ها",
-            "existingOnly": "فقط فایل‌های موجود",
-            "orphans": "یادداشت‌های منزوی",
-            "groups": "گروه‌ها",
-            "newGroup": "گروه جدید",
-            "display": "نمایش",
-            "arrows": "فلش‌ها",
-            "textFade": "آستانه محو شدن متن",
-            "nodeSize": "اندازه گره",
-            "linkThickness": "ضخامت لینک",
-            "animate": "متحرک‌سازی",
-            "forces": "نیروها",
-            "centerForce": "نیروی مرکزی",
-            "repelForce": "نیروی دافعه",
-            "linkForce": "نیروی لینک",
-            "linkDistance": "فاصله لینک"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1471,5 +1445,31 @@
         "property": "خ",
         "wikilink": "پ",
         "semantic": "م"
+    },
+    "skyView": {
+        "noNotes": "یادداشتی برای نمایش وجود ندارد",
+        "controls": {
+            "title": "تنظیمات گراف",
+            "reset": "بازنشانی به پیش‌فرض",
+            "filters": "فیلترها",
+            "searchPlaceholder": "جستجوی فایل‌ها...",
+            "tags": "برچسب‌ها",
+            "attachments": "پیوست‌ها",
+            "existingOnly": "فقط فایل‌های موجود",
+            "orphans": "یادداشت‌های منزوی",
+            "groups": "گروه‌ها",
+            "newGroup": "گروه جدید",
+            "display": "نمایش",
+            "arrows": "فلش‌ها",
+            "textFade": "آستانه محو شدن متن",
+            "nodeSize": "اندازه گره",
+            "linkThickness": "ضخامت لینک",
+            "animate": "متحرک‌سازی",
+            "forces": "نیروها",
+            "centerForce": "نیروی مرکزی",
+            "repelForce": "نیروی دافعه",
+            "linkForce": "نیروی لینک",
+            "linkDistance": "فاصله لینک"
+        }
     }
 }

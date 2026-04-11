@@ -286,7 +286,26 @@
       "Bash(sed -i 's/\"addLibrary\": \"Add library\"/\"addLibrary\": \"Add library\",\\\\n        \"newLibrary\": \"New library\"/' en.json)",
       "Bash(sed -i 's/\"addLibrary\": \"إضافة مكتبة\"/\"addLibrary\": \"إضافة مكتبة\",\\\\n        \"newLibrary\": \"مكتبة جديدة\"/' ar.json)",
       "Bash(sed -i 's/\"addLibrary\": \"Add library\"/\"addLibrary\": \"Add library\",\\\\n        \"newLibrary\": \"New library\"/' __TRACKED_VAR__.json)",
-      "Bash(find \"E:\\\\مشاريع كلاود\\\\Constellation\" -type f \\\\\\( -name \"*.rs\" -o -name \"*.ts\" -o -name \"*.js\" \\\\\\) -exec grep -l \"constellation_search_universal\" {} \\\\;)"
+      "Bash(find \"E:\\\\مشاريع كلاود\\\\Constellation\" -type f \\\\\\( -name \"*.rs\" -o -name \"*.ts\" -o -name \"*.js\" \\\\\\) -exec grep -l \"constellation_search_universal\" {} \\\\;)",
+      "Bash(tasklist)",
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")",
+      "Bash(grep -l \"useCanonical\" src/lib/i18n/*.json)",
+      "Bash(cp src-tauri/src/canonical.rs ConstellationEditor/src-tauri/src/canonical.rs)",
+      "Bash(cp src-tauri/src/file_kinds.rs ConstellationEditor/src-tauri/src/file_kinds.rs)",
+      "Bash(grep -l \"migrationTitle\" src/lib/i18n/*.json)",
+      "Bash(grep -l \"choiceTitle\" src/lib/i18n/*.json)",
+      "Bash(grep -l \"searchOps\" src/lib/i18n/*.json)",
+      "WebFetch(domain:www.iamcal.com)",
+      "WebFetch(domain:thetexttool.com)",
+      "WebFetch(domain:terminal-wg.pages.freedesktop.org)",
+      "WebFetch(domain:www.unicode.org)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "Bash(grep -v 'i18n\\\\|$t\\(')",
+      "Bash(sed -i 's/$t\\('\\\\''starView\\\\./$t\\('\\\\''skyView./g' src/lib/components/StarView.svelte)",
+      "Bash(sed -i 's/$t\\('\\\\''panels\\\\.starView'\\\\''\\)/$t\\('\\\\''panels.skyView'\\\\''\\)/g' src/lib/components/SecondScreenPage.svelte)",
+      "Bash(mv src/lib/components/StarView.svelte src/lib/components/SkyView.svelte)",
+      "Bash(mv src/lib/components/FullStarView.svelte src/lib/components/FullSkyView.svelte)",
+      "Bash(mv src/lib/components/LocalStarView.svelte src/lib/components/LocalSkyView.svelte)"
     ]
   }
 }

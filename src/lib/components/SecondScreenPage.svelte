@@ -14,10 +14,10 @@
 		writeNote, markRecentWrite, wasRecentlyWritten, setWriteAhead, clearWriteAhead,
 		renameItem,
 		scanLibraryLinks, scanLibraryTags,
-		buildStarData,
+		buildSkyData,
 		libraryStats, loadAllStats,
 		SCRIPT_UNICODE_RANGES, getFontSetById,
-		type StarNode, type StarLink
+		type SkyNode, type SkyLink
 	} from '$lib/libraries/store';
 	import { detectDir } from '$lib/utils';
 	import { scanNoteTasks, toggleTask } from '$lib/tasks/store';
@@ -30,7 +30,7 @@
 	import DashboardView from '$lib/components/DashboardView.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
-	import LocalStarView from '$lib/components/LocalStarView.svelte';
+	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
 	import {
 		onNoteToScreen, onNoteSaved, onUniverseSwitch, onSettingsChanged,
 		onStateRequest, onWorkspaceRestore,
@@ -98,8 +98,8 @@
 	let epForwardLinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let epTags = $state<string[]>([]);
 	let epProperties = $state<{ key: string; value: any }[]>([]);
-	let epLocalStarNodes = $state<StarNode[]>([]);
-	let epLocalStarLinks = $state<StarLink[]>([]);
+	let epLocalSkyNodes = $state<SkyNode[]>([]);
+	let epLocalSkyLinks = $state<SkyLink[]>([]);
 	let epTasks = $state<TaskItem[]>([]);
 
 	// Split companion — comparison panel data for all notes
@@ -112,8 +112,8 @@
 		forwardLinks: { name: string; path: string; libraryName: string }[];
 		tags: string[];
 		properties: { key: string; value: any }[];
-		localStarNodes: StarNode[];
-		localStarLinks: StarLink[];
+		localSkyNodes: SkyNode[];
+		localSkyLinks: SkyLink[];
 		tasks: TaskItem[];
 	}
 	let scPanels = $state<SplitPanelEntry[]>([]);
@@ -227,8 +227,8 @@
 	let skyviewBacklinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let skyviewForwardLinks = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let skyviewTags = $state<string[]>([]);
-	let skyviewLocalNodes = $state<StarNode[]>([]);
-	let skyviewLocalLinks = $state<StarLink[]>([]);
+	let skyviewLocalNodes = $state<SkyNode[]>([]);
+	let skyviewLocalLinks = $state<SkyLink[]>([]);
 	let skyviewGeneration = 0;
 
 	// Navigation history for sky view companion
@@ -307,7 +307,7 @@
 					})
 					.filter(Boolean) as { name: string; path: string; libraryName: string }[];
 
-				const { nodes: sn, links: sl } = buildStarData(links, allNotes.map(n => ({
+				const { nodes: sn, links: sl } = buildSkyData(links, allNotes.map(n => ({
 					id: n.name.replace(/\.md$/, '').toLowerCase(),
 					name: n.name,
 					path: n.path,
@@ -389,7 +389,7 @@
 	async function loadEditorPanelsData(data: EditorPanelsData) {
 		if (!data.notePath || !data.libraryPath) {
 			epBacklinks = []; epForwardLinks = []; epTags = []; epProperties = [];
-			epLocalStarNodes = []; epLocalStarLinks = [];
+			epLocalSkyNodes = []; epLocalSkyLinks = [];
 			return;
 		}
 		try {
@@ -428,16 +428,16 @@
 				.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
 
 			// Local star
-			const { nodes, links: starLinks } = buildStarData(links, allNotes);
+			const { nodes, links: skyLinks } = buildSkyData(links, allNotes);
 			const connectedIds = new Set<string>([noteName]);
-			for (const link of starLinks) {
+			for (const link of skyLinks) {
 				if (link.source === noteName || link.target === noteName) {
 					connectedIds.add(link.source);
 					connectedIds.add(link.target);
 				}
 			}
-			epLocalStarNodes = nodes.filter(n => connectedIds.has(n.id));
-			epLocalStarLinks = starLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
+			epLocalSkyNodes = nodes.filter(n => connectedIds.has(n.id));
+			epLocalSkyLinks = skyLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
 		// Tasks
 			if (data.notePath && data.libraryPath) {
 				const taskResult = await scanNoteTasks(data.notePath, data.libraryName || '', data.libraryPath).catch(() => null);
@@ -448,7 +448,7 @@
 		} catch (e) {
 			console.error('[SS] loadEditorPanelsData failed:', e);
 			epBacklinks = []; epForwardLinks = []; epTags = []; epProperties = [];
-			epLocalStarNodes = []; epLocalStarLinks = []; epTasks = [];
+			epLocalSkyNodes = []; epLocalSkyLinks = []; epTasks = [];
 		}
 	}
 
@@ -462,7 +462,7 @@
 				notePath: note.notePath, noteName: note.noteName,
 				libraryName: note.libraryName, libraryPath: note.libraryPath,
 				backlinks: [], forwardLinks: [], tags: [], properties: [],
-				localStarNodes: [], localStarLinks: [], tasks: [],
+				localSkyNodes: [], localSkyLinks: [], tasks: [],
 			};
 			try {
 				const lib = $libraries.find(l => l.name === note.libraryName);
@@ -494,13 +494,13 @@
 					.filter(l => l.path)
 					.filter((v, i, a) => a.findIndex(x => x.path === v.path) === i);
 
-				const { nodes, links: starLinks } = buildStarData(links, allNotes);
+				const { nodes, links: skyLinks } = buildSkyData(links, allNotes);
 				const connectedIds = new Set<string>([noteName]);
-				for (const link of starLinks) {
+				for (const link of skyLinks) {
 					if (link.source === noteName || link.target === noteName) { connectedIds.add(link.source); connectedIds.add(link.target); }
 				}
-				entry.localStarNodes = nodes.filter(n => connectedIds.has(n.id));
-				entry.localStarLinks = starLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
+				entry.localSkyNodes = nodes.filter(n => connectedIds.has(n.id));
+				entry.localSkyLinks = skyLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
 
 				const taskResult = await scanNoteTasks(note.notePath, note.libraryName || '', libraryPath).catch(() => null);
 				entry.tasks = taskResult?.tasks ?? [];
@@ -1226,7 +1226,7 @@
 						{ id: 'properties', icon: '⚙', label: $t('panels.properties') || 'Properties' },
 						{ id: 'backlinks', icon: '🔗', label: $t('panels.backlinks') || 'Backlinks' },
 						{ id: 'tags', icon: '🏷', label: $t('panels.tags') || 'Tags' },
-						{ id: 'star', icon: '', label: $t('panels.starView') || 'Sky View' },
+						{ id: 'star', icon: '', label: $t('panels.skyView') || 'Sky View' },
 						{ id: 'tasks', icon: '☑', label: $t('panels.tasks') || 'Tasks' },
 					] as tab}
 						<button class="sc-tab" class:active={splitCompanionTab === tab.id}
@@ -1301,10 +1301,10 @@
 									{/if}
 								{:else if splitCompanionTab === 'star'}
 									<div class="sc-star-panel">
-										{#if panel.localStarNodes.length > 0}
-											<LocalStarView
-												nodes={panel.localStarNodes}
-												links={panel.localStarLinks}
+										{#if panel.localSkyNodes.length > 0}
+											<LocalSkyView
+												nodes={panel.localSkyNodes}
+												links={panel.localSkyLinks}
 												activeNodeId={panel.noteName.replace(/\.md$/, '').toLowerCase()}
 												onNodeClick={(id) => {
 													const note = allNotes.find(n => n.name.toLowerCase() === id);
@@ -1357,7 +1357,7 @@
 						{ id: 'properties', icon: '⚙', label: $t('panels.properties') || 'Properties' },
 						{ id: 'backlinks', icon: '🔗', label: $t('panels.backlinks') || 'Backlinks' },
 						{ id: 'tags', icon: '🏷', label: $t('panels.tags') || 'Tags' },
-						{ id: 'star', icon: '', label: $t('panels.starView') || 'Sky View' },
+						{ id: 'star', icon: '', label: $t('panels.skyView') || 'Sky View' },
 						{ id: 'tasks', icon: '☑', label: $t('panels.tasks') || 'Tasks' },
 					] as tab}
 						<button class="sc-tab" class:active={editorPanelsTab === tab.id}
@@ -1432,10 +1432,10 @@
 							</div>
 						{:else if editorPanelsTab === 'star'}
 							<div class="sc-panel sc-star-panel">
-								{#if epLocalStarNodes.length > 0}
-									<LocalStarView
-										nodes={epLocalStarNodes}
-										links={epLocalStarLinks}
+								{#if epLocalSkyNodes.length > 0}
+									<LocalSkyView
+										nodes={epLocalSkyNodes}
+										links={epLocalSkyLinks}
 										activeNodeId={editorPanelsData.noteName?.replace(/\.md$/, '').toLowerCase() || ''}
 										onNodeClick={(id) => {
 											const note = allNotes.find(n => n.name.toLowerCase() === id);
@@ -1586,7 +1586,7 @@
 
 						{#if skyviewLocalNodes.length > 0}
 							<div class="skyview-graph">
-								<LocalStarView
+								<LocalSkyView
 									nodes={skyviewLocalNodes}
 									links={skyviewLocalLinks}
 									activeNodeId={skyviewNode.name.replace(/\.md$/, '').toLowerCase()}

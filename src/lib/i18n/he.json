@@ -362,7 +362,7 @@
         "addLibrary": "הוסף כספת",
         "searchLibrary": "חפש בכספת",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "סקור פתקים שהגיע מועדם",
         "openTrail": "פתח שביל",
         "openLens": "החלף עדשה",
@@ -451,8 +451,8 @@
         "skills": "כישורים",
         "graphViewTitle": "תצוגת גרף",
         "pinned": "מוצמד",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "לחץ על פתק בסרגל הצד כדי לראות את הקשרים שלו",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "לחץ על פתק בסרגל הצד כדי לראות את הקשרים שלו",
         "clickToStart": "לחץ כאן כדי להתחיל",
         "search": "חיפוש..."
     },
@@ -485,11 +485,11 @@
         "tasksHeader": "משימות",
         "calendar": "לוח שנה",
         "calendarHeader": "לוח שנה",
-        "starView": "Sky View",
         "health": "בריאות ידע",
         "provenance": "מקור",
         "review": "פולס סקירה",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "הכל",
@@ -1173,32 +1173,6 @@
         "noLibraries": "אין כספות רשומות",
         "openLibrary": "+ פתח כספת"
     },
-    "starView": {
-        "noNotes": "אין פתקים להצגה",
-        "controls": {
-            "title": "הגדרות גרף",
-            "reset": "איפוס לברירות מחדל",
-            "filters": "מסננים",
-            "searchPlaceholder": "חיפוש קבצים...",
-            "tags": "תגיות",
-            "attachments": "קבצים מצורפים",
-            "existingOnly": "קבצים קיימים בלבד",
-            "orphans": "פתקים מבודדים",
-            "groups": "קבוצות",
-            "newGroup": "קבוצה חדשה",
-            "display": "תצוגה",
-            "arrows": "חיצים",
-            "textFade": "סף דהיית טקסט",
-            "nodeSize": "גודל צומת",
-            "linkThickness": "עובי קישור",
-            "animate": "הנפשה",
-            "forces": "כוחות",
-            "centerForce": "כוח מרכוז",
-            "repelForce": "כוח דחייה",
-            "linkForce": "כוח קישור",
-            "linkDistance": "מרחק קישור"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1471,5 +1445,31 @@
         "property": "מ",
         "wikilink": "ק",
         "semantic": "ס"
+    },
+    "skyView": {
+        "noNotes": "אין פתקים להצגה",
+        "controls": {
+            "title": "הגדרות גרף",
+            "reset": "איפוס לברירות מחדל",
+            "filters": "מסננים",
+            "searchPlaceholder": "חיפוש קבצים...",
+            "tags": "תגיות",
+            "attachments": "קבצים מצורפים",
+            "existingOnly": "קבצים קיימים בלבד",
+            "orphans": "פתקים מבודדים",
+            "groups": "קבוצות",
+            "newGroup": "קבוצה חדשה",
+            "display": "תצוגה",
+            "arrows": "חיצים",
+            "textFade": "סף דהיית טקסט",
+            "nodeSize": "גודל צומת",
+            "linkThickness": "עובי קישור",
+            "animate": "הנפשה",
+            "forces": "כוחות",
+            "centerForce": "כוח מרכוז",
+            "repelForce": "כוח דחייה",
+            "linkForce": "כוח קישור",
+            "linkDistance": "מרחק קישור"
+        }
     }
 }

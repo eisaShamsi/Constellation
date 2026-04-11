@@ -362,7 +362,7 @@
         "addLibrary": "خزانہ شامل کریں",
         "searchLibrary": "خزانے میں تلاش",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "واجب الاداء نوٹس کا جائزہ",
         "openTrail": "پگڈنڈی کھولیں",
         "openLens": "لینز تبدیل کریں",
@@ -451,8 +451,8 @@
         "skills": "مہارتیں",
         "graphViewTitle": "گراف ویو",
         "pinned": "پن کیا گیا",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "سائیڈ بار میں نوٹ کلک کریں اس کے روابط دیکھنے کے لیے",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "سائیڈ بار میں نوٹ کلک کریں اس کے روابط دیکھنے کے لیے",
         "clickToStart": "شروع کرنے کے لیے کلک کریں",
         "search": "تلاش..."
     },
@@ -485,11 +485,11 @@
         "tasksHeader": "کام",
         "calendar": "کیلنڈر",
         "calendarHeader": "کیلنڈر",
-        "starView": "Sky View",
         "health": "علم کی صحت",
         "provenance": "اسناد",
         "review": "جائزہ نبض",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "سب",
@@ -1173,32 +1173,6 @@
         "noLibraries": "کوئی والٹ رجسٹرڈ نہیں",
         "openLibrary": "+ والٹ کھولیں"
     },
-    "starView": {
-        "noNotes": "دکھانے کے لیے کوئی نوٹس نہیں",
-        "controls": {
-            "title": "گراف کی ترتیبات",
-            "reset": "ڈیفالٹ پر ری سیٹ کریں",
-            "filters": "فلٹرز",
-            "searchPlaceholder": "فائلیں تلاش کریں...",
-            "tags": "ٹیگز",
-            "attachments": "منسلکات",
-            "existingOnly": "صرف موجود فائلیں",
-            "orphans": "یتیم نوٹس",
-            "groups": "گروپس",
-            "newGroup": "نیا گروپ",
-            "display": "ڈسپلے",
-            "arrows": "تیر",
-            "textFade": "متن کی دھندلاہٹ کی حد",
-            "nodeSize": "نوڈ کا سائز",
-            "linkThickness": "لنک کی موٹائی",
-            "animate": "متحرک",
-            "forces": "قوتیں",
-            "centerForce": "مرکزی قوت",
-            "repelForce": "دھکیلنے کی قوت",
-            "linkForce": "لنک کی قوت",
-            "linkDistance": "لنک کی دوری"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1471,5 +1445,31 @@
         "property": "خ",
         "wikilink": "ر",
         "semantic": "د"
+    },
+    "skyView": {
+        "noNotes": "دکھانے کے لیے کوئی نوٹس نہیں",
+        "controls": {
+            "title": "گراف کی ترتیبات",
+            "reset": "ڈیفالٹ پر ری سیٹ کریں",
+            "filters": "فلٹرز",
+            "searchPlaceholder": "فائلیں تلاش کریں...",
+            "tags": "ٹیگز",
+            "attachments": "منسلکات",
+            "existingOnly": "صرف موجود فائلیں",
+            "orphans": "یتیم نوٹس",
+            "groups": "گروپس",
+            "newGroup": "نیا گروپ",
+            "display": "ڈسپلے",
+            "arrows": "تیر",
+            "textFade": "متن کی دھندلاہٹ کی حد",
+            "nodeSize": "نوڈ کا سائز",
+            "linkThickness": "لنک کی موٹائی",
+            "animate": "متحرک",
+            "forces": "قوتیں",
+            "centerForce": "مرکزی قوت",
+            "repelForce": "دھکیلنے کی قوت",
+            "linkForce": "لنک کی قوت",
+            "linkDistance": "لنک کی دوری"
+        }
     }
 }

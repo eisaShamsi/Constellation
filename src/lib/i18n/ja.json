@@ -362,7 +362,7 @@
         "addLibrary": "保管庫を追加",
         "searchLibrary": "保管庫を検索",
         "quickCapture": "Quick Capture",
-        "starView": "Sky View",
+        "skyView": "Sky View",
         "reviewDueNotes": "期限のノートを確認",
         "openTrail": "トレイルを開く",
         "openLens": "レンズ切替",
@@ -451,8 +451,8 @@
         "skills": "スキル",
         "graphViewTitle": "グラフビュー",
         "pinned": "ピン留め",
-        "starViewTitle": "Sky View",
-        "starViewWiWHint": "サイドバーのノートをクリックして接続を表示",
+        "skyViewTitle": "Sky View",
+        "skyViewWiWHint": "サイドバーのノートをクリックして接続を表示",
         "clickToStart": "クリックして開始",
         "search": "検索..."
     },
@@ -485,11 +485,11 @@
         "tasksHeader": "タスク",
         "calendar": "カレンダー",
         "calendarHeader": "カレンダー",
-        "starView": "Sky View",
         "health": "知識の健全性",
         "provenance": "来歴",
         "review": "レビューパルス",
-        "inspector360": "360.3D"
+        "inspector360": "360.3D",
+        "skyView": "Sky View"
     },
     "tasksPanel": {
         "all": "すべて",
@@ -1173,32 +1173,6 @@
         "noLibraries": "登録されたボールトがありません",
         "openLibrary": "+ ボールトを開く"
     },
-    "starView": {
-        "noNotes": "表示するノートがありません",
-        "controls": {
-            "title": "グラフ設定",
-            "reset": "デフォルトにリセット",
-            "filters": "フィルター",
-            "searchPlaceholder": "ファイルを検索...",
-            "tags": "タグ",
-            "attachments": "添付ファイル",
-            "existingOnly": "既存のファイルのみ",
-            "orphans": "孤立ノート",
-            "groups": "グループ",
-            "newGroup": "新しいグループ",
-            "display": "表示",
-            "arrows": "矢印",
-            "textFade": "テキストフェードしきい値",
-            "nodeSize": "ノードサイズ",
-            "linkThickness": "リンクの太さ",
-            "animate": "アニメーション",
-            "forces": "力",
-            "centerForce": "中心力",
-            "repelForce": "反発力",
-            "linkForce": "リンク力",
-            "linkDistance": "リンク距離"
-        }
-    },
     "nav": {
         "home": "Home",
         "libraries": "Libraries",
@@ -1471,5 +1445,31 @@
         "property": "属",
         "wikilink": "鏈",
         "semantic": "意"
+    },
+    "skyView": {
+        "noNotes": "表示するノートがありません",
+        "controls": {
+            "title": "グラフ設定",
+            "reset": "デフォルトにリセット",
+            "filters": "フィルター",
+            "searchPlaceholder": "ファイルを検索...",
+            "tags": "タグ",
+            "attachments": "添付ファイル",
+            "existingOnly": "既存のファイルのみ",
+            "orphans": "孤立ノート",
+            "groups": "グループ",
+            "newGroup": "新しいグループ",
+            "display": "表示",
+            "arrows": "矢印",
+            "textFade": "テキストフェードしきい値",
+            "nodeSize": "ノードサイズ",
+            "linkThickness": "リンクの太さ",
+            "animate": "アニメーション",
+            "forces": "力",
+            "centerForce": "中心力",
+            "repelForce": "反発力",
+            "linkForce": "リンク力",
+            "linkDistance": "リンク距離"
+        }
     }
 }

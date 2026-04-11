@@ -2,16 +2,16 @@
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { createNote, writeNote, buildFullContent } from '$lib/libraries/store';
-	import type { StarNode } from '$lib/libraries/store';
+	import type { SkyNode } from '$lib/libraries/store';
 
 	let {
-		notes = [] as StarNode[],
+		notes = [] as SkyNode[],
 		activeTrail = null as any,
 		libraryPath = '',
 		libraryName = '',
 		onClose,
 	}: {
-		notes?: StarNode[];
+		notes?: SkyNode[];
 		activeTrail?: any;
 		libraryPath?: string;
 		libraryName?: string;
@@ -84,7 +84,7 @@
 		} catch {}
 	}
 
-	async function addNote(note: StarNode) {
+	async function addNote(note: SkyNode) {
 		// Don't add duplicates
 		if (blocks.some(b => b.notePath === note.path)) return;
 		const block: ForgeBlock = {

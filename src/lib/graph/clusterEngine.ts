@@ -395,7 +395,7 @@ export interface CommunityProfile {
 
 /**
  * Build rich profiles for each community — maturity, provenance, stratum.
- * Uses CE Layer 1 data already on StarNode objects.
+ * Uses CE Layer 1 data already on SkyNode objects.
  */
 export function buildCommunityProfiles(
 	clusters: ClusterInfo[],

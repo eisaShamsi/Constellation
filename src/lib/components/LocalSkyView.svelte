@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 
-	interface StarNode {
+	interface SkyNode {
 		id: string;
 		name: string;
 		path: string;
@@ -9,7 +9,7 @@
 		linkCount: number;
 	}
 
-	interface StarLink {
+	interface SkyLink {
 		source: string;
 		target: string;
 	}
@@ -20,8 +20,8 @@
 		activeNodeId = '',
 		onNodeClick,
 	}: {
-		nodes: StarNode[];
-		links: StarLink[];
+		nodes: SkyNode[];
+		links: SkyLink[];
 		activeNodeId?: string;
 		onNodeClick: (id: string) => void;
 	} = $props();
@@ -29,9 +29,9 @@
 	let containerEl: HTMLDivElement;
 	let canvasEl: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D | null = null;
-	let nodePositions: { node: StarNode; x: number; y: number; r: number }[] = [];
+	let nodePositions: { node: SkyNode; x: number; y: number; r: number }[] = [];
 	let resizeObserver: ResizeObserver | null = null;
-	let hoveredNode: StarNode | null = null;
+	let hoveredNode: SkyNode | null = null;
 
 	const LIBRARY_COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16'];
 	let libraryColorMap = new Map<string, string>();
@@ -158,7 +158,7 @@
 		const x = e.clientX - rect.left;
 		const y = e.clientY - rect.top;
 
-		let found: StarNode | null = null;
+		let found: SkyNode | null = null;
 		for (const pos of nodePositions) {
 			const dx = x - pos.x;
 			const dy = y - pos.y;
