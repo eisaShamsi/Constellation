@@ -683,20 +683,13 @@
 	});
 
 	/* ─── Title ─── */
-	function generateAutoTitle(): string {
-		const now = new Date();
-		const yyyy = now.getUTCFullYear();
-		const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
-		const dd = String(now.getUTCDate()).padStart(2, '0');
-		const hh = String(now.getUTCHours()).padStart(2, '0');
-		const min = String(now.getUTCMinutes()).padStart(2, '0');
-		const ss = String(now.getUTCSeconds()).padStart(2, '0');
-		const suffix = Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
-		return `${yyyy}${mm}${dd}T${hh}${min}${ss}Z_NOTE_${suffix}`;
-	}
 	function handleTitleBlur() {
 		const trimmed = titleValue.trim();
-		if (!trimmed) titleValue = generateAutoTitle();
+		if (!trimmed) {
+			// Restore the original title — never generate a new one.
+			// The title comes from the filename (compatible mode) or frontmatter (canonical mode).
+			titleValue = title || filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') || $t('actions.untitled');
+		}
 		if (titleValue !== title) ontitlechange?.(titleValue);
 	}
 	function handleTitleKeydown(e: KeyboardEvent) {
