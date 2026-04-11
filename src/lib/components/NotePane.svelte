@@ -685,12 +685,14 @@
 	/* ─── Title ─── */
 	function generateAutoTitle(): string {
 		const now = new Date();
-		const dd = String(now.getDate()).padStart(2, '0');
-		const mm = String(now.getMonth() + 1).padStart(2, '0');
-		const yyyy = now.getFullYear();
-		const hh = String(now.getHours()).padStart(2, '0');
-		const min = String(now.getMinutes()).padStart(2, '0');
-		return `CoNote${dd}${mm}${yyyy}.${hh}:${min}`;
+		const yyyy = now.getUTCFullYear();
+		const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+		const dd = String(now.getUTCDate()).padStart(2, '0');
+		const hh = String(now.getUTCHours()).padStart(2, '0');
+		const min = String(now.getUTCMinutes()).padStart(2, '0');
+		const ss = String(now.getUTCSeconds()).padStart(2, '0');
+		const suffix = Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+		return `${yyyy}${mm}${dd}T${hh}${min}${ss}Z_NOTE_${suffix}`;
 	}
 	function handleTitleBlur() {
 		const trimmed = titleValue.trim();
