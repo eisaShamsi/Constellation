@@ -420,12 +420,14 @@
 	let searchDebounce: ReturnType<typeof setTimeout>;
 	let searchMatches = $state<{ name: string; match_type: string; path: string; libraryName: string }[]>([]);
 	let searchTotalHits = $state(0);
+	let searchCategoryCounts = $state<Record<string, number>>({});
+	let showCategoryBreakdown = $state(false);
 	$effect(() => {
 		const q = searchQuery;
 		if (q !== prevSearch) {
 			prevSearch = q;
 			engine?.setSearch(q); // instant client-side name filter
-			if (!q.trim()) { searchMatches = []; searchTotalHits = 0; engine?.clearSearchBadges(); }
+			if (!q.trim()) { searchMatches = []; searchTotalHits = 0; searchCategoryCounts = {}; showCategoryBreakdown = false; engine?.clearSearchBadges(); }
 			else { setTimeout(() => engine?.renderSearchBadges(), 50); }
 			// Also fire advanced search for content/structured/semantic matches (async)
 			clearTimeout(searchDebounce);
@@ -469,9 +471,11 @@
 								['properties', 'property'], ['wikilinks', 'wikilink'], ['semantic', 'semantic'],
 							];
 							let totalHits = 0;
+							const catCounts: Record<string, number> = {};
 							for (const [cat, mt] of categoryTypes) {
 								const items = (resp as any)[cat] ?? [];
 								totalHits += items.length;
+								if (items.length > 0) catCounts[cat] = items.length;
 								for (const r of items) {
 									const id = r.name.toLowerCase();
 									allIds.add(id);
@@ -483,6 +487,7 @@
 								}
 							}
 							searchTotalHits = totalHits;
+							searchCategoryCounts = catCounts;
 
 						}
 
@@ -655,7 +660,22 @@
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
 						</button>
 						{#if searchMatches.length > 0}
-							<span class="gm-search-count">{searchTotalHits || searchMatches.length}{#if searchTotalHits > searchMatches.length}<span style="font-weight:400;opacity:0.7"> {$t('searchHub.from')} {searchMatches.length} {$t('searchHub.notes')}</span>{/if}</span>
+							<button class="gm-search-count" onclick={() => showCategoryBreakdown = !showCategoryBreakdown}>
+								{searchTotalHits || searchMatches.length}{#if searchTotalHits > searchMatches.length}<span style="font-weight:400;opacity:0.7"> {$t('searchHub.from')} {searchMatches.length} {$t('searchHub.notes')}</span>{/if}
+							</button>
+							{#if showCategoryBreakdown && Object.keys(searchCategoryCounts).length > 0}
+								<div class="gm-cat-dropdown">
+									{#each Object.entries(searchCategoryCounts) as [cat, count]}
+										{@const colors: Record<string, string> = { titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed' }}
+										{@const icons: Record<string, string> = { titles: 'T', contents: 'C', tags: '#', properties: 'P', wikilinks: 'W', semantic: 'S' }}
+										<div class="gm-cat-row">
+											<span class="gm-cat-badge" style:background={colors[cat] ?? '#94a3b8'}>{icons[cat] ?? '?'}</span>
+											<span class="gm-cat-name">{$t(`searchHub.${cat}`)}</span>
+											<span class="gm-cat-num">{count}</span>
+										</div>
+									{/each}
+								</div>
+							{/if}
 						{/if}
 						<button class="gm-search-close" onclick={() => { searchVisible = false; searchQuery = ''; }}>×</button>
 					</div>
@@ -1051,6 +1071,46 @@
 		font-size: 0.68rem; color: var(--interactive-accent); font-weight: 600;
 		background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
 		padding: 1px 6px; border-radius: 8px; flex-shrink: 0;
+		border: none; cursor: pointer; position: relative;
+	}
+	.gm-search-count:hover { filter: brightness(1.1); }
+	.gm-cat-dropdown {
+		position: absolute;
+		top: 100%;
+		inset-inline-end: 0;
+		margin-top: 4px;
+		background: var(--background-primary, #fff);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px;
+		padding: 6px 0;
+		min-width: 180px;
+		box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+		z-index: 100;
+	}
+	.gm-cat-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 4px 12px;
+		font-size: 0.78rem;
+	}
+	.gm-cat-badge {
+		width: 18px; height: 18px;
+		display: flex; align-items: center; justify-content: center;
+		border-radius: 3px;
+		color: white;
+		font-size: 0.65rem;
+		font-weight: 700;
+		flex-shrink: 0;
+	}
+	.gm-cat-name {
+		flex: 1;
+		color: var(--text-normal);
+	}
+	.gm-cat-num {
+		font-weight: 600;
+		color: var(--text-muted);
+		font-size: 0.72rem;
 	}
 	/* Chips */
 	.gm-chips {
