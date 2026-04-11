@@ -68,6 +68,26 @@ Canonical filenames redesigned for user choice and safety:
 - Test 2 (link external folder, keep intact): PASS ✅
 - Title clear restores original, cid preserves original date: PASS ✅
 
+### Multilingual Natural Language Search Operators (commits `87f823c` → `79cf3e9`)
+**A PKM first — no other system does this.**
+
+Architecture (Excel/LibreOffice pattern):
+- `canonicalizeSearchQuery()` — pre-processes input, replaces localized operators with English
+- `hasAdvancedSyntaxMultilingual()` — detects operators in any language
+- `getSearchOps()` — returns current locale's operator map from i18n
+- Unicode-aware regex with `\p{L}` boundaries (not `\b`)
+- English always works as fallback in any locale
+
+Operators translated in all 15 locales: linksTo, linksFrom, mutual, mentions, orphans, linksBetween, linksAll, and, scope
+
+Arabic terminology (user-refined):
+- الربط إلى (links to), الربط من (links from)
+- الروابط البينية (links between), جميع الروابط (links all)
+- متبادل (mutual), يذكر (mentions), يتيم (orphans)
+
+Syntax chips localized — show operators in user's language.
+SearchHub + Sky View both wired with canonicalization.
+
 ### Open Items
 - Frontmatter parser unification (3 parsers → 1 shared) — tracked for future
 - Vec batch streaming in canonicalize_execute for 100K+ file vaults — optimization
