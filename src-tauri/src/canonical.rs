@@ -572,6 +572,111 @@ pub fn canonicalize_execute(
     Ok(result)
 }
 
+/// Auto-canonicalize all non-canonical files across all libraries in the active universe.
+/// Called on startup — skips files that are already canonical.
+/// Returns total files renamed across all libraries.
+#[tauri::command]
+pub fn auto_canonicalize_all(app: tauri::AppHandle) -> Result<CanonicalizeResult, String> {
+    let libraries = crate::libraries::load_all_libraries(&app);
+    let config_path = crate::universe::active_constellation_dir(&app)
+        .map(|d| d.join("file_kinds.json"))
+        .ok();
+    let mut registry = KindRegistry::new(config_path.as_deref());
+
+    let mut total = CanonicalizeResult {
+        total_files: 0,
+        renamed: 0,
+        sidecars_created: 0,
+        errors: Vec::new(),
+        rename_map: HashMap::new(),
+    };
+
+    for lib in &libraries {
+        let lib_path = Path::new(&lib.path);
+        if !lib_path.is_dir() { continue; }
+
+        let files = collect_files_recursive(lib_path);
+        for file_path in &files {
+            // Skip already canonical files
+            if is_canonical_filename(file_path) { continue; }
+            // Skip .meta.json sidecars
+            if file_path.to_string_lossy().ends_with(".meta.json") { continue; }
+
+            let kind = crate::file_kinds::classify_file(file_path, &mut registry);
+            let created = file_creation_time(file_path);
+            let ext = file_path.extension()
+                .map(|e| e.to_string_lossy().to_string())
+                .unwrap_or_else(|| "bin".to_string());
+
+            let parent = file_path.parent().unwrap_or(lib_path);
+            let canonical = generate_canonical(&kind, &created, &ext, Some(parent));
+            let new_path = parent.join(&canonical.full);
+
+            let original_name = file_path.file_stem()
+                .unwrap_or_default().to_string_lossy().to_string();
+            let original_filename = file_path.file_name()
+                .unwrap_or_default().to_string_lossy().to_string();
+
+            let ext_lower = ext.to_lowercase();
+            if ext_lower == "md" || ext_lower == "markdown" {
+                match fs::read_to_string(file_path) {
+                    Ok(content) => {
+                        let fields = FrontmatterFields {
+                            title: original_name.clone(),
+                            cid: canonical.stem.clone(),
+                            kind: kind.to_lowercase(),
+                            created: created.to_rfc3339(),
+                            aliases: vec![original_name.clone()],
+                            original_filename: Some(original_filename),
+                        };
+                        let enriched = inject_frontmatter(&content, &fields);
+                        if let Err(e) = fs::write(&new_path, enriched) {
+                            total.errors.push(format!("{}: write: {}", file_path.display(), e));
+                            continue;
+                        }
+                        let _ = fs::remove_file(file_path);
+                        total.renamed += 1;
+                    }
+                    Err(e) => { total.errors.push(format!("{}: read: {}", file_path.display(), e)); }
+                }
+            } else {
+                // Non-markdown: rename + sidecar
+                if let Err(e) = fs::rename(file_path, &new_path) {
+                    total.errors.push(format!("{}: rename: {}", file_path.display(), e));
+                    continue;
+                }
+                total.renamed += 1;
+                let sidecar = SidecarMetadata {
+                    title: original_name.clone(),
+                    cid: canonical.stem.clone(),
+                    kind: kind.to_lowercase(),
+                    created: created.to_rfc3339(),
+                    original_filename: original_filename,
+                    aliases: vec![original_name],
+                    referenced_by: Vec::new(),
+                };
+                if let Err(e) = write_sidecar(&new_path, &sidecar) {
+                    total.errors.push(e);
+                } else {
+                    total.sidecars_created += 1;
+                }
+            }
+
+            total.rename_map.insert(
+                file_path.to_string_lossy().to_string(),
+                new_path.to_string_lossy().to_string(),
+            );
+        }
+        total.total_files += files.len();
+    }
+
+    if total.renamed > 0 {
+        eprintln!("[CANONICAL] Auto-canonicalized {} files across {} libraries", total.renamed, libraries.len());
+    }
+
+    Ok(total)
+}
+
 /// Generate a canonical name for a new note (called from the frontend).
 #[tauri::command]
 pub fn generate_canonical_name(

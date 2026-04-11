@@ -62,6 +62,11 @@ export async function canonicalizeExecute(libraryPath: string): Promise<Canonica
 	return invoke<CanonicalizeResult>('canonicalize_execute', { libraryPath });
 }
 
+/** Auto-canonicalize all non-canonical files across all libraries. Called on startup. */
+export async function autoCanonicalize(): Promise<CanonicalizeResult> {
+	return invoke<CanonicalizeResult>('auto_canonicalize_all');
+}
+
 /** Import files with canonical filenames + classification + frontmatter enrichment. */
 export async function importWithCanonical(
 	source: string,

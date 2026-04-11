@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { importPickSource, importPreview, importExecute, importWithCanonical } from '$lib/importers/store';
+	import { importPickSource, importPreview, importWithCanonical } from '$lib/importers/store';
 	import type { ImportFormat, ImportPreview, ImportResult } from '$lib/importers/types';
 
 	let {
@@ -20,7 +20,6 @@
 	let sourcePath = $state('');
 	let targetLibrary = $state(libraries[0]?.path ?? '');
 	let subfolder = $state('Imported');
-	let useCanonical = $state(true);
 	let preview = $state<ImportPreview | null>(null);
 	let result = $state<ImportResult | null>(null);
 	let error = $state('');
@@ -63,11 +62,7 @@
 		loading = true;
 		step = 'importing';
 		try {
-			if (useCanonical) {
-				result = await importWithCanonical(sourcePath, selectedFormat, targetLibrary, subfolder);
-			} else {
-				result = await importExecute(sourcePath, selectedFormat, targetLibrary, subfolder);
-			}
+			result = await importWithCanonical(sourcePath, selectedFormat, targetLibrary, subfolder);
 			step = 'done';
 		} catch (e: any) {
 			error = e?.toString() ?? 'Import failed';
@@ -130,12 +125,7 @@
 					</label>
 				</div>
 
-				<label class="canonical-toggle">
-					<input type="checkbox" bind:checked={useCanonical} />
-					<span class="toggle-label">{$t('importer.useCanonical')}</span>
-					<span class="toggle-desc">{$t('importer.useCanonicalDesc')}</span>
-				</label>
-
+	
 				<div class="importer-actions">
 					<button class="btn-secondary" onclick={onClose}>{$t('common.cancel')}</button>
 					<button class="btn-primary" onclick={pickSource}>{$t('importer.selectSource')}</button>
@@ -348,28 +338,6 @@
 		background: var(--background-primary);
 		color: var(--text-normal);
 		font-size: 0.85rem;
-	}
-
-	.canonical-toggle {
-		display: flex;
-		align-items: flex-start;
-		gap: 8px;
-		margin-bottom: 16px;
-		padding: 10px 12px;
-		border: 1px solid var(--background-modifier-border);
-		border-radius: 8px;
-		cursor: pointer;
-		flex-wrap: wrap;
-	}
-	.canonical-toggle:hover { background: var(--background-secondary); }
-	.canonical-toggle input[type="checkbox"] { margin-top: 2px; }
-	.toggle-label { font-size: 0.85rem; font-weight: 500; }
-	.toggle-desc {
-		width: 100%;
-		font-size: 0.75rem;
-		color: var(--text-muted);
-		padding-inline-start: 22px;
-		line-height: 1.4;
 	}
 
 	/* RTL fixes */

@@ -348,6 +348,7 @@ pub fn run() {
             canonical::generate_canonical_name,
             canonical::canonicalize_preview,
             canonical::canonicalize_execute,
+            canonical::auto_canonicalize_all,
             constellation_show_in_folder,
             open_path,
             list_monitors,

@@ -1450,6 +1450,19 @@
 		// Detect multiple monitors — gate SS features
 		hasMultipleDisplays = await hasMultipleMonitors().catch(() => false);
 
+		// Auto-canonicalize all non-canonical files before indexing
+		try {
+			const { autoCanonicalize } = await import('$lib/importers/store');
+			const canonResult = await autoCanonicalize();
+			if (canonResult.renamed > 0) {
+				console.log(`[CANONICAL] Auto-canonicalized ${canonResult.renamed} files`);
+				// Refresh file trees since filenames changed
+				for (const lib of $libraries) {
+					await refreshLibraryTree(lib.id);
+				}
+			}
+		} catch (e) { console.error('[CANONICAL] Auto-canonicalize failed:', e); }
+
 		// Initialize search engine (background, non-blocking)
 		initSearchIndex().then(async () => {
 			searchEngineReady = true;
