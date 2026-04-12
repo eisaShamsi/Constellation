@@ -1469,6 +1469,8 @@
 				const counts: Record<string, number> = await invoke('constellation_search_link_counts');
 				searchLinkCounts = new Map(Object.entries(counts).map(([k, v]) => [k, { incoming: v }]));
 			} catch {}
+			// Living Link System: apply weight decay on startup (background, non-blocking)
+			invoke('constellation_link_decay').catch(() => {});
 		}).catch(() => {});
 
 		// Semantic search: ONNX engine lazy-loads on first search/embed call

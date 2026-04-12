@@ -1038,6 +1038,159 @@ pub fn constellation_link_dormant(
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
+/// Apply weight decay to all active links.
+/// Formula: weight = weight × 0.95^(months_since_last_traversal)
+/// Only decays links not traversed in the last 30 days.
+/// Also derives lifecycle stage from weight + traversal data.
+#[tauri::command]
+pub fn constellation_link_decay(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    // Step 1: Apply weight decay to links not traversed in 30+ days
+    // Calculate months since last traversal for each link
+    let mut decayed: usize = 0;
+    let mut dormant_count: usize = 0;
+
+    if let Ok(mut stmt) = conn.prepare(
+        "SELECT id, weight, last_traversed, traversal_count, status
+         FROM note_links
+         WHERE status IN ('active', 'dormant')
+           AND last_traversed != ''
+           AND julianday('now') - julianday(last_traversed) >= 30"
+    ) {
+        let links: Vec<(i64, f64, String, i64, String)> = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, f64>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, i64>(3)?,
+                row.get::<_, String>(4)?,
+            ))
+        }).map_err(|e| e.to_string())?
+          .filter_map(|r| r.ok())
+          .collect();
+
+        for (id, weight, last_traversed, _tc, status) in &links {
+            // Calculate months since last traversal
+            let months = conn.query_row(
+                "SELECT (julianday('now') - julianday(?1)) / 30.0",
+                params![last_traversed],
+                |row| row.get::<_, f64>(0),
+            ).unwrap_or(0.0);
+
+            if months < 1.0 { continue; }
+
+            // Apply decay: weight × 0.95^months
+            let new_weight = weight * (0.95_f64).powf(months);
+            let new_weight = (new_weight * 1000.0).round() / 1000.0; // round to 3 decimals
+
+            // Determine lifecycle status
+            let new_status = if months >= 3.0 && *status == "active" {
+                dormant_count += 1;
+                "dormant"
+            } else {
+                status.as_str()
+            };
+
+            conn.execute(
+                "UPDATE note_links SET weight = ?1, status = ?2 WHERE id = ?3",
+                params![new_weight, new_status, id],
+            ).map_err(|e| format!("Failed to decay link: {}", e))?;
+            decayed += 1;
+        }
+    }
+
+    // Step 2: Count lifecycle stage distribution
+    let mut stages: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+
+    // Birth: traversal_count = 0, weight = 1.0
+    let birth: usize = conn.query_row(
+        "SELECT COUNT(*) FROM note_links WHERE status = 'active' AND traversal_count = 0",
+        [], |r| r.get(0)
+    ).unwrap_or(0);
+    stages.insert("birth".to_string(), birth);
+
+    // Growth: traversal_count > 0, weight < 5.0
+    let growth: usize = conn.query_row(
+        "SELECT COUNT(*) FROM note_links WHERE status = 'active' AND traversal_count > 0 AND weight < 5.0",
+        [], |r| r.get(0)
+    ).unwrap_or(0);
+    stages.insert("growth".to_string(), growth);
+
+    // Maturity: weight >= 5.0
+    let maturity: usize = conn.query_row(
+        "SELECT COUNT(*) FROM note_links WHERE status = 'active' AND weight >= 5.0",
+        [], |r| r.get(0)
+    ).unwrap_or(0);
+    stages.insert("maturity".to_string(), maturity);
+
+    // Dormancy
+    let dormant: usize = conn.query_row(
+        "SELECT COUNT(*) FROM note_links WHERE status = 'dormant'",
+        [], |r| r.get(0)
+    ).unwrap_or(0);
+    stages.insert("dormancy".to_string(), dormant);
+
+    // Archived
+    let archived: usize = conn.query_row(
+        "SELECT COUNT(*) FROM note_links WHERE status = 'archived'",
+        [], |r| r.get(0)
+    ).unwrap_or(0);
+    stages.insert("archived".to_string(), archived);
+
+    Ok(serde_json::json!({
+        "decayed": decayed,
+        "new_dormant": dormant_count,
+        "lifecycle": stages,
+    }))
+}
+
+/// Update a link's confidence level.
+#[tauri::command]
+pub fn constellation_link_set_confidence(
+    app: tauri::AppHandle,
+    source_path: String,
+    target_name: String,
+    confidence: String,
+) -> Result<(), String> {
+    if !["hypothesis", "evidence", "established", "contested"].contains(&confidence.as_str()) {
+        return Err(format!("Invalid confidence level: {}", confidence));
+    }
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let target_lower = target_name.to_lowercase();
+    conn.execute(
+        "UPDATE note_links SET confidence = ?1 WHERE source_path = ?2 AND LOWER(target_name) = ?3",
+        params![confidence, source_path, target_lower],
+    ).map_err(|e| format!("Failed to update confidence: {}", e))?;
+
+    Ok(())
+}
+
+/// Archive a link (soft delete — preserved in history).
+#[tauri::command]
+pub fn constellation_link_archive(
+    app: tauri::AppHandle,
+    source_path: String,
+    target_name: String,
+) -> Result<(), String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let target_lower = target_name.to_lowercase();
+    conn.execute(
+        "UPDATE note_links SET status = 'archived', weight = 0.0 WHERE source_path = ?1 AND LOWER(target_name) = ?2",
+        params![source_path, target_lower],
+    ).map_err(|e| format!("Failed to archive link: {}", e))?;
+
+    Ok(())
+}
+
 // ─── Tauri Commands ────────────────────────────────────────────
 
 /// Initialize the search index — builds/rebuilds the SQLite database.
