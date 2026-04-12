@@ -123,7 +123,31 @@ SearchHub + Sky View both wired with canonicalization.
 - Frontmatter parser unification (3 parsers → 1 shared) — tracked for future
 - Vec batch streaming in canonicalize_execute for 100K+ file vaults — optimization
 - De-canonicalize UI button in library settings — not yet wired
-- 7 Cognitive typed-link search operators (15 languages, natural word order) — designed, pending implementation
+- 7 Cognitive typed-link search operators — IMPLEMENTED (commit f8065a4)
+
+### Living Link System (commits `ec80db9` → `f8065a4`)
+
+**Knowledge Formulation Philosophy:**
+- Complete specification: docs/CONSTELLATION-KNOWLEDGE-FORMULATION.md (+ .docx)
+- 8 link properties: type, direction, annotation, weight, confidence, created, last_traversed, traversal_count
+- 6 lifecycle stages: spark → birth → growth → maturity → dormancy → renewal/archival
+- 5 Acts of Knowledge Creation: observation → connection → tension → synthesis → conviction
+- CLAUDE.md updated with Knowledge Formulation + Living Link Architecture sections
+- Help file + User Manual chapter created
+
+**P0: Link Storage Foundation (commit `4ddcb83`):**
+- `note_links` SQLite table with all 8 properties + indexes
+- `extract_typed_links()` parses `[[type::target|annotation]]` syntax
+- `constellation_link_stats` diagnostic command
+- Verified: 19,062 links indexed across 2999 notes, 1,834 with annotations
+
+**P1: Cognitive Search Operators (commit `f8065a4`):**
+- 7 typed-link operators: supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of
+- Rust: TypedLinkFilter + note_links query in constellation_search
+- TypeScript: parseSearchQuery recognizes all 7 operators
+- Canonicalization: all 7 translated in 15 languages
+- Syntax chips: 7 cognitive chips in SearchHub + Sky View
+- Arabic: يدعم، يناقض، يسبب، يمثل، يعمم، مشتق من، جزء من
 
 ---
 
