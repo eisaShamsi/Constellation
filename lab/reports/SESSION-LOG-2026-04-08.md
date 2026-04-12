@@ -193,6 +193,12 @@ All 5 priority levels implemented and verified:
 - P4: 8 formulation analysis queries (diagnostic instruments)
 - P5: Knowledge Health Dashboard (visual diagnostics)
 
+### Full Function Wiring (commit `2efda4b`):
+- OutgoingLinksPanel: now clickable with traversal tracking (was display-only)
+- Note delete: cleans note_links + note_meta via reindex_delete_note()
+- OrgChart: canonicalized search (multilingual + cognitive operators)
+- Constellation Sight: same canonicalization wired
+
 ---
 
 ## Phase: Canonical Filename Architecture
