@@ -1333,6 +1333,7 @@
 		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
 		border-radius: 6px; padding: 0 6px;
 		position: relative;
+		min-width: 350px; flex: 1; max-width: 600px;
 	}
 	.oc-search-box:focus-within { border-color: var(--interactive-accent); }
 	.oc-search-box svg { color: var(--text-muted); flex-shrink: 0; }
