@@ -3420,9 +3420,14 @@
 					contradictions={lensContradictions}
 					{libraryColorMap}
 					searchMatchIds={searchHubMatchIds}
-					onNoteClick={(path, name) => {
+					onNoteClick={(path, name, highlightTerm) => {
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
-						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						if (lib) {
+							let hl = highlightTerm || '';
+							hl = hl.replace(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?|supports|contradicts|causes|exemplifies|generalizes|derives[- ]from|part[- ]of)\s*/gi, '');
+							hl = hl.replace(/\[\[|\]\]/g, '').replace(/^\s*#/, '').trim() || undefined;
+							openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', hl as string | undefined);
+						}
 						lensActive = false;
 						sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens;
 						lensReturnPending = true;

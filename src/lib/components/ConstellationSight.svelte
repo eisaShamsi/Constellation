@@ -85,7 +85,7 @@
 	let hoveredNode: SimNode | null = null;
 	let searchVisible = $state(false);
 	let searchQuery = $state('');
-	let searchScope = $state<'all' | 'title' | 'content'>('all');
+	let searchScope = $state<'all' | 'title' | 'content' | 'tag' | 'property' | 'semantic'>('all');
 	interface SearchMatch { node: SimNode; matchType: 'title' | 'content' | 'both'; }
 	let searchResults = $state<SearchMatch[]>([]);
 	let searchIdx = $state(0);
@@ -489,30 +489,56 @@
 		historyItems = readSearchHistory();
 		const q = searchQuery.toLowerCase();
 
-		// 1. Title matches (instant, local)
+		// 1. Title matches (instant, local) — for 'all' and 'title' scopes
 		const titleMatchIds = new Set<string>();
-		if (searchScope !== 'content') {
+		if (searchScope === 'all' || searchScope === 'title') {
 			for (const n of simNodes) {
 				if (n.name.toLowerCase().includes(q)) titleMatchIds.add(n.id);
 			}
 		}
 
-		// 2. Content + advanced matches via Constellation search (supports #tags, properties, links)
+		// 2. Backend search — uses universalSearch for categorized results
 		const contentMatchIds = new Set<string>();
+		const tagMatchIds = new Set<string>();
+		const propertyMatchIds = new Set<string>();
+		const semanticMatchIds = new Set<string>();
 		if (searchScope !== 'title') {
 			try {
-				const { constellationSearch, parseSearchQuery, canonicalizeSearchQuery, stripInvisibleChars } = await import('$lib/libraries/store');
+				const { universalSearch, embedText, appSettings, canonicalizeSearchQuery, stripInvisibleChars } = await import('$lib/libraries/store');
 				const { getSearchOps } = await import('$lib/i18n');
+				const { get } = await import('svelte/store');
 				const cleanQ = stripInvisibleChars(searchQuery);
-				const req = parseSearchQuery(canonicalizeSearchQuery(cleanQ, getSearchOps()));
-				req.limit = 200;
-				const results = await constellationSearch(req);
-				for (const r of results) contentMatchIds.add(r.name.toLowerCase());
+				const canonicalized = canonicalizeSearchQuery(cleanQ, getSearchOps());
+
+				// Get semantic embedding if enabled
+				let qEmbed: number[] | null = null;
+				if ((searchScope === 'all' || searchScope === 'semantic') && get(appSettings).enabledFeatures?.semanticSearch) {
+					try { qEmbed = await embedText(canonicalized); } catch {}
+				}
+
+				const resp = await universalSearch(canonicalized, qEmbed, 200);
+				// Categorize by scope
+				if (searchScope === 'all' || searchScope === 'content') {
+					for (const r of (resp as any).contents ?? []) contentMatchIds.add(r.name.toLowerCase());
+				}
+				if (searchScope === 'all' || searchScope === 'tag') {
+					for (const r of (resp as any).tags ?? []) tagMatchIds.add(r.name.toLowerCase());
+				}
+				if (searchScope === 'all' || searchScope === 'property') {
+					for (const r of (resp as any).properties ?? []) propertyMatchIds.add(r.name.toLowerCase());
+				}
+				if (searchScope === 'all' || searchScope === 'semantic') {
+					for (const r of (resp as any).semantic ?? []) semanticMatchIds.add(r.name.toLowerCase());
+				}
+				if (searchScope === 'all') {
+					// Also include title hits from backend
+					for (const r of (resp as any).titles ?? []) titleMatchIds.add(r.name.toLowerCase());
+				}
 			} catch { /* fallback */ }
 		}
 
 		// 3. Classify each match
-		const allIds = new Set([...titleMatchIds, ...contentMatchIds]);
+		const allIds = new Set([...titleMatchIds, ...contentMatchIds, ...tagMatchIds, ...propertyMatchIds, ...semanticMatchIds]);
 		const nodeMap = new Map(simNodes.map(n => [n.id, n]));
 		const matches: SearchMatch[] = [];
 
@@ -520,7 +546,7 @@
 			const node = nodeMap.get(id);
 			if (!node) continue;
 			const inTitle = titleMatchIds.has(id);
-			const inContent = contentMatchIds.has(id);
+			const inContent = contentMatchIds.has(id) || tagMatchIds.has(id) || propertyMatchIds.has(id) || semanticMatchIds.has(id);
 			const matchType = inTitle && inContent ? 'both' : inTitle ? 'title' : 'content';
 			matches.push({ node, matchType });
 		}
@@ -679,8 +705,11 @@
 				<div class="cl-search-bar">
 					<div class="cl-search-scope">
 						<button class:active={searchScope === 'all'} onclick={() => searchScope = 'all'}>{$t("lens.scopeAll") || "All"}</button>
-						<button class:active={searchScope === 'title'} onclick={() => searchScope = 'title'}>{$t("lens.scopeTitle") || "Title"}</button>
-						<button class:active={searchScope === 'content'} onclick={() => searchScope = 'content'}>{$t("lens.scopeContent") || "Content"}</button>
+						<button class:active={searchScope === 'title'} onclick={() => searchScope = 'title'}>{$t("searchHub.titles") || "Title"}</button>
+						<button class:active={searchScope === 'content'} onclick={() => searchScope = 'content'}>{$t("searchHub.contents") || "Content"}</button>
+						<button class:active={searchScope === 'tag'} onclick={() => searchScope = 'tag'}>{$t("searchHub.tags") || "Tags"}</button>
+						<button class:active={searchScope === 'property'} onclick={() => searchScope = 'property'}>{$t("searchHub.properties") || "Props"}</button>
+						<button class:active={searchScope === 'semantic'} onclick={() => searchScope = 'semantic'}>{$t("searchHub.semantic") || "Semantic"}</button>
 					</div>
 					<div class="cl-search-input-wrap">
 						<input type="text" dir="auto" placeholder={searchScope === 'title' ? ($t('lens.searchTitles') || 'Search titles...') : searchScope === 'content' ? ($t('lens.searchContent') || 'Search content...') : ($t('lens.searchAll') || 'Search all... (Enter)')} bind:value={searchQuery}
@@ -689,7 +718,7 @@
 							oninput={() => { showHistory = false; }}
 							onkeydown={(e) => {
 								if (e.key === 'Enter') { e.preventDefault(); searchResults.length > 0 ? (e.shiftKey ? prevSearchResult() : nextSearchResult()) : executeSearch(); }
-								if (e.key === 'Escape') closeSearch();
+								if (e.key === 'Escape') { closeSearch(); e.stopPropagation(); }
 							}} />
 						<button onclick={resetSearch} title={$t('common.clear') || 'Reset'}>×</button>
 						<button class="cl-chips-btn" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers') || 'Syntax'}>
@@ -780,6 +809,39 @@
 					<span><strong>{$t("lens.regionLabel") || "Region"}</strong> — {$t("lens.communityDesc") || "community"}</span>
 				</div>
 				<div class="cl-legend-divider"></div>
+				<div class="cl-legend-title" style="margin-top:4px">{$t('searchHub.linksTo') || 'Link Types'}</div>
+				<div class="cl-legend-row">
+					<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#4A9EFF" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#4A9EFF"/></svg>
+					<span>supports</span>
+				</div>
+				<div class="cl-legend-row">
+					<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FF4A4A" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FF4A4A"/></svg>
+					<span>contradicts</span>
+				</div>
+				<div class="cl-legend-row">
+					<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FF8C42" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FF8C42"/></svg>
+					<span>causes</span>
+				</div>
+				<div class="cl-legend-row">
+					<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#4AFF88" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#4AFF88"/></svg>
+					<span>exemplifies</span>
+				</div>
+				<div class="cl-legend-row">
+					<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#C084FC" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#C084FC"/></svg>
+					<span>generalizes</span>
+				</div>
+				<div class="cl-legend-row">
+					<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FACC15" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FACC15"/></svg>
+					<span>derives-from</span>
+				</div>
+				<div class="cl-legend-row">
+					<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,2"/></svg>
+					<span>hypothesis (unverified)</span>
+				</div>
+				<div class="cl-legend-row">
+					<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#4A9EFF" stroke-width="3"/></svg>
+					<span>established (high weight)</span>
+				</div>
 				<div class="cl-legend-row"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#4A9EFF" stroke-width="1.5"/></svg><span><strong>{$t('lens.linkSupports') || 'supports'}</strong></span></div>
 				<div class="cl-legend-row"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#FF4A4A" stroke-width="1.5"/></svg><span><strong>{$t('lens.linkContradicts') || 'contradicts'}</strong></span></div>
 				<div class="cl-legend-row"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#FF8C42" stroke-width="1.5"/></svg><span><strong>{$t('lens.linkCauses') || 'causes'}</strong></span></div>
@@ -853,9 +915,9 @@
 	.cl-search-dropdown { position: absolute; top: 100%; inset-inline-start: 0; z-index: 100; background: rgba(255,255,255,0.98); border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 200px; max-height: 250px; overflow-y: auto; margin-top: 4px; }
 	.cl-dropdown-item { display: block; width: 100%; text-align: start; padding: 6px 12px; border: none; background: none; cursor: pointer; font-size: 11px; color: #1a1a1a; }
 	.cl-dropdown-item:hover { background: #f1f5f9; }
-	.cl-chips-grid { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; max-width: 400px; }
-	.cl-chip { padding: 2px 8px; border-radius: 12px; border: 1px solid #e5e7eb; background: white; color: #64748b; font-size: 10px; cursor: pointer; white-space: nowrap; }
-	.cl-chip:hover { border-color: var(--interactive-accent, #7c3aed); color: var(--interactive-accent, #7c3aed); }
+	.cl-chips-grid { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; max-width: 450px; }
+	.cl-chip { padding: 4px 10px; border-radius: 6px; border: 1.5px solid #d1d5db; background: #f9fafb; color: #374151; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.12s; }
+	.cl-chip:hover { border-color: var(--interactive-accent, #7c3aed); color: var(--interactive-accent, #7c3aed); background: rgba(124,58,237,0.06); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 	.cl-search-nav { border: none; background: none; color: #64748b; cursor: pointer; padding: 0 2px; display: flex; align-items: center; }
 	.cl-search-nav:hover { color: #1a1a1a; }
 
