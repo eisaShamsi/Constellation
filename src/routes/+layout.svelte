@@ -54,7 +54,7 @@
 	import TemplateSuggester from '$lib/components/TemplateSuggester.svelte';
 	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
 	import GraphMindView from '$lib/components/GraphMindView.svelte';
-	import ConstellationSight from '$lib/components/ConstellationSight.svelte';
+	import ConstellationSight from '$lib/components/ConstellationSight2.svelte';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import SearchHub from '$lib/components/SearchHub.svelte';
