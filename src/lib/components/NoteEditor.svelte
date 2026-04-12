@@ -150,18 +150,21 @@
 	}
 
 	async function handleTitleChange(newTitle: string) {
+		if (!newTitle || !tab.path) return;
 		const currentName = tab.name.replace(/\.md$/, '');
 		if (newTitle === currentName) return;
 
-		// For canonical files, rename_item updates frontmatter (not the filename).
-		// For compatible files, it renames the file on disk.
-		// In both cases, check if the target path already exists to prevent overwrites.
+		// Skip rename if the file doesn't exist (e.g., during initial load)
 		const newPath = tab.path.replace(/[^/\\]+$/, newTitle + '.md');
 		try {
 			await renameItem(tab.path, newPath);
 		} catch (e) {
-			// Rename failed (e.g., target exists) — restore the original title
-			console.error('[NoteEditor] Rename failed:', e);
+			// Rename failed — log but don't disrupt the user
+			if (String(e).includes('does not exist')) {
+				// File might have been moved/renamed externally — silently ignore
+			} else {
+				console.error('[NoteEditor] Rename failed:', e);
+			}
 		}
 	}
 
