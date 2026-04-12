@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
-	import { t } from '$lib/i18n';
-	import { dir } from '$lib/i18n';
-	import { libraries, appSettings, type FileEntry } from '$lib/libraries/store';
+	import { t, dir, getSearchOps } from '$lib/i18n';
+	import { libraries, appSettings, type FileEntry, stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual } from '$lib/libraries/store';
 	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import { detectDir } from '$lib/utils';
+	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
 
 	let {
 		libraryColorMap = {} as Record<string, string>,
@@ -506,6 +506,47 @@
 	let searchVisiblePaths = $state<Set<string>>(new Set()); // O(1) visibility lookup (matches + ancestors)
 	let searchExecuted = $state(false);
 
+	// Syntax chips + search enhancements
+	let showChips = $state(false);
+	let showSearchHistory = $state(false);
+	let searchHistoryItems = $state<string[]>([]);
+	let searchCategoryCounts = $state<Record<string, number>>({});
+
+	const syntaxChips = $derived.by(() => {
+		const _locale = $t('searchHub.linksTo');
+		const ops = getSearchOps();
+		return [
+			{ label: 'linksTo', syntax: (ops?.linksTo ?? 'links to') + ' [[' },
+			{ label: 'linksFrom', syntax: (ops?.linksFrom ?? 'links from') + ' [[' },
+			{ label: 'mutual', syntax: (ops?.mutual ?? 'mutual') + ' [[' },
+			{ label: 'mentions', syntax: (ops?.mentions ?? 'mentions') + ' [[' },
+			{ label: 'orphans', syntax: ops?.orphans ?? 'orphans' },
+			{ label: 'linksBetween', syntax: (ops?.linksBetween ?? 'links between') + ' [[' },
+			{ label: 'linksAll', syntax: (ops?.linksAll ?? 'links all') + ' [[' },
+			{ label: 'supports', syntax: (ops?.supports ?? 'supports') + ' [[' },
+			{ label: 'contradicts', syntax: (ops?.contradicts ?? 'contradicts') + ' [[' },
+			{ label: 'causes', syntax: (ops?.causes ?? 'causes') + ' [[' },
+			{ label: 'exemplifies', syntax: (ops?.exemplifies ?? 'exemplifies') + ' [[' },
+			{ label: 'generalizes', syntax: (ops?.generalizes ?? 'generalizes') + ' [[' },
+			{ label: 'derivesFrom', syntax: (ops?.derivesFrom ?? 'derives from') + ' [[' },
+			{ label: 'partOf', syntax: (ops?.partOf ?? 'part of') + ' [[' },
+			{ label: 'tag', syntax: '#' },
+			{ label: 'property', syntax: 'key=value' },
+			{ label: 'scope', syntax: (ops?.scope ?? 'in') + ':' },
+		];
+	});
+
+	function insertChipSyntax(syntax: string) {
+		fsSearchQuery = fsSearchQuery ? fsSearchQuery + ' ' + syntax : syntax;
+		showChips = false;
+	}
+
+	function selectSearchHistory(q: string) {
+		fsSearchQuery = q;
+		showSearchHistory = false;
+		executeSearch();
+	}
+
 	/** O(1) visibility check — precomputed set, no tree walking on render. */
 	function fsMatchesSearch(node: MapNode): boolean {
 		if (searchVisiblePaths.size === 0) return true; // no active search = show all
@@ -530,16 +571,24 @@
 		// 1. Call advanced search (supports #tags, property=value, links to [[]], etc.)
 		let bodyMatchPaths = new Set<string>();
 		try {
-			const { constellationSearch, parseSearchQuery, canonicalizeSearchQuery, stripInvisibleChars } = await import('$lib/libraries/store');
-			const { getSearchOps } = await import('$lib/i18n');
+			const { constellationSearch, parseSearchQuery } = await import('$lib/libraries/store');
 			const cleanQuery = stripInvisibleChars(fsSearchQuery);
 			const canonicalized = canonicalizeSearchQuery(cleanQuery, getSearchOps());
 			const req = parseSearchQuery(canonicalized);
 			req.limit = 200;
 			req.include_snippet = true;
 			const results = await constellationSearch(req);
-			for (const r of results) bodyMatchPaths.add(r.path);
+			// Track category counts
+			const cats: Record<string, number> = {};
+			for (const r of results) {
+				bodyMatchPaths.add(r.path);
+				cats[r.match_type] = (cats[r.match_type] || 0) + 1;
+			}
+			searchCategoryCounts = cats;
 		} catch { /* fallback to title-only */ }
+		// Save to search history
+		addSearchHistory(fsSearchQuery);
+		searchHistoryItems = readSearchHistory();
 
 		// 2. Walk tree: mark nodes whose path is in bodyMatchPaths OR whose name matches
 		const q = fsSearchQuery.toLowerCase();
@@ -745,7 +794,9 @@
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 				<input type="text" dir="auto" placeholder={$t('layout.search') || 'Search... (Enter)'}
 					bind:value={fsSearchQuery}
-					oninput={() => { searchExecuted = false; searchMatches = []; searchMatchPaths = new Set(); searchVisiblePaths = new Set(); }}
+					oninput={() => { searchExecuted = false; searchMatches = []; searchMatchPaths = new Set(); searchVisiblePaths = new Set(); showSearchHistory = false; }}
+					onfocus={() => { if (!fsSearchQuery) { searchHistoryItems = readSearchHistory(); showSearchHistory = true; } }}
+					onblur={() => setTimeout(() => { showSearchHistory = false; }, 200)}
 					onkeydown={(e) => {
 						if (e.key === 'Enter') {
 							e.preventDefault();
@@ -755,18 +806,46 @@
 						if (e.key === 'Escape') { clearSearch(); e.stopPropagation(); }
 					}} />
 				<button class="oc-search-clear" onclick={clearSearch}>×</button>
+				<button class="oc-chips-btn" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers')}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+				</button>
 			</div>
 			{#if searchMatches.length > 0}
 				<span class="oc-fs-match-count">{searchMatchIdx + 1}/{searchMatches.length}</span>
-				<button class="oc-fs-match-nav" onclick={prevMatch} title="Previous (Shift+Enter)">
+				{#if Object.keys(searchCategoryCounts).length > 0}
+					<span class="oc-fs-cats">
+						{#each Object.entries(searchCategoryCounts) as [type, count]}
+							<span class="oc-fs-cat-badge" class:oc-cat-title={type==='title'} class:oc-cat-content={type==='content'||type==='structured'} class:oc-cat-tag={type==='tag'} class:oc-cat-wikilink={type==='wikilink'} class:oc-cat-property={type==='property'}>{type[0].toUpperCase()} {count}</span>
+						{/each}
+					</span>
+				{/if}
+				<button class="oc-fs-match-nav" onclick={prevMatch} title={$t('common.previous') || 'Previous'}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 				</button>
-				<button class="oc-fs-match-nav" onclick={nextMatch} title="Next (Enter)">
+				<button class="oc-fs-match-nav" onclick={nextMatch} title={$t('common.next') || 'Next'}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
 				</button>
-				<button class="oc-fs-match-nav" onclick={clearSearch} title="Clear">✕</button>
+				<button class="oc-fs-match-nav" onclick={clearSearch} title={$t('common.clear') || 'Clear'}>✕</button>
 			{:else if searchExecuted && searchMatches.length === 0}
-				<span class="oc-fs-match-count oc-fs-no-match">0 matches</span>
+				<span class="oc-fs-match-count oc-fs-no-match">{$t('searchHub.noResults') || '0 matches'}</span>
+			{/if}
+
+			<!-- Search history dropdown -->
+			{#if showSearchHistory && searchHistoryItems.length > 0 && !fsSearchQuery}
+				<div class="oc-search-history">
+					{#each searchHistoryItems.slice(0, 8) as item}
+						<button class="oc-history-item" onclick={() => selectSearchHistory(item)} dir="auto">{item}</button>
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Syntax chips panel -->
+			{#if showChips}
+				<div class="oc-chips-panel">
+					{#each syntaxChips as chip}
+						<button class="oc-chip" onclick={() => insertChipSyntax(chip.syntax)}>{$t(`searchHub.${chip.label}`)}</button>
+					{/each}
+				</div>
 			{/if}
 			{#each ALL_MATURITIES as m}
 				<button class="oc-fs-chip" class:active={fsMaturityFilter.has(m)} onclick={() => toggleMaturityFilter(m)}>
@@ -931,7 +1010,7 @@
 	{#if loading}
 		<div class="oc-loading">
 			<div class="oc-spinner"></div>
-			<span>Loading...</span>
+			<span>{$t('layout.loading') || 'Loading...'}</span>
 		</div>
 	{:else if rootNode}
 		<div class="oc-tree-scroll">
@@ -1251,6 +1330,7 @@
 		display: flex; align-items: center; gap: 4px;
 		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
 		border-radius: 6px; padding: 0 6px;
+		position: relative;
 	}
 	.oc-search-box:focus-within { border-color: var(--interactive-accent); }
 	.oc-search-box svg { color: var(--text-muted); flex-shrink: 0; }
@@ -1261,6 +1341,21 @@
 	}
 	.oc-search-box input::placeholder { color: var(--text-faint); }
 	.oc-search-clear { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 0 2px; }
+	.oc-chips-btn { border: none; background: none; cursor: pointer; color: var(--text-muted); padding: 2px; border-radius: 3px; }
+	.oc-chips-btn:hover, .oc-chips-btn.active { color: var(--interactive-accent); background: var(--background-modifier-hover); }
+	.oc-chips-panel { position: absolute; top: 100%; inset-inline-start: 0; z-index: 100; display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-width: 500px; margin-top: 4px; }
+	.oc-chip { padding: 2px 8px; border-radius: 12px; border: 1px solid var(--background-modifier-border); background: var(--background-primary); color: var(--text-muted); font-size: 0.7rem; cursor: pointer; white-space: nowrap; }
+	.oc-chip:hover { border-color: var(--interactive-accent); color: var(--interactive-accent); }
+	.oc-search-history { position: absolute; top: 100%; inset-inline-start: 0; z-index: 100; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 200px; margin-top: 4px; max-height: 200px; overflow-y: auto; }
+	.oc-history-item { display: block; width: 100%; text-align: start; padding: 6px 12px; border: none; background: none; cursor: pointer; font-size: 0.78rem; color: var(--text-normal); }
+	.oc-history-item:hover { background: var(--background-modifier-hover); }
+	.oc-fs-cats { display: flex; gap: 4px; align-items: center; }
+	.oc-fs-cat-badge { font-size: 0.62rem; padding: 1px 5px; border-radius: 4px; font-weight: 600; color: white; }
+	.oc-cat-title { background: #3b82f6; }
+	.oc-cat-content { background: #16a34a; }
+	.oc-cat-tag { background: #f472b6; }
+	.oc-cat-wikilink { background: #60a5fa; }
+	.oc-cat-property { background: #f59e0b; }
 	.oc-fs-match-count { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
 	.oc-fs-no-match { color: #ef4444; }
 	.oc-fs-match-nav {
