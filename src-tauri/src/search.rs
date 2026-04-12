@@ -1038,6 +1038,186 @@ pub fn constellation_link_dormant(
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
+// ─── P4: Formulation Analysis (Knowledge Diagnostics) ────────
+
+/// A formulation insight — one row from a diagnostic query.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct FormulationInsight {
+    pub source_name: String,
+    pub target_name: String,
+    pub link_type: String,
+    pub annotation: String,
+    pub weight: f64,
+    pub confidence: String,
+    pub traversal_count: i64,
+    pub last_traversed: String,
+    pub library_name: String,
+}
+
+/// Formulation analysis: diagnostic queries for intellectual life.
+/// `query_type` determines which analysis runs:
+///   - "strongest_evidence"  — top supports for a target, ranked by weight × confidence
+///   - "weak_foundations"    — hypothesis links with high weight (building on sand)
+///   - "tensions"           — contradicts links for a target
+///   - "stagnating"         — high-weight links gone dormant
+///   - "abandoned"          — archived links
+///   - "emerging"           — hypothesis + growing weight (curiosity without proof)
+///   - "bias_check"         — targets where supports >> contradicts (echo chambers)
+///   - "most_connected"     — notes with most incoming typed links
+///   - "knowledge_gaps"     — notes with outgoing links but few incoming (giving but not receiving)
+#[tauri::command]
+pub fn constellation_formulation_analysis(
+    app: tauri::AppHandle,
+    query_type: String,
+    target: Option<String>,
+) -> Result<Vec<FormulationInsight>, String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let target_lower = target.as_deref().unwrap_or("").to_lowercase();
+    let confidence_weight = |c: &str| -> f64 {
+        match c { "established" => 3.0, "evidence" => 2.0, "hypothesis" => 1.0, "contested" => 0.5, _ => 1.0 }
+    };
+
+    match query_type.as_str() {
+        "strongest_evidence" => {
+            // Top supports for a target, ranked by weight × confidence multiplier
+            let mut stmt = conn.prepare(
+                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                 FROM note_links WHERE link_type = 'supports' AND status = 'active'
+                 AND (?1 = '' OR LOWER(target_name) LIKE '%' || ?1 || '%')
+                 ORDER BY weight DESC LIMIT 50"
+            ).map_err(|e| e.to_string())?;
+            let mut results = query_insights(&mut stmt, &[&target_lower as &dyn rusqlite::types::ToSql])?;
+            // Re-sort by weight × confidence
+            results.sort_by(|a, b| {
+                let sa = a.weight * confidence_weight(&a.confidence);
+                let sb = b.weight * confidence_weight(&b.confidence);
+                sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
+            });
+            Ok(results)
+        }
+        "weak_foundations" => {
+            // hypothesis links with high weight — building on uncertain ground
+            let mut stmt = conn.prepare(
+                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                 FROM note_links WHERE confidence = 'hypothesis' AND weight > 2.0 AND status = 'active'
+                 ORDER BY weight DESC LIMIT 50"
+            ).map_err(|e| e.to_string())?;
+            query_insights(&mut stmt, &[])
+        }
+        "tensions" => {
+            // contradicts links for a target
+            let mut stmt = conn.prepare(
+                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                 FROM note_links WHERE link_type = 'contradicts' AND status = 'active'
+                 AND (?1 = '' OR LOWER(target_name) LIKE '%' || ?1 || '%')
+                 ORDER BY weight DESC LIMIT 50"
+            ).map_err(|e| e.to_string())?;
+            query_insights(&mut stmt, &[&target_lower as &dyn rusqlite::types::ToSql])
+        }
+        "stagnating" => {
+            // high-weight links gone dormant
+            let mut stmt = conn.prepare(
+                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                 FROM note_links WHERE status = 'dormant' AND weight > 2.0
+                 ORDER BY weight DESC LIMIT 50"
+            ).map_err(|e| e.to_string())?;
+            query_insights(&mut stmt, &[])
+        }
+        "abandoned" => {
+            // archived links
+            let mut stmt = conn.prepare(
+                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                 FROM note_links WHERE status = 'archived'
+                 ORDER BY last_traversed DESC LIMIT 50"
+            ).map_err(|e| e.to_string())?;
+            query_insights(&mut stmt, &[])
+        }
+        "emerging" => {
+            // hypothesis + recently traversed (curiosity without proof yet)
+            let mut stmt = conn.prepare(
+                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                 FROM note_links WHERE confidence = 'hypothesis' AND traversal_count > 0 AND status = 'active'
+                 ORDER BY traversal_count DESC, weight DESC LIMIT 50"
+            ).map_err(|e| e.to_string())?;
+            query_insights(&mut stmt, &[])
+        }
+        "bias_check" => {
+            // targets where supports count >> contradicts count
+            let mut stmt = conn.prepare(
+                "SELECT target_name,
+                    SUM(CASE WHEN link_type = 'supports' THEN 1 ELSE 0 END) as support_count,
+                    SUM(CASE WHEN link_type = 'contradicts' THEN 1 ELSE 0 END) as contradict_count
+                 FROM note_links WHERE status = 'active' AND link_type IN ('supports', 'contradicts')
+                 GROUP BY target_name
+                 HAVING support_count > 0 AND contradict_count = 0
+                 ORDER BY support_count DESC LIMIT 50"
+            ).map_err(|e| e.to_string())?;
+            let rows = stmt.query_map([], |row| {
+                Ok(FormulationInsight {
+                    source_name: String::new(),
+                    target_name: row.get(0)?,
+                    link_type: "bias".to_string(),
+                    annotation: format!("{} supports, {} contradicts", row.get::<_, i64>(1)?, row.get::<_, i64>(2)?),
+                    weight: row.get::<_, i64>(1)? as f64,
+                    confidence: String::new(),
+                    traversal_count: 0,
+                    last_traversed: String::new(),
+                    library_name: String::new(),
+                })
+            }).map_err(|e| e.to_string())?;
+            Ok(rows.filter_map(|r| r.ok()).collect())
+        }
+        "most_connected" => {
+            // notes with most incoming typed links
+            let mut stmt = conn.prepare(
+                "SELECT target_name, COUNT(*) as cnt, GROUP_CONCAT(DISTINCT link_type) as types,
+                        AVG(weight) as avg_weight
+                 FROM note_links WHERE status = 'active'
+                 GROUP BY target_name ORDER BY cnt DESC LIMIT 50"
+            ).map_err(|e| e.to_string())?;
+            let rows = stmt.query_map([], |row| {
+                Ok(FormulationInsight {
+                    source_name: String::new(),
+                    target_name: row.get(0)?,
+                    link_type: row.get::<_, String>(2).unwrap_or_default(),
+                    annotation: format!("{} incoming links", row.get::<_, i64>(1)?),
+                    weight: row.get::<_, f64>(3).unwrap_or(1.0),
+                    confidence: String::new(),
+                    traversal_count: row.get::<_, i64>(1)?,
+                    last_traversed: String::new(),
+                    library_name: String::new(),
+                })
+            }).map_err(|e| e.to_string())?;
+            Ok(rows.filter_map(|r| r.ok()).collect())
+        }
+        _ => Err(format!("Unknown formulation query: {}", query_type)),
+    }
+}
+
+/// Helper: execute a prepared statement and collect FormulationInsight rows.
+fn query_insights(
+    stmt: &mut rusqlite::Statement,
+    params: &[&dyn rusqlite::types::ToSql],
+) -> Result<Vec<FormulationInsight>, String> {
+    let rows = stmt.query_map(params, |row| {
+        Ok(FormulationInsight {
+            source_name: row.get(0)?,
+            target_name: row.get(1)?,
+            link_type: row.get(2)?,
+            annotation: row.get(3)?,
+            weight: row.get(4)?,
+            confidence: row.get(5)?,
+            traversal_count: row.get(6)?,
+            last_traversed: row.get(7)?,
+            library_name: row.get(8)?,
+        })
+    }).map_err(|e| e.to_string())?;
+    Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
 /// Apply weight decay to all active links.
 /// Formula: weight = weight × 0.95^(months_since_last_traversal)
 /// Only decays links not traversed in the last 30 days.
