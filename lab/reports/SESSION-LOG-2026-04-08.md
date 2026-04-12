@@ -199,6 +199,14 @@ All 5 priority levels implemented and verified:
 - OrgChart: canonicalized search (multilingual + cognitive operators)
 - Constellation Sight: same canonicalization wired
 
+### OrgChart Full Audit + Implementation (commits `0f3ef9d` → `9054760`):
+- Syntax chips: 17 operators (7 topology + 7 cognitive + 3 structural)
+- Search history: dropdown on focus, saves/recalls queries
+- Category count badges: color-coded T/C/#/P/W breakdown
+- Living Link indicators: 🔗link_count + S{stratum} on tree nodes
+- Hardcoded strings → $t() (Loading, 0 matches, nav buttons)
+- ARIA accessibility: role=tree, role=treeitem, aria-label on buttons
+
 ---
 
 ## Phase: Canonical Filename Architecture
