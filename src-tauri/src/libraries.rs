@@ -954,13 +954,26 @@ pub fn delete_item(app: tauri::AppHandle, path: String, permanent: Option<bool>)
     }
 
     let _ = permanent; // For now, always permanent delete
-    if target.is_dir() {
+    let path_str = path.clone();
+    let result = if target.is_dir() {
         fs::remove_dir_all(target)
             .map_err(|e| format!("Failed to delete folder: {}", e))
     } else {
         fs::remove_file(target)
             .map_err(|e| format!("Failed to delete file: {}", e))
+    };
+
+    // Clean up note_links and note_meta for deleted items
+    if result.is_ok() {
+        // Clean up search index + link data for deleted note
+        use tauri::Manager;
+        {
+            let search_state = app.state::<crate::search::SearchState>();
+            let _ = crate::search::reindex_delete_note(&search_state, &path_str);
+        }
     }
+
+    result
 }
 
 /// Resolve a wikilink target to an actual file path within a library.

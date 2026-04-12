@@ -3915,6 +3915,9 @@
 						<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
 						<OutgoingLinksPanel
 							outgoingLinks={currentOutgoing}
+							activeNotePath={sidebarTab?.path ?? ''}
+							libraryPath={sidebarTab?.libraryPath ?? ''}
+							{libraryColorMap}
 						/>
 					</div>
 				{:else if rightSidebarTab === 'tags'}

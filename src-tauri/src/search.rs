@@ -1429,6 +1429,16 @@ pub fn constellation_search_reindex(
     reindex_single_note(&state, &note_path, &library_name)
 }
 
+/// Delete a note from the search index + link table.
+pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    if let Some(conn) = db.as_ref() {
+        let _ = conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path]);
+        let _ = conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path]);
+    }
+    Ok(())
+}
+
 /// Reindex a single note — callable from other modules without Tauri command overhead.
 pub fn reindex_single_note(
     state: &SearchState,

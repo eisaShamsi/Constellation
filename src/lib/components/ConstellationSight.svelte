@@ -415,8 +415,10 @@
 		const contentMatchIds = new Set<string>();
 		if (searchScope !== 'title') {
 			try {
-				const { constellationSearch, parseSearchQuery } = await import('$lib/libraries/store');
-				const req = parseSearchQuery(searchQuery);
+				const { constellationSearch, parseSearchQuery, canonicalizeSearchQuery, stripInvisibleChars } = await import('$lib/libraries/store');
+				const { getSearchOps } = await import('$lib/i18n');
+				const cleanQ = stripInvisibleChars(searchQuery);
+				const req = parseSearchQuery(canonicalizeSearchQuery(cleanQ, getSearchOps()));
 				req.limit = 200;
 				const results = await constellationSearch(req);
 				for (const r of results) contentMatchIds.add(r.name.toLowerCase());

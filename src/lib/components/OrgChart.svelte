@@ -530,8 +530,11 @@
 		// 1. Call advanced search (supports #tags, property=value, links to [[]], etc.)
 		let bodyMatchPaths = new Set<string>();
 		try {
-			const { constellationSearch, parseSearchQuery } = await import('$lib/libraries/store');
-			const req = parseSearchQuery(fsSearchQuery);
+			const { constellationSearch, parseSearchQuery, canonicalizeSearchQuery, stripInvisibleChars } = await import('$lib/libraries/store');
+			const { getSearchOps } = await import('$lib/i18n');
+			const cleanQuery = stripInvisibleChars(fsSearchQuery);
+			const canonicalized = canonicalizeSearchQuery(cleanQuery, getSearchOps());
+			const req = parseSearchQuery(canonicalized);
 			req.limit = 200;
 			req.include_snippet = true;
 			const results = await constellationSearch(req);
