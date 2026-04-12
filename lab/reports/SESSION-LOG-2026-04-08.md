@@ -167,6 +167,13 @@ SearchHub + Sky View both wired with canonicalization.
 - `constellation_link_archive`: soft-delete (preserved in history)
 - Verified: lifecycle distribution correct, decay formula ready
 
+**P4: Formulation Analysis (commit `aa76e40`):**
+- `constellation_formulation_analysis` with 8 diagnostic query types:
+  strongest_evidence, weak_foundations, tensions, stagnating,
+  abandoned, emerging, bias_check, most_connected
+- Each returns FormulationInsight with full link data
+- Verified: "emerging" query found 2 traversed hypothesis links
+
 ---
 
 ## Phase: Canonical Filename Architecture
