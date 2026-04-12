@@ -242,17 +242,17 @@
 		// 1. Background grid (subtle)
 		drawGrid(w, h);
 
-		// 2. Community regions (ellipses)
+		// 2. Community regions (ellipses) — very subtle, background only
 		if (showRegions) drawCommunityRegions();
 
-		// 3. Structural gap lines (red dashed)
-		drawGapLines();
+		// 3. Nodes (drawn before edges so edges are on TOP and visible)
+		drawNodes();
 
-		// 4. Edges — LIVING LINK VISUALIZATION
+		// 4. Edges — LIVING LINK VISUALIZATION (on top of everything)
 		drawEdges();
 
-		// 5. Nodes
-		drawNodes();
+		// 5. Structural gap lines (red dashed — on top)
+		drawGapLines();
 
 		// 6. Hover label
 		if (hoveredNode) drawHoverLabel(hoveredNode);
@@ -301,9 +301,9 @@
 
 			ctx!.beginPath();
 			ctx!.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-			ctx!.fillStyle = color + '12'; // 7% fill
+			ctx!.fillStyle = color + '06'; // 2% fill — won't bury edges
 			ctx!.fill();
-			ctx!.strokeStyle = color + '44'; // 27% stroke
+			ctx!.strokeStyle = color + '22'; // 13% stroke — subtle outline
 			ctx!.lineWidth = 1.5 / zoom;
 			ctx!.stroke();
 		}
