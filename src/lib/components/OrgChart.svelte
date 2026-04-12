@@ -659,6 +659,13 @@
 		searchMatches = []; searchMatchPaths = new Set();
 		searchVisiblePaths = new Set(); searchMatchIdx = 0;
 		searchExecuted = false;
+		searchCategoryCounts = {};
+		// Collapse back to root + first-level children and fit to screen
+		if (mapRoot) {
+			fsExpandedPaths = new Set([mapRoot.path]);
+			userHasPanned = false;
+			userHasZoomed = false;
+		}
 	}
 
 	function fsMatchesFilter(node: MapNode): boolean {
