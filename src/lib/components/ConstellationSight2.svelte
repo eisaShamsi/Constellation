@@ -207,10 +207,10 @@
 			.force('charge', d3.forceManyBody().strength(forceStrength).distanceMax(300))
 			.force('center', d3.forceCenter(0, 0))
 			.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 2))
-			.alphaDecay(0.03); // slightly faster decay for performance
+			.alphaDecay(0.05); // fast decay for performance
 
-		// Synchronous ticks for initial layout — REDUCED from 200 to 100
-		for (let i = 0; i < 100; i++) simulation.tick();
+		// Synchronous ticks for initial layout — 60 ticks (was 200 in old, 100 before)
+		for (let i = 0; i < 60; i++) simulation.tick();
 
 		// Then animate
 		simulation.alpha(0.1).restart();
@@ -360,9 +360,9 @@
 				ctx!.setLineDash(conf.dash.map(d => d / zoom));
 			}
 
-			// Dormant → faded
+			// Dormant → faded, untyped → visible but subtle
 			const isDormant = link.status === 'dormant';
-			const opacity = isDormant ? '33' : typed ? 'B3' : '4D';
+			const opacity = isDormant ? '33' : typed ? 'B3' : '88';
 
 			ctx!.beginPath();
 			ctx!.moveTo(sx, sy);
@@ -563,13 +563,29 @@
 		ctx = canvasEl.getContext('2d');
 		if (ctx) ctx.scale(devicePixelRatio, devicePixelRatio);
 
-		// Load Living Link enrichment data
-		await loadLinkEnrichment();
-
-		// Build and run simulation
+		// Build and run simulation IMMEDIATELY (don't wait for enrichment)
 		buildSimData();
 		startSimulation();
 		fitToScreen();
+
+		// Load Living Link enrichment data in background (non-blocking)
+		loadLinkEnrichment().then(() => {
+			// Re-enrich simLinks with loaded data
+			for (const link of simLinks) {
+				const src = link.source as SimNode;
+				const tgt = link.target as SimNode;
+				const key = `${src.name.toLowerCase()}::${tgt.name.toLowerCase()}`;
+				const enriched = linkEnrichment.get(key);
+				if (enriched) {
+					link.weight = enriched.weight;
+					link.confidence = enriched.confidence;
+					link.annotation = enriched.annotation;
+					link.traversalCount = enriched.traversalCount;
+					link.status = enriched.status;
+				}
+			}
+			requestDraw();
+		});
 	});
 
 	onDestroy(() => {
