@@ -187,6 +187,8 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         CREATE INDEX IF NOT EXISTS idx_link_weight ON note_links(weight);
         CREATE INDEX IF NOT EXISTS idx_link_confidence ON note_links(confidence);
         CREATE INDEX IF NOT EXISTS idx_link_status ON note_links(status);
+        CREATE INDEX IF NOT EXISTS idx_link_last_traversed ON note_links(last_traversed);
+        CREATE INDEX IF NOT EXISTS idx_link_traversal_count ON note_links(traversal_count);
     ").map_err(|e| format!("Failed to create note_links: {}", e))?;
 
     Ok(conn)
@@ -436,14 +438,53 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
         ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
 
         // Populate note_links — preserve existing weight/traversal data on re-index
+        // Step 1: Snapshot existing traversal data before deleting
+        let mut preserved: std::collections::HashMap<String, (f64, String, i64, String, String)> =
+            std::collections::HashMap::new();
+        {
+            let mut stmt = conn.prepare(
+                "SELECT target_name, link_type, weight, last_traversed, traversal_count, confidence, created
+                 FROM note_links WHERE source_path = ?1"
+            ).map_err(|e| e.to_string())?;
+            let rows = stmt.query_map(params![note_path], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,  // target_name
+                    row.get::<_, String>(1)?,  // link_type
+                    row.get::<_, f64>(2)?,     // weight
+                    row.get::<_, String>(3)?,  // last_traversed
+                    row.get::<_, i64>(4)?,     // traversal_count
+                    row.get::<_, String>(5)?,  // confidence
+                    row.get::<_, String>(6)?,  // created
+                ))
+            }).map_err(|e| e.to_string())?;
+            for row in rows {
+                if let Ok((target, ltype, w, lt, tc, conf, created)) = row {
+                    // Only preserve if link was actually traversed (tc > 0)
+                    if tc > 0 || w != 1.0 {
+                        let key = format!("{}::{}", ltype, target);
+                        preserved.insert(key, (w, lt, tc, conf, created));
+                    }
+                }
+            }
+        }
+        // Step 2: Delete and re-insert, restoring preserved data
         conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path])
             .map_err(|e| e.to_string())?;
         for tl in &typed_links {
-            conn.execute(
-                "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status)
-                 VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?6, 0, ?7, 'active')",
-                params![note_path, name, tl.target, tl.link_type, tl.annotation, now, library_name],
-            ).map_err(|e| format!("Failed to index link: {}", e))?;
+            let key = format!("{}::{}", tl.link_type, tl.target);
+            if let Some((w, lt, tc, conf, created)) = preserved.get(&key) {
+                conn.execute(
+                    "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'active')",
+                    params![note_path, name, tl.target, tl.link_type, tl.annotation, conf, w, created, lt, tc, library_name],
+                ).map_err(|e| format!("Failed to index link: {}", e))?;
+            } else {
+                conn.execute(
+                    "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status)
+                     VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?6, 0, ?7, 'active')",
+                    params![note_path, name, tl.target, tl.link_type, tl.annotation, now, library_name],
+                ).map_err(|e| format!("Failed to index link: {}", e))?;
+            }
         }
 
         Ok(())
@@ -891,6 +932,110 @@ pub fn constellation_link_stats(app: tauri::AppHandle) -> Result<LinkStats, Stri
     }
 
     Ok(LinkStats { total_links, by_type, by_confidence, with_annotation, sample_links })
+}
+
+/// Record a link traversal: user followed a link from source to target.
+/// Updates last_traversed, increments traversal_count, recalculates weight.
+/// Weight formula: 1.0 + ln(1 + traversal_count) — logarithmic, early traversals matter most.
+#[tauri::command]
+pub fn constellation_link_traverse(
+    app: tauri::AppHandle,
+    source_path: String,
+    target_name: String,
+) -> Result<serde_json::Value, String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let target_lower = target_name.to_lowercase();
+
+    // Two-step: read current traversal_count, compute new weight in Rust, then update.
+    // This avoids reliance on SQLite math functions (ln) which need SQLITE_ENABLE_MATH_FUNCTIONS.
+    let mut stmt = conn.prepare(
+        "SELECT id, traversal_count FROM note_links
+         WHERE source_path = ?1 AND LOWER(target_name) = ?2"
+    ).map_err(|e| e.to_string())?;
+    let links: Vec<(i64, i64)> = stmt.query_map(params![source_path, target_lower], |row| {
+        Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?))
+    }).map_err(|e| e.to_string())?
+      .filter_map(|r| r.ok())
+      .collect();
+
+    let mut updated: usize = 0;
+    for (id, tc) in &links {
+        let new_tc = tc + 1;
+        let new_weight = 1.0 + (1.0 + new_tc as f64).ln();
+        conn.execute(
+            "UPDATE note_links SET
+                traversal_count = ?1,
+                last_traversed = ?2,
+                weight = ?3,
+                status = CASE WHEN status = 'dormant' THEN 'active' ELSE status END
+             WHERE id = ?4",
+            params![new_tc, now, new_weight, id],
+        ).map_err(|e| format!("Failed to record traversal: {}", e))?;
+        updated += 1;
+    }
+
+    Ok(serde_json::json!({
+        "updated": updated,
+        "source": source_path,
+        "target": target_name,
+        "timestamp": now,
+    }))
+}
+
+/// Find dormant links — links not traversed within the given threshold (default 90 days).
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct DormantLink {
+    pub source_name: String,
+    pub target_name: String,
+    pub link_type: String,
+    pub annotation: String,
+    pub weight: f64,
+    pub last_traversed: String,
+    pub traversal_count: i64,
+    pub days_dormant: i64,
+}
+
+#[tauri::command]
+pub fn constellation_link_dormant(
+    app: tauri::AppHandle,
+    days_threshold: Option<u32>,
+) -> Result<Vec<DormantLink>, String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let threshold = days_threshold.unwrap_or(90) as i64;
+
+    let mut stmt = conn.prepare(
+        "SELECT source_name, target_name, link_type, annotation, weight,
+                last_traversed, traversal_count,
+                CAST(julianday('now') - julianday(last_traversed) AS INTEGER) AS days_dormant
+         FROM note_links
+         WHERE status = 'active'
+           AND last_traversed != ''
+           AND julianday('now') - julianday(last_traversed) >= ?1
+         ORDER BY days_dormant DESC
+         LIMIT 200"
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map(params![threshold], |row| {
+        Ok(DormantLink {
+            source_name: row.get(0)?,
+            target_name: row.get(1)?,
+            link_type: row.get(2)?,
+            annotation: row.get(3)?,
+            weight: row.get(4)?,
+            last_traversed: row.get(5)?,
+            traversal_count: row.get(6)?,
+            days_dormant: row.get(7)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
 // ─── Tauri Commands ────────────────────────────────────────────

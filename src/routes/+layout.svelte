@@ -3902,6 +3902,7 @@
 							backlinks={currentBacklinks}
 							unlinkedMentions={currentUnlinkedMentions}
 							activeNoteName={sidebarTab?.name ?? ''}
+							activeNotePath={sidebarTab?.path ?? ''}
 							{libraryColorMap}
 						/>
 					</div>

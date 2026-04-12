@@ -562,7 +562,7 @@ export function createEmptyTab() {
 	}
 }
 
-export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean) {
+export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean, fromNotePath?: string) {
 	const tabs = get(openTabs);
 
 	// If the same file is already the active tab, just update highlight
@@ -573,6 +573,10 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		}
 		return;
 	}
+
+	// Living Link System: record traversal when following a wikilink (fire-and-forget)
+	// Deferred until we have the note's display name (extracted from content below)
+	const _fromNotePath = fromNotePath;
 
 	/* Check write-ahead buffer first — it has the latest content if the
 	   async disk write from a previous close hasn't completed yet. */
@@ -593,6 +597,11 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	const fmTitleMatch = content.match(/^---[\s\S]*?^title:\s*"?([^"\n]+)"?\s*$/m);
 	if (fmTitleMatch?.[1]) {
 		name = fmTitleMatch[1].trim();
+	}
+
+	// Living Link System: record traversal now that we have the display name
+	if (_fromNotePath) {
+		invoke('constellation_link_traverse', { sourcePath: _fromNotePath, targetName: name }).catch(() => {});
 	}
 
 	// Derive library path from registered libraries

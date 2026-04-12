@@ -20,11 +20,13 @@
 		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string }[],
 		unlinkedMentions = [] as { name: string; path: string; context: string; libraryName: string }[],
 		activeNoteName = '',
+		activeNotePath = '',
 		libraryColorMap = {} as Record<string, string>,
 	}: {
 		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string }[];
 		unlinkedMentions: { name: string; path: string; context: string; libraryName: string }[];
 		activeNoteName?: string;
+		activeNotePath?: string;
 		libraryColorMap?: Record<string, string>;
 	} = $props();
 
@@ -47,7 +49,7 @@
 
 	async function openLink(path: string, libraryName: string, e?: MouseEvent) {
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		await openNoteTab(path, libraryName, getLibraryColor(libraryName), undefined, newTab);
+		await openNoteTab(path, libraryName, getLibraryColor(libraryName), undefined, newTab, activeNotePath || undefined);
 	}
 
 	async function linkMention(mentionPath: string, e: MouseEvent) {

@@ -281,6 +281,8 @@ pub fn run() {
             search::constellation_search_universal,
             search::constellation_search_link_counts,
             search::constellation_link_stats,
+            search::constellation_link_traverse,
+            search::constellation_link_dormant,
             embeddings::constellation_init_embeddings,
             embeddings::constellation_embed_text,
             embeddings::constellation_embed_notes,

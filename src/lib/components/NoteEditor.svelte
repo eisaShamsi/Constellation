@@ -196,7 +196,7 @@
 		try {
 			const resolved = await resolveWikilinkCrossLibrary(tab.libraryPath, link);
 			if (resolved) {
-				await openNoteTab(resolved.path, resolved.libraryName, resolved.libraryColor || '#7c3aed', undefined, newTab);
+				await openNoteTab(resolved.path, resolved.libraryName, resolved.libraryColor || '#7c3aed', undefined, newTab, tab.path);
 			} else {
 				// Note doesn't exist — create it in the same folder with default frontmatter
 				const folder = tab.path.replace(/[/\\][^/\\]+$/, '');
