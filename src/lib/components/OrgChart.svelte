@@ -873,12 +873,12 @@
 		{#if loading}
 			<div class="oc-fs-loading">{$t('layout.loading') || 'Loading...'}</div>
 		{:else if mapRoot}
-			<div class="oc-canvas-inner" bind:this={innerEl} use:autoFitWidth style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: center center;">
+			<div class="oc-canvas-inner" role="tree" aria-label="Knowledge hierarchy" bind:this={innerEl} use:autoFitWidth style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: center center;">
 				{#snippet orgNode(node: MapNode, depth: number)}
 					{#if fsMatchesSearch(node) && fsMatchesFilter(node)}
 						<div class="oc-org-group">
 							<!-- The box -->
-							<div class="oc-org-box"
+							<div class="oc-org-box" role="treeitem"
 								data-path={node.path}
 								class:oc-org-root={node.node_type === 'universe'}
 								class:oc-org-lib={node.node_type === 'library' || node.node_type === 'child_universe'}
@@ -904,6 +904,8 @@
 								{:else}
 									<div class="oc-org-box-meta">
 										{#if node.word_count > 0}<span>{formatWordCount(node.word_count)}w</span>{/if}
+										{#if node.link_count > 0}<span class="oc-link-indicator">🔗{node.link_count}</span>{/if}
+										{#if node.stratum && node.stratum > 1}<span class="oc-stratum-indicator">S{node.stratum}</span>{/if}
 										{#if node.maturity}<span class="oc-org-maturity-dot" style="background:{MATURITY_COLORS[node.maturity]}"></span>{/if}
 									</div>
 								{/if}
@@ -919,13 +921,14 @@
 									<div class="oc-org-connector"><div class="oc-org-vline"></div></div>
 									<div class="oc-org-notelist">
 										{#each noteChildren as note (note.path)}
-											<button class="oc-org-noterow"
+											<button class="oc-org-noterow" aria-label="{note.name}"
 												class:oc-org-match={isDirectMatch(note)}
 												dir={detectDir(note.name)}
 												onclick={() => onNoteClick?.(note.path, note.name + '.md')}
 												oncontextmenu={(e) => handleContextMenu(e, note)}>
 												<span class="oc-org-noterow-dot" style="background:{MATURITY_COLORS[note.maturity || 'seed']}"></span>
 												<span class="oc-org-noterow-name">{note.name}</span>
+																	{#if note.link_count > 0}<span class="oc-link-indicator-sm">🔗{note.link_count}</span>{/if}
 												{#if note.word_count > 0}<span class="oc-org-noterow-meta">{formatWordCount(note.word_count)}w</span>{/if}
 												{#if note.modified}<span class="oc-org-noterow-meta">{formatDate(note.modified)}</span>{/if}
 											</button>
@@ -1356,6 +1359,10 @@
 	.oc-cat-tag { background: #f472b6; }
 	.oc-cat-wikilink { background: #60a5fa; }
 	.oc-cat-property { background: #f59e0b; }
+	/* Living Link indicators on tree nodes */
+	.oc-link-indicator { font-size: 0.6rem; color: var(--interactive-accent); opacity: 0.8; }
+	.oc-stratum-indicator { font-size: 0.55rem; background: var(--interactive-accent); color: white; padding: 0 3px; border-radius: 3px; font-weight: 600; }
+	.oc-link-indicator-sm { font-size: 0.55rem; color: var(--text-faint); margin-inline-start: 4px; }
 	.oc-fs-match-count { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
 	.oc-fs-no-match { color: #ef4444; }
 	.oc-fs-match-nav {
