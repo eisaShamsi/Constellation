@@ -305,7 +305,11 @@
       "Bash(sed -i 's/$t\\('\\\\''panels\\\\.starView'\\\\''\\)/$t\\('\\\\''panels.skyView'\\\\''\\)/g' src/lib/components/SecondScreenPage.svelte)",
       "Bash(mv src/lib/components/StarView.svelte src/lib/components/SkyView.svelte)",
       "Bash(mv src/lib/components/FullStarView.svelte src/lib/components/FullSkyView.svelte)",
-      "Bash(mv src/lib/components/LocalStarView.svelte src/lib/components/LocalSkyView.svelte)"
+      "Bash(mv src/lib/components/LocalStarView.svelte src/lib/components/LocalSkyView.svelte)",
+      "Bash(grep -v \"//\")",
+      "WebFetch(domain:chatgpt.com)",
+      "Bash(node \"C:\\\\Users\\\\ealsh\\\\AppData\\\\Local\\\\Temp\\\\create_docx.js\")",
+      "Bash(node create_docx.js)"
     ]
   }
 }

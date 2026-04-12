@@ -119,11 +119,18 @@ SearchHub + Sky View both wired with canonicalization.
 - Counts match: Search Hub and Sky View show identical "396 from 181 notes"
 - Sky View category breakdown dropdown: click count badge to see per-category hits
 
-### Open Items
-- Frontmatter parser unification (3 parsers → 1 shared) — tracked for future
-- Vec batch streaming in canonicalize_execute for 100K+ file vaults — optimization
-- De-canonicalize UI button in library settings — not yet wired
-- 7 Cognitive typed-link search operators — IMPLEMENTED (commit f8065a4)
+### Test Results (continued):
+- Test 5 (OrgChart): PASS ✅ — full enhancements (chips, history, categories, Living Link indicators, ARIA)
+- Test 6 (Sight): Functional but needs major Living Link integration
+
+### Open Items — Next Session Priority
+1. **Sight Living Link Integration** (CRITICAL): typed link colors, weight thickness, confidence line styles, direction arrows, annotation tooltips on hover — the circulatory system visualization
+2. **Sight UX**: syntax chips, search history, × reset vs close, highlight on note open, performance (15s → <3s)
+3. **SOV/SVO natural language operators**: 15 languages with per-language word order
+4. **De-canonicalize UI**: button in library settings (backend exists)
+5. **Frontmatter parser unification**: 3 parsers → 1 shared module
+6. **Search tests 7-12**: QuickSwitcher, Backlinks, Tags, cross-function, editor highlights, return state
+7. **Help files**: 14 translated languages
 
 ### Living Link System (commits `ec80db9` → `f8065a4`)
 
