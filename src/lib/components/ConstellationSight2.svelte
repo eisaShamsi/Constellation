@@ -200,24 +200,87 @@
 		} catch {}
 	}
 
-	// ─── Start D3 Force Simulation ────────────────────────────
-	function startSimulation() {
-		simulation = d3.forceSimulation(simNodes)
-			.force('link', d3.forceLink(simLinks).id((d: any) => d.id).distance(linkDistance).strength(0.3))
-			.force('charge', d3.forceManyBody().strength(forceStrength).distanceMax(300))
-			.force('center', d3.forceCenter(0, 0))
-			.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 2))
-			.alphaDecay(0.05); // fast decay for performance
+	// ─── Gravity-Well Layout (replaces force-directed simulation) ─────
+	// Positions nodes in concentric rings by centrality, with community sectors.
+	// Core knowledge at center, peripheral at edges. Communicates meaning by position.
+	function computeGravityWellLayout() {
+		if (simNodes.length === 0) return;
 
-		// Synchronous ticks for initial layout — 40 ticks (was 200 in old)
-		// D3 Barnes-Hut is O(n log n) per tick; 40 gives adequate layout
-		for (let i = 0; i < 40; i++) simulation.tick();
+		// 1. Sort nodes by centrality (descending) to assign rings
+		const sorted = [...simNodes].sort((a, b) => b.centrality - a.centrality);
+		const n = sorted.length;
 
-		// Then animate
-		simulation.alpha(0.1).restart();
-		simulation.on('tick', () => {
-			if (!destroyed) requestDraw();
+		// Ring thresholds (by percentile)
+		const ringThresholds = [
+			{ maxPct: 0.05, radius: 0 },                          // Ring 0: top 5% — center
+			{ maxPct: 0.15, radius: Math.min(width, height) * 0.12 }, // Ring 1: 5-15%
+			{ maxPct: 0.35, radius: Math.min(width, height) * 0.25 }, // Ring 2: 15-35%
+			{ maxPct: 1.00, radius: Math.min(width, height) * 0.45 }, // Ring 3: 35-100%
+		];
+
+		// Assign ring to each node
+		const nodeRings = new Map<string, number>();
+		sorted.forEach((node, i) => {
+			const pct = i / n;
+			let ring = 3;
+			for (let r = 0; r < ringThresholds.length; r++) {
+				if (pct < ringThresholds[r].maxPct) { ring = r; break; }
+			}
+			nodeRings.set(node.id, ring);
 		});
+
+		// 2. Build community → sector angle mapping
+		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
+		const numCommunities = Math.max(communityIds.length, 1);
+		const communityAngle = new Map<number, number>();
+		communityIds.forEach((cid, i) => {
+			communityAngle.set(cid, (i / numCommunities) * Math.PI * 2);
+		});
+		const sectorWidth = (Math.PI * 2) / numCommunities;
+
+		// 3. Group nodes by (ring, community) for even distribution
+		const groups = new Map<string, SimNode[]>();
+		for (const node of simNodes) {
+			const ring = nodeRings.get(node.id) ?? 3;
+			const key = `${ring}:${node.communityId}`;
+			if (!groups.has(key)) groups.set(key, []);
+			groups.get(key)!.push(node);
+		}
+
+		// 4. Position each node
+		for (const [key, members] of groups) {
+			const [ringStr, cidStr] = key.split(':');
+			const ring = parseInt(ringStr);
+			const cid = parseInt(cidStr);
+			const baseRadius = ringThresholds[ring]?.radius ?? ringThresholds[3].radius;
+			const baseAngle = communityAngle.get(cid) ?? 0;
+
+			members.forEach((node, i) => {
+				// Spread nodes within their sector
+				const angleOffset = (i / Math.max(members.length, 1)) * sectorWidth * 0.8;
+				const angle = baseAngle + sectorWidth * 0.1 + angleOffset;
+
+				// Add jitter to radius to avoid exact circle overlap
+				const jitter = (Math.random() - 0.5) * baseRadius * 0.15;
+				const radius = ring === 0
+					? Math.random() * Math.min(width, height) * 0.04  // Center cluster: small random spread
+					: baseRadius + jitter;
+
+				node.x = radius * Math.cos(angle);
+				node.y = radius * Math.sin(angle);
+			});
+		}
+
+		// 5. Light collision-avoidance pass (20 ticks, no charge/link forces)
+		simulation = d3.forceSimulation(simNodes)
+			.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 1.5).strength(0.5))
+			.alphaDecay(0.1)
+			.stop();
+
+		for (let i = 0; i < 20; i++) simulation.tick();
+
+		// Single draw — no continuous animation needed
+		requestDraw();
 	}
 
 	// ─── Canvas Rendering ─────────────────────────────────────
@@ -239,8 +302,8 @@
 		ctx.translate(w / 2 + panX, h / 2 + panY);
 		ctx.scale(zoom, zoom);
 
-		// 1. Background grid (subtle)
-		drawGrid(w, h);
+		// 1. Background guides: concentric rings + sector dividers
+		drawRadialGuides();
 
 		// 2. Community regions (lowest layer — background)
 		if (showRegions) drawCommunityRegions();
@@ -263,18 +326,38 @@
 		ctx.restore();
 	}
 
-	function drawGrid(w: number, h: number) {
-		const gridSize = 40;
-		const gridColor = 'rgba(148, 163, 184, 0.06)';
-		ctx!.strokeStyle = gridColor;
+	function drawRadialGuides() {
+		const minDim = Math.min(width, height);
+		const ringRadii = [minDim * 0.12, minDim * 0.25, minDim * 0.45];
+		const guideColor = 'rgba(148, 163, 184, 0.08)';
+
+		// Concentric rings
+		ctx!.strokeStyle = guideColor;
 		ctx!.lineWidth = 0.5 / zoom;
-		const hw = w / 2 / zoom, hh = h / 2 / zoom;
-		for (let x = -Math.ceil(hw / gridSize) * gridSize; x <= hw; x += gridSize) {
-			ctx!.beginPath(); ctx!.moveTo(x, -hh); ctx!.lineTo(x, hh); ctx!.stroke();
+		for (const r of ringRadii) {
+			ctx!.beginPath();
+			ctx!.arc(0, 0, r, 0, Math.PI * 2);
+			ctx!.stroke();
 		}
-		for (let y = -Math.ceil(hh / gridSize) * gridSize; y <= hh; y += gridSize) {
-			ctx!.beginPath(); ctx!.moveTo(-hw, y); ctx!.lineTo(hw, y); ctx!.stroke();
+
+		// Community sector dividers (very subtle)
+		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
+		const numC = Math.max(communityIds.length, 1);
+		const outerR = ringRadii[ringRadii.length - 1] * 1.1;
+		ctx!.strokeStyle = 'rgba(148, 163, 184, 0.04)';
+		for (let i = 0; i < numC; i++) {
+			const angle = (i / numC) * Math.PI * 2;
+			ctx!.beginPath();
+			ctx!.moveTo(0, 0);
+			ctx!.lineTo(outerR * Math.cos(angle), outerR * Math.sin(angle));
+			ctx!.stroke();
 		}
+
+		// Center dot
+		ctx!.beginPath();
+		ctx!.arc(0, 0, 2 / zoom, 0, Math.PI * 2);
+		ctx!.fillStyle = 'rgba(148, 163, 184, 0.2)';
+		ctx!.fill();
 	}
 
 	function drawCommunityRegions() {
@@ -409,14 +492,27 @@
 
 		for (const n of simNodes) {
 			const x = n.x ?? 0, y = n.y ?? 0;
-			// Cull nodes outside viewport
 			if (x < vpLeft || x > vpRight || y < vpTop || y > vpBottom) continue;
 
+			// Maturity → opacity (seed=0.5, sapling=0.7, evergreen=0.9, canonical=1.0, wilting=0.4)
+			const maturityAlpha: Record<string, number> = { seed: 0.5, sapling: 0.7, evergreen: 0.9, canonical: 1.0, wilting: 0.4 };
+			const alpha = maturityAlpha[n.maturity ?? 'seed'] ?? 0.6;
+
+			// Bridge emphasis — subtle outer shadow for high-centrality nodes
+			if (n.centrality > 0.4) {
+				ctx!.beginPath();
+				ctx!.arc(x, y, n.r + 4 / zoom, 0, Math.PI * 2);
+				ctx!.fillStyle = n.communityColor + '33';
+				ctx!.fill();
+			}
+
 			// Node circle
+			ctx!.globalAlpha = alpha;
 			ctx!.beginPath();
 			ctx!.arc(x, y, n.r, 0, Math.PI * 2);
 			ctx!.fillStyle = n.communityColor;
 			ctx!.fill();
+			ctx!.globalAlpha = 1.0;
 
 			// Maturity border
 			if (n.maturity && MATURITY_COLORS[n.maturity]) {
@@ -427,14 +523,14 @@
 
 			// Bridge ring (high centrality)
 			if (n.centrality > 0.5) {
-				ctx!.strokeStyle = '#ffffff';
+				ctx!.strokeStyle = '#7c3aed';
 				ctx!.lineWidth = 2 / zoom;
 				ctx!.stroke();
 			}
 
 			// Hover highlight
 			if (hoveredNode === n) {
-				ctx!.strokeStyle = '#7c3aed';
+				ctx!.strokeStyle = '#1e1b4b';
 				ctx!.lineWidth = 2.5 / zoom;
 				ctx!.stroke();
 			}
@@ -579,9 +675,9 @@
 		ctx = canvasEl.getContext('2d');
 		if (ctx) ctx.scale(devicePixelRatio, devicePixelRatio);
 
-		// Build and run simulation IMMEDIATELY (don't wait for enrichment)
+		// Build data and compute gravity-well layout
 		buildSimData();
-		startSimulation();
+		computeGravityWellLayout();
 		fitToScreen();
 
 		// Load Living Link enrichment data in background (non-blocking)
@@ -640,7 +736,7 @@
 		flex-direction: column;
 		width: 100%;
 		height: 100%;
-		background: #fafafa;
+		background: var(--background-primary, #fafafa);
 		overflow: hidden;
 	}
 	.sight2-header {
