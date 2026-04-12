@@ -209,8 +209,9 @@
 			.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 2))
 			.alphaDecay(0.05); // fast decay for performance
 
-		// Synchronous ticks for initial layout — 60 ticks (was 200 in old, 100 before)
-		for (let i = 0; i < 60; i++) simulation.tick();
+		// Synchronous ticks for initial layout — 40 ticks (was 200 in old)
+		// D3 Barnes-Hut is O(n log n) per tick; 40 gives adequate layout
+		for (let i = 0; i < 40; i++) simulation.tick();
 
 		// Then animate
 		simulation.alpha(0.1).restart();
@@ -340,19 +341,27 @@
 	}
 
 	function drawEdges() {
-		// Batch by type for fewer state changes
+		// Viewport bounds for culling (skip edges fully outside view)
+		const hw = width / 2 / zoom, hh = height / 2 / zoom;
+		const vpLeft = -panX / zoom - hw - 50, vpRight = -panX / zoom + hw + 50;
+		const vpTop = -panY / zoom - hh - 50, vpBottom = -panY / zoom + hh + 50;
+
 		for (const link of simLinks) {
 			const src = link.source as SimNode;
 			const tgt = link.target as SimNode;
 			const sx = src.x ?? 0, sy = src.y ?? 0;
 			const tx = tgt.x ?? 0, ty = tgt.y ?? 0;
 
+			// Cull edges fully outside viewport
+			if ((sx < vpLeft && tx < vpLeft) || (sx > vpRight && tx > vpRight) ||
+				(sy < vpTop && ty < vpTop) || (sy > vpBottom && ty > vpBottom)) continue;
+
 			const typed = link.linkType && link.linkType !== 'relates' && LINK_TYPE_COLORS[link.linkType];
 			const color = typed ? LINK_TYPE_COLORS[link.linkType!] : '#94a3b8';
 
 			// Weight → thickness
 			const w = link.weight ?? 1.0;
-			const baseWidth = typed ? Math.max(0.8, Math.min(4, w * 0.5)) : 0.4;
+			const baseWidth = typed ? Math.max(0.8, Math.min(4, w * 0.5)) : 0.7;
 
 			// Confidence → dash style
 			const conf = CONFIDENCE_STYLE[link.confidence ?? 'hypothesis'] ?? CONFIDENCE_STYLE.hypothesis;
@@ -362,7 +371,7 @@
 
 			// Dormant → faded, untyped → visible but subtle
 			const isDormant = link.status === 'dormant';
-			const opacity = isDormant ? '33' : typed ? 'B3' : '88';
+			const opacity = isDormant ? '44' : typed ? 'CC' : 'AA';
 
 			ctx!.beginPath();
 			ctx!.moveTo(sx, sy);
@@ -393,8 +402,14 @@
 	}
 
 	function drawNodes() {
+		const hw = width / 2 / zoom, hh = height / 2 / zoom;
+		const vpLeft = -panX / zoom - hw - 20, vpRight = -panX / zoom + hw + 20;
+		const vpTop = -panY / zoom - hh - 20, vpBottom = -panY / zoom + hh + 20;
+
 		for (const n of simNodes) {
 			const x = n.x ?? 0, y = n.y ?? 0;
+			// Cull nodes outside viewport
+			if (x < vpLeft || x > vpRight || y < vpTop || y > vpBottom) continue;
 
 			// Node circle
 			ctx!.beginPath();
