@@ -86,7 +86,7 @@
 	let searchVisible = $state(false);
 	let searchQuery = $state('');
 	let searchScope = $state<'all' | 'title' | 'content' | 'tag' | 'property' | 'semantic'>('all');
-	interface SearchMatch { node: SimNode; matchType: 'title' | 'content' | 'both'; }
+	interface SearchMatch { node: SimNode; matchType: string; matchCategories: string[]; }
 	let searchResults = $state<SearchMatch[]>([]);
 	let searchIdx = $state(0);
 	let showChips = $state(false);
@@ -360,14 +360,15 @@
 			if (searchResults.length > 0) {
 				const currentId = searchResults[searchIdx]?.node.id;
 				const matchMap = new Map(searchResults.map(m => [m.node.id, m.matchType]));
-				const MATCH_COLORS = { title: '#3b82f6', content: '#16a34a', both: '#7c3aed' };
+				const MATCH_COLORS: Record<string, string> = { title: '#3b82f6', content: '#16a34a', both: '#7c3aed', T: '#3b82f6', C: '#16a34a', '#': '#f472b6', P: '#f59e0b', S: '#7c3aed', match: '#94a3b8' };
 
 				for (const sn of simNodes) {
 					const matchType = matchMap.get(sn.id);
 					if (!matchType) continue;
 					const sx = sn.x ?? 0, sy = sn.y ?? 0;
 					const isCurrent = sn.id === currentId;
-					const color = MATCH_COLORS[matchType];
+					const firstCat = matchType.split('·')[0] || 'match';
+					const color = MATCH_COLORS[firstCat] || '#7c3aed';
 
 					if (isCurrent) {
 						// Current match: bouncing arrow + thick ring in match color
@@ -545,15 +546,19 @@
 		for (const id of allIds) {
 			const node = nodeMap.get(id);
 			if (!node) continue;
-			const inTitle = titleMatchIds.has(id);
-			const inContent = contentMatchIds.has(id) || tagMatchIds.has(id) || propertyMatchIds.has(id) || semanticMatchIds.has(id);
-			const matchType = inTitle && inContent ? 'both' : inTitle ? 'title' : 'content';
-			matches.push({ node, matchType });
+			const cats: string[] = [];
+			if (titleMatchIds.has(id)) cats.push('T');
+			if (contentMatchIds.has(id)) cats.push('C');
+			if (tagMatchIds.has(id)) cats.push('#');
+			if (propertyMatchIds.has(id)) cats.push('P');
+			if (semanticMatchIds.has(id)) cats.push('S');
+			const matchType = cats.join('·') || 'match';
+			matches.push({ node, matchType, matchCategories: cats });
 		}
 
 		matches.sort((a, b) => {
-			const order = { both: 0, title: 1, content: 2 };
-			return order[a.matchType] - order[b.matchType];
+			const order: Record<string, number> = {}; // sort by category count (more = higher)
+			return (b.matchCategories?.length ?? 0) - (a.matchCategories?.length ?? 0);
 		});
 
 		searchResults = matches;
@@ -645,7 +650,7 @@
 			const matches: SearchMatch[] = [];
 			for (const sn of simNodes) {
 				if (searchMatchIds.has(sn.id) || searchMatchIds.has(sn.name?.toLowerCase())) {
-					matches.push({ node: sn, matchType: 'both' });
+					matches.push({ node: sn, matchType: 'match', matchCategories: ['T'] });
 				}
 			}
 			if (matches.length > 0) {
@@ -743,7 +748,9 @@
 					</div>
 					{#if searchResults.length > 0}
 						{@const currentMatch = searchResults[searchIdx]}
-						<span class="cl-search-type" style="background:{currentMatch?.matchType === 'title' ? '#3b82f6' : currentMatch?.matchType === 'content' ? '#16a34a' : '#7c3aed'}">{currentMatch?.matchType}</span>
+						{#each (currentMatch?.matchCategories ?? []) as cat}
+							<span class="cl-search-type" style="background:{cat === 'T' ? '#3b82f6' : cat === 'C' ? '#16a34a' : cat === '#' ? '#f472b6' : cat === 'P' ? '#f59e0b' : cat === 'S' ? '#7c3aed' : '#94a3b8'}">{cat}</span>
+						{/each}
 						<span class="cl-search-found">{searchIdx + 1}/{searchResults.length}</span>
 						<button class="cl-search-nav" onclick={prevSearchResult}>
 							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
