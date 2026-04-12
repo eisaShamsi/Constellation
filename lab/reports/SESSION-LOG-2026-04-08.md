@@ -159,6 +159,14 @@ SearchHub + Sky View both wired with canonicalization.
 - Verified: 2 links with weight > 1.0 after traversal testing
 - Fixed: rename error silenced for non-existent files during title blur
 
+**P3: Weight Decay + Lifecycle + Confidence (commit `0c7b54d`):**
+- `constellation_link_decay`: weight × 0.95^months for 30+ day idle links
+- Marks dormant after 90+ days idle, runs on startup
+- Lifecycle stages: birth (19,062), growth (2), maturity (0), dormancy (0), archived (0)
+- `constellation_link_set_confidence`: hypothesis → evidence → established → contested
+- `constellation_link_archive`: soft-delete (preserved in history)
+- Verified: lifecycle distribution correct, decay formula ready
+
 ---
 
 ## Phase: Canonical Filename Architecture
