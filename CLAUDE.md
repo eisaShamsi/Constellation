@@ -1,7 +1,7 @@
 # Constellation — Claude Instructions
 
 ## Project
-Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libraries.
+Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) — a Personal Knowledge Formulation system. Not management — formulation.
 
 ## Before Starting Work
 1. Always `git pull origin main` first to sync changes from other devices/sessions.
@@ -108,6 +108,25 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - All data stays on the user's device. No telemetry, no tracking, no cloud dependency.
 - Sync is the user's choice (Git, Syncthing, iCloud) — Constellation doesn't own it.
 - The app must work fully offline, instantly, always.
+
+### Knowledge Formulation (Not Management)
+- Constellation is a **Personal Knowledge Formulation** system — not a file manager.
+- Knowledge is not about storing information. It is about **connecting, challenging, synthesizing, and building** understanding.
+- Links are **living vessels** — they carry type, annotation, weight, confidence, and temporal data.
+- Links follow a lifecycle: Spark → Birth → Growth → Maturity → Dormancy → Renewal/Archival.
+- The 7 link types are the **cognitive vocabulary**: supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of.
+- The search engine is a **diagnostic instrument** for intellectual life — not a file finder.
+- The Five Acts of Knowledge Creation: Observation → Connection → Tension → Synthesis → Conviction.
+- Full specification: `docs/CONSTELLATION-KNOWLEDGE-FORMULATION.md`
+
+### The Living Link Architecture
+- Links are **first-class knowledge objects** with the `LINK` file kind (`YYYYMMDDTHHMMSSZ_LINK_XXXX.md`).
+- **Dual-layer storage**: LINK files on disk (source of truth) + `note_links` SQLite table (fast index).
+- **Eight properties**: Type, Direction, Annotation, Weight, Confidence, Created, Last Traversed, Traversal Count.
+- **Four confidence levels**: hypothesis → evidence → established → contested.
+- **Weight is earned through use**: logarithmic growth on traversal, 5% monthly decay without use.
+- Links must be **searchable by all properties** in the user's own language.
+- Every link operation must be **reversible** — archival, not deletion.
 
 ### Constraint as Design
 - Don't add features just because you can. Every feature must justify its existence.

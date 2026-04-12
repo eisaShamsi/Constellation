@@ -2,15 +2,16 @@
 
 **Version 0.3.4 | March 2026**
 
-Constellation is a Personal Knowledge Management (PKM) desktop application for managing Markdown note libraries. Built with Tauri v2, SvelteKit, and Rust, it runs natively on Windows, macOS, and Linux with full Arabic and RTL support.
+Constellation is a Personal Knowledge Formulation desktop application. Not a file manager — a thinking instrument. Built with Tauri v2, SvelteKit, and Rust, it runs natively on Windows, macOS, and Linux with full multilingual support (15 languages, RTL-native).
 
 ---
 
 ## Table of Contents
 
-1. [Getting Started](#getting-started)
-2. [Universe and Libraries](#universe-and-libraries)
-3. [Creating and Editing Notes](#creating-and-editing-notes)
+1. [Knowledge Formulation](#knowledge-formulation)
+2. [Getting Started](#getting-started)
+3. [Universe and Libraries](#universe-and-libraries)
+4. [Creating and Editing Notes](#creating-and-editing-notes)
 4. [Notes Management Sidebar](#notes-management-sidebar)
 5. [Search](#search)
 6. [Sky View (GraphMind)](#star-view-graphmind)
@@ -31,6 +32,42 @@ Constellation is a Personal Knowledge Management (PKM) desktop application for m
 19. [Security and Privacy](#security-and-privacy)
 20. [Constellation Map](#constellation-map)
 21. [Cognitive Engine](#cognitive-engine)
+
+---
+
+## Knowledge Formulation
+
+Constellation is built on a simple belief: **knowledge is not about storage — it's about formulation**. You don't become wiser by organizing files. You become wiser by connecting ideas, challenging assumptions, tracing origins, and synthesizing understanding.
+
+### The Living Link
+
+In Constellation, a link between two notes is not a dead pointer. It is a **living vessel** that carries meaning:
+
+- **Type**: What kind of relationship? (supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of)
+- **Annotation**: Why does this connection exist? Your reasoning at the moment of linking.
+- **Weight**: How significant? Grows with use, decays with neglect.
+- **Confidence**: How certain? Hypothesis → Evidence → Established.
+
+### The Five Acts of Knowledge Creation
+
+1. **Observation** — You capture something new (a note is born)
+2. **Connection** — You link it to existing knowledge (the first heartbeat)
+3. **Tension** — You discover a contradiction (critical thinking begins)
+4. **Synthesis** — You resolve the tension with a new understanding (knowledge is created)
+5. **Conviction** — Evidence accumulates over time (the idea becomes bedrock)
+
+### Searching Your Thinking
+
+Constellation's search engine is a diagnostic instrument for your intellectual life:
+
+- `supports [[Democracy]]` — What evidence supports this idea?
+- `contradicts [[My Thesis]]` — What challenges my thinking?
+- `causes [[Event]]` — What led to this outcome?
+- `orphans` — Which ideas are isolated and unconnected?
+
+All operators work in your language — type in Arabic, French, Japanese, or any of 15 supported languages.
+
+For the full specification, see `docs/CONSTELLATION-KNOWLEDGE-FORMULATION.md`.
 
 ---
 
