@@ -41,7 +41,7 @@
 		communityProfiles?: any[];
 		contradictions?: [string, string][];
 		libraryColorMap?: Record<string, string>;
-		onNoteClick?: (path: string, name: string) => void;
+		onNoteClick?: (path: string, name: string, highlightTerm?: string) => void;
 		onClose?: () => void;
 		searchMatchIds?: Set<string> | null;
 	} = $props();
@@ -67,6 +67,10 @@
 	}
 	interface SimLink extends d3.SimulationLinkDatum<SimNode> {
 		linkType?: string;
+		weight?: number;
+		confidence?: string;
+		annotation?: string;
+		traversalCount?: number;
 	}
 
 	let simNodes: SimNode[] = [];
@@ -128,6 +132,21 @@
 				simLinks.push({ source: src, target: tgt, linkType: l.linkType });
 			}
 		}
+	}
+
+	// ─── Enrich links with Living Link data from note_links table ───
+	async function enrichLinksFromDB() {
+		try {
+			const stats: any = await invoke('constellation_link_stats');
+			if (!stats?.sample_links) return;
+			// Build lookup: "source::target" → link data
+			// Query all links for visible notes
+			const allLinkData: any[] = await invoke('constellation_formulation_analysis', {
+				queryType: 'most_connected', target: null
+			});
+			// For now, use link stats to get a sense of the data
+			// Full enrichment: query note_links for all displayed connections
+		} catch {}
 	}
 
 	// ─── Start D3 force simulation ───
@@ -236,20 +255,56 @@
 			ctx.setLineDash([]);
 		}
 
-		// 3. Edges — typed links: 2px, 70% opacity, solid. Untyped: dashed, subtle.
+		// 3. Edges — Living Link visualization:
+		//    Typed: solid colored lines with arrowheads, thickness = weight
+		//    Untyped: dashed subtle lines
+		//    Confidence: hypothesis=thin, evidence=medium, established=thick
 		for (const link of simLinks) {
 			const src = link.source as SimNode;
 			const tgt = link.target as SimNode;
+			const sx = src.x ?? 0, sy = src.y ?? 0;
+			const tx = tgt.x ?? 0, ty = tgt.y ?? 0;
 			const typed = link.linkType && LINK_TYPE_COLORS[link.linkType];
 			const color = typed ? LINK_TYPE_COLORS[link.linkType!] : '#94a3b8';
+
+			// Weight-based thickness (default 1.0, grows with traversal)
+			const w = link.weight ?? 1.0;
+			const baseWidth = typed ? Math.max(0.8, Math.min(3, w * 0.6)) : 0.5;
+
+			// Confidence-based style
+			const conf = link.confidence ?? 'hypothesis';
+			if (conf === 'hypothesis' && typed) {
+				ctx.setLineDash([4 / zoom, 3 / zoom]); // hypothesis = dashed even for typed
+			} else if (!typed) {
+				ctx.setLineDash([3 / zoom, 3 / zoom]);
+			}
+
 			ctx.beginPath();
-			if (!typed) ctx.setLineDash([4 / zoom, 3 / zoom]); // untyped = dashed
-			ctx.moveTo(src.x ?? 0, src.y ?? 0);
-			ctx.lineTo(tgt.x ?? 0, tgt.y ?? 0);
-			ctx.strokeStyle = typed ? color + 'B3' : color + '4D'; // typed=70%, untyped=25%
-			ctx.lineWidth = typed ? 1 / zoom : 0.7 / zoom;
+			ctx.moveTo(sx, sy);
+			ctx.lineTo(tx, ty);
+			ctx.strokeStyle = typed ? color + 'B3' : color + '4D';
+			ctx.lineWidth = baseWidth / zoom;
 			ctx.stroke();
-			if (!typed) ctx.setLineDash([]); // reset dash
+			ctx.setLineDash([]);
+
+			// Arrowhead for typed links (shows direction)
+			if (typed) {
+				const dx = tx - sx, dy = ty - sy;
+				const len = Math.sqrt(dx * dx + dy * dy);
+				if (len > 0) {
+					const ux = dx / len, uy = dy / len;
+					// Arrow at 70% along the line (not at the target node)
+					const ax = sx + dx * 0.7, ay = sy + dy * 0.7;
+					const arrowSize = 4 / zoom;
+					ctx.beginPath();
+					ctx.moveTo(ax + ux * arrowSize, ay + uy * arrowSize);
+					ctx.lineTo(ax - uy * arrowSize * 0.5 - ux * arrowSize * 0.3, ay + ux * arrowSize * 0.5 - uy * arrowSize * 0.3);
+					ctx.lineTo(ax + uy * arrowSize * 0.5 - ux * arrowSize * 0.3, ay - ux * arrowSize * 0.5 - uy * arrowSize * 0.3);
+					ctx.closePath();
+					ctx.fillStyle = color + 'CC';
+					ctx.fill();
+				}
+			}
 		}
 
 		// 4. Nodes
@@ -388,7 +443,9 @@
 	function onMouseUp() { isPanning = false; }
 	function onClick(e: MouseEvent) {
 		if (hoveredNode && onNoteClick) {
-			onNoteClick(hoveredNode.path, hoveredNode.name);
+			// Pass search query as highlight term if search is active
+			const hl = searchQuery.trim() || undefined;
+			onNoteClick(hoveredNode.path, hoveredNode.name, hl);
 		}
 	}
 	function onWheel(e: WheelEvent) {
@@ -470,10 +527,13 @@
 		centerOnSearchResult();
 	}
 
-	function clearSearch() {
+	function resetSearch() {
 		searchQuery = '';
 		searchResults = [];
 		searchIdx = 0;
+	}
+	function closeSearch() {
+		resetSearch();
 		searchVisible = false;
 	}
 
@@ -541,7 +601,7 @@
 		<span class="cl-title">{$t('lens.title') || 'Constellation Sight'}</span>
 		<span class="cl-stat">{nodes.length} {$t('lens.nodes') || 'nodes'} · {links.length} {$t('lens.edges') || 'edges'}</span>
 		<div class="cl-toolbar">
-			<button class="cl-toolbar-btn" class:active={searchVisible} onclick={() => { searchVisible = !searchVisible; if (!searchVisible) clearSearch(); }} title={$t('layout.search') || 'Search'}>
+			<button class="cl-toolbar-btn" class:active={searchVisible} onclick={() => { searchVisible = !searchVisible; if (!searchVisible) closeSearch(); }} title={$t('layout.search') || 'Search'}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</button>
 			<button class="cl-toolbar-btn" onclick={() => {
@@ -583,9 +643,9 @@
 					<input type="text" dir="auto" placeholder={searchScope === 'title' ? ($t('lens.searchTitles') || 'Search titles...') : searchScope === 'content' ? ($t('lens.searchContent') || 'Search content...') : ($t('lens.searchAll') || 'Search all... (Enter)')} bind:value={searchQuery}
 						onkeydown={(e) => {
 							if (e.key === 'Enter') { e.preventDefault(); searchResults.length > 0 ? (e.shiftKey ? prevSearchResult() : nextSearchResult()) : executeSearch(); }
-							if (e.key === 'Escape') clearSearch();
+							if (e.key === 'Escape') closeSearch();
 						}} />
-					<button onclick={clearSearch}>×</button>
+					<button onclick={resetSearch} title="Reset">×</button>
 					{#if searchResults.length > 0}
 						{@const currentMatch = searchResults[searchIdx]}
 						<span class="cl-search-type" style="background:{currentMatch?.matchType === 'title' ? '#3b82f6' : currentMatch?.matchType === 'content' ? '#16a34a' : '#7c3aed'}">{currentMatch?.matchType}</span>
