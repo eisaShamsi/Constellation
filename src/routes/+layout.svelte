@@ -65,6 +65,7 @@
 
 	import { embedNotes, embeddingStatus } from '$lib/libraries/store';
 	import DashboardView from '$lib/components/DashboardView.svelte';
+	import KnowledgeHealthDashboard from '$lib/components/KnowledgeHealthDashboard.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
@@ -323,6 +324,7 @@
 	let showSenseMakingCanvas = $state(false); // CE Phase 11
 	let showConstellationMap = $state(false);
 	let showSearchHub = $state(false);
+	let showKnowledgeHealth = $state(false);
 	let searchHubMatchIds = $state<Set<string> | null>(null);
 	let searchHubReturnPending = $state(false);
 	let searchHubInitialQuery = $state('');
@@ -1200,6 +1202,7 @@
 			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; }, category: 'View' },
 			{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; mapReturnPending = false; }, category: 'View' },
 			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; }, category: 'View' },
+			{ id: 'knowledge-health', name: 'Knowledge Health', icon: '🩺', action: () => { showCommandPalette = false; showKnowledgeHealth = true; }, category: 'View' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
@@ -4217,6 +4220,10 @@
 			onClose={() => showImporter = false}
 			onImportComplete={refreshLibraryCaches}
 		/>
+	{/if}
+
+	{#if showKnowledgeHealth}
+		<KnowledgeHealthDashboard onClose={() => showKnowledgeHealth = false} />
 	{/if}
 
 	{#if showLibraryPicker}
