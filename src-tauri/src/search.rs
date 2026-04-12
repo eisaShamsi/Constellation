@@ -153,6 +153,35 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         CREATE INDEX IF NOT EXISTS idx_note_name ON note_meta(name);
     ").map_err(|e| format!("Failed to create indexes: {}", e))?;
 
+    // ─── Living Link System (Knowledge Formulation) ─────────────────────
+    // note_links: stores typed, directed, annotated links with lifecycle data.
+    // Source of truth: LINK files on disk. This table is the fast index.
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS note_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_path TEXT NOT NULL,
+            source_name TEXT NOT NULL,
+            target_path TEXT,
+            target_name TEXT NOT NULL,
+            link_type TEXT NOT NULL DEFAULT 'relates',
+            annotation TEXT DEFAULT '',
+            confidence TEXT DEFAULT 'hypothesis',
+            weight REAL DEFAULT 1.0,
+            created TEXT DEFAULT '',
+            last_traversed TEXT DEFAULT '',
+            traversal_count INTEGER DEFAULT 0,
+            library_name TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            UNIQUE(source_path, target_name, link_type)
+        );
+        CREATE INDEX IF NOT EXISTS idx_link_source ON note_links(source_path);
+        CREATE INDEX IF NOT EXISTS idx_link_target ON note_links(target_name);
+        CREATE INDEX IF NOT EXISTS idx_link_type ON note_links(link_type);
+        CREATE INDEX IF NOT EXISTS idx_link_weight ON note_links(weight);
+        CREATE INDEX IF NOT EXISTS idx_link_confidence ON note_links(confidence);
+        CREATE INDEX IF NOT EXISTS idx_link_status ON note_links(status);
+    ").map_err(|e| format!("Failed to create note_links: {}", e))?;
+
     Ok(conn)
 }
 
@@ -233,6 +262,45 @@ fn extract_wikilinks(content: &str) -> Vec<String> {
                 links.push(target);
             }
         }
+    }
+    links
+}
+
+/// A typed link extracted from note content.
+#[derive(Debug, Clone)]
+struct TypedLink {
+    target: String,       // target note name (lowercase)
+    link_type: String,    // supports, contradicts, causes, etc.
+    annotation: String,   // user's reasoning (from |annotation syntax)
+}
+
+/// Extract typed links from note content.
+/// Matches: [[type::target|annotation]], [[type::target]], [[target|display]], [[target]]
+fn extract_typed_links(content: &str) -> Vec<TypedLink> {
+    use std::sync::OnceLock;
+    static RE: OnceLock<regex::Regex> = OnceLock::new();
+    // Matches: [[optional_type::target|optional_annotation]]
+    let re = RE.get_or_init(|| {
+        regex::Regex::new(r"\[\[(?:([a-zA-Z\-]+)::)?([^\]|]+?)(?:\|([^\]]*))?\]\]").unwrap()
+    });
+    let mut links = Vec::new();
+    let mut seen = std::collections::HashSet::<String>::new();
+    for cap in re.captures_iter(content) {
+        let link_type = cap.get(1)
+            .map(|m| m.as_str().to_lowercase())
+            .unwrap_or_else(|| "relates".to_string());
+        let target = cap.get(2)
+            .map(|m| m.as_str().trim().to_lowercase())
+            .unwrap_or_default();
+        let annotation = cap.get(3)
+            .map(|m| m.as_str().trim().to_string())
+            .unwrap_or_default();
+
+        if target.is_empty() { continue; }
+        let key = format!("{}::{}", link_type, target);
+        if !seen.insert(key) { continue; }
+
+        links.push(TypedLink { target, link_type, annotation });
     }
     links
 }
@@ -345,6 +413,10 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
     let links_json = serde_json::to_string(&wikilinks).unwrap_or_default();
     let headings_json = serde_json::to_string(&headings).unwrap_or_default();
 
+    // Extract typed links for the living link system
+    let typed_links = extract_typed_links(&content);
+    let now = chrono::Utc::now().to_rfc3339();
+
     // Upsert: delete old, insert new (triggers handle FTS sync) — wrapped in transaction for atomicity
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
     let result = (|| -> Result<(), String> {
@@ -355,6 +427,18 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body],
         ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
+
+        // Populate note_links — preserve existing weight/traversal data on re-index
+        conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path])
+            .map_err(|e| e.to_string())?;
+        for tl in &typed_links {
+            conn.execute(
+                "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status)
+                 VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?6, 0, ?7, 'active')",
+                params![note_path, name, tl.target, tl.link_type, tl.annotation, now, library_name],
+            ).map_err(|e| format!("Failed to index link: {}", e))?;
+        }
+
         Ok(())
     })();
     match result {
@@ -721,7 +805,7 @@ pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexSta
     // Schema v2: force full reindex to pick up bracket-format tags + inline hashtags
     // Check for version marker; if missing or outdated, delete and rebuild
     let version_path = path.with_extension("version");
-    let current_version = "6"; // v6: name stored original (not Arabic-normalized) for graph ID matching
+    let current_version = "7"; // v7: note_links table (Living Link System), typed link extraction
     let needs_rebuild = match std::fs::read_to_string(&version_path) {
         Ok(v) => v.trim() != current_version,
         Err(_) => true,
