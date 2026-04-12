@@ -795,6 +795,67 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
 }
 
+// ─── Link System Queries ──────────────────────────────────────
+
+/// Get link statistics from the note_links table.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct LinkStats {
+    pub total_links: usize,
+    pub by_type: std::collections::HashMap<String, usize>,
+    pub by_confidence: std::collections::HashMap<String, usize>,
+    pub with_annotation: usize,
+    pub sample_links: Vec<serde_json::Value>,
+}
+
+#[tauri::command]
+pub fn constellation_link_stats(app: tauri::AppHandle) -> Result<LinkStats, String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let total_links: usize = conn.query_row(
+        "SELECT COUNT(*) FROM note_links WHERE status = 'active'", [], |r| r.get(0)
+    ).unwrap_or(0);
+
+    let mut by_type = std::collections::HashMap::new();
+    if let Ok(mut stmt) = conn.prepare("SELECT link_type, COUNT(*) FROM note_links WHERE status = 'active' GROUP BY link_type") {
+        if let Ok(rows) = stmt.query_map([], |r| Ok((r.get::<_,String>(0)?, r.get::<_,usize>(1)?))) {
+            for row in rows.flatten() { by_type.insert(row.0, row.1); }
+        }
+    }
+
+    let mut by_confidence = std::collections::HashMap::new();
+    if let Ok(mut stmt) = conn.prepare("SELECT confidence, COUNT(*) FROM note_links WHERE status = 'active' GROUP BY confidence") {
+        if let Ok(rows) = stmt.query_map([], |r| Ok((r.get::<_,String>(0)?, r.get::<_,usize>(1)?))) {
+            for row in rows.flatten() { by_confidence.insert(row.0, row.1); }
+        }
+    }
+
+    let with_annotation: usize = conn.query_row(
+        "SELECT COUNT(*) FROM note_links WHERE status = 'active' AND annotation != ''", [], |r| r.get(0)
+    ).unwrap_or(0);
+
+    let mut sample_links = Vec::new();
+    if let Ok(mut stmt) = conn.prepare(
+        "SELECT source_name, target_name, link_type, annotation, confidence, weight FROM note_links WHERE status = 'active' ORDER BY weight DESC LIMIT 10"
+    ) {
+        if let Ok(rows) = stmt.query_map([], |r| {
+            Ok(serde_json::json!({
+                "source": r.get::<_,String>(0)?,
+                "target": r.get::<_,String>(1)?,
+                "type": r.get::<_,String>(2)?,
+                "annotation": r.get::<_,String>(3)?,
+                "confidence": r.get::<_,String>(4)?,
+                "weight": r.get::<_,f64>(5)?,
+            }))
+        }) {
+            for row in rows.flatten() { sample_links.push(row); }
+        }
+    }
+
+    Ok(LinkStats { total_links, by_type, by_confidence, with_annotation, sample_links })
+}
+
 // ─── Tauri Commands ────────────────────────────────────────────
 
 /// Initialize the search index — builds/rebuilds the SQLite database.
