@@ -242,17 +242,17 @@
 		// 1. Background grid (subtle)
 		drawGrid(w, h);
 
-		// 2. Community regions (ellipses) — very subtle, background only
+		// 2. Community regions (lowest layer — background)
 		if (showRegions) drawCommunityRegions();
 
-		// 3. Nodes (drawn before edges so edges are on TOP and visible)
-		drawNodes();
-
-		// 4. Edges — LIVING LINK VISUALIZATION (on top of everything)
-		drawEdges();
-
-		// 5. Structural gap lines (red dashed — on top)
+		// 3. Structural gap lines
 		drawGapLines();
+
+		// 4. Links — Living Link visualization (middle layer)
+		drawLinks();
+
+		// 5. Nodes (top layer — always visible)
+		drawNodes();
 
 		// 6. Hover label
 		if (hoveredNode) drawHoverLabel(hoveredNode);
@@ -301,9 +301,10 @@
 
 			ctx!.beginPath();
 			ctx!.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-			ctx!.fillStyle = color + '06'; // 2% fill — won't bury edges
+			ctx!.fillStyle = color + '12'; // 7% fill
 			ctx!.fill();
-			ctx!.strokeStyle = color + '22'; // 13% stroke — subtle outline
+			ctx!.strokeStyle = color; // solid border
+			ctx!.lineWidth = 1.5 / zoom;
 			ctx!.lineWidth = 1.5 / zoom;
 			ctx!.stroke();
 		}
@@ -340,7 +341,7 @@
 		}
 	}
 
-	function drawEdges() {
+	function drawLinks() {
 		// Viewport bounds for culling (skip edges fully outside view)
 		const hw = width / 2 / zoom, hh = height / 2 / zoom;
 		const vpLeft = -panX / zoom - hw - 50, vpRight = -panX / zoom + hw + 50;
