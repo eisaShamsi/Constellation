@@ -124,13 +124,27 @@ SearchHub + Sky View both wired with canonicalization.
 - Test 6 (Sight): Functional but needs major Living Link integration
 
 ### Open Items — Next Session Priority
-1. **Sight Living Link Integration** (CRITICAL): typed link colors, weight thickness, confidence line styles, direction arrows, annotation tooltips on hover — the circulatory system visualization
-2. **Sight UX**: syntax chips, search history, × reset vs close, highlight on note open, performance (15s → <3s)
-3. **SOV/SVO natural language operators**: 15 languages with per-language word order
-4. **De-canonicalize UI**: button in library settings (backend exists)
-5. **Frontmatter parser unification**: 3 parsers → 1 shared module
-6. **Search tests 7-12**: QuickSwitcher, Backlinks, Tags, cross-function, editor highlights, return state
-7. **Help files**: 14 translated languages
+### Constellation Sight — Ground-Up Rebuild Planned
+Decision: Stop patching the old Sight. Rebuild from ground up with Living Link System at its core.
+
+**Plan approved (5 phases):**
+- Phase A: Strip and Foundation (D3 simulation + canvas + pan/zoom, <3s load)
+- Phase B: Living Link Edge Rendering (type colors, weight thickness, confidence styles, arrowheads, annotation tooltips, dormant fading)
+- Phase C: Search Integration (6 scopes, chips, history, category badges, highlight on click)
+- Phase D: Insight Panel (replaces SightPanel — health, link stats, lifecycle, formulation analysis, communities, gaps)
+- Phase E: Polish + Replace (legend, settings, ARIA, RTL, i18n, performance validation)
+
+**Terminology**: Lens → Sight, LensPanel → SightPanel (throughout codebase)
+
+**Syntax resolution**: Both `[[note|type]]` (CE spec) and `[[type::target|annotation]]` (Living Link) coexist. Prefer `::` for new links.
+
+### Remaining Open Items
+1. **Sight rebuild** (Phases A-E) — next sessions
+2. **SOV/SVO natural language operators**: 15 languages with per-language word order
+3. **De-canonicalize UI**: button in library settings (backend exists)
+4. **Frontmatter parser unification**: 3 parsers → 1 shared module
+5. **Search tests 7-12**: QuickSwitcher, Backlinks, Tags, cross-function, editor highlights, return state
+6. **Help files**: 14 translated languages
 
 ### Living Link System (commits `ec80db9` → `f8065a4`)
 
