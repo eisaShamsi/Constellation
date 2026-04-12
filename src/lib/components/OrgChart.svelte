@@ -809,6 +809,22 @@
 				<button class="oc-chips-btn" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
 				</button>
+				<!-- Search history dropdown (inside search box for correct positioning) -->
+				{#if showSearchHistory && searchHistoryItems.length > 0 && !fsSearchQuery}
+					<div class="oc-search-history">
+						{#each searchHistoryItems.slice(0, 8) as item}
+							<button class="oc-history-item" onclick={() => selectSearchHistory(item)} dir="auto">{item}</button>
+						{/each}
+					</div>
+				{/if}
+				<!-- Syntax chips panel (inside search box for correct positioning) -->
+				{#if showChips}
+					<div class="oc-chips-panel">
+						{#each syntaxChips as chip}
+							<button class="oc-chip" onclick={() => insertChipSyntax(chip.syntax)}>{$t(`searchHub.${chip.label}`)}</button>
+						{/each}
+					</div>
+				{/if}
 			</div>
 			{#if searchMatches.length > 0}
 				<span class="oc-fs-match-count">{searchMatchIdx + 1}/{searchMatches.length}</span>
@@ -830,23 +846,6 @@
 				<span class="oc-fs-match-count oc-fs-no-match">{$t('searchHub.noResults') || '0 matches'}</span>
 			{/if}
 
-			<!-- Search history dropdown -->
-			{#if showSearchHistory && searchHistoryItems.length > 0 && !fsSearchQuery}
-				<div class="oc-search-history">
-					{#each searchHistoryItems.slice(0, 8) as item}
-						<button class="oc-history-item" onclick={() => selectSearchHistory(item)} dir="auto">{item}</button>
-					{/each}
-				</div>
-			{/if}
-
-			<!-- Syntax chips panel -->
-			{#if showChips}
-				<div class="oc-chips-panel">
-					{#each syntaxChips as chip}
-						<button class="oc-chip" onclick={() => insertChipSyntax(chip.syntax)}>{$t(`searchHub.${chip.label}`)}</button>
-					{/each}
-				</div>
-			{/if}
 			{#each ALL_MATURITIES as m}
 				<button class="oc-fs-chip" class:active={fsMaturityFilter.has(m)} onclick={() => toggleMaturityFilter(m)}>
 					<span class="oc-fs-chip-dot" style="background:{MATURITY_COLORS[m]}"></span>
@@ -1328,7 +1327,7 @@
 	.oc-fs-icon { color: var(--text-muted); flex-shrink: 0; }
 	.oc-fs-title { font-size: 16px; font-weight: 700; color: var(--text-normal); }
 	.oc-fs-stat { font-size: 12px; color: var(--text-muted); }
-	.oc-fs-actions { display: flex; align-items: center; gap: 6px; margin-inline-start: auto; }
+	.oc-fs-actions { display: flex; align-items: center; gap: 6px; margin-inline-start: auto; flex-wrap: wrap; }
 	.oc-search-box {
 		display: flex; align-items: center; gap: 4px;
 		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
