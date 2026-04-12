@@ -149,6 +149,16 @@ SearchHub + Sky View both wired with canonicalization.
 - Syntax chips: 7 cognitive chips in SearchHub + Sky View
 - Arabic: يدعم، يناقض، يسبب، يمثل، يعمم، مشتق من، جزء من
 
+**P2: Traversal Tracking (commit `2fb8c82`):**
+- `constellation_link_traverse`: records link click, increments count, updates weight via `1.0 + ln(1 + tc)`
+- Dormancy auto-wake: dormant links revive on traversal
+- Data preservation: weight/traversal/confidence survives re-index
+- `constellation_link_dormant`: finds links idle 90+ days
+- Wired: NoteEditor + BacklinksPanel pass source path on wikilink click
+- Target name uses display title (not canonical filename)
+- Verified: 2 links with weight > 1.0 after traversal testing
+- Fixed: rename error silenced for non-existent files during title blur
+
 ---
 
 ## Phase: Canonical Filename Architecture
