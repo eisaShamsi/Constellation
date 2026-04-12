@@ -509,7 +509,7 @@
 	// Syntax chips + search enhancements
 	let showChips = $state(false);
 	let showSearchHistory = $state(false);
-	let searchHistoryItems = $state<string[]>([]);
+	let searchHistoryItems = $state<{ query: string; timestamp: number }[]>([]);
 	let searchCategoryCounts = $state<Record<string, number>>({});
 
 	const syntaxChips = $derived.by(() => {
@@ -541,8 +541,8 @@
 		showChips = false;
 	}
 
-	function selectSearchHistory(q: string) {
-		fsSearchQuery = q;
+	function selectSearchHistory(q: { query: string }) {
+		fsSearchQuery = q.query;
 		showSearchHistory = false;
 		executeSearch();
 	}
@@ -820,7 +820,7 @@
 				{#if showSearchHistory && searchHistoryItems.length > 0 && !fsSearchQuery}
 					<div class="oc-search-history">
 						{#each searchHistoryItems.slice(0, 8) as item}
-							<button class="oc-history-item" onclick={() => selectSearchHistory(item)} dir="auto">{item}</button>
+							<button class="oc-history-item" onclick={() => selectSearchHistory(item)} dir="auto">{item.query}</button>
 						{/each}
 					</div>
 				{/if}
