@@ -444,7 +444,14 @@
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
         "notes": "노트",
-        "from": "에서"
+        "from": "에서",
+        "supports": "지지",
+        "contradicts": "모순",
+        "causes": "원인",
+        "exemplifies": "예시",
+        "generalizes": "일반화",
+        "derivesFrom": "파생",
+        "partOf": "일부"
     },
     "layout": {
         "leftSidebar": "왼쪽 사이드바",
@@ -1439,7 +1446,14 @@
         "linksBetween": "링크 사이",
         "linksAll": "모든 링크",
         "and": "그리고",
-        "scope": "내"
+        "scope": "내",
+        "supports": "지지",
+        "contradicts": "모순",
+        "causes": "원인",
+        "exemplifies": "예시",
+        "generalizes": "일반화",
+        "derivesFrom": "파생",
+        "partOf": "일부"
     },
     "searchBadges": {
         "title": "제",

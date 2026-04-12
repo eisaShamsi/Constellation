@@ -444,7 +444,14 @@
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
         "notes": "פתקים",
-        "from": "מתוך"
+        "from": "מתוך",
+        "supports": "תומך",
+        "contradicts": "סותר",
+        "causes": "גורם",
+        "exemplifies": "ממחיש",
+        "generalizes": "מכליל",
+        "derivesFrom": "נגזר",
+        "partOf": "חלק"
     },
     "layout": {
         "leftSidebar": "סרגל צד שמאלי",
@@ -1439,7 +1446,14 @@
         "linksBetween": "קישורים בין",
         "linksAll": "כל הקישורים",
         "and": "ו",
-        "scope": "ב"
+        "scope": "ב",
+        "supports": "תומך",
+        "contradicts": "סותר",
+        "causes": "גורם",
+        "exemplifies": "ממחיש",
+        "generalizes": "מכליל",
+        "derivesFrom": "נגזר מ",
+        "partOf": "חלק מ"
     },
     "searchBadges": {
         "title": "כ",

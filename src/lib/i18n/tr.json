@@ -444,7 +444,14 @@
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
         "notes": "not",
-        "from": "içinden"
+        "from": "içinden",
+        "supports": "Destekleyen",
+        "contradicts": "Çelişen",
+        "causes": "Neden",
+        "exemplifies": "Örnekleyen",
+        "generalizes": "Genelleyen",
+        "derivesFrom": "Kaynaklanan",
+        "partOf": "Parçası"
     },
     "layout": {
         "leftSidebar": "Sol kenar çubuğu",
@@ -1439,7 +1446,14 @@
         "linksBetween": "bağlantı arasında",
         "linksAll": "tüm bağlantılar",
         "and": "ve",
-        "scope": "içinde"
+        "scope": "içinde",
+        "supports": "destekleyen",
+        "contradicts": "çelişen",
+        "causes": "neden",
+        "exemplifies": "örnekleyen",
+        "generalizes": "genelleyen",
+        "derivesFrom": "kaynaklanan",
+        "partOf": "parçası"
     },
     "searchBadges": {
         "title": "B",

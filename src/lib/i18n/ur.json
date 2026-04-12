@@ -444,7 +444,14 @@
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
         "notes": "نوٹس",
-        "from": "میں سے"
+        "from": "میں سے",
+        "supports": "حمایت",
+        "contradicts": "تردید",
+        "causes": "وجہ",
+        "exemplifies": "مثال",
+        "generalizes": "تعمیم",
+        "derivesFrom": "ماخوذ",
+        "partOf": "حصہ"
     },
     "layout": {
         "leftSidebar": "بایاں سائڈبار",
@@ -1439,7 +1446,14 @@
         "linksBetween": "روابط مابین",
         "linksAll": "تمام روابط",
         "and": "اور",
-        "scope": "میں"
+        "scope": "میں",
+        "supports": "حمایت",
+        "contradicts": "تردید",
+        "causes": "وجہ",
+        "exemplifies": "مثال",
+        "generalizes": "تعمیم",
+        "derivesFrom": "سے ماخوذ",
+        "partOf": "حصہ"
     },
     "searchBadges": {
         "title": "ع",

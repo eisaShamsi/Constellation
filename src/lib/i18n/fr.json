@@ -444,7 +444,14 @@
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
         "notes": "notes",
-        "from": "de"
+        "from": "de",
+        "supports": "Soutient",
+        "contradicts": "Contredit",
+        "causes": "Cause",
+        "exemplifies": "Illustre",
+        "generalizes": "Généralise",
+        "derivesFrom": "Dérive de",
+        "partOf": "Partie de"
     },
     "layout": {
         "leftSidebar": "Barre latérale gauche",
@@ -1439,7 +1446,14 @@
         "linksBetween": "liens entre",
         "linksAll": "tous les liens",
         "and": "et",
-        "scope": "dans"
+        "scope": "dans",
+        "supports": "soutient",
+        "contradicts": "contredit",
+        "causes": "cause",
+        "exemplifies": "illustre",
+        "generalizes": "généralise",
+        "derivesFrom": "dérive de",
+        "partOf": "partie de"
     },
     "searchBadges": {
         "title": "T",

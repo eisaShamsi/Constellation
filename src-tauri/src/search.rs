@@ -40,6 +40,7 @@ pub struct SearchFilters {
     pub orphans: Option<bool>,
     pub links_between: Option<Vec<String>>,  // exactly 2 targets
     pub links_all: Option<Vec<String>>,     // incoming + outgoing combined
+    pub typed_links: Option<Vec<TypedLinkFilter>>, // cognitive link type queries
     pub library_names: Option<Vec<String>>,
     pub maturity: Option<Vec<String>>,
     pub path_prefix: Option<String>,
@@ -50,6 +51,12 @@ pub struct PropertyFilter {
     pub key: String,
     pub op: String,     // "=" | "!=" | "contains" | "is_empty"
     pub value: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TypedLinkFilter {
+    pub link_type: String,   // supports, contradicts, causes, etc.
+    pub target: String,      // target note name
 }
 
 #[derive(Debug, Serialize)]
@@ -722,6 +729,36 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
             // Exclude X itself
             conditions.push("LOWER(name) != ?".to_string());
             params_vec.push(Box::new(target_lower));
+        }
+    }
+
+    // Typed link filter: find notes that have a specific relationship to a target
+    // e.g., "supports [[X]]" → find notes where source has link_type=supports to target=X
+    if let Some(typed_links) = &filters.typed_links {
+        for tl in typed_links {
+            let target_lower = tl.target.to_lowercase();
+            let link_type_lower = tl.link_type.to_lowercase();
+            // Query note_links table for matching typed links
+            let mut source_paths: Vec<String> = Vec::new();
+            if let Ok(mut stmt) = conn.prepare(
+                "SELECT DISTINCT source_path FROM note_links WHERE link_type = ?1 AND (LOWER(target_name) = ?2 OR LOWER(target_name) LIKE '%' || ?2 || '%') AND status = 'active'"
+            ) {
+                if let Ok(rows) = stmt.query_map(params![link_type_lower, target_lower], |row| row.get::<_, String>(0)) {
+                    for row in rows.flatten() {
+                        source_paths.push(row);
+                    }
+                }
+            }
+            if source_paths.is_empty() {
+                // No matches — add impossible condition to return empty results
+                conditions.push("1 = 0".to_string());
+            } else {
+                let placeholders: Vec<String> = source_paths.iter().map(|_| "?".to_string()).collect();
+                conditions.push(format!("path IN ({})", placeholders.join(",")));
+                for sp in &source_paths {
+                    params_vec.push(Box::new(sp.clone()));
+                }
+            }
         }
     }
 

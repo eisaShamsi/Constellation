@@ -797,6 +797,7 @@ export interface ConstellationSearchRequest {
 		orphans?: boolean;
 		links_between?: string[];
 		links_all?: string[];
+		typed_links?: { link_type: string; target: string }[];
 		library_names?: string[];
 		maturity?: string[];
 		path_prefix?: string;
@@ -926,6 +927,14 @@ export function canonicalizeSearchQuery(raw: string, ops: Record<string, string>
 		[ops.mutual, 'mutual'],
 		[ops.mentions, 'mentions'],
 		[ops.orphans, 'orphans'],
+		// Cognitive typed link operators
+		[ops.supports, 'supports'],
+		[ops.contradicts, 'contradicts'],
+		[ops.causes, 'causes'],
+		[ops.exemplifies, 'exemplifies'],
+		[ops.generalizes, 'generalizes'],
+		[ops.derivesFrom, 'derives from'],
+		[ops.partOf, 'part of'],
 	].filter(([loc, can]) => loc && can && loc !== can) as [string, string][];
 
 	replacements.sort((a, b) => b[0].length - a[0].length);
@@ -991,8 +1000,8 @@ export function canonicalizeSearchQuery(raw: string, ops: Record<string, string>
 export function hasAdvancedSyntaxMultilingual(q: string, ops: Record<string, string> | null): boolean {
 	// ROOT FIX: strip invisible bidi characters before checking
 	const clean = stripInvisibleChars(q);
-	// English operators (always checked)
-	if (/[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:/i.test(clean)) return true;
+	// English operators (always checked) — includes cognitive typed link operators
+	if (/[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:|supports\s+\[\[|contradicts\s+\[\[|causes\s+\[\[|exemplifies\s+\[\[|generalizes\s+\[\[|derives[- ]from\s+\[\[|part[- ]of\s+\[\[/i.test(clean)) return true;
 	// Localized operators for current locale
 	if (!ops) return false;
 	const normalized = normalizeArabicLight(clean);
@@ -1092,6 +1101,17 @@ export function parseSearchQuery(raw: string): ConstellationSearchRequest {
 	while ((match = allLinksRe.exec(raw)) !== null) {
 		if (!filters.links_all) filters.links_all = [];
 		filters.links_all.push(match[1].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Cognitive typed link operators: "supports [[X]]", "contradicts [[X]]", etc.
+	const typedLinkTypes = ['supports', 'contradicts', 'causes', 'exemplifies', 'generalizes', 'derives[- ]from', 'part[- ]of'];
+	const typedLinkRe = new RegExp(`(${typedLinkTypes.join('|')})\\s+\\[\\[([^\\]]+)\\]\\]`, 'gi');
+	while ((match = typedLinkRe.exec(raw)) !== null) {
+		if (!filters.typed_links) filters.typed_links = [];
+		// Normalize type: "derives from" → "derives-from", "part of" → "part-of"
+		const linkType = match[1].toLowerCase().replace(/\s+/g, '-');
+		filters.typed_links.push({ link_type: linkType, target: match[2].toLowerCase() });
 		freeText = freeText.replace(match[0], '').trim();
 	}
 

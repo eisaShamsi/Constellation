@@ -444,7 +444,14 @@
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
         "notes": "笔记",
-        "from": "来自"
+        "from": "来自",
+        "supports": "支持",
+        "contradicts": "矛盾",
+        "causes": "导致",
+        "exemplifies": "例子",
+        "generalizes": "概括",
+        "derivesFrom": "源自",
+        "partOf": "一部分"
     },
     "layout": {
         "leftSidebar": "左侧边栏",
@@ -1439,7 +1446,14 @@
         "linksBetween": "链接之间",
         "linksAll": "所有链接",
         "and": "和",
-        "scope": "在"
+        "scope": "在",
+        "supports": "支持",
+        "contradicts": "矛盾",
+        "causes": "导致",
+        "exemplifies": "例子",
+        "generalizes": "概括",
+        "derivesFrom": "源自",
+        "partOf": "一部分"
     },
     "searchBadges": {
         "title": "题",

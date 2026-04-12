@@ -445,7 +445,14 @@
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
         "notes": "notes",
-        "from": "from"
+        "from": "from",
+        "supports": "Supports",
+        "contradicts": "Contradicts",
+        "causes": "Causes",
+        "exemplifies": "Exemplifies",
+        "generalizes": "Generalizes",
+        "derivesFrom": "Derives from",
+        "partOf": "Part of"
     },
     "layout": {
         "leftSidebar": "Left sidebar",
@@ -1443,7 +1450,14 @@
         "linksBetween": "links between",
         "linksAll": "links all",
         "and": "and",
-        "scope": "in"
+        "scope": "in",
+        "supports": "supports",
+        "contradicts": "contradicts",
+        "causes": "causes",
+        "exemplifies": "exemplifies",
+        "generalizes": "generalizes",
+        "derivesFrom": "derives from",
+        "partOf": "part of"
     },
     "searchBadges": {
         "title": "T",

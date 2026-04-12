@@ -444,7 +444,14 @@
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
         "notes": "ノート",
-        "from": "から"
+        "from": "から",
+        "supports": "支持",
+        "contradicts": "矛盾",
+        "causes": "原因",
+        "exemplifies": "例",
+        "generalizes": "一般化",
+        "derivesFrom": "派生",
+        "partOf": "一部"
     },
     "layout": {
         "leftSidebar": "左サイドバー",
@@ -1439,7 +1446,14 @@
         "linksBetween": "リンク間",
         "linksAll": "全リンク",
         "and": "と",
-        "scope": "内"
+        "scope": "内",
+        "supports": "支持",
+        "contradicts": "矛盾",
+        "causes": "原因",
+        "exemplifies": "例",
+        "generalizes": "一般化",
+        "derivesFrom": "派生",
+        "partOf": "一部"
     },
     "searchBadges": {
         "title": "題",

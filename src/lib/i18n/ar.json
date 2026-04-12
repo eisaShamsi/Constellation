@@ -447,7 +447,14 @@
         "wikilinks": "الروابط",
         "semantic": "دلالي",
         "notes": "ملاحظة",
-        "from": "من"
+        "from": "من",
+        "supports": "يدعم",
+        "contradicts": "يناقض",
+        "causes": "يسبب",
+        "exemplifies": "يمثل",
+        "generalizes": "يعمم",
+        "derivesFrom": "مشتق من",
+        "partOf": "جزء من"
     },
     "layout": {
         "leftSidebar": "الشريط الأيسر",
@@ -1443,7 +1450,14 @@
         "linksBetween": "الروابط البينية",
         "linksAll": "جميع الروابط",
         "and": "و",
-        "scope": "في"
+        "scope": "في",
+        "supports": "يدعم",
+        "contradicts": "يناقض",
+        "causes": "يسبب",
+        "exemplifies": "يمثل",
+        "generalizes": "يعمم",
+        "derivesFrom": "مشتق من",
+        "partOf": "جزء من"
     },
     "searchBadges": {
         "title": "ع",

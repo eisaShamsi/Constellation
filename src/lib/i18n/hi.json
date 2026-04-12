@@ -444,7 +444,14 @@
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
         "notes": "नोट्स",
-        "from": "से"
+        "from": "से",
+        "supports": "समर्थन",
+        "contradicts": "खंडन",
+        "causes": "कारण",
+        "exemplifies": "उदाहरण",
+        "generalizes": "सामान्यीकरण",
+        "derivesFrom": "निकला",
+        "partOf": "हिस्सा"
     },
     "layout": {
         "leftSidebar": "बायाँ साइडबार",
@@ -1439,7 +1446,14 @@
         "linksBetween": "लिंक बीच",
         "linksAll": "सभी लिंक",
         "and": "और",
-        "scope": "में"
+        "scope": "में",
+        "supports": "समर्थन",
+        "contradicts": "खंडन",
+        "causes": "कारण",
+        "exemplifies": "उदाहरण",
+        "generalizes": "सामान्यीकरण",
+        "derivesFrom": "से निकला",
+        "partOf": "हिस्सा"
     },
     "searchBadges": {
         "title": "श",

@@ -444,7 +444,14 @@
         "wikilinks": "Wikilinks",
         "semantic": "Semantic",
         "notes": "заметок",
-        "from": "из"
+        "from": "из",
+        "supports": "Поддерживает",
+        "contradicts": "Противоречит",
+        "causes": "Вызывает",
+        "exemplifies": "Иллюстрирует",
+        "generalizes": "Обобщает",
+        "derivesFrom": "Происходит от",
+        "partOf": "Часть"
     },
     "layout": {
         "leftSidebar": "Левая панель",
@@ -1439,7 +1446,14 @@
         "linksBetween": "ссылки между",
         "linksAll": "все ссылки",
         "and": "и",
-        "scope": "в"
+        "scope": "в",
+        "supports": "поддерживает",
+        "contradicts": "противоречит",
+        "causes": "вызывает",
+        "exemplifies": "иллюстрирует",
+        "generalizes": "обобщает",
+        "derivesFrom": "происходит от",
+        "partOf": "часть"
     },
     "searchBadges": {
         "title": "З",

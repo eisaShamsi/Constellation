@@ -66,6 +66,15 @@
 			{ label: 'orphans', syntax: ops?.orphans ?? 'orphans' },
 			{ label: 'linksBetween', syntax: (ops?.linksBetween ?? 'links between') + ' [[' },
 			{ label: 'linksAll', syntax: (ops?.linksAll ?? 'links all') + ' [[' },
+			// Cognitive typed link operators
+			{ label: 'supports', syntax: (ops?.supports ?? 'supports') + ' [[' },
+			{ label: 'contradicts', syntax: (ops?.contradicts ?? 'contradicts') + ' [[' },
+			{ label: 'causes', syntax: (ops?.causes ?? 'causes') + ' [[' },
+			{ label: 'exemplifies', syntax: (ops?.exemplifies ?? 'exemplifies') + ' [[' },
+			{ label: 'generalizes', syntax: (ops?.generalizes ?? 'generalizes') + ' [[' },
+			{ label: 'derivesFrom', syntax: (ops?.derivesFrom ?? 'derives from') + ' [[' },
+			{ label: 'partOf', syntax: (ops?.partOf ?? 'part of') + ' [[' },
+			// Structural
 			{ label: 'tag', syntax: '#' },
 			{ label: 'property', syntax: 'key=value' },
 			{ label: 'scope', syntax: (ops?.scope ?? 'in') + ':' },
