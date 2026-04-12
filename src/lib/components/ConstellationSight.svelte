@@ -7,8 +7,9 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import * as d3 from 'd3';
-	import { t, dir } from '$lib/i18n';
+	import { t, dir, getSearchOps } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
+	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
 	import type { SkyNode, SkyLink } from '$lib/libraries/store';
 	import type { ClusterInfo, StructuralGap, UniverseHealth } from '$lib/graph/clusterEngine';
 	import LensPanel from './LensPanel.svelte';
@@ -88,6 +89,32 @@
 	interface SearchMatch { node: SimNode; matchType: 'title' | 'content' | 'both'; }
 	let searchResults = $state<SearchMatch[]>([]);
 	let searchIdx = $state(0);
+	let showChips = $state(false);
+	let showHistory = $state(false);
+	let historyItems = $state<{ query: string; timestamp: number }[]>([]);
+
+	const syntaxChips = $derived.by(() => {
+		const _locale = $t('searchHub.linksTo');
+		const ops = getSearchOps();
+		return [
+			{ label: 'linksTo', syntax: (ops?.linksTo ?? 'links to') + ' [[' },
+			{ label: 'linksFrom', syntax: (ops?.linksFrom ?? 'links from') + ' [[' },
+			{ label: 'mutual', syntax: (ops?.mutual ?? 'mutual') + ' [[' },
+			{ label: 'mentions', syntax: (ops?.mentions ?? 'mentions') + ' [[' },
+			{ label: 'orphans', syntax: ops?.orphans ?? 'orphans' },
+			{ label: 'linksAll', syntax: (ops?.linksAll ?? 'links all') + ' [[' },
+			{ label: 'supports', syntax: (ops?.supports ?? 'supports') + ' [[' },
+			{ label: 'contradicts', syntax: (ops?.contradicts ?? 'contradicts') + ' [[' },
+			{ label: 'causes', syntax: (ops?.causes ?? 'causes') + ' [[' },
+			{ label: 'exemplifies', syntax: (ops?.exemplifies ?? 'exemplifies') + ' [[' },
+			{ label: 'generalizes', syntax: (ops?.generalizes ?? 'generalizes') + ' [[' },
+			{ label: 'derivesFrom', syntax: (ops?.derivesFrom ?? 'derives from') + ' [[' },
+			{ label: 'partOf', syntax: (ops?.partOf ?? 'part of') + ' [[' },
+			{ label: 'tag', syntax: '#' },
+			{ label: 'property', syntax: 'key=value' },
+			{ label: 'scope', syntax: (ops?.scope ?? 'in') + ':' },
+		];
+	});
 	let settingsVisible = $state(false);
 	let showRegions = $state(true);
 	let forceStrength = $state(-60);
@@ -458,6 +485,8 @@
 	// ─── Search ───
 	async function executeSearch() {
 		if (!searchQuery.trim()) { searchResults = []; searchIdx = 0; return; }
+		addSearchHistory(searchQuery);
+		historyItems = readSearchHistory();
 		const q = searchQuery.toLowerCase();
 
 		// 1. Title matches (instant, local)
@@ -534,7 +563,20 @@
 	}
 	function closeSearch() {
 		resetSearch();
+		showChips = false;
+		showHistory = false;
 		searchVisible = false;
+	}
+
+	function insertChipSyntax(syntax: string) {
+		searchQuery = searchQuery ? searchQuery + ' ' + syntax : syntax;
+		showChips = false;
+	}
+
+	function selectHistory(item: { query: string }) {
+		searchQuery = item.query;
+		showHistory = false;
+		executeSearch();
 	}
 
 	// ─── Settings apply ───
@@ -640,12 +682,36 @@
 						<button class:active={searchScope === 'title'} onclick={() => searchScope = 'title'}>{$t("lens.scopeTitle") || "Title"}</button>
 						<button class:active={searchScope === 'content'} onclick={() => searchScope = 'content'}>{$t("lens.scopeContent") || "Content"}</button>
 					</div>
-					<input type="text" dir="auto" placeholder={searchScope === 'title' ? ($t('lens.searchTitles') || 'Search titles...') : searchScope === 'content' ? ($t('lens.searchContent') || 'Search content...') : ($t('lens.searchAll') || 'Search all... (Enter)')} bind:value={searchQuery}
-						onkeydown={(e) => {
-							if (e.key === 'Enter') { e.preventDefault(); searchResults.length > 0 ? (e.shiftKey ? prevSearchResult() : nextSearchResult()) : executeSearch(); }
-							if (e.key === 'Escape') closeSearch();
-						}} />
-					<button onclick={resetSearch} title="Reset">×</button>
+					<div class="cl-search-input-wrap">
+						<input type="text" dir="auto" placeholder={searchScope === 'title' ? ($t('lens.searchTitles') || 'Search titles...') : searchScope === 'content' ? ($t('lens.searchContent') || 'Search content...') : ($t('lens.searchAll') || 'Search all... (Enter)')} bind:value={searchQuery}
+							onfocus={() => { if (!searchQuery) { historyItems = readSearchHistory(); showHistory = true; } }}
+							onblur={() => setTimeout(() => { showHistory = false; }, 200)}
+							oninput={() => { showHistory = false; }}
+							onkeydown={(e) => {
+								if (e.key === 'Enter') { e.preventDefault(); searchResults.length > 0 ? (e.shiftKey ? prevSearchResult() : nextSearchResult()) : executeSearch(); }
+								if (e.key === 'Escape') closeSearch();
+							}} />
+						<button onclick={resetSearch} title={$t('common.clear') || 'Reset'}>×</button>
+						<button class="cl-chips-btn" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers') || 'Syntax'}>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+						</button>
+						<!-- Search history -->
+						{#if showHistory && historyItems.length > 0 && !searchQuery}
+							<div class="cl-search-dropdown">
+								{#each historyItems.slice(0, 8) as item}
+									<button class="cl-dropdown-item" onclick={() => selectHistory(item)} dir="auto">{item.query}</button>
+								{/each}
+							</div>
+						{/if}
+						<!-- Syntax chips -->
+						{#if showChips}
+							<div class="cl-search-dropdown cl-chips-grid">
+								{#each syntaxChips as chip}
+									<button class="cl-chip" onclick={() => insertChipSyntax(chip.syntax)}>{$t(`searchHub.${chip.label}`)}</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
 					{#if searchResults.length > 0}
 						{@const currentMatch = searchResults[searchIdx]}
 						<span class="cl-search-type" style="background:{currentMatch?.matchType === 'title' ? '#3b82f6' : currentMatch?.matchType === 'content' ? '#16a34a' : '#7c3aed'}">{currentMatch?.matchType}</span>
@@ -765,7 +831,7 @@
 	.cl-search-bar svg { color: #64748b; flex-shrink: 0; }
 	.cl-search-bar input {
 		border: none; outline: none; background: none; font-size: 12px;
-		font-family: inherit; color: #1a1a1a; width: 160px;
+		font-family: inherit; color: #1a1a1a; min-width: 200px;
 	}
 	.cl-search-bar button {
 		border: none; background: none; color: #64748b; cursor: pointer; font-size: 14px; padding: 0 2px;
@@ -780,6 +846,16 @@
 	.cl-search-found { font-size: 10px; color: #64748b; white-space: nowrap; }
 	.cl-search-type { font-size: 9px; color: white; padding: 1px 5px; border-radius: 4px; white-space: nowrap; text-transform: capitalize; }
 	.cl-search-none { font-size: 10px; color: #ef4444; white-space: nowrap; }
+	.cl-search-input-wrap { position: relative; display: flex; align-items: center; gap: 4px; flex: 1; min-width: 200px; }
+	.cl-search-input-wrap input { flex: 1; min-width: 0; }
+	.cl-chips-btn { border: none; background: none; cursor: pointer; color: #64748b; padding: 2px; border-radius: 3px; }
+	.cl-chips-btn:hover, .cl-chips-btn.active { color: var(--interactive-accent, #7c3aed); background: rgba(124,58,237,0.1); }
+	.cl-search-dropdown { position: absolute; top: 100%; inset-inline-start: 0; z-index: 100; background: rgba(255,255,255,0.98); border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 200px; max-height: 250px; overflow-y: auto; margin-top: 4px; }
+	.cl-dropdown-item { display: block; width: 100%; text-align: start; padding: 6px 12px; border: none; background: none; cursor: pointer; font-size: 11px; color: #1a1a1a; }
+	.cl-dropdown-item:hover { background: #f1f5f9; }
+	.cl-chips-grid { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; max-width: 400px; }
+	.cl-chip { padding: 2px 8px; border-radius: 12px; border: 1px solid #e5e7eb; background: white; color: #64748b; font-size: 10px; cursor: pointer; white-space: nowrap; }
+	.cl-chip:hover { border-color: var(--interactive-accent, #7c3aed); color: var(--interactive-accent, #7c3aed); }
 	.cl-search-nav { border: none; background: none; color: #64748b; cursor: pointer; padding: 0 2px; display: flex; align-items: center; }
 	.cl-search-nav:hover { color: #1a1a1a; }
 
