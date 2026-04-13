@@ -45,8 +45,9 @@
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
 		{ id: 'knowledge', label: $t('settings.sections.knowledge') || 'Knowledge Management', icon: 'brain' },
 		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
-		{ id: 'keyboard', label: $t('settings.sections.keyboard'), icon: 'keyboard' },
-		{ id: 'features', label: $t('settings.sections.features'), icon: 'grid' },
+		{ id: 'hotkeys', label: $t('settings.sections.hotkeys') || 'Hotkeys', icon: 'keyboard' },
+		{ id: 'templates', label: $t('settings.sections.templates') || 'Templates', icon: 'template' },
+		{ id: 'plugins', label: $t('settings.sections.plugins') || 'Plug-Ins', icon: 'grid' },
 	]);
 
 	const filteredCommands = $derived(
@@ -55,38 +56,39 @@
 			: commands
 	);
 
-	// Feature cards grouped by category
+	// Plug-in cards grouped by category
 	const featureGroups = $derived([
 		{
-			category: $t('settings.features.navigation'),
+			category: $t('settings.plugins.navigation') || 'Navigation',
 			icon: 'compass',
 			features: [
-				{ id: 'search', name: $t('settings.features.search'), desc: $t('settings.features.searchDesc'), icon: '🔍' },
-				{ id: 'quickSwitcher', name: $t('settings.features.quickSwitcher'), desc: $t('settings.features.quickSwitcherDesc'), icon: '⚡' },
-				{ id: 'commandPalette', name: $t('settings.features.commandPalette'), desc: $t('settings.features.commandPaletteDesc'), icon: '🎯' },
+				{ id: 'search', name: $t('settings.plugins.search') || 'Search', desc: $t('settings.plugins.searchDesc') || 'Search across all libraries', icon: '🔍' },
+				{ id: 'quickSwitcher', name: $t('settings.plugins.quickSwitcher') || 'Quick Switcher', desc: $t('settings.plugins.quickSwitcherDesc') || 'Quickly navigate between notes', icon: '⚡' },
+				{ id: 'commandPalette', name: $t('settings.plugins.commandPalette') || 'Command Palette', desc: $t('settings.plugins.commandPaletteDesc') || 'Quick access to all commands', icon: '🎯' },
 			]
 		},
 		{
-			category: $t('settings.features.discovery'),
+			category: $t('settings.plugins.discovery') || 'Discovery',
 			icon: 'eye',
 			features: [
-				{ id: 'graphView', name: $t('settings.features.graphView'), desc: $t('settings.features.graphViewDesc'), icon: '🌐' },
-				{ id: 'backlinks', name: $t('settings.features.backlinks'), desc: $t('settings.features.backlinksDesc'), icon: '🔗' },
-				{ id: 'outgoingLinks', name: $t('settings.features.outgoingLinks'), desc: $t('settings.features.outgoingLinksDesc'), icon: '↗️' },
-				{ id: 'pagePreview', name: $t('settings.features.pagePreview'), desc: $t('settings.features.pagePreviewDesc'), icon: '👁️' },
-				{ id: 'tags', name: $t('settings.features.tags'), desc: $t('settings.features.tagsDesc'), icon: '🏷️' },
-				{ id: 'index', name: $t('settings.features.index'), desc: $t('settings.features.indexDesc'), icon: '📑' },
-				{ id: 'semanticSearch', name: $t('settings.features.semanticSearch'), desc: $t('settings.features.semanticSearchDesc'), icon: '🧠' },
+				{ id: 'graphView', name: $t('settings.plugins.graphView') || 'Sky View', desc: $t('settings.plugins.graphViewDesc') || 'Visualize links between notes', icon: '🌐' },
+				{ id: 'constellationSight', name: $t('settings.plugins.constellationSight') || 'Constellation Sight', desc: $t('settings.plugins.constellationSightDesc') || 'Gravity-well knowledge visualization with analytics', icon: '👁️' },
+				{ id: 'constellationMap', name: $t('settings.plugins.constellationMap') || 'Constellation Map', desc: $t('settings.plugins.constellationMapDesc') || 'Sunburst visualization of knowledge structure', icon: '🗺️' },
+				{ id: 'backlinks', name: $t('settings.plugins.backlinks') || 'Backlinks', desc: $t('settings.plugins.backlinksDesc') || 'Show notes that link to the current note', icon: '🔗' },
+				{ id: 'outgoingLinks', name: $t('settings.plugins.outgoingLinks') || 'Outgoing Links', desc: $t('settings.plugins.outgoingLinksDesc') || 'Show links in the current note', icon: '↗️' },
+				{ id: 'pagePreview', name: $t('settings.plugins.pagePreview') || 'Page Preview', desc: $t('settings.plugins.pagePreviewDesc') || 'Preview notes on link hover', icon: '👁️' },
+				{ id: 'tags', name: $t('settings.plugins.tags') || 'Tags', desc: $t('settings.plugins.tagsDesc') || 'View and browse all tags', icon: '🏷️' },
+				{ id: 'index', name: $t('settings.plugins.index') || 'Index', desc: $t('settings.plugins.indexDesc') || 'Collect and browse terms from all notes', icon: '📑' },
+				{ id: 'semanticSearch', name: $t('settings.plugins.semanticSearch') || 'Semantic Search', desc: $t('settings.plugins.semanticSearchDesc') || 'Find conceptually related notes using AI', icon: '🧠' },
 			]
 		},
 		{
-			category: $t('settings.features.organization'),
+			category: $t('settings.plugins.organization') || 'Organization',
 			icon: 'layers',
 			features: [
-				{ id: 'dailyNotes', name: $t('settings.features.dailyNotes'), desc: $t('settings.features.dailyNotesDesc'), icon: '📅' },
-				{ id: 'templates', name: $t('settings.features.templates'), desc: $t('settings.features.templatesDesc'), icon: '📋' },
-				{ id: 'workspaces', name: $t('settings.features.workspaces'), desc: $t('settings.features.workspacesDesc'), icon: '📐' },
-				{ id: 'wordCount', name: $t('settings.features.wordCount'), desc: $t('settings.features.wordCountDesc'), icon: '📊' },
+				{ id: 'dailyNotes', name: $t('settings.plugins.dailyNotes') || 'Daily Notes', desc: $t('settings.plugins.dailyNotesDesc') || 'Create and open daily notes', icon: '📅' },
+				{ id: 'workspaces', name: $t('settings.plugins.workspaces') || 'Workspaces', desc: $t('settings.plugins.workspacesDesc') || 'Save and restore workspace layouts', icon: '📐' },
+				{ id: 'wordCount', name: $t('settings.plugins.wordCount') || 'Word Count', desc: $t('settings.plugins.wordCountDesc') || 'Show word count in status bar', icon: '📊' },
 			]
 		},
 	]);
@@ -1576,7 +1578,7 @@
 					</div>
 
 				<!-- ═══ KEYBOARD ═══ -->
-				{:else if activeSection === 'keyboard'}
+				{:else if activeSection === 'hotkeys'}
 					<div class="hotkey-filter">
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 						<input type="text" placeholder={$t('settings.keyboard.filter')}
@@ -1616,9 +1618,22 @@
 						{/if}
 					</div>
 
-				<!-- ═══ FEATURES ═══ -->
-				{:else if activeSection === 'features'}
-					<p class="section-intro">{$t('settings.features.intro')}</p>
+				<!-- ═══ TEMPLATES ═══ -->
+				{:else if activeSection === 'templates'}
+					<p class="section-intro">{$t('settings.templates.intro') || 'Manage note templates. Templates let you insert predefined content into new notes.'}</p>
+					<div class="setting-row">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.plugins.templates') || 'Templates'}</div>
+							<div class="setting-desc">{$t('settings.plugins.templatesDesc') || 'Insert content from template files'}</div>
+						</div>
+						<button class="toggle-btn" class:on={getFeatureEnabled('templates')} onclick={() => toggleFeature('templates')}>
+							{getFeatureEnabled('templates') ? $t('settings.plugins.on') || 'On' : $t('settings.plugins.off') || 'Off'}
+						</button>
+					</div>
+
+				<!-- ═══ PLUG-INS ═══ -->
+				{:else if activeSection === 'plugins'}
+					<p class="section-intro">{$t('settings.plugins.intro') || 'Toggle plug-ins on or off. Disabled plug-ins are hidden from the interface.'}</p>
 
 					{#each featureGroups as group}
 						<div class="feature-group">
@@ -1632,7 +1647,7 @@
 										<div class="feature-card-desc">{feature.desc}</div>
 										<div class="feature-card-toggle">
 											<span class="feature-dot" class:on={getFeatureEnabled(feature.id)}></span>
-											{getFeatureEnabled(feature.id) ? $t('settings.features.on') : $t('settings.features.off')}
+											{getFeatureEnabled(feature.id) ? $t('settings.plugins.on') || 'On' : $t('settings.plugins.off') || 'Off'}
 										</div>
 									</button>
 								{/each}
