@@ -6,6 +6,7 @@
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
 	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme } from '$lib/libraries/store';
+	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -24,6 +25,7 @@
 	// Theme editor state
 	let editingTheme = $state<ConstellationTheme | null>(null);
 	let themeEditorOpen = $state(false);
+	let showObsidianBrowser = $state(false);
 
 	const allThemes = $derived([...BUILTIN_THEMES, ...($appSettings.customThemes ?? [])]);
 
@@ -1632,6 +1634,10 @@
 						<button class="theme-card theme-import" onclick={importTheme}>
 							<span class="theme-add-icon">↓</span>
 							<div class="theme-card-name">{$t('settings.appearance.importTheme') || 'Import'}</div>
+						</button>
+						<button class="theme-card theme-obsidian" onclick={() => showObsidianBrowser = true}>
+							<span class="theme-add-icon">🟣</span>
+							<div class="theme-card-name">{$t('settings.appearance.obsidianThemes') || 'Obsidian Themes'}</div>
 						</button>
 					</div>
 
