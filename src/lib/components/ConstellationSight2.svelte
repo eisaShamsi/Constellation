@@ -169,6 +169,9 @@
 	let selectedNode: SimNode | null = null;
 	let neighborIds = new Set<string>();
 
+	// Search target node IDs (from [[X]] in structured queries)
+	let searchTargetIds = new Set<string>();
+
 	const isRTL = $derived($dir === 'rtl');
 
 	// Syntax chips (reactive to locale)
@@ -360,6 +363,7 @@
 
 		const nodeMap = new Map(simNodes.map(n => [n.id, n]));
 		const matches: SearchMatch[] = [];
+		searchTargetIds = new Set<string>();
 
 		if (isAdvanced) {
 			// ── Structured query: links to/from, orphans, mutual, cognitive types ──
@@ -380,6 +384,7 @@
 				let tm;
 				while ((tm = targetRe.exec(canonicalized)) !== null) {
 					const targetId = tm[1].toLowerCase();
+					searchTargetIds.add(targetId);
 					const targetNode = nodeMap.get(targetId);
 					if (targetNode && !matches.find(m => m.node.id === targetId)) {
 						matches.push({ node: targetNode, matchType: 'target', matchCategories: ['T'] });
@@ -483,6 +488,7 @@
 		searchIdx = 0;
 		searchMatchSet = new Set();
 		searchMatchCats = new Map();
+		searchTargetIds = new Set();
 		requestDraw();
 	}
 
@@ -566,18 +572,34 @@
 			if ((sx < vpLeft && tx < vpLeft) || (sx > vpRight && tx > vpRight) ||
 				(sy < vpTop && ty < vpTop) || (sy > vpBottom && ty > vpBottom)) continue;
 
-			// Dim links not connected to search matches or selected neighborhood
-			const searchDim = hasSearch && !searchMatchSet.has(src.id) && !searchMatchSet.has(tgt.id);
+			// Classify link relevance to search/neighborhood
+			const srcMatch = hasSearch && searchMatchSet.has(src.id);
+			const tgtMatch = hasSearch && searchMatchSet.has(tgt.id);
+			const searchHighlight = srcMatch && tgtMatch;        // BOTH endpoints are matches → bold
+			const searchPartial = srcMatch || tgtMatch;           // one endpoint is a match → visible
+			const searchDim = hasSearch && !searchPartial;        // neither → dim
 			const neighborDim = selectedNode != null && src.id !== selectedNode.id && tgt.id !== selectedNode.id;
 
 			const typed = link.linkType && link.linkType !== 'relates' && LINK_TYPE_COLORS[link.linkType];
-			const color = typed ? LINK_TYPE_COLORS[link.linkType!] : '#94a3b8';
+
+			// Search-highlighted links: colored by direction relative to target
+			// Green = inward (result → target), Red = outward (target → result)
+			let color: string;
+			if (searchHighlight && searchTargetIds.size > 0) {
+				const srcIsTarget = searchTargetIds.has(src.id);
+				const tgtIsTarget = searchTargetIds.has(tgt.id);
+				color = tgtIsTarget ? '#16a34a' : srcIsTarget ? '#ef4444' : '#f59e0b'; // green inward, red outward, amber other
+			} else {
+				color = typed ? LINK_TYPE_COLORS[link.linkType!] : '#94a3b8';
+			}
+
 			const w = link.weight ?? 1.0;
-			const baseWidth = (typed ? Math.max(0.8, Math.min(4, w * 0.5)) : 0.7) * linkStrokeMul;
+			const baseWidth = (typed ? Math.max(0.8, Math.min(4, w * 0.5)) : 0.7) * linkStrokeMul
+				* (searchHighlight ? 3.0 : 1.0);  // 3× thicker for search-matched links
 			const conf = CONFIDENCE_STYLE[link.confidence ?? 'hypothesis'] ?? CONFIDENCE_STYLE.hypothesis;
 
 			const isDormant = link.status === 'dormant';
-			const baseAlpha = searchDim ? 0.13 : neighborDim ? 0.06 : isDormant ? 0.27 : linkOpacity;
+			const baseAlpha = searchHighlight ? 1.0 : searchDim ? 0.06 : neighborDim ? 0.06 : isDormant ? 0.27 : linkOpacity;
 			const alphaHex = Math.round(baseAlpha * 255).toString(16).padStart(2, '0');
 
 			// All lines solid — no dashes
