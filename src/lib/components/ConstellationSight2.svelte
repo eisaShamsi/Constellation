@@ -14,6 +14,7 @@
 	 */
 	import { onMount, onDestroy } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import SightPanel from './SightPanel.svelte';
 	import * as d3 from 'd3';
 	import { t, dir, getSearchOps } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
@@ -171,6 +172,9 @@
 
 	// Search target node IDs (from [[X]] in structured queries)
 	let searchTargetIds = new Set<string>();
+
+	// SightPanel
+	let panelVisible = $state(false);
 
 	const isRTL = $derived($dir === 'rtl');
 
@@ -977,6 +981,10 @@
 			<button class="sight2-btn" onclick={fitToScreen} title={$t('lens.fitToScreen') || 'Fit to screen'}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
 			</button>
+			<!-- Panel toggle -->
+			<button class="sight2-btn" class:active={panelVisible} onclick={() => panelVisible = !panelVisible} title={$t('sightPanel.overview') || 'Analytics'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="10" width="7" height="11" rx="1"/><rect x="3" y="13" width="7" height="8" rx="1"/></svg>
+			</button>
 			<!-- Settings toggle -->
 			<button class="sight2-btn" class:active={settingsVisible} onclick={() => settingsVisible = !settingsVisible} title={$t('ribbon.settings') || 'Settings'}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/></svg>
@@ -1148,6 +1156,41 @@
 				</div>
 			{/if}
 		</div>
+		<!-- SightPanel sidebar -->
+		{#if panelVisible}
+			{@const orphans = simNodes.filter(n => (n.linkCount ?? 0) === 0).length}
+			{@const libMap = new Map<string, { name: string; color: string; count: number }>()}
+			{@const _build = simNodes.forEach(n => {
+				const existing = libMap.get(n.libraryName);
+				if (existing) existing.count++;
+				else libMap.set(n.libraryName, { name: n.libraryName, color: n.libraryColor, count: 1 });
+			})}
+			<SightPanel
+				nodeCount={simNodes.length}
+				linkCount={simLinks.length}
+				orphanCount={orphans}
+				{bridges}
+				libraryBreakdown={[...libMap.values()].sort((a, b) => b.count - a.count)}
+				onNoteClick={(name) => {
+					// Find node by name and trigger neighborhood highlight
+					const node = simNodes.find(n => n.name === name || n.id === name.toLowerCase());
+					if (node) {
+						selectedNode = node;
+						neighborIds = new Set<string>();
+						for (const link of simLinks) {
+							const src = link.source as SimNode;
+							const tgt = link.target as SimNode;
+							if (src.id === node.id) neighborIds.add(tgt.id);
+							if (tgt.id === node.id) neighborIds.add(src.id);
+						}
+						// Center on node
+						panX = -(node.x ?? 0) * zoom;
+						panY = -(node.y ?? 0) * zoom;
+						requestDraw();
+					}
+				}}
+			/>
+		{/if}
 	</div>
 </div>
 
