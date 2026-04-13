@@ -5,7 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme } from '$lib/libraries/store';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -20,6 +20,82 @@
 	} = $props();
 
 	let activeSection = $state('dashboard');
+
+	// Theme editor state
+	let editingTheme = $state<ConstellationTheme | null>(null);
+	let themeEditorOpen = $state(false);
+
+	const allThemes = $derived([...BUILTIN_THEMES, ...($appSettings.customThemes ?? [])]);
+
+	function selectTheme(id: string) {
+		updateSettings({ activeThemeId: id });
+	}
+
+	function startNewTheme() {
+		const base = $appSettings.colorScheme === 'dark' ? BUILTIN_THEMES[1] : BUILTIN_THEMES[0];
+		editingTheme = {
+			id: `custom-${Date.now()}`,
+			name: 'My Theme',
+			type: base.type,
+			colors: { ...base.colors },
+		};
+		themeEditorOpen = true;
+	}
+
+	function startEditTheme(theme: ConstellationTheme) {
+		editingTheme = { ...theme, colors: { ...theme.colors } };
+		themeEditorOpen = true;
+	}
+
+	function saveTheme() {
+		if (!editingTheme) return;
+		const customs = [...($appSettings.customThemes ?? [])];
+		const idx = customs.findIndex(t => t.id === editingTheme!.id);
+		if (idx >= 0) customs[idx] = editingTheme;
+		else customs.push(editingTheme);
+		updateSettings({ customThemes: customs, activeThemeId: editingTheme.id });
+		themeEditorOpen = false;
+		editingTheme = null;
+	}
+
+	function deleteTheme(id: string) {
+		const customs = ($appSettings.customThemes ?? []).filter(t => t.id !== id);
+		updateSettings({
+			customThemes: customs,
+			activeThemeId: $appSettings.activeThemeId === id ? '' : $appSettings.activeThemeId,
+		});
+		if (editingTheme?.id === id) { editingTheme = null; themeEditorOpen = false; }
+	}
+
+	function exportTheme(theme: ConstellationTheme) {
+		const json = JSON.stringify(theme, null, 2);
+		const blob = new Blob([json], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `${theme.name.replace(/\s+/g, '-').toLowerCase()}.constellation-theme.json`;
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	async function importTheme() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.json,.constellation-theme.json';
+		input.onchange = async () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			try {
+				const text = await file.text();
+				const theme = JSON.parse(text) as ConstellationTheme;
+				if (!theme.id || !theme.name || !theme.colors) throw new Error('Invalid theme');
+				theme.id = `imported-${Date.now()}`;
+				const customs = [...($appSettings.customThemes ?? []), theme];
+				updateSettings({ customThemes: customs, activeThemeId: theme.id });
+			} catch {}
+		};
+		input.click();
+	}
 	let hotkeyFilter = $state('');
 	let testStatus = $state('');
 	let testing = $state(false);
@@ -1530,17 +1606,83 @@
 
 				<!-- ═══ APPEARANCE ═══ -->
 				{:else if activeSection === 'appearance'}
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.colorScheme')}</div>
-							<div class="setting-desc">{$t('settings.appearance.colorSchemeDesc')}</div>
-						</div>
-						<select class="setting-control" value={$appSettings.colorScheme} onchange={(e) => updateSettings({ colorScheme: (e.target as HTMLSelectElement).value as any })}>
-							<option value="light">{$t('settings.appearance.light')}</option>
-							<option value="dark">{$t('settings.appearance.dark')}</option>
-							<option value="system">{$t('settings.appearance.system')}</option>
-						</select>
+
+					<!-- Theme Gallery -->
+					<div class="setting-section-heading">{$t('settings.appearance.themes') || 'Themes'}</div>
+					<div class="theme-gallery">
+						{#each allThemes as theme}
+							<button class="theme-card" class:active={$appSettings.activeThemeId === theme.id}
+								onclick={() => selectTheme(theme.id)}>
+								<div class="theme-swatches">
+									<span class="theme-sw" style="background:{theme.colors.background}"></span>
+									<span class="theme-sw" style="background:{theme.colors.surface}"></span>
+									<span class="theme-sw" style="background:{theme.colors.accent}"></span>
+									<span class="theme-sw" style="background:{theme.colors.text}"></span>
+								</div>
+								<div class="theme-card-name">{theme.name}</div>
+								{#if !BUILTIN_THEMES.find(b => b.id === theme.id)}
+									<button class="theme-edit-btn" onclick|stopPropagation={() => startEditTheme(theme)} title="Edit">✏️</button>
+								{/if}
+							</button>
+						{/each}
+						<button class="theme-card theme-add" onclick={startNewTheme}>
+							<span class="theme-add-icon">+</span>
+							<div class="theme-card-name">{$t('settings.appearance.newTheme') || 'New Theme'}</div>
+						</button>
+						<button class="theme-card theme-import" onclick={importTheme}>
+							<span class="theme-add-icon">↓</span>
+							<div class="theme-card-name">{$t('settings.appearance.importTheme') || 'Import'}</div>
+						</button>
 					</div>
+
+					<!-- Reset to default -->
+					{#if $appSettings.activeThemeId}
+						<button class="btn-text" onclick={() => updateSettings({ activeThemeId: '' })}>{$t('settings.appearance.resetTheme') || 'Reset to default'}</button>
+					{/if}
+
+					<!-- Theme Editor -->
+					{#if themeEditorOpen && editingTheme}
+						<div class="theme-editor">
+							<div class="setting-section-heading">{$t('settings.appearance.customize') || 'Customize Theme'}</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeName') || 'Name'}</div></div>
+								<input type="text" class="setting-control" bind:value={editingTheme.name} />
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeType') || 'Type'}</div></div>
+								<select class="setting-control" bind:value={editingTheme.type}>
+									<option value="light">{$t('settings.appearance.light')}</option>
+									<option value="dark">{$t('settings.appearance.dark')}</option>
+								</select>
+							</div>
+							{#each [
+								['background', $t('settings.appearance.themeBackground') || 'Background'],
+								['surface', $t('settings.appearance.themeSurface') || 'Surface'],
+								['text', $t('settings.appearance.themeText') || 'Text'],
+								['accent', $t('settings.appearance.themeAccent') || 'Accent'],
+								['border', $t('settings.appearance.themeBorder') || 'Border'],
+							] as [key, label]}
+								<div class="setting-item">
+									<div class="setting-info"><div class="setting-name">{label}</div></div>
+									<div class="color-row">
+										<input type="color" class="color-input" value={editingTheme.colors[key]}
+											oninput={(e) => { editingTheme!.colors[key] = (e.target as HTMLInputElement).value; }} />
+										<span class="color-hex">{editingTheme.colors[key]}</span>
+									</div>
+								</div>
+							{/each}
+							<div class="theme-editor-actions">
+								<button class="btn-primary" onclick={saveTheme}>{$t('common.save') || 'Save'}</button>
+								<button class="btn-text" onclick={() => { themeEditorOpen = false; editingTheme = null; }}>{$t('common.cancel') || 'Cancel'}</button>
+								{#if !BUILTIN_THEMES.find(b => b.id === editingTheme.id)}
+									<button class="btn-danger" onclick={() => deleteTheme(editingTheme!.id)}>{$t('common.delete') || 'Delete'}</button>
+									<button class="btn-text" onclick={() => exportTheme(editingTheme!)}>{$t('settings.appearance.exportTheme') || 'Export'}</button>
+								{/if}
+							</div>
+						</div>
+					{/if}
+
+					<div class="setting-section-heading" style="margin-top:16px">{$t('settings.appearance.general') || 'General'}</div>
 
 					<div class="setting-item">
 						<div class="setting-info">
@@ -1551,18 +1693,6 @@
 							<option value="start">{$t('settings.appearance.titleAlignStart')}</option>
 							<option value="center">{$t('settings.appearance.titleAlignCenter')}</option>
 						</select>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.accentColor')}</div>
-							<div class="setting-desc">{$t('settings.appearance.accentColorDesc')}</div>
-						</div>
-						<div class="color-row">
-							<input type="color" class="color-input" value={$appSettings.accentColor}
-								onchange={(e) => updateSettings({ accentColor: (e.target as HTMLInputElement).value })} />
-							<span class="color-hex">{$appSettings.accentColor}</span>
-						</div>
 					</div>
 
 					<!-- Interface Font Size -->
@@ -1860,6 +1990,55 @@
 		border-radius: 6px; padding: 2px; cursor: pointer; background: none;
 	}
 	.color-hex { font-size: 0.82rem; color: var(--text-muted); font-family: var(--font-monospace-theme); }
+
+	/* Theme gallery */
+	.theme-gallery {
+		display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+		gap: 10px; margin-bottom: 12px;
+	}
+	.theme-card {
+		display: flex; flex-direction: column; align-items: center; gap: 6px;
+		padding: 10px 8px; border-radius: 10px;
+		border: 2px solid var(--background-modifier-border);
+		background: var(--background-secondary); cursor: pointer;
+		position: relative; transition: all 0.15s;
+	}
+	.theme-card:hover { border-color: var(--interactive-accent); }
+	.theme-card.active { border-color: var(--interactive-accent); box-shadow: 0 0 0 2px var(--interactive-accent); }
+	.theme-swatches { display: flex; gap: 3px; }
+	.theme-sw { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
+	.theme-card-name { font-size: 0.75rem; color: var(--text-muted); text-align: center; }
+	.theme-edit-btn {
+		position: absolute; top: 4px; inset-inline-end: 4px; background: none; border: none;
+		cursor: pointer; font-size: 12px; opacity: 0; transition: opacity 0.15s;
+	}
+	.theme-card:hover .theme-edit-btn { opacity: 1; }
+	.theme-add, .theme-import { border-style: dashed; }
+	.theme-add-icon { font-size: 1.5rem; color: var(--text-faint); }
+
+	/* Theme editor */
+	.theme-editor {
+		margin-top: 12px; padding: 14px; border-radius: 10px;
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+	}
+	.theme-editor-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+	.btn-primary {
+		padding: 6px 16px; border-radius: 6px; border: none;
+		background: var(--interactive-accent); color: var(--text-on-accent);
+		font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit;
+	}
+	.btn-primary:hover { opacity: 0.9; }
+	.btn-text {
+		padding: 6px 12px; border-radius: 6px; border: none; background: none;
+		color: var(--text-muted); font-size: 0.82rem; cursor: pointer; font-family: inherit;
+	}
+	.btn-text:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.btn-danger {
+		padding: 6px 12px; border-radius: 6px; border: none;
+		background: var(--text-error); color: white;
+		font-size: 0.82rem; cursor: pointer; font-family: inherit; margin-inline-start: auto;
+	}
 
 	/* Slider */
 	.slider-row { display: flex; align-items: center; gap: 10px; min-width: 180px; }
