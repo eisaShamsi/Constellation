@@ -201,11 +201,6 @@
 			.attr('stroke', '#fff')
 			.attr('stroke-width', 0.5)
 			.style('cursor', 'pointer')
-			.append('title').text((d: any) => {
-				const data = d.data as MapNode;
-				return data.is_dir ? ($t('constellationMap.zoomIn') || 'Click to zoom in') : data.name;
-			})
-			.select(function() { return (this as Element).parentNode as Element; })
 			.on('click', (_event: MouseEvent, d: any) => {
 				const data = d.data as MapNode;
 				if (data.is_dir && data.children && data.children.length > 0) {
@@ -542,7 +537,7 @@
 
 	<!-- Tooltip -->
 	{#if tooltip.visible && tooltip.node}
-		<div class="cmap-tooltip" style="left:{tooltip.x + 12}px;top:{tooltip.y - 8}px" dir="auto">
+		<div class="cmap-tooltip" style="left:{tooltip.x + 20}px;top:{tooltip.y - 60}px" dir="auto">
 			<div class="cmap-tt-name">{tooltip.node.name}</div>
 			{#if tooltip.node.node_type === 'child_universe'}
 				<div class="cmap-tt-type">{$t('constellationMap.childUniverse') || 'Child Universe'}</div>
