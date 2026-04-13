@@ -675,8 +675,10 @@
 			const sx = src.x ?? 0, sy = src.y ?? 0;
 			const tx = tgt.x ?? 0, ty = tgt.y ?? 0;
 
-			if ((sx < vpLeft && tx < vpLeft) || (sx > vpRight && tx > vpRight) ||
-				(sy < vpTop && ty < vpTop) || (sy > vpBottom && ty > vpBottom)) continue;
+			// Only draw links where BOTH endpoints are within the viewport.
+			// This prevents "rays to nowhere" — long lines extending to off-screen nodes.
+			if (sx < vpLeft || sx > vpRight || sy < vpTop || sy > vpBottom ||
+				tx < vpLeft || tx > vpRight || ty < vpTop || ty > vpBottom) continue;
 
 			// Dim links not connected to search matches
 			const searchDim = hasSearch && !searchMatchSet.has(src.id) && !searchMatchSet.has(tgt.id);
