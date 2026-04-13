@@ -33,8 +33,7 @@
 		path: string;
 		libraryName: string;
 		centrality: number;
-		communityId: number;
-		communityColor: string;
+		libraryColor: string;
 		r: number;
 		maturity?: string;
 		linkCount?: number;
@@ -149,15 +148,18 @@
 	let searchMatchSet = $state<Set<string>>(new Set());
 
 	// Settings
-	let showRegions = $state(true);
 	let showLegend = $state(true);
 	let settingsVisible = $state(false);
-	let linkStrokeMul = $state(1.5);   // link thickness multiplier (0.5–4)
-	let linkOpacity = $state(0.85);    // link opacity (0.1–1.0)
+	let linkStrokeMul = $state(1.0);   // link thickness multiplier (0.5–4)
+	let linkOpacity = $state(0.6);     // link opacity (0.1–1.0)
 	let arrowSize = $state(6);         // arrowhead size in px (2–12)
 
 	// Search match categories map: nodeId → categories[]
 	let searchMatchCats = $state<Map<string, string[]>>(new Map());
+
+	// Neighborhood highlight: click a node to see its connections
+	let selectedNode: SimNode | null = null;
+	let neighborIds = new Set<string>();
 
 	const isRTL = $derived($dir === 'rtl');
 
@@ -190,16 +192,14 @@
 		const nodeMap = new Map<string, SimNode>();
 		simNodes = nodes.map(n => {
 			const c = centrality.get(n.id) ?? 0;
-			const cid = communityAssignments.get(n.id) ?? 0;
-			const color = communityColors.get(cid) ?? '#94a3b8';
+			const libColor = libraryColorMap[n.libraryName] ?? '#94a3b8';
 			const sn: SimNode = {
 				id: n.id,
 				name: n.name,
 				path: n.path,
 				libraryName: n.libraryName,
 				centrality: c,
-				communityId: cid,
-				communityColor: color,
+				libraryColor: libColor,
 				r: Math.max(3, 3 + c * 18),
 				maturity: (n as any).maturity,
 				linkCount: n.linkCount,
@@ -252,73 +252,90 @@
 	}
 
 	// ─── Gravity-Well Layout ──────────────────────────────────
+	// Position = centrality (distance from center) × library (angular sector).
+	// No community detection. Libraries are the user's own organization.
 	function computeGravityWellLayout() {
 		if (simNodes.length === 0) return;
 
+		const maxR = Math.min(width, height) * 0.45;
+
+		// ── 1. Assign rings by centrality percentile ──
 		const sorted = [...simNodes].sort((a, b) => b.centrality - a.centrality);
 		const n = sorted.length;
-
-		const ringThresholds = [
-			{ maxPct: 0.05, radius: 0 },
-			{ maxPct: 0.15, radius: Math.min(width, height) * 0.12 },
-			{ maxPct: 0.35, radius: Math.min(width, height) * 0.25 },
-			{ maxPct: 1.00, radius: Math.min(width, height) * 0.45 },
-		];
+		const ringRadii = [0, maxR * 0.27, maxR * 0.56, maxR * 0.88];
 
 		const nodeRings = new Map<string, number>();
 		sorted.forEach((node, i) => {
 			const pct = i / n;
-			let ring = 3;
-			for (let r = 0; r < ringThresholds.length; r++) {
-				if (pct < ringThresholds[r].maxPct) { ring = r; break; }
-			}
-			nodeRings.set(node.id, ring);
+			nodeRings.set(node.id, pct < 0.05 ? 0 : pct < 0.15 ? 1 : pct < 0.35 ? 2 : 3);
 		});
 
-		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
-		const numCommunities = Math.max(communityIds.length, 1);
-		const communityAngle = new Map<number, number>();
-		communityIds.forEach((cid, i) => {
-			communityAngle.set(cid, (i / numCommunities) * Math.PI * 2);
-		});
-		const sectorWidth = (Math.PI * 2) / numCommunities;
+		// ── 2. Library sectors (user's own organization) ──
+		const libraryNames = [...new Set(simNodes.map(n => n.libraryName))].sort();
+		const numLibs = Math.max(libraryNames.length, 1);
+		const sectorWidth = (Math.PI * 2) / numLibs;
+		const libIndex = new Map<string, number>();
+		libraryNames.forEach((name, i) => libIndex.set(name, i));
 
+		// ── 3. Group by (ring, library) ──
 		const groups = new Map<string, SimNode[]>();
 		for (const node of simNodes) {
 			const ring = nodeRings.get(node.id) ?? 3;
-			const key = `${ring}:${node.communityId}`;
+			const lib = libIndex.get(node.libraryName) ?? 0;
+			const key = `${ring}:${lib}`;
 			if (!groups.has(key)) groups.set(key, []);
 			groups.get(key)!.push(node);
 		}
 
+		// ── 4. Position each node ──
 		for (const [key, members] of groups) {
-			const [ringStr, cidStr] = key.split(':');
+			const [ringStr, libStr] = key.split(':');
 			const ring = parseInt(ringStr);
-			const cid = parseInt(cidStr);
-			const baseRadius = ringThresholds[ring]?.radius ?? ringThresholds[3].radius;
-			const baseAngle = communityAngle.get(cid) ?? 0;
+			const lib = parseInt(libStr);
+			const baseRadius = ringRadii[ring];
+			const baseAngle = (lib / numLibs) * Math.PI * 2;
 
 			members.forEach((node, i) => {
 				const angleOffset = (i / Math.max(members.length, 1)) * sectorWidth * 0.8;
 				const angle = baseAngle + sectorWidth * 0.1 + angleOffset;
-				const jitter = (Math.random() - 0.5) * baseRadius * 0.15;
+				const jitter = (Math.random() - 0.5) * baseRadius * 0.12;
 				const radius = ring === 0
-					? Math.random() * Math.min(width, height) * 0.04
+					? maxR * 0.02 + (i / Math.max(members.length, 1)) * maxR * 0.06
 					: baseRadius + jitter;
 				node.x = radius * Math.cos(angle);
 				node.y = radius * Math.sin(angle);
 			});
 		}
 
-		// Light collision-avoidance — only for small/medium datasets.
-		// For large datasets (>1500 nodes) the gravity-well positioning is sufficient.
+		// ── 5. Collision avoidance for small datasets ──
 		if (simNodes.length <= 1500) {
+			const boundaryForce = () => {
+				const force = (alpha: number) => {
+					for (const node of simNodes) {
+						const x = node.x ?? 0, y = node.y ?? 0;
+						const dist = Math.sqrt(x * x + y * y);
+						const limit = maxR - (node.r ?? 3);
+						if (dist > limit) {
+							const scale = limit / dist;
+							node.x = x * scale;
+							node.y = y * scale;
+							node.vx = (node.vx ?? 0) * 0.1;
+							node.vy = (node.vy ?? 0) * 0.1;
+						}
+					}
+				};
+				force.initialize = () => {};
+				return force;
+			};
+
 			simulation = d3.forceSimulation(simNodes)
 				.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 1.5).strength(0.5))
+				.force('boundary', boundaryForce())
 				.alphaDecay(0.15)
 				.stop();
 			for (let i = 0; i < 15; i++) simulation.tick();
 		}
+
 		requestDraw();
 	}
 
@@ -470,8 +487,6 @@
 		ctx.scale(zoom, zoom);
 
 		drawRadialGuides();
-		if (showRegions) drawCommunityRegions();
-		drawGapLines();
 		drawLinks();
 		drawNodes();
 		drawSearchBadges();
@@ -500,87 +515,6 @@
 		ctx!.fill();
 	}
 
-	function drawCommunityRegions() {
-		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
-		const numC = Math.max(communityIds.length, 1);
-		const sectorWidth = (Math.PI * 2) / numC;
-		const outerR = Math.min(width, height) * 0.48;
-
-		for (let i = 0; i < communityIds.length; i++) {
-			const cid = communityIds[i];
-			const startAngle = (i / numC) * Math.PI * 2;
-			const endAngle = startAngle + sectorWidth;
-			const color = communityColors.get(cid) ?? '#94a3b8';
-
-			ctx!.beginPath();
-			ctx!.moveTo(0, 0);
-			ctx!.arc(0, 0, outerR, startAngle, endAngle);
-			ctx!.closePath();
-			ctx!.fillStyle = color + '0D';
-			ctx!.fill();
-
-			ctx!.beginPath();
-			ctx!.moveTo(0, 0);
-			ctx!.lineTo(outerR * Math.cos(startAngle), outerR * Math.sin(startAngle));
-			ctx!.strokeStyle = color + '30';
-			ctx!.lineWidth = 1 / zoom;
-			ctx!.stroke();
-
-			ctx!.beginPath();
-			ctx!.arc(0, 0, outerR, startAngle, endAngle);
-			ctx!.strokeStyle = color + '25';
-			ctx!.lineWidth = 1 / zoom;
-			ctx!.stroke();
-
-			// Community label — only render when zoom makes it readable (not a mess of overlapping text)
-			const fontSize = 11 / zoom;
-			if (fontSize >= 6 && fontSize <= 30) {
-				const midAngle = startAngle + sectorWidth / 2;
-				const labelR = outerR + 16 / zoom;
-				const lx = labelR * Math.cos(midAngle);
-				const ly = labelR * Math.sin(midAngle);
-				const profile = communityProfiles?.find(p => p.id === cid);
-				const label = profile?.name ?? `C${cid}`;
-				ctx!.font = `${fontSize}px system-ui, sans-serif`;
-				ctx!.fillStyle = color + '88';
-				ctx!.textAlign = 'center';
-				ctx!.textBaseline = 'middle';
-				ctx!.fillText(label.length > 10 ? label.slice(0, 10) + '…' : label, lx, ly);
-			}
-		}
-	}
-
-	function drawGapLines() {
-		if (!gaps.length) return;
-		const communityCenter = new Map<number, { x: number; y: number }>();
-		for (const n of simNodes) {
-			const cid = n.communityId;
-			if (!communityCenter.has(cid)) communityCenter.set(cid, { x: 0, y: 0 });
-			const c = communityCenter.get(cid)!;
-			c.x += (n.x ?? 0); c.y += (n.y ?? 0);
-		}
-		const counts = new Map<number, number>();
-		for (const n of simNodes) counts.set(n.communityId, (counts.get(n.communityId) ?? 0) + 1);
-		for (const [cid, c] of communityCenter) {
-			const cnt = counts.get(cid) ?? 1;
-			c.x /= cnt; c.y /= cnt;
-		}
-
-		for (const gap of gaps) {
-			const c1 = communityCenter.get(gap.community1);
-			const c2 = communityCenter.get(gap.community2);
-			if (!c1 || !c2) continue;
-			ctx!.beginPath();
-			ctx!.setLineDash([8 / zoom, 6 / zoom]);
-			ctx!.moveTo(c1.x, c1.y);
-			ctx!.lineTo(c2.x, c2.y);
-			ctx!.strokeStyle = '#ef444499';
-			ctx!.lineWidth = 2 / zoom;
-			ctx!.stroke();
-			ctx!.setLineDash([]);
-		}
-	}
-
 	function drawLinks() {
 		const hw = width / 2 / zoom, hh = height / 2 / zoom;
 		const vpLeft = -panX / zoom - hw - 50, vpRight = -panX / zoom + hw + 50;
@@ -596,8 +530,9 @@
 			if ((sx < vpLeft && tx < vpLeft) || (sx > vpRight && tx > vpRight) ||
 				(sy < vpTop && ty < vpTop) || (sy > vpBottom && ty > vpBottom)) continue;
 
-			// Dim links not connected to search matches
+			// Dim links not connected to search matches or selected neighborhood
 			const searchDim = hasSearch && !searchMatchSet.has(src.id) && !searchMatchSet.has(tgt.id);
+			const neighborDim = selectedNode != null && src.id !== selectedNode.id && tgt.id !== selectedNode.id;
 
 			const typed = link.linkType && link.linkType !== 'relates' && LINK_TYPE_COLORS[link.linkType];
 			const color = typed ? LINK_TYPE_COLORS[link.linkType!] : '#94a3b8';
@@ -607,8 +542,7 @@
 			if (conf.dash.length > 0) ctx!.setLineDash(conf.dash.map(d => d / zoom));
 
 			const isDormant = link.status === 'dormant';
-			// Use linkOpacity setting — convert to 2-digit hex
-			const baseAlpha = searchDim ? 0.13 : isDormant ? 0.27 : linkOpacity;
+			const baseAlpha = searchDim ? 0.13 : neighborDim ? 0.06 : isDormant ? 0.27 : linkOpacity;
 			const alphaHex = Math.round(baseAlpha * 255).toString(16).padStart(2, '0');
 
 			ctx!.beginPath();
@@ -652,14 +586,19 @@
 
 			const isMatch = hasSearch && searchMatchSet.has(n.id);
 			const isCurrent = currentMatch === n;
+			const isNeighbor = selectedNode && (n === selectedNode || neighborIds.has(n.id));
 			const maturityAlpha: Record<string, number> = { seed: 0.5, sapling: 0.7, evergreen: 0.9, canonical: 1.0, wilting: 0.4 };
-			const alpha = hasSearch ? (isMatch ? 1.0 : 0.15) : (maturityAlpha[n.maturity ?? 'seed'] ?? 0.6);
+			// Dim logic: search dims non-matches, neighborhood dims non-neighbors
+			const baseAlpha = maturityAlpha[n.maturity ?? 'seed'] ?? 0.6;
+			const alpha = hasSearch ? (isMatch ? 1.0 : 0.15)
+				: selectedNode ? (isNeighbor ? 1.0 : 0.12)
+				: baseAlpha;
 
 			// Bridge emphasis
-			if (n.centrality > 0.4 && (!hasSearch || isMatch)) {
+			if (n.centrality > 0.4 && alpha > 0.3) {
 				ctx!.beginPath();
 				ctx!.arc(x, y, n.r + 4 / zoom, 0, Math.PI * 2);
-				ctx!.fillStyle = n.communityColor + '33';
+				ctx!.fillStyle = n.libraryColor + '33';
 				ctx!.fill();
 			}
 
@@ -672,11 +611,20 @@
 				ctx!.stroke();
 			}
 
-			// Node circle
+			// Selected node highlight
+			if (n === selectedNode) {
+				ctx!.beginPath();
+				ctx!.arc(x, y, n.r + 5 / zoom, 0, Math.PI * 2);
+				ctx!.strokeStyle = '#f59e0b';
+				ctx!.lineWidth = 2.5 / zoom;
+				ctx!.stroke();
+			}
+
+			// Node circle — colored by library
 			ctx!.globalAlpha = alpha;
 			ctx!.beginPath();
 			ctx!.arc(x, y, n.r, 0, Math.PI * 2);
-			ctx!.fillStyle = n.communityColor;
+			ctx!.fillStyle = n.libraryColor;
 			ctx!.fill();
 			ctx!.globalAlpha = 1.0;
 
@@ -863,9 +811,30 @@
 	}
 
 	function onClick(e: MouseEvent) {
-		if (hoveredNode && onNoteClick) {
-			const hl = searchQuery.trim() || undefined;
-			onNoteClick(hoveredNode.path, hoveredNode.name, hl);
+		if (hoveredNode) {
+			if (e.detail === 2 && onNoteClick) {
+				// Double-click: open the note
+				const hl = searchQuery.trim() || undefined;
+				onNoteClick(hoveredNode.path, hoveredNode.name, hl);
+			} else {
+				// Single-click: neighborhood highlight — show connected nodes
+				selectedNode = hoveredNode;
+				neighborIds = new Set<string>();
+				for (const link of simLinks) {
+					const src = link.source as SimNode;
+					const tgt = link.target as SimNode;
+					if (src.id === hoveredNode.id) neighborIds.add(tgt.id);
+					if (tgt.id === hoveredNode.id) neighborIds.add(src.id);
+				}
+				requestDraw();
+			}
+		} else {
+			// Click empty space: clear neighborhood highlight
+			if (selectedNode) {
+				selectedNode = null;
+				neighborIds = new Set();
+				requestDraw();
+			}
 		}
 	}
 
@@ -1019,10 +988,6 @@
 				<div class="sight2-settings">
 					<div class="sight2-settings-title">{$t("lens.display") || "Display"}</div>
 					<label class="sight2-settings-row">
-						<span>{$t("lens.regions") || "Community Regions"}</span>
-						<button class:active={showRegions} onclick={() => { showRegions = !showRegions; requestDraw(); }}>{showRegions ? 'On' : 'Off'}</button>
-					</label>
-					<label class="sight2-settings-row">
 						<span>{$t("lens.legend") || "Legend"}</span>
 						<button class:active={showLegend} onclick={() => showLegend = !showLegend}>{showLegend ? 'On' : 'Off'}</button>
 					</label>
@@ -1065,7 +1030,11 @@
 						<span class="sight2-lg-dot" style="background:#a78bfa"></span>
 						<span class="sight2-lg-dot" style="background:#34d399"></span>
 						<span class="sight2-lg-dot" style="background:#60a5fa"></span>
-						<span>{$t("lens.legendCommunityColor") || "Color"} = {$t("lens.communityDesc") || "community"}</span>
+						<span>Color = library</span>
+					</div>
+					<div class="sight2-legend-row">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+						<span>Click = show connections</span>
 					</div>
 					<div class="sight2-legend-divider"></div>
 					<!-- Link types -->
