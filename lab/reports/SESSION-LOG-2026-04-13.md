@@ -37,6 +37,12 @@
 - All links solid, multiple direction arrows for typed links
 
 ### Open Items
-- Pointer arrow for current search result — may need debugging if not appearing
+- `a8a24d9` — Fixed pointer arrow (ID comparison, not object identity) + arrows on ALL links + zoom 3x
+- Pointer arrow: CONFIRMED WORKING (amber triangle above current result)
+- Direction arrows: CONFIRMED WORKING ("like a highway" — user approved)
+- Category badges: CONFIRMED WORKING (T/P/S badges enlarged 2x)
+- Settings persistence: CONFIRMED WORKING
+
+### Remaining
 - SightPanel (insight/analytics sidebar) — pending
 - Help file updates for Sight changes
