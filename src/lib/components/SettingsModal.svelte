@@ -1636,22 +1636,22 @@
 					<p class="section-intro">{$t('settings.plugins.intro') || 'Toggle plug-ins on or off. Disabled plug-ins are hidden from the interface.'}</p>
 
 					{#each featureGroups as group}
-						<div class="feature-group">
-							<div class="feature-group-header">{group.category}</div>
-							<div class="feature-grid">
-								{#each group.features as feature}
-									<button class="feature-card" class:enabled={getFeatureEnabled(feature.id)}
-										onclick={() => toggleFeature(feature.id)}>
-										<div class="feature-card-icon">{feature.icon}</div>
-										<div class="feature-card-name">{feature.name}</div>
-										<div class="feature-card-desc">{feature.desc}</div>
-										<div class="feature-card-toggle">
-											<span class="feature-dot" class:on={getFeatureEnabled(feature.id)}></span>
-											{getFeatureEnabled(feature.id) ? $t('settings.plugins.on') || 'On' : $t('settings.plugins.off') || 'Off'}
-										</div>
+						<div class="plugin-group">
+							<div class="plugin-group-header">{group.category}</div>
+							{#each group.features as feature}
+								<div class="plugin-row">
+									<span class="plugin-icon">{feature.icon}</span>
+									<div class="plugin-info">
+										<div class="plugin-name">{feature.name}</div>
+										<div class="plugin-desc">{feature.desc}</div>
+									</div>
+									<button class="plugin-switch" class:on={getFeatureEnabled(feature.id)}
+										onclick={() => toggleFeature(feature.id)}
+										title={getFeatureEnabled(feature.id) ? 'On' : 'Off'}>
+										<span class="plugin-switch-knob"></span>
 									</button>
-								{/each}
-							</div>
+								</div>
+							{/each}
 						</div>
 					{/each}
 				{/if}
@@ -2137,6 +2137,38 @@
 		transition: background 0.2s ease;
 	}
 	.feature-dot.on { background: var(--color-green, #4ade80); }
+
+	/* Plug-in toggle switches */
+	.plugin-group { margin-bottom: 20px; }
+	.plugin-group-header {
+		font-size: 0.8rem; font-weight: 600; color: var(--text-faint);
+		text-transform: uppercase; letter-spacing: 0.04em;
+		margin-bottom: 8px;
+	}
+	.plugin-row {
+		display: flex; align-items: center; gap: 12px;
+		padding: 10px 12px; border-radius: 8px;
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+	.plugin-row:hover { background: var(--background-modifier-hover); }
+	.plugin-icon { font-size: 1.1rem; flex-shrink: 0; }
+	.plugin-info { flex: 1; min-width: 0; }
+	.plugin-name { font-size: 0.85rem; font-weight: 600; color: var(--text-normal); }
+	.plugin-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; margin-top: 1px; }
+	.plugin-switch {
+		width: 40px; height: 22px; border-radius: 11px; border: none;
+		background: var(--background-modifier-border); cursor: pointer;
+		position: relative; flex-shrink: 0; transition: background 0.2s;
+		padding: 0;
+	}
+	.plugin-switch.on { background: var(--interactive-accent, #7c3aed); }
+	.plugin-switch-knob {
+		position: absolute; top: 2px; inset-inline-start: 2px;
+		width: 18px; height: 18px; border-radius: 50%;
+		background: white; transition: inset-inline-start 0.2s;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+	}
+	.plugin-switch.on .plugin-switch-knob { inset-inline-start: 20px; }
 
 	/* ═══ AI / INTELLIGENCE ═══ */
 	.test-btn {
