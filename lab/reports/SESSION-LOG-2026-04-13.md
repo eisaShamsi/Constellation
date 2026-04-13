@@ -57,6 +57,40 @@
 - Target node added to match set so connecting links stay visible
 - Search-highlighted links: green (inward→target), red (outward←target), 3× bold
 
+### Constellation Map Enhancements
+- Full search engine (same as Sight: structured + free text + semantic)
+- Search results sidebar with category badges + resizable drag handle
+- Fit to Screen button (reset to root)
+- Settings panel (arc opacity, depth limit, persistent)
+- Zoom + pan (D3 zoom behavior)
+- SVG hover tooltips showing "Name (Type)"
+- Double-click sidebar result to open note
+- Hover respects search dimming state
+- Library color legend added
+- Legend enlarged 2x
+- Error display localized
+
+### Distinct Category Badges (All Operators)
+- LT=links to, LF=links from, LA=links all, LB=links between
+- ⇄=mutual, M=mentions, ∅=orphan
+- T=title, C=content, #=tag, P=property, S=semantic, W=wikilink
+- Backend updated to return distinct match_types per operator
+
+### Critical Bug Fix: Missing Graph Links
+- `scan_library_links` used file stem for canonical files
+- `collect_library_notes` used frontmatter title
+- Mismatch → zero links in graph for canonical libraries
+- Fix: both now use frontmatter title for canonical files
+
+### Settings Restructure
+- "Keyboard" → "Hotkeys"
+- "Features" → "Plug-Ins"
+- New "Templates" tab (future-ready for multiple templates)
+- Constellation Map: OFF by default (opt-in plug-in)
+- Constellation Sight: ON by default
+- Ribbon + command palette gated by plug-in flags
+- All 15 locales updated
+
 ### Remaining
-- SightPanel (insight/analytics sidebar) — pending
-- Help file updates for Sight changes
+- Map help documentation file
+- Help file updates for settings restructure
