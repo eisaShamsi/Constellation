@@ -152,6 +152,12 @@
 	let showRegions = $state(true);
 	let showLegend = $state(true);
 	let settingsVisible = $state(false);
+	let linkStrokeMul = $state(1.5);   // link thickness multiplier (0.5–4)
+	let linkOpacity = $state(0.85);    // link opacity (0.1–1.0)
+	let arrowSize = $state(6);         // arrowhead size in px (2–12)
+
+	// Search match categories map: nodeId → categories[]
+	let searchMatchCats = $state<Map<string, string[]>>(new Map());
 
 	const isRTL = $derived($dir === 'rtl');
 
@@ -304,12 +310,15 @@
 			});
 		}
 
-		simulation = d3.forceSimulation(simNodes)
-			.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 1.5).strength(0.5))
-			.alphaDecay(0.1)
-			.stop();
-
-		for (let i = 0; i < 20; i++) simulation.tick();
+		// Light collision-avoidance — only for small/medium datasets.
+		// For large datasets (>1500 nodes) the gravity-well positioning is sufficient.
+		if (simNodes.length <= 1500) {
+			simulation = d3.forceSimulation(simNodes)
+				.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 1.5).strength(0.5))
+				.alphaDecay(0.15)
+				.stop();
+			for (let i = 0; i < 15; i++) simulation.tick();
+		}
 		requestDraw();
 	}
 
@@ -384,6 +393,10 @@
 		searchResults = matches;
 		searchIdx = 0;
 		searchMatchSet = new Set(matches.map(m => m.node.id));
+		// Build category map for canvas badge rendering
+		const catMap = new Map<string, string[]>();
+		for (const m of matches) catMap.set(m.node.id, m.matchCategories);
+		searchMatchCats = catMap;
 
 		if (searchResults.length > 0) centerOnSearchResult();
 		requestDraw();
@@ -416,6 +429,7 @@
 		searchResults = [];
 		searchIdx = 0;
 		searchMatchSet = new Set();
+		searchMatchCats = new Map();
 		requestDraw();
 	}
 
@@ -460,6 +474,7 @@
 		drawGapLines();
 		drawLinks();
 		drawNodes();
+		drawSearchBadges();
 		if (hoveredNode) drawHoverLabel(hoveredNode);
 		if (hoveredLink) drawLinkAnnotation(hoveredLink);
 
@@ -517,17 +532,21 @@
 			ctx!.lineWidth = 1 / zoom;
 			ctx!.stroke();
 
-			const midAngle = startAngle + sectorWidth / 2;
-			const labelR = outerR + 14 / zoom;
-			const lx = labelR * Math.cos(midAngle);
-			const ly = labelR * Math.sin(midAngle);
-			const profile = communityProfiles?.find(p => p.id === cid);
-			const label = profile?.label ?? `C${cid}`;
-			ctx!.font = `${Math.max(9, 11 / zoom)}px system-ui, sans-serif`;
-			ctx!.fillStyle = color + 'AA';
-			ctx!.textAlign = 'center';
-			ctx!.textBaseline = 'middle';
-			ctx!.fillText(label.length > 12 ? label.slice(0, 12) + '…' : label, lx, ly);
+			// Community label — only render when zoom makes it readable (not a mess of overlapping text)
+			const fontSize = 11 / zoom;
+			if (fontSize >= 6 && fontSize <= 30) {
+				const midAngle = startAngle + sectorWidth / 2;
+				const labelR = outerR + 16 / zoom;
+				const lx = labelR * Math.cos(midAngle);
+				const ly = labelR * Math.sin(midAngle);
+				const profile = communityProfiles?.find(p => p.id === cid);
+				const label = profile?.name ?? `C${cid}`;
+				ctx!.font = `${fontSize}px system-ui, sans-serif`;
+				ctx!.fillStyle = color + '88';
+				ctx!.textAlign = 'center';
+				ctx!.textBaseline = 'middle';
+				ctx!.fillText(label.length > 10 ? label.slice(0, 10) + '…' : label, lx, ly);
+			}
 		}
 	}
 
@@ -583,34 +602,37 @@
 			const typed = link.linkType && link.linkType !== 'relates' && LINK_TYPE_COLORS[link.linkType];
 			const color = typed ? LINK_TYPE_COLORS[link.linkType!] : '#94a3b8';
 			const w = link.weight ?? 1.0;
-			const baseWidth = typed ? Math.max(0.8, Math.min(4, w * 0.5)) : 0.7;
+			const baseWidth = (typed ? Math.max(0.8, Math.min(4, w * 0.5)) : 0.7) * linkStrokeMul;
 			const conf = CONFIDENCE_STYLE[link.confidence ?? 'hypothesis'] ?? CONFIDENCE_STYLE.hypothesis;
 			if (conf.dash.length > 0) ctx!.setLineDash(conf.dash.map(d => d / zoom));
 
 			const isDormant = link.status === 'dormant';
-			const opacity = searchDim ? '22' : isDormant ? '44' : typed ? 'CC' : 'AA';
+			// Use linkOpacity setting — convert to 2-digit hex
+			const baseAlpha = searchDim ? 0.13 : isDormant ? 0.27 : linkOpacity;
+			const alphaHex = Math.round(baseAlpha * 255).toString(16).padStart(2, '0');
 
 			ctx!.beginPath();
 			ctx!.moveTo(sx, sy);
 			ctx!.lineTo(tx, ty);
-			ctx!.strokeStyle = color + opacity;
+			ctx!.strokeStyle = color + alphaHex;
 			ctx!.lineWidth = (baseWidth * conf.widthMul) / zoom;
 			ctx!.stroke();
 			if (conf.dash.length > 0) ctx!.setLineDash([]);
 
+			// Arrowhead for typed links — uses arrowSize setting
 			if (typed && !searchDim) {
 				const dx = tx - sx, dy = ty - sy;
 				const len = Math.sqrt(dx * dx + dy * dy);
 				if (len > 10) {
 					const ux = dx / len, uy = dy / len;
 					const ax = sx + dx * 0.7, ay = sy + dy * 0.7;
-					const as = 4 / zoom;
+					const as = arrowSize / zoom;
 					ctx!.beginPath();
 					ctx!.moveTo(ax + ux * as, ay + uy * as);
 					ctx!.lineTo(ax - uy * as * 0.5 - ux * as * 0.3, ay + ux * as * 0.5 - uy * as * 0.3);
 					ctx!.lineTo(ax + uy * as * 0.5 - ux * as * 0.3, ay - ux * as * 0.5 - uy * as * 0.3);
 					ctx!.closePath();
-					ctx!.fillStyle = color + 'CC';
+					ctx!.fillStyle = color + alphaHex;
 					ctx!.fill();
 				}
 			}
@@ -676,6 +698,63 @@
 			if (hoveredNode === n) {
 				ctx!.strokeStyle = '#1e1b4b';
 				ctx!.lineWidth = 2.5 / zoom;
+				ctx!.stroke();
+			}
+		}
+	}
+
+	function drawSearchBadges() {
+		if (searchMatchCats.size === 0) return;
+		const hw = width / 2 / zoom, hh = height / 2 / zoom;
+		const vpLeft = -panX / zoom - hw - 40, vpRight = -panX / zoom + hw + 40;
+		const vpTop = -panY / zoom - hh - 40, vpBottom = -panY / zoom + hh + 40;
+		const currentMatch = searchResults[searchIdx]?.node;
+
+		for (const n of simNodes) {
+			const cats = searchMatchCats.get(n.id);
+			if (!cats || cats.length === 0) continue;
+			const x = n.x ?? 0, y = n.y ?? 0;
+			if (x < vpLeft || x > vpRight || y < vpTop || y > vpBottom) continue;
+
+			const isCurrent = currentMatch === n;
+
+			// Draw category badges below the node
+			const badgeY = y + n.r + 5 / zoom;
+			const badgeH = 8 / zoom;
+			const badgeW = 8 / zoom;
+			const gap = 2 / zoom;
+			const totalW = cats.length * (badgeW + gap) - gap;
+			let bx = x - totalW / 2;
+
+			for (const cat of cats) {
+				const col = CAT_COLORS[cat] ?? '#94a3b8';
+				ctx!.fillStyle = col;
+				ctx!.beginPath();
+				ctx!.roundRect(bx, badgeY, badgeW, badgeH, 1.5 / zoom);
+				ctx!.fill();
+				// Badge letter
+				ctx!.fillStyle = '#ffffff';
+				ctx!.font = `bold ${5 / zoom}px system-ui, sans-serif`;
+				ctx!.textAlign = 'center';
+				ctx!.textBaseline = 'middle';
+				ctx!.fillText(cat, bx + badgeW / 2, badgeY + badgeH / 2);
+				bx += badgeW + gap;
+			}
+
+			// Pointer arrow for current match — triangle pointing down at the node
+			if (isCurrent) {
+				const arrY = y - n.r - 14 / zoom;
+				const arrH = 8 / zoom;
+				const arrW = 10 / zoom;
+				ctx!.beginPath();
+				ctx!.moveTo(x, y - n.r - 3 / zoom);              // tip pointing at node
+				ctx!.lineTo(x - arrW / 2, arrY);                   // top-left
+				ctx!.lineTo(x + arrW / 2, arrY);                   // top-right
+				ctx!.closePath();
+				ctx!.fillStyle = '#f59e0b';
+				ctx!.fill();
+				ctx!.strokeStyle = '#ffffff';
+				ctx!.lineWidth = 1 / zoom;
 				ctx!.stroke();
 			}
 		}
@@ -849,7 +928,7 @@
 <div class="sight2-root" dir={isRTL ? 'rtl' : 'ltr'}>
 	<!-- Header -->
 	<div class="sight2-header">
-		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
 		<span class="sight2-title">{$t('lens.title') || 'Constellation Sight'}</span>
 		<span class="sight2-stats">{simNodes.length} {$t('lens.nodes') || 'nodes'} · {simLinks.length} {$t('lens.links') || 'links'}</span>
 		<div class="sight2-toolbar">
@@ -946,6 +1025,19 @@
 					<label class="sight2-settings-row">
 						<span>{$t("lens.legend") || "Legend"}</span>
 						<button class:active={showLegend} onclick={() => showLegend = !showLegend}>{showLegend ? 'On' : 'Off'}</button>
+					</label>
+					<div class="sight2-settings-title" style="margin-top:4px">{$t('searchHub.linksTo') || 'Links'}</div>
+					<label class="sight2-settings-slider">
+						<span>Stroke: {linkStrokeMul.toFixed(1)}×</span>
+						<input type="range" min="0.5" max="4" step="0.25" bind:value={linkStrokeMul} oninput={() => requestDraw()} />
+					</label>
+					<label class="sight2-settings-slider">
+						<span>Opacity: {Math.round(linkOpacity * 100)}%</span>
+						<input type="range" min="0.1" max="1" step="0.05" bind:value={linkOpacity} oninput={() => requestDraw()} />
+					</label>
+					<label class="sight2-settings-slider">
+						<span>Arrows: {arrowSize}px</span>
+						<input type="range" min="2" max="12" step="1" bind:value={arrowSize} oninput={() => requestDraw()} />
 					</label>
 				</div>
 			{/if}
@@ -1183,6 +1275,11 @@
 		background: none; color: var(--text-muted, #64748b); font-family: inherit;
 	}
 	.sight2-settings-row button.active { background: var(--interactive-accent, #7c3aed); color: white; border-color: var(--interactive-accent, #7c3aed); }
+	.sight2-settings-slider {
+		display: flex; flex-direction: column; gap: 2px;
+	}
+	.sight2-settings-slider span { font-size: 10px; color: var(--text-muted, #64748b); }
+	.sight2-settings-slider input[type="range"] { width: 100%; height: 14px; cursor: pointer; }
 
 	/* ─── Legend ─── */
 	.sight2-legend {
