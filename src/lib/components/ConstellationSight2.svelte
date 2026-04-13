@@ -252,80 +252,72 @@
 	}
 
 	// ─── Gravity-Well Layout ──────────────────────────────────
-	// Every node is tethered to the center by a chord. The chord length
-	// is a continuous function of the node's knowledge properties.
-	// The outer ring (maxR) is the maximum chord length. No jitter.
-	// No D3 collision simulation. Deterministic positions.
+	// 4-ring concentric layout by centrality percentile + community sectors.
+	// No jitter. No D3 collision simulation. Deterministic bounded positions.
 	function computeGravityWellLayout() {
 		if (simNodes.length === 0) return;
 
 		const maxR = Math.min(width, height) * 0.45;
 
-		// ── 1. Chord length: f(centrality, linkCount, maturity) ──
-		let maxLinks = 1;
-		for (const n of simNodes) {
-			if ((n.linkCount || 0) > maxLinks) maxLinks = n.linkCount || 0;
-		}
-		const MATURITY_PULL: Record<string, number> = {
-			canonical: 0.0, evergreen: 0.1, sapling: 0.3, seed: 0.6, wilting: 0.8,
-		};
+		// ── 1. Assign rings by centrality percentile ──
+		const sorted = [...simNodes].sort((a, b) => b.centrality - a.centrality);
+		const n = sorted.length;
+		const ringRadii = [
+			maxR * 0.0,   // Ring 0: top 5% — center cluster
+			maxR * 0.27,  // Ring 1: 5-15%
+			maxR * 0.56,  // Ring 2: 15-35%
+			maxR * 0.88,  // Ring 3: 35-100% — outer ring (within boundary)
+		];
+
+		const nodeRings = new Map<string, number>();
+		sorted.forEach((node, i) => {
+			const pct = i / n;
+			const ring = pct < 0.05 ? 0 : pct < 0.15 ? 1 : pct < 0.35 ? 2 : 3;
+			nodeRings.set(node.id, ring);
+		});
 
 		// ── 2. Community sectors ──
 		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
 		const numC = Math.max(communityIds.length, 1);
 		const sectorWidth = (Math.PI * 2) / numC;
-		const baseAngles = new Map<number, number>();
-		communityIds.forEach((cid, i) => baseAngles.set(cid, (i / numC) * Math.PI * 2));
 
-		// Group by community
-		const groups = new Map<number, SimNode[]>();
+		// ── 3. Group by (ring, community) ──
+		const groups = new Map<string, SimNode[]>();
 		for (const node of simNodes) {
-			if (!groups.has(node.communityId)) groups.set(node.communityId, []);
-			groups.get(node.communityId)!.push(node);
+			const ring = nodeRings.get(node.id) ?? 3;
+			const key = `${ring}:${node.communityId}`;
+			if (!groups.has(key)) groups.set(key, []);
+			groups.get(key)!.push(node);
 		}
 
-		// ── 3. Position each node ──
-		for (const [cid, members] of groups) {
-			const baseAngle = baseAngles.get(cid) || 0;
+		// ── 4. Position each node — no jitter, no simulation ──
+		const communityIndex = new Map<number, number>();
+		communityIds.forEach((cid, i) => communityIndex.set(cid, i));
 
-			// Compute chord for each member
-			const withChord = members.map(node => {
-				const cScore = 1 - Math.min(node.centrality, 1);
-				const lScore = 1 - Math.min((node.linkCount || 0) / maxLinks, 1);
-				const mScore = MATURITY_PULL[node.maturity || 'seed'] ?? 0.6;
-				const score = cScore * 0.6 + lScore * 0.25 + mScore * 0.15;
-				// Chord: [2% .. 100%] of maxR
-				const chord = Math.max(maxR * 0.02, score * maxR);
-				return { node, chord };
+		for (const [key, members] of groups) {
+			const [ringStr, cidStr] = key.split(':');
+			const ring = parseInt(ringStr);
+			const cid = parseInt(cidStr);
+			const baseRadius = ringRadii[ring];
+			const cidIdx = communityIndex.get(cid) ?? 0;
+			const baseAngle = (cidIdx / numC) * Math.PI * 2;
+
+			members.forEach((node, i) => {
+				const angleOffset = (i / Math.max(members.length, 1)) * sectorWidth * 0.8;
+				const angle = baseAngle + sectorWidth * 0.1 + angleOffset;
+
+				// Ring 0 (center): small spread so they don't pile on origin
+				const radius = ring === 0
+					? maxR * 0.02 + (i / Math.max(members.length, 1)) * maxR * 0.06
+					: baseRadius;
+
+				node.x = radius * Math.cos(angle);
+				node.y = radius * Math.sin(angle);
 			});
-
-			// Sort by chord (nearest first) for clean angular distribution
-			withChord.sort((a, b) => a.chord - b.chord);
-
-			withChord.forEach(({ node, chord }, i) => {
-				const angleOffset = (i / Math.max(members.length, 1)) * sectorWidth * 0.85;
-				const angle = baseAngle + sectorWidth * 0.075 + angleOffset;
-				node.x = chord * Math.cos(angle);
-				node.y = chord * Math.sin(angle);
-			});
 		}
 
-		// ── 4. Verify — belt AND suspenders ──
-		// If any node is beyond maxR, the chord math has a bug. Log and fix.
-		let escaped = 0;
-		for (const node of simNodes) {
-			const nx = node.x, ny = node.y;
-			if (nx == null || ny == null || isNaN(nx) || isNaN(ny)) {
-				node.x = 0; node.y = 0; escaped++; continue;
-			}
-			const dist = Math.sqrt(nx * nx + ny * ny);
-			if (dist > maxR) {
-				node.x = nx * (maxR / dist);
-				node.y = ny * (maxR / dist);
-				escaped++;
-			}
-		}
-		if (escaped > 0) console.error(`[Sight2] ${escaped} nodes escaped maxR=${maxR.toFixed(0)}. Fixed.`);
+		// No D3 simulation. No jitter. All positions are deterministic
+		// and bounded by ringRadii[3] = 0.88 * maxR < maxR. Nothing escapes.
 
 		requestDraw();
 	}
