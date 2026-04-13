@@ -317,14 +317,37 @@
 		}
 
 		// Light collision-avoidance — only for small/medium datasets.
-		// For large datasets (>1500 nodes) the gravity-well positioning is sufficient.
 		if (simNodes.length <= 1500) {
 			simulation = d3.forceSimulation(simNodes)
 				.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 1.5).strength(0.5))
 				.alphaDecay(0.15)
 				.stop();
 			for (let i = 0; i < 15; i++) simulation.tick();
+
+			// Re-clamp after collision pass — D3 collision can push nodes outward
+			for (const node of simNodes) {
+				const nx = node.x ?? 0, ny = node.y ?? 0;
+				const dist = Math.sqrt(nx * nx + ny * ny);
+				if (dist > maxRadius) {
+					const scale = maxRadius / dist;
+					node.x = nx * scale;
+					node.y = ny * scale;
+				}
+			}
 		}
+
+		// Post-layout enforcement: clamp ALL nodes to the outer ring boundary.
+		// This catches any drift from collision, floating point, or edge cases.
+		for (const node of simNodes) {
+			const nx = node.x ?? 0, ny = node.y ?? 0;
+			const dist = Math.sqrt(nx * nx + ny * ny);
+			if (dist > maxRadius) {
+				const scale = maxRadius / dist;
+				node.x = nx * scale;
+				node.y = ny * scale;
+			}
+		}
+
 		requestDraw();
 	}
 
@@ -475,12 +498,6 @@
 		ctx.translate(w / 2 + panX, h / 2 + panY);
 		ctx.scale(zoom, zoom);
 
-		// Hard clip: nothing renders beyond the outer ring boundary
-		const clipR = Math.min(w, h) * 0.47;
-		ctx.beginPath();
-		ctx.arc(0, 0, clipR, 0, Math.PI * 2);
-		ctx.clip();
-
 		drawRadialGuides();
 		if (showRegions) drawCommunityRegions();
 		drawGapLines();
@@ -498,11 +515,15 @@
 		const ringRadii = [minDim * 0.12, minDim * 0.25, minDim * 0.45];
 		const guideColor = 'rgba(148, 163, 184, 0.08)';
 
-		ctx!.strokeStyle = guideColor;
 		ctx!.lineWidth = 0.5 / zoom;
-		for (const r of ringRadii) {
+		for (let i = 0; i < ringRadii.length; i++) {
+			const r = ringRadii[i];
+			const isOuter = i === ringRadii.length - 1;
 			ctx!.beginPath();
 			ctx!.arc(0, 0, r, 0, Math.PI * 2);
+			// Outer ring is more visible — it's the boundary
+			ctx!.strokeStyle = isOuter ? 'rgba(148, 163, 184, 0.18)' : guideColor;
+			ctx!.lineWidth = isOuter ? 1 / zoom : 0.5 / zoom;
 			ctx!.stroke();
 		}
 
@@ -614,9 +635,19 @@
 			const hull = convexHull(points);
 			if (hull.length < 2) continue;
 
-			// Padding = average node radius + breathing room
+			// Padding = average node radius + breathing room, but never extend beyond outer ring
 			const avgR = members.reduce((s, m) => s + m.r, 0) / members.length;
-			const padding = avgR + 8;
+			const outerBound = Math.min(width, height) * 0.45;
+			// Check how close the farthest member is to the boundary
+			let maxDist = 0;
+			for (const m of members) {
+				const d = Math.sqrt((m.x ?? 0) ** 2 + (m.y ?? 0) ** 2);
+				if (d > maxDist) maxDist = d;
+			}
+			// Reduce padding if the hull would exceed the outer ring
+			const idealPadding = avgR + 8;
+			const headroom = Math.max(0, outerBound - maxDist);
+			const padding = Math.min(idealPadding, Math.max(2, headroom));
 
 			// Draw padded hull — subtle fill + colored border
 			drawSmoothHull(hull, padding);
