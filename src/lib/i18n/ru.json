@@ -1431,6 +1431,26 @@
         "settingOpacity": "Прозрачность",
         "settingArrows": "Стрелки"
     },
+    "sightPanel": {
+        "overview": "Обзор",
+        "totalNodes": "Заметки",
+        "totalLinks": "Связи",
+        "orphans": "Сироты",
+        "linksPerNote": "Связей/Заметку",
+        "linkHealth": "Здоровье связей",
+        "byType": "По типу",
+        "byConfidence": "По уверенности",
+        "dormantLinks": "спящие связи (90+ дней)",
+        "topBridges": "Главные мосты",
+        "insights": "Аналитика",
+        "strongest_evidence": "Сильнейшие доказательства",
+        "weak_foundations": "Слабые основы",
+        "tensions": "Противоречия",
+        "stagnating": "Застой",
+        "most_connected": "Наиболее связанные",
+        "knowledge_gaps": "Пробелы в знаниях",
+        "noResults": "Нет результатов"
+    },
     "canonical": {
         "migrationTitle": "Подготовка вашей библиотеки",
         "migrationDesc": "Constellation организует ваши файлы с помощью канонической системы идентификации. Каждый файл получает уникальный неизменяемый идентификатор, а ваши заголовки остаются такими, как вы их назвали.",

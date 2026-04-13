@@ -1431,6 +1431,26 @@
         "settingOpacity": "不透明度",
         "settingArrows": "矢印"
     },
+    "sightPanel": {
+        "overview": "概要",
+        "totalNodes": "ノート",
+        "totalLinks": "リンク",
+        "orphans": "孤立",
+        "linksPerNote": "リンク/ノート",
+        "linkHealth": "リンク健全性",
+        "byType": "タイプ別",
+        "byConfidence": "信頼度別",
+        "dormantLinks": "休眠リンク（90日以上）",
+        "topBridges": "トップブリッジ",
+        "insights": "知識インサイト",
+        "strongest_evidence": "最強の証拠",
+        "weak_foundations": "弱い基盤",
+        "tensions": "緊張",
+        "stagnating": "停滞",
+        "most_connected": "最も接続",
+        "knowledge_gaps": "知識ギャップ",
+        "noResults": "結果なし"
+    },
     "canonical": {
         "migrationTitle": "ライブラリを準備中",
         "migrationDesc": "Constellationが正規識別システムでファイルを整理しています。各ファイルに固有の不変識別子が付与されますが、タイトルはそのまま保持されます。",

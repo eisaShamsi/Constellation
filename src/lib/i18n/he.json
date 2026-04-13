@@ -1431,6 +1431,26 @@
         "settingOpacity": "שקיפות",
         "settingArrows": "חיצים"
     },
+    "sightPanel": {
+        "overview": "סקירה",
+        "totalNodes": "הערות",
+        "totalLinks": "קישורים",
+        "orphans": "יתומים",
+        "linksPerNote": "קישורים/הערה",
+        "linkHealth": "בריאות קישורים",
+        "byType": "לפי סוג",
+        "byConfidence": "לפי ביטחון",
+        "dormantLinks": "קישורים רדומים (90+ ימים)",
+        "topBridges": "גשרים מובילים",
+        "insights": "תובנות",
+        "strongest_evidence": "הראיות החזקות",
+        "weak_foundations": "יסודות חלשים",
+        "tensions": "מתחים",
+        "stagnating": "קיפאון",
+        "most_connected": "המחובר ביותר",
+        "knowledge_gaps": "פערי ידע",
+        "noResults": "אין תוצאות"
+    },
     "canonical": {
         "migrationTitle": "מכין את הספרייה שלך",
         "migrationDesc": "קונסטליישן מארגן את הקבצים שלך עם מערכת הזהות הקנונית. כל קובץ מקבל מזהה ייחודי וקבוע בעוד הכותרות שלך נשארות בדיוק כפי שקראת להן.",

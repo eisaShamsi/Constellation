@@ -1431,6 +1431,26 @@
         "settingOpacity": "شفافیت",
         "settingArrows": "تیر"
     },
+    "sightPanel": {
+        "overview": "جائزہ",
+        "totalNodes": "نوٹس",
+        "totalLinks": "روابط",
+        "orphans": "یتیم",
+        "linksPerNote": "روابط/نوٹ",
+        "linkHealth": "روابط کی صحت",
+        "byType": "قسم کے مطابق",
+        "byConfidence": "اعتماد کے مطابق",
+        "dormantLinks": "غیر فعال روابط (90+ دن)",
+        "topBridges": "اہم پل",
+        "insights": "علمی بصیرت",
+        "strongest_evidence": "مضبوط ترین ثبوت",
+        "weak_foundations": "کمزور بنیادیں",
+        "tensions": "تناؤ",
+        "stagnating": "جمود",
+        "most_connected": "سب سے زیادہ مربوط",
+        "knowledge_gaps": "علمی خلا",
+        "noResults": "کوئی نتائج نہیں"
+    },
     "canonical": {
         "migrationTitle": "آپ کی لائبریری تیار ہو رہی ہے",
         "migrationDesc": "کانسٹیلیشن آپ کی فائلوں کو اپنے کیننیکل شناختی نظام سے ترتیب دے رہا ہے۔ ہر فائل کو ایک منفرد اور مستقل شناخت کنندہ ملتا ہے جبکہ آپ کے عنوانات بالکل ویسے ہی رہتے ہیں۔",

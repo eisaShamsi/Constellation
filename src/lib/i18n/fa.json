@@ -1431,6 +1431,26 @@
         "settingOpacity": "شفافیت",
         "settingArrows": "فلش‌ها"
     },
+    "sightPanel": {
+        "overview": "نمای کلی",
+        "totalNodes": "یادداشت‌ها",
+        "totalLinks": "پیوندها",
+        "orphans": "یتیم",
+        "linksPerNote": "پیوند/یادداشت",
+        "linkHealth": "سلامت پیوندها",
+        "byType": "بر اساس نوع",
+        "byConfidence": "بر اساس اطمینان",
+        "dormantLinks": "پیوندهای خاموش (90+ روز)",
+        "topBridges": "پل‌های برتر",
+        "insights": "بینش‌های دانشی",
+        "strongest_evidence": "قوی‌ترین شواهد",
+        "weak_foundations": "پایه‌های ضعیف",
+        "tensions": "تنش‌ها",
+        "stagnating": "راکد",
+        "most_connected": "بیشترین اتصال",
+        "knowledge_gaps": "شکاف‌های دانشی",
+        "noResults": "بدون نتیجه"
+    },
     "canonical": {
         "migrationTitle": "آماده‌سازی کتابخانه شما",
         "migrationDesc": "صورت فلکی در حال سازماندهی فایل‌های شما با سیستم هویت استاندارد است. هر فایل یک شناسه یکتا و تغییرناپذیر دریافت می‌کند در حالی که عنوان‌های شما دست نخورده باقی می‌مانند.",

@@ -1431,6 +1431,26 @@
         "settingOpacity": "불투명도",
         "settingArrows": "화살표"
     },
+    "sightPanel": {
+        "overview": "개요",
+        "totalNodes": "노트",
+        "totalLinks": "링크",
+        "orphans": "고립",
+        "linksPerNote": "링크/노트",
+        "linkHealth": "링크 건강",
+        "byType": "유형별",
+        "byConfidence": "신뢰도별",
+        "dormantLinks": "휴면 링크 (90일 이상)",
+        "topBridges": "상위 브리지",
+        "insights": "지식 인사이트",
+        "strongest_evidence": "가장 강력한 증거",
+        "weak_foundations": "약한 기반",
+        "tensions": "긴장",
+        "stagnating": "정체",
+        "most_connected": "가장 연결된",
+        "knowledge_gaps": "지식 격차",
+        "noResults": "결과 없음"
+    },
     "canonical": {
         "migrationTitle": "라이브러리 준비 중",
         "migrationDesc": "Constellation이 정규 식별 시스템으로 파일을 정리하고 있습니다. 각 파일에 고유하고 변경 불가능한 식별자가 부여되며, 제목은 그대로 유지됩니다.",

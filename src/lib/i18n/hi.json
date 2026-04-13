@@ -1431,6 +1431,26 @@
         "settingOpacity": "पारदर्शिता",
         "settingArrows": "तीर"
     },
+    "sightPanel": {
+        "overview": "अवलोकन",
+        "totalNodes": "नोट्स",
+        "totalLinks": "लिंक",
+        "orphans": "अनाथ",
+        "linksPerNote": "लिंक/नोट",
+        "linkHealth": "लिंक स्वास्थ्य",
+        "byType": "प्रकार अनुसार",
+        "byConfidence": "विश्वास अनुसार",
+        "dormantLinks": "निष्क्रिय लिंक (90+ दिन)",
+        "topBridges": "शीर्ष पुल",
+        "insights": "ज्ञान अंतर्दृष्टि",
+        "strongest_evidence": "सबसे मजबूत साक्ष्य",
+        "weak_foundations": "कमजोर नींव",
+        "tensions": "तनाव",
+        "stagnating": "स्थिर",
+        "most_connected": "सर्वाधिक जुड़ा",
+        "knowledge_gaps": "ज्ञान अंतराल",
+        "noResults": "कोई परिणाम नहीं"
+    },
     "canonical": {
         "migrationTitle": "आपकी लाइब्रेरी तैयार हो रही है",
         "migrationDesc": "कॉन्स्टेलेशन आपकी फ़ाइलों को अपनी कैनोनिकल पहचान प्रणाली से व्यवस्थित कर रहा है। प्रत्येक फ़ाइल को एक अद्वितीय, अपरिवर्तनीय पहचानकर्ता मिलता है जबकि आपके शीर्षक वैसे ही रहते हैं।",

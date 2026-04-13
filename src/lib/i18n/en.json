@@ -1435,6 +1435,26 @@
         "settingOpacity": "Opacity",
         "settingArrows": "Arrows"
     },
+    "sightPanel": {
+        "overview": "Overview",
+        "totalNodes": "Notes",
+        "totalLinks": "Links",
+        "orphans": "Orphans",
+        "linksPerNote": "Links/Note",
+        "linkHealth": "Link Health",
+        "byType": "By Type",
+        "byConfidence": "By Confidence",
+        "dormantLinks": "dormant links (90+ days)",
+        "topBridges": "Top Bridges",
+        "insights": "Knowledge Insights",
+        "strongest_evidence": "Strongest Evidence",
+        "weak_foundations": "Weak Foundations",
+        "tensions": "Tensions",
+        "stagnating": "Stagnating",
+        "most_connected": "Most Connected",
+        "knowledge_gaps": "Knowledge Gaps",
+        "noResults": "No results"
+    },
     "canonical": {
         "migrationTitle": "Preparing Your Library",
         "migrationDesc": "Constellation is organizing your files with its canonical identity system. Each file receives a unique, immutable identifier while your titles stay exactly as you named them.",

@@ -1431,6 +1431,26 @@
         "settingOpacity": "Opacidad",
         "settingArrows": "Flechas"
     },
+    "sightPanel": {
+        "overview": "Resumen",
+        "totalNodes": "Notas",
+        "totalLinks": "Enlaces",
+        "orphans": "Huérfanas",
+        "linksPerNote": "Enlaces/Nota",
+        "linkHealth": "Salud de enlaces",
+        "byType": "Por tipo",
+        "byConfidence": "Por confianza",
+        "dormantLinks": "enlaces inactivos (90+ días)",
+        "topBridges": "Puentes principales",
+        "insights": "Perspectivas",
+        "strongest_evidence": "Evidencia más fuerte",
+        "weak_foundations": "Bases débiles",
+        "tensions": "Tensiones",
+        "stagnating": "Estancado",
+        "most_connected": "Más conectado",
+        "knowledge_gaps": "Brechas de conocimiento",
+        "noResults": "Sin resultados"
+    },
     "canonical": {
         "migrationTitle": "Preparando tu biblioteca",
         "migrationDesc": "Constellation está organizando tus archivos con su sistema de identidad canónica. Cada archivo recibe un identificador único e inmutable mientras tus títulos permanecen tal como los nombraste.",

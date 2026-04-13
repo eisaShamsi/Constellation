@@ -1431,6 +1431,26 @@
         "settingOpacity": "Deckkraft",
         "settingArrows": "Pfeile"
     },
+    "sightPanel": {
+        "overview": "Übersicht",
+        "totalNodes": "Notizen",
+        "totalLinks": "Links",
+        "orphans": "Waisen",
+        "linksPerNote": "Links/Notiz",
+        "linkHealth": "Link-Gesundheit",
+        "byType": "Nach Typ",
+        "byConfidence": "Nach Konfidenz",
+        "dormantLinks": "ruhende Links (90+ Tage)",
+        "topBridges": "Top-Brücken",
+        "insights": "Wissens-Einblicke",
+        "strongest_evidence": "Stärkste Belege",
+        "weak_foundations": "Schwache Grundlagen",
+        "tensions": "Spannungen",
+        "stagnating": "Stagnierend",
+        "most_connected": "Am stärksten vernetzt",
+        "knowledge_gaps": "Wissenslücken",
+        "noResults": "Keine Ergebnisse"
+    },
     "canonical": {
         "migrationTitle": "Bibliothek wird vorbereitet",
         "migrationDesc": "Constellation organisiert Ihre Dateien mit dem kanonischen Identitätssystem. Jede Datei erhält eine eindeutige, unveränderliche Kennung, während Ihre Titel unverändert bleiben.",

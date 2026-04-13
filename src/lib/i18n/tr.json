@@ -1431,6 +1431,26 @@
         "settingOpacity": "Opaklık",
         "settingArrows": "Oklar"
     },
+    "sightPanel": {
+        "overview": "Genel Bakış",
+        "totalNodes": "Notlar",
+        "totalLinks": "Bağlantılar",
+        "orphans": "Yetimler",
+        "linksPerNote": "Bağlantı/Not",
+        "linkHealth": "Bağlantı Sağlığı",
+        "byType": "Türe göre",
+        "byConfidence": "Güvene göre",
+        "dormantLinks": "uykuda bağlantılar (90+ gün)",
+        "topBridges": "En Önemli Köprüler",
+        "insights": "Bilgi Analizi",
+        "strongest_evidence": "En güçlü kanıt",
+        "weak_foundations": "Zayıf temeller",
+        "tensions": "Gerilimler",
+        "stagnating": "Durağan",
+        "most_connected": "En bağlantılı",
+        "knowledge_gaps": "Bilgi boşlukları",
+        "noResults": "Sonuç yok"
+    },
     "canonical": {
         "migrationTitle": "Kütüphaneniz hazırlanıyor",
         "migrationDesc": "Constellation dosyalarınızı kanonik kimlik sistemiyle düzenliyor. Her dosya benzersiz ve değişmez bir tanımlayıcı alırken başlıklarınız aynen korunuyor.",

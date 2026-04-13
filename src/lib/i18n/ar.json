@@ -1435,6 +1435,26 @@
         "settingOpacity": "الشفافية",
         "settingArrows": "الأسهم"
     },
+    "sightPanel": {
+        "overview": "نظرة عامة",
+        "totalNodes": "ملاحظات",
+        "totalLinks": "روابط",
+        "orphans": "يتيمة",
+        "linksPerNote": "روابط/ملاحظة",
+        "linkHealth": "صحة الروابط",
+        "byType": "حسب النوع",
+        "byConfidence": "حسب الثقة",
+        "dormantLinks": "روابط خاملة (90+ يوم)",
+        "topBridges": "أهم الجسور",
+        "insights": "رؤى معرفية",
+        "strongest_evidence": "أقوى الأدلة",
+        "weak_foundations": "أسس ضعيفة",
+        "tensions": "توترات",
+        "stagnating": "راكدة",
+        "most_connected": "الأكثر ارتباطاً",
+        "knowledge_gaps": "فجوات معرفية",
+        "noResults": "لا نتائج"
+    },
     "canonical": {
         "migrationTitle": "تجهيز مكتبتك",
         "migrationDesc": "يقوم كوكبة بتنظيم ملفاتك بنظام الهوية القياسي. يحصل كل ملف على معرّف فريد وثابت بينما تبقى عناوينك كما سميتها.",
