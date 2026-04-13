@@ -1655,24 +1655,48 @@
 									<option value="dark">{$t('settings.appearance.dark')}</option>
 								</select>
 							</div>
-							{#each [
-								['background', $t('settings.appearance.themeBackground') || 'Background'],
-								['surface', $t('settings.appearance.themeSurface') || 'Surface'],
-								['text', $t('settings.appearance.themeText') || 'Text'],
-								['accent', $t('settings.appearance.themeAccent') || 'Accent'],
-								['border', $t('settings.appearance.themeBorder') || 'Border'],
-							] as [key, label]}
-								<div class="setting-item">
-									<div class="setting-info"><div class="setting-name">{label}</div></div>
-									<div class="color-row">
-										<input type="color" class="color-input" value={editingTheme.colors[key]}
-											oninput={(e) => { editingTheme!.colors[key] = (e.target as HTMLInputElement).value; }} />
-										<span class="color-hex">{editingTheme.colors[key]}</span>
-									</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeBackground') || 'Background'}</div></div>
+								<div class="color-row">
+									<input type="color" class="color-input" value={editingTheme.colors.background}
+										oninput={(e) => { editingTheme!.colors.background = (e.target as HTMLInputElement).value; }} />
+									<span class="color-hex">{editingTheme.colors.background}</span>
 								</div>
-							{/each}
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeSurface') || 'Surface'}</div></div>
+								<div class="color-row">
+									<input type="color" class="color-input" value={editingTheme.colors.surface}
+										oninput={(e) => { editingTheme!.colors.surface = (e.target as HTMLInputElement).value; }} />
+									<span class="color-hex">{editingTheme.colors.surface}</span>
+								</div>
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeText') || 'Text'}</div></div>
+								<div class="color-row">
+									<input type="color" class="color-input" value={editingTheme.colors.text}
+										oninput={(e) => { editingTheme!.colors.text = (e.target as HTMLInputElement).value; }} />
+									<span class="color-hex">{editingTheme.colors.text}</span>
+								</div>
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeAccent') || 'Accent'}</div></div>
+								<div class="color-row">
+									<input type="color" class="color-input" value={editingTheme.colors.accent}
+										oninput={(e) => { editingTheme!.colors.accent = (e.target as HTMLInputElement).value; }} />
+									<span class="color-hex">{editingTheme.colors.accent}</span>
+								</div>
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeBorder') || 'Border'}</div></div>
+								<div class="color-row">
+									<input type="color" class="color-input" value={editingTheme.colors.border}
+										oninput={(e) => { editingTheme!.colors.border = (e.target as HTMLInputElement).value; }} />
+									<span class="color-hex">{editingTheme.colors.border}</span>
+								</div>
+							</div>
 							<div class="theme-editor-actions">
-								<button class="btn-primary" onclick={saveTheme}>{$t('common.save') || 'Save'}</button>
+								<button class="btn-primary" onclick={saveTheme}>Save</button>
 								<button class="btn-text" onclick={() => { themeEditorOpen = false; editingTheme = null; }}>{$t('common.cancel') || 'Cancel'}</button>
 								{#if !BUILTIN_THEMES.find(b => b.id === editingTheme.id)}
 									<button class="btn-danger" onclick={() => deleteTheme(editingTheme!.id)}>{$t('common.delete') || 'Delete'}</button>
