@@ -1447,9 +1447,15 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
             scan_links_recursive(&path, re, links, library_name);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                let source_name = path.file_stem()
+                // Use frontmatter title for canonical files (matching collect_library_notes)
+                let file_stem = path.file_stem()
                     .map(|s| s.to_string_lossy().to_string())
                     .unwrap_or_default();
+                let source_name = if crate::canonical::is_canonical_filename(&path) {
+                    extract_frontmatter_title(&content).unwrap_or(file_stem)
+                } else {
+                    file_stem
+                };
                 for cap in re.captures_iter(&content) {
                     let target = cap[1].trim().to_string();
                     // Extract link type from alias:
