@@ -7,7 +7,7 @@
 	 * where the heart beats fast, and where tissue is dying.
 	 *
 	 * Architecture:
-	 *   D3 force simulation (proven) + Canvas rendering
+	 *   Gravity-well radial layout + Canvas rendering
 	 *   Living Link enrichment (type colors, weight thickness, confidence styles)
 	 *   Search (6 scopes, chips, history, category badges)
 	 *   Insight Panel (health, links, lifecycle, formulation, communities)
@@ -20,8 +20,9 @@
 	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
 	import {
 		stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual,
-		universalSearch, type UniversalSearchResponse,
+		universalSearch, embedText, appSettings, type UniversalSearchResponse,
 	} from '$lib/libraries/store';
+	import { get } from 'svelte/store';
 	import type { SkyNode, SkyLink } from '$lib/libraries/store';
 	import type { ClusterInfo, StructuralGap, UniverseHealth, CommunityProfile } from '$lib/graph/clusterEngine';
 
@@ -49,6 +50,12 @@
 		status?: string;
 	}
 
+	interface SearchMatch {
+		node: SimNode;
+		matchType: string;
+		matchCategories: string[];
+	}
+
 	// ─── Link Type Colors (Living Link System) ────────────────
 	const LINK_TYPE_COLORS: Record<string, string> = {
 		supports: '#4A9EFF', contradicts: '#FF4A4A', causes: '#FF8C42',
@@ -66,6 +73,10 @@
 		evidence: { dash: [], widthMul: 1.0 },
 		established: { dash: [], widthMul: 1.5 },
 		contested: { dash: [2, 2], widthMul: 1.2 },
+	};
+
+	const CAT_COLORS: Record<string, string> = {
+		T: '#3b82f6', C: '#16a34a', '#': '#f472b6', P: '#f59e0b', S: '#7c3aed',
 	};
 
 	// ─── Props ────────────────────────────────────────────────
@@ -126,12 +137,47 @@
 	// Living Link enrichment map: "source::target" → link data
 	let linkEnrichment = new Map<string, { weight: number; confidence: string; annotation: string; traversalCount: number; status: string }>();
 
+	// Search
+	let searchVisible = $state(false);
+	let searchQuery = $state('');
+	let searchScope = $state<'all' | 'title' | 'content' | 'tag' | 'property' | 'semantic'>('all');
+	let searchResults = $state<SearchMatch[]>([]);
+	let searchIdx = $state(0);
+	let showChips = $state(false);
+	let showHistory = $state(false);
+	let historyItems = $state<{ query: string; timestamp: number }[]>([]);
+	let searchMatchSet = $state<Set<string>>(new Set());
+
 	// Settings
 	let showRegions = $state(true);
-	let forceStrength = $state(-60);
-	let linkDistance = $state(40);
+	let showLegend = $state(true);
+	let settingsVisible = $state(false);
 
 	const isRTL = $derived($dir === 'rtl');
+
+	// Syntax chips (reactive to locale)
+	const syntaxChips = $derived.by(() => {
+		const _locale = $t('searchHub.linksTo');
+		const ops = getSearchOps();
+		return [
+			{ label: 'linksTo', syntax: (ops?.linksTo ?? 'links to') + ' [[' },
+			{ label: 'linksFrom', syntax: (ops?.linksFrom ?? 'links from') + ' [[' },
+			{ label: 'mutual', syntax: (ops?.mutual ?? 'mutual') + ' [[' },
+			{ label: 'mentions', syntax: (ops?.mentions ?? 'mentions') + ' [[' },
+			{ label: 'orphans', syntax: ops?.orphans ?? 'orphans' },
+			{ label: 'linksAll', syntax: (ops?.linksAll ?? 'links all') + ' [[' },
+			{ label: 'supports', syntax: (ops?.supports ?? 'supports') + ' [[' },
+			{ label: 'contradicts', syntax: (ops?.contradicts ?? 'contradicts') + ' [[' },
+			{ label: 'causes', syntax: (ops?.causes ?? 'causes') + ' [[' },
+			{ label: 'exemplifies', syntax: (ops?.exemplifies ?? 'exemplifies') + ' [[' },
+			{ label: 'generalizes', syntax: (ops?.generalizes ?? 'generalizes') + ' [[' },
+			{ label: 'derivesFrom', syntax: (ops?.derivesFrom ?? 'derives from') + ' [[' },
+			{ label: 'partOf', syntax: (ops?.partOf ?? 'part of') + ' [[' },
+			{ label: 'tag', syntax: '#' },
+			{ label: 'property', syntax: 'key=value' },
+			{ label: 'scope', syntax: (ops?.scope ?? 'in') + ':' },
+		];
+	});
 
 	// ─── Build Simulation Data ────────────────────────────────
 	function buildSimData() {
@@ -183,7 +229,6 @@
 	// ─── Load Living Link Enrichment from note_links ──────────
 	async function loadLinkEnrichment() {
 		try {
-			// Query all active links with their properties
 			const stats: any = await invoke('constellation_link_stats');
 			if (stats?.sample_links) {
 				for (const link of stats.sample_links) {
@@ -200,25 +245,20 @@
 		} catch {}
 	}
 
-	// ─── Gravity-Well Layout (replaces force-directed simulation) ─────
-	// Positions nodes in concentric rings by centrality, with community sectors.
-	// Core knowledge at center, peripheral at edges. Communicates meaning by position.
+	// ─── Gravity-Well Layout ──────────────────────────────────
 	function computeGravityWellLayout() {
 		if (simNodes.length === 0) return;
 
-		// 1. Sort nodes by centrality (descending) to assign rings
 		const sorted = [...simNodes].sort((a, b) => b.centrality - a.centrality);
 		const n = sorted.length;
 
-		// Ring thresholds (by percentile)
 		const ringThresholds = [
-			{ maxPct: 0.05, radius: 0 },                          // Ring 0: top 5% — center
-			{ maxPct: 0.15, radius: Math.min(width, height) * 0.12 }, // Ring 1: 5-15%
-			{ maxPct: 0.35, radius: Math.min(width, height) * 0.25 }, // Ring 2: 15-35%
-			{ maxPct: 1.00, radius: Math.min(width, height) * 0.45 }, // Ring 3: 35-100%
+			{ maxPct: 0.05, radius: 0 },
+			{ maxPct: 0.15, radius: Math.min(width, height) * 0.12 },
+			{ maxPct: 0.35, radius: Math.min(width, height) * 0.25 },
+			{ maxPct: 1.00, radius: Math.min(width, height) * 0.45 },
 		];
 
-		// Assign ring to each node
 		const nodeRings = new Map<string, number>();
 		sorted.forEach((node, i) => {
 			const pct = i / n;
@@ -229,7 +269,6 @@
 			nodeRings.set(node.id, ring);
 		});
 
-		// 2. Build community → sector angle mapping
 		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
 		const numCommunities = Math.max(communityIds.length, 1);
 		const communityAngle = new Map<number, number>();
@@ -238,7 +277,6 @@
 		});
 		const sectorWidth = (Math.PI * 2) / numCommunities;
 
-		// 3. Group nodes by (ring, community) for even distribution
 		const groups = new Map<string, SimNode[]>();
 		for (const node of simNodes) {
 			const ring = nodeRings.get(node.id) ?? 3;
@@ -247,7 +285,6 @@
 			groups.get(key)!.push(node);
 		}
 
-		// 4. Position each node
 		for (const [key, members] of groups) {
 			const [ringStr, cidStr] = key.split(':');
 			const ring = parseInt(ringStr);
@@ -256,31 +293,148 @@
 			const baseAngle = communityAngle.get(cid) ?? 0;
 
 			members.forEach((node, i) => {
-				// Spread nodes within their sector
 				const angleOffset = (i / Math.max(members.length, 1)) * sectorWidth * 0.8;
 				const angle = baseAngle + sectorWidth * 0.1 + angleOffset;
-
-				// Add jitter to radius to avoid exact circle overlap
 				const jitter = (Math.random() - 0.5) * baseRadius * 0.15;
 				const radius = ring === 0
-					? Math.random() * Math.min(width, height) * 0.04  // Center cluster: small random spread
+					? Math.random() * Math.min(width, height) * 0.04
 					: baseRadius + jitter;
-
 				node.x = radius * Math.cos(angle);
 				node.y = radius * Math.sin(angle);
 			});
 		}
 
-		// 5. Light collision-avoidance pass (20 ticks, no charge/link forces)
 		simulation = d3.forceSimulation(simNodes)
 			.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 1.5).strength(0.5))
 			.alphaDecay(0.1)
 			.stop();
 
 		for (let i = 0; i < 20; i++) simulation.tick();
-
-		// Single draw — no continuous animation needed
 		requestDraw();
+	}
+
+	// ─── Search ───────────────────────────────────────────────
+	async function executeSearch() {
+		if (!searchQuery.trim()) { searchResults = []; searchIdx = 0; searchMatchSet = new Set(); requestDraw(); return; }
+		addSearchHistory(searchQuery);
+		historyItems = readSearchHistory();
+		const q = searchQuery.toLowerCase();
+
+		// 1. Title matches (instant, local)
+		const titleMatchIds = new Set<string>();
+		if (searchScope === 'all' || searchScope === 'title') {
+			for (const n of simNodes) {
+				if (n.name.toLowerCase().includes(q)) titleMatchIds.add(n.id);
+			}
+		}
+
+		// 2. Backend search
+		const contentMatchIds = new Set<string>();
+		const tagMatchIds = new Set<string>();
+		const propertyMatchIds = new Set<string>();
+		const semanticMatchIds = new Set<string>();
+		if (searchScope !== 'title') {
+			try {
+				const cleanQ = stripInvisibleChars(searchQuery);
+				const ops = getSearchOps();
+				const canonicalized = canonicalizeSearchQuery(cleanQ, ops);
+
+				let qEmbed: number[] | null = null;
+				if ((searchScope === 'all' || searchScope === 'semantic') && get(appSettings).enabledFeatures?.semanticSearch) {
+					try { qEmbed = await embedText(canonicalized); } catch {}
+				}
+
+				const resp: any = await universalSearch(canonicalized, qEmbed, 200);
+				if (searchScope === 'all' || searchScope === 'content') {
+					for (const r of resp?.contents ?? []) contentMatchIds.add(r.name.toLowerCase());
+				}
+				if (searchScope === 'all' || searchScope === 'tag') {
+					for (const r of resp?.tags ?? []) tagMatchIds.add(r.name.toLowerCase());
+				}
+				if (searchScope === 'all' || searchScope === 'property') {
+					for (const r of resp?.properties ?? []) propertyMatchIds.add(r.name.toLowerCase());
+				}
+				if (searchScope === 'all' || searchScope === 'semantic') {
+					for (const r of resp?.semantic ?? []) semanticMatchIds.add(r.name.toLowerCase());
+				}
+				if (searchScope === 'all') {
+					for (const r of resp?.titles ?? []) titleMatchIds.add(r.name.toLowerCase());
+				}
+			} catch {}
+		}
+
+		// 3. Classify matches
+		const allIds = new Set([...titleMatchIds, ...contentMatchIds, ...tagMatchIds, ...propertyMatchIds, ...semanticMatchIds]);
+		const nodeMap = new Map(simNodes.map(n => [n.id, n]));
+		const matches: SearchMatch[] = [];
+
+		for (const id of allIds) {
+			const node = nodeMap.get(id);
+			if (!node) continue;
+			const cats: string[] = [];
+			if (titleMatchIds.has(id)) cats.push('T');
+			if (contentMatchIds.has(id)) cats.push('C');
+			if (tagMatchIds.has(id)) cats.push('#');
+			if (propertyMatchIds.has(id)) cats.push('P');
+			if (semanticMatchIds.has(id)) cats.push('S');
+			matches.push({ node, matchType: cats.join('·') || 'match', matchCategories: cats });
+		}
+
+		matches.sort((a, b) => (b.matchCategories?.length ?? 0) - (a.matchCategories?.length ?? 0));
+		searchResults = matches;
+		searchIdx = 0;
+		searchMatchSet = new Set(matches.map(m => m.node.id));
+
+		if (searchResults.length > 0) centerOnSearchResult();
+		requestDraw();
+	}
+
+	function centerOnSearchResult() {
+		const match = searchResults[searchIdx];
+		if (!match) return;
+		const nx = match.node.x ?? 0, ny = match.node.y ?? 0;
+		zoom = 2;
+		panX = -nx * zoom;
+		panY = -ny * zoom;
+		requestDraw();
+	}
+
+	function nextSearchResult() {
+		if (searchResults.length === 0) return;
+		searchIdx = (searchIdx + 1) % searchResults.length;
+		centerOnSearchResult();
+	}
+
+	function prevSearchResult() {
+		if (searchResults.length === 0) return;
+		searchIdx = (searchIdx - 1 + searchResults.length) % searchResults.length;
+		centerOnSearchResult();
+	}
+
+	function resetSearch() {
+		searchQuery = '';
+		searchResults = [];
+		searchIdx = 0;
+		searchMatchSet = new Set();
+		requestDraw();
+	}
+
+	function closeSearch() {
+		resetSearch();
+		showChips = false;
+		showHistory = false;
+		searchVisible = false;
+	}
+
+	function insertChipSyntax(syntax: string) {
+		searchQuery = searchQuery ? searchQuery + ' ' + syntax : syntax;
+		showChips = false;
+	}
+
+	function selectHistory(item: { query: string }) {
+		searchQuery = item.query;
+		showHistory = false;
+		executeSearch();
 	}
 
 	// ─── Canvas Rendering ─────────────────────────────────────
@@ -298,29 +452,15 @@
 		ctx.clearRect(0, 0, w, h);
 
 		ctx.save();
-		// Transform: pan + zoom centered on canvas
 		ctx.translate(w / 2 + panX, h / 2 + panY);
 		ctx.scale(zoom, zoom);
 
-		// 1. Background guides: concentric rings + sector dividers
 		drawRadialGuides();
-
-		// 2. Community regions (lowest layer — background)
 		if (showRegions) drawCommunityRegions();
-
-		// 3. Structural gap lines
 		drawGapLines();
-
-		// 4. Links — Living Link visualization (middle layer)
 		drawLinks();
-
-		// 5. Nodes (top layer — always visible)
 		drawNodes();
-
-		// 6. Hover label
 		if (hoveredNode) drawHoverLabel(hoveredNode);
-
-		// 7. Hover link annotation
 		if (hoveredLink) drawLinkAnnotation(hoveredLink);
 
 		ctx.restore();
@@ -331,7 +471,6 @@
 		const ringRadii = [minDim * 0.12, minDim * 0.25, minDim * 0.45];
 		const guideColor = 'rgba(148, 163, 184, 0.08)';
 
-		// Concentric rings
 		ctx!.strokeStyle = guideColor;
 		ctx!.lineWidth = 0.5 / zoom;
 		for (const r of ringRadii) {
@@ -340,20 +479,6 @@
 			ctx!.stroke();
 		}
 
-		// Community sector dividers (very subtle)
-		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
-		const numC = Math.max(communityIds.length, 1);
-		const outerR = ringRadii[ringRadii.length - 1] * 1.1;
-		ctx!.strokeStyle = 'rgba(148, 163, 184, 0.04)';
-		for (let i = 0; i < numC; i++) {
-			const angle = (i / numC) * Math.PI * 2;
-			ctx!.beginPath();
-			ctx!.moveTo(0, 0);
-			ctx!.lineTo(outerR * Math.cos(angle), outerR * Math.sin(angle));
-			ctx!.stroke();
-		}
-
-		// Center dot
 		ctx!.beginPath();
 		ctx!.arc(0, 0, 2 / zoom, 0, Math.PI * 2);
 		ctx!.fillStyle = 'rgba(148, 163, 184, 0.2)';
@@ -361,35 +486,48 @@
 	}
 
 	function drawCommunityRegions() {
-		// Compute ellipse hulls per community
-		const communityNodes = new Map<number, SimNode[]>();
-		for (const n of simNodes) {
-			const nodes = communityNodes.get(n.communityId) || [];
-			nodes.push(n);
-			communityNodes.set(n.communityId, nodes);
-		}
+		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
+		const numC = Math.max(communityIds.length, 1);
+		const sectorWidth = (Math.PI * 2) / numC;
+		const outerR = Math.min(width, height) * 0.48;
 
-		for (const [cid, members] of communityNodes) {
-			if (members.length < 3) continue;
-			const cx = d3.mean(members, m => m.x) ?? 0;
-			const cy = d3.mean(members, m => m.y) ?? 0;
-			let rx = 0, ry = 0;
-			for (const m of members) {
-				rx = Math.max(rx, Math.abs((m.x ?? 0) - cx));
-				ry = Math.max(ry, Math.abs((m.y ?? 0) - cy));
-			}
-			rx = Math.max(rx + 30, 40);
-			ry = Math.max(ry + 30, 40);
+		for (let i = 0; i < communityIds.length; i++) {
+			const cid = communityIds[i];
+			const startAngle = (i / numC) * Math.PI * 2;
+			const endAngle = startAngle + sectorWidth;
 			const color = communityColors.get(cid) ?? '#94a3b8';
 
 			ctx!.beginPath();
-			ctx!.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-			ctx!.fillStyle = color + '12'; // 7% fill
+			ctx!.moveTo(0, 0);
+			ctx!.arc(0, 0, outerR, startAngle, endAngle);
+			ctx!.closePath();
+			ctx!.fillStyle = color + '0D';
 			ctx!.fill();
-			ctx!.strokeStyle = color; // solid border
-			ctx!.lineWidth = 1.5 / zoom;
-			ctx!.lineWidth = 1.5 / zoom;
+
+			ctx!.beginPath();
+			ctx!.moveTo(0, 0);
+			ctx!.lineTo(outerR * Math.cos(startAngle), outerR * Math.sin(startAngle));
+			ctx!.strokeStyle = color + '30';
+			ctx!.lineWidth = 1 / zoom;
 			ctx!.stroke();
+
+			ctx!.beginPath();
+			ctx!.arc(0, 0, outerR, startAngle, endAngle);
+			ctx!.strokeStyle = color + '25';
+			ctx!.lineWidth = 1 / zoom;
+			ctx!.stroke();
+
+			const midAngle = startAngle + sectorWidth / 2;
+			const labelR = outerR + 14 / zoom;
+			const lx = labelR * Math.cos(midAngle);
+			const ly = labelR * Math.sin(midAngle);
+			const profile = communityProfiles?.find(p => p.id === cid);
+			const label = profile?.label ?? `C${cid}`;
+			ctx!.font = `${Math.max(9, 11 / zoom)}px system-ui, sans-serif`;
+			ctx!.fillStyle = color + 'AA';
+			ctx!.textAlign = 'center';
+			ctx!.textBaseline = 'middle';
+			ctx!.fillText(label.length > 12 ? label.slice(0, 12) + '…' : label, lx, ly);
 		}
 	}
 
@@ -425,10 +563,10 @@
 	}
 
 	function drawLinks() {
-		// Viewport bounds for culling (skip edges fully outside view)
 		const hw = width / 2 / zoom, hh = height / 2 / zoom;
 		const vpLeft = -panX / zoom - hw - 50, vpRight = -panX / zoom + hw + 50;
 		const vpTop = -panY / zoom - hh - 50, vpBottom = -panY / zoom + hh + 50;
+		const hasSearch = searchMatchSet.size > 0;
 
 		for (const link of simLinks) {
 			const src = link.source as SimNode;
@@ -436,26 +574,21 @@
 			const sx = src.x ?? 0, sy = src.y ?? 0;
 			const tx = tgt.x ?? 0, ty = tgt.y ?? 0;
 
-			// Cull edges fully outside viewport
 			if ((sx < vpLeft && tx < vpLeft) || (sx > vpRight && tx > vpRight) ||
 				(sy < vpTop && ty < vpTop) || (sy > vpBottom && ty > vpBottom)) continue;
 
+			// Dim links not connected to search matches
+			const searchDim = hasSearch && !searchMatchSet.has(src.id) && !searchMatchSet.has(tgt.id);
+
 			const typed = link.linkType && link.linkType !== 'relates' && LINK_TYPE_COLORS[link.linkType];
 			const color = typed ? LINK_TYPE_COLORS[link.linkType!] : '#94a3b8';
-
-			// Weight → thickness
 			const w = link.weight ?? 1.0;
 			const baseWidth = typed ? Math.max(0.8, Math.min(4, w * 0.5)) : 0.7;
-
-			// Confidence → dash style
 			const conf = CONFIDENCE_STYLE[link.confidence ?? 'hypothesis'] ?? CONFIDENCE_STYLE.hypothesis;
-			if (conf.dash.length > 0) {
-				ctx!.setLineDash(conf.dash.map(d => d / zoom));
-			}
+			if (conf.dash.length > 0) ctx!.setLineDash(conf.dash.map(d => d / zoom));
 
-			// Dormant → faded, untyped → visible but subtle
 			const isDormant = link.status === 'dormant';
-			const opacity = isDormant ? '44' : typed ? 'CC' : 'AA';
+			const opacity = searchDim ? '22' : isDormant ? '44' : typed ? 'CC' : 'AA';
 
 			ctx!.beginPath();
 			ctx!.moveTo(sx, sy);
@@ -465,8 +598,7 @@
 			ctx!.stroke();
 			if (conf.dash.length > 0) ctx!.setLineDash([]);
 
-			// Arrowhead for typed links
-			if (typed) {
+			if (typed && !searchDim) {
 				const dx = tx - sx, dy = ty - sy;
 				const len = Math.sqrt(dx * dx + dy * dy);
 				if (len > 10) {
@@ -489,21 +621,33 @@
 		const hw = width / 2 / zoom, hh = height / 2 / zoom;
 		const vpLeft = -panX / zoom - hw - 20, vpRight = -panX / zoom + hw + 20;
 		const vpTop = -panY / zoom - hh - 20, vpBottom = -panY / zoom + hh + 20;
+		const hasSearch = searchMatchSet.size > 0;
+		const currentMatch = searchResults[searchIdx]?.node;
 
 		for (const n of simNodes) {
 			const x = n.x ?? 0, y = n.y ?? 0;
 			if (x < vpLeft || x > vpRight || y < vpTop || y > vpBottom) continue;
 
-			// Maturity → opacity (seed=0.5, sapling=0.7, evergreen=0.9, canonical=1.0, wilting=0.4)
+			const isMatch = hasSearch && searchMatchSet.has(n.id);
+			const isCurrent = currentMatch === n;
 			const maturityAlpha: Record<string, number> = { seed: 0.5, sapling: 0.7, evergreen: 0.9, canonical: 1.0, wilting: 0.4 };
-			const alpha = maturityAlpha[n.maturity ?? 'seed'] ?? 0.6;
+			const alpha = hasSearch ? (isMatch ? 1.0 : 0.15) : (maturityAlpha[n.maturity ?? 'seed'] ?? 0.6);
 
-			// Bridge emphasis — subtle outer shadow for high-centrality nodes
-			if (n.centrality > 0.4) {
+			// Bridge emphasis
+			if (n.centrality > 0.4 && (!hasSearch || isMatch)) {
 				ctx!.beginPath();
 				ctx!.arc(x, y, n.r + 4 / zoom, 0, Math.PI * 2);
 				ctx!.fillStyle = n.communityColor + '33';
 				ctx!.fill();
+			}
+
+			// Search match highlight ring
+			if (isMatch) {
+				ctx!.beginPath();
+				ctx!.arc(x, y, n.r + (isCurrent ? 6 : 3) / zoom, 0, Math.PI * 2);
+				ctx!.strokeStyle = isCurrent ? '#f59e0b' : '#3b82f6';
+				ctx!.lineWidth = (isCurrent ? 3 : 2) / zoom;
+				ctx!.stroke();
 			}
 
 			// Node circle
@@ -515,14 +659,14 @@
 			ctx!.globalAlpha = 1.0;
 
 			// Maturity border
-			if (n.maturity && MATURITY_COLORS[n.maturity]) {
+			if (n.maturity && MATURITY_COLORS[n.maturity] && (!hasSearch || isMatch)) {
 				ctx!.strokeStyle = MATURITY_COLORS[n.maturity];
 				ctx!.lineWidth = 1.5 / zoom;
 				ctx!.stroke();
 			}
 
-			// Bridge ring (high centrality)
-			if (n.centrality > 0.5) {
+			// Bridge ring
+			if (n.centrality > 0.5 && (!hasSearch || isMatch)) {
 				ctx!.strokeStyle = '#7c3aed';
 				ctx!.lineWidth = 2 / zoom;
 				ctx!.stroke();
@@ -593,7 +737,6 @@
 			requestDraw();
 			return;
 		}
-		// Hit test nodes
 		const rect = canvasEl.getBoundingClientRect();
 		const mx = (e.clientX - rect.left - rect.width / 2 - panX) / zoom;
 		const my = (e.clientY - rect.top - rect.height / 2 - panY) / zoom;
@@ -608,7 +751,6 @@
 			}
 		}
 
-		// Hit test edges (if no node hovered)
 		if (!hoveredNode) {
 			for (const link of simLinks) {
 				if (!link.annotation) continue;
@@ -616,7 +758,6 @@
 				const tgt = link.target as SimNode;
 				const sx = src.x ?? 0, sy = src.y ?? 0;
 				const tx = tgt.x ?? 0, ty = tgt.y ?? 0;
-				// Point-to-line-segment distance
 				const dx = tx - sx, dy = ty - sy;
 				const len2 = dx * dx + dy * dy;
 				if (len2 === 0) continue;
@@ -644,7 +785,8 @@
 
 	function onClick(e: MouseEvent) {
 		if (hoveredNode && onNoteClick) {
-			onNoteClick(hoveredNode.path, hoveredNode.name);
+			const hl = searchQuery.trim() || undefined;
+			onNoteClick(hoveredNode.path, hoveredNode.name, hl);
 		}
 	}
 
@@ -675,14 +817,11 @@
 		ctx = canvasEl.getContext('2d');
 		if (ctx) ctx.scale(devicePixelRatio, devicePixelRatio);
 
-		// Build data and compute gravity-well layout
 		buildSimData();
 		computeGravityWellLayout();
 		fitToScreen();
 
-		// Load Living Link enrichment data in background (non-blocking)
 		loadLinkEnrichment().then(() => {
-			// Re-enrich simLinks with loaded data
 			for (const link of simLinks) {
 				const src = link.source as SimNode;
 				const tgt = link.target as SimNode;
@@ -711,22 +850,185 @@
 	<!-- Header -->
 	<div class="sight2-header">
 		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-		<span class="sight2-title">Constellation Sight</span>
-		<span class="sight2-stats">{simNodes.length} nodes · {simLinks.length} edges</span>
-		<div class="sight2-actions">
-			<button class="sight2-btn" onclick={fitToScreen} title="Fit to screen">
+		<span class="sight2-title">{$t('lens.title') || 'Constellation Sight'}</span>
+		<span class="sight2-stats">{simNodes.length} {$t('lens.nodes') || 'nodes'} · {simLinks.length} {$t('lens.links') || 'links'}</span>
+		<div class="sight2-toolbar">
+			<!-- Search toggle -->
+			<button class="sight2-btn" class:active={searchVisible} onclick={() => { searchVisible = !searchVisible; if (!searchVisible) closeSearch(); }} title={$t('layout.search') || 'Search'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+			</button>
+			<!-- Fit to screen -->
+			<button class="sight2-btn" onclick={fitToScreen} title={$t('lens.fitToScreen') || 'Fit to screen'}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
 			</button>
-			<button class="sight2-close" onclick={() => onClose?.()}>×</button>
+			<!-- Settings toggle -->
+			<button class="sight2-btn" class:active={settingsVisible} onclick={() => settingsVisible = !settingsVisible} title={$t('ribbon.settings') || 'Settings'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/></svg>
+			</button>
 		</div>
+		<button class="sight2-close" onclick={() => onClose?.()}>×</button>
 	</div>
 
-	<!-- Canvas -->
-	<div class="sight2-canvas-wrap">
-		<canvas bind:this={canvasEl} style="width:{width}px;height:{height}px"
-			onmousedown={onMouseDown} onmousemove={onMouseMove} onmouseup={onMouseUp}
-			onmouseleave={onMouseUp} onwheel={onWheel} onclick={onClick}>
-		</canvas>
+	<!-- Body -->
+	<div class="sight2-body">
+		<div class="sight2-canvas-wrap">
+			<!-- Search bar -->
+			{#if searchVisible}
+				<div class="sight2-search">
+					<div class="sight2-search-scope">
+						<button class:active={searchScope === 'all'} onclick={() => searchScope = 'all'}>{$t("lens.scopeAll") || "All"}</button>
+						<button class:active={searchScope === 'title'} onclick={() => searchScope = 'title'}>{$t("searchHub.titles") || "Title"}</button>
+						<button class:active={searchScope === 'content'} onclick={() => searchScope = 'content'}>{$t("searchHub.contents") || "Content"}</button>
+						<button class:active={searchScope === 'tag'} onclick={() => searchScope = 'tag'}>{$t("searchHub.tags") || "Tags"}</button>
+						<button class:active={searchScope === 'property'} onclick={() => searchScope = 'property'}>{$t("searchHub.properties") || "Props"}</button>
+						<button class:active={searchScope === 'semantic'} onclick={() => searchScope = 'semantic'}>{$t("searchHub.semantic") || "Semantic"}</button>
+					</div>
+					<div class="sight2-search-input">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+						<input type="text" dir="auto"
+							placeholder={$t('lens.searchAll') || 'Search... (Enter)'}
+							bind:value={searchQuery}
+							onfocus={() => { if (!searchQuery) { historyItems = readSearchHistory(); showHistory = true; } }}
+							onblur={() => setTimeout(() => { showHistory = false; }, 200)}
+							oninput={() => { showHistory = false; }}
+							onkeydown={(e) => {
+								if (e.key === 'Enter') { e.preventDefault(); searchResults.length > 0 ? (e.shiftKey ? prevSearchResult() : nextSearchResult()) : executeSearch(); }
+								if (e.key === 'Escape') { closeSearch(); e.stopPropagation(); }
+							}} />
+						<button class="sight2-search-clear" onclick={resetSearch} title={$t('common.clear') || 'Clear'}>×</button>
+						<button class="sight2-chips-btn" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers') || 'Syntax'}>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+						</button>
+						<!-- Search history dropdown -->
+						{#if showHistory && historyItems.length > 0 && !searchQuery}
+							<div class="sight2-dropdown">
+								{#each historyItems.slice(0, 8) as item}
+									<button class="sight2-dropdown-item" onclick={() => selectHistory(item)} dir="auto">{item.query}</button>
+								{/each}
+							</div>
+						{/if}
+						<!-- Syntax chips dropdown -->
+						{#if showChips}
+							<div class="sight2-dropdown sight2-chips-grid">
+								{#each syntaxChips as chip}
+									<button class="sight2-chip" onclick={() => insertChipSyntax(chip.syntax)}>{$t(`searchHub.${chip.label}`)}</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
+					<!-- Results navigation -->
+					{#if searchResults.length > 0}
+						{@const currentMatch = searchResults[searchIdx]}
+						{#each (currentMatch?.matchCategories ?? []) as cat}
+							<span class="sight2-cat" style="background:{CAT_COLORS[cat] ?? '#94a3b8'}">{cat}</span>
+						{/each}
+						<span class="sight2-search-count">{searchIdx + 1}/{searchResults.length}</span>
+						<button class="sight2-search-nav" onclick={prevSearchResult}>
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+						</button>
+						<button class="sight2-search-nav" onclick={nextSearchResult}>
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+						</button>
+					{:else if searchQuery}
+						<span class="sight2-search-none">0</span>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Settings panel -->
+			{#if settingsVisible}
+				<div class="sight2-settings">
+					<div class="sight2-settings-title">{$t("lens.display") || "Display"}</div>
+					<label class="sight2-settings-row">
+						<span>{$t("lens.regions") || "Community Regions"}</span>
+						<button class:active={showRegions} onclick={() => { showRegions = !showRegions; requestDraw(); }}>{showRegions ? 'On' : 'Off'}</button>
+					</label>
+					<label class="sight2-settings-row">
+						<span>{$t("lens.legend") || "Legend"}</span>
+						<button class:active={showLegend} onclick={() => showLegend = !showLegend}>{showLegend ? 'On' : 'Off'}</button>
+					</label>
+				</div>
+			{/if}
+
+			<!-- Canvas -->
+			<canvas bind:this={canvasEl} style="width:{width}px;height:{height}px"
+				onmousedown={onMouseDown} onmousemove={onMouseMove} onmouseup={onMouseUp}
+				onmouseleave={onMouseUp} onwheel={onWheel} onclick={onClick}>
+			</canvas>
+
+			<!-- Legend -->
+			{#if showLegend}
+				<div class="sight2-legend">
+					<div class="sight2-legend-title">{$t('lens.legend') || 'Legend'}</div>
+					<!-- Nodes -->
+					<div class="sight2-legend-row">
+						<span class="sight2-lg-dot sight2-lg-big"></span>
+						<span>{$t("lens.largeNode") || "Large"} — {$t("lens.bridgeDesc") || "bridge / high centrality"}</span>
+					</div>
+					<div class="sight2-legend-row">
+						<span class="sight2-lg-dot sight2-lg-small"></span>
+						<span>{$t("lens.smallNode") || "Small"} — {$t("lens.peripheralDesc") || "peripheral"}</span>
+					</div>
+					<div class="sight2-legend-row">
+						<span class="sight2-lg-dot" style="background:#a78bfa"></span>
+						<span class="sight2-lg-dot" style="background:#34d399"></span>
+						<span class="sight2-lg-dot" style="background:#60a5fa"></span>
+						<span>{$t("lens.legendCommunityColor") || "Color"} = {$t("lens.communityDesc") || "community"}</span>
+					</div>
+					<div class="sight2-legend-divider"></div>
+					<!-- Link types -->
+					<div class="sight2-legend-title">{$t('searchHub.linksTo') || 'Link Types'}</div>
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#4A9EFF" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#4A9EFF"/></svg>
+						<span>supports</span>
+					</div>
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FF4A4A" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FF4A4A"/></svg>
+						<span>contradicts</span>
+					</div>
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FF8C42" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FF8C42"/></svg>
+						<span>causes</span>
+					</div>
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#4AFF88" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#4AFF88"/></svg>
+						<span>exemplifies</span>
+					</div>
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#C084FC" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#C084FC"/></svg>
+						<span>generalizes</span>
+					</div>
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FACC15" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FACC15"/></svg>
+						<span>derives-from</span>
+					</div>
+					<div class="sight2-legend-divider"></div>
+					<!-- Confidence -->
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/></svg>
+						<span>hypothesis</span>
+					</div>
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#4A9EFF" stroke-width="2"/></svg>
+						<span>evidence</span>
+					</div>
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#4A9EFF" stroke-width="3"/></svg>
+						<span>established</span>
+					</div>
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#ef4444" stroke-width="2" stroke-dasharray="2,2"/></svg>
+						<span>contested</span>
+					</div>
+					<div class="sight2-legend-divider"></div>
+					<!-- Structure -->
+					<div class="sight2-legend-row">
+						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/></svg>
+						<span>{$t("lens.redDashed") || "Red dashed"} — {$t("lens.blindSpotDesc") || "blind spot"}</span>
+					</div>
+				</div>
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -748,19 +1050,25 @@
 		flex-shrink: 0;
 		background: var(--background-primary, #fff);
 	}
-	.sight2-title { font-size: 14px; font-weight: 700; }
+	.sight2-header svg { color: var(--text-muted, #64748b); }
+	.sight2-title { font-size: 14px; font-weight: 700; color: var(--text-normal, #1a1a1a); }
 	.sight2-stats { font-size: 11px; color: var(--text-muted, #64748b); }
-	.sight2-actions { display: flex; gap: 4px; margin-inline-start: auto; }
+	.sight2-toolbar { display: flex; gap: 2px; margin-inline-start: auto; }
 	.sight2-btn {
-		border: none; background: none; cursor: pointer;
-		color: var(--text-muted, #64748b); padding: 4px; border-radius: 4px;
+		width: 28px; height: 28px; border: none; border-radius: 4px;
+		background: none; color: var(--text-muted, #64748b); cursor: pointer;
+		display: flex; align-items: center; justify-content: center;
 	}
 	.sight2-btn:hover { background: var(--background-modifier-hover, #f1f5f9); color: var(--text-normal, #1a1a1a); }
+	.sight2-btn.active { background: var(--interactive-accent, #7c3aed); color: white; }
 	.sight2-close {
 		border: none; background: none; cursor: pointer;
 		font-size: 18px; color: var(--text-muted, #64748b); padding: 0 4px;
 	}
 	.sight2-close:hover { color: var(--text-normal, #1a1a1a); }
+
+	/* Body */
+	.sight2-body { flex: 1; display: flex; overflow: hidden; }
 	.sight2-canvas-wrap {
 		flex: 1;
 		position: relative;
@@ -770,4 +1078,128 @@
 		display: block;
 		cursor: grab;
 	}
+	.sight2-canvas-wrap canvas:active { cursor: grabbing; }
+
+	/* ─── Search bar ─── */
+	.sight2-search {
+		position: absolute; top: 8px; inset-inline-start: 8px; z-index: 10;
+		display: flex; align-items: center; gap: 6px;
+		background: var(--background-primary, rgba(255,255,255,0.97));
+		border: 1px solid var(--background-modifier-border, #e5e7eb);
+		border-radius: 8px; padding: 6px 10px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+	}
+	.sight2-search-scope { display: flex; gap: 1px; flex-shrink: 0; }
+	.sight2-search-scope button {
+		padding: 2px 6px; font-size: 9px;
+		border: 1px solid var(--background-modifier-border, #e5e7eb);
+		border-radius: 3px; background: none;
+		color: var(--text-muted, #64748b); cursor: pointer; font-family: inherit;
+	}
+	.sight2-search-scope button:hover { background: var(--background-modifier-hover, #f1f5f9); }
+	.sight2-search-scope button.active { background: var(--interactive-accent, #7c3aed); color: white; border-color: var(--interactive-accent, #7c3aed); }
+	.sight2-search-input {
+		position: relative; display: flex; align-items: center; gap: 4px;
+		flex: 1; min-width: 200px; max-width: 400px;
+	}
+	.sight2-search-input svg { color: var(--text-muted, #64748b); flex-shrink: 0; }
+	.sight2-search-input input {
+		border: none; outline: none; background: none; font-size: 12px;
+		font-family: inherit; color: var(--text-normal, #1a1a1a); flex: 1; min-width: 0;
+	}
+	.sight2-search-clear {
+		border: none; background: none; color: var(--text-muted, #64748b);
+		cursor: pointer; font-size: 14px; padding: 0 2px;
+	}
+	.sight2-chips-btn {
+		border: none; background: none; cursor: pointer;
+		color: var(--text-muted, #64748b); padding: 2px; border-radius: 3px;
+	}
+	.sight2-chips-btn:hover, .sight2-chips-btn.active {
+		color: var(--interactive-accent, #7c3aed);
+		background: rgba(124,58,237,0.1);
+	}
+	.sight2-cat {
+		font-size: 9px; color: white; padding: 1px 5px;
+		border-radius: 4px; white-space: nowrap;
+	}
+	.sight2-search-count { font-size: 10px; color: var(--text-muted, #64748b); white-space: nowrap; }
+	.sight2-search-none { font-size: 10px; color: #ef4444; white-space: nowrap; }
+	.sight2-search-nav {
+		border: none; background: none; color: var(--text-muted, #64748b);
+		cursor: pointer; padding: 0 2px; display: flex; align-items: center;
+	}
+	.sight2-search-nav:hover { color: var(--text-normal, #1a1a1a); }
+
+	/* Dropdowns */
+	.sight2-dropdown {
+		position: absolute; top: 100%; inset-inline-start: 0; z-index: 100;
+		background: var(--background-primary, rgba(255,255,255,0.98));
+		border: 1px solid var(--background-modifier-border, #e5e7eb);
+		border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+		min-width: 200px; max-height: 250px; overflow-y: auto; margin-top: 4px;
+	}
+	.sight2-dropdown-item {
+		display: block; width: 100%; text-align: start;
+		padding: 6px 12px; border: none; background: none; cursor: pointer;
+		font-size: 11px; color: var(--text-normal, #1a1a1a);
+	}
+	.sight2-dropdown-item:hover { background: var(--background-modifier-hover, #f1f5f9); }
+	.sight2-chips-grid {
+		display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; max-width: 450px;
+	}
+	.sight2-chip {
+		padding: 4px 10px; border-radius: 6px;
+		border: 1.5px solid var(--background-modifier-border, #d1d5db);
+		background: var(--background-secondary, #f9fafb);
+		color: var(--text-normal, #374151);
+		font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap;
+		transition: all 0.12s;
+	}
+	.sight2-chip:hover {
+		border-color: var(--interactive-accent, #7c3aed);
+		color: var(--interactive-accent, #7c3aed);
+		background: rgba(124,58,237,0.06);
+	}
+
+	/* ─── Settings panel ─── */
+	.sight2-settings {
+		position: absolute; top: 8px; inset-inline-end: 8px; z-index: 10;
+		background: var(--background-primary, rgba(255,255,255,0.97));
+		border: 1px solid var(--background-modifier-border, #e5e7eb);
+		border-radius: 8px; padding: 12px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+		width: 200px; display: flex; flex-direction: column; gap: 8px;
+	}
+	.sight2-settings-title { font-size: 12px; font-weight: 700; color: var(--text-normal, #1a1a1a); }
+	.sight2-settings-row {
+		display: flex; align-items: center; justify-content: space-between;
+		gap: 8px;
+	}
+	.sight2-settings-row span { font-size: 10px; color: var(--text-muted, #64748b); }
+	.sight2-settings-row button {
+		padding: 2px 10px; border-radius: 4px; font-size: 10px; cursor: pointer;
+		border: 1px solid var(--background-modifier-border, #e5e7eb);
+		background: none; color: var(--text-muted, #64748b); font-family: inherit;
+	}
+	.sight2-settings-row button.active { background: var(--interactive-accent, #7c3aed); color: white; border-color: var(--interactive-accent, #7c3aed); }
+
+	/* ─── Legend ─── */
+	.sight2-legend {
+		position: absolute; bottom: 16px; inset-inline-start: 16px; z-index: 5;
+		background: var(--background-primary, rgba(255,255,255,0.95));
+		border: 1px solid var(--background-modifier-border, #e5e7eb);
+		border-radius: 8px; padding: 10px 14px; font-size: 10px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+		display: flex; flex-direction: column; gap: 4px; max-width: 220px;
+	}
+	.sight2-legend-title { font-size: 11px; font-weight: 700; color: var(--text-normal, #1a1a1a); margin-bottom: 2px; }
+	.sight2-legend-row { display: flex; align-items: center; gap: 5px; color: var(--text-muted, #64748b); font-size: 10px; }
+	.sight2-legend-divider { height: 1px; background: var(--background-modifier-border, #e5e7eb); margin: 2px 0; }
+	.sight2-lg-dot {
+		width: 8px; height: 8px; border-radius: 50%; background: #7c3aed;
+		flex-shrink: 0; display: inline-block;
+	}
+	.sight2-lg-big { width: 14px; height: 14px; }
+	.sight2-lg-small { width: 5px; height: 5px; }
 </style>
