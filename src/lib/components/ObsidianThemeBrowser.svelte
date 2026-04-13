@@ -4,7 +4,8 @@
 	import { appSettings, updateSettings, type ConstellationTheme } from '$lib/libraries/store';
 	import {
 		fetchObsidianThemeList, downloadThemeCSS, parseObsidianCSS,
-		getScreenshotUrl, type ObsidianThemeEntry,
+		extractPreviewColors, parseStyleSettings,
+		getScreenshotUrl, type ObsidianThemeEntry, type ThemePreviewColors, type StyleSettingsOption,
 	} from '$lib/theme/obsidianImporter';
 
 	let { onClose, onImported }: {
@@ -20,6 +21,10 @@
 	let loading = $state(true);
 	let error = $state('');
 	let importing = $state<string | null>(null); // repo being imported
+	let previewEntry = $state<ObsidianThemeEntry | null>(null);
+	let previewColors = $state<ThemePreviewColors | null>(null);
+	let previewLoading = $state(false);
+	let styleSettings = $state<StyleSettingsOption[]>([]);
 
 	onMount(async () => {
 		try {
@@ -37,6 +42,24 @@
 		filteredThemes = q
 			? themes.filter(t => t.name.toLowerCase().includes(q) || t.author.toLowerCase().includes(q))
 			: themes;
+	}
+
+	async function previewTheme(entry: ObsidianThemeEntry) {
+		if (previewEntry?.repo === entry.repo) { previewEntry = null; previewColors = null; styleSettings = []; return; }
+		previewEntry = entry;
+		previewColors = null;
+		previewLoading = true;
+		styleSettings = [];
+		try {
+			const css = await downloadThemeCSS(entry.repo);
+			const type = entry.modes?.includes('dark') ? 'dark' : 'light';
+			previewColors = extractPreviewColors(css, type);
+			styleSettings = parseStyleSettings(css);
+		} catch {
+			previewColors = null;
+		} finally {
+			previewLoading = false;
+		}
 	}
 
 	async function importTheme(entry: ObsidianThemeEntry) {
@@ -122,15 +145,56 @@
 									{/each}
 								</div>
 							</div>
-							<button class="otb-import-btn"
-								disabled={importing === entry.repo}
-								onclick={() => importTheme(entry)}>
-								{#if importing === entry.repo}
-									<span class="otb-btn-spinner"></span>
-								{:else}
-									{$t('settings.appearance.importTheme') || 'Import'}
-								{/if}
-							</button>
+							<div class="otb-card-actions">
+								<button class="otb-preview-btn"
+									class:active={previewEntry?.repo === entry.repo}
+									onclick={() => previewTheme(entry)}>
+									{$t('settings.appearance.preview') || 'Preview'}
+								</button>
+								<button class="otb-import-btn"
+									disabled={importing === entry.repo}
+									onclick={() => importTheme(entry)}>
+									{#if importing === entry.repo}
+										<span class="otb-btn-spinner"></span>
+									{:else}
+										{$t('settings.appearance.importTheme') || 'Import'}
+									{/if}
+								</button>
+							</div>
+
+							<!-- Inline preview panel -->
+							{#if previewEntry?.repo === entry.repo}
+								<div class="otb-preview-panel">
+									{#if previewLoading}
+										<span class="otb-btn-spinner" style="margin:8px auto;display:block"></span>
+									{:else if previewColors}
+										<div class="otb-preview-sample" style="background:{previewColors.background};color:{previewColors.text};border-color:{previewColors.border}">
+											<div class="otb-preview-sidebar" style="background:{previewColors.surface}">
+												<div class="otb-preview-bar" style="background:{previewColors.accent};width:60%"></div>
+												<div class="otb-preview-bar" style="background:{previewColors.border};width:80%"></div>
+												<div class="otb-preview-bar" style="background:{previewColors.border};width:45%"></div>
+											</div>
+											<div class="otb-preview-content">
+												<div class="otb-preview-title" style="color:{previewColors.text}">Note Title</div>
+												<div class="otb-preview-text" style="color:{previewColors.text};opacity:0.7">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</div>
+												<div class="otb-preview-link" style="color:{previewColors.accent}">[[Related Note]]</div>
+											</div>
+										</div>
+										<div class="otb-preview-swatches">
+											<span title="Background" style="background:{previewColors.background}"></span>
+											<span title="Surface" style="background:{previewColors.surface}"></span>
+											<span title="Text" style="background:{previewColors.text}"></span>
+											<span title="Accent" style="background:{previewColors.accent}"></span>
+											<span title="Border" style="background:{previewColors.border}"></span>
+										</div>
+										{#if styleSettings.length > 0}
+											<div class="otb-style-settings">
+												<span class="otb-ss-label">Style Settings: {styleSettings.length} options</span>
+											</div>
+										{/if}
+									{/if}
+								</div>
+							{/if}
 						</div>
 					{/each}
 				</div>
@@ -222,11 +286,20 @@
 		background: #f59e0b22; color: #f59e0b; text-transform: capitalize;
 	}
 	.otb-mode.dark { background: #6366f122; color: #6366f1; }
+	.otb-card-actions { display: flex; gap: 6px; margin: 8px 12px 12px; }
+	.otb-preview-btn {
+		flex: 1; padding: 6px 0; border-radius: 6px;
+		border: 1px solid var(--background-modifier-border, #e5e7eb);
+		background: none; color: var(--text-muted, #64748b);
+		font-size: 11px; cursor: pointer; font-family: inherit;
+	}
+	.otb-preview-btn:hover { background: var(--background-modifier-hover, #f1f5f9); }
+	.otb-preview-btn.active { background: var(--interactive-accent, #7c3aed); color: white; border-color: var(--interactive-accent); }
 	.otb-import-btn {
-		margin: 8px 12px 12px; padding: 6px 0; border-radius: 6px;
+		flex: 1; padding: 6px 0; border-radius: 6px;
 		border: 1px solid var(--interactive-accent, #7c3aed);
 		background: none; color: var(--interactive-accent, #7c3aed);
-		font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+		font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit;
 		display: flex; align-items: center; justify-content: center; gap: 6px;
 	}
 	.otb-import-btn:hover { background: var(--interactive-accent, #7c3aed); color: white; }
@@ -235,6 +308,32 @@
 		width: 14px; height: 14px; border: 2px solid currentColor;
 		border-top-color: transparent; border-radius: 50%;
 		animation: otb-spin 0.6s linear infinite;
+	}
+	/* Preview panel */
+	.otb-preview-panel { padding: 8px 12px 12px; border-top: 1px solid var(--background-modifier-border, #e5e7eb); }
+	.otb-preview-sample {
+		display: flex; border-radius: 6px; overflow: hidden;
+		border: 1px solid; height: 80px; font-size: 10px;
+	}
+	.otb-preview-sidebar { width: 30%; padding: 8px 6px; display: flex; flex-direction: column; gap: 4px; }
+	.otb-preview-bar { height: 4px; border-radius: 2px; }
+	.otb-preview-content { flex: 1; padding: 8px; }
+	.otb-preview-title { font-weight: 700; font-size: 11px; margin-bottom: 4px; }
+	.otb-preview-text { font-size: 9px; line-height: 1.4; }
+	.otb-preview-link { font-size: 9px; margin-top: 4px; text-decoration: underline; }
+	.otb-preview-swatches {
+		display: flex; gap: 4px; margin-top: 8px; justify-content: center;
+	}
+	.otb-preview-swatches span {
+		width: 20px; height: 20px; border-radius: 50%;
+		border: 1px solid rgba(0,0,0,0.15);
+	}
+	.otb-style-settings {
+		margin-top: 6px; text-align: center;
+	}
+	.otb-ss-label {
+		font-size: 10px; color: var(--interactive-accent, #7c3aed);
+		background: rgba(124,58,237,0.08); padding: 2px 8px; border-radius: 4px;
 	}
 	.otb-empty {
 		text-align: center; padding: 40px; color: var(--text-faint, #94a3b8);

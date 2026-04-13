@@ -14,6 +14,24 @@ export interface ObsidianThemeEntry {
 	modes: string[]; // ["dark", "light"]
 }
 
+/** A Style Settings option parsed from theme CSS */
+export interface StyleSettingsOption {
+	id: string;
+	title: string;
+	type: 'variable-color' | 'variable-number' | 'variable-select' | 'variable-text' | 'variable-number-slider';
+	default?: string;
+	format?: string;
+}
+
+/** Preview colors extracted from a theme without full download */
+export interface ThemePreviewColors {
+	background: string;
+	surface: string;
+	text: string;
+	accent: string;
+	border: string;
+}
+
 const REGISTRY_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-css-themes.json';
 
 /** Fetch the Obsidian community themes registry */
@@ -388,4 +406,83 @@ function hslToHex(h: number, s: number, l: number): string {
 		return Math.round(255 * color).toString(16).padStart(2, '0');
 	};
 	return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+// ─── #6: Theme Preview ─────────────────────────────────────
+
+/**
+ * Extract preview colors from theme CSS without creating a full theme.
+ * Used for showing a mini preview before the user commits to importing.
+ */
+export function extractPreviewColors(css: string, type: 'light' | 'dark'): ThemePreviewColors {
+	const selector = type === 'dark' ? '.theme-dark' : '.theme-light';
+	const vars = {
+		...extractVariables(css, ':root'),
+		...extractVariables(css, 'body'),
+		...extractVariables(css, selector),
+	};
+	return mapToColors(vars, type);
+}
+
+// ─── #7: Style Settings Metadata Parser ────────────────────
+
+/**
+ * Parse the Style Settings plugin metadata from theme CSS.
+ * Obsidian themes like Minimal, AnuPpuccin, Things, etc. embed a
+ * /* @settings block that defines user-customizable options.
+ *
+ * Format:
+ * /* @settings
+ * name: Theme Name
+ * id: theme-id
+ * settings:
+ *   - id: color-bg
+ *     title: Background color
+ *     type: variable-color
+ *     default: '#1e1e2e'
+ * * /
+ */
+export function parseStyleSettings(css: string): StyleSettingsOption[] {
+	const options: StyleSettingsOption[] = [];
+
+	// Find the @settings block in CSS comments
+	const settingsRegex = /\/\*\s*@settings\s*\n([\s\S]*?)\*\//g;
+	const match = settingsRegex.exec(css);
+	if (!match) return options;
+
+	const yaml = match[1];
+
+	// Find the settings: array section
+	const settingsStart = yaml.indexOf('settings:');
+	if (settingsStart === -1) return options;
+
+	const settingsBlock = yaml.slice(settingsStart + 'settings:'.length);
+
+	// Parse each setting entry (simplified YAML parser for the known format)
+	const entries = settingsBlock.split(/\n\s*-\s+/).filter(e => e.trim());
+
+	for (const entry of entries) {
+		const lines = entry.split('\n').map(l => l.trim()).filter(l => l);
+		const obj: Record<string, string> = {};
+
+		for (const line of lines) {
+			const colonIdx = line.indexOf(':');
+			if (colonIdx === -1) continue;
+			const key = line.slice(0, colonIdx).trim();
+			const val = line.slice(colonIdx + 1).trim().replace(/^['"]|['"]$/g, '');
+			obj[key] = val;
+		}
+
+		if (obj.id && obj.title && obj.type) {
+			options.push({
+				id: obj.id,
+				title: obj.title,
+				type: obj.type as StyleSettingsOption['type'],
+				default: obj.default,
+				format: obj.format,
+			});
+		}
+	}
+
+	return options;
 }

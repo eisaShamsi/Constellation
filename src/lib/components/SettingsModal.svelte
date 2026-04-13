@@ -1834,6 +1834,13 @@
 	</div>
 </div>
 
+{#if showObsidianBrowser}
+	<ObsidianThemeBrowser
+		onClose={() => showObsidianBrowser = false}
+		onImported={(theme) => { showObsidianBrowser = false; }}
+	/>
+{/if}
+
 <style>
 	/* ═══ OVERLAY ═══ */
 	.settings-overlay {
