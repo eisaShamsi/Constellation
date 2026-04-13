@@ -91,6 +91,23 @@
 - Ribbon + command palette gated by plug-in flags
 - All 15 locales updated
 
+### Notes Navigator Fix
+- Root cause: duplicate note paths from Rust backend → Svelte each_key_duplicate crash
+- Fix: deduplicate by path + parallel library loading with timeouts
+
+### Settings Restructure (Final)
+- Keyboard → Hotkeys
+- Features → Core Plug-Ins (renamed from Plug-Ins)
+- New Templates tab
+- All plug-in toggles wired to ribbon buttons:
+  Sky View, Constellation Sight, Constellation Map, OrgChart,
+  Index, Daily Notes, AI Skills, Notes Navigator, Second Screen
+- Global Tasks ribbon button removed
+- Folders/By Stage/By Topic lens dropdown removed
+- Theme toggle moved from ribbon to Settings > Appearance
+- Import Notes moved from ribbon to Settings > Universe
+
 ### Remaining
+- Theme Settings system (plan approved, not yet implemented)
 - Map help documentation file
 - Help file updates for settings restructure
