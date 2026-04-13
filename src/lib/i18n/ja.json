@@ -285,7 +285,9 @@
       "constellationMap": "Constellation Map",
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
-      "constellationSightDesc": "Gravity-well knowledge visualization with analytics"
+      "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "notesNavigator": "ノートナビゲーター",
+      "notesNavigatorDesc": "フォルダ、タグ、プロパティでノートを閲覧・フィルタ"
     },
     "knowledge": {
       "intro": "知識の整理、表示、分析の方法を設定します。",

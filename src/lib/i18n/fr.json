@@ -285,7 +285,9 @@
       "constellationMap": "Constellation Map",
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
-      "constellationSightDesc": "Gravity-well knowledge visualization with analytics"
+      "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "notesNavigator": "Navigateur de Notes",
+      "notesNavigatorDesc": "Parcourir et filtrer les notes par dossier, tag ou propriété"
     },
     "knowledge": {
       "intro": "Configurez l'organisation, l'affichage et l'analyse de vos connaissances.",

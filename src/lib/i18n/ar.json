@@ -285,7 +285,9 @@
       "constellationMap": "Constellation Map",
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
-      "constellationSightDesc": "Gravity-well knowledge visualization with analytics"
+      "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "notesNavigator": "متصفح الملاحظات",
+      "notesNavigatorDesc": "تصفح وتصفية الملاحظات حسب المجلد أو الوسم أو الخاصية"
     },
     "knowledge": {
       "intro": "اضبط كيفية تنظيم معرفتك وعرضها وتحليلها.",

@@ -285,7 +285,9 @@
       "constellationMap": "Constellation Map",
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
-      "constellationSightDesc": "Gravity-well knowledge visualization with analytics"
+      "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "notesNavigator": "笔记导航器",
+      "notesNavigatorDesc": "按文件夹、标签或属性浏览和筛选笔记"
     },
     "knowledge": {
       "intro": "配置知识的组织、查看和分析方式。",

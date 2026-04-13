@@ -285,7 +285,9 @@
       "constellationMap": "Constellation Map",
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
-      "constellationSightDesc": "Gravity-well knowledge visualization with analytics"
+      "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "notesNavigator": "नोट्स नेविगेटर",
+      "notesNavigatorDesc": "फ़ोल्डर, टैग या प्रॉपर्टी के अनुसार नोट्स ब्राउज़ करें"
     },
     "knowledge": {
       "intro": "कॉन्फ़िगर करें कि आपका ज्ञान कैसे व्यवस्थित, देखा और विश्लेषित किया जाता है।",

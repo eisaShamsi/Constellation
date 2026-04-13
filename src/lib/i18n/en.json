@@ -251,7 +251,9 @@
       "constellationMap": "Constellation Map",
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
-      "constellationSightDesc": "Gravity-well knowledge visualization with analytics"
+      "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "notesNavigator": "Notes Navigator",
+      "notesNavigatorDesc": "Browse and filter notes by folder, tag, or property"
     },
     "templates": {
       "templateFolder": "Template folder",

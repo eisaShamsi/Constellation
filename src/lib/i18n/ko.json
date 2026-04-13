@@ -285,7 +285,9 @@
       "constellationMap": "Constellation Map",
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
-      "constellationSightDesc": "Gravity-well knowledge visualization with analytics"
+      "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "notesNavigator": "노트 내비게이터",
+      "notesNavigatorDesc": "폴더, 태그 또는 속성으로 노트 탐색 및 필터링"
     },
     "knowledge": {
       "intro": "지식이 구성, 표시 및 분석되는 방식을 구성합니다.",

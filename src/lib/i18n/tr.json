@@ -285,7 +285,9 @@
       "constellationMap": "Constellation Map",
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
-      "constellationSightDesc": "Gravity-well knowledge visualization with analytics"
+      "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "notesNavigator": "Not Gezgini",
+      "notesNavigatorDesc": "Notları klasör, etiket veya özelliğe göre göz atın"
     },
     "knowledge": {
       "intro": "Bilginizin nasıl düzenlendiğini, görüntülendiğini ve analiz edildiğini yapılandırın.",
