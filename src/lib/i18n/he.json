@@ -169,7 +169,21 @@
       "fontTheme": "ערכת גופן",
       "fontThemeDefault": "ברירת מחדל",
       "fontThemeTypewriter": "מכונת כתיבה",
-      "contextual": "הקשרי"
+      "contextual": "הקשרי",
+      "themes": "ערכות נושא",
+      "newTheme": "ערכה חדשה",
+      "importTheme": "ייבוא",
+      "resetTheme": "איפוס",
+      "customize": "התאמה אישית",
+      "themeName": "שם",
+      "themeType": "סוג",
+      "themeBackground": "רקע",
+      "themeSurface": "משטח",
+      "themeText": "טקסט",
+      "themeAccent": "הדגשה",
+      "themeBorder": "גבול",
+      "exportTheme": "ייצוא",
+      "general": "כללי"
     },
     "ai": {
       "provider": "ספק",

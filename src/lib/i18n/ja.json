@@ -169,7 +169,21 @@
       "fontTheme": "フォントテーマ",
       "fontThemeDefault": "デフォルト",
       "fontThemeTypewriter": "タイプライター",
-      "contextual": "コンテキスト"
+      "contextual": "コンテキスト",
+      "themes": "テーマ",
+      "newTheme": "新しいテーマ",
+      "importTheme": "インポート",
+      "resetTheme": "デフォルトに戻す",
+      "customize": "テーマをカスタマイズ",
+      "themeName": "名前",
+      "themeType": "タイプ",
+      "themeBackground": "背景",
+      "themeSurface": "サーフェス",
+      "themeText": "テキスト",
+      "themeAccent": "アクセント",
+      "themeBorder": "ボーダー",
+      "exportTheme": "エクスポート",
+      "general": "一般"
     },
     "ai": {
       "provider": "プロバイダー",

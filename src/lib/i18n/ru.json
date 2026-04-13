@@ -169,7 +169,21 @@
       "fontTheme": "Тема шрифта",
       "fontThemeDefault": "По умолчанию",
       "fontThemeTypewriter": "Печатная машинка",
-      "contextual": "Контекстный"
+      "contextual": "Контекстный",
+      "themes": "Темы",
+      "newTheme": "Новая тема",
+      "importTheme": "Импорт",
+      "resetTheme": "Сбросить",
+      "customize": "Настроить тему",
+      "themeName": "Имя",
+      "themeType": "Тип",
+      "themeBackground": "Фон",
+      "themeSurface": "Поверхность",
+      "themeText": "Текст",
+      "themeAccent": "Акцент",
+      "themeBorder": "Граница",
+      "exportTheme": "Экспорт",
+      "general": "Общие"
     },
     "ai": {
       "provider": "Поставщик",

@@ -169,7 +169,21 @@
       "fontTheme": "طرح قلم",
       "fontThemeDefault": "پیش‌فرض",
       "fontThemeTypewriter": "ماشین تحریر",
-      "contextual": "زمینه‌ای"
+      "contextual": "زمینه‌ای",
+      "themes": "تم‌ها",
+      "newTheme": "تم جدید",
+      "importTheme": "وارد کردن",
+      "resetTheme": "بازنشانی",
+      "customize": "سفارشی‌سازی",
+      "themeName": "نام",
+      "themeType": "نوع",
+      "themeBackground": "پس‌زمینه",
+      "themeSurface": "سطح",
+      "themeText": "متن",
+      "themeAccent": "رنگ برجسته",
+      "themeBorder": "حاشیه",
+      "exportTheme": "صادر کردن",
+      "general": "عمومی"
     },
     "ai": {
       "provider": "ارائه‌دهنده",

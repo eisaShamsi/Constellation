@@ -205,7 +205,21 @@
       "fontTheme": "Font Theme",
       "fontThemeDefault": "Default",
       "fontThemeTypewriter": "Typewriter",
-      "contextual": "Contextual"
+      "contextual": "Contextual",
+      "themes": "Themes",
+      "newTheme": "New Theme",
+      "importTheme": "Import",
+      "resetTheme": "Reset to default",
+      "customize": "Customize Theme",
+      "themeName": "Name",
+      "themeType": "Type",
+      "themeBackground": "Background",
+      "themeSurface": "Surface",
+      "themeText": "Text",
+      "themeAccent": "Accent",
+      "themeBorder": "Border",
+      "exportTheme": "Export",
+      "general": "General"
     },
     "keyboard": {
       "filter": "Filter commands...",

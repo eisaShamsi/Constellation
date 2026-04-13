@@ -169,7 +169,21 @@
       "fontTheme": "Yazı tipi teması",
       "fontThemeDefault": "Varsayılan",
       "fontThemeTypewriter": "Daktilo",
-      "contextual": "Bağlamsal"
+      "contextual": "Bağlamsal",
+      "themes": "Temalar",
+      "newTheme": "Yeni tema",
+      "importTheme": "İçe aktar",
+      "resetTheme": "Varsayılana sıfırla",
+      "customize": "Temayı özelleştir",
+      "themeName": "Ad",
+      "themeType": "Tür",
+      "themeBackground": "Arka plan",
+      "themeSurface": "Yüzey",
+      "themeText": "Metin",
+      "themeAccent": "Vurgu",
+      "themeBorder": "Kenarlık",
+      "exportTheme": "Dışa aktar",
+      "general": "Genel"
     },
     "ai": {
       "provider": "Sağlayıcı",

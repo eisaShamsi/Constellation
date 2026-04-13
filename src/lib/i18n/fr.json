@@ -169,7 +169,21 @@
       "fontTheme": "Thème de police",
       "fontThemeDefault": "Par défaut",
       "fontThemeTypewriter": "Machine à écrire",
-      "contextual": "Contextuel"
+      "contextual": "Contextuel",
+      "themes": "Thèmes",
+      "newTheme": "Nouveau thème",
+      "importTheme": "Importer",
+      "resetTheme": "Réinitialiser",
+      "customize": "Personnaliser",
+      "themeName": "Nom",
+      "themeType": "Type",
+      "themeBackground": "Arrière-plan",
+      "themeSurface": "Surface",
+      "themeText": "Texte",
+      "themeAccent": "Accent",
+      "themeBorder": "Bordure",
+      "exportTheme": "Exporter",
+      "general": "Général"
     },
     "ai": {
       "provider": "Fournisseur",

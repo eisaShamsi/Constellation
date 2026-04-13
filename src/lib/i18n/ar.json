@@ -169,7 +169,21 @@
       "fontTheme": "سمة الخط",
       "fontThemeDefault": "افتراضي",
       "fontThemeTypewriter": "آلة كاتبة",
-      "contextual": "سياقي"
+      "contextual": "سياقي",
+      "themes": "السمات",
+      "newTheme": "سمة جديدة",
+      "importTheme": "استيراد",
+      "resetTheme": "إعادة للافتراضي",
+      "customize": "تخصيص السمة",
+      "themeName": "الاسم",
+      "themeType": "النوع",
+      "themeBackground": "الخلفية",
+      "themeSurface": "السطح",
+      "themeText": "النص",
+      "themeAccent": "اللون المميز",
+      "themeBorder": "الحدود",
+      "exportTheme": "تصدير",
+      "general": "عام"
     },
     "ai": {
       "provider": "المزود",

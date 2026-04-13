@@ -169,7 +169,21 @@
       "fontTheme": "글꼴 테마",
       "fontThemeDefault": "기본",
       "fontThemeTypewriter": "타자기",
-      "contextual": "상황별"
+      "contextual": "상황별",
+      "themes": "테마",
+      "newTheme": "새 테마",
+      "importTheme": "가져오기",
+      "resetTheme": "기본값으로 재설정",
+      "customize": "테마 사용자 정의",
+      "themeName": "이름",
+      "themeType": "유형",
+      "themeBackground": "배경",
+      "themeSurface": "표면",
+      "themeText": "텍스트",
+      "themeAccent": "강조",
+      "themeBorder": "테두리",
+      "exportTheme": "내보내기",
+      "general": "일반"
     },
     "ai": {
       "provider": "제공자",

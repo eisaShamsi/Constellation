@@ -169,7 +169,21 @@
       "fontTheme": "字体主题",
       "fontThemeDefault": "默认",
       "fontThemeTypewriter": "打字机",
-      "contextual": "上下文"
+      "contextual": "上下文",
+      "themes": "主题",
+      "newTheme": "新主题",
+      "importTheme": "导入",
+      "resetTheme": "恢复默认",
+      "customize": "自定义主题",
+      "themeName": "名称",
+      "themeType": "类型",
+      "themeBackground": "背景",
+      "themeSurface": "表面",
+      "themeText": "文本",
+      "themeAccent": "强调色",
+      "themeBorder": "边框",
+      "exportTheme": "导出",
+      "general": "常规"
     },
     "ai": {
       "provider": "服务商",

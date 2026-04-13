@@ -169,7 +169,21 @@
       "fontTheme": "Schriftart-Design",
       "fontThemeDefault": "Standard",
       "fontThemeTypewriter": "Schreibmaschine",
-      "contextual": "Kontextabhängig"
+      "contextual": "Kontextabhängig",
+      "themes": "Themes",
+      "newTheme": "Neues Theme",
+      "importTheme": "Importieren",
+      "resetTheme": "Standard wiederherstellen",
+      "customize": "Theme anpassen",
+      "themeName": "Name",
+      "themeType": "Typ",
+      "themeBackground": "Hintergrund",
+      "themeSurface": "Oberfläche",
+      "themeText": "Text",
+      "themeAccent": "Akzent",
+      "themeBorder": "Rahmen",
+      "exportTheme": "Exportieren",
+      "general": "Allgemein"
     },
     "ai": {
       "provider": "Anbieter",
