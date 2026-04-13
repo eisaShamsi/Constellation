@@ -81,6 +81,32 @@
 		T: '#3b82f6', C: '#16a34a', '#': '#f472b6', P: '#f59e0b', S: '#7c3aed', W: '#94a3b8',
 	};
 
+	// Sidebar resize
+	let sidebarWidth = $state(260);
+	let isResizing = false;
+
+	function onResizeStart(e: MouseEvent) {
+		isResizing = true;
+		e.preventDefault();
+		const onMove = (ev: MouseEvent) => {
+			if (!isResizing) return;
+			// For RTL, measure from right edge
+			const container = (e.target as Element).closest('.cmap-content-wrap');
+			if (!container) return;
+			const rect = container.getBoundingClientRect();
+			const isR = $dir === 'rtl';
+			const newWidth = isR ? rect.right - ev.clientX : ev.clientX - rect.left;
+			sidebarWidth = Math.max(180, Math.min(500, newWidth));
+		};
+		const onUp = () => {
+			isResizing = false;
+			window.removeEventListener('mousemove', onMove);
+			window.removeEventListener('mouseup', onUp);
+		};
+		window.addEventListener('mousemove', onMove);
+		window.addEventListener('mouseup', onUp);
+	}
+
 	// Syntax chips
 	let showChips = $state(false);
 	const syntaxChips = $derived.by(() => {
@@ -655,7 +681,7 @@
 	<div class="cmap-content-wrap">
 		<!-- Search results sidebar -->
 		{#if searchResults.length > 0}
-			<div class="cmap-results">
+			<div class="cmap-results" style="width:{sidebarWidth}px">
 				<div class="cmap-results-header">{searchResults.length} {$t('sightPanel.totalNodes') || 'results'}</div>
 				<div class="cmap-results-list">
 					{#each searchResults as result, i}
@@ -671,6 +697,8 @@
 					{/each}
 				</div>
 			</div>
+			<!-- Resize handle -->
+			<div class="cmap-resize-handle" onmousedown={onResizeStart}></div>
 		{/if}
 
 		<!-- Sunburst -->
@@ -849,10 +877,14 @@
 
 	/* Search results sidebar */
 	.cmap-results {
-		width: 240px; flex-shrink: 0; display: flex; flex-direction: column;
-		border-inline-end: 1px solid var(--border, #e0e0e0);
+		flex-shrink: 0; display: flex; flex-direction: column;
 		background: var(--background-primary, #fff); overflow: hidden;
 	}
+	.cmap-resize-handle {
+		width: 4px; flex-shrink: 0; cursor: col-resize;
+		background: var(--border, #e0e0e0);
+	}
+	.cmap-resize-handle:hover { background: var(--interactive-accent, #7c3aed); }
 	.cmap-results-header {
 		padding: 8px 12px; font-size: 11px; font-weight: 700;
 		color: var(--text-muted, #888); border-bottom: 1px solid var(--border, #e0e0e0);
