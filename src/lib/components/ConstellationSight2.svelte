@@ -77,7 +77,7 @@
 	};
 
 	const CAT_COLORS: Record<string, string> = {
-		T: '#3b82f6', C: '#16a34a', '#': '#f472b6', P: '#f59e0b', S: '#7c3aed',
+		T: '#3b82f6', C: '#16a34a', '#': '#f472b6', P: '#f59e0b', S: '#7c3aed', W: '#94a3b8', '∅': '#64748b',
 	};
 
 	// ─── Props ────────────────────────────────────────────────
@@ -378,7 +378,7 @@
 					const id = r.name.toLowerCase();
 					const node = nodeMap.get(id);
 					if (!node) continue;
-					const CAT_MAP: Record<string, string> = { wikilink: 'W', title: 'T', content: 'C', tag: '#', property: 'P', semantic: 'S', hybrid: 'C' };
+					const CAT_MAP: Record<string, string> = { wikilink: 'W', title: 'T', content: 'C', tag: '#', property: 'P', semantic: 'S', hybrid: 'C', structured: '∅' };
 					const cat = CAT_MAP[r.match_type] ?? r.match_type.charAt(0).toUpperCase();
 					matches.push({ node, matchType: cat, matchCategories: [cat] });
 				}
