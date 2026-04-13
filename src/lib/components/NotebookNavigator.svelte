@@ -67,7 +67,6 @@
 	onMount(async () => {
 		try {
 			const libs = $libraries;
-			console.log('[NotesNav] Starting load for', libs.length, 'libraries');
 			const allNotes: NoteWithMeta[] = [];
 			const allTags: Record<string, number> = {};
 			const libTreeMap = new Map<string, FileEntry>();
@@ -76,22 +75,19 @@
 			function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
 				return Promise.race([
 					promise,
-					new Promise<T>(resolve => setTimeout(() => { console.log('[NotesNav] TIMEOUT hit'); resolve(fallback); }, ms)),
+					new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms)),
 				]);
 			}
 
 			// Process 2 libraries at a time
 			for (let i = 0; i < libs.length; i += 2) {
 				const batch = libs.slice(i, i + 2);
-				console.log('[NotesNav] Loading batch', i/2 + 1, ':', batch.map(l => l.name).join(', '));
 				const results = await Promise.all(batch.map(async (lib) => {
-					console.log('[NotesNav]   IPC start:', lib.name);
 					const [notes, libTags, tree] = await Promise.all([
-						withTimeout(collectLibraryNotesWithMeta(lib.path).catch((e) => { console.error('[NotesNav] meta error:', lib.name, e); return []; }), 15000, [] as NoteWithMeta[]),
+						withTimeout(collectLibraryNotesWithMeta(lib.path).catch(() => []), 15000, [] as NoteWithMeta[]),
 						withTimeout(invoke<Record<string, number>>('scan_library_tags', { libraryPath: lib.path }).catch(() => ({})), 10000, {}),
 						withTimeout(invoke<FileEntry[]>('read_library_tree', { libraryPath: lib.path, maxDepth: 10 }).catch(() => []), 10000, []),
 					]);
-					console.log('[NotesNav]   IPC done:', lib.name, '→', notes.length, 'notes');
 					return { lib, notes, libTags, tree };
 				}));
 				for (const { lib, notes, libTags, tree } of results) {
@@ -102,14 +98,11 @@
 					}
 					libTreeMap.set(normalizePath(lib.path), { name: lib.name, path: lib.path, is_dir: true, children: tree } as FileEntry);
 				}
-				console.log('[NotesNav] Batch done. Total notes so far:', allNotes.length);
 			}
 
-			console.log('[NotesNav] Libraries done. Loading child universes...');
 			// Group under child universes
 			let childUniverses: ChildUniverseInfo[] = [];
 			try { childUniverses = await getChildUniverses(); } catch {}
-			console.log('[NotesNav] Child universes:', childUniverses.length);
 
 			const childLibPathSets = new Map<string, Set<string>>();
 			for (const cu of childUniverses) {
@@ -150,7 +143,13 @@
 				}
 			}
 
-			allNotesWithMeta = allNotes;
+			// Deduplicate notes by path (prevents Svelte each_key_duplicate crash)
+			const seen = new Set<string>();
+			const deduped: NoteWithMeta[] = [];
+			for (const n of allNotes) {
+				if (!seen.has(n.path)) { seen.add(n.path); deduped.push(n); }
+			}
+			allNotesWithMeta = deduped;
 			tagMap = allTags;
 			folderTrees = trees;
 		} finally {
