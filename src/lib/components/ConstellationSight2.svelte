@@ -430,7 +430,7 @@
 		const match = searchResults[searchIdx];
 		if (!match) return;
 		const nx = match.node.x ?? 0, ny = match.node.y ?? 0;
-		zoom = 2;
+		zoom = 3;
 		panX = -nx * zoom;
 		panY = -ny * zoom;
 		requestDraw();
@@ -559,8 +559,8 @@
 			ctx!.lineWidth = (baseWidth * conf.widthMul) / zoom;
 			ctx!.stroke();
 
-			// Direction arrows along the link line (multiple small arrows)
-			if (typed && baseAlpha > 0.1) {
+			// Direction arrows along the link line (ALL links, not just typed)
+			if (baseAlpha > 0.1) {
 				const dx = tx - sx, dy = ty - sy;
 				const len = Math.sqrt(dx * dx + dy * dy);
 				if (len > 20) {
@@ -595,7 +595,7 @@
 			if (x < vpLeft || x > vpRight || y < vpTop || y > vpBottom) continue;
 
 			const isMatch = hasSearch && searchMatchSet.has(n.id);
-			const isCurrent = currentMatch === n;
+			const isCurrent = currentMatch?.id === n.id;
 			const isNeighbor = selectedNode && (n === selectedNode || neighborIds.has(n.id));
 			const maturityAlpha: Record<string, number> = { seed: 0.5, sapling: 0.7, evergreen: 0.9, canonical: 1.0, wilting: 0.4 };
 			// Dim logic: search dims non-matches, neighborhood dims non-neighbors
@@ -674,7 +674,7 @@
 			const x = n.x ?? 0, y = n.y ?? 0;
 			if (x < vpLeft || x > vpRight || y < vpTop || y > vpBottom) continue;
 
-			const isCurrent = currentMatch === n;
+			const isCurrent = currentMatch?.id === n.id;
 
 			// Draw category badges below the node
 			const badgeY = y + n.r + 6 / zoom;
