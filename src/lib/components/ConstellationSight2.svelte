@@ -374,7 +374,8 @@
 					const id = r.name.toLowerCase();
 					const node = nodeMap.get(id);
 					if (!node) continue;
-					const cat = r.match_type === 'wikilink' ? 'W' : r.match_type === 'title' ? 'T' : r.match_type === 'content' ? 'C' : 'L';
+					const CAT_MAP: Record<string, string> = { wikilink: 'W', title: 'T', content: 'C', tag: '#', property: 'P', semantic: 'S', hybrid: 'C' };
+					const cat = CAT_MAP[r.match_type] ?? r.match_type.charAt(0).toUpperCase();
 					matches.push({ node, matchType: cat, matchCategories: [cat] });
 				}
 
