@@ -479,51 +479,24 @@
 	}
 
 	function highlightSearchResult() {
-		const match = searchResults[searchIdx];
 		if (!svgEl) return;
+		const match = searchResults[searchIdx];
 		const matchSet = new Set(searchResults.map(n => n.path));
-		const svg = d3.select(svgEl);
 
-		// Remove old badges
-		svg.selectAll('.search-badge').remove();
-
-		// Reset all arcs, then highlight matches
-		svg.selectAll('path').each(function(d: any) {
+		// Highlight arcs: current = black border, other matches = blue, rest = dimmed
+		d3.select(svgEl).selectAll('path').each(function(d: any) {
 			const isMatch = d?.data?.path && matchSet.has(d.data.path);
 			const isCurrent = match && d?.data?.path === match.path && d?.data?.name === match.name;
 			d3.select(this)
 				.attr('stroke', isCurrent ? '#000000' : isMatch ? '#3b82f6' : '#fff')
 				.attr('stroke-width', isCurrent ? 3.5 : isMatch ? 2 : 0.5)
 				.attr('fill-opacity', isMatch || isCurrent ? 1 : 0.3);
-
-			// Add category badges on matching arcs
-			if (isMatch && d?.data?.path) {
-				const cats = searchCats.get(d.data.path);
-				if (cats && cats.length > 0) {
-					// Position at arc centroid
-					const midAngle = ((d as any).x0 + (d as any).x1) / 2;
-					const midRadius = ((d as any).y0 + (d as any).y1) / 2;
-					const bx = midRadius * Math.sin(midAngle);
-					const by = -midRadius * Math.cos(midAngle);
-					const badgeSize = 14;
-					const totalW = cats.length * (badgeSize + 2);
-
-					cats.forEach((cat: string, ci: number) => {
-						const g = svg.select('g').append('g')
-							.attr('class', 'search-badge')
-							.attr('transform', `translate(${bx - totalW / 2 + ci * (badgeSize + 2)}, ${by - badgeSize / 2})`);
-						g.append('rect')
-							.attr('width', badgeSize).attr('height', badgeSize).attr('rx', 3)
-							.attr('fill', CAT_COLORS[cat] ?? '#94a3b8');
-						g.append('text')
-							.attr('x', badgeSize / 2).attr('y', badgeSize / 2 + 1)
-							.attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
-							.attr('fill', '#fff').attr('font-size', '9px').attr('font-weight', 'bold')
-							.text(cat);
-					});
-				}
-			}
 		});
+	}
+
+	function selectSearchResult(idx: number) {
+		searchIdx = idx;
+		highlightSearchResult();
 	}
 
 	function highlightAllResults() {
@@ -551,7 +524,6 @@
 		searchResults = [];
 		searchCats = new Map();
 		searchIdx = 0;
-		if (svgEl) d3.select(svgEl).selectAll('.search-badge').remove();
 		highlightAllResults();
 	}
 
@@ -686,20 +658,43 @@
 		</div>
 	{/if}
 
-	<!-- Content -->
-	<div class="cmap-body" bind:this={containerEl}>
-		{#if loading}
-			<div class="cmap-loading">
-				<div class="cmap-spinner"></div>
-				<p>{$t('constellationMap.loading') || 'Building knowledge map...'}</p>
+	<!-- Content: results sidebar (left) + sunburst (right) -->
+	<div class="cmap-content-wrap">
+		<!-- Search results sidebar -->
+		{#if searchResults.length > 0}
+			<div class="cmap-results">
+				<div class="cmap-results-header">{searchResults.length} {$t('sightPanel.totalNodes') || 'results'}</div>
+				<div class="cmap-results-list">
+					{#each searchResults as result, i}
+						<button class="cmap-result-row" class:active={i === searchIdx}
+							onclick={() => selectSearchResult(i)} dir="auto">
+							<span class="cmap-result-name">{result.name}</span>
+							<span class="cmap-result-badges">
+								{#each (searchCats.get(result.path) ?? []) as cat}
+									<span class="cmap-result-badge" style="background:{CAT_COLORS[cat] ?? '#94a3b8'}">{cat}</span>
+								{/each}
+							</span>
+						</button>
+					{/each}
+				</div>
 			</div>
-		{:else if error}
-			<div class="cmap-error">
-				<p>{$t('constellationMap.noData') || 'No data available'}</p>
-			</div>
-		{:else}
-			<svg bind:this={svgEl} class="cmap-svg"></svg>
 		{/if}
+
+		<!-- Sunburst -->
+		<div class="cmap-body" bind:this={containerEl}>
+			{#if loading}
+				<div class="cmap-loading">
+					<div class="cmap-spinner"></div>
+					<p>{$t('constellationMap.loading') || 'Building knowledge map...'}</p>
+				</div>
+			{:else if error}
+				<div class="cmap-error">
+					<p>{$t('constellationMap.noData') || 'No data available'}</p>
+				</div>
+			{:else}
+				<svg bind:this={svgEl} class="cmap-svg"></svg>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Tooltip -->
@@ -856,7 +851,35 @@
 	.cmap-bc-item.active { font-weight: 700; color: var(--text-normal, #333); cursor: default; }
 	.cmap-bc-sep { color: var(--text-faint, #ccc); }
 
+	.cmap-content-wrap { flex: 1; display: flex; overflow: hidden; }
 	.cmap-body { flex: 1; position: relative; overflow: hidden; }
+
+	/* Search results sidebar */
+	.cmap-results {
+		width: 240px; flex-shrink: 0; display: flex; flex-direction: column;
+		border-inline-end: 1px solid var(--border, #e0e0e0);
+		background: var(--background-primary, #fff); overflow: hidden;
+	}
+	.cmap-results-header {
+		padding: 8px 12px; font-size: 11px; font-weight: 700;
+		color: var(--text-muted, #888); border-bottom: 1px solid var(--border, #e0e0e0);
+		flex-shrink: 0;
+	}
+	.cmap-results-list { flex: 1; overflow-y: auto; }
+	.cmap-result-row {
+		display: flex; align-items: center; gap: 6px; width: 100%;
+		padding: 6px 12px; border: none; background: none; cursor: pointer;
+		font-size: 11px; color: var(--text-normal, #333); font-family: inherit;
+		text-align: start; border-bottom: 1px solid var(--background-modifier-border, #f0f0f0);
+	}
+	.cmap-result-row:hover { background: var(--background-modifier-hover, #f5f5f5); }
+	.cmap-result-row.active { background: var(--background-modifier-active-hover, #e8e8ff); font-weight: 600; }
+	.cmap-result-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.cmap-result-badges { display: flex; gap: 2px; flex-shrink: 0; }
+	.cmap-result-badge {
+		font-size: 8px; color: #fff; padding: 1px 4px; border-radius: 3px;
+		font-weight: 700; line-height: 1.2;
+	}
 	.cmap-svg { width: 100%; height: 100%; }
 
 	.cmap-loading {
