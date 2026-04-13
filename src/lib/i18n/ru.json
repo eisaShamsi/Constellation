@@ -287,7 +287,9 @@
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
       "notesNavigator": "Навигатор заметок",
-      "notesNavigatorDesc": "Просмотр и фильтрация заметок по папке, тегу или свойству"
+      "notesNavigatorDesc": "Просмотр и фильтрация заметок по папке, тегу или свойству",
+      "secondScreen": "Второй экран",
+      "secondScreenDesc": "Окно-компаньон на втором мониторе"
     },
     "knowledge": {
       "intro": "Настройте организацию, отображение и анализ ваших знаний.",

@@ -287,7 +287,9 @@
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
       "notesNavigator": "Navigateur de Notes",
-      "notesNavigatorDesc": "Parcourir et filtrer les notes par dossier, tag ou propriété"
+      "notesNavigatorDesc": "Parcourir et filtrer les notes par dossier, tag ou propriété",
+      "secondScreen": "Second Écran",
+      "secondScreenDesc": "Fenêtre compagnon sur un second moniteur"
     },
     "knowledge": {
       "intro": "Configurez l'organisation, l'affichage et l'analyse de vos connaissances.",

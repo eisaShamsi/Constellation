@@ -253,7 +253,9 @@
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
       "notesNavigator": "Notes Navigator",
-      "notesNavigatorDesc": "Browse and filter notes by folder, tag, or property"
+      "notesNavigatorDesc": "Browse and filter notes by folder, tag, or property",
+      "secondScreen": "Second Screen",
+      "secondScreenDesc": "Companion window on a second monitor"
     },
     "templates": {
       "templateFolder": "Template folder",

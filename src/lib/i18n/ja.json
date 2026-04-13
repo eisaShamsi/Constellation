@@ -287,7 +287,9 @@
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
       "notesNavigator": "ノートナビゲーター",
-      "notesNavigatorDesc": "フォルダ、タグ、プロパティでノートを閲覧・フィルタ"
+      "notesNavigatorDesc": "フォルダ、タグ、プロパティでノートを閲覧・フィルタ",
+      "secondScreen": "セカンドスクリーン",
+      "secondScreenDesc": "セカンドモニターのコンパニオンウィンドウ"
     },
     "knowledge": {
       "intro": "知識の整理、表示、分析の方法を設定します。",

@@ -287,7 +287,9 @@
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
       "notesNavigator": "ניווט הערות",
-      "notesNavigatorDesc": "עיון וסינון הערות לפי תיקייה, תגית או מאפיין"
+      "notesNavigatorDesc": "עיון וסינון הערות לפי תיקייה, תגית או מאפיין",
+      "secondScreen": "מסך שני",
+      "secondScreenDesc": "חלון נלווה על צג שני"
     },
     "knowledge": {
       "intro": "הגדר כיצד הידע שלך מאורגן, מוצג ומנותח.",

@@ -287,7 +287,9 @@
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
       "notesNavigator": "笔记导航器",
-      "notesNavigatorDesc": "按文件夹、标签或属性浏览和筛选笔记"
+      "notesNavigatorDesc": "按文件夹、标签或属性浏览和筛选笔记",
+      "secondScreen": "第二屏幕",
+      "secondScreenDesc": "第二显示器上的伴侣窗口"
     },
     "knowledge": {
       "intro": "配置知识的组织、查看和分析方式。",

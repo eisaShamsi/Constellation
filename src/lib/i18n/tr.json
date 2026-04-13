@@ -287,7 +287,9 @@
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
       "notesNavigator": "Not Gezgini",
-      "notesNavigatorDesc": "Notları klasör, etiket veya özelliğe göre göz atın"
+      "notesNavigatorDesc": "Notları klasör, etiket veya özelliğe göre göz atın",
+      "secondScreen": "İkinci Ekran",
+      "secondScreenDesc": "İkinci monitörde yardımcı pencere"
     },
     "knowledge": {
       "intro": "Bilginizin nasıl düzenlendiğini, görüntülendiğini ve analiz edildiğini yapılandırın.",

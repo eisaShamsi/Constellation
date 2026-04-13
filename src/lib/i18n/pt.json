@@ -287,7 +287,9 @@
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
       "notesNavigator": "Navegador de Notas",
-      "notesNavigatorDesc": "Navegar e filtrar notas por pasta, tag ou propriedade"
+      "notesNavigatorDesc": "Navegar e filtrar notas por pasta, tag ou propriedade",
+      "secondScreen": "Segunda Tela",
+      "secondScreenDesc": "Janela complementar em um segundo monitor"
     },
     "knowledge": {
       "intro": "Configure como seu conhecimento é organizado, visualizado e analisado.",

@@ -287,7 +287,9 @@
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
       "notesNavigator": "नोट्स नेविगेटर",
-      "notesNavigatorDesc": "फ़ोल्डर, टैग या प्रॉपर्टी के अनुसार नोट्स ब्राउज़ करें"
+      "notesNavigatorDesc": "फ़ोल्डर, टैग या प्रॉपर्टी के अनुसार नोट्स ब्राउज़ करें",
+      "secondScreen": "दूसरी स्क्रीन",
+      "secondScreenDesc": "दूसरे मॉनिटर पर साथी विंडो"
     },
     "knowledge": {
       "intro": "कॉन्फ़िगर करें कि आपका ज्ञान कैसे व्यवस्थित, देखा और विश्लेषित किया जाता है।",

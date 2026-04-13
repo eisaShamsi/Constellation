@@ -287,7 +287,9 @@
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
       "notesNavigator": "متصفح الملاحظات",
-      "notesNavigatorDesc": "تصفح وتصفية الملاحظات حسب المجلد أو الوسم أو الخاصية"
+      "notesNavigatorDesc": "تصفح وتصفية الملاحظات حسب المجلد أو الوسم أو الخاصية",
+      "secondScreen": "الشاشة الثانية",
+      "secondScreenDesc": "نافذة مرافقة على شاشة ثانية"
     },
     "knowledge": {
       "intro": "اضبط كيفية تنظيم معرفتك وعرضها وتحليلها.",

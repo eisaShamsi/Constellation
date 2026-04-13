@@ -2823,7 +2823,7 @@
 			{/if}
 		</div>
 		<div class="dock-bottom">
-			{#if hasMultipleDisplays}
+			{#if hasMultipleDisplays && $appSettings.enabledFeatures?.secondScreen !== false}
 				<button class="dock-btn" class:active={secondScreenOpen} onclick={handleToggleSecondScreen} title={$t('secondScreen.title')}>
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/><rect x="9" y="10" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/></svg>
 				</button>

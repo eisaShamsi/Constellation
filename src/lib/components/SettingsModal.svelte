@@ -86,6 +86,7 @@
 			category: $t('settings.plugins.organization') || 'Organization',
 			icon: 'layers',
 			features: [
+				{ id: 'secondScreen', name: $t('settings.plugins.secondScreen') || 'Second Screen', desc: $t('settings.plugins.secondScreenDesc') || 'Companion window on a second monitor', icon: '🖥️' },
 				{ id: 'dailyNotes', name: $t('settings.plugins.dailyNotes') || 'Daily Notes', desc: $t('settings.plugins.dailyNotesDesc') || 'Create and open daily notes', icon: '📅' },
 				{ id: 'workspaces', name: $t('settings.plugins.workspaces') || 'Workspaces', desc: $t('settings.plugins.workspacesDesc') || 'Save and restore workspace layouts', icon: '📐' },
 				{ id: 'wordCount', name: $t('settings.plugins.wordCount') || 'Word Count', desc: $t('settings.plugins.wordCountDesc') || 'Show word count in status bar', icon: '📊' },
