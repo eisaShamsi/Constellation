@@ -252,36 +252,37 @@
 	}
 
 	// ─── Gravity-Well Layout ──────────────────────────────────
-	// 4-ring concentric layout by centrality percentile + community sectors.
-	// No jitter. No D3 collision simulation. Deterministic bounded positions.
 	function computeGravityWellLayout() {
 		if (simNodes.length === 0) return;
 
-		const maxR = Math.min(width, height) * 0.45;
-
-		// ── 1. Assign rings by centrality percentile ──
 		const sorted = [...simNodes].sort((a, b) => b.centrality - a.centrality);
 		const n = sorted.length;
-		const ringRadii = [
-			maxR * 0.0,   // Ring 0: top 5% — center cluster
-			maxR * 0.27,  // Ring 1: 5-15%
-			maxR * 0.56,  // Ring 2: 15-35%
-			maxR * 0.88,  // Ring 3: 35-100% — outer ring (within boundary)
+
+		const ringThresholds = [
+			{ maxPct: 0.05, radius: 0 },
+			{ maxPct: 0.15, radius: Math.min(width, height) * 0.12 },
+			{ maxPct: 0.35, radius: Math.min(width, height) * 0.25 },
+			{ maxPct: 1.00, radius: Math.min(width, height) * 0.45 },
 		];
 
 		const nodeRings = new Map<string, number>();
 		sorted.forEach((node, i) => {
 			const pct = i / n;
-			const ring = pct < 0.05 ? 0 : pct < 0.15 ? 1 : pct < 0.35 ? 2 : 3;
+			let ring = 3;
+			for (let r = 0; r < ringThresholds.length; r++) {
+				if (pct < ringThresholds[r].maxPct) { ring = r; break; }
+			}
 			nodeRings.set(node.id, ring);
 		});
 
-		// ── 2. Community sectors ──
 		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
-		const numC = Math.max(communityIds.length, 1);
-		const sectorWidth = (Math.PI * 2) / numC;
+		const numCommunities = Math.max(communityIds.length, 1);
+		const communityAngle = new Map<number, number>();
+		communityIds.forEach((cid, i) => {
+			communityAngle.set(cid, (i / numCommunities) * Math.PI * 2);
+		});
+		const sectorWidth = (Math.PI * 2) / numCommunities;
 
-		// ── 3. Group by (ring, community) ──
 		const groups = new Map<string, SimNode[]>();
 		for (const node of simNodes) {
 			const ring = nodeRings.get(node.id) ?? 3;
@@ -290,35 +291,34 @@
 			groups.get(key)!.push(node);
 		}
 
-		// ── 4. Position each node — no jitter, no simulation ──
-		const communityIndex = new Map<number, number>();
-		communityIds.forEach((cid, i) => communityIndex.set(cid, i));
-
 		for (const [key, members] of groups) {
 			const [ringStr, cidStr] = key.split(':');
 			const ring = parseInt(ringStr);
 			const cid = parseInt(cidStr);
-			const baseRadius = ringRadii[ring];
-			const cidIdx = communityIndex.get(cid) ?? 0;
-			const baseAngle = (cidIdx / numC) * Math.PI * 2;
+			const baseRadius = ringThresholds[ring]?.radius ?? ringThresholds[3].radius;
+			const baseAngle = communityAngle.get(cid) ?? 0;
 
 			members.forEach((node, i) => {
 				const angleOffset = (i / Math.max(members.length, 1)) * sectorWidth * 0.8;
 				const angle = baseAngle + sectorWidth * 0.1 + angleOffset;
-
-				// Ring 0 (center): small spread so they don't pile on origin
+				const jitter = (Math.random() - 0.5) * baseRadius * 0.15;
 				const radius = ring === 0
-					? maxR * 0.02 + (i / Math.max(members.length, 1)) * maxR * 0.06
-					: baseRadius;
-
+					? Math.random() * Math.min(width, height) * 0.04
+					: baseRadius + jitter;
 				node.x = radius * Math.cos(angle);
 				node.y = radius * Math.sin(angle);
 			});
 		}
 
-		// No D3 simulation. No jitter. All positions are deterministic
-		// and bounded by ringRadii[3] = 0.88 * maxR < maxR. Nothing escapes.
-
+		// Light collision-avoidance — only for small/medium datasets.
+		// For large datasets (>1500 nodes) the gravity-well positioning is sufficient.
+		if (simNodes.length <= 1500) {
+			simulation = d3.forceSimulation(simNodes)
+				.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 1.5).strength(0.5))
+				.alphaDecay(0.15)
+				.stop();
+			for (let i = 0; i < 15; i++) simulation.tick();
+		}
 		requestDraw();
 	}
 
