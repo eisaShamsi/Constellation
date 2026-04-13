@@ -716,7 +716,7 @@
 	.cmap-search svg { color: var(--text-muted, #888); flex-shrink: 0; }
 	.cmap-search input {
 		border: none; outline: none; background: none; font-size: 12px;
-		font-family: inherit; color: var(--text-normal, #333); flex: 1; min-width: 150px;
+		font-family: inherit; color: var(--text-normal, #333); min-width: 200px; max-width: 400px;
 	}
 	.cmap-search-clear { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 0 2px; }
 	.cmap-search-count { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
