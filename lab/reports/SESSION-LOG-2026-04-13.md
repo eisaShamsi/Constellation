@@ -107,7 +107,46 @@
 - Theme toggle moved from ribbon to Settings > Appearance
 - Import Notes moved from ribbon to Settings > Universe
 
+### Theme System (Complete)
+- 6 built-in themes: Constellation Light/Dark, Nord Light/Dark, Solarized Light/Dark
+- Theme gallery UI with color swatch preview cards
+- Theme editor: 5 color pickers (background, surface, text, accent, border)
+- Create, name, save, delete, export (.constellation-theme.json), import themes
+- deriveThemeVariables(): 5 colors → 30+ CSS variables via HSL math
+- Fixed broken accent color bridge (hex→HSL now applied)
+- Light/dark auto-pairing: themes switch variant with color scheme toggle
+
+### Obsidian Theme Importer (Complete — Full Compatibility)
+- Browse 200+ Obsidian community themes from GitHub registry
+- Search by name or author
+- Theme preview: mini layout mockup + 5-color swatches before importing
+- 7 compatibility layers:
+  1. Full variable injection (ALL -- variables, not just known prefixes)
+  2. CSS class shim (20+ Obsidian→Constellation selector mappings)
+  3. CodeMirror syntax color extraction (15 .cm-* classes)
+  4. @import and @font-face preservation
+  5. Light/dark variant auto-pairing via pairedThemeId
+  6. Theme preview with extractPreviewColors()
+  7. Style Settings metadata parser (/* @settings */ blocks)
+- Style Settings UI: color/number/text controls per theme option
+- Style Settings values persisted and applied as CSS variables
+
+### Settings Restructure (Final)
+- Keyboard → Hotkeys
+- Features → Core Plug-Ins
+- New Templates tab (future-ready)
+- All plug-in toggles wired: Sky View, Sight, Map, OrgChart, Index,
+  Daily Notes, AI Skills, Notes Navigator, Second Screen
+- Global Tasks removed, lens dropdown removed
+- Theme toggle → Settings > Appearance, Import → Settings > Universe
+
+### Other Fixes
+- Notes Navigator: fixed hang (duplicate paths → Svelte each_key_duplicate)
+- Notes Navigator: parallelized library loading with timeouts
+- scan_library_links: canonical filename mismatch → zero graph links (fixed)
+- Distinct category badges for all search operators (LT/LF/LA/LB/⇄/M/∅)
+
 ### Remaining
-- Theme Settings system (plan approved, not yet implemented)
 - Map help documentation file
-- Help file updates for settings restructure
+- Test Obsidian theme importer end-to-end
+- Help files for settings restructure + theme system
