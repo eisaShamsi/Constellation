@@ -43,6 +43,20 @@
 - Category badges: CONFIRMED WORKING (T/P/S badges enlarged 2x)
 - Settings persistence: CONFIRMED WORKING
 
+### Critical Bug Fix: Missing Graph Links
+- `scan_library_links` used file stem as source_name for ALL files
+- `collect_library_notes` used frontmatter title for canonical files
+- Mismatch meant `buildSkyData` could never match link sources to nodes
+- Result: ZERO links in Sky View and Sight for canonical libraries
+- Fix: `scan_library_links` now uses frontmatter title for canonical files
+- Impact: ALL graph visualizations now show correct link connections
+
+### Structured Search in Sight
+- Wired `parseSearchQuery` → `constellationSearch` for advanced operators
+- `links to [[X]]`, `orphans`, `mutual`, cognitive types all work
+- Target node added to match set so connecting links stay visible
+- Search-highlighted links: green (inward→target), red (outward←target), 3× bold
+
 ### Remaining
 - SightPanel (insight/analytics sidebar) — pending
 - Help file updates for Sight changes
