@@ -183,6 +183,11 @@
 			.attr('stroke', '#fff')
 			.attr('stroke-width', 0.5)
 			.style('cursor', 'pointer')
+			.append('title').text((d: any) => {
+				const data = d.data as MapNode;
+				return data.is_dir ? ($t('constellationMap.zoomIn') || 'Click to zoom in') : data.name;
+			})
+			.select(function() { return (this as Element).parentNode as Element; })
 			.on('click', (_event: MouseEvent, d: any) => {
 				const data = d.data as MapNode;
 				if (data.is_dir && data.children && data.children.length > 0) {
@@ -403,7 +408,7 @@
 			</div>
 		{:else if error}
 			<div class="cmap-error">
-				<p>{error}</p>
+				<p>{$t('constellationMap.noData') || 'No data available'}</p>
 			</div>
 		{:else}
 			<svg bind:this={svgEl} class="cmap-svg"></svg>
@@ -446,12 +451,19 @@
 	{#if !compact}
 	<div class="cmap-legend">
 		{#if colorMode === 'maturity'}
+			<span class="cmap-legend-title">{$t('constellationMap.maturity') || 'Maturity'}</span>
 			{#each Object.entries(MATURITY_COLORS) as [label, color]}
 				<span class="cmap-legend-item"><span class="cmap-legend-dot" style="background:{color}"></span>{label}</span>
 			{/each}
 		{:else if colorMode === 'stratum'}
+			<span class="cmap-legend-title">{$t('constellationMap.stratum') || 'Stratum'}</span>
 			{#each STRATUM_COLORS as color, i}
 				<span class="cmap-legend-item"><span class="cmap-legend-dot" style="background:{color}"></span>L{i + 1}</span>
+			{/each}
+		{:else if colorMode === 'library'}
+			<span class="cmap-legend-title">{$t('constellationMap.library') || 'Library'}</span>
+			{#each Object.entries(libraryColorMap) as [name, color]}
+				<span class="cmap-legend-item"><span class="cmap-legend-dot" style="background:{color}"></span>{name}</span>
 			{/each}
 		{/if}
 	</div>
@@ -528,6 +540,7 @@
 		border-top: 1px solid var(--border, #e0e0e0); flex-wrap: wrap;
 		justify-content: center;
 	}
+	.cmap-legend-title { font-size: 10px; font-weight: 700; color: var(--text-normal, #333); text-transform: uppercase; letter-spacing: 0.5px; }
 	.cmap-legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted, #888); }
 	.cmap-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 </style>
