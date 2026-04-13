@@ -390,7 +390,7 @@
 		// Find and highlight the matching arc
 		d3.select(svgEl).selectAll('path').each(function(d: any) {
 			if (d?.data?.name === match.name && d?.data?.path === match.path) {
-				d3.select(this).attr('stroke', '#f59e0b').attr('stroke-width', 3);
+				d3.select(this).attr('stroke', '#000000').attr('stroke-width', 3);
 			}
 		});
 	}
