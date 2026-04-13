@@ -152,8 +152,8 @@
 	let showRegions = $state(true);
 	let showLegend = $state(true);
 	let settingsVisible = $state(false);
-	let linkStrokeMul = $state(1.5);   // link thickness multiplier (0.5–4)
-	let linkOpacity = $state(0.85);    // link opacity (0.1–1.0)
+	let linkStrokeMul = $state(1.0);   // link thickness multiplier (0.5–4)
+	let linkOpacity = $state(0.5);     // link opacity (0.1–1.0)
 	let arrowSize = $state(6);         // arrowhead size in px (2–12)
 
 	// Search match categories map: nodeId → categories[]
@@ -689,9 +689,22 @@
 			if (conf.dash.length > 0) ctx!.setLineDash(conf.dash.map(d => d / zoom));
 
 			const isDormant = link.status === 'dormant';
-			// Use linkOpacity setting — convert to 2-digit hex
-			const baseAlpha = searchDim ? 0.13 : isDormant ? 0.27 : linkOpacity;
-			const alphaHex = Math.round(baseAlpha * 255).toString(16).padStart(2, '0');
+
+			// Distance-based fade: long links become more transparent
+			// Short local connections stay fully visible; cross-ring links fade
+			const dx0 = tx - sx, dy0 = ty - sy;
+			const linkLen = Math.sqrt(dx0 * dx0 + dy0 * dy0);
+			const fadeThreshold = Math.min(width, height) * 0.15; // start fading beyond this
+			const fadeMax = Math.min(width, height) * 0.5;        // fully faded at this distance
+			const distanceFade = linkLen <= fadeThreshold ? 1.0
+				: linkLen >= fadeMax ? 0.08
+				: 1.0 - (linkLen - fadeThreshold) / (fadeMax - fadeThreshold) * 0.92;
+
+			const baseAlpha = (searchDim ? 0.13 : isDormant ? 0.27 : linkOpacity) * distanceFade;
+			const alphaHex = Math.round(Math.max(0.02, baseAlpha) * 255).toString(16).padStart(2, '0');
+
+			// Skip nearly invisible links (perf + visual cleanup)
+			if (baseAlpha < 0.03) { if (conf.dash.length > 0) ctx!.setLineDash([]); continue; }
 
 			ctx!.beginPath();
 			ctx!.moveTo(sx, sy);
