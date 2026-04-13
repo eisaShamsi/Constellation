@@ -34,7 +34,7 @@
 		type IndexEntry
 	} from '$lib/libraries/store';
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet } from '$lib/libraries/store';
-	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById } from '$lib/libraries/store';
+	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, BUILTIN_THEMES, deriveThemeVariables, hexToHSL } from '$lib/libraries/store';
 	import { get } from 'svelte/store';
 	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
@@ -1003,6 +1003,51 @@
 				: colorScheme;
 			document.body.classList.remove('theme-light', 'theme-dark');
 			document.body.classList.add(`theme-${resolved}`);
+		}
+	});
+
+	// Apply custom theme colors
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		const s = $appSettings;
+		const themeId = s.activeThemeId;
+		if (!themeId) {
+			// No custom theme — but still apply accent color if set
+			if (s.accentColor && s.accentColor !== '#7c3aed') {
+				const hsl = hexToHSL(s.accentColor);
+				document.body.style.setProperty('--accent-h', String(hsl.h));
+				document.body.style.setProperty('--accent-s', `${hsl.s}%`);
+				document.body.style.setProperty('--accent-l', `${hsl.l}%`);
+			}
+			return;
+		}
+
+		// Find theme (built-in or custom)
+		const theme = BUILTIN_THEMES.find(t => t.id === themeId) || s.customThemes?.find(t => t.id === themeId);
+		if (!theme) return;
+
+		// Apply derived CSS variables
+		const vars = deriveThemeVariables(theme.colors, theme.type);
+		const root = document.body.style;
+		for (const [key, value] of Object.entries(vars)) {
+			root.setProperty(key, value);
+		}
+
+		// Apply theme type class
+		document.body.classList.remove('theme-light', 'theme-dark');
+		document.body.classList.add(`theme-${theme.type}`);
+
+		// Apply custom CSS if present
+		let customStyleEl = document.getElementById('constellation-custom-theme-css');
+		if (theme.customCSS) {
+			if (!customStyleEl) {
+				customStyleEl = document.createElement('style');
+				customStyleEl.id = 'constellation-custom-theme-css';
+				document.head.appendChild(customStyleEl);
+			}
+			customStyleEl.textContent = theme.customCSS;
+		} else if (customStyleEl) {
+			customStyleEl.remove();
 		}
 	});
 

@@ -1534,6 +1534,116 @@ export function getAllFontSets(customSets: FontSet[] = []): FontSet[] {
 }
 
 // ─── Settings store ───
+// ─── Theme System ─────────────────────────────────────────
+export interface ConstellationTheme {
+	id: string;
+	name: string;
+	type: 'light' | 'dark';
+	colors: {
+		background: string;
+		surface: string;
+		text: string;
+		accent: string;
+		border: string;
+	};
+	customCSS?: string;
+}
+
+/** Convert hex color to HSL components */
+export function hexToHSL(hex: string): { h: number; s: number; l: number } {
+	const r = parseInt(hex.slice(1, 3), 16) / 255;
+	const g = parseInt(hex.slice(3, 5), 16) / 255;
+	const b = parseInt(hex.slice(5, 7), 16) / 255;
+	const max = Math.max(r, g, b), min = Math.min(r, g, b);
+	let h = 0, s = 0;
+	const l = (max + min) / 2;
+	if (max !== min) {
+		const d = max - min;
+		s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+		if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+		else if (max === g) h = ((b - r) / d + 2) / 6;
+		else h = ((r - g) / d + 4) / 6;
+	}
+	return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+/** Lighten or darken a hex color by percentage */
+function adjustLightness(hex: string, amount: number): string {
+	const hsl = hexToHSL(hex);
+	const newL = Math.max(0, Math.min(100, hsl.l + amount));
+	return `hsl(${hsl.h}, ${hsl.s}%, ${newL}%)`;
+}
+
+/** Derive all CSS variables from 5 theme colors */
+export function deriveThemeVariables(colors: ConstellationTheme['colors'], type: 'light' | 'dark'): Record<string, string> {
+	const { background, surface, text, accent, border } = colors;
+	const accentHSL = hexToHSL(accent);
+	const isDark = type === 'dark';
+
+	return {
+		'--background-primary': background,
+		'--background-primary-alt': adjustLightness(background, isDark ? 3 : -3),
+		'--background-secondary': surface,
+		'--background-secondary-alt': adjustLightness(surface, isDark ? 3 : -3),
+		'--background-modifier-border': border,
+		'--background-modifier-border-focus': accent,
+		'--background-modifier-hover': adjustLightness(surface, isDark ? 5 : -4),
+		'--background-modifier-form-field': adjustLightness(background, isDark ? 3 : -2),
+		'--background-modifier-cover': isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
+		'--background-modifier-success': '#16a34a22',
+		'--background-modifier-error': '#ef444422',
+		'--text-normal': text,
+		'--text-muted': adjustLightness(text, isDark ? -20 : 20),
+		'--text-faint': adjustLightness(text, isDark ? -35 : 35),
+		'--text-on-accent': isDark ? '#1e1e2e' : '#ffffff',
+		'--text-error': '#ef4444',
+		'--text-warning': '#f59e0b',
+		'--text-success': '#16a34a',
+		'--text-accent': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${accentHSL.l}%)`,
+		'--text-accent-hover': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${Math.max(0, accentHSL.l - 10)}%)`,
+		'--interactive-normal': surface,
+		'--interactive-hover': adjustLightness(surface, isDark ? 5 : -5),
+		'--interactive-accent': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${accentHSL.l}%)`,
+		'--interactive-accent-hover': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${Math.max(0, accentHSL.l - 8)}%)`,
+		'--accent-h': String(accentHSL.h),
+		'--accent-s': `${accentHSL.s}%`,
+		'--accent-l': `${accentHSL.l}%`,
+		'--scrollbar-bg': 'transparent',
+		'--scrollbar-thumb-bg': adjustLightness(border, isDark ? 5 : -5),
+		'--scrollbar-active-thumb-bg': adjustLightness(border, isDark ? 10 : -10),
+		'--shadow-s': isDark ? '0 1px 2px rgba(0,0,0,0.4)' : '0 1px 2px rgba(0,0,0,0.1)',
+		'--shadow-l': isDark ? '0 4px 16px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.12)',
+	};
+}
+
+/** Built-in themes */
+export const BUILTIN_THEMES: ConstellationTheme[] = [
+	{
+		id: 'constellation-light', name: 'Constellation Light', type: 'light',
+		colors: { background: '#ffffff', surface: '#f8fafc', text: '#1f2328', accent: '#7c3aed', border: '#e5e7eb' },
+	},
+	{
+		id: 'constellation-dark', name: 'Constellation Dark', type: 'dark',
+		colors: { background: '#1e1e2e', surface: '#2a2a3e', text: '#cdd6f4', accent: '#b4befe', border: '#45475a' },
+	},
+	{
+		id: 'nord-light', name: 'Nord Light', type: 'light',
+		colors: { background: '#eceff4', surface: '#e5e9f0', text: '#2e3440', accent: '#5e81ac', border: '#d8dee9' },
+	},
+	{
+		id: 'nord-dark', name: 'Nord Dark', type: 'dark',
+		colors: { background: '#2e3440', surface: '#3b4252', text: '#eceff4', accent: '#88c0d0', border: '#4c566a' },
+	},
+	{
+		id: 'solarized-light', name: 'Solarized Light', type: 'light',
+		colors: { background: '#fdf6e3', surface: '#eee8d5', text: '#657b83', accent: '#268bd2', border: '#93a1a1' },
+	},
+	{
+		id: 'solarized-dark', name: 'Solarized Dark', type: 'dark',
+		colors: { background: '#002b36', surface: '#073642', text: '#839496', accent: '#2aa198', border: '#586e75' },
+	},
+];
+
 export interface AppSettings {
 	// Editor
 	showLineNumbers: boolean;
@@ -1561,10 +1671,12 @@ export interface AppSettings {
 	confirmDelete: boolean;
 	trashDestination: 'system' | 'local' | 'permanent';
 
-	// Appearance
+	// Appearance & Themes
 	titleAlignment: 'start' | 'center';
 	colorScheme: 'light' | 'dark' | 'system';
 	accentColor: string;
+	activeThemeId: string;
+	customThemes: ConstellationTheme[];
 	interfaceFont: string;
 	interfaceFontSize: number;
 	textFont: string;
@@ -1692,6 +1804,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 	titleAlignment: 'center',
 	colorScheme: 'light',
 	accentColor: '#7c3aed',
+	activeThemeId: '',
+	customThemes: [],
 	interfaceFont: '',
 	interfaceFontSize: 14,
 	textFont: '',
