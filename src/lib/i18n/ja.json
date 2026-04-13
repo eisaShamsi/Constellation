@@ -183,7 +183,10 @@
       "themeAccent": "アクセント",
       "themeBorder": "ボーダー",
       "exportTheme": "エクスポート",
-      "general": "一般"
+      "general": "一般",
+      "obsidianThemes": "Obsidianコミュニティテーマ",
+      "searchThemes": "名前または作者でテーマを検索...",
+      "loadingThemes": "テーマを読み込み中..."
     },
     "ai": {
       "provider": "プロバイダー",

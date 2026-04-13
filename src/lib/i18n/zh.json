@@ -183,7 +183,10 @@
       "themeAccent": "强调色",
       "themeBorder": "边框",
       "exportTheme": "导出",
-      "general": "常规"
+      "general": "常规",
+      "obsidianThemes": "Obsidian 社区主题",
+      "searchThemes": "按名称或作者搜索主题...",
+      "loadingThemes": "正在加载主题..."
     },
     "ai": {
       "provider": "服务商",

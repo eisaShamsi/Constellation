@@ -183,7 +183,10 @@
       "themeAccent": "הדגשה",
       "themeBorder": "גבול",
       "exportTheme": "ייצוא",
-      "general": "כללי"
+      "general": "כללי",
+      "obsidianThemes": "ערכות נושא של קהילת Obsidian",
+      "searchThemes": "חיפוש ערכות לפי שם או מחבר...",
+      "loadingThemes": "טוען ערכות..."
     },
     "ai": {
       "provider": "ספק",

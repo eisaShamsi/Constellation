@@ -183,7 +183,10 @@
       "themeAccent": "نمایاں",
       "themeBorder": "بارڈر",
       "exportTheme": "برآمد",
-      "general": "عمومی"
+      "general": "عمومی",
+      "obsidianThemes": "Obsidian کمیونٹی تھیمز",
+      "searchThemes": "نام یا مصنف سے تھیم تلاش کریں...",
+      "loadingThemes": "تھیمز لوڈ ہو رہے ہیں..."
     },
     "ai": {
       "provider": "فراہم کنندہ",

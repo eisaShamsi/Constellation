@@ -183,7 +183,10 @@
       "themeAccent": "एक्सेंट",
       "themeBorder": "बॉर्डर",
       "exportTheme": "निर्यात",
-      "general": "सामान्य"
+      "general": "सामान्य",
+      "obsidianThemes": "Obsidian कम्युनिटी थीम",
+      "searchThemes": "नाम या लेखक से थीम खोजें...",
+      "loadingThemes": "थीम लोड हो रहे हैं..."
     },
     "ai": {
       "provider": "प्रदाता",

@@ -183,7 +183,10 @@
       "themeAccent": "رنگ برجسته",
       "themeBorder": "حاشیه",
       "exportTheme": "صادر کردن",
-      "general": "عمومی"
+      "general": "عمومی",
+      "obsidianThemes": "تم‌های جامعه Obsidian",
+      "searchThemes": "جستجوی تم بر اساس نام یا نویسنده...",
+      "loadingThemes": "در حال بارگذاری تم‌ها..."
     },
     "ai": {
       "provider": "ارائه‌دهنده",

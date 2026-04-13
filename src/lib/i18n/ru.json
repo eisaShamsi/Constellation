@@ -183,7 +183,10 @@
       "themeAccent": "Акцент",
       "themeBorder": "Граница",
       "exportTheme": "Экспорт",
-      "general": "Общие"
+      "general": "Общие",
+      "obsidianThemes": "Темы сообщества Obsidian",
+      "searchThemes": "Поиск тем по имени или автору...",
+      "loadingThemes": "Загрузка тем..."
     },
     "ai": {
       "provider": "Поставщик",

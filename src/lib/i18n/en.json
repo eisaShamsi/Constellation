@@ -219,7 +219,10 @@
       "themeAccent": "Accent",
       "themeBorder": "Border",
       "exportTheme": "Export",
-      "general": "General"
+      "general": "General",
+      "obsidianThemes": "Obsidian Community Themes",
+      "searchThemes": "Search themes by name or author...",
+      "loadingThemes": "Loading themes..."
     },
     "keyboard": {
       "filter": "Filter commands...",

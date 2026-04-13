@@ -183,7 +183,10 @@
       "themeAccent": "اللون المميز",
       "themeBorder": "الحدود",
       "exportTheme": "تصدير",
-      "general": "عام"
+      "general": "عام",
+      "obsidianThemes": "سمات مجتمع Obsidian",
+      "searchThemes": "ابحث عن سمات بالاسم أو المؤلف...",
+      "loadingThemes": "جاري تحميل السمات..."
     },
     "ai": {
       "provider": "المزود",

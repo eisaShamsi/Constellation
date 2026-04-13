@@ -183,7 +183,10 @@
       "themeAccent": "강조",
       "themeBorder": "테두리",
       "exportTheme": "내보내기",
-      "general": "일반"
+      "general": "일반",
+      "obsidianThemes": "Obsidian 커뮤니티 테마",
+      "searchThemes": "이름 또는 작성자로 테마 검색...",
+      "loadingThemes": "테마 로딩 중..."
     },
     "ai": {
       "provider": "제공자",

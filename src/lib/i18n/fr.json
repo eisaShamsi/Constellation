@@ -183,7 +183,10 @@
       "themeAccent": "Accent",
       "themeBorder": "Bordure",
       "exportTheme": "Exporter",
-      "general": "Général"
+      "general": "Général",
+      "obsidianThemes": "Thèmes communautaires Obsidian",
+      "searchThemes": "Rechercher par nom ou auteur...",
+      "loadingThemes": "Chargement des thèmes..."
     },
     "ai": {
       "provider": "Fournisseur",

@@ -183,7 +183,10 @@
       "themeAccent": "Vurgu",
       "themeBorder": "Kenarlık",
       "exportTheme": "Dışa aktar",
-      "general": "Genel"
+      "general": "Genel",
+      "obsidianThemes": "Obsidian Topluluk Temaları",
+      "searchThemes": "Ada veya yazara göre tema ara...",
+      "loadingThemes": "Temalar yükleniyor..."
     },
     "ai": {
       "provider": "Sağlayıcı",
