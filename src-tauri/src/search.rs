@@ -827,16 +827,20 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     // Determine the dominant filter type for match_type coloring
     let dominant_type = if filters.tags.as_ref().map_or(false, |t| !t.is_empty()) {
         "tag"
-    } else if filters.wikilinks_to.as_ref().map_or(false, |w| !w.is_empty())
-           || filters.wikilinks_from.as_ref().map_or(false, |w| !w.is_empty())
-           || filters.mutual.as_ref().map_or(false, |w| !w.is_empty())
-           || filters.links_between.as_ref().map_or(false, |w| !w.is_empty())
-           || filters.links_all.as_ref().map_or(false, |w| !w.is_empty()) {
-        "wikilink"
+    } else if filters.wikilinks_to.as_ref().map_or(false, |w| !w.is_empty()) {
+        "links_to"
+    } else if filters.wikilinks_from.as_ref().map_or(false, |w| !w.is_empty()) {
+        "links_from"
+    } else if filters.mutual.as_ref().map_or(false, |w| !w.is_empty()) {
+        "mutual"
+    } else if filters.links_between.as_ref().map_or(false, |w| !w.is_empty()) {
+        "links_between"
+    } else if filters.links_all.as_ref().map_or(false, |w| !w.is_empty()) {
+        "links_all"
     } else if filters.mentions.as_ref().map_or(false, |m| !m.is_empty()) {
-        "content"
+        "mentions"
     } else if filters.orphans.unwrap_or(false) {
-        "structured"
+        "orphan"
     } else if filters.properties.as_ref().map_or(false, |p| !p.is_empty()) {
         "property"
     } else {
