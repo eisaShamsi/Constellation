@@ -948,11 +948,11 @@
 	.cmap-tt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
 	.cmap-legend {
-		display: flex; gap: 12px; padding: 8px 20px; flex-shrink: 0;
+		display: flex; gap: 20px; padding: 14px 20px; flex-shrink: 0;
 		border-top: 1px solid var(--border, #e0e0e0); flex-wrap: wrap;
-		justify-content: center;
+		justify-content: center; align-items: center;
 	}
-	.cmap-legend-title { font-size: 10px; font-weight: 700; color: var(--text-normal, #333); text-transform: uppercase; letter-spacing: 0.5px; }
-	.cmap-legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted, #888); }
-	.cmap-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+	.cmap-legend-title { font-size: 16px; font-weight: 700; color: var(--text-normal, #333); text-transform: uppercase; letter-spacing: 0.5px; }
+	.cmap-legend-item { display: flex; align-items: center; gap: 8px; font-size: 16px; color: var(--text-muted, #888); }
+	.cmap-legend-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
 </style>
