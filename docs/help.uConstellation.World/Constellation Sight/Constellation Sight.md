@@ -5,163 +5,245 @@ aliases:
   - Network Analysis
   - Graph Analytics
   - Bridge Notes
-  - Structural Gaps
   - Universe Health
-description: The Constellation Sight applies network science algorithms to your knowledge graph, revealing bridge notes, topical communities, structural blind spots, and cognitive diversity.
+description: The Constellation Sight visualizes your entire knowledge system as a gravity-well graph, revealing how ideas connect, where knowledge is strong, and where it needs growth.
 ---
 
 # Constellation Sight
 
 ## What Is It?
 
-Imagine looking at a city from above at night. Some buildings have many roads connecting them — they're hubs. Some neighborhoods are dense with activity, while others sit isolated with few connections. And between some neighborhoods, there are no roads at all — blind spots that could benefit from a bridge.
+Imagine looking at a city from above at night. Some buildings are in the center, surrounded by roads leading everywhere --- they're hubs. Other buildings sit on the outskirts with one road in. Between them, highways show how traffic flows.
 
-The Constellation Sight does this for your knowledge. It takes your notes and the links between them and analyzes their structure using algorithms from network science. It answers the question: **"What patterns and gaps exist in my thinking?"**
+The Constellation Sight does this for your knowledge. Every note is a point. Every link between notes is a line. The most connected, important notes sit at the center. The peripheral ones sit at the edges. Links show how ideas flow between them --- their type, direction, and strength.
 
-It doesn't tell you what to think. It shows you the shape of what you already know — where your knowledge is deep, where it's shallow, and where two areas of expertise could connect but don't yet.
+It answers the question: **"What does my knowledge system look like, and how healthy is it?"**
 
 ---
 
 ## Why Does It Matter?
 
-Most note-taking apps show you what you wrote. The Constellation Sight shows you what you *haven't* written — the connections you haven't made, the bridges you haven't built, the areas you've neglected.
-
-This is based on a principle from network science: **the most valuable insight often lies not in what's present, but in what's absent.** The gap between two well-developed knowledge areas is where new ideas are born.
+Most note-taking apps show you what you wrote. The Constellation Sight shows you the *shape* of what you know --- where your thinking is deep, where it's shallow, and how ideas connect across libraries.
 
 ---
 
 ## How to Open It
 
-1. Click the **Lens button** in the left dock bar — it looks like a magnifier with a plus sign
-2. Wait a few seconds while the analysis runs (the more notes and links you have, the richer the results)
-3. The Lens view appears: a graph on the left, an analytics panel on the right
+1. Click the **Sight button** (eye icon) in the left ribbon
+2. Wait a few seconds while the graph builds
+3. The Sight view appears: a gravity-well graph filling the screen
 
-To close: click the **×** button in the top-right corner, or press **Escape**.
+To close: click the **x** button in the top-right corner.
 
 ---
 
 ## What You See
 
-### The Graph
+### The Gravity-Well Graph
 
-When the Lens activates, your note graph transforms:
+Notes are arranged in concentric rings based on their importance (centrality):
+
+| Ring | Who's Here | Why |
+|------|-----------|-----|
+| **Center** | Top 5% most connected notes | These are the hubs of your knowledge --- bridges between different areas |
+| **Inner ring** | 5-15% | Major concepts with strong connections |
+| **Middle ring** | 15-35% | Supporting knowledge |
+| **Outer ring** | 35-100% | Peripheral notes, orphans, seeds |
+
+Within each ring, notes are grouped by **library** --- your own organization. Notes from the same library share the same color and cluster in the same angular sector.
+
+### Visual Vocabulary
 
 | Element | What It Means |
 |---------|---------------|
-| **Large node** | A bridge note — it connects different areas of your knowledge. The larger the node, the more important it is as a connector. |
-| **Small node** | A note that lives within a single topic area. Not a bridge, but still part of the fabric. |
-| **Node color** | Each color represents an auto-detected topic cluster (community). Notes of the same color are densely connected to each other. |
-| **Solid line** | A wikilink connection between two notes. |
-| **Red dashed line** | A structural gap — two topic areas that could meaningfully connect but currently don't. These are your blind spots. |
-| **Colored region** | A translucent ellipse showing the boundary of a community — a group of notes that form a topic cluster. |
-
-### The Analytics Panel
-
-The panel on the right shows five sections:
-
-#### 1. Legend
-
-Click to expand. Explains every visual element in the graph — what large/small nodes mean, what colors represent, what the lines indicate.
-
-#### 2. Universe Health (0-100)
-
-A single number that captures the overall diversity and balance of your knowledge:
-
-- **Green (70-100)**: Healthy — your knowledge is diverse, well-connected, and balanced across topics
-- **Amber (40-69)**: Moderate — some imbalance or isolation. Consider exploring underconnected areas
-- **Red (0-39)**: Low diversity — your knowledge may be concentrated in too few areas
-
-The score is built from four components:
-
-| Component | What It Measures | What's Healthy |
-|-----------|-----------------|----------------|
-| **Modularity** | How distinct your topic clusters are. Clear topics = good. | 0.3 – 0.6 |
-| **Dominance** | What percentage of your notes belong to the largest topic. Lower is better — you don't want one topic to overwhelm everything. | Below 35% |
-| **Entropy** | How evenly your knowledge is spread across topics. Higher = more diverse. | Above 2.0 |
-| **Links/Note** | Average connections per note. More links = better integration. | Above 1.0 |
-
-#### 3. Top Bridges
-
-The 10 most structurally important notes in your universe. These aren't necessarily the notes with the most links — they're the notes that *connect different areas*. A note with only 3 links can be a critical bridge if it's the only connection between two large topic clusters.
-
-Click any bridge note to open it in the editor.
-
-#### 4. Communities
-
-Auto-detected topic clusters. The Lens uses the Louvain algorithm to find groups of notes that are densely connected to each other. Each community gets:
-
-- A **color dot** matching the graph
-- An **auto-generated name** from the most common words in member note titles
-- A **member count**
-
-These communities emerge from your actual link patterns — not from your folder structure or tags. They may surprise you.
-
-#### 5. Blind Spots
-
-Pairs of communities with few or no connections between them. Each blind spot shows:
-
-- The two community names
-- How many links exist between them (often zero)
-
-A blind spot is not an error — it's an opportunity. It tells you: "These two areas of your knowledge could meaningfully relate, but you haven't explored the connection yet."
+| **Large node** | High centrality --- this note bridges different knowledge areas |
+| **Small node** | Low centrality --- peripheral or within a single topic |
+| **Node color** | Which library the note belongs to |
+| **Solid line** | A link between two notes |
+| **Direction arrows** | Small arrows along each link showing which way the connection flows |
+| **Line thickness** | Thicker = higher confidence (established), thinner = lower (hypothesis) |
 
 ---
 
-## Advanced Features
+## Interacting with the Graph
 
-Expand the **Advanced** section in the panel to access:
+### Pan and Zoom
 
-### Layer Peeling
+- **Scroll wheel**: Zoom in/out
+- **Click and drag**: Pan the view
+- **Fit to Screen button**: Resets zoom to show all nodes (expand icon in toolbar)
 
-Drag the slider to temporarily hide the top 1-20 most central notes. This is like removing the obvious landmarks to see what's underneath. When you peel away your MOC notes and index pages, a secondary structure emerges — smaller clusters and bridge notes that were invisible under the dominant layer.
+### Neighborhood Highlight
 
-### Tag Edges
+**Single-click** any node to see its connections:
 
-Toggle this on to reveal implicit connections. When two notes share the same tag but have no wikilink between them, the Lens draws an additional edge. This often reveals connections you've been making unconsciously (through tags) but haven't formalized (through links).
+- The clicked node gets an amber ring
+- All directly connected notes stay fully visible
+- Everything else dims to ~12% opacity
+- Links to/from the selected note stay visible; all others nearly disappear
 
----
+This is the nervous system metaphor: touch a nerve, and you see what it connects to.
 
-## Tips for Using the Lens
+**Click empty space** to clear the highlight.
 
-> **Start with the health score.** If it's low, look at the dominance and entropy numbers to understand why. Is one topic overwhelming your universe? Are your notes evenly distributed?
+**Double-click** a node to open the note in the editor.
 
-> **Check the blind spots.** Each gap between two communities is a potential research question. Ask yourself: "Is there a meaningful connection between these two areas that I haven't explored?"
+### Hover
 
-> **Watch the bridges.** Your top bridge notes deserve extra attention. They're the structural backbone of your knowledge. Consider developing them further — adding more detail, more links, more context.
-
-> **Use layer peeling when the graph feels cluttered.** Hide your MOC and index notes to see the organic structure underneath.
-
-> **The Lens works better with more links.** If your notes don't have many wikilinks, the analysis will be thin. The more you connect your notes, the richer the insights become.
-
----
-
-## How It Works (For the Curious)
-
-The Constellation Sight uses three algorithms:
-
-1. **Betweenness Centrality** (Brandes' algorithm, 2001): For each note, it counts how many shortest paths between all other note pairs pass through it. Notes that sit on many shortest paths are bridges — structurally important connectors.
-
-2. **Community Detection** (Louvain algorithm): Groups notes into clusters by maximizing "modularity" — finding groups where connections within the group are denser than connections between groups.
-
-3. **Structural Gap Detection** (based on Ronald Burt's structural holes theory, 1992): Identifies pairs of communities with high internal density but low inter-community connections.
-
-All computation runs locally on your machine. No data leaves your device. The centrality algorithm runs in Rust for performance; community detection runs in JavaScript.
+Move your mouse over any node to see its name in a tooltip.
 
 ---
 
-## RTL Support
+## Search
 
-The Constellation Sight works identically for Arabic, Hebrew, English, and any language. The graph algorithms analyze structure (links between notes), not language. Community names auto-detect text direction. The panel respects your interface language setting.
+Click the **magnifying glass** in the toolbar to open the search bar. The Sight search supports all the same operators as the main Search Hub:
+
+### Free Text
+Type any word or phrase. Results are highlighted on the graph with blue rings and category badges:
+- **T** = title match
+- **C** = content match
+- **#** = tag match
+- **P** = property match
+- **S** = semantic match
+
+### Link Operators
+
+| Operator | Example | What It Finds |
+|----------|---------|---------------|
+| `links to [[X]]` | `links to [[Ideaverse]]` | Notes that link TO this note |
+| `links from [[X]]` | `links from [[Ideaverse]]` | Notes that this note links TO |
+| `mutual [[X]]` | `mutual [[Ideaverse]]` | Notes with bidirectional links |
+| `links all [[X]]` | `links all [[Ideaverse]]` | All linked notes (union of to + from) |
+| `orphans` | `orphans` | Notes with no links at all |
+
+### Cognitive Link Types
+
+| Operator | What It Finds |
+|----------|---------------|
+| `supports [[X]]` | Notes that support this note |
+| `contradicts [[X]]` | Notes that contradict this note |
+| `causes [[X]]` | Notes that cause this note |
+| `exemplifies [[X]]` | Notes that exemplify this note |
+| `generalizes [[X]]` | Notes that generalize this note |
+| `derives from [[X]]` | Notes derived from this note |
+| `part of [[X]]` | Notes that are part of this note |
+
+### Directional Link Colors
+
+When searching link operators, the connections are highlighted with direction:
+- **Green lines** = inward (the result links TO the target)
+- **Red lines** = outward (the target links TO the result)
+- **Amber lines** = between two results
+
+### Navigating Results
+
+- Press **Enter** to jump to the next result (zooms to 3x)
+- Press **Shift+Enter** for the previous result
+- An **amber pointer arrow** marks the current result
+- The result counter shows your position (e.g., "3/15")
+
+### Syntax Chips
+
+Click the **three-dot button** next to the search input to see all available operators as clickable chips. These are localized to your interface language.
+
+### Search History
+
+Click the search input when empty to see your recent searches (up to 8).
+
+---
+
+## Analytics Panel (SightPanel)
+
+Click the **grid icon** in the toolbar to open the analytics sidebar.
+
+### Universe Health (0-100)
+
+A single number capturing the overall health of your knowledge system:
+
+- **Green (70+)**: Healthy --- well-connected, diverse knowledge
+- **Amber (40-69)**: Moderate --- some areas need attention
+- **Red (below 40)**: Low --- knowledge may be too concentrated or disconnected
+
+### Overview
+
+Quick metrics at a glance:
+- **Notes**: Total notes in your universe
+- **Links**: Total connections between notes
+- **Orphans**: Notes with no links (candidates for connection)
+- **Links/Note**: Average connectivity ratio
+
+Below these, a **library breakdown** shows how many notes belong to each library, with colored dots matching the graph.
+
+### Link Health
+
+Expandable section showing:
+- **By Type**: Horizontal bars for each link type (supports, contradicts, causes, etc.) with counts
+- **By Confidence**: Bars for hypothesis, evidence, established, contested
+- **Dormant Links**: Count of links not traversed in 90+ days (a warning signal)
+
+### Top Bridges
+
+The 10 most structurally important notes. These are the notes that connect different areas of your knowledge. Click any bridge to highlight its neighborhood on the graph.
+
+### Knowledge Insights
+
+Six diagnostic views of your knowledge system:
+
+| View | What It Shows |
+|------|---------------|
+| **Strongest Evidence** | Links with highest weight and established confidence |
+| **Weak Foundations** | Hypothesis-level links with low weight --- ideas that need more support |
+| **Tensions** | Contradiction pairs --- ideas in active disagreement |
+| **Stagnating** | High-weight links not traversed recently --- knowledge going dormant |
+| **Most Connected** | Notes with the highest number of connections |
+| **Knowledge Gaps** | Areas where connections are missing |
+
+Click any insight row to highlight the relevant nodes on the graph.
+
+---
+
+## Settings
+
+Click the **gear icon** in the toolbar:
+
+- **Legend**: Toggle the legend panel on/off
+- **Stroke**: Adjust link line thickness (0.5x to 4x)
+- **Opacity**: Adjust link visibility (10% to 100%)
+- **Arrows**: Adjust direction arrow size (2px to 16px)
+
+Settings persist when you navigate away and come back.
+
+---
+
+## Tips
+
+> **Start with the health score.** A low score means your knowledge needs more connections or diversity.
+
+> **Click nodes to explore neighborhoods.** The highlight reveals local structure that's invisible in the full graph.
+
+> **Use link search to trace reasoning.** "links to [[X]]" shows everything pointing at an idea. "links from [[X]]" shows where an idea leads.
+
+> **Watch the bridges.** Your top bridge notes are the backbone of your knowledge. Strengthen them.
+
+> **The Sight works better with more links.** The more you connect your notes, the richer the visualization.
+
+---
+
+## How It Works
+
+The Constellation Sight uses **betweenness centrality** (Brandes' algorithm) to determine which notes are most structurally important. Notes that sit on many shortest paths between other notes are bridges --- they connect different areas of knowledge.
+
+The **gravity-well layout** positions nodes in concentric rings by centrality percentile, with angular sectors grouped by library. No random simulation --- positions are deterministic based on your knowledge metrics.
+
+All computation runs locally on your machine. No data leaves your device.
 
 ---
 
 ## Relationship to Other Features
 
-| Feature | What It Shows | How It Relates to the Lens |
-|---------|---------------|---------------------------|
-| **Sky View** | Your note graph as a force-directed visualization | The Lens uses the same graph but overlays analytics (centrality, communities, gaps) |
-| **Constellation Map** | The shape and maturity of your knowledge as a sunburst | The Map shows *structure*; the Lens shows *patterns*. Use both for complete awareness. |
-| **OrgChart** | Your folder/library hierarchy as a visual tree | The OrgChart shows how you *organized* your notes; the Lens shows how they *actually connect*. |
-| **Index** | Terms and concepts extracted from your notes | The Index shows *what you wrote about*; the Lens shows *how those topics relate*. |
-
-All Constellation functions complement each other — they don't compete. Each gives you a different perspective on the same knowledge.
+| Feature | What It Shows | How It Relates to Sight |
+|---------|---------------|------------------------|
+| **Sky View** | Your note graph as a force-directed visualization | Sight uses the same graph but with a structured gravity-well layout and analytics |
+| **Constellation Map** | The shape and maturity of your knowledge as a sunburst | The Map shows *structure*; Sight shows *connections* |
+| **OrgChart** | Your folder/library hierarchy as a visual tree | OrgChart shows how you *organized* notes; Sight shows how they *actually connect* |
+| **Search Hub** | Full-text, tag, property, and semantic search | Sight search uses the same engine but highlights results on the graph |

@@ -607,51 +607,43 @@ When the Second Screen is open:
 
 ## 8. Constellation Sight
 
-The Constellation Sight is a network analysis engine that reveals the hidden structure of your knowledge. It answers: **"What patterns and gaps exist in my thinking?"**
+The Constellation Sight visualizes your entire knowledge system as a gravity-well graph. It answers: **"What does my knowledge look like, and how healthy is it?"**
 
-### Opening the Lens
+### Opening the Sight
 
-Click the **Lens button** in the left dock bar (magnifier with plus sign). The Lens view appears: a graph on the left, an analytics panel on the right. Press Escape or click × to close.
+Click the **Sight button** (eye icon) in the left ribbon. The gravity-well graph appears. Click x to close.
 
-### What the Graph Shows
+### The Gravity-Well Graph
+
+Notes are arranged in concentric rings by importance (centrality). The most connected notes sit at the center; peripheral notes at the edges. Within each ring, notes are grouped by library (your organization). Node color = library.
 
 | Element | Meaning |
 |---------|---------|
-| **Large node** | Bridge note — connects different knowledge areas |
-| **Small node** | Peripheral note — lives within one topic |
-| **Node color** | Auto-detected topic cluster (community) |
-| **Solid line** | Wikilink between two notes |
-| **Red dashed line** | Structural gap — blind spot between disconnected areas |
-| **Colored region** | Community boundary |
+| **Large node** | High centrality — bridges different knowledge areas |
+| **Small node** | Peripheral — within one area |
+| **Node color** | Library membership |
+| **Solid line** | Link between two notes |
+| **Direction arrows** | Small arrows showing link direction |
+| **Line thickness** | Confidence level (thick = established, thin = hypothesis) |
 
-### Universe Health (0-100)
+### Interaction
 
-A composite score measuring the diversity and balance of your knowledge:
+- **Single-click** a node: highlights its neighborhood (all connected notes). Everything else dims.
+- **Double-click**: opens the note in the editor.
+- **Click empty space**: clears the highlight.
+- **Scroll**: zoom. **Drag**: pan. **Fit to Screen**: toolbar button.
 
-- **Modularity**: How distinct your topic clusters are (0.3-0.6 is healthy)
-- **Dominance**: % of notes in the largest community (below 35% is healthy)
-- **Entropy**: How evenly knowledge is distributed (higher = more diverse)
-- **Links/Note**: Average connections per note (above 1.0 is healthy)
+### Search in Sight
 
-### Top Bridges
+Click the magnifying glass. Supports all operators: `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, free text, and semantic search. Results show directional colors: green (inward), red (outward).
 
-The 10 most structurally important notes — not the most linked, but the most critical connectors between areas. Click to open.
+### Analytics Panel (SightPanel)
 
-### Communities
+Click the grid icon to open the sidebar. Shows: Universe Health score (0-100), note/link/orphan counts, link type and confidence bars, top 10 bridges, and Knowledge Insights (strongest evidence, weak foundations, tensions, stagnating, most connected, knowledge gaps).
 
-Auto-detected topic clusters from your link patterns. Each gets a color, auto-generated name, and member count. These emerge from actual connections, not folder structure.
+### Settings
 
-### Blind Spots
-
-Community pairs with few or no connections. Each is an opportunity: two knowledge areas that could meaningfully connect but don't yet.
-
-### Advanced: Layer Peeling
-
-Temporarily hide the top-N most central notes (MOCs, index pages) to reveal the underlying conceptual structure beneath the dominant layer.
-
-### Advanced: Tag Edges
-
-Toggle on to reveal implicit connections between notes sharing tags but no wikilinks.
+Gear icon: adjust link stroke thickness, opacity, and arrow size. Settings persist across sessions.
 
 ---
 
