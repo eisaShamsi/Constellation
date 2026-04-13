@@ -62,7 +62,6 @@
 			category: $t('settings.plugins.navigation') || 'Navigation',
 			icon: 'compass',
 			features: [
-				{ id: 'search', name: $t('settings.plugins.search') || 'Search', desc: $t('settings.plugins.searchDesc') || 'Search across all libraries', icon: '🔍' },
 				{ id: 'quickSwitcher', name: $t('settings.plugins.quickSwitcher') || 'Quick Switcher', desc: $t('settings.plugins.quickSwitcherDesc') || 'Quickly navigate between notes', icon: '⚡' },
 				{ id: 'commandPalette', name: $t('settings.plugins.commandPalette') || 'Command Palette', desc: $t('settings.plugins.commandPaletteDesc') || 'Quick access to all commands', icon: '🎯' },
 			]
