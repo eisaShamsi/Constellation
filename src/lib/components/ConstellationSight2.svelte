@@ -147,12 +147,19 @@
 	let historyItems = $state<{ query: string; timestamp: number }[]>([]);
 	let searchMatchSet = $state<Set<string>>(new Set());
 
-	// Settings
-	let showLegend = $state(true);
+	// Settings — persisted across remounts via module-level storage
+	const _defaults = { showLegend: true, linkStrokeMul: 1.0, linkOpacity: 0.6, arrowSize: 8 };
+	const _saved = (globalThis as any).__sight2Settings ?? { ..._defaults };
+	let showLegend = $state(_saved.showLegend);
 	let settingsVisible = $state(false);
-	let linkStrokeMul = $state(1.0);   // link thickness multiplier (0.5–4)
-	let linkOpacity = $state(0.6);     // link opacity (0.1–1.0)
-	let arrowSize = $state(6);         // arrowhead size in px (2–12)
+	let linkStrokeMul = $state(_saved.linkStrokeMul);
+	let linkOpacity = $state(_saved.linkOpacity);
+	let arrowSize = $state(_saved.arrowSize);
+
+	// Save settings on change so they survive remounts
+	function persistSettings() {
+		(globalThis as any).__sight2Settings = { showLegend, linkStrokeMul, linkOpacity, arrowSize };
+	}
 
 	// Search match categories map: nodeId → categories[]
 	let searchMatchCats = $state<Map<string, string[]>>(new Map());
@@ -667,10 +674,10 @@
 			const isCurrent = currentMatch === n;
 
 			// Draw category badges below the node
-			const badgeY = y + n.r + 5 / zoom;
-			const badgeH = 8 / zoom;
-			const badgeW = 8 / zoom;
-			const gap = 2 / zoom;
+			const badgeY = y + n.r + 6 / zoom;
+			const badgeH = 16 / zoom;
+			const badgeW = 16 / zoom;
+			const gap = 3 / zoom;
 			const totalW = cats.length * (badgeW + gap) - gap;
 			let bx = x - totalW / 2;
 
@@ -678,11 +685,11 @@
 				const col = CAT_COLORS[cat] ?? '#94a3b8';
 				ctx!.fillStyle = col;
 				ctx!.beginPath();
-				ctx!.roundRect(bx, badgeY, badgeW, badgeH, 1.5 / zoom);
+				ctx!.roundRect(bx, badgeY, badgeW, badgeH, 3 / zoom);
 				ctx!.fill();
 				// Badge letter
 				ctx!.fillStyle = '#ffffff';
-				ctx!.font = `bold ${5 / zoom}px system-ui, sans-serif`;
+				ctx!.font = `bold ${10 / zoom}px system-ui, sans-serif`;
 				ctx!.textAlign = 'center';
 				ctx!.textBaseline = 'middle';
 				ctx!.fillText(cat, bx + badgeW / 2, badgeY + badgeH / 2);
@@ -691,18 +698,19 @@
 
 			// Pointer arrow for current match — triangle pointing down at the node
 			if (isCurrent) {
-				const arrY = y - n.r - 14 / zoom;
-				const arrH = 8 / zoom;
-				const arrW = 10 / zoom;
+				const arrW = 16 / zoom;
+				const arrH = 14 / zoom;
+				const tipY = y - n.r - 4 / zoom;
+				const topY = tipY - arrH;
 				ctx!.beginPath();
-				ctx!.moveTo(x, y - n.r - 3 / zoom);              // tip pointing at node
-				ctx!.lineTo(x - arrW / 2, arrY);                   // top-left
-				ctx!.lineTo(x + arrW / 2, arrY);                   // top-right
+				ctx!.moveTo(x, tipY);                     // tip pointing at node
+				ctx!.lineTo(x - arrW / 2, topY);          // top-left
+				ctx!.lineTo(x + arrW / 2, topY);          // top-right
 				ctx!.closePath();
 				ctx!.fillStyle = '#f59e0b';
 				ctx!.fill();
 				ctx!.strokeStyle = '#ffffff';
-				ctx!.lineWidth = 1 / zoom;
+				ctx!.lineWidth = 1.5 / zoom;
 				ctx!.stroke();
 			}
 		}
@@ -989,20 +997,20 @@
 					<div class="sight2-settings-title">{$t("lens.display") || "Display"}</div>
 					<label class="sight2-settings-row">
 						<span>{$t("lens.legend") || "Legend"}</span>
-						<button class:active={showLegend} onclick={() => showLegend = !showLegend}>{showLegend ? 'On' : 'Off'}</button>
+						<button class:active={showLegend} onclick={() => { showLegend = !showLegend; persistSettings(); }}>{showLegend ? 'On' : 'Off'}</button>
 					</label>
 					<div class="sight2-settings-title" style="margin-top:4px">{$t('searchHub.linksTo') || 'Links'}</div>
 					<label class="sight2-settings-slider">
 						<span>Stroke: {linkStrokeMul.toFixed(1)}×</span>
-						<input type="range" min="0.5" max="4" step="0.25" bind:value={linkStrokeMul} oninput={() => requestDraw()} />
+						<input type="range" min="0.5" max="4" step="0.25" bind:value={linkStrokeMul} oninput={() => { requestDraw(); persistSettings(); }} />
 					</label>
 					<label class="sight2-settings-slider">
 						<span>Opacity: {Math.round(linkOpacity * 100)}%</span>
-						<input type="range" min="0.1" max="1" step="0.05" bind:value={linkOpacity} oninput={() => requestDraw()} />
+						<input type="range" min="0.1" max="1" step="0.05" bind:value={linkOpacity} oninput={() => { requestDraw(); persistSettings(); }} />
 					</label>
 					<label class="sight2-settings-slider">
 						<span>Arrows: {arrowSize}px</span>
-						<input type="range" min="2" max="12" step="1" bind:value={arrowSize} oninput={() => requestDraw()} />
+						<input type="range" min="2" max="16" step="1" bind:value={arrowSize} oninput={() => { requestDraw(); persistSettings(); }} />
 					</label>
 				</div>
 			{/if}
