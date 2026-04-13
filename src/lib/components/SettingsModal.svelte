@@ -742,6 +742,17 @@
 						</div>
 					</div>
 
+					<div class="setting-section-heading">{$t('ribbon.importNotes') || 'Import Notes'}</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('ribbon.importNotes') || 'Import Notes'}</div>
+							<div class="setting-desc">{$t('importer.desc') || 'Import notes from another application'}</div>
+						</div>
+						<button class="setting-control btn-action" onclick={() => { onClose?.(); setTimeout(() => document.dispatchEvent(new CustomEvent('constellation:show-importer')), 100); }}>
+							{$t('importer.import') || 'Import'}
+						</button>
+					</div>
+
 				<!-- ═══ EDITOR ═══ -->
 				{:else if activeSection === 'editor'}
 					<div class="setting-item">
