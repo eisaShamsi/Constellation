@@ -159,6 +159,9 @@
 	// Search match categories map: nodeId → categories[]
 	let searchMatchCats = $state<Map<string, string[]>>(new Map());
 
+	// The absolute boundary radius — set once at layout time, used everywhere
+	let outerRingRadius = 0;
+
 	const isRTL = $derived($dir === 'rtl');
 
 	// Syntax chips (reactive to locale)
@@ -253,99 +256,83 @@
 	}
 
 	// ─── Gravity-Well Layout ──────────────────────────────────
+	// Every node is tethered to the center by a chord. Chord length is a
+	// continuous function of the node's knowledge properties. The maximum
+	// chord length IS the outer ring radius. No node can escape.
 	function computeGravityWellLayout() {
 		if (simNodes.length === 0) return;
 
-		const sorted = [...simNodes].sort((a, b) => b.centrality - a.centrality);
-		const n = sorted.length;
+		const maxRadius = Math.min(width, height) * 0.45;
+		outerRingRadius = maxRadius;
 
-		const ringThresholds = [
-			{ maxPct: 0.05, radius: 0 },
-			{ maxPct: 0.15, radius: Math.min(width, height) * 0.12 },
-			{ maxPct: 0.35, radius: Math.min(width, height) * 0.25 },
-			{ maxPct: 1.00, radius: Math.min(width, height) * 0.45 },
-		];
+		// ── 1. Compute chord length for each node ──
+		// Chord = distance from center. Determined by:
+		//   - centrality (high → short chord → near center)
+		//   - linkCount  (many links → shorter chord)
+		//   - maturity   (evergreen/canonical → shorter, seed/wilting → longer)
+		// All combined into a single score 0..1 where 0 = center, 1 = outer ring.
 
-		const nodeRings = new Map<string, number>();
-		sorted.forEach((node, i) => {
-			const pct = i / n;
-			let ring = 3;
-			for (let r = 0; r < ringThresholds.length; r++) {
-				if (pct < ringThresholds[r].maxPct) { ring = r; break; }
-			}
-			nodeRings.set(node.id, ring);
-		});
+		// Find max linkCount for normalization
+		let maxLinks = 1;
+		for (const n of simNodes) {
+			if ((n.linkCount || 0) > maxLinks) maxLinks = n.linkCount || 0;
+		}
 
+		const MATURITY_PULL: Record<string, number> = {
+			canonical: 0.0, evergreen: 0.1, sapling: 0.3, seed: 0.6, wilting: 0.8,
+		};
+
+		const chordLengths = new Map<string, number>();
+		for (const node of simNodes) {
+			// centrality: 0 (peripheral) to ~1 (highly central)
+			const cScore = 1 - Math.min(node.centrality, 1); // invert: high centrality → 0 (center)
+
+			// linkCount: normalized, inverted — many links → closer to center
+			const lScore = 1 - Math.min((node.linkCount || 0) / maxLinks, 1);
+
+			// maturity pull
+			const mScore = MATURITY_PULL[node.maturity || 'seed'] ?? 0.6;
+
+			// Weighted blend: centrality dominates, links and maturity refine
+			const score = cScore * 0.6 + lScore * 0.25 + mScore * 0.15;
+
+			// Chord length: score 0 → center, score 1 → outer ring
+			// Use a small minimum so high-centrality nodes don't pile on (0,0)
+			const chord = Math.max(maxRadius * 0.02, score * maxRadius);
+			chordLengths.set(node.id, chord);
+		}
+
+		// ── 2. Compute angular position (community sectors) ──
 		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
 		const numCommunities = Math.max(communityIds.length, 1);
-		const communityAngle = new Map<number, number>();
-		communityIds.forEach((cid, i) => {
-			communityAngle.set(cid, (i / numCommunities) * Math.PI * 2);
-		});
 		const sectorWidth = (Math.PI * 2) / numCommunities;
+		const communityBaseAngle = new Map<number, number>();
+		communityIds.forEach((cid, i) => {
+			communityBaseAngle.set(cid, (i / numCommunities) * Math.PI * 2);
+		});
 
-		const groups = new Map<string, SimNode[]>();
+		// Group nodes by community for angular distribution within each sector
+		const communityMembers = new Map<number, SimNode[]>();
 		for (const node of simNodes) {
-			const ring = nodeRings.get(node.id) ?? 3;
-			const key = `${ring}:${node.communityId}`;
-			if (!groups.has(key)) groups.set(key, []);
-			groups.get(key)!.push(node);
+			if (!communityMembers.has(node.communityId)) communityMembers.set(node.communityId, []);
+			communityMembers.get(node.communityId)!.push(node);
 		}
 
-		// Absolute boundary — no node may exceed the outermost ring
-		const maxRadius = Math.min(width, height) * 0.45;
+		// ── 3. Position each node: chord length × angle ──
+		for (const [cid, members] of communityMembers) {
+			const baseAngle = communityBaseAngle.get(cid) || 0;
 
-		for (const [key, members] of groups) {
-			const [ringStr, cidStr] = key.split(':');
-			const ring = parseInt(ringStr);
-			const cid = parseInt(cidStr);
-			const baseRadius = ringThresholds[ring]?.radius ?? ringThresholds[3].radius;
-			const baseAngle = communityAngle.get(cid) ?? 0;
+			// Sort members by chord length (closest to center first) for cleaner distribution
+			members.sort((a, b) => (chordLengths.get(a.id) || 0) - (chordLengths.get(b.id) || 0));
 
 			members.forEach((node, i) => {
-				const angleOffset = (i / Math.max(members.length, 1)) * sectorWidth * 0.8;
-				const angle = baseAngle + sectorWidth * 0.1 + angleOffset;
-				const jitter = (Math.random() - 0.5) * baseRadius * 0.12;
-				const rawRadius = ring === 0
-					? Math.random() * Math.min(width, height) * 0.04
-					: baseRadius + jitter;
-				// Clamp: nothing beyond the outer ring
-				const radius = Math.min(rawRadius, maxRadius);
-				node.x = radius * Math.cos(angle);
-				node.y = radius * Math.sin(angle);
+				const chord = chordLengths.get(node.id) || maxRadius;
+				// Spread nodes within their community sector
+				const angleOffset = (i / Math.max(members.length, 1)) * sectorWidth * 0.85;
+				const angle = baseAngle + sectorWidth * 0.075 + angleOffset;
+				node.x = chord * Math.cos(angle);
+				node.y = chord * Math.sin(angle);
 			});
-		}
-
-		// Light collision-avoidance — only for small/medium datasets.
-		if (simNodes.length <= 1500) {
-			simulation = d3.forceSimulation(simNodes)
-				.force('collide', d3.forceCollide<SimNode>().radius(d => d.r + 1.5).strength(0.5))
-				.alphaDecay(0.15)
-				.stop();
-			for (let i = 0; i < 15; i++) simulation.tick();
-
-			// Re-clamp after collision pass — D3 collision can push nodes outward
-			for (const node of simNodes) {
-				const nx = node.x ?? 0, ny = node.y ?? 0;
-				const dist = Math.sqrt(nx * nx + ny * ny);
-				if (dist > maxRadius) {
-					const scale = maxRadius / dist;
-					node.x = nx * scale;
-					node.y = ny * scale;
-				}
-			}
-		}
-
-		// Post-layout enforcement: clamp ALL nodes to the outer ring boundary.
-		// This catches any drift from collision, floating point, or edge cases.
-		for (const node of simNodes) {
-			const nx = node.x ?? 0, ny = node.y ?? 0;
-			const dist = Math.sqrt(nx * nx + ny * ny);
-			if (dist > maxRadius) {
-				const scale = maxRadius / dist;
-				node.x = nx * scale;
-				node.y = ny * scale;
-			}
 		}
 
 		requestDraw();
@@ -681,7 +668,7 @@
 			const cid = n.communityId;
 			if (!communityCenter.has(cid)) communityCenter.set(cid, { x: 0, y: 0 });
 			const c = communityCenter.get(cid)!;
-			c.x += (n.x ?? 0); c.y += (n.y ?? 0);
+			c.x += (n.x || 0); c.y += (n.y || 0);
 		}
 		const counts = new Map<number, number>();
 		for (const n of simNodes) counts.set(n.communityId, (counts.get(n.communityId) ?? 0) + 1);
@@ -714,13 +701,12 @@
 		for (const link of simLinks) {
 			const src = link.source as SimNode;
 			const tgt = link.target as SimNode;
-			const sx = src.x ?? 0, sy = src.y ?? 0;
-			const tx = tgt.x ?? 0, ty = tgt.y ?? 0;
+			const sx = src.x || 0, sy = src.y || 0;
+			const tx = tgt.x || 0, ty = tgt.y || 0;
 
-			// Only draw links where BOTH endpoints are within the viewport.
-			// This prevents "rays to nowhere" — long lines extending to off-screen nodes.
-			if (sx < vpLeft || sx > vpRight || sy < vpTop || sy > vpBottom ||
-				tx < vpLeft || tx > vpRight || ty < vpTop || ty > vpBottom) continue;
+			// Standard viewport culling (both endpoints outside same edge)
+			if ((sx < vpLeft && tx < vpLeft) || (sx > vpRight && tx > vpRight) ||
+				(sy < vpTop && ty < vpTop) || (sy > vpBottom && ty > vpBottom)) continue;
 
 			// Dim links not connected to search matches
 			const searchDim = hasSearch && !searchMatchSet.has(src.id) && !searchMatchSet.has(tgt.id);
@@ -794,7 +780,7 @@
 		}
 
 		for (const n of simNodes) {
-			const x = n.x ?? 0, y = n.y ?? 0;
+			const x = n.x || 0, y = n.y || 0;
 			if (x < vpLeft || x > vpRight || y < vpTop || y > vpBottom) continue;
 
 			const isMatch = hasSearch && searchMatchSet.has(n.id);
@@ -875,7 +861,7 @@
 		for (const n of simNodes) {
 			const cats = searchMatchCats.get(n.id);
 			if (!cats || cats.length === 0) continue;
-			const x = n.x ?? 0, y = n.y ?? 0;
+			const x = n.x || 0, y = n.y || 0;
 			if (x < vpLeft || x > vpRight || y < vpTop || y > vpBottom) continue;
 
 			const isCurrent = currentMatch === n;
@@ -923,7 +909,7 @@
 	}
 
 	function drawHoverLabel(n: SimNode) {
-		const x = n.x ?? 0, y = n.y ?? 0;
+		const x = n.x || 0, y = n.y || 0;
 		const label = n.name;
 		ctx!.font = `${12 / zoom}px system-ui, sans-serif`;
 		const metrics = ctx!.measureText(label);
@@ -985,7 +971,7 @@
 		hoveredNode = null;
 		hoveredLink = null;
 		for (const n of simNodes) {
-			const dx = (n.x ?? 0) - mx, dy = (n.y ?? 0) - my;
+			const dx = (n.x || 0) - mx, dy = (n.y || 0) - my;
 			if (dx * dx + dy * dy < (n.r + 4) * (n.r + 4)) {
 				hoveredNode = n;
 				break;
@@ -1035,10 +1021,10 @@
 		if (simNodes.length === 0) return;
 		let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
 		for (const n of simNodes) {
-			minX = Math.min(minX, (n.x ?? 0) - n.r);
-			maxX = Math.max(maxX, (n.x ?? 0) + n.r);
-			minY = Math.min(minY, (n.y ?? 0) - n.r);
-			maxY = Math.max(maxY, (n.y ?? 0) + n.r);
+			minX = Math.min(minX, (n.x || 0) - n.r);
+			maxX = Math.max(maxX, (n.x || 0) + n.r);
+			minY = Math.min(minY, (n.y || 0) - n.r);
+			maxY = Math.max(maxY, (n.y || 0) + n.r);
 		}
 		const rangeX = maxX - minX || 1;
 		const rangeY = maxY - minY || 1;
