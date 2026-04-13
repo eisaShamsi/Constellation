@@ -9,10 +9,13 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { t, dir } from '$lib/i18n';
 
+	import type { UniverseHealth } from '$lib/graph/clusterEngine';
+
 	let {
 		nodeCount = 0,
 		linkCount = 0,
 		orphanCount = 0,
+		health = null as UniverseHealth | null,
 		bridges = [] as { id: string; name: string; centrality: number }[],
 		libraryBreakdown = [] as { name: string; color: string; count: number }[],
 		onNoteClick,
@@ -20,10 +23,15 @@
 		nodeCount?: number;
 		linkCount?: number;
 		orphanCount?: number;
+		health?: UniverseHealth | null;
 		bridges?: { id: string; name: string; centrality: number }[];
 		libraryBreakdown?: { name: string; color: string; count: number }[];
 		onNoteClick?: (name: string) => void;
 	} = $props();
+
+	function healthColor(score: number): string {
+		return score >= 70 ? '#16a34a' : score >= 40 ? '#f59e0b' : '#ef4444';
+	}
 
 	const isRTL = $derived($dir === 'rtl');
 
@@ -81,6 +89,24 @@
 <div class="sp-root" dir={isRTL ? 'rtl' : 'ltr'}>
 	<!-- Section 1: Overview -->
 	<div class="sp-overview">
+		{#if health}
+			<div class="sp-health">
+				<div class="sp-health-score">
+					<span class="sp-health-num" style="color:{healthColor(health.score)}">{Math.round(health.score)}</span>
+					<span class="sp-health-label">{$t('lens.universeHealth') || 'Universe Health'}</span>
+				</div>
+				<div class="sp-health-grid">
+					<div class="sp-health-metric">
+						<span class="sp-health-val">{(health.connectivity).toFixed(1)}</span>
+						<span class="sp-health-key">{$t('lens.connectivity') || 'Links/Note'}</span>
+					</div>
+					<div class="sp-health-metric">
+						<span class="sp-health-val">{Math.round(health.entropy * 100)}%</span>
+						<span class="sp-health-key">{$t('lens.entropy') || 'Diversity'}</span>
+					</div>
+				</div>
+			</div>
+		{/if}
 		<div class="sp-overview-title">{$t('sightPanel.overview') || 'Overview'}</div>
 		<div class="sp-stats-grid">
 			<div class="sp-stat">
@@ -214,6 +240,15 @@
 		border-inline-start: 1px solid var(--background-modifier-border, #e5e7eb);
 		font-size: 11px; display: flex; flex-direction: column; gap: 0;
 	}
+	/* Health */
+	.sp-health { text-align: center; padding-bottom: 10px; margin-bottom: 8px; border-bottom: 1px solid var(--background-modifier-border, #e5e7eb); }
+	.sp-health-score { display: flex; align-items: baseline; justify-content: center; gap: 6px; }
+	.sp-health-num { font-size: 36px; font-weight: 800; line-height: 1; }
+	.sp-health-label { font-size: 11px; color: var(--text-muted, #64748b); }
+	.sp-health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; }
+	.sp-health-metric { text-align: center; padding: 3px; background: var(--background-secondary, #f8fafc); border-radius: 4px; }
+	.sp-health-val { display: block; font-size: 13px; font-weight: 700; color: var(--text-normal, #1a1a1a); }
+	.sp-health-key { font-size: 9px; color: var(--text-faint, #94a3b8); text-transform: uppercase; letter-spacing: 0.5px; }
 	/* Overview */
 	.sp-overview { padding: 12px; border-bottom: 1px solid var(--background-modifier-border, #e5e7eb); }
 	.sp-overview-title { font-size: 12px; font-weight: 700; color: var(--text-normal, #1a1a1a); margin-bottom: 8px; }

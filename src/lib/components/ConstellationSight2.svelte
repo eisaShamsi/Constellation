@@ -1169,6 +1169,7 @@
 				nodeCount={simNodes.length}
 				linkCount={simLinks.length}
 				orphanCount={orphans}
+				{health}
 				{bridges}
 				libraryBreakdown={[...libMap.values()].sort((a, b) => b.count - a.count)}
 				onNoteClick={(name) => {
