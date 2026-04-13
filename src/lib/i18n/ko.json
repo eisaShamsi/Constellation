@@ -16,7 +16,7 @@
       "keyboard": "단축키",
       "features": "플러그인",
       "hotkeys": "단축키",
-      "plugins": "플러그인",
+      "plugins": "코어 플러그인",
       "templates": "템플릿",
       "knowledge": "지식 관리"
     },
