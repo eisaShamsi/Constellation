@@ -61,6 +61,15 @@
 	let breadcrumb = $state<{ name: string; node: any }[]>([]);
 	let tooltip = $state<{ x: number; y: number; node: MapNode; visible: boolean }>({ x: 0, y: 0, node: null as any, visible: false });
 
+	// Search
+	let searchVisible = $state(false);
+	let searchQuery = $state('');
+	let searchResults = $state<MapNode[]>([]);
+	let searchIdx = $state(0);
+
+	// Settings
+	let settingsVisible = $state(false);
+
 	// Maturity colors
 	const MATURITY_COLORS: Record<string, string> = {
 		seed: '#d1d5db',
@@ -353,6 +362,54 @@
 		}
 	});
 
+	// ─── Search within Map ──────────────────────────────────
+	function collectAllNodes(node: MapNode, results: MapNode[] = []): MapNode[] {
+		results.push(node);
+		if (node.children) for (const c of node.children) collectAllNodes(c, results);
+		return results;
+	}
+
+	function executeMapSearch() {
+		if (!searchQuery.trim() || !mapData) { searchResults = []; searchIdx = 0; return; }
+		const q = searchQuery.toLowerCase();
+		const all = collectAllNodes(mapData);
+		searchResults = all.filter(n => n.name.toLowerCase().includes(q));
+		searchIdx = 0;
+		if (searchResults.length > 0) highlightSearchResult();
+	}
+
+	function highlightSearchResult() {
+		const match = searchResults[searchIdx];
+		if (!match || !svgEl) return;
+		// Remove old highlights
+		d3.select(svgEl).selectAll('path').attr('stroke-width', 0.5).attr('stroke', '#fff');
+		// Find and highlight the matching arc
+		d3.select(svgEl).selectAll('path').each(function(d: any) {
+			if (d?.data?.name === match.name && d?.data?.path === match.path) {
+				d3.select(this).attr('stroke', '#f59e0b').attr('stroke-width', 3);
+			}
+		});
+	}
+
+	function nextMapResult() {
+		if (searchResults.length === 0) return;
+		searchIdx = (searchIdx + 1) % searchResults.length;
+		highlightSearchResult();
+	}
+
+	function prevMapResult() {
+		if (searchResults.length === 0) return;
+		searchIdx = (searchIdx - 1 + searchResults.length) % searchResults.length;
+		highlightSearchResult();
+	}
+
+	function resetMapSearch() {
+		searchQuery = '';
+		searchResults = [];
+		searchIdx = 0;
+		if (svgEl) d3.select(svgEl).selectAll('path').attr('stroke-width', 0.5).attr('stroke', '#fff');
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
 			if (breadcrumb.length > 0) {
@@ -381,6 +438,14 @@
 				<option value="stratum">{$t('constellationMap.colorByStratum') || 'Stratum'}</option>
 				<option value="library">{$t('constellationMap.colorByLibrary') || 'Library'}</option>
 			</select>
+			<!-- Search toggle -->
+			<button class="cmap-toolbar-btn" class:active={searchVisible} onclick={() => { searchVisible = !searchVisible; if (!searchVisible) resetMapSearch(); }} title={$t('layout.search') || 'Search'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+			</button>
+			<!-- Fit to Screen (zoom to root) -->
+			<button class="cmap-toolbar-btn" onclick={zoomToRoot} title={$t('lens.fitToScreen') || 'Fit to screen'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+			</button>
 			{#if onClose}
 				<button class="cmap-close" onclick={onClose}>×</button>
 			{/if}
@@ -396,6 +461,32 @@
 				<span class="cmap-bc-sep">/</span>
 				<button class="cmap-bc-item" class:active={i === breadcrumb.length - 1} onclick={() => zoomToBreadcrumb(i)} dir="auto">{bc.name}</button>
 			{/each}
+		</div>
+	{/if}
+
+	<!-- Search bar -->
+	{#if searchVisible}
+		<div class="cmap-search">
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+			<input type="text" dir="auto"
+				placeholder={$t('lens.searchAll') || 'Search... (Enter)'}
+				bind:value={searchQuery}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') { e.preventDefault(); searchResults.length > 0 ? (e.shiftKey ? prevMapResult() : nextMapResult()) : executeMapSearch(); }
+					if (e.key === 'Escape') { searchVisible = false; resetMapSearch(); e.stopPropagation(); }
+				}} />
+			<button class="cmap-search-clear" onclick={resetMapSearch}>×</button>
+			{#if searchResults.length > 0}
+				<span class="cmap-search-count">{searchIdx + 1}/{searchResults.length}</span>
+				<button class="cmap-search-nav" onclick={prevMapResult}>
+					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+				</button>
+				<button class="cmap-search-nav" onclick={nextMapResult}>
+					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+				</button>
+			{:else if searchQuery}
+				<span class="cmap-search-none">0</span>
+			{/if}
 		</div>
 	{/if}
 
@@ -488,12 +579,36 @@
 		background: var(--background-secondary, #f5f5f5); font-size: 12px; cursor: pointer;
 		color: var(--text-normal, #333);
 	}
+	.cmap-toolbar-btn {
+		width: 28px; height: 28px; border: none; border-radius: 4px;
+		background: none; color: var(--text-muted, #888); cursor: pointer;
+		display: flex; align-items: center; justify-content: center;
+	}
+	.cmap-toolbar-btn:hover { background: var(--background-modifier-hover, #f1f5f9); color: var(--text-normal, #333); }
+	.cmap-toolbar-btn.active { background: var(--interactive-accent, #7c3aed); color: white; }
 	.cmap-close {
 		width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border, #ddd);
 		background: transparent; color: var(--text-muted, #888); font-size: 18px;
 		cursor: pointer; display: flex; align-items: center; justify-content: center;
 	}
 	.cmap-close:hover { background: var(--border, #eee); color: var(--text-normal, #333); }
+
+	/* Search bar */
+	.cmap-search {
+		display: flex; align-items: center; gap: 6px;
+		padding: 6px 20px; border-bottom: 1px solid var(--border, #e0e0e0);
+		flex-shrink: 0;
+	}
+	.cmap-search svg { color: var(--text-muted, #888); flex-shrink: 0; }
+	.cmap-search input {
+		border: none; outline: none; background: none; font-size: 12px;
+		font-family: inherit; color: var(--text-normal, #333); flex: 1; min-width: 150px;
+	}
+	.cmap-search-clear { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 0 2px; }
+	.cmap-search-count { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+	.cmap-search-none { font-size: 10px; color: #ef4444; white-space: nowrap; }
+	.cmap-search-nav { border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 0 2px; display: flex; align-items: center; }
+	.cmap-search-nav:hover { color: var(--text-normal); }
 
 	.cmap-breadcrumb {
 		display: flex; align-items: center; gap: 4px; padding: 6px 20px;
