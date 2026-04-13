@@ -20,7 +20,8 @@
 	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
 	import {
 		stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual,
-		universalSearch, embedText, appSettings, type UniversalSearchResponse,
+		universalSearch, constellationSearch, parseSearchQuery,
+		embedText, appSettings, type UniversalSearchResponse,
 	} from '$lib/libraries/store';
 	import { get } from 'svelte/store';
 	import type { SkyNode, SkyLink } from '$lib/libraries/store';
@@ -348,76 +349,93 @@
 
 	// ─── Search ───────────────────────────────────────────────
 	async function executeSearch() {
-		if (!searchQuery.trim()) { searchResults = []; searchIdx = 0; searchMatchSet = new Set(); requestDraw(); return; }
+		if (!searchQuery.trim()) { searchResults = []; searchIdx = 0; searchMatchSet = new Set(); searchMatchCats = new Map(); requestDraw(); return; }
 		addSearchHistory(searchQuery);
 		historyItems = readSearchHistory();
-		const q = searchQuery.toLowerCase();
 
-		// 1. Title matches (instant, local)
-		const titleMatchIds = new Set<string>();
-		if (searchScope === 'all' || searchScope === 'title') {
-			for (const n of simNodes) {
-				if (n.name.toLowerCase().includes(q)) titleMatchIds.add(n.id);
-			}
-		}
+		const cleanQ = stripInvisibleChars(searchQuery);
+		const ops = getSearchOps();
+		const canonicalized = canonicalizeSearchQuery(cleanQ, ops);
+		const isAdvanced = hasAdvancedSyntaxMultilingual(canonicalized, ops);
 
-		// 2. Backend search
-		const contentMatchIds = new Set<string>();
-		const tagMatchIds = new Set<string>();
-		const propertyMatchIds = new Set<string>();
-		const semanticMatchIds = new Set<string>();
-		if (searchScope !== 'title') {
-			try {
-				const cleanQ = stripInvisibleChars(searchQuery);
-				const ops = getSearchOps();
-				const canonicalized = canonicalizeSearchQuery(cleanQ, ops);
-
-				let qEmbed: number[] | null = null;
-				if ((searchScope === 'all' || searchScope === 'semantic') && get(appSettings).enabledFeatures?.semanticSearch) {
-					try { qEmbed = await embedText(canonicalized); } catch {}
-				}
-
-				const resp: any = await universalSearch(canonicalized, qEmbed, 200);
-				if (searchScope === 'all' || searchScope === 'content') {
-					for (const r of resp?.contents ?? []) contentMatchIds.add(r.name.toLowerCase());
-				}
-				if (searchScope === 'all' || searchScope === 'tag') {
-					for (const r of resp?.tags ?? []) tagMatchIds.add(r.name.toLowerCase());
-				}
-				if (searchScope === 'all' || searchScope === 'property') {
-					for (const r of resp?.properties ?? []) propertyMatchIds.add(r.name.toLowerCase());
-				}
-				if (searchScope === 'all' || searchScope === 'semantic') {
-					for (const r of resp?.semantic ?? []) semanticMatchIds.add(r.name.toLowerCase());
-				}
-				if (searchScope === 'all') {
-					for (const r of resp?.titles ?? []) titleMatchIds.add(r.name.toLowerCase());
-				}
-			} catch {}
-		}
-
-		// 3. Classify matches
-		const allIds = new Set([...titleMatchIds, ...contentMatchIds, ...tagMatchIds, ...propertyMatchIds, ...semanticMatchIds]);
 		const nodeMap = new Map(simNodes.map(n => [n.id, n]));
 		const matches: SearchMatch[] = [];
 
-		for (const id of allIds) {
-			const node = nodeMap.get(id);
-			if (!node) continue;
-			const cats: string[] = [];
-			if (titleMatchIds.has(id)) cats.push('T');
-			if (contentMatchIds.has(id)) cats.push('C');
-			if (tagMatchIds.has(id)) cats.push('#');
-			if (propertyMatchIds.has(id)) cats.push('P');
-			if (semanticMatchIds.has(id)) cats.push('S');
-			matches.push({ node, matchType: cats.join('·') || 'match', matchCategories: cats });
+		if (isAdvanced) {
+			// ── Structured query: links to/from, orphans, mutual, cognitive types ──
+			// Uses parseSearchQuery → constellationSearch (same as SearchHub)
+			try {
+				const req = parseSearchQuery(canonicalized);
+				const results = await constellationSearch(req);
+				for (const r of results) {
+					const id = r.name.toLowerCase();
+					const node = nodeMap.get(id);
+					if (!node) continue;
+					const cat = r.match_type === 'wikilink' ? 'W' : r.match_type === 'title' ? 'T' : r.match_type === 'content' ? 'C' : 'L';
+					matches.push({ node, matchType: cat, matchCategories: [cat] });
+				}
+			} catch {}
+		} else {
+			// ── Free text: universal search across all categories ──
+			const q = searchQuery.toLowerCase();
+			const titleMatchIds = new Set<string>();
+			const contentMatchIds = new Set<string>();
+			const tagMatchIds = new Set<string>();
+			const propertyMatchIds = new Set<string>();
+			const semanticMatchIds = new Set<string>();
+
+			// Local title matches
+			if (searchScope === 'all' || searchScope === 'title') {
+				for (const n of simNodes) {
+					if (n.name.toLowerCase().includes(q)) titleMatchIds.add(n.id);
+				}
+			}
+
+			// Backend search
+			if (searchScope !== 'title') {
+				try {
+					let qEmbed: number[] | null = null;
+					if ((searchScope === 'all' || searchScope === 'semantic') && get(appSettings).enabledFeatures?.semanticSearch) {
+						try { qEmbed = await embedText(canonicalized); } catch {}
+					}
+					const resp: any = await universalSearch(canonicalized, qEmbed, 200);
+					if (searchScope === 'all' || searchScope === 'content') {
+						for (const r of resp?.contents ?? []) contentMatchIds.add(r.name.toLowerCase());
+					}
+					if (searchScope === 'all' || searchScope === 'tag') {
+						for (const r of resp?.tags ?? []) tagMatchIds.add(r.name.toLowerCase());
+					}
+					if (searchScope === 'all' || searchScope === 'property') {
+						for (const r of resp?.properties ?? []) propertyMatchIds.add(r.name.toLowerCase());
+					}
+					if (searchScope === 'all' || searchScope === 'semantic') {
+						for (const r of resp?.semantic ?? []) semanticMatchIds.add(r.name.toLowerCase());
+					}
+					if (searchScope === 'all') {
+						for (const r of resp?.titles ?? []) titleMatchIds.add(r.name.toLowerCase());
+					}
+				} catch {}
+			}
+
+			// Classify
+			const allIds = new Set([...titleMatchIds, ...contentMatchIds, ...tagMatchIds, ...propertyMatchIds, ...semanticMatchIds]);
+			for (const id of allIds) {
+				const node = nodeMap.get(id);
+				if (!node) continue;
+				const cats: string[] = [];
+				if (titleMatchIds.has(id)) cats.push('T');
+				if (contentMatchIds.has(id)) cats.push('C');
+				if (tagMatchIds.has(id)) cats.push('#');
+				if (propertyMatchIds.has(id)) cats.push('P');
+				if (semanticMatchIds.has(id)) cats.push('S');
+				matches.push({ node, matchType: cats.join('·') || 'match', matchCategories: cats });
+			}
 		}
 
 		matches.sort((a, b) => (b.matchCategories?.length ?? 0) - (a.matchCategories?.length ?? 0));
 		searchResults = matches;
 		searchIdx = 0;
 		searchMatchSet = new Set(matches.map(m => m.node.id));
-		// Build category map for canvas badge rendering
 		const catMap = new Map<string, string[]>();
 		for (const m of matches) catMap.set(m.node.id, m.matchCategories);
 		searchMatchCats = catMap;
