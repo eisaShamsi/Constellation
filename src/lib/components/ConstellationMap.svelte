@@ -256,6 +256,13 @@
 			.attr('stroke', '#fff')
 			.attr('stroke-width', 0.5)
 			.style('cursor', 'pointer')
+			.each(function(d: any) {
+				const data = d.data as MapNode;
+				const typeLabel = data.node_type === 'child_universe' ? 'cUniverse'
+					: data.node_type === 'library' ? 'Library'
+					: data.is_dir ? 'Folder' : 'Note';
+				d3.select(this).append('title').text(`${data.name} (${typeLabel})`);
+			})
 			.on('click', (_event: MouseEvent, d: any) => {
 				const data = d.data as MapNode;
 				if (data.is_dir && data.children && data.children.length > 0) {
