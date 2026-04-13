@@ -292,6 +292,9 @@
 			groups.get(key)!.push(node);
 		}
 
+		// Absolute boundary — no node may exceed the outermost ring
+		const maxRadius = Math.min(width, height) * 0.45;
+
 		for (const [key, members] of groups) {
 			const [ringStr, cidStr] = key.split(':');
 			const ring = parseInt(ringStr);
@@ -302,10 +305,12 @@
 			members.forEach((node, i) => {
 				const angleOffset = (i / Math.max(members.length, 1)) * sectorWidth * 0.8;
 				const angle = baseAngle + sectorWidth * 0.1 + angleOffset;
-				const jitter = (Math.random() - 0.5) * baseRadius * 0.15;
-				const radius = ring === 0
+				const jitter = (Math.random() - 0.5) * baseRadius * 0.12;
+				const rawRadius = ring === 0
 					? Math.random() * Math.min(width, height) * 0.04
 					: baseRadius + jitter;
+				// Clamp: nothing beyond the outer ring
+				const radius = Math.min(rawRadius, maxRadius);
 				node.x = radius * Math.cos(angle);
 				node.y = radius * Math.sin(angle);
 			});
