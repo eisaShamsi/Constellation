@@ -1621,7 +1621,7 @@
 								</div>
 								<div class="theme-card-name">{theme.name}</div>
 								{#if !BUILTIN_THEMES.find(b => b.id === theme.id)}
-									<button class="theme-edit-btn" onclick|stopPropagation={() => startEditTheme(theme)} title="Edit">✏️</button>
+									<button class="theme-edit-btn" onclick={(e) => { e.stopPropagation(); startEditTheme(theme); }} title="Edit">✏️</button>
 								{/if}
 							</button>
 						{/each}
