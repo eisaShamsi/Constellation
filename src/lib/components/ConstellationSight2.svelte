@@ -475,6 +475,12 @@
 		ctx.translate(w / 2 + panX, h / 2 + panY);
 		ctx.scale(zoom, zoom);
 
+		// Hard clip: nothing renders beyond the outer ring boundary
+		const clipR = Math.min(w, h) * 0.47;
+		ctx.beginPath();
+		ctx.arc(0, 0, clipR, 0, Math.PI * 2);
+		ctx.clip();
+
 		drawRadialGuides();
 		if (showRegions) drawCommunityRegions();
 		drawGapLines();
