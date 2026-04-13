@@ -1421,7 +1421,15 @@
         "linkExemplifies": "例证",
         "linkGeneralizes": "概括",
         "linkDerivesFrom": "源自",
-        "linkPartOf": "部分"
+        "linkPartOf": "部分",
+        "colorLibrary": "颜色 = 库",
+        "clickConnections": "点击 = 显示连接",
+        "thinHypothesis": "细线 = 假设",
+        "thickEstablished": "粗线 = 已确立",
+        "arrowsDirection": "箭头 = 方向",
+        "settingStroke": "线条粗细",
+        "settingOpacity": "不透明度",
+        "settingArrows": "箭头"
     },
     "canonical": {
         "migrationTitle": "正在准备您的资料库",

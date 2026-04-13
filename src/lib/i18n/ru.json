@@ -1421,7 +1421,15 @@
         "linkExemplifies": "иллюстрирует",
         "linkGeneralizes": "обобщает",
         "linkDerivesFrom": "производное от",
-        "linkPartOf": "часть"
+        "linkPartOf": "часть",
+        "colorLibrary": "Цвет = библиотека",
+        "clickConnections": "Клик = показать связи",
+        "thinHypothesis": "тонкий = гипотеза",
+        "thickEstablished": "толстый = подтверждённый",
+        "arrowsDirection": "стрелки = направление",
+        "settingStroke": "Толщина",
+        "settingOpacity": "Прозрачность",
+        "settingArrows": "Стрелки"
     },
     "canonical": {
         "migrationTitle": "Подготовка вашей библиотеки",

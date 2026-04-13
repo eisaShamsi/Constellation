@@ -1425,7 +1425,15 @@
         "linkExemplifies": "يمثّل",
         "linkGeneralizes": "يعمّم",
         "linkDerivesFrom": "مشتق من",
-        "linkPartOf": "جزء من"
+        "linkPartOf": "جزء من",
+        "colorLibrary": "اللون = المكتبة",
+        "clickConnections": "انقر = عرض الروابط",
+        "thinHypothesis": "رفيع = فرضية",
+        "thickEstablished": "سميك = مثبت",
+        "arrowsDirection": "أسهم = الاتجاه",
+        "settingStroke": "السُمك",
+        "settingOpacity": "الشفافية",
+        "settingArrows": "الأسهم"
     },
     "canonical": {
         "migrationTitle": "تجهيز مكتبتك",

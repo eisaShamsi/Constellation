@@ -1421,7 +1421,15 @@
         "linkExemplifies": "उदाहरण",
         "linkGeneralizes": "सामान्यीकरण",
         "linkDerivesFrom": "व्युत्पन्न",
-        "linkPartOf": "का भाग"
+        "linkPartOf": "का भाग",
+        "colorLibrary": "रंग = पुस्तकालय",
+        "clickConnections": "क्लिक = कनेक्शन दिखाएं",
+        "thinHypothesis": "पतला = परिकल्पना",
+        "thickEstablished": "मोटा = स्थापित",
+        "arrowsDirection": "तीर = दिशा",
+        "settingStroke": "मोटाई",
+        "settingOpacity": "पारदर्शिता",
+        "settingArrows": "तीर"
     },
     "canonical": {
         "migrationTitle": "आपकी लाइब्रेरी तैयार हो रही है",

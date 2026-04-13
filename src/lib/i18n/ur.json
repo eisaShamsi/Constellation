@@ -1421,7 +1421,15 @@
         "linkExemplifies": "مثال",
         "linkGeneralizes": "تعمیم",
         "linkDerivesFrom": "ماخوذ",
-        "linkPartOf": "حصہ"
+        "linkPartOf": "حصہ",
+        "colorLibrary": "رنگ = لائبریری",
+        "clickConnections": "کلک = روابط دکھائیں",
+        "thinHypothesis": "پتلا = مفروضہ",
+        "thickEstablished": "موٹا = ثابت شدہ",
+        "arrowsDirection": "تیر = سمت",
+        "settingStroke": "موٹائی",
+        "settingOpacity": "شفافیت",
+        "settingArrows": "تیر"
     },
     "canonical": {
         "migrationTitle": "آپ کی لائبریری تیار ہو رہی ہے",

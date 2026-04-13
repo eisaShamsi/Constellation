@@ -1421,7 +1421,15 @@
         "linkExemplifies": "نمونه",
         "linkGeneralizes": "تعمیم",
         "linkDerivesFrom": "مشتق از",
-        "linkPartOf": "بخشی از"
+        "linkPartOf": "بخشی از",
+        "colorLibrary": "رنگ = کتابخانه",
+        "clickConnections": "کلیک = نمایش اتصالات",
+        "thinHypothesis": "نازک = فرضیه",
+        "thickEstablished": "ضخیم = تثبیت‌شده",
+        "arrowsDirection": "فلش‌ها = جهت",
+        "settingStroke": "ضخامت",
+        "settingOpacity": "شفافیت",
+        "settingArrows": "فلش‌ها"
     },
     "canonical": {
         "migrationTitle": "آماده‌سازی کتابخانه شما",

@@ -1421,7 +1421,15 @@
         "linkExemplifies": "예시",
         "linkGeneralizes": "일반화",
         "linkDerivesFrom": "유래",
-        "linkPartOf": "일부"
+        "linkPartOf": "일부",
+        "colorLibrary": "색상 = 라이브러리",
+        "clickConnections": "클릭 = 연결 표시",
+        "thinHypothesis": "얇은 = 가설",
+        "thickEstablished": "굵은 = 확립됨",
+        "arrowsDirection": "화살표 = 방향",
+        "settingStroke": "선 굵기",
+        "settingOpacity": "불투명도",
+        "settingArrows": "화살표"
     },
     "canonical": {
         "migrationTitle": "라이브러리 준비 중",

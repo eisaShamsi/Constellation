@@ -1421,7 +1421,15 @@
         "linkExemplifies": "例示",
         "linkGeneralizes": "一般化",
         "linkDerivesFrom": "由来",
-        "linkPartOf": "一部"
+        "linkPartOf": "一部",
+        "colorLibrary": "色 = ライブラリ",
+        "clickConnections": "クリック = 接続を表示",
+        "thinHypothesis": "細い = 仮説",
+        "thickEstablished": "太い = 確立",
+        "arrowsDirection": "矢印 = 方向",
+        "settingStroke": "線の太さ",
+        "settingOpacity": "不透明度",
+        "settingArrows": "矢印"
     },
     "canonical": {
         "migrationTitle": "ライブラリを準備中",

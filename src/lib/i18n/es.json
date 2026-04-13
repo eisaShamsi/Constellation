@@ -1421,7 +1421,15 @@
         "linkExemplifies": "ejemplifica",
         "linkGeneralizes": "generaliza",
         "linkDerivesFrom": "derivado de",
-        "linkPartOf": "parte de"
+        "linkPartOf": "parte de",
+        "colorLibrary": "Color = biblioteca",
+        "clickConnections": "Clic = mostrar conexiones",
+        "thinHypothesis": "fino = hipótesis",
+        "thickEstablished": "grueso = establecido",
+        "arrowsDirection": "flechas = dirección",
+        "settingStroke": "Grosor",
+        "settingOpacity": "Opacidad",
+        "settingArrows": "Flechas"
     },
     "canonical": {
         "migrationTitle": "Preparando tu biblioteca",

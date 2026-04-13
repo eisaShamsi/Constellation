@@ -1421,7 +1421,15 @@
         "linkExemplifies": "veranschaulicht",
         "linkGeneralizes": "verallgemeinert",
         "linkDerivesFrom": "abgeleitet von",
-        "linkPartOf": "Teil von"
+        "linkPartOf": "Teil von",
+        "colorLibrary": "Farbe = Bibliothek",
+        "clickConnections": "Klick = Verbindungen zeigen",
+        "thinHypothesis": "dünn = Hypothese",
+        "thickEstablished": "dick = gesichert",
+        "arrowsDirection": "Pfeile = Richtung",
+        "settingStroke": "Strichstärke",
+        "settingOpacity": "Deckkraft",
+        "settingArrows": "Pfeile"
     },
     "canonical": {
         "migrationTitle": "Bibliothek wird vorbereitet",

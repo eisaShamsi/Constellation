@@ -1421,7 +1421,15 @@
         "linkExemplifies": "örnekler",
         "linkGeneralizes": "genelleştirir",
         "linkDerivesFrom": "türetilmiş",
-        "linkPartOf": "parçası"
+        "linkPartOf": "parçası",
+        "colorLibrary": "Renk = kütüphane",
+        "clickConnections": "Tıkla = bağlantıları göster",
+        "thinHypothesis": "ince = hipotez",
+        "thickEstablished": "kalın = kanıtlanmış",
+        "arrowsDirection": "oklar = yön",
+        "settingStroke": "Kalınlık",
+        "settingOpacity": "Opaklık",
+        "settingArrows": "Oklar"
     },
     "canonical": {
         "migrationTitle": "Kütüphaneniz hazırlanıyor",

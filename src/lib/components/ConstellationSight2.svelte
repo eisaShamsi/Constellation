@@ -1061,15 +1061,15 @@
 					</label>
 					<div class="sight2-settings-title" style="margin-top:4px">{$t('searchHub.linksTo') || 'Links'}</div>
 					<label class="sight2-settings-slider">
-						<span>Stroke: {linkStrokeMul.toFixed(1)}×</span>
+						<span>{$t("lens.settingStroke") || "Stroke"}: {linkStrokeMul.toFixed(1)}×</span>
 						<input type="range" min="0.5" max="4" step="0.25" bind:value={linkStrokeMul} oninput={() => { requestDraw(); persistSettings(); }} />
 					</label>
 					<label class="sight2-settings-slider">
-						<span>Opacity: {Math.round(linkOpacity * 100)}%</span>
+						<span>{$t("lens.settingOpacity") || "Opacity"}: {Math.round(linkOpacity * 100)}%</span>
 						<input type="range" min="0.1" max="1" step="0.05" bind:value={linkOpacity} oninput={() => { requestDraw(); persistSettings(); }} />
 					</label>
 					<label class="sight2-settings-slider">
-						<span>Arrows: {arrowSize}px</span>
+						<span>{$t("lens.settingArrows") || "Arrows"}: {arrowSize}px</span>
 						<input type="range" min="2" max="16" step="1" bind:value={arrowSize} oninput={() => { requestDraw(); persistSettings(); }} />
 					</label>
 				</div>
@@ -1098,52 +1098,52 @@
 						<span class="sight2-lg-dot" style="background:#a78bfa"></span>
 						<span class="sight2-lg-dot" style="background:#34d399"></span>
 						<span class="sight2-lg-dot" style="background:#60a5fa"></span>
-						<span>Color = library</span>
+						<span>{$t("lens.colorLibrary") || "Color = library"}</span>
 					</div>
 					<div class="sight2-legend-row">
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
-						<span>Click = show connections</span>
+						<span>{$t("lens.clickConnections") || "Click = show connections"}</span>
 					</div>
 					<div class="sight2-legend-divider"></div>
 					<!-- Link types -->
 					<div class="sight2-legend-title">{$t('searchHub.linksTo') || 'Link Types'}</div>
 					<div class="sight2-legend-row">
 						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#4A9EFF" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#4A9EFF"/></svg>
-						<span>supports</span>
+						<span>{$t("lens.linkSupports") || "supports"}</span>
 					</div>
 					<div class="sight2-legend-row">
 						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FF4A4A" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FF4A4A"/></svg>
-						<span>contradicts</span>
+						<span>{$t("lens.linkContradicts") || "contradicts"}</span>
 					</div>
 					<div class="sight2-legend-row">
 						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FF8C42" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FF8C42"/></svg>
-						<span>causes</span>
+						<span>{$t("lens.linkCauses") || "causes"}</span>
 					</div>
 					<div class="sight2-legend-row">
 						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#4AFF88" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#4AFF88"/></svg>
-						<span>exemplifies</span>
+						<span>{$t("lens.linkExemplifies") || "exemplifies"}</span>
 					</div>
 					<div class="sight2-legend-row">
 						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#C084FC" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#C084FC"/></svg>
-						<span>generalizes</span>
+						<span>{$t("lens.linkGeneralizes") || "generalizes"}</span>
 					</div>
 					<div class="sight2-legend-row">
 						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FACC15" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FACC15"/></svg>
-						<span>derives-from</span>
+						<span>{$t("lens.linkDerivesFrom") || "derives-from"}</span>
 					</div>
 					<div class="sight2-legend-divider"></div>
 					<!-- Confidence = thickness -->
 					<div class="sight2-legend-row">
 						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#94a3b8" stroke-width="1"/></svg>
-						<span>thin = hypothesis</span>
+						<span>{$t("lens.thinHypothesis") || "thin = hypothesis"}</span>
 					</div>
 					<div class="sight2-legend-row">
 						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#4A9EFF" stroke-width="3"/></svg>
-						<span>thick = established</span>
+						<span>{$t("lens.thickEstablished") || "thick = established"}</span>
 					</div>
 					<div class="sight2-legend-row">
 						<svg width="20" height="6"><polygon points="0,3 6,0 6,6" fill="#4A9EFF"/><polygon points="8,3 14,0 14,6" fill="#4A9EFF"/></svg>
-						<span>arrows = direction</span>
+						<span>{$t("lens.arrowsDirection") || "arrows = direction"}</span>
 					</div>
 				</div>
 			{/if}
