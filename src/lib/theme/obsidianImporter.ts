@@ -56,12 +56,19 @@ export function parseObsidianCSS(css: string, name: string, author: string, mode
 	const rootVars = extractVariables(css, ':root');
 	const bodyVars = extractVariables(css, 'body');
 
+	const slug = name.toLowerCase().replace(/\s+/g, '-');
+	const lightId = `obsidian-${slug}-light`;
+	const darkId = `obsidian-${slug}-dark`;
+
 	if (modes.includes('light') || Object.keys(lightVars).length > 0) {
 		const vars = { ...rootVars, ...bodyVars, ...lightVars };
 		themes.push({
-			id: `obsidian-${name.toLowerCase().replace(/\s+/g, '-')}-light`,
+			id: lightId,
 			name: `${name} Light`,
 			type: 'light',
+			pairedThemeId: darkId, // auto-switch counterpart
+			author,
+			source: 'obsidian',
 			colors: mapToColors(vars, 'light'),
 			customCSS: adaptedCSS,
 		});
@@ -70,9 +77,12 @@ export function parseObsidianCSS(css: string, name: string, author: string, mode
 	if (modes.includes('dark') || Object.keys(darkVars).length > 0) {
 		const vars = { ...rootVars, ...bodyVars, ...darkVars };
 		themes.push({
-			id: `obsidian-${name.toLowerCase().replace(/\s+/g, '-')}-dark`,
+			id: darkId,
 			name: `${name} Dark`,
 			type: 'dark',
+			pairedThemeId: lightId, // auto-switch counterpart
+			author,
+			source: 'obsidian',
 			colors: mapToColors(vars, 'dark'),
 			customCSS: adaptedCSS,
 		});
@@ -83,9 +93,11 @@ export function parseObsidianCSS(css: string, name: string, author: string, mode
 		const vars = { ...rootVars, ...bodyVars, ...lightVars, ...darkVars };
 		const type = modes.includes('dark') ? 'dark' : 'light';
 		themes.push({
-			id: `obsidian-${name.toLowerCase().replace(/\s+/g, '-')}`,
+			id: `obsidian-${slug}`,
 			name,
 			type,
+			author,
+			source: 'obsidian',
 			colors: mapToColors(vars, type),
 			customCSS: adaptedCSS,
 		});
@@ -204,43 +216,166 @@ function resolveColor(vars: Record<string, string>, candidates: string[], fallba
 
 /**
  * Adapt Obsidian CSS for Constellation.
- * Extracts only CSS variable declarations from compatible selectors.
- * Strips Obsidian-specific component selectors (.workspace, .nav-*, etc.)
- * that don't exist in Constellation.
+ *
+ * Three-stage adaptation:
+ * 1. Preserve @import and @font-face declarations (fonts the theme needs)
+ * 2. Extract ALL CSS variables from compatible selectors (not just known ones)
+ * 3. Map Obsidian component selectors to Constellation equivalents via class shim
  */
 function adaptCSSForConstellation(css: string): string {
 	const lines: string[] = [];
-	// Extract variable blocks from selectors we support
+
+	// ── Stage 1: Preserve @import and @font-face ──
+	// These are essential for themes that bundle custom fonts
+	const importRegex = /@import\s+(?:url\()?[^;]+;/g;
+	let importMatch;
+	while ((importMatch = importRegex.exec(css)) !== null) {
+		lines.push(importMatch[0]);
+	}
+	const fontFaceRegex = /@font-face\s*\{[^}]+\}/g;
+	let fontMatch;
+	while ((fontMatch = fontFaceRegex.exec(css)) !== null) {
+		lines.push(fontMatch[0]);
+	}
+
+	// ── Stage 2: Extract ALL CSS variables from compatible selectors ──
+	// Keep every --variable, not just known prefixes. Unknown vars do no harm
+	// and may be referenced by the theme's own component styles.
 	const supportedSelectors = [':root', 'body', '.theme-light', '.theme-dark'];
 
 	for (const selector of supportedSelectors) {
 		const vars = extractVariables(css, selector);
 		if (Object.keys(vars).length === 0) continue;
 
-		// Only include variables that Constellation uses (our CSS variable namespace)
-		const constellationVarPrefixes = [
-			'--background-', '--text-', '--interactive-', '--accent-',
-			'--scrollbar-', '--shadow-', '--color-', '--font-',
-			'--code-', '--star-', '--line-height',
-		];
-
-		const filtered: Record<string, string> = {};
+		lines.push(`${selector} {`);
 		for (const [key, val] of Object.entries(vars)) {
-			if (constellationVarPrefixes.some(p => key.startsWith(p))) {
-				filtered[key] = val;
-			}
+			lines.push(`  ${key}: ${val};`);
 		}
+		lines.push('}');
+	}
 
-		if (Object.keys(filtered).length > 0) {
-			lines.push(`${selector} {`);
-			for (const [key, val] of Object.entries(filtered)) {
-				lines.push(`  ${key}: ${val};`);
+	// ── Stage 3: Extract CodeMirror syntax highlighting ──
+	// Map Obsidian's .cm-* classes to our --code-* variables
+	const cmMappings = extractCodeMirrorColors(css);
+	if (Object.keys(cmMappings).length > 0) {
+		lines.push(':root {');
+		for (const [key, val] of Object.entries(cmMappings)) {
+			lines.push(`  ${key}: ${val};`);
+		}
+		lines.push('}');
+	}
+
+	// ── Stage 4: CSS Class Shim ──
+	// Map Obsidian's component selectors to Constellation equivalents
+	lines.push(generateClassShim(css));
+
+	return lines.join('\n');
+}
+
+/**
+ * Extract CodeMirror syntax colors from Obsidian theme CSS.
+ * Maps .cm-keyword { color: X } → --code-keyword: X
+ */
+function extractCodeMirrorColors(css: string): Record<string, string> {
+	const mapping: Record<string, string> = {};
+	const cmClasses: Record<string, string> = {
+		'cm-keyword': '--code-keyword',
+		'cm-string': '--code-string',
+		'cm-number': '--code-number',
+		'cm-comment': '--code-comment',
+		'cm-def': '--code-function',
+		'cm-builtin': '--code-builtin',
+		'cm-type': '--code-type',
+		'cm-tag': '--code-tag',
+		'cm-attribute': '--code-attr',
+		'cm-variable': '--code-variable',
+		'cm-meta': '--code-meta',
+		'cm-operator': '--code-keyword',
+		'cm-property': '--code-attr',
+		'cm-qualifier': '--code-type',
+		'cm-atom': '--code-number',
+	};
+
+	for (const [cmClass, cssVar] of Object.entries(cmClasses)) {
+		// Match: .cm-keyword { color: #xxx } or .cm-s-obsidian .cm-keyword { color: #xxx }
+		const regex = new RegExp(`\\.(?:cm-s-obsidian\\s+)?\\.${cmClass}\\s*\\{[^}]*color:\\s*([^;]+);`, 'g');
+		const match = regex.exec(css);
+		if (match) {
+			const color = match[1].trim();
+			if (!color.includes('var(')) { // skip variable references
+				mapping[cssVar] = color;
 			}
-			lines.push('}');
 		}
 	}
 
-	return lines.join('\n');
+	return mapping;
+}
+
+/**
+ * Generate CSS class shim that maps Obsidian selectors to Constellation.
+ * This allows Obsidian component-level styles to partially work.
+ */
+function generateClassShim(css: string): string {
+	// Obsidian → Constellation class mappings
+	const SELECTOR_MAP: Record<string, string> = {
+		// Layout
+		'.workspace': '.app-root',
+		'.workspace-leaf': '.pane',
+		'.workspace-leaf-content': '.pane',
+		'.workspace-tabs': '.tabs-row',
+		'.workspace-tab-header': '.tab',
+		// Sidebar
+		'.nav-folder': '.library-section',
+		'.nav-folder-title': '.tree-folder',
+		'.nav-file': '.tree-file',
+		'.nav-file-title': '.tree-file',
+		'.nav-folder-collapse-indicator': '.v-chev',
+		// Editor
+		'.markdown-source-view': '.pane',
+		'.markdown-preview-view': '.pane',
+		'.markdown-rendered': '.pane',
+		'.cm-s-obsidian': '.cm-editor',
+		'.cm-content': '.cm-content',
+		// UI
+		'.view-header': '.sight2-header',
+		'.view-header-title': '.sight2-title',
+		'.status-bar': '.statusbar',
+		'.modal': '.settings-overlay',
+		'.setting-item': '.setting-item',
+		'.search-input-container': '.search-input',
+		// Tags
+		'.tag': '.s-tag',
+		// Callouts
+		'.callout': '.callout',
+		'.callout-title': '.callout-title',
+	};
+
+	const shimLines: string[] = [];
+
+	// For each mapping, check if the Obsidian selector has styles in the CSS
+	// and create an alias rule
+	for (const [obsSelector, constSelector] of Object.entries(SELECTOR_MAP)) {
+		const escaped = obsSelector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		const regex = new RegExp(`${escaped}\\s*\\{([^}]+)\\}`, 'g');
+		let match;
+		while ((match = regex.exec(css)) !== null) {
+			const block = match[1].trim();
+			// Only include style declarations (not nested selectors)
+			const declarations = block.split(';')
+				.map(d => d.trim())
+				.filter(d => d && d.includes(':') && !d.startsWith('//') && !d.startsWith('/*'));
+
+			if (declarations.length > 0) {
+				shimLines.push(`${constSelector} {`);
+				for (const decl of declarations) {
+					shimLines.push(`  ${decl};`);
+				}
+				shimLines.push('}');
+			}
+		}
+	}
+
+	return shimLines.join('\n');
 }
 
 function hslToHex(h: number, s: number, l: number): string {

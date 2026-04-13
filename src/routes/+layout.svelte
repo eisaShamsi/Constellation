@@ -1006,11 +1006,25 @@
 		}
 	});
 
-	// Apply custom theme colors
+	// Apply custom theme colors (responds to both activeThemeId and colorScheme changes)
 	$effect(() => {
 		if (typeof document === 'undefined') return;
 		const s = $appSettings;
-		const themeId = s.activeThemeId;
+		let themeId = s.activeThemeId;
+
+		// Auto-pair: if the active theme has a counterpart for the current scheme, switch to it
+		if (themeId) {
+			const resolved = colorScheme === 'system'
+				? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+				: colorScheme;
+			const allThemes = [...BUILTIN_THEMES, ...(s.customThemes ?? [])];
+			const current = allThemes.find(t => t.id === themeId);
+			if (current && current.type !== resolved && current.pairedThemeId) {
+				const paired = allThemes.find(t => t.id === current.pairedThemeId);
+				if (paired) themeId = paired.id;
+			}
+		}
+
 		if (!themeId) {
 			// No custom theme — but still apply accent color if set
 			if (s.accentColor && s.accentColor !== '#7c3aed') {
