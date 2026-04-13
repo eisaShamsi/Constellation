@@ -546,35 +546,38 @@
 			const w = link.weight ?? 1.0;
 			const baseWidth = (typed ? Math.max(0.8, Math.min(4, w * 0.5)) : 0.7) * linkStrokeMul;
 			const conf = CONFIDENCE_STYLE[link.confidence ?? 'hypothesis'] ?? CONFIDENCE_STYLE.hypothesis;
-			if (conf.dash.length > 0) ctx!.setLineDash(conf.dash.map(d => d / zoom));
 
 			const isDormant = link.status === 'dormant';
 			const baseAlpha = searchDim ? 0.13 : neighborDim ? 0.06 : isDormant ? 0.27 : linkOpacity;
 			const alphaHex = Math.round(baseAlpha * 255).toString(16).padStart(2, '0');
 
+			// All lines solid — no dashes
 			ctx!.beginPath();
 			ctx!.moveTo(sx, sy);
 			ctx!.lineTo(tx, ty);
 			ctx!.strokeStyle = color + alphaHex;
 			ctx!.lineWidth = (baseWidth * conf.widthMul) / zoom;
 			ctx!.stroke();
-			if (conf.dash.length > 0) ctx!.setLineDash([]);
 
-			// Arrowhead for typed links — uses arrowSize setting
-			if (typed && !searchDim) {
+			// Direction arrows along the link line (multiple small arrows)
+			if (typed && baseAlpha > 0.1) {
 				const dx = tx - sx, dy = ty - sy;
 				const len = Math.sqrt(dx * dx + dy * dy);
-				if (len > 10) {
+				if (len > 20) {
 					const ux = dx / len, uy = dy / len;
-					const ax = sx + dx * 0.7, ay = sy + dy * 0.7;
 					const as = arrowSize / zoom;
-					ctx!.beginPath();
-					ctx!.moveTo(ax + ux * as, ay + uy * as);
-					ctx!.lineTo(ax - uy * as * 0.5 - ux * as * 0.3, ay + ux * as * 0.5 - uy * as * 0.3);
-					ctx!.lineTo(ax + uy * as * 0.5 - ux * as * 0.3, ay - ux * as * 0.5 - uy * as * 0.3);
-					ctx!.closePath();
-					ctx!.fillStyle = color + alphaHex;
-					ctx!.fill();
+					// Place arrows at 30%, 55%, 80% of the link length
+					const positions = len > 80 ? [0.3, 0.55, 0.8] : len > 40 ? [0.35, 0.65] : [0.5];
+					for (const t of positions) {
+						const ax = sx + dx * t, ay = sy + dy * t;
+						ctx!.beginPath();
+						ctx!.moveTo(ax + ux * as, ay + uy * as);
+						ctx!.lineTo(ax - uy * as * 0.5 - ux * as * 0.3, ay + ux * as * 0.5 - uy * as * 0.3);
+						ctx!.lineTo(ax + uy * as * 0.5 - ux * as * 0.3, ay - ux * as * 0.5 - uy * as * 0.3);
+						ctx!.closePath();
+						ctx!.fillStyle = color + alphaHex;
+						ctx!.fill();
+					}
 				}
 			}
 		}
@@ -696,22 +699,28 @@
 				bx += badgeW + gap;
 			}
 
-			// Pointer arrow for current match — triangle pointing down at the node
+			// Pointer arrow for current match — large amber triangle above the node
 			if (isCurrent) {
-				const arrW = 16 / zoom;
-				const arrH = 14 / zoom;
-				const tipY = y - n.r - 4 / zoom;
+				const arrW = 20 / zoom;
+				const arrH = 18 / zoom;
+				const tipY = y - n.r - 5 / zoom;
 				const topY = tipY - arrH;
+				// Draw twice: shadow first, then fill — ensures visibility
 				ctx!.beginPath();
-				ctx!.moveTo(x, tipY);                     // tip pointing at node
-				ctx!.lineTo(x - arrW / 2, topY);          // top-left
-				ctx!.lineTo(x + arrW / 2, topY);          // top-right
+				ctx!.moveTo(x, tipY);
+				ctx!.lineTo(x - arrW / 2, topY);
+				ctx!.lineTo(x + arrW / 2, topY);
 				ctx!.closePath();
 				ctx!.fillStyle = '#f59e0b';
 				ctx!.fill();
 				ctx!.strokeStyle = '#ffffff';
-				ctx!.lineWidth = 1.5 / zoom;
+				ctx!.lineWidth = 2 / zoom;
 				ctx!.stroke();
+				// Small dot at tip for precision
+				ctx!.beginPath();
+				ctx!.arc(x, tipY, 2 / zoom, 0, Math.PI * 2);
+				ctx!.fillStyle = '#f59e0b';
+				ctx!.fill();
 			}
 		}
 	}
@@ -1072,28 +1081,18 @@
 						<span>derives-from</span>
 					</div>
 					<div class="sight2-legend-divider"></div>
-					<!-- Confidence -->
+					<!-- Confidence = thickness -->
 					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/></svg>
-						<span>hypothesis</span>
-					</div>
-					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#4A9EFF" stroke-width="2"/></svg>
-						<span>evidence</span>
+						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#94a3b8" stroke-width="1"/></svg>
+						<span>thin = hypothesis</span>
 					</div>
 					<div class="sight2-legend-row">
 						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#4A9EFF" stroke-width="3"/></svg>
-						<span>established</span>
+						<span>thick = established</span>
 					</div>
 					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#ef4444" stroke-width="2" stroke-dasharray="2,2"/></svg>
-						<span>contested</span>
-					</div>
-					<div class="sight2-legend-divider"></div>
-					<!-- Structure -->
-					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/></svg>
-						<span>{$t("lens.redDashed") || "Red dashed"} — {$t("lens.blindSpotDesc") || "blind spot"}</span>
+						<svg width="20" height="6"><polygon points="0,3 6,0 6,6" fill="#4A9EFF"/><polygon points="8,3 14,0 14,6" fill="#4A9EFF"/></svg>
+						<span>arrows = direction</span>
 					</div>
 				</div>
 			{/if}
