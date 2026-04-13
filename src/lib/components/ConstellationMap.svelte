@@ -80,7 +80,7 @@
 	const CAT_COLORS: Record<string, string> = {
 		T: '#3b82f6', C: '#16a34a', '#': '#f472b6', P: '#f59e0b', S: '#7c3aed',
 		W: '#94a3b8', '∅': '#64748b', M: '#06b6d4',
-		'→': '#16a34a', '←': '#ef4444', '⇄': '#8b5cf6', '⇔': '#0ea5e9', '⊕': '#d946ef',
+		LT: '#16a34a', LF: '#ef4444', '⇄': '#8b5cf6', LB: '#0ea5e9', LA: '#d946ef',
 	};
 
 	// Sidebar resize
@@ -457,7 +457,7 @@
 			try {
 				const req = parseSearchQuery(canonicalized);
 				const results = await constellationSearch(req);
-				const CAT_MAP: Record<string, string> = { links_to: '→', links_from: '←', mutual: '⇄', links_between: '⇔', links_all: '⊕', mentions: 'M', orphan: '∅', wikilink: 'W', title: 'T', content: 'C', tag: '#', property: 'P', semantic: 'S', hybrid: 'C', structured: '∅' };
+				const CAT_MAP: Record<string, string> = { links_to: 'LT', links_from: 'LF', mutual: '⇄', links_between: 'LB', links_all: 'LA', mentions: 'M', orphan: '∅', wikilink: 'W', title: 'T', content: 'C', tag: '#', property: 'P', semantic: 'S', hybrid: 'C', structured: '∅' };
 				for (const r of results) {
 					const node = nameMap.get(r.name.toLowerCase());
 					if (node) {
