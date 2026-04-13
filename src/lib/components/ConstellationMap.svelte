@@ -242,25 +242,18 @@
 				}
 			})
 			.on('mouseenter', (event: MouseEvent, d: any) => {
-				const data = d.data as MapNode;
-				tooltip = {
-					x: event.clientX,
-					y: event.clientY,
-					node: data,
-					visible: true,
-				};
-				// Highlight
-				d3.select(event.currentTarget as Element).attr('fill-opacity', 1).attr('stroke-width', 2);
-			})
-			.on('mousemove', (event: MouseEvent) => {
-				tooltip.x = event.clientX;
-				tooltip.y = event.clientY;
+				// Only highlight on hover if no search is active
+				if (searchResults.length === 0) {
+					d3.select(event.currentTarget as Element).attr('fill-opacity', 1).attr('stroke-width', 2);
+				}
 			})
 			.on('mouseleave', (event: MouseEvent, d: any) => {
-				tooltip.visible = false;
-				d3.select(event.currentTarget as Element)
-					.attr('fill-opacity', (d: any) => getNodeOpacity(d))
-					.attr('stroke-width', 0.5);
+				// Only restore on leave if no search is active
+				if (searchResults.length === 0) {
+					d3.select(event.currentTarget as Element)
+						.attr('fill-opacity', (d: any) => getNodeOpacity(d))
+						.attr('stroke-width', 0.5);
+				}
 			});
 
 		// Center circle radius = inner edge of the first ring
