@@ -379,7 +379,6 @@
 				}
 
 				// Also add the TARGET nodes (from [[X]]) to the match set
-				// so links between results and targets stay visible
 				const targetRe = /\[\[([^\]]+)\]\]/g;
 				let tm;
 				while ((tm = targetRe.exec(canonicalized)) !== null) {
@@ -389,6 +388,24 @@
 					if (targetNode && !matches.find(m => m.node.id === targetId)) {
 						matches.push({ node: targetNode, matchType: 'target', matchCategories: ['T'] });
 					}
+					// DIAGNOSTIC: check links connecting to this target
+					const linksToTarget = simLinks.filter(l => {
+						const s = (l.source as SimNode).id, t = (l.target as SimNode).id;
+						return s === targetId || t === targetId;
+					});
+					console.log(`[Sight2 DEBUG] Target "${targetId}": node found=${!!targetNode}, simLinks to/from=${linksToTarget.length}`);
+					console.log(`[Sight2 DEBUG] Match IDs:`, [...matches.map(m => m.node.id)]);
+					if (linksToTarget.length > 0) {
+						console.log(`[Sight2 DEBUG] Sample links:`, linksToTarget.slice(0, 5).map(l => `${(l.source as SimNode).id} → ${(l.target as SimNode).id}`));
+					}
+					// Also check: do any simLinks connect ANY two nodes in the match set?
+					const matchIds = new Set(matches.map(m => m.node.id));
+					matchIds.add(targetId);
+					const highlightLinks = simLinks.filter(l => {
+						const s = (l.source as SimNode).id, t = (l.target as SimNode).id;
+						return matchIds.has(s) && matchIds.has(t);
+					});
+					console.log(`[Sight2 DEBUG] Links where BOTH endpoints are matches: ${highlightLinks.length}`);
 				}
 			} catch {}
 		} else {
