@@ -244,6 +244,13 @@
 
 		const g = svg.append('g');
 
+		// Zoom + pan
+		const zoomBehavior = d3.zoom<SVGSVGElement, unknown>()
+			.scaleExtent([0.3, 5])
+			.on('zoom', (event) => { g.attr('transform', event.transform); });
+		svg.call(zoomBehavior);
+		svg.on('dblclick.zoom', null); // disable double-click zoom (we use dblclick for notes)
+
 		// Draw arcs
 		const nodes = root.descendants().filter(d => d.depth > 0); // skip root
 
