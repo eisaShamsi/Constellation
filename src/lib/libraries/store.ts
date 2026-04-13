@@ -1657,6 +1657,7 @@ export interface AppSettings {
 		workspaces: boolean;
 		index: boolean;
 		semanticSearch: boolean;
+		notesNavigator: boolean;
 		constellationMap: boolean;
 		constellationSight: boolean;
 	};
@@ -1753,6 +1754,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 		workspaces: true,
 		index: true,
 		semanticSearch: false,
+		notesNavigator: true,
 		constellationMap: false,
 		constellationSight: true,
 	},

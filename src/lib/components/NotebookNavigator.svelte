@@ -70,19 +70,23 @@
 			const allNotes: NoteWithMeta[] = [];
 			const allTags: Record<string, number> = {};
 
-			// Build per-library trees and collect notes/tags
-			const libTreeMap = new Map<string, FileEntry>(); // lib.path → tree entry
-			for (const lib of libs) {
-				const notes = await collectLibraryNotesWithMeta(lib.path);
+			// Build per-library trees and collect notes/tags — PARALLEL per library
+			const libTreeMap = new Map<string, FileEntry>();
+			const results = await Promise.all(libs.map(async (lib) => {
+				const [notes, libTags, tree] = await Promise.all([
+					collectLibraryNotesWithMeta(lib.path).catch(() => [] as NoteWithMeta[]),
+					invoke<Record<string, number>>('scan_library_tags', { libraryPath: lib.path }).catch(() => ({})),
+					invoke<FileEntry[]>('read_library_tree', { libraryPath: lib.path, maxDepth: 10 }).catch(() => []),
+				]);
+				return { lib, notes, libTags, tree };
+			}));
+
+			for (const { lib, notes, libTags, tree } of results) {
 				for (const n of notes) n.libraryName = lib.name;
 				allNotes.push(...notes);
-
-				const libTags = await invoke<Record<string, number>>('scan_library_tags', { libraryPath: lib.path }).catch(() => ({}));
 				for (const [tag, count] of Object.entries(libTags)) {
 					allTags[tag] = (allTags[tag] || 0) + count;
 				}
-
-				const tree = await invoke<FileEntry[]>('read_library_tree', { libraryPath: lib.path, maxDepth: 10 }).catch(() => []);
 				libTreeMap.set(normalizePath(lib.path), { name: lib.name, path: lib.path, is_dir: true, children: tree } as FileEntry);
 			}
 
