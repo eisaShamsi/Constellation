@@ -363,7 +363,6 @@
 
 		if (isAdvanced) {
 			// ── Structured query: links to/from, orphans, mutual, cognitive types ──
-			// Uses parseSearchQuery → constellationSearch (same as SearchHub)
 			try {
 				const req = parseSearchQuery(canonicalized);
 				const results = await constellationSearch(req);
@@ -373,6 +372,18 @@
 					if (!node) continue;
 					const cat = r.match_type === 'wikilink' ? 'W' : r.match_type === 'title' ? 'T' : r.match_type === 'content' ? 'C' : 'L';
 					matches.push({ node, matchType: cat, matchCategories: [cat] });
+				}
+
+				// Also add the TARGET nodes (from [[X]]) to the match set
+				// so links between results and targets stay visible
+				const targetRe = /\[\[([^\]]+)\]\]/g;
+				let tm;
+				while ((tm = targetRe.exec(canonicalized)) !== null) {
+					const targetId = tm[1].toLowerCase();
+					const targetNode = nodeMap.get(targetId);
+					if (targetNode && !matches.find(m => m.node.id === targetId)) {
+						matches.push({ node: targetNode, matchType: 'target', matchCategories: ['T'] });
+					}
 				}
 			} catch {}
 		} else {
