@@ -12,8 +12,9 @@
 	import {
 		stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual,
 		universalSearch, constellationSearch, parseSearchQuery,
-		embedText, appSettings,
+		embedText, appSettings, type UniversalSearchResponse,
 	} from '$lib/libraries/store';
+	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
 
 	interface MapNode {
 		name: string;
@@ -71,7 +72,14 @@
 	let searchVisible = $state(false);
 	let searchQuery = $state('');
 	let searchResults = $state<MapNode[]>([]);
+	let searchCats = $state<Map<string, string[]>>(new Map()); // path → categories
 	let searchIdx = $state(0);
+	let showHistory = $state(false);
+	let historyItems = $state<{ query: string; timestamp: number }[]>([]);
+
+	const CAT_COLORS: Record<string, string> = {
+		T: '#3b82f6', C: '#16a34a', '#': '#f472b6', P: '#f59e0b', S: '#7c3aed', W: '#94a3b8',
+	};
 
 	// Syntax chips
 	let showChips = $state(false);
@@ -395,7 +403,10 @@
 	}
 
 	async function executeMapSearch() {
-		if (!searchQuery.trim() || !mapData) { searchResults = []; searchIdx = 0; highlightAllResults(); return; }
+		if (!searchQuery.trim() || !mapData) { searchResults = []; searchIdx = 0; searchCats = new Map(); highlightAllResults(); return; }
+
+		addSearchHistory(searchQuery);
+		historyItems = readSearchHistory();
 
 		const cleanQ = stripInvisibleChars(searchQuery);
 		const ops = getSearchOps();
@@ -405,43 +416,63 @@
 		const all = collectAllNodes(mapData);
 		const nameMap = new Map(all.map(n => [n.name.toLowerCase(), n]));
 		const matchedNodes: MapNode[] = [];
+		const cats = new Map<string, string[]>();
 
 		if (isAdvanced) {
-			// Structured query: links to/from, orphans, cognitive types, tags, etc.
 			try {
 				const req = parseSearchQuery(canonicalized);
 				const results = await constellationSearch(req);
+				const CAT_MAP: Record<string, string> = { wikilink: 'W', title: 'T', content: 'C', tag: '#', property: 'P', semantic: 'S', hybrid: 'C' };
 				for (const r of results) {
 					const node = nameMap.get(r.name.toLowerCase());
-					if (node) matchedNodes.push(node);
+					if (node) {
+						matchedNodes.push(node);
+						const cat = CAT_MAP[r.match_type] ?? r.match_type.charAt(0).toUpperCase();
+						cats.set(node.path, [cat]);
+					}
 				}
 			} catch {}
 		} else {
-			// Free text: local name filter + backend universal search
 			const q = searchQuery.toLowerCase();
-			// Local name matches
+			const titleMatchPaths = new Set<string>();
+			const contentMatchPaths = new Set<string>();
+			const tagMatchPaths = new Set<string>();
+			const propMatchPaths = new Set<string>();
+			const semMatchPaths = new Set<string>();
+
+			// Local title matches
 			for (const n of all) {
-				if (n.name.toLowerCase().includes(q)) matchedNodes.push(n);
+				if (n.name.toLowerCase().includes(q)) { matchedNodes.push(n); titleMatchPaths.add(n.path); }
 			}
-			// Backend search for content/tag/property/semantic matches
+
+			// Backend search
 			try {
 				let qEmbed: number[] | null = null;
 				if (get(appSettings).enabledFeatures?.semanticSearch) {
 					try { qEmbed = await embedText(canonicalized); } catch {}
 				}
 				const resp: any = await universalSearch(canonicalized, qEmbed, 200);
-				const backendNames = new Set<string>();
-				for (const cat of ['titles', 'contents', 'tags', 'properties', 'semantic']) {
-					for (const r of resp?.[cat] ?? []) backendNames.add(r.name.toLowerCase());
-				}
-				for (const name of backendNames) {
-					const node = nameMap.get(name);
-					if (node && !matchedNodes.includes(node)) matchedNodes.push(node);
-				}
+				for (const r of resp?.titles ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { titleMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
+				for (const r of resp?.contents ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { contentMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
+				for (const r of resp?.tags ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { tagMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
+				for (const r of resp?.properties ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { propMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
+				for (const r of resp?.semantic ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { semMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
 			} catch {}
+
+			// Build category map
+			for (const n of matchedNodes) {
+				const c: string[] = [];
+				if (titleMatchPaths.has(n.path)) c.push('T');
+				if (contentMatchPaths.has(n.path)) c.push('C');
+				if (tagMatchPaths.has(n.path)) c.push('#');
+				if (propMatchPaths.has(n.path)) c.push('P');
+				if (semMatchPaths.has(n.path)) c.push('S');
+				if (c.length > 0) cats.set(n.path, c);
+			}
 		}
 
 		searchResults = matchedNodes;
+		searchCats = cats;
 		searchIdx = 0;
 		if (searchResults.length > 0) highlightSearchResult();
 		else highlightAllResults();
@@ -451,14 +482,47 @@
 		const match = searchResults[searchIdx];
 		if (!svgEl) return;
 		const matchSet = new Set(searchResults.map(n => n.path));
+		const svg = d3.select(svgEl);
+
+		// Remove old badges
+		svg.selectAll('.search-badge').remove();
+
 		// Reset all arcs, then highlight matches
-		d3.select(svgEl).selectAll('path').each(function(d: any) {
+		svg.selectAll('path').each(function(d: any) {
 			const isMatch = d?.data?.path && matchSet.has(d.data.path);
 			const isCurrent = match && d?.data?.path === match.path && d?.data?.name === match.name;
 			d3.select(this)
 				.attr('stroke', isCurrent ? '#000000' : isMatch ? '#3b82f6' : '#fff')
 				.attr('stroke-width', isCurrent ? 3.5 : isMatch ? 2 : 0.5)
 				.attr('fill-opacity', isMatch || isCurrent ? 1 : 0.3);
+
+			// Add category badges on matching arcs
+			if (isMatch && d?.data?.path) {
+				const cats = searchCats.get(d.data.path);
+				if (cats && cats.length > 0) {
+					// Position at arc centroid
+					const midAngle = ((d as any).x0 + (d as any).x1) / 2;
+					const midRadius = ((d as any).y0 + (d as any).y1) / 2;
+					const bx = midRadius * Math.sin(midAngle);
+					const by = -midRadius * Math.cos(midAngle);
+					const badgeSize = 14;
+					const totalW = cats.length * (badgeSize + 2);
+
+					cats.forEach((cat: string, ci: number) => {
+						const g = svg.select('g').append('g')
+							.attr('class', 'search-badge')
+							.attr('transform', `translate(${bx - totalW / 2 + ci * (badgeSize + 2)}, ${by - badgeSize / 2})`);
+						g.append('rect')
+							.attr('width', badgeSize).attr('height', badgeSize).attr('rx', 3)
+							.attr('fill', CAT_COLORS[cat] ?? '#94a3b8');
+						g.append('text')
+							.attr('x', badgeSize / 2).attr('y', badgeSize / 2 + 1)
+							.attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+							.attr('fill', '#fff').attr('font-size', '9px').attr('font-weight', 'bold')
+							.text(cat);
+					});
+				}
+			}
 		});
 	}
 
@@ -485,7 +549,9 @@
 	function resetMapSearch() {
 		searchQuery = '';
 		searchResults = [];
+		searchCats = new Map();
 		searchIdx = 0;
+		if (svgEl) d3.select(svgEl).selectAll('.search-badge').remove();
 		highlightAllResults();
 	}
 
@@ -551,13 +617,25 @@
 	{#if searchVisible}
 		<div class="cmap-search">
 			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-			<input type="text" dir="auto"
-				placeholder={$t('lens.searchAll') || 'Search... (Enter)'}
-				bind:value={searchQuery}
-				onkeydown={(e) => {
-					if (e.key === 'Enter') { e.preventDefault(); searchResults.length > 0 ? (e.shiftKey ? prevMapResult() : nextMapResult()) : executeMapSearch(); }
-					if (e.key === 'Escape') { searchVisible = false; resetMapSearch(); e.stopPropagation(); }
-				}} />
+			<div class="cmap-search-input-wrap">
+				<input type="text" dir="auto"
+					placeholder={$t('lens.searchAll') || 'Search... (Enter)'}
+					bind:value={searchQuery}
+					onfocus={() => { if (!searchQuery) { historyItems = readSearchHistory(); showHistory = true; } }}
+					onblur={() => setTimeout(() => { showHistory = false; }, 200)}
+					oninput={() => { showHistory = false; }}
+					onkeydown={(e) => {
+						if (e.key === 'Enter') { e.preventDefault(); searchResults.length > 0 ? (e.shiftKey ? prevMapResult() : nextMapResult()) : executeMapSearch(); }
+						if (e.key === 'Escape') { searchVisible = false; resetMapSearch(); e.stopPropagation(); }
+					}} />
+				{#if showHistory && historyItems.length > 0 && !searchQuery}
+					<div class="cmap-history-dropdown">
+						{#each historyItems.slice(0, 8) as item}
+							<button class="cmap-history-item" onclick={() => { searchQuery = item.query; showHistory = false; executeMapSearch(); }} dir="auto">{item.query}</button>
+						{/each}
+					</div>
+				{/if}
+			</div>
 			<button class="cmap-search-clear" onclick={resetMapSearch}>×</button>
 				<button class="cmap-chips-btn" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers') || 'Syntax'}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
@@ -570,6 +648,10 @@
 					</div>
 				{/if}
 			{#if searchResults.length > 0}
+				{@const curCats = searchCats.get(searchResults[searchIdx]?.path) ?? []}
+				{#each curCats as cat}
+					<span class="cmap-search-cat" style="background:{CAT_COLORS[cat] ?? '#94a3b8'}">{cat}</span>
+				{/each}
 				<span class="cmap-search-count">{searchIdx + 1}/{searchResults.length}</span>
 				<button class="cmap-search-nav" onclick={prevMapResult}>
 					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -714,11 +796,25 @@
 		flex-shrink: 0; position: relative;
 	}
 	.cmap-search svg { color: var(--text-muted, #888); flex-shrink: 0; }
-	.cmap-search input {
+	.cmap-search-input-wrap { position: relative; min-width: 200px; max-width: 400px; }
+	.cmap-search-input-wrap input {
 		border: none; outline: none; background: none; font-size: 12px;
-		font-family: inherit; color: var(--text-normal, #333); min-width: 200px; max-width: 400px;
+		font-family: inherit; color: var(--text-normal, #333); width: 100%;
 	}
+	.cmap-history-dropdown {
+		position: absolute; top: 100%; inset-inline-start: 0; z-index: 100;
+		background: var(--background-primary, #fff); border: 1px solid var(--border, #e0e0e0);
+		border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+		min-width: 200px; max-height: 250px; overflow-y: auto; margin-top: 4px;
+	}
+	.cmap-history-item {
+		display: block; width: 100%; text-align: start; padding: 6px 12px;
+		border: none; background: none; cursor: pointer; font-size: 11px;
+		color: var(--text-normal, #333); font-family: inherit;
+	}
+	.cmap-history-item:hover { background: var(--background-modifier-hover, #f1f5f9); }
 	.cmap-search-clear { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 0 2px; }
+	.cmap-search-cat { font-size: 9px; color: #fff; padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
 	.cmap-search-count { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
 	.cmap-search-none { font-size: 10px; color: #ef4444; white-space: nowrap; }
 	.cmap-search-nav { border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 0 2px; display: flex; align-items: center; }
