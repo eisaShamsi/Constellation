@@ -5,9 +5,15 @@
 	 * Inspired by Goalscape. Uses D3.js d3.partition() for layout.
 	 */
 	import { onMount, onDestroy } from 'svelte';
-	import { t } from '$lib/i18n';
+	import { t, dir, getSearchOps } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import * as d3 from 'd3';
+	import { get } from 'svelte/store';
+	import {
+		stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual,
+		universalSearch, constellationSearch, parseSearchQuery,
+		embedText, appSettings,
+	} from '$lib/libraries/store';
 
 	interface MapNode {
 		name: string;
@@ -66,6 +72,21 @@
 	let searchQuery = $state('');
 	let searchResults = $state<MapNode[]>([]);
 	let searchIdx = $state(0);
+
+	// Syntax chips
+	let showChips = $state(false);
+	const syntaxChips = $derived.by(() => {
+		const _locale = $t('searchHub.linksTo');
+		const ops = getSearchOps();
+		return [
+			{ label: 'linksTo', syntax: (ops?.linksTo ?? 'links to') + ' [[' },
+			{ label: 'linksFrom', syntax: (ops?.linksFrom ?? 'links from') + ' [[' },
+			{ label: 'orphans', syntax: ops?.orphans ?? 'orphans' },
+			{ label: 'tag', syntax: '#' },
+			{ label: 'supports', syntax: (ops?.supports ?? 'supports') + ' [[' },
+			{ label: 'contradicts', syntax: (ops?.contradicts ?? 'contradicts') + ' [[' },
+		];
+	});
 
 	// Settings (persisted across remounts)
 	const _mapDefaults = { arcOpacity: 0.75, depthLimit: 5, showLabels: true };
@@ -366,32 +387,86 @@
 		}
 	});
 
-	// ─── Search within Map ──────────────────────────────────
+	// ─── Search within Map (same engine as Sight) ───────────
 	function collectAllNodes(node: MapNode, results: MapNode[] = []): MapNode[] {
 		results.push(node);
 		if (node.children) for (const c of node.children) collectAllNodes(c, results);
 		return results;
 	}
 
-	function executeMapSearch() {
-		if (!searchQuery.trim() || !mapData) { searchResults = []; searchIdx = 0; return; }
-		const q = searchQuery.toLowerCase();
+	async function executeMapSearch() {
+		if (!searchQuery.trim() || !mapData) { searchResults = []; searchIdx = 0; highlightAllResults(); return; }
+
+		const cleanQ = stripInvisibleChars(searchQuery);
+		const ops = getSearchOps();
+		const canonicalized = canonicalizeSearchQuery(cleanQ, ops);
+		const isAdvanced = hasAdvancedSyntaxMultilingual(canonicalized, ops);
+
 		const all = collectAllNodes(mapData);
-		searchResults = all.filter(n => n.name.toLowerCase().includes(q));
+		const nameMap = new Map(all.map(n => [n.name.toLowerCase(), n]));
+		const matchedNodes: MapNode[] = [];
+
+		if (isAdvanced) {
+			// Structured query: links to/from, orphans, cognitive types, tags, etc.
+			try {
+				const req = parseSearchQuery(canonicalized);
+				const results = await constellationSearch(req);
+				for (const r of results) {
+					const node = nameMap.get(r.name.toLowerCase());
+					if (node) matchedNodes.push(node);
+				}
+			} catch {}
+		} else {
+			// Free text: local name filter + backend universal search
+			const q = searchQuery.toLowerCase();
+			// Local name matches
+			for (const n of all) {
+				if (n.name.toLowerCase().includes(q)) matchedNodes.push(n);
+			}
+			// Backend search for content/tag/property/semantic matches
+			try {
+				let qEmbed: number[] | null = null;
+				if (get(appSettings).enabledFeatures?.semanticSearch) {
+					try { qEmbed = await embedText(canonicalized); } catch {}
+				}
+				const resp: any = await universalSearch(canonicalized, qEmbed, 200);
+				const backendNames = new Set<string>();
+				for (const cat of ['titles', 'contents', 'tags', 'properties', 'semantic']) {
+					for (const r of resp?.[cat] ?? []) backendNames.add(r.name.toLowerCase());
+				}
+				for (const name of backendNames) {
+					const node = nameMap.get(name);
+					if (node && !matchedNodes.includes(node)) matchedNodes.push(node);
+				}
+			} catch {}
+		}
+
+		searchResults = matchedNodes;
 		searchIdx = 0;
 		if (searchResults.length > 0) highlightSearchResult();
+		else highlightAllResults();
 	}
 
 	function highlightSearchResult() {
 		const match = searchResults[searchIdx];
-		if (!match || !svgEl) return;
-		// Remove old highlights
-		d3.select(svgEl).selectAll('path').attr('stroke-width', 0.5).attr('stroke', '#fff');
-		// Find and highlight the matching arc
+		if (!svgEl) return;
+		const matchSet = new Set(searchResults.map(n => n.path));
+		// Reset all arcs, then highlight matches
 		d3.select(svgEl).selectAll('path').each(function(d: any) {
-			if (d?.data?.name === match.name && d?.data?.path === match.path) {
-				d3.select(this).attr('stroke', '#000000').attr('stroke-width', 3);
-			}
+			const isMatch = d?.data?.path && matchSet.has(d.data.path);
+			const isCurrent = match && d?.data?.path === match.path && d?.data?.name === match.name;
+			d3.select(this)
+				.attr('stroke', isCurrent ? '#000000' : isMatch ? '#3b82f6' : '#fff')
+				.attr('stroke-width', isCurrent ? 3.5 : isMatch ? 2 : 0.5)
+				.attr('fill-opacity', isMatch || isCurrent ? 1 : 0.3);
+		});
+	}
+
+	function highlightAllResults() {
+		if (!svgEl) return;
+		// Reset all arcs to normal
+		d3.select(svgEl).selectAll('path').each(function(d: any) {
+			d3.select(this).attr('stroke', '#fff').attr('stroke-width', 0.5).attr('fill-opacity', (d: any) => getNodeOpacity(d));
 		});
 	}
 
@@ -411,7 +486,7 @@
 		searchQuery = '';
 		searchResults = [];
 		searchIdx = 0;
-		if (svgEl) d3.select(svgEl).selectAll('path').attr('stroke-width', 0.5).attr('stroke', '#fff');
+		highlightAllResults();
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -484,6 +559,16 @@
 					if (e.key === 'Escape') { searchVisible = false; resetMapSearch(); e.stopPropagation(); }
 				}} />
 			<button class="cmap-search-clear" onclick={resetMapSearch}>×</button>
+				<button class="cmap-chips-btn" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers') || 'Syntax'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+				</button>
+				{#if showChips}
+					<div class="cmap-chips-dropdown">
+						{#each syntaxChips as chip}
+							<button class="cmap-chip" onclick={() => { searchQuery = searchQuery ? searchQuery + ' ' + chip.syntax : chip.syntax; showChips = false; }}>{$t(`searchHub.${chip.label}`)}</button>
+						{/each}
+					</div>
+				{/if}
 			{#if searchResults.length > 0}
 				<span class="cmap-search-count">{searchIdx + 1}/{searchResults.length}</span>
 				<button class="cmap-search-nav" onclick={prevMapResult}>
@@ -626,7 +711,7 @@
 	.cmap-search {
 		display: flex; align-items: center; gap: 6px;
 		padding: 6px 20px; border-bottom: 1px solid var(--border, #e0e0e0);
-		flex-shrink: 0;
+		flex-shrink: 0; position: relative;
 	}
 	.cmap-search svg { color: var(--text-muted, #888); flex-shrink: 0; }
 	.cmap-search input {
@@ -638,6 +723,20 @@
 	.cmap-search-none { font-size: 10px; color: #ef4444; white-space: nowrap; }
 	.cmap-search-nav { border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 0 2px; display: flex; align-items: center; }
 	.cmap-search-nav:hover { color: var(--text-normal); }
+	.cmap-chips-btn { border: none; background: none; cursor: pointer; color: var(--text-muted, #888); padding: 2px; border-radius: 3px; }
+	.cmap-chips-btn:hover, .cmap-chips-btn.active { color: var(--interactive-accent, #7c3aed); background: rgba(124,58,237,0.1); }
+	.cmap-chips-dropdown {
+		position: absolute; top: 100%; inset-inline-start: 0; z-index: 100;
+		display: flex; flex-wrap: wrap; gap: 6px; padding: 10px;
+		background: var(--background-primary, #fff); border: 1px solid var(--border, #e0e0e0);
+		border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-width: 350px; margin-top: 4px;
+	}
+	.cmap-chip {
+		padding: 4px 10px; border-radius: 6px; border: 1.5px solid var(--border, #d1d5db);
+		background: var(--background-secondary, #f9fafb); color: var(--text-normal, #374151);
+		font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; font-family: inherit;
+	}
+	.cmap-chip:hover { border-color: var(--interactive-accent, #7c3aed); color: var(--interactive-accent, #7c3aed); }
 
 	/* Settings panel */
 	.cmap-settings {
