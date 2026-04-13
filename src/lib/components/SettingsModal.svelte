@@ -1701,6 +1701,41 @@
 									<span class="color-hex">{editingTheme.colors.border}</span>
 								</div>
 							</div>
+							<!-- Style Settings (from Obsidian themes) -->
+							{#if editingTheme.styleSettings && editingTheme.styleSettings.length > 0}
+								<div class="setting-section-heading" style="margin-top:12px">Style Settings</div>
+								{#each editingTheme.styleSettings as ss}
+									<div class="setting-item">
+										<div class="setting-info"><div class="setting-name">{ss.title}</div></div>
+										{#if ss.type === 'variable-color'}
+											<div class="color-row">
+												<input type="color" class="color-input"
+													value={editingTheme.styleSettingsValues?.[ss.id] ?? ss.default ?? '#000000'}
+													oninput={(e) => {
+														if (!editingTheme!.styleSettingsValues) editingTheme!.styleSettingsValues = {};
+														editingTheme!.styleSettingsValues[ss.id] = (e.target as HTMLInputElement).value;
+													}} />
+												<span class="color-hex">{editingTheme.styleSettingsValues?.[ss.id] ?? ss.default ?? ''}</span>
+											</div>
+										{:else if ss.type === 'variable-number' || ss.type === 'variable-number-slider'}
+											<input type="number" class="setting-control" style="width:80px"
+												value={editingTheme.styleSettingsValues?.[ss.id] ?? ss.default ?? ''}
+												oninput={(e) => {
+													if (!editingTheme!.styleSettingsValues) editingTheme!.styleSettingsValues = {};
+													editingTheme!.styleSettingsValues[ss.id] = (e.target as HTMLInputElement).value;
+												}} />
+										{:else}
+											<input type="text" class="setting-control" style="width:120px"
+												value={editingTheme.styleSettingsValues?.[ss.id] ?? ss.default ?? ''}
+												oninput={(e) => {
+													if (!editingTheme!.styleSettingsValues) editingTheme!.styleSettingsValues = {};
+													editingTheme!.styleSettingsValues[ss.id] = (e.target as HTMLInputElement).value;
+												}} />
+										{/if}
+									</div>
+								{/each}
+							{/if}
+
 							<div class="theme-editor-actions">
 								<button class="btn-primary" onclick={saveTheme}>Save</button>
 								<button class="btn-text" onclick={() => { themeEditorOpen = false; editingTheme = null; }}>{$t('common.cancel') || 'Cancel'}</button>

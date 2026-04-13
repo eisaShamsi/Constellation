@@ -62,6 +62,9 @@ export async function downloadThemeCSS(repo: string): Promise<string> {
 export function parseObsidianCSS(css: string, name: string, author: string, modes: string[]): ConstellationTheme[] {
 	const themes: ConstellationTheme[] = [];
 
+	// Parse Style Settings metadata (if present)
+	const ssOptions = parseStyleSettings(css);
+
 	// Adapt CSS: extract only CSS variable declarations that Constellation uses.
 	// Strip Obsidian-specific selectors (.workspace, .cm-s-obsidian, etc.)
 	// Keep only :root, body, .theme-light, .theme-dark variable blocks.
@@ -89,6 +92,7 @@ export function parseObsidianCSS(css: string, name: string, author: string, mode
 			source: 'obsidian',
 			colors: mapToColors(vars, 'light'),
 			customCSS: adaptedCSS,
+			styleSettings: ssOptions.length > 0 ? ssOptions : undefined,
 		});
 	}
 
@@ -103,6 +107,7 @@ export function parseObsidianCSS(css: string, name: string, author: string, mode
 			source: 'obsidian',
 			colors: mapToColors(vars, 'dark'),
 			customCSS: adaptedCSS,
+			styleSettings: ssOptions.length > 0 ? ssOptions : undefined,
 		});
 	}
 
@@ -118,6 +123,7 @@ export function parseObsidianCSS(css: string, name: string, author: string, mode
 			source: 'obsidian',
 			colors: mapToColors(vars, type),
 			customCSS: adaptedCSS,
+			styleSettings: ssOptions.length > 0 ? ssOptions : undefined,
 		});
 	}
 

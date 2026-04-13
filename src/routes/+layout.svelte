@@ -1063,6 +1063,13 @@
 		} else if (customStyleEl) {
 			customStyleEl.remove();
 		}
+
+		// Apply Style Settings user overrides as CSS variables
+		if (theme.styleSettingsValues) {
+			for (const [id, value] of Object.entries(theme.styleSettingsValues)) {
+				root.setProperty(`--${id}`, value);
+			}
+		}
 	});
 
 	// Focus — toggle body class to hide sidebar/tabs/statusbar
