@@ -13,8 +13,11 @@
             "intelligence": "Intelligenz",
             "security": "Sicherheit & Datenschutz",
             "appearance": "Erscheinungsbild",
-            "keyboard": "Tastatur",
-            "features": "Funktionen",
+            "keyboard": "Tastenkürzel",
+            "features": "Erweiterungen",
+            "hotkeys": "Tastenkürzel",
+            "plugins": "Erweiterungen",
+            "templates": "Vorlagen",
             "knowledge": "Wissensmanagement"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "Keine Befehle gefunden",
             "pressKeys": "Tasten drücken..."
         },
-        "features": {
-            "intro": "Integrierte Funktionen ein- oder ausschalten. Deaktivierte Funktionen werden ausgeblendet.",
+        "plugins": {
+            "intro": "Erweiterungen ein- oder ausschalten. Deaktivierte Erweiterungen werden ausgeblendet.",
             "dailyNotes": "Tägliche Notizen",
             "dailyNotesDesc": "Tägliche Notizen erstellen und öffnen",
             "templates": "Vorlagen",
@@ -305,7 +308,16 @@
             "off": "Aus",
             "navigation": "Navigation",
             "discovery": "Entdeckung",
-            "organization": "Organisation"
+            "organization": "Organisation",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "Sunburst-Visualisierung der Wissensstruktur",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "Gravitationsbrunnen-Visualisierung mit Analytik",
+            "templates": "Vorlagen",
+            "templatesDesc": "Inhalte aus Vorlagendateien einfügen"
+        },
+        "templates": {
+            "intro": "Notizvorlagen verwalten. Vorlagen fügen vordefinierte Inhalte in neue Notizen ein."
         },
         "knowledge": {
             "intro": "Konfigurieren Sie, wie Ihr Wissen organisiert, angezeigt und analysiert wird.",

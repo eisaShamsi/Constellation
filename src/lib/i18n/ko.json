@@ -13,8 +13,11 @@
             "intelligence": "인텔리전스",
             "security": "보안 & 개인정보",
             "appearance": "외관",
-            "keyboard": "키보드",
-            "features": "기능",
+            "keyboard": "단축키",
+            "features": "플러그인",
+            "hotkeys": "단축키",
+            "plugins": "플러그인",
+            "templates": "템플릿",
             "knowledge": "지식 관리"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "명령어를 찾을 수 없습니다",
             "pressKeys": "키를 누르세요..."
         },
-        "features": {
-            "intro": "내장 기능을 켜거나 끕니다. 비활성화된 기능은 인터페이스에서 숨겨집니다.",
+        "plugins": {
+            "intro": "플러그인을 켜거나 끕니다. 비활성화된 플러그인은 인터페이스에서 숨겨집니다.",
             "dailyNotes": "일일 노트",
             "dailyNotesDesc": "일일 노트 생성 및 열기",
             "templates": "템플릿",
@@ -305,7 +308,16 @@
             "off": "끄기",
             "navigation": "탐색",
             "discovery": "발견",
-            "organization": "정리"
+            "organization": "정리",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "지식 구조의 선버스트 시각화",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "중력 우물 지식 시각화 및 분석",
+            "templates": "템플릿",
+            "templatesDesc": "템플릿 파일에서 내용 삽입"
+        },
+        "templates": {
+            "intro": "노트 템플릿을 관리합니다. 템플릿으로 새 노트에 미리 정의된 콘텐츠를 삽입할 수 있습니다."
         },
         "knowledge": {
             "intro": "지식이 구성, 표시 및 분석되는 방식을 구성합니다.",

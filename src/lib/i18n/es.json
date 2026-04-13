@@ -13,8 +13,11 @@
             "intelligence": "Inteligencia",
             "security": "Seguridad y Privacidad",
             "appearance": "Apariencia",
-            "keyboard": "Teclado",
-            "features": "Funciones",
+            "keyboard": "Atajos de teclado",
+            "features": "Complementos",
+            "hotkeys": "Atajos de teclado",
+            "plugins": "Complementos",
+            "templates": "Plantillas",
             "knowledge": "Gestión del conocimiento"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "No se encontraron comandos",
             "pressKeys": "Presiona teclas..."
         },
-        "features": {
-            "intro": "Activa o desactiva las funciones integradas. Las funciones desactivadas se ocultan de la interfaz.",
+        "plugins": {
+            "intro": "Activar o desactivar complementos. Los complementos desactivados se ocultan de la interfaz.",
             "dailyNotes": "Notas diarias",
             "dailyNotesDesc": "Crear y abrir notas diarias",
             "templates": "Plantillas",
@@ -305,7 +308,16 @@
             "off": "Desactivado",
             "navigation": "Navegación",
             "discovery": "Descubrimiento",
-            "organization": "Organización"
+            "organization": "Organización",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "Visualización radial de la estructura del conocimiento",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "Visualización gravitacional del conocimiento con análisis",
+            "templates": "Plantillas",
+            "templatesDesc": "Insertar contenido desde archivos de plantilla"
+        },
+        "templates": {
+            "intro": "Gestionar plantillas de notas. Las plantillas insertan contenido predefinido en nuevas notas."
         },
         "knowledge": {
             "intro": "Configure cómo se organiza, visualiza y analiza su conocimiento.",

@@ -13,8 +13,11 @@
             "intelligence": "الذكاء",
             "security": "الأمان والخصوصية",
             "appearance": "المظهر",
-            "keyboard": "لوحة المفاتيح",
-            "features": "الميزات",
+            "keyboard": "اختصارات المفاتيح",
+            "features": "الإضافات",
+            "hotkeys": "اختصارات المفاتيح",
+            "plugins": "الإضافات",
+            "templates": "القوالب",
             "knowledge": "إدارة المعرفة"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "لم يتم العثور على أوامر",
             "pressKeys": "اضغط المفاتيح..."
         },
-        "features": {
-            "intro": "تبديل الميزات المدمجة. الميزات المعطلة مخفية من الواجهة.",
+        "plugins": {
+            "intro": "تفعيل أو تعطيل الإضافات. الإضافات المعطلة تختفي من الواجهة.",
             "dailyNotes": "الملاحظات اليومية",
             "dailyNotesDesc": "إنشاء وفتح الملاحظات اليومية",
             "templates": "القوالب",
@@ -305,7 +308,16 @@
             "off": "معطّل",
             "navigation": "التنقل",
             "discovery": "الاكتشاف",
-            "organization": "التنظيم"
+            "organization": "التنظيم",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "تصور شمسي لهيكل المعرفة",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "تصور الجاذبية للمعرفة مع التحليلات",
+            "templates": "القوالب",
+            "templatesDesc": "إدراج محتوى من ملفات القوالب"
+        },
+        "templates": {
+            "intro": "إدارة قوالب الملاحظات. تتيح القوالب إدراج محتوى محدد مسبقاً في الملاحظات الجديدة."
         },
         "knowledge": {
             "intro": "اضبط كيفية تنظيم معرفتك وعرضها وتحليلها.",

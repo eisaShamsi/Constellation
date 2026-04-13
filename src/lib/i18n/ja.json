@@ -13,8 +13,11 @@
             "intelligence": "インテリジェンス",
             "security": "セキュリティ＆プライバシー",
             "appearance": "外観",
-            "keyboard": "キーボード",
-            "features": "機能",
+            "keyboard": "ホットキー",
+            "features": "プラグイン",
+            "hotkeys": "ホットキー",
+            "plugins": "プラグイン",
+            "templates": "テンプレート",
             "knowledge": "ナレッジ管理"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "コマンドが見つかりません",
             "pressKeys": "キーを押してください..."
         },
-        "features": {
-            "intro": "組み込み機能のオン/オフを切り替えます。無効にした機能はインターフェースから非表示になります。",
+        "plugins": {
+            "intro": "プラグインのオン/オフを切り替えます。無効なプラグインはインターフェースから非表示になります。",
             "dailyNotes": "デイリーノート",
             "dailyNotesDesc": "デイリーノートを作成して開く",
             "templates": "テンプレート",
@@ -305,7 +308,16 @@
             "off": "オフ",
             "navigation": "ナビゲーション",
             "discovery": "ディスカバリー",
-            "organization": "整理"
+            "organization": "整理",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "知識構造のサンバースト表示",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "重力井戸型ナレッジビジュアライゼーション",
+            "templates": "テンプレート",
+            "templatesDesc": "テンプレートファイルからコンテンツを挿入"
+        },
+        "templates": {
+            "intro": "ノートテンプレートを管理します。テンプレートで事前定義されたコンテンツを新しいノートに挿入できます。"
         },
         "knowledge": {
             "intro": "知識の整理、表示、分析の方法を設定します。",

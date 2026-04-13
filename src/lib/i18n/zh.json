@@ -13,8 +13,11 @@
             "intelligence": "智能",
             "security": "安全与隐私",
             "appearance": "外观",
-            "keyboard": "键盘",
-            "features": "功能",
+            "keyboard": "快捷键",
+            "features": "插件",
+            "hotkeys": "快捷键",
+            "plugins": "插件",
+            "templates": "模板",
             "knowledge": "知识管理"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "未找到命令",
             "pressKeys": "按下按键..."
         },
-        "features": {
-            "intro": "开启或关闭内置功能。禁用的功能将从界面中隐藏。",
+        "plugins": {
+            "intro": "启用或禁用插件。禁用的插件将从界面中隐藏。",
             "dailyNotes": "日记",
             "dailyNotesDesc": "创建和打开每日笔记",
             "templates": "模板",
@@ -305,7 +308,16 @@
             "off": "关闭",
             "navigation": "导航",
             "discovery": "发现",
-            "organization": "组织"
+            "organization": "组织",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "知识结构的旭日图可视化",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "重力井知识可视化与分析",
+            "templates": "模板",
+            "templatesDesc": "从模板文件插入内容"
+        },
+        "templates": {
+            "intro": "管理笔记模板。模板可以在新笔记中插入预定义内容。"
         },
         "knowledge": {
             "intro": "配置知识的组织、查看和分析方式。",

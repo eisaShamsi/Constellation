@@ -13,8 +13,11 @@
             "intelligence": "Intelligence",
             "security": "Security & Privacy",
             "appearance": "Appearance",
-            "keyboard": "Keyboard",
-            "features": "Features",
+            "keyboard": "Hotkeys",
+            "features": "Plug-Ins",
+            "hotkeys": "Hotkeys",
+            "plugins": "Plug-Ins",
+            "templates": "Templates",
             "knowledge": "Knowledge Management"
         },
         "dashboard": {
@@ -210,8 +213,8 @@
             "noCommands": "No commands found",
             "pressKeys": "Press keys..."
         },
-        "features": {
-            "intro": "Toggle built-in features on or off. Disabled features are hidden from the interface.",
+        "plugins": {
+            "intro": "Toggle plug-ins on or off. Disabled plug-ins are hidden from the interface.",
             "on": "On",
             "off": "Off",
             "navigation": "Navigation",
@@ -244,7 +247,16 @@
             "index": "Index",
             "indexDesc": "Collect and browse terms from all notes",
             "semanticSearch": "Semantic Search",
-            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)"
+            "semanticSearchDesc": "Find conceptually related notes across 100 languages using AI embeddings (offline)",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "Sunburst visualization of knowledge structure",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+            "templates": "Templates",
+            "templatesDesc": "Insert content from template files"
+        },
+        "templates": {
+            "intro": "Manage note templates. Templates let you insert predefined content into new notes."
         },
         "intelligence": {
             "intro": "Configure AI providers, skills, and privacy controls for your libraries.",

@@ -13,8 +13,11 @@
             "intelligence": "هوش",
             "security": "امنیت و حریم خصوصی",
             "appearance": "ظاهر",
-            "keyboard": "صفحه‌کلید",
-            "features": "ویژگی‌ها",
+            "keyboard": "میانبرهای صفحه‌کلید",
+            "features": "افزونه‌ها",
+            "hotkeys": "میانبرهای صفحه‌کلید",
+            "plugins": "افزونه‌ها",
+            "templates": "قالب‌ها",
             "knowledge": "مدیریت دانش"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "دستوری یافت نشد",
             "pressKeys": "کلیدها را فشار دهید..."
         },
-        "features": {
-            "intro": "ویژگی‌های داخلی را روشن یا خاموش کنید. ویژگی‌های غیرفعال از رابط کاربری مخفی می‌شوند.",
+        "plugins": {
+            "intro": "فعال یا غیرفعال کردن افزونه‌ها. افزونه‌های غیرفعال از رابط پنهان می‌شوند.",
             "dailyNotes": "یادداشت‌های روزانه",
             "dailyNotesDesc": "ایجاد و باز کردن یادداشت‌های روزانه",
             "templates": "قالب‌ها",
@@ -305,7 +308,16 @@
             "off": "خاموش",
             "navigation": "ناوبری",
             "discovery": "کشف",
-            "organization": "سازمان‌دهی"
+            "organization": "سازمان‌دهی",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "تجسم خورشیدی ساختار دانش",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "تجسم گرانشی دانش با تحلیل‌ها",
+            "templates": "قالب‌ها",
+            "templatesDesc": "درج محتوا از فایل‌های قالب"
+        },
+        "templates": {
+            "intro": "مدیریت قالب‌های یادداشت. قالب‌ها محتوای از پیش تعریف‌شده را در یادداشت‌های جدید درج می‌کنند."
         },
         "knowledge": {
             "intro": "نحوه سازماندهی، نمایش و تحلیل دانش خود را تنظیم کنید.",

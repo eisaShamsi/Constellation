@@ -13,8 +13,11 @@
             "intelligence": "बुद्धिमत्ता",
             "security": "सुरक्षा और गोपनीयता",
             "appearance": "दिखावट",
-            "keyboard": "कीबोर्ड",
-            "features": "सुविधाएँ",
+            "keyboard": "शॉर्टकट कुंजियाँ",
+            "features": "प्लग-इन",
+            "hotkeys": "शॉर्टकट कुंजियाँ",
+            "plugins": "प्लग-इन",
+            "templates": "टेम्पलेट",
             "knowledge": "ज्ञान प्रबंधन"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "कोई कमांड नहीं मिली",
             "pressKeys": "कुंजियाँ दबाएँ..."
         },
-        "features": {
-            "intro": "अंतर्निहित सुविधाओं को चालू या बंद करें। अक्षम सुविधाएँ इंटरफ़ेस से छिपी होती हैं।",
+        "plugins": {
+            "intro": "प्लग-इन चालू या बंद करें। अक्षम प्लग-इन इंटरफ़ेस से छिपे रहते हैं।",
             "dailyNotes": "दैनिक नोट्स",
             "dailyNotesDesc": "दैनिक नोट्स बनाएँ और खोलें",
             "templates": "टेम्पलेट्स",
@@ -305,7 +308,16 @@
             "off": "बंद",
             "navigation": "नेविगेशन",
             "discovery": "खोज",
-            "organization": "संगठन"
+            "organization": "संगठन",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "ज्ञान संरचना का सनबर्स्ट विज़ुअलाइज़ेशन",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "गुरुत्वाकर्षण ज्ञान विज़ुअलाइज़ेशन",
+            "templates": "टेम्पलेट्स",
+            "templatesDesc": "टेम्पलेट फ़ाइलों से सामग्री डालें"
+        },
+        "templates": {
+            "intro": "नोट टेम्पलेट प्रबंधित करें। टेम्पलेट नई नोट्स में पूर्वनिर्धारित सामग्री डालते हैं।"
         },
         "knowledge": {
             "intro": "कॉन्फ़िगर करें कि आपका ज्ञान कैसे व्यवस्थित, देखा और विश्लेषित किया जाता है।",

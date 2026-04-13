@@ -13,8 +13,11 @@
             "intelligence": "בינה",
             "security": "אבטחה ופרטיות",
             "appearance": "מראה",
-            "keyboard": "מקלדת",
-            "features": "תכונות",
+            "keyboard": "קיצורי מקלדת",
+            "features": "תוספים",
+            "hotkeys": "קיצורי מקלדת",
+            "plugins": "תוספים",
+            "templates": "תבניות",
             "knowledge": "ניהול ידע"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "לא נמצאו פקודות",
             "pressKeys": "לחץ על מקשים..."
         },
-        "features": {
-            "intro": "הפעל או כבה תכונות מובנות. תכונות מושבתות מוסתרות מהממשק.",
+        "plugins": {
+            "intro": "הפעל או השבת תוספים. תוספים מושבתים מוסתרים מהממשק.",
             "dailyNotes": "פתקים יומיים",
             "dailyNotesDesc": "צור ופתח פתקים יומיים",
             "templates": "תבניות",
@@ -305,7 +308,16 @@
             "off": "כבוי",
             "navigation": "ניווט",
             "discovery": "גילוי",
-            "organization": "ארגון"
+            "organization": "ארגון",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "תצוגת שמש של מבנה הידע",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "תצוגת כוח משיכה עם ניתוח",
+            "templates": "תבניות",
+            "templatesDesc": "הכנס תוכן מקבצי תבנית"
+        },
+        "templates": {
+            "intro": "ניהול תבניות הערות. תבניות מאפשרות הוספת תוכן מוגדר מראש להערות חדשות."
         },
         "knowledge": {
             "intro": "הגדר כיצד הידע שלך מאורגן, מוצג ומנותח.",

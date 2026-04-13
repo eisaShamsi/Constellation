@@ -13,8 +13,11 @@
             "intelligence": "ذہانت",
             "security": "سیکیورٹی اور رازداری",
             "appearance": "ظاہری شکل",
-            "keyboard": "کی بورڈ",
-            "features": "خصوصیات",
+            "keyboard": "شارٹ کٹ کیز",
+            "features": "پلگ انز",
+            "hotkeys": "شارٹ کٹ کیز",
+            "plugins": "پلگ انز",
+            "templates": "ٹیمپلیٹس",
             "knowledge": "علم کا انتظام"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "کوئی کمانڈ نہیں ملی",
             "pressKeys": "کیز دبائیں..."
         },
-        "features": {
-            "intro": "بلٹ ان خصوصیات کو آن یا آف کریں۔ غیر فعال خصوصیات انٹرفیس سے چھپی ہوتی ہیں۔",
+        "plugins": {
+            "intro": "پلگ انز کو آن یا آف کریں۔ غیر فعال پلگ انز انٹرفیس سے چھپ جاتے ہیں۔",
             "dailyNotes": "روزانہ نوٹس",
             "dailyNotesDesc": "روزانہ نوٹس بنائیں اور کھولیں",
             "templates": "ٹیمپلیٹس",
@@ -305,7 +308,16 @@
             "off": "آف",
             "navigation": "نیویگیشن",
             "discovery": "دریافت",
-            "organization": "تنظیم"
+            "organization": "تنظیم",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "علم کی ساخت کا سن برسٹ تصور",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "کشش ثقل نالج ویژولائزیشن",
+            "templates": "ٹیمپلیٹس",
+            "templatesDesc": "ٹیمپلیٹ فائلوں سے مواد داخل کریں"
+        },
+        "templates": {
+            "intro": "نوٹ ٹیمپلیٹس کا انتظام کریں۔ ٹیمپلیٹس نئے نوٹس میں پہلے سے طے شدہ مواد داخل کرتے ہیں۔"
         },
         "knowledge": {
             "intro": "ترتیب دیں کہ آپ کا علم کیسے منظم، دکھایا اور تجزیہ کیا جائے۔",

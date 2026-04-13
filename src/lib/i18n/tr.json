@@ -13,8 +13,11 @@
             "intelligence": "Zeka",
             "security": "Güvenlik & Gizlilik",
             "appearance": "Görünüm",
-            "keyboard": "Klavye",
-            "features": "Özellikler",
+            "keyboard": "Kısayol Tuşları",
+            "features": "Eklentiler",
+            "hotkeys": "Kısayol Tuşları",
+            "plugins": "Eklentiler",
+            "templates": "Şablonlar",
             "knowledge": "Bilgi Yönetimi"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "Komut bulunamadı",
             "pressKeys": "Tuşlara basın..."
         },
-        "features": {
-            "intro": "Yerleşik özellikleri açın veya kapatın. Devre dışı bırakılan özellikler arayüzden gizlenir.",
+        "plugins": {
+            "intro": "Eklentileri açın veya kapatın. Devre dışı eklentiler arayüzden gizlenir.",
             "dailyNotes": "Günlük Notlar",
             "dailyNotesDesc": "Günlük notlar oluşturun ve açın",
             "templates": "Şablonlar",
@@ -305,7 +308,16 @@
             "off": "Kapalı",
             "navigation": "Gezinme",
             "discovery": "Keşif",
-            "organization": "Düzenleme"
+            "organization": "Düzenleme",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "Bilgi yapısının güneş ışını görselleştirmesi",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "Yerçekimi kuyusu bilgi görselleştirmesi",
+            "templates": "Şablonlar",
+            "templatesDesc": "Şablon dosyalarından içerik ekleyin"
+        },
+        "templates": {
+            "intro": "Not şablonlarını yönetin. Şablonlar yeni notlara önceden tanımlanmış içerik ekler."
         },
         "knowledge": {
             "intro": "Bilginizin nasıl düzenlendiğini, görüntülendiğini ve analiz edildiğini yapılandırın.",

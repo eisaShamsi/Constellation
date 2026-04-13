@@ -13,8 +13,11 @@
             "intelligence": "Intelligence",
             "security": "Sécurité & Confidentialité",
             "appearance": "Apparence",
-            "keyboard": "Clavier",
-            "features": "Fonctionnalités",
+            "keyboard": "Raccourcis clavier",
+            "features": "Extensions",
+            "hotkeys": "Raccourcis clavier",
+            "plugins": "Extensions",
+            "templates": "Modèles",
             "knowledge": "Gestion des connaissances"
         },
         "general": {
@@ -271,8 +274,8 @@
             "noCommands": "Aucune commande trouvée",
             "pressKeys": "Appuyez sur les touches..."
         },
-        "features": {
-            "intro": "Activez ou désactivez les fonctionnalités intégrées. Les fonctionnalités désactivées sont masquées.",
+        "plugins": {
+            "intro": "Activer ou désactiver les extensions. Les extensions désactivées sont masquées.",
             "dailyNotes": "Notes quotidiennes",
             "dailyNotesDesc": "Créer et ouvrir des notes quotidiennes",
             "templates": "Modèles",
@@ -305,7 +308,16 @@
             "off": "Désactivé",
             "navigation": "Navigation",
             "discovery": "Découverte",
-            "organization": "Organisation"
+            "organization": "Organisation",
+            "constellationMap": "Constellation Map",
+            "constellationMapDesc": "Visualisation en rayons de la structure des connaissances",
+            "constellationSight": "Constellation Sight",
+            "constellationSightDesc": "Visualisation gravitationnelle avec analytique",
+            "templates": "Modèles",
+            "templatesDesc": "Insérer du contenu depuis des fichiers modèles"
+        },
+        "templates": {
+            "intro": "Gérer les modèles de notes. Les modèles insèrent du contenu prédéfini dans les nouvelles notes."
         },
         "knowledge": {
             "intro": "Configurez l'organisation, l'affichage et l'analyse de vos connaissances.",
