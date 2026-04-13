@@ -74,6 +74,7 @@
 				{ id: 'skyView', name: $t('settings.plugins.graphView') || 'Sky View', desc: $t('settings.plugins.graphViewDesc') || 'Visualize links between notes', icon: '🌐' },
 				{ id: 'constellationSight', name: $t('settings.plugins.constellationSight') || 'Constellation Sight', desc: $t('settings.plugins.constellationSightDesc') || 'Gravity-well knowledge visualization with analytics', icon: '👁️' },
 				{ id: 'constellationMap', name: $t('settings.plugins.constellationMap') || 'Constellation Map', desc: $t('settings.plugins.constellationMapDesc') || 'Sunburst visualization of knowledge structure', icon: '🗺️' },
+				{ id: 'orgChart', name: $t('settings.plugins.orgChart') || 'OrgChart', desc: $t('settings.plugins.orgChartDesc') || 'Visual tree of your knowledge hierarchy', icon: '🏛️' },
 				{ id: 'backlinks', name: $t('settings.plugins.backlinks') || 'Backlinks', desc: $t('settings.plugins.backlinksDesc') || 'Show notes that link to the current note', icon: '🔗' },
 				{ id: 'outgoingLinks', name: $t('settings.plugins.outgoingLinks') || 'Outgoing Links', desc: $t('settings.plugins.outgoingLinksDesc') || 'Show links in the current note', icon: '↗️' },
 				{ id: 'pagePreview', name: $t('settings.plugins.pagePreview') || 'Page Preview', desc: $t('settings.plugins.pagePreviewDesc') || 'Preview notes on link hover', icon: '👁️' },
@@ -86,6 +87,7 @@
 			category: $t('settings.plugins.organization') || 'Organization',
 			icon: 'layers',
 			features: [
+				{ id: 'aiSkills', name: $t('settings.plugins.aiSkills') || 'AI Skills', desc: $t('settings.plugins.aiSkillsDesc') || 'AI-powered automation and knowledge tools', icon: '⭐' },
 				{ id: 'secondScreen', name: $t('settings.plugins.secondScreen') || 'Second Screen', desc: $t('settings.plugins.secondScreenDesc') || 'Companion window on a second monitor', icon: '🖥️' },
 				{ id: 'dailyNotes', name: $t('settings.plugins.dailyNotes') || 'Daily Notes', desc: $t('settings.plugins.dailyNotesDesc') || 'Create and open daily notes', icon: '📅' },
 				{ id: 'workspaces', name: $t('settings.plugins.workspaces') || 'Workspaces', desc: $t('settings.plugins.workspacesDesc') || 'Save and restore workspace layouts', icon: '📐' },

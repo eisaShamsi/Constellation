@@ -2774,6 +2774,7 @@
 			}} title={$t('searchHub.title')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</button>
+			{#if $appSettings.enabledFeatures?.orgChart !== false}
 			<button class="dock-btn" class:active={showOrgChart} onclick={() => {
 				showOrgChart = !showOrgChart;
 				orgChartReturnPending = false;
@@ -2787,6 +2788,7 @@
 			}} title={$t('navigator.orgChart') || 'Organization Chart'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
 			</button>
+			{/if}
 			{#if $appSettings.enabledFeatures?.skyView !== false}
 			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
@@ -2795,12 +2797,16 @@
 			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => { showGlobalTasks = !showGlobalTasks; showSkyView = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.globalTasks')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 			</button>
+			{#if $appSettings.enabledFeatures?.dailyNotes !== false}
 			<button class="dock-btn" onclick={handleOpenDailyNote} title={$t('ribbon.dailyNote')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
 			</button>
+			{/if}
+			{#if $appSettings.enabledFeatures?.aiSkills !== false}
 			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('ribbon.aiSkills')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
 			</a>
+			{/if}
 			{#if $appSettings.enabledFeatures?.index !== false}
 			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>

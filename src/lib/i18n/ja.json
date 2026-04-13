@@ -289,7 +289,11 @@
       "notesNavigator": "ノートナビゲーター",
       "notesNavigatorDesc": "フォルダ、タグ、プロパティでノートを閲覧・フィルタ",
       "secondScreen": "セカンドスクリーン",
-      "secondScreenDesc": "セカンドモニターのコンパニオンウィンドウ"
+      "secondScreenDesc": "セカンドモニターのコンパニオンウィンドウ",
+      "orgChart": "組織図",
+      "orgChartDesc": "ナレッジ階層のビジュアルツリー",
+      "aiSkills": "AIスキル",
+      "aiSkillsDesc": "AI搭載の自動化・ナレッジツール"
     },
     "knowledge": {
       "intro": "知識の整理、表示、分析の方法を設定します。",

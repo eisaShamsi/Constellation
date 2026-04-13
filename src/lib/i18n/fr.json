@@ -289,7 +289,11 @@
       "notesNavigator": "Navigateur de Notes",
       "notesNavigatorDesc": "Parcourir et filtrer les notes par dossier, tag ou propriété",
       "secondScreen": "Second Écran",
-      "secondScreenDesc": "Fenêtre compagnon sur un second moniteur"
+      "secondScreenDesc": "Fenêtre compagnon sur un second moniteur",
+      "orgChart": "Organigramme",
+      "orgChartDesc": "Arbre visuel de votre hiérarchie de connaissances",
+      "aiSkills": "Compétences IA",
+      "aiSkillsDesc": "Outils d'automatisation et de connaissances par IA"
     },
     "knowledge": {
       "intro": "Configurez l'organisation, l'affichage et l'analyse de vos connaissances.",

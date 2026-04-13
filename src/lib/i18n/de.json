@@ -289,7 +289,11 @@
       "notesNavigator": "Notizen-Navigator",
       "notesNavigatorDesc": "Notizen nach Ordner, Tag oder Eigenschaft durchsuchen",
       "secondScreen": "Zweiter Bildschirm",
-      "secondScreenDesc": "Begleitfenster auf einem zweiten Monitor"
+      "secondScreenDesc": "Begleitfenster auf einem zweiten Monitor",
+      "orgChart": "Organigramm",
+      "orgChartDesc": "Visueller Baum Ihrer Wissenshierarchie",
+      "aiSkills": "KI-Fähigkeiten",
+      "aiSkillsDesc": "KI-gestützte Automatisierung und Wissenswerkzeuge"
     },
     "knowledge": {
       "intro": "Konfigurieren Sie, wie Ihr Wissen organisiert, angezeigt und analysiert wird.",

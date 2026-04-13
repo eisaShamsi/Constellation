@@ -289,7 +289,11 @@
       "notesNavigator": "ניווט הערות",
       "notesNavigatorDesc": "עיון וסינון הערות לפי תיקייה, תגית או מאפיין",
       "secondScreen": "מסך שני",
-      "secondScreenDesc": "חלון נלווה על צג שני"
+      "secondScreenDesc": "חלון נלווה על צג שני",
+      "orgChart": "תרשים ארגוני",
+      "orgChartDesc": "עץ חזותי של היררכיית הידע שלך",
+      "aiSkills": "כישורי AI",
+      "aiSkillsDesc": "כלי אוטומציה וידע מבוססי AI"
     },
     "knowledge": {
       "intro": "הגדר כיצד הידע שלך מאורגן, מוצג ומנותח.",

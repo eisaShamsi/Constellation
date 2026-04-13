@@ -289,7 +289,11 @@
       "notesNavigator": "Not Gezgini",
       "notesNavigatorDesc": "Notları klasör, etiket veya özelliğe göre göz atın",
       "secondScreen": "İkinci Ekran",
-      "secondScreenDesc": "İkinci monitörde yardımcı pencere"
+      "secondScreenDesc": "İkinci monitörde yardımcı pencere",
+      "orgChart": "Organizasyon Şeması",
+      "orgChartDesc": "Bilgi hiyerarşinizin görsel ağacı",
+      "aiSkills": "Yapay Zeka Becerileri",
+      "aiSkillsDesc": "Yapay zeka destekli otomasyon ve bilgi araçları"
     },
     "knowledge": {
       "intro": "Bilginizin nasıl düzenlendiğini, görüntülendiğini ve analiz edildiğini yapılandırın.",

@@ -289,7 +289,11 @@
       "notesNavigator": "노트 내비게이터",
       "notesNavigatorDesc": "폴더, 태그 또는 속성으로 노트 탐색 및 필터링",
       "secondScreen": "세컨드 스크린",
-      "secondScreenDesc": "두 번째 모니터의 컴패니언 창"
+      "secondScreenDesc": "두 번째 모니터의 컴패니언 창",
+      "orgChart": "조직도",
+      "orgChartDesc": "지식 계층의 시각적 트리",
+      "aiSkills": "AI 스킬",
+      "aiSkillsDesc": "AI 기반 자동화 및 지식 도구"
     },
     "knowledge": {
       "intro": "지식이 구성, 표시 및 분석되는 방식을 구성합니다.",

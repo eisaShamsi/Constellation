@@ -1658,6 +1658,8 @@ export interface AppSettings {
 		index: boolean;
 		semanticSearch: boolean;
 		notesNavigator: boolean;
+		orgChart: boolean;
+		aiSkills: boolean;
 		secondScreen: boolean;
 		constellationMap: boolean;
 		constellationSight: boolean;
@@ -1756,6 +1758,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 		index: true,
 		semanticSearch: false,
 		notesNavigator: true,
+		orgChart: true,
+		aiSkills: true,
 		secondScreen: true,
 		constellationMap: false,
 		constellationSight: true,

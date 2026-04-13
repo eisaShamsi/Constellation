@@ -289,7 +289,11 @@
       "notesNavigator": "Navegador de Notas",
       "notesNavigatorDesc": "Navegar e filtrar notas por pasta, tag ou propriedade",
       "secondScreen": "Segunda Tela",
-      "secondScreenDesc": "Janela complementar em um segundo monitor"
+      "secondScreenDesc": "Janela complementar em um segundo monitor",
+      "orgChart": "Organograma",
+      "orgChartDesc": "Árvore visual da sua hierarquia de conhecimento",
+      "aiSkills": "Habilidades IA",
+      "aiSkillsDesc": "Ferramentas de automação e conhecimento por IA"
     },
     "knowledge": {
       "intro": "Configure como seu conhecimento é organizado, visualizado e analisado.",

@@ -255,7 +255,11 @@
       "notesNavigator": "Notes Navigator",
       "notesNavigatorDesc": "Browse and filter notes by folder, tag, or property",
       "secondScreen": "Second Screen",
-      "secondScreenDesc": "Companion window on a second monitor"
+      "secondScreenDesc": "Companion window on a second monitor",
+      "orgChart": "OrgChart",
+      "orgChartDesc": "Visual tree of your knowledge hierarchy",
+      "aiSkills": "AI Skills",
+      "aiSkillsDesc": "AI-powered automation and knowledge tools"
     },
     "templates": {
       "templateFolder": "Template folder",
