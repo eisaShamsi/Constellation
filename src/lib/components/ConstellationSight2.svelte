@@ -187,6 +187,7 @@
 
 	// ─── Build Simulation Data ────────────────────────────────
 	function buildSimData() {
+		communitySizes = new Map<number, number>();
 		const nodeMap = new Map<string, SimNode>();
 		simNodes = nodes.map(n => {
 			const c = centrality.get(n.id) ?? 0;
@@ -500,52 +501,133 @@
 		ctx!.fill();
 	}
 
-	function drawCommunityRegions() {
-		const communityIds = [...new Set(simNodes.map(n => n.communityId))].sort((a, b) => a - b);
-		const numC = Math.max(communityIds.length, 1);
-		const sectorWidth = (Math.PI * 2) / numC;
-		const outerR = Math.min(width, height) * 0.48;
+	// ─── Hexagon helper ──────────────────────────────────────
+	function hexPath(cx: number, cy: number, r: number) {
+		// Flat-top hexagon
+		ctx!.beginPath();
+		for (let i = 0; i < 6; i++) {
+			const angle = (Math.PI / 3) * i;
+			const hx = cx + r * Math.cos(angle);
+			const hy = cy + r * Math.sin(angle);
+			if (i === 0) ctx!.moveTo(hx, hy);
+			else ctx!.lineTo(hx, hy);
+		}
+		ctx!.closePath();
+	}
 
-		for (let i = 0; i < communityIds.length; i++) {
-			const cid = communityIds[i];
-			const startAngle = (i / numC) * Math.PI * 2;
-			const endAngle = startAngle + sectorWidth;
+	// ─── Convex Hull (Andrew's monotone chain) ──────────────
+	function convexHull(points: [number, number][]): [number, number][] {
+		if (points.length < 3) return points;
+		const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+		const cross = (O: [number, number], A: [number, number], B: [number, number]) =>
+			(A[0] - O[0]) * (B[1] - O[1]) - (A[1] - O[1]) * (B[0] - O[0]);
+
+		const lower: [number, number][] = [];
+		for (const p of sorted) {
+			while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+			lower.push(p);
+		}
+		const upper: [number, number][] = [];
+		for (let i = sorted.length - 1; i >= 0; i--) {
+			const p = sorted[i];
+			while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+			upper.push(p);
+		}
+		lower.pop();
+		upper.pop();
+		return lower.concat(upper);
+	}
+
+	// ─── Smooth hull path (rounded convex hull) ─────────────
+	function drawSmoothHull(hull: [number, number][], padding: number) {
+		if (hull.length < 2) return;
+		if (hull.length === 2) {
+			// Capsule between two points
+			const [ax, ay] = hull[0];
+			const [bx, by] = hull[1];
+			const dx = bx - ax, dy = by - ay;
+			const len = Math.sqrt(dx * dx + dy * dy) || 1;
+			const nx = -dy / len * padding, ny = dx / len * padding;
+			ctx!.beginPath();
+			ctx!.moveTo(ax + nx, ay + ny);
+			ctx!.lineTo(bx + nx, by + ny);
+			ctx!.arc(bx, by, padding, Math.atan2(ny, nx), Math.atan2(-ny, -nx));
+			ctx!.lineTo(ax - nx, ay - ny);
+			ctx!.arc(ax, ay, padding, Math.atan2(-ny, -nx), Math.atan2(ny, nx));
+			ctx!.closePath();
+			return;
+		}
+		// Offset hull outward by padding, then draw with rounded corners
+		ctx!.beginPath();
+		for (let i = 0; i < hull.length; i++) {
+			const [cx, cy] = hull[i];
+			const [nx, ny] = hull[(i + 1) % hull.length];
+			if (i === 0) {
+				// Move to midpoint of first edge offset
+				const mx = (cx + nx) / 2, my = (cy + ny) / 2;
+				const dx = nx - cx, dy = ny - cy;
+				const len = Math.sqrt(dx * dx + dy * dy) || 1;
+				ctx!.moveTo(mx + (-dy / len) * padding, my + (dx / len) * padding);
+			}
+			// Arc around vertex nx,ny with radius = padding
+			const [px, py] = hull[(i + 2) % hull.length];
+			const d1x = cx - nx, d1y = cy - ny;
+			const d2x = px - nx, d2y = py - ny;
+			const a1 = Math.atan2(d1y, d1x);
+			const a2 = Math.atan2(d2y, d2x);
+			ctx!.arcTo(
+				nx + Math.cos(a1) * padding * -1 + (nx - cx) * 0.1,
+				ny + Math.sin(a1) * padding * -1 + (ny - cy) * 0.1,
+				nx + Math.cos(a2) * padding * -1 + (nx - px) * 0.1,
+				ny + Math.sin(a2) * padding * -1 + (ny - py) * 0.1,
+				padding
+			);
+		}
+		ctx!.closePath();
+	}
+
+	function drawCommunityRegions() {
+		// Draw convex hull borders around each community's nodes
+		const communityNodes = new Map<number, SimNode[]>();
+		for (const n of simNodes) {
+			if (!communityNodes.has(n.communityId)) communityNodes.set(n.communityId, []);
+			communityNodes.get(n.communityId)!.push(n);
+		}
+
+		for (const [cid, members] of communityNodes) {
+			if (members.length < 2) continue;
 			const color = communityColors.get(cid) ?? '#94a3b8';
 
-			ctx!.beginPath();
-			ctx!.moveTo(0, 0);
-			ctx!.arc(0, 0, outerR, startAngle, endAngle);
-			ctx!.closePath();
-			ctx!.fillStyle = color + '0D';
+			// Build convex hull from node positions
+			const points: [number, number][] = members.map(m => [m.x ?? 0, m.y ?? 0]);
+			const hull = convexHull(points);
+			if (hull.length < 2) continue;
+
+			// Padding = average node radius + breathing room
+			const avgR = members.reduce((s, m) => s + m.r, 0) / members.length;
+			const padding = avgR + 8;
+
+			// Draw padded hull — subtle fill + colored border
+			drawSmoothHull(hull, padding);
+			ctx!.fillStyle = color + '08'; // ~3% fill — barely visible tint
 			ctx!.fill();
-
-			ctx!.beginPath();
-			ctx!.moveTo(0, 0);
-			ctx!.lineTo(outerR * Math.cos(startAngle), outerR * Math.sin(startAngle));
-			ctx!.strokeStyle = color + '30';
-			ctx!.lineWidth = 1 / zoom;
+			ctx!.strokeStyle = color + '55'; // ~33% opacity border
+			ctx!.lineWidth = 1.5 / zoom;
 			ctx!.stroke();
 
-			ctx!.beginPath();
-			ctx!.arc(0, 0, outerR, startAngle, endAngle);
-			ctx!.strokeStyle = color + '25';
-			ctx!.lineWidth = 1 / zoom;
-			ctx!.stroke();
-
-			// Community label — only render when zoom makes it readable (not a mess of overlapping text)
+			// Community label at centroid — only at readable zoom levels
 			const fontSize = 11 / zoom;
-			if (fontSize >= 6 && fontSize <= 30) {
-				const midAngle = startAngle + sectorWidth / 2;
-				const labelR = outerR + 16 / zoom;
-				const lx = labelR * Math.cos(midAngle);
-				const ly = labelR * Math.sin(midAngle);
+			if (fontSize >= 6 && fontSize <= 28) {
+				const cx = members.reduce((s, m) => s + (m.x ?? 0), 0) / members.length;
+				const cy = members.reduce((s, m) => s + (m.y ?? 0), 0) / members.length;
+				// Place label slightly above centroid
 				const profile = communityProfiles?.find(p => p.id === cid);
 				const label = profile?.name ?? `C${cid}`;
-				ctx!.font = `${fontSize}px system-ui, sans-serif`;
-				ctx!.fillStyle = color + '88';
+				ctx!.font = `bold ${fontSize}px system-ui, sans-serif`;
+				ctx!.fillStyle = color + '66';
 				ctx!.textAlign = 'center';
 				ctx!.textBaseline = 'middle';
-				ctx!.fillText(label.length > 10 ? label.slice(0, 10) + '…' : label, lx, ly);
+				ctx!.fillText(label.length > 14 ? label.slice(0, 14) + '…' : label, cx, cy - (avgR + 12) / zoom);
 			}
 		}
 	}
@@ -639,12 +721,20 @@
 		}
 	}
 
+	// Count how many nodes share each community (for orphan detection)
+	let communitySizes = new Map<number, number>();
+
 	function drawNodes() {
 		const hw = width / 2 / zoom, hh = height / 2 / zoom;
 		const vpLeft = -panX / zoom - hw - 20, vpRight = -panX / zoom + hw + 20;
 		const vpTop = -panY / zoom - hh - 20, vpBottom = -panY / zoom + hh + 20;
 		const hasSearch = searchMatchSet.size > 0;
 		const currentMatch = searchResults[searchIdx]?.node;
+
+		// Build community sizes once per draw if empty
+		if (communitySizes.size === 0) {
+			for (const n of simNodes) communitySizes.set(n.communityId, (communitySizes.get(n.communityId) ?? 0) + 1);
+		}
 
 		for (const n of simNodes) {
 			const x = n.x ?? 0, y = n.y ?? 0;
@@ -655,27 +745,42 @@
 			const maturityAlpha: Record<string, number> = { seed: 0.5, sapling: 0.7, evergreen: 0.9, canonical: 1.0, wilting: 0.4 };
 			const alpha = hasSearch ? (isMatch ? 1.0 : 0.15) : (maturityAlpha[n.maturity ?? 'seed'] ?? 0.6);
 
+			// Is this node in a real community (>1 member) or an orphan?
+			const inCommunity = (communitySizes.get(n.communityId) ?? 0) > 1;
+
 			// Bridge emphasis
 			if (n.centrality > 0.4 && (!hasSearch || isMatch)) {
-				ctx!.beginPath();
-				ctx!.arc(x, y, n.r + 4 / zoom, 0, Math.PI * 2);
+				if (inCommunity) {
+					hexPath(x, y, n.r + 4 / zoom);
+				} else {
+					ctx!.beginPath();
+					ctx!.arc(x, y, n.r + 4 / zoom, 0, Math.PI * 2);
+				}
 				ctx!.fillStyle = n.communityColor + '33';
 				ctx!.fill();
 			}
 
-			// Search match highlight ring
+			// Search match highlight
 			if (isMatch) {
-				ctx!.beginPath();
-				ctx!.arc(x, y, n.r + (isCurrent ? 6 : 3) / zoom, 0, Math.PI * 2);
+				if (inCommunity) {
+					hexPath(x, y, n.r + (isCurrent ? 6 : 3) / zoom);
+				} else {
+					ctx!.beginPath();
+					ctx!.arc(x, y, n.r + (isCurrent ? 6 : 3) / zoom, 0, Math.PI * 2);
+				}
 				ctx!.strokeStyle = isCurrent ? '#f59e0b' : '#3b82f6';
 				ctx!.lineWidth = (isCurrent ? 3 : 2) / zoom;
 				ctx!.stroke();
 			}
 
-			// Node circle
+			// Node shape: hexagon for community members, circle for orphans
 			ctx!.globalAlpha = alpha;
-			ctx!.beginPath();
-			ctx!.arc(x, y, n.r, 0, Math.PI * 2);
+			if (inCommunity) {
+				hexPath(x, y, n.r);
+			} else {
+				ctx!.beginPath();
+				ctx!.arc(x, y, n.r, 0, Math.PI * 2);
+			}
 			ctx!.fillStyle = n.communityColor;
 			ctx!.fill();
 			ctx!.globalAlpha = 1.0;
@@ -1052,7 +1157,15 @@
 			{#if showLegend}
 				<div class="sight2-legend">
 					<div class="sight2-legend-title">{$t('lens.legend') || 'Legend'}</div>
-					<!-- Nodes -->
+					<!-- Node shapes -->
+					<div class="sight2-legend-row">
+						<svg width="16" height="14" viewBox="0 0 16 14"><polygon points="8,0 15,3.5 15,10.5 8,14 1,10.5 1,3.5" fill="#a78bfa" opacity="0.7"/></svg>
+						<span>Hexagon = community member</span>
+					</div>
+					<div class="sight2-legend-row">
+						<svg width="14" height="14"><circle cx="7" cy="7" r="5" fill="#94a3b8" opacity="0.6"/></svg>
+						<span>Circle = orphan / uncategorized</span>
+					</div>
 					<div class="sight2-legend-row">
 						<span class="sight2-lg-dot sight2-lg-big"></span>
 						<span>{$t("lens.largeNode") || "Large"} — {$t("lens.bridgeDesc") || "bridge / high centrality"}</span>
@@ -1060,12 +1173,6 @@
 					<div class="sight2-legend-row">
 						<span class="sight2-lg-dot sight2-lg-small"></span>
 						<span>{$t("lens.smallNode") || "Small"} — {$t("lens.peripheralDesc") || "peripheral"}</span>
-					</div>
-					<div class="sight2-legend-row">
-						<span class="sight2-lg-dot" style="background:#a78bfa"></span>
-						<span class="sight2-lg-dot" style="background:#34d399"></span>
-						<span class="sight2-lg-dot" style="background:#60a5fa"></span>
-						<span>{$t("lens.legendCommunityColor") || "Color"} = {$t("lens.communityDesc") || "community"}</span>
 					</div>
 					<div class="sight2-legend-divider"></div>
 					<!-- Link types -->
