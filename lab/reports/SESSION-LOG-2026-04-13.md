@@ -1,50 +1,42 @@
 # Session Log — 2026-04-13
 
-## Phase: Sight2 Full Feature Integration
+## Phase: Sight2 Complete Redesign
+
+### Key Design Decisions
+1. **Dropped Louvain community detection** — communities were algorithmic noise, not cognitive knowledge. User's own libraries are more meaningful groupings.
+2. **Nodes colored by library** — user's organization, not algorithm's guess.
+3. **Neighborhood highlight** — single-click a node to see all connections (nervous system metaphor). More useful than static community boundaries.
+4. **All links solid** — dashed lines raised questions ("what does this shape mean?"). Confidence shown by thickness instead.
+5. **Multiple direction arrows** on typed links — 3 arrows on long links, 2 on medium, 1 on short.
+6. **Simplicity principle** — "The simplicity should come from understanding what you see at first sight. NOT to raise more questions."
 
 ### Commits
 - `5b11d11` — Sight2: Sector wedge communities + full search integration + legend
+- `3f40403` — Sight2: Fix 5 test findings — sectors, badges, arrows, link controls, perf
+- `e6a54e5` — Revert hexagon/boundary experiments — back to 3f40403
+- `04f0308` — Sight2: Restore exact 3f40403 layout
+- `289e4e5` — Sight2: Drop Louvain — library colors + neighborhood highlight
+- `d87b804` — Sight2: Bigger badges, pointer arrow, persistent settings, visible arrows
+- `d6f2f8e` — Sight2: Solid links + multiple direction arrows + bigger pointer
 
-### Work Done
+### Boundary Issue Investigation
+- Spent significant time debugging nodes/links escaping outer ring
+- Root cause: D3 forceCollide pushed nodes outward after positioning, no post-simulation clamp
+- Research: d3-force-limit, d3-force-boundary, Mbostock bounded force gist
+- Solution: custom boundary force registered as last D3 force + jitter reduction
+- Multiple failed approaches: clip(), render-time skipping, chord-based layout
+- Final state: 4-ring layout with boundary force for collision avoidance
 
-**Community Regions Redesign**
-- Replaced overlapping ellipses with sector wedges (pie slices) matching gravity-well angular sectors
-- Each community gets its own wedge from center to outer ring with subtle color tint
-- Sector border lines, outer arc edges, community labels at outer edge
-- Fixed "wrong impression" — ellipses looked random, wedges communicate organized sectors
-
-**Full Search Integration (Phase B)**
-- 6 search scopes: all, title, content, tag, property, semantic
-- Backend search via `universalSearch` with semantic embedding support
-- 16 localized syntax chips (reactive to locale changes)
-- Search history dropdown (last 8 queries)
-- Category badges: T (title), C (content), # (tag), P (property), S (semantic)
-- Prev/next navigation with counter (Shift+Enter / Enter)
-- Canvas highlights: matched nodes glow blue ring, current match amber ring
-- Non-matched nodes dim to 15% opacity, links dim accordingly
-- Click passes search query as highlight term to note editor
-
-**Legend (Phase D partial)**
-- Node section: size = centrality, color = community, bridge emphasis
-- Link types: supports (blue), contradicts (red), causes (amber), exemplifies (green), generalizes (purple), derives-from (yellow)
-- Confidence levels: hypothesis (dashed), evidence (solid), established (thick), contested (dotted red)
-- Structural gaps: red dashed lines
-
-**Settings Panel**
-- Toggle community regions on/off
-- Toggle legend on/off
-
-**Theme Adaptivity**
-- All UI elements use CSS custom properties (var(--background-primary), var(--text-muted), etc.)
-- Works on both light and dark themes
-
-### Visualization Model Discussion
-- User asked for honest opinion on visualization models
-- Recommended gravity-well radial (currently implemented) over honeycomb tessellation
-- Gravity-well communicates hierarchy (center=core, edge=peripheral, sectors=communities)
-- Honeycomb forces uniform cells — erases centrality signal, philosophically wrong for PKM
-- Suggested "breathing layout" as future evolution (subtle activity-based animation)
+### What Works Now
+- 4-ring gravity-well layout (centrality → distance from center)
+- Library-based angular sectors and node colors
+- Search: 6 scopes, syntax chips, history, category badges (T/C/#/P/S), pointer arrow
+- Neighborhood highlight: single-click shows connections, double-click opens note
+- Settings: link stroke/opacity/arrow sliders, persist across remounts
+- Legend: node sizes, library colors, link types, confidence=thickness, arrows=direction
+- All links solid, multiple direction arrows for typed links
 
 ### Open Items
-- Phase C: SightPanel (insight/analytics sidebar) — pending
-- Session log + help file updates for all changes
+- Pointer arrow for current search result — may need debugging if not appearing
+- SightPanel (insight/analytics sidebar) — pending
+- Help file updates for Sight changes
