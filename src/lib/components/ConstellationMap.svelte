@@ -67,8 +67,17 @@
 	let searchResults = $state<MapNode[]>([]);
 	let searchIdx = $state(0);
 
-	// Settings
+	// Settings (persisted across remounts)
+	const _mapDefaults = { arcOpacity: 0.75, depthLimit: 5, showLabels: true };
+	const _mapSaved = (globalThis as any).__mapSettings ?? { ..._mapDefaults };
 	let settingsVisible = $state(false);
+	let arcOpacity = $state(_mapSaved.arcOpacity);
+	let depthLimit = $state(_mapSaved.depthLimit);
+	let showLabels = $state(_mapSaved.showLabels);
+
+	function persistMapSettings() {
+		(globalThis as any).__mapSettings = { arcOpacity, depthLimit, showLabels };
+	}
 
 	// Maturity colors
 	const MATURITY_COLORS: Record<string, string> = {
@@ -129,13 +138,13 @@
 		if (data.is_dir) return 0.85;
 		if (colorMode === 'maturity') {
 			const m = data.maturity || 'seed';
-			if (m === 'seed') return 0.4;
-			if (m === 'sapling') return 0.6;
-			if (m === 'evergreen') return 0.8;
-			if (m === 'canonical') return 0.95;
-			if (m === 'wilting') return 0.5;
+			if (m === 'seed') return 0.4 * arcOpacity;
+			if (m === 'sapling') return 0.6 * arcOpacity;
+			if (m === 'evergreen') return 0.8 * arcOpacity;
+			if (m === 'canonical') return 0.95 * arcOpacity;
+			if (m === 'wilting') return 0.5 * arcOpacity;
 		}
-		return 0.75;
+		return arcOpacity;
 	}
 
 	let currentRoot: any = null;
@@ -309,7 +318,7 @@
 				// Load universe-level map (all libraries)
 				data = await invoke<MapNode>('constellation_map_universe', {
 					universeName: universeName || 'Universe',
-					maxDepth: 5,
+					maxDepth: depthLimit,
 				});
 			}
 			mapData = data;
@@ -446,6 +455,10 @@
 			<button class="cmap-toolbar-btn" onclick={zoomToRoot} title={$t('lens.fitToScreen') || 'Fit to screen'}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
 			</button>
+			<!-- Settings toggle -->
+			<button class="cmap-toolbar-btn" class:active={settingsVisible} onclick={() => settingsVisible = !settingsVisible} title={$t('ribbon.settings') || 'Settings'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/></svg>
+			</button>
 			{#if onClose}
 				<button class="cmap-close" onclick={onClose}>×</button>
 			{/if}
@@ -487,6 +500,27 @@
 			{:else if searchQuery}
 				<span class="cmap-search-none">0</span>
 			{/if}
+		</div>
+	{/if}
+
+	<!-- Settings panel -->
+	{#if settingsVisible}
+		<div class="cmap-settings">
+			<label class="cmap-settings-slider">
+				<span>{$t('lens.settingOpacity') || 'Opacity'}: {Math.round(arcOpacity * 100)}%</span>
+				<input type="range" min="0.3" max="1" step="0.05" bind:value={arcOpacity} oninput={() => {
+					persistMapSettings();
+					const current = breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1].node.data : mapData;
+					if (current) renderSunburst(current);
+				}} />
+			</label>
+			<label class="cmap-settings-slider">
+				<span>Depth: {depthLimit}</span>
+				<input type="range" min="2" max="8" step="1" bind:value={depthLimit} oninput={() => {
+					persistMapSettings();
+					loadData();
+				}} />
+			</label>
 		</div>
 	{/if}
 
@@ -609,6 +643,15 @@
 	.cmap-search-none { font-size: 10px; color: #ef4444; white-space: nowrap; }
 	.cmap-search-nav { border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 0 2px; display: flex; align-items: center; }
 	.cmap-search-nav:hover { color: var(--text-normal); }
+
+	/* Settings panel */
+	.cmap-settings {
+		display: flex; gap: 16px; padding: 8px 20px; flex-shrink: 0;
+		border-bottom: 1px solid var(--border, #e0e0e0); align-items: center;
+	}
+	.cmap-settings-slider { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+	.cmap-settings-slider span { font-size: 10px; color: var(--text-muted, #888); }
+	.cmap-settings-slider input[type="range"] { width: 100%; height: 14px; cursor: pointer; }
 
 	.cmap-breadcrumb {
 		display: flex; align-items: center; gap: 4px; padding: 6px 20px;
