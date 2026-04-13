@@ -686,7 +686,9 @@
 				<div class="cmap-results-list">
 					{#each searchResults as result, i}
 						<button class="cmap-result-row" class:active={i === searchIdx}
-							onclick={() => selectSearchResult(i)} dir="auto">
+							onclick={() => selectSearchResult(i)}
+							ondblclick={() => { if (!result.is_dir && onNoteClick) onNoteClick(result.path, result.name); }}
+							dir="auto">
 							<span class="cmap-result-name">{result.name}</span>
 							<span class="cmap-result-badges">
 								{#each (searchCats.get(result.path) ?? []) as cat}
