@@ -2916,27 +2916,6 @@
 							{/if}
 						</button>
 					{/if}
-						<!-- CE Phase 9: Lens switcher -->
-						{#if sidebarMode === 'tree' }
-							<select class="mode-tab lens-select" value={activeLensId}
-								onchange={async (e) => {
-									const id = (e.target as HTMLSelectElement).value;
-									activeLensId = id;
-									if (!id) { lensGroups = []; return; }
-									const lens = availableLenses.find((l: any) => l.id === id);
-									const lib = get(libraries)[0];
-									if (lens && lib) {
-										try {
-											lensGroups = await invoke('apply_lens', { libraryPath: lib.path, lens });
-										} catch { lensGroups = []; }
-									}
-								}}>
-								<option value="">📁 {$t('lensPanel.default') || 'Folders'}</option>
-								{#each availableLenses as lens}
-									<option value={lens.id}>🔍 {lens.name}</option>
-								{/each}
-							</select>
-						{/if}
 					</div>
 				</div>
 
