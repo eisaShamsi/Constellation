@@ -15,20 +15,21 @@ Constellation es una aplicacion de escritorio para la Gestion del Conocimiento P
 5. [Vista Estelar (GraphMind)](#vista-estelar-graphmind)
 6. [Vista Dividida](#vista-dividida)
 7. [Indice](#indice)
-8. [Segunda Pantalla](#segunda-pantalla)
-9. [Propiedades y Frontmatter](#propiedades-y-frontmatter)
-10. [Plantillas](#plantillas)
-11. [Tablas](#tablas)
-12. [Tareas](#tareas)
-13. [Importador](#importador)
-14. [Calendario](#calendario)
-15. [Lens](#lens)
-16. [Configuracion](#configuracion)
-17. [Atajos de Teclado](#atajos-de-teclado)
-18. [Soporte RTL y Arabe](#soporte-rtl-y-arabe)
-19. [Seguridad y Privacidad](#seguridad-y-privacidad)
-20. [Mapa del conocimiento](#mapa-del-conocimiento)
-21. [Motor Cognitivo](#motor-cognitivo)
+8. [Constellation Sight](#constellation-sight)
+9. [Segunda Pantalla](#segunda-pantalla)
+10. [Propiedades y Frontmatter](#propiedades-y-frontmatter)
+11. [Plantillas](#plantillas)
+12. [Tablas](#tablas)
+13. [Tareas](#tareas)
+14. [Importador](#importador)
+15. [Calendario](#calendario)
+16. [Lens](#lens)
+17. [Configuracion](#configuracion)
+18. [Atajos de Teclado](#atajos-de-teclado)
+19. [Soporte RTL y Arabe](#soporte-rtl-y-arabe)
+20. [Seguridad y Privacidad](#seguridad-y-privacidad)
+21. [Mapa del conocimiento](#mapa-del-conocimiento)
+22. [Motor Cognitivo](#motor-cognitivo)
 
 ---
 
@@ -454,7 +455,49 @@ Cuando la Segunda Pantalla esta abierta:
 
 ---
 
-## 8. Segunda Pantalla
+## 8. Constellation Sight
+
+Constellation Sight visualiza todo su sistema de conocimiento como un grafico de pozo gravitacional. Responde a la pregunta: **"Como se ve mi conocimiento y que tan saludable esta?"**
+
+### Abrir Sight
+
+Haga clic en el **boton Sight** (icono de ojo) en la cinta izquierda. Aparece el grafico de pozo gravitacional. Haga clic en x para cerrar.
+
+### El Grafico de Pozo Gravitacional
+
+Las notas se organizan en anillos concentricos por importancia (centralidad). Las notas mas conectadas se ubican en el centro; las notas perifericas en los bordes. Dentro de cada anillo, las notas se agrupan por biblioteca (su organizacion). Color del nodo = biblioteca.
+
+| Elemento | Significado |
+|----------|-------------|
+| **Nodo grande** | Alta centralidad — conecta diferentes areas de conocimiento |
+| **Nodo pequeno** | Periferico — dentro de un area |
+| **Color del nodo** | Pertenencia a biblioteca |
+| **Linea solida** | Enlace entre dos notas |
+| **Flechas de direccion** | Pequenas flechas que muestran la direccion del enlace |
+| **Grosor de linea** | Nivel de confianza (grueso = establecido, delgado = hipotesis) |
+
+### Interaccion
+
+- **Clic simple** en un nodo: resalta su vecindario (todas las notas conectadas). Todo lo demas se atenua.
+- **Doble clic**: abre la nota en el editor.
+- **Clic en espacio vacio**: borra el resaltado.
+- **Desplazamiento**: zoom. **Arrastrar**: panoramica. **Ajustar a pantalla**: boton de la barra de herramientas.
+
+### Busqueda en Sight
+
+Haga clic en la lupa. Soporta todos los operadores: `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, texto libre y busqueda semantica. Los resultados muestran colores direccionales: verde (entrante), rojo (saliente).
+
+### Panel de Analiticas (SightPanel)
+
+Haga clic en el icono de cuadricula para abrir la barra lateral. Muestra: puntuacion de Salud del Universo (0-100), contadores de notas/enlaces/huerfanos, barras de tipo de enlace y confianza, top 10 puentes e Informacion del Conocimiento (evidencia mas fuerte, fundamentos debiles, tensiones, estancados, mas conectados, brechas de conocimiento).
+
+### Configuracion
+
+Icono de engranaje: ajuste el grosor del trazo de enlace, opacidad y tamano de flecha. La configuracion persiste entre sesiones.
+
+---
+
+## 9. Segunda Pantalla
 
 La Segunda Pantalla es una ventana complementaria basada en modos que se adapta al modo actual de tu barra lateral.
 
@@ -509,7 +552,7 @@ Todas las configuraciones visuales se propagan instantaneamente a la segunda pan
 
 ---
 
-## 9. Propiedades y Frontmatter
+## 10. Propiedades y Frontmatter
 
 Las notas pueden tener frontmatter YAML en la parte superior:
 
@@ -536,7 +579,7 @@ Alterna la visualizacion de propiedades en **Configuracion > Editor > Propiedade
 
 ---
 
-## 10. Plantillas
+## 11. Plantillas
 
 Crea plantillas de notas reutilizables:
 
@@ -555,7 +598,7 @@ Las plantillas admiten variables:
 
 ---
 
-## 11. Tablas
+## 12. Tablas
 
 ### Tablas Markdown
 
@@ -585,7 +628,7 @@ El editor de Documentos (TipTap) ofrece una experiencia visual de tablas:
 
 ---
 
-## 12. Tareas
+## 13. Tareas
 
 Constellation admite casillas de tareas en las notas:
 
@@ -598,7 +641,7 @@ En el modo de Vista Previa en Vivo, las casillas son clicables. Las tareas se pu
 
 ---
 
-## 13. Importador
+## 14. Importador
 
 Importa notas desde otras herramientas PKM:
 
@@ -610,7 +653,7 @@ Ve a **Configuracion > Importador** para iniciar una importacion.
 
 ---
 
-## 14. Calendario
+## 15. Calendario
 
 La vista de Calendario muestra las notas organizadas por fecha:
 
@@ -622,7 +665,7 @@ Abre el Calendario desde la barra lateral.
 
 ---
 
-## 15. Lens
+## 16. Lens
 
 Lens proporciona vistas filtradas de tus notas:
 
@@ -632,7 +675,7 @@ Lens proporciona vistas filtradas de tus notas:
 
 ---
 
-## 16. Configuracion
+## 17. Configuracion
 
 Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctrl+,`.
 
@@ -664,7 +707,7 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 
 ---
 
-## 17. Atajos de Teclado
+## 18. Atajos de Teclado
 
 ### Globales
 
@@ -704,7 +747,7 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 
 ---
 
-## 18. Soporte RTL y Arabe
+## 19. Soporte RTL y Arabe
 
 Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y otros idiomas con escritura RTL:
 
@@ -723,7 +766,7 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 
 ---
 
-## 19. Seguridad y Privacidad
+## 20. Seguridad y Privacidad
 
 - **Todos los datos permanecen locales** — sin sincronizacion en la nube, sin telemetria, sin rastreo
 - **Archivos Markdown** — tus notas son archivos de texto plano que te pertenecen completamente
@@ -733,7 +776,7 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 
 ---
 
-## 20. Mapa del conocimiento
+## 21. Mapa del conocimiento
 
 El Mapa del conocimiento es una visualizacion radial (sunburst) que muestra la estructura, densidad y madurez de todo tu universo de conocimiento.
 
@@ -766,7 +809,7 @@ Despues de abrir una nota desde el Mapa, aparece un boton "Volver al Mapa" en la
 
 ---
 
-## 21. Motor Cognitivo
+## 22. Motor Cognitivo
 
 El Motor Cognitivo es el sistema de inteligencia integrado de Constellation que analiza tus notas y descubre patrones ocultos y relaciones entre tus ideas. Su filosofia fundamental:
 

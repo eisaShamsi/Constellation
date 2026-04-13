@@ -15,20 +15,21 @@ Constellation, Markdown not kütüphanelerini yönetmek için tasarlanmış bir 
 5. [Sky View (GraphMind)](#star-view-graphmind)
 6. [Bölünmüş Görünüm](#bölünmüş-görünüm)
 7. [Dizin](#dizin)
-8. [İkinci Ekran](#ikinci-ekran)
-9. [Özellikler ve Frontmatter](#özellikler-ve-frontmatter)
-10. [Şablonlar](#şablonlar)
-11. [Tablolar](#tablolar)
-12. [Görevler](#görevler)
-13. [İçe Aktarıcı](#içe-aktarıcı)
-14. [Takvim](#takvim)
-15. [Lens](#lens)
-16. [Ayarlar](#ayarlar)
-17. [Klavye Kısayolları](#klavye-kısayolları)
-18. [RTL ve Arapça Desteği](#rtl-ve-arapça-desteği)
-19. [Güvenlik ve Gizlilik](#güvenlik-ve-gizlilik)
-20. [Bilgi Haritası](#bilgi-haritası)
-21. [Bilişsel Motor](#bilişsel-motor)
+8. [Constellation Sight](#constellation-sight)
+9. [İkinci Ekran](#ikinci-ekran)
+10. [Özellikler ve Frontmatter](#özellikler-ve-frontmatter)
+11. [Şablonlar](#şablonlar)
+12. [Tablolar](#tablolar)
+13. [Görevler](#görevler)
+14. [İçe Aktarıcı](#içe-aktarıcı)
+15. [Takvim](#takvim)
+16. [Lens](#lens)
+17. [Ayarlar](#ayarlar)
+18. [Klavye Kısayolları](#klavye-kısayolları)
+19. [RTL ve Arapça Desteği](#rtl-ve-arapça-desteği)
+20. [Güvenlik ve Gizlilik](#güvenlik-ve-gizlilik)
+21. [Bilgi Haritası](#bilgi-haritası)
+22. [Bilişsel Motor](#bilişsel-motor)
 
 ---
 
@@ -454,7 +455,49 @@ Notu normal bir sekme olarak açmak için `Ctrl+Tıklama` yapın. Sekme çubuğu
 
 ---
 
-## 8. İkinci Ekran
+## 8. Constellation Sight
+
+Constellation Sight, tum bilgi sisteminizi bir kutle cekimi kuyusu grafigi olarak gorsellestirir. Su soruya cevap verir: **"Bilgim nasil gorunuyor ve ne kadar saglikli?"**
+
+### Sight'i Acma
+
+Sol seritte **Sight dugmesine** (goz simgesi) tiklayin. Kutle cekimi kuyusu grafigi goruntulenir. Kapatmak icin x'e tiklayin.
+
+### Kutle Cekimi Kuyusu Grafigi
+
+Notlar onem (merkezilik) derecesine gore es merkezli halkalar seklinde duzenlenir. En cok baglantili notlar merkezde; cevresel notlar kenarlarda yer alir. Her halka icinde notlar kutuphaneye (organizasyonunuza) gore gruplanir. Dugum rengi = kutuphane.
+
+| Oge | Anlami |
+|-----|--------|
+| **Buyuk dugum** | Yuksek merkezilik — farkli bilgi alanlarini birlestiren kopru |
+| **Kucuk dugum** | Cevresel — tek bir alan icinde |
+| **Dugum rengi** | Kutuphane uyeligi |
+| **Duz cizgi** | Iki not arasindaki baglanti |
+| **Yon oklari** | Baglanti yonunu gosteren kucuk oklar |
+| **Cizgi kalinligi** | Guven duzeyi (kalin = yerlesik, ince = hipotez) |
+
+### Etkilesim
+
+- **Tek tiklama**: Dugumun komsulugunu vurgular (tum baglantili notlar). Diger her sey soluklaşır.
+- **Cift tiklama**: Notu duzenleyicide acar.
+- **Bos alana tiklama**: Vurgulamayi temizler.
+- **Kaydirma**: yakinlastirma/uzaklastirma. **Surukle**: kaydir. **Ekrana Sigdir**: arac cubugu dugmesi.
+
+### Sight'ta Arama
+
+Buyutece tiklayin. Tum operatorleri destekler: `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, serbest metin ve anlamsal arama. Sonuclar yonsel renkler gosterir: yesil (gelen), kirmizi (giden).
+
+### Analiz Paneli (SightPanel)
+
+Izgara simgesine tiklayarak yan cubugu acin. Gosterir: Evren Saglik puani (0-100), not/baglanti/yetim sayaclari, baglanti turu ve guven cubuklari, en iyi 10 kopru ve Bilgi Icgörüleri (en guclu kanit, zayif temeller, gerilimler, durgunlar, en cok baglantili, bilgi boslukları).
+
+### Ayarlar
+
+Disli simgesi: baglanti cizgi kalinligini, opakligini ve ok boyutunu ayarlayin. Ayarlar oturumlar arasinda kalici olarak saklanir.
+
+---
+
+## 9. İkinci Ekran
 
 İkinci Ekran, geçerli kenar çubuğu modunuza uyum sağlayan mod tabanlı bir eşlik penceresidir.
 
@@ -509,7 +552,7 @@ Tüm görsel ayarlar anında ikinci ekrana yansıtılır — yeniden başlatma g
 
 ---
 
-## 9. Özellikler ve Frontmatter
+## 10. Özellikler ve Frontmatter
 
 Notların üst kısmında YAML frontmatter bulunabilir:
 
@@ -536,7 +579,7 @@ Constellation özellik türlerini otomatik olarak algılar:
 
 ---
 
-## 10. Şablonlar
+## 11. Şablonlar
 
 Yeniden kullanılabilir not şablonları oluşturun:
 
@@ -555,7 +598,7 @@ Yeniden kullanılabilir not şablonları oluşturun:
 
 ---
 
-## 11. Tablolar
+## 12. Tablolar
 
 ### Markdown Tabloları
 
@@ -585,7 +628,7 @@ Belge düzenleyici (TipTap) görsel bir tablo deneyimi sunar:
 
 ---
 
-## 12. Görevler
+## 13. Görevler
 
 Constellation, notlarda görev onay kutularını destekler:
 
@@ -598,7 +641,7 @@ Canlı Önizleme modunda, onay kutuları tıklanabilirdir. Görevler, kütüphan
 
 ---
 
-## 13. İçe Aktarıcı
+## 14. İçe Aktarıcı
 
 Diğer PKM araçlarından notları içe aktarın:
 
@@ -610,7 +653,7 @@ Diğer PKM araçlarından notları içe aktarın:
 
 ---
 
-## 14. Takvim
+## 15. Takvim
 
 Takvim görünümü, notları tarihe göre düzenlenmiş olarak gösterir:
 
@@ -622,7 +665,7 @@ Takvimi kenar çubuğundan açın.
 
 ---
 
-## 15. Lens
+## 16. Lens
 
 Lens, notlarınızın filtrelenmiş görünümlerini sağlar:
 
@@ -632,7 +675,7 @@ Lens, notlarınızın filtrelenmiş görünümlerini sağlar:
 
 ---
 
-## 16. Ayarlar
+## 17. Ayarlar
 
 Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
@@ -664,7 +707,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
 ---
 
-## 17. Klavye Kısayolları
+## 18. Klavye Kısayolları
 
 ### Genel
 
@@ -704,7 +747,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
 ---
 
-## 18. RTL ve Arapça Desteği
+## 19. RTL ve Arapça Desteği
 
 Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemleri için birinci sınıf destek sunar:
 
@@ -723,7 +766,7 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 
 ---
 
-## 19. Güvenlik ve Gizlilik
+## 20. Güvenlik ve Gizlilik
 
 - **Tüm veriler yerelde kalır** — bulut senkronizasyonu yok, telemetri yok, izleme yok
 - **Markdown dosyaları** — notlarınız tamamen size ait düz metin dosyalarıdır
@@ -733,7 +776,7 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 
 ---
 
-## 20. Bilgi Haritası
+## 21. Bilgi Haritası
 
 Bilgi Haritası, tum bilgi evreninizin yapisini, yogunlugunu ve olgunlugunu gosteren radyal bir sunburst gorsellestirmesidir.
 
@@ -766,7 +809,7 @@ Haritadan bir not actiktan sonra, sekme cubugunda "Haritaya Don" dugmesi gorunur
 
 ---
 
-## 21. Bilişsel Motor
+## 22. Bilişsel Motor
 
 Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz arasındaki gizli kalıpları ve ilişkileri ortaya çıkaran yerleşik zeka sistemidir. Temel felsefesi:
 

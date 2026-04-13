@@ -15,20 +15,21 @@ Constellation est une application de bureau de gestion des connaissances personn
 5. [Vue Etoiles (GraphMind)](#vue-etoiles-graphmind)
 6. [Vue fractionnee](#vue-fractionnee)
 7. [Index](#index)
-8. [Second ecran](#second-ecran)
-9. [Proprietes et Frontmatter](#proprietes-et-frontmatter)
-10. [Modeles](#modeles)
-11. [Tableaux](#tableaux)
-12. [Taches](#taches)
-13. [Importateur](#importateur)
-14. [Calendrier](#calendrier)
-15. [Lens](#lens)
-16. [Parametres](#parametres)
-17. [Raccourcis clavier](#raccourcis-clavier)
-18. [Prise en charge RTL et arabe](#prise-en-charge-rtl-et-arabe)
-19. [Securite et confidentialite](#securite-et-confidentialite)
-20. [Carte des connaissances](#carte-des-connaissances)
-21. [Moteur Cognitif](#moteur-cognitif)
+8. [Constellation Sight](#constellation-sight)
+9. [Second ecran](#second-ecran)
+10. [Proprietes et Frontmatter](#proprietes-et-frontmatter)
+11. [Modeles](#modeles)
+12. [Tableaux](#tableaux)
+13. [Taches](#taches)
+14. [Importateur](#importateur)
+15. [Calendrier](#calendrier)
+16. [Lens](#lens)
+17. [Parametres](#parametres)
+18. [Raccourcis clavier](#raccourcis-clavier)
+19. [Prise en charge RTL et arabe](#prise-en-charge-rtl-et-arabe)
+20. [Securite et confidentialite](#securite-et-confidentialite)
+21. [Carte des connaissances](#carte-des-connaissances)
+22. [Moteur Cognitif](#moteur-cognitif)
 
 ---
 
@@ -454,7 +455,49 @@ Lorsque le Second Ecran est ouvert :
 
 ---
 
-## 8. Second ecran
+## 8. Constellation Sight
+
+Constellation Sight visualise l'ensemble de votre systeme de connaissances sous forme de graphe en puits gravitationnel. Il repond a la question : **"A quoi ressemble mon savoir et quelle est sa sante ?"**
+
+### Ouvrir Sight
+
+Cliquez sur le **bouton Sight** (icone d'oeil) dans le ruban gauche. Le graphe en puits gravitationnel apparait. Cliquez sur x pour fermer.
+
+### Le Graphe en Puits Gravitationnel
+
+Les notes sont disposees en anneaux concentriques par importance (centralite). Les notes les plus connectees se trouvent au centre ; les notes peripheriques aux bords. Au sein de chaque anneau, les notes sont groupees par bibliotheque (votre organisation). Couleur du noeud = bibliotheque.
+
+| Element | Signification |
+|---------|---------------|
+| **Grand noeud** | Haute centralite — relie differents domaines de connaissance |
+| **Petit noeud** | Peripherique — au sein d'un domaine |
+| **Couleur du noeud** | Appartenance a une bibliotheque |
+| **Ligne pleine** | Lien entre deux notes |
+| **Fleches de direction** | Petites fleches indiquant la direction du lien |
+| **Epaisseur de ligne** | Niveau de confiance (epais = etabli, fin = hypothese) |
+
+### Interaction
+
+- **Simple clic** sur un noeud : met en surbrillance son voisinage (toutes les notes connectees). Tout le reste s'estompe.
+- **Double-clic** : ouvre la note dans l'editeur.
+- **Clic sur espace vide** : efface la surbrillance.
+- **Defiler** : zoom. **Glisser** : panoramique. **Ajuster a l'ecran** : bouton de la barre d'outils.
+
+### Recherche dans Sight
+
+Cliquez sur la loupe. Prend en charge tous les operateurs : `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, texte libre et recherche semantique. Les resultats affichent des couleurs directionnelles : vert (entrant), rouge (sortant).
+
+### Panneau d'Analyse (SightPanel)
+
+Cliquez sur l'icone de grille pour ouvrir la barre laterale. Affiche : score de Sante de l'Univers (0-100), compteurs de notes/liens/orphelins, barres de type de lien et de confiance, top 10 des ponts et Aperçus des Connaissances (preuves les plus solides, fondations faibles, tensions, stagnation, les plus connectes, lacunes de connaissance).
+
+### Parametres
+
+Icone d'engrenage : ajustez l'epaisseur du trait de lien, l'opacite et la taille des fleches. Les parametres persistent entre les sessions.
+
+---
+
+## 9. Second ecran
 
 Le second ecran est une fenetre complementaire basee sur les modes qui s'adapte au mode actuel de votre barre laterale.
 
@@ -509,7 +552,7 @@ Tous les parametres visuels se propagent instantanement au second ecran — aucu
 
 ---
 
-## 9. Proprietes et Frontmatter
+## 10. Proprietes et Frontmatter
 
 Les notes peuvent contenir du YAML Frontmatter en en-tete :
 
@@ -536,7 +579,7 @@ Basculez l'affichage des proprietes dans **Parametres > Editeur > Proprietes dan
 
 ---
 
-## 10. Modeles
+## 11. Modeles
 
 Creez des modeles de notes reutilisables :
 
@@ -555,7 +598,7 @@ Les modeles prennent en charge les variables :
 
 ---
 
-## 11. Tableaux
+## 12. Tableaux
 
 ### Tableaux Markdown
 
@@ -585,7 +628,7 @@ L'editeur de document (TipTap) offre une experience de tableau visuelle :
 
 ---
 
-## 12. Taches
+## 13. Taches
 
 Constellation prend en charge les cases a cocher de taches dans les notes :
 
@@ -598,7 +641,7 @@ En mode Apercu en direct, les cases a cocher sont cliquables. Les taches peuvent
 
 ---
 
-## 13. Importateur
+## 14. Importateur
 
 Importez des notes depuis d'autres outils PKM :
 
@@ -610,7 +653,7 @@ Allez dans **Parametres > Importateur** pour lancer un import.
 
 ---
 
-## 14. Calendrier
+## 15. Calendrier
 
 La vue Calendrier affiche les notes organisees par date :
 
@@ -622,7 +665,7 @@ Ouvrez le Calendrier depuis la barre laterale.
 
 ---
 
-## 15. Lens
+## 16. Lens
 
 Lens fournit des vues filtrees de vos notes :
 
@@ -632,7 +675,7 @@ Lens fournit des vues filtrees de vos notes :
 
 ---
 
-## 16. Parametres
+## 17. Parametres
 
 Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctrl+,`.
 
@@ -664,7 +707,7 @@ Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctr
 
 ---
 
-## 17. Raccourcis clavier
+## 18. Raccourcis clavier
 
 ### Globaux
 
@@ -704,7 +747,7 @@ Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctr
 
 ---
 
-## 18. Prise en charge RTL et arabe
+## 19. Prise en charge RTL et arabe
 
 Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu, le persan, l'ourdou et les autres ecritures RTL :
 
@@ -723,7 +766,7 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 
 ---
 
-## 19. Securite et confidentialite
+## 20. Securite et confidentialite
 
 - **Toutes les donnees restent locales** — pas de synchronisation cloud, pas de telemetrie, pas de suivi
 - **Fichiers Markdown** — vos notes sont des fichiers texte brut qui vous appartiennent entierement
@@ -733,7 +776,7 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 
 ---
 
-## 20. Carte des connaissances
+## 21. Carte des connaissances
 
 La Carte des connaissances est une visualisation radiale (sunburst) qui montre la structure, la densite et la maturite de votre univers de connaissances.
 
@@ -766,7 +809,7 @@ Apres avoir ouvert une note depuis la Carte, un bouton "Retour a la Carte" appar
 
 ---
 
-## 21. Moteur Cognitif
+## 22. Moteur Cognitif
 
 Le Moteur Cognitif est le systeme d'intelligence integre de Constellation qui analyse vos notes et revele les motifs caches et les relations entre vos idees. Sa philosophie fondamentale :
 

@@ -15,20 +15,21 @@ Constellation ist eine Desktop-Anwendung fuer persoenliches Wissensmanagement (P
 5. [Sternenansicht (GraphMind)](#sternenansicht-graphmind)
 6. [Geteilte Ansicht](#geteilte-ansicht)
 7. [Index](#index)
-8. [Zweiter Bildschirm](#zweiter-bildschirm)
-9. [Eigenschaften und Frontmatter](#eigenschaften-und-frontmatter)
-10. [Vorlagen](#vorlagen)
-11. [Tabellen](#tabellen)
-12. [Aufgaben](#aufgaben)
-13. [Importer](#importer)
-14. [Kalender](#kalender)
-15. [Lens](#lens)
-16. [Einstellungen](#einstellungen)
-17. [Tastenkuerzel](#tastenkuerzel)
-18. [RTL- und Arabisch-Unterstuetzung](#rtl--und-arabisch-unterstuetzung)
-19. [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
-20. [Wissenskarte](#wissenskarte)
-21. [Kognitive Engine](#kognitive-engine)
+8. [Constellation Sight](#constellation-sight)
+9. [Zweiter Bildschirm](#zweiter-bildschirm)
+10. [Eigenschaften und Frontmatter](#eigenschaften-und-frontmatter)
+11. [Vorlagen](#vorlagen)
+12. [Tabellen](#tabellen)
+13. [Aufgaben](#aufgaben)
+14. [Importer](#importer)
+15. [Kalender](#kalender)
+16. [Lens](#lens)
+17. [Einstellungen](#einstellungen)
+18. [Tastenkuerzel](#tastenkuerzel)
+19. [RTL- und Arabisch-Unterstuetzung](#rtl--und-arabisch-unterstuetzung)
+20. [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
+21. [Wissenskarte](#wissenskarte)
+22. [Kognitive Engine](#kognitive-engine)
 
 ---
 
@@ -454,7 +455,49 @@ Wenn der Zweite Bildschirm geoeffnet ist:
 
 ---
 
-## 8. Zweiter Bildschirm
+## 8. Constellation Sight
+
+Constellation Sight visualisiert Ihr gesamtes Wissenssystem als Gravitationsschacht-Graph. Es beantwortet die Frage: **"Wie sieht mein Wissen aus und wie gesund ist es?"**
+
+### Sight oeffnen
+
+Klicken Sie auf die **Sight-Schaltflaeche** (Augensymbol) in der linken Leiste. Der Gravitationsschacht-Graph erscheint. Klicken Sie auf x zum Schliessen.
+
+### Der Gravitationsschacht-Graph
+
+Notizen sind in konzentrischen Ringen nach Wichtigkeit (Zentralitaet) angeordnet. Die am staerksten vernetzten Notizen befinden sich im Zentrum; periphere Notizen am Rand. Innerhalb jedes Rings sind Notizen nach Bibliothek (Ihrer Organisation) gruppiert. Knotenfarbe = Bibliothek.
+
+| Element | Bedeutung |
+|---------|-----------|
+| **Grosser Knoten** | Hohe Zentralitaet — verbindet verschiedene Wissensbereiche |
+| **Kleiner Knoten** | Peripher — innerhalb eines Bereichs |
+| **Knotenfarbe** | Bibliothekszugehoerigkeit |
+| **Durchgezogene Linie** | Verbindung zwischen zwei Notizen |
+| **Richtungspfeile** | Kleine Pfeile, die die Verbindungsrichtung anzeigen |
+| **Linienstaerke** | Konfidenzniveau (dick = etabliert, duenn = Hypothese) |
+
+### Interaktion
+
+- **Einfachklick** auf einen Knoten: Hebt seine Nachbarschaft hervor (alle verbundenen Notizen). Alles andere wird abgeblendet.
+- **Doppelklick**: Oeffnet die Notiz im Editor.
+- **Klick auf leeren Bereich**: Loescht die Hervorhebung.
+- **Scrollen**: Zoom. **Ziehen**: Schwenken. **An Bildschirm anpassen**: Symbolleisten-Schaltflaeche.
+
+### Suche in Sight
+
+Klicken Sie auf die Lupe. Unterstuetzt alle Operatoren: `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, Freitext und semantische Suche. Ergebnisse zeigen Richtungsfarben: Gruen (eingehend), Rot (ausgehend).
+
+### Analyse-Panel (SightPanel)
+
+Klicken Sie auf das Rastersymbol, um die Seitenleiste zu oeffnen. Zeigt: Universum-Gesundheitswert (0-100), Notiz-/Link-/Orphan-Zaehler, Linktyp- und Konfidenzbalken, Top 10 Bruecken und Wissenseinblicke (staerkste Evidenz, schwache Grundlagen, Spannungen, stagnierende, am staerksten vernetzte, Wissensluecken).
+
+### Einstellungen
+
+Zahnradsymbol: Passen Sie Linkstrichstaerke, Deckkraft und Pfeilgroesse an. Einstellungen bleiben sitzungsuebergreifend erhalten.
+
+---
+
+## 9. Zweiter Bildschirm
 
 Der Zweite Bildschirm ist ein modusbasiertes Begleitfenster, das sich an Ihren aktuellen Seitenleistenmodus anpasst.
 
@@ -509,7 +552,7 @@ Alle visuellen Einstellungen werden sofort auf den zweiten Bildschirm uebertrage
 
 ---
 
-## 9. Eigenschaften und Frontmatter
+## 10. Eigenschaften und Frontmatter
 
 Notizen koennen YAML-Frontmatter am Anfang enthalten:
 
@@ -536,7 +579,7 @@ Eigenschaftsanzeige umschalten unter **Einstellungen > Editor > Eigenschaften im
 
 ---
 
-## 10. Vorlagen
+## 11. Vorlagen
 
 Erstellen Sie wiederverwendbare Notizvorlagen:
 
@@ -555,7 +598,7 @@ Vorlagen unterstuetzen Variablen:
 
 ---
 
-## 11. Tabellen
+## 12. Tabellen
 
 ### Markdown-Tabellen
 
@@ -585,7 +628,7 @@ Der Dokument-Editor (TipTap) bietet eine visuelle Tabellenerfahrung:
 
 ---
 
-## 12. Aufgaben
+## 13. Aufgaben
 
 Constellation unterstuetzt Aufgaben-Kontrollkaestchen in Notizen:
 
@@ -598,7 +641,7 @@ Im Live-Vorschau-Modus sind Kontrollkaestchen anklickbar. Aufgaben koennen bibli
 
 ---
 
-## 13. Importer
+## 14. Importer
 
 Importieren Sie Notizen aus anderen PKM-Tools:
 
@@ -610,7 +653,7 @@ Gehen Sie zu **Einstellungen > Importer**, um einen Import zu starten.
 
 ---
 
-## 14. Kalender
+## 15. Kalender
 
 Die Kalenderansicht zeigt Notizen nach Datum geordnet:
 
@@ -622,7 +665,7 @@ Oeffnen Sie den Kalender ueber die Seitenleiste.
 
 ---
 
-## 15. Lens
+## 16. Lens
 
 Lens bietet gefilterte Ansichten Ihrer Notizen:
 
@@ -632,7 +675,7 @@ Lens bietet gefilterte Ansichten Ihrer Notizen:
 
 ---
 
-## 16. Einstellungen
+## 17. Einstellungen
 
 Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder `Ctrl+,`.
 
@@ -664,7 +707,7 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 
 ---
 
-## 17. Tastenkuerzel
+## 18. Tastenkuerzel
 
 ### Global
 
@@ -704,7 +747,7 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 
 ---
 
-## 18. RTL- und Arabisch-Unterstuetzung
+## 19. RTL- und Arabisch-Unterstuetzung
 
 Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Persisch, Urdu und andere RTL-Schriften:
 
@@ -723,7 +766,7 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 
 ---
 
-## 19. Sicherheit und Datenschutz
+## 20. Sicherheit und Datenschutz
 
 - **Alle Daten bleiben lokal** — keine Cloud-Synchronisierung, keine Telemetrie, kein Tracking
 - **Markdown-Dateien** — Ihre Notizen sind einfache Textdateien, die Ihnen vollstaendig gehoeren
@@ -733,7 +776,7 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 
 ---
 
-## 20. Wissenskarte
+## 21. Wissenskarte
 
 Die Wissenskarte ist eine radiale Sunburst-Visualisierung, die Struktur, Dichte und Reifegrad Ihres gesamten Wissensuniversums zeigt.
 
@@ -766,7 +809,7 @@ Nach dem Oeffnen einer Notiz aus der Karte erscheint eine "Zurueck zur Karte"-Sc
 
 ---
 
-## 21. Kognitive Engine
+## 22. Kognitive Engine
 
 Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das Ihre Notizen analysiert und verborgene Muster und Zusammenhaenge zwischen Ihren Ideen aufdeckt. Ihre Kernphilosophie:
 
