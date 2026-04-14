@@ -362,6 +362,7 @@ pub fn run() {
             canonical::auto_canonicalize_all,
             canonical::inject_cid_library,
             canonical::de_canonicalize_library,
+            canonical::repair_external_libraries_on_startup,
             libraries::set_library_canonical_mode,
             constellation_show_in_folder,
             open_path,

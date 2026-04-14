@@ -875,7 +875,10 @@ pub struct DeCanonicalizeResult {
 /// Restore original filenames for all canonical files in a library.
 /// Renames files from canonical (20260411T...Z_NOTE_XXXX.md) back to human names.
 /// Uses frontmatter `title` or `original_filename` to determine the target name.
-/// Removes `cid`, `kind`, `original_filename` from frontmatter.
+/// Strips `kind` and `original_filename` from frontmatter but PRESERVES `cid` —
+/// the unique identifier stays on every note as a frontmatter property so
+/// Constellation's living-link system (traversal weights, typed edges, link
+/// history) keeps working without imposing filename conventions on the vault.
 /// Deletes `.meta.json` sidecars.
 #[tauri::command]
 pub fn de_canonicalize_library(
@@ -1005,7 +1008,11 @@ fn extract_fm_field(content: &str, key: &str) -> Option<String> {
     None
 }
 
-/// Remove canonical fields (cid, kind, original_filename, aliases) from frontmatter.
+/// Remove the canonical-specific fields (kind, original_filename, aliases) but
+/// KEEP the `cid` property — the unique identifier stays on the note as a
+/// frontmatter field even after the filename reverts to its original form.
+/// This lets Constellation continue to track the note (for links, weights,
+/// traversal history) without imposing filename conventions on the vault.
 fn remove_canonical_fields(content: &str) -> String {
     let trimmed = content.trim_start();
     if !trimmed.starts_with("---") { return content.to_string(); }
@@ -1014,7 +1021,8 @@ fn remove_canonical_fields(content: &str) -> String {
     let fm = &after[..end];
     let body = &after[end + 4..];
 
-    let canonical_keys = ["cid:", "kind:", "original_filename:"];
+    // Fields we strip on de-canonicalization. `cid` is deliberately preserved.
+    let strip_keys = ["kind:", "original_filename:"];
     let mut in_aliases = false;
     let mut new_lines: Vec<&str> = Vec::new();
 
@@ -1022,18 +1030,17 @@ fn remove_canonical_fields(content: &str) -> String {
         let t = line.trim();
         if t.starts_with("aliases:") {
             in_aliases = true;
-            continue; // remove aliases block header
+            continue;
         }
         if in_aliases {
-            if t.starts_with("- ") { continue; } // remove alias items
+            if t.starts_with("- ") { continue; }
             in_aliases = false;
         }
-        if canonical_keys.iter().any(|k| t.starts_with(k)) { continue; }
+        if strip_keys.iter().any(|k| t.starts_with(k)) { continue; }
         new_lines.push(line);
     }
 
     if new_lines.is_empty() || new_lines.iter().all(|l| l.trim().is_empty()) {
-        // No frontmatter left — return body only
         body.trim_start().to_string()
     } else {
         format!("---\n{}\n---{}", new_lines.join("\n"), body)
@@ -1143,6 +1150,58 @@ fn collect_files_recursive_depth(dir: &Path, depth: u32) -> Vec<PathBuf> {
     }
 
     files
+}
+
+// ─── Startup safeguard ─────────────────────────────────────────────
+//
+// The canonical filename scheme (20260410T153045Z_NOTE_XXXX.md) is only
+// appropriate for libraries CREATED by Constellation. Earlier builds
+// inadvertently applied it to external libraries (e.g. Obsidian vaults)
+// on import, which renamed every note on disk and broke every wikilink
+// referencing the original names.
+//
+// `repair_external_libraries_on_startup` scans every registered library.
+// For any whose path contains canonical-named files paired with an
+// `original_filename` or `title` in frontmatter, it de-canonicalizes
+// silently, restoring the vault to its original state. Idempotent: a
+// library with no canonical files is a no-op. CID is preserved on every
+// note as a frontmatter property so Living Link data survives the
+// revert.
+
+/// Returns true if any .md file in `lib_path` is in canonical filename
+/// format. Cheap probe — used to decide whether to run the revert.
+fn library_has_canonical_md(lib_path: &Path) -> bool {
+    let files = collect_files_recursive(lib_path);
+    files.iter().any(|f| {
+        f.extension().and_then(|e| e.to_str()) == Some("md")
+            && is_canonical_filename(f)
+    })
+}
+
+/// Startup migration: de-canonicalize every registered library that isn't
+/// explicitly native (i.e. not Constellation's own workspace store) and
+/// still has canonical-named .md files on disk. Safe to call on every
+/// launch — idempotent.
+#[tauri::command]
+pub fn repair_external_libraries_on_startup(
+    app: tauri::AppHandle,
+) -> Result<Vec<String>, String> {
+    let mut repaired: Vec<String> = Vec::new();
+    let libraries = crate::libraries::load_all_libraries(&app);
+    for lib in libraries {
+        if lib.canonical_mode == "native" { continue; }
+        let lib_path = Path::new(&lib.path);
+        if !lib_path.is_dir() { continue; }
+        if !library_has_canonical_md(lib_path) { continue; }
+        eprintln!("[CANONICAL] Auto-repairing external library: {}", lib.path);
+        match de_canonicalize_library(app.clone(), lib.path.clone()) {
+            Ok(res) => {
+                if res.restored > 0 { repaired.push(lib.name.clone()); }
+            }
+            Err(e) => eprintln!("[CANONICAL] Repair failed for {}: {}", lib.path, e),
+        }
+    }
+    Ok(repaired)
 }
 
 #[cfg(test)]

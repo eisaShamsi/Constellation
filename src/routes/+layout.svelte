@@ -1532,6 +1532,17 @@
 			invoke('constellation_show_in_folder', { path: detail.path }).catch(() => {});
 		});
 
+		// Safety net: de-canonicalize any external library that earlier builds
+		// may have renamed en-masse on import. Idempotent, silent, runs every
+		// launch. Keeps the user's Obsidian vault filenames intact; only the
+		// CID frontmatter property remains to link notes to Constellation's
+		// living-link system.
+		invoke<string[]>('repair_external_libraries_on_startup').then((repaired) => {
+			if (repaired.length > 0) {
+				console.log('[Constellation] Restored original filenames in libraries:', repaired);
+			}
+		}).catch(err => console.error('[Constellation] Startup repair failed:', err));
+
 		// Living Link P3: run weight decay job once per 24h (idle, fire-and-forget)
 		try {
 			const lastDecay = Number(localStorage.getItem('constellation:last-link-decay') ?? '0');
@@ -2569,40 +2580,27 @@
 			// Step 1: Pick folder
 			const folderPath: string | null = await invoke('pick_folder');
 			if (!folderPath) { adding = false; return; }
-			// Step 2: Show choice dialog — user decides how to handle files
+			// Step 2: Add as a compatible library — ALWAYS. External files
+			// (existing Obsidian vaults, etc.) are never renamed on import.
+			// We only inject a `cid` property into the frontmatter of each
+			// markdown note so Constellation's Living Link system has a
+			// stable identifier, leaving the filename and the rest of the
+			// vault exactly as the user had it.
 			pendingLibraryPath = folderPath;
-			showCanonicalChoice = true;
-			// Flow continues in handleCanonicalChoice / handleKeepIntact
+			await handleKeepIntact();
 		} catch (e) { error = String(e); adding = false; }
 	}
 
+	// Deprecated: external library canonicalization is disabled entirely.
+	// Constellation MUST NOT rename files in libraries the user imports or
+	// links to the app. External files keep their original filenames; a
+	// `cid` property is added to each markdown note's frontmatter so the
+	// Living Link system has a stable identifier without touching the vault.
+	// Redirects to the compatible-mode path. Kept as a stub so any stale
+	// call-site (e.g. the old CanonicalChoiceDialog) behaves identically
+	// to keep-intact. Will be removed once the dialog is too.
 	async function handleCanonicalAdopt() {
-		showCanonicalChoice = false;
-		try {
-			// Register library with "canonical" mode
-			const library: LibraryInfo = await invoke('add_library', { path: pendingLibraryPath });
-			const { setLibraryCanonicalMode, canonicalizeExecute } = await import('$lib/importers/store');
-			await setLibraryCanonicalMode(library.id, 'canonical');
-
-			// Canonicalize files with progress
-			const { listen } = await import('@tauri-apps/api/event');
-			const unlisten = await listen<any>('canonical-progress', (event) => {
-				const p = event.payload;
-				if (p.phase === 'scanning') { canonicalizing = true; canonicalProgress = { ...canonicalProgress, phase: 'scanning' }; }
-				else if (p.phase === 'canonicalizing') { canonicalProgress = { current: p.current, total: p.total, currentFile: p.current_file, libraryName: p.library_name, phase: 'canonicalizing' }; }
-				else if (p.phase === 'done') { canonicalizing = false; }
-			});
-			canonicalizing = true;
-			await canonicalizeExecute(pendingLibraryPath);
-			unlisten();
-			canonicalizing = false;
-
-			await loadLibraries();
-			await loadAllStats();
-			await refreshLibraryCaches();
-			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
-		} catch (e) { error = String(e); canonicalizing = false; }
-		adding = false;
+		await handleKeepIntact();
 	}
 
 	async function handleKeepIntact() {
