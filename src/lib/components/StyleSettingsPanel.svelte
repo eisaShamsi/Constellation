@@ -26,9 +26,9 @@
 	function isCollapsed(id: string): boolean { return !expandedSections.has(id); }
 
 	function toggleSection(id: string) {
-		// Svelte 5 tracks Set mutations; no need to reallocate.
-		if (expandedSections.has(id)) expandedSections.delete(id);
-		else expandedSections.add(id);
+		const next = new Set(expandedSections);
+		if (next.has(id)) next.delete(id); else next.add(id);
+		expandedSections = next;
 	}
 
 	function resetValue(setting: StyleSetting) {
@@ -54,12 +54,6 @@
 		return out;
 	}
 
-	// Memoize visibility per-block so unrelated state changes don't re-walk every block.
-	const visibleByBlock = $derived.by(() => {
-		const map = new Map<string, StyleSetting[]>();
-		for (const b of blocks) map.set(b.id, computeVisible(b.settings, expandedSections));
-		return map;
-	});
 </script>
 
 {#if blocks.length === 0}
@@ -69,7 +63,7 @@
 		<div class="ss-block">
 			<div class="ss-block-name">{block.name}</div>
 
-			{#each visibleByBlock.get(block.id) ?? [] as setting (setting.id)}
+			{#each computeVisible(block.settings, expandedSections) as setting (setting.id)}
 				<!-- Heading -->
 				{#if setting.type === 'heading'}
 					<button class="ss-heading ss-heading-{setting.level ?? 3}"
