@@ -1092,8 +1092,10 @@
 			return;
 		}
 
-		// Find theme (built-in or custom)
-		const theme = BUILTIN_THEMES.find(t => t.id === themeId) || s.customThemes?.find(t => t.id === themeId);
+		// Find theme — customs take precedence over built-ins so a user's
+		// auto-cloned copy of a built-in theme (same id, now with their
+		// styleSettingsValues attached) is the one that gets applied.
+		const theme = s.customThemes?.find(t => t.id === themeId) || BUILTIN_THEMES.find(t => t.id === themeId);
 		if (!theme) return;
 
 		// Apply derived CSS variables
