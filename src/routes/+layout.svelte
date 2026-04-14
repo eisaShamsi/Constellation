@@ -1012,15 +1012,17 @@
 	// wrote hard-coded per-tier File-Explorer defaults into styleSettingsValues.
 	// Both defeat the current cascade. Runs exactly once per session.
 	let _coreBlockCleanupDone = false;
-	// Tier values that match these previous hard-coded defaults are cleared so
-	// the new master cascade can take over. Pairs: [id, oldDefault].
-	const LEGACY_FT_DEFAULTS: Array<[string, string]> = [
-		['ft-universe-font-size', '13'], ['ft-universe-weight', '600'],
-		['ft-cuniverse-font-size', '13'], ['ft-cuniverse-weight', '600'],
-		['ft-library-font-size', '13'], ['ft-library-weight', '600'],
-		['ft-font-size', '13'], ['ft-folder-weight', '400'],
-		['ft-file-weight', '400'], ['ft-row-padding-y', '2'],
-	];
+	// Any per-tier File-Explorer value stored from earlier sessions would
+	// defeat the new master cascade (CSS var fallbacks can't distinguish
+	// "explicitly set" from "not set"). Clear them all on startup. Master
+	// ids (ft-master-*) and non-file-explorer ids are preserved.
+	const LEGACY_FT_TIER_IDS = new Set([
+		'ft-universe-font-size', 'ft-universe-weight', 'ft-universe-color',
+		'ft-cuniverse-font-size', 'ft-cuniverse-weight', 'ft-cuniverse-color',
+		'ft-library-font-size', 'ft-library-weight', 'ft-library-color',
+		'ft-font-size', 'ft-folder-weight', 'ft-folder-color',
+		'ft-file-weight', 'ft-file-color', 'ft-row-padding-y',
+	]);
 	$effect(() => {
 		if (_coreBlockCleanupDone) return;
 		const customs = $appSettings.customThemes;
@@ -1036,12 +1038,12 @@
 					next = { ...next, styleSettingsBlocks: filtered };
 				}
 			}
-			// (b) clear legacy per-tier defaults so the master cascade can apply
+			// (b) clear legacy per-tier File-Explorer overrides so master cascades
 			if (ct.styleSettingsValues) {
 				const values = { ...ct.styleSettingsValues };
 				let valuesChanged = false;
-				for (const [id, oldDefault] of LEGACY_FT_DEFAULTS) {
-					if (values[id] === oldDefault) { delete values[id]; valuesChanged = true; }
+				for (const id of Object.keys(values)) {
+					if (LEGACY_FT_TIER_IDS.has(id)) { delete values[id]; valuesChanged = true; }
 				}
 				if (valuesChanged) {
 					changed = true;
@@ -1053,6 +1055,12 @@
 		if (changed) updateSettings({ customThemes: cleaned });
 		_coreBlockCleanupDone = true;
 	});
+
+	// Track which Style-Settings CSS vars the last theme-apply wrote, so
+	// stale overrides are cleared when the user resets a row (empty values
+	// are skipped by the generator, so the property would otherwise persist
+	// forever).
+	let _lastStyleSettingsKeys: string[] = [];
 
 	// Apply custom theme colors (responds to both activeThemeId and colorScheme changes)
 	$effect(() => {
@@ -1120,6 +1128,13 @@
 				theme.styleSettingsValues ?? {},
 				theme.type
 			);
+			// Clear any Style-Settings var from the previous apply that is NOT
+			// in the new set (user reset it, or cleared a tier override).
+			const newKeys = new Set(Object.keys(ssResult.variables));
+			for (const prevKey of _lastStyleSettingsKeys) {
+				if (!newKeys.has(prevKey)) root.removeProperty(prevKey);
+			}
+			_lastStyleSettingsKeys = [...newKeys];
 			// Apply CSS variables with proper format units
 			for (const [key, value] of Object.entries(ssResult.variables)) {
 				root.setProperty(key, value);
