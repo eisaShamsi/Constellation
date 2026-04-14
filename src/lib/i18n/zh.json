@@ -18,6 +18,7 @@
       "hotkeys": "快捷键",
       "plugins": "核心插件",
       "templates": "模板",
+      "styleSettings": "样式设置",
       "knowledge": "知识管理"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "常规",
       "obsidianThemes": "Obsidian 社区主题",
       "searchThemes": "按名称或作者搜索主题...",
-      "loadingThemes": "正在加载主题..."
+      "loadingThemes": "正在加载主题...",
+      "deleteThemeConfirm": "删除主题",
+      "hasStyleSettings": "此主题包含样式设置",
+      "seeStyleSettingsTab": "打开\"样式设置\"标签页以自定义主题选项。",
+      "noActiveTheme": "未选择活动主题。请先在「外观」中选择一个主题。",
+      "styleSettingsHint": "自定义活动主题。更改会实时生效并自动保存。",
+      "noStyleSettings": "此主题没有可自定义的样式设置。请导入支持 Style Settings 的 Obsidian 主题以查看选项。",
+      "resetStyleSettings": "全部重置为默认值",
+      "stylesSavedTo": "已保存至：",
+      "ssImport": "导入 / 粘贴",
+      "ssImportFile": "从文件",
+      "ssCopy": "复制",
+      "ssExport": "导出",
+      "ssPasteTitle": "从 Obsidian Style Settings 或 Constellation 粘贴 JSON",
+      "ssImportTitle": "导入样式设置",
+      "ssImportHint": "粘贴从 Obsidian 的 Style Settings 插件或 Constellation 导出的 JSON。键是设置 ID(例如 \"h1-size\"),映射到字符串值。",
+      "ssApplyMerge": "合并",
+      "ssApplyReplace": "全部替换",
+      "ssPasteClipboard": "从剪贴板粘贴"
     },
     "ai": {
       "provider": "服务商",

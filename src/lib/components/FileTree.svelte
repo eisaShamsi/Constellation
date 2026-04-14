@@ -158,11 +158,12 @@
 		display: flex;
 		align-items: center;
 		gap: 3px;
-		padding: 2px 6px;
+		padding: var(--ft-row-padding-y, 2px) 6px;
 		border-radius: 3px;
 		cursor: pointer;
-		color: var(--text-muted);
-		font-size: 0.82rem;
+		color: var(--ft-folder-color, var(--text-muted));
+		font-size: var(--ft-font-size, 0.82rem);
+		font-weight: var(--ft-folder-weight, 400);
 		user-select: none;
 	}
 	.folder:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
@@ -178,11 +179,12 @@
 	.note {
 		display: block;
 		width: 100%;
-		padding: 2px 6px 2px 20px;
+		padding: var(--ft-row-padding-y, 2px) 6px var(--ft-row-padding-y, 2px) 20px;
 		border: none;
 		background: none;
-		color: var(--text-normal);
-		font-size: 0.82rem;
+		color: var(--ft-file-color, var(--text-normal));
+		font-size: var(--ft-font-size, 0.82rem);
+		font-weight: var(--ft-file-weight, 400);
 		font-family: inherit;
 		cursor: pointer;
 		border-radius: 3px;

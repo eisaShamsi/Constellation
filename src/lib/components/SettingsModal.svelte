@@ -8,6 +8,7 @@
 	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme } from '$lib/libraries/store';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
+	import { CONSTELLATION_CORE_BLOCKS } from '$lib/theme/constellationStyleSettings';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -26,6 +27,101 @@
 	// Theme editor state
 	let editingTheme = $state<ConstellationTheme | null>(null);
 	let themeEditorOpen = $state(false);
+	let ssImportOpen = $state(false);
+	let ssImportText = $state('');
+	let ssImportError = $state('');
+
+	function exportStyleSettings() {
+		const active = allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0];
+		if (!active) return;
+		const json = JSON.stringify(active.styleSettingsValues ?? {}, null, 2);
+		const blob = new Blob([json], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `${(active.name || 'theme').replace(/\s+/g, '-').toLowerCase()}-style-settings.json`;
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	function copyStyleSettings() {
+		const active = allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0];
+		if (!active) return;
+		const json = JSON.stringify(active.styleSettingsValues ?? {}, null, 2);
+		navigator.clipboard?.writeText(json).catch(() => {});
+	}
+
+	function applyStyleSettingsJSON(raw: string, mode: 'merge' | 'replace' = 'merge') {
+		ssImportError = '';
+		let parsed: any;
+		try {
+			parsed = JSON.parse(raw);
+		} catch (e: any) {
+			ssImportError = 'Invalid JSON: ' + (e?.message ?? 'parse error');
+			return false;
+		}
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+			ssImportError = 'Expected an object of setting-id → value pairs.';
+			return false;
+		}
+		const active = allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0];
+		if (!active) { ssImportError = 'No active theme.'; return false; }
+		const isBuiltin = !!BUILTIN_THEMES.find(b => b.id === active.id);
+		const customs = [...($appSettings.customThemes ?? [])];
+		let target = customs.find(t => t.id === active.id);
+		if (!target) {
+			target = { ...active, styleSettingsValues: { ...(active.styleSettingsValues ?? {}) } };
+			if (isBuiltin) target.source = 'custom';
+			customs.push(target);
+		}
+		const base = mode === 'replace' ? {} : { ...(target.styleSettingsValues ?? {}) };
+		for (const [k, v] of Object.entries(parsed)) {
+			if (v === null || v === undefined || v === '') delete base[k];
+			else base[k] = String(v);
+		}
+		target.styleSettingsValues = base;
+		updateSettings({ customThemes: customs, activeThemeId: target.id });
+		return true;
+	}
+
+	async function pasteStyleSettingsFromClipboard() {
+		try {
+			const text = await navigator.clipboard.readText();
+			if (!text || !text.trim()) {
+				ssImportError = 'Clipboard is empty.';
+				ssImportText = '';
+				ssImportOpen = true;
+				return;
+			}
+			if (!applyStyleSettingsJSON(text, 'merge')) {
+				// Show in the paste box so user can fix / choose mode
+				ssImportText = text;
+				ssImportOpen = true;
+			}
+		} catch (e: any) {
+			ssImportError = 'Clipboard access denied. Use Import / Paste instead.';
+			ssImportOpen = true;
+		}
+	}
+
+	function importStyleSettingsFile() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = 'application/json,.json';
+		input.onchange = async () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			const text = await file.text();
+			if (applyStyleSettingsJSON(text, 'merge')) {
+				ssImportOpen = false;
+				ssImportText = '';
+			} else {
+				ssImportText = text;
+				ssImportOpen = true;
+			}
+		};
+		input.click();
+	}
 	let showObsidianBrowser = $state(false);
 
 	const allThemes = $derived([...BUILTIN_THEMES, ...($appSettings.customThemes ?? [])]);
@@ -124,6 +220,7 @@
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
 		{ id: 'knowledge', label: $t('settings.sections.knowledge') || 'Knowledge Management', icon: 'brain' },
 		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
+		{ id: 'stylesettings', label: $t('settings.sections.styleSettings') || 'Style Settings', icon: 'sliders' },
 		{ id: 'hotkeys', label: $t('settings.sections.hotkeys') || 'Hotkeys', icon: 'keyboard' },
 		{ id: 'templates', label: $t('settings.sections.templates') || 'Templates', icon: 'template' },
 		{ id: 'plugins', label: $t('settings.sections.plugins') || 'Plug-Ins', icon: 'grid' },
@@ -496,6 +593,9 @@
 			bot: 'M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1H3a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM9 14a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z',
 			brain: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zm11 5a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2a3 3 0 1 1 0-6 3 3 0 0 1 0 6z',
 			translate: 'M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z',
+			sliders: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
+			template: 'M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z',
+			compass: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z',
 		};
 		return icons[icon] || icons.dashboard;
 	}
@@ -1624,7 +1724,8 @@
 								</div>
 								<div class="theme-card-name">{theme.name}</div>
 								{#if !BUILTIN_THEMES.find(b => b.id === theme.id)}
-									<button class="theme-edit-btn" onclick={(e) => { e.stopPropagation(); startEditTheme(theme); }} title="Edit">✏️</button>
+									<button class="theme-edit-btn" onclick={(e) => { e.stopPropagation(); startEditTheme(theme); }} title={$t('common.edit') || 'Edit'}>✏️</button>
+									<button class="theme-delete-btn" onclick={(e) => { e.stopPropagation(); if (confirm(($t('settings.appearance.deleteThemeConfirm') || 'Delete theme') + ' "' + theme.name + '"?')) deleteTheme(theme.id); }} title={$t('common.delete') || 'Delete'}>✕</button>
 								{/if}
 							</button>
 						{/each}
@@ -1702,17 +1803,14 @@
 									<span class="color-hex">{editingTheme.colors.border}</span>
 								</div>
 							</div>
-t						<!-- Style Settings (full Obsidian-compatible panel) -->
+							<!-- Style Settings hint -->
 							{#if editingTheme.styleSettingsBlocks && editingTheme.styleSettingsBlocks.length > 0}
-								<div class="setting-section-heading" style="margin-top:12px">Style Settings</div>
-								<StyleSettingsPanel
-									blocks={editingTheme.styleSettingsBlocks}
-									values={editingTheme.styleSettingsValues ?? {}}
-									onChange={(id, value) => {
-										if (!editingTheme!.styleSettingsValues) editingTheme!.styleSettingsValues = {};
-										editingTheme!.styleSettingsValues[id] = value;
-									}}
-								/>
+								<div class="setting-item">
+									<div class="setting-info">
+										<div class="setting-name">{$t('settings.appearance.hasStyleSettings') || 'This theme has Style Settings'}</div>
+										<div class="setting-desc">{$t('settings.appearance.seeStyleSettingsTab') || 'Open the “Style Settings” tab to customize theme options.'}</div>
+									</div>
+								</div>
 							{/if}
 
 							<div class="theme-editor-actions">
@@ -1764,6 +1862,100 @@ t						<!-- Style Settings (full Obsidian-compatible panel) -->
 							<span class="slider-val">{$appSettings.fontSize}px</span>
 						</div>
 					</div>
+
+				<!-- ═══ STYLE SETTINGS ═══ -->
+				{:else if activeSection === 'stylesettings'}
+					{@const activeTheme = allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0]}
+					{#if !activeTheme}
+						<div class="setting-desc">{$t('settings.appearance.noActiveTheme') || 'No active theme selected. Choose a theme in Appearance first.'}</div>
+					{:else}
+						<div class="ss-toolbar">
+							<div class="ss-toolbar-title">{activeTheme.name}</div>
+							<div class="ss-toolbar-actions">
+								<button class="w-btn w-btn-sm" onclick={pasteStyleSettingsFromClipboard} title={$t('settings.appearance.ssPasteClipboard') || 'Paste JSON directly from clipboard (merge)'}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+									{$t('settings.appearance.ssPasteClipboard') || 'Paste from clipboard'}
+								</button>
+								<button class="w-btn w-btn-sm" onclick={() => { ssImportText = ''; ssImportError = ''; ssImportOpen = true; }} title={$t('settings.appearance.ssPasteTitle') || 'Open paste box to review, merge, or replace'}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+									{$t('settings.appearance.ssImport') || 'Import / Paste'}
+								</button>
+								<button class="w-btn w-btn-sm" onclick={importStyleSettingsFile} title={$t('settings.appearance.ssImportFile') || 'Import from .json file'}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+									{$t('settings.appearance.ssImportFile') || 'From file'}
+								</button>
+								<button class="w-btn w-btn-sm" onclick={copyStyleSettings} title={$t('settings.appearance.ssCopy') || 'Copy current values as JSON'}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+									{$t('settings.appearance.ssCopy') || 'Copy'}
+								</button>
+								<button class="w-btn w-btn-sm" onclick={exportStyleSettings} title={$t('settings.appearance.ssExport') || 'Export current values to a .json file'}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+									{$t('settings.appearance.ssExport') || 'Export'}
+								</button>
+							</div>
+						</div>
+						<div class="setting-desc" style="margin-bottom:12px">
+							{$t('settings.appearance.styleSettingsHint') || 'Customize the active theme. Changes apply live and are saved automatically.'}
+						</div>
+
+						{#if ssImportOpen}
+							<div class="ss-import-box">
+								<div class="ss-import-head">
+									<strong>{$t('settings.appearance.ssImportTitle') || 'Import Style Settings'}</strong>
+									<button class="btn-text" onclick={() => { ssImportOpen = false; ssImportText = ''; ssImportError = ''; }}>{$t('common.cancel') || 'Cancel'}</button>
+								</div>
+								<div class="setting-desc" style="margin-bottom:6px">
+									{$t('settings.appearance.ssImportHint') || 'Paste JSON exported from Obsidian’s Style Settings plugin or Constellation. Keys are setting IDs (e.g. "h1-size") mapping to string values.'}
+								</div>
+								<textarea class="ss-import-ta" bind:value={ssImportText}
+									placeholder={'{\n  "h1-size": "32",\n  "interactive-accent": "#7c3aed"\n}'}></textarea>
+								{#if ssImportError}
+									<div class="ss-import-err">{ssImportError}</div>
+								{/if}
+								<div class="ss-import-actions">
+									<button class="w-btn" onclick={() => { if (applyStyleSettingsJSON(ssImportText, 'merge')) { ssImportOpen = false; ssImportText = ''; } }}>{$t('settings.appearance.ssApplyMerge') || 'Merge'}</button>
+									<button class="w-btn" onclick={() => { if (applyStyleSettingsJSON(ssImportText, 'replace')) { ssImportOpen = false; ssImportText = ''; } }}>{$t('settings.appearance.ssApplyReplace') || 'Replace all'}</button>
+								</div>
+							</div>
+						{/if}
+						{@const coreIds = new Set(CONSTELLATION_CORE_BLOCKS.map(b => b.id))}
+						{@const themeOwnBlocks = (activeTheme.styleSettingsBlocks ?? []).filter(b => !coreIds.has(b.id))}
+						{@const mergedBlocks = [...CONSTELLATION_CORE_BLOCKS, ...themeOwnBlocks]}
+						<StyleSettingsPanel
+							blocks={mergedBlocks}
+							values={activeTheme.styleSettingsValues ?? {}}
+							onChange={(id, value) => {
+								const isBuiltin = !!BUILTIN_THEMES.find(b => b.id === activeTheme.id);
+								const customs = [...($appSettings.customThemes ?? [])];
+								let target = customs.find(t => t.id === activeTheme.id);
+								if (!target) {
+									target = {
+										...activeTheme,
+										styleSettingsValues: { ...(activeTheme.styleSettingsValues ?? {}) },
+										styleSettingsBlocks: [...(activeTheme.styleSettingsBlocks ?? [])],
+									};
+									if (isBuiltin) target.source = 'custom';
+									customs.push(target);
+								}
+								if (!target.styleSettingsValues) target.styleSettingsValues = {};
+								// Empty string = delete override so theme-derived value takes over
+								if (value === '' || value == null) delete target.styleSettingsValues[id];
+								else target.styleSettingsValues[id] = value;
+								// Do NOT store core blocks on the theme — the layout effect merges
+								// them in at apply-time. Storing them here would double them on each
+								// change.
+								updateSettings({ customThemes: customs, activeThemeId: target.id });
+							}}
+						/>
+						<div style="margin-top:16px; display:flex; gap:12px; align-items:center;">
+							<button class="btn-text" onclick={() => {
+								const customs = [...($appSettings.customThemes ?? [])];
+								const target = customs.find(t => t.id === activeTheme.id);
+								if (target) { target.styleSettingsValues = {}; updateSettings({ customThemes: customs }); }
+							}}>{$t('settings.appearance.resetStyleSettings') || 'Reset all to defaults'}</button>
+							<span class="setting-desc">{$t('settings.appearance.stylesSavedTo') || 'Saved to:'} <strong>{activeTheme.name}</strong></span>
+						</div>
+					{/if}
 
 				<!-- ═══ KEYBOARD ═══ -->
 				{:else if activeSection === 'hotkeys'}
@@ -2064,6 +2256,60 @@ t						<!-- Style Settings (full Obsidian-compatible panel) -->
 		cursor: pointer; font-size: 12px; opacity: 0; transition: opacity 0.15s;
 	}
 	.theme-card:hover .theme-edit-btn { opacity: 1; }
+	.theme-delete-btn {
+		position: absolute; top: 4px; inset-inline-end: 24px; background: none; border: none;
+		cursor: pointer; font-size: 12px; opacity: 0; transition: opacity 0.15s; color: var(--text-muted);
+		padding: 0; line-height: 1;
+	}
+	.theme-card:hover .theme-delete-btn { opacity: 1; }
+	.theme-delete-btn:hover { color: var(--text-error, #e06666); }
+	/* Style Settings toolbar */
+	.ss-toolbar {
+		display: flex; align-items: center; justify-content: space-between;
+		gap: 12px; flex-wrap: wrap;
+		padding: 8px 0 10px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		margin-bottom: 10px;
+	}
+	.ss-toolbar-title {
+		font-size: 14px; font-weight: 700;
+		color: var(--interactive-accent);
+	}
+	.ss-toolbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+	.w-btn-sm {
+		display: inline-flex; align-items: center; gap: 4px;
+		padding: 4px 10px; font-size: 12px;
+	}
+	.w-btn-sm svg { flex-shrink: 0; }
+	/* Import box */
+	.ss-import-box {
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+		border-radius: 8px;
+		padding: 12px;
+		margin-bottom: 14px;
+	}
+	.ss-import-head {
+		display: flex; align-items: center; justify-content: space-between;
+		margin-bottom: 8px;
+	}
+	.ss-import-ta {
+		width: 100%; min-height: 160px; resize: vertical;
+		font-family: var(--font-monospace-theme, monospace);
+		font-size: 12px; line-height: 1.5;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		background: var(--background-primary);
+		color: var(--text-normal);
+		padding: 8px 10px;
+	}
+	.ss-import-err {
+		margin-top: 6px; color: var(--text-error, #e06666);
+		font-size: 12px;
+	}
+	.ss-import-actions {
+		display: flex; gap: 8px; margin-top: 10px;
+	}
 	.theme-add, .theme-import { border-style: dashed; }
 	.theme-add-icon { font-size: 1.5rem; color: var(--text-faint); }
 

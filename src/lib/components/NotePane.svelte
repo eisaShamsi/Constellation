@@ -388,14 +388,14 @@
 				EditorView.theme({
 					'&': { background: 'transparent', border: 'none', outline: 'none' },
 					'&.cm-focused': { outline: 'none' },
-					'.cm-scroller': { overflow: 'auto', fontFamily: 'inherit', fontSize: '16px', lineHeight: '1.75' },
-					'.cm-content': { padding: '0', caretColor: 'var(--text-normal, #1a1a1a)' },
-					'.cm-cursor': { borderLeftColor: 'var(--text-normal, #1a1a1a)', borderLeftWidth: '1.5px' },
+					'.cm-scroller': { overflow: 'auto', fontFamily: 'inherit', fontSize: 'var(--font-text-size, 16px)', lineHeight: 'var(--line-height-normal, 1.75)' },
+					'.cm-content': { padding: '0', caretColor: 'var(--caret-color, var(--text-normal, #1a1a1a))' },
+					'.cm-cursor': { borderLeftColor: 'var(--caret-color, var(--text-normal, #1a1a1a))', borderLeftWidth: '1.5px' },
 					'.cm-line': { padding: '0' },
 					'.cm-activeLine': { background: 'transparent' },
 					'.cm-activeLineGutter': { display: 'none' },
 					'.cm-gutters': { display: 'none' },
-					'.cm-selectionBackground': { background: 'color-mix(in srgb, var(--interactive-accent, #7c3aed) 20%, transparent)' },
+					'.cm-selectionBackground': { background: 'var(--text-selection, color-mix(in srgb, var(--interactive-accent, #7c3aed) 20%, transparent))' },
 					'.cm-searchMatch': {
 						backgroundColor: 'color-mix(in srgb, var(--interactive-accent, #7c3aed) 25%, transparent)',
 						outline: '1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 50%, transparent)',

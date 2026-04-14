@@ -18,6 +18,7 @@
       "hotkeys": "Kısayol Tuşları",
       "plugins": "Çekirdek Eklentiler",
       "templates": "Şablonlar",
+      "styleSettings": "Stil Ayarları",
       "knowledge": "Bilgi Yönetimi"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "Genel",
       "obsidianThemes": "Obsidian Topluluk Temaları",
       "searchThemes": "Ada veya yazara göre tema ara...",
-      "loadingThemes": "Temalar yükleniyor..."
+      "loadingThemes": "Temalar yükleniyor...",
+      "deleteThemeConfirm": "Temayı sil",
+      "hasStyleSettings": "Bu temada Stil Ayarları var",
+      "seeStyleSettingsTab": "Tema seçeneklerini özelleştirmek için \"Stil Ayarları\" sekmesini açın.",
+      "noActiveTheme": "Etkin tema seçilmedi. Önce Görünüm'den bir tema seçin.",
+      "styleSettingsHint": "Etkin temayı özelleştirin. Değişiklikler anında uygulanır ve otomatik olarak kaydedilir.",
+      "noStyleSettings": "Bu temanın özelleştirilebilir Stil Ayarları yok. Seçenekleri görmek için Style Settings'i destekleyen bir Obsidian teması içe aktarın.",
+      "resetStyleSettings": "Tümünü varsayılana sıfırla",
+      "stylesSavedTo": "Kaydedildi:",
+      "ssImport": "İçe aktar / Yapıştır",
+      "ssImportFile": "Dosyadan",
+      "ssCopy": "Kopyala",
+      "ssExport": "Dışa aktar",
+      "ssPasteTitle": "Obsidian Style Settings veya Constellation'dan JSON yapıştırın",
+      "ssImportTitle": "Stil Ayarlarını içe aktar",
+      "ssImportHint": "Obsidian'ın Style Settings eklentisinden veya Constellation'dan dışa aktarılmış JSON'u yapıştırın. Anahtarlar, ayar kimlikleridir (örn. \"h1-size\") ve metin değerlerine eşlenir.",
+      "ssApplyMerge": "Birleştir",
+      "ssApplyReplace": "Tümünü değiştir",
+      "ssPasteClipboard": "Panodan yapıştır"
     },
     "ai": {
       "provider": "Sağlayıcı",

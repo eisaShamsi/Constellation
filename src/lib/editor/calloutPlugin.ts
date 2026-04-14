@@ -353,8 +353,9 @@ export const calloutClickHandler = EditorView.domEventHandlers({}); // kept for 
 export const calloutTheme = EditorView.theme({
 	// Left border on every callout line
 	'.cm-callout-line': {
-		borderInlineStart: '3px solid var(--callout-color, #448aff)',
+		borderInlineStart: 'var(--blockquote-border-width, 3px) solid var(--callout-color, #448aff)',
 		paddingInlineStart: '12px !important',
+		borderRadius: 'var(--callout-radius, 0)',
 	},
 	// Title line: stronger background + bold
 	'.cm-callout-title-line': {

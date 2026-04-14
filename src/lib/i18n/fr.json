@@ -18,6 +18,7 @@
       "hotkeys": "Raccourcis clavier",
       "plugins": "Extensions Principales",
       "templates": "Modèles",
+      "styleSettings": "Paramètres de style",
       "knowledge": "Gestion des connaissances"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "Général",
       "obsidianThemes": "Thèmes communautaires Obsidian",
       "searchThemes": "Rechercher par nom ou auteur...",
-      "loadingThemes": "Chargement des thèmes..."
+      "loadingThemes": "Chargement des thèmes...",
+      "deleteThemeConfirm": "Supprimer le thème",
+      "hasStyleSettings": "Ce thème dispose de Paramètres de style",
+      "seeStyleSettingsTab": "Ouvrez l'onglet \"Paramètres de style\" pour personnaliser les options du thème.",
+      "noActiveTheme": "Aucun thème actif sélectionné. Choisissez d'abord un thème dans Apparence.",
+      "styleSettingsHint": "Personnalisez le thème actif. Les modifications s'appliquent en direct et sont enregistrées automatiquement.",
+      "noStyleSettings": "Ce thème n'a aucun Paramètre de style personnalisable. Importez un thème Obsidian compatible avec Style Settings pour voir des options ici.",
+      "resetStyleSettings": "Tout réinitialiser aux valeurs par défaut",
+      "stylesSavedTo": "Enregistré dans :",
+      "ssImport": "Importer / Coller",
+      "ssImportFile": "Depuis un fichier",
+      "ssCopy": "Copier",
+      "ssExport": "Exporter",
+      "ssPasteTitle": "Collez un JSON depuis Obsidian Style Settings ou Constellation",
+      "ssImportTitle": "Importer les Paramètres de style",
+      "ssImportHint": "Collez le JSON exporté depuis l'extension Style Settings d'Obsidian ou depuis Constellation. Les clés sont des identifiants de paramètre (par ex. \"h1-size\") associés à des valeurs textuelles.",
+      "ssApplyMerge": "Fusionner",
+      "ssApplyReplace": "Tout remplacer",
+      "ssPasteClipboard": "Coller depuis le presse-papiers"
     },
     "ai": {
       "provider": "Fournisseur",

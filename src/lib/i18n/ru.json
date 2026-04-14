@@ -18,6 +18,7 @@
       "hotkeys": "Горячие клавиши",
       "plugins": "Основные расширения",
       "templates": "Шаблоны",
+      "styleSettings": "Настройки стиля",
       "knowledge": "Управление знаниями"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "Общие",
       "obsidianThemes": "Темы сообщества Obsidian",
       "searchThemes": "Поиск тем по имени или автору...",
-      "loadingThemes": "Загрузка тем..."
+      "loadingThemes": "Загрузка тем...",
+      "deleteThemeConfirm": "Удалить тему",
+      "hasStyleSettings": "Эта тема поддерживает Настройки стиля",
+      "seeStyleSettingsTab": "Откройте вкладку \"Настройки стиля\", чтобы настроить параметры темы.",
+      "noActiveTheme": "Активная тема не выбрана. Сначала выберите тему в разделе «Внешний вид».",
+      "styleSettingsHint": "Настройте активную тему. Изменения применяются мгновенно и сохраняются автоматически.",
+      "noStyleSettings": "У этой темы нет настраиваемых параметров стиля. Импортируйте тему Obsidian с поддержкой Style Settings, чтобы увидеть параметры здесь.",
+      "resetStyleSettings": "Сбросить всё к значениям по умолчанию",
+      "stylesSavedTo": "Сохранено в:",
+      "ssImport": "Импорт / Вставить",
+      "ssImportFile": "Из файла",
+      "ssCopy": "Копировать",
+      "ssExport": "Экспорт",
+      "ssPasteTitle": "Вставьте JSON из Obsidian Style Settings или Constellation",
+      "ssImportTitle": "Импорт настроек стиля",
+      "ssImportHint": "Вставьте JSON, экспортированный из плагина Style Settings Obsidian или из Constellation. Ключи — идентификаторы настроек (например, \"h1-size\"), сопоставляемые со строковыми значениями.",
+      "ssApplyMerge": "Объединить",
+      "ssApplyReplace": "Заменить всё",
+      "ssPasteClipboard": "Вставить из буфера обмена"
     },
     "ai": {
       "provider": "Поставщик",

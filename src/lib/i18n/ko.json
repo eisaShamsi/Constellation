@@ -18,6 +18,7 @@
       "hotkeys": "단축키",
       "plugins": "코어 플러그인",
       "templates": "템플릿",
+      "styleSettings": "스타일 설정",
       "knowledge": "지식 관리"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "일반",
       "obsidianThemes": "Obsidian 커뮤니티 테마",
       "searchThemes": "이름 또는 작성자로 테마 검색...",
-      "loadingThemes": "테마 로딩 중..."
+      "loadingThemes": "테마 로딩 중...",
+      "deleteThemeConfirm": "테마 삭제",
+      "hasStyleSettings": "이 테마에는 스타일 설정이 있습니다",
+      "seeStyleSettingsTab": "테마 옵션을 맞춤 설정하려면 \"스타일 설정\" 탭을 여세요.",
+      "noActiveTheme": "활성 테마가 선택되지 않았습니다. 먼저 외관에서 테마를 선택하세요.",
+      "styleSettingsHint": "활성 테마를 맞춤 설정하세요. 변경 사항은 실시간으로 적용되며 자동으로 저장됩니다.",
+      "noStyleSettings": "이 테마에는 맞춤 설정 가능한 스타일 설정이 없습니다. 옵션을 보려면 Style Settings를 지원하는 Obsidian 테마를 가져오세요.",
+      "resetStyleSettings": "모두 기본값으로 초기화",
+      "stylesSavedTo": "저장 위치:",
+      "ssImport": "가져오기 / 붙여넣기",
+      "ssImportFile": "파일에서",
+      "ssCopy": "복사",
+      "ssExport": "내보내기",
+      "ssPasteTitle": "Obsidian Style Settings 또는 Constellation의 JSON을 붙여넣으세요",
+      "ssImportTitle": "스타일 설정 가져오기",
+      "ssImportHint": "Obsidian의 Style Settings 플러그인 또는 Constellation에서 내보낸 JSON을 붙여넣으세요. 키는 설정 ID(예: \"h1-size\")이며 문자열 값에 매핑됩니다.",
+      "ssApplyMerge": "병합",
+      "ssApplyReplace": "모두 바꾸기",
+      "ssPasteClipboard": "클립보드에서 붙여넣기"
     },
     "ai": {
       "provider": "제공자",

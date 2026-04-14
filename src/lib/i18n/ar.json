@@ -18,6 +18,7 @@
       "hotkeys": "اختصارات المفاتيح",
       "plugins": "الإضافات الأساسية",
       "templates": "القوالب",
+      "styleSettings": "إعدادات الأسلوب",
       "knowledge": "إدارة المعرفة"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "عام",
       "obsidianThemes": "سمات مجتمع Obsidian",
       "searchThemes": "ابحث عن سمات بالاسم أو المؤلف...",
-      "loadingThemes": "جاري تحميل السمات..."
+      "loadingThemes": "جاري تحميل السمات...",
+      "deleteThemeConfirm": "حذف السمة",
+      "hasStyleSettings": "هذه السمة تدعم إعدادات الأسلوب",
+      "seeStyleSettingsTab": "افتح تبويب \"إعدادات الأسلوب\" لتخصيص خيارات السمة.",
+      "noActiveTheme": "لا توجد سمة نشطة محددة. اختر سمة من قسم المظهر أولاً.",
+      "styleSettingsHint": "خصّص السمة النشطة. التغييرات تُطبّق فورياً وتُحفظ تلقائياً.",
+      "noStyleSettings": "هذه السمة لا تحتوي على إعدادات أسلوب قابلة للتخصيص. استورد سمة Obsidian تدعم إعدادات الأسلوب لرؤية الخيارات هنا.",
+      "resetStyleSettings": "إعادة الجميع إلى الافتراضي",
+      "stylesSavedTo": "محفوظ في:",
+      "ssImport": "استيراد / لصق",
+      "ssImportFile": "من ملف",
+      "ssCopy": "نسخ",
+      "ssExport": "تصدير",
+      "ssPasteTitle": "ألصق JSON من Obsidian Style Settings أو Constellation",
+      "ssImportTitle": "استيراد إعدادات الأسلوب",
+      "ssImportHint": "ألصق JSON المُصدَّر من إضافة Style Settings في Obsidian أو من Constellation. المفاتيح هي معرّفات الإعدادات (مثل \"h1-size\") مع قيم نصية.",
+      "ssApplyMerge": "دمج",
+      "ssApplyReplace": "استبدال الكل",
+      "ssPasteClipboard": "لصق من الحافظة"
     },
     "ai": {
       "provider": "المزود",

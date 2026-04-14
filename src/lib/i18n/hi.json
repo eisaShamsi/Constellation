@@ -18,6 +18,7 @@
       "hotkeys": "शॉर्टकट कुंजियाँ",
       "plugins": "कोर प्लग-इन",
       "templates": "टेम्पलेट",
+      "styleSettings": "स्टाइल सेटिंग्स",
       "knowledge": "ज्ञान प्रबंधन"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "सामान्य",
       "obsidianThemes": "Obsidian कम्युनिटी थीम",
       "searchThemes": "नाम या लेखक से थीम खोजें...",
-      "loadingThemes": "थीम लोड हो रहे हैं..."
+      "loadingThemes": "थीम लोड हो रहे हैं...",
+      "deleteThemeConfirm": "थीम हटाएं",
+      "hasStyleSettings": "इस थीम में स्टाइल सेटिंग्स हैं",
+      "seeStyleSettingsTab": "थीम विकल्पों को अनुकूलित करने के लिए \"स्टाइल सेटिंग्स\" टैब खोलें।",
+      "noActiveTheme": "कोई सक्रिय थीम चयनित नहीं है। पहले अपीयरेंस में एक थीम चुनें।",
+      "styleSettingsHint": "सक्रिय थीम को अनुकूलित करें। परिवर्तन तुरंत लागू होते हैं और स्वचालित रूप से सहेजे जाते हैं।",
+      "noStyleSettings": "इस थीम में अनुकूलन योग्य स्टाइल सेटिंग्स नहीं हैं। विकल्प देखने के लिए Style Settings का समर्थन करने वाली Obsidian थीम आयात करें।",
+      "resetStyleSettings": "सभी को डिफ़ॉल्ट पर रीसेट करें",
+      "stylesSavedTo": "सहेजा गया:",
+      "ssImport": "आयात / पेस्ट",
+      "ssImportFile": "फ़ाइल से",
+      "ssCopy": "कॉपी",
+      "ssExport": "निर्यात",
+      "ssPasteTitle": "Obsidian Style Settings या Constellation से JSON पेस्ट करें",
+      "ssImportTitle": "स्टाइल सेटिंग्स आयात करें",
+      "ssImportHint": "Obsidian के Style Settings प्लगइन या Constellation से निर्यात किया गया JSON पेस्ट करें। कुंजियाँ सेटिंग आईडी (जैसे \"h1-size\") हैं जो स्ट्रिंग मानों से मैप होती हैं।",
+      "ssApplyMerge": "मर्ज करें",
+      "ssApplyReplace": "सभी बदलें",
+      "ssPasteClipboard": "क्लिपबोर्ड से पेस्ट करें"
     },
     "ai": {
       "provider": "प्रदाता",

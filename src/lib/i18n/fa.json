@@ -18,6 +18,7 @@
       "hotkeys": "میانبرهای صفحه‌کلید",
       "plugins": "افزونه‌های اصلی",
       "templates": "قالب‌ها",
+      "styleSettings": "تنظیمات سبک",
       "knowledge": "مدیریت دانش"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "عمومی",
       "obsidianThemes": "تم‌های جامعه Obsidian",
       "searchThemes": "جستجوی تم بر اساس نام یا نویسنده...",
-      "loadingThemes": "در حال بارگذاری تم‌ها..."
+      "loadingThemes": "در حال بارگذاری تم‌ها...",
+      "deleteThemeConfirm": "حذف تم",
+      "hasStyleSettings": "این تم دارای تنظیمات سبک است",
+      "seeStyleSettingsTab": "برای سفارشی‌سازی گزینه‌های تم، زبانه \"تنظیمات سبک\" را باز کنید.",
+      "noActiveTheme": "هیچ تم فعالی انتخاب نشده است. ابتدا در بخش ظاهر یک تم انتخاب کنید.",
+      "styleSettingsHint": "تم فعال را سفارشی کنید. تغییرات بلافاصله اعمال و به‌طور خودکار ذخیره می‌شوند.",
+      "noStyleSettings": "این تم تنظیمات سبک قابل سفارشی‌سازی ندارد. یک تم Obsidian که از Style Settings پشتیبانی می‌کند وارد کنید تا گزینه‌ها را ببینید.",
+      "resetStyleSettings": "بازگرداندن همه به پیش‌فرض",
+      "stylesSavedTo": "ذخیره‌شده در:",
+      "ssImport": "وارد کردن / چسباندن",
+      "ssImportFile": "از فایل",
+      "ssCopy": "کپی",
+      "ssExport": "صادر کردن",
+      "ssPasteTitle": "JSON را از Obsidian Style Settings یا Constellation بچسبانید",
+      "ssImportTitle": "وارد کردن تنظیمات سبک",
+      "ssImportHint": "JSON صادرشده از افزونه Style Settings در Obsidian یا از Constellation را بچسبانید. کلیدها شناسه‌های تنظیمات (مانند \"h1-size\") با مقادیر متنی هستند.",
+      "ssApplyMerge": "ادغام",
+      "ssApplyReplace": "جایگزینی همه",
+      "ssPasteClipboard": "چسباندن از کلیپ‌بورد"
     },
     "ai": {
       "provider": "ارائه‌دهنده",

@@ -18,6 +18,7 @@
       "hotkeys": "Hotkeys",
       "plugins": "Core Plug-Ins",
       "templates": "Templates",
+      "styleSettings": "Style Settings",
       "knowledge": "Knowledge Management"
     },
     "dashboard": {
@@ -222,7 +223,25 @@
       "general": "General",
       "obsidianThemes": "Obsidian Community Themes",
       "searchThemes": "Search themes by name or author...",
-      "loadingThemes": "Loading themes..."
+      "loadingThemes": "Loading themes...",
+      "deleteThemeConfirm": "Delete theme",
+      "hasStyleSettings": "This theme has Style Settings",
+      "seeStyleSettingsTab": "Open the \"Style Settings\" tab to customize theme options.",
+      "noActiveTheme": "No active theme selected. Choose a theme in Appearance first.",
+      "styleSettingsHint": "Customize the active theme. Changes apply live and are saved automatically.",
+      "noStyleSettings": "This theme has no customizable Style Settings. Import an Obsidian theme that supports Style Settings to see options here.",
+      "resetStyleSettings": "Reset all to defaults",
+      "stylesSavedTo": "Saved to:",
+      "ssImport": "Import / Paste",
+      "ssImportFile": "From file",
+      "ssCopy": "Copy",
+      "ssExport": "Export",
+      "ssPasteTitle": "Paste JSON from Obsidian Style Settings or Constellation",
+      "ssImportTitle": "Import Style Settings",
+      "ssImportHint": "Paste JSON exported from Obsidian's Style Settings plugin or Constellation. Keys are setting IDs (e.g. \"h1-size\") mapping to string values.",
+      "ssApplyMerge": "Merge",
+      "ssApplyReplace": "Replace all",
+      "ssPasteClipboard": "Paste from clipboard"
     },
     "keyboard": {
       "filter": "Filter commands...",

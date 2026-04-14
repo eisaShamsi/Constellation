@@ -18,6 +18,7 @@
       "hotkeys": "شارٹ کٹ کیز",
       "plugins": "بنیادی پلگ انز",
       "templates": "ٹیمپلیٹس",
+      "styleSettings": "اسٹائل سیٹنگز",
       "knowledge": "علم کا انتظام"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "عمومی",
       "obsidianThemes": "Obsidian کمیونٹی تھیمز",
       "searchThemes": "نام یا مصنف سے تھیم تلاش کریں...",
-      "loadingThemes": "تھیمز لوڈ ہو رہے ہیں..."
+      "loadingThemes": "تھیمز لوڈ ہو رہے ہیں...",
+      "deleteThemeConfirm": "تھیم حذف کریں",
+      "hasStyleSettings": "اس تھیم میں اسٹائل سیٹنگز موجود ہیں",
+      "seeStyleSettingsTab": "تھیم کے اختیارات کو حسبِ ضرورت بنانے کے لیے \"اسٹائل سیٹنگز\" ٹیب کھولیں۔",
+      "noActiveTheme": "کوئی فعال تھیم منتخب نہیں ہے۔ پہلے ظاہری شکل میں ایک تھیم منتخب کریں۔",
+      "styleSettingsHint": "فعال تھیم کو حسبِ ضرورت بنائیں۔ تبدیلیاں فوراً لاگو ہوتی ہیں اور خودکار طور پر محفوظ ہوتی ہیں۔",
+      "noStyleSettings": "اس تھیم میں حسبِ ضرورت بنانے کے قابل اسٹائل سیٹنگز نہیں ہیں۔ اختیارات دیکھنے کے لیے Style Settings سپورٹ کرنے والی Obsidian تھیم درآمد کریں۔",
+      "resetStyleSettings": "تمام کو ڈیفالٹ پر ری سیٹ کریں",
+      "stylesSavedTo": "محفوظ کردہ:",
+      "ssImport": "درآمد / پیسٹ",
+      "ssImportFile": "فائل سے",
+      "ssCopy": "کاپی",
+      "ssExport": "برآمد",
+      "ssPasteTitle": "Obsidian Style Settings یا Constellation سے JSON پیسٹ کریں",
+      "ssImportTitle": "اسٹائل سیٹنگز درآمد کریں",
+      "ssImportHint": "Obsidian کے Style Settings پلگ ان یا Constellation سے برآمد شدہ JSON پیسٹ کریں۔ کلیدیں سیٹنگ IDs (مثلاً \"h1-size\") ہیں جو سٹرنگ ویلیوز سے میپ ہوتی ہیں۔",
+      "ssApplyMerge": "ضم کریں",
+      "ssApplyReplace": "سب تبدیل کریں",
+      "ssPasteClipboard": "کلپ بورڈ سے پیسٹ کریں"
     },
     "ai": {
       "provider": "فراہم کنندہ",

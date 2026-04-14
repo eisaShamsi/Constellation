@@ -18,6 +18,7 @@
       "hotkeys": "ホットキー",
       "plugins": "コアプラグイン",
       "templates": "テンプレート",
+      "styleSettings": "スタイル設定",
       "knowledge": "ナレッジ管理"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "一般",
       "obsidianThemes": "Obsidianコミュニティテーマ",
       "searchThemes": "名前または作者でテーマを検索...",
-      "loadingThemes": "テーマを読み込み中..."
+      "loadingThemes": "テーマを読み込み中...",
+      "deleteThemeConfirm": "テーマを削除",
+      "hasStyleSettings": "このテーマにはスタイル設定があります",
+      "seeStyleSettingsTab": "テーマのオプションをカスタマイズするには、\"スタイル設定\" タブを開いてください。",
+      "noActiveTheme": "アクティブなテーマが選択されていません。まず「外観」でテーマを選択してください。",
+      "styleSettingsHint": "アクティブなテーマをカスタマイズします。変更はリアルタイムで適用され、自動的に保存されます。",
+      "noStyleSettings": "このテーマにはカスタマイズ可能なスタイル設定がありません。オプションを表示するには、Style Settings に対応した Obsidian テーマをインポートしてください。",
+      "resetStyleSettings": "すべてをデフォルトにリセット",
+      "stylesSavedTo": "保存先:",
+      "ssImport": "インポート / 貼り付け",
+      "ssImportFile": "ファイルから",
+      "ssCopy": "コピー",
+      "ssExport": "エクスポート",
+      "ssPasteTitle": "Obsidian Style Settings または Constellation から JSON を貼り付けます",
+      "ssImportTitle": "スタイル設定をインポート",
+      "ssImportHint": "Obsidian の Style Settings プラグインまたは Constellation からエクスポートした JSON を貼り付けてください。キーは設定 ID(例: \"h1-size\")で、文字列値にマッピングされます。",
+      "ssApplyMerge": "マージ",
+      "ssApplyReplace": "すべて置換",
+      "ssPasteClipboard": "クリップボードから貼り付け"
     },
     "ai": {
       "provider": "プロバイダー",

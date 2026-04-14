@@ -18,6 +18,7 @@
       "hotkeys": "קיצורי מקלדת",
       "plugins": "תוספי ליבה",
       "templates": "תבניות",
+      "styleSettings": "הגדרות סגנון",
       "knowledge": "ניהול ידע"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "כללי",
       "obsidianThemes": "ערכות נושא של קהילת Obsidian",
       "searchThemes": "חיפוש ערכות לפי שם או מחבר...",
-      "loadingThemes": "טוען ערכות..."
+      "loadingThemes": "טוען ערכות...",
+      "deleteThemeConfirm": "מחיקת ערכה",
+      "hasStyleSettings": "לערכה זו יש הגדרות סגנון",
+      "seeStyleSettingsTab": "פתח את הלשונית \"הגדרות סגנון\" כדי להתאים אישית את אפשרויות הערכה.",
+      "noActiveTheme": "לא נבחרה ערכה פעילה. בחר ערכה תחילה ב\"מראה\".",
+      "styleSettingsHint": "התאם אישית את הערכה הפעילה. השינויים מוחלים בזמן אמת ונשמרים אוטומטית.",
+      "noStyleSettings": "לערכה זו אין הגדרות סגנון ניתנות להתאמה. ייבא ערכת Obsidian התומכת ב-Style Settings כדי לראות אפשרויות כאן.",
+      "resetStyleSettings": "אפס הכול לברירות המחדל",
+      "stylesSavedTo": "נשמר אל:",
+      "ssImport": "ייבוא / הדבקה",
+      "ssImportFile": "מקובץ",
+      "ssCopy": "העתק",
+      "ssExport": "ייצוא",
+      "ssPasteTitle": "הדבק JSON מ-Obsidian Style Settings או מ-Constellation",
+      "ssImportTitle": "ייבוא הגדרות סגנון",
+      "ssImportHint": "הדבק JSON שיוצא מתוסף Style Settings של Obsidian או מ-Constellation. המפתחות הם מזהי הגדרה (למשל \"h1-size\") עם ערכי מחרוזת.",
+      "ssApplyMerge": "מיזוג",
+      "ssApplyReplace": "החלף הכול",
+      "ssPasteClipboard": "הדבק מהלוח"
     },
     "ai": {
       "provider": "ספק",

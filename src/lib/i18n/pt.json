@@ -18,6 +18,7 @@
       "hotkeys": "Atalhos de teclado",
       "plugins": "Extensões Principais",
       "templates": "Modelos",
+      "styleSettings": "Configurações de estilo",
       "knowledge": "Gestão do conhecimento"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "Geral",
       "obsidianThemes": "Temas da comunidade Obsidian",
       "searchThemes": "Pesquisar temas por nome ou autor...",
-      "loadingThemes": "Carregando temas..."
+      "loadingThemes": "Carregando temas...",
+      "deleteThemeConfirm": "Excluir tema",
+      "hasStyleSettings": "Este tema tem Configurações de estilo",
+      "seeStyleSettingsTab": "Abra a aba \"Configurações de estilo\" para personalizar as opções do tema.",
+      "noActiveTheme": "Nenhum tema ativo selecionado. Escolha um tema em Aparência primeiro.",
+      "styleSettingsHint": "Personalize o tema ativo. As alterações são aplicadas ao vivo e salvas automaticamente.",
+      "noStyleSettings": "Este tema não possui Configurações de estilo personalizáveis. Importe um tema do Obsidian compatível com Style Settings para ver opções aqui.",
+      "resetStyleSettings": "Redefinir tudo para o padrão",
+      "stylesSavedTo": "Salvo em:",
+      "ssImport": "Importar / Colar",
+      "ssImportFile": "De arquivo",
+      "ssCopy": "Copiar",
+      "ssExport": "Exportar",
+      "ssPasteTitle": "Cole um JSON do Obsidian Style Settings ou do Constellation",
+      "ssImportTitle": "Importar Configurações de estilo",
+      "ssImportHint": "Cole o JSON exportado do plug-in Style Settings do Obsidian ou do Constellation. As chaves são IDs de configuração (por ex. \"h1-size\") mapeadas para valores de texto.",
+      "ssApplyMerge": "Mesclar",
+      "ssApplyReplace": "Substituir tudo",
+      "ssPasteClipboard": "Colar da área de transferência"
     },
     "ai": {
       "provider": "Provedor",

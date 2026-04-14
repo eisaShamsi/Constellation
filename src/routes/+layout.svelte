@@ -36,6 +36,7 @@
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet } from '$lib/libraries/store';
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, BUILTIN_THEMES, deriveThemeVariables, hexToHSL } from '$lib/libraries/store';
 	import { generateStyleSettingsCSS } from '$lib/theme/styleSettings';
+	import { CONSTELLATION_CORE_BLOCKS } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
@@ -1007,6 +1008,24 @@
 		}
 	});
 
+	// One-time cleanup: an earlier bug stored core blocks on custom themes; strip them.
+	$effect(() => {
+		const customs = $appSettings.customThemes;
+		if (!customs || customs.length === 0) return;
+		const coreIdSet = new Set(CONSTELLATION_CORE_BLOCKS.map(b => b.id));
+		let changed = false;
+		const cleaned = customs.map(ct => {
+			if (!ct.styleSettingsBlocks || ct.styleSettingsBlocks.length === 0) return ct;
+			const filtered = ct.styleSettingsBlocks.filter(b => !coreIdSet.has(b.id));
+			if (filtered.length !== ct.styleSettingsBlocks.length) {
+				changed = true;
+				return { ...ct, styleSettingsBlocks: filtered };
+			}
+			return ct;
+		});
+		if (changed) updateSettings({ customThemes: cleaned });
+	});
+
 	// Apply custom theme colors (responds to both activeThemeId and colorScheme changes)
 	$effect(() => {
 		if (typeof document === 'undefined') return;
@@ -1066,9 +1085,15 @@
 		}
 
 		// Apply Style Settings (full spec: variables + body classes + format units)
-		if (theme.styleSettingsBlocks && theme.styleSettingsBlocks.length > 0) {
+		// Always merge Constellation core blocks so native style controls work even
+		// when a theme defines no blocks of its own. Strip any stored core-block
+		// copies first (a previous version buggily stored them on the theme).
+		const coreIds = new Set(CONSTELLATION_CORE_BLOCKS.map(b => b.id));
+		const themeOwnBlocks = (theme.styleSettingsBlocks ?? []).filter(b => !coreIds.has(b.id));
+		const ssBlocks = [...CONSTELLATION_CORE_BLOCKS, ...themeOwnBlocks];
+		if (ssBlocks.length > 0) {
 			const ssResult = generateStyleSettingsCSS(
-				theme.styleSettingsBlocks,
+				ssBlocks,
 				theme.styleSettingsValues ?? {},
 				theme.type
 			);
@@ -4502,7 +4527,7 @@
 		height: 100vh;
 		display: grid;
 		grid-template-columns: auto auto 1fr auto;
-		grid-template-rows: 1fr 24px;
+		grid-template-rows: 1fr var(--statusbar-height, 24px);
 		overflow: hidden;
 	}
 	.app.no-sidebar {
@@ -4511,16 +4536,24 @@
 
 	/* ═══ DOCK ═══ */
 	.dock {
-		grid-row: 1; width: 40px; background: var(--bg-tertiary);
+		grid-row: 1;
+		width: var(--dock-width, 40px);
+		background: var(--dock-bg, var(--bg-tertiary));
 		border-inline-end: 1px solid var(--border);
 		display: flex; flex-direction: column;
 		justify-content: space-between; align-items: center; padding: 6px 0;
 	}
 	.dock-top, .dock-bottom { display: flex; flex-direction: column; align-items: center; gap: 1px; }
 	.dock-btn {
-		width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-		border-radius: 4px; border: none; background: none;
-		color: var(--text-secondary); cursor: pointer; text-decoration: none; transition: all 0.1s;
+		width: var(--dock-btn-size, 32px); height: var(--dock-btn-size, 32px);
+		display: flex; align-items: center; justify-content: center;
+		border-radius: var(--dock-btn-radius, 4px); border: none; background: none;
+		color: var(--dock-btn-color, var(--text-secondary));
+		cursor: pointer; text-decoration: none; transition: all 0.1s;
+	}
+	.dock-btn svg {
+		width: var(--dock-icon-size, 18px);
+		height: var(--dock-icon-size, 18px);
 	}
 	.dock-btn:hover { background: var(--border); color: var(--text); }
 	.dock-btn.active { color: var(--accent); }
@@ -4533,13 +4566,24 @@
 		position: relative;
 	}
 	.sidebar-toolbar {
-		padding: 4px 6px; border-bottom: 1px solid var(--border);
-		min-height: 34px; display: flex; flex-direction: column;
+		padding: 4px 6px;
+		border-bottom: 1px solid var(--border);
+		min-height: var(--sidebar-toolbar-height, 34px);
+		background: var(--sidebar-toolbar-bg, transparent);
+		display: flex; flex-direction: column;
 	}
 	.toolbar-actions { display: flex; gap: 2px; align-items: center; padding: 2px 0; }
 	.tb-btn {
-		width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-		border: none; background: none; border-radius: 3px; color: var(--text-muted); cursor: pointer;
+		width: var(--sidebar-btn-size, 26px); height: var(--sidebar-btn-size, 26px);
+		display: flex; align-items: center; justify-content: center;
+		border: none; background: none;
+		border-radius: var(--sidebar-btn-radius, 3px);
+		color: var(--sidebar-btn-color, var(--text-muted));
+		cursor: pointer;
+	}
+	.tb-btn svg {
+		width: var(--sidebar-icon-size, 16px);
+		height: var(--sidebar-icon-size, 16px);
 	}
 	.tb-btn:hover { background: var(--border); color: var(--text); }
 	.tb-btn.active { color: var(--interactive-accent); }
@@ -4666,9 +4710,13 @@
 	.no-results { padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.82rem; }
 
 	.library-header {
-		display: flex; align-items: center; gap: 4px; width: 100%; padding: 3px 12px;
-		background: none; border: none; color: var(--text-secondary);
-		font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; text-align: start;
+		display: flex; align-items: center; gap: 4px; width: 100%;
+		padding: var(--ft-row-padding-y, 3px) 12px;
+		background: none; border: none;
+		color: var(--ft-library-color, var(--text-secondary));
+		font-size: var(--ft-library-font-size, 0.8rem);
+		font-weight: var(--ft-library-weight, 600);
+		font-family: inherit; cursor: pointer; text-align: start;
 	}
 	.library-header:hover { background: var(--bg-hover); }
 	.v-chev { color: var(--text-muted); flex-shrink: 0; transition: transform 0.15s ease; }
@@ -4691,19 +4739,19 @@
 		display: flex;
 		align-items: center;
 		gap: 4px;
-		padding: 3px 12px;
-		font-size: 0.8rem;
-		color: var(--interactive-accent);
-		font-weight: 600;
+		padding: var(--ft-row-padding-y, 3px) 12px;
+		font-size: var(--ft-universe-font-size, 0.8rem);
+		color: var(--ft-universe-color, var(--interactive-accent));
+		font-weight: var(--ft-universe-weight, 600);
 	}
 	.child-universe-item {
 		display: flex;
 		align-items: center;
 		gap: 4px;
-		padding: 3px 12px;
-		font-size: 0.8rem;
-		color: var(--text-secondary);
-		font-weight: 600;
+		padding: var(--ft-row-padding-y, 3px) 12px;
+		font-size: var(--ft-cuniverse-font-size, 0.8rem);
+		color: var(--ft-cuniverse-color, var(--text-secondary));
+		font-weight: var(--ft-cuniverse-weight, 600);
 	}
 	.child-universe-name {
 		flex: 1;
@@ -4767,8 +4815,9 @@
 	/* Layout bar (sidebar + split controls, independent from tabs) */
 	.layout-bar {
 		display: flex; align-items: center;
-		background: var(--bg-secondary);
+		background: var(--layout-bar-bg, var(--bg-secondary));
 		padding: 4px 8px;
+		min-height: var(--layout-bar-height, auto);
 		flex-shrink: 0;
 		gap: 4px;
 		box-shadow: 0 -1px 0 0 rgba(0,0,0,0.08) inset;
@@ -4777,8 +4826,9 @@
 	/* Tab bar (locked to paper edge) */
 	.tab-bar {
 		display: flex; flex-direction: column; align-items: center;
-		background: #e8e8ec; border-bottom: none;
+		background: var(--topbar-bg, #e8e8ec); border-bottom: none;
 		flex-shrink: 0;
+		min-height: var(--topbar-height, auto);
 		padding: 5px 32px 0;
 	}
 	.tab-scroll-wrap {
@@ -4808,18 +4858,22 @@
 	.tab-scroll.no-tabs { margin-inline-start: 0; padding: 0; }
 	.tab {
 		display: flex; align-items: center; gap: 6px;
-		padding: 5px 10px; font-size: 0.8rem; color: var(--text-secondary);
-		background: #dcdce0; border-radius: 6px 6px 0 0;
+		padding: 5px 10px;
+		font-size: var(--tab-font-size, 0.8rem);
+		height: var(--tab-height, auto);
+		color: var(--tab-color, var(--text-secondary));
+		background: var(--tab-bg, #dcdce0);
+		border-radius: var(--tab-radius, 6px) var(--tab-radius, 6px) 0 0;
 		cursor: pointer; min-width: 0;
 		border: none; font-family: inherit; flex-shrink: 0;
 		border-top: 3px solid var(--library-color, transparent);
 		position: relative;
 	}
 	.tab.active, .tab.focused {
-		background: #ffffff; color: var(--text);
-		border: 1px solid #d0d0d0;
+		background: var(--tab-active-bg, #ffffff); color: var(--tab-active-color, var(--text));
+		border: 1px solid var(--tab-border, #d0d0d0);
 		border-top: 3px solid var(--library-color, var(--accent));
-		border-bottom: 1px solid #ffffff;
+		border-bottom: 1px solid var(--tab-active-bg, #ffffff);
 		margin-bottom: -1px;
 	}
 	.tab.drag-over {
@@ -4862,12 +4916,19 @@
 	}
 	.tab-close:hover { background: var(--border); color: var(--text); }
 	.tab-action {
-		width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-		border: none; background: none; border-radius: 4px;
-		color: var(--text-muted); cursor: pointer; flex-shrink: 0; margin: auto 2px;
+		width: var(--layout-btn-size, 28px); height: var(--layout-btn-size, 28px);
+		display: flex; align-items: center; justify-content: center;
+		border: none; background: none;
+		border-radius: var(--layout-btn-radius, 4px);
+		color: var(--layout-btn-color, var(--text-muted));
+		cursor: pointer; flex-shrink: 0; margin: auto 2px;
+	}
+	.tab-action svg {
+		width: var(--layout-icon-size, 14px);
+		height: var(--layout-icon-size, 14px);
 	}
 	.tab-action:hover:not(:disabled) { background: var(--border); color: var(--text); }
-	.tab-action.active { color: var(--accent); }
+	.tab-action.active { color: var(--layout-btn-active-color, var(--accent)); }
 	.tab-action:disabled { opacity: 0.3; cursor: not-allowed; }
 	.tab-spacer { flex: 1; }
 	.tab-ctx-menu {
@@ -5229,7 +5290,7 @@
 
 	/* ═══ RIGHT SIDEBAR ═══ */
 	.right-sidebar {
-		grid-row: 1; background: var(--bg-secondary);
+		grid-row: 1; background: var(--right-sidebar-bg, var(--bg-secondary));
 		border-inline-start: 1px solid var(--border);
 		overflow: hidden;
 		transition: width 0.2s ease;
@@ -5243,15 +5304,25 @@
 
 	.rs-tabs {
 		display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+		background: var(--rs-tabs-bg, transparent);
 	}
 	.rs-tab {
 		flex: 1; display: flex; align-items: center; justify-content: center;
-		height: 30px; border: none; background: none;
-		color: var(--text-muted); cursor: pointer;
+		height: var(--rs-tab-height, 30px);
+		border: none; background: none;
+		color: var(--rs-tab-color, var(--text-muted));
+		cursor: pointer;
 		border-bottom: 2px solid transparent;
 	}
+	.rs-tab svg {
+		width: var(--rs-icon-size, 16px);
+		height: var(--rs-icon-size, 16px);
+	}
 	.rs-tab:hover { background: var(--bg-hover); color: var(--text); }
-	.rs-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+	.rs-tab.active {
+		color: var(--rs-tab-active-color, var(--accent));
+		border-bottom-color: var(--rs-tab-active-color, var(--accent));
+	}
 	.rs-tab-badge {
 		position: absolute; top: -2px; inset-inline-end: -2px;
 		font-size: 0.55rem; background: var(--interactive-accent); color: white;
@@ -5305,10 +5376,14 @@
 
 	/* ═══ STATUS BAR ═══ */
 	.status-bar {
-		grid-column: 1 / -1; grid-row: 2; height: 24px;
-		background: var(--bg-tertiary); border-top: 1px solid var(--border);
+		grid-column: 1 / -1; grid-row: 2;
+		height: var(--statusbar-height, 24px);
+		background: var(--statusbar-bg, var(--bg-tertiary));
+		border-top: 1px solid var(--border);
 		display: flex; align-items: center; justify-content: space-between;
-		padding: 0 10px; font-size: 0.7rem; color: var(--text-muted);
+		padding: 0 10px;
+		font-size: var(--statusbar-font-size, 0.7rem);
+		color: var(--statusbar-color, var(--text-muted));
 	}
 	.sb-left, .sb-right { display: flex; align-items: center; gap: 4px; }
 	.sb-dot { color: var(--border); }

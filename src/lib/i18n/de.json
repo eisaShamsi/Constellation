@@ -18,6 +18,7 @@
       "hotkeys": "Tastenkürzel",
       "plugins": "Kern-Erweiterungen",
       "templates": "Vorlagen",
+      "styleSettings": "Stil-Einstellungen",
       "knowledge": "Wissensmanagement"
     },
     "general": {
@@ -186,7 +187,25 @@
       "general": "Allgemein",
       "obsidianThemes": "Obsidian Community-Themes",
       "searchThemes": "Themes nach Name oder Autor suchen...",
-      "loadingThemes": "Themes werden geladen..."
+      "loadingThemes": "Themes werden geladen...",
+      "deleteThemeConfirm": "Theme löschen",
+      "hasStyleSettings": "Dieses Theme hat Stil-Einstellungen",
+      "seeStyleSettingsTab": "Öffne den Tab \"Stil-Einstellungen\", um Theme-Optionen anzupassen.",
+      "noActiveTheme": "Kein aktives Theme ausgewählt. Wähle zuerst ein Theme unter Erscheinungsbild.",
+      "styleSettingsHint": "Passe das aktive Theme an. Änderungen werden live übernommen und automatisch gespeichert.",
+      "noStyleSettings": "Dieses Theme hat keine anpassbaren Stil-Einstellungen. Importiere ein Obsidian-Theme, das Style Settings unterstützt, um Optionen zu sehen.",
+      "resetStyleSettings": "Alle auf Standard zurücksetzen",
+      "stylesSavedTo": "Gespeichert unter:",
+      "ssImport": "Importieren / Einfügen",
+      "ssImportFile": "Aus Datei",
+      "ssCopy": "Kopieren",
+      "ssExport": "Exportieren",
+      "ssPasteTitle": "JSON aus Obsidian Style Settings oder Constellation einfügen",
+      "ssImportTitle": "Stil-Einstellungen importieren",
+      "ssImportHint": "Füge JSON ein, das aus Obsidians Style-Settings-Plugin oder aus Constellation exportiert wurde. Schlüssel sind Einstellungs-IDs (z. B. \"h1-size\") mit Textwerten.",
+      "ssApplyMerge": "Zusammenführen",
+      "ssApplyReplace": "Alles ersetzen",
+      "ssPasteClipboard": "Aus Zwischenablage einfügen"
     },
     "ai": {
       "provider": "Anbieter",

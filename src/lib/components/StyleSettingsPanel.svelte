@@ -19,7 +19,22 @@
 
 	const lang = $derived($locale?.slice(0, 2) ?? 'en');
 
+	// Collapsed by default: start with every heading id collapsed.
 	let collapsedSections = $state<Set<string>>(new Set());
+	let _initialized = false;
+	$effect(() => {
+		if (_initialized) return;
+		const ids = new Set<string>();
+		for (const b of blocks) {
+			for (const s of b.settings) {
+				if (s.type === 'heading') ids.add(s.id);
+			}
+		}
+		if (ids.size > 0) {
+			collapsedSections = ids;
+			_initialized = true;
+		}
+	});
 
 	function toggleSection(id: string) {
 		const next = new Set(collapsedSections);
@@ -39,6 +54,22 @@
 
 	function getTitle(s: StyleSetting): string { return getLocalizedTitle(s, lang); }
 	function getDesc(s: StyleSetting): string | undefined { return getLocalizedDescription(s, lang); }
+
+	function computeVisible(settings: StyleSetting[], collapsed: Set<string>): StyleSetting[] {
+		const out: StyleSetting[] = [];
+		let hideUntilLevel: number | null = null;
+		for (const s of settings) {
+			if (s.type === 'heading') {
+				const level = s.level ?? 3;
+				if (hideUntilLevel !== null && level <= hideUntilLevel) hideUntilLevel = null;
+				out.push(s);
+				if (collapsed.has(s.id)) hideUntilLevel = level;
+			} else if (hideUntilLevel === null) {
+				out.push(s);
+			}
+		}
+		return out;
+	}
 </script>
 
 {#if blocks.length === 0}
@@ -48,7 +79,7 @@
 		<div class="ss-block">
 			<div class="ss-block-name">{block.name}</div>
 
-			{#each block.settings as setting (setting.id)}
+			{#each computeVisible(block.settings, collapsedSections) as setting (setting.id)}
 				<!-- Heading -->
 				{#if setting.type === 'heading'}
 					<button class="ss-heading ss-heading-{setting.level ?? 3}"

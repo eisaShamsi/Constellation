@@ -449,10 +449,8 @@
 		// Defer ALL heavy work to avoid blocking the UI thread.
 		// d3.forceSimulation() + forceLink() initialization is O(N+E) and
 		// synchronously blocks with 1885 nodes + thousands of links.
-		// ─── Full mode: d3 force simulation ───
 		// Cap nodes to prevent UI freeze. d3 handles ~400 nodes smoothly.
-		const MAX_INITIAL_NODES = 50; // DEBUG: testing if d3 is the bottleneck
-		console.log('[SkyView] renderGraph called, nodes:', nodes.length, 'links:', links.length);
+		const MAX_INITIAL_NODES = 400;
 
 		let filteredNodes = nodes.filter(n => !hiddenLibraries.has(n.libraryName));
 		if (filterQuery.trim()) {
