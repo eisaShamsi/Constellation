@@ -1550,8 +1550,9 @@ export interface ConstellationTheme {
 		border: string;
 	};
 	customCSS?: string;
-	styleSettings?: { id: string; title: string; type: string; default?: string }[];
-	styleSettingsValues?: Record<string, string>; // user overrides: setting id → value
+	styleSettingsBlocks?: import('$lib/theme/styleSettings').StyleSettingsBlock[];
+	styleSettingsValues?: Record<string, string>;
+	styleSettingsClasses?: Record<string, boolean>;
 }
 
 /** Convert hex color to HSL components */

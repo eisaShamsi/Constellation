@@ -7,6 +7,7 @@
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
 	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme } from '$lib/libraries/store';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
+	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -1701,39 +1702,17 @@
 									<span class="color-hex">{editingTheme.colors.border}</span>
 								</div>
 							</div>
-							<!-- Style Settings (from Obsidian themes) -->
-							{#if editingTheme.styleSettings && editingTheme.styleSettings.length > 0}
+t						<!-- Style Settings (full Obsidian-compatible panel) -->
+							{#if editingTheme.styleSettingsBlocks && editingTheme.styleSettingsBlocks.length > 0}
 								<div class="setting-section-heading" style="margin-top:12px">Style Settings</div>
-								{#each editingTheme.styleSettings as ss}
-									<div class="setting-item">
-										<div class="setting-info"><div class="setting-name">{ss.title}</div></div>
-										{#if ss.type === 'variable-color'}
-											<div class="color-row">
-												<input type="color" class="color-input"
-													value={editingTheme.styleSettingsValues?.[ss.id] ?? ss.default ?? '#000000'}
-													oninput={(e) => {
-														if (!editingTheme!.styleSettingsValues) editingTheme!.styleSettingsValues = {};
-														editingTheme!.styleSettingsValues[ss.id] = (e.target as HTMLInputElement).value;
-													}} />
-												<span class="color-hex">{editingTheme.styleSettingsValues?.[ss.id] ?? ss.default ?? ''}</span>
-											</div>
-										{:else if ss.type === 'variable-number' || ss.type === 'variable-number-slider'}
-											<input type="number" class="setting-control" style="width:80px"
-												value={editingTheme.styleSettingsValues?.[ss.id] ?? ss.default ?? ''}
-												oninput={(e) => {
-													if (!editingTheme!.styleSettingsValues) editingTheme!.styleSettingsValues = {};
-													editingTheme!.styleSettingsValues[ss.id] = (e.target as HTMLInputElement).value;
-												}} />
-										{:else}
-											<input type="text" class="setting-control" style="width:120px"
-												value={editingTheme.styleSettingsValues?.[ss.id] ?? ss.default ?? ''}
-												oninput={(e) => {
-													if (!editingTheme!.styleSettingsValues) editingTheme!.styleSettingsValues = {};
-													editingTheme!.styleSettingsValues[ss.id] = (e.target as HTMLInputElement).value;
-												}} />
-										{/if}
-									</div>
-								{/each}
+								<StyleSettingsPanel
+									blocks={editingTheme.styleSettingsBlocks}
+									values={editingTheme.styleSettingsValues ?? {}}
+									onChange={(id, value) => {
+										if (!editingTheme!.styleSettingsValues) editingTheme!.styleSettingsValues = {};
+										editingTheme!.styleSettingsValues[id] = value;
+									}}
+								/>
 							{/if}
 
 							<div class="theme-editor-actions">

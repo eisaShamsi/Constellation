@@ -35,6 +35,7 @@
 	} from '$lib/libraries/store';
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet } from '$lib/libraries/store';
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, BUILTIN_THEMES, deriveThemeVariables, hexToHSL } from '$lib/libraries/store';
+	import { generateStyleSettingsCSS } from '$lib/theme/styleSettings';
 	import { get } from 'svelte/store';
 	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
@@ -1064,8 +1065,28 @@
 			customStyleEl.remove();
 		}
 
-		// Apply Style Settings user overrides as CSS variables
-		if (theme.styleSettingsValues) {
+		// Apply Style Settings (full spec: variables + body classes + format units)
+		if (theme.styleSettingsBlocks && theme.styleSettingsBlocks.length > 0) {
+			const ssResult = generateStyleSettingsCSS(
+				theme.styleSettingsBlocks,
+				theme.styleSettingsValues ?? {},
+				theme.type
+			);
+			// Apply CSS variables with proper format units
+			for (const [key, value] of Object.entries(ssResult.variables)) {
+				root.setProperty(key, value);
+			}
+			// Apply body classes from class-toggle and class-select
+			// Remove old style settings classes first
+			document.body.className = document.body.className
+				.split(' ')
+				.filter(c => !c.startsWith('css-settings-'))
+				.join(' ');
+			for (const cls of ssResult.classes) {
+				document.body.classList.add(cls);
+			}
+		} else if (theme.styleSettingsValues) {
+			// Fallback: simple key→value application
 			for (const [id, value] of Object.entries(theme.styleSettingsValues)) {
 				root.setProperty(`--${id}`, value);
 			}
