@@ -759,7 +759,7 @@
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraryStats.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
-	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || lensActive || showSearchHub || isDashboardVisible);
+	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || showSearchHub || isDashboardVisible);
 
 	// Auto-collapse sidebars when full-page becomes active, restore when deactivated
 	let sidebarBeforeFullPage = false;
@@ -1516,6 +1516,16 @@
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
 		document.addEventListener('constellation:show-importer', () => { showImporter = true; });
+
+		// Living Link P3: run weight decay job once per 24h (idle, fire-and-forget)
+		try {
+			const lastDecay = Number(localStorage.getItem('constellation:last-link-decay') ?? '0');
+			if (Date.now() - lastDecay > 86_400_000) {
+				const { linkDecay } = await import('$lib/libraries/store');
+				linkDecay().then(() => localStorage.setItem('constellation:last-link-decay', String(Date.now())))
+					.catch(() => { /* index not ready yet — try again next launch */ });
+			}
+		} catch { /* localStorage unavailable */ }
 
 		// 1. Check universe state
 		let universes: UniverseEntry[] = [];
@@ -2946,8 +2956,16 @@
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
 			</button>
 			{/if}
+			<button class="dock-btn" class:active={showKnowledgeHealth} onclick={() => {
+				showKnowledgeHealth = !showKnowledgeHealth;
+				if (showKnowledgeHealth) {
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false;
+				}
+			}} title={$t('ribbon.knowledgeHealth') || 'Knowledge Health'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
+			</button>
 			{#if $appSettings.enabledFeatures?.skyView !== false}
-			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
+			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showKnowledgeHealth = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
 			</button>
 			{/if}

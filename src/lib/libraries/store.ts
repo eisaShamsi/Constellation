@@ -866,6 +866,92 @@ export async function universalSearch(query: string, queryEmbedding?: number[] |
 	return invoke('constellation_search_universal', { query, queryEmbedding: queryEmbedding ?? null, limit: limit ?? 0 });
 }
 
+// ─── Living Link System: P3-P5 wrappers ────────────────────────────────
+
+export interface LinkStats {
+	total_links: number;
+	by_type: Record<string, number>;
+	by_confidence: Record<string, number>;
+	with_annotation: number;
+	sample_links: Array<{ source: string; target: string; type: string; annotation: string; confidence: string; weight: number }>;
+}
+
+export interface LinkDecayResult {
+	decayed: number;
+	new_dormant: number;
+	lifecycle: { birth: number; growth: number; maturity: number; dormancy: number; archived: number };
+}
+
+export interface FormulationInsight {
+	source_name: string;
+	target_name: string;
+	link_type: string;
+	annotation: string;
+	weight: number;
+	confidence: string;
+	traversal_count: number;
+	last_traversed: string;
+	library_name: string;
+}
+
+export type FormulationQueryType =
+	| 'strongest_evidence' | 'weak_foundations' | 'tensions' | 'stagnating'
+	| 'abandoned' | 'emerging' | 'bias_check' | 'most_connected';
+
+export async function linkStats(): Promise<LinkStats> {
+	return invoke('constellation_link_stats');
+}
+
+export async function linkDecay(): Promise<LinkDecayResult> {
+	return invoke('constellation_link_decay');
+}
+
+export async function formulationAnalysis(queryType: FormulationQueryType, target?: string): Promise<FormulationInsight[]> {
+	return invoke('constellation_formulation_analysis', { queryType, target: target ?? null });
+}
+
+/**
+ * Map a NoteLink-like row (with weight, traversal_count, last_traversed, status fields)
+ * to its current lifecycle stage. Mirrors the Rust classification in
+ * `constellation_link_decay` so the UI doesn't need a roundtrip per row.
+ *
+ *   spark      — created < 7 days ago, no traversal yet
+ *   birth      — traversal_count = 0 (or weight ≤ 1)
+ *   growth     — traversed at least once, weight < 5
+ *   maturity   — weight ≥ 5
+ *   dormancy   — status = 'dormant' (set by decay job after 90 days idle)
+ *   archival   — status = 'archived'
+ */
+export type LinkStage = 'spark' | 'birth' | 'growth' | 'maturity' | 'dormancy' | 'archival';
+
+export function getLinkStage(link: { weight?: number; traversal_count?: number; status?: string; created?: string; last_traversed?: string }): LinkStage {
+	if (link.status === 'archived') return 'archival';
+	if (link.status === 'dormant') return 'dormancy';
+	const w = link.weight ?? 1;
+	const tc = link.traversal_count ?? 0;
+	if (tc === 0) {
+		// Within 7 days = spark; otherwise birth (waiting for first use)
+		if (link.created) {
+			const ageDays = (Date.now() - new Date(link.created).getTime()) / 86400000;
+			if (ageDays < 7) return 'spark';
+		}
+		return 'birth';
+	}
+	if (w >= 5) return 'maturity';
+	return 'growth';
+}
+
+const STAGE_META: Record<LinkStage, { icon: string; color: string; label: string }> = {
+	spark:    { icon: '✨', color: '#a78bfa', label: 'Spark' },
+	birth:    { icon: '🌱', color: '#86efac', label: 'Birth' },
+	growth:   { icon: '🌿', color: '#22c55e', label: 'Growth' },
+	maturity: { icon: '🌳', color: '#15803d', label: 'Maturity' },
+	dormancy: { icon: '🌙', color: '#94a3b8', label: 'Dormant' },
+	archival: { icon: '📦', color: '#64748b', label: 'Archived' },
+};
+
+export function getLinkStageMeta(stage: LinkStage) { return STAGE_META[stage]; }
+
 /** Initialize the Rust-native ONNX embedding engine. */
 export async function initEmbeddingEngine(): Promise<string> {
 	return invoke('constellation_init_embeddings');
