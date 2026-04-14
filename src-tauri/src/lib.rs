@@ -3,6 +3,7 @@ mod bases;
 mod canvas;
 mod canonical;
 mod embeddings;
+mod embeds;
 mod dataview;
 mod file_kinds;
 mod inspector360;
@@ -256,6 +257,9 @@ pub fn run() {
             libraries::read_note_preview,
             libraries::save_clipboard_image,
             libraries::resolve_embed_image,
+            embeds::resolve_embed,
+            embeds::read_vault_config_cmd,
+            embeds::invalidate_vault_index_cmd,
             libraries::scan_note_stages,
             strata::compute_note_strata,
             maturity::compute_note_maturity,

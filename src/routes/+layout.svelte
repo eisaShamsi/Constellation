@@ -1517,6 +1517,21 @@
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
 		document.addEventListener('constellation:show-importer', () => { showImporter = true; });
 
+		// Universal Embed: "open this note" (from transclusion header click)
+		window.addEventListener('constellation:open-note', (e: Event) => {
+			const detail = (e as CustomEvent).detail as { path?: string };
+			if (!detail?.path) return;
+			const libs = get(libraries);
+			const lib = libs.find(l => detail.path!.startsWith(l.path));
+			if (lib) openNoteTab(detail.path!, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+		});
+		// Universal Embed: "open this file externally" (from generic file card)
+		window.addEventListener('constellation:open-external', (e: Event) => {
+			const detail = (e as CustomEvent).detail as { path?: string };
+			if (!detail?.path) return;
+			invoke('constellation_show_in_folder', { path: detail.path }).catch(() => {});
+		});
+
 		// Living Link P3: run weight decay job once per 24h (idle, fire-and-forget)
 		try {
 			const lastDecay = Number(localStorage.getItem('constellation:last-link-decay') ?? '0');

@@ -157,6 +157,21 @@ const checkboxUncheckedDeco = Decoration.replace({ widget: new CheckboxWidget(fa
 // Key: "libraryPath|notePath|filename", Value: data URL or '' (not found).
 const _imageCache = new Map<string, string>();
 
+/** Cache for resolve_embed results so repeat renders don't spam IPC. */
+interface EmbedResolution {
+	kind: 'image' | 'audio' | 'video' | 'pdf' | 'canvas' | 'excalidraw' | 'note' | 'generic' | 'missing';
+	url: string;
+	absolute_path?: string | null;
+	mime?: string | null;
+	size_bytes: number;
+	note_body?: string | null;
+	heading?: string | null;
+	block_id?: string | null;
+}
+const _embedCache = new Map<string, EmbedResolution>();
+/** Circular-guard for note transclusion: tracks paths currently being rendered. */
+const _transcludeStack = new Set<string>();
+
 /** Widget for inline images — resolves via Rust IPC (handles non-ASCII paths correctly). */
 class ImageWidget extends WidgetType {
 	filename: string;
@@ -239,6 +254,251 @@ class ImageWidget extends WidgetType {
 			&& this.libraryPath === other.libraryPath
 			&& this.notePath === other.notePath;
 	}
+}
+
+/**
+ * Universal embed widget — resolves `![[target]]` via Rust and renders the
+ * appropriate media: image, audio player, video player, PDF iframe, canvas
+ * / excalidraw preview, note transclusion, generic file pill, or a visible
+ * "not found" placeholder.
+ */
+class UniversalEmbedWidget extends WidgetType {
+	constructor(
+		public target: string,
+		public displayAlias: string,
+		public libraryPath: string,
+		public notePath: string,
+	) { super(); }
+
+	toDOM() {
+		const wrap = document.createElement('div');
+		wrap.className = 'cm-md-embed';
+		const cacheKey = `${this.libraryPath}|${this.notePath}|${this.target}`;
+		const cached = _embedCache.get(cacheKey);
+		if (cached) {
+			this._render(wrap, cached);
+			return wrap;
+		}
+		// Async resolve — show skeleton, swap when ready
+		this._renderLoading(wrap);
+		invoke<EmbedResolution>('resolve_embed', {
+			libraryPath: this.libraryPath,
+			notePath: this.notePath,
+			target: this.target,
+		}).then(res => {
+			_embedCache.set(cacheKey, res);
+			wrap.innerHTML = '';
+			this._render(wrap, res);
+		}).catch(() => {
+			wrap.innerHTML = '';
+			this._renderMissing(wrap);
+		});
+		return wrap;
+	}
+
+	private _renderLoading(wrap: HTMLDivElement) {
+		const el = document.createElement('span');
+		el.className = 'cm-embed-loading';
+		el.textContent = `⏳ ${this.displayAlias || this.target}`;
+		wrap.appendChild(el);
+	}
+
+	private _render(wrap: HTMLDivElement, res: EmbedResolution) {
+		switch (res.kind) {
+			case 'image':      return this._renderImage(wrap, res);
+			case 'audio':      return this._renderAudio(wrap, res);
+			case 'video':      return this._renderVideo(wrap, res);
+			case 'pdf':        return this._renderPdf(wrap, res);
+			case 'canvas':     return this._renderCanvas(wrap, res);
+			case 'excalidraw': return this._renderExcalidraw(wrap, res);
+			case 'note':       return this._renderNote(wrap, res);
+			case 'generic':    return this._renderGeneric(wrap, res);
+			default:           return this._renderMissing(wrap);
+		}
+	}
+
+	private _renderImage(wrap: HTMLDivElement, res: EmbedResolution) {
+		const img = document.createElement('img');
+		img.src = res.url;
+		img.alt = this.displayAlias || this.target;
+		img.loading = 'lazy';
+		img.onerror = () => this._renderMissing(wrap);
+		wrap.appendChild(img);
+	}
+
+	private _renderAudio(wrap: HTMLDivElement, res: EmbedResolution) {
+		const a = document.createElement('audio');
+		a.src = res.url;
+		a.controls = true;
+		a.preload = 'metadata';
+		wrap.appendChild(a);
+		const cap = document.createElement('div');
+		cap.className = 'cm-embed-caption';
+		cap.textContent = `🎵 ${this.displayAlias || this.target}`;
+		wrap.appendChild(cap);
+	}
+
+	private _renderVideo(wrap: HTMLDivElement, res: EmbedResolution) {
+		const v = document.createElement('video');
+		v.src = res.url;
+		v.controls = true;
+		v.preload = 'metadata';
+		v.playsInline = true;
+		v.style.maxWidth = '100%';
+		wrap.appendChild(v);
+		const cap = document.createElement('div');
+		cap.className = 'cm-embed-caption';
+		cap.textContent = `🎬 ${this.displayAlias || this.target}`;
+		wrap.appendChild(cap);
+	}
+
+	private _renderPdf(wrap: HTMLDivElement, res: EmbedResolution) {
+		// Obsidian supports `#page=N` PDF fragments; carry them through to the viewer.
+		const page = this.target.match(/#page=(\d+)/)?.[1];
+		const src = page ? `${res.url}#page=${page}` : res.url;
+		const iframe = document.createElement('iframe');
+		iframe.src = src;
+		iframe.className = 'cm-embed-pdf';
+		iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts');
+		wrap.appendChild(iframe);
+		const cap = document.createElement('div');
+		cap.className = 'cm-embed-caption';
+		cap.textContent = `📄 ${this.displayAlias || this.target}${page ? ` · page ${page}` : ''}`;
+		wrap.appendChild(cap);
+	}
+
+	private _renderCanvas(wrap: HTMLDivElement, res: EmbedResolution) {
+		// Obsidian Canvas is JSON with {nodes, edges}. Render a compact preview.
+		let summary = 'Canvas';
+		try {
+			const doc = JSON.parse(res.note_body ?? '{}');
+			const n = doc.nodes?.length ?? 0;
+			const e = doc.edges?.length ?? 0;
+			summary = `Canvas · ${n} node${n !== 1 ? 's' : ''} · ${e} edge${e !== 1 ? 's' : ''}`;
+		} catch {}
+		wrap.appendChild(this._card('🗺️', this.displayAlias || this.target, summary, res.absolute_path));
+	}
+
+	private _renderExcalidraw(wrap: HTMLDivElement, res: EmbedResolution) {
+		// Excalidraw embeds in Obsidian have a `.excalidraw.svg` sibling for preview.
+		// If we find it, render the SVG; otherwise show a file-pill placeholder.
+		let summary = 'Excalidraw drawing';
+		try {
+			const doc = JSON.parse(res.note_body ?? '{}');
+			const el = doc.elements?.length ?? 0;
+			summary = `Excalidraw · ${el} element${el !== 1 ? 's' : ''}`;
+		} catch {}
+		wrap.appendChild(this._card('✏️', this.displayAlias || this.target, summary, res.absolute_path));
+	}
+
+	private _renderNote(wrap: HTMLDivElement, res: EmbedResolution) {
+		const absPath = res.absolute_path ?? '';
+		if (_transcludeStack.has(absPath)) {
+			// Circular transclusion — show a compact badge instead
+			wrap.appendChild(this._card('🔄', this.displayAlias || this.target, 'Circular transclusion'));
+			return;
+		}
+		_transcludeStack.add(absPath);
+		try {
+			let body = res.note_body ?? '';
+			// Strip YAML frontmatter
+			body = body.replace(/^---\n[\s\S]*?\n---\n?/, '');
+			// Scope to heading / block if specified
+			if (res.heading) body = extractHeading(body, res.heading);
+			if (res.block_id) body = extractBlock(body, res.block_id);
+			const container = document.createElement('div');
+			container.className = 'cm-embed-transclusion';
+			const hdr = document.createElement('div');
+			hdr.className = 'cm-embed-transclusion-header';
+			hdr.textContent = `📝 ${this.displayAlias || this.target}`;
+			container.appendChild(hdr);
+			const bodyEl = document.createElement('div');
+			bodyEl.className = 'cm-embed-transclusion-body';
+			// Minimal inline rendering — the transcluded note renders as markdown-ish
+			// plain text. Users who need full CM6 live-preview inside transclusions
+			// can click through to the source note (handler below).
+			bodyEl.textContent = body.trim().slice(0, 4000);
+			container.appendChild(bodyEl);
+			hdr.style.cursor = 'pointer';
+			hdr.addEventListener('click', () => {
+				window.dispatchEvent(new CustomEvent('constellation:open-note', { detail: { path: absPath } }));
+			});
+			wrap.appendChild(container);
+		} finally {
+			_transcludeStack.delete(absPath);
+		}
+	}
+
+	private _renderGeneric(wrap: HTMLDivElement, res: EmbedResolution) {
+		const kb = res.size_bytes > 0 ? ` · ${formatBytes(res.size_bytes)}` : '';
+		wrap.appendChild(this._card('📎', this.displayAlias || this.target, `File${kb}`, res.absolute_path));
+	}
+
+	private _renderMissing(wrap: HTMLDivElement) {
+		wrap.appendChild(this._card('⚠️', this.target, 'File not found in vault'));
+		wrap.firstElementChild?.classList.add('cm-embed-missing');
+	}
+
+	private _card(icon: string, title: string, subtitle: string, openPath?: string | null) {
+		const card = document.createElement('div');
+		card.className = 'cm-embed-card';
+		const ic = document.createElement('span'); ic.className = 'cm-embed-card-icon'; ic.textContent = icon; card.appendChild(ic);
+		const body = document.createElement('div'); body.className = 'cm-embed-card-body';
+		const t = document.createElement('div'); t.className = 'cm-embed-card-title'; t.textContent = title; body.appendChild(t);
+		const s = document.createElement('div'); s.className = 'cm-embed-card-sub'; s.textContent = subtitle; body.appendChild(s);
+		card.appendChild(body);
+		if (openPath) {
+			card.style.cursor = 'pointer';
+			card.addEventListener('click', () => {
+				window.dispatchEvent(new CustomEvent('constellation:open-external', { detail: { path: openPath } }));
+			});
+		}
+		return card;
+	}
+
+	eq(other: UniversalEmbedWidget) {
+		return this.target === other.target
+			&& this.libraryPath === other.libraryPath
+			&& this.notePath === other.notePath;
+	}
+}
+
+function extractHeading(md: string, heading: string): string {
+	const target = heading.trim().toLowerCase();
+	const lines = md.split('\n');
+	let start = -1, endLevel = 7;
+	for (let i = 0; i < lines.length; i++) {
+		const m = lines[i].match(/^(#{1,6})\s+(.+?)\s*$/);
+		if (m && m[2].trim().toLowerCase() === target) { start = i; endLevel = m[1].length; break; }
+	}
+	if (start < 0) return md;
+	let end = lines.length;
+	for (let i = start + 1; i < lines.length; i++) {
+		const m = lines[i].match(/^(#{1,6})\s/);
+		if (m && m[1].length <= endLevel) { end = i; break; }
+	}
+	return lines.slice(start, end).join('\n');
+}
+
+function extractBlock(md: string, blockId: string): string {
+	const marker = `^${blockId}`;
+	const lines = md.split('\n');
+	for (let i = 0; i < lines.length; i++) {
+		if (lines[i].includes(marker)) {
+			// Walk back to start of paragraph / list item
+			let start = i;
+			while (start > 0 && lines[start - 1].trim() !== '') start--;
+			return lines.slice(start, i + 1).join('\n').replace(new RegExp(`\\s*\\^${blockId}\\s*$`), '');
+		}
+	}
+	return md;
+}
+
+function formatBytes(n: number): string {
+	if (n < 1024) return `${n} B`;
+	if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+	if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+	return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
 /** Widget for inline HTML tags (<u>, <sub>, <sup>) — preserves bidi with dir=auto */
@@ -472,25 +732,27 @@ function buildDecorations(view: EditorView): DecorationSet {
 
 	// Single-pass line scan for wikilink embeds, wikilinks, and tags
 	// (Merged from 3 separate loops to reduce iteration overhead)
-	const IMG_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'avif']);
 	for (const { from: vFrom, to: vTo } of view.visibleRanges) {
 		for (let pos = vFrom; pos < vTo;) {
 			const line = doc.lineAt(pos);
 			if (line.number !== cursorLine) {
 				const lineText = line.text;
 
-				// Image embeds: ![[file.png]]
+				// Universal embeds: ![[target]] — Rust resolves the type and returns
+				// an EmbedResolution the UniversalEmbedWidget routes to the right
+				// renderer (image / audio / video / PDF / canvas / excalidraw /
+				// note-transclusion / generic / missing).
 				const embedRe = /!\[\[([^\]]+)\]\]/g;
 				let m;
 				while ((m = embedRe.exec(lineText)) !== null) {
-					const target = m[1];
-					const ext = target.split('.').pop()?.toLowerCase() || '';
-					if (IMG_EXTS.has(ext)) {
-						const absFrom = line.from + m.index;
-						ranges.push({ from: absFrom, to: absFrom + m[0].length, deco: Decoration.replace({
-							widget: new ImageWidget(target, target, libPath, notePath),
-						}) });
-					}
+					const inner = m[1];
+					const pipeIdx = inner.indexOf('|');
+					const rawTarget = pipeIdx >= 0 ? inner.slice(0, pipeIdx) : inner;
+					const alias = pipeIdx >= 0 ? inner.slice(pipeIdx + 1) : '';
+					const absFrom = line.from + m.index;
+					ranges.push({ from: absFrom, to: absFrom + m[0].length, deco: Decoration.replace({
+						widget: new UniversalEmbedWidget(rawTarget, alias, libPath, notePath),
+					}) });
 				}
 
 				// Wikilinks: [[note]], [[note|display]], or [[note|link-type]] (CE typed links)

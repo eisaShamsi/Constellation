@@ -1175,4 +1175,96 @@
 		visibility: visible !important;
 	}
 
+	/* ─── Universal Embed Widget (Living Embed Resolver) ─── */
+	.e-editor :global(.cm-md-embed) {
+		display: block;
+		margin: 10px 0;
+	}
+	.e-editor :global(.cm-md-embed img),
+	.e-editor :global(.cm-md-embed video) {
+		max-width: 100%;
+		border-radius: 6px;
+	}
+	.e-editor :global(.cm-md-embed audio) {
+		width: 100%;
+	}
+	.e-editor :global(.cm-embed-loading) {
+		display: inline-block;
+		padding: 6px 10px;
+		border-radius: 6px;
+		background: var(--background-modifier-border);
+		color: var(--text-muted);
+		font-size: 0.85em;
+	}
+	.e-editor :global(.cm-embed-caption) {
+		font-size: 0.75em;
+		color: var(--text-muted);
+		margin-top: 4px;
+		text-align: center;
+	}
+	.e-editor :global(.cm-embed-pdf) {
+		width: 100%;
+		height: 600px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px;
+		background: var(--background-secondary);
+	}
+	.e-editor :global(.cm-embed-card) {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 12px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px;
+		background: var(--background-secondary);
+	}
+	.e-editor :global(.cm-embed-card-icon) {
+		font-size: 1.6em;
+		flex-shrink: 0;
+	}
+	.e-editor :global(.cm-embed-card-body) {
+		min-width: 0;
+		flex: 1;
+	}
+	.e-editor :global(.cm-embed-card-title) {
+		font-weight: 600;
+		color: var(--text-normal);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.e-editor :global(.cm-embed-card-sub) {
+		font-size: 0.8em;
+		color: var(--text-muted);
+	}
+	.e-editor :global(.cm-embed-missing) {
+		border-color: color-mix(in srgb, var(--text-warning, #f59e0b) 40%, transparent);
+		background: color-mix(in srgb, var(--text-warning, #f59e0b) 8%, var(--background-secondary));
+	}
+	/* Note transclusion */
+	.e-editor :global(.cm-embed-transclusion) {
+		border-inline-start: 3px solid var(--interactive-accent);
+		background: var(--background-secondary);
+		border-radius: 0 6px 6px 0;
+		padding: 8px 12px;
+	}
+	.e-editor :global(.cm-embed-transclusion-header) {
+		font-weight: 600;
+		color: var(--interactive-accent);
+		font-size: 0.9em;
+		padding-bottom: 4px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		margin-bottom: 6px;
+	}
+	.e-editor :global(.cm-embed-transclusion-header:hover) {
+		text-decoration: underline;
+	}
+	.e-editor :global(.cm-embed-transclusion-body) {
+		white-space: pre-wrap;
+		color: var(--text-muted);
+		font-size: 0.92em;
+		max-height: 360px;
+		overflow-y: auto;
+	}
+
 </style>
