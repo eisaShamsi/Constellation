@@ -164,3 +164,88 @@ After multiple attempts at master-with-per-tier-override cascade (which kept bre
 
 ### Stale CSS variable cleanup
 `root.setProperty` never removes properties. When a user reset a Style Settings row, the previously-set CSS var would persist forever on `document.body`. Added a `_lastStyleSettingsKeys` registry that diffs keys between applies and removes any no-longer-present property.
+
+---
+
+## Phase 5 — Universal Embed Resolver (Obsidian parity)
+
+Replaced the image-only embed handler with a full-spectrum resolver.
+
+Commits `e050cb5`, `45f4a4e`, `12697de`, `9754014`, `3314ae6`, `fea299a`, `40eb19c`, `c645ec6`.
+
+- New `src-tauri/src/embeds.rs` with a 6-level resolution pipeline matching Obsidian exactly (note-relative → vault-path → `.obsidian/app.json` attachmentFolderPath → common fallback folders → vault-wide filename index → vault root).
+- Vault index is lazy-cached, digit-normalized (Arabic-Indic / Persian ↔ ASCII so `Pasted image ٢٠٢٥٠٩١٥.png` and `Pasted image 20250915.png` match).
+- Longest-prefix library match in `openNoteTab` so nested libraries route correctly.
+- `UniversalEmbedWidget` routes every `![[target]]` to the right renderer: Image / Audio / Video / PDF / Canvas / Excalidraw / Note transclusion / Generic file / Missing placeholder.
+- Note transclusion (read-only, scoped to `#heading` or `^block-id`, circular-guarded, header click opens source).
+- Rich diagnostic card on miss — shows tried paths, attachmentFolderPath from `.obsidian/app.json`, vault file count, did-you-mean suggestions, and a live filesystem listing of the expected attachment folder.
+
+---
+
+## Phase 6 — Canonical filename disaster recovery + lockdown
+
+Commits `d6228b7`, `cc0ca57`, `b19908c`.
+
+Problem: earlier builds mass-renamed external Obsidian vaults to Constellation's canonical scheme (`20260410T153045Z_NOTE_XXXX.md`), breaking every wikilink and embed reference. 10,616 files across 8 libraries had been corrupted.
+
+Fix, in three layers:
+1. **Automatic repair on startup** — `repair_external_libraries_on_startup` scans every library (no mode gate — filesystem is the source of truth). For any library with canonical-named .md files, invokes `de_canonicalize_library` which restores original filenames from frontmatter `title` / `original_filename`. Ran once on the user's machine, restored all 10,616 files instantly with zero errors.
+2. **Permanent import lockdown** — `handleAddLibrary` now calls `handleKeepIntact` directly. The "adopt canonical" dialog is gone. External files are NEVER renamed.
+3. **Namespaced CID property** — stable identifier renamed `cid` → `cid_cn` (zero-collision with any pre-existing `cid:` in a user's vault). Lazy injection per-note on first open via `ensure_cid_cn_cmd`. Timestamp = file's creation/mtime. Legacy `cid:` values migrate in-place on first touch.
+
+---
+
+## Phase 7 — Emoji & Icon Library (Core Plug-In)
+
+Commits `ce3c3e0`, `e7bf160`, `6d36c14`, `fdeaae1`, `8b6521e`, `8c63ea0`, `c1dcd41`.
+
+Full-scope plug-in (~3,600 icons across four MIT-licensed sets + every Unicode emoji with 23-locale keyword search):
+
+- **Picker** (`EmojiIconPicker.svelte`): three-tab modal (Emoji / Icons / Recent). Ctrl+. globally. Emoji tabs + set-filter chips for icons (Lucide / Phosphor / Heroicons / Feather).
+- **Inline `:shortcode:` autocomplete** (`shortcodeAutocomplete.ts`): 23-locale emoji keyword search + all icon names (both short and namespaced forms).
+- **Widget renderer** (`IconShortcodeWidget` in livePreview.ts): `:lucide-heart:` renders as inline SVG at 1.15em. Keeps `.md` files small/readable.
+- **App icon overrides** (`iconOverrides.ts`, `IconOverrideSettings.svelte`, `SlotIcon.svelte`): 60+ customizable shell slots (Dock, Sidebar Toolbar, Layout Bar, Inspector Tabs, File Tree, Editor Toolbar, Callouts). New Settings sub-tab "App Icons". Reference wiring on Knowledge Health dock button — other slots follow the same `<SlotIcon slot="..."><svg>...</svg></SlotIcon>` pattern.
+- **Active editor registry** (`activeEditor.ts`): tracks last-focused editor so picker inserts at correct cursor across split/multi-pane layouts.
+- Lucide format fix: v1.x uses `Array<[tag, attrs]>` not the `[tag, attrs, children]` shape we assumed initially.
+
+---
+
+## Phase 8 — Living Link Architecture P2–P5
+
+Commits `2c285fb`, `3c78b2c`.
+
+All four phases wired. P2 Traversal Tracking + P3 Weight/Lifecycle + P4 Formulation Queries + P5 Knowledge Health Dashboard — discovered the backend (`constellation_link_traverse`, `constellation_link_decay`, `constellation_formulation_analysis`, `constellation_link_stats`) was already implemented; this session wired missing surfaces (Sky View node click, Trail prev/next) and completed the UI plumbing for the Knowledge Health Dashboard (already-existing but unreachable component `KnowledgeHealthDashboard.svelte` — state variable was never declared). Daily auto-decay trigger added in `onMount` via localStorage-gated 24h check.
+
+---
+
+## Phase 9 — Trial Universe build (COMPLETE)
+
+Background task `bf58hcway` finished after ~3 hours.
+
+| Metric | Value |
+|---|---|
+| **Total notes** | **7,600** (target: 6,000+) ✅ |
+| Science | 2,050 |
+| Humanities | 2,046 |
+| Arts & Culture | 1,900 |
+| **العالم العربي** | **1,600** (target: ≥1,000) ✅ |
+| Total images | 4,064 (Wikimedia Commons, CC-attributed) |
+| Size on disk | 967 MB |
+| Skipped seeds | 49 (disambiguation / 404 / redirects) |
+
+**Link distribution** (656,855 typed links total):
+- derives-from: 43.9%
+- supports: 42.9%
+- exemplifies: 5.7%
+- **contradicts: 3.0%** (19,321 — strong input for Tension Detector)
+- causes: 2.7%
+- part-of: 1.4%
+- generalizes: 0.3%
+
+**Structure**: 1 Universe (Constellation Discovery) → 4 cUniverses → 16 libraries → ~80 folders → 7,600 notes. Rich frontmatter (30+ curated properties from Wikipedia infoboxes). Callouts (`abstract` / `example` / `info` / `warning`) fire per note. Hero images on every note that has one in Commons. Arabic content sourced from `ar.wikipedia.org`.
+
+**Next steps for the trial Universe**:
+- Ship as a ZIP release artifact (user-downloadable)
+- Smoke-test by opening in Constellation
+- Verify embed resolution works across this scale
+- Optionally: regenerate with tuned heuristics (derives-from is overweighted — could rebalance)
