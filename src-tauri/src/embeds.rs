@@ -49,6 +49,13 @@ pub struct EmbedResolution {
     pub note_body: Option<String>,
     pub heading: Option<String>,      // `#Heading` fragment if present
     pub block_id: Option<String>,     // `^block-id` fragment if present
+    /// Diagnostic info when kind == "missing": list of candidate paths we tried
+    /// and the vault's configured attachment folder. Helps the UI tell the user
+    /// WHY the file wasn't found.
+    #[serde(default)]
+    pub tried_paths: Vec<String>,
+    #[serde(default)]
+    pub attachment_folder: String,
 }
 
 impl EmbedResolution {
@@ -62,6 +69,8 @@ impl EmbedResolution {
             note_body: None,
             heading: None,
             block_id: None,
+            tried_paths: Vec::new(),
+            attachment_folder: String::new(),
         }
     }
 }
@@ -312,35 +321,47 @@ fn base64_encode(input: &[u8]) -> String {
     result
 }
 
+/// Result of a resolution attempt: the matched path (if any) and the list
+/// of paths we tried on the way. `tried` is useful for "file not found"
+/// diagnostics shown to the user.
+struct ResolutionResult {
+    matched: Option<PathBuf>,
+    tried: Vec<PathBuf>,
+}
+
 fn resolve_path(
     library_path: &str,
     note_path: &str,
     target: &str,
     cfg: &VaultConfig,
-) -> Option<PathBuf> {
-    let sep = std::path::MAIN_SEPARATOR;
+) -> ResolutionResult {
     let lib = Path::new(library_path);
+    let mut tried: Vec<PathBuf> = Vec::new();
+
+    let try_candidate = |p: PathBuf, tried: &mut Vec<PathBuf>| -> Option<PathBuf> {
+        if p.is_file() { Some(p) } else { tried.push(p); None }
+    };
 
     // 1. Relative to note's folder (exact path)
     if !note_path.is_empty() {
         if let Some(note_dir) = Path::new(note_path).parent() {
-            let p = note_dir.join(target);
-            if p.is_file() { return Some(p); }
+            if let Some(p) = try_candidate(note_dir.join(target), &mut tried) {
+                return ResolutionResult { matched: Some(p), tried };
+            }
         }
     }
 
     // 2. Absolute inside vault (`![[subfolder/file.png]]`)
     if target.contains('/') || target.contains('\\') {
-        let p = lib.join(target);
-        if p.is_file() { return Some(p); }
+        if let Some(p) = try_candidate(lib.join(target), &mut tried) {
+            return ResolutionResult { matched: Some(p), tried };
+        }
     }
 
     // 3. Explicit attachment folder from .obsidian/app.json
     let attach = &cfg.attachment_folder_path;
     if !attach.is_empty() {
-        // Obsidian accepts "./" (same folder as note), "./subfolder" (relative),
-        // "folder" (absolute in vault).
-        let p = if attach == "./" || attach.is_empty() {
+        let p = if attach == "./" {
             Path::new(note_path).parent().map(|p| p.join(target)).unwrap_or_else(|| lib.join(target))
         } else if attach.starts_with("./") {
             Path::new(note_path).parent()
@@ -349,37 +370,53 @@ fn resolve_path(
         } else {
             lib.join(attach).join(target)
         };
-        if p.is_file() { return Some(p); }
+        if let Some(p) = try_candidate(p, &mut tried) {
+            return ResolutionResult { matched: Some(p), tried };
+        }
     }
 
     // 4. Common attachment folder fallbacks
-    for folder in &["attachments", "images", "assets", "media", "_attachments", "Attachments"] {
-        let p = lib.join(folder).join(target);
-        if p.is_file() { return Some(p); }
+    for folder in &["attachments", "images", "assets", "media", "_attachments", "Attachments", "Files", "files"] {
+        if let Some(p) = try_candidate(lib.join(folder).join(target), &mut tried) {
+            return ResolutionResult { matched: Some(p), tried };
+        }
     }
 
-    // 5. Vault-wide filename index (Obsidian's default behavior)
-    // Only applies if target has no path separator — path-form is already handled above.
+    // 5. Vault-wide filename index (Obsidian's default — finds the file regardless
+    //    of how deeply it's nested). Rebuild on miss so newly-added files are seen.
     if !target.contains('/') && !target.contains('\\') {
         let key = target.to_lowercase();
-        let index = get_or_build_vault_index(library_path);
+        let mut index = get_or_build_vault_index(library_path);
         if let Some(p) = index.get(&key) {
-            if p.is_file() { return Some(p.clone()); }
+            if p.is_file() { return ResolutionResult { matched: Some(p.clone()), tried }; }
         }
         // Markdown transclusion: user may have typed `![[Note]]` without .md
         if Path::new(target).extension().is_none() {
             let key_md = format!("{}.md", key);
             if let Some(p) = index.get(&key_md) {
-                if p.is_file() { return Some(p.clone()); }
+                if p.is_file() { return ResolutionResult { matched: Some(p.clone()), tried }; }
+            }
+        }
+        // Miss — force a fresh index and retry (handles files added since last scan)
+        invalidate_vault_index(library_path);
+        index = get_or_build_vault_index(library_path);
+        if let Some(p) = index.get(&key) {
+            if p.is_file() { return ResolutionResult { matched: Some(p.clone()), tried }; }
+        }
+        if Path::new(target).extension().is_none() {
+            let key_md = format!("{}.md", key);
+            if let Some(p) = index.get(&key_md) {
+                if p.is_file() { return ResolutionResult { matched: Some(p.clone()), tried }; }
             }
         }
     }
 
     // 6. Vault root
-    let p = lib.join(target);
-    if p.is_file() { return Some(p); }
-    let _ = sep;
-    None
+    if let Some(p) = try_candidate(lib.join(target), &mut tried) {
+        return ResolutionResult { matched: Some(p), tried };
+    }
+
+    ResolutionResult { matched: None, tried }
 }
 
 /// Main entry point. Resolves an embed target to a URL the frontend can render.
@@ -392,7 +429,8 @@ pub fn resolve_embed(
     let parsed = parse_target(&target);
     let cfg = read_vault_config(Path::new(&library_path));
 
-    let Some(abs) = resolve_path(&library_path, &note_path, &parsed.path, &cfg) else {
+    let res = resolve_path(&library_path, &note_path, &parsed.path, &cfg);
+    let Some(abs) = res.matched else {
         return EmbedResolution {
             kind: "missing".into(),
             url: String::new(),
@@ -402,6 +440,8 @@ pub fn resolve_embed(
             note_body: None,
             heading: parsed.heading,
             block_id: parsed.block_id,
+            tried_paths: res.tried.into_iter().map(|p| p.to_string_lossy().into_owned()).collect(),
+            attachment_folder: cfg.attachment_folder_path.clone(),
         };
     };
 
@@ -422,6 +462,8 @@ pub fn resolve_embed(
             note_body: Some(body),
             heading: parsed.heading,
             block_id: parsed.block_id,
+            tried_paths: Vec::new(),
+            attachment_folder: cfg.attachment_folder_path.clone(),
         };
     }
 
@@ -438,6 +480,8 @@ pub fn resolve_embed(
             note_body: Some(body),
             heading: parsed.heading,
             block_id: parsed.block_id,
+            tried_paths: Vec::new(),
+            attachment_folder: cfg.attachment_folder_path.clone(),
         };
     }
 
@@ -462,6 +506,8 @@ pub fn resolve_embed(
         note_body: None,
         heading: parsed.heading,
         block_id: parsed.block_id,
+        tried_paths: Vec::new(),
+        attachment_folder: cfg.attachment_folder_path.clone(),
     }
 }
 

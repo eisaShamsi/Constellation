@@ -167,6 +167,8 @@ interface EmbedResolution {
 	note_body?: string | null;
 	heading?: string | null;
 	block_id?: string | null;
+	tried_paths?: string[];
+	attachment_folder?: string;
 }
 const _embedCache = new Map<string, EmbedResolution>();
 /** Circular-guard for note transclusion: tracks paths currently being rendered. */
@@ -313,7 +315,7 @@ class UniversalEmbedWidget extends WidgetType {
 			case 'excalidraw': return this._renderExcalidraw(wrap, res);
 			case 'note':       return this._renderNote(wrap, res);
 			case 'generic':    return this._renderGeneric(wrap, res);
-			default:           return this._renderMissing(wrap);
+			default:           return this._renderMissing(wrap, res);
 		}
 	}
 
@@ -434,9 +436,26 @@ class UniversalEmbedWidget extends WidgetType {
 		wrap.appendChild(this._card('📎', this.displayAlias || this.target, `File${kb}`, res.absolute_path));
 	}
 
-	private _renderMissing(wrap: HTMLDivElement) {
-		wrap.appendChild(this._card('⚠️', this.target, 'File not found in vault'));
-		wrap.firstElementChild?.classList.add('cm-embed-missing');
+	private _renderMissing(wrap: HTMLDivElement, res?: EmbedResolution) {
+		const card = this._card('⚠️', this.target, 'File not found in vault');
+		card.classList.add('cm-embed-missing');
+		if (res && (res.tried_paths?.length || res.attachment_folder)) {
+			// Attach an expandable diagnostic block so the user can see WHY the file
+			// wasn't found (common cause: attachment folder is different from what
+			// Obsidian defaulted to when these files were pasted).
+			const details = document.createElement('details');
+			details.className = 'cm-embed-missing-details';
+			const summary = document.createElement('summary');
+			summary.textContent = 'Show lookup details';
+			details.appendChild(summary);
+			const info = document.createElement('div');
+			info.className = 'cm-embed-missing-info';
+			const af = res.attachment_folder ? `attachmentFolderPath: "${res.attachment_folder}"` : '(.obsidian/app.json not read or empty)';
+			info.textContent = `${af}\n\nLooked for:\n  ${(res.tried_paths ?? []).join('\n  ')}`;
+			details.appendChild(info);
+			wrap.appendChild(details);
+		}
+		wrap.appendChild(card);
 	}
 
 	private _card(icon: string, title: string, subtitle: string, openPath?: string | null) {

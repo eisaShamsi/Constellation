@@ -1241,6 +1241,28 @@
 		border-color: color-mix(in srgb, var(--text-warning, #f59e0b) 40%, transparent);
 		background: color-mix(in srgb, var(--text-warning, #f59e0b) 8%, var(--background-secondary));
 	}
+	.e-editor :global(.cm-embed-missing-details) {
+		margin-top: 4px;
+		font-size: 0.78em;
+		color: var(--text-muted);
+	}
+	.e-editor :global(.cm-embed-missing-details summary) {
+		cursor: pointer;
+		padding: 4px 0;
+	}
+	.e-editor :global(.cm-embed-missing-info) {
+		white-space: pre-wrap;
+		word-break: break-all;
+		font-family: var(--font-monospace-theme, monospace);
+		font-size: 0.88em;
+		padding: 6px 8px;
+		border-radius: 4px;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		margin-top: 4px;
+		max-height: 180px;
+		overflow-y: auto;
+	}
 	/* Note transclusion */
 	.e-editor :global(.cm-embed-transclusion) {
 		border-inline-start: 3px solid var(--interactive-accent);
