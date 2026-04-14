@@ -1008,23 +1008,47 @@
 		}
 	});
 
-	// One-time cleanup: an earlier bug stored core blocks on custom themes; strip them.
-	// Guarded so this runs exactly once per session even though $effect re-fires
-	// whenever $appSettings changes.
+	// One-time cleanup: earlier versions stored core blocks on custom themes and
+	// wrote hard-coded per-tier File-Explorer defaults into styleSettingsValues.
+	// Both defeat the current cascade. Runs exactly once per session.
 	let _coreBlockCleanupDone = false;
+	// Tier values that match these previous hard-coded defaults are cleared so
+	// the new master cascade can take over. Pairs: [id, oldDefault].
+	const LEGACY_FT_DEFAULTS: Array<[string, string]> = [
+		['ft-universe-font-size', '13'], ['ft-universe-weight', '600'],
+		['ft-cuniverse-font-size', '13'], ['ft-cuniverse-weight', '600'],
+		['ft-library-font-size', '13'], ['ft-library-weight', '600'],
+		['ft-font-size', '13'], ['ft-folder-weight', '400'],
+		['ft-file-weight', '400'], ['ft-row-padding-y', '2'],
+	];
 	$effect(() => {
 		if (_coreBlockCleanupDone) return;
 		const customs = $appSettings.customThemes;
 		if (!customs || customs.length === 0) { _coreBlockCleanupDone = true; return; }
 		let changed = false;
 		const cleaned = customs.map(ct => {
-			if (!ct.styleSettingsBlocks || ct.styleSettingsBlocks.length === 0) return ct;
-			const filtered = ct.styleSettingsBlocks.filter(b => !CORE_BLOCK_IDS.has(b.id));
-			if (filtered.length !== ct.styleSettingsBlocks.length) {
-				changed = true;
-				return { ...ct, styleSettingsBlocks: filtered };
+			let next = ct;
+			// (a) strip stored core blocks
+			if (ct.styleSettingsBlocks && ct.styleSettingsBlocks.length > 0) {
+				const filtered = ct.styleSettingsBlocks.filter(b => !CORE_BLOCK_IDS.has(b.id));
+				if (filtered.length !== ct.styleSettingsBlocks.length) {
+					changed = true;
+					next = { ...next, styleSettingsBlocks: filtered };
+				}
 			}
-			return ct;
+			// (b) clear legacy per-tier defaults so the master cascade can apply
+			if (ct.styleSettingsValues) {
+				const values = { ...ct.styleSettingsValues };
+				let valuesChanged = false;
+				for (const [id, oldDefault] of LEGACY_FT_DEFAULTS) {
+					if (values[id] === oldDefault) { delete values[id]; valuesChanged = true; }
+				}
+				if (valuesChanged) {
+					changed = true;
+					next = { ...next, styleSettingsValues: values };
+				}
+			}
+			return next;
 		});
 		if (changed) updateSettings({ customThemes: cleaned });
 		_coreBlockCleanupDone = true;
