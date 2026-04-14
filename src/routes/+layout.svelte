@@ -1782,64 +1782,63 @@
 				skyLinks = gLinks;
 				starVersion++;
 
-				// CE Phase 2: Fetch Knowledge Strata per library, merge into skyNodes
-				for (const lib of libraryList) {
-					try {
-						const strata = await invoke<{ note_path: string; stratum: number }[]>(
-							'compute_note_strata', { libraryPath: lib.path, libraryName: lib.name }
-						);
-						const strataMap = new Map(strata.map(s => [s.note_path.replace(/\\/g, '/').toLowerCase(), s.stratum]));
-						for (const node of skyNodes) {
-							const key = node.path.replace(/\\/g, '/').toLowerCase();
-							const s = strataMap.get(key);
-							if (s !== undefined) node.stratum = s;
-						}
-					} catch { /* strata computation failed — nodes stay without stratum */ }
+				// CE Phases 2/3/5/6: enrich nodes with strata, maturity, origins,
+				// and stages. Previously these were FOUR sequential per-library
+				// loops (16 libraries × 4 = 64 sequential awaits), which on a
+				// 7,600-note Universe stalled the views for two minutes. Run
+				// every library × every phase in parallel.
+				const _libPaths = libraryList.map(l => l.path);
+				const _libNames = libraryList.map(l => l.name);
+				const [_strataResults, _maturityResults, _originsResults, _stagesResults] = await Promise.all([
+					Promise.all(_libPaths.map((p, i) => invoke<{ note_path: string; stratum: number }[]>(
+						'compute_note_strata', { libraryPath: p, libraryName: _libNames[i] }
+					).catch(() => [] as { note_path: string; stratum: number }[]))),
+					Promise.all(_libPaths.map((p, i) => invoke<{ note_path: string; state: string }[]>(
+						'compute_note_maturity', { libraryPath: p, libraryName: _libNames[i] }
+					).catch(() => [] as { note_path: string; state: string }[]))),
+					Promise.all(_libPaths.map((p, i) => invoke<{ note_path: string; origin_type: string }[]>(
+						'compute_note_origins', { libraryPath: p, libraryName: _libNames[i] }
+					).catch(() => [] as { note_path: string; origin_type: string }[]))),
+					Promise.all(_libPaths.map((p) => invoke<[string, string][]>(
+						'scan_note_stages', { libraryPath: p }
+					).catch(() => [] as [string, string][]))),
+				]);
+
+				// Merge strata
+				for (const strata of _strataResults) {
+					const sMap = new Map(strata.map(s => [s.note_path.replace(/\\/g, '/').toLowerCase(), s.stratum]));
+					for (const node of skyNodes) {
+						const key = node.path.replace(/\\/g, '/').toLowerCase();
+						const s = sMap.get(key);
+						if (s !== undefined) node.stratum = s;
+					}
 				}
-				// CE Phase 3: Fetch Maturity Lifecycle per library, merge into skyNodes + maturityMap
+				// Merge maturity
 				const newMatMap = new Map<string, string>();
-				for (const lib of libraryList) {
-					try {
-						const maturities = await invoke<{ note_path: string; state: string }[]>(
-							'compute_note_maturity', { libraryPath: lib.path, libraryName: lib.name }
-						);
-						for (const m of maturities) {
-							const key = m.note_path.replace(/\\/g, '/').toLowerCase();
-							newMatMap.set(key, m.state);
-						}
-						for (const node of skyNodes) {
-							const key = node.path.replace(/\\/g, '/').toLowerCase();
-							const m = newMatMap.get(key);
-							if (m) node.maturity = m;
-						}
-					} catch { /* maturity computation failed */ }
+				for (const maturities of _maturityResults) {
+					for (const m of maturities) newMatMap.set(m.note_path.replace(/\\/g, '/').toLowerCase(), m.state);
+				}
+				for (const node of skyNodes) {
+					const key = node.path.replace(/\\/g, '/').toLowerCase();
+					const m = newMatMap.get(key);
+					if (m) node.maturity = m;
 				}
 				maturityMap = newMatMap;
-
-				// CE Phase 5: Fetch provenance origins per library, merge into skyNodes
-				for (const lib of libraryList) {
-					try {
-						const origins = await invoke<{ note_path: string; origin_type: string }[]>(
-							'compute_note_origins', { libraryPath: lib.path, libraryName: lib.name }
-						);
-						const originMap = new Map(origins.map(o => [o.note_path.replace(/\\/g, '/').toLowerCase(), o.origin_type]));
-						for (const node of skyNodes) {
-							const key = node.path.replace(/\\/g, '/').toLowerCase();
-							const o = originMap.get(key);
-							if (o && o !== 'none') node.originType = o;
-						}
-					} catch { /* origins failed */ }
+				// Merge origins
+				for (const origins of _originsResults) {
+					const oMap = new Map(origins.map(o => [o.note_path.replace(/\\/g, '/').toLowerCase(), o.origin_type]));
+					for (const node of skyNodes) {
+						const key = node.path.replace(/\\/g, '/').toLowerCase();
+						const o = oMap.get(key);
+						if (o && o !== 'none') node.originType = o;
+					}
 				}
-
-				// CE Phase 6: Scan note stages per library
+				// Merge stages
 				const newStageMap = new Map<string, string>();
-				for (const lib of libraryList) {
-					try {
-						const stages = await invoke<[string, string][]>('scan_note_stages', { libraryPath: lib.path });
-						for (const [path, stage] of stages) {
-							newStageMap.set(path.replace(/\\/g, '/').toLowerCase(), stage);
-						}
-					} catch { /* stages scan failed */ }
+				for (const stages of _stagesResults) {
+					for (const [path, stage] of stages) {
+						newStageMap.set(path.replace(/\\/g, '/').toLowerCase(), stage);
+					}
 				}
 				stageMap = newStageMap;
 
