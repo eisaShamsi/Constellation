@@ -818,8 +818,22 @@ pub fn inject_cid_library(app: tauri::AppHandle, library_path: String) -> Result
             Err(e) => { result.errors.push(format!("{}: {}", file_path.display(), e)); continue; }
         };
 
-        // Skip if already has a cid
+        // Skip if already has a cid_cn (or legacy cid — migration path below)
+        if content.contains("\ncid_cn:") || content.starts_with("cid_cn:") {
+            continue;
+        }
+        // Legacy `cid:` migration: if present, rename the key to `cid_cn:` and
+        // leave the value intact. Namespacing avoids collision with any
+        // pre-existing `cid:` property in the user's vault.
         if content.contains("\ncid:") || content.starts_with("cid:") {
+            let migrated = migrate_cid_to_cid_cn(&content);
+            if migrated != content {
+                if let Err(e) = fs::write(file_path, &migrated) {
+                    result.errors.push(format!("{}: migrate cid→cid_cn: {}", file_path.display(), e));
+                } else {
+                    result.renamed += 1;
+                }
+            }
             continue;
         }
 
@@ -827,18 +841,21 @@ pub fn inject_cid_library(app: tauri::AppHandle, library_path: String) -> Result
         let kind_code = "NOTE"; // default for .md
         let canonical = generate_canonical(kind_code, &created, "md", None);
 
-        // Inject only cid into frontmatter
+        // Inject cid_cn into frontmatter. The user sees this as a regular
+        // property in the Properties panel; it's Constellation's stable
+        // identifier, namespaced so it cannot collide with any existing
+        // `cid:` field in the user's vault.
         let updated = if content.trim_start().starts_with("---") {
             let after = &content.trim_start()[3..];
             if let Some(end) = after.find("\n---") {
                 let fm = &after[..end];
                 let body = &after[end + 4..];
-                format!("---\n{}\ncid: {}\n---{}", fm, canonical.stem, body)
+                format!("---\n{}\ncid_cn: {}\n---{}", fm, canonical.stem, body)
             } else {
-                format!("---\ncid: {}\n---\n\n{}", canonical.stem, content)
+                format!("---\ncid_cn: {}\n---\n\n{}", canonical.stem, content)
             }
         } else {
-            format!("---\ncid: {}\n---\n\n{}", canonical.stem, content)
+            format!("---\ncid_cn: {}\n---\n\n{}", canonical.stem, content)
         };
 
         if let Err(e) = fs::write(file_path, &updated) {
@@ -1008,11 +1025,11 @@ fn extract_fm_field(content: &str, key: &str) -> Option<String> {
     None
 }
 
-/// Remove the canonical-specific fields (kind, original_filename, aliases) but
-/// KEEP the `cid` property — the unique identifier stays on the note as a
-/// frontmatter field even after the filename reverts to its original form.
-/// This lets Constellation continue to track the note (for links, weights,
-/// traversal history) without imposing filename conventions on the vault.
+/// Remove the canonical-specific fields (kind, original_filename, aliases) and
+/// migrate any legacy `cid:` to `cid_cn:`. Preserves `cid_cn:` — the
+/// namespaced stable identifier stays on every note so the Living Link
+/// system keeps working after a filename revert without imposing filename
+/// conventions on the vault.
 fn remove_canonical_fields(content: &str) -> String {
     let trimmed = content.trim_start();
     if !trimmed.starts_with("---") { return content.to_string(); }
@@ -1021,10 +1038,9 @@ fn remove_canonical_fields(content: &str) -> String {
     let fm = &after[..end];
     let body = &after[end + 4..];
 
-    // Fields we strip on de-canonicalization. `cid` is deliberately preserved.
     let strip_keys = ["kind:", "original_filename:"];
     let mut in_aliases = false;
-    let mut new_lines: Vec<&str> = Vec::new();
+    let mut new_lines: Vec<String> = Vec::new();
 
     for line in fm.lines() {
         let t = line.trim();
@@ -1037,7 +1053,14 @@ fn remove_canonical_fields(content: &str) -> String {
             in_aliases = false;
         }
         if strip_keys.iter().any(|k| t.starts_with(k)) { continue; }
-        new_lines.push(line);
+        // Migrate legacy `cid:` → `cid_cn:` at the same time
+        if t.starts_with("cid:") && !t.starts_with("cid_cn") {
+            let indent_len = line.len() - t.len();
+            let indent = &line[..indent_len];
+            new_lines.push(format!("{}cid_cn:{}", indent, &t[4..]));
+            continue;
+        }
+        new_lines.push(line.to_string());
     }
 
     if new_lines.is_empty() || new_lines.iter().all(|l| l.trim().is_empty()) {
@@ -1150,6 +1173,90 @@ fn collect_files_recursive_depth(dir: &Path, depth: u32) -> Vec<PathBuf> {
     }
 
     files
+}
+
+// ─── cid_cn namespace (decision 4) ─────────────────────────────────
+//
+// Constellation's stable note identifier is stored under the namespaced
+// property name `cid_cn:` (Constellation Node id) instead of the generic
+// `cid:` so it can never collide with a pre-existing `cid:` property in
+// a user's Obsidian vault. Internal helpers migrate any legacy `cid:`
+// to `cid_cn:` in-place on first touch.
+
+/// Rename the frontmatter key `cid:` → `cid_cn:` in a markdown document.
+/// Touches only the first YAML block at the top of the file; leaves the
+/// value, body, and any other keys untouched.
+pub fn migrate_cid_to_cid_cn(content: &str) -> String {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") { return content.to_string(); }
+    let leading = &content[..content.len() - trimmed.len()];
+    let after = &trimmed[3..];
+    let Some(end) = after.find("\n---") else { return content.to_string(); };
+    let fm = &after[..end];
+    let rest = &after[end..];
+    let new_fm: String = fm
+        .lines()
+        .map(|line| {
+            let t = line.trim_start();
+            if t.starts_with("cid:") && !t.starts_with("cid_cn") {
+                let indent_len = line.len() - t.len();
+                let indent = &line[..indent_len];
+                format!("{}cid_cn:{}", indent, &t[4..])
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!("{}---{}{}", leading, new_fm, rest)
+}
+
+/// Lazy-inject a `cid_cn:` into a note's frontmatter if it doesn't already
+/// have one. Uses the file's creation time so the CID's timestamp reflects
+/// when the note was originally authored, not when Constellation happened
+/// to see it. Called by the note-read pipeline the first time a note is
+/// opened in Constellation — no eager vault-wide writes.
+///
+/// Returns the content (possibly mutated) and writes back to disk only
+/// when an injection or migration actually happened.
+pub fn ensure_cid_cn(file_path: &Path, content: &str) -> std::io::Result<String> {
+    // Already namespaced — nothing to do
+    if content.contains("\ncid_cn:") || content.trim_start().starts_with("cid_cn:") {
+        return Ok(content.to_string());
+    }
+    // Legacy key — migrate in place
+    if content.contains("\ncid:") || content.trim_start().starts_with("cid:") {
+        let migrated = migrate_cid_to_cid_cn(content);
+        if migrated != content { fs::write(file_path, &migrated)?; }
+        return Ok(migrated);
+    }
+    // Neither present — synthesise a new CID from the file's creation time
+    let created = file_creation_time(file_path);
+    let canonical = generate_canonical("NOTE", &created, "md", None);
+    let updated = if content.trim_start().starts_with("---") {
+        let after = &content.trim_start()[3..];
+        if let Some(end) = after.find("\n---") {
+            let fm = &after[..end];
+            let body = &after[end + 4..];
+            format!("---\n{}\ncid_cn: {}\n---{}", fm, canonical.stem, body)
+        } else {
+            format!("---\ncid_cn: {}\n---\n\n{}", canonical.stem, content)
+        }
+    } else {
+        format!("---\ncid_cn: {}\n---\n\n{}", canonical.stem, content)
+    };
+    fs::write(file_path, &updated)?;
+    Ok(updated)
+}
+
+/// Tauri command wrapping `ensure_cid_cn` for call from the frontend's
+/// note-open pipeline.
+#[tauri::command]
+pub fn ensure_cid_cn_cmd(file_path: String) -> Result<String, String> {
+    let path = Path::new(&file_path);
+    if !path.is_file() { return Err(format!("Not a file: {}", file_path)); }
+    let content = fs::read_to_string(path).map_err(|e| format!("read: {}", e))?;
+    ensure_cid_cn(path, &content).map_err(|e| format!("ensure_cid_cn: {}", e))
 }
 
 // ─── Startup safeguard ─────────────────────────────────────────────

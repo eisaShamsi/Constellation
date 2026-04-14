@@ -592,6 +592,18 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 			return; // File may not exist or be readable
 		}
 	}
+
+	// Living Link identifier (cid_cn): injected lazily the first time a note is
+	// opened. Adds a `cid_cn:` property to the note's YAML frontmatter with a
+	// timestamp derived from the file's creation time. Migrates any legacy
+	// `cid:` to `cid_cn:` on the same pass. Only markdown files get this; the
+	// vault's original filenames are never touched.
+	if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
+		try {
+			const updated = await invoke<string>('ensure_cid_cn_cmd', { filePath });
+			if (updated && updated !== content) content = updated;
+		} catch { /* non-fatal: CID stays absent, note still opens */ }
+	}
 	// For canonical files, extract title from frontmatter; fallback to filename stem
 	let name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
 	const fmTitleMatch = content.match(/^---[\s\S]*?^title:\s*"?([^"\n]+)"?\s*$/m);

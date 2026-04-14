@@ -2606,11 +2606,12 @@
 	async function handleKeepIntact() {
 		showCanonicalChoice = false;
 		try {
-			// Register library with "compatible" mode (default)
-			const library: LibraryInfo = await invoke('add_library', { path: pendingLibraryPath });
-			// Inject cid-only (non-destructive, fast)
-			const { injectCidLibrary } = await import('$lib/importers/store');
-			await injectCidLibrary(pendingLibraryPath);
+			// Register library with "compatible" mode (the only mode for external
+			// vaults). No bulk writes to the vault on import — the Living Link
+			// identifier (cid_cn) is injected lazily on a per-note basis the first
+			// time Constellation actually opens a note. This keeps the user's
+			// filesystem untouched until the note is genuinely accessed.
+			await invoke('add_library', { path: pendingLibraryPath });
 
 			await loadLibraries();
 			await loadAllStats();
