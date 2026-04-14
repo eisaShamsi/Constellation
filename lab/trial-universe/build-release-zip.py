@@ -30,9 +30,11 @@ total_bytes = 0
 for root, dirs, files in os.walk(src_long):
     for f in files:
         p = os.path.join(root, f)
-        # Arcname: relative to src_long, then re-prefixed with "Constellation Discovery"
         rel = os.path.relpath(p, src_long)
-        arcname = os.path.join(SRC_REL, rel)
+        # ZIP spec requires forward-slash separators in arcnames. Windows
+        # Explorer's built-in unzipper rejects archives that use backslashes,
+        # and 7-Zip warns. Normalize here.
+        arcname = (SRC_REL + "/" + rel.replace(os.sep, "/")).replace("\\", "/")
         try:
             sz = os.path.getsize(p)
             zf.write(p, arcname)

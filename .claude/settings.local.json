@@ -342,7 +342,16 @@
       "Bash(grep -n \"libraryPath:\\\\|filePath:\\\\|libraryPath =\\\\|libraryPath}$\" src/lib/components/NotePane.svelte)",
       "Bash(grep -rn \"\\\\\"cid:\\\\\"\\\\|cid:\\\\\\\\\\\\\\\\|fm_lines.push\\(format!\\(\\\\\"cid:\" src-tauri/src/)",
       "Bash(grep -rn \"\\\\\\\\bcid\\\\\\\\b\" src/lib/ src/routes/)",
-      "Bash(grep -n 'from '\\\\''$lib/editor/bidiPlugin'\\\\''\\\\|from '\\\\''$lib/editor/livePreview'\\\\''' src/lib/components/NotePane.svelte)"
+      "Bash(grep -n 'from '\\\\''$lib/editor/bidiPlugin'\\\\''\\\\|from '\\\\''$lib/editor/livePreview'\\\\''' src/lib/components/NotePane.svelte)",
+      "Bash(7z --version)",
+      "Bash(zip --version)",
+      "Bash(powershell.exe -Command \"Get-Command Compress-Archive | Select-Object Name\")",
+      "Bash(mkdir -p \"/e/Backups/Constellation/trial-universe-releases\")",
+      "Read(//e/Backups/Constellation//**)",
+      "Bash(powershell.exe -NoProfile -Command '$src = '\\\\''E:\\\\مشاريع كلاود\\\\Constellation\\\\lab\\\\trial-universe\\\\output\\\\Constellation Discovery'\\\\''; $dst = '\\\\''E:\\\\Backups\\\\Constellation\\\\constellation-trial-universe-v1-20260414.zip'\\\\''; Compress-Archive -Path $src -DestinationPath $dst -CompressionLevel Optimal -Force; Get-Item $dst | Select-Object Length, FullName')",
+      "Bash(powershell.exe -NoProfile -Command 'Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory\\('\\\\''E:\\\\مشاريع كلاود\\\\Constellation\\\\lab\\\\trial-universe\\\\output\\\\Constellation Discovery'\\\\'', '\\\\''E:\\\\Backups\\\\Constellation\\\\constellation-trial-universe-v1-20260414.zip'\\\\'', [System.IO.Compression.CompressionLevel]::Optimal, $true\\); Get-Item '\\\\''E:\\\\Backups\\\\Constellation\\\\constellation-trial-universe-v1-20260414.zip'\\\\'' | Select-Object @{N='\\\\''Size_MB'\\\\'';E={[math]::Round\\($_.Length/1MB, 1\\)}}, FullName')",
+      "Bash(powershell.exe -NoProfile -Command 'Add-Type -AssemblyName System.IO.Compression.FileSystem; $z = [System.IO.Compression.ZipFile]::OpenRead\\('\\\\''E:\\\\Backups\\\\Constellation\\\\constellation-trial-universe-v1-20260414.zip'\\\\''\\); Write-Host \\('\\\\''Entries: '\\\\'' + $z.Entries.Count\\); $z.Entries | Select-Object -First 5 FullName, Length; $z.Dispose\\(\\)')",
+      "Bash(gh --version)"
     ]
   }
 }
