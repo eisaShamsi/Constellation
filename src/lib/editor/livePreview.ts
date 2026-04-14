@@ -171,6 +171,8 @@ interface EmbedResolution {
 	attachment_folder?: string;
 	similar_files?: string[];
 	vault_file_count?: number;
+	attachment_folder_listing?: string[];
+	attachment_folder_resolved?: string;
 }
 const _embedCache = new Map<string, EmbedResolution>();
 /** Circular-guard for note transclusion: tracks paths currently being rendered. */
@@ -453,12 +455,17 @@ class UniversalEmbedWidget extends WidgetType {
 			const tried = `Looked for:\n  ${(res.tried_paths ?? []).join('\n  ')}`;
 			const fc = res.vault_file_count ?? 0;
 			const count = `\n\nVault index: ${fc.toLocaleString()} file${fc === 1 ? '' : 's'} scanned`;
+			const folderListingBlock = res.attachment_folder_listing?.length
+				? `\n\nAttachment folder on disk (${res.attachment_folder_resolved}):\n  ${res.attachment_folder_listing.join('\n  ')}`
+				: res.attachment_folder_resolved
+					? `\n\nAttachment folder on disk (${res.attachment_folder_resolved}): (folder does not exist or is empty)`
+					: '';
 			const similar = res.similar_files?.length
 				? `\n\nSimilar files in vault:\n  ${res.similar_files.join('\n  ')}`
 				: fc === 0
 					? '\n\nThe vault index is empty — the library path may not be readable (permission issue) or points to the wrong folder.'
 					: '\n\nNo similar filenames found in the vault — the file may not exist, or it was moved/renamed.';
-			info.textContent = `${af}${count}\n\n${tried}${similar}`;
+			info.textContent = `${af}${count}\n\n${tried}${folderListingBlock}${similar}`;
 			details.appendChild(info);
 			wrap.appendChild(details);
 		}

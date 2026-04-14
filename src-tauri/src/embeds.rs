@@ -65,6 +65,14 @@ pub struct EmbedResolution {
     /// individual path comparison would ever succeed.
     #[serde(default)]
     pub vault_file_count: u64,
+    /// Direct filesystem listing of the expected attachment folder, if it
+    /// exists. Bypasses the index cache — shows the OS's actual view of
+    /// the folder right now, which is definitive proof that a file is or
+    /// isn't there.
+    #[serde(default)]
+    pub attachment_folder_listing: Vec<String>,
+    #[serde(default)]
+    pub attachment_folder_resolved: String,
 }
 
 impl EmbedResolution {
@@ -82,6 +90,8 @@ impl EmbedResolution {
             attachment_folder: String::new(),
             similar_files: Vec::new(),
             vault_file_count: 0,
+            attachment_folder_listing: Vec::new(),
+            attachment_folder_resolved: String::new(),
         }
     }
 }
@@ -497,6 +507,7 @@ pub fn resolve_embed(
         // user can see what files ARE present that might be a near-match.
         let similar = find_similar_in_index(&library_path, &parsed.path);
         let vault_file_count = get_or_build_vault_index(&library_path).len() as u64;
+        let (folder_resolved, folder_listing) = list_expected_attachment_folder(&library_path, &note_path, &cfg);
         return EmbedResolution {
             kind: "missing".into(),
             url: String::new(),
@@ -510,6 +521,8 @@ pub fn resolve_embed(
             attachment_folder: cfg.attachment_folder_path.clone(),
             similar_files: similar,
             vault_file_count,
+            attachment_folder_listing: folder_listing,
+            attachment_folder_resolved: folder_resolved,
         };
     };
 
@@ -534,6 +547,8 @@ pub fn resolve_embed(
             attachment_folder: cfg.attachment_folder_path.clone(),
             similar_files: Vec::new(),
             vault_file_count: 0,
+            attachment_folder_listing: Vec::new(),
+            attachment_folder_resolved: String::new(),
         };
     }
 
@@ -554,6 +569,8 @@ pub fn resolve_embed(
             attachment_folder: cfg.attachment_folder_path.clone(),
             similar_files: Vec::new(),
             vault_file_count: 0,
+            attachment_folder_listing: Vec::new(),
+            attachment_folder_resolved: String::new(),
         };
     }
 
@@ -582,7 +599,57 @@ pub fn resolve_embed(
         attachment_folder: cfg.attachment_folder_path.clone(),
         similar_files: Vec::new(),
         vault_file_count: 0,
+        attachment_folder_listing: Vec::new(),
+        attachment_folder_resolved: String::new(),
     }
+}
+
+/// Resolve the expected attachment folder (per Obsidian rules) and list its
+/// actual contents on disk. Bypasses the cached vault index — this is the
+/// OS-level truth about what's in that folder right now. Used for the missing
+/// diagnostic card so the user can see exactly what files are/aren't present.
+///
+/// Returns (resolved_absolute_path, listing). Listing is empty if the folder
+/// doesn't exist or can't be read.
+fn list_expected_attachment_folder(
+    library_path: &str,
+    note_path: &str,
+    cfg: &VaultConfig,
+) -> (String, Vec<String>) {
+    let lib = Path::new(library_path);
+    let attach = &cfg.attachment_folder_path;
+
+    // Match the same resolution logic used in step 3 of resolve_path
+    let base = if attach.is_empty() {
+        lib.to_path_buf()
+    } else if attach == "./" {
+        Path::new(note_path).parent().map(|p| p.to_path_buf()).unwrap_or_else(|| lib.to_path_buf())
+    } else if attach.starts_with("./") {
+        Path::new(note_path).parent()
+            .map(|p| p.join(&attach[2..]))
+            .unwrap_or_else(|| lib.join(&attach[2..]))
+    } else {
+        lib.join(attach)
+    };
+
+    let resolved = base.to_string_lossy().into_owned();
+    let Ok(entries) = fs::read_dir(&base) else {
+        return (resolved, Vec::new());
+    };
+
+    let mut files: Vec<(String, bool)> = Vec::new();
+    for e in entries.flatten() {
+        let name = e.file_name().to_string_lossy().into_owned();
+        let is_dir = e.metadata().map(|m| m.is_dir()).unwrap_or(false);
+        files.push((name, is_dir));
+    }
+    // Sort: files first by name, then directories
+    files.sort_by(|a, b| a.1.cmp(&b.1).then_with(|| a.0.to_lowercase().cmp(&b.0.to_lowercase())));
+    let listing = files.into_iter()
+        .take(30)
+        .map(|(n, is_dir)| if is_dir { format!("[dir] {}", n) } else { n })
+        .collect();
+    (resolved, listing)
 }
 
 /// Find up to 8 files in the vault index whose basename resembles the target.
