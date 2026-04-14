@@ -1536,15 +1536,24 @@
 		});
 
 		// Safety net: de-canonicalize any external library that earlier builds
-		// may have renamed en-masse on import. Idempotent, silent, runs every
-		// launch. Keeps the user's Obsidian vault filenames intact; only the
-		// CID frontmatter property remains to link notes to Constellation's
-		// living-link system.
-		invoke<string[]>('repair_external_libraries_on_startup').then((repaired) => {
-			if (repaired.length > 0) {
-				console.log('[Constellation] Restored original filenames in libraries:', repaired);
+		// may have renamed en-masse on import. Runs at most ONCE per install —
+		// after the first successful sweep, we mark it done in localStorage and
+		// skip on subsequent boots (the import path that created canonical
+		// filenames has been removed, so they cannot reappear).
+		//
+		// This matters at scale: with a 7,600-note Universe across 16 libraries
+		// the repair walks ~12,000 files via IPC on every launch, which bogged
+		// down startup by several seconds even when every library was clean.
+		try {
+			if (localStorage.getItem('constellation:canonical-repair-done') !== '1') {
+				invoke<string[]>('repair_external_libraries_on_startup').then((repaired) => {
+					if (repaired.length > 0) {
+						console.log('[Constellation] Restored original filenames in libraries:', repaired);
+					}
+					localStorage.setItem('constellation:canonical-repair-done', '1');
+				}).catch(err => console.error('[Constellation] Startup repair failed:', err));
 			}
-		}).catch(err => console.error('[Constellation] Startup repair failed:', err));
+		} catch { /* localStorage unavailable */ }
 
 		// Living Link P3: run weight decay job once per 24h (idle, fire-and-forget)
 		try {
