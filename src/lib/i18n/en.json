@@ -278,6 +278,8 @@
       "commandPaletteDesc": "Quick access to all commands",
       "wordCount": "Word Count",
       "wordCountDesc": "Show word count in status bar",
+      "emojiIconPicker": "Emoji & Icon Library",
+      "emojiIconPickerDesc": "Ctrl+. picker for emoji and vector icons — insert into notes, override app icons",
       "workspaces": "Workspaces",
       "workspacesDesc": "Save and restore workspace layouts",
       "index": "Index",
@@ -440,6 +442,15 @@
     "knowledgeHealth": "Knowledge Health",
     "settings": "Settings",
     "importNotes": "Import notes"
+  },
+  "picker": {
+    "title": "Emoji & Icons",
+    "emoji": "Emoji",
+    "icons": "Icons",
+    "recent": "Recent",
+    "search": "Search — type in any language",
+    "noResults": "No matches.",
+    "recentEmpty": "Nothing used yet. Pick something from Emoji or Icons."
   },
   "knowledgeHealth": {
     "title": "Knowledge Health",

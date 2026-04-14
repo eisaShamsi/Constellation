@@ -650,7 +650,22 @@
 		idleSaveTimer = setInterval(() => { requestIdleCallback(() => doSave()); }, IDLE_SAVE_INTERVAL);
 		document.addEventListener('visibilitychange', handleVisibilityChange);
 		window.addEventListener('beforeunload', handleBeforeUnload);
+		window.addEventListener('constellation:insert-at-cursor', handleInsertAtCursor);
 	});
+
+	function handleInsertAtCursor(e: Event) {
+		const text = (e as CustomEvent).detail?.text;
+		if (!text || !view) return;
+		// Only the focused editor consumes the event — in split/multi-pane
+		// layouts several NotePanes listen; we want the one the user is in.
+		if (document.activeElement && !view.dom.contains(document.activeElement)) return;
+		const { from } = view.state.selection.main;
+		view.dispatch({
+			changes: { from, to: view.state.selection.main.to, insert: text },
+			selection: { anchor: from + text.length },
+		});
+		view.focus();
+	}
 
 	/* ─── Destroy ─── */
 	onDestroy(() => {
@@ -658,6 +673,7 @@
 		if (debouncedSaveTimer) { clearTimeout(debouncedSaveTimer); debouncedSaveTimer = null; }
 		document.removeEventListener('visibilitychange', handleVisibilityChange);
 		window.removeEventListener('beforeunload', handleBeforeUnload);
+		window.removeEventListener('constellation:insert-at-cursor', handleInsertAtCursor);
 		if (checkboxHandler && editorEl) editorEl.removeEventListener('mousedown', checkboxHandler, true);
 		if (chevronHandler && editorEl) editorEl.removeEventListener('mousedown', chevronHandler, true);
 		if (linkClickHandler && editorEl) editorEl.removeEventListener('mousedown', linkClickHandler, true);

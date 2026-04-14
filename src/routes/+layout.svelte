@@ -59,6 +59,7 @@
 	import ConstellationSight from '$lib/components/ConstellationSight2.svelte';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
+	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
 	import SearchHub from '$lib/components/SearchHub.svelte';
 	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
@@ -327,6 +328,7 @@
 	let showConstellationMap = $state(false);
 	let showSearchHub = $state(false);
 	let showKnowledgeHealth = $state(false);
+	let showPicker = $state(false);
 	let searchHubMatchIds = $state<Set<string> | null>(null);
 	let searchHubReturnPending = $state(false);
 	let searchHubInitialQuery = $state('');
@@ -1882,6 +1884,15 @@
 			e.preventDefault();
 		}
 
+		// Ctrl+. → open the Emoji & Icon picker (Obsidian-parity shortcut).
+		// Gated on the Core Plug-In toggle.
+		if ((e.ctrlKey || e.metaKey) && e.key === '.' && !e.shiftKey && !e.altKey
+			&& $appSettings.enabledFeatures?.emojiIconPicker !== false) {
+			e.preventDefault();
+			showPicker = true;
+			return;
+		}
+
 		// Escape always closes overlays (not remappable)
 		if (e.key === 'Escape') {
 			if (showNewLibraryDropdown) { showNewLibraryDropdown = false; newLibName = ''; return; }
@@ -1897,6 +1908,7 @@
 			if (showWorkspaces) { showWorkspaces = false; return; }
 			if (showSettings) { showSettings = false; return; }
 			if (showImporter) { showImporter = false; return; }
+			if (showPicker) { showPicker = false; return; }
 			return;
 		}
 
@@ -4413,6 +4425,18 @@
 
 	{#if showKnowledgeHealth}
 		<KnowledgeHealthDashboard onClose={() => showKnowledgeHealth = false} />
+	{/if}
+
+	{#if showPicker}
+		<EmojiIconPicker
+			onClose={() => showPicker = false}
+			onPick={(insertion) => {
+				// Dispatch to the active CM6 editor. NotePane listens for this
+				// event and inserts the string at cursor position.
+				window.dispatchEvent(new CustomEvent('constellation:insert-at-cursor', { detail: { text: insertion } }));
+				showPicker = false;
+			}}
+		/>
 	{/if}
 
 	{#if showLibraryPicker}
