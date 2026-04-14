@@ -81,12 +81,13 @@
 	<EmojiIconPicker
 		onClose={() => pickingSlot = null}
 		onPick={(insertion) => {
-			// The picker's onPick delivers the RENDERED string (emoji or wrapped SVG).
-			// For override storage we want the REF (emoji char or "set:name" id).
-			// We extract the ref from the data-icon attribute of the wrapped SVG;
-			// raw emoji is stored as-is.
-			const dataMatch = insertion.match(/data-icon="([^"]+)"/);
-			const ref = dataMatch ? dataMatch[1] : insertion;
+			// Picker's onPick delivers either a raw emoji character or an icon
+			// shortcode like `:lucide-heart:`. Normalize to the ref form the
+			// override map stores ("lucide:heart" / emoji-as-is).
+			let ref: string;
+			const sc = insertion.match(/^:(lucide|phosphor|hi|feather)-([a-z0-9-]+):$/);
+			if (sc) ref = `${sc[1]}:${sc[2]}`;
+			else ref = insertion; // raw emoji
 			if (pickingSlot) setOverride(pickingSlot, ref);
 			pickingSlot = null;
 		}}
