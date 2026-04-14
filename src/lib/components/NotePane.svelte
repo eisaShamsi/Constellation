@@ -1198,6 +1198,21 @@
 		visibility: visible !important;
 	}
 
+	/* ─── Inline icon shortcode widget (:lucide-heart:, :phosphor-book:, ...) ─── */
+	.e-editor :global(.cm-icon-inline) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		vertical-align: middle;
+		height: 1.15em;
+		width: 1.15em;
+		line-height: 1;
+	}
+	.e-editor :global(.cm-icon-inline svg) {
+		width: 1.15em;
+		height: 1.15em;
+	}
+
 	/* ─── Universal Embed Widget (Living Embed Resolver) ─── */
 	.e-editor :global(.cm-md-embed) {
 		display: block;

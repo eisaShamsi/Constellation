@@ -534,6 +534,50 @@ function formatBytes(n: number): string {
 	return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
+/**
+ * IconShortcodeWidget — renders `:set-name:` shortcodes (lucide-heart,
+ * phosphor-heart, hi-heart, feather-heart) as inline SVG in the editor.
+ * Looks up the icon in the cached iconSets map, lazy-loaded on first hit.
+ */
+let _iconsByIdCache: Map<string, string> | null = null;
+let _iconsLoading: Promise<Map<string, string>> | null = null;
+
+function loadIconsById(): Promise<Map<string, string>> {
+	if (_iconsByIdCache) return Promise.resolve(_iconsByIdCache);
+	if (!_iconsLoading) {
+		_iconsLoading = import('./iconSets').then(async (mod) => {
+			const all = await mod.loadAllIcons();
+			const map = new Map<string, string>();
+			for (const icon of all) map.set(icon.id, icon.svg);
+			_iconsByIdCache = map;
+			return map;
+		});
+	}
+	return _iconsLoading;
+}
+
+class IconShortcodeWidget extends WidgetType {
+	constructor(public iconId: string) { super(); }
+	toDOM() {
+		const span = document.createElement('span');
+		span.className = `cm-icon-inline cn-icon-${this.iconId.replace(':', '-')}`;
+		span.setAttribute('data-icon', this.iconId);
+		// Render synchronously if cache already populated, else render a
+		// placeholder that gets swapped when the cache loads.
+		if (_iconsByIdCache?.has(this.iconId)) {
+			span.innerHTML = _iconsByIdCache.get(this.iconId)!;
+		} else {
+			span.textContent = '⎔';
+			loadIconsById().then((map) => {
+				const svg = map.get(this.iconId);
+				if (svg) span.innerHTML = svg;
+			});
+		}
+		return span;
+	}
+	eq(other: IconShortcodeWidget) { return other.iconId === this.iconId; }
+}
+
 /** Widget for inline HTML tags (<u>, <sub>, <sup>) — preserves bidi with dir=auto */
 class InlineHtmlWidget extends WidgetType {
 	content: string;
@@ -770,6 +814,22 @@ function buildDecorations(view: EditorView): DecorationSet {
 			const line = doc.lineAt(pos);
 			if (line.number !== cursorLine) {
 				const lineText = line.text;
+
+				// Icon shortcodes: `:lucide-heart:`, `:phosphor-book:`, etc.
+				// Renders inline as the corresponding SVG via the lazy iconSets
+				// cache. Scoped to known set prefixes so ordinary `:note:` or
+				// timestamps like `10:30:` don't accidentally match.
+				const iconShortRe = /:(lucide|phosphor|hi|feather)-([a-z0-9][a-z0-9-]*):/g;
+				let iconMatch;
+				while ((iconMatch = iconShortRe.exec(lineText)) !== null) {
+					const setName = iconMatch[1];
+					const name = iconMatch[2];
+					const iconId = `${setName}:${name}`;
+					const absFrom = line.from + iconMatch.index;
+					ranges.push({ from: absFrom, to: absFrom + iconMatch[0].length, deco: Decoration.replace({
+						widget: new IconShortcodeWidget(iconId),
+					}) });
+				}
 
 				// Universal embeds: ![[target]] — Rust resolves the type and returns
 				// an EmbedResolution the UniversalEmbedWidget routes to the right

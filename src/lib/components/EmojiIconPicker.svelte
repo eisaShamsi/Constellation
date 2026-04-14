@@ -124,9 +124,13 @@
 	}
 
 	function pickIcon(i: Icon) {
-		const svg = wrapForInsertion(i);
-		pushRecent(svg);
-		onPick(svg);
+		// Insert the shortcode form (`:lucide-heart:`) rather than raw SVG.
+		// The editor's live-preview widget resolves the shortcode to an inline
+		// <svg> at render time. Keeps the .md file small and editable and
+		// matches how emoji work (raw character, decorated).
+		const shortcode = `:${i.set}-${i.name}:`;
+		pushRecent(shortcode);
+		onPick(shortcode);
 	}
 
 	function pushRecent(s: string) {

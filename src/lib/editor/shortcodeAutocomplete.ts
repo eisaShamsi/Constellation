@@ -83,22 +83,22 @@ async function buildEntries(): Promise<ShortcodeMatch[]> {
 		}
 	}
 
-	// Vector icons — unified load across Lucide / Phosphor / Heroicons / Feather.
-	// Indexed by kebab-name AND by namespaced id so typing `:heart:` finds
-	// matches across all sets, while `:phosphor-heart:` targets that set.
+	// Vector icons — insert as :set-name: shortcodes. The editor's live-preview
+	// widget renders them as inline SVG. Keeps the .md file small and
+	// readable; matches how emoji work (raw character, decorated).
 	try {
-		const { loadAllIcons, wrapForInsertion } = await import('./iconSets');
+		const { loadAllIcons } = await import('./iconSets');
 		const icons = await loadAllIcons();
 		const boostPerSet: Record<string, number> = {
 			lucide: 0, feather: -1, heroicons: -2, phosphor: -3,
 		};
 		for (const icon of icons) {
-			const wrapped = wrapForInsertion(icon);
-			// Short form — `:heart:` (any set). Boost by the preferred-set order.
+			const shortcode = `:${icon.set}-${icon.name}:`;
+			// Short form — `:heart:` lists every set that has a matching name.
 			out.push({
 				keyword: icon.name,
-				label: `⎔  ${icon.name}`,
-				insertion: wrapped,
+				label: `⎔  ${icon.id}`,
+				insertion: shortcode,
 				detail: icon.set,
 				boost: -5 + (boostPerSet[icon.set] ?? -3),
 			});
@@ -106,7 +106,7 @@ async function buildEntries(): Promise<ShortcodeMatch[]> {
 			out.push({
 				keyword: `${icon.set}-${icon.name}`,
 				label: `⎔  ${icon.id}`,
-				insertion: wrapped,
+				insertion: shortcode,
 				detail: icon.set,
 				boost: -7,
 			});
