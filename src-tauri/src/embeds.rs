@@ -137,13 +137,41 @@ pub fn build_vault_index(library_path: &Path) -> VaultIndex {
     let mut files: HashMap<String, PathBuf> = HashMap::new();
     walk(library_path, &mut |path, depth| {
         if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
-            let key = name.to_lowercase();
-            // Keep the shallowest hit for duplicates
-            files.entry(key).or_insert_with(|| path.to_path_buf());
+            // Primary key: lowercased original name
+            files.entry(name.to_lowercase()).or_insert_with(|| path.to_path_buf());
+            // Secondary key: digit-normalized (Arabic-Indic / Persian / ASCII
+            // all collapse to the same form so `![[Pasted image ٢٠٢٥.png]]`
+            // resolves even when disk has `Pasted image 2025.png`, and vice
+            // versa. Common with Obsidian on Arabic/Persian locales.
+            let normalized = normalize_digits(&name.to_lowercase());
+            if normalized != name.to_lowercase() {
+                files.entry(normalized).or_insert_with(|| path.to_path_buf());
+            }
             let _ = depth;
         }
     });
     VaultIndex { files, built_at: std::time::Instant::now() }
+}
+
+/// Fold Arabic-Indic (U+0660..0669) and Extended Arabic-Indic / Persian
+/// (U+06F0..06F9) digits down to ASCII 0-9. Leaves all other characters
+/// untouched. Used to normalize filenames whose digit encoding differs from
+/// what the note references.
+pub fn normalize_digits(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for ch in s.chars() {
+        let cp = ch as u32;
+        if (0x0660..=0x0669).contains(&cp) {
+            // Arabic-Indic 0-9
+            out.push(char::from_u32('0' as u32 + (cp - 0x0660)).unwrap_or(ch));
+        } else if (0x06F0..=0x06F9).contains(&cp) {
+            // Extended Arabic-Indic / Persian / Urdu 0-9
+            out.push(char::from_u32('0' as u32 + (cp - 0x06F0)).unwrap_or(ch));
+        } else {
+            out.push(ch);
+        }
+    }
+    out
 }
 
 fn walk<F: FnMut(&Path, usize)>(root: &Path, callback: &mut F) {
@@ -338,14 +366,30 @@ fn resolve_path(
     let lib = Path::new(library_path);
     let mut tried: Vec<PathBuf> = Vec::new();
 
-    let try_candidate = |p: PathBuf, tried: &mut Vec<PathBuf>| -> Option<PathBuf> {
-        if p.is_file() { Some(p) } else { tried.push(p); None }
+    // Try the target both as-provided and with all digit codepoints folded to
+    // ASCII. Handles Obsidian's Arabic/Persian-locale behavior where pasted
+    // images may be saved with ٠-٩ or ۰-۹ in the filename while a note
+    // references the ASCII form (or vice versa).
+    let target_normalized = normalize_digits(target);
+    let target_variants: Vec<String> = if target_normalized != target {
+        vec![target.to_string(), target_normalized]
+    } else {
+        vec![target.to_string()]
+    };
+
+    let mut try_candidate = |base: PathBuf, tried: &mut Vec<PathBuf>| -> Option<PathBuf> {
+        for variant in &target_variants {
+            let p = base.join(variant);
+            if p.is_file() { return Some(p); }
+            if !tried.iter().any(|t| t == &p) { tried.push(p); }
+        }
+        None
     };
 
     // 1. Relative to note's folder (exact path)
     if !note_path.is_empty() {
         if let Some(note_dir) = Path::new(note_path).parent() {
-            if let Some(p) = try_candidate(note_dir.join(target), &mut tried) {
+            if let Some(p) = try_candidate(note_dir.to_path_buf(), &mut tried) {
                 return ResolutionResult { matched: Some(p), tried };
             }
         }
@@ -353,7 +397,7 @@ fn resolve_path(
 
     // 2. Absolute inside vault (`![[subfolder/file.png]]`)
     if target.contains('/') || target.contains('\\') {
-        if let Some(p) = try_candidate(lib.join(target), &mut tried) {
+        if let Some(p) = try_candidate(lib.to_path_buf(), &mut tried) {
             return ResolutionResult { matched: Some(p), tried };
         }
     }
@@ -361,58 +405,65 @@ fn resolve_path(
     // 3. Explicit attachment folder from .obsidian/app.json
     let attach = &cfg.attachment_folder_path;
     if !attach.is_empty() {
-        let p = if attach == "./" {
-            Path::new(note_path).parent().map(|p| p.join(target)).unwrap_or_else(|| lib.join(target))
+        let base = if attach == "./" {
+            Path::new(note_path).parent().map(|p| p.to_path_buf()).unwrap_or_else(|| lib.to_path_buf())
         } else if attach.starts_with("./") {
             Path::new(note_path).parent()
-                .map(|p| p.join(&attach[2..]).join(target))
-                .unwrap_or_else(|| lib.join(&attach[2..]).join(target))
+                .map(|p| p.join(&attach[2..]))
+                .unwrap_or_else(|| lib.join(&attach[2..]))
         } else {
-            lib.join(attach).join(target)
+            lib.join(attach)
         };
-        if let Some(p) = try_candidate(p, &mut tried) {
+        if let Some(p) = try_candidate(base, &mut tried) {
             return ResolutionResult { matched: Some(p), tried };
         }
     }
 
     // 4. Common attachment folder fallbacks
     for folder in &["attachments", "images", "assets", "media", "_attachments", "Attachments", "Files", "files"] {
-        if let Some(p) = try_candidate(lib.join(folder).join(target), &mut tried) {
+        if let Some(p) = try_candidate(lib.join(folder), &mut tried) {
             return ResolutionResult { matched: Some(p), tried };
         }
     }
 
     // 5. Vault-wide filename index (Obsidian's default — finds the file regardless
     //    of how deeply it's nested). Rebuild on miss so newly-added files are seen.
+    //    Try the target under both the original lowercased form AND the
+    //    digit-normalized form — the index stores both forms for files whose
+    //    names contain any non-ASCII digits.
     if !target.contains('/') && !target.contains('\\') {
         let key = target.to_lowercase();
-        let mut index = get_or_build_vault_index(library_path);
-        if let Some(p) = index.get(&key) {
-            if p.is_file() { return ResolutionResult { matched: Some(p.clone()), tried }; }
-        }
-        // Markdown transclusion: user may have typed `![[Note]]` without .md
-        if Path::new(target).extension().is_none() {
-            let key_md = format!("{}.md", key);
-            if let Some(p) = index.get(&key_md) {
-                if p.is_file() { return ResolutionResult { matched: Some(p.clone()), tried }; }
+        let normalized_key = normalize_digits(&key);
+        let try_keys: Vec<&str> = if normalized_key != key { vec![&key, &normalized_key] } else { vec![&key] };
+
+        let lookup = |index: &HashMap<String, PathBuf>| -> Option<PathBuf> {
+            for k in &try_keys {
+                if let Some(p) = index.get(*k) { if p.is_file() { return Some(p.clone()); } }
             }
+            // Transclusion without .md extension
+            if Path::new(target).extension().is_none() {
+                for k in &try_keys {
+                    let k_md = format!("{}.md", k);
+                    if let Some(p) = index.get(&k_md) { if p.is_file() { return Some(p.clone()); } }
+                }
+            }
+            None
+        };
+
+        let index = get_or_build_vault_index(library_path);
+        if let Some(p) = lookup(&index) {
+            return ResolutionResult { matched: Some(p), tried };
         }
         // Miss — force a fresh index and retry (handles files added since last scan)
         invalidate_vault_index(library_path);
-        index = get_or_build_vault_index(library_path);
-        if let Some(p) = index.get(&key) {
-            if p.is_file() { return ResolutionResult { matched: Some(p.clone()), tried }; }
-        }
-        if Path::new(target).extension().is_none() {
-            let key_md = format!("{}.md", key);
-            if let Some(p) = index.get(&key_md) {
-                if p.is_file() { return ResolutionResult { matched: Some(p.clone()), tried }; }
-            }
+        let index = get_or_build_vault_index(library_path);
+        if let Some(p) = lookup(&index) {
+            return ResolutionResult { matched: Some(p), tried };
         }
     }
 
     // 6. Vault root
-    if let Some(p) = try_candidate(lib.join(target), &mut tried) {
+    if let Some(p) = try_candidate(lib.to_path_buf(), &mut tried) {
         return ResolutionResult { matched: Some(p), tried };
     }
 
