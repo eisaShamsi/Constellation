@@ -2407,7 +2407,11 @@
 
 		// No second screen — open note in main, THEN exit Sky View so the tab
 		// has a path before the new-tab guard renders an empty screen.
-		await openNoteTab(path, libraryName, color, highlightTerm);
+		// Pass the currently-active tab as _fromNotePath so Living Link records
+		// the traversal from the note the user was reading through Sky View to
+		// the node they clicked.
+		const fromPath = $activeTab?.path && $activeTab.path !== path ? $activeTab.path : undefined;
+		await openNoteTab(path, libraryName, color, highlightTerm, false, fromPath);
 		showSkyView = false;
 		if (highlightTerm) skyViewReturnPending = true;
 	}
@@ -3767,21 +3771,23 @@
 								trailTotal={activeTrail ? activeTrail.notes.length : 0}
 								onTrailPrev={async () => {
 									if (activeTrail && trailIndex > 0) {
+										const fromPath = activeTrail.notes[trailIndex]?.path;
 										trailIndex--;
 										const note = activeTrail.notes[trailIndex];
 										if (note.exists) {
 											const lib = get(libraries)[0];
-											if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+											if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, false, fromPath);
 										}
 									}
 								}}
 								onTrailNext={async () => {
 									if (activeTrail && trailIndex < activeTrail.notes.length - 1) {
+										const fromPath = activeTrail.notes[trailIndex]?.path;
 										trailIndex++;
 										const note = activeTrail.notes[trailIndex];
 										if (note.exists) {
 											const lib = get(libraries)[0];
-											if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+											if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, false, fromPath);
 										}
 									}
 								}}
