@@ -1178,27 +1178,42 @@ fn library_has_canonical_md(lib_path: &Path) -> bool {
     })
 }
 
-/// Startup migration: de-canonicalize every registered library that isn't
-/// explicitly native (i.e. not Constellation's own workspace store) and
-/// still has canonical-named .md files on disk. Safe to call on every
-/// launch — idempotent.
+/// Startup migration: scan every registered library for canonical-named files.
+/// If any are found, revert them to their original filenames using the
+/// `title` / `original_filename` / aliases preserved in frontmatter (or the
+/// `.meta.json` sidecar for attachments). Idempotent — a library with no
+/// canonical files is skipped.
+///
+/// NO mode check. Earlier builds may have left a library marked "native"
+/// while its files were actually canonicalized from an external import; the
+/// mode flag is not reliable, the filesystem is. If a library contains
+/// files in canonical format (20260410T153045Z_NOTE_XXXX.md) AND those
+/// files carry restore metadata in their frontmatter, revert them.
 #[tauri::command]
 pub fn repair_external_libraries_on_startup(
     app: tauri::AppHandle,
 ) -> Result<Vec<String>, String> {
     let mut repaired: Vec<String> = Vec::new();
     let libraries = crate::libraries::load_all_libraries(&app);
+    eprintln!("[CANONICAL] Checking {} libraries for canonical-format files to repair", libraries.len());
     for lib in libraries {
-        if lib.canonical_mode == "native" { continue; }
         let lib_path = Path::new(&lib.path);
-        if !lib_path.is_dir() { continue; }
-        if !library_has_canonical_md(lib_path) { continue; }
-        eprintln!("[CANONICAL] Auto-repairing external library: {}", lib.path);
+        if !lib_path.is_dir() {
+            eprintln!("[CANONICAL]   - {}: path not accessible, skipped", lib.path);
+            continue;
+        }
+        if !library_has_canonical_md(lib_path) {
+            eprintln!("[CANONICAL]   - {}: no canonical-format files, clean", lib.name);
+            continue;
+        }
+        eprintln!("[CANONICAL]   - {}: canonical files detected, reverting...", lib.name);
         match de_canonicalize_library(app.clone(), lib.path.clone()) {
             Ok(res) => {
+                eprintln!("[CANONICAL]     restored {} files, {} errors", res.restored, res.errors.len());
+                for err in &res.errors { eprintln!("[CANONICAL]       ! {}", err); }
                 if res.restored > 0 { repaired.push(lib.name.clone()); }
             }
-            Err(e) => eprintln!("[CANONICAL] Repair failed for {}: {}", lib.path, e),
+            Err(e) => eprintln!("[CANONICAL]     FAILED: {}", e),
         }
     }
     Ok(repaired)
