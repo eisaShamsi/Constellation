@@ -432,7 +432,7 @@ export function generateStyleSettingsCSS(
 
 				case 'variable-text': {
 					const textVal = val ?? setting.default;
-					if (textVal !== undefined) {
+					if (textVal !== undefined && textVal !== '') {
 						variables[`--${setting.id}`] = setting.quotes ? `'${textVal}'` : textVal;
 					}
 					break;
@@ -441,7 +441,7 @@ export function generateStyleSettingsCSS(
 				case 'variable-number':
 				case 'variable-number-slider': {
 					const numVal = val ?? setting.default;
-					if (numVal !== undefined) {
+					if (numVal !== undefined && numVal !== '') {
 						const suffix = setting.format || '';
 						variables[`--${setting.id}`] = `${numVal}${suffix}`;
 					}
@@ -450,7 +450,7 @@ export function generateStyleSettingsCSS(
 
 				case 'variable-select': {
 					const selVal = val ?? setting.default;
-					if (selVal !== undefined) {
+					if (selVal !== undefined && selVal !== '') {
 						variables[`--${setting.id}`] = selVal;
 					}
 					break;
