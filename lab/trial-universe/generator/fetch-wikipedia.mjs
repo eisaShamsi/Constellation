@@ -24,44 +24,50 @@ async function rateGate() {
 	lastRequestAt = Date.now();
 }
 
-function cachePath(kind, title) {
-	const safe = title.replace(/[^\w.-]+/g, '_');
-	return join(CACHE_DIR, kind, `${safe}.json`);
+function cachePath(kind, title, lang = 'en') {
+	// Preserve non-ASCII word characters (Arabic, Hebrew, CJK, Cyrillic, etc.) — the
+	// \w shorthand is ASCII-only and would collapse every Arabic title to the same
+	// path, causing catastrophic cache collisions.
+	const safe = title
+		.replace(/[^\p{L}\p{N}.\- _]+/gu, '')
+		.replace(/[\s_]+/g, '_')
+		.slice(0, 120);
+	return join(CACHE_DIR, lang, kind, `${safe}.json`);
 }
 
-async function readCache(kind, title) {
-	const p = cachePath(kind, title);
+async function readCache(kind, title, lang = 'en') {
+	const p = cachePath(kind, title, lang);
 	try {
 		await access(p);
 		return JSON.parse(await readFile(p, 'utf8'));
 	} catch { return null; }
 }
 
-async function writeCache(kind, title, data) {
-	const p = cachePath(kind, title);
+async function writeCache(kind, title, data, lang = 'en') {
+	const p = cachePath(kind, title, lang);
 	await mkdir(dirname(p), { recursive: true });
 	await writeFile(p, JSON.stringify(data, null, 2));
 }
 
 /** Fetch a page summary (lightweight: title, extract, thumbnail, coordinates). */
-export async function fetchSummary(title) {
-	const cached = await readCache('summary', title);
+export async function fetchSummary(title, lang = 'en') {
+	const cached = await readCache('summary', title, lang);
 	if (cached) return cached;
 	await rateGate();
-	const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`;
+	const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`;
 	const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' } });
 	if (!res.ok) {
 		if (res.status === 404) return null;
-		throw new Error(`Wikipedia summary ${title}: ${res.status}`);
+		throw new Error(`Wikipedia (${lang}) summary ${title}: ${res.status}`);
 	}
 	const data = await res.json();
-	await writeCache('summary', title, data);
+	await writeCache('summary', title, data, lang);
 	return data;
 }
 
 /** Fetch full parsed HTML + wiki links + sections for a page. */
-export async function fetchParsed(title) {
-	const cached = await readCache('parsed', title);
+export async function fetchParsed(title, lang = 'en') {
+	const cached = await readCache('parsed', title, lang);
 	if (cached) return cached;
 	await rateGate();
 	const params = new URLSearchParams({
@@ -75,15 +81,15 @@ export async function fetchParsed(title) {
 		disabletoc: '1',
 		origin: '*',
 	});
-	const url = `https://en.wikipedia.org/w/api.php?${params}`;
+	const url = `https://${lang}.wikipedia.org/w/api.php?${params}`;
 	const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
-	if (!res.ok) throw new Error(`Wikipedia parse ${title}: ${res.status}`);
+	if (!res.ok) throw new Error(`Wikipedia (${lang}) parse ${title}: ${res.status}`);
 	const data = await res.json();
 	if (data.error) {
 		if (data.error.code === 'missingtitle') return null;
-		throw new Error(`Wikipedia parse ${title}: ${data.error.info}`);
+		throw new Error(`Wikipedia (${lang}) parse ${title}: ${data.error.info}`);
 	}
-	await writeCache('parsed', title, data.parse);
+	await writeCache('parsed', title, data.parse, lang);
 	return data.parse;
 }
 

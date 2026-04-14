@@ -32,9 +32,9 @@ const { values: args } = parseArgs({
 });
 
 const STAGE_LIMITS = {
-	poc:    { librariesMax: 1,  notesPerLibrary: 20  },
-	pilot:  { librariesMax: 2,  notesPerLibrary: 100 },
-	full:   { librariesMax: 12, notesPerLibrary: 500 },
+	poc:    { librariesMax: 1,  notesPerLibrary: 20,  spreadAcrossCUniverses: false },
+	pilot:  { librariesMax: 4,  notesPerLibrary: 25,  spreadAcrossCUniverses: true  },
+	full:   { librariesMax: 12, notesPerLibrary: 500, spreadAcrossCUniverses: true  },
 };
 
 const LIMITS = STAGE_LIMITS[args.stage];
@@ -42,6 +42,11 @@ if (!LIMITS) { console.error(`Unknown stage: ${args.stage}`); process.exit(1); }
 
 const configDir = join(__dirname, '..', 'config');
 const topology = JSON.parse(await readFile(join(configDir, 'topology.json'), 'utf8'));
+// Merge the Arab cUniverse (kept in its own file so the main topology stays readable)
+try {
+	const arabCU = JSON.parse(await readFile(join(configDir, 'topology-arab.json'), 'utf8'));
+	topology.cUniverses.push(arabCU);
+} catch { /* optional */ }
 
 const outRoot = join(args.output, topology.universe.name);
 await mkdir(outRoot, { recursive: true });
@@ -50,19 +55,38 @@ console.log(`\n=== Trial Universe build [stage=${args.stage}] ===`);
 console.log(`Output: ${outRoot}`);
 console.log(`Max libraries: ${LIMITS.librariesMax}, notes per library: ${LIMITS.notesPerLibrary}\n`);
 
-const allNotes = []; // { title, libraryId, folderName, filename, filepath, linksOut }
+const allNotes = []; // { title, libraryId, folderName, filename, filepath, linksOut, typedLinkHints, properties }
 const contradictionPairs = [];
 const libraryFolderIndexes = []; // names of the folder-index / seed notes
+const skipLog = [];
 
-let libraryCount = 0;
-for (const cu of topology.cUniverses) {
-	for (const lib of cu.libraries) {
-		if (libraryCount >= LIMITS.librariesMax) break;
-		await buildLibrary(cu, lib);
-		libraryCount++;
+// Build a flat list of (cUniverse, library) pairs in the order to visit
+const libraryOrder = [];
+if (LIMITS.spreadAcrossCUniverses) {
+	// Round-robin across cUniverses so the pilot reaches multiple domains
+	let idx = 0;
+	let added = true;
+	while (added && libraryOrder.length < LIMITS.librariesMax) {
+		added = false;
+		for (const cu of topology.cUniverses) {
+			if (idx < cu.libraries.length && libraryOrder.length < LIMITS.librariesMax) {
+				libraryOrder.push({ cu, lib: cu.libraries[idx] });
+				added = true;
+			}
+		}
+		idx++;
 	}
-	if (libraryCount >= LIMITS.librariesMax) break;
+} else {
+	for (const cu of topology.cUniverses) {
+		for (const lib of cu.libraries) {
+			if (libraryOrder.length >= LIMITS.librariesMax) break;
+			libraryOrder.push({ cu, lib });
+		}
+		if (libraryOrder.length >= LIMITS.librariesMax) break;
+	}
 }
+
+for (const { cu, lib } of libraryOrder) await buildLibrary(cu, lib);
 
 // Typed link second pass
 console.log('\n--- Pass 2: typed-link resolution ---');
@@ -89,6 +113,8 @@ for (const n of allNotes) {
 		folderSiblings: siblings,
 		contradictionPairs,
 		libraryFolderIndexes,
+		typedLinkHints: n.typedLinkHints ?? {},
+		properties: n.properties ?? {},
 	});
 }
 
@@ -112,7 +138,11 @@ for (const n of allNotes) {
 }
 
 console.log('\n=== Build complete ===');
-console.log(`Notes: ${allNotes.length}`);
+console.log(`Notes: ${allNotes.length}   Skipped seeds: ${skipLog.length}`);
+if (skipLog.length) {
+	await writeFile(join(outRoot, 'skip-log.json'), JSON.stringify(skipLog, null, 2));
+	console.log(`(skip details → ${join(outRoot, 'skip-log.json')})`);
+}
 console.log('Link type distribution:');
 const total = Object.values(typeCounts).reduce((a, b) => a + b, 0) || 1;
 for (const [t, c] of Object.entries(typeCounts).sort((a, b) => b[1] - a[1])) {
@@ -156,8 +186,12 @@ async function buildLibrary(cu, lib) {
 					folderCount++;
 					libraryNoteCount++;
 					process.stdout.write('.');
+				} else {
+					skipLog.push({ seed, library: lib.id, reason: 'disambiguation or 404' });
+					process.stdout.write('x');
 				}
 			} catch (e) {
+				skipLog.push({ seed, library: lib.id, reason: e.message });
 				console.warn(`\n  ! ${seed}: ${e.message}`);
 			}
 		}
@@ -167,9 +201,10 @@ async function buildLibrary(cu, lib) {
 }
 
 async function buildSeed(title, cu, lib, folder, libRoot, folderDir) {
-	const summary = await fetchSummary(title);
+	const lang = cu.wikipediaLang ?? 'en';
+	const summary = await fetchSummary(title, lang);
 	if (!summary || summary.type === 'disambiguation') return null;
-	const parsed = await fetchParsed(title);
+	const parsed = await fetchParsed(title, lang);
 	if (!parsed) return null;
 
 	let heroImageLocalPath = null;
@@ -185,18 +220,23 @@ async function buildSeed(title, cu, lib, folder, libRoot, folderDir) {
 		}
 	}
 
+	const isContradictionTarget = (lib.contradictionSeeds ?? []).some(p => p[0] === title || p[1] === title);
 	const built = buildNote({
 		title,
 		summary,
 		parsed,
-		libraryContext: { libraryId: lib.id, folderPath: folder.name },
+		libraryContext: { libraryId: lib.id, folderPath: folder.name, cUniverseName: cu.name },
 		heroImageLocalPath,
 		heroImageInfo,
+		lang,
+		isContradictionTarget,
 	});
 
 	const filepath = join(folderDir, built.filename);
 	await writeFile(filepath, built.content);
 
+	// Re-parse to pull properties from the body for the link-typer.
+	// (We pass them through from buildNote rather than re-parsing; simpler.)
 	return {
 		title,
 		libraryId: lib.id,
@@ -204,7 +244,39 @@ async function buildSeed(title, cu, lib, folder, libRoot, folderDir) {
 		filename: built.filename,
 		filepath,
 		linksOut: built.linksOut,
+		typedLinkHints: built.typedLinkHints,
+		properties: extractPropertiesFromFrontmatter(built.content),
 	};
+}
+
+function extractPropertiesFromFrontmatter(content) {
+	const m = content.match(/^---\n([\s\S]*?)\n---/);
+	if (!m) return {};
+	const body = m[1];
+	// Simple YAML-ish parse of array fields we care about for link typing
+	const props = {};
+	const ARRAY_KEYS = [
+		'influenced_by', 'influenced', 'predecessor', 'successor', 'doctoral_advisor',
+		'doctoral_students', 'notable_works', 'notable_ideas', 'known_for',
+		'main_interests', 'school', 'era', 'field', 'part_of', 'discovered_by',
+		'formulated_by', 'developed_by', 'founded_by', 'founder', 'institutions', 'alma_mater',
+	];
+	for (const key of ARRAY_KEYS) {
+		const re = new RegExp(`^${key}:\\s*\\n((?:\\s{2,}-\\s.+\\n)+)`, 'm');
+		const mm = body.match(re);
+		if (mm) {
+			props[key] = mm[1]
+				.split('\n')
+				.map(l => l.match(/-\s+(?:"([^"]+)"|(\S.*))$/))
+				.filter(Boolean)
+				.map(mm2 => (mm2[1] ?? mm2[2]).trim());
+			continue;
+		}
+		// scalar form
+		const scalar = body.match(new RegExp(`^${key}:\\s*(?:"([^"]+)"|(.+))$`, 'm'));
+		if (scalar) props[key] = scalar[1] ?? scalar[2];
+	}
+	return props;
 }
 
 function extractFileTitle(thumbUrl) {
