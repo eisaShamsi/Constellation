@@ -685,6 +685,28 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 - Tema (Claro / Oscuro)
 - Fuente de interfaz, Fuente de texto, Fuente monoespaciada, Tamano de fuente
 - Tema de fuente — combinaciones de fuentes predefinidas (Maquina de escribir, Clasico, Moderno, etc.) para cambio rapido
+- **Temas** — elige entre seis temas integrados, crea temas personalizados (editor de cinco colores), importa temas del registro de la comunidad de Obsidian (200+ temas), o importa un archivo de tema `.json`. Elimina cualquier tema personalizado con el boton ✕ al pasar el raton.
+
+### Style Settings
+
+Una pestana dedicada para la personalizacion detallada de cada elemento visible de la interfaz, aplicada en vivo al tema activo.
+
+- **Colores** — fondo, superficies, texto (normal/atenuado/debil), acento, bordes, colores de estado
+- **Tipografia** — tamanos de fuente de interfaz/nota/codigo, tamanos H1–H6, peso de encabezados, alturas de linea, espacio entre parrafos
+- **Diseno y forma** — radios de esquina pequeno/mediano/grande, anchos de borde, sombras, longitud de linea legible del editor, margenes laterales
+- **Componentes** — barra de listones, barra de acciones lateral, barra de diseno (alternadores de panel), barra superior/tiras de pestanas, barra de estado, barra lateral derecha (inspector), explorador de archivos (notas del Universo, universos hijo, bibliotecas, carpetas, notas), botones, etiquetas, callouts — cada uno con tamano, radio, color independientes, y estilo de estado activo cuando corresponda
+- **Editor** — color/hover/decoracion de enlace, color/fondo/radio de codigo en linea, ancho/color de la barra de cita, color del cursor, fondo de seleccion
+
+**Importar / Exportar** — barra de herramientas arriba de la pestana:
+- Pegar desde el portapapeles (un clic)
+- Importar / Pegar (area de texto con Fusionar o Reemplazar)
+- Desde archivo (.json)
+- Copiar (valores actuales al portapapeles)
+- Exportar (.json)
+
+El formato coincide exactamente con el plugin Style Settings de Obsidian, por lo que puedes compartir ajustes entre Obsidian y Constellation.
+
+Los cambios se guardan automaticamente en el tema activo; si editas un tema integrado, se auto-clona en tus temas personalizados para que los cambios persistan sin modificar el original.
 
 ### Editor
 

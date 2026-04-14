@@ -685,6 +685,28 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 - Thema (Hell / Dunkel)
 - Oberflaechen-Schriftart, Textschriftart, Monospace-Schriftart, Schriftgroesse
 - Schriftthema — vorgefertigte Schriftkombinationen (Schreibmaschine, Klassisch, Modern usw.) fuer schnellen Wechsel
+- **Themen** — waehlen Sie aus sechs eingebauten Themen, erstellen Sie benutzerdefinierte Themen (Fuenf-Farben-Editor), importieren Sie Themen aus der Obsidian-Community-Registry (200+ Themen) oder importieren Sie eine `.json`-Themendatei. Loeschen Sie jedes benutzerdefinierte Thema mit dem ✕-Button beim Hover.
+
+### Style Settings
+
+Ein eigener Tab fuer die feinkoernige Anpassung jedes sichtbaren Interface-Elements, live auf das aktive Thema angewendet.
+
+- **Farben** — Hintergrund, Oberflaechen, Text (normal/gedaempft/schwach), Akzent, Rahmen, Zustandsfarben
+- **Typografie** — Schriftgroessen fuer Interface/Notizen/Code, H1–H6-Groessen, Ueberschriftgewicht, Zeilenhoehen, Absatzabstand
+- **Layout & Form** — klein/mittel/gross Eckenradien, Rahmenbreiten, Schatten, lesbare Editor-Zeilenlaenge, Seitenraender
+- **Komponenten** — Ribbon-Dock, Aktionsleiste der Seitenleiste, Layout-Leiste (Panel-Toggles), Top-Leiste/Tab-Leiste, Statusleiste, rechte Seitenleiste (Inspector), Datei-Explorer (Universum-Notizen, Kind-Universen, Bibliotheken, Ordner, Notizen), Buttons, Tags, Callouts — jeweils mit unabhaengiger Groesse, Radius, Farbe und gegebenenfalls Aktiv-Zustand-Styling
+- **Editor** — Linkfarbe/Hover/Dekoration, Inline-Code-Farbe/Hintergrund/Radius, Blockzitat-Balkenbreite/-Farbe, Cursorfarbe, Auswahlhintergrund
+
+**Import / Export** — Symbolleiste oben im Tab:
+- Aus Zwischenablage einfuegen (ein Klick)
+- Import / Einfuegen (Textfeld mit Merge oder Ersetzen)
+- Aus Datei (.json)
+- Kopieren (aktuelle Werte in Zwischenablage)
+- Exportieren (.json)
+
+Das Format entspricht exakt dem Style-Settings-Plugin von Obsidian, sodass Sie Einstellungen zwischen Obsidian und Constellation teilen koennen.
+
+Aenderungen werden automatisch im aktiven Thema gespeichert; wenn Sie ein eingebautes Thema bearbeiten, wird es automatisch in Ihre benutzerdefinierten Themen geklont, sodass Aenderungen bestehen bleiben, ohne das Original zu veraendern.
 
 ### Editor
 

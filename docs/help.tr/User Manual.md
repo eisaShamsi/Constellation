@@ -685,6 +685,28 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 - Tema (Açık / Koyu)
 - Arayüz yazı tipi, Metin yazı tipi, Mono yazı tipi, Yazı tipi boyutu
 - Yazı tipi teması — hazır yazı tipi kombinasyonları (Daktilo, Klasik, Modern vb.) hızlı geçiş için
+- **Temalar** — altı yerleşik temadan seçin, özel temalar oluşturun (beş renkli düzenleyici), Obsidian topluluk kayıt defterinden temalar içe aktarın (200+ tema) veya bir `.json` tema dosyası içe aktarın. Üzerine gelindiğinde ✕ düğmesiyle herhangi bir özel temayı silin.
+
+### Style Settings
+
+Arayüzün her görünür öğesinin ince ayarı için özel bir sekme, aktif temaya canlı olarak uygulanır.
+
+- **Renkler** — arka plan, yüzeyler, metin (normal/azaltılmış/soluk), vurgu, kenarlıklar, durum renkleri
+- **Tipografi** — arayüz/not/kod yazı tipi boyutları, H1–H6 boyutları, başlık ağırlığı, satır yükseklikleri, paragraf aralığı
+- **Düzen ve Şekil** — küçük/orta/büyük köşe yarıçapları, kenarlık genişlikleri, gölgeler, editör okunabilir satır uzunluğu, yan kenar boşlukları
+- **Bileşenler** — şerit dock, yan işlem çubuğu, düzen çubuğu (panel anahtarları), üst çubuk/sekme şeridi, durum çubuğu, sağ kenar çubuğu (müfettiş), dosya gezgini (Evren notları, alt evrenler, kitaplıklar, klasörler, notlar), düğmeler, etiketler, callout'lar — her biri bağımsız boyut, yarıçap, renk ve geçerli olduğunda aktif durum stili ile
+- **Editör** — bağlantı renk/üzerine gelme/dekorasyon, satır içi kod renk/arka plan/yarıçap, alıntı çubuğu genişlik/renk, imleç rengi, seçim arka planı
+
+**İçe Aktar / Dışa Aktar** — sekmenin üstündeki araç çubuğu:
+- Panodan yapıştır (tek tıklama)
+- İçe aktar / Yapıştır (Birleştir veya Değiştir ile metin alanı)
+- Dosyadan (.json)
+- Kopyala (mevcut değerleri panoya)
+- Dışa aktar (.json)
+
+Biçim Obsidian'ın Style Settings eklentisiyle tam olarak eşleşir, böylece Obsidian ve Constellation arasında ayarları paylaşabilirsiniz.
+
+Değişiklikler aktif temaya otomatik kaydedilir; yerleşik bir temayı düzenlerseniz, değişiklikler orijinali değiştirmeden kalıcı olacak şekilde özel temalarınıza otomatik klonlanır.
 
 ### Düzenleyici
 

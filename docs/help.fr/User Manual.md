@@ -685,6 +685,28 @@ Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctr
 - Theme (Clair / Sombre)
 - Police d'interface, Police de texte, Police monospace, Taille de police
 - Theme de police — combinaisons de polices predefinies (Machine a ecrire, Classique, Moderne, etc.) pour un changement rapide
+- **Themes** — choisissez parmi six themes integres, creez des themes personnalises (editeur de cinq couleurs), importez des themes depuis le registre communautaire d'Obsidian (200+ themes), ou importez un fichier `.json`. Supprimez n'importe quel theme personnalise avec le bouton ✕ au survol.
+
+### Style Settings
+
+Un onglet dedie pour la personnalisation fine de chaque element visible de l'interface, applique en direct au theme actif.
+
+- **Couleurs** — fond, surfaces, texte (normal/attenue/faible), accent, bordures, couleurs d'etat
+- **Typographie** — tailles de police interface/note/code, tailles H1–H6, graisse des titres, hauteurs de ligne, espacement des paragraphes
+- **Mise en page et forme** — rayons de coin petit/moyen/grand, largeurs de bordure, ombres, longueur de ligne lisible de l'editeur, marges laterales
+- **Composants** — dock ruban, barre d'actions laterale, barre de mise en page (bascules de panneaux), barre superieure/bande d'onglets, barre d'etat, barre laterale droite (inspecteur), explorateur de fichiers (notes d'Univers, univers enfants, bibliotheques, dossiers, notes), boutons, etiquettes, callouts — chacun avec taille, rayon, couleur independants, et style d'etat actif le cas echeant
+- **Editeur** — couleur/survol/decoration du lien, couleur/fond/rayon du code en ligne, largeur/couleur de la barre de citation, couleur du curseur, fond de selection
+
+**Importer / Exporter** — barre d'outils en haut de l'onglet :
+- Coller depuis le presse-papiers (un clic)
+- Importer / Coller (zone de texte avec Fusionner ou Remplacer)
+- Depuis un fichier (.json)
+- Copier (valeurs actuelles dans le presse-papiers)
+- Exporter (.json)
+
+Le format correspond exactement au plugin Style Settings d'Obsidian, vous pouvez donc partager des reglages entre Obsidian et Constellation.
+
+Les modifications sont enregistrees automatiquement dans le theme actif ; si vous modifiez un theme integre, il est automatiquement clone dans vos themes personnalises pour que les changements persistent sans modifier l'original.
 
 ### Editeur
 

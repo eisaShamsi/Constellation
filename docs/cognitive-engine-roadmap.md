@@ -20,7 +20,16 @@ LAYER 1 — Structural Cognition (zero AI dependency)
   Phase 10: Expression Forge    🔲  synthesis workspace, output composition
   Phase 11: Sense-Making Canvas 🔲  pre-structural space (heaviest engineering)
 
-LAYER 2 — AI Discovery (reads Layer 1 structures)
+LAYER 2 — Living Link Architecture (reads Layer 1, no AI)
+
+  P0: Dual-layer storage       ✅  LINK files on disk + note_links SQLite index
+  P1: 7 cognitive operators    ✅  in SearchHub + Sky View, all 15 locales
+  P2: Traversal tracking       🔲  increment count + last_traversed on link click
+  P3: Weight + lifecycle       🔲  log-growth on use, 5%/month decay, 6 stages
+  P4: Formulation queries      🔲  strongest chains, contested clusters, untraversed
+  P5: Knowledge Health         🔲  single-screen diagnostic dashboard
+
+LAYER 3 — AI Discovery (reads Layer 1 + 2 structures)
 
   Phase 12: Hidden Pattern Discovery   🔲  ghost links in GraphMind
   Phase 13: Blind Spot Detection       🔲  domain gaps via AI
@@ -74,7 +83,8 @@ LAYER 2 — AI Discovery (reads Layer 1 structures)
 | 9 Multi-Lens Views | Tags + Dataview (both existing) |
 | 10 Expression Forge | Phase 2, Phase 6, Phase 8 |
 | 11 Sense-Making Canvas | NotePane + Frontmatter (both existing) |
-| 12–16 (Layer 2) | All Layer 1 phases, AI integration (existing) |
+| L2 (P2–P5) Living Link | P0/P1 (done), note_links table (existing), wikilink click handlers (existing) |
+| 12–16 (Layer 3) | All Layer 1 + Layer 2 phases, AI integration (existing) |
 
 ---
 

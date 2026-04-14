@@ -838,6 +838,28 @@ Access Settings from the sidebar gear icon or `Ctrl+,`.
 - Accent color
 - Interface font size (11–18px)
 - Note font size
+- **Themes** — pick from six built-in themes, create custom themes (five-color editor), import themes from the Obsidian Community registry (200+ themes), or import a `.json` theme file. Delete any custom theme with the ✕ button on hover.
+
+### Style Settings
+
+A dedicated tab for fine-grained customization of every visible interface element, applied live to the active theme.
+
+- **Colors** — background, surfaces, text (normal/muted/faint), accent, borders, state colors
+- **Typography** — interface / note / code font sizes, H1–H6 sizes, heading weight, line heights, paragraph spacing
+- **Layout & Shape** — small/medium/large corner radii, border widths, shadows, editor readable line length, side margins
+- **Components** — ribbon dock, sidebar action toolbar, layout bar (pane toggles), top bar / tab strip, status bar, right sidebar (inspector), file explorer (Universe notes, child universes, libraries, folders, notes), buttons, tags, callouts — each with independent size, radius, color, and where applicable, active-state styling
+- **Editor** — link color/hover/decoration, inline code color/background/radius, blockquote bar width/color, cursor color, selection background
+
+**Import / Export** — toolbar at top of the tab:
+- Paste from clipboard (one-click)
+- Import / Paste (textarea with Merge or Replace)
+- From file (.json)
+- Copy (current values to clipboard)
+- Export (.json)
+
+The format matches Obsidian's Style Settings plugin exactly, so you can share settings between Obsidian and Constellation.
+
+Changes auto-save to the active theme; if you edit a built-in theme, it is auto-cloned into your custom themes so changes persist without modifying the original.
 
 ### Language
 

@@ -685,6 +685,28 @@ Acesse as Configuracoes pelo icone de engrenagem na barra lateral ou `Ctrl+,`.
 - Tema (Claro / Escuro)
 - Fonte da interface, Fonte de texto, Fonte monoespcada, Tamanho da fonte
 - Tema de fonte — combinacoes de fontes predefinidas (Maquina de escrever, Classico, Moderno, etc.) para troca rapida
+- **Temas** — escolha entre seis temas integrados, crie temas personalizados (editor de cinco cores), importe temas do registro da comunidade do Obsidian (200+ temas), ou importe um arquivo de tema `.json`. Exclua qualquer tema personalizado com o botao ✕ ao passar o mouse.
+
+### Style Settings
+
+Uma aba dedicada para personalizacao detalhada de cada elemento visivel da interface, aplicada ao vivo ao tema ativo.
+
+- **Cores** — fundo, superficies, texto (normal/atenuado/fraco), acento, bordas, cores de estado
+- **Tipografia** — tamanhos de fonte interface/nota/codigo, tamanhos H1–H6, peso de titulos, alturas de linha, espacamento entre paragrafos
+- **Layout e Forma** — raios de canto pequeno/medio/grande, larguras de borda, sombras, comprimento de linha legivel do editor, margens laterais
+- **Componentes** — dock de faixa, barra de acoes lateral, barra de layout (alternadores de painel), barra superior/faixa de abas, barra de status, barra lateral direita (inspetor), explorador de arquivos (notas do Universo, universos filhos, bibliotecas, pastas, notas), botoes, tags, callouts — cada um com tamanho, raio, cor independentes, e estilo de estado ativo quando aplicavel
+- **Editor** — cor/hover/decoracao do link, cor/fundo/raio do codigo em linha, largura/cor da barra de citacao, cor do cursor, fundo de selecao
+
+**Importar / Exportar** — barra de ferramentas no topo da aba:
+- Colar da area de transferencia (um clique)
+- Importar / Colar (area de texto com Mesclar ou Substituir)
+- De arquivo (.json)
+- Copiar (valores atuais para area de transferencia)
+- Exportar (.json)
+
+O formato corresponde exatamente ao plugin Style Settings do Obsidian, entao voce pode compartilhar ajustes entre Obsidian e Constellation.
+
+As alteracoes sao salvas automaticamente no tema ativo; se voce editar um tema integrado, ele e clonado automaticamente em seus temas personalizados para que as mudancas persistam sem modificar o original.
 
 ### Editor
 
