@@ -12,7 +12,7 @@
         {
           "id": "physics",
           "name": "Physics",
-          "targetNoteCount": 450,
+          "targetNoteCount": 550,
           "folders": [
             {
               "name": "Classical Mechanics",
@@ -49,7 +49,7 @@
         {
           "id": "biology",
           "name": "Biology",
-          "targetNoteCount": 420,
+          "targetNoteCount": 550,
           "folders": [
             {
               "name": "Cell Biology",
@@ -80,7 +80,7 @@
         {
           "id": "computer-science",
           "name": "Computer Science",
-          "targetNoteCount": 380,
+          "targetNoteCount": 500,
           "folders": [
             {
               "name": "Algorithms & Data Structures",
@@ -106,7 +106,7 @@
         {
           "id": "earth-sciences",
           "name": "Earth Sciences",
-          "targetNoteCount": 350,
+          "targetNoteCount": 450,
           "folders": [
             {
               "name": "Geology",
@@ -136,7 +136,7 @@
         {
           "id": "philosophy",
           "name": "Philosophy",
-          "targetNoteCount": 450,
+          "targetNoteCount": 550,
           "folders": [
             {
               "name": "Ancient Philosophy",
@@ -174,7 +174,7 @@
         {
           "id": "history",
           "name": "History",
-          "targetNoteCount": 430,
+          "targetNoteCount": 550,
           "folders": [
             {
               "name": "Ancient History",
@@ -201,7 +201,7 @@
         {
           "id": "linguistics",
           "name": "Linguistics",
-          "targetNoteCount": 320,
+          "targetNoteCount": 450,
           "folders": [
             {
               "name": "Core Areas",
@@ -224,7 +224,7 @@
         {
           "id": "religion",
           "name": "Religion & Comparative Traditions",
-          "targetNoteCount": 380,
+          "targetNoteCount": 500,
           "folders": [
             {
               "name": "Abrahamic Traditions",
@@ -254,7 +254,7 @@
         {
           "id": "literature",
           "name": "Literature",
-          "targetNoteCount": 420,
+          "targetNoteCount": 550,
           "folders": [
             {
               "name": "Classical",
@@ -281,7 +281,7 @@
         {
           "id": "music",
           "name": "Music",
-          "targetNoteCount": 380,
+          "targetNoteCount": 500,
           "folders": [
             {
               "name": "Theory & Practice",
@@ -304,7 +304,7 @@
         {
           "id": "architecture",
           "name": "Architecture",
-          "targetNoteCount": 330,
+          "targetNoteCount": 450,
           "folders": [
             {
               "name": "Historical Styles",
@@ -327,7 +327,7 @@
         {
           "id": "film",
           "name": "Film",
-          "targetNoteCount": 290,
+          "targetNoteCount": 400,
           "folders": [
             {
               "name": "History",

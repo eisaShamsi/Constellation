@@ -8,7 +8,7 @@
     {
       "id": "arab-history",
       "name": "تاريخ عربي وإسلامي",
-      "targetNoteCount": 300,
+      "targetNoteCount": 450,
       "folders": [
         {
           "name": "الجاهلية وصدر الإسلام",
@@ -62,7 +62,7 @@
     {
       "id": "arab-geography",
       "name": "جغرافيا",
-      "targetNoteCount": 250,
+      "targetNoteCount": 400,
       "folders": [
         {
           "name": "شبه الجزيرة العربية",
@@ -112,7 +112,7 @@
     {
       "id": "arab-sciences",
       "name": "علوم عربية",
-      "targetNoteCount": 250,
+      "targetNoteCount": 400,
       "folders": [
         {
           "name": "الرياضيات والفلك",
@@ -160,7 +160,7 @@
     {
       "id": "arab-literature",
       "name": "أدب وتراث",
-      "targetNoteCount": 200,
+      "targetNoteCount": 350,
       "folders": [
         {
           "name": "الشعر",

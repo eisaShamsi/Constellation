@@ -34,7 +34,7 @@ const { values: args } = parseArgs({
 const STAGE_LIMITS = {
 	poc:    { librariesMax: 1,  notesPerLibrary: 20,  spreadAcrossCUniverses: false },
 	pilot:  { librariesMax: 4,  notesPerLibrary: 25,  spreadAcrossCUniverses: true  },
-	full:   { librariesMax: 12, notesPerLibrary: 500, spreadAcrossCUniverses: true  },
+	full:   { librariesMax: 16, notesPerLibrary: 550, spreadAcrossCUniverses: true, expand: true  },
 };
 
 const LIMITS = STAGE_LIMITS[args.stage];
@@ -59,6 +59,12 @@ const allNotes = []; // { title, libraryId, folderName, filename, filepath, link
 const contradictionPairs = [];
 const libraryFolderIndexes = []; // names of the folder-index / seed notes
 const skipLog = [];
+
+// Every seed title across every library in the build — so expansion in library A
+// never steals a topic that is an explicit seed in library B.
+const GLOBAL_SEED_SET = new Set(
+	topology.cUniverses.flatMap(cu => cu.libraries.flatMap(lib => lib.folders.flatMap(f => f.seeds)))
+);
 
 // Build a flat list of (cUniverse, library) pairs in the order to visit
 const libraryOrder = [];
@@ -162,27 +168,33 @@ async function buildLibrary(cu, lib) {
 		id: lib.id, name: lib.name, cUniverse: cu.id, color: cu.color, createdAt: new Date().toISOString(),
 	}, null, 2));
 
+	// The per-library quota is the user-facing target; both seed and expansion
+	// phases draw from it.
+	const quota = lib.targetNoteCount
+		? Math.min(lib.targetNoteCount, LIMITS.notesPerLibrary)
+		: LIMITS.notesPerLibrary;
 	let libraryNoteCount = 0;
-	const quota = Math.min(LIMITS.notesPerLibrary, lib.folders.reduce((s, f) => s + f.seeds.length, 0));
+	const libTitleSet = new Set();
+	const folderBySeed = new Map(); // seed title → { folder, folderDir }
 
+	// ── Phase 1: explicit seeds ─────────────────────────────────────────────
 	for (const folder of lib.folders) {
-		if (libraryNoteCount >= LIMITS.notesPerLibrary) break;
+		if (libraryNoteCount >= quota) break;
 		const folderDir = join(libRoot, folder.name);
 		await mkdir(folderDir, { recursive: true });
-
-		// First seed in a folder is treated as the folder index for part-of assignment
 		if (folder.seeds[0]) libraryFolderIndexes.push(folder.seeds[0]);
-
-		const folderQuota = Math.ceil(LIMITS.notesPerLibrary / lib.folders.length);
+		const folderQuota = Math.ceil(quota / lib.folders.length);
 		let folderCount = 0;
 
 		for (const seed of folder.seeds) {
 			if (folderCount >= folderQuota) break;
-			if (libraryNoteCount >= LIMITS.notesPerLibrary) break;
+			if (libraryNoteCount >= quota) break;
 			try {
 				const note = await buildSeed(seed, cu, lib, folder, libRoot, folderDir);
 				if (note) {
 					allNotes.push(note);
+					libTitleSet.add(note.title);
+					folderBySeed.set(note.title, { folder, folderDir });
 					folderCount++;
 					libraryNoteCount++;
 					process.stdout.write('.');
@@ -195,6 +207,49 @@ async function buildLibrary(cu, lib) {
 				console.warn(`\n  ! ${seed}: ${e.message}`);
 			}
 		}
+	}
+
+	// ── Phase 2: expansion ──────────────────────────────────────────────────
+	// Walk outbound links of the seed notes. For each new target not already
+	// processed anywhere, fetch it and attach to the folder of the seed that
+	// first referenced it. Other libraries' seeds are skipped so each topic
+	// lives in exactly one place.
+	if (LIMITS.expand && libraryNoteCount < quota) {
+		process.stdout.write(` [expanding...]`);
+		const relatedDir = join(libRoot, cu.wikipediaLang === 'ar' ? 'مواضيع ذات صلة' : 'Related Topics');
+		await mkdir(relatedDir, { recursive: true });
+		const relatedFolder = { name: cu.wikipediaLang === 'ar' ? 'مواضيع ذات صلة' : 'Related Topics', seeds: [] };
+
+		// Build the expansion queue: titles → first discovering seed
+		const queue = new Map();
+		for (const n of allNotes) {
+			if (n.libraryId !== lib.id) continue;
+			for (const outTitle of n.linksOut) {
+				if (libTitleSet.has(outTitle)) continue;        // already in this library
+				if (GLOBAL_SEED_SET.has(outTitle)) continue;    // owned by another library
+				if (queue.has(outTitle)) continue;
+				queue.set(outTitle, n.title);
+			}
+		}
+
+		// Process queue until quota hit, rate-limited by fetcher
+		let expandCount = 0;
+		for (const [title, sourceTitle] of queue) {
+			if (libraryNoteCount >= quota) break;
+			const parent = folderBySeed.get(sourceTitle);
+			const { folder, folderDir } = parent ?? { folder: relatedFolder, folderDir: relatedDir };
+			try {
+				const note = await buildSeed(title, cu, lib, folder, libRoot, folderDir);
+				if (note) {
+					allNotes.push(note);
+					libTitleSet.add(note.title);
+					libraryNoteCount++;
+					expandCount++;
+					if (expandCount % 10 === 0) process.stdout.write('+');
+				}
+			} catch { /* silent: expansion is best-effort */ }
+		}
+		process.stdout.write(` (+${expandCount} via expansion)`);
 	}
 
 	console.log(`\n  ${libraryNoteCount} notes in ${lib.name}`);
