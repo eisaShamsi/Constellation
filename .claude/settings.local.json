@@ -338,7 +338,8 @@
       "Bash(node generator/index.mjs --stage pilot)",
       "Bash(node generator/index.mjs --stage full)",
       "Bash(ls src/lib/components/KnowledgeHealth*)",
-      "Bash(grep -rn \"embed\\\\|!\\\\\\\\\\\\[\\\\\\\\\\\\[\\\\|transclude\" src/lib/editor/)"
+      "Bash(grep -rn \"embed\\\\|!\\\\\\\\\\\\[\\\\\\\\\\\\[\\\\|transclude\" src/lib/editor/)",
+      "Bash(grep -n \"libraryPath:\\\\|filePath:\\\\|libraryPath =\\\\|libraryPath}$\" src/lib/components/NotePane.svelte)"
     ]
   }
 }

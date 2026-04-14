@@ -60,6 +60,11 @@ pub struct EmbedResolution {
     /// suggestions for a missing resolution.
     #[serde(default)]
     pub similar_files: Vec<String>,
+    /// Total file count in the vault index — when this is 0, the walk itself
+    /// failed (permission denied at vault root, wrong path, etc.) and no
+    /// individual path comparison would ever succeed.
+    #[serde(default)]
+    pub vault_file_count: u64,
 }
 
 impl EmbedResolution {
@@ -76,6 +81,7 @@ impl EmbedResolution {
             tried_paths: Vec::new(),
             attachment_folder: String::new(),
             similar_files: Vec::new(),
+            vault_file_count: 0,
         }
     }
 }
@@ -490,6 +496,7 @@ pub fn resolve_embed(
         // Miss: compute "did you mean" suggestions from the vault index so the
         // user can see what files ARE present that might be a near-match.
         let similar = find_similar_in_index(&library_path, &parsed.path);
+        let vault_file_count = get_or_build_vault_index(&library_path).len() as u64;
         return EmbedResolution {
             kind: "missing".into(),
             url: String::new(),
@@ -502,6 +509,7 @@ pub fn resolve_embed(
             tried_paths: res.tried.into_iter().map(|p| p.to_string_lossy().into_owned()).collect(),
             attachment_folder: cfg.attachment_folder_path.clone(),
             similar_files: similar,
+            vault_file_count,
         };
     };
 
@@ -525,6 +533,7 @@ pub fn resolve_embed(
             tried_paths: Vec::new(),
             attachment_folder: cfg.attachment_folder_path.clone(),
             similar_files: Vec::new(),
+            vault_file_count: 0,
         };
     }
 
@@ -544,6 +553,7 @@ pub fn resolve_embed(
             tried_paths: Vec::new(),
             attachment_folder: cfg.attachment_folder_path.clone(),
             similar_files: Vec::new(),
+            vault_file_count: 0,
         };
     }
 
@@ -571,6 +581,7 @@ pub fn resolve_embed(
         tried_paths: Vec::new(),
         attachment_folder: cfg.attachment_folder_path.clone(),
         similar_files: Vec::new(),
+        vault_file_count: 0,
     }
 }
 

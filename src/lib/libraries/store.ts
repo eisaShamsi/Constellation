@@ -608,13 +608,20 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	// Use a path-normalized, case-insensitive prefix match so Windows paths
 	// (\ vs / separators) and case differences don't silently lose the
 	// library anchor — which would break embed resolution for any note.
+	// Pick the LONGEST matching prefix so nested libraries
+	// (e.g. "Universe" and "Universe/Project" both registered) route each
+	// note to its immediate containing library.
 	const allLibraries = get(libraries);
 	const normalize = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
 	const filePathNorm = normalize(filePath);
-	const library = allLibraries.find(v => {
+	let library: typeof allLibraries[number] | undefined;
+	let bestLen = -1;
+	for (const v of allLibraries) {
 		const libNorm = normalize(v.path);
-		return filePathNorm === libNorm || filePathNorm.startsWith(libNorm + '/');
-	});
+		if (filePathNorm === libNorm || filePathNorm.startsWith(libNorm + '/')) {
+			if (libNorm.length > bestLen) { bestLen = libNorm.length; library = v; }
+		}
+	}
 	const libraryPath = library?.path ?? '';
 
 	// Default: replace active tab content
