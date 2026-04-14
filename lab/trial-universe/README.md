@@ -1,6 +1,8 @@
 # Constellation — Trial Universe Generator
 
-A Node script that builds a **~5000-note demonstration Universe** from public sources (Wikipedia + Wikimedia Commons + Wikidata). The output is a portable Constellation Universe — ready to be opened in Constellation and explored — designed to showcase every unique feature of the app, with emphasis on:
+> **v1 release (2026-04-14)**: [`constellation-trial-universe-v1-20260414.zip`](./RELEASE-NOTES-v1.md) — 7,600 notes, 16 libraries, 4 cUniverses including a full Arabic cUniverse (`العالم العربي`, 1,600 notes from `ar.wikipedia.org`). 656,855 typed links, 19,321 of them curated `contradicts`. 4,064 CC-attributed images. 967 MB extracted.
+
+A Node script that builds a demonstration Universe from public sources (Wikipedia + Wikimedia Commons + Wikidata). The output is a portable Constellation Universe — ready to be opened in Constellation and explored — designed to showcase every unique feature of the app, with emphasis on:
 
 - **Living Link Architecture** — real typed links (supports / contradicts / causes / exemplifies / generalizes / derives-from / part-of), not just wikilinks.
 - **Cognitive Engine phases** — deliberate contradictions between notes so Tension Detector finds real tension; provenance chains for historical evolution of ideas; maturity distribution from seed to canonical.
