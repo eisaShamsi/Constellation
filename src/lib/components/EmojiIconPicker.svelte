@@ -92,10 +92,17 @@
 		const all = await import('lucide');
 		const entries = Object.entries(all) as [string, any][];
 		const list: Icon[] = [];
+		const seen = new Set<string>();
 		for (const [rawName, def] of entries) {
-			// Lucide exports icons as [tag, attrs, children[]] arrays + some helper fns.
-			if (!Array.isArray(def) || def.length < 3) continue;
+			// Lucide v1.x exports each icon as an Array<[tag, attrs]> — no outer
+			// <svg>, no `children` array. We wrap it with the standard 24×24
+			// Lucide base attributes at render time.
+			if (!Array.isArray(def)) continue;
 			if (!/^[A-Z]/.test(rawName)) continue;
+			// Skip aliases pointing at the same array (same reference under two
+			// PascalCase names, e.g. AlarmCheck + AlarmClockCheck)
+			if (seen.has(rawName)) continue;
+			seen.add(rawName);
 			try {
 				const svg = renderLucide(def);
 				if (svg) list.push({ name: kebab(rawName), svg });
@@ -109,14 +116,17 @@
 		return pascal.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 	}
 
-	/** Render a Lucide icon array into an inline <svg> string. */
-	function renderLucide(def: any): string {
-		const [, attrs, children] = def;
-		const attrStr = Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(' ');
-		const childStr = (children ?? []).map(([tag, a]: any) =>
-			`<${tag} ${Object.entries(a).map(([k, v]) => `${k}="${v}"`).join(' ')}/>`
-		).join('');
-		return `<svg ${attrStr}>${childStr}</svg>`;
+	/** Render a Lucide icon (array of [tag, attrs]) into a standalone <svg> string. */
+	function renderLucide(def: any[]): string {
+		const body = def.map((entry) => {
+			if (!Array.isArray(entry) || entry.length < 2) return '';
+			const [tag, attrs] = entry;
+			const attrStr = Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(' ');
+			return `<${tag} ${attrStr}/>`;
+		}).join('');
+		if (!body) return '';
+		// Lucide's standard rendering attributes
+		return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 	}
 
 	const filteredEmoji = $derived.by(() => {

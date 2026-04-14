@@ -341,7 +341,8 @@
       "Bash(grep -rn \"embed\\\\|!\\\\\\\\\\\\[\\\\\\\\\\\\[\\\\|transclude\" src/lib/editor/)",
       "Bash(grep -n \"libraryPath:\\\\|filePath:\\\\|libraryPath =\\\\|libraryPath}$\" src/lib/components/NotePane.svelte)",
       "Bash(grep -rn \"\\\\\"cid:\\\\\"\\\\|cid:\\\\\\\\\\\\\\\\|fm_lines.push\\(format!\\(\\\\\"cid:\" src-tauri/src/)",
-      "Bash(grep -rn \"\\\\\\\\bcid\\\\\\\\b\" src/lib/ src/routes/)"
+      "Bash(grep -rn \"\\\\\\\\bcid\\\\\\\\b\" src/lib/ src/routes/)",
+      "Bash(grep -n 'from '\\\\''$lib/editor/bidiPlugin'\\\\''\\\\|from '\\\\''$lib/editor/livePreview'\\\\''' src/lib/components/NotePane.svelte)"
     ]
   }
 }

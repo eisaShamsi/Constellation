@@ -4430,10 +4430,22 @@
 	{#if showPicker}
 		<EmojiIconPicker
 			onClose={() => showPicker = false}
-			onPick={(insertion) => {
-				// Dispatch to the active CM6 editor. NotePane listens for this
-				// event and inserts the string at cursor position.
-				window.dispatchEvent(new CustomEvent('constellation:insert-at-cursor', { detail: { text: insertion } }));
+			onPick={async (insertion) => {
+				// Insert directly into the last-focused CM6 editor via the
+				// active-editor registry. The picker's own focus doesn't
+				// interfere because registration happens on every editor
+				// focusin, and the picker opens without stealing that record.
+				const { getActiveEditor } = await import('$lib/editor/activeEditor');
+				const view = getActiveEditor();
+				if (view) {
+					const sel = view.state.selection.main;
+					view.dispatch({
+						changes: { from: sel.from, to: sel.to, insert: insertion },
+						selection: { anchor: sel.from + insertion.length },
+					});
+					// Defer focus so Svelte finishes unmounting the picker first
+					setTimeout(() => view.focus(), 0);
+				}
 				showPicker = false;
 			}}
 		/>

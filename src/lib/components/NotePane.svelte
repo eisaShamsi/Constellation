@@ -22,6 +22,7 @@
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
+	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
 	import { createWikilinkCompletion, createTagCompletion, createSlashCompletion, createTypedLinkCompletion } from '$lib/editor/completions';
 	import TableToolbar from './TableToolbar.svelte';
@@ -650,22 +651,16 @@
 		idleSaveTimer = setInterval(() => { requestIdleCallback(() => doSave()); }, IDLE_SAVE_INTERVAL);
 		document.addEventListener('visibilitychange', handleVisibilityChange);
 		window.addEventListener('beforeunload', handleBeforeUnload);
-		window.addEventListener('constellation:insert-at-cursor', handleInsertAtCursor);
+		// Register this editor with the global active-editor registry so the
+		// emoji/icon picker (and any future global command) can insert into it.
+		view?.dom.addEventListener('focusin', onEditorFocusIn);
+		if (view) registerActiveEditor(view);
 	});
 
-	function handleInsertAtCursor(e: Event) {
-		const text = (e as CustomEvent).detail?.text;
-		if (!text || !view) return;
-		// Only the focused editor consumes the event — in split/multi-pane
-		// layouts several NotePanes listen; we want the one the user is in.
-		if (document.activeElement && !view.dom.contains(document.activeElement)) return;
-		const { from } = view.state.selection.main;
-		view.dispatch({
-			changes: { from, to: view.state.selection.main.to, insert: text },
-			selection: { anchor: from + text.length },
-		});
-		view.focus();
+	function onEditorFocusIn() {
+		if (view) registerActiveEditor(view);
 	}
+
 
 	/* ─── Destroy ─── */
 	onDestroy(() => {
@@ -673,7 +668,10 @@
 		if (debouncedSaveTimer) { clearTimeout(debouncedSaveTimer); debouncedSaveTimer = null; }
 		document.removeEventListener('visibilitychange', handleVisibilityChange);
 		window.removeEventListener('beforeunload', handleBeforeUnload);
-		window.removeEventListener('constellation:insert-at-cursor', handleInsertAtCursor);
+		if (view) {
+			view.dom.removeEventListener('focusin', onEditorFocusIn);
+			unregisterActiveEditor(view);
+		}
 		if (checkboxHandler && editorEl) editorEl.removeEventListener('mousedown', checkboxHandler, true);
 		if (chevronHandler && editorEl) editorEl.removeEventListener('mousedown', chevronHandler, true);
 		if (linkClickHandler && editorEl) editorEl.removeEventListener('mousedown', linkClickHandler, true);
