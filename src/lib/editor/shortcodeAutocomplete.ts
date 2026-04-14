@@ -83,39 +83,37 @@ async function buildEntries(): Promise<ShortcodeMatch[]> {
 		}
 	}
 
-	// Lucide icons — load only names + kebab ids; SVG is produced inline on pick
+	// Vector icons — unified load across Lucide / Phosphor / Heroicons / Feather.
+	// Indexed by kebab-name AND by namespaced id so typing `:heart:` finds
+	// matches across all sets, while `:phosphor-heart:` targets that set.
 	try {
-		const lucideMod = await import('lucide');
-		const all = Object.entries(lucideMod) as [string, any][];
-		const seenName = new Set<string>();
-		for (const [rawName, def] of all) {
-			if (!Array.isArray(def) || !/^[A-Z]/.test(rawName) || seenName.has(rawName)) continue;
-			seenName.add(rawName);
-			const kebab = rawName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-			const svg = renderLucide(def);
-			if (!svg) continue;
+		const { loadAllIcons, wrapForInsertion } = await import('./iconSets');
+		const icons = await loadAllIcons();
+		const boostPerSet: Record<string, number> = {
+			lucide: 0, feather: -1, heroicons: -2, phosphor: -3,
+		};
+		for (const icon of icons) {
+			const wrapped = wrapForInsertion(icon);
+			// Short form — `:heart:` (any set). Boost by the preferred-set order.
 			out.push({
-				keyword: kebab,
-				label: `⎔  ${kebab}`,
-				insertion: svg,
-				detail: 'lucide',
-				boost: -5,
+				keyword: icon.name,
+				label: `⎔  ${icon.name}`,
+				insertion: wrapped,
+				detail: icon.set,
+				boost: -5 + (boostPerSet[icon.set] ?? -3),
+			});
+			// Namespaced form — `:lucide-heart:`, `:phosphor-heart:`, etc.
+			out.push({
+				keyword: `${icon.set}-${icon.name}`,
+				label: `⎔  ${icon.id}`,
+				insertion: wrapped,
+				detail: icon.set,
+				boost: -7,
 			});
 		}
-	} catch { /* Lucide optional */ }
+	} catch { /* Optional — continue without vector icons */ }
 
 	return out;
-}
-
-function renderLucide(def: any[]): string {
-	const body = def.map((entry) => {
-		if (!Array.isArray(entry) || entry.length < 2) return '';
-		const [tag, attrs] = entry;
-		const attrStr = Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(' ');
-		return `<${tag} ${attrStr}/>`;
-	}).join('');
-	if (!body) return '';
-	return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cn-icon-inline">${body}</svg>`;
 }
 
 async function getEntries(): Promise<ShortcodeMatch[]> {

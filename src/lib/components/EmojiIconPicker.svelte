@@ -25,6 +25,8 @@
 		onClose: () => void;
 	} = $props();
 
+	import { loadAllIcons, wrapForInsertion, type Icon, type IconSet } from '$lib/editor/iconSets';
+
 	type Emoji = {
 		unicode: string;
 		label: string;
@@ -32,7 +34,6 @@
 		tags?: string[];
 		group?: number;
 	};
-	type Icon = { name: string; svg: string };
 
 	const GROUPS: { id: number; name: string; icon: string }[] = [
 		{ id: 0, name: 'Smileys', icon: '😀' },
@@ -49,6 +50,7 @@
 	let tab = $state<'emoji' | 'icons' | 'recent'>('emoji');
 	let group = $state<number>(0);
 	let query = $state('');
+	let iconSetFilter = $state<IconSet | 'all'>('all');
 	let emojis = $state<Emoji[]>([]);
 	let icons = $state<Icon[]>([]);
 	let loading = $state(true);
@@ -89,44 +91,8 @@
 	async function loadIcons() {
 		if (icons.length > 0) return;
 		loading = true;
-		const all = await import('lucide');
-		const entries = Object.entries(all) as [string, any][];
-		const list: Icon[] = [];
-		const seen = new Set<string>();
-		for (const [rawName, def] of entries) {
-			// Lucide v1.x exports each icon as an Array<[tag, attrs]> — no outer
-			// <svg>, no `children` array. We wrap it with the standard 24×24
-			// Lucide base attributes at render time.
-			if (!Array.isArray(def)) continue;
-			if (!/^[A-Z]/.test(rawName)) continue;
-			// Skip aliases pointing at the same array (same reference under two
-			// PascalCase names, e.g. AlarmCheck + AlarmClockCheck)
-			if (seen.has(rawName)) continue;
-			seen.add(rawName);
-			try {
-				const svg = renderLucide(def);
-				if (svg) list.push({ name: kebab(rawName), svg });
-			} catch { /* skip malformed entries */ }
-		}
-		icons = list;
+		icons = await loadAllIcons();
 		loading = false;
-	}
-
-	function kebab(pascal: string): string {
-		return pascal.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-	}
-
-	/** Render a Lucide icon (array of [tag, attrs]) into a standalone <svg> string. */
-	function renderLucide(def: any[]): string {
-		const body = def.map((entry) => {
-			if (!Array.isArray(entry) || entry.length < 2) return '';
-			const [tag, attrs] = entry;
-			const attrStr = Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(' ');
-			return `<${tag} ${attrStr}/>`;
-		}).join('');
-		if (!body) return '';
-		// Lucide's standard rendering attributes
-		return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 	}
 
 	const filteredEmoji = $derived.by(() => {
@@ -142,8 +108,9 @@
 
 	const filteredIcons = $derived.by(() => {
 		const q = query.trim().toLowerCase();
-		if (q) return icons.filter(i => i.name.includes(q)).slice(0, 300);
-		return icons.slice(0, 300);
+		let base = iconSetFilter === 'all' ? icons : icons.filter(i => i.set === iconSetFilter);
+		if (q) base = base.filter(i => i.name.includes(q) || i.id.includes(q));
+		return base.slice(0, 500);
 	});
 
 	async function switchTab(t: typeof tab) {
@@ -157,9 +124,7 @@
 	}
 
 	function pickIcon(i: Icon) {
-		// Inject a Constellation-specific stable-class so the resulting SVG
-		// can be restyled via Style Settings later.
-		const svg = i.svg.replace('<svg', `<svg class="cn-icon cn-icon-${i.name}" data-icon="lucide:${i.name}"`);
+		const svg = wrapForInsertion(i);
 		pushRecent(svg);
 		onPick(svg);
 	}
@@ -227,9 +192,16 @@
 			{#if loading}
 				<div class="picker-loading">Loading icons…</div>
 			{:else}
+				<div class="icon-set-filters">
+					<button class="set-btn" class:active={iconSetFilter === 'all'} onclick={() => iconSetFilter = 'all'}>All</button>
+					<button class="set-btn" class:active={iconSetFilter === 'lucide'} onclick={() => iconSetFilter = 'lucide'}>Lucide</button>
+					<button class="set-btn" class:active={iconSetFilter === 'phosphor'} onclick={() => iconSetFilter = 'phosphor'}>Phosphor</button>
+					<button class="set-btn" class:active={iconSetFilter === 'heroicons'} onclick={() => iconSetFilter = 'heroicons'}>Heroicons</button>
+					<button class="set-btn" class:active={iconSetFilter === 'feather'} onclick={() => iconSetFilter = 'feather'}>Feather</button>
+				</div>
 				<div class="picker-grid picker-grid-icons">
-					{#each filteredIcons as i (i.name)}
-						<button class="icon-cell" title={i.name} onclick={() => pickIcon(i)}>
+					{#each filteredIcons as i (i.id)}
+						<button class="icon-cell" title={i.id} onclick={() => pickIcon(i)}>
 							{@html i.svg}
 						</button>
 					{/each}
@@ -317,4 +289,14 @@
 	.picker-empty, .picker-loading {
 		padding: 24px; color: var(--text-muted); text-align: center; font-size: 12px;
 	}
+	.icon-set-filters {
+		display: flex; gap: 4px; padding: 0 8px 4px;
+	}
+	.set-btn {
+		background: none; border: 1px solid var(--background-modifier-border);
+		color: var(--text-muted); cursor: pointer; font-family: inherit;
+		padding: 3px 8px; border-radius: 4px; font-size: 11px;
+	}
+	.set-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.set-btn.active { background: var(--interactive-accent); color: var(--text-on-accent); border-color: var(--interactive-accent); }
 </style>
