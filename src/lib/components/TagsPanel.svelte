@@ -117,9 +117,11 @@
 	.tp-chev.expanded { transform: rotate(90deg); }
 	.tp-tag {
 		display: flex; align-items: center; gap: 2px;
-		background: none; border: none; cursor: pointer;
-		font-family: inherit; padding: 2px 4px; border-radius: 3px;
-		color: var(--text-normal); font-size: 0.8rem;
+		background: var(--tag-bg, none); border: none; cursor: pointer;
+		font-family: inherit; padding: 2px 4px;
+		border-radius: var(--tag-radius, 3px);
+		color: var(--tag-color, var(--text-normal));
+		font-size: 0.8rem;
 	}
 	.tp-tag:hover { background: var(--background-modifier-hover); }
 	.tp-hash { color: var(--interactive-accent); font-weight: 600; }

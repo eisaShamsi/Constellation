@@ -135,18 +135,61 @@ export function parseObsidianCSS(css: string, name: string, author: string, mode
  * Extract CSS custom properties from a specific selector block.
  * Handles nested blocks, multiple occurrences of the same selector.
  */
+/**
+ * Brace-aware block extraction. Finds `selector { ... }` blocks where the
+ * body may itself contain nested rules with their own `{}` pairs (the old
+ * regex-based `[^}]+` approach truncated Minimal-style themes at the first
+ * inner brace, losing most variable definitions).
+ */
+function extractSelectorBlocks(css: string, selector: string): string[] {
+	const blocks: string[] = [];
+	const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	// Find the selector followed by `{` at start of declaration (not inside another rule)
+	const headerRegex = new RegExp(escaped + '\\s*\\{', 'g');
+	let m: RegExpExecArray | null;
+	while ((m = headerRegex.exec(css)) !== null) {
+		let i = m.index + m[0].length;
+		let depth = 1;
+		const start = i;
+		while (i < css.length && depth > 0) {
+			const ch = css[i];
+			if (ch === '{') depth++;
+			else if (ch === '}') depth--;
+			i++;
+		}
+		if (depth === 0) blocks.push(css.slice(start, i - 1));
+	}
+	return blocks;
+}
+
 function extractVariables(css: string, selector: string): Record<string, string> {
 	const vars: Record<string, string> = {};
-	// Match all blocks for this selector
-	const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	const regex = new RegExp(escaped + '\\s*\\{([^}]+)\\}', 'g');
-	let match;
-	while ((match = regex.exec(css)) !== null) {
-		const block = match[1];
-		// Extract --variable: value pairs
-		const varRegex = /(--[\w-]+)\s*:\s*([^;]+);/g;
-		let varMatch;
-		while ((varMatch = varRegex.exec(block)) !== null) {
+	for (const block of extractSelectorBlocks(css, selector)) {
+		// Walk the top-level declarations only: skip nested rules `{...}`
+		let depth = 0;
+		let declStart = 0;
+		let i = 0;
+		const topLevelPieces: string[] = [];
+		while (i < block.length) {
+			const ch = block[i];
+			if (ch === '{') {
+				if (depth === 0) {
+					// Strip the nested rule's body so we don't collect declarations inside it
+					topLevelPieces.push(block.slice(declStart, i).replace(/[^;]+$/, ''));
+				}
+				depth++;
+			} else if (ch === '}') {
+				depth--;
+				if (depth === 0) declStart = i + 1;
+			}
+			i++;
+		}
+		if (depth === 0) topLevelPieces.push(block.slice(declStart));
+		const decls = topLevelPieces.join(';');
+		// Extract --variable: value pairs (value may contain parentheses & commas)
+		const varRegex = /(--[\w-]+)\s*:\s*([^;]+?)\s*(?:;|$)/g;
+		let varMatch: RegExpExecArray | null;
+		while ((varMatch = varRegex.exec(decls)) !== null) {
 			vars[varMatch[1].trim()] = varMatch[2].trim();
 		}
 	}
@@ -188,21 +231,67 @@ function mapToColors(vars: Record<string, string>, type: 'light' | 'dark'): Cons
 }
 
 /**
+ * Resolve a scalar var() chain. Follows up to 8 hops.
+ * Returns the final literal value (number / string / hex / rgb()).
+ */
+function resolveVarChain(vars: Record<string, string>, expr: string, depth = 0): string {
+	if (depth > 8) return expr;
+	const trimmed = expr.trim();
+	const m = trimmed.match(/^var\(\s*(--[\w-]+)(?:\s*,\s*([^)]+))?\s*\)$/);
+	if (!m) return trimmed;
+	const name = m[1];
+	const fallback = m[2]?.trim();
+	if (vars[name] !== undefined) return resolveVarChain(vars, vars[name], depth + 1);
+	if (fallback !== undefined) return resolveVarChain(vars, fallback, depth + 1);
+	return trimmed;
+}
+
+/**
+ * Fully resolve a value that may contain inner var() references
+ * (e.g. "hsl(var(--base-h), var(--base-s), var(--base-l))").
+ * Replaces each var() occurrence with its resolved literal.
+ */
+function resolveValue(vars: Record<string, string>, val: string, depth = 0): string {
+	if (depth > 8) return val;
+	let out = val;
+	let changed = true;
+	let hops = 0;
+	while (changed && hops++ < 8) {
+		changed = false;
+		out = out.replace(/var\(\s*(--[\w-]+)(?:\s*,\s*([^)]*))?\s*\)/g, (_, name, fb) => {
+			if (vars[name] !== undefined) { changed = true; return vars[name]; }
+			if (fb !== undefined && fb.trim() !== '') { changed = true; return fb; }
+			return '#000000'; // unresolvable → safe default
+		});
+	}
+	return out.trim();
+}
+
+/**
  * Resolve a color from CSS variables, trying multiple names.
- * Handles var() references, hsl(), rgb(), and hex values.
+ * Handles var() references (including chained and HSL-split patterns),
+ * hsl(), rgb(), and hex values.
  */
 function resolveColor(vars: Record<string, string>, candidates: string[], fallback: string): string {
 	for (const name of candidates) {
-		const val = vars[name];
+		const raw = vars[name];
+		if (!raw) continue;
+
+		// Expand any var() references (handles HSL-split themes like Minimal)
+		const val = raw.includes('var(') ? resolveValue(vars, raw) : raw;
 		if (!val) continue;
 
-		// Skip values that reference other variables (can't resolve without full context)
-		if (val.includes('var(')) continue;
-
 		// Handle hex
-		if (val.startsWith('#')) return val.length === 4
-			? `#${val[1]}${val[1]}${val[2]}${val[2]}${val[3]}${val[3]}` // expand shorthand
-			: val;
+		if (val.startsWith('#')) {
+			if (val.length === 4) { // #RGB → #RRGGBB
+				return `#${val[1]}${val[1]}${val[2]}${val[2]}${val[3]}${val[3]}`;
+			}
+			if (val.length === 5) { // #RGBA → #RRGGBB (drop alpha)
+				return `#${val[1]}${val[1]}${val[2]}${val[2]}${val[3]}${val[3]}`;
+			}
+			if (val.length === 7 || val.length === 9) return val.slice(0, 7);
+			continue; // malformed hex, try next candidate
+		}
 
 		// Handle rgb/rgba
 		if (val.startsWith('rgb')) {
@@ -215,7 +304,7 @@ function resolveColor(vars: Record<string, string>, candidates: string[], fallba
 			}
 		}
 
-		// Handle hsl/hsla
+		// Handle hsl/hsla — robust to commas, spaces, slashes, percent signs
 		if (val.startsWith('hsl')) {
 			const nums = val.match(/[\d.]+/g);
 			if (nums && nums.length >= 3) {

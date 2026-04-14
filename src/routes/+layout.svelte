@@ -5246,7 +5246,9 @@
 	.home-dashboard-toggle:hover { background: var(--border); color: var(--text); }
 	.w-btn {
 		background: var(--accent); border: none; color: var(--text-on-accent);
-		padding: 8px 20px; border-radius: 6px; cursor: pointer;
+		padding: var(--button-padding-y, 8px) var(--button-padding-x, 20px);
+		border-radius: var(--button-radius, 6px);
+		cursor: pointer;
 		font-size: 0.9rem; font-weight: 600;
 	}
 	.w-btn:hover { background: var(--accent-hover); }
