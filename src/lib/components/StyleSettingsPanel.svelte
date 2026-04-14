@@ -19,43 +19,26 @@
 
 	const lang = $derived($locale?.slice(0, 2) ?? 'en');
 
-	// Collapsed by default: start with every heading id collapsed.
-	let collapsedSections = $state<Set<string>>(new Set());
-	let _initialized = false;
-	$effect(() => {
-		if (_initialized) return;
-		const ids = new Set<string>();
-		for (const b of blocks) {
-			for (const s of b.settings) {
-				if (s.type === 'heading') ids.add(s.id);
-			}
-		}
-		if (ids.size > 0) {
-			collapsedSections = ids;
-			_initialized = true;
-		}
-	});
+	// Expanded set (empty = all collapsed — the default). Inverted so we don't
+	// need a one-shot init effect just to seed "start collapsed".
+	let expandedSections = $state<Set<string>>(new Set());
+
+	function isCollapsed(id: string): boolean { return !expandedSections.has(id); }
 
 	function toggleSection(id: string) {
-		const next = new Set(collapsedSections);
-		if (next.has(id)) next.delete(id); else next.add(id);
-		collapsedSections = next;
-	}
-
-	function setValue(id: string, value: string) {
-		values[id] = value;
-		onChange?.(id, value);
+		// Svelte 5 tracks Set mutations; no need to reallocate.
+		if (expandedSections.has(id)) expandedSections.delete(id);
+		else expandedSections.add(id);
 	}
 
 	function resetValue(setting: StyleSetting) {
-		const def = setting.default ?? '';
-		setValue(setting.id, def);
+		onChange?.(setting.id, setting.default ?? '');
 	}
 
 	function getTitle(s: StyleSetting): string { return getLocalizedTitle(s, lang); }
 	function getDesc(s: StyleSetting): string | undefined { return getLocalizedDescription(s, lang); }
 
-	function computeVisible(settings: StyleSetting[], collapsed: Set<string>): StyleSetting[] {
+	function computeVisible(settings: StyleSetting[], expanded: Set<string>): StyleSetting[] {
 		const out: StyleSetting[] = [];
 		let hideUntilLevel: number | null = null;
 		for (const s of settings) {
@@ -63,13 +46,20 @@
 				const level = s.level ?? 3;
 				if (hideUntilLevel !== null && level <= hideUntilLevel) hideUntilLevel = null;
 				out.push(s);
-				if (collapsed.has(s.id)) hideUntilLevel = level;
+				if (!expanded.has(s.id)) hideUntilLevel = level;
 			} else if (hideUntilLevel === null) {
 				out.push(s);
 			}
 		}
 		return out;
 	}
+
+	// Memoize visibility per-block so unrelated state changes don't re-walk every block.
+	const visibleByBlock = $derived.by(() => {
+		const map = new Map<string, StyleSetting[]>();
+		for (const b of blocks) map.set(b.id, computeVisible(b.settings, expandedSections));
+		return map;
+	});
 </script>
 
 {#if blocks.length === 0}
@@ -79,13 +69,13 @@
 		<div class="ss-block">
 			<div class="ss-block-name">{block.name}</div>
 
-			{#each computeVisible(block.settings, collapsedSections) as setting (setting.id)}
+			{#each visibleByBlock.get(block.id) ?? [] as setting (setting.id)}
 				<!-- Heading -->
 				{#if setting.type === 'heading'}
 					<button class="ss-heading ss-heading-{setting.level ?? 3}"
 						onclick={() => toggleSection(setting.id)}>
 						<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-							class:rotated={collapsedSections.has(setting.id)}>
+							class:rotated={isCollapsed(setting.id)}>
 							<polyline points="6 9 12 15 18 9"/>
 						</svg>
 						{getTitle(setting)}
@@ -109,7 +99,7 @@
 							{#if getDesc(setting)}<div class="ss-desc">{getDesc(setting)}</div>{/if}
 						</div>
 						<button class="ss-switch" class:on={values[setting.id] === 'true' || (!values[setting.id] && setting.default === 'true')}
-							onclick={() => setValue(setting.id, values[setting.id] === 'true' ? 'false' : 'true')}>
+							onclick={() => onChange?.(setting.id, values[setting.id] === 'true' ? 'false' : 'true')}>
 							<span class="ss-switch-knob"></span>
 						</button>
 					</div>
@@ -122,7 +112,7 @@
 							{#if getDesc(setting)}<div class="ss-desc">{getDesc(setting)}</div>{/if}
 						</div>
 						<select class="ss-select" value={values[setting.id] ?? setting.default ?? ''}
-							onchange={(e) => setValue(setting.id, (e.target as HTMLSelectElement).value)}>
+							onchange={(e) => onChange?.(setting.id, (e.target as HTMLSelectElement).value)}>
 							{#if setting.allowEmpty}
 								<option value="none">—</option>
 							{/if}
@@ -141,7 +131,7 @@
 						</div>
 						<div class="ss-input-wrap">
 							<input type="text" class="ss-input" value={values[setting.id] ?? setting.default ?? ''}
-								oninput={(e) => setValue(setting.id, (e.target as HTMLInputElement).value)} />
+								oninput={(e) => onChange?.(setting.id, (e.target as HTMLInputElement).value)} />
 							<button class="ss-reset" onclick={() => resetValue(setting)} title="Reset">↺</button>
 						</div>
 					</div>
@@ -156,7 +146,7 @@
 						<div class="ss-input-wrap">
 							<input type="number" class="ss-input ss-input-num" value={values[setting.id] ?? setting.default ?? ''}
 								min={setting.min} max={setting.max} step={setting.step}
-								oninput={(e) => setValue(setting.id, (e.target as HTMLInputElement).value)} />
+								oninput={(e) => onChange?.(setting.id, (e.target as HTMLInputElement).value)} />
 							{#if setting.format}<span class="ss-unit">{setting.format}</span>{/if}
 							<button class="ss-reset" onclick={() => resetValue(setting)} title="Reset">↺</button>
 						</div>
@@ -173,7 +163,7 @@
 							<input type="range" class="ss-slider"
 								min={setting.min ?? 0} max={setting.max ?? 100} step={setting.step ?? 1}
 								value={values[setting.id] ?? setting.default ?? String(setting.min ?? 0)}
-								oninput={(e) => setValue(setting.id, (e.target as HTMLInputElement).value)} />
+								oninput={(e) => onChange?.(setting.id, (e.target as HTMLInputElement).value)} />
 							<span class="ss-slider-val">{values[setting.id] ?? setting.default ?? setting.min ?? 0}{setting.format ?? ''}</span>
 							<button class="ss-reset" onclick={() => resetValue(setting)} title="Reset">↺</button>
 						</div>
@@ -188,7 +178,7 @@
 						</div>
 						<div class="ss-input-wrap">
 							<select class="ss-select" value={values[setting.id] ?? setting.default ?? ''}
-								onchange={(e) => setValue(setting.id, (e.target as HTMLSelectElement).value)}>
+								onchange={(e) => onChange?.(setting.id, (e.target as HTMLSelectElement).value)}>
 								{#each setting.options ?? [] as opt}
 									<option value={opt.value}>{opt.label}</option>
 								{/each}
@@ -207,7 +197,7 @@
 						<div class="ss-input-wrap">
 							<input type="color" class="ss-color"
 								value={values[setting.id] ?? setting.default ?? '#000000'}
-								oninput={(e) => setValue(setting.id, (e.target as HTMLInputElement).value)} />
+								oninput={(e) => onChange?.(setting.id, (e.target as HTMLInputElement).value)} />
 							<span class="ss-color-hex">{values[setting.id] ?? setting.default ?? ''}</span>
 							<button class="ss-reset" onclick={() => resetValue(setting)} title="Reset">↺</button>
 						</div>
@@ -225,15 +215,15 @@
 								<span class="ss-themed-label">☀️</span>
 								<input type="color" class="ss-color"
 									value={values[`${setting.id}@@light`] ?? setting.defaultLight ?? '#000000'}
-									oninput={(e) => setValue(`${setting.id}@@light`, (e.target as HTMLInputElement).value)} />
+									oninput={(e) => onChange?.(`${setting.id}@@light`, (e.target as HTMLInputElement).value)} />
 							</div>
 							<div class="ss-themed-pair">
 								<span class="ss-themed-label">🌙</span>
 								<input type="color" class="ss-color"
 									value={values[`${setting.id}@@dark`] ?? setting.defaultDark ?? '#000000'}
-									oninput={(e) => setValue(`${setting.id}@@dark`, (e.target as HTMLInputElement).value)} />
+									oninput={(e) => onChange?.(`${setting.id}@@dark`, (e.target as HTMLInputElement).value)} />
 							</div>
-							<button class="ss-reset" onclick={() => { resetValue(setting); setValue(`${setting.id}@@light`, setting.defaultLight ?? ''); setValue(`${setting.id}@@dark`, setting.defaultDark ?? ''); }} title="Reset">↺</button>
+							<button class="ss-reset" onclick={() => { resetValue(setting); onChange?.(`${setting.id}@@light`, setting.defaultLight ?? ''); onChange?.(`${setting.id}@@dark`, setting.defaultDark ?? ''); }} title="Reset">↺</button>
 						</div>
 					</div>
 				{/if}

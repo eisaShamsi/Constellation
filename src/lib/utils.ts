@@ -646,3 +646,35 @@ export function formatShortcut(s: string): string {
 		.replace('ArrowUp', '↑')
 		.replace('ArrowDown', '↓');
 }
+
+/** Slugify a human-readable name for a download filename. */
+function slugifyFilename(name: string): string {
+	return (name || 'export').replace(/\s+/g, '-').toLowerCase();
+}
+
+/** Trigger a browser download of a JSON payload. Pass either a string or any serializable value. */
+export function downloadJSON(filename: string, data: unknown): void {
+	const json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+	const blob = new Blob([json], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename.endsWith('.json') ? filename : `${slugifyFilename(filename)}.json`;
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+/** Open a native file picker for a .json file; resolves with its text, or null if cancelled. */
+export function pickJSONFile(): Promise<string | null> {
+	return new Promise((resolve) => {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = 'application/json,.json';
+		input.onchange = async () => {
+			const file = input.files?.[0];
+			if (!file) return resolve(null);
+			try { resolve(await file.text()); } catch { resolve(null); }
+		};
+		input.click();
+	});
+}

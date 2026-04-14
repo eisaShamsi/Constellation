@@ -8,7 +8,8 @@
 	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme } from '$lib/libraries/store';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
-	import { CONSTELLATION_CORE_BLOCKS } from '$lib/theme/constellationStyleSettings';
+	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
+	import { downloadJSON, pickJSONFile } from '$lib/utils';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -31,29 +32,42 @@
 	let ssImportText = $state('');
 	let ssImportError = $state('');
 
+	/** Get the active theme (explicitly selected, or the first available as fallback). */
+	function getActiveTheme(): ConstellationTheme | undefined {
+		return allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0];
+	}
+
+	/**
+	 * Return a mutable copy of customThemes with a guaranteed entry for `activeId`.
+	 * If the active theme is built-in, it is cloned into customs (marked `source: 'custom'`)
+	 * so changes persist without mutating the built-in.
+	 */
+	function ensureCustomTheme(active: ConstellationTheme): { customs: ConstellationTheme[]; target: ConstellationTheme } {
+		const customs = [...($appSettings.customThemes ?? [])];
+		let target = customs.find(t => t.id === active.id);
+		if (!target) {
+			target = { ...active, styleSettingsValues: { ...(active.styleSettingsValues ?? {}) } };
+			if (BUILTIN_THEMES.find(b => b.id === active.id)) target.source = 'custom';
+			customs.push(target);
+		}
+		return { customs, target };
+	}
+
 	function exportStyleSettings() {
-		const active = allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0];
+		const active = getActiveTheme();
 		if (!active) return;
-		const json = JSON.stringify(active.styleSettingsValues ?? {}, null, 2);
-		const blob = new Blob([json], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `${(active.name || 'theme').replace(/\s+/g, '-').toLowerCase()}-style-settings.json`;
-		a.click();
-		URL.revokeObjectURL(url);
+		downloadJSON(`${active.name || 'theme'}-style-settings`, active.styleSettingsValues ?? {});
 	}
 
 	function copyStyleSettings() {
-		const active = allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0];
+		const active = getActiveTheme();
 		if (!active) return;
-		const json = JSON.stringify(active.styleSettingsValues ?? {}, null, 2);
-		navigator.clipboard?.writeText(json).catch(() => {});
+		navigator.clipboard?.writeText(JSON.stringify(active.styleSettingsValues ?? {}, null, 2)).catch(() => {});
 	}
 
-	function applyStyleSettingsJSON(raw: string, mode: 'merge' | 'replace' = 'merge') {
+	function applyStyleSettingsJSON(raw: string, mode: 'merge' | 'replace' = 'merge'): boolean {
 		ssImportError = '';
-		let parsed: any;
+		let parsed: unknown;
 		try {
 			parsed = JSON.parse(raw);
 		} catch (e: any) {
@@ -64,18 +78,11 @@
 			ssImportError = 'Expected an object of setting-id → value pairs.';
 			return false;
 		}
-		const active = allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0];
+		const active = getActiveTheme();
 		if (!active) { ssImportError = 'No active theme.'; return false; }
-		const isBuiltin = !!BUILTIN_THEMES.find(b => b.id === active.id);
-		const customs = [...($appSettings.customThemes ?? [])];
-		let target = customs.find(t => t.id === active.id);
-		if (!target) {
-			target = { ...active, styleSettingsValues: { ...(active.styleSettingsValues ?? {}) } };
-			if (isBuiltin) target.source = 'custom';
-			customs.push(target);
-		}
+		const { customs, target } = ensureCustomTheme(active);
 		const base = mode === 'replace' ? {} : { ...(target.styleSettingsValues ?? {}) };
-		for (const [k, v] of Object.entries(parsed)) {
+		for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
 			if (v === null || v === undefined || v === '') delete base[k];
 			else base[k] = String(v);
 		}
@@ -94,33 +101,25 @@
 				return;
 			}
 			if (!applyStyleSettingsJSON(text, 'merge')) {
-				// Show in the paste box so user can fix / choose mode
 				ssImportText = text;
 				ssImportOpen = true;
 			}
-		} catch (e: any) {
+		} catch {
 			ssImportError = 'Clipboard access denied. Use Import / Paste instead.';
 			ssImportOpen = true;
 		}
 	}
 
-	function importStyleSettingsFile() {
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.accept = 'application/json,.json';
-		input.onchange = async () => {
-			const file = input.files?.[0];
-			if (!file) return;
-			const text = await file.text();
-			if (applyStyleSettingsJSON(text, 'merge')) {
-				ssImportOpen = false;
-				ssImportText = '';
-			} else {
-				ssImportText = text;
-				ssImportOpen = true;
-			}
-		};
-		input.click();
+	async function importStyleSettingsFile() {
+		const text = await pickJSONFile();
+		if (!text) return;
+		if (applyStyleSettingsJSON(text, 'merge')) {
+			ssImportOpen = false;
+			ssImportText = '';
+		} else {
+			ssImportText = text;
+			ssImportOpen = true;
+		}
 	}
 	let showObsidianBrowser = $state(false);
 
@@ -167,33 +166,19 @@
 	}
 
 	function exportTheme(theme: ConstellationTheme) {
-		const json = JSON.stringify(theme, null, 2);
-		const blob = new Blob([json], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `${theme.name.replace(/\s+/g, '-').toLowerCase()}.constellation-theme.json`;
-		a.click();
-		URL.revokeObjectURL(url);
+		downloadJSON(`${theme.name}.constellation-theme`, theme);
 	}
 
 	async function importTheme() {
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.accept = '.json,.constellation-theme.json';
-		input.onchange = async () => {
-			const file = input.files?.[0];
-			if (!file) return;
-			try {
-				const text = await file.text();
-				const theme = JSON.parse(text) as ConstellationTheme;
-				if (!theme.id || !theme.name || !theme.colors) throw new Error('Invalid theme');
-				theme.id = `imported-${Date.now()}`;
-				const customs = [...($appSettings.customThemes ?? []), theme];
-				updateSettings({ customThemes: customs, activeThemeId: theme.id });
-			} catch {}
-		};
-		input.click();
+		const text = await pickJSONFile();
+		if (!text) return;
+		try {
+			const theme = JSON.parse(text) as ConstellationTheme;
+			if (!theme.id || !theme.name || !theme.colors) throw new Error('Invalid theme');
+			theme.id = `imported-${Date.now()}`;
+			const customs = [...($appSettings.customThemes ?? []), theme];
+			updateSettings({ customThemes: customs, activeThemeId: theme.id });
+		} catch {}
 	}
 	let hotkeyFilter = $state('');
 	let testStatus = $state('');
@@ -1918,32 +1903,14 @@
 								</div>
 							</div>
 						{/if}
-						{@const coreIds = new Set(CONSTELLATION_CORE_BLOCKS.map(b => b.id))}
-						{@const themeOwnBlocks = (activeTheme.styleSettingsBlocks ?? []).filter(b => !coreIds.has(b.id))}
-						{@const mergedBlocks = [...CONSTELLATION_CORE_BLOCKS, ...themeOwnBlocks]}
 						<StyleSettingsPanel
-							blocks={mergedBlocks}
+							blocks={getEffectiveStyleBlocks(activeTheme)}
 							values={activeTheme.styleSettingsValues ?? {}}
 							onChange={(id, value) => {
-								const isBuiltin = !!BUILTIN_THEMES.find(b => b.id === activeTheme.id);
-								const customs = [...($appSettings.customThemes ?? [])];
-								let target = customs.find(t => t.id === activeTheme.id);
-								if (!target) {
-									target = {
-										...activeTheme,
-										styleSettingsValues: { ...(activeTheme.styleSettingsValues ?? {}) },
-										styleSettingsBlocks: [...(activeTheme.styleSettingsBlocks ?? [])],
-									};
-									if (isBuiltin) target.source = 'custom';
-									customs.push(target);
-								}
+								const { customs, target } = ensureCustomTheme(activeTheme);
 								if (!target.styleSettingsValues) target.styleSettingsValues = {};
-								// Empty string = delete override so theme-derived value takes over
 								if (value === '' || value == null) delete target.styleSettingsValues[id];
 								else target.styleSettingsValues[id] = value;
-								// Do NOT store core blocks on the theme — the layout effect merges
-								// them in at apply-time. Storing them here would double them on each
-								// change.
 								updateSettings({ customThemes: customs, activeThemeId: target.id });
 							}}
 						/>

@@ -204,3 +204,19 @@ export const CONSTELLATION_CORE_BLOCKS: StyleSettingsBlock[] = [
 		],
 	},
 ];
+
+/** Precomputed set of core block ids — reuse instead of re-allocating. */
+export const CORE_BLOCK_IDS: ReadonlySet<string> = new Set(
+	CONSTELLATION_CORE_BLOCKS.map(b => b.id),
+);
+
+/** Strip core-block copies a previous bug may have stored on a theme. */
+export function stripCoreBlocks(blocks: StyleSettingsBlock[] | undefined): StyleSettingsBlock[] {
+	if (!blocks || blocks.length === 0) return [];
+	return blocks.filter(b => !CORE_BLOCK_IDS.has(b.id));
+}
+
+/** Core blocks + theme's own blocks (deduplicated). Single source of truth. */
+export function getEffectiveStyleBlocks(theme: { styleSettingsBlocks?: StyleSettingsBlock[] } | null | undefined): StyleSettingsBlock[] {
+	return [...CONSTELLATION_CORE_BLOCKS, ...stripCoreBlocks(theme?.styleSettingsBlocks)];
+}

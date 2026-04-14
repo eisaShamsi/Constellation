@@ -36,7 +36,7 @@
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet } from '$lib/libraries/store';
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, BUILTIN_THEMES, deriveThemeVariables, hexToHSL } from '$lib/libraries/store';
 	import { generateStyleSettingsCSS } from '$lib/theme/styleSettings';
-	import { CONSTELLATION_CORE_BLOCKS } from '$lib/theme/constellationStyleSettings';
+	import { CORE_BLOCK_IDS, getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
@@ -1009,14 +1009,17 @@
 	});
 
 	// One-time cleanup: an earlier bug stored core blocks on custom themes; strip them.
+	// Guarded so this runs exactly once per session even though $effect re-fires
+	// whenever $appSettings changes.
+	let _coreBlockCleanupDone = false;
 	$effect(() => {
+		if (_coreBlockCleanupDone) return;
 		const customs = $appSettings.customThemes;
-		if (!customs || customs.length === 0) return;
-		const coreIdSet = new Set(CONSTELLATION_CORE_BLOCKS.map(b => b.id));
+		if (!customs || customs.length === 0) { _coreBlockCleanupDone = true; return; }
 		let changed = false;
 		const cleaned = customs.map(ct => {
 			if (!ct.styleSettingsBlocks || ct.styleSettingsBlocks.length === 0) return ct;
-			const filtered = ct.styleSettingsBlocks.filter(b => !coreIdSet.has(b.id));
+			const filtered = ct.styleSettingsBlocks.filter(b => !CORE_BLOCK_IDS.has(b.id));
 			if (filtered.length !== ct.styleSettingsBlocks.length) {
 				changed = true;
 				return { ...ct, styleSettingsBlocks: filtered };
@@ -1024,6 +1027,7 @@
 			return ct;
 		});
 		if (changed) updateSettings({ customThemes: cleaned });
+		_coreBlockCleanupDone = true;
 	});
 
 	// Apply custom theme colors (responds to both activeThemeId and colorScheme changes)
@@ -1084,13 +1088,8 @@
 			customStyleEl.remove();
 		}
 
-		// Apply Style Settings (full spec: variables + body classes + format units)
-		// Always merge Constellation core blocks so native style controls work even
-		// when a theme defines no blocks of its own. Strip any stored core-block
-		// copies first (a previous version buggily stored them on the theme).
-		const coreIds = new Set(CONSTELLATION_CORE_BLOCKS.map(b => b.id));
-		const themeOwnBlocks = (theme.styleSettingsBlocks ?? []).filter(b => !coreIds.has(b.id));
-		const ssBlocks = [...CONSTELLATION_CORE_BLOCKS, ...themeOwnBlocks];
+		// Apply Style Settings: core blocks + theme's own blocks (dedup guarded).
+		const ssBlocks = getEffectiveStyleBlocks(theme);
 		if (ssBlocks.length > 0) {
 			const ssResult = generateStyleSettingsCSS(
 				ssBlocks,
