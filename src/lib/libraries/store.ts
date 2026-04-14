@@ -1802,6 +1802,10 @@ export interface AppSettings {
 	accentColor: string;
 	activeThemeId: string;
 	customThemes: ConstellationTheme[];
+	/** Emoji & Icon Library (core plug-in): per-slot icon overrides.
+	 *  Map<slot, ref> where ref is an emoji char or a namespaced icon id
+	 *  ("lucide:heart", "phosphor:heart", ...). Unset = use built-in default. */
+	iconOverrides?: Record<string, string>;
 	interfaceFont: string;
 	interfaceFontSize: number;
 	textFont: string;
@@ -1931,6 +1935,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	accentColor: '#7c3aed',
 	activeThemeId: '',
 	customThemes: [],
+	iconOverrides: {},
 	interfaceFont: '',
 	interfaceFontSize: 14,
 	textFont: '',

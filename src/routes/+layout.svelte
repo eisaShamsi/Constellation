@@ -60,6 +60,7 @@
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
+	import SlotIcon from '$lib/components/SlotIcon.svelte';
 	import SearchHub from '$lib/components/SearchHub.svelte';
 	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
@@ -2988,12 +2989,16 @@
 					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false;
 				}
 			}} title={$t('ribbon.knowledgeHealth') || 'Knowledge Health'}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
-					<path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
-					<path d="M15 13a4.5 4.5 0 0 1-3-4"/>
-					<path d="M12 5v13"/>
-				</svg>
+				<SlotIcon slot="dock.knowledgeHealth">
+					{#snippet children()}
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+							<path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+							<path d="M15 13a4.5 4.5 0 0 1-3-4"/>
+							<path d="M12 5v13"/>
+						</svg>
+					{/snippet}
+				</SlotIcon>
 			</button>
 			{#if $appSettings.enabledFeatures?.skyView !== false}
 			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showKnowledgeHealth = false; }} title={$t('ribbon.graphView') || 'Sky View'}>

@@ -19,6 +19,7 @@
       "plugins": "Core Plug-Ins",
       "templates": "Templates",
       "styleSettings": "Style Settings",
+      "iconOverrides": "App Icons",
       "knowledge": "Knowledge Management"
     },
     "dashboard": {
@@ -450,7 +451,12 @@
     "recent": "Recent",
     "search": "Search — type in any language",
     "noResults": "No matches.",
-    "recentEmpty": "Nothing used yet. Pick something from Emoji or Icons."
+    "recentEmpty": "Nothing used yet. Pick something from Emoji or Icons.",
+    "customizeAppIcons": "Customize app icons",
+    "customizeDesc": "Replace any Constellation chrome icon with an emoji or icon from the library.",
+    "filterSlots": "Filter slots…",
+    "reset": "Reset",
+    "resetAll": "Reset all"
   },
   "knowledgeHealth": {
     "title": "Knowledge Health",

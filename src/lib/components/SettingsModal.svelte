@@ -10,6 +10,7 @@
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
 	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
 	import { downloadJSON, pickJSONFile } from '$lib/utils';
+	import IconOverrideSettings from './IconOverrideSettings.svelte';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -206,6 +207,7 @@
 		{ id: 'knowledge', label: $t('settings.sections.knowledge') || 'Knowledge Management', icon: 'brain' },
 		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
 		{ id: 'stylesettings', label: $t('settings.sections.styleSettings') || 'Style Settings', icon: 'sliders' },
+		{ id: 'iconoverrides', label: $t('settings.sections.iconOverrides') || 'App Icons', icon: 'grid' },
 		{ id: 'hotkeys', label: $t('settings.sections.hotkeys') || 'Hotkeys', icon: 'keyboard' },
 		{ id: 'templates', label: $t('settings.sections.templates') || 'Templates', icon: 'template' },
 		{ id: 'plugins', label: $t('settings.sections.plugins') || 'Plug-Ins', icon: 'grid' },
@@ -1924,6 +1926,10 @@
 							<span class="setting-desc">{$t('settings.appearance.stylesSavedTo') || 'Saved to:'} <strong>{activeTheme.name}</strong></span>
 						</div>
 					{/if}
+
+				<!-- ═══ ICON OVERRIDES ═══ -->
+				{:else if activeSection === 'iconoverrides'}
+					<IconOverrideSettings />
 
 				<!-- ═══ KEYBOARD ═══ -->
 				{:else if activeSection === 'hotkeys'}
