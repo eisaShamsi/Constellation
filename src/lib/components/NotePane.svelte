@@ -25,6 +25,7 @@
 	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
 	import { createWikilinkCompletion, createTagCompletion, createSlashCompletion, createTypedLinkCompletion } from '$lib/editor/completions';
+	import { shortcodeCompletion } from '$lib/editor/shortcodeAutocomplete';
 	import TableToolbar from './TableToolbar.svelte';
 	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, type ParsedTable } from '$lib/editor/tableUtils';
 	import { evaluateTableFormulas, indexToCol } from '$lib/editor/tableFormulas';
@@ -342,7 +343,15 @@
 				...($appSettings.autoPairBrackets ? [closeBrackets({ brackets: ['(', '[', '{', '"', "'", '`'] })] : []),
 				search({ top: true }),
 				colorHighlightField,
-				autocompletion({ override: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
+				autocompletion({
+					override: (
+						$appSettings.enabledFeatures?.emojiIconPicker !== false
+							? [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion, shortcodeCompletion]
+							: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion]
+					),
+					activateOnTyping: true,
+					maxRenderedOptions: 20,
+				}),
 				// Prec.highest: runs before @codemirror/lang-markdown's built-in
 				// blockquote-continue keymap (which auto-adds "> " on every Enter).
 				Prec.highest(keymap.of([{ key: 'Enter', run: calloutExitOnEnter }])),
