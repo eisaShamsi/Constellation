@@ -169,6 +169,7 @@ interface EmbedResolution {
 	block_id?: string | null;
 	tried_paths?: string[];
 	attachment_folder?: string;
+	similar_files?: string[];
 }
 const _embedCache = new Map<string, EmbedResolution>();
 /** Circular-guard for note transclusion: tracks paths currently being rendered. */
@@ -439,10 +440,7 @@ class UniversalEmbedWidget extends WidgetType {
 	private _renderMissing(wrap: HTMLDivElement, res?: EmbedResolution) {
 		const card = this._card('⚠️', this.target, 'File not found in vault');
 		card.classList.add('cm-embed-missing');
-		if (res && (res.tried_paths?.length || res.attachment_folder)) {
-			// Attach an expandable diagnostic block so the user can see WHY the file
-			// wasn't found (common cause: attachment folder is different from what
-			// Obsidian defaulted to when these files were pasted).
+		if (res && (res.tried_paths?.length || res.similar_files?.length)) {
 			const details = document.createElement('details');
 			details.className = 'cm-embed-missing-details';
 			const summary = document.createElement('summary');
@@ -451,7 +449,11 @@ class UniversalEmbedWidget extends WidgetType {
 			const info = document.createElement('div');
 			info.className = 'cm-embed-missing-info';
 			const af = res.attachment_folder ? `attachmentFolderPath: "${res.attachment_folder}"` : '(.obsidian/app.json not read or empty)';
-			info.textContent = `${af}\n\nLooked for:\n  ${(res.tried_paths ?? []).join('\n  ')}`;
+			const tried = `Looked for:\n  ${(res.tried_paths ?? []).join('\n  ')}`;
+			const similar = res.similar_files?.length
+				? `\n\nSimilar files in vault:\n  ${res.similar_files.join('\n  ')}`
+				: '\n\nNo similar filenames found in the vault — the file may not exist, or it was moved/renamed.';
+			info.textContent = `${af}\n\n${tried}${similar}`;
 			details.appendChild(info);
 			wrap.appendChild(details);
 		}

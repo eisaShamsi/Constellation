@@ -56,6 +56,10 @@ pub struct EmbedResolution {
     pub tried_paths: Vec<String>,
     #[serde(default)]
     pub attachment_folder: String,
+    /// Files in the vault whose name is close to the target — "did you mean"
+    /// suggestions for a missing resolution.
+    #[serde(default)]
+    pub similar_files: Vec<String>,
 }
 
 impl EmbedResolution {
@@ -71,6 +75,7 @@ impl EmbedResolution {
             block_id: None,
             tried_paths: Vec::new(),
             attachment_folder: String::new(),
+            similar_files: Vec::new(),
         }
     }
 }
@@ -482,6 +487,9 @@ pub fn resolve_embed(
 
     let res = resolve_path(&library_path, &note_path, &parsed.path, &cfg);
     let Some(abs) = res.matched else {
+        // Miss: compute "did you mean" suggestions from the vault index so the
+        // user can see what files ARE present that might be a near-match.
+        let similar = find_similar_in_index(&library_path, &parsed.path);
         return EmbedResolution {
             kind: "missing".into(),
             url: String::new(),
@@ -493,6 +501,7 @@ pub fn resolve_embed(
             block_id: parsed.block_id,
             tried_paths: res.tried.into_iter().map(|p| p.to_string_lossy().into_owned()).collect(),
             attachment_folder: cfg.attachment_folder_path.clone(),
+            similar_files: similar,
         };
     };
 
@@ -515,6 +524,7 @@ pub fn resolve_embed(
             block_id: parsed.block_id,
             tried_paths: Vec::new(),
             attachment_folder: cfg.attachment_folder_path.clone(),
+            similar_files: Vec::new(),
         };
     }
 
@@ -533,6 +543,7 @@ pub fn resolve_embed(
             block_id: parsed.block_id,
             tried_paths: Vec::new(),
             attachment_folder: cfg.attachment_folder_path.clone(),
+            similar_files: Vec::new(),
         };
     }
 
@@ -559,7 +570,30 @@ pub fn resolve_embed(
         block_id: parsed.block_id,
         tried_paths: Vec::new(),
         attachment_folder: cfg.attachment_folder_path.clone(),
+        similar_files: Vec::new(),
     }
+}
+
+/// Find up to 8 files in the vault index whose basename shares the most
+/// prefix characters (digit-normalized, case-insensitive) with the target.
+/// Used to surface "did you mean" suggestions when a resolve misses.
+fn find_similar_in_index(library_path: &str, target: &str) -> Vec<String> {
+    let index = get_or_build_vault_index(library_path);
+    let target_norm = normalize_digits(&target.to_lowercase());
+    // Compute a cheap similarity score: length of common prefix between the
+    // normalized target and the normalized basename.
+    let mut scored: Vec<(usize, String, PathBuf)> = Vec::new();
+    for (key, path) in index.iter() {
+        let key_norm = normalize_digits(key);
+        let prefix_len = target_norm.chars().zip(key_norm.chars())
+            .take_while(|(a, b)| a == b).count();
+        if prefix_len >= 4 {
+            let name = path.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+            scored.push((prefix_len, name, path.clone()));
+        }
+    }
+    scored.sort_by(|a, b| b.0.cmp(&a.0));
+    scored.into_iter().take(8).map(|(_, _, p)| p.to_string_lossy().into_owned()).collect()
 }
 
 /// Expose the vault config so the frontend can show "Attachment folder: ..." in library settings.
