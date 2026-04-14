@@ -604,9 +604,17 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		invoke('constellation_link_traverse', { sourcePath: _fromNotePath, targetName: name }).catch(() => {});
 	}
 
-	// Derive library path from registered libraries
+	// Derive library path from registered libraries.
+	// Use a path-normalized, case-insensitive prefix match so Windows paths
+	// (\ vs / separators) and case differences don't silently lose the
+	// library anchor — which would break embed resolution for any note.
 	const allLibraries = get(libraries);
-	const library = allLibraries.find(v => filePath.startsWith(v.path));
+	const normalize = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+	const filePathNorm = normalize(filePath);
+	const library = allLibraries.find(v => {
+		const libNorm = normalize(v.path);
+		return filePathNorm === libNorm || filePathNorm.startsWith(libNorm + '/');
+	});
 	const libraryPath = library?.path ?? '';
 
 	// Default: replace active tab content
