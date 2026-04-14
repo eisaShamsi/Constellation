@@ -585,26 +585,46 @@ pub fn resolve_embed(
     }
 }
 
-/// Find up to 8 files in the vault index whose basename shares the most
-/// prefix characters (digit-normalized, case-insensitive) with the target.
-/// Used to surface "did you mean" suggestions when a resolve misses.
+/// Find up to 8 files in the vault index whose basename resembles the target.
+///
+/// Matching strategy (in order):
+///   1. Same file extension AND a shared 3+ char prefix (digit-normalized)
+///   2. Same file extension alone (returns up to 8 arbitrary matches of that
+///      type — helps the user see that e.g. "there are PNGs in the vault,
+///      just not one with this name")
 fn find_similar_in_index(library_path: &str, target: &str) -> Vec<String> {
     let index = get_or_build_vault_index(library_path);
     let target_norm = normalize_digits(&target.to_lowercase());
-    // Compute a cheap similarity score: length of common prefix between the
-    // normalized target and the normalized basename.
-    let mut scored: Vec<(usize, String, PathBuf)> = Vec::new();
+    let target_ext = Path::new(target).extension()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_lowercase());
+
+    let mut scored: Vec<(usize, PathBuf)> = Vec::new();
+    let mut same_ext: Vec<PathBuf> = Vec::new();
     for (key, path) in index.iter() {
         let key_norm = normalize_digits(key);
         let prefix_len = target_norm.chars().zip(key_norm.chars())
             .take_while(|(a, b)| a == b).count();
-        if prefix_len >= 4 {
-            let name = path.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
-            scored.push((prefix_len, name, path.clone()));
+        let key_ext = Path::new(key).extension()
+            .and_then(|s| s.to_str())
+            .map(|s| s.to_lowercase());
+        let ext_matches = target_ext.is_some() && key_ext == target_ext;
+        if prefix_len >= 3 && ext_matches {
+            scored.push((prefix_len, path.clone()));
+        } else if ext_matches && same_ext.len() < 8 {
+            same_ext.push(path.clone());
         }
     }
+
     scored.sort_by(|a, b| b.0.cmp(&a.0));
-    scored.into_iter().take(8).map(|(_, _, p)| p.to_string_lossy().into_owned()).collect()
+    let mut out: Vec<String> = scored.into_iter().take(8).map(|(_, p)| p.to_string_lossy().into_owned()).collect();
+    // If prefix-matching gave us nothing, fall back to arbitrary files with the
+    // same extension — so the user sees that e.g. there ARE images in the vault,
+    // just not the one referenced.
+    if out.is_empty() {
+        out.extend(same_ext.into_iter().map(|p| p.to_string_lossy().into_owned()));
+    }
+    out
 }
 
 /// Expose the vault config so the frontend can show "Attachment folder: ..." in library settings.
