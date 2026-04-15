@@ -109,8 +109,13 @@ fn save_registry(app: &tauri::AppHandle, registry: &UniverseRegistry) -> Result<
 
 /// Get the active universe ROOT directory path from managed state.
 pub fn active_universe_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let t0 = std::time::Instant::now();
     let state = app.state::<UniverseState>();
     let lock = state.active_path.lock().map_err(|e| e.to_string())?;
+    let elapsed = t0.elapsed();
+    if elapsed.as_millis() > 50 {
+        eprintln!("[RUST-PERF] active_universe_dir: slow mutex acquire ({:?})", elapsed);
+    }
     lock.clone().ok_or_else(|| "No active universe set.".to_string())
 }
 
@@ -351,8 +356,11 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
 /// Recursively resolve all libraries accessible from a universe directory.
 /// Collects own libraries + child universe libraries, deduplicated by path.
 fn resolve_libraries_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>) -> Vec<crate::libraries::LibraryInfo> {
+    let t0 = std::time::Instant::now();
+    eprintln!("[RUST-PERF]   resolve_libraries_recursive: start for {}", universe_path.display());
     // Prevent circular references
     if let Ok(canon) = fs::canonicalize(universe_path) {
+        eprintln!("[RUST-PERF]   canonicalize done at {:?}", t0.elapsed());
         if visited.contains(&canon) {
             return vec![];
         }
@@ -364,9 +372,12 @@ fn resolve_libraries_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>)
 
     // 1. Load own libraries from .constellation/libraries.json
     let libs_path = cdir.join("libraries.json");
+    eprintln!("[RUST-PERF]   reading {} at {:?}", libs_path.display(), t0.elapsed());
     if libs_path.exists() {
         if let Ok(data) = fs::read_to_string(&libs_path) {
+            eprintln!("[RUST-PERF]   libraries.json read ({} bytes) at {:?}", data.len(), t0.elapsed());
             if let Ok(libs) = serde_json::from_str::<Vec<crate::libraries::LibraryInfo>>(&data) {
+                eprintln!("[RUST-PERF]   parsed {} libs at {:?}", libs.len(), t0.elapsed());
                 all_libraries.extend(libs);
             }
         }
@@ -1007,9 +1018,14 @@ pub fn remove_child_universe(app: tauri::AppHandle, child_path: String) -> Resul
 /// (own + children, recursive, deduplicated).
 #[tauri::command]
 pub fn resolve_universe_libraries(app: tauri::AppHandle) -> Result<Vec<crate::libraries::LibraryInfo>, String> {
+    let t0 = std::time::Instant::now();
+    eprintln!("[RUST-PERF] resolve_universe_libraries: start");
     let universe_dir = active_universe_dir(&app)?;
+    eprintln!("[RUST-PERF] resolve_universe_libraries: got active_universe_dir at {:?}", t0.elapsed());
     let mut visited = Vec::new();
-    Ok(resolve_libraries_recursive(&universe_dir, &mut visited))
+    let result = resolve_libraries_recursive(&universe_dir, &mut visited);
+    eprintln!("[RUST-PERF] resolve_universe_libraries: returning {} rows at {:?}", result.len(), t0.elapsed());
+    Ok(result)
 }
 
 /// Info about a child universe — name, path, and how many libraries it contributes.
