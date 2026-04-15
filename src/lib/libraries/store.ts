@@ -1907,7 +1907,7 @@ export interface AppSettings {
 	};
 }
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
 	showLineNumbers: true,
 	readableLineLength: true,
 	tabSize: 4,

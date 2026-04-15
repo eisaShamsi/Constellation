@@ -26,7 +26,7 @@
 		buildSkyData, readNotePreview,
 		getDailyNotePath, updateLinksOnRename, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
-		loadSettings, updateSettings, appSettings,
+		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
 		buildDefaultFrontmatter,
@@ -1402,43 +1402,18 @@
 
 	// ─── Universe initialization ───
 	async function initializeApp() {
-		// ═══ BOOT ARCHITECTURE — paint-first, hydrate-after ═══════════════
-		// Per the 2026-04-15 expert-panel-validated architecture (see
-		// lab/boot-perf/BOOT-BUDGET.md): appReady flips to true BEFORE any
-		// IPC awaits, so the UI shell paints immediately. Data loads in
-		// parallel after paint; reactive stores populate progressively.
+		// ═══ BOOT ARCHITECTURE — paint-first, single-bundle IPC ════════════
+		// Per 2026-04-15 expert panel + LL-015 (dev-mode per-IPC overhead is
+		// ~37s on Windows): the frontend now makes ONE IPC call at boot that
+		// returns the full bundle of config + libraries + child universes,
+		// rather than ~10 serialized calls. This collapses boot-IPC latency
+		// from 10× the per-call overhead to 1×.
 		//
-		// Previously this function awaited 7+ serialized IPC calls before
-		// flipping appReady, which gated first paint on the slowest Rust
-		// handler plus Tauri's command queue. Production boot on a
-		// 7,600-note Universe now takes ~1s to paint and ~8s to fully
-		// hydrate (was 25s/136s).
+		// appReady still flips synchronously at the top so the UI shell
+		// paints instantly. The bundle call populates all reactive stores in
+		// one shot when it returns.
 		performance.mark('boot:paint');
 		appReady = true;
-
-		// Load essential app config in parallel (fault-tolerant).
-		await Promise.all([
-			loadSettings().catch(() => {}),
-			loadBookmarks().catch(() => {}),
-			loadWorkspaces().catch(() => {}),
-			loadPropertyTypes().catch(() => {}),
-			listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}),
-			getChildUniverses().then(async (c) => {
-				childUniverses = c;
-				const map = new Map<string, Set<string>>();
-				for (const cu of c) {
-					try {
-						const childLibs = await invoke<{ id: string; name: string; path: string }[]>(
-							'read_child_universe_libraries', { childPath: cu.path }
-						);
-						map.set(cu.path, new Set(childLibs.map(l => l.path.replace(/\\/g, '/').toLowerCase())));
-					} catch {
-						map.set(cu.path, new Set());
-					}
-				}
-				childUniverseLibPaths = map;
-			}).catch(() => {}),
-		]);
 
 		// Idle detection for lock screen
 		const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'] as const;
@@ -1453,11 +1428,98 @@
 			if (idleTimer) clearTimeout(idleTimer);
 		});
 
-		// Load libraries — populates the sidebar store. librariesLoaded flips
-		// to true afterward so the Welcome/Create screen only shows when we
-		// truly know the universe has no registered libraries (not while
-		// we're still waiting for the IPC to return).
-		try { await loadLibraries(); } catch { /* ignore */ }
+		// One IPC call returns everything: libraries, settings, bookmarks,
+		// workspaces, property types, workspace bases, child universes.
+		type BootBundle = {
+			libraries: any[];
+			settings: Record<string, unknown>;
+			bookmarks: unknown[];
+			workspaces: unknown[];
+			property_types: Record<string, unknown>;
+			workspace_bases: any[];
+			child_universes: ChildUniverseInfo[];
+			child_universe_lib_paths: Record<string, string[]>;
+		};
+		let bundle: BootBundle | null = null;
+		try {
+			bundle = await invoke<BootBundle>('constellation_boot_bundle');
+		} catch (e) {
+			console.warn('[boot] boot bundle failed, falling back to per-call loads', e);
+		}
+
+		if (bundle) {
+			// Populate every store directly from the bundle response. No
+			// additional IPCs — the whole point of collapsing into one call.
+			// Each store-setter mirrors what the individual loader functions
+			// do in $lib/libraries/store.ts + propertyTypeRegistry.ts.
+			libraries.set(bundle.libraries);
+
+			// Settings — merge with DEFAULT_SETTINGS (same logic as loadSettings).
+			try {
+				const parsed = bundle.settings as any;
+				if (parsed && Object.keys(parsed).length > 0) {
+					const savedSkyView = parsed.skyView || {};
+					if (savedSkyView.nodeSize === 4) savedSkyView.nodeSize = 1.5;
+					appSettings.set({
+						...DEFAULT_SETTINGS,
+						...parsed,
+						skyView: { ...DEFAULT_SETTINGS.skyView, ...savedSkyView },
+						security: { ...DEFAULT_SETTINGS.security, ...(parsed.security || {}) },
+						enabledFeatures: { ...DEFAULT_SETTINGS.enabledFeatures, ...(parsed.enabledFeatures ?? parsed.enabledPlugins ?? {}) },
+						customShortcuts: { ...(parsed.customShortcuts || {}) },
+					});
+				}
+			} catch { /* settings schema mismatch — fall through with defaults */ }
+
+			// Bookmarks / Workspaces — arrays set directly.
+			if (Array.isArray(bundle.bookmarks) && bundle.bookmarks.length > 0) {
+				bookmarks.set(bundle.bookmarks as any);
+			}
+			if (Array.isArray(bundle.workspaces) && bundle.workspaces.length > 0) {
+				workspaces.set(bundle.workspaces as any);
+			}
+
+			// Property types — seed the registry cache (avoids a separate IPC).
+			try {
+				const reg = await import('$lib/libraries/propertyTypeRegistry');
+				reg.seedFromBundle(bundle.property_types);
+			} catch { /* on-demand load on first use */ }
+
+			workspaceBases = bundle.workspace_bases;
+			childUniverses = bundle.child_universes;
+			const map = new Map<string, Set<string>>();
+			for (const cu of bundle.child_universes) {
+				map.set(cu.path, new Set(bundle.child_universe_lib_paths[cu.path] ?? []));
+			}
+			childUniverseLibPaths = map;
+		} else {
+			// Fallback: old per-IPC pattern. Only runs if the bundle command
+			// is unavailable (shouldn't happen post-dc46683 but defensive).
+			await Promise.all([
+				loadSettings().catch(() => {}),
+				loadBookmarks().catch(() => {}),
+				loadWorkspaces().catch(() => {}),
+				loadPropertyTypes().catch(() => {}),
+				listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}),
+				getChildUniverses().then(async (c) => {
+					childUniverses = c;
+					const m = new Map<string, Set<string>>();
+					for (const cu of c) {
+						try {
+							const childLibs = await invoke<{ id: string; name: string; path: string }[]>(
+								'read_child_universe_libraries', { childPath: cu.path }
+							);
+							m.set(cu.path, new Set(childLibs.map(l => l.path.replace(/\\/g, '/').toLowerCase())));
+						} catch {
+							m.set(cu.path, new Set());
+						}
+					}
+					childUniverseLibPaths = m;
+				}).catch(() => {}),
+				loadLibraries().catch(() => {}),
+			]);
+		}
+
 		librariesLoaded = true;
 		performance.mark('boot:libraries-loaded');
 
