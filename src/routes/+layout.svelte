@@ -1483,6 +1483,12 @@
 			loadLibraryAppearance(lib.path, lib.id).catch(() => {})
 		);
 
+		// loadAllStats is fire-and-forget. The expensive content reads were
+		// removed in commit 1a7ce05 (metadata-only walk + per-library
+		// parallel threads). The sidebar shows library names from $libraries
+		// immediately; star counts populate when this resolves.
+		loadAllStats().catch(() => {});
+
 		// ONE call to load the cache snapshot. No reconcile, no walkers.
 		refreshLibraryCaches().catch(() => {});
 	}
