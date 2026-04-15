@@ -61,11 +61,17 @@ pub struct BootSnapshot {
 /// to decide whether to show the one-time "Building index…" progress screen.
 #[tauri::command]
 pub fn cache_boot_snapshot(app: tauri::AppHandle) -> Result<BootSnapshot, String> {
+    // CRITICAL: open the DB if state hasn't opened it yet. On 2nd+ boots the
+    // search.db file already exists on disk with all our data, but nothing
+    // has called constellation_search_init yet — so the state.db mutex is
+    // empty and without this call we'd return is_cold: true despite the data
+    // being right there. This was the bug in the initial cache-first boot:
+    // the snapshot reported cold on every launch, defeating the whole point.
+    let _ = crate::search::ensure_search_db_ready(&app);
+
     let state = app.state::<SearchState>();
     let db_guard = state.db.lock().map_err(|e| e.to_string())?;
 
-    // If the search engine hasn't been initialized yet, treat the snapshot as
-    // cold. initSearchIndex() will populate it; a later call will return hot.
     let conn = match db_guard.as_ref() {
         Some(c) => c,
         None => {
@@ -230,21 +236,26 @@ pub fn cache_is_populated(app: tauri::AppHandle) -> Result<bool, String> {
 #[tauri::command]
 pub fn cache_reconcile(app: tauri::AppHandle) -> Result<(), String> {
     use tauri::Emitter;
-    // Spawn on a background thread so the IPC call returns immediately.
-    // Blocking here would freeze every subsequent IPC for the duration of
-    // the indexer walk (potentially minutes on a cold first boot), which
-    // is precisely the symptom we're trying to eliminate.
+    // Ensure the schema exists + state's query connection is ready BEFORE
+    // we spawn the walk thread. This makes cache_boot_snapshot calls that
+    // arrive during the walk succeed (they see the populated DB) instead of
+    // racing the walker.
+    crate::search::ensure_search_db_ready(&app)?;
+
     let app_clone = app.clone();
     std::thread::spawn(move || {
         let started = std::time::Instant::now();
-        let was_cold = crate::search::constellation_search_init(app_clone.clone())
-            .map(|s| s.note_count == 0)
-            .unwrap_or(true);
-        // Re-check to see if the reconcile actually produced rows (was_cold
-        // reflects the pre-run state, so subtract from post-run counts to
-        // know if the first boot just finished).
+        // reconcile_filesystem uses a DEDICATED connection — the state
+        // connection stays free for concurrent frontend queries thanks to
+        // SQLite WAL mode.
+        let result = crate::search::reconcile_filesystem(&app_clone);
+        let (note_count, was_cold) = match result {
+            Ok(stats) => (stats.note_count, stats.note_count == 0),
+            Err(_) => (0, true),
+        };
         let _ = app_clone.emit("cache-reconciled", serde_json::json!({
             "was_cold": was_cold,
+            "note_count": note_count,
             "elapsed_ms": started.elapsed().as_millis() as u64,
         }));
     });

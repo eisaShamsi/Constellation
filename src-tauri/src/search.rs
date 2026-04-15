@@ -1381,49 +1381,83 @@ pub fn constellation_link_archive(
 
 // ─── Tauri Commands ────────────────────────────────────────────
 
-/// Initialize the search index — builds/rebuilds the SQLite database.
-#[tauri::command]
-pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexStats, String> {
-    let path = db_path(&app)?;
-
-    // Schema v2: force full reindex to pick up bracket-format tags + inline hashtags
-    // Check for version marker; if missing or outdated, delete and rebuild
+/// Fast path: open the search DB (creating schema if absent) and place it in
+/// state. Does NOT walk the filesystem. Safe to call from the boot path — on
+/// a populated DB this is a millisecond-scale operation.
+///
+/// Previously `constellation_search_init` opened the DB AND walked every
+/// library before putting the connection in state. That meant any concurrent
+/// `cache_boot_snapshot` call saw `None` and reported a cold cache, defeating
+/// the whole cache-first boot. Splitting this in two is what makes the
+/// cache-first boot actually work on 2nd+ launches.
+pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
+    let state = app.state::<SearchState>();
+    {
+        let guard = state.db.lock().map_err(|e| e.to_string())?;
+        if guard.is_some() {
+            return Ok(());
+        }
+    }
+    let path = db_path(app)?;
     let version_path = path.with_extension("version");
-    let current_version = "7"; // v7: note_links table (Living Link System), typed link extraction
+    let current_version = "7";
     let needs_rebuild = match std::fs::read_to_string(&version_path) {
         Ok(v) => v.trim() != current_version,
         Err(_) => true,
     };
     if needs_rebuild {
         let _ = std::fs::remove_file(&path);
-        // Version file written AFTER successful rebuild (below)
     }
-
     let conn = init_db(&path)?;
-
-    // Index all libraries
-    let libraries = crate::libraries::load_all_libraries(&app);
-    for lib in &libraries {
-        index_library_recursive(&conn, Path::new(&lib.path), &lib.name, 0);
-    }
-
-    let note_count: u32 = conn.query_row(
-        "SELECT COUNT(*) FROM note_meta", [], |row| row.get(0)
-    ).unwrap_or(0);
-
-    let index_size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
-
-    // Store connection in app state
-    let state = app.state::<SearchState>();
     let mut db = state.db.lock().map_err(|e| e.to_string())?;
     *db = Some(conn);
-
-    // Write version file AFTER successful rebuild (crash-safe)
     if needs_rebuild {
         let _ = std::fs::write(&version_path, current_version);
     }
+    Ok(())
+}
+
+/// Walk every library and reindex changed files using a DEDICATED connection
+/// (not the one in SearchState). SQLite's WAL mode allows concurrent readers,
+/// so frontend queries through `state.db` continue working while this runs.
+///
+/// Runs in the caller's thread. `cache_reconcile` wraps this in
+/// `std::thread::spawn` so it never blocks IPC.
+pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, String> {
+    // Make sure schema exists and state has the query connection.
+    ensure_search_db_ready(app)?;
+
+    let path = db_path(app)?;
+    // Dedicated connection for the walk — does NOT touch state.db, so the
+    // state's query connection stays available to frontend reads the whole
+    // time. WAL mode (set in init_db) is what makes this safe.
+    let walk_conn = Connection::open(&path)
+        .map_err(|e| format!("Failed to open search.db for reconcile: {}", e))?;
+    walk_conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
+        .map_err(|e| e.to_string())?;
+
+    let libraries = crate::libraries::load_all_libraries(app);
+    for lib in &libraries {
+        index_library_recursive(&walk_conn, Path::new(&lib.path), &lib.name, 0);
+    }
+
+    let note_count: u32 = walk_conn.query_row(
+        "SELECT COUNT(*) FROM note_meta", [], |row| row.get(0)
+    ).unwrap_or(0);
+    let index_size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
 
     Ok(SearchIndexStats { note_count, index_size_bytes: index_size })
+}
+
+/// Initialize the search index — builds/rebuilds the SQLite database.
+///
+/// Kept for backward compatibility with callers that want the legacy
+/// "open + walk" behavior. The boot path now uses `ensure_search_db_ready`
+/// (instant) and `reconcile_filesystem` (on a background thread) separately.
+#[tauri::command]
+pub fn constellation_search_init(app: tauri::AppHandle) -> Result<SearchIndexStats, String> {
+    ensure_search_db_ready(&app)?;
+    reconcile_filesystem(&app)
 }
 
 /// Reindex a single note (called on file change).
