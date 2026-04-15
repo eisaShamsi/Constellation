@@ -1040,6 +1040,8 @@ pub struct ChildUniverseInfo {
 /// Return info about child universes of the active universe.
 #[tauri::command]
 pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInfo>, String> {
+    let t0 = std::time::Instant::now();
+    eprintln!("[RUST-PERF] {} get_child_universes: ENTER", chrono::Local::now().format("%H:%M:%S%.3f"));
     let cdir = active_constellation_dir(&app)?;
     let meta_path = cdir.join("universe.json");
 
@@ -1099,6 +1101,7 @@ pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInf
         });
     }
 
+    eprintln!("[RUST-PERF] {} get_child_universes: EXIT ({} children, {:?})", chrono::Local::now().format("%H:%M:%S%.3f"), children.len(), t0.elapsed());
     Ok(children)
 }
 
@@ -1131,15 +1134,19 @@ pub fn read_child_universe_libraries(_app: tauri::AppHandle, child_path: String)
 /// Read settings.json from the active universe.
 #[tauri::command]
 pub fn read_universe_settings(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let t0 = std::time::Instant::now();
+    eprintln!("[RUST-PERF] {} read_universe_settings: ENTER", chrono::Local::now().format("%H:%M:%S%.3f"));
     let dir = active_constellation_dir(&app)?;
     let path = dir.join("settings.json");
-    if path.exists() {
+    let result = if path.exists() {
         let data = fs::read_to_string(&path)
             .map_err(|e| format!("Failed to read settings: {}", e))?;
         serde_json::from_str(&data).map_err(|e| format!("Failed to parse settings: {}", e))
     } else {
         Ok(serde_json::Value::Object(serde_json::Map::new()))
-    }
+    };
+    eprintln!("[RUST-PERF] {} read_universe_settings: EXIT ({:?})", chrono::Local::now().format("%H:%M:%S%.3f"), t0.elapsed());
+    result
 }
 
 /// Save settings.json to the active universe.
@@ -1154,15 +1161,19 @@ pub fn save_universe_settings(app: tauri::AppHandle, settings: serde_json::Value
 /// Read bookmarks.json from the active universe.
 #[tauri::command]
 pub fn read_universe_bookmarks(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let t0 = std::time::Instant::now();
+    eprintln!("[RUST-PERF] {} read_universe_bookmarks: ENTER", chrono::Local::now().format("%H:%M:%S%.3f"));
     let dir = active_constellation_dir(&app)?;
     let path = dir.join("bookmarks.json");
-    if path.exists() {
+    let result = if path.exists() {
         let data = fs::read_to_string(&path)
             .map_err(|e| format!("Failed to read bookmarks: {}", e))?;
         serde_json::from_str(&data).map_err(|e| format!("Failed to parse bookmarks: {}", e))
     } else {
         Ok(serde_json::Value::Array(vec![]))
-    }
+    };
+    eprintln!("[RUST-PERF] {} read_universe_bookmarks: EXIT ({:?})", chrono::Local::now().format("%H:%M:%S%.3f"), t0.elapsed());
+    result
 }
 
 /// Save bookmarks.json to the active universe.
@@ -1177,15 +1188,19 @@ pub fn save_universe_bookmarks(app: tauri::AppHandle, bookmarks: serde_json::Val
 /// Read workspaces.json from the active universe.
 #[tauri::command]
 pub fn read_universe_workspaces(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let t0 = std::time::Instant::now();
+    eprintln!("[RUST-PERF] {} read_universe_workspaces: ENTER", chrono::Local::now().format("%H:%M:%S%.3f"));
     let dir = active_constellation_dir(&app)?;
     let path = dir.join("workspaces.json");
-    if path.exists() {
+    let result = if path.exists() {
         let data = fs::read_to_string(&path)
             .map_err(|e| format!("Failed to read workspaces: {}", e))?;
         serde_json::from_str(&data).map_err(|e| format!("Failed to parse workspaces: {}", e))
     } else {
         Ok(serde_json::Value::Array(vec![]))
-    }
+    };
+    eprintln!("[RUST-PERF] {} read_universe_workspaces: EXIT ({:?})", chrono::Local::now().format("%H:%M:%S%.3f"), t0.elapsed());
+    result
 }
 
 /// Save workspaces.json to the active universe.
@@ -1200,15 +1215,19 @@ pub fn save_universe_workspaces(app: tauri::AppHandle, workspaces: serde_json::V
 /// Read property-types.json from the active universe.
 #[tauri::command]
 pub fn read_universe_property_types(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let t0 = std::time::Instant::now();
+    eprintln!("[RUST-PERF] {} read_universe_property_types: ENTER", chrono::Local::now().format("%H:%M:%S%.3f"));
     let dir = active_constellation_dir(&app)?;
     let path = dir.join("property-types.json");
-    if path.exists() {
+    let result = if path.exists() {
         let data = fs::read_to_string(&path)
             .map_err(|e| format!("Failed to read property types: {}", e))?;
         serde_json::from_str(&data).map_err(|e| format!("Failed to parse property types: {}", e))
     } else {
         Ok(serde_json::Value::Object(serde_json::Map::new()))
-    }
+    };
+    eprintln!("[RUST-PERF] {} read_universe_property_types: EXIT ({:?})", chrono::Local::now().format("%H:%M:%S%.3f"), t0.elapsed());
+    result
 }
 
 /// Save property-types.json to the active universe.
