@@ -304,6 +304,11 @@
 	let activeUniverseName = $state('');
 	let appVersion = $state('');
 	let appReady = $state(false);
+	// Distinguishes "hydration in progress" from "genuinely has no libraries".
+	// Flips to true ONLY after loadLibraries() completes (success or empty).
+	// Used to gate the Welcome/Create screen — we don't want that screen to
+	// flash during the window between paint and libraries loading.
+	let librariesLoaded = $state(false);
 
 	// Load app version
 	getVersion().then(v => appVersion = v).catch(() => {});
@@ -1448,8 +1453,12 @@
 			if (idleTimer) clearTimeout(idleTimer);
 		});
 
-		// Load libraries — populates the sidebar store.
+		// Load libraries — populates the sidebar store. librariesLoaded flips
+		// to true afterward so the Welcome/Create screen only shows when we
+		// truly know the universe has no registered libraries (not while
+		// we're still waiting for the IPC to return).
 		try { await loadLibraries(); } catch { /* ignore */ }
+		librariesLoaded = true;
 		performance.mark('boot:libraries-loaded');
 
 		// ═══ BOOT RULE: ZERO FILESYSTEM WALKS ════════════════════════════
@@ -1488,6 +1497,7 @@
 	async function handleUniverseSwitch() {
 		// Save current state, clear everything, re-init
 		appReady = false;
+		librariesLoaded = false;
 		showUniverseManager = false;
 
 		// Unwatch all libraries
@@ -3436,10 +3446,14 @@
 						</div>
 					{/each}
 
-					{#if $libraryStats.length === 0}
+					{#if $libraryStats.length === 0 && librariesLoaded}
 						<div class="empty-sidebar">
 							<p>{$t('sidebar.noLibraries')}</p>
 							<button class="add-first-btn" onclick={handleAddLibrary}>{$t('sidebar.addLibraryButton')}</button>
+						</div>
+					{:else if !librariesLoaded}
+						<div class="empty-sidebar">
+							<div class="loading-spinner" aria-label="Loading libraries"></div>
 						</div>
 					{/if}
 				{/if}
@@ -4032,7 +4046,12 @@
 				</div>
 			{:else if isHome}
 				<div class="welcome" class:welcome-dashboard={$libraryStats.length > 0 && $appSettings.showDashboard}>
-					{#if $libraryStats.length === 0}
+					{#if $libraryStats.length === 0 && !librariesLoaded}
+						<!-- Hydration window: spinner, not the Create-Library screen. -->
+						<div class="app-loading" style="min-height: 400px;">
+							<div class="loading-spinner"></div>
+						</div>
+					{:else if $libraryStats.length === 0}
 						<svg class="w-icon" width="80" height="80" viewBox="0 0 160 160" fill="none">
 								<defs>
 									<linearGradient id="wStarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
