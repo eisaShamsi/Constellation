@@ -646,6 +646,10 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
     *lock = Some(final_path);
 
+    // Invalidate the libraries cache — switching universes means the
+    // libraries list is completely different now.
+    crate::libraries::invalidate_libraries_cache();
+
     // Update registry
     registry.active_id = Some(id);
     save_registry(&app, &registry)?;

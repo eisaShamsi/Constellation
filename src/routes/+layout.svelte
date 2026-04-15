@@ -1407,12 +1407,12 @@
 	// absolutely in the IPC commands the frontend fires. If the UI STILL
 	// takes 25s to appear, the problem is in the bundle / hydration.
 	const BOOT_FEATURES = {
-		loadPromiseAll: false,  // Promise.all of 6 config IPCs
-		loadLibraries: false,   // invoke('resolve_universe_libraries')
-		watchers: false,
-		appearances: false,
-		stats: false,
-		cacheSnapshot: false,   // refreshLibraryCaches (cache_boot_snapshot)
+		loadPromiseAll: true,   // 6 config IPCs — needed for app config
+		loadLibraries: true,    // Libraries list — needed for sidebar
+		watchers: true,         // File watcher per library
+		appearances: true,      // Per-library appearance
+		stats: true,            // loadAllStats — sidebar star counts
+		cacheSnapshot: true,    // refreshLibraryCaches (SQLite snapshot)
 	};
 
 	async function initializeApp() {

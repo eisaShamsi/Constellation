@@ -62,24 +62,55 @@ fn load_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     }
 }
 
+/// Module-level cache for `load_all_libraries`.
+///
+/// Before this cache: diagnostic logs showed 50+ calls per boot from many
+/// different code paths (validate_path_in_any_library, scan_*,
+/// constellation_map_universe, etc.). Each re-read libraries.json from disk
+/// and re-parsed it. Under Tauri's IPC queue on Windows this created the
+/// 60-second boot-time hang we've been hunting.
+///
+/// The cache:
+///   - Populated on first call per active-universe.
+///   - Invalidated whenever `save_libraries` writes to disk.
+///   - Keyed by the active universe path — switching universes reloads.
+static LIBRARIES_CACHE: std::sync::Mutex<Option<(std::path::PathBuf, Vec<LibraryInfo>)>> =
+    std::sync::Mutex::new(None);
+
 /// Load ALL libraries: own + child universe libraries (recursive, deduplicated).
 /// This is what the frontend and query_base should use.
 pub fn load_all_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
-    static CALL_COUNT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-    let n = CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
-    if n < 200 {
-        let bt = std::backtrace::Backtrace::force_capture();
-        let bt_str = format!("{}", bt);
-        // Extract just the interesting frames — filter to our own crate
-        let interesting: Vec<&str> = bt_str.lines()
-            .filter(|l| l.contains("constellation::") && !l.contains("load_all_libraries") && !l.contains("load_libraries_pub"))
-            .take(3)
-            .collect();
-        eprintln!("[RUST-PERF] load_all_libraries call #{} — caller chain: {:?}", n, interesting);
+    let active = crate::universe::active_universe_dir(app).ok();
+
+    if let Some(ref universe_path) = active {
+        if let Ok(guard) = LIBRARIES_CACHE.lock() {
+            if let Some((cached_universe, cached_libs)) = guard.as_ref() {
+                if cached_universe == universe_path {
+                    return cached_libs.clone();
+                }
+            }
+        }
     }
-    match crate::universe::resolve_universe_libraries(app.clone()) {
+
+    // Cache miss: compute the result.
+    let libs = match crate::universe::resolve_universe_libraries(app.clone()) {
         Ok(libs) => libs,
         Err(_) => load_libraries(app),
+    };
+
+    if let Some(universe_path) = active {
+        if let Ok(mut guard) = LIBRARIES_CACHE.lock() {
+            *guard = Some((universe_path, libs.clone()));
+        }
+    }
+    libs
+}
+
+/// Invalidate the in-memory library cache. Call when the on-disk
+/// libraries.json has changed (add/remove library, rename, universe switch).
+pub fn invalidate_libraries_cache() {
+    if let Ok(mut guard) = LIBRARIES_CACHE.lock() {
+        *guard = None;
     }
 }
 
@@ -92,7 +123,10 @@ pub fn load_libraries_pub(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
 fn save_libraries(app: &tauri::AppHandle, libraries: &[LibraryInfo]) -> Result<(), String> {
     let path = libraries_config_path(app)?;
     let data = serde_json::to_string_pretty(libraries).map_err(|e| e.to_string())?;
-    fs::write(&path, data).map_err(|e| format!("Failed to save libraries config: {}", e))
+    fs::write(&path, data).map_err(|e| format!("Failed to save libraries config: {}", e))?;
+    // Invalidate the in-memory cache so subsequent reads see the new list.
+    invalidate_libraries_cache();
+    Ok(())
 }
 
 /// Validate that a file path is contained within a library directory.
