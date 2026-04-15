@@ -1396,9 +1396,31 @@
 	}
 
 	// ─── Universe initialization ───
+	// ═══════════════════════════════════════════════════════════════════
+	// BOOT-PERF BISECTION — temporary diagnostic switches
+	// ═══════════════════════════════════════════════════════════════════
+	// Per user request 2026-04-15: each switch disables one post-paint
+	// background task. Start ALL = false (everything off), measure boot.
+	// Flip one to true, measure again. The flip that adds significant
+	// time is the culprit.
+	//
+	// Each switch is independent — they can be flipped in any order. The
+	// boot-perf log will show timings for whatever's enabled.
+	const BOOT_FEATURES = {
+		watchers: false,        // startWatchingLibrary per library
+		appearances: false,     // loadLibraryAppearance per library
+		stats: false,           // loadAllStats (star counts, recent notes)
+		cacheSnapshot: true,    // refreshLibraryCaches (cache_boot_snapshot)
+		// Future panels (mount-time work): SkyView / Sight / Map / Index
+		// are only mounted on click — they cannot be disabled here. If they
+		// turn out to do work at boot via reactive subscriptions, we'll add
+		// switches for those subscriptions here too.
+	};
+
 	async function initializeApp() {
 		performance.mark('boot:paint');
 		appReady = true;
+		console.log('[boot-perf] BOOT_FEATURES enabled:', BOOT_FEATURES);
 
 		// Per-call instrumentation. Tells us EXACTLY which IPC is slow —
 		// previously we knew "65s for the Promise.all" but not which call.
@@ -1479,23 +1501,32 @@
 		//   - per-library watcher start in a loop with yields. Collapsed
 		//     into a single parallel Promise.all, not awaited here at all.
 		//
-		// File watchers and library-appearance loads are fire-and-forget;
-		// they don't block boot and don't contend on the SQLite writer.
-		Promise.all($libraries.map(lib =>
-			startWatchingLibrary(lib.id, lib.path).catch(() => {})
-		)).catch(() => {});
-		$libraries.forEach(lib =>
-			loadLibraryAppearance(lib.path, lib.id).catch(() => {})
-		);
-
-		// loadAllStats is fire-and-forget. The expensive content reads were
-		// removed in commit 1a7ce05 (metadata-only walk + per-library
-		// parallel threads). The sidebar shows library names from $libraries
-		// immediately; star counts populate when this resolves.
-		loadAllStats().catch(() => {});
-
-		// ONE call to load the cache snapshot. No reconcile, no walkers.
-		refreshLibraryCaches().catch(() => {});
+		// Bisection switches — see BOOT_FEATURES at the top of this file.
+		if (BOOT_FEATURES.watchers) {
+			const tw = performance.now();
+			Promise.all($libraries.map(lib =>
+				startWatchingLibrary(lib.id, lib.path).catch(() => {})
+			)).then(() =>
+				console.log('[boot-perf] watchers settled', Math.round(performance.now() - tw), 'ms')
+			).catch(() => {});
+		}
+		if (BOOT_FEATURES.appearances) {
+			$libraries.forEach(lib =>
+				loadLibraryAppearance(lib.path, lib.id).catch(() => {})
+			);
+		}
+		if (BOOT_FEATURES.stats) {
+			const ts = performance.now();
+			loadAllStats().then(() =>
+				console.log('[boot-perf] loadAllStats settled', Math.round(performance.now() - ts), 'ms')
+			).catch(() => {});
+		}
+		if (BOOT_FEATURES.cacheSnapshot) {
+			const tc = performance.now();
+			refreshLibraryCaches().then(() =>
+				console.log('[boot-perf] refreshLibraryCaches settled', Math.round(performance.now() - tc), 'ms')
+			).catch(() => {});
+		}
 	}
 
 	async function handleUniverseCreated(entry: UniverseEntry) {
@@ -1592,26 +1623,37 @@
 		// This matters at scale: with a 7,600-note Universe across 16 libraries
 		// the repair walks ~12,000 files via IPC on every launch, which bogged
 		// down startup by several seconds even when every library was clean.
-		try {
-			if (localStorage.getItem('constellation:canonical-repair-done') !== '1') {
-				invoke<string[]>('repair_external_libraries_on_startup').then((repaired) => {
-					if (repaired.length > 0) {
-						console.log('[Constellation] Restored original filenames in libraries:', repaired);
-					}
-					localStorage.setItem('constellation:canonical-repair-done', '1');
-				}).catch(err => console.error('[Constellation] Startup repair failed:', err));
-			}
-		} catch { /* localStorage unavailable */ }
+		// CANONICAL REPAIR — also disabled at boot for bisection. This walks
+		// every library's filesystem via collect_files_recursive checking
+		// for canonical-format filenames. Even gated by localStorage,
+		// confirming it's truly off makes our measurement clean.
+		// try {
+		//     if (localStorage.getItem('constellation:canonical-repair-done') !== '1') {
+		//         invoke<string[]>('repair_external_libraries_on_startup').then((repaired) => {
+		//             if (repaired.length > 0) console.log('[Constellation] Restored:', repaired);
+		//             localStorage.setItem('constellation:canonical-repair-done', '1');
+		//         }).catch(err => console.error('[Constellation] Startup repair failed:', err));
+		//     }
+		// } catch { /* localStorage unavailable */ }
+		console.log('[boot-perf] canonical-repair DISABLED at boot (bisection)');
 
-		// Living Link P3: run weight decay job once per 24h (idle, fire-and-forget)
-		try {
-			const lastDecay = Number(localStorage.getItem('constellation:last-link-decay') ?? '0');
-			if (Date.now() - lastDecay > 86_400_000) {
-				const { linkDecay } = await import('$lib/libraries/store');
-				linkDecay().then(() => localStorage.setItem('constellation:last-link-decay', String(Date.now())))
-					.catch(() => { /* index not ready yet — try again next launch */ });
-			}
-		} catch { /* localStorage unavailable */ }
+		// Living Link P3: weight decay job. CURRENTLY DISABLED at boot —
+		// a strong suspect for the 65s `loadLibraries` window. With 656k
+		// links in the trial Universe, this may be running tens of
+		// thousands of inner queries on the SearchState DB mutex,
+		// blocking every other DB-touching command. Bisection: re-enable
+		// only after we confirm the boot is fast without it. Long-term
+		// this should run on idle, never at boot.
+		//
+		// try {
+		//     const lastDecay = Number(localStorage.getItem('constellation:last-link-decay') ?? '0');
+		//     if (Date.now() - lastDecay > 86_400_000) {
+		//         const { linkDecay } = await import('$lib/libraries/store');
+		//         linkDecay().then(() => localStorage.setItem('constellation:last-link-decay', String(Date.now())))
+		//             .catch(() => { /* index not ready yet */ });
+		//     }
+		// } catch { /* localStorage unavailable */ }
+		console.log('[boot-perf] linkDecay DISABLED at boot (bisection)');
 
 		// 1. Check universe state — instrumented (paint_ms tells us total
 		// onMount-to-paint, but this breaks down WHERE within onMount.)
