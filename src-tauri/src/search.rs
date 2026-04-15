@@ -382,13 +382,15 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
 
-    let content = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+    // PERF: mtime-first gate. Previously we read the file into memory THEN
+    // checked the cache — meaning every unchanged file was still read from
+    // disk on every boot. On a 7,600-note Universe that's 7,600 wasted reads.
+    // Now: stat the file, compare to cached mtime, read content only if stale.
     let modified = std::fs::metadata(path)
         .and_then(|m| m.modified())
         .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
         .unwrap_or(0);
 
-    // Check if already indexed with same modified time
     let existing_mod: Option<u64> = conn.query_row(
         "SELECT modified FROM note_meta WHERE path = ?1",
         params![note_path],
@@ -396,8 +398,10 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
     ).ok();
 
     if existing_mod == Some(modified) {
-        return Ok(()); // Already up to date
+        return Ok(()); // Cache hit — no disk read needed.
     }
+
+    let content = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
 
     let (properties, tags, body) = parse_frontmatter(&content);
     let wikilinks = extract_wikilinks(&content);

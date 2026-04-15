@@ -1,6 +1,7 @@
 mod ai;
 mod bases;
 mod canvas;
+mod cache;
 mod canonical;
 mod embeddings;
 mod embeds;
@@ -277,6 +278,9 @@ pub fn run() {
             inspector360::get_360_view,
             lens::constellation_lens_centrality,
             lens::constellation_lens_tag_edges,
+            cache::cache_boot_snapshot,
+            cache::cache_is_populated,
+            cache::cache_reconcile,
             search::constellation_search_init,
             search::constellation_search,
             search::constellation_search_reindex,
