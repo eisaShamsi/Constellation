@@ -281,6 +281,8 @@ pub fn run() {
             cache::cache_boot_snapshot,
             cache::cache_is_populated,
             cache::cache_reconcile,
+            cache::write_boot_perf_report,
+            cache::read_boot_perf_report,
             search::constellation_search_init,
             search::constellation_search,
             search::constellation_search_reindex,

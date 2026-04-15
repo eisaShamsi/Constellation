@@ -230,6 +230,29 @@ fn read_tags(conn: &Connection) -> Result<HashMap<String, u32>, String> {
     Ok(tags)
 }
 
+/// Persist the frontend's boot-perf scorecard to
+/// `<universe>/.constellation/boot-perf.latest.json`. Read by the Settings →
+/// Debug panel (and the lab harness) to display pass/fail status against
+/// the `lab/boot-perf/BOOT-BUDGET.md` ship-gate criteria.
+#[tauri::command]
+pub fn write_boot_perf_report(app: tauri::AppHandle, report_json: String) -> Result<(), String> {
+    let cdir = crate::universe::active_constellation_dir(&app)?;
+    let _ = std::fs::create_dir_all(&cdir);
+    let path = cdir.join("boot-perf.latest.json");
+    std::fs::write(&path, report_json).map_err(|e| e.to_string())
+}
+
+/// Read the most recent boot-perf report — used by Settings → Debug.
+#[tauri::command]
+pub fn read_boot_perf_report(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let cdir = crate::universe::active_constellation_dir(&app)?;
+    let path = cdir.join("boot-perf.latest.json");
+    if !path.exists() {
+        return Ok(None);
+    }
+    std::fs::read_to_string(&path).map(Some).map_err(|e| e.to_string())
+}
+
 /// Return true if the cache has any entries — used by the frontend to decide
 /// whether to show the first-run "Building index…" progress UI.
 #[tauri::command]

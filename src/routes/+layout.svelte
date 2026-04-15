@@ -1397,6 +1397,19 @@
 
 	// ─── Universe initialization ───
 	async function initializeApp() {
+		// ═══ BOOT ARCHITECTURE — paint-first, hydrate-after ═══════════════
+		// Per 2026-04-15 expert panel review (lab/boot-perf/BOOT-BUDGET.md),
+		// the UI MUST be visible before any data loads. Previously this
+		// function awaited 7+ IPC calls before flipping appReady — meaning
+		// first paint was gated on the slowest Rust handler in the chain.
+		// Now: paint immediately, data fills in progressively.
+		//
+		// Agent 2 (Tauri systems) put it bluntly: "Constellation awaits
+		// backend work before the window is shown; Obsidian doesn't. That
+		// is the architectural error."
+		performance.mark('boot:paint');
+		appReady = true;
+
 		// Load essential data from the active universe in parallel (each fault-tolerant)
 		await Promise.all([
 			loadSettings().catch(() => {}),
@@ -1435,12 +1448,14 @@
 			if (idleTimer) clearTimeout(idleTimer);
 		});
 
-		// Load libraries — this is what the sidebar needs
+		// Load libraries — populates the sidebar store. The shell is already
+		// painted (appReady was set by the caller before invoking us); the
+		// sidebar fills in when this resolves.
 		try { await loadLibraries(); } catch { /* ignore */ }
 
-		// App is usable now — show UI immediately. Everything below runs in the
-		// background; the sidebar populates progressively as stats arrive.
-		appReady = true;
+		// Mark hydration checkpoint for the boot-perf scorecard. The shell
+		// painted earlier; by this point the $libraries store is populated.
+		performance.mark('boot:libraries-loaded');
 
 		// Stats (star counts + 10 recent notes per library) walk every .md file
 		// and read the 10 most-recent for previews. On a 7,600-note Universe
@@ -1625,6 +1640,10 @@
 			return;
 		}
 
+		// initializeApp paints the shell (appReady=true) at its very first
+		// step, then loads data in the background. We `await` its full
+		// completion here so later onMount steps (watcher setup, etc.)
+		// run with a populated libraries store.
 		await initializeApp();
 
 		// Listen for file change events from the watcher
@@ -1769,6 +1788,37 @@
 	let cacheRefreshing = false;
 	/** Yield to the browser event loop so UI clicks can preempt heavy work. */
 	const yieldToUI = () => new Promise<void>(r => setTimeout(r, 0));
+
+	/**
+	 * Write the boot-perf scorecard for `lab/boot-perf/BOOT-BUDGET.md` Criteria 1+2.
+	 * Called once, after `boot:hydrated` is marked. Idempotent.
+	 */
+	let bootPerfRecorded = false;
+	async function recordBootPerf() {
+		if (bootPerfRecorded) return;
+		bootPerfRecorded = true;
+		try {
+			const paint = performance.getEntriesByName('boot:paint')[0]?.startTime ?? 0;
+			const libs = performance.getEntriesByName('boot:libraries-loaded')[0]?.startTime ?? 0;
+			const hyd = performance.getEntriesByName('boot:hydrated')[0]?.startTime ?? 0;
+			const report = {
+				paint_ms: Math.round(paint),
+				libraries_loaded_ms: Math.round(libs),
+				hydrated_ms: Math.round(hyd),
+				note_count: allNotes.length,
+				timestamp: new Date().toISOString(),
+				// Criteria from lab/boot-perf/BOOT-BUDGET.md
+				criterion_1_paint: paint <= 2500 ? 'PASS' : 'FAIL',
+				criterion_2_hydrated: hyd <= 6000 ? 'PASS' : 'FAIL',
+			};
+			console.log('[boot-perf]', report);
+			// Persist to .constellation/boot-perf.latest.json so the
+			// Settings → Debug panel and the lab harness can read it.
+			await invoke('write_boot_perf_report', { reportJson: JSON.stringify(report) }).catch(() => {});
+		} catch (e) {
+			console.warn('[boot-perf] recording failed', e);
+		}
+	}
 	async function refreshLibraryCaches() {
 		// Prevent concurrent scans — skip if one is already in progress
 		if (cacheRefreshing) return;
@@ -1811,6 +1861,11 @@
 					skyLinks = gLinks;
 					starVersion++;
 				}
+
+				// Boot-perf Criterion 2: fully responsive. Reached when the
+				// cache snapshot has been applied to all reactive stores.
+				performance.mark('boot:hydrated');
+				recordBootPerf();
 			}
 
 			// ── Background reconciliation ─────────────────────────────────
