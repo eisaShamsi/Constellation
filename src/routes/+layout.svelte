@@ -1447,7 +1447,11 @@
 			try { await startWatchingLibrary(lib.id, lib.path); } catch { /* ignore */ }
 			await loadLibraryAppearance(lib.path, lib.id);
 		}
-		await refreshLibraryCaches();
+		// DO NOT await — on a large Universe (7,600 notes across 16 libraries)
+		// the cache refresh reads every file 8 times (64 IPC calls total). Fire
+		// in the background so the UI is interactive immediately; views that
+		// depend on the data will populate progressively as results arrive.
+		refreshLibraryCaches().catch(() => {});
 	}
 
 	async function handleUniverseCreated(entry: UniverseEntry) {
@@ -1736,6 +1740,8 @@
 	});
 
 	let cacheRefreshing = false;
+	/** Yield to the browser event loop so UI clicks can preempt heavy work. */
+	const yieldToUI = () => new Promise<void>(r => setTimeout(r, 0));
 	async function refreshLibraryCaches() {
 		// Prevent concurrent scans — skip if one is already in progress
 		if (cacheRefreshing) return;
@@ -1746,28 +1752,30 @@
 			const notes: { name: string; path: string; libraryName: string }[] = [];
 			const indexRaw: IndexEntry[] = [];
 
-			// Process libraries sequentially (2 at a time) to avoid IPC flood
+			// Stream per library. Each library publishes its data as soon as the
+			// scan returns, so Sky View / Index / Sight populate progressively
+			// rather than waiting on the slowest library. Yield between libraries
+			// so UI clicks can preempt — critical for large Universes where each
+			// library read takes 2-5 seconds and the whole pass took 2+ minutes.
 			const libraryList = $libraries;
-			for (let i = 0; i < libraryList.length; i += 2) {
-				const batch = libraryList.slice(i, i + 2);
-				const batchResults = await Promise.all(batch.map(async (lib) => {
-					const [libLinks, libTags, libNotes, libIndex] = await Promise.all([
-						scanLibraryLinks(lib.path, lib.name).catch(() => [] as NoteLink[]),
-						scanLibraryTags(lib.path).catch(() => ({} as Record<string, number>)),
-						invoke('collect_library_notes', { libraryPath: lib.path }).catch(() => []) as Promise<any[]>,
-						scanLibraryIndex(lib.path).catch(() => [] as IndexEntry[]),
-					]);
-					return { lib, libLinks, libTags, libNotes, libIndex };
-				}));
-
-				for (const { lib, libLinks, libTags, libNotes, libIndex } of batchResults) {
-					links.push(...libLinks);
-					for (const [tag, count] of Object.entries(libTags)) {
-						tags[tag] = (tags[tag] || 0) + count;
-					}
-					notes.push(...libNotes.map((n: any) => ({ name: n.name, path: n.path, libraryName: lib.name })));
-					indexRaw.push(...libIndex);
+			for (const lib of libraryList) {
+				const [libLinks, libTags, libNotes, libIndex] = await Promise.all([
+					scanLibraryLinks(lib.path, lib.name).catch(() => [] as NoteLink[]),
+					scanLibraryTags(lib.path).catch(() => ({} as Record<string, number>)),
+					invoke('collect_library_notes', { libraryPath: lib.path }).catch(() => []) as Promise<any[]>,
+					scanLibraryIndex(lib.path).catch(() => [] as IndexEntry[]),
+				]);
+				links.push(...libLinks);
+				for (const [tag, count] of Object.entries(libTags)) {
+					tags[tag] = (tags[tag] || 0) + count;
 				}
+				notes.push(...(libNotes as any[]).map((n: any) => ({ name: n.name, path: n.path, libraryName: lib.name })));
+				indexRaw.push(...libIndex);
+				// Publish partial progress so the UI shows something immediately
+				allLibraryLinks = links;
+				allLibraryTags = tags;
+				allNotes = notes;
+				await yieldToUI();
 			}
 
 			allLibraryLinks = links;
@@ -1781,83 +1789,91 @@
 				skyNodes = nodes;
 				skyLinks = gLinks;
 				starVersion++;
+			}
 
-				// CE Phases 2/3/5/6: enrich nodes with strata, maturity, origins,
-				// and stages. Previously these were FOUR sequential per-library
-				// loops (16 libraries × 4 = 64 sequential awaits), which on a
-				// 7,600-note Universe stalled the views for two minutes. Run
-				// every library × every phase in parallel.
-				const _libPaths = libraryList.map(l => l.path);
-				const _libNames = libraryList.map(l => l.name);
-				const [_strataResults, _maturityResults, _originsResults, _stagesResults] = await Promise.all([
-					Promise.all(_libPaths.map((p, i) => invoke<{ note_path: string; stratum: number }[]>(
-						'compute_note_strata', { libraryPath: p, libraryName: _libNames[i] }
-					).catch(() => [] as { note_path: string; stratum: number }[]))),
-					Promise.all(_libPaths.map((p, i) => invoke<{ note_path: string; state: string }[]>(
-						'compute_note_maturity', { libraryPath: p, libraryName: _libNames[i] }
-					).catch(() => [] as { note_path: string; state: string }[]))),
-					Promise.all(_libPaths.map((p, i) => invoke<{ note_path: string; origin_type: string }[]>(
-						'compute_note_origins', { libraryPath: p, libraryName: _libNames[i] }
-					).catch(() => [] as { note_path: string; origin_type: string }[]))),
-					Promise.all(_libPaths.map((p) => invoke<[string, string][]>(
-						'scan_note_stages', { libraryPath: p }
-					).catch(() => [] as [string, string][]))),
-				]);
+			// Enrichments (strata / maturity / origins / stages / tensions / lenses)
+			// are purely decorative — they tint and label nodes. Sky View / Index /
+			// Sight / Knowledge Health all work without them. They each re-scan
+			// every file in every library, so on a 7,600-note Universe they add
+			// another 30k disk reads and hundreds of thousands of main-thread Map
+			// operations. Fire them as a separate background task and yield to the
+			// UI between libraries so clicks are never blocked.
+			void enrichNodesBackground(libraryList);
+		} finally {
+			cacheRefreshing = false;
+		}
+	}
 
-				// Merge strata
-				for (const strata of _strataResults) {
-					const sMap = new Map(strata.map(s => [s.note_path.replace(/\\/g, '/').toLowerCase(), s.stratum]));
-					for (const node of skyNodes) {
-						const key = node.path.replace(/\\/g, '/').toLowerCase();
-						const s = sMap.get(key);
-						if (s !== undefined) node.stratum = s;
-					}
+	async function enrichNodesBackground(libraryList: typeof $libraries) {
+		if (libraryList.length === 0) return;
+		const libPaths = libraryList.map(l => l.path);
+		const libNames = libraryList.map(l => l.name);
+
+		// Strata — per library, yield between
+		for (let i = 0; i < libPaths.length; i++) {
+			try {
+				const strata = await invoke<{ note_path: string; stratum: number }[]>(
+					'compute_note_strata', { libraryPath: libPaths[i], libraryName: libNames[i] }
+				);
+				const sMap = new Map(strata.map(s => [s.note_path.replace(/\\/g, '/').toLowerCase(), s.stratum]));
+				for (const node of skyNodes) {
+					const key = node.path.replace(/\\/g, '/').toLowerCase();
+					const s = sMap.get(key);
+					if (s !== undefined) node.stratum = s;
 				}
-				// Merge maturity
-				const newMatMap = new Map<string, string>();
-				for (const maturities of _maturityResults) {
-					for (const m of maturities) newMatMap.set(m.note_path.replace(/\\/g, '/').toLowerCase(), m.state);
-				}
+			} catch { /* skip */ }
+			await yieldToUI();
+		}
+		// Maturity
+		const newMatMap = new Map<string, string>();
+		for (let i = 0; i < libPaths.length; i++) {
+			try {
+				const maturities = await invoke<{ note_path: string; state: string }[]>(
+					'compute_note_maturity', { libraryPath: libPaths[i], libraryName: libNames[i] }
+				);
+				for (const m of maturities) newMatMap.set(m.note_path.replace(/\\/g, '/').toLowerCase(), m.state);
 				for (const node of skyNodes) {
 					const key = node.path.replace(/\\/g, '/').toLowerCase();
 					const m = newMatMap.get(key);
 					if (m) node.maturity = m;
 				}
-				maturityMap = newMatMap;
-				// Merge origins
-				for (const origins of _originsResults) {
-					const oMap = new Map(origins.map(o => [o.note_path.replace(/\\/g, '/').toLowerCase(), o.origin_type]));
-					for (const node of skyNodes) {
-						const key = node.path.replace(/\\/g, '/').toLowerCase();
-						const o = oMap.get(key);
-						if (o && o !== 'none') node.originType = o;
-					}
-				}
-				// Merge stages
-				const newStageMap = new Map<string, string>();
-				for (const stages of _stagesResults) {
-					for (const [path, stage] of stages) {
-						newStageMap.set(path.replace(/\\/g, '/').toLowerCase(), stage);
-					}
-				}
-				stageMap = newStageMap;
-
-				// CE Phase 9: Load available lenses
-				try {
-					availableLenses = await invoke('list_lenses');
-				} catch { availableLenses = []; }
-
-				// CE Phase 4: Detect tensions (first library only for performance)
-				if (libraryList.length > 0) {
-					try {
-						tensionReport = await invoke('detect_tensions', { libraryPath: libraryList[0].path, libraryName: libraryList[0].name });
-					} catch { tensionReport = null; }
-				}
-				starVersion++; // signal strata + maturity + tension data ready
-			}
-		} finally {
-			cacheRefreshing = false;
+			} catch { /* skip */ }
+			await yieldToUI();
 		}
+		maturityMap = newMatMap;
+		// Origins
+		for (let i = 0; i < libPaths.length; i++) {
+			try {
+				const origins = await invoke<{ note_path: string; origin_type: string }[]>(
+					'compute_note_origins', { libraryPath: libPaths[i], libraryName: libNames[i] }
+				);
+				const oMap = new Map(origins.map(o => [o.note_path.replace(/\\/g, '/').toLowerCase(), o.origin_type]));
+				for (const node of skyNodes) {
+					const key = node.path.replace(/\\/g, '/').toLowerCase();
+					const o = oMap.get(key);
+					if (o && o !== 'none') node.originType = o;
+				}
+			} catch { /* skip */ }
+			await yieldToUI();
+		}
+		// Stages
+		const newStageMap = new Map<string, string>();
+		for (let i = 0; i < libPaths.length; i++) {
+			try {
+				const stages = await invoke<[string, string][]>('scan_note_stages', { libraryPath: libPaths[i] });
+				for (const [path, stage] of stages) {
+					newStageMap.set(path.replace(/\\/g, '/').toLowerCase(), stage);
+				}
+			} catch { /* skip */ }
+			await yieldToUI();
+		}
+		stageMap = newStageMap;
+		// Lenses + tensions (cheap, once)
+		try { availableLenses = await invoke('list_lenses'); } catch { availableLenses = []; }
+		try {
+			tensionReport = await invoke('detect_tensions', { libraryPath: libPaths[0], libraryName: libNames[0] });
+		} catch { tensionReport = null; }
+		starVersion++;
 	}
 
 	function mergeIndexEntries(entries: IndexEntry[]): IndexEntry[] {
