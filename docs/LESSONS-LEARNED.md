@@ -141,5 +141,49 @@ In the callout freeze case: seven rounds of patches addressed symptoms (cursor g
 
 ---
 
-*Last updated: 2026-03-31*
-*For: Constellation — eNotePane development cycle*
+## LL-015: Always Test Production Before Chasing Dev-Mode Performance
+**Discovered:** 2026-04-15 (boot-perf saga on 7,600-note Universe)
+
+Tauri v2 on Windows in dev mode (`npm run tauri dev` via Vite + WebView2 + DevTools attachment) introduces massive per-IPC latency — measured at ~37 seconds per command dispatch on the test hardware. The *same code* compiled as a production `.exe` (via `npm run tauri build`) has no such delay — the production app boots in 1s UI / 8s fully responsive where dev mode was 25s / 136s.
+
+Hours of debugging went into chasing a phantom that only exists in dev mode. Dev-mode timings are NOT representative of user experience and must never be used as the signal for "is this fast enough to ship."
+
+**Rule:** When performance is the question, always measure against a production build. Dev-mode numbers are only useful for *relative* comparisons within the same run, never as an absolute ship-gate.
+
+---
+
+## LL-016: Cache at the Call Site When Callers Are Unknown
+**Discovered:** 2026-04-15 (load_all_libraries 50-calls-per-boot)
+
+Diagnostics showed `load_all_libraries` was being invoked 50+ times per boot from many code paths (both known and mystery callers in reactive cascades, file watchers, map commands, and validation paths). Each call re-read `libraries.json` from disk and re-parsed JSON. Under Tauri's IPC queue this produced a 60-second boot hang.
+
+Auditing every call site to remove redundant calls would have taken hours and missed future callers. The better fix: add an in-memory cache at the callee side, keyed by a stable invariant (active universe path), invalidated by the two functions that mutate the underlying state (`save_libraries` and `set_active_universe`). All 50+ callers — present and future, known and unknown — now get instant reads automatically.
+
+**Rule:** If a function is called from many places across the codebase and the data rarely changes, cache the result inside the function rather than auditing every call site. Invalidation points should be the few places that mutate the underlying data, not the many places that read it.
+
+---
+
+## LL-017: When Patching Fails, Spawn Adversarial Expert Agents
+**Discovered:** 2026-04-15 (boot-perf saga)
+
+After 4 patch attempts on the boot-perf issue failed, continuing to guess was clearly wrong (per LL-014). The breakthrough came from spawning three AI agent personas in parallel — an Obsidian internals expert, a Tauri/Rust systems expert, and a PKM architecture generalist — each instructed to review the proposed fix adversarially and produce a structured memo with verdict, risks, and acceptance criteria.
+
+Their convergent findings identified architectural errors I had missed (especially: "Constellation awaits backend work before the window is shown; Obsidian doesn't") and produced 5 concrete ship-gate criteria that became `lab/boot-perf/BOOT-BUDGET.md`. The objective criteria transformed further work from blind patching into measurable progress.
+
+**Rule:** When LL-014 triggers ("stop patching"), don't just stop — actively escalate to adversarial expert review. Spawn 2–3 independent AI reviewers with distinct perspectives, produce concrete numerical acceptance criteria, and only then resume implementation. The first move out of a patching loop should be a lab harness and a referee panel, not another patch.
+
+---
+
+## LL-018: Paint-First UI — Never Gate First Paint on IPC
+**Discovered:** 2026-04-15 (boot-perf expert panel)
+
+Constellation's boot originally awaited 7+ serialized IPC calls before setting `appReady = true`, meaning the loading spinner could not be replaced until the slowest Rust handler returned. On large Universes with Tauri's command-queue contention, this gated first paint on tens of seconds of backend work.
+
+Obsidian does not do this — it shows its shell immediately and hydrates data asynchronously. Every competitor that paints faster than Constellation does this. The fix is structural: in `initializeApp`, call `appReady = true` synchronously at the top; let every data load run afterward as a fire-and-forget that populates reactive stores progressively.
+
+**Rule:** First paint MUST NOT await backend work. The UI shell shows immediately; data arrives asynchronously and fills in. This applies at every level — layout mount, tab open, settings panel, any dialog. If a component's first render is gated on an `await invoke(...)`, refactor it.
+
+---
+
+*Last updated: 2026-04-15*
+*For: Constellation — boot-perf rewrite cycle*

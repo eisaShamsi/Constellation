@@ -352,7 +352,9 @@
       "Bash(powershell.exe -NoProfile -Command 'Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory\\('\\\\''E:\\\\مشاريع كلاود\\\\Constellation\\\\lab\\\\trial-universe\\\\output\\\\Constellation Discovery'\\\\'', '\\\\''E:\\\\Backups\\\\Constellation\\\\constellation-trial-universe-v1-20260414.zip'\\\\'', [System.IO.Compression.CompressionLevel]::Optimal, $true\\); Get-Item '\\\\''E:\\\\Backups\\\\Constellation\\\\constellation-trial-universe-v1-20260414.zip'\\\\'' | Select-Object @{N='\\\\''Size_MB'\\\\'';E={[math]::Round\\($_.Length/1MB, 1\\)}}, FullName')",
       "Bash(powershell.exe -NoProfile -Command 'Add-Type -AssemblyName System.IO.Compression.FileSystem; $z = [System.IO.Compression.ZipFile]::OpenRead\\('\\\\''E:\\\\Backups\\\\Constellation\\\\constellation-trial-universe-v1-20260414.zip'\\\\''\\); Write-Host \\('\\\\''Entries: '\\\\'' + $z.Entries.Count\\); $z.Entries | Select-Object -First 5 FullName, Length; $z.Dispose\\(\\)')",
       "Bash(gh --version)",
-      "WebFetch(domain:docs.obsidian.md)"
+      "WebFetch(domain:docs.obsidian.md)",
+      "Bash(ls -d help.*)",
+      "Bash(ls CHANGELOG*)"
     ]
   }
 }
