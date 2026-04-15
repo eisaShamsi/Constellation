@@ -1399,22 +1399,20 @@
 	// ═══════════════════════════════════════════════════════════════════
 	// BOOT-PERF BISECTION — temporary diagnostic switches
 	// ═══════════════════════════════════════════════════════════════════
-	// Per user request 2026-04-15: each switch disables one post-paint
-	// background task. Start ALL = false (everything off), measure boot.
-	// Flip one to true, measure again. The flip that adds significant
-	// time is the culprit.
+	// NUCLEAR MODE: NOTHING runs after paint. Not even loadLibraries.
+	// This isolates whether the slowness is in our data-loading chain or
+	// in something more fundamental (Svelte hydration, Tauri IPC bridge).
 	//
-	// Each switch is independent — they can be flipped in any order. The
-	// boot-perf log will show timings for whatever's enabled.
+	// Expected outcome: if the UI paints fast with this, the culprit is
+	// absolutely in the IPC commands the frontend fires. If the UI STILL
+	// takes 25s to appear, the problem is in the bundle / hydration.
 	const BOOT_FEATURES = {
-		watchers: false,        // startWatchingLibrary per library
-		appearances: false,     // loadLibraryAppearance per library
-		stats: false,           // loadAllStats (star counts, recent notes)
-		cacheSnapshot: true,    // refreshLibraryCaches (cache_boot_snapshot)
-		// Future panels (mount-time work): SkyView / Sight / Map / Index
-		// are only mounted on click — they cannot be disabled here. If they
-		// turn out to do work at boot via reactive subscriptions, we'll add
-		// switches for those subscriptions here too.
+		loadPromiseAll: false,  // Promise.all of 6 config IPCs
+		loadLibraries: false,   // invoke('resolve_universe_libraries')
+		watchers: false,
+		appearances: false,
+		stats: false,
+		cacheSnapshot: false,   // refreshLibraryCaches (cache_boot_snapshot)
 	};
 
 	async function initializeApp() {
@@ -1436,30 +1434,34 @@
 			finally { timings[label] = stop(); }
 		};
 
-		await Promise.all([
-			time('loadSettings', () => loadSettings()).catch(() => {}),
-			time('loadBookmarks', () => loadBookmarks()).catch(() => {}),
-			time('loadWorkspaces', () => loadWorkspaces()).catch(() => {}),
-			time('loadPropertyTypes', () => loadPropertyTypes()).catch(() => {}),
-			time('listWorkspaceBases', () => listWorkspaceBases()).then(b => workspaceBases = b).catch(() => {}),
-			time('getChildUniverses', () => getChildUniverses()).then(async (c) => {
-				childUniverses = c;
-				const map = new Map<string, Set<string>>();
-				const cuStart = performance.now();
-				for (const cu of c) {
-					try {
-						const childLibs = await invoke<{ id: string; name: string; path: string }[]>(
-							'read_child_universe_libraries', { childPath: cu.path }
-						);
-						map.set(cu.path, new Set(childLibs.map(l => l.path.replace(/\\/g, '/').toLowerCase())));
-					} catch {
-						map.set(cu.path, new Set());
+		if (BOOT_FEATURES.loadPromiseAll) {
+			await Promise.all([
+				time('loadSettings', () => loadSettings()).catch(() => {}),
+				time('loadBookmarks', () => loadBookmarks()).catch(() => {}),
+				time('loadWorkspaces', () => loadWorkspaces()).catch(() => {}),
+				time('loadPropertyTypes', () => loadPropertyTypes()).catch(() => {}),
+				time('listWorkspaceBases', () => listWorkspaceBases()).then(b => workspaceBases = b).catch(() => {}),
+				time('getChildUniverses', () => getChildUniverses()).then(async (c) => {
+					childUniverses = c;
+					const map = new Map<string, Set<string>>();
+					const cuStart = performance.now();
+					for (const cu of c) {
+						try {
+							const childLibs = await invoke<{ id: string; name: string; path: string }[]>(
+								'read_child_universe_libraries', { childPath: cu.path }
+							);
+							map.set(cu.path, new Set(childLibs.map(l => l.path.replace(/\\/g, '/').toLowerCase())));
+						} catch {
+							map.set(cu.path, new Set());
+						}
 					}
-				}
-				timings['readChildUniverseLibraries_x' + c.length] = Math.round(performance.now() - cuStart);
-				childUniverseLibPaths = map;
-			}).catch(() => {}),
-		]);
+					timings['readChildUniverseLibraries_x' + c.length] = Math.round(performance.now() - cuStart);
+					childUniverseLibPaths = map;
+				}).catch(() => {}),
+			]);
+		} else {
+			console.log('[boot-perf] loadPromiseAll DISABLED — skipping config IPCs');
+		}
 		(window as any).__bootTimings = timings;
 
 		// Idle detection for lock screen
@@ -1475,30 +1477,28 @@
 			if (idleTimer) clearTimeout(idleTimer);
 		});
 
-		// Load libraries — split into IPC call vs reactive cascade so we
-		// can isolate where the 83s actually goes. If invoke() takes 80s,
-		// it's the Tauri/Rust side. If libraries.set() takes 80s, it's a
-		// Svelte $derived chain reacting to the store.
-		const llStart = performance.now();
-		let libList: any[] = [];
-		try {
-			libList = await invoke<any[]>('resolve_universe_libraries');
-		} catch (e) {
-			console.warn('[boot-perf] resolve_universe_libraries error', e);
-			try { libList = await invoke<any[]>('list_libraries'); } catch {}
-		}
-		const llIpc = performance.now();
-		timings['loadLibraries_invoke'] = Math.round(llIpc - llStart);
-		console.log('[boot-perf] resolve_universe_libraries returned', libList.length, 'rows in', timings['loadLibraries_invoke'], 'ms');
+		if (BOOT_FEATURES.loadLibraries) {
+			const llStart = performance.now();
+			let libList: any[] = [];
+			try {
+				libList = await invoke<any[]>('resolve_universe_libraries');
+			} catch (e) {
+				console.warn('[boot-perf] resolve_universe_libraries error', e);
+				try { libList = await invoke<any[]>('list_libraries'); } catch {}
+			}
+			const llIpc = performance.now();
+			timings['loadLibraries_invoke'] = Math.round(llIpc - llStart);
+			console.log('[boot-perf] resolve_universe_libraries returned', libList.length, 'rows in', timings['loadLibraries_invoke'], 'ms');
 
-		// Apply to the store. If THIS step takes a long time, the slowness
-		// is in subscribers/$derived, not in the Rust IPC.
-		const { libraries: librariesStore } = await import('$lib/libraries/store');
-		librariesStore.set(libList);
-		const llSet = performance.now();
-		timings['loadLibraries_storeSet'] = Math.round(llSet - llIpc);
-		timings['loadLibraries_total'] = Math.round(llSet - llStart);
-		console.log('[boot-perf] libraries.set took', timings['loadLibraries_storeSet'], 'ms (cascade)');
+			const { libraries: librariesStore } = await import('$lib/libraries/store');
+			librariesStore.set(libList);
+			const llSet = performance.now();
+			timings['loadLibraries_storeSet'] = Math.round(llSet - llIpc);
+			timings['loadLibraries_total'] = Math.round(llSet - llStart);
+			console.log('[boot-perf] libraries.set took', timings['loadLibraries_storeSet'], 'ms (cascade)');
+		} else {
+			console.log('[boot-perf] loadLibraries DISABLED — skipping resolve_universe_libraries');
+		}
 
 		// Mark hydration checkpoint for the boot-perf scorecard.
 		performance.mark('boot:libraries-loaded');
