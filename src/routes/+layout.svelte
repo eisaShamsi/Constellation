@@ -1437,20 +1437,32 @@
 
 		// Load libraries — this is what the sidebar needs
 		try { await loadLibraries(); } catch { /* ignore */ }
-		try { await loadAllStats(); } catch { /* ignore */ }
 
-		// App is usable now — show UI immediately
+		// App is usable now — show UI immediately. Everything below runs in the
+		// background; the sidebar populates progressively as stats arrive.
 		appReady = true;
 
-		// Start file watchers and build caches in the background
-		for (const lib of $libraries) {
-			try { await startWatchingLibrary(lib.id, lib.path); } catch { /* ignore */ }
-			await loadLibraryAppearance(lib.path, lib.id);
-		}
-		// DO NOT await — on a large Universe (7,600 notes across 16 libraries)
-		// the cache refresh reads every file 8 times (64 IPC calls total). Fire
-		// in the background so the UI is interactive immediately; views that
-		// depend on the data will populate progressively as results arrive.
+		// Stats (star counts + 10 recent notes per library) walk every .md file
+		// and read the 10 most-recent for previews. On a 7,600-note Universe
+		// this used to be awaited before appReady — 22s of frozen UI. Now it
+		// runs in the background and the sidebar updates when it completes.
+		loadAllStats().catch(() => {});
+
+		// Start file watchers in parallel (one IPC each, non-blocking) and load
+		// appearances without awaiting between libraries.
+		(async () => {
+			const libs = $libraries;
+			await Promise.all(libs.map(lib =>
+				startWatchingLibrary(lib.id, lib.path).catch(() => {})
+			));
+			for (const lib of libs) {
+				await loadLibraryAppearance(lib.path, lib.id).catch(() => {});
+				await yieldToUI();
+			}
+		})();
+
+		// Cache refresh runs in the background and streams per library. See
+		// refreshLibraryCaches() for details.
 		refreshLibraryCaches().catch(() => {});
 	}
 
