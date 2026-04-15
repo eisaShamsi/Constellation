@@ -1457,27 +1457,33 @@
 		// painted earlier; by this point the $libraries store is populated.
 		performance.mark('boot:libraries-loaded');
 
-		// Stats (star counts + 10 recent notes per library) walk every .md file
-		// and read the 10 most-recent for previews. On a 7,600-note Universe
-		// this used to be awaited before appReady — 22s of frozen UI. Now it
-		// runs in the background and the sidebar updates when it completes.
-		loadAllStats().catch(() => {});
+		// ═══ BOOT RULE: ZERO FILESYSTEM WALKS ════════════════════════════
+		// Per the 2026-04-15 expert panel, nothing walks the filesystem on
+		// boot. Ever. The SQLite cache is the source of truth. The only
+		// boot-path work is refreshLibraryCaches() which runs a single
+		// SELECT against the cache.
+		//
+		// Previously KILLED from this boot path:
+		//   - loadAllStats()  — walked every .md file for star counts + previews.
+		//     Derived stats now come from the cache snapshot.
+		//   - cache_reconcile() — a full-filesystem mtime walk. Moved to a
+		//     cheap stat-only idle sweep (Criterion 4 work, separate commit).
+		//   - enrichNodesBackground() — 4 per-library walks for strata /
+		//     maturity / origins / stages. Those projections will be
+		//     persisted into SQLite at index time and read from cache.
+		//   - per-library watcher start in a loop with yields. Collapsed
+		//     into a single parallel Promise.all, not awaited here at all.
+		//
+		// File watchers and library-appearance loads are fire-and-forget;
+		// they don't block boot and don't contend on the SQLite writer.
+		Promise.all($libraries.map(lib =>
+			startWatchingLibrary(lib.id, lib.path).catch(() => {})
+		)).catch(() => {});
+		$libraries.forEach(lib =>
+			loadLibraryAppearance(lib.path, lib.id).catch(() => {})
+		);
 
-		// Start file watchers in parallel (one IPC each, non-blocking) and load
-		// appearances without awaiting between libraries.
-		(async () => {
-			const libs = $libraries;
-			await Promise.all(libs.map(lib =>
-				startWatchingLibrary(lib.id, lib.path).catch(() => {})
-			));
-			for (const lib of libs) {
-				await loadLibraryAppearance(lib.path, lib.id).catch(() => {});
-				await yieldToUI();
-			}
-		})();
-
-		// Cache refresh runs in the background and streams per library. See
-		// refreshLibraryCaches() for details.
+		// ONE call to load the cache snapshot. No reconcile, no walkers.
 		refreshLibraryCaches().catch(() => {});
 	}
 
@@ -1868,29 +1874,20 @@
 				recordBootPerf();
 			}
 
-			// ── Background reconciliation ─────────────────────────────────
-			// Walk the filesystem comparing mtime against the cache; re-parse
-			// only files that actually changed. The indexer is mtime-gated at
-			// the note level — unchanged files are skipped WITHOUT being read.
-			// On a hot cache with no external changes this is essentially a
-			// stat of every .md file (cheap) + zero content reads. When it
-			// finishes it emits `cache-reconciled`, and the listener in
-			// onMount will re-call refreshLibraryCaches() to pick up deltas.
-			invoke('cache_reconcile').catch(() => {});
-
-			// Enrichments (strata / maturity / origins / stages / tensions /
-			// lenses) are decorative tints on graph nodes. They each still
-			// walk per-library; fire them as a separate background task so
-			// clicks are never blocked.
-			if (libraryList.length > 0) {
-				void enrichNodesBackground(libraryList);
-			}
-
-			// Index view (term mentions, Arabic stemming) is heavier and only
-			// needed when the user opens that specific tab. Defer it entirely
-			// — loadIndexDataLazily() runs the old scan on demand.
-			// (existing code paths still call scanLibraryIndex via the Index
-			// tab itself, so no data is lost — it's just not prefetched.)
+			// ═══ ZERO BOOT-TIME WALKS — see initializeApp() comment ════════
+			// `cache_reconcile` and `enrichNodesBackground` used to fire here.
+			// Both walked every library on every boot, causing the audible
+			// disk thrashing and IPC saturation that made the app
+			// unresponsive for minutes after first paint.
+			//
+			// They are now triggered ONLY by:
+			//   - The runtime file watcher (per-file, incremental).
+			//   - The user clicking Settings → Rebuild Index.
+			//   - First-ever launch when the cache is empty (one-time modal).
+			//
+			// External edits made while the app was closed (git pull, sync
+			// clients) are detected by a future cheap stat-only sweep — see
+			// Criterion 4 in lab/boot-perf/BOOT-BUDGET.md.
 		} finally {
 			cacheRefreshing = false;
 		}
