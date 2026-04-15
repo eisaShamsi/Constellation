@@ -765,7 +765,7 @@
 	let newLibraryName = $state('');
 
 	const isHome = $derived(page.url.pathname === '/');
-	const isDashboardVisible = $derived(isHome && !$activeTab && $libraryStats.length > 0 && $appSettings.showDashboard);
+	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
 	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || showSearchHub || isDashboardVisible);
 
@@ -3446,7 +3446,7 @@
 						</div>
 					{/each}
 
-					{#if $libraryStats.length === 0 && librariesLoaded}
+					{#if $libraries.length === 0 && librariesLoaded}
 						<div class="empty-sidebar">
 							<p>{$t('sidebar.noLibraries')}</p>
 							<button class="add-first-btn" onclick={handleAddLibrary}>{$t('sidebar.addLibraryButton')}</button>
@@ -4045,13 +4045,13 @@
 					{/if}
 				</div>
 			{:else if isHome}
-				<div class="welcome" class:welcome-dashboard={$libraryStats.length > 0 && $appSettings.showDashboard}>
-					{#if $libraryStats.length === 0 && !librariesLoaded}
+				<div class="welcome" class:welcome-dashboard={$libraries.length > 0 && $appSettings.showDashboard}>
+					{#if !librariesLoaded}
 						<!-- Hydration window: spinner, not the Create-Library screen. -->
 						<div class="app-loading" style="min-height: 400px;">
 							<div class="loading-spinner"></div>
 						</div>
-					{:else if $libraryStats.length === 0}
+					{:else if $libraries.length === 0}
 						<svg class="w-icon" width="80" height="80" viewBox="0 0 160 160" fill="none">
 								<defs>
 									<linearGradient id="wStarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
