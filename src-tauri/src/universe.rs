@@ -1019,12 +1019,13 @@ pub fn remove_child_universe(app: tauri::AppHandle, child_path: String) -> Resul
 #[tauri::command]
 pub fn resolve_universe_libraries(app: tauri::AppHandle) -> Result<Vec<crate::libraries::LibraryInfo>, String> {
     let t0 = std::time::Instant::now();
-    eprintln!("[RUST-PERF] resolve_universe_libraries: start");
+    let wall = chrono::Local::now().format("%H:%M:%S%.3f");
+    eprintln!("[RUST-PERF] {} resolve_universe_libraries: ENTER", wall);
     let universe_dir = active_universe_dir(&app)?;
-    eprintln!("[RUST-PERF] resolve_universe_libraries: got active_universe_dir at {:?}", t0.elapsed());
     let mut visited = Vec::new();
     let result = resolve_libraries_recursive(&universe_dir, &mut visited);
-    eprintln!("[RUST-PERF] resolve_universe_libraries: returning {} rows at {:?}", result.len(), t0.elapsed());
+    let wall2 = chrono::Local::now().format("%H:%M:%S%.3f");
+    eprintln!("[RUST-PERF] {} resolve_universe_libraries: EXIT ({} rows, {:?} elapsed)", wall2, result.len(), t0.elapsed());
     Ok(result)
 }
 

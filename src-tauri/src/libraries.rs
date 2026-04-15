@@ -65,6 +65,18 @@ fn load_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
 /// Load ALL libraries: own + child universe libraries (recursive, deduplicated).
 /// This is what the frontend and query_base should use.
 pub fn load_all_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
+    static CALL_COUNT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    let n = CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+    if n < 200 {
+        let bt = std::backtrace::Backtrace::force_capture();
+        let bt_str = format!("{}", bt);
+        // Extract just the interesting frames — filter to our own crate
+        let interesting: Vec<&str> = bt_str.lines()
+            .filter(|l| l.contains("constellation::") && !l.contains("load_all_libraries") && !l.contains("load_libraries_pub"))
+            .take(3)
+            .collect();
+        eprintln!("[RUST-PERF] load_all_libraries call #{} — caller chain: {:?}", n, interesting);
+    }
     match crate::universe::resolve_universe_libraries(app.clone()) {
         Ok(libs) => libs,
         Err(_) => load_libraries(app),
