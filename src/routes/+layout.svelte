@@ -1475,10 +1475,30 @@
 			if (idleTimer) clearTimeout(idleTimer);
 		});
 
-		// Load libraries — populates the sidebar store.
+		// Load libraries — split into IPC call vs reactive cascade so we
+		// can isolate where the 83s actually goes. If invoke() takes 80s,
+		// it's the Tauri/Rust side. If libraries.set() takes 80s, it's a
+		// Svelte $derived chain reacting to the store.
 		const llStart = performance.now();
-		try { await loadLibraries(); } catch { /* ignore */ }
-		timings['loadLibraries'] = Math.round(performance.now() - llStart);
+		let libList: any[] = [];
+		try {
+			libList = await invoke<any[]>('resolve_universe_libraries');
+		} catch (e) {
+			console.warn('[boot-perf] resolve_universe_libraries error', e);
+			try { libList = await invoke<any[]>('list_libraries'); } catch {}
+		}
+		const llIpc = performance.now();
+		timings['loadLibraries_invoke'] = Math.round(llIpc - llStart);
+		console.log('[boot-perf] resolve_universe_libraries returned', libList.length, 'rows in', timings['loadLibraries_invoke'], 'ms');
+
+		// Apply to the store. If THIS step takes a long time, the slowness
+		// is in subscribers/$derived, not in the Rust IPC.
+		const { libraries: librariesStore } = await import('$lib/libraries/store');
+		librariesStore.set(libList);
+		const llSet = performance.now();
+		timings['loadLibraries_storeSet'] = Math.round(llSet - llIpc);
+		timings['loadLibraries_total'] = Math.round(llSet - llStart);
+		console.log('[boot-perf] libraries.set took', timings['loadLibraries_storeSet'], 'ms (cascade)');
 
 		// Mark hydration checkpoint for the boot-perf scorecard.
 		performance.mark('boot:libraries-loaded');
