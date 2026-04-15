@@ -354,7 +354,8 @@
       "Bash(gh --version)",
       "WebFetch(domain:docs.obsidian.md)",
       "Bash(ls -d help.*)",
-      "Bash(ls CHANGELOG*)"
+      "Bash(ls CHANGELOG*)",
+      "Bash(grep -n \"No libraries yet\\\\|Welcome to Constellation\\\\|Add your first library\" src/routes/+layout.svelte src/lib/components/*.svelte)"
     ]
   }
 }

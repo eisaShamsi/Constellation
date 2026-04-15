@@ -1506,9 +1506,14 @@ pub fn constellation_search(
     let conn = match db_guard.as_ref() {
         Some(c) => c,
         None => {
-            // Fallback: initialize on first search
+            // Fallback: open the DB lazily. This used to call
+            // constellation_search_init which WALKED every library on every
+            // first-search — blocking the UI for seconds on a large Universe.
+            // Now we only open the connection (cheap); the index is kept fresh
+            // by the file watcher and by explicit Rebuild Index actions. If
+            // the index is cold (empty), the search just returns no results.
             drop(db_guard);
-            constellation_search_init(app.clone())?;
+            ensure_search_db_ready(&app)?;
             let state = app.state::<SearchState>();
             let db_guard = state.db.lock().map_err(|e| e.to_string())?;
             return match db_guard.as_ref() {
@@ -1820,8 +1825,10 @@ pub fn constellation_search_universal(
     let conn = match db_guard.as_ref() {
         Some(c) => c,
         None => {
+            // Same lazy-open pattern as constellation_search — cheap DB open
+            // only, never a filesystem walk. See that function for rationale.
             drop(db_guard);
-            constellation_search_init(app.clone())?;
+            ensure_search_db_ready(&app)?;
             let state = app.state::<SearchState>();
             let db_guard = state.db.lock().map_err(|e| e.to_string())?;
             return match db_guard.as_ref() {
