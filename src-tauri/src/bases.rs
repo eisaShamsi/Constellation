@@ -715,8 +715,6 @@ pub struct WorkspaceBaseEntry {
 
 #[tauri::command]
 pub fn list_workspace_bases(app: tauri::AppHandle) -> Result<Vec<WorkspaceBaseEntry>, String> {
-    let t0 = std::time::Instant::now();
-    eprintln!("[RUST-PERF] {} list_workspace_bases: ENTER", chrono::Local::now().format("%H:%M:%S%.3f"));
     let dir = workspace_bases_dir(&app)?;
     let mut entries = Vec::new();
 
@@ -750,7 +748,6 @@ pub fn list_workspace_bases(app: tauri::AppHandle) -> Result<Vec<WorkspaceBaseEn
     }
 
     entries.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-    eprintln!("[RUST-PERF] {} list_workspace_bases: EXIT ({} entries, {:?})", chrono::Local::now().format("%H:%M:%S%.3f"), entries.len(), t0.elapsed());
     Ok(entries)
 }
 

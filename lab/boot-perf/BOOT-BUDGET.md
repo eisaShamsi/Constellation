@@ -68,20 +68,49 @@ Once the implementation work lands, the user:
 4. Sees a 5-row scorecard: each criterion with PASS / FAIL and the measured value.
 5. Criteria 4 and 5 have "Run now" buttons that execute the procedure automatically.
 
-## Current baseline (pre-implementation, committed `69cfa6a`)
+## Production baseline (post-fix, commit `ce47e13`)
 
-Reported by user, 2026-04-15:
+Reported by user, 2026-04-15. Measured against the trial Universe
+(7,600 notes, 16 libraries, 656k typed links).
+
+| Criterion | Target | Measured (production .exe) | Status |
+|---|---|---|---|
+| 1. UI visible | ≤ 2.5s | **~1s** | **PASS** |
+| 2. Fully responsive | ≤ 6s | **~8s** | NEAR (1.3× target) |
+| 3. RSS ≤ 350 MB | ≤ 350 MB | not yet measured | TBD |
+| 4. Stat sweep 50 files | ≤ 3s non-blocking | not implemented | future |
+| 5. Kill-mid-index recovery | pass | not implemented | future |
+
+For comparison, Obsidian on the same hardware reports < 5s UI / < 10s
+fully responsive. Constellation production now beats UI and is within
+1.3× of fully-responsive on the largest test corpus we ship today.
+
+## Pre-fix baseline (commit `69cfa6a`, for reference)
 
 | Criterion | Target | Measured | Status |
 |---|---|---|---|
-| 1. UI visible | ≤ 2.5s | **25s** | FAIL |
-| 2. Fully responsive | ≤ 6s | **> 360s (user terminated)** | FAIL |
-| 3. RSS ≤ 350 MB | ≤ 350 MB | not measured | — |
-| 4. Stat sweep 50 files | ≤ 3s non-blocking | not implemented | N/A |
-| 5. Kill-mid-index recovery | pass | not implemented | N/A |
+| 1. UI visible | ≤ 2.5s | 25s | FAIL |
+| 2. Fully responsive | ≤ 6s | > 360s (user terminated) | FAIL |
 
-This baseline is what the architecture rewrite must beat. Every commit in the rewrite series is measured against this table.
+The fix series (commits `a76a717` through `ce47e13`) reduced UI-visible
+time by 25× and fully-responsive time by 45×.
+
+## Open work (Criteria 4 and 5)
+
+Still not implemented; tracked in the boot-perf todo for a future session:
+- **Criterion 4** — cheap stat-only post-UI sweep that detects external
+  changes (OneDrive, Syncthing, git pull) without blocking the UI.
+- **Criterion 5** — kill-mid-index recovery: schema-version check on
+  search.db with auto-rebuild modal if WAL is corrupt.
+
+These do not gate the current "boot-perf-fix-2026-04-15" milestone but
+must land before we can claim full ship-readiness on this dimension.
 
 ## Changelog
 
-- **2026-04-15** — Budget created after 3-agent expert panel review. See `lab/reports/SESSION-LOG-2026-04-15.md` for the panel memos.
+- **2026-04-15 (initial)** — Budget created after 3-agent expert panel
+  review. Pre-fix baseline recorded.
+- **2026-04-15 (production verified)** — Fix series complete. Production
+  build measured at 1s UI / 8s fully responsive on the trial Universe.
+  Dev-mode IPC remains slow due to Vite + WebView2 + DevTools attachment
+  overhead — not a shipping concern.

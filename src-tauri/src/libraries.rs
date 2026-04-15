@@ -82,6 +82,7 @@ static LIBRARIES_CACHE: std::sync::Mutex<Option<(std::path::PathBuf, Vec<Library
 pub fn load_all_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     let active = crate::universe::active_universe_dir(app).ok();
 
+    // Fast path — cache hit for the currently active universe.
     if let Some(ref universe_path) = active {
         if let Ok(guard) = LIBRARIES_CACHE.lock() {
             if let Some((cached_universe, cached_libs)) = guard.as_ref() {
@@ -92,7 +93,7 @@ pub fn load_all_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
         }
     }
 
-    // Cache miss: compute the result.
+    // Cache miss or unknown universe — do the actual disk read + parse.
     let libs = match crate::universe::resolve_universe_libraries(app.clone()) {
         Ok(libs) => libs,
         Err(_) => load_libraries(app),
