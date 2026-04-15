@@ -1397,30 +1397,33 @@
 
 	// ─── Universe initialization ───
 	async function initializeApp() {
-		// ═══ BOOT ARCHITECTURE — paint-first, hydrate-after ═══════════════
-		// Per 2026-04-15 expert panel review (lab/boot-perf/BOOT-BUDGET.md),
-		// the UI MUST be visible before any data loads. Previously this
-		// function awaited 7+ IPC calls before flipping appReady — meaning
-		// first paint was gated on the slowest Rust handler in the chain.
-		// Now: paint immediately, data fills in progressively.
-		//
-		// Agent 2 (Tauri systems) put it bluntly: "Constellation awaits
-		// backend work before the window is shown; Obsidian doesn't. That
-		// is the architectural error."
 		performance.mark('boot:paint');
 		appReady = true;
 
-		// Load essential data from the active universe in parallel (each fault-tolerant)
+		// Per-call instrumentation. Tells us EXACTLY which IPC is slow —
+		// previously we knew "65s for the Promise.all" but not which call.
+		// All `_t` values land in `[boot-perf]` for diagnosis.
+		const t = (label: string) => {
+			const start = performance.now();
+			return () => Math.round(performance.now() - start);
+		};
+		const timings: Record<string, number> = {};
+		const time = async <T,>(label: string, fn: () => Promise<T>): Promise<T> => {
+			const stop = t(label);
+			try { return await fn(); }
+			finally { timings[label] = stop(); }
+		};
+
 		await Promise.all([
-			loadSettings().catch(() => {}),
-			loadBookmarks().catch(() => {}),
-			loadWorkspaces().catch(() => {}),
-			loadPropertyTypes().catch(() => {}),
-			listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}),
-			getChildUniverses().then(async (c) => {
+			time('loadSettings', () => loadSettings()).catch(() => {}),
+			time('loadBookmarks', () => loadBookmarks()).catch(() => {}),
+			time('loadWorkspaces', () => loadWorkspaces()).catch(() => {}),
+			time('loadPropertyTypes', () => loadPropertyTypes()).catch(() => {}),
+			time('listWorkspaceBases', () => listWorkspaceBases()).then(b => workspaceBases = b).catch(() => {}),
+			time('getChildUniverses', () => getChildUniverses()).then(async (c) => {
 				childUniverses = c;
-				// Resolve which libraries belong to each child universe
 				const map = new Map<string, Set<string>>();
+				const cuStart = performance.now();
 				for (const cu of c) {
 					try {
 						const childLibs = await invoke<{ id: string; name: string; path: string }[]>(
@@ -1431,9 +1434,11 @@
 						map.set(cu.path, new Set());
 					}
 				}
+				timings['readChildUniverseLibraries_x' + c.length] = Math.round(performance.now() - cuStart);
 				childUniverseLibPaths = map;
 			}).catch(() => {}),
 		]);
+		(window as any).__bootTimings = timings;
 
 		// Idle detection for lock screen
 		const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'] as const;
@@ -1448,14 +1453,14 @@
 			if (idleTimer) clearTimeout(idleTimer);
 		});
 
-		// Load libraries — populates the sidebar store. The shell is already
-		// painted (appReady was set by the caller before invoking us); the
-		// sidebar fills in when this resolves.
+		// Load libraries — populates the sidebar store.
+		const llStart = performance.now();
 		try { await loadLibraries(); } catch { /* ignore */ }
+		timings['loadLibraries'] = Math.round(performance.now() - llStart);
 
-		// Mark hydration checkpoint for the boot-perf scorecard. The shell
-		// painted earlier; by this point the $libraries store is populated.
+		// Mark hydration checkpoint for the boot-perf scorecard.
 		performance.mark('boot:libraries-loaded');
+		console.log('[boot-perf] per-call timings (ms):', timings);
 
 		// ═══ BOOT RULE: ZERO FILESYSTEM WALKS ════════════════════════════
 		// Per the 2026-04-15 expert panel, nothing walks the filesystem on
@@ -1608,12 +1613,18 @@
 			}
 		} catch { /* localStorage unavailable */ }
 
-		// 1. Check universe state
+		// 1. Check universe state — instrumented (paint_ms tells us total
+		// onMount-to-paint, but this breaks down WHERE within onMount.)
+		(window as any).__bootOnMountStart = performance.now();
 		let universes: UniverseEntry[] = [];
 		let needsMigration = false;
 		try {
+			const t1 = performance.now();
 			universes = await listUniverses();
+			console.log('[boot-perf] listUniverses', Math.round(performance.now() - t1), 'ms');
+			const t2 = performance.now();
 			needsMigration = await checkMigrationNeeded();
+			console.log('[boot-perf] checkMigrationNeeded', Math.round(performance.now() - t2), 'ms');
 		} catch {
 			// IPC not available (browser preview) — show setup
 			showUniverseSetup = true;
@@ -1638,7 +1649,9 @@
 		let activated = false;
 		for (const entry of universes) {
 			try {
+				const tA = performance.now();
 				await setActiveUniverse(entry.id);
+				console.log('[boot-perf] setActiveUniverse', entry.name, Math.round(performance.now() - tA), 'ms');
 				activeUniverseName = entry.name;
 				activated = true;
 				break;
