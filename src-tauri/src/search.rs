@@ -91,7 +91,7 @@ impl SearchState {
 
 // ─── Database Setup ────────────────────────────────────────────
 
-fn db_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+pub(crate) fn db_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let cdir = crate::universe::active_constellation_dir(app)?;
     Ok(cdir.join("search.db"))
 }

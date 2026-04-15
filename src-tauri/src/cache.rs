@@ -29,13 +29,34 @@
 //! included here — they're only used in hover cards / Index view, which can
 //! lazy-fetch after first paint.
 
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OpenFlags};
 use serde::Serialize;
 use std::collections::HashMap;
 use tauri::Manager;
 
 use crate::libraries::NoteLink;
 use crate::search::SearchState;
+
+/// Open a READ-ONLY connection to search.db. Uses its own Connection — does
+/// NOT touch SearchState.db's mutex. SQLite WAL mode (set in init_db) allows
+/// unlimited concurrent readers, so this is free and unblocking.
+///
+/// Why: previously every cache read fought the same Mutex<Connection> used
+/// by the filesystem-walking reconcile, so a long walk froze Search Hub and
+/// backlinks for the duration. With a dedicated reader connection the two
+/// operations never contend — the writer walks on its own connection, any
+/// number of readers can query through their own.
+fn open_reader(app: &tauri::AppHandle) -> Result<Connection, String> {
+    let path = crate::search::db_path(app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let conn = Connection::open_with_flags(&path, flags)
+        .map_err(|e| format!("Failed to open search.db (read-only): {}", e))?;
+    // WAL readers set busy_timeout so they wait briefly rather than fail
+    // if the writer holds a lock at an exact moment of checkpoint.
+    conn.busy_timeout(std::time::Duration::from_millis(500))
+        .map_err(|e| e.to_string())?;
+    Ok(conn)
+}
 
 #[derive(Debug, Serialize)]
 pub struct BootNote {
@@ -61,20 +82,18 @@ pub struct BootSnapshot {
 /// to decide whether to show the one-time "Building index…" progress screen.
 #[tauri::command]
 pub fn cache_boot_snapshot(app: tauri::AppHandle) -> Result<BootSnapshot, String> {
-    // CRITICAL: open the DB if state hasn't opened it yet. On 2nd+ boots the
-    // search.db file already exists on disk with all our data, but nothing
-    // has called constellation_search_init yet — so the state.db mutex is
-    // empty and without this call we'd return is_cold: true despite the data
-    // being right there. This was the bug in the initial cache-first boot:
-    // the snapshot reported cold on every launch, defeating the whole point.
+    // Make sure the DB file exists (first ever launch creates the schema).
+    // After this call the file is on disk and we can open a read-only
+    // connection to it, bypassing the writer mutex entirely.
     let _ = crate::search::ensure_search_db_ready(&app);
 
-    let state = app.state::<SearchState>();
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-
-    let conn = match db_guard.as_ref() {
-        Some(c) => c,
-        None => {
+    // Dedicated read-only connection. Does NOT lock SearchState.db — so if
+    // a reconcile walk is in progress, Search Hub / backlinks / this call
+    // all proceed concurrently (SQLite WAL mode guarantees readers never
+    // block writers and vice versa).
+    let conn = match open_reader(&app) {
+        Ok(c) => c,
+        Err(_) => {
             return Ok(BootSnapshot {
                 notes: Vec::new(),
                 links: Vec::new(),
@@ -83,6 +102,7 @@ pub fn cache_boot_snapshot(app: tauri::AppHandle) -> Result<BootSnapshot, String
             });
         }
     };
+    let conn = &conn;
 
     // ── Notes ───────────────────────────────────────────────────────
     let mut notes = Vec::new();
@@ -214,11 +234,10 @@ fn read_tags(conn: &Connection) -> Result<HashMap<String, u32>, String> {
 /// whether to show the first-run "Building index…" progress UI.
 #[tauri::command]
 pub fn cache_is_populated(app: tauri::AppHandle) -> Result<bool, String> {
-    let state = app.state::<SearchState>();
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    let conn = match db_guard.as_ref() {
-        Some(c) => c,
-        None => return Ok(false),
+    // Use the dedicated reader to avoid contending with any in-flight walk.
+    let conn = match open_reader(&app) {
+        Ok(c) => c,
+        Err(_) => return Ok(false),
     };
     let count: i64 = conn
         .query_row("SELECT COUNT(*) FROM note_meta", params![], |row| row.get(0))
