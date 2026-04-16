@@ -1454,6 +1454,10 @@
 			workspace_bases: any[];
 			child_universes: ChildUniverseInfo[];
 			child_universe_lib_paths: Record<string, string[]>;
+			/** Per-step wall-clock timings measured inside the Rust command.
+			 *  Attributed into `boot-perf.latest.json#boot_bundle_timings`
+			 *  so cold-boot bottlenecks are diagnosable without rebuilds. */
+			timings_ms?: Array<[string, number]>;
 		};
 		let bundle: BootBundle | null = null;
 		try {
@@ -1507,6 +1511,13 @@
 				map.set(cu.path, new Set(bundle.child_universe_lib_paths[cu.path] ?? []));
 			}
 			childUniverseLibPaths = map;
+
+			// Stash Rust-side per-step timings so buildBootPerfReport can write
+			// them into boot-perf.latest.json. Investigation target per
+			// lab/boot-perf/boot-bundle-cold-start.md.
+			if (Array.isArray(bundle.timings_ms)) {
+				bootBundleTimings = bundle.timings_ms;
+			}
 		} else {
 			// Fallback: old per-IPC pattern. Only runs if the bundle command
 			// is unavailable (shouldn't happen post-dc46683 but defensive).
@@ -1890,6 +1901,11 @@
 	 */
 	let bootPerfCorePhaseWritten = false;
 	let bootPerfGraphPhaseWritten = false;
+	/** Per-step timings captured inside Rust's constellation_boot_bundle.
+	 *  Populated once on first paint; written to boot-perf.latest.json so
+	 *  cold-boot attribution is possible without rebuilds. See
+	 *  lab/boot-perf/boot-bundle-cold-start.md. */
+	let bootBundleTimings: Array<[string, number]> = [];
 	function buildBootPerfReport(includeGraphPhase: boolean): Record<string, unknown> {
 		const paint = performance.getEntriesByName('boot:paint')[0]?.startTime ?? 0;
 		const libs = performance.getEntriesByName('boot:libraries-loaded')[0]?.startTime ?? 0;
@@ -1906,6 +1922,10 @@
 			// Criteria from lab/boot-perf/BOOT-BUDGET.md
 			criterion_1_paint: paint <= 2500 ? 'PASS' : 'FAIL',
 			criterion_2_hydrated: hyd <= 6000 ? 'PASS' : 'FAIL',
+			// Per-step timings from constellation_boot_bundle — diagnostic only.
+			// Empty on first paint before the bundle resolves; populated on the
+			// graph-phase write (and any subsequent writes).
+			boot_bundle_timings: bootBundleTimings,
 		};
 	}
 	async function recordBootPerf() {
