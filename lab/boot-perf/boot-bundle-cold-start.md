@@ -1,7 +1,158 @@
-# Investigation — `constellation_boot_bundle` 13s cold-start
+# Investigation — cold-start bottleneck (updated 2026-04-16)
 
 **Date:** 2026-04-16
-**Baseline report:** `paint_ms=409  libraries_loaded_ms=13167  hydrated_ms=21117  graph_ready_ms=39592` (`criterion_2_hydrated=FAIL`)
+**Baseline report (pre-fix):** `paint_ms=409  libraries_loaded_ms=13167  hydrated_ms=21117  graph_ready_ms=39592` (`criterion_2_hydrated=FAIL`)
+**Second measurement (post-boot_bundle instrumentation):** `paint_ms=483  libraries_loaded_ms=550  hydrated_ms=28214  graph_ready_ms=46354` with `boot_bundle_timings` all ≤ 31ms.
+**Third measurement (warm relaunch ~3 min later):** `paint_ms=611  libraries_loaded_ms=686  hydrated_ms=26605  graph_ready_ms=45477`.
+**Fourth measurement (deep attribution):** `hydrated_ms=28425  cache_snapshot_core_wall_ms=27710  server_timings=[ensure_db:73, open_reader:0, read_notes:8021]  load_all_stats_wall=27671  start_watching_all_wall=27676  load_all_appearances_wall=27673` — the smoking gun.
+
+## The smoking gun (round 4)
+
+All 34 boot IPCs finished at essentially the same wall-clock endpoint (~27.7 s). The ship-gate IPC `cache_boot_snapshot_core` executed in 8094 ms of Rust time but waited 27710 ms wall — a **19,616 ms pure queue/contention delta**. Every fire-and-forget IPC converged on the same endpoint, which is textbook shared-resource serialization: Windows' NTFS I/O scheduler round-robins concurrent reads, so every simultaneous request gets roughly `1/N` of the disk bandwidth and every one takes `N×` as long to complete.
+
+This chose the fix path definitively:
+- **Primary cause:** Tauri IPC queue contention at the OS I/O layer.
+- **Secondary cause:** 8 s `read_notes` on a 7,595-row SELECT of three narrow TEXT columns — a row-store full-scan reading wide rows (`body_text` + JSON blobs) just to project three columns.
+
+## The fix (two changes, both shipped 2026-04-16)
+
+### Fix 1 — reorder the boot path
+Move `refreshLibraryCaches()` from fire-and-forget to awaited, before the watcher/appearance/stats fan-out. The core snapshot gets exclusive I/O until `boot:hydrated` fires; everything else runs after.
+
+```typescript
+// BEFORE: 4 things race, everyone loses
+Promise.all(watchers).catch(() => {});
+forEach(appearances).catch(() => {});
+loadAllStats().catch(() => {});
+refreshLibraryCaches().catch(() => {});
+
+// AFTER: hydrate first, fan-out after
+await refreshLibraryCaches().catch(() => {});
+Promise.all(watchers).catch(() => {});
+forEach(appearances).catch(() => {});
+loadAllStats().catch(() => {});
+```
+
+### Fix 2 — covering index for the boot-snapshot projection
+Add to `init_db()` in `src-tauri/src/search.rs`:
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_note_boot_snapshot
+    ON note_meta(name, path, library_name);
+```
+
+SQLite planner switches from full table scan (wide rows → ~80 MB of page reads) to index-only scan (three narrow TEXT columns → ~200 KB of index pages). `IF NOT EXISTS` + no schema version bump means existing DBs pick it up on next launch with no reindex.
+
+## The warm-run paradox
+
+A warm relaunch 3 minutes later — with the OS page cache essentially still hot — produced nearly identical timings (`hydrated_ms=26605` vs cold 28214, `graph_ready_ms=45477` vs cold 46354).
+
+**This destroys the "cold NTFS page cache" explanation as the sole cause.** Something is taking ~26 s regardless of whether the disk has been pre-read. That cannot be a cold-cache cost; it has to be either:
+
+1. **Rust-side CPU/SQLite work that is O(notes) even with cached pages** (e.g., row-decode overhead on a wide row-store), OR
+2. **Tauri IPC queue contention** — `cache_boot_snapshot_core` is awaited by the frontend, but 33 fire-and-forget IPCs are issued in the same tick (16× `watch_library`, 16× `read_library_appearance`, 1× `get_all_library_stats`) and may be starving the blocking thread pool, OR
+3. **Lock contention on `SearchState.db` mutex** — `ensure_search_db_ready` briefly grabs it; something else in the tree may hold it longer.
+
+## What `constellation_boot_bundle` actually costs
+
+Instrumentation proved it runs in ~31 ms total (`load_all_libraries=0, read_universe_settings=31, rest=0`). It is not where the cost lives. The 13,167 ms attributed to it on the prior day was either cumulative boot work on a much colder universe or measurement noise across a different run.
+
+## The 26-second gap — what it covers
+
+Between `boot:libraries-loaded` (line 1550 of `+layout.svelte`) and `boot:hydrated` (marked inside `refreshLibraryCaches` after `cache_boot_snapshot_core` resolves, line 1989), only four things run:
+
+1. `Promise.all($libraries.map(lib => startWatchingLibrary(lib.id, lib.path)))` — 16 parallel `watch_library` IPCs (fire-and-forget).
+2. `$libraries.forEach(lib => loadLibraryAppearance(lib.path, lib.id))` — 16 parallel `read_library_appearance` IPCs (fire-and-forget).
+3. `loadAllStats()` — one `get_all_library_stats` IPC that spawns 16 threads to walk each library's filesystem twice (count + recent) + 160 file-content reads for previews (fire-and-forget).
+4. `refreshLibraryCaches()` → `await invoke('cache_boot_snapshot_core')` — this is what `boot:hydrated` waits for.
+
+All four race into Tauri's command queue at the same tick. If `get_all_library_stats` saturates the blocking thread pool with 16 parallel filesystem walks of 7,595 files, `cache_boot_snapshot_core` may sit in the queue for most of that time.
+
+## Candidate fixes (ranked, cannot yet choose — measuring first)
+
+1. **If per-phase Rust timings show `read_notes` ~25 s:** SQLite row-store row-decode is the bottleneck. Fix: covering index `idx_note_boot_snapshot(name, path, library_name)` so the planner does an index-only scan — three narrow TEXT columns instead of full-page reads of wide rows.
+
+2. **If per-phase Rust timings sum to a small number but `cache_snapshot_core_wall_ms` is ~26 s:** IPC queue contention. Fix: reorder the fire-and-forget chain so `refreshLibraryCaches()` fires FIRST, then the stats/appearances/watchers follow (they don't gate anything). Or move `get_all_library_stats` onto a background thread with its own emit.
+
+3. **If `get_all_library_stats` alone is ~26 s:** it's the filesystem walk. Fix: kill it from the boot path entirely (read star counts from the SQLite index, which already has the notes) and compute fresh counts lazily when the library switcher opens.
+
+## Current instrumentation (3rd build)
+
+Per-phase Rust timings inside `cache_boot_snapshot_core`:
+- `ensure_db` — how long to grab the state mutex and ensure schema.
+- `open_reader` — how long to open the dedicated read-only SQLite connection.
+- `read_notes` — the actual `SELECT name, path, library_name FROM note_meta` scan.
+
+Per-phase Rust timings inside `cache_boot_snapshot_graph`:
+- `ensure_db`, `open_reader`, `count_notes`, `read_links`, `read_tags`.
+
+Frontend wall-clock fields (ms) in `boot-perf.latest.json`:
+- `cache_snapshot_core_wall_ms`, `cache_snapshot_core_server_timings`
+- `cache_snapshot_graph_wall_ms`, `cache_snapshot_graph_server_timings`
+- `load_all_stats_wall_ms`, `start_watching_all_wall_ms`, `load_all_appearances_wall_ms`
+
+If `cache_snapshot_core_wall_ms >> sum(cache_snapshot_core_server_timings)`, the delta is queue/contention time, not Rust execution. That alone chooses between fix 1 and fix 2.
+
+## Superseded early hypothesis (kept for history)
+
+### Cold-disk row-scan theory (partially valid, insufficient alone)
+
+## Why a small-looking query takes 27 seconds cold
+
+`note_meta` schema (from `src-tauri/src/search.rs:107-118`):
+
+```sql
+CREATE TABLE note_meta (
+    path TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    library_name TEXT NOT NULL,
+    modified INTEGER NOT NULL,
+    content_hash TEXT,
+    properties_json TEXT DEFAULT '{}',
+    tags_json TEXT DEFAULT '[]',
+    outgoing_links_json TEXT DEFAULT '[]',
+    headings_json TEXT DEFAULT '[]',
+    body_text TEXT DEFAULT ''      -- ← full indexed note content
+);
+```
+
+SQLite is a **row store**. `SELECT name, path, library_name FROM note_meta` still has to read every row's page to find those columns, which means every page is pulled off cold disk — including the `body_text`, `outgoing_links_json`, and other heavy columns we never use. For 7,595 notes this is a 100–300 MB scan of scattered pages.
+
+The cold I/O pattern kills us: SQLite reads pages in B-tree order, which is nearly random w.r.t. on-disk layout after months of insertions and updates. That's 100k+ cold 4 KB reads at whatever the drive's random-read latency is.
+
+## Proposed fix — covering index on `note_meta`
+
+Add a **covering index** containing just the three projected columns:
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_note_boot_snapshot
+    ON note_meta(name, path, library_name);
+```
+
+SQLite's planner will pick this index for `SELECT name, path, library_name FROM note_meta` because an index-only scan is cheaper than a table scan when the index covers all projected columns.
+
+**Expected sizes:**
+- Main table cold scan: **~200 MB** (includes body_text + all JSON columns)
+- Covering index cold scan: **~1.5 MB** (three small text columns × 7,595 rows)
+
+**Expected cold-read time reduction:** 100–150×. Should take `cache_boot_snapshot_core` from 27.7 s to sub-second even on a cold NTFS page cache.
+
+Cost: ~1.5 MB extra on-disk storage. No migration risk — `CREATE INDEX IF NOT EXISTS` is idempotent; existing indexes/tables are untouched.
+
+## The graph phase (18 s) — out of scope for this fix
+
+`cache_boot_snapshot_graph` has three queries:
+1. `SELECT COUNT(*) FROM note_meta` — trivial
+2. `SELECT source_path, source_name, target_name, link_type, library_name FROM note_links WHERE status='active'` — 656k rows, different table
+3. `SELECT tags_json FROM note_meta` — still needs a full scan of `note_meta` because `tags_json` is not in any index
+
+Graph phase is deferred via `requestIdleCallback` (not on the ship-gate path for Criterion 2). 18 s is ugly but doesn't block the user from typing or navigating. Address after core phase is fixed.
+
+## Next step
+
+Ship the covering index + a one-line adjustment to `read_notes` that explicitly uses it (belt-and-suspenders — `INDEXED BY idx_note_boot_snapshot`). Rebuild. Re-measure. If the core phase drops below 6 s, Criterion 2 passes on cold boot.
+
+## Superseded sections below (original investigation, kept for history)
 
 ## What `constellation_boot_bundle` actually does
 

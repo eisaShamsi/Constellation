@@ -160,6 +160,23 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         CREATE INDEX IF NOT EXISTS idx_note_name ON note_meta(name);
     ").map_err(|e| format!("Failed to create indexes: {}", e))?;
 
+    // Covering index for the boot-path projection:
+    //   SELECT name, path, library_name FROM note_meta
+    // Without this, SQLite does a full table scan and reads the wide
+    // rows (body_text + *_json blobs, ~80 MB on a 7,600-note Universe)
+    // just to project three narrow TEXT columns. With the covering
+    // index, the planner does an index-only scan over ~200 KB of index
+    // pages. Measured 2026-04-16: brings `read_notes` from 8021 ms to
+    // low-millis on cold boot. See lab/boot-perf/boot-bundle-cold-start.md.
+    //
+    // `IF NOT EXISTS` + no version bump means this index is picked up
+    // on the next app launch without deleting or rebuilding the user's
+    // existing search.db.
+    conn.execute_batch("
+        CREATE INDEX IF NOT EXISTS idx_note_boot_snapshot
+            ON note_meta(name, path, library_name);
+    ").map_err(|e| format!("Failed to create idx_note_boot_snapshot: {}", e))?;
+
     // ─── Living Link System (Knowledge Formulation) ─────────────────────
     // note_links: stores typed, directed, annotated links with lifecycle data.
     // Source of truth: LINK files on disk. This table is the fast index.

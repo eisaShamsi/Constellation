@@ -1565,14 +1565,44 @@
 		// fast (metadata-only walk + per-library thread parallelism).
 		// It's fire-and-forget so the sidebar star counts populate
 		// without blocking anything.
-		Promise.all($libraries.map(lib =>
-			startWatchingLibrary(lib.id, lib.path).catch(() => {})
-		)).catch(() => {});
-		$libraries.forEach(lib =>
-			loadLibraryAppearance(lib.path, lib.id).catch(() => {})
-		);
-		loadAllStats().catch(() => {});
-		refreshLibraryCaches().catch(() => {});
+		// ═══ BOOT ORDER: hydrate first, fan-out after ═══════════════════
+		// Critical finding (2026-04-16): all 34 boot IPCs (16 watchers +
+		// 16 appearances + stats + snapshot) were racing into Tauri's
+		// command queue in the same tick. On Windows/NTFS the I/O
+		// scheduler round-robined them, so `cache_boot_snapshot_core` —
+		// the ONE thing that gates `boot:hydrated` — took 27 s wall-clock
+		// despite only 8 s of Rust execution time. Everything else
+		// finished at the same ~27 s endpoint.
+		//
+		// Fix: await the ship-gate IPC first. The core snapshot owns the
+		// I/O queue until `boot:hydrated` fires; only THEN do watchers,
+		// appearances, and stats fan out. They don't gate anything the
+		// user can see, so deferring them is free.
+		// See lab/boot-perf/boot-bundle-cold-start.md.
+		await refreshLibraryCaches().catch(() => {});
+
+		// Post-hydration fan-out — populate sidebar badges and enable
+		// the file watcher. Fire-and-forget; the UI is already live.
+		{
+			const t0 = performance.now();
+			Promise.all($libraries.map(lib =>
+				startWatchingLibrary(lib.id, lib.path).catch(() => {})
+			)).then(() => { startWatchingAllWallMs = Math.round(performance.now() - t0); })
+			  .catch(() => { startWatchingAllWallMs = Math.round(performance.now() - t0); });
+		}
+		{
+			const t0 = performance.now();
+			Promise.all($libraries.map(lib =>
+				loadLibraryAppearance(lib.path, lib.id).catch(() => {})
+			)).then(() => { loadAllAppearancesWallMs = Math.round(performance.now() - t0); })
+			  .catch(() => { loadAllAppearancesWallMs = Math.round(performance.now() - t0); });
+		}
+		{
+			const t0 = performance.now();
+			loadAllStats()
+				.then(() => { loadAllStatsWallMs = Math.round(performance.now() - t0); })
+				.catch(() => { loadAllStatsWallMs = Math.round(performance.now() - t0); });
+		}
 	}
 
 	async function handleUniverseCreated(entry: UniverseEntry) {
@@ -1906,6 +1936,21 @@
 	 *  cold-boot attribution is possible without rebuilds. See
 	 *  lab/boot-perf/boot-bundle-cold-start.md. */
 	let bootBundleTimings: Array<[string, number]> = [];
+	/** Diagnostic — time between `await invoke(...)` issue and resolution
+	 *  for each awaited boot IPC. Paired with the Rust `timings_ms` inside
+	 *  each response: if `wall_ms >> sum(timings_ms)`, the difference is
+	 *  queue/contention time, not Rust execution time. */
+	let cacheSnapshotCoreWallMs = 0;
+	let cacheSnapshotCoreServerTimings: Array<[string, number]> = [];
+	let cacheSnapshotGraphWallMs = 0;
+	let cacheSnapshotGraphServerTimings: Array<[string, number]> = [];
+	/** Wall-clock for the fire-and-forget chain issued right before
+	 *  `refreshLibraryCaches()`. These race into Tauri's command queue
+	 *  alongside `cache_boot_snapshot_core`; if any is slow it may starve
+	 *  the core snapshot. */
+	let loadAllStatsWallMs = 0;
+	let startWatchingAllWallMs = 0;
+	let loadAllAppearancesWallMs = 0;
 	function buildBootPerfReport(includeGraphPhase: boolean): Record<string, unknown> {
 		const paint = performance.getEntriesByName('boot:paint')[0]?.startTime ?? 0;
 		const libs = performance.getEntriesByName('boot:libraries-loaded')[0]?.startTime ?? 0;
@@ -1926,6 +1971,20 @@
 			// Empty on first paint before the bundle resolves; populated on the
 			// graph-phase write (and any subsequent writes).
 			boot_bundle_timings: bootBundleTimings,
+			// ── Deep attribution for Criterion 2 cold-boot regression ──
+			// `*_wall_ms` is the frontend-side elapsed from `await invoke(...)`
+			// to resolution. `*_server_timings` is the Rust-side per-phase
+			// breakdown returned inside the response. If wall >> sum(server),
+			// the time is queue/contention; if read_notes dominates server,
+			// the fix is the SQLite row-scan.
+			cache_snapshot_core_wall_ms: cacheSnapshotCoreWallMs,
+			cache_snapshot_core_server_timings: cacheSnapshotCoreServerTimings,
+			cache_snapshot_graph_wall_ms: cacheSnapshotGraphWallMs,
+			cache_snapshot_graph_server_timings: cacheSnapshotGraphServerTimings,
+			// Fire-and-forget chain that races alongside the core snapshot.
+			load_all_stats_wall_ms: loadAllStatsWallMs,
+			start_watching_all_wall_ms: startWatchingAllWallMs,
+			load_all_appearances_wall_ms: loadAllAppearancesWallMs,
 		};
 	}
 	async function recordBootPerf() {
@@ -1968,11 +2027,17 @@
 		let core: {
 			notes: { name: string; path: string; library_name: string }[];
 			is_cold: boolean;
+			timings_ms?: Array<[string, number]>;
 		};
+		const coreInvokeStart = performance.now();
 		try {
 			core = await invoke('cache_boot_snapshot_core');
 		} catch {
 			core = { notes: [], is_cold: true };
+		}
+		cacheSnapshotCoreWallMs = Math.round(performance.now() - coreInvokeStart);
+		if (Array.isArray(core.timings_ms)) {
+			cacheSnapshotCoreServerTimings = core.timings_ms;
 		}
 
 		if (!core.is_cold) {
@@ -1996,11 +2061,16 @@
 		// data; bumps `skyVersion` so open views re-derive off the new data.
 		const loadGraph = async (): Promise<void> => {
 			try {
-				let graph: { links: NoteLink[]; tags: Record<string, number> };
+				let graph: { links: NoteLink[]; tags: Record<string, number>; timings_ms?: Array<[string, number]> };
+				const graphInvokeStart = performance.now();
 				try {
 					graph = await invoke('cache_boot_snapshot_graph');
 				} catch {
 					graph = { links: [], tags: {} };
+				}
+				cacheSnapshotGraphWallMs = Math.round(performance.now() - graphInvokeStart);
+				if (Array.isArray(graph.timings_ms)) {
+					cacheSnapshotGraphServerTimings = graph.timings_ms;
 				}
 
 				allLibraryLinks = graph.links;

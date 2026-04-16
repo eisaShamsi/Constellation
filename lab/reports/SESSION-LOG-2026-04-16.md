@@ -103,4 +103,68 @@ import { Application, Container, Graphics, Text } from 'pixi.js';
 
 ---
 
-*Next session pickup: run task B (boot_bundle cold-start) or the Index panel investigation, per user priority.*
+## Addendum — Fix 1 + Fix 2 landed (same day, evening)
+
+After the split-snapshot landing exposed cold-start as the bottleneck, a third round of deep attribution proved the cause was **not** `constellation_boot_bundle` (~31 ms total) but two different things:
+
+1. **Tauri IPC queue contention at the OS I/O layer.** All 34 boot IPCs (16 watchers + 16 appearances + 1 stats + 1 snapshot) raced simultaneously. Wall-clock measurements showed every IPC converging on the same endpoint (~27.7 s) — textbook shared-resource serialization. The ship-gate IPC `cache_boot_snapshot_core` had only 8,094 ms of actual Rust work but a 19,616 ms wall-clock wait.
+2. **Row-store full-scan cost.** `SELECT name, path, library_name FROM note_meta` forced SQLite to read every page of the wide row-store table (body_text + JSON blobs) to project three narrow text columns.
+
+### Fix 1 — reorder fan-out (frontend)
+
+`src/routes/+layout.svelte`: moved `refreshLibraryCaches()` from fire-and-forget to **awaited, before** the watcher/appearance/stats fan-out. The core snapshot gets exclusive I/O until `boot:hydrated` fires; every other boot IPC runs after.
+
+### Fix 2 — covering index (Rust / SQLite)
+
+`src-tauri/src/search.rs`, inside `init_db()`:
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_note_boot_snapshot
+    ON note_meta(name, path, library_name);
+```
+
+Planner switches from full table scan to index-only scan — three narrow TEXT columns instead of full-page reads of wide rows. `IF NOT EXISTS` + no schema-version bump means existing DBs pick it up on next launch without reindex.
+
+### Instrumentation retained
+
+`cache.rs` `BootSnapshotCore` and `BootSnapshotGraph` now carry `timings_ms: Vec<(String, u64)>` with per-phase Rust wall-clock (ensure_db, open_reader, read_notes / count_notes, read_links, read_tags). Frontend wall-clock around each awaited invoke is written to `boot-perf.latest.json` (`cache_snapshot_core_wall_ms`, `cache_snapshot_core_server_timings`, …). This delta (wall − server_sum) is the IPC queue / contention time. Standing instrumentation — useful for any future boot-perf work.
+
+### Measured result (same binary, clean universe, second boot)
+
+```
+Before fixes:         hydrated_ms = 28,425    cache_snapshot_core_wall = 27,710
+After Fix 1 + Fix 2:  hydrated_ms = 10,759    cache_snapshot_core_wall = 10,244
+                      read_notes (Rust) = 5 ms (was 8,021 ms)
+                      ensure_db (Rust) = 110 ms (after one-time 7,717 ms CREATE INDEX on first launch)
+```
+
+**2.65× improvement.** `read_notes` dropped 1,600×. Criterion 2 still misses: **10.7 s vs 6 s target**.
+
+### Residual — unattributed 10.1 s dispatch wait
+
+With `cache_snapshot_core_wall = 10,244` and server phases summing to only 121 ms (ensure_db:110 + open_reader:6 + read_notes:5), there is a **10,123 ms gap** between frontend invoke dispatch and the Rust function actually running. The Rust work is done — but *something* is delaying the handler from being picked up by Tauri's dispatcher or the `spawn_blocking` pool.
+
+After three rounds of instrumentation (LL-014), the disciplined move is to stop drilling and file the residual. It would require another Rust-side `eprintln!` at the very top of the handler to measure pre-execution queue time, and we do not yet know whether the cause is (a) Tauri dispatcher thread, (b) blocking thread pool saturation, or (c) some module-level Svelte IPC firing during onMount before initializeApp resolves.
+
+**Criterion 2 status: NEAR (not PASS).** 10,759 ms vs 6,000 ms target. Shipping what works; residual filed as LL-020 and listed below as open item B.1.
+
+### Files touched (addendum)
+
+- `src-tauri/src/cache.rs` — added `timings_ms` field and per-phase Instant probes to `BootSnapshotCore` / `BootSnapshotGraph`.
+- `src-tauri/src/search.rs` — `CREATE INDEX IF NOT EXISTS idx_note_boot_snapshot ON note_meta(name, path, library_name)` in `init_db()`.
+- `src/routes/+layout.svelte` — `await refreshLibraryCaches()` before fan-out; wall-clock probes around every awaited boot invoke; extended `buildBootPerfReport` with `*_wall_ms` and `*_server_timings` fields.
+- `lab/boot-perf/boot-bundle-cold-start.md` — investigation writeup (smoking-gun analysis, warm-run paradox, fix rationale, retained for history).
+- `docs/LESSONS-LEARNED.md` — LL-020 (wall-vs-server measurement distinguishes IPC queue from Rust work; covering indexes on row-stores for narrow projections).
+
+### Commits expected (addendum)
+
+2. **Boot perf: reorder fan-out + covering index for note_meta snapshot** — Fix 1 + Fix 2, instrumentation, investigation writeup, LL-020.
+
+### Open items updated
+
+- **B.1 — Cold-start IPC dispatch delay (~10 s).** Unknown whether cause is Tauri dispatcher or blocking-thread pool or pre-onMount IPC. Would need `eprintln!` instrumentation at the entry of the handler to attribute. Deferred.
+- **Criterion 2 — NEAR, not PASS.** 10.7 s vs 6.0 s. Two wins shipped; third round deferred per LL-014.
+
+---
+
+*Next session pickup: run the Index panel investigation (task D).*

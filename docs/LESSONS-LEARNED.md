@@ -206,5 +206,24 @@ import { Application, Container, Graphics, Text } from 'pixi.js';
 
 ---
 
+## LL-020: Wall-Clock vs Server-Time Decides Whether the Bottleneck Is in Your Code
+**Discovered:** 2026-04-16 (boot-perf cold-start round 3)
+
+`cache_boot_snapshot_core` frontend wall-clock was 27,710 ms. Server-side phase timings (ensure_db, open_reader, read_notes) summed to 8,094 ms. The delta — **19,616 ms of pure queue/contention wait** — proved the bottleneck was not inside the Rust function at all. It was the OS I/O scheduler round-robining 34 concurrent boot IPCs on Windows NTFS and starving the one we needed first.
+
+Without this split attribution I would have optimized Rust code that was already fast enough. The fix wasn't inside the handler; it was **ordering the call sites** (await `refreshLibraryCaches()` before fan-out) so the critical IPC got exclusive I/O until hydration fired.
+
+The same measurement also separated the two real costs: 8 s was genuine Rust work (row-store full scan — fixed with `CREATE INDEX IF NOT EXISTS idx_note_boot_snapshot ON note_meta(name, path, library_name)` — dropped to 5 ms, 1,600×), and the other 19 s was pure queue. Two root causes, one measurement to tell them apart.
+
+**Rule:** For any frontend `invoke(...)` on the critical path, always instrument both:
+1. Frontend `performance.now()` wall-clock around the invoke.
+2. Rust-side per-phase `Instant::now()` checkpoints returned in the response struct.
+
+If `wall_ms >> sum(server_timings_ms)`, the delta is IPC queue / OS contention — optimize by reordering, de-paralleling fire-and-forget calls, or moving work off the critical path. If `wall_ms ≈ sum(server_timings_ms)`, the bottleneck is genuinely inside the handler — optimize the Rust code or the SQL plan. Never optimize blind; the fix direction flips based on which pattern you have.
+
+**Corollary — covering indexes on row-stores.** SQLite is a row store. A `SELECT a, b, c FROM wide_table` still reads every page to find a/b/c — including columns you never asked for (body_text, JSON blobs). For narrow projections on wide tables, a covering index (`CREATE INDEX ... ON table(a, b, c)`) lets the planner do an index-only scan against a small, dense index instead of a full-page scan against the wide row-store. Cost is trivial disk; speedup is typically 100–1000×.
+
+---
+
 *Last updated: 2026-04-16*
 *For: Constellation — boot-perf + Sky View fix cycle*

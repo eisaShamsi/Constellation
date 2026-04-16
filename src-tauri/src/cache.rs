@@ -42,6 +42,7 @@
 use rusqlite::{params, Connection, OpenFlags};
 use serde::Serialize;
 use std::collections::HashMap;
+use std::time::Instant;
 
 use crate::libraries::NoteLink;
 
@@ -93,6 +94,12 @@ pub struct BootSnapshot {
 pub struct BootSnapshotCore {
     pub notes: Vec<BootNote>,
     pub is_cold: bool,
+    /// Per-phase Rust-side wall-clock timings for cold-boot attribution.
+    /// Ordered the same way the phases run. Shipped to
+    /// `boot-perf.latest.json` so we can tell whether a slow cold boot
+    /// lives in `ensure_db`, `open_reader`, or `read_notes`. See
+    /// `lab/boot-perf/boot-bundle-cold-start.md`.
+    pub timings_ms: Vec<(String, u64)>,
 }
 
 /// Heavy boot payload — the typed-link edge list plus aggregated tag counts.
@@ -104,6 +111,9 @@ pub struct BootSnapshotCore {
 pub struct BootSnapshotGraph {
     pub links: Vec<NoteLink>,
     pub tags: HashMap<String, u32>,
+    /// Per-phase Rust-side wall-clock timings for graph-phase attribution.
+    /// Same purpose / shape as `BootSnapshotCore::timings_ms`.
+    pub timings_ms: Vec<(String, u64)>,
 }
 
 /// Fast boot payload — just the notes list and a cold-cache flag. The
@@ -116,23 +126,39 @@ pub struct BootSnapshotGraph {
 /// columns.
 #[tauri::command]
 pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> {
-    // Make sure the DB file exists (first launch creates the schema).
-    let _ = crate::search::ensure_search_db_ready(&app);
+    let mut timings: Vec<(String, u64)> = Vec::new();
 
+    // Phase 1: schema bootstrap (no-op on existing DB).
+    let t0 = Instant::now();
+    let _ = crate::search::ensure_search_db_ready(&app);
+    timings.push(("ensure_db".into(), t0.elapsed().as_millis() as u64));
+
+    // Phase 2: open a dedicated read-only connection. SQLite WAL mode lets
+    // this coexist with the writer and with other readers — no mutex contention.
+    let t1 = Instant::now();
     let conn = match open_reader(&app) {
         Ok(c) => c,
         Err(_) => {
+            timings.push(("open_reader_err".into(), t1.elapsed().as_millis() as u64));
             return Ok(BootSnapshotCore {
                 notes: Vec::new(),
                 is_cold: true,
+                timings_ms: timings,
             });
         }
     };
+    timings.push(("open_reader".into(), t1.elapsed().as_millis() as u64));
 
+    // Phase 3: the actual row scan — `SELECT name, path, library_name FROM note_meta`.
+    // This is the suspect phase on cold boot; `note_meta` is a row-store with
+    // wide columns (body_text, *_json) that force full-page reads.
+    let t2 = Instant::now();
     let notes = read_notes(&conn)?;
+    timings.push(("read_notes".into(), t2.elapsed().as_millis() as u64));
+
     let is_cold = notes.is_empty();
 
-    Ok(BootSnapshotCore { notes, is_cold })
+    Ok(BootSnapshotCore { notes, is_cold, timings_ms: timings })
 }
 
 /// Heavy boot payload — link edges + tag counts. Deferred to
@@ -143,32 +169,49 @@ pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCor
 /// for indices built before typed links existed.
 #[tauri::command]
 pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGraph, String> {
-    let _ = crate::search::ensure_search_db_ready(&app);
+    let mut timings: Vec<(String, u64)> = Vec::new();
 
+    let t0 = Instant::now();
+    let _ = crate::search::ensure_search_db_ready(&app);
+    timings.push(("ensure_db".into(), t0.elapsed().as_millis() as u64));
+
+    let t1 = Instant::now();
     let conn = match open_reader(&app) {
         Ok(c) => c,
         Err(_) => {
+            timings.push(("open_reader_err".into(), t1.elapsed().as_millis() as u64));
             return Ok(BootSnapshotGraph {
                 links: Vec::new(),
                 tags: HashMap::new(),
+                timings_ms: timings,
             });
         }
     };
+    timings.push(("open_reader".into(), t1.elapsed().as_millis() as u64));
 
     // Detect cold cache by counting note_meta rows — if zero, the index
     // hasn't been built yet and the fallback is pointless.
+    let t2 = Instant::now();
     let note_count: i64 = conn
         .query_row("SELECT COUNT(*) FROM note_meta", params![], |row| row.get(0))
         .unwrap_or(0);
+    timings.push(("count_notes".into(), t2.elapsed().as_millis() as u64));
 
+    let t3 = Instant::now();
     let mut links = read_links(&conn)?;
+    timings.push(("read_links".into(), t3.elapsed().as_millis() as u64));
+
     if links.is_empty() && note_count > 0 {
+        let t3b = Instant::now();
         links = read_untyped_links_fallback(&conn)?;
+        timings.push(("read_untyped_links_fallback".into(), t3b.elapsed().as_millis() as u64));
     }
 
+    let t4 = Instant::now();
     let tags = read_tags(&conn)?;
+    timings.push(("read_tags".into(), t4.elapsed().as_millis() as u64));
 
-    Ok(BootSnapshotGraph { links, tags })
+    Ok(BootSnapshotGraph { links, tags, timings_ms: timings })
 }
 
 /// Back-compat shim — merges `cache_boot_snapshot_core` + `_graph` into the
@@ -177,6 +220,10 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
 /// critical path.
 #[tauri::command]
 pub fn cache_boot_snapshot(app: tauri::AppHandle) -> Result<BootSnapshot, String> {
+    // Shim: the per-phase timings produced by the split commands are not
+    // included in the merged shape. Ambient callers (second screen, tests)
+    // don't consume them; only the boot-perf scorecard does, and the boot
+    // path no longer goes through this shim.
     let core = cache_boot_snapshot_core(app.clone())?;
     let graph = cache_boot_snapshot_graph(app)?;
     Ok(BootSnapshot {
