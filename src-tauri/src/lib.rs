@@ -281,6 +281,8 @@ pub fn run() {
             lens::constellation_lens_tag_edges,
             boot_bundle::constellation_boot_bundle,
             cache::cache_boot_snapshot,
+            cache::cache_boot_snapshot_core,
+            cache::cache_boot_snapshot_graph,
             cache::cache_is_populated,
             cache::cache_reconcile,
             cache::write_boot_perf_report,

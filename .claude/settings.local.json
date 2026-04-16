@@ -355,7 +355,12 @@
       "WebFetch(domain:docs.obsidian.md)",
       "Bash(ls -d help.*)",
       "Bash(ls CHANGELOG*)",
-      "Bash(grep -n \"No libraries yet\\\\|Welcome to Constellation\\\\|Add your first library\" src/routes/+layout.svelte src/lib/components/*.svelte)"
+      "Bash(grep -n \"No libraries yet\\\\|Welcome to Constellation\\\\|Add your first library\" src/routes/+layout.svelte src/lib/components/*.svelte)",
+      "Bash(grep -l \"Sky View\\\\|sky view\\\\|SkyView\\\\|0 nodes\\\\|star view\" \"E:/مشاريع كلاود/Constellation/lab/reports/SESSION-LOG-2026-04-\"*.md)",
+      "WebFetch(domain:svelte.dev)",
+      "Bash(cargo run:*)",
+      "Bash(node -e \"const pkg = require\\('pixi.js/package.json'\\); console.log\\('pixi version:', pkg.version\\); console.log\\('unsafe-eval export:', JSON.stringify\\(pkg.exports?.['./unsafe-eval'] ?? 'NOT EXPORTED'\\)\\);\")",
+      "Bash(node -e \"const fs = require\\('fs'\\); const pkg = JSON.parse\\(fs.readFileSync\\('node_modules/pixi.js/package.json', 'utf8'\\)\\); console.log\\('pixi version:', pkg.version\\); console.log\\('unsafe-eval export:', JSON.stringify\\(pkg.exports && pkg.exports['./unsafe-eval'], null, 2\\)\\);\")"
     ]
   }
 }

@@ -9,6 +9,16 @@
  * ZERO Svelte imports. This file must never import from 'svelte'.
  */
 
+// Tauri's default CSP forbids `unsafe-eval`. PIXI v8 normally generates its
+// WebGL shader functions at runtime via `new Function(...)` which triggers
+// the CSP violation and throws
+//   "Current environment does not allow unsafe-eval, please use
+//    pixi.js/unsafe-eval module to enable support."
+// The `pixi.js/unsafe-eval` subpath installs a pre-compiled function
+// generator that doesn't use eval, and MUST be imported BEFORE any PIXI
+// class is constructed. Side-effect import only — nothing to name.
+// See docs/LESSONS-LEARNED.md LL-017 for the full diagnostic story.
+import 'pixi.js/unsafe-eval';
 import { Application, Graphics, Container, Text, TextStyle } from 'pixi.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -1280,13 +1290,20 @@ export class GraphEngine {
 	// ─── Worker (Layer 3) ──────────────────────────────────────────
 
 	private startWorker(): void {
+		// new Worker() only throws synchronously for invalid constructor args;
+		// module-load failures surface asynchronously via onerror. Both paths
+		// fall back to a deterministic circular layout so the user still sees
+		// structure even if the physics worker can't start.
 		try {
 			this.worker = new Worker(new URL('./forceWorker.ts', import.meta.url), { type: 'module' });
 		} catch {
-			// Fallback: circular layout
 			this.applyCircularLayout();
 			return;
 		}
+
+		this.worker.onerror = () => {
+			this.applyCircularLayout();
+		};
 
 		this.worker.onmessage = (e: MessageEvent) => {
 			if (e.data.type === 'positions') {

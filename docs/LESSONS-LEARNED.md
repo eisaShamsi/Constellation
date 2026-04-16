@@ -185,5 +185,26 @@ Obsidian does not do this — it shows its shell immediately and hydrates data a
 
 ---
 
-*Last updated: 2026-04-15*
-*For: Constellation — boot-perf rewrite cycle*
+## LL-019: PIXI v8 + Tauri CSP — Import `pixi.js/unsafe-eval` as a Side-Effect
+**Discovered:** 2026-04-16 (Sky View rendering bug)
+
+Sky View was returning data, pushing it into `skyNodes`/`skyLinks`, reaching the PIXI `Application.init()` call — and then rendering an empty black canvas with "0 nodes · 0 edges" in the status bar. No visible error in the DevTools console.
+
+Root cause: PIXI v8 generates WebGL shader programs at runtime using `new Function(...)`. Tauri's default CSP does not allow `unsafe-eval`, so every shader compile throws `"Current environment does not allow unsafe-eval, please use pixi.js/unsafe-eval module to enable support."` PIXI catches the throw internally and leaves the renderer half-constructed — no crash, no red border, just a silent empty canvas.
+
+The throw never surfaced in the normal error paths; only after a 13-component disassembly with progressive probes (A–I inside `init()`) did the caught error get re-logged and identified. Once seen, the fix is one line:
+
+```ts
+// MUST be the first PIXI-related import — pure side-effect
+import 'pixi.js/unsafe-eval';
+import { Application, Container, Graphics, Text } from 'pixi.js';
+```
+
+`pixi.js/unsafe-eval` ships a pre-compiled shader generator that does not use `new Function()`. It must be imported **before** any PIXI class is constructed. Relaxing the app-wide CSP was rejected — weakening `unsafe-eval` for the whole app to accommodate one library's default build is a security regression across the entire frontend.
+
+**Rule:** When a WebGL / Canvas / GPU library fails silently on a Tauri target, suspect CSP — the default is strict and any library using `new Function()` or `eval()` for runtime codegen will fail without surfacing an error. Prefer the library's pre-compiled / no-eval variant via a side-effect import before any usage. Never relax the app-wide CSP to work around a single library's default build.
+
+---
+
+*Last updated: 2026-04-16*
+*For: Constellation — boot-perf + Sky View fix cycle*

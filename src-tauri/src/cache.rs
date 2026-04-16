@@ -18,12 +18,22 @@
 //!
 //! What the frontend gets
 //! ----------------------
-//! `cache_boot_snapshot` returns, in a single IPC call:
-//!   - `notes`: [{ name, path, library_name }] — populates file tree, Sky View, Sight
-//!   - `links`: [NoteLink] — populates Sky View graph, backlinks, Index
-//!   - `tags`: { tag: count } — populates tag browser, autocomplete
-//!   - `is_cold`: true on first boot (cache empty) so the UI can show a
-//!     one-time "Building index…" progress indicator.
+//! The boot snapshot is split into two commands so the heavy link/tag
+//! payload doesn't block first paint (BOOT-BUDGET.md Criterion 2):
+//!
+//! * `cache_boot_snapshot_core` (awaited): { notes, is_cold }
+//!     - `notes`: [{ name, path, library_name }] — populates file tree / Sight.
+//!     - `is_cold`: true on first boot (cache empty) so the UI can show a
+//!       one-time "Building index…" progress indicator.
+//!
+//! * `cache_boot_snapshot_graph` (deferred via requestIdleCallback): { links, tags }
+//!     - `links`: [NoteLink] — populates Sky View graph, backlinks, Index.
+//!     - `tags`: { tag: count } — populates tag browser, autocomplete.
+//!     These views are never on the initial paint path, so shipping them
+//!     after `boot:hydrated` frees ~8s of IPC + JS work off the critical path.
+//!
+//! * `cache_boot_snapshot` (back-compat shim): returns the combined shape
+//!     above for any ambient caller (second screen, tests, future code).
 //!
 //! The expensive link-context and tag-mention line-by-line data are NOT
 //! included here — they're only used in hover cards / Index view, which can
@@ -32,10 +42,8 @@
 use rusqlite::{params, Connection, OpenFlags};
 use serde::Serialize;
 use std::collections::HashMap;
-use tauri::Manager;
 
 use crate::libraries::NoteLink;
-use crate::search::SearchState;
 
 /// Open a READ-ONLY connection to search.db. Uses its own Connection — does
 /// NOT touch SearchState.db's mutex. SQLite WAL mode (set in init_db) allows
@@ -65,6 +73,10 @@ pub struct BootNote {
     pub library_name: String,
 }
 
+/// Back-compat combined snapshot. Preserved so ambient callers (second screen,
+/// tests, legacy code) keep working. No longer on the boot critical path —
+/// the frontend now awaits `BootSnapshotCore` for first-paint hydration and
+/// defers `BootSnapshotGraph` via `requestIdleCallback`.
 #[derive(Debug, Serialize)]
 pub struct BootSnapshot {
     pub notes: Vec<BootNote>,
@@ -73,72 +85,127 @@ pub struct BootSnapshot {
     pub is_cold: bool,
 }
 
-/// Read the full boot snapshot from the SQLite cache. Pure in-memory query —
-/// no filesystem I/O. Returns (notes, links, tags) for every library the
-/// search index knows about.
+/// Minimal boot payload required to paint the sidebar / file tree / Sight.
+/// Returns in low-millis even on a 7,600-note Universe because `note_meta` is
+/// a flat SQLite table with no joins and the row projection is narrow
+/// (name, path, library_name — three `TEXT` columns).
+#[derive(Debug, Serialize)]
+pub struct BootSnapshotCore {
+    pub notes: Vec<BootNote>,
+    pub is_cold: bool,
+}
+
+/// Heavy boot payload — the typed-link edge list plus aggregated tag counts.
+/// Deferred to `requestIdleCallback` on the frontend so the ~656k-row link
+/// table never blocks first paint on large Universes. Only consumed by Sky
+/// View, backlinks panel, tag browser, and the Lens — none of which are on
+/// the initial paint path.
+#[derive(Debug, Serialize)]
+pub struct BootSnapshotGraph {
+    pub links: Vec<NoteLink>,
+    pub tags: HashMap<String, u32>,
+}
+
+/// Fast boot payload — just the notes list and a cold-cache flag. The
+/// frontend awaits this before marking `boot:hydrated` / clearing the
+/// "Building index…" splash. The heavy link-graph + tag-aggregation payload
+/// is fetched separately via `cache_boot_snapshot_graph` after first paint.
 ///
-/// `is_cold` is `true` iff `note_meta` is empty, which happens on a first
-/// launch (or after the user clears the cache). The frontend uses this flag
-/// to decide whether to show the one-time "Building index…" progress screen.
+/// On a 7,600-note Universe this query returns in low-millis because
+/// `note_meta` is indexed and the row projection is three narrow `TEXT`
+/// columns.
 #[tauri::command]
-pub fn cache_boot_snapshot(app: tauri::AppHandle) -> Result<BootSnapshot, String> {
-    // Make sure the DB file exists (first ever launch creates the schema).
-    // After this call the file is on disk and we can open a read-only
-    // connection to it, bypassing the writer mutex entirely.
+pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> {
+    // Make sure the DB file exists (first launch creates the schema).
     let _ = crate::search::ensure_search_db_ready(&app);
 
-    // Dedicated read-only connection. Does NOT lock SearchState.db — so if
-    // a reconcile walk is in progress, Search Hub / backlinks / this call
-    // all proceed concurrently (SQLite WAL mode guarantees readers never
-    // block writers and vice versa).
     let conn = match open_reader(&app) {
         Ok(c) => c,
         Err(_) => {
-            return Ok(BootSnapshot {
+            return Ok(BootSnapshotCore {
                 notes: Vec::new(),
-                links: Vec::new(),
-                tags: HashMap::new(),
                 is_cold: true,
             });
         }
     };
-    let conn = &conn;
 
-    // ── Notes ───────────────────────────────────────────────────────
-    let mut notes = Vec::new();
-    {
-        let mut stmt = conn
-            .prepare("SELECT name, path, library_name FROM note_meta")
-            .map_err(|e| e.to_string())?;
-        let rows = stmt
-            .query_map([], |row| {
-                Ok(BootNote {
-                    name: row.get(0)?,
-                    path: row.get(1)?,
-                    library_name: row.get(2)?,
-                })
-            })
-            .map_err(|e| e.to_string())?;
-        for r in rows.flatten() {
-            notes.push(r);
-        }
-    }
-
+    let notes = read_notes(&conn)?;
     let is_cold = notes.is_empty();
 
-    // ── Links ───────────────────────────────────────────────────────
-    // Read from the typed-link `note_links` table when available (populated by
-    // index_note via extract_typed_links). Fall back to outgoing_links_json
-    // from note_meta for notes that haven't been typed-link-indexed yet.
-    let mut links = read_links(conn)?;
-    if links.is_empty() && !is_cold {
-        links = read_untyped_links_fallback(conn)?;
+    Ok(BootSnapshotCore { notes, is_cold })
+}
+
+/// Heavy boot payload — link edges + tag counts. Deferred to
+/// `requestIdleCallback` so the ~656k-row payload never blocks first paint.
+///
+/// Reads the typed-link `note_links` table when populated (current indexer)
+/// and falls back to the legacy `outgoing_links_json` blob in `note_meta`
+/// for indices built before typed links existed.
+#[tauri::command]
+pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGraph, String> {
+    let _ = crate::search::ensure_search_db_ready(&app);
+
+    let conn = match open_reader(&app) {
+        Ok(c) => c,
+        Err(_) => {
+            return Ok(BootSnapshotGraph {
+                links: Vec::new(),
+                tags: HashMap::new(),
+            });
+        }
+    };
+
+    // Detect cold cache by counting note_meta rows — if zero, the index
+    // hasn't been built yet and the fallback is pointless.
+    let note_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM note_meta", params![], |row| row.get(0))
+        .unwrap_or(0);
+
+    let mut links = read_links(&conn)?;
+    if links.is_empty() && note_count > 0 {
+        links = read_untyped_links_fallback(&conn)?;
     }
 
-    // ── Tags ────────────────────────────────────────────────────────
-    let tags = read_tags(conn)?;
+    let tags = read_tags(&conn)?;
 
-    Ok(BootSnapshot { notes, links, tags, is_cold })
+    Ok(BootSnapshotGraph { links, tags })
+}
+
+/// Back-compat shim — merges `cache_boot_snapshot_core` + `_graph` into the
+/// original single-response shape. Kept so ambient callers (second screen,
+/// tests, any external invocation) keep working; no longer on the boot
+/// critical path.
+#[tauri::command]
+pub fn cache_boot_snapshot(app: tauri::AppHandle) -> Result<BootSnapshot, String> {
+    let core = cache_boot_snapshot_core(app.clone())?;
+    let graph = cache_boot_snapshot_graph(app)?;
+    Ok(BootSnapshot {
+        notes: core.notes,
+        links: graph.links,
+        tags: graph.tags,
+        is_cold: core.is_cold,
+    })
+}
+
+/// Project `note_meta` → `BootNote`. Single prepared statement, one scan.
+fn read_notes(conn: &Connection) -> Result<Vec<BootNote>, String> {
+    let mut notes = Vec::new();
+    let mut stmt = conn
+        .prepare("SELECT name, path, library_name FROM note_meta")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(BootNote {
+                name: row.get(0)?,
+                path: row.get(1)?,
+                library_name: row.get(2)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    for r in rows.flatten() {
+        notes.push(r);
+    }
+    Ok(notes)
 }
 
 /// Read all links from the typed note_links table.

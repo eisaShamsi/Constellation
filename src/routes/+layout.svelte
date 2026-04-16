@@ -536,10 +536,14 @@
 	let allLibraryTags = $state<Record<string, number>>({});
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let allIndexEntries = $state<IndexEntry[]>([]);
-	// Star data stored as plain (non-reactive) arrays to avoid $state proxy overhead
-	// on potentially tens of thousands of items. Use starVersion to signal changes.
-	let skyNodes: SkyNode[] = [];
-	let skyLinks: SkyLink[] = [];
+	// Star data uses $state.raw — tracks reassignment (required for the main Sky View
+	// <GraphMindView nodes={skyNodes}> binding and the Lens <ConstellationSight> binding
+	// to re-run when refreshLibraryCaches populates these arrays after mount) but
+	// skips the per-element proxy wrap, preserving iteration perf on 10k+ arrays.
+	// Plain `let` is non-reactive in Svelte 5 runes — confirmed by Sky View boot
+	// investigation, see docs/LESSONS-LEARNED.md LL-017.
+	let skyNodes = $state.raw<SkyNode[]>([]);
+	let skyLinks = $state.raw<SkyLink[]>([]);
 
 	// Constellation Lens state
 	let lensActive = $state(false);
@@ -556,6 +560,11 @@
 	let lensCommunityProfiles = $state<CommunityProfile[]>([]);
 	let lensContradictions = $state<[string, string][]>([]);
 	let starVersion = $state(0);
+	// Boot Criterion 2: `graphReady` flips to true once the deferred link+tag
+	// payload (Phase 2 of refreshLibraryCaches) lands. Views that render
+	// degraded state while the graph is still loading (Sky View shell, tag
+	// browser) can read this flag to flip to the full UI when it arrives.
+	let graphReady = $state(false);
 	let searchLinkCounts = $state(new Map<string, { incoming: number }>());
 	let maturityMap = $state(new Map<string, string>()); // path → maturity state (CE Phase 3)
 	let stageMap = $state(new Map<string, string>()); // path → stage (CE Phase 6)
@@ -834,6 +843,12 @@
 		const tab = sidebarTab;
 		const props = sidebarProperties;
 		const dirFallback = $dir as 'ltr' | 'rtl';
+		// Track allLibraryLinks as a dep so this effect re-runs when the
+		// deferred graph payload (Phase 2 of refreshLibraryCaches) lands —
+		// otherwise a tab focused BEFORE the graph arrives would show an
+		// empty backlinks/outgoing panel and never auto-refresh. Reading
+		// `.length` at top level is enough to establish the dependency.
+		void allLibraryLinks.length;
 		clearTimeout(_sidebarDebounce);
 
 		// Immediate reset when no tab
@@ -1866,27 +1881,38 @@
 	const yieldToUI = () => new Promise<void>(r => setTimeout(r, 0));
 
 	/**
-	 * Write the boot-perf scorecard for `lab/boot-perf/BOOT-BUDGET.md` Criteria 1+2.
-	 * Called once, after `boot:hydrated` is marked. Idempotent.
+	 * Write the boot-perf scorecard for `lab/boot-perf/BOOT-BUDGET.md`.
+	 * Called twice: once when `boot:hydrated` is marked (Criteria 1+2), and
+	 * again when `boot:graph-ready` resolves so `graph_ready_ms` is recorded
+	 * even though it isn't a ship-gate. Both writes are idempotent — the
+	 * first write fills paint/hydrated; the second overwrites with the full
+	 * scorecard (paint/hydrated/graph-ready).
 	 */
-	let bootPerfRecorded = false;
+	let bootPerfCorePhaseWritten = false;
+	let bootPerfGraphPhaseWritten = false;
+	function buildBootPerfReport(includeGraphPhase: boolean): Record<string, unknown> {
+		const paint = performance.getEntriesByName('boot:paint')[0]?.startTime ?? 0;
+		const libs = performance.getEntriesByName('boot:libraries-loaded')[0]?.startTime ?? 0;
+		const hyd = performance.getEntriesByName('boot:hydrated')[0]?.startTime ?? 0;
+		const graphReadyMark = performance.getEntriesByName('boot:graph-ready')[0]?.startTime ?? 0;
+		return {
+			paint_ms: Math.round(paint),
+			libraries_loaded_ms: Math.round(libs),
+			hydrated_ms: Math.round(hyd),
+			// graph_ready_ms is informational — not a ship-gate criterion.
+			graph_ready_ms: includeGraphPhase ? Math.round(graphReadyMark) : null,
+			note_count: allNotes.length,
+			timestamp: new Date().toISOString(),
+			// Criteria from lab/boot-perf/BOOT-BUDGET.md
+			criterion_1_paint: paint <= 2500 ? 'PASS' : 'FAIL',
+			criterion_2_hydrated: hyd <= 6000 ? 'PASS' : 'FAIL',
+		};
+	}
 	async function recordBootPerf() {
-		if (bootPerfRecorded) return;
-		bootPerfRecorded = true;
+		if (bootPerfCorePhaseWritten) return;
+		bootPerfCorePhaseWritten = true;
 		try {
-			const paint = performance.getEntriesByName('boot:paint')[0]?.startTime ?? 0;
-			const libs = performance.getEntriesByName('boot:libraries-loaded')[0]?.startTime ?? 0;
-			const hyd = performance.getEntriesByName('boot:hydrated')[0]?.startTime ?? 0;
-			const report = {
-				paint_ms: Math.round(paint),
-				libraries_loaded_ms: Math.round(libs),
-				hydrated_ms: Math.round(hyd),
-				note_count: allNotes.length,
-				timestamp: new Date().toISOString(),
-				// Criteria from lab/boot-perf/BOOT-BUDGET.md
-				criterion_1_paint: paint <= 2500 ? 'PASS' : 'FAIL',
-				criterion_2_hydrated: hyd <= 6000 ? 'PASS' : 'FAIL',
-			};
+			const report = buildBootPerfReport(false);
 			console.log('[boot-perf]', report);
 			// Persist to .constellation/boot-perf.latest.json so the
 			// Settings → Debug panel and the lab harness can read it.
@@ -1895,72 +1921,116 @@
 			console.warn('[boot-perf] recording failed', e);
 		}
 	}
+	async function recordBootPerfGraphPhase() {
+		if (bootPerfGraphPhaseWritten) return;
+		bootPerfGraphPhaseWritten = true;
+		try {
+			const report = buildBootPerfReport(true);
+			console.log('[boot-perf] graph-ready', report);
+			await invoke('write_boot_perf_report', { reportJson: JSON.stringify(report) }).catch(() => {});
+		} catch (e) {
+			console.warn('[boot-perf] graph-phase recording failed', e);
+		}
+	}
 	async function refreshLibraryCaches() {
-		// Prevent concurrent scans — skip if one is already in progress
+		// Prevent concurrent scans — skip if one is already in progress.
+		// The guard spans BOTH phases (core await + deferred graph load) so
+		// re-entrant callers during the idle-callback window still short-circuit.
 		if (cacheRefreshing) return;
 		cacheRefreshing = true;
+
+		// ── Phase 1 (awaited): CORE snapshot ────────────────────────────
+		// Minimal payload (notes + is_cold) needed to paint the sidebar /
+		// file tree / Sight. Returns in low-millis on a 7,600-note Universe.
+		// The heavy link graph + tag aggregation is deferred to Phase 2
+		// via requestIdleCallback so `boot:hydrated` fires before the
+		// ~656k-row link payload crosses IPC.
+		let core: {
+			notes: { name: string; path: string; library_name: string }[];
+			is_cold: boolean;
+		};
 		try {
-			// ── Cache-first boot ──────────────────────────────────────────
-			// Read the entire boot snapshot from the SQLite cache in ONE IPC
-			// call — no filesystem walk. On a 7,600-note Universe this returns
-			// in ~100ms instead of the previous 2+ minutes of per-library
-			// disk scans. Matches Obsidian's metadata-cache boot pattern.
-			const libraryList = $libraries;
-			let snapshot: {
-				notes: { name: string; path: string; library_name: string }[];
-				links: NoteLink[];
-				tags: Record<string, number>;
-				is_cold: boolean;
-			};
+			core = await invoke('cache_boot_snapshot_core');
+		} catch {
+			core = { notes: [], is_cold: true };
+		}
+
+		if (!core.is_cold) {
+			allNotes = core.notes.map(n => ({
+				name: n.name,
+				path: n.path,
+				libraryName: n.library_name,
+			}));
+
+			// Boot-perf Criterion 2: fully responsive. Reached when the
+			// core snapshot has populated the notes list — the UI can paint
+			// the sidebar/file tree/Sight immediately even while the link
+			// graph is still streaming in.
+			performance.mark('boot:hydrated');
+			recordBootPerf();
+		}
+
+		// ── Phase 2 (deferred): GRAPH snapshot ──────────────────────────
+		// Fires via requestIdleCallback so it never competes with the paint
+		// that just happened. Populates link/tag state and rebuilds Sky View
+		// data; bumps `starVersion` so open views re-derive off the new data.
+		const loadGraph = async (): Promise<void> => {
 			try {
-				snapshot = await invoke('cache_boot_snapshot');
-			} catch {
-				snapshot = { notes: [], links: [], tags: {}, is_cold: true };
-			}
+				let graph: { links: NoteLink[]; tags: Record<string, number> };
+				try {
+					graph = await invoke('cache_boot_snapshot_graph');
+				} catch {
+					graph = { links: [], tags: {} };
+				}
 
-			if (!snapshot.is_cold) {
-				// Hot path — cache has data. Populate UI state directly.
-				allLibraryLinks = snapshot.links;
-				allLibraryTags = snapshot.tags;
-				allNotes = snapshot.notes.map(n => ({
-					name: n.name,
-					path: n.path,
-					libraryName: n.library_name,
-				}));
+				allLibraryLinks = graph.links;
+				allLibraryTags = graph.tags;
 
-				if (libraryList.length > 0) {
-					const { nodes, links: gLinks } = buildSkyData(
-						snapshot.links,
-						allNotes,
-					);
+				const libraryList = $libraries;
+				if (libraryList.length > 0 && graph.links.length > 0) {
+					const { nodes, links: gLinks } = buildSkyData(graph.links, allNotes);
 					skyNodes = nodes;
 					skyLinks = gLinks;
 					starVersion++;
 				}
 
-				// Boot-perf Criterion 2: fully responsive. Reached when the
-				// cache snapshot has been applied to all reactive stores.
-				performance.mark('boot:hydrated');
-				recordBootPerf();
+				// Signal: Sky View / backlinks / tag browser can now use the
+				// full graph. Components that render a degraded "Loading…"
+				// state while waiting can read this flag to flip to full UI.
+				graphReady = true;
+				performance.mark('boot:graph-ready');
+				recordBootPerfGraphPhase();
+			} finally {
+				cacheRefreshing = false;
 			}
+		};
 
-			// ═══ ZERO BOOT-TIME WALKS — see initializeApp() comment ════════
-			// `cache_reconcile` and `enrichNodesBackground` used to fire here.
-			// Both walked every library on every boot, causing the audible
-			// disk thrashing and IPC saturation that made the app
-			// unresponsive for minutes after first paint.
-			//
-			// They are now triggered ONLY by:
-			//   - The runtime file watcher (per-file, incremental).
-			//   - The user clicking Settings → Rebuild Index.
-			//   - First-ever launch when the cache is empty (one-time modal).
-			//
-			// External edits made while the app was closed (git pull, sync
-			// clients) are detected by a future cheap stat-only sweep — see
-			// Criterion 4 in lab/boot-perf/BOOT-BUDGET.md.
-		} finally {
-			cacheRefreshing = false;
-		}
+		const schedule = (fn: () => void): void => {
+			// requestIdleCallback is a browser primitive; fall back to
+			// setTimeout(0) on WebKit (Safari/iOS) where it isn't implemented.
+			const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+			if (typeof w.requestIdleCallback === 'function') {
+				w.requestIdleCallback(fn, { timeout: 3000 });
+			} else {
+				setTimeout(fn, 0);
+			}
+		};
+		schedule(() => { loadGraph().catch(() => { cacheRefreshing = false; }); });
+
+		// ═══ ZERO BOOT-TIME WALKS — see initializeApp() comment ════════
+		// `cache_reconcile` and `enrichNodesBackground` used to fire here.
+		// Both walked every library on every boot, causing the audible
+		// disk thrashing and IPC saturation that made the app
+		// unresponsive for minutes after first paint.
+		//
+		// They are now triggered ONLY by:
+		//   - The runtime file watcher (per-file, incremental).
+		//   - The user clicking Settings → Rebuild Index.
+		//   - First-ever launch when the cache is empty (one-time modal).
+		//
+		// External edits made while the app was closed (git pull, sync
+		// clients) are detected by a future cheap stat-only sweep — see
+		// Criterion 4 in lab/boot-perf/BOOT-BUDGET.md.
 	}
 
 	async function enrichNodesBackground(libraryList: typeof $libraries) {
