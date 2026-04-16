@@ -559,7 +559,7 @@
 	let lensTagEdges = $state<{ source: string; target: string; shared_tags: string[]; weight: number }[]>([]);
 	let lensCommunityProfiles = $state<CommunityProfile[]>([]);
 	let lensContradictions = $state<[string, string][]>([]);
-	let starVersion = $state(0);
+	let skyVersion = $state(0);
 	// Boot Criterion 2: `graphReady` flips to true once the deferred link+tag
 	// payload (Phase 2 of refreshLibraryCaches) lands. Views that render
 	// degraded state while the graph is still loading (Sky View shell, tag
@@ -570,13 +570,13 @@
 	let stageMap = $state(new Map<string, string>()); // path → stage (CE Phase 6)
 	// Star data is passed to SkyView as plain arrays.
 	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
-	// make iteration extremely slow. Instead, starVersion ($state) triggers re-render
+	// make iteration extremely slow. Instead, skyVersion ($state) triggers re-render
 	// and SkyView reads the plain skyNodes/skyLinks directly.
 
 	// WiW filtered data — recomputed when selection or star data changes
-	// Uses starVersion as reactive trigger since skyNodes/skyLinks are plain arrays
+	// Uses skyVersion as reactive trigger since skyNodes/skyLinks are plain arrays
 	const wiwFilteredNodes = $derived.by(() => {
-		const _ver = starVersion; // reactive trigger
+		const _ver = skyVersion; // reactive trigger
 		if (!skyViewSelectedPath || !showSkyView) return [];
 		const paths = Array.isArray(skyViewSelectedPath) ? skyViewSelectedPath : [skyViewSelectedPath];
 		const norms = paths.map(p => p.replace(/\\/g, '/').toLowerCase());
@@ -587,7 +587,7 @@
 	});
 	const wiwFilteredNodeIds = $derived(new Set(wiwFilteredNodes.map(n => n.id)));
 	const wiwFilteredLinks = $derived.by(() => {
-		const _ver = starVersion;
+		const _ver = skyVersion;
 		if (wiwFilteredNodes.length === 0) return [];
 		return skyLinks.filter(l => wiwFilteredNodeIds.has(l.source) && wiwFilteredNodeIds.has(l.target));
 	});
@@ -917,10 +917,10 @@
 	let _localStarTimer: ReturnType<typeof setTimeout> | undefined;
 
 	$effect(() => {
-		// Track reactive dependencies (starVersion signals when plain arrays change)
+		// Track reactive dependencies (skyVersion signals when plain arrays change)
 		const isVisible = rightSidebarOpen && rightSidebarTab === 'star';
 		const tab = sidebarTab;
-		const _ver = starVersion; // reactive trigger for non-reactive skyNodes/skyLinks
+		const _ver = skyVersion; // reactive trigger for non-reactive skyNodes/skyLinks
 
 		clearTimeout(_localStarTimer);
 
@@ -1973,7 +1973,7 @@
 		// ── Phase 2 (deferred): GRAPH snapshot ──────────────────────────
 		// Fires via requestIdleCallback so it never competes with the paint
 		// that just happened. Populates link/tag state and rebuilds Sky View
-		// data; bumps `starVersion` so open views re-derive off the new data.
+		// data; bumps `skyVersion` so open views re-derive off the new data.
 		const loadGraph = async (): Promise<void> => {
 			try {
 				let graph: { links: NoteLink[]; tags: Record<string, number> };
@@ -1991,7 +1991,7 @@
 					const { nodes, links: gLinks } = buildSkyData(graph.links, allNotes);
 					skyNodes = nodes;
 					skyLinks = gLinks;
-					starVersion++;
+					skyVersion++;
 				}
 
 				// Signal: Sky View / backlinks / tag browser can now use the
@@ -2102,7 +2102,7 @@
 		try {
 			tensionReport = await invoke('detect_tensions', { libraryPath: libPaths[0], libraryName: libNames[0] });
 		} catch { tensionReport = null; }
-		starVersion++;
+		skyVersion++;
 	}
 
 	function mergeIndexEntries(entries: IndexEntry[]): IndexEntry[] {
