@@ -582,7 +582,9 @@
     "words": "mots",
     "characters": "caractères",
     "libraries": "coffres",
-    "notes": "notes"
+    "notes": "notes",
+    "indexing": "Indexation",
+    "indexingTooltip": "Construction de l'index : analyse du contenu des notes pour trouver les termes significatifs dans votre Univers. Chaque bibliothèque est analysée tour à tour — le panneau se remplira au fur et à mesure que les bibliothèques se terminent."
   },
   "notePane": {
     "saving": "Enregistrement...",
@@ -641,6 +643,7 @@
     "filterPlaceholder": "Filtrer les termes...",
     "terms": "termes",
     "noTerms": "Aucun terme de glossaire trouvé",
+    "building": "Création de l'index…",
     "allLangs": "Tous"
   },
   "workspacesPanel": {

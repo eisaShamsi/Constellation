@@ -94,6 +94,19 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) — a Personal Knowledge Formul
 - After adding a CM6 extension: open a 5000-word note and scroll. If scrolling stutters, optimize or remove.
 - After adding CSS: resize the window from max to min. If layout breaks, fix before committing.
 
+### Rule 8: Write-Time Derivation
+> **Every computed view in Constellation is maintained at write time, not read time.**
+>
+> When a note changes, every derived surface that depends on it updates in the same transaction. The app does not recompute on boot. It does not recompute on panel open. It reads what's already stored.
+
+- **Canonical example**: SQLite FTS5. The `notes_fts` virtual table is kept in sync with `note_meta` via the `note_meta_ai` / `note_meta_ad` / `note_meta_au` triggers in `init_db`. Search is instant because the index is always current. No `scan_*` command is needed.
+- **Canonical use case**: the Index panel (`read_index_entries`) reads directly from the FTS5 vocabulary dictionary (`notes_vocab` virtual table — an `fts5vocab(notes_fts, 'row')` view). Term expansion (`read_term_mentions`) is a single FTS5 `MATCH` query. Nothing is rebuilt on boot.
+- **Don't**: write a `scan_*_library` or `rebuild_*` command that re-walks the Universe to produce a derived view. If you find yourself doing that, stop — the shape is wrong. That path is how LL-XXX happened (hand-rolled term index that OOMed and required a 3 GB WAL vacuum to recover).
+- **Do**: persist the derived view, wire a trigger or hook on the source-of-truth write path, let reads be cheap lookups.
+- **First-time population**: when a new surface is added to an existing Universe, the one-off back-fill should run in the background after paint, with progress in the status bar — and must be resumable.
+- **Where this rule must be applied next** (audit pending): Sky View (`skyNodes`/`skyLinks` rebuilt on every boot), Backlinks/Outgoing panels (recomputed on tab focus), Tag browser (scanned on open), Sight dashboard, sidebar star counts, Map. Each of these should persist its derived data and maintain it via triggers or watcher hooks.
+- **Hard constraint**: no new feature may regress boot time, typing latency, or IPC responsiveness. Measure before/after on a large Universe (7,600+ notes) before committing.
+
 ---
 
 ## 🏗️ Architecture Principles

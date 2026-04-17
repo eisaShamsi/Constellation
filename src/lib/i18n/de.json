@@ -582,7 +582,9 @@
     "words": "Wörter",
     "characters": "Zeichen",
     "libraries": "Bibliotheken",
-    "notes": "Notizen"
+    "notes": "Notizen",
+    "indexing": "Indizierung",
+    "indexingTooltip": "Index wird erstellt: Notizinhalte werden gescannt, um bedeutungsvolle Begriffe in Ihrem Universum zu finden. Jede Bibliothek wird nacheinander gescannt — das Panel füllt sich, sobald Bibliotheken abgeschlossen sind."
   },
   "notePane": {
     "saving": "Wird gespeichert...",
@@ -641,6 +643,7 @@
     "filterPlaceholder": "Begriffe filtern...",
     "terms": "Begriffe",
     "noTerms": "Keine Glossarbegriffe gefunden",
+    "building": "Index wird erstellt…",
     "allLangs": "Alle"
   },
   "workspacesPanel": {

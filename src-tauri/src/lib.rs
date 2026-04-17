@@ -316,6 +316,8 @@ pub fn run() {
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::scan_library_index,
+            libraries::read_index_entries,
+            libraries::read_term_mentions,
             watcher::watch_library,
             watcher::unwatch_library,
             bases::parse_base_file,

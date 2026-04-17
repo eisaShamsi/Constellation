@@ -582,7 +582,9 @@
     "words": "palabras",
     "characters": "caracteres",
     "libraries": "bibliotecas",
-    "notes": "notas"
+    "notes": "notas",
+    "indexing": "Indexando",
+    "indexingTooltip": "Construyendo el Índice: escaneando el contenido de las notas para encontrar los términos significativos en tu Universo. Cada biblioteca se escanea por turnos — el panel se irá llenando a medida que terminen las bibliotecas."
   },
   "notePane": {
     "saving": "Guardando...",
@@ -641,6 +643,7 @@
     "filterPlaceholder": "Filtrar términos...",
     "terms": "términos",
     "noTerms": "No se encontraron términos del glosario",
+    "building": "Creando índice…",
     "allLangs": "Todos"
   },
   "workspacesPanel": {

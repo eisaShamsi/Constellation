@@ -653,7 +653,9 @@
     "words": "words",
     "characters": "characters",
     "libraries": "libraries",
-    "notes": "notes"
+    "notes": "notes",
+    "indexing": "Indexing",
+    "indexingTooltip": "Building Index: scanning note contents to find the meaningful terms across your Universe. Each library is scanned in turn — the panel will populate as libraries finish."
   },
   "notePane": {
     "saving": "Saving...",
@@ -712,6 +714,7 @@
     "filterPlaceholder": "Filter terms...",
     "terms": "terms",
     "noTerms": "No index terms found",
+    "building": "Building index…",
     "allLangs": "All"
   },
   "workspacesPanel": {

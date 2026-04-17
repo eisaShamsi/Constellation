@@ -1465,6 +1465,32 @@ export async function scanLibraryIndex(libraryPath: string): Promise<IndexEntry[
 	return await invoke('scan_library_index', { libraryPath });
 }
 
+/**
+ * Read the full Universe vocabulary from the FTS5 term dictionary.
+ *
+ * Backed by the `notes_vocab` virtual table — a `fts5vocab(notes_fts)` view
+ * over the term dictionary that FTS5 already maintains as notes are added,
+ * edited, or deleted (via existing triggers on `note_meta`).
+ *
+ * Returns one `IndexEntry` per term with display and count. `mentions` is
+ * empty — the UI lazy-fetches the notes for a term via `readTermMentions`
+ * when the user expands it, so we don't move millions of rows across IPC.
+ *
+ * No progress bar needed: the dictionary is already built. Result arrives
+ * in tens of milliseconds.
+ */
+export async function readIndexEntries(): Promise<IndexEntry[]> {
+	return await invoke('read_index_entries');
+}
+
+/**
+ * Lazy-load the list of notes mentioning a given term. Called on expand.
+ * Uses FTS5 MATCH against the term dictionary — sub-10 ms per call.
+ */
+export async function readTermMentions(term: string, limit?: number): Promise<IndexMention[]> {
+	return await invoke('read_term_mentions', { term, limit: limit ?? null });
+}
+
 // ─── Navigator data ───
 export interface NoteWithMeta {
 	name: string;

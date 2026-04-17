@@ -582,7 +582,9 @@
     "words": "단어",
     "characters": "글자",
     "libraries": "보관함",
-    "notes": "노트"
+    "notes": "노트",
+    "indexing": "색인 생성",
+    "indexingTooltip": "색인 구축 중: 유니버스 전체에서 의미 있는 용어를 찾기 위해 노트 내용을 스캔하고 있습니다. 각 라이브러리를 차례로 스캔합니다 — 라이브러리가 완료될 때마다 패널이 채워집니다."
   },
   "notePane": {
     "saving": "저장 중...",
@@ -641,6 +643,7 @@
     "filterPlaceholder": "용어 필터...",
     "terms": "개 용어",
     "noTerms": "용어를 찾을 수 없습니다",
+    "building": "인덱스 생성 중…",
     "allLangs": "모두"
   },
   "workspacesPanel": {

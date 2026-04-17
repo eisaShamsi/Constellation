@@ -4,6 +4,7 @@
 
 	let {
 		entries = [] as IndexEntry[],
+		isLoading = false,
 		onNoteClick,
 		onTermClick,
 		onNoteHover = (_path: string, _e: MouseEvent) => {},
@@ -11,8 +12,10 @@
 		activeNotePath = '',
 		selectedTerms = new Set<string>(),
 		onTermSelect,
+		loadMentions,
 	}: {
 		entries: IndexEntry[];
+		isLoading?: boolean;
 		onNoteClick: (filePath: string, noteName: string, term?: string, e?: MouseEvent) => void;
 		onTermClick?: (term: string, mentions: { note_path: string; note_name: string }[]) => void;
 		onNoteHover?: (filePath: string, e: MouseEvent) => void;
@@ -20,7 +23,34 @@
 		activeNotePath?: string;
 		selectedTerms?: Set<string>;
 		onTermSelect?: (term: string, mentions: { note_path: string; note_name: string }[], selected: boolean) => void;
+		/** Lazy-loader for per-term mentions. Called on first expand of a term. */
+		loadMentions?: (term: string) => Promise<IndexMention[]>;
 	} = $props();
+
+	// Per-term mentions cache — populated on demand when the user expands a term.
+	// Keeps the initial IPC payload tiny (terms only; no mentions pre-loaded).
+	let mentionsCache = $state<Map<string, IndexMention[]>>(new Map());
+	let loadingMentions = $state<Set<string>>(new Set());
+
+	function getMentions(term: string): IndexMention[] {
+		return mentionsCache.get(term) ?? [];
+	}
+
+	async function ensureMentionsLoaded(term: string) {
+		if (!loadMentions) return;
+		if (mentionsCache.has(term)) return;
+		if (loadingMentions.has(term)) return;
+		loadingMentions.add(term);
+		loadingMentions = new Set(loadingMentions);
+		try {
+			const list = await loadMentions(term);
+			mentionsCache.set(term, list);
+			mentionsCache = new Map(mentionsCache);
+		} finally {
+			loadingMentions.delete(term);
+			loadingMentions = new Set(loadingMentions);
+		}
+	}
 
 	let filterQuery = $state('');
 	let expandedTerms = $state<Set<string>>(new Set());
@@ -355,6 +385,7 @@
 			expandedTerms = new Set();
 		} else {
 			expandedTerms = new Set([term]);
+			void ensureMentionsLoaded(term);
 		}
 	}
 
@@ -385,19 +416,23 @@
 	}
 
 	// ─── Export ───
-	function exportToClipboard() {
+	// Mentions are lazy-loaded per term; export walks the visible list and
+	// loads any not-yet-cached ones before assembling the markdown.
+	async function exportToClipboard() {
 		const source = sortMode === 'freq' ? freqEntries : visibleEntries;
+		const allTerms = source.map((e) => e.term);
+		await Promise.all(allTerms.map((t) => ensureMentionsLoaded(t)));
 		let md = '# Index\n\n';
 		if (sortMode === 'freq') {
 			for (const entry of source) {
-				const notes = entry.mentions.map(m => m.note_name).join(', ');
+				const notes = getMentions(entry.term).map(m => m.note_name).join(', ');
 				md += `- ${entry.term} (${entry.count}) — ${notes}\n`;
 			}
 		} else {
 			for (const [letter, group] of groupedEntries) {
 				md += `## ${letter}\n`;
 				for (const entry of group) {
-					const notes = entry.mentions.map(m => m.note_name).join(', ');
+					const notes = getMentions(entry.term).map(m => m.note_name).join(', ');
 					md += `- ${entry.term} (${entry.count}) — ${notes}\n`;
 				}
 				md += '\n';
@@ -495,21 +530,21 @@
 		<div class="gp-anchor-bar">
 			<span class="gp-anchor-label">{$t('indexPanel.comparing') || 'Comparing'}:</span>
 			{#each [...selectedTerms] as term}
-				<button class="gp-anchor-chip" onclick={() => {
+				<button class="gp-anchor-chip" onclick={async () => {
 					if (onTermSelect) {
-						const entry = entries.find(e => e.term === term);
-						onTermSelect(term, entry?.mentions ?? [], false);
+						await ensureMentionsLoaded(term);
+						onTermSelect(term, getMentions(term), false);
 					}
 				}}>
 					<span dir="auto">{term}</span>
 					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 				</button>
 			{/each}
-			<button class="gp-anchor-clear" onclick={() => {
+			<button class="gp-anchor-clear" onclick={async () => {
 				if (onTermSelect) {
 					for (const term of selectedTerms) {
-						const entry = entries.find(e => e.term === term);
-						onTermSelect(term, entry?.mentions ?? [], false);
+						await ensureMentionsLoaded(term);
+						onTermSelect(term, getMentions(term), false);
 					}
 				}
 			}}>
@@ -521,7 +556,11 @@
 	<!-- Term list -->
 	<div class="gp-list" bind:this={listEl} onscroll={handleScroll}>
 		{#if scriptFilteredEntries.length === 0}
-			<div class="gp-empty">{$t('indexPanel.noTerms')}</div>
+			{#if isLoading}
+				<div class="gp-loading">{$t('indexPanel.building') || 'Building index…'}</div>
+			{:else}
+				<div class="gp-empty">{$t('indexPanel.noTerms')}</div>
+			{/if}
 		{:else if sortMode === 'alpha'}
 			{#each groupedEntries as [letter, group]}
 				<div class="gp-letter-group">
@@ -538,11 +577,13 @@
 								</span>
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
 								<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}
-									onclick={(e) => {
+									onclick={async (e) => {
 										if ((e.ctrlKey || e.metaKey) && onTermSelect) {
-											onTermSelect(entry.term, entry.mentions, !selectedTerms.has(entry.term));
+											await ensureMentionsLoaded(entry.term);
+											onTermSelect(entry.term, getMentions(entry.term), !selectedTerms.has(entry.term));
 										} else if (onTermClick) {
-											onTermClick(entry.term, entry.mentions);
+											await ensureMentionsLoaded(entry.term);
+											onTermClick(entry.term, getMentions(entry.term));
 											toggleExpand(entry.term);
 										} else {
 											toggleExpand(entry.term);
@@ -559,7 +600,7 @@
 
 							{#if expandedTerms.has(entry.term)}
 								<div class="gp-references" dir="auto">
-									{#each entry.mentions as mention, i}
+									{#each getMentions(entry.term) as mention, i}
 										<button class="gp-ref" class:active={mention.note_path === activeNotePath}
 											data-filepath={mention.note_path}
 											onclick={(e) => onNoteClick(mention.note_path, mention.note_name, entry.term, e)}
@@ -586,11 +627,13 @@
 						</span>
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}
-							onclick={(e) => {
+							onclick={async (e) => {
 								if ((e.ctrlKey || e.metaKey) && onTermSelect) {
-									onTermSelect(entry.term, entry.mentions, !selectedTerms.has(entry.term));
+									await ensureMentionsLoaded(entry.term);
+									onTermSelect(entry.term, getMentions(entry.term), !selectedTerms.has(entry.term));
 								} else if (onTermClick) {
-									onTermClick(entry.term, entry.mentions);
+									await ensureMentionsLoaded(entry.term);
+									onTermClick(entry.term, getMentions(entry.term));
 									toggleExpand(entry.term);
 								} else {
 									toggleExpand(entry.term);
@@ -607,7 +650,7 @@
 
 					{#if expandedTerms.has(entry.term)}
 						<div class="gp-references" dir="auto">
-							{#each entry.mentions as mention, i}
+							{#each getMentions(entry.term) as mention, i}
 								<button class="gp-ref" class:active={mention.note_path === activeNotePath}
 									data-filepath={mention.note_path}
 									onclick={(e) => onNoteClick(mention.note_path, mention.note_name, entry.term, e)}

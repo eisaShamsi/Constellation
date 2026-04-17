@@ -153,6 +153,20 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         END;
     ").map_err(|e| format!("Failed to create FTS triggers: {}", e))?;
 
+    // ─── Index Panel vocabulary view ─────────────────────────────────────
+    // fts5vocab exposes the sorted term dictionary that FTS5 already
+    // maintains on-disk as triggers update `notes_fts`. Row mode:
+    //   (term TEXT, doc INTEGER, cnt INTEGER)
+    //   * doc — number of distinct notes containing the term
+    //   * cnt — total occurrences across all notes
+    // This replaces the custom index_terms/index_mentions/index_meta tables:
+    // the Index panel reads directly from the already-maintained FTS5 index,
+    // no separate tokenization or aggregation pass is needed, and edits to
+    // notes update the vocab transparently via the existing FTS5 triggers.
+    conn.execute_batch("
+        CREATE VIRTUAL TABLE IF NOT EXISTS notes_vocab USING fts5vocab(notes_fts, 'row');
+    ").map_err(|e| format!("Failed to create notes_vocab: {}", e))?;
+
     // Indexes for structured queries
     conn.execute_batch("
         CREATE INDEX IF NOT EXISTS idx_note_library ON note_meta(library_name);
@@ -207,6 +221,15 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         CREATE INDEX IF NOT EXISTS idx_link_last_traversed ON note_links(last_traversed);
         CREATE INDEX IF NOT EXISTS idx_link_traversal_count ON note_links(traversal_count);
     ").map_err(|e| format!("Failed to create note_links: {}", e))?;
+
+    // Drop any leftover tables from the aborted custom-index experiment
+    // (2026-04-16). The Index panel now reads directly from the FTS5 vocab
+    // virtual table `notes_vocab` above; these tables are no longer used.
+    conn.execute_batch("
+        DROP TABLE IF EXISTS index_mentions;
+        DROP TABLE IF EXISTS index_terms;
+        DROP TABLE IF EXISTS index_meta;
+    ").map_err(|e| format!("Failed to drop obsolete index tables: {}", e))?;
 
     Ok(conn)
 }

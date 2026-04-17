@@ -582,7 +582,9 @@
     "words": "个字",
     "characters": "个字符",
     "libraries": "个仓库",
-    "notes": "篇笔记"
+    "notes": "篇笔记",
+    "indexing": "建立索引",
+    "indexingTooltip": "正在构建索引:扫描笔记内容以查找您的宇宙中有意义的术语。每个仓库依次扫描 — 当仓库完成时,面板将逐步填充。"
   },
   "notePane": {
     "saving": "正在保存...",
@@ -641,6 +643,7 @@
     "filterPlaceholder": "筛选术语...",
     "terms": "个术语",
     "noTerms": "未找到术语",
+    "building": "正在构建索引…",
     "allLangs": "全部"
   },
   "workspacesPanel": {

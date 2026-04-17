@@ -360,7 +360,16 @@
       "WebFetch(domain:svelte.dev)",
       "Bash(cargo run:*)",
       "Bash(node -e \"const pkg = require\\('pixi.js/package.json'\\); console.log\\('pixi version:', pkg.version\\); console.log\\('unsafe-eval export:', JSON.stringify\\(pkg.exports?.['./unsafe-eval'] ?? 'NOT EXPORTED'\\)\\);\")",
-      "Bash(node -e \"const fs = require\\('fs'\\); const pkg = JSON.parse\\(fs.readFileSync\\('node_modules/pixi.js/package.json', 'utf8'\\)\\); console.log\\('pixi version:', pkg.version\\); console.log\\('unsafe-eval export:', JSON.stringify\\(pkg.exports && pkg.exports['./unsafe-eval'], null, 2\\)\\);\")"
+      "Bash(node -e \"const fs = require\\('fs'\\); const pkg = JSON.parse\\(fs.readFileSync\\('node_modules/pixi.js/package.json', 'utf8'\\)\\); console.log\\('pixi version:', pkg.version\\); console.log\\('unsafe-eval export:', JSON.stringify\\(pkg.exports && pkg.exports['./unsafe-eval'], null, 2\\)\\);\")",
+      "Bash(node -e 'JSON.parse\\(require\\('\\\\''fs'\\\\''\\).readFileSync\\('\\\\''__TRACKED_VAR__'\\\\'','\\\\''utf8'\\\\''\\)\\)')",
+      "Bash(taskkill //F //IM constellation.exe)",
+      "WebFetch(domain:sqlite.org)",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:darksi.de)",
+      "Bash(python .splice_index.py)",
+      "Bash(rm .splice_index.py)",
+      "Bash(sqlite3 --version)",
+      "Bash(python -c ' *)"
     ]
   }
 }

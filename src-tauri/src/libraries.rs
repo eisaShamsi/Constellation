@@ -2433,6 +2433,161 @@ fn is_same_script(a: &str, b: &str) -> bool {
     ba == bb
 }
 
+/// Tokenize a single note body and accumulate into the index + bigram maps.
+/// Pure in-memory — no filesystem, no SQL. Callers pass already-stripped
+/// body text (YAML frontmatter removed, markdown syntax collapsed).
+///
+/// Used by the filesystem walker `scan_index_words_recursive` (called from
+/// `scan_library_index`, the on-demand per-library filesystem rebuild).
+///
+/// The cache-streaming path (`scan_index_populate_batch`) uses the sibling
+/// `tokenize_note_local` function instead, which emits a per-note HashMap
+/// and avoids unbounded accumulation across notes.
+fn tokenize_note_body(
+    body: &str,
+    note_path: &str,
+    note_name: &str,
+    stopwords: &std::collections::HashSet<String>,
+    index: &mut std::collections::HashMap<String, (
+        std::collections::HashMap<String, u32>, u32, Vec<(String, String)>,
+    )>,
+    bigrams: &mut std::collections::HashMap<String, (String, u32, Vec<(String, String)>)>,
+) {
+    let mut seen_in_note: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut seen_bigrams: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut prev_word: Option<String> = None;
+    let mut prev_key: Option<String> = None;
+
+    for word in body.split(|c: char| {
+        // Split on non-alphabetic chars (except apostrophe).
+        // Also split on dashes, underscores, and em/en dashes.
+        if c == '\'' { return false; }
+        if c == '—' || c == '–' || c == '-' || c == '_' { return true; }
+        !c.is_alphabetic()
+    }) {
+        let word = word.trim_matches('\'');
+        if word.is_empty() {
+            prev_word = None;
+            prev_key = None;
+            continue;
+        }
+        let char_count = word.chars().count();
+        let word_is_arabic = is_arabic(word);
+        let word_is_hebrew = is_hebrew(word);
+        let is_non_latin = word.chars().any(|c| !c.is_ascii_alphabetic());
+
+        // Skip abnormally long words — likely concatenation errors.
+        // Arabic rarely exceeds 12 chars; Latin rarely exceeds 25.
+        if word_is_arabic && char_count > 15 {
+            prev_word = None;
+            prev_key = None;
+            continue;
+        }
+        if is_non_latin && char_count < 2 {
+            prev_word = None;
+            prev_key = None;
+            continue;
+        }
+        if !is_non_latin && char_count < 3 {
+            prev_word = None;
+            prev_key = None;
+            continue;
+        }
+
+        // Process word through language-specific pipeline.
+        let (normalized, stripped, stemmed);
+        if word_is_arabic {
+            // Arabic: Lucene Light10 pipeline.
+            // display = original with tashkeel removed (ة أ إ preserved)
+            // key = fully normalized + stemmed (for grouping)
+            let (disp, stem) = process_arabic_word(word);
+            normalized = normalize_arabic(word); // full normalization for stopword check
+            stripped = disp; // display preserved
+            stemmed = stem;  // grouped by Light10
+        } else if word_is_hebrew {
+            normalized = word.to_string();
+            let s = strip_hebrew_prefix(&normalized).to_string();
+            stripped = s.clone();
+            stemmed = s;
+        } else {
+            normalized = word.to_string();
+            stripped = normalized.clone();
+            stemmed = if is_persian(&stripped) {
+                stem_persian(&stripped)
+            } else if is_cyrillic(&stripped) {
+                stem_russian(&stripped)
+            } else if is_devanagari(&stripped) {
+                stem_hindi(&stripped)
+            } else if is_latin(&stripped) {
+                let lower = stripped.to_lowercase();
+                if lower.contains('ä') || lower.contains('ö') || lower.contains('ü') || lower.contains('ß') {
+                    stem_german(&stripped)
+                } else if lower.contains('ñ') || lower.ends_with("ción") || lower.ends_with("ando") {
+                    stem_spanish(&stripped)
+                } else if lower.contains('ç') || lower.contains('ã') || lower.contains('õ') {
+                    stem_portuguese(&stripped)
+                } else if lower.contains('é') || lower.contains('è') || lower.contains('ê') || lower.ends_with("ment") || lower.ends_with("tion") {
+                    stem_french(&stripped)
+                } else if lower.contains('ş') || lower.contains('ğ') || lower.contains('ı') || lower.contains('ü') {
+                    stem_turkish(&stripped)
+                } else {
+                    stem_english(&stripped)
+                }
+            } else {
+                stripped.clone()
+            };
+        }
+
+        // Use stemmed form as index key; keep original display form.
+        let key = stemmed.to_lowercase();
+
+        // Skip stopwords (check both original normalized and stemmed forms).
+        let norm_lower = normalized.to_lowercase();
+        let is_stop = stopwords.contains(&key) || stopwords.contains(&norm_lower);
+
+        if !is_stop {
+            // Result must be ≥3 chars for Arabic/Hebrew, ≥2 for others.
+            let min_len = if word_is_arabic || word_is_hebrew { 3 } else { 2 };
+            if key.chars().count() < min_len {
+                prev_word = Some(stripped.clone());
+                prev_key = Some(key);
+                continue;
+            }
+
+            let entry = index.entry(key.clone()).or_insert_with(|| {
+                (std::collections::HashMap::new(), 0, Vec::new())
+            });
+            // Track display variant (use stripped form, not raw word with tashkeel).
+            *entry.0.entry(stripped.clone()).or_insert(0) += 1;
+            entry.1 += 1;
+
+            if !seen_in_note.contains(&key) {
+                seen_in_note.insert(key.clone());
+                entry.2.push((note_path.to_string(), note_name.to_string()));
+            }
+        }
+
+        // Bigram detection: pair with previous non-stop word if same script.
+        if let (Some(pw), Some(pk)) = (&prev_word, &prev_key) {
+            let prev_is_stop = stopwords.contains(pk.as_str());
+            if !is_stop && !prev_is_stop && is_same_script(pw, &stripped) {
+                let bi_key = format!("{} {}", pk, key);
+                let bi_display = format!("{} {}", pw, stripped);
+                let bi_entry = bigrams.entry(bi_key.clone())
+                    .or_insert_with(|| (bi_display, 0, Vec::new()));
+                bi_entry.1 += 1;
+                if !seen_bigrams.contains(&bi_key) {
+                    seen_bigrams.insert(bi_key);
+                    bi_entry.2.push((note_path.to_string(), note_name.to_string()));
+                }
+            }
+        }
+
+        prev_word = Some(stripped.clone());
+        prev_key = Some(key);
+    }
+}
+
 fn scan_index_words_recursive(
     dir: &Path,
     md_strip: &regex::Regex,
@@ -2481,138 +2636,134 @@ fn scan_index_words_recursive(
                     String::new()
                 });
 
-                let mut seen_in_note: std::collections::HashSet<String> = std::collections::HashSet::new();
-                let mut seen_bigrams: std::collections::HashSet<String> = std::collections::HashSet::new();
-                let mut prev_word: Option<String> = None;
-                let mut prev_key: Option<String> = None;
-
-                for word in cleaned.split(|c: char| {
-                    // Split on non-alphabetic chars (except apostrophe)
-                    // Also split on dashes, underscores, and special Unicode chars
-                    if c == '\'' { return false; }
-                    if c == '—' || c == '–' || c == '-' || c == '_' { return true; }
-                    !c.is_alphabetic()
-                }) {
-                    let word = word.trim_matches('\'');
-                    if word.is_empty() {
-                        prev_word = None;
-                        prev_key = None;
-                        continue;
-                    }
-                    let char_count = word.chars().count();
-                    let word_is_arabic = is_arabic(word);
-                    let word_is_hebrew = is_hebrew(word);
-                    let is_non_latin = word.chars().any(|c| !c.is_ascii_alphabetic());
-
-                    // Skip abnormally long words — likely concatenation errors
-                    // Arabic words rarely exceed 12 chars; Latin rarely exceeds 25
-                    if word_is_arabic && char_count > 15 {
-                        prev_word = None;
-                        prev_key = None;
-                        continue;
-                    }
-                    if is_non_latin && char_count < 2 {
-                        prev_word = None;
-                        prev_key = None;
-                        continue;
-                    }
-                    if !is_non_latin && char_count < 3 {
-                        prev_word = None;
-                        prev_key = None;
-                        continue;
-                    }
-
-                    // Process word through language-specific pipeline
-                    let (normalized, stripped, stemmed);
-                    if word_is_arabic {
-                        // Arabic: Lucene Light10 pipeline
-                        // display = original with tashkeel removed (ة أ إ preserved)
-                        // key = fully normalized + stemmed (for grouping)
-                        let (disp, stem) = process_arabic_word(word);
-                        normalized = normalize_arabic(word); // full normalization for stopword check
-                        stripped = disp; // display = original chars preserved
-                        stemmed = stem;  // key = grouped by Light10
-                    } else if word_is_hebrew {
-                        normalized = word.to_string();
-                        let s = strip_hebrew_prefix(&normalized).to_string();
-                        stripped = s.clone();
-                        stemmed = s;
-                    } else {
-                        normalized = word.to_string();
-                        stripped = normalized.clone();
-                        stemmed = if is_persian(&stripped) {
-                            stem_persian(&stripped)
-                        } else if is_cyrillic(&stripped) {
-                            stem_russian(&stripped)
-                        } else if is_devanagari(&stripped) {
-                            stem_hindi(&stripped)
-                        } else if is_latin(&stripped) {
-                            let lower = stripped.to_lowercase();
-                            if lower.contains('ä') || lower.contains('ö') || lower.contains('ü') || lower.contains('ß') {
-                                stem_german(&stripped)
-                            } else if lower.contains('ñ') || lower.ends_with("ción") || lower.ends_with("ando") {
-                                stem_spanish(&stripped)
-                            } else if lower.contains('ç') || lower.contains('ã') || lower.contains('õ') {
-                                stem_portuguese(&stripped)
-                            } else if lower.contains('é') || lower.contains('è') || lower.contains('ê') || lower.ends_with("ment") || lower.ends_with("tion") {
-                                stem_french(&stripped)
-                            } else if lower.contains('ş') || lower.contains('ğ') || lower.contains('ı') || lower.contains('ü') {
-                                stem_turkish(&stripped)
-                            } else {
-                                stem_english(&stripped)
-                            }
-                        } else {
-                            stripped.clone()
-                        };
-                    }
-
-                    // Use stemmed form as index key, but keep original display form
-                    let key = stemmed.to_lowercase();
-
-                    // Skip stopwords (check both original normalized and stemmed forms)
-                    let norm_lower = normalized.to_lowercase();
-                    let is_stop = stopwords.contains(&key) || stopwords.contains(&norm_lower);
-
-                    if !is_stop {
-                        // Skip if result is too short — 3 chars min for Arabic/Hebrew, 2 for others
-                        let min_len = if word_is_arabic || word_is_hebrew { 3 } else { 2 };
-                        if key.chars().count() < min_len { prev_word = Some(stripped.clone()); prev_key = Some(key); continue; }
-
-                        let entry = index.entry(key.clone()).or_insert_with(|| {
-                            (std::collections::HashMap::new(), 0, Vec::new())
-                        });
-                        // Track display variant (use stripped form, not raw word with tashkeel)
-                        *entry.0.entry(stripped.clone()).or_insert(0) += 1;
-                        entry.1 += 1;
-
-                        if !seen_in_note.contains(&key) {
-                            seen_in_note.insert(key.clone());
-                            entry.2.push((note_path.clone(), note_name.clone()));
-                        }
-                    }
-
-                    // Bigram detection: pair with previous non-stop word if same script
-                    if let (Some(pw), Some(pk)) = (&prev_word, &prev_key) {
-                        let prev_is_stop = stopwords.contains(pk.as_str());
-                        if !is_stop && !prev_is_stop && is_same_script(pw, &stripped) {
-                            let bi_key = format!("{} {}", pk, key);
-                            let bi_display = format!("{} {}", pw, stripped);
-                            let bi_entry = bigrams.entry(bi_key.clone())
-                                .or_insert_with(|| (bi_display, 0, Vec::new()));
-                            bi_entry.1 += 1;
-                            if !seen_bigrams.contains(&bi_key) {
-                                seen_bigrams.insert(bi_key);
-                                bi_entry.2.push((note_path.clone(), note_name.clone()));
-                            }
-                        }
-                    }
-
-                    prev_word = Some(stripped.clone());
-                    prev_key = Some(key);
-                }
+                tokenize_note_body(&cleaned, &note_path, &note_name, stopwords, index, bigrams);
             }
         }
     }
+}
+
+/// ─── Index Panel backed by FTS5 vocab ───────────────────────────────────
+///
+/// The Index panel reads directly from the `notes_vocab` virtual table,
+/// which is a `fts5vocab(notes_fts, 'row')` view over the term dictionary
+/// that FTS5 already maintains on disk. Each row is `(term, doc, cnt)`:
+///   * term — a token produced by the FTS5 tokenizer
+///   * doc  — number of distinct notes containing the token
+///   * cnt  — total occurrences across all notes
+///
+/// Advantages over the previous custom-table attempts:
+///   * Zero bulk work. FTS5 triggers on `note_meta` already maintain the
+///     term dictionary incrementally as notes are added, edited, or deleted.
+///   * No in-memory accumulation. Aggregation is what FTS5 does on disk.
+///   * Boot is free — the panel opens to a live view over the dictionary.
+///
+/// Current tokenization is whatever FTS5 was configured with at table
+/// creation (`unicode61 remove_diacritics 2`), which lower-cases and
+/// strips diacritics but does not stem. This means "philosophy" and
+/// "philosophies" appear as separate terms. A later phase will register a
+/// custom FTS5 tokenizer wrapping the existing multi-language pipeline
+/// (`tokenize_note_body` / Light10 Arabic stemming / bigrams) so the
+/// vocabulary reflects the richer tokenization.
+
+/// Read the Universe vocabulary from the FTS5 term dictionary.
+/// Returns `(display, count)` pairs; `mentions` is left empty — the UI
+/// lazy-fetches the notes for a term via `read_term_mentions` when the
+/// user expands it, which avoids returning millions of rows up front.
+///
+/// Filters (tuned for multi-script corpora, especially Arabic without
+/// stemming, where a 7,600-note Universe produces ~450k unique term forms):
+///   * terms shorter than 2 characters
+///   * terms with count < 5 — drops hapax/near-hapax noise that would
+///     otherwise bloat the list to hundreds of thousands of one-off tokens.
+///   * LIMIT 50000 — ceiling on payload size and rendering cost. At 50k
+///     alphabetically-sorted terms the user's filter-as-you-type narrows
+///     quickly; at more than 50k the JSON blob and Svelte $state proxy
+///     wrap start to hurt main-thread responsiveness.
+///
+/// Performance: a single forward scan over the FTS5 dictionary segments.
+/// Measured ~350ms for 50k rows on a 7,600-note Arabic-heavy Universe.
+#[tauri::command]
+pub fn read_index_entries(app: tauri::AppHandle) -> Result<Vec<IndexEntry>, String> {
+    use rusqlite::{Connection, OpenFlags};
+
+    let db_path = crate::search::db_path(&app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let conn = Connection::open_with_flags(&db_path, flags)
+        .map_err(|e| format!("Failed to open search.db: {}", e))?;
+    conn.busy_timeout(std::time::Duration::from_millis(500))
+        .map_err(|e| e.to_string())?;
+
+    let mut stmt = conn.prepare(
+        "SELECT term, cnt FROM notes_vocab
+         WHERE LENGTH(term) >= 2 AND cnt >= 5
+         ORDER BY term
+         LIMIT 50000"
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, i64>(1)? as u32,
+        ))
+    }).map_err(|e| e.to_string())?;
+
+    let mut entries: Vec<IndexEntry> = Vec::new();
+    for row in rows.flatten() {
+        let (term, count) = row;
+        entries.push(IndexEntry {
+            term: term.clone(),
+            count,
+            mentions: Vec::new(),
+            is_compound: false,
+        });
+    }
+    Ok(entries)
+}
+
+/// Lazy-load the list of notes mentioning a given term. Called when the
+/// user expands a term in the Index panel. Uses FTS5 `MATCH` — an O(log n)
+/// term-dictionary lookup followed by a linear scan of the postings list,
+/// joined to `note_meta` for display names.
+///
+/// Returns up to `limit` (default 200) mentions, ordered by note name.
+#[tauri::command]
+pub fn read_term_mentions(
+    app: tauri::AppHandle,
+    term: String,
+    limit: Option<u32>,
+) -> Result<Vec<IndexMention>, String> {
+    use rusqlite::{Connection, OpenFlags};
+
+    let limit = limit.unwrap_or(200).max(1).min(5000);
+
+    let db_path = crate::search::db_path(&app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let conn = Connection::open_with_flags(&db_path, flags)
+        .map_err(|e| format!("Failed to open search.db: {}", e))?;
+    conn.busy_timeout(std::time::Duration::from_millis(500))
+        .map_err(|e| e.to_string())?;
+
+    // Bind as a phrase so FTS5 treats the input literally.
+    // Quotes must be doubled per FTS5 quoted-string syntax.
+    let phrase = format!("\"{}\"", term.replace('"', "\"\""));
+
+    let mut stmt = conn.prepare(
+        "SELECT nm.path, nm.name
+         FROM notes_fts
+         JOIN note_meta nm ON notes_fts.rowid = nm.rowid
+         WHERE notes_fts MATCH ?1
+         ORDER BY LOWER(nm.name)
+         LIMIT ?2"
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map(rusqlite::params![phrase, limit as i64], |row| {
+        Ok(IndexMention {
+            note_path: row.get::<_, String>(0)?,
+            note_name: row.get::<_, String>(1)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    Ok(rows.flatten().collect())
 }
 
 /// Collect all note names in a library (for autocomplete).

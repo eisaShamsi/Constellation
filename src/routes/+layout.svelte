@@ -22,7 +22,7 @@
 		toggleEditMode, editingTabIds,
 		navigateBack, navigateForward,
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
-		scanLibraryIndex,
+		scanLibraryIndex, readIndexEntries, readTermMentions,
 		buildSkyData, readNotePreview,
 		getDailyNotePath, updateLinksOnRename, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
@@ -536,6 +536,14 @@
 	let allLibraryTags = $state<Record<string, number>>({});
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let allIndexEntries = $state<IndexEntry[]>([]);
+	// Index panel lazy-load state. The index is built by a filesystem walk in
+	// `scan_library_index` (libraries.rs), so it is NOT on the boot path (per
+	// commit 039ac66 "kill ALL filesystem walkers from boot"). Instead we
+	// scan lazily when the user opens the panel for the first time. The key
+	// combines universe + library count so adding/removing libraries also
+	// triggers a re-scan on next panel open. Reset to null on universe switch.
+	let indexLoading = $state(false);
+	let indexLoadedKey = $state<string | null>(null);
 	// Star data uses $state.raw — tracks reassignment (required for the main Sky View
 	// <GraphMindView nodes={skyNodes}> binding and the Lens <ConstellationSight> binding
 	// to re-run when refreshLibraryCaches populates these arrays after mount) but
@@ -1636,6 +1644,7 @@
 		allLibraryTags = {};
 		allNotes = [];
 		allIndexEntries = [];
+		indexLoadedKey = null;
 		libraryTrees = {};
 		expandedLibraries = new Set();
 		editingTabIds.set(new Set());
@@ -2911,6 +2920,35 @@
 		pagePreview = { ...pagePreview, visible: false };
 	}
 
+	// ─── Index panel: FTS5 vocab read ───
+	// The Index panel is now backed by the `notes_vocab` virtual table
+	// (fts5vocab over `notes_fts`). FTS5 already maintains the term dictionary
+	// incrementally as notes change — no build step, no progress bar, no
+	// batch loop. We just read when the data is ready.
+	//
+	// Triggered on `graphReady` so the first read doesn't fight the boot
+	// snapshot IPC queue. Subsequent universe switches trigger a re-read.
+	// One `invoke` round-trip, tens of milliseconds on a 50k-term Universe.
+	$effect(() => {
+		if (!graphReady) return;
+		if ($libraries.length === 0) return;
+		const key = `${activeUniverseName}|${$libraries.length}`;
+		if (indexLoadedKey === key) return;
+		if (indexLoading) return;
+
+		indexLoading = true;
+		(async () => {
+			try {
+				allIndexEntries = await readIndexEntries();
+				indexLoadedKey = key;
+			} catch {
+				/* leave allIndexEntries as-is */
+			} finally {
+				indexLoading = false;
+			}
+		})();
+	});
+
 	// ─── Library tree operations ───
 	async function toggleLibrary(lib: LibraryStats) {
 		skyViewSelectedPath = lib.path;
@@ -3863,7 +3901,9 @@
 					<div class="index-body">
 						<IndexPanel
 							entries={allIndexEntries}
+							isLoading={indexLoading}
 							onNoteClick={handleIndexNoteClick}
+							loadMentions={(term) => readTermMentions(term, 500)}
 							onNoteHover={handleIndexNoteHover}
 							onNoteLeave={handleIndexNoteLeave}
 							activeNotePath={indexActiveNotePath}

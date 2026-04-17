@@ -582,7 +582,9 @@
     "words": "語",
     "characters": "文字",
     "libraries": "保管庫",
-    "notes": "ノート"
+    "notes": "ノート",
+    "indexing": "インデックス作成中",
+    "indexingTooltip": "インデックスを構築中: ユニバース全体にわたる意味のある用語を見つけるために、ノートの内容をスキャンしています。各ライブラリは順番にスキャンされます — ライブラリが完了するごとにパネルが埋まっていきます。"
   },
   "notePane": {
     "saving": "保存中...",
@@ -641,6 +643,7 @@
     "filterPlaceholder": "用語を絞り込み...",
     "terms": "件の用語",
     "noTerms": "用語が見つかりません",
+    "building": "インデックスを構築中…",
     "allLangs": "すべて"
   },
   "workspacesPanel": {

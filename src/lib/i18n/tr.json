@@ -582,7 +582,9 @@
     "words": "kelime",
     "characters": "karakter",
     "libraries": "kasa",
-    "notes": "not"
+    "notes": "not",
+    "indexing": "Dizin oluşturma",
+    "indexingTooltip": "Dizin oluşturuluyor: Evreninizdeki anlamlı terimleri bulmak için not içerikleri taranıyor. Her kütüphane sırayla taranır — kütüphaneler tamamlandıkça panel dolacaktır."
   },
   "notePane": {
     "saving": "Kaydediliyor...",
@@ -641,6 +643,7 @@
     "filterPlaceholder": "Terimleri filtrele...",
     "terms": "terim",
     "noTerms": "Sözlük terimi bulunamadı",
+    "building": "Dizin oluşturuluyor…",
     "allLangs": "Tümü"
   },
   "workspacesPanel": {
