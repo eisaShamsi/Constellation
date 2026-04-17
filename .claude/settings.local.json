@@ -369,7 +369,13 @@
       "Bash(python .splice_index.py)",
       "Bash(rm .splice_index.py)",
       "Bash(sqlite3 --version)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "WebFetch(domain:lib.rs)",
+      "WebFetch(domain:gist.githubusercontent.com)",
+      "Bash(constellation)",
+      "Bash(grep -E \"fts5_tokenizer|error|^warning: `constellation`\")",
+      "Bash(grep -E \"error|warning: `constellation`\")",
+      "Bash(grep -E \"error|^warning: \\\\`constellation\\\\`\")"
     ]
   }
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import type { IndexEntry, IndexMention } from '$lib/libraries/store';
+	import VirtualList from '$lib/components/VirtualList.svelte';
 
 	let {
 		entries = [] as IndexEntry[],
@@ -54,13 +55,11 @@
 
 	let filterQuery = $state('');
 	let expandedTerms = $state<Set<string>>(new Set());
-	let visibleCount = $state(200);
 	let activeScript = $state<string>('all');
 	let activeLetter = $state<string | null>(null);
 	let sortMode = $state<'alpha' | 'freq'>('alpha');
 	let excludedTerms = $state<Set<string>>(loadExcluded());
 	let showHidden = $state(false);
-	let listEl: HTMLDivElement | undefined;
 	let contextMenu = $state<{ x: number; y: number; term: string } | null>(null);
 
 	// ═══════════════════════════════════════════════
@@ -310,35 +309,94 @@
 		activeLetter = null;
 	});
 
-	const visibleEntries = $derived(scriptFilteredEntries.slice(0, visibleCount));
-	const hasMore = $derived(scriptFilteredEntries.length > visibleCount);
-	const maxCount = $derived(Math.max(1, ...scriptFilteredEntries.map(e => e.count)));
+	// maxCount — bounded scan over a sample (first 5000) so we don't hot-loop
+	// `Math.max(...arr)` on 500k+ items per derivation. The bar widths are a
+	// visual heuristic; sampling the top-of-list is fine since SQL orders by
+	// term and high-count terms are sprinkled throughout anyway.
+	const maxCount = $derived.by(() => {
+		const sample = scriptFilteredEntries.length > 5000
+			? scriptFilteredEntries.slice(0, 5000)
+			: scriptFilteredEntries;
+		let m = 1;
+		for (const e of sample) if (e.count > m) m = e.count;
+		return m;
+	});
 
-	// Alphabetical mode: group by letter
+	// Alphabetical mode: group by letter. Inner groups keep SQL's byte-order
+	// (ORDER BY term) — the custom `constellation` tokenizer produces
+	// language-normalized stems so byte order is already an acceptable
+	// dictionary order within a single script. No JS re-sort, which would
+	// cost O(n log n) localeCompare calls on 100k+ term groups.
 	const groupedEntries = $derived.by(() => {
 		if (sortMode === 'freq') return [];
 		const groups = new Map<string, IndexEntry[]>();
-		for (const entry of visibleEntries) {
+		for (const entry of scriptFilteredEntries) {
 			const { letter } = getIndexInfo(entry.term);
-			const group = groups.get(letter) ?? [];
+			let group = groups.get(letter);
+			if (!group) { group = []; groups.set(letter, group); }
 			group.push(entry);
-			groups.set(letter, group);
-		}
-		for (const [, group] of groups) {
-			group.sort((a, b) => {
-				const ia = getIndexInfo(a.term);
-				const ib = getIndexInfo(b.term);
-				return ia.sortKey.localeCompare(ib.sortKey);
-			});
 		}
 		return Array.from(groups.entries()).sort((a, b) => compareLetters(a[0], b[0]));
 	});
 
-	// Frequency mode: flat sorted list
+	// Frequency mode: flat sorted list. Shallow copy so we don't mutate
+	// the upstream `scriptFilteredEntries` reference.
 	const freqEntries = $derived.by(() => {
 		if (sortMode !== 'freq') return [];
-		return [...visibleEntries].sort((a, b) => b.count - a.count);
+		return [...scriptFilteredEntries].sort((a, b) => b.count - a.count);
 	});
+
+	// ═══════════════════════════════════════════════
+	// ─── Virtualized row model ───
+	// Flatten groupedEntries / freqEntries into a linear array of typed
+	// rows so VirtualList can render only the visible window. Expanded
+	// mentions become their own row, inserted directly after the term row.
+	// ═══════════════════════════════════════════════
+	type VRow =
+		| { kind: 'header'; letter: string }
+		| { kind: 'entry'; entry: IndexEntry }
+		| { kind: 'expanded'; term: string };
+
+	const ROW_HEIGHT_HEADER = 30;
+	const ROW_HEIGHT_ENTRY = 30;
+	const ROW_HEIGHT_MENTION = 22;
+	const ROW_HEIGHT_EXPAND_PAD = 12;
+	const ROW_HEIGHT_EXPAND_MIN = 32;
+
+	const rows = $derived.by((): VRow[] => {
+		const out: VRow[] = [];
+		if (sortMode === 'freq') {
+			for (const entry of freqEntries) {
+				out.push({ kind: 'entry', entry });
+				if (expandedTerms.has(entry.term)) {
+					out.push({ kind: 'expanded', term: entry.term });
+				}
+			}
+		} else {
+			for (const [letter, group] of groupedEntries) {
+				out.push({ kind: 'header', letter });
+				for (const entry of group) {
+					out.push({ kind: 'entry', entry });
+					if (expandedTerms.has(entry.term)) {
+						out.push({ kind: 'expanded', term: entry.term });
+					}
+				}
+			}
+		}
+		return out;
+	});
+
+	function getRowHeight(r: VRow): number {
+		if (r.kind === 'header') return ROW_HEIGHT_HEADER;
+		if (r.kind === 'entry') return ROW_HEIGHT_ENTRY;
+		const list = mentionsCache.get(r.term);
+		const count = list?.length ?? 0;
+		return Math.max(ROW_HEIGHT_EXPAND_MIN, ROW_HEIGHT_EXPAND_PAD + count * ROW_HEIGHT_MENTION);
+	}
+
+	// String key that changes on any filter/sort/letter switch — VirtualList
+	// resets its scroll-to-top when this changes.
+	const scrollResetKey = $derived(`${activeScript}|${activeLetter ?? ''}|${sortMode}|${filterQuery}`);
 
 	const allLetters = $derived.by(() => {
 		if (sortMode === 'freq') return [];
@@ -389,20 +447,12 @@
 		}
 	}
 
-	function handleScroll(e: Event) {
-		const el = e.target as HTMLElement;
-		if (hasMore && el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
-			visibleCount += 200;
-		}
-	}
-
 	function selectLetter(letter: string) {
 		if (activeLetter === letter) {
 			activeLetter = null; // toggle off — show all
 		} else {
 			activeLetter = letter;
-			visibleCount = 200; // reset lazy load
-			if (listEl) listEl.scrollTop = 0; // scroll to top
+			// VirtualList scrolls to top via scrollResetKey change (activeLetter is part of the key).
 		}
 	}
 
@@ -416,22 +466,37 @@
 	}
 
 	// ─── Export ───
-	// Mentions are lazy-loaded per term; export walks the visible list and
-	// loads any not-yet-cached ones before assembling the markdown.
+	// Mentions are lazy-loaded per term; export walks the filtered list and
+	// loads any not-yet-cached ones before assembling the markdown. On very
+	// large result sets (> ~5000 terms) exporting everything would produce
+	// multi-MB clipboards and hammer the per-term-mentions IPC, so we cap.
+	const EXPORT_CAP = 5000;
 	async function exportToClipboard() {
-		const source = sortMode === 'freq' ? freqEntries : visibleEntries;
-		const allTerms = source.map((e) => e.term);
-		await Promise.all(allTerms.map((t) => ensureMentionsLoaded(t)));
-		let md = '# Index\n\n';
+		const allTerms: string[] = [];
 		if (sortMode === 'freq') {
-			for (const entry of source) {
+			for (const e of freqEntries) allTerms.push(e.term);
+		} else {
+			for (const [, group] of groupedEntries) for (const e of group) allTerms.push(e.term);
+		}
+		const truncated = allTerms.length > EXPORT_CAP;
+		const termsToExport = truncated ? allTerms.slice(0, EXPORT_CAP) : allTerms;
+		await Promise.all(termsToExport.map((t) => ensureMentionsLoaded(t)));
+		let md = '# Index\n\n';
+		if (truncated) md += `_Showing first ${EXPORT_CAP} of ${allTerms.length} terms. Filter to narrow the export._\n\n`;
+		if (sortMode === 'freq') {
+			for (const term of termsToExport) {
+				const entry = freqEntries.find(e => e.term === term);
+				if (!entry) continue;
 				const notes = getMentions(entry.term).map(m => m.note_name).join(', ');
 				md += `- ${entry.term} (${entry.count}) — ${notes}\n`;
 			}
 		} else {
+			const termSet = new Set(termsToExport);
 			for (const [letter, group] of groupedEntries) {
+				const inGroup = group.filter(e => termSet.has(e.term));
+				if (inGroup.length === 0) continue;
 				md += `## ${letter}\n`;
-				for (const entry of group) {
+				for (const entry of inGroup) {
 					const notes = getMentions(entry.term).map(m => m.note_name).join(', ');
 					md += `- ${entry.term} (${entry.count}) — ${notes}\n`;
 				}
@@ -440,13 +505,6 @@
 		}
 		navigator.clipboard.writeText(md);
 	}
-
-	$effect(() => {
-		filterQuery;
-		activeScript;
-		sortMode;
-		visibleCount = 200;
-	});
 
 	// Close context menu on click outside
 	function handleWindowClick() { contextMenu = null; }
@@ -553,120 +611,74 @@
 		</div>
 	{/if}
 
-	<!-- Term list -->
-	<div class="gp-list" bind:this={listEl} onscroll={handleScroll}>
-		{#if scriptFilteredEntries.length === 0}
+	<!-- Term list (virtualized — see VirtualList.svelte) -->
+	{#if scriptFilteredEntries.length === 0}
+		<div class="gp-list-empty">
 			{#if isLoading}
 				<div class="gp-loading">{$t('indexPanel.building') || 'Building index…'}</div>
 			{:else}
 				<div class="gp-empty">{$t('indexPanel.noTerms')}</div>
 			{/if}
-		{:else if sortMode === 'alpha'}
-			{#each groupedEntries as [letter, group]}
-				<div class="gp-letter-group">
-					<div class="gp-letter" data-letter={letter}>{letter}</div>
-					{#each group as entry}
-						{@const isHidden = excludedTerms.has(entry.term.toLowerCase())}
-						<div class="gp-entry" class:hidden-term={isHidden}>
-							<button class="gp-term-row" oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
-								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<span class="gp-chev-btn" onclick={() => toggleExpand(entry.term)}>
-									<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
-										<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
-									</svg>
-								</span>
-								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}
-									onclick={async (e) => {
-										if ((e.ctrlKey || e.metaKey) && onTermSelect) {
-											await ensureMentionsLoaded(entry.term);
-											onTermSelect(entry.term, getMentions(entry.term), !selectedTerms.has(entry.term));
-										} else if (onTermClick) {
-											await ensureMentionsLoaded(entry.term);
-											onTermClick(entry.term, getMentions(entry.term));
-											toggleExpand(entry.term);
-										} else {
-											toggleExpand(entry.term);
-										}
-									}}>
-									{entry.term}
-									{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
-								</span>
-								<div class="gp-freq-wrap">
-									<div class="gp-freq-bar" style="width: {(entry.count / maxCount) * 100}%"></div>
-									<span class="gp-count">{entry.count}</span>
-								</div>
-							</button>
-
-							{#if expandedTerms.has(entry.term)}
-								<div class="gp-references" dir="auto">
-									{#each getMentions(entry.term) as mention, i}
-										<button class="gp-ref" class:active={mention.note_path === activeNotePath}
-											data-filepath={mention.note_path}
-											onclick={(e) => onNoteClick(mention.note_path, mention.note_name, entry.term, e)}
-											onmouseenter={(e) => onNoteHover(mention.note_path, e)}
-											onmouseleave={() => onNoteLeave()}>
-											{mention.note_name}</button>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					{/each}
-				</div>
-			{/each}
-		{:else}
-			{#each freqEntries as entry}
-				{@const isHidden = excludedTerms.has(entry.term.toLowerCase())}
-				<div class="gp-entry" class:hidden-term={isHidden}>
-					<button class="gp-term-row" oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<span class="gp-chev-btn" onclick={() => toggleExpand(entry.term)}>
-							<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
-								<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
-							</svg>
-						</span>
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}
-							onclick={async (e) => {
-								if ((e.ctrlKey || e.metaKey) && onTermSelect) {
-									await ensureMentionsLoaded(entry.term);
-									onTermSelect(entry.term, getMentions(entry.term), !selectedTerms.has(entry.term));
-								} else if (onTermClick) {
-									await ensureMentionsLoaded(entry.term);
-									onTermClick(entry.term, getMentions(entry.term));
-									toggleExpand(entry.term);
-								} else {
-									toggleExpand(entry.term);
-								}
-							}}>
-							{entry.term}
-							{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
-						</span>
-						<div class="gp-freq-wrap">
-							<div class="gp-freq-bar" style="width: {(entry.count / maxCount) * 100}%"></div>
-							<span class="gp-count">{entry.count}</span>
-						</div>
-					</button>
-
-					{#if expandedTerms.has(entry.term)}
-						<div class="gp-references" dir="auto">
-							{#each getMentions(entry.term) as mention, i}
-								<button class="gp-ref" class:active={mention.note_path === activeNotePath}
-									data-filepath={mention.note_path}
-									onclick={(e) => onNoteClick(mention.note_path, mention.note_name, entry.term, e)}
-									onmouseenter={(e) => onNoteHover(mention.note_path, e)}
-									onmouseleave={() => onNoteLeave()}>
-									{mention.note_name}</button>
-							{/each}
-						</div>
-					{/if}
-				</div>
-			{/each}
-		{/if}
-		{#if hasMore}
-			<div class="gp-loading">{$t('indexPanel.terms')}...</div>
-		{/if}
-	</div>
+		</div>
+	{:else}
+		<VirtualList
+			items={rows}
+			getItemHeight={getRowHeight}
+			{scrollResetKey}
+			overscan={12}
+		>
+			{#snippet row(r, _i)}
+				{#if r.kind === 'header'}
+					<div class="gp-letter" data-letter={r.letter}>{r.letter}</div>
+				{:else if r.kind === 'entry'}
+					{@const entry = r.entry}
+					{@const isHidden = excludedTerms.has(entry.term.toLowerCase())}
+					<div class="gp-entry" class:hidden-term={isHidden}>
+						<button class="gp-term-row" oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<span class="gp-chev-btn" onclick={() => toggleExpand(entry.term)}>
+								<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
+									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+								</svg>
+							</span>
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}
+								onclick={async (e) => {
+									if ((e.ctrlKey || e.metaKey) && onTermSelect) {
+										await ensureMentionsLoaded(entry.term);
+										onTermSelect(entry.term, getMentions(entry.term), !selectedTerms.has(entry.term));
+									} else if (onTermClick) {
+										await ensureMentionsLoaded(entry.term);
+										onTermClick(entry.term, getMentions(entry.term));
+										toggleExpand(entry.term);
+									} else {
+										toggleExpand(entry.term);
+									}
+								}}>
+								{entry.term}
+								{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
+							</span>
+							<div class="gp-freq-wrap">
+								<div class="gp-freq-bar" style="width: {(entry.count / maxCount) * 100}%"></div>
+								<span class="gp-count">{entry.count}</span>
+							</div>
+						</button>
+					</div>
+				{:else}
+					<div class="gp-references" dir="auto">
+						{#each getMentions(r.term) as mention}
+							<button class="gp-ref" class:active={mention.note_path === activeNotePath}
+								data-filepath={mention.note_path}
+								onclick={(e) => onNoteClick(mention.note_path, mention.note_name, r.term, e)}
+								onmouseenter={(e) => onNoteHover(mention.note_path, e)}
+								onmouseleave={() => onNoteLeave()}>
+								{mention.note_name}</button>
+						{/each}
+					</div>
+				{/if}
+			{/snippet}
+		</VirtualList>
+	{/if}
 </div>
 
 <!-- Context menu -->
@@ -823,13 +835,15 @@
 		border-radius: 4px;
 	}
 
-	/* ── List ── */
-	.gp-list {
-		overflow-y: auto;
+	/* ── List ──
+	   The list itself is now a <VirtualList> component (.vlist) — it owns
+	   flex:1 and overflow:auto. We keep .gp-list-empty as a wrapper for the
+	   empty / loading states only, so the layout still fills the pane. */
+	.gp-list-empty {
 		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
 		padding: 4px 0;
-		columns: 280px auto;
-		column-gap: 8px;
 	}
 	.gp-empty {
 		color: var(--color-base-40);
@@ -844,11 +858,7 @@
 		text-align: center;
 	}
 
-	/* ── Letter groups ── */
-	.gp-letter-group {
-		margin-bottom: 2px;
-		/* Allow large letter groups to split across columns */
-	}
+	/* ── Letter header (rendered as its own virtualized row) ── */
 	.gp-letter {
 		font-weight: 700;
 		font-size: 0.75rem;
@@ -858,14 +868,14 @@
 		letter-spacing: 0.08em;
 		background: var(--bg-secondary);
 		border-bottom: 1px solid var(--border);
-		break-after: avoid;
 	}
 
-	/* ── Term entry ── */
+	/* ── Term entry ──
+	   Virtualized: each rendered row lives inside VirtualList's absolutely
+	   positioned slot. No multi-column layout, no content-visibility — the
+	   virtual list already skips off-screen rows entirely. */
 	.gp-entry {
 		padding: 0 4px;
-		margin-bottom: 2px;
-		break-inside: avoid;
 	}
 	.gp-entry.hidden-term {
 		opacity: 0.4;

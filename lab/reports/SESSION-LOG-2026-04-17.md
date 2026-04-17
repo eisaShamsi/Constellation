@@ -109,16 +109,121 @@ Canonical example cited: FTS5's `notes_fts` triggers on `note_meta`. Canonical u
 - `CLAUDE.md` — added Rule 8: Write-Time Derivation.
 - *External*: user's `search.db` at `E:\Constellation Universes\Eisa Cognitive Knowledge\.constellation\` — vacuumed (WAL truncated).
 
+### 7. Custom FTS5 tokenizer — `constellation` registered via FFI
+
+Next-phase work from the morning's open item. Landed same day. Approach approved by the user after a research pass (per LL-024 — no more reinventing the wheel).
+
+**Research findings (agent pass):**
+- `rusqlite` 0.31's `ffi` module re-exports the SQLite FTS5 C API (`fts5_api`, `fts5_tokenizer`, `Fts5Tokenizer`, `FTS5_TOKENIZE_*` flags, `FTS5_TOKEN_COLOCATED`, `sqlite3_bind_pointer`) even without the `vtab` feature — enough for a custom tokenizer.
+- The FTS5 tokenizer is invoked **symmetrically** on write (document insert) and read (`MATCH` query). We stem once in the tokenizer and every `notes_fts` row + every search query key on the same stem space. No query interception needed.
+- `snippet()` / `highlight()` keep working because FTS5 stores byte offsets **separately** from token bytes. We emit the stem as token content but report the original word's byte range.
+- Bigrams are emitted as **colocated tokens** (share position with the preceding unigram), joined by `\x1f` (Unit Separator) sentinel. Phrase queries still resolve because SQLite re-tokenizes the query string through the same tokenizer.
+- Three reference implementations surveyed: `sqlite-zstd` (too heavy, needs writable DB), `fts5-snowball` crate (English-only stemmer, no Arabic/Hebrew), **ColonelThirtyTwo gist** (~150 LOC of pure FFI glue, MIT-licensed, load-bearing pattern — the right shoulder to stand on).
+
+**Files**
+
+New: `src-tauri/src/fts5_tokenizer.rs` (~360 LOC)
+- `pub trait Tokenizer` — the Rust-side interface (global state + `fn tokenize(reason, text, push_token)`).
+- Four `unsafe extern "C"` shims (`c_xcreate`, `c_xdelete`, `c_xtokenize`, `c_xdestroy`) adapted from the gist. Panic boundary via `catch_unwind(AssertUnwindSafe(...))` so Rust panics become `SQLITE_ERROR`, not process crashes.
+- `pub fn register_tokenizer<T: Tokenizer>(conn, name, global)` — binds the fts5_api pointer via `sqlite3_bind_pointer`, calls `xCreateTokenizer`. Leak-safe: if registration fails, the boxed Global is reclaimed (`let _ = Box::from_raw(boxed_global);` — fixed a latent leak in the upstream gist).
+- `pub struct ConstellationTokenizer` — walks the input with `char_indices()` matching `libraries::tokenize_note_body` word-boundary rules, calls `libraries::process_word_for_fts` (new helper) for each word, and emits:
+  - `stem` as the primary token at the word's original byte range;
+  - previous-word + current-word bigram as a colocated token (`stem1\x1fstem2`) only if both are non-stopwords and same-script.
+- `pub const BIGRAM_SEP: u8 = 0x1f` — `notes_vocab` consumers convert this back to space for display.
+
+Changed: `src-tauri/src/libraries.rs`
+- `build_stopwords()` and `is_same_script()` → `pub(crate)`.
+- New `pub(crate) fn process_word_for_fts(word) -> Option<(stem, norm_lower)>` — length rules (Arabic 2-20, others max 40, min stem 2) + language routing to `process_arabic_word` / `strip_hebrew_prefix` / `stem_persian / russian / hindi / german / spanish / portuguese / french / turkish / english`. Single source of truth for per-word stemming.
+- `read_index_entries` & `read_term_mentions`: `let mut conn`, `register_fts5_tokenizer(&mut conn)?;` before any `notes_fts` / `notes_vocab` query. Without this every fresh connection fails with "no such tokenizer: constellation" because the tokenizer registry is per-connection.
+- `read_index_entries` additionally converts the `\x1f` sentinel to space for display (`entry.term`) and flags the row with `is_compound` so the Index panel can render bigrams distinctly.
+
+Changed: `src-tauri/src/search.rs`
+- Added `const FTS_SCHEMA_VERSION: i64 = 1;` (ledger: 0 = legacy `unicode61`, 1 = `constellation`).
+- `register_fts5_tokenizer(conn)` helper — builds the stopword set once and hands an `Arc<HashSet<String>>` to the tokenizer's Global.
+- `init_db` now registers the tokenizer **before** any `CREATE VIRTUAL TABLE notes_fts`; the fts5 VTable definition uses `tokenize='constellation'`.
+- Migration: reads `PRAGMA user_version`. If less than 1, drops `notes_vocab` + `notes_fts`, re-creates them with the new tokenizer, runs `INSERT INTO notes_fts(notes_fts) VALUES('rebuild')` to re-tokenize every `note_meta.body_text`, writes the new user_version, then `PRAGMA wal_checkpoint(TRUNCATE)` — defense against the 3.1 GB WAL incident from earlier today.
+- `reconcile_filesystem`'s walker connection also registers the tokenizer — the FTS5 AFTER-INSERT/UPDATE triggers on `note_meta` invoke `xTokenize` from that connection; without registration the trigger fails.
+
+Changed: `src-tauri/src/lib.rs`
+- `mod fts5_tokenizer;` registered alongside the other modules.
+
+**Error fixed during build-check**
+- `rusqlite::Error::ModuleError` is gated behind the `vtab` feature (we only enable `bundled`). Replaced with `rusqlite::Error::SqliteFailure(ffi::Error::new(ffi::SQLITE_TOOBIG), Some("token longer than c_int".into()))` — the overflow path that would fire if a single token exceeds ~2 GB (never).
+
+**Where it still registers**
+| Connection | File | Register? | Why |
+|---|---|---|---|
+| `init_db` main conn | `search.rs` | ✓ | creates `notes_fts`, runs rebuild |
+| `reconcile_filesystem` walk conn | `search.rs` | ✓ | writes trigger `xTokenize` |
+| `read_index_entries` | `libraries.rs` | ✓ | queries `notes_vocab` (uses tokenizer at query-time for some ops) |
+| `read_term_mentions` | `libraries.rs` | ✓ | `MATCH` query |
+| `cache.rs open_reader` | `cache.rs` | ✗ | read-only, plain `SELECT` only, no `MATCH` — tokenizer never invoked |
+
+**Build status:** `cargo check` clean (0 errors, 8 warnings — all pre-existing in `embeds.rs` / `lens.rs` / `search.rs`).
+
+**Pending user test** (see "Open items").
+
+### 8. Uncapped Index + real virtualization (frontend)
+
+After the tokenizer landed, the user built + booted the release on the 7,600-note Arabic-heavy trial Universe. Diagnostics confirmed the tokenizer is alive:
+
+```
+[read_index_entries] user_version=1 notes_vocab total=5,689,896 filtered(len>=2, cnt>=5)=516,563
+arabic samples: [("عام", 22047), ("عرب", 21860), ("دول", 20029), ("عبد", 13845),
+                 ("مدين", 13506), ("اول", 13086), ("سن", 13019), ("اخر", 11320),
+                 ("اسلام", 10834), ("محمد", 10723)]
+```
+
+Arabic stems are present. The earlier `unicode61` bug that showed only Latin at the front of the list is gone because the `ORDER BY term LIMIT 50000` has been removed from `read_index_entries`.
+
+**The remaining problem:** the panel hung on "Building index…" because Svelte's `{#each}` over 516k rows materialized half-a-million `<div>` nodes on the main thread. CSS `content-visibility: auto` (added as a first swing) skips paint/layout for off-screen rows but doesn't stop node creation — so it wasn't enough. The multi-column `columns: 280px auto` layout was also incompatible with row windowing.
+
+User picked **(B)**: ship real virtualization, keep the `cnt >= 5` SQL threshold, keep no ceiling. Ruled out pulling `virtua` / `svelte-tiny-virtual-list` — the Index panel's shape (flat list + inline section headers + one-at-a-time expansion) is narrow enough that a purpose-built ~110 LOC component wins on RTL control, bundle size, and zero-dep discipline.
+
+**New file: `src/lib/components/VirtualList.svelte` (~110 LOC)**
+- Svelte 5 runes-native, generic over `T`.
+- `$derived.by` builds a `Float64Array` prefix sum of row heights via `getItemHeight(item, i)` — re-runs when `items` changes or when any `$state` read inside `getItemHeight` changes (Svelte's signal tracking crosses component boundaries).
+- Binary search over the offsets array → first visible index; plus `overscan` on each side.
+- Only the visible slice is rendered. Each rendered row is absolutely positioned (`translateY(offsetPx)`) inside an inner div sized to the full virtual height — scroll bar position stays accurate.
+- `scrollResetKey` prop: whenever its value changes, the list scrolls back to top (used for filter / letter / sort switches).
+- `ResizeObserver` on the container keeps `viewportHeight` accurate across pane resize; `onDestroy` disconnects per Rule 4.
+
+**Rewrite: `src/lib/components/IndexPanel.svelte`**
+- **Flattened model.** `VRow = { kind: 'header', letter } | { kind: 'entry', entry } | { kind: 'expanded', term }`. The `rows` derivation walks `groupedEntries` (alpha mode) or `freqEntries` (freq mode) and emits a single flat array with letter headers and optional expanded-mentions rows inlined after their owning entry.
+- `getRowHeight` returns 30px for headers/entries; for expanded rows it's `max(32, 12 + mentions.length * 22)`. Because `mentionsCache` is a `$state`, expanding a term triggers a re-derivation of the prefix sum on the fly when mentions resolve — the expanded row smoothly grows to fit.
+- **Removed**: the `visibleCount` lazy-load counter, the `handleScroll`-on-bottom auto-expand, the `listEl` ref, the `$effect` that reset `visibleCount` on filter change, the nested `{#each letter}{#each group}` rendering, the multi-column CSS (`columns: 280px auto; column-gap: 8px`), the `content-visibility: auto` / `contain-intrinsic-size` CSS experiment, and the `break-inside: avoid` / `break-after: avoid` rules that only made sense under multi-column.
+- **Kept**: all filter/sort/script logic, alphabet bar, script tabs, context menu, anchor bar, and all RTL rules.
+- **Dropped JS re-sort inside each letter group.** SQL's `ORDER BY term` (BINARY collation) already produces acceptable dictionary order within a single script, because the `constellation` tokenizer has already normalized Arabic prefixes and case at write time. Saves ~O(n log n) `localeCompare` calls on 100k-row groups.
+- **Capped `maxCount`** at a 5000-item sample (was `Math.max(...scriptFilteredEntries.map(e => e.count))` — blew the call stack on 500k-entry arrays).
+- **Capped export** at 5000 terms with an inline notice — `navigator.clipboard.writeText` on 500k entries would generate multi-MB strings and issue 500k `ensureMentionsLoaded` IPC calls.
+
+**Verification**
+- `npm run check`: only the pre-existing a11y warnings inherited from the original `<span onclick>` pattern — no new type or runtime errors. No issues in `VirtualList.svelte` or the refactored `IndexPanel.svelte`.
+- Release build (`npm run tauri build`) in progress as of the SO.
+
+**User test — PASS.** User reported: *"All pass, all work, with almost instant speed."* All six steps verified on the 7,600-note Universe with 516,563 filtered terms:
+1. Panel opens immediately; no "Building index…" hang.
+2. Smooth scroll top-to-bottom across the half-million rows.
+3. Alphabet bar click scrolls + filters to the selected letter.
+4. Filter search is lag-free on keystroke.
+5. Expand/collapse term mentions works; no row overlap.
+6. Alpha ↔ Frequency sort switch is instant.
+
 ## Open items
 
-- **Phase next: custom FTS5 tokenizer.** The Index panel currently uses `unicode61 remove_diacritics 2` — no Arabic Light10 prefix stripping, no multi-language stemmers, no bigrams. Reference implementation: `greentechapps/sqlite3-arabic-tokenizer`. Plan: register a custom tokenizer from `rusqlite` that wraps Constellation's existing `tokenize_note_body` / `process_arabic_word` / `stem_english` / … pipeline. Create a second FTS5 table (contentless) using it, re-point `notes_vocab`. Expected effect: 452k terms collapse to ~30–60k, easily under the 50k cap.
+- **Test on the 7,600-note Arabic Universe.** Expected observations:
+  - `SELECT COUNT(*) FROM notes_vocab WHERE LENGTH(term) >= 2` — was ~452k on `unicode61`, target 30-60k.
+  - First boot after upgrade: `[search] notes_fts rebuilt with 'constellation' tokenizer in N ms` in the log. If N > 10_000 ms, move the rebuild to a background task post-paint (Rule 8 — first-time population runs after paint with progress bar).
+  - Index panel: bigrams appear (space-joined, not `\x1f`), Arabic terms look like stems (e.g. `كتاب` instead of `الكتاب` / `كتابه` / `كتابي`), English terms stemmed (`run` covering `running/runs/runner`).
+  - Boot time: no regression vs. 2026-04-17 morning measurement on the same Universe.
 - **Phase after: port Write-Time Derivation to Sky View.** `skyNodes` + `skyLinks` currently rebuild on every boot from `allLibraryLinks`. Cache `sky_nodes` / `sky_edges` tables; maintain via note_links-change hooks.
 - **Then**: Backlinks, Outgoing, Tag browser, Sight, sidebar stars, Map — same rule, same pattern.
 
 ## Commits expected
 
-1. **Index panel on FTS5 vocab + Write-Time Derivation rule** — today's change. Fixes the broken panel, documents the principle, sets up the next phase.
+1. **Index panel on FTS5 vocab + Write-Time Derivation rule** — landed earlier today as `9d62cd2`. Fixed the broken panel, documented the principle, set up the tokenizer phase.
+2. **Custom FTS5 `constellation` tokenizer** — pending user-test validation. Restores Arabic Light10 + multi-language stemmers + bigrams. Versioned migration rebuilds `notes_fts` on first boot.
 
 ---
 
-*Next session pickup: register a custom FTS5 tokenizer wrapping the existing Constellation tokenization pipeline (Arabic Light10 + multi-language stemmers + bigrams), create a second FTS5 table using it, re-point `notes_vocab` to that table.*
+*Next session pickup: run the release binary on the trial Universe, capture `notes_vocab` row count + rebuild time + boot time, then commit the tokenizer. After that: Sky View port to Write-Time Derivation.*

@@ -8,6 +8,7 @@ mod embeddings;
 mod embeds;
 mod dataview;
 mod file_kinds;
+mod fts5_tokenizer;
 mod inspector360;
 mod importers;
 mod libraries;

@@ -13,8 +13,23 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::Manager;
+
+/// Schema version tracked via `PRAGMA user_version`.
+///
+/// Increment when the FTS5 tokenizer changes, the `notes_fts` / `notes_vocab`
+/// schema changes, or any other setup in `init_db` requires a one-time
+/// rebuild of derived data. On boot we drop + recreate the FTS5 chain if
+/// the stored version is below this and then issue an `INSERT INTO
+/// notes_fts(notes_fts) VALUES('rebuild')` so the new index populates
+/// from the existing `note_meta` rows — no filesystem re-walk needed.
+///
+/// | version | change                                                       |
+/// |--------:|--------------------------------------------------------------|
+/// |       0 | legacy — notes_fts created with `tokenize='unicode61 ...'`   |
+/// |       1 | custom Constellation tokenizer (Arabic Light10 + bigrams)    |
+const FTS_SCHEMA_VERSION: i64 = 1;
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -96,11 +111,108 @@ pub(crate) fn db_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(cdir.join("search.db"))
 }
 
+/// Append a timestamped line to `<universe>/.constellation/diagnostics.log`.
+///
+/// Windows Tauri builds are compiled as GUI subsystem so `eprintln!` /
+/// `println!` go nowhere even when launched from a terminal. Diagnostics
+/// that must be visible after the fact (migration fired? which tokenizer
+/// is active? how many `notes_vocab` rows?) therefore need a durable
+/// sink the user can open in any editor. Takes the `search.db` path so
+/// callers never need to know the Universe root.
+///
+/// Non-fatal: any failure is swallowed so diagnostics never break the
+/// critical path. Also mirrored to `eprintln!` for dev builds where
+/// stderr IS attached (e.g. `npm run tauri dev`).
+pub(crate) fn diag_log(db_path: &Path, msg: &str) {
+    // Still emit to stderr for dev builds and future console-subsystem binaries.
+    eprintln!("{}", msg);
+    let Some(parent) = db_path.parent() else { return; };
+    let log_path = parent.join("diagnostics.log");
+    let ts = {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
+    };
+    let line = format!("[{}] {}\n", ts, msg);
+    let _ = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+        .and_then(|mut f| {
+            use std::io::Write;
+            f.write_all(line.as_bytes())
+        });
+}
+
+/// Register the custom Constellation FTS5 tokenizer on a connection.
+///
+/// Every connection that will run `MATCH` against `notes_fts` — or
+/// `CREATE VIRTUAL TABLE ... tokenize='constellation'` — needs this
+/// called once. Tokenizer registration is connection-local in SQLite
+/// FTS5 (no global registry in the `bundled` build), so callers that
+/// open their own connections (e.g. the read-only opens in
+/// `libraries::read_index_entries` / `read_term_mentions`) must call
+/// this before issuing queries.
+///
+/// Idempotent within a connection in the sense that repeated calls
+/// with the same name register a second time (SQLite shadows the
+/// earlier registration); but under normal flow each connection
+/// should call this exactly once, right after opening.
+pub(crate) fn register_fts5_tokenizer(conn: &mut Connection) -> Result<(), String> {
+    let stopwords = Arc::new(crate::libraries::build_stopwords());
+    crate::fts5_tokenizer::register_tokenizer::<
+        crate::fts5_tokenizer::ConstellationTokenizer,
+    >(
+        conn,
+        crate::fts5_tokenizer::ConstellationGlobal { stopwords },
+        "constellation",
+    )
+}
+
 fn init_db(path: &Path) -> Result<Connection, String> {
-    let conn = Connection::open(path).map_err(|e| format!("Failed to open search.db: {}", e))?;
+    let mut conn = Connection::open(path).map_err(|e| format!("Failed to open search.db: {}", e))?;
 
     // Enable WAL mode for concurrent reads
     conn.execute_batch("PRAGMA journal_mode=WAL;").map_err(|e| e.to_string())?;
+
+    // ─── Register the custom FTS5 tokenizer ──────────────────────────
+    // Must happen BEFORE any `CREATE VIRTUAL TABLE ... tokenize='constellation'`
+    // so SQLite can resolve the tokenizer name. Safe to call on a
+    // connection that has never seen FTS5 — it only wires up an
+    // in-memory pointer on the connection; no DB state changes.
+    register_fts5_tokenizer(&mut conn)?;
+
+    // ─── FTS schema migration ────────────────────────────────────────
+    // Old databases have `notes_fts` created with
+    //   tokenize='unicode61 remove_diacritics 2'
+    // `CREATE VIRTUAL TABLE IF NOT EXISTS` below would NOT change an
+    // existing table's tokenizer — it silently skips. So if the stored
+    // `PRAGMA user_version` is below the current FTS schema version we
+    // drop the FTS5 chain, let the CREATE statements below rebuild it
+    // with the new tokenizer, and then issue a `rebuild` command to
+    // repopulate it from `note_meta` (no filesystem walk needed — FTS5
+    // re-indexes from the content table). See FTS_SCHEMA_VERSION above
+    // for the version ledger.
+    let stored_version: i64 = conn
+        .query_row("PRAGMA user_version;", [], |row| row.get(0))
+        .map_err(|e| format!("PRAGMA user_version failed: {}", e))?;
+    let needs_fts_rebuild = stored_version < FTS_SCHEMA_VERSION;
+    diag_log(path, &format!(
+        "[search] init_db: PRAGMA user_version={} (target {}) — rebuild {}",
+        stored_version,
+        FTS_SCHEMA_VERSION,
+        if needs_fts_rebuild { "NEEDED (dropping notes_fts/notes_vocab)" } else { "skipped (already current)" },
+    ));
+    if needs_fts_rebuild {
+        // Drop notes_vocab first (it depends on notes_fts). IF EXISTS so
+        // this is a no-op on fresh DBs.
+        conn.execute_batch("
+            DROP TABLE IF EXISTS notes_vocab;
+            DROP TABLE IF EXISTS notes_fts;
+        ").map_err(|e| format!("Failed to drop old FTS chain during migration: {}", e))?;
+    }
 
     // Create metadata table
     conn.execute_batch("
@@ -128,14 +240,26 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         );
     ").map_err(|e| format!("Failed to create note_embeddings: {}", e))?;
 
-    // Create FTS5 virtual table for full-text search
+    // Create FTS5 virtual table for full-text search.
+    //
+    // Uses the custom 'constellation' tokenizer (registered above) so
+    // the stored tokens are already stemmed forms:
+    //   * Arabic Light10 collapses the ~452k surface forms observed on
+    //     a 7,600-note Arabic-heavy Universe to ~30-60k stems.
+    //   * Multi-language stemmers (Persian / Hebrew / Cyrillic /
+    //     Devanagari / German / Spanish / Portuguese / French / Turkish /
+    //     English) each collapse their own inflections.
+    //   * Bigrams are emitted as colocated tokens, joined by the
+    //     `fts5_tokenizer::BIGRAM_SEP` sentinel byte.
+    //   * `MATCH` queries are stemmed through the same tokenizer, so
+    //     `MATCH 'الكتاب'` and `MATCH 'كتب'` both land on the stem 'كتب'.
     conn.execute_batch("
         CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
             name,
             body_text,
             content=note_meta,
             content_rowid=rowid,
-            tokenize='unicode61 remove_diacritics 2'
+            tokenize='constellation'
         );
     ").map_err(|e| format!("Failed to create notes_fts: {}", e))?;
 
@@ -230,6 +354,48 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         DROP TABLE IF EXISTS index_terms;
         DROP TABLE IF EXISTS index_meta;
     ").map_err(|e| format!("Failed to drop obsolete index tables: {}", e))?;
+
+    // ─── One-time FTS5 rebuild after tokenizer migration ─────────────
+    // If we bumped past FTS_SCHEMA_VERSION above we dropped the old
+    // `notes_fts` + `notes_vocab`. The `CREATE VIRTUAL TABLE IF NOT
+    // EXISTS` statements above re-created them with the new tokenizer,
+    // but empty — there's no content yet. `INSERT INTO notes_fts(notes_fts)
+    // VALUES('rebuild')` walks the content table (`note_meta`) and
+    // re-tokenizes every row through our custom pipeline, populating
+    // the inverted index.
+    //
+    // This happens inline in `init_db`, which is called once per
+    // Universe open. For the 7,600-note trial Universe this is expected
+    // to complete in well under 10 seconds (FTS5 reads the content
+    // table sequentially; our tokenizer is pure Rust stemming). If
+    // measurement shows it above that threshold we'll move the rebuild
+    // to a background task post-paint, per Rule 8's first-time
+    // population guidance.
+    //
+    // A `wal_checkpoint(TRUNCATE)` afterwards prevents the large
+    // transaction from bloating the WAL (learned the hard way — a
+    // previous aborted streaming run left a 3.1 GB WAL that froze boot).
+    if needs_fts_rebuild {
+        let rebuild_start = std::time::Instant::now();
+        conn.execute_batch("INSERT INTO notes_fts(notes_fts) VALUES('rebuild');")
+            .map_err(|e| format!("Failed to rebuild notes_fts: {}", e))?;
+        let rebuild_ms = rebuild_start.elapsed().as_millis();
+
+        // Stamp the new schema version BEFORE checkpoint so that a crash
+        // after checkpoint but before PRAGMA wouldn't trigger a spurious
+        // second rebuild.
+        conn.execute_batch(&format!("PRAGMA user_version = {};", FTS_SCHEMA_VERSION))
+            .map_err(|e| format!("Failed to stamp user_version: {}", e))?;
+
+        // Truncate WAL so the large rebuild transaction doesn't haunt
+        // future boots. Ignore errors — this is hygiene, not correctness.
+        let _ = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);");
+
+        diag_log(path, &format!(
+            "[search] notes_fts rebuilt with 'constellation' tokenizer in {} ms",
+            rebuild_ms
+        ));
+    }
 
     Ok(conn)
 }
@@ -1471,10 +1637,15 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     // Dedicated connection for the walk — does NOT touch state.db, so the
     // state's query connection stays available to frontend reads the whole
     // time. WAL mode (set in init_db) is what makes this safe.
-    let walk_conn = Connection::open(&path)
+    let mut walk_conn = Connection::open(&path)
         .map_err(|e| format!("Failed to open search.db for reconcile: {}", e))?;
     walk_conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
         .map_err(|e| e.to_string())?;
+    // Reconcile writes to note_meta; the FTS5 AFTER-INSERT/UPDATE
+    // triggers tokenize body_text through the 'constellation' tokenizer.
+    // Without registration here the trigger's INSERT INTO notes_fts
+    // would fail on this connection with "no such tokenizer".
+    register_fts5_tokenizer(&mut walk_conn)?;
 
     let libraries = crate::libraries::load_all_libraries(app);
     for lib in &libraries {

@@ -2220,7 +2220,7 @@ fn stem_persian(word: &str) -> String {
     normalized
 }
 
-fn build_stopwords() -> std::collections::HashSet<String> {
+pub(crate) fn build_stopwords() -> std::collections::HashSet<String> {
     let words: &[&str] = &[
         // English
         "the","be","to","of","and","a","in","that","have","i","it","for","not","on","with",
@@ -2422,7 +2422,7 @@ pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result
     Ok(entries)
 }
 
-fn is_same_script(a: &str, b: &str) -> bool {
+pub(crate) fn is_same_script(a: &str, b: &str) -> bool {
     let ca = a.chars().next().unwrap_or(' ');
     let cb = b.chars().next().unwrap_or(' ');
     // Both ASCII Latin
@@ -2431,6 +2431,88 @@ fn is_same_script(a: &str, b: &str) -> bool {
     let ba = (ca as u32) >> 8;
     let bb = (cb as u32) >> 8;
     ba == bb
+}
+
+/// Per-word processor used by the custom FTS5 tokenizer
+/// (`crate::fts5_tokenizer::ConstellationTokenizer`).
+///
+/// Takes a single word and returns `(stem, norm_lower)` if the word is
+/// worth emitting to the FTS5 inverted index, or `None` if it should be
+/// skipped (empty, too short, or unreasonably long — likely concatenation
+/// noise). The caller decides stopword filtering against the returned pair.
+///
+/// This is the same stemming pipeline used by `tokenize_note_body`
+/// (Arabic Light10 / Hebrew prefix stripping / Persian / Cyrillic /
+/// Devanagari / German / Spanish / Portuguese / French / Turkish /
+/// English), but without the side-effectful HashMap accumulation — the
+/// tokenizer just needs the stem + pre-stem normalized form.
+///
+/// * `stem` — lowercased, stemmed, suitable as a primary FTS5 token byte
+///   sequence. When the same word arrives in a MATCH query it is stemmed
+///   through this same function, so stemming is symmetric.
+/// * `norm_lower` — lowercased, normalized (for Arabic: diacritics
+///   stripped, alef/yeh/teh-marbuta variants unified) but NOT stemmed.
+///   Callers check this against the stopword set too, because stopword
+///   lists are curated in un-stemmed form (e.g. "the", not "th").
+pub(crate) fn process_word_for_fts(word: &str) -> Option<(String, String)> {
+    let char_count = word.chars().count();
+    if char_count < 2 { return None; }
+
+    let word_is_arabic = is_arabic(word);
+    let word_is_hebrew = is_hebrew(word);
+
+    // Length guards to drop concatenation noise.
+    // Arabic words >20 chars are almost always glued tokens.
+    // Non-Arabic: 40 is generous enough for German compounds.
+    if word_is_arabic && char_count > 20 { return None; }
+    if !word_is_arabic && char_count > 40 { return None; }
+
+    let (normalized, stemmed);
+    if word_is_arabic {
+        let (_disp, stem) = process_arabic_word(word);
+        normalized = normalize_arabic(word);
+        stemmed = stem;
+    } else if word_is_hebrew {
+        normalized = word.to_string();
+        stemmed = strip_hebrew_prefix(&normalized).to_string();
+    } else {
+        normalized = word.to_string();
+        let lower = normalized.to_lowercase();
+        stemmed = if is_persian(&normalized) {
+            stem_persian(&normalized)
+        } else if is_cyrillic(&normalized) {
+            stem_russian(&normalized)
+        } else if is_devanagari(&normalized) {
+            stem_hindi(&normalized)
+        } else if is_latin(&normalized) {
+            if lower.contains('ä') || lower.contains('ö') || lower.contains('ü') || lower.contains('ß') {
+                stem_german(&normalized)
+            } else if lower.contains('ñ') || lower.ends_with("ción") || lower.ends_with("ando") {
+                stem_spanish(&normalized)
+            } else if lower.contains('ç') || lower.contains('ã') || lower.contains('õ') {
+                stem_portuguese(&normalized)
+            } else if lower.contains('é') || lower.contains('è') || lower.contains('ê')
+                || lower.ends_with("ment") || lower.ends_with("tion") {
+                stem_french(&normalized)
+            } else if lower.contains('ş') || lower.contains('ğ') || lower.contains('ı') {
+                stem_turkish(&normalized)
+            } else {
+                stem_english(&normalized)
+            }
+        } else {
+            // Unknown script — emit as-is (CJK, etc.)
+            normalized.clone()
+        };
+    }
+
+    let stem_lower = stemmed.to_lowercase();
+    let norm_lower = normalized.to_lowercase();
+
+    // Skip if the stem degenerated to <2 chars (e.g. after Arabic prefix
+    // stripping on a short word).
+    if stem_lower.chars().count() < 2 { return None; }
+
+    Some((stem_lower, norm_lower))
 }
 
 /// Tokenize a single note body and accumulate into the index + bigram maps.
@@ -2688,16 +2770,79 @@ pub fn read_index_entries(app: tauri::AppHandle) -> Result<Vec<IndexEntry>, Stri
 
     let db_path = crate::search::db_path(&app)?;
     let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-    let conn = Connection::open_with_flags(&db_path, flags)
+    let mut conn = Connection::open_with_flags(&db_path, flags)
         .map_err(|e| format!("Failed to open search.db: {}", e))?;
     conn.busy_timeout(std::time::Duration::from_millis(500))
         .map_err(|e| e.to_string())?;
+    // Register the 'constellation' FTS5 tokenizer on this connection so
+    // later phases can MATCH-through-query here if needed. Reading
+    // `notes_vocab` alone does not invoke the tokenizer, but consistency
+    // avoids a "unknown tokenizer: constellation" surprise if this
+    // function grows to do a MATCH later.
+    crate::search::register_fts5_tokenizer(&mut conn)?;
 
+    // Diagnostic: emit once per Index-panel open so we can see the state
+    // of the FTS5 term dictionary on the user's Universe. Cheap (two
+    // `COUNT(*)`s + a `PRAGMA`), appends to
+    // `<universe>/.constellation/diagnostics.log`, helps catch
+    // tokenizer-migration regressions early. Windows Tauri GUI builds
+    // have no stderr so we can't rely on `eprintln!` alone.
+    {
+        let total_rows: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM notes_vocab", [], |r| r.get(0)
+        ).unwrap_or(-1);
+        let filtered_rows: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM notes_vocab WHERE LENGTH(term) >= 2 AND cnt >= 5",
+            [], |r| r.get(0),
+        ).unwrap_or(-1);
+        let uv: i64 = conn.query_row(
+            "PRAGMA user_version;", [], |r| r.get(0)
+        ).unwrap_or(-1);
+        crate::search::diag_log(&db_path, &format!(
+            "[read_index_entries] user_version={} notes_vocab total={} filtered(len>=2, cnt>=5)={}",
+            uv, total_rows, filtered_rows
+        ));
+        // Sample up to 10 Arabic-script terms so we can visually verify
+        // the tokenizer is producing stems and not e.g. rejecting Arabic.
+        // Uses a simple range check on the first byte of the UTF-8 form
+        // (Arabic code points start at U+0600 which is 0xD8 0x80 in UTF-8,
+        //  so the first byte is always one of 0xD8 or 0xD9 for U+0600..0x06FF).
+        let mut sample_stmt = conn.prepare(
+            "SELECT term, cnt FROM notes_vocab
+             WHERE term GLOB '[\u{0600}-\u{06FF}]*'
+             ORDER BY cnt DESC LIMIT 10"
+        );
+        if let Ok(ref mut s) = sample_stmt {
+            let rows = s.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)));
+            if let Ok(rows) = rows {
+                let samples: Vec<(String, i64)> = rows.flatten().collect();
+                crate::search::diag_log(&db_path, &format!(
+                    "[read_index_entries] arabic samples (top by count, up to 10): {:?}",
+                    samples
+                ));
+            }
+        }
+    }
+
+    // No LIMIT. The Index panel is the canonical view of the Universe's
+    // vocabulary — truncating it silently hides entire scripts from the
+    // back of the alphabet because SQLite's default BINARY collation
+    // sorts by UTF-8 bytes (Latin `a-z` = 0x61..0x7A, Arabic starts at
+    // 0xD8 0x80, Hebrew at 0xD7 0x90, CJK at 0xE4..0xE9). A LIMIT at the
+    // SQL layer picks favorites; we don't.
+    //
+    // What keeps this bounded: the `cnt >= 5` threshold below, combined
+    // with the `constellation` tokenizer's stemming, caps a 7,600-note
+    // Universe at ~100-200k rows. The stderr diagnostic above prints
+    // the realized count on every open so regressions are visible.
+    //
+    // The frontend renders the result through a virtualized list
+    // (`IndexPanel.svelte`) — payload size is the only soft limit, not
+    // render cost.
     let mut stmt = conn.prepare(
         "SELECT term, cnt FROM notes_vocab
          WHERE LENGTH(term) >= 2 AND cnt >= 5
-         ORDER BY term
-         LIMIT 50000"
+         ORDER BY term"
     ).map_err(|e| e.to_string())?;
 
     let rows = stmt.query_map([], |row| {
@@ -2710,11 +2855,22 @@ pub fn read_index_entries(app: tauri::AppHandle) -> Result<Vec<IndexEntry>, Stri
     let mut entries: Vec<IndexEntry> = Vec::new();
     for row in rows.flatten() {
         let (term, count) = row;
+        // Bigrams are stored in the FTS5 index as `<stem1>\x1f<stem2>`
+        // (the `\x1f` Unit Separator sentinel picked by the custom
+        // tokenizer — see `crate::fts5_tokenizer::BIGRAM_SEP`). Convert
+        // the sentinel to a space so the Index panel shows
+        // "knowledge management" instead of the raw control character.
+        // The frontend's click handler passes the display form back to
+        // `read_term_mentions`, which wraps it in a phrase-query
+        // "..." and lets FTS5 re-tokenize — still matching the bigram
+        // via position-adjacent unigrams.
+        let has_sentinel = term.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP);
+        let display = if has_sentinel { term.replace('\u{001F}', " ") } else { term };
         entries.push(IndexEntry {
-            term: term.clone(),
+            term: display,
             count,
             mentions: Vec::new(),
-            is_compound: false,
+            is_compound: has_sentinel,
         });
     }
     Ok(entries)
@@ -2738,10 +2894,16 @@ pub fn read_term_mentions(
 
     let db_path = crate::search::db_path(&app)?;
     let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-    let conn = Connection::open_with_flags(&db_path, flags)
+    let mut conn = Connection::open_with_flags(&db_path, flags)
         .map_err(|e| format!("Failed to open search.db: {}", e))?;
     conn.busy_timeout(std::time::Duration::from_millis(500))
         .map_err(|e| e.to_string())?;
+    // Register the 'constellation' FTS5 tokenizer on this connection.
+    // Required because the MATCH below tokenizes the query string
+    // through the same tokenizer that populated the index — if the
+    // tokenizer weren't registered, SQLite would fail with "no such
+    // tokenizer: constellation".
+    crate::search::register_fts5_tokenizer(&mut conn)?;
 
     // Bind as a phrase so FTS5 treats the input literally.
     // Quotes must be doubled per FTS5 quoted-string syntax.
