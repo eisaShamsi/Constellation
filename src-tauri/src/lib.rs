@@ -1,4 +1,5 @@
 mod ai;
+mod arabic;
 mod bases;
 mod canvas;
 mod boot_bundle;
@@ -14,6 +15,7 @@ mod importers;
 mod libraries;
 mod lens;
 mod lenses;
+mod lexicon;
 mod search;
 mod map;
 mod maturity;
