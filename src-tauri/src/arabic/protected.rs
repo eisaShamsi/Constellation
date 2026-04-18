@@ -34,15 +34,14 @@
 //!
 //! Per قرار 2 (ا): all data embeds at compile time with `include_str!`,
 //! so the binary still ships without external dependencies. A future
-//! tiered mode would mmap a large FST off disk. For M1e we use a
-//! compile-time `const` Rust array to keep the module self-contained
-//! and debuggable; the switch to data files happens in M1g when the
-//! list grows past ~1K entries.
+//! tiered mode would mmap a large FST off disk. M1e started with a
+//! compile-time `const` Rust array (~200 entries, self-contained and
+//! debuggable); M1g/M1h switched to `protected_seed.tsv` once the list
+//! grew past 1K entries — now matching the `roots_seed.tsv` pattern.
 
 use super::normalizer;
 use super::types::{Analysis, AnalysisOrigin, Lang, PartOfSpeech};
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::sync::OnceLock;
 
 /// Why this word is protected. The category drives POS and origin-lang
@@ -101,262 +100,156 @@ impl ProtectedEntry {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// Seed data — the M1e 200-entry hand-picked list.
+// Seed data — external TSV file loaded at startup (M1g/M1h).
 //
-// Each row is (surface, category, pos, origin_lang).
-// The surface must already be stripped of tashkeel. Hamza variants
-// (أ إ آ ؤ ئ) are preserved. Names appear in their most common
-// orthographic form.
+// The seed corpus lives in `protected_seed.tsv` alongside this file and
+// is embedded into the binary via `include_str!`. Each non-comment,
+// non-blank line is `surface<TAB>category<TAB>origin_lang`:
 //
-// Selection criteria:
+//   surface     — Arabic surface form, tashkeel-stripped, hamza preserved.
+//   category    — `proper` | `place` | `loanword` | `function`.
+//   origin_lang — BCP-47 code from {ar, de, en, es, fa, fr, he, hi, ja,
+//                 ko, pt, ru, tr, ur, zh}, or `-` for None.
+//
+// `PartOfSpeech` is derived from `category` (no redundant column):
+//   proper/place → ProperNoun, loanword → Foreign, function → Particle.
+//
+// The file grows append-only; `build_table` applies first-write-wins on
+// duplicate surfaces so reordering or pasting an already-present entry
+// is always safe.
+//
+// Selection criteria (the bar for adding an entry):
 //   - Name / place / loanword whose prefix coincidentally matches an
 //     Arabic clitic (و / أ / م / ال / ب / ك / ل) and would be over-stripped.
-//   - High-frequency: the entry must appear in at least 1-in-10K words
-//     of a modern Arabic corpus.
-//   - Short enough that surface collision matters (≤ 6 letters, typically).
+//   - High-frequency: expected to appear in real user text.
+//   - Non-decomposable: no (root × pattern) analysis exists.
 //
-// The full 20K corpus comes in M1g from Wikipedia category extraction.
+// Sourcing: hand-curated from public-domain references. No BAMA /
+// Buckwalter / SAMA / GPL data is used. Ramp target: 20K proper nouns
+// + 2K loanwords from CC-BY-SA Wikipedia extraction (future milestone);
+// v1 ships ~1200 high-impact entries.
 // ──────────────────────────────────────────────────────────────────────
 
-type Seed = (&'static str, ProtectedCategory, PartOfSpeech, Option<Lang>);
+/// Raw TSV text embedded at compile time. Zero I/O at runtime — parse
+/// happens lazily inside [`build_table`] on first `table()` call.
+const PROTECTED_TSV: &str = include_str!("protected_seed.tsv");
 
-const SEED: &[Seed] = &[
-    // ── Proper nouns: people (masculine) — the critical وائل case and peers
-    ("وائل",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("محمد",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("أحمد",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("علي",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("عمر",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("عثمان",     ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("يوسف",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("إبراهيم",   ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("إسماعيل",   ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("موسى",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("عيسى",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("يعقوب",     ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("داود",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("سليمان",    ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("خالد",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("حسن",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("حسين",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("عبدالله",   ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("عبدالرحمن", ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("طارق",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("ياسر",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("سامي",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("ماجد",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("فيصل",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("بدر",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("أسامة",     ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("أنس",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("زياد",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("رائد",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("صالح",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("مازن",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("نبيل",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
+/// Parse a BCP-47 language tag from the TSV's third column.
+///
+/// Returns `None` for the sentinel `-` (native Arabic or an origin we
+/// don't carry in the 15-language bridge). Unknown tags also return
+/// `None` — they're treated as "no known origin" rather than halting
+/// the build, so typos in the TSV degrade gracefully instead of
+/// disabling protection of a valid surface.
+fn parse_origin_lang(tag: &str) -> Option<Lang> {
+    match tag {
+        "ar" => Some(Lang::Ar),
+        "de" => Some(Lang::De),
+        "en" => Some(Lang::En),
+        "es" => Some(Lang::Es),
+        "fa" => Some(Lang::Fa),
+        "fr" => Some(Lang::Fr),
+        "he" => Some(Lang::He),
+        "hi" => Some(Lang::Hi),
+        "ja" => Some(Lang::Ja),
+        "ko" => Some(Lang::Ko),
+        "pt" => Some(Lang::Pt),
+        "ru" => Some(Lang::Ru),
+        "tr" => Some(Lang::Tr),
+        "ur" => Some(Lang::Ur),
+        "zh" => Some(Lang::Zh),
+        _ => None, // "-" or unknown
+    }
+}
 
-    // ── Proper nouns: people (feminine)
-    ("فاطمة",     ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("عائشة",     ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("خديجة",     ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("مريم",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("زينب",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("سارة",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("ليلى",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("نور",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("هدى",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("أمل",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("رنا",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("هند",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("دينا",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("رانيا",     ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("سلمى",      ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("إيمان",     ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("جميلة",     ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("منى",       ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
-    ("نجلاء",     ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun, None),
+/// Map a category tag to its `ProtectedCategory` + derived POS.
+///
+/// The POS is strictly 1:1 with the category (places and people are
+/// both proper nouns; loanwords are always Foreign; function words are
+/// always Particle), so storing POS as a separate column would just be
+/// redundant noise the author could get wrong. Returns `None` on
+/// unknown category tags so the caller can skip the row.
+fn parse_category(tag: &str) -> Option<(ProtectedCategory, PartOfSpeech)> {
+    match tag {
+        "proper"   => Some((ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun)),
+        "place"    => Some((ProtectedCategory::Place,      PartOfSpeech::ProperNoun)),
+        "loanword" => Some((ProtectedCategory::Loanword,   PartOfSpeech::Foreign)),
+        "function" => Some((ProtectedCategory::Function,   PartOfSpeech::Particle)),
+        _ => None,
+    }
+}
 
-    // ── Places: countries
-    ("السعودية",  ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("مصر",       ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("العراق",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("سوريا",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("لبنان",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الأردن",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("فلسطين",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("اليمن",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("عمان",      ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الكويت",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("البحرين",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("قطر",       ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الإمارات",  ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("المغرب",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الجزائر",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("تونس",      ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("ليبيا",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("السودان",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("موريتانيا", ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الصومال",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("جيبوتي",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
+/// Parse the TSV into an iterator of parsed rows. Skips blank lines and
+/// anything starting with '#'. Rows with fewer than three tab-separated
+/// columns are dropped silently — the file has a fixed column count, so
+/// a short row indicates a hand-edit bug that tests will surface via
+/// the corpus-size assertion.
+fn parse_tsv(
+    tsv: &str,
+) -> impl Iterator<Item = (&str, ProtectedCategory, PartOfSpeech, Option<Lang>)> {
+    tsv.lines().filter_map(|line| {
+        let line = line.trim_end_matches('\r');
+        if line.is_empty() || line.starts_with('#') {
+            return None;
+        }
+        let mut cols = line.splitn(3, '\t');
+        let surface = cols.next()?.trim();
+        let category_tag = cols.next()?.trim();
+        let origin_tag = cols.next()?.trim();
+        if surface.is_empty() || category_tag.is_empty() {
+            return None;
+        }
+        let (category, pos) = parse_category(category_tag)?;
+        let origin_lang = parse_origin_lang(origin_tag);
+        Some((surface, category, pos, origin_lang))
+    })
+}
 
-    // ── Places: cities
-    ("القاهرة",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("بغداد",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("دمشق",      ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("بيروت",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الرياض",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("جدة",       ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("مكة",       ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("المدينة",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("أبوظبي",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("دبي",       ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الدوحة",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الإسكندرية", ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الخرطوم",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الرباط",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("طرابلس",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("صنعاء",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("القدس",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("غزة",       ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("حلب",       ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("الموصل",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("البصرة",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
+/// Public accessor for the embedded seed text. Mirrors
+/// [`super::roots::seed_tsv`] so future tools (lint, diff, inspector UI)
+/// can reach the same bytes the parser sees.
+pub fn seed_tsv() -> &'static str {
+    PROTECTED_TSV
+}
 
-    // ── Places: non-Arab world (common refs)
-    ("أمريكا",    ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::En)),
-    ("بريطانيا",  ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::En)),
-    ("فرنسا",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Fr)),
-    ("ألمانيا",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::De)),
-    ("إسبانيا",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Es)),
-    ("إيطاليا",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, None),
-    ("روسيا",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Ru)),
-    ("الصين",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Zh)),
-    ("اليابان",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Ja)),
-    ("كوريا",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Ko)),
-    ("الهند",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Hi)),
-    ("تركيا",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Tr)),
-    ("إيران",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Fa)),
-    ("باكستان",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Ur)),
-    ("لندن",      ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::En)),
-    ("باريس",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Fr)),
-    ("برلين",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::De)),
-    ("نيويورك",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::En)),
-    ("موسكو",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Ru)),
-    ("طوكيو",     ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Ja)),
-    ("إسطنبول",   ProtectedCategory::Place, PartOfSpeech::ProperNoun, Some(Lang::Tr)),
+// ── Migration note ────────────────────────────────────────────────────
+// The legacy in-source seed array (M1e) used this shape:
+//
+//   type Seed = (&'static str, ProtectedCategory, PartOfSpeech, Option<Lang>);
+//   const SEED: &[Seed] = &[ ("وائل", ProperNoun, ProperNoun, None), ... ];
+//
+// All data now lives in `protected_seed.tsv`. The comment preserved so
+// repo-wide greps for `type Seed` or `const SEED` land here instead of
+// silently returning no hits and raising a "did we lose the data?" alarm.
+// ──────────────────────────────────────────────────────────────────────
 
-    // ── Loanwords: technology / computing
-    ("إنترنت",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("كمبيوتر",   ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("تلفزيون",   ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("تلفون",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("راديو",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("فيديو",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("موبايل",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("لابتوب",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("تابلت",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("سيرفر",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("باسورد",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("إيميل",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("فيسبوك",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("تويتر",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("يوتيوب",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("جوجل",      ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-
-    // ── Loanwords: finance / business
-    // (Italian-origin loanwords: we don't carry Italian in the 15-language
-    // bridge, so they're tagged with `None` origin — they still benefit from
-    // being protected against prefix stripping.)
-    ("بنك",       ProtectedCategory::Loanword, PartOfSpeech::Foreign, None), /* Italian banca via Ottoman */
-    ("فيزا",      ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("فاتورة",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, None), /* Italian fattura */
-    ("دولار",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("يورو",      ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("شيك",       ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("بوليصة",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, None), /* Italian polizza */
-
-    // ── Loanwords: transport
-    ("أوتوبيس",   ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("تاكسي",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("سيارة",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, None), /* arabized */
-    ("طيارة",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, None),
-    ("قطار",      ProtectedCategory::Loanword, PartOfSpeech::Foreign, None),
-    ("ميترو",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::Fr)),
-    ("باص",       ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-
-    // ── Loanwords: household / food
-    ("تلفاز",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("سندوتش",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("بيتزا",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, None), /* Italian pizza */
-    ("قهوة",      ProtectedCategory::Loanword, PartOfSpeech::Foreign, None),
-    ("شاي",       ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::Zh)),
-    ("شاورما",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::Tr)),
-    ("بطاطس",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("طماطم",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-
-    // ── Loanwords: scientific / medical
-    ("كيميا",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, None),
-    ("فيزياء",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, None),
-    ("بيولوجيا",  ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("جيولوجيا",  ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("أكسجين",    ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("هيدروجين",  ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("فيتامين",   ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("فيروس",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("بكتيريا",   ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("إنزيم",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-    ("هرمون",     ProtectedCategory::Loanword, PartOfSpeech::Foreign, Some(Lang::En)),
-
-    // ── Common function words / particles (non-decomposable)
-    ("هذا",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("هذه",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("هؤلاء",     ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("ذلك",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("تلك",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("أولئك",     ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("الذي",      ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("التي",      ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("الذين",     ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("اللواتي",   ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("اللاتي",    ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("متى",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("أين",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("كيف",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("لماذا",     ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("ماذا",      ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("أيضا",      ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("إذن",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("لكن",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("بل",        ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("قد",        ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("لقد",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("إن",        ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("إنما",      ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("كي",        ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("لكي",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("عندما",     ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("حيث",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("حتى",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-    ("فقط",       ProtectedCategory::Function, PartOfSpeech::Particle, None),
-];
 
 // ──────────────────────────────────────────────────────────────────────
-// Loaded table — built once per process from `SEED`.
+// Loaded table — built once per process from the embedded TSV.
 // ──────────────────────────────────────────────────────────────────────
 
 /// Process-wide singleton keyed by the tashkeel-stripped surface.
 static TABLE: OnceLock<HashMap<String, ProtectedEntry>> = OnceLock::new();
 
 fn build_table() -> HashMap<String, ProtectedEntry> {
-    let mut map = HashMap::with_capacity(SEED.len() + 16);
-    for &(surface, category, pos, origin_lang) in SEED {
+    // Rough estimate: average row is ~20 bytes of TSV text. Over-
+    // allocating slightly is cheaper than rehashing mid-insert.
+    let approx = PROTECTED_TSV.len() / 20;
+    let mut map = HashMap::with_capacity(approx.max(256));
+    for (surface, category, pos, origin_lang) in parse_tsv(PROTECTED_TSV) {
         // Defensive: the seed should already be stripped. We normalize
-        // here to tolerate accidental diacritics in future edits.
+        // here to tolerate accidental diacritics in future edits, and to
+        // keep the `vocalized_surface_still_matches` invariant exact.
         let lemma = normalizer::normalize_stripped(surface);
-        map.insert(
-            lemma.clone(),
-            ProtectedEntry { lemma, category, pos, origin_lang },
-        );
+        if lemma.is_empty() {
+            continue;
+        }
+        // First-write-wins — duplicates across sections (e.g. a name
+        // that also appears under loanwords) are tolerated silently.
+        // The first occurrence in the TSV is authoritative; the
+        // follow-up is ignored. Matches `roots::RootsIndex::build`.
+        map.entry(lemma.clone())
+            .or_insert(ProtectedEntry { lemma, category, pos, origin_lang });
     }
     map
 }
@@ -507,24 +400,34 @@ mod tests {
 
     #[test]
     fn table_has_expected_size() {
-        // Sanity check: ~200 hand-picked entries for M1e.
+        // Sanity check: M1g/M1h shipped ~1200 entries drawn from
+        // public-domain references. Upper bound is deliberately loose
+        // (2000) so normal append-only growth doesn't break tests; the
+        // next resize up is the M1g-data pass to 20K proper nouns, at
+        // which point this bound gets retuned.
         let n = len();
-        assert!(n >= 180, "expected at least 180 protected entries, got {n}");
-        assert!(n <= 260, "protected table grew unexpectedly: {n} entries");
+        assert!(n >= 800, "expected at least 800 protected entries, got {n}");
+        assert!(n <= 2000, "protected table grew unexpectedly: {n} entries");
     }
 
     #[test]
-    fn no_duplicate_lemmas_in_seed() {
-        // Build the table from scratch and compare to a HashSet of seed
-        // lemmas — any collisions would silently overwrite and hide bugs.
-        let seed_lemmas: HashSet<String> = SEED
-            .iter()
-            .map(|(s, _, _, _)| normalizer::normalize_stripped(s))
-            .collect();
-        assert_eq!(
-            seed_lemmas.len(),
-            SEED.len(),
-            "duplicate surface in SEED — check the const array"
+    fn tsv_parses_to_at_least_as_many_entries_as_the_table() {
+        // The table applies first-write-wins on duplicate surfaces, so
+        // `len()` is a lower bound on TSV row count. Any accidental
+        // explosion of duplicate rows (e.g. a bad copy-paste) would
+        // show up here as a wide gap — the test passes today with a
+        // tight bound (≤ 1 duplicate per 100 rows) and flags a diff
+        // bomb if the TSV ever gains significantly more dupes.
+        let row_count = parse_tsv(PROTECTED_TSV).count();
+        let table_size = len();
+        assert!(
+            row_count >= table_size,
+            "TSV row count {row_count} is somehow less than loaded table size {table_size}"
+        );
+        let dupes = row_count - table_size;
+        assert!(
+            dupes * 100 <= row_count,
+            "TSV has {dupes} duplicate rows out of {row_count} — dedupe before committing"
         );
     }
 
@@ -543,9 +446,105 @@ mod tests {
         for entry in iter() {
             *by_cat.entry(entry.category).or_insert(0) += 1;
         }
-        assert!(by_cat.get(&ProtectedCategory::ProperNoun).copied().unwrap_or(0) >= 30);
-        assert!(by_cat.get(&ProtectedCategory::Place).copied().unwrap_or(0) >= 30);
-        assert!(by_cat.get(&ProtectedCategory::Loanword).copied().unwrap_or(0) >= 30);
-        assert!(by_cat.get(&ProtectedCategory::Function).copied().unwrap_or(0) >= 20);
+        // Minimums reflect the M1g/M1h ramp (proper ≥ 300, place ≥ 200,
+        // loanword ≥ 300, function ≥ 50). Kept well below actual counts
+        // so ordinary curation edits don't break the test.
+        assert!(by_cat.get(&ProtectedCategory::ProperNoun).copied().unwrap_or(0) >= 300);
+        assert!(by_cat.get(&ProtectedCategory::Place).copied().unwrap_or(0) >= 200);
+        assert!(by_cat.get(&ProtectedCategory::Loanword).copied().unwrap_or(0) >= 300);
+        assert!(by_cat.get(&ProtectedCategory::Function).copied().unwrap_or(0) >= 50);
+    }
+
+    // ── TSV-parser unit tests ───────────────────────────────────────
+
+    #[test]
+    fn parse_origin_lang_handles_sentinel_and_known_codes() {
+        assert_eq!(parse_origin_lang("-"), None);
+        assert_eq!(parse_origin_lang(""), None);
+        assert_eq!(parse_origin_lang("xx"), None); // unknown ⇒ None, not panic
+        assert_eq!(parse_origin_lang("en"), Some(Lang::En));
+        assert_eq!(parse_origin_lang("zh"), Some(Lang::Zh));
+        assert_eq!(parse_origin_lang("ar"), Some(Lang::Ar));
+    }
+
+    #[test]
+    fn parse_category_rejects_unknown() {
+        assert_eq!(parse_category("unknown-tag"), None);
+        assert_eq!(parse_category(""), None);
+        assert!(matches!(
+            parse_category("proper"),
+            Some((ProtectedCategory::ProperNoun, PartOfSpeech::ProperNoun))
+        ));
+        assert!(matches!(
+            parse_category("loanword"),
+            Some((ProtectedCategory::Loanword, PartOfSpeech::Foreign))
+        ));
+        assert!(matches!(
+            parse_category("function"),
+            Some((ProtectedCategory::Function, PartOfSpeech::Particle))
+        ));
+        assert!(matches!(
+            parse_category("place"),
+            Some((ProtectedCategory::Place, PartOfSpeech::ProperNoun))
+        ));
+    }
+
+    #[test]
+    fn parse_tsv_skips_comments_and_blanks() {
+        let input = "\
+# comment
+\r
+وائل\tproper\t-
+\t\t
+# another
+محمد\tproper\t-
+bad-row-only-two-cols\tproper
+عمر\tproper\t-
+";
+        let rows: Vec<_> = parse_tsv(input).collect();
+        assert_eq!(rows.len(), 3, "expected 3 valid rows, got {rows:#?}");
+        assert_eq!(rows[0].0, "وائل");
+        assert_eq!(rows[1].0, "محمد");
+        assert_eq!(rows[2].0, "عمر");
+    }
+
+    #[test]
+    fn parse_tsv_drops_unknown_category() {
+        let input = "وائل\tproper\t-\nfoo\tgibberish\t-\n";
+        let rows: Vec<_> = parse_tsv(input).collect();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].0, "وائل");
+    }
+
+    #[test]
+    fn seed_tsv_accessor_returns_embedded_bytes() {
+        // The accessor must return the same slice `include_str!` gave
+        // us — consumers in the lexical bridge may content-address the
+        // list by hashing these bytes.
+        let s = seed_tsv();
+        assert!(!s.is_empty());
+        assert!(s.contains("وائل"));
+        assert!(s.contains("\tproper\t")); // at least one proper row
+    }
+
+    #[test]
+    fn first_write_wins_on_duplicate_surface() {
+        // If the TSV ever re-lists a surface under a different category,
+        // the build keeps the first occurrence. Prove it.
+        let input = "كريم\tproper\t-\nكريم\tloanword\ten\n";
+        let mut map: HashMap<String, ProtectedEntry> = HashMap::new();
+        for (surface, category, pos, origin_lang) in parse_tsv(input) {
+            let lemma = normalizer::normalize_stripped(surface);
+            map.entry(lemma.clone()).or_insert(ProtectedEntry {
+                lemma,
+                category,
+                pos,
+                origin_lang,
+            });
+        }
+        assert_eq!(map.len(), 1);
+        let e = map.get("كريم").unwrap();
+        assert_eq!(e.category, ProtectedCategory::ProperNoun);
+        assert_eq!(e.origin_lang, None);
     }
 }
