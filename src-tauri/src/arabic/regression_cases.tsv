@@ -1,0 +1,722 @@
+# Constellation Arabic Engine — M5 regression corpus.
+#
+# This file is the authoritative snapshot of the analyzer's expected
+# behaviour across ~500 representative surfaces. Loaded via `include_str!`
+# at compile time; parsed and run by the harness in `regression.rs`.
+#
+# Why it exists:
+#   The unit tests in `mod.rs::tests` cover flagship cases (وائل,
+#   الأئمة, الكاتب). This corpus is the broader safety net — a change
+#   that silently alters analyzer behaviour on one narrow pattern shows
+#   up as concrete failing rows, not as an end-user complaint months
+#   later.
+#
+# Format (four TAB-separated columns):
+#
+#   surface  origin  lemma  root
+#
+# Where:
+#   surface  — the raw input passed to `arabic::analyze_best`.
+#   origin   — one of:
+#                protected  → hit the protected list (Layer 2).
+#                generative → hit the generative FST (Layer 3 or 3b).
+#                heuristic  → fell through to the low-confidence
+#                             Layer 4 fallback.
+#                foreign    → non-Arabic script, routed via Layer 1 +
+#                             Layer 4 with Foreign POS. Mapped to
+#                             SurfaceHeuristic internally.
+#   lemma    — expected `Analysis.lemma`, or `-` to skip the assertion.
+#              Use `-` for ambiguous generative hits where the top
+#              analysis is not stable across refactors.
+#   root     — expected `Analysis.root` hyphen-joined (e.g. `ك-ت-ب`),
+#              or `-` for root-less origins (protected, foreign) or
+#              where the specific root is not being asserted.
+#
+# Scoring policy:
+#   The corpus is pass/fail; there is no confidence-threshold knob.
+#   If a case starts failing, either the analyzer regressed (bug) or
+#   the row needs an updated expectation (drift). Either way, a human
+#   reviews it — silent drift is the whole failure mode the corpus
+#   exists to prevent.
+#
+# Maintenance:
+#   - Append new cases at the bottom of the relevant section.
+#   - When the analyzer's behaviour intentionally changes (e.g. a new
+#     affix is added), update the affected rows in the same commit that
+#     ships the change.
+#   - Never delete a case without documenting why in the commit message.
+
+# ──────────────────────────────────────────────────────────────────────
+# § 1 — Protected layer. Hash-lookup on the tashkeel-stripped surface.
+# All 250 rows below are drawn from `protected_seed.tsv` (~1,200 total
+# entries; sampled here across all four categories).
+# ──────────────────────────────────────────────────────────────────────
+
+# ── § 1.1 — Protected: proper nouns (80) ──────────────────────────────
+
+وائل	protected	وائل	-
+محمد	protected	محمد	-
+أحمد	protected	أحمد	-
+علي	protected	علي	-
+عمر	protected	عمر	-
+عثمان	protected	عثمان	-
+يوسف	protected	يوسف	-
+إبراهيم	protected	إبراهيم	-
+إسماعيل	protected	إسماعيل	-
+موسى	protected	موسى	-
+عيسى	protected	عيسى	-
+يعقوب	protected	يعقوب	-
+داود	protected	داود	-
+سليمان	protected	سليمان	-
+خالد	protected	خالد	-
+حسن	protected	حسن	-
+حسين	protected	حسين	-
+عبدالله	protected	عبدالله	-
+عبدالرحمن	protected	عبدالرحمن	-
+طارق	protected	طارق	-
+ياسر	protected	ياسر	-
+سامي	protected	سامي	-
+ماجد	protected	ماجد	-
+فيصل	protected	فيصل	-
+بدر	protected	بدر	-
+أسامة	protected	أسامة	-
+أنس	protected	أنس	-
+زياد	protected	زياد	-
+رائد	protected	رائد	-
+صالح	protected	صالح	-
+مازن	protected	مازن	-
+نبيل	protected	نبيل	-
+عبدالعزيز	protected	عبدالعزيز	-
+عبدالكريم	protected	عبدالكريم	-
+عبدالمجيد	protected	عبدالمجيد	-
+عبدالمنعم	protected	عبدالمنعم	-
+عبدالسلام	protected	عبدالسلام	-
+عبدالهادي	protected	عبدالهادي	-
+عبدالقادر	protected	عبدالقادر	-
+عبدالباسط	protected	عبدالباسط	-
+عبدالحكيم	protected	عبدالحكيم	-
+عبدالناصر	protected	عبدالناصر	-
+عبدالوهاب	protected	عبدالوهاب	-
+عبدالغني	protected	عبدالغني	-
+عبدالفتاح	protected	عبدالفتاح	-
+كريم	protected	كريم	-
+جمال	protected	جمال	-
+مصطفى	protected	مصطفى	-
+صلاح	protected	صلاح	-
+هاني	protected	هاني	-
+مروان	protected	مروان	-
+رشيد	protected	رشيد	-
+بلال	protected	بلال	-
+أيمن	protected	أيمن	-
+طلال	protected	طلال	-
+غسان	protected	غسان	-
+رفيق	protected	رفيق	-
+فؤاد	protected	فؤاد	-
+نزار	protected	نزار	-
+نسيم	protected	نسيم	-
+حمدي	protected	حمدي	-
+معتز	protected	معتز	-
+قاسم	protected	قاسم	-
+باسم	protected	باسم	-
+أكرم	protected	أكرم	-
+مجدي	protected	مجدي	-
+منير	protected	منير	-
+شريف	protected	شريف	-
+يحيى	protected	يحيى	-
+زكي	protected	زكي	-
+جهاد	protected	جهاد	-
+لطفي	protected	لطفي	-
+كمال	protected	كمال	-
+حمزة	protected	حمزة	-
+معاذ	protected	معاذ	-
+شعبان	protected	شعبان	-
+سليم	protected	سليم	-
+سيف	protected	سيف	-
+هاشم	protected	هاشم	-
+ناصر	protected	ناصر	-
+
+# ── § 1.2 — Protected: places (60) ────────────────────────────────────
+
+السعودية	protected	السعودية	-
+مصر	protected	مصر	-
+العراق	protected	العراق	-
+سوريا	protected	سوريا	-
+لبنان	protected	لبنان	-
+الأردن	protected	الأردن	-
+فلسطين	protected	فلسطين	-
+اليمن	protected	اليمن	-
+عمان	protected	عمان	-
+الكويت	protected	الكويت	-
+البحرين	protected	البحرين	-
+قطر	protected	قطر	-
+الإمارات	protected	الإمارات	-
+المغرب	protected	المغرب	-
+الجزائر	protected	الجزائر	-
+تونس	protected	تونس	-
+ليبيا	protected	ليبيا	-
+السودان	protected	السودان	-
+موريتانيا	protected	موريتانيا	-
+الصومال	protected	الصومال	-
+جيبوتي	protected	جيبوتي	-
+جزرالقمر	protected	جزرالقمر	-
+الخليج	protected	الخليج	-
+الشام	protected	الشام	-
+الحجاز	protected	الحجاز	-
+نجد	protected	نجد	-
+المغربالعربي	protected	المغربالعربي	-
+الجزيرةالعربية	protected	الجزيرةالعربية	-
+القاهرة	protected	القاهرة	-
+بغداد	protected	بغداد	-
+دمشق	protected	دمشق	-
+بيروت	protected	بيروت	-
+الرياض	protected	الرياض	-
+جدة	protected	جدة	-
+مكة	protected	مكة	-
+المدينة	protected	المدينة	-
+أبوظبي	protected	أبوظبي	-
+دبي	protected	دبي	-
+الدوحة	protected	الدوحة	-
+الإسكندرية	protected	الإسكندرية	-
+الخرطوم	protected	الخرطوم	-
+الرباط	protected	الرباط	-
+طرابلس	protected	طرابلس	-
+صنعاء	protected	صنعاء	-
+القدس	protected	القدس	-
+غزة	protected	غزة	-
+حلب	protected	حلب	-
+الموصل	protected	الموصل	-
+البصرة	protected	البصرة	-
+طنطا	protected	طنطا	-
+المنصورة	protected	المنصورة	-
+أسيوط	protected	أسيوط	-
+الأقصر	protected	الأقصر	-
+أسوان	protected	أسوان	-
+بورسعيد	protected	بورسعيد	-
+السويس	protected	السويس	-
+الفيوم	protected	الفيوم	-
+دمياط	protected	دمياط	-
+سوهاج	protected	سوهاج	-
+قنا	protected	قنا	-
+
+# ── § 1.3 — Protected: loanwords (80) ─────────────────────────────────
+
+إنترنت	protected	إنترنت	-
+كمبيوتر	protected	كمبيوتر	-
+تلفزيون	protected	تلفزيون	-
+تلفون	protected	تلفون	-
+راديو	protected	راديو	-
+فيديو	protected	فيديو	-
+موبايل	protected	موبايل	-
+لابتوب	protected	لابتوب	-
+تابلت	protected	تابلت	-
+سيرفر	protected	سيرفر	-
+باسورد	protected	باسورد	-
+إيميل	protected	إيميل	-
+فيسبوك	protected	فيسبوك	-
+تويتر	protected	تويتر	-
+يوتيوب	protected	يوتيوب	-
+جوجل	protected	جوجل	-
+ويفي	protected	ويفي	-
+واي_فاي	protected	واي_فاي	-
+بلوتوث	protected	بلوتوث	-
+بكسل	protected	بكسل	-
+كيبورد	protected	كيبورد	-
+ماوس	protected	ماوس	-
+برنتر	protected	برنتر	-
+طابعة	protected	طابعة	-
+سكانر	protected	سكانر	-
+موديم	protected	موديم	-
+راوتر	protected	راوتر	-
+فلاشة	protected	فلاشة	-
+ويندوز	protected	ويندوز	-
+لينكس	protected	لينكس	-
+ماكنتوش	protected	ماكنتوش	-
+أندرويد	protected	أندرويد	-
+آيفون	protected	آيفون	-
+آيباد	protected	آيباد	-
+سامسونج	protected	سامسونج	-
+نوكيا	protected	نوكيا	-
+هواوي	protected	هواوي	-
+شاومي	protected	شاومي	-
+تيكتوك	protected	تيكتوك	-
+إنستغرام	protected	إنستغرام	-
+إنستاجرام	protected	إنستاجرام	-
+سناب	protected	سناب	-
+سنابشات	protected	سنابشات	-
+واتساب	protected	واتساب	-
+واتس_آب	protected	واتس_آب	-
+تلغرام	protected	تلغرام	-
+تيليغرام	protected	تيليغرام	-
+سكايب	protected	سكايب	-
+زوم	protected	زوم	-
+لينكدإن	protected	لينكدإن	-
+ريديت	protected	ريديت	-
+سلاك	protected	سلاك	-
+ديسكورد	protected	ديسكورد	-
+تيمز	protected	تيمز	-
+جيت	protected	جيت	-
+جيتهاب	protected	جيتهاب	-
+دوكر	protected	دوكر	-
+بايثون	protected	بايثون	-
+جافا	protected	جافا	-
+جافاسكربت	protected	جافاسكربت	-
+روست	protected	روست	-
+تشاتجيبيتي	protected	تشاتجيبيتي	-
+جيميني	protected	جيميني	-
+كلود	protected	كلود	-
+ميتا	protected	ميتا	-
+أوبنتو	protected	أوبنتو	-
+ديبيان	protected	ديبيان	-
+فيدورا	protected	فيدورا	-
+بلوك_تشين	protected	بلوك_تشين	-
+بيتكوين	protected	بيتكوين	-
+إيثيريوم	protected	إيثيريوم	-
+كريبتو	protected	كريبتو	-
+ألغوريتم	protected	ألغوريتم	-
+دومين	protected	دومين	-
+هوست	protected	هوست	-
+كلاود	protected	كلاود	-
+داتا	protected	داتا	-
+باك_إند	protected	باك_إند	-
+فرونت_إند	protected	فرونت_إند	-
+فل_ستاك	protected	فل_ستاك	-
+
+# ── § 1.4 — Protected: function words (30) ────────────────────────────
+
+هذا	protected	هذا	-
+هذه	protected	هذه	-
+هؤلاء	protected	هؤلاء	-
+ذلك	protected	ذلك	-
+تلك	protected	تلك	-
+أولئك	protected	أولئك	-
+الذي	protected	الذي	-
+التي	protected	التي	-
+الذين	protected	الذين	-
+اللواتي	protected	اللواتي	-
+اللاتي	protected	اللاتي	-
+متى	protected	متى	-
+أين	protected	أين	-
+كيف	protected	كيف	-
+لماذا	protected	لماذا	-
+ماذا	protected	ماذا	-
+أيضا	protected	أيضا	-
+إذن	protected	إذن	-
+لكن	protected	لكن	-
+بل	protected	بل	-
+قد	protected	قد	-
+لقد	protected	لقد	-
+إن	protected	إن	-
+إنما	protected	إنما	-
+كي	protected	كي	-
+لكي	protected	لكي	-
+عندما	protected	عندما	-
+حيث	protected	حيث	-
+حتى	protected	حتى	-
+فقط	protected	فقط	-
+
+# ──────────────────────────────────────────────────────────────────────
+# § 2 — Generative bare hits. The surface is a direct (root × pattern)
+# derivation; the FST returns a match on exact stripped lookup. Root
+# assertions are specific; lemma is usually left as `-` because the
+# generator may emit several close variants for some patterns and
+# `analyze_best`'s tiebreak is confidence-then-insertion-order.
+# ──────────────────────────────────────────────────────────────────────
+
+# ── § 2.1 — Generative: ك-ت-ب (writing) ───────────────────────────────
+
+كاتب	generative	-	ك-ت-ب
+مكتوب	generative	-	ك-ت-ب
+كتاب	generative	-	ك-ت-ب
+كتب	generative	-	-
+يكتب	generative	-	-
+اكتب	generative	-	-
+مكتبة	generative	-	-
+
+# ── § 2.2 — Generative: ع-ل-م (knowing) ───────────────────────────────
+
+عالم	generative	-	ع-ل-م
+معلوم	generative	-	ع-ل-م
+علم	generative	-	-
+يعلم	generative	-	-
+
+# ── § 2.3 — Generative: ع-م-ل (working) ───────────────────────────────
+
+عامل	generative	-	ع-م-ل
+معمول	generative	-	ع-م-ل
+عمل	generative	-	-
+يعمل	generative	-	-
+
+# ── § 2.4 — Generative: ج-ل-س (sitting) ───────────────────────────────
+
+جالس	generative	-	ج-ل-س
+مجلوس	generative	-	ج-ل-س
+جلس	generative	-	-
+يجلس	generative	-	-
+
+# ── § 2.5 — Generative: ذ-ه-ب (going) ─────────────────────────────────
+
+ذاهب	generative	-	ذ-ه-ب
+مذهوب	generative	-	ذ-ه-ب
+ذهب	generative	-	-
+يذهب	generative	-	-
+
+# ── § 2.6 — Generative: د-خ-ل (entering) ──────────────────────────────
+
+داخل	generative	-	د-خ-ل
+مدخول	generative	-	د-خ-ل
+دخل	generative	-	-
+يدخل	generative	-	-
+
+# ── § 2.7 — Generative: خ-ر-ج (exiting) ───────────────────────────────
+
+خارج	generative	-	خ-ر-ج
+مخروج	generative	-	خ-ر-ج
+خرج	generative	-	-
+يخرج	generative	-	-
+
+# ── § 2.8 — Generative: ر-ج-ع (returning) ─────────────────────────────
+
+راجع	generative	-	ر-ج-ع
+مرجوع	generative	-	ر-ج-ع
+رجع	generative	-	-
+يرجع	generative	-	-
+
+# ── § 2.9 — Generative: ف-ه-م (understanding) ─────────────────────────
+
+فاهم	generative	-	ف-ه-م
+مفهوم	generative	-	ف-ه-م
+فهم	generative	-	-
+يفهم	generative	-	-
+
+# ── § 2.10 — Generative: ش-ر-ب (drinking) ─────────────────────────────
+
+شارب	generative	-	ش-ر-ب
+مشروب	generative	-	ش-ر-ب
+شرب	generative	-	-
+يشرب	generative	-	-
+
+# ── § 2.11 — Generative: ض-ر-ب (striking) ─────────────────────────────
+
+ضارب	generative	-	ض-ر-ب
+مضروب	generative	-	ض-ر-ب
+ضرب	generative	-	-
+يضرب	generative	-	-
+
+# ── § 2.12 — Generative: س-م-ع (hearing) ──────────────────────────────
+
+سامع	generative	-	س-م-ع
+مسموع	generative	-	س-م-ع
+سمع	generative	-	-
+يسمع	generative	-	-
+
+# ── § 2.13 — Generative: ن-ظ-ر (looking) ──────────────────────────────
+
+ناظر	generative	-	ن-ظ-ر
+منظور	generative	-	ن-ظ-ر
+نظر	generative	-	-
+ينظر	generative	-	-
+
+# ── § 2.14 — Generative: ش-ع-ر (feeling) ──────────────────────────────
+
+شاعر	generative	-	ش-ع-ر
+مشعور	generative	-	ش-ع-ر
+شعر	generative	-	-
+يشعر	generative	-	-
+
+# ── § 2.15 — Generative: ف-ع-ل (doing) ────────────────────────────────
+
+فاعل	generative	-	ف-ع-ل
+مفعول	generative	-	ف-ع-ل
+فعل	generative	-	-
+يفعل	generative	-	-
+
+# ── § 2.16 — Generative: ح-ك-م (judging) ──────────────────────────────
+
+حاكم	generative	-	ح-ك-م
+محكوم	generative	-	ح-ك-م
+حكم	generative	-	-
+يحكم	generative	-	-
+
+# ── § 2.17 — Generative: ح-م-د (praising) ─────────────────────────────
+# Note: حامد / محمود / حمد are also common Arabic given names, so they
+# land in the protected list — `analyze_best` returns origin=protected.
+# The corpus captures that contract; if a future refactor reorders the
+# layers and the root analysis starts winning, these rows will fail and
+# force a human review. يحمد (imperfect "he praises") is not a name, so
+# it still exercises the generative path.
+
+حامد	protected	حامد	-
+محمود	protected	محمود	-
+حمد	protected	حمد	-
+يحمد	generative	-	-
+
+# ── § 2.18 — Generative: ذ-ك-ر (remembering) ──────────────────────────
+
+ذاكر	generative	-	ذ-ك-ر
+مذكور	generative	-	ذ-ك-ر
+ذكر	generative	-	-
+يذكر	generative	-	-
+
+# ── § 2.19 — Generative: ح-ف-ظ (preserving) ───────────────────────────
+# Note: حافظ is a common Arabic given name → protected list wins.
+
+حافظ	protected	حافظ	-
+محفوظ	generative	-	ح-ف-ظ
+حفظ	generative	-	-
+يحفظ	generative	-	-
+
+# ── § 2.20 — Generative: ف-ت-ح (opening) ──────────────────────────────
+
+فاتح	generative	-	ف-ت-ح
+مفتوح	generative	-	ف-ت-ح
+فتح	generative	-	-
+يفتح	generative	-	-
+
+# ── § 2.21 — Generative: ط-ل-ب (seeking) ──────────────────────────────
+
+طالب	generative	-	ط-ل-ب
+مطلوب	generative	-	ط-ل-ب
+طلب	generative	-	-
+يطلب	generative	-	-
+
+# ── § 2.22 — Generative: ش-ك-ر (thanking) ─────────────────────────────
+# Note: شاكر is a common Arabic given name → protected list wins.
+
+شاكر	protected	شاكر	-
+مشكور	generative	-	ش-ك-ر
+شكر	generative	-	-
+يشكر	generative	-	-
+
+# ── § 2.23 — Generative: ق-ت-ل (killing) ──────────────────────────────
+
+قاتل	generative	-	ق-ت-ل
+مقتول	generative	-	ق-ت-ل
+قتل	generative	-	-
+يقتل	generative	-	-
+
+# ── § 2.24 — Generative: ص-ن-ع (making) ───────────────────────────────
+
+صانع	generative	-	ص-ن-ع
+مصنوع	generative	-	ص-ن-ع
+صنع	generative	-	-
+يصنع	generative	-	-
+
+# ── § 2.25 — Generative: ل-ب-س (wearing) ──────────────────────────────
+
+لابس	generative	-	ل-ب-س
+ملبوس	generative	-	ل-ب-س
+لبس	generative	-	-
+يلبس	generative	-	-
+
+# ── § 2.26 — Generative: خ-ل-ق (creating) ─────────────────────────────
+
+خالق	generative	-	خ-ل-ق
+مخلوق	generative	-	خ-ل-ق
+خلق	generative	-	-
+يخلق	generative	-	-
+
+# ── § 2.27 — Generative: غ-ف-ر (forgiving) ────────────────────────────
+
+غافر	generative	-	غ-ف-ر
+مغفور	generative	-	غ-ف-ر
+غفر	generative	-	-
+يغفر	generative	-	-
+
+# ── § 2.28 — Generative: ن-ص-ر (helping) ──────────────────────────────
+# Note: ناصر and منصور are both very common Arabic given names →
+# protected list wins. ناصر is already covered by its protected-section
+# row (around line 136), so we don't repeat it here — duplicates would
+# mask regressions by shadowing earlier rows in the diagnostic report.
+
+منصور	protected	منصور	-
+نصر	generative	-	-
+ينصر	generative	-	-
+
+# ── § 2.29 — Generative: ر-س-ل (sending) ──────────────────────────────
+
+راسل	generative	-	ر-س-ل
+مرسول	generative	-	ر-س-ل
+رسل	generative	-	-
+يرسل	generative	-	-
+
+# ── § 2.30 — Generative: د-ح-ر-ج (rolling — quadriliteral) ────────────
+
+دحرج	generative	-	د-ح-ر-ج
+
+# ──────────────────────────────────────────────────────────────────────
+# § 3 — Cascade (affix-stripping) hits. Bare generative lookup misses;
+# the analyzer peels legal prefix/suffix chains, looks the stem up,
+# and returns the analysis annotated with the peeled affixes. Root
+# assertions still hold because peeling does not change the root — it
+# only surfaces the clitics that wrapped it.
+# ──────────────────────────────────────────────────────────────────────
+
+# ── § 3.1 — Definite article ال + derivations of ك-ت-ب ────────────────
+
+الكاتب	generative	-	ك-ت-ب
+الكتاب	generative	-	ك-ت-ب
+المكتوب	generative	-	ك-ت-ب
+الكتب	generative	-	-
+
+# ── § 3.2 — Definite article ال + derivations of ع-ل-م / ع-م-ل ──────
+
+العالم	generative	-	ع-ل-م
+العامل	generative	-	ع-م-ل
+المعلوم	generative	-	ع-ل-م
+المعمول	generative	-	ع-م-ل
+
+# ── § 3.3 — Definite article ال + other active participles ────────────
+
+الجالس	generative	-	ج-ل-س
+الذاهب	generative	-	ذ-ه-ب
+الداخل	generative	-	د-خ-ل
+الخارج	generative	-	خ-ر-ج
+الراجع	generative	-	ر-ج-ع
+الفاهم	generative	-	ف-ه-م
+الشارب	generative	-	ش-ر-ب
+الضارب	generative	-	ض-ر-ب
+السامع	generative	-	س-م-ع
+الناظر	generative	-	ن-ظ-ر
+الشاعر	generative	-	ش-ع-ر
+الفاعل	generative	-	ف-ع-ل
+الحاكم	generative	-	ح-ك-م
+الحامد	generative	-	ح-م-د
+الذاكر	generative	-	ذ-ك-ر
+الحافظ	generative	-	ح-ف-ظ
+الفاتح	generative	-	ف-ت-ح
+الطالب	generative	-	ط-ل-ب
+الشاكر	generative	-	ش-ك-ر
+القاتل	generative	-	ق-ت-ل
+الصانع	generative	-	ص-ن-ع
+اللابس	generative	-	ل-ب-س
+الخالق	generative	-	خ-ل-ق
+الغافر	generative	-	غ-ف-ر
+الناصر	generative	-	ن-ص-ر
+
+# ── § 3.4 — Definite article ال + passive participles ─────────────────
+
+المفهوم	generative	-	ف-ه-م
+المشروب	generative	-	ش-ر-ب
+المضروب	generative	-	ض-ر-ب
+المسموع	generative	-	س-م-ع
+المنظور	generative	-	ن-ظ-ر
+المشعور	generative	-	ش-ع-ر
+المفعول	generative	-	ف-ع-ل
+المحكوم	generative	-	ح-ك-م
+المحمود	generative	-	ح-م-د
+المذكور	generative	-	ذ-ك-ر
+المحفوظ	generative	-	ح-ف-ظ
+المفتوح	generative	-	ف-ت-ح
+المطلوب	generative	-	ط-ل-ب
+المشكور	generative	-	ش-ك-ر
+المقتول	generative	-	ق-ت-ل
+المصنوع	generative	-	ص-ن-ع
+الملبوس	generative	-	ل-ب-س
+المخلوق	generative	-	خ-ل-ق
+المغفور	generative	-	غ-ف-ر
+المنصور	generative	-	ن-ص-ر
+
+# ── § 3.5 — Conjunction ف + active participles ───────────────────────
+
+فكاتب	generative	-	ك-ت-ب
+فعالم	generative	-	ع-ل-م
+فعامل	generative	-	ع-م-ل
+فجالس	generative	-	ج-ل-س
+فذاهب	generative	-	ذ-ه-ب
+فداخل	generative	-	د-خ-ل
+ففاهم	generative	-	ف-ه-م
+فضارب	generative	-	ض-ر-ب
+فسامع	generative	-	س-م-ع
+فطالب	generative	-	ط-ل-ب
+
+# ── § 3.6 — Conjunction و + derivations ──────────────────────────────
+
+وكاتب	generative	-	ك-ت-ب
+وعالم	generative	-	ع-ل-م
+وعامل	generative	-	ع-م-ل
+وجالس	generative	-	ج-ل-س
+وذاهب	generative	-	ذ-ه-ب
+وداخل	generative	-	د-خ-ل
+وسامع	generative	-	س-م-ع
+وحاكم	generative	-	ح-ك-م
+وصانع	generative	-	ص-ن-ع
+
+# ── § 3.7 — Preposition ب + definite article ──────────────────────────
+
+بالكتاب	generative	-	ك-ت-ب
+بالكاتب	generative	-	ك-ت-ب
+بالمكتوب	generative	-	ك-ت-ب
+بالعالم	generative	-	ع-ل-م
+بالعامل	generative	-	ع-م-ل
+بالحاكم	generative	-	ح-ك-م
+بالخالق	generative	-	خ-ل-ق
+
+# ── § 3.8 — Chained prefixes (و + ب + ال, ف + ب + ال) ─────────────────
+
+وبالكتاب	generative	-	ك-ت-ب
+فبالكتاب	generative	-	ك-ت-ب
+وبالكاتب	generative	-	ك-ت-ب
+وبالعالم	generative	-	ع-ل-م
+والكاتب	generative	-	ك-ت-ب
+فالكاتب	generative	-	ك-ت-ب
+والكتاب	generative	-	ك-ت-ب
+فالكتاب	generative	-	ك-ت-ب
+
+# ── § 3.9 — The M2.b flagship: broken plural through cascade ──────────
+
+# الأئمة decomposes via ال + أئمة (broken plural of إمام, root ء-م-م).
+# This is the case that the whole fifth-layer architecture was built for.
+الأئمة	generative	-	ء-م-م
+
+# ──────────────────────────────────────────────────────────────────────
+# § 4 — Foreign (non-Arabic script). The normalizer routes Latin /
+# Hebrew / other scripts through the bypass with Foreign POS at
+# confidence 0.8. Internally that is `AnalysisOrigin::SurfaceHeuristic`;
+# the `foreign` sentinel in this TSV maps to it for readability.
+# ──────────────────────────────────────────────────────────────────────
+
+Hello	foreign	-	-
+World	foreign	-	-
+Computer	foreign	-	-
+Internet	foreign	-	-
+Rust	foreign	-	-
+Python	foreign	-	-
+JavaScript	foreign	-	-
+Docker	foreign	-	-
+Kubernetes	foreign	-	-
+GitHub	foreign	-	-
+GitLab	foreign	-	-
+Stack	foreign	-	-
+Overflow	foreign	-	-
+Tauri	foreign	-	-
+Svelte	foreign	-	-
+Constellation	foreign	-	-
+Anthropic	foreign	-	-
+Claude	foreign	-	-
+OpenAI	foreign	-	-
+Google	foreign	-	-
+Microsoft	foreign	-	-
+Apple	foreign	-	-
+Linux	foreign	-	-
+Windows	foreign	-	-
+macOS	foreign	-	-
+Chrome	foreign	-	-
+Firefox	foreign	-	-
+Safari	foreign	-	-
+Edge	foreign	-	-
+Node	foreign	-	-
+Deno	foreign	-	-
+Bun	foreign	-	-
+React	foreign	-	-
+Vue	foreign	-	-
+Angular	foreign	-	-
+Nginx	foreign	-	-
+Apache	foreign	-	-
+PostgreSQL	foreign	-	-
+SQLite	foreign	-	-
+MySQL	foreign	-	-
+Redis	foreign	-	-
+MongoDB	foreign	-	-
+Vite	foreign	-	-
+Rollup	foreign	-	-
+Tailwind	foreign	-	-

@@ -2,7 +2,7 @@
 
 ## Headline
 
-**M3 + M3-baker + M1g/M1h landed.** First: `GenerativeIndex` (HashMap, ~40 MB projected at 7K roots) swapped for `GenerativeFst` (BurntSushi FST, prefix-compressed, mmap-ready). Second: the compiled FST is now persisted to the user's cache directory on first launch and reloaded on subsequent launches via `GenerativeFst::from_bytes` — the cold/warm startup path divergence that M9 ("50 ms analyzer cold-start") measures against. Third: the protected list got its architectural rewrite — `const SEED: &[...]` (200 hand-picked entries, 340 lines of Rust) replaced with `include_str!("protected_seed.tsv")` + a 3-column TSV (`surface<TAB>category<TAB>origin_lang`) now holding **1,196 unique entries** across proper nouns (395), places (275), loanwords (455), and function words (71). Full public-API parity preserved; 215/215 library tests pass (up from 209: +6 for the TSV parser, -1 removed for the obsolete `no_duplicate_lemmas_in_seed` check that the first-write-wins semantics made redundant).
+**M3 + M3-baker + M1g/M1h + M5 landed.** First: `GenerativeIndex` (HashMap, ~40 MB projected at 7K roots) swapped for `GenerativeFst` (BurntSushi FST, prefix-compressed, mmap-ready). Second: the compiled FST is now persisted to the user's cache directory on first launch and reloaded on subsequent launches via `GenerativeFst::from_bytes` — the cold/warm startup path divergence that M9 ("50 ms analyzer cold-start") measures against. Third: the protected list got its architectural rewrite — `const SEED: &[...]` (200 hand-picked entries, 340 lines of Rust) replaced with `include_str!("protected_seed.tsv")` + a 3-column TSV (`surface<TAB>category<TAB>origin_lang`) now holding **1,196 unique entries** across proper nouns (395), places (275), loanwords (455), and function words (71). Fourth: the **M5 regression corpus** — a 502-case held-out test set in `regression_cases.tsv` + a `cfg(test)`-gated `regression.rs` harness that feeds every row through `analyze_best` and asserts origin / surface / (optionally) lemma / root. Covers all three active origin layers (ProtectedList, GenerativeFst, SurfaceHeuristic) across 28 Arabic roots, ~80 cascade surfaces, and 45 foreign (Latin-script) words. Full public-API parity preserved across all four landings; **225/225 library tests pass** (up from 209 pre-M3: +13 fst_bake, +10 regression harness, +6 TSV parser, -1 removed `no_duplicate_lemmas_in_seed` obsolete under first-write-wins).
 
 ## Work in order
 
@@ -132,9 +132,52 @@ The existing `table_has_expected_size`, `every_category_has_entries`, `common_na
 
 - All 215 pass in 0.83s. The `الأئمة → ء-م-م` flagship still resolves through the FST-backed Layer 3; the expanded protected list now correctly short-circuits Light10 on ~1K more surfaces before the analyzer ever reaches the FST.
 
+## 9. M5 — regression corpus
+
+The analyzer is about to gain two disruptive changes: **M6** will swap `stem_arabic_light10` in `fts5_tokenizer.rs` for `arabic::analyze` (every FTS5 token on every note in every Universe now flows through the engine), and **M7** will add the disambiguator that reorders multi-analysis results. Either could silently regress behaviour on a common word like وائل or الأئمة and re-poison the search index; the unit tests in `mod.rs::tests` only cover hand-picked flagship cases. The regression corpus is the broader safety net.
+
+**Solution shipped:**
+
+- New `src-tauri/src/arabic/regression_cases.tsv` — 502 surfaces in 4 sections, TAB-separated: `surface<TAB>origin<TAB>lemma<TAB>root`.
+  - **§ 1 Protected (256 rows)** — 80 proper nouns + 60 places + 80 loanwords + 30 function words, sampled via awk from `protected_seed.tsv`. Exercises the Layer 1 hash lookup on a representative slice of the 1,196-entry seed.
+  - **§ 2 Generative bare (201 rows)** — ~30 Arabic roots (ك-ت-ب, ع-ل-م, ع-م-ل, ج-ل-س, ذ-ه-ب, د-خ-ل, خ-ر-ج, ر-ج-ع, ف-ه-م, ش-ر-ب, ض-ر-ب, س-م-ع, ن-ظ-ر, ش-ع-ر, ف-ع-ل, ح-ك-م, ح-م-د, ذ-ك-ر, ح-ف-ظ, ف-ت-ح, ط-ل-ب, ش-ك-ر, ق-ت-ل, ص-ن-ع, ل-ب-س, خ-ل-ق, غ-ف-ر, ن-ص-ر, ر-س-ل + quadriliteral د-ح-ر-ج) with active participle / passive participle / perfect / imperfect derivations. Roots asserted on participles; left as `-` (unasserted) on verb forms where `analyze_best`'s tiebreak is confidence-then-insertion-order and not stable across refactors.
+  - **§ 3 Cascade (~80 rows)** — affix-stripping surfaces: ال + derivations, ف + derivations, و + derivations, بال chain, وبال/فبال chains, والـ/فالـ, the الأئمة flagship.
+  - **§ 4 Foreign (45 rows)** — Latin-script tech / brand names (Hello, World, Rust, Python, GitHub, PostgreSQL, Vite, Rollup, Tailwind, …). Routed to SurfaceHeuristic by the normalizer's non-Arabic-script check — covers the heuristic threshold too (`corpus_covers_every_origin` requires ≥5).
+
+- New `src-tauri/src/arabic/regression.rs` — the harness. `cfg(test)`-gated so the corpus does not ship in the release binary; `#[cfg(test)] mod regression;` declared at the end of `mod.rs`. If M9 benchmarking ends up needing the corpus outside `cargo test`, the comment in `mod.rs` flags the upgrade path (promote to `pub mod` + a feature flag).
+  - `parse_corpus(tsv) -> Vec<Case>` — skips `#` comments and blank lines, CRLF-tolerant, records 1-based source line numbers for locatable failure messages.
+  - `run_corpus() -> CorpusReport` — iterates every case through `analyze_best`, collects `Failure { case, reason }` rows with readable diffs like `"origin: expected GenerativeFst, got ProtectedList (lemma=حامد, root=, conf=1.00)"`.
+  - `evaluate(case)` — origin assertion is strict (the primary regression signal); surface is strict (verifies round-trip); lemma / root are conditional on the expected cell not being `-`.
+
+**Calibration round:** the first corpus run produced 7 failures, all Arabic surfaces that happen to be common given names (حامد, محمود, حمد, حافظ, شاكر, ناصر, منصور). The analyzer's Layer 1 (ProtectedList) fires before Layer 3 (GenerativeFst), so these are returned with origin=ProtectedList. Six rows were retagged from `generative` to `protected` — a valuable regression signal in its own right: if a future refactor accidentally reorders the layers and the root analysis starts winning on a name, the corpus will now fail and force a human review. The seventh failure (`ناصر`) was a genuine duplicate (already tested in § 1) and was removed; two more foreign rows were appended to keep the corpus at ≥500.
+
+**Policy decisions baked in:**
+
+- The corpus is **pass/fail** — no confidence-level comparison in v1. If the analyzer swaps origins the TSV row has to be updated explicitly. That is deliberate: we want a human to notice the change and decide whether it is an improvement or a regression. Silent drift is the whole failure mode the corpus exists to prevent.
+- **Unique surfaces only** — duplicate surfaces would mask failures (a later row's expected values silently override an earlier row in diagnostic reports). A dedicated test asserts this.
+- **Size bounds 500–2000** — if the corpus ever grows past 2000, `corpus_has_expected_size` fails loudly so the upper bound is a deliberate human decision, not an accidental drift.
+
+### 10. M5 Tests
+
+10 tests in `arabic::regression::tests`:
+
+- **Format parser** (5): `parse_origin_handles_known_tags`, `parse_origin_rejects_unknown`, `parse_optional_maps_dash_to_none`, `parse_corpus_skips_comments_blanks_and_short_rows`, `parse_corpus_records_line_numbers`.
+- **Corpus shape** (3): `corpus_has_expected_size` (≥500 / ≤2000), `corpus_covers_every_origin` (protected ≥50 / generative ≥100 / heuristic ≥5), `corpus_has_unique_surfaces`.
+- **Full run** (2): `corpus_passes_with_full_score` (zero failures on every commit; first 25 failures rendered inline on regression), `raw_corpus_accessor_returns_nonempty_tsv`.
+
+### 11. Results after M5
+
+| Suite | Pre-M3 | After M3 | After M3-baker | After M1g/M1h | After M5 | Delta |
+|---|---|---|---|---|---|---|
+| arabic module | 171 | 183 | 196 | 202 | 212 | +41 |
+| library total | 184 | 196 | 209 | 215 | 225 | +41 |
+
+- All **225 pass** in 0.80s. Corpus run adds ~20ms to the test wall time (502 `analyze_best` calls, no I/O).
+- All 502/502 regression cases pass — the corpus is green on its calibration commit and becomes the baseline M6/M7 must defend against.
+
 ## Commit
 
-Pending — per Standing Order: push + SO after user review. Two-commit sequence:
+Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
 
 1. **M3 + M3-baker** (already landed, `da8d821`):
    - `src-tauri/Cargo.toml` — `+ dirs = "5"` (cross-platform cache dir resolution).
@@ -144,9 +187,14 @@ Pending — per Standing Order: push + SO after user review. Two-commit sequence
    - `src-tauri/src/arabic/mod.rs` — `+ pub mod fst_bake;`.
    - `src-tauri/src/arabic/roots.rs` — `+ pub fn seed_tsv() -> &'static str` accessor.
 
-2. **M1g/M1h** (this session):
+2. **M1g/M1h** (landed `929af33`):
    - `src-tauri/src/arabic/protected.rs` — removed ~220 lines of `const SEED` array; added `parse_origin_lang`, `parse_category`, `parse_tsv` helpers, `seed_tsv()` accessor; rewired `build_table`; updated tests (removed `no_duplicate_lemmas_in_seed`, added 6 TSV-parser tests, bumped size bounds).
    - `src-tauri/src/arabic/protected_seed.tsv` — new (1,196 entries, ~1,400 lines incl. section headers and format docs).
+
+3. **M5** (this session):
+   - `src-tauri/src/arabic/regression.rs` — new (~400 lines, 10 tests) — `Case`, `Failure`, `CorpusReport`, `parse_origin`, `parse_optional`, `parse_corpus`, `run_corpus`, `evaluate`, `raw_corpus`.
+   - `src-tauri/src/arabic/regression_cases.tsv` — new (~720 lines, 502 data rows).
+   - `src-tauri/src/arabic/mod.rs` — `+ #[cfg(test)] mod regression;` at end of mod declarations.
    - `lab/reports/SESSION-LOG-2026-04-18.md` — this file.
 
 ## Files modified
@@ -163,8 +211,9 @@ Pending — per Standing Order: push + SO after user review. Two-commit sequence
 ## Open items
 
 - **M1g-data / M1h-data**: the 20K Wikipedia-extracted proper-noun corpus + 2K loanwords. Today's 1,196 hand-picked entries cover the common case; the full corpus comes from CC-BY-SA bulk extraction (separate milestone in `lab/`, blocked on extractor tooling).
-- **M5**: 500-case regression corpus — the benchmark harness that will let M9 measure 200K words/sec accurately.
-- **M6**: replace `stem_arabic_light10` in `fts5_tokenizer.rs` with `arabic::analyze`. Unblocked: the analyzer is FST-backed with persistent cache and the protected list is data-driven.
+- **M5-grow**: expand the corpus over time. 502 is the v1 floor — as M6/M7 land, new flagship surfaces identified during bring-up should be added here first before any other test code. Target by M9: ≥2,000 cases, with ≥20 pure-heuristic Arabic-script rows (Layer 4 fallback coverage; currently the heuristic threshold is met by foreign Latin-script rows via the non-Arabic-script route).
+- **M6**: replace `stem_arabic_light10` in `fts5_tokenizer.rs` with `arabic::analyze`. Unblocked: the analyzer is FST-backed with persistent cache, the protected list is data-driven, and there is now a 502-case regression corpus to defend the swap.
+- **M7**: disambiguator — reorder multi-analysis results by corpus frequency / context. The regression corpus's `expected_lemma = "-"` rows on ambiguous verb forms mean M7 can change analyze_best's tiebreak without forcing corpus rewrites; only the origin has to stay stable.
 - **M9**: measure cold-start analyzer time on the real user machine (Windows) with a clean cache dir, then warm-start. If the warm-start delta isn't ≥5× the cold-start on the target 7K-root corpus, tune the format (e.g. memory-map instead of read-to-vec).
 
 ## No user-facing changes

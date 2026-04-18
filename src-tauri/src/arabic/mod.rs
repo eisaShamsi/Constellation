@@ -63,6 +63,13 @@ pub mod fst_bake;
 // pub mod disambiguator; // M7
 // pub mod overrides;     // M8
 
+// M5 — regression corpus. Harness + 500-case TSV. `cfg(test)`-gated so
+// the corpus does not ship in the release binary; if M9 benchmarking
+// needs it outside of `cargo test`, promote to `pub mod` + a feature
+// flag rather than always-on.
+#[cfg(test)]
+mod regression;
+
 pub use types::{
     Affix, AffixFunction, AffixSlot, Analysis, AnalysisOrigin, Lang, PartOfSpeech, Pattern,
     PatternKind, Root, RootClass,
