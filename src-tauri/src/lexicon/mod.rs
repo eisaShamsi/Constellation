@@ -79,10 +79,12 @@
 
 pub mod bake;
 pub mod expansion;
+pub mod fts;
 pub mod graph;
 pub mod parse;
 
 pub use expansion::{ExpansionOptions, ExpansionResult, SynonymLevel};
+pub use fts::{build_match_expr, escape_fts_term};
 pub use graph::{
     build_bundle, seed_tsv, BuildError, Edge, EdgeKind, LemmaNode, LexiconBundle, LexiconGraph,
     SenseId,
@@ -273,6 +275,45 @@ fn push_bounded(
     }
 }
 
+/// End-to-end convenience: expand `lemma` and immediately fold the
+/// result into an FTS5 `MATCH` expression ready for
+/// `WHERE notes_fts MATCH ?` — the shape M12 plumbs into search.rs.
+///
+/// Returns `None` when the expansion produces zero usable terms after
+/// escaping (empty source lemma, or a pathological lemma made only of
+/// characters that [`fts::escape_fts_term`] strips). The caller should
+/// treat `None` as "run the user's plain query instead" — an empty
+/// MATCH clause is a syntax error in FTS5.
+///
+/// ```ignore
+/// // Typical wiring on the search path:
+/// let match_expr = lexicon::expand_to_match_expr(lemma, Lang::En, &opts)
+///     .unwrap_or_else(|| format!("\"{}\"", lemma));  // fall back
+/// let rows = conn.prepare("SELECT … FROM notes_fts WHERE notes_fts MATCH ?1 …")?
+///     .query_map(params![match_expr], /* … */)?;
+/// ```
+pub fn expand_to_match_expr(
+    lemma: &str,
+    source: Lang,
+    opts: &ExpansionOptions,
+) -> Option<String> {
+    let r = expand(lemma, source, opts);
+    fts::build_match_expr(&r)
+}
+
+/// Like [`expand_to_match_expr`], but against a caller-supplied graph
+/// so tests can exercise the full pipeline without touching the
+/// process-wide singleton.
+pub fn expand_to_match_expr_via(
+    graph: &LexiconGraph,
+    lemma: &str,
+    source: Lang,
+    opts: &ExpansionOptions,
+) -> Option<String> {
+    let r = expand_via(graph, lemma, source, opts);
+    fts::build_match_expr(&r)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -410,5 +451,87 @@ c:knowledge\tNoun\ten:knowledge,cognition\tar:معرفة\tfr:connaissance
         let r = expand_via(&g, "book", Lang::En, &ExpansionOptions::default());
         assert!(r.hypernyms.is_empty());
         assert!(r.hyponyms.is_empty());
+    }
+
+    // ── expand_to_match_expr end-to-end (M12) ─────────────────────
+
+    #[test]
+    fn expand_to_match_expr_via_produces_or_joined_phrase_query() {
+        let g = small_graph();
+        let expr = expand_to_match_expr_via(
+            &g,
+            "book",
+            Lang::En,
+            &ExpansionOptions::default(),
+        )
+        .expect("non-empty match expression");
+        // Every term is phrase-quoted so operator keywords inside a
+        // lemma can never change the query shape.
+        assert!(expr.contains("\"book\""), "source missing: {}", expr);
+        assert!(expr.contains("\"كتاب\""), "arabic missing: {}", expr);
+        assert!(expr.contains("\"livre\""), "french missing: {}", expr);
+        assert!(expr.contains(" OR "), "disjunction missing: {}", expr);
+    }
+
+    #[test]
+    fn expand_to_match_expr_via_falls_back_to_source_on_miss() {
+        let g = small_graph();
+        // Lemma not in the graph: the echoed source lemma still
+        // produces a valid single-phrase MATCH clause.
+        let expr = expand_to_match_expr_via(
+            &g,
+            "quasar",
+            Lang::En,
+            &ExpansionOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(expr, "\"quasar\"");
+    }
+
+    #[test]
+    fn expand_to_match_expr_via_returns_none_on_empty_lemma() {
+        let g = small_graph();
+        // Empty lemma echoes as an empty source, which escape_fts_term
+        // strips — so the whole expression is None and callers fall
+        // back to their non-expanded path.
+        let expr = expand_to_match_expr_via(
+            &g,
+            "",
+            Lang::En,
+            &ExpansionOptions::default(),
+        );
+        assert!(expr.is_none());
+    }
+
+    #[test]
+    fn expand_to_match_expr_via_honours_mono_mode() {
+        let g = small_graph();
+        // mono(En): enabled_langs = {En}, synonym_level = None. So the
+        // MATCH expression contains nothing but the echoed source
+        // lemma — behaviourally identical to today's un-expanded
+        // search. Safety net for the rollback case.
+        let expr = expand_to_match_expr_via(
+            &g,
+            "book",
+            Lang::En,
+            &ExpansionOptions::mono(Lang::En),
+        )
+        .unwrap();
+        assert_eq!(expr, "\"book\"");
+    }
+
+    #[test]
+    fn expand_to_match_expr_through_singleton() {
+        // The non-`_via` variant routes through `LexiconGraph::get()`,
+        // which also exercises the on-disk cache path (thanks M11).
+        // Smoke-test that the end-to-end call on the seeded graph
+        // returns a non-empty MATCH expression.
+        let expr = expand_to_match_expr(
+            "book",
+            Lang::En,
+            &ExpansionOptions::default(),
+        );
+        assert!(expr.is_some());
+        assert!(expr.unwrap().contains("\"book\""));
     }
 }
