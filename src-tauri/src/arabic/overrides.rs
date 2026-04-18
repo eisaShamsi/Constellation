@@ -63,6 +63,33 @@
 //! }
 //! ```
 //!
+//! ## Federation — layered stores (M8b-v2)
+//!
+//! A Universe may declare `cUniverse` children (see `UniverseMeta::children`
+//! in `universe.rs`) — linked Universes whose libraries surface in the
+//! active Universe's federated view. Each of those child Universes may
+//! have authored its own `arabic-overrides.json`. The active store is
+//! therefore a **stack of layers**:
+//!
+//! ```text
+//! layers[0]   = active Universe (sovereign — user's own overrides)
+//! layers[1..] = cUniverse children, in declaration order
+//! ```
+//!
+//! `lookup` walks the stack in order and returns on the first hit —
+//! **the parent's override always wins** on conflict. This matches the
+//! sovereignty semantics in CLAUDE.md's Knowledge Formulation principles:
+//! the user's intent in the active Universe is the highest-authority
+//! signal. Children contribute for surfaces the parent hasn't overridden.
+//!
+//! CRUD (`insert` / `remove` / `save_to_path`) touches **only** the
+//! sovereign layer. Child layers are read-only from the active Universe's
+//! perspective — each child owns its own `arabic-overrides.json`, edited
+//! when that child is the active Universe.
+//!
+//! A non-federated Universe (no `children`) produces a one-layer stack —
+//! byte-for-byte the same hot-path behaviour as pre-M8b-v2.
+//!
 //! ## What this module does NOT do (today)
 //!
 //! - **No FTS re-index on change**: if the user edits an override, the
@@ -70,11 +97,6 @@
 //!   task (tracked in SESSION-LOG as M8c) will emit a reindex signal
 //!   when overrides change. For now, overrides take effect on newly
 //!   written notes only — and on the next full reindex of the library.
-//! - **No per-library federation**: `cUniverses` (child Universes
-//!   contributing libraries to a parent) all share the *parent*
-//!   Universe's override set via `ACTIVE_STORE`. Per-Universe override
-//!   stacking is tracked as an M8b-v2 follow-up; for v1, overrides are
-//!   a property of the active Universe only.
 //! - **No normalizer-dependency flattening**: we call
 //!   `crate::arabic::normalizer::normalize` at lookup time to match the
 //!   stripped form of the input. If the user's override was authored on
@@ -164,86 +186,152 @@ fn default_version() -> u32 {
     1
 }
 
-/// In-memory override store for a single Universe.
+/// In-memory override store for a single Universe, optionally layered
+/// across its cUniverse children.
+///
+/// Internal shape is a **stack** of layers:
+///
+/// - `layers[0]`    — the active (sovereign) Universe's overrides
+/// - `layers[1..]`  — cUniverse children's overrides, in declaration order
+///
+/// A non-federated Universe (no `UniverseMeta::children`) produces a
+/// one-entry stack that behaves byte-for-byte like the pre-M8b-v2
+/// single-layer store. An uninitialized store (before any Universe is
+/// activated, or after `clear_active`) has `layers.is_empty()` — this
+/// is a valid "no overrides anywhere" state and short-circuits cleanly
+/// via `is_empty()`.
 ///
 /// Construction:
-/// - `OverrideStore::new()` — empty, for tests or brand-new Universes.
-/// - `OverrideStore::load_from_path(&p)` — parse the JSON file. Returns
-///   `Ok(empty)` if the file doesn't exist (a fresh Universe hasn't
-///   authored any overrides yet), `Err` only on malformed JSON or I/O
-///   errors on an *existing* file.
+/// - `OverrideStore::new()` — empty (zero layers), for tests or brand-
+///   new Universes.
+/// - `OverrideStore::load_from_path(&p)` — single-layer load from one
+///   file. Returns an empty (zero-layer) store if the file doesn't exist.
+/// - `OverrideStore::from_layered_paths(&[parent, children...])` — load
+///   multiple files into a layered stack. Used by the Universe switcher
+///   to combine parent + cUniverse children's overrides.
 ///
 /// Lookup:
-/// - `OverrideStore::lookup(&norm_surface)` — O(1) HashMap hit on the
-///   pre-normalized surface. This is what `analyze_with_overrides` calls.
+/// - `OverrideStore::lookup(&norm_surface)` — walks layers in order;
+///   the first hit wins. Parent always wins on conflict.
 ///
-/// Mutation:
-/// - `OverrideStore::insert(o)` — upsert (replace on duplicate surface).
-/// - `OverrideStore::remove(&surface)` — remove by verbatim surface;
-///   returns the removed record for audit.
-/// - `OverrideStore::save_to_path(&p)` — atomic write via `.tmp` +
-///   rename (no partial-file poisoning on crash).
+/// Mutation (sovereign-only — child layers are read-only from the
+/// active Universe's perspective):
+/// - `OverrideStore::insert(o)` — upsert into `layers[0]` (creates it
+///   if the stack was empty).
+/// - `OverrideStore::remove(&surface)` — remove from `layers[0]` only.
+/// - `OverrideStore::save_to_path(&p)` — atomic write of the sovereign
+///   layer only, via `.tmp` + rename. Children are not touched.
 #[derive(Debug, Default, Clone)]
 pub struct OverrideStore {
-    /// Key = normalized surface (from `normalizer::normalize(...).stripped`).
-    /// Values own the full `UserOverride`; there's no need for lifetimes
-    /// here because the store is always held by the `analyze()` call
-    /// site at the layer above.
-    entries: HashMap<String, UserOverride>,
+    /// One HashMap per layer. Key = normalized surface (from
+    /// `normalizer::normalize(...).stripped`). `layers[0]` is the active
+    /// Universe's sovereign layer; `layers[1..]` are cUniverse children
+    /// probed after the parent misses.
+    ///
+    /// Invariant: every layer's keys are normalized consistently via
+    /// `normalize_key` so that a surface authored in any layer can be
+    /// found by a lookup using any equivalent normalized form.
+    layers: Vec<HashMap<String, UserOverride>>,
 }
 
 impl OverrideStore {
-    /// New empty store. Test/fixture constructor and the return value
-    /// from `load_from_path` when the file doesn't exist yet.
+    /// New empty store with zero layers. Returned from `load_from_path`
+    /// on a missing file, from `new()` for tests / fixtures, and from
+    /// `clear_active` when the active Universe is closed.
     pub fn new() -> Self {
-        Self { entries: HashMap::new() }
+        Self { layers: Vec::new() }
     }
 
-    /// Number of overrides in the store. Useful for the Settings UI
-    /// "N overrides configured" indicator.
+    /// Total number of overrides across **all** layers. Useful for boot
+    /// diagnostics ("loaded N overrides across K Universes") and for the
+    /// Settings UI summary count.
     pub fn len(&self) -> usize {
-        self.entries.len()
+        self.layers.iter().map(|l| l.len()).sum()
     }
 
-    /// True when no overrides are configured. Handy short-circuit for
-    /// `analyze_with_overrides` to skip the HashMap probe entirely.
+    /// True when no overrides are configured in any layer. Handy short-
+    /// circuit for `analyze_with_overrides` to skip the layer walk
+    /// entirely when both the parent and every child have no entries.
     pub fn is_empty(&self) -> bool {
-        self.entries.is_empty()
+        self.layers.iter().all(|l| l.is_empty())
     }
 
-    /// Iterate all overrides. Order is unspecified (HashMap iteration);
-    /// callers that need a stable order must sort the result.
+    /// Iterate every override across all layers (sovereign first, then
+    /// children in declaration order). Order within a single layer is
+    /// unspecified (HashMap iteration); callers that need a stable total
+    /// order must sort the result.
+    ///
+    /// If you only want the editable (sovereign) entries — e.g. the
+    /// Settings UI listing — prefer `sovereign_iter` instead, so you
+    /// don't show the user child-Universe entries they can't modify
+    /// from this Universe's editor.
     pub fn iter(&self) -> impl Iterator<Item = &UserOverride> {
-        self.entries.values()
+        self.layers.iter().flat_map(|l| l.values())
     }
 
-    /// Look up by *normalized* surface.
+    /// Iterate only the sovereign (parent's own) overrides — the entries
+    /// backed by the active Universe's own `arabic-overrides.json`. The
+    /// Settings UI editing flow uses this to avoid listing read-only
+    /// child-Universe entries.
+    pub fn sovereign_iter(&self) -> impl Iterator<Item = &UserOverride> {
+        self.layers.first().into_iter().flat_map(|l| l.values())
+    }
+
+    /// Number of layers currently installed. Diagnostic only; the hot
+    /// path does not branch on this. Useful for the Settings UI to
+    /// render "parent + N child Universe contributions".
+    pub fn layer_count(&self) -> usize {
+        self.layers.len()
+    }
+
+    /// Look up by *normalized* surface. Walks layers in order — parent
+    /// wins on conflict.
     ///
     /// The caller is responsible for running the normalizer on the user
-    /// input first — this keeps the hot path cheap (one HashMap probe,
-    /// no re-normalization inside the store). `analyze_with_overrides`
-    /// does this correctly.
-    pub fn lookup(&self, normalized_surface: &str) -> Option<&UserOverride> {
-        self.entries.get(normalized_surface)
-    }
-
-    /// Upsert an override. The record's `surface` is normalized via the
-    /// engine's normalizer to produce the HashMap key, so a later lookup
-    /// on either the raw surface or the normalized form finds it.
+    /// input first — this keeps the hot path cheap (one HashMap probe
+    /// per layer, no re-normalization inside the store).
+    /// `analyze_with_overrides` does this correctly.
     ///
-    /// Returns the previous value if one was replaced (HashMap::insert
-    /// semantics), so callers can audit "this edit overwrote an existing
-    /// override authored at {created_at}".
-    pub fn insert(&mut self, override_: UserOverride) -> Option<UserOverride> {
-        let key = Self::normalize_key(&override_.surface);
-        self.entries.insert(key, override_)
+    /// Typical layer count today is 1–5 (parent + a handful of
+    /// children). With a small Vec the loop is branch-prediction-friendly
+    /// and each missing probe is a single hash + bucket check. The hot-
+    /// path cost is dominated by the single `Arc::clone` at the call
+    /// site (~5ns on Windows), not the layer walk.
+    pub fn lookup(&self, normalized_surface: &str) -> Option<&UserOverride> {
+        for layer in &self.layers {
+            if let Some(v) = layer.get(normalized_surface) {
+                return Some(v);
+            }
+        }
+        None
     }
 
-    /// Remove by verbatim surface. Returns the removed record, or None
-    /// if no override existed for this surface.
+    /// Upsert an override into the sovereign layer. Creates `layers[0]`
+    /// if the stack was empty. The record's `surface` is normalized via
+    /// the engine's normalizer to produce the HashMap key, so a later
+    /// lookup on either the raw surface or a vocalized form finds it.
+    ///
+    /// Returns the previous value if one was replaced in the sovereign
+    /// layer (HashMap::insert semantics). A duplicate surface in a child
+    /// layer is NOT overwritten — children own their own files.
+    pub fn insert(&mut self, override_: UserOverride) -> Option<UserOverride> {
+        if self.layers.is_empty() {
+            self.layers.push(HashMap::new());
+        }
+        let key = Self::normalize_key(&override_.surface);
+        self.layers[0].insert(key, override_)
+    }
+
+    /// Remove by verbatim surface from the sovereign layer only. Returns
+    /// the removed record, or None if no sovereign override existed for
+    /// this surface (even if a child layer has one — child entries are
+    /// read-only from the parent's perspective).
     pub fn remove(&mut self, surface: &str) -> Option<UserOverride> {
+        if self.layers.is_empty() {
+            return None;
+        }
         let key = Self::normalize_key(surface);
-        self.entries.remove(&key)
+        self.layers[0].remove(&key)
     }
 
     /// The canonical path for a Universe's override file. Separate helper
@@ -252,32 +340,58 @@ impl OverrideStore {
         universe_dir.join(".constellation").join("arabic-overrides.json")
     }
 
-    /// Load from disk. A missing file yields an empty store (this is the
-    /// common case for a freshly-created Universe); only true I/O or
-    /// parse errors bubble up.
+    /// Load a single-layer store from one file. A missing file yields
+    /// a zero-layer store (this is the common case for a freshly-created
+    /// Universe that hasn't authored any overrides yet); only true I/O
+    /// or parse errors bubble up.
+    ///
+    /// Used by the CRUD Tauri commands, which always operate on a single
+    /// file (the active Universe's own overrides).
     pub fn load_from_path(path: &Path) -> std::io::Result<Self> {
         if !path.exists() {
             return Ok(Self::new());
         }
-        let bytes = std::fs::read(path)?;
-        let file: OverrideFile = serde_json::from_slice(&bytes)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-        let mut store = Self::new();
-        for o in file.overrides {
-            store.insert(o);
-        }
-        Ok(store)
+        let layer = read_layer(path)?;
+        Ok(Self { layers: vec![layer] })
     }
 
-    /// Atomic write: stage to `.tmp`, rename on success. No partial-file
-    /// poisoning on crash mid-write. Creates parent directories as needed.
+    /// Build a layered store from an ordered list of paths. `paths[0]`
+    /// is the sovereign (active Universe's) override file; `paths[1..]`
+    /// are cUniverse children's override files probed after a parent
+    /// miss, in the order given.
+    ///
+    /// Missing files become empty layers — a fresh child Universe that
+    /// hasn't authored overrides contributes nothing but does not abort
+    /// the load. An existing-but-malformed file propagates the parse
+    /// error (callers can log it and install an empty store as fallback).
+    pub fn from_layered_paths(paths: &[PathBuf]) -> std::io::Result<Self> {
+        let mut layers = Vec::with_capacity(paths.len());
+        for p in paths {
+            let layer = if p.exists() {
+                read_layer(p)?
+            } else {
+                HashMap::new()
+            };
+            layers.push(layer);
+        }
+        Ok(Self { layers })
+    }
+
+    /// Atomic write of the sovereign (parent's) layer only. Children
+    /// are never written through the parent's path — each child owns
+    /// its own `arabic-overrides.json`, edited when that child is the
+    /// active Universe.
+    ///
+    /// Stage to `.tmp`, rename on success. No partial-file poisoning on
+    /// crash mid-write. Creates parent directories as needed.
     pub fn save_to_path(&self, path: &Path) -> std::io::Result<()> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
         // Stable iteration order for the on-disk JSON so diffs stay small
         // when the user edits with Git: sort by surface.
-        let mut overrides: Vec<UserOverride> = self.entries.values().cloned().collect();
+        let sovereign = self.layers.first().cloned().unwrap_or_default();
+        let mut overrides: Vec<UserOverride> = sovereign.values().cloned().collect();
         overrides.sort_by(|a, b| a.surface.cmp(&b.surface));
         let file = OverrideFile { version: 1, overrides };
         let json = serde_json::to_vec_pretty(&file)
@@ -302,7 +416,23 @@ impl OverrideStore {
     }
 }
 
-// ── Process-wide active store (M8b) ──────────────────────────────────
+/// Parse a single override file off disk into the HashMap shape used
+/// per layer. Shared between `load_from_path` (single-layer) and
+/// `from_layered_paths` (multi-layer) so the on-disk schema and the
+/// normalization of keys stay identical regardless of entry point.
+fn read_layer(path: &Path) -> std::io::Result<HashMap<String, UserOverride>> {
+    let bytes = std::fs::read(path)?;
+    let file: OverrideFile = serde_json::from_slice(&bytes)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    let mut map = HashMap::new();
+    for o in file.overrides {
+        let key = OverrideStore::normalize_key(&o.surface);
+        map.insert(key, o);
+    }
+    Ok(map)
+}
+
+// ── Process-wide active store (M8b, layered in M8b-v2) ───────────────
 //
 // The FTS5 tokenizer runs inside SQLite's call context — a sync,
 // Tauri-State-less path. It can't easily reach the `UniverseState`
@@ -318,6 +448,14 @@ impl OverrideStore {
 // still see the prior `Arc` via `into_inner` recovery; we `unwrap()`
 // because a poisoned lock here means the analyzer itself panicked mid-
 // write, which is a bug we want to surface loudly, not paper over.
+//
+// M8b-v2 additions:
+// - `activate_layered_for_universe` installs a multi-layer store,
+//   one layer per (parent + cUniverse child) combination.
+// - `set_sovereign_layer` replaces only `layers[0]` of the current
+//   active store, preserving any child layers — used by the CRUD
+//   commands so editing a parent override doesn't clobber the child
+//   contributions the Universe switcher installed.
 
 static ACTIVE_STORE: OnceLock<RwLock<Arc<OverrideStore>>> = OnceLock::new();
 
@@ -327,7 +465,7 @@ fn store_lock() -> &'static RwLock<Arc<OverrideStore>> {
 
 /// Cheap clone of the currently-active override store. Called per FTS5
 /// tokenizer invocation. `Arc::clone` is a refcount bump — the store's
-/// internal HashMap is NOT duplicated.
+/// internal layer Vec and its HashMaps are NOT duplicated.
 ///
 /// On first call before any `set_active` / `activate_for_universe`, this
 /// returns an empty store, so Layer 0 never fires and every analysis
@@ -336,12 +474,15 @@ pub fn active() -> Arc<OverrideStore> {
     store_lock().read().expect("arabic override lock poisoned").clone()
 }
 
-/// Install a new active store. Called by:
-/// - `activate_for_universe` when the user opens / switches Universes.
-/// - The `add_arabic_override` / `remove_arabic_override` Tauri commands
-///   after they persist the change to disk, so subsequent tokenizer
-///   calls see the new entry without waiting for the next Universe
-///   switch.
+/// Install a new active store, replacing all layers. Called by:
+/// - `activate_for_universe` / `activate_layered_for_universe` when the
+///   user opens / switches Universes.
+/// - `clear_active` on Universe close.
+/// - Tests that need deterministic baseline state.
+///
+/// CRUD commands (`add_arabic_override` / `remove_arabic_override`)
+/// should use `set_sovereign_layer` instead, so they don't wipe out
+/// child-Universe contributions when the user edits a parent override.
 ///
 /// Thread-safe. The write guard is held only for the Arc pointer swap,
 /// not for any HashMap-level mutation — the store itself is immutable
@@ -350,17 +491,80 @@ pub fn set_active(store: OverrideStore) {
     *store_lock().write().expect("arabic override lock poisoned") = Arc::new(store);
 }
 
-/// Load the override file from `<universe_root>/.constellation/arabic-overrides.json`
-/// and install it as the active store. Missing file = empty store (the
-/// common case for a fresh Universe). Malformed JSON = error.
+/// Replace only the sovereign (parent) layer of the currently-active
+/// store, preserving any cUniverse child layers underneath.
 ///
-/// Returns the count of installed overrides on success — the caller can
-/// log this for boot diagnostics ("loaded 42 Arabic overrides for
-/// Universe <name>").
+/// Called by `add_arabic_override` / `remove_arabic_override` after the
+/// CRUD command has persisted the change to disk. The command loads a
+/// single-layer view from the parent's `arabic-overrides.json`, mutates
+/// it, saves, and then calls this function to slot that layer back into
+/// position 0 of the active store — without re-reading child override
+/// files (no disk I/O) and without losing the child contributions the
+/// Universe switcher originally installed.
+///
+/// Takes a single-layer `OverrideStore` (what `load_from_path` returns).
+/// If the passed store has more than one layer, only `layers[0]` is
+/// adopted as the new sovereign; additional layers are ignored.
+pub fn set_sovereign_layer(sovereign: OverrideStore) {
+    let new_layer_0 = sovereign.layers.into_iter().next().unwrap_or_default();
+    let mut guard = store_lock().write().expect("arabic override lock poisoned");
+    // Build the replacement by cloning out the prior child layers, then
+    // slotting the new sovereign in front. Cheap: HashMaps are Arc-aware
+    // through the wrapping Arc<OverrideStore>, but the layers Vec itself
+    // isn't Arc'd, so we do one shallow clone per child — typically 0.
+    let prior = guard.clone();
+    let mut new_layers: Vec<HashMap<String, UserOverride>> = Vec::with_capacity(prior.layers.len().max(1));
+    new_layers.push(new_layer_0);
+    for child in prior.layers.iter().skip(1) {
+        new_layers.push(child.clone());
+    }
+    *guard = Arc::new(OverrideStore { layers: new_layers });
+}
+
+/// Load a single override file from a Universe and install it as the
+/// active store (single-layer). Kept for non-federated callers and
+/// backwards-compatible tests. A Universe with cUniverse children
+/// should use `activate_layered_for_universe` so the children's
+/// overrides are also consulted.
+///
+/// Missing parent file = empty store (the common case for a fresh
+/// Universe). Malformed JSON = error.
+///
+/// Returns the count of installed overrides on success.
 pub fn activate_for_universe(universe_root: &Path) -> Result<usize, String> {
-    let path = OverrideStore::path_in_universe(universe_root);
-    let store = OverrideStore::load_from_path(&path)
-        .map_err(|e| format!("Failed to load {}: {}", path.display(), e))?;
+    activate_layered_for_universe(universe_root, &[])
+}
+
+/// Layered activation — install the parent's overrides as the sovereign
+/// layer and each cUniverse child's overrides as additional layers
+/// probed in declaration order on parent miss.
+///
+/// Called by `universe::set_active_universe` after reading
+/// `UniverseMeta::children` and resolving each entry to a Universe root
+/// path. The order of `child_universes` is preserved in the lookup
+/// order — the caller decides priority among children (today: the order
+/// the user added them in the federation settings).
+///
+/// Missing child files become empty layers (a fresh child Universe
+/// contributes nothing but does not abort the load). Parent-file errors
+/// propagate, because the active Universe's overrides failing to load
+/// is a user-visible problem worth surfacing; child errors propagate
+/// too, since a malformed child file is a bug the Settings UI should
+/// show rather than silently swallow.
+///
+/// Returns the total override count across all layers, for boot
+/// diagnostics ("loaded 42 overrides across parent + 3 child Universes").
+pub fn activate_layered_for_universe(
+    universe_root: &Path,
+    child_universes: &[PathBuf],
+) -> Result<usize, String> {
+    let mut paths: Vec<PathBuf> = Vec::with_capacity(1 + child_universes.len());
+    paths.push(OverrideStore::path_in_universe(universe_root));
+    for cu in child_universes {
+        paths.push(OverrideStore::path_in_universe(cu));
+    }
+    let store = OverrideStore::from_layered_paths(&paths)
+        .map_err(|e| format!("Failed to load layered overrides: {}", e))?;
     let count = store.len();
     set_active(store);
     Ok(count)
@@ -372,6 +576,20 @@ pub fn activate_for_universe(universe_root: &Path) -> Result<usize, String> {
 pub fn clear_active() {
     set_active(OverrideStore::new());
 }
+
+/// Process-wide test mutex for every cargo-test path that mutates
+/// `ACTIVE_STORE`.
+///
+/// Declared at module (not test-module) scope so integration tests in
+/// other crate modules — notably `search::tests::m8c_*` — can lock the
+/// same mutex and serialize against the tests in this file. Without
+/// this, the default `--test-threads` concurrency would race
+/// `set_active` / `active` calls across suites, producing flaky
+/// failures.
+///
+/// `#[cfg(test)]`-gated so it contributes zero bytes to release builds.
+#[cfg(test)]
+pub(crate) static TEST_OVERRIDE_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 // ── Tauri command surface (M8b) ──────────────────────────────────────
 //
@@ -404,11 +622,17 @@ pub fn read_arabic_overrides(app: tauri::AppHandle) -> Result<Vec<UserOverride>,
 
 /// Upsert an override in the active Universe. Replaces any existing
 /// entry with the same normalized surface. Persists to disk atomically,
-/// then reinstalls the active store so subsequent FTS5 tokens see the
-/// change without waiting for the next Universe switch.
+/// then reinstalls the active store's sovereign layer so subsequent
+/// FTS5 tokens see the change without waiting for the next Universe
+/// switch.
 ///
 /// Parameter name `entry` rather than Rust keyword-adjacent `override`
 /// so it serializes cleanly through Tauri's IPC layer.
+///
+/// Uses `set_sovereign_layer` (not `set_active`) so any cUniverse
+/// children installed at Universe-switch time remain probed on parent
+/// miss — the user editing a parent override doesn't silently drop
+/// child-Universe contributions.
 #[tauri::command]
 pub fn add_arabic_override(
     app: tauri::AppHandle,
@@ -421,13 +645,18 @@ pub fn add_arabic_override(
     store.insert(entry);
     store.save_to_path(&path)
         .map_err(|e| format!("Failed to write {}: {}", path.display(), e))?;
-    set_active(store);
+    set_sovereign_layer(store);
     Ok(())
 }
 
 /// Remove the override for a surface. Returns `true` if an override was
 /// removed, `false` if no override existed for this surface (not an
 /// error — idempotent from the UI's perspective).
+///
+/// Only touches the sovereign (active Universe's) layer — a surface
+/// that exists only in a cUniverse child's overrides file cannot be
+/// removed from the parent Universe. To remove a child's override, the
+/// user must switch to that child Universe first.
 #[tauri::command]
 pub fn remove_arabic_override(
     app: tauri::AppHandle,
@@ -441,7 +670,7 @@ pub fn remove_arabic_override(
     if removed {
         store.save_to_path(&path)
             .map_err(|e| format!("Failed to write {}: {}", path.display(), e))?;
-        set_active(store);
+        set_sovereign_layer(store);
     }
     Ok(removed)
 }
@@ -710,13 +939,14 @@ mod tests {
     // adding one for three tests is overkill. A hand-rolled Mutex is
     // three lines.
 
-    use std::sync::Mutex as StdMutex;
-
-    static REGISTRY_TEST_MUTEX: StdMutex<()> = StdMutex::new(());
-
     /// RAII guard that snapshots the active store on construction and
     /// restores it on drop, so each test runs against a predictable
     /// (empty) baseline and doesn't leak state into the next one.
+    ///
+    /// Locks `crate::arabic::overrides::TEST_OVERRIDE_MUTEX` — the
+    /// crate-wide test mutex — so any concurrent `cargo test` thread
+    /// that touches `ACTIVE_STORE` (including `search::tests::m8c_*`)
+    /// serializes against us.
     struct RegistryGuard {
         _lock: std::sync::MutexGuard<'static, ()>,
         prior: Arc<OverrideStore>,
@@ -724,7 +954,7 @@ mod tests {
 
     impl RegistryGuard {
         fn new() -> Self {
-            let lock = REGISTRY_TEST_MUTEX
+            let lock = super::TEST_OVERRIDE_MUTEX
                 .lock()
                 .unwrap_or_else(|e| e.into_inner()); // ignore poisoning
             let prior = active();
@@ -883,5 +1113,482 @@ mod tests {
                 "malformed JSON on an *existing* file must surface as an error");
 
         let _ = std::fs::remove_dir_all(&tmp_dir);
+    }
+
+    // ── M8b-v2: layered federation ────────────────────────────────────
+    //
+    // Helper that authors a minimal `arabic-overrides.json` at the
+    // canonical path under `universe_dir` and returns the path, so
+    // end-to-end activation tests can exercise the on-disk → layered-
+    // store pipeline without re-implementing the schema per test.
+
+    fn seed_universe_with_override(universe_dir: &Path, o: UserOverride) -> PathBuf {
+        let path = OverrideStore::path_in_universe(universe_dir);
+        let mut single = OverrideStore::new();
+        single.insert(o);
+        single.save_to_path(&path).expect("seed universe overrides");
+        path
+    }
+
+    /// Build a layered store in-memory (no disk I/O) for unit-level
+    /// tests of lookup / iter / len semantics. The first layer is the
+    /// sovereign; subsequent layers are children in declaration order.
+    fn layered_store(layers: Vec<Vec<UserOverride>>) -> OverrideStore {
+        let built_layers: Vec<HashMap<String, UserOverride>> = layers
+            .into_iter()
+            .map(|v| {
+                let mut m = HashMap::new();
+                for o in v {
+                    let key = OverrideStore::normalize_key(&o.surface);
+                    m.insert(key, o);
+                }
+                m
+            })
+            .collect();
+        OverrideStore { layers: built_layers }
+    }
+
+    #[test]
+    fn layered_lookup_returns_parent_on_conflict() {
+        // Both parent and child have an override for the same surface —
+        // the parent's (layer 0) must win. This is the core sovereignty
+        // guarantee of M8b-v2.
+        let store = layered_store(vec![
+            vec![mk_override("خليفة", "from_parent")],
+            vec![mk_override("خليفة", "from_child")],
+        ]);
+        let norm = super::super::normalizer::normalize("خليفة").stripped;
+        let hit = store.lookup(&norm).expect("must hit");
+        assert_eq!(hit.lemma, "from_parent",
+            "parent's override must win on conflict, not child's");
+    }
+
+    #[test]
+    fn layered_lookup_falls_through_to_child_on_parent_miss() {
+        // Parent has nothing; child contributes a surface. Lookup must
+        // find the child entry rather than returning None, otherwise
+        // federated overrides are invisible to the tokenizer.
+        let store = layered_store(vec![
+            vec![], // empty parent
+            vec![mk_override("خليفة", "from_child")],
+        ]);
+        let norm = super::super::normalizer::normalize("خليفة").stripped;
+        let hit = store.lookup(&norm).expect("must hit via child");
+        assert_eq!(hit.lemma, "from_child");
+    }
+
+    #[test]
+    fn layered_lookup_walks_children_in_declaration_order() {
+        // Parent misses; two children each have a distinct surface.
+        // Both surfaces must be reachable, and a surface present in
+        // an earlier child must not be shadowed by a later child.
+        let store = layered_store(vec![
+            vec![], // empty parent
+            vec![mk_override("ألف", "from_child_1")],
+            vec![mk_override("باء", "from_child_2"), mk_override("ألف", "from_child_2_shadow")],
+        ]);
+        let alif = super::super::normalizer::normalize("ألف").stripped;
+        let ba = super::super::normalizer::normalize("باء").stripped;
+        assert_eq!(store.lookup(&alif).unwrap().lemma, "from_child_1",
+            "earlier child's entry must win over a later child's duplicate");
+        assert_eq!(store.lookup(&ba).unwrap().lemma, "from_child_2");
+    }
+
+    #[test]
+    fn layered_len_sums_across_layers() {
+        let store = layered_store(vec![
+            vec![mk_override("ألف", "alif"), mk_override("باء", "ba")],
+            vec![mk_override("جيم", "jim")],
+            vec![mk_override("دال", "dal"), mk_override("هاء", "ha"), mk_override("واو", "waw")],
+        ]);
+        assert_eq!(store.len(), 2 + 1 + 3);
+        assert_eq!(store.layer_count(), 3);
+        assert!(!store.is_empty());
+    }
+
+    #[test]
+    fn layered_is_empty_when_all_layers_empty() {
+        // A stack with layers that all happen to be empty is still
+        // "empty" for the short-circuit path. The tokenizer's
+        // `if store.is_empty()` guard should skip the lookup entirely.
+        let store = layered_store(vec![vec![], vec![], vec![]]);
+        assert!(store.is_empty(), "stack of empty layers must report empty");
+        assert_eq!(store.layer_count(), 3,
+            "but the layers themselves are preserved");
+    }
+
+    #[test]
+    fn layered_iter_yields_entries_from_every_layer() {
+        let store = layered_store(vec![
+            vec![mk_override("ألف", "alif")],
+            vec![mk_override("باء", "ba"), mk_override("جيم", "jim")],
+        ]);
+        let surfaces: Vec<String> = store.iter().map(|o| o.surface.clone()).collect();
+        assert_eq!(surfaces.len(), 3);
+        assert!(surfaces.contains(&"ألف".to_string()));
+        assert!(surfaces.contains(&"باء".to_string()));
+        assert!(surfaces.contains(&"جيم".to_string()));
+    }
+
+    #[test]
+    fn layered_sovereign_iter_yields_only_parent_layer() {
+        // Settings UI contract: the editable overrides list is the
+        // sovereign layer only — child-Universe entries must not appear
+        // in the parent's editing UI (the user can't modify them from
+        // this Universe).
+        let store = layered_store(vec![
+            vec![mk_override("ألف", "alif"), mk_override("باء", "ba")],
+            vec![mk_override("جيم", "jim_from_child")],
+        ]);
+        let sovereign: Vec<String> = store.sovereign_iter().map(|o| o.lemma.clone()).collect();
+        assert_eq!(sovereign.len(), 2);
+        assert!(sovereign.contains(&"alif".to_string()));
+        assert!(sovereign.contains(&"ba".to_string()));
+        assert!(!sovereign.contains(&"jim_from_child".to_string()),
+            "sovereign_iter must exclude child-Universe entries");
+    }
+
+    #[test]
+    fn insert_into_layered_only_touches_sovereign_layer() {
+        // Editing a parent override must not rewrite any child layer's
+        // entries — child files are owned by child Universes and must
+        // stay byte-for-byte untouched.
+        let mut store = layered_store(vec![
+            vec![mk_override("ألف", "alif_parent")],
+            vec![mk_override("باء", "ba_child")],
+        ]);
+        store.insert(mk_override("جيم", "new_parent_entry"));
+
+        // Parent now has 2 entries; child still has exactly 1.
+        assert_eq!(store.layers[0].len(), 2);
+        assert_eq!(store.layers[1].len(), 1);
+
+        // And the new entry must resolve to the parent, never shadowing
+        // into the child.
+        let jim = super::super::normalizer::normalize("جيم").stripped;
+        assert_eq!(store.lookup(&jim).unwrap().lemma, "new_parent_entry");
+    }
+
+    #[test]
+    fn remove_from_layered_cannot_touch_child_entries() {
+        // A surface that only exists in a child layer is NOT removable
+        // via remove() — CRUD only touches the sovereign layer. The
+        // Settings UI surfaces this by showing child entries as read-only.
+        let mut store = layered_store(vec![
+            vec![mk_override("ألف", "alif_parent")],
+            vec![mk_override("باء", "ba_child")],
+        ]);
+
+        // Remove something that only exists in child → returns None,
+        // child layer untouched.
+        let removed = store.remove("باء");
+        assert!(removed.is_none(),
+            "surface only in child layer must not be removable from parent");
+        assert_eq!(store.layers[1].len(), 1, "child layer unchanged");
+
+        // Remove something that exists in parent → works, child still
+        // untouched.
+        let removed = store.remove("ألف");
+        assert!(removed.is_some());
+        assert_eq!(store.layers[0].len(), 0);
+        assert_eq!(store.layers[1].len(), 1, "child layer still untouched");
+    }
+
+    #[test]
+    fn save_to_path_writes_only_sovereign_not_children() {
+        // When the parent's overrides file is saved, the on-disk JSON
+        // must contain only sovereign entries — child contributions
+        // must not leak into the parent's file.
+        let tmp_dir = std::env::temp_dir().join(format!(
+            "constellation_overrides_save_layered_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let path = OverrideStore::path_in_universe(&tmp_dir);
+
+        let store = layered_store(vec![
+            vec![mk_override("ألف", "alif_parent")],
+            vec![mk_override("باء", "ba_child"), mk_override("جيم", "jim_child")],
+        ]);
+        store.save_to_path(&path).expect("save");
+
+        let contents = std::fs::read_to_string(&path).expect("read back");
+        assert!(contents.contains("ألف"), "parent entry must be saved");
+        assert!(!contents.contains("باء"), "child entry must NOT leak into parent file");
+        assert!(!contents.contains("جيم"), "child entry must NOT leak into parent file");
+
+        let _ = std::fs::remove_dir_all(&tmp_dir);
+    }
+
+    #[test]
+    fn from_layered_paths_builds_correct_stack() {
+        let tmp_root = std::env::temp_dir().join(format!(
+            "constellation_overrides_from_layered_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let parent_dir = tmp_root.join("parent");
+        let child_a_dir = tmp_root.join("child_a");
+        let child_b_dir = tmp_root.join("child_b");
+
+        let parent_path = seed_universe_with_override(
+            &parent_dir,
+            UserOverride {
+                surface: "ألف".into(), lemma: "alif_parent".into(),
+                root: String::new(), pattern_label: "user:override".into(),
+                pos: PartOfSpeech::ProperNoun, note: String::new(),
+                created_at: String::new(),
+            },
+        );
+        let child_a_path = seed_universe_with_override(
+            &child_a_dir,
+            UserOverride {
+                surface: "باء".into(), lemma: "ba_child_a".into(),
+                root: String::new(), pattern_label: "user:override".into(),
+                pos: PartOfSpeech::ProperNoun, note: String::new(),
+                created_at: String::new(),
+            },
+        );
+        let child_b_path = seed_universe_with_override(
+            &child_b_dir,
+            UserOverride {
+                surface: "جيم".into(), lemma: "jim_child_b".into(),
+                root: String::new(), pattern_label: "user:override".into(),
+                pos: PartOfSpeech::ProperNoun, note: String::new(),
+                created_at: String::new(),
+            },
+        );
+
+        let store = OverrideStore::from_layered_paths(&[
+            parent_path, child_a_path, child_b_path,
+        ]).expect("layered load");
+
+        assert_eq!(store.layer_count(), 3);
+        assert_eq!(store.len(), 3);
+
+        let alif = super::super::normalizer::normalize("ألف").stripped;
+        let ba = super::super::normalizer::normalize("باء").stripped;
+        let jim = super::super::normalizer::normalize("جيم").stripped;
+
+        assert_eq!(store.lookup(&alif).unwrap().lemma, "alif_parent");
+        assert_eq!(store.lookup(&ba).unwrap().lemma, "ba_child_a");
+        assert_eq!(store.lookup(&jim).unwrap().lemma, "jim_child_b");
+
+        let _ = std::fs::remove_dir_all(&tmp_root);
+    }
+
+    #[test]
+    fn from_layered_paths_tolerates_missing_child_files() {
+        // A freshly-created cUniverse child that hasn't authored any
+        // overrides yet must not abort the layered load — its layer
+        // just becomes empty and the active Universe continues working.
+        let tmp_root = std::env::temp_dir().join(format!(
+            "constellation_overrides_missing_child_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let parent_dir = tmp_root.join("parent");
+        let parent_path = seed_universe_with_override(
+            &parent_dir,
+            UserOverride {
+                surface: "ألف".into(), lemma: "alif_parent".into(),
+                root: String::new(), pattern_label: "user:override".into(),
+                pos: PartOfSpeech::ProperNoun, note: String::new(),
+                created_at: String::new(),
+            },
+        );
+        // Point at a non-existent child path — simulates a child
+        // Universe that has no `arabic-overrides.json` authored yet.
+        let missing_child_path = tmp_root.join("ghost_child")
+            .join(".constellation").join("arabic-overrides.json");
+
+        let store = OverrideStore::from_layered_paths(&[
+            parent_path, missing_child_path,
+        ]).expect("missing child must not abort");
+
+        assert_eq!(store.layer_count(), 2);
+        assert_eq!(store.layers[1].len(), 0, "ghost child layer is empty");
+        assert_eq!(store.len(), 1);
+
+        let _ = std::fs::remove_dir_all(&tmp_root);
+    }
+
+    #[test]
+    fn from_layered_paths_propagates_malformed_child_error() {
+        // An existing-but-malformed child file is a bug the Settings
+        // UI should surface, not a silent degradation. The error must
+        // propagate so the caller can log/display it.
+        let tmp_root = std::env::temp_dir().join(format!(
+            "constellation_overrides_malformed_child_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let parent_dir = tmp_root.join("parent");
+        let parent_path = seed_universe_with_override(
+            &parent_dir,
+            UserOverride {
+                surface: "ألف".into(), lemma: "alif_parent".into(),
+                root: String::new(), pattern_label: "user:override".into(),
+                pos: PartOfSpeech::ProperNoun, note: String::new(),
+                created_at: String::new(),
+            },
+        );
+        let child_dir = tmp_root.join("broken_child");
+        let child_path = OverrideStore::path_in_universe(&child_dir);
+        std::fs::create_dir_all(child_path.parent().unwrap()).expect("mkdir child");
+        std::fs::write(&child_path, b"{ corrupted json").expect("write garbage");
+
+        let result = OverrideStore::from_layered_paths(&[parent_path, child_path]);
+        assert!(result.is_err(),
+            "malformed child JSON must surface as error, not silent drop");
+
+        let _ = std::fs::remove_dir_all(&tmp_root);
+    }
+
+    #[test]
+    fn activate_layered_for_universe_end_to_end() {
+        let _g = RegistryGuard::new();
+
+        let tmp_root = std::env::temp_dir().join(format!(
+            "constellation_overrides_activate_layered_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let parent_dir = tmp_root.join("parent_universe");
+        let child_dir = tmp_root.join("child_universe");
+
+        seed_universe_with_override(&parent_dir, UserOverride {
+            surface: "خليفة".into(), lemma: "from_parent".into(),
+            root: String::new(), pattern_label: "user:override".into(),
+            pos: PartOfSpeech::ProperNoun, note: String::new(),
+            created_at: String::new(),
+        });
+        seed_universe_with_override(&child_dir, UserOverride {
+            surface: "إمام".into(), lemma: "from_child".into(),
+            root: String::new(), pattern_label: "user:override".into(),
+            pos: PartOfSpeech::ProperNoun, note: String::new(),
+            created_at: String::new(),
+        });
+
+        let count = activate_layered_for_universe(&parent_dir, &[child_dir.clone()])
+            .expect("layered activation");
+        assert_eq!(count, 2, "total count includes both parent and child entries");
+
+        let store = active();
+        assert_eq!(store.layer_count(), 2);
+
+        let khalifa = super::super::normalizer::normalize("خليفة").stripped;
+        let imam = super::super::normalizer::normalize("إمام").stripped;
+        assert_eq!(store.lookup(&khalifa).unwrap().lemma, "from_parent",
+            "parent surface resolves to parent layer");
+        assert_eq!(store.lookup(&imam).unwrap().lemma, "from_child",
+            "child surface resolves via fall-through to child layer");
+
+        let _ = std::fs::remove_dir_all(&tmp_root);
+    }
+
+    #[test]
+    fn activate_for_universe_is_equivalent_to_zero_children() {
+        // Backward-compatibility contract: the pre-M8b-v2 API
+        // `activate_for_universe(p)` must now be observationally
+        // identical to `activate_layered_for_universe(p, &[])`. A
+        // non-federated Universe with no children gets exactly one
+        // layer, same as before the refactor.
+        let _g = RegistryGuard::new();
+
+        let tmp_dir = std::env::temp_dir().join(format!(
+            "constellation_overrides_backcompat_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        seed_universe_with_override(&tmp_dir, UserOverride {
+            surface: "وائل".into(), lemma: "وائل".into(),
+            root: String::new(), pattern_label: "user:ProperNoun".into(),
+            pos: PartOfSpeech::ProperNoun, note: String::new(),
+            created_at: String::new(),
+        });
+
+        let count = activate_for_universe(&tmp_dir).expect("activate");
+        assert_eq!(count, 1);
+
+        let store = active();
+        assert_eq!(store.layer_count(), 1,
+            "single-arg activate_for_universe must produce exactly one layer");
+
+        let _ = std::fs::remove_dir_all(&tmp_dir);
+    }
+
+    #[test]
+    fn set_sovereign_layer_preserves_child_layers() {
+        // The critical CRUD invariant: editing a parent override must
+        // not drop any cUniverse child contributions. This is the whole
+        // reason `set_sovereign_layer` exists alongside `set_active`.
+        let _g = RegistryGuard::new();
+
+        // Install a 2-layer store: parent + one child.
+        let initial = layered_store(vec![
+            vec![mk_override("ألف", "alif_v1")],
+            vec![mk_override("باء", "ba_from_child")],
+        ]);
+        set_active(initial);
+        assert_eq!(active().layer_count(), 2);
+
+        // Simulate a CRUD operation: load a single-layer view from disk,
+        // mutate, call set_sovereign_layer.
+        let mut new_sovereign = OverrideStore::new();
+        new_sovereign.insert(mk_override("ألف", "alif_v2_edited"));
+        new_sovereign.insert(mk_override("جيم", "jim_new_entry"));
+        set_sovereign_layer(new_sovereign);
+
+        // After: parent layer has the edited content; child layer
+        // survives untouched.
+        let after = active();
+        assert_eq!(after.layer_count(), 2,
+            "child layer must survive sovereign replacement");
+
+        let alif = super::super::normalizer::normalize("ألف").stripped;
+        let ba = super::super::normalizer::normalize("باء").stripped;
+        let jim = super::super::normalizer::normalize("جيم").stripped;
+
+        assert_eq!(after.lookup(&alif).unwrap().lemma, "alif_v2_edited",
+            "parent's edited override must be visible");
+        assert_eq!(after.lookup(&jim).unwrap().lemma, "jim_new_entry",
+            "parent's new override must be visible");
+        assert_eq!(after.lookup(&ba).unwrap().lemma, "ba_from_child",
+            "child override must still be reachable after CRUD");
+    }
+
+    #[test]
+    fn set_sovereign_layer_on_empty_active_creates_single_layer() {
+        // Edge case: no Universe activated yet (ACTIVE_STORE is empty
+        // by default). set_sovereign_layer on an empty store must
+        // produce a 1-layer store with just the sovereign content,
+        // mirroring what set_active would do.
+        let _g = RegistryGuard::new();
+        clear_active();
+        assert!(active().is_empty());
+        assert_eq!(active().layer_count(), 0);
+
+        let mut sov = OverrideStore::new();
+        sov.insert(mk_override("وائل", "وائل"));
+        set_sovereign_layer(sov);
+
+        let after = active();
+        assert_eq!(after.layer_count(), 1);
+        assert_eq!(after.len(), 1);
+        let norm = super::super::normalizer::normalize("وائل").stripped;
+        assert!(after.lookup(&norm).is_some());
     }
 }

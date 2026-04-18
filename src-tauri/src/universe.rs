@@ -409,6 +409,43 @@ fn resolve_libraries_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>)
     all_libraries
 }
 
+/// Resolve the cUniverse children declared by `parent` into canonicalized
+/// Universe-root `PathBuf`s.
+///
+/// Reads `<parent>/.constellation/universe.json` (falling back to
+/// `<parent>/universe.json` for legacy layouts), decodes `UniverseMeta`,
+/// and canonicalizes each `children` entry. Non-existent or non-directory
+/// entries are silently skipped — a child Universe that was moved or
+/// deleted shouldn't block the active Universe from booting.
+///
+/// Used by `set_active_universe` to feed
+/// `arabic::overrides::activate_layered_for_universe` (M8b-v2), and a
+/// natural hook point for any future layered-per-Universe surface (tag
+/// browser federation, sky view merging, etc.).
+fn resolve_child_universe_roots(parent: &Path) -> Vec<PathBuf> {
+    let cdir = constellation_dir(parent);
+    let meta_path = cdir.join("universe.json");
+    let meta_path = if meta_path.exists() {
+        meta_path
+    } else {
+        parent.join("universe.json")
+    };
+    if !meta_path.exists() {
+        return Vec::new();
+    }
+    let Ok(data) = fs::read_to_string(&meta_path) else {
+        return Vec::new();
+    };
+    let Ok(meta) = serde_json::from_str::<UniverseMeta>(&data) else {
+        return Vec::new();
+    };
+    meta.children
+        .iter()
+        .filter_map(|s| fs::canonicalize(s).ok())
+        .filter(|p| p.is_dir())
+        .collect()
+}
+
 // ─── Tauri Commands ───
 
 /// List all known universes from the registry, with the active one first.
@@ -646,10 +683,25 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
     // prevent the user from switching Universes. The engine gracefully
     // falls back to no-overrides on error, and the Settings UI will
     // surface the parse error when the user opens the overrides panel.
-    match crate::arabic::overrides::activate_for_universe(&final_path) {
+    //
+    // M8b-v2: also enumerate `UniverseMeta::children` so any cUniverse
+    // child overrides are stacked under the parent's sovereign layer.
+    // Lookup walks parent → children on normalize-miss; parent wins on
+    // conflict. A non-federated Universe (no children) collapses to
+    // the pre-v2 single-layer behaviour byte-for-byte.
+    let child_universe_roots = resolve_child_universe_roots(&final_path);
+    match crate::arabic::overrides::activate_layered_for_universe(
+        &final_path,
+        &child_universe_roots,
+    ) {
         Ok(count) if count > 0 => {
-            eprintln!("[arabic] Loaded {} Arabic override(s) for Universe at {}",
-                      count, final_path.display());
+            eprintln!(
+                "[arabic] Loaded {} Arabic override(s) for Universe at {} ({} child Universe{} stacked)",
+                count,
+                final_path.display(),
+                child_universe_roots.len(),
+                if child_universe_roots.len() == 1 { "" } else { "s" },
+            );
         }
         Ok(_) => {} // no overrides authored yet — common case, silent
         Err(e) => {

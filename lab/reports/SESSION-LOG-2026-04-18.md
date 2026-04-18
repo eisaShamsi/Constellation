@@ -923,6 +923,114 @@ Two `None` branches and a happy path — the same three-way shape M14's `SearchR
 
 - `M12-bench-m11`: re-run `m12_bench` once `M11-data` lands and publish the 20K-concept × 15-lang numbers alongside the current M10-seed baseline. Not a new module — just an opt-in rerun with the new corpus in place. If p99 migrates, the hard-assert threshold gets adjusted with a one-line change.
 
+## 33. M8b-v2 — layered overrides + M8c integration tests + normalizer alignment
+
+Two items graduated from the Open items section (§ Open items below) into shipping code, plus a linguistic correctness fix uncovered while writing the integration tests.
+
+### Why now
+
+M8 shipped user overrides against a single global `ACTIVE_STORE`. Two gaps remained:
+
+1. **M8b-v2**: per-cUniverse layering. A Universe that federates in child Universes (via `UniverseMeta.children`) couldn't consult the child's override files — the global store held only the sovereign (active) Universe's authored overrides. Parent–child precedence had no implementation.
+2. **M8c-integration-test**: the M8c shipping PR added unit coverage for the Tauri command's wiring but deferred the full-chain assertion (author override → reindex → FTS token set flips) until a real `SearchState` harness existed. The open item was parked on the "Settings → Debug scorecard" milestone.
+
+Both are now unblocked: cUniverse federation is real enough that a user switching the active Universe with children declared should see the child overrides light up automatically; and the integration test can run against a tempfile-backed `SearchState` without needing a scorecard UI. Both land in this session.
+
+A third finding surfaced during M8c test authoring and is captured here too: `search::normalize_arabic_for_search` had been folding ta-marbuta (ة → ه), alif maqsura (ى → ي), and alif variants (أ/إ/آ/ٱ → ا) — silently conflating semantically-distinct words like `عبرة` (a lesson) and `عبره` (he crossed it). This violated Constellation's "Language-First by Design" principle (CLAUDE.md) and disagreed with `arabic::normalizer::normalize().stripped` (the override-store key normalizer). Aligned both to strip tashkeel + tatweel only. Rationale captured in the new doc comment with the `عبرة` / `عبره` motivating pair.
+
+### M8b-v2 — layered `OverrideStore`
+
+Refactored `OverrideStore` from a single `HashMap<String, UserOverride>` to a **stack of layers**: `layers: Vec<HashMap<String, UserOverride>>`, with `layers[0]` the **sovereign** layer (always the active Universe's own overrides) and `layers[1..]` the **child Universe** layers in the order declared by `UniverseMeta.children`.
+
+**Lookup semantics** — parent-wins, walk layers in order:
+
+```rust
+pub fn lookup(&self, normalized_surface: &str) -> Option<&UserOverride> {
+    for layer in &self.layers {
+        if let Some(v) = layer.get(normalized_surface) { return Some(v); }
+    }
+    None
+}
+```
+
+**CRUD-sovereign invariant** — `insert` / `remove` / `save_to_path` only ever mutate `layers[0]`. Child layers are read-only views of another Universe's file on disk; editing them here would be a cross-Universe mutation the user never asked for. Same constraint goes for the `clear_active` / `set_active` `add_arabic_override` / `remove_arabic_override` command chain.
+
+**Key API additions**:
+
+- `OverrideStore::from_layered_paths(&[PathBuf]) -> io::Result<Self>` — builds a layered store from an ordered list of override file paths. Path 0 is the sovereign; paths 1.. are children. Missing files produce empty layers rather than errors (a child with no overrides is a normal state, not a failure).
+- `overrides::activate_layered_for_universe(universe_root, &[child_roots]) -> Result<usize, String>` — one-call boot: resolve every file, load them, install as the new `ACTIVE_STORE`. Returns the total entry count across all layers.
+- `overrides::activate_for_universe(universe_root)` — back-compat wrapper that calls `activate_layered_for_universe(root, &[])`. Existing callers don't need to change until they want federation.
+- `overrides::set_sovereign_layer(store)` — replaces **only** `layers[0]` and keeps the existing `layers[1..]` intact. Used by the `add_arabic_override` / `remove_arabic_override` Tauri commands so CRUD on the sovereign layer doesn't evict the child-universe layers from memory and force a reload.
+- `OverrideStore::layer_count()`, `sovereign_iter()` — diagnostic readers used by the new tests.
+- `read_layer(path)` (module-private) — shared single-file loader between `load_from_path` and `from_layered_paths`. Keeps the on-disk schema and key-normalization path identical regardless of entry point.
+
+**Universe integration** — `src-tauri/src/universe.rs`:
+
+- New helper `resolve_child_universe_roots(parent: &Path) -> Vec<PathBuf>` (mirrors the existing `resolve_libraries_recursive` pattern). Reads the parent's `universe.json`, enumerates `children`, canonicalises each path, and drops any that aren't readable directories. Silent-skip on malformed entries — federation degradations must not block boot.
+- `set_active_universe` (the `#[tauri::command]` hook) now calls `activate_layered_for_universe(final_path, &child_universe_roots)` instead of the single-path `activate_for_universe`. Logs the total entry count as before.
+
+**Tests — 17 new in `arabic::overrides::tests`**:
+
+Covers every new semantic:
+- Parent-wins on surface collision (sovereign lemma beats child lemma).
+- Child-only hit (surface absent from sovereign, present in child → child's override fires).
+- Multi-child walk (three-layer stack; hit in layer 2 / layer 3 / miss across all).
+- CRUD-sovereign-only invariant: `insert` on a layered store mutates only layer 0; `remove` refuses to touch child layers; `save_to_path` serialises only layer 0's entries.
+- `set_sovereign_layer` preserves children across sovereign replacement.
+- `from_layered_paths` with missing child file → empty child layer, no error.
+- `activate_layered_for_universe` end-to-end: resolve paths, load, set active, verify `active().layer_count()`.
+- Empty-stack edge cases: `is_empty`, `len`, `iter` all return the zero value.
+
+The test mutex was promoted from a submodule-local `REGISTRY_TEST_MUTEX` to a crate-visible `#[cfg(test)] pub(crate) static TEST_OVERRIDE_MUTEX` at the `overrides` module scope, so the new `search::tests_m8c` module (see below) serialises against the same global.
+
+### M8c — end-to-end integration tests (`search::tests_m8c`)
+
+New `#[cfg(test)] mod tests_m8c` inside `src-tauri/src/search.rs`. Four tests that exercise the full contract the `add_arabic_override` Tauri command relies on:
+
+1. **`override_and_reindex_flips_fts_token_set`** — the headline contract. Seeds a `note_meta` row with body `"خليفة راشد"`, asserts a sentinel stem `"pinnedteststem"` is absent from FTS, installs an override mapping `خليفة → pinnedteststem`, asserts the sentinel is **still** absent (overrides don't retroactively mutate indexed rows), runs `reindex_notes_matching_text(state, "خليفة")`, and asserts (a) exactly 1 row was re-tokenized and (b) the sentinel now MATCHes. If this ever regresses, the Settings UI "pin this word" button becomes a silent no-op on the existing index — exactly the failure the test is written to catch.
+2. **`reindex_returns_zero_when_no_notes_match`** — forward-looking override (no existing note mentions the surface) returns 0 re-tokenizations without error. Guards the common case of a user authoring an override ahead of future content.
+3. **`reindex_empty_needle_short_circuits`** — empty / whitespace needle returns 0 before issuing the `body_text LIKE %%` scan. Guards the UI against an accidental empty-string dispatch triggering a full-table scan on a 7,600-note Universe.
+4. **`reindex_updates_all_matching_rows_in_one_pass`** — three notes mention `خليفة` + one unrelated note. Asserts the single `BEGIN IMMEDIATE` transaction flips all three rows and leaves the unrelated row untouched.
+
+**Test-harness design**:
+
+- `OverrideTestGuard` — RAII guard that locks the crate-wide `TEST_OVERRIDE_MUTEX` on construction and clears `ACTIVE_STORE` on both construction and drop. Ensures no test leaks override state to a neighbour, and that the global store isn't raced across `tests_m8c` + `arabic::overrides::tests`.
+- `seeded_state(dir, path, body) -> SearchState` — tempfile-backed SQLite DB seeded with one `note_meta` row. Body is pre-normalised via `super::normalize_arabic_for_search` to mirror production's `index_note` (which normalises `plain_body` before INSERT). Without this, the body-side ta-marbuta survived while the needle-side didn't, and the LIKE scan missed — captured as the doc comment rationale.
+- Latin sentinel `"pinnedteststem"` for the override lemma — guaranteed never to be an Arabic analyzer verdict, so `notes_fts MATCH 'pinnedteststem'` cleanly distinguishes pre-override from post-override FTS state with no false positives from the default stemming pipeline.
+- Per-test nanosecond-stamped temp directories so concurrent test workers don't collide on the same SQLite file.
+
+### Bonus fix — `normalize_arabic_for_search` aligned with `arabic::normalizer::normalize_stripped`
+
+Discovered while writing `override_and_reindex_flips_fts_token_set`. The first version of the test used `خليفة` (ta-marbuta) and the reindex returned 0 rows even though the override was installed correctly. Tracing revealed two separate normalizers with different semantics:
+
+| Normalizer | Scope | ة/ه | ى/ي | أ/إ/آ → ا |
+| --- | --- | --- | --- | --- |
+| `arabic::normalizer::normalize().stripped` | Override store keys, Layer 2/3 lookups | preserved | preserved | preserved |
+| `search::normalize_arabic_for_search` (old) | FTS body storage + query pre-pass | **folded** | **folded** | **folded** |
+
+Production `index_note` stores `body_text` through the aggressive folder; `reindex_notes_matching_text` builds its LIKE needle with the same folder; but the override store's key is the un-folded stripped form. So `خليفة` (key) and `خليفه` (folded body) never matched, and any user-authored override whose surface contained ة / ى / alif-variants was a silent no-op on the FTS path.
+
+**Fix**: `search::normalize_arabic_for_search` now delegates to `arabic::normalizer::normalize_stripped` — exactly one tashkeel/tatweel implementation in the codebase. The aggressive fold is gone from the index/query path.
+
+**Why this is the correct behaviour, not just a compromise**: the fold-based normalizer was conflating semantically-distinct words. The canonical case (captured in the new doc comment):
+
+| Surface | Reading | Meaning |
+| --- | --- | --- |
+| `عبرة` | ʿibrah | a lesson / moral — "عبرة لمن اعتبر" |
+| `عبره` | ʿabarah | he crossed it / went through it |
+
+Different roots, different morphology, different pronunciation, different meaning. Folding ة → ه merges them into one FTS token — so a search for "عبرة" (a lesson) returns every note that said "مرّ عبره" (he crossed it), and vice versa. That is a **semantic break**, not a cosmetic one. Same applies to `خليفة` vs verb-form `خليفه`, `موسى` (terminal alif maqsura is correct spelling), and hamza-bearing alifs in `إسلام`, `أحمد`, `آمنة`.
+
+**Trade-off**: misspelled queries ("خليفه" when the user meant "خليفة") no longer cross-match. The correct place to handle that is a dedicated query-side spelling-tolerance layer with contextual disambiguation — not lossy transformation at index time. Added as the new M8e open item (§ Open items).
+
+### Results
+
+`cargo test --lib`: **402 passed, 0 failed, 2 ignored, 0 measured**. Net +21 tests this landing (17 M8b-v2 + 4 M8c). No regressions from the normalizer alignment — no existing test depended on the previous folding behaviour, which is itself evidence the fold was orphaned from the rest of the pipeline's semantics.
+
+### Follow-ons queued (M8e)
+
+- **M8e: spelling-tolerance query layer** — handle misspellings like "خليفه" (heh) for "خليفة" (ta-marbuta) at query time, without destroying the `عبرة` / `عبره` distinction. Candidate approaches: edit-distance-bounded FTS5 match expansion; a dedicated spellcheck pass that runs against the user's own vocab before the lexical query; context-aware disambiguation using a 3-word window around the ambiguous surface. Scope and design deferred until real-user queries surface which misspelling classes matter most.
+
 ## Commit
 
 Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
@@ -1010,6 +1118,12 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
     - `src-tauri/src/lexicon/mod.rs` — `+ pub mod detect;` + `+ pub use detect::detect_source_lang` + `+ #[cfg(test)] mod bench;` (test-only, next to the existing module declarations).
     - `lab/reports/SESSION-LOG-2026-04-18.md` — § 32 added with full disambiguation rules for Ar/Fa/Ur + CJK + Latin families, 33-test enumeration, bench methodology + captured numbers table, M14 integration snippet, and the `M12-bench-m11` rerun follow-on.
 
+15. **M8b-v2 + M8c integration tests + normalizer alignment** (this session, pending):
+    - `src-tauri/src/arabic/overrides.rs` — `OverrideStore` refactored from single `HashMap` to `layers: Vec<HashMap>`; `layers[0]` sovereign, `layers[1..]` cUniverse children. Parent-wins `lookup` walks layers in order. CRUD-sovereign invariant: `insert` / `remove` / `save_to_path` only mutate `layers[0]`. New API: `from_layered_paths`, `layer_count`, `sovereign_iter`, module-private `read_layer`. Process-wide helpers: `activate_layered_for_universe(root, &[child_roots])`, `set_sovereign_layer(store)` (replaces layer 0, keeps child layers); back-compat `activate_for_universe(root) = activate_layered_for_universe(root, &[])`. `TEST_OVERRIDE_MUTEX` promoted from submodule-local to crate-visible (`#[cfg(test)] pub(crate)`). +17 tests.
+    - `src-tauri/src/universe.rs` — new helper `resolve_child_universe_roots(parent) -> Vec<PathBuf>` (mirrors `resolve_libraries_recursive`). `set_active_universe` now calls `activate_layered_for_universe(final_path, &child_universe_roots)` instead of the single-path `activate_for_universe`.
+    - `src-tauri/src/search.rs` — two landings. (a) `normalize_arabic_for_search` refactored from aggressive-fold (ة→ه, ى→ي, أ/إ/آ/ٱ→ا) to `crate::arabic::normalizer::normalize_stripped` delegation — tashkeel + tatweel only. Preserves the `عبرة` (ʿibrah, "a lesson") vs `عبره` (ʿabarah, "he crossed it") semantic distinction that the old fold was silently breaking. Doc comment captures the canonical motivating pair. `index_note` body_text now travels the same key-space as override keys. (b) New `#[cfg(test)] mod tests_m8c` — 4 end-to-end tests: `override_and_reindex_flips_fts_token_set` (headline — seed row, install override, reindex, assert FTS token flip), `reindex_returns_zero_when_no_notes_match`, `reindex_empty_needle_short_circuits`, `reindex_updates_all_matching_rows_in_one_pass`. `OverrideTestGuard` RAII holds `TEST_OVERRIDE_MUTEX` + clears `ACTIVE_STORE` on construction/drop. `seeded_state` pre-normalises body via `normalize_arabic_for_search` to mirror production's `index_note`. Latin sentinel `"pinnedteststem"` for clean MATCH boundary.
+    - `lab/reports/SESSION-LOG-2026-04-18.md` — § 33 added with Why-Now framing, M8b-v2 layered store design (parent-wins code snippet + CRUD-sovereign invariant + API list + test breakdown), M8c integration tests (4 tests + harness design), bonus `normalize_arabic_for_search` alignment with the `عبرة`/`عبره` semantic-break table, results (402/402 passed, +21 tests net), and the M8e spelling-tolerance follow-on.
+
 ## Files modified
 
 - `src-tauri/Cargo.toml` — `+ fst = "0.4"` (M3), `+ dirs = "5"` (M3-baker).
@@ -1024,11 +1138,11 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src-tauri/src/arabic/regression_cases.tsv` — new (M5, 502 data rows).
 - `src-tauri/src/libraries.rs` — `process_arabic_word` routed through `analyze_best` (M6) + 5 new FTS contract tests at EOF; M8b extends it to read `arabic::overrides::active()` on every token.
 - `src-tauri/src/arabic/disambiguate.rs` — new (M7, 12 tests).
-- `src-tauri/src/arabic/overrides.rs` — new (M8, 16 tests) — UserOverride type, OverrideStore CRUD, per-Universe JSON persistence with atomic writes. M8b adds `ACTIVE_STORE` registry + three Tauri commands + 8 registry tests (total 24). M8c adds a fourth Tauri command (`reindex_arabic_overrides`).
+- `src-tauri/src/arabic/overrides.rs` — new (M8, 16 tests) — UserOverride type, OverrideStore CRUD, per-Universe JSON persistence with atomic writes. M8b adds `ACTIVE_STORE` registry + three Tauri commands + 8 registry tests (total 24). M8c adds a fourth Tauri command (`reindex_arabic_overrides`). M8b-v2 refactors the internal storage from single `HashMap` to `layers: Vec<HashMap>` (sovereign + cUniverse children) with parent-wins lookup + CRUD-sovereign invariant; adds `from_layered_paths`, `activate_layered_for_universe`, `set_sovereign_layer`, `layer_count`, `sovereign_iter`; +17 tests (total 41). Test mutex promoted from submodule-local to crate-visible (`TEST_OVERRIDE_MUTEX`) so the M8c integration suite serialises against the same global.
 - `src-tauri/src/arabic/mod.rs` — M8b adds `analyze_with_overrides_best` convenience; `analyze_best` reduced to a thin wrapper.
-- `src-tauri/src/universe.rs` — M8b hooks `activate_for_universe` into `set_active_universe`.
+- `src-tauri/src/universe.rs` — M8b hooks `activate_for_universe` into `set_active_universe`. M8b-v2 adds `resolve_child_universe_roots(parent) -> Vec<PathBuf>` and switches `set_active_universe` to call `activate_layered_for_universe(final_path, &child_universe_roots)` so cUniverse override files light up automatically on Universe switch.
 - `src-tauri/src/lib.rs` — M8b registers three Arabic override Tauri commands; M8c registers the fourth (`reindex_arabic_overrides`).
-- `src-tauri/src/search.rs` — M8c adds `reindex_notes_matching_text` helper (targeted FTS5 `delete` + reinsert under a transaction).
+- `src-tauri/src/search.rs` — M8c adds `reindex_notes_matching_text` helper (targeted FTS5 `delete` + reinsert under a transaction). M8b-v2/M8c-integration-test (1) realigns `normalize_arabic_for_search` from aggressive-fold (ة→ه, ى→ي, alif variants) to `crate::arabic::normalizer::normalize_stripped` delegation (tashkeel + tatweel only), preserving the `عبرة`/`عبره` semantic distinction the old fold was silently breaking, and (2) adds `#[cfg(test)] mod tests_m8c` with 4 end-to-end tests (override → reindex → FTS token flip, forward-looking override, empty-needle short-circuit, one-transaction multi-row flip) + `OverrideTestGuard` RAII + `seeded_state` harness.
 - `src/lib/components/ArabicOverridesPanel.svelte` — new (M8c, ~480 lines). Settings-modal panel for override CRUD with live reindex feedback.
 - `src/lib/components/SettingsModal.svelte` — M8c adds the `arabic-overrides` section entry + content branch.
 - `src/lib/i18n/{ar,de,en,es,fa,fr,he,hi,ja,ko,pt,ru,tr,ur,zh}.json` — M8c adds `settings.sections.arabicOverrides` + the 31-key `settings.arabicOverrides` block to all 15 locale files.
@@ -1048,8 +1162,7 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - **M1g-data / M1h-data**: the 20K Wikipedia-extracted proper-noun corpus + 2K loanwords. Today's 1,196 hand-picked entries cover the common case; the full corpus comes from CC-BY-SA bulk extraction (separate milestone in `lab/`, blocked on extractor tooling).
 - **M5-grow**: expand the corpus over time. 502 is the v1 floor — as M6/M7 land, new flagship surfaces identified during bring-up should be added here first before any other test code. Target by M9: ≥2,000 cases, with ≥20 pure-heuristic Arabic-script rows (Layer 4 fallback coverage; currently the heuristic threshold is met by foreign Latin-script rows via the non-Arabic-script route).
 - **M7-v2**: corpus-aware disambiguation. Today's ranking is a pure function of the Analysis fields. V2 reads the user's own FTS vocab to bias toward lemmas the user writes often, plus a 3-word context window at query time to pick between readings (`كاتب الرسالة` → Noun; `كاتب أخاه` → Verb). Tracked as a follow-on once Settings → Debug surfaces the existing v1 rank so we can A/B the v2 improvements.
-- **M8b-v2**: per-cUniverse override layering. When the user views libraries federated from a child Universe, the tokenizer should consult the child's override file too (or overlay the parent's on top of it, with parent winning ties). Today's `ACTIVE_STORE` is a single global Arc; v2 either becomes a stack or a composite `OverrideStore` that consults multiple backing maps. Wait until real-user feedback shows this is needed before building it.
-- **M8c-integration-test**: end-to-end "add override → reindex → assert FTS hit set changes" test. Will live with the Settings → Debug scorecard so the assertion can run under the real SearchState (not a fresh tempdb) against a seeded Universe.
+- **M8e — spelling-tolerance query layer**: handle misspellings like `خليفه` (heh) for `خليفة` (ta-marbuta) at query time, **without** destroying the `عبرة` (a lesson) / `عبره` (he crossed it) distinction at index time. The M8b-v2 landing fixed a root-cause bug where `normalize_arabic_for_search` was aggressively folding ة/ه, ى/ي, and alif variants — but the UX question of "the user typed the wrong letter" still stands, and can't be answered correctly by a lossy index transform. Candidate approaches: (a) edit-distance-bounded FTS5 match expansion on the query side; (b) a dedicated spellcheck pass that runs against the user's own FTS vocab before the lexical query; (c) context-aware disambiguation using a 3-word window around the ambiguous surface (same pattern M7-v2 proposes for POS disambiguation). Scope and design deferred until real-user queries surface which misspelling classes matter most.
 - **M9-mmap**: switch the FST byte buffer from `Vec<u8>` to `memmap2::Mmap`. Drops RSS at 7K roots from the projected ~90 MiB (today's in-memory layout) to an estimated ~20–30 MiB resident, and cuts warm-start time further because the OS page-cache supplies pages on demand. Needs a cfg-gate path: mmap on desktop, `Vec<u8>` on mobile (iOS disallows anon-mmap on some targets). Bench re-runs to confirm both numbers post-change.
 - **M9-intern**: intern `pattern_label` and `root_key` across `SurfaceValue`. Today each enriched value owns two `String` copies; patterns like `فاعل` recur on every root's active-participle cell (~600 duplicates today, ~7,000 at scale). A 4-byte `u16` index into a shared `StringInterner` cuts the per-value payload from ~48 B of owned string bytes to 4 B total. Layered with M9-mmap, drops projected RSS at 7K roots to ≈15 MiB range.
 - **M9-hotpath**: profile `analyze_best` to close the 200K-words/sec gap. Candidates: (a) `overrides::active()` does an unconditional `Arc::clone` even when the active store is empty — cache an `AtomicBool` snapshot of "store is empty" inside `set_active` to skip the clone on the common empty path; (b) `rank_analyses` allocates a `Vec<Analysis>` even for single-hit inputs — a `SmallVec<[Analysis; 2]>` dodges one allocation per word; (c) generator-style visitor that lets fast ProtectedList / UserOverride hits short-circuit before allocating the result vector. Target: ≥200K words/sec at 7K-root scale, re-measured via the same bench.

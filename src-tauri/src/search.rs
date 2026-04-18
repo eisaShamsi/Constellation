@@ -533,23 +533,55 @@ fn extract_headings(content: &str) -> Vec<String> {
     headings
 }
 
-/// Arabic text normalization for consistent FTS matching.
-/// Removes diacritics, normalizes Alef variants, Teh marbuta, Alef maqsura.
+/// Arabic text normalization for FTS storage and query matching.
+///
+/// **Only strips tashkeel (diacritics) and tatweel** — the two
+/// unconditionally-safe transformations that every Arabic reader
+/// and every dictionary agree do not change the word's identity.
+///
+/// **Does NOT fold ة/ه, ى/ي, or alif variants.** Those distinctions
+/// carry orthographic *and semantic* weight in Modern Standard Arabic —
+/// they distinguish genuinely different words, not just spelling
+/// variants of one word.
+///
+/// The canonical motivating pair:
+///
+/// | Surface | Reading | Meaning                             |
+/// |---------|---------|-------------------------------------|
+/// | `عبرة`  | ʿibrah  | a lesson / moral ("عبرة لمن اعتبر") |
+/// | `عبره`  | ʿabarah | he crossed it / went through it     |
+///
+/// Different roots, different morphology, different pronunciation,
+/// different meaning. Folding ة → ه merges these into a single FTS
+/// token — so a search for "عبرة" (a lesson) returns every note that
+/// said "مرّ عبره" (he crossed it), and vice versa. That is a
+/// **semantic break**, not a cosmetic one. Similarly:
+/// - `خليفة` (a caliph) vs `خليفه` (a misspelling — or, parsed as a
+///   verb form, "he succeeded him")
+/// - `موسى` (Moses — terminal alif maqsura is the correct spelling)
+/// - `إسلام`, `آمنة`, `أحمد` (hamza-bearing alifs are part of the word)
+///
+/// An earlier revision of this helper folded all of the above —
+/// violating Constellation's "Language-First by Design" principle
+/// (CLAUDE.md) and silently disagreeing with
+/// `arabic::normalizer::normalize().stripped` (the canonical stripping
+/// used by the override store's key function), so user-authored
+/// overrides whose surface contained any of those characters never
+/// fired on the FTS path.
+///
+/// **Trade-off**: misspelled queries ("خليفه" when they meant
+/// "خليفة") no longer cross-match. The correct place to handle that
+/// is a dedicated query-side spelling-tolerance layer with
+/// contextual disambiguation — not lossy transformation at index
+/// time that would equally destroy the `عبرة` / `عبره` distinction.
+/// Tracked as the open SESSION-LOG follow-up "M8e: spelling-tolerance
+/// query layer".
+///
+/// This function delegates to `arabic::normalizer::normalize_stripped`
+/// so there is exactly one tashkeel/tatweel implementation in the
+/// codebase — any future range fix benefits every caller at once.
 fn normalize_arabic_for_search(text: &str) -> String {
-    text.chars().filter_map(|c| {
-        // Remove diacritics (tashkeel)
-        if ('\u{064B}'..='\u{065F}').contains(&c) || c == '\u{0670}'
-            || ('\u{06D6}'..='\u{06ED}').contains(&c) { return None; }
-        // Remove tatweel
-        if c == '\u{0640}' { return None; }
-        // Normalize Alef variants → ا
-        if c == 'أ' || c == 'إ' || c == 'آ' || c == '\u{0671}' { return Some('ا'); }
-        // Alef maqsura → ي
-        if c == 'ى' { return Some('ي'); }
-        // Teh marbuta → ه
-        if c == 'ة' { return Some('ه'); }
-        Some(c)
-    }).collect()
+    crate::arabic::normalizer::normalize_stripped(text)
 }
 
 /// Strip markdown syntax for plain-text indexing.
@@ -621,10 +653,19 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
         .cloned()
         .unwrap_or_else(|| file_stem.clone());
 
-    // Arabic normalization for FTS body text (Phase 4)
-    // Normalize diacritics, Alef variants, Teh marbuta for consistent content search.
-    // NOTE: name is stored ORIGINAL (not normalized) so it matches graph node IDs.
-    // Arabic normalization for name matching happens at query time instead.
+    // Arabic normalization for FTS body text.
+    //
+    // **Tashkeel + tatweel only** — we no longer fold ة/ه, ى/ي, or
+    // alif variants. Those distinctions carry meaning in MSA; folding
+    // them silently conflates `خليفة` and the `خليفه` misspelling in
+    // the index, and disagreed with the override store's key
+    // normalizer (which never folds). Misspelling tolerance belongs
+    // in a separate spell-check query layer, not in lossy
+    // normalization at index time.
+    //
+    // NOTE: `name` is stored ORIGINAL (not even tashkeel-stripped) so
+    // it still matches graph node IDs. Name-side Arabic normalization
+    // happens at query time instead.
     let plain_body = normalize_arabic_for_search(&plain_body);
 
     let props_json = serde_json::to_string(&properties).unwrap_or_default();
@@ -2396,4 +2437,302 @@ pub fn constellation_search_link_counts(
     }
 
     Ok(counts)
+}
+
+// ── M8c — end-to-end override → reindex → FTS token shift ─────────────
+//
+// These tests exercise the full contract that `add_arabic_override`
+// relies on: an override authored in the active Universe, followed by
+// a `reindex_arabic_overrides` call, must cause `notes_fts` to contain
+// the overridden stem for every note that mentions the original surface.
+//
+// They are unit-level in the sense that they do NOT require the Tauri
+// AppHandle or a running app — they drive `reindex_notes_matching_text`
+// directly against a tempfile SQLite DB initialized via `init_db`.
+// This matches the M8c scope split (ship the integration test without
+// the Settings → Debug UI scorecard, which is tracked as M8d).
+
+#[cfg(test)]
+mod tests_m8c {
+    use super::*;
+    use crate::arabic::overrides::{
+        self, OverrideStore, UserOverride, TEST_OVERRIDE_MUTEX,
+    };
+    use crate::arabic::PartOfSpeech;
+    use std::sync::MutexGuard;
+
+    /// Serializes ACTIVE_STORE mutations across every test in this
+    /// suite AND the tests in `arabic::overrides::tests`. Without this,
+    /// cargo test's default multi-thread runner would race the global
+    /// override registry between suites.
+    struct OverrideTestGuard {
+        _lock: MutexGuard<'static, ()>,
+    }
+
+    impl OverrideTestGuard {
+        fn new() -> Self {
+            let lock = TEST_OVERRIDE_MUTEX
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            overrides::clear_active();
+            Self { _lock: lock }
+        }
+    }
+
+    impl Drop for OverrideTestGuard {
+        fn drop(&mut self) {
+            overrides::clear_active();
+        }
+    }
+
+    /// Author a unique temp-dir path for one test run. Each test uses
+    /// a nanosecond-stamped directory so concurrent test workers don't
+    /// collide on the same SQLite file.
+    fn unique_tmp_dir(tag: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "constellation_m8c_{}_{}",
+            tag,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ))
+    }
+
+    /// Build a fresh `SearchState` backed by a tempfile DB, seeded
+    /// with one `note_meta` row whose `body_text` is `body`.
+    ///
+    /// The `note_meta_ai` trigger fires automatically on INSERT, so
+    /// after this call `notes_fts` already holds the tokenized form
+    /// of `body` under the current `ACTIVE_STORE` (which the caller
+    /// controls — usually empty to capture the pre-override baseline).
+    ///
+    /// **Production parity**: `index_note` at search.rs:628 pre-normalises
+    /// `plain_body` via `normalize_arabic_for_search` *before* the INSERT,
+    /// so every `body_text` row on disk is already in normalised form
+    /// (Teh marbuta → Heh, Alef variants collapsed, diacritics stripped).
+    /// `reindex_notes_matching_text` relies on this invariant — it
+    /// normalises the needle and does `body_text LIKE %needle_normalised%`,
+    /// so raw-Arabic body rows would silently fail the LIKE match. The
+    /// seed mirrors production by normalising here too.
+    fn seeded_state(dir: &Path, note_path: &str, body: &str) -> SearchState {
+        std::fs::create_dir_all(dir).expect("mkdir tempdir");
+        let db_path = dir.join("search.db");
+        let conn = init_db(&db_path).expect("init_db");
+        let body_normalised = super::normalize_arabic_for_search(body);
+        conn.execute(
+            "INSERT INTO note_meta(path, name, library_name, modified, body_text) \
+             VALUES (?1, ?2, ?3, 0, ?4)",
+            params![note_path, "test_note", "testlib", body_normalised],
+        )
+        .expect("seed note_meta");
+        SearchState {
+            db: std::sync::Mutex::new(Some(conn)),
+        }
+    }
+
+    /// Count FTS5 rows that MATCH `query` against the current state.
+    /// Takes out a read lock and runs a single COUNT query.
+    fn fts_match_count(state: &SearchState, query: &str) -> u32 {
+        let db = state.db.lock().expect("db lock");
+        let conn = db.as_ref().expect("conn present");
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM notes_fts WHERE notes_fts MATCH ?1",
+                params![query],
+                |r| r.get(0),
+            )
+            .expect("MATCH count query");
+        count as u32
+    }
+
+    /// Tear down a test DB directory (file + WAL/SHM siblings + parent).
+    fn cleanup(dir: &Path) {
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// Build a single-lemma sovereign override for tests. Uses the
+    /// Latin sentinel `pinnedteststem` as the lemma — guaranteed not
+    /// to collide with any Arabic analyzer verdict, so MATCH for the
+    /// sentinel cleanly distinguishes pre-override from post-override
+    /// FTS state.
+    fn sentinel_override(surface: &str, lemma: &str) -> UserOverride {
+        UserOverride {
+            surface: surface.to_string(),
+            lemma: lemma.to_string(),
+            root: String::new(),
+            pattern_label: "user:ProperNoun".to_string(),
+            pos: PartOfSpeech::ProperNoun,
+            note: String::new(),
+            created_at: String::new(),
+        }
+    }
+
+    /// The headline M8c contract: authoring an override then running
+    /// `reindex_notes_matching_text` flips every mentioning note's
+    /// FTS row from the default stem to the override's lemma. If this
+    /// ever regresses, the Settings UI "pin this word" button becomes
+    /// a silent no-op on the existing index — exactly the failure M8c
+    /// is written to catch.
+    ///
+    /// **Surface choice**: `خليفة` (with ta-marbuta) is the canonical
+    /// spelling. The test specifically uses a surface with ta-marbuta
+    /// because an earlier revision of `normalize_arabic_for_search`
+    /// folded ة → ه, which silently disagreed with the override
+    /// store's key normalizer (which never folds) — breaking exactly
+    /// the reindex contract this test exists to guard. The test is
+    /// preserved with its original linguistically-correct surface so
+    /// any future regression that reintroduces the fold trips here
+    /// before it reaches users.
+    #[test]
+    fn override_and_reindex_flips_fts_token_set() {
+        let _g = OverrideTestGuard::new();
+        let dir = unique_tmp_dir("flip");
+
+        // Body contains the target surface + one unrelated word so the
+        // row still matches some query even after override rewrites the
+        // target's stem.
+        let state = seeded_state(&dir, "/notes/khalifa.md", "خليفة راشد");
+
+        let sentinel = "pinnedteststem";
+
+        // 1) Pre-override: sentinel is nowhere in the index.
+        assert_eq!(
+            fts_match_count(&state, sentinel),
+            0,
+            "sentinel must be absent from FTS before any override"
+        );
+
+        // 2) Install the override.
+        let mut store = OverrideStore::new();
+        store.insert(sentinel_override("خليفة", sentinel));
+        overrides::set_active(store);
+
+        // 3) Critical contract: override alone doesn't retroactively
+        //    rewrite existing FTS rows. The row was tokenized BEFORE
+        //    we activated, so the sentinel stem isn't yet present.
+        //    This is exactly why `reindex_notes_matching_text` exists.
+        assert_eq!(
+            fts_match_count(&state, sentinel),
+            0,
+            "override in ACTIVE_STORE alone must not retroactively update FTS"
+        );
+
+        // 4) Run the reindex helper — the Tauri command's inner body.
+        let reindexed = reindex_notes_matching_text(&state, "خليفة")
+            .expect("reindex must succeed");
+        assert_eq!(
+            reindexed, 1,
+            "exactly the one mentioning row should be re-tokenized"
+        );
+
+        // 5) Post-reindex: the override's lemma is now in the FTS index
+        //    and MATCH finds it.
+        assert_eq!(
+            fts_match_count(&state, sentinel),
+            1,
+            "sentinel stem must be present in FTS after reindex"
+        );
+
+        cleanup(&dir);
+    }
+
+    /// A surface that no note mentions must return 0 re-tokenizations
+    /// without error — the `add_arabic_override` + reindex chain is
+    /// idempotent for words that haven't been indexed yet, which is
+    /// the common case for the user adding a forward-looking override.
+    #[test]
+    fn reindex_returns_zero_when_no_notes_match() {
+        let _g = OverrideTestGuard::new();
+        let dir = unique_tmp_dir("nomatch");
+
+        // Body contains some other Arabic words — not the target.
+        let state = seeded_state(&dir, "/notes/other.md", "كتاب مفيد");
+
+        let count = reindex_notes_matching_text(&state, "خليفة")
+            .expect("reindex must succeed on zero-match needle");
+        assert_eq!(count, 0, "no mentioning rows → zero re-tokenizations");
+
+        cleanup(&dir);
+    }
+
+    /// Empty / whitespace needle must short-circuit to 0 without
+    /// issuing the expensive `body_text LIKE %%` scan. Guards the
+    /// Settings UI against an accidental empty-string dispatch
+    /// triggering a full-table scan on a 7,600-note Universe.
+    #[test]
+    fn reindex_empty_needle_short_circuits() {
+        let _g = OverrideTestGuard::new();
+        let dir = unique_tmp_dir("empty");
+        let state = seeded_state(&dir, "/notes/x.md", "some body");
+
+        assert_eq!(
+            reindex_notes_matching_text(&state, "")
+                .expect("empty needle must not error"),
+            0
+        );
+        assert_eq!(
+            reindex_notes_matching_text(&state, "   ")
+                .expect("whitespace needle must not error"),
+            0
+        );
+
+        cleanup(&dir);
+    }
+
+    /// The reindex walks `body_text LIKE %needle%` — every matching
+    /// row gets re-tokenized in one IMMEDIATE transaction. Multiple
+    /// rows containing the same surface must all flip to the new
+    /// sentinel stem, not just the first one.
+    ///
+    /// See `override_and_reindex_flips_fts_token_set` for the
+    /// rationale on using a ta-marbuta-bearing surface deliberately.
+    #[test]
+    fn reindex_updates_all_matching_rows_in_one_pass() {
+        let _g = OverrideTestGuard::new();
+        let dir = unique_tmp_dir("multi");
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        let db_path = dir.join("search.db");
+        let conn = init_db(&db_path).expect("init_db");
+
+        // Three notes all mentioning خليفة, one unrelated note.
+        // Bodies are pre-normalised to match production `index_note`
+        // behaviour (see the note on `seeded_state` for full rationale).
+        for (path, body) in [
+            ("/notes/a.md", "خليفة راشد"),
+            ("/notes/b.md", "عمر بن خليفة"),
+            ("/notes/c.md", "كتاب عن خليفة"),
+            ("/notes/d.md", "كتاب مفيد"),
+        ] {
+            let body_normalised = super::normalize_arabic_for_search(body);
+            conn.execute(
+                "INSERT INTO note_meta(path, name, library_name, modified, body_text) \
+                 VALUES (?1, ?2, ?3, 0, ?4)",
+                params![path, "note", "testlib", body_normalised],
+            )
+            .expect("seed");
+        }
+        let state = SearchState {
+            db: std::sync::Mutex::new(Some(conn)),
+        };
+
+        let sentinel = "bulktestsentinel";
+        let mut store = OverrideStore::new();
+        store.insert(sentinel_override("خليفة", sentinel));
+        overrides::set_active(store);
+
+        let reindexed = reindex_notes_matching_text(&state, "خليفة")
+            .expect("reindex");
+        assert_eq!(
+            reindexed, 3,
+            "all three mentioning rows (not the unrelated one) should be re-tokenized"
+        );
+        assert_eq!(
+            fts_match_count(&state, sentinel),
+            3,
+            "every mentioning row must now contain the sentinel stem"
+        );
+
+        cleanup(&dir);
+    }
 }
