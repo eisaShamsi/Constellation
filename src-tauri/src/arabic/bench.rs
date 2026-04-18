@@ -51,6 +51,99 @@
 //! measured once per process. Splitting into multiple `#[test]` fns
 //! would require fresh subprocesses — more machinery than this bench
 //! warrants. One test, sequential measurements, report to stdout.
+//!
+//! # Profiling (M9-profile)
+//!
+//! The bench harness above gives you per-phase wall-clock numbers. When
+//! those numbers move and you need to know **which function** moved
+//! them, attach a sampling profiler to the same test.
+//!
+//! ## samply (cross-platform, macOS / Linux / Windows)
+//!
+//! Install (Rust toolchain, no root required):
+//!
+//! ```bash
+//! cargo install samply --locked
+//! ```
+//!
+//! Profile the full bench (cold-start + warm-start + throughput +
+//! throughput-FTS + accuracy) with symbol-resolved sampling:
+//!
+//! ```bash
+//! # Build the test binary in release mode first so samply has
+//! # optimised code to sample. `--no-run` emits the binary without
+//! # executing the test.
+//! cargo test --lib --release arabic::bench --no-run 2>&1 | \
+//!   grep "Executable" | tail -1
+//! # Copy the reported path, then:
+//! samply record <that-path> --ignored --nocapture arabic::bench::tests::m9_bench
+//! ```
+//!
+//! samply opens a flamegraph / call-tree in the Firefox Profiler UI
+//! (local browser — no data uploaded). Look for:
+//!
+//! - **`arabic::analyze_with_overrides`** — the main pipeline body.
+//!   Post-M9-hotpath (c), hits on Layer 0 / Layer 2 short-circuit in
+//!   `analyze_with_overrides_best` before entering this function; the
+//!   samples you see in it are Layer 3+ (generative FST) traffic.
+//! - **`fst::Map::get` / `fst::raw::Fst::find`** — the actual FST walk.
+//!   Post-M9-mmap, reads trap through the MMU and may show up hotter
+//!   than pre-mmap profiles — this is the +1,128 ns/call cost § 38
+//!   accepted (and § 39 partially recovered).
+//! - **`arabic::normalizer::normalize`** — tashkeel / tatweel strip.
+//!   Called twice per slow-path `analyze_with_overrides_best` call
+//!   (see § 39 cost analysis). If samples here exceed ~5 % of total,
+//!   M9-hotpath (c)-v2 (single-normalize refactor) becomes justified.
+//! - **`arabic::disambiguate::rank_analyses`** — runs at every multi-hit
+//!   return point. Should be small (SmallVec-backed sort from § 36).
+//!
+//! ## cargo-flamegraph (Linux perf backend, optional)
+//!
+//! Install:
+//!
+//! ```bash
+//! cargo install flamegraph
+//! ```
+//!
+//! Run:
+//!
+//! ```bash
+//! CARGO_PROFILE_RELEASE_DEBUG=true cargo flamegraph \
+//!   --unit-test --release \
+//!   -- arabic::bench::tests::m9_bench --ignored --nocapture
+//! ```
+//!
+//! Produces `flamegraph.svg` in the worktree root. Same hotspot
+//! interpretation as samply. Requires `perf` (Linux only) and may need
+//! `sudo sysctl kernel.perf_event_paranoid=1` on Debian/Ubuntu.
+//!
+//! ## Windows: cargo-pgo (optional, profile-guided optimisation)
+//!
+//! For throughput hotspot discovery on Windows specifically, `samply`
+//! is the best option (works via ETW under the hood). `cargo flamegraph`
+//! requires perf and is Linux-only. If ETW doesn't work on your host,
+//! Visual Studio's Performance Profiler (attach to the test.exe after
+//! `--no-run`) is the fallback.
+//!
+//! ## Reading the numbers against the bench report
+//!
+//! The bench report prints wall-clock per-call numbers (e.g. `Per-call
+//! (ns)` = 7,584). A profile sample percentage × that per-call number
+//! approximates each function's nanosecond cost per `analyze_best`
+//! call. Example: if `fst::Map::get` shows 35 % of samples during the
+//! Throughput phase, its cost is ~35 % × 7,584 ≈ 2,654 ns/call.
+//!
+//! # Open observability follow-ons
+//!
+//! - **Criterion-grade bench**: the `#[test] #[ignore]` harness has
+//!   ±19 % run-to-run variance on Windows release (observed § 39).
+//!   A `--bench` target with warm-up + statistical outlier rejection
+//!   would narrow that before landing micro-optimisations whose
+//!   claimed wins sit below noise.
+//! - **samply CI integration**: capture a profile per commit in CI and
+//!   publish the call-tree as an artefact. Makes regressions attributable
+//!   to a specific function without a local repro. Deferred until
+//!   samply stabilises its headless JSON output.
 
 #[cfg(test)]
 mod tests {
