@@ -60,7 +60,7 @@ pub mod generator;
 pub mod fst_index;
 pub mod fst_bake;
 // pub mod analyzer;      // M4
-// pub mod disambiguator; // M7
+pub mod disambiguate;     // M7
 // pub mod overrides;     // M8
 
 // M5 — regression corpus. Harness + 500-case TSV. `cfg(test)`-gated so
@@ -156,7 +156,7 @@ pub fn analyze(word: &str) -> Vec<Analysis> {
 
     let stripped_hits = idx.lookup(&norm.stripped);
     if !stripped_hits.is_empty() {
-        return stripped_hits
+        let mut hits: Vec<Analysis> = stripped_hits
             .iter()
             .map(|form| Analysis {
                 surface: word.to_string(),
@@ -172,11 +172,15 @@ pub fn analyze(word: &str) -> Vec<Analysis> {
                 lang: Lang::Ar,
             })
             .collect();
+        // M7 — deterministic linguistic ranking (noun over verb at equal
+        // confidence, alphabetic tiebreak, etc.). See `disambiguate.rs`.
+        disambiguate::rank_analyses(&mut hits);
+        return hits;
     }
 
     let folded_hits = idx.lookup_folded(&norm.folded);
     if !folded_hits.is_empty() {
-        return folded_hits
+        let mut hits: Vec<Analysis> = folded_hits
             .iter()
             .map(|form| Analysis {
                 surface: word.to_string(),
@@ -194,6 +198,8 @@ pub fn analyze(word: &str) -> Vec<Analysis> {
                 lang: Lang::Ar,
             })
             .collect();
+        disambiguate::rank_analyses(&mut hits);
+        return hits;
     }
 
     // ── Layer 3b: affix-stripping cascade ───────────────────────────
@@ -255,6 +261,10 @@ pub fn analyze(word: &str) -> Vec<Analysis> {
         // the same remainder can come from multiple peelings that happen to
         // produce the same stripped form (e.g. with/without a و if و is the
         // first letter of the stem anyway).
+        //
+        // This sort key is deliberately NOT the disambiguator's ranking
+        // key — it's a dedup-oriented sort that makes `dedup_by` correct.
+        // The disambiguator re-sorts the deduped survivors below.
         peel_analyses.sort_by(|a, b| {
             a.root
                 .cmp(&b.root)
@@ -268,6 +278,10 @@ pub fn analyze(word: &str) -> Vec<Analysis> {
                 && a.prefixes.len() == b.prefixes.len()
                 && a.suffixes.len() == b.suffixes.len()
         });
+        // M7 — after dedup, rank the survivors by the disambiguator key so
+        // `analyze_best` picks a deterministic, linguistically informed
+        // winner. See `disambiguate.rs`.
+        disambiguate::rank_analyses(&mut peel_analyses);
         return peel_analyses;
     }
 
@@ -292,30 +306,37 @@ pub fn analyze(word: &str) -> Vec<Analysis> {
     }]
 }
 
-/// Convenience: returns the single best analysis (highest confidence),
-/// or a verbatim stub if the analyzer produced nothing.
+/// Convenience: returns the single best analysis, or a verbatim stub if
+/// the analyzer produced nothing.
+///
+/// As of M7 `analyze()` internally calls `disambiguate::rank_analyses` at
+/// every multi-hit return point, so the first element of its output is
+/// already the deterministic best pick. This function is a thin `.next()`
+/// over that guaranteed-ranked Vec — no resorting needed.
 ///
 /// This is the primary hook for the FTS5 tokenizer, which does not care
 /// about ambiguity — it just wants `(surface, lemma, root)` to index.
 pub fn analyze_best(word: &str) -> Analysis {
-    let mut analyses = analyze(word);
-    if analyses.is_empty() {
-        return Analysis {
-            surface: word.to_string(),
-            lemma: word.to_string(),
-            root: String::new(),
-            pattern_label: "none".to_string(),
-            pos: PartOfSpeech::Unknown,
-            prefixes: Vec::new(),
-            suffixes: Vec::new(),
-            confidence: 0.0,
-            origin: AnalysisOrigin::SurfaceHeuristic,
-            equivalents: HashMap::new(),
-            lang: Lang::Ar,
-        };
+    let analyses = analyze(word);
+    if let Some(best) = analyses.into_iter().next() {
+        return best;
     }
-    analyses.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
-    analyses.into_iter().next().unwrap()
+    // Only reached for empty / whitespace input where analyze() itself
+    // returned an empty Vec. Hand the caller an identity stub so the FTS
+    // tokenizer can still index whatever raw bytes came in.
+    Analysis {
+        surface: word.to_string(),
+        lemma: word.to_string(),
+        root: String::new(),
+        pattern_label: "none".to_string(),
+        pos: PartOfSpeech::Unknown,
+        prefixes: Vec::new(),
+        suffixes: Vec::new(),
+        confidence: 0.0,
+        origin: AnalysisOrigin::SurfaceHeuristic,
+        equivalents: HashMap::new(),
+        lang: Lang::Ar,
+    }
 }
 
 #[cfg(test)]

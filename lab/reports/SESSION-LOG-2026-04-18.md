@@ -2,7 +2,7 @@
 
 ## Headline
 
-**M3 + M3-baker + M1g/M1h + M5 + M6 landed.** First: `GenerativeIndex` (HashMap, ~40 MB projected at 7K roots) swapped for `GenerativeFst` (BurntSushi FST, prefix-compressed, mmap-ready). Second: the compiled FST is now persisted to the user's cache directory on first launch and reloaded on subsequent launches via `GenerativeFst::from_bytes` — the cold/warm startup path divergence that M9 ("50 ms analyzer cold-start") measures against. Third: the protected list got its architectural rewrite — `const SEED: &[...]` (200 hand-picked entries, 340 lines of Rust) replaced with `include_str!("protected_seed.tsv")` + a 3-column TSV (`surface<TAB>category<TAB>origin_lang`) now holding **1,196 unique entries** across proper nouns (395), places (275), loanwords (455), and function words (71). Fourth: the **M5 regression corpus** — a 502-case held-out test set in `regression_cases.tsv` + a `cfg(test)`-gated `regression.rs` harness that feeds every row through `analyze_best` and asserts origin / surface / (optionally) lemma / root. Covers all three active origin layers (ProtectedList, GenerativeFst, SurfaceHeuristic) across 28 Arabic roots, ~80 cascade surfaces, and 45 foreign (Latin-script) words. Fifth: **M6** — the FTS5 Arabic stemming path in `libraries.rs::process_arabic_word` now routes through `arabic::analyze_best`. Every Arabic token in every note in every Universe now flows through the five-layer engine; Light10 is retained only as the graceful `SurfaceHeuristic` fallback so unknown words don't regress. The flagship `وائل → "ائل"` mangle is gone: the protected list short-circuits Light10 and the stem is preserved verbatim. Full public-API parity preserved across all five landings; **230/230 library tests pass** (up from 209 pre-M3: +13 fst_bake, +10 regression harness, +6 TSV parser, +5 M6 FTS contract tests, -1 removed `no_duplicate_lemmas_in_seed` obsolete under first-write-wins).
+**M3 + M3-baker + M1g/M1h + M5 + M6 + M7 landed.** First: `GenerativeIndex` (HashMap, ~40 MB projected at 7K roots) swapped for `GenerativeFst` (BurntSushi FST, prefix-compressed, mmap-ready). Second: the compiled FST is now persisted to the user's cache directory on first launch and reloaded on subsequent launches via `GenerativeFst::from_bytes` — the cold/warm startup path divergence that M9 ("50 ms analyzer cold-start") measures against. Third: the protected list got its architectural rewrite — `const SEED: &[...]` (200 hand-picked entries, 340 lines of Rust) replaced with `include_str!("protected_seed.tsv")` + a 3-column TSV (`surface<TAB>category<TAB>origin_lang`) now holding **1,196 unique entries** across proper nouns (395), places (275), loanwords (455), and function words (71). Fourth: the **M5 regression corpus** — a 502-case held-out test set in `regression_cases.tsv` + a `cfg(test)`-gated `regression.rs` harness that feeds every row through `analyze_best` and asserts origin / surface / (optionally) lemma / root. Covers all three active origin layers (ProtectedList, GenerativeFst, SurfaceHeuristic) across 28 Arabic roots, ~80 cascade surfaces, and 45 foreign (Latin-script) words. Fifth: **M6** — the FTS5 Arabic stemming path in `libraries.rs::process_arabic_word` now routes through `arabic::analyze_best`. Every Arabic token in every note in every Universe now flows through the five-layer engine; Light10 is retained only as the graceful `SurfaceHeuristic` fallback so unknown words don't regress. The flagship `وائل → "ائل"` mangle is gone: the protected list short-circuits Light10 and the stem is preserved verbatim. Sixth: **M7** — the Layer 4 disambiguator. `analyze_best`'s insertion-order tiebreak replaced with a pure, deterministic rank: confidence desc → origin (UserOverride > ProtectedList > FST > Heuristic) → POS (ProperNoun > Noun > … > Verb > … > Foreign) → fewer affixes → alphabetic lemma. The كاتب ambiguity now resolves to the Noun reading (active participle) every time, across any OS, any FST build, any Universe. Full public-API parity preserved across all six landings; **242/242 library tests pass** (up from 209 pre-M3: +13 fst_bake, +10 regression harness, +6 TSV parser, +5 M6 FTS contract tests, +12 M7 disambiguator, -1 removed `no_duplicate_lemmas_in_seed` obsolete under first-write-wins).
 
 ## Work in order
 
@@ -227,6 +227,63 @@ All 5 pass.
 - All **230 pass** in 0.69s. The 502-case regression corpus is still green (it was never at risk — M6 doesn't change `analyze_best` itself, only its downstream consumer).
 - Test wall time did not regress. The analyzer's `get()` path already ran in the existing 212 Arabic tests; M6 only adds 5 more calls.
 
+## 15. M7 — Layer 4 disambiguator
+
+The pre-M7 `analyze_best` sorted `analyze()`'s Vec by confidence desc and picked the first element. For ties the tiebreak was insertion order, which in turn depended on FST serialization order — fragile across refactors, hash-RNG, and even OS-level build orderings. Word `كاتب` could return Noun today and Verb tomorrow with no code change in between. The FTS index would flip its lemma column between restarts. M7 closes this with a pure, deterministic, linguistically-informed rank.
+
+**Solution shipped:**
+
+- New module `src-tauri/src/arabic/disambiguate.rs` (~180 lines, 12 tests). Keeps the arabic module's one-file-per-layer convention.
+- Public surface (crate-internal):
+  - `origin_rank(AnalysisOrigin) -> u8` — UserOverride=0, ProtectedList=1, GenerativeFst=2, SurfaceHeuristic=3.
+  - `pos_rank(PartOfSpeech) -> u8` — ProperNoun=0, Noun=1, Adjective=2, Adverb=3, Verb=4, Particle=5, Foreign=6, Unknown=7. Opinionated for PKM context: in user notes, named entities and common nouns dominate; verbs are next; particles/unknowns last.
+  - `rank_analyses(&mut [Analysis])` — in-place stable sort by the tuple `(confidence desc, origin asc, pos asc, affix_count asc, lemma asc)`. The final alphabetic key on `lemma` is what makes the order *deterministic* — no two distinct analyses can ever tie.
+
+- `analyze()` now calls `rank_analyses` at each multi-hit return point:
+  - The Layer-3 bare stripped hits branch builds a `Vec<Analysis>`, ranks, returns.
+  - The Layer-3 folded fallback does the same.
+  - The Layer-3b peel cascade keeps its existing dedup-oriented sort (by `(root, pattern_label, prefix_count, suffix_count)`), dedups, *then* calls `rank_analyses` on the survivors. The comment on the dedup sort now explicitly flags that it is not the disambiguator's ranking key — it exists to make `dedup_by` correct.
+
+- `analyze_best` collapsed from "sort then pick" to "take first":
+  - `analyze()` pre-ranks internally, so `analyze_best = analyze(word).into_iter().next().unwrap_or(stub)`.
+  - No duplication of sort logic between the two entry points; the ranking lives in exactly one place.
+
+**Why this ranking, not something fancier:**
+
+- **Pure function of the Analysis fields** → reproducible test fixtures, easy golden-file regression coverage, zero hidden state. Context-aware or corpus-frequency-aware ranking is a v2 extension documented in the module preamble; v1's goal is to eliminate the insertion-order tiebreak, not to build a neural model.
+- **Alphabetic lemma as the final tiebreak** → strict total order across all `Analysis` values, so sorting is stable across refactors, OS hash RNGs, FST build orders, and `HashMap` iteration quirks.
+- **No `partial_cmp` unwraps** → NaN confidence (should never happen but might in future buggy code paths) degrades to `Ordering::Equal` and subsequent keys decide. One of the 12 tests pins this "doesn't panic on NaN" contract.
+- **POS rank is opinionated, and deliberately so** → `docs/CONSTELLATION-ARABIC-ENGINE.md` has flagged for a long time that PKM notes are noun-dominant. If a future user study shows the distribution is different for a given Universe, the POS rank is the one place to adjust — the generator, FST, and protected list stay untouched.
+
+**Regression corpus compatibility:**
+
+- The 502-case corpus asserts `origin` on every row, and leaves `lemma` as `-` (unasserted) on ambiguous verb surfaces. M7 preserves the origin invariants and only changes the lemma pick among equal-confidence origin peers, which is exactly the space the corpus left unconstrained. All 502 cases stay green on M7.
+- The `katib_ambiguity_surfaces_both_pos` test (unchanged in `mod.rs::tests`) still holds: `analyze()` still returns **both** Noun and Verb readings of `كاتب`; M7 only pins the *order*, not the presence.
+- The `bare_generative_hit_returns_generative_origin` test (which asserted high-confidence GenerativeFst origin for `كاتب` without pinning pos) keeps passing.
+
+### 16. Tests — 12 new for M7
+
+All 12 in `arabic::disambiguate::tests`, organized from primitive-rank assertions upward to full ranking-under-realistic-Analysis-vectors:
+
+- **Rank primitives (2)**: `origin_rank_puts_user_override_first`, `pos_rank_puts_proper_noun_first_then_noun` — assert the monotonicity of both rank tables. These are the contract that the sort keys depend on; if anyone ever reorders the enum and forgets to update the rank table, these fail.
+- **Single-key dominance (2)**: `rank_prefers_higher_confidence`, `rank_lower_confidence_never_overtakes_at_any_pos` — confidence is the dominant key; subsequent keys only decide among confidence peers. The second test is the explicit inverse: no matter how good the POS/origin of a lower-confidence hit, it must not beat a higher-confidence one.
+- **Tiebreak chain (4)**: `rank_prefers_protected_over_fst_at_equal_confidence`, `rank_prefers_user_override_over_everything_at_equal_confidence`, `rank_prefers_noun_over_verb_at_equal_confidence_and_origin`, `rank_prefers_fewer_affixes_at_equal_everything_else` — each test pins a specific key's behaviour against synthetic analyses that tie on all higher-priority keys.
+- **Determinism (2)**: `rank_is_alphabetic_at_full_tie` — the last-resort alphabetic lemma tiebreak actually fires. `rank_is_idempotent` — sorting twice produces the same output (a stability guarantee for the FTS index: re-running the analyzer on the same corpus must not flip tokens between runs).
+- **Robustness (2)**: `rank_handles_empty_and_single_element_slices` — no-op on trivial inputs. `rank_handles_nan_confidence_without_panic` — invariant-violating NaN inputs degrade gracefully.
+
+All pass. Test wall time across the whole suite: 0.30s (unchanged within noise; 12 new tests sort ≤3-element Vecs and finish in microseconds).
+
+### 17. Results after M7
+
+| Suite | Pre-M3 | After M3 | After M3-baker | After M1g/M1h | After M5 | After M6 | After M7 | Delta |
+|---|---|---|---|---|---|---|---|---|
+| arabic module | 171 | 183 | 196 | 202 | 212 | 212 | 224 | +53 |
+| libraries FTS contract | 0 | 0 | 0 | 0 | 0 | 5 | 5 | +5 |
+| library total | 184 | 196 | 209 | 215 | 225 | 230 | 242 | +58 |
+
+- All **242 pass** in 0.30s. The 502-case regression corpus and the 5 FTS contract tests from M6 continue to pass — M7 is behaviourally additive.
+- The full arabic::tests integration suite (mod.rs::tests — 23 tests including `katib_ambiguity_surfaces_both_pos`, the flagship `wael_flows_through_protected_layer`, and the `alaimma_flagship_resolves_through_cascade` cascade test) is all green.
+
 ## Commit
 
 Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
@@ -249,9 +306,14 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
    - `src-tauri/src/arabic/mod.rs` — `+ #[cfg(test)] mod regression;` at end of mod declarations.
    - `lab/reports/SESSION-LOG-2026-04-18.md` — this file.
 
-4. **M6** (this session, pending):
+4. **M6** (this session, `3cf5510`):
    - `src-tauri/src/libraries.rs` — `process_arabic_word` refactored (line ~1949) to route through `arabic::analyze_best`, with Light10 retained as the `SurfaceHeuristic` fallback; 5 new FTS contract tests appended to a new `#[cfg(test)] mod tests` block at EOF.
    - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 12–14 added.
+
+5. **M7** (this session, pending):
+   - `src-tauri/src/arabic/disambiguate.rs` — new (~180 lines, 12 tests) — `origin_rank`, `pos_rank`, `rank_analyses`.
+   - `src-tauri/src/arabic/mod.rs` — uncomment `pub mod disambiguate;`; call `rank_analyses` at each multi-hit return point in `analyze()`; simplify `analyze_best` to `analyze(word).into_iter().next()`.
+   - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 15–17 added.
 
 ## Files modified
 
@@ -266,13 +328,14 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src-tauri/src/arabic/regression.rs` — new (M5, 10 tests).
 - `src-tauri/src/arabic/regression_cases.tsv` — new (M5, 502 data rows).
 - `src-tauri/src/libraries.rs` — `process_arabic_word` routed through `analyze_best` (M6) + 5 new FTS contract tests at EOF.
+- `src-tauri/src/arabic/disambiguate.rs` — new (M7, 12 tests).
 
 ## Open items
 
 - **M1g-data / M1h-data**: the 20K Wikipedia-extracted proper-noun corpus + 2K loanwords. Today's 1,196 hand-picked entries cover the common case; the full corpus comes from CC-BY-SA bulk extraction (separate milestone in `lab/`, blocked on extractor tooling).
 - **M5-grow**: expand the corpus over time. 502 is the v1 floor — as M6/M7 land, new flagship surfaces identified during bring-up should be added here first before any other test code. Target by M9: ≥2,000 cases, with ≥20 pure-heuristic Arabic-script rows (Layer 4 fallback coverage; currently the heuristic threshold is met by foreign Latin-script rows via the non-Arabic-script route).
-- **M7**: disambiguator — reorder multi-analysis results by corpus frequency / context. Unblocked now that M6 has landed: every FTS-visible Arabic token is running through `analyze_best`, so any improvement to the tiebreak (currently confidence-then-insertion-order) directly improves search quality. The regression corpus's `expected_lemma = "-"` rows on ambiguous verb forms mean M7 can change the tiebreak without forcing corpus rewrites; only the origin has to stay stable.
-- **M8**: user overrides — `overrides.rs` + a UI for the user to pin the analysis of a specific surface. This is the Layer 0 in the five-layer architecture that's currently a stub — unblocked by M6 landing (an override is only meaningful if the pipeline it overrides actually runs on user data).
+- **M7-v2**: corpus-aware disambiguation. Today's ranking is a pure function of the Analysis fields. V2 reads the user's own FTS vocab to bias toward lemmas the user writes often, plus a 3-word context window at query time to pick between readings (`كاتب الرسالة` → Noun; `كاتب أخاه` → Verb). Tracked as a follow-on once Settings → Debug surfaces the existing v1 rank so we can A/B the v2 improvements.
+- **M8**: user overrides — `overrides.rs` + a UI for the user to pin the analysis of a specific surface. The disambiguator's `origin_rank` already ranks `UserOverride` strictly above `ProtectedList` / `GenerativeFst`, so once M8 writes Analyses with origin=UserOverride into the pipeline, they immediately win the tiebreak without further changes to `rank_analyses`. The wire is live; M8 just needs to run the current.
 - **M9**: measure cold-start analyzer time on the real user machine (Windows) with a clean cache dir, then warm-start. If the warm-start delta isn't ≥5× the cold-start on the target 7K-root corpus, tune the format (e.g. memory-map instead of read-to-vec).
 
 ## No user-facing changes
