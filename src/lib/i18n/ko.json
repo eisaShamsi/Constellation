@@ -19,7 +19,8 @@
       "plugins": "코어 플러그인",
       "templates": "템플릿",
       "styleSettings": "스타일 설정",
-      "knowledge": "지식 관리"
+      "knowledge": "지식 관리",
+      "arabicOverrides": "아랍어 재정의"
     },
     "general": {
       "language": "언어",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "언어별 날짜 및 숫자 형식",
       "scriptTools": "스크립트 도구",
       "scriptToolsDesc": "언어별 기호 및 구두점"
+    },
+    "arabicOverrides": {
+      "title": "아랍어 엔진 재정의",
+      "intro": "이 Universe에서 특정 아랍어 표면형에 대한 엔진 해석을 고정합니다. 각 재정의는 최우선 답이며 생성 FST, 캐스케이드, 휴리스틱 폴백을 모두 이깁니다.",
+      "loading": "불러오는 중…",
+      "empty": "아직 재정의가 없습니다.",
+      "countOne": "개",
+      "countMany": "개",
+      "add": "재정의 추가",
+      "newTitle": "새 재정의",
+      "surface": "표면형",
+      "surfaceRequired": "표면형은 필수입니다.",
+      "lemma": "표제어",
+      "lemmaHint": "비우면 표면형이 사용됩니다.",
+      "root": "어근",
+      "pattern": "패턴",
+      "pos": "품사",
+      "note": "메모",
+      "notePlaceholder": "이 재정의가 존재하는 이유(선택)",
+      "save": "저장",
+      "saving": "저장 중…",
+      "cancel": "취소",
+      "remove": "제거",
+      "reindexing": "재색인 중…",
+      "reindexed": "노트 {count}개 재색인됨",
+      "posProperNoun": "고유명사",
+      "posNoun": "명사",
+      "posAdjective": "형용사",
+      "posAdverb": "부사",
+      "posVerb": "동사",
+      "posParticle": "조사",
+      "posForeign": "외래",
+      "posUnknown": "미정"
     },
     "files": {
       "defaultLocation": "새 노트의 기본 위치",
@@ -644,7 +678,15 @@
     "terms": "개 용어",
     "noTerms": "용어를 찾을 수 없습니다",
     "building": "인덱스 생성 중…",
-    "allLangs": "모두"
+    "allLangs": "모두",
+    "comparing": "비교",
+    "clearAll": "모두 지우기",
+    "loadingCommonality": "공통점 불러오는 중…",
+    "noCommonality": "선택한 모든 용어를 포함하는 노트가 없습니다.",
+    "noteWithAll": "개의 노트가 모두 포함",
+    "notesWithAll": "개의 노트가 모두 포함",
+    "selectedTerms": "개 선택된 용어",
+    "alsoAppearsWith": "함께 나타나는 단어"
   },
   "workspacesPanel": {
     "title": "작업 공간",

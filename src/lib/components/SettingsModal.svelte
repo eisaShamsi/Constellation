@@ -11,6 +11,7 @@
 	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
 	import { downloadJSON, pickJSONFile } from '$lib/utils';
 	import IconOverrideSettings from './IconOverrideSettings.svelte';
+	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -201,6 +202,7 @@
 		{ id: 'universe', label: $t('settings.sections.universe'), icon: 'universe' },
 		{ id: 'editor', label: $t('settings.sections.editor'), icon: 'edit' },
 		{ id: 'language', label: $t('settings.language.title') || 'Language', icon: 'translate' },
+		{ id: 'arabic-overrides', label: $t('settings.sections.arabicOverrides') || 'Arabic Overrides', icon: 'translate' },
 		{ id: 'skyview', label: $t('settings.sections.skyview'), icon: 'graph' },
 		{ id: 'intelligence', label: $t('settings.sections.intelligence'), icon: 'bot' },
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
@@ -1273,6 +1275,10 @@
 							</div>
 						</div>
 					{/if}
+
+				<!-- ═══ ARABIC OVERRIDES ═══ -->
+				{:else if activeSection === 'arabic-overrides'}
+					<ArabicOverridesPanel />
 
 				<!-- ═══ SKY VIEW & LINKS ═══ -->
 				{:else if activeSection === 'skyview'}

@@ -19,7 +19,8 @@
       "plugins": "核心插件",
       "templates": "模板",
       "styleSettings": "样式设置",
-      "knowledge": "知识管理"
+      "knowledge": "知识管理",
+      "arabicOverrides": "阿拉伯语覆盖"
     },
     "general": {
       "language": "语言",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "按语言格式化日期和数字",
       "scriptTools": "脚本工具",
       "scriptToolsDesc": "特定语言的符号和标点"
+    },
+    "arabicOverrides": {
+      "title": "阿拉伯语引擎覆盖",
+      "intro": "为当前 Universe 中特定的阿拉伯语表面形式固定引擎的分析结果。每条覆盖都是最高权威——它会胜过生成式 FST、级联剥词与启发式回退。",
+      "loading": "加载中…",
+      "empty": "暂无覆盖。",
+      "countOne": "条",
+      "countMany": "条",
+      "add": "添加覆盖",
+      "newTitle": "新建覆盖",
+      "surface": "表面形式",
+      "surfaceRequired": "表面形式为必填项。",
+      "lemma": "词元",
+      "lemmaHint": "留空则使用表面形式。",
+      "root": "词根",
+      "pattern": "模式",
+      "pos": "词性",
+      "note": "备注",
+      "notePlaceholder": "为何设此覆盖?(可选)",
+      "save": "保存",
+      "saving": "保存中…",
+      "cancel": "取消",
+      "remove": "移除",
+      "reindexing": "重新索引中…",
+      "reindexed": "已重新索引 {count} 条笔记",
+      "posProperNoun": "专有名词",
+      "posNoun": "名词",
+      "posAdjective": "形容词",
+      "posAdverb": "副词",
+      "posVerb": "动词",
+      "posParticle": "虚词",
+      "posForeign": "外来语",
+      "posUnknown": "未知"
     },
     "files": {
       "defaultLocation": "新笔记的默认位置",
@@ -644,7 +678,15 @@
     "terms": "个术语",
     "noTerms": "未找到术语",
     "building": "正在构建索引…",
-    "allLangs": "全部"
+    "allLangs": "全部",
+    "comparing": "比较",
+    "clearAll": "全部清除",
+    "loadingCommonality": "正在加载共同点…",
+    "noCommonality": "没有笔记包含所有选定的术语。",
+    "noteWithAll": "条笔记包含所有",
+    "notesWithAll": "条笔记包含所有",
+    "selectedTerms": "个选定术语",
+    "alsoAppearsWith": "同时出现"
   },
   "workspacesPanel": {
     "title": "工作区",

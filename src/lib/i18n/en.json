@@ -20,7 +20,8 @@
       "templates": "Templates",
       "styleSettings": "Style Settings",
       "iconOverrides": "App Icons",
-      "knowledge": "Knowledge Management"
+      "knowledge": "Knowledge Management",
+      "arabicOverrides": "Arabic Overrides"
     },
     "dashboard": {
       "libraries": "Libraries",
@@ -121,6 +122,39 @@
       "dateAndNumbersDesc": "Format dates and numbers per language",
       "scriptTools": "Script Tools",
       "scriptToolsDesc": "Language-specific symbols and punctuation"
+    },
+    "arabicOverrides": {
+      "title": "Arabic Engine Overrides",
+      "intro": "Pin how the engine analyses specific Arabic surfaces in this Universe. Each override is the sovereign answer — it wins over the generative FST, the cascade, and the heuristic fallback.",
+      "loading": "Loading…",
+      "empty": "No overrides yet.",
+      "countOne": "override",
+      "countMany": "overrides",
+      "add": "Add override",
+      "newTitle": "New override",
+      "surface": "Surface",
+      "surfaceRequired": "Surface is required.",
+      "lemma": "Lemma",
+      "lemmaHint": "Defaults to surface if left blank.",
+      "root": "Root",
+      "pattern": "Pattern",
+      "pos": "POS",
+      "note": "Note",
+      "notePlaceholder": "Why does this override exist? (optional)",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "remove": "Remove",
+      "reindexing": "Reindexing…",
+      "reindexed": "Reindexed {count} note(s)",
+      "posProperNoun": "Proper noun",
+      "posNoun": "Noun",
+      "posAdjective": "Adjective",
+      "posAdverb": "Adverb",
+      "posVerb": "Verb",
+      "posParticle": "Particle",
+      "posForeign": "Foreign",
+      "posUnknown": "Unknown"
     },
     "files": {
       "defaultLocation": "Default location for new notes",
@@ -715,7 +749,15 @@
     "terms": "terms",
     "noTerms": "No index terms found",
     "building": "Building index…",
-    "allLangs": "All"
+    "allLangs": "All",
+    "comparing": "Comparing",
+    "clearAll": "Clear all",
+    "loadingCommonality": "Loading commonality…",
+    "noCommonality": "No notes contain all selected terms.",
+    "noteWithAll": "note contains all",
+    "notesWithAll": "notes contain all",
+    "selectedTerms": "selected terms",
+    "alsoAppearsWith": "Also appears with"
   },
   "workspacesPanel": {
     "title": "Workspaces",

@@ -19,7 +19,8 @@
       "plugins": "Extensions Principales",
       "templates": "Modèles",
       "styleSettings": "Paramètres de style",
-      "knowledge": "Gestion des connaissances"
+      "knowledge": "Gestion des connaissances",
+      "arabicOverrides": "Surcharges arabes"
     },
     "general": {
       "language": "Langue",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "Formater les dates et chiffres par langue",
       "scriptTools": "Outils d'écriture",
       "scriptToolsDesc": "Symboles et ponctuation spécifiques à chaque langue"
+    },
+    "arabicOverrides": {
+      "title": "Surcharges du moteur arabe",
+      "intro": "Fixez la manière dont le moteur analyse certaines formes arabes dans cet Univers. Chaque surcharge est la réponse souveraine — elle l'emporte sur le FST génératif, la cascade et le repli heuristique.",
+      "loading": "Chargement…",
+      "empty": "Aucune surcharge pour l'instant.",
+      "countOne": "surcharge",
+      "countMany": "surcharges",
+      "add": "Ajouter une surcharge",
+      "newTitle": "Nouvelle surcharge",
+      "surface": "Forme de surface",
+      "surfaceRequired": "La forme de surface est requise.",
+      "lemma": "Lemme",
+      "lemmaHint": "Prend la forme de surface si laissé vide.",
+      "root": "Racine",
+      "pattern": "Schème",
+      "pos": "Catégorie",
+      "note": "Note",
+      "notePlaceholder": "Pourquoi cette surcharge existe-t-elle ? (optionnel)",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "remove": "Supprimer",
+      "reindexing": "Réindexation…",
+      "reindexed": "{count} note(s) réindexée(s)",
+      "posProperNoun": "Nom propre",
+      "posNoun": "Nom",
+      "posAdjective": "Adjectif",
+      "posAdverb": "Adverbe",
+      "posVerb": "Verbe",
+      "posParticle": "Particule",
+      "posForeign": "Étranger",
+      "posUnknown": "Inconnu"
     },
     "files": {
       "defaultLocation": "Emplacement par défaut des nouvelles notes",
@@ -644,7 +678,15 @@
     "terms": "termes",
     "noTerms": "Aucun terme de glossaire trouvé",
     "building": "Création de l'index…",
-    "allLangs": "Tous"
+    "allLangs": "Tous",
+    "comparing": "Comparaison",
+    "clearAll": "Tout effacer",
+    "loadingCommonality": "Chargement des points communs…",
+    "noCommonality": "Aucune note ne contient tous les termes sélectionnés.",
+    "noteWithAll": "note contient tous les",
+    "notesWithAll": "notes contiennent tous les",
+    "selectedTerms": "termes sélectionnés",
+    "alsoAppearsWith": "Apparaît aussi avec"
   },
   "workspacesPanel": {
     "title": "Espaces de travail",

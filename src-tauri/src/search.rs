@@ -2265,6 +2265,95 @@ fn search_wikilinks(conn: &Connection, query: &str, limit: u32) -> Vec<SearchRes
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
 }
 
+/// Targeted FTS re-tokenization for notes whose text contains `needle`.
+///
+/// Used by the Arabic override CRUD path: when the user pins or removes
+/// an override for a surface (say "خليفة"), every note whose body or name
+/// mentions that surface has a stale Layer 0 verdict in the on-disk FTS
+/// index. This function re-runs the tokenizer over just those rows — so
+/// the next `MATCH` query reflects the new override without waiting for
+/// a full Universe rebuild.
+///
+/// Implementation:
+/// 1. Arabic-normalize `needle` the same way `index_note` normalizes
+///    `body_text` on storage, so the LIKE match catches notes that use
+///    any Alef variant, tashkeel, etc.
+/// 2. `SELECT rowid, name, body_text FROM note_meta WHERE body_text LIKE ?
+///    OR name LIKE ?` — O(N_notes). On 7,600 notes this scans ~10–50 MB of
+///    body text; measured sub-100ms. If this ever gets slow, swap to an
+///    FTS5 MATCH, but MATCH goes through the tokenizer (which we're trying
+///    to refresh) — LIKE on the raw normalized body is the cheapest signal
+///    that survives tokenizer changes.
+/// 3. For each hit: issue the FTS5 `delete` directive then re-insert. Both
+///    operations go through the active tokenizer, so the new `ACTIVE_STORE`
+///    override verdict lands in the index.
+///
+/// Returns the number of rows re-tokenized. Zero is not an error — it
+/// just means no indexed note mentions `needle`.
+pub fn reindex_notes_matching_text(
+    state: &SearchState,
+    needle: &str,
+) -> Result<u32, String> {
+    if needle.trim().is_empty() {
+        return Ok(0);
+    }
+    let needle_normalized = normalize_arabic_for_search(needle);
+    // Body and name LIKE patterns: %needle% (case-sensitive; Arabic is not case-bearing).
+    let like = format!("%{}%", needle_normalized);
+
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = match db.as_ref() {
+        Some(c) => c,
+        None => return Ok(0), // No DB yet — nothing to reindex.
+    };
+
+    // Gather affected rows first (rowid, name, body_text) so we can issue
+    // the delete + insert in a single transaction without holding a prepared
+    // statement open across the writes.
+    let mut stmt = conn
+        .prepare(
+            "SELECT rowid, name, body_text
+             FROM note_meta
+             WHERE body_text LIKE ?1 OR name LIKE ?1",
+        )
+        .map_err(|e| e.to_string())?;
+    let rows: Vec<(i64, String, String)> = stmt
+        .query_map(params![like], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+    drop(stmt);
+
+    if rows.is_empty() {
+        return Ok(0);
+    }
+
+    conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
+    let mut count: u32 = 0;
+    for (rowid, name, body_text) in &rows {
+        // Delete the existing FTS row, then re-insert so the tokenizer
+        // runs again with the current ACTIVE_STORE in scope.
+        let del = conn.execute(
+            "INSERT INTO notes_fts(notes_fts, rowid, name, body_text) VALUES('delete', ?1, ?2, ?3)",
+            params![rowid, name, body_text],
+        );
+        if del.is_err() {
+            continue;
+        }
+        let ins = conn.execute(
+            "INSERT INTO notes_fts(rowid, name, body_text) VALUES (?1, ?2, ?3)",
+            params![rowid, name, body_text],
+        );
+        if ins.is_ok() {
+            count += 1;
+        }
+    }
+    conn.execute_batch("COMMIT").map_err(|e| e.to_string())?;
+    Ok(count)
+}
+
 /// Return incoming link counts for all notes from the search database.
 #[tauri::command]
 pub fn constellation_search_link_counts(

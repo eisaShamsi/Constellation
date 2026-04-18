@@ -19,7 +19,8 @@
       "plugins": "תוספי ליבה",
       "templates": "תבניות",
       "styleSettings": "הגדרות סגנון",
-      "knowledge": "ניהול ידע"
+      "knowledge": "ניהול ידע",
+      "arabicOverrides": "דריסות ערבית"
     },
     "general": {
       "language": "שפה",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "עיצוב תאריכים ומספרים לפי שפה",
       "scriptTools": "כלי כתיבה",
       "scriptToolsDesc": "סמלים ופיסוק ייחודיים לכל שפה"
+    },
+    "arabicOverrides": {
+      "title": "דריסות מנוע הערבית",
+      "intro": "קבע כיצד המנוע ינתח צורות ערביות מסוימות ביקום הזה. כל דריסה היא התשובה הריבונית — היא גוברת על ה‑FST היוצר, המפל הצורני ושיקום ההיוריסטי.",
+      "loading": "טוען…",
+      "empty": "אין עדיין דריסות.",
+      "countOne": "דריסה",
+      "countMany": "דריסות",
+      "add": "הוסף דריסה",
+      "newTitle": "דריסה חדשה",
+      "surface": "צורת שטח",
+      "surfaceRequired": "צורת השטח נדרשת.",
+      "lemma": "למה",
+      "lemmaHint": "ברירת המחדל היא צורת השטח אם ריק.",
+      "root": "שורש",
+      "pattern": "משקל",
+      "pos": "חלק דיבר",
+      "note": "הערה",
+      "notePlaceholder": "מדוע קיימת הדריסה הזאת? (לא חובה)",
+      "save": "שמור",
+      "saving": "שומר…",
+      "cancel": "בטל",
+      "remove": "הסר",
+      "reindexing": "מאנדקס מחדש…",
+      "reindexed": "{count} הערות אונדקסו מחדש",
+      "posProperNoun": "שם פרטי",
+      "posNoun": "שם עצם",
+      "posAdjective": "שם תואר",
+      "posAdverb": "תואר הפועל",
+      "posVerb": "פועל",
+      "posParticle": "מילית",
+      "posForeign": "לועזי",
+      "posUnknown": "לא ידוע"
     },
     "files": {
       "defaultLocation": "מיקום ברירת מחדל לפתקים חדשים",
@@ -644,7 +678,15 @@
     "terms": "מונחים",
     "noTerms": "לא נמצאו מונחים",
     "building": "בונה אינדקס…",
-    "allLangs": "הכל"
+    "allLangs": "הכל",
+    "comparing": "השוואה",
+    "clearAll": "נקה הכל",
+    "loadingCommonality": "טוען משותף…",
+    "noCommonality": "אין פתקים המכילים את כל המונחים שנבחרו.",
+    "noteWithAll": "פתק מכיל את כל",
+    "notesWithAll": "פתקים מכילים את כל",
+    "selectedTerms": "המונחים שנבחרו",
+    "alsoAppearsWith": "מופיע גם עם"
   },
   "workspacesPanel": {
     "title": "סביבות עבודה",

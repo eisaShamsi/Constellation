@@ -362,6 +362,7 @@ pub fn run() {
             arabic::overrides::read_arabic_overrides,
             arabic::overrides::add_arabic_override,
             arabic::overrides::remove_arabic_override,
+            arabic::overrides::reindex_arabic_overrides,
             libraries::get_file_metadata,
             libraries::notes_by_tag,
             dataview::execute_dataview_query,

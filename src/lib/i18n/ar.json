@@ -19,7 +19,8 @@
       "plugins": "الإضافات الأساسية",
       "templates": "القوالب",
       "styleSettings": "إعدادات الأسلوب",
-      "knowledge": "إدارة المعرفة"
+      "knowledge": "إدارة المعرفة",
+      "arabicOverrides": "تجاوزات المحرك العربي"
     },
     "general": {
       "language": "اللغة",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "تنسيق التاريخ والأرقام حسب اللغة",
       "scriptTools": "أدوات الكتابة",
       "scriptToolsDesc": "رموز وعلامات ترقيم خاصة بكل لغة"
+    },
+    "arabicOverrides": {
+      "title": "تجاوزات المحرك العربي",
+      "intro": "ثبّت كيف يحلّل المحرك أشكالًا عربية محدّدة داخل هذا الكون. كل تجاوز هو الجواب السيادي — يسبق مولِّد الجذر-الوزن، والشلال الصرفي، والرجوع الاستدلالي.",
+      "loading": "جارٍ التحميل…",
+      "empty": "لا توجد تجاوزات بعد.",
+      "countOne": "تجاوز",
+      "countMany": "تجاوزات",
+      "add": "إضافة تجاوز",
+      "newTitle": "تجاوز جديد",
+      "surface": "الشكل السطحي",
+      "surfaceRequired": "الشكل السطحي مطلوب.",
+      "lemma": "اللَّمَّا",
+      "lemmaHint": "يتّخذ قيمة الشكل السطحي إذا ترك فارغًا.",
+      "root": "الجذر",
+      "pattern": "الوزن",
+      "pos": "القسم",
+      "note": "ملاحظة",
+      "notePlaceholder": "لماذا يوجد هذا التجاوز؟ (اختياري)",
+      "save": "حفظ",
+      "saving": "جارٍ الحفظ…",
+      "cancel": "إلغاء",
+      "remove": "إزالة",
+      "reindexing": "جارٍ إعادة الفهرسة…",
+      "reindexed": "أُعيدت فهرسة {count} ملاحظة",
+      "posProperNoun": "اسم عَلَم",
+      "posNoun": "اسم",
+      "posAdjective": "صفة",
+      "posAdverb": "ظرف",
+      "posVerb": "فعل",
+      "posParticle": "أداة",
+      "posForeign": "أجنبي",
+      "posUnknown": "غير محدَّد"
     },
     "files": {
       "defaultLocation": "موقع الملاحظات الجديدة",
@@ -647,7 +681,15 @@
     "terms": "مصطلحات",
     "noTerms": "لم يتم العثور على مصطلحات في الفهرس",
     "building": "جارٍ بناء الفهرس…",
-    "allLangs": "الكل"
+    "allLangs": "الكل",
+    "comparing": "مقارنة",
+    "clearAll": "مسح الكل",
+    "loadingCommonality": "جارٍ تحميل القاسم المشترك…",
+    "noCommonality": "لا توجد ملاحظات تحتوي على جميع المصطلحات المحددة.",
+    "noteWithAll": "ملاحظة تحتوي على جميع",
+    "notesWithAll": "ملاحظات تحتوي على جميع",
+    "selectedTerms": "المصطلحات المحددة",
+    "alsoAppearsWith": "يظهر أيضًا مع"
   },
   "workspacesPanel": {
     "title": "مساحات العمل",

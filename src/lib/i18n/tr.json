@@ -19,7 +19,8 @@
       "plugins": "Çekirdek Eklentiler",
       "templates": "Şablonlar",
       "styleSettings": "Stil Ayarları",
-      "knowledge": "Bilgi Yönetimi"
+      "knowledge": "Bilgi Yönetimi",
+      "arabicOverrides": "Arapça Geçersiz Kılmalar"
     },
     "general": {
       "language": "Dil",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "Dile göre tarih ve sayı biçimi",
       "scriptTools": "Yazı araçları",
       "scriptToolsDesc": "Dile özgü semboller ve noktalama"
+    },
+    "arabicOverrides": {
+      "title": "Arapça Motor Geçersiz Kılmaları",
+      "intro": "Bu Evrende belirli Arapça yüzey biçimlerini motorun nasıl çözümleyeceğini sabitleyin. Her geçersiz kılma egemen yanıttır — üretici FST, kaskad ve sezgisel yedeği geçer.",
+      "loading": "Yükleniyor…",
+      "empty": "Henüz geçersiz kılma yok.",
+      "countOne": "geçersiz kılma",
+      "countMany": "geçersiz kılma",
+      "add": "Geçersiz kılma ekle",
+      "newTitle": "Yeni geçersiz kılma",
+      "surface": "Yüzey biçimi",
+      "surfaceRequired": "Yüzey biçimi gereklidir.",
+      "lemma": "Lemma",
+      "lemmaHint": "Boş bırakılırsa yüzey biçimi kullanılır.",
+      "root": "Kök",
+      "pattern": "Örüntü",
+      "pos": "Söz türü",
+      "note": "Not",
+      "notePlaceholder": "Bu geçersiz kılma neden var? (isteğe bağlı)",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor…",
+      "cancel": "İptal",
+      "remove": "Kaldır",
+      "reindexing": "Yeniden dizinleniyor…",
+      "reindexed": "{count} not yeniden dizinlendi",
+      "posProperNoun": "Özel ad",
+      "posNoun": "Ad",
+      "posAdjective": "Sıfat",
+      "posAdverb": "Zarf",
+      "posVerb": "Fiil",
+      "posParticle": "İlgeç",
+      "posForeign": "Yabancı",
+      "posUnknown": "Bilinmiyor"
     },
     "files": {
       "defaultLocation": "Yeni notlar için varsayılan konum",
@@ -644,7 +678,15 @@
     "terms": "terim",
     "noTerms": "Sözlük terimi bulunamadı",
     "building": "Dizin oluşturuluyor…",
-    "allLangs": "Tümü"
+    "allLangs": "Tümü",
+    "comparing": "Karşılaştırma",
+    "clearAll": "Tümünü temizle",
+    "loadingCommonality": "Ortak noktalar yükleniyor…",
+    "noCommonality": "Seçili tüm terimleri içeren not yok.",
+    "noteWithAll": "not tümünü içeriyor",
+    "notesWithAll": "not tümünü içeriyor",
+    "selectedTerms": "seçili terim",
+    "alsoAppearsWith": "Birlikte görünür"
   },
   "workspacesPanel": {
     "title": "Çalışma Alanları",

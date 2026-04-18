@@ -19,7 +19,8 @@
       "plugins": "Kern-Erweiterungen",
       "templates": "Vorlagen",
       "styleSettings": "Stil-Einstellungen",
-      "knowledge": "Wissensmanagement"
+      "knowledge": "Wissensmanagement",
+      "arabicOverrides": "Arabische Überschreibungen"
     },
     "general": {
       "language": "Sprache",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "Datum und Zahlen je Sprache formatieren",
       "scriptTools": "Schriftwerkzeuge",
       "scriptToolsDesc": "Sprachspezifische Symbole und Satzzeichen"
+    },
+    "arabicOverrides": {
+      "title": "Überschreibungen der Arabisch-Engine",
+      "intro": "Legen Sie fest, wie die Engine bestimmte arabische Oberflächenformen in diesem Universum analysiert. Jede Überschreibung ist die souveräne Antwort — sie schlägt den generativen FST, die Kaskade und den heuristischen Fallback.",
+      "loading": "Lädt…",
+      "empty": "Noch keine Überschreibungen.",
+      "countOne": "Überschreibung",
+      "countMany": "Überschreibungen",
+      "add": "Überschreibung hinzufügen",
+      "newTitle": "Neue Überschreibung",
+      "surface": "Oberflächenform",
+      "surfaceRequired": "Oberflächenform ist erforderlich.",
+      "lemma": "Lemma",
+      "lemmaHint": "Standardmäßig Oberflächenform, falls leer.",
+      "root": "Wurzel",
+      "pattern": "Muster",
+      "pos": "Wortart",
+      "note": "Notiz",
+      "notePlaceholder": "Warum existiert diese Überschreibung? (optional)",
+      "save": "Speichern",
+      "saving": "Speichert…",
+      "cancel": "Abbrechen",
+      "remove": "Entfernen",
+      "reindexing": "Neuindiziert…",
+      "reindexed": "{count} Notiz(en) neu indiziert",
+      "posProperNoun": "Eigenname",
+      "posNoun": "Substantiv",
+      "posAdjective": "Adjektiv",
+      "posAdverb": "Adverb",
+      "posVerb": "Verb",
+      "posParticle": "Partikel",
+      "posForeign": "Fremd",
+      "posUnknown": "Unbekannt"
     },
     "files": {
       "defaultLocation": "Standardort für neue Notizen",
@@ -644,7 +678,15 @@
     "terms": "Begriffe",
     "noTerms": "Keine Glossarbegriffe gefunden",
     "building": "Index wird erstellt…",
-    "allLangs": "Alle"
+    "allLangs": "Alle",
+    "comparing": "Vergleich",
+    "clearAll": "Alle löschen",
+    "loadingCommonality": "Gemeinsamkeiten werden geladen…",
+    "noCommonality": "Keine Notizen enthalten alle ausgewählten Begriffe.",
+    "noteWithAll": "Notiz enthält alle",
+    "notesWithAll": "Notizen enthalten alle",
+    "selectedTerms": "ausgewählten Begriffe",
+    "alsoAppearsWith": "Kommt auch vor mit"
   },
   "workspacesPanel": {
     "title": "Arbeitsbereiche",

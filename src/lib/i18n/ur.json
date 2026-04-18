@@ -19,7 +19,8 @@
       "plugins": "بنیادی پلگ انز",
       "templates": "ٹیمپلیٹس",
       "styleSettings": "اسٹائل سیٹنگز",
-      "knowledge": "علم کا انتظام"
+      "knowledge": "علم کا انتظام",
+      "arabicOverrides": "عربی اوور رائڈز"
     },
     "general": {
       "language": "زبان",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "زبان کے مطابق تاریخ اور نمبر فارمیٹ",
       "scriptTools": "تحریری ٹولز",
       "scriptToolsDesc": "زبان کے مخصوص علامات اور اوقاف"
+    },
+    "arabicOverrides": {
+      "title": "عربی انجن کے اوور رائڈز",
+      "intro": "اس Universe میں مخصوص عربی سطحی شکلوں کو انجن کس طرح تجزیہ کرے، طے کریں۔ ہر اوور رائڈ حاکم جواب ہے — یہ جنریٹو FST، کیسکیڈ اور ہیورسٹک فال بیک پر غالب رہتا ہے۔",
+      "loading": "لوڈ ہو رہا ہے…",
+      "empty": "ابھی کوئی اوور رائڈ نہیں۔",
+      "countOne": "اوور رائڈ",
+      "countMany": "اوور رائڈز",
+      "add": "اوور رائڈ شامل کریں",
+      "newTitle": "نیا اوور رائڈ",
+      "surface": "سطحی شکل",
+      "surfaceRequired": "سطحی شکل لازمی ہے۔",
+      "lemma": "لیما",
+      "lemmaHint": "خالی چھوڑنے پر سطحی شکل استعمال ہوگی۔",
+      "root": "جڑ",
+      "pattern": "وزن",
+      "pos": "کلمہ کی قسم",
+      "note": "نوٹ",
+      "notePlaceholder": "یہ اوور رائڈ کیوں ہے؟ (اختیاری)",
+      "save": "محفوظ کریں",
+      "saving": "محفوظ ہو رہا ہے…",
+      "cancel": "منسوخ کریں",
+      "remove": "ہٹائیں",
+      "reindexing": "دوبارہ انڈیکسنگ…",
+      "reindexed": "{count} نوٹ دوبارہ انڈیکس ہوئے",
+      "posProperNoun": "اسم خاص",
+      "posNoun": "اسم",
+      "posAdjective": "صفت",
+      "posAdverb": "ظرف",
+      "posVerb": "فعل",
+      "posParticle": "حرف",
+      "posForeign": "غیر ملکی",
+      "posUnknown": "نامعلوم"
     },
     "files": {
       "defaultLocation": "نئے نوٹس کے لیے ڈیفالٹ مقام",
@@ -644,7 +678,15 @@
     "terms": "اصطلاحات",
     "noTerms": "کوئی اصطلاحات نہیں ملیں",
     "building": "انڈیکس بنایا جا رہا ہے…",
-    "allLangs": "سب"
+    "allLangs": "سب",
+    "comparing": "موازنہ",
+    "clearAll": "سب صاف کریں",
+    "loadingCommonality": "مشترکات لوڈ ہو رہی ہیں…",
+    "noCommonality": "کوئی نوٹ تمام منتخب اصطلاحات پر مشتمل نہیں ہے۔",
+    "noteWithAll": "نوٹ تمام پر مشتمل ہے",
+    "notesWithAll": "نوٹس تمام پر مشتمل ہیں",
+    "selectedTerms": "منتخب اصطلاحات",
+    "alsoAppearsWith": "کے ساتھ بھی آتا ہے"
   },
   "workspacesPanel": {
     "title": "ورک اسپیسز",

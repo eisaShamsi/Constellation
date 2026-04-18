@@ -19,7 +19,8 @@
       "plugins": "افزونه‌های اصلی",
       "templates": "قالب‌ها",
       "styleSettings": "تنظیمات سبک",
-      "knowledge": "مدیریت دانش"
+      "knowledge": "مدیریت دانش",
+      "arabicOverrides": "بازنویسی‌های عربی"
     },
     "general": {
       "language": "زبان",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "قالب‌بندی تاریخ و اعداد بر اساس زبان",
       "scriptTools": "ابزارهای نوشتاری",
       "scriptToolsDesc": "نمادها و علائم نگارشی مخصوص هر زبان"
+    },
+    "arabicOverrides": {
+      "title": "بازنویسی‌های موتور عربی",
+      "intro": "نحوه تحلیل موتور را برای شکل‌های عربی مشخص در این جهان ثبت کنید. هر بازنویسی پاسخ حاکم است — بر FST مولّد، آبشار صرفی و بازگشت ابتکاری برتری دارد.",
+      "loading": "در حال بارگذاری…",
+      "empty": "هنوز بازنویسی‌ای وجود ندارد.",
+      "countOne": "بازنویسی",
+      "countMany": "بازنویسی",
+      "add": "افزودن بازنویسی",
+      "newTitle": "بازنویسی جدید",
+      "surface": "شکل سطحی",
+      "surfaceRequired": "شکل سطحی الزامی است.",
+      "lemma": "ریشهٔ لغوی",
+      "lemmaHint": "در صورت خالی بودن، شکل سطحی انتخاب می‌شود.",
+      "root": "ریشه",
+      "pattern": "وزن",
+      "pos": "مقولهٔ دستوری",
+      "note": "یادداشت",
+      "notePlaceholder": "چرا این بازنویسی وجود دارد؟ (اختیاری)",
+      "save": "ذخیره",
+      "saving": "در حال ذخیره…",
+      "cancel": "لغو",
+      "remove": "حذف",
+      "reindexing": "در حال بازنمایه‌سازی…",
+      "reindexed": "{count} یادداشت بازنمایه‌سازی شد",
+      "posProperNoun": "اسم خاص",
+      "posNoun": "اسم",
+      "posAdjective": "صفت",
+      "posAdverb": "قید",
+      "posVerb": "فعل",
+      "posParticle": "حرف",
+      "posForeign": "بیگانه",
+      "posUnknown": "نامشخص"
     },
     "files": {
       "defaultLocation": "مکان پیش‌فرض برای یادداشت‌های جدید",
@@ -644,7 +678,15 @@
     "terms": "اصطلاحات",
     "noTerms": "اصطلاحی یافت نشد",
     "building": "در حال ساخت فهرست…",
-    "allLangs": "همه"
+    "allLangs": "همه",
+    "comparing": "مقایسه",
+    "clearAll": "پاک کردن همه",
+    "loadingCommonality": "در حال بارگذاری اشتراک…",
+    "noCommonality": "هیچ یادداشتی شامل همهٔ اصطلاحات انتخاب‌شده نیست.",
+    "noteWithAll": "یادداشت شامل همهٔ",
+    "notesWithAll": "یادداشت شامل همهٔ",
+    "selectedTerms": "اصطلاح انتخاب‌شده",
+    "alsoAppearsWith": "همچنین ظاهر می‌شود با"
   },
   "workspacesPanel": {
     "title": "فضاهای کاری",

@@ -446,6 +446,27 @@ pub fn remove_arabic_override(
     Ok(removed)
 }
 
+/// Targeted FTS5 re-tokenization for every note whose body or name
+/// mentions `surface`.
+///
+/// Fired by the Settings UI after `add_arabic_override` or
+/// `remove_arabic_override` so the on-disk FTS index reflects the new
+/// Layer 0 verdict without waiting for a full Universe rebuild. Returns
+/// the number of rows re-tokenized — zero is a valid outcome (no indexed
+/// note contains the surface) and not an error.
+///
+/// The heavy lifting lives in `search::reindex_notes_matching_text`;
+/// this wrapper just exposes it through the Tauri IPC surface.
+#[tauri::command]
+pub fn reindex_arabic_overrides(
+    app: tauri::AppHandle,
+    surface: String,
+) -> Result<u32, String> {
+    use tauri::Manager;
+    let state = app.state::<crate::search::SearchState>();
+    crate::search::reindex_notes_matching_text(&state, &surface)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

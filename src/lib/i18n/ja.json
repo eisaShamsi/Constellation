@@ -19,7 +19,8 @@
       "plugins": "コアプラグイン",
       "templates": "テンプレート",
       "styleSettings": "スタイル設定",
-      "knowledge": "ナレッジ管理"
+      "knowledge": "ナレッジ管理",
+      "arabicOverrides": "アラビア語オーバーライド"
     },
     "general": {
       "language": "言語",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "言語ごとの日付と数字の形式",
       "scriptTools": "スクリプトツール",
       "scriptToolsDesc": "言語固有の記号と句読点"
+    },
+    "arabicOverrides": {
+      "title": "アラビア語エンジン・オーバーライド",
+      "intro": "この Universe 内の特定のアラビア語表層形に対する解析を固定します。各オーバーライドは最上位の回答であり、生成 FST・カスケード・ヒューリスティック・フォールバックに優先します。",
+      "loading": "読み込み中…",
+      "empty": "オーバーライドはまだありません。",
+      "countOne": "件",
+      "countMany": "件",
+      "add": "オーバーライドを追加",
+      "newTitle": "新しいオーバーライド",
+      "surface": "表層形",
+      "surfaceRequired": "表層形は必須です。",
+      "lemma": "レンマ",
+      "lemmaHint": "空欄の場合は表層形を使用します。",
+      "root": "語根",
+      "pattern": "語型",
+      "pos": "品詞",
+      "note": "メモ",
+      "notePlaceholder": "このオーバーライドを作った理由(任意)",
+      "save": "保存",
+      "saving": "保存中…",
+      "cancel": "キャンセル",
+      "remove": "削除",
+      "reindexing": "再インデックス中…",
+      "reindexed": "{count} 件のノートを再インデックスしました",
+      "posProperNoun": "固有名詞",
+      "posNoun": "名詞",
+      "posAdjective": "形容詞",
+      "posAdverb": "副詞",
+      "posVerb": "動詞",
+      "posParticle": "助詞",
+      "posForeign": "外来",
+      "posUnknown": "不明"
     },
     "files": {
       "defaultLocation": "新しいノートのデフォルト保存先",
@@ -644,7 +678,15 @@
     "terms": "件の用語",
     "noTerms": "用語が見つかりません",
     "building": "インデックスを構築中…",
-    "allLangs": "すべて"
+    "allLangs": "すべて",
+    "comparing": "比較",
+    "clearAll": "すべてクリア",
+    "loadingCommonality": "共通項を読み込み中…",
+    "noCommonality": "選択したすべての用語を含むノートはありません。",
+    "noteWithAll": "件のノートがすべてを含む",
+    "notesWithAll": "件のノートがすべてを含む",
+    "selectedTerms": "個の選択された用語",
+    "alsoAppearsWith": "同時に出現する語"
   },
   "workspacesPanel": {
     "title": "ワークスペース",

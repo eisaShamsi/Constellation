@@ -19,7 +19,8 @@
       "plugins": "कोर प्लग-इन",
       "templates": "टेम्पलेट",
       "styleSettings": "स्टाइल सेटिंग्स",
-      "knowledge": "ज्ञान प्रबंधन"
+      "knowledge": "ज्ञान प्रबंधन",
+      "arabicOverrides": "अरबी ओवरराइड"
     },
     "general": {
       "language": "भाषा",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "भाषा के अनुसार दिनांक और संख्याएँ स्वरूपित करें",
       "scriptTools": "लिपि उपकरण",
       "scriptToolsDesc": "भाषा-विशिष्ट प्रतीक और विराम चिह्न"
+    },
+    "arabicOverrides": {
+      "title": "अरबी इंजन ओवरराइड",
+      "intro": "इस ब्रह्मांड में विशिष्ट अरबी शब्द-रूपों के लिए इंजन के विश्लेषण को तय करें। प्रत्येक ओवरराइड सर्वोच्च उत्तर है — यह जेनरेटिव FST, कैस्केड और हेयुरिस्टिक फॉलबैक पर भारी पड़ता है।",
+      "loading": "लोड हो रहा है…",
+      "empty": "अभी कोई ओवरराइड नहीं।",
+      "countOne": "ओवरराइड",
+      "countMany": "ओवरराइड",
+      "add": "ओवरराइड जोड़ें",
+      "newTitle": "नया ओवरराइड",
+      "surface": "सतह रूप",
+      "surfaceRequired": "सतह रूप आवश्यक है।",
+      "lemma": "लेम्मा",
+      "lemmaHint": "खाली छोड़ने पर सतह रूप लिया जाता है।",
+      "root": "मूल",
+      "pattern": "छंद/ढाँचा",
+      "pos": "शब्द-भेद",
+      "note": "नोट",
+      "notePlaceholder": "यह ओवरराइड क्यों है? (वैकल्पिक)",
+      "save": "सहेजें",
+      "saving": "सहेज रहा है…",
+      "cancel": "रद्द करें",
+      "remove": "हटाएँ",
+      "reindexing": "पुनः अनुक्रमण…",
+      "reindexed": "{count} नोट पुनः अनुक्रमित",
+      "posProperNoun": "व्यक्तिवाचक संज्ञा",
+      "posNoun": "संज्ञा",
+      "posAdjective": "विशेषण",
+      "posAdverb": "क्रिया-विशेषण",
+      "posVerb": "क्रिया",
+      "posParticle": "अव्यय",
+      "posForeign": "विदेशी",
+      "posUnknown": "अज्ञात"
     },
     "files": {
       "defaultLocation": "नए नोट्स का डिफ़ॉल्ट स्थान",
@@ -644,7 +678,15 @@
     "terms": "शब्द",
     "noTerms": "कोई शब्दावली शब्द नहीं मिले",
     "building": "इंडेक्स बन रहा है…",
-    "allLangs": "सभी"
+    "allLangs": "सभी",
+    "comparing": "तुलना",
+    "clearAll": "सब साफ़ करें",
+    "loadingCommonality": "समानताएँ लोड हो रही हैं…",
+    "noCommonality": "किसी भी नोट में चयनित सभी शब्द नहीं हैं।",
+    "noteWithAll": "नोट में सभी हैं",
+    "notesWithAll": "नोटों में सभी हैं",
+    "selectedTerms": "चयनित शब्द",
+    "alsoAppearsWith": "साथ भी दिखाई देता है"
   },
   "workspacesPanel": {
     "title": "वर्कस्पेस",

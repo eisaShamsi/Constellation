@@ -19,7 +19,8 @@
       "plugins": "Complementos Principales",
       "templates": "Plantillas",
       "styleSettings": "Ajustes de estilo",
-      "knowledge": "Gestión del conocimiento"
+      "knowledge": "Gestión del conocimiento",
+      "arabicOverrides": "Anulaciones del árabe"
     },
     "general": {
       "language": "Idioma",
@@ -108,6 +109,39 @@
       "dateAndNumbersDesc": "Formatear fechas y números por idioma",
       "scriptTools": "Herramientas de escritura",
       "scriptToolsDesc": "Símbolos y puntuación específicos del idioma"
+    },
+    "arabicOverrides": {
+      "title": "Anulaciones del motor árabe",
+      "intro": "Fija cómo el motor analiza superficies árabes concretas en este Universo. Cada anulación es la respuesta soberana — vence al FST generativo, la cascada y el respaldo heurístico.",
+      "loading": "Cargando…",
+      "empty": "Aún no hay anulaciones.",
+      "countOne": "anulación",
+      "countMany": "anulaciones",
+      "add": "Añadir anulación",
+      "newTitle": "Nueva anulación",
+      "surface": "Forma superficial",
+      "surfaceRequired": "La forma superficial es obligatoria.",
+      "lemma": "Lema",
+      "lemmaHint": "Usa la forma superficial si se deja en blanco.",
+      "root": "Raíz",
+      "pattern": "Patrón",
+      "pos": "Categoría",
+      "note": "Nota",
+      "notePlaceholder": "¿Por qué existe esta anulación? (opcional)",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "cancel": "Cancelar",
+      "remove": "Eliminar",
+      "reindexing": "Reindexando…",
+      "reindexed": "Se reindexaron {count} nota(s)",
+      "posProperNoun": "Nombre propio",
+      "posNoun": "Sustantivo",
+      "posAdjective": "Adjetivo",
+      "posAdverb": "Adverbio",
+      "posVerb": "Verbo",
+      "posParticle": "Partícula",
+      "posForeign": "Extranjero",
+      "posUnknown": "Desconocido"
     },
     "files": {
       "defaultLocation": "Ubicación predeterminada para nuevas notas",
@@ -644,7 +678,15 @@
     "terms": "términos",
     "noTerms": "No se encontraron términos del glosario",
     "building": "Creando índice…",
-    "allLangs": "Todos"
+    "allLangs": "Todos",
+    "comparing": "Comparando",
+    "clearAll": "Limpiar todo",
+    "loadingCommonality": "Cargando coincidencias…",
+    "noCommonality": "Ninguna nota contiene todos los términos seleccionados.",
+    "noteWithAll": "nota contiene todos los",
+    "notesWithAll": "notas contienen todos los",
+    "selectedTerms": "términos seleccionados",
+    "alsoAppearsWith": "También aparece con"
   },
   "workspacesPanel": {
     "title": "Espacios de trabajo",
