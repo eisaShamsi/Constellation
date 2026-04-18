@@ -248,8 +248,18 @@ pub fn analyze_with_overrides(
             .map(|form| Analysis {
                 surface: word.to_string(),
                 lemma: form.surface.clone(),
-                root: form.root_key.clone(),
-                pattern_label: form.pattern_label.clone(),
+                // M9-intern: `form.root_key` / `form.pattern_label` are
+                // `Arc<str>` on the GeneratedForm side-table so distinct
+                // values share one heap allocation. `Analysis` keeps
+                // `String` fields for public-API stability — the
+                // conversion here is one owned-String allocation per
+                // Analysis (transient; freed once the caller's best-pick
+                // is kept). The per-call cost is identical to the
+                // pre-M9-intern `form.root_key.clone()` (both allocate
+                // one String); the saving comes from the side-table
+                // itself not holding 1.1M owned String copies.
+                root: form.root_key.to_string(),
+                pattern_label: form.pattern_label.to_string(),
                 pos: generator::pos_for_kind(form.pattern_kind),
                 prefixes: Vec::new(),
                 suffixes: Vec::new(),
@@ -272,8 +282,18 @@ pub fn analyze_with_overrides(
             .map(|form| Analysis {
                 surface: word.to_string(),
                 lemma: form.surface.clone(),
-                root: form.root_key.clone(),
-                pattern_label: form.pattern_label.clone(),
+                // M9-intern: `form.root_key` / `form.pattern_label` are
+                // `Arc<str>` on the GeneratedForm side-table so distinct
+                // values share one heap allocation. `Analysis` keeps
+                // `String` fields for public-API stability — the
+                // conversion here is one owned-String allocation per
+                // Analysis (transient; freed once the caller's best-pick
+                // is kept). The per-call cost is identical to the
+                // pre-M9-intern `form.root_key.clone()` (both allocate
+                // one String); the saving comes from the side-table
+                // itself not holding 1.1M owned String copies.
+                root: form.root_key.to_string(),
+                pattern_label: form.pattern_label.to_string(),
                 pos: generator::pos_for_kind(form.pattern_kind),
                 prefixes: Vec::new(),
                 suffixes: Vec::new(),
@@ -333,8 +353,18 @@ pub fn analyze_with_overrides(
             peel_analyses.push(Analysis {
                 surface: word.to_string(),
                 lemma: form.surface.clone(),
-                root: form.root_key.clone(),
-                pattern_label: form.pattern_label.clone(),
+                // M9-intern: `form.root_key` / `form.pattern_label` are
+                // `Arc<str>` on the GeneratedForm side-table so distinct
+                // values share one heap allocation. `Analysis` keeps
+                // `String` fields for public-API stability — the
+                // conversion here is one owned-String allocation per
+                // Analysis (transient; freed once the caller's best-pick
+                // is kept). The per-call cost is identical to the
+                // pre-M9-intern `form.root_key.clone()` (both allocate
+                // one String); the saving comes from the side-table
+                // itself not holding 1.1M owned String copies.
+                root: form.root_key.to_string(),
+                pattern_label: form.pattern_label.to_string(),
                 pos: generator::pos_for_kind(form.pattern_kind),
                 // Analysis stores AffixFunction (semantic) not Affix
                 // (surface) — the caller wants to know "this has a

@@ -77,7 +77,7 @@ use super::patterns;
 use super::roots;
 use super::types::{PartOfSpeech, Pattern, PatternKind, Root, RootClass};
 use std::collections::HashMap;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 // ──────────────────────────────────────────────────────────────────────
 // Public API
@@ -116,13 +116,32 @@ pub fn generate_all() -> Vec<GeneratedForm> {
     let idx = roots::RootsIndex::get();
     let pats = patterns::all_patterns();
 
+    // M9-intern — dedup pools for the two `Arc<str>` fields on
+    // `GeneratedForm`. A root_key like `ك-ت-ب` recurs across every
+    // pattern applied to that root (~140 times at full corpus); a
+    // pattern_label like `فَاعِل` recurs across every root that licenses
+    // the active participle (~6,000 times at 7K-root scale). Interning
+    // each once here avoids thousands of owned-String heap allocations
+    // during the cold-start rebuild, and lets the side-tables share a
+    // single heap copy per distinct value.
+    let mut root_pool: HashMap<String, Arc<str>> = HashMap::new();
+    let mut label_pool: HashMap<String, Arc<str>> = HashMap::new();
+
+    // Pre-intern every pattern label — there are ~200 of them regardless
+    // of corpus size, so this is a bounded warm-up that pays for itself
+    // on the very first root × pattern iteration.
+    for pattern in &pats {
+        intern(&mut label_pool, &pattern.label_ar);
+    }
+
     let mut out: Vec<GeneratedForm> = Vec::with_capacity(idx.len() * pats.len() / 4);
     for root in idx.iter() {
+        let root_key = intern(&mut root_pool, &roots::canonical_key(&root.radicals));
         for pattern in &pats {
             if let Some(surface) = apply(root, pattern) {
                 out.push(GeneratedForm {
-                    root_key: roots::canonical_key(&root.radicals),
-                    pattern_label: pattern.label_ar.clone(),
+                    root_key: Arc::clone(&root_key),
+                    pattern_label: intern(&mut label_pool, &pattern.label_ar),
                     pattern_kind: pattern.kind,
                     surface,
                 });
@@ -133,12 +152,39 @@ pub fn generate_all() -> Vec<GeneratedForm> {
     out
 }
 
+/// Intern a string into an `Arc<str>` pool, returning a shared `Arc` that
+/// all callers referencing the same string get back. Used by both the
+/// cold-start [`generate_all`] and the cache-load path in `fst_bake` —
+/// whoever decodes the side tables can reuse this helper for symmetric
+/// sharing.
+pub(crate) fn intern(pool: &mut HashMap<String, Arc<str>>, s: &str) -> Arc<str> {
+    if let Some(existing) = pool.get(s) {
+        return Arc::clone(existing);
+    }
+    let arc: Arc<str> = Arc::from(s);
+    pool.insert(s.to_string(), Arc::clone(&arc));
+    arc
+}
+
 /// One generated surface form, fully linked back to its inputs for FST
 /// payload assembly.
+///
+/// M9-intern — `root_key` and `pattern_label` are `Arc<str>` rather than
+/// `String` so the ~200 distinct pattern labels and ~600 (today) / ~7,000
+/// (projected) distinct root keys are heap-allocated **once** and shared
+/// across every form that references them. At 1.1M-form scale a full
+/// `String` per field would cost ~110 bytes per form in repeated string
+/// bytes + allocator overhead (160 MB total); sharing via `Arc<str>` drops
+/// that to ~32 bytes per form for the two pointers (35 MB total) plus a
+/// few KB for the shared strings themselves. On-disk bake format is
+/// unchanged — strings still round-trip through a length-prefixed UTF-8
+/// encoding. The `fst_bake` decoder re-interns at load time by funnelling
+/// every decoded string through a shared pool so cache hits get the same
+/// sharing as cold rebuilds.
 #[derive(Debug, Clone)]
 pub struct GeneratedForm {
-    pub root_key: String,
-    pub pattern_label: String,
+    pub root_key: Arc<str>,
+    pub pattern_label: Arc<str>,
     pub pattern_kind: PatternKind,
     pub surface: String,
 }
@@ -982,7 +1028,7 @@ mod tests {
         // At least one hit should come from the ك-ت-ب root via an active
         // participle pattern.
         let found = hits.iter().any(|g| {
-            g.root_key == "ك-ت-ب" && g.pattern_kind == PatternKind::ActiveParticiple
+            &*g.root_key == "ك-ت-ب" && g.pattern_kind == PatternKind::ActiveParticiple
         });
         assert!(
             found,
@@ -997,7 +1043,7 @@ mod tests {
         let hits = idx.lookup("مكتوب");
         assert!(!hits.is_empty(), "مكتوب must be in the generative index");
         let found = hits.iter().any(|g| {
-            g.root_key == "ك-ت-ب" && g.pattern_kind == PatternKind::PassiveParticiple
+            &*g.root_key == "ك-ت-ب" && g.pattern_kind == PatternKind::PassiveParticiple
         });
         assert!(
             found,
@@ -1013,7 +1059,7 @@ mod tests {
         assert!(!hits.is_empty(), "دحرج must be in the generative index");
         let found = hits
             .iter()
-            .any(|g| g.root_key == "د-ح-ر-ج" && g.pattern_kind == PatternKind::VerbPerfect);
+            .any(|g| &*g.root_key == "د-ح-ر-ج" && g.pattern_kind == PatternKind::VerbPerfect);
         assert!(
             found,
             "دحرج must trace to (د-ح-ر-ج, VerbPerfect); hits: {:?}",
@@ -1250,8 +1296,8 @@ mod tests {
             "generated corpus must contain أئمة (ء-م-م + أَفْعِلَة); first \
              hamzated forms: {:?}",
             all.iter()
-                .filter(|g| g.root_key == "ء-م-م")
-                .map(|g| (stripped(&g.surface), g.pattern_label.clone()))
+                .filter(|g| &*g.root_key == "ء-م-م")
+                .map(|g| (stripped(&g.surface), (*g.pattern_label).to_string()))
                 .collect::<Vec<_>>()
         );
     }
@@ -1268,7 +1314,7 @@ mod tests {
             "أئمة must be findable in the GenerativeIndex after M2.b"
         );
         let found = hits.iter().any(|g| {
-            g.root_key == "ء-م-م" && g.pattern_kind == PatternKind::BrokenPlural
+            &*g.root_key == "ء-م-م" && g.pattern_kind == PatternKind::BrokenPlural
         });
         assert!(
             found,
@@ -1464,7 +1510,7 @@ mod tests {
         let all = generate_all();
         let has_qala = all
             .iter()
-            .any(|g| g.root_key == "ق-و-ل" && stripped(&g.surface) == "قال");
+            .any(|g| &*g.root_key == "ق-و-ل" && stripped(&g.surface) == "قال");
         assert!(has_qala, "generated corpus must contain قال from ق-و-ل");
     }
 
@@ -1473,7 +1519,7 @@ mod tests {
         let all = generate_all();
         let has_daʿa = all
             .iter()
-            .any(|g| g.root_key == "د-ع-و" && stripped(&g.surface) == "دعا");
+            .any(|g| &*g.root_key == "د-ع-و" && stripped(&g.surface) == "دعا");
         assert!(has_daʿa, "generated corpus must contain دعا from د-ع-و");
     }
 
@@ -1482,7 +1528,7 @@ mod tests {
         let all = generate_all();
         let has_yaʿidu = all
             .iter()
-            .any(|g| g.root_key == "و-ع-د" && stripped(&g.surface) == "يعد");
+            .any(|g| &*g.root_key == "و-ع-د" && stripped(&g.surface) == "يعد");
         assert!(has_yaʿidu, "generated corpus must contain يعد from و-ع-د");
     }
 
@@ -1492,7 +1538,7 @@ mod tests {
         let hits = idx.lookup("قال");
         assert!(!hits.is_empty(), "قال must be in the generative index");
         let found = hits.iter().any(|g|
-            g.root_key == "ق-و-ل" && g.pattern_kind == PatternKind::VerbPerfect
+            &*g.root_key == "ق-و-ل" && g.pattern_kind == PatternKind::VerbPerfect
         );
         assert!(found, "قال must trace to (ق-و-ل, VerbPerfect); hits: {:?}", hits);
     }
@@ -1503,7 +1549,7 @@ mod tests {
         let hits = idx.lookup("يعد");
         assert!(!hits.is_empty(), "يعد must be in the generative index");
         let found = hits.iter().any(|g|
-            g.root_key == "و-ع-د" && g.pattern_kind == PatternKind::VerbImperfect
+            &*g.root_key == "و-ع-د" && g.pattern_kind == PatternKind::VerbImperfect
         );
         assert!(found, "يعد must trace to (و-ع-د, VerbImperfect); hits: {:?}", hits);
     }

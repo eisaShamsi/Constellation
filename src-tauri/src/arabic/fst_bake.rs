@@ -67,12 +67,13 @@
 //! building in-memory, so the worst case is the old M3 behaviour
 //! (HashMap-class startup cost).
 
+use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
-use super::generator::GeneratedForm;
+use super::generator::{intern as intern_into_pool, GeneratedForm};
 use super::types::PatternKind;
 
 /// Bump whenever generator rules, pattern corpus, or the on-disk layout
@@ -237,6 +238,12 @@ fn encode_side(out: &mut Vec<u8>, fst_bytes: &[u8], values: &[GeneratedForm]) {
 
 fn encode_form(out: &mut Vec<u8>, form: &GeneratedForm) {
     out.push(encode_kind(form.pattern_kind));
+    // M9-intern: `form.root_key` and `form.pattern_label` are now
+    // `Arc<str>` (shared across forms that share the same string).
+    // `Arc<str>` derefs to `str`, so `&form.root_key` coerces cleanly
+    // to `&str` at the call site — on-disk format is byte-identical to
+    // the pre-M9-intern layout (same length prefix + UTF-8 bytes). No
+    // CACHE_FORMAT_VERSION bump required.
     encode_str(out, &form.root_key);
     encode_str(out, &form.pattern_label);
     encode_str(out, &form.surface);
@@ -267,8 +274,19 @@ fn decode_bundle(buf: &[u8]) -> io::Result<FstBundle> {
         ));
     }
 
-    let (stripped_bytes, values_stripped) = decode_side(&mut cur)?;
-    let (folded_bytes, values_folded) = decode_side(&mut cur)?;
+    // M9-intern — dedup pools for the `Arc<str>` fields on decoded forms.
+    // Shared across both sides (stripped + folded) because the two side
+    // tables overlap heavily (the folded table is a strict subset of the
+    // stripped table in key space but has its own value rows). Without
+    // the shared pool each side would allocate its own `Arc` per string
+    // and lose half the sharing win.
+    let mut root_pool: HashMap<String, Arc<str>> = HashMap::new();
+    let mut label_pool: HashMap<String, Arc<str>> = HashMap::new();
+
+    let (stripped_bytes, values_stripped) =
+        decode_side(&mut cur, &mut root_pool, &mut label_pool)?;
+    let (folded_bytes, values_folded) =
+        decode_side(&mut cur, &mut root_pool, &mut label_pool)?;
 
     // Trailing garbage is a protocol violation — reject rather than
     // silently accept. A partial write that happened to pass earlier
@@ -291,7 +309,11 @@ fn decode_bundle(buf: &[u8]) -> io::Result<FstBundle> {
     })
 }
 
-fn decode_side(cur: &mut Cursor) -> io::Result<(Vec<u8>, Vec<GeneratedForm>)> {
+fn decode_side(
+    cur: &mut Cursor,
+    root_pool: &mut HashMap<String, Arc<str>>,
+    label_pool: &mut HashMap<String, Arc<str>>,
+) -> io::Result<(Vec<u8>, Vec<GeneratedForm>)> {
     let fst_len = cur.read_u64()? as usize;
     let fst_bytes = cur.read_bytes(fst_len)?.to_vec();
     let val_count = cur.read_u64()? as usize;
@@ -300,12 +322,16 @@ fn decode_side(cur: &mut Cursor) -> io::Result<(Vec<u8>, Vec<GeneratedForm>)> {
     // total values per side at 4B, far beyond any plausible corpus).
     let mut values = Vec::with_capacity(val_count);
     for _ in 0..val_count {
-        values.push(decode_form(cur)?);
+        values.push(decode_form(cur, root_pool, label_pool)?);
     }
     Ok((fst_bytes, values))
 }
 
-fn decode_form(cur: &mut Cursor) -> io::Result<GeneratedForm> {
+fn decode_form(
+    cur: &mut Cursor,
+    root_pool: &mut HashMap<String, Arc<str>>,
+    label_pool: &mut HashMap<String, Arc<str>>,
+) -> io::Result<GeneratedForm> {
     let kind_tag = cur.read_u8()?;
     let pattern_kind = decode_kind(kind_tag).ok_or_else(|| {
         io::Error::new(
@@ -313,9 +339,15 @@ fn decode_form(cur: &mut Cursor) -> io::Result<GeneratedForm> {
             format!("arabic-fst cache: unknown PatternKind tag {kind_tag}"),
         )
     })?;
-    let root_key = decode_str(cur)?;
-    let pattern_label = decode_str(cur)?;
+    let root_key_str = decode_str(cur)?;
+    let pattern_label_str = decode_str(cur)?;
     let surface = decode_str(cur)?;
+    // M9-intern: funnel the decoded string through a shared pool so
+    // every form that references the same root or pattern shares a
+    // single heap allocation. Cache-hit loads now get the same sharing
+    // as cold rebuilds.
+    let root_key = intern_into_pool(root_pool, &root_key_str);
+    let pattern_label = intern_into_pool(label_pool, &pattern_label_str);
     Ok(GeneratedForm {
         root_key,
         pattern_label,
@@ -442,15 +474,15 @@ mod tests {
         FstBundle {
             stripped_bytes: vec![0xAA, 0xBB, 0xCC],
             values_stripped: vec![GeneratedForm {
-                root_key: "ك-ت-ب".to_string(),
-                pattern_label: "فَعَلَ".to_string(),
+                root_key: "ك-ت-ب".into(),
+                pattern_label: "فَعَلَ".into(),
                 pattern_kind: PatternKind::VerbPerfect,
                 surface: "كَتَبَ".to_string(),
             }],
             folded_bytes: vec![0xDD, 0xEE],
             values_folded: vec![GeneratedForm {
-                root_key: "ك-ت-ب".to_string(),
-                pattern_label: "فَاعِل".to_string(),
+                root_key: "ك-ت-ب".into(),
+                pattern_label: "فَاعِل".into(),
                 pattern_kind: PatternKind::ActiveParticiple,
                 surface: "كاتب".to_string(),
             }],
@@ -510,15 +542,19 @@ mod tests {
     #[test]
     fn encode_decode_form_roundtrip() {
         let form = GeneratedForm {
-            root_key: "ض-ر-ب".to_string(),
-            pattern_label: "فَعَلَ".to_string(),
+            root_key: "ض-ر-ب".into(),
+            pattern_label: "فَعَلَ".into(),
             pattern_kind: PatternKind::VerbPerfect,
             surface: "ضَرَبَ".to_string(),
         };
         let mut buf = Vec::new();
         encode_form(&mut buf, &form);
         let mut cur = Cursor { buf: &buf, pos: 0 };
-        let back = decode_form(&mut cur).expect("decode");
+        // M9-intern: decode_form now requires mutable intern pools so
+        // roundtrip tests must provide them (empty is fine for one-off).
+        let mut root_pool: HashMap<String, Arc<str>> = HashMap::new();
+        let mut label_pool: HashMap<String, Arc<str>> = HashMap::new();
+        let back = decode_form(&mut cur, &mut root_pool, &mut label_pool).expect("decode");
         assert_eq!(back.root_key, form.root_key);
         assert_eq!(back.pattern_label, form.pattern_label);
         assert_eq!(back.pattern_kind, form.pattern_kind);

@@ -381,7 +381,7 @@ mod tests {
         let hits = idx.lookup("كاتب");
         assert!(!hits.is_empty(), "كاتب must be findable in the FST");
         assert!(
-            hits.iter().any(|f| f.root_key == "ك-ت-ب"),
+            hits.iter().any(|f| &*f.root_key == "ك-ت-ب"),
             "expected root ك-ت-ب among hits for كاتب; got {:?}",
             hits.iter().map(|f| &f.root_key).collect::<Vec<_>>()
         );
@@ -394,7 +394,7 @@ mod tests {
         let hits = idx.lookup("مكتوب");
         assert!(!hits.is_empty(), "مكتوب must be findable in the FST");
         assert!(
-            hits.iter().any(|f| f.root_key == "ك-ت-ب"),
+            hits.iter().any(|f| &*f.root_key == "ك-ت-ب"),
             "expected root ك-ت-ب among hits for مكتوب"
         );
     }
@@ -406,7 +406,7 @@ mod tests {
         let hits = idx.lookup("دحرج");
         assert!(!hits.is_empty(), "دحرج must be findable in the FST");
         assert!(
-            hits.iter().any(|f| f.root_key == "د-ح-ر-ج"),
+            hits.iter().any(|f| &*f.root_key == "د-ح-ر-ج"),
             "expected root د-ح-ر-ج among hits for دحرج"
         );
     }
@@ -423,7 +423,7 @@ mod tests {
             "أئمة must be findable in the FST (flagship M2.b regression)"
         );
         assert!(
-            hits.iter().any(|f| f.root_key == "ء-م-م"),
+            hits.iter().any(|f| &*f.root_key == "ء-م-م"),
             "expected root ء-م-م among hits for أئمة; got {:?}",
             hits.iter()
                 .map(|f| (&f.root_key, &f.pattern_label))
@@ -441,7 +441,7 @@ mod tests {
             "قال must be findable in the FST (M2.c hollow-perfect regression)"
         );
         assert!(
-            hits.iter().any(|f| f.root_key == "ق-و-ل"),
+            hits.iter().any(|f| &*f.root_key == "ق-و-ل"),
             "expected root ق-و-ل among hits for قال"
         );
     }
@@ -459,7 +459,7 @@ mod tests {
             "يعد must be findable (M2.c assimilated-imperfect regression)"
         );
         assert!(
-            hits.iter().any(|f| f.root_key == "و-ع-د"),
+            hits.iter().any(|f| &*f.root_key == "و-ع-د"),
             "expected root و-ع-د among hits for يعد; got {:?}",
             hits.iter().map(|f| &f.root_key).collect::<Vec<_>>()
         );
@@ -552,8 +552,8 @@ mod tests {
         // `MapBuilder` so this test stays independent of whatever helper
         // we eventually use to persist the corpus to disk.
         let value = GeneratedForm {
-            root_key: "ك-ت-ب".to_string(),
-            pattern_label: "فَعَلَ".to_string(),
+            root_key: "ك-ت-ب".into(),
+            pattern_label: "فَعَلَ".into(),
             pattern_kind: PatternKind::VerbPerfect,
             surface: "كَتَبَ".to_string(),
         };
@@ -575,7 +575,7 @@ mod tests {
 
         let hits = idx.lookup("كتب");
         assert_eq!(hits.len(), 1, "reassembled FST must return the one form");
-        assert_eq!(hits[0].root_key, "ك-ت-ب");
+        assert_eq!(&*hits[0].root_key, "ك-ت-ب");
         assert!(idx.lookup_folded("كتب").is_empty(), "empty folded map must miss");
     }
 }

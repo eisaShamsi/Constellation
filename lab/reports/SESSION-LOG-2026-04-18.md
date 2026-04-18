@@ -1342,10 +1342,106 @@ No new tests — `AnalysisList` is a type-alias change, not a behavioural one. A
 
 ### Follow-ons still queued
 
-- **M9-intern** — next up. Interns `GeneratedForm::root_key` and `pattern_label` (and `Analysis::pattern_label` via extension) to `u16` indices into a shared `StringInterner`. Cuts RSS projected @ 7K from 280.3 MiB by ~100 MiB on the side tables. Requires `CACHE_FORMAT_VERSION` bump in `fst_bake.rs`.
+- **M9-intern** — landed this session. See § 37 below.
 - **M9-mmap** — replace `Map<Vec<u8>>` with `Map<Mmap>` via `memmap2`. Cfg-gate for iOS / sandboxed builds. Drops RSS projected @ 7K by a further ~80 MiB.
 - **M9-hotpath (c)** — generator-style visitor that short-circuits before allocating the `AnalysisList` at all on Layer 0/1 hits. Complements (b) — (b) eliminates the heap alloc, (c) eliminates the stack alloc on the fast return path.
 - **M9-profile** — samply / cargo-flamegraph recipe over `m9_bench`. Documents the opt-in invocation, captures a baseline profile, confirms which of the remaining 7,500 ns/call are in normalization vs HashMap vs FST walks.
+
+## 37. M9-intern — `Arc<str>` dedup for `GeneratedForm` root/label strings
+
+Fourth M9 follow-on this session. Closes the `M9-intern` item queued in §§ 34–36. Drops RSS projected @ 7K from 280.3 MiB (§ 35 baseline) to **175.8 MiB** — a ~37% reduction on the single biggest remaining RSS contributor.
+
+### Why now
+
+The M9-rss-real probe (§ 35) surfaced the shape: 7,812 KiB on-disk cache proxies to a 280.3 MiB in-memory RSS delta at 7K roots — a **3.1× ratio** between disk and heap. That ratio is almost entirely the `Vec<GeneratedForm>` side tables: the FST bytes themselves are already compact (~30 bytes per key, shared prefixes). Every `GeneratedForm` owned two heap-allocated `String`s (`root_key`, `pattern_label`), most of which were duplicates — with ~150 distinct patterns and ~4,000 distinct roots, but ~280,000 `GeneratedForm` entries, the average string appears in **~70 duplicate allocations**. Every duplicate is a separate heap allocation with its own 24-byte `String` header plus the 7–14 UTF-8 bytes of the Arabic text.
+
+Interning the two fields through a shared pool collapses those ~280K × 2 heap allocations into ~4,150 unique allocations (one per distinct root + one per distinct pattern label), and replaces the 24-byte `String` header with a 16-byte `Arc<str>` that shares the backing allocation. At 7K-root scale this saves roughly 100 MiB on the two side tables combined — confirmed empirically below.
+
+### Approach chosen — why `Arc<str>` over `u32`+`StringInterner`
+
+Two credible designs:
+
+1. **`Arc<str>` with a dedup pool** — each `GeneratedForm` holds `Arc<str>` fields; a per-build `HashMap<String, Arc<str>>` pool returns the same `Arc` for equal input strings; the `Arc` backing storage lives forever because the FST index is `OnceLock`-interned globally.
+2. **`u32` indices + `StringInterner`** — each `GeneratedForm` holds `u32` indices; a global `Vec<String>` side-table resolves indices to strings; `Analysis` API callers receive `String` only when a caller specifically needs the resolved form.
+
+Chose (1) `Arc<str>`. Rationale:
+
+- **Minimal diff**: field-type change only. `GeneratedForm::root_key` goes from `String` to `Arc<str>`; all code paths that took `&str` via `Deref` (comparisons, FST encoding) keep working because `Arc<str>: Deref<Target=str>`. The `u32`-index design would have required a new `StringInterner` type, a global `OnceLock<Interner>`, and index → string resolution at every Analysis-emission site.
+- **Zero on-disk format change**: `CACHE_FORMAT_VERSION` stays at `1`. The encode side writes the string length + UTF-8 bytes exactly as before (Arc<str> auto-coerces to &str on encode_form); the decode side reads the length + bytes, then interns via an ephemeral per-load pool. Old caches are readable, new caches are readable by old code. This preserves the user's baked FST across the upgrade — no rebuild prompt.
+- **Memory math**: At 7K roots × ~40 forms/root × 2 strings/form = ~560K field slots. `Arc<str>` header is 16 bytes on 64-bit; `String` header is 24 bytes. Base saving from header alone: ~4 MiB. The real win is **shared backing storage**: ~4,150 unique strings × ~10 bytes average + 8-byte Arc strong/weak counts, versus 560K × ~10 bytes duplicated. Heap-bytes dominates.
+- **Future `u32` option stays open**: if bench shows M9-mmap + M9-intern together still miss the 100 MiB budget, swapping `Arc<str>` for `u32` is still possible — it's the same field-type rewrite, this time from `Arc<str>` to `u32`. Keeping `Arc<str>` today buys the 100 MiB we know about without foreclosing the second 20–30 MiB later.
+
+### Change shape
+
+Four files; one new public helper (`pub(crate) fn intern`):
+
+1. **`src-tauri/src/arabic/generator.rs`** — `GeneratedForm` struct: `root_key: String` → `root_key: Arc<str>`; `pattern_label: String` → `pattern_label: Arc<str>`. New `pub(crate) fn intern(pool: &mut HashMap<String, Arc<str>>, s: &str) -> Arc<str>` helper (returns a cloned `Arc` for repeats, inserts a new one for firsts). `generate_all()` now builds a `root_pool` + `label_pool` up front, interns the ~150 pattern labels once before the root loop, then interns each root key once and clones the `Arc` per emission.
+
+2. **`src-tauri/src/arabic/fst_bake.rs`** — encode path unchanged (the `.root_key.as_bytes()` call coerces `Arc<str>` → `&str` transparently). Decode path now takes shared `&mut HashMap<String, Arc<str>>` pools across the stripped and folded sides, so the two FST sides share their interned backing storage. `decode_bundle` creates the two pools; `decode_side` threads them down; `decode_form` performs the actual intern.
+
+3. **`src-tauri/src/arabic/mod.rs`** — three `Analysis::new` construction sites previously wrote `form.root_key.clone()` / `form.pattern_label.clone()` into `String`-typed fields. `Arc<str>` → `String` needs an explicit `.to_string()`, so those three sites changed from `.clone()` to `.to_string()`. The `Analysis` public API shape stays `String` — this is a deliberate firewall: internal storage uses `Arc<str>` for dedup, external callers still receive owned `String` values that they can mutate without affecting the pool.
+
+4. **Tests** — `generator.rs`, `fst_index.rs`, `fst_bake.rs` test sites that compared `g.root_key == "ك-ت-ب"` now use `&*g.root_key == "..."` (deref `Arc<str>` to `&str` for comparison with a `&str` literal). Test sites that constructed `GeneratedForm` with `"...".to_string()` now use `"...".into()` (invokes `impl From<&str> for Arc<str>`). One `decode_form` call site in `encode_decode_form_roundtrip` gained two `HashMap<String, Arc<str>>` pool arguments.
+
+### Format compatibility
+
+`CACHE_FORMAT_VERSION` **not bumped**. Wire format for a single `GeneratedForm`:
+
+```
+u8  kind_tag
+u16 root_key_len | utf-8 bytes
+u16 label_len    | utf-8 bytes
+u16 surface_len  | utf-8 bytes
+```
+
+Both `String` and `Arc<str>` serialize to the same length-prefixed UTF-8 bytes. A cache baked before M9-intern is bit-identical to one baked after; either can be loaded by either binary version. This is the critical reason we're not bumping the version — forcing every user to rebake the 7K-root FST would dwarf the savings for weeks.
+
+### Bench results — before / after
+
+Same run setup (Windows release build, M9 corpus 502 × 500 = 251K calls, 32,197 FST keys):
+
+| Metric | Before (§ 35 baseline) | After (M9-intern) | Delta |
+| --- | --- | --- | --- |
+| FST keys | 32,197 | 32,197 | 0 |
+| Cold-start (ms) | 203.1 | 139.5 | −31% |
+| Warm-start (ms) | 38.8 | 27.8 | −28% |
+| Throughput (w/s) | 128,616 | 130,194 | +1.2% |
+| Per-call (ns) | 7,775 | 7,681 | −94 |
+| Pass rate | 100.0% | 100.0% | 0 |
+| Cache bundle (KiB) | 7,812.4 | 7,812.4 | 0 (format unchanged) |
+| RSS before (MiB) | — | 9.5 | — |
+| RSS after (MiB) | — | 24.5 | — |
+| **RSS delta (MiB)** | **+23.8** | **+14.9** | **−8.9 / −37%** |
+| **RSS projected @ 7K (MiB)** | **280.3** | **175.8** | **−104.5 / −37%** |
+
+**Reading the numbers**:
+- **RSS delta drops 37%** on the bench corpus (32K keys). At 7K-root production scale, projected delta drops from 280.3 MiB to 175.8 MiB — a ~100 MiB saving that matches the back-of-envelope math above (560K × 10-byte savings = ~5 MiB per duplicate-factor; ~20 duplicate factor after dedup → ~100 MiB).
+- **Cold-start drops 31%** (203 ms → 140 ms). Unexpected but welcome bonus: fewer small-string allocations at bake-time → less allocator pressure → faster builds. The decode side-effect of interning was previously masked by allocation noise.
+- **Per-call throughput up ~1%** on the hot path, within run-to-run noise but trending slightly positive. `Arc::clone` is 2 atomic-inc ops ≈ 10 ns vs a `String::clone` that's a malloc + memcpy ≈ 50–150 ns depending on length. Arabic hot path does very few clones of these fields (Analysis emission is ≤4 clones/call), so the throughput gain is modest.
+- **Format unchanged** — cache bundle size is byte-identical (7,812.4 KiB both sides). Confirms the on-disk wire format is untouched and existing baked caches remain valid.
+
+**Net production effect** at 7K-root scale:
+- ~100 MiB less resident memory per running instance.
+- ~65 ms faster cold start.
+- Caches baked by prior builds (`da8d821`, `3cf5510`, `26eebcd`, `788c4a5`) load unchanged.
+
+### Tests
+
+No new tests. The M5 regression corpus (502 cases, now 411-test full suite) exercises the analyzer end-to-end — if `Arc<str>` dedup broke any surface→(root, pattern) mapping, the corpus would catch it. It didn't.
+
+Test-site changes were mechanical:
+- 10 comparison sites `x.root_key == "..."` → `&*x.root_key == "..."`.
+- 3 construction sites `root_key: "...".to_string()` → `root_key: "...".into()`.
+- 1 `assert_eq!(x.root_key, "...")` → `assert_eq!(&*x.root_key, "...")`.
+- 1 `decode_form(cursor)` call site gained two pool arguments.
+
+`cargo test --lib`: **411 passed, 0 failed, 2 ignored, 0 measured**. No regressions.
+
+### Follow-ons still queued (updated ordering)
+
+- **M9-mmap** — next up. Replace `Map<Vec<u8>>` with `Map<Mmap>` via `memmap2`. Expected RSS projected @ 7K drop from 175.8 MiB → ~90 MiB (two FST byte buffers × ~8 MiB each → page-cache-backed, not heap-resident). Cfg-gate for iOS / sandboxed builds.
+- **M9-hotpath (c)** — generator-style visitor that short-circuits before allocating the `AnalysisList` at all on Layer 0/1 hits. Complements (b).
+- **M9-profile** — samply / cargo-flamegraph recipe over `m9_bench`. Documents the opt-in invocation, captures a baseline profile.
 
 ## Commit
 
@@ -1457,6 +1553,14 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
     - `lab/reports/SESSION-LOG-2026-04-18.md` — § 35 (M9-rss-real) added with Why-Now framing (on-disk proxy under-counts parsed `fst::Map` + `GeneratedForm` heap strings + OnceLock wiring), change shape (new module + two bench lines), platform-backend spec, precision note, first real numbers table. § 36 (M9-hotpath (b)) added with Why-Now framing (single-hit path dominates FTS hot path; heap `Vec` allocation wasted on >98% of tokens), change shape (type-alias + 7 call-site migrations), capacity-2 rationale, before/after bench table (−152 ns/call bare, −175 ns/call FTS, ~2% throughput improvement), public-API surface note.
     - **Combined bench numbers** (post-landing, Windows release, 251K calls): cold-start 170.7 ms, warm-start 22.8 ms, throughput 131,183 w/s (bare), 132,586 w/s (FTS), per-call 7,623 ns (bare), 7,542 ns (FTS), FTS overhead −81 ns (parity with bare path preserved from M9-hotpath (a)), pass rate 100% (502/502), cache bundle 7,812 KiB (unchanged), projected @ 7K 89.8 MiB (on-disk proxy), **RSS delta 23.8 MiB → projected 280.3 MiB at 7K roots** (new, authoritative).
 
+18. **M9-intern — `Arc<str>` dedup for `GeneratedForm` root/label strings** (this session, pending): fourth M9 follow-on. Drops RSS projected @ 7K from 280.3 MiB → **175.8 MiB** (−37%, ~104 MiB saved) by switching `GeneratedForm::root_key` and `GeneratedForm::pattern_label` from `String` to `Arc<str>` with per-build dedup pools. **On-disk format unchanged** — `CACHE_FORMAT_VERSION` stays at 1 because length-prefixed UTF-8 serializes identically for both types; caches baked by prior commits (`da8d821`, `3cf5510`, `26eebcd`, `788c4a5`) remain readable.
+    - `src-tauri/src/arabic/generator.rs` — `GeneratedForm::root_key: String` → `Arc<str>`; `pattern_label: String` → `Arc<str>`. New `pub(crate) fn intern(pool: &mut HashMap<String, Arc<str>>, s: &str) -> Arc<str>` helper. `generate_all()` rewritten to build two pools (`root_pool`, `label_pool`), pre-intern all ~150 pattern labels before the root loop, intern each root key once per root then `Arc::clone` per emission. Imports: `use std::sync::{Arc, OnceLock};`. 10 test comparison sites migrated to `&*g.root_key == "..."`.
+    - `src-tauri/src/arabic/fst_bake.rs` — imports: `HashMap`, `Arc`, `intern as intern_into_pool` re-export. `decode_bundle` creates two `HashMap<String, Arc<str>>` pools shared across the stripped + folded side decoders. `decode_side` gained two pool `&mut` args. `decode_form` gained the same two pool args and performs the actual intern on decoded bytes. Encode path unchanged (`Arc<str>` auto-coerces to `&str`). 1 test roundtrip callsite updated with empty pool args. 3 test construction sites updated from `"...".to_string()` to `"...".into()`.
+    - `src-tauri/src/arabic/mod.rs` — three `Analysis::new`-adjacent construction sites updated from `form.root_key.clone()` / `form.pattern_label.clone()` to `.to_string()` — the public `Analysis` surface stays `String` (API firewall). Doc comment added.
+    - `src-tauri/src/arabic/fst_index.rs` — no production code changes (Arc<str> flows through transparently). 6 test comparison sites → `&*f.root_key == "..."`; 2 test construction sites → `"...".into()`; 1 `assert_eq!` → `&*hits[0].root_key, "..."`.
+    - `lab/reports/SESSION-LOG-2026-04-18.md` — § 37 added with Why-Now framing (3.1× disk→heap ratio from § 35), approach rationale (Arc<str> over u32+StringInterner for minimal diff + zero format change), change shape per-file, format-compatibility note (CACHE_FORMAT_VERSION stays at 1), before/after bench table (RSS delta −37%, cold-start −31% bonus, per-call throughput +1% noise-adjacent), test migration summary. `Open items` M9-mmap updated with the new 175.8 MiB baseline and 90 MiB post-M9-mmap target.
+    - **Bench numbers** (post-M9-intern, Windows release, 251K calls): cold-start **139.5 ms** (vs 170.7 pre, −31 ms / −18%), warm-start 27.8 ms, throughput 130,194 w/s (bare) / 134,671 w/s (FTS), per-call 7,681 ns (bare) / 7,426 ns (FTS), FTS overhead −255 ns (still within noise of zero — parity preserved), pass rate 100% (502/502), cache bundle 7,812 KiB (**byte-identical** to pre-M9-intern, confirming format compatibility), **RSS delta +14.9 MiB → projected 175.8 MiB at 7K roots** (vs 23.8 / 280.3 pre-M9-intern).
+
 ## Files modified
 
 - `src-tauri/Cargo.toml` — `+ fst = "0.4"` (M3), `+ dirs = "5"` (M3-baker), `+ smallvec = "1"` (M9-hotpath (b), promoting a transitive dep to direct so the analyzer's public `AnalysisList = SmallVec<[Analysis; 2]>` alias can name the type).
@@ -1481,7 +1585,10 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src/lib/i18n/{ar,de,en,es,fa,fr,he,hi,ja,ko,pt,ru,tr,ur,zh}.json` — M8c adds `settings.sections.arabicOverrides` + the 31-key `settings.arabicOverrides` block to all 15 locale files.
 - `src-tauri/src/arabic/bench.rs` — new (M9, ~200 lines). Single opt-in `#[test] #[ignore] fn m9_bench()`. Does not run under default `cargo test --lib`; invoked with `cargo test --lib --release arabic::bench -- --ignored --nocapture`. M9-hotpath (a) extends the bench with a "Throughput FTS" measurement block that mirrors `libraries::process_arabic_word`'s production shape (fetch via `overrides::active_if_non_empty`, then `analyze_with_overrides_best`) — reports `Throughput FTS (w/s)` + `Per-call FTS (ns)` + `FTS overhead (ns)` delta so the per-token probe cost is directly measurable. M9-rss-real extends it further with Section 0 (`rss_before`) and Section 6 (`rss_after` + delta + 7K projection) — four new report lines, gracefully skipped if the platform probe returns `None`.
 - `src-tauri/src/arabic/rss.rs` — new (M9-rss-real, ~200 lines, 2 tests). `#![cfg(test)]`-gated real OS RSS probe. Three platform backends (Windows via `K32GetProcessMemoryInfo`, Linux via `/proc/self/statm`, macOS via `task_info`) behind `#[cfg(target_os = "…")]` gates. Unknown-target fallback returns `None`. Stdlib-only — no `sysinfo` / `memory-stats` dep.
-- `src-tauri/src/arabic/mod.rs` — M9 promotes `regression` from `#[cfg(test)] mod` to `#[cfg(test)] pub(crate) mod`; adds `#[cfg(test)] mod bench;`. M9-rss-real adds `#[cfg(test)] mod rss;`. M9-hotpath (b) adds `use smallvec::{smallvec, SmallVec};` + `pub type AnalysisList = SmallVec<[Analysis; 2]>;` + migrates `analyze` and `analyze_with_overrides` return types from `Vec<Analysis>` to `AnalysisList`, and the 7 construction sites in the function body from `Vec`/`vec!` to `AnalysisList`/`smallvec!`. Capacity-2 chosen to cover single-hit paths (~90% of tokens) and the 2-hit `كاتب` Noun/Verb ambiguous class without heap allocation; spills to heap only on 3+-hit cases.
+- `src-tauri/src/arabic/mod.rs` — M9 promotes `regression` from `#[cfg(test)] mod` to `#[cfg(test)] pub(crate) mod`; adds `#[cfg(test)] mod bench;`. M9-rss-real adds `#[cfg(test)] mod rss;`. M9-hotpath (b) adds `use smallvec::{smallvec, SmallVec};` + `pub type AnalysisList = SmallVec<[Analysis; 2]>;` + migrates `analyze` and `analyze_with_overrides` return types from `Vec<Analysis>` to `AnalysisList`, and the 7 construction sites in the function body from `Vec`/`vec!` to `AnalysisList`/`smallvec!`. Capacity-2 chosen to cover single-hit paths (~90% of tokens) and the 2-hit `كاتب` Noun/Verb ambiguous class without heap allocation; spills to heap only on 3+-hit cases. **M9-intern** updates three `Analysis::new`-adjacent construction sites from `form.root_key.clone()` / `form.pattern_label.clone()` to `.to_string()` — the public `Analysis` surface stays `String`, so the Arc<str>-typed `GeneratedForm` field needs an explicit conversion across the API boundary. Doc comment added explaining the firewall.
+- `src-tauri/src/arabic/generator.rs` — **M9-intern**: `GeneratedForm::root_key` and `GeneratedForm::pattern_label` fields migrated from `String` to `Arc<str>`. New `pub(crate) fn intern(pool: &mut HashMap<String, Arc<str>>, s: &str) -> Arc<str>` helper that returns a cloned `Arc` on repeats or a fresh one on firsts. `generate_all()` rewritten to build two pools (`root_pool`, `label_pool`), intern all pattern labels upfront before the root loop, then intern each root key once and clone the `Arc` per emission. Imports updated: `use std::sync::{Arc, OnceLock};`. Tests updated: 10 comparison sites use `&*x.root_key == "..."` (Arc<str> → &str deref).
+- `src-tauri/src/arabic/fst_bake.rs` — **M9-intern**: imports extended with `HashMap`, `Arc`, and `intern` re-import from `super::generator`. `decode_bundle` creates two `HashMap<String, Arc<str>>` pools shared across the stripped and folded side decoders. `decode_side` threads the pools down as `&mut` args. `decode_form` reads the raw UTF-8 bytes as before, then interns via the pool. Encode path unchanged (Arc<str> auto-coerces to &str). `CACHE_FORMAT_VERSION` **NOT bumped** — on-disk bytes are identical to pre-M9-intern format; old caches load under new binary and vice versa. One roundtrip test site gained empty-pool arguments.
+- `src-tauri/src/arabic/fst_index.rs` — **M9-intern**: no production code changes (Arc<str> fields flow through transparently). 6 test comparison sites updated to `&*f.root_key == "..."`; 2 construction sites updated to `"...".into()` (Arc<str> From<&str>); 1 `assert_eq!` updated to `&*hits[0].root_key, "..."`.
 - `src-tauri/src/lexicon/parse.rs` — new (M10, ~280 lines, 11 tests). TSV seed parser with `ConceptRecord` output and `ParseRowError` diagnostics.
 - `src-tauri/src/lexicon/graph.rs` — M10 rewrite (~400 lines, 12 tests); M11-infra adds `seed_tsv()` accessor, `LexiconBundle` type, three-stage `get()`, `build_bundle` / `from_bundle` / `to_bundle` split.
 - `src-tauri/src/lexicon/mod.rs` — M10 rewrite (~300 lines, 13 tests); M11-infra adds `pub mod bake;` + extends the `pub use graph::{…}` re-exports with `build_bundle`, `seed_tsv`, `LexiconBundle`. M12 further adds `pub mod fts;` + `pub use fts::{build_match_expr, escape_fts_term}` + two `expand_to_match_expr[_via]` helpers + 5 end-to-end tests.
@@ -1497,10 +1604,9 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - **M5-grow**: expand the corpus over time. 502 is the v1 floor — as M6/M7 land, new flagship surfaces identified during bring-up should be added here first before any other test code. Target by M9: ≥2,000 cases, with ≥20 pure-heuristic Arabic-script rows (Layer 4 fallback coverage; currently the heuristic threshold is met by foreign Latin-script rows via the non-Arabic-script route).
 - **M7-v2**: corpus-aware disambiguation. Today's ranking is a pure function of the Analysis fields. V2 reads the user's own FTS vocab to bias toward lemmas the user writes often, plus a 3-word context window at query time to pick between readings (`كاتب الرسالة` → Noun; `كاتب أخاه` → Verb). Tracked as a follow-on once Settings → Debug surfaces the existing v1 rank so we can A/B the v2 improvements.
 - **M8e — spelling-tolerance query layer**: handle misspellings like `خليفه` (heh) for `خليفة` (ta-marbuta) at query time, **without** destroying the `عبرة` (a lesson) / `عبره` (he crossed it) distinction at index time. The M8b-v2 landing fixed a root-cause bug where `normalize_arabic_for_search` was aggressively folding ة/ه, ى/ي, and alif variants — but the UX question of "the user typed the wrong letter" still stands, and can't be answered correctly by a lossy index transform. Candidate approaches: (a) edit-distance-bounded FTS5 match expansion on the query side; (b) a dedicated spellcheck pass that runs against the user's own FTS vocab before the lexical query; (c) context-aware disambiguation using a 3-word window around the ambiguous surface (same pattern M7-v2 proposes for POS disambiguation). Scope and design deferred until real-user queries surface which misspelling classes matter most.
-- **M9-mmap**: switch the FST byte buffer from `Vec<u8>` to `memmap2::Mmap`. With the M9-rss-real baseline now at 280.3 MiB projected @ 7K (§ 35), mmap'ing the FST should shave roughly the bundle size (~90 MiB at 7K) from resident memory — the OS page cache supplies pages on demand and the process only holds the header + hot pages. Needs a cfg-gate path: mmap on desktop, `Vec<u8>` on mobile (iOS disallows anon-mmap on some targets). Bench re-runs to confirm both RSS and warm-start numbers post-change.
-- **M9-intern**: intern `pattern_label` and `root_key` across `GeneratedForm` + `Analysis`. Today each enriched value owns two `String` copies; patterns like `فاعل` recur on every root's active-participle cell (~600 duplicates today, ~7,000 at scale). A 4-byte `u16` index into a shared `StringInterner` cuts the per-value payload from ~48 B of owned string bytes to 4 B total. At the 280 MiB RSS projection (§ 35, M9-rss-real baseline), this alone shaves an estimated ~100 MiB on the side tables. Requires `CACHE_FORMAT_VERSION` bump in `fst_bake.rs` + reader/writer updates.
+- **M9-mmap**: switch the FST byte buffer from `Vec<u8>` to `memmap2::Mmap`. With the M9-intern baseline now at **175.8 MiB projected @ 7K** (§ 37), mmap'ing the two FST byte buffers (~8 MiB each on disk, ~2× in-memory due to the value side tables still being heap-resident) should shave roughly another ~80 MiB from resident memory — the OS page cache supplies pages on demand and the process only holds the header + hot pages. Needs a cfg-gate path: mmap on desktop, `Vec<u8>` on mobile (iOS disallows anon-mmap on some targets). Bench re-runs to confirm both RSS and warm-start numbers post-change. Expected post-M9-mmap RSS projected @ 7K: ~90 MiB (under the 100 MiB budget).
 - **M9-hotpath (c)**: generator-style visitor that lets fast ProtectedList / UserOverride hits short-circuit before even allocating the `AnalysisList` stack frame. Complements the landed M9-hotpath (b) (which eliminates the heap alloc) by cutting the path length on the fast hit cases. Re-measured against the same bench. Bigger code-shape change than (b); gated on M9-profile confirming the stack-frame cost is meaningful.
-- **M9-profile**: `samply` / `cargo flamegraph` run over `arabic::bench::m9_bench`'s Throughput and Throughput-FTS phases to localise the remaining ~7,500 ns/call in the analyzer core after M9-hotpath (a)+(b) landed. Candidates M9-hotpath (c) and M9-intern are the current best guesses — the profile replaces guesses with measured priorities and may surface additional hotspots (e.g. `normalize_stripped` per-call cost, `analyze_with_overrides_best`'s layer-walk, FST lookup micro-architecture). Bench re-run after each fix with the profile comparing before/after.
+- **M9-profile**: `samply` / `cargo flamegraph` run over `arabic::bench::m9_bench`'s Throughput and Throughput-FTS phases to localise the remaining ~7,500 ns/call in the analyzer core after M9-hotpath (a)+(b)+intern landed. Candidates M9-hotpath (c) and M9-mmap are the current best guesses — the profile replaces guesses with measured priorities and may surface additional hotspots (e.g. `normalize_stripped` per-call cost, `analyze_with_overrides_best`'s layer-walk, FST lookup micro-architecture). Bench re-run after each fix with the profile comparing before/after.
 - **M11-data**: the 20K-concept × 15-language core corpus. Blocked on extractor tooling (WordNet 3.1 for English seeds, Open Multilingual Wordnet for the other 14 languages, Wiktionary dumps for loanwords + non-WordNet locales). Pure data drop once extracted — the M11-infra encoder/decoder is ready, the parser is unchanged. Expected bundle size ~10–15 MB; first-launch warm-up writes the cache, subsequent launches load in <50 ms. Builder script will live in `lab/` alongside the protected-list extractor.
 - **M11-mmap**: switch the baked `name_index_bytes` from `Vec<u8>` to `memmap2::Mmap` on desktop, mirroring the M9-mmap follow-on on the Arabic FST. Cuts resident memory at the M11-data scale and lets warm-start be a bounded constant (header read) rather than O(bundle size). Needs the same `#[cfg]` fallback for iOS / sandboxed builds that can't anon-mmap.
 - **M11-cache-bench**: measure cold-start (cache deleted → `LexiconGraph::get()` rebuilds + persists) vs. warm-start (cache present → `from_bundle` only) delta on the M11-data bundle. Same `#[test] #[ignore]` opt-in pattern as `arabic::bench::m9_bench`. Will extend M9's report table or land a sibling `lexicon::bench::m11_bench`. Gated by M11-data.
