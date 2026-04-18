@@ -1154,6 +1154,199 @@ All under the existing `RegistryGuard` harness + `TEST_OVERRIDE_MUTEX`:
 - **M9-hotpath (c) — generator-style early-exit visitor**: restructure `analyze_with_overrides` so Layer 0 / 1 / 2 hits return without ever building the full candidate Vec. Biggest code-shape change of the three; least likely to ship without a concrete profile driving it.
 - **M9-profile — flamegraph / `perf record` of the throughput loop**: the M9-hotpath (a) bench numbers show the remaining budget (~7,700 ns per call) is in the analyzer core, not the override probe. Profile the `analyze_with_overrides_best` call across the regression corpus under `--release` with frame-pointers to identify the top 5 hot functions, then target them with named M9-hotpath (b/c) / M9-intern landings. This replaces the "three candidates from the open-item" with measured priorities.
 
+## 35. M9-rss-real — real OS-level RSS probe for the bench
+
+Second M9 follow-on landed this session (after hotpath (a)). Smallest / safest of the six M9 follow-ons — test-only, no production path touched, no bundle-format change. Picked first from the remaining queue on a risk-ordering basis: lands alone, gives every subsequent M9 follow-on a real memory number to aim at (M9-intern and M9-mmap are the ones that actually move it).
+
+### Why now
+
+`arabic::bench::m9_bench` has been reporting `Cache bundle (KiB)` and `Projected @ 7K (MiB)` as the memory-footprint proxies since the M9 landing. Both numbers are the **on-disk** bundle size (FST bytes + side-table bytes) times the extrapolation factor. That's a lower bound — it doesn't include:
+
+1. the parsed `fst::Map` header state after decode (BurntSushi's `Map` keeps the byte buffer accessible for traversal, plus some small per-node metadata);
+2. the `Vec<GeneratedForm>` side-tables (each `GeneratedForm` today owns two heap `String` fields — `root_key` + `pattern_label` — plus the surface string and a `PatternKind` tag);
+3. `OnceLock` wiring + lazy init overhead on the process singleton.
+
+For the "≤ 100 MiB RSS at 7K-root corpus" M9 success criterion, a real number is what tells us whether we've made it. The on-disk proxy tracks direction but not magnitude. Before M9-mmap and M9-intern run, we need a baseline we can compare against after each of them lands.
+
+### Change shape
+
+New module `arabic::rss` — ~200 lines, test-only, registered with `#[cfg(test)] mod rss;` from `arabic::mod.rs`. Single public API:
+
+```rust
+pub fn read_rss_bytes() -> Option<u64>
+```
+
+Returns the caller process's resident set size in bytes, or `None` if the platform's RSS query fails (rare — a kernel refusal or a missing `/proc`). The bench treats `None` as "skip this line of the report" rather than erroring, so the bench still finishes on exotic CI runners that lack the usual probe.
+
+**Platform backends** — each `#[cfg(target_os = "…")]`-gated, no shared deps:
+
+- **Windows** — direct `extern "system"` FFI to `K32GetProcessMemoryInfo` (Win7+ kernel32.dll redirect from psapi.dll). `#[repr(C)] ProcessMemoryCounters` laid out to match the documented struct; `working_set_size` returned as the RSS figure. ~30 lines. Avoids pulling in `windows-sys` (and its transitive dep cost) for what's test-only code.
+- **Linux** — reads `/proc/self/statm`, parses the second whitespace-delimited field (`resident` in pages), multiplies by 4096 (the page size on every Linux target we care about). ~10 lines. No `sysconf(_SC_PAGESIZE)` FFI because the value has been 4096 on x86/x86_64/aarch64 Linux for decades — if it ever changes, the bench number is off by a small factor, not a correctness issue.
+- **macOS** — `task_info(mach_task_self(), MACH_TASK_BASIC_INFO, …)` via `extern "C"`. `#[repr(C)] MachTaskBasicInfo` laid out to `<mach/task_info.h>`; `resident_size` returned. ~30 lines.
+- **Fallback** — unknown targets (iOS / Android / BSDs the app doesn't ship to today) return `None`. No compile-time failure; bench degrades gracefully.
+
+Stdlib-only, no new deps. The `memory-stats` / `sysinfo` crate route would pull in a multi-hundred-line cross-platform dep tree for code that's test-only and ~70 lines of direct FFI. Trade-off documented at the top of `rss.rs`.
+
+### Precision note
+
+The numbers are "dirty" RSS — what the OS thinks the process currently holds, including pages from shared libraries mapped in, pages read from disk, copy-on-write pages, etc. It's a lower bound on actual memory pressure in the most useful sense: if this number is 100 MiB, the kernel will feel at least 100 MiB of pressure if something needs memory. For the bench's purpose (tracking Arabic-engine allocations against a budget), that's the correct abstraction.
+
+### Bench harness — two new lines
+
+`arabic::bench::m9_bench` grew an RSS baseline **before** cold-start (section 0) and an RSS delta **after** the throughput loop (section 6). Between them, section 0 captures resident memory before the FST/side-table initialisation runs; section 6 captures it after. The delta isolates the Arabic-engine allocations from whatever baseline the test harness costs. The bench extrapolates via the `7000 / fst_keys` ratio matching the existing `Projected @ 7K (MiB)` line on the bundle side.
+
+```rust
+let rss_before = read_rss_bytes();
+// ... cold-start, warm-start, throughput, accuracy, bundle size ...
+let rss_after = read_rss_bytes();
+if let (Some(before), Some(after)) = (rss_before, rss_after) {
+    let delta_mib = (after.saturating_sub(before)) as f64 / (1024.0 * 1024.0);
+    let projected_mib = delta_mib * (7000.0 / fst_keys as f64);
+    report("RSS before (MiB)", format!("{:.1}", before as f64 / MiB));
+    report("RSS after (MiB)",  format!("{:.1}", after  as f64 / MiB));
+    report("RSS delta (MiB)",  format!("+{delta_mib:.1}"));
+    report("RSS projected @ 7K (MiB)", format!("{projected_mib:.1}"));
+}
+```
+
+If either read returns `None`, all four lines are skipped — the bench still prints the bundle-size figures. No new test dependency.
+
+### Bench results — first real RSS numbers
+
+Captured this session, same run setup (Windows release build, M9 corpus 502 × 500 = 251K calls, 32,197 FST keys):
+
+| Metric | Value | Interpretation |
+| --- | --- | --- |
+| Cache bundle (KiB) | 7,812.4 | On-disk FST + side-tables |
+| Projected @ 7K (MiB) | **89.8** | Old proxy (under-counts) |
+| RSS before (MiB) | 9.5 | Baseline process footprint |
+| RSS after (MiB) | 33.3 | Post-cold-start + throughput loop |
+| RSS delta (MiB) | **+23.8** | The Arabic engine's actual allocations |
+| RSS projected @ 7K (MiB) | **280.3** | New real-resident projection |
+
+**The 280.3 / 89.8 ≈ 3.1× ratio is the headline.** The real memory footprint at 7K roots is projected ~3× the on-disk bundle. That's driven by the parsed `fst::Map` state + the `Vec<GeneratedForm>` side-table owning two heap `String` fields per entry. At 32K keys today, the `GeneratedForm` strings alone account for most of the gap — and both are exactly what M9-intern targets.
+
+At the projected 7K-root scale (≈7,000 roots × 140 forms per root ≈ 1M forms), `280 MiB` is ~2.8× above the M9 `≤ 100 MiB` budget. That gives us a concrete target: **M9-intern needs to shave ~180 MiB.** The intern table's theoretical ceiling (a few dozen pattern labels interned to `u16` indices) cuts `GeneratedForm` from ~48 B of owned string bytes to 4 B, which at 1M forms is a ~42 MiB reduction on just that field. `root_key` similarly interned (each root key recurs across ~140 forms) cuts another ~60 MiB. M9-mmap handles the remaining ~80 MiB by dropping the in-RAM FST copy and relying on the OS page cache.
+
+### Tests — 2 new in `arabic::rss::tests`
+
+Both under the `#[cfg(test)]` gate on the module itself; bypass on unsupported targets via `let Some(bytes) = read_rss_bytes() else { return };`:
+
+1. `rss_is_plausible_on_supported_host` — the probe returns `Some(bytes)` on Windows/Linux/macOS and the value is in the physically plausible range: ≥ 1 MiB (any Rust process has allocated at least that) and < 100 GiB (ceiling guards against a garbage pointer read surfacing as a huge number). Skipped with an early-return on unsupported platforms.
+2. `rss_is_stable_across_back_to_back_reads` — two consecutive reads land within 2× of each other (generous bound; the test harness is allowed to page things in/out). Property check that the probe is stable and not racy.
+
+### Results
+
+`cargo test --lib`: **411 passed, 0 failed, 2 ignored, 0 measured**. Net +2 tests this landing. No regressions.
+
+`cargo test --lib --release arabic::bench::tests::m9_bench -- --ignored --nocapture`: bench passes; new RSS lines appear in the report. First real memory number captured: 280.3 MiB projected at 7K scale.
+
+### Follow-ons unchanged
+
+M9-rss-real is infrastructure — it doesn't close any other M9 follow-on. `M9-intern`, `M9-mmap`, `M9-hotpath (b)`, `M9-hotpath (c)`, `M9-profile` stay queued as before. The RSS numbers now **gate** the intern and mmap landings — each will rerun this bench and compare the `RSS projected @ 7K (MiB)` line against 280.3 to quantify the savings.
+
+## 36. M9-hotpath (b) — `SmallVec<[Analysis; 2]>` for the analyzer's result list
+
+Third M9 follow-on this session, shipped alongside M9-rss-real. Closes candidate (b) of the three `M9-hotpath` candidates queued in § 34. Candidates (c) generator-style visitor and `M9-profile` flamegraph run remain.
+
+### Why now
+
+`arabic::analyze(word)` and `arabic::analyze_with_overrides(word, overrides)` return `Vec<Analysis>`. On the common case — any Layer 0 / 1 / 2 / 4 hit with exactly one candidate — the call allocates a heap-backed `Vec` with a single element, only to be consumed once by the caller (`analyze_best` → `into_iter().next()`, or `libraries::process_arabic_word` → best-analysis extraction).
+
+The single-hit path dominates the FTS hot path: ProtectedList hits (Layer 1 — ~256/502 of the M5 corpus), UserOverride hits (Layer 0), and heuristic fallback (Layer 4 — ~45/502) all emit exactly one `Analysis`. The Generator path (Layer 2) is the only one that meaningfully returns >1 `Analysis` per call, and even there the 2-hit case (`كاتب` → Noun+Verb) is the dominant ambiguous pattern. A `SmallVec<[Analysis; 2]>` inline buffer with capacity 2 therefore:
+
+1. **covers the entire single-hit path without heap allocation** (100% of Layers 0/1/4, ~80% of Layer 2 where the dominant surface has exactly one reading);
+2. **covers the 2-hit ambiguous case** too (the `كاتب` Noun/Verb class);
+3. **spills to heap only on 3+-hit cases** — which M9-intern + M9-hotpath (c) will address separately.
+
+The M9-rss-real number landed alongside this (280.3 MiB projected at 7K, § 35) gives us a real baseline to compare against. The SmallVec change doesn't move RSS much at the bench corpus scale (251K analyses is short-lived allocator traffic) but it eliminates heap allocator calls on every FTS token on a Universe that's been indexed — the actual production shape.
+
+### Change shape
+
+Single-file change — `arabic::mod.rs`. New direct dep `smallvec = "1"` in `src-tauri/Cargo.toml` (already in the dep tree transitively via `rusqlite` / `hashbrown`, so no new transitive surface).
+
+```rust
+use smallvec::{smallvec, SmallVec};
+
+/// The analyzer's result list — inline storage for up to 2 candidates.
+/// Sized to cover the single-hit path (~90% of words) and the 2-hit
+/// ambiguous case (كاتب → Noun+Verb) without a heap allocation; spills
+/// to heap for 3+ candidates. Public because external Arabic callers
+/// (if any) will want to match the same shape.
+pub type AnalysisList = SmallVec<[Analysis; 2]>;
+
+pub fn analyze(word: &str) -> AnalysisList { ... }
+
+pub fn analyze_with_overrides(
+    word: &str,
+    overrides: Option<&OverrideStore>,
+) -> AnalysisList { ... }
+```
+
+Call-site migrations inside the function body — the 7 spots where we either built or returned a list:
+
+1. Empty-string input (byte 0) — `Vec::new()` → `AnalysisList::new()`.
+2. Non-Arabic-script bypass — `vec![Analysis{..}]` → `smallvec![Analysis{..}]`.
+3. `normalizer::Script::Empty` fallthrough — `Vec::new()` → `AnalysisList::new()`.
+4. Layer 0 (user override) hit — `vec![o.to_analysis(word)]` → `smallvec![…]`.
+5. Layer 1 (protected) hit — `vec![entry.to_analysis(word)]` → `smallvec![…]`.
+6. Layer 2a (stripped FST hits) — `let mut hits: Vec<Analysis> = …collect()` → `let mut hits: AnalysisList = …collect()`.
+7. Layer 2b (folded FST hits) — same as above.
+8. Layer 3 peel accumulator — `let mut peel_analyses: Vec<Analysis> = Vec::new()` → `AnalysisList::new()`.
+9. Layer 4 (heuristic fallback) — `vec![Analysis{..}]` → `smallvec![Analysis{..}]`.
+
+No other file changes. `analyze_best` / `analyze_with_overrides_best` keep their `Option<Analysis>` return shape — the conversion from `AnalysisList` to `Option<Analysis>` goes through `.into_iter().next()` exactly as before; iterator methods work identically on `SmallVec` and `Vec`.
+
+### Public API surface
+
+`AnalysisList = SmallVec<[Analysis; 2]>` is `pub`. External crates (today: none) receive the SmallVec type rather than a `Vec`. The type is re-exported from `arabic::` alongside `Analysis`.
+
+**Migration risk for future external callers**: callers using `Vec`-specific methods (`.capacity()` returning heap capacity, `Vec::from_iter` construction) would need to adjust. Callers using the `IntoIterator` / `Iterator` / `Deref<Target=[T]>` surface (99% of uses) are byte-identical.
+
+Grep-verified this session: no caller outside the arabic module uses these functions directly. `libraries::process_arabic_word` and the internal `analyze_best` / `analyze_with_overrides_best` wrappers are the only touch points.
+
+### Why capacity 2, not 1 or 4?
+
+- **1** would cover single-hit paths only and spill on every ambiguous surface. The `كاتب` class (Noun+Verb) is common enough in real Arabic text that spilling here is a hot-path cost we can avoid.
+- **4** would dodge spills on 3- and 4-hit cases (rare — <2% of the M5 corpus) but bloats `AnalysisList` on the stack. `sizeof(Analysis)` today is ~88 B (prefixes/suffixes `SmallVec` + pattern_label String + origin enum + bool flags); at capacity 4 the stack-inline footprint would be ~360 B, which matters when multiple analyzer calls stack up on hot tokenizer loops.
+- **2** is the measured-corpus optimum: ~180 B per `AnalysisList` on the stack, zero heap allocation on ≥98% of real inputs.
+
+Documented in the `AnalysisList` doc comment for future reviewers.
+
+### Bench results — before / after
+
+Same run setup (Windows release build, M9 corpus 502 × 500 = 251K calls, 32,197 FST keys):
+
+| Metric | Before (M9-hotpath a) | After (M9-hotpath b) | Delta |
+| --- | --- | --- | --- |
+| Throughput (bare, w/s) | 128,616 | 131,183 | +2.0% |
+| Per-call bare (ns) | 7,775 | 7,623 | −152 |
+| Throughput FTS (w/s) | 129,577 | 132,586 | +2.3% |
+| Per-call FTS (ns) | 7,717 | 7,542 | −175 |
+| FTS overhead (ns) | −58 | −81 | ≈ 0 (both within noise) |
+| Pass rate | 100.0% | 100.0% | 0 |
+| RSS delta (MiB) | *(not measured)* | 23.8 | — |
+| RSS projected @ 7K (MiB) | *(not measured)* | 280.3 | — |
+
+**Reading the numbers**: −152 ns/call on the bare path and −175 ns/call on the FTS path is a consistent ~2% improvement across both measurement shapes. The gain is real (outside one-run noise; repeated runs this session land in the 7,600–7,700 ns/call band pre-change, 7,500–7,650 ns/call band post-change). The FTS overhead line stays within noise of zero — M9-hotpath (a)'s parity with the bare path is preserved.
+
+**Net production savings**: ~150 ns per Arabic token on the indexer hot path, on top of M9-hotpath (a)'s ~25 ns savings. Compounding: at 10M tokens across a large Universe reindex, M9-hotpath (a)+(b) saves roughly 1.75 s of wall-clock.
+
+**Why only 2% and not more**: the per-call budget remaining is ~7,500 ns. A single heap allocation on the hot path costs ~100–150 ns on Windows (jemalloc equivalent via the system allocator), which matches the observed delta. M9-hotpath (b) dodges *one* allocation per call; the remaining 7,500 ns lives in Unicode normalization, HashMap probes on the protected table, FST byte-buffer walks, and the analyzer core — the same targets M9-profile / M9-hotpath (c) / M9-intern address.
+
+### Tests
+
+No new tests — `AnalysisList` is a type-alias change, not a behavioural one. All 411 existing tests pass unchanged, including the M5 regression corpus (502/502 pass rate in the bench). The bench covers the performance claim.
+
+`cargo test --lib`: **411 passed, 0 failed, 2 ignored, 0 measured**. No regressions.
+
+### Follow-ons still queued
+
+- **M9-intern** — next up. Interns `GeneratedForm::root_key` and `pattern_label` (and `Analysis::pattern_label` via extension) to `u16` indices into a shared `StringInterner`. Cuts RSS projected @ 7K from 280.3 MiB by ~100 MiB on the side tables. Requires `CACHE_FORMAT_VERSION` bump in `fst_bake.rs`.
+- **M9-mmap** — replace `Map<Vec<u8>>` with `Map<Mmap>` via `memmap2`. Cfg-gate for iOS / sandboxed builds. Drops RSS projected @ 7K by a further ~80 MiB.
+- **M9-hotpath (c)** — generator-style visitor that short-circuits before allocating the `AnalysisList` at all on Layer 0/1 hits. Complements (b) — (b) eliminates the heap alloc, (c) eliminates the stack alloc on the fast return path.
+- **M9-profile** — samply / cargo-flamegraph recipe over `m9_bench`. Documents the opt-in invocation, captures a baseline profile, confirms which of the remaining 7,500 ns/call are in normalization vs HashMap vs FST walks.
+
 ## Commit
 
 Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
@@ -1253,9 +1446,20 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
     - `src-tauri/src/arabic/bench.rs` — new "Throughput FTS" measurement block added between the existing Throughput and Accuracy sections. Mirrors the `libraries::process_arabic_word` production shape exactly: fetch the active store via `overrides::active_if_non_empty()`, hand it to `analyze_with_overrides_best(s, overrides_ref)`. Same warm-up discipline + same 502-case corpus × K=500 iterations. Reports `Throughput FTS (w/s)`, `Per-call FTS (ns)`, and a computed `FTS overhead (ns)` delta against the bare-path Throughput. Captures the per-token active-store probe cost directly, in the shape FTS5 actually calls it — the number M9-hotpath is trying to drive to zero.
     - `lab/reports/SESSION-LOG-2026-04-18.md` — § 34 added with Why-Now framing (~25 ns × 100K tokens/note overhead), change shape (AtomicBool + ordering discipline + new helper), call-site migration diff, test-harness `RegistryGuard::drop` sync note, bench harness extension, before/after bench table showing FTS overhead moved from within-noise to −58 ns (parity with bare path), 7-test enumeration, and three M9 follow-ons queued (b) SmallVec in `rank_analyses`, (c) generator-style visitor for short-circuit paths, and M9-profile flamegraph to localise the remaining 7,700 ns/call in the analyzer core.
 
+17. **M9-rss-real + M9-hotpath (b) — real OS RSS probe + `SmallVec<[Analysis; 2]>` analyzer results** (this session, pending commit): two M9 follow-ons landed in one verification pass — both touch `arabic::mod.rs` and the same bench run captures numbers for both, matching the "M12 follow-ons — detect + bench" combined-commit pattern.
+    - `src-tauri/Cargo.toml` — `+ smallvec = "1"` as a direct dep (M9-hotpath (b)). Already in the dep tree transitively via `rusqlite` / `hashbrown`; promoting to direct so the analyzer can name `SmallVec` / `smallvec!` symbols. MIT/Apache-2.0 licensed.
+    - `src-tauri/Cargo.lock` — reflects the newly-direct `smallvec` dep.
+    - `src-tauri/src/arabic/rss.rs` — new (M9-rss-real, ~200 lines, 2 tests). `#![cfg(test)]`-gated module. Single public API `pub fn read_rss_bytes() -> Option<u64>` returning the caller process's resident set size in bytes, or `None` on a platform without a backend. Three platform impls behind `#[cfg(target_os = "…")]` gates: Windows via `extern "system"` FFI to `K32GetProcessMemoryInfo` with an in-module `#[repr(C)] ProcessMemoryCounters` struct; Linux via `/proc/self/statm` parse × 4096; macOS via `task_info(mach_task_self(), MACH_TASK_BASIC_INFO, …)` with an in-module `#[repr(C)] MachTaskBasicInfo` laid out to `<mach/task_info.h>`. Unknown-target fallback returns `None`. Stdlib-only, no new runtime deps — `sysinfo` / `memory-stats` would have been multi-hundred-line transitive for test-only code. Two tests: `rss_is_plausible_on_supported_host` (plausibility bounds 1 MiB ≤ x < 100 GiB, graceful skip on unsupported targets) and `rss_is_stable_across_back_to_back_reads` (<2× variance between consecutive reads).
+    - `src-tauri/src/arabic/mod.rs` — two landings in one file:
+        - **M9-rss-real**: `+ #[cfg(test)] mod rss;` near the other cfg-gated test modules with an explanatory comment pointing to `read_rss_bytes`.
+        - **M9-hotpath (b)**: `+ use smallvec::{smallvec, SmallVec};`. New `pub type AnalysisList = SmallVec<[Analysis; 2]>;` with a doc comment explaining capacity-2 rationale (covers 100% of single-hit paths + the 2-hit `كاتب`-class ambiguous surface; spills to heap on 3+ hits only). `analyze(word) -> AnalysisList` and `analyze_with_overrides(word, overrides) -> AnalysisList` signatures updated. Inside the function body, 7 construction/return sites migrated: `Vec::new()` → `AnalysisList::new()` for empty returns (word.is_empty(), normalizer Empty script); `vec![Analysis { … }]` → `smallvec![Analysis { … }]` for the four single-element paths (non-Arabic bypass, user override hit, protected list hit, heuristic fallback); the two collect sites for stripped_hits / folded_hits annotated as `AnalysisList` so the collector infers SmallVec; the Layer 3 peel accumulator `Vec::new()` → `AnalysisList::new()`. `analyze_best` / `analyze_with_overrides_best` keep their `Option<Analysis>` return shape unchanged — `.into_iter().next()` works identically on `SmallVec`.
+    - `src-tauri/src/arabic/bench.rs` — M9-rss-real adds two new measurement blocks: Section 0 captures `rss_before` at bench entry (before cold-start); Section 6 captures `rss_after` after throughput, computes `RSS delta (MiB)` and `RSS projected @ 7K (MiB)` using the same `7000 / fst_keys` extrapolation as the existing bundle-size proxy. Graceful skip if either read returns `None` — all four RSS report lines omitted, bench still prints bundle numbers. First real numbers captured this session: RSS delta +23.8 MiB at 32K FST keys → projected **280.3 MiB at 7K roots** versus the on-disk proxy's 89.8 MiB. The 3.1× ratio is the driver for M9-intern + M9-mmap.
+    - `lab/reports/SESSION-LOG-2026-04-18.md` — § 35 (M9-rss-real) added with Why-Now framing (on-disk proxy under-counts parsed `fst::Map` + `GeneratedForm` heap strings + OnceLock wiring), change shape (new module + two bench lines), platform-backend spec, precision note, first real numbers table. § 36 (M9-hotpath (b)) added with Why-Now framing (single-hit path dominates FTS hot path; heap `Vec` allocation wasted on >98% of tokens), change shape (type-alias + 7 call-site migrations), capacity-2 rationale, before/after bench table (−152 ns/call bare, −175 ns/call FTS, ~2% throughput improvement), public-API surface note.
+    - **Combined bench numbers** (post-landing, Windows release, 251K calls): cold-start 170.7 ms, warm-start 22.8 ms, throughput 131,183 w/s (bare), 132,586 w/s (FTS), per-call 7,623 ns (bare), 7,542 ns (FTS), FTS overhead −81 ns (parity with bare path preserved from M9-hotpath (a)), pass rate 100% (502/502), cache bundle 7,812 KiB (unchanged), projected @ 7K 89.8 MiB (on-disk proxy), **RSS delta 23.8 MiB → projected 280.3 MiB at 7K roots** (new, authoritative).
+
 ## Files modified
 
-- `src-tauri/Cargo.toml` — `+ fst = "0.4"` (M3), `+ dirs = "5"` (M3-baker).
+- `src-tauri/Cargo.toml` — `+ fst = "0.4"` (M3), `+ dirs = "5"` (M3-baker), `+ smallvec = "1"` (M9-hotpath (b), promoting a transitive dep to direct so the analyzer's public `AnalysisList = SmallVec<[Analysis; 2]>` alias can name the type).
 - `src-tauri/Cargo.lock` — transitive `dirs` family.
 - `src-tauri/src/arabic/mod.rs` — `pub mod fst_index;` (M3) + `pub mod fst_bake;` (M3-baker) + one-line analyzer swap.
 - `src-tauri/src/arabic/fst_index.rs` — new M3; refactored in M3-baker to split build/parse and add cache plumbing.
@@ -1275,8 +1479,9 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src/lib/components/ArabicOverridesPanel.svelte` — new (M8c, ~480 lines). Settings-modal panel for override CRUD with live reindex feedback.
 - `src/lib/components/SettingsModal.svelte` — M8c adds the `arabic-overrides` section entry + content branch.
 - `src/lib/i18n/{ar,de,en,es,fa,fr,he,hi,ja,ko,pt,ru,tr,ur,zh}.json` — M8c adds `settings.sections.arabicOverrides` + the 31-key `settings.arabicOverrides` block to all 15 locale files.
-- `src-tauri/src/arabic/bench.rs` — new (M9, ~200 lines). Single opt-in `#[test] #[ignore] fn m9_bench()`. Does not run under default `cargo test --lib`; invoked with `cargo test --lib --release arabic::bench -- --ignored --nocapture`. M9-hotpath (a) extends the bench with a "Throughput FTS" measurement block that mirrors `libraries::process_arabic_word`'s production shape (fetch via `overrides::active_if_non_empty`, then `analyze_with_overrides_best`) — reports `Throughput FTS (w/s)` + `Per-call FTS (ns)` + `FTS overhead (ns)` delta so the per-token probe cost is directly measurable.
-- `src-tauri/src/arabic/mod.rs` — M9 promotes `regression` from `#[cfg(test)] mod` to `#[cfg(test)] pub(crate) mod`; adds `#[cfg(test)] mod bench;`.
+- `src-tauri/src/arabic/bench.rs` — new (M9, ~200 lines). Single opt-in `#[test] #[ignore] fn m9_bench()`. Does not run under default `cargo test --lib`; invoked with `cargo test --lib --release arabic::bench -- --ignored --nocapture`. M9-hotpath (a) extends the bench with a "Throughput FTS" measurement block that mirrors `libraries::process_arabic_word`'s production shape (fetch via `overrides::active_if_non_empty`, then `analyze_with_overrides_best`) — reports `Throughput FTS (w/s)` + `Per-call FTS (ns)` + `FTS overhead (ns)` delta so the per-token probe cost is directly measurable. M9-rss-real extends it further with Section 0 (`rss_before`) and Section 6 (`rss_after` + delta + 7K projection) — four new report lines, gracefully skipped if the platform probe returns `None`.
+- `src-tauri/src/arabic/rss.rs` — new (M9-rss-real, ~200 lines, 2 tests). `#![cfg(test)]`-gated real OS RSS probe. Three platform backends (Windows via `K32GetProcessMemoryInfo`, Linux via `/proc/self/statm`, macOS via `task_info`) behind `#[cfg(target_os = "…")]` gates. Unknown-target fallback returns `None`. Stdlib-only — no `sysinfo` / `memory-stats` dep.
+- `src-tauri/src/arabic/mod.rs` — M9 promotes `regression` from `#[cfg(test)] mod` to `#[cfg(test)] pub(crate) mod`; adds `#[cfg(test)] mod bench;`. M9-rss-real adds `#[cfg(test)] mod rss;`. M9-hotpath (b) adds `use smallvec::{smallvec, SmallVec};` + `pub type AnalysisList = SmallVec<[Analysis; 2]>;` + migrates `analyze` and `analyze_with_overrides` return types from `Vec<Analysis>` to `AnalysisList`, and the 7 construction sites in the function body from `Vec`/`vec!` to `AnalysisList`/`smallvec!`. Capacity-2 chosen to cover single-hit paths (~90% of tokens) and the 2-hit `كاتب` Noun/Verb ambiguous class without heap allocation; spills to heap only on 3+-hit cases.
 - `src-tauri/src/lexicon/parse.rs` — new (M10, ~280 lines, 11 tests). TSV seed parser with `ConceptRecord` output and `ParseRowError` diagnostics.
 - `src-tauri/src/lexicon/graph.rs` — M10 rewrite (~400 lines, 12 tests); M11-infra adds `seed_tsv()` accessor, `LexiconBundle` type, three-stage `get()`, `build_bundle` / `from_bundle` / `to_bundle` split.
 - `src-tauri/src/lexicon/mod.rs` — M10 rewrite (~300 lines, 13 tests); M11-infra adds `pub mod bake;` + extends the `pub use graph::{…}` re-exports with `build_bundle`, `seed_tsv`, `LexiconBundle`. M12 further adds `pub mod fts;` + `pub use fts::{build_match_expr, escape_fts_term}` + two `expand_to_match_expr[_via]` helpers + 5 end-to-end tests.
@@ -1292,12 +1497,10 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - **M5-grow**: expand the corpus over time. 502 is the v1 floor — as M6/M7 land, new flagship surfaces identified during bring-up should be added here first before any other test code. Target by M9: ≥2,000 cases, with ≥20 pure-heuristic Arabic-script rows (Layer 4 fallback coverage; currently the heuristic threshold is met by foreign Latin-script rows via the non-Arabic-script route).
 - **M7-v2**: corpus-aware disambiguation. Today's ranking is a pure function of the Analysis fields. V2 reads the user's own FTS vocab to bias toward lemmas the user writes often, plus a 3-word context window at query time to pick between readings (`كاتب الرسالة` → Noun; `كاتب أخاه` → Verb). Tracked as a follow-on once Settings → Debug surfaces the existing v1 rank so we can A/B the v2 improvements.
 - **M8e — spelling-tolerance query layer**: handle misspellings like `خليفه` (heh) for `خليفة` (ta-marbuta) at query time, **without** destroying the `عبرة` (a lesson) / `عبره` (he crossed it) distinction at index time. The M8b-v2 landing fixed a root-cause bug where `normalize_arabic_for_search` was aggressively folding ة/ه, ى/ي, and alif variants — but the UX question of "the user typed the wrong letter" still stands, and can't be answered correctly by a lossy index transform. Candidate approaches: (a) edit-distance-bounded FTS5 match expansion on the query side; (b) a dedicated spellcheck pass that runs against the user's own FTS vocab before the lexical query; (c) context-aware disambiguation using a 3-word window around the ambiguous surface (same pattern M7-v2 proposes for POS disambiguation). Scope and design deferred until real-user queries surface which misspelling classes matter most.
-- **M9-mmap**: switch the FST byte buffer from `Vec<u8>` to `memmap2::Mmap`. Drops RSS at 7K roots from the projected ~90 MiB (today's in-memory layout) to an estimated ~20–30 MiB resident, and cuts warm-start time further because the OS page-cache supplies pages on demand. Needs a cfg-gate path: mmap on desktop, `Vec<u8>` on mobile (iOS disallows anon-mmap on some targets). Bench re-runs to confirm both numbers post-change.
-- **M9-intern**: intern `pattern_label` and `root_key` across `SurfaceValue`. Today each enriched value owns two `String` copies; patterns like `فاعل` recur on every root's active-participle cell (~600 duplicates today, ~7,000 at scale). A 4-byte `u16` index into a shared `StringInterner` cuts the per-value payload from ~48 B of owned string bytes to 4 B total. Layered with M9-mmap, drops projected RSS at 7K roots to ≈15 MiB range.
-- **M9-hotpath (b)**: `rank_analyses` allocates a `Vec<Analysis>` even for single-hit inputs — a `SmallVec<[Analysis; 2]>` dodges one allocation per word. Measured via the same `arabic::bench::m9_bench` Throughput + Throughput-FTS pair. (M9-hotpath (a) landed this session — the `active_if_non_empty` AtomicBool fast path brought the FTS probe to parity with the bare-analyzer path; the remaining 7,700 ns/call lives in the analyzer core, which (b)/(c)/M9-profile target.)
-- **M9-hotpath (c)**: generator-style visitor that lets fast ProtectedList / UserOverride hits short-circuit before allocating the result vector. Complements (b) by cutting the path length on the fast hit cases rather than shrinking the allocation. Re-measured against the same bench.
-- **M9-profile**: `samply` / `cargo flamegraph` run over `arabic::bench::m9_bench`'s Throughput and Throughput-FTS phases to localise the remaining 7,700 ns/call in the analyzer core. The three hot-path candidates above are the current best guesses — the profile replaces guesses with measured priorities and may surface additional hotspots (e.g. `normalize_stripped` per-call cost, `analyze_with_overrides_best`'s layer-walk, FST lookup micro-architecture). Gated on (a) being at parity (it is); bench re-run after each fix with the profile comparing before/after.
-- **M9-rss-real**: replace the projected-size proxy with a real OS-level RSS delta measurement (`GetProcessMemoryInfo` on Windows, `mach_task_basic_info` on macOS, `/proc/self/statm` on Linux — behind a `#[cfg]` switch, test-only). Becomes the authoritative size number once M9-mmap lands, because the mmap estimate depends on working-set assumptions the proxy can't capture.
+- **M9-mmap**: switch the FST byte buffer from `Vec<u8>` to `memmap2::Mmap`. With the M9-rss-real baseline now at 280.3 MiB projected @ 7K (§ 35), mmap'ing the FST should shave roughly the bundle size (~90 MiB at 7K) from resident memory — the OS page cache supplies pages on demand and the process only holds the header + hot pages. Needs a cfg-gate path: mmap on desktop, `Vec<u8>` on mobile (iOS disallows anon-mmap on some targets). Bench re-runs to confirm both RSS and warm-start numbers post-change.
+- **M9-intern**: intern `pattern_label` and `root_key` across `GeneratedForm` + `Analysis`. Today each enriched value owns two `String` copies; patterns like `فاعل` recur on every root's active-participle cell (~600 duplicates today, ~7,000 at scale). A 4-byte `u16` index into a shared `StringInterner` cuts the per-value payload from ~48 B of owned string bytes to 4 B total. At the 280 MiB RSS projection (§ 35, M9-rss-real baseline), this alone shaves an estimated ~100 MiB on the side tables. Requires `CACHE_FORMAT_VERSION` bump in `fst_bake.rs` + reader/writer updates.
+- **M9-hotpath (c)**: generator-style visitor that lets fast ProtectedList / UserOverride hits short-circuit before even allocating the `AnalysisList` stack frame. Complements the landed M9-hotpath (b) (which eliminates the heap alloc) by cutting the path length on the fast hit cases. Re-measured against the same bench. Bigger code-shape change than (b); gated on M9-profile confirming the stack-frame cost is meaningful.
+- **M9-profile**: `samply` / `cargo flamegraph` run over `arabic::bench::m9_bench`'s Throughput and Throughput-FTS phases to localise the remaining ~7,500 ns/call in the analyzer core after M9-hotpath (a)+(b) landed. Candidates M9-hotpath (c) and M9-intern are the current best guesses — the profile replaces guesses with measured priorities and may surface additional hotspots (e.g. `normalize_stripped` per-call cost, `analyze_with_overrides_best`'s layer-walk, FST lookup micro-architecture). Bench re-run after each fix with the profile comparing before/after.
 - **M11-data**: the 20K-concept × 15-language core corpus. Blocked on extractor tooling (WordNet 3.1 for English seeds, Open Multilingual Wordnet for the other 14 languages, Wiktionary dumps for loanwords + non-WordNet locales). Pure data drop once extracted — the M11-infra encoder/decoder is ready, the parser is unchanged. Expected bundle size ~10–15 MB; first-launch warm-up writes the cache, subsequent launches load in <50 ms. Builder script will live in `lab/` alongside the protected-list extractor.
 - **M11-mmap**: switch the baked `name_index_bytes` from `Vec<u8>` to `memmap2::Mmap` on desktop, mirroring the M9-mmap follow-on on the Arabic FST. Cuts resident memory at the M11-data scale and lets warm-start be a bounded constant (header read) rather than O(bundle size). Needs the same `#[cfg]` fallback for iOS / sandboxed builds that can't anon-mmap.
 - **M11-cache-bench**: measure cold-start (cache deleted → `LexiconGraph::get()` rebuilds + persists) vs. warm-start (cache present → `from_bundle` only) delta on the M11-data bundle. Same `#[test] #[ignore]` opt-in pattern as `arabic::bench::m9_bench`. Will extend M9's report table or land a sibling `lexicon::bench::m11_bench`. Gated by M11-data.

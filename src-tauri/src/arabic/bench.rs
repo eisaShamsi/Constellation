@@ -57,6 +57,7 @@ mod tests {
     use crate::arabic::fst_bake;
     use crate::arabic::fst_index::GenerativeFst;
     use crate::arabic::regression::{parse_corpus, raw_corpus, run_corpus};
+    use crate::arabic::rss::read_rss_bytes;
     use crate::arabic::{analyze_best, analyze_with_overrides_best, overrides, AnalysisOrigin};
     use std::fs;
     use std::hint::black_box;
@@ -71,6 +72,15 @@ mod tests {
     #[ignore]
     fn m9_bench() {
         println!("\n=== M9 Bench — Arabic Engine ===\n");
+
+        // ── 0. RSS baseline ──────────────────────────────────────────
+        // Snapshot RSS BEFORE any Arabic-engine state is touched, so the
+        // later "after" snapshot isolates the delta attributable to the
+        // FST load + side-tables + protected list. Stdlib-only probe per
+        // platform (see `arabic::rss`); returns `None` on unknown targets
+        // and we report "skipped" gracefully — the bench must still
+        // finish on an unsupported host.
+        let rss_before = read_rss_bytes();
 
         // ── 1. Cold-start ────────────────────────────────────────────
         // Clear the on-disk cache so GenerativeFst::get() falls through
@@ -246,6 +256,44 @@ mod tests {
                     "Projected @ 7K (MiB)",
                     format!("{projected_mib:.1}"),
                 );
+            }
+        }
+
+        // ── 6. RSS — real OS-level (M9-rss-real) ─────────────────────
+        // The proxy above tracks the on-disk bundle; the number below is
+        // what the kernel actually attributes to this process. The delta
+        // between `rss_before` (recorded before anything touched the
+        // Arabic engine) and `rss_after` isolates the analyzer's
+        // steady-state working set — FST bytes, side-tables,
+        // protected list, disambiguator tables, and whatever else the
+        // pipeline warmed up during throughput.
+        //
+        // `rss_after` is captured POST-throughput so it includes any
+        // allocation caches that grew during the 251,000-call burn — a
+        // more honest "what does this engine cost in production" number
+        // than a fresh-off-the-boot snapshot.
+        let rss_after = read_rss_bytes();
+        match (rss_before, rss_after) {
+            (Some(before), Some(after)) => {
+                let before_mib = before as f64 / (1024.0 * 1024.0);
+                let after_mib = after as f64 / (1024.0 * 1024.0);
+                let delta_mib = after_mib - before_mib;
+                report("RSS before (MiB)", format!("{before_mib:.1}"));
+                report("RSS after (MiB)", format!("{after_mib:.1}"));
+                report("RSS delta (MiB)", format!("{delta_mib:+.1}"));
+                // Same linear projection the size-proxy uses. Treat as
+                // approximate — the FST compresses nonlinearly with
+                // corpus size — but directionally correct for an M9
+                // sanity check.
+                let ratio = 7000.0 / 595.0;
+                let projected_mib = delta_mib * ratio;
+                report(
+                    "RSS projected @ 7K (MiB)",
+                    format!("{projected_mib:.1}"),
+                );
+            }
+            _ => {
+                report("RSS probe", "skipped (platform unsupported)");
             }
         }
 

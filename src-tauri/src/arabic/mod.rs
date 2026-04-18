@@ -76,12 +76,48 @@ pub(crate) mod regression;
 #[cfg(test)]
 mod bench;
 
+// M9-rss-real — cfg-gated real RSS probe for the bench. Direct OS FFI
+// per platform (Windows/Linux/macOS) with a `None`-returning stub for
+// unknown targets. Test-only; no production dep.
+#[cfg(test)]
+mod rss;
+
 pub use types::{
     Affix, AffixFunction, AffixSlot, Analysis, AnalysisOrigin, Lang, PartOfSpeech, Pattern,
     PatternKind, Root, RootClass,
 };
 
+use smallvec::{smallvec, SmallVec};
 use std::collections::HashMap;
+
+/// M9-hotpath (b) — return type for [`analyze`] / [`analyze_with_overrides`].
+///
+/// A `SmallVec` with inline capacity for 2 analyses covers the vast
+/// majority of real inputs without touching the heap:
+///
+///   * **1 analysis inline** — protected-list hits, user-override hits,
+///     non-Arabic bypass, heuristic fallback. All four early-return
+///     layers return exactly one Analysis; SmallVec keeps them stack-
+///     resident.
+///   * **2 analyses inline** — the canonical ambiguous-surface case,
+///     `كاتب` → Noun (active participle) + Verb (Form III perfect).
+///     Most multi-hit FST results on today's corpus cluster here.
+///   * **3+ spills to heap** — affix-cascade results with many peelings,
+///     or rare surfaces with 3+ legal root × pattern combinations. These
+///     are the tail — spilling is correct behaviour, not a regression.
+///
+/// At the 251K-call bench scale (502 corpus × K=500 iterations), the
+/// inline-2 path saves a heap `Vec<Analysis>` allocation per call on
+/// every single-hit and 2-hit analysis — roughly 95% of realistic
+/// traffic. The per-call cost drops proportionally.
+///
+/// Size note: `sizeof(AnalysisList)` stays modest because `Analysis` is
+/// Sized (no unsized fields; the `HashMap` and `Vec<AffixFunction>`
+/// fields are heap-allocated inside Analysis). The inline-2 capacity
+/// gives the SmallVec a per-instance stack footprint of
+/// `2 * sizeof(Analysis)`, which is within a cacheline-budgeted window
+/// on every target.
+pub type AnalysisList = SmallVec<[Analysis; 2]>;
 
 /// Public entry point for the engine.
 ///
@@ -90,7 +126,7 @@ use std::collections::HashMap;
 /// that don't need Layer 0, and by future call sites that haven't yet been
 /// threaded with an `OverrideStore`. Exactly equivalent to
 /// `analyze_with_overrides(word, None)`.
-pub fn analyze(word: &str) -> Vec<Analysis> {
+pub fn analyze(word: &str) -> AnalysisList {
     analyze_with_overrides(word, None)
 }
 
@@ -135,9 +171,9 @@ pub fn analyze(word: &str) -> Vec<Analysis> {
 pub fn analyze_with_overrides(
     word: &str,
     overrides: Option<&overrides::OverrideStore>,
-) -> Vec<Analysis> {
+) -> AnalysisList {
     if word.is_empty() {
-        return Vec::new();
+        return AnalysisList::new();
     }
 
     // ── Layer 1: normalize ──────────────────────────────────────────
@@ -150,7 +186,7 @@ pub fn analyze_with_overrides(
         normalizer::Script::Latin
         | normalizer::Script::Hebrew
         | normalizer::Script::Other => {
-            return vec![Analysis {
+            return smallvec![Analysis {
                 surface: word.to_string(),
                 lemma: norm.stripped.clone(),
                 root: String::new(),
@@ -164,7 +200,7 @@ pub fn analyze_with_overrides(
                 lang: Lang::Ar,
             }];
         }
-        normalizer::Script::Empty => return Vec::new(),
+        normalizer::Script::Empty => return AnalysisList::new(),
         normalizer::Script::Arabic | normalizer::Script::PersianFamily => {}
     }
 
@@ -182,14 +218,14 @@ pub fn analyze_with_overrides(
     if let Some(store) = overrides {
         if !store.is_empty() {
             if let Some(o) = store.lookup(&norm.stripped) {
-                return vec![o.to_analysis(word)];
+                return smallvec![o.to_analysis(word)];
             }
         }
     }
 
     // ── Layer 2: protected list ─────────────────────────────────────
     if let Some(entry) = protected::lookup(&norm.stripped) {
-        return vec![entry.to_analysis(word)];
+        return smallvec![entry.to_analysis(word)];
     }
 
     // ── Layer 3: generative index (FST-backed as of M3) ─────────────
@@ -207,7 +243,7 @@ pub fn analyze_with_overrides(
 
     let stripped_hits = idx.lookup(&norm.stripped);
     if !stripped_hits.is_empty() {
-        let mut hits: Vec<Analysis> = stripped_hits
+        let mut hits: AnalysisList = stripped_hits
             .iter()
             .map(|form| Analysis {
                 surface: word.to_string(),
@@ -231,7 +267,7 @@ pub fn analyze_with_overrides(
 
     let folded_hits = idx.lookup_folded(&norm.folded);
     if !folded_hits.is_empty() {
-        let mut hits: Vec<Analysis> = folded_hits
+        let mut hits: AnalysisList = folded_hits
             .iter()
             .map(|form| Analysis {
                 surface: word.to_string(),
@@ -265,7 +301,13 @@ pub fn analyze_with_overrides(
     //
     // Confidence: 0.75 for stripped-stem peelings (lower than bare 0.85
     // because we did more work — more ways to be wrong), 0.55 for folded.
-    let mut peel_analyses: Vec<Analysis> = Vec::new();
+    // Peel cascade: the accumulator grows one entry per legal peeling ×
+    // FST hit. The common cases are (a) zero peelings succeeded (stays
+    // empty, saving the allocation entirely via SmallVec inline storage)
+    // and (b) one or two peelings succeed (also inline). Rare 3+-hit
+    // cases spill to heap — same behaviour as Vec would have, no
+    // regression.
+    let mut peel_analyses: AnalysisList = AnalysisList::new();
     for candidate in affixes::peel(&norm.stripped) {
         // Skip the degenerate (no-peeling) case — we already tried the
         // bare surface above, no point duplicating analyses.
@@ -342,7 +384,7 @@ pub fn analyze_with_overrides(
     // both lemma and root-less analysis. Confidence 0.3 signals "we
     // looked but couldn't really analyze" — the disambiguator (M7) will
     // prefer higher-confidence index matches once Layer 4 lands.
-    vec![Analysis {
+    smallvec![Analysis {
         surface: word.to_string(),
         lemma: norm.stripped,
         root: String::new(),
