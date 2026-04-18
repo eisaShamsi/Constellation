@@ -37,6 +37,11 @@ tauri-plugin-process = "2.3.1"
 # Used by arabic::fst_index to replace the HashMap-backed GenerativeIndex.
 # BSD/MIT licensed (license-clean, matches our no-GPL policy).
 fst = "0.4"
+# M3-baker: cross-platform cache directory resolution (Windows
+# `%LOCALAPPDATA%`, macOS `~/Library/Caches`, Linux `~/.cache`).
+# Used by arabic::fst_bake to persist the compiled FST between launches.
+# Apache-2.0/MIT licensed.
+dirs = "5"
 
 [features]
 default = ["custom-protocol"]

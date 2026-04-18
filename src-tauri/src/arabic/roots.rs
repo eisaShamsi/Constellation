@@ -163,6 +163,16 @@ pub fn root_from_key(key: &str, gloss: Option<&str>) -> Option<Root> {
 /// happens lazily inside `RootsIndex::build()` on first `get()`.
 const SEED_TSV: &str = include_str!("roots_seed.tsv");
 
+/// Public accessor for the embedded seed text. Used by
+/// [`crate::arabic::fst_bake`] to content-address the compiled FST cache
+/// — editing `roots_seed.tsv` flips this string, which flips the cache's
+/// `version_hash`, which orphans the old file so the next boot rebuilds
+/// from scratch. A `pub fn` rather than a `pub const` because some
+/// consumers may want to treat the seed as opaque bytes in the future.
+pub fn seed_tsv() -> &'static str {
+    SEED_TSV
+}
+
 /// Parse the TSV into an iterator of `(key, gloss)` pairs. Skips blank
 /// lines and anything starting with '#'. Rows with fewer than two
 /// tab-separated columns are dropped silently — the seed file has no

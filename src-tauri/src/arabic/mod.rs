@@ -58,6 +58,7 @@ pub mod protected;
 pub mod roots;
 pub mod generator;
 pub mod fst_index;
+pub mod fst_bake;
 // pub mod analyzer;      // M4
 // pub mod disambiguator; // M7
 // pub mod overrides;     // M8

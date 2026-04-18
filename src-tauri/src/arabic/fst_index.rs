@@ -54,6 +54,7 @@ use fst::{Map, MapBuilder};
 #[cfg(test)]
 use fst::Streamer;
 
+use super::fst_bake::{self, FstBundle};
 use super::generator::{generate_all, GeneratedForm};
 use super::normalizer::{normalize_folded, normalize_stripped};
 
@@ -79,28 +80,83 @@ pub struct GenerativeFst {
 }
 
 impl GenerativeFst {
-    /// Access the lazily-initialised singleton. First call builds the
-    /// full corpus (all seed roots × 158 patterns, deduped per key);
-    /// subsequent calls are free.
+    /// Access the lazily-initialised singleton.
+    ///
+    /// Three-stage init, in preference order:
+    ///
+    ///   1. **Cache hit** — `fst_bake::try_load_cached()` reads a bundle
+    ///      from the user's cache directory (content-addressed by a hash
+    ///      of `roots_seed.tsv` + `CACHE_FORMAT_VERSION`). If the file is
+    ///      present, well-formed, and parses back into a live `Map`, we
+    ///      use it and skip generation entirely. This is the warm path
+    ///      at steady state — expected cost is a file read and two
+    ///      `fst::Map::new()` calls (which just validate the header).
+    ///   2. **Cache miss / corrupt cache** — we fall through to an
+    ///      in-memory rebuild via [`Self::build_bundle`], then persist
+    ///      the result best-effort so the *next* launch hits the cache.
+    ///      A failed persist is silent: read-only cache dirs must never
+    ///      gate the analyzer from coming up.
+    ///   3. **Final reconstruction** — the freshly-built bundle always
+    ///      parses (we wrote those bytes ourselves seconds ago), so the
+    ///      `expect` is unreachable in practice; we keep it as a
+    ///      loud-failure tripwire in case a future refactor breaks the
+    ///      build/parse invariant.
+    ///
+    /// Subsequent calls to `get()` after the first are free — the
+    /// [`OnceLock`] short-circuits.
     pub fn get() -> &'static GenerativeFst {
         static INDEX: OnceLock<GenerativeFst> = OnceLock::new();
-        INDEX.get_or_init(Self::build)
+        INDEX.get_or_init(|| {
+            // Stage 1: try the on-disk cache. Any failure (missing file,
+            // hash mismatch, truncation, decode error) returns None and
+            // we fall through — the cache layer never panics.
+            if let Some(bundle) = fst_bake::try_load_cached() {
+                if let Ok(fst) = Self::from_bundle(bundle) {
+                    return fst;
+                }
+                // FST-byte parse failure from a successfully-decoded
+                // bundle would indicate a mismatch between what
+                // `fst_bake` wrote and what `fst::Map` can read — treat
+                // it as a corrupt cache and rebuild. No panic.
+            }
+
+            // Stage 2: cold start. Build the bundle in memory, persist it
+            // for next launch (best-effort), then hand the same bytes to
+            // `from_bundle` so stages 1 and 2 go through the exact same
+            // reconstruction path — no cold/warm behavioural divergence.
+            let bundle = Self::build_bundle();
+            fst_bake::persist_best_effort(&bundle);
+
+            Self::from_bundle(bundle).expect(
+                "freshly-built FST bundle must parse back into a live Map — \
+                 if this trips, the build/parse invariant in build_bundle \
+                 has been broken",
+            )
+        })
     }
 
-    /// Build the FST from scratch out of `generator::generate_all()`.
+    /// Build a serialisable bundle (raw FST bytes + both side-tables)
+    /// from `generator::generate_all()`. Extracted from the old `build`
+    /// so the bake layer can consume the same intermediate representation
+    /// it will persist — no duplicate bucketing code between the cold
+    /// and warm paths.
     ///
     /// Steps:
     ///   1. Walk every generated form, bucket into `BTreeMap` under
-    ///      stripped + folded keys. `BTreeMap` is deliberate — FST builder
-    ///      requires strictly sorted insertions, and `BTreeMap::into_iter`
-    ///      yields keys in UTF-8 byte order (which is also Unicode code
-    ///      point order for all the Arabic we handle).
-    ///   2. Per-bucket dedup on `(root_key, pattern_label)` — the HashMap
-    ///      implementation does the same; keeping parity lets the two
-    ///      backends share tests.
+    ///      stripped + folded keys. `BTreeMap` is deliberate — FST
+    ///      builder requires strictly sorted insertions, and
+    ///      `BTreeMap::into_iter` yields keys in UTF-8 byte order
+    ///      (which is also Unicode code point order for the Arabic we
+    ///      handle).
+    ///   2. Per-bucket dedup on `(root_key, pattern_label)` — matches
+    ///      the HashMap implementation's semantics so parity tests stay
+    ///      valid across backends.
     ///   3. Flatten each bucket into a side-table; pack the FST value as
     ///      `(offset << 32) | count`.
-    fn build() -> Self {
+    ///
+    /// Returned `FstBundle` is owned — the caller can persist, parse, or
+    /// both.
+    fn build_bundle() -> FstBundle {
         let mut buckets_stripped: BTreeMap<String, Vec<GeneratedForm>> = BTreeMap::new();
         let mut buckets_folded: BTreeMap<String, Vec<GeneratedForm>> = BTreeMap::new();
 
@@ -123,25 +179,36 @@ impl GenerativeFst {
         dedup_buckets(&mut buckets_stripped);
         dedup_buckets(&mut buckets_folded);
 
-        let (fst_stripped, values_stripped) = build_map(buckets_stripped);
-        let (fst_folded, values_folded) = build_map(buckets_folded);
+        let (stripped_bytes, values_stripped) = build_map_bytes(buckets_stripped);
+        let (folded_bytes, values_folded) = build_map_bytes(buckets_folded);
 
-        GenerativeFst {
-            fst_stripped,
-            fst_folded,
+        FstBundle {
+            stripped_bytes,
             values_stripped,
+            folded_bytes,
             values_folded,
         }
     }
 
-    /// Construct from pre-built FST bytes + matching side-tables. This is
-    /// the entry point the future mmap loader will use once we bake the
-    /// corpus to a file on first run — matching the M3 mandate to keep
-    /// the startup path under 50 ms even with a 1M+ form corpus.
+    /// Reconstruct a live `GenerativeFst` from an owned [`FstBundle`].
+    /// Single entry point for both cache-hit and fresh-build paths, so
+    /// any bug in FST-byte handling surfaces identically in either.
+    fn from_bundle(bundle: FstBundle) -> Result<Self, fst::Error> {
+        Self::from_bytes(
+            bundle.stripped_bytes,
+            bundle.values_stripped,
+            bundle.folded_bytes,
+            bundle.values_folded,
+        )
+    }
+
+    /// Construct from pre-built FST bytes + matching side-tables. This
+    /// is the raw mmap / bake entry point — `from_bundle` wraps it in
+    /// the caller-friendly `FstBundle` shape.
     ///
-    /// Not yet wired up by the main `analyze()` path; present so the
-    /// storage contract is explicit and reviewable now.
-    #[allow(dead_code)]
+    /// Retained as `pub` for external tools (regression corpus dumper,
+    /// future mmap loader) that want to hand in FST bytes without going
+    /// through `FstBundle`.
     pub fn from_bytes(
         stripped_bytes: Vec<u8>,
         values_stripped: Vec<GeneratedForm>,
@@ -226,8 +293,8 @@ fn dedup_buckets(buckets: &mut BTreeMap<String, Vec<GeneratedForm>>) {
     }
 }
 
-/// Consume a sorted-keys bucket map, emit `(Map, values)` where each
-/// key's FST value is `(offset << 32) | count` into `values`.
+/// Consume a sorted-keys bucket map, emit `(fst_bytes, values)` where
+/// each key's FST value is `(offset << 32) | count` into `values`.
 ///
 /// `BTreeMap::into_iter` yields keys in byte-lex order, which is exactly
 /// the order `MapBuilder::insert` requires. This function panics on
@@ -236,9 +303,13 @@ fn dedup_buckets(buckets: &mut BTreeMap<String, Vec<GeneratedForm>>) {
 ///   - An overflow of `u32::MAX` offsets/counts would mean our corpus
 ///     grew past 4 billion forms — ten thousand times today's size. Fail
 ///     loud at build time rather than silently truncate.
-fn build_map(
+///
+/// Returning raw bytes (rather than `Map<Vec<u8>>`) lets `build_bundle`
+/// hand the same buffer to two consumers — the on-disk baker and the
+/// in-memory `fst::Map::new` — without an extra clone.
+fn build_map_bytes(
     buckets: BTreeMap<String, Vec<GeneratedForm>>,
-) -> (Map<Vec<u8>>, Vec<GeneratedForm>) {
+) -> (Vec<u8>, Vec<GeneratedForm>) {
     let total_forms: usize = buckets.values().map(|v| v.len()).sum();
     let mut values: Vec<GeneratedForm> = Vec::with_capacity(total_forms);
     let mut builder = MapBuilder::memory();
@@ -264,8 +335,7 @@ fn build_map(
     let bytes = builder
         .into_inner()
         .expect("FST builder finalize failed (unreachable on in-memory writer)");
-    let map = Map::new(bytes).expect("FST parse of freshly-built bytes failed (unreachable)");
-    (map, values)
+    (bytes, values)
 }
 
 /// Decode a packed `(offset, count)` `u64` and slice the side-table.
