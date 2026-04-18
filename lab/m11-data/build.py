@@ -1,13 +1,38 @@
 #!/usr/bin/env python3
 """
-Constellation Lexicon — concepts.json → lexicon_v1.tsv emitter.
+Constellation Lexicon — concepts/*.json → lexicon_v1.tsv emitter.
 
-Reads the hand-curated concept list from concepts.json and writes a
-deterministic TSV in the format consumed by
-src-tauri/src/lexicon/parse.rs::parse().
+Reads every `NNN-theme.json` shard from `lab/m11-data/concepts/`, merges
+them into a single concept list, and writes a deterministic TSV in the
+format consumed by `src-tauri/src/lexicon/parse.rs::parse()`.
 
-Determinism rules (reproducible byte-identical output given same input):
-  - Rows sorted by concept id, stably.
+# Shard layout (M11-data v2)
+
+Prior to v2 the corpus lived in a single `concepts.json` file. That
+scales to ~2K concepts before the file becomes unwieldy for review
+and editing. At the 20K-concept target the corpus is sharded by
+theme, one file per theme, under `concepts/`:
+
+    concepts/000-core-seed.json          # M11-data v1 foundation (49 concepts)
+    concepts/001-body-and-family.json    # body parts, family, kinship
+    concepts/002-nature.json             # animals, plants, weather, landscape
+    concepts/003-food-and-household.json # food, drink, everyday objects
+    concepts/004-qualities.json          # adjectives, colors, numbers
+    concepts/005-basic-verbs.json        # core action verbs, emotions
+    ...
+
+Each shard is a self-contained `{"schema_version": 1, "concepts": [...]}`
+document. The three-digit prefix provides stable lexicographic sort
+order; the theme suffix is purely a human navigation aid.
+
+Shards are flattened in filename sort order. Duplicate concept ids
+ACROSS shards are a hard error — the build fails with a pointer to
+both files. This is the cross-shard dedup invariant.
+
+# Determinism rules (reproducible byte-identical output given same input)
+
+  - Shard filenames read in sort order (so concept input order is stable).
+  - Rows in the emitted TSV sorted by concept id, stably.
   - Language columns sorted alphabetically by lang code within each row.
   - Lemmas within a single (concept × language) cell: first-seen order
     preserved (preferred lemma first), duplicates dropped after the
@@ -15,10 +40,10 @@ Determinism rules (reproducible byte-identical output given same input):
   - Header comment block is a fixed literal.
   - No trailing whitespace; LF line endings regardless of host OS.
 
-Exits non-zero with a descriptive stderr message if concepts.json is
+Exits non-zero with a descriptive stderr message if any shard is
 malformed. validate.py does the deeper content checks; build.py is
 only expected to catch structural issues (missing required fields,
-unknown PoS, lemma value not a list).
+unknown PoS, lemma value not a list, cross-shard id collisions).
 
 Usage:
     python build.py                    # writes the TSV
@@ -32,12 +57,12 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONCEPTS_JSON = Path(__file__).parent / "concepts.json"
+CONCEPTS_DIR = Path(__file__).parent / "concepts"
 OUTPUT_TSV = REPO_ROOT / "src-tauri" / "src" / "lexicon" / "data" / "lexicon_v1.tsv"
 
 # ISO-639-1 codes that round-trip with arabic::Lang::code.
@@ -76,55 +101,93 @@ def die(msg: str, code: int = 1) -> None:
     sys.exit(code)
 
 
-def load_concepts() -> List[Dict[str, Any]]:
-    """Parse concepts.json, do structural validation, return the concept list."""
-    if not CONCEPTS_JSON.exists():
-        die(f"concepts.json not found at {CONCEPTS_JSON}")
-
+def load_shard(path: Path) -> List[Dict[str, Any]]:
+    """Parse one `concepts/NNN-theme.json` shard, validate structurally,
+    return the concept list. Does not check cross-shard id uniqueness —
+    that happens in `load_all_shards`."""
     try:
-        with CONCEPTS_JSON.open(encoding="utf-8") as fh:
+        with path.open(encoding="utf-8") as fh:
             doc = json.load(fh)
     except json.JSONDecodeError as e:
-        die(f"concepts.json is not valid JSON: {e}")
+        die(f"{path.name} is not valid JSON: {e}")
 
     if not isinstance(doc, dict):
-        die("concepts.json root must be an object")
+        die(f"{path.name}: root must be an object")
     if doc.get("schema_version") != 1:
-        die(f"unsupported schema_version={doc.get('schema_version')!r}; expected 1")
+        die(f"{path.name}: unsupported schema_version={doc.get('schema_version')!r}; expected 1")
     concepts = doc.get("concepts")
     if not isinstance(concepts, list):
-        die("concepts.json: 'concepts' key must be a list")
+        die(f"{path.name}: 'concepts' key must be a list")
 
     seen_ids: Dict[str, int] = {}
     for idx, c in enumerate(concepts):
         if not isinstance(c, dict):
-            die(f"concept #{idx} is not an object")
+            die(f"{path.name}: concept #{idx} is not an object")
         cid = c.get("id")
         if not isinstance(cid, str) or not cid:
-            die(f"concept #{idx}: 'id' must be a non-empty string")
+            die(f"{path.name}: concept #{idx}: 'id' must be a non-empty string")
         if cid in seen_ids:
-            die(f"duplicate concept id {cid!r} at #{idx} (first seen at #{seen_ids[cid]})")
+            die(f"{path.name}: duplicate concept id {cid!r} at #{idx} "
+                f"(first seen at #{seen_ids[cid]})")
         seen_ids[cid] = idx
 
         pos = c.get("pos", "Unknown")
         if pos not in VALID_POS:
-            die(f"concept {cid!r}: invalid pos {pos!r}; expected one of {sorted(VALID_POS)}")
+            die(f"{path.name}: concept {cid!r}: invalid pos {pos!r}; "
+                f"expected one of {sorted(VALID_POS)}")
 
         lemmas = c.get("lemmas")
         if not isinstance(lemmas, dict):
-            die(f"concept {cid!r}: 'lemmas' must be an object (got {type(lemmas).__name__})")
+            die(f"{path.name}: concept {cid!r}: 'lemmas' must be an object "
+                f"(got {type(lemmas).__name__})")
         for lang, values in lemmas.items():
             if lang not in SUPPORTED_LANGS:
-                die(f"concept {cid!r}: unknown lang key {lang!r}; expected one of {SUPPORTED_LANGS}")
+                die(f"{path.name}: concept {cid!r}: unknown lang key {lang!r}; "
+                    f"expected one of {SUPPORTED_LANGS}")
             if not isinstance(values, list):
-                die(f"concept {cid!r}: lemmas[{lang!r}] must be a list")
+                die(f"{path.name}: concept {cid!r}: lemmas[{lang!r}] must be a list")
             for v in values:
                 if not isinstance(v, str):
-                    die(f"concept {cid!r}: lemmas[{lang!r}] contains non-string {v!r}")
+                    die(f"{path.name}: concept {cid!r}: lemmas[{lang!r}] "
+                        f"contains non-string {v!r}")
                 if "\t" in v or "\n" in v:
-                    die(f"concept {cid!r}: lemmas[{lang!r}] contains control char in {v!r}")
+                    die(f"{path.name}: concept {cid!r}: lemmas[{lang!r}] "
+                        f"contains control char in {v!r}")
 
     return concepts
+
+
+def load_all_shards() -> Tuple[List[Dict[str, Any]], List[Tuple[str, int]]]:
+    """Walk `concepts/` in filename sort order, parse every `*.json` shard,
+    merge into one concept list, cross-shard-dedup-check.
+
+    Returns `(concepts, shard_counts)` where `shard_counts` is a list of
+    `(shard_name, concept_count)` pairs in load order — useful for the
+    dry-run summary.
+    """
+    if not CONCEPTS_DIR.is_dir():
+        die(f"concepts/ directory not found at {CONCEPTS_DIR}")
+
+    shard_paths = sorted(CONCEPTS_DIR.glob("*.json"))
+    if not shard_paths:
+        die(f"no *.json shards found in {CONCEPTS_DIR}")
+
+    all_concepts: List[Dict[str, Any]] = []
+    id_to_shard: Dict[str, str] = {}
+    shard_counts: List[Tuple[str, int]] = []
+
+    for path in shard_paths:
+        concepts = load_shard(path)
+        for c in concepts:
+            cid = c["id"]
+            if cid in id_to_shard:
+                die(f"cross-shard duplicate concept id {cid!r}: appears in "
+                    f"both {id_to_shard[cid]} and {path.name}")
+            id_to_shard[cid] = path.name
+        all_concepts.extend(concepts)
+        shard_counts.append((path.name, len(concepts)))
+
+    return all_concepts, shard_counts
 
 
 def dedup_preserving_order(items: List[str]) -> List[str]:
@@ -168,7 +231,8 @@ def render_tsv(concepts: List[Dict[str, Any]]) -> str:
     return HEADER + "\n" + "\n".join(rows) + "\n"
 
 
-def count_summary(concepts: List[Dict[str, Any]]) -> str:
+def count_summary(concepts: List[Dict[str, Any]],
+                  shard_counts: List[Tuple[str, int]]) -> str:
     """Human-readable counts for --dry-run output."""
     total_lemmas = 0
     per_lang: Dict[str, int] = {lang: 0 for lang in SUPPORTED_LANGS}
@@ -179,10 +243,15 @@ def count_summary(concepts: List[Dict[str, Any]]) -> str:
             total_lemmas += len(dedup)
 
     lines = [
+        f"  shards: {len(shard_counts)}",
+    ]
+    for name, n in shard_counts:
+        lines.append(f"    {name}: {n}")
+    lines.extend([
         f"  concepts: {len(concepts)}",
         f"  total lemma strings: {total_lemmas}",
         "  per-language lemma counts:",
-    ]
+    ])
     for lang in SUPPORTED_LANGS:
         cov = per_lang[lang]
         pct = 100.0 * cov / max(1, len(concepts))
@@ -200,10 +269,10 @@ def main() -> int:
                         help="parse + count only; write nothing")
     args = parser.parse_args()
 
-    concepts = load_concepts()
+    concepts, shard_counts = load_all_shards()
 
     if args.dry_run:
-        print(count_summary(concepts))
+        print(count_summary(concepts, shard_counts))
         return 0
 
     tsv = render_tsv(concepts)
@@ -220,7 +289,7 @@ def main() -> int:
         fh.write(tsv)
 
     print(f"wrote {OUTPUT_TSV.relative_to(REPO_ROOT)} ({len(tsv):,} bytes)")
-    print(count_summary(concepts))
+    print(count_summary(concepts, shard_counts))
     return 0
 
 

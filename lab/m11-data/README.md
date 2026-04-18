@@ -1,16 +1,16 @@
 # M11-data — Constellation Lexicon corpus
 
-**Status**: v1 (~100 hand-curated concepts) — seed → production swap.
+**Status**: v2 (in-flight, scaling toward 20K concepts via thematic shards).
 **Output**: `src-tauri/src/lexicon/data/lexicon_v1.tsv`
 **Parser**: `src-tauri/src/lexicon/parse.rs` (unchanged from M10).
 
 ## What this is
 
 The M10 Lexical Bridge shipped a 15-concept toy seed (`seed_v1.tsv`) so the
-build/bake/expand pipeline could be exercised end-to-end. This directory
-holds the tooling that produces the real corpus on top of that pipeline —
-the data file `lexicon_v1.tsv` that `LexiconGraph::get()` will load in
-production once wired.
+build/bake/expand pipeline could be exercised end-to-end. M11-data v1
+replaced it with a 49-concept hand-curated production corpus. v2 (current)
+scales the same corpus toward 20K concepts via thematic shards — the
+pipeline and Rust wire-up are unchanged; only the authoring layout has.
 
 **Every concept in this corpus is Constellation-original content.** No
 third-party wordnet data is consumed. This was a deliberate decision (see
@@ -19,16 +19,24 @@ licensing obligations and no redistribution constraints.
 
 ## Scale policy
 
-v1 ships a tight, high-quality core (~100 concepts covering the most-used
-vocabulary for knowledge work across all 15 supported languages). Every
-row is hand-verified, especially Arabic (per project-owner rule: Arabic
-coverage is non-negotiable — every row must carry at least one Arabic
-lemma).
+v2 targets **~20K concepts**, incrementally landed via thematic shards
+(`concepts/NNN-theme.json`). Each shard covers a coherent slice of
+vocabulary (body-and-family, nature, food-and-household, qualities,
+basic-verbs, …) and is reviewable on its own. The 49 original concepts
+live in `000-core-seed.json` as the foundation; every subsequent shard
+is additive.
 
-Expansion to larger scale (~500, ~2K, ~20K concepts) is tracked as
-M11-data-scale, a separate milestone. The architecture doesn't need
-20K to work; M12 wire-up and M13 UI can proceed against 100 as cleanly
-as against 20K.
+Every row is hand-verified for correctness, especially Arabic (per
+project-owner rule: Arabic coverage is non-negotiable — every row must
+carry at least one Arabic lemma). The target per-concept coverage is
+≥8 of 15 languages (enforced as a validator warning, not a hard error,
+so degraded rows still ship).
+
+Past ~2K concepts, hand-curation may transition to LLM-assisted
+generation with the same validator as the gate — the shard layout is
+agnostic to authoring method. Every shard is structurally validated
+by `build.py` before it can produce output; every emitted TSV is
+content-validated by `validate.py`.
 
 ## Why no third-party sources
 
@@ -55,15 +63,41 @@ forever.
 
 ```
 lab/m11-data/
-├── README.md          # this file
-├── concepts.json      # source of truth: all concepts + lemmas in one file
-├── build.py           # concepts.json → src-tauri/src/lexicon/data/lexicon_v1.tsv
-├── validate.py        # post-build sanity checks against the emitted TSV
-├── regenerate.sh      # one-command rebuild: build + validate
+├── README.md                             # this file
+├── concepts/                             # source of truth — one shard per theme
+│   ├── 000-core-seed.json                # M11-data v1 foundation (49 concepts)
+│   ├── 001-body-and-family.json          # body parts, family, kinship
+│   ├── 002-nature.json                   # animals, plants, weather, landscape
+│   └── NNN-<theme>.json                  # additional thematic shards as they land
+├── build.py                              # concepts/*.json → lexicon_v1.tsv
+├── validate.py                           # post-build sanity checks against the emitted TSV
+├── regenerate.sh                         # one-command rebuild: build + validate
 └── (no NOTICE / LICENSE file — no upstream attribution to carry)
 ```
 
-## Concept data shape (in `concepts.json`)
+### Shard layout (v2)
+
+The `concepts/` directory holds one JSON file per theme. Prior to v2 the
+whole corpus lived in a single `concepts.json` file; at ~20K concepts
+that file becomes unwieldy for review and editing. Sharding keeps each
+theme independently reviewable while preserving deterministic output.
+
+- **Filename** — `NNN-theme.json`. The three-digit prefix gives stable
+  lexicographic sort order (build.py reads shards in filename order);
+  the theme suffix is a human navigation aid.
+- **Schema** — every shard is a self-contained
+  `{"schema_version": 1, "concepts": [...]}` document. Inter-shard
+  relationships are expressed only through the shared concept id
+  namespace.
+- **Cross-shard dedup** — duplicate concept ids across shards are a
+  **hard build-time error** with pointers to both offending files. This
+  is the cross-shard dedup invariant.
+- **Deterministic output** — the build walks shards in filename sort
+  order and concatenates concept lists; the final TSV is then sorted
+  by concept id, so the byte-identical output invariant holds
+  regardless of how the concepts are split across shards.
+
+## Concept data shape (one entry in any shard)
 
 ```json
 {
@@ -134,9 +168,13 @@ Enforced by `validate.py`:
 
 ## Regeneration workflow
 
-1. Edit `concepts.json` (add, remove, or tweak concepts).
+1. Edit the relevant shard in `concepts/` (add, remove, or tweak
+   concepts). To introduce a new theme, create a new `NNN-theme.json`
+   with the next free prefix.
 2. Run `./regenerate.sh` (or `python build.py && python validate.py`).
-3. The script writes `src-tauri/src/lexicon/data/lexicon_v1.tsv` (the
+3. The script walks every `*.json` shard in `concepts/` in filename
+   sort order, flattens them (hard error on cross-shard id collision),
+   and writes `src-tauri/src/lexicon/data/lexicon_v1.tsv` (the
    production corpus). It does NOT touch `seed_v1.tsv` — that file is
    preserved as the M10 regression fixture.
 4. Build Rust side — `cargo build --release -p constellation_lib`.
@@ -158,12 +196,13 @@ No other Rust code changes. The parser is scale-independent; the
 baker is scale-independent; the expand / detect paths are
 scale-independent. This directory is pure data-layer work.
 
-## Follow-ons (outside v1 scope)
+## Follow-ons (outside current scope)
 
-- **M11-data-scale**: expand from ~100 concepts to ~500, then ~2K, then
-  ~20K. At ~2K hand-curation scales; past that, LLM-assisted generation
-  + a validation harness may be needed. Ship v1 first, measure user
-  value, decide.
+- **M11-data v2 continued batches**: land further thematic shards
+  (`003-food-and-household.json`, `004-qualities.json`,
+  `005-basic-verbs.json`, …) until the corpus reaches ~20K concepts.
+  Each batch is a discrete shard, reviewable and rollback-able on its
+  own.
 - **M11-data-synonyms**: today each concept carries 1–3 lemmas per
   language. M8-style synonym edges (in-language near-equivalents) could
   be added by splitting each concept into multiple sense-tagged nodes.
