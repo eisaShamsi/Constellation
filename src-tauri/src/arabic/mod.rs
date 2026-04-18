@@ -68,7 +68,13 @@ pub mod overrides;        // M8
 // needs it outside of `cargo test`, promote to `pub mod` + a feature
 // flag rather than always-on.
 #[cfg(test)]
-mod regression;
+pub(crate) mod regression;
+
+// M9 — bench harness. One `#[test] #[ignore]` that reports cold-start,
+// warm-start, throughput, accuracy, and size on demand. Opt-in via
+// `cargo test --lib --release arabic::bench -- --ignored --nocapture`.
+#[cfg(test)]
+mod bench;
 
 pub use types::{
     Affix, AffixFunction, AffixSlot, Analysis, AnalysisOrigin, Lang, PartOfSpeech, Pattern,
