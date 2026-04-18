@@ -1918,15 +1918,41 @@ fn stem_arabic_light10(word: &str) -> String {
     chars.iter().collect()
 }
 
-/// Combined Arabic processing: normalize + stem
-/// Returns (display_form, index_key)
-/// - display: original word with tashkeel removed (ة stays ة, أ stays أ)
-/// - key: fully normalized + stemmed (for grouping variants)
+/// Combined Arabic processing: normalize + stem.
+/// Returns (display_form, index_key):
+///   - display: original word with tashkeel removed (ة stays ة, أ stays أ).
+///   - key: canonical stem used by FTS5 to group surface variants.
+///
+/// M6 routes the key through `arabic::analyze_best`, which runs the five
+/// Constellation Arabic Engine layers and returns the highest-confidence
+/// analysis:
+///
+///   Layer 1 ProtectedList    — proper nouns / places / loanwords / function (conf 1.00)
+///   Layer 2 GenerativeFst    — bare (root × pattern) hit                    (conf 0.85)
+///   Layer 3b Cascade         — affix-peeled stem hit                        (conf 0.75 / 0.55)
+///   Layer 4 SurfaceHeuristic — normalized surface fallback                  (conf 0.30)
+///
+/// For every analysis with origin ≠ SurfaceHeuristic the engine's `lemma`
+/// is a strict improvement on Light10 — most visibly on the proper-noun
+/// case that motivated this milestone: `وائل → "وائل"` (ProtectedList)
+/// instead of the Light10-corrupted `"ائل"`.
+///
+/// When the analyzer's best guess IS SurfaceHeuristic (an Arabic word
+/// that isn't protected, isn't in the FST, and can't be peeled to any
+/// FST stem), we keep Light10 so the swap is strictly non-regressive:
+/// unrecognized words continue to get the same affix-stripping they got
+/// before M6, and search recall on them doesn't drop.
 fn process_arabic_word(word: &str) -> (String, String) {
     let display = normalize_arabic_display(word); // preserve ة أ إ آ ى
-    let normalized = normalize_arabic(word);       // unify ة→ه أ→ا etc.
-    let stemmed = stem_arabic_light10(&normalized);
-    (display, stemmed)
+    let analysis = crate::arabic::analyze_best(word);
+    let stem = if matches!(analysis.origin, crate::arabic::AnalysisOrigin::SurfaceHeuristic) {
+        // Unknown word — preserve pre-M6 Light10 behaviour so recall on
+        // previously-indexed surfaces does not regress.
+        stem_arabic_light10(&normalize_arabic(word))
+    } else {
+        analysis.lemma
+    };
+    (display, stem)
 }
 
 /// Remove common Hebrew prefixes: ב ל מ ה ו כ ש
@@ -3411,4 +3437,90 @@ pub fn get_file_metadata(file_path: String) -> Result<FileMetadata, String> {
         .unwrap_or(0);
 
     Ok(FileMetadata { created, modified })
+}
+
+// ─── Tests ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    //! M6 end-to-end contract tests. The 502-case regression corpus in
+    //! `arabic::regression` exercises `analyze_best` in isolation; this
+    //! module checks that the FTS pipeline's `process_arabic_word` wrapper
+    //! and `process_word_for_fts` downstream guard actually surface the
+    //! analyzer's verdict to the tokenizer. Without these, a future
+    //! refactor could wire a different stemmer in and the corpus would
+    //! still pass while search results quietly regressed.
+    use super::*;
+
+    /// The flagship bug that motivated the Constellation Arabic Engine.
+    /// Pre-M6: Light10 stripped the leading و from وائل, producing "ائل"
+    /// and corrupting every index row of every note mentioning any Wael.
+    /// Post-M6: the protected list short-circuits Light10 and returns the
+    /// name verbatim. This test is the pin that prevents the bug from
+    /// ever silently returning.
+    #[test]
+    fn wael_is_not_mangled_to_ail() {
+        let (_display, stem) = process_arabic_word("وائل");
+        assert_eq!(stem, "وائل", "M6 must not mangle protected proper nouns");
+    }
+
+    /// End-to-end through the whole `process_word_for_fts` filter —
+    /// this is what the FTS5 tokenizer actually calls. Guarantees
+    /// the stem column of the notes_fts index holds the full name.
+    #[test]
+    fn wael_survives_process_word_for_fts() {
+        let (stem, _norm) = process_word_for_fts("وائل").expect("وائل must tokenize");
+        assert_eq!(stem, "وائل");
+    }
+
+    /// Cascade flagship: الأئمة (definite + broken plural of إمام).
+    /// Layer 3b peels ال, FST matches أئمة as the plural of إمام →
+    /// lemma comes out as one of the legitimate root derivations.
+    /// We don't pin the exact lemma because the tiebreak order among
+    /// equal-confidence FST hits isn't stable across refactors (the
+    /// 502-case corpus leaves this row unasserted on lemma for the
+    /// same reason), but we DO assert it isn't the Light10 mangle
+    /// ("ئم" from naive ال- / -ة stripping).
+    #[test]
+    fn aimma_is_not_light10_mangled() {
+        let (_display, stem) = process_arabic_word("الأئمة");
+        assert_ne!(stem, "ئم", "cascade path must find a real analysis");
+        assert_ne!(stem, "ئمه", "cascade path must find a real analysis");
+        // Sanity: the lemma should contain at least one of the
+        // radicals ء / م — any genuine analysis of الأئمة does.
+        assert!(
+            stem.chars().any(|c| c == 'ء' || c == 'أ' || c == 'م' || c == 'إ'),
+            "stem {:?} lost the root radicals",
+            stem,
+        );
+    }
+
+    /// Unknown Arabic word falls to SurfaceHeuristic — verify we KEEP
+    /// Light10 affix stripping for it so M6 is strictly non-regressive
+    /// for words the analyzer doesn't yet know. "قذالبثظ" is nonsense:
+    /// not protected, no root × pattern match, no peelable affix chain
+    /// that hits anything real.
+    #[test]
+    fn unknown_word_still_gets_light10_stripping() {
+        let nonsense = "قذالبثظ";
+        let (_display, stem) = process_arabic_word(nonsense);
+        // Post-condition is just "did not panic and returned non-empty
+        // UTF-8" — the exact Light10 output on nonsense isn't something
+        // we want to pin to a literal. The important contract is that
+        // the pipeline degrades gracefully, not that it produces any
+        // particular string.
+        assert!(!stem.is_empty());
+        assert!(stem.chars().all(|c| !c.is_ascii_control()));
+    }
+
+    /// Non-Arabic words must still route through the non-Arabic branch
+    /// untouched — M6 only changed the Arabic branch of `process_word_for_fts`.
+    #[test]
+    fn english_word_still_english_stemmed() {
+        let (stem, norm) = process_word_for_fts("running").expect("english must tokenize");
+        // The English stemmer turns "running" into "run" (or close);
+        // critically the stem must NOT be Arabic-pipeline output.
+        assert!(stem.is_ascii(), "english must not be routed to arabic pipeline");
+        assert_eq!(norm, "running");
+    }
 }

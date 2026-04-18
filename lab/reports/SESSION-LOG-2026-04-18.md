@@ -2,7 +2,7 @@
 
 ## Headline
 
-**M3 + M3-baker + M1g/M1h + M5 landed.** First: `GenerativeIndex` (HashMap, ~40 MB projected at 7K roots) swapped for `GenerativeFst` (BurntSushi FST, prefix-compressed, mmap-ready). Second: the compiled FST is now persisted to the user's cache directory on first launch and reloaded on subsequent launches via `GenerativeFst::from_bytes` — the cold/warm startup path divergence that M9 ("50 ms analyzer cold-start") measures against. Third: the protected list got its architectural rewrite — `const SEED: &[...]` (200 hand-picked entries, 340 lines of Rust) replaced with `include_str!("protected_seed.tsv")` + a 3-column TSV (`surface<TAB>category<TAB>origin_lang`) now holding **1,196 unique entries** across proper nouns (395), places (275), loanwords (455), and function words (71). Fourth: the **M5 regression corpus** — a 502-case held-out test set in `regression_cases.tsv` + a `cfg(test)`-gated `regression.rs` harness that feeds every row through `analyze_best` and asserts origin / surface / (optionally) lemma / root. Covers all three active origin layers (ProtectedList, GenerativeFst, SurfaceHeuristic) across 28 Arabic roots, ~80 cascade surfaces, and 45 foreign (Latin-script) words. Full public-API parity preserved across all four landings; **225/225 library tests pass** (up from 209 pre-M3: +13 fst_bake, +10 regression harness, +6 TSV parser, -1 removed `no_duplicate_lemmas_in_seed` obsolete under first-write-wins).
+**M3 + M3-baker + M1g/M1h + M5 + M6 landed.** First: `GenerativeIndex` (HashMap, ~40 MB projected at 7K roots) swapped for `GenerativeFst` (BurntSushi FST, prefix-compressed, mmap-ready). Second: the compiled FST is now persisted to the user's cache directory on first launch and reloaded on subsequent launches via `GenerativeFst::from_bytes` — the cold/warm startup path divergence that M9 ("50 ms analyzer cold-start") measures against. Third: the protected list got its architectural rewrite — `const SEED: &[...]` (200 hand-picked entries, 340 lines of Rust) replaced with `include_str!("protected_seed.tsv")` + a 3-column TSV (`surface<TAB>category<TAB>origin_lang`) now holding **1,196 unique entries** across proper nouns (395), places (275), loanwords (455), and function words (71). Fourth: the **M5 regression corpus** — a 502-case held-out test set in `regression_cases.tsv` + a `cfg(test)`-gated `regression.rs` harness that feeds every row through `analyze_best` and asserts origin / surface / (optionally) lemma / root. Covers all three active origin layers (ProtectedList, GenerativeFst, SurfaceHeuristic) across 28 Arabic roots, ~80 cascade surfaces, and 45 foreign (Latin-script) words. Fifth: **M6** — the FTS5 Arabic stemming path in `libraries.rs::process_arabic_word` now routes through `arabic::analyze_best`. Every Arabic token in every note in every Universe now flows through the five-layer engine; Light10 is retained only as the graceful `SurfaceHeuristic` fallback so unknown words don't regress. The flagship `وائل → "ائل"` mangle is gone: the protected list short-circuits Light10 and the stem is preserved verbatim. Full public-API parity preserved across all five landings; **230/230 library tests pass** (up from 209 pre-M3: +13 fst_bake, +10 regression harness, +6 TSV parser, +5 M6 FTS contract tests, -1 removed `no_duplicate_lemmas_in_seed` obsolete under first-write-wins).
 
 ## Work in order
 
@@ -175,6 +175,58 @@ The analyzer is about to gain two disruptive changes: **M6** will swap `stem_ara
 - All **225 pass** in 0.80s. Corpus run adds ~20ms to the test wall time (502 `analyze_best` calls, no I/O).
 - All 502/502 regression cases pass — the corpus is green on its calibration commit and becomes the baseline M6/M7 must defend against.
 
+## 12. M6 — route FTS5 Arabic stemming through analyze_best
+
+The whole point of the Constellation Arabic Engine is that it's what the FTS5 tokenizer uses. Until M6 landed, `libraries.rs::process_arabic_word` still called `stem_arabic_light10` — Light10 was writing into the search index, which is why وائل was indexed as "ائل" and why the flagship bug existed in the first place. M6 is the swap.
+
+**Solution shipped:**
+
+- Edited `src-tauri/src/libraries.rs::process_arabic_word` (around line 1949). Old body: `normalize_arabic` + `stem_arabic_light10` → returns two strings. New body:
+
+  ```rust
+  fn process_arabic_word(word: &str) -> (String, String) {
+      let display = normalize_arabic_display(word);
+      let analysis = crate::arabic::analyze_best(word);
+      let stem = if matches!(analysis.origin, crate::arabic::AnalysisOrigin::SurfaceHeuristic) {
+          stem_arabic_light10(&normalize_arabic(word))
+      } else {
+          analysis.lemma
+      };
+      (display, stem)
+  }
+  ```
+
+- `normalize_arabic_display` is untouched — the display column keeps preserving `ة / أ / إ / آ / ى` so rendered hits still show the user's original spelling.
+- The key column is now the analyzer's `lemma` whenever the engine has an opinion (origin ∈ {ProtectedList, GenerativeFst, SurfaceHeuristic is *the* fallback route}). That's a strict upgrade on every surface the engine recognizes — most visibly on proper nouns like وائل (ProtectedList, lemma=وائل, confidence 1.00) and on cascade chains like الأئمة (FST hit on أئمة after ال- peel).
+- When `analyze_best` returns origin=`SurfaceHeuristic` — the engine's own "I don't know this word" signal — we fall back to `stem_arabic_light10(normalize_arabic(word))`, which is byte-for-byte the pre-M6 path. That guarantees the swap is non-regressive: every surface Light10 used to stem correctly still produces the same index key. Only the surfaces where Light10 was *wrong* (because it over-strips proper nouns and loanwords) change their output.
+- `stem_arabic_light10` is retained at its existing location (line 1867) as the fallback helper. Removing it would be premature — the analyzer does not yet cover the whole Arabic lexicon.
+- `fts5_tokenizer.rs` was **not touched**. It delegates to `crate::libraries::process_word_for_fts(word)`, which routes Arabic-script words through `process_arabic_word`. The IPC boundary stays exactly where CLAUDE.md Rule 3 requires it (Rust-side only, zero `invoke()` on the keystroke hot path).
+
+**Why the fallback is a policy decision, not a quick hack:** a full drop-in that trusted `analyze_best` unconditionally would regress recall on every surface the FST doesn't yet cover. At today's 595-root seed that's a lot of real words. Keeping Light10 behind the `SurfaceHeuristic` guard means the rollout is monotonic — every M1g/M5-grow / roots-expansion landing converts more surfaces from "Light10 heuristic" to "engine verdict" without ever reversing direction. The comment in `process_arabic_word` documents this explicitly so a future refactor can't silently delete the fallback.
+
+### 13. Tests — 5 new FTS contract tests
+
+Added in a new `#[cfg(test)] mod tests` block at the end of `libraries.rs`. The existing 502-case regression corpus exercises `analyze_best` in isolation; these 5 tests verify the *wrapper* — that the analyzer's verdict actually makes it through `process_arabic_word` and `process_word_for_fts` to the tokenizer without being mangled by the glue code.
+
+- `wael_is_not_mangled_to_ail` — flagship. Asserts `process_arabic_word("وائل")` returns stem `"وائل"` exact. This is the test that would have caught the original bug in 2025 if it had existed.
+- `wael_survives_process_word_for_fts` — end-to-end through the FTS-facing entry point. Guarantees the stem column of `notes_fts` will hold the full name on any future indexing pass.
+- `aimma_is_not_light10_mangled` — the الأئمة cascade flagship. Doesn't pin a specific lemma (tiebreak is not stable across refactors; the corpus leaves this row's lemma unasserted too), but asserts the output isn't the Light10 mangle ("ئم" / "ئمه") and contains at least one of the real root radicals (ء / أ / م / إ).
+- `unknown_word_still_gets_light10_stripping` — the fallback contract. Feeds nonsense ("قذالبثظ") that can't possibly hit any analyzer layer except `SurfaceHeuristic`. Asserts the pipeline degrades gracefully (non-empty UTF-8 output, no control chars). The exact string isn't pinned because Light10's output on nonsense isn't something we want frozen — only the contract "M6 is non-regressive for unknown words" is.
+- `english_word_still_english_stemmed` — sanity check that non-Arabic routes through the non-Arabic branch of `process_word_for_fts` untouched. Asserts the stem is ASCII (so it can't have been routed through the Arabic pipeline).
+
+All 5 pass.
+
+### 14. Results after M6
+
+| Suite | Pre-M3 | After M3 | After M3-baker | After M1g/M1h | After M5 | After M6 | Delta |
+|---|---|---|---|---|---|---|---|
+| arabic module | 171 | 183 | 196 | 202 | 212 | 212 | +41 |
+| libraries FTS contract | 0 | 0 | 0 | 0 | 0 | 5 | +5 |
+| library total | 184 | 196 | 209 | 215 | 225 | 230 | +46 |
+
+- All **230 pass** in 0.69s. The 502-case regression corpus is still green (it was never at risk — M6 doesn't change `analyze_best` itself, only its downstream consumer).
+- Test wall time did not regress. The analyzer's `get()` path already ran in the existing 212 Arabic tests; M6 only adds 5 more calls.
+
 ## Commit
 
 Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
@@ -191,11 +243,15 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
    - `src-tauri/src/arabic/protected.rs` — removed ~220 lines of `const SEED` array; added `parse_origin_lang`, `parse_category`, `parse_tsv` helpers, `seed_tsv()` accessor; rewired `build_table`; updated tests (removed `no_duplicate_lemmas_in_seed`, added 6 TSV-parser tests, bumped size bounds).
    - `src-tauri/src/arabic/protected_seed.tsv` — new (1,196 entries, ~1,400 lines incl. section headers and format docs).
 
-3. **M5** (this session):
+3. **M5** (this session, `1cc8d76`):
    - `src-tauri/src/arabic/regression.rs` — new (~400 lines, 10 tests) — `Case`, `Failure`, `CorpusReport`, `parse_origin`, `parse_optional`, `parse_corpus`, `run_corpus`, `evaluate`, `raw_corpus`.
    - `src-tauri/src/arabic/regression_cases.tsv` — new (~720 lines, 502 data rows).
    - `src-tauri/src/arabic/mod.rs` — `+ #[cfg(test)] mod regression;` at end of mod declarations.
    - `lab/reports/SESSION-LOG-2026-04-18.md` — this file.
+
+4. **M6** (this session, pending):
+   - `src-tauri/src/libraries.rs` — `process_arabic_word` refactored (line ~1949) to route through `arabic::analyze_best`, with Light10 retained as the `SurfaceHeuristic` fallback; 5 new FTS contract tests appended to a new `#[cfg(test)] mod tests` block at EOF.
+   - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 12–14 added.
 
 ## Files modified
 
@@ -207,13 +263,16 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src-tauri/src/arabic/roots.rs` — `+ pub fn seed_tsv()` accessor (M3-baker).
 - `src-tauri/src/arabic/protected.rs` — TSV loader refactor (M1g/M1h).
 - `src-tauri/src/arabic/protected_seed.tsv` — new (M1g/M1h, 1,196 entries).
+- `src-tauri/src/arabic/regression.rs` — new (M5, 10 tests).
+- `src-tauri/src/arabic/regression_cases.tsv` — new (M5, 502 data rows).
+- `src-tauri/src/libraries.rs` — `process_arabic_word` routed through `analyze_best` (M6) + 5 new FTS contract tests at EOF.
 
 ## Open items
 
 - **M1g-data / M1h-data**: the 20K Wikipedia-extracted proper-noun corpus + 2K loanwords. Today's 1,196 hand-picked entries cover the common case; the full corpus comes from CC-BY-SA bulk extraction (separate milestone in `lab/`, blocked on extractor tooling).
 - **M5-grow**: expand the corpus over time. 502 is the v1 floor — as M6/M7 land, new flagship surfaces identified during bring-up should be added here first before any other test code. Target by M9: ≥2,000 cases, with ≥20 pure-heuristic Arabic-script rows (Layer 4 fallback coverage; currently the heuristic threshold is met by foreign Latin-script rows via the non-Arabic-script route).
-- **M6**: replace `stem_arabic_light10` in `fts5_tokenizer.rs` with `arabic::analyze`. Unblocked: the analyzer is FST-backed with persistent cache, the protected list is data-driven, and there is now a 502-case regression corpus to defend the swap.
-- **M7**: disambiguator — reorder multi-analysis results by corpus frequency / context. The regression corpus's `expected_lemma = "-"` rows on ambiguous verb forms mean M7 can change analyze_best's tiebreak without forcing corpus rewrites; only the origin has to stay stable.
+- **M7**: disambiguator — reorder multi-analysis results by corpus frequency / context. Unblocked now that M6 has landed: every FTS-visible Arabic token is running through `analyze_best`, so any improvement to the tiebreak (currently confidence-then-insertion-order) directly improves search quality. The regression corpus's `expected_lemma = "-"` rows on ambiguous verb forms mean M7 can change the tiebreak without forcing corpus rewrites; only the origin has to stay stable.
+- **M8**: user overrides — `overrides.rs` + a UI for the user to pin the analysis of a specific surface. This is the Layer 0 in the five-layer architecture that's currently a stub — unblocked by M6 landing (an override is only meaningful if the pipeline it overrides actually runs on user data).
 - **M9**: measure cold-start analyzer time on the real user machine (Windows) with a clean cache dir, then warm-start. If the warm-start delta isn't ≥5× the cold-start on the target 7K-root corpus, tune the format (e.g. memory-map instead of read-to-vec).
 
 ## No user-facing changes
