@@ -1,6 +1,6 @@
 # Manual de Usuario de Constellation
 
-**Version 0.3.4 | Marzo 2026**
+**Version 0.1.0 | Marzo 2026**
 
 Constellation es una aplicacion de escritorio para la Gestion del Conocimiento Personal (PKM) que permite administrar bibliotecas de notas en Markdown. Desarrollada con Tauri v2, SvelteKit y Rust, funciona de forma nativa en Windows, macOS y Linux con soporte completo para arabe y escritura RTL.
 
@@ -708,6 +708,10 @@ El formato coincide exactamente con el plugin Style Settings de Obsidian, por lo
 
 Los cambios se guardan automaticamente en el tema activo; si editas un tema integrado, se auto-clona en tus temas personalizados para que los cambios persistan sin modificar el original.
 
+### Anulaciones del motor arabe
+
+Un panel por Universo donde fijas como el motor arabe analiza ciertas formas superficiales — tus propias acunaciones, nombres locales, prestamos especificos de tu campo, o casos en los que no estas de acuerdo con la lectura automatica del motor. Cada anulacion vence al FST generativo, a la cascada y al respaldo heuristico. Anadir o eliminar una anulacion dispara una reindexacion focalizada solo sobre las notas que contienen la superficie afectada — sin reconstruccion completa. Consulta la seccion 19 ("Soporte RTL y Arabe") para el paso a paso.
+
 ### Editor
 
 - Tipo de editor (Markdown / Documento)
@@ -785,6 +789,34 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 1. Ve a **Configuracion > General > Idioma** y selecciona Arabe
 2. Opcionalmente, establece una fuente dedicada para arabe en **Configuracion > General > Fuentes de escritura**
 3. Las notas con contenido en arabe se renderizaran automaticamente en RTL
+
+### Anulaciones del motor arabe
+
+El motor arabe de Constellation es un analizador morfologico de cinco capas que corre bajo cada busqueda, cada enlace y cada entrada del indice. Entiende raices, patrones, nombres propios, prestamos y reparaciones fonologicas — de modo que una consulta por كاتب encuentra كتبنا y كتاب, pero وائل se mantiene intacto como nombre en lugar de ser mutilado a ائل.
+
+El panel **Anulaciones del arabe** en Configuracion es donde le ensenas al motor tu propia terminologia. Cada anulacion es la respuesta soberana — vence al FST generativo, a la cascada y al respaldo heuristico.
+
+**Cuando usar anulaciones:**
+- Nombres de personas, toponimos locales o terminos especificos de tu campo que el motor no conoce
+- Acunaciones o siglas propias de tu Universo
+- Prestamos donde quieras preservar una grafia concreta
+- Cualquier caso en el que el analisis automatico del motor no coincida con tu forma de leer la palabra
+
+**Paso a paso:**
+
+1. Abre **Configuracion** (icono del engranaje o `Ctrl + ,` / `Cmd + ,`) y selecciona **Anulaciones del arabe** en la barra lateral.
+2. Haz clic en **Anadir anulacion**.
+3. Rellena:
+   - **Forma superficial** — la palabra arabe tal como la tecleas
+   - **Lema** — la forma canonica que debe devolver el motor
+   - **Raiz** (opcional) — 3 o 4 consonantes si la palabra tiene raiz clasica
+   - **Patron** (opcional) — p. ej. `فاعل`
+   - **Categoria** — Nombre propio / Sustantivo / Adjetivo / Adverbio / Verbo / Particula / Extranjero / Desconocido
+   - **Nota** (opcional) — una linea de contexto para ti mismo
+4. Haz clic en **Guardar**. El panel muestra **Reindexando…** mientras cada nota que contiene la superficie se vuelve a tokenizar y, al terminar, **Se reindexaron N nota(s)**.
+5. Para eliminar una anulacion, haz clic en la **x** de su fila — el mismo barrido de reindexacion corre al reves.
+
+Las anulaciones se guardan por Universo en `<universo>/.constellation/arabic-overrides.json` — texto plano, ordenado alfabeticamente, escritura atomica. Puedes ponerlo bajo control de versiones o compartirlo entre dispositivos.
 
 ---
 
@@ -1084,5 +1116,5 @@ Todas las herramientas del Motor Cognitivo se configuran desde **Ajustes > Motor
 
 ---
 
-*Manual de Usuario de Constellation — Version 0.3.4 — Marzo 2026*
+*Manual de Usuario de Constellation — Version 0.1.0 — Marzo 2026*
 *uconstellation.world*

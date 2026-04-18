@@ -1,6 +1,6 @@
 # Manual do Usuario do Constellation
 
-**Versao 0.3.4 | Marco 2026**
+**Versao 0.1.0 | Marco 2026**
 
 Constellation e um aplicativo de desktop para Gestao do Conhecimento Pessoal (PKM) que permite gerenciar bibliotecas de notas em Markdown. Desenvolvido com Tauri v2, SvelteKit e Rust, funciona nativamente no Windows, macOS e Linux com suporte completo para arabe e escrita RTL.
 
@@ -708,6 +708,10 @@ O formato corresponde exatamente ao plugin Style Settings do Obsidian, entao voc
 
 As alteracoes sao salvas automaticamente no tema ativo; se voce editar um tema integrado, ele e clonado automaticamente em seus temas personalizados para que as mudancas persistam sem modificar o original.
 
+### Substituicoes do motor arabe
+
+Um painel por Universo onde voce fixa como o motor arabe analisa certas formas de superficie — as suas proprias cunhagens, nomes locais, emprestimos especificos do seu campo, ou casos em que voce discorda da leitura automatica do motor. Cada substituicao vence o FST generativo, a cascata e o recuo heuristico. Adicionar ou remover uma substituicao dispara uma reindexacao focada apenas nas notas que contem a superficie afetada — sem reconstrucao completa. Veja a secao 19 ("Suporte RTL e Arabe") para o passo a passo.
+
 ### Editor
 
 - Tipo de editor (Markdown / Documento)
@@ -785,6 +789,34 @@ Constellation oferece suporte de primeira classe para arabe, hebraico, persa, ur
 1. Va para **Configuracoes > Geral > Idioma** e selecione Arabe
 2. Opcionalmente, defina uma fonte dedicada para arabe em **Configuracoes > Geral > Fontes de escrita**
 3. Notas com conteudo em arabe serao renderizadas automaticamente em RTL
+
+### Substituicoes do motor arabe
+
+O motor arabe do Constellation e um analisador morfologico de cinco camadas que corre sob cada busca, cada link e cada entrada do indice. Ele entende raizes, padroes, nomes proprios, emprestimos e reparos fonologicos — de modo que uma consulta por كاتب encontra كتبنا e كتاب, mas وائل permanece intacto como nome proprio em vez de ser mutilado para ائل.
+
+O painel **Substituicoes do arabe** nas Configuracoes e onde voce ensina a sua propria terminologia ao motor. Cada substituicao e a resposta soberana — ela vence o FST generativo, a cascata e o recuo heuristico.
+
+**Quando usar substituicoes:**
+- Nomes de pessoas, toponimos locais ou termos especificos do seu campo que o motor nao conhece
+- Cunhagens ou siglas proprias do seu Universo
+- Emprestimos em que voce quer preservar uma grafia especifica
+- Qualquer caso em que a analise automatica do motor diverge da sua forma de ler a palavra
+
+**Passo a passo:**
+
+1. Abra **Configuracoes** (icone de engrenagem ou `Ctrl + ,` / `Cmd + ,`) e selecione **Substituicoes do arabe** na barra lateral.
+2. Clique em **Adicionar substituicao**.
+3. Preencha:
+   - **Forma de superficie** — a palavra arabe como voce a digita
+   - **Lema** — a forma canonica que o motor deve retornar
+   - **Raiz** (opcional) — 3 ou 4 consoantes se a palavra tiver raiz classica
+   - **Padrao** (opcional) — p. ex. `فاعل`
+   - **Categoria** — Nome proprio / Substantivo / Adjetivo / Adverbio / Verbo / Particula / Estrangeiro / Desconhecido
+   - **Nota** (opcional) — uma linha de contexto para voce mesmo
+4. Clique em **Guardar**. O painel mostra **A reindexar…** enquanto cada nota que contem a superficie e retokenizada e, ao concluir, **N nota(s) reindexada(s)**.
+5. Para remover uma substituicao, clique no **x** da sua linha — a mesma varredura de reindexacao corre ao contrario.
+
+As substituicoes sao guardadas por Universo em `<universo>/.constellation/arabic-overrides.json` — texto simples, ordenado alfabeticamente, escrita atomica. Voce pode coloca-lo sob controle de versao ou compartilha-lo entre dispositivos.
 
 ---
 
@@ -1084,5 +1116,5 @@ Todas as ferramentas do Motor Cognitivo podem ser configuradas em **Configuracoe
 
 ---
 
-*Manual do Usuario do Constellation — Versao 0.3.4 — Marco 2026*
+*Manual do Usuario do Constellation — Versao 0.1.0 — Marco 2026*
 *uconstellation.world*

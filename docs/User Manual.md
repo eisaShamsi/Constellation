@@ -873,6 +873,10 @@ A dedicated tab consolidating all language-related settings:
 - **Script Tools** — language-specific symbol and punctuation toolbars (Arabic, Hebrew, CJK, etc.)
 - **Font Theme** — choose between Default and Typewriter font themes. The Typewriter theme applies authentic pre-PC-era fonts for each script (Courier Prime for Latin, Noto Naskh Arabic for Arabic, Miriam Libre for Hebrew, PT Mono for Cyrillic, Tiro Devanagari Hindi for Hindi, and system CJK fonts for Chinese/Japanese/Korean)
 
+### Arabic Overrides
+
+A per-Universe panel where you pin how the Arabic engine analyses specific surfaces — your own coinages, local names, field-specific loanwords, or cases where you disagree with the engine's automatic reading. Each override wins over the generative FST, the cascade, and the heuristic fallback. Adding or removing an override triggers a targeted reindex of only the notes that contain the affected surface — no full rebuild. See §18 ("RTL and Arabic Support") for the step-by-step walkthrough.
+
 ### Editor
 
 - Floating toolbar toggle (show/hide toolbar on text selection)
@@ -955,6 +959,34 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 2. Optionally set a dedicated Arabic font set in **Settings > Language > Custom Font Sets**
 3. Enable Script Tools for Arabic symbol toolbar access
 4. Notes with Arabic content will automatically render RTL
+
+### Arabic Engine Overrides
+
+Constellation's Arabic engine is a five-layer morphological analyser that runs beneath every search, link, and index entry. It understands roots, patterns, proper nouns, loanwords, and phonological repairs — so a query for كاتب finds كتبنا and كتاب, but وائل stays intact as a name instead of being mangled into ائل.
+
+The **Arabic Overrides** panel in Settings is where you teach the engine your own terminology. Each override is the sovereign answer — it wins over the generative FST, the cascade, and the heuristic fallback.
+
+**When to use overrides:**
+- Personal names, local place names, or field-specific terms the engine does not know
+- Coinages or acronyms unique to your Universe
+- Loanwords where you want a specific spelling preserved
+- Any case where the engine's automatic analysis disagrees with how you read the word
+
+**Step-by-step:**
+
+1. Open **Settings** (gear icon or `Ctrl + ,` / `Cmd + ,`) and select **Arabic Overrides** in the sidebar.
+2. Click **Add override**.
+3. Fill in:
+   - **Surface** — the Arabic word as you type it
+   - **Lemma** — the canonical form the engine should return
+   - **Root** (optional) — 3 or 4 consonants if the word has a classical root
+   - **Pattern** (optional) — e.g. `فاعل`
+   - **Part of speech** — Proper noun / Noun / Adjective / Adverb / Verb / Particle / Foreign / Unknown
+   - **Note** (optional) — a line of context for yourself
+4. Click **Save**. The panel shows **Reindexing…** while every note containing the surface is re-tokenised, then **Reindexed N note(s)** when done.
+5. To remove an override, click the **×** on its row — the same reindex sweep runs in reverse.
+
+Overrides are stored per Universe at `<universe>/.constellation/arabic-overrides.json` — plain text, alphabetically sorted, atomically written. You can version-control the file or share it across devices.
 
 ---
 

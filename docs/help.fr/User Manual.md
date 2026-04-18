@@ -1,6 +1,6 @@
 # Manuel d'utilisation de Constellation
 
-**Version 0.3.4 | Mars 2026**
+**Version 0.1.0 | Mars 2026**
 
 Constellation est une application de bureau de gestion des connaissances personnelles (PKM) pour gerer des bibliotheques de notes Markdown. Developpee avec Tauri v2, SvelteKit et Rust, elle fonctionne nativement sur Windows, macOS et Linux avec une prise en charge complete de l'arabe et du RTL.
 
@@ -708,6 +708,10 @@ Le format correspond exactement au plugin Style Settings d'Obsidian, vous pouvez
 
 Les modifications sont enregistrees automatiquement dans le theme actif ; si vous modifiez un theme integre, il est automatiquement clone dans vos themes personnalises pour que les changements persistent sans modifier l'original.
 
+### Surcharges du moteur arabe
+
+Un panneau par Univers ou vous fixez la facon dont le moteur arabe analyse certaines formes de surface — vos propres neologismes, des noms locaux, des emprunts specifiques a un domaine, ou les cas ou vous etes en desaccord avec la lecture automatique du moteur. Chaque surcharge l'emporte sur le FST generatif, la cascade et le repli heuristique. Ajouter ou retirer une surcharge declenche une reindexation ciblee sur les seules notes qui contiennent la forme de surface concernee — pas de reconstruction complete. Voir le chapitre 19 (« Prise en charge RTL et arabe ») pour la procedure pas a pas.
+
 ### Editeur
 
 - Type d'editeur (Markdown / Document)
@@ -785,6 +789,34 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 1. Allez dans **Parametres > General > Langue** et selectionnez Arabe
 2. Optionnellement, definissez une police arabe dediee dans **Parametres > General > Polices de script**
 3. Les notes avec du contenu arabe s'afficheront automatiquement en RTL
+
+### Surcharges du moteur arabe
+
+Le moteur arabe de Constellation est un analyseur morphologique a cinq couches qui tourne sous chaque recherche, chaque lien et chaque entree d'index. Il comprend racines, schemes, noms propres, emprunts et reparations phonologiques — de sorte qu'une requete pour كاتب trouve aussi كتبنا et كتاب, mais que وائل reste intact comme nom propre au lieu d'etre mutile en ائل.
+
+Le panneau **Surcharges arabes** dans les Parametres est l'endroit ou vous enseignez votre propre terminologie au moteur. Chaque surcharge est la reponse souveraine — elle l'emporte sur le FST generatif, la cascade et le repli heuristique.
+
+**Quand utiliser les surcharges :**
+- Noms de personnes, toponymes locaux ou termes specifiques a votre domaine que le moteur ne connait pas
+- Neologismes ou acronymes propres a votre Univers
+- Emprunts dont vous voulez preserver une orthographe particuliere
+- Tout cas ou l'analyse automatique du moteur contredit votre facon de lire le mot
+
+**Pas a pas :**
+
+1. Ouvrez les **Parametres** (icone d'engrenage ou `Ctrl + ,` / `Cmd + ,`) et selectionnez **Surcharges arabes** dans la barre laterale.
+2. Cliquez sur **Ajouter une surcharge**.
+3. Remplissez :
+   - **Forme de surface** — le mot arabe tel que vous le tapez
+   - **Lemme** — la forme canonique que le moteur doit renvoyer
+   - **Racine** (optionnelle) — 3 ou 4 consonnes si le mot a une racine classique
+   - **Scheme** (optionnel) — par ex. `فاعل`
+   - **Categorie** — Nom propre / Nom / Adjectif / Adverbe / Verbe / Particule / Etranger / Inconnu
+   - **Note** (optionnelle) — une ligne de contexte pour vous-meme
+4. Cliquez sur **Enregistrer**. Le panneau affiche **Reindexation…** pendant que chaque note contenant la forme de surface est retokenisee, puis **N note(s) reindexee(s)** une fois termine.
+5. Pour retirer une surcharge, cliquez sur le **x** de sa ligne — le meme balayage de reindexation s'execute en sens inverse.
+
+Les surcharges sont stockees par Univers dans `<univers>/.constellation/arabic-overrides.json` — texte brut, trie alphabetiquement, ecrit de maniere atomique. Vous pouvez mettre le fichier sous controle de version ou le partager entre appareils.
 
 ---
 
@@ -1084,5 +1116,5 @@ Tous les outils du Moteur Cognitif se configurent dans **Parametres > Moteur Cog
 
 ---
 
-*Manuel d'utilisation de Constellation — Version 0.3.4 — Mars 2026*
+*Manuel d'utilisation de Constellation — Version 0.1.0 — Mars 2026*
 *uconstellation.world*

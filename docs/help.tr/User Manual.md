@@ -1,6 +1,6 @@
 # Constellation Kullanım Kılavuzu
 
-**Sürüm 0.3.4 | Mart 2026**
+**Sürüm 0.1.0 | Mart 2026**
 
 Constellation, Markdown not kütüphanelerini yönetmek için tasarlanmış bir Kişisel Bilgi Yönetimi (PKM) masaüstü uygulamasıdır. Tauri v2, SvelteKit ve Rust ile geliştirilmiş olup Windows, macOS ve Linux'ta tam Arapça ve RTL desteğiyle yerel olarak çalışır.
 
@@ -708,6 +708,10 @@ Biçim Obsidian'ın Style Settings eklentisiyle tam olarak eşleşir, böylece O
 
 Değişiklikler aktif temaya otomatik kaydedilir; yerleşik bir temayı düzenlerseniz, değişiklikler orijinali değiştirmeden kalıcı olacak şekilde özel temalarınıza otomatik klonlanır.
 
+### Arapça Geçersiz Kılmalar
+
+Arapça motorun belirli yüzey biçimlerini nasıl çözümleyeceğini sabitlediğiniz, Evren başına bir panel — kendi türettiğiniz sözcükler, yerel adlar, alana özgü ödünç sözcükler veya motorun otomatik okumasıyla aynı fikirde olmadığınız durumlar için. Her geçersiz kılma üretici FST, kaskad ve sezgisel yedeği geçer. Bir geçersiz kılma eklemek veya kaldırmak, yalnızca etkilenen yüzey biçimini içeren notların hedefli bir şekilde yeniden dizinlenmesini tetikler — tam yeniden oluşturma yoktur. Adım adım kılavuz için §19 ("RTL ve Arapça Desteği") bölümüne bakın.
+
 ### Düzenleyici
 
 - Düzenleyici türü (Markdown / Belge)
@@ -785,6 +789,34 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 1. **Ayarlar > Genel > Dil** bölümüne gidin ve Arapça'yı seçin
 2. İsteğe bağlı olarak **Ayarlar > Genel > Yazı tipi betikleri** bölümünde özel bir Arapça yazı tipi ayarlayın
 3. Arapça içerikli notlar otomatik olarak RTL olarak görüntülenecektir
+
+### Arapça Motor Geçersiz Kılmaları
+
+Constellation'ın Arapça motoru, her aramanın, her bağlantının ve her dizin girdisinin altında çalışan beş katmanlı bir biçimbilim çözümleyicisidir. Kökleri, örüntüleri, özel adları, ödünç sözcükleri ve fonolojik onarımları anlar — böylece كاتب sorgusu كتبنا ve كتاب sözcüklerini bulur, ancak وائل bir ad olarak olduğu gibi kalır, ائل olarak bozulmaz.
+
+Ayarlar'daki **Arapça Geçersiz Kılmalar** paneli, motora kendi terminolojinizi öğrettiğiniz yerdir. Her geçersiz kılma egemen yanıttır — üretici FST, kaskad ve sezgisel yedeği geçer.
+
+**Geçersiz kılmaları ne zaman kullanmalı:**
+- Motorun bilmediği kişi adları, yerel yer adları veya alana özgü terimler
+- Evreninize özgü türetilmiş sözcükler veya kısaltmalar
+- Belirli bir yazımı korumak istediğiniz ödünç sözcükler
+- Motorun otomatik çözümlemesinin sözcüğü nasıl okuduğunuzla çeliştiği her durum
+
+**Adım adım:**
+
+1. **Ayarlar** bölümünü açın (dişli simgesi veya `Ctrl + ,` / `Cmd + ,`) ve kenar çubuğundan **Arapça Geçersiz Kılmalar** öğesini seçin.
+2. **Geçersiz kılma ekle** düğmesine tıklayın.
+3. Şunları doldurun:
+   - **Yüzey biçimi** — Arapça sözcüğü yazdığınız şekliyle
+   - **Lemma** — motorun döndürmesi gereken kanonik biçim
+   - **Kök** (isteğe bağlı) — sözcüğün klasik bir kökü varsa 3 veya 4 ünsüz
+   - **Örüntü** (isteğe bağlı) — örn. `فاعل`
+   - **Söz türü** — Özel ad / Ad / Sıfat / Zarf / Fiil / İlgeç / Yabancı / Bilinmiyor
+   - **Not** (isteğe bağlı) — kendiniz için bir bağlam satırı
+4. **Kaydet** düğmesine tıklayın. Panel, yüzey biçimini içeren her not yeniden belirteçlenirken **Yeniden dizinleniyor…** gösterir ve tamamlandığında **N not yeniden dizinlendi** gösterir.
+5. Bir geçersiz kılmayı kaldırmak için satırındaki **×** düğmesine tıklayın — aynı yeniden dizinleme taraması tersine çalışır.
+
+Geçersiz kılmalar Evren başına `<universe>/.constellation/arabic-overrides.json` konumunda saklanır — düz metin, alfabetik sıralı, atomik yazılmış. Dosyayı sürüm kontrolüne alabilir veya cihazlar arasında paylaşabilirsiniz.
 
 ---
 
@@ -1084,5 +1116,5 @@ Bilişsel Motor'un tüm araçları **Ayarlar > Bilişsel Motor** bölümünden y
 
 ---
 
-*Constellation Kullanım Kılavuzu — Sürüm 0.3.4 — Mart 2026*
+*Constellation Kullanım Kılavuzu — Sürüm 0.1.0 — Mart 2026*
 *uconstellation.world*

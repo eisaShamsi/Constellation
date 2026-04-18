@@ -1,6 +1,6 @@
 # Constellation Benutzerhandbuch
 
-**Version 0.3.4 | Maerz 2026**
+**Version 0.1.0 | Maerz 2026**
 
 Constellation ist eine Desktop-Anwendung fuer persoenliches Wissensmanagement (PKM) zur Verwaltung von Markdown-Notizbibliotheken. Entwickelt mit Tauri v2, SvelteKit und Rust, laeuft sie nativ auf Windows, macOS und Linux mit vollstaendiger Unterstuetzung fuer Arabisch und RTL.
 
@@ -708,6 +708,10 @@ Das Format entspricht exakt dem Style-Settings-Plugin von Obsidian, sodass Sie E
 
 Aenderungen werden automatisch im aktiven Thema gespeichert; wenn Sie ein eingebautes Thema bearbeiten, wird es automatisch in Ihre benutzerdefinierten Themen geklont, sodass Aenderungen bestehen bleiben, ohne das Original zu veraendern.
 
+### Ueberschreibungen der Arabisch-Engine
+
+Ein Panel pro Universum, in dem Sie festlegen, wie die Arabisch-Engine bestimmte Oberflaechenformen analysiert — Ihre eigenen Wortschoepfungen, lokale Namen, fachspezifische Lehnwoerter oder Faelle, in denen Sie der automatischen Lesart der Engine widersprechen. Jede Ueberschreibung schlaegt den generativen FST, die Kaskade und den heuristischen Fallback. Das Hinzufuegen oder Entfernen einer Ueberschreibung loest eine gezielte Neuindizierung nur fuer die Notizen aus, die die betroffene Oberflaechenform enthalten — keine Komplettneuaufbau. Siehe Abschnitt 19 ("RTL- und Arabisch-Unterstuetzung") fuer die Schritt-fuer-Schritt-Anleitung.
+
 ### Editor
 
 - Editortyp (Markdown / Dokument)
@@ -785,6 +789,34 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 1. Gehen Sie zu **Einstellungen > Allgemein > Sprache** und waehlen Sie Arabisch
 2. Optional: Legen Sie eine eigene arabische Schriftart unter **Einstellungen > Allgemein > Skript-Schriftarten** fest
 3. Notizen mit arabischem Inhalt werden automatisch in RTL dargestellt
+
+### Ueberschreibungen der Arabisch-Engine
+
+Die Arabisch-Engine von Constellation ist ein fuenfschichtiger morphologischer Analysator, der unter jeder Suche, jedem Link und jedem Indexeintrag laeuft. Sie versteht Wurzeln, Muster, Eigennamen, Lehnwoerter und phonologische Reparaturen — so findet eine Anfrage nach كاتب auch كتبنا und كتاب, waehrend وائل als Name unversehrt bleibt und nicht zu ائل verstuemmelt wird.
+
+Das Panel **Arabische Ueberschreibungen** in den Einstellungen ist der Ort, an dem Sie der Engine Ihre eigene Terminologie beibringen. Jede Ueberschreibung ist die souveraene Antwort — sie schlaegt den generativen FST, die Kaskade und den heuristischen Fallback.
+
+**Wann Sie Ueberschreibungen verwenden sollten:**
+- Personennamen, lokale Ortsnamen oder fachspezifische Begriffe, die die Engine nicht kennt
+- Wortschoepfungen oder Abkuerzungen, die nur in Ihrem Universum vorkommen
+- Lehnwoerter, bei denen Sie eine bestimmte Schreibung bewahren wollen
+- Jeder Fall, in dem die automatische Analyse der Engine Ihrer Lesart widerspricht
+
+**Schritt fuer Schritt:**
+
+1. Oeffnen Sie **Einstellungen** (Zahnradsymbol oder `Ctrl + ,` / `Cmd + ,`) und waehlen Sie **Arabische Ueberschreibungen** in der Seitenleiste.
+2. Klicken Sie auf **Ueberschreibung hinzufuegen**.
+3. Tragen Sie ein:
+   - **Oberflaechenform** — das arabische Wort so, wie Sie es tippen
+   - **Lemma** — die kanonische Form, die die Engine zurueckgeben soll
+   - **Wurzel** (optional) — 3 oder 4 Konsonanten, wenn das Wort eine klassische Wurzel hat
+   - **Muster** (optional) — z.B. `فاعل`
+   - **Wortart** — Eigenname / Substantiv / Adjektiv / Adverb / Verb / Partikel / Fremd / Unbekannt
+   - **Notiz** (optional) — eine Zeile Kontext fuer Sie selbst
+4. Klicken Sie auf **Speichern**. Das Panel zeigt **Neuindiziert…**, waehrend jede Notiz mit der Oberflaechenform neu tokenisiert wird, und dann **N Notiz(en) neu indiziert**, wenn der Vorgang abgeschlossen ist.
+5. Um eine Ueberschreibung zu entfernen, klicken Sie auf das **x** in ihrer Zeile — derselbe Neuindizierungs-Durchlauf laeuft rueckwaerts.
+
+Ueberschreibungen werden pro Universum unter `<universe>/.constellation/arabic-overrides.json` gespeichert — reiner Text, alphabetisch sortiert, atomar geschrieben. Sie koennen die Datei in die Versionskontrolle aufnehmen oder geraeteuebergreifend teilen.
 
 ---
 
@@ -1084,5 +1116,5 @@ Alle Werkzeuge der Kognitiven Engine koennen unter **Einstellungen > Kognitive E
 
 ---
 
-*Constellation Benutzerhandbuch — Version 0.3.4 — Maerz 2026*
+*Constellation Benutzerhandbuch — Version 0.1.0 — Maerz 2026*
 *uconstellation.world*

@@ -504,6 +504,46 @@ i18n — 15 locales:
 - **M8c adds no Rust unit tests.** `reindex_notes_matching_text` is an effect-on-FTS helper whose behavior is only observable through a round-trip test (tokenize → mutate override → reindex → re-query and assert the new stem lands). That's integration territory, not unit territory, and the integration-test harness sits behind the forthcoming Settings → Debug scorecard — when the scorecard lands it will be the natural home for an end-to-end "add override → reindex → assert FTS row count delta" assertion. Until then, the reindex helper is protected by the existing M6 FTS contract tests (which still pass) plus manual QA on the trial Universe.
 - `npx svelte-check` — 53 pre-existing errors, ALL in user's in-flight work on `+layout.svelte` and `libraries/+page.svelte`. Zero new errors introduced by `ArabicOverridesPanel.svelte` or the `SettingsModal.svelte` additions.
 
+### 27. M8c-doc — help files + User Manual (15 languages)
+
+The Standing Order mandates every user-facing feature land with its help-file + User Manual documentation in all 15 languages. M8c-doc is that pass for M8c.
+
+**New help topic**: `docs/help.{15 locales}/Arabic Engine/Arabic Engine.md`. A new category in the help tree — alongside Cognitive Engine, Knowledge Formulation, Sky View, etc. Each file follows the established help-topic template (Philosophy / Feature / What it is / Why it matters / How to use it / Step-by-step / Glossary) and is grounded in the same 9-heading structure across all 15 languages for diff-friendly parity:
+
+1. `# Arabic Engine` (top)
+2. `## Why the engine exists`
+3. `## Feature: Arabic Engine Overrides`
+4. `### What it is`
+5. `### Why it matters`
+6. `### How to use it`
+7. `### Interaction with the Protected List`
+8. `### Interaction across Universes`
+9. `### What happens if you edit the file by hand`
+10. `## Glossary`
+
+(9 `##`-level headings; the single `#` top heading is not counted above.)
+
+**User Manual inserts** (15 files): each locale's `docs/help.{lang}/User Manual.md` + the canonical `docs/User Manual.md` now carry two new subsections:
+
+- Inside the RTL/Arabic-support section: a full `### Arabic Engine Overrides` walkthrough (step-by-step, from opening Settings to verifying the reindex).
+- Inside the Settings section, after Language and before Editor: a short `### Arabic Overrides` cross-reference that points readers to the RTL section for the full walkthrough.
+
+**Vocabulary grounding**: every translation reuses the localized strings already shipped in M8c (`src/lib/i18n/{lang}.json`: `settings.sections.arabicOverrides` + 31-key `settings.arabicOverrides` block). This guarantees the help text, the User Manual, and the Settings UI all use the same wording for "Arabic Engine Overrides", "Add override", "Reindexing…", "Reindexed N note(s)", and every POS label — so a user following the User Manual in Japanese reads the same string they see on the save button. No translator drift between UI and docs.
+
+**Preserved verbatim across all 15 languages**: `FST`, `JSON`, `Ctrl`, `Cmd`, `.constellation/`, `arabic-overrides.json`, and the Arabic sample words (`وائل`, `كاتب`, `فاعل`, `ك‑ت‑ب`, `الكتاب`, `كتبنا`, `مكتوب`, `فلسطين`, `إنترنت`).
+
+**Character counts** (rough measure of translation depth; all files validated to have ≥3 `##` headings and each User Manual has ≥1 `arabic-overrides` mention):
+
+| Language family | Files | Chars |
+|---|---|---|
+| Canonical (en) | 1 new + User Manual edit | 7,600 + User Manual diff |
+| RTL (ar, fa, ur, he) | 4 new + 4 User Manual edits | ~46,086 |
+| European (de, fr, es, pt) | 4 new + 4 User Manual edits | ~34,629 |
+| Slavic + Turkic (ru, tr) | 2 new + 2 User Manual edits | ~23,626 |
+| Asian (zh, ja, ko, hi) | 4 new + 4 User Manual edits | ~44,537 |
+
+**Production method**: canonical English written first; 14 translations produced by four parallel background agents grouped by language family, each with explicit non-overlap scopes (own language only, own two file types only — no code, no config, no other docs). Verified by enumeration: 15/15 new help files exist with consistent structure, 15/15 User Manuals contain the `arabic-overrides` cross-reference path exactly once.
+
 ## Commit
 
 Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
@@ -548,7 +588,7 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
    - `src-tauri/src/lib.rs` — register the three Tauri commands in the `generate_handler!` list.
    - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 21–23 added.
 
-8. **M8c** (this session, pending):
+8. **M8c** (this session, `5b9495d`):
    - `src-tauri/src/search.rs` — new pub helper `reindex_notes_matching_text(state, needle)` that LIKE-scans `note_meta`, deletes + re-inserts affected rows into `notes_fts` inside a single `BEGIN IMMEDIATE`/`COMMIT`, returns the count of re-tokenized rows.
    - `src-tauri/src/arabic/overrides.rs` — add fourth `#[tauri::command] reindex_arabic_overrides(app, surface)` that grabs `SearchState` and delegates to `search::reindex_notes_matching_text`.
    - `src-tauri/src/lib.rs` — register `reindex_arabic_overrides` alongside the M8b trio.
@@ -556,6 +596,11 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
    - `src/lib/components/SettingsModal.svelte` — one import, one `sections` entry (`arabic-overrides`, icon `translate`), one content branch.
    - `src/lib/i18n/{ar,de,en,es,fa,fr,he,hi,ja,ko,pt,ru,tr,ur,zh}.json` — one `"arabicOverrides"` key in `settings.sections` + a 31-key `settings.arabicOverrides` block each (15 files total, JSON-validated).
    - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 24–26 added.
+
+9. **M8c-doc** (this session, pending):
+   - `docs/help.{uConstellation.World,ar,de,es,fa,fr,he,hi,ja,ko,pt,ru,tr,ur,zh}/Arabic Engine/Arabic Engine.md` — 15 new help-topic files (one per locale), consistent 9-`##`-heading structure, shared vocabulary from the M8c i18n JSON.
+   - `docs/User Manual.md` + `docs/help.{14 locales}/User Manual.md` — 15 User Manual edits each inserting (a) a full `### Arabic Engine Overrides` walkthrough inside the RTL/Arabic-Support section and (b) a short cross-reference subsection inside the Settings section between Language and Editor.
+   - `lab/reports/SESSION-LOG-2026-04-18.md` — § 27 added.
 
 ## Files modified
 
@@ -586,7 +631,6 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - **M5-grow**: expand the corpus over time. 502 is the v1 floor — as M6/M7 land, new flagship surfaces identified during bring-up should be added here first before any other test code. Target by M9: ≥2,000 cases, with ≥20 pure-heuristic Arabic-script rows (Layer 4 fallback coverage; currently the heuristic threshold is met by foreign Latin-script rows via the non-Arabic-script route).
 - **M7-v2**: corpus-aware disambiguation. Today's ranking is a pure function of the Analysis fields. V2 reads the user's own FTS vocab to bias toward lemmas the user writes often, plus a 3-word context window at query time to pick between readings (`كاتب الرسالة` → Noun; `كاتب أخاه` → Verb). Tracked as a follow-on once Settings → Debug surfaces the existing v1 rank so we can A/B the v2 improvements.
 - **M8b-v2**: per-cUniverse override layering. When the user views libraries federated from a child Universe, the tokenizer should consult the child's override file too (or overlay the parent's on top of it, with parent winning ties). Today's `ACTIVE_STORE` is a single global Arc; v2 either becomes a stack or a composite `OverrideStore` that consults multiple backing maps. Wait until real-user feedback shows this is needed before building it.
-- **M8c-doc**: help files + User Manual entries for the Arabic Overrides panel. Per Standing Order (PCS = Push + Commit + SO), the next iteration needs a walkthrough in `docs/help.uConstellation.World/Arabic Engine/Arabic Overrides.md` + 14 translated counterparts in `docs/help.{lang}/`, plus a section in `docs/User Manual.md` + all 14 translated User Manuals. Tracked separately so this commit can land the engineering slice without blocking on the authoring pass.
 - **M8c-integration-test**: end-to-end "add override → reindex → assert FTS hit set changes" test. Will live with the Settings → Debug scorecard so the assertion can run under the real SearchState (not a fresh tempdb) against a seeded Universe.
 - **M9**: measure cold-start analyzer time on the real user machine (Windows) with a clean cache dir, then warm-start. If the warm-start delta isn't ≥5× the cold-start on the target 7K-root corpus, tune the format (e.g. memory-map instead of read-to-vec). Also measure throughput (target ≥200K words/sec on the 502-case corpus) and RSS delta (target ≤10 MB for the analyzer singleton at 7K-root scale). M8b's `ACTIVE_STORE` adds ~25 ns per token — budget this into the throughput measurement; the expected impact is well under 1%.
 
