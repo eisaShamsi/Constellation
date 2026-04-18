@@ -48,6 +48,14 @@ dirs = "5"
 # name the type. MIT/Apache-2.0 licensed.
 smallvec = "1"
 
+# M9-mmap: memory-map the baked Arabic FST byte buffers so they live
+# in the OS page cache rather than the process heap. Applied only on
+# desktop targets — iOS and Android sandboxes routinely deny anonymous
+# mmap. On those targets `fst_bake` falls back to `Vec<u8>` (the old
+# heap-resident path). MIT/Apache-2.0 licensed.
+[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+memmap2 = "0.9"
+
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]

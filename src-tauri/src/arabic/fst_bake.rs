@@ -76,6 +76,97 @@ use std::sync::{Arc, OnceLock};
 use super::generator::{intern as intern_into_pool, GeneratedForm};
 use super::types::PatternKind;
 
+// ──────────────────────────────────────────────────────────────────────
+// M9-mmap: FstBytes — backing storage for an FST byte buffer.
+//
+// On desktop targets (Windows / macOS / Linux) we prefer `Mmap` so the
+// FST bytes live in the OS page cache rather than the process heap —
+// at 7K-root scale this saves roughly 80 MiB of resident memory per
+// launch. On iOS / Android where anon-mmap may be denied inside the
+// sandbox we fall back to `Owned(Vec<u8>)`, the pre-M9-mmap behaviour.
+//
+// The two FSTs (stripped + folded) share a single `Arc<Mmap>` over the
+// whole cache file; each `FstBytes::Mmap` value slices its own region
+// out of the shared map. This keeps the mmap count at 1 per load, not
+// 2 — important because each mmap costs a kernel syscall, a VMA entry,
+// and (on Windows) a section-handle.
+//
+// `fst::Map<D>` requires `D: AsRef<[u8]>`, which this enum implements
+// uniformly across variants. The `GenerativeFst` struct is therefore
+// opaque to the storage choice — all call sites go through the same
+// `.get(bytes)` FST API regardless of backend.
+// ──────────────────────────────────────────────────────────────────────
+
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+use memmap2::Mmap;
+
+/// Read-only byte buffer backing a baked FST. See module-level comment.
+///
+/// The `Mmap` variant is only available on desktop targets (guarded by
+/// `#[cfg(not(any(target_os = "ios", target_os = "android")))]`); on
+/// mobile targets this enum collapses to a single `Owned` variant and
+/// all loads go through `Vec<u8>`.
+pub enum FstBytes {
+    /// A slice into a shared memory-mapped file. `mmap` is wrapped in
+    /// an `Arc` so the stripped and folded FSTs can share one map;
+    /// `offset` / `len` identify this FST's byte region within the map.
+    #[cfg(not(any(target_os = "ios", target_os = "android")))]
+    Mmap {
+        mmap: Arc<Mmap>,
+        offset: usize,
+        len: usize,
+    },
+    /// A heap-owned byte buffer. Produced by the cold-rebuild path
+    /// (fresh FST bytes from `MapBuilder::into_inner`) and by any
+    /// target where mmap isn't available.
+    Owned(Vec<u8>),
+}
+
+impl AsRef<[u8]> for FstBytes {
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        match self {
+            #[cfg(not(any(target_os = "ios", target_os = "android")))]
+            Self::Mmap { mmap, offset, len } => &mmap[*offset..*offset + *len],
+            Self::Owned(v) => v.as_slice(),
+        }
+    }
+}
+
+impl std::fmt::Debug for FstBytes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            #[cfg(not(any(target_os = "ios", target_os = "android")))]
+            Self::Mmap { offset, len, .. } => f
+                .debug_struct("FstBytes::Mmap")
+                .field("offset", offset)
+                .field("len", len)
+                .finish(),
+            Self::Owned(v) => f.debug_tuple("FstBytes::Owned").field(&v.len()).finish(),
+        }
+    }
+}
+
+impl From<Vec<u8>> for FstBytes {
+    fn from(v: Vec<u8>) -> Self {
+        Self::Owned(v)
+    }
+}
+
+impl FstBytes {
+    /// Length of the byte buffer. `as_ref().len()` would also work, but
+    /// this is friendlier at struct-field sites that don't want to
+    /// match on the enum.
+    pub fn len(&self) -> usize {
+        match self {
+            #[cfg(not(any(target_os = "ios", target_os = "android")))]
+            Self::Mmap { len, .. } => *len,
+            Self::Owned(v) => v.len(),
+        }
+    }
+
+}
+
 /// Bump whenever generator rules, pattern corpus, or the on-disk layout
 /// change. Folded into the version hash, so the next launch detects the
 /// mismatch and transparently rebuilds. Seed-TSV edits don't need a bump
@@ -89,17 +180,20 @@ const MAGIC: [u8; 8] = *b"CAEFST01";
 
 /// An in-memory bundle of everything needed to reconstruct a
 /// [`crate::arabic::fst_index::GenerativeFst`]: the two FST byte-buffers
-/// and the two side-tables of [`GeneratedForm`]. Owned on both sides so
-/// the cache writer can persist it and the cache reader can hand it
-/// straight to `GenerativeFst::from_bytes`.
+/// and the two side-tables of [`GeneratedForm`].
 ///
-/// `Debug` is derived so the `expect_err(...)` calls in the tests compile —
-/// the underlying Vecs format predictably (byte slices + form Debug impls).
+/// The FST byte fields use [`FstBytes`] (M9-mmap) so the load path can
+/// hand in mmap-backed slices over the cache file without copying the
+/// FST bytes to heap. The cold-rebuild path wraps fresh `Vec<u8>` in
+/// `FstBytes::Owned` via `From<Vec<u8>>`. The write path walks
+/// `as_ref()` on the enum — the on-disk format is byte-identical to
+/// pre-M9-mmap bundles, so `CACHE_FORMAT_VERSION` stays at 1 and old
+/// caches remain readable.
 #[derive(Debug)]
 pub struct FstBundle {
-    pub stripped_bytes: Vec<u8>,
+    pub stripped_bytes: FstBytes,
     pub values_stripped: Vec<GeneratedForm>,
-    pub folded_bytes: Vec<u8>,
+    pub folded_bytes: FstBytes,
     pub values_folded: Vec<GeneratedForm>,
 }
 
@@ -176,11 +270,71 @@ pub fn persist_best_effort(bundle: &FstBundle) {
 
 /// Read a bundle from an arbitrary path. Exposed for tests so we don't
 /// have to race the user's real cache dir.
+///
+/// On desktop targets (Windows / macOS / Linux) this prefers the mmap
+/// path: the whole file is mapped once, both FST byte regions are
+/// handed to `FstBytes::Mmap` as shared slices into that map, and only
+/// the side-tables are decoded onto the heap. Mmap failure (which is
+/// rare but possible — e.g. the file is on a filesystem that doesn't
+/// support mapping, like a strict-sandboxed network share) falls back
+/// to the heap-read path below.
+///
+/// On iOS / Android we skip the mmap attempt entirely and always read
+/// into a `Vec<u8>` — the mobile sandboxes routinely deny anon-mmap.
 pub fn load_bundle(path: &std::path::Path) -> io::Result<FstBundle> {
+    #[cfg(not(any(target_os = "ios", target_os = "android")))]
+    {
+        match load_bundle_mmap(path) {
+            Ok(bundle) => return Ok(bundle),
+            Err(_) => {
+                // Fall through to the heap-read path. We don't log the
+                // specific error — a subsequent heap-read failure will
+                // surface the real issue with a matching error shape.
+            }
+        }
+    }
+    load_bundle_heap(path)
+}
+
+/// Heap-backed load path — used as the mobile default and as a fallback
+/// when mmap isn't available. Reads the whole file into a `Vec<u8>`
+/// and copies the FST bytes out into a second `Vec<u8>` per side.
+fn load_bundle_heap(path: &std::path::Path) -> io::Result<FstBundle> {
     let mut file = fs::File::open(path)?;
     let mut buf = Vec::new();
     file.read_to_end(&mut buf)?;
-    decode_bundle(&buf)
+    decode_bundle_heap(&buf)
+}
+
+/// Mmap-backed load path. Memory-maps the whole cache file once,
+/// parses the headers + side tables eagerly (those stay on heap), and
+/// hands the FST byte regions back as `FstBytes::Mmap` slices sharing
+/// the single `Arc<Mmap>`. At 7K-root scale this keeps ~80 MiB of FST
+/// bytes out of the process heap — the OS page cache supplies pages on
+/// demand and the kernel evicts them under memory pressure.
+///
+/// The file format is unchanged (same byte layout as `encode_bundle`).
+/// We parse offsets by reading the fixed-size header + the per-side
+/// `fst_len` length field, then compute `offset = pos_after_len` and
+/// `len = fst_len` for the FST byte region; `cur.pos` advances past
+/// the bytes before the side-table decode so the rest of the code path
+/// is shape-identical to the heap path.
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+fn load_bundle_mmap(path: &std::path::Path) -> io::Result<FstBundle> {
+    let file = fs::File::open(path)?;
+    // SAFETY: `Mmap::map` is `unsafe` because the caller must ensure the
+    // underlying file is not modified while the mapping is live — a
+    // concurrent writer could make the mapped bytes inconsistent. In
+    // our deployment the cache file is written once at startup (via
+    // atomic rename in `write_bundle`), lives for the lifetime of the
+    // process, and is never mutated in place. A second process baking
+    // the same cache would also write via atomic rename, so the mapped
+    // bytes either remain the old file (backed by its inode until we
+    // drop the mmap) or become stale but internally consistent. The
+    // invariant holds for our deployment pattern.
+    let mmap = unsafe { Mmap::map(&file)? };
+    let mmap = Arc::new(mmap);
+    decode_bundle_mmap(mmap)
 }
 
 /// Write a bundle to an arbitrary path. Creates parent directories if
@@ -221,8 +375,11 @@ fn encode_bundle(bundle: &FstBundle) -> Vec<u8> {
     out.extend_from_slice(&MAGIC);
     out.extend_from_slice(&version_hash().to_le_bytes());
 
-    encode_side(&mut out, &bundle.stripped_bytes, &bundle.values_stripped);
-    encode_side(&mut out, &bundle.folded_bytes, &bundle.values_folded);
+    // `.as_ref()` produces `&[u8]` whether the underlying storage is a
+    // heap `Vec<u8>` (cold-rebuild path) or a slice into the mmap (warm
+    // load path). The on-disk byte layout is identical in both cases.
+    encode_side(&mut out, bundle.stripped_bytes.as_ref(), &bundle.values_stripped);
+    encode_side(&mut out, bundle.folded_bytes.as_ref(), &bundle.values_folded);
 
     out
 }
@@ -255,7 +412,12 @@ fn encode_str(out: &mut Vec<u8>, s: &str) {
     out.extend_from_slice(bytes);
 }
 
-fn decode_bundle(buf: &[u8]) -> io::Result<FstBundle> {
+/// Heap-backed decode path. Copies the FST byte regions out of `buf` into
+/// owned `Vec<u8>`s wrapped in [`FstBytes::Owned`]. Used by the mobile
+/// default and as the fallback when mmap isn't available. Parses side
+/// tables identically to the mmap path — the two only differ in where the
+/// FST bytes physically live.
+fn decode_bundle_heap(buf: &[u8]) -> io::Result<FstBundle> {
     let mut cur = Cursor { buf, pos: 0 };
 
     let magic = cur.read_bytes(8)?;
@@ -284,13 +446,95 @@ fn decode_bundle(buf: &[u8]) -> io::Result<FstBundle> {
     let mut label_pool: HashMap<String, Arc<str>> = HashMap::new();
 
     let (stripped_bytes, values_stripped) =
-        decode_side(&mut cur, &mut root_pool, &mut label_pool)?;
+        decode_side_heap(&mut cur, &mut root_pool, &mut label_pool)?;
     let (folded_bytes, values_folded) =
-        decode_side(&mut cur, &mut root_pool, &mut label_pool)?;
+        decode_side_heap(&mut cur, &mut root_pool, &mut label_pool)?;
 
     // Trailing garbage is a protocol violation — reject rather than
     // silently accept. A partial write that happened to pass earlier
     // length checks would land here.
+    if cur.pos != cur.buf.len() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "arabic-fst cache: {} trailing bytes after folded side",
+                cur.buf.len() - cur.pos
+            ),
+        ));
+    }
+
+    Ok(FstBundle {
+        stripped_bytes: FstBytes::Owned(stripped_bytes),
+        values_stripped,
+        folded_bytes: FstBytes::Owned(folded_bytes),
+        values_folded,
+    })
+}
+
+fn decode_side_heap(
+    cur: &mut Cursor,
+    root_pool: &mut HashMap<String, Arc<str>>,
+    label_pool: &mut HashMap<String, Arc<str>>,
+) -> io::Result<(Vec<u8>, Vec<GeneratedForm>)> {
+    let fst_len = cur.read_u64()? as usize;
+    let fst_bytes = cur.read_bytes(fst_len)?.to_vec();
+    let val_count = cur.read_u64()? as usize;
+
+    // Pre-reserve; values are bounded (u32 offsets in FST packing cap the
+    // total values per side at 4B, far beyond any plausible corpus).
+    let mut values = Vec::with_capacity(val_count);
+    for _ in 0..val_count {
+        values.push(decode_form(cur, root_pool, label_pool)?);
+    }
+    Ok((fst_bytes, values))
+}
+
+/// Mmap-backed decode path. Hands back [`FstBytes::Mmap`] slices that share
+/// a single `Arc<Mmap>` covering the whole cache file — the FST bytes stay
+/// in the OS page cache and never hit the process heap. Side tables are
+/// decoded eagerly (same as the heap path) because they own their own
+/// `Arc<str>` / `String` heap allocations and can't be slice-backed.
+///
+/// The byte layout is identical to [`decode_bundle_heap`] — offsets into
+/// the mmap are computed from the cursor position after each length prefix
+/// is read. Any parse error (short buffer, bad magic, hash mismatch,
+/// trailing garbage) returns `Err` and the load path falls back to the
+/// heap reader.
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+fn decode_bundle_mmap(mmap: Arc<Mmap>) -> io::Result<FstBundle> {
+    // Borrow the mmap as a byte slice for the cursor's lifetime. Because
+    // the cursor's `'a` is tied to this local borrow, every `&'a [u8]`
+    // the cursor hands out is valid for the body of this function. The
+    // returned `FstBundle` carries its own `Arc<Mmap>` clones inside each
+    // `FstBytes::Mmap`, not the borrow — so the mmap lives on past the
+    // cursor's drop.
+    let buf: &[u8] = &mmap[..];
+    let mut cur = Cursor { buf, pos: 0 };
+
+    let magic = cur.read_bytes(8)?;
+    if magic != MAGIC {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "arabic-fst cache: magic mismatch (not our file, or corruption)",
+        ));
+    }
+
+    let got_hash = cur.read_u64()?;
+    if got_hash != version_hash() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "arabic-fst cache: version hash mismatch (seed or code changed)",
+        ));
+    }
+
+    let mut root_pool: HashMap<String, Arc<str>> = HashMap::new();
+    let mut label_pool: HashMap<String, Arc<str>> = HashMap::new();
+
+    let (stripped_bytes, values_stripped) =
+        decode_side_mmap(&mut cur, &mmap, &mut root_pool, &mut label_pool)?;
+    let (folded_bytes, values_folded) =
+        decode_side_mmap(&mut cur, &mmap, &mut root_pool, &mut label_pool)?;
+
     if cur.pos != cur.buf.len() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -309,17 +553,31 @@ fn decode_bundle(buf: &[u8]) -> io::Result<FstBundle> {
     })
 }
 
-fn decode_side(
+/// Side decoder paired with [`decode_bundle_mmap`]. Captures the cursor's
+/// pre-advance position as the FST byte region's offset in the mmap,
+/// advances past the region, then decodes the side table. The returned
+/// `FstBytes::Mmap` carries an `Arc::clone` of the shared map plus the
+/// captured offset/length — no FST bytes are copied.
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+fn decode_side_mmap(
     cur: &mut Cursor,
+    mmap: &Arc<Mmap>,
     root_pool: &mut HashMap<String, Arc<str>>,
     label_pool: &mut HashMap<String, Arc<str>>,
-) -> io::Result<(Vec<u8>, Vec<GeneratedForm>)> {
+) -> io::Result<(FstBytes, Vec<GeneratedForm>)> {
     let fst_len = cur.read_u64()? as usize;
-    let fst_bytes = cur.read_bytes(fst_len)?.to_vec();
+    // Snapshot the cursor position *before* advancing past the FST bytes
+    // so the mmap slice spans exactly the same byte range the heap path
+    // would have copied into `fst_bytes`.
+    let offset = cur.pos;
+    let _ = cur.read_bytes(fst_len)?; // advance; drop the returned slice
+    let fst_bytes = FstBytes::Mmap {
+        mmap: Arc::clone(mmap),
+        offset,
+        len: fst_len,
+    };
     let val_count = cur.read_u64()? as usize;
 
-    // Pre-reserve; values are bounded (u32 offsets in FST packing cap the
-    // total values per side at 4B, far beyond any plausible corpus).
     let mut values = Vec::with_capacity(val_count);
     for _ in 0..val_count {
         values.push(decode_form(cur, root_pool, label_pool)?);
@@ -471,15 +729,19 @@ mod tests {
         // Minimal hand-built bundle: one key, one form per side. We don't
         // need a real FST for encode/decode roundtrip tests — the cache
         // treats FST bytes as opaque blobs.
+        //
+        // M9-mmap: FST byte fields moved from `Vec<u8>` to `FstBytes`.
+        // Cold-build paths land on `FstBytes::Owned`; tests follow suit
+        // via `From<Vec<u8>>` (`.into()`).
         FstBundle {
-            stripped_bytes: vec![0xAA, 0xBB, 0xCC],
+            stripped_bytes: vec![0xAA, 0xBB, 0xCC].into(),
             values_stripped: vec![GeneratedForm {
                 root_key: "ك-ت-ب".into(),
                 pattern_label: "فَعَلَ".into(),
                 pattern_kind: PatternKind::VerbPerfect,
                 surface: "كَتَبَ".to_string(),
             }],
-            folded_bytes: vec![0xDD, 0xEE],
+            folded_bytes: vec![0xDD, 0xEE].into(),
             values_folded: vec![GeneratedForm {
                 root_key: "ك-ت-ب".into(),
                 pattern_label: "فَاعِل".into(),
@@ -569,8 +831,13 @@ mod tests {
         write_bundle(&path, &original).expect("write");
         let loaded = load_bundle(&path).expect("load");
 
-        assert_eq!(loaded.stripped_bytes, original.stripped_bytes);
-        assert_eq!(loaded.folded_bytes, original.folded_bytes);
+        // M9-mmap: compare via `.as_ref()` since `FstBytes` is backed by
+        // either a `Vec<u8>` or an mmap slice and we don't derive
+        // `PartialEq` on the enum (the `Arc<Mmap>` field isn't
+        // meaningfully comparable). The underlying bytes must still
+        // match exactly.
+        assert_eq!(loaded.stripped_bytes.as_ref(), original.stripped_bytes.as_ref());
+        assert_eq!(loaded.folded_bytes.as_ref(), original.folded_bytes.as_ref());
         assert_eq!(loaded.values_stripped.len(), original.values_stripped.len());
         assert_eq!(loaded.values_folded.len(), original.values_folded.len());
         assert_eq!(
@@ -706,7 +973,9 @@ mod tests {
         persist_best_effort(&original);
 
         let loaded = try_load_cached().expect("try_load_cached must hit after persist");
-        assert_eq!(loaded.stripped_bytes, original.stripped_bytes);
+        // `.as_ref()` to compare through the `FstBytes` enum regardless
+        // of which backing variant (`Owned` / `Mmap`) each path produced.
+        assert_eq!(loaded.stripped_bytes.as_ref(), original.stripped_bytes.as_ref());
         assert_eq!(
             loaded.values_stripped[0].surface,
             original.values_stripped[0].surface

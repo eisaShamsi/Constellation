@@ -54,7 +54,7 @@ use fst::{Map, MapBuilder};
 #[cfg(test)]
 use fst::Streamer;
 
-use super::fst_bake::{self, FstBundle};
+use super::fst_bake::{self, FstBundle, FstBytes};
 use super::generator::{generate_all, GeneratedForm};
 use super::normalizer::{normalize_folded, normalize_stripped};
 
@@ -65,11 +65,17 @@ use super::normalizer::{normalize_folded, normalize_stripped};
 /// See the module-level docs for the rationale behind the FST representation.
 pub struct GenerativeFst {
     /// FST over stripped (tashkeel/tatweel removed) surface keys.
-    fst_stripped: Map<Vec<u8>>,
+    ///
+    /// M9-mmap: the backing store is now [`FstBytes`] rather than `Vec<u8>`
+    /// so warm loads can hand in a slice into the memory-mapped cache file.
+    /// `fst::Map<D>` only requires `D: AsRef<[u8]>` (which `FstBytes`
+    /// implements), so this is a type-only change — the lookup API is
+    /// unchanged.
+    fst_stripped: Map<FstBytes>,
     /// FST over folded (aggressive normalization) surface keys. Only
     /// populated when the folded key differs from the stripped one —
     /// saves roughly a third of the entries on real corpora.
-    fst_folded: Map<Vec<u8>>,
+    fst_folded: Map<FstBytes>,
     /// Flat values array for `fst_stripped`. An FST entry `(offset, count)`
     /// slices into `&values_stripped[offset..offset + count]`.
     values_stripped: Vec<GeneratedForm>,
@@ -182,10 +188,15 @@ impl GenerativeFst {
         let (stripped_bytes, values_stripped) = build_map_bytes(buckets_stripped);
         let (folded_bytes, values_folded) = build_map_bytes(buckets_folded);
 
+        // M9-mmap: `build_map_bytes` still returns `Vec<u8>` (the FST
+        // builder writes to a heap buffer and we have no file to map
+        // against). Wrapping in `FstBytes::Owned` via `From<Vec<u8>>`
+        // keeps the cold-build path shape-identical to pre-M9-mmap —
+        // only warm loads produce `FstBytes::Mmap`.
         FstBundle {
-            stripped_bytes,
+            stripped_bytes: stripped_bytes.into(),
             values_stripped,
-            folded_bytes,
+            folded_bytes: folded_bytes.into(),
             values_folded,
         }
     }
@@ -209,14 +220,19 @@ impl GenerativeFst {
     /// Retained as `pub` for external tools (regression corpus dumper,
     /// future mmap loader) that want to hand in FST bytes without going
     /// through `FstBundle`.
+    ///
+    /// M9-mmap: accepts `impl Into<FstBytes>` so existing callers that
+    /// hand in a `Vec<u8>` keep working unchanged (`From<Vec<u8>>`
+    /// produces `FstBytes::Owned`), while the new mmap path can pass an
+    /// `FstBytes::Mmap` directly without copying.
     pub fn from_bytes(
-        stripped_bytes: Vec<u8>,
+        stripped_bytes: impl Into<FstBytes>,
         values_stripped: Vec<GeneratedForm>,
-        folded_bytes: Vec<u8>,
+        folded_bytes: impl Into<FstBytes>,
         values_folded: Vec<GeneratedForm>,
     ) -> Result<Self, fst::Error> {
-        let fst_stripped = Map::new(stripped_bytes)?;
-        let fst_folded = Map::new(folded_bytes)?;
+        let fst_stripped = Map::new(stripped_bytes.into())?;
+        let fst_folded = Map::new(folded_bytes.into())?;
         Ok(GenerativeFst {
             fst_stripped,
             fst_folded,
