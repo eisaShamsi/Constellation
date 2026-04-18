@@ -2,7 +2,7 @@
 
 ## Headline
 
-**M3 + M3-baker + M1g/M1h + M5 + M6 + M7 landed.** First: `GenerativeIndex` (HashMap, ~40 MB projected at 7K roots) swapped for `GenerativeFst` (BurntSushi FST, prefix-compressed, mmap-ready). Second: the compiled FST is now persisted to the user's cache directory on first launch and reloaded on subsequent launches via `GenerativeFst::from_bytes` — the cold/warm startup path divergence that M9 ("50 ms analyzer cold-start") measures against. Third: the protected list got its architectural rewrite — `const SEED: &[...]` (200 hand-picked entries, 340 lines of Rust) replaced with `include_str!("protected_seed.tsv")` + a 3-column TSV (`surface<TAB>category<TAB>origin_lang`) now holding **1,196 unique entries** across proper nouns (395), places (275), loanwords (455), and function words (71). Fourth: the **M5 regression corpus** — a 502-case held-out test set in `regression_cases.tsv` + a `cfg(test)`-gated `regression.rs` harness that feeds every row through `analyze_best` and asserts origin / surface / (optionally) lemma / root. Covers all three active origin layers (ProtectedList, GenerativeFst, SurfaceHeuristic) across 28 Arabic roots, ~80 cascade surfaces, and 45 foreign (Latin-script) words. Fifth: **M6** — the FTS5 Arabic stemming path in `libraries.rs::process_arabic_word` now routes through `arabic::analyze_best`. Every Arabic token in every note in every Universe now flows through the five-layer engine; Light10 is retained only as the graceful `SurfaceHeuristic` fallback so unknown words don't regress. The flagship `وائل → "ائل"` mangle is gone: the protected list short-circuits Light10 and the stem is preserved verbatim. Sixth: **M7** — the Layer 4 disambiguator. `analyze_best`'s insertion-order tiebreak replaced with a pure, deterministic rank: confidence desc → origin (UserOverride > ProtectedList > FST > Heuristic) → POS (ProperNoun > Noun > … > Verb > … > Foreign) → fewer affixes → alphabetic lemma. The كاتب ambiguity now resolves to the Noun reading (active participle) every time, across any OS, any FST build, any Universe. Full public-API parity preserved across all six landings; **242/242 library tests pass** (up from 209 pre-M3: +13 fst_bake, +10 regression harness, +6 TSV parser, +5 M6 FTS contract tests, +12 M7 disambiguator, -1 removed `no_duplicate_lemmas_in_seed` obsolete under first-write-wins).
+**M3 + M3-baker + M1g/M1h + M5 + M6 + M7 + M8 landed.** First: `GenerativeIndex` (HashMap, ~40 MB projected at 7K roots) swapped for `GenerativeFst` (BurntSushi FST, prefix-compressed, mmap-ready). Second: the compiled FST is now persisted to the user's cache directory on first launch and reloaded on subsequent launches via `GenerativeFst::from_bytes` — the cold/warm startup path divergence that M9 ("50 ms analyzer cold-start") measures against. Third: the protected list got its architectural rewrite — `const SEED: &[...]` (200 hand-picked entries, 340 lines of Rust) replaced with `include_str!("protected_seed.tsv")` + a 3-column TSV (`surface<TAB>category<TAB>origin_lang`) now holding **1,196 unique entries** across proper nouns (395), places (275), loanwords (455), and function words (71). Fourth: the **M5 regression corpus** — a 502-case held-out test set in `regression_cases.tsv` + a `cfg(test)`-gated `regression.rs` harness that feeds every row through `analyze_best` and asserts origin / surface / (optionally) lemma / root. Covers all three active origin layers (ProtectedList, GenerativeFst, SurfaceHeuristic) across 28 Arabic roots, ~80 cascade surfaces, and 45 foreign (Latin-script) words. Fifth: **M6** — the FTS5 Arabic stemming path in `libraries.rs::process_arabic_word` now routes through `arabic::analyze_best`. Every Arabic token in every note in every Universe now flows through the five-layer engine; Light10 is retained only as the graceful `SurfaceHeuristic` fallback so unknown words don't regress. The flagship `وائل → "ائل"` mangle is gone: the protected list short-circuits Light10 and the stem is preserved verbatim. Sixth: **M7** — the Layer 4 disambiguator. `analyze_best`'s insertion-order tiebreak replaced with a pure, deterministic rank: confidence desc → origin (UserOverride > ProtectedList > FST > Heuristic) → POS (ProperNoun > Noun > … > Verb > … > Foreign) → fewer affixes → alphabetic lemma. The كاتب ambiguity now resolves to the Noun reading (active participle) every time, across any OS, any FST build, any Universe. Seventh: **M8** — Layer 0 user overrides. New module `arabic::overrides` with a per-Universe JSON store at `<universe>/.constellation/arabic-overrides.json`; `analyze_with_overrides(word, Some(&store))` inserts a hash-lookup Layer 0 that short-circuits the entire pipeline on an exact or normalized-vocalized match. `UserOverride::to_analysis()` produces an `Analysis` with `origin=UserOverride, confidence=1.0`, which M7's disambiguator already ranks strictly above every other origin — so no changes to `rank_analyses` were needed. The back-compat wrapper `analyze(word) ≡ analyze_with_overrides(word, None)` preserves every caller on the crate today; the overload is purely additive. Atomic file writes (`.tmp` + rename), alphabetic-sorted entries for git-friendly diffs, forward-compat serde defaults. Full public-API parity preserved across all seven landings; **263/263 library tests pass** (up from 209 pre-M3: +13 fst_bake, +10 regression harness, +6 TSV parser, +5 M6 FTS contract tests, +12 M7 disambiguator, +21 M8 overrides [16 unit + 5 integration], -1 removed `no_duplicate_lemmas_in_seed` obsolete under first-write-wins).
 
 ## Work in order
 
@@ -284,6 +284,68 @@ All pass. Test wall time across the whole suite: 0.30s (unchanged within noise; 
 - All **242 pass** in 0.30s. The 502-case regression corpus and the 5 FTS contract tests from M6 continue to pass — M7 is behaviourally additive.
 - The full arabic::tests integration suite (mod.rs::tests — 23 tests including `katib_ambiguity_surfaces_both_pos`, the flagship `wael_flows_through_protected_layer`, and the `alaimma_flagship_resolves_through_cascade` cascade test) is all green.
 
+## 18. M8 — Layer 0 user overrides
+
+The pipeline's Layer 1 (ProtectedList) short-circuits Light10 on ~1,200 hand-curated surfaces. But no curated list can anticipate every proper noun, loanword, or domain term the user will write — personal names of family, employer-specific jargon, fictional place names, newly coined technical terms. The user needs a way to pin an analysis for any surface they care about, and have that pin stick across sessions, Universes, and engine upgrades. M8 is that mechanism: Layer 0, the fastest path in the engine, gated only by a single per-Universe hash lookup.
+
+**Solution shipped:**
+
+- New module `src-tauri/src/arabic/overrides.rs` (~340 lines, 16 tests). Keeps the arabic-module's one-file-per-layer convention.
+- Public surface (crate-internal):
+  - `UserOverride { surface, lemma, root?, pattern_label?, pos?, note?, created_at? }` — `#[derive(Debug, Clone, Serialize, Deserialize)]` with `#[serde(default)]` on every optional field so a file written by a future version of Constellation (adding, say, `confidence` or `origin_hint`) round-trips cleanly through an older version.
+  - `UserOverride::to_analysis(original_surface: &str) -> Analysis` — produces an `Analysis` with `origin = AnalysisOrigin::UserOverride`, `confidence = 1.0`, `lang = Lang::Ar`, empty `prefix`/`suffix`/`equivalents`. Preserves the caller's exact surface (not the override's canonical surface) so round-trip display strings aren't mutated.
+  - `OverrideFile { version: u32 (default 1), overrides: Vec<UserOverride> }` — the on-disk JSON envelope.
+  - `OverrideStore { entries: HashMap<String, UserOverride> }` — the in-memory index. Keyed on `normalize_key(surface)` which calls `super::normalizer::normalize(surface).stripped`, so a user's `وَائِل` override with full vocalization matches the bare surface `وائل` at query time (and vice versa — the normalization is symmetric).
+  - Methods: `new()`, `len()`, `is_empty()`, `iter()`, `lookup(surface) -> Option<&UserOverride>`, `insert(override)`, `remove(surface) -> Option<UserOverride>`, `path_in_universe(universe: &Path) -> PathBuf`, `load_from_path(&Path) -> Result<Self>`, `save_to_path(&Path) -> Result<()>`.
+
+- **Persistence**:
+  - Canonical path: `<universe>/.constellation/arabic-overrides.json`. Parallel to every other per-Universe file (`libraries.json`, `universe.json`, etc.). Not in `<cache_dir>` because overrides are per-Universe knowledge, not per-install.
+  - Atomic write: stage to `<path>.tmp`, `fs::rename` on success. Survives power loss / crash mid-write. A crash during `.tmp` write leaves the old file intact.
+  - Entries serialize in alphabetic order by `surface` so a diff on the JSON file is deterministic — a user syncing via git/Syncthing never sees a noisy reordering when they add or remove a single entry.
+  - `load_from_path` returns an **empty store** (not an error) when the file is missing — first-launch case on a pre-existing Universe. Malformed JSON (not-JSON, missing `overrides` array, etc.) returns `InvalidData`; the caller decides whether to back up the bad file and start fresh or surface an error to the user.
+  - Parent directory (`.constellation/`) is created on save if missing.
+
+- **`analyze()` → `analyze_with_overrides()` split**: the crate now exposes two public entry points.
+  - `analyze(word: &str) -> Vec<Analysis>` remains the zero-dependency entry point — back-compat contract for everything already wired (including the 502-case regression corpus, M6's `process_arabic_word`, and the 23 mod.rs integration tests). Internally it's a 3-line wrapper: `analyze_with_overrides(word, None)`.
+  - `analyze_with_overrides(word: &str, overrides: Option<&OverrideStore>) -> Vec<Analysis>` is the new overload. Inserts a Layer 0 hook between the script check and Layer 2 (ProtectedList): if `overrides` is `Some` and the store is non-empty, it runs `store.lookup(&norm.stripped)` — a single `HashMap` get — and on a hit returns `vec![o.to_analysis(word)]` immediately, bypassing every subsequent layer.
+  - `analyze_best` and its callers are untouched; they continue to call `analyze(word)` and get the back-compat behaviour. When M8b (the Tauri commands + Svelte UI) wires the override store into `libraries.rs::process_arabic_word`, that's the single call site that needs to switch from `analyze_best` to an override-aware variant.
+
+- **Why Layer 0 is strictly a short-circuit, not a rank-participant**: M7's disambiguator already ranks `UserOverride` strictly above `ProtectedList` / `GenerativeFst` / `SurfaceHeuristic`. That means if Layer 0 were to emit a `UserOverride` Analysis *alongside* the other layers' results, the disambiguator would put it first and `analyze_best` would return it. That's the correct answer, but it costs us the FST + protected + normalizer work on every override hit. Layer 0 fires early and returns a single-element `Vec` instead — exactly the same final answer, but with the 4 downstream layers skipped. The disambiguator's `UserOverride=0` rank is now belt-and-suspenders: even a future refactor that accidentally routes override results through the full rank path still produces the same verdict.
+
+- **Versioning**: the `OverrideFile` envelope carries a `version: u32` (default `1`). The serde default means a v1 file written today round-trips through a future v2 reader; a future v2 reader can branch on `version > 1` to apply migrations. The alphabetic-sort-by-surface invariant is enforced on write, not assumed on read — a hand-edited file with scrambled ordering still loads correctly; the next save canonicalizes.
+
+### 19. Tests — 21 new for M8
+
+**16 unit tests in `arabic::overrides::tests`** — the module's own contract:
+
+- **`to_analysis` shape (3)**: `to_analysis_sets_user_override_origin`, `to_analysis_sets_full_confidence`, `to_analysis_preserves_caller_surface` — the 3 facts the disambiguator depends on.
+- **Store CRUD (6)**: `empty_store_reports_empty`, `insert_and_lookup_roundtrip`, `lookup_miss_returns_none`, `insert_replaces_on_duplicate_surface`, `remove_returns_removed_entry`, `remove_nonexistent_returns_none` — the data structure's invariants.
+- **Normalization parity (1)**: `lookup_matches_vocalized_surface_against_bare_override` — `وَائِل` with full vocalization hits an override authored for bare `وائل`. This is the test that proves M8's Layer 0 key space is aligned with the normalizer, not a second independent key space that can drift.
+- **Iteration (1)**: `iter_exposes_all_entries` — tiebreak-free `iter()` visits every stored override exactly once.
+- **Persistence (4)**: `load_from_missing_path_returns_empty`, `save_then_load_roundtrips`, `load_rejects_malformed_json`, `atomic_save_leaves_no_tmp_file` — the 4 disk-path failure modes.
+- **Storage hygiene (2)**: `save_sorts_entries_alphabetically_for_diff_friendliness`, `path_in_universe_is_constellation_arabic_overrides_json` — the 2 on-disk invariants that make the file git-sync-friendly.
+
+**5 integration tests in `arabic::tests`** — the overlay's pipeline contract:
+
+- `override_beats_protected_list` — a surface that would normally hit Layer 1 (e.g. `الله`) is instead returned from Layer 0 with `origin=UserOverride` when the user has pinned it.
+- `override_beats_fst_hit` — a surface that would normally hit Layer 3 (e.g. `كاتب`, a generative FST winner at conf=0.85) is instead returned from Layer 0 at conf=1.0.
+- `override_catches_vocalized_surface` — an override authored for bare `وائل` is hit by a query for `وَائِل`. Proves the normalization key path is symmetric at the Layer 0 boundary.
+- `empty_override_store_is_a_no_op` — `analyze_with_overrides(word, Some(&empty_store))` is equivalent to `analyze(word)` on every test surface. Key property: adding the override overload didn't silently change the default-case behaviour.
+- `override_does_not_fire_on_non_arabic_input` — a Latin-script word gets routed to `SurfaceHeuristic` as before, even with overrides present. Layer 0 sits *after* the script check, not before it, so non-Arabic inputs never consult the Arabic override table.
+
+All 21 pass. Combined with the 12 M7 disambiguator tests and the 502-case regression corpus, the M8 contract is triple-locked: the module's own 16 tests, 5 integration tests against the live `analyze_with_overrides` pipeline, and the corpus which proves the back-compat `analyze()` entry point still has zero behavioural drift.
+
+### 20. Results after M8
+
+| Suite | Pre-M3 | After M3 | After M3-baker | After M1g/M1h | After M5 | After M6 | After M7 | After M8 | Delta |
+|---|---|---|---|---|---|---|---|---|---|
+| arabic module | 171 | 183 | 196 | 202 | 212 | 212 | 224 | 245 | +74 |
+| libraries FTS contract | 0 | 0 | 0 | 0 | 0 | 5 | 5 | 5 | +5 |
+| library total | 184 | 196 | 209 | 215 | 225 | 230 | 242 | 263 | +79 |
+
+- All **263 pass** in 0.38s. The 502-case regression corpus and every previous layer's tests stay green.
+- M8 is the first milestone that adds a cross-module integration surface (per-Universe files), but no disk I/O runs in the default test path — `load_from_path` / `save_to_path` tests use `tempfile::TempDir` and the override-overload integration tests build the store in memory.
+
 ## Commit
 
 Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
@@ -310,10 +372,15 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
    - `src-tauri/src/libraries.rs` — `process_arabic_word` refactored (line ~1949) to route through `arabic::analyze_best`, with Light10 retained as the `SurfaceHeuristic` fallback; 5 new FTS contract tests appended to a new `#[cfg(test)] mod tests` block at EOF.
    - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 12–14 added.
 
-5. **M7** (this session, pending):
+5. **M7** (this session, `26eebcd`):
    - `src-tauri/src/arabic/disambiguate.rs` — new (~180 lines, 12 tests) — `origin_rank`, `pos_rank`, `rank_analyses`.
    - `src-tauri/src/arabic/mod.rs` — uncomment `pub mod disambiguate;`; call `rank_analyses` at each multi-hit return point in `analyze()`; simplify `analyze_best` to `analyze(word).into_iter().next()`.
    - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 15–17 added.
+
+6. **M8** (this session, pending):
+   - `src-tauri/src/arabic/overrides.rs` — new (~340 lines, 16 tests) — `UserOverride`, `OverrideFile`, `OverrideStore`, `normalize_key`, atomic save, alphabetic sort, per-Universe path.
+   - `src-tauri/src/arabic/mod.rs` — uncomment `pub mod overrides;`; split `analyze` into `analyze(word) = analyze_with_overrides(word, None)`; insert Layer 0 lookup between script check and Layer 2; add 5 integration tests.
+   - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 18–20 added.
 
 ## Files modified
 
@@ -329,14 +396,15 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src-tauri/src/arabic/regression_cases.tsv` — new (M5, 502 data rows).
 - `src-tauri/src/libraries.rs` — `process_arabic_word` routed through `analyze_best` (M6) + 5 new FTS contract tests at EOF.
 - `src-tauri/src/arabic/disambiguate.rs` — new (M7, 12 tests).
+- `src-tauri/src/arabic/overrides.rs` — new (M8, 16 tests) — UserOverride type, OverrideStore CRUD, per-Universe JSON persistence with atomic writes.
 
 ## Open items
 
 - **M1g-data / M1h-data**: the 20K Wikipedia-extracted proper-noun corpus + 2K loanwords. Today's 1,196 hand-picked entries cover the common case; the full corpus comes from CC-BY-SA bulk extraction (separate milestone in `lab/`, blocked on extractor tooling).
 - **M5-grow**: expand the corpus over time. 502 is the v1 floor — as M6/M7 land, new flagship surfaces identified during bring-up should be added here first before any other test code. Target by M9: ≥2,000 cases, with ≥20 pure-heuristic Arabic-script rows (Layer 4 fallback coverage; currently the heuristic threshold is met by foreign Latin-script rows via the non-Arabic-script route).
 - **M7-v2**: corpus-aware disambiguation. Today's ranking is a pure function of the Analysis fields. V2 reads the user's own FTS vocab to bias toward lemmas the user writes often, plus a 3-word context window at query time to pick between readings (`كاتب الرسالة` → Noun; `كاتب أخاه` → Verb). Tracked as a follow-on once Settings → Debug surfaces the existing v1 rank so we can A/B the v2 improvements.
-- **M8**: user overrides — `overrides.rs` + a UI for the user to pin the analysis of a specific surface. The disambiguator's `origin_rank` already ranks `UserOverride` strictly above `ProtectedList` / `GenerativeFst`, so once M8 writes Analyses with origin=UserOverride into the pipeline, they immediately win the tiebreak without further changes to `rank_analyses`. The wire is live; M8 just needs to run the current.
-- **M9**: measure cold-start analyzer time on the real user machine (Windows) with a clean cache dir, then warm-start. If the warm-start delta isn't ≥5× the cold-start on the target 7K-root corpus, tune the format (e.g. memory-map instead of read-to-vec).
+- **M8b**: wire the `OverrideStore` through to `libraries.rs::process_arabic_word` (per-Universe load on boot, cache by Universe path), add Tauri commands (`read_arabic_overrides`, `add_arabic_override`, `remove_arabic_override`), add Settings → Language → Arabic Engine UI for override CRUD, and emit an FTS reindex signal when overrides change (so the on-disk `notes_fts` stem column reflects the new verdict without waiting for a full Universe rebuild). M8 scaffolding is complete — Layer 0 fires when passed a store; M8b is the plumbing that passes a store.
+- **M9**: measure cold-start analyzer time on the real user machine (Windows) with a clean cache dir, then warm-start. If the warm-start delta isn't ≥5× the cold-start on the target 7K-root corpus, tune the format (e.g. memory-map instead of read-to-vec). Also measure throughput (target ≥200K words/sec on the 502-case corpus) and RSS delta (target ≤10 MB for the analyzer singleton at 7K-root scale).
 
 ## No user-facing changes
 

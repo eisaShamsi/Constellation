@@ -61,7 +61,7 @@ pub mod fst_index;
 pub mod fst_bake;
 // pub mod analyzer;      // M4
 pub mod disambiguate;     // M7
-// pub mod overrides;     // M8
+pub mod overrides;        // M8
 
 // M5 — regression corpus. Harness + 500-case TSV. `cfg(test)`-gated so
 // the corpus does not ship in the release binary; if M9 benchmarking
@@ -79,8 +79,28 @@ use std::collections::HashMap;
 
 /// Public entry point for the engine.
 ///
-/// Runs the layers we have implemented so far:
+/// Convenience wrapper over [`analyze_with_overrides`] that runs the engine
+/// *without* a per-Universe override store. Used by the existing 170+ tests
+/// that don't need Layer 0, and by future call sites that haven't yet been
+/// threaded with an `OverrideStore`. Exactly equivalent to
+/// `analyze_with_overrides(word, None)`.
+pub fn analyze(word: &str) -> Vec<Analysis> {
+    analyze_with_overrides(word, None)
+}
+
+/// Full five-layer public entry point, accepting an optional per-Universe
+/// [`overrides::OverrideStore`] that takes precedence over every other
+/// layer.
 ///
+/// Runs the pipeline in this order:
+///
+///   0. **User overrides** (M8, optional) — exact hash lookup on the
+///      normalized surface. A hit returns a single Analysis with
+///      `origin = UserOverride` and `confidence = 1.0`, bypassing every
+///      downstream layer. The disambiguator already ranks `UserOverride`
+///      at the top of its `origin_rank`, so even if future code paths
+///      merge override hits with other Layers' candidates, the override
+///      wins the tiebreak. Non-Arabic scripts bypass this layer.
 ///   1. **Normalizer** — strip tashkeel + tatweel, classify script.
 ///      Non-Arabic scripts are returned verbatim as `Foreign`.
 ///   2. **Protected list** — hash lookup on the stripped surface. A hit
@@ -97,13 +117,19 @@ use std::collections::HashMap;
 ///      index. Confidence 0.75 (stripped stem) or 0.55 (folded stem).
 ///      This is how الكاتب → ال + كاتب → root ك-ت-ب; likewise
 ///      كتابها → كتاب + ها.
+///   4. **Disambiguator** (M7) — runs at every multi-hit return point of
+///      the Layer-3/3b branches, sorting candidates by the deterministic
+///      ranking key documented in `disambiguate.rs`.
 ///
-/// Layers 4–5 (disambiguator + user overrides) are milestones M7/M8.
-/// When nothing in Layers 1–3 hits, we fall back to a low-confidence
-/// `SurfaceHeuristic` that hands the caller the normalized surface as
-/// both lemma and root-less analysis — this preserves correctness for
-/// the FTS tokenizer while keeping the wire format forward-compatible.
-pub fn analyze(word: &str) -> Vec<Analysis> {
+/// Layer 5 (heuristic fallback) fires when nothing else hit — a single
+/// low-confidence Analysis with `origin = SurfaceHeuristic` that hands the
+/// caller the normalized surface as both lemma and root-less analysis.
+/// This preserves correctness for the FTS tokenizer while keeping the
+/// wire format forward-compatible.
+pub fn analyze_with_overrides(
+    word: &str,
+    overrides: Option<&overrides::OverrideStore>,
+) -> Vec<Analysis> {
     if word.is_empty() {
         return Vec::new();
     }
@@ -134,6 +160,25 @@ pub fn analyze(word: &str) -> Vec<Analysis> {
         }
         normalizer::Script::Empty => return Vec::new(),
         normalizer::Script::Arabic | normalizer::Script::PersianFamily => {}
+    }
+
+    // ── Layer 0: user overrides (M8) ────────────────────────────────
+    //
+    // Runs AFTER normalization so vocalized surfaces (وَائِل) collapse to
+    // the same key as the bare form (وائل) and a single override entry
+    // catches both. Runs BEFORE Layer 2 (protected list) so the user's
+    // choice wins over the shipped seed corpus — this is the whole point
+    // of the layer: sovereign user authority over engine inference.
+    //
+    // The `is_empty` short-circuit keeps the hot path free on Universes
+    // without any overrides configured (the common case). When overrides
+    // are present, a single HashMap probe decides whether to short-circuit.
+    if let Some(store) = overrides {
+        if !store.is_empty() {
+            if let Some(o) = store.lookup(&norm.stripped) {
+                return vec![o.to_analysis(word)];
+            }
+        }
     }
 
     // ── Layer 2: protected list ─────────────────────────────────────
@@ -623,5 +668,111 @@ mod tests {
             let a = analyze_best(token);
             assert_eq!(a.pos, PartOfSpeech::Foreign, "{token} should be Foreign");
         }
+    }
+
+    // ── Layer 0 (user overrides, M8) ────────────────────────────────
+
+    #[test]
+    fn override_beats_protected_list() {
+        // وائل is in the protected list → ProtectedList, lemma=وائل, conf=1.0.
+        // If the user adds an override that re-tags it ProperNoun with a
+        // different lemma, the override must win.
+        let mut store = overrides::OverrideStore::new();
+        store.insert(overrides::UserOverride {
+            surface: "وائل".to_string(),
+            lemma: "wael-override-lemma".to_string(),
+            root: "user-root".to_string(),
+            pattern_label: "user:custom".to_string(),
+            pos: PartOfSpeech::ProperNoun,
+            note: String::new(),
+            created_at: String::new(),
+        });
+        let hits = analyze_with_overrides("وائل", Some(&store));
+        assert_eq!(hits.len(), 1, "override must short-circuit to a single Analysis");
+        assert!(matches!(hits[0].origin, AnalysisOrigin::UserOverride));
+        assert_eq!(hits[0].lemma, "wael-override-lemma");
+        assert_eq!(hits[0].confidence, 1.0);
+    }
+
+    #[test]
+    fn override_beats_fst_hit() {
+        // كاتب is a normal FST hit (Form I active participle of ك-ت-ب).
+        // An override must take over without going near Layer 3.
+        let mut store = overrides::OverrideStore::new();
+        store.insert(overrides::UserOverride {
+            surface: "كاتب".to_string(),
+            lemma: "author".to_string(),
+            root: String::new(),
+            pattern_label: "user:override".to_string(),
+            pos: PartOfSpeech::Noun,
+            note: String::new(),
+            created_at: String::new(),
+        });
+        let a = analyze_with_overrides("كاتب", Some(&store))
+            .into_iter()
+            .next()
+            .expect("override must produce an analysis");
+        assert!(matches!(a.origin, AnalysisOrigin::UserOverride));
+        assert_eq!(a.lemma, "author");
+    }
+
+    #[test]
+    fn override_catches_vocalized_surface() {
+        // Override authored on bare وائل must also match fully-vocalized
+        // وَائِل via the normalizer. Single entry, two-for-one.
+        let mut store = overrides::OverrideStore::new();
+        store.insert(overrides::UserOverride {
+            surface: "وائل".to_string(),
+            lemma: "wael-via-override".to_string(),
+            root: String::new(),
+            pattern_label: "user:override".to_string(),
+            pos: PartOfSpeech::ProperNoun,
+            note: String::new(),
+            created_at: String::new(),
+        });
+        let a = analyze_with_overrides("وَائِل", Some(&store))
+            .into_iter()
+            .next()
+            .expect("vocalized must hit the bare-surface override");
+        assert_eq!(a.lemma, "wael-via-override");
+        assert_eq!(a.surface, "وَائِل", "surface round-trips verbatim");
+    }
+
+    #[test]
+    fn empty_override_store_is_a_no_op() {
+        // An empty override store must not change the engine's behaviour
+        // vs calling analyze() with no store at all — this is what keeps
+        // the `analyze(word) = analyze_with_overrides(word, None)` back-
+        // compat contract honest.
+        let store = overrides::OverrideStore::new();
+        let with = analyze_with_overrides("وائل", Some(&store));
+        let without = analyze("وائل");
+        assert_eq!(with.len(), without.len());
+        assert_eq!(with[0].lemma, without[0].lemma);
+        assert_eq!(with[0].origin, without[0].origin);
+    }
+
+    #[test]
+    fn override_does_not_fire_on_non_arabic_input() {
+        // Override keyed on a surface that isn't Arabic must not fire —
+        // Layer 0 runs after the script detector, so Latin/Hebrew inputs
+        // bypass the override store entirely. Important contract: a user
+        // can't break foreign-word handling by mis-pinning an override.
+        let mut store = overrides::OverrideStore::new();
+        store.insert(overrides::UserOverride {
+            surface: "hello".to_string(),
+            lemma: "should-not-fire".to_string(),
+            root: String::new(),
+            pattern_label: "user:override".to_string(),
+            pos: PartOfSpeech::ProperNoun,
+            note: String::new(),
+            created_at: String::new(),
+        });
+        let a = analyze_with_overrides("hello", Some(&store))
+            .into_iter()
+            .next()
+            .expect("foreign path returns a stub");
+        assert_ne!(a.lemma, "should-not-fire", "override must not fire on non-Arabic");
+        assert_eq!(a.pos, PartOfSpeech::Foreign);
     }
 }
