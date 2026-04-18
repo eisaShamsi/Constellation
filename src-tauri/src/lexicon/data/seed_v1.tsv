@@ -1,0 +1,44 @@
+# Constellation Lexical Bridge — seed v1 (M10).
+#
+# This is a tiny hand-picked seed used to exercise the lexicon architecture
+# end-to-end until M11 ships the 20K-concept core tier. The format below
+# scales to that milestone unchanged — M11 simply adds more rows (and may
+# switch the packaging to a pre-compiled binary blob at `lexicon_v*.bin`,
+# but the seed will remain parseable for regression use).
+#
+# Format per row (TAB-separated):
+#
+#   concept_id<TAB>pos<TAB>lang:lemma,lemma,...<TAB>lang:lemma,lemma,...<TAB>...
+#
+# - `concept_id` is a stable slug like `c:book`. Grep-friendly across the
+#   dataset; does not change once published.
+# - `pos` is one of the `arabic::PartOfSpeech` variants: Noun / Verb /
+#   Adjective / Adverb / ProperNoun / Particle / Foreign / Unknown. Empty
+#   string (two consecutive tabs) means Unknown.
+# - Each subsequent column is `lang_code:lemma1,lemma2,...`. Lang codes
+#   are the ISO-639-1 codes that round-trip with `arabic::Lang::code`:
+#   ar, de, en, es, fa, fr, he, hi, ja, ko, pt, ru, tr, ur, zh. Unknown
+#   codes are skipped with a debug warning.
+# - Arabic lemmas are stored unvocalized (no diacritics / tashkeel /
+#   tatweel). The lookup normalizes both the seed at build-time and the
+#   caller's query at read-time so `كِتَاب` still finds `كتاب`.
+# - Blank lines and lines beginning with `#` are ignored.
+# - Columns may appear in any order; the parser keys by `lang_code:`.
+# - Rows are accepted in any order; the builder sorts before FST
+#   compilation so the resulting graph is deterministic.
+
+c:book	Noun	en:book,books	ar:كتاب	fr:livre,bouquin	de:Buch	es:libro	pt:livro	ru:книга	zh:书	ja:本	ko:책	hi:किताब,पुस्तक	tr:kitap	fa:کتاب	ur:کتاب	he:ספר
+c:knowledge	Noun	en:knowledge,cognition	ar:معرفة,علم	fr:connaissance,savoir	de:Wissen,Erkenntnis	es:conocimiento	pt:conhecimento	ru:знание	zh:知识	ja:知識	ko:지식	hi:ज्ञान	tr:bilgi	fa:دانش	ur:علم	he:ידע
+c:write	Verb	en:write,writes,wrote,writing	ar:كتب,يكتب	fr:écrire	de:schreiben	es:escribir	pt:escrever	ru:писать	zh:写	ja:書く	ko:쓰다	hi:लिखना	tr:yazmak	fa:نوشتن	ur:لکھنا	he:לכתוב
+c:read	Verb	en:read,reads	ar:قرأ,يقرأ	fr:lire	de:lesen	es:leer	pt:ler	ru:читать	zh:读	ja:読む	ko:읽다	hi:पढ़ना	tr:okumak	fa:خواندن	ur:پڑھنا	he:לקרוא
+c:love	Noun	en:love	ar:حب,محبة	fr:amour	de:Liebe	es:amor	pt:amor	ru:любовь	zh:爱	ja:愛	ko:사랑	hi:प्रेम	tr:aşk	fa:عشق	ur:محبت	he:אהבה
+c:water	Noun	en:water	ar:ماء	fr:eau	de:Wasser	es:agua	pt:água	ru:вода	zh:水	ja:水	ko:물	hi:पानी	tr:su	fa:آب	ur:پانی	he:מים
+c:house	Noun	en:house,home	ar:بيت,منزل	fr:maison	de:Haus	es:casa	pt:casa	ru:дом	zh:房子	ja:家	ko:집	hi:घर	tr:ev	fa:خانه	ur:گھر	he:בית
+c:teacher	Noun	en:teacher	ar:معلم,أستاذ	fr:enseignant,professeur	de:Lehrer	es:profesor	pt:professor	ru:учитель	zh:老师	ja:先生	ko:선생님	hi:शिक्षक	tr:öğretmen	fa:معلم	ur:استاد	he:מורה
+c:student	Noun	en:student	ar:طالب	fr:étudiant	de:Student	es:estudiante	pt:estudante	ru:студент	zh:学生	ja:学生	ko:학생	hi:छात्र	tr:öğrenci	fa:دانشجو	ur:طالبعلم	he:סטודנט
+c:language	Noun	en:language	ar:لغة,لسان	fr:langue	de:Sprache	es:idioma,lengua	pt:língua	ru:язык	zh:语言	ja:言語	ko:언어	hi:भाषा	tr:dil	fa:زبان	ur:زبان	he:שפה
+c:peace	Noun	en:peace	ar:سلام	fr:paix	de:Frieden	es:paz	pt:paz	ru:мир	zh:和平	ja:平和	ko:평화	hi:शांति	tr:barış	fa:صلح	ur:امن	he:שלום
+c:truth	Noun	en:truth	ar:حق,حقيقة	fr:vérité	de:Wahrheit	es:verdad	pt:verdade	ru:правда,истина	zh:真理	ja:真実	ko:진실	hi:सत्य	tr:gerçek	fa:حقیقت	ur:حقیقت	he:אמת
+c:time	Noun	en:time	ar:وقت,زمن	fr:temps	de:Zeit	es:tiempo	pt:tempo	ru:время	zh:时间	ja:時間	ko:시간	hi:समय	tr:zaman	fa:زمان	ur:وقت	he:זמן
+c:day	Noun	en:day	ar:يوم	fr:jour	de:Tag	es:día	pt:dia	ru:день	zh:天	ja:日	ko:날	hi:दिन	tr:gün	fa:روز	ur:دن	he:יום
+c:night	Noun	en:night	ar:ليل,ليلة	fr:nuit	de:Nacht	es:noche	pt:noite	ru:ночь	zh:夜	ja:夜	ko:밤	hi:रात	tr:gece	fa:شب	ur:رات	he:לילה
