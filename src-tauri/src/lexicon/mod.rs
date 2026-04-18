@@ -78,11 +78,16 @@
 //! FTS5 search path arrives in M12.
 
 pub mod bake;
+pub mod detect;
 pub mod expansion;
 pub mod fts;
 pub mod graph;
 pub mod parse;
 
+#[cfg(test)]
+mod bench;
+
+pub use detect::detect_source_lang;
 pub use expansion::{ExpansionOptions, ExpansionResult, SynonymLevel};
 pub use fts::{build_match_expr, escape_fts_term};
 pub use graph::{
