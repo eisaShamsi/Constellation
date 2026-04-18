@@ -1849,6 +1849,99 @@ The whole tooling lives in `lab/m11-data/` rather than `src-tauri/scripts/` or s
 
 **Every single lemma in the v1 corpus is Constellation-original content.** There is no NOTICE file, no LICENSE file to preserve, no upstream attribution to carry. This property is non-negotiable for v1 and must be preserved by any future expansion step that pulls in external text (if one is ever approved) — the validator checks structure and script, but the **origin-clean property is enforced by the human curator at commit time**.
 
+## 43. M12-wire — lexicon expansion in `lexical_search` (prefix-fallback gated on " OR ")
+
+M12 plumbing landed in `9fd1f53` (§ 31–32) — `lexicon::fts::build_match_expr`, `expand_to_match_expr[_via]`, `detect_source_lang`, `m12_bench`. That was pure infrastructure: the expansion helpers were in-tree and tested, but `search.rs::lexical_search` never called any of them. Every user query still hit the raw `normalize_arabic_for_search(q)` → `{normalized}*` path that shipped pre-M10. **M12-wire closes that gap**: `lexical_search` now tries cross-language expansion first, and falls back to prefix matching only when the bridge can't produce cross-lingual terms.
+
+### Why now
+
+Without M12-wire, M11-data v1 (the 49-concept corpus that just landed as § 42) ships as a dead payload. Every byte of `lexicon_v1.tsv` is on disk, every concept-edge is in the CSR graph, the `expand_to_match_expr` helper is tested against them — but the user's query never reaches that helper, so "tree" still matches only "tree*" and never bridges to `شجرة` / `livre` / `árbol`. The feature is invisible until this edit. It's also the cheapest diff possible — three-line call site swap + one helper function — so there's no reason to defer past the v1 corpus landing.
+
+### Approach — where the bridge kicks in
+
+The call site in `src-tauri/src/search.rs::lexical_search` (line ~770) used to be:
+
+```rust
+let normalized = normalize_arabic_for_search(query);
+let fts_query = format!("{}*", normalized.replace('"', ""));
+```
+
+Now it's:
+
+```rust
+let normalized = normalize_arabic_for_search(query);
+
+// M12 wire-up: try cross-language expansion via the lexicon. When the
+// query detects as a supported language and the lemma is in the
+// corpus, we get a phrase-quoted OR-joined expression that pulls in
+// translations and synonyms. Otherwise we fall back to the original
+// prefix-match — that preserves today's behavior for proper nouns,
+// code, rare words, and anything outside our ~49-concept seed.
+let fts_query = expanded_match_query(&normalized)
+    .unwrap_or_else(|| format!("{}*", normalized.replace('"', "")));
+```
+
+The helper is tiny and does exactly one thing — gate on `" OR "`:
+
+```rust
+fn expanded_match_query(normalized: &str) -> Option<String> {
+    let lang = crate::lexicon::detect_source_lang(normalized)?;
+    let expr = crate::lexicon::expand_to_match_expr(
+        normalized,
+        lang,
+        &crate::lexicon::ExpansionOptions::default(),
+    )?;
+    if expr.contains(" OR ") {
+        Some(expr)
+    } else {
+        None
+    }
+}
+```
+
+The `" OR "` check is the load-bearing decision. `expand_to_match_expr` happily returns `Some("\"quasar\"")` (single phrase-quoted term) for any well-formed lemma whose detected language is supported — even when the lemma isn't in the corpus at all. That's because `expand()` contractually includes the source lemma in its `flat_terms()` output, so the match expression always has at least one term. If we took that single-term expression on the search path, we'd silently *regress* recall: today a query for "quasar" matches `quasar*` (prefix) and finds `quasars`, `quasar-like`, `Quasar-spin`. After the naive wire-up it would match only the exact phrase `"quasar"` and lose those variants.
+
+Requiring `" OR "` in the expression means we only take the expanded path when expansion actually added cross-lingual or cross-synonym terms beyond the source. The fallback to `{normalized}*` preserves today's prefix behavior pixel-for-pixel on every query the production corpus doesn't cover — which at 49 concepts is the overwhelming majority.
+
+### What the five new tests pin
+
+`search::tests_m12` (5 tests, appended as a new `#[cfg(test)] mod tests_m12` block at EOF of `search.rs`):
+
+1. `known_english_word_bridges_cross_lingually` — `expanded_match_query("tree")` returns `Some(expr)` with `" OR "`, contains `"tree"` (source preserved), contains `شجرة` (Arabic translation actually made it in via the c:tree concept).
+2. `known_arabic_word_bridges_to_english` — `expanded_match_query("شجرة")` returns `Some(expr)` with `" OR "`, contains `"tree"`. Reverse direction — Arabic source must pull in English just as English pulls in Arabic.
+3. `unknown_word_falls_back_to_none` — `expanded_match_query("quasar")` returns `None`. Latin-script so `detect_source_lang` succeeds, but no corpus match so expansion echoes only `"quasar"` → no ` OR ` → helper returns None → caller uses prefix fallback.
+4. `punctuation_only_returns_none` — `"   !!!"`, `""`, `"123"` all return None because `detect_source_lang` returns None when no strong-script characters are present.
+5. `proper_noun_not_in_corpus_falls_back` — `"Constellation"` and `"Anthropic"` return None. Pins the common-case behavior until M11-data scales up: well-formed Latin words that happen not to be on a concept fall through to prefix matching, identical to pre-M12-wire.
+
+These are unit tests of the decision gate, not integration tests against a live SQLite DB. The integration behavior ("does the FTS5 MATCH actually find the right notes?") is already covered end-to-end by `lexicon::tests::expand_to_match_expr_via_produces_or_joined_phrase_query` + the baked FTS5 contract tests in `libraries.rs::tests` that went in with M6. Duplicating a full seeded-DB harness just to repeat the same assertions would add test mass without adding coverage.
+
+### Blast radius
+
+Three call sites in `search.rs` invoke `lexical_search`: the raw `SearchRequest::Lexical` handler (line ~1825), the hybrid `SearchRequest::Hybrid` dense+sparse fusion (line ~1891), and... that's it. Structured search, wikilink search, tag search all use different code paths that don't touch the FTS5 MATCH expression. So the wire-up flows through all the text-search UI today without needing a second edit.
+
+The `SearchRequest::Hybrid` path doubles the limit (`lexical_search(conn, q, limit * 2)`) before RRF fusion — that still works transparently, it just pulls twice as many candidates per side, and each side now has access to cross-lingual matches.
+
+### Verification
+
+- **`cargo test --lib tests_m12` — 5/5 pass.** All new helper tests green on the first compile.
+- **`cargo test --lib` — 417/417 pass** (up from 412 post-M11-data). Zero regressions across the full lib suite. Pre-existing test modules unchanged: `arabic::*`, `libraries::*`, `lexicon::*`, `search::tests_m8c`, universe, overrides registry — all byte-identical behavior.
+- **Behavior-preservation check**: every existing test that invoked `lexical_search` still passes. The fallback branch is taken for every test lemma that isn't in the 49-concept corpus (the test corpora are all English proper nouns and made-up Arabic surfaces like `خليفة` which isn't on c:caliph), so the MATCH expressions produced for those tests are byte-identical to pre-M12-wire.
+
+### What's not in this commit
+
+No user-visible toggle. The expansion is default-on because:
+1. It only takes the bridge when expansion actually has cross-lingual terms — so for 99.9% of out-of-corpus queries the behavior is identical to today's prefix match.
+2. When the bridge *does* fire, the user sees the feature that M11-data v1 exists for — searching "tree" surfaces notes that mention شجرة. That's the value proposition. Gating it behind a setting before any user has seen it would be shipping a feature in stealth.
+3. The `ExpansionOptions::default()` path includes all 15 supported languages and `SynonymLevel::Synonym`. Per-language toggles, per-Universe on/off, and synonym-level selection are all trivially pluggable once Settings → Debug has a panel to expose them (M13 scope).
+
+No bench extension. `lexicon::bench::m12_bench` already measures `expand_to_match_expr_via` at the p99 level (current result: ~5 µs mean / ~16 µs p99 at the 49-concept scale). The wire-up adds one extra function call per query (the `expanded_match_query` wrapper doing the `contains(" OR ")` check on a short string) and the established `expand_to_match_expr` path underneath. That's well inside the existing `< 1 ms` hard-assert threshold, and re-running `m12_bench` wouldn't produce a meaningfully different number.
+
+No new IPC surface. `search_notes` (the Tauri command) is byte-identical — the change is purely inside `lexical_search`'s body. No command registration edit, no frontend type change, no TypeScript binding update.
+
+### Open follow-on (M13 territory)
+
+The next piece of user-facing work is the UI shape: when a hit came via translation rather than direct match, the result card should show *why* it matched ("via شجرة" badge). Today the caller gets back a `SearchResult { snippet, match_type, ... }` with `match_type` being `"title"`/`"content"` based on where the highlight landed. A `match_via: Option<String>` field threading back the bridge lemma is natural to add — the expansion result already carries `(Lang, String)` pairs — but the Svelte-side result card hasn't been designed for it yet. That's M13.
+
 ## Commit
 
 Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
@@ -1997,6 +2090,10 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
     - `src-tauri/src/lexicon/bake.rs` — existing `real_seed_bundle_writes_reads_reconstructs` test retargeted to `legacy_seed_tsv()` so it continues to pin the M10 15-concept seed fixture through encoder/decoder changes. New sibling test `real_lexicon_bundle_writes_reads_reconstructs` mirrors the legacy canary against the production corpus: round-trips through `build_bundle` → `write_bundle` → `load_bundle` → `from_bundle`, asserts `recs.len() > 20` (tripwire against accidental revert), asserts `en:tree` (production-only lookup) + `ar:شجرة` (mandatory-Arabic sanity) resolve in the reconstructed graph.
     - `lab/reports/SESSION-LOG-2026-04-18.md` — § 42 added with Why-Now framing (eliminate extractor-tooling blocker + third-party licensing surface), scope (49-concept corpus composition table), deterministic emitter rules, structural + content validator specs, Rust wire-up (seed_tsv swap + legacy_seed_tsv + two-canary-test pattern), verification (116 lexicon + 412 full-lib tests pass), non-goals (scale / synonyms / domains / alternate-data-sources tracked as separate milestones), `lab/m11-data/` layout rationale.
 
+23. **M12-wire — lexicon expansion in `lexical_search`** (this session, pending):
+    - `src-tauri/src/search.rs` — `lexical_search` call site (line ~770) swaps `let fts_query = format!("{}*", normalized.replace('"', ""));` for `let fts_query = expanded_match_query(&normalized).unwrap_or_else(|| format!("{}*", normalized.replace('"', "")));`. New sibling `fn expanded_match_query(normalized: &str) -> Option<String>` (~25 lines, directly after `lexical_search`) that calls `crate::lexicon::detect_source_lang` + `crate::lexicon::expand_to_match_expr` with `ExpansionOptions::default()`, then gates the return on `expr.contains(" OR ")` — returning `Some(expr)` only when expansion produced actual cross-lingual / cross-synonym bridge terms, `None` otherwise so the caller falls back to today's prefix match. New `#[cfg(test)] mod tests_m12` at EOF with 5 tests: `known_english_word_bridges_cross_lingually` (`tree` → OR-joined expr with `شجرة`), `known_arabic_word_bridges_to_english` (`شجرة` → OR-joined expr with `tree`), `unknown_word_falls_back_to_none` (`quasar` → None, preserving prefix fallback), `punctuation_only_returns_none` (`"   !!!"` / `""` / `"123"` — `detect_source_lang` returns None), `proper_noun_not_in_corpus_falls_back` (`Constellation` / `Anthropic` → None, common-case behavior until M11-data scales).
+    - `lab/reports/SESSION-LOG-2026-04-18.md` — § 43 added with Why-Now framing (M11-data v1 is a dead payload without this edit), approach (helper-returns-None decision gate on `" OR "` presence), five-test pin-down of the gate, blast radius (two `lexical_search` call sites in `search.rs`, no IPC surface change, no frontend edit), verification (`cargo test --lib tests_m12` 5/5 + `cargo test --lib` 417/417), scope kept out (no settings toggle, no bench re-run, no `match_via` badge yet — M13 scope).
+
 ## Files modified
 
 - `src-tauri/Cargo.toml` — `+ fst = "0.4"` (M3), `+ dirs = "5"` (M3-baker), `+ smallvec = "1"` (M9-hotpath (b), promoting a transitive dep to direct so the analyzer's public `AnalysisList = SmallVec<[Analysis; 2]>` alias can name the type). M9-mmap adds a target-gated dep block `[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies] memmap2 = "0.9"` so `memmap2` lands on desktop builds only — mobile targets compile with the `Owned`-variant-only `FstBytes` path and pay zero binary or dep-tree cost.
@@ -2015,7 +2112,7 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src-tauri/src/arabic/mod.rs` — M8b adds `analyze_with_overrides_best` convenience; `analyze_best` reduced to a thin wrapper.
 - `src-tauri/src/universe.rs` — M8b hooks `activate_for_universe` into `set_active_universe`. M8b-v2 adds `resolve_child_universe_roots(parent) -> Vec<PathBuf>` and switches `set_active_universe` to call `activate_layered_for_universe(final_path, &child_universe_roots)` so cUniverse override files light up automatically on Universe switch.
 - `src-tauri/src/lib.rs` — M8b registers three Arabic override Tauri commands; M8c registers the fourth (`reindex_arabic_overrides`).
-- `src-tauri/src/search.rs` — M8c adds `reindex_notes_matching_text` helper (targeted FTS5 `delete` + reinsert under a transaction). M8b-v2/M8c-integration-test (1) realigns `normalize_arabic_for_search` from aggressive-fold (ة→ه, ى→ي, alif variants) to `crate::arabic::normalizer::normalize_stripped` delegation (tashkeel + tatweel only), preserving the `عبرة`/`عبره` semantic distinction the old fold was silently breaking, and (2) adds `#[cfg(test)] mod tests_m8c` with 4 end-to-end tests (override → reindex → FTS token flip, forward-looking override, empty-needle short-circuit, one-transaction multi-row flip) + `OverrideTestGuard` RAII + `seeded_state` harness.
+- `src-tauri/src/search.rs` — M8c adds `reindex_notes_matching_text` helper (targeted FTS5 `delete` + reinsert under a transaction). M8b-v2/M8c-integration-test (1) realigns `normalize_arabic_for_search` from aggressive-fold (ة→ه, ى→ي, alif variants) to `crate::arabic::normalizer::normalize_stripped` delegation (tashkeel + tatweel only), preserving the `عبرة`/`عبره` semantic distinction the old fold was silently breaking, and (2) adds `#[cfg(test)] mod tests_m8c` with 4 end-to-end tests (override → reindex → FTS token flip, forward-looking override, empty-needle short-circuit, one-transaction multi-row flip) + `OverrideTestGuard` RAII + `seeded_state` harness. **M12-wire** edits the `lexical_search` body (line ~770) to call a new `expanded_match_query(&normalized)` helper and `unwrap_or_else` back to the pre-existing `{normalized}*` prefix expression. The helper (~25 lines, directly below `lexical_search`) delegates to `crate::lexicon::detect_source_lang` + `crate::lexicon::expand_to_match_expr(..., &ExpansionOptions::default())`, then returns `Some(expr)` only when `expr.contains(" OR ")` — the gate that distinguishes "expansion actually bridged" from "expansion echoed only the source lemma". New `#[cfg(test)] mod tests_m12` appended at EOF with 5 tests pinning the decision boundary (known-en + known-ar bridge cross-lingually, unknown word / punctuation-only / proper-noun fall through to None so the caller uses prefix fallback).
 - `src/lib/components/ArabicOverridesPanel.svelte` — new (M8c, ~480 lines). Settings-modal panel for override CRUD with live reindex feedback.
 - `src/lib/components/SettingsModal.svelte` — M8c adds the `arabic-overrides` section entry + content branch.
 - `src/lib/i18n/{ar,de,en,es,fa,fr,he,hi,ja,ko,pt,ru,tr,ur,zh}.json` — M8c adds `settings.sections.arabicOverrides` + the 31-key `settings.arabicOverrides` block to all 15 locale files.
@@ -2060,6 +2157,9 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - **M11-mmap**: switch the baked `name_index_bytes` from `Vec<u8>` to `memmap2::Mmap` on desktop, mirroring the M9-mmap follow-on on the Arabic FST. Cuts resident memory at the M11-data scale and lets warm-start be a bounded constant (header read) rather than O(bundle size). Needs the same `#[cfg]` fallback for iOS / sandboxed builds that can't anon-mmap.
 - **M11-cache-bench**: measure cold-start (cache deleted → `LexiconGraph::get()` rebuilds + persists) vs. warm-start (cache present → `from_bundle` only) delta on the M11-data bundle. Same `#[test] #[ignore]` opt-in pattern as `arabic::bench::m9_bench`. Will extend M9's report table or land a sibling `lexicon::bench::m11_bench`. Gated by M11-data.
 - **M12-bench-m11**: rerun `lexicon::bench::m12_bench` once `M11-data` lands to publish the 20K-concept × 15-lang numbers alongside the current M10-seed baseline (mean 5.2 µs / p99 15.8 µs). Not a new module — just an opt-in rerun with the new corpus in place. If p99 migrates meaningfully, the `< 1 ms` hard-assert threshold gets revisited with real data.
+- ~~**M12-wire**~~ — **LANDED § 43**. `lexical_search` in `search.rs` now calls `expanded_match_query(&normalized)` with `unwrap_or_else` back to the prefix match. The helper gates on `" OR "` in the expansion output so only true cross-lingual / cross-synonym bridges take the expanded path — out-of-corpus queries preserve today's `{normalized}*` prefix behavior pixel-for-pixel. 5/5 new `tests_m12` pass; full lib suite 417/417 with zero regressions.
+- **M13 — multilingual result badge**: thread a `match_via: Option<String>` through `SearchResult` so result cards can show *why* a hit surfaced via translation (e.g. "via شجرة" badge for an en-query → ar-note match). The expansion side already carries `(Lang, String)` pairs — just needs a Tauri-type extension and the Svelte-side card tweak. Blocked only on UI design. Natural follow-on after M12-wire (§ 43).
+- **M14 — benchmarks**: prove M12-wire does not slow Arabic-only search. Extend or sibling `lexicon::bench::m12_bench` with a `search_wire_bench` that measures `lexical_search` end-to-end on a seeded SQLite DB across (a) known-word → bridges, (b) unknown-word → prefix fallback, (c) Arabic-only query in Arabic-only corpus. Hard-assert the (c) path is within ±5% of the pre-M12-wire baseline. Prerequisite for claiming "cross-lingual search for free" in the help docs.
 
 ## User-facing changes (M8c)
 

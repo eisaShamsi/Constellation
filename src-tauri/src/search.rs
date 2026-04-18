@@ -770,7 +770,15 @@ fn index_library_recursive(conn: &Connection, dir: &Path, library_name: &str, de
 fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
     // Normalize query for Arabic consistency (same normalization as indexed text)
     let normalized = normalize_arabic_for_search(query);
-    let fts_query = format!("{}*", normalized.replace('"', ""));
+
+    // M12 wire-up: try cross-language expansion via the lexicon. When the
+    // query detects as a supported language and the lemma is in the
+    // corpus, we get a phrase-quoted OR-joined expression that pulls in
+    // translations and synonyms. Otherwise we fall back to the original
+    // prefix-match — that preserves today's behavior for proper nouns,
+    // code, rare words, and anything outside our ~49-concept seed.
+    let fts_query = expanded_match_query(&normalized)
+        .unwrap_or_else(|| format!("{}*", normalized.replace('"', "")));
 
     let mut stmt = match conn.prepare(
         "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified,
@@ -816,6 +824,34 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
     }).ok();
 
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
+}
+
+/// Try to produce a cross-language FTS5 MATCH expression for `normalized`
+/// via the Lexical Bridge (M10 + M11-data).
+///
+/// Returns `Some(expr)` only when expansion actually adds terms beyond
+/// the source lemma — detected by the presence of `" OR "` in the built
+/// expression. Otherwise returns `None` so `lexical_search` falls back
+/// to prefix matching.
+///
+/// That fallback matters: `expand_to_match_expr` happily returns a
+/// single-quoted lemma for in-corpus words that happen to have no
+/// translations yet, and a one-term exact-phrase match would *regress*
+/// recall versus today's `word*` prefix query. Requiring the " OR "
+/// bridge means we only take the expanded path when there's an actual
+/// cross-lingual win.
+fn expanded_match_query(normalized: &str) -> Option<String> {
+    let lang = crate::lexicon::detect_source_lang(normalized)?;
+    let expr = crate::lexicon::expand_to_match_expr(
+        normalized,
+        lang,
+        &crate::lexicon::ExpansionOptions::default(),
+    )?;
+    if expr.contains(" OR ") {
+        Some(expr)
+    } else {
+        None
+    }
 }
 
 /// Structured filter search (properties, tags, wikilinks).
@@ -2734,5 +2770,88 @@ mod tests_m8c {
         );
 
         cleanup(&dir);
+    }
+}
+
+// ─── M12 (lexicon wire-up) unit tests ──────────────────────────
+//
+// These tests pin the decision boundary of `expanded_match_query`:
+// when does `lexical_search` take the cross-lingual bridge vs.
+// fall back to today's `word*` prefix match?
+//
+// The bridge only kicks in when `detect_source_lang` succeeds AND
+// `build_match_expr` produces an expression with " OR " (i.e. the
+// lemma actually has translations or synonyms in the corpus). Any
+// other shape — unknown language, punctuation-only, or in-corpus
+// lemma with zero bridge edges — returns None so prefix matching
+// still runs. Regressing that surface would silently degrade recall
+// on every query the production corpus doesn't cover.
+
+#[cfg(test)]
+mod tests_m12 {
+    use super::expanded_match_query;
+
+    #[test]
+    fn known_english_word_bridges_cross_lingually() {
+        // "tree" is concept c:tree in lexicon_v1.tsv with rich
+        // coverage across all 15 languages.
+        let expr = expanded_match_query("tree")
+            .expect("tree must bridge — it's in the production corpus");
+        assert!(expr.contains(" OR "), "expected OR-joined expression, got {expr:?}");
+        // Spot-check that the Arabic translation actually made it in.
+        assert!(
+            expr.contains("شجرة"),
+            "expected ar:شجرة in expansion, got {expr:?}"
+        );
+        // And that the source lemma is preserved.
+        assert!(
+            expr.contains("\"tree\""),
+            "expected source lemma 'tree' in expansion, got {expr:?}"
+        );
+    }
+
+    #[test]
+    fn known_arabic_word_bridges_to_english() {
+        // Reverse direction — Arabic lemma should pull in English
+        // plus other languages via the same concept node.
+        let expr = expanded_match_query("شجرة")
+            .expect("شجرة must bridge — it's ar: on concept c:tree");
+        assert!(expr.contains(" OR "), "expected OR-joined expression, got {expr:?}");
+        assert!(
+            expr.contains("\"tree\""),
+            "expected en:tree in expansion, got {expr:?}"
+        );
+    }
+
+    #[test]
+    fn unknown_word_falls_back_to_none() {
+        // "quasar" is Latin script so detect_source_lang returns
+        // Some(Lang::En), but the lemma isn't in the corpus. Expansion
+        // echoes only the source lemma → single-term expr → no " OR " →
+        // we return None so the caller falls back to `quasar*`.
+        assert_eq!(
+            expanded_match_query("quasar"),
+            None,
+            "unknown words must NOT take the bridge — prefix fallback \
+             preserves today's recall for out-of-corpus queries"
+        );
+    }
+
+    #[test]
+    fn punctuation_only_returns_none() {
+        // detect_source_lang returns None for strings with no
+        // strong-script characters, so the whole bridge short-circuits.
+        assert_eq!(expanded_match_query("   !!!"), None);
+        assert_eq!(expanded_match_query(""), None);
+        assert_eq!(expanded_match_query("123"), None);
+    }
+
+    #[test]
+    fn proper_noun_not_in_corpus_falls_back() {
+        // Any well-formed English word not on a concept returns None
+        // and falls through to prefix matching. This is the common
+        // case until M11-data scales up past 49 concepts.
+        assert_eq!(expanded_match_query("Constellation"), None);
+        assert_eq!(expanded_match_query("Anthropic"), None);
     }
 }
