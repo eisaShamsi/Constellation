@@ -130,6 +130,56 @@ pub fn analyze(word: &str) -> AnalysisList {
     analyze_with_overrides(word, None)
 }
 
+/// M9-hotpath (c): shared Layer 0 (user override) + Layer 2 (protected
+/// list) lookup that returns `Option<Analysis>` so best-pick callers can
+/// short-circuit without allocating an [`AnalysisList`] stack frame.
+///
+/// Both layers are pure hash-map probes on the pre-normalized stripped
+/// key — no FST touch, no affix cascade, no disambiguator. When either
+/// hits, one [`Analysis`] is returned directly; when both miss, `None`
+/// signals "fall through to the full pipeline".
+///
+/// This is factored out of [`analyze_with_overrides`] so
+/// [`analyze_with_overrides_best`] can call it as a fast path and return
+/// a single [`Analysis`] directly, skipping the [`AnalysisList`]
+/// construction + `into_iter().next()` destructure on the hit path. The
+/// body of [`analyze_with_overrides`] still delegates to the same
+/// helper and wraps the result in `smallvec![hit]` so both entry points
+/// stay in lock-step — one source of truth for Layer 0 / Layer 2
+/// semantics, no drift risk.
+#[inline]
+fn lookup_layer_01(
+    word: &str,
+    overrides: Option<&overrides::OverrideStore>,
+    stripped: &str,
+) -> Option<Analysis> {
+    // ── Layer 0: user overrides (M8) ────────────────────────────────
+    //
+    // Runs AFTER normalization so vocalized surfaces (وَائِل) collapse to
+    // the same key as the bare form (وائل) and a single override entry
+    // catches both. Runs BEFORE Layer 2 (protected list) so the user's
+    // choice wins over the shipped seed corpus — this is the whole point
+    // of the layer: sovereign user authority over engine inference.
+    //
+    // The `is_empty` short-circuit keeps the hot path free on Universes
+    // without any overrides configured (the common case). When overrides
+    // are present, a single HashMap probe decides whether to short-circuit.
+    if let Some(store) = overrides {
+        if !store.is_empty() {
+            if let Some(o) = store.lookup(stripped) {
+                return Some(o.to_analysis(word));
+            }
+        }
+    }
+
+    // ── Layer 2: protected list ─────────────────────────────────────
+    if let Some(entry) = protected::lookup(stripped) {
+        return Some(entry.to_analysis(word));
+    }
+
+    None
+}
+
 /// Full five-layer public entry point, accepting an optional per-Universe
 /// [`overrides::OverrideStore`] that takes precedence over every other
 /// layer.
@@ -204,28 +254,14 @@ pub fn analyze_with_overrides(
         normalizer::Script::Arabic | normalizer::Script::PersianFamily => {}
     }
 
-    // ── Layer 0: user overrides (M8) ────────────────────────────────
+    // ── Layer 0 + Layer 2: user overrides + protected list ──────────
     //
-    // Runs AFTER normalization so vocalized surfaces (وَائِل) collapse to
-    // the same key as the bare form (وائل) and a single override entry
-    // catches both. Runs BEFORE Layer 2 (protected list) so the user's
-    // choice wins over the shipped seed corpus — this is the whole point
-    // of the layer: sovereign user authority over engine inference.
-    //
-    // The `is_empty` short-circuit keeps the hot path free on Universes
-    // without any overrides configured (the common case). When overrides
-    // are present, a single HashMap probe decides whether to short-circuit.
-    if let Some(store) = overrides {
-        if !store.is_empty() {
-            if let Some(o) = store.lookup(&norm.stripped) {
-                return smallvec![o.to_analysis(word)];
-            }
-        }
-    }
-
-    // ── Layer 2: protected list ─────────────────────────────────────
-    if let Some(entry) = protected::lookup(&norm.stripped) {
-        return smallvec![entry.to_analysis(word)];
+    // M9-hotpath (c) consolidated both short-circuit lookups into
+    // `lookup_layer_01` so this function and `analyze_with_overrides_best`
+    // share one source of truth. A hit returns a single-element
+    // SmallVec (inline storage, no heap alloc) and bypasses Layer 3+.
+    if let Some(hit) = lookup_layer_01(word, overrides, &norm.stripped) {
+        return smallvec![hit];
     }
 
     // ── Layer 3: generative index (FST-backed as of M3) ─────────────
@@ -468,6 +504,43 @@ pub fn analyze_with_overrides_best(
     word: &str,
     overrides: Option<&overrides::OverrideStore>,
 ) -> Analysis {
+    // ── M9-hotpath (c) fast path ────────────────────────────────────
+    //
+    // The FTS5 tokenizer (the primary caller of this function) always
+    // takes the single best Analysis, discarding any alternatives. That
+    // means when Layer 0 (user override) or Layer 2 (protected list)
+    // hits, the full pipeline produces exactly one Analysis → we pack
+    // it into a `smallvec![hit]` → the caller immediately destructures
+    // with `.into_iter().next()` → we throw the SmallVec away.
+    //
+    // Short-circuit before ever allocating the SmallVec stack frame.
+    // On a Layer 0 / Layer 2 hit we skip:
+    //   • the `AnalysisList` frame construction,
+    //   • the `into_iter().next()` destructure below.
+    //
+    // Cost: one extra `normalizer::normalize` call on Layer 3+ miss
+    // paths (the slow path double-normalizes). That's O(byte length) on
+    // strings averaging 5–10 bytes — well under the single FST probe
+    // the slow path would do anyway, and dwarfed by the mmap page-fault
+    // cost noted in § 38's regression analysis.
+    if !word.is_empty() {
+        let norm = normalizer::normalize(word);
+        // Only short-circuit for Arabic-family scripts. Latin / Hebrew /
+        // Other / Empty all need the full pipeline's script-specific
+        // return paths (Foreign Analysis, empty list), so we fall
+        // through and let `analyze_with_overrides` handle them
+        // canonically.
+        if matches!(
+            norm.script,
+            normalizer::Script::Arabic | normalizer::Script::PersianFamily
+        ) {
+            if let Some(hit) = lookup_layer_01(word, overrides, &norm.stripped) {
+                return hit;
+            }
+        }
+    }
+
+    // ── Slow path: full pipeline (Layer 3, 3b, 5 + non-Arabic) ──────
     let analyses = analyze_with_overrides(word, overrides);
     if let Some(best) = analyses.into_iter().next() {
         return best;
