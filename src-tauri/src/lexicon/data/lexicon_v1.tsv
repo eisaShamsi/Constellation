@@ -18,69 +18,113 @@ c:animal	Noun	ar:حيوان	de:Tier	en:animal	es:animal	fa:حیوان	fr:animal	
 c:apple	Noun	ar:تفاحة	de:Apfel	en:apple	es:manzana	fa:سیب	fr:pomme	he:תפוח	hi:सेब	ja:リンゴ,林檎	ko:사과	pt:maçã	ru:яблоко	tr:elma	ur:سیب	zh:苹果
 c:arm	Noun	ar:ذراع	de:Arm	en:arm	es:brazo	fa:بازو	fr:bras	he:זרוע	hi:बांह,भुजा	ja:腕	ko:팔	pt:braço	ru:рука	tr:kol	ur:بازو	zh:臂,胳膊
 c:baby	Noun	ar:رضيع,طفل	de:Baby,Säugling	en:baby	es:bebé	fa:نوزاد	fr:bébé	he:תינוק	hi:शिशु	ja:赤ちゃん,赤ん坊	ko:아기	pt:bebê	ru:младенец	tr:bebek	ur:شیرخوار	zh:婴儿,宝宝
+c:bad	Adjective	ar:سيئ	de:schlecht	en:bad	es:malo	fa:بد	fr:mauvais	he:רע	hi:बुरा,ख़राब	ja:悪い	ko:나쁜	pt:mau,ruim	ru:плохой	tr:kötü	ur:برا	zh:坏
+c:bag	Noun	ar:حقيبة,كيس	de:Tasche	en:bag	es:bolsa	fa:کیف,ساک	fr:sac	he:תיק,שקית	hi:थैला,बैग	ja:鞄,バッグ	ko:가방	pt:saco,bolsa	ru:сумка	tr:çanta	ur:تھیلا,بیگ	zh:袋,包
 c:beautiful	Adjective	ar:جميل	de:schön	en:beautiful	es:hermoso,bello	fa:زیبا	fr:beau,belle	he:יפה	hi:सुंदर	ja:美しい	ko:아름답다	pt:bonito,belo	ru:красивый	tr:güzel	ur:خوبصورت	zh:美丽
+c:bed	Noun	ar:سرير	de:Bett	en:bed	es:cama	fa:تخت,تختخواب	fr:lit	he:מיטה	hi:बिस्तर	ja:ベッド,寝床	ko:침대	pt:cama	ru:кровать	tr:yatak	ur:بستر	zh:床
 c:bee	Noun	ar:نحلة	de:Biene	en:bee	es:abeja	fa:زنبور	fr:abeille	he:דבורה	hi:मधुमक्खी	ja:蜂,ミツバチ	ko:벌,꿀벌	pt:abelha	ru:пчела	tr:arı	ur:شہد کی مکھی	zh:蜜蜂
 c:big	Adjective	ar:كبير	de:groß	en:big,large	es:grande	fa:بزرگ	fr:grand,grande	he:גדול	hi:बड़ा	ja:大きい	ko:크다	pt:grande	ru:большой	tr:büyük	ur:بڑا	zh:大
 c:bird	Noun	ar:طائر,طير	de:Vogel	en:bird	es:pájaro,ave	fa:پرنده	fr:oiseau	he:ציפור	hi:पक्षी,चिड़िया	ja:鳥	ko:새	pt:pássaro,ave	ru:птица	tr:kuş	ur:پرندہ,چڑیا	zh:鸟
+c:black	Adjective	ar:أسود	de:schwarz	en:black	es:negro	fa:سیاه,مشکی	fr:noir	he:שחור	hi:काला	ja:黒,黒い	ko:검은,검정	pt:preto,negro	ru:чёрный	tr:siyah,kara	ur:کالا	zh:黑,黑色
 c:blood	Noun	ar:دم	de:Blut	en:blood	es:sangre	fa:خون	fr:sang	he:דם	hi:खून,रक्त	ja:血	ko:피	pt:sangue	ru:кровь	tr:kan	ur:خون	zh:血
+c:blue	Adjective	ar:أزرق	de:blau	en:blue	es:azul	fa:آبی	fr:bleu	he:כחול	hi:नीला	ja:青,青い	ko:파란,푸른	pt:azul	ru:синий,голубой	tr:mavi	ur:نیلا	zh:蓝,蓝色
 c:body	Noun	ar:جسم,بدن	de:Körper	en:body	es:cuerpo	fa:بدن	fr:corps	he:גוף	hi:शरीर	ja:体,身体	ko:몸,신체	pt:corpo	ru:тело	tr:vücut,beden	ur:جسم	zh:身体,身
 c:bone	Noun	ar:عظم	de:Knochen	en:bone	es:hueso	fa:استخوان	fr:os	he:עצם	hi:हड्डी	ja:骨	ko:뼈	pt:osso	ru:кость	tr:kemik	ur:ہڈی	zh:骨,骨头
 c:book	Noun	ar:كتاب	de:Buch	en:book,books	es:libro	fa:کتاب	fr:livre,bouquin	he:ספר	hi:किताब,पुस्तक	ja:本	ko:책	pt:livro	ru:книга	tr:kitap	ur:کتاب	zh:书
+c:bottle	Noun	ar:زجاجة,قارورة	de:Flasche	en:bottle	es:botella	fa:بطری	fr:bouteille	he:בקבוק	hi:बोतल	ja:瓶,ボトル	ko:병	pt:garrafa	ru:бутылка	tr:şişe	ur:بوتل	zh:瓶子
 c:boy	Noun	ar:ولد,صبي	de:Junge,Knabe	en:boy	es:niño,chico	fa:پسر	fr:garçon	he:ילד,נער	hi:लड़का	ja:男の子,少年	ko:소년	pt:menino,garoto	ru:мальчик	tr:oğlan,erkek çocuk	ur:لڑکا	zh:男孩
 c:brain	Noun	ar:دماغ,مخ	de:Gehirn	en:brain	es:cerebro	fa:مغز	fr:cerveau	he:מוח	hi:मस्तिष्क,दिमाग	ja:脳	ko:뇌	pt:cérebro	ru:мозг	tr:beyin	ur:دماغ	zh:脑,大脑
 c:branch	Noun	ar:فرع,غصن	de:Ast,Zweig	en:branch	es:rama	fa:شاخه	fr:branche	he:ענף	hi:शाखा,डाली	ja:枝	ko:가지	pt:ramo,galho	ru:ветвь,ветка	tr:dal	ur:شاخ	zh:枝,树枝
 c:bread	Noun	ar:خبز	de:Brot	en:bread	es:pan	fa:نان	fr:pain	he:לחם	hi:रोटी	ja:パン	ko:빵	pt:pão	ru:хлеб	tr:ekmek	ur:روٹی	zh:面包
+c:breakfast	Noun	ar:فطور,إفطار	de:Frühstück	en:breakfast	es:desayuno	fa:صبحانه	fr:petit-déjeuner	he:ארוחת בוקר	hi:नाश्ता	ja:朝食,朝ごはん	ko:아침	pt:café da manhã	ru:завтрак	tr:kahvaltı	ur:ناشتہ	zh:早餐
 c:bridge	Noun	ar:جسر	de:Brücke	en:bridge	es:puente	fa:پل	fr:pont	he:גשר	hi:पुल	ja:橋	ko:다리	pt:ponte	ru:мост	tr:köprü	ur:پل	zh:桥
 c:brother	Noun	ar:أخ	de:Bruder	en:brother	es:hermano	fa:برادر	fr:frère	he:אח	hi:भाई	ja:兄,弟	ko:형제,형,동생	pt:irmão	ru:брат	tr:kardeş,erkek kardeş	ur:بھائی	zh:兄弟,哥哥,弟弟
+c:brown	Adjective	ar:بني	de:braun	en:brown	es:marrón,café	fa:قهوه‌ای	fr:brun,marron	he:חום	hi:भूरा	ja:茶色	ko:갈색	pt:marrom,castanho	ru:коричневый	tr:kahverengi	ur:بھورا	zh:棕,褐色
+c:butter	Noun	ar:زبدة	de:Butter	en:butter	es:mantequilla	fa:کره	fr:beurre	he:חמאה	hi:मक्खन	ja:バター	ko:버터	pt:manteiga	ru:масло	tr:tereyağı	ur:مکھن	zh:黄油
 c:butterfly	Noun	ar:فراشة	de:Schmetterling	en:butterfly	es:mariposa	fa:پروانه	fr:papillon	he:פרפר	hi:तितली	ja:蝶	ko:나비	pt:borboleta	ru:бабочка	tr:kelebek	ur:تتلی	zh:蝴蝶
 c:camel	Noun	ar:جمل,ناقة	de:Kamel	en:camel	es:camello	fa:شتر	fr:chameau	he:גמל	hi:ऊँट	ja:ラクダ	ko:낙타	pt:camelo	ru:верблюд	tr:deve	ur:اونٹ	zh:骆驼
 c:cat	Noun	ar:قط,قطة	de:Katze	en:cat	es:gato	fa:گربه	fr:chat,chatte	he:חתול	hi:बिल्ली	ja:猫	ko:고양이	pt:gato	ru:кошка,кот	tr:kedi	ur:بلی	zh:猫
+c:chair	Noun	ar:كرسي	de:Stuhl	en:chair	es:silla	fa:صندلی	fr:chaise	he:כיסא	hi:कुर्सी	ja:椅子	ko:의자	pt:cadeira	ru:стул	tr:sandalye	ur:کرسی	zh:椅子
+c:cheese	Noun	ar:جبن,جبنة	de:Käse	en:cheese	es:queso	fa:پنیر	fr:fromage	he:גבינה	hi:पनीर	ja:チーズ	ko:치즈	pt:queijo	ru:сыр	tr:peynir	ur:پنیر	zh:奶酪
 c:child	Noun	ar:طفل,ولد	de:Kind	en:child,children	es:niño,hijo	fa:بچه,کودک	fr:enfant	he:ילד	hi:बच्चा	ja:子供,子	ko:아이,어린이	pt:criança,filho	ru:ребёнок,дитя	tr:çocuk	ur:بچہ	zh:孩子,儿童
 c:city	Noun	ar:مدينة	de:Stadt	en:city	es:ciudad	fa:شهر	fr:ville	he:עיר	hi:शहर,नगर	ja:都市,街	ko:도시	pt:cidade	ru:город	tr:şehir,kent	ur:شہر	zh:城市
+c:clean	Adjective	ar:نظيف	de:sauber	en:clean	es:limpio	fa:تمیز,پاک	fr:propre	he:נקי	hi:साफ़	ja:清潔,きれい	ko:깨끗한	pt:limpo	ru:чистый	tr:temiz	ur:صاف	zh:干净
+c:clock	Noun	ar:ساعة	de:Uhr	en:clock	es:reloj	fa:ساعت	fr:horloge	he:שעון	hi:घड़ी	ja:時計	ko:시계	pt:relógio	ru:часы	tr:saat	ur:گھڑی	zh:钟
+c:clothes	Noun	ar:ملابس,ثياب	de:Kleidung,Kleider	en:clothes,clothing	es:ropa	fa:لباس	fr:vêtements	he:בגדים	hi:कपड़े	ja:服,衣服	ko:옷,의복	pt:roupa	ru:одежда	tr:giysi,kıyafet	ur:کپڑے	zh:衣服
 c:cloud	Noun	ar:سحابة,غيمة	de:Wolke	en:cloud	es:nube	fa:ابر	fr:nuage	he:ענן	hi:बादल	ja:雲	ko:구름	pt:nuvem	ru:облако,туча	tr:bulut	ur:بادل	zh:云
+c:coat	Noun	ar:معطف	de:Mantel	en:coat	es:abrigo	fa:پالتو	fr:manteau	he:מעיל	hi:कोट	ja:コート,外套	ko:외투,코트	pt:casaco	ru:пальто	tr:palto,ceket	ur:کوٹ	zh:外套,大衣
+c:coffee	Noun	ar:قهوة	de:Kaffee	en:coffee	es:café	fa:قهوه	fr:café	he:קפה	hi:कॉफ़ी	ja:コーヒー,珈琲	ko:커피	pt:café	ru:кофе	tr:kahve	ur:کافی	zh:咖啡
+c:cold	Adjective	ar:بارد	de:kalt	en:cold	es:frío	fa:سرد	fr:froid	he:קר	hi:ठंडा	ja:寒い,冷たい	ko:추운,차가운	pt:frio	ru:холодный	tr:soğuk	ur:ٹھنڈا	zh:冷
+c:computer	Noun	ar:حاسوب,كمبيوتر	de:Computer	en:computer	es:computadora,ordenador	fa:رایانه,کامپیوتر	fr:ordinateur	he:מחשב	hi:कंप्यूटर,संगणक	ja:コンピュータ,計算機	ko:컴퓨터	pt:computador	ru:компьютер	tr:bilgisayar	ur:کمپیوٹر	zh:计算机,电脑
 c:cow	Noun	ar:بقرة	de:Kuh	en:cow	es:vaca	fa:گاو	fr:vache	he:פרה	hi:गाय	ja:牛	ko:소,암소	pt:vaca	ru:корова	tr:inek	ur:گائے	zh:牛,母牛
+c:cup	Noun	ar:كوب,فنجان	de:Tasse,Becher	en:cup	es:taza	fa:فنجان,لیوان	fr:tasse,coupe	he:כוס,ספל	hi:कप,प्याला	ja:カップ,杯	ko:컵	pt:xícara,chávena	ru:чашка	tr:fincan,bardak	ur:کپ,پیالہ	zh:杯子
 c:date-fruit	Noun	ar:تمر,بلح	de:Dattel	en:date	es:dátil	fa:خرما	fr:datte	he:תמר	hi:खजूर	ja:ナツメヤシ	ko:대추야자	pt:tâmara	ru:финик	tr:hurma	ur:کھجور	zh:枣,椰枣
 c:daughter	Noun	ar:ابنة,بنت	de:Tochter	en:daughter	es:hija	fa:دختر	fr:fille	he:בת	hi:बेटी,पुत्री	ja:娘	ko:딸	pt:filha	ru:дочь	tr:kız	ur:بیٹی	zh:女儿
 c:day	Noun	ar:يوم	de:Tag	en:day	es:día	fa:روز	fr:jour	he:יום	hi:दिन	ja:日	ko:날	pt:dia	ru:день	tr:gün	ur:دن	zh:天
 c:desert	Noun	ar:صحراء	de:Wüste	en:desert	es:desierto	fa:بیابان,صحرا	fr:désert	he:מדבר	hi:रेगिस्तान,मरुस्थल	ja:砂漠	ko:사막	pt:deserto	ru:пустыня	tr:çöl	ur:صحرا,ریگستان	zh:沙漠
+c:dinner	Noun	ar:عشاء	de:Abendessen	en:dinner,supper	es:cena	fa:شام	fr:dîner	he:ארוחת ערב	hi:रात का खाना	ja:夕食,ディナー	ko:저녁	pt:jantar	ru:ужин	tr:akşam yemeği	ur:رات کا کھانا	zh:晚餐,晚饭
+c:dirty	Adjective	ar:قذر,وسخ	de:schmutzig	en:dirty	es:sucio	fa:کثیف	fr:sale	he:מלוכלך	hi:गंदा	ja:汚い	ko:더러운	pt:sujo	ru:грязный	tr:kirli	ur:گندا	zh:脏
 c:dog	Noun	ar:كلب	de:Hund	en:dog	es:perro	fa:سگ	fr:chien	he:כלב	hi:कुत्ता	ja:犬	ko:개	pt:cachorro,cão	ru:собака,пёс	tr:köpek	ur:کتا	zh:狗
 c:door	Noun	ar:باب	de:Tür	en:door	es:puerta	fa:در	fr:porte	he:דלת	hi:दरवाज़ा	ja:ドア,扉	ko:문	pt:porta	ru:дверь	tr:kapı	ur:دروازہ	zh:门
+c:dry	Adjective	ar:جاف	de:trocken	en:dry	es:seco	fa:خشک	fr:sec	he:יבש	hi:सूखा	ja:乾いた	ko:마른,건조한	pt:seco	ru:сухой	tr:kuru	ur:خشک	zh:干
 c:ear	Noun	ar:أذن	de:Ohr	en:ear,ears	es:oreja,oído	fa:گوش	fr:oreille	he:אוזן	hi:कान	ja:耳	ko:귀	pt:orelha,ouvido	ru:ухо	tr:kulak	ur:کان	zh:耳,耳朵
 c:earth	Noun	ar:أرض	de:Erde	en:earth,ground	es:tierra	fa:زمین	fr:terre	he:אדמה,ארץ	hi:पृथ्वी,धरती	ja:地球,大地	ko:지구,땅	pt:terra	ru:земля	tr:toprak,yer	ur:زمین	zh:地球,大地
+c:easy	Adjective	ar:سهل	de:einfach,leicht	en:easy	es:fácil	fa:آسان,ساده	fr:facile	he:קל	hi:आसान	ja:簡単,易しい	ko:쉬운	pt:fácil	ru:лёгкий,простой	tr:kolay	ur:آسان	zh:容易,简单
 c:eat	Verb	ar:أكل,يأكل	de:essen	en:eat,eats,ate	es:comer	fa:خوردن	fr:manger	he:לאכול	hi:खाना	ja:食べる	ko:먹다	pt:comer	ru:есть,кушать	tr:yemek	ur:کھانا	zh:吃
+c:egg	Noun	ar:بيضة,بيض	de:Ei	en:egg,eggs	es:huevo	fa:تخم مرغ	fr:œuf	he:ביצה	hi:अंडा	ja:卵,たまご	ko:달걀,계란	pt:ovo	ru:яйцо	tr:yumurta	ur:انڈا	zh:蛋,鸡蛋
+c:eight	Noun	ar:ثمانية	de:acht	en:eight	es:ocho	fa:هشت	fr:huit	he:שמונה	hi:आठ	ja:八,はち	ko:여덟,팔	pt:oito	ru:восемь	tr:sekiz	ur:آٹھ	zh:八
 c:elephant	Noun	ar:فيل	de:Elefant	en:elephant	es:elefante	fa:فیل	fr:éléphant	he:פיל	hi:हाथी	ja:象,ゾウ	ko:코끼리	pt:elefante	ru:слон	tr:fil	ur:ہاتھی	zh:象,大象
+c:empty	Adjective	ar:فارغ	de:leer	en:empty	es:vacío	fa:خالی	fr:vide	he:ריק	hi:खाली	ja:空,空っぽ	ko:빈	pt:vazio	ru:пустой	tr:boş	ur:خالی	zh:空
 c:eye	Noun	ar:عين	de:Auge	en:eye,eyes	es:ojo	fa:چشم	fr:œil,yeux	he:עין	hi:आंख,नेत्र	ja:目	ko:눈	pt:olho	ru:глаз	tr:göz	ur:آنکھ	zh:眼,眼睛
 c:face	Noun	ar:وجه	de:Gesicht	en:face	es:cara,rostro	fa:چهره,صورت	fr:visage,figure	he:פנים	hi:चेहरा,मुख	ja:顔	ko:얼굴	pt:rosto,cara	ru:лицо	tr:yüz,surat	ur:چہرہ	zh:脸,面
 c:family	Noun	ar:أسرة,عائلة	de:Familie	en:family	es:familia	fa:خانواده	fr:famille	he:משפחה	hi:परिवार	ja:家族	ko:가족	pt:família	ru:семья	tr:aile	ur:خاندان	zh:家庭,家
+c:fast	Adjective	ar:سريع	de:schnell	en:fast,quick	es:rápido	fa:سریع,تند	fr:rapide,vite	he:מהיר	hi:तेज़	ja:速い,早い	ko:빠른	pt:rápido	ru:быстрый	tr:hızlı	ur:تیز	zh:快
 c:father	Noun	ar:أب,والد	de:Vater	en:father,dad	es:padre,papá	fa:پدر	fr:père,papa	he:אב,אבא	hi:पिता,बाप	ja:父,お父さん	ko:아버지,아빠	pt:pai	ru:отец,папа	tr:baba,peder	ur:باپ,والد	zh:父亲,爸爸
+c:few	Adjective	ar:قليل	de:wenige	en:few	es:pocos	fa:کم,اندک	fr:peu	he:מעט	hi:कुछ,थोड़े	ja:少し,少ない	ko:적은	pt:poucos	ru:мало,немногие	tr:az,birkaç	ur:کم,چند	zh:少,几个
 c:field	Noun	ar:حقل	de:Feld	en:field	es:campo	fa:مزرعه,دشت	fr:champ	he:שדה	hi:खेत	ja:畑,田,野	ko:밭,들	pt:campo	ru:поле	tr:tarla,alan	ur:کھیت	zh:田,田地
 c:finger	Noun	ar:إصبع	de:Finger	en:finger	es:dedo	fa:انگشت	fr:doigt	he:אצבע	hi:उँगली	ja:指	ko:손가락	pt:dedo	ru:палец	tr:parmak	ur:انگلی	zh:手指
 c:fire	Noun	ar:نار	de:Feuer	en:fire	es:fuego	fa:آتش	fr:feu	he:אש	hi:आग	ja:火	ko:불	pt:fogo	ru:огонь	tr:ateş	ur:آگ	zh:火
 c:fish	Noun	ar:سمك,سمكة	de:Fisch	en:fish	es:pez,pescado	fa:ماهی	fr:poisson	he:דג	hi:मछली	ja:魚	ko:물고기,생선	pt:peixe	ru:рыба	tr:balık	ur:مچھلی	zh:鱼
+c:five	Noun	ar:خمسة	de:fünf	en:five	es:cinco	fa:پنج	fr:cinq	he:חמישה	hi:पांच	ja:五,ご	ko:다섯,오	pt:cinco	ru:пять	tr:beş	ur:پانچ	zh:五
 c:flower	Noun	ar:زهرة,وردة	de:Blume	en:flower	es:flor	fa:گل	fr:fleur	he:פרח	hi:फूल	ja:花	ko:꽃	pt:flor	ru:цветок	tr:çiçek	ur:پھول	zh:花
 c:food	Noun	ar:طعام	de:Essen,Nahrung	en:food	es:comida	fa:غذا	fr:nourriture,aliment	he:אוכל	hi:भोजन,खाना	ja:食べ物	ko:음식	pt:comida,alimento	ru:еда,пища	tr:yemek,gıda	ur:کھانا	zh:食物
 c:foot	Noun	ar:قدم	de:Fuß	en:foot,feet	es:pie	fa:پا	fr:pied	he:כף רגל	hi:पैर,पाँव	ja:足	ko:발	pt:pé	ru:нога,стопа	tr:ayak	ur:پاؤں	zh:脚
 c:forest	Noun	ar:غابة	de:Wald	en:forest	es:bosque	fa:جنگل	fr:forêt	he:יער	hi:जंगल,वन	ja:森,森林	ko:숲,삼림	pt:floresta	ru:лес	tr:orman	ur:جنگل	zh:森林
+c:fork	Noun	ar:شوكة	de:Gabel	en:fork	es:tenedor	fa:چنگال	fr:fourchette	he:מזלג	hi:कांटा	ja:フォーク	ko:포크	pt:garfo	ru:вилка	tr:çatal	ur:کانٹا	zh:叉子
+c:four	Noun	ar:أربعة	de:vier	en:four	es:cuatro	fa:چهار	fr:quatre	he:ארבעה	hi:चार	ja:四,よん	ko:넷,사	pt:quatro	ru:четыре	tr:dört	ur:چار	zh:四
 c:friend	Noun	ar:صديق	de:Freund,Freundin	en:friend	es:amigo,amiga	fa:دوست	fr:ami,amie	he:חבר	hi:दोस्त,मित्र	ja:友達,友人	ko:친구	pt:amigo,amiga	ru:друг,подруга	tr:arkadaş,dost	ur:دوست	zh:朋友
 c:fruit	Noun	ar:فاكهة,ثمرة	de:Frucht,Obst	en:fruit	es:fruta	fa:میوه	fr:fruit	he:פרי	hi:फल	ja:果物	ko:과일	pt:fruta	ru:фрукт,плод	tr:meyve	ur:پھل	zh:水果,果
+c:full	Adjective	ar:ممتلئ,كامل	de:voll	en:full	es:lleno	fa:پر	fr:plein	he:מלא	hi:भरा	ja:満ちた,いっぱい	ko:가득 찬	pt:cheio	ru:полный	tr:dolu	ur:بھرا ہوا	zh:满
 c:garden	Noun	ar:حديقة,بستان	de:Garten	en:garden	es:jardín	fa:باغ,باغچه	fr:jardin	he:גן	hi:बगीचा,उद्यान	ja:庭,庭園	ko:정원	pt:jardim	ru:сад	tr:bahçe	ur:باغ	zh:花园,园
 c:girl	Noun	ar:بنت,فتاة	de:Mädchen	en:girl	es:niña,chica	fa:دختر	fr:fille	he:ילדה,נערה	hi:लड़की	ja:女の子,少女	ko:소녀	pt:menina,garota	ru:девочка,девушка	tr:kız	ur:لڑکی	zh:女孩
 c:goat	Noun	ar:ماعز	de:Ziege	en:goat	es:cabra	fa:بز	fr:chèvre	he:עז	hi:बकरी	ja:山羊,ヤギ	ko:염소	pt:cabra	ru:коза	tr:keçi	ur:بکری	zh:山羊
 c:good	Adjective	ar:جيد,حسن	de:gut	en:good	es:bueno	fa:خوب	fr:bon,bonne	he:טוב	hi:अच्छा	ja:良い,いい	ko:좋다	pt:bom,boa	ru:хороший	tr:iyi	ur:اچھا	zh:好
 c:grape	Noun	ar:عنب	de:Traube,Weintraube	en:grape	es:uva	fa:انگور	fr:raisin	he:ענב	hi:अंगूर	ja:ブドウ	ko:포도	pt:uva	ru:виноград	tr:üzüm	ur:انگور	zh:葡萄
+c:gray	Adjective	ar:رمادي	de:grau	en:gray,grey	es:gris	fa:خاکستری	fr:gris	he:אפור	hi:धूसर,स्लेटी	ja:灰色,グレー	ko:회색	pt:cinza,cinzento	ru:серый	tr:gri	ur:خاکستری	zh:灰,灰色
+c:green	Adjective	ar:أخضر	de:grün	en:green	es:verde	fa:سبز	fr:vert	he:ירוק	hi:हरा	ja:緑,緑色	ko:초록,녹색	pt:verde	ru:зелёный	tr:yeşil	ur:ہرا,سبز	zh:绿,绿色
 c:hair	Noun	ar:شعر	de:Haar	en:hair	es:pelo,cabello	fa:مو	fr:cheveu,cheveux	he:שיער	hi:बाल	ja:髪,毛	ko:머리카락,털	pt:cabelo	ru:волосы	tr:saç	ur:بال	zh:头发,毛
 c:hand	Noun	ar:يد	de:Hand	en:hand,hands	es:mano	fa:دست	fr:main	he:יד	hi:हाथ	ja:手	ko:손	pt:mão	ru:рука	tr:el	ur:ہاتھ	zh:手
+c:happy	Adjective	ar:سعيد	de:glücklich,froh	en:happy	es:feliz,contento	fa:خوشحال,شاد	fr:heureux,content	he:שמח,מאושר	hi:खुश,प्रसन्न	ja:幸せ,嬉しい	ko:행복한,기쁜	pt:feliz,contente	ru:счастливый	tr:mutlu	ur:خوش	zh:快乐,开心
+c:hard-difficult	Adjective	ar:صعب	de:schwer,schwierig	en:hard,difficult	es:difícil	fa:سخت,دشوار	fr:difficile,dur	he:קשה	hi:कठिन,मुश्किल	ja:難しい	ko:어려운	pt:difícil	ru:трудный,сложный	tr:zor,güç	ur:مشکل,دشوار	zh:难
+c:hat	Noun	ar:قبعة	de:Hut	en:hat	es:sombrero	fa:کلاه	fr:chapeau	he:כובע	hi:टोपी	ja:帽子	ko:모자	pt:chapéu	ru:шляпа	tr:şapka	ur:ٹوپی	zh:帽子
 c:head	Noun	ar:رأس	de:Kopf,Haupt	en:head	es:cabeza	fa:سر	fr:tête	he:ראש	hi:सिर	ja:頭	ko:머리	pt:cabeça	ru:голова	tr:baş,kafa	ur:سر	zh:头
 c:hear	Verb	ar:سمع,يسمع	de:hören	en:hear,hears,heard	es:oír,escuchar	fa:شنیدن	fr:entendre	he:לשמוע	hi:सुनना	ja:聞く	ko:듣다	pt:ouvir	ru:слышать	tr:duymak	ur:سننا	zh:听
 c:heart	Noun	ar:قلب	de:Herz	en:heart	es:corazón	fa:قلب,دل	fr:cœur	he:לב	hi:दिल,हृदय	ja:心臓,心	ko:심장,마음	pt:coração	ru:сердце	tr:kalp,yürek	ur:دل	zh:心,心脏
+c:honey	Noun	ar:عسل	de:Honig	en:honey	es:miel	fa:عسل	fr:miel	he:דבש	hi:शहद	ja:蜂蜜	ko:꿀	pt:mel	ru:мёд	tr:bal	ur:شہد	zh:蜂蜜
 c:horse	Noun	ar:حصان,فرس	de:Pferd	en:horse	es:caballo	fa:اسب	fr:cheval	he:סוס	hi:घोड़ा	ja:馬	ko:말	pt:cavalo	ru:лошадь,конь	tr:at	ur:گھوڑا	zh:马
+c:hot	Adjective	ar:حار,ساخن	de:heiß	en:hot	es:caliente	fa:داغ,گرم	fr:chaud,brûlant	he:חם	hi:गरम	ja:熱い	ko:뜨거운	pt:quente	ru:горячий	tr:sıcak	ur:گرم	zh:热
 c:house	Noun	ar:بيت,منزل	de:Haus	en:house,home	es:casa	fa:خانه	fr:maison	he:בית	hi:घर	ja:家	ko:집	pt:casa	ru:дом	tr:ev	ur:گھر	zh:房子
+c:hundred	Noun	ar:مائة,مئة	de:hundert	en:hundred	es:cien,ciento	fa:صد	fr:cent	he:מאה	hi:सौ	ja:百,ひゃく	ko:백	pt:cem,cento	ru:сто	tr:yüz	ur:سو	zh:百
 c:husband	Noun	ar:زوج	de:Ehemann,Mann	en:husband	es:esposo,marido	fa:همسر,شوهر	fr:époux,mari	he:בעל	hi:पति	ja:夫	ko:남편	pt:esposo,marido	ru:муж	tr:eş,koca	ur:شوہر	zh:丈夫,老公
 c:idea	Noun	ar:فكرة	de:Idee	en:idea,ideas	es:idea	fa:ایده,فکر	fr:idée	he:רעיון	hi:विचार	ja:アイデア,考え	ko:생각,아이디어	pt:ideia	ru:идея	tr:fikir	ur:خیال	zh:想法,主意
 c:important	Adjective	ar:مهم	de:wichtig	en:important	es:importante	fa:مهم	fr:important,importante	he:חשוב	hi:महत्वपूर्ण	ja:重要	ko:중요하다	pt:importante	ru:важный	tr:önemli	ur:اہم	zh:重要
 c:insect	Noun	ar:حشرة	de:Insekt	en:insect	es:insecto	fa:حشره	fr:insecte	he:חרק	hi:कीट	ja:昆虫,虫	ko:곤충,벌레	pt:inseto	ru:насекомое	tr:böcek	ur:کیڑا	zh:昆虫
+c:juice	Noun	ar:عصير	de:Saft	en:juice	es:jugo,zumo	fa:آبمیوه	fr:jus	he:מיץ	hi:रस	ja:ジュース	ko:주스	pt:suco,sumo	ru:сок	tr:meyve suyu	ur:رس	zh:果汁
+c:key	Noun	ar:مفتاح	de:Schlüssel	en:key	es:llave	fa:کلید	fr:clé,clef	he:מפתח	hi:चाबी,कुंजी	ja:鍵	ko:열쇠	pt:chave	ru:ключ	tr:anahtar	ur:چابی	zh:钥匙
+c:knife	Noun	ar:سكين	de:Messer	en:knife	es:cuchillo	fa:چاقو,کارد	fr:couteau	he:סכין	hi:चाकू,छुरी	ja:ナイフ,包丁	ko:칼	pt:faca	ru:нож	tr:bıçak	ur:چاقو	zh:刀
 c:knowledge	Noun	ar:معرفة,علم	de:Wissen,Erkenntnis	en:knowledge,cognition	es:conocimiento	fa:دانش	fr:connaissance,savoir	he:ידע	hi:ज्ञान	ja:知識	ko:지식	pt:conhecimento	ru:знание	tr:bilgi	ur:علم	zh:知识
 c:lake	Noun	ar:بحيرة	de:See	en:lake	es:lago	fa:دریاچه	fr:lac	he:אגם	hi:झील	ja:湖	ko:호수	pt:lago	ru:озеро	tr:göl	ur:جھیل	zh:湖,湖泊
+c:lamp	Noun	ar:مصباح	de:Lampe	en:lamp	es:lámpara	fa:چراغ	fr:lampe	he:מנורה	hi:दीपक,लैंप	ja:ランプ,灯	ko:램프,등	pt:lâmpada	ru:лампа	tr:lamba	ur:چراغ	zh:灯
 c:language	Noun	ar:لغة,لسان	de:Sprache	en:language	es:idioma,lengua	fa:زبان	fr:langue	he:שפה	hi:भाषा	ja:言語	ko:언어	pt:língua	ru:язык	tr:dil	ur:زبان	zh:语言
 c:leaf	Noun	ar:ورقة	de:Blatt	en:leaf,leaves	es:hoja	fa:برگ	fr:feuille	he:עלה	hi:पत्ता,पत्ती	ja:葉,葉っぱ	ko:잎	pt:folha	ru:лист	tr:yaprak	ur:پتا	zh:叶,叶子
 c:learn	Verb	ar:تعلم,يتعلم	de:lernen	en:learn,learns,learned	es:aprender	fa:یاد گرفتن	fr:apprendre	he:ללמוד	hi:सीखना	ja:学ぶ	ko:배우다	pt:aprender	ru:учить,учиться	tr:öğrenmek	ur:سیکھنا	zh:学习
@@ -89,9 +133,15 @@ c:light	Noun	ar:نور,ضوء	de:Licht	en:light	es:luz	fa:نور,روشنایی	
 c:link	Noun	ar:رابط,صلة	de:Link,Verknüpfung	en:link,links	es:enlace,vínculo	fa:پیوند,لینک	fr:lien	he:קישור	hi:लिंक,कड़ी	ja:リンク	ko:링크	pt:link,elo	ru:ссылка,связь	tr:bağlantı,link	ur:لنک,رابطہ	zh:链接
 c:lion	Noun	ar:أسد	de:Löwe	en:lion	es:león	fa:شیر	fr:lion	he:אריה	hi:शेर,सिंह	ja:ライオン,獅子	ko:사자	pt:leão	ru:лев	tr:aslan	ur:شیر	zh:狮,狮子
 c:love	Noun	ar:حب,محبة	de:Liebe	en:love	es:amor	fa:عشق	fr:amour	he:אהבה	hi:प्रेम	ja:愛	ko:사랑	pt:amor	ru:любовь	tr:aşk	ur:محبت	zh:爱
+c:lunch	Noun	ar:غداء	de:Mittagessen	en:lunch	es:almuerzo	fa:ناهار	fr:déjeuner	he:ארוחת צהריים	hi:दोपहर का भोजन	ja:昼食,ランチ	ko:점심	pt:almoço	ru:обед	tr:öğle yemeği	ur:دوپہر کا کھانا	zh:午餐
 c:man	Noun	ar:رجل	de:Mann	en:man,men	es:hombre	fa:مرد	fr:homme	he:איש,גבר	hi:आदमी,पुरुष	ja:男,男性	ko:남자	pt:homem	ru:мужчина	tr:erkek,adam	ur:آدمی,مرد	zh:男人,男子
+c:many	Adjective	ar:كثير	de:viele	en:many	es:muchos	fa:بسیاری,خیلی	fr:beaucoup,nombreux	he:הרבה	hi:बहुत,अनेक	ja:多い,たくさん	ko:많은	pt:muitos	ru:много,многие	tr:çok,birçok	ur:بہت,کثیر	zh:许多,很多
+c:meal	Noun	ar:وجبة	de:Mahlzeit	en:meal	es:comida	fa:وعده غذایی	fr:repas	he:ארוחה	hi:भोजन	ja:食事	ko:식사	pt:refeição	ru:приём пищи,еда	tr:öğün,yemek	ur:کھانا	zh:餐,一餐
+c:meat	Noun	ar:لحم	de:Fleisch	en:meat	es:carne	fa:گوشت	fr:viande	he:בשר	hi:मांस	ja:肉	ko:고기	pt:carne	ru:мясо	tr:et	ur:گوشت	zh:肉
 c:memory	Noun	ar:ذاكرة,ذكرى	de:Erinnerung,Gedächtnis	en:memory	es:memoria,recuerdo	fa:حافظه,خاطره	fr:mémoire,souvenir	he:זיכרון	hi:स्मृति,याद	ja:記憶,思い出	ko:기억,추억	pt:memória,lembrança	ru:память,воспоминание	tr:hafıza,bellek,anı	ur:یاد,یادداشت	zh:记忆
+c:milk	Noun	ar:حليب,لبن	de:Milch	en:milk	es:leche	fa:شیر	fr:lait	he:חלב	hi:दूध	ja:牛乳,ミルク	ko:우유	pt:leite	ru:молоко	tr:süt	ur:دودھ	zh:牛奶
 c:mind	Noun	ar:عقل,ذهن	de:Geist,Verstand	en:mind	es:mente	fa:ذهن,عقل	fr:esprit	he:תודעה,שכל	hi:मन	ja:心,精神	ko:마음,정신	pt:mente	ru:ум,разум	tr:akıl,zihin	ur:ذہن,دماغ	zh:心智,思想
+c:mirror	Noun	ar:مرآة	de:Spiegel	en:mirror	es:espejo	fa:آینه	fr:miroir	he:מראה	hi:दर्पण,आईना	ja:鏡	ko:거울	pt:espelho	ru:зеркало	tr:ayna	ur:آئینہ	zh:镜子
 c:moon	Noun	ar:قمر	de:Mond	en:moon	es:luna	fa:ماه	fr:lune	he:ירח	hi:चंद्रमा,चांद	ja:月	ko:달	pt:lua	ru:луна	tr:ay	ur:چاند	zh:月亮
 c:mother	Noun	ar:أم,والدة	de:Mutter	en:mother,mom	es:madre,mamá	fa:مادر	fr:mère,maman	he:אם,אמא	hi:माँ,माता	ja:母,お母さん	ko:어머니,엄마	pt:mãe	ru:мать,мама	tr:anne,ana	ur:ماں,والدہ	zh:母亲,妈妈
 c:mountain	Noun	ar:جبل	de:Berg	en:mountain	es:montaña	fa:کوه	fr:montagne	he:הר	hi:पर्वत,पहाड़	ja:山	ko:산	pt:montanha,serra	ru:гора	tr:dağ	ur:پہاڑ	zh:山
@@ -102,60 +152,102 @@ c:neck	Noun	ar:عنق,رقبة	de:Hals	en:neck	es:cuello	fa:گردن	fr:cou	he:�
 c:neighbor	Noun	ar:جار	de:Nachbar	en:neighbor,neighbour	es:vecino	fa:همسایه	fr:voisin	he:שכן	hi:पड़ोसी	ja:隣人,近所の人	ko:이웃	pt:vizinho	ru:сосед	tr:komşu	ur:پڑوسی	zh:邻居
 c:new	Adjective	ar:جديد	de:neu	en:new	es:nuevo	fa:نو,جدید	fr:nouveau,nouvelle	he:חדש	hi:नया	ja:新しい	ko:새롭다	pt:novo	ru:новый	tr:yeni	ur:نیا	zh:新
 c:night	Noun	ar:ليل,ليلة	de:Nacht	en:night	es:noche	fa:شب	fr:nuit	he:לילה	hi:रात	ja:夜	ko:밤	pt:noite	ru:ночь	tr:gece	ur:رات	zh:夜
+c:nine	Noun	ar:تسعة	de:neun	en:nine	es:nueve	fa:نه	fr:neuf	he:תשעה	hi:नौ	ja:九,きゅう	ko:아홉,구	pt:nove	ru:девять	tr:dokuz	ur:نو	zh:九
 c:nose	Noun	ar:أنف	de:Nase	en:nose	es:nariz	fa:بینی,دماغ	fr:nez	he:אף	hi:नाक	ja:鼻	ko:코	pt:nariz	ru:нос	tr:burun	ur:ناک	zh:鼻,鼻子
 c:note	Noun	ar:ملاحظة,مذكرة	de:Notiz	en:note,notes	es:nota,apunte	fa:یادداشت	fr:note	he:הערה,פתק	hi:टिप्पणी,नोट	ja:メモ,ノート	ko:메모,노트	pt:nota,apontamento	ru:заметка,запись	tr:not	ur:نوٹ	zh:笔记
 c:now	Adverb	ar:الآن	de:jetzt	en:now	es:ahora	fa:اکنون,الان	fr:maintenant	he:עכשיו	hi:अब	ja:今	ko:지금	pt:agora	ru:сейчас,теперь	tr:şimdi	ur:ابھی,اب	zh:现在
 c:ocean	Noun	ar:محيط	de:Ozean	en:ocean	es:océano	fa:اقیانوس	fr:océan	he:אוקיינוס	hi:महासागर	ja:海洋,大洋	ko:대양,해양	pt:oceano	ru:океан	tr:okyanus	ur:بحر	zh:海洋,大洋
+c:oil	Noun	ar:زيت	de:Öl	en:oil	es:aceite	fa:روغن	fr:huile	he:שמן	hi:तेल	ja:油,オイル	ko:기름	pt:óleo	ru:масло	tr:yağ	ur:تیل	zh:油
+c:old	Adjective	ar:قديم,عجوز	de:alt	en:old	es:viejo,antiguo	fa:کهنه,پیر	fr:vieux,ancien	he:ישן,זקן	hi:पुराना,बूढ़ा	ja:古い,老いた	ko:오래된,늙은	pt:velho,antigo	ru:старый	tr:eski,yaşlı	ur:پرانا,بوڑھا	zh:老,旧
 c:olive	Noun	ar:زيتون	de:Olive	en:olive	es:aceituna,oliva	fa:زیتون	fr:olive	he:זית	hi:जैतून	ja:オリーブ	ko:올리브	pt:azeitona	ru:оливка,маслина	tr:zeytin	ur:زیتون	zh:橄榄
+c:one	Noun	ar:واحد	de:eins	en:one	es:uno	fa:یک	fr:un	he:אחד	hi:एक	ja:一,いち	ko:하나,일	pt:um	ru:один	tr:bir	ur:ایک	zh:一
+c:orange-color	Adjective	ar:برتقالي	de:orange	en:orange	es:naranja	fa:نارنجی	fr:orange	he:כתום	hi:नारंगी,संतरी	ja:オレンジ色,橙	ko:주황	pt:laranja	ru:оранжевый	tr:turuncu	ur:نارنجی	zh:橙色,橘色
+c:paper	Noun	ar:ورق,ورقة	de:Papier	en:paper	es:papel	fa:کاغذ	fr:papier	he:נייר	hi:कागज़	ja:紙	ko:종이	pt:papel	ru:бумага	tr:kâğıt	ur:کاغذ	zh:纸
 c:parent	Noun	ar:والد	de:Elternteil	en:parent,parents	es:padre,madre	fa:والد	fr:parent	he:הורה	hi:अभिभावक	ja:親	ko:부모	pt:pai,mãe	ru:родитель	tr:ebeveyn	ur:والد	zh:父母,家长
 c:peace	Noun	ar:سلام	de:Frieden	en:peace	es:paz	fa:صلح	fr:paix	he:שלום	hi:शांति	ja:平和	ko:평화	pt:paz	ru:мир	tr:barış	ur:امن	zh:和平
+c:pen	Noun	ar:قلم	de:Stift,Kugelschreiber	en:pen	es:bolígrafo,pluma	fa:خودکار,قلم	fr:stylo	he:עט	hi:कलम,पेन	ja:ペン	ko:펜	pt:caneta	ru:ручка	tr:kalem	ur:قلم	zh:笔
 c:person	Noun	ar:شخص,إنسان	de:Person,Mensch	en:person,people	es:persona	fa:شخص,فرد	fr:personne	he:אדם	hi:व्यक्ति	ja:人	ko:사람	pt:pessoa	ru:человек,личность	tr:kişi,şahıs	ur:شخص	zh:人,人员
+c:phone	Noun	ar:هاتف,تلفون	de:Telefon	en:phone,telephone	es:teléfono	fa:تلفن	fr:téléphone	he:טלפון	hi:फोन,टेलीफोन	ja:電話	ko:전화	pt:telefone	ru:телефон	tr:telefon	ur:فون,ٹیلیفون	zh:电话
+c:pink	Adjective	ar:وردي	de:rosa	en:pink	es:rosa,rosado	fa:صورتی	fr:rose	he:ורוד	hi:गुलाबी	ja:ピンク,桃色	ko:분홍	pt:rosa	ru:розовый	tr:pembe	ur:گلابی	zh:粉红,粉色
+c:plate	Noun	ar:صحن,طبق	de:Teller	en:plate	es:plato	fa:بشقاب	fr:assiette	he:צלחת	hi:थाली,प्लेट	ja:皿	ko:접시	pt:prato	ru:тарелка	tr:tabak	ur:پلیٹ	zh:盘子
+c:purple	Adjective	ar:بنفسجي,أرجواني	de:lila,violett	en:purple,violet	es:morado,púrpura	fa:بنفش	fr:violet,pourpre	he:סגול	hi:बैंगनी	ja:紫	ko:보라,자주	pt:roxo,púrpura	ru:фиолетовый	tr:mor	ur:جامنی	zh:紫,紫色
 c:question	Noun	ar:سؤال	de:Frage	en:question	es:pregunta	fa:سؤال,پرسش	fr:question	he:שאלה	hi:प्रश्न,सवाल	ja:質問	ko:질문	pt:pergunta	ru:вопрос	tr:soru	ur:سوال	zh:问题
 c:rabbit	Noun	ar:أرنب	de:Kaninchen,Hase	en:rabbit	es:conejo	fa:خرگوش	fr:lapin	he:ארנבת	hi:खरगोश	ja:ウサギ	ko:토끼	pt:coelho	ru:кролик,заяц	tr:tavşan	ur:خرگوش	zh:兔子
 c:rain	Noun	ar:مطر	de:Regen	en:rain	es:lluvia	fa:باران	fr:pluie	he:גשם	hi:बारिश,वर्षा	ja:雨	ko:비	pt:chuva	ru:дождь	tr:yağmur	ur:بارش	zh:雨
 c:read	Verb	ar:قرأ,يقرأ	de:lesen	en:read,reads	es:leer	fa:خواندن	fr:lire	he:לקרוא	hi:पढ़ना	ja:読む	ko:읽다	pt:ler	ru:читать	tr:okumak	ur:پڑھنا	zh:读
+c:red	Adjective	ar:أحمر	de:rot	en:red	es:rojo	fa:قرمز,سرخ	fr:rouge	he:אדום	hi:लाल	ja:赤,赤い	ko:빨간,붉은	pt:vermelho	ru:красный	tr:kırmızı	ur:لال,سرخ	zh:红,红色
 c:rice	Noun	ar:أرز	de:Reis	en:rice	es:arroz	fa:برنج	fr:riz	he:אורז	hi:चावल	ja:米,ご飯	ko:쌀,밥	pt:arroz	ru:рис	tr:pirinç	ur:چاول	zh:米,大米
+c:right	Adjective	ar:صحيح	de:richtig	en:right,correct	es:correcto	fa:درست,صحیح	fr:correct,juste	he:נכון	hi:सही	ja:正しい	ko:옳은,맞는	pt:correto,certo	ru:правильный	tr:doğru	ur:صحیح,درست	zh:对,正确
 c:river	Noun	ar:نهر	de:Fluss	en:river	es:río	fa:رودخانه	fr:fleuve,rivière	he:נהר	hi:नदी	ja:川,河	ko:강	pt:rio	ru:река	tr:nehir,ırmak	ur:دریا,ندی	zh:河,江
 c:road	Noun	ar:طريق	de:Straße,Weg	en:road	es:camino,carretera	fa:راه,جاده	fr:route,chemin	he:דרך,כביש	hi:सड़क,रास्ता	ja:道,道路	ko:길,도로	pt:estrada,caminho	ru:дорога	tr:yol	ur:سڑک,راستہ	zh:路,道路
 c:root	Noun	ar:جذر,أصل	de:Wurzel	en:root	es:raíz	fa:ریشه	fr:racine	he:שורש	hi:जड़,मूल	ja:根	ko:뿌리	pt:raiz	ru:корень	tr:kök	ur:جڑ	zh:根
 c:rose	Noun	ar:وردة	de:Rose	en:rose	es:rosa	fa:گل سرخ,رز	fr:rose	he:ורד	hi:गुलाब	ja:バラ	ko:장미	pt:rosa	ru:роза	tr:gül	ur:گلاب	zh:玫瑰
+c:sad	Adjective	ar:حزين	de:traurig	en:sad	es:triste	fa:غمگین,ناراحت	fr:triste	he:עצוב	hi:दुखी,उदास	ja:悲しい	ko:슬픈	pt:triste	ru:грустный,печальный	tr:üzgün	ur:اداس	zh:悲伤,伤心
+c:salt	Noun	ar:ملح	de:Salz	en:salt	es:sal	fa:نمک	fr:sel	he:מלח	hi:नमक	ja:塩	ko:소금	pt:sal	ru:соль	tr:tuz	ur:نمک	zh:盐
 c:sand	Noun	ar:رمل	de:Sand	en:sand	es:arena	fa:شن,ماسه	fr:sable	he:חול	hi:रेत,बालू	ja:砂	ko:모래	pt:areia	ru:песок	tr:kum	ur:ریت	zh:沙,沙子
 c:sea	Noun	ar:بحر	de:Meer,See	en:sea	es:mar	fa:دریا	fr:mer	he:ים	hi:समुद्र	ja:海	ko:바다	pt:mar	ru:море	tr:deniz	ur:سمندر	zh:海,海洋
 c:see	Verb	ar:رأى,يرى	de:sehen	en:see,sees,saw	es:ver	fa:دیدن	fr:voir	he:לראות	hi:देखना	ja:見る	ko:보다	pt:ver	ru:видеть	tr:görmek	ur:دیکھنا	zh:看
 c:seed	Noun	ar:بذرة	de:Samen	en:seed	es:semilla	fa:بذر,دانه	fr:graine,semence	he:זרע	hi:बीज	ja:種,種子	ko:씨,씨앗	pt:semente	ru:семя,зерно	tr:tohum	ur:بیج	zh:种子,籽
+c:seven	Noun	ar:سبعة	de:sieben	en:seven	es:siete	fa:هفت	fr:sept	he:שבעה	hi:सात	ja:七,なな	ko:일곱,칠	pt:sete	ru:семь	tr:yedi	ur:سات	zh:七
 c:shadow	Noun	ar:ظل	de:Schatten	en:shadow	es:sombra	fa:سایه	fr:ombre	he:צל	hi:छाया,परछाई	ja:影	ko:그림자	pt:sombra	ru:тень	tr:gölge	ur:سایہ	zh:影,影子
 c:sheep	Noun	ar:خروف,غنم	de:Schaf	en:sheep	es:oveja	fa:گوسفند	fr:mouton,brebis	he:כבש	hi:भेड़	ja:羊	ko:양	pt:ovelha,carneiro	ru:овца	tr:koyun	ur:بھیڑ	zh:羊,绵羊
+c:shoe	Noun	ar:حذاء	de:Schuh	en:shoe,shoes	es:zapato	fa:کفش	fr:chaussure,soulier	he:נעל	hi:जूता	ja:靴	ko:신발,구두	pt:sapato	ru:обувь,туфля	tr:ayakkabı	ur:جوتا	zh:鞋
+c:short	Adjective	ar:قصير	de:kurz	en:short	es:corto,bajo	fa:کوتاه	fr:court	he:קצר	hi:छोटा	ja:短い	ko:짧은	pt:curto,baixo	ru:короткий	tr:kısa	ur:مختصر	zh:短
 c:simple	Adjective	ar:بسيط	de:einfach	en:simple	es:simple,sencillo	fa:ساده	fr:simple	he:פשוט	hi:सरल	ja:簡単,シンプル	ko:간단하다	pt:simples	ru:простой	tr:basit	ur:سادہ	zh:简单
 c:sister	Noun	ar:أخت	de:Schwester	en:sister	es:hermana	fa:خواهر	fr:sœur	he:אחות	hi:बहन	ja:姉,妹	ko:자매,언니,누나,여동생	pt:irmã	ru:сестра	tr:kız kardeş	ur:بہن	zh:姐妹,姐姐,妹妹
+c:six	Noun	ar:ستة	de:sechs	en:six	es:seis	fa:شش	fr:six	he:שישה	hi:छह	ja:六,ろく	ko:여섯,육	pt:seis	ru:шесть	tr:altı	ur:چھ	zh:六
 c:skin	Noun	ar:جلد,بشرة	de:Haut	en:skin	es:piel	fa:پوست	fr:peau	he:עור	hi:त्वचा,चमड़ी	ja:肌,皮膚	ko:피부	pt:pele	ru:кожа	tr:deri,cilt	ur:جلد	zh:皮肤,皮
 c:sky	Noun	ar:سماء	de:Himmel	en:sky	es:cielo	fa:آسمان	fr:ciel	he:שמים	hi:आकाश,आसमान	ja:空	ko:하늘	pt:céu	ru:небо	tr:gök,gökyüzü	ur:آسمان	zh:天空
 c:sleep	Verb	ar:نام,ينام	de:schlafen	en:sleep,sleeps,slept	es:dormir	fa:خوابیدن	fr:dormir	he:לישון	hi:सोना	ja:寝る	ko:자다	pt:dormir	ru:спать	tr:uyumak	ur:سونا	zh:睡觉
+c:slow	Adjective	ar:بطيء	de:langsam	en:slow	es:lento	fa:آهسته,کند	fr:lent	he:איטי	hi:धीमा	ja:遅い	ko:느린	pt:lento	ru:медленный	tr:yavaş	ur:سست	zh:慢
+c:small	Adjective	ar:صغير	de:klein	en:small,little	es:pequeño	fa:کوچک	fr:petit	he:קטן	hi:छोटा	ja:小さい	ko:작은	pt:pequeno	ru:маленький	tr:küçük	ur:چھوٹا	zh:小
 c:snake	Noun	ar:ثعبان,حية	de:Schlange	en:snake	es:serpiente	fa:مار	fr:serpent	he:נחש	hi:साँप	ja:蛇,ヘビ	ko:뱀	pt:serpente,cobra	ru:змея	tr:yılan	ur:سانپ	zh:蛇
 c:snow	Noun	ar:ثلج	de:Schnee	en:snow	es:nieve	fa:برف	fr:neige	he:שלג	hi:बर्फ़,हिम	ja:雪	ko:눈	pt:neve	ru:снег	tr:kar	ur:برف	zh:雪
 c:son	Noun	ar:ابن	de:Sohn	en:son	es:hijo	fa:پسر	fr:fils	he:בן	hi:बेटा,पुत्र	ja:息子	ko:아들	pt:filho	ru:сын	tr:oğul	ur:بیٹا	zh:儿子
 c:speak	Verb	ar:تكلم,يتكلم	de:sprechen	en:speak,speaks,spoke	es:hablar	fa:صحبت کردن	fr:parler	he:לדבר	hi:बोलना	ja:話す	ko:말하다	pt:falar	ru:говорить	tr:konuşmak	ur:بولنا	zh:说
+c:spoon	Noun	ar:ملعقة	de:Löffel	en:spoon	es:cuchara	fa:قاشق	fr:cuillère	he:כף	hi:चम्मच	ja:スプーン,匙	ko:숟가락	pt:colher	ru:ложка	tr:kaşık	ur:چمچ	zh:勺子
 c:star	Noun	ar:نجم,نجمة	de:Stern	en:star,stars	es:estrella	fa:ستاره	fr:étoile	he:כוכב	hi:तारा,सितारा	ja:星	ko:별	pt:estrela	ru:звезда	tr:yıldız	ur:ستارہ	zh:星星
 c:stone	Noun	ar:حجر	de:Stein	en:stone	es:piedra	fa:سنگ	fr:pierre	he:אבן	hi:पत्थर	ja:石	ko:돌	pt:pedra	ru:камень	tr:taş	ur:پتھر	zh:石,石头
 c:storm	Noun	ar:عاصفة	de:Sturm	en:storm	es:tormenta	fa:طوفان	fr:tempête,orage	he:סערה	hi:तूफ़ान	ja:嵐	ko:폭풍	pt:tempestade	ru:буря,шторм	tr:fırtına	ur:طوفان	zh:风暴,暴风
+c:strong	Adjective	ar:قوي	de:stark	en:strong	es:fuerte	fa:قوی	fr:fort	he:חזק	hi:मज़बूत,बलवान	ja:強い	ko:강한	pt:forte	ru:сильный	tr:güçlü	ur:مضبوط	zh:强,强壮
 c:student	Noun	ar:طالب	de:Student	en:student	es:estudiante	fa:دانشجو	fr:étudiant	he:סטודנט	hi:छात्र	ja:学生	ko:학생	pt:estudante	ru:студент	tr:öğrenci	ur:طالبعلم	zh:学生
+c:sugar	Noun	ar:سكر	de:Zucker	en:sugar	es:azúcar	fa:شکر,قند	fr:sucre	he:סוכר	hi:चीनी,शक्कर	ja:砂糖	ko:설탕	pt:açúcar	ru:сахар	tr:şeker	ur:چینی	zh:糖
 c:sun	Noun	ar:شمس	de:Sonne	en:sun	es:sol	fa:خورشید,آفتاب	fr:soleil	he:שמש	hi:सूर्य,सूरज	ja:太陽	ko:해,태양	pt:sol	ru:солнце	tr:güneş	ur:سورج	zh:太阳
+c:table	Noun	ar:طاولة,مائدة	de:Tisch	en:table	es:mesa	fa:میز	fr:table	he:שולחן	hi:मेज़	ja:テーブル,机	ko:탁자,테이블	pt:mesa	ru:стол	tr:masa	ur:میز	zh:桌子
+c:tall	Adjective	ar:طويل	de:groß	en:tall	es:alto	fa:بلند	fr:grand	he:גבוה	hi:लंबा	ja:背が高い,高い	ko:키 큰	pt:alto	ru:высокий	tr:uzun,boylu	ur:لمبا	zh:高
+c:tea	Noun	ar:شاي	de:Tee	en:tea	es:té	fa:چای	fr:thé	he:תה	hi:चाय	ja:茶,お茶	ko:차	pt:chá	ru:чай	tr:çay	ur:چائے	zh:茶
 c:teacher	Noun	ar:معلم,أستاذ	de:Lehrer	en:teacher	es:profesor	fa:معلم	fr:enseignant,professeur	he:מורה	hi:शिक्षक	ja:先生	ko:선생님	pt:professor	ru:учитель	tr:öğretmen	ur:استاد	zh:老师
+c:ten	Noun	ar:عشرة	de:zehn	en:ten	es:diez	fa:ده	fr:dix	he:עשרה	hi:दस	ja:十,じゅう	ko:열,십	pt:dez	ru:десять	tr:on	ur:دس	zh:十
 c:think	Verb	ar:فكر,يفكر	de:denken	en:think,thinks,thought	es:pensar	fa:فکر کردن	fr:penser	he:לחשוב	hi:सोचना	ja:考える,思う	ko:생각하다	pt:pensar	ru:думать	tr:düşünmek	ur:سوچنا	zh:想,思考
+c:thousand	Noun	ar:ألف	de:tausend	en:thousand	es:mil	fa:هزار	fr:mille	he:אלף	hi:हज़ार	ja:千,せん	ko:천	pt:mil	ru:тысяча	tr:bin	ur:ہزار	zh:千
+c:three	Noun	ar:ثلاثة	de:drei	en:three	es:tres	fa:سه	fr:trois	he:שלושה	hi:तीन	ja:三,さん	ko:셋,삼	pt:três	ru:три	tr:üç	ur:تین	zh:三
 c:thunder	Noun	ar:رعد	de:Donner	en:thunder	es:trueno	fa:رعد,تندر	fr:tonnerre	he:רעם	hi:गरज,बादल गर्जन	ja:雷鳴	ko:천둥	pt:trovão	ru:гром	tr:gök gürültüsü	ur:گرج	zh:雷
 c:time	Noun	ar:وقت,زمن	de:Zeit	en:time	es:tiempo	fa:زمان	fr:temps	he:זמן	hi:समय	ja:時間	ko:시간	pt:tempo	ru:время	tr:zaman	ur:وقت	zh:时间
+c:tired	Adjective	ar:متعب	de:müde	en:tired	es:cansado	fa:خسته	fr:fatigué	he:עייף	hi:थका	ja:疲れた	ko:피곤한	pt:cansado	ru:усталый	tr:yorgun	ur:تھکا ہوا	zh:累,疲倦
 c:today	Adverb	ar:اليوم	de:heute	en:today	es:hoy	fa:امروز	fr:aujourd'hui	he:היום	hi:आज	ja:今日	ko:오늘	pt:hoje	ru:сегодня	tr:bugün	ur:آج	zh:今天
 c:tongue	Noun	ar:لسان	de:Zunge	en:tongue	es:lengua	fa:زبان	fr:langue	he:לשון	hi:जीभ	ja:舌	ko:혀	pt:língua	ru:язык	tr:dil	ur:زبان	zh:舌,舌头
 c:tooth	Noun	ar:سن,ضرس	de:Zahn	en:tooth,teeth	es:diente	fa:دندان	fr:dent	he:שן	hi:दांत	ja:歯	ko:이,치아	pt:dente	ru:зуб	tr:diş	ur:دانت	zh:牙,牙齿
 c:tree	Noun	ar:شجرة	de:Baum	en:tree,trees	es:árbol	fa:درخت	fr:arbre	he:עץ	hi:पेड़,वृक्ष	ja:木	ko:나무	pt:árvore	ru:дерево	tr:ağaç	ur:درخت	zh:树
 c:truth	Noun	ar:حق,حقيقة	de:Wahrheit	en:truth	es:verdad	fa:حقیقت	fr:vérité	he:אמת	hi:सत्य	ja:真実	ko:진실	pt:verdade	ru:правда,истина	tr:gerçek	ur:حقیقت	zh:真理
+c:two	Noun	ar:اثنان,اثنين	de:zwei	en:two	es:dos	fa:دو	fr:deux	he:שניים	hi:दो	ja:二,に	ko:둘,이	pt:dois	ru:два	tr:iki	ur:دو	zh:二,两
 c:voice	Noun	ar:صوت	de:Stimme	en:voice	es:voz	fa:صدا	fr:voix	he:קול	hi:आवाज़,स्वर	ja:声	ko:목소리	pt:voz	ru:голос	tr:ses	ur:آواز	zh:声音,嗓音
+c:warm	Adjective	ar:دافئ	de:warm	en:warm	es:cálido,caliente	fa:گرم	fr:chaud	he:חם	hi:गर्म	ja:暖かい,温かい	ko:따뜻한	pt:quente,morno	ru:тёплый	tr:sıcak,ılık	ur:گرم	zh:暖和,温暖
 c:water	Noun	ar:ماء	de:Wasser	en:water	es:agua	fa:آب	fr:eau	he:מים	hi:पानी	ja:水	ko:물	pt:água	ru:вода	tr:su	ur:پانی	zh:水
+c:weak	Adjective	ar:ضعيف	de:schwach	en:weak	es:débil	fa:ضعیف	fr:faible	he:חלש	hi:कमज़ोर	ja:弱い	ko:약한	pt:fraco	ru:слабый	tr:zayıf	ur:کمزور	zh:弱
+c:wet	Adjective	ar:مبلل,رطب	de:nass	en:wet	es:mojado	fa:خیس,تر	fr:mouillé,humide	he:רטוב	hi:गीला	ja:濡れた	ko:젖은	pt:molhado	ru:мокрый	tr:ıslak	ur:گیلا	zh:湿
 c:wheat	Noun	ar:قمح,حنطة	de:Weizen	en:wheat	es:trigo	fa:گندم	fr:blé,froment	he:חיטה	hi:गेहूँ	ja:小麦	ko:밀	pt:trigo	ru:пшеница	tr:buğday	ur:گندم	zh:小麦,麦
+c:white	Adjective	ar:أبيض	de:weiß	en:white	es:blanco	fa:سفید	fr:blanc	he:לבן	hi:सफ़ेद	ja:白,白い	ko:흰,하얀	pt:branco	ru:белый	tr:beyaz	ur:سفید	zh:白,白色
 c:wife	Noun	ar:زوجة	de:Ehefrau,Frau	en:wife	es:esposa,mujer	fa:همسر,زن	fr:épouse,femme	he:אישה	hi:पत्नी	ja:妻	ko:아내	pt:esposa,mulher	ru:жена	tr:eş,karı	ur:بیوی	zh:妻子,老婆
 c:wind	Noun	ar:ريح	de:Wind	en:wind	es:viento	fa:باد	fr:vent	he:רוח	hi:हवा,पवन	ja:風	ko:바람	pt:vento	ru:ветер	tr:rüzgar	ur:ہوا	zh:风
+c:window	Noun	ar:نافذة,شباك	de:Fenster	en:window	es:ventana	fa:پنجره	fr:fenêtre	he:חלון	hi:खिड़की	ja:窓	ko:창문	pt:janela	ru:окно	tr:pencere	ur:کھڑکی	zh:窗,窗户
+c:wine	Noun	ar:نبيذ,خمر	de:Wein	en:wine	es:vino	fa:شراب	fr:vin	he:יין	hi:शराब,मदिरा	ja:ワイン	ko:와인,포도주	pt:vinho	ru:вино	tr:şarap	ur:شراب	zh:葡萄酒,酒
 c:wolf	Noun	ar:ذئب	de:Wolf	en:wolf	es:lobo	fa:گرگ	fr:loup	he:זאב	hi:भेड़िया	ja:狼,オオカミ	ko:늑대	pt:lobo	ru:волк	tr:kurt	ur:بھیڑیا	zh:狼
 c:woman	Noun	ar:امرأة,سيدة	de:Frau	en:woman,women	es:mujer	fa:زن	fr:femme	he:אישה	hi:औरत,महिला	ja:女,女性	ko:여자	pt:mulher	ru:женщина	tr:kadın	ur:عورت,خاتون	zh:女人,女子
 c:work	Verb	ar:عمل,يعمل	de:arbeiten	en:work,works,worked	es:trabajar	fa:کار کردن	fr:travailler	he:לעבוד	hi:काम करना	ja:働く	ko:일하다	pt:trabalhar	ru:работать	tr:çalışmak	ur:کام کرنا	zh:工作
 c:world	Noun	ar:عالم,دنيا	de:Welt	en:world	es:mundo	fa:جهان,دنیا	fr:monde	he:עולם	hi:दुनिया,विश्व	ja:世界	ko:세계	pt:mundo	ru:мир	tr:dünya	ur:دنیا	zh:世界
 c:write	Verb	ar:كتب,يكتب	de:schreiben	en:write,writes,wrote,writing	es:escribir	fa:نوشتن	fr:écrire	he:לכתוב	hi:लिखना	ja:書く	ko:쓰다	pt:escrever	ru:писать	tr:yazmak	ur:لکھنا	zh:写
+c:wrong	Adjective	ar:خاطئ	de:falsch	en:wrong,incorrect	es:incorrecto,equivocado	fa:اشتباه,غلط	fr:faux,incorrect	he:לא נכון,שגוי	hi:ग़लत	ja:間違い,誤り	ko:틀린,잘못된	pt:errado,incorreto	ru:неправильный,ошибочный	tr:yanlış	ur:غلط	zh:错,错误
 c:year	Noun	ar:سنة,عام	de:Jahr	en:year,years	es:año	fa:سال	fr:an,année	he:שנה	hi:वर्ष,साल	ja:年	ko:년,해	pt:ano	ru:год	tr:yıl,sene	ur:سال	zh:年
+c:yellow	Adjective	ar:أصفر	de:gelb	en:yellow	es:amarillo	fa:زرد	fr:jaune	he:צהוב	hi:पीला	ja:黄色,黄色い	ko:노란,노랑	pt:amarelo	ru:жёлтый	tr:sarı	ur:زرد,پیلا	zh:黄,黄色
+c:young	Adjective	ar:شاب,صغير السن	de:jung	en:young	es:joven	fa:جوان	fr:jeune	he:צעיר	hi:जवान,युवा	ja:若い	ko:젊은,어린	pt:jovem	ru:молодой	tr:genç	ur:جوان	zh:年轻
+c:zero	Noun	ar:صفر	de:null	en:zero	es:cero	fa:صفر	fr:zéro	he:אפס	hi:शून्य	ja:ゼロ,零	ko:영,제로	pt:zero	ru:ноль	tr:sıfır	ur:صفر	zh:零
