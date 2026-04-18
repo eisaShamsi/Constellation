@@ -505,7 +505,8 @@
     "exemplifies": "نمونه",
     "generalizes": "تعمیم",
     "derivesFrom": "برگرفته",
-    "partOf": "بخشی"
+    "partOf": "بخشی",
+    "matchVia": "از طریق"
   },
   "layout": {
     "leftSidebar": "نوار کناری چپ",

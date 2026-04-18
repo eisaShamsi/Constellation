@@ -505,7 +505,8 @@
     "exemplifies": "مثال",
     "generalizes": "تعمیم",
     "derivesFrom": "ماخوذ",
-    "partOf": "حصہ"
+    "partOf": "حصہ",
+    "matchVia": "بذریعہ"
   },
   "layout": {
     "leftSidebar": "بایاں سائڈبار",

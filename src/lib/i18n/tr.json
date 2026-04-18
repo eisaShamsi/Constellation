@@ -505,7 +505,8 @@
     "exemplifies": "Örnekleyen",
     "generalizes": "Genelleyen",
     "derivesFrom": "Kaynaklanan",
-    "partOf": "Parçası"
+    "partOf": "Parçası",
+    "matchVia": "üzerinden"
   },
   "layout": {
     "leftSidebar": "Sol kenar çubuğu",

@@ -84,6 +84,16 @@ pub struct SearchResult {
     pub snippet: Option<String>,
     pub heading_breadcrumb: Option<Vec<String>>,
     pub modified: u64,
+    /// M13 — cross-lingual match badge.
+    ///
+    /// When the lexical search path (FTS5) surfaces a hit because a
+    /// translated lemma matched — not the user's original query — this
+    /// carries the bridge term so the UI can render a small "via {lemma}"
+    /// pill on the result card. `None` means the hit matched the source
+    /// lemma directly (same-language match), or the search path didn't
+    /// go through the Lexical Bridge at all (structured / tag / wikilink
+    /// / property queries never populate this).
+    pub match_via: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -777,8 +787,22 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
     // translations and synonyms. Otherwise we fall back to the original
     // prefix-match — that preserves today's behavior for proper nouns,
     // code, rare words, and anything outside our ~49-concept seed.
-    let fts_query = expanded_match_query(&normalized)
-        .unwrap_or_else(|| format!("{}*", normalized.replace('"', "")));
+    //
+    // M13 badge: when the expanded path fires, the returned
+    // `LexicalExpansion` also carries the set of non-source-language
+    // lemmas that could have caused a hit. For each returned row we
+    // scan the FTS5 snippet for a `<mark>…</mark>` whose contents
+    // matches one of those bridge terms — that's the lemma the UI
+    // renders as "via {lemma}".
+    let expansion = expanded_match_query(&normalized);
+    let fts_query = match &expansion {
+        Some(e) => e.match_expr.clone(),
+        None => format!("{}*", normalized.replace('"', "")),
+    };
+    let bridge_terms: &[String] = expansion
+        .as_ref()
+        .map(|e| e.bridge_terms_lower.as_slice())
+        .unwrap_or(&[]);
 
     let mut stmt = match conn.prepare(
         "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified,
@@ -811,6 +835,17 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
             "content".to_string()
         };
 
+        // M13: report "via {lemma}" only when a cross-language lemma
+        // was actually highlighted by FTS5. Title hits short-circuit —
+        // a filename match is never a translation event.
+        let match_via = if title_hit {
+            None
+        } else {
+            snippet
+                .as_deref()
+                .and_then(|s| find_match_via(s, bridge_terms))
+        };
+
         Ok(SearchResult {
             path: row.get(0)?,
             name,
@@ -820,38 +855,114 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
             snippet,
             match_type,
             heading_breadcrumb: None,
+            match_via,
         })
     }).ok();
 
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
 }
 
-/// Try to produce a cross-language FTS5 MATCH expression for `normalized`
-/// via the Lexical Bridge (M10 + M11-data).
+/// Output of `expanded_match_query` — the FTS5 MATCH expression plus
+/// the set of bridge terms used to surface "via {lemma}" badges.
 ///
-/// Returns `Some(expr)` only when expansion actually adds terms beyond
-/// the source lemma — detected by the presence of `" OR "` in the built
-/// expression. Otherwise returns `None` so `lexical_search` falls back
-/// to prefix matching.
+/// `bridge_terms_lower` holds only **non-source-language** lemmas
+/// (lowercased up-front so per-row snippet scans skip allocation).
+/// A query in English expands to en-plus-everything-else — we filter
+/// `En` out so "tree" matching a note containing "trees" (same lang,
+/// plural inflection) doesn't get badged as a translation. Only true
+/// cross-lingual hits show the badge.
+struct LexicalExpansion {
+    /// FTS5 MATCH clause, e.g. `"tree" OR "trees" OR "شجرة" OR "árbol"`.
+    match_expr: String,
+    /// Lowercased non-source-language lemmas from the expansion.
+    /// Empty when expansion only produced same-language terms
+    /// (`lexical_search` still takes the expanded path in that case
+    /// but no row can earn a badge).
+    bridge_terms_lower: Vec<String>,
+}
+
+/// Try to produce a cross-language FTS5 MATCH expression for `normalized`
+/// via the Lexical Bridge (M10 + M11-data), along with the bridge-term
+/// set for M13 badging.
+///
+/// Returns `Some(LexicalExpansion)` only when expansion actually adds
+/// terms beyond the source lemma — detected by the presence of `" OR "`
+/// in the built expression. Otherwise returns `None` so `lexical_search`
+/// falls back to prefix matching.
 ///
 /// That fallback matters: `expand_to_match_expr` happily returns a
 /// single-quoted lemma for in-corpus words that happen to have no
 /// translations yet, and a one-term exact-phrase match would *regress*
 /// recall versus today's `word*` prefix query. Requiring the " OR "
 /// bridge means we only take the expanded path when there's an actual
-/// cross-lingual win.
-fn expanded_match_query(normalized: &str) -> Option<String> {
-    let lang = crate::lexicon::detect_source_lang(normalized)?;
-    let expr = crate::lexicon::expand_to_match_expr(
+/// cross-lingual or cross-synonym win.
+fn expanded_match_query(normalized: &str) -> Option<LexicalExpansion> {
+    let source_lang = crate::lexicon::detect_source_lang(normalized)?;
+    let result = crate::lexicon::expand(
         normalized,
-        lang,
+        source_lang,
         &crate::lexicon::ExpansionOptions::default(),
-    )?;
-    if expr.contains(" OR ") {
-        Some(expr)
-    } else {
-        None
+    );
+    let match_expr = crate::lexicon::fts::build_match_expr(&result)?;
+    if !match_expr.contains(" OR ") {
+        return None;
     }
+    // Filter to cross-language terms only. Same-language expansion
+    // (plurals, inflections, in-language synonyms) stays in the MATCH
+    // clause so FTS5 finds it, but it doesn't earn a "via" badge —
+    // the user already knows their own language's word for it.
+    let bridge_terms_lower: Vec<String> = result
+        .flat_terms()
+        .into_iter()
+        .filter(|(lang, _)| *lang != source_lang)
+        .map(|(_, term)| term.to_lowercase())
+        .collect();
+    Some(LexicalExpansion {
+        match_expr,
+        bridge_terms_lower,
+    })
+}
+
+/// M13: scan an FTS5 snippet for the first `<mark>…</mark>` whose
+/// contents (case-folded) matches a bridge term. Returns the bridge
+/// term so the UI can render it as "via {lemma}".
+///
+/// `bridge_terms_lower` MUST be pre-lowercased — the scan does one
+/// `to_lowercase()` per marked region (typically 1–3 per snippet) and
+/// compares directly. Anchoring on `<mark>` tags (not raw substring)
+/// avoids false positives where a bridge term happens to appear in
+/// the unmarked context window around the real match.
+///
+/// Returns `None` when:
+///   - The snippet has no `<mark>` tags (no FTS hit, unreachable in
+///     practice — we're called only when `body_hit` is true).
+///   - None of the marked regions match a bridge term (the hit came
+///     via the source lemma itself — same-language match).
+///   - The caller passed an empty `bridge_terms_lower` (the expansion
+///     didn't produce cross-language terms, so no badge is possible).
+fn find_match_via(snippet: &str, bridge_terms_lower: &[String]) -> Option<String> {
+    if bridge_terms_lower.is_empty() {
+        return None;
+    }
+    const MARK_OPEN: &str = "<mark>";
+    const MARK_CLOSE: &str = "</mark>";
+    let mut cursor = 0;
+    while let Some(open_rel) = snippet[cursor..].find(MARK_OPEN) {
+        let content_start = cursor + open_rel + MARK_OPEN.len();
+        let tail = &snippet[content_start..];
+        let Some(close_rel) = tail.find(MARK_CLOSE) else {
+            break;
+        };
+        let marked = &tail[..close_rel];
+        let marked_lower = marked.to_lowercase();
+        for term in bridge_terms_lower {
+            if marked_lower == *term {
+                return Some(term.clone());
+            }
+        }
+        cursor = content_start + close_rel + MARK_CLOSE.len();
+    }
+    None
 }
 
 /// Structured filter search (properties, tags, wikilinks).
@@ -1158,6 +1269,7 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
             match_type: mt.clone(),
             snippet: None,
             heading_breadcrumb: None,
+            match_via: None,
         })
     }).ok();
 
@@ -1985,6 +2097,7 @@ fn semantic_search(conn: &Connection, query_embedding: &[f32], limit: u32) -> Ve
                     match_type: "semantic".to_string(),
                     snippet: None,
                     heading_breadcrumb: None,
+                    match_via: None,
                 }, sim));
             }
         }
@@ -2227,6 +2340,7 @@ fn search_titles(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult
             snippet: None,
             match_type: "title".to_string(),
             heading_breadcrumb: None,
+            match_via: None,
         })
     }).ok();
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
@@ -2257,6 +2371,7 @@ fn search_contents(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResu
             snippet: row.get(5).ok(),
             match_type: "content".to_string(),
             heading_breadcrumb: None,
+            match_via: None,
         })
     }).ok();
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
@@ -2285,6 +2400,7 @@ fn search_tags(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> 
             snippet: Some(tags_json),
             match_type: "tag".to_string(),
             heading_breadcrumb: None,
+            match_via: None,
         })
     }).ok();
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
@@ -2311,6 +2427,7 @@ fn search_properties(conn: &Connection, query: &str, limit: u32) -> Vec<SearchRe
             snippet: Some(props_json),
             match_type: "property".to_string(),
             heading_breadcrumb: None,
+            match_via: None,
         })
     }).ok();
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
@@ -2337,6 +2454,7 @@ fn search_wikilinks(conn: &Connection, query: &str, limit: u32) -> Vec<SearchRes
             snippet: Some(links_json),
             match_type: "wikilink".to_string(),
             heading_breadcrumb: None,
+            match_via: None,
         })
     }).ok();
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
@@ -2795,18 +2913,24 @@ mod tests_m12 {
     fn known_english_word_bridges_cross_lingually() {
         // "tree" is concept c:tree in lexicon_v1.tsv with rich
         // coverage across all 15 languages.
-        let expr = expanded_match_query("tree")
+        let exp = expanded_match_query("tree")
             .expect("tree must bridge — it's in the production corpus");
-        assert!(expr.contains(" OR "), "expected OR-joined expression, got {expr:?}");
+        assert!(
+            exp.match_expr.contains(" OR "),
+            "expected OR-joined expression, got {:?}",
+            exp.match_expr,
+        );
         // Spot-check that the Arabic translation actually made it in.
         assert!(
-            expr.contains("شجرة"),
-            "expected ar:شجرة in expansion, got {expr:?}"
+            exp.match_expr.contains("شجرة"),
+            "expected ar:شجرة in expansion, got {:?}",
+            exp.match_expr,
         );
         // And that the source lemma is preserved.
         assert!(
-            expr.contains("\"tree\""),
-            "expected source lemma 'tree' in expansion, got {expr:?}"
+            exp.match_expr.contains("\"tree\""),
+            "expected source lemma 'tree' in expansion, got {:?}",
+            exp.match_expr,
         );
     }
 
@@ -2814,12 +2938,17 @@ mod tests_m12 {
     fn known_arabic_word_bridges_to_english() {
         // Reverse direction — Arabic lemma should pull in English
         // plus other languages via the same concept node.
-        let expr = expanded_match_query("شجرة")
+        let exp = expanded_match_query("شجرة")
             .expect("شجرة must bridge — it's ar: on concept c:tree");
-        assert!(expr.contains(" OR "), "expected OR-joined expression, got {expr:?}");
         assert!(
-            expr.contains("\"tree\""),
-            "expected en:tree in expansion, got {expr:?}"
+            exp.match_expr.contains(" OR "),
+            "expected OR-joined expression, got {:?}",
+            exp.match_expr,
+        );
+        assert!(
+            exp.match_expr.contains("\"tree\""),
+            "expected en:tree in expansion, got {:?}",
+            exp.match_expr,
         );
     }
 
@@ -2829,9 +2958,8 @@ mod tests_m12 {
         // Some(Lang::En), but the lemma isn't in the corpus. Expansion
         // echoes only the source lemma → single-term expr → no " OR " →
         // we return None so the caller falls back to `quasar*`.
-        assert_eq!(
-            expanded_match_query("quasar"),
-            None,
+        assert!(
+            expanded_match_query("quasar").is_none(),
             "unknown words must NOT take the bridge — prefix fallback \
              preserves today's recall for out-of-corpus queries"
         );
@@ -2841,9 +2969,9 @@ mod tests_m12 {
     fn punctuation_only_returns_none() {
         // detect_source_lang returns None for strings with no
         // strong-script characters, so the whole bridge short-circuits.
-        assert_eq!(expanded_match_query("   !!!"), None);
-        assert_eq!(expanded_match_query(""), None);
-        assert_eq!(expanded_match_query("123"), None);
+        assert!(expanded_match_query("   !!!").is_none());
+        assert!(expanded_match_query("").is_none());
+        assert!(expanded_match_query("123").is_none());
     }
 
     #[test]
@@ -2851,7 +2979,201 @@ mod tests_m12 {
         // Any well-formed English word not on a concept returns None
         // and falls through to prefix matching. This is the common
         // case until M11-data scales up past 49 concepts.
-        assert_eq!(expanded_match_query("Constellation"), None);
-        assert_eq!(expanded_match_query("Anthropic"), None);
+        assert!(expanded_match_query("Constellation").is_none());
+        assert!(expanded_match_query("Anthropic").is_none());
+    }
+}
+
+// ─── M13 tests ────────────────────────────────────────────────────────────────
+//
+// `find_match_via` powers the cross-lingual result badge. It scans the
+// FTS5 `snippet()` output — an HTML fragment with `<mark>…</mark>` around
+// every matched token — and returns the first marked region whose text
+// is a known bridge term. These tests pin down three properties:
+//
+//   1. Only `<mark>`-anchored matches count. A bridge term that happens
+//      to appear in the unmarked context window is ignored — otherwise
+//      we'd badge results where the real hit was on the source lemma.
+//   2. Case is folded on both sides. FTS5 emits snippets with the
+//      document's original casing; bridge terms come from the corpus
+//      pre-lowercased by `expanded_match_query`.
+//   3. First mark wins. If a note happens to contain both a source-lang
+//      and a bridge-lang token, the first marked region decides the
+//      badge — deterministic, and the source case was already short-
+//      circuited by caller logic (title-hit test + same-lang filter in
+//      `expanded_match_query`).
+//
+// The `bridge_terms` tests on `LexicalExpansion` verify that the source
+// language is filtered out. That filter is what prevents "tree" matching
+// a note containing "trees" from earning a spurious "via trees" badge.
+
+#[cfg(test)]
+mod tests_m13 {
+    use super::{expanded_match_query, find_match_via};
+
+    #[test]
+    fn mark_containing_bridge_term_returns_it() {
+        // Baseline — the mark's text exactly equals a bridge term.
+        let snippet = "a note about <mark>شجرة</mark> in the garden";
+        let bridge = vec!["شجرة".to_string()];
+        assert_eq!(
+            find_match_via(snippet, &bridge),
+            Some("شجرة".to_string()),
+        );
+    }
+
+    #[test]
+    fn source_lemma_match_returns_none() {
+        // Only the source lemma is marked — no bridge term visible.
+        // The caller already filtered source-lang terms out of
+        // `bridge_terms_lower`, so the slice passed here contains only
+        // non-source languages. A marked region that doesn't match any
+        // of them means the hit came via the user's own lemma.
+        let snippet = "planting a <mark>tree</mark> today";
+        let bridge = vec!["شجرة".to_string(), "árbol".to_string()];
+        assert!(find_match_via(snippet, &bridge).is_none());
+    }
+
+    #[test]
+    fn first_mark_wins_when_multiple_bridges_present() {
+        // Two marks, both bridge terms. The earlier one decides the
+        // badge — keeps rendering deterministic across reruns.
+        let snippet = "<mark>شجرة</mark> and <mark>árbol</mark> mean the same";
+        let bridge = vec!["شجرة".to_string(), "árbol".to_string()];
+        assert_eq!(
+            find_match_via(snippet, &bridge),
+            Some("شجرة".to_string()),
+        );
+    }
+
+    #[test]
+    fn unmarked_bridge_occurrence_is_ignored() {
+        // The word "شجرة" appears in context but isn't inside `<mark>`.
+        // The real FTS match was on "tree" (the source lemma), so the
+        // badge must NOT fire — anchoring on `<mark>` is what makes
+        // this behavior correct.
+        let snippet = "planting a <mark>tree</mark> — شجرة in Arabic";
+        let bridge = vec!["شجرة".to_string()];
+        assert!(
+            find_match_via(snippet, &bridge).is_none(),
+            "bridge term outside <mark> must not earn a badge"
+        );
+    }
+
+    #[test]
+    fn case_is_folded_on_snippet_side() {
+        // FTS5 keeps the document's original casing inside `<mark>`.
+        // Bridge terms are pre-lowercased by `expanded_match_query`,
+        // so the scan lowercases the marked region before comparing.
+        let snippet = "the <mark>Árbol</mark> is old";
+        let bridge = vec!["árbol".to_string()];
+        assert_eq!(
+            find_match_via(snippet, &bridge),
+            Some("árbol".to_string()),
+        );
+    }
+
+    #[test]
+    fn empty_bridge_terms_returns_none_fast() {
+        // Common case when expansion only produced same-language
+        // synonyms: `bridge_terms_lower` is empty and no badge can
+        // ever fire. Early-out avoids the scan entirely.
+        let snippet = "a <mark>tree</mark> stands tall";
+        assert!(find_match_via(snippet, &[]).is_none());
+    }
+
+    #[test]
+    fn snippet_without_marks_returns_none() {
+        // Defensive — in practice we only call `find_match_via` when
+        // FTS5 returned a body hit, so there's always ≥1 `<mark>`. But
+        // if the snippet column was NULL or malformed, we must not panic.
+        let bridge = vec!["شجرة".to_string()];
+        assert!(find_match_via("", &bridge).is_none());
+        assert!(find_match_via("no marks here at all", &bridge).is_none());
+    }
+
+    #[test]
+    fn unterminated_mark_breaks_out_cleanly() {
+        // Malformed HTML — a `<mark>` without a closing tag. We break
+        // the loop at the open tag rather than scanning to EOF. No panic,
+        // no false positive.
+        let snippet = "a <mark>tree and more text with no close";
+        let bridge = vec!["tree".to_string()];
+        assert!(find_match_via(snippet, &bridge).is_none());
+    }
+
+    #[test]
+    fn partial_mark_content_match_does_not_badge() {
+        // The mark contains a bridge term as a substring but not as
+        // the whole marked region. Reject — the FTS match unit is the
+        // whole token, and badging a prefix would be incoherent.
+        let snippet = "the <mark>árbol-shaped</mark> pattern";
+        let bridge = vec!["árbol".to_string()];
+        assert!(
+            find_match_via(snippet, &bridge).is_none(),
+            "bridge term must be the full marked region, not a substring"
+        );
+    }
+
+    #[test]
+    fn english_expansion_excludes_english_from_bridge_terms() {
+        // `expanded_match_query("tree")` produces a MATCH expr with
+        // English inflections AND cross-lingual translations. The
+        // bridge_terms set must contain ONLY the cross-lingual side —
+        // otherwise a match on "trees" (plural) would earn a "via trees"
+        // badge, which is nonsense for an English-speaking user.
+        let exp = expanded_match_query("tree").expect("tree must bridge");
+        assert!(
+            !exp.bridge_terms_lower.is_empty(),
+            "expected cross-lingual bridge terms, got empty set"
+        );
+        for term in &exp.bridge_terms_lower {
+            assert!(
+                term != "tree" && term != "trees",
+                "English terms must be filtered from bridge_terms, found {:?}",
+                term,
+            );
+        }
+        // And the Arabic translation should be present.
+        assert!(
+            exp.bridge_terms_lower.iter().any(|t| t == "شجرة"),
+            "expected 'شجرة' in bridge_terms_lower, got {:?}",
+            exp.bridge_terms_lower,
+        );
+    }
+
+    #[test]
+    fn arabic_expansion_excludes_arabic_from_bridge_terms() {
+        // Reverse direction — Arabic source, English should appear in
+        // bridge_terms and Arabic lemmas should not.
+        let exp = expanded_match_query("شجرة").expect("شجرة must bridge");
+        for term in &exp.bridge_terms_lower {
+            assert!(
+                term != "شجرة",
+                "Arabic source must be filtered from bridge_terms, found {:?}",
+                term,
+            );
+        }
+        assert!(
+            exp.bridge_terms_lower.iter().any(|t| t == "tree"),
+            "expected 'tree' in bridge_terms_lower for Arabic source, got {:?}",
+            exp.bridge_terms_lower,
+        );
+    }
+
+    #[test]
+    fn bridge_terms_are_pre_lowercased() {
+        // `find_match_via` assumes `bridge_terms_lower` is already
+        // lowercased — it does `to_lowercase()` only on the snippet
+        // side, per row. Verify the contract holds at the source.
+        let exp = expanded_match_query("tree").expect("tree must bridge");
+        for term in &exp.bridge_terms_lower {
+            assert_eq!(
+                term.as_str(),
+                term.to_lowercase().as_str(),
+                "bridge term must be pre-lowercased, found mixed case: {:?}",
+                term,
+            );
+        }
     }
 }

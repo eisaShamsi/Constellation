@@ -505,7 +505,8 @@
     "exemplifies": "Illustre",
     "generalizes": "Généralise",
     "derivesFrom": "Dérive de",
-    "partOf": "Partie de"
+    "partOf": "Partie de",
+    "matchVia": "via"
   },
   "layout": {
     "leftSidebar": "Barre latérale gauche",

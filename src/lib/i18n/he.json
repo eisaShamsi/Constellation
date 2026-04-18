@@ -505,7 +505,8 @@
     "exemplifies": "ממחיש",
     "generalizes": "מכליל",
     "derivesFrom": "נגזר",
-    "partOf": "חלק"
+    "partOf": "חלק",
+    "matchVia": "דרך"
   },
   "layout": {
     "leftSidebar": "סרגל צד שמאלי",

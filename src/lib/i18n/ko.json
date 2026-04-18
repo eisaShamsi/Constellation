@@ -505,7 +505,8 @@
     "exemplifies": "예시",
     "generalizes": "일반화",
     "derivesFrom": "파생",
-    "partOf": "일부"
+    "partOf": "일부",
+    "matchVia": "경유"
   },
   "layout": {
     "leftSidebar": "왼쪽 사이드바",

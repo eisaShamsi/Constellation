@@ -505,7 +505,8 @@
     "exemplifies": "Иллюстрирует",
     "generalizes": "Обобщает",
     "derivesFrom": "Происходит от",
-    "partOf": "Часть"
+    "partOf": "Часть",
+    "matchVia": "через"
   },
   "layout": {
     "leftSidebar": "Левая панель",

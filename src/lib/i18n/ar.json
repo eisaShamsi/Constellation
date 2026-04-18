@@ -508,7 +508,8 @@
     "exemplifies": "يمثل",
     "generalizes": "يعمم",
     "derivesFrom": "مشتق من",
-    "partOf": "جزء من"
+    "partOf": "جزء من",
+    "matchVia": "عبر"
   },
   "layout": {
     "leftSidebar": "الشريط الأيسر",

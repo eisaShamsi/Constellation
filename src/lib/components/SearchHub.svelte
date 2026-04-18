@@ -456,6 +456,11 @@
 										<button class="sh-item" onclick={() => handleResultClick(r)} dir={detectDir(r.name)}>
 											<div class="sh-item-top">
 												<span class="sh-item-name">{@html highlightInText(r.name)}</span>
+												{#if r.match_via}
+													<span class="sh-match-via" dir={detectDir(r.match_via)} title="{$t('searchHub.matchVia')} {r.match_via}">
+														{$t('searchHub.matchVia')} {r.match_via}
+													</span>
+												{/if}
 												<span class="sh-item-lib">{r.library_name}</span>
 											</div>
 											{#if r.snippet}
@@ -491,6 +496,11 @@
 								<span class="sh-cat-badge" style:background={categoryColors[r.match_type] ?? '#94a3b8'}>{categoryIcons[r.match_type] ?? '?'}</span>
 							{/if}
 							<span class="sh-item-name">{@html highlightInText(r.name)}</span>
+							{#if r.match_via}
+								<span class="sh-match-via" dir={detectDir(r.match_via)} title="{$t('searchHub.matchVia')} {r.match_via}">
+									{$t('searchHub.matchVia')} {r.match_via}
+								</span>
+							{/if}
 							<span class="sh-wa-links" class:sh-wa-zero={rIncoming === 0}>
 								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
 								{rIncoming}
@@ -525,6 +535,11 @@
 											onclick={() => handleResultClick(r)} dir={detectDir(r.name)}>
 											<div class="sh-item-top">
 												<span class="sh-item-name">{@html highlightInText(r.name)}</span>
+												{#if r.match_via}
+													<span class="sh-match-via" dir={detectDir(r.match_via)} title="{$t('searchHub.matchVia')} {r.match_via}">
+														{$t('searchHub.matchVia')} {r.match_via}
+													</span>
+												{/if}
 												<span class="sh-item-lib">{r.library_name}</span>
 											</div>
 											{#if r.snippet}
@@ -696,6 +711,18 @@
 	.sh-item-top { display: flex; align-items: center; gap: 6px; }
 	.sh-item-name { font-size: 0.82rem; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sh-item-lib { font-size: 0.68rem; color: var(--accent); flex-shrink: 0; }
+	/* M13 — cross-lingual match badge: "via {lemma}". Rendered next to
+	   the result name when the hit came through a translation rather
+	   than the source lemma itself. Uses a subtle accent-tinted chip so
+	   it reads as metadata, not as the headline. `dir` is set on the
+	   span so Arabic / Hebrew lemmas render right-to-left regardless of
+	   the host row's direction. */
+	.sh-match-via {
+		font-size: 0.68rem; color: var(--text-muted); flex-shrink: 0;
+		padding: 1px 6px; border-radius: 8px;
+		background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+		max-width: 12ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
 	.sh-item-snippet {
 		font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4;

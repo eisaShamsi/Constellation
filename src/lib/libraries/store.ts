@@ -852,6 +852,17 @@ export interface ConstellationSearchResult {
 	snippet?: string;
 	heading_breadcrumb?: string[];
 	modified: number;
+	/**
+	 * M13 — cross-lingual match badge. Populated when the result was
+	 * found via a Lexical Bridge expansion to a language other than the
+	 * query's source language. Example: query "tree" matches an Arabic
+	 * note containing "شجرة" → `match_via: "شجرة"`. UI renders as
+	 * "via شجرة" next to the result title.
+	 *
+	 * Absent (undefined) when the hit was same-language, a title match,
+	 * or the expansion didn't produce cross-language terms.
+	 */
+	match_via?: string;
 }
 
 /** Initialize the search index (builds SQLite FTS5 database). */

@@ -505,7 +505,8 @@
     "exemplifies": "Veranschaulicht",
     "generalizes": "Verallgemeinert",
     "derivesFrom": "Abgeleitet von",
-    "partOf": "Teil von"
+    "partOf": "Teil von",
+    "matchVia": "über"
   },
   "layout": {
     "leftSidebar": "Linke Seitenleiste",

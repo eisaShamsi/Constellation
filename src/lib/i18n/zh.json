@@ -505,7 +505,8 @@
     "exemplifies": "例子",
     "generalizes": "概括",
     "derivesFrom": "源自",
-    "partOf": "一部分"
+    "partOf": "一部分",
+    "matchVia": "经由"
   },
   "layout": {
     "leftSidebar": "左侧边栏",

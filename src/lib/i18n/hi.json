@@ -505,7 +505,8 @@
     "exemplifies": "उदाहरण",
     "generalizes": "सामान्यीकरण",
     "derivesFrom": "निकला",
-    "partOf": "हिस्सा"
+    "partOf": "हिस्सा",
+    "matchVia": "के माध्यम से"
   },
   "layout": {
     "leftSidebar": "बायाँ साइडबार",
