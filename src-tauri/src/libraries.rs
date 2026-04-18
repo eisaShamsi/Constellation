@@ -1944,7 +1944,19 @@ fn stem_arabic_light10(word: &str) -> String {
 /// before M6, and search recall on them doesn't drop.
 fn process_arabic_word(word: &str) -> (String, String) {
     let display = normalize_arabic_display(word); // preserve ة أ إ آ ى
-    let analysis = crate::arabic::analyze_best(word);
+    // M8b: consult the active Universe's user-override store before
+    // routing through the rest of the engine. `Arc::clone` of the store
+    // is a refcount bump, ~5 ns — well within the FTS5 tokenizer budget.
+    // If the active Universe has no overrides authored (the overwhelmingly
+    // common case), we short-circuit to None so `analyze_with_overrides`
+    // doesn't bother probing an empty HashMap per token.
+    let store = crate::arabic::overrides::active();
+    let overrides_ref = if store.is_empty() {
+        None
+    } else {
+        Some(store.as_ref())
+    };
+    let analysis = crate::arabic::analyze_with_overrides_best(word, overrides_ref);
     let stem = if matches!(analysis.origin, crate::arabic::AnalysisOrigin::SurfaceHeuristic) {
         // Unknown word — preserve pre-M6 Light10 behaviour so recall on
         // previously-indexed surfaces does not regress.

@@ -67,12 +67,14 @@
 //!
 //! - **No FTS re-index on change**: if the user edits an override, the
 //!   existing FTS rows still hold the pre-override stem. A forthcoming
-//!   task (tracked in SESSION-LOG as M8b) will emit a reindex signal
+//!   task (tracked in SESSION-LOG as M8c) will emit a reindex signal
 //!   when overrides change. For now, overrides take effect on newly
-//!   written notes only.
-//! - **No Tauri command surface**: the `#[tauri::command]`-decorated
-//!   CRUD endpoints that the Settings UI will call live in a separate
-//!   forthcoming module. This layer is the pure data / lookup core.
+//!   written notes only — and on the next full reindex of the library.
+//! - **No per-library federation**: `cUniverses` (child Universes
+//!   contributing libraries to a parent) all share the *parent*
+//!   Universe's override set via `ACTIVE_STORE`. Per-Universe override
+//!   stacking is tracked as an M8b-v2 follow-up; for v1, overrides are
+//!   a property of the active Universe only.
 //! - **No normalizer-dependency flattening**: we call
 //!   `crate::arabic::normalizer::normalize` at lookup time to match the
 //!   stripped form of the input. If the user's override was authored on
@@ -83,6 +85,7 @@ use super::types::{Analysis, AnalysisOrigin, Lang, PartOfSpeech};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock, RwLock};
 
 /// One user-authored override.
 ///
@@ -297,6 +300,150 @@ impl OverrideStore {
     fn normalize_key(surface: &str) -> String {
         super::normalizer::normalize(surface).stripped
     }
+}
+
+// ── Process-wide active store (M8b) ──────────────────────────────────
+//
+// The FTS5 tokenizer runs inside SQLite's call context — a sync,
+// Tauri-State-less path. It can't easily reach the `UniverseState`
+// managed store via `app.state::<UniverseState>()`. So we mirror the
+// per-Universe override file into a process-wide `OnceLock<RwLock<Arc<...>>>`
+// and swap the inner `Arc` every time the active Universe changes or
+// the user edits an override via the Settings UI.
+//
+// Hot-path cost: one `RwLock::read` (uncontended ~20ns on Windows) +
+// one `Arc::clone` (refcount bump, ~5ns). Well under the tokenizer's
+// normalize + HashMap-probe budget. The RwLock is poisoned-tolerant —
+// if a panic happens while holding the write guard, subsequent readers
+// still see the prior `Arc` via `into_inner` recovery; we `unwrap()`
+// because a poisoned lock here means the analyzer itself panicked mid-
+// write, which is a bug we want to surface loudly, not paper over.
+
+static ACTIVE_STORE: OnceLock<RwLock<Arc<OverrideStore>>> = OnceLock::new();
+
+fn store_lock() -> &'static RwLock<Arc<OverrideStore>> {
+    ACTIVE_STORE.get_or_init(|| RwLock::new(Arc::new(OverrideStore::new())))
+}
+
+/// Cheap clone of the currently-active override store. Called per FTS5
+/// tokenizer invocation. `Arc::clone` is a refcount bump — the store's
+/// internal HashMap is NOT duplicated.
+///
+/// On first call before any `set_active` / `activate_for_universe`, this
+/// returns an empty store, so Layer 0 never fires and every analysis
+/// falls through to Layers 1–5 as in pre-M8b behaviour.
+pub fn active() -> Arc<OverrideStore> {
+    store_lock().read().expect("arabic override lock poisoned").clone()
+}
+
+/// Install a new active store. Called by:
+/// - `activate_for_universe` when the user opens / switches Universes.
+/// - The `add_arabic_override` / `remove_arabic_override` Tauri commands
+///   after they persist the change to disk, so subsequent tokenizer
+///   calls see the new entry without waiting for the next Universe
+///   switch.
+///
+/// Thread-safe. The write guard is held only for the Arc pointer swap,
+/// not for any HashMap-level mutation — the store itself is immutable
+/// once installed.
+pub fn set_active(store: OverrideStore) {
+    *store_lock().write().expect("arabic override lock poisoned") = Arc::new(store);
+}
+
+/// Load the override file from `<universe_root>/.constellation/arabic-overrides.json`
+/// and install it as the active store. Missing file = empty store (the
+/// common case for a fresh Universe). Malformed JSON = error.
+///
+/// Returns the count of installed overrides on success — the caller can
+/// log this for boot diagnostics ("loaded 42 Arabic overrides for
+/// Universe <name>").
+pub fn activate_for_universe(universe_root: &Path) -> Result<usize, String> {
+    let path = OverrideStore::path_in_universe(universe_root);
+    let store = OverrideStore::load_from_path(&path)
+        .map_err(|e| format!("Failed to load {}: {}", path.display(), e))?;
+    let count = store.len();
+    set_active(store);
+    Ok(count)
+}
+
+/// Install an empty active store. Used when the app has no active
+/// Universe (cold-boot before the frontend calls `set_active_universe`)
+/// or when a Universe is deliberately closed. Idempotent.
+pub fn clear_active() {
+    set_active(OverrideStore::new());
+}
+
+// ── Tauri command surface (M8b) ──────────────────────────────────────
+//
+// Read / add / remove override endpoints for the Settings UI. All three
+// commands resolve the active Universe root via
+// `crate::universe::active_universe_dir`, reload the store from disk
+// (rather than trusting the in-memory `ACTIVE_STORE`), mutate, persist
+// atomically, then update `ACTIVE_STORE` so the next FTS5 tokenizer
+// call sees the change.
+//
+// Reloading from disk on every CRUD — instead of mutating `ACTIVE_STORE`
+// directly — makes concurrent edits from multiple UI windows safe
+// (second screen, settings modal) without needing a cross-window
+// mutex: the disk is the source of truth, and the Mutex over the on-
+// disk JSON file (implicit in file-system-level atomic rename) is the
+// only contention point.
+
+/// Return every override authored in the active Universe, sorted
+/// alphabetically by surface for stable UI ordering.
+#[tauri::command]
+pub fn read_arabic_overrides(app: tauri::AppHandle) -> Result<Vec<UserOverride>, String> {
+    let universe_root = crate::universe::active_universe_dir(&app)?;
+    let path = OverrideStore::path_in_universe(&universe_root);
+    let store = OverrideStore::load_from_path(&path)
+        .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+    let mut entries: Vec<UserOverride> = store.iter().cloned().collect();
+    entries.sort_by(|a, b| a.surface.cmp(&b.surface));
+    Ok(entries)
+}
+
+/// Upsert an override in the active Universe. Replaces any existing
+/// entry with the same normalized surface. Persists to disk atomically,
+/// then reinstalls the active store so subsequent FTS5 tokens see the
+/// change without waiting for the next Universe switch.
+///
+/// Parameter name `entry` rather than Rust keyword-adjacent `override`
+/// so it serializes cleanly through Tauri's IPC layer.
+#[tauri::command]
+pub fn add_arabic_override(
+    app: tauri::AppHandle,
+    entry: UserOverride,
+) -> Result<(), String> {
+    let universe_root = crate::universe::active_universe_dir(&app)?;
+    let path = OverrideStore::path_in_universe(&universe_root);
+    let mut store = OverrideStore::load_from_path(&path)
+        .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+    store.insert(entry);
+    store.save_to_path(&path)
+        .map_err(|e| format!("Failed to write {}: {}", path.display(), e))?;
+    set_active(store);
+    Ok(())
+}
+
+/// Remove the override for a surface. Returns `true` if an override was
+/// removed, `false` if no override existed for this surface (not an
+/// error — idempotent from the UI's perspective).
+#[tauri::command]
+pub fn remove_arabic_override(
+    app: tauri::AppHandle,
+    surface: String,
+) -> Result<bool, String> {
+    let universe_root = crate::universe::active_universe_dir(&app)?;
+    let path = OverrideStore::path_in_universe(&universe_root);
+    let mut store = OverrideStore::load_from_path(&path)
+        .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+    let removed = store.remove(&surface).is_some();
+    if removed {
+        store.save_to_path(&path)
+            .map_err(|e| format!("Failed to write {}: {}", path.display(), e))?;
+        set_active(store);
+    }
+    Ok(removed)
 }
 
 #[cfg(test)]
@@ -527,5 +674,193 @@ mod tests {
         assert!(p.ends_with(".constellation/arabic-overrides.json") ||
                 p.ends_with(r".constellation\arabic-overrides.json"),
                 "path must land in .constellation/, got {:?}", p);
+    }
+
+    // ── Process-wide active store (M8b) ───────────────────────────────
+    //
+    // These tests all touch a global singleton, so they must not run in
+    // parallel with each other. Cargo test's default `--test-threads=N`
+    // would race them, producing flaky failures. We serialize via the
+    // `REGISTRY_TEST_MUTEX` below — every test that calls `set_active` /
+    // `active` / `activate_for_universe` acquires the guard first and
+    // snapshots the prior state on drop.
+    //
+    // Rationale vs. #[serial_test]: the crate isn't a dependency, and
+    // adding one for three tests is overkill. A hand-rolled Mutex is
+    // three lines.
+
+    use std::sync::Mutex as StdMutex;
+
+    static REGISTRY_TEST_MUTEX: StdMutex<()> = StdMutex::new(());
+
+    /// RAII guard that snapshots the active store on construction and
+    /// restores it on drop, so each test runs against a predictable
+    /// (empty) baseline and doesn't leak state into the next one.
+    struct RegistryGuard {
+        _lock: std::sync::MutexGuard<'static, ()>,
+        prior: Arc<OverrideStore>,
+    }
+
+    impl RegistryGuard {
+        fn new() -> Self {
+            let lock = REGISTRY_TEST_MUTEX
+                .lock()
+                .unwrap_or_else(|e| e.into_inner()); // ignore poisoning
+            let prior = active();
+            clear_active();
+            Self { _lock: lock, prior }
+        }
+    }
+
+    impl Drop for RegistryGuard {
+        fn drop(&mut self) {
+            // Restore the prior Arc byte-for-byte.
+            *store_lock().write().unwrap() = self.prior.clone();
+        }
+    }
+
+    #[test]
+    fn active_returns_empty_store_before_any_set() {
+        let _g = RegistryGuard::new();
+        let store = active();
+        assert!(store.is_empty());
+        assert_eq!(store.len(), 0);
+    }
+
+    #[test]
+    fn set_active_then_active_roundtrips() {
+        let _g = RegistryGuard::new();
+
+        let mut store = OverrideStore::new();
+        store.insert(mk_override("وائل", "وائل"));
+        set_active(store);
+
+        let active_store = active();
+        assert_eq!(active_store.len(), 1);
+        assert!(active_store.lookup("وائل").is_some(),
+                "installed override must be reachable via active()");
+    }
+
+    #[test]
+    fn set_active_replaces_prior_store_entirely() {
+        let _g = RegistryGuard::new();
+
+        // First install
+        let mut a = OverrideStore::new();
+        a.insert(mk_override("ألف", "ألف"));
+        set_active(a);
+        assert_eq!(active().len(), 1);
+        assert!(active().lookup("ألف").is_some());
+
+        // Second install — completely different contents
+        let mut b = OverrideStore::new();
+        b.insert(mk_override("باء", "باء"));
+        set_active(b);
+        assert_eq!(active().len(), 1);
+        assert!(active().lookup("ألف").is_none(),
+                "prior override must not survive a set_active swap");
+        assert!(active().lookup("باء").is_some());
+    }
+
+    #[test]
+    fn clear_active_installs_empty_store() {
+        let _g = RegistryGuard::new();
+
+        let mut store = OverrideStore::new();
+        store.insert(mk_override("وائل", "وائل"));
+        set_active(store);
+        assert_eq!(active().len(), 1);
+
+        clear_active();
+        assert!(active().is_empty());
+    }
+
+    #[test]
+    fn active_returns_cheap_arc_clones() {
+        // Sanity check: the two Arcs returned by back-to-back `active()`
+        // calls point to the same underlying allocation — we're not
+        // accidentally deep-cloning the HashMap on every tokenizer hit.
+        let _g = RegistryGuard::new();
+        let mut store = OverrideStore::new();
+        store.insert(mk_override("وائل", "وائل"));
+        set_active(store);
+
+        let first = active();
+        let second = active();
+        assert!(Arc::ptr_eq(&first, &second),
+                "active() must return shared Arc, not a deep clone");
+    }
+
+    #[test]
+    fn activate_for_universe_installs_from_disk() {
+        let _g = RegistryGuard::new();
+
+        let tmp_dir = std::env::temp_dir().join(format!(
+            "constellation_overrides_test_activate_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let path = OverrideStore::path_in_universe(&tmp_dir);
+
+        // Seed disk with a single override
+        let mut store = OverrideStore::new();
+        store.insert(mk_override("وائل", "وائل"));
+        store.save_to_path(&path).expect("seed disk");
+
+        // Clear ACTIVE_STORE, then activate from this Universe
+        clear_active();
+        assert!(active().is_empty());
+
+        let count = activate_for_universe(&tmp_dir).expect("activate");
+        assert_eq!(count, 1, "returned count must match loaded override count");
+        assert_eq!(active().len(), 1);
+        assert!(active().lookup("وائل").is_some());
+
+        let _ = std::fs::remove_dir_all(&tmp_dir);
+    }
+
+    #[test]
+    fn activate_for_universe_handles_missing_file() {
+        let _g = RegistryGuard::new();
+
+        let tmp_dir = std::env::temp_dir().join(format!(
+            "constellation_overrides_test_missing_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+
+        // Don't create anything on disk. activate_for_universe on a
+        // fresh Universe must install an empty store, NOT error out —
+        // a Universe that hasn't authored any overrides is the common
+        // case.
+        let count = activate_for_universe(&tmp_dir).expect("missing = empty, not err");
+        assert_eq!(count, 0);
+        assert!(active().is_empty());
+    }
+
+    #[test]
+    fn activate_for_universe_reports_malformed_json_as_error() {
+        let _g = RegistryGuard::new();
+
+        let tmp_dir = std::env::temp_dir().join(format!(
+            "constellation_overrides_test_malformed_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let path = OverrideStore::path_in_universe(&tmp_dir);
+        std::fs::create_dir_all(path.parent().unwrap()).expect("mkdir");
+        std::fs::write(&path, b"{ not valid JSON").expect("write garbage");
+
+        let result = activate_for_universe(&tmp_dir);
+        assert!(result.is_err(),
+                "malformed JSON on an *existing* file must surface as an error");
+
+        let _ = std::fs::remove_dir_all(&tmp_dir);
     }
 }

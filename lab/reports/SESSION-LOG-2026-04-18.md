@@ -2,7 +2,7 @@
 
 ## Headline
 
-**M3 + M3-baker + M1g/M1h + M5 + M6 + M7 + M8 landed.** First: `GenerativeIndex` (HashMap, ~40 MB projected at 7K roots) swapped for `GenerativeFst` (BurntSushi FST, prefix-compressed, mmap-ready). Second: the compiled FST is now persisted to the user's cache directory on first launch and reloaded on subsequent launches via `GenerativeFst::from_bytes` — the cold/warm startup path divergence that M9 ("50 ms analyzer cold-start") measures against. Third: the protected list got its architectural rewrite — `const SEED: &[...]` (200 hand-picked entries, 340 lines of Rust) replaced with `include_str!("protected_seed.tsv")` + a 3-column TSV (`surface<TAB>category<TAB>origin_lang`) now holding **1,196 unique entries** across proper nouns (395), places (275), loanwords (455), and function words (71). Fourth: the **M5 regression corpus** — a 502-case held-out test set in `regression_cases.tsv` + a `cfg(test)`-gated `regression.rs` harness that feeds every row through `analyze_best` and asserts origin / surface / (optionally) lemma / root. Covers all three active origin layers (ProtectedList, GenerativeFst, SurfaceHeuristic) across 28 Arabic roots, ~80 cascade surfaces, and 45 foreign (Latin-script) words. Fifth: **M6** — the FTS5 Arabic stemming path in `libraries.rs::process_arabic_word` now routes through `arabic::analyze_best`. Every Arabic token in every note in every Universe now flows through the five-layer engine; Light10 is retained only as the graceful `SurfaceHeuristic` fallback so unknown words don't regress. The flagship `وائل → "ائل"` mangle is gone: the protected list short-circuits Light10 and the stem is preserved verbatim. Sixth: **M7** — the Layer 4 disambiguator. `analyze_best`'s insertion-order tiebreak replaced with a pure, deterministic rank: confidence desc → origin (UserOverride > ProtectedList > FST > Heuristic) → POS (ProperNoun > Noun > … > Verb > … > Foreign) → fewer affixes → alphabetic lemma. The كاتب ambiguity now resolves to the Noun reading (active participle) every time, across any OS, any FST build, any Universe. Seventh: **M8** — Layer 0 user overrides. New module `arabic::overrides` with a per-Universe JSON store at `<universe>/.constellation/arabic-overrides.json`; `analyze_with_overrides(word, Some(&store))` inserts a hash-lookup Layer 0 that short-circuits the entire pipeline on an exact or normalized-vocalized match. `UserOverride::to_analysis()` produces an `Analysis` with `origin=UserOverride, confidence=1.0`, which M7's disambiguator already ranks strictly above every other origin — so no changes to `rank_analyses` were needed. The back-compat wrapper `analyze(word) ≡ analyze_with_overrides(word, None)` preserves every caller on the crate today; the overload is purely additive. Atomic file writes (`.tmp` + rename), alphabetic-sorted entries for git-friendly diffs, forward-compat serde defaults. Full public-API parity preserved across all seven landings; **263/263 library tests pass** (up from 209 pre-M3: +13 fst_bake, +10 regression harness, +6 TSV parser, +5 M6 FTS contract tests, +12 M7 disambiguator, +21 M8 overrides [16 unit + 5 integration], -1 removed `no_duplicate_lemmas_in_seed` obsolete under first-write-wins).
+**M3 + M3-baker + M1g/M1h + M5 + M6 + M7 + M8 + M8b landed.** First: `GenerativeIndex` (HashMap, ~40 MB projected at 7K roots) swapped for `GenerativeFst` (BurntSushi FST, prefix-compressed, mmap-ready). Second: the compiled FST is now persisted to the user's cache directory on first launch and reloaded on subsequent launches via `GenerativeFst::from_bytes` — the cold/warm startup path divergence that M9 ("50 ms analyzer cold-start") measures against. Third: the protected list got its architectural rewrite — `const SEED: &[...]` (200 hand-picked entries, 340 lines of Rust) replaced with `include_str!("protected_seed.tsv")` + a 3-column TSV (`surface<TAB>category<TAB>origin_lang`) now holding **1,196 unique entries** across proper nouns (395), places (275), loanwords (455), and function words (71). Fourth: the **M5 regression corpus** — a 502-case held-out test set in `regression_cases.tsv` + a `cfg(test)`-gated `regression.rs` harness that feeds every row through `analyze_best` and asserts origin / surface / (optionally) lemma / root. Covers all three active origin layers (ProtectedList, GenerativeFst, SurfaceHeuristic) across 28 Arabic roots, ~80 cascade surfaces, and 45 foreign (Latin-script) words. Fifth: **M6** — the FTS5 Arabic stemming path in `libraries.rs::process_arabic_word` now routes through `arabic::analyze_best`. Every Arabic token in every note in every Universe now flows through the five-layer engine; Light10 is retained only as the graceful `SurfaceHeuristic` fallback so unknown words don't regress. The flagship `وائل → "ائل"` mangle is gone: the protected list short-circuits Light10 and the stem is preserved verbatim. Sixth: **M7** — the Layer 4 disambiguator. `analyze_best`'s insertion-order tiebreak replaced with a pure, deterministic rank: confidence desc → origin (UserOverride > ProtectedList > FST > Heuristic) → POS (ProperNoun > Noun > … > Verb > … > Foreign) → fewer affixes → alphabetic lemma. The كاتب ambiguity now resolves to the Noun reading (active participle) every time, across any OS, any FST build, any Universe. Seventh: **M8** — Layer 0 user overrides. New module `arabic::overrides` with a per-Universe JSON store at `<universe>/.constellation/arabic-overrides.json`; `analyze_with_overrides(word, Some(&store))` inserts a hash-lookup Layer 0 that short-circuits the entire pipeline on an exact or normalized-vocalized match. `UserOverride::to_analysis()` produces an `Analysis` with `origin=UserOverride, confidence=1.0`, which M7's disambiguator already ranks strictly above every other origin — so no changes to `rank_analyses` were needed. The back-compat wrapper `analyze(word) ≡ analyze_with_overrides(word, None)` preserves every caller on the crate today; the overload is purely additive. Atomic file writes (`.tmp` + rename), alphabetic-sorted entries for git-friendly diffs, forward-compat serde defaults. Eighth: **M8b (Rust plumbing slice)** — the wire that makes M8 run in production. New `ACTIVE_STORE` registry in `overrides.rs` (process-wide `OnceLock<RwLock<Arc<OverrideStore>>>`), `activate_for_universe()` hook called from `set_active_universe` so switching Universes auto-loads the per-Universe JSON file into the active store, `process_arabic_word` in `libraries.rs` (FTS5 hot path) now reads the active store via cheap `Arc::clone`, and three Tauri commands (`read_arabic_overrides`, `add_arabic_override`, `remove_arabic_override`) registered in `lib.rs` and exposed to the Settings UI which arrives in M8c. Full public-API parity preserved across all eight landings; **271/271 library tests pass** (up from 209 pre-M3: +13 fst_bake, +10 regression harness, +6 TSV parser, +5 M6 FTS contract tests, +12 M7 disambiguator, +21 M8 overrides [16 unit + 5 integration], +8 M8b ACTIVE_STORE registry [Arc-pointer-identity + swap semantics + activate_for_universe disk paths], -1 removed `no_duplicate_lemmas_in_seed` obsolete under first-write-wins).
 
 ## Work in order
 
@@ -346,6 +346,103 @@ All 21 pass. Combined with the 12 M7 disambiguator tests and the 502-case regres
 - All **263 pass** in 0.38s. The 502-case regression corpus and every previous layer's tests stay green.
 - M8 is the first milestone that adds a cross-module integration surface (per-Universe files), but no disk I/O runs in the default test path — `load_from_path` / `save_to_path` tests use `tempfile::TempDir` and the override-overload integration tests build the store in memory.
 
+## 21. M8b — the wire: `ACTIVE_STORE` + Tauri commands + `set_active_universe` hook
+
+M8 shipped the Layer 0 type (`UserOverride`), the data structure (`OverrideStore`), and the pipeline overload (`analyze_with_overrides`), plus persistence (atomic `.tmp`+rename) and a full test suite. What M8 didn't ship is the wire: no call site actually *passed* an `OverrideStore` to the pipeline on the FTS5 hot path. The Settings UI had nothing to CRUD against. Switching Universes loaded no overrides. M8b closes that gap on the Rust side. (The Svelte UI + FTS reindex signal are M8c.)
+
+**Solution shipped:**
+
+### 21.1 Process-wide active store
+
+The FTS5 tokenizer runs inside SQLite's call context — a sync function with no access to `app.state::<UniverseState>()`. So we mirror the per-Universe override file into a process-wide singleton at the arabic module root:
+
+```rust
+// arabic/overrides.rs
+static ACTIVE_STORE: OnceLock<RwLock<Arc<OverrideStore>>> = OnceLock::new();
+
+pub fn active() -> Arc<OverrideStore> { ... }          // cheap clone, FTS hot path
+pub fn set_active(store: OverrideStore) { ... }        // swap the Arc
+pub fn activate_for_universe(root: &Path) -> Result<usize, String> { ... }
+pub fn clear_active() { ... }                          // install empty store
+```
+
+Hot-path cost: one `RwLock::read` (uncontended ~20 ns on Windows) + one `Arc::clone` (refcount bump, ~5 ns). Well under the tokenizer's normalize + HashMap-probe budget. The FTS5 tokenizer is expected to burn ~10 µs per token regardless; the registry adds ~0.025 µs to that. A test (`active_returns_cheap_arc_clones`) pins the contract: back-to-back `active()` calls return `Arc::ptr_eq`-equal handles so we can't accidentally deep-clone the HashMap at tokenize time.
+
+### 21.2 Pipeline wire: `analyze_with_overrides_best`
+
+The former `analyze_best(word)` already wrapped `analyze(word).into_iter().next().unwrap_or(stub)`. M8b adds a parallel `analyze_with_overrides_best(word, overrides: Option<&OverrideStore>)` that calls `analyze_with_overrides` under the hood, and reduces `analyze_best` to a single-line wrapper (`analyze_with_overrides_best(word, None)`). No duplicated fallback stub — DRY preserved, public surface grows by one function.
+
+### 21.3 FTS5 tokenizer wire: `process_arabic_word`
+
+The one-line M6 change (`analyze_best(word) → analyze_with_overrides_best(word, overrides_ref)`) with a fast-path guard:
+
+```rust
+// libraries.rs::process_arabic_word
+let store = crate::arabic::overrides::active();
+let overrides_ref = if store.is_empty() {
+    None
+} else {
+    Some(store.as_ref())
+};
+let analysis = crate::arabic::analyze_with_overrides_best(word, overrides_ref);
+```
+
+The `is_empty()` guard keeps the analyzer's hot path identical to M8-pre for Universes that haven't authored any overrides (the overwhelmingly common case today). When the store is non-empty, the HashMap probe inside `analyze_with_overrides`'s Layer 0 fires exactly once per token — O(1) expected.
+
+### 21.4 Boot wire: `set_active_universe`
+
+`crate::universe::set_active_universe` already fires once per Universe switch (including the frontend-issued call at cold-boot that activates the last-used Universe). M8b adds an `activate_for_universe` call right after the `UniverseState` mutation and `libraries::invalidate_libraries_cache()` call:
+
+```rust
+// universe.rs::set_active_universe (after the existing state update)
+match crate::arabic::overrides::activate_for_universe(&final_path) {
+    Ok(count) if count > 0 => {
+        eprintln!("[arabic] Loaded {} Arabic override(s) for Universe at {}", count, ...);
+    }
+    Ok(_) => {}  // no overrides authored yet — common case, silent
+    Err(e) => {
+        eprintln!("[arabic] Failed to load overrides for Universe at {}: {}", ..., e);
+        crate::arabic::overrides::clear_active();
+    }
+}
+```
+
+Errors are logged but *not* propagated. A malformed `arabic-overrides.json` must not prevent the user from switching Universes — the engine gracefully falls back to no-overrides on error, and the forthcoming Settings UI will surface the parse error when the user opens the overrides panel. On error we explicitly `clear_active()` so a residual store from the previous active Universe doesn't leak across the switch.
+
+### 21.5 Tauri command surface
+
+Three `#[tauri::command]` functions at the bottom of `overrides.rs`:
+
+- `read_arabic_overrides(app: AppHandle) -> Result<Vec<UserOverride>, String>` — returns all overrides for the active Universe, sorted alphabetically by surface. Reads from disk, not from `ACTIVE_STORE`, so the UI sees the canonical on-disk state even if a second window raced a write.
+- `add_arabic_override(app, entry: UserOverride) -> Result<(), String>` — upsert. Reloads the store from disk, inserts the entry, atomic-saves, then calls `set_active` so subsequent FTS5 tokens see the change without waiting for a Universe switch.
+- `remove_arabic_override(app, surface: String) -> Result<bool, String>` — idempotent remove. Returns `true` if an entry was removed, `false` if none existed (not an error — the UI can treat both identically).
+
+**Why disk-as-source-of-truth, not `ACTIVE_STORE`-as-source-of-truth** for CRUD: it makes concurrent edits from multiple UI windows (Settings modal, second-screen panel) safe without cross-window mutex coordination. The atomic-rename on disk is the only serialization point. Worst case under contention: one window's write is immediately overwritten by another's; neither write is lost mid-file; and the next `read_arabic_overrides` call returns whichever landed last. In practice the Settings UI is single-window and this contention path never fires.
+
+Registered in `src-tauri/src/lib.rs` alongside existing command handlers.
+
+### 22. M8b Tests — 8 new
+
+All 8 in `arabic::overrides::tests`, under a `REGISTRY_TEST_MUTEX`-serialized RAII guard (`RegistryGuard`) that snapshots the prior `ACTIVE_STORE` on construction and restores it on drop — so the global singleton's state can't leak across tests or races under `--test-threads=N`:
+
+- **Registry baseline (2)**: `active_returns_empty_store_before_any_set` (boot state = empty, Layer 0 never fires), `clear_active_installs_empty_store` (explicit reset).
+- **Set/get roundtrip (2)**: `set_active_then_active_roundtrips` (round-trip correctness), `set_active_replaces_prior_store_entirely` (no residual entries leak across a swap).
+- **Hot-path contract (1)**: `active_returns_cheap_arc_clones` — back-to-back `active()` calls return `Arc::ptr_eq`-equal handles. This is the guarantee the FTS5 tokenizer depends on; a future refactor that accidentally starts deep-cloning the HashMap per token would fail this test loudly.
+- **Disk → registry (3)**: `activate_for_universe_installs_from_disk` (seed a JSON file in a tempdir, call `activate_for_universe`, verify the active store contains the entry and the returned count matches), `activate_for_universe_handles_missing_file` (fresh Universe case: missing file → empty store, NOT an error), `activate_for_universe_reports_malformed_json_as_error` (a corrupted *existing* file surfaces as `Err`).
+
+All 8 pass under serialized execution. The `RegistryGuard` pattern is documented in-line so future additions to this test module can follow the same convention.
+
+### 23. Results after M8b
+
+| Suite | Pre-M3 | After M3 | After M3-baker | After M1g/M1h | After M5 | After M6 | After M7 | After M8 | After M8b | Delta |
+|---|---|---|---|---|---|---|---|---|---|---|
+| arabic module | 171 | 183 | 196 | 202 | 212 | 212 | 224 | 245 | 253 | +82 |
+| libraries FTS contract | 0 | 0 | 0 | 0 | 0 | 5 | 5 | 5 | 5 | +5 |
+| library total | 184 | 196 | 209 | 215 | 225 | 230 | 242 | 263 | 271 | +87 |
+
+- All **271 pass** in 0.67s. No regression on the 502-case corpus or the 16 M8 override unit tests.
+- Test wall time grew by ~290 ms vs M8 (0.38 → 0.67s) — expected: the new disk-path tests (`activate_for_universe_installs_from_disk`, `…_handles_missing_file`, `…_reports_malformed_json_as_error`) each `create_dir_all` + write + read + cleanup a tempdir. Well within noise on CI.
+
 ## Commit
 
 Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
@@ -377,10 +474,18 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
    - `src-tauri/src/arabic/mod.rs` — uncomment `pub mod disambiguate;`; call `rank_analyses` at each multi-hit return point in `analyze()`; simplify `analyze_best` to `analyze(word).into_iter().next()`.
    - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 15–17 added.
 
-6. **M8** (this session, pending):
+6. **M8** (this session, `bcde2bc`):
    - `src-tauri/src/arabic/overrides.rs` — new (~340 lines, 16 tests) — `UserOverride`, `OverrideFile`, `OverrideStore`, `normalize_key`, atomic save, alphabetic sort, per-Universe path.
    - `src-tauri/src/arabic/mod.rs` — uncomment `pub mod overrides;`; split `analyze` into `analyze(word) = analyze_with_overrides(word, None)`; insert Layer 0 lookup between script check and Layer 2; add 5 integration tests.
    - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 18–20 added.
+
+7. **M8b** (this session, pending):
+   - `src-tauri/src/arabic/overrides.rs` — add `ACTIVE_STORE` static + `active`, `set_active`, `activate_for_universe`, `clear_active`; add three `#[tauri::command]` endpoints (`read_arabic_overrides`, `add_arabic_override`, `remove_arabic_override`); add 8 registry tests under `REGISTRY_TEST_MUTEX`-serialized `RegistryGuard`.
+   - `src-tauri/src/arabic/mod.rs` — add `analyze_with_overrides_best(word, overrides)`; reduce `analyze_best` to a wrapper over `(word, None)`.
+   - `src-tauri/src/libraries.rs` — `process_arabic_word` now consults `arabic::overrides::active()` via cheap `Arc::clone`, short-circuits to `None` when empty so the FTS hot path on Universes-without-overrides is byte-identical to pre-M8b.
+   - `src-tauri/src/universe.rs` — after the `UniverseState` mutation in `set_active_universe`, call `arabic::overrides::activate_for_universe(&final_path)`; errors logged and swallowed (with `clear_active()` fallback) so a malformed JSON can never block a Universe switch.
+   - `src-tauri/src/lib.rs` — register the three Tauri commands in the `generate_handler!` list.
+   - `lab/reports/SESSION-LOG-2026-04-18.md` — §§ 21–23 added.
 
 ## Files modified
 
@@ -394,17 +499,21 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src-tauri/src/arabic/protected_seed.tsv` — new (M1g/M1h, 1,196 entries).
 - `src-tauri/src/arabic/regression.rs` — new (M5, 10 tests).
 - `src-tauri/src/arabic/regression_cases.tsv` — new (M5, 502 data rows).
-- `src-tauri/src/libraries.rs` — `process_arabic_word` routed through `analyze_best` (M6) + 5 new FTS contract tests at EOF.
+- `src-tauri/src/libraries.rs` — `process_arabic_word` routed through `analyze_best` (M6) + 5 new FTS contract tests at EOF; M8b extends it to read `arabic::overrides::active()` on every token.
 - `src-tauri/src/arabic/disambiguate.rs` — new (M7, 12 tests).
-- `src-tauri/src/arabic/overrides.rs` — new (M8, 16 tests) — UserOverride type, OverrideStore CRUD, per-Universe JSON persistence with atomic writes.
+- `src-tauri/src/arabic/overrides.rs` — new (M8, 16 tests) — UserOverride type, OverrideStore CRUD, per-Universe JSON persistence with atomic writes. M8b adds `ACTIVE_STORE` registry + three Tauri commands + 8 registry tests (total 24).
+- `src-tauri/src/arabic/mod.rs` — M8b adds `analyze_with_overrides_best` convenience; `analyze_best` reduced to a thin wrapper.
+- `src-tauri/src/universe.rs` — M8b hooks `activate_for_universe` into `set_active_universe`.
+- `src-tauri/src/lib.rs` — M8b registers three Arabic override Tauri commands.
 
 ## Open items
 
 - **M1g-data / M1h-data**: the 20K Wikipedia-extracted proper-noun corpus + 2K loanwords. Today's 1,196 hand-picked entries cover the common case; the full corpus comes from CC-BY-SA bulk extraction (separate milestone in `lab/`, blocked on extractor tooling).
 - **M5-grow**: expand the corpus over time. 502 is the v1 floor — as M6/M7 land, new flagship surfaces identified during bring-up should be added here first before any other test code. Target by M9: ≥2,000 cases, with ≥20 pure-heuristic Arabic-script rows (Layer 4 fallback coverage; currently the heuristic threshold is met by foreign Latin-script rows via the non-Arabic-script route).
 - **M7-v2**: corpus-aware disambiguation. Today's ranking is a pure function of the Analysis fields. V2 reads the user's own FTS vocab to bias toward lemmas the user writes often, plus a 3-word context window at query time to pick between readings (`كاتب الرسالة` → Noun; `كاتب أخاه` → Verb). Tracked as a follow-on once Settings → Debug surfaces the existing v1 rank so we can A/B the v2 improvements.
-- **M8b**: wire the `OverrideStore` through to `libraries.rs::process_arabic_word` (per-Universe load on boot, cache by Universe path), add Tauri commands (`read_arabic_overrides`, `add_arabic_override`, `remove_arabic_override`), add Settings → Language → Arabic Engine UI for override CRUD, and emit an FTS reindex signal when overrides change (so the on-disk `notes_fts` stem column reflects the new verdict without waiting for a full Universe rebuild). M8 scaffolding is complete — Layer 0 fires when passed a store; M8b is the plumbing that passes a store.
-- **M9**: measure cold-start analyzer time on the real user machine (Windows) with a clean cache dir, then warm-start. If the warm-start delta isn't ≥5× the cold-start on the target 7K-root corpus, tune the format (e.g. memory-map instead of read-to-vec). Also measure throughput (target ≥200K words/sec on the 502-case corpus) and RSS delta (target ≤10 MB for the analyzer singleton at 7K-root scale).
+- **M8c**: Settings UI for override CRUD + FTS reindex signal. Svelte panel (`ArabicOverridesPanel.svelte`) wired to the three Tauri commands landed in M8b; a new "Language" or "Arabic Engine" tab in `SettingsModal.svelte`; when an override is added/removed, emit a reindex signal that rebuilds affected rows in `notes_fts` so the on-disk stem column reflects the new Layer 0 verdict without waiting for a full Universe rebuild. i18n strings in all 15 locales. The FTS-reindex story: either (a) delete affected rows from `notes_fts` + re-tokenize matching notes on demand, or (b) mark the FTS as dirty and schedule a background rebuild. Prototype (a) first — targeted invalidation — and fall back to (b) if the affected-row set is unreasonably large on a real Universe.
+- **M8b-v2**: per-cUniverse override layering. When the user views libraries federated from a child Universe, the tokenizer should consult the child's override file too (or overlay the parent's on top of it, with parent winning ties). Today's `ACTIVE_STORE` is a single global Arc; v2 either becomes a stack or a composite `OverrideStore` that consults multiple backing maps. Wait until real-user feedback shows this is needed before building it.
+- **M9**: measure cold-start analyzer time on the real user machine (Windows) with a clean cache dir, then warm-start. If the warm-start delta isn't ≥5× the cold-start on the target 7K-root corpus, tune the format (e.g. memory-map instead of read-to-vec). Also measure throughput (target ≥200K words/sec on the 502-case corpus) and RSS delta (target ≤10 MB for the analyzer singleton at 7K-root scale). M8b's `ACTIVE_STORE` adds ~25 ns per token — budget this into the throughput measurement; the expected impact is well under 1%.
 
 ## No user-facing changes
 

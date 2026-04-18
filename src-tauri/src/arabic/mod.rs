@@ -361,8 +361,36 @@ pub fn analyze_with_overrides(
 ///
 /// This is the primary hook for the FTS5 tokenizer, which does not care
 /// about ambiguity — it just wants `(surface, lemma, root)` to index.
+///
+/// Equivalent to `analyze_with_overrides_best(word, None)`. Callers that
+/// need Layer 0 user overrides (e.g. the FTS5 tokenizer, post-M8b)
+/// should use the `_with_overrides` variant with
+/// `arabic::overrides::active().as_ref()` as the store.
 pub fn analyze_best(word: &str) -> Analysis {
-    let analyses = analyze(word);
+    analyze_with_overrides_best(word, None)
+}
+
+/// Full five-layer best-pick entry point, accepting an optional
+/// per-Universe [`overrides::OverrideStore`] that takes precedence over
+/// every other layer.
+///
+/// Identical behaviour to `analyze_best` when `overrides == None`. When
+/// `Some(store)`, a Layer 0 hit returns immediately with
+/// `origin = UserOverride` and `confidence = 1.0`.
+///
+/// This is the hook the FTS5 tokenizer uses post-M8b to pick up user
+/// overrides for the currently-active Universe:
+///
+/// ```ignore
+/// let store = arabic::overrides::active();
+/// let overrides = if store.is_empty() { None } else { Some(store.as_ref()) };
+/// let analysis = arabic::analyze_with_overrides_best(word, overrides);
+/// ```
+pub fn analyze_with_overrides_best(
+    word: &str,
+    overrides: Option<&overrides::OverrideStore>,
+) -> Analysis {
+    let analyses = analyze_with_overrides(word, overrides);
     if let Some(best) = analyses.into_iter().next() {
         return best;
     }

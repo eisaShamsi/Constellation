@@ -633,11 +633,33 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
     // Update managed state
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
-    *lock = Some(final_path);
+    *lock = Some(final_path.clone());
 
     // Invalidate the libraries cache — switching universes means the
     // libraries list is completely different now.
     crate::libraries::invalidate_libraries_cache();
+
+    // M8b: load this Universe's Arabic user-override file into the
+    // process-wide active store. Consumed by every subsequent FTS5
+    // tokenizer call via `arabic::overrides::active()`. Errors are
+    // logged but NOT propagated — a malformed overrides.json must not
+    // prevent the user from switching Universes. The engine gracefully
+    // falls back to no-overrides on error, and the Settings UI will
+    // surface the parse error when the user opens the overrides panel.
+    match crate::arabic::overrides::activate_for_universe(&final_path) {
+        Ok(count) if count > 0 => {
+            eprintln!("[arabic] Loaded {} Arabic override(s) for Universe at {}",
+                      count, final_path.display());
+        }
+        Ok(_) => {} // no overrides authored yet — common case, silent
+        Err(e) => {
+            eprintln!("[arabic] Failed to load overrides for Universe at {}: {}",
+                      final_path.display(), e);
+            // Install an empty store so any residual from a previous
+            // active Universe doesn't leak across the switch.
+            crate::arabic::overrides::clear_active();
+        }
+    }
 
     // Update registry
     registry.active_id = Some(id);
