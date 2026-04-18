@@ -18,6 +18,7 @@ c:afternoon	Noun	ar:بعد الظهر	de:Nachmittag	en:afternoon	es:tarde	fa:ب�
 c:air	Noun	ar:هواء	de:Luft	en:air	es:aire	fa:هوا	fr:air	he:אוויר	hi:हवा,वायु	ja:空気	ko:공기	pt:ar	ru:воздух	tr:hava	ur:ہوا	zh:空气
 c:airplane	Noun	ar:طائرة	de:Flugzeug	en:airplane,plane,aeroplane	es:avión,aeroplano	fa:هواپیما	fr:avion,aéroplane	he:מטוס	hi:हवाई जहाज़,विमान	ja:飛行機	ko:비행기	pt:avião,aeroplano	ru:самолёт	tr:uçak	ur:ہوائی جہاز,طیارہ	zh:飞机
 c:airport	Noun	ar:مطار	de:Flughafen	en:airport	es:aeropuerto	fa:فرودگاه	fr:aéroport	he:נמל תעופה,שדה תעופה	hi:हवाई अड्डा,एयरपोर्ट	ja:空港	ko:공항	pt:aeroporto	ru:аэропорт	tr:havalimanı,havaalanı	ur:ہوائی اڈا,ایئرپورٹ	zh:机场
+c:angel	Noun	ar:ملاك	de:Engel	en:angel	es:ángel	fa:فرشته	fr:ange	he:מלאך	hi:देवदूत,फ़रिश्ता	ja:天使	ko:천사	pt:anjo	ru:ангел	tr:melek	ur:فرشتہ	zh:天使
 c:anger	Noun	ar:غضب	de:Zorn,Ärger,Wut	en:anger	es:ira,enojo	fa:خشم,عصبانیت	fr:colère	he:כעס	hi:क्रोध,ग़ुस्सा	ja:怒り	ko:분노,화	pt:raiva,ira	ru:гнев,злость	tr:öfke,kızgınlık	ur:غصہ	zh:愤怒,生气
 c:angle	Noun	ar:زاوية	de:Winkel	en:angle	es:ángulo	fa:زاویه	fr:angle	he:זווית	hi:कोण	ja:角,角度	ko:각,각도	pt:ângulo	ru:угол	tr:açı	ur:زاویہ	zh:角,角度
 c:animal	Noun	ar:حيوان	de:Tier	en:animal	es:animal	fa:حیوان	fr:animal	he:חיה	hi:जानवर,पशु	ja:動物	ko:동물	pt:animal	ru:животное	tr:hayvan	ur:جانور	zh:动物
@@ -51,12 +52,14 @@ c:beauty	Noun	ar:جمال	de:Schönheit	en:beauty	es:belleza	fa:زیبایی	fr:
 c:bed	Noun	ar:سرير	de:Bett	en:bed	es:cama	fa:تخت,تختخواب	fr:lit	he:מיטה	hi:बिस्तर	ja:ベッド,寝床	ko:침대	pt:cama	ru:кровать	tr:yatak	ur:بستر	zh:床
 c:bee	Noun	ar:نحلة	de:Biene	en:bee	es:abeja	fa:زنبور	fr:abeille	he:דבורה	hi:मधुमक्खी	ja:蜂,ミツバチ	ko:벌,꿀벌	pt:abelha	ru:пчела	tr:arı	ur:شہد کی مکھی	zh:蜜蜂
 c:beginning	Noun	ar:بداية	de:Anfang,Beginn	en:beginning,start	es:comienzo,inicio	fa:آغاز,شروع	fr:début,commencement	he:התחלה	hi:शुरुआत,आरंभ	ja:始まり	ko:시작	pt:começo,início	ru:начало	tr:başlangıç	ur:آغاز,شروع	zh:开始,开端
+c:belief	Noun	ar:اعتقاد,عقيدة	de:Überzeugung	en:belief	es:creencia	fa:باور,عقیده	fr:croyance	he:אמונה	hi:विश्वास,मान्यता	ja:信念	ko:신념,믿음	pt:crença	ru:убеждение	tr:inanç	ur:عقیدہ	zh:信念
 c:believe	Verb	ar:صدق,آمن	de:glauben	en:believe	es:creer	fa:باور کردن	fr:croire	he:להאמין	hi:मानना,विश्वास करना	ja:信じる	ko:믿다	pt:crer,acreditar	ru:верить	tr:inanmak	ur:ماننا,یقین کرنا	zh:相信
 c:bicycle	Noun	ar:دراجة	de:Fahrrad,Rad	en:bicycle,bike	es:bicicleta,bici	fa:دوچرخه	fr:bicyclette,vélo	he:אופניים	hi:साइकिल	ja:自転車	ko:자전거	pt:bicicleta	ru:велосипед	tr:bisiklet	ur:سائیکل	zh:自行车,单车
 c:big	Adjective	ar:كبير	de:groß	en:big,large	es:grande	fa:بزرگ	fr:grand,grande	he:גדול	hi:बड़ा	ja:大きい	ko:크다	pt:grande	ru:большой	tr:büyük	ur:بڑا	zh:大
 c:biology	Noun	ar:أحياء,علم الأحياء	de:Biologie	en:biology	es:biología	fa:زیست‌شناسی	fr:biologie	he:ביולוגיה	hi:जीव विज्ञान,जीवविज्ञान	ja:生物学	ko:생물학	pt:biologia	ru:биология	tr:biyoloji	ur:حیاتیات	zh:生物学
 c:bird	Noun	ar:طائر,طير	de:Vogel	en:bird	es:pájaro,ave	fa:پرنده	fr:oiseau	he:ציפור	hi:पक्षी,चिड़िया	ja:鳥	ko:새	pt:pássaro,ave	ru:птица	tr:kuş	ur:پرندہ,چڑیا	zh:鸟
 c:black	Adjective	ar:أسود	de:schwarz	en:black	es:negro	fa:سیاه,مشکی	fr:noir	he:שחור	hi:काला	ja:黒,黒い	ko:검은,검정	pt:preto,negro	ru:чёрный	tr:siyah,kara	ur:کالا	zh:黑,黑色
+c:blessing	Noun	ar:بركة,نعمة	de:Segen	en:blessing	es:bendición	fa:برکت,نعمت	fr:bénédiction	he:ברכה	hi:आशीर्वाद	ja:祝福	ko:축복	pt:bênção	ru:благословение	tr:bereket,lütuf	ur:برکت,نعمت	zh:祝福
 c:blood	Noun	ar:دم	de:Blut	en:blood	es:sangre	fa:خون	fr:sang	he:דם	hi:खून,रक्त	ja:血	ko:피	pt:sangue	ru:кровь	tr:kan	ur:خون	zh:血
 c:blue	Adjective	ar:أزرق	de:blau	en:blue	es:azul	fa:آبی	fr:bleu	he:כחול	hi:नीला	ja:青,青い	ko:파란,푸른	pt:azul	ru:синий,голубой	tr:mavi	ur:نیلا	zh:蓝,蓝色
 c:boat	Noun	ar:قارب,زورق	de:Boot	en:boat	es:barca,bote	fa:قایق	fr:bateau,barque	he:סירה	hi:नाव,नौका	ja:ボート,小舟	ko:보트	pt:barco,bote	ru:лодка	tr:tekne,kayık	ur:کشتی,ناؤ	zh:小船
@@ -106,6 +109,7 @@ c:cheese	Noun	ar:جبن,جبنة	de:Käse	en:cheese	es:queso	fa:پنیر	fr:from
 c:chemistry	Noun	ar:كيمياء	de:Chemie	en:chemistry	es:química	fa:شیمی	fr:chimie	he:כימיה	hi:रसायन,रसायन विज्ञान	ja:化学	ko:화학	pt:química	ru:химия	tr:kimya	ur:کیمیا	zh:化学
 c:child	Noun	ar:طفل,ولد	de:Kind	en:child,children	es:niño,hijo	fa:بچه,کودک	fr:enfant	he:ילד	hi:बच्चा	ja:子供,子	ko:아이,어린이	pt:criança,filho	ru:ребёнок,дитя	tr:çocuk	ur:بچہ	zh:孩子,儿童
 c:choose	Verb	ar:اختار	de:wählen,auswählen	en:choose	es:elegir,escoger	fa:انتخاب کردن	fr:choisir	he:לבחור	hi:चुनना	ja:選ぶ	ko:선택하다,고르다	pt:escolher	ru:выбирать	tr:seçmek	ur:چننا	zh:选择,选
+c:church	Noun	ar:كنيسة	de:Kirche	en:church	es:iglesia	fa:کلیسا	fr:église	he:כנסייה	hi:गिरजाघर,चर्च	ja:教会	ko:교회	pt:igreja	ru:церковь	tr:kilise	ur:کلیسا,گرجا	zh:教堂
 c:circle	Noun	ar:دائرة	de:Kreis	en:circle	es:círculo	fa:دایره	fr:cercle	he:עיגול,מעגל	hi:वृत्त,गोला	ja:円	ko:원	pt:círculo	ru:круг	tr:daire,çember	ur:دائرہ	zh:圆,圆圈
 c:citizen	Noun	ar:مواطن	de:Bürger	en:citizen	es:ciudadano	fa:شهروند	fr:citoyen	he:אזרח	hi:नागरिक	ja:市民,国民	ko:시민,국민	pt:cidadão	ru:гражданин	tr:vatandaş	ur:شہری	zh:公民,市民
 c:city	Noun	ar:مدينة	de:Stadt	en:city	es:ciudad	fa:شهر	fr:ville	he:עיר	hi:शहर,नगर	ja:都市,街	ko:도시	pt:cidade	ru:город	tr:şehir,kent	ur:شہر	zh:城市
@@ -126,6 +130,8 @@ c:company	Noun	ar:شركة	de:Firma,Unternehmen	en:company,firm	es:empresa,compa
 c:compare	Verb	ar:قارن	de:vergleichen	en:compare	es:comparar	fa:مقایسه کردن	fr:comparer	he:להשוות	hi:तुलना करना	ja:比較する,比べる	ko:비교하다	pt:comparar	ru:сравнивать	tr:karşılaştırmak	ur:موازنہ کرنا	zh:比较
 c:complain	Verb	ar:اشتكى,شكا	de:sich beschweren,klagen	en:complain	es:quejarse	fa:شکایت کردن	fr:se plaindre	he:להתלונן	hi:शिकायत करना	ja:不平を言う,苦情を言う	ko:불평하다	pt:queixar-se,reclamar	ru:жаловаться	tr:şikayet etmek	ur:شکایت کرنا	zh:抱怨,投诉
 c:computer	Noun	ar:حاسوب,كمبيوتر	de:Computer	en:computer	es:computadora,ordenador	fa:رایانه,کامپیوتر	fr:ordinateur	he:מחשב	hi:कंप्यूटर,संगणक	ja:コンピュータ,計算機	ko:컴퓨터	pt:computador	ru:компьютер	tr:bilgisayar	ur:کمپیوٹر	zh:计算机,电脑
+c:conscience	Noun	ar:ضمير	de:Gewissen	en:conscience	es:conciencia	fa:وجدان	fr:conscience	he:מצפון	hi:अंतरात्मा,विवेक	ja:良心	ko:양심	pt:consciência	ru:совесть	tr:vicdan	ur:ضمیر	zh:良心
+c:consciousness	Noun	ar:وعي,شعور	de:Bewusstsein	en:consciousness	es:conciencia	fa:آگاهی,هوشیاری	fr:conscience	he:תודעה	hi:चेतना	ja:意識	ko:의식	pt:consciência	ru:сознание	tr:bilinç	ur:شعور,آگاہی	zh:意识
 c:consider	Verb	ar:اعتبر	de:betrachten,erwägen	en:consider	es:considerar	fa:در نظر گرفتن	fr:considérer	he:לשקול	hi:विचार करना	ja:考える,検討する	ko:고려하다	pt:considerar	ru:считать,рассматривать	tr:düşünmek,saymak	ur:غور کرنا	zh:考虑
 c:cook	Noun	ar:طباخ	de:Koch,Köchin	en:cook,chef	es:cocinero,chef	fa:آشپز,سرآشپز	fr:cuisinier,chef	he:טבח,שף	hi:रसोइया,शेफ	ja:料理人,シェフ	ko:요리사,셰프	pt:cozinheiro,chef	ru:повар,шеф-повар	tr:aşçı,şef	ur:باورچی,شیف	zh:厨师,大厨
 c:copper	Noun	ar:نحاس	de:Kupfer	en:copper	es:cobre	fa:مس	fr:cuivre	he:נחושת	hi:तांबा,ताम्र	ja:銅	ko:구리,동	pt:cobre	ru:медь	tr:bakır	ur:تانبا	zh:铜
@@ -150,6 +156,7 @@ c:depart	Verb	ar:غادر	de:abfahren,abreisen	en:depart,leave	es:partir,salir	f
 c:describe	Verb	ar:وصف	de:beschreiben	en:describe	es:describir	fa:توصیف کردن	fr:décrire	he:לתאר	hi:वर्णन करना	ja:描写する,説明する	ko:묘사하다,설명하다	pt:descrever	ru:описывать	tr:tanımlamak,betimlemek	ur:بیان کرنا	zh:描述
 c:desert	Noun	ar:صحراء	de:Wüste	en:desert	es:desierto	fa:بیابان,صحرا	fr:désert	he:מדבר	hi:रेगिस्तान,मरुस्थल	ja:砂漠	ko:사막	pt:deserto	ru:пустыня	tr:çöl	ur:صحرا,ریگستان	zh:沙漠
 c:design	Noun	ar:تصميم	de:Design,Entwurf	en:design	es:diseño	fa:طرح,طراحی	fr:design,conception	he:עיצוב	hi:डिज़ाइन,रूपरेखा	ja:デザイン,設計	ko:디자인,설계	pt:design,desenho	ru:дизайн	tr:tasarım	ur:ڈیزائن,خاکہ	zh:设计
+c:destiny	Noun	ar:قدر,مصير	de:Schicksal,Bestimmung	en:destiny	es:destino	fa:سرنوشت,تقدیر	fr:destin,destinée	he:גורל,ייעוד	hi:भाग्य,नियति	ja:運命	ko:운명	pt:destino	ru:судьба	tr:kader,yazgı	ur:قسمت,تقدیر	zh:命运
 c:die	Verb	ar:مات	de:sterben	en:die	es:morir	fa:مردن	fr:mourir	he:למות	hi:मरना	ja:死ぬ	ko:죽다	pt:morrer	ru:умирать,умереть	tr:ölmek	ur:مرنا	zh:死
 c:dinner	Noun	ar:عشاء	de:Abendessen	en:dinner,supper	es:cena	fa:شام	fr:dîner	he:ארוחת ערב	hi:रात का खाना	ja:夕食,ディナー	ko:저녁	pt:jantar	ru:ужин	tr:akşam yemeği	ur:رات کا کھانا	zh:晚餐,晚饭
 c:dirty	Adjective	ar:قذر,وسخ	de:schmutzig	en:dirty	es:sucio	fa:کثیف	fr:sale	he:מלוכלך	hi:गंदा	ja:汚い	ko:더러운	pt:sujo	ru:грязный	tr:kirli	ur:گندا	zh:脏
@@ -192,19 +199,26 @@ c:engine	Noun	ar:محرك	de:Motor,Maschine	en:engine,motor	es:motor	fa:موتو
 c:engineer	Noun	ar:مهندس	de:Ingenieur,Ingenieurin	en:engineer	es:ingeniero	fa:مهندس	fr:ingénieur	he:מהנדס	hi:इंजीनियर,अभियंता	ja:技術者,エンジニア	ko:엔지니어,기술자	pt:engenheiro	ru:инженер	tr:mühendis	ur:انجینئر	zh:工程师
 c:equal	Verb	ar:ساوى	de:gleichen,entsprechen	en:equal	es:igualar	fa:برابر بودن	fr:égaler	he:שווה	hi:बराबर होना	ja:等しい	ko:같다	pt:igualar	ru:равняться	tr:eşitlemek	ur:برابر ہونا	zh:等于
 c:equality	Noun	ar:مساواة	de:Gleichheit	en:equality	es:igualdad	fa:برابری,مساوات	fr:égalité	he:שוויון	hi:समानता,बराबरी	ja:平等	ko:평등,동등	pt:igualdade	ru:равенство	tr:eşitlik	ur:برابری,مساوات	zh:平等
+c:essence	Noun	ar:جوهر,ماهية	de:Wesen,Essenz	en:essence	es:esencia	fa:جوهر,ذات	fr:essence	he:מהות	hi:सार,तत्त्व	ja:本質	ko:본질	pt:essência	ru:сущность	tr:öz,cevher	ur:جوہر,ماہیت	zh:本质
+c:eternity	Noun	ar:أبدية,خلود	de:Ewigkeit	en:eternity	es:eternidad	fa:ابدیت,جاودانگی	fr:éternité	he:נצח	hi:अनंतता,शाश्वतता	ja:永遠	ko:영원	pt:eternidade	ru:вечность	tr:sonsuzluk,ebediyet	ur:ابدیت,ہمیشگی	zh:永恒
+c:ethics	Noun	ar:أخلاق	de:Ethik	en:ethics	es:ética	fa:اخلاق	fr:éthique	he:אתיקה	hi:नीतिशास्त्र,नैतिकता	ja:倫理	ko:윤리	pt:ética	ru:этика	tr:etik,ahlak	ur:اخلاقیات	zh:伦理
 c:evening	Noun	ar:مساء	de:Abend	en:evening	es:atardecer,noche	fa:عصر,غروب	fr:soir	he:ערב	hi:शाम	ja:夕方	ko:저녁	pt:tarde,noite	ru:вечер	tr:akşam	ur:شام	zh:晚上,傍晚
 c:event	Noun	ar:حدث	de:Ereignis,Veranstaltung	en:event	es:evento,suceso	fa:رویداد,اتفاق	fr:événement	he:אירוע	hi:घटना,आयोजन	ja:イベント,出来事	ko:행사,사건	pt:evento,acontecimento	ru:событие	tr:olay,etkinlik	ur:واقعہ	zh:事件,活动
+c:evil	Noun	ar:شر	de:Böse	en:evil	es:mal,maldad	fa:شر,بدی	fr:mal	he:רע,רוע	hi:बुराई	ja:悪	ko:악	pt:mal,maldade	ru:зло	tr:kötülük	ur:برائی,شر	zh:恶,邪恶
+c:existence	Noun	ar:وجود	de:Existenz,Dasein	en:existence	es:existencia	fa:وجود,هستی	fr:existence	he:קיום	hi:अस्तित्व	ja:存在	ko:존재	pt:existência	ru:существование	tr:varoluş,var olma	ur:وجود	zh:存在
 c:expect	Verb	ar:توقع	de:erwarten	en:expect	es:esperar	fa:انتظار داشتن	fr:attendre,s'attendre	he:לצפות	hi:उम्मीद करना,अपेक्षा करना	ja:期待する,予期する	ko:기대하다	pt:esperar	ru:ожидать	tr:beklemek	ur:امید کرنا	zh:期待,预期
 c:experiment	Noun	ar:تجربة	de:Experiment,Versuch	en:experiment	es:experimento	fa:آزمایش	fr:expérience	he:ניסוי	hi:प्रयोग	ja:実験	ko:실험	pt:experimento,experiência	ru:эксперимент,опыт	tr:deney	ur:تجربہ	zh:实验
 c:explain	Verb	ar:شرح	de:erklären	en:explain	es:explicar	fa:توضیح دادن	fr:expliquer	he:להסביר	hi:समझाना	ja:説明する	ko:설명하다	pt:explicar	ru:объяснять	tr:açıklamak	ur:سمجھانا,وضاحت کرنا	zh:解释,说明
 c:eye	Noun	ar:عين	de:Auge	en:eye,eyes	es:ojo	fa:چشم	fr:œil,yeux	he:עין	hi:आंख,नेत्र	ja:目	ko:눈	pt:olho	ru:глаз	tr:göz	ur:آنکھ	zh:眼,眼睛
 c:face	Noun	ar:وجه	de:Gesicht	en:face	es:cara,rostro	fa:چهره,صورت	fr:visage,figure	he:פנים	hi:चेहरा,मुख	ja:顔	ko:얼굴	pt:rosto,cara	ru:лицо	tr:yüz,surat	ur:چہرہ	zh:脸,面
 c:factory	Noun	ar:مصنع	de:Fabrik	en:factory	es:fábrica	fa:کارخانه	fr:usine,fabrique	he:מפעל,בית חרושת	hi:कारख़ाना,फ़ैक्ट्री	ja:工場	ko:공장	pt:fábrica	ru:фабрика,завод	tr:fabrika	ur:کارخانہ,فیکٹری	zh:工厂
+c:faith	Noun	ar:إيمان	de:Glaube	en:faith	es:fe	fa:ایمان	fr:foi	he:אמונה	hi:विश्वास,आस्था	ja:信仰	ko:믿음,신앙	pt:fé	ru:вера	tr:iman,inanç	ur:ایمان,عقیدہ	zh:信仰
 c:family	Noun	ar:أسرة,عائلة	de:Familie	en:family	es:familia	fa:خانواده	fr:famille	he:משפחה	hi:परिवार	ja:家族	ko:가족	pt:família	ru:семья	tr:aile	ur:خاندان	zh:家庭,家
 c:far	Adverb	ar:بعيد	de:fern,weit	en:far	es:lejos	fa:دور	fr:loin	he:רחוק	hi:दूर	ja:遠い	ko:멀리,먼	pt:longe	ru:далеко	tr:uzak	ur:دور	zh:远
 c:farm	Noun	ar:مزرعة	de:Bauernhof,Farm	en:farm	es:granja,finca	fa:مزرعه	fr:ferme	he:חווה,משק	hi:खेत,फ़ार्म	ja:農場,ファーム	ko:농장	pt:fazenda,granja	ru:ферма,хозяйство	tr:çiftlik	ur:فارم,کھیت	zh:农场
 c:farmer	Noun	ar:مزارع,فلاح	de:Landwirt,Bauer	en:farmer	es:agricultor,granjero	fa:کشاورز,دهقان	fr:agriculteur,fermier	he:חקלאי,איכר	hi:किसान	ja:農家,農夫	ko:농부	pt:agricultor,fazendeiro	ru:фермер,крестьянин	tr:çiftçi	ur:کسان,زمیندار	zh:农民,农夫
 c:fast	Adjective	ar:سريع	de:schnell	en:fast,quick	es:rápido	fa:سریع,تند	fr:rapide,vite	he:מהיר	hi:तेज़	ja:速い,早い	ko:빠른	pt:rápido	ru:быстрый	tr:hızlı	ur:تیز	zh:快
+c:fate	Noun	ar:قدر,مصير	de:Schicksal	en:fate	es:destino,sino	fa:تقدیر,سرنوشت	fr:destin,sort	he:גורל	hi:भाग्य,किस्मत	ja:運命	ko:운명	pt:destino,sina	ru:судьба	tr:kader,alın yazısı	ur:قسمت,تقدیر	zh:命运
 c:father	Noun	ar:أب,والد	de:Vater	en:father,dad	es:padre,papá	fa:پدر	fr:père,papa	he:אב,אבא	hi:पिता,बाप	ja:父,お父さん	ko:아버지,아빠	pt:pai	ru:отец,папа	tr:baba,peder	ur:باپ,والد	zh:父亲,爸爸
 c:fear	Noun	ar:خوف	de:Angst,Furcht	en:fear	es:miedo,temor	fa:ترس	fr:peur,crainte	he:פחד	hi:डर,भय	ja:恐れ,怖れ	ko:두려움,공포	pt:medo	ru:страх	tr:korku	ur:ڈر,خوف	zh:害怕,恐惧
 c:few	Adjective	ar:قليل	de:wenige	en:few	es:pocos	fa:کم,اندک	fr:peu	he:מעט	hi:कुछ,थोड़े	ja:少し,少ない	ko:적은	pt:poucos	ru:мало,немногие	tr:az,birkaç	ur:کم,چند	zh:少,几个
@@ -225,6 +239,7 @@ c:foot	Noun	ar:قدم	de:Fuß	en:foot,feet	es:pie	fa:پا	fr:pied	he:כף רגל
 c:force	Noun	ar:قوة	de:Kraft	en:force	es:fuerza	fa:نیرو	fr:force	he:כוח	hi:बल	ja:力,フォース	ko:힘	pt:força	ru:сила	tr:kuvvet	ur:قوت	zh:力
 c:forest	Noun	ar:غابة	de:Wald	en:forest	es:bosque	fa:جنگل	fr:forêt	he:יער	hi:जंगल,वन	ja:森,森林	ko:숲,삼림	pt:floresta	ru:лес	tr:orman	ur:جنگل	zh:森林
 c:forget	Verb	ar:نسي	de:vergessen	en:forget	es:olvidar	fa:فراموش کردن	fr:oublier	he:לשכוח	hi:भूलना	ja:忘れる	ko:잊다	pt:esquecer	ru:забывать,забыть	tr:unutmak	ur:بھولنا	zh:忘,忘记
+c:forgiveness	Noun	ar:مغفرة,عفو	de:Vergebung	en:forgiveness	es:perdón	fa:بخشش,عفو	fr:pardon	he:סליחה,מחילה	hi:क्षमा	ja:許し	ko:용서	pt:perdão	ru:прощение	tr:af,bağışlama	ur:معافی,بخشش	zh:宽恕,原谅
 c:fork	Noun	ar:شوكة	de:Gabel	en:fork	es:tenedor	fa:چنگال	fr:fourchette	he:מזלג	hi:कांटा	ja:フォーク	ko:포크	pt:garfo	ru:вилка	tr:çatal	ur:کانٹا	zh:叉子
 c:four	Noun	ar:أربعة	de:vier	en:four	es:cuatro	fa:چهار	fr:quatre	he:ארבעה	hi:चार	ja:四,よん	ko:넷,사	pt:quatro	ru:четыре	tr:dört	ur:چار	zh:四
 c:freedom	Noun	ar:حرية	de:Freiheit	en:freedom	es:libertad	fa:آزادی	fr:liberté	he:חופש	hi:स्वतंत्रता,आज़ादी	ja:自由	ko:자유	pt:liberdade	ru:свобода	tr:özgürlük	ur:آزادی	zh:自由
@@ -241,8 +256,10 @@ c:give	Verb	ar:أعطى	de:geben	en:give	es:dar	fa:دادن	fr:donner	he:לתת	
 c:glass	Noun	ar:زجاج	de:Glas	en:glass	es:vidrio,cristal	fa:شیشه	fr:verre	he:זכוכית	hi:कांच,शीशा	ja:ガラス,硝子	ko:유리,글라스	pt:vidro	ru:стекло	tr:cam	ur:شیشہ	zh:玻璃
 c:go	Verb	ar:ذهب	de:gehen	en:go	es:ir	fa:رفتن	fr:aller	he:ללכת	hi:जाना	ja:行く	ko:가다	pt:ir	ru:идти,ходить	tr:gitmek	ur:جانا	zh:去
 c:goat	Noun	ar:ماعز	de:Ziege	en:goat	es:cabra	fa:بز	fr:chèvre	he:עז	hi:बकरी	ja:山羊,ヤギ	ko:염소	pt:cabra	ru:коза	tr:keçi	ur:بکری	zh:山羊
+c:god	Noun	ar:إله,الله	de:Gott	en:god	es:dios	fa:خدا	fr:dieu	he:אלוהים	hi:ईश्वर,भगवान	ja:神	ko:신,하나님	pt:deus	ru:бог	tr:tanrı,allah	ur:خدا,اللہ	zh:神,上帝
 c:gold	Noun	ar:ذهب	de:Gold	en:gold	es:oro	fa:طلا	fr:or	he:זהב	hi:सोना,स्वर्ण	ja:金,ゴールド	ko:금,골드	pt:ouro	ru:золото	tr:altın	ur:سونا,زر	zh:金,黄金
 c:good	Adjective	ar:جيد,حسن	de:gut	en:good	es:bueno	fa:خوب	fr:bon,bonne	he:טוב	hi:अच्छा	ja:良い,いい	ko:좋다	pt:bom,boa	ru:хороший	tr:iyi	ur:اچھا	zh:好
+c:goodness	Noun	ar:خير,صلاح	de:Güte	en:goodness	es:bondad	fa:نیکی,خوبی	fr:bonté	he:טוב	hi:भलाई,अच्छाई	ja:善	ko:선,선함	pt:bondade	ru:добро	tr:iyilik	ur:نیکی,بھلائی	zh:善,善良
 c:government	Noun	ar:حكومة	de:Regierung	en:government	es:gobierno	fa:دولت,حکومت	fr:gouvernement	he:ממשלה	hi:सरकार	ja:政府	ko:정부	pt:governo	ru:правительство	tr:hükümet	ur:حکومت	zh:政府
 c:grape	Noun	ar:عنب	de:Traube,Weintraube	en:grape	es:uva	fa:انگور	fr:raisin	he:ענב	hi:अंगूर	ja:ブドウ	ko:포도	pt:uva	ru:виноград	tr:üzüm	ur:انگور	zh:葡萄
 c:gravity	Noun	ar:جاذبية	de:Schwerkraft,Gravitation	en:gravity	es:gravedad	fa:گرانش,جاذبه	fr:gravité,pesanteur	he:כבידה	hi:गुरुत्वाकर्षण	ja:重力,引力	ko:중력	pt:gravidade	ru:гравитация,тяготение	tr:yerçekimi	ur:کشش ثقل	zh:重力
@@ -264,10 +281,13 @@ c:headphone	Noun	ar:سماعة رأس,سماعات	de:Kopfhörer	en:headphones,h
 c:hear	Verb	ar:سمع,يسمع	de:hören	en:hear,hears,heard	es:oír,escuchar	fa:شنیدن	fr:entendre	he:לשמוע	hi:सुनना	ja:聞く	ko:듣다	pt:ouvir	ru:слышать	tr:duymak	ur:سننا	zh:听
 c:heart	Noun	ar:قلب	de:Herz	en:heart	es:corazón	fa:قلب,دل	fr:cœur	he:לב	hi:दिल,हृदय	ja:心臓,心	ko:심장,마음	pt:coração	ru:сердце	tr:kalp,yürek	ur:دل	zh:心,心脏
 c:heat	Noun	ar:حرارة	de:Hitze,Wärme	en:heat	es:calor	fa:گرما	fr:chaleur	he:חום	hi:गर्मी,ऊष्मा	ja:熱	ko:열	pt:calor	ru:тепло,жар	tr:ısı,sıcaklık	ur:حرارت	zh:热
+c:heaven	Noun	ar:سماء,جنة	de:Himmel	en:heaven	es:cielo	fa:بهشت,آسمان	fr:ciel,paradis	he:שמיים	hi:स्वर्ग	ja:天国	ko:천국	pt:céu	ru:небеса,рай	tr:cennet,gök	ur:جنت,آسمان	zh:天堂
+c:hell	Noun	ar:جحيم,نار	de:Hölle	en:hell	es:infierno	fa:جهنم,دوزخ	fr:enfer	he:גיהנום	hi:नरक	ja:地獄	ko:지옥	pt:inferno	ru:ад	tr:cehennem	ur:جہنم,دوزخ	zh:地狱
 c:help	Verb	ar:ساعد	de:helfen	en:help	es:ayudar	fa:کمک کردن	fr:aider	he:לעזור	hi:मदद करना	ja:助ける,手伝う	ko:돕다	pt:ajudar	ru:помогать,помочь	tr:yardım etmek	ur:مدد کرنا	zh:帮助,帮
 c:helper	Noun	ar:مساعد	de:Helfer,Assistent	en:helper,assistant	es:ayudante,asistente	fa:کمک,دستیار	fr:aide,assistant	he:עוזר	hi:सहायक,मददगार	ja:助手,アシスタント	ko:조수,도우미	pt:ajudante,assistente	ru:помощник,ассистент	tr:yardımcı,asistan	ur:مددگار,معاون	zh:助手,帮手
 c:highway	Noun	ar:طريق سريع	de:Autobahn,Schnellstraße	en:highway,motorway,freeway	es:autopista,carretera	fa:بزرگراه,آزادراه	fr:autoroute	he:כביש מהיר	hi:राजमार्ग,हाईवे	ja:高速道路	ko:고속도로	pt:autoestrada,rodovia	ru:шоссе,автомагистраль	tr:otoyol,karayolu	ur:شاہراہ,ہائی وے	zh:高速公路
 c:honey	Noun	ar:عسل	de:Honig	en:honey	es:miel	fa:عسل	fr:miel	he:דבש	hi:शहद	ja:蜂蜜	ko:꿀	pt:mel	ru:мёд	tr:bal	ur:شہد	zh:蜂蜜
+c:honor	Noun	ar:شرف	de:Ehre	en:honor,honour	es:honor	fa:شرف,آبرو	fr:honneur	he:כבוד	hi:सम्मान,इज़्ज़त	ja:名誉	ko:명예	pt:honra	ru:честь	tr:onur,şeref	ur:عزت,شرف	zh:荣誉
 c:hook	Noun	ar:خطاف,كلاب	de:Haken	en:hook	es:gancho	fa:قلاب	fr:crochet	he:וו,קרס	hi:हुक,कांटा	ja:フック,鉤	ko:고리,훅	pt:gancho	ru:крюк,крючок	tr:kanca,çengel	ur:کنڈا,ہک	zh:钩子,挂钩
 c:hope	Noun	ar:أمل,رجاء	de:Hoffnung	en:hope	es:esperanza	fa:امید	fr:espoir,espérance	he:תקווה	hi:आशा,उम्मीद	ja:希望	ko:희망	pt:esperança	ru:надежда	tr:umut	ur:امید	zh:希望
 c:horse	Noun	ar:حصان,فرس	de:Pferd	en:horse	es:caballo	fa:اسب	fr:cheval	he:סוס	hi:घोड़ा	ja:馬	ko:말	pt:cavalo	ru:лошадь,конь	tr:at	ur:گھوڑا	zh:马
@@ -326,6 +346,7 @@ c:listen	Verb	ar:استمع,أصغى	de:zuhören,hören	en:listen	es:escuchar	fa
 c:live	Verb	ar:عاش	de:leben	en:live	es:vivir	fa:زندگی کردن,زیستن	fr:vivre	he:לחיות	hi:जीना,रहना	ja:生きる,住む	ko:살다	pt:viver,morar	ru:жить	tr:yaşamak	ur:جینا,رہنا	zh:活,住
 c:location	Noun	ar:موقع	de:Position,Lage	en:location	es:ubicación	fa:موقعیت	fr:position,emplacement	he:מיקום	hi:स्थिति	ja:位置	ko:위치	pt:localização,posição	ru:положение,местоположение	tr:konum	ur:مقام,جگہ	zh:位置
 c:lock	Noun	ar:قفل	de:Schloss	en:lock	es:cerradura,candado	fa:قفل	fr:serrure,cadenas	he:מנעול	hi:ताला	ja:鍵,錠	ko:자물쇠,잠금장치	pt:fechadura,cadeado	ru:замок	tr:kilit	ur:تالا	zh:锁,锁头
+c:logic	Noun	ar:منطق	de:Logik	en:logic	es:lógica	fa:منطق	fr:logique	he:היגיון,לוגיקה	hi:तर्क	ja:論理	ko:논리	pt:lógica	ru:логика	tr:mantık	ur:منطق	zh:逻辑
 c:look	Verb	ar:نظر	de:schauen,blicken	en:look	es:mirar	fa:نگاه کردن	fr:regarder	he:להסתכל	hi:देखना	ja:見る	ko:보다	pt:olhar	ru:смотреть	tr:bakmak	ur:دیکھنا	zh:看
 c:love	Noun	ar:حب,محبة	de:Liebe	en:love	es:amor	fa:عشق	fr:amour	he:אהבה	hi:प्रेम	ja:愛	ko:사랑	pt:amor	ru:любовь	tr:aşk	ur:محبت	zh:爱
 c:luggage	Noun	ar:أمتعة,حقائب	de:Gepäck	en:luggage,baggage	es:equipaje	fa:بار,چمدان	fr:bagages	he:מטען,כבודה	hi:सामान,लगेज	ja:荷物,手荷物	ko:짐,수하물	pt:bagagem	ru:багаж	tr:bagaj	ur:سامان	zh:行李
@@ -351,6 +372,7 @@ c:meet	Verb	ar:قابل,لقي	de:treffen,begegnen	en:meet	es:encontrar,conocer	
 c:meeting	Noun	ar:اجتماع	de:Treffen,Besprechung	en:meeting	es:reunión	fa:جلسه	fr:réunion	he:פגישה,ישיבה	hi:बैठक,मीटिंग	ja:会議,ミーティング	ko:회의	pt:reunião	ru:встреча,собрание	tr:toplantı	ur:اجلاس,ملاقات	zh:会议
 c:memory	Noun	ar:ذاكرة,ذكرى	de:Erinnerung,Gedächtnis	en:memory	es:memoria,recuerdo	fa:حافظه,خاطره	fr:mémoire,souvenir	he:זיכרון	hi:स्मृति,याद	ja:記憶,思い出	ko:기억,추억	pt:memória,lembrança	ru:память,воспоминание	tr:hafıza,bellek,anı	ur:یاد,یادداشت	zh:记忆
 c:merchant	Noun	ar:تاجر	de:Kaufmann,Händler	en:merchant,trader	es:comerciante,mercader	fa:تاجر,بازرگان	fr:marchand,commerçant	he:סוחר	hi:व्यापारी	ja:商人	ko:상인	pt:comerciante,mercador	ru:торговец,купец	tr:tüccar,tacir	ur:تاجر	zh:商人,商贩
+c:mercy	Noun	ar:رحمة	de:Barmherzigkeit,Gnade	en:mercy	es:misericordia,piedad	fa:رحمت,مهربانی	fr:miséricorde,pitié	he:רחמים,חסד	hi:दया,करुणा	ja:慈悲	ko:자비	pt:misericórdia,piedade	ru:милосердие	tr:merhamet	ur:رحم,رحمت	zh:怜悯,慈悲
 c:message	Noun	ar:رسالة	de:Nachricht,Botschaft	en:message	es:mensaje	fa:پیام	fr:message	he:הודעה	hi:संदेश	ja:メッセージ,伝言	ko:메시지	pt:mensagem	ru:сообщение	tr:mesaj	ur:پیغام	zh:消息,信息
 c:metal	Noun	ar:معدن	de:Metall	en:metal	es:metal	fa:فلز	fr:métal	he:מתכת	hi:धातु	ja:金属,メタル	ko:금속,메탈	pt:metal	ru:металл	tr:metal,maden	ur:دھات	zh:金属
 c:microphone	Noun	ar:ميكروفون	de:Mikrofon	en:microphone,mic	es:micrófono	fa:میکروفون	fr:microphone,micro	he:מיקרופון	hi:माइक्रोफोन,माइक	ja:マイク,マイクロフォン	ko:마이크,마이크로폰	pt:microfone	ru:микрофон	tr:mikrofon	ur:مائیکروفون	zh:麦克风,话筒
@@ -359,6 +381,7 @@ c:milk	Noun	ar:حليب,لبن	de:Milch	en:milk	es:leche	fa:شیر	fr:lait	he:ח
 c:mind	Noun	ar:عقل,ذهن	de:Geist,Verstand	en:mind	es:mente	fa:ذهن,عقل	fr:esprit	he:תודעה,שכל	hi:मन	ja:心,精神	ko:마음,정신	pt:mente	ru:ум,разум	tr:akıl,zihin	ur:ذہن,دماغ	zh:心智,思想
 c:minus	Noun	ar:ناقص,طرح	de:Minus	en:minus	es:menos	fa:منها,تفریق	fr:moins	he:מינוס,פחות	hi:घटाव,माइनस	ja:マイナス	ko:빼기,마이너스	pt:menos	ru:минус	tr:eksi	ur:منفی,مائنس	zh:减,减号
 c:minute	Noun	ar:دقيقة	de:Minute	en:minute	es:minuto	fa:دقیقه	fr:minute	he:דקה	hi:मिनट	ja:分	ko:분	pt:minuto	ru:минута	tr:dakika	ur:منٹ	zh:分钟
+c:miracle	Noun	ar:معجزة	de:Wunder	en:miracle	es:milagro	fa:معجزه	fr:miracle	he:נס	hi:चमत्कार	ja:奇跡	ko:기적	pt:milagre	ru:чудо	tr:mucize	ur:معجزہ	zh:奇迹
 c:mirror	Noun	ar:مرآة	de:Spiegel	en:mirror	es:espejo	fa:آینه	fr:miroir	he:מראה	hi:दर्पण,आईना	ja:鏡	ko:거울	pt:espelho	ru:зеркало	tr:ayna	ur:آئینہ	zh:镜子
 c:mobile	Noun	ar:جوال,محمول,موبايل	de:Handy,Mobiltelefon	en:mobile,cell phone,cellphone,cell	es:móvil,celular	fa:موبایل,تلفن همراه	fr:mobile,portable	he:נייד,סלולרי	hi:मोबाइल,सेलफ़ोन	ja:携帯電話,ケータイ	ko:휴대폰,핸드폰	pt:celular,telemóvel	ru:мобильный,сотовый	tr:cep telefonu,mobil	ur:موبائل	zh:手机
 c:molecule	Noun	ar:جزيء	de:Molekül	en:molecule	es:molécula	fa:مولکول	fr:molécule	he:מולקולה	hi:अणु	ja:分子	ko:분자	pt:molécula	ru:молекула	tr:molekül	ur:مالیکیول	zh:分子
@@ -368,6 +391,7 @@ c:monitor	Noun	ar:شاشة عرض,مرقاب	de:Monitor	en:monitor	es:monitor	fa
 c:month	Noun	ar:شهر	de:Monat	en:month	es:mes	fa:ماه	fr:mois	he:חודש	hi:महीना,मास	ja:月	ko:달,월	pt:mês	ru:месяц	tr:ay	ur:مہینہ	zh:月
 c:moon	Noun	ar:قمر	de:Mond	en:moon	es:luna	fa:ماه	fr:lune	he:ירח	hi:चंद्रमा,चांद	ja:月	ko:달	pt:lua	ru:луна	tr:ay	ur:چاند	zh:月亮
 c:morning	Noun	ar:صباح	de:Morgen	en:morning	es:mañana	fa:صبح	fr:matin	he:בוקר	hi:सुबह	ja:朝	ko:아침	pt:manhã	ru:утро	tr:sabah	ur:صبح	zh:早上,早晨
+c:mosque	Noun	ar:مسجد,جامع	de:Moschee	en:mosque	es:mezquita	fa:مسجد	fr:mosquée	he:מסגד	hi:मस्जिद	ja:モスク	ko:모스크,이슬람 사원	pt:mesquita	ru:мечеть	tr:cami,mescit	ur:مسجد	zh:清真寺
 c:mother	Noun	ar:أم,والدة	de:Mutter	en:mother,mom	es:madre,mamá	fa:مادر	fr:mère,maman	he:אם,אמא	hi:माँ,माता	ja:母,お母さん	ko:어머니,엄마	pt:mãe	ru:мать,мама	tr:anne,ana	ur:ماں,والدہ	zh:母亲,妈妈
 c:motorcycle	Noun	ar:دراجة نارية	de:Motorrad	en:motorcycle,motorbike	es:motocicleta,moto	fa:موتورسیکلت,موتور	fr:motocyclette,moto	he:אופנוע	hi:मोटरसाइकिल	ja:オートバイ,バイク	ko:오토바이,모터사이클	pt:motocicleta,moto	ru:мотоцикл	tr:motosiklet	ur:موٹرسائیکل	zh:摩托车
 c:mountain	Noun	ar:جبل	de:Berg	en:mountain	es:montaña	fa:کوه	fr:montagne	he:הר	hi:पर्वत,पहाड़	ja:山	ko:산	pt:montanha,serra	ru:гора	tr:dağ	ur:پہاڑ	zh:山
@@ -413,6 +437,7 @@ c:page	Noun	ar:صفحة	de:Seite	en:page	es:página	fa:صفحه	fr:page	he:עמ�
 c:painting	Noun	ar:رسم,لوحة	de:Gemälde,Malerei	en:painting	es:pintura	fa:نقاشی	fr:peinture,tableau	he:ציור	hi:चित्रकारी,पेंटिंग	ja:絵画,絵	ko:그림,회화	pt:pintura,quadro	ru:картина,живопись	tr:resim,tablo	ur:پینٹنگ,تصویر کشی	zh:绘画,画作
 c:pan	Noun	ar:مقلاة	de:Pfanne,Bratpfanne	en:pan,frying pan,skillet	es:sartén	fa:ماهیتابه	fr:poêle	he:מחבת	hi:कड़ाही,तवा	ja:フライパン,鍋	ko:프라이팬,팬	pt:frigideira,panela	ru:сковорода,сковородка	tr:tava	ur:کڑاہی,توا	zh:平底锅,煎锅
 c:paper	Noun	ar:ورق,ورقة	de:Papier	en:paper	es:papel	fa:کاغذ	fr:papier	he:נייר	hi:कागज़	ja:紙	ko:종이	pt:papel	ru:бумага	tr:kâğıt	ur:کاغذ	zh:纸
+c:paradise	Noun	ar:فردوس,جنة	de:Paradies	en:paradise	es:paraíso	fa:بهشت,فردوس	fr:paradis	he:גן עדן	hi:स्वर्ग,जन्नत	ja:楽園	ko:낙원	pt:paraíso	ru:рай	tr:cennet	ur:جنت,فردوس	zh:乐园
 c:parent	Noun	ar:والد	de:Elternteil	en:parent,parents	es:padre,madre	fa:والد	fr:parent	he:הורה	hi:अभिभावक	ja:親	ko:부모	pt:pai,mãe	ru:родитель	tr:ebeveyn	ur:والد	zh:父母,家长
 c:passenger	Noun	ar:راكب,مسافر	de:Passagier,Fahrgast,Reisender	en:passenger	es:pasajero,viajero	fa:مسافر	fr:passager,voyageur	he:נוסע	hi:यात्री,सवारी	ja:乗客,旅客	ko:승객	pt:passageiro	ru:пассажир	tr:yolcu	ur:مسافر	zh:乘客,旅客
 c:password	Noun	ar:كلمة مرور,كلمة السر	de:Passwort,Kennwort	en:password	es:contraseña,clave	fa:رمز عبور,گذرواژه	fr:mot de passe	he:סיסמה	hi:पासवर्ड	ja:パスワード	ko:비밀번호,암호	pt:senha,palavra-passe	ru:пароль	tr:şifre,parola	ur:پاس ورڈ	zh:密码
@@ -423,11 +448,13 @@ c:peace	Noun	ar:سلام	de:Frieden	en:peace	es:paz	fa:صلح	fr:paix	he:שלו�
 c:pen	Noun	ar:قلم	de:Stift,Kugelschreiber	en:pen	es:bolígrafo,pluma	fa:خودکار,قلم	fr:stylo	he:עט	hi:कलम,पेन	ja:ペン	ko:펜	pt:caneta	ru:ручка	tr:kalem	ur:قلم	zh:笔
 c:pencil	Noun	ar:قلم رصاص	de:Bleistift	en:pencil	es:lápiz	fa:مداد	fr:crayon	he:עיפרון	hi:पेंसिल	ja:鉛筆,ペンシル	ko:연필	pt:lápis	ru:карандаш	tr:kurşun kalem	ur:پنسل	zh:铅笔
 c:person	Noun	ar:شخص,إنسان	de:Person,Mensch	en:person,people	es:persona	fa:شخص,فرد	fr:personne	he:אדם	hi:व्यक्ति	ja:人	ko:사람	pt:pessoa	ru:человек,личность	tr:kişi,şahıs	ur:شخص	zh:人,人员
+c:philosophy	Noun	ar:فلسفة	de:Philosophie	en:philosophy	es:filosofía	fa:فلسفه	fr:philosophie	he:פילוסופיה	hi:दर्शन,दर्शनशास्त्र	ja:哲学	ko:철학	pt:filosofia	ru:философия	tr:felsefe	ur:فلسفہ	zh:哲学
 c:phone	Noun	ar:هاتف,تلفون	de:Telefon	en:phone,telephone	es:teléfono	fa:تلفن	fr:téléphone	he:טלפון	hi:फोन,टेलीफोन	ja:電話	ko:전화	pt:telefone	ru:телефон	tr:telefon	ur:فون,ٹیلیفون	zh:电话
 c:photograph	Noun	ar:صورة فوتوغرافية	de:Foto,Fotografie	en:photograph,photo	es:fotografía,foto	fa:عکس	fr:photographie,photo	he:תצלום,צילום	hi:तस्वीर,फोटो	ja:写真	ko:사진	pt:fotografia,foto	ru:фотография,фото	tr:fotoğraf	ur:فوٹو	zh:照片
 c:physics	Noun	ar:فيزياء	de:Physik	en:physics	es:física	fa:فیزیک	fr:physique	he:פיזיקה	hi:भौतिकी,भौतिक विज्ञान	ja:物理学,物理	ko:물리,물리학	pt:física	ru:физика	tr:fizik	ur:طبیعیات	zh:物理,物理学
 c:piano	Noun	ar:بيانو	de:Klavier,Piano	en:piano	es:piano	fa:پیانو	fr:piano	he:פסנתר	hi:पियानो	ja:ピアノ	ko:피아노	pt:piano	ru:пианино	tr:piyano	ur:پیانو	zh:钢琴
 c:picture	Noun	ar:صورة	de:Bild	en:picture	es:imagen,cuadro	fa:تصویر,عکس	fr:image,tableau	he:תמונה	hi:तस्वीर,चित्र	ja:絵,写真	ko:그림,사진	pt:imagem,foto	ru:картинка,изображение	tr:resim	ur:تصویر	zh:图画,图片
+c:pilgrimage	Noun	ar:حج	de:Pilgerfahrt,Wallfahrt	en:pilgrimage	es:peregrinación	fa:زیارت,حج	fr:pèlerinage	he:עלייה לרגל	hi:तीर्थयात्रा	ja:巡礼	ko:순례	pt:peregrinação	ru:паломничество	tr:hac	ur:زیارت,حج	zh:朝圣
 c:pilot	Noun	ar:طيار	de:Pilot,Pilotin	en:pilot	es:piloto	fa:خلبان	fr:pilote	he:טייס	hi:पायलट,विमान चालक	ja:パイロット,操縦士	ko:파일럿,조종사	pt:piloto	ru:пилот,лётчик	tr:pilot	ur:پائلٹ	zh:飞行员,驾驶员
 c:pink	Adjective	ar:وردي	de:rosa	en:pink	es:rosa,rosado	fa:صورتی	fr:rose	he:ורוד	hi:गुलाबी	ja:ピンク,桃色	ko:분홍	pt:rosa	ru:розовый	tr:pembe	ur:گلابی	zh:粉红,粉色
 c:place	Noun	ar:مكان	de:Ort,Platz	en:place	es:lugar	fa:جا,مکان	fr:lieu,endroit	he:מקום	hi:जगह,स्थान	ja:場所	ko:장소,곳	pt:lugar	ru:место	tr:yer	ur:جگہ,مقام	zh:地方
@@ -443,14 +470,18 @@ c:policeman	Noun	ar:شرطي	de:Polizist,Polizistin	en:policeman,police officer	
 c:port	Noun	ar:ميناء	de:Hafen	en:port,harbor,harbour	es:puerto	fa:بندر	fr:port	he:נמל	hi:बंदरगाह	ja:港,港湾	ko:항구	pt:porto	ru:порт,гавань	tr:liman	ur:بندرگاہ	zh:港口,港湾
 c:pot	Noun	ar:قدر,وعاء	de:Topf,Kochtopf	en:pot	es:olla,cazuela	fa:قابلمه,دیگ	fr:pot,marmite	he:סיר	hi:बर्तन,पतीला	ja:鍋	ko:냄비,솥	pt:panela,pote	ru:горшок,кастрюля	tr:tencere	ur:دیگ,ہانڈی	zh:锅,罐
 c:power	Noun	ar:قوة,سلطة	de:Macht,Kraft	en:power	es:poder	fa:قدرت	fr:pouvoir	he:כוח,עוצמה	hi:शक्ति,ताकत	ja:力,権力	ko:힘,권력	pt:poder	ru:власть,сила	tr:güç,iktidar	ur:طاقت,قوت	zh:力量,权力
+c:prayer	Noun	ar:صلاة,دعاء	de:Gebet	en:prayer	es:oración,plegaria	fa:نماز,دعا	fr:prière	he:תפילה	hi:प्रार्थना	ja:祈り	ko:기도	pt:oração	ru:молитва	tr:dua,namaz	ur:دعا,نماز	zh:祈祷
 c:present	Noun	ar:حاضر	de:Gegenwart	en:present	es:presente	fa:حال	fr:présent	he:הווה	hi:वर्तमान	ja:現在	ko:현재	pt:presente	ru:настоящее	tr:şimdi	ur:حال	zh:现在
 c:president	Noun	ar:رئيس	de:Präsident	en:president	es:presidente	fa:رئیس جمهور	fr:président	he:נשיא	hi:राष्ट्रपति	ja:大統領	ko:대통령	pt:presidente	ru:президент	tr:başkan,cumhurbaşkanı	ur:صدر	zh:总统,主席
+c:pride	Noun	ar:كبرياء,فخر	de:Stolz	en:pride	es:orgullo	fa:غرور,افتخار	fr:fierté,orgueil	he:גאווה	hi:गर्व,घमंड	ja:誇り	ko:자부심,교만	pt:orgulho	ru:гордость	tr:gurur	ur:فخر,غرور	zh:骄傲,自豪
 c:priest	Noun	ar:كاهن,قس	de:Priester	en:priest	es:sacerdote,cura	fa:کشیش,روحانی	fr:prêtre	he:כהן,כומר	hi:पुजारी,पादरी	ja:司祭,神父	ko:사제,신부	pt:sacerdote,padre	ru:священник,жрец	tr:rahip,papaz	ur:پادری,پجاری	zh:牧师,祭司
+c:principle	Noun	ar:مبدأ	de:Prinzip,Grundsatz	en:principle	es:principio	fa:اصل,مبدأ	fr:principe	he:עיקרון	hi:सिद्धांत	ja:原則,原理	ko:원칙,원리	pt:princípio	ru:принцип	tr:ilke,prensip	ur:اصول	zh:原则,原理
 c:prison	Noun	ar:سجن	de:Gefängnis	en:prison	es:prisión,cárcel	fa:زندان	fr:prison	he:כלא	hi:जेल,कारागार	ja:刑務所	ko:감옥,교도소	pt:prisão,cadeia	ru:тюрьма	tr:hapishane,cezaevi	ur:قید خانہ,جیل	zh:监狱
 c:private	Adjective	ar:خاص	de:privat	en:private	es:privado	fa:خصوصی,شخصی	fr:privé	he:פרטי	hi:निजी,व्यक्तिगत	ja:個人的,プライベート	ko:개인적,사적	pt:privado	ru:частный,личный	tr:özel	ur:نجی,ذاتی	zh:私人,私有
 c:profession	Noun	ar:مهنة	de:Beruf,Profession	en:profession,occupation	es:profesión,oficio	fa:حرفه,پیشه	fr:profession,métier	he:מקצוע	hi:पेशा,व्यवसाय	ja:職業	ko:직업	pt:profissão,ofício	ru:профессия,занятие	tr:meslek	ur:پیشہ,حرفہ	zh:职业,行业
 c:program	Noun	ar:برنامج	de:Programm	en:program,programme	es:programa	fa:برنامه	fr:programme	he:תוכנית	hi:प्रोग्राम,कार्यक्रम	ja:プログラム	ko:프로그램	pt:programa	ru:программа	tr:program	ur:پروگرام	zh:程序,程式
 c:promise	Verb	ar:وعد	de:versprechen	en:promise	es:prometer	fa:قول دادن	fr:promettre	he:להבטיח	hi:वादा करना	ja:約束する	ko:약속하다	pt:prometer	ru:обещать	tr:söz vermek	ur:وعدہ کرنا	zh:承诺,答应
+c:prophet	Noun	ar:نبي,رسول	de:Prophet	en:prophet	es:profeta	fa:پیامبر,نبی	fr:prophète	he:נביא	hi:पैग़म्बर,नबी	ja:預言者	ko:예언자	pt:profeta	ru:пророк	tr:peygamber	ur:نبی,پیغمبر	zh:先知
 c:public	Noun	ar:عامة,جمهور	de:Öffentlichkeit	en:public	es:público	fa:مردم,عموم	fr:public	he:ציבור	hi:जनता,लोग	ja:公衆,一般	ko:대중,공중	pt:público	ru:публика,общественность	tr:halk,kamu	ur:عوام	zh:公众,大众
 c:punishment	Noun	ar:عقاب,عقوبة	de:Strafe,Bestrafung	en:punishment	es:castigo	fa:مجازات,تنبیه	fr:punition,châtiment	he:עונש	hi:सज़ा,दंड	ja:罰,処罰	ko:처벌,벌	pt:castigo,punição	ru:наказание	tr:ceza	ur:سزا	zh:惩罚,处罚
 c:purple	Adjective	ar:بنفسجي,أرجواني	de:lila,violett	en:purple,violet	es:morado,púrpura	fa:بنفش	fr:violet,pourpre	he:סגול	hi:बैंगनी	ja:紫	ko:보라,자주	pt:roxo,púrpura	ru:фиолетовый	tr:mor	ur:جامنی	zh:紫,紫色
@@ -460,11 +491,13 @@ c:rabbit	Noun	ar:أرنب	de:Kaninchen,Hase	en:rabbit	es:conejo	fa:خرگوش	fr
 c:radio	Noun	ar:راديو,مذياع	de:Radio,Rundfunk	en:radio	es:radio	fa:رادیو	fr:radio	he:רדיו	hi:रेडियो	ja:ラジオ	ko:라디오	pt:rádio	ru:радио	tr:radyo	ur:ریڈیو	zh:收音机,无线电
 c:rain	Noun	ar:مطر	de:Regen	en:rain	es:lluvia	fa:باران	fr:pluie	he:גשם	hi:बारिश,वर्षा	ja:雨	ko:비	pt:chuva	ru:дождь	tr:yağmur	ur:بارش	zh:雨
 c:read	Verb	ar:قرأ,يقرأ	de:lesen	en:read,reads	es:leer	fa:خواندن	fr:lire	he:לקרוא	hi:पढ़ना	ja:読む	ko:읽다	pt:ler	ru:читать	tr:okumak	ur:پڑھنا	zh:读
+c:reality	Noun	ar:واقع,حقيقة	de:Realität,Wirklichkeit	en:reality	es:realidad	fa:واقعیت	fr:réalité	he:מציאות	hi:वास्तविकता,यथार्थ	ja:現実	ko:현실	pt:realidade	ru:реальность	tr:gerçeklik	ur:حقیقت,واقعیت	zh:现实
 c:realize	Verb	ar:أدرك	de:erkennen,realisieren	en:realize,realise	es:darse cuenta	fa:دریافتن	fr:se rendre compte	he:להבין	hi:एहसास होना	ja:気づく,悟る	ko:깨닫다	pt:perceber,dar-se conta	ru:осознавать,понимать	tr:fark etmek	ur:احساس ہونا	zh:意识到,发现
 c:reason	Noun	ar:سبب	de:Grund	en:reason	es:razón	fa:دلیل	fr:raison	he:סיבה	hi:कारण,वजह	ja:理由	ko:이유	pt:razão,motivo	ru:причина	tr:sebep,neden	ur:وجہ,سبب	zh:原因,理由
 c:recognize	Verb	ar:تعرف	de:erkennen	en:recognize,recognise	es:reconocer	fa:شناختن	fr:reconnaître	he:לזהות	hi:पहचानना	ja:認識する,見分ける	ko:인식하다,알아보다	pt:reconhecer	ru:узнавать	tr:tanımak	ur:پہچاننا	zh:认出,识别
 c:red	Adjective	ar:أحمر	de:rot	en:red	es:rojo	fa:قرمز,سرخ	fr:rouge	he:אדום	hi:लाल	ja:赤,赤い	ko:빨간,붉은	pt:vermelho	ru:красный	tr:kırmızı	ur:لال,سرخ	zh:红,红色
 c:region	Noun	ar:إقليم	de:Region	en:region	es:región	fa:منطقه	fr:région	he:אזור,חבל	hi:प्रदेश,क्षेत्र	ja:地方	ko:지방	pt:região	ru:регион	tr:bölge	ur:خطہ,علاقہ	zh:地区
+c:religion	Noun	ar:دين,ديانة	de:Religion	en:religion	es:religión	fa:دین,مذهب	fr:religion	he:דת	hi:धर्म	ja:宗教	ko:종교	pt:religião	ru:религия	tr:din	ur:مذہب,دین	zh:宗教
 c:remember	Verb	ar:تذكر	de:erinnern,sich erinnern	en:remember	es:recordar	fa:به یاد آوردن	fr:se souvenir,se rappeler	he:לזכור	hi:याद करना	ja:覚える,思い出す	ko:기억하다	pt:lembrar	ru:помнить	tr:hatırlamak	ur:یاد کرنا	zh:记得,记住
 c:repeat	Verb	ar:كرر	de:wiederholen	en:repeat	es:repetir	fa:تکرار کردن	fr:répéter	he:לחזור	hi:दोहराना	ja:繰り返す	ko:반복하다	pt:repetir	ru:повторять	tr:tekrarlamak	ur:دہرانا	zh:重复
 c:responsibility	Noun	ar:مسؤولية	de:Verantwortung	en:responsibility	es:responsabilidad	fa:مسئولیت	fr:responsabilité	he:אחריות	hi:जिम्मेदारी,उत्तरदायित्व	ja:責任	ko:책임	pt:responsabilidade	ru:ответственность	tr:sorumluluk	ur:ذمہ داری	zh:责任
@@ -516,6 +549,7 @@ c:shovel	Noun	ar:مجرفة	de:Schaufel,Spaten	en:shovel,spade	es:pala	fa:بیل
 c:show	Verb	ar:أظهر,أرى	de:zeigen	en:show	es:mostrar,enseñar	fa:نشان دادن	fr:montrer	he:להראות	hi:दिखाना	ja:見せる,示す	ko:보여주다	pt:mostrar	ru:показывать,показать	tr:göstermek	ur:دکھانا	zh:显示,给看
 c:silver	Noun	ar:فضة	de:Silber	en:silver	es:plata	fa:نقره	fr:argent	he:כסף	hi:चांदी,रजत	ja:銀,シルバー	ko:은,실버	pt:prata	ru:серебро	tr:gümüş	ur:چاندی	zh:银,银子
 c:simple	Adjective	ar:بسيط	de:einfach	en:simple	es:simple,sencillo	fa:ساده	fr:simple	he:פשוט	hi:सरल	ja:簡単,シンプル	ko:간단하다	pt:simples	ru:простой	tr:basit	ur:سادہ	zh:简单
+c:sin	Noun	ar:ذنب,خطيئة	de:Sünde	en:sin	es:pecado	fa:گناه	fr:péché	he:חטא	hi:पाप	ja:罪	ko:죄	pt:pecado	ru:грех	tr:günah	ur:گناہ	zh:罪
 c:singer	Noun	ar:مغني	de:Sänger	en:singer	es:cantante	fa:خواننده	fr:chanteur	he:זמר	hi:गायक	ja:歌手	ko:가수	pt:cantor	ru:певец	tr:şarkıcı	ur:گلوکار	zh:歌手
 c:sister	Noun	ar:أخت	de:Schwester	en:sister	es:hermana	fa:خواهر	fr:sœur	he:אחות	hi:बहन	ja:姉,妹	ko:자매,언니,누나,여동생	pt:irmã	ru:сестра	tr:kız kardeş	ur:بہن	zh:姐妹,姐姐,妹妹
 c:sit	Verb	ar:جلس	de:sitzen	en:sit	es:sentarse	fa:نشستن	fr:s'asseoir	he:לשבת	hi:बैठना	ja:座る	ko:앉다	pt:sentar	ru:сидеть	tr:oturmak	ur:بیٹھنا	zh:坐
@@ -535,9 +569,11 @@ c:soldier	Noun	ar:جندي	de:Soldat	en:soldier	es:soldado	fa:سرباز	fr:sold
 c:solid	Noun	ar:صلب,جامد	de:Feststoff	en:solid	es:sólido	fa:جامد	fr:solide	he:מוצק	hi:ठोस	ja:固体	ko:고체	pt:sólido	ru:твёрдое тело	tr:katı	ur:ٹھوس	zh:固体
 c:son	Noun	ar:ابن	de:Sohn	en:son	es:hijo	fa:پسر	fr:fils	he:בן	hi:बेटा,पुत्र	ja:息子	ko:아들	pt:filho	ru:сын	tr:oğul	ur:بیٹا	zh:儿子
 c:song	Noun	ar:أغنية	de:Lied	en:song	es:canción	fa:آهنگ,ترانه	fr:chanson	he:שיר	hi:गीत,गाना	ja:歌,ソング	ko:노래	pt:canção,música	ru:песня	tr:şarkı	ur:گیت,گانا	zh:歌,歌曲
+c:soul	Noun	ar:روح,نفس	de:Seele	en:soul	es:alma	fa:روح,جان	fr:âme	he:נשמה	hi:आत्मा	ja:魂	ko:영혼	pt:alma	ru:душа	tr:ruh	ur:روح	zh:灵魂
 c:south	Noun	ar:جنوب	de:Süden	en:south	es:sur	fa:جنوب	fr:sud	he:דרום	hi:दक्षिण	ja:南	ko:남쪽,남	pt:sul	ru:юг	tr:güney	ur:جنوب	zh:南
 c:speak	Verb	ar:تكلم,يتكلم	de:sprechen	en:speak,speaks,spoke	es:hablar	fa:صحبت کردن	fr:parler	he:לדבר	hi:बोलना	ja:話す	ko:말하다	pt:falar	ru:говорить	tr:konuşmak	ur:بولنا	zh:说
 c:speaker	Noun	ar:سماعة,مكبر صوت	de:Lautsprecher	en:speaker,loudspeaker	es:altavoz,parlante,bocina	fa:بلندگو,اسپیکر	fr:haut-parleur,enceinte	he:רמקול	hi:स्पीकर,लाउडस्पीकर	ja:スピーカー	ko:스피커,확성기	pt:alto-falante,coluna	ru:динамик,громкоговоритель	tr:hoparlör	ur:اسپیکر	zh:扬声器,喇叭
+c:spirit	Noun	ar:روح	de:Geist	en:spirit	es:espíritu	fa:روح	fr:esprit	he:רוח	hi:आत्मा,प्रेत	ja:精神,霊	ko:정신,영	pt:espírito	ru:дух	tr:ruh	ur:روح	zh:精神
 c:spoon	Noun	ar:ملعقة	de:Löffel	en:spoon	es:cuchara	fa:قاشق	fr:cuillère	he:כף	hi:चम्मच	ja:スプーン,匙	ko:숟가락	pt:colher	ru:ложка	tr:kaşık	ur:چمچ	zh:勺子
 c:square	Noun	ar:مربع	de:Quadrat	en:square	es:cuadrado	fa:مربع	fr:carré	he:ריבוע	hi:वर्ग,चौकोर	ja:四角,正方形	ko:사각형,정사각형	pt:quadrado	ru:квадрат	tr:kare	ur:مربع	zh:正方形,方形
 c:stage	Noun	ar:مسرح,منصة	de:Bühne	en:stage	es:escenario	fa:صحنه	fr:scène	he:במה	hi:मंच,स्टेज	ja:舞台,ステージ	ko:무대,스테이지	pt:palco,cenário	ru:сцена,подмостки	tr:sahne	ur:اسٹیج,منچ	zh:舞台
@@ -572,6 +608,7 @@ c:teacher	Noun	ar:معلم,أستاذ	de:Lehrer	en:teacher	es:profesor	fa:معل
 c:television	Noun	ar:تلفاز,تلفزيون	de:Fernseher,Fernsehen	en:television,tv	es:televisión,televisor,tele	fa:تلویزیون	fr:télévision,télé	he:טלוויזיה	hi:टेलीविजन,टीवी	ja:テレビ,テレビジョン	ko:텔레비전,티브이	pt:televisão,tv	ru:телевизор,телевидение	tr:televizyon	ur:ٹیلی ویژن	zh:电视,电视机
 c:tell	Verb	ar:أخبر	de:erzählen,sagen	en:tell	es:contar,decir	fa:گفتن,خبر دادن	fr:raconter,dire	he:לספר	hi:बताना	ja:伝える,話す	ko:알리다,말하다	pt:contar,dizer	ru:рассказывать,сказать	tr:anlatmak,söylemek	ur:بتانا	zh:告诉
 c:temperature	Noun	ar:درجة الحرارة	de:Temperatur	en:temperature	es:temperatura	fa:دما,حرارت	fr:température	he:טמפרטורה	hi:तापमान	ja:温度	ko:온도	pt:temperatura	ru:температура	tr:sıcaklık	ur:درجہ حرارت	zh:温度
+c:temple	Noun	ar:معبد,هيكل	de:Tempel	en:temple	es:templo	fa:معبد	fr:temple	he:מקדש	hi:मंदिर	ja:寺院	ko:사원,절	pt:templo	ru:храм	tr:tapınak	ur:مندر,معبد	zh:庙,寺
 c:ten	Noun	ar:عشرة	de:zehn	en:ten	es:diez	fa:ده	fr:dix	he:עשרה	hi:दस	ja:十,じゅう	ko:열,십	pt:dez	ru:десять	tr:on	ur:دس	zh:十
 c:thank	Verb	ar:شكر	de:danken	en:thank	es:agradecer	fa:تشکر کردن	fr:remercier	he:להודות	hi:धन्यवाद देना,आभार व्यक्त करना	ja:感謝する	ko:감사하다	pt:agradecer	ru:благодарить	tr:teşekkür etmek	ur:شکریہ ادا کرنا,شکر کرنا	zh:感谢,谢
 c:theater	Noun	ar:مسرح	de:Theater	en:theater,theatre	es:teatro	fa:تئاتر	fr:théâtre	he:תיאטרון	hi:रंगमंच,थिएटर	ja:劇場,シアター	ko:극장,연극	pt:teatro	ru:театр	tr:tiyatro	ur:تھیٹر	zh:剧院,戏剧
@@ -612,6 +649,7 @@ c:upload	Verb	ar:رفع	de:hochladen	en:upload	es:subir,cargar	fa:آپلود ک�
 c:vehicle	Noun	ar:مركبة,عربة	de:Fahrzeug	en:vehicle	es:vehículo	fa:خودرو,وسیله نقلیه	fr:véhicule	he:רכב	hi:वाहन	ja:乗り物,車両	ko:차량,탈것	pt:veículo	ru:транспорт,транспортное средство	tr:araç,taşıt	ur:گاڑی,سواری	zh:车辆,交通工具
 c:village	Noun	ar:قرية	de:Dorf	en:village	es:aldea,pueblo	fa:روستا,دهکده	fr:village	he:כפר	hi:गाँव	ja:村	ko:마을	pt:aldeia,vila	ru:деревня	tr:köy	ur:گاؤں	zh:村,村庄
 c:violin	Noun	ar:كمان	de:Geige,Violine	en:violin	es:violín	fa:ویولن	fr:violon	he:כינור	hi:वायलिन	ja:バイオリン	ko:바이올린	pt:violino	ru:скрипка	tr:keman	ur:وائلن	zh:小提琴
+c:virtue	Noun	ar:فضيلة	de:Tugend	en:virtue	es:virtud	fa:فضیلت	fr:vertu	he:מידה טובה,סגולה	hi:सद्गुण,पुण्य	ja:美徳,徳	ko:덕,미덕	pt:virtude	ru:добродетель	tr:erdem,fazilet	ur:فضیلت,نیکی	zh:美德
 c:visit	Noun	ar:زيارة	de:Besuch	en:visit	es:visita	fa:دیدار,ملاقات	fr:visite	he:ביקור	hi:मुलाकात,दौरा	ja:訪問,見学	ko:방문	pt:visita	ru:визит,посещение	tr:ziyaret	ur:ملاقات	zh:访问,拜访
 c:voice	Noun	ar:صوت	de:Stimme	en:voice	es:voz	fa:صدا	fr:voix	he:קול	hi:आवाज़,स्वर	ja:声	ko:목소리	pt:voz	ru:голос	tr:ses	ur:آواز	zh:声音,嗓音
 c:vote	Noun	ar:تصويت,صوت	de:Abstimmung,Stimme	en:vote	es:voto	fa:رأی	fr:vote,voix	he:קול,הצבעה	hi:वोट,मत	ja:投票,票	ko:투표	pt:voto	ru:голос,голосование	tr:oy	ur:ووٹ	zh:投票,选票
@@ -636,6 +674,7 @@ c:wind	Noun	ar:ريح	de:Wind	en:wind	es:viento	fa:باد	fr:vent	he:רוח	hi:�
 c:window	Noun	ar:نافذة,شباك	de:Fenster	en:window	es:ventana	fa:پنجره	fr:fenêtre	he:חלון	hi:खिड़की	ja:窓	ko:창문	pt:janela	ru:окно	tr:pencere	ur:کھڑکی	zh:窗,窗户
 c:wine	Noun	ar:نبيذ,خمر	de:Wein	en:wine	es:vino	fa:شراب	fr:vin	he:יין	hi:शराब,मदिरा	ja:ワイン	ko:와인,포도주	pt:vinho	ru:вино	tr:şarap	ur:شراب	zh:葡萄酒,酒
 c:wire	Noun	ar:سلك	de:Draht,Kabel	en:wire	es:alambre,cable	fa:سیم	fr:fil,câble	he:חוט,תיל	hi:तार	ja:針金,ワイヤー	ko:철사,와이어	pt:fio,arame	ru:провод,проволока	tr:tel,kablo	ur:تار	zh:电线,金属丝
+c:wisdom	Noun	ar:حكمة	de:Weisheit	en:wisdom	es:sabiduría	fa:حکمت,خرد	fr:sagesse	he:חוכמה	hi:ज्ञान,बुद्धिमत्ता	ja:知恵	ko:지혜	pt:sabedoria	ru:мудрость	tr:bilgelik,hikmet	ur:حکمت,دانائی	zh:智慧
 c:wolf	Noun	ar:ذئب	de:Wolf	en:wolf	es:lobo	fa:گرگ	fr:loup	he:זאב	hi:भेड़िया	ja:狼,オオカミ	ko:늑대	pt:lobo	ru:волк	tr:kurt	ur:بھیڑیا	zh:狼
 c:woman	Noun	ar:امرأة,سيدة	de:Frau	en:woman,women	es:mujer	fa:زن	fr:femme	he:אישה	hi:औरत,महिला	ja:女,女性	ko:여자	pt:mulher	ru:женщина	tr:kadın	ur:عورت,خاتون	zh:女人,女子
 c:wonder	Verb	ar:تساءل	de:sich fragen	en:wonder	es:preguntarse	fa:در شگفت بودن	fr:se demander	he:לתהות	hi:आश्चर्य करना	ja:不思議に思う	ko:궁금해하다	pt:perguntar-se	ru:задаваться вопросом	tr:merak etmek	ur:سوچنا,حیرت ہونا	zh:想知道
@@ -644,6 +683,7 @@ c:word	Noun	ar:كلمة	de:Wort	en:word,words	es:palabra	fa:کلمه,واژه	fr
 c:work	Verb	ar:عمل,يعمل	de:arbeiten	en:work,works,worked	es:trabajar	fa:کار کردن	fr:travailler	he:לעבוד	hi:काम करना	ja:働く	ko:일하다	pt:trabalhar	ru:работать	tr:çalışmak	ur:کام کرنا	zh:工作
 c:worker	Noun	ar:عامل	de:Arbeiter,Arbeiterin	en:worker,laborer	es:trabajador,obrero	fa:کارگر	fr:travailleur,ouvrier	he:עובד,פועל	hi:मज़दूर,कामगार	ja:労働者	ko:노동자	pt:trabalhador,operário	ru:рабочий,работник	tr:işçi	ur:مزدور,کارکن	zh:工人,劳动者
 c:world	Noun	ar:عالم,دنيا	de:Welt	en:world	es:mundo	fa:جهان,دنیا	fr:monde	he:עולם	hi:दुनिया,विश्व	ja:世界	ko:세계	pt:mundo	ru:мир	tr:dünya	ur:دنیا	zh:世界
+c:worship	Noun	ar:عبادة	de:Anbetung	en:worship	es:adoración,culto	fa:عبادت,پرستش	fr:adoration,culte	he:עבודה,סגידה	hi:पूजा	ja:崇拝,礼拝	ko:예배,숭배	pt:adoração,culto	ru:поклонение	tr:ibadet	ur:عبادت	zh:崇拜
 c:wrench	Noun	ar:مفتاح ربط	de:Schraubenschlüssel	en:wrench,spanner	es:llave,llave inglesa	fa:آچار	fr:clé,clef	he:מפתח ברגים	hi:पाना	ja:レンチ,スパナ	ko:렌치,스패너	pt:chave,chave inglesa	ru:гаечный ключ	tr:anahtar,İngiliz anahtarı	ur:رنچ,پانا	zh:扳手,扳钳
 c:write	Verb	ar:كتب,يكتب	de:schreiben	en:write,writes,wrote,writing	es:escribir	fa:نوشتن	fr:écrire	he:לכתוב	hi:लिखना	ja:書く	ko:쓰다	pt:escrever	ru:писать	tr:yazmak	ur:لکھنا	zh:写
 c:writer	Noun	ar:كاتب	de:Schriftsteller	en:writer	es:escritor	fa:نویسنده	fr:écrivain	he:סופר	hi:लेखक	ja:作家,ライター	ko:작가,라이터	pt:escritor	ru:писатель	tr:yazar	ur:لکھاری	zh:作家,作者
