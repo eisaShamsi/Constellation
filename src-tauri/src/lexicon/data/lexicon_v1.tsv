@@ -28,6 +28,7 @@ c:angel	Noun	ar:ملاك	de:Engel	en:angel	es:ángel	fa:فرشته	fr:ange	he:מ
 c:anger	Noun	ar:غضب	de:Zorn,Ärger,Wut	en:anger	es:ira,enojo	fa:خشم,عصبانیت	fr:colère	he:כעס	hi:क्रोध,ग़ुस्सा	ja:怒り	ko:분노,화	pt:raiva,ira	ru:гнев,злость	tr:öfke,kızgınlık	ur:غصہ	zh:愤怒,生气
 c:angle	Noun	ar:زاوية	de:Winkel	en:angle	es:ángulo	fa:زاویه	fr:angle	he:זווית	hi:कोण	ja:角,角度	ko:각,각도	pt:ângulo	ru:угол	tr:açı	ur:زاویہ	zh:角,角度
 c:animal	Noun	ar:حيوان	de:Tier	en:animal	es:animal	fa:حیوان	fr:animal	he:חיה	hi:जानवर,पशु	ja:動物	ko:동물	pt:animal	ru:животное	tr:hayvan	ur:جانور	zh:动物
+c:ankle	Noun	ar:كاحل	de:Knöchel,Fußgelenk	en:ankle	es:tobillo	fa:مچ پا	fr:cheville	he:קרסול	hi:टखना	ja:足首	ko:발목	pt:tornozelo	ru:лодыжка	tr:ayak bileği	ur:ٹخنہ	zh:脚踝,踝
 c:announce	Verb	ar:أعلن	de:ankündigen,verkünden	en:announce	es:anunciar	fa:اعلام کردن	fr:annoncer	he:להכריז	hi:घोषणा करना	ja:発表する	ko:발표하다	pt:anunciar	ru:объявлять	tr:duyurmak,ilan etmek	ur:اعلان کرنا	zh:宣布,宣告
 c:answer	Verb	ar:أجاب,رد	de:antworten	en:answer,reply	es:responder,contestar	fa:پاسخ دادن,جواب دادن	fr:répondre	he:לענות	hi:जवाब देना,उत्तर देना	ja:答える	ko:답하다,대답하다	pt:responder	ru:отвечать,ответить	tr:cevaplamak,yanıtlamak	ur:جواب دینا	zh:回答,答
 c:antenna	Noun	ar:هوائي,أنتنا	de:Antenne	en:antenna,aerial	es:antena	fa:آنتن	fr:antenne	he:אנטנה	hi:एंटीना	ja:アンテナ	ko:안테나	pt:antena	ru:антенна	tr:anten	ur:اینٹینا	zh:天线
@@ -43,6 +44,7 @@ c:army	Noun	ar:جيش	de:Armee,Heer	en:army	es:ejército	fa:ارتش	fr:armée	h
 c:arrest	Noun	ar:اعتقال,توقيف	de:Festnahme,Verhaftung	en:arrest	es:arresto,detención	fa:دستگیری,بازداشت	fr:arrestation	he:מעצר	hi:गिरफ़्तारी	ja:逮捕	ko:체포,검거	pt:prisão,detenção	ru:арест,задержание	tr:tutuklama,gözaltı	ur:گرفتاری	zh:逮捕,拘留
 c:arrive	Verb	ar:وصل	de:ankommen	en:arrive	es:llegar	fa:رسید,رسیدن	fr:arriver	he:הגיע	hi:पहुंचना	ja:到着する,着く	ko:도착하다	pt:chegar	ru:приезжать,прибывать	tr:varmak,ulaşmak	ur:پہنچنا	zh:到达,抵达
 c:art	Noun	ar:فن	de:Kunst	en:art	es:arte	fa:هنر	fr:art	he:אמנות	hi:कला	ja:芸術,アート	ko:예술	pt:arte	ru:искусство	tr:sanat	ur:فن	zh:艺术
+c:artery	Noun	ar:شريان	de:Arterie,Schlagader	en:artery	es:arteria	fa:سرخرگ,شریان	fr:artère	he:עורק	hi:धमनी	ja:動脈	ko:동맥	pt:artéria	ru:артерия	tr:atardamar,arter	ur:شریان	zh:动脉
 c:artist	Noun	ar:فنان	de:Künstler,Künstlerin	en:artist	es:artista	fa:هنرمند	fr:artiste	he:אמן	hi:कलाकार	ja:芸術家,アーティスト	ko:예술가,아티스트	pt:artista	ru:художник,артист	tr:sanatçı	ur:فنکار	zh:艺术家
 c:ash	Noun	ar:رماد	de:Asche	en:ash	es:ceniza	fa:خاکستر	fr:cendre	he:אפר	hi:राख	ja:灰	ko:재	pt:cinza	ru:пепел	tr:kül	ur:راکھ	zh:灰,灰烬
 c:ask	Verb	ar:سأل	de:fragen	en:ask	es:preguntar	fa:پرسیدن	fr:demander	he:לשאול	hi:पूछना	ja:尋ねる,聞く	ko:묻다	pt:perguntar	ru:спрашивать,спросить	tr:sormak	ur:پوچھنا	zh:问
@@ -91,9 +93,11 @@ c:bird	Noun	ar:طائر,طير	de:Vogel	en:bird	es:pájaro,ave	fa:پرنده	fr:
 c:birth	Noun	ar:ولادة,ميلاد	de:Geburt	en:birth	es:nacimiento,parto	fa:تولد	fr:naissance	he:לידה	hi:जन्म	ja:誕生,出産	ko:출생,탄생	pt:nascimento	ru:рождение	tr:doğum	ur:پیدائش	zh:出生,诞生
 c:black	Adjective	ar:أسود	de:schwarz	en:black	es:negro	fa:سیاه,مشکی	fr:noir	he:שחור	hi:काला	ja:黒,黒い	ko:검은,검정	pt:preto,negro	ru:чёрный	tr:siyah,kara	ur:کالا	zh:黑,黑色
 c:blackboard	Noun	ar:سبورة,لوح	de:Tafel	en:blackboard,chalkboard	es:pizarra,pizarrón	fa:تخته سیاه	fr:tableau noir	he:לוח	hi:श्यामपट	ja:黒板	ko:칠판	pt:quadro-negro,lousa	ru:доска	tr:kara tahta	ur:تختہ سیاہ,بلیک بورڈ	zh:黑板
+c:bladder	Noun	ar:مثانة	de:Blase,Harnblase	en:bladder	es:vejiga	fa:مثانه	fr:vessie	he:שלפוחית	hi:मूत्राशय	ja:膀胱	ko:방광	pt:bexiga	ru:мочевой пузырь	tr:mesane	ur:مثانہ	zh:膀胱
 c:blessing	Noun	ar:بركة,نعمة	de:Segen	en:blessing	es:bendición	fa:برکت,نعمت	fr:bénédiction	he:ברכה	hi:आशीर्वाद	ja:祝福	ko:축복	pt:bênção	ru:благословение	tr:bereket,lütuf	ur:برکت,نعمت	zh:祝福
 c:blizzard	Noun	ar:عاصفة ثلجية	de:Schneesturm,Blizzard	en:blizzard,snowstorm	es:ventisca,tormenta de nieve	fa:بوران,کولاک	fr:blizzard,tempête de neige	he:סופת שלגים	hi:बर्फ़ीला तूफ़ान,हिम-तूफ़ान	ja:吹雪	ko:눈보라	pt:nevasca,tempestade de neve	ru:метель,буран,пурга	tr:kar fırtınası,tipi	ur:برفانی طوفان	zh:暴风雪
 c:blood	Noun	ar:دم	de:Blut	en:blood	es:sangre	fa:خون	fr:sang	he:דם	hi:खून,रक्त	ja:血	ko:피	pt:sangue	ru:кровь	tr:kan	ur:خون	zh:血
+c:blood-vessel	Noun	ar:وعاء دموي	de:Blutgefäß	en:blood vessel	es:vaso sanguíneo	fa:رگ خونی	fr:vaisseau sanguin	he:כלי דם	hi:रक्त वाहिका	ja:血管	ko:혈관	pt:vaso sanguíneo	ru:кровеносный сосуд	tr:kan damarı	ur:خون کی نالی	zh:血管
 c:blue	Adjective	ar:أزرق	de:blau	en:blue	es:azul	fa:آبی	fr:bleu	he:כחול	hi:नीला	ja:青,青い	ko:파란,푸른	pt:azul	ru:синий,голубой	tr:mavi	ur:نیلا	zh:蓝,蓝色
 c:blunt	Adjective	ar:كليل	de:stumpf	en:blunt	es:romo,desafilado	fa:کند	fr:émoussé	he:קהה	hi:कुंद	ja:鈍い	ko:무딘,둔한	pt:rombo,cego	ru:тупой	tr:kör,küt	ur:کند	zh:钝
 c:boat	Noun	ar:قارب,زورق	de:Boot	en:boat	es:barca,bote	fa:قایق	fr:bateau,barque	he:סירה	hi:नाव,नौका	ja:ボート,小舟	ko:보트	pt:barco,bote	ru:лодка	tr:tekne,kayık	ur:کشتی,ناؤ	zh:小船
@@ -158,9 +162,12 @@ c:chaos	Noun	ar:فوضى	de:Chaos	en:chaos	es:caos	fa:آشوب,هرج و مرج	
 c:chapter	Noun	ar:فصل	de:Kapitel	en:chapter	es:capítulo	fa:فصل	fr:chapitre	he:פרק	hi:अध्याय	ja:章	ko:장,챕터	pt:capítulo	ru:глава	tr:bölüm	ur:باب	zh:章,章节
 c:charger	Noun	ar:شاحن	de:Ladegerät	en:charger	es:cargador	fa:شارژر	fr:chargeur	he:מטען	hi:चार्जर	ja:充電器,チャージャー	ko:충전기	pt:carregador	ru:зарядное устройство,зарядка	tr:şarj aleti,şarjör	ur:چارجر	zh:充电器
 c:check	Noun	ar:شيك	de:Scheck	en:check,cheque	es:cheque	fa:چک	fr:chèque	he:המחאה,צ'ק	hi:चेक	ja:小切手,チェック	ko:수표,체크	pt:cheque	ru:чек	tr:çek	ur:چیک	zh:支票
+c:cheek	Noun	ar:خد,وجنة	de:Wange,Backe	en:cheek	es:mejilla	fa:گونه	fr:joue	he:לחי	hi:गाल	ja:頬	ko:뺨,볼	pt:bochecha,face	ru:щека	tr:yanak	ur:گال	zh:脸颊,面颊
 c:cheese	Noun	ar:جبن,جبنة	de:Käse	en:cheese	es:queso	fa:پنیر	fr:fromage	he:גבינה	hi:पनीर	ja:チーズ	ko:치즈	pt:queijo	ru:сыр	tr:peynir	ur:پنیر	zh:奶酪
 c:chemistry	Noun	ar:كيمياء	de:Chemie	en:chemistry	es:química	fa:شیمی	fr:chimie	he:כימיה	hi:रसायन,रसायन विज्ञान	ja:化学	ko:화학	pt:química	ru:химия	tr:kimya	ur:کیمیا	zh:化学
+c:chest	Noun	ar:صدر	de:Brust,Brustkorb	en:chest	es:pecho	fa:سینه	fr:poitrine	he:חזה	hi:छाती	ja:胸	ko:가슴	pt:peito	ru:грудь	tr:göğüs	ur:سینہ	zh:胸,胸部
 c:child	Noun	ar:طفل,ولد	de:Kind	en:child,children	es:niño,hijo	fa:بچه,کودک	fr:enfant	he:ילד	hi:बच्चा	ja:子供,子	ko:아이,어린이	pt:criança,filho	ru:ребёнок,дитя	tr:çocuk	ur:بچہ	zh:孩子,儿童
+c:chin	Noun	ar:ذقن	de:Kinn	en:chin	es:barbilla,mentón	fa:چانه	fr:menton	he:סנטר	hi:ठोड़ी	ja:顎	ko:턱	pt:queixo	ru:подбородок	tr:çene	ur:ٹھوڑی	zh:下巴,颏
 c:choose	Verb	ar:اختار	de:wählen,auswählen	en:choose	es:elegir,escoger	fa:انتخاب کردن	fr:choisir	he:לבחור	hi:चुनना	ja:選ぶ	ko:선택하다,고르다	pt:escolher	ru:выбирать	tr:seçmek	ur:چننا	zh:选择,选
 c:church	Noun	ar:كنيسة	de:Kirche	en:church	es:iglesia	fa:کلیسا	fr:église	he:כנסייה	hi:गिरजाघर,चर्च	ja:教会	ko:교회	pt:igreja	ru:церковь	tr:kilise	ur:کلیسا,گرجا	zh:教堂
 c:circle	Noun	ar:دائرة	de:Kreis	en:circle	es:círculo	fa:دایره	fr:cercle	he:עיגול,מעגל	hi:वृत्त,गोला	ja:円	ko:원	pt:círculo	ru:круг	tr:daire,çember	ur:دائرہ	zh:圆,圆圈
@@ -304,6 +311,7 @@ c:education	Noun	ar:تعليم,تربية	de:Bildung,Erziehung	en:education	es:e
 c:effect	Noun	ar:أثر,تأثير	de:Wirkung,Effekt	en:effect	es:efecto	fa:اثر,تأثیر	fr:effet	he:השפעה,אפקט	hi:प्रभाव,असर	ja:効果,影響	ko:효과,영향	pt:efeito	ru:эффект,воздействие	tr:etki	ur:اثر,تاثیر	zh:效果,影响
 c:egg	Noun	ar:بيضة,بيض	de:Ei	en:egg,eggs	es:huevo	fa:تخم مرغ	fr:œuf	he:ביצה	hi:अंडा	ja:卵,たまご	ko:달걀,계란	pt:ovo	ru:яйцо	tr:yumurta	ur:انڈا	zh:蛋,鸡蛋
 c:eight	Noun	ar:ثمانية	de:acht	en:eight	es:ocho	fa:هشت	fr:huit	he:שמונה	hi:आठ	ja:八,はち	ko:여덟,팔	pt:oito	ru:восемь	tr:sekiz	ur:آٹھ	zh:八
+c:elbow	Noun	ar:مرفق,كوع	de:Ellbogen,Ellenbogen	en:elbow	es:codo	fa:آرنج	fr:coude	he:מרפק	hi:कोहनी	ja:肘	ko:팔꿈치	pt:cotovelo	ru:локоть	tr:dirsek	ur:کہنی	zh:肘,肘部
 c:election	Noun	ar:انتخاب,انتخابات	de:Wahl	en:election	es:elección	fa:انتخابات	fr:élection	he:בחירות	hi:चुनाव,निर्वाचन	ja:選挙	ko:선거	pt:eleição	ru:выборы	tr:seçim	ur:انتخاب	zh:选举
 c:electricity	Noun	ar:كهرباء	de:Elektrizität,Strom	en:electricity	es:electricidad	fa:برق,الکتریسیته	fr:électricité	he:חשמל	hi:बिजली	ja:電気	ko:전기	pt:eletricidade	ru:электричество	tr:elektrik	ur:بجلی	zh:电,电力
 c:element	Noun	ar:عنصر	de:Element	en:element	es:elemento	fa:عنصر	fr:élément	he:יסוד	hi:तत्व	ja:元素,エレメント	ko:원소	pt:elemento	ru:элемент	tr:element	ur:عنصر	zh:元素
@@ -339,6 +347,9 @@ c:expense	Noun	ar:نفقة,مصروف	de:Ausgabe,Aufwand	en:expense,expenditure	
 c:experiment	Noun	ar:تجربة	de:Experiment,Versuch	en:experiment	es:experimento	fa:آزمایش	fr:expérience	he:ניסוי	hi:प्रयोग	ja:実験	ko:실험	pt:experimento,experiência	ru:эксперимент,опыт	tr:deney	ur:تجربہ	zh:实验
 c:explain	Verb	ar:شرح	de:erklären	en:explain	es:explicar	fa:توضیح دادن	fr:expliquer	he:להסביר	hi:समझाना	ja:説明する	ko:설명하다	pt:explicar	ru:объяснять	tr:açıklamak	ur:سمجھانا,وضاحت کرنا	zh:解释,说明
 c:eye	Noun	ar:عين	de:Auge	en:eye,eyes	es:ojo	fa:چشم	fr:œil,yeux	he:עין	hi:आंख,नेत्र	ja:目	ko:눈	pt:olho	ru:глаз	tr:göz	ur:آنکھ	zh:眼,眼睛
+c:eyebrow	Noun	ar:حاجب	de:Augenbraue	en:eyebrow,brow	es:ceja	fa:ابرو	fr:sourcil	he:גבה	hi:भौंह,भौं	ja:眉	ko:눈썹	pt:sobrancelha	ru:бровь	tr:kaş	ur:ابرو	zh:眉毛
+c:eyelash	Noun	ar:رمش	de:Wimper	en:eyelash,lash	es:pestaña	fa:مژه	fr:cil	he:ריס	hi:बरौनी	ja:まつ毛	ko:속눈썹	pt:cílio,pestana	ru:ресница	tr:kirpik	ur:پلک	zh:睫毛
+c:eyelid	Noun	ar:جفن	de:Augenlid,Lid	en:eyelid	es:párpado	fa:پلک	fr:paupière	he:עפעף	hi:पलक	ja:瞼	ko:눈꺼풀	pt:pálpebra	ru:веко	tr:göz kapağı	ur:پپوٹا	zh:眼皮,眼睑
 c:face	Noun	ar:وجه	de:Gesicht	en:face	es:cara,rostro	fa:چهره,صورت	fr:visage,figure	he:פנים	hi:चेहरा,मुख	ja:顔	ko:얼굴	pt:rosto,cara	ru:лицо	tr:yüz,surat	ur:چہرہ	zh:脸,面
 c:factory	Noun	ar:مصنع	de:Fabrik	en:factory	es:fábrica	fa:کارخانه	fr:usine,fabrique	he:מפעל,בית חרושת	hi:कारख़ाना,फ़ैक्ट्री	ja:工場	ko:공장	pt:fábrica	ru:фабрика,завод	tr:fabrika	ur:کارخانہ,فیکٹری	zh:工厂
 c:faith	Noun	ar:إيمان	de:Glaube	en:faith	es:fe	fa:ایمان	fr:foi	he:אמונה	hi:विश्वास,आस्था	ja:信仰	ko:믿음,신앙	pt:fé	ru:вера	tr:iman,inanç	ur:ایمان,عقیدہ	zh:信仰
@@ -379,6 +390,7 @@ c:foot	Noun	ar:قدم	de:Fuß	en:foot,feet	es:pie	fa:پا	fr:pied	he:כף רגל
 c:football	Noun	ar:كرة القدم	de:Fußball	en:football,soccer	es:fútbol,futbol	fa:فوتبال	fr:football	he:כדורגל	hi:फ़ुटबॉल	ja:サッカー,フットボール	ko:축구,풋볼	pt:futebol	ru:футбол	tr:futbol	ur:فٹبال	zh:足球
 c:force	Noun	ar:قوة	de:Kraft	en:force	es:fuerza	fa:نیرو	fr:force	he:כוח	hi:बल	ja:力,フォース	ko:힘	pt:força	ru:сила	tr:kuvvet	ur:قوت	zh:力
 c:forecast	Noun	ar:توقعات,تنبؤ	de:Vorhersage,Prognose	en:forecast	es:pronóstico,previsión	fa:پیش‌بینی	fr:prévision	he:תחזית	hi:पूर्वानुमान	ja:予報,予測	ko:예보,예측	pt:previsão,prognóstico	ru:прогноз	tr:tahmin	ur:پیش گوئی	zh:预报,预测
+c:forehead	Noun	ar:جبهة	de:Stirn	en:forehead,brow	es:frente	fa:پیشانی	fr:front	he:מצח	hi:माथा	ja:額	ko:이마	pt:testa,fronte	ru:лоб	tr:alın	ur:پیشانی	zh:额头,额
 c:forest	Noun	ar:غابة	de:Wald	en:forest	es:bosque	fa:جنگل	fr:forêt	he:יער	hi:जंगल,वन	ja:森,森林	ko:숲,삼림	pt:floresta	ru:лес	tr:orman	ur:جنگل	zh:森林
 c:forget	Verb	ar:نسي	de:vergessen	en:forget	es:olvidar	fa:فراموش کردن	fr:oublier	he:לשכוח	hi:भूलना	ja:忘れる	ko:잊다	pt:esquecer	ru:забывать,забыть	tr:unutmak	ur:بھولنا	zh:忘,忘记
 c:forgiveness	Noun	ar:مغفرة,عفو	de:Vergebung	en:forgiveness	es:perdón	fa:بخشش,عفو	fr:pardon	he:סליחה,מחילה	hi:क्षमा	ja:許し	ko:용서	pt:perdão	ru:прощение	tr:af,bağışlama	ur:معافی,بخشش	zh:宽恕,原谅
@@ -396,6 +408,7 @@ c:full	Adjective	ar:ممتلئ,كامل	de:voll	en:full	es:lleno	fa:پر	fr:plei
 c:future	Noun	ar:مستقبل	de:Zukunft	en:future	es:futuro	fa:آینده	fr:futur,avenir	he:עתיד	hi:भविष्य	ja:未来	ko:미래	pt:futuro	ru:будущее	tr:gelecek	ur:مستقبل	zh:未来
 c:galaxy	Noun	ar:مجرة	de:Galaxie,Galaxis	en:galaxy	es:galaxia	fa:کهکشان	fr:galaxie	he:גלקסיה	hi:आकाशगंगा,गैलेक्सी	ja:銀河	ko:은하,갤럭시	pt:galáxia	ru:галактика	tr:galaksi	ur:کہکشاں	zh:星系,银河系
 c:gale	Noun	ar:ريح شديدة,ريح قوية	de:Sturmwind,Sturmbö	en:gale	es:vendaval	fa:باد شدید	fr:vent fort,coup de vent	he:רוח חזקה	hi:तेज़ हवा	ja:強風,疾風	ko:강풍,질풍	pt:vendaval	ru:штормовой ветер,буря	tr:bora,sert rüzgar	ur:تیز ہوا	zh:大风
+c:gallbladder	Noun	ar:مرارة	de:Gallenblase	en:gallbladder	es:vesícula biliar	fa:کیسه صفرا	fr:vésicule biliaire	he:כיס מרה	hi:पित्ताशय	ja:胆嚢	ko:쓸개,담낭	pt:vesícula biliar	ru:жёлчный пузырь	tr:safra kesesi	ur:پتا	zh:胆囊
 c:game	Noun	ar:لعبة	de:Spiel	en:game	es:juego	fa:بازی	fr:jeu	he:משחק	hi:खेल	ja:ゲーム,試合	ko:게임,놀이	pt:jogo	ru:игра	tr:oyun	ur:کھیل,گیم	zh:游戏,比赛
 c:garden	Noun	ar:حديقة,بستان	de:Garten	en:garden	es:jardín	fa:باغ,باغچه	fr:jardin	he:גן	hi:बगीचा,उद्यान	ja:庭,庭園	ko:정원	pt:jardim	ru:сад	tr:bahçe	ur:باغ	zh:花园,园
 c:gas	Noun	ar:غاز	de:Gas	en:gas	es:gas	fa:گاز	fr:gaz	he:גז	hi:गैस	ja:気体,ガス	ko:기체,가스	pt:gás	ru:газ	tr:gaz	ur:گیس	zh:气体
@@ -446,12 +459,14 @@ c:heart	Noun	ar:قلب	de:Herz	en:heart	es:corazón	fa:قلب,دل	fr:cœur	he:�
 c:heat	Noun	ar:حرارة	de:Hitze,Wärme	en:heat	es:calor	fa:گرما	fr:chaleur	he:חום	hi:गर्मी,ऊष्मा	ja:熱	ko:열	pt:calor	ru:тепло,жар	tr:ısı,sıcaklık	ur:حرارت	zh:热
 c:heatwave	Noun	ar:موجة حارة,موجة حر	de:Hitzewelle	en:heatwave,heat wave	es:ola de calor	fa:موج گرما	fr:canicule,vague de chaleur	he:גל חום	hi:लू,गर्मी की लहर	ja:熱波	ko:폭염,열파	pt:onda de calor	ru:тепловая волна,аномальная жара	tr:sıcak hava dalgası	ur:گرمی کی لہر	zh:热浪
 c:heaven	Noun	ar:سماء,جنة	de:Himmel	en:heaven	es:cielo	fa:بهشت,آسمان	fr:ciel,paradis	he:שמיים	hi:स्वर्ग	ja:天国	ko:천국	pt:céu	ru:небеса,рай	tr:cennet,gök	ur:جنت,آسمان	zh:天堂
+c:heel	Noun	ar:كعب	de:Ferse	en:heel	es:talón	fa:پاشنه	fr:talon	he:עקב	hi:एड़ी	ja:かかと	ko:뒤꿈치	pt:calcanhar	ru:пятка	tr:topuk	ur:ایڑی	zh:脚跟,后跟
 c:hell	Noun	ar:جحيم,نار	de:Hölle	en:hell	es:infierno	fa:جهنم,دوزخ	fr:enfer	he:גיהנום	hi:नरक	ja:地獄	ko:지옥	pt:inferno	ru:ад	tr:cehennem	ur:جہنم,دوزخ	zh:地狱
 c:help	Verb	ar:ساعد	de:helfen	en:help	es:ayudar	fa:کمک کردن	fr:aider	he:לעזור	hi:मदद करना	ja:助ける,手伝う	ko:돕다	pt:ajudar	ru:помогать,помочь	tr:yardım etmek	ur:مدد کرنا	zh:帮助,帮
 c:helper	Noun	ar:مساعد	de:Helfer,Assistent	en:helper,assistant	es:ayudante,asistente	fa:کمک,دستیار	fr:aide,assistant	he:עוזר	hi:सहायक,मददगार	ja:助手,アシスタント	ko:조수,도우미	pt:ajudante,assistente	ru:помощник,ассистент	tr:yardımcı,asistan	ur:مددگار,معاون	zh:助手,帮手
 c:hemisphere	Noun	ar:نصف الكرة,نصف الكرة الأرضية	de:Halbkugel,Hemisphäre	en:hemisphere	es:hemisferio	fa:نیم کره	fr:hémisphère	he:חצי כדור	hi:गोलार्ध	ja:半球	ko:반구	pt:hemisfério	ru:полушарие	tr:yarımküre	ur:نصف کرہ	zh:半球
 c:highway	Noun	ar:طريق سريع	de:Autobahn,Schnellstraße	en:highway,motorway,freeway	es:autopista,carretera	fa:بزرگراه,آزادراه	fr:autoroute	he:כביש מהיר	hi:राजमार्ग,हाईवे	ja:高速道路	ko:고속도로	pt:autoestrada,rodovia	ru:шоссе,автомагистраль	tr:otoyol,karayolu	ur:شاہراہ,ہائی وے	zh:高速公路
 c:hill	Noun	ar:تل,هضبة	de:Hügel	en:hill	es:colina,cerro	fa:تپه	fr:colline	he:גבעה	hi:पहाड़ी	ja:丘	ko:언덕	pt:colina,morro	ru:холм	tr:tepe	ur:پہاڑی	zh:山丘,丘陵
+c:hip	Noun	ar:ورك	de:Hüfte	en:hip	es:cadera	fa:لگن,باسن	fr:hanche	he:ירך	hi:कूल्हा	ja:ヒップ,腰回り	ko:엉덩이	pt:quadril,anca	ru:бедро	tr:kalça	ur:کولھا	zh:臀部,髋
 c:history	Noun	ar:تاريخ	de:Geschichte	en:history	es:historia	fa:تاریخ	fr:histoire	he:היסטוריה	hi:इतिहास	ja:歴史	ko:역사	pt:história	ru:история	tr:tarih	ur:تاریخ	zh:历史
 c:hockey	Noun	ar:هوكي	de:Hockey	en:hockey	es:hockey	fa:هاکی	fr:hockey	he:הוקי	hi:हॉकी	ja:ホッケー	ko:하키	pt:hóquei	ru:хоккей	tr:hokey	ur:ہاکی	zh:曲棍球
 c:hollow	Adjective	ar:مجوف,أجوف	de:hohl	en:hollow	es:hueco	fa:توخالی	fr:creux	he:חלול	hi:खोखला	ja:中空の,空洞の	ko:속이 빈	pt:oco	ru:полый	tr:oyuk	ur:کھوکھلا	zh:空,空心
@@ -491,11 +506,13 @@ c:instrument	Noun	ar:آلة	de:Instrument	en:instrument	es:instrumento	fa:ساز
 c:intention	Noun	ar:نية,قصد	de:Absicht,Intention	en:intention	es:intención	fa:نیت,قصد	fr:intention	he:כוונה	hi:इरादा,मंशा	ja:意図,つもり	ko:의도,의향	pt:intenção	ru:намерение	tr:niyet,kasıt	ur:نیت,ارادہ	zh:意图,意向
 c:interest	Noun	ar:فائدة,ربا	de:Zins,Zinsen	en:interest	es:interés	fa:بهره,سود	fr:intérêt	he:ריבית	hi:ब्याज	ja:利息,金利	ko:이자,금리	pt:juros	ru:процент,проценты	tr:faiz	ur:سود	zh:利息
 c:internet	Noun	ar:إنترنت	de:Internet	en:internet,net	es:internet	fa:اینترنت	fr:internet	he:אינטרנט	hi:इंटरनेट	ja:インターネット,ネット	ko:인터넷	pt:internet	ru:интернет	tr:internet	ur:انٹرنیٹ	zh:互联网,因特网
+c:intestine	Noun	ar:أمعاء,معي	de:Darm	en:intestine,bowel	es:intestino	fa:روده	fr:intestin	he:מעי	hi:आंत	ja:腸	ko:창자,장	pt:intestino	ru:кишечник,кишка	tr:bağırsak	ur:آنت	zh:肠
 c:intuition	Noun	ar:حدس,بصيرة	de:Intuition,Ahnung	en:intuition	es:intuición	fa:شهود,الهام	fr:intuition	he:אינטואיציה	hi:अंतर्ज्ञान,सहज बोध	ja:直観,直感	ko:직관,직감	pt:intuição	ru:интуиция	tr:sezgi	ur:بصیرت,وجدان	zh:直觉
 c:investment	Noun	ar:استثمار	de:Investition,Anlage	en:investment	es:inversión	fa:سرمایه‌گذاری	fr:investissement	he:השקעה	hi:निवेश	ja:投資	ko:투자	pt:investimento	ru:инвестиция,вложение	tr:yatırım	ur:سرمایہ کاری	zh:投资
 c:investor	Noun	ar:مستثمر	de:Investor,Anleger	en:investor	es:inversor,inversionista	fa:سرمایه‌گذار	fr:investisseur	he:משקיע	hi:निवेशक	ja:投資家	ko:투자자	pt:investidor	ru:инвестор	tr:yatırımcı	ur:سرمایہ کار	zh:投资者,投资人
 c:iron	Noun	ar:حديد	de:Eisen	en:iron	es:hierro	fa:آهن	fr:fer	he:ברזל	hi:लोहा	ja:鉄,アイアン	ko:철	pt:ferro	ru:железо	tr:demir	ur:لوہا	zh:铁
 c:island	Noun	ar:جزيرة	de:Insel	en:island,isle	es:isla	fa:جزیره	fr:île	he:אי	hi:द्वीप	ja:島	ko:섬	pt:ilha	ru:остров	tr:ada	ur:جزیرہ	zh:岛,岛屿
+c:jaw	Noun	ar:فك	de:Kiefer	en:jaw	es:mandíbula	fa:آرواره,فک	fr:mâchoire	he:לסת	hi:जबड़ा	ja:顎	ko:턱	pt:mandíbula,maxilar	ru:челюсть	tr:çene	ur:جبڑا	zh:颌,下巴
 c:job	Noun	ar:وظيفة,عمل	de:Job,Arbeitsstelle,Stelle	en:job	es:trabajo,empleo	fa:شغل,کار	fr:emploi,boulot	he:עבודה,משרה	hi:नौकरी,कार्य	ja:仕事,職	ko:일자리,직업	pt:emprego,trabalho	ru:работа,должность	tr:iş,meslek	ur:نوکری,ملازمت	zh:工作,职位
 c:journey	Noun	ar:رحلة	de:Reise,Fahrt	en:journey	es:viaje,jornada	fa:سفر	fr:voyage,trajet	he:מסע	hi:यात्रा,सफ़र	ja:旅,旅路	ko:여정,여행	pt:viagem,jornada	ru:путешествие,поездка	tr:yolculuk,seyahat	ur:سفر	zh:旅程,旅途
 c:joy	Noun	ar:فرح,سرور	de:Freude	en:joy	es:alegría,gozo	fa:شادی	fr:joie	he:שמחה	hi:खुशी,आनंद	ja:喜び	ko:기쁨	pt:alegria	ru:радость	tr:sevinç,neşe	ur:خوشی	zh:喜悦,快乐
@@ -509,7 +526,9 @@ c:justice	Noun	ar:عدل,عدالة	de:Gerechtigkeit	en:justice	es:justicia	fa:�
 c:key	Noun	ar:مفتاح	de:Schlüssel	en:key	es:llave	fa:کلید	fr:clé,clef	he:מפתח	hi:चाबी,कुंजी	ja:鍵	ko:열쇠	pt:chave	ru:ключ	tr:anahtar	ur:چابی	zh:钥匙
 c:keyboard	Noun	ar:لوحة مفاتيح	de:Tastatur	en:keyboard	es:teclado	fa:صفحه کلید	fr:clavier	he:מקלדת	hi:कीबोर्ड	ja:キーボード	ko:키보드	pt:teclado	ru:клавиатура	tr:klavye	ur:کی بورڈ	zh:键盘
 c:kick	Verb	ar:ركل	de:treten,kicken	en:kick,kicks,kicked,kicking	es:patear,dar una patada	fa:لگد زدن	fr:donner un coup de pied	he:לבעוט	hi:लात मारना,ठोकर मारना	ja:蹴る,キックする	ko:차다	pt:chutar	ru:пинать,ударять ногой	tr:tekmelemek	ur:لات مارنا	zh:踢
+c:kidney	Noun	ar:كلية	de:Niere	en:kidney	es:riñón	fa:کلیه	fr:rein	he:כליה	hi:गुर्दा,वृक्क	ja:腎臓	ko:신장,콩팥	pt:rim	ru:почка	tr:böbrek	ur:گردہ	zh:肾,肾脏
 c:king	Noun	ar:ملك	de:König	en:king	es:rey	fa:پادشاه,شاه	fr:roi	he:מלך	hi:राजा	ja:王	ko:왕	pt:rei	ru:король,царь	tr:kral	ur:بادشاہ	zh:国王,王
+c:knee	Noun	ar:ركبة	de:Knie	en:knee	es:rodilla	fa:زانو	fr:genou	he:ברך	hi:घुटना	ja:膝	ko:무릎	pt:joelho	ru:колено	tr:diz	ur:گھٹنا	zh:膝,膝盖
 c:knife	Noun	ar:سكين	de:Messer	en:knife	es:cuchillo	fa:چاقو,کارد	fr:couteau	he:סכין	hi:चाकू,छुरी	ja:ナイフ,包丁	ko:칼	pt:faca	ru:нож	tr:bıçak	ur:چاقو	zh:刀
 c:know	Verb	ar:عرف	de:wissen,kennen	en:know	es:saber,conocer	fa:دانستن	fr:savoir,connaître	he:לדעת	hi:जानना	ja:知る	ko:알다	pt:saber,conhecer	ru:знать	tr:bilmek	ur:جاننا	zh:知道
 c:knowledge	Noun	ar:معرفة,علم	de:Wissen,Erkenntnis	en:knowledge,cognition	es:conocimiento	fa:دانش	fr:connaissance,savoir	he:ידע	hi:ज्ञान	ja:知識	ko:지식	pt:conhecimento	ru:знание	tr:bilgi	ur:علم	zh:知识
@@ -534,16 +553,19 @@ c:lesson	Noun	ar:درس	de:Lektion,Unterrichtsstunde	en:lesson	es:lección	fa:د
 c:liberty	Noun	ar:حرية	de:Freiheit	en:liberty	es:libertad	fa:آزادی	fr:liberté	he:חירות	hi:स्वतंत्रता,आज़ादी	ja:自由,リバティ	ko:자유,리버티	pt:liberdade	ru:свобода	tr:özgürlük,hürriyet	ur:آزادی	zh:自由
 c:library	Noun	ar:مكتبة	de:Bibliothek	en:library	es:biblioteca	fa:کتابخانه	fr:bibliothèque	he:ספרייה	hi:पुस्तकालय	ja:図書館	ko:도서관	pt:biblioteca	ru:библиотека	tr:kütüphane	ur:لائبریری,کتب خانہ	zh:图书馆
 c:lie-falsehood	Noun	ar:كذبة	de:Lüge	en:lie	es:mentira	fa:دروغ	fr:mensonge	he:שקר	hi:झूठ	ja:嘘	ko:거짓말	pt:mentira	ru:ложь	tr:yalan	ur:جھوٹ	zh:谎言,谎话
+c:ligament	Noun	ar:رباط	de:Band,Ligament	en:ligament	es:ligamento	fa:رباط	fr:ligament	he:רצועה	hi:स्नायु	ja:靭帯	ko:인대	pt:ligamento	ru:связка	tr:bağ,ligament	ur:رباط	zh:韧带
 c:light	Noun	ar:نور,ضوء	de:Licht	en:light	es:luz	fa:نور,روشنایی	fr:lumière	he:אור	hi:रोशनी,प्रकाश	ja:光	ko:빛	pt:luz	ru:свет	tr:ışık	ur:روشنی,نور	zh:光,光线
 c:lightning	Noun	ar:برق	de:Blitz	en:lightning	es:relámpago,rayo	fa:صاعقه,برق	fr:éclair,foudre	he:ברק	hi:बिजली	ja:稲妻,雷光	ko:번개	pt:relâmpago,raio	ru:молния	tr:şimşek,yıldırım	ur:بجلی	zh:闪电
 c:line	Noun	ar:خط	de:Linie	en:line	es:línea	fa:خط	fr:ligne	he:קו	hi:रेखा,लाइन	ja:線,ライン	ko:선,줄	pt:linha	ru:линия	tr:çizgi	ur:لکیر,خط	zh:线,线条
 c:linen	Noun	ar:كتان	de:Leinen	en:linen	es:lino	fa:کتان	fr:lin	he:פשתן	hi:सनी	ja:亜麻,リネン	ko:아마,린넨	pt:linho	ru:лён	tr:keten	ur:کتان	zh:亚麻
 c:link	Noun	ar:رابط,صلة	de:Link,Verknüpfung	en:link,links	es:enlace,vínculo	fa:پیوند,لینک	fr:lien	he:קישור	hi:लिंक,कड़ी	ja:リンク	ko:링크	pt:link,elo	ru:ссылка,связь	tr:bağlantı,link	ur:لنک,رابطہ	zh:链接
 c:lion	Noun	ar:أسد	de:Löwe	en:lion	es:león	fa:شیر	fr:lion	he:אריה	hi:शेर,सिंह	ja:ライオン,獅子	ko:사자	pt:leão	ru:лев	tr:aslan	ur:شیر	zh:狮,狮子
+c:lip	Noun	ar:شفة	de:Lippe	en:lip,lips	es:labio	fa:لب	fr:lèvre	he:שפה	hi:होंठ	ja:唇	ko:입술	pt:lábio	ru:губа	tr:dudak	ur:ہونٹ	zh:嘴唇
 c:liquid	Noun	ar:سائل	de:Flüssigkeit	en:liquid	es:líquido	fa:مایع	fr:liquide	he:נוזל	hi:तरल,द्रव	ja:液体	ko:액체	pt:líquido	ru:жидкость	tr:sıvı	ur:مائع	zh:液体
 c:listen	Verb	ar:استمع,أصغى	de:zuhören,hören	en:listen	es:escuchar	fa:گوش دادن	fr:écouter	he:להקשיב	hi:सुनना	ja:聴く	ko:듣다	pt:escutar,ouvir	ru:слушать	tr:dinlemek	ur:سننا	zh:听
 c:literature	Noun	ar:أدب	de:Literatur	en:literature	es:literatura	fa:ادبیات	fr:littérature	he:ספרות	hi:साहित्य	ja:文学	ko:문학	pt:literatura	ru:литература	tr:edebiyat	ur:ادب,ادبیات	zh:文学
 c:live	Verb	ar:عاش	de:leben	en:live	es:vivir	fa:زندگی کردن,زیستن	fr:vivre	he:לחיות	hi:जीना,रहना	ja:生きる,住む	ko:살다	pt:viver,morar	ru:жить	tr:yaşamak	ur:جینا,رہنا	zh:活,住
+c:liver	Noun	ar:كبد	de:Leber	en:liver	es:hígado	fa:جگر,کبد	fr:foie	he:כבד	hi:जिगर,यकृत	ja:肝臓	ko:간	pt:fígado	ru:печень	tr:karaciğer	ur:جگر	zh:肝,肝脏
 c:location	Noun	ar:موقع	de:Position,Lage	en:location	es:ubicación	fa:موقعیت	fr:position,emplacement	he:מיקום	hi:स्थिति	ja:位置	ko:위치	pt:localização,posição	ru:положение,местоположение	tr:konum	ur:مقام,جگہ	zh:位置
 c:lock	Noun	ar:قفل	de:Schloss	en:lock	es:cerradura,candado	fa:قفل	fr:serrure,cadenas	he:מנעול	hi:ताला	ja:鍵,錠	ko:자물쇠,잠금장치	pt:fechadura,cadeado	ru:замок	tr:kilit	ur:تالا	zh:锁,锁头
 c:logic	Noun	ar:منطق	de:Logik	en:logic	es:lógica	fa:منطق	fr:logique	he:היגיון,לוגיקה	hi:तर्क	ja:論理	ko:논리	pt:lógica	ru:логика	tr:mantık	ur:منطق	zh:逻辑
@@ -552,6 +574,7 @@ c:loss	Noun	ar:خسارة	de:Verlust	en:loss	es:pérdida	fa:زیان,ضرر	fr:p
 c:love	Noun	ar:حب,محبة	de:Liebe	en:love	es:amor	fa:عشق	fr:amour	he:אהבה	hi:प्रेम	ja:愛	ko:사랑	pt:amor	ru:любовь	tr:aşk	ur:محبت	zh:爱
 c:luggage	Noun	ar:أمتعة,حقائب	de:Gepäck	en:luggage,baggage	es:equipaje	fa:بار,چمدان	fr:bagages	he:מטען,כבודה	hi:सामान,लगेज	ja:荷物,手荷物	ko:짐,수하물	pt:bagagem	ru:багаж	tr:bagaj	ur:سامان	zh:行李
 c:lunch	Noun	ar:غداء	de:Mittagessen	en:lunch	es:almuerzo	fa:ناهار	fr:déjeuner	he:ארוחת צהריים	hi:दोपहर का भोजन	ja:昼食,ランチ	ko:점심	pt:almoço	ru:обед	tr:öğle yemeği	ur:دوپہر کا کھانا	zh:午餐
+c:lung	Noun	ar:رئة	de:Lunge	en:lung,lungs	es:pulmón	fa:ریه,شش	fr:poumon	he:ריאה	hi:फेफड़ा	ja:肺	ko:폐,허파	pt:pulmão	ru:лёгкое	tr:akciğer	ur:پھیپھڑا	zh:肺
 c:machine	Noun	ar:آلة,ماكينة	de:Maschine,Apparat	en:machine	es:máquina	fa:ماشین,دستگاه	fr:machine,appareil	he:מכונה	hi:मशीन,यंत्र	ja:機械,マシン	ko:기계,머신	pt:máquina	ru:машина	tr:makine	ur:مشین	zh:机器,机械
 c:magazine	Noun	ar:مجلة	de:Zeitschrift,Magazin	en:magazine	es:revista	fa:مجله	fr:magazine,revue	he:מגזין,כתב עת	hi:पत्रिका,मैगज़ीन	ja:雑誌	ko:잡지	pt:revista	ru:журнал	tr:dergi	ur:رسالہ,میگزین	zh:杂志
 c:make	Verb	ar:صنع,عمل	de:machen	en:make	es:hacer	fa:ساختن	fr:faire	he:לעשות	hi:बनाना	ja:作る	ko:만들다	pt:fazer	ru:делать	tr:yapmak	ur:بنانا	zh:做,制造
@@ -611,6 +634,7 @@ c:move	Verb	ar:تحرك,انتقل	de:bewegen	en:move	es:mover	fa:حرکت کر�
 c:multiply	Verb	ar:ضرب	de:multiplizieren	en:multiply	es:multiplicar	fa:ضرب کردن	fr:multiplier	he:להכפיל	hi:गुणा करना	ja:掛ける	ko:곱하다	pt:multiplicar	ru:умножать	tr:çarpmak	ur:ضرب کرنا	zh:乘
 c:municipality	Noun	ar:بلدية	de:Gemeinde,Kommune	en:municipality	es:municipio,municipalidad	fa:شهرداری	fr:municipalité,commune	he:עירייה	hi:नगरपालिका	ja:自治体,市町村	ko:지자체,자치단체	pt:município,municipalidade	ru:муниципалитет	tr:belediye	ur:بلدیہ	zh:市,自治体
 c:murder	Noun	ar:قتل,جريمة قتل	de:Mord	en:murder	es:asesinato,homicidio	fa:قتل	fr:meurtre,assassinat	he:רצח	hi:हत्या,क़त्ल	ja:殺人	ko:살인,살해	pt:assassinato,homicídio	ru:убийство	tr:cinayet,katil	ur:قتل	zh:谋杀,凶杀
+c:muscle	Noun	ar:عضلة	de:Muskel	en:muscle	es:músculo	fa:ماهیچه,عضله	fr:muscle	he:שריר	hi:मांसपेशी,पेशी	ja:筋肉	ko:근육	pt:músculo	ru:мышца	tr:kas	ur:پٹھا	zh:肌肉
 c:museum	Noun	ar:متحف	de:Museum	en:museum	es:museo	fa:موزه	fr:musée	he:מוזיאון	hi:संग्रहालय,म्यूजियम	ja:博物館,美術館	ko:박물관,미술관	pt:museu	ru:музей	tr:müze	ur:عجائب گھر,میوزیم	zh:博物馆,美术馆
 c:music	Noun	ar:موسيقى	de:Musik	en:music	es:música	fa:موسیقی	fr:musique	he:מוזיקה	hi:संगीत	ja:音楽	ko:음악	pt:música	ru:музыка	tr:müzik	ur:موسیقی	zh:音乐
 c:musician	Noun	ar:موسيقي,موسيقار	de:Musiker,Musikerin	en:musician	es:músico	fa:موسیقیدان,نوازنده	fr:musicien,musicienne	he:מוזיקאי	hi:संगीतकार,संगीतज्ञ	ja:音楽家,ミュージシャン	ko:음악가,뮤지션	pt:músico	ru:музыкант	tr:müzisyen	ur:موسیقار	zh:音乐家
@@ -622,6 +646,7 @@ c:necessity	Noun	ar:ضرورة	de:Notwendigkeit	en:necessity	es:necesidad	fa:ض�
 c:neck	Noun	ar:عنق,رقبة	de:Hals	en:neck	es:cuello	fa:گردن	fr:cou	he:צוואר	hi:गर्दन	ja:首	ko:목	pt:pescoço	ru:шея	tr:boyun	ur:گردن	zh:颈,脖子
 c:needle	Noun	ar:إبرة	de:Nadel	en:needle	es:aguja	fa:سوزن	fr:aiguille	he:מחט	hi:सुई	ja:針	ko:바늘	pt:agulha	ru:игла,иголка	tr:iğne	ur:سوئی	zh:针,针头
 c:neighbor	Noun	ar:جار	de:Nachbar	en:neighbor,neighbour	es:vecino	fa:همسایه	fr:voisin	he:שכן	hi:पड़ोसी	ja:隣人,近所の人	ko:이웃	pt:vizinho	ru:сосед	tr:komşu	ur:پڑوسی	zh:邻居
+c:nerve	Noun	ar:عصب	de:Nerv	en:nerve	es:nervio	fa:عصب	fr:nerf	he:עצב	hi:तंत्रिका,नस	ja:神経	ko:신경	pt:nervo	ru:нерв	tr:sinir	ur:عصب	zh:神经
 c:network	Noun	ar:شبكة	de:Netzwerk,Netz	en:network	es:red	fa:شبکه	fr:réseau	he:רשת	hi:नेटवर्क	ja:ネットワーク	ko:네트워크,망	pt:rede	ru:сеть	tr:ağ,şebeke	ur:نیٹ ورک	zh:网络
 c:new	Adjective	ar:جديد	de:neu	en:new	es:nuevo	fa:نو,جدید	fr:nouveau,nouvelle	he:חדש	hi:नया	ja:新しい	ko:새롭다	pt:novo	ru:новый	tr:yeni	ur:نیا	zh:新
 c:news	Noun	ar:أخبار,خبر	de:Nachrichten,Neuigkeiten	en:news	es:noticias	fa:خبر,اخبار	fr:nouvelles,actualités	he:חדשות	hi:समाचार,खबर	ja:ニュース,知らせ	ko:뉴스,소식	pt:notícias	ru:новости	tr:haber,haberler	ur:خبر,خبریں	zh:新闻,消息
@@ -660,7 +685,9 @@ c:own	Verb	ar:امتلك,ملك	de:besitzen	en:own,possess	es:poseer	fa:داشت
 c:page	Noun	ar:صفحة	de:Seite	en:page	es:página	fa:صفحه	fr:page	he:עמוד,דף	hi:पृष्ठ,पन्ना	ja:ページ	ko:페이지,쪽	pt:página	ru:страница	tr:sayfa	ur:صفحہ	zh:页
 c:pain	Noun	ar:ألم,وجع	de:Schmerz	en:pain,ache	es:dolor	fa:درد	fr:douleur	he:כאב	hi:दर्द,पीड़ा	ja:痛み	ko:아픔,통증	pt:dor	ru:боль	tr:ağrı,acı	ur:درد,تکلیف	zh:疼痛,痛
 c:painting	Noun	ar:رسم,لوحة	de:Gemälde,Malerei	en:painting	es:pintura	fa:نقاشی	fr:peinture,tableau	he:ציור	hi:चित्रकारी,पेंटिंग	ja:絵画,絵	ko:그림,회화	pt:pintura,quadro	ru:картина,живопись	tr:resim,tablo	ur:پینٹنگ,تصویر کشی	zh:绘画,画作
+c:palm	Noun	ar:راحة,كف	de:Handfläche	en:palm	es:palma	fa:کف دست	fr:paume	he:כף יד	hi:हथेली	ja:手のひら	ko:손바닥	pt:palma	ru:ладонь	tr:avuç	ur:ہتھیلی	zh:手掌,掌
 c:pan	Noun	ar:مقلاة	de:Pfanne,Bratpfanne	en:pan,frying pan,skillet	es:sartén	fa:ماهیتابه	fr:poêle	he:מחבת	hi:कड़ाही,तवा	ja:フライパン,鍋	ko:프라이팬,팬	pt:frigideira,panela	ru:сковорода,сковородка	tr:tava	ur:کڑاہی,توا	zh:平底锅,煎锅
+c:pancreas	Noun	ar:بنكرياس	de:Bauchspeicheldrüse,Pankreas	en:pancreas	es:páncreas	fa:لوزالمعده,پانکراس	fr:pancréas	he:לבלב	hi:अग्न्याशय	ja:膵臓	ko:췌장	pt:pâncreas	ru:поджелудочная	tr:pankreas	ur:لبلبہ	zh:胰腺,胰脏
 c:paper	Noun	ar:ورق,ورقة	de:Papier	en:paper	es:papel	fa:کاغذ	fr:papier	he:נייר	hi:कागज़	ja:紙	ko:종이	pt:papel	ru:бумага	tr:kâğıt	ur:کاغذ	zh:纸
 c:paradigm	Noun	ar:نموذج فكري,نمط	de:Paradigma	en:paradigm	es:paradigma	fa:الگو,پارادایم	fr:paradigme	he:פרדיגמה	hi:प्रतिमान,पैराडाइम	ja:パラダイム	ko:패러다임,틀	pt:paradigma	ru:парадигма	tr:paradigma	ur:طرز فکر,پیراڈائم	zh:范式
 c:paradise	Noun	ar:فردوس,جنة	de:Paradies	en:paradise	es:paraíso	fa:بهشت,فردوس	fr:paradis	he:גן עדן	hi:स्वर्ग,जन्नत	ja:楽園	ko:낙원	pt:paraíso	ru:рай	tr:cennet	ur:جنت,فردوس	zh:乐园
@@ -778,6 +805,7 @@ c:responsibility	Noun	ar:مسؤولية	de:Verantwortung	en:responsibility	es:re
 c:rest	Noun	ar:راحة	de:Ruhe,Erholung	en:rest	es:descanso,reposo	fa:استراحت	fr:repos	he:מנוחה	hi:आराम	ja:休息	ko:휴식	pt:descanso,repouso	ru:отдых	tr:dinlenme,istirahat	ur:آرام	zh:休息
 c:return	Verb	ar:عاد,رجع	de:zurückkehren,zurückkommen	en:return	es:volver,regresar,retornar	fa:برگشت,بازگشت	fr:retourner,revenir,rentrer	he:חזר,שב	hi:लौटना,वापस आना	ja:帰る,戻る	ko:돌아가다,돌아오다	pt:voltar,regressar,retornar	ru:возвращаться	tr:dönmek	ur:واپس آنا,لوٹنا	zh:返回,回来,归来
 c:review	Verb	ar:راجع	de:überprüfen,wiederholen	en:review,revise,revising	es:revisar,repasar	fa:مرور کردن,بازبینی کردن	fr:réviser,revoir	he:לחזור,לבדוק	hi:समीक्षा करना,दोहराना	ja:復習する	ko:복습하다,검토하다	pt:revisar,rever	ru:повторять,пересматривать	tr:tekrar etmek,gözden geçirmek	ur:نظر ثانی کرنا,دہرانا	zh:复习,审查
+c:rib	Noun	ar:ضلع	de:Rippe	en:rib	es:costilla	fa:دنده	fr:côte	he:צלע	hi:पसली	ja:肋骨	ko:갈비뼈,늑골	pt:costela	ru:ребро	tr:kaburga	ur:پسلی	zh:肋骨
 c:rice	Noun	ar:أرز	de:Reis	en:rice	es:arroz	fa:برنج	fr:riz	he:אורז	hi:चावल	ja:米,ご飯	ko:쌀,밥	pt:arroz	ru:рис	tr:pirinç	ur:چاول	zh:米,大米
 c:rich	Adjective	ar:غني,ثري	de:reich	en:rich,wealthy	es:rico	fa:ثروتمند,پولدار	fr:riche	he:עשיר	hi:अमीर,धनी	ja:裕福な,金持ちの	ko:부유한,부자의	pt:rico	ru:богатый	tr:zengin	ur:امیر,دولت مند	zh:富,富有
 c:ride	Verb	ar:ركب	de:reiten,fahren	en:ride	es:montar,cabalgar	fa:سوار شد,سوار شدن	fr:monter,chevaucher	he:רכב	hi:सवारी करना	ja:乗る	ko:타다	pt:montar,cavalgar	ru:ехать,ездить	tr:binmek	ur:سوار ہونا	zh:骑,乘
@@ -834,6 +862,7 @@ c:ship	Noun	ar:سفينة	de:Schiff	en:ship,vessel	es:barco,buque,nave	fa:کشت
 c:shoe	Noun	ar:حذاء	de:Schuh	en:shoe,shoes	es:zapato	fa:کفش	fr:chaussure,soulier	he:נעל	hi:जूता	ja:靴	ko:신발,구두	pt:sapato	ru:обувь,туфля	tr:ayakkabı	ur:جوتا	zh:鞋
 c:shop	Noun	ar:متجر,دكان	de:Laden,Geschäft	en:shop,store	es:tienda	fa:مغازه,فروشگاه	fr:boutique,magasin	he:חנות	hi:दुकान	ja:店,ショップ	ko:가게,상점	pt:loja	ru:магазин,лавка	tr:dükkan,mağaza	ur:دکان	zh:商店,店铺
 c:short	Adjective	ar:قصير	de:kurz	en:short	es:corto,bajo	fa:کوتاه	fr:court	he:קצר	hi:छोटा	ja:短い	ko:짧은	pt:curto,baixo	ru:короткий	tr:kısa	ur:مختصر	zh:短
+c:shoulder	Noun	ar:كتف	de:Schulter	en:shoulder	es:hombro	fa:شانه,دوش	fr:épaule	he:כתף	hi:कंधा	ja:肩	ko:어깨	pt:ombro	ru:плечо	tr:omuz	ur:کندھا	zh:肩,肩膀
 c:shout	Verb	ar:صرخ,صاح	de:schreien,rufen	en:shout	es:gritar	fa:فریاد زدن	fr:crier	he:לצעוק	hi:चिल्लाना	ja:叫ぶ	ko:외치다,소리치다	pt:gritar	ru:кричать	tr:bağırmak	ur:چلانا	zh:喊,叫
 c:shovel	Noun	ar:مجرفة	de:Schaufel,Spaten	en:shovel,spade	es:pala	fa:بیل	fr:pelle	he:אֵת,מגרפה	hi:फावड़ा,बेलचा	ja:シャベル,スコップ	ko:삽	pt:pá	ru:лопата	tr:kürek,bel	ur:پھاوڑا,بیلچہ	zh:铲子,铁铲
 c:show	Verb	ar:أظهر,أرى	de:zeigen	en:show	es:mostrar,enseñar	fa:نشان دادن	fr:montrer	he:להראות	hi:दिखाना	ja:見せる,示す	ko:보여주다	pt:mostrar	ru:показывать,показать	tr:göstermek	ur:دکھانا	zh:显示,给看
@@ -846,6 +875,7 @@ c:sister	Noun	ar:أخت	de:Schwester	en:sister	es:hermana	fa:خواهر	fr:sœur
 c:sit	Verb	ar:جلس	de:sitzen	en:sit	es:sentarse	fa:نشستن	fr:s'asseoir	he:לשבת	hi:बैठना	ja:座る	ko:앉다	pt:sentar	ru:сидеть	tr:oturmak	ur:بیٹھنا	zh:坐
 c:six	Noun	ar:ستة	de:sechs	en:six	es:seis	fa:شش	fr:six	he:שישה	hi:छह	ja:六,ろく	ko:여섯,육	pt:seis	ru:шесть	tr:altı	ur:چھ	zh:六
 c:skin	Noun	ar:جلد,بشرة	de:Haut	en:skin	es:piel	fa:پوست	fr:peau	he:עור	hi:त्वचा,चमड़ी	ja:肌,皮膚	ko:피부	pt:pele	ru:кожа	tr:deri,cilt	ur:جلد	zh:皮肤,皮
+c:skull	Noun	ar:جمجمة	de:Schädel	en:skull,cranium	es:cráneo,calavera	fa:جمجمه	fr:crâne	he:גולגולת	hi:खोपड़ी	ja:頭蓋骨	ko:두개골,해골	pt:crânio,caveira	ru:череп	tr:kafatası	ur:کھوپڑی	zh:头骨,颅骨
 c:sky	Noun	ar:سماء	de:Himmel	en:sky	es:cielo	fa:آسمان	fr:ciel	he:שמים	hi:आकाश,आसमान	ja:空	ko:하늘	pt:céu	ru:небо	tr:gök,gökyüzü	ur:آسمان	zh:天空
 c:sleep	Verb	ar:نام,ينام	de:schlafen	en:sleep,sleeps,slept	es:dormir	fa:خوابیدن	fr:dormir	he:לישון	hi:सोना	ja:寝る	ko:자다	pt:dormir	ru:спать	tr:uyumak	ur:سونا	zh:睡觉
 c:sleet	Noun	ar:مطر متجمد	de:Schneeregen,Graupel	en:sleet	es:aguanieve	fa:تگرگ و باران	fr:grésil,neige fondue	he:גשם קפוא	hi:हिम-वर्षा	ja:みぞれ	ko:진눈깨비	pt:chuva com neve	ru:мокрый снег	tr:sulusepken	ur:ژالہ	zh:雨夹雪
@@ -870,7 +900,9 @@ c:south	Noun	ar:جنوب	de:Süden	en:south	es:sur	fa:جنوب	fr:sud	he:דרו�
 c:speak	Verb	ar:تكلم,يتكلم	de:sprechen	en:speak,speaks,spoke	es:hablar	fa:صحبت کردن	fr:parler	he:לדבר	hi:बोलना	ja:話す	ko:말하다	pt:falar	ru:говорить	tr:konuşmak	ur:بولنا	zh:说
 c:speaker	Noun	ar:سماعة,مكبر صوت	de:Lautsprecher	en:speaker,loudspeaker	es:altavoz,parlante,bocina	fa:بلندگو,اسپیکر	fr:haut-parleur,enceinte	he:רמקול	hi:स्पीकर,लाउडस्पीकर	ja:スピーカー	ko:스피커,확성기	pt:alto-falante,coluna	ru:динамик,громкоговоритель	tr:hoparlör	ur:اسپیکر	zh:扬声器,喇叭
 c:spend	Verb	ar:أنفق,صرف	de:ausgeben	en:spend	es:gastar	fa:خرج کرد,مصرف کرد	fr:dépenser	he:הוציא,להוציא	hi:खर्च करना	ja:使う,費やす	ko:쓰다,소비하다	pt:gastar	ru:тратить,потратить	tr:harcamak	ur:خرچ کرنا	zh:花,花费
+c:spine	Noun	ar:عمود فقري	de:Wirbelsäule,Rückgrat	en:spine,backbone	es:columna vertebral,espina	fa:ستون فقرات	fr:colonne vertébrale,épine dorsale	he:עמוד השדרה	hi:रीढ़	ja:背骨,脊椎	ko:척추,등뼈	pt:coluna vertebral,espinha	ru:позвоночник	tr:omurga	ur:ریڑھ	zh:脊柱,脊椎
 c:spirit	Noun	ar:روح	de:Geist	en:spirit	es:espíritu	fa:روح	fr:esprit	he:רוח	hi:आत्मा,प्रेत	ja:精神,霊	ko:정신,영	pt:espírito	ru:дух	tr:ruh	ur:روح	zh:精神
+c:spleen	Noun	ar:طحال	de:Milz	en:spleen	es:bazo	fa:طحال	fr:rate	he:טחול	hi:तिल्ली,प्लीहा	ja:脾臓	ko:비장	pt:baço	ru:селезёнка	tr:dalak	ur:تلی	zh:脾,脾脏
 c:spoon	Noun	ar:ملعقة	de:Löffel	en:spoon	es:cuchara	fa:قاشق	fr:cuillère	he:כף	hi:चम्मच	ja:スプーン,匙	ko:숟가락	pt:colher	ru:ложка	tr:kaşık	ur:چمچ	zh:勺子
 c:sport	Noun	ar:رياضة	de:Sport	en:sport,sports	es:deporte	fa:ورزش	fr:sport	he:ספורט	hi:खेल,स्पोर्ट	ja:スポーツ	ko:스포츠,운동	pt:esporte,desporto	ru:спорт	tr:spor	ur:کھیل,اسپورٹ	zh:运动,体育
 c:square	Noun	ar:مربع	de:Quadrat	en:square	es:cuadrado	fa:مربع	fr:carré	he:ריבוע	hi:वर्ग,चौकोर	ja:四角,正方形	ko:사각형,정사각형	pt:quadrado	ru:квадрат	tr:kare	ur:مربع	zh:正方形,方形
@@ -885,6 +917,7 @@ c:statue	Noun	ar:تمثال	de:Statue,Standbild	en:statue	es:estatua	fa:مجسم
 c:statute	Noun	ar:تشريع,نظام	de:Gesetz,Statut	en:statute	es:estatuto,ley	fa:قانون,اساسنامه	fr:statut,loi	he:חוק,תקנון	hi:क़ानून,विधि	ja:法令,制定法	ko:법령,제정법	pt:estatuto,lei	ru:статут,закон	tr:tüzük,kanun	ur:قانون,دستور	zh:法令,制定法
 c:steel	Noun	ar:فولاذ,صلب	de:Stahl	en:steel	es:acero	fa:فولاد	fr:acier	he:פלדה	hi:इस्पात,स्टील	ja:鋼,スチール	ko:강철,스틸	pt:aço	ru:сталь	tr:çelik	ur:فولاد,اسٹیل	zh:钢,钢铁
 c:sticky	Adjective	ar:لزج,دبق	de:klebrig	en:sticky	es:pegajoso	fa:چسبناک	fr:collant,poisseux	he:דביק	hi:चिपचिपा	ja:粘着性の,ねばねば	ko:끈적거리는	pt:pegajoso,viscoso	ru:липкий	tr:yapışkan	ur:چپچپا	zh:粘
+c:stomach	Noun	ar:معدة	de:Magen	en:stomach	es:estómago	fa:معده	fr:estomac	he:קיבה	hi:पेट,उदर	ja:胃	ko:위	pt:estômago	ru:желудок	tr:mide	ur:معدہ	zh:胃
 c:stone	Noun	ar:حجر	de:Stein	en:stone	es:piedra	fa:سنگ	fr:pierre	he:אבן	hi:पत्थर	ja:石	ko:돌	pt:pedra	ru:камень	tr:taş	ur:پتھر	zh:石,石头
 c:stop	Verb	ar:توقف	de:stoppen,anhalten,aufhören	en:stop	es:parar,detener	fa:ایستادن,متوقف کردن	fr:arrêter	he:לעצור	hi:रुकना,बंद करना	ja:止める	ko:멈추다	pt:parar	ru:останавливать,остановить	tr:durmak	ur:رکنا	zh:停
 c:storm	Noun	ar:عاصفة	de:Sturm	en:storm	es:tormenta	fa:طوفان	fr:tempête,orage	he:סערה	hi:तूफ़ान	ja:嵐	ko:폭풍	pt:tempestade	ru:буря,шторм	tr:fırtına	ur:طوفان	zh:风暴,暴风
@@ -923,6 +956,7 @@ c:tell	Verb	ar:أخبر	de:erzählen,sagen	en:tell	es:contar,decir	fa:گفتن,�
 c:temperature	Noun	ar:درجة الحرارة	de:Temperatur	en:temperature	es:temperatura	fa:دما,حرارت	fr:température	he:טמפרטורה	hi:तापमान	ja:温度	ko:온도	pt:temperatura	ru:температура	tr:sıcaklık	ur:درجہ حرارت	zh:温度
 c:temple	Noun	ar:معبد,هيكل	de:Tempel	en:temple	es:templo	fa:معبد	fr:temple	he:מקדש	hi:मंदिर	ja:寺院	ko:사원,절	pt:templo	ru:храм	tr:tapınak	ur:مندر,معبد	zh:庙,寺
 c:ten	Noun	ar:عشرة	de:zehn	en:ten	es:diez	fa:ده	fr:dix	he:עשרה	hi:दस	ja:十,じゅう	ko:열,십	pt:dez	ru:десять	tr:on	ur:دس	zh:十
+c:tendon	Noun	ar:وتر	de:Sehne	en:tendon	es:tendón	fa:تاندون,زردپی	fr:tendon	he:גיד	hi:कंडरा	ja:腱	ko:힘줄	pt:tendão	ru:сухожилие	tr:kiriş,tendon	ur:پٹھے کا رباط	zh:腱
 c:tennis	Noun	ar:تنس	de:Tennis	en:tennis	es:tenis	fa:تنیس	fr:tennis	he:טניס	hi:टेनिस	ja:テニス	ko:테니스	pt:tênis,ténis	ru:теннис	tr:tenis	ur:ٹینس	zh:网球
 c:territory	Noun	ar:إقليم,منطقة	de:Territorium,Gebiet	en:territory	es:territorio	fa:قلمرو,سرزمین	fr:territoire	he:שטח,טריטוריה	hi:क्षेत्र,प्रदेश	ja:領土,テリトリー	ko:영토	pt:território	ru:территория	tr:bölge,arazi	ur:علاقہ,سرزمین	zh:领土,地域
 c:test	Noun	ar:اختبار,فحص	de:Test	en:test	es:prueba,test	fa:آزمون,تست	fr:test,épreuve	he:מבחן,בדיקה	hi:परीक्षण,टेस्ट	ja:テスト,試験	ko:테스트,시험	pt:teste,prova	ru:тест,проверка	tr:test,deneme	ur:ٹیسٹ,جانچ	zh:测验,测试
@@ -941,6 +975,7 @@ c:thousand	Noun	ar:ألف	de:tausend	en:thousand	es:mil	fa:هزار	fr:mille	he:
 c:thread	Noun	ar:خيط	de:Faden,Garn	en:thread	es:hilo	fa:نخ	fr:fil	he:חוט	hi:धागा	ja:糸,スレッド	ko:실,스레드	pt:fio,linha	ru:нить,нитка	tr:iplik	ur:دھاگا	zh:线,线头
 c:three	Noun	ar:ثلاثة	de:drei	en:three	es:tres	fa:سه	fr:trois	he:שלושה	hi:तीन	ja:三,さん	ko:셋,삼	pt:três	ru:три	tr:üç	ur:تین	zh:三
 c:throw	Verb	ar:رمى	de:werfen	en:throw,throws,threw,thrown,throwing	es:lanzar,tirar	fa:پرتاب کردن,انداختن	fr:lancer,jeter	he:לזרוק,להשליך	hi:फेंकना	ja:投げる	ko:던지다	pt:lançar,jogar,arremessar	ru:бросать,кидать	tr:atmak,fırlatmak	ur:پھینکنا	zh:投,扔
+c:thumb	Noun	ar:إبهام	de:Daumen	en:thumb	es:pulgar	fa:شست,انگشت شست	fr:pouce	he:בוהן	hi:अंगूठा	ja:親指	ko:엄지	pt:polegar	ru:большой палец	tr:başparmak	ur:انگوٹھا	zh:拇指
 c:thunder	Noun	ar:رعد	de:Donner	en:thunder	es:trueno	fa:رعد,تندر	fr:tonnerre	he:רעם	hi:गरज,बादल गर्जन	ja:雷鳴	ko:천둥	pt:trovão	ru:гром	tr:gök gürültüsü	ur:گرج	zh:雷
 c:ticket	Noun	ar:تذكرة	de:Ticket,Fahrkarte	en:ticket	es:billete,boleto,entrada,tique	fa:بلیط	fr:billet,ticket	he:כרטיס	hi:टिकट	ja:チケット,切符	ko:티켓,표	pt:bilhete,ingresso	ru:билет	tr:bilet	ur:ٹکٹ	zh:票,车票
 c:tile	Noun	ar:بلاط,قرميد	de:Fliese,Kachel	en:tile	es:azulejo,baldosa	fa:کاشی	fr:carreau,tuile	he:אריח	hi:टाइल	ja:タイル	ko:타일	pt:azulejo	ru:плитка	tr:fayans,kiremit	ur:ٹائل	zh:瓦,瓷砖
@@ -948,6 +983,7 @@ c:time	Noun	ar:وقت,زمن	de:Zeit	en:time	es:tiempo	fa:زمان	fr:temps	he:�
 c:tired	Adjective	ar:متعب	de:müde	en:tired	es:cansado	fa:خسته	fr:fatigué	he:עייף	hi:थका	ja:疲れた	ko:피곤한	pt:cansado	ru:усталый	tr:yorgun	ur:تھکا ہوا	zh:累,疲倦
 c:title	Noun	ar:عنوان	de:Titel	en:title	es:título	fa:عنوان	fr:titre	he:כותרת	hi:शीर्षक	ja:題,タイトル	ko:제목,타이틀	pt:título	ru:название,заглавие	tr:başlık,unvan	ur:عنوان	zh:标题,题目
 c:today	Adverb	ar:اليوم	de:heute	en:today	es:hoy	fa:امروز	fr:aujourd'hui	he:היום	hi:आज	ja:今日	ko:오늘	pt:hoje	ru:сегодня	tr:bugün	ur:آج	zh:今天
+c:toe	Noun	ar:إصبع قدم	de:Zehe	en:toe	es:dedo del pie	fa:انگشت پا	fr:orteil	he:בוהן	hi:पैर की उंगली	ja:つま先,足指	ko:발가락	pt:dedo do pé	ru:палец ноги	tr:ayak parmağı	ur:پاؤں کی انگلی	zh:脚趾
 c:tomorrow	Noun	ar:غدا	de:morgen	en:tomorrow	es:mañana	fa:فردا	fr:demain	he:מחר	hi:कल	ja:明日	ko:내일	pt:amanhã	ru:завтра	tr:yarın	ur:کل	zh:明天
 c:tongue	Noun	ar:لسان	de:Zunge	en:tongue	es:lengua	fa:زبان	fr:langue	he:לשון	hi:जीभ	ja:舌	ko:혀	pt:língua	ru:язык	tr:dil	ur:زبان	zh:舌,舌头
 c:tool	Noun	ar:أداة	de:Werkzeug,Instrument	en:tool,instrument	es:herramienta,instrumento	fa:ابزار,وسیله	fr:outil,instrument	he:כלי	hi:औज़ार,उपकरण	ja:道具,ツール	ko:도구,공구	pt:ferramenta,instrumento	ru:инструмент,орудие	tr:alet,araç	ur:اوزار,آلہ	zh:工具,器具
@@ -989,8 +1025,10 @@ c:vaccine	Noun	ar:لقاح,تطعيم	de:Impfstoff	en:vaccine	es:vacuna	fa:وا�
 c:valley	Noun	ar:وادي,واد	de:Tal	en:valley	es:valle	fa:دره	fr:vallée	he:עמק	hi:घाटी	ja:谷,バレー	ko:계곡,골짜기	pt:vale	ru:долина	tr:vadi	ur:وادی	zh:山谷,谷
 c:value	Noun	ar:قيمة	de:Wert	en:value,worth	es:valor	fa:ارزش	fr:valeur	he:ערך	hi:मूल्य,मान	ja:価値	ko:가치	pt:valor	ru:ценность,стоимость	tr:değer	ur:قدر,قیمت	zh:价值
 c:vehicle	Noun	ar:مركبة,عربة	de:Fahrzeug	en:vehicle	es:vehículo	fa:خودرو,وسیله نقلیه	fr:véhicule	he:רכב	hi:वाहन	ja:乗り物,車両	ko:차량,탈것	pt:veículo	ru:транспорт,транспортное средство	tr:araç,taşıt	ur:گاڑی,سواری	zh:车辆,交通工具
+c:vein	Noun	ar:وريد	de:Vene	en:vein	es:vena	fa:سیاهرگ,ورید	fr:veine	he:וריד	hi:शिरा,नस	ja:静脈	ko:정맥	pt:veia	ru:вена	tr:toplardamar,ven	ur:رگ	zh:静脉
 c:velvet	Noun	ar:مخمل	de:Samt	en:velvet	es:terciopelo	fa:مخمل	fr:velours	he:קטיפה	hi:मखमल	ja:ベルベット	ko:벨벳	pt:veludo	ru:бархат	tr:kadife	ur:مخمل	zh:天鹅绒
 c:verdict	Noun	ar:حكم	de:Urteil,Verdikt	en:verdict	es:veredicto	fa:رای,حکم	fr:verdict	he:פסק דין,ורדיקט	hi:फ़ैसला,निर्णय	ja:評決,判決	ko:평결,판결	pt:veredicto,veredito	ru:вердикт,приговор	tr:karar	ur:فیصلہ	zh:裁决
+c:vertebra	Noun	ar:فقرة	de:Wirbel	en:vertebra	es:vértebra	fa:مهره	fr:vertèbre	he:חוליה	hi:कशेरुका	ja:椎骨	ko:척추뼈	pt:vértebra	ru:позвонок	tr:omur	ur:مہرہ	zh:椎骨
 c:victory	Noun	ar:نصر,انتصار	de:Sieg	en:victory	es:victoria	fa:پیروزی	fr:victoire	he:ניצחון	hi:विजय,जीत	ja:勝利	ko:승리	pt:vitória	ru:победа	tr:zafer,galibiyet	ur:فتح,کامیابی	zh:胜利
 c:village	Noun	ar:قرية	de:Dorf	en:village	es:aldea,pueblo	fa:روستا,دهکده	fr:village	he:כפר	hi:गाँव	ja:村	ko:마을	pt:aldeia,vila	ru:деревня	tr:köy	ur:گاؤں	zh:村,村庄
 c:violin	Noun	ar:كمان	de:Geige,Violine	en:violin	es:violín	fa:ویولن	fr:violon	he:כינור	hi:वायलिन	ja:バイオリン	ko:바이올린	pt:violino	ru:скрипка	tr:keman	ur:وائلن	zh:小提琴
@@ -1003,6 +1041,7 @@ c:volcano	Noun	ar:بركان	de:Vulkan	en:volcano	es:volcán	fa:آتشفشان	f
 c:volleyball	Noun	ar:كرة الطائرة	de:Volleyball	en:volleyball	es:voleibol,vóleibol	fa:والیبال	fr:volley-ball,volley	he:כדורעף	hi:वॉलीबॉल	ja:バレーボール	ko:배구	pt:voleibol,vôlei	ru:волейбол	tr:voleybol	ur:والی بال	zh:排球
 c:vote	Noun	ar:تصويت,صوت	de:Abstimmung,Stimme	en:vote	es:voto	fa:رأی	fr:vote,voix	he:קול,הצבעה	hi:वोट,मत	ja:投票,票	ko:투표	pt:voto	ru:голос,голосование	tr:oy	ur:ووٹ	zh:投票,选票
 c:wagon	Noun	ar:عربة	de:Wagen,Karren	en:wagon,cart	es:vagón,carro,carreta	fa:گاری,واگن	fr:chariot,charrette	he:עגלה	hi:गाड़ी,ठेला	ja:荷車,ワゴン	ko:수레,마차	pt:vagão,carroça	ru:повозка,телега	tr:araba,vagon	ur:ریڑھی	zh:货车,马车
+c:waist	Noun	ar:خصر	de:Taille	en:waist	es:cintura	fa:کمر	fr:taille	he:מותן	hi:कमर	ja:腰	ko:허리	pt:cintura	ru:талия	tr:bel	ur:کمر	zh:腰
 c:walk	Verb	ar:مشى	de:gehen	en:walk	es:caminar,andar	fa:راه رفتن	fr:marcher	he:ללכת	hi:चलना	ja:歩く	ko:걷다	pt:caminhar,andar	ru:ходить	tr:yürümek	ur:چلنا	zh:走
 c:war	Noun	ar:حرب	de:Krieg	en:war	es:guerra	fa:جنگ	fr:guerre	he:מלחמה	hi:युद्ध	ja:戦争	ko:전쟁	pt:guerra	ru:война	tr:savaş	ur:جنگ	zh:战争
 c:warm	Adjective	ar:دافئ	de:warm	en:warm	es:cálido,caliente	fa:گرم	fr:chaud	he:חם	hi:गर्म	ja:暖かい,温かい	ko:따뜻한	pt:quente,morno	ru:тёплый	tr:sıcak,ılık	ur:گرم	zh:暖和,温暖
@@ -1045,6 +1084,7 @@ c:worship	Noun	ar:عبادة	de:Anbetung	en:worship	es:adoración,culto	fa:عب�
 c:wound	Noun	ar:جرح	de:Wunde	en:wound	es:herida	fa:زخم	fr:plaie,blessure	he:פצע	hi:घाव	ja:傷	ko:상처	pt:ferida	ru:рана	tr:yara	ur:زخم	zh:伤口
 c:wrench	Noun	ar:مفتاح ربط	de:Schraubenschlüssel	en:wrench,spanner	es:llave,llave inglesa	fa:آچار	fr:clé,clef	he:מפתח ברגים	hi:पाना	ja:レンチ,スパナ	ko:렌치,스패너	pt:chave,chave inglesa	ru:гаечный ключ	tr:anahtar,İngiliz anahtarı	ur:رنچ,پانا	zh:扳手,扳钳
 c:wrestling	Noun	ar:مصارعة	de:Ringen	en:wrestling	es:lucha libre,lucha	fa:کشتی	fr:lutte	he:היאבקות	hi:कुश्ती	ja:レスリング,相撲	ko:레슬링,씨름	pt:luta livre,luta	ru:борьба	tr:güreş	ur:کشتی	zh:摔跤,摔角
+c:wrist	Noun	ar:معصم	de:Handgelenk	en:wrist	es:muñeca	fa:مچ	fr:poignet	he:פרק כף היד	hi:कलाई	ja:手首	ko:손목	pt:pulso	ru:запястье	tr:bilek	ur:کلائی	zh:手腕,腕
 c:write	Verb	ar:كتب,يكتب	de:schreiben	en:write,writes,wrote,writing	es:escribir	fa:نوشتن	fr:écrire	he:לכתוב	hi:लिखना	ja:書く	ko:쓰다	pt:escrever	ru:писать	tr:yazmak	ur:لکھنا	zh:写
 c:writer	Noun	ar:كاتب	de:Schriftsteller	en:writer	es:escritor	fa:نویسنده	fr:écrivain	he:סופר	hi:लेखक	ja:作家,ライター	ko:작가,라이터	pt:escritor	ru:писатель	tr:yazar	ur:لکھاری	zh:作家,作者
 c:wrong	Adjective	ar:خاطئ	de:falsch	en:wrong,incorrect	es:incorrecto,equivocado	fa:اشتباه,غلط	fr:faux,incorrect	he:לא נכון,שגוי	hi:ग़लत	ja:間違い,誤り	ko:틀린,잘못된	pt:errado,incorreto	ru:неправильный,ошибочный	tr:yanlış	ur:غلط	zh:错,错误
