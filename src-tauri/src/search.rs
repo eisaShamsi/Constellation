@@ -3177,3 +3177,411 @@ mod tests_m13 {
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// M14-bench — `lexical_search` end-to-end latency bench.
+// ─────────────────────────────────────────────────────────────────────
+//
+// Run with:
+//
+// ```bash
+// cargo test --lib --release search::m14_bench -- --ignored --nocapture
+// ```
+//
+// # What this measures
+//
+// One `#[test] #[ignore]` function that seeds a tempfile SQLite DB with
+// ~100 bench notes (English-only + Arabic-only + mixed bodies centred
+// on lexicon-covered concepts), then times `lexical_search` across
+// three query shapes:
+//
+//   (a) known-word → bridges:   "tree", "كتاب", "livre"
+//   (b) unknown-word → prefix:  "quasar", "Constellation", "xyzzy"
+//   (c) Arabic-only (native):   "شجرة", "معرفة"
+//
+// Per query: warmup 20 calls, then SAMPLES=500 timed calls via
+// `Instant::now()` bracketing each invocation. The harness reports
+// mean / p50 / p95 / p99 / max per shape.
+//
+// # Why it matters
+//
+// M12-wire (§ 43) rewired `lexical_search` to try cross-language
+// expansion via the Lexical Bridge before falling back to prefix
+// matching. The risk: Arabic-only queries on Arabic-only corpora used
+// to run a single-term FTS5 MATCH; now they may run a 15-branch OR-join
+// that contributes zero hits against the Arabic-only FTS rows. If the
+// new OR-joined MATCH is measurably slower the regression is silent at
+// the user-facing level (same result set, same ranking) but pays a
+// latency tax on every keystroke of Arabic search.
+//
+// This bench is the **regression gate**: a hard p99 budget on shape
+// (c), plus informational stats on (a) and (b). Trips on the next opt-in
+// `--ignored` run if the post-M12-wire pipeline regresses.
+//
+// # Budgets
+//
+// * Shape (a) p99 <  10 ms — bridged path, adds OR branches.
+// * Shape (b) p99 <  10 ms — prefix fallback, identical shape to pre-M12.
+// * Shape (c) p99 <  10 ms — the critical non-regression gate.
+//
+// These are absolute budgets on a 100-note corpus; typical observed
+// latency on a warm DB is expected to be 1–2 orders of magnitude below
+// the budget (sub-ms). The headroom absorbs CI variance without hiding
+// a genuine regression — a 10× slowdown would still trip.
+//
+// # Scope note
+//
+// Not gated on `cargo test --lib` — only on an explicit `--ignored`
+// invocation, matching `arabic::bench::m9_bench` and `lexicon::bench::m12_bench`.
+// The tempfile corpus is cleaned up at the end; runs leave no state.
+
+#[cfg(test)]
+mod m14_bench {
+    use super::{init_db, lexical_search, normalize_arabic_for_search};
+    use rusqlite::params;
+    use std::hint::black_box;
+    use std::path::PathBuf;
+    use std::time::Instant;
+
+    /// English-only bench bodies. Each centres on one lexicon-covered
+    /// concept so the bridged path (shape (a)) actually materialises
+    /// hits rather than producing a zero-result MATCH. Filler words
+    /// around the anchor keep the FTS tokens realistic (not a single
+    /// lemma stuffed 100 times).
+    const EN_BODIES: &[(&str, &str)] = &[
+        ("en_tree_1", "The old tree behind the house casts a long shadow at dusk."),
+        ("en_tree_2", "She planted a tree for every birthday; the garden is thirty trees strong."),
+        ("en_tree_3", "Oak is the tallest tree on this hillside."),
+        ("en_book_1", "The library keeps every book in alphabetical order by author."),
+        ("en_book_2", "He borrowed a book on celestial navigation for the weekend."),
+        ("en_book_3", "A book about knowledge is a book about everything."),
+        ("en_house_1", "The house on the corner has been empty since spring."),
+        ("en_house_2", "They turned the old house into a small café with a garden."),
+        ("en_water_1", "Water from the mountain spring is cold even in July."),
+        ("en_water_2", "The water tasted faintly of iron, but it was safe."),
+        ("en_knowledge_1", "Knowledge is not a stockpile; it is a working relationship with the world."),
+        ("en_knowledge_2", "His knowledge of maps outweighed his knowledge of the road itself."),
+        ("en_language_1", "A new language rewrites the shape of your thought."),
+        ("en_language_2", "Every language carries the fingerprints of its speakers."),
+        ("en_peace_1", "Peace is a practice, not a treaty."),
+        ("en_truth_1", "Truth has a simple habit of outlasting the convenient."),
+        ("en_love_1", "Love, like writing, rewards the patient over the clever."),
+        ("en_time_1", "Time is the only currency you spend before you earn it."),
+        ("en_day_1", "A quiet day beside a clear river is a reset."),
+        ("en_night_1", "Night in the desert is colder than you expect."),
+        ("en_learn_1", "We learn best when we teach, and teach best when we doubt."),
+        ("en_idea_1", "An idea held lightly goes further than an idea held tightly."),
+        ("en_fire_1", "Fire, water, wood, and wind — the elements of every story."),
+        ("en_door_1", "The door to the garden had been oiled but never fixed."),
+        ("en_city_1", "The city at midnight is another city entirely."),
+        ("en_food_1", "Good food and a long table — nothing else required."),
+        ("en_bread_1", "Bread baked that morning at the corner bakery."),
+        ("en_earth_1", "The earth under the old tree was cool and damp."),
+        ("en_eat_1", "They would eat in silence, and then the stories would begin."),
+        ("en_hear_1", "I could hear the tree creaking in the wind all night."),
+        ("en_see_1", "Look at the tree: it has stood longer than most families."),
+        ("en_read_1", "To read a book is to borrow another person's attention."),
+        ("en_write_1", "Writing a book is a slow tree, grown one ring per year."),
+        ("en_student_1", "A student asks the teacher how to ask better questions."),
+        ("en_teacher_1", "The teacher opened the book and then closed it again."),
+        ("en_big_1", "The big tree at the centre of the village."),
+        ("en_good_1", "Good water, good bread, good company."),
+        ("en_beautiful_1", "A beautiful tree in winter has nothing to hide."),
+        ("en_important_1", "What is important is rarely what is urgent."),
+        ("en_mixed_1", "A tree, a book, a door, a river — the catalog of a day."),
+    ];
+
+    /// Arabic-only bench bodies. Same anchor-concept pattern as EN_BODIES.
+    /// These drive shape (c) — an Arabic query hitting Arabic rows with
+    /// the bridged MATCH clause carrying zero-hit cross-lingual branches.
+    const AR_BODIES: &[(&str, &str)] = &[
+        ("ar_tree_1", "الشجرة القديمة خلف البيت تلقي ظلا طويلا عند الغروب."),
+        ("ar_tree_2", "زرعت شجرة في كل عيد ميلاد؛ الحديقة الآن ثلاثون شجرة."),
+        ("ar_tree_3", "البلوط هو أطول شجرة على هذا التل."),
+        ("ar_book_1", "المكتبة تحتفظ بكل كتاب مرتب أبجديا حسب المؤلف."),
+        ("ar_book_2", "استعار كتاب عن الملاحة الفلكية لعطلة نهاية الأسبوع."),
+        ("ar_book_3", "كتاب عن المعرفة هو كتاب عن كل شيء."),
+        ("ar_house_1", "البيت في الزاوية فارغ منذ الربيع."),
+        ("ar_house_2", "حولوا البيت القديم إلى مقهى صغير بحديقة."),
+        ("ar_water_1", "الماء من نبع الجبل بارد حتى في يوليو."),
+        ("ar_water_2", "طعم الماء كان فيه نبرة من الحديد، لكنه كان آمنا."),
+        ("ar_knowledge_1", "المعرفة ليست مخزونا؛ بل علاقة عمل مع العالم."),
+        ("ar_knowledge_2", "معرفته بالخرائط فاقت معرفته بالطريق نفسه."),
+        ("ar_language_1", "اللغة الجديدة تعيد رسم شكل الفكر."),
+        ("ar_language_2", "كل لغة تحمل بصمات أهلها."),
+        ("ar_peace_1", "السلام ممارسة، لا معاهدة."),
+        ("ar_truth_1", "للحقيقة عادة بسيطة: أن تبقى بعد أن يذهب ما هو مريح."),
+        ("ar_love_1", "الحب، مثل الكتابة، يكافئ الصبور أكثر من الذكي."),
+        ("ar_time_1", "الوقت هو العملة الوحيدة التي تنفقها قبل أن تكسبها."),
+        ("ar_day_1", "يوم هادئ بجوار نهر صاف هو إعادة ضبط."),
+        ("ar_night_1", "الليل في الصحراء أبرد مما تتوقع."),
+        ("ar_learn_1", "نتعلم بشكل أفضل حين نعلم، ونعلم بشكل أفضل حين نشك."),
+        ("ar_idea_1", "فكرة ممسكة بخفة تذهب أبعد من فكرة ممسكة بشدة."),
+        ("ar_fire_1", "نار، ماء، خشب، ريح — عناصر كل قصة."),
+        ("ar_door_1", "باب الحديقة كان مزيتا لكن لم يصلح."),
+        ("ar_city_1", "المدينة في منتصف الليل مدينة أخرى تماما."),
+        ("ar_food_1", "طعام جيد وطاولة طويلة — لا شيء آخر مطلوب."),
+        ("ar_bread_1", "الخبز المخبوز في ذلك الصباح عند المخبز المجاور."),
+        ("ar_earth_1", "الأرض تحت الشجرة القديمة كانت باردة ورطبة."),
+        ("ar_eat_1", "كانوا يأكلون في صمت، ثم تبدأ القصص."),
+        ("ar_hear_1", "كنت أسمع الشجرة تصرّ في الريح طوال الليل."),
+        ("ar_see_1", "انظر إلى الشجرة: لقد صمدت أطول من معظم العائلات."),
+        ("ar_read_1", "قراءة كتاب هي استعارة انتباه شخص آخر."),
+        ("ar_write_1", "كتابة كتاب شجرة بطيئة، تنمو حلقة واحدة في السنة."),
+        ("ar_student_1", "الطالب يسأل المعلم كيف يسأل أسئلة أفضل."),
+        ("ar_teacher_1", "فتح المعلم الكتاب ثم أغلقه مرة أخرى."),
+        ("ar_big_1", "الشجرة الكبيرة في منتصف القرية."),
+        ("ar_good_1", "ماء جيد، خبز جيد، رفقة جيدة."),
+        ("ar_beautiful_1", "شجرة جميلة في الشتاء ليس لديها ما تخفيه."),
+        ("ar_important_1", "المهم نادرا ما يكون العاجل."),
+        ("ar_mixed_1", "شجرة، كتاب، باب، نهر — فهرس يوم."),
+    ];
+
+    /// Mixed-language bench bodies — one concept word in two languages
+    /// inside a single body. These stress-test the tokenizer-hand-off
+    /// between the Arabic Light10 stemmer and the English path.
+    const MIXED_BODIES: &[(&str, &str)] = &[
+        ("mix_1", "A tree that grows slowly becomes a long شجرة. The old becomes the ancient."),
+        ("mix_2", "Every book in the كتاب is a window to somewhere else."),
+        ("mix_3", "Water is ماء — the same molecule, a different word."),
+        ("mix_4", "Knowledge is معرفة — working relationship with the world."),
+        ("mix_5", "The house is بيت, the home is also بيت — Arabic is generous that way."),
+        ("mix_6", "Peace (سلام) costs attention. Peace is practice."),
+        ("mix_7", "Truth (الحقيقة) outlasts the convenient."),
+        ("mix_8", "Language (لغة) rewrites the shape of thought."),
+        ("mix_9", "A student (طالب) asks the teacher (معلم) better questions."),
+        ("mix_10", "Fire (نار), water (ماء), wood, wind — elements of every story."),
+        ("mix_11", "An idea (فكرة) held lightly travels further."),
+        ("mix_12", "City (مدينة) at midnight is another city entirely."),
+        ("mix_13", "Food (طعام), bread (خبز), good company."),
+        ("mix_14", "Day (يوم) is quiet beside a clear river."),
+        ("mix_15", "Night (ليل) in the desert is colder than you expect."),
+        ("mix_16", "A door (باب) to the garden, oiled but not fixed."),
+        ("mix_17", "To read (قراءة) a book is to borrow another person's attention."),
+        ("mix_18", "To write (كتابة) a book is a slow tree, one ring per year."),
+        ("mix_19", "Earth (أرض), tree (شجرة), fire (نار), water (ماء) — the elements."),
+        ("mix_20", "Learn (تعلم) by teaching; teach (تعليم) by doubting."),
+    ];
+
+    fn unique_tmp_dir() -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "constellation_m14_bench_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ))
+    }
+
+    /// Build a fresh tempfile SQLite DB, run `init_db` to register the
+    /// constellation tokenizer + create the FTS schema, then insert
+    /// all bench bodies. Each INSERT fires `note_meta_ai` which
+    /// populates `notes_fts` with the tokenised body — so at return
+    /// time the DB is fully ready for `lexical_search`.
+    fn seed_bench_corpus() -> (PathBuf, rusqlite::Connection) {
+        let dir = unique_tmp_dir();
+        std::fs::create_dir_all(&dir).expect("mkdir bench tempdir");
+        let db_path = dir.join("search.db");
+        let conn = init_db(&db_path).expect("init_db");
+
+        let all = EN_BODIES.iter().chain(AR_BODIES.iter()).chain(MIXED_BODIES.iter());
+        for (name, body) in all {
+            let body_normalised = normalize_arabic_for_search(body);
+            let note_path = format!("/seed/bench/{}.md", name);
+            conn.execute(
+                "INSERT INTO note_meta(path, name, library_name, modified, body_text) \
+                 VALUES (?1, ?2, 'bench', 0, ?3)",
+                params![note_path, name, body_normalised],
+            )
+            .expect("seed insert");
+        }
+        (dir, conn)
+    }
+
+    /// Percentile by rank on a sorted slice. No interpolation — the
+    /// sample size (500) is large enough that bucket choice dominates
+    /// and mirrors `lexicon::bench::m12_bench`.
+    fn percentile(sorted: &[u64], p: f64) -> u64 {
+        if sorted.is_empty() {
+            return 0;
+        }
+        let idx = ((sorted.len() as f64) * p).clamp(0.0, (sorted.len() - 1) as f64) as usize;
+        sorted[idx]
+    }
+
+    /// Warmup + sample harness around `lexical_search`. Returns a
+    /// sorted vector of per-call nanosecond latencies so the caller can
+    /// derive percentiles.
+    fn measure(
+        conn: &rusqlite::Connection,
+        query: &str,
+        warmup: usize,
+        samples: usize,
+    ) -> Vec<u64> {
+        for _ in 0..warmup {
+            black_box(lexical_search(conn, query, 25));
+        }
+        let mut ns: Vec<u64> = Vec::with_capacity(samples);
+        for _ in 0..samples {
+            let t = Instant::now();
+            let r = lexical_search(conn, query, 25);
+            ns.push(t.elapsed().as_nanos() as u64);
+            black_box(r);
+        }
+        ns.sort_unstable();
+        ns
+    }
+
+    /// Print a compact per-shape stat line. Kept terse so the full
+    /// three-shape report fits on one terminal height without scroll.
+    fn report_stats(label: &str, samples: &[u64], hits: usize) {
+        let sum: u128 = samples.iter().map(|&n| n as u128).sum();
+        let mean_ns = (sum / samples.len() as u128) as u64;
+        let p50 = percentile(samples, 0.50);
+        let p95 = percentile(samples, 0.95);
+        let p99 = percentile(samples, 0.99);
+        let max = *samples.last().unwrap_or(&0);
+        println!(
+            "  {label:<28} hits={hits:<3} mean={mean_ns:>8} ns  p50={p50:>8}  p95={p95:>8}  p99={p99:>8}  max={max:>8}"
+        );
+        println!(
+            "  {:<28}            mean={:.2} µs   p50={:.2}      p95={:.2}      p99={:.2}      max={:.2}",
+            "",
+            mean_ns as f64 / 1_000.0,
+            p50 as f64 / 1_000.0,
+            p95 as f64 / 1_000.0,
+            p99 as f64 / 1_000.0,
+            max as f64 / 1_000.0,
+        );
+    }
+
+    /// M14 end-to-end bench. Opt-in only: `--ignored`.
+    ///
+    /// The budget constants are expressed in nanoseconds so the assert
+    /// message is human-readable when a regression trips it. 10 ms p99
+    /// is generous for a 100-note corpus — typical observed latencies
+    /// on a warm DB are sub-millisecond, so a tripped assert indicates
+    /// a real shape-change in the hot path (unwanted full-table scan,
+    /// per-call allocation storm, contention on a global lock, etc.)
+    /// rather than CI variance.
+    const BUDGET_P99_NS: u64 = 10_000_000; // 10 ms
+
+    #[test]
+    #[ignore]
+    fn m14_bench() {
+        println!("\n=== M14 Bench — lexical_search end-to-end ===\n");
+
+        let (dir, conn) = seed_bench_corpus();
+        let note_count = EN_BODIES.len() + AR_BODIES.len() + MIXED_BODIES.len();
+        println!(
+            "  Corpus: {} notes ({} en, {} ar, {} mixed)\n",
+            note_count,
+            EN_BODIES.len(),
+            AR_BODIES.len(),
+            MIXED_BODIES.len(),
+        );
+
+        const WARMUP: usize = 20;
+        const SAMPLES: usize = 500;
+
+        // ── Shape (a): known-word → bridges ──────────────────────────
+        // These queries are in lexicon_v1.tsv so `expanded_match_query`
+        // returns Some(...) with " OR "-joined cross-lingual branches.
+        // Hit counts should span both source-language rows and bridged
+        // rows in other scripts — which is the defining M12-wire win.
+        println!("  ── Shape (a): known-word → bridges ──");
+        let shape_a = &[
+            ("tree (en→bridges)", "tree"),
+            ("كتاب (ar→bridges)", "كتاب"),
+            ("livre (fr→bridges)", "livre"),
+        ];
+        let mut worst_a_p99: u64 = 0;
+        for (label, q) in shape_a {
+            // One-shot hit count (measured separately so the per-call
+            // measurement stays untainted by Vec<SearchResult> drop).
+            let hits = lexical_search(&conn, q, 25).len();
+            let s = measure(&conn, q, WARMUP, SAMPLES);
+            report_stats(label, &s, hits);
+            worst_a_p99 = worst_a_p99.max(percentile(&s, 0.99));
+        }
+
+        // ── Shape (b): unknown-word → prefix fallback ────────────────
+        // `expanded_match_query` returns None (lemma not in corpus),
+        // so `lexical_search` takes the raw `{word}*` prefix path —
+        // identical shape to pre-M10 behaviour, included as the "null
+        // hypothesis" baseline. If the bridged (a) path drifts far
+        // from (b), we know the cost is in expansion/MATCH planning
+        // rather than in FTS5 row retrieval.
+        println!("\n  ── Shape (b): unknown-word → prefix fallback ──");
+        let shape_b = &[
+            ("quasar (prefix)", "quasar"),
+            ("Constellation (prefix)", "Constellation"),
+            ("xyzzy (prefix)", "xyzzy"),
+        ];
+        let mut worst_b_p99: u64 = 0;
+        for (label, q) in shape_b {
+            let hits = lexical_search(&conn, q, 25).len();
+            let s = measure(&conn, q, WARMUP, SAMPLES);
+            report_stats(label, &s, hits);
+            worst_b_p99 = worst_b_p99.max(percentile(&s, 0.99));
+        }
+
+        // ── Shape (c): Arabic-only query (non-regression gate) ──────
+        // The critical measurement: an Arabic query that IS in the
+        // lexicon (so expansion fires, adding ~15 OR branches to the
+        // FTS5 MATCH clause). Each added branch is a zero-hit lookup
+        // against the Arabic-only rows that ultimately satisfy the
+        // query. We're asserting that the added planning/scan cost
+        // is negligible on FTS5 at this corpus scale — i.e. M12-wire
+        // did not introduce a per-branch cost that scales with the
+        // MATCH expression length.
+        println!("\n  ── Shape (c): Arabic-only (non-regression gate) ──");
+        let shape_c = &[
+            ("شجرة (ar-only)", "شجرة"),
+            ("معرفة (ar-only)", "معرفة"),
+        ];
+        let mut worst_c_p99: u64 = 0;
+        for (label, q) in shape_c {
+            let hits = lexical_search(&conn, q, 25).len();
+            let s = measure(&conn, q, WARMUP, SAMPLES);
+            report_stats(label, &s, hits);
+            worst_c_p99 = worst_c_p99.max(percentile(&s, 0.99));
+        }
+
+        println!(
+            "\n  Summary: worst-p99  (a)={:.2} ms  (b)={:.2} ms  (c)={:.2} ms    budget={:.0} ms",
+            worst_a_p99 as f64 / 1_000_000.0,
+            worst_b_p99 as f64 / 1_000_000.0,
+            worst_c_p99 as f64 / 1_000_000.0,
+            BUDGET_P99_NS as f64 / 1_000_000.0,
+        );
+
+        // Cleanup: bench is ephemeral, tempfiles don't survive.
+        let _ = std::fs::remove_dir_all(&dir);
+
+        // Hard gates. Order matters for diagnosis — if (c) trips first
+        // the regression is in the bridged Arabic path specifically; if
+        // (b) also trips the cost is elsewhere in FTS5 / rusqlite /
+        // result materialisation. (a) is informational-hard (still
+        // asserts budget so a bridged-path regression gets caught) but
+        // (c) is the milestone-defining assertion.
+        assert!(
+            worst_a_p99 < BUDGET_P99_NS,
+            "Shape (a) bridged p99 {} ns exceeds budget {} ns — bridged MATCH or FTS plan slowed down",
+            worst_a_p99,
+            BUDGET_P99_NS,
+        );
+        assert!(
+            worst_b_p99 < BUDGET_P99_NS,
+            "Shape (b) prefix p99 {} ns exceeds budget {} ns — baseline FTS5 path regressed (not M12-wire's fault)",
+            worst_b_p99,
+            BUDGET_P99_NS,
+        );
+        assert!(
+            worst_c_p99 < BUDGET_P99_NS,
+            "Shape (c) Arabic-only p99 {} ns exceeds budget {} ns — M12-wire HAS regressed Arabic search",
+            worst_c_p99,
+            BUDGET_P99_NS,
+        );
+    }
+}
