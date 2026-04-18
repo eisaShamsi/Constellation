@@ -57,7 +57,7 @@ mod tests {
     use crate::arabic::fst_bake;
     use crate::arabic::fst_index::GenerativeFst;
     use crate::arabic::regression::{parse_corpus, raw_corpus, run_corpus};
-    use crate::arabic::{analyze_best, AnalysisOrigin};
+    use crate::arabic::{analyze_best, analyze_with_overrides_best, overrides, AnalysisOrigin};
     use std::fs;
     use std::hint::black_box;
     use std::time::Instant;
@@ -147,6 +147,47 @@ mod tests {
         report("Wall (s)", format!("{elapsed_s:.2}"));
         report("Throughput (words/s)", format!("{wps:.0}"));
         report("Per-call (ns)", format!("{ns_per_call:.0}"));
+
+        // ── 3b. Throughput (FTS production path) ─────────────────────
+        // M9-hotpath added `active_if_non_empty` specifically to cut
+        // the per-token cost of the `overrides::active()` probe. The
+        // "Throughput" measurement above calls `analyze_best` directly
+        // and so doesn't exercise that probe at all — it's the raw
+        // analyzer speed, useful for comparing across algorithmic
+        // changes but not representative of what FTS5 tokenization
+        // actually pays per token.
+        //
+        // This measurement mirrors `libraries::process_arabic_word`'s
+        // production shape: fetch the active store via
+        // `active_if_non_empty`, hand it to `analyze_with_overrides_best`.
+        // When the bench runs with an empty active store (the default
+        // in this harness — no `set_active` call), the probe returns
+        // `None` via the fast path. The delta between "Throughput" and
+        // "Throughput FTS" is the per-token active-store cost we've
+        // been trying to drive down.
+        //
+        // Same warm-up discipline: one full pre-pass before the clock.
+        for s in &surfaces {
+            let store_owned = overrides::active_if_non_empty();
+            let overrides_ref = store_owned.as_deref();
+            black_box(analyze_with_overrides_best(s, overrides_ref));
+        }
+
+        let t_fts = Instant::now();
+        for _ in 0..K {
+            for s in &surfaces {
+                let store_owned = overrides::active_if_non_empty();
+                let overrides_ref = store_owned.as_deref();
+                black_box(analyze_with_overrides_best(s, overrides_ref));
+            }
+        }
+        let elapsed_fts = t_fts.elapsed().as_secs_f64();
+        let wps_fts = total_calls as f64 / elapsed_fts;
+        let ns_per_fts = elapsed_fts * 1e9 / total_calls as f64;
+        let overhead_ns = ns_per_fts - ns_per_call;
+        report("Throughput FTS (w/s)", format!("{wps_fts:.0}"));
+        report("Per-call FTS (ns)", format!("{ns_per_fts:.0}"));
+        report("FTS overhead (ns)", format!("{overhead_ns:+.0}"));
 
         // ── 4. Accuracy ──────────────────────────────────────────────
         let rpt = run_corpus();

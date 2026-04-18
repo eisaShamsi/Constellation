@@ -1769,6 +1769,16 @@ fn collect_notes_with_tag(dir: &Path, lib_id: &str, lib_name: &str, re: &regex::
 pub struct IndexMention {
     pub note_path: String,
     pub note_name: String,
+    /// One-line FTS5 snippet of the matched term in context (up to ~12
+    /// tokens around the first hit). Matched tokens are wrapped in
+    /// `\x02`…`\x03` sentinels (STX/ETX control chars) which the frontend
+    /// splits on to render as `<mark>` — chosen over putting `<mark>` in
+    /// SQL so literal HTML in user notes is not injected into the DOM.
+    ///
+    /// `None` when FTS5 returned an empty snippet (e.g. title-only match
+    /// against a note with empty body). The Index panel omits the context
+    /// line in that case.
+    pub snippet: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1777,6 +1787,20 @@ pub struct IndexEntry {
     pub count: u32,
     pub mentions: Vec<IndexMention>,
     pub is_compound: bool,
+}
+
+/// Co-occurring term — another vocabulary term appearing in the same notes
+/// as a query term. Returned by `read_cooccurring_terms` and rendered as
+/// a chip strip beneath an expanded Index term, surfacing lexical
+/// adjacency ("notes containing 'knowledge' also contain …").
+#[derive(Debug, Clone, Serialize)]
+pub struct CooccurringTerm {
+    /// Display form of the co-occurring term. Bigrams stored as
+    /// `stem1\x1fstem2` are converted to `"stem1 stem2"` for the UI.
+    pub term: String,
+    /// Number of sampled matching notes that also contain this term.
+    /// Capped above by `sample_limit` (default 200).
+    pub note_count: u32,
 }
 
 /// ─── Arabic Indexing Pipeline ───────────────────────────────────────────────
@@ -1944,18 +1968,16 @@ fn stem_arabic_light10(word: &str) -> String {
 /// before M6, and search recall on them doesn't drop.
 fn process_arabic_word(word: &str) -> (String, String) {
     let display = normalize_arabic_display(word); // preserve ة أ إ آ ى
-    // M8b: consult the active Universe's user-override store before
-    // routing through the rest of the engine. `Arc::clone` of the store
-    // is a refcount bump, ~5 ns — well within the FTS5 tokenizer budget.
-    // If the active Universe has no overrides authored (the overwhelmingly
-    // common case), we short-circuit to None so `analyze_with_overrides`
-    // doesn't bother probing an empty HashMap per token.
-    let store = crate::arabic::overrides::active();
-    let overrides_ref = if store.is_empty() {
-        None
-    } else {
-        Some(store.as_ref())
-    };
+    // M8b routes every token through the active Universe's user-override
+    // store before the rest of the engine. M9-hotpath (a) cut this from
+    // an unconditional RwLock-read + Arc::clone (~25 ns) to a single
+    // relaxed `AtomicBool::load` (~2 ns) on the overwhelmingly common
+    // empty-store case via `active_if_non_empty`. The returned
+    // `Option<Arc<_>>` lives until end of scope, so `.as_deref()` gives
+    // the `Option<&OverrideStore>` the downstream analyze call expects
+    // without any reference-lifetime juggling.
+    let store_owned = crate::arabic::overrides::active_if_non_empty();
+    let overrides_ref = store_owned.as_deref();
     let analysis = crate::arabic::analyze_with_overrides_best(word, overrides_ref);
     let stem = if matches!(analysis.origin, crate::arabic::AnalysisOrigin::SurfaceHeuristic) {
         // Unknown word — preserve pre-M6 Light10 behaviour so recall on
@@ -2436,7 +2458,9 @@ pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result
                 .unwrap_or_default();
             let mentions: Vec<IndexMention> = sources
                 .into_iter()
-                .map(|(note_path, note_name)| IndexMention { note_path, note_name })
+                // Legacy walker doesn't produce FTS5 snippets — the
+                // FTS5-backed `read_term_mentions` is the modern source.
+                .map(|(note_path, note_name)| IndexMention { note_path, note_name, snippet: None })
                 .collect();
             IndexEntry { term, count, mentions, is_compound: false }
         })
@@ -2449,7 +2473,7 @@ pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result
         .map(|(term, count, sources)| {
             let mentions: Vec<IndexMention> = sources
                 .into_iter()
-                .map(|(note_path, note_name)| IndexMention { note_path, note_name })
+                .map(|(note_path, note_name)| IndexMention { note_path, note_name, snippet: None })
                 .collect();
             IndexEntry { term, count, mentions, is_compound: true }
         })
@@ -2947,8 +2971,17 @@ pub fn read_term_mentions(
     // Quotes must be doubled per FTS5 quoted-string syntax.
     let phrase = format!("\"{}\"", term.replace('"', "\"\""));
 
+    // `snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)` returns a single
+    // line of surrounding text with the matched tokens wrapped in STX/ETX
+    // (\x02/\x03) sentinels. `-1` means "best column across all indexed
+    // columns" — so a term that lives in the title (column 0) or body
+    // (column 1) both get a useful preview. `12` tokens ≈ one line of
+    // context; longer snippets waste vertical space in the expanded row.
+    // STX/ETX are used (not `<mark>`) so literal HTML in user notes
+    // cannot be injected into the DOM at render time.
     let mut stmt = conn.prepare(
-        "SELECT nm.path, nm.name
+        "SELECT nm.path, nm.name,
+                snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)
          FROM notes_fts
          JOIN note_meta nm ON notes_fts.rowid = nm.rowid
          WHERE notes_fts MATCH ?1
@@ -2957,13 +2990,189 @@ pub fn read_term_mentions(
     ).map_err(|e| e.to_string())?;
 
     let rows = stmt.query_map(rusqlite::params![phrase, limit as i64], |row| {
-        Ok(IndexMention {
-            note_path: row.get::<_, String>(0)?,
-            note_name: row.get::<_, String>(1)?,
-        })
+        let note_path: String = row.get(0)?;
+        let note_name: String = row.get(1)?;
+        // snippet() returns TEXT; SQLite can hand us NULL in edge cases
+        // (very short/empty content columns), so tolerate both.
+        let snippet_raw: Option<String> = row.get(2).ok();
+        let snippet = snippet_raw.and_then(|s| if s.is_empty() { None } else { Some(s) });
+        Ok(IndexMention { note_path, note_name, snippet })
     }).map_err(|e| e.to_string())?;
 
     Ok(rows.flatten().collect())
+}
+
+/// Return the top co-occurring terms for `term` — other vocabulary terms
+/// appearing in the same notes. Surfaces lexical adjacency: "notes that
+/// mention 'knowledge' also mention: 'wisdom', 'understanding', …".
+///
+/// ## Performance model
+///
+/// `fts5vocab(…, 'instance')` has no index on `doc`, so a SQL-level
+/// co-occurrence query (e.g. `WHERE doc IN (matching_rowids)`) degrades to
+/// a full scan of every token position in the entire FTS index. For a
+/// 7,600-note Arabic Universe that's millions of rows per query.
+///
+/// Instead we:
+///   1. Pull up to `sample_limit` matching rowids from `notes_fts MATCH`
+///      (indexed — fast).
+///   2. Fetch `note_meta.body_text` for each rowid (covered by the
+///      primary-key rowid index — ~hundreds of tiny point reads).
+///   3. Re-tokenize each body in-process through the same
+///      `process_word_for_fts` pipeline the FTS5 tokenizer uses, so the
+///      stems we aggregate are symmetric with those in the index.
+///   4. Count distinct notes per co-occurring stem; sort descending.
+///
+/// Cost on a common term (say 500 matches, 2 KB body each): ~1 MB of
+/// text × low-microsecond per-word tokenization ≈ <100 ms. Rare terms
+/// are essentially free.
+///
+/// The 200-note default sample is empirically enough: the rank order of
+/// top co-occurring terms stabilizes well before every matching note is
+/// visited (law of large numbers on the tail). Users tuning for
+/// exhaustiveness can raise `sample_limit`; there's no correctness
+/// benefit past a few hundred.
+#[tauri::command]
+pub fn read_cooccurring_terms(
+    app: tauri::AppHandle,
+    term: String,
+    sample_limit: Option<u32>,
+    result_limit: Option<u32>,
+) -> Result<Vec<CooccurringTerm>, String> {
+    use rusqlite::{Connection, OpenFlags};
+    use std::collections::{HashMap, HashSet};
+
+    let sample_limit = sample_limit.unwrap_or(200).max(1).min(2000);
+    let result_limit = result_limit.unwrap_or(20).max(1).min(100) as usize;
+
+    let db_path = crate::search::db_path(&app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let mut conn = Connection::open_with_flags(&db_path, flags)
+        .map_err(|e| format!("Failed to open search.db: {}", e))?;
+    conn.busy_timeout(std::time::Duration::from_millis(500))
+        .map_err(|e| e.to_string())?;
+    crate::search::register_fts5_tokenizer(&mut conn)?;
+
+    // Stems of the query term — excluded from co-occurrence results
+    // (nobody wants "knowledge" listed as co-occurring with "knowledge").
+    // Whitespace split handles the bigram display form:
+    // "knowledge management" → ["knowledge", "management"], so both the
+    // unigram stems are filtered out.
+    let query_stems: HashSet<String> = term
+        .split_whitespace()
+        .filter_map(|w| process_word_for_fts(w).map(|(stem, _norm)| stem))
+        .collect();
+
+    // Step 1: sample matching rowids via FTS5 MATCH.
+    //
+    // The `stmt`/`rows` pair must both outlive the `.collect()` call —
+    // `rows` borrows from `stmt`, and `stmt` borrows from `conn`. Binding
+    // each to its own `let` (rather than chaining through a block-expr)
+    // keeps the borrow chain alive until `collect()` finishes.
+    let phrase = format!("\"{}\"", term.replace('"', "\"\""));
+    let mut stmt = conn.prepare(
+        "SELECT rowid FROM notes_fts WHERE notes_fts MATCH ?1 LIMIT ?2"
+    ).map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map(rusqlite::params![&phrase, sample_limit as i64], |r| r.get::<_, i64>(0))
+        .map_err(|e| e.to_string())?;
+    let rowids: Vec<i64> = rows.filter_map(|r| r.ok()).collect();
+    drop(stmt); // release the borrow on `conn` before we prepare `body_stmt`.
+
+    if rowids.is_empty() { return Ok(Vec::new()); }
+
+    // Step 2 & 3: for each rowid, fetch body_text and collect distinct
+    // stems. `counts` accumulates stem → number of distinct notes it
+    // appears in (co-document frequency across the sample).
+    let stopwords = build_stopwords();
+    let mut counts: HashMap<String, u32> = HashMap::new();
+
+    let mut body_stmt = conn.prepare(
+        "SELECT body_text FROM note_meta WHERE rowid = ?1"
+    ).map_err(|e| e.to_string())?;
+
+    for rowid in &rowids {
+        let body: Option<String> = body_stmt
+            .query_row(rusqlite::params![rowid], |r| r.get(0))
+            .ok();
+        let Some(body) = body else { continue; };
+        if body.is_empty() { continue; }
+
+        // Tokenize with the same boundary rules as the FTS5 tokenizer
+        // (`fts5_tokenizer::is_word_boundary`): apostrophes don't break
+        // words (keeps contractions together), em/en/hyphen/underscore
+        // and non-alphabetic chars do.
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut word_start: Option<usize> = None;
+        for (byte_idx, ch) in body.char_indices() {
+            if is_cooccurrence_boundary(ch) {
+                if let Some(start) = word_start.take() {
+                    collect_stem(&body[start..byte_idx], &stopwords, &query_stems, &mut seen);
+                }
+            } else if word_start.is_none() {
+                word_start = Some(byte_idx);
+            }
+        }
+        // Tail word (input doesn't end with a boundary char).
+        if let Some(start) = word_start {
+            collect_stem(&body[start..], &stopwords, &query_stems, &mut seen);
+        }
+
+        for stem in seen {
+            *counts.entry(stem).or_insert(0) += 1;
+        }
+    }
+
+    // Step 4: top-K by count descending, tie-break alphabetic ascending
+    // for deterministic ordering across sessions on equal-count buckets.
+    let mut results: Vec<CooccurringTerm> = counts
+        .into_iter()
+        .map(|(stem, note_count)| {
+            let term = if stem.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP) {
+                stem.replace('\u{001F}', " ")
+            } else {
+                stem
+            };
+            CooccurringTerm { term, note_count }
+        })
+        .collect();
+    results.sort_by(|a, b| {
+        b.note_count.cmp(&a.note_count).then_with(|| a.term.cmp(&b.term))
+    });
+    results.truncate(result_limit);
+
+    Ok(results)
+}
+
+/// Boundary predicate for co-occurrence re-tokenization. Must mirror
+/// `fts5_tokenizer::is_word_boundary` exactly so the stems we aggregate
+/// are the same ones stored in `notes_fts` / `notes_vocab`.
+#[inline]
+fn is_cooccurrence_boundary(c: char) -> bool {
+    if c == '\'' { return false; }
+    if c == '—' || c == '–' || c == '-' || c == '_' { return true; }
+    !c.is_alphabetic()
+}
+
+#[inline]
+fn collect_stem(
+    word: &str,
+    stopwords: &std::collections::HashSet<String>,
+    query_stems: &std::collections::HashSet<String>,
+    seen: &mut std::collections::HashSet<String>,
+) {
+    if let Some((stem, norm_lower)) = process_word_for_fts(word) {
+        // Three-way filter: stopword list (checked against both stem and
+        // pre-stem normalized form — matches the tokenizer's rule), and
+        // the query term's own stems (so it doesn't appear in its own
+        // co-occurrence list).
+        if !stopwords.contains(&stem)
+            && !stopwords.contains(&norm_lower)
+            && !query_stems.contains(&stem)
+        {
+            seen.insert(stem);
+        }
+    }
 }
 
 /// Collect all note names in a library (for autocomplete).

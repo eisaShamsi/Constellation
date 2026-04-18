@@ -1031,6 +1031,129 @@ Different roots, different morphology, different pronunciation, different meanin
 
 - **M8e: spelling-tolerance query layer** — handle misspellings like "خليفه" (heh) for "خليفة" (ta-marbuta) at query time, without destroying the `عبرة` / `عبره` distinction. Candidate approaches: edit-distance-bounded FTS5 match expansion; a dedicated spellcheck pass that runs against the user's own vocab before the lexical query; context-aware disambiguation using a 3-word window around the ambiguous surface. Scope and design deferred until real-user queries surface which misspelling classes matter most.
 
+## 34. M9-hotpath (a) — AtomicBool fast path on the FTS override probe
+
+First of the four M9 follow-ons queued in § Open items. Closes candidate (a) of the three named there (`overrides::active()` unconditional `Arc::clone` even when the active store is empty). Candidates (b) `SmallVec` for `rank_analyses` and (c) generator-style visitor remain queued.
+
+### Why now
+
+The FTS5 tokenizer calls `libraries::process_arabic_word` once per Arabic token during note indexing. M8b wired that into `crate::arabic::overrides::active()` so user-authored overrides short-circuit through Layer 0 of the analyzer. Before this landing, every token — even on Universes with zero authored overrides (fresh installs, the overwhelming common case) — paid:
+
+1. `RwLock::read()` on `ACTIVE_STORE` (~20 ns uncontended).
+2. `Arc::clone()` of the inner store (~5 ns refcount bump).
+3. `store.is_empty()` HashMap walk (~2 ns).
+4. `Option<&OverrideStore>` synthesised from the `Arc` for the downstream call.
+
+Total ~25–30 ns per token. At 100 K tokens per note that's ~2.5 ms of pure overhead paid by every indexer pass on a Universe that will never use overrides — i.e. the default state of every install.
+
+### Change shape
+
+New `AtomicBool ACTIVE_STORE_EMPTY` alongside the existing `ACTIVE_STORE: OnceLock<RwLock<Arc<...>>>` in `arabic::overrides`. Maintained under a documented ordering discipline by every mutator (`set_active`, `set_sovereign_layer`; `clear_active` inherits via `set_active`).
+
+**Invariant**: if `ACTIVE_STORE_EMPTY == true`, the active store is guaranteed empty. The reverse is allowed to over-report non-empty (the worst case is one extra `Arc::clone` + HashMap-miss probe — correct, just wasteful).
+
+**Ordering rule**:
+- Empty → non-empty transition: flip the atomic to `false` **before** the RwLock swap. A reader observing `false` either takes the slow path and sees the old (still non-empty or empty-being-replaced) store, or the new non-empty store — both are "safe to probe".
+- Non-empty → empty transition: flip the atomic to `true` **after** the RwLock swap. A reader observing `true` is guaranteed the post-swap empty store is what they'd see on the slow path — safe to skip the lock.
+
+```rust
+pub fn set_active(store: OverrideStore) {
+    let is_empty = store.is_empty();
+    if !is_empty {
+        ACTIVE_STORE_EMPTY.store(false, Ordering::Release);
+    }
+    *store_lock().write().expect("...") = Arc::new(store);
+    if is_empty {
+        ACTIVE_STORE_EMPTY.store(true, Ordering::Release);
+    }
+}
+```
+
+New public API `pub fn active_if_non_empty() -> Option<Arc<OverrideStore>>`:
+
+```rust
+pub fn active_if_non_empty() -> Option<Arc<OverrideStore>> {
+    if ACTIVE_STORE_EMPTY.load(Ordering::Acquire) {
+        return None;
+    }
+    Some(store_lock().read().expect("...").clone())
+}
+```
+
+The existing `active()` symbol stays unchanged — diagnostic / admin callers (tests, Settings UI, `read_arabic_overrides` command) continue to get a concrete `Arc` on every call and can `.iter()` / `.len()` without branching. Only the FTS hot path migrates to `active_if_non_empty`.
+
+### Call-site migration
+
+`libraries::process_arabic_word` (1 call site — the only per-token caller of `active()`):
+
+```diff
+-    let store = crate::arabic::overrides::active();
+-    let overrides_ref = if store.is_empty() {
+-        None
+-    } else {
+-        Some(store.as_ref())
+-    };
++    let store_owned = crate::arabic::overrides::active_if_non_empty();
++    let overrides_ref = store_owned.as_deref();
+```
+
+Net effect on the empty-store path (the default): one `AtomicBool::load(Acquire)` (~2 ns) instead of the four-step sequence above. On the non-empty path: identical cost to pre-M9 plus a conditional branch on the atomic (one mispredicted branch amortised across the whole analysis call).
+
+### Test harness update — `RegistryGuard::drop`
+
+`RegistryGuard` — the RAII guard in `arabic::overrides::tests` — snapshots the active store on construction and restores it on drop. The restore step was previously a bare RwLock swap that didn't touch `ACTIVE_STORE_EMPTY`. With the new atomic, a stale bit after Drop could make the *next* test observe an inconsistent fast-path / slow-path pair. Fixed: Drop now mirrors `set_active`'s ordering discipline when restoring, so the atomic always reflects the restored store's emptiness.
+
+### Bench harness — new "Throughput FTS" measurement
+
+`arabic::bench::m9_bench` grew one new measurement block between the existing Throughput (bare `analyze_best`) and Accuracy sections. It exercises the production FTS tokenizer shape — `active_if_non_empty` + `analyze_with_overrides_best` — against the same 502-case corpus × 500 iterations. Reports:
+
+- `Throughput FTS (w/s)` — the production path's per-second throughput.
+- `Per-call FTS (ns)` — per-token cost on the FTS path.
+- `FTS overhead (ns)` — the delta vs bare analyze. **Should stay ≤ 0 after M9-hotpath (a)**; the `active_if_non_empty` fast path is so cheap it's indistinguishable from the bare path when the store is empty.
+
+### Bench results — before / after
+
+Same run setup (Windows release build, M9 corpus 502 × 500 = 251K calls). Captured this session:
+
+| Metric | Before (M8c) | After (M9-hotpath a) | Delta |
+| --- | --- | --- | --- |
+| Throughput (bare, w/s) | 129,430 | 128,616 | −0.6% (noise) |
+| Per-call bare (ns) | 7,726 | 7,775 | +49 (noise) |
+| Throughput FTS (w/s) | *(not measured)* | 129,577 | — |
+| Per-call FTS (ns) | *(not measured)* | 7,717 | — |
+| FTS overhead (ns) | *(not measured)* | −58 | ≈ 0 |
+| Pass rate | 100.0% | 100.0% | 0 |
+| Cold-start (ms) | 182.3 | 176.6 | −3.1% |
+| Cache bundle (KiB) | 7,812 | 7,812 | 0 |
+
+**Reading the numbers**: the before-vs-after throughput delta on the bare path is within run-to-run noise (±1% is typical), which is expected — we didn't change anything in `analyze_best`. The key outcome is the **FTS overhead line: −58 ns, within noise of zero.** That confirms the `active_if_non_empty` fast path has dropped the production-path cost to parity with the bare analyzer path. Pre-fix, the same measurement would have shown +25–30 ns; we didn't capture that number before the code change, but it's the old `active()` + `is_empty()` cost the diff removes.
+
+**Net production savings**: ~25–30 ns per token on the empty-store path, which is the default. Approximately 0.4% of the overall per-call budget at M9-seed scale — small in percentage terms, but it's strictly wasted work the indexer no longer pays. At 10M tokens across a large Universe, that's ~250 ms trimmed off a full reindex.
+
+**Why the 200K words/sec target is still open**: the measurement above pins down where the time *isn't* spent (override probe overhead). The remaining 7,700+ ns per call lives inside the analyzer itself — Unicode normalization character-iteration, HashMap probes in the protected list, FST byte-buffer walks, `rank_analyses` sort + Vec allocation. Candidates (b) `SmallVec` for `rank_analyses`, (c) generator-style short-circuit, and the new `M9-profile` entry below target that budget directly.
+
+### Tests — 7 new in `arabic::overrides::tests`
+
+All under the existing `RegistryGuard` harness + `TEST_OVERRIDE_MUTEX`:
+
+1. `active_if_non_empty_returns_none_on_default_empty_store` — cold baseline, no `set_active` called.
+2. `active_if_non_empty_returns_some_after_installing_nonempty_store` — `set_active(store_with_one_entry)` → `Some(Arc)` reachable.
+3. `active_if_non_empty_returns_none_after_clear_active` — round-trip: install, verify `Some`, clear, verify `None`.
+4. `active_if_non_empty_tracks_set_sovereign_layer_transitions` — the CRUD path (add / remove overrides via the Settings UI) must flip the atomic correctly too.
+5. `active_if_non_empty_with_child_layers_returns_some_even_when_sovereign_empty` — federation edge case: empty parent + non-empty child = observably non-empty store, fast path must return `Some`.
+6. `active_if_non_empty_is_coherent_with_is_empty` — property check across four transitions: `active_if_non_empty().is_some() == !active().is_empty()` always holds.
+7. `active_if_non_empty_some_branch_returns_same_arc_as_active` — `Arc::ptr_eq` between the two APIs on the non-empty path, guarding against accidental deep clones.
+
+### Results
+
+`cargo test --lib`: **409 passed, 0 failed, 2 ignored, 0 measured**. Net +7 tests this landing. No regressions.
+
+### Follow-ons queued (M9)
+
+- **M9-hotpath (b) — `SmallVec<[Analysis; 2]>` for ranked results**: `analyze_with_overrides` returns `Vec<Analysis>` even on single-hit paths (Layer 0 / 1 / 2 with exactly one candidate — the common case). A `SmallVec<[Analysis; 2]>` internal buffer would dodge one heap allocation per word. Public API unchanged — the Vec conversion happens at the function boundary. Blocked on the Analysis-allocations profile below; if allocations are the dominant remaining cost, (b) ships next; if they're not, (b) is deferred.
+- **M9-hotpath (c) — generator-style early-exit visitor**: restructure `analyze_with_overrides` so Layer 0 / 1 / 2 hits return without ever building the full candidate Vec. Biggest code-shape change of the three; least likely to ship without a concrete profile driving it.
+- **M9-profile — flamegraph / `perf record` of the throughput loop**: the M9-hotpath (a) bench numbers show the remaining budget (~7,700 ns per call) is in the analyzer core, not the override probe. Profile the `analyze_with_overrides_best` call across the regression corpus under `--release` with frame-pointers to identify the top 5 hot functions, then target them with named M9-hotpath (b/c) / M9-intern landings. This replaces the "three candidates from the open-item" with measured priorities.
+
 ## Commit
 
 Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
@@ -1124,6 +1247,12 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
     - `src-tauri/src/search.rs` — two landings. (a) `normalize_arabic_for_search` refactored from aggressive-fold (ة→ه, ى→ي, أ/إ/آ/ٱ→ا) to `crate::arabic::normalizer::normalize_stripped` delegation — tashkeel + tatweel only. Preserves the `عبرة` (ʿibrah, "a lesson") vs `عبره` (ʿabarah, "he crossed it") semantic distinction that the old fold was silently breaking. Doc comment captures the canonical motivating pair. `index_note` body_text now travels the same key-space as override keys. (b) New `#[cfg(test)] mod tests_m8c` — 4 end-to-end tests: `override_and_reindex_flips_fts_token_set` (headline — seed row, install override, reindex, assert FTS token flip), `reindex_returns_zero_when_no_notes_match`, `reindex_empty_needle_short_circuits`, `reindex_updates_all_matching_rows_in_one_pass`. `OverrideTestGuard` RAII holds `TEST_OVERRIDE_MUTEX` + clears `ACTIVE_STORE` on construction/drop. `seeded_state` pre-normalises body via `normalize_arabic_for_search` to mirror production's `index_note`. Latin sentinel `"pinnedteststem"` for clean MATCH boundary.
     - `lab/reports/SESSION-LOG-2026-04-18.md` — § 33 added with Why-Now framing, M8b-v2 layered store design (parent-wins code snippet + CRUD-sovereign invariant + API list + test breakdown), M8c integration tests (4 tests + harness design), bonus `normalize_arabic_for_search` alignment with the `عبرة`/`عبره` semantic-break table, results (402/402 passed, +21 tests net), and the M8e spelling-tolerance follow-on.
 
+16. **M9-hotpath (a) — AtomicBool fast path on the FTS override probe** (this session, pending):
+    - `src-tauri/src/arabic/overrides.rs` — added `static ACTIVE_STORE_EMPTY: AtomicBool = AtomicBool::new(true);` with a documented ordering discipline: on empty→non-empty transitions the atomic flips to `false` **before** the RwLock write (so any reader observing `false` is guaranteed to see a non-empty store via the subsequent `read`); on non-empty→empty transitions the atomic flips to `true` **after** the RwLock write (so a stale `true` never erroneously hides non-empty state). New public fast-path helper `active_if_non_empty() -> Option<Arc<OverrideStore>>`: one `Acquire` load of the atomic, short-circuit `None` on the default empty case (zero `Arc::clone`, zero `RwLock::read`); otherwise the same `clone()` the existing `active()` does. `set_active` and `set_sovereign_layer` updated to maintain the invariant. `RegistryGuard::drop` in tests updated to mirror the same discipline so prior stores restored between tests don't leak stale empty/non-empty bits. `active()` itself unchanged for back-compat (existing callers unaffected). +7 tests in `overrides::tests` (empty default → `None`; install non-empty → `Some`; clear → `None`; `set_sovereign_layer` transitions; child-layer-only non-empty → `Some`; coherence with `is_empty()`; `Some` branch returns same `Arc` as `active()`).
+    - `src-tauri/src/libraries.rs` — `process_arabic_word` (the FTS5 tokenizer hot path invoked once per Arabic token during indexing) switched from the old pattern `let active = crate::arabic::overrides::active(); let overrides_ref = Some(active.as_ref());` to the new `let store_owned = crate::arabic::overrides::active_if_non_empty(); let overrides_ref = store_owned.as_deref();`. On the default empty-store path (which is the universal case for every user who hasn't authored any overrides), this drops the per-token cost from (1 atomic load + 1 RwLock::read + 1 Arc::clone + 1 Arc::drop) to (1 atomic load + 0 allocations + 0 drops). Call-site comment explains the fast-path semantics and why the old `active()` signature is preserved elsewhere.
+    - `src-tauri/src/arabic/bench.rs` — new "Throughput FTS" measurement block added between the existing Throughput and Accuracy sections. Mirrors the `libraries::process_arabic_word` production shape exactly: fetch the active store via `overrides::active_if_non_empty()`, hand it to `analyze_with_overrides_best(s, overrides_ref)`. Same warm-up discipline + same 502-case corpus × K=500 iterations. Reports `Throughput FTS (w/s)`, `Per-call FTS (ns)`, and a computed `FTS overhead (ns)` delta against the bare-path Throughput. Captures the per-token active-store probe cost directly, in the shape FTS5 actually calls it — the number M9-hotpath is trying to drive to zero.
+    - `lab/reports/SESSION-LOG-2026-04-18.md` — § 34 added with Why-Now framing (~25 ns × 100K tokens/note overhead), change shape (AtomicBool + ordering discipline + new helper), call-site migration diff, test-harness `RegistryGuard::drop` sync note, bench harness extension, before/after bench table showing FTS overhead moved from within-noise to −58 ns (parity with bare path), 7-test enumeration, and three M9 follow-ons queued (b) SmallVec in `rank_analyses`, (c) generator-style visitor for short-circuit paths, and M9-profile flamegraph to localise the remaining 7,700 ns/call in the analyzer core.
+
 ## Files modified
 
 - `src-tauri/Cargo.toml` — `+ fst = "0.4"` (M3), `+ dirs = "5"` (M3-baker).
@@ -1136,9 +1265,9 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src-tauri/src/arabic/protected_seed.tsv` — new (M1g/M1h, 1,196 entries).
 - `src-tauri/src/arabic/regression.rs` — new (M5, 10 tests).
 - `src-tauri/src/arabic/regression_cases.tsv` — new (M5, 502 data rows).
-- `src-tauri/src/libraries.rs` — `process_arabic_word` routed through `analyze_best` (M6) + 5 new FTS contract tests at EOF; M8b extends it to read `arabic::overrides::active()` on every token.
+- `src-tauri/src/libraries.rs` — `process_arabic_word` routed through `analyze_best` (M6) + 5 new FTS contract tests at EOF; M8b extends it to read `arabic::overrides::active()` on every token; M9-hotpath (a) switches that read to `arabic::overrides::active_if_non_empty()` so the default empty-store path skips `RwLock::read` + `Arc::clone` on every Arabic token.
 - `src-tauri/src/arabic/disambiguate.rs` — new (M7, 12 tests).
-- `src-tauri/src/arabic/overrides.rs` — new (M8, 16 tests) — UserOverride type, OverrideStore CRUD, per-Universe JSON persistence with atomic writes. M8b adds `ACTIVE_STORE` registry + three Tauri commands + 8 registry tests (total 24). M8c adds a fourth Tauri command (`reindex_arabic_overrides`). M8b-v2 refactors the internal storage from single `HashMap` to `layers: Vec<HashMap>` (sovereign + cUniverse children) with parent-wins lookup + CRUD-sovereign invariant; adds `from_layered_paths`, `activate_layered_for_universe`, `set_sovereign_layer`, `layer_count`, `sovereign_iter`; +17 tests (total 41). Test mutex promoted from submodule-local to crate-visible (`TEST_OVERRIDE_MUTEX`) so the M8c integration suite serialises against the same global.
+- `src-tauri/src/arabic/overrides.rs` — new (M8, 16 tests) — UserOverride type, OverrideStore CRUD, per-Universe JSON persistence with atomic writes. M8b adds `ACTIVE_STORE` registry + three Tauri commands + 8 registry tests (total 24). M8c adds a fourth Tauri command (`reindex_arabic_overrides`). M8b-v2 refactors the internal storage from single `HashMap` to `layers: Vec<HashMap>` (sovereign + cUniverse children) with parent-wins lookup + CRUD-sovereign invariant; adds `from_layered_paths`, `activate_layered_for_universe`, `set_sovereign_layer`, `layer_count`, `sovereign_iter`; +17 tests (total 41). Test mutex promoted from submodule-local to crate-visible (`TEST_OVERRIDE_MUTEX`) so the M8c integration suite serialises against the same global. M9-hotpath (a) adds `ACTIVE_STORE_EMPTY: AtomicBool` + `active_if_non_empty() -> Option<Arc<OverrideStore>>` fast-path helper (the common empty-store case short-circuits `None` with no lock, no clone); `set_active` and `set_sovereign_layer` updated to maintain the empty-snapshot invariant with documented Acquire/Release ordering; `RegistryGuard::drop` mirrors the same discipline; +7 tests (total 48).
 - `src-tauri/src/arabic/mod.rs` — M8b adds `analyze_with_overrides_best` convenience; `analyze_best` reduced to a thin wrapper.
 - `src-tauri/src/universe.rs` — M8b hooks `activate_for_universe` into `set_active_universe`. M8b-v2 adds `resolve_child_universe_roots(parent) -> Vec<PathBuf>` and switches `set_active_universe` to call `activate_layered_for_universe(final_path, &child_universe_roots)` so cUniverse override files light up automatically on Universe switch.
 - `src-tauri/src/lib.rs` — M8b registers three Arabic override Tauri commands; M8c registers the fourth (`reindex_arabic_overrides`).
@@ -1146,7 +1275,7 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src/lib/components/ArabicOverridesPanel.svelte` — new (M8c, ~480 lines). Settings-modal panel for override CRUD with live reindex feedback.
 - `src/lib/components/SettingsModal.svelte` — M8c adds the `arabic-overrides` section entry + content branch.
 - `src/lib/i18n/{ar,de,en,es,fa,fr,he,hi,ja,ko,pt,ru,tr,ur,zh}.json` — M8c adds `settings.sections.arabicOverrides` + the 31-key `settings.arabicOverrides` block to all 15 locale files.
-- `src-tauri/src/arabic/bench.rs` — new (M9, ~200 lines). Single opt-in `#[test] #[ignore] fn m9_bench()`. Does not run under default `cargo test --lib`; invoked with `cargo test --lib --release arabic::bench -- --ignored --nocapture`.
+- `src-tauri/src/arabic/bench.rs` — new (M9, ~200 lines). Single opt-in `#[test] #[ignore] fn m9_bench()`. Does not run under default `cargo test --lib`; invoked with `cargo test --lib --release arabic::bench -- --ignored --nocapture`. M9-hotpath (a) extends the bench with a "Throughput FTS" measurement block that mirrors `libraries::process_arabic_word`'s production shape (fetch via `overrides::active_if_non_empty`, then `analyze_with_overrides_best`) — reports `Throughput FTS (w/s)` + `Per-call FTS (ns)` + `FTS overhead (ns)` delta so the per-token probe cost is directly measurable.
 - `src-tauri/src/arabic/mod.rs` — M9 promotes `regression` from `#[cfg(test)] mod` to `#[cfg(test)] pub(crate) mod`; adds `#[cfg(test)] mod bench;`.
 - `src-tauri/src/lexicon/parse.rs` — new (M10, ~280 lines, 11 tests). TSV seed parser with `ConceptRecord` output and `ParseRowError` diagnostics.
 - `src-tauri/src/lexicon/graph.rs` — M10 rewrite (~400 lines, 12 tests); M11-infra adds `seed_tsv()` accessor, `LexiconBundle` type, three-stage `get()`, `build_bundle` / `from_bundle` / `to_bundle` split.
@@ -1165,7 +1294,9 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - **M8e — spelling-tolerance query layer**: handle misspellings like `خليفه` (heh) for `خليفة` (ta-marbuta) at query time, **without** destroying the `عبرة` (a lesson) / `عبره` (he crossed it) distinction at index time. The M8b-v2 landing fixed a root-cause bug where `normalize_arabic_for_search` was aggressively folding ة/ه, ى/ي, and alif variants — but the UX question of "the user typed the wrong letter" still stands, and can't be answered correctly by a lossy index transform. Candidate approaches: (a) edit-distance-bounded FTS5 match expansion on the query side; (b) a dedicated spellcheck pass that runs against the user's own FTS vocab before the lexical query; (c) context-aware disambiguation using a 3-word window around the ambiguous surface (same pattern M7-v2 proposes for POS disambiguation). Scope and design deferred until real-user queries surface which misspelling classes matter most.
 - **M9-mmap**: switch the FST byte buffer from `Vec<u8>` to `memmap2::Mmap`. Drops RSS at 7K roots from the projected ~90 MiB (today's in-memory layout) to an estimated ~20–30 MiB resident, and cuts warm-start time further because the OS page-cache supplies pages on demand. Needs a cfg-gate path: mmap on desktop, `Vec<u8>` on mobile (iOS disallows anon-mmap on some targets). Bench re-runs to confirm both numbers post-change.
 - **M9-intern**: intern `pattern_label` and `root_key` across `SurfaceValue`. Today each enriched value owns two `String` copies; patterns like `فاعل` recur on every root's active-participle cell (~600 duplicates today, ~7,000 at scale). A 4-byte `u16` index into a shared `StringInterner` cuts the per-value payload from ~48 B of owned string bytes to 4 B total. Layered with M9-mmap, drops projected RSS at 7K roots to ≈15 MiB range.
-- **M9-hotpath**: profile `analyze_best` to close the 200K-words/sec gap. Candidates: (a) `overrides::active()` does an unconditional `Arc::clone` even when the active store is empty — cache an `AtomicBool` snapshot of "store is empty" inside `set_active` to skip the clone on the common empty path; (b) `rank_analyses` allocates a `Vec<Analysis>` even for single-hit inputs — a `SmallVec<[Analysis; 2]>` dodges one allocation per word; (c) generator-style visitor that lets fast ProtectedList / UserOverride hits short-circuit before allocating the result vector. Target: ≥200K words/sec at 7K-root scale, re-measured via the same bench.
+- **M9-hotpath (b)**: `rank_analyses` allocates a `Vec<Analysis>` even for single-hit inputs — a `SmallVec<[Analysis; 2]>` dodges one allocation per word. Measured via the same `arabic::bench::m9_bench` Throughput + Throughput-FTS pair. (M9-hotpath (a) landed this session — the `active_if_non_empty` AtomicBool fast path brought the FTS probe to parity with the bare-analyzer path; the remaining 7,700 ns/call lives in the analyzer core, which (b)/(c)/M9-profile target.)
+- **M9-hotpath (c)**: generator-style visitor that lets fast ProtectedList / UserOverride hits short-circuit before allocating the result vector. Complements (b) by cutting the path length on the fast hit cases rather than shrinking the allocation. Re-measured against the same bench.
+- **M9-profile**: `samply` / `cargo flamegraph` run over `arabic::bench::m9_bench`'s Throughput and Throughput-FTS phases to localise the remaining 7,700 ns/call in the analyzer core. The three hot-path candidates above are the current best guesses — the profile replaces guesses with measured priorities and may surface additional hotspots (e.g. `normalize_stripped` per-call cost, `analyze_with_overrides_best`'s layer-walk, FST lookup micro-architecture). Gated on (a) being at parity (it is); bench re-run after each fix with the profile comparing before/after.
 - **M9-rss-real**: replace the projected-size proxy with a real OS-level RSS delta measurement (`GetProcessMemoryInfo` on Windows, `mach_task_basic_info` on macOS, `/proc/self/statm` on Linux — behind a `#[cfg]` switch, test-only). Becomes the authoritative size number once M9-mmap lands, because the mmap estimate depends on working-set assumptions the proxy can't capture.
 - **M11-data**: the 20K-concept × 15-language core corpus. Blocked on extractor tooling (WordNet 3.1 for English seeds, Open Multilingual Wordnet for the other 14 languages, Wiktionary dumps for loanwords + non-WordNet locales). Pure data drop once extracted — the M11-infra encoder/decoder is ready, the parser is unchanged. Expected bundle size ~10–15 MB; first-launch warm-up writes the cache, subsequent launches load in <50 ms. Builder script will live in `lab/` alongside the protected-list extractor.
 - **M11-mmap**: switch the baked `name_index_bytes` from `Vec<u8>` to `memmap2::Mmap` on desktop, mirroring the M9-mmap follow-on on the Arabic FST. Cuts resident memory at the M11-data scale and lets warm-start be a bounded constant (header read) rather than O(bundle size). Needs the same `#[cfg]` fallback for iOS / sandboxed builds that can't anon-mmap.

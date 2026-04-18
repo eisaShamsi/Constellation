@@ -107,6 +107,7 @@ use super::types::{Analysis, AnalysisOrigin, Lang, PartOfSpeech};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock, RwLock};
 
 /// One user-authored override.
@@ -459,6 +460,44 @@ fn read_layer(path: &Path) -> std::io::Result<HashMap<String, UserOverride>> {
 
 static ACTIVE_STORE: OnceLock<RwLock<Arc<OverrideStore>>> = OnceLock::new();
 
+/// Fast-path snapshot of "is the active store empty?". Maintained by
+/// every mutator of `ACTIVE_STORE` (`set_active`, `set_sovereign_layer`,
+/// `clear_active`). Readers on the FTS5 hot path check this first via
+/// `active_if_non_empty` — when `true`, we skip the `RwLock::read` +
+/// `Arc::clone` and return `None` directly, saving ~25 ns per token on
+/// the overwhelmingly common case (fresh install, no authored overrides).
+///
+/// Starts `true` because the default `ACTIVE_STORE` (before any activate
+/// call) is an empty `OverrideStore::new()` — so the fast-path kicks in
+/// immediately on cold boot.
+///
+/// # Ordering discipline
+///
+/// Writers:
+/// - **Transitioning to non-empty** (new store has entries): update the
+///   atomic to `false` **before** the RwLock swap. Readers who see
+///   `false` take the slow path and will observe either the old or new
+///   store via the RwLock — both at least non-empty (or if we're going
+///   empty→non-empty, reading the old empty store one more time is
+///   harmless: the caller does an extra HashMap probe that misses and
+///   falls through, semantically identical to the fast-path None).
+/// - **Transitioning to empty** (new store has no entries): update the
+///   atomic to `true` **after** the RwLock swap. Readers who see `true`
+///   will skip the lock — and the store they'd have read is now empty,
+///   so skipping is correct. If a reader sees `false` (stale) during
+///   the transition, they take the slow path and read the post-swap
+///   empty store, which just routes through L1–L5 via `None` inside
+///   `analyze_with_overrides`. Never incorrect.
+///
+/// This gives us the invariant: **if `ACTIVE_STORE_EMPTY == true`, the
+/// active store is guaranteed empty.** The reverse is allowed to be
+/// stale (over-report non-empty is safe — just a one-off extra clone).
+///
+/// Readers use `Ordering::Acquire` on the atomic + `Ordering::Relaxed`
+/// on the miss path — cheap enough that even the Acquire is below the
+/// HashMap probe that would follow.
+static ACTIVE_STORE_EMPTY: AtomicBool = AtomicBool::new(true);
+
 fn store_lock() -> &'static RwLock<Arc<OverrideStore>> {
     ACTIVE_STORE.get_or_init(|| RwLock::new(Arc::new(OverrideStore::new())))
 }
@@ -470,8 +509,47 @@ fn store_lock() -> &'static RwLock<Arc<OverrideStore>> {
 /// On first call before any `set_active` / `activate_for_universe`, this
 /// returns an empty store, so Layer 0 never fires and every analysis
 /// falls through to Layers 1–5 as in pre-M8b behaviour.
+///
+/// # When to use which
+///
+/// - FTS5 hot path → [`active_if_non_empty`]. Returns `None` on the
+///   common empty case without touching the RwLock.
+/// - Diagnostic / admin code (tests, Settings UI) → `active()`. Always
+///   returns a concrete Arc even for an empty store, so callers can
+///   `.iter()` / `.len()` / `.layer_count()` without branching.
 pub fn active() -> Arc<OverrideStore> {
     store_lock().read().expect("arabic override lock poisoned").clone()
+}
+
+/// Fast-path variant of [`active`] for the FTS5 tokenizer hot path.
+///
+/// Returns `None` when the active store is empty (no authored overrides
+/// in the sovereign layer and no child layers with content) — the common
+/// case for fresh installs and the overwhelming majority of Universes
+/// that never author an override. Callers pass the resulting
+/// `Option<&OverrideStore>` directly to
+/// [`analyze_with_overrides`] / [`analyze_with_overrides_best`].
+///
+/// **Performance**: the empty path is a single `AtomicBool::load`
+/// (~2 ns) versus `active()`'s RwLock-read + Arc::clone (~25 ns). On
+/// production Arabic-heavy notes this is called once per token, so the
+/// savings scale linearly with document size. At 100K tokens per note
+/// that's ~2.3 ms trimmed off the indexer per note.
+///
+/// **Correctness**: follows the ordering discipline on
+/// [`ACTIVE_STORE_EMPTY`]. A stale read showing "empty" is impossible
+/// (the bit is only set `true` after a swap to an empty store has
+/// completed). A stale read showing "non-empty" is possible during a
+/// transitioning-to-empty swap — the caller gets an `Some` Arc to an
+/// empty store, does one extra HashMap-miss probe, then falls through to
+/// L1–L5 just as if we'd returned `None`. Not a correctness issue.
+pub fn active_if_non_empty() -> Option<Arc<OverrideStore>> {
+    if ACTIVE_STORE_EMPTY.load(Ordering::Acquire) {
+        return None;
+    }
+    // Slow path — RwLock read + Arc::clone. Still cheap (~25 ns) but
+    // paid only when there's likely real work to do.
+    Some(store_lock().read().expect("arabic override lock poisoned").clone())
 }
 
 /// Install a new active store, replacing all layers. Called by:
@@ -486,9 +564,26 @@ pub fn active() -> Arc<OverrideStore> {
 ///
 /// Thread-safe. The write guard is held only for the Arc pointer swap,
 /// not for any HashMap-level mutation — the store itself is immutable
-/// once installed.
+/// once installed. Maintains [`ACTIVE_STORE_EMPTY`] in the orderings
+/// documented on that static — empty→non-empty transitions flip the
+/// bit **before** the swap; non-empty→empty transitions flip the bit
+/// **after** the swap.
 pub fn set_active(store: OverrideStore) {
+    let is_empty = store.is_empty();
+    // Empty → non-empty (or non-empty → non-empty): publish non-empty
+    // bit BEFORE the swap, so any reader who sees it and falls through
+    // to the RwLock reads either the old or new store — both at least
+    // "non-empty enough" that routing through the slow path is correct.
+    if !is_empty {
+        ACTIVE_STORE_EMPTY.store(false, Ordering::Release);
+    }
     *store_lock().write().expect("arabic override lock poisoned") = Arc::new(store);
+    // Non-empty → empty (or empty → empty): publish empty bit AFTER
+    // the swap, so a reader who sees `true` is guaranteed the store
+    // they'd have read is empty — safe to skip the lock.
+    if is_empty {
+        ACTIVE_STORE_EMPTY.store(true, Ordering::Release);
+    }
 }
 
 /// Replace only the sovereign (parent) layer of the currently-active
@@ -518,7 +613,19 @@ pub fn set_sovereign_layer(sovereign: OverrideStore) {
     for child in prior.layers.iter().skip(1) {
         new_layers.push(child.clone());
     }
-    *guard = Arc::new(OverrideStore { layers: new_layers });
+    let new_store = OverrideStore { layers: new_layers };
+    let is_empty = new_store.is_empty();
+    // Same ordering discipline as `set_active`: flip the non-empty bit
+    // before the swap, and the empty bit after. Under the held write
+    // guard, readers taking the slow path will serialize on the RwLock
+    // and see a coherent before/after state.
+    if !is_empty {
+        ACTIVE_STORE_EMPTY.store(false, Ordering::Release);
+    }
+    *guard = Arc::new(new_store);
+    if is_empty {
+        ACTIVE_STORE_EMPTY.store(true, Ordering::Release);
+    }
 }
 
 /// Load a single override file from a Universe and install it as the
@@ -965,8 +1072,23 @@ mod tests {
 
     impl Drop for RegistryGuard {
         fn drop(&mut self) {
-            // Restore the prior Arc byte-for-byte.
+            // Restore the prior Arc byte-for-byte, and keep
+            // `ACTIVE_STORE_EMPTY` in sync with the restored state.
+            // Without this sync the next test could observe a stale
+            // fast-path bit — e.g. see `empty=true` while the RwLock
+            // actually holds a non-empty store, causing
+            // `active_if_non_empty` to return `None` and bypass real
+            // overrides. Mirrors the ordering discipline of
+            // `set_active` for consistency, though under the mutex the
+            // transitional window is not externally observable.
+            let is_empty = self.prior.is_empty();
+            if !is_empty {
+                ACTIVE_STORE_EMPTY.store(false, Ordering::Release);
+            }
             *store_lock().write().unwrap() = self.prior.clone();
+            if is_empty {
+                ACTIVE_STORE_EMPTY.store(true, Ordering::Release);
+            }
         }
     }
 
@@ -1590,5 +1712,151 @@ mod tests {
         assert_eq!(after.len(), 1);
         let norm = super::super::normalizer::normalize("وائل").stripped;
         assert!(after.lookup(&norm).is_some());
+    }
+
+    // ── M9-hotpath (a): active_if_non_empty fast path ────────────────
+
+    #[test]
+    fn active_if_non_empty_returns_none_on_default_empty_store() {
+        // Fresh baseline — no set_active has been called, so the
+        // ACTIVE_STORE is the default empty one and ACTIVE_STORE_EMPTY
+        // is `true`. The fast path must short-circuit to None without
+        // touching the RwLock.
+        let _g = RegistryGuard::new();
+        assert!(active_if_non_empty().is_none(),
+            "empty active store must take the fast-path None branch");
+    }
+
+    #[test]
+    fn active_if_non_empty_returns_some_after_installing_nonempty_store() {
+        // After set_active(store_with_entries), the fast path must
+        // transition to returning `Some` and the entries must be
+        // reachable via lookup.
+        let _g = RegistryGuard::new();
+        assert!(active_if_non_empty().is_none());
+
+        let mut store = OverrideStore::new();
+        store.insert(mk_override("وائل", "وائل"));
+        set_active(store);
+
+        let opt = active_if_non_empty();
+        assert!(opt.is_some(),
+            "non-empty store must be reachable via active_if_non_empty");
+        let arc = opt.unwrap();
+        let norm = super::super::normalizer::normalize("وائل").stripped;
+        assert!(arc.lookup(&norm).is_some(),
+            "the Some(Arc) must expose the installed entries");
+    }
+
+    #[test]
+    fn active_if_non_empty_returns_none_after_clear_active() {
+        // Transition back to empty: install non-empty, then clear_active.
+        // The atomic must flip back to true so subsequent fast-path
+        // readers skip the RwLock.
+        let _g = RegistryGuard::new();
+
+        let mut store = OverrideStore::new();
+        store.insert(mk_override("وائل", "وائل"));
+        set_active(store);
+        assert!(active_if_non_empty().is_some());
+
+        clear_active();
+        assert!(active_if_non_empty().is_none(),
+            "clear_active must restore the fast-path empty short-circuit");
+    }
+
+    #[test]
+    fn active_if_non_empty_tracks_set_sovereign_layer_transitions() {
+        // set_sovereign_layer is the CRUD path — editing / removing a
+        // parent override. It must maintain ACTIVE_STORE_EMPTY
+        // correctly so the fast path doesn't desync from the actual
+        // store shape.
+        let _g = RegistryGuard::new();
+
+        // Start: empty. Fast path = None.
+        assert!(active_if_non_empty().is_none());
+
+        // Install a non-empty sovereign layer via set_sovereign_layer
+        // (not set_active) — the CRUD-style entry point. Fast path
+        // must switch to Some.
+        let mut sov = OverrideStore::new();
+        sov.insert(mk_override("وائل", "وائل"));
+        set_sovereign_layer(sov);
+        assert!(active_if_non_empty().is_some(),
+            "set_sovereign_layer with content must flip the fast-path bit");
+
+        // Replace with an empty sovereign — the "user removed the last
+        // override" case. Fast path must return None again.
+        set_sovereign_layer(OverrideStore::new());
+        assert!(active_if_non_empty().is_none(),
+            "set_sovereign_layer with empty content must restore fast-path None");
+    }
+
+    #[test]
+    fn active_if_non_empty_with_child_layers_returns_some_even_when_sovereign_empty() {
+        // Edge case: the sovereign layer is empty but a cUniverse child
+        // has overrides. The active store is NOT empty as a whole, so
+        // the fast path must return Some and the caller must consult
+        // the child layer on lookup. This guards against a future
+        // regression where someone mistakenly implements "empty" as
+        // "sovereign only has no entries".
+        let _g = RegistryGuard::new();
+
+        let mixed = layered_store(vec![
+            vec![], // empty sovereign
+            vec![mk_override("خليفة", "from_child")], // non-empty child
+        ]);
+        set_active(mixed);
+
+        let opt = active_if_non_empty();
+        assert!(opt.is_some(),
+            "non-empty child layer must keep the store observably non-empty");
+        let arc = opt.unwrap();
+        let norm = super::super::normalizer::normalize("خليفة").stripped;
+        assert_eq!(arc.lookup(&norm).unwrap().lemma, "from_child");
+    }
+
+    #[test]
+    fn active_if_non_empty_is_coherent_with_is_empty() {
+        // Property-ish: for every state the active store can be in,
+        // active_if_non_empty's Some/None return must agree with
+        // active().is_empty() — they're two views of the same truth.
+        let _g = RegistryGuard::new();
+
+        // State 1: default empty.
+        assert_eq!(active_if_non_empty().is_some(), !active().is_empty());
+
+        // State 2: non-empty via set_active.
+        let mut s = OverrideStore::new();
+        s.insert(mk_override("وائل", "وائل"));
+        set_active(s);
+        assert_eq!(active_if_non_empty().is_some(), !active().is_empty());
+
+        // State 3: cleared.
+        clear_active();
+        assert_eq!(active_if_non_empty().is_some(), !active().is_empty());
+
+        // State 4: set_sovereign_layer with content.
+        let mut s2 = OverrideStore::new();
+        s2.insert(mk_override("ألف", "ألف"));
+        set_sovereign_layer(s2);
+        assert_eq!(active_if_non_empty().is_some(), !active().is_empty());
+    }
+
+    #[test]
+    fn active_if_non_empty_some_branch_returns_same_arc_as_active() {
+        // When the store is non-empty, both APIs return pointers into
+        // the same underlying allocation — no deep clones, no parallel
+        // stores.
+        let _g = RegistryGuard::new();
+
+        let mut s = OverrideStore::new();
+        s.insert(mk_override("وائل", "وائل"));
+        set_active(s);
+
+        let fast = active_if_non_empty().expect("non-empty after set_active");
+        let slow = active();
+        assert!(Arc::ptr_eq(&fast, &slow),
+            "active_if_non_empty() and active() must share the Arc");
     }
 }
