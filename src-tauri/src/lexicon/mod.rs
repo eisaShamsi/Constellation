@@ -77,12 +77,16 @@
 //! on-disk cache arrive in M11. Query expansion plumbing into the
 //! FTS5 search path arrives in M12.
 
+pub mod bake;
 pub mod expansion;
 pub mod graph;
 pub mod parse;
 
 pub use expansion::{ExpansionOptions, ExpansionResult, SynonymLevel};
-pub use graph::{BuildError, Edge, EdgeKind, LemmaNode, LexiconGraph, SenseId};
+pub use graph::{
+    build_bundle, seed_tsv, BuildError, Edge, EdgeKind, LemmaNode, LexiconBundle, LexiconGraph,
+    SenseId,
+};
 pub use parse::{parse, parse_with_diagnostics, ConceptRecord, ParseRowError};
 
 use crate::arabic::Lang;

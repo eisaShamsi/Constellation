@@ -49,6 +49,7 @@
 //! nodes + one FST entry). M10 only has single-sense concepts, so every
 //! count is 1; the packing is prepared for M11's WordNet multi-sense data.
 
+use super::bake;
 use super::parse::{parse_with_diagnostics, ConceptRecord};
 use crate::arabic::normalizer::normalize_stripped;
 use crate::arabic::{Lang, PartOfSpeech};
@@ -56,6 +57,13 @@ use fst::{Map, MapBuilder};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
+
+/// The embedded core-tier seed TSV, exposed as a `&'static str` so
+/// [`bake::version_hash`] can hash its bytes deterministically for the
+/// cache filename. Parallel to `arabic::roots::seed_tsv()`.
+pub fn seed_tsv() -> &'static str {
+    include_str!("data/seed_v1.tsv")
+}
 
 /// Opaque sense identifier. For WordNet-derived entries this is the
 /// synset offset; for Wiktionary entries it is a hash of the sense
@@ -145,6 +153,24 @@ pub struct LexiconGraph {
     pub name_index: Map<Vec<u8>>,
 }
 
+/// Serialisable form of [`LexiconGraph`] — everything the graph needs
+/// to reconstruct itself, with the FST held as raw bytes so the bake
+/// layer can persist it as an opaque blob.
+///
+/// The bundle is what `build_bundle` emits, what `bake::write_bundle`
+/// persists to disk, and what `from_bundle` consumes when reconstructing
+/// the live graph from either a fresh build or a cache hit. Cold and
+/// warm init paths therefore go through **the exact same** reconstruction
+/// step — no divergence, no "oh we forgot to apply X on the warm path"
+/// class of bug. See `arabic::fst_bake` for the precedent.
+#[derive(Debug)]
+pub struct LexiconBundle {
+    pub nodes: Vec<LemmaNode>,
+    pub edge_offsets: Vec<u32>,
+    pub edges: Vec<Edge>,
+    pub name_index_bytes: Vec<u8>,
+}
+
 impl LexiconGraph {
     /// Total node count.
     pub fn node_count(&self) -> usize {
@@ -184,39 +210,121 @@ impl LexiconGraph {
         (offset..offset + count).collect()
     }
 
-    /// Access the lazily-initialised singleton. Builds from the embedded
-    /// seed on first call; subsequent calls return the same `&'static`
-    /// reference at memory-access cost.
+    /// Access the lazily-initialised singleton.
     ///
-    /// Boot-time impact: parsing ~15 rows and compiling a ~200-key FST
-    /// takes sub-millisecond. When M11 ships the 20K-concept core the
-    /// boot impact will grow accordingly, at which point this will move
-    /// behind the same on-disk cache pattern used by `arabic::fst_bake`
-    /// (see `docs/LESSONS-LEARNED.md` — Write-Time Derivation).
+    /// Three-stage init, in preference order (mirrors `arabic::fst_index::GenerativeFst::get`):
+    ///
+    ///   1. **Cache hit** — [`bake::try_load_cached`] reads a bundle from
+    ///      the user's cache directory (content-addressed by a hash of
+    ///      [`seed_tsv()`] + [`bake::CACHE_FORMAT_VERSION`]). If the file
+    ///      is present, well-formed, and parses back into a live `Map`,
+    ///      we use it and skip parsing + FST compilation entirely. At the
+    ///      M11 20K-concept scale this is where the cold-start savings
+    ///      come from.
+    ///   2. **Cache miss / corrupt cache** — fall through to an in-memory
+    ///      parse + build via [`build_bundle`], then persist the result
+    ///      best-effort so the *next* launch hits the cache. A failed
+    ///      persist is silent: a read-only cache dir must never stop the
+    ///      lexicon from loading.
+    ///   3. **Final reconstruction** — the freshly-built bundle always
+    ///      parses (we wrote those FST bytes seconds ago), so the
+    ///      `expect` is unreachable in practice; we keep it as a
+    ///      loud-failure tripwire in case a future refactor breaks the
+    ///      build/parse invariant.
+    ///
+    /// Subsequent calls after the first are free — the [`OnceLock`]
+    /// short-circuits.
     pub fn get() -> &'static LexiconGraph {
         static SINGLETON: OnceLock<LexiconGraph> = OnceLock::new();
-        SINGLETON.get_or_init(Self::load_core)
+        SINGLETON.get_or_init(|| {
+            // Stage 1: try the on-disk cache. Any failure returns None and
+            // we fall through — the cache layer never panics.
+            if let Some(bundle) = bake::try_load_cached() {
+                if let Ok(g) = Self::from_bundle(bundle) {
+                    return g;
+                }
+                // FST-byte parse failure from a successfully-decoded
+                // bundle would indicate a mismatch between what `bake`
+                // wrote and what `fst::Map` can read — treat as corrupt
+                // cache and rebuild. No panic.
+            }
+
+            // Stage 2: cold start. Build the bundle in memory, persist it
+            // for next launch (best-effort), then hand the same bundle to
+            // `from_bundle` so stages 1 and 2 go through the exact same
+            // reconstruction path.
+            let tsv = seed_tsv();
+            let (records, errors) = parse_with_diagnostics(tsv);
+            for (line, err) in &errors {
+                eprintln!("lexicon seed row {line} skipped: {err:?}");
+            }
+            let bundle = build_bundle(records)
+                .expect("lexicon seed failed to compile — this is a shipping bug");
+            bake::persist_best_effort(&bundle);
+
+            Self::from_bundle(bundle).expect(
+                "freshly-built lexicon bundle must parse back into a live Map — \
+                 if this trips, the build/parse invariant in build_bundle has \
+                 been broken",
+            )
+        })
     }
 
     /// Load the core-tier graph from the embedded seed TSV. Public
-    /// mainly so tests can reconstruct without holding the singleton.
+    /// mainly so tests can reconstruct without touching the singleton
+    /// or the disk cache.
     ///
     /// On any build-side error the function panics with a descriptive
     /// message rather than silently returning an empty graph — a broken
     /// lexicon at boot is a shipping bug that must surface loudly.
     pub fn load_core() -> Self {
-        let tsv = include_str!("data/seed_v1.tsv");
+        let tsv = seed_tsv();
         let (records, errors) = parse_with_diagnostics(tsv);
         for (line, err) in &errors {
             eprintln!("lexicon seed row {line} skipped: {err:?}");
         }
-        build(records).expect("lexicon seed failed to compile — this is a bug")
+        let bundle = build_bundle(records)
+            .expect("lexicon seed failed to compile — this is a shipping bug");
+        Self::from_bundle(bundle)
+            .expect("freshly-built lexicon bundle must parse — invariant broken")
     }
 
     /// Construct a graph for tests / diagnostics without touching the
     /// singleton or the embedded seed.
     pub fn from_records(records: Vec<ConceptRecord>) -> Result<Self, BuildError> {
-        build(records)
+        let bundle = build_bundle(records)?;
+        Self::from_bundle(bundle)
+    }
+
+    /// Reconstruct a live [`LexiconGraph`] from a [`LexiconBundle`].
+    /// Single entry point for both the cache-hit and cold-build paths so
+    /// any bug in FST-byte handling surfaces identically in either.
+    pub fn from_bundle(bundle: LexiconBundle) -> Result<Self, BuildError> {
+        let name_index = Map::new(bundle.name_index_bytes)?;
+        Ok(LexiconGraph {
+            nodes: bundle.nodes,
+            edge_offsets: bundle.edge_offsets,
+            edges: bundle.edges,
+            name_index,
+        })
+    }
+
+    /// Snapshot this graph into a [`LexiconBundle`] for persistence. The
+    /// returned bundle carries the FST's raw bytes (a copy of the
+    /// underlying `Vec<u8>`) plus clones of the node / edge tables — so
+    /// the caller owns a completely independent snapshot they can ship
+    /// across a thread or to disk without touching the live graph.
+    ///
+    /// Used by tests that persist + reload via `bake::write_bundle` /
+    /// `bake::load_bundle` against an arbitrary temp path. Production
+    /// never calls this — `build_bundle` is the cold-path factory.
+    pub fn to_bundle(&self) -> LexiconBundle {
+        LexiconBundle {
+            nodes: self.nodes.clone(),
+            edge_offsets: self.edge_offsets.clone(),
+            edges: self.edges.clone(),
+            name_index_bytes: self.name_index.as_fst().as_bytes().to_vec(),
+        }
     }
 
     /// Empty-graph constructor. Used by `Default` and by tests that
@@ -286,7 +394,13 @@ fn build_key(lang: Lang, normalized: &str) -> String {
     s
 }
 
-/// Core builder: records → graph.
+/// Core builder: records → [`LexiconBundle`].
+///
+/// Returns a serialisable bundle rather than a live graph so the cache
+/// layer (`bake::persist_best_effort`) and the reconstruction step
+/// (`from_bundle`) can share the same intermediate representation —
+/// cold- and warm-path init go through the same `from_bundle` call so
+/// any FST-byte handling bug surfaces identically in either.
 ///
 /// Algorithm (all O(n) over total lemma count):
 ///
@@ -307,7 +421,7 @@ fn build_key(lang: Lang, normalized: &str) -> String {
 ///      within the same concept (multi-lemma columns).
 /// 5. Sort each node's outgoing edges by (`kind`, `target`) then compact
 ///    into CSR — `edge_offsets` of length `nodes.len() + 1`.
-fn build(records: Vec<ConceptRecord>) -> Result<LexiconGraph, BuildError> {
+pub fn build_bundle(records: Vec<ConceptRecord>) -> Result<LexiconBundle, BuildError> {
     #[derive(Clone)]
     struct Entry {
         lang: Lang,
@@ -379,7 +493,6 @@ fn build(records: Vec<ConceptRecord>) -> Result<LexiconGraph, BuildError> {
         fst_builder.insert(key, packed)?;
     }
     let name_index_bytes = fst_builder.into_inner()?;
-    let name_index = Map::new(name_index_bytes)?;
 
     // Step 4: emit edges.
     //
@@ -434,11 +547,11 @@ fn build(records: Vec<ConceptRecord>) -> Result<LexiconGraph, BuildError> {
         edge_offsets.push(edges.len() as u32);
     }
 
-    Ok(LexiconGraph {
+    Ok(LexiconBundle {
         nodes,
         edge_offsets,
         edges,
-        name_index,
+        name_index_bytes,
     })
 }
 
