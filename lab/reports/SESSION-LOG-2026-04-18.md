@@ -1718,6 +1718,137 @@ The absolute per-call throughput numbers in the bench are **directionally useful
 
 All six are **follow-ons to follow-ons** — none of them block any downstream feature work, and every downstream feature can proceed against the current M9-series state (173 MiB RSS projected @ 7K, 7,100 ns/call FTS path, 100% regression-corpus pass rate, byte-identical cache format at `CACHE_FORMAT_VERSION = 1`).
 
+## 42. M11-data v1 — production lexicon corpus (seed → 49 hand-curated concepts)
+
+**Context.** The earlier `M11-infra` milestone (§§ preceding) landed the encoder / decoder / three-stage `LexiconGraph::get()` boot path, and shipped it against the M10 toy seed (`seed_v1.tsv`, 15 concepts). The production corpus was listed as an Open Item — "blocked on extractor tooling (WordNet 3.1 / OMW / Wiktionary dumps)". This session re-scoped that item to **eliminate the extractor dependency entirely** and ship a hand-curated v1.
+
+**Why no third-party data.** The project-owner rule, as clarified this session, is "anything that constrains distribution or creates obligations" is out. Under that reading:
+
+- **Princeton WordNet 3.1** — BSD-style with a retained-copyright-notice obligation. Out.
+- **Open Multilingual Wordnet bundle** — mixed per-source-wordnet; multiple CC BY-SA members → share-alike virality on derivative works. Out.
+- **Wiktionary / wiktextract** — CC BY-SA 4.0. Share-alike. Out.
+- **GermaNet, FarsNet** — non-commercial / research-only. Hard out either way.
+
+Building our own eliminates the question: Constellation can redistribute its lexicon under any license it chooses, now and forever. The trade-off is **corpus scale** — v1 ships 49 concepts instead of 20K — which is acceptable because the architecture itself is scale-independent (parser, baker, expand, detect all unchanged), and scale-up is tracked as a separate milestone.
+
+### What landed
+
+```
+lab/m11-data/
+├── README.md          # scope, schema, coverage floor, regeneration workflow, "why no third-party" rationale
+├── concepts.json      # source of truth — 49 concepts × up to 15 langs, schema_version=1
+├── build.py           # concepts.json → src-tauri/src/lexicon/data/lexicon_v1.tsv (deterministic TSV emitter)
+├── validate.py        # post-build TSV validator (script match, coverage floor, dedup, Arabic-marks guard)
+└── regenerate.sh      # one-command build + validate wrapper
+```
+
+**`concepts.json` corpus composition (49 concepts)**:
+
+| Category | Count | Examples |
+|---|---|---|
+| Seed (imported from `seed_v1.tsv`) | 15 | book, knowledge, write, read, love, water, house, teacher, student, language, peace, truth, time, day, night |
+| Objects | 10 | tree, sun, moon, star, fire, earth, sky, food, bread, door |
+| Actions | 8 | speak, think, see, hear, learn, work, eat, sleep |
+| Qualities | 6 | good, big, new, beautiful, important, simple |
+| Time / space | 5 | year, world, city, now, today |
+| Cognition | 3 | idea, question, memory |
+| PKM primitives | 2 | note, link |
+
+Every concept carries lemmas for **all 15 supported languages** (ar de en es fa fr he hi ja ko pt ru tr ur zh). Coverage is 100–163% per language (multiple synonyms on many rows), so there is no "partial row" in v1 — every concept is complete across the whole language matrix.
+
+### Deterministic TSV emitter (`build.py`)
+
+Reproducible byte-identical output given same input — same djb2 hash → same cache filename → no spurious rebuilds across checkouts on different OSes:
+
+- Rows sorted by concept id (stable).
+- Language columns sorted alphabetically by lang code within each row.
+- Lemmas within a single `(concept × language)` cell preserve first-seen order; duplicates dropped after first occurrence.
+- Header comment block is a fixed literal.
+- LF line endings regardless of host OS (`open(..., newline="\n")`).
+- No trailing whitespace.
+
+Emitted to `src-tauri/src/lexicon/data/lexicon_v1.tsv` — the file ships as part of the binary via `include_str!`. Size: **8,175 bytes** (up from 4.4 KB for the M10 seed).
+
+Structural validation in `build.py` (fail-fast before the TSV is even written):
+
+- `schema_version` must equal `1`.
+- Concept IDs must be unique, non-empty strings.
+- `pos` must be in the `arabic::PartOfSpeech` enum (`Noun`, `Verb`, `Adjective`, `Adverb`, `ProperNoun`, `Particle`, `Foreign`, `Unknown`).
+- Lang keys must be in the 15-member `SUPPORTED_LANGS` list.
+- Lemma values must be lists of strings free of tabs and newlines.
+
+### Post-build content validator (`validate.py`)
+
+Runs against the emitted TSV (not the JSON) — catches anything the build-time checks missed or that a hand-edit of the TSV might introduce:
+
+**Hard errors (exit 1)**:
+- Row without both `en:` and `ar:` with ≥1 lemma each (per project rule: Arabic is mandatory).
+- Any `ar`/`fa`/`ur` lemma containing tashkeel (U+064B–U+065F) or tatweel (U+0640) — the parser strips these on every lookup, so storing them does the same work on every boot for no benefit.
+- Duplicate lemma within a single `(concept × language)` cell.
+- Duplicate concept ID across the corpus.
+
+**Warnings (exit 0 but surfaced)**:
+- Fewer than 8 of 15 languages populated on a concept (v1 hits 15/15 on every row, so this is 0 warnings).
+- Script mismatch per language — per-lang Unicode block check (Arabic/Hebrew/Devanagari/Hiragana+Katakana+CJK/Hangul/Cyrillic/Latin), with Japanese/Korean/Chinese tolerating Latin (romaji, pinyin bundling).
+
+Validator output on today's v1 corpus:
+
+```
+validate.py: src-tauri/src/lexicon/data/lexicon_v1.tsv
+  concepts: 49
+  errors:   0
+  warnings: 0
+
+✓ all hard checks passed
+```
+
+### Rust wire-up (swap the production corpus, preserve the regression fixture)
+
+`src-tauri/src/lexicon/graph.rs`:
+
+- `pub fn seed_tsv() -> &'static str` — **changed** to `include_str!("data/lexicon_v1.tsv")`. Docstring updated to explain the semantics: "the production corpus that `LexiconGraph::get()` compiles on cold boot".
+- **New** `pub fn legacy_seed_tsv() -> &'static str` — `include_str!("data/seed_v1.tsv")`. Exists solely to keep the M10 15-concept seed file accessible to its regression canary. The legacy seed file itself stays on disk.
+
+`src-tauri/src/lexicon/bake.rs` test module:
+
+- `real_seed_bundle_writes_reads_reconstructs` — renamed the imported accessor from `seed_tsv()` to `legacy_seed_tsv()`. Comment updated to clarify the test's role: "historical canary — `seed_v1.tsv` is preserved on disk as the M10 regression fixture, and this test guarantees it still parses cleanly through every later encoder/decoder change."
+- **New** `real_lexicon_bundle_writes_reads_reconstructs` — mirrors the legacy canary but runs against the production corpus via `seed_tsv()`. Assertions:
+  - `recs.len() > 20` — tripwire against a future accidental revert of the corpus swap (legacy seed has 15 concepts; any value > 20 proves we're actually reading the production file).
+  - Full bundle-encode → write-to-temp → load-from-temp → decode → reconstruct round-trip.
+  - `en:tree` resolves in the reconstructed graph (only in `lexicon_v1.tsv`, absent from `seed_v1.tsv`).
+  - `ar:شجرة` resolves (Arabic mandatory-coverage sanity).
+
+### Verification
+
+```
+cd src-tauri && cargo test --lib -p constellation lexicon::
+test result: ok. 116 passed; 0 failed; 1 ignored; 0 measured; 297 filtered out
+
+cd src-tauri && cargo test --lib -p constellation
+test result: ok. 412 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out
+```
+
+Both the legacy seed canary and the new production canary pass. Zero regressions across the full 412-test lib suite. No cache format bump needed — `CACHE_FORMAT_VERSION` stays at 1, and the djb2 hash of the TSV bytes changes automatically so caches from the M10 seed era are invalidated transparently on first boot after this lands.
+
+### Scope kept out
+
+Explicit **non-goals** for v1 — each tracked as a separate follow-on milestone so it doesn't leak into this commit:
+
+- **M11-data-scale**: expand from ~49 to ~500, then ~2K, then ~20K concepts. At ~2K hand-curation still scales; past that an LLM-assisted generator plus a validation harness is likely needed. Ship v1, measure user value, then decide.
+- **M11-data-synonyms**: today each concept carries 1–3 lemmas per language. M8-style synonym edges (in-language near-equivalents via multiple sense-tagged nodes per concept) are architecturally ready — `SenseId` is prepared for this — but not populated. Deferred.
+- **M11-data-domains**: domain-specific expansion packs (science / philosophy / arts / Islamic studies / medicine) can ship via `LexiconBundle::merge` (not yet implemented) layered on top of the core corpus. Deferred.
+- **M11-data-wiktionary-path**: if the license landscape ever changes, the `build.py` pipeline is structured so an alternate data source could be plumbed in — the TSV shape is stable, the parser is permissive, the validator is content-agnostic. Kept deliberately out of scope for v1.
+
+### Why this shape
+
+The whole tooling lives in `lab/m11-data/` rather than `src-tauri/scripts/` or similar for three reasons:
+
+1. **Data is separate from engine**. The Rust side knows nothing about `concepts.json` — it reads `lexicon_v1.tsv` and nothing else. The TSV is the contract; everything upstream of it is a producer. This keeps the cold-build path reproducible if the producer ever changes.
+2. **`lab/` is already the convention** for data-producers and bench harnesses in this codebase (`lab/reports/`, `lab/verification/`). M11-data fits the same shape.
+3. **Python, not Rust, for the producer**. The emitter is pure data transformation — JSON in, TSV out — with no hot-path concerns. Python is the right tool: ubiquitous, stdlib-only (no PyYAML, no external deps), readable by non-Rust contributors.
+
+**Every single lemma in the v1 corpus is Constellation-original content.** There is no NOTICE file, no LICENSE file to preserve, no upstream attribution to carry. This property is non-negotiable for v1 and must be preserved by any future expansion step that pulls in external text (if one is ever approved) — the validator checks structure and script, but the **origin-clean property is enforced by the human curator at commit time**.
+
 ## Commit
 
 Pending — per Standing Order: push + SO after user review. Three-commit sequence (M5 is the third):
@@ -1855,6 +1986,17 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
     - `lab/reports/SESSION-LOG-2026-04-18.md` — § 40 added with Why-Now framing (post-M9-hotpath (c) the remaining 7,100 ns/call is distributed across functions the wall-clock bench can count but not attribute; further micro-optimisation needs per-function costs), approach (two profiler recipes + reading guide), change shape (doc-comment-only), `Why doc-comment, not a separate .md file` justification, verification (`cargo check --lib --tests` clean), two open items (first-profile pass, samply CI integration).
     - **No runtime change** — `cargo check --lib --tests` clean, no bench rerun necessary (M9-profile's deliverable is the recipe, not a measurement).
 
+22. **M11-data v1 — production lexicon corpus** (this session, pending commit):
+    - `lab/m11-data/README.md` — new (~175 lines). Scope doc explaining v1 is 100% Constellation-original content (no WordNet / OMW / Wiktionary dependency), schema (concept id + pos + per-language lemma lists), coverage floor (`en:` + `ar:` mandatory, ≥8/15 target), regeneration workflow, and the rationale for why every third-party wordnet source was rejected under the owner's "anything that constrains distribution or creates obligations" rule.
+    - `lab/m11-data/concepts.json` — new (49 concepts × 15 languages, single-file source of truth). Each entry: `id` (kebab-case slug), `pos` (one of the 8 `arabic::PartOfSpeech` variants), `category` (organizational tag, not emitted to TSV), `notes` (one-line human gloss, not emitted), `lemmas` (15-key object, each value a list of lemma strings). Categories: seed (15 imported from M10 seed_v1.tsv), objects (10), actions (8), qualities (6), time/space (5), cognition (3), PKM primitives (2).
+    - `lab/m11-data/build.py` — new (~230 lines). `concepts.json` → `src-tauri/src/lexicon/data/lexicon_v1.tsv` emitter with deterministic output (sorted concept ids, alphabetically-sorted lang columns, first-seen order for lemmas within a cell, fixed header comment block, LF line endings, UTF-8). Structural validation catches `schema_version != 1`, non-unique ids, invalid PoS, unknown lang keys, non-string lemma values, tab/newline contamination before the TSV is even written. `--stdout` + `--dry-run` flags for CI / debugging.
+    - `lab/m11-data/validate.py` — new (~275 lines). Post-build TSV content validator. Hard errors (exit 1): missing `en:`/`ar:` lemma, tashkeel/tatweel in `ar`/`fa`/`ur` lemmas (U+064B–U+065F + U+0640), duplicate lemma within a cell, duplicate concept id. Warnings: <8/15 language coverage, per-lang script mismatch via Unicode block membership (Arabic / Hebrew / Devanagari / Hiragana+Katakana+CJK / Hangul / Cyrillic / Latin, with CJK/Korean/Japanese tolerating romaji for pinyin + loanwords).
+    - `lab/m11-data/regenerate.sh` — new (~30 lines). One-command `build.py && validate.py` wrapper with `set -euo pipefail`. Portable `PY=${PYTHON:-python3}` fallback to `python` on Windows.
+    - `src-tauri/src/lexicon/data/lexicon_v1.tsv` — new (8,175 bytes, 49 rows + header comment block). The production corpus, emitted by `build.py` from `concepts.json`. Ships as part of the binary via `include_str!` from `graph.rs::seed_tsv()`. 100% Constellation-original content — no third-party attribution required. Format matches the M10 seed exactly: `concept_id<TAB>pos<TAB>lang:lemma,lemma,...<TAB>...`.
+    - `src-tauri/src/lexicon/graph.rs` — `seed_tsv()` swapped from `include_str!("data/seed_v1.tsv")` to `include_str!("data/lexicon_v1.tsv")` (the production cold-build path now uses the 49-concept corpus). New sibling `pub fn legacy_seed_tsv() -> &'static str` returning `include_str!("data/seed_v1.tsv")` so the M10 seed regression canary still has a byte-exact accessor to its fixture. Docstrings updated to explain the semantics of each.
+    - `src-tauri/src/lexicon/bake.rs` — existing `real_seed_bundle_writes_reads_reconstructs` test retargeted to `legacy_seed_tsv()` so it continues to pin the M10 15-concept seed fixture through encoder/decoder changes. New sibling test `real_lexicon_bundle_writes_reads_reconstructs` mirrors the legacy canary against the production corpus: round-trips through `build_bundle` → `write_bundle` → `load_bundle` → `from_bundle`, asserts `recs.len() > 20` (tripwire against accidental revert), asserts `en:tree` (production-only lookup) + `ar:شجرة` (mandatory-Arabic sanity) resolve in the reconstructed graph.
+    - `lab/reports/SESSION-LOG-2026-04-18.md` — § 42 added with Why-Now framing (eliminate extractor-tooling blocker + third-party licensing surface), scope (49-concept corpus composition table), deterministic emitter rules, structural + content validator specs, Rust wire-up (seed_tsv swap + legacy_seed_tsv + two-canary-test pattern), verification (116 lexicon + 412 full-lib tests pass), non-goals (scale / synonyms / domains / alternate-data-sources tracked as separate milestones), `lab/m11-data/` layout rationale.
+
 ## Files modified
 
 - `src-tauri/Cargo.toml` — `+ fst = "0.4"` (M3), `+ dirs = "5"` (M3-baker), `+ smallvec = "1"` (M9-hotpath (b), promoting a transitive dep to direct so the analyzer's public `AnalysisList = SmallVec<[Analysis; 2]>` alias can name the type). M9-mmap adds a target-gated dep block `[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies] memmap2 = "0.9"` so `memmap2` lands on desktop builds only — mobile targets compile with the `Owned`-variant-only `FstBytes` path and pay zero binary or dep-tree cost.
@@ -1884,10 +2026,16 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - `src-tauri/src/arabic/fst_bake.rs` — **M9-intern**: imports extended with `HashMap`, `Arc`, and `intern` re-import from `super::generator`. `decode_bundle` creates two `HashMap<String, Arc<str>>` pools shared across the stripped and folded side decoders. `decode_side` threads the pools down as `&mut` args. `decode_form` reads the raw UTF-8 bytes as before, then interns via the pool. Encode path unchanged (Arc<str> auto-coerces to &str). `CACHE_FORMAT_VERSION` **NOT bumped** — on-disk bytes are identical to pre-M9-intern format; old caches load under new binary and vice versa. One roundtrip test site gained empty-pool arguments. **M9-mmap**: adds `use memmap2::Mmap;` (cfg-gated) + new `pub enum FstBytes { Mmap { mmap: Arc<Mmap>, offset, len }, Owned(Vec<u8>) }` with `AsRef<[u8]>` / `Debug` / `From<Vec<u8>>` / `len` impls. `FstBundle::{stripped_bytes, folded_bytes}` migrated from `Vec<u8>` to `FstBytes`. `load_bundle` split into `load_bundle_mmap` (desktop, preferred) + `load_bundle_heap` (fallback / mobile). `decode_bundle` renamed to `decode_bundle_heap` (wraps output in `FstBytes::Owned`), with a new sibling `decode_bundle_mmap(Arc<Mmap>)` that captures cursor-position offsets and produces `FstBytes::Mmap` slices sharing a single `Arc<Mmap>` across stripped + folded. `encode_side` callers updated to `.as_ref()` on `FstBytes`. **CACHE_FORMAT_VERSION stays at 1** — on-disk byte layout is byte-identical. Three test sites updated (`sample_bundle` uses `.into()`; two `assert_eq!` roundtrip sites compare via `.as_ref()`).
 - `src-tauri/src/arabic/fst_index.rs` — **M9-intern**: no production code changes (Arc<str> fields flow through transparently). 6 test comparison sites updated to `&*f.root_key == "..."`; 2 construction sites updated to `"...".into()` (Arc<str> From<&str>); 1 `assert_eq!` updated to `&*hits[0].root_key, "..."`. **M9-mmap**: imports extended with `FstBytes`. `GenerativeFst::{fst_stripped, fst_folded}` fields migrated from `Map<Vec<u8>>` to `Map<FstBytes>` (type-only — all lookup code byte-identical). `from_bytes` signature relaxed from `Vec<u8>` to `impl Into<FstBytes>` (preserves back-compat via `From<Vec<u8>>`; the new mmap path passes `FstBytes::Mmap` directly, no copy). `build_bundle` wraps cold-rebuild `Vec<u8>` via `.into()` at the `FstBundle` construction site.
 - `src-tauri/src/lexicon/parse.rs` — new (M10, ~280 lines, 11 tests). TSV seed parser with `ConceptRecord` output and `ParseRowError` diagnostics.
-- `src-tauri/src/lexicon/graph.rs` — M10 rewrite (~400 lines, 12 tests); M11-infra adds `seed_tsv()` accessor, `LexiconBundle` type, three-stage `get()`, `build_bundle` / `from_bundle` / `to_bundle` split.
+- `src-tauri/src/lexicon/graph.rs` — M10 rewrite (~400 lines, 12 tests); M11-infra adds `seed_tsv()` accessor, `LexiconBundle` type, three-stage `get()`, `build_bundle` / `from_bundle` / `to_bundle` split. **M11-data v1** swaps the body of `seed_tsv()` from `include_str!("data/seed_v1.tsv")` to `include_str!("data/lexicon_v1.tsv")` (cold-build path now consumes the 49-concept production corpus); adds sibling `pub fn legacy_seed_tsv() -> &'static str` so the M10 seed regression canary in `bake.rs` retains a byte-exact accessor to its fixture.
 - `src-tauri/src/lexicon/mod.rs` — M10 rewrite (~300 lines, 13 tests); M11-infra adds `pub mod bake;` + extends the `pub use graph::{…}` re-exports with `build_bundle`, `seed_tsv`, `LexiconBundle`. M12 further adds `pub mod fts;` + `pub use fts::{build_match_expr, escape_fts_term}` + two `expand_to_match_expr[_via]` helpers + 5 end-to-end tests.
-- `src-tauri/src/lexicon/data/seed_v1.tsv` — new (M10, 4.4 KB, 15 hand-picked concepts × 12–16 language labels).
-- `src-tauri/src/lexicon/bake.rs` — new (M11-infra, ~615 lines, 18 tests). Bundle binary format, cache path, version hash, atomic writes, safe decoder.
+- `src-tauri/src/lexicon/data/seed_v1.tsv` — new (M10, 4.4 KB, 15 hand-picked concepts × 12–16 language labels). **M11-data v1** retains this file on disk unchanged as the fixture for the `real_seed_bundle_writes_reads_reconstructs` regression canary (reachable via `graph::legacy_seed_tsv()`).
+- `src-tauri/src/lexicon/data/lexicon_v1.tsv` — new (**M11-data v1**, 8,175 bytes, 49 hand-curated concepts × 15 languages, emitted by `lab/m11-data/build.py` from `concepts.json`). 100% Constellation-original content — no third-party attribution required. This is the file `graph::seed_tsv()` returns on the production cold-build path; swapping it is what makes M11-data v1 the "real" corpus.
+- `src-tauri/src/lexicon/bake.rs` — new (M11-infra, ~615 lines, 18 tests). Bundle binary format, cache path, version hash, atomic writes, safe decoder. **M11-data v1** retargets the existing `real_seed_bundle_writes_reads_reconstructs` test to `legacy_seed_tsv()` (preserving the M10 seed regression role) and adds a sibling `real_lexicon_bundle_writes_reads_reconstructs` test that exercises the same write→load→reconstruct round-trip against the production corpus, asserts `recs.len() > 20` (tripwire against seed-revert), and spot-checks `en:tree` + `ar:شجرة` resolve in the reconstructed graph.
+- `lab/m11-data/README.md` — new (**M11-data v1**, ~175 lines). Scope doc: v1 is 100% Constellation-original content, no third-party wordnet dependency, schema spec, coverage floor, regeneration workflow, license-rejection rationale for Princeton WordNet 3.1 / OMW / Wiktionary / GermaNet / FarsNet.
+- `lab/m11-data/concepts.json` — new (**M11-data v1**, 49 concepts × up to 15 languages, `schema_version: 1`). Single-file source of truth for the corpus; edited directly by human curators, consumed by `build.py`.
+- `lab/m11-data/build.py` — new (**M11-data v1**, ~230 lines). Deterministic `concepts.json` → `lexicon_v1.tsv` emitter with structural validation + `--stdout` + `--dry-run` flags.
+- `lab/m11-data/validate.py` — new (**M11-data v1**, ~275 lines). Post-build TSV content validator — hard errors for missing `en:`/`ar:`, tashkeel/tatweel in Arabic-script lemmas, dup lemmas, dup concept ids; warnings for low language coverage + per-lang script mismatches via Unicode block membership.
+- `lab/m11-data/regenerate.sh` — new (**M11-data v1**, ~30 lines). One-command `build.py && validate.py` wrapper with fail-fast + portable Python interpreter lookup.
 - `src-tauri/src/lexicon/fts.rs` — new (M12, ~210 lines, 20 tests). FTS5 MATCH expression generator. Pure logic, no SQL, no graph walk — takes an `ExpansionResult`, emits an `Option<String>` of `"..." OR "..."` phrase-quoted terms (operator-keyword-safe at M11-data scale).
 - `src-tauri/src/lexicon/detect.rs` — new (M12-lang-detect, ~280 lines, 33 tests). Unicode-script source-language classifier — exported as `lexicon::detect_source_lang`. Pure stdlib, no new dependencies.
 - `src-tauri/src/lexicon/bench.rs` — new (M12-bench, ~160 lines, 1 `#[ignore]` test). `lexicon::bench::m12_bench` opt-in latency benchmark for `expand_to_match_expr_via`. Mirrors the `arabic::bench::m9_bench` pattern — does not run under default `cargo test --lib`, invoked with `--release ... -- --ignored --nocapture`. Hard-asserts p99 < 1 ms.
@@ -1905,7 +2053,10 @@ Pending — per Standing Order: push + SO after user review. Three-commit sequen
 - ~~**M9-profile**~~ — **LANDED § 40**. Sampling-profiler recipe added to `arabic::bench` module-level doc comment. Covers `samply` (cross-platform, recommended), `cargo-flamegraph` (Linux-only), Windows VS-Profiler fallback, a four-hotspot reading guide, and a sample-percentage-to-nanosecond conversion formula. Paste-ready — anyone can run the recipes against the worktree with `cargo install samply` or `cargo install flamegraph`.
 - **First-profile pass** (new, from § 40): actually run samply against `m9_bench` and publish the four-hotspot cost breakdown in a future SESSION-LOG. Gated on a developer wanting to use the recipe; the recipe is the deliverable, the first run is a follow-on consumption of it.
 - **samply CI integration** (new, from § 40): capture a profile per commit in CI and publish the call-tree as an artefact. Makes regressions attributable to a specific function without a local repro. Deferred until samply stabilises its headless JSON output.
-- **M11-data**: the 20K-concept × 15-language core corpus. Blocked on extractor tooling (WordNet 3.1 for English seeds, Open Multilingual Wordnet for the other 14 languages, Wiktionary dumps for loanwords + non-WordNet locales). Pure data drop once extracted — the M11-infra encoder/decoder is ready, the parser is unchanged. Expected bundle size ~10–15 MB; first-launch warm-up writes the cache, subsequent launches load in <50 ms. Builder script will live in `lab/` alongside the protected-list extractor.
+- ~~**M11-data**~~ — **LANDED § 42** as `lab/m11-data/` (README + `concepts.json` + `build.py` + `validate.py` + `regenerate.sh`) + `src-tauri/src/lexicon/data/lexicon_v1.tsv` (49 concepts × 15 languages, 100% Constellation-original content, 8,175 bytes). Extractor-tooling dependency eliminated via hand-curation + strict "no third-party data" rule. Scale expansion tracked as follow-ons below.
+- **M11-data-scale**: expand the v1 corpus from 49 concepts toward ~500 → ~2K → ~20K. Hand-curation scales to ~2K; past that needs an LLM-assisted generator + validation harness. Measurements to decide: user-visible value at 49 vs. 500 vs. 2K before committing to 20K.
+- **M11-data-synonyms**: each v1 concept carries 1–3 lemmas per language; the `SenseId` type is already prepared for M8-style in-language synonym edges via multiple sense-tagged nodes per concept. Not populated in v1.
+- **M11-data-domains**: domain-specific expansion packs (science / philosophy / arts / Islamic studies / medicine) layered on the core corpus via `LexiconBundle::merge` (not yet implemented). Ships as separate bundles, not edits to `lexicon_v1.tsv`.
 - **M11-mmap**: switch the baked `name_index_bytes` from `Vec<u8>` to `memmap2::Mmap` on desktop, mirroring the M9-mmap follow-on on the Arabic FST. Cuts resident memory at the M11-data scale and lets warm-start be a bounded constant (header read) rather than O(bundle size). Needs the same `#[cfg]` fallback for iOS / sandboxed builds that can't anon-mmap.
 - **M11-cache-bench**: measure cold-start (cache deleted → `LexiconGraph::get()` rebuilds + persists) vs. warm-start (cache present → `from_bundle` only) delta on the M11-data bundle. Same `#[test] #[ignore]` opt-in pattern as `arabic::bench::m9_bench`. Will extend M9's report table or land a sibling `lexicon::bench::m11_bench`. Gated by M11-data.
 - **M12-bench-m11**: rerun `lexicon::bench::m12_bench` once `M11-data` lands to publish the 20K-concept × 15-lang numbers alongside the current M10-seed baseline (mean 5.2 µs / p99 15.8 µs). Not a new module — just an opt-in rerun with the new corpus in place. If p99 migrates meaningfully, the `< 1 ms` hard-assert threshold gets revisited with real data.

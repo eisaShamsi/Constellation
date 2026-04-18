@@ -58,10 +58,26 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
-/// The embedded core-tier seed TSV, exposed as a `&'static str` so
-/// [`bake::version_hash`] can hash its bytes deterministically for the
-/// cache filename. Parallel to `arabic::roots::seed_tsv()`.
+/// The embedded core-tier TSV — the production corpus that
+/// `LexiconGraph::get()` compiles on cold boot. Exposed as a
+/// `&'static str` so [`bake::version_hash`] can hash its bytes
+/// deterministically for the cache filename. Parallel to
+/// `arabic::roots::seed_tsv()`.
+///
+/// As of M11-data this returns `lexicon_v1.tsv` (49 hand-curated
+/// concepts, 100% Constellation-original content, 15 languages every
+/// row). The legacy M10 seed (`seed_v1.tsv`, 15 concepts) stays on
+/// disk as the regression fixture for `real_seed_bundle_*` and is
+/// reachable via [`legacy_seed_tsv`].
 pub fn seed_tsv() -> &'static str {
+    include_str!("data/lexicon_v1.tsv")
+}
+
+/// The legacy M10 15-concept seed, kept around as the byte-exact
+/// regression fixture for the `real_seed_bundle_writes_reads_reconstructs`
+/// canary in `bake.rs`. Not consumed on the production boot path —
+/// [`seed_tsv`] is.
+pub fn legacy_seed_tsv() -> &'static str {
     include_str!("data/seed_v1.tsv")
 }
 

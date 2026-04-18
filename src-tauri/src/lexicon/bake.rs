@@ -567,7 +567,7 @@ impl<'a> Cursor<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lexicon::graph::{build_bundle, LexiconGraph};
+    use crate::lexicon::graph::{build_bundle, legacy_seed_tsv, LexiconGraph};
     use crate::lexicon::parse::parse;
 
     fn sample_bundle() -> LexiconBundle {
@@ -832,13 +832,15 @@ mod tests {
 
     #[test]
     fn real_seed_bundle_writes_reads_reconstructs() {
-        // End-to-end: build the real seed bundle, write it to a temp
-        // path, read it back, reconstruct a graph, verify lookups still
-        // resolve. This is the canary that detects any encoder / decoder
-        // mismatch that could only surface at realistic scale.
-        let tsv = seed_tsv();
+        // End-to-end: build the legacy M10 15-concept seed bundle,
+        // write it to a temp path, read it back, reconstruct a graph,
+        // verify lookups still resolve. This is the historical canary
+        // — seed_v1.tsv is preserved on disk as the M10 regression
+        // fixture, and this test guarantees it still parses cleanly
+        // through every later encoder / decoder change.
+        let tsv = legacy_seed_tsv();
         let recs = parse(tsv);
-        let original = build_bundle(recs).expect("build_bundle real seed");
+        let original = build_bundle(recs).expect("build_bundle legacy seed");
 
         let path = tmp_path("realseed");
         write_bundle(&path, &original).expect("write");
@@ -857,6 +859,52 @@ mod tests {
         assert!(
             !g.find_nodes(Lang::Ar, "كتاب").is_empty(),
             "ar:كتاب must resolve in the reconstructed graph"
+        );
+
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn real_lexicon_bundle_writes_reads_reconstructs() {
+        // End-to-end canary for the production corpus (lexicon_v1.tsv,
+        // the M11-data deliverable). Mirrors the legacy seed canary but
+        // asserts a lookup (`en:tree`) that is only present in the
+        // production corpus, guaranteeing the round-trip actually
+        // consumed the larger file and not the legacy seed by accident.
+        let tsv = seed_tsv();
+        let recs = parse(tsv);
+        // Production corpus is strictly larger than the legacy 15-row
+        // seed; this assertion doubles as a "seed swap actually
+        // happened" tripwire.
+        assert!(
+            recs.len() > 20,
+            "lexicon_v1 must carry more concepts than the legacy seed \
+             (got {} records — did seed_tsv() silently revert?)",
+            recs.len()
+        );
+        let original = build_bundle(recs).expect("build_bundle real lexicon");
+
+        let path = tmp_path("reallexicon");
+        write_bundle(&path, &original).expect("write");
+        let loaded = load_bundle(&path).expect("load");
+        assert_eq!(loaded.nodes.len(), original.nodes.len());
+        assert_eq!(loaded.edges.len(), original.edges.len());
+        assert_eq!(loaded.edge_offsets, original.edge_offsets);
+        assert_eq!(loaded.name_index_bytes, original.name_index_bytes);
+
+        let g = LexiconGraph::from_bundle(loaded).expect("reconstruct");
+        // Spot-check a lookup that only exists in the production
+        // corpus (not in the legacy 15-concept seed).
+        assert!(
+            !g.find_nodes(Lang::En, "tree").is_empty(),
+            "en:tree must resolve — it is in lexicon_v1 but not seed_v1"
+        );
+        // And the mandatory Arabic round-trip, per project rule: every
+        // row must carry Arabic. Pick a concept that's Arabic-only in
+        // the production corpus.
+        assert!(
+            !g.find_nodes(Lang::Ar, "شجرة").is_empty(),
+            "ar:شجرة must resolve in the reconstructed production graph"
         );
 
         let _ = fs::remove_file(&path);
