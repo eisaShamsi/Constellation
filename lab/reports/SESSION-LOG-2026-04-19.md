@@ -993,3 +993,73 @@ at this corpus size; assume nothing about what's taken.
 ### Commits
 
 - `130384e` — `M11-data v2: +065-plants-and-trees + +066-weather-and-climate (80 concepts)`
+
+---
+
+## § 25 — M11-data v2: +067-colors-extended + +068-shapes-and-geometry + +069-furniture-and-home (parallel triple)
+
+**Trigger.** Standing directive continuation. After §§ 23-24 landed, I launched three
+general-purpose agents in parallel to author 40-concept shards on three non-overlapping
+themes I'd scouted against the existing 67 shards: advanced colors, geometry, and
+furniture/home objects.
+
+### Pre-flight scouting
+
+Before dispatching agents, I did a cheap `"id": "(red|blue|...|chair|table|...)"` grep
+to confirm that the **core** primitives of each theme were already taken and therefore
+needed an `-color` / `-shape` / compound-form workaround in the agent brief:
+
+- Colors: `red`, `green`, `blue` in 004-qualities; minerals `ruby`, `sapphire`,
+  `emerald`, `jade`, `amber`, `topaz`, `platinum`, `copper`, `bronze`, `gold`, `silver`
+  in 040-minerals; plants `lavender`, `lilac`, `chestnut` in 065.
+- Shapes: `circle`, `square`, `triangle`, `line`, `point`, `angle` in 010-science-and-math.
+- Furniture: `chair`, `table`, `bed` in 003-food-and-household; `desk` in 017-education;
+  `ladder`, `broom` in 012-tools-and-materials; `mirror`, `lamp`, `clock` in 003.
+
+The agents were given explicit collision lists plus a MANDATORY grep instruction for
+every candidate ID. Build.py's cross-shard duplicate check (`build.py:184`) is the final
+enforcement — any missed collision becomes a hard error.
+
+### Agent reports — collisions caught
+
+- **067**: 19 ID suffixes applied (`-color`). `turquoise`, `violet`, `lime-color`,
+  `rose-color` dropped as already taken.
+- **068**: 9 collisions caught *by build.py at commit time*, not by the pre-flight grep
+  (because 010-science-and-math uses a compact lemma format the initial scan pattern
+  missed). Agent iterated and renamed: `circle`→`circle-shape`, `square`→`square-shape`,
+  `triangle`→`triangle-shape`, `prism`→`prism-shape`, `crescent`→`crescent-shape`,
+  `star`→`star-shape`, `ring`→`ring-shape`, `edge`→`edge-geometry`. `line`/`point`/`angle`
+  dropped entirely.
+- **069**: 3 collisions caught (`desk`→`writing-desk`, `ladder`→`stepladder`,
+  `broom`→`sweeping-broom`). 10 additional IDs replaced at pre-flight grep stage.
+
+### Verification
+
+`python build.py` final — clean:
+
+```
+shards:              70
+concepts:         2,840
+total lemma strings: 53,847
+per-language coverage: 114% – 136%  (all 15 languages)
+```
+
+Spot-checked first 4 rows of each shard for Arabic, Chinese, Japanese quality:
+
+- 067: crimson قِرمِزي 深红 深紅 ✓; scarlet قانٍ 猩红 緋色 ✓
+- 068: circle-shape دائرة 圆 円 ✓; rectangle مستطيل 长方形 長方形 ✓
+- 069: writing-desk مكتب كتابة 书桌 机 ✓; bookshelf رف كتب 书架 本棚 ✓
+
+### Corpus progress
+
+```
+shards:             67 → 70   (+3)
+concepts:        2,720 → 2,840  (+120, +4.4%)
+lemma strings:  51,681 → 53,847  (+2,166)
+```
+
+Progress toward 20K: **14.2%**.
+
+### Commits
+
+- `8855353` — `M11-data v2: +067-colors-extended + +068-shapes-and-geometry + +069-furniture-and-home (120 concepts)`
