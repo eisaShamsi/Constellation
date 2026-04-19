@@ -42,7 +42,7 @@
 use rusqlite::{params, Connection, OpenFlags};
 use serde::Serialize;
 use std::collections::HashMap;
-use std::time::Instant;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use crate::libraries::NoteLink;
 
@@ -100,6 +100,14 @@ pub struct BootSnapshotCore {
     /// lives in `ensure_db`, `open_reader`, or `read_notes`. See
     /// `lab/boot-perf/boot-bundle-cold-start.md`.
     pub timings_ms: Vec<(String, u64)>,
+    /// Server-side `SystemTime::now()` at the moment the struct is
+    /// returned from the Tauri command, expressed as milliseconds since
+    /// the Unix epoch. Paired with a `Date.now()` capture on the JS side
+    /// immediately after `invoke()` resolves, the delta isolates pure
+    /// IPC transport + JSON deserialize cost — independent of any work
+    /// the JS caller does with the payload afterwards. Diagnostic tool
+    /// for the Criterion 2 22.5s mystery (boot-perf 2026-04-19).
+    pub server_return_unix_ms: u128,
 }
 
 /// Heavy boot payload — the typed-link edge list plus aggregated tag counts.
@@ -114,6 +122,9 @@ pub struct BootSnapshotGraph {
     /// Per-phase Rust-side wall-clock timings for graph-phase attribution.
     /// Same purpose / shape as `BootSnapshotCore::timings_ms`.
     pub timings_ms: Vec<(String, u64)>,
+    /// Server-side Unix-epoch millisecond timestamp at struct construction.
+    /// See `BootSnapshotCore::server_return_unix_ms` — same diagnostic use.
+    pub server_return_unix_ms: u128,
 }
 
 /// Fast boot payload — just the notes list and a cold-cache flag. The
@@ -140,10 +151,15 @@ pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCor
         Ok(c) => c,
         Err(_) => {
             timings.push(("open_reader_err".into(), t1.elapsed().as_millis() as u64));
+            let server_return_unix_ms = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|d| d.as_millis())
+                .unwrap_or(0);
             return Ok(BootSnapshotCore {
                 notes: Vec::new(),
                 is_cold: true,
                 timings_ms: timings,
+                server_return_unix_ms,
             });
         }
     };
@@ -158,7 +174,11 @@ pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCor
 
     let is_cold = notes.is_empty();
 
-    Ok(BootSnapshotCore { notes, is_cold, timings_ms: timings })
+    let server_return_unix_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    Ok(BootSnapshotCore { notes, is_cold, timings_ms: timings, server_return_unix_ms })
 }
 
 /// Heavy boot payload — link edges + tag counts. Deferred to
@@ -180,10 +200,15 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
         Ok(c) => c,
         Err(_) => {
             timings.push(("open_reader_err".into(), t1.elapsed().as_millis() as u64));
+            let server_return_unix_ms = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|d| d.as_millis())
+                .unwrap_or(0);
             return Ok(BootSnapshotGraph {
                 links: Vec::new(),
                 tags: HashMap::new(),
                 timings_ms: timings,
+                server_return_unix_ms,
             });
         }
     };
@@ -211,7 +236,11 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
     let tags = read_tags(&conn)?;
     timings.push(("read_tags".into(), t4.elapsed().as_millis() as u64));
 
-    Ok(BootSnapshotGraph { links, tags, timings_ms: timings })
+    let server_return_unix_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    Ok(BootSnapshotGraph { links, tags, timings_ms: timings, server_return_unix_ms })
 }
 
 /// Back-compat shim — merges `cache_boot_snapshot_core` + `_graph` into the

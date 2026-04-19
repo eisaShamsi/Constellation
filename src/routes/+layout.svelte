@@ -1953,6 +1953,37 @@
 	let cacheSnapshotCoreServerTimings: Array<[string, number]> = [];
 	let cacheSnapshotGraphWallMs = 0;
 	let cacheSnapshotGraphServerTimings: Array<[string, number]> = [];
+	/** Criterion 2 IPC-overhead diagnostic (2026-04-19). We split the
+	 *  previously-undifferentiated "wall time" bucket into three:
+	 *
+	 *   1. transport_ms  = clientRecvUnixMs - server_return_unix_ms
+	 *      Pure IPC: the time between Rust returning the struct and the
+	 *      JS `await invoke(...)` resolving. Isolates Tauri serialize +
+	 *      WebView2 pipe + JS deserialize — independent of what the
+	 *      caller does with the payload.
+	 *
+	 *   2. assign_ms     = perf.now() after allNotes=... - perf.now() after invoke
+	 *      Time to apply the response to reactive state. On a 7,600-note
+	 *      Universe this is the Svelte 5 reactive cascade triggered by
+	 *      the `allNotes = ...` assignment — if it dominates, the fix is
+	 *      to chunk the assignment across `requestAnimationFrame` rather
+	 *      than attack IPC.
+	 *
+	 *   3. The remainder of wall_ms is everything else (promise micro-task
+	 *      scheduling, other JS running in between, etc.).
+	 *
+	 *  If core_wall = 22,614 ms but server_timings sum to only ~48 ms, we
+	 *  need to know whether the missing ~22,500 ms lives in transport or
+	 *  assign. The raw unix timestamps are also shipped so we can sanity-
+	 *  check clock drift between Rust and JS clocks. */
+	let cacheSnapshotCoreTransportMs = 0;
+	let cacheSnapshotCoreAssignMs = 0;
+	let cacheSnapshotCoreServerReturnUnixMs = 0;
+	let cacheSnapshotCoreClientRecvUnixMs = 0;
+	let cacheSnapshotGraphTransportMs = 0;
+	let cacheSnapshotGraphAssignMs = 0;
+	let cacheSnapshotGraphServerReturnUnixMs = 0;
+	let cacheSnapshotGraphClientRecvUnixMs = 0;
 	/** Wall-clock for the fire-and-forget chain issued right before
 	 *  `refreshLibraryCaches()`. These race into Tauri's command queue
 	 *  alongside `cache_boot_snapshot_core`; if any is slow it may starve
@@ -1990,6 +2021,19 @@
 			cache_snapshot_core_server_timings: cacheSnapshotCoreServerTimings,
 			cache_snapshot_graph_wall_ms: cacheSnapshotGraphWallMs,
 			cache_snapshot_graph_server_timings: cacheSnapshotGraphServerTimings,
+			// ── IPC-overhead attribution (2026-04-19 Criterion 2 diagnostic) ──
+			// Splits the single wall_ms bucket into transport (pure IPC) and
+			// assign (reactive cascade cost of applying payload to state).
+			// Raw unix timestamps are included so clock skew between Rust and
+			// JS can be ruled out if transport_ms looks implausible.
+			cache_snapshot_core_transport_ms: cacheSnapshotCoreTransportMs,
+			cache_snapshot_core_assign_ms: cacheSnapshotCoreAssignMs,
+			cache_snapshot_core_server_return_unix_ms: cacheSnapshotCoreServerReturnUnixMs,
+			cache_snapshot_core_client_recv_unix_ms: cacheSnapshotCoreClientRecvUnixMs,
+			cache_snapshot_graph_transport_ms: cacheSnapshotGraphTransportMs,
+			cache_snapshot_graph_assign_ms: cacheSnapshotGraphAssignMs,
+			cache_snapshot_graph_server_return_unix_ms: cacheSnapshotGraphServerReturnUnixMs,
+			cache_snapshot_graph_client_recv_unix_ms: cacheSnapshotGraphClientRecvUnixMs,
 			// Fire-and-forget chain that races alongside the core snapshot.
 			load_all_stats_wall_ms: loadAllStatsWallMs,
 			start_watching_all_wall_ms: startWatchingAllWallMs,
@@ -2037,6 +2081,7 @@
 			notes: { name: string; path: string; library_name: string }[];
 			is_cold: boolean;
 			timings_ms?: Array<[string, number]>;
+			server_return_unix_ms?: number;
 		};
 		const coreInvokeStart = performance.now();
 		try {
@@ -2044,10 +2089,20 @@
 		} catch {
 			core = { notes: [], is_cold: true };
 		}
-		cacheSnapshotCoreWallMs = Math.round(performance.now() - coreInvokeStart);
+		// Capture the instant `await invoke(...)` resolved — before any
+		// reactive work. Paired with `core.server_return_unix_ms` (captured
+		// in Rust right before `Ok(...)`), the delta is pure transport cost.
+		const coreClientRecvUnixMs = Date.now();
+		const corePostInvokePerfMs = performance.now();
+		cacheSnapshotCoreWallMs = Math.round(corePostInvokePerfMs - coreInvokeStart);
 		if (Array.isArray(core.timings_ms)) {
 			cacheSnapshotCoreServerTimings = core.timings_ms;
 		}
+		cacheSnapshotCoreServerReturnUnixMs = core.server_return_unix_ms ?? 0;
+		cacheSnapshotCoreClientRecvUnixMs = coreClientRecvUnixMs;
+		cacheSnapshotCoreTransportMs = core.server_return_unix_ms
+			? Math.max(0, coreClientRecvUnixMs - core.server_return_unix_ms)
+			: 0;
 
 		if (!core.is_cold) {
 			allNotes = core.notes.map(n => ({
@@ -2055,6 +2110,12 @@
 				path: n.path,
 				libraryName: n.library_name,
 			}));
+			// Measure how long the reactive cascade from `allNotes = ...` took.
+			// On Svelte 5, this includes re-running every `$derived` / `$effect`
+			// that reads `allNotes` (file tree, sidebar, Sight). If this number
+			// is large, the fix path is chunking via requestAnimationFrame, not
+			// attacking IPC.
+			cacheSnapshotCoreAssignMs = Math.round(performance.now() - corePostInvokePerfMs);
 
 			// Boot-perf Criterion 2: fully responsive. Reached when the
 			// core snapshot has populated the notes list — the UI can paint
@@ -2070,17 +2131,29 @@
 		// data; bumps `skyVersion` so open views re-derive off the new data.
 		const loadGraph = async (): Promise<void> => {
 			try {
-				let graph: { links: NoteLink[]; tags: Record<string, number>; timings_ms?: Array<[string, number]> };
+				let graph: {
+					links: NoteLink[];
+					tags: Record<string, number>;
+					timings_ms?: Array<[string, number]>;
+					server_return_unix_ms?: number;
+				};
 				const graphInvokeStart = performance.now();
 				try {
 					graph = await invoke('cache_boot_snapshot_graph');
 				} catch {
 					graph = { links: [], tags: {} };
 				}
-				cacheSnapshotGraphWallMs = Math.round(performance.now() - graphInvokeStart);
+				const graphClientRecvUnixMs = Date.now();
+				const graphPostInvokePerfMs = performance.now();
+				cacheSnapshotGraphWallMs = Math.round(graphPostInvokePerfMs - graphInvokeStart);
 				if (Array.isArray(graph.timings_ms)) {
 					cacheSnapshotGraphServerTimings = graph.timings_ms;
 				}
+				cacheSnapshotGraphServerReturnUnixMs = graph.server_return_unix_ms ?? 0;
+				cacheSnapshotGraphClientRecvUnixMs = graphClientRecvUnixMs;
+				cacheSnapshotGraphTransportMs = graph.server_return_unix_ms
+					? Math.max(0, graphClientRecvUnixMs - graph.server_return_unix_ms)
+					: 0;
 
 				allLibraryLinks = graph.links;
 				allLibraryTags = graph.tags;
@@ -2092,6 +2165,12 @@
 					skyLinks = gLinks;
 					skyVersion++;
 				}
+
+				// Measure how long applying the graph to reactive state took.
+				// Captured AFTER buildSkyData since that synchronously iterates
+				// the full link set on the main thread (store.ts:1504-1543) and
+				// is part of the "cost of receiving the graph payload" bucket.
+				cacheSnapshotGraphAssignMs = Math.round(performance.now() - graphPostInvokePerfMs);
 
 				// Signal: Sky View / backlinks / tag browser can now use the
 				// full graph. Components that render a degraded "Loading…"
