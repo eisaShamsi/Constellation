@@ -292,13 +292,103 @@ The fix made the queue **slightly worse**, not zero. The root-cause theory was f
 3. **If a fix regresses the metric it was supposed to improve, revert immediately** — don't stack a "tuning" commit on top. The regression is evidence the model is wrong, not that the fix needs tuning.
 4. **Keep the five-stamp diagnostic instrumentation permanently.** It is cheap (two `Date.now()` + two `SystemTime::now()`), works in release, and is the only way to distinguish queue from body from transport. Without it, a 20 s boot looks exactly like a 2 s boot followed by 18 s of mystery JS work — and you will fix the wrong thing.
 
-### Reserved for the follow-up investigation
+### Follow-up resolved — Rounds 4 → 7 (added 2026-04-19)
 
-The actual cause of `core_queue_ms ≈ 20 s` on cold boot remains open. The next investigator should (a) read Tauri v2's `invoke_handler!` macro expansion in `tauri-macros`, (b) read `tauri-runtime-wry`'s IPC receive loop and determine whether commands are drained serially or in parallel, (c) capture a full IPC timeline with **every** boot-fan-out command's five-stamp record — not just the snapshot — so we can see whether some *other* command is holding a resource the snapshot blocks on.
+The follow-up investigation closed Criterion 2 on 2026-04-19 at `hydrated_ms = 811 ms` (trial Universe, commit `8a74949`). It took four more rounds to get there. The methodology that worked — and that must be repeated rather than reinvented — is the **escalating-specificity diagnostic stack**:
 
-Do **not** propose another fix based on unvalidated theory. Read the code first, or run an experiment that can cleanly falsify the hypothesis before writing the "fix" commit.
+#### Stage 1 — Queue-time stamps (LL-021's original instrumentation)
+
+The five-stamp model correctly said "the 20 s is pre-body queue, not body, not transport." That narrowed the search to "what happens between JS `postMessage` and Rust body starting." This is table stakes for any IPC regression. Without it you are guessing.
+
+#### Stage 2 — "Broadly plausible" patch rounds (Rounds 4 and 5)
+
+Convert every sync `#[tauri::command]` in the obvious fan-out to `#[tauri::command(async)]` based on the theory "sync commands run inline on the UI thread, so they serialize." The theory is correct as a mechanism but useless as a diagnosis — *which* sync command is the blocker is still unread. Rounds 4 and 5 each converted a cluster (layout fan-out, then DashboardView fan-out) and each left `core_queue_ms` statistically unchanged.
+
+**When this pattern fires twice without moving the metric, LL-014 triggers (three-strike rule). Stop patching.**
+
+#### Stage 3 — Cheap falsifiers (adversarial investigation)
+
+Dispatch an agent with the instruction "try to falsify the UI-thread-contention theory." It will produce two or three specific hypotheses. For each, find a falsifying test that costs one line of code:
+
+- *Hypothesis*: DashboardView mount is the blocker → gate the whole subtree with `{#if false && ...}`. One edit. Measurement: `core_queue_ms` unchanged. Subtree off the critical path. Hypothesis falsified.
+- *Hypothesis*: JS itself is blocked (a microtask/promise chain is stuck, not awaiting Rust) → add a `setInterval(…, 100)` from `boot:paint` onward, record `boot_heartbeat_max_gap_ms`, freeze at `boot:hydrated`. Measurement: max gap = 112 ms during an 18,614 ms queue window. JS is fully alive. Hypothesis falsified.
+
+**Cheap falsifiers are the tool of choice the moment a third-hit LL-014 trigger happens.** They cost minutes, not hours, and they eliminate hypotheses definitively. The DashboardView gate was 14 characters. The heartbeat was one `setInterval` + max-gap tracking. Both produced irrefutable verdicts.
+
+#### Stage 4 — Rust-side IPC arrival tracer (the instrument that actually names the culprit)
+
+By elimination after Stage 3: the 18.6 s lives between JS `postMessage` and Rust `invoke_handler` dispatch. That's upstream of every `Instant::now()` we had. The instrument needed is one a per-command stamp **at the dispatcher**, independent of any edits to individual command bodies.
+
+Pattern (Constellation implementation in `src-tauri/src/perf_trace.rs` + `src-tauri/src/lib.rs`):
+
+```rust
+// perf_trace.rs
+static TRACE_LOG: Mutex<Vec<(String, u64)>> = Mutex::new(Vec::new());
+
+pub fn record(cmd: &str) {
+    let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
+    if let Ok(mut log) = TRACE_LOG.lock() { log.push((cmd.to_string(), ts)); }
+}
+
+#[tauri::command]
+pub fn get_perf_trace_log() -> Vec<(String, u64)> { TRACE_LOG.lock().map(|l| l.clone()).unwrap_or_default() }
+
+// lib.rs — wrap generate_handler!
+.invoke_handler({
+    let inner: Box<dyn Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static> =
+        Box::new(tauri::generate_handler![ /* all commands */ ]);
+    move |invoke: tauri::ipc::Invoke<tauri::Wry>| -> bool {
+        perf_trace::record(invoke.message.command());
+        inner(invoke)
+    }
+})
+```
+
+Two Tauri v2 type-system subtleties worth recording for the next implementer:
+
+1. `generate_handler!` must be bound via `Box<dyn Fn(Invoke<Wry>) -> bool + Send + Sync + 'static>` to pin the macro's `R: Runtime` generic at the binding site. Without the annotation, Rust cannot resolve R in a `let` binding and emits `E0282 cannot infer type`.
+2. `invoke.message.command()` returns `&str`; call `perf_trace::record` *before* forwarding to `inner(invoke)` (which consumes `invoke` by value).
+
+**On the first measurement after adding this, the answer fell out in one line of JSON.** Of the 20.6 s queue, the arrival log showed:
+
+| t (ms, relative) | command | what |
+|---:|:---|:---|
+| +566 | `constellation_map_universe` | first call |
+| +17,792 | `constellation_map_universe` (again) | second call, 17.2 s later |
+| +21,294 | `cache_boot_snapshot_core` | finally dispatched |
+
+The 17.2 s gap between the two map arrivals was the dispatcher blocked by the first call. The second call cost a further 3.5 s. Core was queued behind both of them for the full 20.7 s.
+
+#### Stage 5 — Named-culprit conversion (Round 7, the actual fix)
+
+One line: `#[tauri::command]` → `#[tauri::command(async)]` on `constellation_map_universe`. Rebuild. Measurement on the next boot: `core_queue_ms = 4`, `hydrated_ms = 811`. A 5,100× reduction in queue, closing Criterion 2 at 7.4× under budget.
+
+### The rule (extended — supersedes "read the runtime's source" from the original)
+
+1. **The five-stamp model is stage 1. Keep it permanently — it rules in/out queue vs. body vs. transport.**
+2. **When two consecutive patches (matching the same hypothesis) don't move the metric, stop.** LL-014 triggers. Do not patch a third time on the same theory.
+3. **Run cheap falsifiers before writing the next fix.** A single `{#if false}` gate or a `setInterval` heartbeat can eliminate a whole class of hypotheses in one build. Prefer falsification over confirmation — an experiment that *can't fail* teaches nothing.
+4. **When the queue stage is named but the cause isn't, instrument the dispatcher, not individual commands.** A per-dispatch arrival log is ~30 lines of Rust and reveals the full timeline with zero per-command edits. In Tauri v2 specifically, wrap `generate_handler!` in a Box-typed closure and stamp `invoke.message.command()`.
+5. **Keep every diagnostic instrument in the codebase permanently.** `perf_trace`, the heartbeat, and the five-stamp model are all cheap at runtime (one mutex, one interval, four timestamps per IPC). Together they transform a future boot regression from "where did the time go" into "here is the exact arrival log — go look at entry N."
+6. **Fixes that don't move the metric are still sometimes correctness-improving** (Round 5's DashboardView fan-out converts are a real improvement in UI-thread hygiene, even though they didn't close Criterion 2). Keep them; don't revert purely for performance reasons if the commit improves code shape.
+
+### What closed Criterion 2
+
+- `perf_trace` arrival tracer → instrument that named `constellation_map_universe`.
+- `#[tauri::command(async)]` on the named command → closed the queue.
+- Total code added: ~30 lines Rust, ~15 lines Svelte, one attribute change.
+
+### What the five-diagnostic stack costs to repeat on the next regression
+
+- Queue-time stamps: already permanent.
+- Cheap falsifiers: minutes each.
+- Heartbeat: already permanent.
+- Arrival tracer: already permanent.
+- Named-culprit conversion: minutes.
+
+Total: ~1 hour if the methodology is followed. ~4 sessions if it isn't.
 
 ---
 
-*Last updated: 2026-04-19 (post Round-3 revert)*
-*For: Constellation — Boot Criterion 2 investigation (open)*
+*Last updated: 2026-04-19 (Criterion 2 closed, commit `8a74949`, hydrated_ms = 811)*
+*For: Constellation — Boot Criterion 2 investigation (closed)*

@@ -589,3 +589,69 @@ The trial Universe now does a ~17-second filesystem walk for map data the user m
 - `4195c09` — Round 6: IPC arrival tracer.
 - `b0bd3eb` — session-log hash backfill.
 - `8a74949` — Round 7: `constellation_map_universe` → `#[tauri::command(async)]`.
+- `81675b0` — session-log hash backfill for Round 7.
+
+---
+
+## § 18 — Criterion 2 CLOSED (Round 7 verified)
+
+### Measurement (trial Universe, 7,595 notes, commit `8a74949`)
+
+Scorecard:
+- Criterion 1 **PASS** — `paint_ms = 658 ms` (≤ 2,500).
+- Criterion 2 **PASS** — `hydrated_ms = 811 ms` (≤ 6,000; first PASS).
+- `core_queue_ms = 4` (down from 20,693 — 5,173× reduction).
+- `core_body_ms = 49`, `core_wall_ms = 100`.
+- `graph_ready_ms = 6,898` (informational; not gated).
+- `boot_heartbeat_max_gap_ms = 111` (unchanged — JS was never the issue).
+
+Arrival log (relative to first arrival at 1776605616574):
+
+| t (ms) | command |
+|---:|---|
+| +0 | `constellation_link_decay` |
+| +1 | `list_universes` |
+| +5 | `check_migration_needed` |
+| +8 | `set_active_universe` |
+| +21 | `constellation_boot_bundle` |
+| +40 | `constellation_map_universe` (1st, async-spawned) |
+| +42 | `constellation_map_universe` (2nd, async-spawned) |
+| +75 | `cache_boot_snapshot_core` |
+| +175 | `get_perf_trace_log` |
+
+The two map calls fire 2 ms apart (both immediately handed to Tokio workers, no longer serializing the UI thread). `cache_boot_snapshot_core` arrives 33 ms after the second map call with zero queue. Arrival log surgically confirms the Round 6 hypothesis and the Round 7 fix.
+
+### What the ship-gate looks like now
+
+All ship-gates that were previously blocked are now met:
+- Criterion 1 (paint ≤ 2.5 s) — PASS.
+- Criterion 2 (fully responsive ≤ 6 s) — PASS at 811 ms, 7.4× under budget.
+- Criterion 3 (RSS ≤ 350 MB) — still "not measured"; measurement only, no code change needed.
+- Criterion 4 (post-boot stat sweep) — implementation pending; tracked separately.
+- Criterion 5 (kill-mid-index recovery) — implementation pending; tracked separately.
+
+### What's still non-optimal (acceptable, deferred)
+
+`constellation_map_universe` still does a full filesystem walk on every boot (twice — once per mount-time caller), just in parallel on Tokio workers. On trial Universe that's ~17 seconds of background IO+CPU for data the user may never ask for. Rule 8 follow-up pending — lazy-mount the overlays + persist the derived map tree. Not blocking Criterion 2, not affecting typing latency, tracked in open items.
+
+### Methodology payoff (LL-021 live)
+
+Round 4 → 7 cycle in retrospect: three patch rounds that kept the same shape (sync→async conversions on commands the developer *thought* were the blocker) all failed because the blocker was never read — only guessed. The moment we built the IPC arrival tracer (one mutex + one Vec, ~30 lines), the answer fell out in the first measurement. LL-014 ("three-strike rule") triggered correctly but didn't prescribe a direction; the direction came from LL-017 + heartbeat + arrival log. LESSONS-LEARNED update pending (§ LL-021 addendum with the full five-diagnostic methodology).
+
+### Commits (final)
+
+- `9001b01` — Experiment A+ (Round 4; correct but not the blocker).
+- `f018ad7` — Round 5 (DashboardView fan-out; same — correct but not the blocker).
+- `4195c09` — Round 6: IPC arrival tracer (diagnostic; kept in place for future cycles).
+- `b0bd3eb` — Round 6 hash backfill.
+- `8a74949` — Round 7: `constellation_map_universe` → `#[tauri::command(async)]` (the actual fix).
+- `81675b0` — Round 7 hash backfill.
+
+### Open items after Criterion 2 closure
+
+- **LESSONS-LEARNED update**: append LL-021 addendum covering the five-diagnostic methodology (queue-time stamps → heartbeat → gate diagnostic → IPC arrival tracer → named-culprit conversion).
+- **Milestone tag**: `milestone/criterion-2-closed` per CLAUDE.md backup routine.
+- **/simplify pass**: Standing Order code review.
+- **Rule 8 follow-up (upgrade, not fix)**: gate `<ConstellationMap>` and `<OrgChart fullscreen>` with `{#if}` so the filesystem walk runs only on first open; persist the derived map tree via note-save triggers.
+- **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing.
+- **M11-data v2**: §§ 107+ toward 20K-concept goal — now unblocked.
