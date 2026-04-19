@@ -1286,3 +1286,131 @@ Open follow-ups:
 - M11-cache-bench opt-in cold-vs-warm harness.
 - M11-data v2 toward 20K concepts (currently 14.8%; background agent
   idle).
+
+---
+
+## § 28 — M11-data v2: +073-food-and-drink
+
+Background worker shard committed from `claude/m11-batch-073-food-and-drink`
+while the main session is on Living Link P2 validation. One shard, 40
+concepts, held local for the main session operator to review and merge.
+
+### Topic selection
+
+Coverage gap analysis across seven candidate domains:
+
+- `food-and-drink` — ~30 staples from seed/004/028 (bread, rice, milk,
+  egg, meat, fish) but near-total absence of vegetables, fruits beyond
+  apple/banana/grape/mango/orange, pastries, prepared dishes, beverages
+  other than water/tea/coffee, spices. Large genuine gap.
+- `family-and-kinship` — 14 entries (ancestor, brother, child, daughter,
+  descendant, family, family-taxonomy, father, husband, mother, parent,
+  sister, son, wife). Missing grandfather/grandmother, uncle/aunt,
+  nephew/niece, cousin, in-laws, sibling, spouse, twin, step-*, god-*,
+  orphan, widow, widower, bride, groom. Also a strong candidate.
+- `music-concepts` (non-instruments) — 13 entries. Also very sparse, but
+  some theory terms get thin translations in non-Western languages.
+- `body-parts` — ~50 entries, densely covered; not a gap.
+- `emotions-and-feelings` — ~35 entries, densely covered; not a gap.
+- `tools-and-devices` — ~41 entries, moderate; not the biggest gap.
+- `time-concepts` — ~37 entries, moderate; not the biggest gap.
+
+Picked `food-and-drink` — largest gap, maximally testable translations
+(concrete referents, minimal polysemy across the 15 languages).
+
+### Final 40 IDs
+
+`avocado`, `beer`, `broccoli`, `cabbage`, `carrot`, `cauliflower`,
+`chili-pepper`, `chocolate`, `cinnamon`, `cocktail`, `cucumber`, `curry`,
+`dessert`, `dumpling`, `espresso`, `flour`, `garlic`, `ginger`, `jam`,
+`kebab`, `lemon`, `lentil`, `lettuce`, `mushroom`, `noodle`, `onion`,
+`pasta`, `peach`, `pineapple`, `pizza`, `pomegranate`, `potato`,
+`pudding`, `saffron`, `salad`, `sandwich`, `soup`, `strawberry`,
+`tomato`, `yogurt`.
+
+### Collisions resolved (1)
+
+- `chili` / `pepper` / `chili-pepper` — `pepper` alone is ambiguous
+  (spice vs sensory vs vegetable), `chili` could collide with the dish
+  form. `chili-pepper` is the widely-used compound that maps cleanly
+  across all 15 languages for the fruit/spice. Chosen.
+- `pomegranate` sits immediately above the existing `pomegranate-tree`
+  from +065-plants-and-trees; the fruit and the plant are distinct
+  concepts under Constellation's per-concept-per-row convention, so no
+  suffix needed on either side.
+
+No other candidate in the 40 collided with the 2,960 existing slugs
+(grep preflight confirmed — `avocado`, `beer`, `broccoli`, etc. all
+unclaimed).
+
+### Verification
+
+Insertion script performed 40 targeted splices at sorted positions;
+preserved original line endings; `LC_ALL=C sort -c` across all `c:` rows
+passed clean (3,000 rows strictly increasing). `git diff --stat`
+reported exactly `1 file changed, 40 insertions(+)` — no noise.
+
+Build check: the reviewer's `cargo build --lib --release -p
+constellation` path was blocked by a pre-existing tauri proc-macro
+panic (`frontendDist: "../build"` missing — the worktree has no built
+Svelte output), which reproduces on unmodified `main`. Bypassed by
+creating a minimal `build/index.html` stub and running the targeted
+end-to-end canary instead:
+
+```
+$ cargo test --lib --release -p constellation \
+    lexicon::bake::tests::real_lexicon_bundle_writes_reads_reconstructs
+  ...
+  test lexicon::bake::tests::real_lexicon_bundle_writes_reads_reconstructs ... ok
+  test result: ok. 1 passed; 0 failed
+```
+
+And the full lexicon subtree:
+
+```
+$ cargo test --lib --release -p constellation lexicon::
+  ...
+  test result: ok. 116 passed; 0 failed; 1 ignored
+```
+
+The `real_lexicon_bundle_writes_reads_reconstructs` canary parses
+`lexicon_v1.tsv` in full, runs `parse → build_bundle → write_bundle →
+load_bundle → LexiconGraph::from_bundle`, and asserts a production-only
+lookup. This is the strongest in-repo signal that the TSV is structurally
+valid; green here means the 40 new rows all have the correct tab count
+(17 fields) and valid UTF-8 in every language column.
+
+Arabic / CJK / RTL spot-checks on a sample:
+- `avocado` → ar `أفوكادو`, zh `牛油果,鳄梨`, ja `アボカド`, ko `아보카도` ✓;
+  he `אבוקדו` (RTL) ✓; ur `ایووکاڈو`, fa `آووکادو` (RTL) ✓.
+- `saffron` → ar `زعفران`, zh `藏红花,番红花`, ko `사프란`, hi `केसर,ज़ाफ़रान` ✓;
+  he `זעפרן,כרכום` (RTL synonym-pair) ✓.
+- `dumpling` → ar `زلابية`, zh `饺子,汤圆`, ja `ダンプリング,餃子`, ko `만두` ✓;
+  hi `पकौड़ी,मोमो` (South Asian regional), tr `hamur topu,mantı` ✓.
+- `pomegranate` → ar `رمان`, fa `انار` (RTL), ur `انار` (RTL), zh `石榴`,
+  ja `ザクロ` ✓ — distinct from the pre-existing `pomegranate-tree`
+  entry directly beneath.
+
+Multi-lemma synonym lists used where the language genuinely splits the
+concept (es: `espresso,exprés`, ko: `요구르트,요거트`, pt: `geleia,doce`).
+Single-lemma where one form dominates (ja: `カクテル`, tr: `havuç`).
+
+### Corpus progress
+
+```
+shards:             73 → 74   (+1)
+concepts:        2,960 → 3,000  (+40, +1.35%)
+```
+
+**Milestone:** corpus crosses the 3,000-concept line. Progress toward
+20K: **14.8% → 15.0%**.
+
+### Commits
+
+- `f265217` — `M11-data v2: +073-food-and-drink (40) batch`
+  (`src-tauri/src/lexicon/data/lexicon_v1.tsv` +40/-0).
+- `<next>` — this session-log entry (hash-stamped in the follow-up
+  commit).
+
+Branch `claude/m11-batch-073-food-and-drink` held local, not pushed;
+awaiting main-session operator review before merge to `main`.
