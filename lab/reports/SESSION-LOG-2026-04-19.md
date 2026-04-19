@@ -992,4 +992,4 @@ at this corpus size; assume nothing about what's taken.
 
 ### Commits
 
-- `<pending>` — `M11-data v2: +065-plants-and-trees + +066-weather-and-climate (parallel, 80 concepts)`
+- `130384e` — `M11-data v2: +065-plants-and-trees + +066-weather-and-climate (80 concepts)`
