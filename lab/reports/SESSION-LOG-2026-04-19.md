@@ -194,7 +194,7 @@ Totals: **40 concepts, 11 women, 6 eras spanning ~3,400 years**, every major wor
 - `26a5211` — M11-data v2 § 105: hash-stamp e03d6fb.
 - `ba4c0bb` — Fix stale proper_noun_not_in_corpus_falls_back test after §§ 101-105 corpus growth.
 - `304edd0` — Boot Criterion 2: IPC-overhead diagnostic instrumentation (transport + assign + raw unix timestamps in both boot snapshot commands).
-- `__HASH_106_PLACEHOLDER__` — M11-data v2 § 106: +063-historical-figures.json (40 concepts).
+- `cb60374` — M11-data v2 § 106: +063-historical-figures.json (40 concepts).
 
 ## Open items
 
