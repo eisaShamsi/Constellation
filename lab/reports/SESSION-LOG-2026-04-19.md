@@ -151,6 +151,33 @@ Frontend — `src/routes/+layout.svelte`:
 
 **Build status.** `npm run tauri build` running in background (task `ba0cg86py`). User will relaunch on trial Universe once it ships and report the new `boot-perf.latest.json` — the eight new fields will be definitive.
 
+### 8. M11-data v2 § 106 — +063-historical-figures.json (40 concepts, corpus 2,560 → 2,600)
+
+Background agent pivots the corpus sequence from geography (§§ 99-105) into named-person vocabulary — a cognitively first-class knowledge anchor that was underrepresented before now. **Why now**: the geographical-scale-hierarchy closed at § 105, and people are the other major class of concrete proper nouns users search for — no prior shard targeted historical figures as such (047-economics lists `keynes` / `smith` implicitly via concepts like `capitalism`, but no explicit person-lemma shard existed). Forty entries selected for era-geographic-gender diversity, each fully populated across all 15 supported languages.
+
+**Cluster breakdown** (40 entries, chronological):
+
+- **Ancient world (8)**: hatshepsut, sappho, hippocrates, confucius, socrates, plato, aristotle, cleopatra — Egyptian / Greek / Chinese. Three women.
+- **Classical/Imperial (6)**: julius-caesar, virgil, ashoka, hypatia, galen, augustus — Roman / Indian / Alexandrian. One woman (Hypatia).
+- **Medieval (8)**: hildegard-of-bingen, murasaki-shikibu, al-khwarizmi, ibn-sina, al-biruni, rumi, ibn-khaldun, joan-of-arc — German / Japanese / Persian / Arab / North-African / French. Three women (Hildegard, Murasaki, Joan).
+- **Early Modern (8)**: mansa-musa, leonardo-da-vinci, galileo, shakespeare, akbar, newton-person, mozart, hokusai — Malian / Italian / English / Mughal / Japanese. Zero women (the era's women are under-memorialized in loanword vocabulary; Elizabeth-I / Nur-Jahan candidates deferred for rarer surface-form coverage).
+- **19th century (4)**: ada-lovelace, darwin, lincoln, tagore — English / American / Bengali. One woman (Ada).
+- **20th century (6)**: marie-curie, einstein, gandhi, frida-kahlo, anne-frank, mandela — Polish-French / German / Indian / Mexican / Dutch-German / South-African. Three women.
+
+Totals: **40 concepts, 11 women, 6 eras spanning ~3,400 years**, every major world region represented at least once. The Islamic-Golden-Age scholarly heritage runs as a mid-medieval cluster (al-khwarizmi, ibn-sina, al-biruni, ibn-khaldun, rumi) matching the § 105 Arabic-astronomical-star-name cluster as a sibling subtheme of pan-Islamic-Abbasid-era intellectual transmission.
+
+**PoS discipline.** 40 Noun pure-PoS (**fortieth pure-Noun v2 shard**) — named-person-proper-nouns lexicalize overwhelmingly as nominal constants across every target language's historical-biographical-vocabulary.
+
+**Cross-shard collision avoidance.** **1 collision identified** against 2,560-concept corpus in pre-write scan: bare `newton` retained at `045-physics-and-energy` as the SI-unit-of-force (N = kg·m/s²). Resolved via one hyphenated-id disambiguator `newton-person` reserving bare `newton` for the unit while the person gets the disambiguated id, surface forms `Isaac Newton` + `Newton` both present as English lemmas on the person concept. Zero other collisions across all other candidates (washington retained at `057-capital-cities` as the US capital — not needed for shard since Washington-the-person was deliberately omitted from shortlist). One Urdu tashkeel fixed pre-commit (`ایڈا لووَلیس` → `ایڈا لوولیس`, strips fatha U+064E from ada-lovelace's Urdu lemma — pre-`build.py` normalizer-compatible form).
+
+**TSV growth.** 501,154 → 510,304 LF-bytes (+9,150 bytes for +40 concepts — compact byte-delta density reflecting the predominance of short transliterated proper-noun surface forms that carry near-identical phonetic forms across target languages — `Einstein` / `Mozart` / `Shakespeare` / `Darwin` / `Newton` preserved near-identically across Latin-script languages compressing delta, offset by dense multi-alternative-lemma entries for the Islamic-Golden-Age-scholars and dual-East-Asian-native-compound-form preservation for Confucius / Murasaki-Shikibu / Hokusai).
+
+**Test posture.** **429/429 cargo test --lib passing** on first invocation (lexicon filter: 116/116 green in 0.75 s). The sentinel test `search::tests_m12::proper_noun_not_in_corpus_falls_back` stays green — the shard carefully avoids `Anthropic` and `Xzyqwop` (the two sentinel strings the test currently depends on, per `ba4c0bb`'s fix).
+
+**Blast radius.** Zero Rust change, pure data addition — same shape as every prior v2 batch §§ 67-105.
+
+**Eleven-streak snapped.** The humanities-subsequence streak across §§ 95-105 ends at eleven — § 106 historical-figures continues it into a **twelfth consecutive humanities shard**, extending the longest non-STEM sub-sequence of v2 corpus to twelve. Next batches could pivot back to STEM/technical neighborhoods if the PoS-balance monitor recommends.
+
 ## Commits (updated)
 
 - `6ed93df` — Boot Criterion 2: Sky View loading indicator during deferred graph load.
@@ -167,6 +194,7 @@ Frontend — `src/routes/+layout.svelte`:
 - `26a5211` — M11-data v2 § 105: hash-stamp e03d6fb.
 - `ba4c0bb` — Fix stale proper_noun_not_in_corpus_falls_back test after §§ 101-105 corpus growth.
 - `304edd0` — Boot Criterion 2: IPC-overhead diagnostic instrumentation (transport + assign + raw unix timestamps in both boot snapshot commands).
+- `__HASH_106_PLACEHOLDER__` — M11-data v2 § 106: +063-historical-figures.json (40 concepts).
 
 ## Open items
 
