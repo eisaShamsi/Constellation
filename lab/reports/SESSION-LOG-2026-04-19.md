@@ -588,4 +588,4 @@ The trial Universe now does a ~17-second filesystem walk for map data the user m
 - `f018ad7` — Round 5: DashboardView fan-out → `(async)`.
 - `4195c09` — Round 6: IPC arrival tracer.
 - `b0bd3eb` — session-log hash backfill.
-- _(pending)_ — Round 7: `constellation_map_universe` → `#[tauri::command(async)]`.
+- `8a74949` — Round 7: `constellation_map_universe` → `#[tauri::command(async)]`.
