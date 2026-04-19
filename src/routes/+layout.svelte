@@ -492,6 +492,17 @@
 	let skyViewReturnPending = $state(false);
 	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 	let mapFocusNode = $state<any>(null); // current MapNode being viewed
+	// Rule 8 / Criterion 2 follow-up: lazy-mount the Map + OrgChart overlays.
+	// Before: both components were always mounted from boot (hidden with CSS) to preserve
+	// drill-down state. Each mount fired `constellation_map_universe` — a full filesystem
+	// walk — contributing ~17s of background work on the 7,600-note Universe even when the
+	// user never opened either panel. Now we flip these to `true` on first show and leave
+	// them mounted afterwards, so drill-down state is still preserved between opens, but
+	// the walk never happens until the user actually asks for the view.
+	let mapEverOpened = $state(false);
+	let orgChartEverOpened = $state(false);
+	$effect(() => { if (showConstellationMap) mapEverOpened = true; });
+	$effect(() => { if (showOrgChart) orgChartEverOpened = true; });
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -4130,61 +4141,73 @@
 			</div>
 		</div>
 
-		<!-- Constellation Map (always rendered, hidden with CSS to preserve drill-down state) -->
-		<div class="map-overlay" class:map-visible={showConstellationMap}>
-			<ConstellationMap
-				universeName={activeUniverseName}
-				libraryPath={get(libraries)[0]?.path ?? ''}
-				libraryName={get(libraries)[0]?.name ?? ''}
-				libraryColor={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}
-				{libraryColorMap}
-				onNoteClick={(path, name) => {
-					const lib = $libraryStats.find(l => path.startsWith(l.path));
-					if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-					showConstellationMap = false;
-					mapReturnPending = true;
-					if (secondScreenOpen) {
-						emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: mapFocusNode, parentNode: null, clickedNote: { path, name, libraryName: lib?.name ?? '', libraryPath: lib?.path ?? '' } });
-					}
-				}}
-				onDrillDown={(node, bcNames) => {
-					mapFocusNode = node;
-					if (secondScreenOpen && showConstellationMap) {
-						emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: node, parentNode: null, clickedNote: null });
-					}
-				}}
-				onColorModeChange={(mode) => {
-					mapColorMode = mode as any;
-					if (secondScreenOpen && showConstellationMap) {
-						emitMapCompanion({ active: true, colorMode: mode as any, focusNode: mapFocusNode, parentNode: null, clickedNote: null });
-					}
-				}}
-				onClose={() => {
-					showConstellationMap = false;
-					mapReturnPending = false;
-					if (secondScreenOpen) {
-						emitMapCompanion({ active: false, colorMode: mapColorMode, focusNode: null, parentNode: null, clickedNote: null });
-					}
-				}}
-			/>
-		</div>
+		<!-- Constellation Map (lazy-mounted on first open; kept mounted afterwards to preserve drill-down state).
+		     Rule 8 / Criterion 2 follow-up: ConstellationMap.onMount fires `constellation_map_universe`
+		     which walks the entire Universe filesystem. Keeping it always-mounted meant that walk ran on
+		     every boot even if the user never opened the Map. Now the overlay — and therefore the walk —
+		     is deferred until the user first clicks Map. Subsequent opens reuse the mounted instance, so
+		     drill-down state (mapFocusNode, mapColorMode) is preserved exactly as before. -->
+		{#if mapEverOpened}
+			<div class="map-overlay" class:map-visible={showConstellationMap}>
+				<ConstellationMap
+					universeName={activeUniverseName}
+					libraryPath={get(libraries)[0]?.path ?? ''}
+					libraryName={get(libraries)[0]?.name ?? ''}
+					libraryColor={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}
+					{libraryColorMap}
+					onNoteClick={(path, name) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						showConstellationMap = false;
+						mapReturnPending = true;
+						if (secondScreenOpen) {
+							emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: mapFocusNode, parentNode: null, clickedNote: { path, name, libraryName: lib?.name ?? '', libraryPath: lib?.path ?? '' } });
+						}
+					}}
+					onDrillDown={(node, bcNames) => {
+						mapFocusNode = node;
+						if (secondScreenOpen && showConstellationMap) {
+							emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: node, parentNode: null, clickedNote: null });
+						}
+					}}
+					onColorModeChange={(mode) => {
+						mapColorMode = mode as any;
+						if (secondScreenOpen && showConstellationMap) {
+							emitMapCompanion({ active: true, colorMode: mode as any, focusNode: mapFocusNode, parentNode: null, clickedNote: null });
+						}
+					}}
+					onClose={() => {
+						showConstellationMap = false;
+						mapReturnPending = false;
+						if (secondScreenOpen) {
+							emitMapCompanion({ active: false, colorMode: mapColorMode, focusNode: null, parentNode: null, clickedNote: null });
+						}
+					}}
+				/>
+			</div>
+		{/if}
 
-		<!-- OrgChart overlay -->
-		<div class="orgchart-overlay" class:orgchart-visible={showOrgChart}>
-			<OrgChart
-				universeName={activeUniverseName}
-				{libraryColorMap}
-				fullscreen={true}
-				onNoteClick={(path, name) => {
-					const lib = $libraryStats.find(l => path.startsWith(l.path));
-					if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-					showOrgChart = false;
-					sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC;
-					orgChartReturnPending = true;
-				}}
-				onClose={() => { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; orgChartReturnPending = false; }}
-			/>
-		</div>
+		<!-- OrgChart overlay (lazy-mounted on first open; kept mounted afterwards).
+		     Same reasoning as the Map overlay above: OrgChart's fullscreen `$effect` fires
+		     `constellation_map_universe` on mount, which is an expensive filesystem walk.
+		     Deferring the mount until first open eliminates that work from every boot. -->
+		{#if orgChartEverOpened}
+			<div class="orgchart-overlay" class:orgchart-visible={showOrgChart}>
+				<OrgChart
+					universeName={activeUniverseName}
+					{libraryColorMap}
+					fullscreen={true}
+					onNoteClick={(path, name) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						showOrgChart = false;
+						sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC;
+						orgChartReturnPending = true;
+					}}
+					onClose={() => { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; orgChartReturnPending = false; }}
+				/>
+			</div>
+		{/if}
 
 		<!-- Constellation Lens — standalone D3+Canvas component -->
 		<div class="lens-overlay" class:lens-visible={lensActive}>

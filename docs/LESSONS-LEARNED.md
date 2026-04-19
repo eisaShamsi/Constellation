@@ -390,5 +390,63 @@ Total: ~1 hour if the methodology is followed. ~4 sessions if it isn't.
 
 ---
 
-*Last updated: 2026-04-19 (Criterion 2 closed, commit `8a74949`, hydrated_ms = 811)*
-*For: Constellation — Boot Criterion 2 investigation (closed)*
+## LL-022: Always-Mounted UI = Always-Running IPC
+
+Even after Criterion 2 was "closed" by converting `constellation_map_universe` to
+`#[tauri::command(async)]` (Round 7), the boot `ipc_arrival_log` still showed **two**
+dispatches of that command 17 seconds apart, spending ~17 s of background CPU walking the
+Universe filesystem — for a view the user might never open that session. The async
+conversion got the work off the UI thread, so Criterion 2 passed at 811 ms — but the work
+itself was still wasted.
+
+**Root cause.** Both `<ConstellationMap>` and the fullscreen `<OrgChart>` overlays were
+always-mounted in `+layout.svelte`, hidden via CSS (`class:map-visible={showConstellationMap}`)
+instead of gated with Svelte `{#if}`. The comment on the ConstellationMap overlay explained
+the motivation — "always rendered, hidden with CSS to preserve drill-down state" — and
+that motivation was correct, but the cost was invisible until the five-stamp diagnostic
+exposed it.
+
+CSS `display: none` hides a component. It does **not** prevent its `onMount` / mount-time
+`$effect` from firing. Every always-mounted overlay whose mount performs IPC pays the IPC
+cost on every boot. Multiplied across Map, OrgChart, and whatever other panels fall into
+the same pattern, the IPC queue stays saturated even after each individual command is
+made async.
+
+**Fix.** Gate each overlay with `{#if mapEverOpened}` / `{#if orgChartEverOpened}`, where
+`*EverOpened` is a `$state(false)` flag flipped `true` by a one-line reactive effect:
+
+```typescript
+let mapEverOpened = $state(false);
+$effect(() => { if (showConstellationMap) mapEverOpened = true; });
+```
+
+First open mounts the overlay and pays the IPC cost **once, interactively, where the user
+expects it**. Subsequent opens reuse the mounted instance, so drill-down state
+(`mapFocusNode`, `mapColorMode`) survives exactly as with the CSS-hiding pattern. The
+`*EverOpened` flag is sticky — it never flips back — so the semantic "has the user ever
+opened this view in this session" is preserved across every future show/hide cycle.
+
+**Rule.** Any always-mounted component that performs IPC during `onMount` or mount-time
+`$effect` must be audited. If the IPC walks the filesystem, opens a DB, or reads anything
+larger than O(1), default to lazy-mount with the `*EverOpened` pattern. CSS-hiding is for
+components whose mount is cheap and which the user toggles frequently. Lazy-mount is for
+components whose mount is expensive and which the user may never open.
+
+**Relationship to Rule 8 (Write-Time Derivation).** Rule 8 is the deeper fix: persist the
+map tree via triggers on note save/rename, so first-open is a cheap SQLite read instead of
+a filesystem walk. Until that lands, lazy-mount is the cheap win that keeps the boot path
+clean. Once the persistent-map refactor ships, the `*EverOpened` pattern becomes
+effectively free (DB read on first open, cached afterwards) but still worth keeping — it
+also defers the D3 / PIXI component mount itself, which is non-trivial CPU in its own right.
+
+**How to find more of these.** Check the boot `ipc_arrival_log` after `paint_ms`. Any
+command that arrives unbidden — i.e., not triggered by a user gesture — and whose
+component is currently visible or always-mounted, is a lazy-mount candidate. On the 7,600-
+note Universe, the arrival log should be essentially empty after hydration; if it isn't,
+start there.
+
+---
+
+*Last updated: 2026-04-19 (Criterion 2 closed @ `8a74949`, hydrated_ms = 811; LL-022
+lazy-mount follow-up landed same session)*
+*For: Constellation — Boot Criterion 2 investigation (closed) + Rule 8 follow-up*

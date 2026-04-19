@@ -655,3 +655,100 @@ Round 4 → 7 cycle in retrospect: three patch rounds that kept the same shape (
 - **Rule 8 follow-up (upgrade, not fix)**: gate `<ConstellationMap>` and `<OrgChart fullscreen>` with `{#if}` so the filesystem walk runs only on first open; persist the derived map tree via note-save triggers.
 - **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing.
 - **M11-data v2**: §§ 107+ toward 20K-concept goal — now unblocked.
+
+## § 19 — Rule 8 follow-up: lazy-mount the Map + OrgChart overlays
+
+### Problem restated (post-Criterion-2)
+
+Criterion 2 passed at `hydrated_ms = 811` — but the boot `ipc_arrival_log` still showed
+two `constellation_map_universe` dispatches 17 seconds apart. The Round 7 `async`
+conversion routed that work off the UI thread (which is why Criterion 2 closed), but the
+work itself was pure waste: a full Universe filesystem walk for a view the user may never
+open in that session.
+
+Root cause: `<ConstellationMap>` and the fullscreen `<OrgChart>` overlays in
+`+layout.svelte` were both **always mounted**, hidden with CSS (`class:map-visible=…`,
+`class:orgchart-visible=…`) rather than `{#if}`. The original comment said "always
+rendered, hidden with CSS to preserve drill-down state" — the motivation was real (state
+in `mapFocusNode` / `mapColorMode` must survive close/reopen), but the cost was the two
+mount-time IPC calls on every boot.
+
+### Fix landed
+
+Two-part change, one file (`src/routes/+layout.svelte`), +78/-55 net:
+
+1. **State** (lines ~495-505): added `mapEverOpened` / `orgChartEverOpened` sticky flags
+   + two single-line `$effect` hooks that flip them to `true` when the respective overlay
+   is first shown. Colocated next to the existing `mapColorMode` / `mapFocusNode` state
+   so future readers see the lazy-mount machinery right alongside the drill-down state it
+   preserves.
+
+2. **Template** (lines ~4144, 4194): wrapped both overlay `<div>`s with
+   `{#if mapEverOpened}` / `{#if orgChartEverOpened}`. Kept the existing `class:*-visible`
+   toggles on the inner div so open/close animation and focus handling work unchanged.
+   Replaced the old one-line comment with a multi-line explainer pointing at the Round 7
+   async conversion and the Rule 8 write-time-derivation follow-up that will supersede
+   this lazy-mount later.
+
+Drill-down state preservation: the `*EverOpened` flag is one-way — it never flips back —
+so after the first open, the overlay stays mounted for the rest of the session. This is
+functionally identical to the old CSS-hide pattern from second open onwards. First open
+is the one that changed: it now costs one async `constellation_map_universe` dispatch,
+but it's triggered by a user gesture, routed through `tauri::async_runtime::spawn`, and
+the loading state is already handled by the component itself (`loading = true` while the
+IPC is in flight). No new "loading" UI needed.
+
+### Why this is a Rule 8 **follow-up**, not a Rule 8 **fix**
+
+Rule 8 (Write-Time Derivation): every computed view should be maintained at write time,
+not read time. The canonical fix for Map is to persist the map tree in SQLite (via
+triggers on note save / rename / delete), so even first-open is a cheap DB read instead
+of a filesystem walk. That's a larger refactor — schema, triggers, back-fill migration —
+and it's tracked separately.
+
+Lazy-mount is the cheap win: the walk still happens eventually on first open, but never
+unbidden. Combined with Round 7's async routing, the UX is: zero boot-path impact, then
+a brief interactive loading state on first click. Acceptable until the persistent-map
+refactor ships.
+
+### Verification
+
+- **Build**: `npm run tauri build` — **2m 13s release compile**, exit 0 code / exit 1 only
+  from `TAURI_SIGNING_PRIVATE_KEY` housekeeping (unrelated, pre-existing open item). Both
+  bundles produced: `Constellation_0.3.4_x64_en-US.msi` + `Constellation_0.3.4_x64-setup.exe`.
+- **svelte-check**: zero new errors; the 53 errors listed are all pre-existing in files I
+  didn't touch (NoteEditor, ConstellationMap type-refs, OrgChart null-check, etc.).
+- **Grep audit**: confirmed `showConstellationMap` initializes `false` (line 334),
+  `showOrgChart` initializes `false` (line 387), all setters come from user-gesture
+  handlers (dock buttons, command palette, return-pill). No boot-time `show* = true`
+  path, so `*EverOpened` stays `false` through boot as intended.
+- **Second `<OrgChart>` instance in sidebar** (line 3726): uses `embedded={true}` not
+  `fullscreen={true}`, and is already conditionally mounted inside
+  `{:else if sidebarMode === 'skyview'}`. The IPC walk in `OrgChart.svelte:735` is gated
+  on `fullscreen && !mapRoot && !loading` — the embedded instance never triggers it. Safe.
+- **SecondScreenPage** also imports `ConstellationMap`, but that's a separate window
+  that only mounts when the user opens the second screen — not on main-window boot. Safe.
+
+### Documentation landed
+
+- `docs/LESSONS-LEARNED.md` — LL-022 added: "Always-Mounted UI = Always-Running IPC",
+  codifying the CSS-hide-vs-{#if} distinction, the `*EverOpened` sticky-flag pattern,
+  and the rule: any always-mounted component whose mount performs IPC larger than O(1)
+  must be audited. Points at Rule 8 as the deeper follow-up.
+
+### Expected behavioural measurement (next boot on trial Universe)
+
+- `hydrated_ms`: still ~811 ms (no change expected — Criterion 2 was already passing).
+- `ipc_arrival_log`: `constellation_map_universe` entries **should vanish entirely** from
+  the boot log (they were the last unbidden commands). If not, there's another caller
+  and further investigation is warranted.
+- First click on "Map" button: one `constellation_map_universe` dispatch, ~17 s for the
+  walk on 7,600 notes, overlay shows loading state until it resolves. Subsequent Map
+  opens in the same session: instant (mounted instance re-shown).
+- Same pattern for OrgChart fullscreen.
+
+### Commits
+
+- `<pending commit>` — `Boot Criterion 2 Rule 8 follow-up: lazy-mount Map + OrgChart overlays`
+  (`src/routes/+layout.svelte` +78/-55, `docs/LESSONS-LEARNED.md` +LL-022,
+  `lab/reports/SESSION-LOG-2026-04-19.md` +§ 19).
