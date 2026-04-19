@@ -919,3 +919,77 @@ All 15 per-language coverage percentages remain healthy (115-137%). Progress tow
   `src-tauri/src/lexicon/data/lexicon_v1.tsv` regenerated,
   `lab/reports/SESSION-LOG-2026-04-19.md` +§ 22; pushed to
   `claude/upbeat-proskuriakova`).
+
+## § 23-24 — M11-data v2: +065-plants-and-trees + +066-weather-and-climate batches (parallel)
+
+### Strategy
+
+To speed up corpus growth, launched two authoring agents in parallel for the next two
+thematic shards. Both had explicit upfront instruction to verify every ID against
+existing shards before writing (lesson from § 22 where 37/40 collided on first draft).
+Both had the same Arabic-mandatory + 15-language-target + native-script hard rules.
+
+### § 23 — 065-plants-and-trees
+
+40 concepts. First-pass target list had heavy collision with the pre-existing
+`032-plants-and-botany.json` (25+ IDs like oak, pine, maple, birch, willow, cedar,
+cypress, elm, tulip, lily, daisy, sunflower, orchid, jasmine, lotus, violet, cactus,
+moss, fern, ivy) and `002-nature.json` (rose, apple, olive, flower, leaf, seed, root,
+branch, forest, garden). Agent substituted from the fallback list and shipped 40 novel
+IDs focusing on less-common flowering plants, regional trees, and herb garden species:
+
+iris, poppy, lavender, hibiscus, marigold, chrysanthemum, daffodil, peony, carnation,
+lilac, hydrangea, honeysuckle, magnolia, gardenia, wisteria, dandelion, clover, thistle,
+reed, grass, bamboo, mulberry, eucalyptus, baobab, redwood, sycamore, poplar, chestnut,
+beech, juniper, acacia, pomegranate-tree, almond-tree, mint, basil, sage, thyme,
+rosemary, chamomile, aloe.
+
+15/15 language coverage every row. Arabic correct on spot-check (السوسن for iris,
+الخشخاش for poppy, الخزامى for lavender, الكركديه for hibiscus, القطيفة for marigold).
+
+### § 24 — 066-weather-and-climate
+
+40 concepts. First-pass target list collided heavily with the pre-existing
+`024-meteorology-and-disasters.json` and `041-weather-and-climate-expanded.json` plus
+some intersection with `002`, `021`, `036`, `045`. The `temperature` candidate collided
+late (with `010-science-and-math.json`) — agent substituted `tempest`. Agent pivoted to
+less-common meteorology terms: regional winds, compound forms, specialist phenomena:
+
+tempest, thunderstorm, snowfall, rainfall, hailstorm, snowdrift, icicle, raindrop,
+snowflake, cloudburst, windstorm, windchill, windshear, whirlwind, sandstorm, duststorm,
+firestorm, snowstorm, thundercloud, overcast, zephyr, mistral, sirocco, khamsin, shamal,
+chinook, foehn, haboob, nor-easter, trade-wind, halo, moonlight, mirage, climatology,
+meteorology, permafrost, iceberg, wet-season, dry-season, cold-front.
+
+15/15 language coverage every row. Arabic correct on spot-check (زوبعة عاتية for tempest,
+عاصفة رعدية for thunderstorm, تساقط الثلوج for snowfall, تساقط الأمطار for rainfall, عاصفة
+البرد for hailstorm).
+
+### Corpus growth (combined)
+
+```
+shards:             65 → 67  (+2)
+concepts:         2,640 → 2,720  (+80, +3%)
+total lemma strings: 50,427 → 51,681  (+1,254, 15.7 lemmas/concept avg)
+```
+
+Progress toward 20K goal: **13.6%** (2,720/20,000).
+
+### Verification
+
+- `python build.py`: zero errors, zero warnings, shards=67, concepts=2720.
+- Both shards verified against all 66 prior shards for ID uniqueness before write.
+- Per-language coverage: 100% across all 15 languages for both shards (every concept
+  has every language populated).
+- TSV regenerated — djb2 hash flips, next app boot refreshes cache bundle.
+
+### Discovery — earlier-than-expected shards
+
+The collision search surfaced two shards my earlier grep missed: `032-plants-and-botany`
+and `041-weather-and-climate-expanded`. Both had been landed in a prior session. This
+reinforces LL-014's three-strike rule equivalent here: **always grep before authoring**
+at this corpus size; assume nothing about what's taken.
+
+### Commits
+
+- `<pending>` — `M11-data v2: +065-plants-and-trees + +066-weather-and-climate (parallel, 80 concepts)`
