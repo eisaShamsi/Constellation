@@ -147,8 +147,30 @@ pub struct BootSnapshotGraph {
 /// On a 7,600-note Universe this query returns in low-millis because
 /// `note_meta` is indexed and the row projection is three narrow `TEXT`
 /// columns.
+///
+/// ## Why `async fn` + `spawn_blocking`
+///
+/// Round 2 IPC diagnostic (2026-04-19) measured `queue_ms = 17,224` with
+/// `body_ms = 72` — 99 % of wall time was spent between JS issuing the
+/// invoke and the Rust command body's first line executing. That's the
+/// Tauri async-runtime worker pool: sync commands block a worker thread
+/// for the duration of the call, and on a 4-worker runtime with the
+/// fire-and-forget boot fan-out racing alongside, the core snapshot waits
+/// ~17 s for a worker. Wrapping the body in `tauri::async_runtime::spawn_blocking`
+/// moves the SQLite work onto the dedicated blocking pool (512 default
+/// threads) and frees the async runtime to dispatch other commands
+/// immediately. See `lab/boot-perf/BOOT-BUDGET.md` Criterion 2.
 #[tauri::command]
-pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> {
+pub async fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> {
+    tauri::async_runtime::spawn_blocking(move || cache_boot_snapshot_core_impl(app))
+        .await
+        .map_err(|e| format!("spawn_blocking failed: {}", e))?
+}
+
+/// Sync implementation. Called from the async command wrapper (on the
+/// blocking pool) and directly from the legacy `cache_boot_snapshot`
+/// shim (off the critical path).
+fn cache_boot_snapshot_core_impl(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> {
     // Stamp command-body entry FIRST — before any work. Paired with a JS-side
     // `Date.now()` captured immediately before `invoke()`, the delta is pure
     // Tauri-dispatcher queue time. See `BootSnapshotCore::server_start_unix_ms`.
@@ -208,8 +230,16 @@ pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCor
 /// Reads the typed-link `note_links` table when populated (current indexer)
 /// and falls back to the legacy `outgoing_links_json` blob in `note_meta`
 /// for indices built before typed links existed.
+///
+/// See `cache_boot_snapshot_core` for why this is `async fn` + `spawn_blocking`.
 #[tauri::command]
-pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGraph, String> {
+pub async fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGraph, String> {
+    tauri::async_runtime::spawn_blocking(move || cache_boot_snapshot_graph_impl(app))
+        .await
+        .map_err(|e| format!("spawn_blocking failed: {}", e))?
+}
+
+fn cache_boot_snapshot_graph_impl(app: tauri::AppHandle) -> Result<BootSnapshotGraph, String> {
     // Stamp command-body entry FIRST. See `cache_boot_snapshot_core` for
     // rationale — this is the queue-time diagnostic.
     let server_start_unix_ms = SystemTime::now()
@@ -276,14 +306,15 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
 /// original single-response shape. Kept so ambient callers (second screen,
 /// tests, any external invocation) keep working; no longer on the boot
 /// critical path.
+///
+/// Calls the sync `*_impl` helpers directly rather than the async commands
+/// so we don't need to be async ourselves. The shim is off the boot
+/// critical path (invoked by ambient callers only), so running the two
+/// phases sequentially on the caller's worker thread is fine.
 #[tauri::command]
 pub fn cache_boot_snapshot(app: tauri::AppHandle) -> Result<BootSnapshot, String> {
-    // Shim: the per-phase timings produced by the split commands are not
-    // included in the merged shape. Ambient callers (second screen, tests)
-    // don't consume them; only the boot-perf scorecard does, and the boot
-    // path no longer goes through this shim.
-    let core = cache_boot_snapshot_core(app.clone())?;
-    let graph = cache_boot_snapshot_graph(app)?;
+    let core = cache_boot_snapshot_core_impl(app.clone())?;
+    let graph = cache_boot_snapshot_graph_impl(app)?;
     Ok(BootSnapshot {
         notes: core.notes,
         links: graph.links,
