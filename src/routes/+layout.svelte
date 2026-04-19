@@ -1984,6 +1984,19 @@
 	let cacheSnapshotGraphAssignMs = 0;
 	let cacheSnapshotGraphServerReturnUnixMs = 0;
 	let cacheSnapshotGraphClientRecvUnixMs = 0;
+	/** Round 2 of IPC-overhead diagnostic (2026-04-19). Adds queue-time
+	 *  attribution — the time between JS issuing `invoke(...)` and the
+	 *  Rust command body actually starting execution. If `queue_ms`
+	 *  dominates `wall_ms`, the bottleneck is Tauri's dispatcher or the
+	 *  blocking-pool scheduler, not any work we do inside the command. */
+	let cacheSnapshotCoreInvokeStartUnixMs = 0;
+	let cacheSnapshotCoreServerStartUnixMs = 0;
+	let cacheSnapshotCoreQueueMs = 0;
+	let cacheSnapshotCoreBodyMs = 0;
+	let cacheSnapshotGraphInvokeStartUnixMs = 0;
+	let cacheSnapshotGraphServerStartUnixMs = 0;
+	let cacheSnapshotGraphQueueMs = 0;
+	let cacheSnapshotGraphBodyMs = 0;
 	/** Wall-clock for the fire-and-forget chain issued right before
 	 *  `refreshLibraryCaches()`. These race into Tauri's command queue
 	 *  alongside `cache_boot_snapshot_core`; if any is slow it may starve
@@ -2034,6 +2047,20 @@
 			cache_snapshot_graph_assign_ms: cacheSnapshotGraphAssignMs,
 			cache_snapshot_graph_server_return_unix_ms: cacheSnapshotGraphServerReturnUnixMs,
 			cache_snapshot_graph_client_recv_unix_ms: cacheSnapshotGraphClientRecvUnixMs,
+			// ── Round 2: queue-time diagnostic (2026-04-19) ──
+			// If queue_ms dominates wall_ms but body_ms is small, the
+			// bottleneck is Tauri's dispatcher / blocking-pool scheduler,
+			// NOT anything in the SQL or IPC codepath. body_ms =
+			// server_return_unix_ms - server_start_unix_ms (pure in-Rust
+			// execution); queue_ms = server_start_unix_ms - invoke_start_unix_ms.
+			cache_snapshot_core_invoke_start_unix_ms: cacheSnapshotCoreInvokeStartUnixMs,
+			cache_snapshot_core_server_start_unix_ms: cacheSnapshotCoreServerStartUnixMs,
+			cache_snapshot_core_queue_ms: cacheSnapshotCoreQueueMs,
+			cache_snapshot_core_body_ms: cacheSnapshotCoreBodyMs,
+			cache_snapshot_graph_invoke_start_unix_ms: cacheSnapshotGraphInvokeStartUnixMs,
+			cache_snapshot_graph_server_start_unix_ms: cacheSnapshotGraphServerStartUnixMs,
+			cache_snapshot_graph_queue_ms: cacheSnapshotGraphQueueMs,
+			cache_snapshot_graph_body_ms: cacheSnapshotGraphBodyMs,
 			// Fire-and-forget chain that races alongside the core snapshot.
 			load_all_stats_wall_ms: loadAllStatsWallMs,
 			start_watching_all_wall_ms: startWatchingAllWallMs,
@@ -2082,8 +2109,15 @@
 			is_cold: boolean;
 			timings_ms?: Array<[string, number]>;
 			server_return_unix_ms?: number;
+			server_start_unix_ms?: number;
 		};
 		const coreInvokeStart = performance.now();
+		// Round 2 (2026-04-19) — capture the wall-clock instant the invoke
+		// was issued. Paired with Rust `server_start_unix_ms` (stamped at
+		// the first line of the command body), the delta is pure dispatcher
+		// queue time. If queue_ms is huge but body_ms is small, Tauri's
+		// blocking-pool scheduler is where the 22.9 s disappears.
+		const coreInvokeStartUnixMs = Date.now();
 		try {
 			core = await invoke('cache_boot_snapshot_core');
 		} catch {
@@ -2102,6 +2136,15 @@
 		cacheSnapshotCoreClientRecvUnixMs = coreClientRecvUnixMs;
 		cacheSnapshotCoreTransportMs = core.server_return_unix_ms
 			? Math.max(0, coreClientRecvUnixMs - core.server_return_unix_ms)
+			: 0;
+		// Round-2 queue + body attribution.
+		cacheSnapshotCoreInvokeStartUnixMs = coreInvokeStartUnixMs;
+		cacheSnapshotCoreServerStartUnixMs = core.server_start_unix_ms ?? 0;
+		cacheSnapshotCoreQueueMs = core.server_start_unix_ms
+			? Math.max(0, core.server_start_unix_ms - coreInvokeStartUnixMs)
+			: 0;
+		cacheSnapshotCoreBodyMs = core.server_start_unix_ms && core.server_return_unix_ms
+			? Math.max(0, core.server_return_unix_ms - core.server_start_unix_ms)
 			: 0;
 
 		if (!core.is_cold) {
@@ -2136,8 +2179,10 @@
 					tags: Record<string, number>;
 					timings_ms?: Array<[string, number]>;
 					server_return_unix_ms?: number;
+					server_start_unix_ms?: number;
 				};
 				const graphInvokeStart = performance.now();
+				const graphInvokeStartUnixMs = Date.now();
 				try {
 					graph = await invoke('cache_boot_snapshot_graph');
 				} catch {
@@ -2153,6 +2198,15 @@
 				cacheSnapshotGraphClientRecvUnixMs = graphClientRecvUnixMs;
 				cacheSnapshotGraphTransportMs = graph.server_return_unix_ms
 					? Math.max(0, graphClientRecvUnixMs - graph.server_return_unix_ms)
+					: 0;
+				// Round-2 queue + body attribution (see core phase above).
+				cacheSnapshotGraphInvokeStartUnixMs = graphInvokeStartUnixMs;
+				cacheSnapshotGraphServerStartUnixMs = graph.server_start_unix_ms ?? 0;
+				cacheSnapshotGraphQueueMs = graph.server_start_unix_ms
+					? Math.max(0, graph.server_start_unix_ms - graphInvokeStartUnixMs)
+					: 0;
+				cacheSnapshotGraphBodyMs = graph.server_start_unix_ms && graph.server_return_unix_ms
+					? Math.max(0, graph.server_return_unix_ms - graph.server_start_unix_ms)
 					: 0;
 
 				allLibraryLinks = graph.links;

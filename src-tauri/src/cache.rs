@@ -108,6 +108,15 @@ pub struct BootSnapshotCore {
     /// the JS caller does with the payload afterwards. Diagnostic tool
     /// for the Criterion 2 22.5s mystery (boot-perf 2026-04-19).
     pub server_return_unix_ms: u128,
+    /// Server-side `SystemTime::now()` at the VERY FIRST line of the command
+    /// body — before any work. Paired with a JS-side `Date.now()` captured
+    /// immediately before `invoke()`, the delta is pure dispatcher-queue
+    /// time (how long Tauri held the request before starting execution).
+    /// If `queue_ms` is large but `body_ms` (server_return - server_start)
+    /// is small, the bottleneck is the blocking-pool scheduler, not the
+    /// SQLite work. Second round of IPC-overhead instrumentation
+    /// (boot-perf 2026-04-19).
+    pub server_start_unix_ms: u128,
 }
 
 /// Heavy boot payload — the typed-link edge list plus aggregated tag counts.
@@ -125,6 +134,9 @@ pub struct BootSnapshotGraph {
     /// Server-side Unix-epoch millisecond timestamp at struct construction.
     /// See `BootSnapshotCore::server_return_unix_ms` — same diagnostic use.
     pub server_return_unix_ms: u128,
+    /// Server-side Unix-epoch millisecond timestamp at command-body entry.
+    /// See `BootSnapshotCore::server_start_unix_ms` — same diagnostic use.
+    pub server_start_unix_ms: u128,
 }
 
 /// Fast boot payload — just the notes list and a cold-cache flag. The
@@ -137,6 +149,14 @@ pub struct BootSnapshotGraph {
 /// columns.
 #[tauri::command]
 pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> {
+    // Stamp command-body entry FIRST — before any work. Paired with a JS-side
+    // `Date.now()` captured immediately before `invoke()`, the delta is pure
+    // Tauri-dispatcher queue time. See `BootSnapshotCore::server_start_unix_ms`.
+    let server_start_unix_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+
     let mut timings: Vec<(String, u64)> = Vec::new();
 
     // Phase 1: schema bootstrap (no-op on existing DB).
@@ -160,6 +180,7 @@ pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCor
                 is_cold: true,
                 timings_ms: timings,
                 server_return_unix_ms,
+                server_start_unix_ms,
             });
         }
     };
@@ -178,7 +199,7 @@ pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCor
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis())
         .unwrap_or(0);
-    Ok(BootSnapshotCore { notes, is_cold, timings_ms: timings, server_return_unix_ms })
+    Ok(BootSnapshotCore { notes, is_cold, timings_ms: timings, server_return_unix_ms, server_start_unix_ms })
 }
 
 /// Heavy boot payload — link edges + tag counts. Deferred to
@@ -189,6 +210,13 @@ pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCor
 /// for indices built before typed links existed.
 #[tauri::command]
 pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGraph, String> {
+    // Stamp command-body entry FIRST. See `cache_boot_snapshot_core` for
+    // rationale — this is the queue-time diagnostic.
+    let server_start_unix_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+
     let mut timings: Vec<(String, u64)> = Vec::new();
 
     let t0 = Instant::now();
@@ -209,6 +237,7 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
                 tags: HashMap::new(),
                 timings_ms: timings,
                 server_return_unix_ms,
+                server_start_unix_ms,
             });
         }
     };
@@ -240,7 +269,7 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis())
         .unwrap_or(0);
-    Ok(BootSnapshotGraph { links, tags, timings_ms: timings, server_return_unix_ms })
+    Ok(BootSnapshotGraph { links, tags, timings_ms: timings, server_return_unix_ms, server_start_unix_ms })
 }
 
 /// Back-compat shim — merges `cache_boot_snapshot_core` + `_graph` into the

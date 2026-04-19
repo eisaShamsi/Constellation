@@ -193,8 +193,49 @@ Totals: **40 concepts, 11 women, 6 eras spanning ~3,400 years**, every major wor
 - `e03d6fb` — M11-data v2 § 105: +062-planets-and-celestial-bodies.json (40 concepts).
 - `26a5211` — M11-data v2 § 105: hash-stamp e03d6fb.
 - `ba4c0bb` — Fix stale proper_noun_not_in_corpus_falls_back test after §§ 101-105 corpus growth.
-- `304edd0` — Boot Criterion 2: IPC-overhead diagnostic instrumentation (transport + assign + raw unix timestamps in both boot snapshot commands).
+- `304edd0` — Boot Criterion 2: IPC-overhead diagnostic Round 1 (transport + assign + raw unix timestamps in both boot snapshot commands).
 - `cb60374` — M11-data v2 § 106: +063-historical-figures.json (40 concepts).
+- `281f23f` — M11-data v2 § 106: hash-stamp cb60374.
+
+## § 9 — Criterion 2 diagnostic Round 2 (queue-time attribution)
+
+**Round 1 measurement came back unattributed.** First instrumentation shipped `transport_ms`, `assign_ms`, and raw Unix timestamps. Measurement on the trial Universe:
+
+| field | value |
+|:---|---:|
+| `cache_snapshot_core_wall_ms` | 23,103 ms |
+| `cache_snapshot_core_server_timings` sum | 170 ms |
+| `cache_snapshot_core_transport_ms` | 19 ms |
+| `cache_snapshot_core_assign_ms` | 0 ms |
+| **unaccounted** | **22,914 ms** |
+
+Transport and assign are both tiny — the 22.9 s lives **between JS issuing `invoke(...)` and the Rust command body starting execution**. The first-round `Instant::now()` at the command body's first line can only measure in-body elapsed, not pre-body queue time.
+
+**Round 2 adds `server_start_unix_ms`.** Stamped on the VERY FIRST line of each command body (before `ensure_search_db_ready`, before `open_reader`, before any work). Paired with a JS-side `invoke_start_unix_ms = Date.now()` captured immediately before `invoke()`, the delta is pure dispatcher-queue time.
+
+Four new fields per snapshot phase (landed in `src-tauri/src/cache.rs` + `src/routes/+layout.svelte`):
+
+- `cache_snapshot_{core|graph}_invoke_start_unix_ms` — JS side, before invoke.
+- `cache_snapshot_{core|graph}_server_start_unix_ms` — Rust side, first line of body.
+- `cache_snapshot_{core|graph}_queue_ms = server_start - invoke_start`.
+- `cache_snapshot_{core|graph}_body_ms = server_return - server_start` (pure in-Rust execution).
+
+Sanity: `queue_ms + body_ms + transport_ms ≈ wall_ms` should hold within ±clock-skew noise. Decision matrix once measurement lands:
+
+| `queue_ms` | `body_ms` | interpretation |
+|:---|:---|:---|
+| ~22.9 s | ~170 ms | Tauri dispatcher / blocking-pool scheduler is the bottleneck. Fix path: convert `cache_boot_snapshot_core` to `async fn` (moves off blocking pool) OR inspect what's holding it. |
+| ~170 ms | ~22.9 s | Rust body actually slow — re-check SQLite; `ensure_search_db_ready` on Mutex contention; connection-open thrash. |
+| both small | small | JS-side main-thread stall between `performance.now()` and actual send. Unlikely but possible if Svelte 5 microtasks starve. |
+
+**Related observation (Sky View "pulse" report).** User opened Sky View after boot and reported "it's like a pulse — slow refresh rate." Continuous main-thread blocking post-boot is consistent with ongoing Rust runtime saturation extending past hydration — same root cause may explain both. Not a standalone issue to chase until the queue attribution lands.
+
+**Build in progress**: `bx13it9um` for new measurement. User will relaunch on trial Universe.
+
+## Commits (updated)
+
+- `304edd0` — Boot Criterion 2: IPC-overhead diagnostic Round 1.
+- `cb60374` + `281f23f` — M11-data v2 § 106.
 
 ## Open items
 
