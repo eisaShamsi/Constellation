@@ -1,6 +1,6 @@
 # Constellation User Manual
 
-**Version 0.3.4 | March 2026**
+**Version 0.1.0 | March 2026**
 
 Constellation is a Personal Knowledge Formulation desktop application. Not a file manager — a thinking instrument. Built with Tauri v2, SvelteKit, and Rust, it runs natively on Windows, macOS, and Linux with full multilingual support (15 languages, RTL-native).
 
@@ -896,6 +896,20 @@ A per-Universe panel where you pin how the Arabic engine analyses specific surfa
 - Check for updates
 - GitHub token for private repo updates
 
+### Debug
+
+Read-only diagnostic view for power users and developers. The **Boot Performance** scorecard reads `<universe>/.constellation/boot-perf.latest.json` — written on every launch — and evaluates it against the five ship-gate criteria defined in `lab/boot-perf/BOOT-BUDGET.md`:
+
+1. **UI visible** (≤ 2.5s) — sidebar painted, last-open note skeleton on screen.
+2. **Fully responsive** (≤ 6s) — typing instant, toolbar clicks open panes, search returns results.
+3. **Idle RSS memory** (≤ 350 MB) — 30 seconds after Criterion 2, no input, no notes open.
+4. **Post-boot stat sweep** — 50 externally-modified files detected in ≤ 3s, non-blocking.
+5. **Kill mid-index recovery** — force-killing during initial index rebuild resumes cleanly.
+
+Each row shows the target, the measured value, and a PASS/FAIL/Not-measured pill. Two collapsible panels below the scorecard show the full per-phase breakdown (graph-ready, core snapshot wall/queue/body/transport, graph snapshot, and the fire-and-forget fan-out) plus the raw JSON.
+
+The scorecard is read-only; to refresh it, close Constellation and relaunch, then re-open the panel (or press the **Refresh** button).
+
 ---
 
 ## 17. Keyboard Shortcuts
@@ -1399,5 +1413,5 @@ Folder structures impose a single hierarchy, but knowledge does not fit one tree
 
 ---
 
-*Constellation User Manual — Version 0.3.4 — March 2026*
+*Constellation User Manual — Version 0.1.0 — March 2026*
 *uconstellation.world*
