@@ -492,13 +492,8 @@
 	let skyViewReturnPending = $state(false);
 	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 	let mapFocusNode = $state<any>(null); // current MapNode being viewed
-	// Rule 8 / Criterion 2 follow-up: lazy-mount the Map + OrgChart overlays.
-	// Before: both components were always mounted from boot (hidden with CSS) to preserve
-	// drill-down state. Each mount fired `constellation_map_universe` — a full filesystem
-	// walk — contributing ~17s of background work on the 7,600-note Universe even when the
-	// user never opened either panel. Now we flip these to `true` on first show and leave
-	// them mounted afterwards, so drill-down state is still preserved between opens, but
-	// the walk never happens until the user actually asks for the view.
+	// Sticky lazy-mount flags — stay true after first open so drill-down state survives
+	// close/reopen, reset on Universe switch. See LL-022.
 	let mapEverOpened = $state(false);
 	let orgChartEverOpened = $state(false);
 	$effect(() => { if (showConstellationMap) mapEverOpened = true; });
@@ -1682,6 +1677,13 @@
 		editingTabIds.set(new Set());
 		libraryAppearances.set({});
 		bookmarks.set([]);
+
+		// Force Map + OrgChart to re-mount on next open for the new Universe.
+		// Their IPC (constellation_map_universe) fires only from onMount, so without
+		// this reset the user would see stale data from the prior Universe.
+		mapEverOpened = false;
+		orgChartEverOpened = false;
+		mapFocusNode = null;
 
 		// Reset cache guard so refreshLibraryCaches can run for the new universe
 		cacheRefreshing = false;
@@ -4141,12 +4143,7 @@
 			</div>
 		</div>
 
-		<!-- Constellation Map (lazy-mounted on first open; kept mounted afterwards to preserve drill-down state).
-		     Rule 8 / Criterion 2 follow-up: ConstellationMap.onMount fires `constellation_map_universe`
-		     which walks the entire Universe filesystem. Keeping it always-mounted meant that walk ran on
-		     every boot even if the user never opened the Map. Now the overlay — and therefore the walk —
-		     is deferred until the user first clicks Map. Subsequent opens reuse the mounted instance, so
-		     drill-down state (mapFocusNode, mapColorMode) is preserved exactly as before. -->
+		<!-- Constellation Map — lazy-mounted (LL-022). -->
 		{#if mapEverOpened}
 			<div class="map-overlay" class:map-visible={showConstellationMap}>
 				<ConstellationMap
@@ -4187,10 +4184,7 @@
 			</div>
 		{/if}
 
-		<!-- OrgChart overlay (lazy-mounted on first open; kept mounted afterwards).
-		     Same reasoning as the Map overlay above: OrgChart's fullscreen `$effect` fires
-		     `constellation_map_universe` on mount, which is an expensive filesystem walk.
-		     Deferring the mount until first open eliminates that work from every boot. -->
+		<!-- OrgChart overlay — lazy-mounted (LL-022). -->
 		{#if orgChartEverOpened}
 			<div class="orgchart-overlay" class:orgchart-visible={showOrgChart}>
 				<OrgChart

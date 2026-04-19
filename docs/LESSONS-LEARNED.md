@@ -423,8 +423,15 @@ $effect(() => { if (showConstellationMap) mapEverOpened = true; });
 First open mounts the overlay and pays the IPC cost **once, interactively, where the user
 expects it**. Subsequent opens reuse the mounted instance, so drill-down state
 (`mapFocusNode`, `mapColorMode`) survives exactly as with the CSS-hiding pattern. The
-`*EverOpened` flag is sticky — it never flips back — so the semantic "has the user ever
-opened this view in this session" is preserved across every future show/hide cycle.
+`*EverOpened` flag is sticky within a Universe session — it never flips back on close —
+so "has the user ever opened this view" is preserved across every show/hide cycle.
+
+**Reset on context switch.** If the component's IPC only fires from `onMount` (common)
+and the context changes (Universe switch, account switch, vault switch), the flag must
+be reset, otherwise the user sees stale data from the prior context. In Constellation,
+`handleUniverseSwitch` resets `mapEverOpened` / `orgChartEverOpened` alongside the other
+in-memory state clears, so the next Map/OrgChart open re-mounts and re-fetches for the
+new Universe. Any future overlay using this pattern must do the same.
 
 **Rule.** Any always-mounted component that performs IPC during `onMount` or mount-time
 `$effect` must be audited. If the IPC walks the filesystem, opens a DB, or reads anything

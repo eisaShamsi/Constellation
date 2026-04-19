@@ -753,3 +753,61 @@ refactor ships.
   (`src/routes/+layout.svelte` +78/-55, `docs/LESSONS-LEARNED.md` +LL-022,
   `lab/reports/SESSION-LOG-2026-04-19.md` +§ 19; pushed to
   `claude/upbeat-proskuriakova`).
+
+## § 20 — /simplify pass on cc1bf65
+
+Ran three review agents (reuse / quality / efficiency) in parallel. Two actionable
+findings, both from the quality agent; efficiency clean, reuse clean (pattern is novel —
+extract `$lib/utils/lazyMount.ts` at the third caller, not now).
+
+### Finding 1: Over-commenting in the diff
+
+The 7-line inline-script comment block (lines 495-501 in the original diff) and the two
+multi-line HTML comment blocks above each `{#if}` guard narrated history and motivation
+three times over. LL-022 + commit message already hold the full rationale. Trimmed:
+
+- Script comment collapsed to two lines: "Sticky lazy-mount flags — stay true after first
+  open so drill-down state survives close/reopen, reset on Universe switch. See LL-022."
+- Both HTML comments reduced to one line each: `<!-- Constellation Map — lazy-mounted
+  (LL-022). -->` and `<!-- OrgChart overlay — lazy-mounted (LL-022). -->`.
+
+Rationale: link to the lesson once, don't duplicate the rationale at every reader site.
+
+### Finding 2: Stale data after Universe switch (real bug)
+
+Both `ConstellationMap.svelte:378` and `OrgChart.svelte:432-735` fire
+`constellation_map_universe` only from `onMount` / mount-time `$effect` — neither reacts
+to `universeName` prop changes. So if the user switches Universes mid-session, the
+already-mounted overlay keeps stale data from the prior Universe.
+
+This pre-existed under the CSS-hide pattern (same root cause), but the fix is cheap and
+natural now: reset the sticky flags inside `handleUniverseSwitch`, alongside the other
+in-memory state clears. On next Map/OrgChart open after a switch, the `{#if}` re-mounts
+the component and `onMount` fetches fresh data for the new Universe.
+
+Change applied at `+layout.svelte` line ~1684 (after `bookmarks.set([])`, before the
+cache-guard reset):
+
+```typescript
+// Force Map + OrgChart to re-mount on next open for the new Universe.
+// Their IPC (constellation_map_universe) fires only from onMount, so without
+// this reset the user would see stale data from the prior Universe.
+mapEverOpened = false;
+orgChartEverOpened = false;
+mapFocusNode = null;
+```
+
+Also added a **Reset on context switch** section to LL-022 documenting the rule: any
+overlay using `*EverOpened` whose IPC only fires from `onMount` must have its flag reset
+alongside the rest of the context-switch state. This keeps the pattern correct for the
+next overlay that adopts it (IndexPanel, SearchHub, Sky View, Lens, dashboards —
+explicitly earmarked in LL-022).
+
+### Build verification
+
+`npm run tauri build` — pending (kicked off in background; will annotate with compile
+time + commit hash when it lands).
+
+### Commits
+
+- `<pending>` — `/simplify pass on cc1bf65: trim comments + reset flags on Universe switch`
