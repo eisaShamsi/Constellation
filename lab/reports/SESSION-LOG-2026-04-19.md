@@ -1176,3 +1176,113 @@ Progress toward 20K: **14.2% → 14.8%**.
 - `14daad8` — `M11-data v2: +070-landforms (40) batch`
 - `aca9af5` — `M11-data v2: +071-motion-and-actions (40) batch`
 - `06af48c` — `M11-data v2: +072-sensory-qualities (40) batch`
+
+---
+
+## § 27 — /simplify v2 on co-occurring terms + M11-mmap minimum compile
+
+Picked up after context compaction. Two interleaved tracks needed closing:
+the uncommitted co-occurring-terms feature work on the Index panel (with a
+pending /simplify pass on top of it) and the M11-mmap WIP in the lexicon
+bundle that had left the crate in a non-compiling state.
+
+### Track 1 — /simplify v2 on IndexPanel + store.ts
+
+Three review agents (reuse / quality / efficiency) in parallel on the
+uncommitted IndexPanel + store.ts diff. Seven actionable findings, all
+fixed:
+
+- **Efficiency:** `ARABIC_RE.test` + `normalizeArabicForFilter` were being
+  called inside the per-entry filter loop. At the 516k-term trial vault
+  that's ~500k regex tests per keystroke. Hoisted into a pre-computed
+  `prepared` array built once per query, then iterated. Inner loop is
+  now pure `includes`.
+- **Quality:** dead `termCount: 1` branch in `comparisonState $derived.by`
+  — unreachable after the upstream `selectedArr.length < 2` guard.
+  Removed.
+- **Quality:** mention-preload `$effect` was firing on every selection
+  change with no gate; three in-component callsites already call
+  `ensureMentionsLoaded` before `onTermSelect`. Gated on
+  `selectedTerms.size >= 2` so the effect runs only for parent-pre-
+  populated multi-term sets (deep-link / session-restore). Keeps
+  defensive coverage without redundant loads on normal flow.
+- **Reuse:** snippet sentinels (CHAR(2)/CHAR(3) wrapping the matched
+  tokens inside an `IndexMention.snippet`) were hardcoded in both
+  store.ts and IndexPanel. Exported `SNIPPET_MARK_START` /
+  `SNIPPET_MARK_END` from store.ts, imported and used on both halves.
+  Rust literal in `libraries.rs` stays the single source of truth.
+- **Quality:** inline async chip-click handler extracted to
+  `handleCooccurChipClick(term, e)`.
+- **Quality:** four over-narrated banner blocks trimmed (Arabic stemmer
+  preamble, co-occurrence cache block, commonality HTML wrap, sentinel
+  doc). Kept one-line pointers only.
+- **Bonus:** caught a version regression that had slipped through —
+  `docs/generate-docx.cjs` had `0.3.4 → 0.1.0`. Reverted.
+
+Not taken (false positive): Agent 1 flagged duplication between the
+IndexPanel Light10 stemmer and `normalizeArabicLight` in store.ts. On
+inspection the two serve different contracts — store.ts normalizes for
+command-parser operator matching with a narrower diacritic range;
+IndexPanel mirrors the Rust `normalize_arabic` + Light10 tokenizer
+contract (must match exactly for query-side stem lookups to hit the
+indexed stems). Deliberately not coupled.
+
+### Track 2 — M11-mmap minimum compile
+
+`src-tauri/src/lexicon/{graph,bake}.rs` had been mid-refactor when the
+prior session compacted:
+
+```
+  graph.rs: name_index: Map<Vec<u8>> -> Map<FstBytes>
+            name_index_bytes: Vec<u8> -> FstBytes
+```
+
+The field types were flipped but the call sites weren't. `cargo build`
+failed with five E0308 errors plus the compiler's literal fix hint
+(`arabic::fst_bake::FstBytes::Owned(...)`).
+
+Completed the minimum wraps:
+- `graph.rs::to_bundle`, `build_bundle` — `FstBytes::Owned(...)` at the
+  assignment sites.
+- `graph.rs::empty` — explicit empty `Map<FstBytes>` construction
+  (`Map::default()` only exists for `Map<Vec<u8>>`). Both unwraps are
+  on infallible paths (empty `MapBuilder.into_inner()` never fails,
+  `Map::new` accepts its own output unconditionally).
+- `bake.rs::decode_bundle`, `sample_bundle` — wrap cursor / builder
+  bytes.
+- `bake.rs::encode_bundle` — switch to `.as_ref()` so the on-disk layout
+  is identical regardless of backing variant (matches the existing
+  `arabic::fst_bake` pattern).
+- `bake.rs::tests` — 3 × `assert_eq!(... .as_ref(), ... .as_ref())`
+  since `FstBytes` can't derive `PartialEq` (the `Mmap` variant holds
+  `Arc<Mmap>`).
+
+On-disk format unchanged; `CACHE_FORMAT_VERSION` stays at 1. Cold-load
+path still lands on `Owned`; the mmap-backed load path is a separate
+follow-up.
+
+### Build verification
+
+- `cargo build --release --lib` — green in **1m 21s**, 59 pre-existing
+  dead-code warnings, zero errors.
+- `npm run tauri build` — green in **1m 33s**. Produced
+  `Constellation_0.3.4_x64_en-US.msi` + `Constellation_0.3.4_x64-setup.exe`.
+  Trailing `TAURI_SIGNING_PRIVATE_KEY` warning is the documented
+  non-fatal signing path (README:267-275) — MSI + NSIS are usable;
+  only the `.sig` sidecar for the in-app auto-updater is skipped.
+
+### Commits
+
+- `80e1a72` — `M11-mmap: complete FstBytes wraps at lexicon bundle call sites`
+  (`src-tauri/src/lexicon/bake.rs` +9/-5, `src-tauri/src/lexicon/graph.rs`
+  +27/-6).
+- `ea30a58` — `Index: co-occurring terms + /simplify v2 pass`
+  (`src/lib/components/IndexPanel.svelte` +443/-19,
+  `src/lib/libraries/store.ts` +50/0).
+
+Open follow-ups:
+- Full M11-mmap mmap-backed load path in `bake.rs` (`load_bundle_mmap`
+  for the lexicon bundle — mirror the arabic/fst_bake precedent).
+- M11-cache-bench opt-in cold-vs-warm harness.
+- M11-data v2 toward 20K concepts (currently 14.8%; background agent
+  idle).
