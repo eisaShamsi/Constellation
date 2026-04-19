@@ -517,6 +517,7 @@
     "pinned": "已固定",
     "skyViewTitle": "Sky View",
     "skyViewWiWHint": "点击侧边栏中的笔记以查看其连接",
+    "skyViewLoading": "正在加载图表…",
     "clickToStart": "点击开始",
     "search": "搜索..."
   },

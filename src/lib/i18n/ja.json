@@ -517,6 +517,7 @@
     "pinned": "ピン留め",
     "skyViewTitle": "Sky View",
     "skyViewWiWHint": "サイドバーのノートをクリックして接続を表示",
+    "skyViewLoading": "グラフを読み込み中…",
     "clickToStart": "クリックして開始",
     "search": "検索..."
   },

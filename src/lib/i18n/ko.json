@@ -517,6 +517,7 @@
     "pinned": "고정됨",
     "skyViewTitle": "Sky View",
     "skyViewWiWHint": "사이드바에서 노트를 클릭하면 연결을 볼 수 있습니다",
+    "skyViewLoading": "그래프 로딩 중…",
     "clickToStart": "클릭하여 시작",
     "search": "검색..."
   },

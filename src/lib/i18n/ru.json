@@ -517,6 +517,7 @@
     "pinned": "Закреплено",
     "skyViewTitle": "Sky View",
     "skyViewWiWHint": "Нажмите на заметку в боковой панели, чтобы увидеть её связи",
+    "skyViewLoading": "Загрузка графа…",
     "clickToStart": "Нажмите, чтобы начать",
     "search": "Поиск..."
   },

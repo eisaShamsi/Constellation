@@ -588,6 +588,7 @@
     "pinned": "Pinned",
     "skyViewTitle": "Sky View",
     "skyViewWiWHint": "Click a note in the sidebar to see its connections",
+    "skyViewLoading": "Loading graph…",
     "clickToStart": "Click me to start",
     "search": "Search..."
   },

@@ -4105,6 +4105,15 @@
 					searchMatchIds={searchHubMatchIds}
 					{allNotes}
 				/>
+				{#if !graphReady}
+					<div class="sky-loading" role="status" aria-live="polite" dir="auto">
+						<svg class="sky-loading-spinner" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+							<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5" fill="none" opacity="0.25"/>
+							<path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+						</svg>
+						<span>{$t('layout.skyViewLoading')}</span>
+					</div>
+				{/if}
 				<!-- WiW Overlay -->
 				{#if showWiW && wiwFilteredNodes.length > 0}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -5582,7 +5591,24 @@
 	.star-fullscreen {
 		flex: 1; display: flex; flex-direction: column; overflow: hidden;
 		background: var(--background-primary, #fff);
+		position: relative;
 	}
+	.sky-loading {
+		position: absolute;
+		top: 56px;
+		inset-inline-end: 16px;
+		display: flex; align-items: center; gap: 8px;
+		padding: 6px 12px;
+		background: rgba(0, 0, 0, 0.55);
+		color: #fff;
+		border-radius: 999px;
+		font-size: 0.8rem;
+		pointer-events: none;
+		z-index: 15;
+		backdrop-filter: blur(4px);
+	}
+	.sky-loading-spinner { animation: sky-loading-spin 0.9s linear infinite; }
+	@keyframes sky-loading-spin { to { transform: rotate(360deg); } }
 	.tab-bar-hidden { display: none !important; }
 	.star-header {
 		display: flex; align-items: center; gap: 4px;

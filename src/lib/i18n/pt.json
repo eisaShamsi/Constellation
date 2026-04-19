@@ -517,6 +517,7 @@
     "pinned": "Fixada",
     "skyViewTitle": "Sky View",
     "skyViewWiWHint": "Clique em uma nota na barra lateral para ver suas conexões",
+    "skyViewLoading": "Carregando grafo…",
     "clickToStart": "Clique para começar",
     "search": "Pesquisar..."
   },
