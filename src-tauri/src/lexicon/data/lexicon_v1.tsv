@@ -40,6 +40,7 @@ c:amethyst	Noun	ar:جمشت	de:Amethyst	en:amethyst	es:amatista	fa:آمتیست,
 c:amphibian	Noun	ar:برمائي	de:Amphibie,Lurch	en:amphibian	es:anfibio	fa:دوزیست	fr:amphibien	he:דו-חיים	hi:उभयचर	ja:両生類	ko:양서류	pt:anfíbio	ru:амфибия,земноводное	tr:amfibi,iki yaşamlı	ur:دوزیست	zh:两栖动物
 c:analysis	Noun	ar:تحليل	de:Analyse	en:analysis	es:análisis	fa:تحلیل	fr:analyse	he:ניתוח	hi:विश्लेषण	ja:分析,解析	ko:분석	pt:análise	ru:анализ	tr:analiz,çözümleme	ur:تجزیہ	zh:分析
 c:ancestor	Noun	ar:سلف,جد	de:Vorfahre,Ahne	en:ancestor,forefather	es:ancestro,antepasado	fa:نیاکان,اجداد	fr:ancêtre	he:אב קדמון,אבות	hi:पूर्वज	ja:祖先,先祖	ko:조상,선조	pt:ancestral,antepassado	ru:предок	tr:ata,cet	ur:آباء,اجداد	zh:祖先,先祖
+c:anemometer	Noun	ar:مقياس الرياح,أنيمومتر	de:Anemometer,Windmesser	en:anemometer	es:anemómetro	fa:بادسنج	fr:anémomètre	he:אנמומטר,מד-רוח	hi:एनीमोमीटर,वायुवेग मापी	ja:風速計,アネモメーター	ko:풍속계	pt:anemômetro	ru:анемометр	tr:anemometre,rüzgârölçer	ur:اینیمومیٹر,بادسنج	zh:风速计
 c:angel	Noun	ar:ملاك	de:Engel	en:angel	es:ángel	fa:فرشته	fr:ange	he:מלאך	hi:देवदूत,फ़रिश्ता	ja:天使	ko:천사	pt:anjo	ru:ангел	tr:melek	ur:فرشتہ	zh:天使
 c:anger	Noun	ar:غضب	de:Zorn,Ärger,Wut	en:anger	es:ira,enojo	fa:خشم,عصبانیت	fr:colère	he:כעס	hi:क्रोध,ग़ुस्सा	ja:怒り	ko:분노,화	pt:raiva,ira	ru:гнев,злость	tr:öfke,kızgınlık	ur:غصہ	zh:愤怒,生气
 c:angle	Noun	ar:زاوية	de:Winkel	en:angle	es:ángulo	fa:زاویه	fr:angle	he:זווית	hi:कोण	ja:角,角度	ko:각,각도	pt:ângulo	ru:угол	tr:açı	ur:زاویہ	zh:角,角度
@@ -49,6 +50,7 @@ c:anniversary	Noun	ar:ذكرى سنوية,ذكرى	de:Jahrestag,Jubiläum	en:ann
 c:announce	Verb	ar:أعلن	de:ankündigen,verkünden	en:announce	es:anunciar	fa:اعلام کردن	fr:annoncer	he:להכריז	hi:घोषणा करना	ja:発表する	ko:발표하다	pt:anunciar	ru:объявлять	tr:duyurmak,ilan etmek	ur:اعلان کرنا	zh:宣布,宣告
 c:answer	Verb	ar:أجاب,رد	de:antworten	en:answer,reply	es:responder,contestar	fa:پاسخ دادن,جواب دادن	fr:répondre	he:לענות	hi:जवाब देना,उत्तर देना	ja:答える	ko:답하다,대답하다	pt:responder	ru:отвечать,ответить	tr:cevaplamak,yanıtlamak	ur:جواب دینا	zh:回答,答
 c:ant	Noun	ar:نملة	de:Ameise	en:ant	es:hormiga	fa:مورچه	fr:fourmi	he:נמלה	hi:चींटी	ja:蟻,アリ	ko:개미	pt:formiga	ru:муравей	tr:karınca	ur:چیونٹی	zh:蚂蚁
+c:antarctic	Noun	ar:القطب الجنوبي,المنطقة القطبية الجنوبية	de:Antarktis	en:Antarctic,the Antarctic	es:Antártico,Antártida	fa:قطب جنوب,منطقه قطبی جنوبی	fr:Antarctique	he:אנטארקטי,האזור האנטארקטי	hi:अंटार्कटिक,दक्षिणी ध्रुवीय क्षेत्र	ja:南極,南極圏	ko:남극,남극권	pt:Antártico,Antártica	ru:Антарктика	tr:Antarktika,Güney Kutbu	ur:قطب جنوبی,انٹارکٹک	zh:南极,南极地区
 c:antenna	Noun	ar:هوائي,أنتنا	de:Antenne	en:antenna,aerial	es:antena	fa:آنتن	fr:antenne	he:אנטנה	hi:एंटीना	ja:アンテナ	ko:안테나	pt:antena	ru:антенна	tr:anten	ur:اینٹینا	zh:天线
 c:anthem	Noun	ar:نشيد	de:Hymne	en:anthem	es:himno	fa:سرود	fr:hymne	he:המנון	hi:गान,राष्ट्रगान	ja:国歌,賛歌	ko:찬가,국가	pt:hino	ru:гимн	tr:marş,ilahi	ur:ترانہ,قومی ترانہ	zh:国歌,颂歌
 c:anxiety	Noun	ar:قلق	de:Angst	en:anxiety	es:ansiedad	fa:اضطراب	fr:anxiété	he:חרדה	hi:चिंता	ja:不安	ko:불안	pt:ansiedade	ru:тревога	tr:kaygı,anksiyete	ur:بے چینی	zh:焦虑
@@ -60,6 +62,7 @@ c:appeal	Noun	ar:استئناف	de:Berufung,Einspruch	en:appeal	es:apelación,re
 c:apple	Noun	ar:تفاحة	de:Apfel	en:apple	es:manzana	fa:سیب	fr:pomme	he:תפוח	hi:सेब	ja:リンゴ,林檎	ko:사과	pt:maçã	ru:яблоко	tr:elma	ur:سیب	zh:苹果
 c:application	Noun	ar:تطبيق	de:Anwendung,App	en:application,app	es:aplicación,app	fa:برنامه,اپلیکیشن	fr:application,appli	he:יישום,אפליקציה	hi:एप्लिकेशन,ऐप	ja:アプリケーション,アプリ	ko:애플리케이션,앱	pt:aplicação,aplicativo,app	ru:приложение	tr:uygulama	ur:ایپلی کیشن,ایپ	zh:应用程序,应用
 c:arch	Noun	ar:قوس,طاق	de:Bogen	en:arch	es:arco	fa:طاق	fr:arche,voûte	he:קשת	hi:मेहराब	ja:アーチ,拱門	ko:아치,홍예	pt:arco	ru:арка	tr:kemer	ur:محراب,طاق	zh:拱门
+c:arctic	Noun	ar:القطب الشمالي,المنطقة القطبية الشمالية	de:Arktis	en:Arctic,the Arctic	es:Ártico	fa:قطب شمال,منطقه قطبی شمالی	fr:Arctique	he:ארקטי,האזור הארקטי	hi:आर्कटिक,उत्तरी ध्रुवीय क्षेत्र	ja:北極,北極圏	ko:북극,북극권	pt:Ártico	ru:Арктика	tr:Arktik,Kuzey Kutbu	ur:قطب شمالی,آرکٹک	zh:北极,北极地区
 c:area	Noun	ar:منطقة	de:Gebiet,Bereich	en:area	es:área,zona	fa:منطقه,ناحیه	fr:zone,aire	he:אזור	hi:क्षेत्र,इलाक़ा	ja:地域,エリア	ko:지역,구역	pt:área,zona	ru:область,зона	tr:alan,bölge	ur:علاقہ	zh:地区,区域
 c:argue	Verb	ar:جادل	de:streiten,argumentieren	en:argue	es:discutir	fa:بحث کردن	fr:discuter,se disputer	he:להתווכח	hi:बहस करना,तर्क करना	ja:議論する,言い争う	ko:논쟁하다	pt:discutir	ru:спорить	tr:tartışmak	ur:بحث کرنا	zh:争论,争辩
 c:argument	Noun	ar:حجة,برهان	de:Argument	en:argument	es:argumento	fa:استدلال,برهان	fr:argument	he:טיעון	hi:तर्क,दलील	ja:論証,議論	ko:논증,주장	pt:argumento	ru:аргумент,довод	tr:argüman,sav	ur:دلیل,استدلال	zh:论证,论点
@@ -95,6 +98,7 @@ c:auditorium	Noun	ar:قاعة المحاضرات,مدرج	de:Auditorium,Hörsaal
 c:aurora	Noun	ar:شفق قطبي	de:Polarlicht,Nordlicht	en:aurora,northern lights	es:aurora,aurora boreal	fa:شفق قطبی	fr:aurore polaire,aurore boréale	he:זוהר קוטבי	hi:ध्रुवीय ज्योति	ja:オーロラ,極光	ko:오로라,극광	pt:aurora polar,aurora boreal	ru:полярное сияние	tr:kutup ışığı	ur:قطبی شفق	zh:极光
 c:author	Noun	ar:مؤلف,كاتب	de:Autor,Verfasser	en:author	es:autor	fa:نویسنده,مؤلف	fr:auteur	he:מחבר	hi:लेखक,रचयिता	ja:著者,作家	ko:저자,작가	pt:autor	ru:автор	tr:yazar,müellif	ur:مصنف	zh:作者
 c:authority	Noun	ar:سلطة	de:Autorität,Behörde	en:authority	es:autoridad	fa:اقتدار,مرجع	fr:autorité	he:סמכות	hi:अधिकार,प्राधिकरण	ja:権威,権限	ko:권한,권위	pt:autoridade	ru:власть,авторитет	tr:otorite,yetki	ur:اختیار,اقتدار	zh:权威,权力
+c:autumn	Noun	ar:خريف	de:Herbst	en:autumn,fall	es:otoño	fa:پاییز	fr:automne	he:סתיו	hi:शरद,पतझड़	ja:秋	ko:가을	pt:outono	ru:осень	tr:sonbahar,güz	ur:خزاں,پت جھڑ	zh:秋,秋季
 c:avalanche	Noun	ar:انهيار ثلجي	de:Lawine	en:avalanche	es:avalancha,alud	fa:بهمن	fr:avalanche	he:מפולת שלגים	hi:हिमस्खलन	ja:雪崩	ko:눈사태	pt:avalanche	ru:лавина	tr:çığ	ur:برفانی تودہ	zh:雪崩
 c:awareness	Noun	ar:وعي,إدراك	de:Bewusstsein,Gewahrsein	en:awareness	es:conciencia,consciencia	fa:آگاهی	fr:conscience,prise de conscience	he:מודעות	hi:जागरूकता,चेतना	ja:自覚,意識	ko:자각,인식	pt:consciência,percepção	ru:осознание,осведомлённость	tr:farkındalık,bilinç	ur:آگہی,شعور	zh:意识,觉察
 c:axe	Noun	ar:فأس	de:Axt,Beil	en:axe,ax	es:hacha	fa:تبر	fr:hache	he:גרזן	hi:कुल्हाड़ी	ja:斧	ko:도끼	pt:machado	ru:топор	tr:balta	ur:کلہاڑی	zh:斧头,斧
@@ -119,6 +123,7 @@ c:bark	Noun	ar:لحاء,قشر الشجر	de:Rinde,Baumrinde	en:bark	es:corteza	
 c:barley	Noun	ar:شعير	de:Gerste	en:barley	es:cebada	fa:جو	fr:orge	he:שעורה	hi:जौ	ja:大麦	ko:보리	pt:cevada	ru:ячмень	tr:arpa	ur:جو	zh:大麦
 c:barn	Noun	ar:حظيرة	de:Scheune	en:barn	es:granero	fa:انبار غله	fr:grange	he:אסם	hi:खलिहान	ja:納屋	ko:헛간	pt:celeiro	ru:амбар	tr:samanlık	ur:باڑا	zh:谷仓
 c:barnacle	Noun	ar:بلح البحر العالق,دبق البحر	de:Seepocke,Entenmuschel	en:barnacle	es:percebe,bellota de mar	fa:کشتی‌چسب	fr:bernacle,anatife	he:דילעה	hi:बार्नेकल	ja:フジツボ	ko:따개비	pt:craca,percebe	ru:морской жёлудь,усоногий рак	tr:deniz palamutu	ur:سمندری سپ	zh:藤壶
+c:barometer	Noun	ar:مقياس الضغط الجوي,بارومتر	de:Barometer,Luftdruckmesser	en:barometer	es:barómetro	fa:فشارسنج,بارومتر	fr:baromètre	he:ברומטר,מד-לחץ	hi:बैरोमीटर,वायुदाब मापी	ja:気圧計,バロメーター	ko:기압계,바로미터	pt:barômetro	ru:барометр	tr:barometre,basınçölçer	ur:بیرومیٹر,فشار پیما	zh:气压计
 c:basalt	Noun	ar:بازلت,حجر بركاني	de:Basalt	en:basalt	es:basalto	fa:بازالت	fr:basalte	he:בזלת	hi:बेसाल्ट	ja:玄武岩,バサルト	ko:현무암,바살트	pt:basalto	ru:базальт	tr:bazalt	ur:بازالٹ	zh:玄武岩
 c:baseball	Noun	ar:بيسبول	de:Baseball	en:baseball	es:béisbol,beisbol	fa:بیسبال	fr:baseball,base-ball	he:בייסבול	hi:बेसबॉल	ja:野球,ベースボール	ko:야구,베이스볼	pt:beisebol	ru:бейсбол	tr:beysbol	ur:بیس بال	zh:棒球
 c:basement	Noun	ar:قبو,سرداب	de:Keller,Untergeschoss	en:basement,cellar	es:sótano	fa:زیرزمین	fr:sous-sol,cave	he:מרתף	hi:तहखाना,बेसमेंट	ja:地下室	ko:지하실	pt:porão,cave	ru:подвал	tr:bodrum	ur:تہہ خانہ,بیسمنٹ	zh:地下室,地窖
@@ -283,6 +288,7 @@ c:christmas	Noun	ar:عيد الميلاد,الكريسماس	de:Weihnachten	en:c
 c:church	Noun	ar:كنيسة	de:Kirche	en:church	es:iglesia	fa:کلیسا	fr:église	he:כנסייה	hi:गिरजाघर,चर्च	ja:教会	ko:교회	pt:igreja	ru:церковь	tr:kilise	ur:کلیسا,گرجا	zh:教堂
 c:cicada	Noun	ar:زيز,زيز الحصاد	de:Zikade	en:cicada	es:cigarra	fa:زنجره	fr:cigale	he:צקאדה	hi:सिकाडा	ja:蝉,セミ	ko:매미	pt:cigarra	ru:цикада	tr:ağustosböceği	ur:جھینگر بڑا	zh:蝉,知了
 c:circle	Noun	ar:دائرة	de:Kreis	en:circle	es:círculo	fa:دایره	fr:cercle	he:עיגול,מעגל	hi:वृत्त,गोला	ja:円	ko:원	pt:círculo	ru:круг	tr:daire,çember	ur:دائرہ	zh:圆,圆圈
+c:cirrus	Noun	ar:سحابة ريشية,سحب ريشية	de:Zirrus,Federwolke	en:cirrus,cirrus cloud	es:cirro	fa:سیروس,ابر پرمانند	fr:cirrus	he:ענן ציררוס,ציררוס	hi:सिरस,पक्षाभ बादल	ja:巻雲	ko:권운	pt:cirro	ru:перистое облако,циррус	tr:sirrus,sirrus bulutu	ur:سیرس,پر مانند بادل	zh:卷云
 c:citizen	Noun	ar:مواطن	de:Bürger	en:citizen	es:ciudadano	fa:شهروند	fr:citoyen	he:אזרח	hi:नागरिक	ja:市民,国民	ko:시민,국민	pt:cidadão	ru:гражданин	tr:vatandaş	ur:شہری	zh:公民,市民
 c:citizenship	Noun	ar:مواطنة	de:Staatsbürgerschaft	en:citizenship	es:ciudadanía	fa:شهروندی,تابعیت	fr:citoyenneté	he:אזרחות	hi:नागरिकता	ja:市民権,国籍	ko:시민권	pt:cidadania	ru:гражданство	tr:vatandaşlık	ur:شہریت	zh:公民身份,公民权
 c:city	Noun	ar:مدينة	de:Stadt	en:city	es:ciudad	fa:شهر	fr:ville	he:עיר	hi:शहर,नगर	ja:都市,街	ko:도시	pt:cidade	ru:город	tr:şehir,kent	ur:شہر	zh:城市
@@ -297,6 +303,7 @@ c:click	Verb	ar:نقر	de:klicken	en:click	es:hacer clic,clicar	fa:کلیک کر
 c:client	Noun	ar:عميل,زبون	de:Klient,Kunde	en:client	es:cliente	fa:مشتری,موکل	fr:client	he:לקוח	hi:ग्राहक	ja:顧客,クライアント	ko:고객,클라이언트	pt:cliente	ru:клиент	tr:müşteri,müvekkil	ur:گاہک,کلائنٹ	zh:客户,客人
 c:cliff	Noun	ar:جرف,منحدر	de:Klippe,Felswand	en:cliff	es:acantilado	fa:صخره,پرتگاه	fr:falaise	he:צוק	hi:चट्टान	ja:崖	ko:절벽	pt:penhasco,falésia	ru:утёс,скала	tr:uçurum,yar	ur:چٹان	zh:悬崖,峭壁
 c:climate	Noun	ar:مناخ	de:Klima	en:climate	es:clima	fa:آب و هوا,اقلیم	fr:climat	he:אקלים	hi:जलवायु	ja:気候	ko:기후	pt:clima	ru:климат	tr:iklim	ur:آب و ہوا	zh:气候
+c:climate-change	Noun	ar:تغير المناخ,التغير المناخي	de:Klimawandel,Klimaveränderung	en:climate change	es:cambio climático	fa:تغییر اقلیم,تغییرات آب و هوایی	fr:changement climatique	he:שינוי אקלים	hi:जलवायु परिवर्तन	ja:気候変動,気候変化	ko:기후 변화	pt:mudança climática	ru:изменение климата	tr:iklim değişikliği	ur:آب و ہوا کی تبدیلی,موسمی تبدیلی	zh:气候变化
 c:clinic	Noun	ar:عيادة	de:Klinik	en:clinic	es:clínica	fa:کلینیک,درمانگاه	fr:clinique	he:מרפאה	hi:क्लिनिक	ja:クリニック,診療所	ko:진료소,클리닉	pt:clínica	ru:клиника	tr:klinik	ur:کلینک	zh:诊所
 c:cloak	Noun	ar:عباءة	de:Umhang	en:cloak	es:capa	fa:شنل	fr:cape	he:שכמייה	hi:लबादा	ja:マント	ko:망토	pt:capa	ru:плащ-накидка	tr:pelerin	ur:لبادہ	zh:斗篷
 c:clock	Noun	ar:ساعة	de:Uhr	en:clock	es:reloj	fa:ساعت	fr:horloge	he:שעון	hi:घड़ी	ja:時計	ko:시계	pt:relógio	ru:часы	tr:saat	ur:گھڑی	zh:钟
@@ -315,6 +322,7 @@ c:coffee	Noun	ar:قهوة	de:Kaffee	en:coffee	es:café	fa:قهوه	fr:café	he:�
 c:coin	Noun	ar:قطعة نقدية,عملة معدنية	de:Münze	en:coin	es:moneda	fa:سکه	fr:pièce,pièce de monnaie	he:מטבע	hi:सिक्का	ja:硬貨,コイン	ko:동전,코인	pt:moeda	ru:монета	tr:madeni para,bozuk para	ur:سکہ	zh:硬币
 c:cold	Adjective	ar:بارد	de:kalt	en:cold	es:frío	fa:سرد	fr:froid	he:קר	hi:ठंडा	ja:寒い,冷たい	ko:추운,차가운	pt:frio	ru:холодный	tr:soğuk	ur:ٹھنڈا	zh:冷
 c:cold-illness	Noun	ar:زكام,رشح	de:Erkältung	en:cold	es:resfriado,catarro	fa:سرماخوردگی	fr:rhume	he:הצטננות	hi:सर्दी,ज़ुकाम	ja:風邪	ko:감기	pt:resfriado,constipação	ru:простуда	tr:soğuk algınlığı,nezle	ur:زکام,نزلہ	zh:感冒
+c:cold-snap	Noun	ar:موجة برد قصيرة,موجة صقيع	de:Kälteeinbruch,Kältewelle	en:cold snap,cold spell	es:ola de frío,frente frío	fa:موج سرما	fr:vague de froid,coup de froid	he:גל קור,קור פתאומי	hi:शीत लहर,ठंड की लहर	ja:寒波,寒気	ko:한파	pt:onda de frio	ru:похолодание,холодный фронт	tr:soğuk hava dalgası	ur:سرد لہر	zh:寒流,寒潮
 c:colonel	Noun	ar:عقيد	de:Oberst	en:colonel	es:coronel	fa:سرهنگ	fr:colonel	he:אלוף משנה	hi:कर्नल	ja:大佐	ko:대령	pt:coronel	ru:полковник	tr:albay	ur:کرنل	zh:上校
 c:column	Noun	ar:عمود	de:Säule,Pfeiler	en:column	es:columna	fa:ستون	fr:colonne	he:עמוד	hi:स्तंभ,खंभा	ja:柱,コラム	ko:기둥,칼럼	pt:coluna	ru:колонна	tr:sütun	ur:ستون,کالم	zh:柱子,圆柱
 c:come	Verb	ar:جاء,أتى	de:kommen	en:come	es:venir	fa:آمدن	fr:venir	he:לבוא	hi:आना	ja:来る	ko:오다	pt:vir	ru:приходить,прийти	tr:gelmek	ur:آنا	zh:来
@@ -381,6 +389,7 @@ c:cry	Verb	ar:بكى	de:weinen	en:cry,weep	es:llorar	fa:گریه کردن	fr:ple
 c:crystal	Noun	ar:بلورة,كريستال	de:Kristall	en:crystal	es:cristal	fa:بلور,کریستال	fr:cristal	he:גביש	hi:क्रिस्टल,बिल्लौर	ja:結晶,クリスタル	ko:결정,크리스탈	pt:cristal	ru:кристалл	tr:kristal,billur	ur:بلور	zh:水晶
 c:cultivate	Verb	ar:فلح,يفلح	de:anbauen	en:cultivate	es:cultivar	fa:کشت کردن	fr:cultiver	he:לעבד	hi:खेती करना	ja:耕す	ko:경작하다	pt:cultivar	ru:возделывать	tr:yetiştirmek	ur:کاشت کرنا	zh:耕种
 c:culture	Noun	ar:ثقافة	de:Kultur	en:culture	es:cultura	fa:فرهنگ	fr:culture	he:תרבות	hi:संस्कृति	ja:文化	ko:문화	pt:cultura	ru:культура	tr:kültür	ur:ثقافت	zh:文化
+c:cumulus	Noun	ar:سحابة ركامية,ركام	de:Kumulus,Haufenwolke	en:cumulus,cumulus cloud	es:cúmulo	fa:کومولوس,ابر کومه‌ای	fr:cumulus	he:ענן קומולוס,קומולוס	hi:क्यूम्युलस,कपासी बादल	ja:積雲	ko:적운	pt:cúmulo	ru:кучевое облако,кумулюс	tr:kümülüs,kümülüs bulutu	ur:کیومولس,کپاسی بادل	zh:积云
 c:cup	Noun	ar:كوب,فنجان	de:Tasse,Becher	en:cup	es:taza	fa:فنجان,لیوان	fr:tasse,coupe	he:כוס,ספל	hi:कप,प्याला	ja:カップ,杯	ko:컵	pt:xícara,chávena	ru:чашка	tr:fincan,bardak	ur:کپ,پیالہ	zh:杯子
 c:cure	Noun	ar:شفاء,علاج	de:Heilung,Heilmittel	en:cure,remedy	es:cura,remedio	fa:درمان,شفا	fr:remède,guérison	he:מרפא,ריפוי	hi:इलाज,उपाय	ja:治癒	ko:치유	pt:cura,remédio	ru:лекарство,исцеление	tr:çare,tedavi	ur:علاج,شفا	zh:治愈
 c:curiosity	Noun	ar:فضول	de:Neugier	en:curiosity	es:curiosidad	fa:کنجکاوی	fr:curiosité	he:סקרנות	hi:जिज्ञासा,कौतूहल	ja:好奇心	ko:호기심	pt:curiosidade	ru:любопытство,любознательность	tr:merak	ur:تجسس,شوق	zh:好奇心
@@ -452,6 +461,7 @@ c:doubt	Verb	ar:شك	de:zweifeln	en:doubt	es:dudar	fa:شک کردن	fr:douter	he
 c:dough	Noun	ar:عجين	de:Teig	en:dough	es:masa	fa:خمیر	fr:pâte	he:בצק	hi:आटा,गूँथा हुआ आटा	ja:生地	ko:반죽	pt:massa	ru:тесто	tr:hamur	ur:آٹا	zh:面团
 c:down	Adverb	ar:تحت,أسفل	de:unten,runter	en:down	es:abajo	fa:پایین	fr:bas,en bas	he:למטה	hi:नीचे	ja:下	ko:아래,밑	pt:baixo,abaixo	ru:вниз	tr:aşağı	ur:نیچے	zh:下
 c:download	Verb	ar:نزل,حمل	de:herunterladen,downloaden	en:download	es:descargar,bajar	fa:دانلود کرد,بارگیری کرد	fr:télécharger	he:הוריד	hi:डाउनलोड करना	ja:ダウンロードする	ko:다운로드하다,내려받다	pt:baixar,descarregar	ru:скачивать,загружать	tr:indirmek	ur:ڈاؤن لوڈ کرنا	zh:下载
+c:downpour	Noun	ar:وابل,سيل منهمر	de:Wolkenbruch,Platzregen,Sturzregen	en:downpour,heavy rain,cloudburst	es:aguacero,chaparrón,chubasco	fa:رگبار,باران شدید	fr:averse,déluge,pluie battante	he:מבול,גשם שוטף	hi:मूसलाधार बारिश,जोरदार बारिश	ja:土砂降り,豪雨	ko:폭우,호우	pt:aguaceiro,chuva forte,tromba-d'água	ru:ливень,проливной дождь	tr:sağanak	ur:موسلا دھار بارش,تیز بارش	zh:倾盆大雨,暴雨
 c:dragonfly	Noun	ar:يعسوب	de:Libelle	en:dragonfly	es:libélula	fa:سنجاقک	fr:libellule	he:שפירית	hi:व्याध पतंग	ja:蜻蛉,トンボ	ko:잠자리	pt:libélula	ru:стрекоза	tr:yusufçuk	ur:ٹڈا پروانہ	zh:蜻蜓
 c:drama	Noun	ar:دراما	de:Drama	en:drama	es:drama	fa:درام	fr:drame	he:דרמה	hi:नाटक,ड्रामा	ja:ドラマ,劇	ko:드라마,극	pt:drama	ru:драма	tr:drama	ur:ڈرامہ	zh:戏剧,话剧
 c:drawing	Noun	ar:رسم	de:Zeichnung	en:drawing	es:dibujo	fa:طراحی	fr:dessin	he:ציור,רישום	hi:रेखांकन,ड्राइंग	ja:絵,デッサン	ko:드로잉,그림	pt:desenho	ru:рисунок	tr:çizim	ur:ڈرائنگ,خاکہ	zh:素描,绘图
@@ -612,6 +622,7 @@ c:fox	Noun	ar:ثعلب	de:Fuchs	en:fox	es:zorro	fa:روباه	fr:renard	he:שו�
 c:fragile	Adjective	ar:هش	de:zerbrechlich,fragil	en:fragile	es:frágil	fa:شکننده	fr:fragile	he:שביר	hi:नाजुक	ja:壊れやすい	ko:깨지기 쉬운	pt:frágil	ru:хрупкий	tr:kırılgan	ur:نازک	zh:易碎,脆弱
 c:fraud	Noun	ar:احتيال,تزوير	de:Betrug	en:fraud	es:fraude	fa:کلاهبرداری,تقلب	fr:fraude	he:הונאה,מרמה	hi:धोखाधड़ी,धोखा	ja:詐欺	ko:사기	pt:fraude	ru:мошенничество	tr:dolandırıcılık,hile	ur:دھوکا دہی,فراڈ	zh:欺诈,诈骗
 c:freedom	Noun	ar:حرية	de:Freiheit	en:freedom	es:libertad	fa:آزادی	fr:liberté	he:חופש	hi:स्वतंत्रता,आज़ादी	ja:自由	ko:자유	pt:liberdade	ru:свобода	tr:özgürlük	ur:آزادی	zh:自由
+c:freeze	Noun	ar:تجمد,تجميد	de:Frost,Gefrieren	en:freeze,freezing	es:helada,congelación	fa:یخبندان,انجماد	fr:gel,gelée	he:קיפאון,קפיאה	hi:हिमपात,जमाव	ja:凍結	ko:결빙	pt:congelamento,geada	ru:заморозки,мороз	tr:don,donma	ur:انجماد,یخ بستگی	zh:冻结,霜冻
 c:friend	Noun	ar:صديق	de:Freund,Freundin	en:friend	es:amigo,amiga	fa:دوست	fr:ami,amie	he:חבר	hi:दोस्त,मित्र	ja:友達,友人	ko:친구	pt:amigo,amiga	ru:друг,подруга	tr:arkadaş,dost	ur:دوست	zh:朋友
 c:frog	Noun	ar:ضفدع	de:Frosch	en:frog	es:rana	fa:قورباغه	fr:grenouille	he:צפרדע	hi:मेंढक	ja:蛙,カエル	ko:개구리	pt:rã	ru:лягушка	tr:kurbağa	ur:مینڈک	zh:青蛙
 c:front	Noun	ar:أمام	de:vorne,Vorderseite	en:front	es:frente,delante	fa:جلو	fr:devant,avant	he:חזית,קדמה	hi:आगे,सामने	ja:前	ko:앞	pt:frente	ru:перед	tr:ön	ur:سامنے,آگے	zh:前
@@ -642,6 +653,7 @@ c:girl	Noun	ar:بنت,فتاة	de:Mädchen	en:girl	es:niña,chica	fa:دختر	fr
 c:give	Verb	ar:أعطى	de:geben	en:give	es:dar	fa:دادن	fr:donner	he:לתת	hi:देना	ja:与える,あげる	ko:주다	pt:dar	ru:давать,дать	tr:vermek	ur:دینا	zh:给
 c:glacier	Noun	ar:نهر جليدي	de:Gletscher	en:glacier	es:glaciar	fa:یخچال طبیعی	fr:glacier	he:קרחון	hi:हिमनद,ग्लेशियर	ja:氷河	ko:빙하	pt:geleira,glaciar	ru:ледник	tr:buzul	ur:گلیشیر	zh:冰川
 c:glass	Noun	ar:زجاج	de:Glas	en:glass	es:vidrio,cristal	fa:شیشه	fr:verre	he:זכוכית	hi:कांच,शीशा	ja:ガラス,硝子	ko:유리,글라스	pt:vidro	ru:стекло	tr:cam	ur:شیشہ	zh:玻璃
+c:global-warming	Noun	ar:الاحتباس الحراري العالمي,الاحترار العالمي	de:globale Erwärmung,Erderwärmung	en:global warming	es:calentamiento global	fa:گرمایش زمین,گرمایش جهانی	fr:réchauffement climatique,réchauffement planétaire	he:התחממות כדור הארץ,התחממות גלובלית	hi:वैश्विक तापन,ग्लोबल वार्मिंग	ja:地球温暖化,温暖化	ko:지구 온난화	pt:aquecimento global	ru:глобальное потепление	tr:küresel ısınma	ur:عالمی حرارت,گلوبل وارمنگ	zh:全球变暖
 c:globe	Noun	ar:كرة أرضية	de:Globus	en:globe	es:globo,globo terráqueo	fa:کره زمین,گوی	fr:globe	he:גלובוס	hi:ग्लोब,भूगोल	ja:地球儀	ko:지구본,구	pt:globo	ru:глобус	tr:küre	ur:گلوب,کرۂ ارض	zh:地球仪
 c:glove	Noun	ar:قفاز	de:Handschuh	en:glove	es:guante	fa:دستکش	fr:gant	he:כפפה	hi:दस्ताना	ja:手袋	ko:장갑	pt:luva	ru:перчатка	tr:eldiven	ur:دستانہ	zh:手套
 c:go	Verb	ar:ذهب	de:gehen	en:go	es:ir	fa:رفتن	fr:aller	he:ללכת	hi:जाना	ja:行く	ko:가다	pt:ir	ru:идти,ходить	tr:gitmek	ur:جانا	zh:去
@@ -670,6 +682,7 @@ c:gray	Adjective	ar:رمادي	de:grau	en:gray,grey	es:gris	fa:خاکستری	fr
 c:graze	Verb	ar:رعى,يرعى	de:weiden	en:graze	es:pastar	fa:چرا کردن	fr:paître	he:רעה	hi:चरना	ja:放牧する	ko:풀을 뜯다	pt:pastar	ru:пастись	tr:otlamak	ur:چرنا	zh:放牧
 c:green	Adjective	ar:أخضر	de:grün	en:green	es:verde	fa:سبز	fr:vert	he:ירוק	hi:हरा	ja:緑,緑色	ko:초록,녹색	pt:verde	ru:зелёный	tr:yeşil	ur:ہرا,سبز	zh:绿,绿色
 c:greenhouse	Noun	ar:دفيئة	de:Gewächshaus	en:greenhouse	es:invernadero	fa:گلخانه	fr:serre	he:חממה	hi:ग्रीनहाउस	ja:温室	ko:온실	pt:estufa	ru:теплица	tr:sera	ur:گرین ہاؤس	zh:温室
+c:greenhouse-effect	Noun	ar:ظاهرة الاحتباس الحراري,أثر الاحتباس الحراري	de:Treibhauseffekt,Glashauseffekt	en:greenhouse effect	es:efecto invernadero	fa:اثر گلخانه‌ای	fr:effet de serre	he:אפקט החממה	hi:ग्रीनहाउस प्रभाव,हरित गृह प्रभाव	ja:温室効果	ko:온실 효과	pt:efeito estufa	ru:парниковый эффект	tr:sera etkisi	ur:گرین ہاؤس اثر,کچ مکان اثر	zh:温室效应
 c:grenade	Noun	ar:قنبلة يدوية	de:Granate,Handgranate	en:grenade	es:granada	fa:نارنجک	fr:grenade	he:רימון	hi:हथगोला	ja:手榴弾	ko:수류탄	pt:granada	ru:граната	tr:el bombası	ur:دستی بم	zh:手榴弹
 c:grill	Verb	ar:شوى على الشواية	de:grillen	en:grill	es:asar a la parrilla	fa:کباب کردن	fr:griller	he:לצלות על גריל	hi:ग्रिल करना	ja:グリルする	ko:그릴에 굽다	pt:grelhar	ru:жарить на гриле	tr:ızgara yapmak	ur:گرل کرنا	zh:烧烤
 c:group	Noun	ar:مجموعة	de:Gruppe	en:group	es:grupo	fa:گروه	fr:groupe	he:קבוצה	hi:समूह,दल	ja:グループ,集団	ko:그룹,집단	pt:grupo	ru:группа	tr:grup	ur:گروہ	zh:组,团体
@@ -681,6 +694,7 @@ c:guilty	Adjective	ar:مذنب	de:schuldig	en:guilty	es:culpable	fa:گناهکا
 c:guitar	Noun	ar:غيتار	de:Gitarre	en:guitar	es:guitarra	fa:گیتار	fr:guitare	he:גיטרה	hi:गिटार	ja:ギター	ko:기타	pt:guitarra,violão	ru:гитара	tr:gitar	ur:گٹار	zh:吉他
 c:gulf	Noun	ar:خليج	de:Golf	en:gulf	es:golfo	fa:خلیج	fr:golfe	he:מפרץ	hi:खाड़ी	ja:湾,ガルフ	ko:만	pt:golfo	ru:залив	tr:körfez	ur:خلیج	zh:海湾
 c:gun	Noun	ar:سلاح ناري	de:Schusswaffe,Gewehr	en:gun,firearm	es:arma de fuego	fa:اسلحه گرم	fr:arme à feu	he:כלי ירייה,אקדח	hi:बंदूक	ja:銃,鉄砲	ko:총	pt:arma de fogo	ru:огнестрельное оружие,ружьё	tr:ateşli silah	ur:آتشی ہتھیار	zh:枪,枪支
+c:gust	Noun	ar:هبة ريح,نفحة ريح	de:Bö,Windstoß	en:gust,wind gust	es:ráfaga,racha	fa:تندباد,وزش ناگهانی	fr:rafale,bourrasque	he:משב רוח,משב	hi:झोंका,हवा का झोंका	ja:突風,疾風	ko:돌풍,질풍	pt:rajada,lufada	ru:порыв ветра,порыв	tr:rüzgâr esintisi,bora	ur:جھونکا,ہوا کا جھونکا	zh:阵风
 c:gym	Noun	ar:صالة رياضية	de:Turnhalle,Fitnessstudio	en:gym,gymnasium	es:gimnasio	fa:باشگاه ورزشی	fr:gymnase,salle de sport	he:אולם ספורט,חדר כושר	hi:जिम,व्यायामशाला	ja:体育館,ジム	ko:체육관,헬스장	pt:ginásio,academia	ru:спортзал,зал	tr:spor salonu,jimnastikhane	ur:جم,ورزش گاہ	zh:健身房,体育馆
 c:hail	Noun	ar:برد	de:Hagel	en:hail	es:granizo	fa:تگرگ	fr:grêle	he:ברד	hi:ओले	ja:雹	ko:우박	pt:granizo	ru:град	tr:dolu	ur:اولے	zh:冰雹
 c:hair	Noun	ar:شعر	de:Haar	en:hair	es:pelo,cabello	fa:مو	fr:cheveu,cheveux	he:שיער	hi:बाल	ja:髪,毛	ko:머리카락,털	pt:cabelo	ru:волосы	tr:saç	ur:بال	zh:头发,毛
@@ -708,6 +722,7 @@ c:hear	Verb	ar:سمع,يسمع	de:hören	en:hear,hears,heard	es:oír,escuchar	fa
 c:hearing	Noun	ar:جلسة	de:Anhörung,Verhandlung	en:hearing	es:audiencia	fa:استماع,جلسه	fr:audience	he:דיון,שימוע	hi:सुनवाई	ja:聴聞,審問	ko:청문,심리	pt:audiência	ru:слушание	tr:duruşma,dinleme	ur:سماعت	zh:听证,审讯
 c:heart	Noun	ar:قلب	de:Herz	en:heart	es:corazón	fa:قلب,دل	fr:cœur	he:לב	hi:दिल,हृदय	ja:心臓,心	ko:심장,마음	pt:coração	ru:сердце	tr:kalp,yürek	ur:دل	zh:心,心脏
 c:heat	Noun	ar:حرارة	de:Hitze,Wärme	en:heat	es:calor	fa:گرما	fr:chaleur	he:חום	hi:गर्मी,ऊष्मा	ja:熱	ko:열	pt:calor	ru:тепло,жар	tr:ısı,sıcaklık	ur:حرارت	zh:热
+c:heat-wave	Noun	ar:موجة حر,موجة حرارة	de:Hitzewelle,Hitzeperiode	en:heat wave,heatwave	es:ola de calor	fa:موج گرما	fr:canicule,vague de chaleur	he:גל חום,שרב	hi:लू,ऊष्म लहर	ja:熱波,猛暑	ko:폭염,열파	pt:onda de calor	ru:волна тепла,аномальная жара	tr:sıcak hava dalgası	ur:گرم لہر,موج گرما	zh:热浪
 c:heatwave	Noun	ar:موجة حارة,موجة حر	de:Hitzewelle	en:heatwave,heat wave	es:ola de calor	fa:موج گرما	fr:canicule,vague de chaleur	he:גל חום	hi:लू,गर्मी की लहर	ja:熱波	ko:폭염,열파	pt:onda de calor	ru:тепловая волна,аномальная жара	tr:sıcak hava dalgası	ur:گرمی کی لہر	zh:热浪
 c:heaven	Noun	ar:سماء,جنة	de:Himmel	en:heaven	es:cielo	fa:بهشت,آسمان	fr:ciel,paradis	he:שמיים	hi:स्वर्ग	ja:天国	ko:천국	pt:céu	ru:небеса,рай	tr:cennet,gök	ur:جنت,آسمان	zh:天堂
 c:hedgehog	Noun	ar:قنفذ	de:Igel	en:hedgehog	es:erizo	fa:جوجه تیغی	fr:hérisson	he:קיפוד	hi:साही	ja:ハリネズミ	ko:고슴도치	pt:ouriço	ru:ёж	tr:kirpi	ur:خارپشت	zh:刺猬
@@ -758,8 +773,10 @@ c:hurricane	Noun	ar:إعصار	de:Hurrikan,Orkan	en:hurricane	es:huracán	fa:ت�
 c:husband	Noun	ar:زوج	de:Ehemann,Mann	en:husband	es:esposo,marido	fa:همسر,شوهر	fr:époux,mari	he:בעל	hi:पति	ja:夫	ko:남편	pt:esposo,marido	ru:муж	tr:eş,koca	ur:شوہر	zh:丈夫,老公
 c:hut	Noun	ar:كوخ	de:Hütte	en:hut	es:choza,cabaña	fa:کلبه	fr:hutte,cabane	he:בקתה,צריף	hi:झोपड़ी,कुटिया	ja:小屋	ko:오두막	pt:cabana,choça	ru:хижина	tr:kulübe	ur:جھونپڑی,کوٹھڑی	zh:小屋,茅屋
 c:hydrogen	Noun	ar:هيدروجين,إيدروجين	de:Wasserstoff	en:hydrogen	es:hidrógeno	fa:هیدروژن	fr:hydrogène	he:מימן,הידרוגן	hi:हाइड्रोजन	ja:水素,ハイドロジェン	ko:수소,하이드로젠	pt:hidrogênio,hidrogénio	ru:водород	tr:hidrojen	ur:ہائیڈروجن	zh:氢,氢气
+c:hygrometer	Noun	ar:مقياس الرطوبة,هايجرومتر	de:Hygrometer,Feuchtigkeitsmesser	en:hygrometer	es:higrómetro	fa:رطوبت‌سنج	fr:hygromètre	he:היגרומטר,מד-לחות	hi:हाइग्रोमीटर,आर्द्रतामापी	ja:湿度計	ko:습도계	pt:higrômetro	ru:гигрометр	tr:higrometre,nemölçer	ur:ہائیگرومیٹر,نمی پیما	zh:湿度计
 c:hymn	Noun	ar:ترنيمة,نشيد ديني	de:Hymne,Kirchenlied	en:hymn	es:himno	fa:سرود مذهبی	fr:hymne,cantique	he:מזמור	hi:स्तोत्र,भजन	ja:賛美歌,聖歌	ko:찬송가	pt:hino	ru:гимн,псалом	tr:ilahi	ur:ترانہ,حمد	zh:圣歌,赞美诗
 c:hypothesis	Noun	ar:فرضية	de:Hypothese	en:hypothesis	es:hipótesis	fa:فرضیه	fr:hypothèse	he:השערה	hi:परिकल्पना	ja:仮説	ko:가설	pt:hipótese	ru:гипотеза	tr:hipotez,varsayım	ur:قیاس,مفروضہ	zh:假设,假说
+c:ice	Noun	ar:جليد,ثلج	de:Eis	en:ice	es:hielo	fa:یخ	fr:glace	he:קרח	hi:बर्फ़	ja:氷	ko:얼음	pt:gelo	ru:лёд	tr:buz	ur:برف,یخ	zh:冰
 c:idea	Noun	ar:فكرة	de:Idee	en:idea,ideas	es:idea	fa:ایده,فکر	fr:idée	he:רעיון	hi:विचार	ja:アイデア,考え	ko:생각,아이디어	pt:ideia	ru:идея	tr:fikir	ur:خیال	zh:想法,主意
 c:identity	Noun	ar:هوية	de:Identität	en:identity	es:identidad	fa:هویت	fr:identité	he:זהות	hi:पहचान,अस्मिता	ja:アイデンティティ,自己同一性	ko:정체성	pt:identidade	ru:идентичность	tr:kimlik	ur:شناخت,پہچان	zh:身份,认同
 c:ideology	Noun	ar:أيديولوجيا,نظرية فكرية	de:Ideologie	en:ideology	es:ideología	fa:ایدئولوژی,مرام	fr:idéologie	he:אידאולוגיה	hi:विचारधारा	ja:イデオロギー,思想体系	ko:이념,이데올로기	pt:ideologia	ru:идеология	tr:ideoloji	ur:نظریہ,آئیڈیالوجی	zh:意识形态,思想体系
@@ -805,6 +822,7 @@ c:jealousy	Noun	ar:غيرة	de:Eifersucht	en:jealousy	es:celos	fa:حسادت	fr:
 c:jeans	Noun	ar:جينز	de:Jeans	en:jeans	es:vaqueros,jeans	fa:شلوار جین	fr:jean	he:ג׳ינס	hi:जीन्स	ja:ジーンズ	ko:청바지	pt:jeans	ru:джинсы	tr:kot	ur:جینز	zh:牛仔裤
 c:jellyfish	Noun	ar:قنديل البحر	de:Qualle	en:jellyfish	es:medusa	fa:عروس دریایی	fr:méduse	he:מדוזה	hi:जेलीफिश,समुद्री जेली	ja:クラゲ	ko:해파리	pt:medusa,água-viva	ru:медуза	tr:denizanası	ur:جیلی فش	zh:水母
 c:jet	Noun	ar:طائرة نفاثة	de:Düsenflugzeug,Jet	en:jet,jet plane	es:avión a reacción,jet	fa:هواپیمای جت,جت	fr:avion à réaction,jet	he:מטוס סילון	hi:जेट विमान	ja:ジェット機	ko:제트기	pt:avião a jato,jato	ru:реактивный самолёт	tr:jet,tepkili uçak	ur:جیٹ طیارہ	zh:喷气式飞机
+c:jet-stream	Noun	ar:تيار نفاث,تيار هوائي علوي	de:Strahlstrom,Jetstream	en:jet stream	es:corriente en chorro	fa:جریان جتی,جت استریم	fr:courant-jet,jet-stream	he:זרם סילוני,ג'ט סטרים	hi:जेट धारा,जेट स्ट्रीम	ja:ジェット気流,ジェットストリーム	ko:제트기류	pt:corrente de jato	ru:струйное течение,джет-стрим	tr:jet akımı	ur:جیٹ اسٹریم,تیز ہوائی دھارا	zh:急流
 c:job	Noun	ar:وظيفة,عمل	de:Job,Arbeitsstelle,Stelle	en:job	es:trabajo,empleo	fa:شغل,کار	fr:emploi,boulot	he:עבודה,משרה	hi:नौकरी,कार्य	ja:仕事,職	ko:일자리,직업	pt:emprego,trabalho	ru:работа,должность	tr:iş,meslek	ur:نوکری,ملازمت	zh:工作,职位
 c:journey	Noun	ar:رحلة	de:Reise,Fahrt	en:journey	es:viaje,jornada	fa:سفر	fr:voyage,trajet	he:מסע	hi:यात्रा,सफ़र	ja:旅,旅路	ko:여정,여행	pt:viagem,jornada	ru:путешествие,поездка	tr:yolculuk,seyahat	ur:سفر	zh:旅程,旅途
 c:joy	Noun	ar:فرح,سرور	de:Freude	en:joy	es:alegría,gozo	fa:شادی	fr:joie	he:שמחה	hi:खुशी,आनंद	ja:喜び	ko:기쁨	pt:alegria	ru:радость	tr:sevinç,neşe	ur:خوشی	zh:喜悦,快乐
@@ -959,6 +977,7 @@ c:monastery	Noun	ar:دير	de:Kloster	en:monastery	es:monasterio	fa:صومعه,�
 c:money	Noun	ar:مال,نقود	de:Geld	en:money	es:dinero	fa:پول	fr:argent	he:כסף	hi:पैसा,धन	ja:お金,金	ko:돈	pt:dinheiro	ru:деньги	tr:para	ur:پیسہ,روپیہ	zh:钱
 c:monitor	Noun	ar:شاشة عرض,مرقاب	de:Monitor	en:monitor	es:monitor	fa:مانیتور,نمایشگر	fr:moniteur	he:צג	hi:मॉनिटर	ja:モニター,モニタ	ko:모니터	pt:monitor	ru:монитор	tr:monitör	ur:مانیٹر	zh:显示器
 c:monkey	Noun	ar:قرد	de:Affe	en:monkey	es:mono	fa:میمون	fr:singe	he:קוף	hi:बंदर	ja:猿,サル	ko:원숭이	pt:macaco	ru:обезьяна	tr:maymun	ur:بندر	zh:猴子
+c:monsoon	Noun	ar:الرياح الموسمية,المنسون	de:Monsun	en:monsoon	es:monzón	fa:باد موسمی,موسمی	fr:mousson	he:מונסון	hi:मानसून,वर्षा ऋतु	ja:モンスーン,季節風	ko:몬순,계절풍	pt:monção	ru:муссон	tr:muson,muson rüzgârı	ur:مانسون,موسمی ہوا	zh:季风
 c:month	Noun	ar:شهر	de:Monat	en:month	es:mes	fa:ماه	fr:mois	he:חודש	hi:महीना,मास	ja:月	ko:달,월	pt:mês	ru:месяц	tr:ay	ur:مہینہ	zh:月
 c:moon	Noun	ar:قمر	de:Mond	en:moon	es:luna	fa:ماه	fr:lune	he:ירח	hi:चंद्रमा,चांद	ja:月	ko:달	pt:lua	ru:луна	tr:ay	ur:چاند	zh:月亮
 c:morning	Noun	ar:صباح	de:Morgen	en:morning	es:mañana	fa:صبح	fr:matin	he:בוקר	hi:सुबह	ja:朝	ko:아침	pt:manhã	ru:утро	tr:sabah	ur:صبح	zh:早上,早晨
@@ -1007,6 +1026,7 @@ c:new-year	Noun	ar:رأس السنة,السنة الجديدة	de:Neujahr,Silves
 c:news	Noun	ar:أخبار,خبر	de:Nachrichten,Neuigkeiten	en:news	es:noticias	fa:خبر,اخبار	fr:nouvelles,actualités	he:חדשות	hi:समाचार,खबर	ja:ニュース,知らせ	ko:뉴스,소식	pt:notícias	ru:новости	tr:haber,haberler	ur:خبر,خبریں	zh:新闻,消息
 c:newspaper	Noun	ar:صحيفة,جريدة	de:Zeitung	en:newspaper	es:periódico,diario	fa:روزنامه	fr:journal	he:עיתון	hi:अखबार,समाचारपत्र	ja:新聞	ko:신문	pt:jornal	ru:газета	tr:gazete	ur:اخبار	zh:报纸,报
 c:night	Noun	ar:ليل,ليلة	de:Nacht	en:night	es:noche	fa:شب	fr:nuit	he:לילה	hi:रात	ja:夜	ko:밤	pt:noite	ru:ночь	tr:gece	ur:رات	zh:夜
+c:nimbus	Noun	ar:سحابة ممطرة,غمامة ركامية	de:Nimbus,Regenwolke	en:nimbus,nimbus cloud	es:nimbo	fa:نیمبوس,ابر بارانی	fr:nimbus	he:ענן נימבוס,נימבוס	hi:निम्बस,वर्षा बादल	ja:乱雲	ko:난운	pt:nimbo	ru:дождевое облако,нимбус	tr:nimbus,nimbus bulutu	ur:نمبس,بارانی بادل	zh:雨云
 c:nine	Noun	ar:تسعة	de:neun	en:nine	es:nueve	fa:نه	fr:neuf	he:תשעה	hi:नौ	ja:九,きゅう	ko:아홉,구	pt:nove	ru:девять	tr:dokuz	ur:نو	zh:九
 c:nitrogen	Noun	ar:نتروجين,آزوت	de:Stickstoff	en:nitrogen	es:nitrógeno	fa:نیتروژن,ازت	fr:azote	he:חנקן,ניטרוגן	hi:नाइट्रोजन	ja:窒素,ナイトロジェン	ko:질소,나이트로젠	pt:nitrogênio,azoto	ru:азот	tr:azot,nitrojen	ur:نائٹروجن	zh:氮,氮气
 c:nobility	Noun	ar:نبلاء,طبقة نبيلة	de:Adel	en:nobility	es:nobleza	fa:اشراف,نجبا	fr:noblesse	he:אצולה	hi:कुलीनता,अभिजात	ja:貴族,ノビリティ	ko:귀족	pt:nobreza	ru:знать,дворянство	tr:soyluluk,asalet	ur:نجابت,شرافت	zh:贵族,贵族阶层
@@ -1057,6 +1077,8 @@ c:owl	Noun	ar:بومة	de:Eule	en:owl	es:búho,lechuza	fa:جغد	fr:hibou,chouet
 c:own	Verb	ar:امتلك,ملك	de:besitzen	en:own,possess	es:poseer	fa:داشت,مالک بود	fr:posséder	he:החזיק,להחזיק	hi:स्वामी होना,रखना	ja:所有する,持つ	ko:소유하다,가지다	pt:possuir,ter	ru:владеть,обладать	tr:sahip olmak	ur:مالک ہونا,رکھنا	zh:拥有,占有
 c:oxygen	Noun	ar:أكسجين,أوكسجين	de:Sauerstoff	en:oxygen	es:oxígeno	fa:اکسیژن	fr:oxygène	he:חמצן	hi:ऑक्सीजन	ja:酸素,オキシジェン	ko:산소,옥시젠	pt:oxigênio,oxigénio	ru:кислород	tr:oksijen	ur:آکسیجن	zh:氧,氧气
 c:oyster	Noun	ar:محار اللؤلؤ,محار	de:Auster	en:oyster	es:ostra	fa:صدف خوراکی	fr:huître	he:צדפת מאכל	hi:शुक्ति,सीप	ja:牡蠣,カキ	ko:굴	pt:ostra	ru:устрица	tr:istiridye	ur:سیپ صدف	zh:牡蛎,蚝
+c:ozone	Noun	ar:أوزون	de:Ozon	en:ozone	es:ozono	fa:ازن	fr:ozone	he:אוזון	hi:ओजोन	ja:オゾン	ko:오존	pt:ozônio,ozono	ru:озон	tr:ozon	ur:اوزون	zh:臭氧
+c:ozone-layer	Noun	ar:طبقة الأوزون	de:Ozonschicht	en:ozone layer	es:capa de ozono	fa:لایه ازن	fr:couche d'ozone	he:שכבת האוזון	hi:ओजोन परत	ja:オゾン層	ko:오존층	pt:camada de ozônio	ru:озоновый слой	tr:ozon tabakası	ur:اوزون کی تہہ	zh:臭氧层
 c:page	Noun	ar:صفحة	de:Seite	en:page	es:página	fa:صفحه	fr:page	he:עמוד,דף	hi:पृष्ठ,पन्ना	ja:ページ	ko:페이지,쪽	pt:página	ru:страница	tr:sayfa	ur:صفحہ	zh:页
 c:pagoda	Noun	ar:باغودا,معبد شرقي	de:Pagode	en:pagoda	es:pagoda	fa:پاگودا,معبد بودایی	fr:pagode	he:פגודה	hi:पगोडा,स्तूप	ja:塔,パゴダ	ko:파고다,불탑	pt:pagode	ru:пагода	tr:pagoda	ur:پگوڈا,بدھ مندر	zh:宝塔,佛塔
 c:pain	Noun	ar:ألم,وجع	de:Schmerz	en:pain,ache	es:dolor	fa:درد	fr:douleur	he:כאב	hi:दर्द,पीड़ा	ja:痛み	ko:아픔,통증	pt:dor	ru:боль	tr:ağrı,acı	ur:درد,تکلیف	zh:疼痛,痛
@@ -1153,6 +1175,7 @@ c:practice	Verb	ar:تدرب,مارس	de:üben,praktizieren	en:practice,practise,
 c:prawn	Noun	ar:قريدس,جمبري كبير	de:Riesengarnele,Große Garnele	en:prawn	es:langostino	fa:میگوی درشت	fr:crevette rose,gambas	he:שרימפ גדול	hi:बड़ा झींगा	ja:クルマエビ,大正海老	ko:대하	pt:lagostim,gamba	ru:креветка крупная	tr:iri karides	ur:بڑا جھینگا	zh:对虾
 c:prayer	Noun	ar:صلاة,دعاء	de:Gebet	en:prayer	es:oración,plegaria	fa:نماز,دعا	fr:prière	he:תפילה	hi:प्रार्थना	ja:祈り	ko:기도	pt:oração	ru:молитва	tr:dua,namaz	ur:دعا,نماز	zh:祈祷
 c:praying-mantis	Noun	ar:فرس النبي,سرعوف	de:Gottesanbeterin	en:praying mantis,mantis	es:mantis religiosa	fa:آخوندک	fr:mante religieuse	he:גמל שלמה	hi:प्रेइंग मैंटिस,बिगड़ी कुदनी	ja:カマキリ	ko:사마귀	pt:louva-a-deus	ru:богомол	tr:peygamberdevesi	ur:فقیہ مچھلی	zh:螳螂
+c:precipitation	Noun	ar:هطول,تساقط	de:Niederschlag	en:precipitation	es:precipitación	fa:بارش,ریزش	fr:précipitation,précipitations	he:משקעים	hi:वर्षण,अवक्षेपण	ja:降水,降水量	ko:강수,강수량	pt:precipitação	ru:осадки,выпадение осадков	tr:yağış	ur:بارش,تہطال	zh:降水,降水量
 c:predator	Noun	ar:مفترس	de:Raubtier	en:predator	es:depredador	fa:شکارچی,درنده	fr:prédateur	he:טורף	hi:शिकारी	ja:捕食者	ko:포식자	pt:predador	ru:хищник	tr:yırtıcı	ur:شکاری,درندہ	zh:捕食者
 c:pregnancy	Noun	ar:حمل	de:Schwangerschaft	en:pregnancy	es:embarazo	fa:بارداری,حاملگی	fr:grossesse	he:הריון	hi:गर्भावस्था	ja:妊娠	ko:임신	pt:gravidez	ru:беременность	tr:gebelik,hamilelik	ur:حمل	zh:怀孕
 c:present	Noun	ar:حاضر	de:Gegenwart	en:present	es:presente	fa:حال	fr:présent	he:הווה	hi:वर्तमान	ja:現在	ko:현재	pt:presente	ru:настоящее	tr:şimdi	ur:حال	zh:现在
@@ -1195,6 +1218,7 @@ c:race	Noun	ar:سباق	de:Rennen,Wettlauf	en:race	es:carrera	fa:مسابقه,د
 c:radio	Noun	ar:راديو,مذياع	de:Radio,Rundfunk	en:radio	es:radio	fa:رادیو	fr:radio	he:רדיו	hi:रेडियो	ja:ラジオ	ko:라디오	pt:rádio	ru:радио	tr:radyo	ur:ریڈیو	zh:收音机,无线电
 c:rage	Noun	ar:غيظ	de:Wut	en:rage	es:rabia	fa:خشم	fr:rage	he:זעם	hi:रोष	ja:激怒	ko:격분	pt:raiva	ru:ярость	tr:öfke	ur:طیش	zh:狂怒
 c:rain	Noun	ar:مطر	de:Regen	en:rain	es:lluvia	fa:باران	fr:pluie	he:גשם	hi:बारिश,वर्षा	ja:雨	ko:비	pt:chuva	ru:дождь	tr:yağmur	ur:بارش	zh:雨
+c:rain-gauge	Noun	ar:مقياس المطر	de:Regenmesser,Niederschlagsmesser	en:rain gauge,pluviometer	es:pluviómetro	fa:باران‌سنج	fr:pluviomètre	he:מד-גשם,פלוביומטר	hi:वर्षामापी,रेन गेज	ja:雨量計	ko:우량계	pt:pluviômetro	ru:дождемер	tr:yağmur ölçer,plüviometre	ur:بارش پیما,رین گیج	zh:雨量计
 c:rainbow	Noun	ar:قوس قزح	de:Regenbogen	en:rainbow	es:arcoíris	fa:رنگین کمان	fr:arc-en-ciel	he:קשת	hi:इंद्रधनुष	ja:虹	ko:무지개	pt:arco-íris	ru:радуга	tr:gökkuşağı	ur:قوس قزح	zh:彩虹
 c:raincoat	Noun	ar:معطف مطر	de:Regenmantel	en:raincoat	es:impermeable	fa:بارانی	fr:imperméable	he:מעיל גשם	hi:बरसाती,रेनकोट	ja:レインコート	ko:레인코트,비옷	pt:capa de chuva	ru:дождевик	tr:yağmurluk	ur:برساتی	zh:雨衣
 c:rainforest	Noun	ar:غابة مطيرة	de:Regenwald	en:rainforest	es:selva tropical,pluvisilva	fa:جنگل بارانی	fr:forêt tropicale,forêt pluviale	he:יער גשם	hi:वर्षावन	ja:熱帯雨林	ko:열대 우림	pt:floresta tropical,floresta pluvial	ru:тропический лес,дождевой лес	tr:yağmur ormanı	ur:برساتی جنگل	zh:雨林,热带雨林
@@ -1313,6 +1337,7 @@ c:serenity	Noun	ar:سكينة	de:Gelassenheit	en:serenity	es:serenidad	fa:آرا
 c:sergeant	Noun	ar:رقيب	de:Feldwebel	en:sergeant	es:sargento	fa:گروهبان	fr:sergent	he:סמל	hi:सार्जेंट	ja:軍曹	ko:중사,상사	pt:sargento	ru:сержант	tr:çavuş	ur:سارجنٹ	zh:中士
 c:servant	Noun	ar:خادم	de:Diener,Dienerin	en:servant	es:sirviente,criado	fa:خدمتکار	fr:serviteur,domestique	he:משרת	hi:नौकर,सेवक	ja:使用人,召使い	ko:하인,종	pt:servo,criado	ru:слуга	tr:hizmetçi,uşak	ur:نوکر,خادم	zh:仆人,侍者
 c:seven	Noun	ar:سبعة	de:sieben	en:seven	es:siete	fa:هفت	fr:sept	he:שבעה	hi:सात	ja:七,なな	ko:일곱,칠	pt:sete	ru:семь	tr:yedi	ur:سات	zh:七
+c:shade	Noun	ar:ظل,فيء	de:Schatten	en:shade,shadow	es:sombra	fa:سایه	fr:ombre,ombrage	he:צל	hi:छाया,छाँव	ja:日陰,陰	ko:그늘,응달	pt:sombra	ru:тень,затенение	tr:gölge	ur:سایہ,چھاؤں	zh:阴凉,荫
 c:shadow	Noun	ar:ظل	de:Schatten	en:shadow	es:sombra	fa:سایه	fr:ombre	he:צל	hi:छाया,परछाई	ja:影	ko:그림자	pt:sombra	ru:тень	tr:gölge	ur:سایہ	zh:影,影子
 c:shame	Noun	ar:عار	de:Scham	en:shame	es:vergüenza	fa:شرم	fr:honte	he:בושה	hi:शर्म	ja:恥	ko:수치	pt:vergonha	ru:стыд	tr:utanç	ur:شرم	zh:羞耻
 c:shareholder	Noun	ar:مساهم	de:Aktionär	en:shareholder,stockholder	es:accionista	fa:سهامدار	fr:actionnaire	he:בעל מניות	hi:शेयरधारक	ja:株主	ko:주주	pt:acionista	ru:акционер	tr:hissedar,pay sahibi	ur:حصص دار,شیئر ہولڈر	zh:股东
@@ -1332,6 +1357,7 @@ c:shoulder	Noun	ar:كتف	de:Schulter	en:shoulder	es:hombro	fa:شانه,دوش	f
 c:shout	Verb	ar:صرخ,صاح	de:schreien,rufen	en:shout	es:gritar	fa:فریاد زدن	fr:crier	he:לצעוק	hi:चिल्लाना	ja:叫ぶ	ko:외치다,소리치다	pt:gritar	ru:кричать	tr:bağırmak	ur:چلانا	zh:喊,叫
 c:shovel	Noun	ar:مجرفة	de:Schaufel,Spaten	en:shovel,spade	es:pala	fa:بیل	fr:pelle	he:אֵת,מגרפה	hi:फावड़ा,बेलचा	ja:シャベル,スコップ	ko:삽	pt:pá	ru:лопата	tr:kürek,bel	ur:پھاوڑا,بیلچہ	zh:铲子,铁铲
 c:show	Verb	ar:أظهر,أرى	de:zeigen	en:show	es:mostrar,enseñar	fa:نشان دادن	fr:montrer	he:להראות	hi:दिखाना	ja:見せる,示す	ko:보여주다	pt:mostrar	ru:показывать,показать	tr:göstermek	ur:دکھانا	zh:显示,给看
+c:shower	Noun	ar:زخة,رشة مطر	de:Schauer,Regenschauer	en:shower,rain shower	es:chubasco,llovizna corta	fa:رگبار کوتاه,بارش کوتاه	fr:averse,ondée	he:ממטר,גשם קצר	hi:बौछार,फुहार	ja:にわか雨,夕立	ko:소나기	pt:aguaceiro,chuvisco	ru:кратковременный дождь,ливень	tr:sağanak yağmur,kısa yağmur	ur:بوچھاڑ,ہلکی بارش	zh:阵雨
 c:shrimp	Noun	ar:روبيان,جمبري	de:Garnele	en:shrimp	es:camarón,gamba	fa:میگو	fr:crevette	he:חסילון,שרימפ	hi:झींगा	ja:エビ,海老	ko:새우	pt:camarão	ru:креветка	tr:karides	ur:جھینگا	zh:虾
 c:shrine	Noun	ar:ضريح,مزار	de:Schrein,Heiligtum	en:shrine	es:santuario,relicario	fa:زیارتگاه,آرامگاه	fr:sanctuaire,châsse	he:מקדש,קבר קדוש	hi:मंदिर,देवालय	ja:神社,聖堂	ko:성지,신사	pt:santuário	ru:святилище,храм малый	tr:türbe,mabet	ur:مزار,درگاہ	zh:神龛,圣殿
 c:shrub	Noun	ar:شجيرة	de:Strauch	en:shrub,bush	es:arbusto	fa:بوته,درختچه	fr:arbuste,buisson	he:שיח	hi:झाड़ी	ja:低木,潅木	ko:관목	pt:arbusto	ru:куст,кустарник	tr:çalı	ur:جھاڑی	zh:灌木
@@ -1403,9 +1429,11 @@ c:spirit	Noun	ar:روح	de:Geist	en:spirit	es:espíritu	fa:روح	fr:esprit	he:�
 c:spleen	Noun	ar:طحال	de:Milz	en:spleen	es:bazo	fa:طحال	fr:rate	he:טחול	hi:तिल्ली,प्लीहा	ja:脾臓	ko:비장	pt:baço	ru:селезёнка	tr:dalak	ur:تلی	zh:脾,脾脏
 c:spoon	Noun	ar:ملعقة	de:Löffel	en:spoon	es:cuchara	fa:قاشق	fr:cuillère	he:כף	hi:चम्मच	ja:スプーン,匙	ko:숟가락	pt:colher	ru:ложка	tr:kaşık	ur:چمچ	zh:勺子
 c:sport	Noun	ar:رياضة	de:Sport	en:sport,sports	es:deporte	fa:ورزش	fr:sport	he:ספורט	hi:खेल,स्पोर्ट	ja:スポーツ	ko:스포츠,운동	pt:esporte,desporto	ru:спорт	tr:spor	ur:کھیل,اسپورٹ	zh:运动,体育
+c:spring	Noun	ar:ربيع	de:Frühling,Frühjahr	en:spring	es:primavera	fa:بهار	fr:printemps	he:אביב	hi:वसंत,बसंत	ja:春	ko:봄	pt:primavera	ru:весна	tr:ilkbahar,bahar	ur:بہار,بسنت	zh:春,春季
 c:spring-festival	Noun	ar:عيد الربيع,مهرجان الربيع	de:Frühlingsfest	en:spring festival	es:fiesta de la primavera	fa:جشن بهار,نوروز	fr:fête du printemps	he:חג האביב	hi:वसंत उत्सव	ja:春祭り,春節	ko:봄 축제,춘절	pt:festa da primavera	ru:праздник весны	tr:bahar festivali	ur:بہار تہوار	zh:春节
 c:spruce	Noun	ar:شوح,تنوب	de:Fichte	en:spruce	es:abeto,pícea	fa:صنوبر نروژی,کاج نروژی	fr:épicéa	he:אשוח	hi:स्प्रूस	ja:トウヒ	ko:가문비나무	pt:espruce,pícea	ru:ель	tr:ladin	ur:اسپروس	zh:云杉
 c:squadron	Noun	ar:سرب	de:Staffel,Geschwader	en:squadron	es:escuadrón	fa:اسکادران	fr:escadron	he:טייסת	hi:स्क्वाड्रन	ja:飛行隊	ko:비행대	pt:esquadrão	ru:эскадрилья	tr:filo	ur:سکواڈرن	zh:中队
+c:squall	Noun	ar:عاصفة قصيرة,زوبعة مفاجئة	de:Sturmbö,Orkanbö	en:squall,wind squall	es:turbonada,borrasca	fa:توفان ناگهانی,تندباد مفاجئ	fr:grain,bourrasque	he:סערה קצרה,משב סוער	hi:आंधी,तूफानी झोंका	ja:スコール,突風雨	ko:스콜,강풍	pt:borrasca,tormenta breve	ru:шквал,шквальный ветер	tr:bora,ani fırtına	ur:طوفانی جھونکا,آندھی	zh:狂风,飑
 c:square	Noun	ar:مربع	de:Quadrat	en:square	es:cuadrado	fa:مربع	fr:carré	he:ריבוע	hi:वर्ग,चौकोर	ja:四角,正方形	ko:사각형,정사각형	pt:quadrado	ru:квадрат	tr:kare	ur:مربع	zh:正方形,方形
 c:squid	Noun	ar:حبار	de:Kalmar,Tintenfisch	en:squid	es:calamar	fa:ماهی مرکب,اسکویید	fr:calmar,calamar	he:דיונון	hi:स्क्विड	ja:イカ	ko:오징어	pt:lula	ru:кальмар	tr:kalamar	ur:اسکوڈ	zh:鱿鱼
 c:squirrel	Noun	ar:سنجاب	de:Eichhörnchen	en:squirrel	es:ardilla	fa:سنجاب	fr:écureuil	he:סנאי	hi:गिलहरी	ja:リス	ko:다람쥐	pt:esquilo	ru:белка	tr:sincap	ur:گلہری	zh:松鼠
@@ -1433,6 +1461,8 @@ c:storm	Noun	ar:عاصفة	de:Sturm	en:storm	es:tormenta	fa:طوفان	fr:tempê
 c:story	Noun	ar:قصة	de:Geschichte	en:story	es:historia,cuento	fa:داستان	fr:histoire	he:סיפור	hi:कहानी	ja:物語,ストーリー	ko:이야기	pt:história,conto	ru:история,рассказ	tr:hikaye,öykü	ur:کہانی	zh:故事
 c:stove	Noun	ar:موقد,بوتاجاز	de:Herd,Kochfeld	en:stove,cooker	es:estufa,cocina	fa:اجاق	fr:cuisinière	he:כיריים	hi:चूल्हा,स्टोव	ja:コンロ	ko:가스레인지,스토브	pt:fogão	ru:плита	tr:ocak	ur:چولہا	zh:炉灶
 c:strait	Noun	ar:مضيق	de:Meerenge,Straße	en:strait	es:estrecho	fa:تنگه	fr:détroit	he:מצר	hi:जलसंधि	ja:海峡	ko:해협	pt:estreito	ru:пролив	tr:boğaz	ur:آبنائے	zh:海峡
+c:stratosphere	Noun	ar:ستراتوسفير,الستراتوسفير	de:Stratosphäre	en:stratosphere	es:estratosfera	fa:استراتوسفر,پوشن‌سپهر	fr:stratosphère	he:סטרטוספירה	hi:समताप मंडल,स्ट्रेटोस्फीयर	ja:成層圏	ko:성층권	pt:estratosfera	ru:стратосфера	tr:stratosfer	ur:اسٹریٹوسفیئر,فلکی پرت	zh:平流层
+c:stratus	Noun	ar:سحابة طبقية,طبقة سحابية	de:Stratus,Schichtwolke	en:stratus,stratus cloud	es:estrato	fa:استراتوس,ابر طبقاتی	fr:stratus	he:ענן סטרטוס,סטרטוס	hi:स्ट्रेटस,स्तरी बादल	ja:層雲	ko:층운	pt:estrato	ru:слоистое облако,стратус	tr:stratus,tabaka bulut	ur:اسٹریٹس,تہہ دار بادل	zh:层云
 c:straw	Noun	ar:قش	de:Stroh	en:straw	es:paja	fa:کاه	fr:paille	he:קש	hi:भूसा	ja:藁	ko:짚	pt:palha	ru:солома	tr:saman	ur:بھوسا	zh:稻草
 c:street	Noun	ar:شارع	de:Straße	en:street	es:calle	fa:خیابان	fr:rue	he:רחוב	hi:सड़क,गली	ja:通り	ko:거리	pt:rua	ru:улица	tr:sokak,cadde	ur:گلی,سڑک	zh:街道,街
 c:strong	Adjective	ar:قوي	de:stark	en:strong	es:fuerte	fa:قوی	fr:fort	he:חזק	hi:मज़बूत,बलवान	ja:強い	ko:강한	pt:forte	ru:сильный	tr:güçlü	ur:مضبوط	zh:强,强壮
@@ -1449,10 +1479,14 @@ c:sugarcane	Noun	ar:قصب السكر	de:Zuckerrohr	en:sugarcane,sugar cane	es:c
 c:suit	Noun	ar:بدلة	de:Anzug	en:suit	es:traje	fa:کت و شلوار	fr:costume	he:חליפה	hi:सूट	ja:スーツ	ko:양복,정장	pt:terno,fato	ru:костюм	tr:takım elbise	ur:سوٹ	zh:西装
 c:sulfur	Noun	ar:كبريت	de:Schwefel	en:sulfur,sulphur	es:azufre	fa:گوگرد	fr:soufre	he:גופרית	hi:गंधक,सल्फर	ja:硫黄,サルファー	ko:황,유황	pt:enxofre	ru:сера	tr:kükürt,sülfür	ur:گندھک	zh:硫,硫磺
 c:sum	Noun	ar:مجموع	de:Summe	en:sum,total	es:suma,total	fa:جمع,حاصل	fr:somme,total	he:סכום	hi:योग,जोड़	ja:合計,総和	ko:합,합계	pt:soma,total	ru:сумма	tr:toplam	ur:مجموعہ,جوڑ	zh:总和,总数
+c:summer	Noun	ar:صيف	de:Sommer	en:summer	es:verano	fa:تابستان	fr:été	he:קיץ	hi:ग्रीष्म,गर्मी	ja:夏	ko:여름	pt:verão	ru:лето	tr:yaz	ur:گرمی,موسم گرما	zh:夏,夏季
 c:sun	Noun	ar:شمس	de:Sonne	en:sun	es:sol	fa:خورشید,آفتاب	fr:soleil	he:שמש	hi:सूर्य,सूरज	ja:太陽	ko:해,태양	pt:sol	ru:солнце	tr:güneş	ur:سورج	zh:太阳
 c:sunflower	Noun	ar:عباد الشمس,دوار الشمس	de:Sonnenblume	en:sunflower	es:girasol	fa:آفتابگردان	fr:tournesol	he:חמנית	hi:सूरजमुखी	ja:ヒマワリ,向日葵	ko:해바라기	pt:girassol	ru:подсолнух,подсолнечник	tr:ayçiçeği	ur:سورج مکھی	zh:向日葵
+c:sunlight	Noun	ar:ضوء الشمس,النور الشمسي	de:Sonnenlicht	en:sunlight	es:luz solar,luz del sol	fa:نور خورشید,روشنایی خورشید	fr:lumière solaire,lumière du soleil	he:אור שמש,אור שמשי	hi:सूर्य प्रकाश,सूर्य की रोशनी	ja:太陽光,日光	ko:태양광,일광	pt:luz solar,luz do sol	ru:солнечный свет	tr:güneş ışığı	ur:سورج کی روشنی	zh:日光
+c:sunray	Noun	ar:شعاع شمسي,شعاع الشمس	de:Sonnenstrahl	en:sunray,sunbeam	es:rayo de sol	fa:پرتو آفتاب,شعاع خورشید	fr:rayon de soleil	he:קרן שמש	hi:सूर्य किरण	ja:日の光,光線	ko:햇살,태양광선	pt:raio de sol	ru:солнечный луч	tr:güneş ışını	ur:کرن,سورج کی کرن	zh:太阳光线,光线
 c:sunrise	Noun	ar:شروق الشمس,شروق	de:Sonnenaufgang	en:sunrise	es:amanecer,salida del sol	fa:طلوع آفتاب,طلوع	fr:lever du soleil,aube	he:זריחה	hi:सूर्योदय	ja:日の出	ko:일출,해돋이	pt:nascer do sol,amanhecer	ru:восход,восход солнца	tr:gün doğumu	ur:طلوع آفتاب	zh:日出
 c:sunset	Noun	ar:غروب الشمس,غروب	de:Sonnenuntergang	en:sunset	es:atardecer,puesta del sol	fa:غروب آفتاب,غروب	fr:coucher du soleil	he:שקיעה	hi:सूर्यास्त	ja:日没,日の入り	ko:일몰,해넘이	pt:pôr do sol,ocaso	ru:закат,заход солнца	tr:gün batımı	ur:غروب آفتاب	zh:日落
+c:sunshine	Noun	ar:ضياء الشمس,أشعة الشمس	de:Sonnenschein	en:sunshine	es:sol,luz del sol	fa:آفتاب	fr:ensoleillement,soleil	he:אור שמש,שמש	hi:धूप,चमकीली धूप	ja:日光,日差し	ko:햇빛,햇볕	pt:sol	ru:солнечный свет,солнце	tr:güneş ışığı,güneşli hava	ur:دھوپ,سورج کی روشنی	zh:阳光
 c:supernova	Noun	ar:مستعر أعظم	de:Supernova	en:supernova	es:supernova	fa:ابرنواختر	fr:supernova	he:סופרנובה	hi:सुपरनोवा,महानवतारा	ja:超新星	ko:초신성	pt:supernova	ru:сверхновая	tr:süpernova	ur:سپرنووا	zh:超新星
 c:surgery	Noun	ar:جراحة,عملية	de:Operation,Chirurgie	en:surgery,operation	es:cirugía,operación	fa:جراحی,عمل	fr:chirurgie,opération	he:ניתוח,כירורגיה	hi:शल्यचिकित्सा,ऑपरेशन	ja:手術	ko:수술	pt:cirurgia,operação	ru:операция,хирургия	tr:ameliyat,cerrahi	ur:سرجری,آپریشن	zh:手术
 c:surprise	Noun	ar:مفاجأة	de:Überraschung	en:surprise	es:sorpresa	fa:تعجب,شگفتی	fr:surprise	he:הפתעה	hi:आश्चर्य	ja:驚き	ko:놀람	pt:surpresa	ru:удивление	tr:sürpriz,şaşkınlık	ur:حیرت	zh:惊讶,惊奇
@@ -1503,10 +1537,12 @@ c:testimony	Noun	ar:شهادة	de:Zeugnis,Aussage	en:testimony	es:testimonio	fa:
 c:textbook	Noun	ar:كتاب مدرسي	de:Lehrbuch,Schulbuch	en:textbook	es:libro de texto	fa:کتاب درسی	fr:manuel	he:ספר לימוד	hi:पाठ्यपुस्तक	ja:教科書	ko:교과서	pt:livro didático,manual	ru:учебник	tr:ders kitabı	ur:نصابی کتاب,درسی کتاب	zh:教科书,课本
 c:thank	Verb	ar:شكر	de:danken	en:thank	es:agradecer	fa:تشکر کردن	fr:remercier	he:להודות	hi:धन्यवाद देना,आभार व्यक्त करना	ja:感謝する	ko:감사하다	pt:agradecer	ru:благодарить	tr:teşekkür etmek	ur:شکریہ ادا کرنا,شکر کرنا	zh:感谢,谢
 c:thanksgiving	Noun	ar:عيد الشكر	de:Erntedankfest,Thanksgiving	en:thanksgiving	es:día de acción de gracias	fa:روز شکرگزاری	fr:action de grâce,thanksgiving	he:חג ההודיה	hi:थैंक्सगिविंग,धन्यवाद दिवस	ja:感謝祭	ko:추수감사절	pt:ação de graças	ru:день благодарения	tr:şükran günü	ur:یوم تشکر,تھینکس گیونگ	zh:感恩节
+c:thaw	Noun	ar:ذوبان,إذابة الجليد	de:Tauwetter,Auftauen	en:thaw,thawing	es:deshielo,descongelación	fa:ذوب,گدازش	fr:dégel,fonte	he:הפשרה,המסה	hi:पिघलना,गलन	ja:雪解け,融雪	ko:해빙,융설	pt:degelo	ru:оттепель,таяние	tr:erime,çözülme	ur:پگھلاؤ,برف پگھلنا	zh:解冻,融化
 c:theater	Noun	ar:مسرح	de:Theater	en:theater,theatre	es:teatro	fa:تئاتر	fr:théâtre	he:תיאטרון	hi:रंगमंच,थिएटर	ja:劇場,シアター	ko:극장,연극	pt:teatro	ru:театр	tr:tiyatro	ur:تھیٹر	zh:剧院,戏剧
 c:theft	Noun	ar:سرقة	de:Diebstahl	en:theft	es:robo,hurto	fa:سرقت,دزدی	fr:vol	he:גניבה	hi:चोरी	ja:窃盗,盗み	ko:절도,도둑질	pt:roubo,furto	ru:кража	tr:hırsızlık	ur:چوری	zh:盗窃,偷窃
 c:theory	Noun	ar:نظرية	de:Theorie	en:theory	es:teoría	fa:نظریه,تئوری	fr:théorie	he:תאוריה,תיאוריה	hi:सिद्धांत	ja:理論,セオリー	ko:이론	pt:teoria	ru:теория	tr:teori,kuram	ur:نظریہ	zh:理论
 c:therapy	Noun	ar:علاج	de:Therapie	en:therapy	es:terapia	fa:درمان	fr:thérapie	he:תרפיה,טיפול	hi:चिकित्सा,थेरेपी	ja:療法	ko:요법,치료법	pt:terapia	ru:терапия	tr:terapi	ur:تھراپی	zh:治疗法
+c:thermometer	Noun	ar:ميزان الحرارة,مقياس الحرارة	de:Thermometer	en:thermometer	es:termómetro	fa:دماسنج	fr:thermomètre	he:מדחום,תרמומטר	hi:थर्मामीटर,तापमापी	ja:温度計	ko:온도계	pt:termômetro	ru:термометр	tr:termometre,sıcaklıkölçer	ur:تھرمامیٹر,درجہ حرارت پیما	zh:温度计
 c:thick	Adjective	ar:سميك,كثيف	de:dick	en:thick	es:grueso,espeso	fa:ضخیم,کلفت	fr:épais	he:עבה	hi:मोटा,गाढ़ा	ja:厚い,太い	ko:두꺼운,진한	pt:grosso,espesso	ru:толстый	tr:kalın	ur:موٹا	zh:厚,浓
 c:thin	Adjective	ar:رقيق,رفيع	de:dünn	en:thin	es:delgado,fino	fa:نازک,لاغر	fr:mince,fin	he:דק	hi:पतला	ja:薄い,細い	ko:얇은,가는	pt:fino,magro	ru:тонкий	tr:ince	ur:پتلا,باریک	zh:薄,细
 c:think	Verb	ar:فكر,يفكر	de:denken	en:think,thinks,thought	es:pensar	fa:فکر کردن	fr:penser	he:לחשוב	hi:सोचना	ja:考える,思う	ko:생각하다	pt:pensar	ru:думать	tr:düşünmek	ur:سوچنا	zh:想,思考
@@ -1519,6 +1555,7 @@ c:threshold	Noun	ar:عتبة	de:Schwelle,Türschwelle	en:threshold,doorstep	es:u
 c:throw	Verb	ar:رمى	de:werfen	en:throw,throws,threw,thrown,throwing	es:lanzar,tirar	fa:پرتاب کردن,انداختن	fr:lancer,jeter	he:לזרוק,להשליך	hi:फेंकना	ja:投げる	ko:던지다	pt:lançar,jogar,arremessar	ru:бросать,кидать	tr:atmak,fırlatmak	ur:پھینکنا	zh:投,扔
 c:thumb	Noun	ar:إبهام	de:Daumen	en:thumb	es:pulgar	fa:شست,انگشت شست	fr:pouce	he:בוהן	hi:अंगूठा	ja:親指	ko:엄지	pt:polegar	ru:большой палец	tr:başparmak	ur:انگوٹھا	zh:拇指
 c:thunder	Noun	ar:رعد	de:Donner	en:thunder	es:trueno	fa:رعد,تندر	fr:tonnerre	he:רעם	hi:गरज,बादल गर्जन	ja:雷鳴	ko:천둥	pt:trovão	ru:гром	tr:gök gürültüsü	ur:گرج	zh:雷
+c:thunderhead	Noun	ar:سحابة رعدية ركامية,سحابة عاصفية	de:Gewitterwolke,Cumulonimbus	en:thunderhead,cumulonimbus	es:cumulonimbus,nube de tormenta	fa:ابر رعدی ستبر,کومولونیمبوس	fr:cumulonimbus,nuage d'orage	he:ענן רעמים,קומולונימבוס	hi:गरज का बादल,कुमूलोनिंबस	ja:積乱雲	ko:적란운	pt:cumulonimbus,nuvem de tempestade	ru:грозовое облако,кучево-дождевое облако	tr:kümülonimbüs,fırtına bulutu	ur:کمولونمبس,طوفانی بادل	zh:积雨云,雷雨云
 c:tick-insect	Noun	ar:قراد	de:Zecke	en:tick	es:garrapata	fa:کنه	fr:tique	he:קרצייה	hi:चिचड़	ja:マダニ	ko:진드기 큰	pt:carrapato	ru:клещ собачий	tr:kene	ur:چچڑ	zh:蜱虫
 c:ticket	Noun	ar:تذكرة	de:Ticket,Fahrkarte	en:ticket	es:billete,boleto,entrada,tique	fa:بلیط	fr:billet,ticket	he:כרטיס	hi:टिकट	ja:チケット,切符	ko:티켓,표	pt:bilhete,ingresso	ru:билет	tr:bilet	ur:ٹکٹ	zh:票,车票
 c:tie-clothing	Noun	ar:ربطة عنق,كرفتة	de:Krawatte	en:tie,necktie	es:corbata	fa:کراوات	fr:cravate	he:עניבה	hi:टाई,नेकटाई	ja:ネクタイ	ko:넥타이	pt:gravata	ru:галстук	tr:kravat	ur:ٹائی	zh:领带
@@ -1567,6 +1604,7 @@ c:triangle	Noun	ar:مثلث	de:Dreieck	en:triangle	es:triángulo	fa:مثلث	fr:
 c:tribe	Noun	ar:قبيلة	de:Stamm	en:tribe	es:tribu	fa:قبیله,ایل	fr:tribu	he:שבט	hi:जनजाति,कबीला	ja:部族	ko:부족,종족	pt:tribo	ru:племя	tr:kabile,boy	ur:قبیلہ	zh:部落,族
 c:trip	Noun	ar:رحلة قصيرة	de:Ausflug	en:trip	es:excursión	fa:سفر کوتاه,گشت	fr:excursion	he:טיול	hi:यात्रा	ja:出張	ko:출장	pt:excursão	ru:поездка	tr:gezi	ur:سیر	zh:出行
 c:trophy	Noun	ar:كأس,جائزة	de:Trophäe,Pokal	en:trophy	es:trofeo	fa:جام,جایزه	fr:trophée	he:גביע	hi:ट्रॉफी	ja:トロフィー	ko:트로피	pt:troféu	ru:трофей,кубок	tr:kupa,ödül	ur:ٹرافی	zh:奖杯
+c:troposphere	Noun	ar:تروبوسفير,الطبقة السفلى من الغلاف الجوي	de:Troposphäre	en:troposphere	es:troposfera	fa:تروپوسفر,وردسپهر	fr:troposphère	he:טרופוספירה	hi:क्षोभमंडल,ट्रोपोस्फीयर	ja:対流圏	ko:대류권	pt:troposfera	ru:тропосфера	tr:troposfer	ur:ٹروپوسفیئر,زیریں کرہ	zh:对流层
 c:truck	Noun	ar:شاحنة	de:Lastwagen,Laster,LKW	en:truck,lorry	es:camión	fa:کامیون	fr:camion	he:משאית	hi:ट्रक,लॉरी	ja:トラック	ko:트럭	pt:caminhão,camião	ru:грузовик	tr:kamyon	ur:ٹرک	zh:卡车,货车
 c:trumpet	Noun	ar:بوق,ترومبيت	de:Trompete	en:trumpet	es:trompeta	fa:ترومپت,شیپور	fr:trompette	he:חצוצרה	hi:तुरही,ट्रम्पेट	ja:トランペット	ko:트럼펫	pt:trompete	ru:труба	tr:trompet,borazan	ur:بگل,ترمپٹ	zh:小号
 c:trunk	Noun	ar:جذع	de:Stamm,Baumstamm	en:trunk	es:tronco	fa:تنه,تنه درخت	fr:tronc	he:גזע	hi:तना,धड़	ja:幹	ko:줄기,나무줄기	pt:tronco	ru:ствол	tr:gövde,ağaç gövdesi	ur:تنا	zh:树干
@@ -1639,6 +1677,7 @@ c:weak	Adjective	ar:ضعيف	de:schwach	en:weak	es:débil	fa:ضعیف	fr:faible	
 c:wealth	Noun	ar:ثروة,غنى	de:Reichtum,Vermögen	en:wealth,riches	es:riqueza	fa:ثروت,دارایی	fr:richesse	he:עושר	hi:धन,दौलत	ja:富,財産	ko:부,재산	pt:riqueza	ru:богатство	tr:zenginlik,servet	ur:دولت	zh:财富
 c:weapon	Noun	ar:سلاح	de:Waffe	en:weapon,arm	es:arma	fa:سلاح	fr:arme	he:נשק	hi:हथियार	ja:武器	ko:무기	pt:arma	ru:оружие	tr:silah	ur:ہتھیار	zh:武器
 c:weather	Noun	ar:طقس,جو	de:Wetter	en:weather	es:tiempo,clima	fa:آب و هوا,هوا	fr:temps,météo	he:מזג אוויר	hi:मौसम	ja:天気,気象	ko:날씨	pt:tempo,clima	ru:погода	tr:hava	ur:موسم	zh:天气
+c:weather-vane	Noun	ar:دوارة الرياح,مؤشر اتجاه الرياح	de:Wetterfahne,Windfahne	en:weather vane,wind vane	es:veleta	fa:بادنما	fr:girouette	he:שבשבת רוח,שבשבת	hi:पवन दिशा सूचक	ja:風見鶏,風向計	ko:풍향계,풍향 지시기	pt:cata-vento	ru:флюгер	tr:rüzgâr gülü	ur:بادنما	zh:风向标,风标
 c:website	Noun	ar:موقع,موقع إلكتروني	de:Website,Webseite	en:website,web	es:sitio web,página web	fa:وبسایت,سایت	fr:site web,site internet	he:אתר אינטרנט,אתר	hi:वेबसाइट	ja:ウェブサイト,サイト	ko:웹사이트,사이트	pt:site,sítio	ru:сайт,веб-сайт	tr:web sitesi,site	ur:ویب سائٹ	zh:网站
 c:wedding	Noun	ar:زفاف,عرس	de:Hochzeit	en:wedding	es:boda,casamiento	fa:عروسی,ازدواج	fr:mariage,noces	he:חתונה	hi:शादी,विवाह	ja:結婚式	ko:결혼식	pt:casamento	ru:свадьба	tr:düğün	ur:شادی,بیاہ	zh:婚礼
 c:weed	Noun	ar:عشب ضار,نبتة ضارة	de:Unkraut	en:weed	es:mala hierba,maleza	fa:علف هرز	fr:mauvaise herbe	he:עשב שוטה	hi:खरपतवार	ja:雑草	ko:잡초	pt:erva daninha	ru:сорняк	tr:yabani ot	ur:گھاس پھوس	zh:杂草
@@ -1660,6 +1699,7 @@ c:window	Noun	ar:نافذة,شباك	de:Fenster	en:window	es:ventana	fa:پنجر
 c:windshield	Noun	ar:زجاج أمامي	de:Windschutzscheibe	en:windshield,windscreen	es:parabrisas	fa:شیشه جلو	fr:pare-brise	he:שמשה קדמית	hi:विंडशील्ड	ja:フロントガラス	ko:앞유리,윈드실드	pt:para-brisa	ru:лобовое стекло	tr:ön cam	ur:ونڈ اسکرین	zh:挡风玻璃
 c:wine	Noun	ar:نبيذ,خمر	de:Wein	en:wine	es:vino	fa:شراب	fr:vin	he:יין	hi:शराब,मदिरा	ja:ワイン	ko:와인,포도주	pt:vinho	ru:вино	tr:şarap	ur:شراب	zh:葡萄酒,酒
 c:winner	Noun	ar:فائز,رابح	de:Sieger,Gewinner	en:winner	es:ganador	fa:برنده	fr:gagnant,vainqueur	he:מנצח	hi:विजेता	ja:勝者,優勝者	ko:우승자,승자	pt:vencedor,ganhador	ru:победитель	tr:kazanan,galip	ur:جیتنے والا,فاتح	zh:赢家,胜者
+c:winter	Noun	ar:شتاء	de:Winter	en:winter	es:invierno	fa:زمستان	fr:hiver	he:חורף	hi:शीत,सर्दी,जाड़ा	ja:冬	ko:겨울	pt:inverno	ru:зима	tr:kış	ur:سردی,موسم سرما,جاڑا	zh:冬,冬季
 c:wire	Noun	ar:سلك	de:Draht,Kabel	en:wire	es:alambre,cable	fa:سیم	fr:fil,câble	he:חוט,תיל	hi:तार	ja:針金,ワイヤー	ko:철사,와이어	pt:fio,arame	ru:провод,проволока	tr:tel,kablo	ur:تار	zh:电线,金属丝
 c:wisdom	Noun	ar:حكمة	de:Weisheit	en:wisdom	es:sabiduría	fa:حکمت,خرد	fr:sagesse	he:חוכמה	hi:ज्ञान,बुद्धिमत्ता	ja:知恵	ko:지혜	pt:sabedoria	ru:мудрость	tr:bilgelik,hikmet	ur:حکمت,دانائی	zh:智慧
 c:witness	Noun	ar:شاهد	de:Zeuge	en:witness	es:testigo	fa:شاهد,گواه	fr:témoin	he:עד	hi:गवाह,साक्षी	ja:証人	ko:증인	pt:testemunha	ru:свидетель	tr:tanık,şahit	ur:گواہ,شاہد	zh:证人,目击者
