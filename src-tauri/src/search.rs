@@ -2976,11 +2976,15 @@ mod tests_m12 {
 
     #[test]
     fn proper_noun_not_in_corpus_falls_back() {
-        // Any well-formed English word not on a concept returns None
-        // and falls through to prefix matching. This is the common
-        // case until M11-data scales up past 49 concepts.
-        assert!(expanded_match_query("Constellation").is_none());
+        // Any well-formed English word not mapped to a concept returns
+        // None and falls through to prefix matching. The corpus has
+        // scaled well past its original 49-concept seed (now 2,500+
+        // concepts across 63 shards), so these assertions use proper
+        // nouns and invented strings guaranteed to stay out of the
+        // natural-language lexicon: "Anthropic" (company name, not a
+        // concept) and "Xzyqwop" (invented, zero-collision).
         assert!(expanded_match_query("Anthropic").is_none());
+        assert!(expanded_match_query("Xzyqwop").is_none());
     }
 }
 
