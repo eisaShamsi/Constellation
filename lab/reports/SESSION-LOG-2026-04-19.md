@@ -864,3 +864,54 @@ closed.
 - `6bbe1a9` — `docs(README): clarify TAURI_SIGNING_PRIVATE_KEY is optional for local builds`
   (`README.md` +34, `lab/reports/SESSION-LOG-2026-04-19.md` +§ 21; pushed to
   `claude/upbeat-proskuriakova`).
+
+## § 22 — M11-data v2: +064-common-animals (40) batch
+
+### Shipped
+
+New shard `lab/m11-data/concepts/064-common-animals.json` — 40 concepts, full 15/15
+language coverage every row, correct Arabic everywhere (non-negotiable per project rule),
+native scripts throughout.
+
+### IDs landed (40, in file order)
+
+crow, pigeon, sparrow, calf, puppy, kitten, swan, seagull, peacock, turkey, ostrich,
+bat, otter, beaver, raccoon, hyena, leopard, cheetah, jaguar, panda, kangaroo, koala,
+chimpanzee, tortoise, heron, flamingo, penguin, salmon, trout, octopus, crab, lobster,
+raven, stork, pelican, vulture, woodpecker, kingfisher, canary, dove.
+
+### Dedup work
+
+First authoring pass assumed common animals were all open — 37 of 40 initial IDs
+(dog, cat, horse, cow, pig, sheep, chicken, etc.) collided with earlier shards
+`002-nature.json`, `037-agriculture-and-farming.json`, `038-animals-wildlife.json`.
+`build.py:184` enforces cross-shard ID uniqueness as a hard error, so the first draft
+failed the build. Second pass dropped the collisions (hen, rooster, lamb, hawk, falcon,
+squirrel, hedgehog, monkey, gorilla, crocodile, turtle, moth, wasp) and substituted 13
+unique ones (salmon, trout, octopus, crab, lobster, raven, stork, pelican, vulture,
+woodpecker, kingfisher, canary, dove) for a clean 40.
+
+### Corpus growth
+
+```
+shards:             64 → 65
+concepts:         2,600 → 2,640  (+40, +1.5%)
+total lemma strings: 49,811 → 50,427  (+616, 15.4 lemmas/concept)
+```
+
+All 15 per-language coverage percentages remain healthy (115-137%). Progress toward
+20K-concept goal: **13.2%** (2,640/20,000).
+
+### Verification
+
+- `python build.py` from `lab/m11-data/`: zero errors, zero warnings.
+- `src-tauri/src/lexicon/data/lexicon_v1.tsv` regenerated fresh (djb2 hash flips → the
+  content-addressed cache filename will flip on next app launch; next boot writes a
+  fresh `.bin` bundle and orphans the old one, per M11-cache-infra).
+- Spot-checked Arabic on first eight rows: غراب (crow), حمامة (pigeon), عصفور (sparrow),
+  عجل (calf), جرو (puppy), هريرة (kitten), بجعة (swan), نورس (seagull) — all correct
+  native forms.
+
+### Commits
+
+- `<pending>` — `M11-data v2: +064-common-animals (40) batch`
