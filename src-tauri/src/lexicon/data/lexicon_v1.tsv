@@ -31,7 +31,9 @@ c:adhd	Noun	ar:اضطراب فرط الحركة ونقص الانتباه	de:ADH
 c:adjective	Noun	ar:صفة,نعت	de:Adjektiv,Eigenschaftswort	en:adjective	es:adjetivo	fa:صفت	fr:adjectif	he:שם תואר	hi:विशेषण	ja:形容詞	ko:형용사	pt:adjetivo	ru:прилагательное	tr:sıfat,önad	ur:صفت	zh:形容词
 c:admiral	Noun	ar:أميرال	de:Admiral	en:admiral	es:almirante	fa:دریاسالار	fr:amiral	he:אדמירל	hi:एडमिरल	ja:提督	ko:제독	pt:almirante	ru:адмирал	tr:amiral	ur:ایڈمرل	zh:海军上将
 c:admiration	Noun	ar:إعجاب	de:Bewunderung	en:admiration	es:admiración	fa:تحسین	fr:admiration	he:הערצה	hi:प्रशंसा	ja:感嘆	ko:감탄	pt:admiração	ru:восхищение	tr:hayranlık	ur:تعریف	zh:钦佩
+c:adriatic-sea	Noun	ar:البحر الأدرياتيكي	de:Adria,Adriatisches Meer	en:Adriatic,Adriatic Sea	es:Mar Adriático	fa:دریای آدریاتیک	fr:Mer Adriatique	he:הים האדריאטי	hi:एड्रियाटिक सागर	ja:アドリア海	ko:아드리아해	pt:Mar Adriático	ru:Адриатическое море	tr:Adriyatik Denizi	ur:بحیرہ ایڈریاٹک	zh:亚得里亚海
 c:adverb	Noun	ar:ظرف,حال	de:Adverb,Umstandswort	en:adverb	es:adverbio	fa:قید	fr:adverbe	he:תואר הפועל	hi:क्रिया विशेषण	ja:副詞	ko:부사	pt:advérbio	ru:наречие	tr:zarf,belirteç	ur:متعلق فعل	zh:副词
+c:aegean-sea	Noun	ar:بحر إيجة	de:Ägäis,Ägäisches Meer	en:Aegean,Aegean Sea	es:Mar Egeo	fa:دریای اژه	fr:Mer Égée	he:הים האגאי	hi:एजियन सागर	ja:エーゲ海	ko:에게해	pt:Mar Egeu	ru:Эгейское море	tr:Ege Denizi	ur:بحیرہ ایجیئن	zh:爱琴海
 c:aesthetics	Noun	ar:علم الجمال,الإستطيقا	de:Ästhetik	en:aesthetics	es:estética	fa:زیبایی شناسی	fr:esthétique	he:אסתטיקה	hi:सौंदर्यशास्त्र	ja:美学	ko:미학	pt:estética	ru:эстетика	tr:estetik	ur:جمالیات	zh:美学
 c:affection	Noun	ar:مودة	de:Zuneigung	en:affection	es:afecto	fa:محبت	fr:affection	he:חיבה	hi:स्नेह	ja:愛情	ko:애정	pt:afeto	ru:привязанность	tr:sevgi	ur:پیار	zh:爱意
 c:afternoon	Noun	ar:بعد الظهر	de:Nachmittag	en:afternoon	es:tarde	fa:بعدازظهر	fr:après-midi	he:אחר הצהריים	hi:दोपहर	ja:午後	ko:오후	pt:tarde	ru:день	tr:öğleden sonra	ur:دوپہر	zh:下午
@@ -62,6 +64,7 @@ c:amsterdam	Noun	ar:أمستردام	de:Amsterdam	en:Amsterdam	es:Ámsterdam	fa:
 c:analysis	Noun	ar:تحليل	de:Analyse	en:analysis	es:análisis	fa:تحلیل	fr:analyse	he:ניתוח	hi:विश्लेषण	ja:分析,解析	ko:분석	pt:análise	ru:анализ	tr:analiz,çözümleme	ur:تجزیہ	zh:分析
 c:ancestor	Noun	ar:سلف,جد	de:Vorfahre,Ahne	en:ancestor,forefather	es:ancestro,antepasado	fa:نیاکان,اجداد	fr:ancêtre	he:אב קדמון,אבות	hi:पूर्वज	ja:祖先,先祖	ko:조상,선조	pt:ancestral,antepassado	ru:предок	tr:ata,cet	ur:آباء,اجداد	zh:祖先,先祖
 c:anchovy	Noun	ar:أنشوجة	de:Sardelle	en:anchovy	es:anchoa	fa:آنچوی	fr:anchois	he:אנשובי	hi:एंकोवी	ja:カタクチイワシ	ko:멸치	pt:anchova	ru:анчоус	tr:hamsi	ur:اینچووی	zh:凤尾鱼
+c:andaman-sea	Noun	ar:بحر أندامان	de:Andamanensee	en:Andaman Sea	es:Mar de Andamán	fa:دریای آندامان	fr:Mer d'Andaman	he:ים אנדמן	hi:अंडमान सागर	ja:アンダマン海	ko:안다만해	pt:Mar de Andamão	ru:Андаманское море	tr:Andaman Denizi	ur:بحیرہ انڈمان	zh:安达曼海
 c:anemometer	Noun	ar:مقياس الرياح,أنيمومتر	de:Anemometer,Windmesser	en:anemometer	es:anemómetro	fa:بادسنج	fr:anémomètre	he:אנמומטר,מד-רוח	hi:एनीमोमीटर,वायुवेग मापी	ja:風速計,アネモメーター	ko:풍속계	pt:anemômetro	ru:анемометр	tr:anemometre,rüzgârölçer	ur:اینیمومیٹر,بادسنج	zh:风速计
 c:angel	Noun	ar:ملاك	de:Engel	en:angel	es:ángel	fa:فرشته	fr:ange	he:מלאך	hi:देवदूत,फ़रिश्ता	ja:天使	ko:천사	pt:anjo	ru:ангел	tr:melek	ur:فرشتہ	zh:天使
 c:anger	Noun	ar:غضب	de:Zorn,Ärger,Wut	en:anger	es:ira,enojo	fa:خشم,عصبانیت	fr:colère	he:כעס	hi:क्रोध,ग़ुस्सा	ja:怒り	ko:분노,화	pt:raiva,ira	ru:гнев,злость	tr:öfke,kızgınlık	ur:غصہ	zh:愤怒,生气
@@ -93,10 +96,13 @@ c:appeal	Noun	ar:استئناف	de:Berufung,Einspruch	en:appeal	es:apelación,re
 c:apple	Noun	ar:تفاحة	de:Apfel	en:apple	es:manzana	fa:سیب	fr:pomme	he:תפוח	hi:सेब	ja:リンゴ,林檎	ko:사과	pt:maçã	ru:яблоко	tr:elma	ur:سیب	zh:苹果
 c:application	Noun	ar:تطبيق	de:Anwendung,App	en:application,app	es:aplicación,app	fa:برنامه,اپلیکیشن	fr:application,appli	he:יישום,אפליקציה	hi:एप्लिकेशन,ऐप	ja:アプリケーション,アプリ	ko:애플리케이션,앱	pt:aplicação,aplicativo,app	ru:приложение	tr:uygulama	ur:ایپلی کیشن,ایپ	zh:应用程序,应用
 c:apprentice	Noun	ar:متدرّب,صبّي	de:Lehrling,Auszubildender	en:apprentice	es:aprendiz	fa:شاگرد,کارآموز	fr:apprenti	he:שוליה,חניך	hi:प्रशिक्षु,शागिर्द	ja:見習い,徒弟	ko:견습생,도제	pt:aprendiz	ru:ученик,подмастерье	tr:çırak	ur:شاگرد,تربیت یافتہ	zh:学徒
+c:arabian-sea	Noun	ar:بحر العرب	de:Arabisches Meer	en:Arabian Sea	es:Mar Arábigo	fa:دریای عرب	fr:Mer d'Arabie	he:הים הערבי	hi:अरब सागर	ja:アラビア海	ko:아라비아해	pt:Mar Arábigo,Mar da Arábia	ru:Аравийское море	tr:Arap Denizi	ur:بحیرہ عرب	zh:阿拉伯海
+c:aral-sea	Noun	ar:بحر الآرال	de:Aralsee	en:Aral Sea	es:Mar de Aral	fa:دریاچه آرال	fr:Mer d'Aral	he:ים אראל	hi:अरल सागर	ja:アラル海	ko:아랄해	pt:Mar de Aral	ru:Аральское море	tr:Aral Gölü	ur:بحیرہ ارال	zh:咸海
 c:arch	Noun	ar:قوس,طاق	de:Bogen	en:arch	es:arco	fa:طاق	fr:arche,voûte	he:קשת	hi:मेहराब	ja:アーチ,拱門	ko:아치,홍예	pt:arco	ru:арка	tr:kemer	ur:محراب,طاق	zh:拱门
 c:archaic	Noun	ar:العصر العتيق,الحقبة الأثرية	de:archaische Zeit,Archaik	en:archaic period,archaic era	es:período arcaico,época arcaica	fa:دوره باستانی,دوره آرکائیک	fr:période archaïque,époque archaïque	he:התקופה הארכאית,תקופה ארכאית	hi:पुरातन काल,प्राचीनतम युग	ja:アルカイック期,古拙期	ko:아르카이크 시대,상고기	pt:período arcaico,época arcaica	ru:архаический период,архаика	tr:arkaik dönem	ur:کہن دور,قدیم ترین دور	zh:古风时期,远古时代
 c:archipelago	Noun	ar:أرخبيل	de:Archipel	en:archipelago	es:archipiélago	fa:مجمع الجزایر	fr:archipel	he:ארכיפלג	hi:द्वीपसमूह	ja:群島	ko:군도	pt:arquipélago	ru:архипелаг	tr:takımadalar	ur:جزیرہ نما	zh:群岛
 c:arctic	Noun	ar:القطب الشمالي,المنطقة القطبية الشمالية	de:Arktis	en:Arctic,the Arctic	es:Ártico	fa:قطب شمال,منطقه قطبی شمالی	fr:Arctique	he:ארקטי,האזור הארקטי	hi:आर्कटिक,उत्तरी ध्रुवीय क्षेत्र	ja:北極,北極圏	ko:북극,북극권	pt:Ártico	ru:Арктика	tr:Arktik,Kuzey Kutbu	ur:قطب شمالی,آرکٹک	zh:北极,北极地区
+c:arctic-ocean	Noun	ar:المحيط المتجمد الشمالي	de:Arktischer Ozean,Nordpolarmeer	en:Arctic Ocean	es:Océano Ártico,Océano Glacial Ártico	fa:اقیانوس منجمد شمالی	fr:Océan Arctique,Océan Glacial Arctique	he:האוקיינוס הארקטי	hi:आर्कटिक महासागर	ja:北極海	ko:북극해	pt:Oceano Ártico,Oceano Glacial Ártico	ru:Северный Ледовитый океан	tr:Kuzey Buz Denizi	ur:بحر منجمد شمالی	zh:北冰洋
 c:area	Noun	ar:منطقة	de:Gebiet,Bereich	en:area	es:área,zona	fa:منطقه,ناحیه	fr:zone,aire	he:אזור	hi:क्षेत्र,इलाक़ा	ja:地域,エリア	ko:지역,구역	pt:área,zona	ru:область,зона	tr:alan,bölge	ur:علاقہ	zh:地区,区域
 c:argentina	Noun	ar:الأرجنتين	de:Argentinien	en:Argentina	es:Argentina	fa:آرژانتین	fr:Argentine	he:ארגנטינה	hi:अर्जेंटीना	ja:アルゼンチン	ko:아르헨티나	pt:Argentina	ru:Аргентина	tr:Arjantin	ur:ارجنٹائن	zh:阿根廷
 c:argue	Verb	ar:جادل	de:streiten,argumentieren	en:argue	es:discutir	fa:بحث کردن	fr:discuter,se disputer	he:להתווכח	hi:बहस करना,तर्क करना	ja:議論する,言い争う	ko:논쟁하다	pt:discutir	ru:спорить	tr:tartışmak	ur:بحث کرنا	zh:争论,争辩
@@ -127,6 +133,7 @@ c:astronomer	Noun	ar:عالم فلك,فلكي	de:Astronom,Astronomin	en:astronom
 c:astronomy	Noun	ar:علم الفلك	de:Astronomie	en:astronomy	es:astronomía	fa:اخترشناسی,ستاره‌شناسی	fr:astronomie	he:אסטרונומיה	hi:खगोल विज्ञान	ja:天文学	ko:천문학	pt:astronomia	ru:астрономия	tr:astronomi,gök bilimi	ur:علم فلکیات	zh:天文学
 c:athens	Noun	ar:أثينا	de:Athen	en:Athens	es:Atenas	fa:آتن	fr:Athènes	he:אתונה	hi:एथेंस	ja:アテネ	ko:아테네	pt:Atenas	ru:Афины	tr:Atina	ur:ایتھنز	zh:雅典
 c:athlete	Noun	ar:رياضي	de:Athlet,Sportler	en:athlete	es:atleta,deportista	fa:ورزشکار	fr:athlète,sportif	he:ספורטאי,אתלט	hi:खिलाड़ी,एथलीट	ja:選手,アスリート	ko:운동선수,선수	pt:atleta,esportista	ru:спортсмен,атлет	tr:sporcu,atlet	ur:کھلاڑی,ایتھلیٹ	zh:运动员
+c:atlantic	Noun	ar:المحيط الأطلسي	de:Atlantik,Atlantischer Ozean	en:Atlantic,Atlantic Ocean	es:Atlántico,Océano Atlántico	fa:اقیانوس اطلس	fr:Atlantique,Océan Atlantique	he:האוקיינוס האטלנטי	hi:अटलांटिक महासागर	ja:大西洋	ko:대서양	pt:Atlântico,Oceano Atlântico	ru:Атлантический океан	tr:Atlas Okyanusu	ur:بحر اوقیانوس	zh:大西洋
 c:atlas	Noun	ar:أطلس	de:Atlas	en:atlas	es:atlas	fa:اطلس	fr:atlas	he:אטלס	hi:एटलस	ja:地図帳,アトラス	ko:지도책,아틀라스	pt:atlas	ru:атлас	tr:atlas	ur:اطلس	zh:地图册
 c:atmosphere	Noun	ar:غلاف جوي,جو	de:Atmosphäre,Lufthülle	en:atmosphere	es:atmósfera	fa:اتمسفر,جو	fr:atmosphère	he:אטמוספירה	hi:वायुमंडल	ja:大気,大気圏	ko:대기,대기권	pt:atmosfera	ru:атмосфера	tr:atmosfer	ur:فضا,کرہ ہوائی	zh:大气,大气层
 c:atoll	Noun	ar:جزيرة مرجانية	de:Atoll	en:atoll	es:atolón	fa:جزیره مرجانی	fr:atoll	he:אטול	hi:प्रवाल द्वीप	ja:環礁	ko:환초	pt:atol	ru:атолл	tr:atol	ur:مرجانی جزیرہ	zh:环礁
@@ -166,6 +173,7 @@ c:balcony	Noun	ar:شرفة,بلكون	de:Balkon	en:balcony	es:balcón	fa:بال�
 c:ball	Noun	ar:كرة	de:Ball	en:ball	es:pelota,balón	fa:توپ	fr:ballon,balle	he:כדור	hi:गेंद	ja:ボール	ko:공,볼	pt:bola	ru:мяч	tr:top	ur:گیند,بال	zh:球
 c:ballet	Noun	ar:باليه	de:Ballett	en:ballet	es:ballet	fa:باله	fr:ballet	he:בלט	hi:बैले	ja:バレエ	ko:발레	pt:balé,ballet	ru:балет	tr:bale	ur:بیلے	zh:芭蕾舞,芭蕾
 c:balloon	Noun	ar:بالون	de:Ballon,Luftballon	en:balloon	es:globo	fa:بادکنک	fr:ballon	he:בלון	hi:गुब्बारा	ja:風船,バルーン	ko:풍선	pt:balão	ru:шар,воздушный шар	tr:balon	ur:غبارہ	zh:气球
+c:baltic-sea	Noun	ar:بحر البلطيق	de:Ostsee,Baltisches Meer	en:Baltic Sea,Baltic	es:Mar Báltico	fa:دریای بالتیک	fr:Mer Baltique	he:הים הבלטי	hi:बाल्टिक सागर	ja:バルト海	ko:발트해	pt:Mar Báltico	ru:Балтийское море	tr:Baltık Denizi	ur:بحیرہ بالٹک	zh:波罗的海
 c:banana	Noun	ar:موز	de:Banane	en:banana	es:plátano,banana	fa:موز	fr:banane	he:בננה	hi:केला	ja:バナナ	ko:바나나	pt:banana	ru:банан	tr:muz	ur:کیلا	zh:香蕉
 c:bandage	Noun	ar:ضمادة	de:Verband,Bandage	en:bandage	es:vendaje,venda	fa:باند,پانسمان	fr:bandage,pansement	he:תחבושת	hi:पट्टी	ja:包帯	ko:붕대	pt:bandagem,atadura	ru:бинт,повязка	tr:bandaj,sargı	ur:پٹی	zh:绷带
 c:bandwidth	Noun	ar:عرض النطاق الترددي	de:Bandbreite	en:bandwidth	es:ancho de banda	fa:پهنای باند	fr:bande passante,largeur de bande	he:רוחב פס	hi:बैंडविड्थ	ja:帯域幅	ko:대역폭	pt:largura de banda	ru:пропускная способность	tr:bant genişliği	ur:بینڈویڈتھ	zh:带宽,频宽
@@ -177,6 +185,7 @@ c:bank	Noun	ar:مصرف,بنك	de:Bank	en:bank	es:banco	fa:بانک	fr:banque	he
 c:banknote	Noun	ar:ورقة نقدية,عملة ورقية	de:Banknote,Geldschein	en:banknote,bill	es:billete,papel moneda	fa:اسکناس	fr:billet de banque,billet	he:שטר כסף,שטר	hi:बैंक नोट,कागज़ी मुद्रा	ja:紙幣,銀行券	ko:지폐,은행권	pt:nota,cédula	ru:банкнота,купюра	tr:banknot,kâğıt para	ur:نوٹ,بینک نوٹ	zh:纸币,钞票
 c:baptism	Noun	ar:عماد,معمودية	de:Taufe	en:baptism	es:bautismo,bautizo	fa:غسل تعمید	fr:baptême	he:טבילה	hi:बपतिस्मा	ja:洗礼	ko:세례	pt:batismo,batizado	ru:крещение	tr:vaftiz	ur:بپتسمہ	zh:洗礼
 c:barcelona	Noun	ar:برشلونة	de:Barcelona	en:Barcelona	es:Barcelona	fa:بارسلونا	fr:Barcelone	he:ברצלונה	hi:बार्सिलोना	ja:バルセロナ	ko:바르셀로나	pt:Barcelona	ru:Барселона	tr:Barselona	ur:بارسلونا	zh:巴塞罗那
+c:barents-sea	Noun	ar:بحر بارنتس	de:Barentssee	en:Barents Sea	es:Mar de Barents	fa:دریای بارنتز	fr:Mer de Barents	he:ים ברנץ	hi:बैरेंट्स सागर	ja:バレンツ海	ko:바렌츠해	pt:Mar de Barents	ru:Баренцево море	tr:Barents Denizi	ur:بحیرہ بارنٹس	zh:巴伦支海
 c:bark	Noun	ar:لحاء,قشر الشجر	de:Rinde,Baumrinde	en:bark	es:corteza	fa:پوست درخت	fr:écorce	he:קליפה	hi:छाल	ja:樹皮	ko:나무껍질	pt:casca,cortiça	ru:кора	tr:kabuk,ağaç kabuğu	ur:درخت کی چھال,چھال	zh:树皮
 c:barley	Noun	ar:شعير	de:Gerste	en:barley	es:cebada	fa:جو	fr:orge	he:שעורה	hi:जौ	ja:大麦	ko:보리	pt:cevada	ru:ячмень	tr:arpa	ur:جو	zh:大麦
 c:barn	Noun	ar:حظيرة	de:Scheune	en:barn	es:granero	fa:انبار غله	fr:grange	he:אסם	hi:खलिहान	ja:納屋	ko:헛간	pt:celeiro	ru:амбар	tr:samanlık	ur:باڑا	zh:谷仓
@@ -196,6 +205,7 @@ c:batter	Noun	ar:خليط سائل,عجينة سائلة	de:Teig,Rührteig	en:ba
 c:battery	Noun	ar:بطارية	de:Batterie,Akku	en:battery	es:batería,pila	fa:باتری	fr:batterie,pile	he:סוללה	hi:बैटरी	ja:電池,バッテリー	ko:배터리,전지	pt:bateria,pilha	ru:батарея,аккумулятор	tr:pil,batarya	ur:بیٹری	zh:电池
 c:battle	Noun	ar:معركة	de:Schlacht	en:battle	es:batalla	fa:نبرد	fr:bataille	he:קרב	hi:लड़ाई	ja:戦闘	ko:전투	pt:batalha	ru:битва,сражение	tr:muharebe	ur:لڑائی	zh:战斗
 c:bay	Noun	ar:خليج صغير	de:Bucht	en:bay	es:bahía	fa:خلیج کوچک	fr:baie	he:מפרץ	hi:खाड़ी	ja:湾	ko:만	pt:baía	ru:залив	tr:koy	ur:خلیج	zh:海湾
+c:bay-of-bengal	Noun	ar:خليج البنغال	de:Golf von Bengalen	en:Bay of Bengal	es:Golfo de Bengala	fa:خلیج بنگال	fr:Golfe du Bengale	he:מפרץ בנגל	hi:बंगाल की खाड़ी	ja:ベンガル湾	ko:벵골만	pt:Baía de Bengala,Golfo de Bengala	ru:Бенгальский залив	tr:Bengal Körfezi	ur:خلیج بنگال	zh:孟加拉湾
 c:beach	Noun	ar:شاطئ	de:Strand,Ufer	en:beach,shore	es:playa	fa:ساحل,کرانه	fr:plage	he:חוף	hi:समुद्र तट,तट	ja:浜,ビーチ	ko:해변,바닷가	pt:praia	ru:пляж	tr:plaj,kumsal	ur:ساحل سمندر	zh:海滩,沙滩
 c:beaker	Noun	ar:كأس كيميائي,دورق	de:Becherglas	en:beaker	es:vaso de precipitados	fa:بشر,لیوان آزمایشگاهی	fr:bécher,gobelet	he:כוס כימית	hi:बीकर	ja:ビーカー	ko:비커	pt:béquer,copo de precipitados	ru:мензурка,химический стакан	tr:beher	ur:بیکر,کیمیائی پیالہ	zh:烧杯
 c:beam	Noun	ar:عارضة,جائز	de:Balken,Träger	en:beam	es:viga	fa:تیر,شاه تیر	fr:poutre	he:קורה	hi:कड़ी,शहतीर	ja:梁	ko:들보,빔	pt:viga	ru:балка	tr:kiriş	ur:شہتیر,بیم	zh:梁,横梁
@@ -212,6 +222,7 @@ c:beijing	Noun	ar:بكين	de:Peking,Beijing	en:Beijing,Peking	es:Pekín,Beijing
 c:belief	Noun	ar:اعتقاد,عقيدة	de:Überzeugung	en:belief	es:creencia	fa:باور,عقیده	fr:croyance	he:אמונה	hi:विश्वास,मान्यता	ja:信念	ko:신념,믿음	pt:crença	ru:убеждение	tr:inanç	ur:عقیدہ	zh:信念
 c:believe	Verb	ar:صدق,آمن	de:glauben	en:believe	es:creer	fa:باور کردن	fr:croire	he:להאמין	hi:मानना,विश्वास करना	ja:信じる	ko:믿다	pt:crer,acreditar	ru:верить	tr:inanmak	ur:ماننا,یقین کرنا	zh:相信
 c:belt	Noun	ar:حزام	de:Gürtel	en:belt	es:cinturón	fa:کمربند	fr:ceinture	he:חגורה	hi:बेल्ट,पेटी	ja:ベルト	ko:벨트,허리띠	pt:cinto	ru:ремень,пояс	tr:kemer	ur:بیلٹ	zh:腰带
+c:bering-sea	Noun	ar:بحر بيرنغ	de:Beringmeer	en:Bering Sea	es:Mar de Bering	fa:دریای برینگ	fr:Mer de Béring	he:ים ברינג	hi:बेरिंग सागर	ja:ベーリング海	ko:베링해	pt:Mar de Bering	ru:Берингово море	tr:Bering Denizi	ur:بحیرہ بیرنگ	zh:白令海
 c:berlin	Noun	ar:برلين	de:Berlin	en:Berlin	es:Berlín	fa:برلین	fr:Berlin	he:ברלין	hi:बर्लिन	ja:ベルリン	ko:베를린	pt:Berlim	ru:Берлин	tr:Berlin	ur:برلن	zh:柏林
 c:besiege	Verb	ar:حاصر,يحاصر	de:belagern	en:besiege	es:sitiar	fa:محاصره کردن	fr:assiéger	he:לצור	hi:घेराबंदी करना	ja:包囲する	ko:포위하다	pt:sitiar	ru:осаждать	tr:kuşatmak	ur:محاصرہ کرنا	zh:围攻
 c:bicycle	Noun	ar:دراجة	de:Fahrrad,Rad	en:bicycle,bike	es:bicicleta,bici	fa:دوچرخه	fr:bicyclette,vélo	he:אופניים	hi:साइकिल	ja:自転車	ko:자전거	pt:bicicleta	ru:велосипед	tr:bisiklet	ur:سائیکل	zh:自行车,单车
@@ -231,6 +242,7 @@ c:birthday	Noun	ar:عيد ميلاد,ميلاد	de:Geburtstag	en:birthday	es:cum
 c:bitcoin	Noun	ar:بيتكوين	de:Bitcoin	en:bitcoin	es:bitcoin	fa:بیت کوین	fr:bitcoin	he:ביטקוין	hi:बिटकॉइन	ja:ビットコイン	ko:비트코인	pt:bitcoin	ru:биткоин	tr:bitcoin	ur:بٹ کوائن	zh:比特币
 c:black	Adjective	ar:أسود	de:schwarz	en:black	es:negro	fa:سیاه,مشکی	fr:noir	he:שחור	hi:काला	ja:黒,黒い	ko:검은,검정	pt:preto,negro	ru:чёрный	tr:siyah,kara	ur:کالا	zh:黑,黑色
 c:black-hole	Noun	ar:ثقب أسود	de:Schwarzes Loch	en:black hole	es:agujero negro	fa:سیاهچاله	fr:trou noir	he:חור שחור	hi:ब्लैक होल,कृष्ण विवर	ja:ブラックホール	ko:블랙홀	pt:buraco negro	ru:чёрная дыра	tr:kara delik	ur:بلیک ہول	zh:黑洞
+c:black-sea	Noun	ar:البحر الأسود	de:Schwarzes Meer	en:Black Sea	es:Mar Negro	fa:دریای سیاه	fr:Mer Noire	he:הים השחור	hi:काला सागर	ja:黒海	ko:흑해	pt:Mar Negro	ru:Чёрное море	tr:Karadeniz	ur:بحیرہ اسود	zh:黑海
 c:blackboard	Noun	ar:سبورة,لوح	de:Tafel	en:blackboard,chalkboard	es:pizarra,pizarrón	fa:تخته سیاه	fr:tableau noir	he:לוח	hi:श्यामपट	ja:黒板	ko:칠판	pt:quadro-negro,lousa	ru:доска	tr:kara tahta	ur:تختہ سیاہ,بلیک بورڈ	zh:黑板
 c:blacksmith	Noun	ar:حداد	de:Schmied,Grobschmied	en:blacksmith,smith	es:herrero	fa:آهنگر	fr:forgeron	he:נפח	hi:लोहार	ja:鍛冶屋,鍛冶師	ko:대장장이,대장간 장인	pt:ferreiro	ru:кузнец	tr:demirci,nalbant	ur:لوہار	zh:铁匠
 c:bladder	Noun	ar:مثانة	de:Blase,Harnblase	en:bladder	es:vejiga	fa:مثانه	fr:vessie	he:שלפוחית	hi:मूत्राशय	ja:膀胱	ko:방광	pt:bexiga	ru:мочевой пузырь	tr:mesane	ur:مثانہ	zh:膀胱
@@ -329,6 +341,7 @@ c:caracas	Noun	ar:كراكاس	de:Caracas	en:Caracas	es:Caracas	fa:کاراکا�
 c:carbohydrate	Noun	ar:كربوهيدرات	de:Kohlenhydrat	en:carbohydrate	es:carbohidrato,hidrato de carbono	fa:کربوهیدرات	fr:glucide,hydrate de carbone	he:פחמימה	hi:कार्बोहाइड्रेट,शर्करा	ja:炭水化物	ko:탄수화물	pt:carboidrato,hidrato de carbono	ru:углевод	tr:karbonhidrat	ur:نشاستہ,کاربوہائیڈریٹ	zh:碳水化合物,糖类
 c:carbon	Noun	ar:كربون,فحم	de:Kohlenstoff	en:carbon	es:carbono	fa:کربن	fr:carbone	he:פחמן	hi:कार्बन	ja:炭素,カーボン	ko:탄소,카본	pt:carbono	ru:углерод	tr:karbon	ur:کاربن	zh:碳
 c:cargo-ship	Noun	ar:سفينة شحن	de:Frachtschiff	en:cargo ship,freighter	es:buque de carga,carguero	fa:کشتی باری	fr:cargo,navire de charge	he:ספינת מטען	hi:मालवाहक जहाज़	ja:貨物船	ko:화물선	pt:navio de carga,cargueiro	ru:грузовое судно,грузовой корабль	tr:kargo gemisi	ur:مال بردار جہاز	zh:货船,货轮
+c:caribbean	Noun	ar:البحر الكاريبي	de:Karibik,Karibisches Meer	en:Caribbean,Caribbean Sea	es:Caribe,Mar Caribe	fa:دریای کارائیب	fr:Caraïbes,Mer des Caraïbes	he:הים הקריבי	hi:कैरेबियन सागर	ja:カリブ海	ko:카리브해	pt:Caribe,Mar do Caribe	ru:Карибское море	tr:Karayip Denizi	ur:بحر کیریبیئن	zh:加勒比海
 c:carnival	Noun	ar:كرنفال	de:Karneval,Fasching	en:carnival	es:carnaval	fa:کارناوال	fr:carnaval	he:קרנבל	hi:कार्निवल	ja:カーニバル,謝肉祭	ko:카니발	pt:carnaval	ru:карнавал	tr:karnaval	ur:کارنیوال	zh:狂欢节,嘉年华
 c:carnivore	Noun	ar:آكل اللحوم,لاحم	de:Fleischfresser,Karnivore	en:carnivore	es:carnívoro	fa:گوشتخوار	fr:carnivore	he:טורף,אוכל בשר	hi:मांसाहारी	ja:肉食動物	ko:육식동물	pt:carnívoro	ru:плотоядное,хищник	tr:etçil,karnivor	ur:گوشت خور	zh:食肉动物
 c:carpenter	Noun	ar:نجار	de:Tischler,Schreiner,Zimmermann	en:carpenter	es:carpintero	fa:نجار	fr:charpentier,menuisier	he:נגר	hi:बढ़ई	ja:大工	ko:목수	pt:carpinteiro	ru:плотник,столяр	tr:marangoz,dülger	ur:بڑھئی	zh:木匠
@@ -336,6 +349,7 @@ c:carpentry	Noun	ar:نجارة	de:Tischlerei,Zimmerei	en:carpentry	es:carpinter�
 c:cartel	Noun	ar:كارتل,تكتل احتكاري	de:Kartell	en:cartel	es:cártel,cartel	fa:کارتل	fr:cartel,entente	he:קרטל	hi:कार्टेल,गुट	ja:カルテル	ko:카르텔	pt:cartel	ru:картель	tr:kartel	ur:کارٹل	zh:卡特尔,企业联合
 c:cartographer	Noun	ar:رسّام خرائط	de:Kartograph	en:cartographer	es:cartógrafo	fa:نقشه‌کش,نقشه‌نگار	fr:cartographe	he:קרטוגרף	hi:मानचित्रकार	ja:地図製作者,地図作成者	ko:지도 제작자,지도학자	pt:cartógrafo	ru:картограф	tr:haritacı,kartograf	ur:نقشہ نگار	zh:制图师,地图绘制员
 c:cash	Noun	ar:نقد,نقود	de:Bargeld	en:cash	es:efectivo	fa:پول نقد,وجه نقد	fr:espèces,liquide	he:מזומן	hi:नकद,नकदी	ja:現金	ko:현금	pt:dinheiro,numerário	ru:наличные,наличка	tr:nakit	ur:نقدی,کیش	zh:现金
+c:caspian-sea	Noun	ar:بحر قزوين	de:Kaspisches Meer	en:Caspian Sea	es:Mar Caspio	fa:دریای خزر,دریای کاسپین	fr:Mer Caspienne	he:הים הכספי	hi:कैस्पियन सागर	ja:カスピ海	ko:카스피해	pt:Mar Cáspio	ru:Каспийское море	tr:Hazar Denizi	ur:بحیرہ قزوین	zh:里海
 c:caste	Noun	ar:طبقة اجتماعية,كاست	de:Kaste	en:caste	es:casta	fa:کاست,طبقه موروثی	fr:caste	he:קסטה	hi:जाति,वर्ण	ja:カースト	ko:카스트,계급	pt:casta	ru:каста	tr:kast	ur:ذات,برادری	zh:种姓,卡斯特
 c:castle	Noun	ar:قلعة,حصن	de:Burg,Schloss	en:castle	es:castillo	fa:قلعه,دژ	fr:château	he:טירה,מבצר	hi:किला,दुर्ग	ja:城	ko:성	pt:castelo	ru:замок,крепость	tr:kale,şato	ur:قلعہ	zh:城堡
 c:cat	Noun	ar:قط,قطة	de:Katze	en:cat	es:gato	fa:گربه	fr:chat,chatte	he:חתול	hi:बिल्ली	ja:猫	ko:고양이	pt:gato	ru:кошка,кот	tr:kedi	ur:بلی	zh:猫
@@ -497,6 +511,7 @@ c:contradiction	Noun	ar:تناقض	de:Widerspruch	en:contradiction	es:contradicc
 c:cook	Noun	ar:طباخ	de:Koch,Köchin	en:cook,chef	es:cocinero,chef	fa:آشپز,سرآشپز	fr:cuisinier,chef	he:טבח,שף	hi:रसोइया,शेफ	ja:料理人,シェフ	ko:요리사,셰프	pt:cozinheiro,chef	ru:повар,шеф-повар	tr:aşçı,şef	ur:باورچی,شیف	zh:厨师,大厨
 c:cooper	Noun	ar:صانع البراميل	de:Küfer,Böttcher,Fassbinder	en:cooper,barrelmaker	es:tonelero	fa:بشکه‌ساز	fr:tonnelier	he:חבתן,חביתאי	hi:पीपा निर्माता	ja:桶職人,樽職人	ko:통 제조공,통장이	pt:tanoeiro	ru:бондарь,бочар	tr:fıçıcı	ur:پیپا ساز	zh:箍桶匠
 c:copper	Noun	ar:نحاس	de:Kupfer	en:copper	es:cobre	fa:مس	fr:cuivre	he:נחושת	hi:तांबा,ताम्र	ja:銅	ko:구리,동	pt:cobre	ru:медь	tr:bakır	ur:تانبا	zh:铜
+c:coral-sea	Noun	ar:بحر كورال,بحر المرجان	de:Korallenmeer	en:Coral Sea	es:Mar del Coral	fa:دریای مرجان	fr:Mer de Corail	he:ים האלמוגים	hi:कोरल सागर,प्रवाल सागर	ja:珊瑚海	ko:산호해	pt:Mar de Coral	ru:Коралловое море	tr:Mercan Denizi	ur:بحیرہ مرجان	zh:珊瑚海
 c:corn	Noun	ar:ذرة	de:Mais	en:corn,maize	es:maíz	fa:ذرت	fr:maïs	he:תירס	hi:मक्का,मकई	ja:トウモロコシ,コーン	ko:옥수수	pt:milho	ru:кукуруза	tr:mısır	ur:مکئی,بھٹا	zh:玉米
 c:corridor	Noun	ar:ممر,رواق	de:Korridor,Flur	en:corridor,hallway	es:corredor,pasillo	fa:راهرو,کریدور	fr:corridor,couloir	he:מסדרון	hi:गलियारा,कॉरिडोर	ja:廊下,コリドー	ko:복도	pt:corredor	ru:коридор	tr:koridor	ur:راہداری,کوریڈور	zh:走廊
 c:corruption	Noun	ar:فساد	de:Korruption	en:corruption	es:corrupción	fa:فساد	fr:corruption	he:שחיתות	hi:भ्रष्टाचार	ja:汚職,腐敗	ko:부패,부정	pt:corrupção	ru:коррупция	tr:yolsuzluk	ur:بدعنوانی,کرپشن	zh:腐败,贪污
@@ -561,6 +576,7 @@ c:date-fruit	Noun	ar:تمر,بلح	de:Dattel	en:date	es:dátil	fa:خرما	fr:da
 c:daughter	Noun	ar:ابنة,بنت	de:Tochter	en:daughter	es:hija	fa:دختر	fr:fille	he:בת	hi:बेटी,पुत्री	ja:娘	ko:딸	pt:filha	ru:дочь	tr:kız	ur:بیٹی	zh:女儿
 c:dawn	Noun	ar:فجر	de:Morgendämmerung,Tagesanbruch	en:dawn,daybreak	es:alba,aurora	fa:سپیده‌دم,فجر	fr:aube,aurore	he:שחר	hi:भोर,उषा	ja:夜明け,暁	ko:새벽,여명	pt:alvorada,madrugada	ru:рассвет,заря	tr:şafak,tan	ur:فجر,پو پھٹنا	zh:黎明,拂晓
 c:day	Noun	ar:يوم	de:Tag	en:day	es:día	fa:روز	fr:jour	he:יום	hi:दिन	ja:日	ko:날	pt:dia	ru:день	tr:gün	ur:دن	zh:天
+c:dead-sea	Noun	ar:البحر الميت	de:Totes Meer	en:Dead Sea	es:Mar Muerto	fa:دریای مرده	fr:Mer Morte	he:ים המלח	hi:मृत सागर	ja:死海	ko:사해	pt:Mar Morto	ru:Мёртвое море	tr:Ölüdeniz,Lut Gölü	ur:بحیرہ مردار	zh:死海
 c:death	Noun	ar:موت,وفاة	de:Tod	en:death	es:muerte	fa:مرگ	fr:mort	he:מוות	hi:मृत्यु,मौत	ja:死	ko:죽음,사망	pt:morte	ru:смерть	tr:ölüm	ur:موت	zh:死亡
 c:debt	Noun	ar:دين	de:Schuld,Schulden	en:debt	es:deuda	fa:بدهی,قرض	fr:dette	he:חוב	hi:ऋण,कर्ज़	ja:借金,負債	ko:빚,부채	pt:dívida	ru:долг	tr:borç	ur:قرض	zh:债务,债
 c:decide	Verb	ar:قرر	de:entscheiden	en:decide	es:decidir	fa:تصمیم گرفتن	fr:décider	he:להחליט	hi:तय करना,निर्णय करना	ja:決める,決定する	ko:결정하다	pt:decidir	ru:решать,решить	tr:karar vermek	ur:فیصلہ کرنا	zh:决定
@@ -678,6 +694,7 @@ c:earth	Noun	ar:أرض	de:Erde	en:earth,ground	es:tierra	fa:زمین	fr:terre	he
 c:earthquake	Noun	ar:زلزال	de:Erdbeben	en:earthquake	es:terremoto	fa:زلزله	fr:tremblement de terre,séisme	he:רעידת אדמה	hi:भूकंप	ja:地震	ko:지진	pt:terremoto,terramoto	ru:землетрясение	tr:deprem	ur:زلزلہ	zh:地震
 c:earthworm	Noun	ar:دودة الأرض	de:Regenwurm	en:earthworm	es:lombriz de tierra	fa:کرم خاکی	fr:ver de terre,lombric	he:תולעת אדמה	hi:केंचुआ	ja:ミミズ	ko:지렁이	pt:minhoca	ru:дождевой червь	tr:solucan,toprak solucanı	ur:کنچوا	zh:蚯蚓
 c:east	Noun	ar:شرق	de:Osten	en:east	es:este,oriente	fa:شرق	fr:est	he:מזרח	hi:पूर्व	ja:東	ko:동쪽,동	pt:leste,oriente	ru:восток	tr:doğu	ur:مشرق	zh:东
+c:east-china-sea	Noun	ar:بحر الصين الشرقي	de:Ostchinesisches Meer	en:East China Sea	es:Mar de China Oriental	fa:دریای چین شرقی	fr:Mer de Chine orientale	he:ים סין המזרחי	hi:पूर्वी चीन सागर	ja:東シナ海	ko:동중국해	pt:Mar da China Oriental	ru:Восточно-Китайское море	tr:Doğu Çin Denizi	ur:بحیرہ مشرقی چین	zh:东海,东中国海
 c:easter	Noun	ar:عيد الفصح,عيد القيامة	de:Ostern	en:easter	es:pascua	fa:عید پاک	fr:pâques	he:חג הפסחא	hi:ईस्टर	ja:復活祭,イースター	ko:부활절	pt:páscoa	ru:пасха	tr:paskalya	ur:ایسٹر	zh:复活节
 c:easy	Adjective	ar:سهل	de:einfach,leicht	en:easy	es:fácil	fa:آسان,ساده	fr:facile	he:קל	hi:आसान	ja:簡単,易しい	ko:쉬운	pt:fácil	ru:лёгкий,простой	tr:kolay	ur:آسان	zh:容易,简单
 c:eat	Verb	ar:أكل,يأكل	de:essen	en:eat,eats,ate	es:comer	fa:خوردن	fr:manger	he:לאכול	hi:खाना	ja:食べる	ko:먹다	pt:comer	ru:есть,кушать	tr:yemek	ur:کھانا	zh:吃
@@ -726,6 +743,7 @@ c:energy	Noun	ar:طاقة	de:Energie	en:energy	es:energía	fa:انرژی	fr:éne
 c:engagement	Noun	ar:خطوبة	de:Verlobung	en:engagement,betrothal	es:compromiso,noviazgo	fa:نامزدی	fr:fiançailles	he:אירוסין	hi:सगाई,मंगनी	ja:婚約	ko:약혼	pt:noivado	ru:помолвка	tr:nişan	ur:منگنی	zh:订婚
 c:engine	Noun	ar:محرك	de:Motor,Maschine	en:engine,motor	es:motor	fa:موتور	fr:moteur	he:מנוע	hi:इंजन,मोटर	ja:エンジン,モーター	ko:엔진,모터	pt:motor	ru:двигатель,мотор	tr:motor	ur:انجن	zh:发动机,引擎,马达
 c:engineer	Noun	ar:مهندس	de:Ingenieur,Ingenieurin	en:engineer	es:ingeniero	fa:مهندس	fr:ingénieur	he:מהנדס	hi:इंजीनियर,अभियंता	ja:技術者,エンジニア	ko:엔지니어,기술자	pt:engenheiro	ru:инженер	tr:mühendis	ur:انجینئر	zh:工程师
+c:english-channel	Noun	ar:القناة الإنجليزية,بحر المانش	de:Ärmelkanal	en:English Channel	es:Canal de la Mancha	fa:کانال مانش	fr:Manche,Canal de la Manche	he:התעלה האנגלית	hi:इंग्लिश चैनल	ja:イギリス海峡	ko:영국 해협	pt:Canal da Mancha,Canal Inglês	ru:Ла-Манш	tr:Manş Denizi	ur:انگلش چینل	zh:英吉利海峡
 c:engraving	Noun	ar:نقش,حفر	de:Gravur,Gravieren	en:engraving	es:grabado	fa:حکاکی	fr:gravure	he:חריטה,תחריט	hi:उत्कीर्णन,नक्काशी	ja:彫刻,彫版	ko:판각,조각	pt:gravura	ru:гравюра,гравировка	tr:gravür,oymacılık	ur:کندہ کاری,نقاشی	zh:雕刻,版画
 c:enlightenment-era	Noun	ar:عصر التنوير	de:Aufklärung,Zeitalter der Aufklärung	en:enlightenment,age of enlightenment	es:ilustración,siglo de las luces	fa:عصر روشنگری	fr:lumières,siècle des lumières	he:תקופת ההשכלה,עידן ההשכלה	hi:ज्ञानोदय,प्रबोधन युग	ja:啓蒙時代	ko:계몽시대,계몽주의 시대	pt:iluminismo,era do iluminismo	ru:эпоха просвещения,просвещение	tr:aydınlanma çağı,aydınlanma dönemi	ur:عہد تنویر,عہد روشن خیالی	zh:启蒙时代,启蒙运动
 c:enlightenment-phil	Noun	ar:استنارة,تنوير	de:Erleuchtung	en:enlightenment	es:iluminación	fa:روشنی ضمیر,اشراق	fr:illumination,éveil	he:הארה,הארת נפש	hi:ज्ञानोदय,बोधि	ja:悟り,覚醒	ko:깨달음,각성	pt:iluminação	ru:просветление	tr:aydınlanma	ur:روشن ضمیری	zh:开悟,觉悟
@@ -954,6 +972,8 @@ c:guilt	Noun	ar:ذنب	de:Schuld	en:guilt	es:culpa	fa:گناه	fr:culpabilité	h
 c:guilty	Adjective	ar:مذنب	de:schuldig	en:guilty	es:culpable	fa:گناهکار,مقصر	fr:coupable	he:אשם	hi:दोषी,अपराधी	ja:有罪の	ko:유죄의,죄 있는	pt:culpado	ru:виновный	tr:suçlu	ur:مجرم,قصوروار	zh:有罪,有过错
 c:guitar	Noun	ar:غيتار	de:Gitarre	en:guitar	es:guitarra	fa:گیتار	fr:guitare	he:גיטרה	hi:गिटार	ja:ギター	ko:기타	pt:guitarra,violão	ru:гитара	tr:gitar	ur:گٹار	zh:吉他
 c:gulf	Noun	ar:خليج	de:Golf	en:gulf	es:golfo	fa:خلیج	fr:golfe	he:מפרץ	hi:खाड़ी	ja:湾,ガルフ	ko:만	pt:golfo	ru:залив	tr:körfez	ur:خلیج	zh:海湾
+c:gulf-of-aden	Noun	ar:خليج عدن	de:Golf von Aden	en:Gulf of Aden	es:Golfo de Adén	fa:خلیج عدن	fr:Golfe d'Aden	he:מפרץ עדן	hi:अदन की खाड़ी	ja:アデン湾	ko:아덴만	pt:Golfo de Adém	ru:Аденский залив	tr:Aden Körfezi	ur:خلیج عدن	zh:亚丁湾
+c:gulf-of-mexico	Noun	ar:خليج المكسيك	de:Golf von Mexiko	en:Gulf of Mexico	es:Golfo de México	fa:خلیج مکزیک	fr:Golfe du Mexique	he:מפרץ מקסיקו	hi:मेक्सिको की खाड़ी	ja:メキシコ湾	ko:멕시코만	pt:Golfo do México	ru:Мексиканский залив	tr:Meksika Körfezi	ur:خلیج میکسیکو	zh:墨西哥湾
 c:gun	Noun	ar:سلاح ناري	de:Schusswaffe,Gewehr	en:gun,firearm	es:arma de fuego	fa:اسلحه گرم	fr:arme à feu	he:כלי ירייה,אקדח	hi:बंदूक	ja:銃,鉄砲	ko:총	pt:arma de fogo	ru:огнестрельное оружие,ружьё	tr:ateşli silah	ur:آتشی ہتھیار	zh:枪,枪支
 c:gust	Noun	ar:هبة ريح,نفحة ريح	de:Bö,Windstoß	en:gust,wind gust	es:ráfaga,racha	fa:تندباد,وزش ناگهانی	fr:rafale,bourrasque	he:משב רוח,משב	hi:झोंका,हवा का झोंका	ja:突風,疾風	ko:돌풍,질풍	pt:rajada,lufada	ru:порыв ветра,порыв	tr:rüzgâr esintisi,bora	ur:جھونکا,ہوا کا جھونکا	zh:阵风
 c:guzheng	Noun	ar:غوزنغ,قيثارة صينية	de:Guzheng,chinesische Zither	en:guzheng	es:guzheng	fa:گوژنگ	fr:guzheng	he:גוז'נג	hi:गुज़ेंग	ja:古箏,グーチェン	ko:고쟁,구정	pt:guzheng	ru:гучжэн	tr:guzheng	ur:گوژنگ	zh:古筝
@@ -1079,6 +1099,7 @@ c:imperialism	Noun	ar:إمبريالية	de:Imperialismus	en:imperialism	es:impe
 c:important	Adjective	ar:مهم	de:wichtig	en:important	es:importante	fa:مهم	fr:important,importante	he:חשוב	hi:महत्वपूर्ण	ja:重要	ko:중요하다	pt:importante	ru:важный	tr:önemli	ur:اہم	zh:重要
 c:income	Noun	ar:دخل,إيراد	de:Einkommen	en:income,earnings	es:ingreso,ingresos	fa:درآمد	fr:revenu	he:הכנסה	hi:आय,आमदनी	ja:収入,所得	ko:수입,소득	pt:renda,rendimento	ru:доход	tr:gelir	ur:آمدنی	zh:收入
 c:india	Noun	ar:الهند	de:Indien	en:India	es:India	fa:هند,هندوستان	fr:Inde	he:הודו	hi:भारत,हिंदुस्तान,इंडिया	ja:インド	ko:인도	pt:Índia	ru:Индия	tr:Hindistan	ur:بھارت,ہندوستان	zh:印度
+c:indian-ocean	Noun	ar:المحيط الهندي	de:Indischer Ozean	en:Indian Ocean	es:Océano Índico	fa:اقیانوس هند	fr:Océan Indien	he:האוקיינוס ההודי	hi:हिन्द महासागर	ja:インド洋	ko:인도양	pt:Oceano Índico	ru:Индийский океан	tr:Hint Okyanusu	ur:بحر ہند	zh:印度洋
 c:indigenous	Noun	ar:شعوب أصلية,سكان أصليون	de:Ureinwohner,indigene Völker	en:indigenous people,native people	es:pueblos indígenas,indígenas	fa:بومیان,مردم بومی	fr:peuples autochtones,indigènes	he:ילידים,אוכלוסייה ילידית	hi:आदिवासी,मूल निवासी	ja:先住民,原住民	ko:토착민,원주민	pt:povos indígenas,indígenas	ru:коренные народы,туземцы	tr:yerli halklar,otokton	ur:مقامی باشندے,قدیم باشندے	zh:原住民,土著
 c:indonesia	Noun	ar:إندونيسيا	de:Indonesien	en:Indonesia	es:Indonesia	fa:اندونزی	fr:Indonésie	he:אינדונזיה	hi:इंडोनेशिया	ja:インドネシア	ko:인도네시아	pt:Indonésia	ru:Индонезия	tr:Endonezya	ur:انڈونیشیا	zh:印度尼西亚,印尼
 c:induction	Noun	ar:استقراء	de:Induktion	en:induction	es:inducción	fa:استقرا	fr:induction	he:אינדוקציה	hi:आगमन,अनुगमन	ja:帰納,インダクション	ko:귀납,인덕션	pt:indução	ru:индукция	tr:tümevarım	ur:استقرا	zh:归纳
@@ -1111,8 +1132,10 @@ c:investment	Noun	ar:استثمار	de:Investition,Anlage	en:investment	es:inver
 c:investor	Noun	ar:مستثمر	de:Investor,Anleger	en:investor	es:inversor,inversionista	fa:سرمایه‌گذار	fr:investisseur	he:משקיע	hi:निवेशक	ja:投資家	ko:투자자	pt:investidor	ru:инвестор	tr:yatırımcı	ur:سرمایہ کار	zh:投资者,投资人
 c:iodine	Noun	ar:يود	de:Jod,Iod	en:iodine	es:yodo	fa:ید	fr:iode	he:יוד	hi:आयोडीन	ja:ヨウ素,ヨード	ko:요오드,아이오딘	pt:iodo	ru:йод	tr:iyot	ur:آیوڈین	zh:碘
 c:ion	Noun	ar:أيون	de:Ion	en:ion	es:ion,ión	fa:یون	fr:ion	he:יון	hi:आयन	ja:イオン	ko:이온	pt:íon,ião	ru:ион	tr:iyon	ur:آئن	zh:离子
+c:ionian-sea	Noun	ar:البحر الأيوني	de:Ionisches Meer	en:Ionian Sea	es:Mar Jónico	fa:دریای یونانی	fr:Mer Ionienne	he:הים היוני	hi:आयोनियन सागर	ja:イオニア海	ko:이오니아해	pt:Mar Jónico	ru:Ионическое море	tr:İyon Denizi	ur:بحیرہ آئیونیئن	zh:爱奥尼亚海
 c:iran	Noun	ar:إيران	de:Iran	en:Iran	es:Irán	fa:ایران	fr:Iran	he:איראן	hi:ईरान	ja:イラン	ko:이란	pt:Irã,Irão	ru:Иран	tr:İran	ur:ایران	zh:伊朗
 c:iraq	Noun	ar:العراق	de:Irak	en:Iraq	es:Irak,Iraq	fa:عراق	fr:Irak	he:עיראק	hi:इराक	ja:イラク	ko:이라크	pt:Iraque	ru:Ирак	tr:Irak	ur:عراق	zh:伊拉克
+c:irish-sea	Noun	ar:البحر الأيرلندي	de:Irische See	en:Irish Sea	es:Mar de Irlanda	fa:دریای ایرلند	fr:Mer d'Irlande	he:הים האירי	hi:आयरिश सागर	ja:アイリッシュ海	ko:아일랜드해	pt:Mar da Irlanda	ru:Ирландское море	tr:İrlanda Denizi	ur:بحیرہ آئرش	zh:爱尔兰海
 c:iron	Noun	ar:حديد	de:Eisen	en:iron	es:hierro	fa:آهن	fr:fer	he:ברזל	hi:लोहा	ja:鉄,アイアン	ko:철	pt:ferro	ru:железо	tr:demir	ur:لوہا	zh:铁
 c:iron-age	Noun	ar:العصر الحديدي	de:Eisenzeit	en:iron age	es:edad del hierro	fa:عصر آهن	fr:âge du fer	he:תקופת הברזל	hi:लौह युग	ja:鉄器時代	ko:철기시대	pt:idade do ferro	ru:железный век	tr:demir çağı	ur:لوہے کا دور	zh:铁器时代
 c:irony	Noun	ar:سخرية,مفارقة	de:Ironie	en:irony	es:ironía	fa:طعنه,کنایه	fr:ironie	he:אירוניה	hi:व्यंग्य	ja:皮肉,アイロニー	ko:아이러니,반어	pt:ironia	ru:ирония	tr:ironi,alaycılık	ur:طنز	zh:反讽,讽刺
@@ -1306,6 +1329,7 @@ c:media	Noun	ar:إعلام,وسائل الإعلام	de:Medien	en:media	es:medio
 c:medicine	Noun	ar:دواء,طب	de:Medizin,Arznei	en:medicine	es:medicina,medicamento	fa:دارو,پزشکی	fr:médecine,médicament	he:רפואה,תרופה	hi:दवा,चिकित्सा	ja:薬,医学	ko:약,의학	pt:medicina,remédio	ru:медицина,лекарство	tr:ilaç,tıp	ur:دوا,طب	zh:药,医学
 c:medieval	Noun	ar:القرون الوسطى,العصور الوسطى	de:Mittelalter	en:middle ages,medieval period	es:edad media,medievo	fa:قرون وسطی	fr:moyen âge	he:ימי הביניים	hi:मध्यकाल,मध्य युग	ja:中世	ko:중세	pt:idade média	ru:средневековье,средние века	tr:orta çağ	ur:قرون وسطی,وسطی دور	zh:中世纪
 c:meditation	Noun	ar:تأمل	de:Meditation	en:meditation	es:meditación	fa:مدیتیشن,مراقبه	fr:méditation	he:מדיטציה	hi:ध्यान	ja:瞑想	ko:명상	pt:meditação	ru:медитация	tr:meditasyon,derin düşünce	ur:مراقبہ	zh:冥想,禅定
+c:mediterranean	Noun	ar:البحر المتوسط,البحر الأبيض المتوسط	de:Mittelmeer	en:Mediterranean,Mediterranean Sea	es:Mediterráneo,Mar Mediterráneo	fa:دریای مدیترانه	fr:Méditerranée,Mer Méditerranée	he:ים התיכון	hi:भूमध्य सागर	ja:地中海	ko:지중해	pt:Mediterrâneo,Mar Mediterrâneo	ru:Средиземное море	tr:Akdeniz	ur:بحیرہ روم	zh:地中海
 c:meet	Verb	ar:قابل,لقي	de:treffen,begegnen	en:meet	es:encontrar,conocer	fa:ملاقات کردن,دیدن	fr:rencontrer	he:לפגוש	hi:मिलना	ja:会う	ko:만나다	pt:encontrar	ru:встречать,встретить	tr:tanışmak,buluşmak	ur:ملنا	zh:见,遇见
 c:meeting	Noun	ar:اجتماع	de:Treffen,Besprechung	en:meeting	es:reunión	fa:جلسه	fr:réunion	he:פגישה,ישיבה	hi:बैठक,मीटिंग	ja:会議,ミーティング	ko:회의	pt:reunião	ru:встреча,собрание	tr:toplantı	ur:اجلاس,ملاقات	zh:会议
 c:melancholy	Noun	ar:كآبة	de:Melancholie	en:melancholy	es:melancolía	fa:مالیخولیا	fr:mélancolie	he:מלנכוליה	hi:विषाद	ja:憂鬱	ko:우울	pt:melancolia	ru:меланхолия	tr:melankoli	ur:اداسی	zh:忧郁
@@ -1448,6 +1472,8 @@ c:nitrogen	Noun	ar:نتروجين,آزوت	de:Stickstoff	en:nitrogen	es:nitróge
 c:nobility	Noun	ar:نبلاء,طبقة نبيلة	de:Adel	en:nobility	es:nobleza	fa:اشراف,نجبا	fr:noblesse	he:אצולה	hi:कुलीनता,अभिजात	ja:貴族,ノビリティ	ko:귀족	pt:nobreza	ru:знать,дворянство	tr:soyluluk,asalet	ur:نجابت,شرافت	zh:贵族,贵族阶层
 c:norm	Noun	ar:معيار,قاعدة	de:Norm	en:norm	es:norma	fa:هنجار,معیار	fr:norme	he:נורמה	hi:मानदंड,मानक	ja:規範,ノルム	ko:규범,표준	pt:norma	ru:норма	tr:norm,ölçüt	ur:معیار,اصول	zh:规范,标准
 c:north	Noun	ar:شمال	de:Norden	en:north	es:norte	fa:شمال	fr:nord	he:צפון	hi:उत्तर	ja:北	ko:북쪽,북	pt:norte	ru:север	tr:kuzey	ur:شمال	zh:北
+c:north-sea	Noun	ar:بحر الشمال	de:Nordsee	en:North Sea	es:Mar del Norte	fa:دریای شمال	fr:Mer du Nord	he:הים הצפוני	hi:उत्तरी सागर	ja:北海	ko:북해	pt:Mar do Norte	ru:Северное море	tr:Kuzey Denizi	ur:بحیرہ شمال	zh:北海
+c:norwegian-sea	Noun	ar:بحر النرويج	de:Europäisches Nordmeer,Norwegische See	en:Norwegian Sea	es:Mar de Noruega	fa:دریای نروژ	fr:Mer de Norvège	he:הים הנורווגי	hi:नॉर्वेजियन सागर	ja:ノルウェー海	ko:노르웨이해	pt:Mar da Noruega	ru:Норвежское море	tr:Norveç Denizi	ur:بحیرہ ناروے	zh:挪威海
 c:nose	Noun	ar:أنف	de:Nase	en:nose	es:nariz	fa:بینی,دماغ	fr:nez	he:אף	hi:नाक	ja:鼻	ko:코	pt:nariz	ru:нос	tr:burun	ur:ناک	zh:鼻,鼻子
 c:nostalgia	Noun	ar:حنين	de:Nostalgie	en:nostalgia	es:nostalgia	fa:نوستالژی	fr:nostalgie	he:נוסטלגיה	hi:पुरानी यादें	ja:郷愁,ノスタルジア	ko:향수	pt:nostalgia	ru:ностальгия	tr:nostalji	ur:پرانی یادیں	zh:怀旧
 c:note	Noun	ar:ملاحظة,مذكرة	de:Notiz	en:note,notes	es:nota,apunte	fa:یادداشت	fr:note	he:הערה,פתק	hi:टिप्पणी,नोट	ja:メモ,ノート	ko:메모,노트	pt:nota,apontamento	ru:заметка,запись	tr:not	ur:نوٹ	zh:笔记
@@ -1515,6 +1541,7 @@ c:oxygen	Noun	ar:أكسجين,أوكسجين	de:Sauerstoff	en:oxygen	es:oxígeno
 c:oyster	Noun	ar:محار اللؤلؤ,محار	de:Auster	en:oyster	es:ostra	fa:صدف خوراکی	fr:huître	he:צדפת מאכל	hi:शुक्ति,सीप	ja:牡蠣,カキ	ko:굴	pt:ostra	ru:устрица	tr:istiridye	ur:سیپ صدف	zh:牡蛎,蚝
 c:ozone	Noun	ar:أوزون	de:Ozon	en:ozone	es:ozono	fa:ازن	fr:ozone	he:אוזון	hi:ओजोन	ja:オゾン	ko:오존	pt:ozônio,ozono	ru:озон	tr:ozon	ur:اوزون	zh:臭氧
 c:ozone-layer	Noun	ar:طبقة الأوزون	de:Ozonschicht	en:ozone layer	es:capa de ozono	fa:لایه ازن	fr:couche d'ozone	he:שכבת האוזון	hi:ओजोन परत	ja:オゾン層	ko:오존층	pt:camada de ozônio	ru:озоновый слой	tr:ozon tabakası	ur:اوزون کی تہہ	zh:臭氧层
+c:pacific	Noun	ar:المحيط الهادئ	de:Pazifik,Pazifischer Ozean	en:Pacific,Pacific Ocean	es:Pacífico,Océano Pacífico	fa:اقیانوس آرام	fr:Pacifique,Océan Pacifique	he:אוקיינוס השקט	hi:प्रशांत महासागर	ja:太平洋	ko:태평양	pt:Pacífico,Oceano Pacífico	ru:Тихий океан	tr:Pasifik Okyanusu	ur:بحر الکاہل	zh:太平洋
 c:page	Noun	ar:صفحة	de:Seite	en:page	es:página	fa:صفحه	fr:page	he:עמוד,דף	hi:पृष्ठ,पन्ना	ja:ページ	ko:페이지,쪽	pt:página	ru:страница	tr:sayfa	ur:صفحہ	zh:页
 c:pagoda	Noun	ar:باغودا,معبد شرقي	de:Pagode	en:pagoda	es:pagoda	fa:پاگودا,معبد بودایی	fr:pagode	he:פגודה	hi:पगोडा,स्तूप	ja:塔,パゴダ	ko:파고다,불탑	pt:pagode	ru:пагода	tr:pagoda	ur:پگوڈا,بدھ مندر	zh:宝塔,佛塔
 c:pain	Noun	ar:ألم,وجع	de:Schmerz	en:pain,ache	es:dolor	fa:درد	fr:douleur	he:כאב	hi:दर्द,पीड़ा	ja:痛み	ko:아픔,통증	pt:dor	ru:боль	tr:ağrı,acı	ur:درد,تکلیف	zh:疼痛,痛
@@ -1566,6 +1593,7 @@ c:penny	Noun	ar:بنس	de:Penny	en:penny	es:penique	fa:پنی	fr:penny	he:פני
 c:perception	Noun	ar:إدراك	de:Wahrnehmung	en:perception	es:percepción	fa:ادراک,درک	fr:perception	he:תפיסה	hi:अनुभूति,बोध	ja:知覚,認識	ko:지각,인식	pt:percepção	ru:восприятие	tr:algı	ur:ادراک,احساس	zh:感知,认知
 c:perform	Verb	ar:أدى,يؤدي	de:aufführen,vorführen	en:perform	es:actuar,interpretar	fa:اجرا کردن,نواختن	fr:jouer,interpréter	he:להופיע	hi:प्रदर्शन करना,अभिनय करना	ja:演奏する,上演する	ko:공연하다,연주하다	pt:atuar,apresentar	ru:исполнять,выступать	tr:sahnelemek,icra etmek	ur:پیش کرنا,ادا کرنا	zh:表演,演出
 c:perfumer	Noun	ar:عطّار,صانع العطور	de:Parfümeur	en:perfumer	es:perfumista	fa:عطار,عطرساز	fr:parfumeur	he:בשם	hi:इत्र बनाने वाला,गंधी	ja:調香師	ko:조향사	pt:perfumista	ru:парфюмер	tr:parfümör,attar	ur:عطار	zh:调香师,香水师
+c:persian-gulf	Noun	ar:الخليج العربي,الخليج الفارسي	de:Persischer Golf	en:Persian Gulf,Arabian Gulf	es:Golfo Pérsico	fa:خلیج فارس	fr:Golfe Persique	he:המפרץ הפרסי	hi:फारस की खाड़ी	ja:ペルシャ湾	ko:페르시아만	pt:Golfo Pérsico	ru:Персидский залив	tr:Basra Körfezi	ur:خلیج فارس	zh:波斯湾
 c:person	Noun	ar:شخص,إنسان	de:Person,Mensch	en:person,people	es:persona	fa:شخص,فرد	fr:personne	he:אדם	hi:व्यक्ति	ja:人	ko:사람	pt:pessoa	ru:человек,личность	tr:kişi,şahıs	ur:شخص	zh:人,人员
 c:personality	Noun	ar:شخصية	de:Persönlichkeit	en:personality	es:personalidad	fa:شخصیت	fr:personnalité	he:אישיות	hi:व्यक्तित्व	ja:性格,人格	ko:성격,인격	pt:personalidade	ru:личность,характер	tr:kişilik,şahsiyet	ur:شخصیت	zh:性格,人格
 c:peso	Noun	ar:بيزو	de:Peso	en:peso	es:peso	fa:پزو,پسو	fr:peso	he:פסו	hi:पेसो	ja:ペソ	ko:페소	pt:peso	ru:песо	tr:peso	ur:پیسو	zh:比索
@@ -1576,6 +1604,7 @@ c:pharaoh	Noun	ar:فرعون	de:Pharao	en:pharaoh	es:faraón	fa:فرعون	fr:ph
 c:pharmacy	Noun	ar:صيدلية	de:Apotheke	en:pharmacy	es:farmacia	fa:داروخانه	fr:pharmacie	he:בית מרקחת	hi:दवाख़ाना,फ़ार्मेसी	ja:薬局	ko:약국	pt:farmácia	ru:аптека	tr:eczane	ur:دواخانہ	zh:药店,药房
 c:phenomenology	Noun	ar:الفينومينولوجيا,علم الظواهر	de:Phänomenologie	en:phenomenology	es:fenomenología	fa:پدیدارشناسی	fr:phénoménologie	he:פנומנולוגיה	hi:दृष्टिघटना विज्ञान	ja:現象学	ko:현상학	pt:fenomenologia	ru:феноменология	tr:fenomenoloji	ur:مظاہریت	zh:现象学
 c:phenotype	Noun	ar:نمط ظاهري,طراز ظاهري	de:Phänotyp	en:phenotype	es:fenotipo	fa:فنوتیپ	fr:phénotype	he:פנוטיפ	hi:लक्षणप्ररूप,फीनोटाइप	ja:表現型	ko:표현형	pt:fenótipo	ru:фенотип	tr:fenotip	ur:ظاہری طرز	zh:表现型,表型
+c:philippine-sea	Noun	ar:بحر الفلبين	de:Philippinisches Meer	en:Philippine Sea	es:Mar de Filipinas	fa:دریای فیلیپین	fr:Mer des Philippines	he:הים הפיליפיני	hi:फिलीपीन सागर	ja:フィリピン海	ko:필리핀해	pt:Mar das Filipinas	ru:Филиппинское море	tr:Filipin Denizi	ur:بحیرہ فلپائن	zh:菲律宾海
 c:philippines	Noun	ar:الفلبين	de:Philippinen	en:Philippines	es:Filipinas	fa:فیلیپین	fr:Philippines	he:הפיליפינים	hi:फिलीपींस	ja:フィリピン	ko:필리핀	pt:Filipinas	ru:Филиппины	tr:Filipinler	ur:فلپائن	zh:菲律宾
 c:philosophy	Noun	ar:فلسفة	de:Philosophie	en:philosophy	es:filosofía	fa:فلسفه	fr:philosophie	he:פילוסופיה	hi:दर्शन,दर्शनशास्त्र	ja:哲学	ko:철학	pt:filosofia	ru:философия	tr:felsefe	ur:فلسفہ	zh:哲学
 c:phishing	Noun	ar:التصيد الاحتيالي,التصيد	de:Phishing	en:phishing	es:phishing,suplantación de identidad	fa:فیشینگ	fr:hameçonnage,phishing	he:דיוג,פישינג	hi:फ़िशिंग	ja:フィッシング	ko:피싱	pt:phishing,fraude eletrônica	ru:фишинг	tr:kimlik avı,phishing	ur:فشنگ	zh:网络钓鱼,钓鱼
@@ -1743,6 +1772,7 @@ c:recognize	Verb	ar:تعرف	de:erkennen	en:recognize,recognise	es:reconocer	fa:
 c:recorder	Noun	ar:مزمار الريكوردر,مزمار عمودي	de:Blockflöte	en:recorder	es:flauta dulce,flauta de pico	fa:فلوت ریکوردر,فلوت بلوک	fr:flûte à bec	he:חלילית	hi:रिकॉर्डर	ja:リコーダー	ko:리코더	pt:flauta doce	ru:блокфлейта	tr:blok flüt,dik flüt	ur:ریکارڈر	zh:竖笛,直笛
 c:recovery	Noun	ar:تعافي,شفاء	de:Genesung,Erholung	en:recovery	es:recuperación	fa:بهبودی	fr:rétablissement,guérison	he:החלמה	hi:स्वस्थ होना,रिकवरी	ja:回復	ko:회복	pt:recuperação	ru:выздоровление	tr:iyileşme	ur:بحالی,صحت یابی	zh:康复,恢复
 c:red	Adjective	ar:أحمر	de:rot	en:red	es:rojo	fa:قرمز,سرخ	fr:rouge	he:אדום	hi:लाल	ja:赤,赤い	ko:빨간,붉은	pt:vermelho	ru:красный	tr:kırmızı	ur:لال,سرخ	zh:红,红色
+c:red-sea	Noun	ar:البحر الأحمر	de:Rotes Meer	en:Red Sea	es:Mar Rojo	fa:دریای سرخ	fr:Mer Rouge	he:ים סוף	hi:लाल सागर	ja:紅海	ko:홍해	pt:Mar Vermelho	ru:Красное море	tr:Kızıldeniz	ur:بحیرہ احمر	zh:红海
 c:reduction	Noun	ar:اختزال	de:Reduktion	en:reduction	es:reducción	fa:کاهش,احیا	fr:réduction	he:חיזור	hi:अपचयन	ja:還元	ko:환원	pt:redução	ru:восстановление	tr:indirgenme,redüksiyon	ur:تخفیف,کمی	zh:还原
 c:reef	Noun	ar:شعاب مرجانية	de:Riff	en:reef	es:arrecife	fa:صخره	fr:récif	he:שונית	hi:भित्ति	ja:岩礁	ko:암초	pt:recife	ru:риф	tr:resif	ur:مرجانی چٹان	zh:礁石
 c:referee	Noun	ar:حكم	de:Schiedsrichter	en:referee,umpire	es:árbitro	fa:داور	fr:arbitre	he:שופט	hi:रेफरी,अंपायर	ja:審判,レフェリー	ko:심판	pt:árbitro	ru:судья,арбитр	tr:hakem	ur:ریفری,امپائر	zh:裁判
@@ -1836,6 +1866,7 @@ c:santur	Noun	ar:سنطور	de:Santur	en:santur,santoor	es:santur	fa:سنتور	
 c:sao-paulo	Noun	ar:ساو باولو	de:São Paulo	en:São Paulo,Sao Paulo	es:São Paulo,San Pablo	fa:سائوپائولو	fr:São Paulo	he:סאו פאולו	hi:साओ पाउलो	ja:サンパウロ	ko:상파울루	pt:São Paulo	ru:Сан-Паулу	tr:São Paulo	ur:ساؤ پاؤلو	zh:圣保罗
 c:sapphire	Noun	ar:ياقوت أزرق,صفير	de:Saphir	en:sapphire	es:zafiro	fa:یاقوت کبود,یاقوت آبی	fr:saphir	he:ספיר	hi:नीलम,सफायर	ja:サファイア,青玉	ko:사파이어,청옥	pt:safira	ru:сапфир	tr:safir	ur:نیلم	zh:蓝宝石
 c:sardine	Noun	ar:سردين	de:Sardine	en:sardine	es:sardina	fa:ساردین	fr:sardine	he:סרדין	hi:सार्डिन	ja:鰯	ko:정어리	pt:sardinha	ru:сардина	tr:sardalya	ur:سارڈین	zh:沙丁鱼
+c:sargasso-sea	Noun	ar:بحر سارجاسو	de:Sargassosee	en:Sargasso Sea	es:Mar de los Sargazos	fa:دریای سارگاسو	fr:Mer des Sargasses	he:ים סרגסו	hi:सर्गासो सागर	ja:サルガッソ海	ko:사르가소해	pt:Mar dos Sargaços	ru:Саргассово море	tr:Sargasso Denizi	ur:بحیرہ سرگیسو	zh:马尾藻海
 c:sari	Noun	ar:ساري	de:Sari	en:sari,saree	es:sari	fa:ساری	fr:sari	he:סארי	hi:साड़ी	ja:サリー	ko:사리	pt:sári	ru:сари	tr:sari	ur:ساڑھی	zh:纱丽
 c:satellite	Noun	ar:قمر صناعي,تابع	de:Satellit	en:satellite	es:satélite	fa:ماهواره,قمر مصنوعی	fr:satellite	he:לוויין	hi:उपग्रह,सैटेलाइट	ja:衛星,人工衛星	ko:위성,인공위성	pt:satélite	ru:спутник	tr:uydu	ur:سیارچہ,مصنوعی سیارہ	zh:卫星,人造卫星
 c:saturn	Noun	ar:زحل	de:Saturn	en:Saturn	es:Saturno	fa:کیوان,زحل	fr:Saturne	he:שבתאי	hi:शनि	ja:土星	ko:토성	pt:Saturno	ru:Сатурн	tr:Satürn	ur:زحل	zh:土星
@@ -1869,6 +1900,7 @@ c:sea	Noun	ar:بحر	de:Meer,See	en:sea	es:mar	fa:دریا	fr:mer	he:ים	hi:स
 c:sea-bass	Noun	ar:قاروص	de:Seebarsch,Wolfsbarsch	en:sea bass	es:lubina	fa:هامور	fr:bar,loup de mer	he:לברק	hi:सी बास	ja:スズキ	ko:농어	pt:robalo	ru:морской окунь	tr:levrek	ur:سمندری مچھلی	zh:鲈鱼
 c:sea-bream	Noun	ar:دنيس	de:Dorade	en:sea bream	es:dorada	fa:سیم دریایی	fr:daurade	he:דניס	hi:समुद्री ब्रीम	ja:鯛	ko:도미	pt:dourada	ru:морской лещ	tr:çipura	ur:سمندری مچھلی	zh:鲷鱼
 c:sea-lion	Noun	ar:أسد البحر	de:Seelöwe	en:sea lion	es:león marino	fa:شیر دریایی	fr:lion de mer,otarie	he:אריה ים	hi:समुद्री सिंह	ja:アシカ	ko:바다사자	pt:leão-marinho	ru:морской лев	tr:deniz aslanı	ur:سمندری شیر	zh:海狮
+c:sea-of-japan	Noun	ar:بحر اليابان	de:Japanisches Meer	en:Sea of Japan,East Sea	es:Mar del Japón	fa:دریای ژاپن	fr:Mer du Japon	he:ים יפן	hi:जापान सागर	ja:日本海	ko:동해,일본해	pt:Mar do Japão	ru:Японское море	tr:Japon Denizi	ur:بحیرہ جاپان	zh:日本海
 c:sea-urchin	Noun	ar:قنفذ البحر	de:Seeigel	en:sea urchin	es:erizo de mar	fa:خارپشت دریایی	fr:oursin	he:קיפוד ים	hi:समुद्री अर्चिन	ja:ウニ	ko:성게	pt:ouriço-do-mar	ru:морской ёж	tr:denizkestanesi	ur:سمندری خارپشت	zh:海胆
 c:seahorse	Noun	ar:حصان البحر	de:Seepferdchen	en:seahorse	es:caballito de mar	fa:اسب دریایی	fr:hippocampe	he:סוסון ים	hi:समुद्री घोड़ा	ja:タツノオトシゴ	ko:해마	pt:cavalo-marinho	ru:морской конёк	tr:denizatı	ur:سمندری گھوڑا	zh:海马
 c:seal-animal	Noun	ar:فقمة	de:Robbe,Seehund	en:seal	es:foca	fa:فک	fr:phoque	he:כלב ים	hi:सील	ja:アザラシ	ko:물개	pt:foca	ru:тюлень	tr:fok	ur:سیل	zh:海豹
@@ -1982,7 +2014,9 @@ c:sorcerer	Noun	ar:مشعوذ	de:Hexenmeister	en:sorcerer	es:hechicero	fa:ساح
 c:soul	Noun	ar:روح,نفس	de:Seele	en:soul	es:alma	fa:روح,جان	fr:âme	he:נשמה	hi:आत्मा	ja:魂	ko:영혼	pt:alma	ru:душа	tr:ruh	ur:روح	zh:灵魂
 c:south	Noun	ar:جنوب	de:Süden	en:south	es:sur	fa:جنوب	fr:sud	he:דרום	hi:दक्षिण	ja:南	ko:남쪽,남	pt:sul	ru:юг	tr:güney	ur:جنوب	zh:南
 c:south-africa	Noun	ar:جنوب أفريقيا	de:Südafrika	en:South Africa	es:Sudáfrica	fa:آفریقای جنوبی	fr:Afrique du Sud	he:דרום אפריקה	hi:दक्षिण अफ्रीका	ja:南アフリカ	ko:남아프리카	pt:África do Sul	ru:Южная Африка,ЮАР	tr:Güney Afrika	ur:جنوبی افریقہ	zh:南非
+c:south-china-sea	Noun	ar:بحر الصين الجنوبي	de:Südchinesisches Meer	en:South China Sea	es:Mar de China Meridional	fa:دریای چین جنوبی	fr:Mer de Chine méridionale	he:ים סין הדרומי	hi:दक्षिण चीन सागर	ja:南シナ海	ko:남중국해	pt:Mar do Sul da China	ru:Южно-Китайское море	tr:Güney Çin Denizi	ur:بحیرہ جنوبی چین	zh:南海,南中国海
 c:south-korea	Noun	ar:كوريا الجنوبية	de:Südkorea	en:South Korea	es:Corea del Sur	fa:کره جنوبی	fr:Corée du Sud	he:דרום קוריאה	hi:दक्षिण कोरिया	ja:韓国,大韓民国	ko:한국,대한민국	pt:Coreia do Sul	ru:Южная Корея	tr:Güney Kore	ur:جنوبی کوریا	zh:韩国,南韩
+c:southern-ocean	Noun	ar:المحيط الجنوبي	de:Südlicher Ozean,Antarktischer Ozean	en:Southern Ocean,Antarctic Ocean	es:Océano Austral,Océano Antártico	fa:اقیانوس جنوبی	fr:Océan Austral,Océan Antarctique	he:האוקיינוס הדרומי	hi:दक्षिणी महासागर	ja:南極海,南氷洋	ko:남극해	pt:Oceano Austral,Oceano Antártico	ru:Южный океан	tr:Güney Okyanusu	ur:بحر جنوبی	zh:南冰洋,南大洋
 c:sow	Verb	ar:بذر,يبذر	de:säen	en:sow	es:sembrar	fa:کاشتن	fr:semer	he:זרע	hi:बोना	ja:蒔く	ko:씨뿌리다	pt:semear	ru:сеять	tr:ekmek	ur:بونا	zh:播种
 c:space	Noun	ar:فضاء	de:Weltraum,All	en:space,outer space	es:espacio,espacio exterior	fa:فضا	fr:espace	he:חלל	hi:अंतरिक्ष	ja:宇宙,宇宙空間	ko:우주,우주공간	pt:espaço,espaço sideral	ru:космос,космическое пространство	tr:uzay	ur:خلا,خلائی فضا	zh:太空,宇宙空间
 c:spacecraft	Noun	ar:مركبة فضائية,سفينة فضاء	de:Raumschiff,Raumfahrzeug	en:spacecraft,spaceship	es:nave espacial	fa:فضاپیما	fr:vaisseau spatial,engin spatial	he:חללית	hi:अंतरिक्ष यान	ja:宇宙船	ko:우주선	pt:nave espacial	ru:космический корабль,космолёт	tr:uzay gemisi,uzay aracı	ur:خلائی جہاز	zh:宇宙飞船,太空船
@@ -2044,6 +2078,7 @@ c:storm	Noun	ar:عاصفة	de:Sturm	en:storm	es:tormenta	fa:طوفان	fr:tempê
 c:story	Noun	ar:قصة	de:Geschichte	en:story	es:historia,cuento	fa:داستان	fr:histoire	he:סיפור	hi:कहानी	ja:物語,ストーリー	ko:이야기	pt:história,conto	ru:история,рассказ	tr:hikaye,öykü	ur:کہانی	zh:故事
 c:stove	Noun	ar:موقد,بوتاجاز	de:Herd,Kochfeld	en:stove,cooker	es:estufa,cocina	fa:اجاق	fr:cuisinière	he:כיריים	hi:चूल्हा,स्टोव	ja:コンロ	ko:가스레인지,스토브	pt:fogão	ru:плита	tr:ocak	ur:چولہا	zh:炉灶
 c:strait	Noun	ar:مضيق	de:Meerenge,Straße	en:strait	es:estrecho	fa:تنگه	fr:détroit	he:מצר	hi:जलसंधि	ja:海峡	ko:해협	pt:estreito	ru:пролив	tr:boğaz	ur:آبنائے	zh:海峡
+c:strait-of-gibraltar	Noun	ar:مضيق جبل طارق	de:Straße von Gibraltar	en:Strait of Gibraltar	es:Estrecho de Gibraltar	fa:تنگه جبل‌الطارق	fr:Détroit de Gibraltar	he:מיצר גיברלטר	hi:जिब्राल्टर जलडमरूमध्य	ja:ジブラルタル海峡	ko:지브롤터 해협	pt:Estreito de Gibraltar	ru:Гибралтарский пролив	tr:Cebelitarık Boğazı	ur:آبنائے جبل الطارق	zh:直布罗陀海峡
 c:stratosphere	Noun	ar:ستراتوسفير,الستراتوسفير	de:Stratosphäre	en:stratosphere	es:estratosfera	fa:استراتوسفر,پوشن‌سپهر	fr:stratosphère	he:סטרטוספירה	hi:समताप मंडल,स्ट्रेटोस्फीयर	ja:成層圏	ko:성층권	pt:estratosfera	ru:стратосфера	tr:stratosfer	ur:اسٹریٹوسفیئر,فلکی پرت	zh:平流层
 c:stratus	Noun	ar:سحابة طبقية,طبقة سحابية	de:Stratus,Schichtwolke	en:stratus,stratus cloud	es:estrato	fa:استراتوس,ابر طبقاتی	fr:stratus	he:ענן סטרטוס,סטרטוס	hi:स्ट्रेटस,स्तरी बादल	ja:層雲	ko:층운	pt:estrato	ru:слоистое облако,стратус	tr:stratus,tabaka bulut	ur:اسٹریٹس,تہہ دار بادل	zh:层云
 c:straw	Noun	ar:قش	de:Stroh	en:straw	es:paja	fa:کاه	fr:paille	he:קש	hi:भूसा	ja:藁	ko:짚	pt:palha	ru:солома	tr:saman	ur:بھوسا	zh:稻草
@@ -2061,6 +2096,7 @@ c:submarine	Noun	ar:غواصة	de:U-Boot,Unterseeboot	en:submarine,sub	es:submar
 c:subsidy	Noun	ar:إعانة,دعم حكومي	de:Subvention	en:subsidy	es:subsidio,subvención	fa:یارانه,سوبسید	fr:subvention	he:סובסידיה	hi:सब्सिडी,अनुदान	ja:補助金	ko:보조금	pt:subsídio,subvenção	ru:субсидия,дотация	tr:sübvansiyon,destekleme	ur:سبسڈی,امدادی رقم	zh:补贴,津贴
 c:substance	Noun	ar:مادة,جوهر	de:Substanz,Stoff	en:substance,matter	es:sustancia,substancia	fa:ماده	fr:substance,matière	he:חומר	hi:पदार्थ,द्रव्य	ja:物質	ko:물질	pt:substância,matéria	ru:вещество,субстанция	tr:madde	ur:مادہ,جوہر	zh:物质
 c:subway	Noun	ar:مترو الأنفاق,قطار الأنفاق	de:U-Bahn,Metro	en:subway,metro,underground	es:metro	fa:مترو	fr:métro	he:רכבת תחתית	hi:भूमिगत रेल,मेट्रो	ja:地下鉄	ko:지하철	pt:metrô,metro	ru:метро	tr:metro	ur:زیر زمین ریل,میٹرو	zh:地铁
+c:suez-canal	Noun	ar:قناة السويس	de:Sueskanal	en:Suez Canal	es:Canal de Suez	fa:کانال سوئز	fr:Canal de Suez	he:תעלת סואץ	hi:स्वेज़ नहर	ja:スエズ運河	ko:수에즈 운하	pt:Canal de Suez	ru:Суэцкий канал	tr:Süveyş Kanalı	ur:نہر سویز	zh:苏伊士运河
 c:suffix	Noun	ar:لاحقة	de:Suffix,Nachsilbe	en:suffix	es:sufijo	fa:پسوند	fr:suffixe	he:סיומת	hi:प्रत्यय	ja:接尾辞	ko:접미사	pt:sufixo	ru:суффикс	tr:sonek	ur:لاحقہ	zh:后缀,词尾
 c:sugar	Noun	ar:سكر	de:Zucker	en:sugar	es:azúcar	fa:شکر,قند	fr:sucre	he:סוכר	hi:चीनी,शक्कर	ja:砂糖	ko:설탕	pt:açúcar	ru:сахар	tr:şeker	ur:چینی	zh:糖
 c:sugarcane	Noun	ar:قصب السكر	de:Zuckerrohr	en:sugarcane,sugar cane	es:caña de azúcar	fa:نیشکر	fr:canne à sucre	he:קנה סוכר	hi:गन्ना	ja:サトウキビ,砂糖黍	ko:사탕수수	pt:cana-de-açúcar	ru:сахарный тростник	tr:şeker kamışı	ur:گنا	zh:甘蔗
@@ -2122,6 +2158,7 @@ c:tao	Noun	ar:الطاو,التاو	de:Dao,Tao	en:tao,dao	es:tao	fa:تائو	fr:
 c:tapestry	Noun	ar:نسيج مزخرف,بساط جداري	de:Wandteppich,Tapisserie	en:tapestry	es:tapiz	fa:گلیم دیواری,تابلو فرش	fr:tapisserie	he:גובלן,שטיח קיר	hi:भित्ति चित्र कढ़ाई,टेपेस्ट्री	ja:タペストリー,綴織	ko:태피스트리	pt:tapeçaria	ru:гобелен	tr:duvar halısı,goblen	ur:دیوارگیر قالین,گلدوزی شدہ کپڑا	zh:挂毯,织锦
 c:tarantula	Noun	ar:رتيلاء	de:Vogelspinne,Tarantel	en:tarantula	es:tarántula	fa:رتیل	fr:tarentule,mygale	he:טרנטולה	hi:टारेंटयुला	ja:タランチュラ	ko:타란툴라	pt:tarântula	ru:тарантул	tr:tarantula	ur:ٹرنٹولا	zh:狼蛛,塔兰图拉
 c:tariff	Noun	ar:تعريفة جمركية	de:Zoll,Zolltarif	en:tariff	es:arancel,tarifa	fa:تعرفه	fr:tarif douanier,droits de douane	he:מכס,תעריף	hi:आयात शुल्क,टैरिफ	ja:関税	ko:관세	pt:tarifa,tarifa aduaneira	ru:тариф,пошлина	tr:tarife,gümrük tarifesi	ur:محصول,ٹیرف	zh:关税,税率
+c:tasman-sea	Noun	ar:بحر تسمان	de:Tasmansee	en:Tasman Sea	es:Mar de Tasmania	fa:دریای تاسمان	fr:Mer de Tasman	he:ים תסמן	hi:तस्मान सागर	ja:タスマン海	ko:태즈먼해	pt:Mar da Tasmânia	ru:Тасманово море	tr:Tasman Denizi	ur:بحیرہ تسمان	zh:塔斯曼海
 c:tax	Noun	ar:ضريبة	de:Steuer	en:tax	es:impuesto	fa:مالیات	fr:impôt,taxe	he:מס	hi:कर,टैक्स	ja:税,税金	ko:세금	pt:imposto	ru:налог	tr:vergi	ur:ٹیکس,محصول	zh:税,税收
 c:taxi	Noun	ar:سيارة أجرة,تاكسي	de:Taxi	en:taxi,cab	es:taxi	fa:تاکسی	fr:taxi	he:מונית,טקסי	hi:टैक्सी	ja:タクシー	ko:택시	pt:táxi	ru:такси	tr:taksi	ur:ٹیکسی	zh:出租车,的士
 c:tea	Noun	ar:شاي	de:Tee	en:tea	es:té	fa:چای	fr:thé	he:תה	hi:चाय	ja:茶,お茶	ko:차	pt:chá	ru:чай	tr:çay	ur:چائے	zh:茶
@@ -2178,6 +2215,7 @@ c:tiger	Noun	ar:نمر	de:Tiger	en:tiger	es:tigre	fa:ببر	fr:tigre	he:נמר	h
 c:tile	Noun	ar:بلاط,قرميد	de:Fliese,Kachel	en:tile	es:azulejo,baldosa	fa:کاشی	fr:carreau,tuile	he:אריח	hi:टाइल	ja:タイル	ko:타일	pt:azulejo	ru:плитка	tr:fayans,kiremit	ur:ٹائل	zh:瓦,瓷砖
 c:till	Verb	ar:حرث,يحرث	de:pflügen	en:till	es:labrar	fa:شخم زدن	fr:labourer	he:חרש	hi:जोतना	ja:耕す	ko:갈다	pt:lavrar	ru:пахать	tr:sürmek	ur:ہل چلانا	zh:犁地
 c:time	Noun	ar:وقت,زمن	de:Zeit	en:time	es:tiempo	fa:زمان	fr:temps	he:זמן	hi:समय	ja:時間	ko:시간	pt:tempo	ru:время	tr:zaman	ur:وقت	zh:时间
+c:timor-sea	Noun	ar:بحر تيمور	de:Timorsee	en:Timor Sea	es:Mar de Timor	fa:دریای تیمور	fr:Mer de Timor	he:ים טימור	hi:तिमोर सागर	ja:ティモール海	ko:티모르해	pt:Mar de Timor	ru:Тиморское море	tr:Timor Denizi	ur:بحیرہ تیمور	zh:帝汶海
 c:tin	Noun	ar:قصدير	de:Zinn	en:tin	es:estaño	fa:قلع	fr:étain	he:בדיל	hi:टिन,राँगा	ja:錫,スズ	ko:주석	pt:estanho	ru:олово	tr:kalay	ur:رانگ,قلعی	zh:锡
 c:tire	Noun	ar:إطار,كاوتشوك	de:Reifen	en:tire,tyre	es:neumático,llanta	fa:لاستیک,تایر	fr:pneu	he:צמיג	hi:टायर	ja:タイヤ	ko:타이어	pt:pneu	ru:шина,покрышка	tr:lastik	ur:ٹائر	zh:轮胎
 c:tired	Adjective	ar:متعب	de:müde	en:tired	es:cansado	fa:خسته	fr:fatigué	he:עייף	hi:थका	ja:疲れた	ko:피곤한	pt:cansado	ru:усталый	tr:yorgun	ur:تھکا ہوا	zh:累,疲倦
@@ -2245,6 +2283,7 @@ c:turtle	Noun	ar:سلحفاة	de:Schildkröte	en:turtle	es:tortuga	fa:لاک‌�
 c:two	Noun	ar:اثنان,اثنين	de:zwei	en:two	es:dos	fa:دو	fr:deux	he:שניים	hi:दो	ja:二,に	ko:둘,이	pt:dois	ru:два	tr:iki	ur:دو	zh:二,两
 c:type	Verb	ar:طبع,كتب على الآلة	de:tippen,schreiben	en:type	es:teclear,escribir a máquina	fa:تایپ کرد	fr:taper,saisir	he:הקליד	hi:टाइप करना	ja:タイプする,入力する	ko:타자치다,입력하다	pt:digitar,datilografar	ru:печатать,набирать	tr:yazmak	ur:ٹائپ کرنا	zh:打字,键入
 c:typhoon	Noun	ar:تايفون,إعصار مداري	de:Taifun	en:typhoon	es:tifón	fa:تایفون	fr:typhon	he:טייפון	hi:टाइफ़ून	ja:台風	ko:태풍	pt:tufão	ru:тайфун	tr:tayfun	ur:ٹائفون	zh:台风
+c:tyrrhenian-sea	Noun	ar:البحر التيراني	de:Tyrrhenisches Meer	en:Tyrrhenian Sea	es:Mar Tirreno	fa:دریای تیرنی	fr:Mer Tyrrhénienne	he:הים הטירני	hi:टायरैनियन सागर	ja:ティレニア海	ko:티레니아해	pt:Mar Tirreno	ru:Тирренское море	tr:Tiren Denizi	ur:بحیرہ ٹائرینیئن	zh:第勒尼安海
 c:uae	Noun	ar:الإمارات العربية المتحدة,الإمارات	de:Vereinigte Arabische Emirate,VAE	en:United Arab Emirates,UAE	es:Emiratos Árabes Unidos	fa:امارات متحده عربی,امارات	fr:Émirats arabes unis	he:איחוד האמירויות הערביות	hi:संयुक्त अरब अमीरात	ja:アラブ首長国連邦,UAE	ko:아랍에미리트	pt:Emirados Árabes Unidos	ru:Объединённые Арабские Эмираты,ОАЭ	tr:Birleşik Arap Emirlikleri,BAE	ur:متحدہ عرب امارات	zh:阿拉伯联合酋长国,阿联酋
 c:ukulele	Noun	ar:أوكوليلي	de:Ukulele	en:ukulele	es:ukelele,ukulele	fa:یوکلله	fr:ukulélé	he:יוקללה	hi:यूकेलेले	ja:ウクレレ	ko:우쿨렐레	pt:ukulele	ru:укулеле	tr:ukulele	ur:یوکیلیلی	zh:尤克里里,夏威夷四弦琴
 c:umayyad	Noun	ar:العصر الأموي,الخلافة الأموية	de:Umayyaden,Umayyadenreich	en:umayyad era,umayyad caliphate	es:califato omeya,era omeya	fa:دوره اموی,خلافت اموی	fr:califat omeyyade,époque omeyyade	he:התקופה האומיית,ח'ליפות אומיית	hi:उमय्यद खिलाफत,उमय्यद युग	ja:ウマイヤ朝	ko:우마이야 왕조	pt:califado omíada,era omíada	ru:омейядский халифат,эпоха омейядов	tr:emevi dönemi,emevi hilafeti	ur:اموی دور,اموی خلافت	zh:倭马亚王朝,倭玛亚时代
@@ -2398,6 +2437,7 @@ c:xylophone	Noun	ar:إكسيليفون	de:Xylophon	en:xylophone	es:xilófono	fa:
 c:yacht	Noun	ar:يخت	de:Jacht,Yacht	en:yacht	es:yate	fa:قایق تفریحی,کشتی تفریحی	fr:yacht	he:יאכטה	hi:नौका	ja:ヨット	ko:요트	pt:iate	ru:яхта	tr:yat	ur:کشتی تفریحی	zh:游艇
 c:year	Noun	ar:سنة,عام	de:Jahr	en:year,years	es:año	fa:سال	fr:an,année	he:שנה	hi:वर्ष,साल	ja:年	ko:년,해	pt:ano	ru:год	tr:yıl,sene	ur:سال	zh:年
 c:yellow	Adjective	ar:أصفر	de:gelb	en:yellow	es:amarillo	fa:زرد	fr:jaune	he:צהוב	hi:पीला	ja:黄色,黄色い	ko:노란,노랑	pt:amarelo	ru:жёлтый	tr:sarı	ur:زرد,پیلا	zh:黄,黄色
+c:yellow-sea	Noun	ar:البحر الأصفر	de:Gelbes Meer	en:Yellow Sea	es:Mar Amarillo	fa:دریای زرد	fr:Mer Jaune	he:הים הצהוב	hi:पीला सागर	ja:黄海	ko:황해,서해	pt:Mar Amarelo	ru:Жёлтое море	tr:Sarı Deniz	ur:بحیرہ زرد	zh:黄海
 c:yen	Noun	ar:ين	de:Yen	en:yen	es:yen	fa:ین	fr:yen	he:ין	hi:येन	ja:円	ko:엔	pt:iene	ru:иена	tr:yen	ur:ین	zh:日元,円
 c:yesterday	Noun	ar:أمس,البارحة	de:gestern	en:yesterday	es:ayer	fa:دیروز	fr:hier	he:אתמול	hi:कल	ja:昨日	ko:어제	pt:ontem	ru:вчера	tr:dün	ur:کل	zh:昨天
 c:yoga	Noun	ar:اليوغا,اليوجا	de:Yoga	en:yoga	es:yoga	fa:یوگا	fr:yoga	he:יוגה	hi:योग	ja:ヨガ,瑜伽	ko:요가	pt:ioga,yoga	ru:йога	tr:yoga	ur:یوگا	zh:瑜伽
