@@ -418,7 +418,7 @@ The five-stamp model correctly located "core's 19.5 s is spent queued." The mech
 
 The refined UI-thread hypothesis now matches the shape of the bug exactly: any sync fan-out that fires **between** `libraries.set()` and `await invoke('cache_boot_snapshot_core')` will queue in front of core. DashboardView is the chief offender on this boot path.
 
-### Round 5 fix (`TBC`)
+### Round 5 fix (`f018ad7`)
 
 Three commands converted from `#[tauri::command]` to `#[tauri::command(async)]`:
 
@@ -448,7 +448,7 @@ The five-stamp model worked: it pointed to "core queued 19.5 s." The UI-thread m
 ## Commits (updated)
 
 - `9001b01` — Experiment A+: fan-out commands to `#[tauri::command(async)]` (Round 4; kept in place — these are still correct).
-- `TBC` — Round 5: DashboardView fan-out commands to `#[tauri::command(async)]`.
+- `f018ad7` — Round 5: DashboardView fan-out commands to `#[tauri::command(async)]`.
 
 ## Open items (updated)
 
