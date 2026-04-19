@@ -295,6 +295,9 @@ Working-tree had `"version": "0.1.0"` vs HEAD's `"0.3.4"` (accidental local reve
 - `5f60448` — Boot Criterion 2: move snapshot commands off async-runtime workers (`spawn_blocking`).
 - `9c722d9` — SESSION-LOG § 10 (Round 2 measurement + fix).
 - `43d049e` — Settings → Debug: Boot Performance scorecard.
+- `ee39443` — SESSION-LOG §§ 11-12 (scorecard UI + conf version sync).
+- `53ccbe7` — User Manual § 16: Debug subsection.
+- `b16c1b3` — LL-021 (split queue-time vs body-time; Tauri async-runtime saturation as a distinct bottleneck from LL-020's OS-I/O contention).
 
 ## Open items
 
