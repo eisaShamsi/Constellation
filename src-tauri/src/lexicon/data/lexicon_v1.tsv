@@ -55,6 +55,7 @@ c:alphabet	Noun	ar:أبجدية,الحروف الأبجدية	de:Alphabet	en:alp
 c:alps	Noun	ar:جبال الألب,الألب	de:Alpen	en:Alps	es:Alpes	fa:آلپ,کوه‌های آلپ	fr:Alpes	he:האלפים,הרי האלפים	hi:आल्प्स,आल्प्स पर्वत	ja:アルプス山脈	ko:알프스산맥	pt:Alpes	ru:Альпы	tr:Alpler,Alp Dağları	ur:الپس,کوہ الپس	zh:阿尔卑斯山脉
 c:altai	Noun	ar:جبال ألتاي	de:Altai	en:Altai,Altai Mountains	es:Altái,montes Altái	fa:آلتای,کوه‌های آلتای	fr:Altaï,monts Altaï	he:אלטאי,הרי אלטאי	hi:अल्ताई पर्वत	ja:アルタイ山脈	ko:알타이산맥	pt:Altai,montes Altai	ru:Алтай,Алтайские горы	tr:Altay Dağları	ur:التائی پہاڑ	zh:阿尔泰山脉
 c:aluminum	Noun	ar:ألومنيوم,ألمنيوم	de:Aluminium	en:aluminum,aluminium	es:aluminio	fa:آلومینیوم	fr:aluminium	he:אלומיניום	hi:एल्यूमीनियम	ja:アルミニウム,アルミ	ko:알루미늄	pt:alumínio	ru:алюминий	tr:alüminyum	ur:ایلومینیم	zh:铝
+c:amazon	Noun	ar:الأمازون,نهر الأمازون	de:Amazonas	en:Amazon,Amazon River	es:Amazonas,río Amazonas	fa:آمازون,رود آمازون	fr:Amazone	he:אמזונס,נהר האמזונס	hi:अमेज़न,अमेज़न नदी	ja:アマゾン川	ko:아마존강	pt:Amazonas,rio Amazonas	ru:Амазонка	tr:Amazon,Amazon Nehri	ur:دریائے ایمیزون,ایمیزون	zh:亚马逊河
 c:amber	Noun	ar:كهرمان,عنبر	de:Bernstein	en:amber	es:ámbar	fa:کهربا	fr:ambre	he:ענבר	hi:अंबर,कहरुआ	ja:琥珀	ko:호박,앰버	pt:âmbar	ru:янтарь	tr:kehribar,amber	ur:کہربا,عنبر	zh:琥珀
 c:ambulance	Noun	ar:إسعاف,سيارة إسعاف	de:Krankenwagen	en:ambulance	es:ambulancia	fa:آمبولانس	fr:ambulance	he:אמבולנס	hi:एम्बुलेंस	ja:救急車	ko:구급차	pt:ambulância	ru:скорая помощь	tr:ambulans	ur:ایمبولینس	zh:救护车
 c:ambush	Noun	ar:كمين	de:Hinterhalt	en:ambush	es:emboscada	fa:کمین	fr:embuscade	he:מארב	hi:घात	ja:待ち伏せ	ko:매복	pt:emboscada	ru:засада	tr:pusu	ur:گھات	zh:伏击
@@ -63,6 +64,7 @@ c:amnesia	Noun	ar:فقدان الذاكرة	de:Amnesie,Gedächtnisverlust	en:amn
 c:amphibian	Noun	ar:برمائي	de:Amphibie,Lurch	en:amphibian	es:anfibio	fa:دوزیست	fr:amphibien	he:דו-חיים	hi:उभयचर	ja:両生類	ko:양서류	pt:anfíbio	ru:амфибия,земноводное	tr:amfibi,iki yaşamlı	ur:دوزیست	zh:两栖动物
 c:amplitude	Noun	ar:سعة,اتساع	de:Amplitude	en:amplitude	es:amplitud	fa:دامنه	fr:amplitude	he:משרעת,אמפליטודה	hi:आयाम,एम्प्लिट्यूड	ja:振幅,アンプリチュード	ko:진폭,앰플리튜드	pt:amplitude	ru:амплитуда	tr:genlik,amplitüt	ur:وسعت,ایمپلیٹیوڈ	zh:振幅,幅度
 c:amsterdam	Noun	ar:أمستردام	de:Amsterdam	en:Amsterdam	es:Ámsterdam	fa:آمستردام	fr:Amsterdam	he:אמסטרדם	hi:एम्स्टर्डम	ja:アムステルダム	ko:암스테르담	pt:Amsterdã,Amesterdão	ru:Амстердам	tr:Amsterdam	ur:ایمسٹرڈیم	zh:阿姆斯特丹
+c:amur	Noun	ar:الأمور,نهر الأمور	de:Amur	en:Amur,Amur River	es:Amur,río Amur	fa:آمور,رود آمور	fr:Amour	he:אמור,נהר האמור	hi:अमूर नदी	ja:アムール川	ko:아무르강	pt:Amur,rio Amur	ru:Амур	tr:Amur,Amur Nehri	ur:دریائے آمور	zh:黑龙江,阿穆尔河
 c:analysis	Noun	ar:تحليل	de:Analyse	en:analysis	es:análisis	fa:تحلیل	fr:analyse	he:ניתוח	hi:विश्लेषण	ja:分析,解析	ko:분석	pt:análise	ru:анализ	tr:analiz,çözümleme	ur:تجزیہ	zh:分析
 c:ancestor	Noun	ar:سلف,جد	de:Vorfahre,Ahne	en:ancestor,forefather	es:ancestro,antepasado	fa:نیاکان,اجداد	fr:ancêtre	he:אב קדמון,אבות	hi:पूर्वज	ja:祖先,先祖	ko:조상,선조	pt:ancestral,antepassado	ru:предок	tr:ata,cet	ur:آباء,اجداد	zh:祖先,先祖
 c:anchovy	Noun	ar:أنشوجة	de:Sardelle	en:anchovy	es:anchoa	fa:آنچوی	fr:anchois	he:אנשובי	hi:एंकोवी	ja:カタクチイワシ	ko:멸치	pt:anchova	ru:анчоус	tr:hamsi	ur:اینچووی	zh:凤尾鱼
@@ -284,6 +286,7 @@ c:box	Noun	ar:صندوق,علبة	de:Kiste,Schachtel,Box	en:box	es:caja	fa:جع�
 c:boxing	Noun	ar:ملاكمة	de:Boxen	en:boxing	es:boxeo	fa:بوکس	fr:boxe	he:איגרוף,בוקס	hi:मुक्केबाज़ी,बॉक्सिंग	ja:ボクシング	ko:복싱,권투	pt:boxe	ru:бокс	tr:boks	ur:باکسنگ	zh:拳击
 c:boy	Noun	ar:ولد,صبي	de:Junge,Knabe	en:boy	es:niño,chico	fa:پسر	fr:garçon	he:ילד,נער	hi:लड़का	ja:男の子,少年	ko:소년	pt:menino,garoto	ru:мальчик	tr:oğlan,erkek çocuk	ur:لڑکا	zh:男孩
 c:bracelet	Noun	ar:سوار	de:Armband	en:bracelet	es:pulsera	fa:دستبند	fr:bracelet	he:צמיד	hi:कंगन,ब्रेसलेट	ja:ブレスレット,腕輪	ko:팔찌	pt:pulseira	ru:браслет	tr:bilezik	ur:کنگن	zh:手链
+c:brahmaputra	Noun	ar:البراهمابوترا,نهر البراهمابوترا	de:Brahmaputra	en:Brahmaputra,Brahmaputra River	es:Brahmaputra,río Brahmaputra	fa:برهماپوترا	fr:Brahmapoutre	he:ברהמפוטרה	hi:ब्रह्मपुत्र,ब्रह्मपुत्र नदी	ja:ブラフマプトラ川	ko:브라마푸트라강	pt:Brahmaputra	ru:Брахмапутра	tr:Brahmaputra	ur:دریائے برہم پترا	zh:布拉马普特拉河,雅鲁藏布江
 c:brain	Noun	ar:دماغ,مخ	de:Gehirn	en:brain	es:cerebro	fa:مغز	fr:cerveau	he:מוח	hi:मस्तिष्क,दिमाग	ja:脳	ko:뇌	pt:cérebro	ru:мозг	tr:beyin	ur:دماغ	zh:脑,大脑
 c:brake	Noun	ar:فرامل,مكبح	de:Bremse	en:brake	es:freno	fa:ترمز	fr:frein	he:בלם	hi:ब्रेक	ja:ブレーキ	ko:브레이크	pt:freio,travão	ru:тормоз	tr:fren	ur:بریک	zh:刹车
 c:branch	Noun	ar:فرع,غصن	de:Ast,Zweig	en:branch	es:rama	fa:شاخه	fr:branche	he:ענף	hi:शाखा,डाली	ja:枝	ko:가지	pt:ramo,galho	ru:ветвь,ветка	tr:dal	ur:شاخ	zh:枝,树枝
@@ -469,6 +472,7 @@ c:cold-illness	Noun	ar:زكام,رشح	de:Erkältung	en:cold	es:resfriado,catarr
 c:cold-snap	Noun	ar:موجة برد قصيرة,موجة صقيع	de:Kälteeinbruch,Kältewelle	en:cold snap,cold spell	es:ola de frío,frente frío	fa:موج سرما	fr:vague de froid,coup de froid	he:גל קור,קור פתאומי	hi:शीत लहर,ठंड की लहर	ja:寒波,寒気	ko:한파	pt:onda de frio	ru:похолодание,холодный фронт	tr:soğuk hava dalgası	ur:سرد لہر	zh:寒流,寒潮
 c:colonel	Noun	ar:عقيد	de:Oberst	en:colonel	es:coronel	fa:سرهنگ	fr:colonel	he:אלוף משנה	hi:कर्नल	ja:大佐	ko:대령	pt:coronel	ru:полковник	tr:albay	ur:کرنل	zh:上校
 c:colonialism	Noun	ar:استعمار	de:Kolonialismus	en:colonialism	es:colonialismo	fa:استعمار	fr:colonialisme	he:קולוניאליזם,אימפריאליזם קולוניאלי	hi:उपनिवेशवाद	ja:植民地主義	ko:식민주의	pt:colonialismo	ru:колониализм	tr:sömürgecilik,kolonyalizm	ur:نوآبادیات,استعمار	zh:殖民主义
+c:colorado	Noun	ar:الكولورادو,نهر الكولورادو	de:Colorado	en:Colorado,Colorado River	es:Colorado,río Colorado	fa:کلرادو,رود کلرادو	fr:Colorado	he:קולורדו,נהר הקולורדו	hi:कोलोराडो नदी	ja:コロラド川	ko:콜로라도강	pt:Colorado,rio Colorado	ru:Колорадо	tr:Colorado,Colorado Nehri	ur:دریائے کولوراڈو	zh:科罗拉多河
 c:column	Noun	ar:عمود	de:Säule,Pfeiler	en:column	es:columna	fa:ستون	fr:colonne	he:עמוד	hi:स्तंभ,खंभा	ja:柱,コラム	ko:기둥,칼럼	pt:coluna	ru:колонна	tr:sütun	ur:ستون,کالم	zh:柱子,圆柱
 c:combustion	Noun	ar:احتراق	de:Verbrennung	en:combustion,burning	es:combustión	fa:احتراق,سوختن	fr:combustion	he:בעירה,שריפה	hi:दहन,ज्वलन	ja:燃焼	ko:연소	pt:combustão	ru:горение,сгорание	tr:yanma,kombüstiyon	ur:احتراق,جلنا	zh:燃烧
 c:come	Verb	ar:جاء,أتى	de:kommen	en:come	es:venir	fa:آمدن	fr:venir	he:לבוא	hi:आना	ja:来る	ko:오다	pt:vir	ru:приходить,прийти	tr:gelmek	ur:آنا	zh:来
@@ -498,6 +502,7 @@ c:conductor	Noun	ar:قائد الأوركسترا,مايسترو	de:Dirigent	en:
 c:confetti	Noun	ar:قصاصات ورق ملونة,كونفيتي	de:Konfetti	en:confetti	es:confeti	fa:کانفتی	fr:confettis	he:קונפטי	hi:कन्फ़ेट्टी	ja:紙吹雪,コンフェッティ	ko:색종이 조각,콘페티	pt:confete	ru:конфетти	tr:konfeti	ur:کنفیٹی	zh:彩纸屑,五彩纸屑
 c:confusion	Noun	ar:ارتباك	de:Verwirrung	en:confusion	es:confusión	fa:سردرگمی	fr:confusion	he:בלבול	hi:भ्रम	ja:混乱	ko:혼란	pt:confusão	ru:смущение,путаница	tr:kafa karışıklığı	ur:الجھن	zh:混乱,困惑
 c:congas	Noun	ar:كونغا	de:Conga,Congas	en:conga,congas	es:conga,congas	fa:کونگا	fr:conga,congas	he:קונגה	hi:कोंगा	ja:コンガ	ko:콩가	pt:conga,congas	ru:конга	tr:konga	ur:کونگا	zh:康加鼓
+c:congo	Noun	ar:الكونغو,نهر الكونغو	de:Kongo	en:Congo,Congo River	es:Congo,río Congo	fa:کنگو,رود کنگو	fr:Congo,fleuve Congo	he:קונגו,נהר הקונגו	hi:कांगो नदी,कांगो	ja:コンゴ川	ko:콩고강	pt:Congo,rio Congo	ru:Конго	tr:Kongo,Kongo Nehri	ur:دریائے کانگو	zh:刚果河
 c:congratulate	Verb	ar:هنأ,يهنئ	de:gratulieren,beglückwünschen	en:congratulate	es:felicitar	fa:تبریک گفتن	fr:féliciter	he:לברך	hi:बधाई देना	ja:祝う,おめでとうを言う	ko:축하하다	pt:felicitar,parabenizar	ru:поздравлять	tr:tebrik etmek	ur:مبارکباد دینا	zh:祝贺,恭喜
 c:conjugation	Noun	ar:تصريف	de:Konjugation,Beugung	en:conjugation	es:conjugación	fa:صرف فعل	fr:conjugaison	he:הטיה	hi:क्रिया रूपांतरण	ja:活用,動詞変化	ko:활용,동사 변화	pt:conjugação	ru:спряжение	tr:çekim	ur:تصریف	zh:动词变位,变位
 c:conjunction	Noun	ar:حرف عطف,رابط	de:Konjunktion,Bindewort	en:conjunction	es:conjunción	fa:حرف ربط	fr:conjonction	he:מילת חיבור	hi:संयोजक	ja:接続詞	ko:접속사	pt:conjunção	ru:союз	tr:bağlaç	ur:حرف ربط	zh:连词
@@ -574,6 +579,7 @@ c:cytoplasm	Noun	ar:سيتوبلازم,هيولى	de:Zytoplasma,Cytoplasma	en:cy
 c:daisy	Noun	ar:أقحوان	de:Gänseblümchen	en:daisy	es:margarita	fa:گل مروارید	fr:marguerite,pâquerette	he:חיננית	hi:डेज़ी,गुलबहार	ja:デイジー,ヒナギク	ko:데이지	pt:margarida	ru:маргаритка	tr:papatya	ur:گل بہار	zh:雏菊
 c:dance	Noun	ar:رقص	de:Tanz	en:dance	es:baile,danza	fa:رقص	fr:danse	he:ריקוד	hi:नृत्य,नाच	ja:踊り,ダンス	ko:춤,댄스	pt:dança	ru:танец	tr:dans	ur:رقص,ناچ	zh:舞蹈,舞
 c:dancer	Noun	ar:راقص	de:Tänzer	en:dancer	es:bailarín	fa:رقصنده	fr:danseur	he:רקדן	hi:नर्तक,डांसर	ja:ダンサー,踊り手	ko:댄서,무용수	pt:dançarino,bailarino	ru:танцор	tr:dansçı	ur:رقاص	zh:舞者
+c:danube	Noun	ar:الدانوب,نهر الدانوب	de:Donau	en:Danube,Danube River	es:Danubio,río Danubio	fa:دانوب,رود دانوب	fr:Danube	he:דנובה,נהר הדנובה	hi:डैन्यूब नदी,डैन्यूब	ja:ドナウ川	ko:도나우강,다뉴브강	pt:Danúbio,rio Danúbio	ru:Дунай	tr:Tuna,Tuna Nehri	ur:دریائے ڈینیوب	zh:多瑙河
 c:darbuka	Noun	ar:دربكة,دربوكة	de:Darbuka,Darabukka	en:darbuka,goblet drum	es:darbuka	fa:تنبک,دربوکه	fr:darbouka,derbouka	he:דרבוקה	hi:दरबुका	ja:ダラブッカ	ko:다르부카	pt:darbuka	ru:дарбука	tr:darbuka	ur:دربکا	zh:达布卡鼓
 c:dark-matter	Noun	ar:مادة مظلمة	de:dunkle Materie	en:dark matter	es:materia oscura	fa:ماده تاریک	fr:matière noire	he:חומר אפל	hi:डार्क मैटर,अदृश्य पदार्थ	ja:暗黒物質	ko:암흑 물질	pt:matéria escura	ru:тёмная материя	tr:karanlık madde	ur:تاریک مادہ	zh:暗物质
 c:dashboard	Noun	ar:لوحة القيادة,طبلون	de:Armaturenbrett	en:dashboard	es:salpicadero,tablero	fa:داشبورد	fr:tableau de bord	he:לוח מחוונים	hi:डैशबोर्ड	ja:ダッシュボード	ko:계기판,대시보드	pt:painel,salpicadeiro	ru:приборная панель,торпедо	tr:gösterge paneli	ur:ڈیش بورڈ	zh:仪表盘
@@ -653,6 +659,7 @@ c:division	Noun	ar:فرقة	de:Division	en:division	es:división	fa:لشکر	fr:
 c:diwali	Noun	ar:ديوالي,مهرجان الأنوار	de:Diwali	en:diwali,deepavali	es:diwali	fa:دیوالی	fr:diwali	he:דיוואלי	hi:दीवाली,दीपावली	ja:ディワーリー	ko:디왈리	pt:diwali	ru:дивали	tr:divali	ur:دیوالی	zh:排灯节,迪瓦利
 c:djembe	Noun	ar:جيمبي	de:Djembe	en:djembe	es:yembe,djembé	fa:جمبه	fr:djembé	he:ג'מבה	hi:जेम्बे	ja:ジェンベ	ko:젬베	pt:djembé	ru:джембе	tr:cembe	ur:جمبے	zh:金贝鼓
 c:dna	Noun	ar:الحمض النووي,دنا	de:DNA,Desoxyribonukleinsäure	en:DNA,deoxyribonucleic acid	es:ADN,ácido desoxirribonucleico	fa:دی ان ای,دزوکسی ریبونوکلئیک اسید	fr:ADN,acide désoxyribonucléique	he:דנ״א	hi:डीएनए	ja:DNA,デオキシリボ核酸	ko:DNA,디옥시리보핵산	pt:DNA,ADN	ru:ДНК,дезоксирибонуклеиновая кислота	tr:DNA,deoksiribonükleik asit	ur:ڈی این اے	zh:脱氧核糖核酸,DNA
+c:dnieper	Noun	ar:الدنيبر,نهر الدنيبر	de:Dnepr,Dnjepr	en:Dnieper,Dnipro	es:Dniéper,río Dniéper	fa:دنیپر,رود دنیپر	fr:Dniepr	he:דנייפר,נהר הדנייפר	hi:नीपर नदी,डनीपर	ja:ドニエプル川	ko:드니프로강,드네프르강	pt:Dnieper,rio Dnieper	ru:Днепр	tr:Dinyeper,Dinyeper Nehri	ur:دریائے ڈنیپر	zh:第聂伯河
 c:dock	Verb	ar:رسا,يرسو	de:andocken,anlegen	en:dock	es:atracar	fa:پهلو گرفتن	fr:accoster,arrimer	he:לעגון	hi:लंगर डालना	ja:停泊する,ドッキングする	ko:정박하다,도킹하다	pt:atracar	ru:причаливать,швартоваться	tr:yanaşmak	ur:لنگر ڈالنا	zh:停靠,对接
 c:doctor	Noun	ar:طبيب,دكتور	de:Arzt,Ärztin	en:doctor,physician	es:médico,doctor	fa:دکتر,پزشک	fr:médecin,docteur	he:רופא,דוקטור	hi:डॉक्टर,चिकित्सक	ja:医者,医師,ドクター	ko:의사,닥터	pt:médico,doutor	ru:врач,доктор	tr:doktor,hekim	ur:ڈاکٹر,طبیب	zh:医生,医师
 c:dog	Noun	ar:كلب	de:Hund	en:dog	es:perro	fa:سگ	fr:chien	he:כלב	hi:कुत्ता	ja:犬	ko:개	pt:cachorro,cão	ru:собака,пёс	tr:köpek	ur:کتا	zh:狗
@@ -660,6 +667,7 @@ c:dollar	Noun	ar:دولار	de:Dollar	en:dollar	es:dólar	fa:دلار	fr:dollar	
 c:dolphin	Noun	ar:دلفين	de:Delfin,Delphin	en:dolphin	es:delfín	fa:دلفین	fr:dauphin	he:דולפין	hi:डॉल्फ़िन	ja:イルカ	ko:돌고래	pt:golfinho	ru:дельфин	tr:yunus	ur:ڈولفن	zh:海豚
 c:domain-bio	Noun	ar:نطاق	de:Domäne	en:domain	es:dominio	fa:دامنه,فرمانرو	fr:domaine	he:על־ממלכה,דומיין	hi:डोमेन,क्षेत्र	ja:ドメイン,超界	ko:역,도메인	pt:domínio	ru:домен	tr:alan	ur:دائرہ,ڈومین	zh:域
 c:dome	Noun	ar:قبة	de:Kuppel,Dom	en:dome,cupola	es:cúpula	fa:گنبد	fr:dôme,coupole	he:כיפה	hi:गुंबद	ja:ドーム,円蓋	ko:돔,원형 지붕	pt:cúpula	ru:купол	tr:kubbe	ur:گنبد	zh:圆顶,穹顶
+c:don	Noun	ar:الدون,نهر الدون	de:Don	en:Don,Don River	es:Don,río Don	fa:دن,رود دن	fr:Don	he:דון,נהר הדון	hi:दोन नदी	ja:ドン川	ko:돈강	pt:Don,rio Don	ru:Дон	tr:Don,Don Nehri	ur:دریائے ڈان	zh:顿河
 c:dong	Noun	ar:دونغ	de:Dong	en:dong	es:dong	fa:دونگ	fr:dong	he:דונג	hi:डॉन्ग	ja:ドン	ko:동	pt:dong	ru:донг	tr:dong	ur:ڈونگ	zh:越南盾
 c:donkey	Noun	ar:حمار	de:Esel	en:donkey	es:burro	fa:خر	fr:âne	he:חמור	hi:गधा	ja:ロバ	ko:당나귀	pt:burro	ru:осёл	tr:eşek	ur:گدھا	zh:驴
 c:door	Noun	ar:باب	de:Tür	en:door	es:puerta	fa:در	fr:porte	he:דלת	hi:दरवाज़ा	ja:ドア,扉	ko:문	pt:porta	ru:дверь	tr:kapı	ur:دروازہ	zh:门
@@ -708,6 +716,7 @@ c:east-china-sea	Noun	ar:بحر الصين الشرقي	de:Ostchinesisches Meer	
 c:easter	Noun	ar:عيد الفصح,عيد القيامة	de:Ostern	en:easter	es:pascua	fa:عید پاک	fr:pâques	he:חג הפסחא	hi:ईस्टर	ja:復活祭,イースター	ko:부활절	pt:páscoa	ru:пасха	tr:paskalya	ur:ایسٹر	zh:复活节
 c:easy	Adjective	ar:سهل	de:einfach,leicht	en:easy	es:fácil	fa:آسان,ساده	fr:facile	he:קל	hi:आसान	ja:簡単,易しい	ko:쉬운	pt:fácil	ru:лёгкий,простой	tr:kolay	ur:آسان	zh:容易,简单
 c:eat	Verb	ar:أكل,يأكل	de:essen	en:eat,eats,ate	es:comer	fa:خوردن	fr:manger	he:לאכול	hi:खाना	ja:食べる	ko:먹다	pt:comer	ru:есть,кушать	tr:yemek	ur:کھانا	zh:吃
+c:ebro	Noun	ar:الإبرو,نهر الإبرو	de:Ebro	en:Ebro,Ebro River	es:Ebro,río Ebro	fa:ابرو,رود ابرو	fr:Èbre	he:אברו,נהר האברו	hi:एब्रो नदी	ja:エブロ川	ko:에브로강	pt:Ebro,rio Ebro	ru:Эбро	tr:Ebro,Ebro Nehri	ur:دریائے ایبرو	zh:埃布罗河
 c:eclipse	Noun	ar:كسوف,خسوف	de:Finsternis,Sonnenfinsternis,Mondfinsternis	en:eclipse	es:eclipse	fa:خورشیدگرفتگی,ماه‌گرفتگی	fr:éclipse	he:ליקוי	hi:ग्रहण,सूर्य ग्रहण,चंद्र ग्रहण	ja:食,日食,月食	ko:식,일식,월식	pt:eclipse	ru:затмение	tr:tutulma,güneş tutulması,ay tutulması	ur:گرہن	zh:食,日食,月食
 c:economy	Noun	ar:اقتصاد	de:Wirtschaft	en:economy	es:economía	fa:اقتصاد	fr:économie	he:כלכלה	hi:अर्थव्यवस्था	ja:経済	ko:경제	pt:economia	ru:экономика	tr:ekonomi	ur:معیشت,اقتصاد	zh:经济
 c:ecosystem	Noun	ar:نظام بيئي	de:Ökosystem	en:ecosystem	es:ecosistema	fa:زیست بوم,اکوسیستم	fr:écosystème	he:מערכת אקולוגית	hi:पारितंत्र,पारिस्थितिकी तंत्र	ja:生態系	ko:생태계	pt:ecossistema	ru:экосистема	tr:ekosistem	ur:ماحولیاتی نظام	zh:生态系统
@@ -721,6 +730,7 @@ c:egg	Noun	ar:بيضة,بيض	de:Ei	en:egg,eggs	es:huevo	fa:تخم مرغ	fr:œu
 c:egypt	Noun	ar:مصر	de:Ägypten	en:Egypt	es:Egipto	fa:مصر	fr:Égypte	he:מצרים	hi:मिस्र	ja:エジプト	ko:이집트	pt:Egito	ru:Египет	tr:Mısır	ur:مصر	zh:埃及
 c:eid	Noun	ar:عيد	de:Eid,islamisches Fest	en:eid	es:eid,fiesta islámica	fa:عید	fr:aïd,eid	he:עיד	hi:ईद	ja:イード	ko:이드	pt:eid,festa islâmica	ru:ид	tr:bayram	ur:عید	zh:开斋节,宰牲节
 c:eight	Noun	ar:ثمانية	de:acht	en:eight	es:ocho	fa:هشت	fr:huit	he:שמונה	hi:आठ	ja:八,はち	ko:여덟,팔	pt:oito	ru:восемь	tr:sekiz	ur:آٹھ	zh:八
+c:elbe	Noun	ar:الإلبه,نهر الإلبه	de:Elbe	en:Elbe,Elbe River	es:Elba,río Elba	fa:الب,رود الب	fr:Elbe	he:אלבה,נהר האלבה	hi:एल्बे नदी	ja:エルベ川	ko:엘베강	pt:Elba,rio Elba	ru:Эльба	tr:Elbe,Elbe Nehri	ur:دریائے ایلبے	zh:易北河
 c:elbow	Noun	ar:مرفق,كوع	de:Ellbogen,Ellenbogen	en:elbow	es:codo	fa:آرنج	fr:coude	he:מרפק	hi:कोहनी	ja:肘	ko:팔꿈치	pt:cotovelo	ru:локоть	tr:dirsek	ur:کہنی	zh:肘,肘部
 c:elder	Noun	ar:شيخ,كبير السن	de:Älteste,Ältester	en:elder	es:anciano,mayor	fa:بزرگ,ریش سفید	fr:aîné,ancien	he:זקן,ותיק	hi:बुज़ुर्ग,वरिष्ठ	ja:長老,年長者	ko:장로,연장자	pt:ancião,mais velho	ru:старейшина	tr:yaşlı,aksakal	ur:بزرگ,بڑے	zh:长老,长者
 c:election	Noun	ar:انتخاب,انتخابات	de:Wahl	en:election	es:elección	fa:انتخابات	fr:élection	he:בחירות	hi:चुनाव,निर्वाचन	ja:選挙	ko:선거	pt:eleição	ru:выборы	tr:seçim	ur:انتخاب	zh:选举
@@ -781,6 +791,7 @@ c:ethnicity	Noun	ar:عرق,انتماء عرقي	de:Ethnie,ethnische Zugehörigk
 c:etiquette	Noun	ar:آداب,إتيكيت	de:Etikette	en:etiquette	es:etiqueta,protocolo	fa:آداب,اتیکت	fr:étiquette	he:נימוס,אטיקט	hi:शिष्टाचार	ja:エチケット,作法	ko:예절,에티켓	pt:etiqueta	ru:этикет	tr:etiket,görgü kuralları	ur:آداب,اخلاقیات	zh:礼仪,礼节
 c:etymology	Noun	ar:علم أصول الكلمات,اشتقاق	de:Etymologie	en:etymology	es:etimología	fa:ریشه شناسی	fr:étymologie	he:אטימולוגיה	hi:व्युत्पत्ति विज्ञान	ja:語源学	ko:어원학	pt:etimologia	ru:этимология	tr:köken bilimi,etimoloji	ur:علم اشتقاق	zh:词源学
 c:euphoria	Noun	ar:نشوة,ابتهاج	de:Euphorie	en:euphoria	es:euforia	fa:سرخوشی	fr:euphorie	he:אופוריה	hi:उल्लास,आनंदातिरेक	ja:多幸感,ユーフォリア	ko:행복감,유포리아	pt:euforia	ru:эйфория	tr:öfori,coşku	ur:کیف,سرشاری	zh:欣快感,欣快
+c:euphrates	Noun	ar:الفرات,نهر الفرات	de:Euphrat	en:Euphrates,Euphrates River	es:Éufrates,río Éufrates	fa:فرات,رود فرات	fr:Euphrate	he:פרת,נהר הפרת	hi:यूफ्रेट्स नदी,फुरात	ja:ユーフラテス川	ko:유프라테스강	pt:Eufrates,rio Eufrates	ru:Евфрат	tr:Fırat,Fırat Nehri	ur:دریائے فرات,فرات	zh:幼发拉底河
 c:euro	Noun	ar:يورو	de:Euro	en:euro	es:euro	fa:یورو	fr:euro	he:יורו	hi:यूरो	ja:ユーロ	ko:유로	pt:euro	ru:евро	tr:avro,euro	ur:یورو	zh:欧元
 c:evacuation	Noun	ar:إخلاء	de:Evakuierung,Räumung	en:evacuation	es:evacuación	fa:تخلیه	fr:évacuation	he:פינוי	hi:निकासी	ja:避難	ko:대피,철수	pt:evacuação	ru:эвакуация	tr:tahliye	ur:انخلا	zh:疏散
 c:evaporation	Noun	ar:تبخر	de:Verdunstung,Verdampfung	en:evaporation,vaporization	es:evaporación,vaporización	fa:تبخیر	fr:évaporation,vaporisation	he:אידוי,התאדות	hi:वाष्पीकरण	ja:蒸発	ko:증발	pt:evaporação,vaporização	ru:испарение	tr:buharlaşma	ur:تبخیر,بخارات	zh:蒸发,汽化
@@ -912,6 +923,7 @@ c:gale	Noun	ar:ريح شديدة,ريح قوية	de:Sturmwind,Sturmbö	en:gale	e
 c:gallbladder	Noun	ar:مرارة	de:Gallenblase	en:gallbladder	es:vesícula biliar	fa:کیسه صفرا	fr:vésicule biliaire	he:כיס מרה	hi:पित्ताशय	ja:胆嚢	ko:쓸개,담낭	pt:vesícula biliar	ru:жёлчный пузырь	tr:safra kesesi	ur:پتا	zh:胆囊
 c:game	Noun	ar:لعبة	de:Spiel	en:game	es:juego	fa:بازی	fr:jeu	he:משחק	hi:खेल	ja:ゲーム,試合	ko:게임,놀이	pt:jogo	ru:игра	tr:oyun	ur:کھیل,گیم	zh:游戏,比赛
 c:gamete	Noun	ar:مشيج,خلية تناسلية	de:Gamet,Keimzelle	en:gamete	es:gameto	fa:گامت	fr:gamète	he:גמטה,תא רבייה	hi:युग्मक	ja:配偶子	ko:생식세포,배우자	pt:gameta	ru:гамета	tr:gamet	ur:تولیدی خلیہ	zh:配子
+c:ganges	Noun	ar:الغانج,نهر الغانج	de:Ganges	en:Ganges,Ganges River	es:Ganges,río Ganges	fa:گنگ,رود گنگ	fr:Gange	he:גנגס,נהר הגנגס	hi:गंगा,गंगा नदी	ja:ガンジス川	ko:갠지스강	pt:Ganges,rio Ganges	ru:Ганг	tr:Ganj,Ganj Nehri	ur:دریائے گنگا,گنگا	zh:恒河
 c:garden	Noun	ar:حديقة,بستان	de:Garten	en:garden	es:jardín	fa:باغ,باغچه	fr:jardin	he:גן	hi:बगीचा,उद्यान	ja:庭,庭園	ko:정원	pt:jardim	ru:сад	tr:bahçe	ur:باغ	zh:花园,园
 c:garrison	Noun	ar:حامية	de:Garnison	en:garrison	es:guarnición	fa:پادگان	fr:garnison	he:חיל מצב	hi:गैरीसन	ja:守備隊,駐屯地	ko:수비대	pt:guarnição	ru:гарнизон	tr:garnizon	ur:گیریزن	zh:驻军
 c:gas	Noun	ar:غاز	de:Gas	en:gas	es:gas	fa:گاز	fr:gaz	he:גז	hi:गैस	ja:気体,ガス	ko:기체,가스	pt:gás	ru:газ	tr:gaz	ur:گیس	zh:气体
@@ -1081,6 +1093,7 @@ c:hour	Noun	ar:ساعة	de:Stunde	en:hour	es:hora	fa:ساعت	fr:heure	he:שעה
 c:house	Noun	ar:بيت,منزل	de:Haus	en:house,home	es:casa	fa:خانه	fr:maison	he:בית	hi:घर	ja:家	ko:집	pt:casa	ru:дом	tr:ev	ur:گھر	zh:房子
 c:housefly	Noun	ar:ذبابة,ذبابة منزلية	de:Stubenfliege,Hausfliege	en:housefly,fly	es:mosca común	fa:مگس خانگی	fr:mouche domestique	he:זבוב הבית	hi:मक्खी,घरेलू मक्खी	ja:家蠅,イエバエ	ko:집파리	pt:mosca doméstica	ru:комнатная муха	tr:karasinek,evsineği	ur:مکھی,گھریلو مکھی	zh:家蝇
 c:houston	Noun	ar:هيوستن	de:Houston	en:Houston	es:Houston	fa:هیوستون	fr:Houston	he:יוסטון	hi:ह्यूस्टन	ja:ヒューストン	ko:휴스턴	pt:Houston	ru:Хьюстон	tr:Houston	ur:ہیوسٹن	zh:休斯顿
+c:hudson	Noun	ar:الهدسون,نهر الهدسون	de:Hudson River,Hudson	en:Hudson,Hudson River	es:Hudson,río Hudson	fa:هادسون,رود هادسون	fr:Hudson	he:הדסון,נהר ההדסון	hi:हडसन नदी	ja:ハドソン川	ko:허드슨강	pt:Hudson,rio Hudson	ru:Гудзон	tr:Hudson,Hudson Nehri	ur:دریائے ہڈسن	zh:哈德逊河
 c:humanism	Noun	ar:الإنسانية	de:Humanismus	en:humanism	es:humanismo	fa:انسان گرایی,اومانیسم	fr:humanisme	he:הומניזם	hi:मानवतावाद	ja:ヒューマニズム,人本主義	ko:인문주의,휴머니즘	pt:humanismo	ru:гуманизм	tr:hümanizm,insancıllık	ur:انسانیت پسندی	zh:人文主义,人本主义
 c:humidity	Noun	ar:رطوبة	de:Luftfeuchtigkeit,Feuchte	en:humidity	es:humedad	fa:رطوبت	fr:humidité	he:לחות	hi:आर्द्रता,नमी	ja:湿度,湿気	ko:습도	pt:umidade,humidade	ru:влажность	tr:nem,rutubet	ur:نمی,رطوبت	zh:湿度
 c:humiliation	Noun	ar:إذلال	de:Demütigung	en:humiliation	es:humillación	fa:خواری	fr:humiliation	he:השפלה	hi:अपमान	ja:屈辱	ko:굴욕	pt:humilhação	ru:унижение	tr:aşağılanma	ur:ذلت	zh:羞辱
@@ -1115,6 +1128,7 @@ c:indian-ocean	Noun	ar:المحيط الهندي	de:Indischer Ozean	en:Indian Oc
 c:indigenous	Noun	ar:شعوب أصلية,سكان أصليون	de:Ureinwohner,indigene Völker	en:indigenous people,native people	es:pueblos indígenas,indígenas	fa:بومیان,مردم بومی	fr:peuples autochtones,indigènes	he:ילידים,אוכלוסייה ילידית	hi:आदिवासी,मूल निवासी	ja:先住民,原住民	ko:토착민,원주민	pt:povos indígenas,indígenas	ru:коренные народы,туземцы	tr:yerli halklar,otokton	ur:مقامی باشندے,قدیم باشندے	zh:原住民,土著
 c:indonesia	Noun	ar:إندونيسيا	de:Indonesien	en:Indonesia	es:Indonesia	fa:اندونزی	fr:Indonésie	he:אינדונזיה	hi:इंडोनेशिया	ja:インドネシア	ko:인도네시아	pt:Indonésia	ru:Индонезия	tr:Endonezya	ur:انڈونیشیا	zh:印度尼西亚,印尼
 c:induction	Noun	ar:استقراء	de:Induktion	en:induction	es:inducción	fa:استقرا	fr:induction	he:אינדוקציה	hi:आगमन,अनुगमन	ja:帰納,インダクション	ko:귀납,인덕션	pt:indução	ru:индукция	tr:tümevarım	ur:استقرا	zh:归纳
+c:indus	Noun	ar:نهر السند,السند	de:Indus	en:Indus,Indus River	es:Indo,río Indo	fa:رود سند,سند	fr:Indus	he:אינדוס,נהר האינדוס	hi:सिंधु नदी,सिंधु	ja:インダス川	ko:인더스강	pt:Indo,rio Indo	ru:Инд	tr:İndus,İndus Nehri	ur:دریائے سندھ,سندھ	zh:印度河
 c:industrial-revolution	Noun	ar:الثورة الصناعية	de:industrielle Revolution	en:industrial revolution	es:revolución industrial	fa:انقلاب صنعتی	fr:révolution industrielle	he:מהפכה תעשייתית,המהפכה התעשייתית	hi:औद्योगिक क्रांति	ja:産業革命	ko:산업혁명	pt:revolução industrial	ru:промышленная революция	tr:sanayi devrimi,endüstri devrimi	ur:صنعتی انقلاب	zh:工业革命,產業革命
 c:inertia	Noun	ar:قصور ذاتي,عطالة	de:Trägheit,Inertia	en:inertia	es:inercia	fa:لختی,اینرسی	fr:inertie	he:התמד,אינרציה	hi:जड़त्व,निष्क्रियता	ja:慣性	ko:관성	pt:inércia	ru:инерция,инертность	tr:atalet,eylemsizlik	ur:جمود,اصطباق	zh:惯性
 c:infection	Noun	ar:عدوى,التهاب	de:Infektion	en:infection	es:infección	fa:عفونت	fr:infection	he:זיהום	hi:संक्रमण	ja:感染	ko:감염	pt:infecção	ru:инфекция	tr:enfeksiyon	ur:انفیکشن,مرض کی چھوت	zh:感染
@@ -1174,6 +1188,7 @@ c:jet-stream	Noun	ar:تيار نفاث,تيار هوائي علوي	de:Strahlstr
 c:jeweler	Noun	ar:جوهرجي,صائغ مجوهرات	de:Juwelier	en:jeweler,jeweller	es:joyero	fa:جواهرساز,جواهرفروش	fr:joaillier,bijoutier	he:תכשיטן,צורף	hi:जौहरी,आभूषण निर्माता	ja:宝石商,宝飾職人	ko:보석세공사,보석상	pt:joalheiro	ru:ювелир	tr:mücevherci	ur:جواہری	zh:珠宝匠,珠宝商
 c:job	Noun	ar:وظيفة,عمل	de:Job,Arbeitsstelle,Stelle	en:job	es:trabajo,empleo	fa:شغل,کار	fr:emploi,boulot	he:עבודה,משרה	hi:नौकरी,कार्य	ja:仕事,職	ko:일자리,직업	pt:emprego,trabalho	ru:работа,должность	tr:iş,meslek	ur:نوکری,ملازمت	zh:工作,职位
 c:johannesburg	Noun	ar:جوهانسبرغ	de:Johannesburg	en:Johannesburg	es:Johannesburgo	fa:ژوهانسبورگ	fr:Johannesburg	he:יוהנסבורג	hi:जोहान्सबर्ग	ja:ヨハネスブルグ	ko:요하네스버그	pt:Joanesburgo	ru:Йоханнесбург	tr:Johannesburg	ur:جوہانسبرگ	zh:约翰内斯堡
+c:jordan	Noun	ar:الأردن,نهر الأردن	de:Jordan	en:Jordan,Jordan River	es:Jordán,río Jordán	fa:اردن,رود اردن	fr:Jourdain	he:הירדן,נהר הירדן	hi:जॉर्डन नदी	ja:ヨルダン川	ko:요르단강	pt:Jordão,rio Jordão	ru:Иордан	tr:Ürdün,Ürdün Nehri	ur:دریائے اردن	zh:约旦河
 c:joule	Noun	ar:جول	de:Joule	en:joule	es:julio,joule	fa:ژول	fr:joule	he:ג'אול,ג'ול	hi:जूल	ja:ジュール	ko:줄	pt:joule	ru:джоуль	tr:joule,jul	ur:جول	zh:焦耳
 c:journey	Noun	ar:رحلة	de:Reise,Fahrt	en:journey	es:viaje,jornada	fa:سفر	fr:voyage,trajet	he:מסע	hi:यात्रा,सफ़र	ja:旅,旅路	ko:여정,여행	pt:viagem,jornada	ru:путешествие,поездка	tr:yolculuk,seyahat	ur:سفر	zh:旅程,旅途
 c:joy	Noun	ar:فرح,سرور	de:Freude	en:joy	es:alegría,gozo	fa:شادی	fr:joie	he:שמחה	hi:खुशी,आनंद	ja:喜び	ko:기쁨	pt:alegria	ru:радость	tr:sevinç,neşe	ur:خوشی	zh:喜悦,快乐
@@ -1247,6 +1262,7 @@ c:leech	Noun	ar:علقة	de:Blutegel,Egel	en:leech	es:sanguijuela	fa:زالو	fr
 c:left-side	Noun	ar:يسار,شمال	de:links	en:left	es:izquierda	fa:چپ	fr:gauche	he:שמאל	hi:बायाँ	ja:左	ko:왼쪽	pt:esquerda	ru:лево	tr:sol	ur:بائیں	zh:左
 c:leg	Noun	ar:ساق,رجل	de:Bein	en:leg	es:pierna	fa:پا	fr:jambe	he:רגל	hi:टांग,पैर	ja:脚,足	ko:다리	pt:perna	ru:нога	tr:bacak	ur:ٹانگ	zh:腿
 c:legend	Noun	ar:أسطورة,حكاية	de:Legende,Sage	en:legend	es:leyenda	fa:افسانه,اسطوره	fr:légende	he:אגדה	hi:किंवदंती,दंतकथा	ja:伝説	ko:전설	pt:lenda	ru:легенда,предание	tr:efsane	ur:افسانہ,داستان	zh:传说,传奇
+c:lena	Noun	ar:لينا,نهر لينا	de:Lena	en:Lena,Lena River	es:Lena,río Lena	fa:لنا,رود لنا	fr:Léna	he:לנה,נהר הלנה	hi:लेना नदी	ja:レナ川	ko:레나강	pt:Lena,rio Lena	ru:Лена	tr:Lena,Lena Nehri	ur:دریائے لینا	zh:勒拿河
 c:lens	Noun	ar:عدسة	de:Linse	en:lens	es:lente	fa:عدسی,لنز	fr:lentille	he:עדשה	hi:लेंस	ja:レンズ	ko:렌즈	pt:lente	ru:линза	tr:mercek,lens	ur:لینس,عدسہ	zh:透镜,镜头
 c:lesson	Noun	ar:درس	de:Lektion,Unterrichtsstunde	en:lesson	es:lección	fa:درس	fr:leçon	he:שיעור	hi:पाठ,सबक	ja:レッスン,授業	ko:레슨,수업	pt:lição,aula	ru:урок	tr:ders	ur:سبق,درس	zh:课,课程
 c:leviathan	Noun	ar:لوياثان	de:Leviathan	en:leviathan	es:leviatán	fa:لویاتان	fr:léviathan	he:לויתן	hi:लेविथान	ja:リヴァイアサン	ko:리바이어던	pt:leviatã	ru:левиафан	tr:leviathan	ur:لویاتھان	zh:利维坦
@@ -1262,6 +1278,7 @@ c:light-year	Noun	ar:سنة ضوئية	de:Lichtjahr	en:light year	es:año luz	fa
 c:lightning	Noun	ar:برق	de:Blitz	en:lightning	es:relámpago,rayo	fa:صاعقه,برق	fr:éclair,foudre	he:ברק	hi:बिजली	ja:稲妻,雷光	ko:번개	pt:relâmpago,raio	ru:молния	tr:şimşek,yıldırım	ur:بجلی	zh:闪电
 c:lily	Noun	ar:زنبق	de:Lilie	en:lily	es:lirio,azucena	fa:سوسن,نیلوفر	fr:lys,lis	he:שושן	hi:कुमुदिनी,लिली	ja:ユリ,百合	ko:백합	pt:lírio	ru:лилия	tr:zambak	ur:سوسن	zh:百合花,百合
 c:limestone	Noun	ar:حجر جيري,كلس	de:Kalkstein	en:limestone	es:caliza,piedra caliza	fa:سنگ آهک	fr:calcaire,pierre calcaire	he:אבן גיר,גיר	hi:चूना पत्थर	ja:石灰岩	ko:석회암,석회석	pt:calcário	ru:известняк	tr:kireç taşı,kalker	ur:چونا پتھر	zh:石灰岩,石灰石
+c:limpopo	Noun	ar:ليمبوبو,نهر ليمبوبو	de:Limpopo	en:Limpopo,Limpopo River	es:Limpopo,río Limpopo	fa:لیمپوپو	fr:Limpopo	he:לימפופו	hi:लिम्पोपो नदी	ja:リンポポ川	ko:림포포강	pt:Limpopo,rio Limpopo	ru:Лимпопо	tr:Limpopo	ur:دریائے لیمپوپو	zh:林波波河
 c:line	Noun	ar:خط	de:Linie	en:line	es:línea	fa:خط	fr:ligne	he:קו	hi:रेखा,लाइन	ja:線,ライン	ko:선,줄	pt:linha	ru:линия	tr:çizgi	ur:لکیر,خط	zh:线,线条
 c:linen	Noun	ar:كتان	de:Leinen	en:linen	es:lino	fa:کتان	fr:lin	he:פשתן	hi:सनी	ja:亜麻,リネン	ko:아마,린넨	pt:linho	ru:лён	tr:keten	ur:کتان	zh:亚麻
 c:linguistics	Noun	ar:علم اللغة,اللسانيات	de:Linguistik,Sprachwissenschaft	en:linguistics	es:lingüística	fa:زبان شناسی	fr:linguistique	he:בלשנות	hi:भाषा विज्ञान	ja:言語学	ko:언어학	pt:linguística	ru:лингвистика,языкознание	tr:dilbilim,dil bilimi	ur:لسانیات	zh:语言学
@@ -1283,6 +1300,7 @@ c:location	Noun	ar:موقع	de:Position,Lage	en:location	es:ubicación	fa:موق
 c:lock	Noun	ar:قفل	de:Schloss	en:lock	es:cerradura,candado	fa:قفل	fr:serrure,cadenas	he:מנעול	hi:ताला	ja:鍵,錠	ko:자물쇠,잠금장치	pt:fechadura,cadeado	ru:замок	tr:kilit	ur:تالا	zh:锁,锁头
 c:locksmith	Noun	ar:صانع الأقفال	de:Schlosser	en:locksmith	es:cerrajero	fa:قفل‌ساز	fr:serrurier	he:מנעולן	hi:ताला बनाने वाला	ja:錠前屋,鍵師	ko:자물쇠 장인,열쇠공	pt:serralheiro	ru:слесарь,замочник	tr:çilingir	ur:تالا ساز	zh:锁匠
 c:logic	Noun	ar:منطق	de:Logik	en:logic	es:lógica	fa:منطق	fr:logique	he:היגיון,לוגיקה	hi:तर्क	ja:論理	ko:논리	pt:lógica	ru:логика	tr:mantık	ur:منطق	zh:逻辑
+c:loire	Noun	ar:اللوار,نهر اللوار	de:Loire	en:Loire,Loire River	es:Loira,río Loira	fa:لوار,رود لوار	fr:Loire	he:לואר,נהר הלואר	hi:लोइरे नदी	ja:ロワール川	ko:루아르강	pt:Loire,Loira	ru:Луара	tr:Loire,Loire Nehri	ur:دریائے لوار	zh:卢瓦尔河
 c:london	Noun	ar:لندن	de:London	en:London	es:Londres	fa:لندن	fr:Londres	he:לונדון	hi:लंदन	ja:ロンドン	ko:런던	pt:Londres	ru:Лондон	tr:Londra	ur:لندن	zh:伦敦
 c:longing	Noun	ar:شوق	de:Sehnsucht	en:longing	es:anhelo	fa:اشتیاق	fr:désir	he:כמיהה	hi:लालसा	ja:切望	ko:갈망	pt:anseio	ru:тоска	tr:özlem	ur:آرزو	zh:渴望
 c:look	Verb	ar:نظر	de:schauen,blicken	en:look	es:mirar	fa:نگاه کردن	fr:regarder	he:להסתכל	hi:देखना	ja:見る	ko:보다	pt:olhar	ru:смотреть	tr:bakmak	ur:دیکھنا	zh:看
@@ -1298,6 +1316,7 @@ c:lung	Noun	ar:رئة	de:Lunge	en:lung,lungs	es:pulmón	fa:ریه,شش	fr:poumon
 c:lute	Noun	ar:عود,لوت	de:Laute	en:lute	es:laúd	fa:عود,لوت	fr:luth	he:לאוטה	hi:ल्यूट,वीणा सदृश	ja:リュート	ko:류트	pt:alaúde	ru:лютня	tr:lavta,ut	ur:لوٹ	zh:琉特琴,鲁特琴
 c:machine	Noun	ar:آلة,ماكينة	de:Maschine,Apparat	en:machine	es:máquina	fa:ماشین,دستگاه	fr:machine,appareil	he:מכונה	hi:मशीन,यंत्र	ja:機械,マシン	ko:기계,머신	pt:máquina	ru:машина	tr:makine	ur:مشین	zh:机器,机械
 c:machine-learning	Noun	ar:تعلم الآلة,التعلم الآلي	de:maschinelles Lernen	en:machine learning,ML	es:aprendizaje automático	fa:یادگیری ماشین	fr:apprentissage automatique	he:למידת מכונה	hi:मशीन लर्निंग	ja:機械学習	ko:기계 학습	pt:aprendizado de máquina	ru:машинное обучение	tr:makine öğrenmesi	ur:مشین لرننگ	zh:机器学习
+c:mackenzie	Noun	ar:ماكنزي,نهر ماكنزي	de:Mackenzie	en:Mackenzie,Mackenzie River	es:Mackenzie,río Mackenzie	fa:مکنزی	fr:Mackenzie	he:מקנזי	hi:मैकेंज़ी नदी	ja:マッケンジー川	ko:매켄지강	pt:Mackenzie,rio Mackenzie	ru:Маккензи	tr:Mackenzie	ur:دریائے میکنزی	zh:麦肯齐河
 c:mackerel	Noun	ar:إسقمري	de:Makrele	en:mackerel	es:caballa	fa:ماهی خال مخالی	fr:maquereau	he:מקרל	hi:मैकेरल	ja:鯖	ko:고등어	pt:cavala	ru:скумбрия	tr:uskumru	ur:میکریل	zh:鲭鱼
 c:madrid	Noun	ar:مدريد	de:Madrid	en:Madrid	es:Madrid	fa:مادرید	fr:Madrid	he:מדריד	hi:मैड्रिड	ja:マドリード	ko:마드리드	pt:Madri,Madrid	ru:Мадрид	tr:Madrid	ur:میڈرڈ	zh:马德里
 c:magazine	Noun	ar:مجلة	de:Zeitschrift,Magazin	en:magazine	es:revista	fa:مجله	fr:magazine,revue	he:מגזין,כתב עת	hi:पत्रिका,मैगज़ीन	ja:雑誌	ko:잡지	pt:revista	ru:журнал	tr:dergi	ur:رسالہ,میگزین	zh:杂志
@@ -1351,6 +1370,7 @@ c:meditation	Noun	ar:تأمل	de:Meditation	en:meditation	es:meditación	fa:مد
 c:mediterranean	Noun	ar:البحر المتوسط,البحر الأبيض المتوسط	de:Mittelmeer	en:Mediterranean,Mediterranean Sea	es:Mediterráneo,Mar Mediterráneo	fa:دریای مدیترانه	fr:Méditerranée,Mer Méditerranée	he:ים התיכון	hi:भूमध्य सागर	ja:地中海	ko:지중해	pt:Mediterrâneo,Mar Mediterrâneo	ru:Средиземное море	tr:Akdeniz	ur:بحیرہ روم	zh:地中海
 c:meet	Verb	ar:قابل,لقي	de:treffen,begegnen	en:meet	es:encontrar,conocer	fa:ملاقات کردن,دیدن	fr:rencontrer	he:לפגוש	hi:मिलना	ja:会う	ko:만나다	pt:encontrar	ru:встречать,встретить	tr:tanışmak,buluşmak	ur:ملنا	zh:见,遇见
 c:meeting	Noun	ar:اجتماع	de:Treffen,Besprechung	en:meeting	es:reunión	fa:جلسه	fr:réunion	he:פגישה,ישיבה	hi:बैठक,मीटिंग	ja:会議,ミーティング	ko:회의	pt:reunião	ru:встреча,собрание	tr:toplantı	ur:اجلاس,ملاقات	zh:会议
+c:mekong	Noun	ar:الميكونغ,نهر الميكونغ	de:Mekong	en:Mekong,Mekong River	es:Mekong,río Mekong	fa:مکونگ,رود مکونگ	fr:Mékong	he:מקונג,נהר המקונג	hi:मेकांग नदी	ja:メコン川	ko:메콩강	pt:Mekong,rio Mekong	ru:Меконг	tr:Mekong,Mekong Nehri	ur:دریائے میکانگ	zh:湄公河
 c:melancholy	Noun	ar:كآبة	de:Melancholie	en:melancholy	es:melancolía	fa:مالیخولیا	fr:mélancolie	he:מלנכוליה	hi:विषाद	ja:憂鬱	ko:우울	pt:melancolia	ru:меланхолия	tr:melankoli	ur:اداسی	zh:忧郁
 c:melbourne	Noun	ar:ملبورن	de:Melbourne	en:Melbourne	es:Melbourne	fa:ملبورن	fr:Melbourne	he:מלבורן	hi:मेलबर्न	ja:メルボルン	ko:멜버른	pt:Melbourne	ru:Мельбурн	tr:Melbourne	ur:میلبورن	zh:墨尔本
 c:melody	Noun	ar:لحن,نغمة	de:Melodie	en:melody,tune	es:melodía,tonada	fa:ملودی,آهنگ	fr:mélodie,air	he:מנגינה,לחן	hi:धुन,राग	ja:メロディー,旋律	ko:멜로디,선율	pt:melodia	ru:мелодия	tr:melodi,ezgi	ur:لے,دھن	zh:旋律,曲调
@@ -1394,6 +1414,7 @@ c:minute	Noun	ar:دقيقة	de:Minute	en:minute	es:minuto	fa:دقیقه	fr:minut
 c:miracle	Noun	ar:معجزة	de:Wunder	en:miracle	es:milagro	fa:معجزه	fr:miracle	he:נס	hi:चमत्कार	ja:奇跡	ko:기적	pt:milagre	ru:чудо	tr:mucize	ur:معجزہ	zh:奇迹
 c:mirror	Noun	ar:مرآة	de:Spiegel	en:mirror	es:espejo	fa:آینه	fr:miroir	he:מראה	hi:दर्पण,आईना	ja:鏡	ko:거울	pt:espelho	ru:зеркало	tr:ayna	ur:آئینہ	zh:镜子
 c:missile	Noun	ar:صاروخ	de:Rakete	en:missile	es:misil	fa:موشک	fr:missile	he:טיל	hi:मिसाइल,प्रक्षेपास्त्र	ja:ミサイル	ko:미사일	pt:míssil	ru:ракета	tr:füze	ur:میزائل	zh:导弹,飞弹
+c:mississippi	Noun	ar:الميسيسيبي,نهر الميسيسيبي	de:Mississippi	en:Mississippi,Mississippi River	es:Misisipi,río Misisipi	fa:می‌سی‌سی‌پی,رود می‌سی‌سی‌پی	fr:Mississippi	he:מיסיסיפי,נהר המיסיסיפי	hi:मिसिसिपी,मिसिसिपी नदी	ja:ミシシッピ川	ko:미시시피강	pt:Mississippi,rio Mississippi	ru:Миссисипи	tr:Misisipi,Misisipi Nehri	ur:دریائے مسیسپی	zh:密西西比河
 c:mist	Noun	ar:ضبابة خفيفة,سديم	de:Dunst,Nebelschleier	en:mist	es:neblina,bruma	fa:مه رقیق	fr:brume	he:אובך,ערפל קל	hi:धुँध	ja:霞,もや	ko:엷은 안개	pt:neblina,bruma	ru:дымка	tr:pus	ur:کہر	zh:薄雾
 c:mite	Noun	ar:سوس,عث	de:Milbe	en:mite	es:ácaro	fa:کنه ریز,هیره	fr:acarien	he:קרדית	hi:कुटकी,माइट	ja:ダニ,ハダニ	ko:진드기	pt:ácaro	ru:клещ	tr:akar	ur:چھوٹا کیڑا	zh:螨虫
 c:mitochondria	Noun	ar:ميتوكوندريا,المتقدرة	de:Mitochondrium,Mitochondrien	en:mitochondrion,mitochondria	es:mitocondria	fa:میتوکندری	fr:mitochondrie	he:מיטוכונדריון,מיטוכונדריה	hi:माइटोकॉन्ड्रिया	ja:ミトコンドリア	ko:미토콘드리아	pt:mitocôndria	ru:митохондрия	tr:mitokondri	ur:مائٹوکونڈریا	zh:线粒体
@@ -1496,9 +1517,11 @@ c:newspaper	Noun	ar:صحيفة,جريدة	de:Zeitung	en:newspaper	es:periódico,
 c:newton	Noun	ar:نيوتن	de:Newton	en:newton	es:newton	fa:نیوتن	fr:newton	he:ניוטון	hi:न्यूटन	ja:ニュートン	ko:뉴턴	pt:newton	ru:ньютон	tr:newton	ur:نیوٹن	zh:牛顿,牛
 c:ney	Noun	ar:ناي	de:Ney,Rohrflöte	en:ney	es:ney	fa:نی	fr:ney	he:ניי	hi:नय,नेय	ja:ネイ	ko:네이	pt:ney	ru:най	tr:ney	ur:نَے,نئے	zh:奈伊笛
 c:nickel-coin	Noun	ar:قطعة نيكل,عملة النيكل	de:Nickel,Fünfcentstück	en:nickel	es:moneda de cinco centavos,níquel	fa:سکه نیکل,سکه پنج سنتی	fr:pièce de cinq cents,nickel	he:מטבע ניקל,ניקל	hi:निकेल सिक्का	ja:ニッケル硬貨,5セント硬貨	ko:니켈 동전,5센트 동전	pt:moeda de cinco centavos,níquel	ru:никель,пятицентовая монета	tr:nikel parası,beş sentlik	ur:نکل سکہ	zh:五分硬币,镍币
+c:niger	Noun	ar:النيجر,نهر النيجر	de:Niger	en:Niger,Niger River	es:Níger,río Níger	fa:نیجر,رود نیجر	fr:Niger,fleuve Niger	he:ניז'ר,נהר הניז'ר	hi:नाइजर नदी	ja:ニジェール川	ko:니제르강	pt:Níger,rio Níger	ru:Нигер	tr:Nijer,Nijer Nehri	ur:دریائے نائجر	zh:尼日尔河
 c:nigeria	Noun	ar:نيجيريا	de:Nigeria	en:Nigeria	es:Nigeria	fa:نیجریه	fr:Nigéria	he:ניגריה	hi:नाइजीरिया	ja:ナイジェリア	ko:나이지리아	pt:Nigéria	ru:Нигерия	tr:Nijerya	ur:نائیجیریا	zh:尼日利亚
 c:night	Noun	ar:ليل,ليلة	de:Nacht	en:night	es:noche	fa:شب	fr:nuit	he:לילה	hi:रात	ja:夜	ko:밤	pt:noite	ru:ночь	tr:gece	ur:رات	zh:夜
 c:nihilism	Noun	ar:العدمية	de:Nihilismus	en:nihilism	es:nihilismo	fa:پوچ گرایی	fr:nihilisme	he:ניהיליזם,אפסנות	hi:शून्यवाद	ja:虚無主義,ニヒリズム	ko:허무주의,니힐리즘	pt:niilismo	ru:нигилизм	tr:nihilizm,hiççilik	ur:عدمیت	zh:虚无主义
+c:nile	Noun	ar:النيل,نهر النيل	de:Nil	en:Nile,Nile River	es:Nilo,río Nilo	fa:نیل,رود نیل	fr:Nil	he:נילוס,נהר הנילוס	hi:नील नदी,नील	ja:ナイル川	ko:나일강	pt:Nilo,rio Nilo	ru:Нил	tr:Nil,Nil Nehri	ur:دریائے نیل,نیل	zh:尼罗河
 c:nimbus	Noun	ar:سحابة ممطرة,غمامة ركامية	de:Nimbus,Regenwolke	en:nimbus,nimbus cloud	es:nimbo	fa:نیمبوس,ابر بارانی	fr:nimbus	he:ענן נימבוס,נימבוס	hi:निम्बस,वर्षा बादल	ja:乱雲	ko:난운	pt:nimbo	ru:дождевое облако,нимбус	tr:nimbus,nimbus bulutu	ur:نمبس,بارانی بادل	zh:雨云
 c:nine	Noun	ar:تسعة	de:neun	en:nine	es:nueve	fa:نه	fr:neuf	he:תשעה	hi:नौ	ja:九,きゅう	ko:아홉,구	pt:nove	ru:девять	tr:dokuz	ur:نو	zh:九
 c:nirvana	Noun	ar:النرفانا	de:Nirwana,Nirvana	en:nirvana	es:nirvana	fa:نیروانا	fr:nirvana	he:נירוונה	hi:निर्वाण	ja:涅槃,ニルヴァーナ	ko:열반,니르바나	pt:nirvana	ru:нирвана	tr:nirvana	ur:نروان	zh:涅槃
@@ -1527,6 +1550,7 @@ c:oak	Noun	ar:بلوط	de:Eiche	en:oak	es:roble	fa:بلوط	fr:chêne	he:אלו�
 c:oasis	Noun	ar:واحة	de:Oase	en:oasis	es:oasis	fa:واحه	fr:oasis	he:נווה מדבר	hi:नखलिस्तान	ja:オアシス	ko:오아시스	pt:oásis	ru:оазис	tr:vaha	ur:نخلستان,واحہ	zh:绿洲
 c:oath	Noun	ar:يمين,قسم	de:Eid,Schwur	en:oath	es:juramento	fa:سوگند,قسم	fr:serment	he:שבועה	hi:शपथ	ja:宣誓,誓い	ko:선서,맹세	pt:juramento	ru:клятва,присяга	tr:yemin,ant	ur:قسم,حلف	zh:誓言,宣誓
 c:oats	Noun	ar:شوفان	de:Hafer	en:oats,oat	es:avena	fa:جو دوسر,یولاف	fr:avoine	he:שיבולת שועל	hi:जई,ओट्स	ja:オート麦,燕麦	ko:귀리	pt:aveia	ru:овёс	tr:yulaf	ur:جئی,جو دوسر	zh:燕麦
+c:ob	Noun	ar:الأوب,نهر الأوب	de:Ob	en:Ob,Ob River	es:Obi,río Obi	fa:اُب,رود اُب	fr:Ob	he:אוב,נהר האוב	hi:ओब नदी	ja:オビ川	ko:오브강	pt:Ob,rio Ob	ru:Обь	tr:Ob,Ob Nehri	ur:دریائے اوب	zh:鄂毕河
 c:objective	Noun	ar:هدف,غاية	de:Ziel	en:objective	es:objetivo	fa:هدف,مقصد	fr:objectif	he:מטרה,יעד	hi:उद्देश्य,लक्ष्य	ja:目標,目的	ko:목표,목적	pt:objetivo	ru:цель	tr:hedef,amaç	ur:مقصد,ہدف	zh:目标,目的
 c:obligation	Noun	ar:التزام	de:Verpflichtung,Obligation	en:obligation	es:obligación	fa:تعهد,الزام	fr:obligation	he:חובה,מחויבות	hi:बाध्यता,दायित्व	ja:義務,責任	ko:의무,책무	pt:obrigação	ru:обязательство	tr:yükümlülük,zorunluluk	ur:ذمہ داری,پابندی	zh:义务,责任
 c:oboe	Noun	ar:أوبوا,مزمار	de:Oboe	en:oboe	es:oboe	fa:ابوا,قره‌نی	fr:hautbois	he:אבוב	hi:ओबो	ja:オーボエ	ko:오보에	pt:oboé	ru:гобой	tr:obua	ur:اوبوا	zh:双簧管
@@ -1559,6 +1583,7 @@ c:orchid	Noun	ar:أوركيد,السحلب	de:Orchidee	en:orchid	es:orquídea	fa
 c:order	Noun	ar:نظام,ترتيب	de:Ordnung,Reihenfolge	en:order	es:orden	fa:نظم,ترتیب	fr:ordre	he:סדר	hi:क्रम,व्यवस्था	ja:秩序,順序	ko:질서,순서	pt:ordem	ru:порядок	tr:düzen,sıra	ur:ترتیب,نظم	zh:秩序,顺序
 c:order-bio	Noun	ar:رتبة	de:Ordnung	en:order	es:orden	fa:راسته	fr:ordre	he:סדרה	hi:गण	ja:目	ko:목	pt:ordem	ru:отряд,порядок	tr:takım	ur:ترتیب,رتبہ	zh:目
 c:organelle	Noun	ar:عضية,عضيات	de:Organell	en:organelle	es:orgánulo,organelo	fa:اندامک	fr:organite	he:אברון	hi:अंगक	ja:細胞小器官	ko:세포 소기관	pt:organela,organelo	ru:органелла,органоид	tr:organel	ur:عضیہ	zh:细胞器
+c:orinoco	Noun	ar:الأورينوكو,نهر الأورينوكو	de:Orinoco	en:Orinoco,Orinoco River	es:Orinoco,río Orinoco	fa:اورینوکو	fr:Orénoque	he:אורינוקו	hi:ओरिनोको नदी	ja:オリノコ川	ko:오리노코강	pt:Orinoco,rio Orinoco	ru:Ориноко	tr:Orinoco,Orinoco Nehri	ur:دریائے اورینوکو	zh:奥里诺科河
 c:osaka	Noun	ar:أوساكا	de:Osaka	en:Osaka	es:Osaka	fa:اوساکا	fr:Osaka	he:אוסקה	hi:ओसाका	ja:大阪,おおさか	ko:오사카	pt:Osaka	ru:Осака	tr:Osaka	ur:اوساکا	zh:大阪
 c:oscillation	Noun	ar:تذبذب,اهتزاز	de:Schwingung,Oszillation	en:oscillation	es:oscilación	fa:نوسان	fr:oscillation	he:תנודה,נדנוד	hi:दोलन	ja:振動,発振	ko:진동,발진	pt:oscilação	ru:колебание,осцилляция	tr:salınım,osilasyon	ur:تذبذب,ہچکولا	zh:振荡,振动
 c:ottawa	Noun	ar:أوتاوا	de:Ottawa	en:Ottawa	es:Ottawa	fa:اتاوا	fr:Ottawa	he:אוטווה	hi:ओटावा	ja:オタワ	ko:오타와	pt:Ottawa	ru:Оттава	tr:Ottawa	ur:اوٹاوا	zh:渥太华
@@ -1596,6 +1621,7 @@ c:paradigm	Noun	ar:نموذج فكري,نمط	de:Paradigma	en:paradigm	es:paradi
 c:paradise	Noun	ar:فردوس,جنة	de:Paradies	en:paradise	es:paraíso	fa:بهشت,فردوس	fr:paradis	he:גן עדן	hi:स्वर्ग,जन्नत	ja:楽園	ko:낙원	pt:paraíso	ru:рай	tr:cennet	ur:جنت,فردوس	zh:乐园
 c:paradox	Noun	ar:مفارقة,تناقض ظاهري	de:Paradox,Paradoxon	en:paradox	es:paradoja	fa:پارادوکس,تناقض‌نما	fr:paradoxe	he:פרדוקס	hi:विरोधाभास,पैराडॉक्स	ja:パラドックス,逆説	ko:역설,패러독스	pt:paradoxo	ru:парадокс	tr:paradoks	ur:پیراڈوکس,تضاد نما	zh:悖论,矛盾
 c:paragraph	Noun	ar:فقرة	de:Absatz,Abschnitt	en:paragraph	es:párrafo	fa:پاراگراف,بند	fr:paragraphe	he:פסקה	hi:अनुच्छेद	ja:段落	ko:단락,문단	pt:parágrafo	ru:абзац,параграф	tr:paragraf	ur:پیراگراف	zh:段落
+c:parana	Noun	ar:بارانا,نهر بارانا	de:Paraná	en:Parana,Paraná,Parana River	es:Paraná,río Paraná	fa:پارانا	fr:Paraná	he:פרנה,נהר הפרנה	hi:पराना नदी	ja:パラナ川	ko:파라나강	pt:Paraná,rio Paraná	ru:Парана	tr:Parana,Parana Nehri	ur:دریائے پرانا	zh:巴拉那河
 c:paranoia	Noun	ar:بارانويا,جنون الارتياب	de:Paranoia	en:paranoia	es:paranoia	fa:پارانویا	fr:paranoïa	he:פרנויה	hi:पैरानोया	ja:偏執症,パラノイア	ko:편집증,파라노이아	pt:paranoia	ru:паранойя	tr:paranoya	ur:پیراونیا	zh:偏执狂,妄想症
 c:parent	Noun	ar:والد	de:Elternteil	en:parent,parents	es:padre,madre	fa:والد	fr:parent	he:הורה	hi:अभिभावक	ja:親	ko:부모	pt:pai,mãe	ru:родитель	tr:ebeveyn	ur:والد	zh:父母,家长
 c:paris	Noun	ar:باريس	de:Paris	en:Paris	es:París	fa:پاریس	fr:Paris	he:פריז	hi:पेरिस	ja:パリ	ko:파리	pt:Paris	ru:Париж	tr:Paris	ur:پیرس	zh:巴黎
@@ -1684,6 +1710,7 @@ c:player	Noun	ar:لاعب	de:Spieler	en:player	es:jugador	fa:بازیکن	fr:jou
 c:plow	Noun	ar:محراث	de:Pflug	en:plow	es:arado	fa:خیش	fr:charrue	he:מחרשה	hi:हल	ja:鋤	ko:쟁기	pt:arado	ru:плуг	tr:saban	ur:ہل	zh:犁
 c:plumber	Noun	ar:سبّاك	de:Klempner,Installateur	en:plumber	es:fontanero,plomero	fa:لوله‌کش	fr:plombier	he:שרברב,אינסטלטור	hi:प्लंबर,नलसाज	ja:配管工	ko:배관공	pt:encanador,canalizador	ru:водопроводчик,сантехник	tr:tesisatçı,su tesisatçısı	ur:پلمبر,نل ساز	zh:水管工
 c:plus	Noun	ar:زائد,جمع	de:Plus	en:plus	es:más	fa:به‌علاوه,جمع	fr:plus	he:פלוס,ועוד	hi:जोड़,प्लस	ja:プラス	ko:더하기,플러스	pt:mais	ru:плюс	tr:artı	ur:جمع,پلس	zh:加,加号
+c:po	Noun	ar:نهر بو,بو	de:Po	en:Po,Po River	es:Po,río Po	fa:رود پو,پو	fr:Pô	he:פו,נהר הפו	hi:पो नदी	ja:ポー川	ko:포강	pt:Pó,rio Pó	ru:По	tr:Po,Po Nehri	ur:دریائے پو	zh:波河
 c:poem	Noun	ar:قصيدة	de:Gedicht	en:poem	es:poema	fa:شعر	fr:poème	he:שיר	hi:कविता	ja:詩	ko:시	pt:poema	ru:стихотворение	tr:şiir	ur:نظم,شعر	zh:诗,诗歌
 c:poet	Noun	ar:شاعر	de:Dichter	en:poet	es:poeta	fa:شاعر	fr:poète	he:משורר	hi:कवि	ja:詩人	ko:시인	pt:poeta	ru:поэт	tr:şair	ur:شاعر	zh:诗人
 c:poetry	Noun	ar:شعر	de:Dichtung,Poesie	en:poetry	es:poesía	fa:شعر	fr:poésie	he:שירה	hi:काव्य,कविता	ja:詩,ポエトリー	ko:시,시가	pt:poesia	ru:поэзия	tr:şiir	ur:شاعری	zh:诗歌
@@ -1842,6 +1869,8 @@ c:return	Verb	ar:عاد,رجع	de:zurückkehren,zurückkommen	en:return	es:volve
 c:revenue	Noun	ar:إيرادات,دخل	de:Einnahmen,Umsatz	en:revenue	es:ingreso,ingresos	fa:درآمد	fr:recette,revenu	he:הכנסה,פדיון	hi:राजस्व,आय	ja:収益,歳入	ko:수익,세입	pt:receita	ru:выручка,доход	tr:gelir,hasılat	ur:محصول,آمدنی	zh:收入,营收
 c:review	Verb	ar:راجع	de:überprüfen,wiederholen	en:review,revise,revising	es:revisar,repasar	fa:مرور کردن,بازبینی کردن	fr:réviser,revoir	he:לחזור,לבדוק	hi:समीक्षा करना,दोहराना	ja:復習する	ko:복습하다,검토하다	pt:revisar,rever	ru:повторять,пересматривать	tr:tekrar etmek,gözden geçirmek	ur:نظر ثانی کرنا,دہرانا	zh:复习,审查
 c:revolution-historical	Noun	ar:ثورة	de:Revolution	en:revolution	es:revolución	fa:انقلاب	fr:révolution	he:מהפכה	hi:क्रांति	ja:革命	ko:혁명	pt:revolução	ru:революция	tr:devrim,ihtilal	ur:انقلاب	zh:革命
+c:rhine	Noun	ar:الراين,نهر الراين	de:Rhein	en:Rhine,Rhine River	es:Rin,río Rin	fa:راین,رود راین	fr:Rhin	he:ריין,נהר הריין	hi:राइन नदी,राइन	ja:ライン川	ko:라인강	pt:Reno,rio Reno	ru:Рейн	tr:Ren,Ren Nehri	ur:دریائے رائن	zh:莱茵河
+c:rhone	Noun	ar:الرون,نهر الرون	de:Rhone,Rhône	en:Rhone,Rhône	es:Ródano,río Ródano	fa:رون,رود رون	fr:Rhône	he:רון,נהר הרון	hi:रोन नदी	ja:ローヌ川	ko:론강	pt:Ródano,rio Ródano	ru:Рона	tr:Rhône,Ron Nehri	ur:دریائے رون	zh:罗讷河
 c:rhythm	Noun	ar:إيقاع	de:Rhythmus	en:rhythm	es:ritmo	fa:ریتم	fr:rythme	he:קצב	hi:ताल,लय	ja:リズム	ko:리듬	pt:ritmo	ru:ритм	tr:ritim	ur:تال,لے	zh:节奏
 c:rib	Noun	ar:ضلع	de:Rippe	en:rib	es:costilla	fa:دنده	fr:côte	he:צלע	hi:पसली	ja:肋骨	ko:갈비뼈,늑골	pt:costela	ru:ребро	tr:kaburga	ur:پسلی	zh:肋骨
 c:ribosome	Noun	ar:ريبوسوم,جسيم ريبي	de:Ribosom	en:ribosome	es:ribosoma	fa:ریبوزوم	fr:ribosome	he:ריבוזום	hi:राइबोसोम	ja:リボソーム	ko:리보솜	pt:ribossomo	ru:рибосома	tr:ribozom	ur:رائبوسوم	zh:核糖体
@@ -1856,6 +1885,7 @@ c:rigid	Adjective	ar:صلب,جامد	de:starr,steif	en:rigid	es:rígido	fa:سف�
 c:ring	Noun	ar:خاتم	de:Ring	en:ring	es:anillo,sortija	fa:انگشتر,حلقه	fr:bague,anneau	he:טבעת	hi:अंगूठी	ja:指輪,リング	ko:반지	pt:anel	ru:кольцо	tr:yüzük	ur:انگوٹھی	zh:戒指
 c:ringgit	Noun	ar:رينغيت	de:Ringgit	en:ringgit	es:ringgit	fa:رینگیت	fr:ringgit	he:רינגיט	hi:रिंगित	ja:リンギット	ko:링깃	pt:ringgit	ru:ринггит	tr:ringgit	ur:رنگٹ	zh:林吉特
 c:rio-de-janeiro	Noun	ar:ريو دي جانيرو	de:Rio de Janeiro	en:Rio de Janeiro,Rio	es:Río de Janeiro	fa:ریودوژانیرو	fr:Rio de Janeiro	he:ריו דה ז'ניירו	hi:रियो डी जेनेरियो	ja:リオデジャネイロ	ko:리우데자네이루	pt:Rio de Janeiro	ru:Рио-де-Жанейро	tr:Rio de Janeiro	ur:ریو ڈی جنیرو	zh:里约热内卢
+c:rio-grande	Noun	ar:ريو غراندي,نهر ريو غراندي	de:Rio Grande	en:Rio Grande	es:río Grande,río Bravo	fa:ریو گرانده	fr:Rio Grande	he:ריו גרנדה	hi:रियो ग्रांडे	ja:リオグランデ川	ko:리오그란데강	pt:rio Grande	ru:Рио-Гранде	tr:Rio Grande	ur:دریائے ریو گرانڈے	zh:格兰德河,里奥格兰德河
 c:ritual	Noun	ar:طقس,شعيرة	de:Ritual,Ritus	en:ritual,rite	es:ritual,rito	fa:آیین,مراسم	fr:rituel,rite	he:טקס,ריטואל	hi:अनुष्ठान,रीति	ja:儀式,儀礼	ko:의식,의례	pt:ritual,rito	ru:ритуал,обряд	tr:ritüel,ayin	ur:رسم,عبادی رسم	zh:仪式,典礼
 c:river	Noun	ar:نهر	de:Fluss	en:river	es:río	fa:رودخانه	fr:fleuve,rivière	he:נהר	hi:नदी	ja:川,河	ko:강	pt:rio	ru:река	tr:nehir,ırmak	ur:دریا,ندی	zh:河,江
 c:riyadh	Noun	ar:الرياض	de:Riad	en:Riyadh	es:Riad	fa:ریاض	fr:Riyad	he:ריאד	hi:रियाद	ja:リヤド	ko:리야드	pt:Riade	ru:Эр-Рияд	tr:Riyad	ur:ریاض	zh:利雅得
@@ -1891,6 +1921,7 @@ c:sadness	Noun	ar:حزن	de:Traurigkeit	en:sadness	es:tristeza	fa:غم,اندو�
 c:saga	Noun	ar:ملحمة,حكاية طويلة	de:Saga	en:saga	es:saga	fa:سرگذشت,سگا	fr:saga	he:סאגה	hi:गाथा,सगा	ja:サーガ,大河物語	ko:사가,대하소설	pt:saga	ru:сага	tr:saga,destansı anlatı	ur:داستان,گاتھا	zh:萨迦,英雄传说
 c:sail	Verb	ar:أبحر	de:segeln	en:sail	es:navegar	fa:کشتی‌رانی کرد,دریانوردی کرد	fr:naviguer	he:הפליג	hi:नौकायन करना	ja:航海する	ko:항해하다	pt:navegar	ru:плыть,плавать	tr:yelken açmak	ur:جہاز رانی کرنا	zh:航行,航海
 c:sailboat	Noun	ar:قارب شراعي	de:Segelboot	en:sailboat,sailing boat	es:velero	fa:قایق بادبانی	fr:voilier	he:סירת מפרש	hi:पाल वाली नाव	ja:帆船	ko:돛단배,범선	pt:veleiro	ru:парусник,парусная лодка	tr:yelkenli	ur:بادبانی کشتی	zh:帆船
+c:saint-lawrence	Noun	ar:سانت لورنس,نهر سانت لورنس	de:Sankt-Lorenz-Strom	en:Saint Lawrence,St. Lawrence River	es:San Lorenzo,río San Lorenzo	fa:سنت لارنس	fr:Saint-Laurent,fleuve Saint-Laurent	he:סנט לורנס	hi:सेंट लॉरेंस नदी	ja:セントローレンス川	ko:세인트로렌스강	pt:São Lourenço,rio São Lourenço	ru:Святого Лаврентия	tr:Aziz Lawrence Nehri	ur:دریائے سینٹ لارنس	zh:圣劳伦斯河
 c:salary	Noun	ar:راتب,أجر	de:Gehalt,Lohn	en:salary,wage	es:salario,sueldo	fa:حقوق,دستمزد	fr:salaire,paie	he:משכורת,שכר	hi:वेतन,तनख़्वाह	ja:給料,給与,賃金	ko:월급,급여,임금	pt:salário,ordenado	ru:зарплата,жалование	tr:maaş,ücret	ur:تنخواہ,اجرت	zh:薪水,工资
 c:salsa	Noun	ar:سالسا	de:Salsa	en:salsa	es:salsa	fa:سالسا	fr:salsa	he:סלסה	hi:साल्सा	ja:サルサ	ko:살사	pt:salsa	ru:сальса	tr:salsa	ur:سالسا	zh:萨尔萨
 c:salt	Noun	ar:ملح	de:Salz	en:salt	es:sal	fa:نمک	fr:sel	he:מלח	hi:नमक	ja:塩	ko:소금	pt:sal	ru:соль	tr:tuz	ur:نمک	zh:盐
@@ -1948,6 +1979,7 @@ c:second	Noun	ar:ثانية	de:Sekunde	en:second	es:segundo	fa:ثانیه	fr:sec
 c:secret	Noun	ar:سر	de:Geheimnis	en:secret	es:secreto	fa:راز	fr:secret	he:סוד	hi:राज़,रहस्य	ja:秘密	ko:비밀	pt:segredo	ru:секрет,тайна	tr:sır	ur:راز	zh:秘密
 c:see	Verb	ar:رأى,يرى	de:sehen	en:see,sees,saw	es:ver	fa:دیدن	fr:voir	he:לראות	hi:देखना	ja:見る	ko:보다	pt:ver	ru:видеть	tr:görmek	ur:دیکھنا	zh:看
 c:seed	Noun	ar:بذرة	de:Samen	en:seed	es:semilla	fa:بذر,دانه	fr:graine,semence	he:זרע	hi:बीज	ja:種,種子	ko:씨,씨앗	pt:semente	ru:семя,зерно	tr:tohum	ur:بیج	zh:种子,籽
+c:seine	Noun	ar:السين,نهر السين	de:Seine	en:Seine,Seine River	es:Sena,río Sena	fa:رود سن,سن	fr:Seine	he:הסן,נהר הסן	hi:सीन नदी,सीन	ja:セーヌ川	ko:센강	pt:Sena,rio Sena	ru:Сена	tr:Sen,Sen Nehri	ur:دریائے سین	zh:塞纳河
 c:sell	Verb	ar:باع	de:verkaufen	en:sell	es:vender	fa:فروختن	fr:vendre	he:למכור	hi:बेचना	ja:売る	ko:팔다	pt:vender	ru:продавать,продать	tr:satmak	ur:بیچنا	zh:卖
 c:semantics	Noun	ar:علم الدلالة,دلالة	de:Semantik,Bedeutungslehre	en:semantics	es:semántica	fa:معنی شناسی	fr:sémantique	he:סמנטיקה,תורת המשמעות	hi:शब्दार्थ विज्ञान	ja:意味論	ko:의미론	pt:semântica	ru:семантика	tr:anlam bilimi,semantik	ur:علم معانی	zh:语义学
 c:semiconductor	Noun	ar:شبه موصل	de:Halbleiter	en:semiconductor	es:semiconductor	fa:نیمه رسانا	fr:semi conducteur,semiconducteur	he:מוליך למחצה	hi:अर्धचालक	ja:半導体	ko:반도체	pt:semicondutor	ru:полупроводник	tr:yarı iletken	ur:نیم موصل	zh:半导体
@@ -2222,6 +2254,7 @@ c:test	Noun	ar:اختبار,فحص	de:Test	en:test	es:prueba,test	fa:آزمون,
 c:testimony	Noun	ar:شهادة	de:Zeugnis,Aussage	en:testimony	es:testimonio	fa:شهادت,گواهی	fr:témoignage	he:עדות	hi:गवाही,साक्ष्य	ja:証言	ko:증언	pt:testemunho	ru:показание,свидетельство	tr:tanıklık,ifade	ur:گواہی,شہادت	zh:证词,证言
 c:textbook	Noun	ar:كتاب مدرسي	de:Lehrbuch,Schulbuch	en:textbook	es:libro de texto	fa:کتاب درسی	fr:manuel	he:ספר לימוד	hi:पाठ्यपुस्तक	ja:教科書	ko:교과서	pt:livro didático,manual	ru:учебник	tr:ders kitabı	ur:نصابی کتاب,درسی کتاب	zh:教科书,课本
 c:thailand	Noun	ar:تايلاند	de:Thailand	en:Thailand	es:Tailandia	fa:تایلند	fr:Thaïlande	he:תאילנד	hi:थाईलैंड	ja:タイ	ko:태국	pt:Tailândia	ru:Таиланд	tr:Tayland	ur:تھائی لینڈ	zh:泰国
+c:thames	Noun	ar:التايمز,نهر التايمز	de:Themse	en:Thames,River Thames	es:Támesis,río Támesis	fa:تیمز,رود تیمز	fr:Tamise	he:התמזה,נהר התמזה	hi:टेम्स नदी,टेम्स	ja:テムズ川	ko:템스강	pt:Tâmisa,rio Tâmisa	ru:Темза	tr:Thames,Thames Nehri	ur:دریائے ٹیمز	zh:泰晤士河
 c:thank	Verb	ar:شكر	de:danken	en:thank	es:agradecer	fa:تشکر کردن	fr:remercier	he:להודות	hi:धन्यवाद देना,आभार व्यक्त करना	ja:感謝する	ko:감사하다	pt:agradecer	ru:благодарить	tr:teşekkür etmek	ur:شکریہ ادا کرنا,شکر کرنا	zh:感谢,谢
 c:thanksgiving	Noun	ar:عيد الشكر	de:Erntedankfest,Thanksgiving	en:thanksgiving	es:día de acción de gracias	fa:روز شکرگزاری	fr:action de grâce,thanksgiving	he:חג ההודיה	hi:थैंक्सगिविंग,धन्यवाद दिवस	ja:感謝祭	ko:추수감사절	pt:ação de graças	ru:день благодарения	tr:şükran günü	ur:یوم تشکر,تھینکس گیونگ	zh:感恩节
 c:thaw	Noun	ar:ذوبان,إذابة الجليد	de:Tauwetter,Auftauen	en:thaw,thawing	es:deshielo,descongelación	fa:ذوب,گدازش	fr:dégel,fonte	he:הפשרה,המסה	hi:पिघलना,गलन	ja:雪解け,融雪	ko:해빙,융설	pt:degelo	ru:оттепель,таяние	tr:erime,çözülme	ur:پگھلاؤ,برف پگھلنا	zh:解冻,融化
@@ -2250,6 +2283,7 @@ c:tide	Noun	ar:مد وجزر	de:Gezeiten	en:tide	es:marea	fa:جزر و مد	fr:m
 c:tie-clothing	Noun	ar:ربطة عنق,كرفتة	de:Krawatte	en:tie,necktie	es:corbata	fa:کراوات	fr:cravate	he:עניבה	hi:टाई,नेकटाई	ja:ネクタイ	ko:넥타이	pt:gravata	ru:галстук	tr:kravat	ur:ٹائی	zh:领带
 c:tien-shan	Noun	ar:جبال تيان شان	de:Tianshan,Tienschan	en:Tien Shan,Tianshan	es:Tian Shan	fa:تیان‌شان	fr:Tian Shan	he:טיאן שאן	hi:तियन शान	ja:天山山脈	ko:톈산산맥	pt:Tian Shan	ru:Тянь-Шань	tr:Tanrı Dağları,Tien Shan	ur:تیان شان	zh:天山山脉
 c:tiger	Noun	ar:نمر	de:Tiger	en:tiger	es:tigre	fa:ببر	fr:tigre	he:נמר	hi:बाघ	ja:虎,トラ	ko:호랑이	pt:tigre	ru:тигр	tr:kaplan	ur:شیر ببر,ٹائیگر	zh:老虎
+c:tigris	Noun	ar:دجلة,نهر دجلة	de:Tigris	en:Tigris,Tigris River	es:Tigris,río Tigris	fa:دجله,رود دجله	fr:Tigre	he:חידקל,נהר החידקל	hi:टाइग्रिस नदी,दजला	ja:ティグリス川	ko:티그리스강	pt:Tigre,rio Tigre	ru:Тигр	tr:Dicle,Dicle Nehri	ur:دریائے دجلہ,دجلہ	zh:底格里斯河
 c:tile	Noun	ar:بلاط,قرميد	de:Fliese,Kachel	en:tile	es:azulejo,baldosa	fa:کاشی	fr:carreau,tuile	he:אריח	hi:टाइल	ja:タイル	ko:타일	pt:azulejo	ru:плитка	tr:fayans,kiremit	ur:ٹائل	zh:瓦,瓷砖
 c:till	Verb	ar:حرث,يحرث	de:pflügen	en:till	es:labrar	fa:شخم زدن	fr:labourer	he:חרש	hi:जोतना	ja:耕す	ko:갈다	pt:lavrar	ru:пахать	tr:sürmek	ur:ہل چلانا	zh:犁地
 c:time	Noun	ar:وقت,زمن	de:Zeit	en:time	es:tiempo	fa:زمان	fr:temps	he:זמן	hi:समय	ja:時間	ko:시간	pt:tempo	ru:время	tr:zaman	ur:وقت	zh:时间
@@ -2381,6 +2415,7 @@ c:visit	Noun	ar:زيارة	de:Besuch	en:visit	es:visita	fa:دیدار,ملاقا
 c:vocabulary	Noun	ar:مفردات,معجم	de:Wortschatz,Vokabular	en:vocabulary	es:vocabulario	fa:واژگان	fr:vocabulaire	he:אוצר מילים	hi:शब्दावली	ja:語彙	ko:어휘	pt:vocabulário	ru:лексика,словарь	tr:kelime hazinesi,sözcük dağarcığı	ur:الفاظ,ذخیرۂ الفاظ	zh:词汇
 c:voice	Noun	ar:صوت	de:Stimme	en:voice	es:voz	fa:صدا	fr:voix	he:קול	hi:आवाज़,स्वर	ja:声	ko:목소리	pt:voz	ru:голос	tr:ses	ur:آواز	zh:声音,嗓音
 c:volcano	Noun	ar:بركان	de:Vulkan	en:volcano	es:volcán	fa:آتشفشان	fr:volcan	he:הר געש	hi:ज्वालामुखी	ja:火山	ko:화산	pt:vulcão	ru:вулкан	tr:yanardağ,volkan	ur:آتش فشاں	zh:火山
+c:volga	Noun	ar:الفولغا,نهر الفولغا	de:Wolga	en:Volga,Volga River	es:Volga,río Volga	fa:ولگا,رود ولگا	fr:Volga	he:וולגה,נהר הוולגה	hi:वोल्गा नदी,वोल्गा	ja:ヴォルガ川	ko:볼가강	pt:Volga,rio Volga	ru:Волга	tr:Volga,Volga Nehri	ur:دریائے وولگا	zh:伏尔加河
 c:volleyball	Noun	ar:كرة الطائرة	de:Volleyball	en:volleyball	es:voleibol,vóleibol	fa:والیبال	fr:volley-ball,volley	he:כדורעף	hi:वॉलीबॉल	ja:バレーボール	ko:배구	pt:voleibol,vôlei	ru:волейбол	tr:voleybol	ur:والی بال	zh:排球
 c:volt	Noun	ar:فولت	de:Volt	en:volt	es:voltio,volt	fa:ولت	fr:volt	he:וולט	hi:वोल्ट	ja:ボルト	ko:볼트	pt:volt	ru:вольт	tr:volt	ur:وولٹ	zh:伏特,伏
 c:voltage	Noun	ar:فرق الجهد,فولتية	de:Spannung,elektrische Spannung	en:voltage,electric potential difference	es:voltaje,tensión eléctrica	fa:ولتاژ,اختلاف پتانسیل	fr:tension,voltage	he:מתח,מתח חשמלי	hi:वोल्टता,वोल्टेज	ja:電圧,ボルテージ	ko:전압,볼티지	pt:voltagem,tensão	ru:напряжение,вольтаж	tr:voltaj,gerilim	ur:وولٹیج,برقی دباؤ	zh:电压
@@ -2474,16 +2509,21 @@ c:writer	Noun	ar:كاتب	de:Schriftsteller	en:writer	es:escritor	fa:نویسن�
 c:wrong	Adjective	ar:خاطئ	de:falsch	en:wrong,incorrect	es:incorrecto,equivocado	fa:اشتباه,غلط	fr:faux,incorrect	he:לא נכון,שגוי	hi:ग़लत	ja:間違い,誤り	ko:틀린,잘못된	pt:errado,incorreto	ru:неправильный,ошибочный	tr:yanlış	ur:غلط	zh:错,错误
 c:xylophone	Noun	ar:إكسيليفون	de:Xylophon	en:xylophone	es:xilófono	fa:زایلوفون	fr:xylophone	he:קסילופון	hi:ज़ाइलोफोन	ja:シロフォン,木琴	ko:실로폰,목금	pt:xilofone	ru:ксилофон	tr:ksilofon	ur:زائلوفون	zh:木琴
 c:yacht	Noun	ar:يخت	de:Jacht,Yacht	en:yacht	es:yate	fa:قایق تفریحی,کشتی تفریحی	fr:yacht	he:יאכטה	hi:नौका	ja:ヨット	ko:요트	pt:iate	ru:яхта	tr:yat	ur:کشتی تفریحی	zh:游艇
+c:yangtze	Noun	ar:اليانغتسي,نهر اليانغتسي	de:Jangtsekiang,Jangtse	en:Yangtze,Yangtze River,Chang Jiang	es:Yangtsé,río Yangtsé	fa:یانگ‌تسه,رود یانگ‌تسه	fr:Yangtsé,Yang-Tsé-Kiang	he:יאנגצה,נהר היאנגצה	hi:यांग्त्ज़े नदी,यांग्त्ज़े	ja:長江,揚子江	ko:양쯔강,장강	pt:Yangtzé,rio Yangtzé	ru:Янцзы	tr:Yangtze,Yangtze Nehri	ur:دریائے یانگسی	zh:长江,扬子江
 c:year	Noun	ar:سنة,عام	de:Jahr	en:year,years	es:año	fa:سال	fr:an,année	he:שנה	hi:वर्ष,साल	ja:年	ko:년,해	pt:ano	ru:год	tr:yıl,sene	ur:سال	zh:年
 c:yellow	Adjective	ar:أصفر	de:gelb	en:yellow	es:amarillo	fa:زرد	fr:jaune	he:צהוב	hi:पीला	ja:黄色,黄色い	ko:노란,노랑	pt:amarelo	ru:жёлтый	tr:sarı	ur:زرد,پیلا	zh:黄,黄色
+c:yellow-river	Noun	ar:النهر الأصفر,هوانغ خه	de:Gelber Fluss,Huang He	en:Yellow River,Huang He	es:río Amarillo,Huang He	fa:رود زرد,هوانگ‌هه	fr:fleuve Jaune,Huang He	he:הנהר הצהוב,חואנג הה	hi:पीली नदी,ह्वांग हो	ja:黄河	ko:황허,황하	pt:rio Amarelo,Huang He	ru:Хуанхэ	tr:Sarı Irmak,Huang He	ur:دریائے زرد,ہوانگ ہو	zh:黄河
 c:yellow-sea	Noun	ar:البحر الأصفر	de:Gelbes Meer	en:Yellow Sea	es:Mar Amarillo	fa:دریای زرد	fr:Mer Jaune	he:הים הצהוב	hi:पीला सागर	ja:黄海	ko:황해,서해	pt:Mar Amarelo	ru:Жёлтое море	tr:Sarı Deniz	ur:بحیرہ زرد	zh:黄海
 c:yen	Noun	ar:ين	de:Yen	en:yen	es:yen	fa:ین	fr:yen	he:ין	hi:येन	ja:円	ko:엔	pt:iene	ru:иена	tr:yen	ur:ین	zh:日元,円
+c:yenisei	Noun	ar:ينيسي,نهر ينيسي	de:Jenissei	en:Yenisei,Yenisey	es:Yeniséi	fa:ینی‌سئی	fr:Ienisseï	he:יניסיי,נהר היניסיי	hi:येनिसी नदी	ja:エニセイ川	ko:예니세이강	pt:Ienissei	ru:Енисей	tr:Yenisey,Yenisey Nehri	ur:دریائے ینی سائی	zh:叶尼塞河
 c:yesterday	Noun	ar:أمس,البارحة	de:gestern	en:yesterday	es:ayer	fa:دیروز	fr:hier	he:אתמול	hi:कल	ja:昨日	ko:어제	pt:ontem	ru:вчера	tr:dün	ur:کل	zh:昨天
 c:yoga	Noun	ar:اليوغا,اليوجا	de:Yoga	en:yoga	es:yoga	fa:یوگا	fr:yoga	he:יוגה	hi:योग	ja:ヨガ,瑜伽	ko:요가	pt:ioga,yoga	ru:йога	tr:yoga	ur:یوگا	zh:瑜伽
 c:yokohama	Noun	ar:يوكوهاما	de:Yokohama	en:Yokohama	es:Yokohama	fa:یوکوهاما	fr:Yokohama	he:יוקוהאמה	hi:योकोहामा	ja:横浜,よこはま	ko:요코하마	pt:Iocoama	ru:Иокогама	tr:Yokohama	ur:یوکوہاما	zh:横滨
 c:young	Adjective	ar:شاب,صغير السن	de:jung	en:young	es:joven	fa:جوان	fr:jeune	he:צעיר	hi:जवान,युवा	ja:若い	ko:젊은,어린	pt:jovem	ru:молодой	tr:genç	ur:جوان	zh:年轻
 c:yuan	Noun	ar:يوان	de:Yuan,Renminbi	en:yuan,renminbi	es:yuan	fa:یوان	fr:yuan,renminbi	he:יואן	hi:युआन	ja:元,人民元	ko:위안	pt:yuan,renminbi	ru:юань	tr:yuan	ur:یوآن	zh:元,人民币
+c:yukon	Noun	ar:يوكون,نهر يوكون	de:Yukon	en:Yukon,Yukon River	es:Yukón,río Yukón	fa:یوکان	fr:Yukon	he:יוקון,נהר היוקון	hi:युकोन नदी	ja:ユーコン川	ko:유콘강	pt:Yukon,rio Yukon	ru:Юкон	tr:Yukon,Yukon Nehri	ur:دریائے یوکن	zh:育空河
 c:zagros	Noun	ar:جبال زاغروس,زاغروس	de:Zagros	en:Zagros,Zagros Mountains	es:Zagros,montes Zagros	fa:زاگرس,کوه‌های زاگرس	fr:Zagros,monts Zagros	he:הרי זגרוס,זגרוס	hi:ज़ाग्रोस पर्वत	ja:ザグロス山脈	ko:자그로스산맥	pt:Zagros,montes Zagros	ru:Загрос	tr:Zagros Dağları	ur:زاگرس,کوہ زاگرس	zh:扎格罗斯山脉
+c:zambezi	Noun	ar:الزمبيزي,نهر الزمبيزي	de:Sambesi	en:Zambezi,Zambezi River	es:Zambeze,río Zambeze	fa:زامبزی,رود زامبزی	fr:Zambèze	he:זמבזי,נהר הזמבזי	hi:ज़ाम्बेज़ी नदी	ja:ザンベジ川	ko:잠베지강	pt:Zambeze,rio Zambeze	ru:Замбези	tr:Zambezi,Zambezi Nehri	ur:دریائے زیمبیزی	zh:赞比西河
 c:zebra	Noun	ar:حمار وحشي,زرد	de:Zebra	en:zebra	es:cebra	fa:گورخر	fr:zèbre	he:זברה	hi:ज़ेब्रा	ja:シマウマ	ko:얼룩말	pt:zebra	ru:зебра	tr:zebra	ur:زیبرا	zh:斑马
 c:zen	Noun	ar:الزن	de:Zen	en:zen	es:zen	fa:ذن	fr:zen	he:זן	hi:ज़ेन	ja:禅	ko:선,젠	pt:zen	ru:дзен	tr:zen	ur:زین	zh:禅
 c:zero	Noun	ar:صفر	de:null	en:zero	es:cero	fa:صفر	fr:zéro	he:אפס	hi:शून्य	ja:ゼロ,零	ko:영,제로	pt:zero	ru:ноль	tr:sıfır	ur:صفر	zh:零
