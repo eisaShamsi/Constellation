@@ -1666,8 +1666,28 @@ fn scan_unlinked_recursive(
     }
 }
 
-/// Scan all tags across a library.
-#[tauri::command]
+/// Scan all tags across a library. **Walks every `.md` file** via
+/// `scan_tags_recursive` below (`fs::read_to_string` per file + regex scan).
+/// On the 7,600-note trial Universe this is ~7,600 file reads per library —
+/// seconds of wall-clock work.
+///
+/// Boot path: `DashboardView.onMount` (src/lib/components/DashboardView.svelte)
+/// calls `scanAllLibraryTags()` (src/lib/libraries/tagUtils.ts) which issues
+/// **one `invoke('scan_library_tags')` per library, sequentially** (16 calls
+/// on the trial Universe). DashboardView mounts the instant
+/// `libraries.set(bundle.libraries)` fires in `refreshLibraryCaches` — which
+/// happens **before** `cache_boot_snapshot_core` returns. Without `(async)`
+/// all 16 invocations queue on the WebView2 UI thread (see `watcher.rs`
+/// docstring for the full dispatch chain), pushing `core_queue_ms` to ~19.5 s
+/// on Round 4 measurements (docs/LESSONS-LEARNED.md LL-021 Round 5).
+///
+/// `#[tauri::command(async)]` routes each scan through `respond_async_serialized`
+/// → `tauri::async_runtime::spawn`, so the UI thread pays only spawn cost per
+/// call and Tokio workers run the actual filesystem walks in parallel.
+/// Write-Time Derivation (CLAUDE.md Rule 8) says the right long-term fix is a
+/// persisted tag index maintained by trigger/watcher — tracked as a separate
+/// open item; this is the minimal change that unblocks Boot Criterion 2.
+#[tauri::command(async)]
 pub fn scan_library_tags(app: tauri::AppHandle, library_path: String) -> Result<std::collections::HashMap<String, u32>, String> {
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == library_path) {

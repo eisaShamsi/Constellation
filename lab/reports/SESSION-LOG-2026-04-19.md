@@ -376,3 +376,83 @@ Bodies unchanged. Docstrings added to each, citing the exact Tauri / wry file:li
 
 - Update `docs/help.uConstellation.World/` + `docs/User Manual.md` + 14 translations if the SkyView indicator becomes documented user-facing behaviour (deferred — transient 6–9 s transitional state, not a persistent feature).
 - `/simplify` pass (code review) after both boot-criterion-2 halves (core/graph split + indicator) are end-to-end verified on the trial Universe.
+
+---
+
+## § 15 — Round 5: Experiment A+ validated but incomplete; the real fan-out was JS-side
+
+### Round 4 measurement (commit `9001b01`, Experiment A+ in place)
+
+User re-tested on trial Universe. Debug → Boot Performance scorecard:
+
+- **Criterion 2: FAIL** — `hydrated_ms` = 20,160 ms (target 6,000).
+- `paint_ms` = 525 ms (Criterion 1 PASS).
+- `core_queue_ms` = **19,502 ms** ← still almost entirely consumed before body runs.
+- `core_body_ms` = 73 ms (fast, as expected).
+- `core_wall_ms` = 19,575 ms.
+- `load_all_stats_wall_ms` = **0 ms**, `start_watching_all_wall_ms` = **13 ms**, `load_all_appearances_wall_ms` = **13 ms**.
+
+### What this proved
+
+The four commands converted in Experiment A+ are now exactly where we predicted they'd be: essentially zero wall time. The dispatch mechanism works. **But they were never the blocker** — all three measured fan-outs fire inside `+layout.svelte` **after** `await refreshLibraryCaches()` resolves, meaning they always queued *behind* `cache_boot_snapshot_core`, never in front of it.
+
+So the 19,502 ms `core_queue_ms` gap comes from something **earlier** in boot — something between paint (525 ms) and core's body starting (~20,000 ms) — that was never in the fan-out we converted.
+
+### Investigation (source read, no speculation)
+
+Traced the JS boot sequence end-to-end in `src/routes/+layout.svelte`:
+
+- Line 1482 — `libraries.set(bundle.libraries)` is called **inside** `initializeApp` before `refreshLibraryCaches` is reached.
+- Line 4519 — `{#if $libraries.length > 0 && $appSettings.showDashboard}` gates `<DashboardView />`. The instant the store update on line 1482 fires, Svelte mounts `DashboardView`.
+- `src/lib/components/DashboardView.svelte:85–134` — `onMount` runs `loadDashboardData()`, which sequentially `await`s:
+  1. `loadAllStats()` (already fast after A+)
+  2. `getChildUniverses()` — **sync** `#[tauri::command]` in `src-tauri/src/universe.rs:1102`
+  3. for each child: `invoke('read_child_universe_libraries')` — **sync** `#[tauri::command]` in `src-tauri/src/universe.rs:1167`
+  4. `scanAllLibraryTags()` (`src/lib/libraries/tagUtils.ts:14–27`) — **16 sequential** `invoke('scan_library_tags')` calls, one per library in a `for` loop.
+
+`scan_library_tags` (`src-tauri/src/libraries.rs:1670`) is a sync `#[tauri::command]` that calls `scan_tags_recursive` — which walks every directory and calls `fs::read_to_string` on every `.md` file, then runs a regex. On the trial Universe that's ~7,600 file reads, sequentially, **on the WebView2 UI thread**. Multiply by 16 libraries, with every intermediate IPC message also queued behind it on the same STA thread, and the 19.5 s queue time is fully explained.
+
+### Why this is the real blocker (not core itself)
+
+The five-stamp model correctly located "core's 19.5 s is spent queued." The mechanism (`#[tauri::command]` sync binding runs inline on the UI thread) is also correct. What we got wrong in Round 4 was **which** sync command was holding the thread: we converted the `+layout.svelte` fan-out (which fires *after* core) when the culprit was `DashboardView.onMount` (which fires *before* core, the instant `libraries.set` runs).
+
+The refined UI-thread hypothesis now matches the shape of the bug exactly: any sync fan-out that fires **between** `libraries.set()` and `await invoke('cache_boot_snapshot_core')` will queue in front of core. DashboardView is the chief offender on this boot path.
+
+### Round 5 fix (`TBC`)
+
+Three commands converted from `#[tauri::command]` to `#[tauri::command(async)]`:
+
+- `scan_library_tags` — `src-tauri/src/libraries.rs:1690`
+- `get_child_universes` — `src-tauri/src/universe.rs:1114`
+- `read_child_universe_libraries` — `src-tauri/src/universe.rs:1185`
+
+All three now route through `respond_async_serialized` → `tauri::async_runtime::spawn`. Bodies unchanged. Each has a docstring explaining the DashboardView boot-path interaction and linking back to `watcher.rs` for the full Tauri dispatch chain (so a future reader sees the whole pattern in one place).
+
+### Predicted outcome
+
+- `core_queue_ms`: 19,502 → single-digit ms. `scan_library_tags × 16` now runs on Tokio workers, so they can't hold the UI thread.
+- `hydrated_ms`: ~20,160 → under 6,000 (Criterion 2 PASS).
+- DashboardView's initial paint may show "loading" slightly longer (tag list arrives async-parallel rather than queued-sync), which is the acceptable trade-off. Long-term, Rule 8 (Write-Time Derivation) says the correct fix is a persisted tag index maintained by a trigger on note-save — tracked as a separate open item, not needed to close Criterion 2.
+
+### What we would look at if `core_queue_ms` does NOT drop
+
+If Round 5 doesn't close the gap, the five-stamp scorecard will still pinpoint the remaining blocker. Candidates to audit next, in order:
+1. Any other `onMount` hook mounted by the `libraries.set`/`appSettings.set` cascade (sidebar tree, status bar, quick-capture panel, recent files panel).
+2. Sidebar virtualization's first-render measurement pass if it issues IPC.
+3. Anything inside `initializeApp` between store-set and `refreshLibraryCaches` that invokes a sync command.
+
+### LL-021 addendum (methodology)
+
+The five-stamp model worked: it pointed to "core queued 19.5 s." The UI-thread mechanism was correct. What failed in Round 4 was **scope selection** — we converted the most-visible fan-out (`+layout.svelte`) without first reading every caller that runs between `libraries.set()` and `invoke('cache_boot_snapshot_core')`. Lesson: when the queue is on a command, enumerate **everything that races it on the same thread**, not just the obvious fan-out that runs *after* it.
+
+## Commits (updated)
+
+- `9001b01` — Experiment A+: fan-out commands to `#[tauri::command(async)]` (Round 4; kept in place — these are still correct).
+- `TBC` — Round 5: DashboardView fan-out commands to `#[tauri::command(async)]`.
+
+## Open items (updated)
+
+- **User action (priority)**: once the Round 5 build ships, relaunch `src-tauri/target/release/constellation.exe` on trial Universe; read Settings → Debug → Boot Performance. Expected: Criterion 2 PASS with `core_queue_ms` ≈ 0.
+- **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing for release builds.
+- **M11-data v2**: §§ 107+ deferred until Criterion 2 verification passes.
+- **Rule 8 follow-up**: persisted tag index (maintained by trigger on note save) to replace `scan_library_tags`'s filesystem walk entirely. Tracked separately; not needed for Criterion 2.

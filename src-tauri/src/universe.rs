@@ -1098,8 +1098,20 @@ pub struct ChildUniverseInfo {
     pub library_count: u32,
 }
 
-/// Return info about child universes of the active universe.
-#[tauri::command]
+/// Return info about child universes of the active universe. Reads
+/// `universe.json` and then, for each child, reads the child's universe.json
+/// + libraries.json to count libraries — small files, but a handful of
+/// synchronous filesystem round-trips per child.
+///
+/// Called on boot from `DashboardView.onMount` →
+/// `loadDashboardData()` → `getChildUniverses()` → this command. Because
+/// DashboardView mounts the instant `libraries.set(bundle.libraries)` fires
+/// (before `cache_boot_snapshot_core` returns), a sync `#[tauri::command]`
+/// binding would queue this work on the WebView2 UI thread and block the
+/// core snapshot. Converting to `#[tauri::command(async)]` offloads dispatch
+/// to Tokio workers — see `watcher.rs` docstring for the full chain, and
+/// `libraries.rs::scan_library_tags` for the boot-fan-out context.
+#[tauri::command(async)]
 pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInfo>, String> {
     let cdir = active_constellation_dir(&app)?;
     let meta_path = cdir.join("universe.json");
@@ -1163,8 +1175,14 @@ pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInf
     Ok(children)
 }
 
-/// Read library list from a child universe path (reads its .constellation/libraries.json).
-#[tauri::command]
+/// Read library list from a child universe path (reads its
+/// `.constellation/libraries.json`). Small file, but DashboardView calls this
+/// **once per child universe** in a sequential `for` loop after
+/// `getChildUniverses` resolves (src/lib/components/DashboardView.svelte
+/// loadDashboardData). Same UI-thread-serialization concern as
+/// `get_child_universes` above — see that docstring + `watcher.rs` for full
+/// rationale.
+#[tauri::command(async)]
 pub fn read_child_universe_libraries(_app: tauri::AppHandle, child_path: String) -> Result<Vec<crate::libraries::LibraryInfo>, String> {
     let cp = Path::new(&child_path);
     let cdir = constellation_dir(cp);
