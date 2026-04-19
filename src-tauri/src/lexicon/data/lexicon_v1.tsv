@@ -52,6 +52,8 @@ c:allergy	Noun	ar:حساسية	de:Allergie	en:allergy	es:alergia	fa:آلرژی,�
 c:alloy	Noun	ar:سبيكة	de:Legierung	en:alloy	es:aleación	fa:آلیاژ	fr:alliage	he:סגסוגת	hi:मिश्र धातु,अलॉय	ja:合金	ko:합금	pt:liga,liga metálica	ru:сплав	tr:alaşım	ur:دھاتی آمیزہ,آلائے	zh:合金
 c:ally	Noun	ar:حليف	de:Verbündeter	en:ally	es:aliado	fa:متحد	fr:allié	he:בעל ברית	hi:सहयोगी	ja:同盟国	ko:동맹	pt:aliado	ru:союзник	tr:müttefik	ur:اتحادی	zh:盟友
 c:alphabet	Noun	ar:أبجدية,الحروف الأبجدية	de:Alphabet	en:alphabet	es:alfabeto,abecedario	fa:الفبا	fr:alphabet	he:אלפבית	hi:वर्णमाला	ja:アルファベット	ko:알파벳,자모	pt:alfabeto	ru:алфавит,азбука	tr:alfabe	ur:حروف تہجی	zh:字母表,字母
+c:alps	Noun	ar:جبال الألب,الألب	de:Alpen	en:Alps	es:Alpes	fa:آلپ,کوه‌های آلپ	fr:Alpes	he:האלפים,הרי האלפים	hi:आल्प्स,आल्प्स पर्वत	ja:アルプス山脈	ko:알프스산맥	pt:Alpes	ru:Альпы	tr:Alpler,Alp Dağları	ur:الپس,کوہ الپس	zh:阿尔卑斯山脉
+c:altai	Noun	ar:جبال ألتاي	de:Altai	en:Altai,Altai Mountains	es:Altái,montes Altái	fa:آلتای,کوه‌های آلتای	fr:Altaï,monts Altaï	he:אלטאי,הרי אלטאי	hi:अल्ताई पर्वत	ja:アルタイ山脈	ko:알타이산맥	pt:Altai,montes Altai	ru:Алтай,Алтайские горы	tr:Altay Dağları	ur:التائی پہاڑ	zh:阿尔泰山脉
 c:aluminum	Noun	ar:ألومنيوم,ألمنيوم	de:Aluminium	en:aluminum,aluminium	es:aluminio	fa:آلومینیوم	fr:aluminium	he:אלומיניום	hi:एल्यूमीनियम	ja:アルミニウム,アルミ	ko:알루미늄	pt:alumínio	ru:алюминий	tr:alüminyum	ur:ایلومینیم	zh:铝
 c:amber	Noun	ar:كهرمان,عنبر	de:Bernstein	en:amber	es:ámbar	fa:کهربا	fr:ambre	he:ענבר	hi:अंबर,कहरुआ	ja:琥珀	ko:호박,앰버	pt:âmbar	ru:янтарь	tr:kehribar,amber	ur:کہربا,عنبر	zh:琥珀
 c:ambulance	Noun	ar:إسعاف,سيارة إسعاف	de:Krankenwagen	en:ambulance	es:ambulancia	fa:آمبولانس	fr:ambulance	he:אמבולנס	hi:एम्बुलेंस	ja:救急車	ko:구급차	pt:ambulância	ru:скорая помощь	tr:ambulans	ur:ایمبولینس	zh:救护车
@@ -65,6 +67,7 @@ c:analysis	Noun	ar:تحليل	de:Analyse	en:analysis	es:análisis	fa:تحلیل	
 c:ancestor	Noun	ar:سلف,جد	de:Vorfahre,Ahne	en:ancestor,forefather	es:ancestro,antepasado	fa:نیاکان,اجداد	fr:ancêtre	he:אב קדמון,אבות	hi:पूर्वज	ja:祖先,先祖	ko:조상,선조	pt:ancestral,antepassado	ru:предок	tr:ata,cet	ur:آباء,اجداد	zh:祖先,先祖
 c:anchovy	Noun	ar:أنشوجة	de:Sardelle	en:anchovy	es:anchoa	fa:آنچوی	fr:anchois	he:אנשובי	hi:एंकोवी	ja:カタクチイワシ	ko:멸치	pt:anchova	ru:анчоус	tr:hamsi	ur:اینچووی	zh:凤尾鱼
 c:andaman-sea	Noun	ar:بحر أندامان	de:Andamanensee	en:Andaman Sea	es:Mar de Andamán	fa:دریای آندامان	fr:Mer d'Andaman	he:ים אנדמן	hi:अंडमान सागर	ja:アンダマン海	ko:안다만해	pt:Mar de Andamão	ru:Андаманское море	tr:Andaman Denizi	ur:بحیرہ انڈمان	zh:安达曼海
+c:andes	Noun	ar:جبال الأنديز,الأنديز	de:Anden	en:Andes,Andes Mountains	es:Andes,cordillera de los Andes	fa:کوه‌های آند,رشته‌کوه آند	fr:Andes,cordillère des Andes	he:הרי האנדים,האנדים	hi:एंडीज़,एंडीज पर्वत	ja:アンデス山脈	ko:안데스산맥	pt:Andes,cordilheira dos Andes	ru:Анды	tr:And Dağları,Andlar	ur:اینڈیز,سلسلہ اینڈیز	zh:安第斯山脉
 c:anemometer	Noun	ar:مقياس الرياح,أنيمومتر	de:Anemometer,Windmesser	en:anemometer	es:anemómetro	fa:بادسنج	fr:anémomètre	he:אנמומטר,מד-רוח	hi:एनीमोमीटर,वायुवेग मापी	ja:風速計,アネモメーター	ko:풍속계	pt:anemômetro	ru:анемометр	tr:anemometre,rüzgârölçer	ur:اینیمومیٹر,بادسنج	zh:风速计
 c:angel	Noun	ar:ملاك	de:Engel	en:angel	es:ángel	fa:فرشته	fr:ange	he:מלאך	hi:देवदूत,फ़रिश्ता	ja:天使	ko:천사	pt:anjo	ru:ангел	tr:melek	ur:فرشتہ	zh:天使
 c:anger	Noun	ar:غضب	de:Zorn,Ärger,Wut	en:anger	es:ira,enojo	fa:خشم,عصبانیت	fr:colère	he:כעס	hi:क्रोध,ग़ुस्सा	ja:怒り	ko:분노,화	pt:raiva,ira	ru:гнев,злость	tr:öfke,kızgınlık	ur:غصہ	zh:愤怒,生气
@@ -73,6 +76,7 @@ c:anglerfish	Noun	ar:سمكة الصياد	de:Anglerfisch,Seeteufel	en:anglerfis
 c:animal	Noun	ar:حيوان	de:Tier	en:animal	es:animal	fa:حیوان	fr:animal	he:חיה	hi:जानवर,पशु	ja:動物	ko:동물	pt:animal	ru:животное	tr:hayvan	ur:جانور	zh:动物
 c:ankara	Noun	ar:أنقرة	de:Ankara	en:Ankara	es:Ankara	fa:آنکارا	fr:Ankara	he:אנקרה	hi:अंकारा	ja:アンカラ	ko:앙카라	pt:Ancara	ru:Анкара	tr:Ankara	ur:انقرہ	zh:安卡拉
 c:ankle	Noun	ar:كاحل	de:Knöchel,Fußgelenk	en:ankle	es:tobillo	fa:مچ پا	fr:cheville	he:קרסול	hi:टखना	ja:足首	ko:발목	pt:tornozelo	ru:лодыжка	tr:ayak bileği	ur:ٹخنہ	zh:脚踝,踝
+c:annapurna	Noun	ar:أنابورنا	de:Annapurna	en:Annapurna	es:Annapurna	fa:آناپورنا	fr:Annapurna	he:אנאפורנה	hi:अन्नपूर्णा	ja:アンナプルナ	ko:안나푸르나	pt:Annapurna	ru:Аннапурна	tr:Annapurna	ur:اناپورنا	zh:安纳布尔纳峰
 c:anniversary	Noun	ar:ذكرى سنوية,ذكرى	de:Jahrestag,Jubiläum	en:anniversary	es:aniversario	fa:سالگرد	fr:anniversaire	he:יום השנה	hi:वर्षगांठ,सालगिरह	ja:記念日	ko:기념일	pt:aniversário	ru:годовщина	tr:yıldönümü	ur:سالگرہ,برسی	zh:周年纪念,纪念日
 c:announce	Verb	ar:أعلن	de:ankündigen,verkünden	en:announce	es:anunciar	fa:اعلام کردن	fr:annoncer	he:להכריז	hi:घोषणा करना	ja:発表する	ko:발표하다	pt:anunciar	ru:объявлять	tr:duyurmak,ilan etmek	ur:اعلان کرنا	zh:宣布,宣告
 c:answer	Verb	ar:أجاب,رد	de:antworten	en:answer,reply	es:responder,contestar	fa:پاسخ دادن,جواب دادن	fr:répondre	he:לענות	hi:जवाब देना,उत्तर देना	ja:答える	ko:답하다,대답하다	pt:responder	ru:отвечать,ответить	tr:cevaplamak,yanıtlamak	ur:جواب دینا	zh:回答,答
@@ -92,6 +96,7 @@ c:aphid	Noun	ar:من النبات	de:Blattlaus	en:aphid	es:pulgón	fa:شته	fr:
 c:api	Noun	ar:واجهة برمجة التطبيقات	de:API,Programmierschnittstelle	en:API,application programming interface	es:API,interfaz de programación de aplicaciones	fa:ای پی آی,رابط برنامه نویسی	fr:API,interface de programmation	he:API,ממשק תכנות	hi:एपीआई	ja:API,アプリケーションプログラミングインターフェース	ko:API,응용 프로그램 인터페이스	pt:API,interface de programação	ru:API,интерфейс программирования	tr:API,uygulama programlama arayüzü	ur:اے پی آئی	zh:API,应用程序接口
 c:apologize	Verb	ar:اعتذر	de:entschuldigen,sich entschuldigen	en:apologize,apologise	es:disculparse	fa:عذرخواهی کردن	fr:s'excuser	he:להתנצל	hi:माफी मांगना	ja:謝る,謝罪する	ko:사과하다	pt:desculpar-se,pedir desculpa	ru:извиняться	tr:özür dilemek	ur:معافی مانگنا	zh:道歉
 c:apothecary	Noun	ar:صيدلاني,عشّاب	de:Apotheker,Kräuterhändler	en:apothecary	es:boticario	fa:داروگر,دواساز	fr:apothicaire	he:רוקח,פרמצבט	hi:औषधकार,वैद्य	ja:薬剤師,薬種商	ko:약종상,약제사	pt:boticário	ru:аптекарь	tr:eczacı,aktar	ur:دوا فروش,عطار	zh:药剂师,药铺掌柜
+c:appalachians	Noun	ar:جبال الأبلاش	de:Appalachen	en:Appalachians,Appalachian Mountains	es:Apalaches,montes Apalaches	fa:آپالاش,کوه‌های آپالاش	fr:Appalaches	he:הרי האפלצ'ים	hi:अप्पालाचियन पर्वत	ja:アパラチア山脈	ko:애팔래치아산맥	pt:Apalaches,montes Apalaches	ru:Аппалачи	tr:Apalaş Dağları	ur:اپلیچن پہاڑ	zh:阿巴拉契亚山脉
 c:appeal	Noun	ar:استئناف	de:Berufung,Einspruch	en:appeal	es:apelación,recurso	fa:تجدیدنظر,استیناف	fr:appel,recours	he:ערעור	hi:अपील	ja:上訴,控訴	ko:항소,상소	pt:apelação,recurso	ru:апелляция,обжалование	tr:temyiz,itiraz	ur:اپیل	zh:上诉,申诉
 c:apple	Noun	ar:تفاحة	de:Apfel	en:apple	es:manzana	fa:سیب	fr:pomme	he:תפוח	hi:सेब	ja:リンゴ,林檎	ko:사과	pt:maçã	ru:яблоко	tr:elma	ur:سیب	zh:苹果
 c:application	Noun	ar:تطبيق	de:Anwendung,App	en:application,app	es:aplicación,app	fa:برنامه,اپلیکیشن	fr:application,appli	he:יישום,אפליקציה	hi:एप्लिकेशन,ऐप	ja:アプリケーション,アプリ	ko:애플리케이션,앱	pt:aplicação,aplicativo,app	ru:приложение	tr:uygulama	ur:ایپلی کیشن,ایپ	zh:应用程序,应用
@@ -135,6 +140,7 @@ c:athens	Noun	ar:أثينا	de:Athen	en:Athens	es:Atenas	fa:آتن	fr:Athènes	h
 c:athlete	Noun	ar:رياضي	de:Athlet,Sportler	en:athlete	es:atleta,deportista	fa:ورزشکار	fr:athlète,sportif	he:ספורטאי,אתלט	hi:खिलाड़ी,एथलीट	ja:選手,アスリート	ko:운동선수,선수	pt:atleta,esportista	ru:спортсмен,атлет	tr:sporcu,atlet	ur:کھلاڑی,ایتھلیٹ	zh:运动员
 c:atlantic	Noun	ar:المحيط الأطلسي	de:Atlantik,Atlantischer Ozean	en:Atlantic,Atlantic Ocean	es:Atlántico,Océano Atlántico	fa:اقیانوس اطلس	fr:Atlantique,Océan Atlantique	he:האוקיינוס האטלנטי	hi:अटलांटिक महासागर	ja:大西洋	ko:대서양	pt:Atlântico,Oceano Atlântico	ru:Атлантический океан	tr:Atlas Okyanusu	ur:بحر اوقیانوس	zh:大西洋
 c:atlas	Noun	ar:أطلس	de:Atlas	en:atlas	es:atlas	fa:اطلس	fr:atlas	he:אטלס	hi:एटलस	ja:地図帳,アトラス	ko:지도책,아틀라스	pt:atlas	ru:атлас	tr:atlas	ur:اطلس	zh:地图册
+c:atlas-mountains	Noun	ar:جبال الأطلس,الأطلس	de:Atlasgebirge,Atlas	en:Atlas Mountains,Atlas	es:Atlas,cordillera del Atlas	fa:اطلس,کوه‌های اطلس	fr:Atlas,chaîne de l'Atlas	he:הרי האטלס,האטלס	hi:एटलस पर्वत	ja:アトラス山脈	ko:아틀라스산맥	pt:Atlas,cordilheira do Atlas	ru:Атлас,Атласские горы	tr:Atlas Dağları	ur:اطلس پہاڑ,کوہ اطلس	zh:阿特拉斯山脉
 c:atmosphere	Noun	ar:غلاف جوي,جو	de:Atmosphäre,Lufthülle	en:atmosphere	es:atmósfera	fa:اتمسفر,جو	fr:atmosphère	he:אטמוספירה	hi:वायुमंडल	ja:大気,大気圏	ko:대기,대기권	pt:atmosfera	ru:атмосфера	tr:atmosfer	ur:فضا,کرہ ہوائی	zh:大气,大气层
 c:atoll	Noun	ar:جزيرة مرجانية	de:Atoll	en:atoll	es:atolón	fa:جزیره مرجانی	fr:atoll	he:אטול	hi:प्रवाल द्वीप	ja:環礁	ko:환초	pt:atol	ru:атолл	tr:atol	ur:مرجانی جزیرہ	zh:环礁
 c:atom	Noun	ar:ذرة	de:Atom	en:atom	es:átomo	fa:اتم,ذره	fr:atome	he:אטום	hi:परमाणु	ja:原子,アトム	ko:원자	pt:átomo	ru:атом	tr:atom	ur:ایٹم	zh:原子
@@ -358,6 +364,7 @@ c:catastrophe	Noun	ar:كارثة كبرى,نكبة	de:Katastrophe	en:catastrophe
 c:caterpillar	Noun	ar:يرقة	de:Raupe	en:caterpillar	es:oruga	fa:کرم ابریشم‌ساز,کرم پروانه	fr:chenille	he:זחל	hi:इल्ली,कैटरपिलर	ja:芋虫,毛虫	ko:애벌레	pt:lagarta	ru:гусеница	tr:tırtıl	ur:سنڈی	zh:毛毛虫
 c:cathedral	Noun	ar:كاتدرائية	de:Kathedrale,Dom	en:cathedral	es:catedral	fa:کلیسای جامع,کاتدرال	fr:cathédrale	he:קתדרלה	hi:कैथेड्रल,गिरजाघर	ja:大聖堂,カテドラル	ko:대성당,카테드랄	pt:catedral	ru:собор	tr:katedral	ur:بڑا گرجا,کیتھیڈرل	zh:大教堂,主教座堂
 c:cattle	Noun	ar:ماشية	de:Rinder	en:cattle	es:ganado	fa:دام	fr:bétail	he:בקר	hi:मवेशी	ja:家畜	ko:가축	pt:gado	ru:скот	tr:sığır	ur:مویشی	zh:牲畜
+c:caucasus	Noun	ar:جبال القوقاز,القوقاز	de:Kaukasus	en:Caucasus,Caucasus Mountains	es:Cáucaso,montes del Cáucaso	fa:قفقاز,کوه‌های قفقاز	fr:Caucase	he:הקווקז,הרי הקווקז	hi:कॉकसस,काकेशस पर्वत	ja:コーカサス山脈	ko:캅카스산맥	pt:Cáucaso	ru:Кавказ,Кавказские горы	tr:Kafkas Dağları,Kafkaslar	ur:قفقاز,کوہ قفقاز	zh:高加索山脉
 c:cause	Noun	ar:سبب,علة	de:Ursache,Grund	en:cause	es:causa	fa:علت,سبب	fr:cause	he:סיבה	hi:कारण	ja:原因	ko:원인	pt:causa	ru:причина	tr:neden,sebep	ur:سبب,وجہ	zh:原因,起因
 c:cedar	Noun	ar:أرز	de:Zeder	en:cedar	es:cedro	fa:سدر	fr:cèdre	he:ארז	hi:देवदार	ja:スギ,杉	ko:삼나무	pt:cedro	ru:кедр	tr:sedir	ur:دیودار	zh:雪松
 c:ceiling	Noun	ar:سقف,سقيفة	de:Decke,Zimmerdecke	en:ceiling	es:techo,cielo raso	fa:سقف	fr:plafond	he:תקרה	hi:छत,चादर	ja:天井	ko:천장	pt:teto	ru:потолок	tr:tavan	ur:چھت	zh:天花板,顶棚
@@ -404,6 +411,7 @@ c:chimney	Noun	ar:مدخنة	de:Schornstein,Kamin	en:chimney	es:chimenea	fa:دو
 c:chin	Noun	ar:ذقن	de:Kinn	en:chin	es:barbilla,mentón	fa:چانه	fr:menton	he:סנטר	hi:ठोड़ी	ja:顎	ko:턱	pt:queixo	ru:подбородок	tr:çene	ur:ٹھوڑی	zh:下巴,颏
 c:china	Noun	ar:الصين	de:China	en:China	es:China	fa:چین	fr:Chine	he:סין	hi:चीन	ja:中国	ko:중국	pt:China	ru:Китай	tr:Çin	ur:چین	zh:中国,中华人民共和国
 c:chlorine	Noun	ar:كلور	de:Chlor	en:chlorine	es:cloro	fa:کلر	fr:chlore	he:כלור	hi:क्लोरीन	ja:塩素,クロリン	ko:염소,클로린	pt:cloro	ru:хлор	tr:klor	ur:کلورین	zh:氯,氯气
+c:cho-oyu	Noun	ar:تشو أويو	de:Cho Oyu	en:Cho Oyu	es:Cho Oyu	fa:چو اویو	fr:Cho Oyu	he:צ'ו אויו	hi:चो ओयु	ja:チョ・オユー	ko:초오유	pt:Cho Oyu	ru:Чо-Ойю	tr:Cho Oyu	ur:چو اویو	zh:卓奥友峰
 c:choir	Noun	ar:جوقة,كورال	de:Chor	en:choir	es:coro	fa:گروه کر,کر	fr:chœur,chorale	he:מקהלה	hi:गाना मंडली,कोरस	ja:合唱団,コーラス	ko:합창단	pt:coro,coral	ru:хор	tr:koro	ur:گلوکاروں کا گروہ	zh:合唱团
 c:choose	Verb	ar:اختار	de:wählen,auswählen	en:choose	es:elegir,escoger	fa:انتخاب کردن	fr:choisir	he:לבחור	hi:चुनना	ja:選ぶ	ko:선택하다,고르다	pt:escolher	ru:выбирать	tr:seçmek	ur:چننا	zh:选择,选
 c:chop	Verb	ar:فرم,قطع	de:hacken	en:chop	es:picar	fa:خرد کردن	fr:hacher	he:לקצוץ	hi:काटना	ja:刻む	ko:썰다,다지다	pt:picar	ru:рубить	tr:doğramak	ur:کاٹنا	zh:切碎,剁
@@ -614,6 +622,7 @@ c:devil	Noun	ar:إبليس	de:Teufel	en:devil	es:diablo	fa:شیطان	fr:diable	
 c:dew	Noun	ar:ندى	de:Tau	en:dew	es:rocío	fa:شبنم	fr:rosée	he:טל	hi:ओस	ja:露	ko:이슬	pt:orvalho	ru:роса	tr:çiy	ur:شبنم	zh:露水
 c:dhaka	Noun	ar:دكا	de:Dhaka	en:Dhaka	es:Daca	fa:داکا	fr:Dacca	he:דאקה	hi:ढाका	ja:ダッカ	ko:다카	pt:Daca	ru:Дакка	tr:Dakka	ur:ڈھاکہ	zh:达卡
 c:dharma	Noun	ar:الدارما	de:Dharma	en:dharma	es:dharma	fa:دارما	fr:dharma	he:דהרמה	hi:धर्म	ja:法,ダルマ	ko:법,다르마	pt:darma,dharma	ru:дхарма	tr:darma,dharma	ur:دھرم	zh:法,达摩
+c:dhaulagiri	Noun	ar:دولاغيري	de:Dhaulagiri	en:Dhaulagiri	es:Dhaulagiri	fa:داولاگیری	fr:Dhaulagiri	he:דאוולאגירי	hi:धौलागिरी	ja:ダウラギリ	ko:다울라기리	pt:Dhaulagiri	ru:Дхаулагири	tr:Dhaulagiri	ur:دھولاگیری	zh:道拉吉里峰
 c:dialect	Noun	ar:لهجة	de:Dialekt,Mundart	en:dialect	es:dialecto	fa:گویش,لهجه	fr:dialecte	he:ניב,דיאלקט	hi:बोली	ja:方言	ko:방언,사투리	pt:dialeto	ru:диалект,говор	tr:lehçe,diyalekt	ur:بولی,لہجہ	zh:方言
 c:dialectic	Noun	ar:الجدل,الديالكتيك	de:Dialektik	en:dialectic	es:dialéctica	fa:دیالکتیک	fr:dialectique	he:דיאלקטיקה	hi:द्वंद्ववाद,संवाद शास्त्र	ja:弁証法	ko:변증법	pt:dialética	ru:диалектика	tr:diyalektik	ur:جدلیات	zh:辩证法
 c:diamond	Noun	ar:ماس	de:Diamant	en:diamond	es:diamante	fa:الماس	fr:diamant	he:יהלום	hi:हीरा	ja:ダイヤモンド	ko:다이아몬드	pt:diamante	ru:алмаз,бриллиант	tr:elmas	ur:ہیرا	zh:钻石
@@ -663,6 +672,7 @@ c:downpour	Noun	ar:وابل,سيل منهمر	de:Wolkenbruch,Platzregen,Sturzreg
 c:drachma	Noun	ar:دراخمة	de:Drachme	en:drachma	es:dracma	fa:دراخما	fr:drachme	he:דרכמה	hi:द्राखमा	ja:ドラクマ	ko:드라크마	pt:dracma	ru:драхма	tr:drahmi	ur:دراخما	zh:德拉克马
 c:dragon	Noun	ar:تنين	de:Drache	en:dragon	es:dragón	fa:اژدها	fr:dragon	he:דרקון	hi:ड्रैगन	ja:龍	ko:용	pt:dragão	ru:дракон	tr:ejderha	ur:اژدہا	zh:龙
 c:dragonfly	Noun	ar:يعسوب	de:Libelle	en:dragonfly	es:libélula	fa:سنجاقک	fr:libellule	he:שפירית	hi:व्याध पतंग	ja:蜻蛉,トンボ	ko:잠자리	pt:libélula	ru:стрекоза	tr:yusufçuk	ur:ٹڈا پروانہ	zh:蜻蜓
+c:drakensberg	Noun	ar:جبال دراكنسبرغ	de:Drakensberge	en:Drakensberg,Drakensberg Mountains	es:Drakensberg,montañas Drakensberg	fa:دراکنزبرگ	fr:Drakensberg	he:דרקנסברג	hi:ड्रेकेन्सबर्ग	ja:ドラケンスバーグ山脈	ko:드라켄즈버그산맥	pt:Drakensberg	ru:Драконовы горы	tr:Drakensberg Dağları	ur:ڈریکنزبرگ	zh:德拉肯斯山脉
 c:drama	Noun	ar:دراما	de:Drama	en:drama	es:drama	fa:درام	fr:drame	he:דרמה	hi:नाटक,ड्रामा	ja:ドラマ,劇	ko:드라마,극	pt:drama	ru:драма	tr:drama	ur:ڈرامہ	zh:戏剧,话剧
 c:drawing	Noun	ar:رسم	de:Zeichnung	en:drawing	es:dibujo	fa:طراحی	fr:dessin	he:ציור,רישום	hi:रेखांकन,ड्राइंग	ja:絵,デッサン	ko:드로잉,그림	pt:desenho	ru:рисунок	tr:çizim	ur:ڈرائنگ,خاکہ	zh:素描,绘图
 c:dream	Noun	ar:حلم	de:Traum	en:dream	es:sueño	fa:رویا,خواب	fr:rêve	he:חלום	hi:सपना,स्वप्न	ja:夢	ko:꿈	pt:sonho	ru:сон,мечта	tr:rüya,düş	ur:خواب,سپنا	zh:梦
@@ -1042,6 +1052,8 @@ c:hierarchy	Noun	ar:تسلسل هرمي,هرمية	de:Hierarchie	en:hierarchy	es
 c:highway	Noun	ar:طريق سريع	de:Autobahn,Schnellstraße	en:highway,motorway,freeway	es:autopista,carretera	fa:بزرگراه,آزادراه	fr:autoroute	he:כביש מהיר	hi:राजमार्ग,हाईवे	ja:高速道路	ko:고속도로	pt:autoestrada,rodovia	ru:шоссе,автомагистраль	tr:otoyol,karayolu	ur:شاہراہ,ہائی وے	zh:高速公路
 c:hijab	Noun	ar:حجاب	de:Hidschab,Kopftuch	en:hijab	es:hiyab	fa:حجاب,روسری	fr:hijab	he:חיג׳אב	hi:हिजाब	ja:ヒジャブ	ko:히잡	pt:hijab	ru:хиджаб	tr:başörtüsü	ur:حجاب	zh:希贾布
 c:hill	Noun	ar:تل,هضبة	de:Hügel	en:hill	es:colina,cerro	fa:تپه	fr:colline	he:גבעה	hi:पहाड़ी	ja:丘	ko:언덕	pt:colina,morro	ru:холм	tr:tepe	ur:پہاڑی	zh:山丘,丘陵
+c:himalayas	Noun	ar:جبال الهيمالايا,الهيمالايا	de:Himalaya	en:Himalayas,Himalaya	es:Himalaya,cordillera del Himalaya	fa:هیمالیا,رشته‌کوه هیمالیا	fr:Himalaya	he:הרי ההימלאיה,הימלאיה	hi:हिमालय,हिमालय पर्वत	ja:ヒマラヤ山脈	ko:히말라야산맥	pt:Himalaias,Himalaia	ru:Гималаи	tr:Himalaya Dağları,Himalayalar	ur:ہمالیہ,کوہ ہمالیہ	zh:喜马拉雅山脉
+c:hindu-kush	Noun	ar:جبال هندوكوش,هندوكوش	de:Hindukusch	en:Hindu Kush	es:Hindú Kush,Hindukush	fa:هندوکش,کوه‌های هندوکش	fr:Hindou Kouch	he:הינדו כוש	hi:हिंदू कुश	ja:ヒンドゥークシュ山脈	ko:힌두쿠시산맥	pt:Hindu Kush	ru:Гиндукуш	tr:Hindukuş Dağları	ur:ہندوکش,کوہ ہندوکش	zh:兴都库什山脉
 c:hip	Noun	ar:ورك	de:Hüfte	en:hip	es:cadera	fa:لگن,باسن	fr:hanche	he:ירך	hi:कूल्हा	ja:ヒップ,腰回り	ko:엉덩이	pt:quadril,anca	ru:бедро	tr:kalça	ur:کولھا	zh:臀部,髋
 c:hippopotamus	Noun	ar:فرس النهر	de:Nilpferd,Flusspferd	en:hippopotamus,hippo	es:hipopótamo	fa:اسب آبی	fr:hippopotame	he:היפופוטם	hi:दरियाई घोड़ा	ja:カバ	ko:하마	pt:hipopótamo	ru:бегемот	tr:su aygırı	ur:دریائی گھوڑا	zh:河马
 c:history	Noun	ar:تاريخ	de:Geschichte	en:history	es:historia	fa:تاریخ	fr:histoire	he:היסטוריה	hi:इतिहास	ja:歴史	ko:역사	pt:história	ru:история	tr:tarih	ur:تاریخ	zh:历史
@@ -1173,8 +1185,11 @@ c:jump	Verb	ar:قفز	de:springen	en:jump,jumps,jumped,jumping	es:saltar	fa:پر
 c:jupiter	Noun	ar:المشتري	de:Jupiter	en:Jupiter	es:Júpiter	fa:برجیس,مشتری	fr:Jupiter	he:צדק	hi:बृहस्पति,गुरु	ja:木星	ko:목성	pt:Júpiter	ru:Юпитер	tr:Jüpiter	ur:مشتری	zh:木星
 c:jury	Noun	ar:هيئة المحلفين	de:Jury,Geschworene	en:jury	es:jurado	fa:هیئت منصفه	fr:jury	he:חבר מושבעים	hi:जूरी,निर्णायक मंडल	ja:陪審,陪審員団	ko:배심,배심원단	pt:júri	ru:присяжные,жюри	tr:jüri	ur:جیوری	zh:陪审团
 c:justice	Noun	ar:عدل,عدالة	de:Gerechtigkeit	en:justice	es:justicia	fa:عدالت	fr:justice	he:צדק	hi:न्याय	ja:正義	ko:정의	pt:justiça	ru:справедливость,правосудие	tr:adalet	ur:انصاف,عدل	zh:正义,公正
+c:k2	Noun	ar:كي 2,تشوغوري	de:K2,Chogori	en:K2,Mount Godwin-Austen,Chogori	es:K2,Chogori	fa:کی ۲,چوگوری	fr:K2,Chogori	he:K2,צ'וגורי	hi:के 2,चोगोरी	ja:K2,ゴッドウィンオースティン山	ko:K2,초고리	pt:K2,Chogori	ru:K2,Чогори	tr:K2,Çogori	ur:کے ٹو,چوغوری	zh:乔戈里峰,K2峰
 c:kaftan	Noun	ar:قفطان	de:Kaftan	en:kaftan,caftan	es:caftán	fa:قفطان	fr:caftan	he:קפטן	hi:काफ़्तान	ja:カフタン	ko:카프탄	pt:cafetã	ru:кафтан	tr:kaftan	ur:قفطان	zh:长袍
+c:kangchenjunga	Noun	ar:كانشنجونغا	de:Kangchendzönga,Kanchenjunga	en:Kangchenjunga,Kanchenjunga	es:Kanchenjunga,Kangchenjunga	fa:کانچنجونگا	fr:Kangchenjunga,Kanchenjunga	he:קנגצ'נג'ונגה	hi:कंचनजंघा,कंचनजूंगा	ja:カンチェンジュンガ	ko:칸첸중가	pt:Kangchenjunga	ru:Канченджанга	tr:Kançencunga	ur:کنچنجنگا	zh:干城章嘉峰
 c:karachi	Noun	ar:كراتشي	de:Karatschi	en:Karachi	es:Karachi	fa:کراچی	fr:Karachi	he:קראצ'י	hi:कराची	ja:カラチ	ko:카라치	pt:Carachi	ru:Карачи	tr:Karaçi	ur:کراچی	zh:卡拉奇
+c:karakoram	Noun	ar:جبال قراقرم,قراقرم	de:Karakorum	en:Karakoram,Karakorum	es:Karakórum,cordillera del Karakórum	fa:قراقروم,رشته‌کوه قراقروم	fr:Karakoram	he:קרקורם	hi:काराकोरम	ja:カラコルム山脈	ko:카라코람산맥	pt:Karakoram,Caracórum	ru:Каракорум	tr:Karakurum Dağları	ur:قراقرم,سلسلہ قراقرم	zh:喀喇昆仑山脉
 c:karma	Noun	ar:الكارما,قانون الكارما	de:Karma	en:karma	es:karma	fa:کارما	fr:karma	he:קארמה	hi:कर्म	ja:業,カルマ	ko:업,카르마	pt:carma,karma	ru:карма	tr:karma	ur:کرما	zh:业力,羯磨
 c:kenya	Noun	ar:كينيا	de:Kenia	en:Kenya	es:Kenia	fa:کنیا	fr:Kenya	he:קניה	hi:केन्या	ja:ケニア	ko:케냐	pt:Quênia,Quénia	ru:Кения	tr:Kenya	ur:کینیا	zh:肯尼亚
 c:kettle	Noun	ar:غلاية,إبريق شاي	de:Wasserkocher,Kessel	en:kettle	es:hervidor,tetera	fa:کتری	fr:bouilloire	he:קומקום	hi:केतली	ja:やかん,ケトル	ko:주전자	pt:chaleira	ru:чайник	tr:su ısıtıcısı,çaydanlık	ur:کیتلی	zh:水壶
@@ -1235,6 +1250,7 @@ c:legend	Noun	ar:أسطورة,حكاية	de:Legende,Sage	en:legend	es:leyenda	fa
 c:lens	Noun	ar:عدسة	de:Linse	en:lens	es:lente	fa:عدسی,لنز	fr:lentille	he:עדשה	hi:लेंस	ja:レンズ	ko:렌즈	pt:lente	ru:линза	tr:mercek,lens	ur:لینس,عدسہ	zh:透镜,镜头
 c:lesson	Noun	ar:درس	de:Lektion,Unterrichtsstunde	en:lesson	es:lección	fa:درس	fr:leçon	he:שיעור	hi:पाठ,सबक	ja:レッスン,授業	ko:레슨,수업	pt:lição,aula	ru:урок	tr:ders	ur:سبق,درس	zh:课,课程
 c:leviathan	Noun	ar:لوياثان	de:Leviathan	en:leviathan	es:leviatán	fa:لویاتان	fr:léviathan	he:לויתן	hi:लेविथान	ja:リヴァイアサン	ko:리바이어던	pt:leviatã	ru:левиафан	tr:leviathan	ur:لویاتھان	zh:利维坦
+c:lhotse	Noun	ar:لوتسي	de:Lhotse	en:Lhotse	es:Lhotse	fa:لوتسه	fr:Lhotse	he:לוטסה	hi:ल्होत्से	ja:ローツェ	ko:로체	pt:Lhotse	ru:Лхоцзе	tr:Lhotse	ur:لہوتسے	zh:洛子峰
 c:liability	Noun	ar:التزام,خصوم	de:Verbindlichkeit,Passivum	en:liability	es:pasivo,obligación	fa:بدهی	fr:passif,dette	he:התחייבות,חוב	hi:देनदारी,दायित्व	ja:負債	ko:부채	pt:passivo,obrigação	ru:обязательство,пассив	tr:yükümlülük,pasif	ur:واجب الادا,دین	zh:负债
 c:liberty	Noun	ar:حرية	de:Freiheit	en:liberty	es:libertad	fa:آزادی	fr:liberté	he:חירות	hi:स्वतंत्रता,आज़ादी	ja:自由,リバティ	ko:자유,리버티	pt:liberdade	ru:свобода	tr:özgürlük,hürriyet	ur:آزادی	zh:自由
 c:library	Noun	ar:مكتبة	de:Bibliothek	en:library	es:biblioteca	fa:کتابخانه	fr:bibliothèque	he:ספרייה	hi:पुस्तकालय	ja:図書館	ko:도서관	pt:biblioteca	ru:библиотека	tr:kütüphane	ur:لائبریری,کتب خانہ	zh:图书馆
@@ -1287,12 +1303,14 @@ c:madrid	Noun	ar:مدريد	de:Madrid	en:Madrid	es:Madrid	fa:مادرید	fr:Mad
 c:magazine	Noun	ar:مجلة	de:Zeitschrift,Magazin	en:magazine	es:revista	fa:مجله	fr:magazine,revue	he:מגזין,כתב עת	hi:पत्रिका,मैगज़ीन	ja:雑誌	ko:잡지	pt:revista	ru:журнал	tr:dergi	ur:رسالہ,میگزین	zh:杂志
 c:magic	Noun	ar:سحر	de:Magie	en:magic	es:magia	fa:جادو	fr:magie	he:קסם	hi:जादू	ja:魔法	ko:마법	pt:magia	ru:магия	tr:büyü	ur:جادو	zh:魔法
 c:magnet	Noun	ar:مغناطيس	de:Magnet	en:magnet	es:imán	fa:آهنربا,مغناطیس	fr:aimant	he:מגנט	hi:चुम्बक	ja:磁石,マグネット	ko:자석,마그넷	pt:ímã,íman	ru:магнит	tr:mıknatıs,magnet	ur:مقناطیس	zh:磁铁,磁石
+c:makalu	Noun	ar:ماكالو	de:Makalu	en:Makalu	es:Makalu	fa:ماکالو	fr:Makalu	he:מקאלו	hi:मकालू	ja:マカルー	ko:마칼루	pt:Makalu	ru:Макалу	tr:Makalu	ur:ماکالو	zh:马卡鲁峰
 c:make	Verb	ar:صنع,عمل	de:machen	en:make	es:hacer	fa:ساختن	fr:faire	he:לעשות	hi:बनाना	ja:作る	ko:만들다	pt:fazer	ru:делать	tr:yapmak	ur:بنانا	zh:做,制造
 c:malaysia	Noun	ar:ماليزيا	de:Malaysia	en:Malaysia	es:Malasia	fa:مالزی	fr:Malaisie	he:מלזיה	hi:मलेशिया	ja:マレーシア	ko:말레이시아	pt:Malásia	ru:Малайзия	tr:Malezya	ur:ملائیشیا	zh:马来西亚
 c:malware	Noun	ar:برمجية خبيثة,برامج ضارة	de:Schadsoftware,Malware	en:malware	es:malware,software malicioso	fa:بدافزار	fr:logiciel malveillant,maliciel	he:תוכנה זדונית	hi:मैलवेयर	ja:マルウェア,悪意のあるソフトウェア	ko:악성 소프트웨어,멀웨어	pt:malware,software malicioso	ru:вредоносное ПО,малварь	tr:kötü amaçlı yazılım	ur:مالویئر	zh:恶意软件
 c:mammal	Noun	ar:ثديي	de:Säugetier	en:mammal	es:mamífero	fa:پستاندار	fr:mammifère	he:יונק	hi:स्तनपायी	ja:哺乳類	ko:포유류	pt:mamífero	ru:млекопитающее	tr:memeli	ur:پستاندار	zh:哺乳动物
 c:man	Noun	ar:رجل	de:Mann	en:man,men	es:hombre	fa:مرد	fr:homme	he:איש,גבר	hi:आदमी,पुरुष	ja:男,男性	ko:남자	pt:homem	ru:мужчина	tr:erkek,adam	ur:آدمی,مرد	zh:男人,男子
 c:manager	Noun	ar:مدير	de:Manager,Leiter	en:manager	es:gerente,director	fa:مدیر	fr:gérant,directeur	he:מנהל	hi:प्रबंधक,मैनेजर	ja:マネージャー,管理者	ko:매니저,관리자	pt:gerente,gestor	ru:менеджер,управляющий	tr:yönetici,müdür	ur:منیجر,مدیر	zh:经理,管理者
+c:manaslu	Noun	ar:ماناسلو	de:Manaslu	en:Manaslu	es:Manaslu	fa:ماناسلو	fr:Manaslu	he:מנאסלו	hi:मनास्लु	ja:マナスル	ko:마나슬루	pt:Manaslu	ru:Манаслу	tr:Manaslu	ur:ماناسلو	zh:马纳斯卢峰
 c:manatee	Noun	ar:خروف البحر	de:Seekuh,Manati	en:manatee	es:manatí	fa:گاو دریایی	fr:lamantin	he:חזיר ים	hi:मनाटी	ja:マナティー	ko:매너티	pt:manatim,peixe-boi	ru:ламантин	tr:denizineği	ur:سمندری گائے	zh:海牛
 c:mandolin	Noun	ar:ماندولين	de:Mandoline	en:mandolin	es:mandolina	fa:ماندولین	fr:mandoline	he:מנדולינה	hi:मैन्डोलिन	ja:マンドリン	ko:만돌린	pt:bandolim	ru:мандолина	tr:mandolin	ur:مینڈولن	zh:曼陀林
 c:mango	Noun	ar:مانجو	de:Mango	en:mango	es:mango	fa:انبه	fr:mangue	he:מנגו	hi:आम	ja:マンゴー	ko:망고	pt:manga	ru:манго	tr:mango	ur:آم	zh:芒果
@@ -1317,6 +1335,7 @@ c:material	Noun	ar:مادة	de:Material,Stoff	en:material	es:material	fa:ماد�
 c:materialism	Noun	ar:المادية	de:Materialismus	en:materialism	es:materialismo	fa:ماتریالیسم,ماده گرایی	fr:matérialisme	he:מטריאליזם,חומרנות	hi:भौतिकवाद	ja:唯物論	ko:유물론	pt:materialismo	ru:материализм	tr:materyalizm,maddecilik	ur:مادیت پسندی	zh:唯物主义
 c:mathematics	Noun	ar:رياضيات	de:Mathematik,Mathe	en:mathematics,math,maths	es:matemáticas,matemática	fa:ریاضی,ریاضیات	fr:mathématiques,maths	he:מתמטיקה	hi:गणित	ja:数学	ko:수학	pt:matemática	ru:математика	tr:matematik	ur:ریاضی	zh:数学
 c:matter	Noun	ar:مادة	de:Materie	en:matter	es:materia	fa:ماده	fr:matière	he:חומר	hi:पदार्थ	ja:物質	ko:물질	pt:matéria	ru:материя	tr:madde	ur:مادہ	zh:物质
+c:matterhorn	Noun	ar:ماترهورن	de:Matterhorn	en:Matterhorn,Monte Cervino	es:Cervino,Matterhorn	fa:ماترهورن	fr:Cervin,mont Cervin	he:מטרהורן	hi:मैटरहॉर्न	ja:マッターホルン	ko:마터호른	pt:Matterhorn,monte Cervino	ru:Маттерхорн	tr:Matterhorn	ur:میٹر ہورن	zh:马特洪峰
 c:mayfly	Noun	ar:ذبابة مايو,حشرة مايو	de:Eintagsfliege	en:mayfly	es:efímera	fa:مگس مه	fr:éphémère	he:יום-חי	hi:मई मक्खी	ja:蜉蝣,カゲロウ	ko:하루살이	pt:efeméride	ru:подёнка	tr:bireylik sineği,mayıssineği	ur:مئی مکھی	zh:蜉蝣
 c:meal	Noun	ar:وجبة	de:Mahlzeit	en:meal	es:comida	fa:وعده غذایی	fr:repas	he:ארוחה	hi:भोजन	ja:食事	ko:식사	pt:refeição	ru:приём пищи,еда	tr:öğün,yemek	ur:کھانا	zh:餐,一餐
 c:meaning	Noun	ar:معنى	de:Bedeutung	en:meaning	es:significado	fa:معنی,معنا	fr:signification,sens	he:משמעות	hi:अर्थ,मतलब	ja:意味	ko:의미,뜻	pt:significado,sentido	ru:значение	tr:anlam,mana	ur:معنی,مطلب	zh:意思,意义
@@ -1393,6 +1412,7 @@ c:monitor	Noun	ar:شاشة عرض,مرقاب	de:Monitor	en:monitor	es:monitor	fa
 c:monkey	Noun	ar:قرد	de:Affe	en:monkey	es:mono	fa:میمون	fr:singe	he:קוף	hi:बंदर	ja:猿,サル	ko:원숭이	pt:macaco	ru:обезьяна	tr:maymun	ur:بندر	zh:猴子
 c:monopoly	Noun	ar:احتكار	de:Monopol	en:monopoly	es:monopolio	fa:انحصار	fr:monopole	he:מונופול	hi:एकाधिकार	ja:独占,専売	ko:독점	pt:monopólio	ru:монополия	tr:tekel,monopol	ur:اجارہ داری,انحصار	zh:垄断,专卖
 c:monsoon	Noun	ar:الرياح الموسمية,المنسون	de:Monsun	en:monsoon	es:monzón	fa:باد موسمی,موسمی	fr:mousson	he:מונסון	hi:मानसून,वर्षा ऋतु	ja:モンスーン,季節風	ko:몬순,계절풍	pt:monção	ru:муссон	tr:muson,muson rüzgârı	ur:مانسون,موسمی ہوا	zh:季风
+c:mont-blanc	Noun	ar:مون بلان	de:Mont Blanc	en:Mont Blanc	es:Mont Blanc,Monte Blanco	fa:مون بلان	fr:mont Blanc	he:מון בלאן	hi:मोंट ब्लांक	ja:モンブラン	ko:몽블랑산	pt:Mont Blanc,monte Branco	ru:Монблан	tr:Mont Blanc	ur:مونٹ بلانک	zh:勃朗峰
 c:month	Noun	ar:شهر	de:Monat	en:month	es:mes	fa:ماه	fr:mois	he:חודש	hi:महीना,मास	ja:月	ko:달,월	pt:mês	ru:месяц	tr:ay	ur:مہینہ	zh:月
 c:montreal	Noun	ar:مونتريال	de:Montreal	en:Montreal	es:Montreal	fa:مونترال	fr:Montréal	he:מונטריאול	hi:मॉन्ट्रियल	ja:モントリオール	ko:몬트리올	pt:Montreal	ru:Монреаль	tr:Montreal	ur:مونٹریال	zh:蒙特利尔
 c:mood	Noun	ar:حالة مزاجية	de:Stimmung,Laune	en:mood	es:humor,estado de ánimo	fa:حال,حالت روحی	fr:humeur	he:מצב רוח	hi:मूड,मनोदशा	ja:気分,ムード	ko:기분,무드	pt:humor,estado de espírito	ru:настроение	tr:ruh hali,mod	ur:موڈ	zh:情绪,心情
@@ -1411,6 +1431,19 @@ c:mothers-day	Noun	ar:عيد الأم	de:Muttertag	en:mother's day,mothers day	e
 c:motivation	Noun	ar:دافع,حافز	de:Motivation,Motiv	en:motivation	es:motivación	fa:انگیزه	fr:motivation	he:מוטיבציה,הנעה	hi:प्रेरणा,अभिप्रेरण	ja:動機,モチベーション	ko:동기,동기부여	pt:motivação	ru:мотивация	tr:motivasyon,güdü	ur:ترغیب,حوصلہ	zh:动机,动力
 c:motive	Noun	ar:دافع,باعث	de:Motiv,Beweggrund	en:motive	es:motivo	fa:انگیزه,دلیل	fr:motif,mobile	he:מניע	hi:प्रेरणा,उद्देश्य	ja:動機	ko:동기,모티브	pt:motivo	ru:мотив,побуждение	tr:güdü,saik	ur:محرک,باعث	zh:动机
 c:motorcycle	Noun	ar:دراجة نارية	de:Motorrad	en:motorcycle,motorbike	es:motocicleta,moto	fa:موتورسیکلت,موتور	fr:motocyclette,moto	he:אופנוע	hi:मोटरसाइकिल	ja:オートバイ,バイク	ko:오토바이,모터사이클	pt:motocicleta,moto	ru:мотоцикл	tr:motosiklet	ur:موٹرسائیکل	zh:摩托车
+c:mount-aconcagua	Noun	ar:أكونكاغوا	de:Aconcagua	en:Aconcagua,Mount Aconcagua	es:Aconcagua,cerro Aconcagua	fa:آکونکاگوا	fr:Aconcagua	he:אקונקגואה	hi:एकांकागुआ,एकोंकागुआ	ja:アコンカグア	ko:아콩카과산	pt:Aconcágua	ru:Аконкагуа	tr:Aconcagua	ur:اکانکاگوا	zh:阿空加瓜山
+c:mount-ararat	Noun	ar:جبل أرارات,أرارات	de:Ararat	en:Mount Ararat,Ararat	es:monte Ararat,Ararat	fa:کوه آرارات,آرارات	fr:mont Ararat,Ararat	he:הר אררט,אררט	hi:माउंट अरारात,अरारात	ja:アララト山	ko:아라라트산	pt:monte Ararat,Ararat	ru:Арарат	tr:Ağrı Dağı,Ararat	ur:ماؤنٹ ارارت,ارارت	zh:亚拉拉特山
+c:mount-denali	Noun	ar:جبل ديناليه,ديناليه	de:Denali,Mount McKinley	en:Denali,Mount McKinley	es:Denali,monte McKinley	fa:دنالی,کوه دنالی	fr:Denali,mont McKinley	he:דנאלי,הר מקינלי	hi:डेनाली,माउंट मैकिन्ले	ja:デナリ,マッキンリー山	ko:디날리,매킨리산	pt:Denali,monte McKinley	ru:Денали,Мак-Кинли	tr:Denali,McKinley Dağı	ur:ڈینالی,ماؤنٹ میکنلے	zh:迪纳利峰,麦金利峰
+c:mount-etna	Noun	ar:جبل إتنا,إتنا	de:Ätna	en:Mount Etna,Etna	es:Etna,monte Etna	fa:کوه اتنا,اتنا	fr:Etna,mont Etna	he:הר אטנה,אטנה	hi:माउंट एटना,एटना	ja:エトナ山	ko:에트나산	pt:Etna,monte Etna	ru:Этна	tr:Etna	ur:ماؤنٹ ایٹنا,ایٹنا	zh:埃特纳火山
+c:mount-everest	Noun	ar:جبل إفرست,إفرست	de:Mount Everest,Everest	en:Mount Everest,Everest	es:Monte Everest,Everest	fa:اورست,قله اورست	fr:mont Everest,Everest	he:האוורסט,הר אוורסט	hi:माउंट एवरेस्ट,एवरेस्ट,सागरमाथा	ja:エベレスト,エベレスト山	ko:에베레스트산,에베레스트	pt:monte Everest,Everest	ru:Эверест,Джомолунгма	tr:Everest Dağı,Everest	ur:ماؤنٹ ایورسٹ,ایورسٹ	zh:珠穆朗玛峰,珠峰
+c:mount-fuji	Noun	ar:جبل فوجي,فوجي	de:Fuji,Fujisan	en:Mount Fuji,Fuji,Fujisan	es:monte Fuji,Fuji	fa:کوه فوجی,فوجی	fr:mont Fuji,Fuji	he:הר פוג'י,פוג'י	hi:माउंट फ़ूजी,फ़ूजी	ja:富士山,ふじさん	ko:후지산	pt:monte Fuji,Fuji	ru:Фудзияма,Фудзи	tr:Fuji Dağı,Fujisan	ur:ماؤنٹ فوجی,فوجی	zh:富士山
+c:mount-kenya	Noun	ar:جبل كينيا	de:Mount Kenya	en:Mount Kenya	es:monte Kenia	fa:کوه کنیا	fr:mont Kenya	he:הר קניה	hi:माउंट केन्या	ja:ケニア山	ko:케냐산	pt:monte Quénia,monte Quênia	ru:Кения	tr:Kenya Dağı	ur:ماؤنٹ کینیا	zh:肯尼亚山
+c:mount-kilimanjaro	Noun	ar:جبل كليمنجارو,كليمنجارو	de:Kilimandscharo	en:Mount Kilimanjaro,Kilimanjaro	es:Kilimanjaro,monte Kilimanjaro	fa:کلیمانجارو,کوه کلیمانجارو	fr:Kilimandjaro,mont Kilimandjaro	he:קילימנג'רו,הר קילימנג'רו	hi:माउंट किलिमंजारो,किलिमंजारो	ja:キリマンジャロ	ko:킬리만자로산	pt:Kilimanjaro,monte Kilimanjaro	ru:Килиманджаро	tr:Kilimanjaro Dağı,Kilimanjaro	ur:ماؤنٹ کلیمنجارو,کلیمنجارو	zh:乞力马扎罗山
+c:mount-olympus	Noun	ar:جبل أوليمبوس,الأوليمبوس	de:Olymp	en:Mount Olympus,Olympus	es:monte Olimpo,Olimpo	fa:کوه المپوس,المپ	fr:mont Olympe,Olympe	he:הר אולימפוס,אולימפוס	hi:माउंट ओलिंपस,ओलिंपस	ja:オリンポス山	ko:올림포스산	pt:monte Olimpo,Olimpo	ru:Олимп	tr:Olimpos Dağı	ur:ماؤنٹ اولمپس,اولمپس	zh:奥林波斯山,奥林匹斯山
+c:mount-rainier	Noun	ar:جبل راينير	de:Mount Rainier	en:Mount Rainier	es:monte Rainier	fa:کوه رینیر	fr:mont Rainier	he:הר ריינייר	hi:माउंट रेनियर	ja:レーニア山	ko:레이니어산	pt:monte Rainier	ru:Рейнир	tr:Rainier Dağı	ur:ماؤنٹ رینیر	zh:雷尼尔山
+c:mount-sinai	Noun	ar:جبل سيناء,طور سيناء	de:Berg Sinai,Sinai	en:Mount Sinai,Sinai	es:monte Sinaí,Sinaí	fa:کوه سینا,طور سینا	fr:mont Sinaï,Sinaï	he:הר סיני,סיני	hi:माउंट सिनाई,सिनाई	ja:シナイ山	ko:시나이산	pt:monte Sinai,Sinai	ru:Синай	tr:Sina Dağı	ur:کوہ طور,جبل سینا	zh:西奈山
+c:mount-vesuvius	Noun	ar:جبل فيزوف,فيزوف	de:Vesuv	en:Mount Vesuvius,Vesuvius	es:Vesubio,monte Vesubio	fa:کوه وزوو,وزوو	fr:Vésuve,mont Vésuve	he:הר וזוב,וזוב	hi:माउंट वेसुवियस,वेसुवियस	ja:ヴェスヴィオ山	ko:베수비오산	pt:Vesúvio,monte Vesúvio	ru:Везувий	tr:Vezüv	ur:ماؤنٹ ویسوویس,ویسوویس	zh:维苏威火山
+c:mount-whitney	Noun	ar:جبل ويتني	de:Mount Whitney	en:Mount Whitney	es:monte Whitney	fa:کوه ویتنی	fr:mont Whitney	he:הר ויטני	hi:माउंट व्हिटनी	ja:ホイットニー山	ko:휘트니산	pt:monte Whitney	ru:Уитни	tr:Whitney Dağı	ur:ماؤنٹ وٹنی	zh:惠特尼山
 c:mountain	Noun	ar:جبل	de:Berg	en:mountain	es:montaña	fa:کوه	fr:montagne	he:הר	hi:पर्वत,पहाड़	ja:山	ko:산	pt:montanha,serra	ru:гора	tr:dağ	ur:پہاڑ	zh:山
 c:mouse	Noun	ar:فأر	de:Maus	en:mouse,mice	es:ratón	fa:موش	fr:souris	he:עכבר	hi:चूहा	ja:ネズミ	ko:쥐	pt:rato,camundongo	ru:мышь	tr:fare	ur:چوہا	zh:老鼠,鼠
 c:mouth	Noun	ar:فم	de:Mund	en:mouth	es:boca	fa:دهان	fr:bouche	he:פה	hi:मुँह	ja:口	ko:입	pt:boca	ru:рот	tr:ağız	ur:منہ	zh:口,嘴
@@ -1431,6 +1464,7 @@ c:nail	Noun	ar:مسمار	de:Nagel	en:nail	es:clavo	fa:میخ	fr:clou	he:מסמ�
 c:naira	Noun	ar:نايرا	de:Naira	en:naira	es:naira	fa:نایرا	fr:naira	he:ניירה	hi:नाइरा	ja:ナイラ	ko:나이라	pt:naira	ru:найра	tr:naira	ur:نائرا	zh:奈拉
 c:nairobi	Noun	ar:نيروبي	de:Nairobi	en:Nairobi	es:Nairobi	fa:نایروبی	fr:Nairobi	he:ניירובי	hi:नैरोबी	ja:ナイロビ	ko:나이로비	pt:Nairóbi	ru:Найроби	tr:Nairobi	ur:نیروبی	zh:内罗毕
 c:name	Noun	ar:اسم	de:Name	en:name	es:nombre	fa:نام,اسم	fr:nom	he:שם	hi:नाम	ja:名前,名	ko:이름,성명	pt:nome	ru:имя	tr:ad,isim	ur:نام	zh:名字,名
+c:nanga-parbat	Noun	ar:نانغا باربات	de:Nanga Parbat	en:Nanga Parbat	es:Nanga Parbat	fa:نانگا پربت	fr:Nanga Parbat	he:ננגה פרבט	hi:नंगा पर्वत	ja:ナンガ・パルバット	ko:낭가파르바트	pt:Nanga Parbat	ru:Нанга Парбат	tr:Nanga Parbat	ur:نانگا پربت	zh:南迦帕尔巴特峰
 c:napkin	Noun	ar:منديل	de:Serviette	en:napkin,serviette	es:servilleta	fa:دستمال سفره	fr:serviette	he:מפית	hi:नैपकिन,रूमाल	ja:ナプキン	ko:냅킨	pt:guardanapo	ru:салфетка	tr:peçete	ur:رومال	zh:餐巾
 c:narwhal	Noun	ar:الحوت المرقط	de:Narwal	en:narwhal	es:narval	fa:نروال	fr:narval	he:נרוול	hi:नरव्हाल	ja:イッカク	ko:일각고래	pt:narval	ru:нарвал	tr:denizgergedanı	ur:ناروہال	zh:独角鲸
 c:nation	Noun	ar:أمة	de:Nation	en:nation	es:nación	fa:ملت	fr:nation	he:אומה	hi:राष्ट्र	ja:国家,国民	ko:국가,민족	pt:nação	ru:нация	tr:millet,ulus	ur:قوم	zh:国家,民族
@@ -1551,6 +1585,7 @@ c:pakistan	Noun	ar:باكستان	de:Pakistan	en:Pakistan	es:Pakistán	fa:پاک
 c:paleolithic	Noun	ar:العصر الحجري القديم	de:Altsteinzeit,Paläolithikum	en:paleolithic	es:paleolítico	fa:پارینه‌سنگی,دوره پارینه‌سنگی	fr:paléolithique	he:פלאוליתית,תקופת האבן הקדומה	hi:पुरापाषाण काल	ja:旧石器時代	ko:구석기시대	pt:paleolítico	ru:палеолит	tr:paleolitik,eski taş çağı	ur:قدیم پتھر کا دور	zh:旧石器时代
 c:palm	Noun	ar:راحة,كف	de:Handfläche	en:palm	es:palma	fa:کف دست	fr:paume	he:כף יד	hi:हथेली	ja:手のひら	ko:손바닥	pt:palma	ru:ладонь	tr:avuç	ur:ہتھیلی	zh:手掌,掌
 c:palm-tree	Noun	ar:نخلة,نخيل	de:Palme	en:palm tree,palm-tree	es:palmera	fa:درخت خرما,نخل	fr:palmier	he:דקל	hi:ताड़,खजूर का पेड़	ja:ヤシの木,椰子	ko:야자나무	pt:palmeira	ru:пальма	tr:hurma ağacı,palmiye	ur:کھجور کا درخت,نخل	zh:棕榈树,棕榈
+c:pamirs	Noun	ar:جبال بامير,البامير	de:Pamir	en:Pamirs,Pamir Mountains	es:Pamir,montes Pamir	fa:پامیر,کوه‌های پامیر	fr:Pamir	he:פאמיר,הרי פאמיר	hi:पामीर पर्वत	ja:パミール高原	ko:파미르고원	pt:Pamir,montes Pamir	ru:Памир	tr:Pamir Dağları	ur:پامیر,کوہ پامیر	zh:帕米尔高原
 c:pan	Noun	ar:مقلاة	de:Pfanne,Bratpfanne	en:pan,frying pan,skillet	es:sartén	fa:ماهیتابه	fr:poêle	he:מחבת	hi:कड़ाही,तवा	ja:フライパン,鍋	ko:프라이팬,팬	pt:frigideira,panela	ru:сковорода,сковородка	tr:tava	ur:کڑاہی,توا	zh:平底锅,煎锅
 c:pancreas	Noun	ar:بنكرياس	de:Bauchspeicheldrüse,Pankreas	en:pancreas	es:páncreas	fa:لوزالمعده,پانکراس	fr:pancréas	he:לבלב	hi:अग्न्याशय	ja:膵臓	ko:췌장	pt:pâncreas	ru:поджелудочная	tr:pankreas	ur:لبلبہ	zh:胰腺,胰脏
 c:panic	Noun	ar:هلع	de:Panik	en:panic	es:pánico	fa:وحشت	fr:panique	he:פאניקה	hi:घबराहट	ja:パニック	ko:공황	pt:pânico	ru:паника	tr:panik	ur:گھبراہٹ	zh:恐慌
@@ -1732,6 +1767,7 @@ c:punishment	Noun	ar:عقاب,عقوبة	de:Strafe,Bestrafung	en:punishment	es:c
 c:pupil	Noun	ar:تلميذ	de:Schüler	en:pupil	es:alumno,pupilo	fa:شاگرد	fr:élève	he:תלמיד	hi:छात्र,शिष्य	ja:生徒	ko:학동,학생	pt:aluno,pupilo	ru:ученик	tr:öğrenci,talebe	ur:شاگرد	zh:学生,小学生
 c:purple	Adjective	ar:بنفسجي,أرجواني	de:lila,violett	en:purple,violet	es:morado,púrpura	fa:بنفش	fr:violet,pourpre	he:סגול	hi:बैंगनी	ja:紫	ko:보라,자주	pt:roxo,púrpura	ru:фиолетовый	tr:mor	ur:جامنی	zh:紫,紫色
 c:purpose	Noun	ar:غرض,غاية	de:Zweck	en:purpose	es:propósito,finalidad	fa:هدف,منظور	fr:but,finalité	he:מטרה,תכלית	hi:उद्देश्य,प्रयोजन	ja:目的	ko:목적,취지	pt:propósito,finalidade	ru:цель,назначение	tr:amaç,maksat	ur:مقصد,مراد	zh:目的,宗旨
+c:pyrenees	Noun	ar:جبال البيرينيه,البيرينيه	de:Pyrenäen	en:Pyrenees	es:Pirineos	fa:پیرنه,کوه‌های پیرنه	fr:Pyrénées	he:הפירנאים	hi:पिरेनीज़	ja:ピレネー山脈	ko:피레네산맥	pt:Pirenéus,Pirineus	ru:Пиренеи	tr:Pireneler	ur:پیرینیز پہاڑ	zh:比利牛斯山脉
 c:quality	Noun	ar:جودة,صفة	de:Qualität,Eigenschaft	en:quality	es:cualidad,calidad	fa:کیفیت	fr:qualité	he:איכות,תכונה	hi:गुण,गुणवत्ता	ja:質,品質	ko:질,품질	pt:qualidade	ru:качество,свойство	tr:kalite,nitelik	ur:معیار,خوبی	zh:质量,品质
 c:quantity	Noun	ar:كمية	de:Menge,Quantität	en:quantity	es:cantidad	fa:مقدار,کمیت	fr:quantité	he:כמות	hi:मात्रा,संख्या	ja:量,数量	ko:양,수량	pt:quantidade	ru:количество	tr:miktar,nicelik	ur:مقدار,تعداد	zh:数量,量
 c:quantum-computing	Noun	ar:الحوسبة الكمية	de:Quantencomputing,Quantenrechnen	en:quantum computing	es:computación cuántica	fa:محاسبات کوانتومی	fr:informatique quantique	he:מחשוב קוונטי	hi:क्वांटम कंप्यूटिंग	ja:量子コンピューティング	ko:양자 컴퓨팅	pt:computação quântica	ru:квантовые вычисления	tr:kuantum bilişim	ur:کوانٹم کمپیوٹنگ	zh:量子计算
@@ -1831,6 +1867,7 @@ c:robbery	Noun	ar:سطو,سرقة بالإكراه	de:Raub,Raubüberfall	en:robb
 c:robot	Noun	ar:روبوت,إنسان آلي	de:Roboter	en:robot	es:robot	fa:ربات	fr:robot	he:רובוט	hi:रोबोट	ja:ロボット	ko:로봇	pt:robô,robot	ru:робот	tr:robot	ur:روبوٹ	zh:机器人
 c:robotics	Noun	ar:الروبوتات,علم الإنسالة	de:Robotik	en:robotics	es:robótica	fa:رباتیک	fr:robotique	he:רובוטיקה	hi:रोबोटिक्स	ja:ロボット工学	ko:로봇공학	pt:robótica	ru:робототехника	tr:robotik,robot bilimi	ur:روبوٹکس	zh:机器人学
 c:rocket	Noun	ar:صاروخ	de:Rakete	en:rocket	es:cohete	fa:راکت,موشک	fr:fusée	he:טיל,רקטה	hi:रॉकेट,प्रक्षेपास्त्र	ja:ロケット	ko:로켓	pt:foguete,foguetão	ru:ракета	tr:roket,füze	ur:راکٹ	zh:火箭
+c:rockies	Noun	ar:جبال روكي,الروكي	de:Rocky Mountains,Rockies	en:Rockies,Rocky Mountains	es:Rocosas,Montañas Rocosas	fa:راکی,کوه‌های راکی	fr:Rocheuses,montagnes Rocheuses	he:הרי הרוקי,רוקי	hi:रॉकीज़,रॉकी पर्वत	ja:ロッキー山脈	ko:로키산맥	pt:Rochosas,Montanhas Rochosas	ru:Скалистые горы	tr:Kayalık Dağlar	ur:راکی پہاڑ,کوہ راکی	zh:落基山脉
 c:rolling-pin	Noun	ar:شوبك	de:Nudelholz,Teigroller	en:rolling pin	es:rodillo	fa:وردنه	fr:rouleau à pâtisserie	he:מערוך	hi:बेलन	ja:麺棒	ko:밀방망이	pt:rolo de massa	ru:скалка	tr:oklava,merdane	ur:بیلن	zh:擀面杖
 c:rome	Noun	ar:روما	de:Rom	en:Rome	es:Roma	fa:رم	fr:Rome	he:רומא	hi:रोम	ja:ローマ	ko:로마	pt:Roma	ru:Рим	tr:Roma	ur:روم	zh:罗马
 c:rooster	Noun	ar:ديك	de:Hahn	en:rooster	es:gallo	fa:خروس	fr:coq	he:תרנגול	hi:मुर्गा	ja:雄鶏	ko:수탉	pt:galo	ru:петух	tr:horoz	ur:مرغا	zh:公鸡
@@ -2211,6 +2248,7 @@ c:tick-insect	Noun	ar:قراد	de:Zecke	en:tick	es:garrapata	fa:کنه	fr:tique	
 c:ticket	Noun	ar:تذكرة	de:Ticket,Fahrkarte	en:ticket	es:billete,boleto,entrada,tique	fa:بلیط	fr:billet,ticket	he:כרטיס	hi:टिकट	ja:チケット,切符	ko:티켓,표	pt:bilhete,ingresso	ru:билет	tr:bilet	ur:ٹکٹ	zh:票,车票
 c:tide	Noun	ar:مد وجزر	de:Gezeiten	en:tide	es:marea	fa:جزر و مد	fr:marée	he:גאות ושפל	hi:ज्वार	ja:潮	ko:조수	pt:maré	ru:прилив	tr:gelgit	ur:جوار بھاٹا	zh:潮汐
 c:tie-clothing	Noun	ar:ربطة عنق,كرفتة	de:Krawatte	en:tie,necktie	es:corbata	fa:کراوات	fr:cravate	he:עניבה	hi:टाई,नेकटाई	ja:ネクタイ	ko:넥타이	pt:gravata	ru:галстук	tr:kravat	ur:ٹائی	zh:领带
+c:tien-shan	Noun	ar:جبال تيان شان	de:Tianshan,Tienschan	en:Tien Shan,Tianshan	es:Tian Shan	fa:تیان‌شان	fr:Tian Shan	he:טיאן שאן	hi:तियन शान	ja:天山山脈	ko:톈산산맥	pt:Tian Shan	ru:Тянь-Шань	tr:Tanrı Dağları,Tien Shan	ur:تیان شان	zh:天山山脉
 c:tiger	Noun	ar:نمر	de:Tiger	en:tiger	es:tigre	fa:ببر	fr:tigre	he:נמר	hi:बाघ	ja:虎,トラ	ko:호랑이	pt:tigre	ru:тигр	tr:kaplan	ur:شیر ببر,ٹائیگر	zh:老虎
 c:tile	Noun	ar:بلاط,قرميد	de:Fliese,Kachel	en:tile	es:azulejo,baldosa	fa:کاشی	fr:carreau,tuile	he:אריח	hi:टाइल	ja:タイル	ko:타일	pt:azulejo	ru:плитка	tr:fayans,kiremit	ur:ٹائل	zh:瓦,瓷砖
 c:till	Verb	ar:حرث,يحرث	de:pflügen	en:till	es:labrar	fa:شخم زدن	fr:labourer	he:חרש	hi:जोतना	ja:耕す	ko:갈다	pt:lavrar	ru:пахать	tr:sürmek	ur:ہل چلانا	zh:犁地
@@ -2300,6 +2338,7 @@ c:universe	Noun	ar:كون	de:Universum,Weltall	en:universe,cosmos	es:universo,co
 c:university	Noun	ar:جامعة	de:Universität,Uni	en:university,college	es:universidad	fa:دانشگاه	fr:université,fac	he:אוניברסיטה	hi:विश्वविद्यालय,यूनिवर्सिटी	ja:大学	ko:대학교,대학	pt:universidade,faculdade	ru:университет	tr:üniversite	ur:یونیورسٹی,جامعہ	zh:大学
 c:up	Adverb	ar:فوق	de:oben,hoch	en:up	es:arriba	fa:بالا	fr:haut,en haut	he:למעלה	hi:ऊपर	ja:上	ko:위	pt:cima,acima	ru:вверх	tr:yukarı	ur:اوپر	zh:上
 c:upload	Verb	ar:رفع	de:hochladen	en:upload	es:subir,cargar	fa:آپلود کرد,بارگذاری کرد	fr:téléverser	he:העלה	hi:अपलोड करना	ja:アップロードする	ko:업로드하다,올리다	pt:fazer upload,carregar	ru:загружать,заливать	tr:yüklemek	ur:اپ لوڈ کرنا	zh:上传
+c:urals	Noun	ar:جبال الأورال,الأورال	de:Ural	en:Urals,Ural Mountains	es:Urales,montes Urales	fa:اورال,کوه‌های اورال	fr:Oural,monts Oural	he:הרי אורל,אורל	hi:यूराल,यूराल पर्वत	ja:ウラル山脈	ko:우랄산맥	pt:Urais,montes Urais	ru:Урал,Уральские горы	tr:Ural Dağları	ur:یورال پہاڑ	zh:乌拉尔山脉
 c:uranus	Noun	ar:أورانوس	de:Uranus	en:Uranus	es:Urano	fa:اورانوس	fr:Uranus	he:אורנוס	hi:अरुण	ja:天王星	ko:천왕성	pt:Urano	ru:Уран	tr:Uranüs	ur:یورینس	zh:天王星
 c:usa	Noun	ar:الولايات المتحدة,أمريكا	de:USA,Vereinigte Staaten,Amerika	en:United States,USA,America	es:Estados Unidos,EE. UU.,América	fa:ایالات متحده,آمریکا	fr:États-Unis,USA,Amérique	he:ארצות הברית,אמריקה	hi:संयुक्त राज्य,अमेरिका	ja:アメリカ合衆国,アメリカ,米国	ko:미국,아메리카	pt:Estados Unidos,EUA,América	ru:США,Соединённые Штаты,Америка	tr:Amerika Birleşik Devletleri,ABD	ur:ریاستہائے متحدہ,امریکہ	zh:美国,美利坚合众国
 c:utilitarianism	Noun	ar:النفعية,المذهب النفعي	de:Utilitarismus	en:utilitarianism	es:utilitarismo	fa:سودگرایی	fr:utilitarisme	he:תועלתנות	hi:उपयोगितावाद	ja:功利主義	ko:공리주의	pt:utilitarismo	ru:утилитаризм	tr:yararcılık,faydacılık	ur:افادیت	zh:功利主义
@@ -2444,6 +2483,7 @@ c:yoga	Noun	ar:اليوغا,اليوجا	de:Yoga	en:yoga	es:yoga	fa:یوگا	fr:
 c:yokohama	Noun	ar:يوكوهاما	de:Yokohama	en:Yokohama	es:Yokohama	fa:یوکوهاما	fr:Yokohama	he:יוקוהאמה	hi:योकोहामा	ja:横浜,よこはま	ko:요코하마	pt:Iocoama	ru:Иокогама	tr:Yokohama	ur:یوکوہاما	zh:横滨
 c:young	Adjective	ar:شاب,صغير السن	de:jung	en:young	es:joven	fa:جوان	fr:jeune	he:צעיר	hi:जवान,युवा	ja:若い	ko:젊은,어린	pt:jovem	ru:молодой	tr:genç	ur:جوان	zh:年轻
 c:yuan	Noun	ar:يوان	de:Yuan,Renminbi	en:yuan,renminbi	es:yuan	fa:یوان	fr:yuan,renminbi	he:יואן	hi:युआन	ja:元,人民元	ko:위안	pt:yuan,renminbi	ru:юань	tr:yuan	ur:یوآن	zh:元,人民币
+c:zagros	Noun	ar:جبال زاغروس,زاغروس	de:Zagros	en:Zagros,Zagros Mountains	es:Zagros,montes Zagros	fa:زاگرس,کوه‌های زاگرس	fr:Zagros,monts Zagros	he:הרי זגרוס,זגרוס	hi:ज़ाग्रोस पर्वत	ja:ザグロス山脈	ko:자그로스산맥	pt:Zagros,montes Zagros	ru:Загрос	tr:Zagros Dağları	ur:زاگرس,کوہ زاگرس	zh:扎格罗斯山脉
 c:zebra	Noun	ar:حمار وحشي,زرد	de:Zebra	en:zebra	es:cebra	fa:گورخر	fr:zèbre	he:זברה	hi:ज़ेब्रा	ja:シマウマ	ko:얼룩말	pt:zebra	ru:зебра	tr:zebra	ur:زیبرا	zh:斑马
 c:zen	Noun	ar:الزن	de:Zen	en:zen	es:zen	fa:ذن	fr:zen	he:זן	hi:ज़ेन	ja:禅	ko:선,젠	pt:zen	ru:дзен	tr:zen	ur:زین	zh:禅
 c:zero	Noun	ar:صفر	de:null	en:zero	es:cero	fa:صفر	fr:zéro	he:אפס	hi:शून्य	ja:ゼロ,零	ko:영,제로	pt:zero	ru:ноль	tr:sıfır	ur:صفر	zh:零
