@@ -59,22 +59,59 @@ Background agent `ada604478a4d559c6` (spawned in parallel this session, targetin
 - `lab/reports/SESSION-LOG-2026-04-18.md` (background agent § 101 narrative + files-modified).
 - `lab/reports/SESSION-LOG-2026-04-19.md` (this file, new).
 
-## Commits
+### 4. M11-data v2 §§ 102-105 — rest of the geographical-sequence landed (background agent completion)
 
-- `6ed93df` — Boot Criterion 2: Sky View loading indicator during deferred graph load (SkyView indicator + 15 locale files).
-- `54bf36b` — M11-data v2 § 101: hash-stamp 8775e51 (background agent).
-- `8775e51` — M11-data v2 § 101: +058-major-world-cities.json (40 concepts) (background agent).
+Agent `ada604478a4d559c6` completed and landed four additional shards after § 101, hitting the five-shard cap set at spawn time. All commits merged into `claude/upbeat-proskuriakova` (HEAD advanced from `6ed93df` → `26a5211`). Per-shard cargo-test-116/116-green on first try for every one of §§ 101-105 — six-consecutive-clean-first-runs, longest clean streak of this session, with the LNK1104 flake streak fully reset after § 100.
+
+| § | Shard | Content commit | Hash-stamp commit | TSV delta |
+|---|---|---|---|---|
+| 102 | `059-oceans-and-seas` | `a7e00e0` | `25398cb` | 649,363 → 663,852 (+14,489) |
+| 103 | `060-mountains-and-ranges` | `ca59c38` | `b076d8b` | 663,852 → 679,025 (+15,173) |
+| 104 | `061-rivers` | `aa53055` | `e6f946e` | 679,025 → 693,283 (+14,258) |
+| 105 | `062-planets-and-celestial-bodies` | `e03d6fb` | `26a5211` | 693,283 → 704,891 (+11,608) |
+
+**Corpus state**: 2,400 → **2,560 concepts** across **63 total shards** (62 v2 + 1 v1 seed); TSV at 704,891 bytes on disk.
+
+**Geographical scale-hierarchy completed** across §§ 99-105: countries → capitals → non-capital-metropolises → oceans-and-seas → mountains-and-ranges → rivers → extra-terrestrial-planetary/stellar-features. § 103 mountains had the highest byte-delta (+15,173) driven by Himalayan multi-language alternative-lemma coverage (Sanskrit/Tibetan सगरमाथा / 珠穆朗玛峰). § 105 planets surfaced a dense Islamic-Golden-Age classical Arabic astronomical heritage cluster — `الشعرى` (Sirius), `النسر الواقع` (Vega), `إبط الجوزاء` (Betelgeuse), `رجل الجبار` (Rigel), `السماك الرامح` (Arcturus), `قلب العقرب` (Antares) — representing genuine cross-language continuity via the Ptolemaic-Islamic-European transmission channel. § 105's collision scan identified 14 astronomical candidates already landed at § 72 (`036-cosmos-and-astronomy`: eight major planets + sun/moon/milky-way/solar-system/supernova/black-hole) and retained them as primitives, with 10 hyphenated-id disambiguators reserving bare `europa`/`io`/`titan`/`triton`/`orion` and zodiacal/mythological names for future sense-landings. **Eleven-consecutive-humanities-streak** across §§ 95-105 — the longest non-STEM sub-sequence of v2 corpus.
+
+### 5. Stale-test fix after §§ 101-105 corpus growth
+
+The full-suite cargo test on the merged HEAD (my `6ed93df` + agent's §§ 102-105 chain + my `1d455f3` interleaved) revealed one regression: `search::tests_m12::proper_noun_not_in_corpus_falls_back` failed because `expanded_match_query("Constellation")` no longer returns `None`. The test's own comment had forecast this: *"Any well-formed English word not on a concept returns None and falls through to prefix matching. This is the common case until M11-data scales up past 49 concepts."* The corpus has now scaled past 2 500 concepts, and `constellation` is a live English lemma on shard `036-cosmos-and-astronomy` (line 152, id `constellation`, lemma `["constellation"]` at line 157) — landed long before today's §§ 101-105 batch, but the test coexisted with it because nothing had triggered the full-suite run since that shard landed.
+
+**Fix** (commit `ba4c0bb`): replace `"Constellation"` with `"Xzyqwop"` — an invented nonsense string with zero collision risk against any natural-language lexicon, so the test continues to exercise the fallback path indefinitely regardless of future corpus growth. Keep `"Anthropic"` (company name, verified not in corpus by direct grep across all 63 shards) as the realistic proper-noun case. Update the comment to reflect present corpus scale and the invariant the assertions now enforce (a guaranteed-non-concept string + a proper-noun-that-will-stay-out-of-corpus).
+
+**Full suite after fix**: **429/429 passing**, 3 ignored (the two `#[ignore]`-gated benches from M9 + M12 plus one additional), 0 failed. Wall time 0.74 s.
+
+### 6. Housekeeping — worktree cleanup
+
+Agent worktree `E:\مشاريع كلاود\Constellation\.claude\worktrees\agent-ada60447` + branch `worktree-agent-ada60447` force-pruned after verification. Only `.claude/settings.local.json` was dirty in it (local config, not source). The two remaining worktrees: main at `ef45c17` + this one at `ba4c0bb`.
+
+## Commits (updated)
+
+- `6ed93df` — Boot Criterion 2: Sky View loading indicator during deferred graph load.
+- `8775e51` — M11-data v2 § 101: +058-major-world-cities.json (40 concepts).
+- `54bf36b` — M11-data v2 § 101: hash-stamp 8775e51.
+- `a7e00e0` — M11-data v2 § 102: +059-oceans-and-seas.json (40 concepts).
+- `25398cb` — M11-data v2 § 102: hash-stamp a7e00e0.
+- `1d455f3` — SESSION-LOG-2026-04-19 first pass.
+- `ca59c38` — M11-data v2 § 103: +060-mountains-and-ranges.json (40 concepts).
+- `b076d8b` — M11-data v2 § 103: hash-stamp ca59c38.
+- `aa53055` — M11-data v2 § 104: +061-rivers.json (40 concepts).
+- `e6f946e` — M11-data v2 § 104: hash-stamp aa53055.
+- `e03d6fb` — M11-data v2 § 105: +062-planets-and-celestial-bodies.json (40 concepts).
+- `26a5211` — M11-data v2 § 105: hash-stamp e03d6fb.
+- `ba4c0bb` — Fix stale proper_noun_not_in_corpus_falls_back test after §§ 101-105 corpus growth.
 
 ## Open items
 
-- **User action**: launch `constellation.exe` on trial Universe; measure & report `paint_ms` / `hydrated_ms` / `graph_ready_ms` from `boot-perf.latest.json`. Criterion 2 PASS condition: `hydrated_ms ≤ 6 000`.
-- **Optional**: second `npm run tauri build` after commit `6ed93df` if you want the SkyView loading indicator visible in the measurable binary (the indicator does not affect `hydrated_ms` itself — only perceived UX during the 6–9 s graph-load window).
-- **Pending**: Settings → Debug → Boot Performance scorecard UI (consumes the `boot-perf.latest.json` payload once the fields stabilize).
+- **User action**: launch `src-tauri/target/release/constellation.exe` on trial Universe; measure & report `paint_ms` / `hydrated_ms` / `graph_ready_ms` from `<universe>/.constellation/boot-perf.latest.json`. Criterion 2 PASS condition: `hydrated_ms ≤ 6 000`.
+- **Optional**: second `npm run tauri build` after `6ed93df` if you want the SkyView loading indicator visible in the measurable binary (indicator does not affect `hydrated_ms`; it only improves perceived UX during the 6–9 s graph-load window).
+- **Pending**: Settings → Debug → Boot Performance scorecard UI (consumes `boot-perf.latest.json` once fields stabilize).
 - **Housekeeping**: `src-tauri/tauri.conf.json` version field reverted to `0.1.0` (prior worktree state); reconcile to `0.3.4` in a separate commit.
 - **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing for release builds (updater signature generation).
-- **M11-data v2**: background agent (`ada604478a4d559c6`) continues toward §§ 102-103 minimum; completion notification pending; will merge agent branch on completion.
+- **M11-data v2**: next targets §§ 106+ — continue toward 20 K-concept long-term goal; geographical-sequence concluded at § 105, next batches likely pivot back to conceptual/abstract domains.
 
 ## Standing Order follow-ups
 
-- Update `docs/help.uConstellation.World/` + `docs/User Manual.md` + 14 translations if the SkyView indicator becomes documented user-facing behaviour (deferred — it's a transient 6–9 s transitional state, not a persistent feature).
-- `/simplify` pass (code review) after M11-data v2 agent merges and both boot-criterion-2 halves (core/graph split + indicator) are end-to-end verified on the trial Universe.
+- Update `docs/help.uConstellation.World/` + `docs/User Manual.md` + 14 translations if the SkyView indicator becomes documented user-facing behaviour (deferred — transient 6–9 s transitional state, not a persistent feature).
+- `/simplify` pass (code review) after both boot-criterion-2 halves (core/graph split + indicator) are end-to-end verified on the trial Universe.
