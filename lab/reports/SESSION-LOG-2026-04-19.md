@@ -810,4 +810,7 @@ time + commit hash when it lands).
 
 ### Commits
 
-- `<pending>` — `/simplify pass on cc1bf65: trim comments + reset flags on Universe switch`
+- `f75eeab` — `/simplify pass on cc1bf65: trim comments + reset flags on Universe switch`
+  (`src/routes/+layout.svelte` -19/+10, `docs/LESSONS-LEARNED.md` +Reset-on-context-switch,
+  `lab/reports/SESSION-LOG-2026-04-19.md` +§ 20; pushed to
+  `claude/upbeat-proskuriakova`).
