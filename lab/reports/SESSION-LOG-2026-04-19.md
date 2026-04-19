@@ -527,7 +527,7 @@ Two more diagnostics' worth of methodology:
 
 - `9001b01` — Experiment A+: fan-out commands to `#[tauri::command(async)]` (Round 4; kept in place — these are still correct).
 - `f018ad7` — Round 5: DashboardView fan-out commands to `#[tauri::command(async)]` (kept in place — correctness-improving; performance-neutral as measured).
-- _(pending)_ — Round 6: `perf_trace` module + `invoke_handler` wrapper + boot-perf `ipc_arrival_log` field.
+- `4195c09` — Round 6: `perf_trace` module + `invoke_handler` wrapper + boot-perf `ipc_arrival_log` field.
 
 ## Open items (updated)
 
