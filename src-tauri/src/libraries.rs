@@ -370,7 +370,15 @@ pub struct StarInfo {
 }
 
 /// Get stats for all libraries (own + child universe) — star counts, folder counts, recent stars.
-#[tauri::command]
+///
+/// `(async)` keeps the body off the WebView2 UI thread (see watcher.rs
+/// `watch_library` for the full rationale — LL-021 post-Round-3). Critical
+/// here because this fn `.join()`s every per-library scanner thread before
+/// returning: on a 16-library × 7,600-note Universe that's several seconds
+/// of synchronous wait. Without `(async)` those seconds are paid on the UI
+/// thread, starving every other boot-fan-out IPC behind it — including
+/// `cache_boot_snapshot_core`, which is Boot Criterion 2's critical path.
+#[tauri::command(async)]
 pub fn get_all_library_stats(app: tauri::AppHandle) -> Vec<LibraryStats> {
     let libraries = load_all_libraries(&app);
     // PERF: Parallelize per-library scans. On a 16-library Universe the sequential
@@ -1271,7 +1279,13 @@ fn has_alias(content: &str, target: &str) -> bool {
 }
 
 /// Read Obsidian's appearance.json for a library.
-#[tauri::command]
+///
+/// `(async)` because this fires 16× in the boot fan-out (one per library) and
+/// performs disk I/O (`fs::read_to_string` + JSON parse). Keeping the body on
+/// the WebView2 UI thread would serialize all 16 reads behind whatever other
+/// fan-out work is in flight. See watcher.rs `watch_library` for the full
+/// UI-thread-serialization rationale (LL-021 post-Round-3).
+#[tauri::command(async)]
 pub fn read_library_appearance(app: tauri::AppHandle, library_path: String) -> Result<serde_json::Value, String> {
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == library_path) {
