@@ -1460,9 +1460,22 @@ export async function scanLibraryTags(libraryPath: string): Promise<Record<strin
 }
 
 // ─── Index: Word Index ───
+/** Sentinel chars that wrap matched tokens inside an `IndexMention.snippet`.
+ *  The Rust backend emits them via `snippet(notes_fts, …, CHAR(2), CHAR(3), …)`
+ *  so the JS side can split safely and render `<mark>` spans without ever
+ *  interpreting user note content as HTML. Keep both sides in sync — the
+ *  Rust literal lives in `src-tauri/src/libraries.rs`. */
+export const SNIPPET_MARK_START = '\x02';
+export const SNIPPET_MARK_END = '\x03';
+
 export interface IndexMention {
 	note_path: string;
 	note_name: string;
+	/** One-line context around the matched term. Matched tokens are wrapped
+	 *  in {@link SNIPPET_MARK_START}…{@link SNIPPET_MARK_END} sentinels.
+	 *  Optional: empty/absent when FTS5 produced no snippet (title-only
+	 *  match against an empty body). */
+	snippet?: string | null;
 }
 
 export interface IndexEntry {
@@ -1500,6 +1513,43 @@ export async function readIndexEntries(): Promise<IndexEntry[]> {
  */
 export async function readTermMentions(term: string, limit?: number): Promise<IndexMention[]> {
 	return await invoke('read_term_mentions', { term, limit: limit ?? null });
+}
+
+/**
+ * A vocabulary term that co-occurs with a query term. "co-occurs" means
+ * "appears in the same note as". Note count is across the sampled matching
+ * set (defaults to 200 notes, cheap on large vaults, statistically stable
+ * for ranking by the time you reach a few hundred hits).
+ */
+export interface CooccurringTerm {
+	/** Display form. Bigrams are space-joined (the `\x1f` sentinel is
+	 *  unwrapped on the Rust side so the UI never sees a control char). */
+	term: string;
+	/** Number of sampled notes in which this term appears alongside the
+	 *  query term. Never exceeds `sample_limit`. */
+	note_count: number;
+}
+
+/**
+ * Lazy-load co-occurring terms for an Index term. Called when the user
+ * expands a row; cached per term so re-expanding is free.
+ *
+ * `sampleLimit` caps how many matching notes we re-tokenize (default 200,
+ * max 2000). `resultLimit` caps how many co-occurring terms we return
+ * (default 20, max 100). These are advisory — for rare query terms we
+ * return everything; for common ones, sampling gives a stable top-K by
+ * law of large numbers.
+ */
+export async function readCooccurringTerms(
+	term: string,
+	sampleLimit?: number,
+	resultLimit?: number
+): Promise<CooccurringTerm[]> {
+	return await invoke('read_cooccurring_terms', {
+		term,
+		sampleLimit: sampleLimit ?? null,
+		resultLimit: resultLimit ?? null,
+	});
 }
 
 // ─── Navigator data ───
