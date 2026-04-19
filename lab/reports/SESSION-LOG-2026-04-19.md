@@ -749,6 +749,7 @@ refactor ships.
 
 ### Commits
 
-- `<pending commit>` — `Boot Criterion 2 Rule 8 follow-up: lazy-mount Map + OrgChart overlays`
+- `cc1bf65` — `Boot Criterion 2 Rule 8 follow-up: lazy-mount Map + OrgChart overlays`
   (`src/routes/+layout.svelte` +78/-55, `docs/LESSONS-LEARNED.md` +LL-022,
-  `lab/reports/SESSION-LOG-2026-04-19.md` +§ 19).
+  `lab/reports/SESSION-LOG-2026-04-19.md` +§ 19; pushed to
+  `claude/upbeat-proskuriakova`).
