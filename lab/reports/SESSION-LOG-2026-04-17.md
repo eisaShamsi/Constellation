@@ -219,10 +219,74 @@ User picked **(B)**: ship real virtualization, keep the `cnt >= 5` SQL threshold
 - **Phase after: port Write-Time Derivation to Sky View.** `skyNodes` + `skyLinks` currently rebuild on every boot from `allLibraryLinks`. Cache `sky_nodes` / `sky_edges` tables; maintain via note_links-change hooks.
 - **Then**: Backlinks, Outgoing, Tag browser, Sight, sidebar stars, Map — same rule, same pattern.
 
-## Commits expected
+## Commits
 
-1. **Index panel on FTS5 vocab + Write-Time Derivation rule** — landed earlier today as `9d62cd2`. Fixed the broken panel, documented the principle, set up the tokenizer phase.
-2. **Custom FTS5 `constellation` tokenizer** — pending user-test validation. Restores Arabic Light10 + multi-language stemmers + bigrams. Versioned migration rebuilds `notes_fts` on first boot.
+1. `9d62cd2` — **Index panel on FTS5 vocab + Write-Time Derivation rule.** Fixed the broken panel, documented the principle, set up the tokenizer phase.
+2. `9187a62` — **Custom FTS5 `constellation` tokenizer + uncapped virtualized Index panel.** Arabic Light10 + multi-language stemmers + bigrams; versioned migration rebuilds `notes_fts` on first boot. New `VirtualList.svelte` renders all 516k terms smoothly at constant DOM cost. User-verified on the 7,600-note Arabic Universe ("almost instant speed").
+
+---
+
+## Phase: Index complementarity — snippet per mention, Arabic filter, multi-term compare
+
+After the virtualized panel landed, the user locked in a **design rule** about the five core functions (Search Hub, OrgChart, SV, Map, Sight): each must **complement**, not overlap, the others within Cognitive Knowledge / Knowledge Formulation. Applied to the Index, that ruled out temporal sparklines (→ Sight) and thinking prompts (→ SV), leaving two Index-appropriate enhancements: **snippet per mention** (term in lexical context) and **co-occurring terms** (term-to-term adjacency).
+
+User directive: *"Finish the index first, then the boot Criterion 2."*
+
+### (a) Snippet per mention — PASS
+
+**Rust — `src-tauri/src/libraries.rs`**
+- Extended `IndexMention` with `snippet: Option<String>`.
+- `read_term_mentions` SQL now joins `notes_fts` and calls `snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)` — STX/ETX sentinels around matched tokens, 12-token window, ellipsis on clip. Column `-1` = all columns.
+- Sentinels (U+0002 / U+0003) over literal `<mark>` so literal HTML typed in a note never reaches the DOM.
+- Fixed two legacy `IndexMention { ... }` constructions in `scan_library_index` (added `snippet: None`).
+
+**Frontend — `src/lib/libraries/store.ts` + `src/lib/components/IndexPanel.svelte`**
+- Added `snippet?: string | null` to `IndexMention` TS interface.
+- `splitSnippet()` helper parses STX/ETX into `{text, mark}[]` parts; text is interpolated through Svelte's default escaping; `mark` parts wrapped in `<mark class="gp-ref-hit">`.
+- Mention row restructured: two-line flex column with `.gp-ref-name` (note title) + optional `.gp-ref-snippet` (`dir="auto"` for mixed-script context).
+- VirtualList height logic: new constants `ROW_HEIGHT_MENTION_PLAIN = 22`, `ROW_HEIGHT_MENTION_SNIPPET = 40`. `getRowHeight` sums per-mention heights from the cache — a term whose mentions have mixed snippet/no-snippet renders correctly.
+
+**User verification**: *"الفهرس يعمل جيدا"* ("The Index works well") — PASS on the 7,600-note Arabic Universe.
+
+### (b) Arabic filter with definite article — user reported bug
+
+User report: *"when I search for an Arabic term with the definite article 'ال' the result is often 0. The Index should be able to identify the root of the term, even if the searcher writes the word with the definite article."*
+
+Root cause: the backend `constellation` FTS5 tokenizer normalizes and stems Arabic words via `process_word_for_fts` → `normalize_arabic` → `stem_arabic_light10`. So "الكتاب" indexes as "كتاب". When the user types "الكتاب" in the filter box, a raw JS substring match against "كتاب" returns zero.
+
+**Fix — `src/lib/components/IndexPanel.svelte`**
+- Added `normalizeArabicForFilter(s)` — an exact JS mirror of `stem_arabic_light10`:
+  - Normalize: strip diacritics (U+064B..065F, U+0670, U+06D6..06ED), tatweel (U+0640); unify أ إ آ ٱ → ا; ى → ي; ة → ه.
+  - 3-char prefixes وال فال بال كال — needs remaining ≥ 3 chars.
+  - 2-char prefixes ال لل — needs remaining ≥ 2 chars.
+  - 1-char prefix و — needs remaining ≥ 3 chars.
+  - 2-char suffixes ها ان ات ون ين يه يت ته — needs remaining ≥ 2 chars.
+  - 1-char suffixes ه ي — needs remaining ≥ 2 chars.
+- `termMatchesQuery(termLower, queryLower)`: direct substring OR stemmed substring. Fast-gated by `ARABIC_RE.test(queryLower)` so Latin/CJK queries skip the regex passes.
+- Wired into both comma-separated OR branch and the single-query branch of `filteredEntries`.
+
+Only Arabic is mirrored here (highest payoff — ال is on virtually every noun). Multi-language query-side stemming via a shared IPC command is tracked as a separate broader follow-up.
+
+### (c) Multi-term "Comparing" chips had no results — user reported
+
+User report (screenshot of `indexPanel.comparing: ابريز × ابريل × ابشر × ... clearAll` bar): *"why when I ctrl many terms it doesn't display the results? It only highlights the selected terms."*
+
+Root cause: `onTermSelect` updates `indexSelectedTerms` in the parent, which renders the chips, but no UI in IndexPanel ever computed or rendered the intersection.
+
+**Fix — `src/lib/components/IndexPanel.svelte`**
+- New `comparisonState` `$derived.by`:
+  - `idle` when <2 terms selected.
+  - `loading` when any selected term's mentions aren't in `mentionsCache`.
+  - `ready` with the INTERSECTION of mention sets by `note_path` (notes containing ALL selected terms — "commonality").
+  - Algorithm: sort mention lists smallest-first, build Sets from the rest, filter smallest by `every(s => s.has(...))`. O(|smallest| × k) — cheap even on thousands of mentions.
+- New `$effect` (gated by `untrack()` per Rule 2) kicks off `ensureMentionsLoaded` for any selected term whose cache entry is missing — belt-and-braces for callers that pre-populate the set without going through the ctrl-click path.
+- New `.gp-commonality` panel rendered between chips bar and term list: shows count ("N notes contain all K selected terms"), scrollable list of note buttons, or "No notes contain all selected terms." fallback. `max-height: 40vh; overflow-y: auto` so the main term list stays visible for adding more terms.
+- i18n: added 7 new keys (`comparing`, `clearAll`, `loadingCommonality`, `noCommonality`, `noteWithAll`, `notesWithAll`, `selectedTerms`) to all 15 locale files (ar, de, en, es, fa, fr, he, hi, ja, ko, pt, ru, tr, ur, zh). JSON validated across all 15.
+
+### Verification
+- JSON sanity: all 15 locale files parse cleanly.
+- Release build: PASS (exit 0, 8 pre-existing warnings, no new ones, both MSI + NSIS bundles produced; trailing `TAURI_SIGNING_PRIVATE_KEY` is the known benign auto-update-signing warning).
+- **User test — PASS.** Both (b) Arabic definite-article filter and (c) multi-term commonality verified on the 7,600-note Arabic Universe: *"Great, both fixes passed."*
 
 ---
 
