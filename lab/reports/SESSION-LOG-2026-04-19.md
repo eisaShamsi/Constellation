@@ -1063,3 +1063,116 @@ Progress toward 20K: **14.2%**.
 ### Commits
 
 - `8855353` — `M11-data v2: +067-colors-extended + +068-shapes-and-geometry + +069-furniture-and-home (120 concepts)`
+
+---
+
+## § 26 — M11-data v2: +070 +071 +072 (sequential triple)
+
+Three thematic shards authored sequentially from the same worktree — landforms,
+advanced motion verbs, and sensory qualities. Sequential rather than parallel so
+build.py's cross-shard dedup check fires between each shard (a collision in shard N
+must not leak into the grep preflight for shard N+1).
+
+### Shard 070 — landforms (40 concepts)
+
+Geographic features beyond the basics already held by `002-nature` and
+`021-geography-expansion`.
+
+**Final 40 IDs**: `valley-landform`, `canyon-landform`, `plateau-landform`,
+`desert-landform`, `island-landform`, `peninsula-landform`, `isthmus`,
+`fjord-landform`, `delta-landform`, `dune-landform`, `basin`, `cliff-landform`,
+`cave`, `glacier-landform`, `bog`, `marsh`, `swamp-landform`, `lagoon-landform`,
+`geyser`, `crater`, `reef-landform`, `atoll-landform`, `beach-landform`,
+`coast-landform`, `shore-landform`, `hot-spring`, `waterfall-landform`,
+`volcano-landform`, `icecap`, `tundra-landform`, `savannah`, `prairie`, `steppe`,
+`rainforest-landform`, `jungle`, `pasture-landform`, `meadow`, `plain-landform`,
+`wetland`, `mesa`.
+
+**Collisions resolved (28 of 40)**: virtually every common landform term was
+already occupied. 021-geography-expansion holds `valley`/`plain`/`plateau`/
+`canyon`/`cliff`/`waterfall`/`glacier`/`volcano`/`island`/`peninsula`/`coast`/
+`beach`/`delta`/`tundra`/`savanna`/`rainforest`/`swamp`/`dune`; 002-nature holds
+`desert`/`field`; 037-agriculture-and-farming holds `pasture`; 041-weather holds
+`spring`; 042-ocean-and-marine-life holds `shore`/`reef`/`atoll`/`lagoon`/`fjord`.
+All conflicting IDs received the `-landform` suffix for semantic clarity.
+`field` was dropped in favour of `mesa` (novel, no collision).
+
+### Shard 071 — motion-and-actions (40 concepts)
+
+Advanced motion verbs — manner-of-motion, speed-and-tempo, path-shape — strictly
+distinct from 005-basic-verbs-and-emotions (`walk`, `run`, `jump`).
+
+**Final 40 IDs**: `stroll`, `dash`, `sprint`, `jog`, `trot`, `gallop`, `skip`,
+`hop`, `leap`, `bound`, `crawl`, `creep`, `slither`, `glide`, `drift`, `soar`,
+`hover`, `plunge`, `dive`, `tumble`, `roll`, `spin`, `twirl`, `wobble`,
+`stagger`, `stumble`, `sway`, `lurch`, `dart`, `saunter`, `amble`, `march`,
+`tread`, `trample`, `tramp`, `rush`, `hasten`, `linger`, `loiter`, `wander`.
+
+**Collisions resolved**: zero. Grep across all 71 existing shards returned no
+hits for any of the 40 candidate IDs. The verb space above the "walk/run/jump"
+basics was entirely unclaimed.
+
+### Shard 072 — sensory-qualities (40 concepts)
+
+Sensory descriptors across the five senses, with clear disambiguation from the
+adjectives in 004-qualities and textures in 023-materials-and-textures.
+
+**Final 40 IDs**: `bright`, `dim`, `vivid`, `muted`, `loud`, `quiet`,
+`soft-sound`, `harsh-sound`, `sharp-taste`, `bland`, `spicy-taste`, `sweet`,
+`sour`, `bitter`, `salty`, `savory`, `aromatic`, `pungent`, `fragrant`,
+`malodorous`, `glossy`, `matte`, `sparkling`, `translucent`, `opaque-feel`,
+`transparent-feel`, `lustrous`, `dull-color`, `fluorescent`, `iridescent`,
+`warm-feel`, `cool-feel`, `tingly`, `numb`, `prickly`, `sticky-feel`, `greasy`,
+`slimy`, `velvety`, `silky`.
+
+**Collisions resolved (7)**: `soft` → `soft-sound`; `sharp` → `sharp-taste`
+(023-materials holds the tactile sense); `sticky` → `sticky-feel` (023); `dull` →
+`dull-color` (023); `transparent` → `transparent-feel` (023); `opaque` →
+`opaque-feel` (023); `warm` → `warm-feel` (004-qualities). Suffix scheme tags
+each sensory axis so downstream code can split sensory modality from the base
+adjective cluster.
+
+### Verification
+
+```
+$ python build.py
+wrote src-tauri/src/lexicon/data/lexicon_v1.tsv (581,427 bytes)
+  shards: 73
+  concepts: 2960
+  total lemma strings: 55,569
+  per-language coverage: 114% - 136%  (all 15 languages)
+```
+
+Cross-shard dedup check (build.py:184) passed cleanly after each shard commit.
+
+**Arabic / CJK / RTL spot-checks:**
+
+- 070: `isthmus` → ar `برزخ`, zh `地峡`, ja `地峡`, ko `지협` ✓;
+  `hot-spring` → ar `ينبوع حار`, zh `温泉`, ja `温泉` ✓;
+  `savannah` → ar `سافانا`, he `סוואנה`, ur `سوانا` (RTL) ✓.
+- 071: `gallop` → ar `عدا بسرعة`, zh `疾驰`, ja `駆ける`, ko `전속력으로 달리다` ✓;
+  `slither` → ar `انزلق كالأفعى`, zh `蜿蜒爬行`, he `להחליק כנחש` (RTL) ✓;
+  `wander` → ar `تجول`, ur `بھٹکنا` (RTL), fa `سرگردان بودن` (RTL) ✓.
+- 072: `iridescent` → ar `متقزح الألوان`, zh `虹彩`, ja `玉虫色の` ✓;
+  `malodorous` → ar `كريه الرائحة`, zh `恶臭`, ko `악취가 나는` ✓;
+  `velvety` → ar `مخملي`, ja `ビロードのような`, ur `مخملی` (RTL) ✓.
+
+Arabic lemmas use diacritics where semantically required (hamza, sukun), CJK
+uses native script (no romaji/pinyin), Hebrew/Urdu/Persian use their native
+right-to-left orthographies.
+
+### Corpus progress
+
+```
+shards:             70 → 73   (+3)
+concepts:        2,840 → 2,960  (+120, +4.2%)
+lemma strings:  53,847 → 55,569  (+1,722)
+```
+
+Progress toward 20K: **14.2% → 14.8%**.
+
+### Commits
+
+- `14daad8` — `M11-data v2: +070-landforms (40) batch`
+- `aca9af5` — `M11-data v2: +071-motion-and-actions (40) batch`
+- `06af48c` — `M11-data v2: +072-sensory-qualities (40) batch`
