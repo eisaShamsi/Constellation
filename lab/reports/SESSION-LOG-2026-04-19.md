@@ -86,6 +86,71 @@ The full-suite cargo test on the merged HEAD (my `6ed93df` + agent's §§ 102-10
 
 Agent worktree `E:\مشاريع كلاود\Constellation\.claude\worktrees\agent-ada60447` + branch `worktree-agent-ada60447` force-pruned after verification. Only `.claude/settings.local.json` was dirty in it (local config, not source). The two remaining worktrees: main at `ef45c17` + this one at `ba4c0bb`.
 
+### 7. Boot Criterion 2 — IPC-overhead diagnostic instrumentation (commit `304edd0`)
+
+**Trigger.** User's first Criterion 2 measurement on the release binary produced the surprising shape below:
+
+```
+paint_ms:            870      PASS
+libraries_loaded_ms: 938
+hydrated_ms:      23,554      FAIL (target ≤6,000)
+graph_ready_ms:   27,873      (informational)
+
+cache_snapshot_core_wall_ms:   22,614        ← 22.6 s inside this invoke()
+cache_snapshot_core_server_timings:
+    ensure_db:    29
+    open_reader:   0
+    read_notes:   19             sum = 48 ms  ← only 48 ms of Rust work
+
+cache_snapshot_graph_wall_ms:   3,882
+cache_snapshot_graph_server_timings:
+    ensure_db:     0
+    open_reader:   0
+    count_notes:   2
+    read_links:  732
+    read_tags: 1,696             sum = 2,430 ms
+```
+
+The graph phase is honest (wall 3,882 − server 2,430 = ~1.5 s of IPC overhead — reasonable for a ~1.4 MB payload). The core phase is the mystery: **22,566 ms of unaccounted-for time** between issuing `await invoke('cache_boot_snapshot_core')` and the resolved Promise. Three hypotheses:
+
+1. **WebView2 IPC serialization** of the 7,600-note JSON array on the main thread of Edge/Chromium's renderer process.
+2. **Svelte 5 reactive cascade** triggered by `allNotes = core.notes.map(...)` — every `$derived` / `$effect` reading `allNotes` (file tree, sidebar, Sight, tab store) re-runs synchronously.
+3. **Main-thread starvation** by the fire-and-forget chain (`loadAllStats`, `startWatchingAll`, `loadAllAppearances`) issued just before `refreshLibraryCaches()`.
+
+Each has a different fix path (Tauri `Channel` streaming vs. chunked assignment via `requestAnimationFrame` vs. serialise the fire-and-forget chain). Guessing wrong wastes a build cycle, so we instrument to find out.
+
+**What landed.**
+
+Rust — `src-tauri/src/cache.rs`:
+
+- `use std::time::{Instant, SystemTime, UNIX_EPOCH};` (SystemTime added).
+- `BootSnapshotCore` and `BootSnapshotGraph` each gain a `pub server_return_unix_ms: u128` field.
+- Every return site (happy path + `open_reader_err` early return, both commands — **four sites total**) captures `SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0)` immediately before building the `Ok(...)` struct literal.
+
+Frontend — `src/routes/+layout.svelte`:
+
+- Eight new `let` state vars in the boot-diagnostic block: `cacheSnapshotCore{Transport,Assign,ServerReturnUnix,ClientRecvUnix}Ms` + graph equivalents.
+- After `await invoke('cache_boot_snapshot_core')` resolves, we capture `Date.now()` (clientRecvUnixMs) and `performance.now()` (postInvokePerfMs) as the first two statements — before anything reactive can run.
+- `cache_snapshot_core_transport_ms = clientRecvUnixMs − core.server_return_unix_ms`. Pure IPC: Tauri serialize + WebView2 pipe + JS deserialize. Independent of any work the JS caller does with the payload afterwards.
+- After the `allNotes = ...` assignment we capture another `performance.now()` — the delta is `cache_snapshot_core_assign_ms`, the reactive-cascade cost.
+- Same pattern for the graph phase, with `assign_ms` captured after `buildSkyData` (since the synchronous iteration of 656 k links on the main thread is part of "cost of receiving this payload").
+- Raw `server_return_unix_ms` + `client_recv_unix_ms` also shipped in the report so clock skew can be ruled out if `transport_ms` looks implausible (e.g. negative, or larger than wall_ms).
+- `buildBootPerfReport` emits the eight new fields.
+
+**Type-check.** `cargo check --lib` clean after the Rust changes (59 pre-existing warnings, all `never used` style, no new diagnostics). Frontend edits are pure idiomatic TS — no signature break.
+
+**Selective staging.** Worktree had two pre-existing unstaged hunks in `+layout.svelte` from prior-session IndexPanel co-occurrence work (line 22 `readCooccurringTerms` import + line 3904 `loadCooccurrence` prop). Used `printf "n\ny\ny\ny\ny\ny\ny\ny\nn\n" | git add -p` to commit only the seven instrumentation hunks. Final diff: `cache.rs +32/-3`, `+layout.svelte +82/-3`.
+
+**Behavior change:** none. The new fields are diagnostic additions to an existing serde-serialised struct — ambient callers (second screen, tests, back-compat `cache_boot_snapshot` shim) keep working because new fields only add to the JSON output; nobody's unmarshal path rejects unknown fields.
+
+**What the next measurement tells us.**
+
+- If `cache_snapshot_core_transport_ms ≈ 22,500`: the cost is in IPC, and the fix is streaming (`tauri::ipc::Channel<BootNote>`) or chunking the payload into multiple smaller invokes.
+- If `cache_snapshot_core_transport_ms ≈ 0` but `cache_snapshot_core_assign_ms ≈ 22,500`: the cost is the Svelte 5 reactive cascade, and the fix is chunking the `allNotes = ...` assignment across `requestAnimationFrame` (set in 1 k-note batches) so the UI stays responsive.
+- If neither dominates but `core_wall_ms` is still ~22,500: the time is being stolen by other work on the main thread during the `await` — the fire-and-forget chain or file-tree synchronous mounts. Fix: serialise or move off-main.
+
+**Build status.** `npm run tauri build` running in background (task `ba0cg86py`). User will relaunch on trial Universe once it ships and report the new `boot-perf.latest.json` — the eight new fields will be definitive.
+
 ## Commits (updated)
 
 - `6ed93df` — Boot Criterion 2: Sky View loading indicator during deferred graph load.
@@ -101,11 +166,12 @@ Agent worktree `E:\مشاريع كلاود\Constellation\.claude\worktrees\agent
 - `e03d6fb` — M11-data v2 § 105: +062-planets-and-celestial-bodies.json (40 concepts).
 - `26a5211` — M11-data v2 § 105: hash-stamp e03d6fb.
 - `ba4c0bb` — Fix stale proper_noun_not_in_corpus_falls_back test after §§ 101-105 corpus growth.
+- `304edd0` — Boot Criterion 2: IPC-overhead diagnostic instrumentation (transport + assign + raw unix timestamps in both boot snapshot commands).
 
 ## Open items
 
-- **User action**: launch `src-tauri/target/release/constellation.exe` on trial Universe; measure & report `paint_ms` / `hydrated_ms` / `graph_ready_ms` from `<universe>/.constellation/boot-perf.latest.json`. Criterion 2 PASS condition: `hydrated_ms ≤ 6 000`.
-- **Optional**: second `npm run tauri build` after `6ed93df` if you want the SkyView loading indicator visible in the measurable binary (indicator does not affect `hydrated_ms`; it only improves perceived UX during the 6–9 s graph-load window).
+- **User action (priority)**: once `ba0cg86py` ships, relaunch `src-tauri/target/release/constellation.exe` on trial Universe; report the new `boot-perf.latest.json` with all eight `cache_snapshot_*_transport_ms` / `cache_snapshot_*_assign_ms` / `_server_return_unix_ms` / `_client_recv_unix_ms` fields. The transport vs. assign split will tell us definitively where the 22.5 s lives and pick the fix path.
+- **Optional**: second `npm run tauri build` after `6ed93df` if you want the SkyView loading indicator visible in the measurable binary (indicator does not affect `hydrated_ms`; it only improves perceived UX during the 6–9 s graph-load window). Note: the instrumentation build `ba0cg86py` bundles the indicator anyway, so this sub-item is obsoleted on its completion.
 - **Pending**: Settings → Debug → Boot Performance scorecard UI (consumes `boot-perf.latest.json` once fields stabilize).
 - **Housekeeping**: `src-tauri/tauri.conf.json` version field reverted to `0.1.0` (prior worktree state); reconcile to `0.3.4` in a separate commit.
 - **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing for release builds (updater signature generation).
