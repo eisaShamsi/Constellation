@@ -914,4 +914,8 @@ All 15 per-language coverage percentages remain healthy (115-137%). Progress tow
 
 ### Commits
 
-- `<pending>` — `M11-data v2: +064-common-animals (40) batch`
+- `8ea6d00` — `M11-data v2: +064-common-animals (40) batch`
+  (`lab/m11-data/concepts/064-common-animals.json` +new,
+  `src-tauri/src/lexicon/data/lexicon_v1.tsv` regenerated,
+  `lab/reports/SESSION-LOG-2026-04-19.md` +§ 22; pushed to
+  `claude/upbeat-proskuriakova`).
