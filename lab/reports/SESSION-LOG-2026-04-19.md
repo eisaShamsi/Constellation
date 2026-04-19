@@ -814,3 +814,51 @@ time + commit hash when it lands).
   (`src/routes/+layout.svelte` -19/+10, `docs/LESSONS-LEARNED.md` +Reset-on-context-switch,
   `lab/reports/SESSION-LOG-2026-04-19.md` +§ 20; pushed to
   `claude/upbeat-proskuriakova`).
+
+## § 21 — TAURI_SIGNING_PRIVATE_KEY: documented, not blocking
+
+### Housekeeping item resolved
+
+Every `npm run tauri build` run in this session (and for some time prior) ended with:
+
+```
+A public key has been found, but no private key.
+Make sure to set TAURI_SIGNING_PRIVATE_KEY environment variable.
+       Error A public key has been found, but no private key. ...
+```
+
+Which looks like a build failure but isn't. `src-tauri/tauri.conf.json` has
+`createUpdaterArtifacts: true` + a minisign `pubkey` pinned; when the matching private
+key env var is absent, Tauri skips the `.sig` sidecar used by the in-app auto-updater and
+prints the misleading "Error" line. The `.msi` + `.exe` installers are produced and fully
+usable.
+
+### What was done
+
+- Expanded the README's "Build for production" section (`README.md` lines 255-295) with
+  an **"Updater signing (optional, release builds only)"** subsection that:
+  - Clarifies the "Error" is not a build failure.
+  - Shows the exact PowerShell commands to silence it by pointing at the encrypted key
+    at `~/.tauri/constellation.key` (confirmed present — 348 bytes, `rsign encrypted
+    secret key` header).
+  - References `.github/workflows/release.yml` where both `TAURI_SIGNING_PRIVATE_KEY`
+    and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` are already plumbed via GitHub Secrets.
+  - Warns that rotating the keypair breaks the updater for existing installs.
+
+### Why not go further
+
+Two more-ambitious options considered and rejected:
+
+1. **Auto-load from a `.env`**: Tauri v2's cargo build doesn't auto-read `.env`; would
+   require adding `dotenv-cli` to npm scripts and a gitignored `.env` with the password
+   in plaintext. Net security loss for trivial UX gain.
+2. **Suppress the error at build time**: would require editing Tauri internals or
+   wrapping `tauri build` in a script that swallows the line. The "error" is a one-time
+   setup signal — swallowing it would mask genuine signing failures during real releases.
+
+Docs + one-time PowerShell `$env:*` assignment is the clean middle ground. Task
+closed.
+
+### Commits
+
+- `<pending>` — `docs(README): clarify TAURI_SIGNING_PRIVATE_KEY is optional for local builds`
