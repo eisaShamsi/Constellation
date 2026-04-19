@@ -266,12 +266,35 @@ fn cache_boot_snapshot_core_impl(app: tauri::AppHandle) -> Result<BootSnapshotCo
 
 **Expected Round 3 reading**: `core_queue_ms` → ~0; `hydrated_ms` ≤ 6 s → **Criterion 2 PASS**. Graph-phase timings should be unchanged (already runs on idle).
 
+## § 11 — Settings → Debug Boot Performance scorecard (`43d049e`)
+
+Consumer UI for the instrumentation. Adds a new **Debug** entry to the Settings sidebar (bug icon) that renders `boot-perf.latest.json` as a five-row scorecard against `BOOT-BUDGET.md`:
+
+- Criterion 1 — UI visible ≤ 2.5s → driven by `paint_ms`.
+- Criterion 2 — Fully responsive ≤ 6s → driven by `hydrated_ms`.
+- Criteria 3/4/5 — placeholders pending instrumentation (RSS, stat-sweep, recovery).
+
+Plus two collapsible `<details>` blocks:
+
+- **Per-phase timings** — graph-ready, libraries-loaded, full Round-2 attribution (core + graph wall / queue / body / transport / assign), fan-out (stats / watchers / appearances).
+- **Raw JSON** — full `bootPerf` object for any field the scorecard doesn't surface explicitly.
+
+Lazy-loaded: the report is fetched via the pre-existing `read_boot_perf_report` Tauri command inside a `$effect` that triggers on `activeSection === 'debug'`. Not on modal mount; not on every boot. Manual refresh button re-reads the file.
+
+i18n: new `settings.debug.*` block added to `en.json` (23 keys). Other 14 locale files deferred to a Standing Order pass — the Debug section is a developer surface, not primary user UX, and the `$t(…) || 'English fallback'` pattern keeps it readable in the meantime.
+
+## § 12 — Housekeeping: tauri.conf.json version sync
+
+Working-tree had `"version": "0.1.0"` vs HEAD's `"0.3.4"` (accidental local revert in the worktree). Restored to `0.3.4` to match HEAD; no commit needed (no diff vs HEAD after restore). `TAURI_SIGNING_PRIVATE_KEY` plumbing remains open — the build completes without it, but the updater-signature step fails non-fatally on the final line; not blocking.
+
 ## Commits (updated)
 
 - `304edd0` — Boot Criterion 2: IPC-overhead diagnostic Round 1.
 - `cb60374` + `281f23f` — M11-data v2 § 106.
 - `2d2ed1b` — Boot Criterion 2: Round 2 queue-time attribution.
 - `5f60448` — Boot Criterion 2: move snapshot commands off async-runtime workers (`spawn_blocking`).
+- `9c722d9` — SESSION-LOG § 10 (Round 2 measurement + fix).
+- `43d049e` — Settings → Debug: Boot Performance scorecard.
 
 ## Open items
 
