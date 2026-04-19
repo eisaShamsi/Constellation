@@ -535,3 +535,57 @@ Two more diagnostics' worth of methodology:
 - **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing for release builds.
 - **M11-data v2**: §§ 107+ deferred until Criterion 2 verification passes.
 - **Rule 8 follow-up**: persisted tag index to replace `scan_library_tags`'s filesystem walk. Still tracked separately; not needed for Criterion 2.
+
+---
+
+## § 17 — Round 6 measurement: named the blocker. Round 7: `constellation_map_universe → (async)`.
+
+### Round 6 measurement (commit `4195c09`, trial Universe, 7,595 notes)
+
+Scorecard:
+- Criterion 1 PASS — `paint_ms = 829`.
+- Criterion 2 **FAIL** — `hydrated_ms = 21,667`.
+- `cache_snapshot_core_queue_ms = 20,693`, `core_body_ms = 72`, `boot_heartbeat_max_gap_ms = 111`.
+- `ipc_arrival_log` (timestamps relative to `invoke_start_unix_ms = 1776604385000`):
+
+| t (ms) | command |
+|---|---|
+| +428 | `constellation_link_decay` |
+| +428 | `list_universes` |
+| +431 | `check_migration_needed` |
+| +433 | `set_active_universe` |
+| +551 | `constellation_boot_bundle` |
+| +566 | `constellation_map_universe` ← |
+| +17,792 | `constellation_map_universe` (2nd) |
+| +21,294 | `cache_boot_snapshot_core` ← picked up 20.7 s after JS posted it |
+| +21,388 | `get_perf_trace_log` |
+
+The 17.2-second gap between the two `constellation_map_universe` arrivals is the dispatcher being blocked by the first call running inline on the UI thread. The second call took a further 3.5 s (OS page cache warm after the first pass). `cache_boot_snapshot_core`'s `invoke_start_unix_ms` was +601 — posted only 35 ms after the first map call — and sat queued for the entire 20.7 s. That fully accounts for `core_queue_ms`.
+
+### Why two calls
+
+`+layout.svelte:4134` wraps `<ConstellationMap>` in `<div class="map-overlay" class:map-visible={showConstellationMap}>` — **always mounted**, CSS-hidden. Its `onMount` → `loadData()` → `invoke('constellation_map_universe')`. First call.
+
+`+layout.svelte:4173` wraps `<OrgChart fullscreen={true}>` in `<div class="orgchart-overlay" class:orgchart-visible={showOrgChart}>` — **always mounted**, CSS-hidden. Its `$effect` at `OrgChart.svelte:735` (`if (fullscreen && !mapRoot && !loading) loadFullscreenData()`) → `invoke('constellation_map_universe')`. Second call.
+
+Both mount patterns are deliberate ("preserve drill-down state across navigation"). Both trigger the heavy walk unconditionally on boot.
+
+### Round 7 fix (pending build)
+
+`src-tauri/src/map.rs:193` — convert `constellation_map_universe` from `#[tauri::command]` to `#[tauri::command(async)]`. Body unchanged (still walks every library's filesystem). Both boot-time dispatches now route through `tauri::async_runtime::spawn`; the UI thread is free for `cache_boot_snapshot_core` to dispatch immediately.
+
+Expected outcome: `core_queue_ms` drops from ~20,693 to single-digit ms; `hydrated_ms` drops from ~21,667 to ~1,500–2,000 ms (paint + core body + assign + the other small fan-out). Criterion 2 PASS.
+
+### What this doesn't fix (deferred)
+
+The trial Universe now does a ~17-second filesystem walk for map data the user may never ask for. Post-Criterion-2 follow-up (tracked separately):
+1. Gate both overlays with `{#if showConstellationMap}` / `{#if showOrgChart}` so the walk runs only on first open.
+2. Persist the derived map tree (Rule 8 — write-time derivation), maintained by note-save triggers, so even the first open is instant.
+
+### Commits (updated, pending Round 7)
+
+- `9001b01` — Experiment A+ (Round 4).
+- `f018ad7` — Round 5: DashboardView fan-out → `(async)`.
+- `4195c09` — Round 6: IPC arrival tracer.
+- `b0bd3eb` — session-log hash backfill.
+- _(pending)_ — Round 7: `constellation_map_universe` → `#[tauri::command(async)]`.
