@@ -1389,6 +1389,46 @@ pub fn constellation_link_traverse(
     }))
 }
 
+/// Developer read-back for a single (source_path, target_name) pair. Returns
+/// every matching row's lifecycle fields raw. Used to validate throttle and
+/// traversal behavior before the P3 visual surfaces exist. No UI depends on
+/// this; safe to remove once Backlinks/Outgoing panels render the data.
+#[tauri::command]
+pub fn constellation_debug_link_state(
+    app: tauri::AppHandle,
+    source_path: String,
+    target_name: String,
+) -> Result<Vec<serde_json::Value>, String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let target_lower = target_name.to_lowercase();
+    let mut stmt = conn.prepare(
+        "SELECT id, source_name, target_name, link_type, confidence,
+                traversal_count, weight, last_traversed, status, annotation
+         FROM note_links
+         WHERE source_path = ?1 AND LOWER(target_name) = ?2"
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map(params![source_path, target_lower], |row| {
+        Ok(serde_json::json!({
+            "id": row.get::<_, i64>(0)?,
+            "source_name": row.get::<_, String>(1)?,
+            "target_name": row.get::<_, String>(2)?,
+            "link_type": row.get::<_, String>(3)?,
+            "confidence": row.get::<_, String>(4)?,
+            "traversal_count": row.get::<_, i64>(5)?,
+            "weight": row.get::<_, f64>(6)?,
+            "last_traversed": row.get::<_, String>(7).unwrap_or_default(),
+            "status": row.get::<_, String>(8)?,
+            "annotation": row.get::<_, String>(9).unwrap_or_default(),
+        }))
+    }).map_err(|e| e.to_string())?;
+
+    Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
 /// Find dormant links — links not traversed within the given threshold (default 90 days).
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct DormantLink {

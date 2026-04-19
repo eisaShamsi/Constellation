@@ -324,6 +324,7 @@ pub fn run() {
             search::constellation_search_link_counts,
             search::constellation_link_stats,
             search::constellation_link_traverse,
+            search::constellation_debug_link_state,
             search::constellation_link_dormant,
             search::constellation_link_decay,
             search::constellation_link_set_confidence,
