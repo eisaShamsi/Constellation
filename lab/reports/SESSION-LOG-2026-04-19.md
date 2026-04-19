@@ -322,13 +322,55 @@ The fix made the queue slightly worse, not zero. The root-cause theory behind `5
 - `b16c1b3` — LL-021 (original: async-runtime saturation theory).
 - `a7f0edd` — SESSION-LOG commit backfill.
 - `f5f0b6a` — **Revert `5f60448`**. Round 3 measurement via Debug scorecard showed `hydrated_ms` 17.8 s → 20.6 s (worse). Theory falsified. LL-021 rewrite + § 13 land alongside.
+- `4757910` — docs(LL-021, session-log § 13): retract spawn_blocking theory after Round 3 falsification.
+- `9001b01` — **Boot Criterion 2 — Experiment A+**: move boot fan-out off the WebView2 UI thread (`watch_library`, `unwatch_library`, `get_all_library_stats`, `read_library_appearance` → `#[tauri::command(async)]`). See § 14.
+
+## § 14 — Investigation agent + Experiment A+: UI-thread fan-out as the real queue cause
+
+Adversarial investigation agent (LL-017) dispatched with specific deliverable: *either* a line-referenced identification of the queue source in Tauri / wry source, *or* a falsifying experiment. It returned both.
+
+**Versions pinned (from `src-tauri/Cargo.lock`):** `tauri = 2.10.3`, `tauri-runtime = 2.10.1`, `tauri-runtime-wry = 2.10.1`, `tauri-macros = 2.5.5`, `wry = 0.54.2`. Source read from `~/.cargo/registry/src/index.crates.io-…/`.
+
+**Key findings (all file:line verified):**
+
+1. **`#[tauri::command] pub fn foo()` does NOT get auto-wrapped.** `tauri-macros/src/command/wrapper.rs:225-244` branches on `ExecutionContext`. Sync `pub fn` → `ExecutionContext::Blocking` → `body_blocking` (line 384-390) emits a **direct synchronous call** on the calling thread. No `spawn_blocking`, no task hop. **This means the reverted `5f60448` was NOT a no-op** — it *was* moving work off the calling thread. It just moved it to the wrong place (a blocking-pool thread) while leaving the UI thread to still do all 32 fan-out dispatches serially. The regression was the overhead of the extra hop with no contention removed.
+
+2. **IPC receive loop is SERIAL on the WebView2 UI thread.** `wry-0.54.2/src/webview2/mod.rs:950` registers a single `WebResourceRequested` handler, which COM STA delivers serially. Line 1016 calls `custom_protocol_handler(..)` inline on the UI thread. That forwards to `tauri-runtime-wry-2.10.1/src/lib.rs:4983` → `tauri-2.10.3/src/ipc/protocol.rs:38-183` → `Webview::on_message` at `tauri-2.10.3/src/webview/mod.rs:1724-1893` → `manager.run_invoke_handler(invoke)` at line 1888, which calls the macro-generated wrapper, which (for sync commands) calls the user function directly. **The entire chain — ACL lookup, handler dispatch, and the full sync command body — runs inline on the WebView2 UI thread.** That's the serialization point.
+
+3. **`#[tauri::command(async)] pub fn foo()` sidesteps it.** `wrapper.rs:241` marks sync fns under `ExecutionContext::Async` as kind `"sync_threadpool"`; `body_async` (316-352) generates `resolver.respond_async_serialized(async move { $path(args) })`, and `respond_async_serialized` at `tauri-2.10.3/src/ipc/mod.rs:375` calls `crate::async_runtime::spawn(async move { task.await })`. The UI thread pays only the spawn cost (microseconds) and is freed to drain the next IPC message; the sync body runs on a Tokio async-runtime worker.
+
+4. **The `spawn_blocking` theory was wrong.** Sync commands don't touch Tokio at all. That's why `5f60448`'s `spawn_blocking` wrapper regressed — it added a hop with no benefit. What actually needed to move was the **dispatch**, not the body, and the correct lever is `#[tauri::command(async)]` on the fan-out commands.
+
+5. **Prime suspect: `watch_library`** (notify crate's `ReadDirectoryChangesW` install on 16 libraries), **but also** `get_all_library_stats` (its body `.join()`s 16 `std::thread::spawn` workers synchronously — the UI thread stalls for the slowest library's scan), and **`read_library_appearance`** (16 × disk read + JSON parse).
+
+**Ruled out by source read:** Tokio worker-pool saturation (sync commands don't touch Tokio); `StateManager` mutex (locked only during a HashMap lookup + downcast, and `cache_boot_snapshot_core` doesn't take `State<T>` anyway); ACL authority mutex (cheap HashMap lookup); async task starvation (Core is a sync command, never enters the runtime).
+
+**Experiment A+ landed (`9001b01`):** converted the four highest-impact fan-out commands to `#[tauri::command(async)]`:
+
+- `watch_library`, `unwatch_library` (`src-tauri/src/watcher.rs`)
+- `get_all_library_stats`, `read_library_appearance` (`src-tauri/src/libraries.rs`)
+
+Bodies unchanged. Docstrings added to each, citing the exact Tauri / wry file:lines so future maintainers don't need to re-do the investigation. Compile-check passed clean (0 new warnings, 59 pre-existing).
+
+**Kept sync** (intentionally): `cache_boot_snapshot_core` and `cache_boot_snapshot_graph`. Graph fires via `requestIdleCallback` after fan-out drains, so its queue (measured at 90 ms in Round 3) is fine. Core's 19,880 ms queue in Round 3 was **caused by** the UI-thread stall above, not by core itself — once the fan-out is off the UI thread, core's own queue should drop to single-digit ms. Moving core to async would just have it compete with the 16+ fan-out bodies now running on the async-worker pool, with no net benefit.
+
+**Predicted outcome on next measurement:**
+
+- `core_queue_ms`: 19,880 → single-digit ms (dominant fix).
+- `hydrated_ms`: 20,610 → under 6,000 (Criterion 2 PASS). Worst-case guess: if UI-thread contention is fully removed, the remaining wall is just `core_body_ms` (~112 ms) plus JS hydration and initial paint work.
+- `graph_queue_ms`: unchanged (~90 ms).
+- If `core_queue_ms` only partially drops, we know there's a **specific other fan-out command** still hogging the UI thread, and the Debug scorecard tells us exactly how much and how long. That makes the next iteration a surgical follow-up, not another blind guess.
+- If `core_queue_ms` doesn't drop at all, the UI-thread hypothesis is falsified and we escalate to the ACL / state manager candidates the agent flagged as weak but non-zero.
+
+## Commits (updated)
+
+- `9001b01` — Experiment A+: fan-out commands to `#[tauri::command(async)]`.
 
 ## Open items
 
-- **Investigation (priority, LL-017)**: adversarial agent to read Tauri v2 IPC dispatch code and identify the *actual* source of `core_queue_ms ≈ 20 s`. Deliverable must be line-referenced in `tauri-macros` / `tauri-runtime-wry` source, or a falsifying experiment. No more fix commits without this.
-- **Rebuild**: release binary from the reverted tree so the user has a clean, known baseline (no spawn_blocking overhead, original sync-command model, Debug scorecard still present).
+- **User action (priority)**: once `bahh636oa` ships, relaunch `src-tauri/target/release/constellation.exe` on trial Universe; read Settings → Debug → Boot Performance. Expected: Criterion 2 PASS with `core_queue_ms` ≈ 0.
 - **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing for release builds (updater signature generation, non-fatal).
-- **M11-data v2**: next targets §§ 107+ — continue toward 20 K-concept long-term goal. Deferred until Criterion 2 investigation has a validated direction.
+- **M11-data v2**: next targets §§ 107+ — continue toward 20 K-concept long-term goal. Deferred until Criterion 2 verification confirms the fix.
 
 ## Standing Order follow-ups
 
