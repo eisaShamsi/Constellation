@@ -225,5 +225,68 @@ If `wall_ms >> sum(server_timings_ms)`, the delta is IPC queue / OS contention �
 
 ---
 
-*Last updated: 2026-04-16*
-*For: Constellation — boot-perf + Sky View fix cycle*
+## LL-021: Split Queue-Time From Body-Time — Tauri's Async-Runtime Worker Pool Is a Separate Bottleneck
+**Discovered:** 2026-04-19 (boot-perf Criterion 2 closure, Round 1 → Round 2)
+
+LL-020 identified the wall-vs-server gap and attributed it to OS I/O contention, fixed by reordering call sites. But after ordering was fixed, cold-boot still showed `hydrated_ms ≈ 17.8s` on the same 7,600-note Universe. Round 1 instrumentation (`Instant::now()` inside the command body, transport-time via Unix timestamps) measured `wall = 23,103ms`, `sum(server_timings) = 170ms`, `transport = 19ms`, `assign = 0ms` — leaving **22.9s completely unaccounted**. The gap was not in transport, not in serialization, not in the JS assign cascade, and not in the Rust body as measured.
+
+The blind spot was simple: `Instant::now()` stamped at the command body's first line measures only *in-body elapsed*. It cannot see the time between JS issuing `invoke(...)` and the Rust dispatcher actually running the body — the **pre-body queue**.
+
+Round 2 added two cross-process Unix timestamps:
+
+- JS side, **immediately before** `invoke()`: `invoke_start_unix_ms = Date.now()`
+- Rust side, **first line of body, before any work**: `server_start_unix_ms = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()`
+
+Delta = pure dispatcher queue time. Verdict on trial Universe:
+
+| field | value | interpretation |
+|:---|---:|:---|
+| `core_wall_ms` | 17,314 ms | JS-side wall |
+| `core_queue_ms` | **17,224 ms** | pre-body dispatcher wait |
+| `core_body_ms` | **72 ms** | pure SQLite work |
+
+99.5 % of wall was **pre-body queue**. The SELECT was trivially fast; the command just couldn't get a turn to run.
+
+**Root cause.** `#[tauri::command] pub fn foo(...)` dispatches onto Tokio's **async-runtime worker pool** — default ~4 threads on a 4-core machine. A sync body blocks its worker for its full duration. Constellation's boot fires fan-out (16 `watch_library` + 16 `get_library_appearance` + stats + recent + etc.) concurrently with `cache_boot_snapshot_core`; those 30+ sync commands occupy every worker, and the core snapshot waits in line for a worker to free up. LL-020's call-site reordering helped but didn't eliminate the race — moving work *off* the critical path is solved; moving work *off the worker pool entirely* is a separate fix.
+
+**The fix.** Convert sync commands to async wrappers around `spawn_blocking`:
+
+```rust
+#[tauri::command]
+pub async fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> {
+    tauri::async_runtime::spawn_blocking(move || cache_boot_snapshot_core_impl(app))
+        .await
+        .map_err(|e| format!("spawn_blocking failed: {}", e))?
+}
+
+fn cache_boot_snapshot_core_impl(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> {
+    // ... original sync body ...
+}
+```
+
+`tauri::async_runtime::spawn_blocking` moves the synchronous body onto Tokio's dedicated **blocking pool** — Tokio's default is 512 threads. The async command wrapper returns a future almost immediately (just awaiting the blocking handle), freeing the async-worker thread to dispatch the next command in the queue. Result: the queue for async workers drains at dispatch speed, not body-execution speed.
+
+**Rule.** For any `#[tauri::command]` that does non-trivial synchronous work (SQLite reads, file I/O, serialization of large payloads) and is on a boot or hot critical path where the system is fan-out-saturated, declare it `async fn` and wrap the sync body in `tauri::async_runtime::spawn_blocking(move || impl(..)).await.map_err(..)?`. Keep an inner sync `_impl` fn for back-compat shims and internal re-use.
+
+**Reserve the async-worker pool for genuinely async work** (Tauri event dispatch, file watchers, network calls, webview channel drains). Every sync command you leave on the async pool is a thread-occupying peer that can starve the critical path on a busy boot.
+
+**Diagnostic checklist — always instrument all five.** If only some are present, you are blind to one of the failure modes:
+
+1. `invoke_start_unix_ms` (JS, before `await invoke(...)`).
+2. `server_start_unix_ms` (Rust, first line of body, before any work).
+3. Per-phase `Instant::now()` checkpoints inside the Rust body.
+4. `server_return_unix_ms` (Rust, last line before returning).
+5. `client_recv_unix_ms` (JS, immediately after `await invoke(...)` resolves).
+
+Derivations:
+- `queue_ms = server_start_unix_ms - invoke_start_unix_ms` → **pre-body dispatcher wait** (LL-021).
+- `body_ms = server_return_unix_ms - server_start_unix_ms` → **pure Rust execution** (same as LL-020's `sum(server_timings)`).
+- `transport_ms = client_recv_unix_ms - server_return_unix_ms` → **serialization + IPC pipe + JS task-queue wait**.
+- `wall_ms = client_recv_unix_ms - invoke_start_unix_ms` → **total elapsed from JS perspective**.
+
+Check: `queue_ms + body_ms + transport_ms ≈ wall_ms` should hold within ±clock-skew noise (<10 ms on the same machine). If it doesn't, the clock drifted or one of the stamps is wrong.
+
+---
+
+*Last updated: 2026-04-19*
+*For: Constellation — Boot Criterion 2 closure (spawn_blocking fix)*
