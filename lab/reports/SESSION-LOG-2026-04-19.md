@@ -232,15 +232,50 @@ Sanity: `queue_ms + body_ms + transport_ms ≈ wall_ms` should hold within ±clo
 
 **Build in progress**: `bx13it9um` for new measurement. User will relaunch on trial Universe.
 
+## § 10 — Round 2 measurement + fix (async fn + spawn_blocking)
+
+**Measurement lands decisively in the queue-dominated column.** User relaunched the Round 2 binary on the trial Universe; fresh `boot-perf.latest.json`:
+
+| field | value | interpretation |
+|:---|---:|:---|
+| `cache_snapshot_core_wall_ms` | 17,314 ms | JS-side wall |
+| `cache_snapshot_core_queue_ms` | **17,224 ms** | pre-body dispatcher wait |
+| `cache_snapshot_core_body_ms` | **72 ms** | pure SQLite work |
+| `cache_snapshot_core_transport_ms` | ~18 ms | serialization + IPC pipe |
+| `cache_snapshot_graph_queue_ms` | 96 ms | graph fires via `requestIdleCallback` — runtime idle by then |
+| `cache_snapshot_graph_body_ms` | 2,286 ms | matches server-timings sum (read_links 566 + read_tags 1,716) |
+
+99.5 % of the core-phase wall is **pre-body queue**. The Rust body when it finally gets a turn is trivial (72 ms). This is the Tauri async-runtime worker pool saturating: `#[tauri::command] pub fn` is dispatched onto the async-runtime workers (~4 on a 4-core machine), and the boot's fire-and-forget fan-out (16 watchers + 16 appearances + stats refresh + recent/pinned) occupies them all while the core snapshot waits in line.
+
+**Fix (commit `5f60448`).** Convert both snapshot commands to `async fn` wrappers around `tauri::async_runtime::spawn_blocking(..)` of new private sync `*_impl` helpers:
+
+```rust
+#[tauri::command]
+pub async fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> {
+    tauri::async_runtime::spawn_blocking(move || cache_boot_snapshot_core_impl(app))
+        .await
+        .map_err(|e| format!("spawn_blocking failed: {}", e))?
+}
+
+fn cache_boot_snapshot_core_impl(app: tauri::AppHandle) -> Result<BootSnapshotCore, String> { /* existing body */ }
+```
+
+`spawn_blocking` moves the SQLite work onto the dedicated blocking pool (Tokio default 512 threads) and frees the async runtime to dispatch other commands immediately. The legacy `cache_boot_snapshot` shim (off the boot critical path) calls the `*_impl` helpers directly — keeping it sync preserves its external shape for ambient callers (second screen, tests) without forcing them to await.
+
+`cargo check` clean. Rebuild kicked off as `bid0t1kd6`.
+
+**Expected Round 3 reading**: `core_queue_ms` → ~0; `hydrated_ms` ≤ 6 s → **Criterion 2 PASS**. Graph-phase timings should be unchanged (already runs on idle).
+
 ## Commits (updated)
 
 - `304edd0` — Boot Criterion 2: IPC-overhead diagnostic Round 1.
 - `cb60374` + `281f23f` — M11-data v2 § 106.
+- `2d2ed1b` — Boot Criterion 2: Round 2 queue-time attribution.
+- `5f60448` — Boot Criterion 2: move snapshot commands off async-runtime workers (`spawn_blocking`).
 
 ## Open items
 
-- **User action (priority)**: once `ba0cg86py` ships, relaunch `src-tauri/target/release/constellation.exe` on trial Universe; report the new `boot-perf.latest.json` with all eight `cache_snapshot_*_transport_ms` / `cache_snapshot_*_assign_ms` / `_server_return_unix_ms` / `_client_recv_unix_ms` fields. The transport vs. assign split will tell us definitively where the 22.5 s lives and pick the fix path.
-- **Optional**: second `npm run tauri build` after `6ed93df` if you want the SkyView loading indicator visible in the measurable binary (indicator does not affect `hydrated_ms`; it only improves perceived UX during the 6–9 s graph-load window). Note: the instrumentation build `ba0cg86py` bundles the indicator anyway, so this sub-item is obsoleted on its completion.
+- **User action (priority)**: once `bid0t1kd6` ships, relaunch `src-tauri/target/release/constellation.exe` on trial Universe; report the new `boot-perf.latest.json`. Expected `core_queue_ms` → ~0 ms and `hydrated_ms` ≤ 6 s (Criterion 2 PASS). If `core_queue_ms` is still large, the theory (async-worker saturation) is wrong and we escalate to runtime-thread profiling.
 - **Pending**: Settings → Debug → Boot Performance scorecard UI (consumes `boot-perf.latest.json` once fields stabilize).
 - **Housekeeping**: `src-tauri/tauri.conf.json` version field reverted to `0.1.0` (prior worktree state); reconcile to `0.3.4` in a separate commit.
 - **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing for release builds (updater signature generation).
