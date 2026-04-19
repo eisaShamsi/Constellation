@@ -213,6 +213,7 @@
 		{ id: 'hotkeys', label: $t('settings.sections.hotkeys') || 'Hotkeys', icon: 'keyboard' },
 		{ id: 'templates', label: $t('settings.sections.templates') || 'Templates', icon: 'template' },
 		{ id: 'plugins', label: $t('settings.sections.plugins') || 'Plug-Ins', icon: 'grid' },
+		{ id: 'debug', label: $t('settings.sections.debug') || 'Debug', icon: 'bug' },
 	]);
 
 	const filteredCommands = $derived(
@@ -586,6 +587,7 @@
 			sliders: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
 			template: 'M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z',
 			compass: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z',
+			bug: 'M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5c-.49 0-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z',
 		};
 		return icons[icon] || icons.dashboard;
 	}
@@ -649,6 +651,65 @@
 
 	let containerEl: HTMLDivElement;
 	onMount(() => { containerEl?.focus(); });
+
+	// ═══ Boot Performance (Settings → Debug) ═══
+	//
+	// Reads `<universe>/.constellation/boot-perf.latest.json`, written on every
+	// boot by `recordBootPerf()` in `+layout.svelte`. Displays a scorecard
+	// against the five ship-gate criteria in `lab/boot-perf/BOOT-BUDGET.md`.
+	// See SESSION-LOG-2026-04-19 § 10 for the async-runtime fix that closes
+	// Criterion 2.
+	let bootPerf = $state<Record<string, unknown> | null>(null);
+	let bootPerfLoading = $state(false);
+	let bootPerfError = $state<string | null>(null);
+	let bootPerfLoadedFor: string | null = null; // avoid reloading on every render
+
+	async function loadBootPerfReport(force = false): Promise<void> {
+		if (bootPerfLoading) return;
+		if (!force && bootPerfLoadedFor === 'latest' && bootPerf !== null) return;
+		bootPerfLoading = true;
+		bootPerfError = null;
+		try {
+			const raw: string | null = await invoke('read_boot_perf_report');
+			if (raw === null) {
+				bootPerf = null;
+				bootPerfError = $t('settings.debug.noReportYet')
+					|| 'No boot-perf report yet. Close the app and relaunch on the trial Universe to record one.';
+			} else {
+				bootPerf = JSON.parse(raw) as Record<string, unknown>;
+				bootPerfError = null;
+			}
+			bootPerfLoadedFor = 'latest';
+		} catch (e) {
+			bootPerf = null;
+			bootPerfError = String(e);
+		} finally {
+			bootPerfLoading = false;
+		}
+	}
+
+	// Auto-load when the Debug section is opened.
+	$effect(() => {
+		if (activeSection === 'debug') loadBootPerfReport(false);
+	});
+
+	/** Helper — pass/fail colouring for a criterion row. */
+	function bpStatusClass(value: unknown, target: number): string {
+		if (typeof value !== 'number') return 'bp-unknown';
+		return value <= target ? 'bp-pass' : 'bp-fail';
+	}
+	function bpStatusLabel(value: unknown, target: number): string {
+		if (typeof value !== 'number') return '—';
+		return value <= target
+			? ($t('settings.debug.pass') || 'PASS')
+			: ($t('settings.debug.fail') || 'FAIL');
+	}
+	/** Format `value` in ms as "1.2s" or "234ms". */
+	function fmtMs(value: unknown): string {
+		if (typeof value !== 'number') return '—';
+		if (value >= 1000) return `${(value / 1000).toFixed(2)}s`;
+		return `${Math.round(value)}ms`;
+	}
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -2014,6 +2075,162 @@
 							{/each}
 						</div>
 					{/each}
+
+				<!-- ═══ DEBUG (Boot Performance Scorecard) ═══ -->
+				{:else if activeSection === 'debug'}
+					<p class="section-intro">
+						{$t('settings.debug.intro')
+							|| 'Read-only diagnostic view. The boot-performance scorecard evaluates the five ship-gate criteria defined in lab/boot-perf/BOOT-BUDGET.md against the last launch on the active Universe.'}
+					</p>
+
+					<div class="setting-section-heading">{$t('settings.debug.bootPerfHeading') || 'Boot Performance'}</div>
+
+					{#if bootPerfLoading}
+						<p class="section-intro">{$t('settings.debug.loading') || 'Loading…'}</p>
+					{:else if bootPerfError}
+						<p class="section-intro" style="color: var(--text-error, var(--color-red))">{bootPerfError}</p>
+					{:else if bootPerf}
+						<!-- Timestamp + reload -->
+						<div class="bp-header">
+							<div class="bp-timestamp">
+								{$t('settings.debug.measuredAt') || 'Measured at'}
+								<code>{bootPerf.timestamp ?? '—'}</code>
+								· {bootPerf.note_count ?? '—'} {$t('settings.debug.notes') || 'notes'}
+							</div>
+							<button class="setting-btn" onclick={() => loadBootPerfReport(true)}>
+								{$t('settings.debug.refresh') || 'Refresh'}
+							</button>
+						</div>
+
+						<!-- Five-criterion scorecard -->
+						<div class="bp-scorecard">
+							<!-- Criterion 1 — UI visible ≤ 2.5s -->
+							<div class="bp-row">
+								<div class="bp-row-head">
+									<span class="bp-num">1</span>
+									<span class="bp-name">{$t('settings.debug.c1') || 'UI visible'}</span>
+								</div>
+								<div class="bp-row-meta">
+									<span class="bp-target">≤ 2.5s</span>
+									<span class="bp-value">{fmtMs(bootPerf.paint_ms)}</span>
+									<span class="bp-status {bpStatusClass(bootPerf.paint_ms, 2500)}">
+										{bpStatusLabel(bootPerf.paint_ms, 2500)}
+									</span>
+								</div>
+							</div>
+
+							<!-- Criterion 2 — Fully responsive ≤ 6s -->
+							<div class="bp-row">
+								<div class="bp-row-head">
+									<span class="bp-num">2</span>
+									<span class="bp-name">{$t('settings.debug.c2') || 'Fully responsive'}</span>
+								</div>
+								<div class="bp-row-meta">
+									<span class="bp-target">≤ 6s</span>
+									<span class="bp-value">{fmtMs(bootPerf.hydrated_ms)}</span>
+									<span class="bp-status {bpStatusClass(bootPerf.hydrated_ms, 6000)}">
+										{bpStatusLabel(bootPerf.hydrated_ms, 6000)}
+									</span>
+								</div>
+							</div>
+
+							<!-- Criterion 3 — RSS ≤ 350 MB (not yet instrumented) -->
+							<div class="bp-row">
+								<div class="bp-row-head">
+									<span class="bp-num">3</span>
+									<span class="bp-name">{$t('settings.debug.c3') || 'Idle RSS memory'}</span>
+								</div>
+								<div class="bp-row-meta">
+									<span class="bp-target">≤ 350 MB</span>
+									<span class="bp-value">—</span>
+									<span class="bp-status bp-unknown">{$t('settings.debug.notMeasured') || 'Not measured'}</span>
+								</div>
+							</div>
+
+							<!-- Criterion 4 — Post-boot stat-sweep (not yet instrumented) -->
+							<div class="bp-row">
+								<div class="bp-row-head">
+									<span class="bp-num">4</span>
+									<span class="bp-name">{$t('settings.debug.c4') || 'Post-boot stat sweep'}</span>
+								</div>
+								<div class="bp-row-meta">
+									<span class="bp-target">≤ 3s / 50 files</span>
+									<span class="bp-value">—</span>
+									<span class="bp-status bp-unknown">{$t('settings.debug.notMeasured') || 'Not measured'}</span>
+								</div>
+							</div>
+
+							<!-- Criterion 5 — Kill-mid-index recovery (manual procedure) -->
+							<div class="bp-row">
+								<div class="bp-row-head">
+									<span class="bp-num">5</span>
+									<span class="bp-name">{$t('settings.debug.c5') || 'Kill mid-index recovery'}</span>
+								</div>
+								<div class="bp-row-meta">
+									<span class="bp-target">{$t('settings.debug.manual') || 'Manual'}</span>
+									<span class="bp-value">
+										{bootPerf.recovery_pass === true
+											? ($t('settings.debug.pass') || 'PASS')
+											: '—'}
+									</span>
+									<span class="bp-status {bootPerf.recovery_pass === true ? 'bp-pass' : 'bp-unknown'}">
+										{bootPerf.recovery_pass === true
+											? ($t('settings.debug.pass') || 'PASS')
+											: ($t('settings.debug.notMeasured') || 'Not measured')}
+									</span>
+								</div>
+							</div>
+						</div>
+
+						<!-- Deep attribution (collapsible) -->
+						<details class="bp-details">
+							<summary>{$t('settings.debug.details') || 'Show per-phase timings'}</summary>
+
+							<div class="bp-grid">
+								<div class="bp-kv">
+									<span class="bp-k">{$t('settings.debug.graphReady') || 'Graph ready'}</span>
+									<span class="bp-v">{fmtMs(bootPerf.graph_ready_ms)}</span>
+								</div>
+								<div class="bp-kv">
+									<span class="bp-k">{$t('settings.debug.librariesLoaded') || 'Libraries loaded'}</span>
+									<span class="bp-v">{fmtMs(bootPerf.libraries_loaded_ms)}</span>
+								</div>
+							</div>
+
+							<div class="bp-subheading">{$t('settings.debug.coreSnapshot') || 'Core snapshot (notes)'}</div>
+							<div class="bp-grid">
+								<div class="bp-kv"><span class="bp-k">wall</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_core_wall_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">queue</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_core_queue_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">body</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_core_body_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">transport</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_core_transport_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">assign</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_core_assign_ms)}</span></div>
+							</div>
+
+							<div class="bp-subheading">{$t('settings.debug.graphSnapshot') || 'Graph snapshot (links + tags)'}</div>
+							<div class="bp-grid">
+								<div class="bp-kv"><span class="bp-k">wall</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_graph_wall_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">queue</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_graph_queue_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">body</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_graph_body_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">transport</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_graph_transport_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">assign</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_graph_assign_ms)}</span></div>
+							</div>
+
+							<div class="bp-subheading">{$t('settings.debug.fanout') || 'Fire-and-forget fan-out'}</div>
+							<div class="bp-grid">
+								<div class="bp-kv"><span class="bp-k">load_all_stats</span><span class="bp-v">{fmtMs(bootPerf.load_all_stats_wall_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">start_watching_all</span><span class="bp-v">{fmtMs(bootPerf.start_watching_all_wall_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">load_all_appearances</span><span class="bp-v">{fmtMs(bootPerf.load_all_appearances_wall_ms)}</span></div>
+							</div>
+						</details>
+
+						<!-- Raw JSON (last-resort fallback for fields the UI doesn't surface) -->
+						<details class="bp-details">
+							<summary>{$t('settings.debug.rawJson') || 'Show raw JSON'}</summary>
+							<pre class="bp-raw">{JSON.stringify(bootPerf, null, 2)}</pre>
+						</details>
+					{:else}
+						<p class="section-intro">{$t('settings.debug.noReportYet') || 'No boot-perf report yet.'}</p>
+					{/if}
 				{/if}
 			</div>
 		</div>
@@ -2639,6 +2856,99 @@
 		box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 	}
 	.plugin-switch.on .plugin-switch-knob { inset-inline-start: 20px; }
+
+	/* ═══ DEBUG — BOOT PERFORMANCE SCORECARD ═══ */
+	.bp-header {
+		display: flex; align-items: center; justify-content: space-between;
+		gap: 12px; margin-bottom: 16px;
+		padding: 8px 12px; border-radius: 6px;
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+	}
+	.bp-timestamp { font-size: 0.78rem; color: var(--text-muted); }
+	.bp-timestamp code {
+		font-family: var(--font-monospace, monospace);
+		font-size: 0.75rem; color: var(--text-normal);
+		background: var(--background-primary);
+		padding: 1px 5px; border-radius: 3px;
+	}
+	.bp-scorecard {
+		display: flex; flex-direction: column; gap: 6px;
+		margin-bottom: 20px;
+	}
+	.bp-row {
+		display: flex; align-items: center; justify-content: space-between;
+		gap: 12px;
+		padding: 10px 14px; border-radius: 8px;
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-primary);
+	}
+	.bp-row-head { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+	.bp-num {
+		display: inline-flex; align-items: center; justify-content: center;
+		width: 22px; height: 22px; border-radius: 50%;
+		background: var(--background-secondary);
+		color: var(--text-muted);
+		font-size: 0.72rem; font-weight: 600;
+		flex-shrink: 0;
+	}
+	.bp-name { font-size: 0.88rem; color: var(--text-normal); font-weight: 500; }
+	.bp-row-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+	.bp-target {
+		font-size: 0.72rem; color: var(--text-faint);
+		font-family: var(--font-monospace, monospace);
+	}
+	.bp-value {
+		font-size: 0.82rem; color: var(--text-normal);
+		font-family: var(--font-monospace, monospace);
+		min-width: 60px; text-align: end;
+	}
+	.bp-status {
+		font-size: 0.68rem; font-weight: 600;
+		padding: 2px 8px; border-radius: 10px;
+		letter-spacing: 0.04em;
+		min-width: 54px; text-align: center;
+	}
+	.bp-status.bp-pass { background: var(--color-green, #4ade80); color: #052e16; }
+	.bp-status.bp-fail { background: var(--color-red, #ef4444); color: #fef2f2; }
+	.bp-status.bp-unknown { background: var(--background-modifier-border); color: var(--text-faint); }
+
+	.bp-details {
+		margin-top: 10px; padding: 8px 12px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		background: var(--background-secondary);
+	}
+	.bp-details summary {
+		cursor: pointer; font-size: 0.82rem; color: var(--text-muted);
+		padding: 2px 0;
+	}
+	.bp-details[open] summary { margin-bottom: 8px; color: var(--text-normal); }
+	.bp-subheading {
+		font-size: 0.72rem; font-weight: 600;
+		color: var(--text-faint);
+		text-transform: uppercase; letter-spacing: 0.06em;
+		margin: 12px 0 6px;
+	}
+	.bp-subheading:first-child { margin-top: 0; }
+	.bp-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		gap: 4px 12px;
+	}
+	.bp-kv {
+		display: flex; justify-content: space-between; align-items: baseline;
+		padding: 2px 0; font-family: var(--font-monospace, monospace); font-size: 0.76rem;
+	}
+	.bp-k { color: var(--text-muted); }
+	.bp-v { color: var(--text-normal); }
+	.bp-raw {
+		max-height: 280px; overflow: auto;
+		font-family: var(--font-monospace, monospace); font-size: 0.72rem;
+		background: var(--background-primary); color: var(--text-muted);
+		padding: 8px 10px; border-radius: 4px;
+		white-space: pre; margin: 0;
+	}
 
 	/* ═══ AI / INTELLIGENCE ═══ */
 	.test-btn {

@@ -21,7 +21,8 @@
       "styleSettings": "Style Settings",
       "iconOverrides": "App Icons",
       "knowledge": "Knowledge Management",
-      "arabicOverrides": "Arabic Overrides"
+      "arabicOverrides": "Arabic Overrides",
+      "debug": "Debug"
     },
     "dashboard": {
       "libraries": "Libraries",
@@ -407,6 +408,31 @@
       "save": "Save",
       "create": "Create",
       "cancel": "Cancel"
+    },
+    "debug": {
+      "intro": "Read-only diagnostic view. The boot-performance scorecard evaluates the five ship-gate criteria defined in lab/boot-perf/BOOT-BUDGET.md against the last launch on the active Universe.",
+      "bootPerfHeading": "Boot Performance",
+      "loading": "Loading…",
+      "noReportYet": "No boot-perf report yet. Close the app and relaunch on the active Universe to record one.",
+      "measuredAt": "Measured at",
+      "notes": "notes",
+      "refresh": "Refresh",
+      "pass": "PASS",
+      "fail": "FAIL",
+      "notMeasured": "Not measured",
+      "manual": "Manual",
+      "c1": "UI visible",
+      "c2": "Fully responsive",
+      "c3": "Idle RSS memory",
+      "c4": "Post-boot stat sweep",
+      "c5": "Kill mid-index recovery",
+      "details": "Show per-phase timings",
+      "rawJson": "Show raw JSON",
+      "graphReady": "Graph ready",
+      "librariesLoaded": "Libraries loaded",
+      "coreSnapshot": "Core snapshot (notes)",
+      "graphSnapshot": "Graph snapshot (links + tags)",
+      "fanout": "Fire-and-forget fan-out"
     }
   },
   "commands": {
