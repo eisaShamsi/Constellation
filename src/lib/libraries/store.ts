@@ -562,6 +562,11 @@ export function createEmptyTab() {
 	}
 }
 
+// Living Link traversal throttle: coalesce rapid repeat clicks on the same
+// (source, target) pair so double-clicks don't inflate traversal_count.
+const TRAVERSAL_THROTTLE_MS = 2000;
+const traversalLastWrite = new Map<string, number>();
+
 export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean, fromNotePath?: string) {
 	const tabs = get(openTabs);
 
@@ -613,7 +618,15 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 
 	// Living Link System: record traversal now that we have the display name
 	if (_fromNotePath) {
-		invoke('constellation_link_traverse', { sourcePath: _fromNotePath, targetName: name }).catch(() => {});
+		const key = `${_fromNotePath}|${name.toLowerCase()}`;
+		const now = Date.now();
+		if (now - (traversalLastWrite.get(key) ?? 0) >= TRAVERSAL_THROTTLE_MS) {
+			traversalLastWrite.set(key, now);
+			// Stale entries (older than TRAVERSAL_THROTTLE_MS) are already inert;
+			// clearing on overflow is equivalent to letting them age out.
+			if (traversalLastWrite.size > 500) traversalLastWrite.clear();
+			invoke('constellation_link_traverse', { sourcePath: _fromNotePath, targetName: name }).catch(() => {});
+		}
 	}
 
 	// Derive library path from registered libraries.
