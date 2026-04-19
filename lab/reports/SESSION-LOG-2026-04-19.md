@@ -861,4 +861,6 @@ closed.
 
 ### Commits
 
-- `<pending>` — `docs(README): clarify TAURI_SIGNING_PRIVATE_KEY is optional for local builds`
+- `6bbe1a9` — `docs(README): clarify TAURI_SIGNING_PRIVATE_KEY is optional for local builds`
+  (`README.md` +34, `lab/reports/SESSION-LOG-2026-04-19.md` +§ 21; pushed to
+  `claude/upbeat-proskuriakova`).
