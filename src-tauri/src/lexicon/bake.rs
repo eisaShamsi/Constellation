@@ -75,6 +75,7 @@ use std::io::{self, Read, Write};
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
+use crate::arabic::fst_bake::FstBytes;
 use crate::arabic::{Lang, PartOfSpeech};
 
 use super::graph::{seed_tsv, Edge, EdgeKind, LemmaNode, LexiconBundle, SenseId};
@@ -226,7 +227,10 @@ fn encode_bundle(bundle: &LexiconBundle) -> Vec<u8> {
 
     // FST bytes.
     out.extend_from_slice(&(bundle.name_index_bytes.len() as u64).to_le_bytes());
-    out.extend_from_slice(&bundle.name_index_bytes);
+    // `.as_ref()` produces `&[u8]` whether the bytes are heap-owned
+    // (cold-rebuild path) or an mmap slice (warm-load path) — same pattern
+    // as `arabic::fst_bake::encode_bundle`.
+    out.extend_from_slice(bundle.name_index_bytes.as_ref());
 
     out
 }
@@ -321,7 +325,7 @@ fn decode_bundle(buf: &[u8]) -> io::Result<LexiconBundle> {
 
     // FST bytes.
     let fst_len = cur.read_u64()? as usize;
-    let name_index_bytes = cur.read_bytes(fst_len)?.to_vec();
+    let name_index_bytes = FstBytes::Owned(cur.read_bytes(fst_len)?.to_vec());
 
     // Trailing garbage is a protocol violation — reject rather than
     // silently accept.
@@ -584,7 +588,7 @@ mod tests {
             }],
             edge_offsets: vec![0, 0], // node_count + 1, zero-length slice
             edges: Vec::new(),
-            name_index_bytes: fst::MapBuilder::memory().into_inner().unwrap(),
+            name_index_bytes: FstBytes::Owned(fst::MapBuilder::memory().into_inner().unwrap()),
         }
     }
 
@@ -723,7 +727,7 @@ mod tests {
         assert_eq!(loaded.nodes[0].lang, original.nodes[0].lang);
         assert_eq!(loaded.edge_offsets, original.edge_offsets);
         assert_eq!(loaded.edges.len(), original.edges.len());
-        assert_eq!(loaded.name_index_bytes, original.name_index_bytes);
+        assert_eq!(loaded.name_index_bytes.as_ref(), original.name_index_bytes.as_ref());
 
         let _ = fs::remove_file(&path);
     }
@@ -848,7 +852,7 @@ mod tests {
         assert_eq!(loaded.nodes.len(), original.nodes.len());
         assert_eq!(loaded.edges.len(), original.edges.len());
         assert_eq!(loaded.edge_offsets, original.edge_offsets);
-        assert_eq!(loaded.name_index_bytes, original.name_index_bytes);
+        assert_eq!(loaded.name_index_bytes.as_ref(), original.name_index_bytes.as_ref());
 
         let g = LexiconGraph::from_bundle(loaded).expect("reconstruct");
         // Sanity: at least one known lookup still works.
@@ -890,7 +894,7 @@ mod tests {
         assert_eq!(loaded.nodes.len(), original.nodes.len());
         assert_eq!(loaded.edges.len(), original.edges.len());
         assert_eq!(loaded.edge_offsets, original.edge_offsets);
-        assert_eq!(loaded.name_index_bytes, original.name_index_bytes);
+        assert_eq!(loaded.name_index_bytes.as_ref(), original.name_index_bytes.as_ref());
 
         let g = LexiconGraph::from_bundle(loaded).expect("reconstruct");
         // Spot-check a lookup that only exists in the production

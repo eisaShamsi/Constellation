@@ -51,6 +51,7 @@
 
 use super::bake;
 use super::parse::{parse_with_diagnostics, ConceptRecord};
+use crate::arabic::fst_bake::FstBytes;
 use crate::arabic::normalizer::normalize_stripped;
 use crate::arabic::{Lang, PartOfSpeech};
 use fst::{Map, MapBuilder};
@@ -166,7 +167,14 @@ pub struct LexiconGraph {
     /// FST mapping `"{lang_code}:{normalized_lemma}"` → packed `(offset, count)`
     /// of consecutive node indices sharing that key. See the module
     /// docs for the value encoding.
-    pub name_index: Map<Vec<u8>>,
+    ///
+    /// Parameterised over [`FstBytes`] (M11-mmap) so the live graph can
+    /// hold an mmap-backed slice into the cache file on desktop without
+    /// copying the FST bytes to heap — same pattern as
+    /// [`crate::arabic::fst_index::GenerativeFst`]. Cold rebuild wraps
+    /// fresh `Vec<u8>` via `FstBytes::Owned`; the on-disk byte layout is
+    /// unchanged.
+    pub name_index: Map<FstBytes>,
 }
 
 /// Serialisable form of [`LexiconGraph`] — everything the graph needs
@@ -184,7 +192,14 @@ pub struct LexiconBundle {
     pub nodes: Vec<LemmaNode>,
     pub edge_offsets: Vec<u32>,
     pub edges: Vec<Edge>,
-    pub name_index_bytes: Vec<u8>,
+    /// Raw FST bytes for the lemma→(offset,count) name index. Held as
+    /// [`FstBytes`] (M11-mmap) so the cache load path can hand in a
+    /// mmap-backed slice; cold build wraps fresh bytes in
+    /// `FstBytes::Owned`. The on-disk format in the bake layer is a
+    /// bare `u64 fst_len + fst_bytes` — unchanged from the pre-M11-mmap
+    /// layout, so old caches remain readable and
+    /// `CACHE_FORMAT_VERSION` stays at 1.
+    pub name_index_bytes: FstBytes,
 }
 
 impl LexiconGraph {
@@ -339,18 +354,24 @@ impl LexiconGraph {
             nodes: self.nodes.clone(),
             edge_offsets: self.edge_offsets.clone(),
             edges: self.edges.clone(),
-            name_index_bytes: self.name_index.as_fst().as_bytes().to_vec(),
+            name_index_bytes: FstBytes::Owned(self.name_index.as_fst().as_bytes().to_vec()),
         }
     }
 
     /// Empty-graph constructor. Used by `Default` and by tests that
     /// exercise the zero-node edge cases of `find_nodes` / `edges_of`.
     pub fn empty() -> Self {
+        // `Map::default()` only exists for `Map<Vec<u8>>`; with the M11-mmap
+        // switch to `Map<FstBytes>` we build the empty FST bytes explicitly.
+        // Both `unwrap`s are on infallible paths — `MapBuilder` with no
+        // inserts always produces a valid empty FST, and `Map::new` accepts
+        // those bytes unconditionally.
+        let empty_bytes = fst::MapBuilder::memory().into_inner().unwrap();
         Self {
             nodes: Vec::new(),
             edge_offsets: vec![0], // sentinel — one more than nodes.len()
             edges: Vec::new(),
-            name_index: Map::default(),
+            name_index: Map::new(FstBytes::Owned(empty_bytes)).unwrap(),
         }
     }
 }
@@ -508,7 +529,7 @@ pub fn build_bundle(records: Vec<ConceptRecord>) -> Result<LexiconBundle, BuildE
         let key = build_key(key_lang, &key_norm);
         fst_builder.insert(key, packed)?;
     }
-    let name_index_bytes = fst_builder.into_inner()?;
+    let name_index_bytes = FstBytes::Owned(fst_builder.into_inner()?);
 
     // Step 4: emit edges.
     //
