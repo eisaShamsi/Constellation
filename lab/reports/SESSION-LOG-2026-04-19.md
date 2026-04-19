@@ -456,3 +456,82 @@ The five-stamp model worked: it pointed to "core queued 19.5 s." The UI-thread m
 - **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing for release builds.
 - **M11-data v2**: §§ 107+ deferred until Criterion 2 verification passes.
 - **Rule 8 follow-up**: persisted tag index (maintained by trigger on note save) to replace `scan_library_tags`'s filesystem walk entirely. Tracked separately; not needed for Criterion 2.
+
+---
+
+## § 16 — Round 5 FAIL, two falsifying diagnostics, Round 6: Rust-side IPC arrival tracer
+
+### Round 5 measurement (commit `f018ad7`)
+
+User re-tested. `core_queue_ms = 19,712` — **statistically indistinguishable** from Round 4's 19,502. The three DashboardView converts did exactly nothing at the Criterion 2 level.
+
+This is the third consecutive patch round (A, A+, DashboardView fan-out) targeting "sync commands racing on the UI thread" without moving the needle. **LL-014 triggered**: stop patching, investigate.
+
+### Adversarial investigation (hypothesis generation)
+
+Dispatched an agent with the brief "adversarial, try to falsify the UI-thread-contention theory." It produced three live hypotheses:
+
+- (a) **DashboardView mount itself is the blocker** — not its IPC fan-out, but Svelte component setup / `$effect` chain / DOM measurement running synchronously on the same thread.
+- (b) **The fan-out includes something we missed** — sidebar virtualization first-render, status bar mount, a recent-files panel, any other `onMount` that fires on `libraries.set()`.
+- (c) **JS itself is blocked** — the `invoke()` call is sitting in a JS microtask/promise queue that can't drain because the main JS thread is busy (not awaiting Rust).
+
+Cheapest falsifier first: hypothesis (a) via single-line gate.
+
+### Diagnostic 1: DashboardView gate (`{#if false}`)
+
+Changed `+layout.svelte:4512` from `{#if $appSettings.showDashboard}` to `{#if false && $appSettings.showDashboard}`. Rebuilt.
+
+Measurement: `core_queue_ms = 19,418`. Unchanged. **Hypothesis (a) falsified.** DashboardView's entire subtree — component setup, `onMount`, all IPC it fans out — is off the critical path for the 19-second queue.
+
+Reverted the gate; no code kept.
+
+### Diagnostic 2: JS event-loop heartbeat
+
+Added a 100ms `setInterval` from `boot:paint` onward, tracking max gap between firings. If JS is blocked for N seconds, the gap will be N seconds. If JS is alive, gap ≤ 200 ms. Stored max-gap under `boot_heartbeat_max_gap_ms` in the boot-perf JSON, cleared at `boot:hydrated`.
+
+Measurement: `boot_heartbeat_max_gap_ms = 112` over an 18,614 ms queue window. **Hypothesis (c) falsified.** JS is fully alive for the entire queue. It's not blocked on a microtask, not blocked on reactivity, not blocked on store derivations. The `invoke('cache_boot_snapshot_core')` promise is just *sitting there* waiting for Rust.
+
+### What this proves, negatively
+
+- Not the `+layout.svelte` fan-out (Round 4 converted it — no move).
+- Not the DashboardView subtree (Round 5 converted it — no move; gate confirmed it's off the critical path).
+- Not the JS thread at all (heartbeat is 112 ms, not 18,000 ms).
+- Not the core body (`core_body_ms = 162` on the heartbeat run).
+
+By elimination: the 18.6 seconds lives **between** JS's `chrome.webview.postMessage` and Rust's `invoke_handler` dispatching `cache_boot_snapshot_core`. That's the WebView2 host pump, wry's `web_message_received`, Tauri's IPC router, or the command-dispatch closure itself.
+
+### Round 6: Rust-side IPC arrival tracer (in progress)
+
+New module `src-tauri/src/perf_trace.rs` — append-only `Mutex<Vec<(String, u64)>>`. The `invoke_handler` in `lib.rs` is wrapped in a closure that calls `perf_trace::record(invoke.message.command())` **before** dispatching to the handler produced by `generate_handler!`. This captures a Unix-ms timestamp on every command that reaches the Rust dispatcher, independent of any per-command edits.
+
+Two new commands:
+- `get_perf_trace_log` — returns the full log as `Vec<(String, u64)>`.
+- `clear_perf_trace_log` — resets between runs (not wired yet; kept for future diagnostic cycles).
+
+Frontend (`+layout.svelte`): `recordBootPerf` now awaits `get_perf_trace_log` at the `boot:hydrated` boundary and includes the returned array as `ipc_arrival_log` in the boot-perf JSON.
+
+### Decision tree for the next measurement
+
+- **If the log shows many command arrivals during the 18.6 s window, with timestamps drifting forward**: the dispatcher IS serialized by something. Look at which commands are there — that names the culprit and decides the next conversion.
+- **If the log shows only `cache_boot_snapshot_core` arriving at the ~18.6 s mark**: the delay is upstream of Rust entirely. Next diagnostic moves into WebView2 / wry (the Tauri IPC router is not the bottleneck).
+- **If the log is empty or nearly empty for the entire window**: nothing reached Rust until core did. Same conclusion as above — upstream of Rust.
+
+### LL-021 addendum (live)
+
+Two more diagnostics' worth of methodology:
+1. **Test cheap falsifiers before expensive rewrites.** The DashboardView gate is 14 characters. It falsified a whole hypothesis in one rebuild.
+2. **Heartbeats are almost free.** A `setInterval(…, 100)` with max-gap tracking costs nothing and conclusively separates "JS blocked" from "JS waiting on Rust."
+3. **When the JS layer and the Rust body are both fast but the promise is slow, instrument the transport.** That's what Round 6 is doing.
+
+## Commits (updated)
+
+- `9001b01` — Experiment A+: fan-out commands to `#[tauri::command(async)]` (Round 4; kept in place — these are still correct).
+- `f018ad7` — Round 5: DashboardView fan-out commands to `#[tauri::command(async)]` (kept in place — correctness-improving; performance-neutral as measured).
+- _(pending)_ — Round 6: `perf_trace` module + `invoke_handler` wrapper + boot-perf `ipc_arrival_log` field.
+
+## Open items (updated)
+
+- **User action (priority)**: once the Round 6 build ships, relaunch `src-tauri/target/release/constellation.exe` on trial Universe; read Settings → Debug → Boot Performance. The `ipc_arrival_log` field tells us whether the queue lives in Tauri's Rust dispatcher or upstream of it.
+- **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing for release builds.
+- **M11-data v2**: §§ 107+ deferred until Criterion 2 verification passes.
+- **Rule 8 follow-up**: persisted tag index to replace `scan_library_tags`'s filesystem walk. Still tracked separately; not needed for Criterion 2.

@@ -22,7 +22,7 @@
 		toggleEditMode, editingTabIds,
 		navigateBack, navigateForward,
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
-		scanLibraryIndex, readIndexEntries, readTermMentions,
+		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
 		buildSkyData, readNotePreview,
 		getDailyNotePath, updateLinksOnRename, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
@@ -1438,6 +1438,27 @@
 		performance.mark('boot:paint');
 		appReady = true;
 
+		// ── Round 5 follow-up diagnostic: JS-event-loop heartbeat ──
+		// Samples the event loop every 100 ms. If the JS thread is blocked
+		// during the core-snapshot queue window, `bootHeartbeatMaxGapMs`
+		// will be large; if the event loop stays responsive, it stays small.
+		// Value is dumped into `buildBootPerfReport()` alongside the other
+		// per-phase timings.
+		bootHeartbeatLastFire = performance.now();
+		bootHeartbeatMaxGapMs = 0;
+		bootHeartbeatInterval = setInterval(() => {
+			const now = performance.now();
+			const gap = now - bootHeartbeatLastFire;
+			if (gap > bootHeartbeatMaxGapMs) bootHeartbeatMaxGapMs = gap;
+			bootHeartbeatLastFire = now;
+		}, 100);
+		cleanupFns.push(() => {
+			if (bootHeartbeatInterval !== undefined) {
+				clearInterval(bootHeartbeatInterval);
+				bootHeartbeatInterval = undefined;
+			}
+		});
+
 		// Idle detection for lock screen
 		const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'] as const;
 		for (const event of activityEvents) {
@@ -1997,6 +2018,26 @@
 	let cacheSnapshotGraphServerStartUnixMs = 0;
 	let cacheSnapshotGraphQueueMs = 0;
 	let cacheSnapshotGraphBodyMs = 0;
+	/** Round 5 follow-up (2026-04-19). JS-event-loop heartbeat. After two
+	 *  rounds of converting sync commands to `(async)` failed to move
+	 *  `core_queue_ms` (stayed at ~19.5 s even with DashboardView fully gated
+	 *  off), the live hypothesis is that the JS thread itself is blocked
+	 *  between `invoke('cache_boot_snapshot_core')` and the Rust dispatcher
+	 *  picking up the message. A `setInterval(…, 100)` samples the event
+	 *  loop: if max-gap-between-fires ≪ 500 ms, JS is alive during the
+	 *  window (next diagnostic: Rust-side arrival tracing). If max-gap
+	 *  ≫ 5,000 ms, JS is blocked (next diagnostic: find the blocker). */
+	let bootHeartbeatMaxGapMs = 0;
+	let bootHeartbeatLastFire = 0;
+	let bootHeartbeatInterval: ReturnType<typeof setInterval> | undefined = undefined;
+	/** Round 6 diagnostic (2026-04-19). Rust-side IPC arrival log.
+	 *  Populated once at boot:hydrated by `invoke('get_perf_trace_log')`,
+	 *  which returns `[command_name, unix_ms]` tuples captured by the
+	 *  `invoke_handler` wrapper in lib.rs on every command dispatch. If
+	 *  during the 18.6 s queue window the log shows many arrivals →
+	 *  dispatcher serialization; if it shows NO arrivals → the delay
+	 *  is upstream of Rust (WebView2 / wry level). */
+	let ipcArrivalLog: Array<[string, number]> = [];
 	/** Wall-clock for the fire-and-forget chain issued right before
 	 *  `refreshLibraryCaches()`. These race into Tauri's command queue
 	 *  alongside `cache_boot_snapshot_core`; if any is slow it may starve
@@ -2065,11 +2106,36 @@
 			load_all_stats_wall_ms: loadAllStatsWallMs,
 			start_watching_all_wall_ms: startWatchingAllWallMs,
 			load_all_appearances_wall_ms: loadAllAppearancesWallMs,
+			// Round 5 follow-up: JS-event-loop heartbeat. Max gap between
+			// `setInterval(…, 100)` firings from boot:paint onward. Small
+			// (< 500) → JS alive; large (> 5000) → JS blocked for that long.
+			boot_heartbeat_max_gap_ms: Math.round(bootHeartbeatMaxGapMs),
+			// Round 6 diagnostic: Rust-side IPC arrival log. Each entry is
+			// `[command_name, unix_ms]` captured by the `invoke_handler`
+			// wrapper in lib.rs the moment a command reaches the Rust
+			// dispatcher. Cross-reference with `cache_snapshot_core_*_unix_ms`
+			// to see what (if anything) ran between JS `postMessage` and the
+			// core snapshot's Rust body starting.
+			ipc_arrival_log: ipcArrivalLog,
 		};
 	}
 	async function recordBootPerf() {
 		if (bootPerfCorePhaseWritten) return;
 		bootPerfCorePhaseWritten = true;
+		// Freeze the heartbeat max-gap to the boot:paint → boot:hydrated window.
+		if (bootHeartbeatInterval !== undefined) {
+			clearInterval(bootHeartbeatInterval);
+			bootHeartbeatInterval = undefined;
+		}
+		// Round 6 diagnostic: fetch the Rust-side IPC arrival log before
+		// writing the report. Captures every command that reached the
+		// Rust dispatcher up to this moment, with a Unix-ms timestamp.
+		try {
+			const log = await invoke<Array<[string, number]>>('get_perf_trace_log');
+			if (Array.isArray(log)) ipcArrivalLog = log;
+		} catch (e) {
+			console.warn('[boot-perf] failed to fetch IPC arrival log', e);
+		}
 		try {
 			const report = buildBootPerfReport(false);
 			console.log('[boot-perf]', report);
@@ -4037,6 +4103,7 @@
 							isLoading={indexLoading}
 							onNoteClick={handleIndexNoteClick}
 							loadMentions={(term) => readTermMentions(term, 500)}
+							loadCooccurrence={(term) => readCooccurringTerms(term)}
 							onNoteHover={handleIndexNoteHover}
 							onNoteLeave={handleIndexNoteLeave}
 							activeNotePath={indexActiveNotePath}

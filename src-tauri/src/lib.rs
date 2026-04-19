@@ -19,6 +19,7 @@ mod lexicon;
 mod search;
 mod map;
 mod maturity;
+mod perf_trace;
 mod provenance;
 mod review;
 mod strata;
@@ -227,7 +228,31 @@ pub fn run() {
         .manage(universe::UniverseState::new())
         .manage(search::SearchState::new())
         .manage(embeddings::EmbeddingState { engine: std::sync::Mutex::new(None) })
-        .invoke_handler(tauri::generate_handler![
+        .invoke_handler({
+            // Round 6 diagnostic (2026-04-19) — IPC arrival tracer.
+            //
+            // Round 5 (scan_library_tags → async) + DashboardView gate
+            // (`{#if false}`) + JS heartbeat (max_gap = 112 ms) all
+            // falsified their respective hypotheses: Criterion 2 still
+            // fails at ~19 s with core_queue_ms ≈ 18.6 s, JS is alive,
+            // and no single frontend gate moves the needle.
+            //
+            // The remaining unknown is what happens between JS
+            // `postMessage` and the Rust command body entering. We wrap
+            // `generate_handler!` in a closure that stamps a Unix-ms
+            // timestamp on every dispatch into `perf_trace::TRACE_LOG`,
+            // then forwards to the inner handler unchanged. The log is
+            // fetched by the frontend at `boot:hydrated` via
+            // `get_perf_trace_log` and bundled into the boot-perf JSON.
+            //
+            // Overhead is a single Mutex lock per command + a
+            // `(String, u64)` push; negligible vs. any actual IPC cost.
+            //
+            // The `Box<dyn Fn(...)>` annotation pins the runtime to `Wry`
+            // at the binding site — without it, the macro's `R: Runtime`
+            // generic is unresolvable in a `let` binding (it only infers
+            // when passed directly to `invoke_handler`).
+            let inner: Box<dyn Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static> = Box::new(tauri::generate_handler![
             ai::ai_send_message,
             ai::ai_validate_connection,
             ai::ai_list_models,
@@ -384,6 +409,8 @@ pub fn run() {
             canonical::repair_external_libraries_on_startup,
             canonical::ensure_cid_cn_cmd,
             libraries::set_library_canonical_mode,
+            perf_trace::get_perf_trace_log,
+            perf_trace::clear_perf_trace_log,
             constellation_show_in_folder,
             open_path,
             list_monitors,
@@ -391,7 +418,12 @@ pub fn run() {
             open_second_screen_on_monitor,
             close_second_screen,
             is_second_screen_open
-        ])
+            ]);
+            move |invoke: tauri::ipc::Invoke<tauri::Wry>| -> bool {
+                perf_trace::record(invoke.message.command());
+                inner(invoke)
+            }
+        })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "second-screen" {
