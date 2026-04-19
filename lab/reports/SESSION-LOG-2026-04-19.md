@@ -287,25 +287,48 @@ i18n: new `settings.debug.*` block added to `en.json` (23 keys). Other 14 locale
 
 Working-tree had `"version": "0.1.0"` vs HEAD's `"0.3.4"` (accidental local revert in the worktree). Restored to `0.3.4` to match HEAD; no commit needed (no diff vs HEAD after restore). `TAURI_SIGNING_PRIVATE_KEY` plumbing remains open — the build completes without it, but the updater-signature step fails non-fatally on the final line; not blocking.
 
+## § 13 — Round 3 measurement: spawn_blocking fix FAILED. Revert.
+
+The release binary rebuilt with `5f60448` + `43d049e` (spawn_blocking + Debug scorecard) shipped; user relaunched on trial Universe. The Debug → Boot Performance scorecard — which is precisely the surface that exists to diagnose this class of regression — gave the verdict directly:
+
+| field | Round 2 (before fix) | Round 3 (after fix, `5f60448`) | Δ |
+|:---|---:|---:|---:|
+| `hydrated_ms` | 17,800 ms | **20,610 ms** | **+2,810 ms (worse)** |
+| `core_queue_ms` | 17,224 ms | **19,880 ms** | **+2,656 ms (worse)** |
+| `core_body_ms` | 72 ms | 112 ms | +40 ms |
+| `graph_queue_ms` | 96 ms | ~90 ms | ≈flat |
+| Criterion 2 | FAIL (target ≤ 6 s) | FAIL (target ≤ 6 s) | — |
+
+The fix made the queue slightly worse, not zero. The root-cause theory behind `5f60448` is **falsified**: whatever is causing the ~20 s `core_queue_ms` on cold boot, it is **not** the async-runtime worker pool being saturated by sync `#[tauri::command]` fan-out. Moving sync bodies to `spawn_blocking` added one task hop of overhead without removing any contention — consistent with the hypothesis that **Tauri v2 already dispatches sync commands via a blocking-pool internally**, but that wasn't confirmed before shipping. LL-014 corollary: do not patch the same symptom with a second theory until the first theory is read against the runtime source.
+
+**Action taken.** Reverted `5f60448` in a new commit; `cache.rs` is back to the sync `#[tauri::command] pub fn` form. The Debug scorecard UI (`43d049e`), session-log `ee39443`/`53ccbe7`/`a7f0edd`, and the five-stamp diagnostic (`2d2ed1b`) all stay — those are independently useful and correct.
+
+**LL-021 revised.** The original LL-021 claimed `spawn_blocking` was the fix. Falsified. Rewrote it to (a) preserve the five-stamp diagnostic model (which *was* decisive in locating the queue stage), and (b) convert the cautionary section into a rule: do not ship a runtime-internals fix on an unvalidated theory. Read the runtime's actual source, or run a falsifying experiment, before writing the commit.
+
+**What changed in our understanding.** Important new signal from the Round 3 numbers: `graph_queue_ms ≈ 90 ms` (unchanged from Round 2) while `core_queue_ms` got worse. Same runtime, same release binary, same boot — the only difference is **when they fire**. `cache_boot_snapshot_core` fires *immediately* after paint, alongside the boot fan-out (16 `watch_library` + 16 `get_library_appearance` + stats + recent + etc.). `cache_boot_snapshot_graph` fires later, via `requestIdleCallback`, when the fan-out has drained. That flips the open question from "why is the async worker pool slow" to "what resource does the fan-out hold that the core snapshot blocks on, which is released by the time the graph call fires?". Candidates: WebView2 IPC receive-channel ordering, a Mutex inside Tauri's command-dispatch layer, SQLite page-cache warm-up, OS file-handle contention before WAL checkpoint.
+
+**Next step.** Spawn an adversarial investigation agent (per LL-017) to read Tauri v2's actual IPC dispatch — `tauri-macros::command` expansion, `tauri-runtime-wry`'s IPC receive loop, WebView2 message drain. Required deliverable: *either* a line-number-referenced identification of the actual queue source, *or* an experiment design that cleanly falsifies a specific hypothesis. No more fix commits until we have one.
+
 ## Commits (updated)
 
 - `304edd0` — Boot Criterion 2: IPC-overhead diagnostic Round 1.
 - `cb60374` + `281f23f` — M11-data v2 § 106.
 - `2d2ed1b` — Boot Criterion 2: Round 2 queue-time attribution.
-- `5f60448` — Boot Criterion 2: move snapshot commands off async-runtime workers (`spawn_blocking`).
+- `5f60448` — Boot Criterion 2: move snapshot commands off async-runtime workers (`spawn_blocking`). **Reverted in `f5f0b6a` after Round 3 measurement regressed.**
 - `9c722d9` — SESSION-LOG § 10 (Round 2 measurement + fix).
 - `43d049e` — Settings → Debug: Boot Performance scorecard.
 - `ee39443` — SESSION-LOG §§ 11-12 (scorecard UI + conf version sync).
 - `53ccbe7` — User Manual § 16: Debug subsection.
-- `b16c1b3` — LL-021 (split queue-time vs body-time; Tauri async-runtime saturation as a distinct bottleneck from LL-020's OS-I/O contention).
+- `b16c1b3` — LL-021 (original: async-runtime saturation theory).
+- `a7f0edd` — SESSION-LOG commit backfill.
+- `f5f0b6a` — **Revert `5f60448`**. Round 3 measurement via Debug scorecard showed `hydrated_ms` 17.8 s → 20.6 s (worse). Theory falsified. LL-021 rewrite + § 13 land alongside.
 
 ## Open items
 
-- **User action (priority)**: once `bid0t1kd6` ships, relaunch `src-tauri/target/release/constellation.exe` on trial Universe; report the new `boot-perf.latest.json`. Expected `core_queue_ms` → ~0 ms and `hydrated_ms` ≤ 6 s (Criterion 2 PASS). If `core_queue_ms` is still large, the theory (async-worker saturation) is wrong and we escalate to runtime-thread profiling.
-- **Pending**: Settings → Debug → Boot Performance scorecard UI (consumes `boot-perf.latest.json` once fields stabilize).
-- **Housekeeping**: `src-tauri/tauri.conf.json` version field reverted to `0.1.0` (prior worktree state); reconcile to `0.3.4` in a separate commit.
-- **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing for release builds (updater signature generation).
-- **M11-data v2**: next targets §§ 106+ — continue toward 20 K-concept long-term goal; geographical-sequence concluded at § 105, next batches likely pivot back to conceptual/abstract domains.
+- **Investigation (priority, LL-017)**: adversarial agent to read Tauri v2 IPC dispatch code and identify the *actual* source of `core_queue_ms ≈ 20 s`. Deliverable must be line-referenced in `tauri-macros` / `tauri-runtime-wry` source, or a falsifying experiment. No more fix commits without this.
+- **Rebuild**: release binary from the reverted tree so the user has a clean, known baseline (no spawn_blocking overhead, original sync-command model, Debug scorecard still present).
+- **Housekeeping**: `TAURI_SIGNING_PRIVATE_KEY` env-var plumbing for release builds (updater signature generation, non-fatal).
+- **M11-data v2**: next targets §§ 107+ — continue toward 20 K-concept long-term goal. Deferred until Criterion 2 investigation has a validated direction.
 
 ## Standing Order follow-ups
 
