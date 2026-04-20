@@ -626,3 +626,79 @@ i18n for all 15 locales via lab/scripts/i18n_most_traveled.py.
   - Isolated throttle stress-test helper
   - `__navTrace` instrumentation cleanup (gate behind dev flag)
   - Settings → Debug Boot Performance scorecard UI
+
+## § 39 — P4.3 wiring, polish iterations, and sidebar sizing
+
+After § 38 landed the Most-Traveled tab inside the LinkDashboard
+component, testing surfaced a stack of small gaps that closed
+one by one:
+
+### Wiring gap: dashboard not mounted anywhere
+Investigation turned up an orphaned component — LinkDashboard
+existed but had no import in the current +layout.svelte. Tests 1
+and 2 were blocked.
+- **`93432ab`** — Added `'links'` to the right-sidebar tab union,
+  imported LinkDashboard, wired a tab button with a link-chain
+  icon and an `allLinks` / `allNotes` / `visible` / `onNoteClick`
+  prop surface.
+- i18n for `panels.links` across all 15 locales via
+  `lab/scripts/i18n_panels_links.py`.
+
+### Pill-style consistency sweep
+User feedback across three screenshots — all variants of "same
+issue" — drove the chip styling to converge on the one source of
+truth (`$appSettings.linkPills.shape`):
+- **`66e1eea`** — `×N` chip in Most-Traveled rows now reads
+  `--pill-radius` / `--pill-height` / `--pill-weight`.
+- **`e456f7e`** — Tab count badges (`11`, `10`, `365`, etc.) and
+  the outer `.ld-tab` container matched to the same vars.
+- **`ac05b10`** — Frontmatter tag pills (`.pe-tag` in
+  PropertyEditor) routed through the same vars **and** forced to
+  solid white text so the numbers read against saturated accent
+  fills in Arabic-dark-theme.
+- **`2a151f6`** — LinkDashboard tab badge text color pinned to
+  white to match the tag pill fix.
+
+Net result: **every pill surface in the app now tracks one setting**
+— link-type badges, sidebar counts, Most-Traveled chips, tab
+badges, and frontmatter tags.
+
+### Test 4 pre-flight: live refresh routing
+The dashboard was reading `allLibraryLinks` directly, so the P4.2
+optimistic bumps never reached the Most-Traveled sort. Fixed
+before the user hit the test:
+- **`bb9bb95`** — Route through `effectiveLibraryLinks` (the
+  bumps-folded derived store). Same pattern the
+  Backlinks/Outgoing panels use. Tests 3 and 4 then passed.
+
+### Sidebar sizing + icon collision
+With 10 tabs in the right sidebar, the default 300px width was
+visibly squeezing both the icon row and the content underneath
+(tag pills wrapping mid-word on RTL notes). LinkDashboard's icon
+also happened to mirror the Backlinks glyph.
+- **`e9bc469`** — Default width `300 → 340`, resize floor
+  `160 → 320`. LinkDashboard icon changed from Feather `link`
+  chain to Feather `share-2` three-node network. Distinct
+  silhouette, still semantically "links/connections".
+
+### Tests completed
+- Test 1: tab appears ✓
+- Test 2: list renders correctly ✓
+- Test 3: click-to-open ✓
+- Test 4: live refresh on traversal ✓
+- Tests 5 + 6: empty state + i18n — deferred (implicitly covered
+  by the 15-locale bundle and the `noTraveled` key)
+
+### Commits landed in this section (chronological)
+- `93432ab` — mount LinkDashboard + `panels.links` i18n
+- `66e1eea` — ×N chip pill-style
+- `e456f7e` — tab badges + tab container pill-style
+- `ac05b10` — frontmatter tag pills (pill-style + white text)
+- `2a151f6` — LinkDashboard badge text white
+- `bb9bb95` — route through effectiveLibraryLinks
+- `e9bc469` — sidebar width + distinct icon
+
+P4 suite fully shipped and validated. Next candidate: **P5 —
+link lifecycle** (decay, stale-target flagging, confidence
+progression). Orthogonal cleanups (navTrace dev-gate, boot-perf
+scorecard UI, throttle stress-test) still on the queue.
