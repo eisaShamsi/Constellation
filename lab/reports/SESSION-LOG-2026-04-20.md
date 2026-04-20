@@ -403,9 +403,23 @@ added `f64 + i64` per row is ~16 B; on the 7,600-note / 656k-link
 trial Universe that's roughly +10 MB one-time payload, fully inside
 the idle-callback phase post-paint. Boot Criterion 2 unaffected.
 
-### Commit
+### Commits
 
 - `db9a826` — P3: Backlinks ordered by weight + traversal-count chip
+- `60167fe` — Chip contrast fix: accent-tinted instead of
+  --text-faint/--background-modifier-border (which rendered the
+  ×N number nearly invisible in the user's dark theme).
+- `6d99fc5` — Unified `.bl-count` (the LINKED MENTIONS header pill)
+  with the traversal chip's accent-tint palette; both Backlinks
+  chips now share one visual language.
+- `989fcef` — Same treatment applied to `.ol-count` in
+  OutgoingLinksPanel so the symmetric panel doesn't stay behind
+  on the old heavy `--background-modifier-border-focus` fill.
+
+User validation: ordering correct (غرناطة at top at weight ≈ 3.40
+on a traversal_count of 14 from the P2 + post-fix test runs; 142
+untraversed backlinks follow alphabetically at weight 1.0). Chip
+and count pill both legible in dark mode.
 
 ### Out of scope (P4 candidates)
 
