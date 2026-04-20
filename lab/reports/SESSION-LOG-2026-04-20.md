@@ -702,3 +702,60 @@ P4 suite fully shipped and validated. Next candidate: **P5 —
 link lifecycle** (decay, stale-target flagging, confidence
 progression). Orthogonal cleanups (navTrace dev-gate, boot-perf
 scorecard UI, throttle stress-test) still on the queue.
+
+## § 40 — P5 slice 1: stale detection + Stale tab
+
+First slice of Living Link lifecycle. Scope kept tight so the
+layer lands incrementally rather than all-at-once.
+
+### What the Rust side already had
+- `note_links.last_traversed` TEXT column with its own index
+- `note_links.confidence` TEXT column with its own index
+- `note_links.status` TEXT column ('active' / 'dormant')
+- `constellation_link_traverse` already updating `last_traversed`
+  on every click
+
+None of these were surfaced to JS. This commit reads them, folds
+them into NoteLink, and computes a lifecycle tier in a pure
+helper. **No schema migration required** — infrastructure was
+just sitting idle.
+
+### What shipped (commit `f53053d`)
+- Rust: `NoteLink` struct gains `last_traversed` + `confidence`
+  with `#[serde(default)]`. Three constructors updated.
+- Rust: `read_links` in cache.rs widened to SELECT the two new
+  columns.
+- JS: `NoteLink` interface mirrored. New `LinkLifecycle` union
+  type + `linkLifecycle()` pure helper that classifies each link
+  into fresh / emerging / established / load-bearing / stale on
+  the fly from (traversal_count, last_traversed_age).
+- UI: New `Stale` tab in LinkDashboard, sorted oldest-touched
+  first, amber-tinted age chip per row ("3mo ago" etc.), tooltip
+  shows raw ISO timestamp.
+- i18n: 15 locales via lab/scripts/i18n_p5_stale.py. Five keys:
+  `stale`, `noStale`, `staleDays`, `staleMonths`, `staleYears`.
+
+### Thresholds (hardcoded for now)
+    fresh        traversal_count === 0
+    emerging     1–2 traversals, recent
+    established  3+ traversals, recent
+    load-bearing 10+ traversals, recent
+    stale        any traversed link untouched for 90+ days
+
+Tuning knobs aren't settings-surfaced yet — deferred until we see
+how the tiers feel on real usage data.
+
+### Deferred to P5 slice 2+
+- Weight decay formula: `effectiveWeight = weight * exp(-λ * days)`
+  — one-liner once half-life is chosen.
+- Confidence promotion server-side: field reads through but always
+  "hypothesis" right now. Promotion write path is a separate IPC.
+- Per-tier chip icon in sidebar panels: the tier is available
+  everywhere but we're keeping the visual surface minimal until the
+  Stale tab proves out.
+
+### Open items snapshot
+- P5 slice 2: decay formula + settings knobs
+- P5 slice 3: confidence promotion write path + per-tier visual
+- Orthogonal: navTrace dev-gate, boot-perf scorecard UI, throttle
+  stress-test helper
