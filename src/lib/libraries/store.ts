@@ -715,7 +715,16 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 			// fire-and-forget below — if it fails, the bump remains (the user
 			// clicked, they expect feedback) and gets reconciled on the next
 			// boot-graph fetch anyway.
-			bumpLinkTraversal(_fromNotePath, nameLower);
+			//
+			// Deferred via queueMicrotask so the bump's reactive cascade
+			// (linkTraversalBumps → linkTraversalMap → NotePane $effect →
+			// view.dispatch → LivePreviewPlugin rebuild) fires AFTER this
+			// openNoteTab call has finished its `{#key}`-remount-triggering
+			// tab update. Running the cascade synchronously mid-navigation
+			// would race with the in-flight editor teardown/mount and
+	// risk the same class of desync the mountedFilePath /
+			// supersede-token guards defend against.
+			queueMicrotask(() => bumpLinkTraversal(_fromNotePath, nameLower));
 			invoke('constellation_link_traverse', { sourcePath: _fromNotePath, targetName: name }).catch(() => {});
 		}
 	}
