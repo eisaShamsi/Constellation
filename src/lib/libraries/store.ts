@@ -622,33 +622,6 @@ export function createEmptyTab() {
 const TRAVERSAL_THROTTLE_MS = 2000;
 const traversalLastWrite = new Map<string, number>();
 
-// P4.2 live refresh: optimistic per-pair traversal increments applied on top
-// of the boot-graph counts. When the user follows a wikilink and we fire
-// `constellation_link_traverse`, we ALSO bump this local map so the in-prose
-// `×N` chip and the sidebar chips update immediately without waiting for
-// the next boot-graph re-fetch. The bumps are cleared whenever the graph
-// payload arrives fresh — at that point the DB has already absorbed the
-// bumps, so keeping them around would double-count.
-export const linkTraversalBumps = writable<Map<string, number>>(new Map());
-
-/** Increment the optimistic bump for a (source, target) pair by 1. Key
- *  format matches the consumers' lookup: `source_path.toLowerCase()|target.toLowerCase()`. */
-export function bumpLinkTraversal(sourcePath: string, targetLower: string) {
-	const key = sourcePath.toLowerCase() + '|' + targetLower;
-	linkTraversalBumps.update(m => {
-		const next = new Map(m);
-		next.set(key, (next.get(key) ?? 0) + 1);
-		return next;
-	});
-}
-
-/** Reset the bumps — call this immediately after a fresh boot-graph load
- *  lands in `allLibraryLinks`, otherwise the optimistic increments will
- *  double-count against the (now-updated) server counts. */
-export function clearLinkTraversalBumps() {
-	linkTraversalBumps.set(new Map());
-}
-
 export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean, fromNotePath?: string) {
 	const tabs = get(openTabs);
 
@@ -702,20 +675,13 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 
 	// Living Link System: record traversal now that we have the display name
 	if (_fromNotePath) {
-		const nameLower = name.toLowerCase();
-		const key = `${_fromNotePath}|${nameLower}`;
+		const key = `${_fromNotePath}|${name.toLowerCase()}`;
 		const now = Date.now();
 		if (now - (traversalLastWrite.get(key) ?? 0) >= TRAVERSAL_THROTTLE_MS) {
 			traversalLastWrite.set(key, now);
 			// Stale entries (older than TRAVERSAL_THROTTLE_MS) are already inert;
 			// clearing on overflow is equivalent to letting them age out.
 			if (traversalLastWrite.size > 500) traversalLastWrite.clear();
-			// P4.2 live refresh: bump the optimistic counter so the chips
-			// render the new count immediately. The server-side write fires
-			// fire-and-forget below — if it fails, the bump remains (the user
-			// clicked, they expect feedback) and gets reconciled on the next
-			// boot-graph fetch anyway.
-			bumpLinkTraversal(_fromNotePath, nameLower);
 			invoke('constellation_link_traverse', { sourcePath: _fromNotePath, targetName: name }).catch(() => {});
 		}
 	}

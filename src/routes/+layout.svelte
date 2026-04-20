@@ -30,7 +30,6 @@
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
 		buildDefaultFrontmatter,
-		linkTraversalBumps, clearLinkTraversalBumps,
 		type FrontmatterProperty, type HeadingItem, type NoteLink, type SkyNode, type SkyLink,
 		type IndexEntry
 	} from '$lib/libraries/store';
@@ -540,23 +539,16 @@
 
 	// Library data caches
 	let allLibraryLinks = $state<NoteLink[]>([]);
-	// P4.2: per-(source,target) traversal counts, derived from the boot
-	// graph PLUS any optimistic bumps fired by openNoteTab since the last
-	// fetch. Key = `${sourcePath.toLowerCase()}|${target.toLowerCase()}`.
+	// P4.2: per-(source,target) traversal counts, built once from the boot
+	// graph. Key = `${sourcePath.toLowerCase()}|${target.toLowerCase()}`.
 	// livePreview.ts consumes this via the linkTraversalMapField StateField
 	// to render a `×N` chip after each traversed wikilink in the note body.
-	// The bumps are cleared by clearLinkTraversalBumps() right after the
-	// boot-graph payload lands so live increments don't double-count against
-	// the server's already-updated values.
 	const linkTraversalMap = $derived.by(() => {
 		const m = new Map<string, number>();
 		for (const l of allLibraryLinks) {
 			const count = l.traversal_count ?? 0;
 			if (count <= 0 || !l.source_path || !l.target) continue;
 			m.set(l.source_path.toLowerCase() + '|' + l.target.toLowerCase(), count);
-		}
-		for (const [key, bump] of $linkTraversalBumps) {
-			m.set(key, (m.get(key) ?? 0) + bump);
 		}
 		return m;
 	});
@@ -1688,7 +1680,6 @@
 		allLibraryLinks = [];
 		allLibraryTags = {};
 		allNotes = [];
-		clearLinkTraversalBumps();
 		allIndexEntries = [];
 		indexLoadedKey = null;
 		libraryTrees = {};
@@ -2309,11 +2300,6 @@
 
 				allLibraryLinks = graph.links;
 				allLibraryTags = graph.tags;
-				// Boot graph carries the canonical counts from the DB, which
-				// already absorbed every traversal that was fired since the
-				// last fetch — drop our optimistic bumps so they don't add
-				// on top.
-				clearLinkTraversalBumps();
 
 				const libraryList = $libraries;
 				if (libraryList.length > 0 && graph.links.length > 0) {
