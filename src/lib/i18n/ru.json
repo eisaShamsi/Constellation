@@ -1593,5 +1593,15 @@
       "linkForce": "Сила связи",
       "linkDistance": "Расстояние связи"
     }
+  },
+  "linkTypes": {
+    "supports": "поддерживает",
+    "contradicts": "противоречит",
+    "causes": "вызывает",
+    "exemplifies": "иллюстрирует",
+    "generalizes": "обобщает",
+    "derives-from": "происходит-от",
+    "part-of": "часть-от",
+    "associative": "ассоциативный"
   }
 }

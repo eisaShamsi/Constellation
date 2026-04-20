@@ -1957,11 +1957,12 @@
 					{#each LINK_TYPE_NAMES as type}
 						{@const fill = $appSettings.linkPills?.fill?.[type] ?? '#888'}
 						{@const text = $appSettings.linkPills?.text?.[type] ?? '#fff'}
+						{@const localized = $t(`linkTypes.${type}`) || type}
 						<div class="setting-item">
 							<div class="setting-info">
-								<div class="setting-name">{type}</div>
+								<div class="setting-name">{localized}<span class="ll-type-id">· {type}</span></div>
 								<div class="setting-desc">
-									<span class="ll-pill-preview" style="background:{fill};color:{text};border-radius:{$appSettings.linkPills?.shape?.radius ?? 10}px;height:{$appSettings.linkPills?.shape?.height ?? 20}px;font-weight:{$appSettings.linkPills?.shape?.fontWeight ?? 700}">{type}</span>
+									<span class="ll-pill-preview" style="background:{fill};color:{text};border-radius:{$appSettings.linkPills?.shape?.radius ?? 10}px;height:{$appSettings.linkPills?.shape?.height ?? 20}px;font-weight:{$appSettings.linkPills?.shape?.fontWeight ?? 700}">{localized}</span>
 								</div>
 							</div>
 							<div class="ll-color-controls">
@@ -2545,6 +2546,11 @@
 		text-transform: lowercase; letter-spacing: 0.02em;
 		box-sizing: border-box; margin-top: 4px;
 		border: 1px solid rgba(0,0,0,0.1);
+	}
+	.ll-type-id {
+		font-family: var(--font-monospace-theme, monospace);
+		font-size: 0.72rem; font-weight: 400;
+		color: var(--text-faint); margin-inline-start: 6px;
 	}
 
 	/* Theme gallery */

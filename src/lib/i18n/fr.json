@@ -1593,5 +1593,15 @@
       "linkForce": "Force de liaison",
       "linkDistance": "Distance de liaison"
     }
+  },
+  "linkTypes": {
+    "supports": "soutient",
+    "contradicts": "contredit",
+    "causes": "cause",
+    "exemplifies": "illustre",
+    "generalizes": "généralise",
+    "derives-from": "dérivé-de",
+    "part-of": "partie-de",
+    "associative": "associatif"
   }
 }

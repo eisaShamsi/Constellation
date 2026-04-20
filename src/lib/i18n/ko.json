@@ -1593,5 +1593,15 @@
       "linkForce": "링크 힘",
       "linkDistance": "링크 거리"
     }
+  },
+  "linkTypes": {
+    "supports": "지지",
+    "contradicts": "모순",
+    "causes": "유발",
+    "exemplifies": "예시",
+    "generalizes": "일반화",
+    "derives-from": "파생",
+    "part-of": "일부",
+    "associative": "연관"
   }
 }

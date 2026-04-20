@@ -88,7 +88,7 @@
 							{@const txt = LINK_TYPE_TEXT[bl.linkType] ?? '#ffffff'}
 							<span class="bl-link-type-badge"
 								style="color:{txt};background:{fill};border-color:{fill}"
-							>{bl.linkType}</span>
+							>{$t(`linkTypes.${bl.linkType}`) || bl.linkType}</span>
 						{/if}
 						{#if (bl.traversalCount ?? 0) > 0}
 							<span class="bl-traversal-chip" title={`Traversed ${bl.traversalCount} time${bl.traversalCount === 1 ? '' : 's'}`}>×{bl.traversalCount}</span>

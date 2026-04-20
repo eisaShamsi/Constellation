@@ -52,7 +52,7 @@
 						{@const txt = LINK_TYPE_TEXT[link.linkType] ?? '#ffffff'}
 						<span class="ol-link-type-badge"
 							style="color:{txt};background:{fill};border-color:{fill}"
-						>{link.linkType}</span>
+						>{$t(`linkTypes.${link.linkType}`) || link.linkType}</span>
 					{/if}
 					{#if (link.traversalCount ?? 0) > 0}
 						<span class="ol-traversal-chip" title={`Traversed ${link.traversalCount} time${link.traversalCount === 1 ? '' : 's'}`}>×{link.traversalCount}</span>

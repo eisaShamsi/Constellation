@@ -1693,5 +1693,15 @@
       "linkForce": "Link force",
       "linkDistance": "Link distance"
     }
+  },
+  "linkTypes": {
+    "supports": "supports",
+    "contradicts": "contradicts",
+    "causes": "causes",
+    "exemplifies": "exemplifies",
+    "generalizes": "generalizes",
+    "derives-from": "derives-from",
+    "part-of": "part-of",
+    "associative": "associative"
   }
 }

@@ -1597,5 +1597,15 @@
       "linkForce": "قوة الرابط",
       "linkDistance": "مسافة الرابط"
     }
+  },
+  "linkTypes": {
+    "supports": "يدعم",
+    "contradicts": "يناقض",
+    "causes": "يسبب",
+    "exemplifies": "يمثّل",
+    "generalizes": "يعمّم",
+    "derives-from": "مشتق من",
+    "part-of": "جزء من",
+    "associative": "ترابطي"
   }
 }

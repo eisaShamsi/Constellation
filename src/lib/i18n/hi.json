@@ -1593,5 +1593,15 @@
       "linkForce": "लिंक बल",
       "linkDistance": "लिंक दूरी"
     }
+  },
+  "linkTypes": {
+    "supports": "समर्थन",
+    "contradicts": "विरोधाभास",
+    "causes": "कारण",
+    "exemplifies": "उदाहरण",
+    "generalizes": "सामान्यीकरण",
+    "derives-from": "व्युत्पन्न",
+    "part-of": "का-हिस्सा",
+    "associative": "साहचर्य"
   }
 }

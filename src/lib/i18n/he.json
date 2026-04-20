@@ -1593,5 +1593,15 @@
       "linkForce": "כוח קישור",
       "linkDistance": "מרחק קישור"
     }
+  },
+  "linkTypes": {
+    "supports": "תומך",
+    "contradicts": "סותר",
+    "causes": "גורם",
+    "exemplifies": "מדגים",
+    "generalizes": "מכליל",
+    "derives-from": "נגזר-מ",
+    "part-of": "חלק-מ",
+    "associative": "אסוציאטיבי"
   }
 }

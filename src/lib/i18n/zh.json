@@ -1593,5 +1593,15 @@
       "linkForce": "连接力",
       "linkDistance": "连接距离"
     }
+  },
+  "linkTypes": {
+    "supports": "支持",
+    "contradicts": "反驳",
+    "causes": "导致",
+    "exemplifies": "举例",
+    "generalizes": "概括",
+    "derives-from": "源自",
+    "part-of": "部分",
+    "associative": "关联"
   }
 }

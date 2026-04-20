@@ -1593,5 +1593,15 @@
       "linkForce": "Verbindungskraft",
       "linkDistance": "Verbindungsabstand"
     }
+  },
+  "linkTypes": {
+    "supports": "unterstützt",
+    "contradicts": "widerspricht",
+    "causes": "verursacht",
+    "exemplifies": "veranschaulicht",
+    "generalizes": "verallgemeinert",
+    "derives-from": "abgeleitet-von",
+    "part-of": "teil-von",
+    "associative": "assoziativ"
   }
 }
