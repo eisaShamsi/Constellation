@@ -87,8 +87,9 @@
 						{/if}
 						<span class="bl-name">{bl.name}</span>
 						{#if bl.linkType}
+							{@const c = LINK_TYPE_COLORS[bl.linkType] ?? '#888'}
 							<span class="bl-link-type-badge"
-								style="color:{LINK_TYPE_COLORS[bl.linkType] ?? '#888'};border-color:{LINK_TYPE_COLORS[bl.linkType] ?? '#888'}20"
+								style="color:{c};background:color-mix(in srgb, {c} 18%, transparent);border-color:color-mix(in srgb, {c} 55%, transparent)"
 							>{bl.linkType}</span>
 						{/if}
 						{#if (bl.traversalCount ?? 0) > 0}
