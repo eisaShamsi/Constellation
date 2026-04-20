@@ -502,3 +502,32 @@ No Rust changes needed — `NoteLink` already carries `weight` and
 - `db9a826` — P3: Backlinks ordered by weight + chip
 - (+ background M11-data cron: `5890ff9`, `6e2a133`, `c29e1a8`,
   `1f45445` — +075, +076, +077, +078 — producer continues toward 20k)
+
+## § 35 — Ghost revival + P4.2 follow-up revert
+
+**User report:** "Surprise... surprise, the ghost has revived. Same symptoms."
+A↔B plinking + title/body desync on wikilink click — the same class the
+`mountedFilePath` guard (`a2052da`) + supersede-token (`80e9fc4`) closed.
+
+**Root cause:** the two P4.2 live-refresh commits landed a reactive
+wave that fires **during** `openNoteTab`'s in-flight navigation —
+`bumpLinkTraversal` runs at store.ts:718, before the tab swap at
+:771. Chain: `linkTraversalBumps` → `linkTraversalMap` $derived →
+NoteEditor prop → NotePane $effect → `view.dispatch(setLinkTraversalMap)`
+→ LivePreviewPlugin rebuilds decorations — all while the `{#key}`
+block is transitioning. `effectiveLibraryLinks` (9ebe35c) doubled the
+blast radius by also invalidating the sidebar on every bump.
+
+**Action:** reverted both follow-ups.
+- `5b31c80` — Revert "P4.2 follow-up: route sidebar panels through bumped links too"
+- `e365e72` — Revert "P4.2 follow-up: live traversal count refresh"
+
+Live `×N` refresh is a nice-to-have: boot-graph fetch already
+reconciles on next launch / universe switch. Post-revert the in-prose
+chip and sidebar chips return to the boot-graph-only data source that
+was clean at `3d216be`.
+
+**Follow-up (deferred):** re-ship live refresh with the bump deferred
+via `queueMicrotask` so the reactive wave fires **after** navigation
+settles, and with a dep-gated sidebar $effect so bumps don't invalidate
+`effectiveLibraryLinks` during nav.
