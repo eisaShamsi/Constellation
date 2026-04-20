@@ -539,6 +539,19 @@
 
 	// Library data caches
 	let allLibraryLinks = $state<NoteLink[]>([]);
+	// P4.2: per-(source,target) traversal counts, built once from the boot
+	// graph. Key = `${sourcePath.toLowerCase()}|${target.toLowerCase()}`.
+	// livePreview.ts consumes this via the linkTraversalMapField StateField
+	// to render a `×N` chip after each traversed wikilink in the note body.
+	const linkTraversalMap = $derived.by(() => {
+		const m = new Map<string, number>();
+		for (const l of allLibraryLinks) {
+			const count = l.traversal_count ?? 0;
+			if (count <= 0 || !l.source_path || !l.target) continue;
+			m.set(l.source_path.toLowerCase() + '|' + l.target.toLowerCase(), count);
+		}
+		return m;
+	});
 	let allLibraryTags = $state<Record<string, number>>({});
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let allIndexEntries = $state<IndexEntry[]>([]);
@@ -4098,7 +4111,7 @@
 							<span class="index-note-name" dir="auto">{indexNoteTab.name}</span>
 							<button class="index-close" onclick={() => { indexNoteTab = null; indexActiveNotePath = ''; }} title="Close note">×</button>
 						</div>
-						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} />
+						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} {linkTraversalMap} />
 					</div>
 					<div class="index-split-divider"></div>
 				{/if}
@@ -4404,6 +4417,7 @@
 									{tab}
 									noteNames={allNotes}
 									allTags={allTagsList}
+									{linkTraversalMap}
 									onnavigateback={() => { setFocusedTab(tab.id); navigateBack(); }}
 									onnavigateforward={() => { setFocusedTab(tab.id); navigateForward(); }}
 									onStageChanged={(path, stage) => {
@@ -4471,6 +4485,7 @@
 								tab={$activeTab}
 								noteNames={allNotes}
 								allTags={allTagsList}
+								{linkTraversalMap}
 								trail={activeTrail ? activeTrail.title : ''}
 								{trailIndex}
 								trailTotal={activeTrail ? activeTrail.notes.length : 0}
