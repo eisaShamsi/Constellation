@@ -421,6 +421,66 @@ on a traversal_count of 14 from the P2 + post-fix test runs; 142
 untraversed backlinks follow alphabetically at weight 1.0). Chip
 and count pill both legible in dark mode.
 
+---
+
+## § 34 — P4.1: Outgoing Links symmetry
+
+Symmetric companion to P3. Outgoing Links panel now mirrors the
+Backlinks treatment: weight-sorted order, link-type badge with the
+shared type-color palette, and the `×N` traversal chip where a pair
+has been traversed.
+
+### Changes
+
+**`store.ts::getOutgoingLinks`** — sort contract matches
+`getBacklinks`: `weight DESC, target ASC`. Stable ordering when
+everything is still at weight 1.0.
+
+**`+layout.svelte`** — `currentOutgoing` state type extended to
+carry `traversalCount` and `linkType`; the map from
+`getOutgoingLinks` passes both through into the panel.
+
+**`OutgoingLinksPanel.svelte`** — adds the link-type badge (same
+`LINK_TYPE_COLORS` palette as BacklinksPanel / GraphMind /
+livePreview) and the `×N` chip (same accent-tinted palette as the
+BacklinksPanel chip). Target row is now a flex container so the
+target name ellipsizes cleanly when badges sit next to it.
+
+No Rust changes needed — `NoteLink` already carries `weight` and
+`traversal_count` from P3's schema extension, and
+`cache_boot_snapshot_graph` already exports both.
+
+### Commit
+
+- `a2d8c7b` — P4.1: Outgoing Links weight-sorted + link-type badge + ×N chip
+
+### P4 lanes remaining
+
+- P4.2: Wikilink weight chip inside rendered prose (higher-impact,
+  needs per-render lookup from the live-preview path).
+- P4.3: "Most-traveled paths" read-only pane (cheapest, least
+  daily-useful).
+
+### Commits landed today (updated)
+
+- `917f2e1` — Remove read_index_entries diagnostic block
+- `80e9fc4` — History navigation races + tab title/body desync
+- `e911749` — session-log § 29
+- `a2052da` — Cross-note content corruption on wikilink-click nav
+- `bfc790f` — session-log § 30 (Ghost audit)
+- `455bdd7` — 404 flood on image embeds
+- `8abf417` — Live-preview: 3-part typed wikilinks
+- `8b5b2e8` — session-log §§ 31, 32
+- `db9a826` — P3: Backlinks ordered by weight + chip
+- `60167fe` — Chip contrast fix
+- `6d99fc5` — Backlinks `.bl-count` pill unified
+- `989fcef` — Outgoing `.ol-count` pill unified
+- `c2843b3` — session-log § 33
+- `4494642` — session-log § 33 polish commits
+- `a2d8c7b` — P4.1: Outgoing Links weight + chip
+- (+ background M11-data cron: `5890ff9`, `6e2a133`, `c29e1a8`,
+  `1f45445` — +075 through +078 — producer continues toward 20k)
+
 ### Out of scope (P4 candidates)
 
 - Outgoing Links panel ordering — same sort, symmetric change, small.
