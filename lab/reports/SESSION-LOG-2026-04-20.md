@@ -574,3 +574,29 @@ design still needed more care, but they weren't the ghost.
 - `5bca489` — revert P4.2 base (×N chip in prose)
 - `9b76c9b` — session-log § 35 (initial diagnosis — superseded)
 - `a3daf92` — **actual ghost fix**
+
+## § 37 — P4.2 relanded with microtask-deferred bump
+
+With the actual ghost fixed in a3daf92, the P4.2 suite came back
+in via three reverts-of-reverts plus one tightening commit:
+
+- `e148446` — Reapply P4.2 base (×N chip in prose)
+- `4435811` — Reapply live-refresh bumps
+- `f92ef9d` — Reapply sidebar routing through effectiveLibraryLinks
+- `5d61d3a` — Defer the bump via `queueMicrotask` inside openNoteTab
+
+The microtask deferral addresses the only real concern flagged when
+I'd reverted the live-refresh commits: firing `bumpLinkTraversal`
+synchronously mid-navigation ran the whole reactive cascade while
+the `{#key}` block was still transitioning the editor. Deferring
+to the end of the current JS turn means the cascade lands AFTER
+`openTabs.update()` has written the new `tab.path`, Svelte has
+processed the remount, and the new NotePane has mounted. The ×N
+chip refresh stays perceptually instant (microtask runs before the
+next paint) while the race window closes entirely.
+
+End-state on main after this section:
+- Ghost fix: libraryName never drops on cross-library wikilinks
+- ×N chips live-refresh in-prose AND in sidebar (Backlinks /
+  Outgoing Links) on every traversal
+- No reactive cascade during navigation
