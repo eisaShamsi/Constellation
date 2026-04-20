@@ -114,19 +114,29 @@
 		onStageChanged?.(tab.path, nextStage);
 	}
 
-	function handleSave(text: string) {
+	// `filePath` is captured by NotePane at mount and passed back on every
+	// save/flush. If it doesn't match the current tab.path, this callback is
+	// arriving from an already-destroyed editor whose tab has been repurposed
+	// by a wikilink click / Alt+← nav. Using `tab.path` / `freshProps()` at
+	// that point would (a) reconstruct content as `current-tab frontmatter
+	// + old-tab body` — corruption — and (b) write that corruption to the
+	// wrong file on disk, or at minimum poison `setWriteAhead` for the new
+	// tab. Bail in that case.
+	function handleSave(text: string, filePath: string) {
 		if (saving) return;
+		if (!filePath || filePath !== tab.path) return;
 		saving = true;
 		const props = freshProps();
-		markRecentWrite(tab.path);
+		markRecentWrite(filePath);
 		const content = buildFullContent(props, text);
-		writeNote(tab.path, content)
-			.then(() => { broadcastNoteSaved(tab.path); })
+		writeNote(filePath, content)
+			.then(() => { broadcastNoteSaved(filePath); })
 			.catch(() => {})
 			.finally(() => { saving = false; });
 	}
 
-	function handleFlush(text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number) {
+	function handleFlush(text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number, filePath: string) {
+		if (!filePath || filePath !== tab.path) return;
 		const props = freshProps();
 		const content = buildFullContent(props, text);
 		// Update store tab if present
@@ -136,15 +146,11 @@
 			ct.cursorPos = cursorPos;
 			ct.scrollTop = scrollTop;
 		}
-		// Update local tab
-		tab.content = content;
-		tab.cursorPos = cursorPos;
-		tab.scrollTop = scrollTop;
-		setWriteAhead(tab.path, content, cursorPos, scrollTop);
+		setWriteAhead(filePath, content, cursorPos, scrollTop);
 		if (needsDiskSave) {
-			markRecentWrite(tab.path);
-			writeNote(tab.path, content)
-				.then(() => { clearWriteAhead(tab.path); broadcastNoteSaved(tab.path); })
+			markRecentWrite(filePath);
+			writeNote(filePath, content)
+				.then(() => { clearWriteAhead(filePath); broadcastNoteSaved(filePath); })
 				.catch(() => {});
 		}
 	}

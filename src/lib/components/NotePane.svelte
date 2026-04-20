@@ -130,8 +130,8 @@
 		noteNames?: { name: string; path: string; libraryName?: string }[];
 		allTags?: string[];
 		onchange?: (value: string) => void;
-		onsave?: (value: string) => void;
-		onflush?: (text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number) => void;
+		onsave?: (value: string, filePath: string) => void;
+		onflush?: (text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number, filePath: string) => void;
 		ontitlechange?: (newTitle: string) => void;
 		onnavigateback?: () => void;
 		onnavigateforward?: () => void;
@@ -210,19 +210,28 @@
 	}
 
 	/* ─── Background save ─── */
+	// Snapshot of the file this NotePane instance is editing, captured at
+	// mount. The `filePath` prop updates reactively when the parent swaps
+	// to a different tab — during the {#key}-triggered destroy there's a
+	// brief window where `filePath` already points to the NEW tab but this
+	// editor's doc still holds the OLD note's body. Using the live prop at
+	// that point corrupts the target file's write-ahead buffer and (if
+	// dirty) its on-disk content. Route through `mountedFilePath` so the
+	// save always lands on the note this editor was actually editing.
+	let mountedFilePath = filePath ?? '';
 	function doSave() {
 		if (!dirty) return;
 		dirty = false;
 		// Snapshot text here — the one place we pay the O(N) toString() cost,
 		// at most once per autosave cycle (1.5s), never on individual keystrokes.
 		if (view) latestText = view.state.doc.toString();
-		onsave?.(latestText);
+		onsave?.(latestText, mountedFilePath);
 	}
 	function doFlush() {
 		if (view) latestText = view.state.doc.toString();
 		const cursorPos = view ? view.state.selection.main.head : 0;
 		const scrollTop = view ? view.scrollDOM.scrollTop : 0;
-		onflush?.(latestText, dirty, cursorPos, scrollTop);
+		onflush?.(latestText, dirty, cursorPos, scrollTop, mountedFilePath);
 	}
 	function handleVisibilityChange() { if (document.hidden && dirty) doSave(); }
 	function handleBeforeUnload() { doFlush(); }
