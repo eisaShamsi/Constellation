@@ -319,7 +319,7 @@ fn read_links(conn: &Connection) -> Result<Vec<NoteLink>, String> {
     let mut stmt = conn
         .prepare(
             "SELECT source_path, source_name, target_name, link_type, library_name,
-                    weight, traversal_count
+                    weight, traversal_count, annotation
              FROM note_links WHERE status = 'active'",
         )
         .map_err(|e| e.to_string())?;
@@ -332,6 +332,7 @@ fn read_links(conn: &Connection) -> Result<Vec<NoteLink>, String> {
             let library_name: String = row.get(4)?;
             let weight: f64 = row.get(5)?;
             let traversal_count: i64 = row.get(6)?;
+            let annotation: String = row.get(7)?;
             Ok(NoteLink {
                 source_path,
                 source_name,
@@ -339,6 +340,7 @@ fn read_links(conn: &Connection) -> Result<Vec<NoteLink>, String> {
                 context: String::new(), // lazy — not needed at boot
                 library_name,
                 link_type: if link_type.is_empty() { None } else { Some(link_type) },
+                annotation,
                 weight,
                 traversal_count,
             })
@@ -378,6 +380,7 @@ fn read_untyped_links_fallback(conn: &Connection) -> Result<Vec<NoteLink>, Strin
                 context: String::new(),
                 library_name: library_name.clone(),
                 link_type: None,
+                annotation: String::new(),
                 weight: 1.0,
                 traversal_count: 0,
             });

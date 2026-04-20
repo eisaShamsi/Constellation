@@ -1492,6 +1492,12 @@ pub struct NoteLink {
     pub context: String,
     pub library_name: String,
     pub link_type: Option<String>,
+    /// User's typed annotation from `[[target|annotation]]` syntax — the
+    /// second parser (`extract_typed_links` in search.rs) stores the
+    /// semantic tag here and leaves `link_type` at the default "relates".
+    /// The UI checks this first when choosing the type-badge color.
+    #[serde(default)]
+    pub annotation: String,
     /// Living Link weight: `1 + ln(1 + traversal_count)`. Default 1.0 for
     /// never-traversed links. Consumed by the Backlinks panel (P3) to
     /// prioritize worn paths.
@@ -1577,6 +1583,7 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
                         context,
                         library_name: library_name.to_string(),
                         link_type,
+                        annotation: String::new(),
                         weight: 1.0,
                         traversal_count: 0,
                     });
@@ -1673,6 +1680,7 @@ fn scan_unlinked_recursive(
                         context,
                         library_name: library_name.to_string(),
                         link_type: None,
+                        annotation: String::new(),
                         weight: 1.0,
                         traversal_count: 0,
                     });

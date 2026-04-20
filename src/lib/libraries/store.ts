@@ -1491,12 +1491,40 @@ export interface NoteLink {
 	context: string;
 	library_name: string;
 	link_type: string | null;
+	/** User's typed annotation from `[[target|annotation]]`. The second
+	 *  parser (`extract_typed_links` in search.rs) stores the semantic
+	 *  tag here and leaves `link_type` at the default "relates". Used by
+	 *  `displayLinkType` to resolve which name to show on the badge. */
+	annotation?: string;
 	/** Living Link weight = 1 + ln(1 + traversal_count). Default 1 for
 	 *  untraversed links; higher values indicate worn paths. Used by
 	 *  `getBacklinks` to prioritize heavily-travelled connections. */
 	weight?: number;
 	/** How many times the user has traversed this link. Default 0. */
 	traversal_count?: number;
+}
+
+/** Known typed-link names shared across the Backlinks/Outgoing panels,
+ *  GraphMind, and the livePreview decorator. Kept in sync with the
+ *  `KNOWN_LINK_TYPES` slice in `src-tauri/src/libraries.rs` and the
+ *  `TYPED_LINK_TYPES` set in `src/lib/editor/livePreview.ts`. */
+const KNOWN_LINK_TYPES = new Set([
+	'supports', 'contradicts', 'causes', 'exemplifies',
+	'generalizes', 'derives-from', 'part-of', 'associative',
+]);
+
+/** Resolve which typed name to show on a link's badge. Prefers the
+ *  `annotation` field (populated by the DB-indexed parser) when it
+ *  matches a known type; falls back to `link_type` if THAT matches a
+ *  known type; otherwise returns `undefined` so the UI can skip the
+ *  badge. Drops the vacuous default `"relates"` that every DB row
+ *  carries at rest. */
+function displayLinkType(l: NoteLink): string | undefined {
+	const ann = l.annotation?.trim().toLowerCase();
+	if (ann && KNOWN_LINK_TYPES.has(ann)) return ann;
+	const lt = l.link_type?.trim().toLowerCase();
+	if (lt && KNOWN_LINK_TYPES.has(lt)) return lt;
+	return undefined;
 }
 
 export async function scanLibraryLinks(libraryPath: string, libraryName: string): Promise<NoteLink[]> {
@@ -1519,7 +1547,7 @@ export function getBacklinks(allLinks: NoteLink[], noteName: string) {
 		path: l.source_path,
 		context: l.context,
 		libraryName: l.library_name,
-		linkType: l.link_type ?? undefined,
+		linkType: displayLinkType(l),
 		traversalCount: l.traversal_count ?? 0,
 	}));
 }
@@ -1534,7 +1562,12 @@ export function getOutgoingLinks(allLinks: NoteLink[], notePath: string) {
 		if (wDiff !== 0) return wDiff;
 		return a.target.localeCompare(b.target);
 	});
-	return outgoing;
+	return outgoing.map(l => ({
+		target: l.target,
+		context: l.context,
+		linkType: displayLinkType(l),
+		traversalCount: l.traversal_count ?? 0,
+	}));
 }
 
 export async function scanUnlinkedMentions(noteName: string, notePath: string): Promise<{ name: string; path: string; context: string; libraryName: string }[]> {

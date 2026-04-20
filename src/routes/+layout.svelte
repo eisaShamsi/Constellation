@@ -884,12 +884,7 @@
 			currentBacklinks = getBacklinks(allLibraryLinks, tab.name);
 			// CE Phase 5: Provenance fetched on tab click only (not here — no IPC on typing path)
 			// Outgoing links
-			currentOutgoing = getOutgoingLinks(allLibraryLinks, tab.path).map(l => ({
-				target: l.target,
-				context: l.context,
-				traversalCount: l.traversal_count ?? 0,
-				linkType: l.link_type ?? undefined,
-			}));
+			currentOutgoing = getOutgoingLinks(allLibraryLinks, tab.path);
 			// Tags (from frontmatter + inline)
 			const tags: string[] = [];
 			for (const p of props) {
