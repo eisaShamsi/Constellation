@@ -23,7 +23,7 @@
 		exemplifies:  '#0b2e18',
 		generalizes:  '#ffffff',
 		'derives-from': '#3d2e00',
-		'part-of':    '#1a1a1a',
+		'part-of':    '#ffffff',
 		associative:  '#ffffff',
 	};
 
@@ -110,7 +110,7 @@
 	.ol-context { display: block; color: var(--text-faint); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ol-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
 	.ol-link-type-badge {
-		font-size: 0.65rem; font-weight: 500; padding: 0 5px;
+		font-size: 0.65rem; font-weight: 700; padding: 0 5px;
 		border-radius: 8px; border: 1px solid; white-space: nowrap; flex-shrink: 0;
 		text-transform: lowercase; letter-spacing: 0.02em;
 	}
