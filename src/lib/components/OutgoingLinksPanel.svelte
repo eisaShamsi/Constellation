@@ -96,9 +96,10 @@
 		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
 		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
 		color: var(--interactive-accent, #7c3aed);
-		border-radius: 10px; padding: 1px 8px;
+		border-radius: 10px; padding: 0 8px; height: 20px; line-height: 1;
 		font-size: 0.7rem; font-weight: 700;
 		font-variant-numeric: tabular-nums;
+		box-sizing: border-box;
 	}
 	.ol-item {
 		padding: 4px 8px; border-radius: 3px;
@@ -112,19 +113,21 @@
 	.ol-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
 	.ol-link-type-badge {
 		display: inline-flex; align-items: center;
-		font-size: 0.65rem; font-weight: 700;
-		padding: 1px 8px;
+		font-size: 0.65rem; font-weight: 700; line-height: 1;
+		padding: 0 8px; height: 20px;
 		border-radius: 10px; border: 1px solid; white-space: nowrap; flex-shrink: 0;
 		text-transform: lowercase; letter-spacing: 0.02em;
+		box-sizing: border-box;
 	}
 	.ol-traversal-chip {
 		display: inline-flex; align-items: center;
-		font-size: 0.65rem; font-weight: 700;
-		padding: 1px 8px;
+		font-size: 0.65rem; font-weight: 700; line-height: 1;
+		padding: 0 8px; height: 20px;
 		border-radius: 10px; white-space: nowrap; flex-shrink: 0;
 		color: var(--interactive-accent, #7c3aed);
 		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
 		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
 		letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
+		box-sizing: border-box;
 	}
 </style>
