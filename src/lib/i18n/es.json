@@ -239,7 +239,18 @@
       "ssImportHint": "Pega el JSON exportado desde el plugin Style Settings de Obsidian o desde Constellation. Las claves son identificadores de ajustes (p. ej. \"h1-size\") asociados a valores de texto.",
       "ssApplyMerge": "Combinar",
       "ssApplyReplace": "Reemplazar todo",
-      "ssPasteClipboard": "Pegar desde el portapapeles"
+      "ssPasteClipboard": "Pegar desde el portapapeles",
+      "livingLinkPills": "Etiquetas de Enlaces Vivos",
+      "livingLinkPillsDesc": "Personaliza los colores y la forma de las etiquetas de tipo de enlace y los chips de recorrido que aparecen en los paneles Retroenlaces y Enlaces Salientes.",
+      "pillFill": "Relleno",
+      "pillText": "Texto",
+      "pillRadius": "Radio de esquina",
+      "pillRadiusDesc": "Qué tan redondeadas están las esquinas (0 = afilado, 20 = totalmente redondo).",
+      "pillHeight": "Altura de etiqueta",
+      "pillHeightDesc": "Tamaño vertical de cada etiqueta.",
+      "pillWeight": "Grosor del texto",
+      "pillWeightDesc": "Grosor de la fuente (400 = normal, 700 = negrita, 900 = extra negrita).",
+      "resetPillStyles": "Restablecer estilos de etiqueta"
     },
     "ai": {
       "provider": "Proveedor",

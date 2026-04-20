@@ -239,7 +239,18 @@
       "ssImportHint": "Obsidian کے Style Settings پلگ ان یا Constellation سے برآمد شدہ JSON پیسٹ کریں۔ کلیدیں سیٹنگ IDs (مثلاً \"h1-size\") ہیں جو سٹرنگ ویلیوز سے میپ ہوتی ہیں۔",
       "ssApplyMerge": "ضم کریں",
       "ssApplyReplace": "سب تبدیل کریں",
-      "ssPasteClipboard": "کلپ بورڈ سے پیسٹ کریں"
+      "ssPasteClipboard": "کلپ بورڈ سے پیسٹ کریں",
+      "livingLinkPills": "لیونگ لنک بیجز",
+      "livingLinkPillsDesc": "بیک لنکس اور آؤٹ گوئنگ لنکس پینلز میں ظاہر ہونے والے لنک قسم کے بیجز اور ٹریورسل چپس کے رنگ اور شکل کو حسب ضرورت بنائیں۔",
+      "pillFill": "بھرنا",
+      "pillText": "متن",
+      "pillRadius": "کنارے کا رداس",
+      "pillRadiusDesc": "بیج کے کنارے کتنے گول ہیں (0 = تیز، 20 = مکمل گول)۔",
+      "pillHeight": "بیج کی اونچائی",
+      "pillHeightDesc": "ہر بیج کا عمودی سائز۔",
+      "pillWeight": "متن کا وزن",
+      "pillWeightDesc": "بیج لیبلز کا فونٹ وزن (400 = عام، 700 = بولڈ، 900 = اضافی بولڈ)۔",
+      "resetPillStyles": "بیج اسٹائلز کو پہلے سے طے شدہ پر ری سیٹ کریں"
     },
     "ai": {
       "provider": "فراہم کنندہ",

@@ -239,7 +239,18 @@
       "ssImportHint": "Obsidian'ın Style Settings eklentisinden veya Constellation'dan dışa aktarılmış JSON'u yapıştırın. Anahtarlar, ayar kimlikleridir (örn. \"h1-size\") ve metin değerlerine eşlenir.",
       "ssApplyMerge": "Birleştir",
       "ssApplyReplace": "Tümünü değiştir",
-      "ssPasteClipboard": "Panodan yapıştır"
+      "ssPasteClipboard": "Panodan yapıştır",
+      "livingLinkPills": "Canlı Bağlantı Rozetleri",
+      "livingLinkPillsDesc": "Geri Bağlantılar ve Giden Bağlantılar panellerinde görünen bağlantı türü rozetlerinin ve geçiş yongalarının renklerini ve şeklini özelleştirin.",
+      "pillFill": "Dolgu",
+      "pillText": "Metin",
+      "pillRadius": "Köşe yarıçapı",
+      "pillRadiusDesc": "Rozet köşelerinin yuvarlaklığı (0 = keskin, 20 = tamamen yuvarlak).",
+      "pillHeight": "Rozet yüksekliği",
+      "pillHeightDesc": "Her rozetin dikey boyutu.",
+      "pillWeight": "Metin kalınlığı",
+      "pillWeightDesc": "Rozet etiketlerinin yazı tipi ağırlığı (400 = normal, 700 = kalın, 900 = çok kalın).",
+      "resetPillStyles": "Rozet stillerini varsayılana sıfırla"
     },
     "ai": {
       "provider": "Sağlayıcı",

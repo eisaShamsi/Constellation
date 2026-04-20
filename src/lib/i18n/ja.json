@@ -239,7 +239,18 @@
       "ssImportHint": "Obsidian の Style Settings プラグインまたは Constellation からエクスポートした JSON を貼り付けてください。キーは設定 ID(例: \"h1-size\")で、文字列値にマッピングされます。",
       "ssApplyMerge": "マージ",
       "ssApplyReplace": "すべて置換",
-      "ssPasteClipboard": "クリップボードから貼り付け"
+      "ssPasteClipboard": "クリップボードから貼り付け",
+      "livingLinkPills": "リビングリンクバッジ",
+      "livingLinkPillsDesc": "バックリンクと発信リンクのパネルに表示されるリンクタイプバッジと移動チップの色と形状をカスタマイズします。",
+      "pillFill": "塗りつぶし",
+      "pillText": "テキスト",
+      "pillRadius": "角の半径",
+      "pillRadiusDesc": "バッジの角の丸み (0 = 鋭角、20 = 完全な丸)。",
+      "pillHeight": "バッジの高さ",
+      "pillHeightDesc": "各バッジの縦方向のサイズ。",
+      "pillWeight": "テキストの太さ",
+      "pillWeightDesc": "バッジラベルのフォントウェイト (400 = 標準、700 = 太字、900 = 極太)。",
+      "resetPillStyles": "バッジスタイルを既定値にリセット"
     },
     "ai": {
       "provider": "プロバイダー",

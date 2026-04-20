@@ -239,7 +239,18 @@
       "ssImportHint": "Collez le JSON exporté depuis l'extension Style Settings d'Obsidian ou depuis Constellation. Les clés sont des identifiants de paramètre (par ex. \"h1-size\") associés à des valeurs textuelles.",
       "ssApplyMerge": "Fusionner",
       "ssApplyReplace": "Tout remplacer",
-      "ssPasteClipboard": "Coller depuis le presse-papiers"
+      "ssPasteClipboard": "Coller depuis le presse-papiers",
+      "livingLinkPills": "Pastilles de Liens Vivants",
+      "livingLinkPillsDesc": "Personnalisez les couleurs et la forme des badges de type de lien et des puces de traversée qui apparaissent dans les panneaux Rétroliens et Liens Sortants.",
+      "pillFill": "Remplissage",
+      "pillText": "Texte",
+      "pillRadius": "Rayon des coins",
+      "pillRadiusDesc": "Arrondi des coins (0 = net, 20 = entièrement rond).",
+      "pillHeight": "Hauteur de pastille",
+      "pillHeightDesc": "Taille verticale de chaque pastille.",
+      "pillWeight": "Épaisseur du texte",
+      "pillWeightDesc": "Graisse de la police (400 = normal, 700 = gras, 900 = extra-gras).",
+      "resetPillStyles": "Réinitialiser les styles de pastille"
     },
     "ai": {
       "provider": "Fournisseur",

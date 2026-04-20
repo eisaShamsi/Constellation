@@ -239,7 +239,18 @@
       "ssImportHint": "ألصق JSON المُصدَّر من إضافة Style Settings في Obsidian أو من Constellation. المفاتيح هي معرّفات الإعدادات (مثل \"h1-size\") مع قيم نصية.",
       "ssApplyMerge": "دمج",
       "ssApplyReplace": "استبدال الكل",
-      "ssPasteClipboard": "لصق من الحافظة"
+      "ssPasteClipboard": "لصق من الحافظة",
+      "livingLinkPills": "شارات الروابط الحية",
+      "livingLinkPillsDesc": "تخصيص ألوان وشكل شارات أنواع الروابط ورقائق المرور التي تظهر في لوحتي الروابط الخلفية والروابط الصادرة.",
+      "pillFill": "التعبئة",
+      "pillText": "النص",
+      "pillRadius": "انحناء الحواف",
+      "pillRadiusDesc": "مدى تدوير حواف الشارة (0 = حاد، 20 = دائري بالكامل).",
+      "pillHeight": "ارتفاع الشارة",
+      "pillHeightDesc": "الحجم العمودي لكل شارة.",
+      "pillWeight": "سماكة النص",
+      "pillWeightDesc": "سماكة خط تسميات الشارة (400 = عادي، 700 = عريض، 900 = عريض جداً).",
+      "resetPillStyles": "إعادة تعيين أنماط الشارات إلى الافتراضي"
     },
     "ai": {
       "provider": "المزود",

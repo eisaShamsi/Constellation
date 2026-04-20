@@ -239,7 +239,18 @@
       "ssImportHint": "Cole o JSON exportado do plug-in Style Settings do Obsidian ou do Constellation. As chaves são IDs de configuração (por ex. \"h1-size\") mapeadas para valores de texto.",
       "ssApplyMerge": "Mesclar",
       "ssApplyReplace": "Substituir tudo",
-      "ssPasteClipboard": "Colar da área de transferência"
+      "ssPasteClipboard": "Colar da área de transferência",
+      "livingLinkPills": "Emblemas de Links Vivos",
+      "livingLinkPillsDesc": "Personalize as cores e a forma dos emblemas de tipo de link e chips de travessia que aparecem nos painéis Backlinks e Links de Saída.",
+      "pillFill": "Preenchimento",
+      "pillText": "Texto",
+      "pillRadius": "Raio do canto",
+      "pillRadiusDesc": "Quão arredondados são os cantos (0 = afiado, 20 = totalmente redondo).",
+      "pillHeight": "Altura do emblema",
+      "pillHeightDesc": "Tamanho vertical de cada emblema.",
+      "pillWeight": "Espessura do texto",
+      "pillWeightDesc": "Peso da fonte (400 = normal, 700 = negrito, 900 = extra negrito).",
+      "resetPillStyles": "Redefinir estilos de emblema"
     },
     "ai": {
       "provider": "Provedor",

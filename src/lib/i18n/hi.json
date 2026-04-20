@@ -239,7 +239,18 @@
       "ssImportHint": "Obsidian के Style Settings प्लगइन या Constellation से निर्यात किया गया JSON पेस्ट करें। कुंजियाँ सेटिंग आईडी (जैसे \"h1-size\") हैं जो स्ट्रिंग मानों से मैप होती हैं।",
       "ssApplyMerge": "मर्ज करें",
       "ssApplyReplace": "सभी बदलें",
-      "ssPasteClipboard": "क्लिपबोर्ड से पेस्ट करें"
+      "ssPasteClipboard": "क्लिपबोर्ड से पेस्ट करें",
+      "livingLinkPills": "लिविंग लिंक बैज",
+      "livingLinkPillsDesc": "बैकलिंक्स और आउटगोइंग लिंक्स पैनल में दिखाई देने वाले लिंक-प्रकार बैज और ट्रैवर्सल चिप्स के रंगों और आकार को अनुकूलित करें।",
+      "pillFill": "भरना",
+      "pillText": "पाठ",
+      "pillRadius": "कोना त्रिज्या",
+      "pillRadiusDesc": "बैज के कोने कितने गोल हैं (0 = तीव्र, 20 = पूर्ण गोल)।",
+      "pillHeight": "बैज ऊंचाई",
+      "pillHeightDesc": "प्रत्येक बैज का लंबवत आकार।",
+      "pillWeight": "पाठ वजन",
+      "pillWeightDesc": "बैज लेबल का फ़ॉन्ट वजन (400 = सामान्य, 700 = बोल्ड, 900 = अतिरिक्त बोल्ड)।",
+      "resetPillStyles": "बैज शैलियाँ डिफ़ॉल्ट पर रीसेट करें"
     },
     "ai": {
       "provider": "प्रदाता",

@@ -239,7 +239,18 @@
       "ssImportHint": "הדבק JSON שיוצא מתוסף Style Settings של Obsidian או מ-Constellation. המפתחות הם מזהי הגדרה (למשל \"h1-size\") עם ערכי מחרוזת.",
       "ssApplyMerge": "מיזוג",
       "ssApplyReplace": "החלף הכול",
-      "ssPasteClipboard": "הדבק מהלוח"
+      "ssPasteClipboard": "הדבק מהלוח",
+      "livingLinkPills": "תגיות קישור חי",
+      "livingLinkPillsDesc": "התאמה אישית של הצבעים והצורה של תגיות סוג הקישור וצ׳יפי המעבר המופיעים בלוחות קישורים נכנסים וקישורים יוצאים.",
+      "pillFill": "מילוי",
+      "pillText": "טקסט",
+      "pillRadius": "רדיוס פינה",
+      "pillRadiusDesc": "כמה מעוגלות הפינות (0 = חד, 20 = עגול לגמרי).",
+      "pillHeight": "גובה תגית",
+      "pillHeightDesc": "גודל אנכי של כל תגית.",
+      "pillWeight": "עובי טקסט",
+      "pillWeightDesc": "משקל פונט של תוויות (400 = רגיל, 700 = מודגש, 900 = מודגש במיוחד).",
+      "resetPillStyles": "אפס סגנונות תגית לברירת מחדל"
     },
     "ai": {
       "provider": "ספק",

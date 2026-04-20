@@ -239,7 +239,18 @@
       "ssImportHint": "粘贴从 Obsidian 的 Style Settings 插件或 Constellation 导出的 JSON。键是设置 ID(例如 \"h1-size\"),映射到字符串值。",
       "ssApplyMerge": "合并",
       "ssApplyReplace": "全部替换",
-      "ssPasteClipboard": "从剪贴板粘贴"
+      "ssPasteClipboard": "从剪贴板粘贴",
+      "livingLinkPills": "活动链接徽章",
+      "livingLinkPillsDesc": "自定义反向链接和传出链接面板中显示的链接类型徽章和遍历标签的颜色和形状。",
+      "pillFill": "填充",
+      "pillText": "文字",
+      "pillRadius": "圆角半径",
+      "pillRadiusDesc": "徽章边角的圆度 (0 = 直角, 20 = 完全圆形)。",
+      "pillHeight": "徽章高度",
+      "pillHeightDesc": "每个徽章的纵向尺寸。",
+      "pillWeight": "文字粗细",
+      "pillWeightDesc": "徽章标签的字体粗细 (400 = 普通, 700 = 加粗, 900 = 特粗)。",
+      "resetPillStyles": "重置徽章样式为默认值"
     },
     "ai": {
       "provider": "服务商",

@@ -239,7 +239,18 @@
       "ssImportHint": "Füge JSON ein, das aus Obsidians Style-Settings-Plugin oder aus Constellation exportiert wurde. Schlüssel sind Einstellungs-IDs (z. B. \"h1-size\") mit Textwerten.",
       "ssApplyMerge": "Zusammenführen",
       "ssApplyReplace": "Alles ersetzen",
-      "ssPasteClipboard": "Aus Zwischenablage einfügen"
+      "ssPasteClipboard": "Aus Zwischenablage einfügen",
+      "livingLinkPills": "Living Link Badges",
+      "livingLinkPillsDesc": "Passe die Farben und die Form der Link-Typ-Badges und Durchlauf-Chips an, die in den Backlinks- und Ausgehende-Links-Bereichen erscheinen.",
+      "pillFill": "Füllung",
+      "pillText": "Text",
+      "pillRadius": "Eckenradius",
+      "pillRadiusDesc": "Wie abgerundet die Badge-Ecken sind (0 = scharf, 20 = vollständig rund).",
+      "pillHeight": "Badge-Höhe",
+      "pillHeightDesc": "Vertikale Größe jedes Badges.",
+      "pillWeight": "Textgewicht",
+      "pillWeightDesc": "Schriftgewicht der Badge-Beschriftungen (400 = normal, 700 = fett, 900 = extrafett).",
+      "resetPillStyles": "Badge-Stile zurücksetzen"
     },
     "ai": {
       "provider": "Anbieter",

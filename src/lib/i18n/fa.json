@@ -239,7 +239,18 @@
       "ssImportHint": "JSON صادرشده از افزونه Style Settings در Obsidian یا از Constellation را بچسبانید. کلیدها شناسه‌های تنظیمات (مانند \"h1-size\") با مقادیر متنی هستند.",
       "ssApplyMerge": "ادغام",
       "ssApplyReplace": "جایگزینی همه",
-      "ssPasteClipboard": "چسباندن از کلیپ‌بورد"
+      "ssPasteClipboard": "چسباندن از کلیپ‌بورد",
+      "livingLinkPills": "نشان‌های پیوند زنده",
+      "livingLinkPillsDesc": "سفارشی‌سازی رنگ‌ها و شکل نشان‌های نوع پیوند و تراشه‌های پیمایش در پنل‌های بک‌لینک و پیوندهای خروجی.",
+      "pillFill": "پرکننده",
+      "pillText": "متن",
+      "pillRadius": "شعاع گوشه",
+      "pillRadiusDesc": "میزان گردی گوشه‌های نشان (0 = تیز، 20 = کاملاً گرد).",
+      "pillHeight": "ارتفاع نشان",
+      "pillHeightDesc": "اندازه عمودی هر نشان.",
+      "pillWeight": "ضخامت متن",
+      "pillWeightDesc": "وزن فونت برچسب‌ها (400 = معمولی، 700 = ضخیم، 900 = خیلی ضخیم).",
+      "resetPillStyles": "بازنشانی سبک‌های نشان به پیش‌فرض"
     },
     "ai": {
       "provider": "ارائه‌دهنده",
