@@ -560,6 +560,20 @@
 		}
 		return m;
 	});
+	// Same fold as `linkTraversalMap` but projected back onto the NoteLink
+	// list so consumers (`getBacklinks` / `getOutgoingLinks`) who read
+	// `l.traversal_count` directly still see the live value. Cloning only
+	// the entries that actually have a bump keeps the hot path at
+	// `O(bumps)` per derivation, not `O(links)`.
+	const effectiveLibraryLinks = $derived.by(() => {
+		if ($linkTraversalBumps.size === 0) return allLibraryLinks;
+		return allLibraryLinks.map(l => {
+			const bump = $linkTraversalBumps.get(
+				l.source_path.toLowerCase() + '|' + l.target.toLowerCase()
+			);
+			return bump ? { ...l, traversal_count: (l.traversal_count ?? 0) + bump } : l;
+		});
+	});
 	let allLibraryTags = $state<Record<string, number>>({});
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let allIndexEntries = $state<IndexEntry[]>([]);
@@ -883,7 +897,10 @@
 		// otherwise a tab focused BEFORE the graph arrives would show an
 		// empty backlinks/outgoing panel and never auto-refresh. Reading
 		// `.length` at top level is enough to establish the dependency.
+		// Also track linkTraversalBumps so the `×N` chips in the sidebar
+		// refresh live when the user follows a wikilink (P4.2 follow-up).
 		void allLibraryLinks.length;
+		void $linkTraversalBumps.size;
 		clearTimeout(_sidebarDebounce);
 
 		// Immediate reset when no tab
@@ -902,10 +919,10 @@
 			// Direction
 			noteDir = body ? detectDir(body) : dirFallback;
 			// Backlinks
-			currentBacklinks = getBacklinks(allLibraryLinks, tab.name);
+			currentBacklinks = getBacklinks(effectiveLibraryLinks, tab.name);
 			// CE Phase 5: Provenance fetched on tab click only (not here — no IPC on typing path)
 			// Outgoing links
-			currentOutgoing = getOutgoingLinks(allLibraryLinks, tab.path);
+			currentOutgoing = getOutgoingLinks(effectiveLibraryLinks, tab.path);
 			// Tags (from frontmatter + inline)
 			const tags: string[] = [];
 			for (const p of props) {
