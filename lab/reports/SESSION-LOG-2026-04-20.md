@@ -355,3 +355,76 @@ touched here — separate format question.
 
 User validation: visible trailers gone; aliases render in the typed
 colors. Confirmed.
+
+---
+
+## § 33 — P3: Backlinks ordered by weight + traversal-count chip
+
+First user-facing payoff for the Living Link system. Backlinks for an
+open note are now sorted by `weight = 1 + ln(1 + traversal_count)`
+descending (ties broken alphabetically by source name for stability
+when everything is still at weight 1.0), and any backlink whose
+source→target pair has been traversed at least once gets a compact
+`×N` chip next to the note name so worn paths are visible at a glance.
+
+### Wire-up
+
+**Rust** (`libraries.rs`, `cache.rs`):
+- `NoteLink` struct gains `weight: f64` and `traversal_count: i64`.
+  Both use serde defaults (1.0 and 0) so any older payload in transit
+  or at rest still deserializes.
+- `cache::read_links` SELECT extended to pull `weight, traversal_count`
+  from `note_links`. The columns have existed since
+  `constellation_link_traverse` landed (P2, `53d97e7`); they just
+  weren't being exported.
+- The three non-DB `NoteLink` constructors (`scan_library_links`,
+  `scan_unlinked_mentions`, `read_untyped_links_fallback`) set
+  `weight = 1.0, traversal_count = 0` explicitly — those paths parse
+  markdown or fall back to `outgoing_links_json` and don't see the
+  lifecycle fields, so "never traversed" is the right neutral.
+
+**Frontend** (`store.ts`, `+layout.svelte`, `BacklinksPanel.svelte`):
+- `NoteLink` TS interface mirrors the Rust fields (both optional for
+  forward-compat).
+- `getBacklinks` sorts `weight DESC, source_name ASC`. Returned shape
+  adds `traversalCount`.
+- `currentBacklinks` state type in `+layout.svelte` extended to carry
+  the count through to the panel.
+- `BacklinksPanel.svelte` renders a `×N` chip (tabular-nums, faint
+  background, pluralization-aware tooltip) when `traversalCount > 0`.
+  Placed between the link-type badge and the library label so the
+  row's visual rhythm stays intact.
+
+### Boot-time impact
+
+No additional IPC calls — the graph payload already flows through
+`cache_boot_snapshot_graph` (the Phase-2 deferred snapshot). The
+added `f64 + i64` per row is ~16 B; on the 7,600-note / 656k-link
+trial Universe that's roughly +10 MB one-time payload, fully inside
+the idle-callback phase post-paint. Boot Criterion 2 unaffected.
+
+### Commit
+
+- `db9a826` — P3: Backlinks ordered by weight + traversal-count chip
+
+### Out of scope (P4 candidates)
+
+- Outgoing Links panel ordering — same sort, symmetric change, small.
+- Wikilink weight chip inside rendered prose — requires per-render
+  lookup; bigger.
+- "Most-traveled paths" pane — read-only view of `note_links ORDER BY
+  weight DESC LIMIT N`; cheapest but least daily-useful.
+
+### Commits landed today (updated)
+
+- `917f2e1` — Remove read_index_entries diagnostic block
+- `80e9fc4` — Fix history navigation races + tab title/body desync
+- `e911749` — docs(session-log 04-20): § 29
+- `a2052da` — Fix cross-note content corruption on wikilink-click nav
+- `bfc790f` — docs(session-log 04-20): § 30
+- `455bdd7` — Fix 404 flood from ImageWidget relative-path embeds
+- `8abf417` — Live-preview: parse 3-part typed wikilinks
+- `8b5b2e8` — docs(session-log 04-20): §§ 31, 32
+- `db9a826` — P3: Backlinks ordered by weight + chip
+- (+ background M11-data cron: `5890ff9`, `6e2a133`, `c29e1a8`,
+  `1f45445` — +075, +076, +077, +078 — producer continues toward 20k)
