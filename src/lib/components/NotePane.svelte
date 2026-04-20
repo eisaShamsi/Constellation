@@ -18,7 +18,7 @@
 	import { defaultKeymap, history, historyKeymap, undo, redo, indentWithTab } from '@codemirror/commands';
 	import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 	import { search, openSearchPanel, searchKeymap, SearchQuery, setSearchQuery, findNext } from '@codemirror/search';
-	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath, notePathField, setNotePath, attachmentFolderField, setAttachmentFolder } from '$lib/editor/livePreview';
+	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath, notePathField, setNotePath, attachmentFolderField, setAttachmentFolder, linkTraversalMapField, setLinkTraversalMap } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
@@ -112,6 +112,7 @@
 		onTrailNext,
 		highlightTerm = '',
 		onlinkclick,
+		linkTraversalMap,
 	}: {
 		value?: string;
 		title?: string;
@@ -146,6 +147,7 @@
 		onTrailNext?: () => void;
 		highlightTerm?: string;
 		onlinkclick?: (link: string, newTab?: boolean) => void;
+		linkTraversalMap?: Map<string, number>;
 	} = $props();
 
 	let titleValue = $state(title);
@@ -349,6 +351,7 @@
 				lineDecoPlugin, lineDecoTheme,
 				scriptFontsField, bidiPlugin, bidiTheme, /* per-line RTL/LTR direction + cursor positioning */
 				libraryPathField, notePathField, attachmentFolderField, /* image path resolution */
+				linkTraversalMapField, /* P4.2: per-wikilink `×N` chip */
 				...($appSettings.autoPairBrackets ? [closeBrackets({ brackets: ['(', '[', '{', '"', "'", '`'] })] : []),
 				search({ top: true }),
 				colorHighlightField,
@@ -449,6 +452,7 @@
 		if (libraryPath) imgEffects.push(setLibraryPath.of(libraryPath));
 		if (filePath) imgEffects.push(setNotePath.of(filePath));
 		imgEffects.push(setAttachmentFolder.of($appSettings.defaultAttachmentFolder || ''));
+		if (linkTraversalMap) imgEffects.push(setLinkTraversalMap.of(linkTraversalMap));
 		const initialState = imgEffects.length
 			? state.update({ effects: imgEffects }).state
 			: state;
@@ -713,6 +717,22 @@
 		if (view && dir !== prevDir) {
 			prevDir = dir;
 			view.dispatch({ effects: dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })) });
+		}
+	});
+
+	/* ─── Traversal map sync (P4.2) ───
+	 * The initial state already carries the map from mount time; this effect
+	 * refreshes it when the boot graph lands (or is replaced on a Universe
+	 * switch) while the note is already open. Skipping the decoration
+	 * rebuild is handled inside ViewPlugin.update — a state-field-only
+	 * transaction doesn't set viewportChanged / selectionSet / docChanged,
+	 * so we also explicitly trigger a viewport refresh via the same
+	 * transaction to get the `×N` chips re-rendered. */
+	let prevTraversalMap = linkTraversalMap;
+	$effect(() => {
+		if (view && linkTraversalMap && linkTraversalMap !== prevTraversalMap) {
+			prevTraversalMap = linkTraversalMap;
+			view.dispatch({ effects: setLinkTraversalMap.of(linkTraversalMap) });
 		}
 	});
 

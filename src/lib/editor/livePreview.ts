@@ -50,6 +50,53 @@ export const attachmentFolderField = StateField.define<string>({
 	},
 });
 
+// ─── Living Link traversal count map (P4.2) ───
+// `${sourcePath.toLowerCase()}|${targetName.toLowerCase()}` → traversal_count.
+// Source is the currently-open note's path (read via notePathField); target
+// is the wikilink name. The decoration pipeline consults this map when
+// rendering a wikilink so it can emit a `×N` chip after the link for worn
+// paths. Empty map = no chips (boot graph not yet loaded, or no links in
+// this note have been traversed).
+export const setLinkTraversalMap = StateEffect.define<Map<string, number>>();
+
+export const linkTraversalMapField = StateField.define<Map<string, number>>({
+	create: () => new Map(),
+	update(value, tr) {
+		for (const effect of tr.effects) {
+			if (effect.is(setLinkTraversalMap)) return effect.value;
+		}
+		return value;
+	},
+});
+
+// Accent-tint used by the wikilink `×N` chip. Falls back to the Constellation
+// purple so the chip is visible even before the user picks a theme accent.
+const WIKILINK_CHIP_ACCENT = 'var(--interactive-accent, #7c3aed)';
+
+class WikilinkTraversalChipWidget extends WidgetType {
+	constructor(public count: number) { super(); }
+	toDOM() {
+		const el = document.createElement('span');
+		el.className = 'cm-living-link-chip';
+		el.textContent = '×' + this.count;
+		el.title = 'Traversed ' + this.count + (this.count === 1 ? ' time' : ' times');
+		// Inline styles keep the chip themable without needing a theme rule.
+		el.setAttribute('style',
+			'display:inline-flex;align-items:center;margin:0 3px;padding:0 6px;' +
+			'font-size:0.6rem;font-weight:700;line-height:1;height:15px;' +
+			'border-radius:8px;font-variant-numeric:tabular-nums;' +
+			'letter-spacing:0.02em;vertical-align:middle;' +
+			'color:' + WIKILINK_CHIP_ACCENT + ';' +
+			'background:color-mix(in srgb,' + WIKILINK_CHIP_ACCENT + ' 14%, transparent);' +
+			'border:1px solid color-mix(in srgb,' + WIKILINK_CHIP_ACCENT + ' 30%, transparent);' +
+			'box-sizing:border-box;'
+		);
+		return el;
+	}
+	eq(other: WikilinkTraversalChipWidget) { return this.count === other.count; }
+	ignoreEvent() { return true; }
+}
+
 /** Returns ordered list of candidate absolute paths for an embedded image.
  *  Search order: note's folder → library root.
  *  We return all candidates so ImageWidget can try each via onerror chaining. */
@@ -677,6 +724,8 @@ function buildDecorations(view: EditorView): DecorationSet {
 	const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 	const libPath  = view.state.field(libraryPathField, false) || '';
 	const notePath = view.state.field(notePathField,    false) || '';
+	const traversalMap = view.state.field(linkTraversalMapField, false) ?? new Map<string, number>();
+	const notePathLower = notePath.toLowerCase();
 	const ranges: { from: number; to: number; deco: Decoration }[] = [];
 
 	// Process only visible ranges for performance
@@ -914,6 +963,29 @@ function buildDecorations(view: EditorView): DecorationSet {
 						ranges.push({ from: innerFrom, to: innerTo, deco: linkDeco });
 						ranges.push({ from: innerTo, to: absTo, deco: replaceDeco });
 					}
+
+					// P4.2: Living Link traversal chip. Look up the count for
+					// this (sourceNote, target) pair and emit a `×N` widget
+					// immediately after the wikilink when it has been walked.
+					// Target is everything before the first pipe (untyped case)
+					// or the segment before the typed annotation — which are
+					// the same bytes, since the target is always the first
+					// `|`-delimited segment.
+					if (notePathLower && traversalMap.size > 0) {
+						const targetName = (pipeIndex >= 0 ? raw.slice(0, pipeIndex) : raw).trim().toLowerCase();
+						if (targetName) {
+							const count = traversalMap.get(notePathLower + '|' + targetName);
+							if (count && count > 0) {
+								ranges.push({
+									from: absTo, to: absTo,
+									deco: Decoration.widget({
+										widget: new WikilinkTraversalChipWidget(count),
+										side: 1,
+									}),
+								});
+							}
+						}
+					}
 				}
 
 				// Inline HTML: <u>...</u>, <sub>...</sub>, <sup>...</sup>
@@ -972,6 +1044,23 @@ class LivePreviewPlugin {
 	}
 
 	update(update: ViewUpdate) {
+		// Detect transactions carrying our context-state effects (library path,
+		// note path, attachment folder, or the P4.2 traversal map) — none of
+		// these trigger viewportChanged/selectionSet/docChanged on their own,
+		// so without this branch the decorations would not rebuild and the
+		// chips / image widgets would stay stale.
+		const contextChanged = update.transactions.some(tr =>
+			tr.effects.some(e =>
+				e.is(setLinkTraversalMap) || e.is(setNotePath) ||
+				e.is(setLibraryPath) || e.is(setAttachmentFolder)
+			)
+		);
+		if (contextChanged) {
+			if (this.rebuildTimer) { clearTimeout(this.rebuildTimer); this.rebuildTimer = null; }
+			this.decorations = buildDecorations(update.view);
+			return;
+		}
+
 		if (update.viewportChanged) {
 			// Scroll — always rebuild, clear any pending debounce
 			if (this.rebuildTimer) { clearTimeout(this.rebuildTimer); this.rebuildTimer = null; }
