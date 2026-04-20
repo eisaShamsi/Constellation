@@ -199,11 +199,12 @@
 		padding: 0 8px;
 		border-radius: var(--pill-radius, 10px);
 		background: var(--background-modifier-border-focus);
+		color: #fff;
 		font-size: 0.68rem; font-weight: var(--pill-weight, 700);
 		line-height: 1;
 		margin-inline-start: 4px;
 	}
-	.ld-tab.active .ld-badge { background: rgba(255,255,255,0.2); color: white; }
+	.ld-tab.active .ld-badge { background: rgba(255,255,255,0.2); color: #fff; }
 	.ld-content { max-height: 300px; overflow-y: auto; }
 	.ld-item {
 		display: flex; width: 100%; padding: 4px 8px; gap: 6px;
