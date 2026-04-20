@@ -350,7 +350,7 @@
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(300);
-	let rightSidebarWidth = $state(300);
+	let rightSidebarWidth = $state(340);
 	let resizing = $state<'left' | 'right' | null>(null);
 	let splitPaneSizes = $state<number[]>([]); // flex values per pane in split view
 
@@ -737,7 +737,7 @@
 			if (side === 'left') {
 				leftSidebarWidth = Math.max(160, Math.min(500, startWidth + (isRtl ? -delta : delta)));
 			} else {
-				rightSidebarWidth = Math.max(160, Math.min(500, startWidth + (isRtl ? delta : -delta)));
+				rightSidebarWidth = Math.max(320, Math.min(600, startWidth + (isRtl ? delta : -delta)));
 			}
 		}
 
@@ -4727,7 +4727,7 @@
 					{#if dueNotes.length > 0}<span class="rs-tab-badge">{dueNotes.length}</span>{/if}
 				</button>
 				<button class="rs-tab" class:active={rightSidebarTab === 'links'} onclick={() => rightSidebarTab = 'links'} title={$t('panels.links') || 'Link Dashboard'}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
 				</button>
 			</div>
 
