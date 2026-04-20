@@ -658,10 +658,13 @@
     "propertyKey": "Anahtar",
     "propertyValue": "Değer",
     "promote": "Yükselt",
-    "stage.fleeting": "Geçici",
-    "stage.literature": "Literatür",
-    "stage.permanent": "Kalıcı",
-    "stage.synthesis": "Sentez"
+    "stage": {
+      "fleeting": "Geçici",
+      "literature": "Literatür",
+      "permanent": "Kalıcı",
+      "synthesis": "Sentez"
+    },
+    "noteStage": "— Aşama —"
   },
   "focusPane": {
     "promote": "Kalıcıya yükselt"

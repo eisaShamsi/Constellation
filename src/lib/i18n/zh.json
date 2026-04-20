@@ -658,10 +658,13 @@
     "propertyKey": "键",
     "propertyValue": "值",
     "promote": "提升",
-    "stage.fleeting": "闪念",
-    "stage.literature": "文献",
-    "stage.permanent": "永久",
-    "stage.synthesis": "综合"
+    "stage": {
+      "fleeting": "闪念",
+      "literature": "文献",
+      "permanent": "永久",
+      "synthesis": "综合"
+    },
+    "noteStage": "— 阶段 —"
   },
   "focusPane": {
     "promote": "提升为永久"

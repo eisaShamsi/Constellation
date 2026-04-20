@@ -658,10 +658,13 @@
     "propertyKey": "کلید",
     "propertyValue": "قدر",
     "promote": "ترقی",
-    "stage.fleeting": "عارضی",
-    "stage.literature": "ادب",
-    "stage.permanent": "مستقل",
-    "stage.synthesis": "ترکیب"
+    "stage": {
+      "fleeting": "عارضی",
+      "literature": "ادب",
+      "permanent": "مستقل",
+      "synthesis": "ترکیب"
+    },
+    "noteStage": "— مرحلہ —"
   },
   "focusPane": {
     "promote": "مستقل میں ترقی"

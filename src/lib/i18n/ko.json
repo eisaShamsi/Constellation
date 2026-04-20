@@ -658,10 +658,13 @@
     "propertyKey": "키",
     "propertyValue": "값",
     "promote": "승격",
-    "stage.fleeting": "순간",
-    "stage.literature": "문헌",
-    "stage.permanent": "영구",
-    "stage.synthesis": "종합"
+    "stage": {
+      "fleeting": "순간",
+      "literature": "문헌",
+      "permanent": "영구",
+      "synthesis": "종합"
+    },
+    "noteStage": "— 단계 —"
   },
   "focusPane": {
     "promote": "영구로 승격"

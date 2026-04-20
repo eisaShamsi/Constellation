@@ -658,10 +658,13 @@
     "propertyKey": "Clé",
     "propertyValue": "Valeur",
     "promote": "Promouvoir",
-    "stage.fleeting": "Éphémère",
-    "stage.literature": "Littérature",
-    "stage.permanent": "Permanent",
-    "stage.synthesis": "Synthèse"
+    "stage": {
+      "fleeting": "Éphémère",
+      "literature": "Littérature",
+      "permanent": "Permanent",
+      "synthesis": "Synthèse"
+    },
+    "noteStage": "— Étape —"
   },
   "focusPane": {
     "promote": "Promouvoir en permanent"

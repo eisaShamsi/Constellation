@@ -658,10 +658,13 @@
     "propertyKey": "מפתח",
     "propertyValue": "ערך",
     "promote": "קדם",
-    "stage.fleeting": "חולף",
-    "stage.literature": "ספרות",
-    "stage.permanent": "קבוע",
-    "stage.synthesis": "סינתזה"
+    "stage": {
+      "fleeting": "חולף",
+      "literature": "ספרות",
+      "permanent": "קבוע",
+      "synthesis": "סינתזה"
+    },
+    "noteStage": "— שלב —"
   },
   "focusPane": {
     "promote": "קדם לקבוע"

@@ -661,10 +661,13 @@
     "propertyKey": "المفتاح",
     "propertyValue": "القيمة",
     "promote": "ترقية",
-    "stage.fleeting": "عابرة",
-    "stage.literature": "مرجعية",
-    "stage.permanent": "دائمة",
-    "stage.synthesis": "تركيبية"
+    "stage": {
+      "fleeting": "عابرة",
+      "literature": "مرجعية",
+      "permanent": "دائمة",
+      "synthesis": "تركيبية"
+    },
+    "noteStage": "— المرحلة —"
   },
   "focusPane": {
     "promote": "ترقية إلى دائمة"

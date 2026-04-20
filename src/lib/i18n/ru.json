@@ -658,10 +658,13 @@
     "propertyKey": "Ключ",
     "propertyValue": "Значение",
     "promote": "Повысить",
-    "stage.fleeting": "Мимолётная",
-    "stage.literature": "Литература",
-    "stage.permanent": "Постоянная",
-    "stage.synthesis": "Синтез"
+    "stage": {
+      "fleeting": "Мимолётная",
+      "literature": "Литература",
+      "permanent": "Постоянная",
+      "synthesis": "Синтез"
+    },
+    "noteStage": "— Этап —"
   },
   "focusPane": {
     "promote": "Повысить до постоянной"

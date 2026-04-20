@@ -658,10 +658,13 @@
     "propertyKey": "کلید",
     "propertyValue": "مقدار",
     "promote": "ارتقا",
-    "stage.fleeting": "گذرا",
-    "stage.literature": "ادبیات",
-    "stage.permanent": "دائمی",
-    "stage.synthesis": "ترکیب"
+    "stage": {
+      "fleeting": "گذرا",
+      "literature": "ادبیات",
+      "permanent": "دائمی",
+      "synthesis": "ترکیب"
+    },
+    "noteStage": "— مرحله —"
   },
   "focusPane": {
     "promote": "ارتقا به دائمی"

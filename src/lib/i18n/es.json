@@ -658,10 +658,13 @@
     "propertyKey": "Clave",
     "propertyValue": "Valor",
     "promote": "Promover",
-    "stage.fleeting": "Fugaz",
-    "stage.literature": "Literatura",
-    "stage.permanent": "Permanente",
-    "stage.synthesis": "Síntesis"
+    "stage": {
+      "fleeting": "Fugaz",
+      "literature": "Literatura",
+      "permanent": "Permanente",
+      "synthesis": "Síntesis"
+    },
+    "noteStage": "— Etapa —"
   },
   "focusPane": {
     "promote": "Promover a permanente"

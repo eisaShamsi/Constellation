@@ -887,11 +887,11 @@
 					onpromote?.(val);
 					view?.focus();
 				}}>
-				<option value="">— Stage —</option>
-				<option value="fleeting">🌱 Fleeting</option>
-				<option value="literature">📖 Literature</option>
-				<option value="permanent">🔗 Permanent</option>
-				<option value="synthesis">✨ Synthesis</option>
+				<option value="">{$t('notePane.noteStage')}</option>
+				<option value="fleeting">🌱 {$t('notePane.stage.fleeting')}</option>
+				<option value="literature">📖 {$t('notePane.stage.literature')}</option>
+				<option value="permanent">🔗 {$t('notePane.stage.permanent')}</option>
+				<option value="synthesis">✨ {$t('notePane.stage.synthesis')}</option>
 			</select>
 		</div>
 		{#if trail}

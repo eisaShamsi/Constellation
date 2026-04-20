@@ -755,10 +755,13 @@
     "propertyKey": "Key",
     "propertyValue": "Value",
     "promote": "Promote",
-    "stage.fleeting": "Fleeting",
-    "stage.literature": "Literature",
-    "stage.permanent": "Permanent",
-    "stage.synthesis": "Synthesis"
+    "stage": {
+      "fleeting": "Fleeting",
+      "literature": "Literature",
+      "permanent": "Permanent",
+      "synthesis": "Synthesis"
+    },
+    "noteStage": "— Stage —"
   },
   "focusPane": {
     "promote": "Promote to Permanent"

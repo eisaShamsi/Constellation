@@ -658,10 +658,13 @@
     "propertyKey": "キー",
     "propertyValue": "値",
     "promote": "昇格",
-    "stage.fleeting": "一時的",
-    "stage.literature": "文献",
-    "stage.permanent": "永続",
-    "stage.synthesis": "統合"
+    "stage": {
+      "fleeting": "一時的",
+      "literature": "文献",
+      "permanent": "永続",
+      "synthesis": "統合"
+    },
+    "noteStage": "— 段階 —"
   },
   "focusPane": {
     "promote": "永続に昇格"

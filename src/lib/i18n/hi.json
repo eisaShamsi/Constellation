@@ -658,10 +658,13 @@
     "propertyKey": "कुंजी",
     "propertyValue": "मान",
     "promote": "प्रमोट",
-    "stage.fleeting": "क्षणिक",
-    "stage.literature": "साहित्य",
-    "stage.permanent": "स्थायी",
-    "stage.synthesis": "संश्लेषण"
+    "stage": {
+      "fleeting": "क्षणिक",
+      "literature": "साहित्य",
+      "permanent": "स्थायी",
+      "synthesis": "संश्लेषण"
+    },
+    "noteStage": "— चरण —"
   },
   "focusPane": {
     "promote": "स्थायी में प्रमोट करें"

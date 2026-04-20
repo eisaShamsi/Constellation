@@ -473,10 +473,10 @@
 			{#if prop.key.toLowerCase() === 'stage'}
 				<select class="pe-val pe-stage-select" value={prop.value.toLowerCase()}
 					onchange={(e) => { const v = (e.target as HTMLSelectElement).value; updateValue(idx, v); onstagechange?.(v); }}>
-					<option value="fleeting">🌱 Fleeting</option>
-					<option value="literature">📖 Literature</option>
-					<option value="permanent">🔗 Permanent</option>
-					<option value="synthesis">✨ Synthesis</option>
+					<option value="fleeting">🌱 {$t('notePane.stage.fleeting')}</option>
+					<option value="literature">📖 {$t('notePane.stage.literature')}</option>
+					<option value="permanent">🔗 {$t('notePane.stage.permanent')}</option>
+					<option value="synthesis">✨ {$t('notePane.stage.synthesis')}</option>
 				</select>
 			{:else if prop.type === 'checkbox'}
 				<label class="pe-checkbox-wrap">

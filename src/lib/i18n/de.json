@@ -658,10 +658,13 @@
     "propertyKey": "Schlüssel",
     "propertyValue": "Wert",
     "promote": "Hochstufen",
-    "stage.fleeting": "Flüchtig",
-    "stage.literature": "Literatur",
-    "stage.permanent": "Permanent",
-    "stage.synthesis": "Synthese"
+    "stage": {
+      "fleeting": "Flüchtig",
+      "literature": "Literatur",
+      "permanent": "Permanent",
+      "synthesis": "Synthese"
+    },
+    "noteStage": "— Stufe —"
   },
   "focusPane": {
     "promote": "Zu Permanent hochstufen"
