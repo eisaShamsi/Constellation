@@ -190,7 +190,9 @@
 	.bl-traversal-chip {
 		font-size: 0.65rem; font-weight: 600; padding: 0 5px;
 		border-radius: 8px; white-space: nowrap; flex-shrink: 0;
-		color: var(--text-faint); background: var(--background-modifier-border);
+		color: var(--interactive-accent, #7c3aed);
+		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
+		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
 		letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
 	}
 </style>
