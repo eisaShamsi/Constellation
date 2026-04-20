@@ -759,3 +759,45 @@ how the tiers feel on real usage data.
 - P5 slice 3: confidence promotion write path + per-tier visual
 - Orthogonal: navTrace dev-gate, boot-perf scorecard UI, throttle
   stress-test helper
+
+## § 41 — P5 slice 2: weight decay + half-life knob
+
+Read-time exponential decay on Living Link weights, with a user-
+configurable half-life. Recently-used paths now outrank equally-
+worn but dormant ones in every sort surface (Backlinks, Outgoing,
+Most Traveled). The DB column stays as the pure traversal
+integral — decay is display-only.
+
+### Math
+    effectiveWeight = rawWeight * exp(-ln(2) * daysSinceTraversal / halfLifeDays)
+
+Default half-life 60 days — sits between the 3-click emerging →
+established step and the 90d stale cliff, giving a gradient rather
+than a binary drop.
+
+### Shipped (commit `844412d`)
+- `effectiveLinkWeight(link, nowMs, halfLifeDays, decayEnabled)`
+  pure helper in store.ts
+- `LinkDecayConfig` type + optional `decay?` parameter on
+  `getBacklinks` / `getOutgoingLinks`
+- `+layout.svelte` sidebar $effect snapshots `Date.now()` +
+  settings once and passes the config to both sort helpers
+- `LinkDashboard.mostTraveled` $derived uses the same helper
+- New "Living Link Lifecycle" block in Settings → Appearance
+  (toggle + 7–365d slider). Slider disables when toggle is off.
+- i18n for 15 locales (7 new keys) via
+  `lab/scripts/i18n_p5_lifecycle.py`
+
+### Invariants preserved
+- Raw `weight` column never touched
+- `traversal_count` chips (`×N`) still show raw counts — stable
+  user-visible counters, not gradient displays
+- Stale-tab 90d threshold independent of decay: a link can be
+  "stale" without being fully decayed, and a short half-life
+  doesn't move links into the Stale tab prematurely
+
+### Next slices
+- P5 slice 3: confidence promotion write path + per-tier chip
+  color/icon in sidebar panels
+- Orthogonal cleanups still on the queue: navTrace dev-gate,
+  boot-perf scorecard UI, throttle stress-test helper
