@@ -600,3 +600,29 @@ End-state on main after this section:
 - ×N chips live-refresh in-prose AND in sidebar (Backlinks /
   Outgoing Links) on every traversal
 - No reactive cascade during navigation
+
+## § 38 — P4.3: Most-Traveled Paths
+
+Added a fifth tab to LinkDashboard showing the top 20 links by
+`traversal_count`. Lands alongside Top Connected / Cross-Library /
+Broken / Orphans — same tabbed UI, same click-to-open behavior,
+same `×N` chip styling as the sidebar panels so visual language
+stays consistent across every Living Link surface.
+
+No new Rust command: the data rides in on the existing boot-graph
+payload (NoteLink.traversal_count) and live-refreshes via the P4.2
+bumps chain, so this tab updates in lockstep with the sidebar chips
+and in-prose ×N widgets with zero additional plumbing.
+
+i18n for all 15 locales via lab/scripts/i18n_most_traveled.py.
+
+**Commit:** `a9204db`
+
+### What's left in the P4/P5 sweep
+
+- **P5** — Link lifecycle (decay, stale-target flagging, confidence
+  progression) — next non-trivial piece
+- Orthogonal:
+  - Isolated throttle stress-test helper
+  - `__navTrace` instrumentation cleanup (gate behind dev flag)
+  - Settings → Debug Boot Performance scorecard UI
