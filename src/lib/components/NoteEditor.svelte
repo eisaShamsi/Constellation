@@ -52,7 +52,6 @@
 		onnavigateforward,
 		onmoreaction,
 		onStageChanged,
-		linkTraversalMap,
 	}: {
 		tab: TabLike;
 		noteNames?: { name: string; path: string; libraryName?: string }[];
@@ -66,7 +65,6 @@
 		onnavigateforward?: () => void;
 		onmoreaction?: (action: string) => void;
 		onStageChanged?: (path: string, stage: string) => void;
-		linkTraversalMap?: Map<string, number>;
 	} = $props();
 
 	// Internal derived state — recalculated when tab changes
@@ -244,7 +242,6 @@
 	{onTrailNext}
 	canGoBack={(tab.historyIndex ?? 0) > 0}
 	canGoForward={(tab.historyIndex ?? 0) < (tab.history?.length ?? 1) - 1}
-	{linkTraversalMap}
 	onchange={() => {}}
 	onpromote={handlePromote}
 	onsave={handleSave}
