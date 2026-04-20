@@ -14,6 +14,18 @@
 		'part-of':    '#AAAAAA',
 		associative:  '#888888',
 	};
+	// Text color paired with each solid fill for AA contrast — matches
+	// BacklinksPanel. Bright fills take dark text; saturated fills take white.
+	const LINK_TYPE_TEXT: Record<string, string> = {
+		supports:     '#ffffff',
+		contradicts:  '#ffffff',
+		causes:       '#ffffff',
+		exemplifies:  '#0b2e18',
+		generalizes:  '#ffffff',
+		'derives-from': '#3d2e00',
+		'part-of':    '#1a1a1a',
+		associative:  '#ffffff',
+	};
 
 	let {
 		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; linkType?: string }[],
@@ -54,9 +66,10 @@
 				<span class="ol-target-row">
 					<span class="ol-target">{link.target}</span>
 					{#if link.linkType}
-						{@const c = LINK_TYPE_COLORS[link.linkType] ?? '#888'}
+						{@const fill = LINK_TYPE_COLORS[link.linkType] ?? '#888'}
+						{@const txt = LINK_TYPE_TEXT[link.linkType] ?? '#ffffff'}
 						<span class="ol-link-type-badge"
-							style="color:{c};background:color-mix(in srgb, {c} 18%, transparent);border-color:color-mix(in srgb, {c} 55%, transparent)"
+							style="color:{txt};background:{fill};border-color:{fill}"
 						>{link.linkType}</span>
 					{/if}
 					{#if (link.traversalCount ?? 0) > 0}

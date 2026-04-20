@@ -15,6 +15,19 @@
 		'part-of':    '#AAAAAA',
 		associative:  '#888888',
 	};
+	// Text color paired with each solid fill, chosen for AA contrast. Bright
+	// fills (gold, light green, grey) take dark text; saturated darker fills
+	// take white text.
+	const LINK_TYPE_TEXT: Record<string, string> = {
+		supports:     '#ffffff',
+		contradicts:  '#ffffff',
+		causes:       '#ffffff',
+		exemplifies:  '#0b2e18',
+		generalizes:  '#ffffff',
+		'derives-from': '#3d2e00',
+		'part-of':    '#1a1a1a',
+		associative:  '#ffffff',
+	};
 
 	let {
 		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number }[],
@@ -87,9 +100,10 @@
 						{/if}
 						<span class="bl-name">{bl.name}</span>
 						{#if bl.linkType}
-							{@const c = LINK_TYPE_COLORS[bl.linkType] ?? '#888'}
+							{@const fill = LINK_TYPE_COLORS[bl.linkType] ?? '#888'}
+							{@const txt = LINK_TYPE_TEXT[bl.linkType] ?? '#ffffff'}
 							<span class="bl-link-type-badge"
-								style="color:{c};background:color-mix(in srgb, {c} 18%, transparent);border-color:color-mix(in srgb, {c} 55%, transparent)"
+								style="color:{txt};background:{fill};border-color:{fill}"
 							>{bl.linkType}</span>
 						{/if}
 						{#if (bl.traversalCount ?? 0) > 0}
