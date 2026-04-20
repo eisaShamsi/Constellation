@@ -175,10 +175,11 @@
 	}
 	.bl-toggle:hover { color: var(--text-normal); }
 	.bl-count {
+		display: inline-flex; align-items: center;
 		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
 		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
 		color: var(--interactive-accent, #7c3aed);
-		border-radius: 8px; padding: 0 6px;
+		border-radius: 8px; padding: 2px 7px; line-height: 1;
 		font-size: 0.7rem; font-weight: 600;
 		font-variant-numeric: tabular-nums;
 	}
@@ -205,12 +206,16 @@
 	}
 	.bl-link-btn:hover { color: var(--interactive-accent); border-color: var(--interactive-accent); }
 	.bl-link-type-badge {
-		font-size: 0.65rem; font-weight: 700; padding: 0 5px;
+		display: inline-flex; align-items: center;
+		font-size: 0.65rem; font-weight: 700; line-height: 1;
+		padding: 2px 6px;
 		border-radius: 8px; border: 1px solid; white-space: nowrap; flex-shrink: 0;
 		text-transform: lowercase; letter-spacing: 0.02em;
 	}
 	.bl-traversal-chip {
-		font-size: 0.65rem; font-weight: 600; padding: 0 5px;
+		display: inline-flex; align-items: center;
+		font-size: 0.65rem; font-weight: 700; line-height: 1;
+		padding: 2px 6px;
 		border-radius: 8px; white-space: nowrap; flex-shrink: 0;
 		color: var(--interactive-accent, #7c3aed);
 		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
