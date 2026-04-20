@@ -22,9 +22,9 @@
 		supports:     '#ffffff',
 		contradicts:  '#ffffff',
 		causes:       '#ffffff',
-		exemplifies:  '#0b2e18',
+		exemplifies:  '#000000',
 		generalizes:  '#ffffff',
-		'derives-from': '#3d2e00',
+		'derives-from': '#000000',
 		'part-of':    '#ffffff',
 		associative:  '#ffffff',
 	};
