@@ -705,6 +705,18 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		}
 	}
 	const libraryPath = library?.path ?? '';
+	// Derive libraryName locally from the same normalized match used for
+	// libraryPath. The caller's `libraryName` arg comes from
+	// `resolve_wikilink_cross_library` whose current-library branch uses
+	// strict string equality against the registered library path — which
+	// silently drops to "" on Windows slash/trailing-slash drift, leaving
+	// the tab with an empty library chip AND poisoning the next
+	// wikilink resolution (empty `currentLibraryPath` skips the
+	// current-library branch and picks the first matching library in
+	// store order, loading the wrong same-named note from another
+	// library). Trust the local derivation; only fall back to the
+	// caller's value when we genuinely couldn't match.
+	const resolvedLibraryName = library?.name ?? libraryName;
 
 	// Default: replace active tab content
 	if (!newTab && currentTab) {
@@ -721,7 +733,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 				path: filePath,
 				content,
 				name,
-				libraryName,
+				libraryName: resolvedLibraryName,
 				libraryPath,
 				libraryColor: color,
 				highlightTerm,
@@ -741,7 +753,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	// Ctrl+click / new tab: create a new tab
 	const id = `tab_${++tabCounter}_${Date.now()}`;
 	const tab: OpenTab = {
-		id, path: filePath, content, libraryName, libraryPath, name, libraryColor: color, highlightTerm,
+		id, path: filePath, content, libraryName: resolvedLibraryName, libraryPath, name, libraryColor: color, highlightTerm,
 		history: [filePath], historyIndex: 0,
 		/* Restore cursor/scroll from write-ahead buffer if available */
 		cursorPos: wab?.cursorPos ?? 0,

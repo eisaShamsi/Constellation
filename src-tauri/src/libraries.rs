@@ -1129,8 +1129,16 @@ pub fn resolve_wikilink_cross_library(
         find_note_by_name_or_alias(current_dir, &target_lower, &mut matches, 0);
         if !matches.is_empty() {
             matches.sort_by_key(|p| p.to_string_lossy().len());
+            // Normalize both sides: strict `==` drops to "" on Windows
+            // slash / trailing-slash / case drift, which then shows up
+            // as an empty library chip on the tab and poisons the next
+            // wikilink resolution (empty currentLibraryPath skips this
+            // branch entirely on the next click, picking the wrong
+            // same-named note from another library).
+            let norm = |s: &str| s.replace('\\', "/").trim_end_matches('/').to_lowercase();
+            let current_norm = norm(&current_library_path);
             let library_name = libraries.iter()
-                .find(|(_, _, p)| p == &current_library_path)
+                .find(|(_, _, p)| norm(p) == current_norm)
                 .map(|(_, n, _)| n.clone())
                 .unwrap_or_default();
             return Ok(Some(ResolvedLink {
