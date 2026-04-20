@@ -864,24 +864,46 @@ function buildDecorations(view: EditorView): DecorationSet {
 					}) });
 				}
 
-				// Wikilinks: [[note]], [[note|display]], or [[note|link-type]] (CE typed links)
+				// Wikilinks: [[note]], [[note|display]], [[note|link-type]] (typed),
+				// or [[note|display|link-type]] (typed with explicit alias).
 				const wikiRe = /(?<!!)\[\[([^\]]+)\]\]/g;
 				while ((m = wikiRe.exec(lineText)) !== null) {
 					const absFrom = line.from + m.index;
 					const absTo = absFrom + m[0].length;
 					const innerFrom = absFrom + 2;
 					const innerTo = absTo - 2;
-					const pipeIndex = m[1].indexOf('|');
+					const raw = m[1];
+					const pipeIndex = raw.indexOf('|');
 					if (pipeIndex >= 0) {
-						const afterPipe = m[1].slice(pipeIndex + 1).trim().toLowerCase();
-						if (TYPED_LINK_TYPES.has(afterPipe)) {
-							// Typed link: show note name in type color, hide [[, |type, ]]
+						// Recognize a typed annotation only when it sits after the LAST
+						// pipe. This covers:
+						//   [[note|type]]            — 2-part typed (pipeIndex === lastPipe)
+						//   [[note|alias|type]]      — 3-part typed with explicit alias
+						// Without the lastIndexOf-based parse, the old code took the
+						// naive `slice(firstPipe + 1)` which for 3-part links produced
+						// an `afterPipe` like `alias|type` that never matched
+						// TYPED_LINK_TYPES — so the "|type]]" trailer leaked into the
+						// rendered alias text (the reported bug).
+						const lastPipeIndex = raw.lastIndexOf('|');
+						const afterLastPipe = raw.slice(lastPipeIndex + 1).trim().toLowerCase();
+						const isTyped = lastPipeIndex > 0 && TYPED_LINK_TYPES.has(afterLastPipe);
+						if (isTyped && lastPipeIndex === pipeIndex) {
+							// 2-part typed: [[note|type]]. Show the note name in the
+							// type color; hide [[ and |type]].
 							const noteEnd = innerFrom + pipeIndex;
 							ranges.push({ from: absFrom, to: innerFrom, deco: replaceDeco }); // hide [[
-							ranges.push({ from: innerFrom, to: noteEnd, deco: typedLinkDecos[afterPipe] ?? linkDeco }); // note name
+							ranges.push({ from: innerFrom, to: noteEnd, deco: typedLinkDecos[afterLastPipe] ?? linkDeco });
 							ranges.push({ from: noteEnd, to: absTo, deco: replaceDeco }); // hide |type]]
+						} else if (isTyped) {
+							// 3-part typed: [[note|alias|type]]. Show the alias in the
+							// type color; hide [[note| and |type]].
+							const aliasStart = innerFrom + pipeIndex + 1;
+							const aliasEnd = innerFrom + lastPipeIndex;
+							ranges.push({ from: absFrom, to: aliasStart, deco: replaceDeco }); // hide [[note|
+							ranges.push({ from: aliasStart, to: aliasEnd, deco: typedLinkDecos[afterLastPipe] ?? linkDeco });
+							ranges.push({ from: aliasEnd, to: absTo, deco: replaceDeco }); // hide |type]]
 						} else {
-							// Display alias: [[note|alias]] — show alias as link text
+							// Display alias: [[note|alias]] (alias may contain pipes).
 							const displayFrom = innerFrom + pipeIndex + 1;
 							ranges.push({ from: absFrom, to: displayFrom, deco: replaceDeco });
 							ranges.push({ from: displayFrom, to: innerTo, deco: linkDeco });
