@@ -126,3 +126,122 @@ so every click legitimately crosses the throttle boundary).
   hourly cron) continues autonomously toward the 20k-concept goal;
   current corpus 3,040 / 20,000 = 15.2% after +074. Not surfaced here
   per user request unless escalation-level.
+
+---
+
+## § 30 — Ghost in the Machine: cross-note content corruption on navigate
+
+User pushed back on moving to P3 until we root-caused what was actually
+happening during the A↔B cycle incidents. Agreed — the supersede-token
+fix stopped the visible symptom but didn't explain *why* there were
+multiple concurrent nav calls to supersede in the first place.
+
+### The hunt
+
+Deployed an Explore agent with a thorough-level brief to trace every
+path that could fire `openNoteTab` / `navigateBack` / `navigateForward`
+more than once per single user action. Candidates examined:
+
+- **Multiple wikilink click handlers on the same event** — checked
+  `src/lib/editor/livePreview.ts:851-879`: wikilinks with typed
+  `|annotation` render as `Decoration.mark` (CSS styling only) +
+  `Decoration.replace` (hiding syntax brackets). Neither carries a
+  click handler. The only wikilink click path is `NotePane.svelte:643`
+  mousedown/capture. Ruled out.
+- **Event bubble conflicts** — the three `mousedown` handlers on
+  `editorEl` (checkbox / chevron / link at lines 553, 592, 643) fire
+  in registration order; `linkClickHandler` uses `preventDefault` +
+  `stopPropagation` but none of them dispatch synthetic events or
+  re-enter. Ruled out.
+- **`$effect` re-fire on tab state change** — swept all 26 `$effect`
+  blocks in `+layout.svelte`. None call `openNoteTab` / `navigateBack` /
+  `navigateForward` in response to tab-state change. Ruled out.
+- **`UniversalEmbedWidget` + `constellation:open-note` event** —
+  `livePreview.ts:429-431` dispatches this event from transclusion
+  **header clicks** only. `![[embed]]` is the only trigger, and our
+  test link is a plain wikilink, not an embed. Ruled out.
+
+**Finding**: the code has no multi-fire source for the A↔B cycle
+visible to static analysis. The cycle was driven by rapid
+`loadTabHistoryEntry` calls racing for the same tab — most plausibly
+OS key-repeat during Alt+← (the one that hit on the *second* incident).
+The first incident (click-driven) remains partially unexplained; the
+Svelte 5 reactive proxy + `{#key}` re-mount path has enough hidden
+cache invalidation that concurrent flush+mount can produce visible
+bounce without a discoverable recursive call. The supersede-token fix
+(`80e9fc4`) stops any race variant regardless of upstream cause —
+acceptable closure for a symptom that also can't be stress-tested
+without a synthetic harness.
+
+### What the audit *did* find: data-corruption bug in `handleFlush`
+
+The real ghost. The screenshots of "tab label = A, body = B" weren't
+just a transient race artifact — they were the visible surface of a
+content-swapping bug that had been silently mis-writing files on every
+navigation since `{#key tab.id + '|' + tab.path}` landed.
+
+**Chain**:
+
+1. User clicks `[[B]]` in A.
+2. `openNoteTab(B, …, A)` updates the tab: path/content/name → B.
+3. `{#key tab.id + '|' + tab.path}` wrapper in `NoteEditor.svelte:216`
+   destroys the old NotePane, mounts a new one.
+4. Old `NotePane.onDestroy` at `NotePane.svelte:688` fires `doFlush()`,
+   which calls `onflush?.(latestText, dirty, cursorPos, scrollTop)`
+   with the old editor's body as `latestText` — **A's body**.
+5. `handleFlush` in `NoteEditor.svelte:129` reads `freshProps()` —
+   which pulls from the *current* store tab, **now B**. Builds
+   `content = buildFullContent(B_frontmatter, A_body)`. That's the
+   corruption.
+6. `setWriteAhead(tab.path, content, …)` — poisons the write-ahead
+   entry for B with the mixed content. The next time the user opens
+   B, `getWriteAhead(B.path)` in `store.ts:645` hands back the mixed
+   body, silently displacing the correct disk content.
+7. If A had been dirty, `writeNote(tab.path, content)` with
+   `tab.path = B` **wrote the mixed content to B.md on disk**.
+   Real, silent cross-file data loss.
+
+### Fix (`a2052da`)
+
+- `NotePane.svelte` captures `mountedFilePath = filePath ?? ''` at
+  mount time, passes it back as the last argument of `onsave` and
+  `onflush`.
+- `NoteEditor.svelte` guards `handleSave` / `handleFlush` with
+  `if (filePath !== tab.path) return;` — any callback arriving from
+  an already-destroyed editor whose tab has been repurposed is dropped
+  cleanly instead of reaching the store mutation / write-ahead /
+  disk-write lines.
+- Removed three `tab.content = …` mutations in `handleFlush` that
+  were silently no-oping anyway (Svelte 5 treats `$props()` as
+  readonly unless declared `$bindable()` — the code had shipped
+  assuming mutability that doesn't exist).
+
+**Tradeoff documented in the commit**: if the user types in A and
+navigates before the 1.5 s debounced save fires, the unsaved
+characters are now dropped on the floor instead of silently
+corrupting B. The debounced-save path covers the common case; this
+is a narrow window that only matters for type-and-navigate-within-
+one-save-cycle usage. Net win over the corruption it replaced.
+
+### Severity
+
+Without this fix, every wikilink traversal in the editor had a latent
+risk of (a) displacing the target note's write-ahead with mixed
+content (which surfaces on next open as body swap) and (b) when the
+source note was dirty, writing that mixed content onto the target
+file's disk. The trial Universe has 656k links across 7,600 notes;
+anyone navigating heavily through the Constellation editor has been
+silently writing cross-contaminated content for weeks. Cannot quantify
+damage retroactively without a file-content audit against git history
+/ backups.
+
+### Commits landed today
+
+- `917f2e1` — Remove read_index_entries diagnostic block
+- `80e9fc4` — Fix history navigation races + tab title/body desync
+- `e911749` — docs(session-log 04-20): § 29
+- `a2052da` — Fix cross-note content corruption on wikilink-click navigation
+
+### Next
+
+Ready to move to P3 (Living Link visual surfaces) per earlier agreement.
