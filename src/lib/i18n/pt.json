@@ -620,7 +620,12 @@
     "crossLibrary": "Entre cofres",
     "noCrossLibrary": "Sem links entre cofres",
     "mostTraveled": "Mais percorridos",
-    "noTraveled": "Nenhum caminho percorrido"
+    "noTraveled": "Nenhum caminho percorrido",
+    "stale": "Desatualizados",
+    "noStale": "Sem ligações desatualizadas — cada caminho percorrido está fresco",
+    "staleDays": "há {n}d",
+    "staleMonths": "há {n}m",
+    "staleYears": "há {n}a"
   },
   "dialogs": {
     "confirmDelete": "Tem certeza de que deseja excluir \"{name}\"?",

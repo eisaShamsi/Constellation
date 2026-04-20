@@ -717,7 +717,12 @@
     "noBroken": "No broken links",
     "noOrphans": "No orphan notes",
     "mostTraveled": "Most Traveled",
-    "noTraveled": "No traveled paths yet"
+    "noTraveled": "No traveled paths yet",
+    "stale": "Stale",
+    "noStale": "No stale links — every traversed path is fresh",
+    "staleDays": "{n}d ago",
+    "staleMonths": "{n}mo ago",
+    "staleYears": "{n}y ago"
   },
   "dialogs": {
     "confirmDelete": "Are you sure you want to delete \"{name}\"?",

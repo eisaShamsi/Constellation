@@ -620,7 +620,12 @@
     "noBroken": "Keine defekten Links",
     "noOrphans": "Keine verwaisten Notizen",
     "mostTraveled": "Meist begangen",
-    "noTraveled": "Noch keine begangenen Pfade"
+    "noTraveled": "Noch keine begangenen Pfade",
+    "stale": "Veraltet",
+    "noStale": "Keine veralteten Links — jeder begangene Pfad ist frisch",
+    "staleDays": "vor {n} T",
+    "staleMonths": "vor {n} Mo",
+    "staleYears": "vor {n} J"
   },
   "dialogs": {
     "confirmDelete": "Möchten Sie \"{name}\" wirklich löschen?",

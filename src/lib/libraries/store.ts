@@ -1557,6 +1557,61 @@ export interface NoteLink {
 	weight?: number;
 	/** How many times the user has traversed this link. Default 0. */
 	traversal_count?: number;
+	/** ISO-8601 timestamp of the most recent traversal, or empty for
+	 *  never-followed links. Powers the P5 lifecycle helpers (decay,
+	 *  stale flagging, confidence tiering). */
+	last_traversed?: string;
+	/** Confidence tier stored in the DB: "hypothesis" (default) or a
+	 *  user-promoted tier. The UI derives a richer lifecycle state from
+	 *  (traversal_count + last_traversed + confidence) via `linkLifecycle()`. */
+	confidence?: string;
+}
+
+/** P5 — Living Link lifecycle state computed client-side from the raw
+ *  DB fields. Four tiers:
+ *
+ *  - `fresh`: never traversed (traversal_count === 0)
+ *  - `emerging`: 1–2 traversals, regardless of age — just-found paths
+ *  - `established`: 3+ traversals AND touched within LINK_STALE_DAYS
+ *  - `load-bearing`: 10+ traversals AND touched within LINK_STALE_DAYS
+ *  - `stale`: previously traversed but untouched for LINK_STALE_DAYS+
+ *
+ *  The UI uses this to color-tier chips, list stale links in the
+ *  LinkDashboard, and (future) apply weight decay. No DB write yet —
+ *  tier is recomputed on every read so threshold changes apply
+ *  immediately without a migration. */
+export type LinkLifecycle = 'fresh' | 'emerging' | 'established' | 'load-bearing' | 'stale';
+
+export const LINK_STALE_DAYS = 90;
+
+/** ms in 24 hours, cached so we don't recompute per call. */
+const MS_PER_DAY = 86_400_000;
+
+/** Compute lifecycle tier for a link. Pure function of the link's
+ *  traversal fields + current time; no side effects.
+ *
+ *  `nowMs` is a param (not `Date.now()` inline) so callers that batch
+ *  many links in a derived can snapshot `Date.now()` once upstream. */
+export function linkLifecycle(link: NoteLink, nowMs: number = Date.now()): LinkLifecycle {
+	const tc = link.traversal_count ?? 0;
+	if (tc === 0) return 'fresh';
+
+	// Age check: parse last_traversed (ISO-8601); fall back to "active" if
+	// the field is missing or malformed — never-traversed links already
+	// returned above, so an empty string here means pre-P5 data that was
+	// still flagged active, which we treat as fresh-looking rather than
+	// stale (principle of least destruction).
+	const lt = link.last_traversed ?? '';
+	let ageDays = 0;
+	if (lt) {
+		const parsed = Date.parse(lt);
+		if (!Number.isNaN(parsed)) ageDays = (nowMs - parsed) / MS_PER_DAY;
+	}
+
+	if (ageDays > LINK_STALE_DAYS) return 'stale';
+	if (tc >= 10) return 'load-bearing';
+	if (tc >= 3) return 'established';
+	return 'emerging';
 }
 
 /** Known typed-link names shared across the Backlinks/Outgoing panels,

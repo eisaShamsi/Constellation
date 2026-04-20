@@ -620,7 +620,12 @@
     "crossLibrary": "보관함 간",
     "noCrossLibrary": "보관함 간 링크 없음",
     "mostTraveled": "가장 많이 이동",
-    "noTraveled": "자주 다닌 경로가 없습니다"
+    "noTraveled": "자주 다닌 경로가 없습니다",
+    "stale": "오래됨",
+    "noStale": "오래된 링크 없음 — 모든 이동 경로가 신선합니다",
+    "staleDays": "{n}일 전",
+    "staleMonths": "{n}개월 전",
+    "staleYears": "{n}년 전"
   },
   "dialogs": {
     "confirmDelete": "\"{name}\"을(를) 삭제하시겠습니까?",

@@ -620,7 +620,12 @@
     "crossLibrary": "跨仓库",
     "noCrossLibrary": "无跨仓库链接",
     "mostTraveled": "最常通行",
-    "noTraveled": "暂无常走路径"
+    "noTraveled": "暂无常走路径",
+    "stale": "已冷落",
+    "noStale": "没有冷落的链接 — 每条走过的路径都仍在活跃",
+    "staleDays": "{n}天前",
+    "staleMonths": "{n}个月前",
+    "staleYears": "{n}年前"
   },
   "dialogs": {
     "confirmDelete": "确定要删除 \"{name}\" 吗？",

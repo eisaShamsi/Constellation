@@ -620,7 +620,12 @@
     "crossLibrary": "בין-כספות",
     "noCrossLibrary": "אין קישורים בין-כספות",
     "mostTraveled": "הנפוצים ביותר",
-    "noTraveled": "אין נתיבים נפוצים עדיין"
+    "noTraveled": "אין נתיבים נפוצים עדיין",
+    "stale": "מיושנים",
+    "noStale": "אין קישורים מיושנים — כל נתיב שנפרץ עדיין טרי",
+    "staleDays": "לפני {n} ימים",
+    "staleMonths": "לפני {n} חודשים",
+    "staleYears": "לפני {n} שנים"
   },
   "dialogs": {
     "confirmDelete": "האם אתה בטוח שברצונך למחוק את \"{name}\"?",

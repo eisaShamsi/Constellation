@@ -620,7 +620,12 @@
     "crossLibrary": "क्रॉस-वॉल्ट",
     "noCrossLibrary": "कोई क्रॉस-वॉल्ट लिंक नहीं",
     "mostTraveled": "सबसे अधिक यात्रा",
-    "noTraveled": "अभी तक कोई यात्रा पथ नहीं"
+    "noTraveled": "अभी तक कोई यात्रा पथ नहीं",
+    "stale": "पुराने",
+    "noStale": "कोई पुरानी कड़ी नहीं — प्रत्येक चला हुआ पथ अभी भी सक्रिय है",
+    "staleDays": "{n} दिन पहले",
+    "staleMonths": "{n} माह पहले",
+    "staleYears": "{n} वर्ष पहले"
   },
   "dialogs": {
     "confirmDelete": "क्या आप वाकई \"{name}\" को हटाना चाहते हैं?",

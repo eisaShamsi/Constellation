@@ -620,7 +620,12 @@
     "crossLibrary": "Kasalar Arası",
     "noCrossLibrary": "Kasalar arası bağlantı yok",
     "mostTraveled": "En Çok Geçilen",
-    "noTraveled": "Henüz geçilen yol yok"
+    "noTraveled": "Henüz geçilen yol yok",
+    "stale": "Eskimiş",
+    "noStale": "Eskimiş bağlantı yok — her geçilen yol hâlâ taze",
+    "staleDays": "{n} gün önce",
+    "staleMonths": "{n} ay önce",
+    "staleYears": "{n} yıl önce"
   },
   "dialogs": {
     "confirmDelete": "\"{name}\" öğesini silmek istediğinizden emin misiniz?",

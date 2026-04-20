@@ -1516,6 +1516,17 @@ pub struct NoteLink {
     /// `note_links` table.
     #[serde(default)]
     pub traversal_count: i64,
+    /// ISO-8601 timestamp of the most recent traversal, or "" for links
+    /// that have never been followed. Populated from
+    /// `note_links.last_traversed`. Consumed by the P5 lifecycle helpers
+    /// to compute decay / stale-flagging / confidence tiers client-side.
+    #[serde(default)]
+    pub last_traversed: String,
+    /// Confidence tier stored in the DB: "hypothesis" (default), or user-
+    /// promoted tiers that will be driven by P5 thresholds. Present here
+    /// so the UI can surface the raw tier without an extra query.
+    #[serde(default)]
+    pub confidence: String,
 }
 
 fn default_weight() -> f64 { 1.0 }
@@ -1594,6 +1605,8 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
                         annotation: String::new(),
                         weight: 1.0,
                         traversal_count: 0,
+                        last_traversed: String::new(),
+                        confidence: String::new(),
                     });
                 }
             }
@@ -1691,6 +1704,8 @@ fn scan_unlinked_recursive(
                         annotation: String::new(),
                         weight: 1.0,
                         traversal_count: 0,
+                        last_traversed: String::new(),
+                        confidence: String::new(),
                     });
                 }
             }

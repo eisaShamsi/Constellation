@@ -620,7 +620,12 @@
     "crossLibrary": "保管庫間",
     "noCrossLibrary": "保管庫間リンクなし",
     "mostTraveled": "最多通過",
-    "noTraveled": "よく通るパスはまだありません"
+    "noTraveled": "よく通るパスはまだありません",
+    "stale": "休眠中",
+    "noStale": "休眠中のリンクはありません — 通ったパスはすべて活動中です",
+    "staleDays": "{n}日前",
+    "staleMonths": "{n}ヶ月前",
+    "staleYears": "{n}年前"
   },
   "dialogs": {
     "confirmDelete": "「{name}」を削除してもよろしいですか？",

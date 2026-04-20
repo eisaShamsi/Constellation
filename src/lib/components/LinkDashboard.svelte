@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { appSettings, type NoteLink } from '$lib/libraries/store';
+	import { appSettings, linkLifecycle, type NoteLink } from '$lib/libraries/store';
 
 	// Share the user-configurable pill shape (radius / height / font-weight)
 	// with BacklinksPanel / OutgoingLinksPanel so the ×N chip in the
@@ -63,6 +63,35 @@
 		return allNotes.filter(n => !linked.has(n.path));
 	});
 
+	// Stale links (P5): previously traversed paths that haven't been
+	// touched in LINK_STALE_DAYS. Surface them so the user can prune,
+	// revisit, or consciously retire the connection. Sort by staleness
+	// (oldest-touched first) so the most-forgotten climb to the top.
+	const staleLinks = $derived.by(() => {
+		if (!visible) return [];
+		const now = Date.now();
+		return allLinks
+			.filter(l => linkLifecycle(l, now) === 'stale')
+			.slice()
+			.sort((a, b) => {
+				// Older last_traversed → higher priority. Empty strings
+				// shouldn't reach here (fresh links skip the stale branch)
+				// but sort them last defensively.
+				const aLt = Date.parse(a.last_traversed ?? '') || 0;
+				const bLt = Date.parse(b.last_traversed ?? '') || 0;
+				return aLt - bLt;
+			})
+			.slice(0, 50)
+			.map(l => ({
+				source_path: l.source_path,
+				source_name: l.source_name,
+				target: l.target,
+				library_name: l.library_name,
+				count: l.traversal_count ?? 0,
+				last: l.last_traversed ?? '',
+			}));
+	});
+
 	// Most-traveled paths (P4.3): top 20 links by Living Link traversal_count.
 	// Surfaces the user's worn edges — the connections they reach for most.
 	// O(m log m) due to sort; m is link count, bounded by vault size.
@@ -100,7 +129,22 @@
 			});
 	});
 
-	let activeSection = $state<'cross' | 'broken' | 'orphan' | 'top' | 'traveled'>('top');
+	let activeSection = $state<'cross' | 'broken' | 'orphan' | 'top' | 'traveled' | 'stale'>('top');
+
+	/** Compact "2 weeks ago" style formatter. Same pattern elsewhere in
+	 *  the app uses Intl.RelativeTimeFormat via $locale; reuse that here
+	 *  so Arabic / RTL users get localized relative strings for free. */
+	function relAge(iso: string): string {
+		if (!iso) return '';
+		const ms = Date.now() - Date.parse(iso);
+		if (Number.isNaN(ms)) return '';
+		const days = Math.floor(ms / 86_400_000);
+		if (days < 30) return $t('linkDashboard.staleDays', { n: String(days) });
+		const months = Math.floor(days / 30);
+		if (months < 12) return $t('linkDashboard.staleMonths', { n: String(months) });
+		const years = Math.floor(days / 365);
+		return $t('linkDashboard.staleYears', { n: String(years) });
+	}
 </script>
 
 <div class="link-dashboard" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
@@ -110,6 +154,9 @@
 		</button>
 		<button class="ld-tab" class:active={activeSection === 'traveled'} onclick={() => activeSection = 'traveled'}>
 			{$t('linkDashboard.mostTraveled')} <span class="ld-badge">{mostTraveled.length}</span>
+		</button>
+		<button class="ld-tab" class:active={activeSection === 'stale'} onclick={() => activeSection = 'stale'}>
+			{$t('linkDashboard.stale')} <span class="ld-badge">{staleLinks.length}</span>
 		</button>
 		<button class="ld-tab" class:active={activeSection === 'cross'} onclick={() => activeSection = 'cross'}>
 			{$t('linkDashboard.crossLibrary')} <span class="ld-badge">{crossLibraryLinks.length}</span>
@@ -140,6 +187,17 @@
 			{/each}
 			{#if mostTraveled.length === 0}
 				<div class="ld-empty">{$t('linkDashboard.noTraveled')}</div>
+			{/if}
+		{:else if activeSection === 'stale'}
+			{#each staleLinks as link}
+				<button class="ld-item" onclick={() => onNoteClick(link.source_path, link.library_name)}>
+					<span class="ld-name">{link.source_name}</span>
+					<span class="ld-detail">→ {link.target}</span>
+					<span class="ld-chip ld-chip-stale" title={link.last}>{relAge(link.last)}</span>
+				</button>
+			{/each}
+			{#if staleLinks.length === 0}
+				<div class="ld-empty">{$t('linkDashboard.noStale')}</div>
 			{/if}
 		{:else if activeSection === 'cross'}
 			{#each crossLibraryLinks.slice(0, 50) as link}
@@ -227,6 +285,14 @@
 		color: var(--interactive-accent);
 		font-size: 0.72rem; font-weight: var(--pill-weight, 700);
 		line-height: 1;
+	}
+	/* Stale-link chip: muted amber so it reads as "needs attention"
+	   without screaming "error" — distinct from the accent chips that
+	   signal live traversal activity. */
+	.ld-chip-stale {
+		background: color-mix(in srgb, #d97706 14%, transparent);
+		border-color: color-mix(in srgb, #d97706 30%, transparent);
+		color: #d97706;
 	}
 	.ld-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 8px 0; text-align: center; }
 </style>

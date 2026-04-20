@@ -620,7 +620,12 @@
     "noBroken": "Sin enlaces rotos",
     "noOrphans": "Sin notas huérfanas",
     "mostTraveled": "Más transitados",
-    "noTraveled": "Aún no hay rutas transitadas"
+    "noTraveled": "Aún no hay rutas transitadas",
+    "stale": "Obsoletos",
+    "noStale": "Sin enlaces obsoletos — cada ruta transitada está fresca",
+    "staleDays": "hace {n} d",
+    "staleMonths": "hace {n} me",
+    "staleYears": "hace {n} a"
   },
   "dialogs": {
     "confirmDelete": "¿Estás seguro de que quieres eliminar \"{name}\"?",
