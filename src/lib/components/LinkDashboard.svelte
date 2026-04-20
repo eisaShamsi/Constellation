@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import type { NoteLink } from '$lib/libraries/store';
+	import { appSettings, type NoteLink } from '$lib/libraries/store';
+
+	// Share the user-configurable pill shape (radius / height / font-weight)
+	// with BacklinksPanel / OutgoingLinksPanel so the ×N chip in the
+	// Most-Traveled tab matches the chips the user sees in the sidebar
+	// and inside rendered prose. One settings surface, every chip respects it.
+	const pillShape = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	let {
 		allLinks = [] as NoteLink[],
@@ -97,7 +103,7 @@
 	let activeSection = $state<'cross' | 'broken' | 'orphan' | 'top' | 'traveled'>('top');
 </script>
 
-<div class="link-dashboard">
+<div class="link-dashboard" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
 	<div class="ld-tabs">
 		<button class="ld-tab" class:active={activeSection === 'top'} onclick={() => activeSection = 'top'}>
 			{$t('linkDashboard.mostConnected')} <span class="ld-badge">{mostConnected.length}</span>
@@ -202,13 +208,15 @@
 	.ld-broken { color: var(--text-error, #ef4444); }
 	.ld-chip {
 		flex-shrink: 0;
-		display: inline-flex; align-items: center;
-		height: 15px; padding: 0 5px; box-sizing: border-box;
-		border-radius: 7px;
+		display: inline-flex; align-items: center; justify-content: center;
+		box-sizing: border-box;
+		height: var(--pill-height, 20px);
+		padding: 0 8px;
+		border-radius: var(--pill-radius, 10px);
 		background: color-mix(in srgb, var(--interactive-accent) 14%, transparent);
 		border: 1px solid color-mix(in srgb, var(--interactive-accent) 30%, transparent);
 		color: var(--interactive-accent);
-		font-size: 0.6rem; font-weight: 600;
+		font-size: 0.72rem; font-weight: var(--pill-weight, 700);
 		line-height: 1;
 	}
 	.ld-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 8px 0; text-align: center; }
