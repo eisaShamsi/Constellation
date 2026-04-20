@@ -181,8 +181,10 @@
 		display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 8px;
 	}
 	.ld-tab {
+		display: inline-flex; align-items: center; gap: 0;
 		background: none; border: 1px solid var(--background-modifier-border);
-		border-radius: 4px; padding: 3px 8px; cursor: pointer;
+		border-radius: var(--pill-radius, 10px); padding: 2px 6px 2px 10px;
+		cursor: pointer;
 		font-size: 0.72rem; font-family: inherit; color: var(--text-muted);
 	}
 	.ld-tab:hover { color: var(--text-normal); }
@@ -191,9 +193,15 @@
 		color: white; border-color: var(--interactive-accent);
 	}
 	.ld-badge {
+		display: inline-flex; align-items: center; justify-content: center;
+		box-sizing: border-box;
+		height: var(--pill-height, 20px);
+		padding: 0 8px;
+		border-radius: var(--pill-radius, 10px);
 		background: var(--background-modifier-border-focus);
-		border-radius: 8px; padding: 0 4px; font-size: 0.68rem;
-		margin-inline-start: 2px;
+		font-size: 0.68rem; font-weight: var(--pill-weight, 700);
+		line-height: 1;
+		margin-inline-start: 4px;
 	}
 	.ld-tab.active .ld-badge { background: rgba(255,255,255,0.2); color: white; }
 	.ld-content { max-height: 300px; overflow-y: auto; }
