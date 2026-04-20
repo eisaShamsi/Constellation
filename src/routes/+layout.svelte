@@ -4893,7 +4893,7 @@
 				{:else if rightSidebarTab === 'links'}
 					<div class="rs-section rs-full-height">
 						<LinkDashboard
-							allLinks={allLibraryLinks}
+							allLinks={effectiveLibraryLinks}
 							allNotes={allNotes}
 							visible={rightSidebarOpen && rightSidebarTab === 'links'}
 							onNoteClick={(path, libraryName) => {
