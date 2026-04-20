@@ -531,3 +531,46 @@ was clean at `3d216be`.
 via `queueMicrotask` so the reactive wave fires **after** navigation
 settles, and with a dep-gated sidebar $effect so bumps don't invalidate
 `effectiveLibraryLinks` during nav.
+
+## § 36 — Ghost identified + fixed (path-comparison bug)
+
+User's reproduction video (Ghost.mp4, 79s) revealed the real
+ghost: NOT plinking, NOT reactive cascade — a **same-filename
+across libraries** bug. The user's vault has `غرناطة.md` in both
+`تاريخ عربي وإسلامي` (history) and `جغرافيا` (geography). Clicking
+wikilinks surfaced the symptom visible in frames 80 vs 110 vs 158:
+tab title `غرناطة` stays constant but body swaps through 4850-,
+5011-, and 18818-character variants. Footer status bar drops the
+library suffix (`غرناطة · تاريخ عربي وإسلامي` → just `غرناطة`).
+
+Root cause traced to `resolve_wikilink_cross_library` in
+libraries.rs:1132 — strict `p == &current_library_path` equality
+against the registered library path silently falls through to
+`""` on Windows slash / trailing-slash / case drift. The empty
+library_name on the tab then poisons the next wikilink call:
+`currentLibraryPath=""` skips the current-library branch entirely
+and the search falls to "Search other libraries" which iterates
+in store order and picks the first matching same-name file —
+the wrong Granada.
+
+**Fix (a3daf92):**
+
+- **libraries.rs**: normalize both sides of the comparison
+  (`\` → `/`, trim trailing `/`, lowercase) so the current-library
+  branch matches robustly on Windows.
+- **store.ts openNoteTab**: derive `libraryName` locally from the
+  same path-normalized matcher already used for `libraryPath`;
+  use it on the tab update instead of trusting the caller's arg.
+  Applies to both replace-active-tab and new-tab branches.
+
+Earlier session speculation that the P4.2 follow-ups (f25dd31,
+9ebe35c) or the P4.2 base (3d216be) caused the regression was
+wrong — those reverts stay in place because the live-refresh
+design still needed more care, but they weren't the ghost.
+
+**Commits:**
+- `5b31c80` — revert P4.2 follow-up (sidebar bumps)
+- `e365e72` — revert P4.2 follow-up (live refresh)
+- `5bca489` — revert P4.2 base (×N chip in prose)
+- `9b76c9b` — session-log § 35 (initial diagnosis — superseded)
+- `a3daf92` — **actual ghost fix**
