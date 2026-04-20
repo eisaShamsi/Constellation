@@ -1525,7 +1525,16 @@ export function getBacklinks(allLinks: NoteLink[], noteName: string) {
 }
 
 export function getOutgoingLinks(allLinks: NoteLink[], notePath: string) {
-	return allLinks.filter(l => l.source_path === notePath);
+	const outgoing = allLinks.filter(l => l.source_path === notePath);
+	// Same sort contract as `getBacklinks`: weight descending, ties broken
+	// alphabetically by target for a stable order when nothing has been
+	// traversed (weights all at 1.0).
+	outgoing.sort((a, b) => {
+		const wDiff = (b.weight ?? 1) - (a.weight ?? 1);
+		if (wDiff !== 0) return wDiff;
+		return a.target.localeCompare(b.target);
+	});
+	return outgoing;
 }
 
 export async function scanUnlinkedMentions(noteName: string, notePath: string): Promise<{ name: string; path: string; context: string; libraryName: string }[]> {

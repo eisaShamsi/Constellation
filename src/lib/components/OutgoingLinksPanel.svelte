@@ -3,13 +3,25 @@
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 
+	// Link-type color palette — mirrors Backlinks + GraphMind + livePreview.
+	const LINK_TYPE_COLORS: Record<string, string> = {
+		supports:     '#4A9EFF',
+		contradicts:  '#FF4A4A',
+		causes:       '#FF8C42',
+		exemplifies:  '#4AFF88',
+		generalizes:  '#A44AFF',
+		'derives-from': '#FFD700',
+		'part-of':    '#AAAAAA',
+		associative:  '#888888',
+	};
+
 	let {
-		outgoingLinks = [] as { target: string; context: string }[],
+		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; linkType?: string }[],
 		activeNotePath = '',
 		libraryPath = '',
 		libraryColorMap = {} as Record<string, string>,
 	}: {
-		outgoingLinks: { target: string; context: string }[];
+		outgoingLinks: { target: string; context: string; traversalCount?: number; linkType?: string }[];
 		activeNotePath?: string;
 		libraryPath?: string;
 		libraryColorMap?: Record<string, string>;
@@ -39,7 +51,17 @@
 	{#if outgoingLinks.length > 0}
 		{#each outgoingLinks as link}
 			<button class="ol-item" onclick={(e) => openLink(link.target, e)} dir="auto">
-				<span class="ol-target">{link.target}</span>
+				<span class="ol-target-row">
+					<span class="ol-target">{link.target}</span>
+					{#if link.linkType}
+						<span class="ol-link-type-badge"
+							style="color:{LINK_TYPE_COLORS[link.linkType] ?? '#888'};border-color:{LINK_TYPE_COLORS[link.linkType] ?? '#888'}20"
+						>{link.linkType}</span>
+					{/if}
+					{#if (link.traversalCount ?? 0) > 0}
+						<span class="ol-traversal-chip" title={`Traversed ${link.traversalCount} time${link.traversalCount === 1 ? '' : 's'}`}>×{link.traversalCount}</span>
+					{/if}
+				</span>
 				<span class="ol-context">{link.context}</span>
 			</button>
 		{/each}
@@ -69,7 +91,21 @@
 		background: none; border: none; cursor: pointer;
 	}
 	.ol-item:hover { background: var(--background-modifier-hover); }
-	.ol-target { display: block; color: var(--interactive-accent); font-size: 0.8rem; }
+	.ol-target-row { display: flex; align-items: center; gap: 4px; }
+	.ol-target { color: var(--interactive-accent); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ol-context { display: block; color: var(--text-faint); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ol-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
+	.ol-link-type-badge {
+		font-size: 0.65rem; font-weight: 500; padding: 0 5px;
+		border-radius: 8px; border: 1px solid; white-space: nowrap; flex-shrink: 0;
+		text-transform: lowercase; letter-spacing: 0.02em;
+	}
+	.ol-traversal-chip {
+		font-size: 0.65rem; font-weight: 600; padding: 0 5px;
+		border-radius: 8px; white-space: nowrap; flex-shrink: 0;
+		color: var(--interactive-accent, #7c3aed);
+		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
+		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
+		letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
+	}
 </style>

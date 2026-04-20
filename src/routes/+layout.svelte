@@ -848,7 +848,7 @@
 	let _focusModeTabId = '';
 	$effect(() => { const id = $activeTab?.id ?? ''; if (id !== _focusModeTabId) { _focusModeTabId = id; focusMode = false; } });
 	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number }[]>([]);
-	let currentOutgoing = $state<{ target: string; context: string }[]>([]);
+	let currentOutgoing = $state<{ target: string; context: string; traversalCount?: number; linkType?: string }[]>([]);
 	let activeNoteTags = $state<string[]>([]);
 	let _sidebarDebounce: ReturnType<typeof setTimeout> | undefined;
 
@@ -887,6 +887,8 @@
 			currentOutgoing = getOutgoingLinks(allLibraryLinks, tab.path).map(l => ({
 				target: l.target,
 				context: l.context,
+				traversalCount: l.traversal_count ?? 0,
+				linkType: l.link_type ?? undefined,
 			}));
 			// Tags (from frontmatter + inline)
 			const tags: string[] = [];
