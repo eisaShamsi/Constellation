@@ -293,11 +293,29 @@ export const libraryCount = derived(libraries, ($v) => $v.length);
 export const totalStars = derived(libraryStats, ($s) => $s.reduce((sum, v) => sum + v.star_count, 0));
 
 // ─── Per-tab navigation ───
+// Supersede token per tab — a later call overwrites an in-flight earlier one
+// so rapid Alt+Left / Alt+Right keypresses don't race openTabs.update with
+// stale content/name/path combinations (the "tab title ≠ body" bug).
+const _navTokens = new Map<string, number>();
+
+// Ring-buffer trace of navigation calls exposed as `window.__navTrace` for
+// debugging the wikilink-click cycle. 200 entries is plenty for a session.
+const _navTrace: Array<{ t: number; fn: string; tabId?: string; from?: string; to?: string; stack?: string }> = [];
+if (typeof window !== 'undefined') (window as unknown as Record<string, unknown>).__navTrace = _navTrace;
+function _traceNav(fn: string, tabId?: string, to?: string, from?: string) {
+	_navTrace.push({
+		t: Date.now(), fn, tabId, to, from,
+		stack: new Error().stack?.split('\n').slice(2, 6).join(' ← '),
+	});
+	if (_navTrace.length > 200) _navTrace.shift();
+}
+
 export function navigateBack() {
 	const tab = get(splitActive) ? get(focusedTab) : get(activeTab);
 	if (!tab || tab.historyIndex <= 0) return;
 	const newIndex = tab.historyIndex - 1;
 	const targetPath = tab.history[newIndex];
+	_traceNav('navigateBack', tab.id, targetPath, tab.path);
 	loadTabHistoryEntry(tab.id, targetPath, newIndex);
 }
 
@@ -306,17 +324,54 @@ export function navigateForward() {
 	if (!tab || tab.historyIndex >= tab.history.length - 1) return;
 	const newIndex = tab.historyIndex + 1;
 	const targetPath = tab.history[newIndex];
+	_traceNav('navigateForward', tab.id, targetPath, tab.path);
 	loadTabHistoryEntry(tab.id, targetPath, newIndex);
 }
 
 async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIndex: number) {
+	const myToken = (_navTokens.get(tabId) ?? 0) + 1;
+	_navTokens.set(tabId, myToken);
 	try {
 		const content: string = await invoke('read_note', { filePath });
-		const name = filePath.split(/[\\/]/).pop()?.replace('.md', '') ?? '';
+		// If a later nav has superseded this one, don't stomp its result.
+		if (_navTokens.get(tabId) !== myToken) return;
+
+		// Name: mirror openNoteTab — prefer frontmatter `title:`, fall back to
+		// the filename stem. Without this parity the tab label flips between
+		// the two conventions as the user navigates forward (click) vs back
+		// (history), producing visible "title ≠ body" desync.
+		let name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
+		const fmTitleMatch = content.match(/^---[\s\S]*?^title:\s*"?([^"\n]+)"?\s*$/m);
+		if (fmTitleMatch?.[1]) name = fmTitleMatch[1].trim();
+
+		// Resolve library for the new path so cross-library history entries
+		// (or any future cross-library nav) don't keep the old library's
+		// name/path on the tab.
+		const allLibs = get(libraries);
+		const normalize = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+		const filePathNorm = normalize(filePath);
+		let resolvedLibrary: typeof allLibs[number] | undefined;
+		let bestLen = -1;
+		for (const v of allLibs) {
+			const libNorm = normalize(v.path);
+			if (filePathNorm === libNorm || filePathNorm.startsWith(libNorm + '/')) {
+				if (libNorm.length > bestLen) { bestLen = libNorm.length; resolvedLibrary = v; }
+			}
+		}
+
 		openTabs.update(tabs => tabs.map(t => {
 			if (t.id !== tabId) return t;
-			return { ...t, path: filePath, content, name, historyIndex: newHistoryIndex, highlightTerm: undefined };
+			return {
+				...t,
+				path: filePath,
+				content,
+				name,
+				historyIndex: newHistoryIndex,
+				highlightTerm: undefined,
+				...(resolvedLibrary ? { libraryName: resolvedLibrary.name, libraryPath: resolvedLibrary.path } : {}),
+			};
 		}));
+		_traceNav('loadTabHistoryEntry:applied', tabId, filePath);
 	} catch { /* file may have been deleted */ }
 }
 
@@ -572,10 +627,12 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 
 	// If the same file is already the active tab, just update highlight
 	const currentTab = get(splitActive) ? get(focusedTab) : get(activeTab);
+	_traceNav('openNoteTab:entry', currentTab?.id, filePath, fromNotePath ?? currentTab?.path);
 	if (currentTab && currentTab.path === filePath) {
 		if (highlightTerm) {
 			openTabs.update(tabs => tabs.map(t => t.id === currentTab.id ? { ...t, highlightTerm } : t));
 		}
+		_traceNav('openNoteTab:earlyReturn', currentTab.id, filePath);
 		return;
 	}
 
@@ -677,6 +734,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		}));
 		// Auto-enable editing mode (WYSIWYG is always edit-ready)
 		editingTabIds.update(set => { const next = new Set(set); next.add(currentTab.id); return next; });
+		_traceNav('openNoteTab:applied', currentTab.id, filePath);
 		return;
 	}
 
