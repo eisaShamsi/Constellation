@@ -565,7 +565,8 @@
     "provenance": "Provenance",
     "review": "Impulsion de révision",
     "inspector360": "360.3D",
-    "skyView": "Sky View"
+    "skyView": "Sky View",
+    "links": "Tableau des liens"
   },
   "tasksPanel": {
     "all": "Toutes",

@@ -565,7 +565,8 @@
     "provenance": "출처",
     "review": "리뷰 펄스",
     "inspector360": "360.3D",
-    "skyView": "Sky View"
+    "skyView": "Sky View",
+    "links": "링크 대시보드"
   },
   "tasksPanel": {
     "all": "전체",

@@ -77,6 +77,7 @@
 	import TensionPanel from '$lib/components/TensionPanel.svelte';
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
 	import ReviewPulsePanel from '$lib/components/ReviewPulsePanel.svelte';
+	import LinkDashboard from '$lib/components/LinkDashboard.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
 	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
@@ -327,7 +328,7 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'links'>('properties');
 	let dueNotes = $state<any[]>([]); // CE Phase 7: ReviewPulse due notes
 	let activeTrail = $state<any>(null); // CE Phase 8: active trail data
 	let showExpressionForge = $state(false); // CE Phase 10
@@ -4725,6 +4726,9 @@
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 					{#if dueNotes.length > 0}<span class="rs-tab-badge">{dueNotes.length}</span>{/if}
 				</button>
+				<button class="rs-tab" class:active={rightSidebarTab === 'links'} onclick={() => rightSidebarTab = 'links'} title={$t('panels.links') || 'Link Dashboard'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+				</button>
 			</div>
 
 			{#if isHome && sidebarTab}
@@ -4883,6 +4887,17 @@
 							onNoteClick={(path, name) => {
 								const lib = $libraryStats.find(l => path.startsWith(l.path));
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+							}}
+						/>
+					</div>
+				{:else if rightSidebarTab === 'links'}
+					<div class="rs-section rs-full-height">
+						<LinkDashboard
+							allLinks={allLibraryLinks}
+							allNotes={allNotes}
+							visible={rightSidebarOpen && rightSidebarTab === 'links'}
+							onNoteClick={(path, libraryName) => {
+								openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed');
 							}}
 						/>
 					</div>

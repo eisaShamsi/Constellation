@@ -565,7 +565,8 @@
     "provenance": "Köken",
     "review": "Gözden Geçirme Nabzı",
     "inspector360": "360.3D",
-    "skyView": "Sky View"
+    "skyView": "Sky View",
+    "links": "Bağlantı Panosu"
   },
   "tasksPanel": {
     "all": "Tümü",
