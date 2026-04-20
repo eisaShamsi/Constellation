@@ -847,7 +847,7 @@
 	let focusMode = $state(false);
 	let _focusModeTabId = '';
 	$effect(() => { const id = $activeTab?.id ?? ''; if (id !== _focusModeTabId) { _focusModeTabId = id; focusMode = false; } });
-	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string }[]>([]);
+	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number }[]>([]);
 	let currentOutgoing = $state<{ target: string; context: string }[]>([]);
 	let activeNoteTags = $state<string[]>([]);
 	let _sidebarDebounce: ReturnType<typeof setTimeout> | undefined;

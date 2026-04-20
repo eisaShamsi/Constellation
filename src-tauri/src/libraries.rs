@@ -1492,7 +1492,19 @@ pub struct NoteLink {
     pub context: String,
     pub library_name: String,
     pub link_type: Option<String>,
+    /// Living Link weight: `1 + ln(1 + traversal_count)`. Default 1.0 for
+    /// never-traversed links. Consumed by the Backlinks panel (P3) to
+    /// prioritize worn paths.
+    #[serde(default = "default_weight")]
+    pub weight: f64,
+    /// Number of times the user has traversed this link. Default 0 for
+    /// fresh / boot-graph-fallback entries that didn't come from the
+    /// `note_links` table.
+    #[serde(default)]
+    pub traversal_count: i64,
 }
+
+fn default_weight() -> f64 { 1.0 }
 
 /// Scan all notes in a library and extract wikilinks from each.
 #[tauri::command]
@@ -1565,6 +1577,8 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
                         context,
                         library_name: library_name.to_string(),
                         link_type,
+                        weight: 1.0,
+                        traversal_count: 0,
                     });
                 }
             }
@@ -1659,6 +1673,8 @@ fn scan_unlinked_recursive(
                         context,
                         library_name: library_name.to_string(),
                         link_type: None,
+                        weight: 1.0,
+                        traversal_count: 0,
                     });
                 }
             }

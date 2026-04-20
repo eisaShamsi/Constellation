@@ -1491,6 +1491,12 @@ export interface NoteLink {
 	context: string;
 	library_name: string;
 	link_type: string | null;
+	/** Living Link weight = 1 + ln(1 + traversal_count). Default 1 for
+	 *  untraversed links; higher values indicate worn paths. Used by
+	 *  `getBacklinks` to prioritize heavily-travelled connections. */
+	weight?: number;
+	/** How many times the user has traversed this link. Default 0. */
+	traversal_count?: number;
 }
 
 export async function scanLibraryLinks(libraryPath: string, libraryName: string): Promise<NoteLink[]> {
@@ -1498,15 +1504,23 @@ export async function scanLibraryLinks(libraryPath: string, libraryName: string)
 }
 
 export function getBacklinks(allLinks: NoteLink[], noteName: string) {
-	const linked = allLinks.filter(l =>
-		l.target.toLowerCase() === noteName.toLowerCase()
-	);
+	const target = noteName.toLowerCase();
+	const linked = allLinks.filter(l => l.target.toLowerCase() === target);
+	// Sort by Living Link weight (desc). Ties broken alphabetically by the
+	// source name so the order stays stable across boots when nothing has
+	// been traversed yet (all weights = 1.0).
+	linked.sort((a, b) => {
+		const wDiff = (b.weight ?? 1) - (a.weight ?? 1);
+		if (wDiff !== 0) return wDiff;
+		return a.source_name.localeCompare(b.source_name);
+	});
 	return linked.map(l => ({
 		name: l.source_name,
 		path: l.source_path,
 		context: l.context,
 		libraryName: l.library_name,
 		linkType: l.link_type ?? undefined,
+		traversalCount: l.traversal_count ?? 0,
 	}));
 }
 
