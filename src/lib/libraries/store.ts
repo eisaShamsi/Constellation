@@ -2083,6 +2083,20 @@ export interface AppSettings {
 	// Custom keyboard shortcut overrides (command ID → shortcut string, empty = unbound)
 	customShortcuts: Record<string, string>;
 
+	// Living Link pill appearance — per-type fill + text colors and shared
+	// shape. Consumed reactively by BacklinksPanel + OutgoingLinksPanel so
+	// the user can tune the sidebar pills without editing CSS. Defaults
+	// mirror the palette that shipped with P3/P4.1.
+	linkPills: {
+		fill: Record<string, string>;    // type name → fill hex
+		text: Record<string, string>;    // type name → text hex
+		shape: {
+			radius: number;              // px border-radius
+			height: number;              // px explicit pill height
+			fontWeight: number;          // 400..900
+		};
+	};
+
 	// Sky View graph settings
 	skyView: {
 		nodeSize: number;
@@ -2223,7 +2237,38 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		constellationSight: true,
 	},
 	customShortcuts: {},
+	linkPills: {
+		fill: {
+			supports:       '#4A9EFF',
+			contradicts:    '#FF4A4A',
+			causes:         '#FF8C42',
+			exemplifies:    '#4AFF88',
+			generalizes:    '#A44AFF',
+			'derives-from': '#FFD700',
+			'part-of':      '#AAAAAA',
+			associative:    '#888888',
+		},
+		text: {
+			supports:       '#ffffff',
+			contradicts:    '#ffffff',
+			causes:         '#ffffff',
+			exemplifies:    '#000000',
+			generalizes:    '#ffffff',
+			'derives-from': '#000000',
+			'part-of':      '#ffffff',
+			associative:    '#ffffff',
+		},
+		shape: { radius: 10, height: 20, fontWeight: 700 },
+	},
 };
+
+/** Shared metadata for the eight typed-link names — used by Settings UI
+ *  and the two panels so the iteration order is stable. Kept in sync
+ *  with `KNOWN_LINK_TYPES` above and `TYPED_LINK_TYPES` in livePreview. */
+export const LINK_TYPE_NAMES = [
+	'supports', 'contradicts', 'causes', 'exemplifies',
+	'generalizes', 'derives-from', 'part-of', 'associative',
+] as const;
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);
 

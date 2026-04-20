@@ -1,33 +1,17 @@
 <script lang="ts">
-	import { openNoteTab, libraries, readNote } from '$lib/libraries/store';
+	import { openNoteTab, libraries, readNote, appSettings } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
 
-	// Link type color palette — matches GraphMind + livePreview typed link colors
-	const LINK_TYPE_COLORS: Record<string, string> = {
-		supports:     '#4A9EFF',
-		contradicts:  '#FF4A4A',
-		causes:       '#FF8C42',
-		exemplifies:  '#4AFF88',
-		generalizes:  '#A44AFF',
-		'derives-from': '#FFD700',
-		'part-of':    '#AAAAAA',
-		associative:  '#888888',
-	};
-	// Text color paired with each solid fill, chosen for AA contrast. Bright
-	// fills (gold, light green, grey) take dark text; saturated darker fills
-	// take white text.
-	const LINK_TYPE_TEXT: Record<string, string> = {
-		supports:     '#ffffff',
-		contradicts:  '#ffffff',
-		causes:       '#ffffff',
-		exemplifies:  '#000000',
-		generalizes:  '#ffffff',
-		'derives-from': '#000000',
-		'part-of':    '#ffffff',
-		associative:  '#ffffff',
-	};
+	// Pill colors + shape now come from $appSettings.linkPills so the user
+	// can tune them from Settings → Appearance → Living Link Pills. The
+	// `?? '#...'` fallbacks keep the panel rendering during the brief
+	// window between boot and settings-loaded, and cover any type the user
+	// might remove from the settings object.
+	const LINK_TYPE_COLORS = $derived($appSettings.linkPills?.fill ?? {});
+	const LINK_TYPE_TEXT   = $derived($appSettings.linkPills?.text ?? {});
+	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	let {
 		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number }[],
@@ -80,7 +64,7 @@
 	}
 </script>
 
-<div class="backlinks-panel">
+<div class="backlinks-panel" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
 	{#if backlinks.length + unlinkedMentions.length > 3}
 		<div class="bl-filter">
 			<input type="text" dir="auto" placeholder="Filter..." value={filterQuery} oninput={(e) => filterQuery = (e.target as HTMLInputElement).value} />
@@ -179,9 +163,11 @@
 		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
 		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
 		color: var(--interactive-accent, #7c3aed);
-		border-radius: 10px; padding: 0 8px; height: 20px; line-height: 1;
-		font-size: 0.7rem; font-weight: 700;
+		border-radius: var(--pill-radius, 10px); padding: 0 8px;
+		height: var(--pill-height, 20px); line-height: 1;
+		font-size: 0.7rem; font-weight: var(--pill-weight, 700);
 		font-variant-numeric: tabular-nums;
+		box-sizing: border-box;
 	}
 	.bl-chev { transition: transform 0.15s ease; flex-shrink: 0; }
 	.bl-chev.expanded { transform: rotate(90deg); }
@@ -207,17 +193,18 @@
 	.bl-link-btn:hover { color: var(--interactive-accent); border-color: var(--interactive-accent); }
 	.bl-link-type-badge {
 		display: inline-flex; align-items: center;
-		font-size: 0.65rem; font-weight: 700; line-height: 1;
-		padding: 0 8px; height: 20px;
-		border-radius: 10px; border: 1px solid; white-space: nowrap; flex-shrink: 0;
+		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
+		padding: 0 8px; height: var(--pill-height, 20px);
+		border-radius: var(--pill-radius, 10px); border: 1px solid;
+		white-space: nowrap; flex-shrink: 0;
 		text-transform: lowercase; letter-spacing: 0.02em;
 		box-sizing: border-box;
 	}
 	.bl-traversal-chip {
 		display: inline-flex; align-items: center;
-		font-size: 0.65rem; font-weight: 700; line-height: 1;
-		padding: 0 8px; height: 20px;
-		border-radius: 10px; white-space: nowrap; flex-shrink: 0;
+		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
+		padding: 0 8px; height: var(--pill-height, 20px);
+		border-radius: var(--pill-radius, 10px); white-space: nowrap; flex-shrink: 0;
 		color: var(--interactive-accent, #7c3aed);
 		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
 		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);

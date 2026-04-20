@@ -5,7 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS } from '$lib/libraries/store';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
 	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
@@ -569,6 +569,35 @@
 		updateSettings({
 			ai: { ...$appSettings.ai, ...partial }
 		} as any);
+	}
+
+	// ─── Living Link pill helpers ───
+	function updatePillFill(type: string, color: string) {
+		updateSettings({
+			linkPills: {
+				...$appSettings.linkPills,
+				fill: { ...$appSettings.linkPills.fill, [type]: color },
+			},
+		});
+	}
+	function updatePillText(type: string, color: string) {
+		updateSettings({
+			linkPills: {
+				...$appSettings.linkPills,
+				text: { ...$appSettings.linkPills.text, [type]: color },
+			},
+		});
+	}
+	function updatePillShape(partial: Partial<typeof $appSettings.linkPills.shape>) {
+		updateSettings({
+			linkPills: {
+				...$appSettings.linkPills,
+				shape: { ...$appSettings.linkPills.shape, ...partial },
+			},
+		});
+	}
+	function resetLinkPills() {
+		updateSettings({ linkPills: DEFAULT_SETTINGS.linkPills });
 	}
 
 	function sectionIcon(icon: string): string {
@@ -1918,6 +1947,81 @@
 						</div>
 					</div>
 
+					<!-- ═══ LIVING LINK PILLS ═══ -->
+					<div class="setting-section-heading">{$t('settings.appearance.livingLinkPills') || 'Living Link Pills'}</div>
+					<div class="setting-desc" style="margin-bottom: 8px;">
+						{$t('settings.appearance.livingLinkPillsDesc') || 'Customize the colors and shape of the link-type badges and traversal chips that appear in the Backlinks and Outgoing Links panels.'}
+					</div>
+
+					<!-- Per-type colors -->
+					{#each LINK_TYPE_NAMES as type}
+						{@const fill = $appSettings.linkPills?.fill?.[type] ?? '#888'}
+						{@const text = $appSettings.linkPills?.text?.[type] ?? '#fff'}
+						<div class="setting-item">
+							<div class="setting-info">
+								<div class="setting-name">{type}</div>
+								<div class="setting-desc">
+									<span class="ll-pill-preview" style="background:{fill};color:{text};border-radius:{$appSettings.linkPills?.shape?.radius ?? 10}px;height:{$appSettings.linkPills?.shape?.height ?? 20}px;font-weight:{$appSettings.linkPills?.shape?.fontWeight ?? 700}">{type}</span>
+								</div>
+							</div>
+							<div class="ll-color-controls">
+								<label class="ll-color-col">
+									<span class="ll-color-label">{$t('settings.appearance.pillFill') || 'Fill'}</span>
+									<input type="color" class="color-input" value={fill}
+										onchange={(e) => updatePillFill(type, (e.target as HTMLInputElement).value)} />
+								</label>
+								<label class="ll-color-col">
+									<span class="ll-color-label">{$t('settings.appearance.pillText') || 'Text'}</span>
+									<input type="color" class="color-input" value={text}
+										onchange={(e) => updatePillText(type, (e.target as HTMLInputElement).value)} />
+								</label>
+							</div>
+						</div>
+					{/each}
+
+					<!-- Shape: radius / height / weight -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.pillRadius') || 'Corner radius'}</div>
+							<div class="setting-desc">{$t('settings.appearance.pillRadiusDesc') || 'How rounded the pill corners are (0 = sharp, 20 = fully round).'}</div>
+						</div>
+						<div class="slider-row">
+							<input type="range" class="setting-slider" min="0" max="20" step="1"
+								value={$appSettings.linkPills?.shape?.radius ?? 10}
+								oninput={(e) => updatePillShape({ radius: parseInt((e.target as HTMLInputElement).value) })} />
+							<span class="slider-val">{$appSettings.linkPills?.shape?.radius ?? 10}px</span>
+						</div>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.pillHeight') || 'Pill height'}</div>
+							<div class="setting-desc">{$t('settings.appearance.pillHeightDesc') || 'Vertical size of every pill.'}</div>
+						</div>
+						<div class="slider-row">
+							<input type="range" class="setting-slider" min="14" max="32" step="1"
+								value={$appSettings.linkPills?.shape?.height ?? 20}
+								oninput={(e) => updatePillShape({ height: parseInt((e.target as HTMLInputElement).value) })} />
+							<span class="slider-val">{$appSettings.linkPills?.shape?.height ?? 20}px</span>
+						</div>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.pillWeight') || 'Text weight'}</div>
+							<div class="setting-desc">{$t('settings.appearance.pillWeightDesc') || 'Font weight of pill labels (400 = normal, 700 = bold, 900 = extra bold).'}</div>
+						</div>
+						<select class="setting-control" value={String($appSettings.linkPills?.shape?.fontWeight ?? 700)}
+							onchange={(e) => updatePillShape({ fontWeight: parseInt((e.target as HTMLSelectElement).value) })}>
+							<option value="400">400 · Normal</option>
+							<option value="500">500 · Medium</option>
+							<option value="600">600 · Semi-bold</option>
+							<option value="700">700 · Bold</option>
+							<option value="800">800 · Extra-bold</option>
+							<option value="900">900 · Black</option>
+						</select>
+					</div>
+
+					<button class="btn-text" onclick={resetLinkPills}>{$t('settings.appearance.resetPillStyles') || 'Reset pill styles to default'}</button>
+
 				<!-- ═══ STYLE SETTINGS ═══ -->
 				{:else if activeSection === 'stylesettings'}
 					{@const activeTheme = allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0]}
@@ -2430,6 +2534,18 @@
 		border-radius: 6px; padding: 2px; cursor: pointer; background: none;
 	}
 	.color-hex { font-size: 0.82rem; color: var(--text-muted); font-family: var(--font-monospace-theme); }
+
+	/* Living Link pill settings */
+	.ll-color-controls { display: flex; gap: 10px; align-items: center; }
+	.ll-color-col { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+	.ll-color-label { font-size: 0.7rem; color: var(--text-muted); }
+	.ll-pill-preview {
+		display: inline-flex; align-items: center; justify-content: center;
+		padding: 0 8px; line-height: 1; font-size: 0.65rem;
+		text-transform: lowercase; letter-spacing: 0.02em;
+		box-sizing: border-box; margin-top: 4px;
+		border: 1px solid rgba(0,0,0,0.1);
+	}
 
 	/* Theme gallery */
 	.theme-gallery {

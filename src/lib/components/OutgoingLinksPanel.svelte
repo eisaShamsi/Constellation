@@ -1,31 +1,13 @@
 <script lang="ts">
-	import { openNoteTab, libraries, resolveWikilinkCrossLibrary } from '$lib/libraries/store';
+	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 
-	// Link-type color palette — mirrors Backlinks + GraphMind + livePreview.
-	const LINK_TYPE_COLORS: Record<string, string> = {
-		supports:     '#4A9EFF',
-		contradicts:  '#FF4A4A',
-		causes:       '#FF8C42',
-		exemplifies:  '#4AFF88',
-		generalizes:  '#A44AFF',
-		'derives-from': '#FFD700',
-		'part-of':    '#AAAAAA',
-		associative:  '#888888',
-	};
-	// Text color paired with each solid fill for AA contrast — matches
-	// BacklinksPanel. Bright fills take dark text; saturated fills take white.
-	const LINK_TYPE_TEXT: Record<string, string> = {
-		supports:     '#ffffff',
-		contradicts:  '#ffffff',
-		causes:       '#ffffff',
-		exemplifies:  '#000000',
-		generalizes:  '#ffffff',
-		'derives-from': '#000000',
-		'part-of':    '#ffffff',
-		associative:  '#ffffff',
-	};
+	// Pill colors + shape come from $appSettings.linkPills — matches
+	// BacklinksPanel. User-configurable via Settings → Appearance.
+	const LINK_TYPE_COLORS = $derived($appSettings.linkPills?.fill ?? {});
+	const LINK_TYPE_TEXT   = $derived($appSettings.linkPills?.text ?? {});
+	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	let {
 		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; linkType?: string }[],
@@ -55,7 +37,7 @@
 	}
 </script>
 
-<div class="outgoing-panel">
+<div class="outgoing-panel" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
 	<div class="ol-header">
 		{$t('outgoingLinksPanel.header')}
 		<span class="ol-count">{outgoingLinks.length}</span>
@@ -96,8 +78,9 @@
 		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
 		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
 		color: var(--interactive-accent, #7c3aed);
-		border-radius: 10px; padding: 0 8px; height: 20px; line-height: 1;
-		font-size: 0.7rem; font-weight: 700;
+		border-radius: var(--pill-radius, 10px); padding: 0 8px;
+		height: var(--pill-height, 20px); line-height: 1;
+		font-size: 0.7rem; font-weight: var(--pill-weight, 700);
 		font-variant-numeric: tabular-nums;
 		box-sizing: border-box;
 	}
@@ -113,17 +96,18 @@
 	.ol-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
 	.ol-link-type-badge {
 		display: inline-flex; align-items: center;
-		font-size: 0.65rem; font-weight: 700; line-height: 1;
-		padding: 0 8px; height: 20px;
-		border-radius: 10px; border: 1px solid; white-space: nowrap; flex-shrink: 0;
+		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
+		padding: 0 8px; height: var(--pill-height, 20px);
+		border-radius: var(--pill-radius, 10px); border: 1px solid;
+		white-space: nowrap; flex-shrink: 0;
 		text-transform: lowercase; letter-spacing: 0.02em;
 		box-sizing: border-box;
 	}
 	.ol-traversal-chip {
 		display: inline-flex; align-items: center;
-		font-size: 0.65rem; font-weight: 700; line-height: 1;
-		padding: 0 8px; height: 20px;
-		border-radius: 10px; white-space: nowrap; flex-shrink: 0;
+		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
+		padding: 0 8px; height: var(--pill-height, 20px);
+		border-radius: var(--pill-radius, 10px); white-space: nowrap; flex-shrink: 0;
 		color: var(--interactive-accent, #7c3aed);
 		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
 		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
