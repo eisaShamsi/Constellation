@@ -245,3 +245,113 @@ damage retroactively without a file-content audit against git history
 ### Next
 
 Ready to move to P3 (Living Link visual surfaces) per earlier agreement.
+
+---
+
+## § 31 — 404 flood fix on image embeds
+
+Follow-up from the Ghost audit. While validating the corruption fix, the
+user flagged the dev-server terminal flooding with 404s against
+`http://localhost:1420/attachments/img/<name>` on every note open. The
+corruption test passed cleanly (`TEST_A_BODY_MARKER` stayed on A, B
+pristine — `a2052da` verified), so this was a separate bug the earlier
+Ghost-hunt had conflated.
+
+### Root cause — two interlocking defects
+
+1. **`ImageWidget.toDOM` used "both paths empty" as a proxy for
+   "absolute URL."** The only intentional caller of that shortcut
+   (`livePreview.ts:797`) had already matched the filename against
+   `^https?://|^data:` — so the regex was the real signal. On first
+   render, the `libraryPathField` / `notePathField` `StateField`s
+   default to `''` before `setLibraryPath` / `setNotePath` effects
+   get dispatched, so widgets built from relative markdown paths
+   like `attachments/img/foo.png` took the "render directly"
+   branch and the browser resolved that relative URL against the
+   dev origin → 404.
+
+2. **The `setLibraryPath` / `setNotePath` effects were dispatched
+   AFTER `new EditorView(state, parent)`.** The `ViewPlugin`
+   constructor runs the initial `buildDecorations` inside that
+   constructor, so the first decoration set was always built
+   against empty fields. A later `view.dispatch` of the correct
+   effects didn't retrigger a rebuild — state-field-only
+   transactions don't set `viewportChanged` / `selectionSet` /
+   `docChanged`, which are the only rebuild triggers in
+   `LivePreviewPlugin.update`.
+
+### Fix (`455bdd7`)
+
+- `livePreview.ts`: `ImageWidget.toDOM` now tests the filename
+  against `/^(https?:|data:|asset:|file:|blob:)/i` to detect
+  absolute URLs (the real signal). If the URL is relative AND
+  both paths are empty, show the fallback placeholder instead of
+  handing the browser a bad relative URL.
+- `NotePane.svelte`: collect the image-path effects BEFORE
+  `new EditorView(...)` and apply them to the state via
+  `state.update({effects}).state`. ViewPlugin's first
+  `buildDecorations` now sees populated fields. Widgets build
+  correctly on the first pass; no placeholder flash, no 404s.
+
+User validation: silent terminal after cold restart on notes that
+had the flood. Confirmed.
+
+### Ghost audit — full closure
+
+All three faces of the Ghost are now closed:
+
+| Face | Fix | Commit |
+|------|-----|--------|
+| Navigation cycle (A↔B plinking) | per-tab supersede token in `loadTabHistoryEntry` + `__navTrace` ring buffer | `80e9fc4` |
+| Title/body desync + cross-note content corruption | `filePath` guard in `handleFlush` / `handleSave` | `a2052da` |
+| 404 flood on image embeds | absolute-URL regex + pre-view state population | `455bdd7` |
+
+### Commits landed today (updated)
+
+- `917f2e1` — Remove read_index_entries diagnostic block
+- `80e9fc4` — Fix history navigation races + tab title/body desync
+- `e911749` — docs(session-log 04-20): § 29
+- `a2052da` — Fix cross-note content corruption on wikilink-click navigation
+- `bfc790f` — docs(session-log 04-20): § 30 — Ghost in the Machine audit
+- `455bdd7` — Fix 404 flood from ImageWidget relative-path embeds on first render
+- (this entry's commit)
+
+### Moving on
+
+Ghost fully closed. Proceeding with P3 — Backlinks panel ordered by
+weight.
+
+---
+
+## § 32 — Live-preview: 3-part typed wikilinks
+
+User surfaced a rendering bug in a paragraph with wikilinks of the form
+`[[مراكش|مراكش و|derives-from]]` and `[[قرطبة|وقرطبة|supports]]` —
+three pipe-separated parts (target, alias, typed annotation). The
+`|derives-from]]` and `|supports]]` trailers were bleeding into the
+rendered text instead of being hidden.
+
+Root cause: the live-preview wikilink parser only inspected
+`firstPipe + 1` for a `TYPED_LINK_TYPES` match. For a 3-part link,
+that substring was `alias|type` which never matched the typed set,
+so the code fell through to the "display alias" branch and rendered
+`alias|type` as the link text.
+
+Fix (`8abf417`): check the substring after the **last** pipe against
+`TYPED_LINK_TYPES`, branching on whether first pipe == last pipe:
+
+- `[[note]]` — plain, unchanged
+- `[[note|alias]]` — display alias (may contain stray pipes)
+- `[[note|type]]` — 2-part typed (first == last pipe)
+- `[[note|alias|type]]` — 3-part typed (first != last pipe) **NEW**
+
+Click navigation unchanged — `NotePane.linkClickHandler` already
+uses `match[1].split('|')[0]` as the target, works for any pipe
+count.
+
+`utils.ts` Marked renderer uses a different typed-link convention
+(`[[note|type:...]]` with explicit `type:` prefix) and was not
+touched here — separate format question.
+
+User validation: visible trailers gone; aliases render in the typed
+colors. Confirmed.
