@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { appSettings, linkLifecycle, type NoteLink } from '$lib/libraries/store';
+	import { appSettings, linkLifecycle, effectiveLinkWeight, type NoteLink } from '$lib/libraries/store';
 
 	// Share the user-configurable pill shape (radius / height / font-weight)
 	// with BacklinksPanel / OutgoingLinksPanel so the ×N chip in the
@@ -92,15 +92,24 @@
 			}));
 	});
 
-	// Most-traveled paths (P4.3): top 20 links by Living Link traversal_count.
-	// Surfaces the user's worn edges — the connections they reach for most.
-	// O(m log m) due to sort; m is link count, bounded by vault size.
+	// Most-traveled paths (P4.3 + P5 slice 2): top 20 links by decayed
+	// Living Link weight. Raw `traversal_count` is kept on the row for
+	// display (the ×N chip) but the sort key is `effectiveLinkWeight()`
+	// — so a link that was hot six months ago sinks beneath one that
+	// was merely warm last week. Pure view concern; DB column untouched.
 	const mostTraveled = $derived.by(() => {
 		if (!visible) return [];
+		const now = Date.now();
+		const lifecycle = $appSettings.linkLifecycle;
+		const halfLife = lifecycle?.halfLifeDays ?? 60;
+		const decayOn = lifecycle?.decayEnabled ?? true;
 		return allLinks
 			.filter(l => (l.traversal_count ?? 0) > 0)
 			.slice()
-			.sort((a, b) => (b.traversal_count ?? 0) - (a.traversal_count ?? 0))
+			.sort((a, b) =>
+				effectiveLinkWeight(b, now, halfLife, decayOn) -
+				effectiveLinkWeight(a, now, halfLife, decayOn)
+			)
 			.slice(0, 20)
 			.map(l => ({
 				source_path: l.source_path,

@@ -1614,6 +1614,40 @@ export function linkLifecycle(link: NoteLink, nowMs: number = Date.now()): LinkL
 	return 'emerging';
 }
 
+/** P5 slice 2 — read-time weight decay.
+ *
+ *  `effectiveWeight = weight * exp(-ln(2) * daysSinceTraversal / halfLifeDays)`
+ *
+ *  The DB column `weight = 1 + ln(1 + traversal_count)` is a pure integral
+ *  of the user's traversal activity. Decay is a display/ordering concern
+ *  only, never a write: that way threshold tuning (half-life slider) takes
+ *  effect immediately, and the ground-truth weight never loses fidelity
+ *  against a user's future revisits.
+ *
+ *  Callers that sort large lists should pass `nowMs` and the settings
+ *  block once rather than reading them per iteration. */
+export function effectiveLinkWeight(
+	link: NoteLink,
+	nowMs: number = Date.now(),
+	halfLifeDays: number = 60,
+	decayEnabled: boolean = true
+): number {
+	const raw = link.weight ?? 1;
+	if (!decayEnabled) return raw;
+
+	const tc = link.traversal_count ?? 0;
+	if (tc === 0) return raw; // never traversed — no age to decay from
+
+	const lt = link.last_traversed ?? '';
+	if (!lt) return raw;
+	const parsed = Date.parse(lt);
+	if (Number.isNaN(parsed)) return raw;
+
+	const ageDays = Math.max(0, (nowMs - parsed) / MS_PER_DAY);
+	const lambda = Math.LN2 / Math.max(1, halfLifeDays);
+	return raw * Math.exp(-lambda * ageDays);
+}
+
 /** Known typed-link names shared across the Backlinks/Outgoing panels,
  *  GraphMind, and the livePreview decorator. Kept in sync with the
  *  `KNOWN_LINK_TYPES` slice in `src-tauri/src/libraries.rs` and the
@@ -1641,14 +1675,28 @@ export async function scanLibraryLinks(libraryPath: string, libraryName: string)
 	return await invoke('scan_library_links', { libraryPath, libraryName });
 }
 
-export function getBacklinks(allLinks: NoteLink[], noteName: string) {
+/** Optional P5 decay config for the sort helpers. Passing it in (rather
+ *  than reading the store here) keeps these functions pure and testable
+ *  while letting callers batch-snapshot `Date.now()` + settings once. */
+export interface LinkDecayConfig {
+	nowMs: number;
+	halfLifeDays: number;
+	decayEnabled: boolean;
+}
+
+function sortWeight(link: NoteLink, cfg?: LinkDecayConfig): number {
+	if (!cfg) return link.weight ?? 1;
+	return effectiveLinkWeight(link, cfg.nowMs, cfg.halfLifeDays, cfg.decayEnabled);
+}
+
+export function getBacklinks(allLinks: NoteLink[], noteName: string, decay?: LinkDecayConfig) {
 	const target = noteName.toLowerCase();
 	const linked = allLinks.filter(l => l.target.toLowerCase() === target);
-	// Sort by Living Link weight (desc). Ties broken alphabetically by the
-	// source name so the order stays stable across boots when nothing has
-	// been traversed yet (all weights = 1.0).
+	// Sort by Living Link weight (desc), decayed if caller opted in. Ties
+	// break alphabetically by source name so fresh vaults (all weights == 1)
+	// stay in a stable order across boots.
 	linked.sort((a, b) => {
-		const wDiff = (b.weight ?? 1) - (a.weight ?? 1);
+		const wDiff = sortWeight(b, decay) - sortWeight(a, decay);
 		if (wDiff !== 0) return wDiff;
 		return a.source_name.localeCompare(b.source_name);
 	});
@@ -1662,13 +1710,11 @@ export function getBacklinks(allLinks: NoteLink[], noteName: string) {
 	}));
 }
 
-export function getOutgoingLinks(allLinks: NoteLink[], notePath: string) {
+export function getOutgoingLinks(allLinks: NoteLink[], notePath: string, decay?: LinkDecayConfig) {
 	const outgoing = allLinks.filter(l => l.source_path === notePath);
-	// Same sort contract as `getBacklinks`: weight descending, ties broken
-	// alphabetically by target for a stable order when nothing has been
-	// traversed (weights all at 1.0).
+	// Same contract as getBacklinks — weight-desc with decay optional.
 	outgoing.sort((a, b) => {
-		const wDiff = (b.weight ?? 1) - (a.weight ?? 1);
+		const wDiff = sortWeight(b, decay) - sortWeight(a, decay);
 		if (wDiff !== 0) return wDiff;
 		return a.target.localeCompare(b.target);
 	});
@@ -2207,6 +2253,18 @@ export interface AppSettings {
 		};
 	};
 
+	// P5 — Living Link lifecycle. Weight decay applied at sort-time only
+	// (no DB write); the raw `weight` column stays as the traversal
+	// integral and the UI picks `effectiveLinkWeight(link)` for ordering.
+	linkLifecycle: {
+		decayEnabled: boolean;
+		// Days after which decayed weight halves. λ = ln(2) / halfLifeDays.
+		// 60 is a middle ground — faster than 90-day stale threshold so
+		// sort order drifts before the link is flagged, giving a gradient
+		// of decay rather than a cliff.
+		halfLifeDays: number;
+	};
+
 	// Sky View graph settings
 	skyView: {
 		nodeSize: number;
@@ -2369,6 +2427,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
 			associative:    '#ffffff',
 		},
 		shape: { radius: 10, height: 20, fontWeight: 700 },
+	},
+	linkLifecycle: {
+		decayEnabled: true,
+		halfLifeDays: 60,
 	},
 };
 

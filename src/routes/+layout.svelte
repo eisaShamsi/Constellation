@@ -919,11 +919,19 @@
 			sidebarHeadings = body ? extractHeadings(body) : [];
 			// Direction
 			noteDir = body ? detectDir(body) : dirFallback;
+			// P5 slice 2: snapshot the decay config once so both sort helpers
+			// get the same `nowMs` (no skew between backlinks and outgoing).
+			const lifecycle = $appSettings.linkLifecycle;
+			const decayCfg = {
+				nowMs: Date.now(),
+				halfLifeDays: lifecycle?.halfLifeDays ?? 60,
+				decayEnabled: lifecycle?.decayEnabled ?? true,
+			};
 			// Backlinks
-			currentBacklinks = getBacklinks(effectiveLibraryLinks, tab.name);
+			currentBacklinks = getBacklinks(effectiveLibraryLinks, tab.name, decayCfg);
 			// CE Phase 5: Provenance fetched on tab click only (not here — no IPC on typing path)
 			// Outgoing links
-			currentOutgoing = getOutgoingLinks(effectiveLibraryLinks, tab.path);
+			currentOutgoing = getOutgoingLinks(effectiveLibraryLinks, tab.path, decayCfg);
 			// Tags (from frontmatter + inline)
 			const tags: string[] = [];
 			for (const p of props) {

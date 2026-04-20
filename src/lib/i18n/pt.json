@@ -250,7 +250,14 @@
       "pillHeightDesc": "Tamanho vertical de cada emblema.",
       "pillWeight": "Espessura do texto",
       "pillWeightDesc": "Peso da fonte (400 = normal, 700 = negrito, 900 = extra negrito).",
-      "resetPillStyles": "Redefinir estilos de emblema"
+      "resetPillStyles": "Redefinir estilos de emblema",
+      "linkLifecycle": "Ciclo de vida da ligação viva",
+      "linkLifecycleDesc": "Ligações que você não seguiu há algum tempo descem nas listas de Retroligações / Ligações de saída / Mais percorridas. Este decaimento é apenas visual — as contagens brutas de travessia no banco de dados permanecem intactas.",
+      "decayEnabled": "Aplicar decaimento de peso à ordenação de ligações",
+      "decayEnabledDesc": "Quando desativado, as ligações são ordenadas apenas pela contagem bruta de travessia (sem ponderação por recência).",
+      "halfLifeDays": "Meia-vida do decaimento",
+      "halfLifeDaysDesc": "Dias após os quais o peso efetivo de uma ligação não usada cai pela metade. Menor = queda mais rápida.",
+      "days": "dias"
     },
     "ai": {
       "provider": "Provedor",

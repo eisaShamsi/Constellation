@@ -288,7 +288,14 @@
       "ssImportHint": "Paste JSON exported from Obsidian's Style Settings plugin or Constellation. Keys are setting IDs (e.g. \"h1-size\") mapping to string values.",
       "ssApplyMerge": "Merge",
       "ssApplyReplace": "Replace all",
-      "ssPasteClipboard": "Paste from clipboard"
+      "ssPasteClipboard": "Paste from clipboard",
+      "linkLifecycle": "Living Link Lifecycle",
+      "linkLifecycleDesc": "Links you haven't followed in a while drift down the Backlinks / Outgoing / Most-Traveled sort. The decay is a display concern only — the raw traversal counts in the database stay intact.",
+      "decayEnabled": "Apply weight decay to link sorts",
+      "decayEnabledDesc": "When off, links sort by raw traversal count only (no recency weighting).",
+      "halfLifeDays": "Decay half-life",
+      "halfLifeDaysDesc": "Days after which an untouched link's effective weight halves. Lower = faster drop-off; higher = slower.",
+      "days": "days"
     },
     "keyboard": {
       "filter": "Filter commands...",

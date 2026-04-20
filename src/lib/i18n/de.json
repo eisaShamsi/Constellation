@@ -250,7 +250,14 @@
       "pillHeightDesc": "Vertikale Größe jedes Badges.",
       "pillWeight": "Textgewicht",
       "pillWeightDesc": "Schriftgewicht der Badge-Beschriftungen (400 = normal, 700 = fett, 900 = extrafett).",
-      "resetPillStyles": "Badge-Stile zurücksetzen"
+      "resetPillStyles": "Badge-Stile zurücksetzen",
+      "linkLifecycle": "Living-Link-Lebenszyklus",
+      "linkLifecycleDesc": "Links, die Sie länger nicht verfolgt haben, rutschen in Rückverweise / Ausgehende / Meist begangen nach unten. Der Zerfall ist nur eine Anzeigesache — die rohen Traversal-Zählungen in der Datenbank bleiben unangetastet.",
+      "decayEnabled": "Gewichtszerfall auf Link-Sortierung anwenden",
+      "decayEnabledDesc": "Wenn aus, werden Links nur nach roher Traversal-Zahl sortiert (keine Aktualitätsgewichtung).",
+      "halfLifeDays": "Halbwertszeit des Zerfalls",
+      "halfLifeDaysDesc": "Tage, nach denen sich das effektive Gewicht eines unbenutzten Links halbiert. Niedriger = schnellerer Abfall.",
+      "days": "Tage"
     },
     "ai": {
       "provider": "Anbieter",

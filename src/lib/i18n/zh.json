@@ -250,7 +250,14 @@
       "pillHeightDesc": "每个徽章的纵向尺寸。",
       "pillWeight": "文字粗细",
       "pillWeightDesc": "徽章标签的字体粗细 (400 = 普通, 700 = 加粗, 900 = 特粗)。",
-      "resetPillStyles": "重置徽章样式为默认值"
+      "resetPillStyles": "重置徽章样式为默认值",
+      "linkLifecycle": "活链接生命周期",
+      "linkLifecycleDesc": "一段时间未点开的链接会在反向链接 / 外向链接 / 最常通行列表中下沉。这只是显示层面的衰减——数据库中的原始通过计数保持不变。",
+      "decayEnabled": "对链接排序应用权重衰减",
+      "decayEnabledDesc": "关闭时，链接仅按原始通过次数排序（不加入新鲜度权重）。",
+      "halfLifeDays": "衰减半衰期",
+      "halfLifeDaysDesc": "未使用链接的有效权重减半所需的天数。数值越小下降越快。",
+      "days": "天"
     },
     "ai": {
       "provider": "服务商",

@@ -250,7 +250,14 @@
       "pillHeightDesc": "Tamaño vertical de cada etiqueta.",
       "pillWeight": "Grosor del texto",
       "pillWeightDesc": "Grosor de la fuente (400 = normal, 700 = negrita, 900 = extra negrita).",
-      "resetPillStyles": "Restablecer estilos de etiqueta"
+      "resetPillStyles": "Restablecer estilos de etiqueta",
+      "linkLifecycle": "Ciclo de vida del enlace vivo",
+      "linkLifecycleDesc": "Los enlaces que no has seguido en un tiempo bajan en los listados de Retrovínculos / Salientes / Más transitados. Este decaimiento es solo visual — los recuentos brutos de travesía en la base de datos permanecen intactos.",
+      "decayEnabled": "Aplicar decaimiento de peso al orden de los enlaces",
+      "decayEnabledDesc": "Cuando está desactivado, los enlaces se ordenan solo por recuento bruto de travesía (sin ponderar la frescura).",
+      "halfLifeDays": "Vida media del decaimiento",
+      "halfLifeDaysDesc": "Días tras los cuales el peso efectivo de un enlace sin uso se reduce a la mitad. Menor = caída más rápida.",
+      "days": "días"
     },
     "ai": {
       "provider": "Proveedor",

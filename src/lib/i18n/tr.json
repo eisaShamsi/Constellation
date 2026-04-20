@@ -250,7 +250,14 @@
       "pillHeightDesc": "Her rozetin dikey boyutu.",
       "pillWeight": "Metin kalınlığı",
       "pillWeightDesc": "Rozet etiketlerinin yazı tipi ağırlığı (400 = normal, 700 = kalın, 900 = çok kalın).",
-      "resetPillStyles": "Rozet stillerini varsayılana sıfırla"
+      "resetPillStyles": "Rozet stillerini varsayılana sıfırla",
+      "linkLifecycle": "Yaşayan Bağlantı Yaşam Döngüsü",
+      "linkLifecycleDesc": "Bir süredir takip etmediğiniz bağlantılar Geri Bağlantılar / Dışa Bağlantılar / En Çok Geçilen listelerinde aşağı kayar. Bu sönümleme yalnızca görüntü katmanındadır — veritabanındaki ham geçiş sayıları bozulmaz.",
+      "decayEnabled": "Bağlantı sıralamasında ağırlık sönümlemesi uygula",
+      "decayEnabledDesc": "Kapalıyken bağlantılar yalnızca ham geçiş sayısına göre sıralanır (tazelik ağırlıklandırılmaz).",
+      "halfLifeDays": "Sönümleme yarı ömrü",
+      "halfLifeDaysDesc": "Kullanılmayan bir bağlantının etkin ağırlığının yarıya düşmesi için geçen gün sayısı. Düşük = hızlı düşüş.",
+      "days": "gün"
     },
     "ai": {
       "provider": "Sağlayıcı",

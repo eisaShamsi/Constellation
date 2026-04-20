@@ -250,7 +250,14 @@
       "pillHeightDesc": "각 배지의 세로 크기.",
       "pillWeight": "텍스트 굵기",
       "pillWeightDesc": "배지 레이블의 글꼴 두께 (400 = 보통, 700 = 굵게, 900 = 매우 굵게).",
-      "resetPillStyles": "배지 스타일을 기본값으로 재설정"
+      "resetPillStyles": "배지 스타일을 기본값으로 재설정",
+      "linkLifecycle": "리빙 링크 라이프사이클",
+      "linkLifecycleDesc": "한동안 따라가지 않은 링크는 역링크 / 나가는 링크 / 가장 많이 이동 목록에서 아래로 밀립니다. 이 감쇠는 표시 계층의 문제일 뿐, 데이터베이스의 원시 이동 횟수는 그대로 유지됩니다.",
+      "decayEnabled": "링크 정렬에 가중치 감쇠 적용",
+      "decayEnabledDesc": "끄면 링크는 원시 이동 횟수만으로 정렬됩니다(최신성 가중 없음).",
+      "halfLifeDays": "감쇠 반감기",
+      "halfLifeDaysDesc": "사용되지 않은 링크의 유효 가중치가 절반이 되기까지의 일수. 낮을수록 빠르게 감쇠.",
+      "days": "일"
     },
     "ai": {
       "provider": "제공자",

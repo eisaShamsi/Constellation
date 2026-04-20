@@ -599,6 +599,11 @@
 	function resetLinkPills() {
 		updateSettings({ linkPills: DEFAULT_SETTINGS.linkPills });
 	}
+	function updateLinkLifecycle(partial: Partial<typeof $appSettings.linkLifecycle>) {
+		updateSettings({
+			linkLifecycle: { ...$appSettings.linkLifecycle, ...partial },
+		});
+	}
 
 	function sectionIcon(icon: string): string {
 		const icons: Record<string, string> = {
@@ -2022,6 +2027,34 @@
 					</div>
 
 					<button class="btn-text" onclick={resetLinkPills}>{$t('settings.appearance.resetPillStyles') || 'Reset pill styles to default'}</button>
+
+					<!-- ═══ Living Link Lifecycle (P5) ═══ -->
+					<div class="setting-section-heading">{$t('settings.appearance.linkLifecycle') || 'Living Link Lifecycle'}</div>
+					<div class="setting-desc setting-section-desc">
+						{$t('settings.appearance.linkLifecycleDesc') || 'Links you haven\'t followed in a while drift down the Backlinks / Outgoing / Most-Traveled sort. The decay is a display concern only — the raw traversal counts in the database stay intact.'}
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.decayEnabled') || 'Apply weight decay to link sorts'}</div>
+							<div class="setting-desc">{$t('settings.appearance.decayEnabledDesc') || 'When off, links sort by raw traversal count only (no recency weighting).'}</div>
+						</div>
+						<input type="checkbox" class="setting-toggle"
+							checked={$appSettings.linkLifecycle?.decayEnabled ?? true}
+							onchange={(e) => updateLinkLifecycle({ decayEnabled: (e.target as HTMLInputElement).checked })} />
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.halfLifeDays') || 'Decay half-life'}</div>
+							<div class="setting-desc">{$t('settings.appearance.halfLifeDaysDesc') || 'Days after which an untouched link\'s effective weight halves. Lower = faster drop-off; higher = slower.'}</div>
+						</div>
+						<div class="slider-row">
+							<input type="range" class="setting-slider" min="7" max="365" step="1"
+								value={$appSettings.linkLifecycle?.halfLifeDays ?? 60}
+								disabled={!($appSettings.linkLifecycle?.decayEnabled ?? true)}
+								oninput={(e) => updateLinkLifecycle({ halfLifeDays: parseInt((e.target as HTMLInputElement).value) })} />
+							<span class="slider-val">{$appSettings.linkLifecycle?.halfLifeDays ?? 60} {$t('settings.appearance.days') || 'days'}</span>
+						</div>
+					</div>
 
 				<!-- ═══ STYLE SETTINGS ═══ -->
 				{:else if activeSection === 'stylesettings'}
