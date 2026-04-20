@@ -2877,49 +2877,6 @@ pub fn read_index_entries(app: tauri::AppHandle) -> Result<Vec<IndexEntry>, Stri
     // function grows to do a MATCH later.
     crate::search::register_fts5_tokenizer(&mut conn)?;
 
-    // Diagnostic: emit once per Index-panel open so we can see the state
-    // of the FTS5 term dictionary on the user's Universe. Cheap (two
-    // `COUNT(*)`s + a `PRAGMA`), appends to
-    // `<universe>/.constellation/diagnostics.log`, helps catch
-    // tokenizer-migration regressions early. Windows Tauri GUI builds
-    // have no stderr so we can't rely on `eprintln!` alone.
-    {
-        let total_rows: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM notes_vocab", [], |r| r.get(0)
-        ).unwrap_or(-1);
-        let filtered_rows: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM notes_vocab WHERE LENGTH(term) >= 2 AND cnt >= 5",
-            [], |r| r.get(0),
-        ).unwrap_or(-1);
-        let uv: i64 = conn.query_row(
-            "PRAGMA user_version;", [], |r| r.get(0)
-        ).unwrap_or(-1);
-        crate::search::diag_log(&db_path, &format!(
-            "[read_index_entries] user_version={} notes_vocab total={} filtered(len>=2, cnt>=5)={}",
-            uv, total_rows, filtered_rows
-        ));
-        // Sample up to 10 Arabic-script terms so we can visually verify
-        // the tokenizer is producing stems and not e.g. rejecting Arabic.
-        // Uses a simple range check on the first byte of the UTF-8 form
-        // (Arabic code points start at U+0600 which is 0xD8 0x80 in UTF-8,
-        //  so the first byte is always one of 0xD8 or 0xD9 for U+0600..0x06FF).
-        let mut sample_stmt = conn.prepare(
-            "SELECT term, cnt FROM notes_vocab
-             WHERE term GLOB '[\u{0600}-\u{06FF}]*'
-             ORDER BY cnt DESC LIMIT 10"
-        );
-        if let Ok(ref mut s) = sample_stmt {
-            let rows = s.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)));
-            if let Ok(rows) = rows {
-                let samples: Vec<(String, i64)> = rows.flatten().collect();
-                crate::search::diag_log(&db_path, &format!(
-                    "[read_index_entries] arabic samples (top by count, up to 10): {:?}",
-                    samples
-                ));
-            }
-        }
-    }
-
     // No LIMIT. The Index panel is the canonical view of the Universe's
     // vocabulary — truncating it silently hides entire scripts from the
     // back of the alphabet because SQLite's default BINARY collation
@@ -2929,8 +2886,7 @@ pub fn read_index_entries(app: tauri::AppHandle) -> Result<Vec<IndexEntry>, Stri
     //
     // What keeps this bounded: the `cnt >= 5` threshold below, combined
     // with the `constellation` tokenizer's stemming, caps a 7,600-note
-    // Universe at ~100-200k rows. The stderr diagnostic above prints
-    // the realized count on every open so regressions are visible.
+    // Universe at ~100-200k rows.
     //
     // The frontend renders the result through a virtualized list
     // (`IndexPanel.svelte`) — payload size is the only soft limit, not
