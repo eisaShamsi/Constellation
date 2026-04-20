@@ -438,8 +438,23 @@
 			],
 		});
 
+		// Pre-populate the image-path state fields BEFORE the view is created so
+		// the ViewPlugin constructor's initial `buildDecorations` sees the
+		// correct paths. If we dispatch these effects after view creation, the
+		// first render's ImageWidgets are built with empty paths and either
+		// 404-flood against the dev origin (if their filenames are relative)
+		// or silently fall back to placeholders that never re-resolve — state
+		// field changes alone don't trigger a decoration rebuild.
+		const imgEffects: any[] = [];
+		if (libraryPath) imgEffects.push(setLibraryPath.of(libraryPath));
+		if (filePath) imgEffects.push(setNotePath.of(filePath));
+		imgEffects.push(setAttachmentFolder.of($appSettings.defaultAttachmentFolder || ''));
+		const initialState = imgEffects.length
+			? state.update({ effects: imgEffects }).state
+			: state;
+
 		try {
-			view = new EditorView({ state, parent: editorEl! });
+			view = new EditorView({ state: initialState, parent: editorEl! });
 		} catch (e) {
 			// Fallback: create editor without livePreview if decorations fail
 			// (e.g., RangeError on content with line-spanning replace decorations)
@@ -459,13 +474,6 @@
 			});
 			view = new EditorView({ state: fallbackState, parent: editorEl! });
 		}
-
-		/* Set library + note paths for image resolution */
-		const imgEffects: any[] = [];
-		if (libraryPath) imgEffects.push(setLibraryPath.of(libraryPath));
-		if (filePath) imgEffects.push(setNotePath.of(filePath));
-		imgEffects.push(setAttachmentFolder.of($appSettings.defaultAttachmentFolder || ''));
-		if (imgEffects.length) view.dispatch({ effects: imgEffects });
 
 		/* Highlight term(s) — supports multi-term comma-separated (,،、) */
 		if (highlightTerm && view) {

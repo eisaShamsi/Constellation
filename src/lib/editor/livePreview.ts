@@ -195,14 +195,30 @@ class ImageWidget extends WidgetType {
 		const wrap = document.createElement('div');
 		wrap.className = 'cm-md-image-widget';
 
-		// Absolute URL (http/data) — render directly, no Rust resolution
-		if (!this.libraryPath && !this.notePath) {
+		// Absolute URL (http/https/data/asset/file/blob) — render directly, no
+		// Rust resolution. Match on the filename itself: the old "paths empty"
+		// heuristic confounded "caller intentionally passed no context" with
+		// "state fields not yet populated on first render", which let relative
+		// paths like `attachments/img/foo.png` take this branch and 404
+		// against the dev server on every initial render.
+		if (/^(https?:|data:|asset:|file:|blob:)/i.test(this.filename)) {
 			const img = document.createElement('img');
 			img.src = this.filename;
 			img.alt = this.alt || '';
 			img.loading = 'lazy';
 			img.onerror = () => this._showFallback(wrap);
 			wrap.appendChild(img);
+			return wrap;
+		}
+
+		// Relative path with no resolution context at all — can't fetch safely.
+		// Show the fallback placeholder instead of handing a relative URL to
+		// the browser (which would resolve it against the dev origin and
+		// produce a 404 flood on every first-render before the setLibraryPath
+		// / setNotePath effects get dispatched). If even one field is set the
+		// Rust side can still try its candidate list.
+		if (!this.libraryPath && !this.notePath) {
+			this._showFallback(wrap);
 			return wrap;
 		}
 
