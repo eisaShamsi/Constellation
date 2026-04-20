@@ -617,7 +617,9 @@
     "orphans": "Huérfanas",
     "noCrossLibrary": "Sin enlaces entre bibliotecas",
     "noBroken": "Sin enlaces rotos",
-    "noOrphans": "Sin notas huérfanas"
+    "noOrphans": "Sin notas huérfanas",
+    "mostTraveled": "Más transitados",
+    "noTraveled": "Aún no hay rutas transitadas"
   },
   "dialogs": {
     "confirmDelete": "¿Estás seguro de que quieres eliminar \"{name}\"?",

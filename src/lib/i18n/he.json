@@ -617,7 +617,9 @@
     "noBroken": "אין קישורים שבורים",
     "noOrphans": "אין פתקים מבודדים",
     "crossLibrary": "בין-כספות",
-    "noCrossLibrary": "אין קישורים בין-כספות"
+    "noCrossLibrary": "אין קישורים בין-כספות",
+    "mostTraveled": "הנפוצים ביותר",
+    "noTraveled": "אין נתיבים נפוצים עדיין"
   },
   "dialogs": {
     "confirmDelete": "האם אתה בטוח שברצונך למחוק את \"{name}\"?",

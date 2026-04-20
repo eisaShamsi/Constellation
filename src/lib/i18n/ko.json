@@ -617,7 +617,9 @@
     "noBroken": "끊긴 링크 없음",
     "noOrphans": "고아 노트 없음",
     "crossLibrary": "보관함 간",
-    "noCrossLibrary": "보관함 간 링크 없음"
+    "noCrossLibrary": "보관함 간 링크 없음",
+    "mostTraveled": "가장 많이 이동",
+    "noTraveled": "자주 다닌 경로가 없습니다"
   },
   "dialogs": {
     "confirmDelete": "\"{name}\"을(를) 삭제하시겠습니까?",

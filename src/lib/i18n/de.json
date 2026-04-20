@@ -617,7 +617,9 @@
     "orphans": "Verwaiste Notizen",
     "noCrossLibrary": "Keine bibliotheksübergreifenden Links",
     "noBroken": "Keine defekten Links",
-    "noOrphans": "Keine verwaisten Notizen"
+    "noOrphans": "Keine verwaisten Notizen",
+    "mostTraveled": "Meist begangen",
+    "noTraveled": "Noch keine begangenen Pfade"
   },
   "dialogs": {
     "confirmDelete": "Möchten Sie \"{name}\" wirklich löschen?",

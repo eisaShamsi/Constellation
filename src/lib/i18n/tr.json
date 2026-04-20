@@ -617,7 +617,9 @@
     "noBroken": "Kırık bağlantı yok",
     "noOrphans": "Yalnız not yok",
     "crossLibrary": "Kasalar Arası",
-    "noCrossLibrary": "Kasalar arası bağlantı yok"
+    "noCrossLibrary": "Kasalar arası bağlantı yok",
+    "mostTraveled": "En Çok Geçilen",
+    "noTraveled": "Henüz geçilen yol yok"
   },
   "dialogs": {
     "confirmDelete": "\"{name}\" öğesini silmek istediğinizden emin misiniz?",

@@ -714,7 +714,9 @@
     "orphans": "Orphans",
     "noCrossLibrary": "No cross-library links",
     "noBroken": "No broken links",
-    "noOrphans": "No orphan notes"
+    "noOrphans": "No orphan notes",
+    "mostTraveled": "Most Traveled",
+    "noTraveled": "No traveled paths yet"
   },
   "dialogs": {
     "confirmDelete": "Are you sure you want to delete \"{name}\"?",

@@ -617,7 +617,9 @@
     "noBroken": "कोई टूटे हुए लिंक नहीं",
     "noOrphans": "कोई अकेले नोट नहीं",
     "crossLibrary": "क्रॉस-वॉल्ट",
-    "noCrossLibrary": "कोई क्रॉस-वॉल्ट लिंक नहीं"
+    "noCrossLibrary": "कोई क्रॉस-वॉल्ट लिंक नहीं",
+    "mostTraveled": "सबसे अधिक यात्रा",
+    "noTraveled": "अभी तक कोई यात्रा पथ नहीं"
   },
   "dialogs": {
     "confirmDelete": "क्या आप वाकई \"{name}\" को हटाना चाहते हैं?",

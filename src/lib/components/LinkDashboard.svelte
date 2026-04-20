@@ -57,6 +57,25 @@
 		return allNotes.filter(n => !linked.has(n.path));
 	});
 
+	// Most-traveled paths (P4.3): top 20 links by Living Link traversal_count.
+	// Surfaces the user's worn edges — the connections they reach for most.
+	// O(m log m) due to sort; m is link count, bounded by vault size.
+	const mostTraveled = $derived.by(() => {
+		if (!visible) return [];
+		return allLinks
+			.filter(l => (l.traversal_count ?? 0) > 0)
+			.slice()
+			.sort((a, b) => (b.traversal_count ?? 0) - (a.traversal_count ?? 0))
+			.slice(0, 20)
+			.map(l => ({
+				source_path: l.source_path,
+				source_name: l.source_name,
+				target: l.target,
+				library_name: l.library_name,
+				count: l.traversal_count ?? 0,
+			}));
+	});
+
 	// Most connected notes (top 10) — O(m + k log k) with map lookups
 	const mostConnected = $derived.by(() => {
 		if (!visible) return [];
@@ -75,13 +94,16 @@
 			});
 	});
 
-	let activeSection = $state<'cross' | 'broken' | 'orphan' | 'top'>('top');
+	let activeSection = $state<'cross' | 'broken' | 'orphan' | 'top' | 'traveled'>('top');
 </script>
 
 <div class="link-dashboard">
 	<div class="ld-tabs">
 		<button class="ld-tab" class:active={activeSection === 'top'} onclick={() => activeSection = 'top'}>
 			{$t('linkDashboard.mostConnected')} <span class="ld-badge">{mostConnected.length}</span>
+		</button>
+		<button class="ld-tab" class:active={activeSection === 'traveled'} onclick={() => activeSection = 'traveled'}>
+			{$t('linkDashboard.mostTraveled')} <span class="ld-badge">{mostTraveled.length}</span>
 		</button>
 		<button class="ld-tab" class:active={activeSection === 'cross'} onclick={() => activeSection = 'cross'}>
 			{$t('linkDashboard.crossLibrary')} <span class="ld-badge">{crossLibraryLinks.length}</span>
@@ -102,6 +124,17 @@
 					<span class="ld-detail">{item.count} links</span>
 				</button>
 			{/each}
+		{:else if activeSection === 'traveled'}
+			{#each mostTraveled as link}
+				<button class="ld-item" onclick={() => onNoteClick(link.source_path, link.library_name)}>
+					<span class="ld-name">{link.source_name}</span>
+					<span class="ld-detail">→ {link.target}</span>
+					<span class="ld-chip">×{link.count}</span>
+				</button>
+			{/each}
+			{#if mostTraveled.length === 0}
+				<div class="ld-empty">{$t('linkDashboard.noTraveled')}</div>
+			{/if}
 		{:else if activeSection === 'cross'}
 			{#each crossLibraryLinks.slice(0, 50) as link}
 				<button class="ld-item" onclick={() => onNoteClick(link.source_path, link.library_name)}>
@@ -167,5 +200,16 @@
 	.ld-name { color: var(--interactive-accent); font-size: 0.8rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ld-detail { color: var(--text-faint); font-size: 0.72rem; flex-shrink: 0; }
 	.ld-broken { color: var(--text-error, #ef4444); }
+	.ld-chip {
+		flex-shrink: 0;
+		display: inline-flex; align-items: center;
+		height: 15px; padding: 0 5px; box-sizing: border-box;
+		border-radius: 7px;
+		background: color-mix(in srgb, var(--interactive-accent) 14%, transparent);
+		border: 1px solid color-mix(in srgb, var(--interactive-accent) 30%, transparent);
+		color: var(--interactive-accent);
+		font-size: 0.6rem; font-weight: 600;
+		line-height: 1;
+	}
 	.ld-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 8px 0; text-align: center; }
 </style>

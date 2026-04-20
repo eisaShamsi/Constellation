@@ -617,7 +617,9 @@
     "noBroken": "リンク切れなし",
     "noOrphans": "孤立ノートなし",
     "crossLibrary": "保管庫間",
-    "noCrossLibrary": "保管庫間リンクなし"
+    "noCrossLibrary": "保管庫間リンクなし",
+    "mostTraveled": "最多通過",
+    "noTraveled": "よく通るパスはまだありません"
   },
   "dialogs": {
     "confirmDelete": "「{name}」を削除してもよろしいですか？",

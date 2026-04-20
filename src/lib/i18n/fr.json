@@ -617,7 +617,9 @@
     "orphans": "Orphelines",
     "noCrossLibrary": "Aucun lien inter-bibliothèques",
     "noBroken": "Aucun lien brisé",
-    "noOrphans": "Aucune note orpheline"
+    "noOrphans": "Aucune note orpheline",
+    "mostTraveled": "Les plus empruntés",
+    "noTraveled": "Aucun chemin emprunté"
   },
   "dialogs": {
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer \"{name}\" ?",

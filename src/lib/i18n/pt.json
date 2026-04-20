@@ -617,7 +617,9 @@
     "noBroken": "Sem links quebrados",
     "noOrphans": "Sem notas órfãs",
     "crossLibrary": "Entre cofres",
-    "noCrossLibrary": "Sem links entre cofres"
+    "noCrossLibrary": "Sem links entre cofres",
+    "mostTraveled": "Mais percorridos",
+    "noTraveled": "Nenhum caminho percorrido"
   },
   "dialogs": {
     "confirmDelete": "Tem certeza de que deseja excluir \"{name}\"?",

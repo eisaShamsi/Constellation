@@ -617,7 +617,9 @@
     "noBroken": "无失效链接",
     "noOrphans": "无孤立笔记",
     "crossLibrary": "跨仓库",
-    "noCrossLibrary": "无跨仓库链接"
+    "noCrossLibrary": "无跨仓库链接",
+    "mostTraveled": "最常通行",
+    "noTraveled": "暂无常走路径"
   },
   "dialogs": {
     "confirmDelete": "确定要删除 \"{name}\" 吗？",
