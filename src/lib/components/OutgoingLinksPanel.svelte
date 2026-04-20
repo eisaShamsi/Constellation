@@ -55,7 +55,14 @@
 		padding: 4px 0; font-weight: 600; color: var(--text-muted); font-size: 0.75rem;
 		text-transform: uppercase; letter-spacing: 0.03em;
 	}
-	.ol-count { background: var(--background-modifier-border-focus); border-radius: 8px; padding: 0 5px; font-size: 0.7rem; color: var(--text-faint); }
+	.ol-count {
+		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
+		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
+		color: var(--interactive-accent, #7c3aed);
+		border-radius: 8px; padding: 0 6px;
+		font-size: 0.7rem; font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
 	.ol-item {
 		padding: 4px 8px; border-radius: 3px;
 		display: block; width: 100%; text-align: start;
