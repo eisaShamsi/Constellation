@@ -6,6 +6,11 @@
 	import { get } from 'svelte/store';
 	import { onMount, onDestroy } from 'svelte';
 	import { appSettings } from '$lib/libraries/store';
+
+	// Share the user's configured pill shape with BacklinksPanel /
+	// OutgoingLinksPanel / LinkDashboard so frontmatter tag pills track
+	// the same radius / height / weight as every other pill in the app.
+	const pillShape = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 	import { formatDate } from '$lib/utils';
 
 	let {
@@ -389,7 +394,7 @@
 	}
 </script>
 
-<div class="property-editor">
+<div class="property-editor" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div class="pe-header" class:pe-clickable={!!onToggle} onclick={() => onToggle?.()}>
 		{#if onToggle}
@@ -715,17 +720,21 @@
 		display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
 	}
 	.pe-tag {
-		display: inline-flex; align-items: center; gap: 2px;
-		background: var(--background-modifier-border-focus); color: var(--text-muted);
-		padding: 1px 6px; border-radius: 10px;
-		font-size: 0.75rem; white-space: nowrap;
+		display: inline-flex; align-items: center; gap: 4px;
+		box-sizing: border-box;
+		height: var(--pill-height, 20px);
+		padding: 0 8px;
+		border-radius: var(--pill-radius, 10px);
+		background: var(--background-modifier-border-focus); color: #fff;
+		font-size: 0.75rem; font-weight: var(--pill-weight, 700);
+		line-height: 1; white-space: nowrap;
 	}
 	.pe-tag-x {
-		border: none; background: none; color: var(--text-faint);
-		cursor: pointer; font-size: 0.75rem; padding: 0 1px;
+		border: none; background: none; color: rgba(255, 255, 255, 0.75);
+		cursor: pointer; font-size: 0.8rem; padding: 0 1px;
 		line-height: 1;
 	}
-	.pe-tag-x:hover { color: var(--text-error); }
+	.pe-tag-x:hover { color: #fff; }
 	.pe-tag-input {
 		flex: 1; min-width: 50px; border: none; background: none;
 		padding: 2px 4px; font-size: 0.78rem; color: var(--text-normal);
