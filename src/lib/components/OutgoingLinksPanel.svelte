@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings } from '$lib/libraries/store';
+	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, setLinkConfidence, type LinkConfidence } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 
@@ -10,16 +10,38 @@
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	let {
-		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string }[],
+		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string; confidence?: LinkConfidence }[],
 		activeNotePath = '',
 		libraryPath = '',
 		libraryColorMap = {} as Record<string, string>,
+		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
 	}: {
-		outgoingLinks: { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string }[];
+		outgoingLinks: { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string; confidence?: LinkConfidence }[];
 		activeNotePath?: string;
 		libraryPath?: string;
 		libraryColorMap?: Record<string, string>;
+		onConfidenceChange?: (sourcePath: string, targetName: string, confidence: LinkConfidence) => void;
 	} = $props();
+
+	let showOutgoing = $state(true);
+
+	// Confidence popover — mirrors BacklinksPanel.
+	let confMenu = $state<{ x: number; y: number; sourcePath: string; targetName: string; current: LinkConfidence } | null>(null);
+	const CONFIDENCE_LEVELS: LinkConfidence[] = ['hypothesis', 'evidence', 'established', 'contested'];
+	function openConfMenu(e: MouseEvent, sourcePath: string, targetName: string, current: LinkConfidence) {
+		e.preventDefault();
+		e.stopPropagation();
+		confMenu = { x: e.clientX, y: e.clientY, sourcePath, targetName, current };
+	}
+	async function applyConf(level: LinkConfidence) {
+		if (!confMenu) return;
+		const { sourcePath, targetName } = confMenu;
+		confMenu = null;
+		try {
+			await setLinkConfidence(sourcePath, targetName, level);
+			onConfidenceChange?.(sourcePath, targetName, level);
+		} catch { /* ignore */ }
+	}
 
 	function getLibraryColor(name: string): string {
 		return libraryColorMap[name] ?? '#7c3aed';
@@ -38,13 +60,18 @@
 </script>
 
 <div class="outgoing-panel" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
-	<div class="ol-header">
+	<button class="ol-header ol-toggle" onclick={() => showOutgoing = !showOutgoing}>
+		<svg class="ol-chev" class:expanded={showOutgoing} width="8" height="8" viewBox="0 0 10 10">
+			<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+		</svg>
 		{$t('outgoingLinksPanel.header')}
 		<span class="ol-count">{outgoingLinks.length}</span>
-	</div>
-	{#if outgoingLinks.length > 0}
+	</button>
+	{#if showOutgoing && outgoingLinks.length > 0}
 		{#each outgoingLinks as link}
-			<button class="ol-item" onclick={(e) => openLink(link.target, e)} dir="auto">
+			<button class="ol-item" onclick={(e) => openLink(link.target, e)} dir="auto"
+				oncontextmenu={(e) => openConfMenu(e, activeNotePath, link.target, link.confidence ?? 'hypothesis')}
+				title={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
 				<span class="ol-target-row">
 					<span class="ol-target">{link.target}</span>
 					{#if link.linkType}
@@ -61,10 +88,24 @@
 				<span class="ol-context">{link.context}</span>
 			</button>
 		{/each}
-	{:else}
+	{:else if showOutgoing}
 		<div class="ol-empty">{$t('outgoingLinksPanel.noLinks')}</div>
 	{/if}
 </div>
+
+{#if confMenu}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="conf-overlay" onclick={() => confMenu = null} oncontextmenu={(e) => { e.preventDefault(); confMenu = null; }}></div>
+	<div class="conf-menu" style="left:{confMenu.x}px;top:{confMenu.y}px">
+		<div class="conf-menu-header">{$t('linkConfidence.setConfidence') || 'Set confidence'}</div>
+		{#each CONFIDENCE_LEVELS as level}
+			<button class="conf-menu-item" class:active={level === confMenu.current} onclick={() => applyConf(level)}>
+				<span class="conf-dot conf-dot-{level}"></span>
+				{$t(`linkConfidence.${level}`) || level}
+			</button>
+		{/each}
+	</div>
+{/if}
 
 <style>
 	.outgoing-panel { font-size: 0.8rem; }
@@ -73,6 +114,13 @@
 		padding: 4px 0; font-weight: 600; color: var(--text-muted); font-size: 0.75rem;
 		text-transform: uppercase; letter-spacing: 0.03em;
 	}
+	.ol-toggle {
+		background: none; border: none; cursor: pointer; font-family: inherit;
+		width: 100%; text-align: start;
+	}
+	.ol-toggle:hover { color: var(--text-normal); }
+	.ol-chev { transition: transform 0.15s ease; flex-shrink: 0; }
+	.ol-chev.expanded { transform: rotate(90deg); }
 	.ol-count {
 		display: inline-flex; align-items: center;
 		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
@@ -130,4 +178,34 @@
 		border-color: color-mix(in srgb, #d97706 30%, transparent);
 		color: #d97706;
 	}
+
+	.conf-overlay { position: fixed; inset: 0; z-index: 99; background: transparent; }
+	.conf-menu {
+		position: fixed; z-index: 100;
+		background: var(--bg-secondary, #fff);
+		border: 1px solid var(--border); border-radius: 6px;
+		box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+		padding: 4px; min-width: 160px;
+		font-size: 0.78rem;
+	}
+	.conf-menu-header {
+		padding: 6px 8px 4px; color: var(--text-muted); font-size: 0.68rem;
+		text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
+	}
+	.conf-menu-item {
+		display: flex; align-items: center; gap: 8px;
+		width: 100%; padding: 6px 8px; border: none; background: none;
+		cursor: pointer; border-radius: 4px; text-align: start;
+		color: var(--text-normal); font-family: inherit; font-size: 0.78rem;
+	}
+	.conf-menu-item:hover { background: var(--background-modifier-hover); }
+	.conf-menu-item.active { font-weight: 600; color: var(--interactive-accent); }
+	.conf-dot {
+		width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+		border: 1px solid var(--border);
+	}
+	.conf-dot-hypothesis { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent); }
+	.conf-dot-evidence   { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 40%, transparent); }
+	.conf-dot-established{ background: var(--interactive-accent, #7c3aed); border-color: var(--interactive-accent, #7c3aed); }
+	.conf-dot-contested  { background: #d97706; border-color: #d97706; }
 </style>

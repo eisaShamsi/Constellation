@@ -257,7 +257,12 @@
       "decayEnabledDesc": "オフのときは、リンクは生のトラバース回数のみで並びます（新しさは加味されません）。",
       "halfLifeDays": "減衰の半減期",
       "halfLifeDaysDesc": "未使用リンクの実効重みが半分になるまでの日数。小さいほど素早く沈みます。",
-      "days": "日"
+      "days": "日",
+      "confidenceBackfill": "リンク信頼度の一括補完",
+      "confidenceBackfillDesc": "閾値を既に超えた既存リンク (≥3 → 証拠、≥10 → 確立) を昇格。自動昇格ルールをまだ通っていないものが対象。単発実行、複数回実行も安全。降格はせず、ユーザー設定の「異議あり」を保持。",
+      "confidenceBackfillBtn": "補完を実行",
+      "confidenceBackfillRunning": "実行中…",
+      "confidenceBackfillResult": "{total}個のリンクを昇格 (→証拠: {evidence}, →確立: {established})。"
     },
     "ai": {
       "provider": "プロバイダー",
@@ -1621,5 +1626,13 @@
     "derives-from": "派生",
     "part-of": "一部",
     "associative": "連想"
+  },
+  "linkConfidence": {
+    "setConfidence": "信頼度を設定",
+    "rightClickHint": "右クリックで信頼度を設定",
+    "hypothesis": "仮説",
+    "evidence": "証拠",
+    "established": "確立",
+    "contested": "異議あり"
   }
 }

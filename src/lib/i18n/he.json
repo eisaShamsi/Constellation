@@ -257,7 +257,12 @@
       "decayEnabledDesc": "כשמכובה, הקישורים ממוינים רק לפי מונה המעברים הגולמי (ללא שקלול רעננות).",
       "halfLifeDays": "חצי-חיי הדעיכה",
       "halfLifeDaysDesc": "מספר הימים שלאחריהם המשקל האפקטיבי של קישור בלתי-משומש נחצה. נמוך יותר = נפילה מהירה יותר.",
-      "days": "ימים"
+      "days": "ימים",
+      "confidenceBackfill": "מילוי ביטחון קישורים",
+      "confidenceBackfillDesc": "קידום קישורים שכבר חצו סף (≥3 → עדות, ≥10 → מבוסס) אך לא עברו דרך חוקי הקידום האוטומטיים. הפעלה חד־פעמית; בטוח להפעיל שוב. לא מוריד; משמר 'שנוי במחלוקת' שנקבע על־ידי המשתמש.",
+      "confidenceBackfillBtn": "הפעל מילוי",
+      "confidenceBackfillRunning": "פועל…",
+      "confidenceBackfillResult": "קודמו {total} קישור(ים) (→עדות: {evidence}, →מבוסס: {established})."
     },
     "ai": {
       "provider": "ספק",
@@ -1621,5 +1626,13 @@
     "derives-from": "נגזר-מ",
     "part-of": "חלק-מ",
     "associative": "אסוציאטיבי"
+  },
+  "linkConfidence": {
+    "setConfidence": "הגדרת ביטחון",
+    "rightClickHint": "לחץ ימני להגדרת ביטחון",
+    "hypothesis": "השערה",
+    "evidence": "עדות",
+    "established": "מבוסס",
+    "contested": "שנוי במחלוקת"
   }
 }

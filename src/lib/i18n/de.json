@@ -257,7 +257,12 @@
       "decayEnabledDesc": "Wenn aus, werden Links nur nach roher Traversal-Zahl sortiert (keine Aktualitätsgewichtung).",
       "halfLifeDays": "Halbwertszeit des Zerfalls",
       "halfLifeDaysDesc": "Tage, nach denen sich das effektive Gewicht eines unbenutzten Links halbiert. Niedriger = schnellerer Abfall.",
-      "days": "Tage"
+      "days": "Tage",
+      "confidenceBackfill": "Link-Vertrauen nachtragen",
+      "confidenceBackfillDesc": "Stuft bestehende Links hoch, die die Schwelle schon überschritten haben (≥3 → Beleg, ≥10 → Etabliert), aber nie auto-gepromoted wurden. Einmalig; mehrfach sicher ausführbar. Stuft nie herab; erhält nutzerdefiniertes 'Umstritten'.",
+      "confidenceBackfillBtn": "Nachtrag ausführen",
+      "confidenceBackfillRunning": "Läuft…",
+      "confidenceBackfillResult": "{total} Link(s) hochgestuft (→Beleg: {evidence}, →Etabliert: {established})."
     },
     "ai": {
       "provider": "Anbieter",
@@ -1621,5 +1626,13 @@
     "derives-from": "abgeleitet-von",
     "part-of": "teil-von",
     "associative": "assoziativ"
+  },
+  "linkConfidence": {
+    "setConfidence": "Vertrauen festlegen",
+    "rightClickHint": "Rechtsklick zum Festlegen",
+    "hypothesis": "Hypothese",
+    "evidence": "Beleg",
+    "established": "Etabliert",
+    "contested": "Umstritten"
   }
 }

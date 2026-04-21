@@ -257,7 +257,12 @@
       "decayEnabledDesc": "关闭时，链接仅按原始通过次数排序（不加入新鲜度权重）。",
       "halfLifeDays": "衰减半衰期",
       "halfLifeDaysDesc": "未使用链接的有效权重减半所需的天数。数值越小下降越快。",
-      "days": "天"
+      "days": "天",
+      "confidenceBackfill": "补填链接置信度",
+      "confidenceBackfillDesc": "对已跨越阈值（≥3 → 证据，≥10 → 已确立）但从未经过自动提升规则的现有链接进行提升。一次性；可多次安全运行。从不降级；保留用户设置的「有争议」。",
+      "confidenceBackfillBtn": "运行补填",
+      "confidenceBackfillRunning": "运行中…",
+      "confidenceBackfillResult": "已提升 {total} 条链接（→证据：{evidence}，→已确立：{established}）。"
     },
     "ai": {
       "provider": "服务商",
@@ -1621,5 +1626,13 @@
     "derives-from": "源自",
     "part-of": "部分",
     "associative": "关联"
+  },
+  "linkConfidence": {
+    "setConfidence": "设置置信度",
+    "rightClickHint": "右键设置置信度",
+    "hypothesis": "假设",
+    "evidence": "证据",
+    "established": "已确立",
+    "contested": "有争议"
   }
 }

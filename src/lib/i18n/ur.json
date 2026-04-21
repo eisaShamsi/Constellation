@@ -257,7 +257,12 @@
       "decayEnabledDesc": "بند ہونے پر لنکس صرف خام چال کی گنتی سے ترتیب پاتے ہیں (تازگی کا وزن نہیں)۔",
       "halfLifeDays": "زوال کی نصف عمر",
       "halfLifeDaysDesc": "وہ دن جن کے بعد غیر استعمال شدہ لنک کا مؤثر وزن آدھا رہ جاتا ہے۔ کم = تیز کمی۔",
-      "days": "دن"
+      "days": "دن",
+      "confidenceBackfill": "لنک اعتماد بھرنا",
+      "confidenceBackfillDesc": "موجودہ لنکس جو پہلے ہی حد عبور کر چکے ہیں (≥3 → شواہد، ≥10 → قائم) لیکن خودکار ترقی سے نہیں گزرے، انہیں ترقی دیں۔ ایک بار؛ متعدد بار چلانا محفوظ۔ کبھی کم نہیں کرتا؛ صارف کا مقرر کردہ 'متنازع' محفوظ رہتا ہے۔",
+      "confidenceBackfillBtn": "بھرنا چلائیں",
+      "confidenceBackfillRunning": "چل رہا ہے…",
+      "confidenceBackfillResult": "{total} لنک ترقی پائی (→شواہد: {evidence}، →قائم: {established})۔"
     },
     "ai": {
       "provider": "فراہم کنندہ",
@@ -1621,5 +1626,13 @@
     "derives-from": "ماخوذ",
     "part-of": "حصہ",
     "associative": "متعلق"
+  },
+  "linkConfidence": {
+    "setConfidence": "اعتماد مقرر کریں",
+    "rightClickHint": "اعتماد مقرر کرنے کیلئے رائٹ کلک کریں",
+    "hypothesis": "مفروضہ",
+    "evidence": "شواہد",
+    "established": "قائم",
+    "contested": "متنازع"
   }
 }

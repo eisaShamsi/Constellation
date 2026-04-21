@@ -1070,6 +1070,32 @@ export async function linkDecay(): Promise<LinkDecayResult> {
 	return invoke('constellation_link_decay');
 }
 
+export type LinkConfidence = 'hypothesis' | 'evidence' | 'established' | 'contested';
+
+/**
+ * Set a link's confidence level. Accepts all 4 tiers. The Rust side will
+ * overwrite whatever the auto-promotion rule decided — use this for
+ * user-driven contest / force-promote actions.
+ */
+export async function setLinkConfidence(sourcePath: string, targetName: string, confidence: LinkConfidence): Promise<void> {
+	await invoke('constellation_link_set_confidence', { sourcePath, targetName, confidence });
+}
+
+export interface LinkConfidenceBackfillResult {
+	promoted_to_established: number;
+	promoted_to_evidence: number;
+	total: number;
+}
+
+/**
+ * One-shot: age-assign confidence on existing rows that already meet the
+ * traversal thresholds (≥10 → established, ≥3 → evidence). Never downgrades;
+ * preserves user-set `contested`.
+ */
+export async function backfillLinkConfidence(): Promise<LinkConfidenceBackfillResult> {
+	return invoke('constellation_link_backfill_confidence');
+}
+
 export async function formulationAnalysis(queryType: FormulationQueryType, target?: string): Promise<FormulationInsight[]> {
 	return invoke('constellation_formulation_analysis', { queryType, target: target ?? null });
 }
@@ -1711,6 +1737,7 @@ export function getBacklinks(allLinks: NoteLink[], noteName: string, decay?: Lin
 		// P5 slice 3: precompute the lifecycle tier here so panels don't
 		// need to import / re-derive on every row render.
 		tier: linkLifecycle(l, nowMs) as LinkLifecycle,
+		confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
 	}));
 }
 
@@ -1729,6 +1756,7 @@ export function getOutgoingLinks(allLinks: NoteLink[], notePath: string, decay?:
 		linkType: displayLinkType(l),
 		traversalCount: l.traversal_count ?? 0,
 		tier: linkLifecycle(l, nowMs) as LinkLifecycle,
+		confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
 	}));
 }
 

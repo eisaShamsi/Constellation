@@ -257,7 +257,12 @@
       "decayEnabledDesc": "Kapalıyken bağlantılar yalnızca ham geçiş sayısına göre sıralanır (tazelik ağırlıklandırılmaz).",
       "halfLifeDays": "Sönümleme yarı ömrü",
       "halfLifeDaysDesc": "Kullanılmayan bir bağlantının etkin ağırlığının yarıya düşmesi için geçen gün sayısı. Düşük = hızlı düşüş.",
-      "days": "gün"
+      "days": "gün",
+      "confidenceBackfill": "Bağlantı güvenini doldur",
+      "confidenceBackfillDesc": "Eşiği geçmiş (≥3 → kanıt, ≥10 → yerleşik) ama otomatik yükseltme kuralından geçmemiş mevcut bağlantıları yükseltir. Tek atış; birden çok kez güvenle çalıştırılabilir. Asla düşürmez; kullanıcının 'itirazlı' seçimini korur.",
+      "confidenceBackfillBtn": "Doldurmayı çalıştır",
+      "confidenceBackfillRunning": "Çalışıyor…",
+      "confidenceBackfillResult": "{total} bağlantı yükseltildi (→kanıt: {evidence}, →yerleşik: {established})."
     },
     "ai": {
       "provider": "Sağlayıcı",
@@ -1621,5 +1626,13 @@
     "derives-from": "türetilir",
     "part-of": "parçası",
     "associative": "ilişkili"
+  },
+  "linkConfidence": {
+    "setConfidence": "Güveni ayarla",
+    "rightClickHint": "Güveni ayarlamak için sağ tıklayın",
+    "hypothesis": "Hipotez",
+    "evidence": "Kanıt",
+    "established": "Yerleşik",
+    "contested": "İtirazlı"
   }
 }

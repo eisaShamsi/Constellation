@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { openNoteTab, libraries, readNote, appSettings } from '$lib/libraries/store';
+	import { openNoteTab, libraries, readNote, appSettings, setLinkConfidence, type LinkConfidence } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
@@ -14,20 +14,43 @@
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	let {
-		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string }[],
+		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string; confidence?: LinkConfidence }[],
 		unlinkedMentions = [] as { name: string; path: string; context: string; libraryName: string }[],
 		activeNoteName = '',
 		activeNotePath = '',
 		libraryColorMap = {} as Record<string, string>,
+		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
 	}: {
-		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string }[];
+		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string; confidence?: LinkConfidence }[];
 		unlinkedMentions: { name: string; path: string; context: string; libraryName: string }[];
 		activeNoteName?: string;
 		activeNotePath?: string;
 		libraryColorMap?: Record<string, string>;
+		onConfidenceChange?: (sourcePath: string, targetName: string, confidence: LinkConfidence) => void;
 	} = $props();
 
+	// Confidence popover state. Opened via right-click on a backlink row.
+	// Position is absolute-positioned relative to the viewport (fixed).
+	let confMenu = $state<{ x: number; y: number; sourcePath: string; targetName: string; current: LinkConfidence } | null>(null);
+	const CONFIDENCE_LEVELS: LinkConfidence[] = ['hypothesis', 'evidence', 'established', 'contested'];
+
+	function openConfMenu(e: MouseEvent, sourcePath: string, targetName: string, current: LinkConfidence) {
+		e.preventDefault();
+		e.stopPropagation();
+		confMenu = { x: e.clientX, y: e.clientY, sourcePath, targetName, current };
+	}
+	async function applyConf(level: LinkConfidence) {
+		if (!confMenu) return;
+		const { sourcePath, targetName } = confMenu;
+		confMenu = null;
+		try {
+			await setLinkConfidence(sourcePath, targetName, level);
+			onConfidenceChange?.(sourcePath, targetName, level);
+		} catch { /* ignore */ }
+	}
+
 	let showUnlinked = $state(false);
+	let showLinked = $state(true);
 	let filterQuery = $state('');
 	const filteredBacklinks = $derived(
 		filterQuery.trim()
@@ -71,13 +94,18 @@
 		</div>
 	{/if}
 	<div class="bl-section">
-		<div class="bl-header">
+		<button class="bl-header bl-toggle" onclick={() => showLinked = !showLinked}>
+			<svg class="bl-chev" class:expanded={showLinked} width="8" height="8" viewBox="0 0 10 10">
+				<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+			</svg>
 			{$t('backlinksPanel.linkedMentions')}
 			<span class="bl-count">{filteredBacklinks.length}</span>
-		</div>
-		{#if filteredBacklinks.length > 0}
+		</button>
+		{#if showLinked && filteredBacklinks.length > 0}
 			{#each filteredBacklinks as bl}
-				<button class="bl-item" onclick={(e) => openLink(bl.path, bl.libraryName, e)}>
+				<button class="bl-item" onclick={(e) => openLink(bl.path, bl.libraryName, e)}
+					oncontextmenu={(e) => openConfMenu(e, bl.path, activeNoteName, bl.confidence ?? 'hypothesis')}
+					title={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
 					<span class="bl-name-row">
 						{#if bl.libraryName}
 							<span class="bl-library-dot" style="background:{getLibraryColor(bl.libraryName)}"></span>
@@ -100,7 +128,7 @@
 					<span class="bl-context">{bl.context}</span>
 				</button>
 			{/each}
-		{:else}
+		{:else if showLinked}
 			<div class="bl-empty">{$t('backlinksPanel.noBacklinks')}</div>
 		{/if}
 	</div>
@@ -138,6 +166,20 @@
 		{/if}
 	</div>
 </div>
+
+{#if confMenu}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="conf-overlay" onclick={() => confMenu = null} oncontextmenu={(e) => { e.preventDefault(); confMenu = null; }}></div>
+	<div class="conf-menu" style="left:{confMenu.x}px;top:{confMenu.y}px">
+		<div class="conf-menu-header">{$t('linkConfidence.setConfidence') || 'Set confidence'}</div>
+		{#each CONFIDENCE_LEVELS as level}
+			<button class="conf-menu-item" class:active={level === confMenu.current} onclick={() => applyConf(level)}>
+				<span class="conf-dot conf-dot-{level}"></span>
+				{$t(`linkConfidence.${level}`) || level}
+			</button>
+		{/each}
+	</div>
+{/if}
 
 <style>
 	.backlinks-panel { font-size: 0.8rem; }
@@ -232,4 +274,37 @@
 		border-color: color-mix(in srgb, #d97706 30%, transparent);
 		color: #d97706;
 	}
+
+	/* Confidence popover (shared visual grammar with OutgoingLinksPanel). */
+	.conf-overlay {
+		position: fixed; inset: 0; z-index: 99; background: transparent;
+	}
+	.conf-menu {
+		position: fixed; z-index: 100;
+		background: var(--bg-secondary, #fff);
+		border: 1px solid var(--border); border-radius: 6px;
+		box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+		padding: 4px; min-width: 160px;
+		font-size: 0.78rem;
+	}
+	.conf-menu-header {
+		padding: 6px 8px 4px; color: var(--text-muted); font-size: 0.68rem;
+		text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
+	}
+	.conf-menu-item {
+		display: flex; align-items: center; gap: 8px;
+		width: 100%; padding: 6px 8px; border: none; background: none;
+		cursor: pointer; border-radius: 4px; text-align: start;
+		color: var(--text-normal); font-family: inherit; font-size: 0.78rem;
+	}
+	.conf-menu-item:hover { background: var(--background-modifier-hover); }
+	.conf-menu-item.active { font-weight: 600; color: var(--interactive-accent); }
+	.conf-dot {
+		width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+		border: 1px solid var(--border);
+	}
+	.conf-dot-hypothesis { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent); }
+	.conf-dot-evidence   { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 40%, transparent); }
+	.conf-dot-established{ background: var(--interactive-accent, #7c3aed); border-color: var(--interactive-accent, #7c3aed); }
+	.conf-dot-contested  { background: #d97706; border-color: #d97706; }
 </style>

@@ -257,7 +257,12 @@
       "decayEnabledDesc": "Quando desativado, as ligações são ordenadas apenas pela contagem bruta de travessia (sem ponderação por recência).",
       "halfLifeDays": "Meia-vida do decaimento",
       "halfLifeDaysDesc": "Dias após os quais o peso efetivo de uma ligação não usada cai pela metade. Menor = queda mais rápida.",
-      "days": "dias"
+      "days": "dias",
+      "confidenceBackfill": "Preencher confiança dos links",
+      "confidenceBackfillDesc": "Promove links existentes que já cruzaram um limite (≥3 → evidência, ≥10 → estabelecido) mas nunca passaram pela regra de auto-promoção. Disparo único; seguro rodar várias vezes. Nunca rebaixa; preserva 'contestado' do usuário.",
+      "confidenceBackfillBtn": "Executar preenchimento",
+      "confidenceBackfillRunning": "Executando…",
+      "confidenceBackfillResult": "{total} link(s) promovido(s) (→evidência: {evidence}, →estabelecido: {established})."
     },
     "ai": {
       "provider": "Provedor",
@@ -1621,5 +1626,13 @@
     "derives-from": "deriva-de",
     "part-of": "parte-de",
     "associative": "associativo"
+  },
+  "linkConfidence": {
+    "setConfidence": "Definir confiança",
+    "rightClickHint": "Clique direito para definir confiança",
+    "hypothesis": "Hipótese",
+    "evidence": "Evidência",
+    "established": "Estabelecido",
+    "contested": "Contestado"
   }
 }

@@ -1816,6 +1816,43 @@ pub fn constellation_link_set_confidence(
     Ok(())
 }
 
+/// One-shot backfill: age-assign `confidence` for rows that already have
+/// enough traversals but were never promoted (e.g. they existed before the
+/// auto-promotion rule shipped, or sat at `hypothesis` because every click
+/// happened pre-P5-slice-3). Never downgrades; preserves user-set `contested`.
+/// Returns counts per tier so the UI can report how many rows moved.
+#[tauri::command]
+pub fn constellation_link_backfill_confidence(
+    app: tauri::AppHandle,
+) -> Result<serde_json::Value, String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let to_established: usize = conn.execute(
+        "UPDATE note_links
+         SET confidence = 'established'
+         WHERE confidence NOT IN ('established', 'contested')
+           AND traversal_count >= 10",
+        [],
+    ).map_err(|e| format!("Failed to backfill established: {}", e))?;
+
+    let to_evidence: usize = conn.execute(
+        "UPDATE note_links
+         SET confidence = 'evidence'
+         WHERE confidence = 'hypothesis'
+           AND traversal_count >= 3
+           AND traversal_count < 10",
+        [],
+    ).map_err(|e| format!("Failed to backfill evidence: {}", e))?;
+
+    Ok(serde_json::json!({
+        "promoted_to_established": to_established,
+        "promoted_to_evidence": to_evidence,
+        "total": to_established + to_evidence,
+    }))
+}
+
 /// Archive a link (soft delete — preserved in history).
 #[tauri::command]
 pub fn constellation_link_archive(

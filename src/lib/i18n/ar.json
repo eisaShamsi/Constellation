@@ -257,7 +257,12 @@
       "decayEnabledDesc": "عند الإيقاف، تُرتَّب الروابط بحسب عدد التنقّل الخام فقط (بدون مراعاة الحداثة).",
       "halfLifeDays": "نصف عمر الانحلال",
       "halfLifeDaysDesc": "عدد الأيام التي يتضاعف نصف الوزن الفعّال لرابط غير مستعمَل بعدها. كلّما قلّ، زاد الانحلال.",
-      "days": "يوم"
+      "days": "يوم",
+      "confidenceBackfill": "إعادة تعبئة ثقة الروابط",
+      "confidenceBackfillDesc": "ترقية الروابط التي تجاوزت حد التنقلات (≥3 → دليل، ≥10 → ثابت) لكنها لم تمر بقاعدة الترقية التلقائية. تشغيل آمن مرات عديدة. لا يُخفض الدرجة ويحافظ على 'متنازع عليه' الذي حدده المستخدم.",
+      "confidenceBackfillBtn": "تشغيل إعادة التعبئة",
+      "confidenceBackfillRunning": "قيد التشغيل…",
+      "confidenceBackfillResult": "تمت ترقية {total} رابطًا (→دليل: {evidence}، →ثابت: {established})."
     },
     "ai": {
       "provider": "المزود",
@@ -1625,5 +1630,13 @@
     "derives-from": "مشتق من",
     "part-of": "جزء من",
     "associative": "ترابطي"
+  },
+  "linkConfidence": {
+    "setConfidence": "تعيين الثقة",
+    "rightClickHint": "انقر بزر الفأرة الأيمن لتعيين الثقة",
+    "hypothesis": "فرضية",
+    "evidence": "دليل",
+    "established": "ثابت",
+    "contested": "متنازع عليه"
   }
 }

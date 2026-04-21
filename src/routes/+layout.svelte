@@ -541,6 +541,19 @@
 
 	// Library data caches
 	let allLibraryLinks = $state<NoteLink[]>([]);
+
+	/** P5 deferred: after a user contests/force-promotes a link's confidence,
+	 *  mirror the DB write into the in-memory NoteLink so the right-click
+	 *  menu's "current" marker reflects the new value without a full rescan.
+	 *  Everything else reads from this array via `effectiveLibraryLinks`. */
+	function applyConfidenceLocally(sourcePath: string, targetName: string, confidence: string) {
+		const target = targetName.toLowerCase();
+		allLibraryLinks = allLibraryLinks.map(l =>
+			l.source_path === sourcePath && l.target.toLowerCase() === target
+				? { ...l, confidence }
+				: l
+		);
+	}
 	// P4.2: per-(source,target) traversal counts, derived from the boot
 	// graph PLUS any optimistic bumps fired by openNoteTab since the last
 	// fetch. Key = `${sourcePath.toLowerCase()}|${target.toLowerCase()}`.
@@ -4777,7 +4790,7 @@
 						{/if}
 					</div>
 				{:else if rightSidebarTab === 'backlinks'}
-					<div class="rs-section">
+					<div class="rs-section rs-section--flush">
 						<div class="rs-header">{$t('panels.backlinksHeader')}</div>
 						<BacklinksPanel
 							backlinks={currentBacklinks}
@@ -4785,15 +4798,17 @@
 							activeNoteName={sidebarTab?.name ?? ''}
 							activeNotePath={sidebarTab?.path ?? ''}
 							{libraryColorMap}
+							onConfidenceChange={applyConfidenceLocally}
 						/>
 					</div>
-					<div class="rs-section">
+					<div class="rs-section rs-section--flush">
 						<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
 						<OutgoingLinksPanel
 							outgoingLinks={currentOutgoing}
 							activeNotePath={sidebarTab?.path ?? ''}
 							libraryPath={sidebarTab?.libraryPath ?? ''}
 							{libraryColorMap}
+							onConfidenceChange={applyConfidenceLocally}
 						/>
 					</div>
 				{:else if rightSidebarTab === 'tags'}
@@ -6128,7 +6143,8 @@
 
 	.rs-tabs {
 		display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
-		background: var(--rs-tabs-bg, transparent);
+		background: var(--rs-tabs-bg, var(--right-sidebar-bg, var(--bg-secondary)));
+		position: sticky; top: 0; z-index: 3;
 	}
 	.rs-tab {
 		flex: 1; display: flex; align-items: center; justify-content: center;
@@ -6158,6 +6174,7 @@
 	.rs-section {
 		padding: 12px; border-bottom: 1px solid var(--border-light);
 	}
+	.rs-section.rs-section--flush { border-bottom: none; }
 	.rs-section.rs-full-height {
 		flex: 1; display: flex; flex-direction: column;
 		padding: 0; border-bottom: none; overflow: hidden;

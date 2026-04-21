@@ -5,7 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS, backfillLinkConfidence } from '$lib/libraries/store';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
 	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
@@ -603,6 +603,26 @@
 		updateSettings({
 			linkLifecycle: { ...$appSettings.linkLifecycle, ...partial },
 		});
+	}
+
+	// P5 deferred: one-shot confidence backfill. Runs a single UPDATE over
+	// `note_links` that promotes rows whose traversal_count already crossed
+	// a tier boundary (≥3 → evidence, ≥10 → established) but were never
+	// auto-promoted because they aged before P5 slice 3 shipped. Never
+	// downgrades; preserves user-set `contested`.
+	let backfillBusy = $state(false);
+	let backfillResult = $state<null | { promoted_to_established: number; promoted_to_evidence: number; total: number }>(null);
+	async function runConfidenceBackfill() {
+		if (backfillBusy) return;
+		backfillBusy = true;
+		backfillResult = null;
+		try {
+			backfillResult = await backfillLinkConfidence();
+		} catch {
+			backfillResult = { promoted_to_established: 0, promoted_to_evidence: 0, total: 0 };
+		} finally {
+			backfillBusy = false;
+		}
 	}
 
 	function sectionIcon(icon: string): string {
@@ -2054,6 +2074,25 @@
 								oninput={(e) => updateLinkLifecycle({ halfLifeDays: parseInt((e.target as HTMLInputElement).value) })} />
 							<span class="slider-val">{$appSettings.linkLifecycle?.halfLifeDays ?? 60} {$t('settings.appearance.days') || 'days'}</span>
 						</div>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.confidenceBackfill') || 'Back-fill link confidence'}</div>
+							<div class="setting-desc">{$t('settings.appearance.confidenceBackfillDesc') || 'Promote existing links that already crossed a traversal threshold (≥3 → evidence, ≥10 → established) but never ran through the auto-promotion rule. One-shot; safe to run multiple times. Never downgrades; preserves user-set contested.'}</div>
+							{#if backfillResult}
+								<div class="setting-desc" style="margin-top:4px;color:var(--interactive-accent)">
+									{$t('settings.appearance.confidenceBackfillResult', { total: String(backfillResult.total), evidence: String(backfillResult.promoted_to_evidence), established: String(backfillResult.promoted_to_established) }) || `Promoted ${backfillResult.total} link${backfillResult.total === 1 ? '' : 's'} (→evidence: ${backfillResult.promoted_to_evidence}, →established: ${backfillResult.promoted_to_established}).`}
+								</div>
+							{/if}
+						</div>
+						<button class="w-btn" disabled={backfillBusy} onclick={runConfidenceBackfill}>
+							{#if backfillBusy}
+								{$t('settings.appearance.confidenceBackfillRunning') || 'Running…'}
+							{:else}
+								{$t('settings.appearance.confidenceBackfillBtn') || 'Run back-fill'}
+							{/if}
+						</button>
 					</div>
 
 				<!-- ═══ STYLE SETTINGS ═══ -->

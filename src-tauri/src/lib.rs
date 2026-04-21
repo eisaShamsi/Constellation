@@ -328,6 +328,7 @@ pub fn run() {
             search::constellation_link_dormant,
             search::constellation_link_decay,
             search::constellation_link_set_confidence,
+            search::constellation_link_backfill_confidence,
             search::constellation_link_archive,
             search::constellation_formulation_analysis,
             embeddings::constellation_init_embeddings,

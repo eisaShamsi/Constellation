@@ -257,7 +257,12 @@
       "decayEnabledDesc": "وقتی خاموش است، پیوندها فقط بر اساس شمارش خام ترتیب می‌گیرند (بدون ملاحظهٔ تازگی).",
       "halfLifeDays": "نیمه‌عمر افت",
       "halfLifeDaysDesc": "روزی که پس از آن وزن مؤثر پیوند بی‌استفاده نصف می‌شود. کمتر = افت سریع‌تر.",
-      "days": "روز"
+      "days": "روز",
+      "confidenceBackfill": "پرکردن اعتماد پیوندها",
+      "confidenceBackfillDesc": "ارتقای پیوندهایی که از آستانه گذشته‌اند (۳+ → شواهد، ۱۰+ → تثبیت‌شده) اما از قاعدهٔ ارتقای خودکار نگذشته‌اند. یک‌بار اجرا؛ اجرای مکرر امن است. هرگز تنزل نمی‌دهد؛ «مورد مناقشه» کاربر حفظ می‌شود.",
+      "confidenceBackfillBtn": "اجرای پرکردن",
+      "confidenceBackfillRunning": "در حال اجرا…",
+      "confidenceBackfillResult": "{total} پیوند ارتقا یافت (→شواهد: {evidence}، →تثبیت‌شده: {established})."
     },
     "ai": {
       "provider": "ارائه‌دهنده",
@@ -1621,5 +1626,13 @@
     "derives-from": "مشتق از",
     "part-of": "بخشی از",
     "associative": "تداعی"
+  },
+  "linkConfidence": {
+    "setConfidence": "تنظیم اعتماد",
+    "rightClickHint": "برای تنظیم اعتماد کلیک راست کنید",
+    "hypothesis": "فرضیه",
+    "evidence": "شواهد",
+    "established": "تثبیت‌شده",
+    "contested": "مورد مناقشه"
   }
 }

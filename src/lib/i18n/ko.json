@@ -257,7 +257,12 @@
       "decayEnabledDesc": "끄면 링크는 원시 이동 횟수만으로 정렬됩니다(최신성 가중 없음).",
       "halfLifeDays": "감쇠 반감기",
       "halfLifeDaysDesc": "사용되지 않은 링크의 유효 가중치가 절반이 되기까지의 일수. 낮을수록 빠르게 감쇠.",
-      "days": "일"
+      "days": "일",
+      "confidenceBackfill": "링크 신뢰도 채우기",
+      "confidenceBackfillDesc": "이미 임계값을 넘은 기존 링크 (≥3 → 증거, ≥10 → 확립됨) 를 승격합니다. 자동 승격 규칙을 거치지 않은 것들 대상. 한 번 실행; 여러 번 실행해도 안전. 절대 강등하지 않으며 사용자 지정 '이의 제기됨'을 보존.",
+      "confidenceBackfillBtn": "채우기 실행",
+      "confidenceBackfillRunning": "실행 중…",
+      "confidenceBackfillResult": "{total}개 링크 승격 (→증거: {evidence}, →확립됨: {established})."
     },
     "ai": {
       "provider": "제공자",
@@ -1621,5 +1626,13 @@
     "derives-from": "파생",
     "part-of": "일부",
     "associative": "연관"
+  },
+  "linkConfidence": {
+    "setConfidence": "신뢰도 설정",
+    "rightClickHint": "우클릭으로 신뢰도 설정",
+    "hypothesis": "가설",
+    "evidence": "증거",
+    "established": "확립됨",
+    "contested": "이의 제기됨"
   }
 }

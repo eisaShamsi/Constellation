@@ -295,7 +295,12 @@
       "decayEnabledDesc": "When off, links sort by raw traversal count only (no recency weighting).",
       "halfLifeDays": "Decay half-life",
       "halfLifeDaysDesc": "Days after which an untouched link's effective weight halves. Lower = faster drop-off; higher = slower.",
-      "days": "days"
+      "days": "days",
+      "confidenceBackfill": "Back-fill link confidence",
+      "confidenceBackfillDesc": "Promote existing links that already crossed a traversal threshold (≥3 → evidence, ≥10 → established) but never ran through the auto-promotion rule. One-shot; safe to run multiple times. Never downgrades; preserves user-set contested.",
+      "confidenceBackfillBtn": "Run back-fill",
+      "confidenceBackfillRunning": "Running…",
+      "confidenceBackfillResult": "Promoted {total} link(s) (→evidence: {evidence}, →established: {established})."
     },
     "keyboard": {
       "filter": "Filter commands...",
@@ -1721,5 +1726,13 @@
     "derives-from": "derives-from",
     "part-of": "part-of",
     "associative": "associative"
+  },
+  "linkConfidence": {
+    "setConfidence": "Set confidence",
+    "rightClickHint": "Right-click to set confidence",
+    "hypothesis": "Hypothesis",
+    "evidence": "Evidence",
+    "established": "Established",
+    "contested": "Contested"
   }
 }
