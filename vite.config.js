@@ -25,8 +25,22 @@ export default defineConfig(async () => ({
         }
       : undefined,
     watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+      // 3. tell Vite to ignore paths that don't affect the frontend bundle.
+      //    Without this, every background M11-data cron commit (writes
+      //    into lab/m11-data/**) and every session-log append fires HMR
+      //    and boots the running Tauri app out. `src-tauri/**` is the
+      //    original guard; the rest are non-bundle directories that
+      //    accumulate churn from tooling, data generation, and docs.
+      ignored: [
+        "**/src-tauri/**",
+        "**/lab/**",
+        "**/docs/**",
+        "**/.claude/**",
+        "**/ConstellationEditor/**",
+        "**/target/**",
+        "**/node_modules/**",
+        "**/.git/**",
+      ],
     },
   },
 }));
