@@ -637,7 +637,11 @@
     "noStale": "오래된 링크 없음 — 모든 이동 경로가 신선합니다",
     "staleDays": "{n}일 전",
     "staleMonths": "{n}개월 전",
-    "staleYears": "{n}년 전"
+    "staleYears": "{n}년 전",
+    "archived": "보관됨",
+    "noArchived": "보관된 링크가 없습니다.",
+    "unarchiveTitle": "이 링크 복원",
+    "loading": "로드 중…"
   },
   "dialogs": {
     "confirmDelete": "\"{name}\"을(를) 삭제하시겠습니까?",
@@ -1633,6 +1637,7 @@
     "hypothesis": "가설",
     "evidence": "증거",
     "established": "확립됨",
-    "contested": "이의 제기됨"
+    "contested": "이의 제기됨",
+    "archive": "링크 보관"
   }
 }

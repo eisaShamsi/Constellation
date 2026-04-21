@@ -637,7 +637,11 @@
     "noStale": "Sem ligações desatualizadas — cada caminho percorrido está fresco",
     "staleDays": "há {n}d",
     "staleMonths": "há {n}m",
-    "staleYears": "há {n}a"
+    "staleYears": "há {n}a",
+    "archived": "Arquivados",
+    "noArchived": "Nenhum link arquivado.",
+    "unarchiveTitle": "Restaurar este link",
+    "loading": "Carregando…"
   },
   "dialogs": {
     "confirmDelete": "Tem certeza de que deseja excluir \"{name}\"?",
@@ -1633,6 +1637,7 @@
     "hypothesis": "Hipótese",
     "evidence": "Evidência",
     "established": "Estabelecido",
-    "contested": "Contestado"
+    "contested": "Contestado",
+    "archive": "Arquivar link"
   }
 }

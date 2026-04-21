@@ -637,7 +637,11 @@
     "noStale": "Keine veralteten Links — jeder begangene Pfad ist frisch",
     "staleDays": "vor {n} T",
     "staleMonths": "vor {n} Mo",
-    "staleYears": "vor {n} J"
+    "staleYears": "vor {n} J",
+    "archived": "Archiviert",
+    "noArchived": "Keine archivierten Links.",
+    "unarchiveTitle": "Diesen Link wiederherstellen",
+    "loading": "Lädt…"
   },
   "dialogs": {
     "confirmDelete": "Möchten Sie \"{name}\" wirklich löschen?",
@@ -1633,6 +1637,7 @@
     "hypothesis": "Hypothese",
     "evidence": "Beleg",
     "established": "Etabliert",
-    "contested": "Umstritten"
+    "contested": "Umstritten",
+    "archive": "Link archivieren"
   }
 }

@@ -47,6 +47,8 @@ In Constellation, a link between two notes is not a dead pointer. It is a **livi
 - **Annotation**: Why does this connection exist? Your reasoning at the moment of linking.
 - **Weight**: How significant? Grows with use, decays with neglect.
 - **Confidence**: How certain? Hypothesis → Evidence → Established (auto-promotes as you traverse; you can also right-click any backlink or outgoing link to contest it or force-promote). Settings → Appearance → Living Link Lifecycle includes a one-shot "Run back-fill" that age-assigns existing links whose traversal count already crossed a threshold but never ran through the auto-promotion rule.
+- **Annotation**: Why does this connection exist? Written inline via `[[type::target|your reasoning]]`. Displayed in italic accent text under the link row in Backlinks / Outgoing panels.
+- **Archive**: Every link operation is reversible. Right-click a backlink / outgoing link → **Archive link** to soft-delete it (preserved in history, hidden from panels). Restore from the **Archived** tab in the Link Dashboard with the circular-arrow button.
 
 ### The Five Acts of Knowledge Creation
 

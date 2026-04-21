@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { appSettings, linkLifecycle, effectiveLinkWeight, type NoteLink } from '$lib/libraries/store';
+	import { appSettings, linkLifecycle, effectiveLinkWeight, listArchivedLinks, unarchiveLink, type NoteLink, type ArchivedLink } from '$lib/libraries/store';
 
 	// Share the user-configurable pill shape (radius / height / font-weight)
 	// with BacklinksPanel / OutgoingLinksPanel so the ×N chip in the
@@ -138,7 +138,31 @@
 			});
 	});
 
-	let activeSection = $state<'cross' | 'broken' | 'orphan' | 'top' | 'traveled' | 'stale'>('top');
+	let activeSection = $state<'cross' | 'broken' | 'orphan' | 'top' | 'traveled' | 'stale' | 'archived'>('top');
+	let archivedLinks = $state<ArchivedLink[]>([]);
+	let archivedLoading = $state(false);
+
+	async function loadArchived() {
+		if (archivedLoading) return;
+		archivedLoading = true;
+		try {
+			archivedLinks = await listArchivedLinks();
+		} catch {
+			archivedLinks = [];
+		} finally {
+			archivedLoading = false;
+		}
+	}
+	async function restoreArchived(link: ArchivedLink, e: MouseEvent) {
+		e.stopPropagation();
+		try {
+			await unarchiveLink(link.source_path, link.target_name);
+			archivedLinks = archivedLinks.filter(l => !(l.source_path === link.source_path && l.target_name.toLowerCase() === link.target_name.toLowerCase()));
+		} catch { /* ignore */ }
+	}
+	$effect(() => {
+		if (activeSection === 'archived' && visible) loadArchived();
+	});
 
 	/** Compact "2 weeks ago" style formatter. Same pattern elsewhere in
 	 *  the app uses Intl.RelativeTimeFormat via $locale; reuse that here
@@ -175,6 +199,9 @@
 		</button>
 		<button class="ld-tab" class:active={activeSection === 'orphan'} onclick={() => activeSection = 'orphan'}>
 			{$t('linkDashboard.orphans')} <span class="ld-badge">{orphanNotes.length}</span>
+		</button>
+		<button class="ld-tab" class:active={activeSection === 'archived'} onclick={() => activeSection = 'archived'}>
+			{$t('linkDashboard.archived') || 'Archived'} <span class="ld-badge">{archivedLinks.length}</span>
 		</button>
 	</div>
 
@@ -238,6 +265,27 @@
 			{#if orphanNotes.length === 0}
 				<div class="ld-empty">{$t('linkDashboard.noOrphans')}</div>
 			{/if}
+		{:else if activeSection === 'archived'}
+			{#if archivedLoading}
+				<div class="ld-empty">{$t('linkDashboard.loading') || 'Loading…'}</div>
+			{:else}
+				{#each archivedLinks as link}
+					<div class="ld-item ld-archived-row">
+						<button class="ld-archived-main" onclick={() => onNoteClick(link.source_path, link.library_name)}>
+							<span class="ld-name">{link.source_name}</span>
+							<span class="ld-detail">→ {link.target_name}</span>
+						</button>
+						<button class="ld-restore" title={$t('linkDashboard.unarchiveTitle') || 'Restore this link'} onclick={(e) => restoreArchived(link, e)}>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>
+							</svg>
+						</button>
+					</div>
+				{/each}
+				{#if archivedLinks.length === 0}
+					<div class="ld-empty">{$t('linkDashboard.noArchived') || 'No archived links.'}</div>
+				{/if}
+			{/if}
 		{/if}
 	</div>
 </div>
@@ -282,6 +330,24 @@
 	.ld-name { color: var(--interactive-accent); font-size: 0.8rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ld-detail { color: var(--text-faint); font-size: 0.72rem; flex-shrink: 0; }
 	.ld-broken { color: var(--text-error, #ef4444); }
+	.ld-archived-row {
+		display: flex; width: 100%; padding: 0; gap: 4px;
+		background: none; border: none; align-items: stretch;
+	}
+	.ld-archived-main {
+		flex: 1; display: flex; align-items: center; gap: 6px;
+		padding: 4px 8px; background: none; border: none; border-radius: 3px;
+		cursor: pointer; text-align: start; font-family: inherit;
+		color: var(--text-muted);
+	}
+	.ld-archived-main:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.ld-archived-main .ld-name { color: var(--text-muted); font-style: italic; }
+	.ld-restore {
+		flex-shrink: 0; background: none; border: 1px solid var(--background-modifier-border);
+		border-radius: 4px; padding: 3px 5px; cursor: pointer;
+		color: var(--text-muted); align-self: center;
+	}
+	.ld-restore:hover { color: var(--interactive-accent); border-color: var(--interactive-accent); }
 	.ld-chip {
 		flex-shrink: 0;
 		display: inline-flex; align-items: center; justify-content: center;

@@ -637,7 +637,11 @@
     "noStale": "没有冷落的链接 — 每条走过的路径都仍在活跃",
     "staleDays": "{n}天前",
     "staleMonths": "{n}个月前",
-    "staleYears": "{n}年前"
+    "staleYears": "{n}年前",
+    "archived": "已归档",
+    "noArchived": "没有已归档的链接。",
+    "unarchiveTitle": "恢复此链接",
+    "loading": "加载中…"
   },
   "dialogs": {
     "confirmDelete": "确定要删除 \"{name}\" 吗？",
@@ -1633,6 +1637,7 @@
     "hypothesis": "假设",
     "evidence": "证据",
     "established": "已确立",
-    "contested": "有争议"
+    "contested": "有争议",
+    "archive": "归档链接"
   }
 }

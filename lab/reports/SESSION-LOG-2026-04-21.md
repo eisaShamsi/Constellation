@@ -92,9 +92,104 @@ Added two new key groups, propagated to all 15 locales via
 
 `<pending>` — PCS at end of § 44.
 
+## § 45. Living Link — marked "Done"
+
+After § 44 landed the deferred UI, the remaining Living Link
+properties (annotation, archive/reversibility) were also shipped
+so the full 8-property lifecycle from the spec is now user-visible
+and user-controllable.
+
+### Annotation display (read-only)
+
+- `getBacklinks` / `getOutgoingLinks` now surface `annotation` on
+  each row.
+- BacklinksPanel: if a backlink has an annotation, render it on
+  its own line in italic accent color below the context excerpt,
+  wrapped in smart quotes.
+- OutgoingLinksPanel: mirror of the same.
+- Annotation is still authored inline in the note body via
+  `[[type::target|your reasoning]]` — source of truth stays on
+  disk. No edit UI in this slice (would require rewriting the
+  source wikilink and is deferred as a separate UX question).
+
+### Archive / unarchive — reversibility
+
+Spec says "every link operation must be reversible — archival,
+not deletion." Implementation:
+
+- **Rust**: existing `constellation_link_archive` + two new
+  commands:
+  - `constellation_link_unarchive(source_path, target_name)` —
+    sets status back to 'active', resets weight to 1.0. Traversal
+    count + confidence are preserved so history isn't lost.
+  - `constellation_link_archived()` — returns all archived rows
+    ordered by `last_traversed DESC` for the dashboard.
+- **Frontend**:
+  - `archiveLink`, `unarchiveLink`, `listArchivedLinks` wrappers
+    in `libraries/store.ts`.
+  - Right-click popover in BacklinksPanel / OutgoingLinksPanel
+    gained an "Archive link" row below the 4 confidence tiers,
+    separated by a horizontal rule. Clicking it archives and
+    removes the row from the panel via `applyArchiveLocally`
+    mirror.
+  - `getBacklinks` / `getOutgoingLinks` now filter out
+    `status === 'archived'` so archived links disappear
+    everywhere they're rendered.
+  - LinkDashboard: new **Archived** tab (7th tab). Lazy-loads
+    via `listArchivedLinks()` on first open (and on subsequent
+    activations). Each row shows source → target with a circular-
+    arrow restore button at the end. Source name is italic muted
+    to signal "inactive."
+
+### i18n
+
+- `linkConfidence.archive` added (right-click menu label).
+- `linkDashboard.{archived, noArchived, unarchiveTitle, loading}`
+  added (tab + empty state + tooltip + loading).
+- All 15 locales updated via
+  `lab/scripts/i18n_link_archive.py`.
+
+### User Manual
+
+Two new bullets under "The Living Link":
+- Annotation — what it is, how to author, where to read.
+- Archive — how to archive and restore.
+
+### Verification
+
+- `cargo check`: clean, 60 pre-existing warnings, 0 errors.
+- `svelte-check`: no new type errors on any file in this slice.
+- Manual plan: right-click a backlink → Archive link → row
+  disappears. Open Link Dashboard → Archived tab → see the row.
+  Click the restore button → row disappears from Archived. Return
+  to the source note → backlink is present again.
+
+### Commit
+
+`<pending>` — PCS at end of § 45.
+
+### Living Link — remaining out-of-scope items
+
+These are NOT required for the spec's "Living Link" marker — they
+were notes in the original spec that we deliberately didn't
+build:
+
+1. **LINK files on disk** (`YYYYMMDDTHHMMSSZ_LINK_XXXX.md` as
+   canonical storage). We persist in SQLite with the `.md`
+   wikilink as source of truth; a per-link file layer was never
+   implemented and would be a major storage model change with
+   no current user-visible benefit. If ever pursued, it belongs
+   in its own architectural phase.
+2. **Annotation inline editor** — to edit the annotation from
+   the sidebar without typing the raw `[[foo|ann]]` syntax,
+   we'd need to rewrite the source wikilink. Deferred as a
+   follow-up polish item.
+3. **Legend surface inside Link Dashboard** — a dedicated "what
+   do these tiers mean" side panel. The tooltip on the chip +
+   the User Manual cover this for now.
+
 ## Still on the queue (orthogonal)
 
 - navTrace instrumentation dev-gate
 - Settings → Debug Boot Performance scorecard UI
 - Isolated throttle stress-test helper
-- Legend surface / docs inside Link Dashboard (optional P5 polish)

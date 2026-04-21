@@ -637,7 +637,11 @@
     "noStale": "אין קישורים מיושנים — כל נתיב שנפרץ עדיין טרי",
     "staleDays": "לפני {n} ימים",
     "staleMonths": "לפני {n} חודשים",
-    "staleYears": "לפני {n} שנים"
+    "staleYears": "לפני {n} שנים",
+    "archived": "בארכיון",
+    "noArchived": "אין קישורים בארכיון.",
+    "unarchiveTitle": "שחזר קישור זה",
+    "loading": "טוען…"
   },
   "dialogs": {
     "confirmDelete": "האם אתה בטוח שברצונך למחוק את \"{name}\"?",
@@ -1633,6 +1637,7 @@
     "hypothesis": "השערה",
     "evidence": "עדות",
     "established": "מבוסס",
-    "contested": "שנוי במחלוקת"
+    "contested": "שנוי במחלוקת",
+    "archive": "העבר קישור לארכיון"
   }
 }

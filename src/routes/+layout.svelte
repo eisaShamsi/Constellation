@@ -554,6 +554,19 @@
 				: l
 		);
 	}
+
+	/** Living Link final: archived links are excluded from the Backlinks /
+	 *  Outgoing panels and from the Most-Traveled / Stale tabs (via status
+	 *  filters elsewhere). Mirror the DB write into memory so the row
+	 *  disappears immediately without a full rescan. */
+	function applyArchiveLocally(sourcePath: string, targetName: string) {
+		const target = targetName.toLowerCase();
+		allLibraryLinks = allLibraryLinks.map(l =>
+			l.source_path === sourcePath && l.target.toLowerCase() === target
+				? { ...l, status: 'archived', weight: 0 }
+				: l
+		);
+	}
 	// P4.2: per-(source,target) traversal counts, derived from the boot
 	// graph PLUS any optimistic bumps fired by openNoteTab since the last
 	// fetch. Key = `${sourcePath.toLowerCase()}|${target.toLowerCase()}`.
@@ -4799,6 +4812,7 @@
 							activeNotePath={sidebarTab?.path ?? ''}
 							{libraryColorMap}
 							onConfidenceChange={applyConfidenceLocally}
+							onArchive={applyArchiveLocally}
 						/>
 					</div>
 					<div class="rs-section rs-section--flush">
@@ -4809,6 +4823,7 @@
 							libraryPath={sidebarTab?.libraryPath ?? ''}
 							{libraryColorMap}
 							onConfidenceChange={applyConfidenceLocally}
+							onArchive={applyArchiveLocally}
 						/>
 					</div>
 				{:else if rightSidebarTab === 'tags'}

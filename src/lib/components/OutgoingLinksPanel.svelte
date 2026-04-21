@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, setLinkConfidence, type LinkConfidence } from '$lib/libraries/store';
+	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 
@@ -10,17 +10,19 @@
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	let {
-		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string; confidence?: LinkConfidence }[],
+		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[],
 		activeNotePath = '',
 		libraryPath = '',
 		libraryColorMap = {} as Record<string, string>,
 		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
+		onArchive = undefined as undefined | ((sourcePath: string, targetName: string) => void),
 	}: {
-		outgoingLinks: { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string; confidence?: LinkConfidence }[];
+		outgoingLinks: { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[];
 		activeNotePath?: string;
 		libraryPath?: string;
 		libraryColorMap?: Record<string, string>;
 		onConfidenceChange?: (sourcePath: string, targetName: string, confidence: LinkConfidence) => void;
+		onArchive?: (sourcePath: string, targetName: string) => void;
 	} = $props();
 
 	let showOutgoing = $state(true);
@@ -40,6 +42,15 @@
 		try {
 			await setLinkConfidence(sourcePath, targetName, level);
 			onConfidenceChange?.(sourcePath, targetName, level);
+		} catch { /* ignore */ }
+	}
+	async function applyArchive() {
+		if (!confMenu) return;
+		const { sourcePath, targetName } = confMenu;
+		confMenu = null;
+		try {
+			await archiveLink(sourcePath, targetName);
+			onArchive?.(sourcePath, targetName);
 		} catch { /* ignore */ }
 	}
 
@@ -86,6 +97,9 @@
 					{/if}
 				</span>
 				<span class="ol-context">{link.context}</span>
+				{#if link.annotation}
+					<span class="ol-annotation" title={link.annotation}>“{link.annotation}”</span>
+				{/if}
 			</button>
 		{/each}
 	{:else if showOutgoing}
@@ -104,6 +118,11 @@
 				{$t(`linkConfidence.${level}`) || level}
 			</button>
 		{/each}
+		<div class="conf-menu-sep"></div>
+		<button class="conf-menu-item conf-menu-archive" onclick={applyArchive}>
+			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
+			{$t('linkConfidence.archive') || 'Archive link'}
+		</button>
 	</div>
 {/if}
 
@@ -141,6 +160,11 @@
 	.ol-target-row { display: flex; align-items: center; gap: 4px; }
 	.ol-target { color: var(--interactive-accent); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ol-context { display: block; color: var(--text-faint); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ol-annotation {
+		display: block; margin-top: 2px;
+		color: var(--interactive-accent); font-size: 0.7rem; font-style: italic;
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
 	.ol-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
 	.ol-link-type-badge {
 		display: inline-flex; align-items: center;
@@ -208,4 +232,8 @@
 	.conf-dot-evidence   { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 40%, transparent); }
 	.conf-dot-established{ background: var(--interactive-accent, #7c3aed); border-color: var(--interactive-accent, #7c3aed); }
 	.conf-dot-contested  { background: #d97706; border-color: #d97706; }
+	.conf-menu-sep { height: 1px; margin: 4px 4px; background: var(--border-light, var(--border)); }
+	.conf-menu-archive { color: var(--text-muted); }
+	.conf-menu-archive:hover { color: #d97706; }
+	.conf-menu-archive svg { flex-shrink: 0; }
 </style>

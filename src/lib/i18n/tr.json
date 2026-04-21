@@ -637,7 +637,11 @@
     "noStale": "Eskimiş bağlantı yok — her geçilen yol hâlâ taze",
     "staleDays": "{n} gün önce",
     "staleMonths": "{n} ay önce",
-    "staleYears": "{n} yıl önce"
+    "staleYears": "{n} yıl önce",
+    "archived": "Arşivlenmiş",
+    "noArchived": "Arşivlenmiş bağlantı yok.",
+    "unarchiveTitle": "Bu bağlantıyı geri yükle",
+    "loading": "Yükleniyor…"
   },
   "dialogs": {
     "confirmDelete": "\"{name}\" öğesini silmek istediğinizden emin misiniz?",
@@ -1633,6 +1637,7 @@
     "hypothesis": "Hipotez",
     "evidence": "Kanıt",
     "established": "Yerleşik",
-    "contested": "İtirazlı"
+    "contested": "İtirazlı",
+    "archive": "Bağlantıyı arşivle"
   }
 }

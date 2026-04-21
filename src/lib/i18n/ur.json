@@ -637,7 +637,11 @@
     "noStale": "کوئی متروک لنک نہیں — ہر چلا ہوا راستہ اب بھی تازہ ہے",
     "staleDays": "{n} دن پہلے",
     "staleMonths": "{n} مہینے پہلے",
-    "staleYears": "{n} سال پہلے"
+    "staleYears": "{n} سال پہلے",
+    "archived": "محفوظ شدہ",
+    "noArchived": "کوئی محفوظ شدہ لنک نہیں۔",
+    "unarchiveTitle": "اس لنک کو بحال کریں",
+    "loading": "لوڈ ہو رہا ہے…"
   },
   "dialogs": {
     "confirmDelete": "کیا آپ واقعی \"{name}\" کو حذف کرنا چاہتے ہیں؟",
@@ -1633,6 +1637,7 @@
     "hypothesis": "مفروضہ",
     "evidence": "شواہد",
     "established": "قائم",
-    "contested": "متنازع"
+    "contested": "متنازع",
+    "archive": "لنک محفوظ کریں"
   }
 }

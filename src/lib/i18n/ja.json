@@ -637,7 +637,11 @@
     "noStale": "休眠中のリンクはありません — 通ったパスはすべて活動中です",
     "staleDays": "{n}日前",
     "staleMonths": "{n}ヶ月前",
-    "staleYears": "{n}年前"
+    "staleYears": "{n}年前",
+    "archived": "アーカイブ済み",
+    "noArchived": "アーカイブされたリンクはありません。",
+    "unarchiveTitle": "このリンクを復元",
+    "loading": "読み込み中…"
   },
   "dialogs": {
     "confirmDelete": "「{name}」を削除してもよろしいですか？",
@@ -1633,6 +1637,7 @@
     "hypothesis": "仮説",
     "evidence": "証拠",
     "established": "確立",
-    "contested": "異議あり"
+    "contested": "異議あり",
+    "archive": "リンクをアーカイブ"
   }
 }

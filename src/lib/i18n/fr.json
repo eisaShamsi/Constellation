@@ -637,7 +637,11 @@
     "noStale": "Aucun lien obsolète — chaque chemin emprunté est récent",
     "staleDays": "il y a {n} j",
     "staleMonths": "il y a {n} mo",
-    "staleYears": "il y a {n} a"
+    "staleYears": "il y a {n} a",
+    "archived": "Archivés",
+    "noArchived": "Aucun lien archivé.",
+    "unarchiveTitle": "Restaurer ce lien",
+    "loading": "Chargement…"
   },
   "dialogs": {
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer \"{name}\" ?",
@@ -1633,6 +1637,7 @@
     "hypothesis": "Hypothèse",
     "evidence": "Preuve",
     "established": "Établi",
-    "contested": "Contesté"
+    "contested": "Contesté",
+    "archive": "Archiver le lien"
   }
 }

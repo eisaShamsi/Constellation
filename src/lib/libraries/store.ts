@@ -1096,6 +1096,32 @@ export async function backfillLinkConfidence(): Promise<LinkConfidenceBackfillRe
 	return invoke('constellation_link_backfill_confidence');
 }
 
+/** Archive a link (soft delete — status='archived', weight zeroed). Reversible via unarchiveLink. */
+export async function archiveLink(sourcePath: string, targetName: string): Promise<void> {
+	await invoke('constellation_link_archive', { sourcePath, targetName });
+}
+
+/** Resurrect an archived link — status back to 'active', weight reset to 1.0. Traversal count + confidence preserved. */
+export async function unarchiveLink(sourcePath: string, targetName: string): Promise<void> {
+	await invoke('constellation_link_unarchive', { sourcePath, targetName });
+}
+
+export interface ArchivedLink {
+	source_path: string;
+	source_name: string;
+	target_name: string;
+	link_type: string;
+	annotation: string;
+	confidence: string;
+	traversal_count: number;
+	last_traversed: string;
+	library_name: string;
+}
+
+export async function listArchivedLinks(): Promise<ArchivedLink[]> {
+	return invoke('constellation_link_archived');
+}
+
 export async function formulationAnalysis(queryType: FormulationQueryType, target?: string): Promise<FormulationInsight[]> {
 	return invoke('constellation_formulation_analysis', { queryType, target: target ?? null });
 }
@@ -1717,7 +1743,7 @@ function sortWeight(link: NoteLink, cfg?: LinkDecayConfig): number {
 
 export function getBacklinks(allLinks: NoteLink[], noteName: string, decay?: LinkDecayConfig) {
 	const target = noteName.toLowerCase();
-	const linked = allLinks.filter(l => l.target.toLowerCase() === target);
+	const linked = allLinks.filter(l => l.target.toLowerCase() === target && l.status !== 'archived');
 	// Sort by Living Link weight (desc), decayed if caller opted in. Ties
 	// break alphabetically by source name so fresh vaults (all weights == 1)
 	// stay in a stable order across boots.
@@ -1738,11 +1764,12 @@ export function getBacklinks(allLinks: NoteLink[], noteName: string, decay?: Lin
 		// need to import / re-derive on every row render.
 		tier: linkLifecycle(l, nowMs) as LinkLifecycle,
 		confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
+		annotation: l.annotation ?? '',
 	}));
 }
 
 export function getOutgoingLinks(allLinks: NoteLink[], notePath: string, decay?: LinkDecayConfig) {
-	const outgoing = allLinks.filter(l => l.source_path === notePath);
+	const outgoing = allLinks.filter(l => l.source_path === notePath && l.status !== 'archived');
 	// Same contract as getBacklinks — weight-desc with decay optional.
 	outgoing.sort((a, b) => {
 		const wDiff = sortWeight(b, decay) - sortWeight(a, decay);
@@ -1757,6 +1784,7 @@ export function getOutgoingLinks(allLinks: NoteLink[], notePath: string, decay?:
 		traversalCount: l.traversal_count ?? 0,
 		tier: linkLifecycle(l, nowMs) as LinkLifecycle,
 		confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
+		annotation: l.annotation ?? '',
 	}));
 }
 

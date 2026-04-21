@@ -1873,6 +1873,62 @@ pub fn constellation_link_archive(
     Ok(())
 }
 
+/// Resurrect an archived link. Resets weight to 1.0 (baseline) and status
+/// back to 'active'. Traversal count and confidence are preserved so the
+/// link's history isn't lost.
+#[tauri::command]
+pub fn constellation_link_unarchive(
+    app: tauri::AppHandle,
+    source_path: String,
+    target_name: String,
+) -> Result<(), String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let target_lower = target_name.to_lowercase();
+    conn.execute(
+        "UPDATE note_links SET status = 'active', weight = 1.0 WHERE source_path = ?1 AND LOWER(target_name) = ?2",
+        params![source_path, target_lower],
+    ).map_err(|e| format!("Failed to unarchive link: {}", e))?;
+
+    Ok(())
+}
+
+/// List archived links for the Link Dashboard's Archived tab.
+#[tauri::command]
+pub fn constellation_link_archived(app: tauri::AppHandle) -> Result<Vec<serde_json::Value>, String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let mut stmt = conn.prepare(
+        "SELECT source_path, source_name, target_name, link_type, annotation, confidence,
+                traversal_count, last_traversed, library_name
+         FROM note_links
+         WHERE status = 'archived'
+         ORDER BY last_traversed DESC, source_name ASC",
+    ).map_err(|e| format!("Failed to prepare archived-links query: {}", e))?;
+
+    let rows: Vec<serde_json::Value> = stmt.query_map([], |row| {
+        Ok(serde_json::json!({
+            "source_path":     row.get::<_, String>(0)?,
+            "source_name":     row.get::<_, String>(1)?,
+            "target_name":     row.get::<_, String>(2)?,
+            "link_type":       row.get::<_, String>(3).unwrap_or_default(),
+            "annotation":      row.get::<_, String>(4).unwrap_or_default(),
+            "confidence":      row.get::<_, String>(5).unwrap_or_default(),
+            "traversal_count": row.get::<_, i64>(6).unwrap_or(0),
+            "last_traversed":  row.get::<_, String>(7).unwrap_or_default(),
+            "library_name":    row.get::<_, String>(8).unwrap_or_default(),
+        }))
+    }).map_err(|e| e.to_string())?
+      .filter_map(|r| r.ok())
+      .collect();
+
+    Ok(rows)
+}
+
 // ─── Tauri Commands ────────────────────────────────────────────
 
 /// Fast path: open the search DB (creating schema if absent) and place it in

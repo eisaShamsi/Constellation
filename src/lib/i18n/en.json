@@ -734,7 +734,11 @@
     "noStale": "No stale links — every traversed path is fresh",
     "staleDays": "{n}d ago",
     "staleMonths": "{n}mo ago",
-    "staleYears": "{n}y ago"
+    "staleYears": "{n}y ago",
+    "archived": "Archived",
+    "noArchived": "No archived links.",
+    "unarchiveTitle": "Restore this link",
+    "loading": "Loading…"
   },
   "dialogs": {
     "confirmDelete": "Are you sure you want to delete \"{name}\"?",
@@ -1733,6 +1737,7 @@
     "hypothesis": "Hypothesis",
     "evidence": "Evidence",
     "established": "Established",
-    "contested": "Contested"
+    "contested": "Contested",
+    "archive": "Archive link"
   }
 }

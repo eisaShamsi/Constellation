@@ -637,7 +637,11 @@
     "noStale": "هیچ پیوند منسوخی نیست — همهٔ مسیرهای پیموده‌شده تازه‌اند",
     "staleDays": "{n} روز پیش",
     "staleMonths": "{n} ماه پیش",
-    "staleYears": "{n} سال پیش"
+    "staleYears": "{n} سال پیش",
+    "archived": "بایگانی‌شده",
+    "noArchived": "هیچ پیوند بایگانی‌شده‌ای نیست.",
+    "unarchiveTitle": "بازیابی این پیوند",
+    "loading": "در حال بارگذاری…"
   },
   "dialogs": {
     "confirmDelete": "آیا مطمئن هستید که می‌خواهید \"{name}\" را حذف کنید؟",
@@ -1633,6 +1637,7 @@
     "hypothesis": "فرضیه",
     "evidence": "شواهد",
     "established": "تثبیت‌شده",
-    "contested": "مورد مناقشه"
+    "contested": "مورد مناقشه",
+    "archive": "بایگانی پیوند"
   }
 }

@@ -640,7 +640,11 @@
     "noStale": "لا توجد روابط مهجورة — كل مسار مطروق لا يزال طازجًا",
     "staleDays": "منذ {n} يوم",
     "staleMonths": "منذ {n} شهر",
-    "staleYears": "منذ {n} سنة"
+    "staleYears": "منذ {n} سنة",
+    "archived": "مؤرشف",
+    "noArchived": "لا توجد روابط مؤرشفة.",
+    "unarchiveTitle": "استعادة هذا الرابط",
+    "loading": "جارٍ التحميل…"
   },
   "dialogs": {
     "confirmDelete": "هل أنت متأكد من حذف \"{name}\"؟",
@@ -1637,6 +1641,7 @@
     "hypothesis": "فرضية",
     "evidence": "دليل",
     "established": "ثابت",
-    "contested": "متنازع عليه"
+    "contested": "متنازع عليه",
+    "archive": "أرشفة الرابط"
   }
 }

@@ -330,6 +330,8 @@ pub fn run() {
             search::constellation_link_set_confidence,
             search::constellation_link_backfill_confidence,
             search::constellation_link_archive,
+            search::constellation_link_unarchive,
+            search::constellation_link_archived,
             search::constellation_formulation_analysis,
             embeddings::constellation_init_embeddings,
             embeddings::constellation_embed_text,

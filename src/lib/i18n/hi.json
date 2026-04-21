@@ -637,7 +637,11 @@
     "noStale": "कोई पुरानी कड़ी नहीं — प्रत्येक चला हुआ पथ अभी भी सक्रिय है",
     "staleDays": "{n} दिन पहले",
     "staleMonths": "{n} माह पहले",
-    "staleYears": "{n} वर्ष पहले"
+    "staleYears": "{n} वर्ष पहले",
+    "archived": "संग्रहित",
+    "noArchived": "कोई संग्रहित लिंक नहीं।",
+    "unarchiveTitle": "इस लिंक को पुनर्स्थापित करें",
+    "loading": "लोड हो रहा है…"
   },
   "dialogs": {
     "confirmDelete": "क्या आप वाकई \"{name}\" को हटाना चाहते हैं?",
@@ -1633,6 +1637,7 @@
     "hypothesis": "परिकल्पना",
     "evidence": "साक्ष्य",
     "established": "स्थापित",
-    "contested": "विवादित"
+    "contested": "विवादित",
+    "archive": "लिंक संग्रहित करें"
   }
 }

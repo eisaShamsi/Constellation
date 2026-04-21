@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { openNoteTab, libraries, readNote, appSettings, setLinkConfidence, type LinkConfidence } from '$lib/libraries/store';
+	import { openNoteTab, libraries, readNote, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
@@ -14,19 +14,21 @@
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	let {
-		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string; confidence?: LinkConfidence }[],
+		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string; confidence?: LinkConfidence; annotation?: string }[],
 		unlinkedMentions = [] as { name: string; path: string; context: string; libraryName: string }[],
 		activeNoteName = '',
 		activeNotePath = '',
 		libraryColorMap = {} as Record<string, string>,
 		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
+		onArchive = undefined as undefined | ((sourcePath: string, targetName: string) => void),
 	}: {
-		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string; confidence?: LinkConfidence }[];
+		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string; confidence?: LinkConfidence; annotation?: string }[];
 		unlinkedMentions: { name: string; path: string; context: string; libraryName: string }[];
 		activeNoteName?: string;
 		activeNotePath?: string;
 		libraryColorMap?: Record<string, string>;
 		onConfidenceChange?: (sourcePath: string, targetName: string, confidence: LinkConfidence) => void;
+		onArchive?: (sourcePath: string, targetName: string) => void;
 	} = $props();
 
 	// Confidence popover state. Opened via right-click on a backlink row.
@@ -46,6 +48,15 @@
 		try {
 			await setLinkConfidence(sourcePath, targetName, level);
 			onConfidenceChange?.(sourcePath, targetName, level);
+		} catch { /* ignore */ }
+	}
+	async function applyArchive() {
+		if (!confMenu) return;
+		const { sourcePath, targetName } = confMenu;
+		confMenu = null;
+		try {
+			await archiveLink(sourcePath, targetName);
+			onArchive?.(sourcePath, targetName);
 		} catch { /* ignore */ }
 	}
 
@@ -126,6 +137,9 @@
 						{/if}
 					</span>
 					<span class="bl-context">{bl.context}</span>
+					{#if bl.annotation}
+						<span class="bl-annotation" title={bl.annotation}>“{bl.annotation}”</span>
+					{/if}
 				</button>
 			{/each}
 		{:else if showLinked}
@@ -178,6 +192,11 @@
 				{$t(`linkConfidence.${level}`) || level}
 			</button>
 		{/each}
+		<div class="conf-menu-sep"></div>
+		<button class="conf-menu-item conf-menu-archive" onclick={applyArchive}>
+			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
+			{$t('linkConfidence.archive') || 'Archive link'}
+		</button>
 	</div>
 {/if}
 
@@ -226,6 +245,11 @@
 	.bl-library-label { font-size: 0.68rem; color: var(--text-faint); flex-shrink: 0; }
 	.bl-name { color: var(--interactive-accent); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.bl-context { display: block; color: var(--text-faint); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.bl-annotation {
+		display: block; margin-top: 2px;
+		color: var(--interactive-accent); font-size: 0.7rem; font-style: italic;
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
 	.bl-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
 	.bl-link-btn {
 		flex-shrink: 0; background: none; border: 1px solid var(--background-modifier-border);
@@ -307,4 +331,8 @@
 	.conf-dot-evidence   { background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 40%, transparent); }
 	.conf-dot-established{ background: var(--interactive-accent, #7c3aed); border-color: var(--interactive-accent, #7c3aed); }
 	.conf-dot-contested  { background: #d97706; border-color: #d97706; }
+	.conf-menu-sep { height: 1px; margin: 4px 4px; background: var(--border-light, var(--border)); }
+	.conf-menu-archive { color: var(--text-muted); }
+	.conf-menu-archive:hover { color: #d97706; }
+	.conf-menu-archive svg { flex-shrink: 0; }
 </style>
