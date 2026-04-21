@@ -141,9 +141,11 @@
 	let activeSection = $state<'cross' | 'broken' | 'orphan' | 'top' | 'traveled' | 'stale' | 'archived'>('top');
 	let archivedLinks = $state<ArchivedLink[]>([]);
 	let archivedLoading = $state(false);
+	let archivedInFlight = false;   // plain let — not reactive, just a reentrancy guard
 
 	async function loadArchived() {
-		if (archivedLoading) return;
+		if (archivedInFlight) return;
+		archivedInFlight = true;
 		archivedLoading = true;
 		try {
 			archivedLinks = await listArchivedLinks();
@@ -151,7 +153,12 @@
 			archivedLinks = [];
 		} finally {
 			archivedLoading = false;
+			archivedInFlight = false;
 		}
+	}
+	function openArchivedTab() {
+		activeSection = 'archived';
+		loadArchived();
 	}
 	async function restoreArchived(link: ArchivedLink, e: MouseEvent) {
 		e.stopPropagation();
@@ -160,9 +167,6 @@
 			archivedLinks = archivedLinks.filter(l => !(l.source_path === link.source_path && l.target_name.toLowerCase() === link.target_name.toLowerCase()));
 		} catch { /* ignore */ }
 	}
-	$effect(() => {
-		if (activeSection === 'archived' && visible) loadArchived();
-	});
 
 	/** Compact "2 weeks ago" style formatter. Same pattern elsewhere in
 	 *  the app uses Intl.RelativeTimeFormat via $locale; reuse that here
@@ -200,7 +204,7 @@
 		<button class="ld-tab" class:active={activeSection === 'orphan'} onclick={() => activeSection = 'orphan'}>
 			{$t('linkDashboard.orphans')} <span class="ld-badge">{orphanNotes.length}</span>
 		</button>
-		<button class="ld-tab" class:active={activeSection === 'archived'} onclick={() => activeSection = 'archived'}>
+		<button class="ld-tab" class:active={activeSection === 'archived'} onclick={openArchivedTab}>
 			{$t('linkDashboard.archived') || 'Archived'} <span class="ld-badge">{archivedLinks.length}</span>
 		</button>
 	</div>
