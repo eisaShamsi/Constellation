@@ -1700,6 +1700,7 @@ export function getBacklinks(allLinks: NoteLink[], noteName: string, decay?: Lin
 		if (wDiff !== 0) return wDiff;
 		return a.source_name.localeCompare(b.source_name);
 	});
+	const nowMs = decay?.nowMs ?? Date.now();
 	return linked.map(l => ({
 		name: l.source_name,
 		path: l.source_path,
@@ -1707,6 +1708,9 @@ export function getBacklinks(allLinks: NoteLink[], noteName: string, decay?: Lin
 		libraryName: l.library_name,
 		linkType: displayLinkType(l),
 		traversalCount: l.traversal_count ?? 0,
+		// P5 slice 3: precompute the lifecycle tier here so panels don't
+		// need to import / re-derive on every row render.
+		tier: linkLifecycle(l, nowMs) as LinkLifecycle,
 	}));
 }
 
@@ -1718,11 +1722,13 @@ export function getOutgoingLinks(allLinks: NoteLink[], notePath: string, decay?:
 		if (wDiff !== 0) return wDiff;
 		return a.target.localeCompare(b.target);
 	});
+	const nowMs = decay?.nowMs ?? Date.now();
 	return outgoing.map(l => ({
 		target: l.target,
 		context: l.context,
 		linkType: displayLinkType(l),
 		traversalCount: l.traversal_count ?? 0,
+		tier: linkLifecycle(l, nowMs) as LinkLifecycle,
 	}));
 }
 

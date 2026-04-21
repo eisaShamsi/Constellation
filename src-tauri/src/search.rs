@@ -1369,14 +1369,36 @@ pub fn constellation_link_traverse(
     for (id, tc) in &links {
         let new_tc = tc + 1;
         let new_weight = 1.0 + (1.0 + new_tc as f64).ln();
+        // P5 slice 3: confidence auto-promotion on traversal.
+        // Tiers align with the frontend `LinkLifecycle` thresholds:
+        //   3+ traversals  → "evidence"     (matches UI tier "established")
+        //   10+ traversals → "established"  (matches UI tier "load-bearing")
+        // A "contested" state remains reserved for user-driven promotion
+        // via a future write path — we never auto-downgrade in this pass.
+        // CASE WHEN preserves any user-promoted value that outranks the
+        // auto-tier ("contested" / "established" when the count is still
+        // climbing).
+        let new_confidence = if new_tc >= 10 {
+            "established"
+        } else if new_tc >= 3 {
+            "evidence"
+        } else {
+            "hypothesis"
+        };
         conn.execute(
             "UPDATE note_links SET
                 traversal_count = ?1,
                 last_traversed = ?2,
                 weight = ?3,
-                status = CASE WHEN status = 'dormant' THEN 'active' ELSE status END
+                status = CASE WHEN status = 'dormant' THEN 'active' ELSE status END,
+                confidence = CASE
+                    WHEN confidence = 'contested' THEN confidence
+                    WHEN confidence = 'established' THEN confidence
+                    WHEN confidence = 'evidence' AND ?5 = 'hypothesis' THEN confidence
+                    ELSE ?5
+                END
              WHERE id = ?4",
-            params![new_tc, now, new_weight, id],
+            params![new_tc, now, new_weight, id, new_confidence],
         ).map_err(|e| format!("Failed to record traversal: {}", e))?;
         updated += 1;
     }

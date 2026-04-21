@@ -10,12 +10,12 @@
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	let {
-		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; linkType?: string }[],
+		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string }[],
 		activeNotePath = '',
 		libraryPath = '',
 		libraryColorMap = {} as Record<string, string>,
 	}: {
-		outgoingLinks: { target: string; context: string; traversalCount?: number; linkType?: string }[];
+		outgoingLinks: { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string }[];
 		activeNotePath?: string;
 		libraryPath?: string;
 		libraryColorMap?: Record<string, string>;
@@ -55,7 +55,7 @@
 						>{$t(`linkTypes.${link.linkType}`) || link.linkType}</span>
 					{/if}
 					{#if (link.traversalCount ?? 0) > 0}
-						<span class="ol-traversal-chip" title={`Traversed ${link.traversalCount} time${link.traversalCount === 1 ? '' : 's'}`}>×{link.traversalCount}</span>
+						<span class="ol-traversal-chip ol-tier-{link.tier ?? 'emerging'}" title={`Traversed ${link.traversalCount} time${link.traversalCount === 1 ? '' : 's'} · ${link.tier ?? 'emerging'}`}>×{link.traversalCount}</span>
 					{/if}
 				</span>
 				<span class="ol-context">{link.context}</span>
@@ -113,5 +113,21 @@
 		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
 		letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
 		box-sizing: border-box;
+	}
+	/* P5 slice 3 — per-tier gradient, mirrors BacklinksPanel. */
+	.ol-tier-emerging { /* default */ }
+	.ol-tier-established {
+		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 26%, transparent);
+		border-color: color-mix(in srgb, var(--interactive-accent, #7c3aed) 55%, transparent);
+	}
+	.ol-tier-load-bearing {
+		background: var(--interactive-accent, #7c3aed);
+		border-color: var(--interactive-accent, #7c3aed);
+		color: #fff;
+	}
+	.ol-tier-stale {
+		background: color-mix(in srgb, #d97706 14%, transparent);
+		border-color: color-mix(in srgb, #d97706 30%, transparent);
+		color: #d97706;
 	}
 </style>

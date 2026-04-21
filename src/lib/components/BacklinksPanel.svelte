@@ -14,13 +14,13 @@
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	let {
-		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number }[],
+		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string }[],
 		unlinkedMentions = [] as { name: string; path: string; context: string; libraryName: string }[],
 		activeNoteName = '',
 		activeNotePath = '',
 		libraryColorMap = {} as Record<string, string>,
 	}: {
-		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number }[];
+		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string }[];
 		unlinkedMentions: { name: string; path: string; context: string; libraryName: string }[];
 		activeNoteName?: string;
 		activeNotePath?: string;
@@ -91,7 +91,7 @@
 							>{$t(`linkTypes.${bl.linkType}`) || bl.linkType}</span>
 						{/if}
 						{#if (bl.traversalCount ?? 0) > 0}
-							<span class="bl-traversal-chip" title={`Traversed ${bl.traversalCount} time${bl.traversalCount === 1 ? '' : 's'}`}>×{bl.traversalCount}</span>
+							<span class="bl-traversal-chip bl-tier-{bl.tier ?? 'emerging'}" title={`Traversed ${bl.traversalCount} time${bl.traversalCount === 1 ? '' : 's'} · ${bl.tier ?? 'emerging'}`}>×{bl.traversalCount}</span>
 						{/if}
 						{#if bl.libraryName}
 							<span class="bl-library-label">{bl.libraryName}</span>
@@ -210,5 +210,26 @@
 		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
 		letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
 		box-sizing: border-box;
+	}
+	/* P5 slice 3 — per-tier visual gradient on the ×N chip.
+	   The tier class is appended to .bl-traversal-chip so each step up
+	   saturates further without changing shape or size. Subtle by design:
+	   the chip should signal "wear" at a glance without screaming. */
+	.bl-tier-emerging {
+		/* default — matches the base class above */
+	}
+	.bl-tier-established {
+		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 26%, transparent);
+		border-color: color-mix(in srgb, var(--interactive-accent, #7c3aed) 55%, transparent);
+	}
+	.bl-tier-load-bearing {
+		background: var(--interactive-accent, #7c3aed);
+		border-color: var(--interactive-accent, #7c3aed);
+		color: #fff;
+	}
+	.bl-tier-stale {
+		background: color-mix(in srgb, #d97706 14%, transparent);
+		border-color: color-mix(in srgb, #d97706 30%, transparent);
+		color: #d97706;
 	}
 </style>
