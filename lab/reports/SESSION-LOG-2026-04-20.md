@@ -801,3 +801,56 @@ than a binary drop.
   color/icon in sidebar panels
 - Orthogonal cleanups still on the queue: navTrace dev-gate,
   boot-perf scorecard UI, throttle stress-test helper
+
+## § 42 — P5 slice 3: auto-confidence + per-tier chip gradient
+
+Final P5 slice. Closes the loop between the lifecycle tiers
+computed on the frontend and the `confidence` column that was
+sitting idle in the Rust schema.
+
+### Rust — `constellation_link_traverse`
+The UPDATE that bumps traversal_count / weight / last_traversed
+now also promotes `confidence`:
+  traversal_count ≥ 3  → "evidence"    (UI tier "established")
+  traversal_count ≥ 10 → "established" (UI tier "load-bearing")
+
+User-promoted states preserved via a CASE guard — "contested"
+never auto-downgrades, and monotonic progression is enforced so
+"established" rows don't revert to "evidence" if their count is
+ever reset externally.
+
+### Frontend — tier gradient on the ×N chip
+
+`getBacklinks` / `getOutgoingLinks` now precompute `tier` per row
+using the same `nowMs` snapshot the decay sort uses. The returned
+shape gains `tier: LinkLifecycle`.
+
+BacklinksPanel + OutgoingLinksPanel append `bl-tier-{tier}` /
+`ol-tier-{tier}` classes to the traversal chip with per-step
+saturation:
+  emerging      14% accent tint (default)
+  established   26% accent tint, bolder border
+  load-bearing  full accent fill, white text — worn-path glow
+  stale         muted amber (matches the Stale tab)
+
+Pill shape/size/radius remain user-configurable — only the
+saturation varies by tier so it reads as "wear" without competing
+with the Living Link Pills settings.
+
+### Commit: `54262e8`
+
+### P5 suite — complete
+- § 40 slice 1: stale detection + Stale tab (`f53053d`)
+- § 41 slice 2: weight decay + half-life knob (`844412d`)
+- § 42 slice 3: auto-confidence + per-tier gradient (`54262e8`)
+
+### Deferred polish (not required for P5)
+- User-driven tier promotion UI (contest / force-promote)
+- One-shot DB backfill command to age-assign existing
+  "hypothesis" confidence values based on current traversal counts
+- Legend surface / docs inside Link Dashboard
+
+### Still on the queue (orthogonal)
+- navTrace instrumentation dev-gate
+- Settings → Debug Boot Performance scorecard UI
+- Isolated throttle stress-test helper
