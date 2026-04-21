@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { importPickSource, importPreview, importExecute } from '$lib/importers/store';
+	import { importPickSource, importPreview, importWithCanonical } from '$lib/importers/store';
 	import type { ImportFormat, ImportPreview, ImportResult } from '$lib/importers/types';
 
 	let {
@@ -62,7 +62,7 @@
 		loading = true;
 		step = 'importing';
 		try {
-			result = await importExecute(sourcePath, selectedFormat, targetLibrary, subfolder);
+			result = await importWithCanonical(sourcePath, selectedFormat, targetLibrary, subfolder);
 			step = 'done';
 		} catch (e: any) {
 			error = e?.toString() ?? 'Import failed';
@@ -125,6 +125,7 @@
 					</label>
 				</div>
 
+	
 				<div class="importer-actions">
 					<button class="btn-secondary" onclick={onClose}>{$t('common.cancel')}</button>
 					<button class="btn-primary" onclick={pickSource}>{$t('importer.selectSource')}</button>
@@ -339,6 +340,10 @@
 		font-size: 0.85rem;
 	}
 
+	/* RTL fixes */
+	:global([dir="rtl"]) .preview-arrow { transform: scaleX(-1); }
+	.preview-size { text-align: end; }
+
 	.importer-actions {
 		display: flex;
 		justify-content: flex-end;
@@ -440,7 +445,7 @@
 		font-size: 0.72rem;
 		color: var(--text-faint);
 		min-width: 50px;
-		text-align: right;
+		text-align: end;
 	}
 
 	.preview-more {

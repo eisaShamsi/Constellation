@@ -1,0 +1,2164 @@
+{
+  "schema_version": 1,
+  "concepts": [
+    {
+      "id": "finger-ring",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "خاتم",
+          "دبلة"
+        ],
+        "de": [
+          "Fingerring",
+          "Ring"
+        ],
+        "en": [
+          "finger ring",
+          "ring"
+        ],
+        "es": [
+          "anillo",
+          "sortija"
+        ],
+        "fa": [
+          "انگشتر"
+        ],
+        "fr": [
+          "bague",
+          "anneau"
+        ],
+        "he": [
+          "טבעת"
+        ],
+        "hi": [
+          "अंगूठी"
+        ],
+        "ja": [
+          "指輪"
+        ],
+        "ko": [
+          "반지"
+        ],
+        "pt": [
+          "anel"
+        ],
+        "ru": [
+          "кольцо",
+          "перстень"
+        ],
+        "tr": [
+          "yüzük"
+        ],
+        "ur": [
+          "انگوٹھی"
+        ],
+        "zh": [
+          "戒指",
+          "指环"
+        ]
+      }
+    },
+    {
+      "id": "signet-ring",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "خاتم الختم"
+        ],
+        "de": [
+          "Siegelring"
+        ],
+        "en": [
+          "signet ring",
+          "seal ring"
+        ],
+        "es": [
+          "sello",
+          "anillo de sello"
+        ],
+        "fa": [
+          "انگشتر مهر"
+        ],
+        "fr": [
+          "chevalière",
+          "bague sigillaire"
+        ],
+        "he": [
+          "טבעת חותם"
+        ],
+        "hi": [
+          "मुद्रा अंगूठी"
+        ],
+        "ja": [
+          "印章指輪",
+          "シグネットリング"
+        ],
+        "ko": [
+          "인장 반지"
+        ],
+        "pt": [
+          "sinete",
+          "anel de sinete"
+        ],
+        "ru": [
+          "перстень-печатка"
+        ],
+        "tr": [
+          "mühür yüzüğü"
+        ],
+        "ur": [
+          "مہر کی انگوٹھی"
+        ],
+        "zh": [
+          "印章戒指",
+          "印戒"
+        ]
+      }
+    },
+    {
+      "id": "wedding-band",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "دبلة الزواج",
+          "خاتم الزواج"
+        ],
+        "de": [
+          "Ehering",
+          "Trauring"
+        ],
+        "en": [
+          "wedding band",
+          "wedding ring"
+        ],
+        "es": [
+          "alianza",
+          "anillo de boda"
+        ],
+        "fa": [
+          "حلقه ازدواج"
+        ],
+        "fr": [
+          "alliance",
+          "anneau de mariage"
+        ],
+        "he": [
+          "טבעת נישואין"
+        ],
+        "hi": [
+          "विवाह की अंगूठी"
+        ],
+        "ja": [
+          "結婚指輪"
+        ],
+        "ko": [
+          "결혼 반지"
+        ],
+        "pt": [
+          "aliança"
+        ],
+        "ru": [
+          "обручальное кольцо"
+        ],
+        "tr": [
+          "nikah yüzüğü",
+          "alyans"
+        ],
+        "ur": [
+          "شادی کی انگوٹھی"
+        ],
+        "zh": [
+          "婚戒",
+          "结婚戒指"
+        ]
+      }
+    },
+    {
+      "id": "engagement-ring",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "خاتم الخطوبة"
+        ],
+        "de": [
+          "Verlobungsring"
+        ],
+        "en": [
+          "engagement ring"
+        ],
+        "es": [
+          "anillo de compromiso"
+        ],
+        "fa": [
+          "حلقه نامزدی"
+        ],
+        "fr": [
+          "bague de fiançailles"
+        ],
+        "he": [
+          "טבעת אירוסין"
+        ],
+        "hi": [
+          "सगाई की अंगूठी"
+        ],
+        "ja": [
+          "婚約指輪"
+        ],
+        "ko": [
+          "약혼 반지"
+        ],
+        "pt": [
+          "anel de noivado"
+        ],
+        "ru": [
+          "кольцо помолвки"
+        ],
+        "tr": [
+          "nişan yüzüğü"
+        ],
+        "ur": [
+          "منگنی کی انگوٹھی"
+        ],
+        "zh": [
+          "订婚戒指"
+        ]
+      }
+    },
+    {
+      "id": "earring",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "قرط",
+          "حلق"
+        ],
+        "de": [
+          "Ohrring"
+        ],
+        "en": [
+          "earring"
+        ],
+        "es": [
+          "pendiente",
+          "arete"
+        ],
+        "fa": [
+          "گوشواره"
+        ],
+        "fr": [
+          "boucle d'oreille"
+        ],
+        "he": [
+          "עגיל"
+        ],
+        "hi": [
+          "कान की बाली",
+          "झुमका"
+        ],
+        "ja": [
+          "イヤリング"
+        ],
+        "ko": [
+          "귀걸이"
+        ],
+        "pt": [
+          "brinco"
+        ],
+        "ru": [
+          "серьга"
+        ],
+        "tr": [
+          "küpe"
+        ],
+        "ur": [
+          "بالی"
+        ],
+        "zh": [
+          "耳环"
+        ]
+      }
+    },
+    {
+      "id": "stud-earring",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "قرط مسمار"
+        ],
+        "de": [
+          "Ohrstecker"
+        ],
+        "en": [
+          "stud earring",
+          "ear stud"
+        ],
+        "es": [
+          "pendiente de botón",
+          "arete de tornillo"
+        ],
+        "fa": [
+          "گوشواره میخی"
+        ],
+        "fr": [
+          "clou d'oreille",
+          "bouton d'oreille"
+        ],
+        "he": [
+          "עגיל מסמר"
+        ],
+        "hi": [
+          "स्टड बाली"
+        ],
+        "ja": [
+          "スタッドピアス"
+        ],
+        "ko": [
+          "스터드 귀걸이"
+        ],
+        "pt": [
+          "brinco de pressão"
+        ],
+        "ru": [
+          "серьга-гвоздик"
+        ],
+        "tr": [
+          "kulak çivisi"
+        ],
+        "ur": [
+          "اسٹڈ بالی"
+        ],
+        "zh": [
+          "耳钉"
+        ]
+      }
+    },
+    {
+      "id": "hoop-earring",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "قرط حلقي"
+        ],
+        "de": [
+          "Creole",
+          "Kreolring"
+        ],
+        "en": [
+          "hoop earring"
+        ],
+        "es": [
+          "aro",
+          "pendiente de aro"
+        ],
+        "fa": [
+          "گوشواره حلقه‌ای"
+        ],
+        "fr": [
+          "créole",
+          "anneau d'oreille"
+        ],
+        "he": [
+          "עגיל חישוק"
+        ],
+        "hi": [
+          "हूप बाली"
+        ],
+        "ja": [
+          "フープピアス"
+        ],
+        "ko": [
+          "후프 귀걸이"
+        ],
+        "pt": [
+          "argola"
+        ],
+        "ru": [
+          "серьга-кольцо"
+        ],
+        "tr": [
+          "halka küpe"
+        ],
+        "ur": [
+          "حلقے دار بالی"
+        ],
+        "zh": [
+          "圆圈耳环",
+          "耳圈"
+        ]
+      }
+    },
+    {
+      "id": "drop-earring",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "قرط معلق"
+        ],
+        "de": [
+          "Ohrhänger",
+          "Ohrklemmer"
+        ],
+        "en": [
+          "drop earring",
+          "dangle earring"
+        ],
+        "es": [
+          "pendiente colgante"
+        ],
+        "fa": [
+          "گوشواره آویز"
+        ],
+        "fr": [
+          "pendentif d'oreille"
+        ],
+        "he": [
+          "עגיל תלוי"
+        ],
+        "hi": [
+          "झुमका",
+          "लटकन बाली"
+        ],
+        "ja": [
+          "ドロップイヤリング"
+        ],
+        "ko": [
+          "드롭 귀걸이"
+        ],
+        "pt": [
+          "brinco pingente"
+        ],
+        "ru": [
+          "серьга-подвеска"
+        ],
+        "tr": [
+          "sallantılı küpe"
+        ],
+        "ur": [
+          "لٹکن بالی"
+        ],
+        "zh": [
+          "垂坠耳环"
+        ]
+      }
+    },
+    {
+      "id": "ear-cuff",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "كليب الأذن"
+        ],
+        "de": [
+          "Ohrmanschette",
+          "Ear Cuff"
+        ],
+        "en": [
+          "ear cuff",
+          "ear clip"
+        ],
+        "es": [
+          "clip de oreja"
+        ],
+        "fa": [
+          "کلیپ گوش"
+        ],
+        "fr": [
+          "manchette d'oreille"
+        ],
+        "he": [
+          "אטב אוזן"
+        ],
+        "hi": [
+          "कान कफ"
+        ],
+        "ja": [
+          "イヤーカフ"
+        ],
+        "ko": [
+          "이어 커프"
+        ],
+        "pt": [
+          "clip de orelha"
+        ],
+        "ru": [
+          "кафф"
+        ],
+        "tr": [
+          "kulak klibi"
+        ],
+        "ur": [
+          "کان کلپ"
+        ],
+        "zh": [
+          "耳骨夹",
+          "耳扣"
+        ]
+      }
+    },
+    {
+      "id": "pendant",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "قلادة",
+          "معلقة"
+        ],
+        "de": [
+          "Anhänger"
+        ],
+        "en": [
+          "pendant"
+        ],
+        "es": [
+          "colgante"
+        ],
+        "fa": [
+          "آویز"
+        ],
+        "fr": [
+          "pendentif"
+        ],
+        "he": [
+          "תליון"
+        ],
+        "hi": [
+          "पेंडेंट",
+          "लॉकेट"
+        ],
+        "ja": [
+          "ペンダント"
+        ],
+        "ko": [
+          "펜던트"
+        ],
+        "pt": [
+          "pingente"
+        ],
+        "ru": [
+          "кулон",
+          "подвеска"
+        ],
+        "tr": [
+          "kolye ucu"
+        ],
+        "ur": [
+          "لاکٹ"
+        ],
+        "zh": [
+          "吊坠",
+          "挂坠"
+        ]
+      }
+    },
+    {
+      "id": "locket",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "ميدالية صغيرة"
+        ],
+        "de": [
+          "Medaillon"
+        ],
+        "en": [
+          "locket"
+        ],
+        "es": [
+          "guardapelo",
+          "locket"
+        ],
+        "fa": [
+          "مدالیون"
+        ],
+        "fr": [
+          "médaillon"
+        ],
+        "he": [
+          "מדליון"
+        ],
+        "hi": [
+          "लॉकेट"
+        ],
+        "ja": [
+          "ロケット"
+        ],
+        "ko": [
+          "로켓"
+        ],
+        "pt": [
+          "medalhão"
+        ],
+        "ru": [
+          "медальон"
+        ],
+        "tr": [
+          "madalyon"
+        ],
+        "ur": [
+          "لاکٹ"
+        ],
+        "zh": [
+          "纪念盒坠",
+          "胸针盒"
+        ]
+      }
+    },
+    {
+      "id": "pearl-necklace",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "عقد اللؤلؤ"
+        ],
+        "de": [
+          "Perlenkette"
+        ],
+        "en": [
+          "pearl necklace"
+        ],
+        "es": [
+          "collar de perlas"
+        ],
+        "fa": [
+          "گردنبند مروارید"
+        ],
+        "fr": [
+          "collier de perles"
+        ],
+        "he": [
+          "מחרוזת פנינים"
+        ],
+        "hi": [
+          "मोती की माला"
+        ],
+        "ja": [
+          "パールネックレス"
+        ],
+        "ko": [
+          "진주 목걸이"
+        ],
+        "pt": [
+          "colar de pérolas"
+        ],
+        "ru": [
+          "жемчужное ожерелье"
+        ],
+        "tr": [
+          "inci kolye"
+        ],
+        "ur": [
+          "موتیوں کا ہار"
+        ],
+        "zh": [
+          "珍珠项链"
+        ]
+      }
+    },
+    {
+      "id": "chain-necklace",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "سلسلة الرقبة"
+        ],
+        "de": [
+          "Halskette",
+          "Kette"
+        ],
+        "en": [
+          "chain necklace",
+          "chain"
+        ],
+        "es": [
+          "cadena",
+          "collar de cadena"
+        ],
+        "fa": [
+          "زنجیر گردن"
+        ],
+        "fr": [
+          "chaîne"
+        ],
+        "he": [
+          "שרשרת"
+        ],
+        "hi": [
+          "चेन"
+        ],
+        "ja": [
+          "チェーンネックレス"
+        ],
+        "ko": [
+          "체인 목걸이"
+        ],
+        "pt": [
+          "corrente",
+          "colar de corrente"
+        ],
+        "ru": [
+          "цепочка"
+        ],
+        "tr": [
+          "zincir kolye"
+        ],
+        "ur": [
+          "زنجیر"
+        ],
+        "zh": [
+          "链式项链",
+          "项链"
+        ]
+      }
+    },
+    {
+      "id": "beaded-necklace",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "عقد الخرز"
+        ],
+        "de": [
+          "Perlenkette",
+          "Perlenstrang"
+        ],
+        "en": [
+          "beaded necklace",
+          "bead necklace"
+        ],
+        "es": [
+          "collar de cuentas"
+        ],
+        "fa": [
+          "گردنبند مهره"
+        ],
+        "fr": [
+          "collier de perles",
+          "collier de perles de verre"
+        ],
+        "he": [
+          "שרשרת חרוזים"
+        ],
+        "hi": [
+          "मनकों का हार"
+        ],
+        "ja": [
+          "ビーズネックレス"
+        ],
+        "ko": [
+          "비즈 목걸이"
+        ],
+        "pt": [
+          "colar de contas"
+        ],
+        "ru": [
+          "ожерелье из бусин",
+          "бусы"
+        ],
+        "tr": [
+          "boncuk kolye"
+        ],
+        "ur": [
+          "مالا",
+          "موتیوں کی مالا"
+        ],
+        "zh": [
+          "珠串项链",
+          "串珠项链"
+        ]
+      }
+    },
+    {
+      "id": "choker",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "طوق الرقبة"
+        ],
+        "de": [
+          "Halsband",
+          "Choker"
+        ],
+        "en": [
+          "choker"
+        ],
+        "es": [
+          "gargantilla"
+        ],
+        "fa": [
+          "گردنبند چسبان"
+        ],
+        "fr": [
+          "ras-du-cou"
+        ],
+        "he": [
+          "קולר"
+        ],
+        "hi": [
+          "चोकर"
+        ],
+        "ja": [
+          "チョーカー"
+        ],
+        "ko": [
+          "초커"
+        ],
+        "pt": [
+          "gargantilha"
+        ],
+        "ru": [
+          "чокер"
+        ],
+        "tr": [
+          "boyunluk",
+          "choker"
+        ],
+        "ur": [
+          "چوکر"
+        ],
+        "zh": [
+          "颈饰",
+          "贴颈项链"
+        ]
+      }
+    },
+    {
+      "id": "bangle",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "سوار"
+        ],
+        "de": [
+          "Armreif"
+        ],
+        "en": [
+          "bangle",
+          "bangle bracelet"
+        ],
+        "es": [
+          "brazalete",
+          "pulsera rígida"
+        ],
+        "fa": [
+          "دستبند"
+        ],
+        "fr": [
+          "bracelet rigide",
+          "jonc"
+        ],
+        "he": [
+          "צמיד"
+        ],
+        "hi": [
+          "चूड़ी"
+        ],
+        "ja": [
+          "バングル"
+        ],
+        "ko": [
+          "뱅글"
+        ],
+        "pt": [
+          "pulseira rígida",
+          "bracelete"
+        ],
+        "ru": [
+          "браслет",
+          "обруч"
+        ],
+        "tr": [
+          "bilezik"
+        ],
+        "ur": [
+          "چوڑی"
+        ],
+        "zh": [
+          "手镯"
+        ]
+      }
+    },
+    {
+      "id": "charm-bracelet",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "سوار التمائم"
+        ],
+        "de": [
+          "Bettelarmband"
+        ],
+        "en": [
+          "charm bracelet"
+        ],
+        "es": [
+          "pulsera de dijes"
+        ],
+        "fa": [
+          "دستبند اسباب‌بازی"
+        ],
+        "fr": [
+          "bracelet à breloques"
+        ],
+        "he": [
+          "צמיד קסמים"
+        ],
+        "hi": [
+          "चार्म ब्रेसलेट"
+        ],
+        "ja": [
+          "チャームブレスレット"
+        ],
+        "ko": [
+          "참 팔찌"
+        ],
+        "pt": [
+          "pulseira de pingentes"
+        ],
+        "ru": [
+          "браслет с шармами"
+        ],
+        "tr": [
+          "şans bileziği"
+        ],
+        "ur": [
+          "چارم بریسلٹ"
+        ],
+        "zh": [
+          "吊坠手链"
+        ]
+      }
+    },
+    {
+      "id": "cuff-bracelet",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "سوار الكف"
+        ],
+        "de": [
+          "Armmanschette"
+        ],
+        "en": [
+          "cuff bracelet",
+          "cuff"
+        ],
+        "es": [
+          "brazalete tipo manguito"
+        ],
+        "fa": [
+          "دستبند کف‌دستی"
+        ],
+        "fr": [
+          "bracelet manchette"
+        ],
+        "he": [
+          "צמיד רחב"
+        ],
+        "hi": [
+          "कफ ब्रेसलेट"
+        ],
+        "ja": [
+          "カフブレスレット"
+        ],
+        "ko": [
+          "커프 팔찌"
+        ],
+        "pt": [
+          "pulseira larga"
+        ],
+        "ru": [
+          "браслет-манжет"
+        ],
+        "tr": [
+          "manşet bileklik"
+        ],
+        "ur": [
+          "کف کڑا"
+        ],
+        "zh": [
+          "宽手镯",
+          "袖口手镯"
+        ]
+      }
+    },
+    {
+      "id": "anklet",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "خلخال",
+          "سوار الكاحل"
+        ],
+        "de": [
+          "Fußkettchen",
+          "Fußkette"
+        ],
+        "en": [
+          "anklet",
+          "ankle bracelet"
+        ],
+        "es": [
+          "tobillera"
+        ],
+        "fa": [
+          "پابند",
+          "خلخال"
+        ],
+        "fr": [
+          "bracelet de cheville"
+        ],
+        "he": [
+          "צמיד רגל"
+        ],
+        "hi": [
+          "पायल"
+        ],
+        "ja": [
+          "アンクレット"
+        ],
+        "ko": [
+          "발찌"
+        ],
+        "pt": [
+          "tornozeleira"
+        ],
+        "ru": [
+          "браслет на ногу",
+          "ножной браслет"
+        ],
+        "tr": [
+          "halhal",
+          "ayak bileziği"
+        ],
+        "ur": [
+          "پازیب"
+        ],
+        "zh": [
+          "脚链",
+          "脚镯"
+        ]
+      }
+    },
+    {
+      "id": "armlet",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "سوار العضد"
+        ],
+        "de": [
+          "Armband",
+          "Armreif"
+        ],
+        "en": [
+          "armlet",
+          "armband"
+        ],
+        "es": [
+          "brazalete de brazo"
+        ],
+        "fa": [
+          "بازوبند"
+        ],
+        "fr": [
+          "bracelet de bras"
+        ],
+        "he": [
+          "צמיד זרוע"
+        ],
+        "hi": [
+          "बाजूबंद"
+        ],
+        "ja": [
+          "アームレット"
+        ],
+        "ko": [
+          "팔찌"
+        ],
+        "pt": [
+          "bracelete de braço"
+        ],
+        "ru": [
+          "наручный браслет",
+          "нарукавное украшение"
+        ],
+        "tr": [
+          "kol bileziği"
+        ],
+        "ur": [
+          "بازوبند"
+        ],
+        "zh": [
+          "臂环",
+          "臂镯"
+        ]
+      }
+    },
+    {
+      "id": "brooch",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "بروش",
+          "دبوس الزينة"
+        ],
+        "de": [
+          "Brosche"
+        ],
+        "en": [
+          "brooch"
+        ],
+        "es": [
+          "broche"
+        ],
+        "fa": [
+          "گل سینه"
+        ],
+        "fr": [
+          "broche"
+        ],
+        "he": [
+          "סיכת חזה"
+        ],
+        "hi": [
+          "ब्रोच"
+        ],
+        "ja": [
+          "ブローチ"
+        ],
+        "ko": [
+          "브로치"
+        ],
+        "pt": [
+          "broche"
+        ],
+        "ru": [
+          "брошь"
+        ],
+        "tr": [
+          "broş"
+        ],
+        "ur": [
+          "بروچ"
+        ],
+        "zh": [
+          "胸针"
+        ]
+      }
+    },
+    {
+      "id": "tiara",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "تاج صغير",
+          "إكليل"
+        ],
+        "de": [
+          "Diadem",
+          "Tiara"
+        ],
+        "en": [
+          "tiara"
+        ],
+        "es": [
+          "tiara"
+        ],
+        "fa": [
+          "تاج کوچک"
+        ],
+        "fr": [
+          "tiare",
+          "diadème"
+        ],
+        "he": [
+          "כתר",
+          "טיארה"
+        ],
+        "hi": [
+          "टियारा"
+        ],
+        "ja": [
+          "ティアラ"
+        ],
+        "ko": [
+          "티아라"
+        ],
+        "pt": [
+          "tiara"
+        ],
+        "ru": [
+          "тиара"
+        ],
+        "tr": [
+          "taç",
+          "tiaara"
+        ],
+        "ur": [
+          "ٹیارا"
+        ],
+        "zh": [
+          "头冠",
+          "小王冠"
+        ]
+      }
+    },
+    {
+      "id": "crown",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "تاج"
+        ],
+        "de": [
+          "Krone"
+        ],
+        "en": [
+          "crown"
+        ],
+        "es": [
+          "corona"
+        ],
+        "fa": [
+          "تاج"
+        ],
+        "fr": [
+          "couronne"
+        ],
+        "he": [
+          "כתר"
+        ],
+        "hi": [
+          "मुकुट"
+        ],
+        "ja": [
+          "王冠"
+        ],
+        "ko": [
+          "왕관"
+        ],
+        "pt": [
+          "coroa"
+        ],
+        "ru": [
+          "корона"
+        ],
+        "tr": [
+          "taç"
+        ],
+        "ur": [
+          "تاج"
+        ],
+        "zh": [
+          "王冠",
+          "皇冠"
+        ]
+      }
+    },
+    {
+      "id": "diadem",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "عصابة الرأس"
+        ],
+        "de": [
+          "Diadem"
+        ],
+        "en": [
+          "diadem"
+        ],
+        "es": [
+          "diadema"
+        ],
+        "fa": [
+          "دیهیم"
+        ],
+        "fr": [
+          "diadème"
+        ],
+        "he": [
+          "דיאדמה"
+        ],
+        "hi": [
+          "डायाडेम"
+        ],
+        "ja": [
+          "ダイアデム"
+        ],
+        "ko": [
+          "다이아뎀"
+        ],
+        "pt": [
+          "diadema"
+        ],
+        "ru": [
+          "диадема"
+        ],
+        "tr": [
+          "diadem"
+        ],
+        "ur": [
+          "تاج"
+        ],
+        "zh": [
+          "王冠",
+          "饰带"
+        ]
+      }
+    },
+    {
+      "id": "amulet",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "تميمة",
+          "حرز"
+        ],
+        "de": [
+          "Amulett"
+        ],
+        "en": [
+          "amulet",
+          "charm"
+        ],
+        "es": [
+          "amuleto"
+        ],
+        "fa": [
+          "تعویذ"
+        ],
+        "fr": [
+          "amulette"
+        ],
+        "he": [
+          "קמע"
+        ],
+        "hi": [
+          "ताबीज"
+        ],
+        "ja": [
+          "お守り",
+          "アミュレット"
+        ],
+        "ko": [
+          "부적"
+        ],
+        "pt": [
+          "amuleto"
+        ],
+        "ru": [
+          "амулет"
+        ],
+        "tr": [
+          "muska"
+        ],
+        "ur": [
+          "تعویذ"
+        ],
+        "zh": [
+          "护身符",
+          "辟邪物"
+        ]
+      }
+    },
+    {
+      "id": "talisman",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "طلسم"
+        ],
+        "de": [
+          "Talisman"
+        ],
+        "en": [
+          "talisman"
+        ],
+        "es": [
+          "talismán"
+        ],
+        "fa": [
+          "طلسم"
+        ],
+        "fr": [
+          "talisman"
+        ],
+        "he": [
+          "טליסמן",
+          "קמע"
+        ],
+        "hi": [
+          "तावीज़"
+        ],
+        "ja": [
+          "タリスマン"
+        ],
+        "ko": [
+          "탈리스만"
+        ],
+        "pt": [
+          "talismã"
+        ],
+        "ru": [
+          "талисман"
+        ],
+        "tr": [
+          "tılsım"
+        ],
+        "ur": [
+          "طلسم"
+        ],
+        "zh": [
+          "护符",
+          "幸运符"
+        ]
+      }
+    },
+    {
+      "id": "charm",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "حبة الحظ",
+          "قطعة الحظ"
+        ],
+        "de": [
+          "Charm",
+          "Glücksbringer"
+        ],
+        "en": [
+          "charm"
+        ],
+        "es": [
+          "dije"
+        ],
+        "fa": [
+          "آویز"
+        ],
+        "fr": [
+          "breloque"
+        ],
+        "he": [
+          "קסם"
+        ],
+        "hi": [
+          "चार्म"
+        ],
+        "ja": [
+          "チャーム"
+        ],
+        "ko": [
+          "참"
+        ],
+        "pt": [
+          "berloque"
+        ],
+        "ru": [
+          "шарм",
+          "брелок"
+        ],
+        "tr": [
+          "şans objesi"
+        ],
+        "ur": [
+          "چارم"
+        ],
+        "zh": [
+          "吊饰",
+          "幸运符饰"
+        ]
+      }
+    },
+    {
+      "id": "medallion",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "ميدالية"
+        ],
+        "de": [
+          "Medaillon"
+        ],
+        "en": [
+          "medallion"
+        ],
+        "es": [
+          "medallón"
+        ],
+        "fa": [
+          "مدال"
+        ],
+        "fr": [
+          "médaillon"
+        ],
+        "he": [
+          "מדליה"
+        ],
+        "hi": [
+          "पदक"
+        ],
+        "ja": [
+          "メダリオン"
+        ],
+        "ko": [
+          "메달리온"
+        ],
+        "pt": [
+          "medalhão"
+        ],
+        "ru": [
+          "медальон"
+        ],
+        "tr": [
+          "madalyon"
+        ],
+        "ur": [
+          "میڈلین"
+        ],
+        "zh": [
+          "大奖章",
+          "圆形挂饰"
+        ]
+      }
+    },
+    {
+      "id": "hairpin",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "دبوس الشعر"
+        ],
+        "de": [
+          "Haarnadel"
+        ],
+        "en": [
+          "hairpin",
+          "hair pin"
+        ],
+        "es": [
+          "horquilla"
+        ],
+        "fa": [
+          "سنجاق مو"
+        ],
+        "fr": [
+          "épingle à cheveux"
+        ],
+        "he": [
+          "סיכת שיער"
+        ],
+        "hi": [
+          "हेयरपिन"
+        ],
+        "ja": [
+          "ヘアピン"
+        ],
+        "ko": [
+          "헤어핀"
+        ],
+        "pt": [
+          "grampo de cabelo"
+        ],
+        "ru": [
+          "шпилька"
+        ],
+        "tr": [
+          "saç iğnesi"
+        ],
+        "ur": [
+          "ہیئر پن"
+        ],
+        "zh": [
+          "发夹",
+          "发针"
+        ]
+      }
+    },
+    {
+      "id": "hair-comb",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "مشط الشعر"
+        ],
+        "de": [
+          "Haarkamm"
+        ],
+        "en": [
+          "hair comb",
+          "decorative comb"
+        ],
+        "es": [
+          "peineta"
+        ],
+        "fa": [
+          "شانه مو"
+        ],
+        "fr": [
+          "peigne"
+        ],
+        "he": [
+          "מסרק"
+        ],
+        "hi": [
+          "बालों की कंघी"
+        ],
+        "ja": [
+          "ヘアコーム"
+        ],
+        "ko": [
+          "머리 빗"
+        ],
+        "pt": [
+          "pente de cabelo"
+        ],
+        "ru": [
+          "расчёска",
+          "гребень"
+        ],
+        "tr": [
+          "saç tarağı"
+        ],
+        "ur": [
+          "کنگھی"
+        ],
+        "zh": [
+          "发梳",
+          "梳子"
+        ]
+      }
+    },
+    {
+      "id": "headband",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "عصابة الرأس"
+        ],
+        "de": [
+          "Haarreif",
+          "Stirnband"
+        ],
+        "en": [
+          "headband"
+        ],
+        "es": [
+          "diadema",
+          "vincha"
+        ],
+        "fa": [
+          "هدبند"
+        ],
+        "fr": [
+          "serre-tête",
+          "bandeau"
+        ],
+        "he": [
+          "סרט ראש"
+        ],
+        "hi": [
+          "हेडबैंड"
+        ],
+        "ja": [
+          "ヘアバンド"
+        ],
+        "ko": [
+          "헤어밴드"
+        ],
+        "pt": [
+          "tiara",
+          "faixa de cabelo"
+        ],
+        "ru": [
+          "ободок",
+          "повязка"
+        ],
+        "tr": [
+          "saç bandı"
+        ],
+        "ur": [
+          "ہیڈ بینڈ"
+        ],
+        "zh": [
+          "发箍",
+          "头箍"
+        ]
+      }
+    },
+    {
+      "id": "cameo",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "نقش بارز"
+        ],
+        "de": [
+          "Kamee"
+        ],
+        "en": [
+          "cameo"
+        ],
+        "es": [
+          "camafeo"
+        ],
+        "fa": [
+          "کامئو"
+        ],
+        "fr": [
+          "camée"
+        ],
+        "he": [
+          "קמאו"
+        ],
+        "hi": [
+          "केमियो"
+        ],
+        "ja": [
+          "カメオ"
+        ],
+        "ko": [
+          "카메오"
+        ],
+        "pt": [
+          "camafeu"
+        ],
+        "ru": [
+          "камея"
+        ],
+        "tr": [
+          "kameo"
+        ],
+        "ur": [
+          "نقش برجستہ"
+        ],
+        "zh": [
+          "浮雕宝石"
+        ]
+      }
+    },
+    {
+      "id": "toe-ring",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "خاتم الإصبع القدم"
+        ],
+        "de": [
+          "Zehenring"
+        ],
+        "en": [
+          "toe ring"
+        ],
+        "es": [
+          "anillo de pie"
+        ],
+        "fa": [
+          "انگشتر پا"
+        ],
+        "fr": [
+          "bague de pied"
+        ],
+        "he": [
+          "טבעת אצבע רגל"
+        ],
+        "hi": [
+          "बिछिया"
+        ],
+        "ja": [
+          "トゥリング"
+        ],
+        "ko": [
+          "발가락 반지"
+        ],
+        "pt": [
+          "anel de dedo do pé"
+        ],
+        "ru": [
+          "кольцо на палец ноги"
+        ],
+        "tr": [
+          "ayak yüzüğü"
+        ],
+        "ur": [
+          "بچھیا"
+        ],
+        "zh": [
+          "趾环"
+        ]
+      }
+    },
+    {
+      "id": "nose-ring",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "خزامة الأنف"
+        ],
+        "de": [
+          "Nasenring"
+        ],
+        "en": [
+          "nose ring",
+          "nose stud"
+        ],
+        "es": [
+          "piercing de nariz",
+          "aro de nariz"
+        ],
+        "fa": [
+          "حلقه بینی"
+        ],
+        "fr": [
+          "anneau de nez"
+        ],
+        "he": [
+          "טבעת אף"
+        ],
+        "hi": [
+          "नथ"
+        ],
+        "ja": [
+          "ノーズリング"
+        ],
+        "ko": [
+          "코 링"
+        ],
+        "pt": [
+          "argola de nariz"
+        ],
+        "ru": [
+          "кольцо в нос",
+          "пирсинг носа"
+        ],
+        "tr": [
+          "burun halkası"
+        ],
+        "ur": [
+          "ناتھ"
+        ],
+        "zh": [
+          "鼻环"
+        ]
+      }
+    },
+    {
+      "id": "corsage",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "باقة الصدر"
+        ],
+        "de": [
+          "Ansteckblume",
+          "Corsage"
+        ],
+        "en": [
+          "corsage"
+        ],
+        "es": [
+          "corsage"
+        ],
+        "fa": [
+          "گل سینه"
+        ],
+        "fr": [
+          "corsage",
+          "boutonnière"
+        ],
+        "he": [
+          "קורסאז'"
+        ],
+        "hi": [
+          "कोर्सेज"
+        ],
+        "ja": [
+          "コサージュ"
+        ],
+        "ko": [
+          "코르사주"
+        ],
+        "pt": [
+          "corsage"
+        ],
+        "ru": [
+          "корсаж"
+        ],
+        "tr": [
+          "yaka çiçeği"
+        ],
+        "ur": [
+          "سینے کا گجرا"
+        ],
+        "zh": [
+          "胸花"
+        ]
+      }
+    },
+    {
+      "id": "lapel-pin",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "دبوس الطية"
+        ],
+        "de": [
+          "Anstecknadel"
+        ],
+        "en": [
+          "lapel pin",
+          "pin badge"
+        ],
+        "es": [
+          "pin de solapa"
+        ],
+        "fa": [
+          "سنجاق یقه"
+        ],
+        "fr": [
+          "pin's",
+          "épinglette"
+        ],
+        "he": [
+          "סיכת דש"
+        ],
+        "hi": [
+          "लैपल पिन"
+        ],
+        "ja": [
+          "ラペルピン"
+        ],
+        "ko": [
+          "라펠 핀"
+        ],
+        "pt": [
+          "broche de lapela"
+        ],
+        "ru": [
+          "значок",
+          "булавка"
+        ],
+        "tr": [
+          "yaka iğnesi"
+        ],
+        "ur": [
+          "لیپل پن"
+        ],
+        "zh": [
+          "翻领别针",
+          "徽章"
+        ]
+      }
+    },
+    {
+      "id": "cufflink",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "رابط الكم"
+        ],
+        "de": [
+          "Manschettenknopf"
+        ],
+        "en": [
+          "cufflink"
+        ],
+        "es": [
+          "gemelo"
+        ],
+        "fa": [
+          "دکمه سردست"
+        ],
+        "fr": [
+          "bouton de manchette"
+        ],
+        "he": [
+          "כפתור שרוול"
+        ],
+        "hi": [
+          "कफलिंक"
+        ],
+        "ja": [
+          "カフスボタン"
+        ],
+        "ko": [
+          "커프링크"
+        ],
+        "pt": [
+          "abotoaduras"
+        ],
+        "ru": [
+          "запонка"
+        ],
+        "tr": [
+          "kol düğmesi"
+        ],
+        "ur": [
+          "کف لنک"
+        ],
+        "zh": [
+          "袖扣"
+        ]
+      }
+    },
+    {
+      "id": "tie-pin",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "دبوس الرابطة"
+        ],
+        "de": [
+          "Krawattennadel"
+        ],
+        "en": [
+          "tie pin",
+          "stickpin"
+        ],
+        "es": [
+          "alfiler de corbata"
+        ],
+        "fa": [
+          "سنجاق کراوات"
+        ],
+        "fr": [
+          "épingle de cravate"
+        ],
+        "he": [
+          "סיכת עניבה"
+        ],
+        "hi": [
+          "टाई पिन"
+        ],
+        "ja": [
+          "タイピン"
+        ],
+        "ko": [
+          "타이 핀"
+        ],
+        "pt": [
+          "alfinete de gravata"
+        ],
+        "ru": [
+          "булавка для галстука"
+        ],
+        "tr": [
+          "kravat iğnesi"
+        ],
+        "ur": [
+          "ٹائی پن"
+        ],
+        "zh": [
+          "领带夹",
+          "领带针"
+        ]
+      }
+    },
+    {
+      "id": "jeweled-belt",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "حزام مرصع"
+        ],
+        "de": [
+          "Schmuckgürtel"
+        ],
+        "en": [
+          "jeweled belt",
+          "ornamental belt"
+        ],
+        "es": [
+          "cinturón enjoyado"
+        ],
+        "fa": [
+          "کمربند جواهرنشان"
+        ],
+        "fr": [
+          "ceinture ornementale"
+        ],
+        "he": [
+          "חגורה מקושטת"
+        ],
+        "hi": [
+          "जड़ाऊ करधनी"
+        ],
+        "ja": [
+          "装飾ベルト"
+        ],
+        "ko": [
+          "보석 허리띠"
+        ],
+        "pt": [
+          "cinto adornado"
+        ],
+        "ru": [
+          "украшенный пояс"
+        ],
+        "tr": [
+          "mücevherli kemer"
+        ],
+        "ur": [
+          "جواہرات والی کمربند"
+        ],
+        "zh": [
+          "宝石腰带",
+          "装饰腰带"
+        ]
+      }
+    },
+    {
+      "id": "thumb-ring",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "خاتم الإبهام"
+        ],
+        "de": [
+          "Daumenring"
+        ],
+        "en": [
+          "thumb ring"
+        ],
+        "es": [
+          "anillo de pulgar"
+        ],
+        "fa": [
+          "انگشتر شست"
+        ],
+        "fr": [
+          "bague de pouce"
+        ],
+        "he": [
+          "טבעת אגודל"
+        ],
+        "hi": [
+          "अंगूठे की अंगूठी"
+        ],
+        "ja": [
+          "親指の指輪"
+        ],
+        "ko": [
+          "엄지 반지"
+        ],
+        "pt": [
+          "anel de polegar"
+        ],
+        "ru": [
+          "кольцо на большой палец"
+        ],
+        "tr": [
+          "baş parmak yüzüğü"
+        ],
+        "ur": [
+          "انگوٹھے کی انگوٹھی"
+        ],
+        "zh": [
+          "大拇指戒指",
+          "扳指"
+        ]
+      }
+    }
+  ]
+}

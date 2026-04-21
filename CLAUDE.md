@@ -1,7 +1,7 @@
 # Constellation — Claude Instructions
 
 ## Project
-Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libraries.
+Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) — a Personal Knowledge Formulation system. Not management — formulation.
 
 ## Before Starting Work
 1. Always `git pull origin main` first to sync changes from other devices/sessions.
@@ -94,6 +94,19 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - After adding a CM6 extension: open a 5000-word note and scroll. If scrolling stutters, optimize or remove.
 - After adding CSS: resize the window from max to min. If layout breaks, fix before committing.
 
+### Rule 8: Write-Time Derivation
+> **Every computed view in Constellation is maintained at write time, not read time.**
+>
+> When a note changes, every derived surface that depends on it updates in the same transaction. The app does not recompute on boot. It does not recompute on panel open. It reads what's already stored.
+
+- **Canonical example**: SQLite FTS5. The `notes_fts` virtual table is kept in sync with `note_meta` via the `note_meta_ai` / `note_meta_ad` / `note_meta_au` triggers in `init_db`. Search is instant because the index is always current. No `scan_*` command is needed.
+- **Canonical use case**: the Index panel (`read_index_entries`) reads directly from the FTS5 vocabulary dictionary (`notes_vocab` virtual table — an `fts5vocab(notes_fts, 'row')` view). Term expansion (`read_term_mentions`) is a single FTS5 `MATCH` query. Nothing is rebuilt on boot.
+- **Don't**: write a `scan_*_library` or `rebuild_*` command that re-walks the Universe to produce a derived view. If you find yourself doing that, stop — the shape is wrong. That path is how LL-XXX happened (hand-rolled term index that OOMed and required a 3 GB WAL vacuum to recover).
+- **Do**: persist the derived view, wire a trigger or hook on the source-of-truth write path, let reads be cheap lookups.
+- **First-time population**: when a new surface is added to an existing Universe, the one-off back-fill should run in the background after paint, with progress in the status bar — and must be resumable.
+- **Where this rule must be applied next** (audit pending): Sky View (`skyNodes`/`skyLinks` rebuilt on every boot), Backlinks/Outgoing panels (recomputed on tab focus), Tag browser (scanned on open), Sight dashboard, sidebar star counts, Map. Each of these should persist its derived data and maintain it via triggers or watcher hooks.
+- **Hard constraint**: no new feature may regress boot time, typing latency, or IPC responsiveness. Measure before/after on a large Universe (7,600+ notes) before committing.
+
 ---
 
 ## 🏗️ Architecture Principles
@@ -109,6 +122,25 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - Sync is the user's choice (Git, Syncthing, iCloud) — Constellation doesn't own it.
 - The app must work fully offline, instantly, always.
 
+### Knowledge Formulation (Not Management)
+- Constellation is a **Personal Knowledge Formulation** system — not a file manager.
+- Knowledge is not about storing information. It is about **connecting, challenging, synthesizing, and building** understanding.
+- Links are **living vessels** — they carry type, annotation, weight, confidence, and temporal data.
+- Links follow a lifecycle: Spark → Birth → Growth → Maturity → Dormancy → Renewal/Archival.
+- The 7 link types are the **cognitive vocabulary**: supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of.
+- The search engine is a **diagnostic instrument** for intellectual life — not a file finder.
+- The Five Acts of Knowledge Creation: Observation → Connection → Tension → Synthesis → Conviction.
+- Full specification: `docs/CONSTELLATION-KNOWLEDGE-FORMULATION.md`
+
+### The Living Link Architecture
+- Links are **first-class knowledge objects** with the `LINK` file kind (`YYYYMMDDTHHMMSSZ_LINK_XXXX.md`).
+- **Dual-layer storage**: LINK files on disk (source of truth) + `note_links` SQLite table (fast index).
+- **Eight properties**: Type, Direction, Annotation, Weight, Confidence, Created, Last Traversed, Traversal Count.
+- **Four confidence levels**: hypothesis → evidence → established → contested.
+- **Weight is earned through use**: logarithmic growth on traversal, 5% monthly decay without use.
+- Links must be **searchable by all properties** in the user's own language.
+- Every link operation must be **reversible** — archival, not deletion.
+
 ### Constraint as Design
 - Don't add features just because you can. Every feature must justify its existence.
 - FocusPane has no toolbar, no properties, no markdown rendering — that IS the design.
@@ -120,6 +152,25 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) for managing Markdown note libr
 - Per-line bidirectional text (bidiPlugin) is a core architectural feature, not an add-on.
 - Every editor view — NotePane, FocusPane, and any future view — must support multilingual, mixed-script content natively.
 - Never build a single-language assumption into layout, fonts, cursor behavior, or input handling.
+
+### Constellation Knowledge Hierarchy
+Constellation organizes knowledge in a five-level hierarchy — no other PKM system has this depth:
+
+```
+Universe (root)
+  └── cUniverse (child universe)
+       └── Library
+            └── Folder
+                 └── Note
+```
+
+- **Universe**: The top-level container. Named by the user. Contains all libraries, settings, bases, bookmarks. One per Constellation instance. Stored as a directory with `universe.json`.
+- **cUniverse (Child Universe)**: A linked Universe that contributes its libraries to a parent. Enables federation — viewing notes from multiple independent Universes in one window.
+- **Library**: A complete, self-contained knowledge base (equivalent to an Obsidian vault). Has its own color, appearance, tags, links, and index. Registered in `libraries.json`. Multiple libraries coexist in one Universe. Libraries are never copied — Constellation reads them in place.
+- **Folder**: A subdirectory within a Library. Organizational structure only. Supports nesting.
+- **Note**: A single `.md` file with optional YAML frontmatter. The atomic unit of knowledge.
+
+**Library ≠ Folder.** A Library is a first-class citizen with its own identity. A Folder is just file organization inside a Library. The "New Library" button in the sidebar toolbar creates or links libraries — distinct from "New Folder".
 
 ### Smooth Transitions
 - NotePane and FocusPane edit the same `.md` file. Switching between them must be seamless.

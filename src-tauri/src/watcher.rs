@@ -16,7 +16,27 @@ impl WatcherState {
     }
 }
 
-#[tauri::command]
+/// Installing a recursive filesystem watch is blocking I/O: `notify`'s Windows
+/// backend calls `ReadDirectoryChangesW` and creates kernel structures for the
+/// subtree. On boot the frontend fans out one `watch_library` per library (16
+/// on the trial Universe) alongside ~16 `get_library_appearance`, stats, and
+/// recent-files calls. Without the `(async)` attribute below, every one of
+/// those `#[tauri::command]` sync bodies runs **on the WebView2 UI thread**
+/// (wry-0.54.2/src/webview2/mod.rs:950 delivers IPC messages via a single
+/// `WebResourceRequested` handler, serialized by COM STA; tauri-2.10.3/src/
+/// webview/mod.rs:1888 then calls the command body inline). Under that model
+/// each library's watch-install + appearance read + …runs back-to-back on one
+/// thread, and `cache_boot_snapshot_core` — which fires in the same fan-out
+/// window — has to wait ~20 s for its turn. That's Boot Criterion 2's failure
+/// mode (docs/LESSONS-LEARNED.md LL-021 post-Round-3 investigation).
+///
+/// `#[tauri::command(async)] pub fn` tells the Tauri macro
+/// (tauri-macros-2.5.5/src/command/wrapper.rs:241, "sync_threadpool" kind) to
+/// route this command through `respond_async_serialized` →
+/// `tauri::async_runtime::spawn` (tauri-2.10.3/src/ipc/mod.rs:375). The UI
+/// thread pays only the spawn cost (microseconds) and is freed to drain the
+/// next IPC message; the sync body runs on a Tokio async-runtime worker.
+#[tauri::command(async)]
 pub fn watch_library(app: AppHandle, library_id: String, library_path: String) -> Result<(), String> {
     let state = app.state::<WatcherState>();
     let mut watchers = state.watchers.lock().map_err(|e| e.to_string())?;
@@ -74,7 +94,12 @@ pub fn watch_library(app: AppHandle, library_id: String, library_path: String) -
     Ok(())
 }
 
-#[tauri::command]
+/// See `watch_library` above for the rationale behind `(async)`. Dropping a
+/// watcher in `notify`'s Windows backend also calls into the OS (the
+/// `RecommendedWatcher` drop releases the `ReadDirectoryChangesW` handle) so
+/// we treat it the same way for symmetry and to keep the UI thread unblocked
+/// even if multiple libraries are closed concurrently.
+#[tauri::command(async)]
 pub fn unwatch_library(app: AppHandle, library_id: String) -> Result<(), String> {
     let state = app.state::<WatcherState>();
     let mut watchers = state.watchers.lock().map_err(|e| e.to_string())?;

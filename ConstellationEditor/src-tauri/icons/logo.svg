@@ -1,0 +1,35 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+
+  <!-- White background rounded square -->
+  <rect width="512" height="512" rx="108" fill="#ffffff" />
+
+  <!-- Center star (largest) -->
+  <path d="M256,204 L272,244 L312,256 L272,268 L256,308 L240,268 L200,256 L240,244 Z"
+    fill="url(#starGrad)" />
+
+  <!-- Top star -->
+  <path d="M256,130 L264,150 L284,158 L264,166 L256,186 L248,166 L228,158 L248,150 Z"
+    fill="url(#starGrad)" />
+
+  <!-- Top-right star -->
+  <path d="M346,182 L354,202 L374,210 L354,218 L346,238 L338,218 L318,210 L338,202 Z"
+    fill="url(#starGrad)" />
+
+  <!-- Bottom-right star -->
+  <path d="M330,306 L338,326 L358,334 L338,342 L330,362 L322,342 L302,334 L322,326 Z"
+    fill="url(#starGrad)" />
+
+  <!-- Bottom-left star -->
+  <path d="M190,326 L198,346 L218,354 L198,362 L190,382 L182,362 L162,354 L182,346 Z"
+    fill="url(#starGrad)" />
+
+  <!-- Left star -->
+  <path d="M162,206 L170,226 L190,234 L170,242 L162,262 L154,242 L134,234 L154,226 Z"
+    fill="url(#starGrad)" />
+</svg>

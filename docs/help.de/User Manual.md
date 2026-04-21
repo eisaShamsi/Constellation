@@ -1,6 +1,6 @@
 # Constellation Benutzerhandbuch
 
-**Version 0.3.4 | Maerz 2026**
+**Version 0.1.0 | Maerz 2026**
 
 Constellation ist eine Desktop-Anwendung fuer persoenliches Wissensmanagement (PKM) zur Verwaltung von Markdown-Notizbibliotheken. Entwickelt mit Tauri v2, SvelteKit und Rust, laeuft sie nativ auf Windows, macOS und Linux mit vollstaendiger Unterstuetzung fuer Arabisch und RTL.
 
@@ -11,23 +11,25 @@ Constellation ist eine Desktop-Anwendung fuer persoenliches Wissensmanagement (P
 1. [Erste Schritte](#erste-schritte)
 2. [Universum und Bibliotheken](#universum-und-bibliotheken)
 3. [Notizen erstellen und bearbeiten](#notizen-erstellen-und-bearbeiten)
-4. [Sternenansicht (GraphMind)](#sternenansicht-graphmind)
-5. [Geteilte Ansicht](#geteilte-ansicht)
-6. [Index](#index)
-7. [Zweiter Bildschirm](#zweiter-bildschirm)
-8. [Eigenschaften und Frontmatter](#eigenschaften-und-frontmatter)
-9. [Vorlagen](#vorlagen)
-10. [Tabellen](#tabellen)
-11. [Aufgaben](#aufgaben)
-12. [Importer](#importer)
-13. [Kalender](#kalender)
-14. [Lens](#lens)
-15. [Einstellungen](#einstellungen)
-16. [Tastenkuerzel](#tastenkuerzel)
-17. [RTL- und Arabisch-Unterstuetzung](#rtl--und-arabisch-unterstuetzung)
-18. [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
-19. [Wissenskarte](#wissenskarte)
-20. [Kognitive Engine](#kognitive-engine)
+4. [Suche](#suche)
+5. [Sternenansicht (GraphMind)](#sternenansicht-graphmind)
+6. [Geteilte Ansicht](#geteilte-ansicht)
+7. [Index](#index)
+8. [Constellation Sight](#constellation-sight)
+9. [Zweiter Bildschirm](#zweiter-bildschirm)
+10. [Eigenschaften und Frontmatter](#eigenschaften-und-frontmatter)
+11. [Vorlagen](#vorlagen)
+12. [Tabellen](#tabellen)
+13. [Aufgaben](#aufgaben)
+14. [Importer](#importer)
+15. [Kalender](#kalender)
+16. [Lens](#lens)
+17. [Einstellungen](#einstellungen)
+18. [Tastenkuerzel](#tastenkuerzel)
+19. [RTL- und Arabisch-Unterstuetzung](#rtl--und-arabisch-unterstuetzung)
+20. [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
+21. [Wissenskarte](#wissenskarte)
+22. [Kognitive Engine](#kognitive-engine)
 
 ---
 
@@ -218,7 +220,87 @@ Sie koennen auch auf bestimmte Ueberschriften verlinken: `[[Notizname#Ueberschri
 
 ---
 
-## 4. Sternenansicht (GraphMind)
+## 4. Suche
+
+Constellation verfuegt ueber eine hybride mehrsprachige Suchmaschine auf Basis von SQLite FTS5 mit BM25-Ranking, strukturierten Abfragefiltern und arabisch-optimierter Normalisierung. Die Suche ist ueber die Seitenleiste erreichbar.
+
+### So suchen Sie
+
+Klicken Sie auf das Suchsymbol in der Seitenleiste oder verwenden Sie `Ctrl+Shift+F`, um den Suchmodus zu aktivieren. Geben Sie Ihre Abfrage ein und Ergebnisse erscheinen nach einer kurzen Verzoegerung (300ms). Druecken Sie `Escape` oder klicken Sie auf die Schaltflaeche `x`, um die Suche zu loeschen und zum Dateibaum zurueckzukehren.
+
+### Suchsyntax
+
+| Syntax | Beispiel | Was gefunden wird |
+|--------|----------|-------------------|
+| Freitext | `Projektmanagement` | Notizen mit diesen Woertern in Titel oder Text |
+| Tag-Filter | `#forschung` | Notizen mit dem Tag `#forschung` |
+| Eigenschaftsfilter | `status=aktiv` | Notizen mit Frontmatter-Eigenschaft `status` gleich `aktiv` |
+| Wikilink-Filter | `links to [[Klima]]` | Notizen mit Verweis auf `[[Klima]]` |
+| Bibliotheksbereich | `in:MeineBibliothek` | Ergebnisse auf eine bestimmte Bibliothek beschraenken |
+| Kombiniert | `#forschung status=aktiv Wirtschaft` | Alle Filter gemeinsam angewendet |
+
+### Treffer-Badges
+
+Jedes Suchergebnis zeigt ein farbiges Badge, das angibt, wie der Treffer gefunden wurde. Das Badge zeigt einen lokalisierten Buchstaben fuer Barrierefreiheit (farbenblind-sicher):
+
+| Badge | Farbe | Bedeutung |
+|-------|-------|-----------|
+| **T** | Blau | Titeltreffer — der Suchbegriff erscheint im Notiznamen |
+| **I** | Gruen | Inhaltstreffer — der Suchbegriff erscheint im Notiztext |
+| **S** | Lila | Semantischer Treffer — konzeptuell verwandt (erfordert Embedding-Modell) |
+| **E** | Bernstein | Eigenschaftstreffer — ueber Frontmatter-Eigenschaftsfilter gefunden |
+| **#** | Pink | Tag-Treffer — ueber Tag-Filter gefunden |
+| **W** | Hellblau | Wikilink-Treffer — ueber Wikilink-Filter gefunden |
+
+Badge-Buchstaben sind fuer alle 15 unterstuetzten Sprachen lokalisiert.
+
+### Angeheftete Ergebnisse (Durch Ergebnisse navigieren)
+
+Suchergebnisse bleiben nach dem Anklicken sichtbar. Die geoeffnete Notiz wird in der Ergebnisliste hervorgehoben, sodass Sie sehen koennen, welches Ergebnis Sie gerade betrachten. Klicken Sie auf ein anderes Ergebnis, um dorthin zu navigieren, ohne erneut zu suchen.
+
+Um die Suche zu loeschen, druecken Sie `Escape` oder klicken Sie auf `x`.
+
+### Tastaturnavigation
+
+| Taste | Aktion |
+|-------|--------|
+| `Pfeil nach unten` | Naechstes Ergebnis auswaehlen |
+| `Pfeil nach oben` | Vorheriges Ergebnis auswaehlen |
+| `Enter` | Ausgewaehltes Ergebnis oeffnen |
+| `Escape` | Suche loeschen und zum Dateibaum zurueckkehren |
+
+### Suchbegriff-Hervorhebung
+
+Wenn Sie eine Notiz aus den Suchergebnissen oeffnen, werden alle Vorkommen des Suchbegriffs im Editor hervorgehoben. Dies funktioniert mit arabischer diakritischer Erkennung — die Suche nach "ادارة" hebt "إدارة" und alle diakritischen Varianten hervor.
+
+### Suchverlauf
+
+Klicken Sie auf das Suchfeld, wenn es leer ist, um Ihre letzten Suchen (letzte 20 Abfragen) anzuzeigen. Jeder Eintrag zeigt den Abfragetext und den Zeitpunkt der Ausfuehrung. Klicken Sie auf einen Eintrag, um die Suche sofort erneut auszufuehren. Nutzen Sie den Link "Verlauf loeschen" am Ende, um den gesamten Verlauf zu entfernen.
+
+Der Suchverlauf wird lokal auf Ihrem Geraet gespeichert und bleibt ueber Neustarts erhalten.
+
+### Search Hub
+
+Der Search Hub ist eine Vollbild-Sucherfahrung. Klicken Sie auf das Lupensymbol in der Dock-Leiste, um ihn zu oeffnen. Beide Seitenleisten klappen ein, um maximalen Platz zu bieten. Geben Sie einen beliebigen Begriff ein und Constellation durchsucht gleichzeitig alles und gruppiert Ergebnisse in 5 Kategorien: Titel, Inhalte, Tags, Eigenschaften und Wikilinks. Jede Kategorie hat einen aufklappbaren Abschnitt mit einem Zaehler-Badge. Klicken Sie auf ein Ergebnis, um es im Editor zu oeffnen, wobei alle Vorkommen hervorgehoben werden. Eine Schaltflaeche "Zurueck zum Search Hub" erscheint, damit Sie zurueckkehren koennen, ohne erneut zu suchen.
+
+### Link-Operatoren
+
+Constellation unterstuetzt 6 Link-Topologie-Suchoperatoren:
+
+| Syntax | Was es findet |
+|--------|---------------|
+| `links to [[X]]` | Notizen, die auf X verlinken (Backlinks) |
+| `links from [[X]]` | Notizen, auf die X verlinkt (ausgehende Links) |
+| `mutual [[X]]` | Notizen, die mit X verlinkt sind UND X verlinkt zurueck (bidirektional) |
+| `mentions [[X]]` | Notizen, die den Namen von X ohne [[Wikilink]] enthalten |
+| `orphans` | Notizen ohne eingehende oder ausgehende Links |
+| `links between [[X]] and [[Y]]` | Notizen, die sowohl auf X als auch auf Y verlinken |
+
+Bei der Eingabe eines Link-Operators zeigt die `[[`-Autovervollstaendigung alle Notizen im Universum. Nach Auswahl einer Notiz geben Sie `#` fuer Ueberschriften-Vervollstaendigung oder `|type:` fuer Linktyp-Vervollstaendigung ein.
+
+---
+
+## 5. Sternenansicht (GraphMind)
 
 Die Sternenansicht visualisiert Ihre Notizen als interaktiven 3D-Graphen, angetrieben von der **GraphMind**-Engine (Pixi.js WebGL).
 
@@ -303,7 +385,7 @@ Der Reifegrad wird automatisch basierend auf Anzahl der Verlinkungen, Ueberarbei
 
 ---
 
-## 5. Geteilte Ansicht
+## 6. Geteilte Ansicht
 
 Die geteilte Ansicht ermoeglicht es Ihnen, mehrere Notizen nebeneinander im Hauptfenster zu bearbeiten.
 
@@ -332,7 +414,7 @@ Klicken Sie auf ein beliebiges Feld, um es zu fokussieren. Das fokussierte Feld 
 
 ---
 
-## 6. Index
+## 7. Index
 
 Der Index ist ein umfassendes Begriffsglossar ueber alle Ihre Bibliotheken — jedes bedeutungsvolle Wort, alphabetisch sortiert mit Vorkommenshaeufigkeiten.
 
@@ -373,7 +455,49 @@ Wenn der Zweite Bildschirm geoeffnet ist:
 
 ---
 
-## 7. Zweiter Bildschirm
+## 8. Constellation Sight
+
+Constellation Sight visualisiert Ihr gesamtes Wissenssystem als Gravitationsschacht-Graph. Es beantwortet die Frage: **"Wie sieht mein Wissen aus und wie gesund ist es?"**
+
+### Sight oeffnen
+
+Klicken Sie auf die **Sight-Schaltflaeche** (Augensymbol) in der linken Leiste. Der Gravitationsschacht-Graph erscheint. Klicken Sie auf x zum Schliessen.
+
+### Der Gravitationsschacht-Graph
+
+Notizen sind in konzentrischen Ringen nach Wichtigkeit (Zentralitaet) angeordnet. Die am staerksten vernetzten Notizen befinden sich im Zentrum; periphere Notizen am Rand. Innerhalb jedes Rings sind Notizen nach Bibliothek (Ihrer Organisation) gruppiert. Knotenfarbe = Bibliothek.
+
+| Element | Bedeutung |
+|---------|-----------|
+| **Grosser Knoten** | Hohe Zentralitaet — verbindet verschiedene Wissensbereiche |
+| **Kleiner Knoten** | Peripher — innerhalb eines Bereichs |
+| **Knotenfarbe** | Bibliothekszugehoerigkeit |
+| **Durchgezogene Linie** | Verbindung zwischen zwei Notizen |
+| **Richtungspfeile** | Kleine Pfeile, die die Verbindungsrichtung anzeigen |
+| **Linienstaerke** | Konfidenzniveau (dick = etabliert, duenn = Hypothese) |
+
+### Interaktion
+
+- **Einfachklick** auf einen Knoten: Hebt seine Nachbarschaft hervor (alle verbundenen Notizen). Alles andere wird abgeblendet.
+- **Doppelklick**: Oeffnet die Notiz im Editor.
+- **Klick auf leeren Bereich**: Loescht die Hervorhebung.
+- **Scrollen**: Zoom. **Ziehen**: Schwenken. **An Bildschirm anpassen**: Symbolleisten-Schaltflaeche.
+
+### Suche in Sight
+
+Klicken Sie auf die Lupe. Unterstuetzt alle Operatoren: `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, Freitext und semantische Suche. Ergebnisse zeigen Richtungsfarben: Gruen (eingehend), Rot (ausgehend).
+
+### Analyse-Panel (SightPanel)
+
+Klicken Sie auf das Rastersymbol, um die Seitenleiste zu oeffnen. Zeigt: Universum-Gesundheitswert (0-100), Notiz-/Link-/Orphan-Zaehler, Linktyp- und Konfidenzbalken, Top 10 Bruecken und Wissenseinblicke (staerkste Evidenz, schwache Grundlagen, Spannungen, stagnierende, am staerksten vernetzte, Wissensluecken).
+
+### Einstellungen
+
+Zahnradsymbol: Passen Sie Linkstrichstaerke, Deckkraft und Pfeilgroesse an. Einstellungen bleiben sitzungsuebergreifend erhalten.
+
+---
+
+## 9. Zweiter Bildschirm
 
 Der Zweite Bildschirm ist ein modusbasiertes Begleitfenster, das sich an Ihren aktuellen Seitenleistenmodus anpasst.
 
@@ -428,7 +552,7 @@ Alle visuellen Einstellungen werden sofort auf den zweiten Bildschirm uebertrage
 
 ---
 
-## 8. Eigenschaften und Frontmatter
+## 10. Eigenschaften und Frontmatter
 
 Notizen koennen YAML-Frontmatter am Anfang enthalten:
 
@@ -455,7 +579,7 @@ Eigenschaftsanzeige umschalten unter **Einstellungen > Editor > Eigenschaften im
 
 ---
 
-## 9. Vorlagen
+## 11. Vorlagen
 
 Erstellen Sie wiederverwendbare Notizvorlagen:
 
@@ -474,7 +598,7 @@ Vorlagen unterstuetzen Variablen:
 
 ---
 
-## 10. Tabellen
+## 12. Tabellen
 
 ### Markdown-Tabellen
 
@@ -504,7 +628,7 @@ Der Dokument-Editor (TipTap) bietet eine visuelle Tabellenerfahrung:
 
 ---
 
-## 11. Aufgaben
+## 13. Aufgaben
 
 Constellation unterstuetzt Aufgaben-Kontrollkaestchen in Notizen:
 
@@ -517,7 +641,7 @@ Im Live-Vorschau-Modus sind Kontrollkaestchen anklickbar. Aufgaben koennen bibli
 
 ---
 
-## 12. Importer
+## 14. Importer
 
 Importieren Sie Notizen aus anderen PKM-Tools:
 
@@ -529,7 +653,7 @@ Gehen Sie zu **Einstellungen > Importer**, um einen Import zu starten.
 
 ---
 
-## 13. Kalender
+## 15. Kalender
 
 Die Kalenderansicht zeigt Notizen nach Datum geordnet:
 
@@ -541,7 +665,7 @@ Oeffnen Sie den Kalender ueber die Seitenleiste.
 
 ---
 
-## 14. Lens
+## 16. Lens
 
 Lens bietet gefilterte Ansichten Ihrer Notizen:
 
@@ -551,7 +675,7 @@ Lens bietet gefilterte Ansichten Ihrer Notizen:
 
 ---
 
-## 15. Einstellungen
+## 17. Einstellungen
 
 Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder `Ctrl+,`.
 
@@ -561,6 +685,32 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 - Thema (Hell / Dunkel)
 - Oberflaechen-Schriftart, Textschriftart, Monospace-Schriftart, Schriftgroesse
 - Schriftthema — vorgefertigte Schriftkombinationen (Schreibmaschine, Klassisch, Modern usw.) fuer schnellen Wechsel
+- **Themen** — waehlen Sie aus sechs eingebauten Themen, erstellen Sie benutzerdefinierte Themen (Fuenf-Farben-Editor), importieren Sie Themen aus der Obsidian-Community-Registry (200+ Themen) oder importieren Sie eine `.json`-Themendatei. Loeschen Sie jedes benutzerdefinierte Thema mit dem ✕-Button beim Hover.
+
+### Style Settings
+
+Ein eigener Tab fuer die feinkoernige Anpassung jedes sichtbaren Interface-Elements, live auf das aktive Thema angewendet.
+
+- **Farben** — Hintergrund, Oberflaechen, Text (normal/gedaempft/schwach), Akzent, Rahmen, Zustandsfarben
+- **Typografie** — Schriftgroessen fuer Interface/Notizen/Code, H1–H6-Groessen, Ueberschriftgewicht, Zeilenhoehen, Absatzabstand
+- **Layout & Form** — klein/mittel/gross Eckenradien, Rahmenbreiten, Schatten, lesbare Editor-Zeilenlaenge, Seitenraender
+- **Komponenten** — Ribbon-Dock, Aktionsleiste der Seitenleiste, Layout-Leiste (Panel-Toggles), Top-Leiste/Tab-Leiste, Statusleiste, rechte Seitenleiste (Inspector), Datei-Explorer (Universum-Notizen, Kind-Universen, Bibliotheken, Ordner, Notizen), Buttons, Tags, Callouts — jeweils mit unabhaengiger Groesse, Radius, Farbe und gegebenenfalls Aktiv-Zustand-Styling
+- **Editor** — Linkfarbe/Hover/Dekoration, Inline-Code-Farbe/Hintergrund/Radius, Blockzitat-Balkenbreite/-Farbe, Cursorfarbe, Auswahlhintergrund
+
+**Import / Export** — Symbolleiste oben im Tab:
+- Aus Zwischenablage einfuegen (ein Klick)
+- Import / Einfuegen (Textfeld mit Merge oder Ersetzen)
+- Aus Datei (.json)
+- Kopieren (aktuelle Werte in Zwischenablage)
+- Exportieren (.json)
+
+Das Format entspricht exakt dem Style-Settings-Plugin von Obsidian, sodass Sie Einstellungen zwischen Obsidian und Constellation teilen koennen.
+
+Aenderungen werden automatisch im aktiven Thema gespeichert; wenn Sie ein eingebautes Thema bearbeiten, wird es automatisch in Ihre benutzerdefinierten Themen geklont, sodass Aenderungen bestehen bleiben, ohne das Original zu veraendern.
+
+### Ueberschreibungen der Arabisch-Engine
+
+Ein Panel pro Universum, in dem Sie festlegen, wie die Arabisch-Engine bestimmte Oberflaechenformen analysiert — Ihre eigenen Wortschoepfungen, lokale Namen, fachspezifische Lehnwoerter oder Faelle, in denen Sie der automatischen Lesart der Engine widersprechen. Jede Ueberschreibung schlaegt den generativen FST, die Kaskade und den heuristischen Fallback. Das Hinzufuegen oder Entfernen einer Ueberschreibung loest eine gezielte Neuindizierung nur fuer die Notizen aus, die die betroffene Oberflaechenform enthalten — keine Komplettneuaufbau. Siehe Abschnitt 19 ("RTL- und Arabisch-Unterstuetzung") fuer die Schritt-fuer-Schritt-Anleitung.
 
 ### Editor
 
@@ -583,7 +733,7 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 
 ---
 
-## 16. Tastenkuerzel
+## 18. Tastenkuerzel
 
 ### Global
 
@@ -623,7 +773,7 @@ Zugriff auf die Einstellungen ueber das Zahnrad-Symbol in der Seitenleiste oder 
 
 ---
 
-## 17. RTL- und Arabisch-Unterstuetzung
+## 19. RTL- und Arabisch-Unterstuetzung
 
 Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Persisch, Urdu und andere RTL-Schriften:
 
@@ -640,9 +790,37 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 2. Optional: Legen Sie eine eigene arabische Schriftart unter **Einstellungen > Allgemein > Skript-Schriftarten** fest
 3. Notizen mit arabischem Inhalt werden automatisch in RTL dargestellt
 
+### Ueberschreibungen der Arabisch-Engine
+
+Die Arabisch-Engine von Constellation ist ein fuenfschichtiger morphologischer Analysator, der unter jeder Suche, jedem Link und jedem Indexeintrag laeuft. Sie versteht Wurzeln, Muster, Eigennamen, Lehnwoerter und phonologische Reparaturen — so findet eine Anfrage nach كاتب auch كتبنا und كتاب, waehrend وائل als Name unversehrt bleibt und nicht zu ائل verstuemmelt wird.
+
+Das Panel **Arabische Ueberschreibungen** in den Einstellungen ist der Ort, an dem Sie der Engine Ihre eigene Terminologie beibringen. Jede Ueberschreibung ist die souveraene Antwort — sie schlaegt den generativen FST, die Kaskade und den heuristischen Fallback.
+
+**Wann Sie Ueberschreibungen verwenden sollten:**
+- Personennamen, lokale Ortsnamen oder fachspezifische Begriffe, die die Engine nicht kennt
+- Wortschoepfungen oder Abkuerzungen, die nur in Ihrem Universum vorkommen
+- Lehnwoerter, bei denen Sie eine bestimmte Schreibung bewahren wollen
+- Jeder Fall, in dem die automatische Analyse der Engine Ihrer Lesart widerspricht
+
+**Schritt fuer Schritt:**
+
+1. Oeffnen Sie **Einstellungen** (Zahnradsymbol oder `Ctrl + ,` / `Cmd + ,`) und waehlen Sie **Arabische Ueberschreibungen** in der Seitenleiste.
+2. Klicken Sie auf **Ueberschreibung hinzufuegen**.
+3. Tragen Sie ein:
+   - **Oberflaechenform** — das arabische Wort so, wie Sie es tippen
+   - **Lemma** — die kanonische Form, die die Engine zurueckgeben soll
+   - **Wurzel** (optional) — 3 oder 4 Konsonanten, wenn das Wort eine klassische Wurzel hat
+   - **Muster** (optional) — z.B. `فاعل`
+   - **Wortart** — Eigenname / Substantiv / Adjektiv / Adverb / Verb / Partikel / Fremd / Unbekannt
+   - **Notiz** (optional) — eine Zeile Kontext fuer Sie selbst
+4. Klicken Sie auf **Speichern**. Das Panel zeigt **Neuindiziert…**, waehrend jede Notiz mit der Oberflaechenform neu tokenisiert wird, und dann **N Notiz(en) neu indiziert**, wenn der Vorgang abgeschlossen ist.
+5. Um eine Ueberschreibung zu entfernen, klicken Sie auf das **x** in ihrer Zeile — derselbe Neuindizierungs-Durchlauf laeuft rueckwaerts.
+
+Ueberschreibungen werden pro Universum unter `<universe>/.constellation/arabic-overrides.json` gespeichert — reiner Text, alphabetisch sortiert, atomar geschrieben. Sie koennen die Datei in die Versionskontrolle aufnehmen oder geraeteuebergreifend teilen.
+
 ---
 
-## 18. Sicherheit und Datenschutz
+## 20. Sicherheit und Datenschutz
 
 - **Alle Daten bleiben lokal** — keine Cloud-Synchronisierung, keine Telemetrie, kein Tracking
 - **Markdown-Dateien** — Ihre Notizen sind einfache Textdateien, die Ihnen vollstaendig gehoeren
@@ -652,7 +830,7 @@ Constellation bietet erstklassige Unterstuetzung fuer Arabisch, Hebraeisch, Pers
 
 ---
 
-## 19. Wissenskarte
+## 21. Wissenskarte
 
 Die Wissenskarte ist eine radiale Sunburst-Visualisierung, die Struktur, Dichte und Reifegrad Ihres gesamten Wissensuniversums zeigt.
 
@@ -685,7 +863,7 @@ Nach dem Oeffnen einer Notiz aus der Karte erscheint eine "Zurueck zur Karte"-Sc
 
 ---
 
-## 20. Kognitive Engine
+## 22. Kognitive Engine
 
 Die Kognitive Engine ist das eingebaute Intelligenzsystem von Constellation, das Ihre Notizen analysiert und verborgene Muster und Zusammenhaenge zwischen Ihren Ideen aufdeckt. Ihre Kernphilosophie:
 
@@ -938,5 +1116,5 @@ Alle Werkzeuge der Kognitiven Engine koennen unter **Einstellungen > Kognitive E
 
 ---
 
-*Constellation Benutzerhandbuch — Version 0.3.4 — Maerz 2026*
+*Constellation Benutzerhandbuch — Version 0.1.0 — Maerz 2026*
 *uconstellation.world*

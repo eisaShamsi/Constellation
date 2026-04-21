@@ -12,9 +12,11 @@
 	 *   - Simulation state (owned by forceWorker)
 	 */
 	import { onMount, onDestroy } from 'svelte';
-	import { t, isRTL as isRTLStore } from '$lib/i18n';
+	import { t, dir, isRTL as isRTLStore, getSearchOps } from '$lib/i18n';
 	import { GraphEngine, type EngineConfig, type LayoutMode } from '$lib/graph/graphEngine';
-	import type { StarNode, StarLink } from '$lib/libraries/store';
+	import type { SkyNode, SkyLink } from '$lib/libraries/store';
+	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
+	import { detectDir } from '$lib/utils';
 	import { computeSemanticLinks, type EmbeddingProgress } from '$lib/graph/semanticEngine';
 	import { detectClusters, type ClusterResult } from '$lib/graph/clusterEngine';
 	import { invoke } from '@tauri-apps/api/core';
@@ -40,25 +42,31 @@
 	};
 
 	let {
-		nodes = [] as StarNode[],
-		links = [] as StarLink[],
-		onNodeClick = undefined as ((path: string, libraryName: string) => void) | undefined,
+		nodes = [] as SkyNode[],
+		links = [] as SkyLink[],
+		onNodeClick = undefined as ((path: string, libraryName: string, highlightTerm?: string) => void) | undefined,
 		onNodeHover = undefined as ((node: { name: string; path: string; libraryName: string } | null) => void) | undefined,
 		activeNodeId = '',
 		highlightPath = null as string | string[] | null,
 		highlightColor = 0x7c3aed,
 		skyViewSettings,
 		libraryColorMap = {} as Record<string, string>,
+		searchMatchIds = null as Set<string> | null,
+		allNotes = [] as {name: string; path: string; libraryName: string}[],
 	}: {
-		nodes: StarNode[];
-		links: StarLink[];
-		onNodeClick?: (path: string, libraryName: string) => void;
+		nodes: SkyNode[];
+		links: SkyLink[];
+		onNodeClick?: (path: string, libraryName: string, highlightTerm?: string) => void;
 		onNodeHover?: (node: { name: string; path: string; libraryName: string } | null) => void;
 		activeNodeId?: string;
 		highlightPath?: string | string[] | null;
 		highlightColor?: number;
 		skyViewSettings?: Partial<EngineConfig>;
 		libraryColorMap?: Record<string, string>;
+		lensCentrality?: Map<string, number> | null;
+		lensCommunityAssignments?: Map<string, number> | null;
+		searchMatchIds?: Set<string> | null;
+		allNotes?: {name: string; path: string; libraryName: string}[];
 	} = $props();
 
 	// ─── Layer 1 state: UI only ─────────────────────────────
@@ -66,6 +74,11 @@
 	let settingsTab: 'appearance' | 'physics' | 'intelligence' = $state('appearance');
 	let searchVisible = $state(false);
 	let searchQuery = $state('');
+	let showSearchHistory = $state(false);
+	let searchHistoryItems = $state(readSearchHistory());
+	let showChips = $state(false);
+	let wikiAuto = $state<{name: string; path: string; libraryName: string}[]>([]);
+	let wikiAutoIdx = $state(-1);
 	let hoveredName = $state<string | null>(null);
 	let nodeCount = $state(0);
 	let edgeCount = $state(0);
@@ -312,7 +325,7 @@
 	// Context menu actions
 	function ctxOpen() {
 		if (!contextMenu) return;
-		onNodeClick?.(contextMenu.node.path, contextMenu.node.libraryName);
+		onNodeClick?.(contextMenu.node.path, contextMenu.node.libraryName, searchVisible && searchQuery ? searchQuery : undefined);
 		contextMenu = null;
 	}
 	function ctxFocus() {
@@ -331,13 +344,188 @@
 		contextMenu = null;
 	}
 
-	// Search → engine (one-way)
+	// ─── Search bar helpers ─────────────────────────────────
+	const syntaxChips = $derived.by(() => {
+		const _localeTracker = $t('searchHub.linksTo'); // reactive dependency on locale
+		const ops = getSearchOps();
+		return [
+			{ label: 'linksTo', syntax: (ops?.linksTo ?? 'links to') + ' [[' },
+			{ label: 'linksFrom', syntax: (ops?.linksFrom ?? 'links from') + ' [[' },
+			{ label: 'mutual', syntax: (ops?.mutual ?? 'mutual') + ' [[' },
+			{ label: 'mentions', syntax: (ops?.mentions ?? 'mentions') + ' [[' },
+			{ label: 'orphans', syntax: ops?.orphans ?? 'orphans' },
+			{ label: 'linksBetween', syntax: (ops?.linksBetween ?? 'links between') + ' [[' },
+			{ label: 'linksAll', syntax: (ops?.linksAll ?? 'links all') + ' [[' },
+			{ label: 'supports', syntax: (ops?.supports ?? 'supports') + ' [[' },
+			{ label: 'contradicts', syntax: (ops?.contradicts ?? 'contradicts') + ' [[' },
+			{ label: 'causes', syntax: (ops?.causes ?? 'causes') + ' [[' },
+			{ label: 'exemplifies', syntax: (ops?.exemplifies ?? 'exemplifies') + ' [[' },
+			{ label: 'generalizes', syntax: (ops?.generalizes ?? 'generalizes') + ' [[' },
+			{ label: 'derivesFrom', syntax: (ops?.derivesFrom ?? 'derives from') + ' [[' },
+			{ label: 'partOf', syntax: (ops?.partOf ?? 'part of') + ' [[' },
+			{ label: 'tag', syntax: '#' },
+			{ label: 'property', syntax: 'key=value' },
+			{ label: 'scope', syntax: (ops?.scope ?? 'in') + ':' },
+		];
+	});
+
+	function handleSearchInput(e: Event) {
+		searchQuery = (e.target as HTMLInputElement).value;
+		showSearchHistory = false;
+		// Wikilink autocomplete
+		const wikiMatch = searchQuery.match(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?)\s+(?:.*\[\[(?:[^\]]+\]\]\s+and\s+)?)?\[\[([^\]]*)$/i);
+		if (wikiMatch) {
+			const partial = wikiMatch[1].toLowerCase();
+			wikiAuto = allNotes.filter(n => !partial || n.name.toLowerCase().includes(partial)).slice(0, 20);
+			wikiAutoIdx = -1;
+			return;
+		}
+		wikiAuto = [];
+	}
+
+	function handleSearchKeydown(e: KeyboardEvent) {
+		if (wikiAuto.length > 0) {
+			if (e.key === 'ArrowDown') { e.preventDefault(); wikiAutoIdx = Math.min(wikiAutoIdx + 1, wikiAuto.length - 1); }
+			else if (e.key === 'ArrowUp') { e.preventDefault(); wikiAutoIdx = Math.max(wikiAutoIdx - 1, 0); }
+			else if (e.key === 'Enter') { e.preventDefault(); insertWikiName(wikiAuto[Math.max(wikiAutoIdx, 0)].name); }
+			else if (e.key === 'Escape') { e.preventDefault(); wikiAuto = []; }
+			return;
+		}
+		if (e.key === 'Escape') { searchVisible = false; searchQuery = ''; }
+		// No auto-bracket pairing in search inputs — causes extra brackets in RTL/bidi contexts
+	}
+
+	function insertWikiName(name: string) {
+		searchQuery = searchQuery.replace(/\[\[[^\]]*$/, `[[${name}]]`);
+		wikiAuto = [];
+		wikiAutoIdx = -1;
+	}
+
+	function insertSyntax(syntax: string) {
+		searchQuery = searchQuery ? searchQuery + ' ' + syntax : syntax;
+		showChips = false;
+		if (syntax.endsWith('[[')) {
+			wikiAuto = allNotes.slice(0, 20);
+			wikiAutoIdx = -1;
+		}
+	}
+
+	function selectHistoryItem(q: string) {
+		searchQuery = q;
+		showSearchHistory = false;
+		searchHistoryItems = readSearchHistory();
+	}
+
+	function clearSearch() {
+		searchQuery = '';
+		searchMatches = [];
+		wikiAuto = [];
+	}
+
+	// Search → engine (one-way) + async hybrid search
 	let prevSearch = '';
+	let searchDebounce: ReturnType<typeof setTimeout>;
+	let searchMatches = $state<{ name: string; match_type: string; path: string; libraryName: string }[]>([]);
+	let searchTotalHits = $state(0);
+	let searchCategoryCounts = $state<Record<string, number>>({});
+	let showCategoryBreakdown = $state(false);
 	$effect(() => {
 		const q = searchQuery;
 		if (q !== prevSearch) {
 			prevSearch = q;
-			engine?.setSearch(q);
+			engine?.setSearch(q); // instant client-side name filter
+			if (!q.trim()) { searchMatches = []; searchTotalHits = 0; searchCategoryCounts = {}; showCategoryBreakdown = false; engine?.clearSearchBadges(); }
+			else { setTimeout(() => engine?.renderSearchBadges(), 50); }
+			// Also fire advanced search for content/structured/semantic matches (async)
+			clearTimeout(searchDebounce);
+			if (q.trim().length >= 2) {
+				searchDebounce = setTimeout(async () => {
+					try {
+						const { universalSearch, constellationSearch, parseSearchQuery, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual, stripInvisibleChars } = await import('$lib/libraries/store');
+						const q_clean = stripInvisibleChars(q); // Strip bidi marks from RTL inputs
+						const { getSearchOps } = await import('$lib/i18n');
+						const ops = getSearchOps();
+						const isAdvanced = hasAdvancedSyntaxMultilingual(q_clean, ops);
+
+						const typeMap = new Map<string, Set<string>>();
+						const allIds = new Set<string>();
+						const flatResults: { name: string; match_type: string; path: string; libraryName: string }[] = [];
+
+						if (isAdvanced) {
+							// Advanced syntax: canonicalize localized operators → parseSearchQuery → constellationSearch
+							const req = parseSearchQuery(canonicalizeSearchQuery(q_clean, ops));
+							req.limit = 0;
+							const results = await constellationSearch(req);
+							for (const r of results) {
+								const id = r.name.toLowerCase();
+								allIds.add(id);
+								if (!typeMap.has(id)) typeMap.set(id, new Set());
+								typeMap.get(id)!.add(r.match_type);
+								flatResults.push({ name: r.name, match_type: r.match_type, path: r.path, libraryName: r.library_name });
+							}
+						} else {
+							// Plain text: use universalSearch for categorized results
+							// Embed query for semantic search if enabled
+							const { embedText, appSettings } = await import('$lib/libraries/store');
+							const { get } = await import('svelte/store');
+							let qEmbed: number[] | null = null;
+							if (get(appSettings).enabledFeatures?.semanticSearch) {
+								try { qEmbed = await embedText(q); } catch {}
+							}
+							const resp = await universalSearch(q, qEmbed, 0);
+							const categoryTypes: [string, string][] = [
+								['titles', 'title'], ['contents', 'content'], ['tags', 'tag'],
+								['properties', 'property'], ['wikilinks', 'wikilink'], ['semantic', 'semantic'],
+							];
+							let totalHits = 0;
+							const catCounts: Record<string, number> = {};
+							for (const [cat, mt] of categoryTypes) {
+								const items = (resp as any)[cat] ?? [];
+								totalHits += items.length;
+								if (items.length > 0) catCounts[cat] = items.length;
+								for (const r of items) {
+									const id = r.name.toLowerCase();
+									allIds.add(id);
+									if (!typeMap.has(id)) typeMap.set(id, new Set());
+									typeMap.get(id)!.add(mt);
+									if (!flatResults.find(f => f.path === r.path)) {
+										flatResults.push({ name: r.name, match_type: mt, path: r.path, libraryName: r.library_name });
+									}
+								}
+							}
+							searchTotalHits = totalHits;
+							searchCategoryCounts = catCounts;
+
+						}
+
+						engine?.setSearchExtendedMulti(allIds, typeMap);
+
+						// Highlight link lines for link operators (use canonicalized query for matching)
+						engine?.clearSearchLinkHighlights();
+						const cq = canonicalizeSearchQuery(q_clean, ops);
+						const linkToMatch = cq.match(/links?\s+to\s+\[\[([^\]]+)\]\]/i);
+						const linkFromMatch = cq.match(/links?\s+from\s+\[\[([^\]]+)\]\]/i);
+						const linkAllMatch = cq.match(/links?\s+all\s+\[\[([^\]]+)\]\]/i);
+						const mutualMatch = cq.match(/mutual\s+\[\[([^\]]+)\]\]/i);
+						if (linkToMatch) {
+							engine?.setSearchLinkHighlights(linkToMatch[1].toLowerCase(), allIds, 'to');
+						} else if (linkFromMatch) {
+							engine?.setSearchLinkHighlights(linkFromMatch[1].toLowerCase(), allIds, 'from');
+						} else if (linkAllMatch) {
+							engine?.setSearchLinkHighlights(linkAllMatch[1].toLowerCase(), allIds, 'all');
+						} else if (mutualMatch) {
+							engine?.setSearchLinkHighlights(mutualMatch[1].toLowerCase(), allIds, 'mutual');
+						}
+
+						setTimeout(() => engine?.renderSearchBadges(), 100);
+						searchMatches = flatResults;
+						addSearchHistory(q);
+						searchHistoryItems = readSearchHistory();
+					} catch (e) { console.error('[SV Search]', e); }
+				}, 300);
+			} else {
+				searchMatches = [];
+			}
 		}
 	});
 
@@ -352,6 +540,13 @@
 		const p = highlightPath;
 		const c = highlightColor;
 		engine?.setHighlightFilter(p, c);
+	});
+
+	// Search Hub match highlighting → engine
+	$effect(() => {
+		if (searchMatchIds && searchMatchIds.size > 0 && engine) {
+			engine.setSearchExtended(searchMatchIds);
+		}
 	});
 
 	// Data changes → engine
@@ -419,7 +614,7 @@
 				if (clickedNode && focusActive) {
 					breadcrumb = [...breadcrumb.filter(b => b.id !== clickedNode.id), { id: clickedNode.id, name: clickedNode.name }].slice(-8);
 				}
-				onNodeClick?.(path, lib);
+				onNodeClick?.(path, lib, searchVisible && searchQuery ? searchQuery : undefined);
 			},
 			onNodeHover: (node) => { hoveredName = node?.name ?? null; onNodeHover?.(node); },
 			onStatsReady: (nc, ec, mc) => { nodeCount = nc; edgeCount = ec; mocCount = mc; },
@@ -458,8 +653,79 @@
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 			</button>
 			{#if searchVisible}
-				<input class="gm-search" type="text" dir="auto" placeholder={$t('graphView.controls.searchPlaceholder')}
-					bind:value={searchQuery} autofocus />
+				<div class="gm-search-wrap">
+					<div class="gm-search-bar">
+						<input class="gm-search" type="text" dir="auto" placeholder={$t('graphView.controls.searchPlaceholder')}
+							value={searchQuery} oninput={handleSearchInput} onkeydown={handleSearchKeydown}
+							onfocus={() => { if (!searchQuery) showSearchHistory = true; }}
+							onblur={() => setTimeout(() => showSearchHistory = false, 200)}
+							autofocus />
+						{#if searchQuery}
+							<button class="gm-search-clear" onclick={clearSearch}>×</button>
+						{/if}
+						<button class="gm-search-chips-btn" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers')}>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+						</button>
+						{#if searchMatches.length > 0}
+							<button class="gm-search-count" onclick={() => showCategoryBreakdown = !showCategoryBreakdown}>
+								{searchTotalHits || searchMatches.length}{#if searchTotalHits > searchMatches.length}<span style="font-weight:400;opacity:0.7"> {$t('searchHub.from')} {searchMatches.length} {$t('searchHub.notes')}</span>{/if}
+							</button>
+							{#if showCategoryBreakdown && Object.keys(searchCategoryCounts).length > 0}
+								<div class="gm-cat-dropdown">
+									{#each Object.entries(searchCategoryCounts) as [cat, count]}
+										{@const colors: Record<string, string> = { titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed' }}
+										{@const icons: Record<string, string> = { titles: 'T', contents: 'C', tags: '#', properties: 'P', wikilinks: 'W', semantic: 'S' }}
+										<div class="gm-cat-row">
+											<span class="gm-cat-badge" style:background={colors[cat] ?? '#94a3b8'}>{icons[cat] ?? '?'}</span>
+											<span class="gm-cat-name">{$t(`searchHub.${cat}`)}</span>
+											<span class="gm-cat-num">{count}</span>
+										</div>
+									{/each}
+								</div>
+							{/if}
+						{/if}
+						<button class="gm-search-close" onclick={() => { searchVisible = false; searchQuery = ''; }}>×</button>
+					</div>
+
+					<!-- Syntax chips -->
+					{#if showChips}
+						<div class="gm-chips">
+							{#each syntaxChips as chip}
+								<button class="gm-chip" onclick={() => insertSyntax(chip.syntax)}>{$t(`searchHub.${chip.label}`)}</button>
+							{/each}
+						</div>
+					{/if}
+
+					<!-- Wikilink autocomplete -->
+					{#if wikiAuto.length > 0}
+						<div class="gm-wiki-drop">
+							{#each wikiAuto as note, idx}
+								<button class="gm-wa-item" class:selected={idx === wikiAutoIdx}
+									onclick={() => insertWikiName(note.name)} dir={detectDir(note.name)}>
+									<span class="gm-wa-name">{note.name}</span>
+									<span class="gm-wa-lib">{note.libraryName}</span>
+								</button>
+							{/each}
+						</div>
+					{/if}
+
+					<!-- Search history -->
+					{#if showSearchHistory && !searchQuery && searchHistoryItems.length > 0}
+						<div class="gm-history">
+							{#each searchHistoryItems.slice(0, 10) as entry}
+								<button class="gm-hist-item" onclick={() => selectHistoryItem(entry.query)}>
+									<span dir="auto">{entry.query}</span>
+									<span class="gm-hist-time">{relativeTime(entry.timestamp)}</span>
+								</button>
+							{/each}
+							<button class="gm-hist-clear" onclick={() => { clearSearchHistory(); searchHistoryItems = []; }}>
+								{$t('sidebar.clearHistory')}
+							</button>
+						</div>
+					{/if}
+
+					<!-- Results shown on canvas as badges+arrows, not in a list -->
+				</div>
 			{/if}
 		</div>
 		<div class="gm-toolbar-right">
@@ -791,6 +1057,114 @@
 		min-width: 200px;
 	}
 	.gm-search:focus { border-color: var(--interactive-accent); }
+	.gm-search-wrap { position: relative; min-width: 350px; }
+	.gm-search-bar {
+		display: flex; align-items: center; gap: 4px;
+		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
+		border-radius: 6px; padding: 0 6px;
+	}
+	.gm-search-bar .gm-search { border: none; flex: 1; min-width: 0; }
+	.gm-search-clear, .gm-search-close {
+		border: none; background: none; color: var(--text-muted); cursor: pointer;
+		font-size: 1rem; padding: 2px 4px; border-radius: 3px;
+	}
+	.gm-search-clear:hover, .gm-search-close:hover { background: var(--bg-hover); color: var(--text); }
+	.gm-search-chips-btn {
+		border: none; background: none; color: var(--text-faint); cursor: pointer;
+		padding: 2px; border-radius: 3px; display: flex; align-items: center;
+	}
+	.gm-search-chips-btn:hover, .gm-search-chips-btn.active { color: var(--interactive-accent); }
+	.gm-search-count {
+		font-size: 0.68rem; color: var(--interactive-accent); font-weight: 600;
+		background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+		padding: 1px 6px; border-radius: 8px; flex-shrink: 0;
+		border: none; cursor: pointer; position: relative;
+	}
+	.gm-search-count:hover { filter: brightness(1.1); }
+	.gm-cat-dropdown {
+		position: absolute;
+		top: 100%;
+		inset-inline-end: 0;
+		margin-top: 4px;
+		background: var(--background-primary, #fff);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px;
+		padding: 6px 0;
+		min-width: 180px;
+		box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+		z-index: 100;
+	}
+	.gm-cat-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 4px 12px;
+		font-size: 0.78rem;
+	}
+	.gm-cat-badge {
+		width: 18px; height: 18px;
+		display: flex; align-items: center; justify-content: center;
+		border-radius: 3px;
+		color: white;
+		font-size: 0.65rem;
+		font-weight: 700;
+		flex-shrink: 0;
+	}
+	.gm-cat-name {
+		flex: 1;
+		color: var(--text-normal);
+	}
+	.gm-cat-num {
+		font-weight: 600;
+		color: var(--text-muted);
+		font-size: 0.72rem;
+	}
+	/* Chips */
+	.gm-chips {
+		display: flex; flex-wrap: wrap; gap: 3px; padding: 4px 0;
+	}
+	.gm-chip {
+		padding: 2px 8px; border-radius: 10px; border: 1px solid var(--background-modifier-border);
+		background: var(--background-primary); color: var(--text-muted); font-size: 0.68rem;
+		cursor: pointer; font-family: inherit; white-space: nowrap;
+	}
+	.gm-chip:hover { background: var(--bg-hover); color: var(--text); border-color: var(--interactive-accent); }
+	/* Wiki autocomplete */
+	.gm-wiki-drop {
+		position: absolute; top: 100%; inset-inline: 0; z-index: 200;
+		max-height: 250px; overflow-y: auto; margin-top: 2px;
+		background: var(--background-primary); border: 1px solid var(--interactive-accent);
+		border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); padding: 2px;
+	}
+	.gm-wa-item {
+		display: flex; align-items: center; gap: 6px; width: 100%; padding: 3px 8px;
+		background: none; border: none; color: var(--text); font-family: inherit;
+		cursor: pointer; text-align: start; font-size: 0.78rem;
+	}
+	.gm-wa-item:hover, .gm-wa-item.selected { background: var(--bg-hover); }
+	.gm-wa-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.gm-wa-lib { font-size: 0.62rem; color: var(--text-muted); flex-shrink: 0; }
+	/* History */
+	.gm-history {
+		position: absolute; top: 100%; inset-inline: 0; z-index: 200;
+		max-height: 250px; overflow-y: auto; margin-top: 2px;
+		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px;
+	}
+	.gm-hist-item {
+		display: flex; align-items: center; gap: 4px; width: 100%; padding: 3px 8px;
+		background: none; border: none; color: var(--text); font-family: inherit;
+		cursor: pointer; text-align: start; font-size: 0.78rem;
+	}
+	.gm-hist-item:hover { background: var(--bg-hover); }
+	.gm-hist-item span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.gm-hist-time { font-size: 0.62rem; color: var(--text-faint); flex-shrink: 0; }
+	.gm-hist-clear {
+		display: block; width: 100%; padding: 2px 8px; background: none; border: none;
+		color: var(--text-faint); font-size: 0.65rem; cursor: pointer; text-align: start; font-family: inherit;
+	}
+	.gm-hist-clear:hover { text-decoration: underline; }
+	/* Match results shown on canvas via GraphEngine badges — no HTML panel needed */
 
 	/* Settings panel */
 	.gm-settings {

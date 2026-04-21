@@ -50,12 +50,13 @@
 	let renameValue = $state('');
 
 	function startRename(entry: FileEntry) {
-		renameValue = entry.is_dir ? entry.name : entry.name.replace(/\.(md|base)$/, '');
+		renameValue = entry.is_dir ? entry.name : (entry.display_title || entry.name.replace(/\.(md|base)$/, ''));
 	}
 
 	function finishRename(entry: FileEntry) {
 		const newName = renameValue.trim();
-		if (newName && newName !== (entry.is_dir ? entry.name : entry.name.replace(/\.(md|base)$/, ''))) {
+		const currentName = entry.is_dir ? entry.name : (entry.display_title || entry.name.replace(/\.(md|base)$/, ''));
+		if (newName && newName !== currentName) {
 			onRenameComplete?.(entry.path, newName);
 		} else {
 			onRenameComplete?.('', ''); // Cancel
@@ -133,7 +134,7 @@
 							<svg class="base-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
 						{/if}
 						{#if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'fleeting'}<span class="note-stage">🌱</span>{:else if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'literature'}<span class="note-stage">📖</span>{:else if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'permanent'}<span class="note-stage">🔗</span>{:else if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'synthesis'}<span class="note-stage">✨</span>{/if}
-						<span class="note-name">{entry.name.replace(/\.(md|base)$/, '')}</span>
+						<span class="note-name">{entry.display_title || entry.name.replace(/\.(md|base)$/, '')}</span>
 					</button>
 				{/if}
 			{/if}
@@ -157,11 +158,12 @@
 		display: flex;
 		align-items: center;
 		gap: 3px;
-		padding: 2px 6px;
+		padding: var(--ft-master-row-padding-y, 2px) 6px;
 		border-radius: 3px;
 		cursor: pointer;
-		color: var(--text-muted);
-		font-size: 0.82rem;
+		color: var(--ft-master-color, var(--text-muted));
+		font-size: var(--ft-master-font-size, 0.82rem);
+		font-weight: var(--ft-master-weight, 400);
 		user-select: none;
 	}
 	.folder:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
@@ -177,11 +179,12 @@
 	.note {
 		display: block;
 		width: 100%;
-		padding: 2px 6px 2px 20px;
+		padding: var(--ft-master-row-padding-y, 2px) 6px var(--ft-master-row-padding-y, 2px) 20px;
 		border: none;
 		background: none;
-		color: var(--text-normal);
-		font-size: 0.82rem;
+		color: var(--ft-master-color, var(--text-normal));
+		font-size: var(--ft-master-font-size, 0.82rem);
+		font-weight: var(--ft-master-weight, 400);
 		font-family: inherit;
 		cursor: pointer;
 		border-radius: 3px;

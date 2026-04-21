@@ -5,9 +5,16 @@
 	 * Inspired by Goalscape. Uses D3.js d3.partition() for layout.
 	 */
 	import { onMount, onDestroy } from 'svelte';
-	import { t } from '$lib/i18n';
+	import { t, dir, getSearchOps } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import * as d3 from 'd3';
+	import { get } from 'svelte/store';
+	import {
+		stripInvisibleChars, canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual,
+		universalSearch, constellationSearch, parseSearchQuery,
+		embedText, appSettings, type UniversalSearchResponse,
+	} from '$lib/libraries/store';
+	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
 
 	interface MapNode {
 		name: string;
@@ -32,6 +39,7 @@
 		libraryColorMap = {} as Record<string, string>,
 		initialData = null as MapNode | null,
 		compact = false,
+		initialColorMode,
 		onNoteClick,
 		onClose,
 		onDrillDown,
@@ -44,6 +52,7 @@
 		libraryColorMap?: Record<string, string>;
 		initialData?: MapNode | null;
 		compact?: boolean;
+		initialColorMode?: 'maturity' | 'stratum' | 'library';
 		onNoteClick?: (path: string, name: string) => void;
 		onClose?: () => void;
 		onDrillDown?: (node: MapNode, breadcrumbNames: string[]) => void;
@@ -55,9 +64,77 @@
 	let loading = $state(true);
 	let error = $state('');
 	let mapData = $state<MapNode | null>(null);
-	let colorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
+	let colorMode = $state<'maturity' | 'stratum' | 'library'>(initialColorMode ?? 'maturity');
 	let breadcrumb = $state<{ name: string; node: any }[]>([]);
 	let tooltip = $state<{ x: number; y: number; node: MapNode; visible: boolean }>({ x: 0, y: 0, node: null as any, visible: false });
+
+	// Search
+	let searchVisible = $state(false);
+	let searchQuery = $state('');
+	let searchResults = $state<MapNode[]>([]);
+	let searchCats = $state<Map<string, string[]>>(new Map()); // path → categories
+	let searchIdx = $state(0);
+	let showHistory = $state(false);
+	let historyItems = $state<{ query: string; timestamp: number }[]>([]);
+
+	const CAT_COLORS: Record<string, string> = {
+		T: '#3b82f6', C: '#16a34a', '#': '#f472b6', P: '#f59e0b', S: '#7c3aed',
+		W: '#94a3b8', '∅': '#64748b', M: '#06b6d4',
+		LT: '#16a34a', LF: '#ef4444', '⇄': '#8b5cf6', LB: '#0ea5e9', LA: '#d946ef',
+	};
+
+	// Sidebar resize
+	let sidebarWidth = $state(260);
+	let isResizing = false;
+
+	function onResizeStart(e: MouseEvent) {
+		isResizing = true;
+		e.preventDefault();
+		const onMove = (ev: MouseEvent) => {
+			if (!isResizing) return;
+			// For RTL, measure from right edge
+			const container = (e.target as Element).closest('.cmap-content-wrap');
+			if (!container) return;
+			const rect = container.getBoundingClientRect();
+			const isR = $dir === 'rtl';
+			const newWidth = isR ? rect.right - ev.clientX : ev.clientX - rect.left;
+			sidebarWidth = Math.max(180, Math.min(500, newWidth));
+		};
+		const onUp = () => {
+			isResizing = false;
+			window.removeEventListener('mousemove', onMove);
+			window.removeEventListener('mouseup', onUp);
+		};
+		window.addEventListener('mousemove', onMove);
+		window.addEventListener('mouseup', onUp);
+	}
+
+	// Syntax chips
+	let showChips = $state(false);
+	const syntaxChips = $derived.by(() => {
+		const _locale = $t('searchHub.linksTo');
+		const ops = getSearchOps();
+		return [
+			{ label: 'linksTo', syntax: (ops?.linksTo ?? 'links to') + ' [[' },
+			{ label: 'linksFrom', syntax: (ops?.linksFrom ?? 'links from') + ' [[' },
+			{ label: 'orphans', syntax: ops?.orphans ?? 'orphans' },
+			{ label: 'tag', syntax: '#' },
+			{ label: 'supports', syntax: (ops?.supports ?? 'supports') + ' [[' },
+			{ label: 'contradicts', syntax: (ops?.contradicts ?? 'contradicts') + ' [[' },
+		];
+	});
+
+	// Settings (persisted across remounts)
+	const _mapDefaults = { arcOpacity: 0.75, depthLimit: 5, showLabels: true };
+	const _mapSaved = (globalThis as any).__mapSettings ?? { ..._mapDefaults };
+	let settingsVisible = $state(false);
+	let arcOpacity = $state(_mapSaved.arcOpacity);
+	let depthLimit = $state(_mapSaved.depthLimit);
+	let showLabels = $state(_mapSaved.showLabels);
+
+	function persistMapSettings() {
+		(globalThis as any).__mapSettings = { arcOpacity, depthLimit, showLabels };
+	}
 
 	// Maturity colors
 	const MATURITY_COLORS: Record<string, string> = {
@@ -118,13 +195,13 @@
 		if (data.is_dir) return 0.85;
 		if (colorMode === 'maturity') {
 			const m = data.maturity || 'seed';
-			if (m === 'seed') return 0.4;
-			if (m === 'sapling') return 0.6;
-			if (m === 'evergreen') return 0.8;
-			if (m === 'canonical') return 0.95;
-			if (m === 'wilting') return 0.5;
+			if (m === 'seed') return 0.4 * arcOpacity;
+			if (m === 'sapling') return 0.6 * arcOpacity;
+			if (m === 'evergreen') return 0.8 * arcOpacity;
+			if (m === 'canonical') return 0.95 * arcOpacity;
+			if (m === 'wilting') return 0.5 * arcOpacity;
 		}
-		return 0.75;
+		return arcOpacity;
 	}
 
 	let currentRoot: any = null;
@@ -169,6 +246,13 @@
 
 		const g = svg.append('g');
 
+		// Zoom + pan
+		const zoomBehavior = d3.zoom<SVGSVGElement, unknown>()
+			.scaleExtent([0.3, 5])
+			.on('zoom', (event) => { g.attr('transform', event.transform); });
+		svg.call(zoomBehavior);
+		svg.on('dblclick.zoom', null); // disable double-click zoom (we use dblclick for notes)
+
 		// Draw arcs
 		const nodes = root.descendants().filter(d => d.depth > 0); // skip root
 
@@ -181,6 +265,13 @@
 			.attr('stroke', '#fff')
 			.attr('stroke-width', 0.5)
 			.style('cursor', 'pointer')
+			.each(function(d: any) {
+				const data = d.data as MapNode;
+				const typeLabel = data.node_type === 'child_universe' ? 'cUniverse'
+					: data.node_type === 'library' ? 'Library'
+					: data.is_dir ? 'Folder' : 'Note';
+				d3.select(this).append('title').text(`${data.name} (${typeLabel})`);
+			})
 			.on('click', (_event: MouseEvent, d: any) => {
 				const data = d.data as MapNode;
 				if (data.is_dir && data.children && data.children.length > 0) {
@@ -193,25 +284,18 @@
 				}
 			})
 			.on('mouseenter', (event: MouseEvent, d: any) => {
-				const data = d.data as MapNode;
-				tooltip = {
-					x: event.clientX,
-					y: event.clientY,
-					node: data,
-					visible: true,
-				};
-				// Highlight
-				d3.select(event.currentTarget as Element).attr('fill-opacity', 1).attr('stroke-width', 2);
-			})
-			.on('mousemove', (event: MouseEvent) => {
-				tooltip.x = event.clientX;
-				tooltip.y = event.clientY;
+				// Only highlight on hover if no search is active
+				if (searchResults.length === 0) {
+					d3.select(event.currentTarget as Element).attr('fill-opacity', 1).attr('stroke-width', 2);
+				}
 			})
 			.on('mouseleave', (event: MouseEvent, d: any) => {
-				tooltip.visible = false;
-				d3.select(event.currentTarget as Element)
-					.attr('fill-opacity', (d: any) => getNodeOpacity(d))
-					.attr('stroke-width', 0.5);
+				// Only restore on leave if no search is active
+				if (searchResults.length === 0) {
+					d3.select(event.currentTarget as Element)
+						.attr('fill-opacity', (d: any) => getNodeOpacity(d))
+						.attr('stroke-width', 0.5);
+				}
 			});
 
 		// Center circle radius = inner edge of the first ring
@@ -293,7 +377,7 @@
 				// Load universe-level map (all libraries)
 				data = await invoke<MapNode>('constellation_map_universe', {
 					universeName: universeName || 'Universe',
-					maxDepth: 5,
+					maxDepth: depthLimit,
 				});
 			}
 			mapData = data;
@@ -331,6 +415,11 @@
 		if (resizeTimer) clearTimeout(resizeTimer);
 	});
 
+	// Sync external color mode prop
+	$effect(() => {
+		if (initialColorMode && initialColorMode !== colorMode) colorMode = initialColorMode;
+	});
+
 	// Re-render when color mode changes
 	$effect(() => {
 		colorMode; // track
@@ -340,6 +429,138 @@
 			onColorModeChange?.(colorMode);
 		}
 	});
+
+	// ─── Search within Map (same engine as Sight) ───────────
+	function collectAllNodes(node: MapNode, results: MapNode[] = []): MapNode[] {
+		results.push(node);
+		if (node.children) for (const c of node.children) collectAllNodes(c, results);
+		return results;
+	}
+
+	async function executeMapSearch() {
+		if (!searchQuery.trim() || !mapData) { searchResults = []; searchIdx = 0; searchCats = new Map(); highlightAllResults(); return; }
+
+		addSearchHistory(searchQuery);
+		historyItems = readSearchHistory();
+
+		const cleanQ = stripInvisibleChars(searchQuery);
+		const ops = getSearchOps();
+		const canonicalized = canonicalizeSearchQuery(cleanQ, ops);
+		const isAdvanced = hasAdvancedSyntaxMultilingual(canonicalized, ops);
+
+		const all = collectAllNodes(mapData);
+		const nameMap = new Map(all.map(n => [n.name.toLowerCase(), n]));
+		const matchedNodes: MapNode[] = [];
+		const cats = new Map<string, string[]>();
+
+		if (isAdvanced) {
+			try {
+				const req = parseSearchQuery(canonicalized);
+				const results = await constellationSearch(req);
+				const CAT_MAP: Record<string, string> = { links_to: 'LT', links_from: 'LF', mutual: '⇄', links_between: 'LB', links_all: 'LA', mentions: 'M', orphan: '∅', wikilink: 'W', title: 'T', content: 'C', tag: '#', property: 'P', semantic: 'S', hybrid: 'C', structured: '∅' };
+				for (const r of results) {
+					const node = nameMap.get(r.name.toLowerCase());
+					if (node) {
+						matchedNodes.push(node);
+						const cat = CAT_MAP[r.match_type] ?? r.match_type.charAt(0).toUpperCase();
+						cats.set(node.path, [cat]);
+					}
+				}
+			} catch {}
+		} else {
+			const q = searchQuery.toLowerCase();
+			const titleMatchPaths = new Set<string>();
+			const contentMatchPaths = new Set<string>();
+			const tagMatchPaths = new Set<string>();
+			const propMatchPaths = new Set<string>();
+			const semMatchPaths = new Set<string>();
+
+			// Local title matches
+			for (const n of all) {
+				if (n.name.toLowerCase().includes(q)) { matchedNodes.push(n); titleMatchPaths.add(n.path); }
+			}
+
+			// Backend search
+			try {
+				let qEmbed: number[] | null = null;
+				if (get(appSettings).enabledFeatures?.semanticSearch) {
+					try { qEmbed = await embedText(canonicalized); } catch {}
+				}
+				const resp: any = await universalSearch(canonicalized, qEmbed, 200);
+				for (const r of resp?.titles ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { titleMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
+				for (const r of resp?.contents ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { contentMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
+				for (const r of resp?.tags ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { tagMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
+				for (const r of resp?.properties ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { propMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
+				for (const r of resp?.semantic ?? []) { const n = nameMap.get(r.name.toLowerCase()); if (n) { semMatchPaths.add(n.path); if (!matchedNodes.includes(n)) matchedNodes.push(n); } }
+			} catch {}
+
+			// Build category map
+			for (const n of matchedNodes) {
+				const c: string[] = [];
+				if (titleMatchPaths.has(n.path)) c.push('T');
+				if (contentMatchPaths.has(n.path)) c.push('C');
+				if (tagMatchPaths.has(n.path)) c.push('#');
+				if (propMatchPaths.has(n.path)) c.push('P');
+				if (semMatchPaths.has(n.path)) c.push('S');
+				if (c.length > 0) cats.set(n.path, c);
+			}
+		}
+
+		searchResults = matchedNodes;
+		searchCats = cats;
+		searchIdx = 0;
+		if (searchResults.length > 0) highlightSearchResult();
+		else highlightAllResults();
+	}
+
+	function highlightSearchResult() {
+		if (!svgEl) return;
+		const match = searchResults[searchIdx];
+		const matchSet = new Set(searchResults.map(n => n.path));
+
+		// Highlight arcs: current = black border, other matches = blue, rest = dimmed
+		d3.select(svgEl).selectAll('path').each(function(d: any) {
+			const isMatch = d?.data?.path && matchSet.has(d.data.path);
+			const isCurrent = match && d?.data?.path === match.path && d?.data?.name === match.name;
+			d3.select(this)
+				.attr('stroke', isCurrent ? '#000000' : isMatch ? '#3b82f6' : '#fff')
+				.attr('stroke-width', isCurrent ? 3.5 : isMatch ? 2 : 0.5)
+				.attr('fill-opacity', isMatch || isCurrent ? 1 : 0.3);
+		});
+	}
+
+	function selectSearchResult(idx: number) {
+		searchIdx = idx;
+		highlightSearchResult();
+	}
+
+	function highlightAllResults() {
+		if (!svgEl) return;
+		// Reset all arcs to normal
+		d3.select(svgEl).selectAll('path').each(function(d: any) {
+			d3.select(this).attr('stroke', '#fff').attr('stroke-width', 0.5).attr('fill-opacity', (d: any) => getNodeOpacity(d));
+		});
+	}
+
+	function nextMapResult() {
+		if (searchResults.length === 0) return;
+		searchIdx = (searchIdx + 1) % searchResults.length;
+		highlightSearchResult();
+	}
+
+	function prevMapResult() {
+		if (searchResults.length === 0) return;
+		searchIdx = (searchIdx - 1 + searchResults.length) % searchResults.length;
+		highlightSearchResult();
+	}
+
+	function resetMapSearch() {
+		searchQuery = '';
+		searchResults = [];
+		searchCats = new Map();
+		searchIdx = 0;
+		highlightAllResults();
+	}
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
@@ -369,6 +590,18 @@
 				<option value="stratum">{$t('constellationMap.colorByStratum') || 'Stratum'}</option>
 				<option value="library">{$t('constellationMap.colorByLibrary') || 'Library'}</option>
 			</select>
+			<!-- Search toggle -->
+			<button class="cmap-toolbar-btn" class:active={searchVisible} onclick={() => { searchVisible = !searchVisible; if (!searchVisible) resetMapSearch(); }} title={$t('layout.search') || 'Search'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+			</button>
+			<!-- Fit to Screen (zoom to root) -->
+			<button class="cmap-toolbar-btn" onclick={zoomToRoot} title={$t('lens.fitToScreen') || 'Fit to screen'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+			</button>
+			<!-- Settings toggle -->
+			<button class="cmap-toolbar-btn" class:active={settingsVisible} onclick={() => settingsVisible = !settingsVisible} title={$t('ribbon.settings') || 'Settings'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/></svg>
+			</button>
 			{#if onClose}
 				<button class="cmap-close" onclick={onClose}>×</button>
 			{/if}
@@ -387,25 +620,125 @@
 		</div>
 	{/if}
 
-	<!-- Content -->
-	<div class="cmap-body" bind:this={containerEl}>
-		{#if loading}
-			<div class="cmap-loading">
-				<div class="cmap-spinner"></div>
-				<p>{$t('constellationMap.loading') || 'Building knowledge map...'}</p>
+	<!-- Search bar -->
+	{#if searchVisible}
+		<div class="cmap-search">
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+			<div class="cmap-search-input-wrap">
+				<input type="text" dir="auto"
+					placeholder={$t('lens.searchAll') || 'Search... (Enter)'}
+					bind:value={searchQuery}
+					onfocus={() => { if (!searchQuery) { historyItems = readSearchHistory(); showHistory = true; } }}
+					onblur={() => setTimeout(() => { showHistory = false; }, 200)}
+					oninput={() => { showHistory = false; }}
+					onkeydown={(e) => {
+						if (e.key === 'Enter') { e.preventDefault(); searchResults.length > 0 ? (e.shiftKey ? prevMapResult() : nextMapResult()) : executeMapSearch(); }
+						if (e.key === 'Escape') { searchVisible = false; resetMapSearch(); e.stopPropagation(); }
+					}} />
+				{#if showHistory && historyItems.length > 0 && !searchQuery}
+					<div class="cmap-history-dropdown">
+						{#each historyItems.slice(0, 8) as item}
+							<button class="cmap-history-item" onclick={() => { searchQuery = item.query; showHistory = false; executeMapSearch(); }} dir="auto">{item.query}</button>
+						{/each}
+					</div>
+				{/if}
 			</div>
-		{:else if error}
-			<div class="cmap-error">
-				<p>{error}</p>
+			<button class="cmap-search-clear" onclick={resetMapSearch}>×</button>
+				<button class="cmap-chips-btn" class:active={showChips} onclick={() => showChips = !showChips} title={$t('searchHub.syntaxHelpers') || 'Syntax'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+				</button>
+				{#if showChips}
+					<div class="cmap-chips-dropdown">
+						{#each syntaxChips as chip}
+							<button class="cmap-chip" onclick={() => { searchQuery = searchQuery ? searchQuery + ' ' + chip.syntax : chip.syntax; showChips = false; }}>{$t(`searchHub.${chip.label}`)}</button>
+						{/each}
+					</div>
+				{/if}
+			{#if searchResults.length > 0}
+				{@const curCats = searchCats.get(searchResults[searchIdx]?.path) ?? []}
+				{#each curCats as cat}
+					<span class="cmap-search-cat" style="background:{CAT_COLORS[cat] ?? '#94a3b8'}">{cat}</span>
+				{/each}
+				<span class="cmap-search-count">{searchIdx + 1}/{searchResults.length}</span>
+				<button class="cmap-search-nav" onclick={prevMapResult}>
+					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+				</button>
+				<button class="cmap-search-nav" onclick={nextMapResult}>
+					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+				</button>
+			{:else if searchQuery}
+				<span class="cmap-search-none">0</span>
+			{/if}
+		</div>
+	{/if}
+
+	<!-- Settings panel -->
+	{#if settingsVisible}
+		<div class="cmap-settings">
+			<label class="cmap-settings-slider">
+				<span>{$t('lens.settingOpacity') || 'Opacity'}: {Math.round(arcOpacity * 100)}%</span>
+				<input type="range" min="0.3" max="1" step="0.05" bind:value={arcOpacity} oninput={() => {
+					persistMapSettings();
+					const current = breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1].node.data : mapData;
+					if (current) renderSunburst(current);
+				}} />
+			</label>
+			<label class="cmap-settings-slider">
+				<span>Depth: {depthLimit}</span>
+				<input type="range" min="2" max="8" step="1" bind:value={depthLimit} oninput={() => {
+					persistMapSettings();
+					loadData();
+				}} />
+			</label>
+		</div>
+	{/if}
+
+	<!-- Content: results sidebar (left) + sunburst (right) -->
+	<div class="cmap-content-wrap">
+		<!-- Search results sidebar -->
+		{#if searchResults.length > 0}
+			<div class="cmap-results" style="width:{sidebarWidth}px">
+				<div class="cmap-results-header">{searchResults.length} {$t('sightPanel.totalNodes') || 'results'}</div>
+				<div class="cmap-results-list">
+					{#each searchResults as result, i}
+						<button class="cmap-result-row" class:active={i === searchIdx}
+							onclick={() => selectSearchResult(i)}
+							ondblclick={() => { if (!result.is_dir && onNoteClick) onNoteClick(result.path, result.name); }}
+							dir="auto">
+							<span class="cmap-result-name">{result.name}</span>
+							<span class="cmap-result-badges">
+								{#each (searchCats.get(result.path) ?? []) as cat}
+									<span class="cmap-result-badge" style="background:{CAT_COLORS[cat] ?? '#94a3b8'}">{cat}</span>
+								{/each}
+							</span>
+						</button>
+					{/each}
+				</div>
 			</div>
-		{:else}
-			<svg bind:this={svgEl} class="cmap-svg"></svg>
+			<!-- Resize handle -->
+			<div class="cmap-resize-handle" onmousedown={onResizeStart}></div>
 		{/if}
+
+		<!-- Sunburst -->
+		<div class="cmap-body" bind:this={containerEl}>
+			{#if loading}
+				<div class="cmap-loading">
+					<div class="cmap-spinner"></div>
+					<p>{$t('constellationMap.loading') || 'Building knowledge map...'}</p>
+				</div>
+			{:else if error}
+				<div class="cmap-error">
+					<p>{$t('constellationMap.noData') || 'No data available'}</p>
+				</div>
+			{:else}
+				<svg bind:this={svgEl} class="cmap-svg"></svg>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Tooltip -->
 	{#if tooltip.visible && tooltip.node}
-		<div class="cmap-tooltip" style="left:{tooltip.x + 12}px;top:{tooltip.y - 8}px" dir="auto">
+		<div class="cmap-tooltip" style="left:{tooltip.x + 20}px;top:{tooltip.y - 60}px" dir="auto">
 			<div class="cmap-tt-name">{tooltip.node.name}</div>
 			{#if tooltip.node.node_type === 'child_universe'}
 				<div class="cmap-tt-type">{$t('constellationMap.childUniverse') || 'Child Universe'}</div>
@@ -439,12 +772,19 @@
 	{#if !compact}
 	<div class="cmap-legend">
 		{#if colorMode === 'maturity'}
+			<span class="cmap-legend-title">{$t('constellationMap.maturity') || 'Maturity'}</span>
 			{#each Object.entries(MATURITY_COLORS) as [label, color]}
 				<span class="cmap-legend-item"><span class="cmap-legend-dot" style="background:{color}"></span>{label}</span>
 			{/each}
 		{:else if colorMode === 'stratum'}
+			<span class="cmap-legend-title">{$t('constellationMap.stratum') || 'Stratum'}</span>
 			{#each STRATUM_COLORS as color, i}
 				<span class="cmap-legend-item"><span class="cmap-legend-dot" style="background:{color}"></span>L{i + 1}</span>
+			{/each}
+		{:else if colorMode === 'library'}
+			<span class="cmap-legend-title">{$t('constellationMap.library') || 'Library'}</span>
+			{#each Object.entries(libraryColorMap) as [name, color]}
+				<span class="cmap-legend-item"><span class="cmap-legend-dot" style="background:{color}"></span>{name}</span>
 			{/each}
 		{/if}
 	</div>
@@ -469,12 +809,73 @@
 		background: var(--background-secondary, #f5f5f5); font-size: 12px; cursor: pointer;
 		color: var(--text-normal, #333);
 	}
+	.cmap-toolbar-btn {
+		width: 28px; height: 28px; border: none; border-radius: 4px;
+		background: none; color: var(--text-muted, #888); cursor: pointer;
+		display: flex; align-items: center; justify-content: center;
+	}
+	.cmap-toolbar-btn:hover { background: var(--background-modifier-hover, #f1f5f9); color: var(--text-normal, #333); }
+	.cmap-toolbar-btn.active { background: var(--interactive-accent, #7c3aed); color: white; }
 	.cmap-close {
 		width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border, #ddd);
 		background: transparent; color: var(--text-muted, #888); font-size: 18px;
 		cursor: pointer; display: flex; align-items: center; justify-content: center;
 	}
 	.cmap-close:hover { background: var(--border, #eee); color: var(--text-normal, #333); }
+
+	/* Search bar */
+	.cmap-search {
+		display: flex; align-items: center; gap: 6px;
+		padding: 6px 20px; border-bottom: 1px solid var(--border, #e0e0e0);
+		flex-shrink: 0; position: relative;
+	}
+	.cmap-search svg { color: var(--text-muted, #888); flex-shrink: 0; }
+	.cmap-search-input-wrap { position: relative; min-width: 200px; max-width: 400px; }
+	.cmap-search-input-wrap input {
+		border: none; outline: none; background: none; font-size: 12px;
+		font-family: inherit; color: var(--text-normal, #333); width: 100%;
+	}
+	.cmap-history-dropdown {
+		position: absolute; top: 100%; inset-inline-start: 0; z-index: 100;
+		background: var(--background-primary, #fff); border: 1px solid var(--border, #e0e0e0);
+		border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+		min-width: 200px; max-height: 250px; overflow-y: auto; margin-top: 4px;
+	}
+	.cmap-history-item {
+		display: block; width: 100%; text-align: start; padding: 6px 12px;
+		border: none; background: none; cursor: pointer; font-size: 11px;
+		color: var(--text-normal, #333); font-family: inherit;
+	}
+	.cmap-history-item:hover { background: var(--background-modifier-hover, #f1f5f9); }
+	.cmap-search-clear { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 0 2px; }
+	.cmap-search-cat { font-size: 9px; color: #fff; padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
+	.cmap-search-count { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+	.cmap-search-none { font-size: 10px; color: #ef4444; white-space: nowrap; }
+	.cmap-search-nav { border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 0 2px; display: flex; align-items: center; }
+	.cmap-search-nav:hover { color: var(--text-normal); }
+	.cmap-chips-btn { border: none; background: none; cursor: pointer; color: var(--text-muted, #888); padding: 2px; border-radius: 3px; }
+	.cmap-chips-btn:hover, .cmap-chips-btn.active { color: var(--interactive-accent, #7c3aed); background: rgba(124,58,237,0.1); }
+	.cmap-chips-dropdown {
+		position: absolute; top: 100%; inset-inline-start: 0; z-index: 100;
+		display: flex; flex-wrap: wrap; gap: 6px; padding: 10px;
+		background: var(--background-primary, #fff); border: 1px solid var(--border, #e0e0e0);
+		border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-width: 350px; margin-top: 4px;
+	}
+	.cmap-chip {
+		padding: 4px 10px; border-radius: 6px; border: 1.5px solid var(--border, #d1d5db);
+		background: var(--background-secondary, #f9fafb); color: var(--text-normal, #374151);
+		font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; font-family: inherit;
+	}
+	.cmap-chip:hover { border-color: var(--interactive-accent, #7c3aed); color: var(--interactive-accent, #7c3aed); }
+
+	/* Settings panel */
+	.cmap-settings {
+		display: flex; gap: 16px; padding: 8px 20px; flex-shrink: 0;
+		border-bottom: 1px solid var(--border, #e0e0e0); align-items: center;
+	}
+	.cmap-settings-slider { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+	.cmap-settings-slider span { font-size: 10px; color: var(--text-muted, #888); }
+	.cmap-settings-slider input[type="range"] { width: 100%; height: 14px; cursor: pointer; }
 
 	.cmap-breadcrumb {
 		display: flex; align-items: center; gap: 4px; padding: 6px 20px;
@@ -489,7 +890,39 @@
 	.cmap-bc-item.active { font-weight: 700; color: var(--text-normal, #333); cursor: default; }
 	.cmap-bc-sep { color: var(--text-faint, #ccc); }
 
+	.cmap-content-wrap { flex: 1; display: flex; overflow: hidden; }
 	.cmap-body { flex: 1; position: relative; overflow: hidden; }
+
+	/* Search results sidebar */
+	.cmap-results {
+		flex-shrink: 0; display: flex; flex-direction: column;
+		background: var(--background-primary, #fff); overflow: hidden;
+	}
+	.cmap-resize-handle {
+		width: 4px; flex-shrink: 0; cursor: col-resize;
+		background: var(--border, #e0e0e0);
+	}
+	.cmap-resize-handle:hover { background: var(--interactive-accent, #7c3aed); }
+	.cmap-results-header {
+		padding: 8px 12px; font-size: 11px; font-weight: 700;
+		color: var(--text-muted, #888); border-bottom: 1px solid var(--border, #e0e0e0);
+		flex-shrink: 0;
+	}
+	.cmap-results-list { flex: 1; overflow-y: auto; }
+	.cmap-result-row {
+		display: flex; align-items: center; gap: 6px; width: 100%;
+		padding: 6px 12px; border: none; background: none; cursor: pointer;
+		font-size: 11px; color: var(--text-normal, #333); font-family: inherit;
+		text-align: start; border-bottom: 1px solid var(--background-modifier-border, #f0f0f0);
+	}
+	.cmap-result-row:hover { background: var(--background-modifier-hover, #f5f5f5); }
+	.cmap-result-row.active { background: var(--background-modifier-active-hover, #e8e8ff); font-weight: 600; }
+	.cmap-result-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.cmap-result-badges { display: flex; gap: 2px; flex-shrink: 0; }
+	.cmap-result-badge {
+		font-size: 8px; color: #fff; padding: 1px 4px; border-radius: 3px;
+		font-weight: 700; line-height: 1.2;
+	}
 	.cmap-svg { width: 100%; height: 100%; }
 
 	.cmap-loading {
@@ -517,10 +950,11 @@
 	.cmap-tt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
 	.cmap-legend {
-		display: flex; gap: 12px; padding: 8px 20px; flex-shrink: 0;
+		display: flex; gap: 20px; padding: 14px 20px; flex-shrink: 0;
 		border-top: 1px solid var(--border, #e0e0e0); flex-wrap: wrap;
-		justify-content: center;
+		justify-content: center; align-items: center;
 	}
-	.cmap-legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted, #888); }
-	.cmap-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+	.cmap-legend-title { font-size: 16px; font-weight: 700; color: var(--text-normal, #333); text-transform: uppercase; letter-spacing: 0.5px; }
+	.cmap-legend-item { display: flex; align-items: center; gap: 8px; font-size: 16px; color: var(--text-muted, #888); }
+	.cmap-legend-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
 </style>

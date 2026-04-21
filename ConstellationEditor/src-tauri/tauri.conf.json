@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Constellation",
+  "version": "0.3.4",
+  "identifier": "world.uconstellation.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Constellation",
+        "width": 1200,
+        "height": 800,
+        "zoomHotkeysEnabled": true
+      },
+      {
+        "label": "second-screen",
+        "title": "Constellation - Screen 2",
+        "url": "screen.html",
+        "width": 1200,
+        "height": 800,
+        "visible": false,
+        "zoomHotkeysEnabled": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://gist.githubusercontent.com/eisaShamsi/d78713095f2bddb26698c9f04a79b2d8/raw/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdGMTI5NjU2RUE3NEZDQwpSV1RNVDZkdVpTbnhCeHJCOU55MzdpdFQ1VEoybGsreFBpYUFmQ1lTZW85VHFUSzd5dFlka3k2eQo="
+    }
+  }
+}

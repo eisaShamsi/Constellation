@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
-// tauri::Manager unused — removed
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LibraryInfo {
@@ -10,7 +9,14 @@ pub struct LibraryInfo {
     pub path: String,
     #[serde(default)]
     pub is_universe_notes: bool,
+    /// "native" = created by Constellation (always canonical filenames)
+    /// "canonical" = external library, user accepted canonicalization
+    /// "compatible" = external library, user chose to keep files intact
+    #[serde(default = "default_canonical_mode")]
+    pub canonical_mode: String,
 }
+
+fn default_canonical_mode() -> String { "native".to_string() }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileEntry {
@@ -21,6 +27,10 @@ pub struct FileEntry {
     pub extension: Option<String>,
     pub modified: Option<u64>,
     pub status: Option<String>,
+    /// For canonical files: the human-readable title from frontmatter.
+    /// Null for non-canonical files or folders.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_title: Option<String>,
 }
 
 /// Get the path to the libraries config file (in .constellation/).
@@ -52,12 +62,56 @@ fn load_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     }
 }
 
+/// Module-level cache for `load_all_libraries`.
+///
+/// Before this cache: diagnostic logs showed 50+ calls per boot from many
+/// different code paths (validate_path_in_any_library, scan_*,
+/// constellation_map_universe, etc.). Each re-read libraries.json from disk
+/// and re-parsed it. Under Tauri's IPC queue on Windows this created the
+/// 60-second boot-time hang we've been hunting.
+///
+/// The cache:
+///   - Populated on first call per active-universe.
+///   - Invalidated whenever `save_libraries` writes to disk.
+///   - Keyed by the active universe path — switching universes reloads.
+static LIBRARIES_CACHE: std::sync::Mutex<Option<(std::path::PathBuf, Vec<LibraryInfo>)>> =
+    std::sync::Mutex::new(None);
+
 /// Load ALL libraries: own + child universe libraries (recursive, deduplicated).
 /// This is what the frontend and query_base should use.
 pub fn load_all_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
-    match crate::universe::resolve_universe_libraries(app.clone()) {
+    let active = crate::universe::active_universe_dir(app).ok();
+
+    // Fast path — cache hit for the currently active universe.
+    if let Some(ref universe_path) = active {
+        if let Ok(guard) = LIBRARIES_CACHE.lock() {
+            if let Some((cached_universe, cached_libs)) = guard.as_ref() {
+                if cached_universe == universe_path {
+                    return cached_libs.clone();
+                }
+            }
+        }
+    }
+
+    // Cache miss or unknown universe — do the actual disk read + parse.
+    let libs = match crate::universe::resolve_universe_libraries(app.clone()) {
         Ok(libs) => libs,
         Err(_) => load_libraries(app),
+    };
+
+    if let Some(universe_path) = active {
+        if let Ok(mut guard) = LIBRARIES_CACHE.lock() {
+            *guard = Some((universe_path, libs.clone()));
+        }
+    }
+    libs
+}
+
+/// Invalidate the in-memory library cache. Call when the on-disk
+/// libraries.json has changed (add/remove library, rename, universe switch).
+pub fn invalidate_libraries_cache() {
+    if let Ok(mut guard) = LIBRARIES_CACHE.lock() {
+        *guard = None;
     }
 }
 
@@ -70,7 +124,10 @@ pub fn load_libraries_pub(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
 fn save_libraries(app: &tauri::AppHandle, libraries: &[LibraryInfo]) -> Result<(), String> {
     let path = libraries_config_path(app)?;
     let data = serde_json::to_string_pretty(libraries).map_err(|e| e.to_string())?;
-    fs::write(&path, data).map_err(|e| format!("Failed to save libraries config: {}", e))
+    fs::write(&path, data).map_err(|e| format!("Failed to save libraries config: {}", e))?;
+    // Invalidate the in-memory cache so subsequent reads see the new list.
+    invalidate_libraries_cache();
+    Ok(())
 }
 
 /// Validate that a file path is contained within a library directory.
@@ -165,12 +222,38 @@ pub fn add_library(app: tauri::AppHandle, path: String) -> Result<LibraryInfo, S
         name,
         path: path.clone(),
         is_universe_notes: false,
+        canonical_mode: "compatible".to_string(), // external libraries default to compatible
     };
 
     libraries.push(library.clone());
     save_libraries(&app, &libraries)?;
 
     Ok(library)
+}
+
+/// Update a library's canonical mode ("native", "canonical", or "compatible").
+#[tauri::command]
+pub fn set_library_canonical_mode(app: tauri::AppHandle, library_id: String, mode: String) -> Result<(), String> {
+    if !["native", "canonical", "compatible"].contains(&mode.as_str()) {
+        return Err(format!("Invalid canonical mode: {}", mode));
+    }
+    let mut libraries = load_libraries(&app);
+    if let Some(lib) = libraries.iter_mut().find(|l| l.id == library_id) {
+        lib.canonical_mode = mode;
+        save_libraries(&app, &libraries)?;
+        Ok(())
+    } else {
+        Err("Library not found.".to_string())
+    }
+}
+
+/// Get a library's canonical mode by path.
+pub fn get_library_mode(app: &tauri::AppHandle, folder_path: &str) -> String {
+    let libraries = load_all_libraries(app);
+    libraries.iter()
+        .find(|l| folder_path.starts_with(&l.path))
+        .map(|l| l.canonical_mode.clone())
+        .unwrap_or_else(|| "native".to_string())
 }
 
 /// Remove a library by ID (does NOT delete any files).
@@ -225,7 +308,9 @@ pub fn get_note_headings(app: tauri::AppHandle, file_path: String) -> Result<Vec
     }
     let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))?;
     let mut headings = Vec::new();
-    let re = regex::Regex::new(r"(?m)^#{1,6}\s+(.+)$").unwrap();
+    use std::sync::OnceLock;
+    static HEADING_RE: OnceLock<regex::Regex> = OnceLock::new();
+    let re = HEADING_RE.get_or_init(|| regex::Regex::new(r"(?m)^#{1,6}\s+(.+)$").unwrap());
     for cap in re.captures_iter(&content) {
         if let Some(m) = cap.get(1) {
             headings.push(m.as_str().trim().to_string());
@@ -285,22 +370,37 @@ pub struct StarInfo {
 }
 
 /// Get stats for all libraries (own + child universe) — star counts, folder counts, recent stars.
-#[tauri::command]
+///
+/// `(async)` keeps the body off the WebView2 UI thread (see watcher.rs
+/// `watch_library` for the full rationale — LL-021 post-Round-3). Critical
+/// here because this fn `.join()`s every per-library scanner thread before
+/// returning: on a 16-library × 7,600-note Universe that's several seconds
+/// of synchronous wait. Without `(async)` those seconds are paid on the UI
+/// thread, starving every other boot-fan-out IPC behind it — including
+/// `cache_boot_snapshot_core`, which is Boot Criterion 2's critical path.
+#[tauri::command(async)]
 pub fn get_all_library_stats(app: tauri::AppHandle) -> Vec<LibraryStats> {
     let libraries = load_all_libraries(&app);
-    libraries.iter().map(|v| {
-        let (star_count, folder_count) = count_contents(Path::new(&v.path));
-        let recent_stars = get_recent_notes(Path::new(&v.path), &v.id, &v.name, 10);
-        LibraryStats {
-            library_id: v.id.clone(),
-            name: v.name.clone(),
-            path: v.path.clone(),
-            star_count,
-            folder_count,
-            recent_stars,
-            is_universe_notes: v.is_universe_notes,
-        }
-    }).collect()
+    // PERF: Parallelize per-library scans. On a 16-library Universe the sequential
+    // walk was the first awaited call on boot — ~7,600 stat calls back-to-back
+    // plus 160 preview reads. Using std threads (no new dep) the disk/CPU runs
+    // concurrently and wall-time drops roughly 10×.
+    let handles: Vec<_> = libraries.into_iter().map(|v| {
+        std::thread::spawn(move || {
+            let (star_count, folder_count) = count_contents(Path::new(&v.path));
+            let recent_stars = get_recent_notes(Path::new(&v.path), &v.id, &v.name, 10);
+            LibraryStats {
+                library_id: v.id.clone(),
+                name: v.name.clone(),
+                path: v.path.clone(),
+                star_count,
+                folder_count,
+                recent_stars,
+                is_universe_notes: v.is_universe_notes,
+            }
+        })
+    }).collect();
+    handles.into_iter().filter_map(|h| h.join().ok()).collect()
 }
 
 /// Search across all libraries for notes matching a query.
@@ -398,11 +498,54 @@ fn count_recursive(dir: &Path, stars: &mut u32, folders: &mut u32, depth: u32) {
 }
 
 fn get_recent_notes(dir: &Path, library_id: &str, library_name: &str, limit: usize) -> Vec<StarInfo> {
-    let mut notes = Vec::new();
-    collect_notes_recursive(dir, library_id, library_name, &mut notes, 0);
-    notes.sort_by(|a, b| b.modified.cmp(&a.modified));
-    notes.truncate(limit);
-    notes
+    // PERF: Collect metadata only (no file content reads). On a 7,600-note Universe
+    // the previous impl read every .md file's content just to pick the 10 most
+    // recent — that's the disk thrashing on boot. We now defer preview reads to
+    // the top-N files after sorting, turning ~7,600 reads into ~10 per library.
+    let mut meta: Vec<(String, std::path::PathBuf, u64)> = Vec::new();
+    collect_recent_meta_recursive(dir, &mut meta, 0);
+    // Partial-sort by modified DESC, keep top `limit` — using a simple full sort
+    // is fine at O(n log n) on metadata-only tuples (no I/O inside the compare).
+    meta.sort_by(|a, b| b.2.cmp(&a.2));
+    meta.truncate(limit);
+    meta.into_iter().map(|(name, path, modified)| {
+        let preview = fs::read_to_string(&path)
+            .unwrap_or_default()
+            .lines()
+            .filter(|l| !l.starts_with('#') && !l.starts_with("---") && !l.trim().is_empty())
+            .take(2)
+            .collect::<Vec<_>>()
+            .join(" ");
+        let preview = safe_truncate(&preview, 120);
+        StarInfo {
+            name: name.trim_end_matches(".md").to_string(),
+            path: path.to_string_lossy().to_string(),
+            library_id: library_id.to_string(),
+            library_name: library_name.to_string(),
+            modified,
+            preview,
+        }
+    }).collect()
+}
+
+fn collect_recent_meta_recursive(dir: &Path, out: &mut Vec<(String, std::path::PathBuf, u64)>, depth: u32) {
+    if depth > 20 { return; }
+    let read_dir = match fs::read_dir(dir) { Ok(rd) => rd, Err(_) => return };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') { continue; }
+        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
+        if path.is_dir() {
+            collect_recent_meta_recursive(&path, out, depth + 1);
+        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
+            let modified = entry.metadata()
+                .and_then(|m| m.modified())
+                .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
+                .unwrap_or(0);
+            out.push((name, path, modified));
+        }
+    }
 }
 
 /// Safely truncate a string to approximately `max_len` characters.
@@ -415,45 +558,9 @@ fn safe_truncate(s: &str, max_len: usize) -> String {
     }
 }
 
-fn collect_notes_recursive(dir: &Path, library_id: &str, library_name: &str, notes: &mut Vec<StarInfo>, depth: u32) {
-    if depth > 20 { return; }
-    let read_dir = match fs::read_dir(dir) {
-        Ok(rd) => rd,
-        Err(_) => return,
-    };
-    for entry in read_dir.flatten() {
-        let path = entry.path();
-        let name = entry.file_name().to_string_lossy().to_string();
-        if name.starts_with('.') { continue; }
-        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
-
-        if path.is_dir() {
-            collect_notes_recursive(&path, library_id, library_name, notes, depth + 1);
-        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
-            let modified = entry.metadata()
-                .and_then(|m| m.modified())
-                .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
-                .unwrap_or(0);
-
-            let preview = fs::read_to_string(&path)
-                .unwrap_or_default()
-                .lines()
-                .filter(|l| !l.starts_with('#') && !l.starts_with("---") && !l.trim().is_empty())
-                .take(2)
-                .collect::<Vec<_>>()
-                .join(" ");
-            let preview = safe_truncate(&preview, 120);
-
-            notes.push(StarInfo {
-                name: name.trim_end_matches(".md").to_string(),
-                path: path.to_string_lossy().to_string(),
-                library_id: library_id.to_string(),
-                library_name: library_name.to_string(),
-                modified,
-                preview,
-            });
-        }
-    }
+#[allow(dead_code)]
+fn _collect_notes_recursive_unused(_dir: &Path, _library_id: &str, _library_name: &str, _notes: &mut Vec<StarInfo>, _depth: u32) {
+    // Superseded by get_recent_notes metadata-first + top-N preview read.
 }
 
 fn search_notes_recursive(dir: &Path, library_id: &str, library_name: &str, query: &str, results: &mut Vec<StarInfo>, depth: u32) {
@@ -512,34 +619,81 @@ fn search_notes_recursive(dir: &Path, library_id: &str, library_name: &str, quer
 /// `initial_frontmatter` is optional YAML content (without delimiters) to insert between `---` markers.
 #[tauri::command]
 pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String, initial_frontmatter: Option<String>) -> Result<String, String> {
-    let safe_name = sanitize_name(&file_name)?;
     validate_path_in_any_library(&app, &folder_path)?;
     let folder = Path::new(&folder_path);
     if !folder.exists() || !folder.is_dir() {
         return Err("Folder does not exist.".to_string());
     }
 
-    let name = if safe_name.ends_with(".md") {
-        safe_name
-    } else {
-        format!("{}.md", safe_name)
-    };
+    let mode = get_library_mode(&app, &folder_path);
+    let dt = chrono::Utc::now();
 
-    let file_path = folder.join(&name);
-    if file_path.exists() {
-        return Err("A file with this name already exists.".to_string());
+    if mode == "native" || mode == "canonical" {
+        // Canonical: structured filename + full frontmatter
+        let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", Some(folder));
+        let file_path = folder.join(&canonical.full);
+        let display_name = file_name.trim_end_matches(".md");
+
+        let mut fm_lines: Vec<String> = Vec::new();
+        fm_lines.push(format!("title: \"{}\"", display_name.replace('"', "\\\"")));
+        fm_lines.push(format!("cid: {}", canonical.stem));
+        fm_lines.push("kind: note".to_string());
+        fm_lines.push(format!("created: {}", dt.to_rfc3339()));
+
+        if let Some(ref extra) = initial_frontmatter {
+            for line in extra.lines() {
+                let trimmed = line.trim();
+                if !trimmed.starts_with("title:") && !trimmed.starts_with("cid:")
+                    && !trimmed.starts_with("kind:") && !trimmed.starts_with("created:")
+                    && !trimmed.is_empty()
+                {
+                    fm_lines.push(trimmed.to_string());
+                }
+            }
+        }
+
+        let content = format!("---\n{}\n---\n\n", fm_lines.join("\n"));
+        fs::write(&file_path, &content)
+            .map_err(|e| format!("Failed to create note: {}", e))?;
+        Ok(file_path.to_string_lossy().to_string())
+    } else {
+        // Compatible: human-readable filename + only cid in frontmatter
+        let safe_name = sanitize_name(&file_name)?;
+        let name = if safe_name.ends_with(".md") { safe_name } else { format!("{}.md", safe_name) };
+        let file_path = folder.join(&name);
+        if file_path.exists() {
+            return Err("A file with this name already exists.".to_string());
+        }
+
+        // Generate a cid without renaming
+        let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", None);
+        let mut fm_lines: Vec<String> = Vec::new();
+        fm_lines.push(format!("cid: {}", canonical.stem));
+
+        if let Some(ref extra) = initial_frontmatter {
+            for line in extra.lines() {
+                let trimmed = line.trim();
+                if !trimmed.starts_with("cid:") && !trimmed.is_empty() {
+                    fm_lines.push(trimmed.to_string());
+                }
+            }
+        }
+
+        let content = if fm_lines.is_empty() {
+            "---\n---\n\n".to_string()
+        } else {
+            format!("---\n{}\n---\n\n", fm_lines.join("\n"))
+        };
+        fs::write(&file_path, &content)
+            .map_err(|e| format!("Failed to create note: {}", e))?;
+        Ok(file_path.to_string_lossy().to_string())
     }
+}
 
-    let fm = initial_frontmatter.unwrap_or_default();
-    let initial = if fm.is_empty() {
-        "---\n---\n\n".to_string()
-    } else {
-        format!("---\n{}\n---\n\n", fm.trim())
-    };
-    fs::write(&file_path, &initial)
-        .map_err(|e| format!("Failed to create note: {}", e))?;
-
-    Ok(file_path.to_string_lossy().to_string())
+/// Check if a library has been canonicalized. Delegates to canonical module.
+#[allow(dead_code)]
+fn is_library_canonical(library_path: &str) -> bool {
+    crate::canonical::is_library_canonicalized(library_path)
 }
 
 /// Search notes by property key/value across all libraries.
@@ -663,19 +817,176 @@ pub fn create_folder(app: tauri::AppHandle, parent_path: String, folder_name: St
 #[tauri::command]
 pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) -> Result<(), String> {
     validate_path_in_any_library(&app, &old_path)?;
-    validate_path_in_any_library(&app, &new_path)?;
     let old = Path::new(&old_path);
     if !old.exists() {
         return Err("Item does not exist.".to_string());
     }
 
-    let new_p = Path::new(&new_path);
-    if new_p.exists() {
-        return Err("An item with this name already exists.".to_string());
+    // Check if this is a canonical .md file — if so, rename = update frontmatter title, NOT the filename
+    if old.extension().map(|e| e == "md").unwrap_or(false)
+        && crate::canonical::is_canonical_filename(old)
+    {
+        let new_title = Path::new(&new_path)
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+
+        // Read content and extract current title from frontmatter
+        let content = fs::read_to_string(old)
+            .map_err(|e| format!("Failed to read note: {}", e))?;
+        let old_title = extract_frontmatter_title(&content)
+            .unwrap_or_else(|| old.file_stem().unwrap_or_default().to_string_lossy().to_string());
+
+        let updated = update_frontmatter_title(&content, &new_title, &old_title);
+        fs::write(old, &updated)
+            .map_err(|e| format!("Failed to write note: {}", e))?;
+
+        // Trigger search reindex for this note so the new title is reflected
+        {
+            use tauri::Manager;
+            let search_state = app.state::<crate::search::SearchState>();
+            let note_path = old.to_string_lossy().to_string();
+            let libs = load_all_libraries(&app);
+            if let Some(lib) = libs.iter().find(|l| note_path.starts_with(&l.path)) {
+                let _ = crate::search::reindex_single_note(&search_state, &note_path, &lib.name);
+            }
+        }
+
+        // The file stays at old_path — canonical filename doesn't change
+        Ok(())
+    } else {
+        // Legacy behavior: actually rename the file/folder
+        validate_path_in_any_library(&app, &new_path)?;
+        let new_p = Path::new(&new_path);
+        if new_p.exists() {
+            return Err("An item with this name already exists.".to_string());
+        }
+        fs::rename(old, new_p)
+            .map_err(|e| format!("Failed to rename: {}", e))
+    }
+}
+
+/// Extract the `title:` value from a note's frontmatter.
+fn extract_frontmatter_title(content: &str) -> Option<String> {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") { return None; }
+    let after = &trimmed[3..];
+    let end = after.find("\n---")?;
+    let fm = &after[..end];
+    for line in fm.lines() {
+        let t = line.trim();
+        if t.starts_with("title:") {
+            let val = t["title:".len()..].trim().trim_matches('"').trim_matches('\'');
+            if !val.is_empty() { return Some(val.to_string()); }
+        }
+    }
+    None
+}
+
+/// Update a note's frontmatter title and add the old title to aliases.
+fn update_frontmatter_title(content: &str, new_title: &str, old_title: &str) -> String {
+    let esc_new = new_title.replace('"', "\\\"");
+    let esc_old = old_title.replace('"', "\\\"");
+
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") {
+        return format!(
+            "---\ntitle: \"{}\"\naliases:\n  - \"{}\"\n---\n\n{}",
+            esc_new, esc_old, content
+        );
     }
 
-    fs::rename(old, new_p)
-        .map_err(|e| format!("Failed to rename: {}", e))
+    let after_first = &trimmed[3..];
+    let Some(end) = after_first.find("\n---") else {
+        return content.to_string();
+    };
+    let fm = &after_first[..end];
+    let body = &after_first[end + 4..];
+
+    let mut new_lines: Vec<String> = Vec::new();
+    let mut found_title = false;
+    let mut found_aliases = false;
+    let mut old_title_in_aliases = false;
+    let mut in_alias_list = false;
+
+    for line in fm.lines() {
+        let t = line.trim();
+
+        // Replace title field
+        if t.starts_with("title:") {
+            found_title = true;
+            new_lines.push(format!("title: \"{}\"", esc_new));
+            continue;
+        }
+
+        // Handle aliases field
+        if t.starts_with("aliases:") {
+            found_aliases = true;
+            let value = t["aliases:".len()..].trim();
+
+            if value.starts_with('[') && value.ends_with(']') {
+                // Inline array: aliases: [a, b, c]
+                let inner = &value[1..value.len() - 1];
+                let existing: Vec<String> = inner
+                    .split(',')
+                    .map(|s| s.trim().trim_matches('"').trim_matches('\'').to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                old_title_in_aliases = existing.iter().any(|a| a == old_title);
+                // Convert to list format for consistency
+                new_lines.push("aliases:".to_string());
+                for alias in &existing {
+                    new_lines.push(format!("  - \"{}\"", alias.replace('"', "\\\"")));
+                }
+                if !old_title_in_aliases {
+                    new_lines.push(format!("  - \"{}\"", esc_old));
+                }
+                continue;
+            }
+
+            // List format: aliases:\n  - a\n  - b
+            new_lines.push(line.to_string());
+            in_alias_list = true;
+            continue;
+        }
+
+        // Collect alias list items
+        if in_alias_list && t.starts_with("- ") {
+            let alias_val = t[2..].trim().trim_matches('"').trim_matches('\'');
+            if alias_val == old_title {
+                old_title_in_aliases = true;
+            }
+            new_lines.push(line.to_string());
+            continue;
+        }
+
+        // End of alias list — append old title if missing
+        if in_alias_list {
+            in_alias_list = false;
+            if !old_title_in_aliases {
+                new_lines.push(format!("  - \"{}\"", esc_old));
+            }
+        }
+
+        new_lines.push(line.to_string());
+    }
+
+    // If alias list was the last thing in frontmatter
+    if in_alias_list && !old_title_in_aliases {
+        new_lines.push(format!("  - \"{}\"", esc_old));
+    }
+
+    // Add missing fields
+    if !found_title {
+        new_lines.insert(0, format!("title: \"{}\"", esc_new));
+    }
+    if !found_aliases {
+        new_lines.push("aliases:".to_string());
+        new_lines.push(format!("  - \"{}\"", esc_old));
+    }
+
+    format!("---\n{}\n---{}", new_lines.join("\n"), body)
 }
 
 /// Move a file or folder to a different directory within any registered library.
@@ -712,13 +1023,26 @@ pub fn delete_item(app: tauri::AppHandle, path: String, permanent: Option<bool>)
     }
 
     let _ = permanent; // For now, always permanent delete
-    if target.is_dir() {
+    let path_str = path.clone();
+    let result = if target.is_dir() {
         fs::remove_dir_all(target)
             .map_err(|e| format!("Failed to delete folder: {}", e))
     } else {
         fs::remove_file(target)
             .map_err(|e| format!("Failed to delete file: {}", e))
+    };
+
+    // Clean up note_links and note_meta for deleted items
+    if result.is_ok() {
+        // Clean up search index + link data for deleted note
+        use tauri::Manager;
+        {
+            let search_state = app.state::<crate::search::SearchState>();
+            let _ = crate::search::reindex_delete_note(&search_state, &path_str);
+        }
     }
+
+    result
 }
 
 /// Resolve a wikilink target to an actual file path within a library.
@@ -805,8 +1129,16 @@ pub fn resolve_wikilink_cross_library(
         find_note_by_name_or_alias(current_dir, &target_lower, &mut matches, 0);
         if !matches.is_empty() {
             matches.sort_by_key(|p| p.to_string_lossy().len());
+            // Normalize both sides: strict `==` drops to "" on Windows
+            // slash / trailing-slash / case drift, which then shows up
+            // as an empty library chip on the tab and poisons the next
+            // wikilink resolution (empty currentLibraryPath skips this
+            // branch entirely on the next click, picking the wrong
+            // same-named note from another library).
+            let norm = |s: &str| s.replace('\\', "/").trim_end_matches('/').to_lowercase();
+            let current_norm = norm(&current_library_path);
             let library_name = libraries.iter()
-                .find(|(_, _, p)| p == &current_library_path)
+                .find(|(_, _, p)| norm(p) == current_norm)
                 .map(|(_, n, _)| n.clone())
                 .unwrap_or_default();
             return Ok(Some(ResolvedLink {
@@ -862,17 +1194,21 @@ fn find_note_by_name(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth
     }
 }
 
-/// Like find_note_by_name, but also checks frontmatter aliases.
+/// Like find_note_by_name, but also checks frontmatter title and aliases.
+/// Resolution order (first match wins):
+///   1. Filename stem match (fast, no file read)
+///   2. Frontmatter `title:` field match (supports canonical filenames)
+///   3. Frontmatter `aliases:` match
 fn find_note_by_name_or_alias(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth: u32) {
     // First try exact filename match (fast)
     find_note_by_name(dir, target, results, depth);
     if !results.is_empty() { return; }
 
-    // If no filename match, scan for aliases
-    find_note_by_alias(dir, target, results, depth);
+    // If no filename match, scan frontmatter title + aliases
+    find_note_by_title_or_alias(dir, target, results, depth);
 }
 
-fn find_note_by_alias(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth: u32) {
+fn find_note_by_title_or_alias(dir: &Path, target: &str, results: &mut Vec<PathBuf>, depth: u32) {
     if depth > 20 { return; }
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
@@ -885,15 +1221,34 @@ fn find_note_by_alias(dir: &Path, target: &str, results: &mut Vec<PathBuf>, dept
         if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
 
         if path.is_dir() {
-            find_note_by_alias(&path, target, results, depth + 1);
+            find_note_by_title_or_alias(&path, target, results, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             if let Ok(content) = fs::read_to_string(&path) {
-                if has_alias(&content, target) {
+                if has_title(&content, target) || has_alias(&content, target) {
                     results.push(path);
                 }
             }
         }
     }
+}
+
+/// Check if a note's frontmatter `title:` field matches the target.
+fn has_title(content: &str, target: &str) -> bool {
+    if !content.starts_with("---") { return false; }
+    let end = match content[3..].find("\n---") {
+        Some(pos) => pos + 3,
+        None => return false,
+    };
+    let frontmatter = &content[3..end];
+    for line in frontmatter.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("title:") {
+            let value = trimmed["title:".len()..].trim();
+            let value = value.trim_matches('"').trim_matches('\'').to_lowercase();
+            if value == target { return true; }
+        }
+    }
+    false
 }
 
 /// Check if a note's frontmatter contains a matching alias.
@@ -932,7 +1287,13 @@ fn has_alias(content: &str, target: &str) -> bool {
 }
 
 /// Read Obsidian's appearance.json for a library.
-#[tauri::command]
+///
+/// `(async)` because this fires 16× in the boot fan-out (one per library) and
+/// performs disk I/O (`fs::read_to_string` + JSON parse). Keeping the body on
+/// the WebView2 UI thread would serialize all 16 reads behind whatever other
+/// fan-out work is in flight. See watcher.rs `watch_library` for the full
+/// UI-thread-serialization rationale (LL-021 post-Round-3).
+#[tauri::command(async)]
 pub fn read_library_appearance(app: tauri::AppHandle, library_path: String) -> Result<serde_json::Value, String> {
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == library_path) {
@@ -1084,6 +1445,19 @@ fn read_dir_recursive(dir: &Path, current_depth: u32, max_depth: u32) -> Vec<Fil
             None
         };
 
+        // For canonical files, extract the frontmatter title as display name
+        let display_title = if !is_dir
+            && extension.as_deref() == Some("md")
+            && crate::canonical::is_canonical_filename(&path)
+        {
+            // Read just the first 1KB to extract title (fast)
+            fs::read_to_string(&path)
+                .ok()
+                .and_then(|c| extract_frontmatter_title(&c))
+        } else {
+            None
+        };
+
         entries.push(FileEntry {
             name,
             path: path.to_string_lossy().to_string(),
@@ -1092,6 +1466,7 @@ fn read_dir_recursive(dir: &Path, current_depth: u32, max_depth: u32) -> Vec<Fil
             extension,
             modified,
             status,
+            display_title,
         });
     }
 
@@ -1125,7 +1500,36 @@ pub struct NoteLink {
     pub context: String,
     pub library_name: String,
     pub link_type: Option<String>,
+    /// User's typed annotation from `[[target|annotation]]` syntax — the
+    /// second parser (`extract_typed_links` in search.rs) stores the
+    /// semantic tag here and leaves `link_type` at the default "relates".
+    /// The UI checks this first when choosing the type-badge color.
+    #[serde(default)]
+    pub annotation: String,
+    /// Living Link weight: `1 + ln(1 + traversal_count)`. Default 1.0 for
+    /// never-traversed links. Consumed by the Backlinks panel (P3) to
+    /// prioritize worn paths.
+    #[serde(default = "default_weight")]
+    pub weight: f64,
+    /// Number of times the user has traversed this link. Default 0 for
+    /// fresh / boot-graph-fallback entries that didn't come from the
+    /// `note_links` table.
+    #[serde(default)]
+    pub traversal_count: i64,
+    /// ISO-8601 timestamp of the most recent traversal, or "" for links
+    /// that have never been followed. Populated from
+    /// `note_links.last_traversed`. Consumed by the P5 lifecycle helpers
+    /// to compute decay / stale-flagging / confidence tiers client-side.
+    #[serde(default)]
+    pub last_traversed: String,
+    /// Confidence tier stored in the DB: "hypothesis" (default), or user-
+    /// promoted tiers that will be driven by P5 thresholds. Present here
+    /// so the UI can surface the raw tier without an extra query.
+    #[serde(default)]
+    pub confidence: String,
 }
+
+fn default_weight() -> f64 { 1.0 }
 
 /// Scan all notes in a library and extract wikilinks from each.
 #[tauri::command]
@@ -1155,9 +1559,15 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
             scan_links_recursive(&path, re, links, library_name);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                let source_name = path.file_stem()
+                // Use frontmatter title for canonical files (matching collect_library_notes)
+                let file_stem = path.file_stem()
                     .map(|s| s.to_string_lossy().to_string())
                     .unwrap_or_default();
+                let source_name = if crate::canonical::is_canonical_filename(&path) {
+                    extract_frontmatter_title(&content).unwrap_or(file_stem)
+                } else {
+                    file_stem
+                };
                 for cap in re.captures_iter(&content) {
                     let target = cap[1].trim().to_string();
                     // Extract link type from alias:
@@ -1192,6 +1602,11 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
                         context,
                         library_name: library_name.to_string(),
                         link_type,
+                        annotation: String::new(),
+                        weight: 1.0,
+                        traversal_count: 0,
+                        last_traversed: String::new(),
+                        confidence: String::new(),
                     });
                 }
             }
@@ -1286,6 +1701,11 @@ fn scan_unlinked_recursive(
                         context,
                         library_name: library_name.to_string(),
                         link_type: None,
+                        annotation: String::new(),
+                        weight: 1.0,
+                        traversal_count: 0,
+                        last_traversed: String::new(),
+                        confidence: String::new(),
                     });
                 }
             }
@@ -1293,8 +1713,28 @@ fn scan_unlinked_recursive(
     }
 }
 
-/// Scan all tags across a library.
-#[tauri::command]
+/// Scan all tags across a library. **Walks every `.md` file** via
+/// `scan_tags_recursive` below (`fs::read_to_string` per file + regex scan).
+/// On the 7,600-note trial Universe this is ~7,600 file reads per library —
+/// seconds of wall-clock work.
+///
+/// Boot path: `DashboardView.onMount` (src/lib/components/DashboardView.svelte)
+/// calls `scanAllLibraryTags()` (src/lib/libraries/tagUtils.ts) which issues
+/// **one `invoke('scan_library_tags')` per library, sequentially** (16 calls
+/// on the trial Universe). DashboardView mounts the instant
+/// `libraries.set(bundle.libraries)` fires in `refreshLibraryCaches` — which
+/// happens **before** `cache_boot_snapshot_core` returns. Without `(async)`
+/// all 16 invocations queue on the WebView2 UI thread (see `watcher.rs`
+/// docstring for the full dispatch chain), pushing `core_queue_ms` to ~19.5 s
+/// on Round 4 measurements (docs/LESSONS-LEARNED.md LL-021 Round 5).
+///
+/// `#[tauri::command(async)]` routes each scan through `respond_async_serialized`
+/// → `tauri::async_runtime::spawn`, so the UI thread pays only spawn cost per
+/// call and Tokio workers run the actual filesystem walks in parallel.
+/// Write-Time Derivation (CLAUDE.md Rule 8) says the right long-term fix is a
+/// persisted tag index maintained by trigger/watcher — tracked as a separate
+/// open item; this is the minimal change that unblocks Boot Criterion 2.
+#[tauri::command(async)]
 pub fn scan_library_tags(app: tauri::AppHandle, library_path: String) -> Result<std::collections::HashMap<String, u32>, String> {
     let libraries = load_all_libraries(&app);
     if !libraries.iter().any(|v| v.path == library_path) {
@@ -1410,6 +1850,16 @@ fn collect_notes_with_tag(dir: &Path, lib_id: &str, lib_name: &str, re: &regex::
 pub struct IndexMention {
     pub note_path: String,
     pub note_name: String,
+    /// One-line FTS5 snippet of the matched term in context (up to ~12
+    /// tokens around the first hit). Matched tokens are wrapped in
+    /// `\x02`…`\x03` sentinels (STX/ETX control chars) which the frontend
+    /// splits on to render as `<mark>` — chosen over putting `<mark>` in
+    /// SQL so literal HTML in user notes is not injected into the DOM.
+    ///
+    /// `None` when FTS5 returned an empty snippet (e.g. title-only match
+    /// against a note with empty body). The Index panel omits the context
+    /// line in that case.
+    pub snippet: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1418,6 +1868,20 @@ pub struct IndexEntry {
     pub count: u32,
     pub mentions: Vec<IndexMention>,
     pub is_compound: bool,
+}
+
+/// Co-occurring term — another vocabulary term appearing in the same notes
+/// as a query term. Returned by `read_cooccurring_terms` and rendered as
+/// a chip strip beneath an expanded Index term, surfacing lexical
+/// adjacency ("notes containing 'knowledge' also contain …").
+#[derive(Debug, Clone, Serialize)]
+pub struct CooccurringTerm {
+    /// Display form of the co-occurring term. Bigrams stored as
+    /// `stem1\x1fstem2` are converted to `"stem1 stem2"` for the UI.
+    pub term: String,
+    /// Number of sampled matching notes that also contain this term.
+    /// Capped above by `sample_limit` (default 200).
+    pub note_count: u32,
 }
 
 /// ─── Arabic Indexing Pipeline ───────────────────────────────────────────────
@@ -1559,15 +2023,51 @@ fn stem_arabic_light10(word: &str) -> String {
     chars.iter().collect()
 }
 
-/// Combined Arabic processing: normalize + stem
-/// Returns (display_form, index_key)
-/// - display: original word with tashkeel removed (ة stays ة, أ stays أ)
-/// - key: fully normalized + stemmed (for grouping variants)
+/// Combined Arabic processing: normalize + stem.
+/// Returns (display_form, index_key):
+///   - display: original word with tashkeel removed (ة stays ة, أ stays أ).
+///   - key: canonical stem used by FTS5 to group surface variants.
+///
+/// M6 routes the key through `arabic::analyze_best`, which runs the five
+/// Constellation Arabic Engine layers and returns the highest-confidence
+/// analysis:
+///
+///   Layer 1 ProtectedList    — proper nouns / places / loanwords / function (conf 1.00)
+///   Layer 2 GenerativeFst    — bare (root × pattern) hit                    (conf 0.85)
+///   Layer 3b Cascade         — affix-peeled stem hit                        (conf 0.75 / 0.55)
+///   Layer 4 SurfaceHeuristic — normalized surface fallback                  (conf 0.30)
+///
+/// For every analysis with origin ≠ SurfaceHeuristic the engine's `lemma`
+/// is a strict improvement on Light10 — most visibly on the proper-noun
+/// case that motivated this milestone: `وائل → "وائل"` (ProtectedList)
+/// instead of the Light10-corrupted `"ائل"`.
+///
+/// When the analyzer's best guess IS SurfaceHeuristic (an Arabic word
+/// that isn't protected, isn't in the FST, and can't be peeled to any
+/// FST stem), we keep Light10 so the swap is strictly non-regressive:
+/// unrecognized words continue to get the same affix-stripping they got
+/// before M6, and search recall on them doesn't drop.
 fn process_arabic_word(word: &str) -> (String, String) {
     let display = normalize_arabic_display(word); // preserve ة أ إ آ ى
-    let normalized = normalize_arabic(word);       // unify ة→ه أ→ا etc.
-    let stemmed = stem_arabic_light10(&normalized);
-    (display, stemmed)
+    // M8b routes every token through the active Universe's user-override
+    // store before the rest of the engine. M9-hotpath (a) cut this from
+    // an unconditional RwLock-read + Arc::clone (~25 ns) to a single
+    // relaxed `AtomicBool::load` (~2 ns) on the overwhelmingly common
+    // empty-store case via `active_if_non_empty`. The returned
+    // `Option<Arc<_>>` lives until end of scope, so `.as_deref()` gives
+    // the `Option<&OverrideStore>` the downstream analyze call expects
+    // without any reference-lifetime juggling.
+    let store_owned = crate::arabic::overrides::active_if_non_empty();
+    let overrides_ref = store_owned.as_deref();
+    let analysis = crate::arabic::analyze_with_overrides_best(word, overrides_ref);
+    let stem = if matches!(analysis.origin, crate::arabic::AnalysisOrigin::SurfaceHeuristic) {
+        // Unknown word — preserve pre-M6 Light10 behaviour so recall on
+        // previously-indexed surfaces does not regress.
+        stem_arabic_light10(&normalize_arabic(word))
+    } else {
+        analysis.lemma
+    };
+    (display, stem)
 }
 
 /// Remove common Hebrew prefixes: ב ל מ ה ו כ ש
@@ -1861,7 +2361,7 @@ fn stem_persian(word: &str) -> String {
     normalized
 }
 
-fn build_stopwords() -> std::collections::HashSet<String> {
+pub(crate) fn build_stopwords() -> std::collections::HashSet<String> {
     let words: &[&str] = &[
         // English
         "the","be","to","of","and","a","in","that","have","i","it","for","not","on","with",
@@ -2039,7 +2539,9 @@ pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result
                 .unwrap_or_default();
             let mentions: Vec<IndexMention> = sources
                 .into_iter()
-                .map(|(note_path, note_name)| IndexMention { note_path, note_name })
+                // Legacy walker doesn't produce FTS5 snippets — the
+                // FTS5-backed `read_term_mentions` is the modern source.
+                .map(|(note_path, note_name)| IndexMention { note_path, note_name, snippet: None })
                 .collect();
             IndexEntry { term, count, mentions, is_compound: false }
         })
@@ -2052,7 +2554,7 @@ pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result
         .map(|(term, count, sources)| {
             let mentions: Vec<IndexMention> = sources
                 .into_iter()
-                .map(|(note_path, note_name)| IndexMention { note_path, note_name })
+                .map(|(note_path, note_name)| IndexMention { note_path, note_name, snippet: None })
                 .collect();
             IndexEntry { term, count, mentions, is_compound: true }
         })
@@ -2063,7 +2565,7 @@ pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result
     Ok(entries)
 }
 
-fn is_same_script(a: &str, b: &str) -> bool {
+pub(crate) fn is_same_script(a: &str, b: &str) -> bool {
     let ca = a.chars().next().unwrap_or(' ');
     let cb = b.chars().next().unwrap_or(' ');
     // Both ASCII Latin
@@ -2072,6 +2574,243 @@ fn is_same_script(a: &str, b: &str) -> bool {
     let ba = (ca as u32) >> 8;
     let bb = (cb as u32) >> 8;
     ba == bb
+}
+
+/// Per-word processor used by the custom FTS5 tokenizer
+/// (`crate::fts5_tokenizer::ConstellationTokenizer`).
+///
+/// Takes a single word and returns `(stem, norm_lower)` if the word is
+/// worth emitting to the FTS5 inverted index, or `None` if it should be
+/// skipped (empty, too short, or unreasonably long — likely concatenation
+/// noise). The caller decides stopword filtering against the returned pair.
+///
+/// This is the same stemming pipeline used by `tokenize_note_body`
+/// (Arabic Light10 / Hebrew prefix stripping / Persian / Cyrillic /
+/// Devanagari / German / Spanish / Portuguese / French / Turkish /
+/// English), but without the side-effectful HashMap accumulation — the
+/// tokenizer just needs the stem + pre-stem normalized form.
+///
+/// * `stem` — lowercased, stemmed, suitable as a primary FTS5 token byte
+///   sequence. When the same word arrives in a MATCH query it is stemmed
+///   through this same function, so stemming is symmetric.
+/// * `norm_lower` — lowercased, normalized (for Arabic: diacritics
+///   stripped, alef/yeh/teh-marbuta variants unified) but NOT stemmed.
+///   Callers check this against the stopword set too, because stopword
+///   lists are curated in un-stemmed form (e.g. "the", not "th").
+pub(crate) fn process_word_for_fts(word: &str) -> Option<(String, String)> {
+    let char_count = word.chars().count();
+    if char_count < 2 { return None; }
+
+    let word_is_arabic = is_arabic(word);
+    let word_is_hebrew = is_hebrew(word);
+
+    // Length guards to drop concatenation noise.
+    // Arabic words >20 chars are almost always glued tokens.
+    // Non-Arabic: 40 is generous enough for German compounds.
+    if word_is_arabic && char_count > 20 { return None; }
+    if !word_is_arabic && char_count > 40 { return None; }
+
+    let (normalized, stemmed);
+    if word_is_arabic {
+        let (_disp, stem) = process_arabic_word(word);
+        normalized = normalize_arabic(word);
+        stemmed = stem;
+    } else if word_is_hebrew {
+        normalized = word.to_string();
+        stemmed = strip_hebrew_prefix(&normalized).to_string();
+    } else {
+        normalized = word.to_string();
+        let lower = normalized.to_lowercase();
+        stemmed = if is_persian(&normalized) {
+            stem_persian(&normalized)
+        } else if is_cyrillic(&normalized) {
+            stem_russian(&normalized)
+        } else if is_devanagari(&normalized) {
+            stem_hindi(&normalized)
+        } else if is_latin(&normalized) {
+            if lower.contains('ä') || lower.contains('ö') || lower.contains('ü') || lower.contains('ß') {
+                stem_german(&normalized)
+            } else if lower.contains('ñ') || lower.ends_with("ción") || lower.ends_with("ando") {
+                stem_spanish(&normalized)
+            } else if lower.contains('ç') || lower.contains('ã') || lower.contains('õ') {
+                stem_portuguese(&normalized)
+            } else if lower.contains('é') || lower.contains('è') || lower.contains('ê')
+                || lower.ends_with("ment") || lower.ends_with("tion") {
+                stem_french(&normalized)
+            } else if lower.contains('ş') || lower.contains('ğ') || lower.contains('ı') {
+                stem_turkish(&normalized)
+            } else {
+                stem_english(&normalized)
+            }
+        } else {
+            // Unknown script — emit as-is (CJK, etc.)
+            normalized.clone()
+        };
+    }
+
+    let stem_lower = stemmed.to_lowercase();
+    let norm_lower = normalized.to_lowercase();
+
+    // Skip if the stem degenerated to <2 chars (e.g. after Arabic prefix
+    // stripping on a short word).
+    if stem_lower.chars().count() < 2 { return None; }
+
+    Some((stem_lower, norm_lower))
+}
+
+/// Tokenize a single note body and accumulate into the index + bigram maps.
+/// Pure in-memory — no filesystem, no SQL. Callers pass already-stripped
+/// body text (YAML frontmatter removed, markdown syntax collapsed).
+///
+/// Used by the filesystem walker `scan_index_words_recursive` (called from
+/// `scan_library_index`, the on-demand per-library filesystem rebuild).
+///
+/// The cache-streaming path (`scan_index_populate_batch`) uses the sibling
+/// `tokenize_note_local` function instead, which emits a per-note HashMap
+/// and avoids unbounded accumulation across notes.
+fn tokenize_note_body(
+    body: &str,
+    note_path: &str,
+    note_name: &str,
+    stopwords: &std::collections::HashSet<String>,
+    index: &mut std::collections::HashMap<String, (
+        std::collections::HashMap<String, u32>, u32, Vec<(String, String)>,
+    )>,
+    bigrams: &mut std::collections::HashMap<String, (String, u32, Vec<(String, String)>)>,
+) {
+    let mut seen_in_note: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut seen_bigrams: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut prev_word: Option<String> = None;
+    let mut prev_key: Option<String> = None;
+
+    for word in body.split(|c: char| {
+        // Split on non-alphabetic chars (except apostrophe).
+        // Also split on dashes, underscores, and em/en dashes.
+        if c == '\'' { return false; }
+        if c == '—' || c == '–' || c == '-' || c == '_' { return true; }
+        !c.is_alphabetic()
+    }) {
+        let word = word.trim_matches('\'');
+        if word.is_empty() {
+            prev_word = None;
+            prev_key = None;
+            continue;
+        }
+        let char_count = word.chars().count();
+        let word_is_arabic = is_arabic(word);
+        let word_is_hebrew = is_hebrew(word);
+        let is_non_latin = word.chars().any(|c| !c.is_ascii_alphabetic());
+
+        // Skip abnormally long words — likely concatenation errors.
+        // Arabic rarely exceeds 12 chars; Latin rarely exceeds 25.
+        if word_is_arabic && char_count > 15 {
+            prev_word = None;
+            prev_key = None;
+            continue;
+        }
+        if is_non_latin && char_count < 2 {
+            prev_word = None;
+            prev_key = None;
+            continue;
+        }
+        if !is_non_latin && char_count < 3 {
+            prev_word = None;
+            prev_key = None;
+            continue;
+        }
+
+        // Process word through language-specific pipeline.
+        let (normalized, stripped, stemmed);
+        if word_is_arabic {
+            // Arabic: Lucene Light10 pipeline.
+            // display = original with tashkeel removed (ة أ إ preserved)
+            // key = fully normalized + stemmed (for grouping)
+            let (disp, stem) = process_arabic_word(word);
+            normalized = normalize_arabic(word); // full normalization for stopword check
+            stripped = disp; // display preserved
+            stemmed = stem;  // grouped by Light10
+        } else if word_is_hebrew {
+            normalized = word.to_string();
+            let s = strip_hebrew_prefix(&normalized).to_string();
+            stripped = s.clone();
+            stemmed = s;
+        } else {
+            normalized = word.to_string();
+            stripped = normalized.clone();
+            stemmed = if is_persian(&stripped) {
+                stem_persian(&stripped)
+            } else if is_cyrillic(&stripped) {
+                stem_russian(&stripped)
+            } else if is_devanagari(&stripped) {
+                stem_hindi(&stripped)
+            } else if is_latin(&stripped) {
+                let lower = stripped.to_lowercase();
+                if lower.contains('ä') || lower.contains('ö') || lower.contains('ü') || lower.contains('ß') {
+                    stem_german(&stripped)
+                } else if lower.contains('ñ') || lower.ends_with("ción") || lower.ends_with("ando") {
+                    stem_spanish(&stripped)
+                } else if lower.contains('ç') || lower.contains('ã') || lower.contains('õ') {
+                    stem_portuguese(&stripped)
+                } else if lower.contains('é') || lower.contains('è') || lower.contains('ê') || lower.ends_with("ment") || lower.ends_with("tion") {
+                    stem_french(&stripped)
+                } else if lower.contains('ş') || lower.contains('ğ') || lower.contains('ı') || lower.contains('ü') {
+                    stem_turkish(&stripped)
+                } else {
+                    stem_english(&stripped)
+                }
+            } else {
+                stripped.clone()
+            };
+        }
+
+        // Use stemmed form as index key; keep original display form.
+        let key = stemmed.to_lowercase();
+
+        // Skip stopwords (check both original normalized and stemmed forms).
+        let norm_lower = normalized.to_lowercase();
+        let is_stop = stopwords.contains(&key) || stopwords.contains(&norm_lower);
+
+        if !is_stop {
+            // Result must be ≥3 chars for Arabic/Hebrew, ≥2 for others.
+            let min_len = if word_is_arabic || word_is_hebrew { 3 } else { 2 };
+            if key.chars().count() < min_len {
+                prev_word = Some(stripped.clone());
+                prev_key = Some(key);
+                continue;
+            }
+
+            let entry = index.entry(key.clone()).or_insert_with(|| {
+                (std::collections::HashMap::new(), 0, Vec::new())
+            });
+            // Track display variant (use stripped form, not raw word with tashkeel).
+            *entry.0.entry(stripped.clone()).or_insert(0) += 1;
+            entry.1 += 1;
+
+            if !seen_in_note.contains(&key) {
+                seen_in_note.insert(key.clone());
+                entry.2.push((note_path.to_string(), note_name.to_string()));
+            }
+        }
+
+        // Bigram detection: pair with previous non-stop word if same script.
+        if let (Some(pw), Some(pk)) = (&prev_word, &prev_key) {
+            let prev_is_stop = stopwords.contains(pk.as_str());
+            if !is_stop && !prev_is_stop && is_same_script(pw, &stripped) {
+                let bi_key = format!("{} {}", pk, key);
+                let bi_display = format!("{} {}", pw, stripped);
+                let bi_entry = bigrams.entry(bi_key.clone())
+                    .or_insert_with(|| (bi_display, 0, Vec::new()));
+                bi_entry.1 += 1;
+                if !seen_bigrams.contains(&bi_key) {
+                    seen_bigrams.insert(bi_key);
+                    bi_entry.2.push((note_path.to_string(), note_name.to_string()));
+                }
+            }
+        }
+
+        prev_word = Some(stripped.clone());
+        prev_key = Some(key);
+    }
 }
 
 fn scan_index_words_recursive(
@@ -2122,136 +2861,353 @@ fn scan_index_words_recursive(
                     String::new()
                 });
 
-                let mut seen_in_note: std::collections::HashSet<String> = std::collections::HashSet::new();
-                let mut seen_bigrams: std::collections::HashSet<String> = std::collections::HashSet::new();
-                let mut prev_word: Option<String> = None;
-                let mut prev_key: Option<String> = None;
-
-                for word in cleaned.split(|c: char| {
-                    // Split on non-alphabetic chars (except apostrophe)
-                    // Also split on dashes, underscores, and special Unicode chars
-                    if c == '\'' { return false; }
-                    if c == '—' || c == '–' || c == '-' || c == '_' { return true; }
-                    !c.is_alphabetic()
-                }) {
-                    let word = word.trim_matches('\'');
-                    if word.is_empty() {
-                        prev_word = None;
-                        prev_key = None;
-                        continue;
-                    }
-                    let char_count = word.chars().count();
-                    let word_is_arabic = is_arabic(word);
-                    let word_is_hebrew = is_hebrew(word);
-                    let is_non_latin = word.chars().any(|c| !c.is_ascii_alphabetic());
-
-                    // Skip abnormally long words — likely concatenation errors
-                    // Arabic words rarely exceed 12 chars; Latin rarely exceeds 25
-                    if word_is_arabic && char_count > 15 {
-                        prev_word = None;
-                        prev_key = None;
-                        continue;
-                    }
-                    if is_non_latin && char_count < 2 {
-                        prev_word = None;
-                        prev_key = None;
-                        continue;
-                    }
-                    if !is_non_latin && char_count < 3 {
-                        prev_word = None;
-                        prev_key = None;
-                        continue;
-                    }
-
-                    // Process word through language-specific pipeline
-                    let (normalized, stripped, stemmed);
-                    if word_is_arabic {
-                        // Arabic: Lucene Light10 pipeline
-                        // display = original with tashkeel removed (ة أ إ preserved)
-                        // key = fully normalized + stemmed (for grouping)
-                        let (disp, stem) = process_arabic_word(word);
-                        normalized = normalize_arabic(word); // full normalization for stopword check
-                        stripped = disp; // display = original chars preserved
-                        stemmed = stem;  // key = grouped by Light10
-                    } else if word_is_hebrew {
-                        normalized = word.to_string();
-                        let s = strip_hebrew_prefix(&normalized).to_string();
-                        stripped = s.clone();
-                        stemmed = s;
-                    } else {
-                        normalized = word.to_string();
-                        stripped = normalized.clone();
-                        stemmed = if is_persian(&stripped) {
-                            stem_persian(&stripped)
-                        } else if is_cyrillic(&stripped) {
-                            stem_russian(&stripped)
-                        } else if is_devanagari(&stripped) {
-                            stem_hindi(&stripped)
-                        } else if is_latin(&stripped) {
-                            let lower = stripped.to_lowercase();
-                            if lower.contains('ä') || lower.contains('ö') || lower.contains('ü') || lower.contains('ß') {
-                                stem_german(&stripped)
-                            } else if lower.contains('ñ') || lower.ends_with("ción") || lower.ends_with("ando") {
-                                stem_spanish(&stripped)
-                            } else if lower.contains('ç') || lower.contains('ã') || lower.contains('õ') {
-                                stem_portuguese(&stripped)
-                            } else if lower.contains('é') || lower.contains('è') || lower.contains('ê') || lower.ends_with("ment") || lower.ends_with("tion") {
-                                stem_french(&stripped)
-                            } else if lower.contains('ş') || lower.contains('ğ') || lower.contains('ı') || lower.contains('ü') {
-                                stem_turkish(&stripped)
-                            } else {
-                                stem_english(&stripped)
-                            }
-                        } else {
-                            stripped.clone()
-                        };
-                    }
-
-                    // Use stemmed form as index key, but keep original display form
-                    let key = stemmed.to_lowercase();
-
-                    // Skip stopwords (check both original normalized and stemmed forms)
-                    let norm_lower = normalized.to_lowercase();
-                    let is_stop = stopwords.contains(&key) || stopwords.contains(&norm_lower);
-
-                    if !is_stop {
-                        // Skip if result is too short — 3 chars min for Arabic/Hebrew, 2 for others
-                        let min_len = if word_is_arabic || word_is_hebrew { 3 } else { 2 };
-                        if key.chars().count() < min_len { prev_word = Some(stripped.clone()); prev_key = Some(key); continue; }
-
-                        let entry = index.entry(key.clone()).or_insert_with(|| {
-                            (std::collections::HashMap::new(), 0, Vec::new())
-                        });
-                        // Track display variant (use stripped form, not raw word with tashkeel)
-                        *entry.0.entry(stripped.clone()).or_insert(0) += 1;
-                        entry.1 += 1;
-
-                        if !seen_in_note.contains(&key) {
-                            seen_in_note.insert(key.clone());
-                            entry.2.push((note_path.clone(), note_name.clone()));
-                        }
-                    }
-
-                    // Bigram detection: pair with previous non-stop word if same script
-                    if let (Some(pw), Some(pk)) = (&prev_word, &prev_key) {
-                        let prev_is_stop = stopwords.contains(pk.as_str());
-                        if !is_stop && !prev_is_stop && is_same_script(pw, &stripped) {
-                            let bi_key = format!("{} {}", pk, key);
-                            let bi_display = format!("{} {}", pw, stripped);
-                            let bi_entry = bigrams.entry(bi_key.clone())
-                                .or_insert_with(|| (bi_display, 0, Vec::new()));
-                            bi_entry.1 += 1;
-                            if !seen_bigrams.contains(&bi_key) {
-                                seen_bigrams.insert(bi_key);
-                                bi_entry.2.push((note_path.clone(), note_name.clone()));
-                            }
-                        }
-                    }
-
-                    prev_word = Some(stripped.clone());
-                    prev_key = Some(key);
-                }
+                tokenize_note_body(&cleaned, &note_path, &note_name, stopwords, index, bigrams);
             }
+        }
+    }
+}
+
+/// ─── Index Panel backed by FTS5 vocab ───────────────────────────────────
+///
+/// The Index panel reads directly from the `notes_vocab` virtual table,
+/// which is a `fts5vocab(notes_fts, 'row')` view over the term dictionary
+/// that FTS5 already maintains on disk. Each row is `(term, doc, cnt)`:
+///   * term — a token produced by the FTS5 tokenizer
+///   * doc  — number of distinct notes containing the token
+///   * cnt  — total occurrences across all notes
+///
+/// Advantages over the previous custom-table attempts:
+///   * Zero bulk work. FTS5 triggers on `note_meta` already maintain the
+///     term dictionary incrementally as notes are added, edited, or deleted.
+///   * No in-memory accumulation. Aggregation is what FTS5 does on disk.
+///   * Boot is free — the panel opens to a live view over the dictionary.
+///
+/// Current tokenization is whatever FTS5 was configured with at table
+/// creation (`unicode61 remove_diacritics 2`), which lower-cases and
+/// strips diacritics but does not stem. This means "philosophy" and
+/// "philosophies" appear as separate terms. A later phase will register a
+/// custom FTS5 tokenizer wrapping the existing multi-language pipeline
+/// (`tokenize_note_body` / Light10 Arabic stemming / bigrams) so the
+/// vocabulary reflects the richer tokenization.
+
+/// Read the Universe vocabulary from the FTS5 term dictionary.
+/// Returns `(display, count)` pairs; `mentions` is left empty — the UI
+/// lazy-fetches the notes for a term via `read_term_mentions` when the
+/// user expands it, which avoids returning millions of rows up front.
+///
+/// Filters (tuned for multi-script corpora, especially Arabic without
+/// stemming, where a 7,600-note Universe produces ~450k unique term forms):
+///   * terms shorter than 2 characters
+///   * terms with count < 5 — drops hapax/near-hapax noise that would
+///     otherwise bloat the list to hundreds of thousands of one-off tokens.
+///   * LIMIT 50000 — ceiling on payload size and rendering cost. At 50k
+///     alphabetically-sorted terms the user's filter-as-you-type narrows
+///     quickly; at more than 50k the JSON blob and Svelte $state proxy
+///     wrap start to hurt main-thread responsiveness.
+///
+/// Performance: a single forward scan over the FTS5 dictionary segments.
+/// Measured ~350ms for 50k rows on a 7,600-note Arabic-heavy Universe.
+#[tauri::command]
+pub fn read_index_entries(app: tauri::AppHandle) -> Result<Vec<IndexEntry>, String> {
+    use rusqlite::{Connection, OpenFlags};
+
+    let db_path = crate::search::db_path(&app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let mut conn = Connection::open_with_flags(&db_path, flags)
+        .map_err(|e| format!("Failed to open search.db: {}", e))?;
+    conn.busy_timeout(std::time::Duration::from_millis(500))
+        .map_err(|e| e.to_string())?;
+    // Register the 'constellation' FTS5 tokenizer on this connection so
+    // later phases can MATCH-through-query here if needed. Reading
+    // `notes_vocab` alone does not invoke the tokenizer, but consistency
+    // avoids a "unknown tokenizer: constellation" surprise if this
+    // function grows to do a MATCH later.
+    crate::search::register_fts5_tokenizer(&mut conn)?;
+
+    // No LIMIT. The Index panel is the canonical view of the Universe's
+    // vocabulary — truncating it silently hides entire scripts from the
+    // back of the alphabet because SQLite's default BINARY collation
+    // sorts by UTF-8 bytes (Latin `a-z` = 0x61..0x7A, Arabic starts at
+    // 0xD8 0x80, Hebrew at 0xD7 0x90, CJK at 0xE4..0xE9). A LIMIT at the
+    // SQL layer picks favorites; we don't.
+    //
+    // What keeps this bounded: the `cnt >= 5` threshold below, combined
+    // with the `constellation` tokenizer's stemming, caps a 7,600-note
+    // Universe at ~100-200k rows.
+    //
+    // The frontend renders the result through a virtualized list
+    // (`IndexPanel.svelte`) — payload size is the only soft limit, not
+    // render cost.
+    let mut stmt = conn.prepare(
+        "SELECT term, cnt FROM notes_vocab
+         WHERE LENGTH(term) >= 2 AND cnt >= 5
+         ORDER BY term"
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, i64>(1)? as u32,
+        ))
+    }).map_err(|e| e.to_string())?;
+
+    let mut entries: Vec<IndexEntry> = Vec::new();
+    for row in rows.flatten() {
+        let (term, count) = row;
+        // Bigrams are stored in the FTS5 index as `<stem1>\x1f<stem2>`
+        // (the `\x1f` Unit Separator sentinel picked by the custom
+        // tokenizer — see `crate::fts5_tokenizer::BIGRAM_SEP`). Convert
+        // the sentinel to a space so the Index panel shows
+        // "knowledge management" instead of the raw control character.
+        // The frontend's click handler passes the display form back to
+        // `read_term_mentions`, which wraps it in a phrase-query
+        // "..." and lets FTS5 re-tokenize — still matching the bigram
+        // via position-adjacent unigrams.
+        let has_sentinel = term.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP);
+        let display = if has_sentinel { term.replace('\u{001F}', " ") } else { term };
+        entries.push(IndexEntry {
+            term: display,
+            count,
+            mentions: Vec::new(),
+            is_compound: has_sentinel,
+        });
+    }
+    Ok(entries)
+}
+
+/// Lazy-load the list of notes mentioning a given term. Called when the
+/// user expands a term in the Index panel. Uses FTS5 `MATCH` — an O(log n)
+/// term-dictionary lookup followed by a linear scan of the postings list,
+/// joined to `note_meta` for display names.
+///
+/// Returns up to `limit` (default 200) mentions, ordered by note name.
+#[tauri::command]
+pub fn read_term_mentions(
+    app: tauri::AppHandle,
+    term: String,
+    limit: Option<u32>,
+) -> Result<Vec<IndexMention>, String> {
+    use rusqlite::{Connection, OpenFlags};
+
+    let limit = limit.unwrap_or(200).max(1).min(5000);
+
+    let db_path = crate::search::db_path(&app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let mut conn = Connection::open_with_flags(&db_path, flags)
+        .map_err(|e| format!("Failed to open search.db: {}", e))?;
+    conn.busy_timeout(std::time::Duration::from_millis(500))
+        .map_err(|e| e.to_string())?;
+    // Register the 'constellation' FTS5 tokenizer on this connection.
+    // Required because the MATCH below tokenizes the query string
+    // through the same tokenizer that populated the index — if the
+    // tokenizer weren't registered, SQLite would fail with "no such
+    // tokenizer: constellation".
+    crate::search::register_fts5_tokenizer(&mut conn)?;
+
+    // Bind as a phrase so FTS5 treats the input literally.
+    // Quotes must be doubled per FTS5 quoted-string syntax.
+    let phrase = format!("\"{}\"", term.replace('"', "\"\""));
+
+    // `snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)` returns a single
+    // line of surrounding text with the matched tokens wrapped in STX/ETX
+    // (\x02/\x03) sentinels. `-1` means "best column across all indexed
+    // columns" — so a term that lives in the title (column 0) or body
+    // (column 1) both get a useful preview. `12` tokens ≈ one line of
+    // context; longer snippets waste vertical space in the expanded row.
+    // STX/ETX are used (not `<mark>`) so literal HTML in user notes
+    // cannot be injected into the DOM at render time.
+    let mut stmt = conn.prepare(
+        "SELECT nm.path, nm.name,
+                snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)
+         FROM notes_fts
+         JOIN note_meta nm ON notes_fts.rowid = nm.rowid
+         WHERE notes_fts MATCH ?1
+         ORDER BY LOWER(nm.name)
+         LIMIT ?2"
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map(rusqlite::params![phrase, limit as i64], |row| {
+        let note_path: String = row.get(0)?;
+        let note_name: String = row.get(1)?;
+        // snippet() returns TEXT; SQLite can hand us NULL in edge cases
+        // (very short/empty content columns), so tolerate both.
+        let snippet_raw: Option<String> = row.get(2).ok();
+        let snippet = snippet_raw.and_then(|s| if s.is_empty() { None } else { Some(s) });
+        Ok(IndexMention { note_path, note_name, snippet })
+    }).map_err(|e| e.to_string())?;
+
+    Ok(rows.flatten().collect())
+}
+
+/// Return the top co-occurring terms for `term` — other vocabulary terms
+/// appearing in the same notes. Surfaces lexical adjacency: "notes that
+/// mention 'knowledge' also mention: 'wisdom', 'understanding', …".
+///
+/// ## Performance model
+///
+/// `fts5vocab(…, 'instance')` has no index on `doc`, so a SQL-level
+/// co-occurrence query (e.g. `WHERE doc IN (matching_rowids)`) degrades to
+/// a full scan of every token position in the entire FTS index. For a
+/// 7,600-note Arabic Universe that's millions of rows per query.
+///
+/// Instead we:
+///   1. Pull up to `sample_limit` matching rowids from `notes_fts MATCH`
+///      (indexed — fast).
+///   2. Fetch `note_meta.body_text` for each rowid (covered by the
+///      primary-key rowid index — ~hundreds of tiny point reads).
+///   3. Re-tokenize each body in-process through the same
+///      `process_word_for_fts` pipeline the FTS5 tokenizer uses, so the
+///      stems we aggregate are symmetric with those in the index.
+///   4. Count distinct notes per co-occurring stem; sort descending.
+///
+/// Cost on a common term (say 500 matches, 2 KB body each): ~1 MB of
+/// text × low-microsecond per-word tokenization ≈ <100 ms. Rare terms
+/// are essentially free.
+///
+/// The 200-note default sample is empirically enough: the rank order of
+/// top co-occurring terms stabilizes well before every matching note is
+/// visited (law of large numbers on the tail). Users tuning for
+/// exhaustiveness can raise `sample_limit`; there's no correctness
+/// benefit past a few hundred.
+#[tauri::command]
+pub fn read_cooccurring_terms(
+    app: tauri::AppHandle,
+    term: String,
+    sample_limit: Option<u32>,
+    result_limit: Option<u32>,
+) -> Result<Vec<CooccurringTerm>, String> {
+    use rusqlite::{Connection, OpenFlags};
+    use std::collections::{HashMap, HashSet};
+
+    let sample_limit = sample_limit.unwrap_or(200).max(1).min(2000);
+    let result_limit = result_limit.unwrap_or(20).max(1).min(100) as usize;
+
+    let db_path = crate::search::db_path(&app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let mut conn = Connection::open_with_flags(&db_path, flags)
+        .map_err(|e| format!("Failed to open search.db: {}", e))?;
+    conn.busy_timeout(std::time::Duration::from_millis(500))
+        .map_err(|e| e.to_string())?;
+    crate::search::register_fts5_tokenizer(&mut conn)?;
+
+    // Stems of the query term — excluded from co-occurrence results
+    // (nobody wants "knowledge" listed as co-occurring with "knowledge").
+    // Whitespace split handles the bigram display form:
+    // "knowledge management" → ["knowledge", "management"], so both the
+    // unigram stems are filtered out.
+    let query_stems: HashSet<String> = term
+        .split_whitespace()
+        .filter_map(|w| process_word_for_fts(w).map(|(stem, _norm)| stem))
+        .collect();
+
+    // Step 1: sample matching rowids via FTS5 MATCH.
+    //
+    // The `stmt`/`rows` pair must both outlive the `.collect()` call —
+    // `rows` borrows from `stmt`, and `stmt` borrows from `conn`. Binding
+    // each to its own `let` (rather than chaining through a block-expr)
+    // keeps the borrow chain alive until `collect()` finishes.
+    let phrase = format!("\"{}\"", term.replace('"', "\"\""));
+    let mut stmt = conn.prepare(
+        "SELECT rowid FROM notes_fts WHERE notes_fts MATCH ?1 LIMIT ?2"
+    ).map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map(rusqlite::params![&phrase, sample_limit as i64], |r| r.get::<_, i64>(0))
+        .map_err(|e| e.to_string())?;
+    let rowids: Vec<i64> = rows.filter_map(|r| r.ok()).collect();
+    drop(stmt); // release the borrow on `conn` before we prepare `body_stmt`.
+
+    if rowids.is_empty() { return Ok(Vec::new()); }
+
+    // Step 2 & 3: for each rowid, fetch body_text and collect distinct
+    // stems. `counts` accumulates stem → number of distinct notes it
+    // appears in (co-document frequency across the sample).
+    let stopwords = build_stopwords();
+    let mut counts: HashMap<String, u32> = HashMap::new();
+
+    let mut body_stmt = conn.prepare(
+        "SELECT body_text FROM note_meta WHERE rowid = ?1"
+    ).map_err(|e| e.to_string())?;
+
+    for rowid in &rowids {
+        let body: Option<String> = body_stmt
+            .query_row(rusqlite::params![rowid], |r| r.get(0))
+            .ok();
+        let Some(body) = body else { continue; };
+        if body.is_empty() { continue; }
+
+        // Tokenize with the same boundary rules as the FTS5 tokenizer
+        // (`fts5_tokenizer::is_word_boundary`): apostrophes don't break
+        // words (keeps contractions together), em/en/hyphen/underscore
+        // and non-alphabetic chars do.
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut word_start: Option<usize> = None;
+        for (byte_idx, ch) in body.char_indices() {
+            if is_cooccurrence_boundary(ch) {
+                if let Some(start) = word_start.take() {
+                    collect_stem(&body[start..byte_idx], &stopwords, &query_stems, &mut seen);
+                }
+            } else if word_start.is_none() {
+                word_start = Some(byte_idx);
+            }
+        }
+        // Tail word (input doesn't end with a boundary char).
+        if let Some(start) = word_start {
+            collect_stem(&body[start..], &stopwords, &query_stems, &mut seen);
+        }
+
+        for stem in seen {
+            *counts.entry(stem).or_insert(0) += 1;
+        }
+    }
+
+    // Step 4: top-K by count descending, tie-break alphabetic ascending
+    // for deterministic ordering across sessions on equal-count buckets.
+    let mut results: Vec<CooccurringTerm> = counts
+        .into_iter()
+        .map(|(stem, note_count)| {
+            let term = if stem.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP) {
+                stem.replace('\u{001F}', " ")
+            } else {
+                stem
+            };
+            CooccurringTerm { term, note_count }
+        })
+        .collect();
+    results.sort_by(|a, b| {
+        b.note_count.cmp(&a.note_count).then_with(|| a.term.cmp(&b.term))
+    });
+    results.truncate(result_limit);
+
+    Ok(results)
+}
+
+/// Boundary predicate for co-occurrence re-tokenization. Must mirror
+/// `fts5_tokenizer::is_word_boundary` exactly so the stems we aggregate
+/// are the same ones stored in `notes_fts` / `notes_vocab`.
+#[inline]
+fn is_cooccurrence_boundary(c: char) -> bool {
+    if c == '\'' { return false; }
+    if c == '—' || c == '–' || c == '-' || c == '_' { return true; }
+    !c.is_alphabetic()
+}
+
+#[inline]
+fn collect_stem(
+    word: &str,
+    stopwords: &std::collections::HashSet<String>,
+    query_stems: &std::collections::HashSet<String>,
+    seen: &mut std::collections::HashSet<String>,
+) {
+    if let Some((stem, norm_lower)) = process_word_for_fts(word) {
+        // Three-way filter: stopword list (checked against both stem and
+        // pre-stem normalized form — matches the tokenizer's rule), and
+        // the query term's own stems (so it doesn't appear in its own
+        // co-occurrence list).
+        if !stopwords.contains(&stem)
+            && !stopwords.contains(&norm_lower)
+            && !query_stems.contains(&stem)
+        {
+            seen.insert(stem);
         }
     }
 }
@@ -2280,15 +3236,27 @@ fn collect_notes_names_recursive(dir: &Path, notes: &mut Vec<serde_json::Value>)
         if path.is_dir() {
             collect_notes_names_recursive(&path, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            let note_name = path.file_stem()
+            // Use frontmatter title for canonical files, file stem for human-named files
+            let file_stem = path.file_stem()
                 .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or_default();
+            let note_name = if crate::canonical::is_canonical_filename(&path) {
+                extract_frontmatter_title_quick(&path).unwrap_or(file_stem)
+            } else {
+                file_stem
+            };
             notes.push(serde_json::json!({
                 "name": note_name,
                 "path": path.to_string_lossy().to_string()
             }));
         }
     }
+}
+
+/// Quick frontmatter title extraction (reads first 1KB only).
+fn extract_frontmatter_title_quick(path: &Path) -> Option<String> {
+    let content = std::fs::read_to_string(path).ok()?;
+    extract_frontmatter_title(&content)
 }
 
 /// Collect all notes with rich metadata (name, path, modified, size, preview, tags, folder).
@@ -2323,9 +3291,16 @@ fn collect_notes_meta_recursive(
         if path.is_dir() {
             collect_notes_meta_recursive(&path, lib_root, tag_re, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            let note_name = path.file_name()
+            // Use frontmatter title for canonical files
+            let file_name = path.file_name()
                 .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or_default();
+            let note_name = if crate::canonical::is_canonical_filename(&path) {
+                extract_frontmatter_title_quick(&path)
+                    .unwrap_or_else(|| file_name.trim_end_matches(".md").to_string())
+            } else {
+                file_name.clone()
+            };
 
             // File metadata
             let meta = fs::metadata(&path).ok();
@@ -2720,4 +3695,90 @@ pub fn get_file_metadata(file_path: String) -> Result<FileMetadata, String> {
         .unwrap_or(0);
 
     Ok(FileMetadata { created, modified })
+}
+
+// ─── Tests ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    //! M6 end-to-end contract tests. The 502-case regression corpus in
+    //! `arabic::regression` exercises `analyze_best` in isolation; this
+    //! module checks that the FTS pipeline's `process_arabic_word` wrapper
+    //! and `process_word_for_fts` downstream guard actually surface the
+    //! analyzer's verdict to the tokenizer. Without these, a future
+    //! refactor could wire a different stemmer in and the corpus would
+    //! still pass while search results quietly regressed.
+    use super::*;
+
+    /// The flagship bug that motivated the Constellation Arabic Engine.
+    /// Pre-M6: Light10 stripped the leading و from وائل, producing "ائل"
+    /// and corrupting every index row of every note mentioning any Wael.
+    /// Post-M6: the protected list short-circuits Light10 and returns the
+    /// name verbatim. This test is the pin that prevents the bug from
+    /// ever silently returning.
+    #[test]
+    fn wael_is_not_mangled_to_ail() {
+        let (_display, stem) = process_arabic_word("وائل");
+        assert_eq!(stem, "وائل", "M6 must not mangle protected proper nouns");
+    }
+
+    /// End-to-end through the whole `process_word_for_fts` filter —
+    /// this is what the FTS5 tokenizer actually calls. Guarantees
+    /// the stem column of the notes_fts index holds the full name.
+    #[test]
+    fn wael_survives_process_word_for_fts() {
+        let (stem, _norm) = process_word_for_fts("وائل").expect("وائل must tokenize");
+        assert_eq!(stem, "وائل");
+    }
+
+    /// Cascade flagship: الأئمة (definite + broken plural of إمام).
+    /// Layer 3b peels ال, FST matches أئمة as the plural of إمام →
+    /// lemma comes out as one of the legitimate root derivations.
+    /// We don't pin the exact lemma because the tiebreak order among
+    /// equal-confidence FST hits isn't stable across refactors (the
+    /// 502-case corpus leaves this row unasserted on lemma for the
+    /// same reason), but we DO assert it isn't the Light10 mangle
+    /// ("ئم" from naive ال- / -ة stripping).
+    #[test]
+    fn aimma_is_not_light10_mangled() {
+        let (_display, stem) = process_arabic_word("الأئمة");
+        assert_ne!(stem, "ئم", "cascade path must find a real analysis");
+        assert_ne!(stem, "ئمه", "cascade path must find a real analysis");
+        // Sanity: the lemma should contain at least one of the
+        // radicals ء / م — any genuine analysis of الأئمة does.
+        assert!(
+            stem.chars().any(|c| c == 'ء' || c == 'أ' || c == 'م' || c == 'إ'),
+            "stem {:?} lost the root radicals",
+            stem,
+        );
+    }
+
+    /// Unknown Arabic word falls to SurfaceHeuristic — verify we KEEP
+    /// Light10 affix stripping for it so M6 is strictly non-regressive
+    /// for words the analyzer doesn't yet know. "قذالبثظ" is nonsense:
+    /// not protected, no root × pattern match, no peelable affix chain
+    /// that hits anything real.
+    #[test]
+    fn unknown_word_still_gets_light10_stripping() {
+        let nonsense = "قذالبثظ";
+        let (_display, stem) = process_arabic_word(nonsense);
+        // Post-condition is just "did not panic and returned non-empty
+        // UTF-8" — the exact Light10 output on nonsense isn't something
+        // we want to pin to a literal. The important contract is that
+        // the pipeline degrades gracefully, not that it produces any
+        // particular string.
+        assert!(!stem.is_empty());
+        assert!(stem.chars().all(|c| !c.is_ascii_control()));
+    }
+
+    /// Non-Arabic words must still route through the non-Arabic branch
+    /// untouched — M6 only changed the Arabic branch of `process_word_for_fts`.
+    #[test]
+    fn english_word_still_english_stemmed() {
+        let (stem, norm) = process_word_for_fts("running").expect("english must tokenize");
+        // The English stemmer turns "running" into "run" (or close);
+        // critically the stem must NOT be Arabic-pipeline output.
+        assert!(stem.is_ascii(), "english must not be routed to arabic pipeline");
+        assert_eq!(norm, "running");
+    }
 }

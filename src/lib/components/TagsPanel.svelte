@@ -40,18 +40,32 @@
 	});
 
 	let expanded = $state<Set<string>>(new Set());
+	let filterQuery = $state('');
+
 	function toggle(path: string) {
 		if (expanded.has(path)) expanded.delete(path);
 		else expanded.add(path);
 		expanded = new Set(expanded);
 	}
+
+	function matchesFilter(node: TagNode): boolean {
+		if (!filterQuery.trim()) return true;
+		const q = filterQuery.toLowerCase();
+		if (node.fullPath.toLowerCase().includes(q)) return true;
+		return node.children.some(c => matchesFilter(c));
+	}
 </script>
 
 <div class="tags-panel">
+	{#if Object.keys(tags).length > 5}
+		<div class="tp-filter">
+			<input type="text" dir="auto" placeholder="Filter tags..." value={filterQuery} oninput={(e) => filterQuery = (e.target as HTMLInputElement).value} />
+		</div>
+	{/if}
 	{#if Object.keys(tags).length === 0}
 		<div class="tp-empty">{$t('tagsPanel.noTags')}</div>
 	{:else}
-		{#each tagTree as node}
+		{#each tagTree.filter(n => matchesFilter(n)) as node}
 			{@render tagNode(node, 0)}
 		{/each}
 	{/if}
@@ -85,6 +99,13 @@
 
 <style>
 	.tags-panel { font-size: 0.8rem; }
+	.tp-filter { padding: 2px 4px 4px; }
+	.tp-filter input {
+		width: 100%; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px;
+		background: var(--bg); color: var(--text); font-size: 0.75rem; font-family: inherit; outline: none;
+	}
+	.tp-filter input:focus { border-color: var(--interactive-accent); }
+	.tp-filter input::placeholder { color: var(--text-faint); }
 	.tp-empty { color: var(--color-base-40); font-size: 0.78rem; }
 	.tp-node { display: flex; align-items: center; gap: 2px; }
 	.tp-toggle {
@@ -96,9 +117,11 @@
 	.tp-chev.expanded { transform: rotate(90deg); }
 	.tp-tag {
 		display: flex; align-items: center; gap: 2px;
-		background: none; border: none; cursor: pointer;
-		font-family: inherit; padding: 2px 4px; border-radius: 3px;
-		color: var(--text-normal); font-size: 0.8rem;
+		background: var(--tag-bg, none); border: none; cursor: pointer;
+		font-family: inherit; padding: 2px 4px;
+		border-radius: var(--tag-radius, 3px);
+		color: var(--tag-color, var(--text-normal));
+		font-size: 0.8rem;
 	}
 	.tp-tag:hover { background: var(--background-modifier-hover); }
 	.tp-hash { color: var(--interactive-accent); font-weight: 600; }

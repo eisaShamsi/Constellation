@@ -305,6 +305,7 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
                             name: meta.name.clone(),
                             path: folder_path_str,
                             is_universe_notes: true,
+                            canonical_mode: "native".to_string(),
                         });
                         if let Ok(json) = serde_json::to_string_pretty(&libs) {
                             let _ = fs::write(&libs_path, json);
@@ -335,6 +336,7 @@ fn ensure_universe_notes_folder(universe_root: &Path) -> Result<(), String> {
             name: meta.name.clone(),
             path: root_path_str,
             is_universe_notes: true,
+            canonical_mode: "native".to_string(),
         });
         if let Ok(json) = serde_json::to_string_pretty(&libs) {
             let _ = fs::write(&libs_path, json);
@@ -407,6 +409,43 @@ fn resolve_libraries_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>)
     all_libraries
 }
 
+/// Resolve the cUniverse children declared by `parent` into canonicalized
+/// Universe-root `PathBuf`s.
+///
+/// Reads `<parent>/.constellation/universe.json` (falling back to
+/// `<parent>/universe.json` for legacy layouts), decodes `UniverseMeta`,
+/// and canonicalizes each `children` entry. Non-existent or non-directory
+/// entries are silently skipped — a child Universe that was moved or
+/// deleted shouldn't block the active Universe from booting.
+///
+/// Used by `set_active_universe` to feed
+/// `arabic::overrides::activate_layered_for_universe` (M8b-v2), and a
+/// natural hook point for any future layered-per-Universe surface (tag
+/// browser federation, sky view merging, etc.).
+fn resolve_child_universe_roots(parent: &Path) -> Vec<PathBuf> {
+    let cdir = constellation_dir(parent);
+    let meta_path = cdir.join("universe.json");
+    let meta_path = if meta_path.exists() {
+        meta_path
+    } else {
+        parent.join("universe.json")
+    };
+    if !meta_path.exists() {
+        return Vec::new();
+    }
+    let Ok(data) = fs::read_to_string(&meta_path) else {
+        return Vec::new();
+    };
+    let Ok(meta) = serde_json::from_str::<UniverseMeta>(&data) else {
+        return Vec::new();
+    };
+    meta.children
+        .iter()
+        .filter_map(|s| fs::canonicalize(s).ok())
+        .filter(|p| p.is_dir())
+        .collect()
+}
+
 // ─── Tauri Commands ───
 
 /// List all known universes from the registry, with the active one first.
@@ -470,6 +509,7 @@ pub fn create_universe(
         name: name.clone(),
         path: universe_dir.to_string_lossy().to_string(), // root, not nested
         is_universe_notes: true,
+        canonical_mode: "native".to_string(),
     };
     let libraries_json = serde_json::to_string_pretty(&vec![&notes_library]).map_err(|e| e.to_string())?;
     fs::write(cdir.join("libraries.json"), &libraries_json)
@@ -630,7 +670,48 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
     // Update managed state
     let state = app.state::<UniverseState>();
     let mut lock = state.active_path.lock().map_err(|e| e.to_string())?;
-    *lock = Some(final_path);
+    *lock = Some(final_path.clone());
+
+    // Invalidate the libraries cache — switching universes means the
+    // libraries list is completely different now.
+    crate::libraries::invalidate_libraries_cache();
+
+    // M8b: load this Universe's Arabic user-override file into the
+    // process-wide active store. Consumed by every subsequent FTS5
+    // tokenizer call via `arabic::overrides::active()`. Errors are
+    // logged but NOT propagated — a malformed overrides.json must not
+    // prevent the user from switching Universes. The engine gracefully
+    // falls back to no-overrides on error, and the Settings UI will
+    // surface the parse error when the user opens the overrides panel.
+    //
+    // M8b-v2: also enumerate `UniverseMeta::children` so any cUniverse
+    // child overrides are stacked under the parent's sovereign layer.
+    // Lookup walks parent → children on normalize-miss; parent wins on
+    // conflict. A non-federated Universe (no children) collapses to
+    // the pre-v2 single-layer behaviour byte-for-byte.
+    let child_universe_roots = resolve_child_universe_roots(&final_path);
+    match crate::arabic::overrides::activate_layered_for_universe(
+        &final_path,
+        &child_universe_roots,
+    ) {
+        Ok(count) if count > 0 => {
+            eprintln!(
+                "[arabic] Loaded {} Arabic override(s) for Universe at {} ({} child Universe{} stacked)",
+                count,
+                final_path.display(),
+                child_universe_roots.len(),
+                if child_universe_roots.len() == 1 { "" } else { "s" },
+            );
+        }
+        Ok(_) => {} // no overrides authored yet — common case, silent
+        Err(e) => {
+            eprintln!("[arabic] Failed to load overrides for Universe at {}: {}",
+                      final_path.display(), e);
+            // Install an empty store so any residual from a previous
+            // active Universe doesn't leak across the switch.
+            crate::arabic::overrides::clear_active();
+        }
+    }
 
     // Update registry
     registry.active_id = Some(id);
@@ -903,6 +984,7 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
         name: name.clone(),
         path: path.clone(),
         is_universe_notes: false,
+        canonical_mode: "compatible".to_string(), // linked external folder
     };
     let libs_json = serde_json::to_string_pretty(&vec![library_entry]).map_err(|e| e.to_string())?;
     fs::write(cdir.join("libraries.json"), &libs_json)
@@ -1016,8 +1098,20 @@ pub struct ChildUniverseInfo {
     pub library_count: u32,
 }
 
-/// Return info about child universes of the active universe.
-#[tauri::command]
+/// Return info about child universes of the active universe. Reads
+/// `universe.json` and then, for each child, reads the child's universe.json
+/// + libraries.json to count libraries — small files, but a handful of
+/// synchronous filesystem round-trips per child.
+///
+/// Called on boot from `DashboardView.onMount` →
+/// `loadDashboardData()` → `getChildUniverses()` → this command. Because
+/// DashboardView mounts the instant `libraries.set(bundle.libraries)` fires
+/// (before `cache_boot_snapshot_core` returns), a sync `#[tauri::command]`
+/// binding would queue this work on the WebView2 UI thread and block the
+/// core snapshot. Converting to `#[tauri::command(async)]` offloads dispatch
+/// to Tokio workers — see `watcher.rs` docstring for the full chain, and
+/// `libraries.rs::scan_library_tags` for the boot-fan-out context.
+#[tauri::command(async)]
 pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInfo>, String> {
     let cdir = active_constellation_dir(&app)?;
     let meta_path = cdir.join("universe.json");
@@ -1081,8 +1175,14 @@ pub fn get_child_universes(app: tauri::AppHandle) -> Result<Vec<ChildUniverseInf
     Ok(children)
 }
 
-/// Read library list from a child universe path (reads its .constellation/libraries.json).
-#[tauri::command]
+/// Read library list from a child universe path (reads its
+/// `.constellation/libraries.json`). Small file, but DashboardView calls this
+/// **once per child universe** in a sequential `for` loop after
+/// `getChildUniverses` resolves (src/lib/components/DashboardView.svelte
+/// loadDashboardData). Same UI-thread-serialization concern as
+/// `get_child_universes` above — see that docstring + `watcher.rs` for full
+/// rationale.
+#[tauri::command(async)]
 pub fn read_child_universe_libraries(_app: tauri::AppHandle, child_path: String) -> Result<Vec<crate::libraries::LibraryInfo>, String> {
     let cp = Path::new(&child_path);
     let cdir = constellation_dir(cp);

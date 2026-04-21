@@ -42,7 +42,7 @@ The syntax is simple. Inside a standard wikilink, add a pipe character followed 
 
 Without typed links, all connections look identical. Your knowledge graph becomes a web of undifferentiated lines — you can see that things are related, but not *how*. With typed links, you can distinguish "this evidence supports that claim" from "this evidence contradicts that claim." This distinction is the foundation of structured thinking.
 
-When you look at your Star View graph, typed links become colored edges. Red lines show contradictions. Blue lines show support. Gold lines trace provenance. At a glance, you can read the intellectual topology of your knowledge.
+When you look at your Sky View graph, typed links become colored edges. Red lines show contradictions. Blue lines show support. Gold lines trace provenance. At a glance, you can read the intellectual topology of your knowledge.
 
 ### How to use it
 
@@ -82,7 +82,7 @@ When you type `[[note name|`, a dropdown appears showing all available link type
 
 - **Editor**: When your cursor moves away from a typed link, it renders in the type's color. A `supports` link appears blue; a `contradicts` link appears red.
 - **Backlinks Panel**: Each backlink that uses a typed link shows a small colored badge with the link type name (e.g., a blue "supports" badge).
-- **Star View**: Link edges between nodes are colored by type. Red edges for contradictions, gold for derivation chains, and so on.
+- **Sky View**: Link edges between nodes are colored by type. Red edges for contradictions, gold for derivation chains, and so on.
 
 ### Tips
 
@@ -136,7 +136,7 @@ The final level is the base plus all earned bonuses, clamped to a maximum of 8.
 
 ### Where you see it
 
-- **Star View**: Higher-level notes appear as **larger nodes**. Level 1-2 notes are small dots. Level 5+ notes are visibly bigger. Level 4+ notes also gain a complementary-colored glow halo — a soft ring of light that makes them stand out.
+- **Sky View**: Higher-level notes appear as **larger nodes**. Level 1-2 notes are small dots. Level 5+ notes are visibly bigger. Level 4+ notes also gain a complementary-colored glow halo — a soft ring of light that makes them stand out.
 - The visual contrast tells you immediately: big glowing nodes are your synthesis hubs; small dots are your raw facts.
 
 ### Earned Complexity
@@ -145,7 +145,7 @@ Strata sizing only activates when your library has **20 or more notes**. Below t
 
 ### Tutorial: See your knowledge depth
 
-1. Open **Star View** (the graph icon in the left sidebar).
+1. Open **Sky View** (the graph icon in the left sidebar).
 2. Look for the largest nodes — these are your highest-level notes (Concept and above).
 3. Notice the glow halo around them — the complementary color makes them pop against any background.
 4. Zoom in to see the smaller dots — these are your Datum and Information-level notes.
@@ -187,7 +187,7 @@ There is no manual tagging. The states are computed every time you open your lib
 ### Where you see it
 
 - **File tree**: A colored left border appears on note names. Light green = Sapling, rich green = Evergreen, gold = Canonical, faded green = Wilting. Seeds have no border.
-- **Star View**: A colored ring appears around nodes matching their maturity state.
+- **Sky View**: A colored ring appears around nodes matching their maturity state.
 - **Tab bar**: A small colored dot appears before the note title, matching the maturity color.
 
 ### Tutorial: Track your note growth
@@ -198,7 +198,7 @@ There is no manual tagging. The states are computed every time you open your lib
 4. Notes with a **gold** border are Canonical — your authoritative references, stable and heavily linked.
 5. Notes with a **faded green** border are Wilting — still structurally connected but untouched for a long time.
 6. Notes with **no border** are Seeds — new ideas waiting to grow.
-7. In Star View, look for the colored rings around nodes to see the same information spatially.
+7. In Sky View, look for the colored rings around nodes to see the same information spatially.
 
 ---
 
@@ -315,7 +315,7 @@ Higher depth is not inherently bad, but it is worth being aware of. The longer t
 ### Where you see it
 
 - **Right sidebar**: The Provenance tab (crosshair icon). It shows the full ancestor chain as a visual tree, with each ancestor indented by depth level. Blue dots indicate external sources; amber dots indicate your own notes.
-- **Star View**: Received notes have a subtle blue glow; discovered notes have an amber glow (when origin data is available).
+- **Sky View**: Received notes have a subtle blue glow; discovered notes have an amber glow (when origin data is available).
 
 ### Tutorial: Trace your sources
 
@@ -638,7 +638,7 @@ The Cognitive Engine does not answer that question for you. It gives you the str
 
 The Cognitive Engine follows a principle of **earned complexity**: features reveal themselves only when your library has enough structure to make them meaningful.
 
-- **Star View strata sizing**: activates at 20+ notes
+- **Sky View strata sizing**: activates at 20+ notes
 - **Tension Detector**: activates at 50+ linked notes
 - **Provenance Chain**: always available (even a single `derives-from` link creates a chain)
 - **Maturity colors**: always visible in the file tree and tabs

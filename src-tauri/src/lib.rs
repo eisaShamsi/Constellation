@@ -1,13 +1,25 @@
 mod ai;
+mod arabic;
 mod bases;
 mod canvas;
+mod boot_bundle;
+mod cache;
+mod canonical;
+mod embeddings;
+mod embeds;
 mod dataview;
+mod file_kinds;
+mod fts5_tokenizer;
 mod inspector360;
 mod importers;
 mod libraries;
+mod lens;
 mod lenses;
+mod lexicon;
+mod search;
 mod map;
 mod maturity;
+mod perf_trace;
 mod provenance;
 mod review;
 mod strata;
@@ -214,7 +226,33 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(watcher::WatcherState::new())
         .manage(universe::UniverseState::new())
-        .invoke_handler(tauri::generate_handler![
+        .manage(search::SearchState::new())
+        .manage(embeddings::EmbeddingState { engine: std::sync::Mutex::new(None) })
+        .invoke_handler({
+            // Round 6 diagnostic (2026-04-19) — IPC arrival tracer.
+            //
+            // Round 5 (scan_library_tags → async) + DashboardView gate
+            // (`{#if false}`) + JS heartbeat (max_gap = 112 ms) all
+            // falsified their respective hypotheses: Criterion 2 still
+            // fails at ~19 s with core_queue_ms ≈ 18.6 s, JS is alive,
+            // and no single frontend gate moves the needle.
+            //
+            // The remaining unknown is what happens between JS
+            // `postMessage` and the Rust command body entering. We wrap
+            // `generate_handler!` in a closure that stamps a Unix-ms
+            // timestamp on every dispatch into `perf_trace::TRACE_LOG`,
+            // then forwards to the inner handler unchanged. The log is
+            // fetched by the frontend at `boot:hydrated` via
+            // `get_perf_trace_log` and bundled into the boot-perf JSON.
+            //
+            // Overhead is a single Mutex lock per command + a
+            // `(String, u64)` push; negligible vs. any actual IPC cost.
+            //
+            // The `Box<dyn Fn(...)>` annotation pins the runtime to `Wry`
+            // at the binding site — without it, the macro's `R: Runtime`
+            // generic is unresolvable in a `let` binding (it only infers
+            // when passed directly to `invoke_handler`).
+            let inner: Box<dyn Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static> = Box::new(tauri::generate_handler![
             ai::ai_send_message,
             ai::ai_validate_connection,
             ai::ai_list_models,
@@ -249,6 +287,9 @@ pub fn run() {
             libraries::read_note_preview,
             libraries::save_clipboard_image,
             libraries::resolve_embed_image,
+            embeds::resolve_embed,
+            embeds::read_vault_config_cmd,
+            embeds::invalidate_vault_index_cmd,
             libraries::scan_note_stages,
             strata::compute_note_strata,
             maturity::compute_note_maturity,
@@ -264,6 +305,35 @@ pub fn run() {
             trails::read_trail,
             canvas::list_canvases,
             inspector360::get_360_view,
+            lens::constellation_lens_centrality,
+            lens::constellation_lens_tag_edges,
+            boot_bundle::constellation_boot_bundle,
+            cache::cache_boot_snapshot,
+            cache::cache_boot_snapshot_core,
+            cache::cache_boot_snapshot_graph,
+            cache::cache_is_populated,
+            cache::cache_reconcile,
+            cache::write_boot_perf_report,
+            cache::read_boot_perf_report,
+            search::constellation_search_init,
+            search::constellation_search,
+            search::constellation_search_reindex,
+            search::constellation_search_store_embedding,
+            search::constellation_search_similar,
+            search::constellation_search_universal,
+            search::constellation_search_link_counts,
+            search::constellation_link_stats,
+            search::constellation_link_traverse,
+            search::constellation_debug_link_state,
+            search::constellation_link_dormant,
+            search::constellation_link_decay,
+            search::constellation_link_set_confidence,
+            search::constellation_link_archive,
+            search::constellation_formulation_analysis,
+            embeddings::constellation_init_embeddings,
+            embeddings::constellation_embed_text,
+            embeddings::constellation_embed_notes,
+            embeddings::constellation_embedding_status,
             map::constellation_map_data,
             map::constellation_map_universe,
             canvas::read_canvas,
@@ -275,6 +345,8 @@ pub fn run() {
             libraries::export_note_html,
             libraries::move_to_trash,
             libraries::scan_library_index,
+            libraries::read_index_entries,
+            libraries::read_term_mentions,
             watcher::watch_library,
             watcher::unwatch_library,
             bases::parse_base_file,
@@ -313,6 +385,10 @@ pub fn run() {
             universe::get_templates_dir,
             universe::list_templates,
             universe::rename_universe,
+            arabic::overrides::read_arabic_overrides,
+            arabic::overrides::add_arabic_override,
+            arabic::overrides::remove_arabic_override,
+            arabic::overrides::reindex_arabic_overrides,
             libraries::get_file_metadata,
             libraries::notes_by_tag,
             dataview::execute_dataview_query,
@@ -323,6 +399,19 @@ pub fn run() {
             importers::import_pick_source,
             importers::import_preview,
             importers::import_execute,
+            importers::import_with_canonical,
+            file_kinds::classify_file_cmd,
+            canonical::generate_canonical_name,
+            canonical::canonicalize_preview,
+            canonical::canonicalize_execute,
+            canonical::auto_canonicalize_all,
+            canonical::inject_cid_library,
+            canonical::de_canonicalize_library,
+            canonical::repair_external_libraries_on_startup,
+            canonical::ensure_cid_cn_cmd,
+            libraries::set_library_canonical_mode,
+            perf_trace::get_perf_trace_log,
+            perf_trace::clear_perf_trace_log,
             constellation_show_in_folder,
             open_path,
             list_monitors,
@@ -330,7 +419,12 @@ pub fn run() {
             open_second_screen_on_monitor,
             close_second_screen,
             is_second_screen_open
-        ])
+            ]);
+            move |invoke: tauri::ipc::Invoke<tauri::Wry>| -> bool {
+                perf_trace::record(invoke.message.command());
+                inner(invoke)
+            }
+        })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "second-screen" {

@@ -10,20 +10,22 @@
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import type { FrontmatterProperty } from '$lib/libraries/store';
 	import PropertyEditor from './PropertyEditor.svelte';
-	import { EditorView, keymap, drawSelection } from '@codemirror/view';
-	import { EditorState, Compartment, Prec } from '@codemirror/state';
+	import { EditorView, keymap, drawSelection, Decoration, type DecorationSet } from '@codemirror/view';
+	import { EditorState, Compartment, Prec, StateField, StateEffect, RangeSetBuilder } from '@codemirror/state';
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 	import { tags } from '@lezer/highlight';
 	import { defaultKeymap, history, historyKeymap, undo, redo, indentWithTab } from '@codemirror/commands';
 	import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 	import { search, openSearchPanel, searchKeymap, SearchQuery, setSearchQuery, findNext } from '@codemirror/search';
-	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath, notePathField, setNotePath, attachmentFolderField, setAttachmentFolder } from '$lib/editor/livePreview';
+	import { livePreviewPlugin, livePreviewTheme, libraryPathField, setLibraryPath, notePathField, setNotePath, attachmentFolderField, setAttachmentFolder, linkTraversalMapField, setLinkTraversalMap } from '$lib/editor/livePreview';
 	import { calloutPlugin, calloutTheme, calloutCollapseField, toggleCallout } from '$lib/editor/calloutPlugin';
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
+	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
 	import { createWikilinkCompletion, createTagCompletion, createSlashCompletion, createTypedLinkCompletion } from '$lib/editor/completions';
+	import { shortcodeCompletion } from '$lib/editor/shortcodeAutocomplete';
 	import TableToolbar from './TableToolbar.svelte';
 	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, type ParsedTable } from '$lib/editor/tableUtils';
 	import { evaluateTableFormulas, indexToCol } from '$lib/editor/tableFormulas';
@@ -48,6 +50,30 @@
 
 	const IDLE_SAVE_INTERVAL = 30_000; /* ms — periodic background save when idle */
 
+	// Multi-color highlight decorations
+	const setColorHighlights = StateEffect.define<{ ranges: { from: number; to: number; cssClass: string }[] }>();
+	const colorHighlightField = StateField.define<DecorationSet>({
+		create() { return Decoration.none; },
+		update(decos, tr) {
+			for (const e of tr.effects) {
+				if (e.is(setColorHighlights)) {
+					const builder = new RangeSetBuilder<Decoration>();
+					const sorted = [...e.value.ranges].sort((a, b) => a.from - b.from);
+					for (const r of sorted) {
+						builder.add(r.from, r.to, Decoration.mark({ class: r.cssClass }));
+					}
+					return builder.finish();
+				}
+			}
+			return decos.map(tr.changes);
+		},
+		provide: f => EditorView.decorations.from(f),
+	});
+
+	const HIGHLIGHT_TYPE_CLASSES: Record<string, string> = {
+		title: 'cm-hl-title', content: 'cm-hl-content', tag: 'cm-hl-tag',
+		property: 'cm-hl-property', wikilink: 'cm-hl-wikilink', semantic: 'cm-hl-semantic',
+	};
 
 	let {
 		value = '',
@@ -86,6 +112,7 @@
 		onTrailNext,
 		highlightTerm = '',
 		onlinkclick,
+		linkTraversalMap,
 	}: {
 		value?: string;
 		title?: string;
@@ -104,8 +131,8 @@
 		noteNames?: { name: string; path: string; libraryName?: string }[];
 		allTags?: string[];
 		onchange?: (value: string) => void;
-		onsave?: (value: string) => void;
-		onflush?: (text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number) => void;
+		onsave?: (value: string, filePath: string) => void;
+		onflush?: (text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number, filePath: string) => void;
 		ontitlechange?: (newTitle: string) => void;
 		onnavigateback?: () => void;
 		onnavigateforward?: () => void;
@@ -120,6 +147,7 @@
 		onTrailNext?: () => void;
 		highlightTerm?: string;
 		onlinkclick?: (link: string, newTab?: boolean) => void;
+		linkTraversalMap?: Map<string, number>;
 	} = $props();
 
 	let titleValue = $state(title);
@@ -184,19 +212,28 @@
 	}
 
 	/* ─── Background save ─── */
+	// Snapshot of the file this NotePane instance is editing, captured at
+	// mount. The `filePath` prop updates reactively when the parent swaps
+	// to a different tab — during the {#key}-triggered destroy there's a
+	// brief window where `filePath` already points to the NEW tab but this
+	// editor's doc still holds the OLD note's body. Using the live prop at
+	// that point corrupts the target file's write-ahead buffer and (if
+	// dirty) its on-disk content. Route through `mountedFilePath` so the
+	// save always lands on the note this editor was actually editing.
+	let mountedFilePath = filePath ?? '';
 	function doSave() {
 		if (!dirty) return;
 		dirty = false;
 		// Snapshot text here — the one place we pay the O(N) toString() cost,
 		// at most once per autosave cycle (1.5s), never on individual keystrokes.
 		if (view) latestText = view.state.doc.toString();
-		onsave?.(latestText);
+		onsave?.(latestText, mountedFilePath);
 	}
 	function doFlush() {
 		if (view) latestText = view.state.doc.toString();
 		const cursorPos = view ? view.state.selection.main.head : 0;
 		const scrollTop = view ? view.scrollDOM.scrollTop : 0;
-		onflush?.(latestText, dirty, cursorPos, scrollTop);
+		onflush?.(latestText, dirty, cursorPos, scrollTop, mountedFilePath);
 	}
 	function handleVisibilityChange() { if (document.hidden && dirty) doSave(); }
 	function handleBeforeUnload() { doFlush(); }
@@ -314,9 +351,19 @@
 				lineDecoPlugin, lineDecoTheme,
 				scriptFontsField, bidiPlugin, bidiTheme, /* per-line RTL/LTR direction + cursor positioning */
 				libraryPathField, notePathField, attachmentFolderField, /* image path resolution */
-				closeBrackets(),
+				linkTraversalMapField, /* P4.2: per-wikilink `×N` chip */
+				...($appSettings.autoPairBrackets ? [closeBrackets({ brackets: ['(', '[', '{', '"', "'", '`'] })] : []),
 				search({ top: true }),
-				autocompletion({ override: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion], activateOnTyping: true, maxRenderedOptions: 20 }),
+				colorHighlightField,
+				autocompletion({
+					override: (
+						$appSettings.enabledFeatures?.emojiIconPicker !== false
+							? [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion, shortcodeCompletion]
+							: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion]
+					),
+					activateOnTyping: true,
+					maxRenderedOptions: 20,
+				}),
 				// Prec.highest: runs before @codemirror/lang-markdown's built-in
 				// blockquote-continue keymap (which auto-adds "> " on every Enter).
 				Prec.highest(keymap.of([{ key: 'Enter', run: calloutExitOnEnter }])),
@@ -324,7 +371,7 @@
 					{ key: 'Tab', run: tableTab },
 					{ key: 'Shift-Tab', run: tableShiftTab },
 					indentWithTab,
-					...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap, ...searchKeymap,
+					...defaultKeymap, ...historyKeymap, ...($appSettings.autoPairBrackets ? closeBracketsKeymap : []), ...searchKeymap,
 				]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
 				EditorView.contentAttributes.of({ dir: 'auto' }),
@@ -363,49 +410,98 @@
 				EditorView.theme({
 					'&': { background: 'transparent', border: 'none', outline: 'none' },
 					'&.cm-focused': { outline: 'none' },
-					'.cm-scroller': { overflow: 'auto', fontFamily: 'inherit', fontSize: '16px', lineHeight: '1.75' },
-					'.cm-content': { padding: '0', caretColor: 'var(--text-normal, #1a1a1a)' },
-					'.cm-cursor': { borderLeftColor: 'var(--text-normal, #1a1a1a)', borderLeftWidth: '1.5px' },
+					'.cm-scroller': { overflow: 'auto', fontFamily: 'inherit', fontSize: 'var(--font-text-size, 16px)', lineHeight: 'var(--line-height-normal, 1.75)' },
+					'.cm-content': { padding: '0', caretColor: 'var(--caret-color, var(--text-normal, #1a1a1a))' },
+					'.cm-cursor': { borderLeftColor: 'var(--caret-color, var(--text-normal, #1a1a1a))', borderLeftWidth: '1.5px' },
 					'.cm-line': { padding: '0' },
 					'.cm-activeLine': { background: 'transparent' },
 					'.cm-activeLineGutter': { display: 'none' },
 					'.cm-gutters': { display: 'none' },
-					'.cm-selectionBackground': { background: 'color-mix(in srgb, var(--interactive-accent, #7c3aed) 20%, transparent)' },
+					'.cm-selectionBackground': { background: 'var(--text-selection, color-mix(in srgb, var(--interactive-accent, #7c3aed) 20%, transparent))' },
+					'.cm-searchMatch': {
+						backgroundColor: 'color-mix(in srgb, var(--interactive-accent, #7c3aed) 25%, transparent)',
+						outline: '1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 50%, transparent)',
+						borderRadius: '2px',
+					},
+					'.cm-searchMatch-selected': {
+						backgroundColor: 'color-mix(in srgb, var(--interactive-accent, #7c3aed) 40%, transparent)',
+						outline: '2px solid var(--interactive-accent, #7c3aed)',
+						borderRadius: '2px',
+					},
+					/* Hide search panel — we only want the highlights, not the UI */
+					'.cm-search.cm-panel': { display: 'none' },
+					/* Multi-color search match highlights per type */
+					'.cm-hl-title': { backgroundColor: 'color-mix(in srgb, #3b82f6 25%, transparent)', outline: '1px solid #3b82f6', borderRadius: '2px' },
+					'.cm-hl-content': { backgroundColor: 'color-mix(in srgb, #16a34a 25%, transparent)', outline: '1px solid #16a34a', borderRadius: '2px' },
+					'.cm-hl-tag': { backgroundColor: 'color-mix(in srgb, #f472b6 25%, transparent)', outline: '1px solid #f472b6', borderRadius: '2px' },
+					'.cm-hl-property': { backgroundColor: 'color-mix(in srgb, #f59e0b 25%, transparent)', outline: '1px solid #f59e0b', borderRadius: '2px' },
+					'.cm-hl-wikilink': { backgroundColor: 'color-mix(in srgb, #60a5fa 25%, transparent)', outline: '1px solid #60a5fa', borderRadius: '2px' },
+					'.cm-hl-semantic': { backgroundColor: 'color-mix(in srgb, #7c3aed 25%, transparent)', outline: '1px solid #7c3aed', borderRadius: '2px' },
 				}),
 			],
 		});
 
-		view = new EditorView({ state, parent: editorEl! });
-
-		/* Set library + note paths for image resolution */
+		// Pre-populate the image-path state fields BEFORE the view is created so
+		// the ViewPlugin constructor's initial `buildDecorations` sees the
+		// correct paths. If we dispatch these effects after view creation, the
+		// first render's ImageWidgets are built with empty paths and either
+		// 404-flood against the dev origin (if their filenames are relative)
+		// or silently fall back to placeholders that never re-resolve — state
+		// field changes alone don't trigger a decoration rebuild.
 		const imgEffects: any[] = [];
 		if (libraryPath) imgEffects.push(setLibraryPath.of(libraryPath));
 		if (filePath) imgEffects.push(setNotePath.of(filePath));
 		imgEffects.push(setAttachmentFolder.of($appSettings.defaultAttachmentFolder || ''));
-		if (imgEffects.length) view.dispatch({ effects: imgEffects });
+		if (linkTraversalMap) imgEffects.push(setLinkTraversalMap.of(linkTraversalMap));
+		const initialState = imgEffects.length
+			? state.update({ effects: imgEffects }).state
+			: state;
 
-		/* Highlight term from Index — open search panel with pre-filled query */
+		try {
+			view = new EditorView({ state: initialState, parent: editorEl! });
+		} catch (e) {
+			// Fallback: create editor without livePreview if decorations fail
+			// (e.g., RangeError on content with line-spanning replace decorations)
+			console.warn('[NotePane] Editor init failed, retrying without livePreview:', e);
+			const fallbackState = EditorState.create({
+				doc: value,
+				extensions: [
+					history(),
+					keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab, ...closeBracketsKeymap, ...searchKeymap]),
+					drawSelection(),
+					markdown({ base: markdownLanguage }),
+					syntaxHighlighting(markdownHighlightStyle),
+					EditorView.lineWrapping,
+					search(),
+					colorHighlightField,
+				],
+			});
+			view = new EditorView({ state: fallbackState, parent: editorEl! });
+		}
+
+		/* Highlight term(s) — supports multi-term comma-separated (,،、) */
 		if (highlightTerm && view) {
-			const isArabic = /[\u0600-\u06FF]/.test(highlightTerm);
-			let q: SearchQuery;
-			if (isArabic) {
-				// Reverse normalization: expand each char to match original variants
-				// Allow optional tashkeel (diacritics) between characters
-				const d = '[\u064B-\u065F\u0670]*'; // optional diacritics class
-				const expanded = highlightTerm.split('').map(ch => {
-					if (ch === 'ه') return `[هة]${d}`;
-					if (ch === 'ا') return `[اأإآٱ]${d}`;
-					if (ch === 'ي') return `[يى]${d}`;
-					return ch + d;
-				}).join('');
-				// Allow optional الـ prefix before the word
-				// Use space/punctuation/start/end as word boundaries (not \b which fails for Arabic)
-				const pattern = `(?:^|[\\s.,;:!?()\\[\\]{}«»"'،؛؟])(?:ال)?${expanded}(?=$|[\\s.,;:!?()\\[\\]{}«»"'،؛؟])`;
-				q = new SearchQuery({ search: pattern, caseSensitive: false, regexp: true });
-			} else {
-				q = new SearchQuery({ search: highlightTerm, caseSensitive: false, literal: true, wholeWord: true });
-			}
+			// Split by comma variants
+			const terms = highlightTerm.split(/[,،、]/).map(s => s.trim()).filter(s => s.length > 0);
+			const d = '[\u064B-\u065F\u0670]*'; // optional Arabic diacritics class
+			const termPatterns = terms.map(term => {
+				const isArabic = /[\u0600-\u06FF]/.test(term);
+				if (isArabic) {
+					const expanded = term.split('').map(ch => {
+						if (ch === 'ه') return `[هة]${d}`;
+						if (ch === 'ا') return `[اأإآٱ]${d}`;
+						if (ch === 'ي') return `[يى]${d}`;
+						return ch + d;
+					}).join('');
+					return `(?:ال)?${expanded}`;
+				}
+				return term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			});
+			const pattern = termPatterns.join('|');
+			const q = new SearchQuery({ search: pattern, caseSensitive: false, regexp: true });
 			view.dispatch({ effects: setSearchQuery.of(q) });
+			// Open search panel to activate highlights (panel is hidden via CSS)
+			openSearchPanel(view);
 			// Scroll to first occurrence — needs delay for editor to fully render
 			setTimeout(() => {
 				if (!view) return;
@@ -419,7 +515,45 @@
 					}
 				}, 50);
 			}, 300);
-		}
+
+				// Multi-color decorations: scan doc and classify each match
+				setTimeout(() => {
+					if (!view) return;
+					const doc = view.state.doc.toString();
+					const re = new RegExp(pattern, 'gi');
+					const ranges: { from: number; to: number; cssClass: string }[] = [];
+					let m;
+					// Find YAML frontmatter boundary
+					let fmEnd = 0;
+					if (doc.startsWith('---')) {
+						const idx = doc.indexOf('---', 3);
+						if (idx > 0) fmEnd = idx + 3;
+					}
+					// First heading end (title area)
+					const firstHeading = doc.match(/^#{1,6}\s+.+$/m);
+					const titleEnd = firstHeading ? (doc.indexOf(firstHeading[0]) + firstHeading[0].length) : 0;
+
+					while ((m = re.exec(doc)) !== null) {
+						const pos = m.index;
+						const line = doc.substring(Math.max(0, doc.lastIndexOf('\n', pos)), doc.indexOf('\n', pos + 1) || doc.length);
+						let cssClass = 'cm-hl-content'; // default: green
+						if (pos <= titleEnd && titleEnd > 0) {
+							cssClass = 'cm-hl-title'; // blue: in title
+						} else if (pos < fmEnd) {
+							if (line.includes('#')) cssClass = 'cm-hl-tag'; // pink: tag in frontmatter
+							else cssClass = 'cm-hl-property'; // amber: property in frontmatter
+						} else if (/\[\[.*\]\]/.test(line)) {
+							cssClass = 'cm-hl-wikilink'; // light blue: in wikilink line
+						} else if (/#\S/.test(line)) {
+							cssClass = 'cm-hl-tag'; // pink: inline tag
+						}
+						ranges.push({ from: pos, to: pos + m[0].length, cssClass });
+					}
+					if (ranges.length > 0) {
+						view.dispatch({ effects: setColorHighlights.of({ ranges }) });
+					}
+				}, 500);
+			}
 
 		/* Checkbox toggle — capture phase, O(1) via posAtCoords */
 		checkboxHandler = ((event: MouseEvent) => {
@@ -547,7 +681,16 @@
 		idleSaveTimer = setInterval(() => { requestIdleCallback(() => doSave()); }, IDLE_SAVE_INTERVAL);
 		document.addEventListener('visibilitychange', handleVisibilityChange);
 		window.addEventListener('beforeunload', handleBeforeUnload);
+		// Register this editor with the global active-editor registry so the
+		// emoji/icon picker (and any future global command) can insert into it.
+		view?.dom.addEventListener('focusin', onEditorFocusIn);
+		if (view) registerActiveEditor(view);
 	});
+
+	function onEditorFocusIn() {
+		if (view) registerActiveEditor(view);
+	}
+
 
 	/* ─── Destroy ─── */
 	onDestroy(() => {
@@ -555,6 +698,10 @@
 		if (debouncedSaveTimer) { clearTimeout(debouncedSaveTimer); debouncedSaveTimer = null; }
 		document.removeEventListener('visibilitychange', handleVisibilityChange);
 		window.removeEventListener('beforeunload', handleBeforeUnload);
+		if (view) {
+			view.dom.removeEventListener('focusin', onEditorFocusIn);
+			unregisterActiveEditor(view);
+		}
 		if (checkboxHandler && editorEl) editorEl.removeEventListener('mousedown', checkboxHandler, true);
 		if (chevronHandler && editorEl) editorEl.removeEventListener('mousedown', chevronHandler, true);
 		if (linkClickHandler && editorEl) editorEl.removeEventListener('mousedown', linkClickHandler, true);
@@ -570,6 +717,22 @@
 		if (view && dir !== prevDir) {
 			prevDir = dir;
 			view.dispatch({ effects: dirCompartment.reconfigure(EditorView.editorAttributes.of({ dir })) });
+		}
+	});
+
+	/* ─── Traversal map sync (P4.2) ───
+	 * The initial state already carries the map from mount time; this effect
+	 * refreshes it when the boot graph lands (or is replaced on a Universe
+	 * switch) while the note is already open. Skipping the decoration
+	 * rebuild is handled inside ViewPlugin.update — a state-field-only
+	 * transaction doesn't set viewportChanged / selectionSet / docChanged,
+	 * so we also explicitly trigger a viewport refresh via the same
+	 * transaction to get the `×N` chips re-rendered. */
+	let prevTraversalMap = linkTraversalMap;
+	$effect(() => {
+		if (view && linkTraversalMap && linkTraversalMap !== prevTraversalMap) {
+			prevTraversalMap = linkTraversalMap;
+			view.dispatch({ effects: setLinkTraversalMap.of(linkTraversalMap) });
 		}
 	});
 
@@ -600,18 +763,13 @@
 	});
 
 	/* ─── Title ─── */
-	function generateAutoTitle(): string {
-		const now = new Date();
-		const dd = String(now.getDate()).padStart(2, '0');
-		const mm = String(now.getMonth() + 1).padStart(2, '0');
-		const yyyy = now.getFullYear();
-		const hh = String(now.getHours()).padStart(2, '0');
-		const min = String(now.getMinutes()).padStart(2, '0');
-		return `CoNote${dd}${mm}${yyyy}.${hh}:${min}`;
-	}
 	function handleTitleBlur() {
 		const trimmed = titleValue.trim();
-		if (!trimmed) titleValue = generateAutoTitle();
+		if (!trimmed) {
+			// Restore the original title — never generate a new one.
+			// The title comes from the filename (compatible mode) or frontmatter (canonical mode).
+			titleValue = title || filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') || $t('actions.untitled');
+		}
 		if (titleValue !== title) ontitlechange?.(titleValue);
 	}
 	function handleTitleKeydown(e: KeyboardEvent) {
@@ -749,11 +907,11 @@
 					onpromote?.(val);
 					view?.focus();
 				}}>
-				<option value="">— Stage —</option>
-				<option value="fleeting">🌱 Fleeting</option>
-				<option value="literature">📖 Literature</option>
-				<option value="permanent">🔗 Permanent</option>
-				<option value="synthesis">✨ Synthesis</option>
+				<option value="">{$t('notePane.noteStage')}</option>
+				<option value="fleeting">🌱 {$t('notePane.stage.fleeting')}</option>
+				<option value="literature">📖 {$t('notePane.stage.literature')}</option>
+				<option value="permanent">🔗 {$t('notePane.stage.permanent')}</option>
+				<option value="synthesis">✨ {$t('notePane.stage.synthesis')}</option>
 			</select>
 		</div>
 		{#if trail}
@@ -1075,6 +1233,135 @@
 	.e-editor :global(.cm-cursor) {
 		border-left: 1.5px solid var(--text-normal, #1a1a1a) !important;
 		visibility: visible !important;
+	}
+
+	/* ─── Inline icon shortcode widget (:lucide-heart:, :phosphor-book:, ...) ─── */
+	.e-editor :global(.cm-icon-inline) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		vertical-align: middle;
+		height: 1.15em;
+		width: 1.15em;
+		line-height: 1;
+	}
+	.e-editor :global(.cm-icon-inline svg) {
+		width: 1.15em;
+		height: 1.15em;
+	}
+
+	/* ─── Universal Embed Widget (Living Embed Resolver) ─── */
+	.e-editor :global(.cm-md-embed) {
+		display: block;
+		margin: 10px 0;
+	}
+	.e-editor :global(.cm-md-embed img),
+	.e-editor :global(.cm-md-embed video) {
+		max-width: 100%;
+		border-radius: 6px;
+	}
+	.e-editor :global(.cm-md-embed audio) {
+		width: 100%;
+	}
+	.e-editor :global(.cm-embed-loading) {
+		display: inline-block;
+		padding: 6px 10px;
+		border-radius: 6px;
+		background: var(--background-modifier-border);
+		color: var(--text-muted);
+		font-size: 0.85em;
+	}
+	.e-editor :global(.cm-embed-caption) {
+		font-size: 0.75em;
+		color: var(--text-muted);
+		margin-top: 4px;
+		text-align: center;
+	}
+	.e-editor :global(.cm-embed-pdf) {
+		width: 100%;
+		height: 600px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px;
+		background: var(--background-secondary);
+	}
+	.e-editor :global(.cm-embed-card) {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 12px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px;
+		background: var(--background-secondary);
+	}
+	.e-editor :global(.cm-embed-card-icon) {
+		font-size: 1.6em;
+		flex-shrink: 0;
+	}
+	.e-editor :global(.cm-embed-card-body) {
+		min-width: 0;
+		flex: 1;
+	}
+	.e-editor :global(.cm-embed-card-title) {
+		font-weight: 600;
+		color: var(--text-normal);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.e-editor :global(.cm-embed-card-sub) {
+		font-size: 0.8em;
+		color: var(--text-muted);
+	}
+	.e-editor :global(.cm-embed-missing) {
+		border-color: color-mix(in srgb, var(--text-warning, #f59e0b) 40%, transparent);
+		background: color-mix(in srgb, var(--text-warning, #f59e0b) 8%, var(--background-secondary));
+	}
+	.e-editor :global(.cm-embed-missing-details) {
+		margin-top: 4px;
+		font-size: 0.78em;
+		color: var(--text-muted);
+	}
+	.e-editor :global(.cm-embed-missing-details summary) {
+		cursor: pointer;
+		padding: 4px 0;
+	}
+	.e-editor :global(.cm-embed-missing-info) {
+		white-space: pre-wrap;
+		word-break: break-all;
+		font-family: var(--font-monospace-theme, monospace);
+		font-size: 0.88em;
+		padding: 6px 8px;
+		border-radius: 4px;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		margin-top: 4px;
+		max-height: 180px;
+		overflow-y: auto;
+	}
+	/* Note transclusion */
+	.e-editor :global(.cm-embed-transclusion) {
+		border-inline-start: 3px solid var(--interactive-accent);
+		background: var(--background-secondary);
+		border-radius: 0 6px 6px 0;
+		padding: 8px 12px;
+	}
+	.e-editor :global(.cm-embed-transclusion-header) {
+		font-weight: 600;
+		color: var(--interactive-accent);
+		font-size: 0.9em;
+		padding-bottom: 4px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		margin-bottom: 6px;
+	}
+	.e-editor :global(.cm-embed-transclusion-header:hover) {
+		text-decoration: underline;
+	}
+	.e-editor :global(.cm-embed-transclusion-body) {
+		white-space: pre-wrap;
+		color: var(--text-muted);
+		font-size: 0.92em;
+		max-height: 360px;
+		overflow-y: auto;
 	}
 
 </style>

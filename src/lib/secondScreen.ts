@@ -241,13 +241,17 @@ export function onSidebarModeChanged(callback: (mode: SidebarMode) => void): Pro
 /*  Split view companion events                                        */
 /* ------------------------------------------------------------------ */
 
+export interface SplitNoteEntry {
+	notePath: string;
+	noteName: string;
+	libraryName: string;
+	libraryPath: string;
+	content: string;
+}
+
 export interface SplitCompanionData {
 	active: boolean;
-	notePath?: string;
-	noteName?: string;
-	libraryName?: string;
-	libraryPath?: string;
-	content?: string;
+	notes?: SplitNoteEntry[];
 }
 
 /** Main → Second Screen: split view state changed */
@@ -358,4 +362,26 @@ export async function emitEditorPanels(data: EditorPanelsData): Promise<void> {
 
 export function onEditorPanels(callback: (data: EditorPanelsData) => void): Promise<UnlistenFn> {
 	return listen<EditorPanelsData>('screen:editor-panels', (event) => callback(event.payload));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Ready signal — SS tells main it has registered all listeners       */
+/* ------------------------------------------------------------------ */
+
+/** SS → Main: all listeners registered, safe to send data. */
+export async function emitScreenReady(): Promise<void> {
+	await emit('screen:ready', {});
+}
+
+/** Wait for screen:ready with a timeout fallback. */
+export function waitForScreenReady(timeoutMs = 2000): Promise<void> {
+	return new Promise((resolve) => {
+		let resolved = false;
+		const unsub = listen('screen:ready', () => {
+			if (!resolved) { resolved = true; unsub.then(u => u()); resolve(); }
+		});
+		setTimeout(() => {
+			if (!resolved) { resolved = true; unsub.then(u => u()); resolve(); }
+		}, timeoutMs);
+	});
 }

@@ -1,9 +1,21 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import type { IndexEntry, IndexMention } from '$lib/libraries/store';
+	import { untrack } from 'svelte';
+	import {
+		SNIPPET_MARK_START,
+		SNIPPET_MARK_END,
+		type IndexEntry,
+		type IndexMention,
+		type CooccurringTerm,
+	} from '$lib/libraries/store';
+	import VirtualList from '$lib/components/VirtualList.svelte';
+
+	const SNIPPET_MARK_START_CODE = SNIPPET_MARK_START.charCodeAt(0);
+	const SNIPPET_MARK_END_CODE = SNIPPET_MARK_END.charCodeAt(0);
 
 	let {
 		entries = [] as IndexEntry[],
+		isLoading = false,
 		onNoteClick,
 		onTermClick,
 		onNoteHover = (_path: string, _e: MouseEvent) => {},
@@ -11,8 +23,11 @@
 		activeNotePath = '',
 		selectedTerms = new Set<string>(),
 		onTermSelect,
+		loadMentions,
+		loadCooccurrence,
 	}: {
 		entries: IndexEntry[];
+		isLoading?: boolean;
 		onNoteClick: (filePath: string, noteName: string, term?: string, e?: MouseEvent) => void;
 		onTermClick?: (term: string, mentions: { note_path: string; note_name: string }[]) => void;
 		onNoteHover?: (filePath: string, e: MouseEvent) => void;
@@ -20,17 +35,76 @@
 		activeNotePath?: string;
 		selectedTerms?: Set<string>;
 		onTermSelect?: (term: string, mentions: { note_path: string; note_name: string }[], selected: boolean) => void;
+		/** Lazy-loader for per-term mentions. Called on first expand of a term. */
+		loadMentions?: (term: string) => Promise<IndexMention[]>;
+		/** Lazy-loader for per-term co-occurring vocabulary terms. Called
+		 *  alongside `loadMentions` on expand; results render as a chip
+		 *  strip beneath the mentions list. */
+		loadCooccurrence?: (term: string) => Promise<CooccurringTerm[]>;
 	} = $props();
+
+	// Per-term mentions cache — populated on demand when the user expands a term.
+	// Keeps the initial IPC payload tiny (terms only; no mentions pre-loaded).
+	let mentionsCache = $state<Map<string, IndexMention[]>>(new Map());
+	let loadingMentions = $state<Set<string>>(new Set());
+
+	function getMentions(term: string): IndexMention[] {
+		return mentionsCache.get(term) ?? [];
+	}
+
+	async function ensureMentionsLoaded(term: string) {
+		if (!loadMentions) return;
+		if (mentionsCache.has(term)) return;
+		if (loadingMentions.has(term)) return;
+		loadingMentions.add(term);
+		loadingMentions = new Set(loadingMentions);
+		try {
+			const list = await loadMentions(term);
+			mentionsCache.set(term, list);
+			mentionsCache = new Map(mentionsCache);
+		} finally {
+			loadingMentions.delete(term);
+			loadingMentions = new Set(loadingMentions);
+		}
+	}
+
+	// Per-term co-occurring-terms cache — mirrors the mentions cache shape
+	// above; populated on expand alongside `ensureMentionsLoaded`.
+	let cooccurrenceCache = $state<Map<string, CooccurringTerm[]>>(new Map());
+	let loadingCooccurrence = $state<Set<string>>(new Set());
+
+	function getCooccurrence(term: string): CooccurringTerm[] {
+		return cooccurrenceCache.get(term) ?? [];
+	}
+
+	async function ensureCooccurrenceLoaded(term: string) {
+		if (!loadCooccurrence) return;
+		if (cooccurrenceCache.has(term)) return;
+		if (loadingCooccurrence.has(term)) return;
+		loadingCooccurrence.add(term);
+		loadingCooccurrence = new Set(loadingCooccurrence);
+		try {
+			const list = await loadCooccurrence(term);
+			cooccurrenceCache.set(term, list);
+			cooccurrenceCache = new Map(cooccurrenceCache);
+		} catch {
+			// Cache an empty result on error so we don't re-hit the backend
+			// on every render — collapse/re-expand to retry.
+			cooccurrenceCache.set(term, []);
+			cooccurrenceCache = new Map(cooccurrenceCache);
+		} finally {
+			loadingCooccurrence.delete(term);
+			loadingCooccurrence = new Set(loadingCooccurrence);
+		}
+	}
 
 	let filterQuery = $state('');
 	let expandedTerms = $state<Set<string>>(new Set());
-	let visibleCount = $state(200);
 	let activeScript = $state<string>('all');
 	let activeLetter = $state<string | null>(null);
 	let sortMode = $state<'alpha' | 'freq'>('alpha');
 	let excludedTerms = $state<Set<string>>(loadExcluded());
 	let showHidden = $state(false);
-	let listEl: HTMLDivElement | undefined;
 	let contextMenu = $state<{ x: number; y: number; term: string } | null>(null);
 
 	// ═══════════════════════════════════════════════
@@ -89,6 +163,80 @@
 		if (CJK_RE.test(ch)) return 'zh';
 		if (LATIN_RE.test(ch)) return 'en';
 		return 'other';
+	}
+
+	// ─── Query normalization for filter matching ───
+	// Terms are stored in stemmed form (the backend's Arabic Light10
+	// pipeline strips "ال", suffixes, diacritics). A raw substring match
+	// would miss "الكتاب" against the indexed "كتاب", so we mirror the
+	// Rust `normalize_arabic` + `stem_arabic_light10` (libraries.rs) in JS
+	// and match on either the raw query or its stem. Other scripts rely
+	// on write-time stemming; query-side mirrors can follow as needed.
+
+	const ARABIC_DIACRITICS_RE = /[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g;
+	const ARABIC_ALEF_VARIANTS_RE = /[\u0622\u0623\u0625\u0671]/g;   // آ أ إ ٱ → ا
+	const ARABIC_ALEF_MAKSURA_RE = /[\u0649]/g;                       // ى → ي
+	const ARABIC_TA_MARBUTA_RE = /[\u0629]/g;                         // ة → ه
+
+	/** Exact JS port of the backend `stem_arabic_light10` (libraries.rs):
+	 *  normalize + sequential 3/2/1-char prefix strip + 2/1-char suffix
+	 *  strip. Sequential so "والمعرفة" → "معرف" in one pass. */
+	function normalizeArabicForFilter(s: string): string {
+		let t = s.replace(ARABIC_DIACRITICS_RE, '');
+		t = t.replace(ARABIC_ALEF_VARIANTS_RE, '\u0627');
+		t = t.replace(ARABIC_ALEF_MAKSURA_RE, '\u064A');
+		t = t.replace(ARABIC_TA_MARBUTA_RE, '\u0647');
+
+		let chars = Array.from(t);
+		let len = chars.length;
+
+		if (len >= 6) {
+			const p = chars[0] + chars[1] + chars[2];
+			if (p === 'وال' || p === 'بال' || p === 'كال' || p === 'فال') {
+				chars = chars.slice(3);
+				len = chars.length;
+			}
+		}
+		if (len >= 4) {
+			const p = chars[0] + chars[1];
+			if (p === 'ال' || p === 'لل') {
+				chars = chars.slice(2);
+				len = chars.length;
+			}
+		}
+		if (len >= 4 && chars[0] === 'و') {
+			chars = chars.slice(1);
+			len = chars.length;
+		}
+
+		if (len >= 4) {
+			const s2 = chars[len - 2] + chars[len - 1];
+			if (
+				s2 === 'ها' || s2 === 'ان' || s2 === 'ات' || s2 === 'ون' ||
+				s2 === 'ين' || s2 === 'يه' || s2 === 'يت' || s2 === 'ته'
+			) {
+				chars = chars.slice(0, len - 2);
+				len = chars.length;
+			}
+		}
+		if (len >= 3) {
+			const last = chars[len - 1];
+			if (last === 'ه' || last === 'ي') {
+				chars = chars.slice(0, len - 1);
+			}
+		}
+
+		return chars.join('');
+	}
+
+	/** A filter sub-query prepared once per filter pass: lower-cased form
+	 *  plus its Arabic stem (if the query is Arabic and stemming would
+	 *  change it). Keeps the per-entry loop to pure substring checks. */
+	type PreparedQuery = { q: string; stem: string | null };
+	function prepareQuery(q: string): PreparedQuery {
+		if (!q || !ARABIC_RE.test(q)) return { q, stem: null };
+		const stemmed = normalizeArabicForFilter(q);
+		return { q, stem: stemmed !== q ? stemmed : null };
 	}
 
 	// ═══════════════════════════════════════════════
@@ -225,23 +373,29 @@
 	const filteredEntries = $derived.by(() => {
 		const raw = filterQuery.trim();
 		let result = entries;
-		// Apply exclusion filter
 		if (!showHidden) {
 			result = result.filter(e => !excludedTerms.has(e.term.toLowerCase()));
 		}
 		if (!raw) return result;
 		const hasComma = /[،,؛;]/.test(raw);
-		if (hasComma) {
-			const terms = raw.split(/[،,؛;]/).map(t => t.trim().toLowerCase()).filter(Boolean);
-			if (terms.length === 0) return result;
-			return result.filter(e => {
-				const lower = e.term.toLowerCase();
-				return terms.some(t => lower.includes(t) || t.includes(lower));
-			});
-		} else {
-			const q = raw.toLowerCase();
-			return result.filter(e => e.term.toLowerCase().includes(q));
-		}
+		const rawQueries = hasComma
+			? raw.split(/[،,؛;]/).map(t => t.trim().toLowerCase()).filter(Boolean)
+			: [raw.toLowerCase()];
+		if (rawQueries.length === 0) return result;
+		// Prepare each sub-query ONCE — ARABIC_RE.test + stemming run per
+		// filter pass, not per entry. The inner loop is then pure .includes.
+		const prepared = rawQueries.map(prepareQuery);
+		return result.filter(e => {
+			const lower = e.term.toLowerCase();
+			for (const { q, stem } of prepared) {
+				if (lower.includes(q)) return true;
+				if (stem && lower.includes(stem)) return true;
+				// Comma mode also matches in reverse: a short query like
+				// "ai" matches an indexed term "ai-safety" AND vice-versa.
+				if (hasComma && q.includes(lower)) return true;
+			}
+			return false;
+		});
 	});
 
 	const availableScripts = $derived.by(() => {
@@ -280,35 +434,144 @@
 		activeLetter = null;
 	});
 
-	const visibleEntries = $derived(scriptFilteredEntries.slice(0, visibleCount));
-	const hasMore = $derived(scriptFilteredEntries.length > visibleCount);
-	const maxCount = $derived(Math.max(1, ...scriptFilteredEntries.map(e => e.count)));
+	// maxCount — bounded scan over a sample (first 5000) so we don't hot-loop
+	// `Math.max(...arr)` on 500k+ items per derivation. The bar widths are a
+	// visual heuristic; sampling the top-of-list is fine since SQL orders by
+	// term and high-count terms are sprinkled throughout anyway.
+	const maxCount = $derived.by(() => {
+		const sample = scriptFilteredEntries.length > 5000
+			? scriptFilteredEntries.slice(0, 5000)
+			: scriptFilteredEntries;
+		let m = 1;
+		for (const e of sample) if (e.count > m) m = e.count;
+		return m;
+	});
 
-	// Alphabetical mode: group by letter
+	// Alphabetical mode: group by letter. Inner groups keep SQL's byte-order
+	// (ORDER BY term) — the custom `constellation` tokenizer produces
+	// language-normalized stems so byte order is already an acceptable
+	// dictionary order within a single script. No JS re-sort, which would
+	// cost O(n log n) localeCompare calls on 100k+ term groups.
 	const groupedEntries = $derived.by(() => {
 		if (sortMode === 'freq') return [];
 		const groups = new Map<string, IndexEntry[]>();
-		for (const entry of visibleEntries) {
+		for (const entry of scriptFilteredEntries) {
 			const { letter } = getIndexInfo(entry.term);
-			const group = groups.get(letter) ?? [];
+			let group = groups.get(letter);
+			if (!group) { group = []; groups.set(letter, group); }
 			group.push(entry);
-			groups.set(letter, group);
-		}
-		for (const [, group] of groups) {
-			group.sort((a, b) => {
-				const ia = getIndexInfo(a.term);
-				const ib = getIndexInfo(b.term);
-				return ia.sortKey.localeCompare(ib.sortKey);
-			});
 		}
 		return Array.from(groups.entries()).sort((a, b) => compareLetters(a[0], b[0]));
 	});
 
-	// Frequency mode: flat sorted list
+	// Frequency mode: flat sorted list. Shallow copy so we don't mutate
+	// the upstream `scriptFilteredEntries` reference.
 	const freqEntries = $derived.by(() => {
 		if (sortMode !== 'freq') return [];
-		return [...visibleEntries].sort((a, b) => b.count - a.count);
+		return [...scriptFilteredEntries].sort((a, b) => b.count - a.count);
 	});
+
+	// ═══════════════════════════════════════════════
+	// ─── Virtualized row model ───
+	// Flatten groupedEntries / freqEntries into a linear array of typed
+	// rows so VirtualList can render only the visible window. Expanded
+	// mentions become their own row, inserted directly after the term row.
+	// ═══════════════════════════════════════════════
+	type VRow =
+		| { kind: 'header'; letter: string }
+		| { kind: 'entry'; entry: IndexEntry }
+		| { kind: 'expanded'; term: string };
+
+	const ROW_HEIGHT_HEADER = 30;
+	const ROW_HEIGHT_ENTRY = 30;
+	/** Plain mention row (title-only match — no FTS5 snippet to show). */
+	const ROW_HEIGHT_MENTION_PLAIN = 22;
+	/** Mention row with a one-line FTS5 snippet beneath the note name. */
+	const ROW_HEIGHT_MENTION_SNIPPET = 40;
+	const ROW_HEIGHT_EXPAND_PAD = 12;
+	const ROW_HEIGHT_EXPAND_MIN = 32;
+	/** Co-occurrence strip height: header line + one row of wrapping chips.
+	 *  Two rows of chips (the common case for result_limit=20 at a typical
+	 *  panel width) fits in 56px. Loading spinner placeholder uses the
+	 *  header-only height. */
+	const ROW_HEIGHT_COOCCUR_HEADER = 22;
+	const ROW_HEIGHT_COOCCUR_CHIPS = 56;
+
+	const rows = $derived.by((): VRow[] => {
+		const out: VRow[] = [];
+		if (sortMode === 'freq') {
+			for (const entry of freqEntries) {
+				out.push({ kind: 'entry', entry });
+				if (expandedTerms.has(entry.term)) {
+					out.push({ kind: 'expanded', term: entry.term });
+				}
+			}
+		} else {
+			for (const [letter, group] of groupedEntries) {
+				out.push({ kind: 'header', letter });
+				for (const entry of group) {
+					out.push({ kind: 'entry', entry });
+					if (expandedTerms.has(entry.term)) {
+						out.push({ kind: 'expanded', term: entry.term });
+					}
+				}
+			}
+		}
+		return out;
+	});
+
+	function getRowHeight(r: VRow): number {
+		if (r.kind === 'header') return ROW_HEIGHT_HEADER;
+		if (r.kind === 'entry') return ROW_HEIGHT_ENTRY;
+		const list = mentionsCache.get(r.term);
+		let total = ROW_HEIGHT_EXPAND_PAD;
+		// Sum per-mention heights — a mention with a FTS5 snippet needs
+		// room for both the note name and the one-line context beneath it.
+		if (list && list.length > 0) {
+			for (const m of list) {
+				total += m.snippet ? ROW_HEIGHT_MENTION_SNIPPET : ROW_HEIGHT_MENTION_PLAIN;
+			}
+		}
+		// Co-occurrence strip: reserve space whenever we're loading or
+		// have results. No strip if the loader returned zero terms —
+		// saves 22px on rare/isolated terms where the strip would be empty.
+		const cooccur = cooccurrenceCache.get(r.term);
+		if (loadingCooccurrence.has(r.term)) {
+			total += ROW_HEIGHT_COOCCUR_HEADER;
+		} else if (cooccur && cooccur.length > 0) {
+			total += ROW_HEIGHT_COOCCUR_HEADER + ROW_HEIGHT_COOCCUR_CHIPS;
+		}
+		return Math.max(ROW_HEIGHT_EXPAND_MIN, total);
+	}
+
+	/** Split a snippet string into plain/highlight parts at the sentinel
+	 *  boundaries (see {@link SNIPPET_MARK_START}/{@link SNIPPET_MARK_END}).
+	 *  Text parts render through default Svelte interpolation (auto-escaped),
+	 *  so user note content can never inject HTML. */
+	function splitSnippet(s: string | null | undefined): { text: string; mark: boolean }[] {
+		if (!s) return [];
+		const out: { text: string; mark: boolean }[] = [];
+		let buf = '';
+		let inMark = false;
+		for (let i = 0; i < s.length; i++) {
+			const ch = s.charCodeAt(i);
+			if (ch === SNIPPET_MARK_START_CODE) {
+				if (buf) { out.push({ text: buf, mark: inMark }); buf = ''; }
+				inMark = true;
+			} else if (ch === SNIPPET_MARK_END_CODE) {
+				if (buf) { out.push({ text: buf, mark: inMark }); buf = ''; }
+				inMark = false;
+			} else {
+				buf += s[i];
+			}
+		}
+		if (buf) out.push({ text: buf, mark: inMark });
+		return out;
+	}
+
+	// String key that changes on any filter/sort/letter switch — VirtualList
+	// resets its scroll-to-top when this changes.
+	const scrollResetKey = $derived(`${activeScript}|${activeLetter ?? ''}|${sortMode}|${filterQuery}`);
 
 	const allLetters = $derived.by(() => {
 		if (sortMode === 'freq') return [];
@@ -350,19 +613,70 @@
 	const totalTerms = $derived(scriptFilteredEntries.length);
 	const hiddenCount = $derived(entries.filter(e => excludedTerms.has(e.term.toLowerCase())).length);
 
+	// ─── Multi-term comparison (commonality across selected terms) ───
+	// Ctrl/Cmd-click adds a term to `selectedTerms`. With 2+ terms we
+	// intersect their mention sets and render the notes that contain
+	// every one beneath the chip bar. The in-component click paths all
+	// preload mentions before adding to `selectedTerms`; this $effect
+	// covers the case where a parent pre-populates the set (persisted
+	// session state, deep-link) without going through those paths.
+
+	$effect(() => {
+		// Only the comparison path needs pre-loaded mentions — a
+		// single selection doesn't render anything until the user
+		// expands it, at which point `toggleExpand` handles loading.
+		if (selectedTerms.size < 2) return;
+		const terms = [...selectedTerms];
+		// Writes to mentionsCache / loadingMentions must not re-track
+		// this effect (CLAUDE.md Rule 2).
+		untrack(() => {
+			for (const term of terms) void ensureMentionsLoaded(term);
+		});
+	});
+
+	type ComparisonState =
+		| { kind: 'idle' }                                           // <2 terms
+		| { kind: 'loading' }                                        // mentions missing
+		| { kind: 'ready'; notes: IndexMention[]; termCount: number };
+
+	const comparisonState = $derived.by((): ComparisonState => {
+		const selectedArr = [...selectedTerms];
+		if (selectedArr.length < 2) return { kind: 'idle' };
+		const perTerm: IndexMention[][] = [];
+		for (const t of selectedArr) {
+			const m = mentionsCache.get(t);
+			if (!m) return { kind: 'loading' };
+			perTerm.push(m);
+		}
+		// Anchor intersection on the smallest list — at most |smallest|
+		// membership checks even when some terms have thousands of mentions.
+		perTerm.sort((a, b) => a.length - b.length);
+		const [first, ...rest] = perTerm;
+		const restSets = rest.map(list => new Set(list.map(m => m.note_path)));
+		const notes = first.filter(m => restSets.every(s => s.has(m.note_path)));
+		return { kind: 'ready', notes, termCount: selectedArr.length };
+	});
+
 	function toggleExpand(term: string) {
 		if (expandedTerms.has(term)) {
 			expandedTerms = new Set();
 		} else {
 			expandedTerms = new Set([term]);
+			// Mentions and co-occurrences are independent DB reads —
+			// fire both so expand-time UX stays snappy.
+			void ensureMentionsLoaded(term);
+			void ensureCooccurrenceLoaded(term);
 		}
 	}
 
-	function handleScroll(e: Event) {
-		const el = e.target as HTMLElement;
-		if (hasMore && el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
-			visibleCount += 200;
-		}
+	/** Chip-click in the co-occurrence strip: same mechanic as Ctrl-click
+	 *  on a main row — toggle the term's membership in the comparison set.
+	 *  Never expands; the user is composing a multi-term view. */
+	async function handleCooccurChipClick(term: string, e: MouseEvent) {
+		e.stopPropagation();
+		if (!onTermSelect) return;
+		await ensureMentionsLoaded(term);
+		onTermSelect(term, getMentions(term), !selectedTerms.has(term));
 	}
 
 	function selectLetter(letter: string) {
@@ -370,8 +684,7 @@
 			activeLetter = null; // toggle off — show all
 		} else {
 			activeLetter = letter;
-			visibleCount = 200; // reset lazy load
-			if (listEl) listEl.scrollTop = 0; // scroll to top
+			// VirtualList scrolls to top via scrollResetKey change (activeLetter is part of the key).
 		}
 	}
 
@@ -385,19 +698,38 @@
 	}
 
 	// ─── Export ───
-	function exportToClipboard() {
-		const source = sortMode === 'freq' ? freqEntries : visibleEntries;
-		let md = '# Index\n\n';
+	// Mentions are lazy-loaded per term; export walks the filtered list and
+	// loads any not-yet-cached ones before assembling the markdown. On very
+	// large result sets (> ~5000 terms) exporting everything would produce
+	// multi-MB clipboards and hammer the per-term-mentions IPC, so we cap.
+	const EXPORT_CAP = 5000;
+	async function exportToClipboard() {
+		const allTerms: string[] = [];
 		if (sortMode === 'freq') {
-			for (const entry of source) {
-				const notes = entry.mentions.map(m => m.note_name).join(', ');
+			for (const e of freqEntries) allTerms.push(e.term);
+		} else {
+			for (const [, group] of groupedEntries) for (const e of group) allTerms.push(e.term);
+		}
+		const truncated = allTerms.length > EXPORT_CAP;
+		const termsToExport = truncated ? allTerms.slice(0, EXPORT_CAP) : allTerms;
+		await Promise.all(termsToExport.map((t) => ensureMentionsLoaded(t)));
+		let md = '# Index\n\n';
+		if (truncated) md += `_Showing first ${EXPORT_CAP} of ${allTerms.length} terms. Filter to narrow the export._\n\n`;
+		if (sortMode === 'freq') {
+			for (const term of termsToExport) {
+				const entry = freqEntries.find(e => e.term === term);
+				if (!entry) continue;
+				const notes = getMentions(entry.term).map(m => m.note_name).join(', ');
 				md += `- ${entry.term} (${entry.count}) — ${notes}\n`;
 			}
 		} else {
+			const termSet = new Set(termsToExport);
 			for (const [letter, group] of groupedEntries) {
+				const inGroup = group.filter(e => termSet.has(e.term));
+				if (inGroup.length === 0) continue;
 				md += `## ${letter}\n`;
-				for (const entry of group) {
-					const notes = entry.mentions.map(m => m.note_name).join(', ');
+				for (const entry of inGroup) {
+					const notes = getMentions(entry.term).map(m => m.note_name).join(', ');
 					md += `- ${entry.term} (${entry.count}) — ${notes}\n`;
 				}
 				md += '\n';
@@ -405,13 +737,6 @@
 		}
 		navigator.clipboard.writeText(md);
 	}
-
-	$effect(() => {
-		filterQuery;
-		activeScript;
-		sortMode;
-		visibleCount = 200;
-	});
 
 	// Close context menu on click outside
 	function handleWindowClick() { contextMenu = null; }
@@ -495,21 +820,21 @@
 		<div class="gp-anchor-bar">
 			<span class="gp-anchor-label">{$t('indexPanel.comparing') || 'Comparing'}:</span>
 			{#each [...selectedTerms] as term}
-				<button class="gp-anchor-chip" onclick={() => {
+				<button class="gp-anchor-chip" onclick={async () => {
 					if (onTermSelect) {
-						const entry = entries.find(e => e.term === term);
-						onTermSelect(term, entry?.mentions ?? [], false);
+						await ensureMentionsLoaded(term);
+						onTermSelect(term, getMentions(term), false);
 					}
 				}}>
 					<span dir="auto">{term}</span>
 					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 				</button>
 			{/each}
-			<button class="gp-anchor-clear" onclick={() => {
+			<button class="gp-anchor-clear" onclick={async () => {
 				if (onTermSelect) {
 					for (const term of selectedTerms) {
-						const entry = entries.find(e => e.term === term);
-						onTermSelect(term, entry?.mentions ?? [], false);
+						await ensureMentionsLoaded(term);
+						onTermSelect(term, getMentions(term), false);
 					}
 				}
 			}}>
@@ -518,112 +843,141 @@
 		</div>
 	{/if}
 
-	<!-- Term list -->
-	<div class="gp-list" bind:this={listEl} onscroll={handleScroll}>
-		{#if scriptFilteredEntries.length === 0}
-			<div class="gp-empty">{$t('indexPanel.noTerms')}</div>
-		{:else if sortMode === 'alpha'}
-			{#each groupedEntries as [letter, group]}
-				<div class="gp-letter-group">
-					<div class="gp-letter" data-letter={letter}>{letter}</div>
-					{#each group as entry}
-						{@const isHidden = excludedTerms.has(entry.term.toLowerCase())}
-						<div class="gp-entry" class:hidden-term={isHidden}>
-							<button class="gp-term-row" oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
-								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<span class="gp-chev-btn" onclick={() => toggleExpand(entry.term)}>
-									<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
-										<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
-									</svg>
-								</span>
-								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}
-									onclick={(e) => {
-										if ((e.ctrlKey || e.metaKey) && onTermSelect) {
-											onTermSelect(entry.term, entry.mentions, !selectedTerms.has(entry.term));
-										} else if (onTermClick) {
-											onTermClick(entry.term, entry.mentions);
-											toggleExpand(entry.term);
-										} else {
-											toggleExpand(entry.term);
-										}
-									}}>
-									{entry.term}
-									{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
-								</span>
-								<div class="gp-freq-wrap">
-									<div class="gp-freq-bar" style="width: {(entry.count / maxCount) * 100}%"></div>
-									<span class="gp-count">{entry.count}</span>
-								</div>
-							</button>
-
-							{#if expandedTerms.has(entry.term)}
-								<div class="gp-references" dir="auto">
-									{#each entry.mentions as mention, i}
-										<button class="gp-ref" class:active={mention.note_path === activeNotePath}
-											data-filepath={mention.note_path}
-											onclick={(e) => onNoteClick(mention.note_path, mention.note_name, entry.term, e)}
-											onmouseenter={(e) => onNoteHover(mention.note_path, e)}
-											onmouseleave={() => onNoteLeave()}>
-											{mention.note_name}</button>
-									{/each}
-								</div>
-							{/if}
-						</div>
+	<!-- Commonality — notes that contain every selected term (2+ terms only). -->
+	{#if comparisonState.kind === 'loading'}
+		<div class="gp-commonality">
+			<div class="gp-commonality-empty">{$t('indexPanel.loadingCommonality') || 'Loading commonality…'}</div>
+		</div>
+	{:else if comparisonState.kind === 'ready'}
+		<div class="gp-commonality">
+			<div class="gp-commonality-header">
+				{#if comparisonState.notes.length === 0}
+					<span>{$t('indexPanel.noCommonality') || 'No notes contain all selected terms.'}</span>
+				{:else}
+					<span>
+						{comparisonState.notes.length}
+						{comparisonState.notes.length === 1
+							? ($t('indexPanel.noteWithAll') || 'note contains all')
+							: ($t('indexPanel.notesWithAll') || 'notes contain all')}
+						{comparisonState.termCount}
+						{$t('indexPanel.selectedTerms') || 'selected terms'}
+					</span>
+				{/if}
+			</div>
+			{#if comparisonState.notes.length > 0}
+				<div class="gp-commonality-list" dir="auto">
+					{#each comparisonState.notes as note}
+						<button class="gp-ref" class:active={note.note_path === activeNotePath}
+							data-filepath={note.note_path}
+							onclick={(e) => onNoteClick(note.note_path, note.note_name, undefined, e)}
+							onmouseenter={(e) => onNoteHover(note.note_path, e)}
+							onmouseleave={() => onNoteLeave()}>
+							<span class="gp-ref-name">{note.note_name}</span>
+						</button>
 					{/each}
 				</div>
-			{/each}
-		{:else}
-			{#each freqEntries as entry}
-				{@const isHidden = excludedTerms.has(entry.term.toLowerCase())}
-				<div class="gp-entry" class:hidden-term={isHidden}>
-					<button class="gp-term-row" oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<span class="gp-chev-btn" onclick={() => toggleExpand(entry.term)}>
-							<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
-								<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
-							</svg>
-						</span>
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}
-							onclick={(e) => {
-								if ((e.ctrlKey || e.metaKey) && onTermSelect) {
-									onTermSelect(entry.term, entry.mentions, !selectedTerms.has(entry.term));
-								} else if (onTermClick) {
-									onTermClick(entry.term, entry.mentions);
-									toggleExpand(entry.term);
-								} else {
-									toggleExpand(entry.term);
-								}
-							}}>
-							{entry.term}
-							{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
-						</span>
-						<div class="gp-freq-wrap">
-							<div class="gp-freq-bar" style="width: {(entry.count / maxCount) * 100}%"></div>
-							<span class="gp-count">{entry.count}</span>
-						</div>
-					</button>
+			{/if}
+		</div>
+	{/if}
 
-					{#if expandedTerms.has(entry.term)}
-						<div class="gp-references" dir="auto">
-							{#each entry.mentions as mention, i}
-								<button class="gp-ref" class:active={mention.note_path === activeNotePath}
-									data-filepath={mention.note_path}
-									onclick={(e) => onNoteClick(mention.note_path, mention.note_name, entry.term, e)}
-									onmouseenter={(e) => onNoteHover(mention.note_path, e)}
-									onmouseleave={() => onNoteLeave()}>
-									{mention.note_name}</button>
-							{/each}
-						</div>
-					{/if}
-				</div>
-			{/each}
-		{/if}
-		{#if hasMore}
-			<div class="gp-loading">{$t('indexPanel.terms')}...</div>
-		{/if}
-	</div>
+	<!-- Term list (virtualized — see VirtualList.svelte) -->
+	{#if scriptFilteredEntries.length === 0}
+		<div class="gp-list-empty">
+			{#if isLoading}
+				<div class="gp-loading">{$t('indexPanel.building') || 'Building index…'}</div>
+			{:else}
+				<div class="gp-empty">{$t('indexPanel.noTerms')}</div>
+			{/if}
+		</div>
+	{:else}
+		<VirtualList
+			items={rows}
+			getItemHeight={getRowHeight}
+			{scrollResetKey}
+			overscan={12}
+		>
+			{#snippet row(r, _i)}
+				{#if r.kind === 'header'}
+					<div class="gp-letter" data-letter={r.letter}>{r.letter}</div>
+				{:else if r.kind === 'entry'}
+					{@const entry = r.entry}
+					{@const isHidden = excludedTerms.has(entry.term.toLowerCase())}
+					<div class="gp-entry" class:hidden-term={isHidden}>
+						<button class="gp-term-row" oncontextmenu={(e) => handleContextMenu(e, entry.term)}>
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<span class="gp-chev-btn" onclick={() => toggleExpand(entry.term)}>
+								<svg class="gp-chev" class:expanded={expandedTerms.has(entry.term)} width="8" height="8" viewBox="0 0 10 10">
+									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+								</svg>
+							</span>
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<span class="gp-term-name" dir="auto" class:term-selected={selectedTerms.has(entry.term)}
+								onclick={async (e) => {
+									if ((e.ctrlKey || e.metaKey) && onTermSelect) {
+										await ensureMentionsLoaded(entry.term);
+										onTermSelect(entry.term, getMentions(entry.term), !selectedTerms.has(entry.term));
+									} else if (onTermClick) {
+										await ensureMentionsLoaded(entry.term);
+										onTermClick(entry.term, getMentions(entry.term));
+										toggleExpand(entry.term);
+									} else {
+										toggleExpand(entry.term);
+									}
+								}}>
+								{entry.term}
+								{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
+							</span>
+							<div class="gp-freq-wrap">
+								<div class="gp-freq-bar" style="width: {(entry.count / maxCount) * 100}%"></div>
+								<span class="gp-count">{entry.count}</span>
+							</div>
+						</button>
+					</div>
+				{:else}
+					<div class="gp-references" dir="auto">
+						{#each getMentions(r.term) as mention}
+							<button class="gp-ref" class:active={mention.note_path === activeNotePath}
+								class:has-snippet={!!mention.snippet}
+								data-filepath={mention.note_path}
+								onclick={(e) => onNoteClick(mention.note_path, mention.note_name, r.term, e)}
+								onmouseenter={(e) => onNoteHover(mention.note_path, e)}
+								onmouseleave={() => onNoteLeave()}>
+								<span class="gp-ref-name">{mention.note_name}</span>
+								{#if mention.snippet}
+									<span class="gp-ref-snippet" dir="auto">
+										{#each splitSnippet(mention.snippet) as part}
+											{#if part.mark}<mark class="gp-ref-hit">{part.text}</mark>{:else}{part.text}{/if}
+										{/each}
+									</span>
+								{/if}
+							</button>
+						{/each}
+						<!-- Co-occurring terms chip strip: click to add to the comparison set. -->
+						{#if loadingCooccurrence.has(r.term)}
+							<div class="gp-cooccur gp-cooccur-loading" dir="auto">
+								<span class="gp-cooccur-label">{$t('indexPanel.alsoAppearsWith') || 'Also appears with'}</span>
+								<span class="gp-cooccur-loading-text">{$t('indexPanel.building') || 'Loading…'}</span>
+							</div>
+						{:else if getCooccurrence(r.term).length > 0}
+							<div class="gp-cooccur" dir="auto">
+								<span class="gp-cooccur-label">{$t('indexPanel.alsoAppearsWith') || 'Also appears with'}</span>
+								<div class="gp-cooccur-chips">
+									{#each getCooccurrence(r.term) as co}
+										<button type="button" class="gp-cooccur-chip" dir="auto"
+											title="{co.term} — {co.note_count} {co.note_count === 1 ? $t('indexPanel.noteWithAll') || 'note' : $t('indexPanel.notesWithAll') || 'notes'}"
+											onclick={(e) => handleCooccurChipClick(co.term, e)}>
+											<span class="gp-cooccur-term">{co.term}</span>
+											<span class="gp-cooccur-count">{co.note_count}</span>
+										</button>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					</div>
+				{/if}
+			{/snippet}
+		</VirtualList>
+	{/if}
 </div>
 
 <!-- Context menu -->
@@ -780,13 +1134,15 @@
 		border-radius: 4px;
 	}
 
-	/* ── List ── */
-	.gp-list {
-		overflow-y: auto;
+	/* ── List ──
+	   The list itself is now a <VirtualList> component (.vlist) — it owns
+	   flex:1 and overflow:auto. We keep .gp-list-empty as a wrapper for the
+	   empty / loading states only, so the layout still fills the pane. */
+	.gp-list-empty {
 		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
 		padding: 4px 0;
-		columns: 280px auto;
-		column-gap: 8px;
 	}
 	.gp-empty {
 		color: var(--color-base-40);
@@ -801,11 +1157,7 @@
 		text-align: center;
 	}
 
-	/* ── Letter groups ── */
-	.gp-letter-group {
-		margin-bottom: 2px;
-		/* Allow large letter groups to split across columns */
-	}
+	/* ── Letter header (rendered as its own virtualized row) ── */
 	.gp-letter {
 		font-weight: 700;
 		font-size: 0.75rem;
@@ -815,14 +1167,14 @@
 		letter-spacing: 0.08em;
 		background: var(--bg-secondary);
 		border-bottom: 1px solid var(--border);
-		break-after: avoid;
 	}
 
-	/* ── Term entry ── */
+	/* ── Term entry ──
+	   Virtualized: each rendered row lives inside VirtualList's absolutely
+	   positioned slot. No multi-column layout, no content-visibility — the
+	   virtual list already skips off-screen rows entirely. */
 	.gp-entry {
 		padding: 0 4px;
-		margin-bottom: 2px;
-		break-inside: avoid;
 	}
 	.gp-entry.hidden-term {
 		opacity: 0.4;
@@ -902,6 +1254,39 @@
 		text-decoration: underline; padding: 2px 4px;
 	}
 	.gp-anchor-clear:hover { color: var(--text-normal); }
+
+	/* Commonality panel (notes containing all selected terms) */
+	.gp-commonality {
+		flex-shrink: 0;
+		max-height: 40vh;
+		display: flex;
+		flex-direction: column;
+		background: color-mix(in srgb, var(--interactive-accent) 3%, var(--background-primary));
+		border-bottom: 1px solid var(--border);
+	}
+	.gp-commonality-header {
+		font-size: 11px;
+		color: var(--text-muted);
+		padding: 6px 12px;
+		font-weight: 600;
+		flex-shrink: 0;
+	}
+	.gp-commonality-empty {
+		font-size: 11px;
+		color: var(--text-faint);
+		padding: 6px 12px;
+		font-style: italic;
+	}
+	.gp-commonality-list {
+		overflow-y: auto;
+		padding: 0 8px 6px;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+	.gp-commonality-list .gp-ref {
+		padding: 3px 6px;
+	}
 	.gp-compound-badge {
 		font-size: 0.55rem;
 		font-weight: 700;
@@ -954,16 +1339,108 @@
 		border-radius: 3px;
 		text-decoration: none;
 		text-align: start;
-		white-space: nowrap;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 1px;
+		min-width: 0;
+		max-width: 100%;
+	}
+	.gp-ref-name {
+		display: block;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
-	.gp-ref.active {
+	.gp-ref.active .gp-ref-name {
 		font-weight: 700;
 	}
 	.gp-ref:hover {
-		text-decoration: underline;
 		background: var(--background-modifier-hover);
+	}
+	.gp-ref:hover .gp-ref-name {
+		text-decoration: underline;
+	}
+	/* One-line context snippet beneath the note name. Each snippet carries
+	   its own dir="auto" in the template so a Hebrew/Arabic snippet under
+	   a Latin note name (or vice versa) still reads in the correct
+	   direction. */
+	.gp-ref-snippet {
+		display: block;
+		font-size: 0.68rem;
+		line-height: 1.35;
+		color: var(--text-muted);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		text-align: start;
+		font-weight: 400;
+	}
+	.gp-ref-hit {
+		background: color-mix(in srgb, var(--interactive-accent) 24%, transparent);
+		color: var(--text-normal);
+		border-radius: 2px;
+		padding: 0 2px;
+		font-weight: 600;
+	}
+
+	/* ── Co-occurring terms chip strip ── */
+	/* Sits below the references list inside an expanded-row. The label +
+	   chips are plain flex; chips wrap to multiple rows when the panel is
+	   narrow, which getRowHeight accounts for by reserving two lines. */
+	.gp-cooccur {
+		margin-top: 6px;
+		padding-top: 5px;
+		border-top: 1px dashed var(--border);
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		min-width: 0;
+	}
+	.gp-cooccur-label {
+		font-size: 0.66rem;
+		font-weight: 600;
+		color: var(--text-faint);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+	.gp-cooccur-loading-text {
+		font-size: 0.7rem;
+		color: var(--text-muted);
+		font-style: italic;
+	}
+	.gp-cooccur-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 3px;
+	}
+	.gp-cooccur-chip {
+		background: var(--background-modifier-form-field);
+		border: 1px solid var(--border);
+		border-radius: 10px;
+		padding: 1px 7px 1px 8px;
+		font-family: inherit;
+		font-size: 0.7rem;
+		color: var(--text-muted);
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		line-height: 1.5;
+		transition: background-color 0.08s, color 0.08s, border-color 0.08s;
+	}
+	.gp-cooccur-chip:hover {
+		background: var(--background-modifier-hover);
+		color: var(--text-normal);
+		border-color: color-mix(in srgb, var(--interactive-accent) 35%, var(--border));
+	}
+	.gp-cooccur-term {
+		font-weight: 500;
+	}
+	.gp-cooccur-count {
+		font-size: 0.62rem;
+		color: var(--text-faint);
+		font-variant-numeric: tabular-nums;
 	}
 
 	/* ── Context menu ── */

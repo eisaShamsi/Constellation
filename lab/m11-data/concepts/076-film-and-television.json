@@ -1,0 +1,2218 @@
+{
+  "schema_version": 1,
+  "concepts": [
+    {
+      "id": "film-actor",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "ممثل",
+          "ممثل سينمائي"
+        ],
+        "de": [
+          "Filmschauspieler",
+          "Schauspieler"
+        ],
+        "en": [
+          "film actor",
+          "actor"
+        ],
+        "es": [
+          "actor de cine",
+          "actor"
+        ],
+        "fa": [
+          "بازیگر فیلم",
+          "بازیگر"
+        ],
+        "fr": [
+          "acteur de cinéma",
+          "acteur"
+        ],
+        "he": [
+          "שחקן קולנוע",
+          "שחקן"
+        ],
+        "hi": [
+          "फिल्म अभिनेता",
+          "अभिनेता"
+        ],
+        "ja": [
+          "映画俳優",
+          "俳優"
+        ],
+        "ko": [
+          "영화 배우",
+          "배우"
+        ],
+        "pt": [
+          "ator de cinema",
+          "ator"
+        ],
+        "ru": [
+          "киноактёр",
+          "актёр"
+        ],
+        "tr": [
+          "film oyuncusu",
+          "oyuncu"
+        ],
+        "ur": [
+          "فلم اداکار",
+          "اداکار"
+        ],
+        "zh": [
+          "电影演员",
+          "演员"
+        ]
+      }
+    },
+    {
+      "id": "actress",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "ممثلة"
+        ],
+        "de": [
+          "Schauspielerin"
+        ],
+        "en": [
+          "actress"
+        ],
+        "es": [
+          "actriz"
+        ],
+        "fa": [
+          "بازیگر زن"
+        ],
+        "fr": [
+          "actrice"
+        ],
+        "he": [
+          "שחקנית"
+        ],
+        "hi": [
+          "अभिनेत्री"
+        ],
+        "ja": [
+          "女優"
+        ],
+        "ko": [
+          "여배우"
+        ],
+        "pt": [
+          "atriz"
+        ],
+        "ru": [
+          "актриса"
+        ],
+        "tr": [
+          "aktris"
+        ],
+        "ur": [
+          "اداکارہ"
+        ],
+        "zh": [
+          "女演员"
+        ]
+      }
+    },
+    {
+      "id": "director",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "مخرج"
+        ],
+        "de": [
+          "Regisseur",
+          "Filmregisseur"
+        ],
+        "en": [
+          "director",
+          "film director"
+        ],
+        "es": [
+          "director",
+          "director de cine"
+        ],
+        "fa": [
+          "کارگردان"
+        ],
+        "fr": [
+          "réalisateur",
+          "metteur en scène"
+        ],
+        "he": [
+          "במאי",
+          "מsutton"
+        ],
+        "hi": [
+          "निर्देशक"
+        ],
+        "ja": [
+          "監督",
+          "映画監督"
+        ],
+        "ko": [
+          "감독",
+          "영화감독"
+        ],
+        "pt": [
+          "diretor",
+          "realizador"
+        ],
+        "ru": [
+          "режиссёр"
+        ],
+        "tr": [
+          "yönetmen"
+        ],
+        "ur": [
+          "ہدایتکار"
+        ],
+        "zh": [
+          "导演"
+        ]
+      }
+    },
+    {
+      "id": "screenwriter",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "كاتب سيناريو"
+        ],
+        "de": [
+          "Drehbuchautor"
+        ],
+        "en": [
+          "screenwriter"
+        ],
+        "es": [
+          "guionista"
+        ],
+        "fa": [
+          "فیلمنامه نویس"
+        ],
+        "fr": [
+          "scénariste"
+        ],
+        "he": [
+          "תסריטאי"
+        ],
+        "hi": [
+          "पटकथा लेखक"
+        ],
+        "ja": [
+          "脚本家"
+        ],
+        "ko": [
+          "시나리오 작가"
+        ],
+        "pt": [
+          "roteirista"
+        ],
+        "ru": [
+          "сценарист"
+        ],
+        "tr": [
+          "senaryo yazarı"
+        ],
+        "ur": [
+          "اسکرین رائٹر"
+        ],
+        "zh": [
+          "编剧"
+        ]
+      }
+    },
+    {
+      "id": "film-producer",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "منتج فيلم",
+          "منتج"
+        ],
+        "de": [
+          "Filmproduzent",
+          "Produzent"
+        ],
+        "en": [
+          "film producer",
+          "producer"
+        ],
+        "es": [
+          "productor de cine",
+          "productor"
+        ],
+        "fa": [
+          "تهیه کننده فیلم",
+          "تهیه کننده"
+        ],
+        "fr": [
+          "producteur de cinéma",
+          "producteur"
+        ],
+        "he": [
+          "מפיק קולנוע",
+          "מפיק"
+        ],
+        "hi": [
+          "फिल्म निर्माता",
+          "निर्माता"
+        ],
+        "ja": [
+          "映画プロデューサー",
+          "プロデューサー"
+        ],
+        "ko": [
+          "영화 제작자",
+          "제작자"
+        ],
+        "pt": [
+          "produtor de cinema",
+          "produtor"
+        ],
+        "ru": [
+          "кинопродюсер",
+          "продюсер"
+        ],
+        "tr": [
+          "film yapımcısı",
+          "yapımcı"
+        ],
+        "ur": [
+          "فلم پروڈیوسر",
+          "پروڈیوسر"
+        ],
+        "zh": [
+          "电影制片人",
+          "制片人"
+        ]
+      }
+    },
+    {
+      "id": "cinematographer",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "مصور سينمائي"
+        ],
+        "de": [
+          "Kameramann",
+          "Kamerafrau"
+        ],
+        "en": [
+          "cinematographer",
+          "director of photography"
+        ],
+        "es": [
+          "cinematógrafo",
+          "director de fotografía"
+        ],
+        "fa": [
+          "فیلمبردار"
+        ],
+        "fr": [
+          "directeur de la photographie",
+          "chef opérateur"
+        ],
+        "he": [
+          "צלם קולנוע"
+        ],
+        "hi": [
+          "छायाकार"
+        ],
+        "ja": [
+          "撮影監督"
+        ],
+        "ko": [
+          "촬영감독"
+        ],
+        "pt": [
+          "cinematógrafo",
+          "diretor de fotografia"
+        ],
+        "ru": [
+          "оператор-постановщик"
+        ],
+        "tr": [
+          "görüntü yönetmeni"
+        ],
+        "ur": [
+          "سینماٹوگرافر"
+        ],
+        "zh": [
+          "摄影师",
+          "摄影指导"
+        ]
+      }
+    },
+    {
+      "id": "film-editor",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "مونتير"
+        ],
+        "de": [
+          "Filmeditor",
+          "Cutter"
+        ],
+        "en": [
+          "film editor",
+          "editor"
+        ],
+        "es": [
+          "editor de cine",
+          "montajista"
+        ],
+        "fa": [
+          "تدوینگر فیلم"
+        ],
+        "fr": [
+          "monteur"
+        ],
+        "he": [
+          "עורך קולנוע"
+        ],
+        "hi": [
+          "फिल्म संपादक"
+        ],
+        "ja": [
+          "映画編集者"
+        ],
+        "ko": [
+          "영화 편집자"
+        ],
+        "pt": [
+          "editor de cinema",
+          "montador"
+        ],
+        "ru": [
+          "монтажёр"
+        ],
+        "tr": [
+          "film editörü",
+          "kurgucu"
+        ],
+        "ur": [
+          "فلم ایڈیٹر"
+        ],
+        "zh": [
+          "剪辑师"
+        ]
+      }
+    },
+    {
+      "id": "film-score",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "موسيقى الفيلم",
+          "الموسيقى التصويرية"
+        ],
+        "de": [
+          "Filmmusik"
+        ],
+        "en": [
+          "film score",
+          "movie score"
+        ],
+        "es": [
+          "banda sonora",
+          "música de película"
+        ],
+        "fa": [
+          "موسیقی متن فیلم"
+        ],
+        "fr": [
+          "bande originale",
+          "musique de film"
+        ],
+        "he": [
+          "פסקול"
+        ],
+        "hi": [
+          "फिल्म संगीत"
+        ],
+        "ja": [
+          "映画音楽"
+        ],
+        "ko": [
+          "영화 음악"
+        ],
+        "pt": [
+          "trilha sonora"
+        ],
+        "ru": [
+          "музыка к фильму",
+          "саундтрек"
+        ],
+        "tr": [
+          "film müziği"
+        ],
+        "ur": [
+          "فلم موسیقی"
+        ],
+        "zh": [
+          "电影配乐"
+        ]
+      }
+    },
+    {
+      "id": "documentary",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "فيلم وثائقي"
+        ],
+        "de": [
+          "Dokumentarfilm",
+          "Doku"
+        ],
+        "en": [
+          "documentary",
+          "documentary film"
+        ],
+        "es": [
+          "documental"
+        ],
+        "fa": [
+          "مستند",
+          "فیلم مستند"
+        ],
+        "fr": [
+          "documentaire"
+        ],
+        "he": [
+          "סרט תיעודי"
+        ],
+        "hi": [
+          "वृत्तचित्र"
+        ],
+        "ja": [
+          "ドキュメンタリー"
+        ],
+        "ko": [
+          "다큐멘터리"
+        ],
+        "pt": [
+          "documentário"
+        ],
+        "ru": [
+          "документальный фильм"
+        ],
+        "tr": [
+          "belgesel"
+        ],
+        "ur": [
+          "دستاویزی فلم"
+        ],
+        "zh": [
+          "纪录片"
+        ]
+      }
+    },
+    {
+      "id": "animated-film",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "فيلم رسوم متحركة",
+          "فيلم كرتوني"
+        ],
+        "de": [
+          "Animationsfilm",
+          "Zeichentrickfilm"
+        ],
+        "en": [
+          "animated film",
+          "animation"
+        ],
+        "es": [
+          "película de animación",
+          "película animada"
+        ],
+        "fa": [
+          "فیلم انیمیشن",
+          "انیمیشن"
+        ],
+        "fr": [
+          "film d'animation"
+        ],
+        "he": [
+          "סרט אנימציה"
+        ],
+        "hi": [
+          "एनिमेटेड फिल्म"
+        ],
+        "ja": [
+          "アニメ映画"
+        ],
+        "ko": [
+          "애니메이션 영화"
+        ],
+        "pt": [
+          "filme de animação"
+        ],
+        "ru": [
+          "мультипликационный фильм",
+          "мультфильм"
+        ],
+        "tr": [
+          "animasyon filmi"
+        ],
+        "ur": [
+          "متحرک فلم"
+        ],
+        "zh": [
+          "动画电影"
+        ]
+      }
+    },
+    {
+      "id": "horror-film",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "فيلم رعب"
+        ],
+        "de": [
+          "Horrorfilm"
+        ],
+        "en": [
+          "horror film",
+          "horror movie"
+        ],
+        "es": [
+          "película de terror",
+          "película de horror"
+        ],
+        "fa": [
+          "فیلم ترسناک"
+        ],
+        "fr": [
+          "film d'horreur"
+        ],
+        "he": [
+          "סרט אימה"
+        ],
+        "hi": [
+          "हॉरर फिल्म"
+        ],
+        "ja": [
+          "ホラー映画"
+        ],
+        "ko": [
+          "공포 영화"
+        ],
+        "pt": [
+          "filme de terror"
+        ],
+        "ru": [
+          "фильм ужасов"
+        ],
+        "tr": [
+          "korku filmi"
+        ],
+        "ur": [
+          "ہارر فلم"
+        ],
+        "zh": [
+          "恐怖片"
+        ]
+      }
+    },
+    {
+      "id": "comedy-film",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "فيلم كوميدي"
+        ],
+        "de": [
+          "Komödie",
+          "Komödienfilm"
+        ],
+        "en": [
+          "comedy film",
+          "comedy"
+        ],
+        "es": [
+          "comedia",
+          "película cómica"
+        ],
+        "fa": [
+          "فیلم کمدی"
+        ],
+        "fr": [
+          "comédie"
+        ],
+        "he": [
+          "סרט קומדיה"
+        ],
+        "hi": [
+          "कॉमेडी फिल्म"
+        ],
+        "ja": [
+          "コメディ映画"
+        ],
+        "ko": [
+          "코미디 영화"
+        ],
+        "pt": [
+          "comédia",
+          "filme cómico"
+        ],
+        "ru": [
+          "комедийный фильм",
+          "комедия"
+        ],
+        "tr": [
+          "komedi filmi"
+        ],
+        "ur": [
+          "کامیڈی فلم"
+        ],
+        "zh": [
+          "喜剧片"
+        ]
+      }
+    },
+    {
+      "id": "drama-film",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "فيلم درامي"
+        ],
+        "de": [
+          "Dramafilm",
+          "Drama"
+        ],
+        "en": [
+          "drama film",
+          "drama"
+        ],
+        "es": [
+          "drama",
+          "película dramática"
+        ],
+        "fa": [
+          "فیلم درام"
+        ],
+        "fr": [
+          "drame"
+        ],
+        "he": [
+          "סרט דרמה"
+        ],
+        "hi": [
+          "ड्रामा फिल्म"
+        ],
+        "ja": [
+          "ドラマ映画"
+        ],
+        "ko": [
+          "드라마 영화"
+        ],
+        "pt": [
+          "drama"
+        ],
+        "ru": [
+          "драматический фильм",
+          "драма"
+        ],
+        "tr": [
+          "dram filmi"
+        ],
+        "ur": [
+          "ڈراما فلم"
+        ],
+        "zh": [
+          "剧情片"
+        ]
+      }
+    },
+    {
+      "id": "thriller-film",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "فيلم إثارة"
+        ],
+        "de": [
+          "Thriller"
+        ],
+        "en": [
+          "thriller",
+          "thriller film"
+        ],
+        "es": [
+          "thriller",
+          "película de suspenso"
+        ],
+        "fa": [
+          "فیلم هیجان انگیز"
+        ],
+        "fr": [
+          "thriller"
+        ],
+        "he": [
+          "סרט מתח"
+        ],
+        "hi": [
+          "थ्रिलर फिल्म"
+        ],
+        "ja": [
+          "スリラー映画"
+        ],
+        "ko": [
+          "스릴러 영화"
+        ],
+        "pt": [
+          "thriller"
+        ],
+        "ru": [
+          "триллер"
+        ],
+        "tr": [
+          "gerilim filmi"
+        ],
+        "ur": [
+          "تھرلر فلم"
+        ],
+        "zh": [
+          "惊悚片"
+        ]
+      }
+    },
+    {
+      "id": "action-film",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "فيلم أكشن",
+          "فيلم حركة"
+        ],
+        "de": [
+          "Actionfilm"
+        ],
+        "en": [
+          "action film",
+          "action movie"
+        ],
+        "es": [
+          "película de acción"
+        ],
+        "fa": [
+          "فیلم اکشن"
+        ],
+        "fr": [
+          "film d'action"
+        ],
+        "he": [
+          "סרט אקשן"
+        ],
+        "hi": [
+          "एक्शन फिल्म"
+        ],
+        "ja": [
+          "アクション映画"
+        ],
+        "ko": [
+          "액션 영화"
+        ],
+        "pt": [
+          "filme de ação"
+        ],
+        "ru": [
+          "боевик"
+        ],
+        "tr": [
+          "aksiyon filmi"
+        ],
+        "ur": [
+          "ایکشن فلم"
+        ],
+        "zh": [
+          "动作片"
+        ]
+      }
+    },
+    {
+      "id": "science-fiction-film",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "فيلم خيال علمي"
+        ],
+        "de": [
+          "Science-Fiction-Film"
+        ],
+        "en": [
+          "science fiction film",
+          "sci-fi movie"
+        ],
+        "es": [
+          "película de ciencia ficción"
+        ],
+        "fa": [
+          "فیلم علمی تخیلی"
+        ],
+        "fr": [
+          "film de science-fiction"
+        ],
+        "he": [
+          "סרט מדע בדיוני"
+        ],
+        "hi": [
+          "साइंस फिक्शन फिल्म"
+        ],
+        "ja": [
+          "SF映画"
+        ],
+        "ko": [
+          "SF 영화"
+        ],
+        "pt": [
+          "filme de ficção científica"
+        ],
+        "ru": [
+          "научно-фантастический фильм",
+          "фантастика"
+        ],
+        "tr": [
+          "bilim kurgu filmi"
+        ],
+        "ur": [
+          "سائنس فکشن فلم"
+        ],
+        "zh": [
+          "科幻片"
+        ]
+      }
+    },
+    {
+      "id": "romance-film",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "فيلم رومانسي"
+        ],
+        "de": [
+          "Liebesfilm",
+          "Romanze"
+        ],
+        "en": [
+          "romance film",
+          "romantic movie"
+        ],
+        "es": [
+          "película romántica"
+        ],
+        "fa": [
+          "فیلم عاشقانه"
+        ],
+        "fr": [
+          "film romantique"
+        ],
+        "he": [
+          "סרט רומנטי"
+        ],
+        "hi": [
+          "रोमांटिक फिल्म"
+        ],
+        "ja": [
+          "ロマンス映画"
+        ],
+        "ko": [
+          "로맨스 영화"
+        ],
+        "pt": [
+          "filme romântico"
+        ],
+        "ru": [
+          "романтический фильм"
+        ],
+        "tr": [
+          "romantik film"
+        ],
+        "ur": [
+          "رومانٹک فلم"
+        ],
+        "zh": [
+          "爱情片"
+        ]
+      }
+    },
+    {
+      "id": "historical-film",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "فيلم تاريخي"
+        ],
+        "de": [
+          "Historienfilm"
+        ],
+        "en": [
+          "historical film",
+          "period film"
+        ],
+        "es": [
+          "película histórica"
+        ],
+        "fa": [
+          "فیلم تاریخی"
+        ],
+        "fr": [
+          "film historique"
+        ],
+        "he": [
+          "סרט היסטורי"
+        ],
+        "hi": [
+          "ऐतिहासिक फिल्म"
+        ],
+        "ja": [
+          "歴史映画",
+          "時代劇"
+        ],
+        "ko": [
+          "역사 영화"
+        ],
+        "pt": [
+          "filme histórico"
+        ],
+        "ru": [
+          "исторический фильм"
+        ],
+        "tr": [
+          "tarihi film"
+        ],
+        "ur": [
+          "تاریخی فلم"
+        ],
+        "zh": [
+          "历史片",
+          "古装片"
+        ]
+      }
+    },
+    {
+      "id": "film-festival",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "مهرجان سينمائي"
+        ],
+        "de": [
+          "Filmfestival",
+          "Filmfestspiele"
+        ],
+        "en": [
+          "film festival"
+        ],
+        "es": [
+          "festival de cine"
+        ],
+        "fa": [
+          "جشنواره فیلم"
+        ],
+        "fr": [
+          "festival de cinéma"
+        ],
+        "he": [
+          "פסטיבל קולנוע"
+        ],
+        "hi": [
+          "फिल्म महोत्सव"
+        ],
+        "ja": [
+          "映画祭"
+        ],
+        "ko": [
+          "영화제"
+        ],
+        "pt": [
+          "festival de cinema"
+        ],
+        "ru": [
+          "кинофестиваль"
+        ],
+        "tr": [
+          "film festivali"
+        ],
+        "ur": [
+          "فلم فیسٹیول"
+        ],
+        "zh": [
+          "电影节"
+        ]
+      }
+    },
+    {
+      "id": "film-premiere",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "العرض الأول",
+          "افتتاح الفيلم"
+        ],
+        "de": [
+          "Filmpremiere"
+        ],
+        "en": [
+          "film premiere",
+          "premiere"
+        ],
+        "es": [
+          "estreno",
+          "premiere"
+        ],
+        "fa": [
+          "اکران اول فیلم",
+          "پریمیر"
+        ],
+        "fr": [
+          "avant-première",
+          "première"
+        ],
+        "he": [
+          "פרמיירה"
+        ],
+        "hi": [
+          "फिल्म प्रीमियर"
+        ],
+        "ja": [
+          "映画プレミア"
+        ],
+        "ko": [
+          "영화 시사회"
+        ],
+        "pt": [
+          "estreia",
+          "première"
+        ],
+        "ru": [
+          "кинопремьера",
+          "премьера"
+        ],
+        "tr": [
+          "film galası",
+          "gala"
+        ],
+        "ur": [
+          "فلم پریمیئر"
+        ],
+        "zh": [
+          "电影首映式"
+        ]
+      }
+    },
+    {
+      "id": "film-trailer",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "إعلان الفيلم",
+          "تريلر"
+        ],
+        "de": [
+          "Filmtrailer",
+          "Trailer"
+        ],
+        "en": [
+          "film trailer",
+          "movie trailer",
+          "trailer"
+        ],
+        "es": [
+          "tráiler",
+          "avance"
+        ],
+        "fa": [
+          "تریلر فیلم"
+        ],
+        "fr": [
+          "bande-annonce"
+        ],
+        "he": [
+          "טריילר"
+        ],
+        "hi": [
+          "फिल्म ट्रेलर"
+        ],
+        "ja": [
+          "予告編"
+        ],
+        "ko": [
+          "영화 예고편"
+        ],
+        "pt": [
+          "trailer",
+          "teaser"
+        ],
+        "ru": [
+          "трейлер"
+        ],
+        "tr": [
+          "film fragmanı"
+        ],
+        "ur": [
+          "فلم ٹریلر"
+        ],
+        "zh": [
+          "电影预告片"
+        ]
+      }
+    },
+    {
+      "id": "film-poster",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "ملصق الفيلم"
+        ],
+        "de": [
+          "Filmplakat"
+        ],
+        "en": [
+          "film poster",
+          "movie poster"
+        ],
+        "es": [
+          "póster de película",
+          "cartel de película"
+        ],
+        "fa": [
+          "پوستر فیلم"
+        ],
+        "fr": [
+          "affiche de cinéma"
+        ],
+        "he": [
+          "כרזת סרט"
+        ],
+        "hi": [
+          "फिल्म पोस्टर"
+        ],
+        "ja": [
+          "映画ポスター"
+        ],
+        "ko": [
+          "영화 포스터"
+        ],
+        "pt": [
+          "cartaz de cinema"
+        ],
+        "ru": [
+          "киноплакат"
+        ],
+        "tr": [
+          "film afişi"
+        ],
+        "ur": [
+          "فلم پوسٹر"
+        ],
+        "zh": [
+          "电影海报"
+        ]
+      }
+    },
+    {
+      "id": "film-crew",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "طاقم الفيلم"
+        ],
+        "de": [
+          "Filmcrew",
+          "Filmteam"
+        ],
+        "en": [
+          "film crew"
+        ],
+        "es": [
+          "equipo de filmación",
+          "equipo técnico"
+        ],
+        "fa": [
+          "عوامل فیلم"
+        ],
+        "fr": [
+          "équipe de tournage"
+        ],
+        "he": [
+          "צוות הצילומים"
+        ],
+        "hi": [
+          "फिल्म क्रू"
+        ],
+        "ja": [
+          "撮影スタッフ"
+        ],
+        "ko": [
+          "영화 제작진"
+        ],
+        "pt": [
+          "equipa de filmagem"
+        ],
+        "ru": [
+          "съёмочная группа"
+        ],
+        "tr": [
+          "film ekibi"
+        ],
+        "ur": [
+          "فلم کرو"
+        ],
+        "zh": [
+          "电影剧组"
+        ]
+      }
+    },
+    {
+      "id": "film-set",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "كواليس التصوير",
+          "موقع التصوير"
+        ],
+        "de": [
+          "Filmset",
+          "Drehort"
+        ],
+        "en": [
+          "film set",
+          "movie set"
+        ],
+        "es": [
+          "plató de rodaje",
+          "set de filmación"
+        ],
+        "fa": [
+          "صحنه فیلم",
+          "لوکیشن فیلم"
+        ],
+        "fr": [
+          "plateau de tournage"
+        ],
+        "he": [
+          "סט צילומים"
+        ],
+        "hi": [
+          "फिल्म सेट"
+        ],
+        "ja": [
+          "撮影セット"
+        ],
+        "ko": [
+          "촬영 세트"
+        ],
+        "pt": [
+          "set de filmagem"
+        ],
+        "ru": [
+          "съёмочная площадка"
+        ],
+        "tr": [
+          "film seti"
+        ],
+        "ur": [
+          "فلم سیٹ"
+        ],
+        "zh": [
+          "片场",
+          "拍摄场地"
+        ]
+      }
+    },
+    {
+      "id": "film-studio",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "استوديو سينمائي"
+        ],
+        "de": [
+          "Filmstudio"
+        ],
+        "en": [
+          "film studio",
+          "movie studio"
+        ],
+        "es": [
+          "estudio de cine"
+        ],
+        "fa": [
+          "استودیوی فیلم"
+        ],
+        "fr": [
+          "studio de cinéma"
+        ],
+        "he": [
+          "סטודיו קולנועי"
+        ],
+        "hi": [
+          "फिल्म स्टूडियो"
+        ],
+        "ja": [
+          "映画スタジオ"
+        ],
+        "ko": [
+          "영화 스튜디오"
+        ],
+        "pt": [
+          "estúdio de cinema"
+        ],
+        "ru": [
+          "киностудия"
+        ],
+        "tr": [
+          "film stüdyosu"
+        ],
+        "ur": [
+          "فلم اسٹوڈیو"
+        ],
+        "zh": [
+          "电影制片厂"
+        ]
+      }
+    },
+    {
+      "id": "streaming-service",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "خدمة البث"
+        ],
+        "de": [
+          "Streamingdienst"
+        ],
+        "en": [
+          "streaming service",
+          "streaming platform"
+        ],
+        "es": [
+          "servicio de streaming",
+          "plataforma de streaming"
+        ],
+        "fa": [
+          "سرویس پخش آنلاین"
+        ],
+        "fr": [
+          "service de streaming",
+          "plateforme de streaming"
+        ],
+        "he": [
+          "שירות סטרימינג"
+        ],
+        "hi": [
+          "स्ट्रीमिंग सेवा"
+        ],
+        "ja": [
+          "ストリーミングサービス"
+        ],
+        "ko": [
+          "스트리밍 서비스"
+        ],
+        "pt": [
+          "serviço de streaming"
+        ],
+        "ru": [
+          "стриминговый сервис"
+        ],
+        "tr": [
+          "yayın akışı hizmeti"
+        ],
+        "ur": [
+          "اسٹریمنگ سروس"
+        ],
+        "zh": [
+          "流媒体服务"
+        ]
+      }
+    },
+    {
+      "id": "television-series",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "مسلسل تلفزيوني"
+        ],
+        "de": [
+          "Fernsehserie"
+        ],
+        "en": [
+          "television series",
+          "TV series"
+        ],
+        "es": [
+          "serie de televisión",
+          "serie televisiva"
+        ],
+        "fa": [
+          "سریال تلویزیونی"
+        ],
+        "fr": [
+          "série télévisée"
+        ],
+        "he": [
+          "סדרת טלוויזיה"
+        ],
+        "hi": [
+          "टेलीविजन श्रृंखला"
+        ],
+        "ja": [
+          "テレビシリーズ",
+          "テレビドラマ"
+        ],
+        "ko": [
+          "TV 시리즈",
+          "드라마"
+        ],
+        "pt": [
+          "série de televisão"
+        ],
+        "ru": [
+          "телесериал"
+        ],
+        "tr": [
+          "televizyon dizisi"
+        ],
+        "ur": [
+          "ٹیلی ویژن سیریز"
+        ],
+        "zh": [
+          "电视剧",
+          "电视系列"
+        ]
+      }
+    },
+    {
+      "id": "television-episode",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "حلقة تلفزيونية"
+        ],
+        "de": [
+          "Fernsehfolge",
+          "Episode"
+        ],
+        "en": [
+          "television episode",
+          "TV episode",
+          "episode"
+        ],
+        "es": [
+          "episodio",
+          "capítulo"
+        ],
+        "fa": [
+          "قسمت سریال"
+        ],
+        "fr": [
+          "épisode"
+        ],
+        "he": [
+          "פרק"
+        ],
+        "hi": [
+          "टेलीविजन एपिसोड"
+        ],
+        "ja": [
+          "テレビのエピソード",
+          "回"
+        ],
+        "ko": [
+          "TV 에피소드",
+          "회"
+        ],
+        "pt": [
+          "episódio"
+        ],
+        "ru": [
+          "эпизод",
+          "серия"
+        ],
+        "tr": [
+          "bölüm"
+        ],
+        "ur": [
+          "ٹی وی ایپیسوڈ"
+        ],
+        "zh": [
+          "电视剧集",
+          "集"
+        ]
+      }
+    },
+    {
+      "id": "television-channel",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "قناة تلفزيونية"
+        ],
+        "de": [
+          "Fernsehkanal",
+          "Fernsehsender"
+        ],
+        "en": [
+          "television channel",
+          "TV channel"
+        ],
+        "es": [
+          "canal de televisión"
+        ],
+        "fa": [
+          "کانال تلویزیون"
+        ],
+        "fr": [
+          "chaîne de télévision"
+        ],
+        "he": [
+          "ערוץ טלוויזיה"
+        ],
+        "hi": [
+          "टेलीविजन चैनल"
+        ],
+        "ja": [
+          "テレビチャンネル"
+        ],
+        "ko": [
+          "TV 채널"
+        ],
+        "pt": [
+          "canal de televisão"
+        ],
+        "ru": [
+          "телеканал"
+        ],
+        "tr": [
+          "televizyon kanalı"
+        ],
+        "ur": [
+          "ٹیلی ویژن چینل"
+        ],
+        "zh": [
+          "电视频道"
+        ]
+      }
+    },
+    {
+      "id": "news-anchor",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "مذيع أخبار",
+          "مقدم نشرة الأخبار"
+        ],
+        "de": [
+          "Nachrichtensprecher",
+          "Nachrichtenmoderatorin"
+        ],
+        "en": [
+          "news anchor",
+          "newscaster"
+        ],
+        "es": [
+          "presentador de noticias",
+          "locutor de noticias"
+        ],
+        "fa": [
+          "مجری اخبار"
+        ],
+        "fr": [
+          "présentateur de journal télévisé"
+        ],
+        "he": [
+          "קריין חדשות"
+        ],
+        "hi": [
+          "समाचार एंकर"
+        ],
+        "ja": [
+          "ニュースキャスター",
+          "アンカーマン"
+        ],
+        "ko": [
+          "뉴스 앵커"
+        ],
+        "pt": [
+          "apresentador de notícias",
+          "âncora de notícias"
+        ],
+        "ru": [
+          "телеведущий",
+          "диктор"
+        ],
+        "tr": [
+          "haber sunucusu"
+        ],
+        "ur": [
+          "نیوز اینکر"
+        ],
+        "zh": [
+          "新闻主播"
+        ]
+      }
+    },
+    {
+      "id": "talk-show",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "برنامج حواري",
+          "برنامج نقاش"
+        ],
+        "de": [
+          "Talkshow"
+        ],
+        "en": [
+          "talk show",
+          "chat show"
+        ],
+        "es": [
+          "programa de entrevistas",
+          "talk show"
+        ],
+        "fa": [
+          "برنامه گفتگو"
+        ],
+        "fr": [
+          "talk-show",
+          "émission de débat"
+        ],
+        "he": [
+          "תוכנית שיחה"
+        ],
+        "hi": [
+          "टॉक शो"
+        ],
+        "ja": [
+          "トークショー"
+        ],
+        "ko": [
+          "토크쇼"
+        ],
+        "pt": [
+          "talk show"
+        ],
+        "ru": [
+          "ток-шоу"
+        ],
+        "tr": [
+          "konuşma programı"
+        ],
+        "ur": [
+          "ٹاک شو"
+        ],
+        "zh": [
+          "脱口秀",
+          "访谈节目"
+        ]
+      }
+    },
+    {
+      "id": "reality-show",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "برنامج الواقع"
+        ],
+        "de": [
+          "Reality-Show"
+        ],
+        "en": [
+          "reality show",
+          "reality TV"
+        ],
+        "es": [
+          "programa de telerrealidad",
+          "reality show"
+        ],
+        "fa": [
+          "برنامه ریالیتی"
+        ],
+        "fr": [
+          "émission de téléréalité"
+        ],
+        "he": [
+          "תוכנית ריאליטי"
+        ],
+        "hi": [
+          "रियलिटी शो"
+        ],
+        "ja": [
+          "リアリティショー"
+        ],
+        "ko": [
+          "리얼리티 쇼"
+        ],
+        "pt": [
+          "reality show",
+          "programa de realidade"
+        ],
+        "ru": [
+          "реалити-шоу"
+        ],
+        "tr": [
+          "reality show",
+          "gerçek hayat programı"
+        ],
+        "ur": [
+          "ریالٹی شو"
+        ],
+        "zh": [
+          "真人秀"
+        ]
+      }
+    },
+    {
+      "id": "sitcom",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "مسلسل كوميدي"
+        ],
+        "de": [
+          "Sitcom"
+        ],
+        "en": [
+          "sitcom",
+          "situation comedy"
+        ],
+        "es": [
+          "comedia de situación",
+          "sitcom"
+        ],
+        "fa": [
+          "سیتکام",
+          "کمدی موقعیتی"
+        ],
+        "fr": [
+          "sitcom",
+          "comédie de situation"
+        ],
+        "he": [
+          "סיטקום"
+        ],
+        "hi": [
+          "सिटकॉम"
+        ],
+        "ja": [
+          "シットコム"
+        ],
+        "ko": [
+          "시트콤"
+        ],
+        "pt": [
+          "sitcom",
+          "comédia de situação"
+        ],
+        "ru": [
+          "ситком"
+        ],
+        "tr": [
+          "sitcom"
+        ],
+        "ur": [
+          "سیٹ کام"
+        ],
+        "zh": [
+          "情景喜剧"
+        ]
+      }
+    },
+    {
+      "id": "miniseries",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "مسلسل قصير",
+          "ميني سيريز"
+        ],
+        "de": [
+          "Miniserie"
+        ],
+        "en": [
+          "miniseries",
+          "limited series"
+        ],
+        "es": [
+          "miniserie"
+        ],
+        "fa": [
+          "مینی سریال"
+        ],
+        "fr": [
+          "minisérie"
+        ],
+        "he": [
+          "מיני-סדרה"
+        ],
+        "hi": [
+          "मिनीसीरीज"
+        ],
+        "ja": [
+          "ミニシリーズ"
+        ],
+        "ko": [
+          "미니시리즈"
+        ],
+        "pt": [
+          "minissérie"
+        ],
+        "ru": [
+          "мини-сериал"
+        ],
+        "tr": [
+          "mini dizi"
+        ],
+        "ur": [
+          "منی سیریز"
+        ],
+        "zh": [
+          "迷你剧"
+        ]
+      }
+    },
+    {
+      "id": "subtitle",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "ترجمة مكتوبة",
+          "ترجمة نصية"
+        ],
+        "de": [
+          "Untertitel"
+        ],
+        "en": [
+          "subtitle"
+        ],
+        "es": [
+          "subtítulo"
+        ],
+        "fa": [
+          "زیرنویس"
+        ],
+        "fr": [
+          "sous-titre"
+        ],
+        "he": [
+          "כתובית"
+        ],
+        "hi": [
+          "उपशीर्षक"
+        ],
+        "ja": [
+          "字幕"
+        ],
+        "ko": [
+          "자막"
+        ],
+        "pt": [
+          "legenda"
+        ],
+        "ru": [
+          "субтитр"
+        ],
+        "tr": [
+          "altyazı"
+        ],
+        "ur": [
+          "سب ٹائٹل"
+        ],
+        "zh": [
+          "字幕"
+        ]
+      }
+    },
+    {
+      "id": "dubbing",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "دبلجة"
+        ],
+        "de": [
+          "Synchronisation",
+          "Synchronfassung"
+        ],
+        "en": [
+          "dubbing",
+          "voice dubbing"
+        ],
+        "es": [
+          "doblaje"
+        ],
+        "fa": [
+          "دوبله"
+        ],
+        "fr": [
+          "doublage"
+        ],
+        "he": [
+          "סנכרון קול",
+          "דיבוב"
+        ],
+        "hi": [
+          "डबिंग"
+        ],
+        "ja": [
+          "吹き替え"
+        ],
+        "ko": [
+          "더빙"
+        ],
+        "pt": [
+          "dublagem"
+        ],
+        "ru": [
+          "дублирование",
+          "озвучка"
+        ],
+        "tr": [
+          "dublaj"
+        ],
+        "ur": [
+          "ڈبنگ"
+        ],
+        "zh": [
+          "配音",
+          "译制"
+        ]
+      }
+    },
+    {
+      "id": "screenplay",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "سيناريو"
+        ],
+        "de": [
+          "Drehbuch"
+        ],
+        "en": [
+          "screenplay",
+          "script"
+        ],
+        "es": [
+          "guion"
+        ],
+        "fa": [
+          "فیلمنامه"
+        ],
+        "fr": [
+          "scénario"
+        ],
+        "he": [
+          "תסריט"
+        ],
+        "hi": [
+          "पटकथा"
+        ],
+        "ja": [
+          "脚本",
+          "シナリオ"
+        ],
+        "ko": [
+          "시나리오",
+          "각본"
+        ],
+        "pt": [
+          "roteiro",
+          "guião"
+        ],
+        "ru": [
+          "сценарий"
+        ],
+        "tr": [
+          "senaryo"
+        ],
+        "ur": [
+          "اسکرین پلے"
+        ],
+        "zh": [
+          "剧本",
+          "电影剧本"
+        ]
+      }
+    },
+    {
+      "id": "storyboard",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "لوحة قصصية"
+        ],
+        "de": [
+          "Storyboard"
+        ],
+        "en": [
+          "storyboard"
+        ],
+        "es": [
+          "guion gráfico",
+          "storyboard"
+        ],
+        "fa": [
+          "استوری بورد"
+        ],
+        "fr": [
+          "storyboard",
+          "scénarimage"
+        ],
+        "he": [
+          "לוח סיפור"
+        ],
+        "hi": [
+          "स्टोरीबोर्ड"
+        ],
+        "ja": [
+          "絵コンテ"
+        ],
+        "ko": [
+          "스토리보드"
+        ],
+        "pt": [
+          "storyboard",
+          "esboço"
+        ],
+        "ru": [
+          "раскадровка"
+        ],
+        "tr": [
+          "hikaye tahtası"
+        ],
+        "ur": [
+          "اسٹوری بورڈ"
+        ],
+        "zh": [
+          "分镜头"
+        ]
+      }
+    },
+    {
+      "id": "film-genre",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "نوع الفيلم"
+        ],
+        "de": [
+          "Filmgenre"
+        ],
+        "en": [
+          "film genre",
+          "movie genre"
+        ],
+        "es": [
+          "género cinematográfico"
+        ],
+        "fa": [
+          "ژانر فیلم"
+        ],
+        "fr": [
+          "genre cinématographique"
+        ],
+        "he": [
+          "ז'אנר קולנועי"
+        ],
+        "hi": [
+          "फिल्म शैली"
+        ],
+        "ja": [
+          "映画ジャンル"
+        ],
+        "ko": [
+          "영화 장르"
+        ],
+        "pt": [
+          "género cinematográfico"
+        ],
+        "ru": [
+          "жанр кино",
+          "киножанр"
+        ],
+        "tr": [
+          "film türü"
+        ],
+        "ur": [
+          "فلم صنف"
+        ],
+        "zh": [
+          "电影类型"
+        ]
+      }
+    },
+    {
+      "id": "box-office",
+      "pos": "Noun",
+      "lemmas": {
+        "ar": [
+          "شباك التذاكر"
+        ],
+        "de": [
+          "Kinokasse",
+          "Box Office"
+        ],
+        "en": [
+          "box office"
+        ],
+        "es": [
+          "taquilla"
+        ],
+        "fa": [
+          "گیشه"
+        ],
+        "fr": [
+          "box-office",
+          "guichet"
+        ],
+        "he": [
+          "קופת הכרטיסים"
+        ],
+        "hi": [
+          "बॉक्स ऑफिस"
+        ],
+        "ja": [
+          "ボックスオフィス",
+          "興行収入"
+        ],
+        "ko": [
+          "박스오피스"
+        ],
+        "pt": [
+          "bilheteria",
+          "bilheteira"
+        ],
+        "ru": [
+          "касса",
+          "кассовые сборы"
+        ],
+        "tr": [
+          "gişe"
+        ],
+        "ur": [
+          "باکس آفس"
+        ],
+        "zh": [
+          "票房"
+        ]
+      }
+    }
+  ]
+}

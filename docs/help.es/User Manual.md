@@ -1,6 +1,6 @@
 # Manual de Usuario de Constellation
 
-**Version 0.3.4 | Marzo 2026**
+**Version 0.1.0 | Marzo 2026**
 
 Constellation es una aplicacion de escritorio para la Gestion del Conocimiento Personal (PKM) que permite administrar bibliotecas de notas en Markdown. Desarrollada con Tauri v2, SvelteKit y Rust, funciona de forma nativa en Windows, macOS y Linux con soporte completo para arabe y escritura RTL.
 
@@ -11,23 +11,25 @@ Constellation es una aplicacion de escritorio para la Gestion del Conocimiento P
 1. [Primeros Pasos](#primeros-pasos)
 2. [Universo y Bibliotecas](#universo-y-bibliotecas)
 3. [Crear y Editar Notas](#crear-y-editar-notas)
-4. [Vista Estelar (GraphMind)](#vista-estelar-graphmind)
-5. [Vista Dividida](#vista-dividida)
-6. [Indice](#indice)
-7. [Segunda Pantalla](#segunda-pantalla)
-8. [Propiedades y Frontmatter](#propiedades-y-frontmatter)
-9. [Plantillas](#plantillas)
-10. [Tablas](#tablas)
-11. [Tareas](#tareas)
-12. [Importador](#importador)
-13. [Calendario](#calendario)
-14. [Lens](#lens)
-15. [Configuracion](#configuracion)
-16. [Atajos de Teclado](#atajos-de-teclado)
-17. [Soporte RTL y Arabe](#soporte-rtl-y-arabe)
-18. [Seguridad y Privacidad](#seguridad-y-privacidad)
-19. [Mapa del conocimiento](#mapa-del-conocimiento)
-20. [Motor Cognitivo](#motor-cognitivo)
+4. [Busqueda](#busqueda)
+5. [Vista Estelar (GraphMind)](#vista-estelar-graphmind)
+6. [Vista Dividida](#vista-dividida)
+7. [Indice](#indice)
+8. [Constellation Sight](#constellation-sight)
+9. [Segunda Pantalla](#segunda-pantalla)
+10. [Propiedades y Frontmatter](#propiedades-y-frontmatter)
+11. [Plantillas](#plantillas)
+12. [Tablas](#tablas)
+13. [Tareas](#tareas)
+14. [Importador](#importador)
+15. [Calendario](#calendario)
+16. [Lens](#lens)
+17. [Configuracion](#configuracion)
+18. [Atajos de Teclado](#atajos-de-teclado)
+19. [Soporte RTL y Arabe](#soporte-rtl-y-arabe)
+20. [Seguridad y Privacidad](#seguridad-y-privacidad)
+21. [Mapa del conocimiento](#mapa-del-conocimiento)
+22. [Motor Cognitivo](#motor-cognitivo)
 
 ---
 
@@ -218,7 +220,87 @@ Tambien puedes enlazar a encabezados especificos: `[[Nombre de la Nota#Encabezad
 
 ---
 
-## 4. Vista Estelar (GraphMind)
+## 4. Busqueda
+
+Constellation incluye un motor de busqueda hibrido multilingue basado en SQLite FTS5 con clasificacion BM25, filtros de consulta estructurados y normalizacion optimizada para arabe. La busqueda es accesible desde la barra lateral.
+
+### Como buscar
+
+Haga clic en el icono de busqueda en la barra lateral o use `Ctrl+Shift+F` para activar el modo de busqueda. Escriba su consulta y los resultados aparecen tras un breve retardo (300ms). Presione `Escape` o haga clic en `x` para limpiar la busqueda y volver al arbol de archivos.
+
+### Sintaxis de busqueda
+
+| Sintaxis | Ejemplo | Que encuentra |
+|----------|---------|---------------|
+| Texto libre | `gestion de proyectos` | Notas que contienen esas palabras en titulo o cuerpo |
+| Filtro de etiqueta | `#investigacion` | Notas etiquetadas con `#investigacion` |
+| Filtro de propiedad | `status=activo` | Notas con propiedad frontmatter `status` igual a `activo` |
+| Filtro de wikilink | `links to [[Clima]]` | Notas que enlazan a `[[Clima]]` |
+| Ambito de biblioteca | `in:MiBiblioteca` | Restringe resultados a una biblioteca especifica |
+| Combinado | `#investigacion status=activo economia` | Todos los filtros aplicados juntos |
+
+### Insignias de tipo de coincidencia
+
+Cada resultado muestra una insignia de color que indica como se encontro la coincidencia. La insignia muestra una letra localizada para accesibilidad (segura para daltonicos):
+
+| Insignia | Color | Significado |
+|----------|-------|-------------|
+| **T** | Azul | Coincidencia de titulo — el termino aparece en el nombre de la nota |
+| **C** | Verde | Coincidencia de contenido — el termino aparece en el cuerpo de la nota |
+| **S** | Purpura | Coincidencia semantica — relacionado conceptualmente (requiere modelo de embeddings) |
+| **P** | Ambar | Coincidencia de propiedad — encontrado via filtro de propiedad frontmatter |
+| **#** | Rosa | Coincidencia de etiqueta — encontrado via filtro de etiqueta |
+| **W** | Azul claro | Coincidencia de wikilink — encontrado via filtro de wikilink |
+
+Las letras de las insignias estan localizadas para los 15 idiomas soportados.
+
+### Resultados fijados (Navegar entre resultados)
+
+Los resultados permanecen visibles despues de hacer clic en uno. La nota abierta se resalta en la lista de resultados para que vea cual esta visualizando. Haga clic en otro resultado para navegar a el sin repetir la busqueda.
+
+Para limpiar la busqueda, presione `Escape` o haga clic en `x`.
+
+### Navegacion por teclado
+
+| Tecla | Accion |
+|-------|--------|
+| `Flecha abajo` | Seleccionar siguiente resultado |
+| `Flecha arriba` | Seleccionar resultado anterior |
+| `Enter` | Abrir el resultado seleccionado |
+| `Escape` | Limpiar busqueda y volver al arbol de archivos |
+
+### Resaltado del termino de busqueda
+
+Al abrir una nota desde los resultados, todas las apariciones del termino se resaltan en el editor. Funciona con deteccion de diacriticos arabes — buscar "ادارة" resaltara "إدارة" y todas las variantes diacriticas.
+
+### Historial de busqueda
+
+Haga clic en el campo de busqueda cuando este vacio para ver sus busquedas recientes (ultimas 20 consultas). Cada entrada muestra el texto y hace cuanto se realizo. Haga clic en cualquier entrada para repetir esa busqueda. Use el enlace "Borrar historial" en la parte inferior para eliminar todo el historial.
+
+El historial se almacena localmente en su dispositivo y persiste entre reinicios de la aplicacion.
+
+### Search Hub
+
+El Search Hub es una experiencia de busqueda a pantalla completa. Haga clic en el icono de lupa en la barra del dock para abrirlo. Ambas barras laterales se colapsan para dar el maximo espacio. Escriba cualquier termino y Constellation busca en todas partes simultaneamente, agrupando resultados en 5 categorias: Titulos, Contenidos, Etiquetas, Propiedades y Wikilinks. Cada categoria tiene una seccion desplegable con un contador. Haga clic en cualquier resultado para abrirlo en el editor con todas las ocurrencias resaltadas. Aparece un boton "Volver al Search Hub" para que pueda regresar sin volver a buscar.
+
+### Operadores de enlace
+
+Constellation admite 6 operadores de busqueda de topologia de enlaces:
+
+| Sintaxis | Que encuentra |
+|----------|---------------|
+| `links to [[X]]` | Notas que enlazan a X (backlinks) |
+| `links from [[X]]` | Notas a las que X enlaza (enlaces salientes) |
+| `mutual [[X]]` | Notas enlazadas a X Y X enlaza de vuelta (bidireccional) |
+| `mentions [[X]]` | Notas que contienen el nombre de X sin un [[wikilink]] |
+| `orphans` | Notas sin enlaces entrantes ni salientes |
+| `links between [[X]] and [[Y]]` | Notas que enlazan tanto a X como a Y |
+
+Al escribir cualquier operador de enlace, el autocompletado `[[` muestra todas las notas del universo. Despues de seleccionar una nota, escriba `#` para completar encabezados o `|type:` para completar el tipo de enlace.
+
+---
+
+## 5. Vista Estelar (GraphMind)
 
 La Vista Estelar visualiza tus notas como un grafo 3D interactivo impulsado por el motor **GraphMind** (Pixi.js WebGL).
 
@@ -303,7 +385,7 @@ El nivel de madurez se actualiza automaticamente segun el numero de enlaces, la 
 
 ---
 
-## 5. Vista Dividida
+## 6. Vista Dividida
 
 La Vista Dividida te permite editar multiples notas lado a lado en la ventana principal.
 
@@ -332,7 +414,7 @@ Haz clic en cualquier panel para enfocarlo. El panel enfocado recibe los atajos 
 
 ---
 
-## 6. Indice
+## 7. Indice
 
 El Indice es un glosario completo de terminos de todas tus bibliotecas — cada palabra significativa, ordenada alfabeticamente con conteos de apariciones.
 
@@ -373,7 +455,49 @@ Cuando la Segunda Pantalla esta abierta:
 
 ---
 
-## 7. Segunda Pantalla
+## 8. Constellation Sight
+
+Constellation Sight visualiza todo su sistema de conocimiento como un grafico de pozo gravitacional. Responde a la pregunta: **"Como se ve mi conocimiento y que tan saludable esta?"**
+
+### Abrir Sight
+
+Haga clic en el **boton Sight** (icono de ojo) en la cinta izquierda. Aparece el grafico de pozo gravitacional. Haga clic en x para cerrar.
+
+### El Grafico de Pozo Gravitacional
+
+Las notas se organizan en anillos concentricos por importancia (centralidad). Las notas mas conectadas se ubican en el centro; las notas perifericas en los bordes. Dentro de cada anillo, las notas se agrupan por biblioteca (su organizacion). Color del nodo = biblioteca.
+
+| Elemento | Significado |
+|----------|-------------|
+| **Nodo grande** | Alta centralidad — conecta diferentes areas de conocimiento |
+| **Nodo pequeno** | Periferico — dentro de un area |
+| **Color del nodo** | Pertenencia a biblioteca |
+| **Linea solida** | Enlace entre dos notas |
+| **Flechas de direccion** | Pequenas flechas que muestran la direccion del enlace |
+| **Grosor de linea** | Nivel de confianza (grueso = establecido, delgado = hipotesis) |
+
+### Interaccion
+
+- **Clic simple** en un nodo: resalta su vecindario (todas las notas conectadas). Todo lo demas se atenua.
+- **Doble clic**: abre la nota en el editor.
+- **Clic en espacio vacio**: borra el resaltado.
+- **Desplazamiento**: zoom. **Arrastrar**: panoramica. **Ajustar a pantalla**: boton de la barra de herramientas.
+
+### Busqueda en Sight
+
+Haga clic en la lupa. Soporta todos los operadores: `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, texto libre y busqueda semantica. Los resultados muestran colores direccionales: verde (entrante), rojo (saliente).
+
+### Panel de Analiticas (SightPanel)
+
+Haga clic en el icono de cuadricula para abrir la barra lateral. Muestra: puntuacion de Salud del Universo (0-100), contadores de notas/enlaces/huerfanos, barras de tipo de enlace y confianza, top 10 puentes e Informacion del Conocimiento (evidencia mas fuerte, fundamentos debiles, tensiones, estancados, mas conectados, brechas de conocimiento).
+
+### Configuracion
+
+Icono de engranaje: ajuste el grosor del trazo de enlace, opacidad y tamano de flecha. La configuracion persiste entre sesiones.
+
+---
+
+## 9. Segunda Pantalla
 
 La Segunda Pantalla es una ventana complementaria basada en modos que se adapta al modo actual de tu barra lateral.
 
@@ -428,7 +552,7 @@ Todas las configuraciones visuales se propagan instantaneamente a la segunda pan
 
 ---
 
-## 8. Propiedades y Frontmatter
+## 10. Propiedades y Frontmatter
 
 Las notas pueden tener frontmatter YAML en la parte superior:
 
@@ -455,7 +579,7 @@ Alterna la visualizacion de propiedades en **Configuracion > Editor > Propiedade
 
 ---
 
-## 9. Plantillas
+## 11. Plantillas
 
 Crea plantillas de notas reutilizables:
 
@@ -474,7 +598,7 @@ Las plantillas admiten variables:
 
 ---
 
-## 10. Tablas
+## 12. Tablas
 
 ### Tablas Markdown
 
@@ -504,7 +628,7 @@ El editor de Documentos (TipTap) ofrece una experiencia visual de tablas:
 
 ---
 
-## 11. Tareas
+## 13. Tareas
 
 Constellation admite casillas de tareas en las notas:
 
@@ -517,7 +641,7 @@ En el modo de Vista Previa en Vivo, las casillas son clicables. Las tareas se pu
 
 ---
 
-## 12. Importador
+## 14. Importador
 
 Importa notas desde otras herramientas PKM:
 
@@ -529,7 +653,7 @@ Ve a **Configuracion > Importador** para iniciar una importacion.
 
 ---
 
-## 13. Calendario
+## 15. Calendario
 
 La vista de Calendario muestra las notas organizadas por fecha:
 
@@ -541,7 +665,7 @@ Abre el Calendario desde la barra lateral.
 
 ---
 
-## 14. Lens
+## 16. Lens
 
 Lens proporciona vistas filtradas de tus notas:
 
@@ -551,7 +675,7 @@ Lens proporciona vistas filtradas de tus notas:
 
 ---
 
-## 15. Configuracion
+## 17. Configuracion
 
 Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctrl+,`.
 
@@ -561,6 +685,32 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 - Tema (Claro / Oscuro)
 - Fuente de interfaz, Fuente de texto, Fuente monoespaciada, Tamano de fuente
 - Tema de fuente — combinaciones de fuentes predefinidas (Maquina de escribir, Clasico, Moderno, etc.) para cambio rapido
+- **Temas** — elige entre seis temas integrados, crea temas personalizados (editor de cinco colores), importa temas del registro de la comunidad de Obsidian (200+ temas), o importa un archivo de tema `.json`. Elimina cualquier tema personalizado con el boton ✕ al pasar el raton.
+
+### Style Settings
+
+Una pestana dedicada para la personalizacion detallada de cada elemento visible de la interfaz, aplicada en vivo al tema activo.
+
+- **Colores** — fondo, superficies, texto (normal/atenuado/debil), acento, bordes, colores de estado
+- **Tipografia** — tamanos de fuente de interfaz/nota/codigo, tamanos H1–H6, peso de encabezados, alturas de linea, espacio entre parrafos
+- **Diseno y forma** — radios de esquina pequeno/mediano/grande, anchos de borde, sombras, longitud de linea legible del editor, margenes laterales
+- **Componentes** — barra de listones, barra de acciones lateral, barra de diseno (alternadores de panel), barra superior/tiras de pestanas, barra de estado, barra lateral derecha (inspector), explorador de archivos (notas del Universo, universos hijo, bibliotecas, carpetas, notas), botones, etiquetas, callouts — cada uno con tamano, radio, color independientes, y estilo de estado activo cuando corresponda
+- **Editor** — color/hover/decoracion de enlace, color/fondo/radio de codigo en linea, ancho/color de la barra de cita, color del cursor, fondo de seleccion
+
+**Importar / Exportar** — barra de herramientas arriba de la pestana:
+- Pegar desde el portapapeles (un clic)
+- Importar / Pegar (area de texto con Fusionar o Reemplazar)
+- Desde archivo (.json)
+- Copiar (valores actuales al portapapeles)
+- Exportar (.json)
+
+El formato coincide exactamente con el plugin Style Settings de Obsidian, por lo que puedes compartir ajustes entre Obsidian y Constellation.
+
+Los cambios se guardan automaticamente en el tema activo; si editas un tema integrado, se auto-clona en tus temas personalizados para que los cambios persistan sin modificar el original.
+
+### Anulaciones del motor arabe
+
+Un panel por Universo donde fijas como el motor arabe analiza ciertas formas superficiales — tus propias acunaciones, nombres locales, prestamos especificos de tu campo, o casos en los que no estas de acuerdo con la lectura automatica del motor. Cada anulacion vence al FST generativo, a la cascada y al respaldo heuristico. Anadir o eliminar una anulacion dispara una reindexacion focalizada solo sobre las notas que contienen la superficie afectada — sin reconstruccion completa. Consulta la seccion 19 ("Soporte RTL y Arabe") para el paso a paso.
 
 ### Editor
 
@@ -583,7 +733,7 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 
 ---
 
-## 16. Atajos de Teclado
+## 18. Atajos de Teclado
 
 ### Globales
 
@@ -623,7 +773,7 @@ Accede a la Configuracion desde el icono de engranaje en la barra lateral o `Ctr
 
 ---
 
-## 17. Soporte RTL y Arabe
+## 19. Soporte RTL y Arabe
 
 Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y otros idiomas con escritura RTL:
 
@@ -640,9 +790,37 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 2. Opcionalmente, establece una fuente dedicada para arabe en **Configuracion > General > Fuentes de escritura**
 3. Las notas con contenido en arabe se renderizaran automaticamente en RTL
 
+### Anulaciones del motor arabe
+
+El motor arabe de Constellation es un analizador morfologico de cinco capas que corre bajo cada busqueda, cada enlace y cada entrada del indice. Entiende raices, patrones, nombres propios, prestamos y reparaciones fonologicas — de modo que una consulta por كاتب encuentra كتبنا y كتاب, pero وائل se mantiene intacto como nombre en lugar de ser mutilado a ائل.
+
+El panel **Anulaciones del arabe** en Configuracion es donde le ensenas al motor tu propia terminologia. Cada anulacion es la respuesta soberana — vence al FST generativo, a la cascada y al respaldo heuristico.
+
+**Cuando usar anulaciones:**
+- Nombres de personas, toponimos locales o terminos especificos de tu campo que el motor no conoce
+- Acunaciones o siglas propias de tu Universo
+- Prestamos donde quieras preservar una grafia concreta
+- Cualquier caso en el que el analisis automatico del motor no coincida con tu forma de leer la palabra
+
+**Paso a paso:**
+
+1. Abre **Configuracion** (icono del engranaje o `Ctrl + ,` / `Cmd + ,`) y selecciona **Anulaciones del arabe** en la barra lateral.
+2. Haz clic en **Anadir anulacion**.
+3. Rellena:
+   - **Forma superficial** — la palabra arabe tal como la tecleas
+   - **Lema** — la forma canonica que debe devolver el motor
+   - **Raiz** (opcional) — 3 o 4 consonantes si la palabra tiene raiz clasica
+   - **Patron** (opcional) — p. ej. `فاعل`
+   - **Categoria** — Nombre propio / Sustantivo / Adjetivo / Adverbio / Verbo / Particula / Extranjero / Desconocido
+   - **Nota** (opcional) — una linea de contexto para ti mismo
+4. Haz clic en **Guardar**. El panel muestra **Reindexando…** mientras cada nota que contiene la superficie se vuelve a tokenizar y, al terminar, **Se reindexaron N nota(s)**.
+5. Para eliminar una anulacion, haz clic en la **x** de su fila — el mismo barrido de reindexacion corre al reves.
+
+Las anulaciones se guardan por Universo en `<universo>/.constellation/arabic-overrides.json` — texto plano, ordenado alfabeticamente, escritura atomica. Puedes ponerlo bajo control de versiones o compartirlo entre dispositivos.
+
 ---
 
-## 18. Seguridad y Privacidad
+## 20. Seguridad y Privacidad
 
 - **Todos los datos permanecen locales** — sin sincronizacion en la nube, sin telemetria, sin rastreo
 - **Archivos Markdown** — tus notas son archivos de texto plano que te pertenecen completamente
@@ -652,7 +830,7 @@ Constellation ofrece soporte de primera clase para arabe, hebreo, persa, urdu y 
 
 ---
 
-## 19. Mapa del conocimiento
+## 21. Mapa del conocimiento
 
 El Mapa del conocimiento es una visualizacion radial (sunburst) que muestra la estructura, densidad y madurez de todo tu universo de conocimiento.
 
@@ -685,7 +863,7 @@ Despues de abrir una nota desde el Mapa, aparece un boton "Volver al Mapa" en la
 
 ---
 
-## 20. Motor Cognitivo
+## 22. Motor Cognitivo
 
 El Motor Cognitivo es el sistema de inteligencia integrado de Constellation que analiza tus notas y descubre patrones ocultos y relaciones entre tus ideas. Su filosofia fundamental:
 
@@ -938,5 +1116,5 @@ Todas las herramientas del Motor Cognitivo se configuran desde **Ajustes > Motor
 
 ---
 
-*Manual de Usuario de Constellation — Version 0.3.4 — Marzo 2026*
+*Manual de Usuario de Constellation — Version 0.1.0 — Marzo 2026*
 *uconstellation.world*

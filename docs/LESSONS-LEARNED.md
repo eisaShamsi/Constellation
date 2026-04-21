@@ -141,5 +141,319 @@ In the callout freeze case: seven rounds of patches addressed symptoms (cursor g
 
 ---
 
-*Last updated: 2026-03-31*
-*For: Constellation — eNotePane development cycle*
+## LL-015: Always Test Production Before Chasing Dev-Mode Performance
+**Discovered:** 2026-04-15 (boot-perf saga on 7,600-note Universe)
+
+Tauri v2 on Windows in dev mode (`npm run tauri dev` via Vite + WebView2 + DevTools attachment) introduces massive per-IPC latency — measured at ~37 seconds per command dispatch on the test hardware. The *same code* compiled as a production `.exe` (via `npm run tauri build`) has no such delay — the production app boots in 1s UI / 8s fully responsive where dev mode was 25s / 136s.
+
+Hours of debugging went into chasing a phantom that only exists in dev mode. Dev-mode timings are NOT representative of user experience and must never be used as the signal for "is this fast enough to ship."
+
+**Rule:** When performance is the question, always measure against a production build. Dev-mode numbers are only useful for *relative* comparisons within the same run, never as an absolute ship-gate.
+
+---
+
+## LL-016: Cache at the Call Site When Callers Are Unknown
+**Discovered:** 2026-04-15 (load_all_libraries 50-calls-per-boot)
+
+Diagnostics showed `load_all_libraries` was being invoked 50+ times per boot from many code paths (both known and mystery callers in reactive cascades, file watchers, map commands, and validation paths). Each call re-read `libraries.json` from disk and re-parsed JSON. Under Tauri's IPC queue this produced a 60-second boot hang.
+
+Auditing every call site to remove redundant calls would have taken hours and missed future callers. The better fix: add an in-memory cache at the callee side, keyed by a stable invariant (active universe path), invalidated by the two functions that mutate the underlying state (`save_libraries` and `set_active_universe`). All 50+ callers — present and future, known and unknown — now get instant reads automatically.
+
+**Rule:** If a function is called from many places across the codebase and the data rarely changes, cache the result inside the function rather than auditing every call site. Invalidation points should be the few places that mutate the underlying data, not the many places that read it.
+
+---
+
+## LL-017: When Patching Fails, Spawn Adversarial Expert Agents
+**Discovered:** 2026-04-15 (boot-perf saga)
+
+After 4 patch attempts on the boot-perf issue failed, continuing to guess was clearly wrong (per LL-014). The breakthrough came from spawning three AI agent personas in parallel — an Obsidian internals expert, a Tauri/Rust systems expert, and a PKM architecture generalist — each instructed to review the proposed fix adversarially and produce a structured memo with verdict, risks, and acceptance criteria.
+
+Their convergent findings identified architectural errors I had missed (especially: "Constellation awaits backend work before the window is shown; Obsidian doesn't") and produced 5 concrete ship-gate criteria that became `lab/boot-perf/BOOT-BUDGET.md`. The objective criteria transformed further work from blind patching into measurable progress.
+
+**Rule:** When LL-014 triggers ("stop patching"), don't just stop — actively escalate to adversarial expert review. Spawn 2–3 independent AI reviewers with distinct perspectives, produce concrete numerical acceptance criteria, and only then resume implementation. The first move out of a patching loop should be a lab harness and a referee panel, not another patch.
+
+---
+
+## LL-018: Paint-First UI — Never Gate First Paint on IPC
+**Discovered:** 2026-04-15 (boot-perf expert panel)
+
+Constellation's boot originally awaited 7+ serialized IPC calls before setting `appReady = true`, meaning the loading spinner could not be replaced until the slowest Rust handler returned. On large Universes with Tauri's command-queue contention, this gated first paint on tens of seconds of backend work.
+
+Obsidian does not do this — it shows its shell immediately and hydrates data asynchronously. Every competitor that paints faster than Constellation does this. The fix is structural: in `initializeApp`, call `appReady = true` synchronously at the top; let every data load run afterward as a fire-and-forget that populates reactive stores progressively.
+
+**Rule:** First paint MUST NOT await backend work. The UI shell shows immediately; data arrives asynchronously and fills in. This applies at every level — layout mount, tab open, settings panel, any dialog. If a component's first render is gated on an `await invoke(...)`, refactor it.
+
+---
+
+## LL-019: PIXI v8 + Tauri CSP — Import `pixi.js/unsafe-eval` as a Side-Effect
+**Discovered:** 2026-04-16 (Sky View rendering bug)
+
+Sky View was returning data, pushing it into `skyNodes`/`skyLinks`, reaching the PIXI `Application.init()` call — and then rendering an empty black canvas with "0 nodes · 0 edges" in the status bar. No visible error in the DevTools console.
+
+Root cause: PIXI v8 generates WebGL shader programs at runtime using `new Function(...)`. Tauri's default CSP does not allow `unsafe-eval`, so every shader compile throws `"Current environment does not allow unsafe-eval, please use pixi.js/unsafe-eval module to enable support."` PIXI catches the throw internally and leaves the renderer half-constructed — no crash, no red border, just a silent empty canvas.
+
+The throw never surfaced in the normal error paths; only after a 13-component disassembly with progressive probes (A–I inside `init()`) did the caught error get re-logged and identified. Once seen, the fix is one line:
+
+```ts
+// MUST be the first PIXI-related import — pure side-effect
+import 'pixi.js/unsafe-eval';
+import { Application, Container, Graphics, Text } from 'pixi.js';
+```
+
+`pixi.js/unsafe-eval` ships a pre-compiled shader generator that does not use `new Function()`. It must be imported **before** any PIXI class is constructed. Relaxing the app-wide CSP was rejected — weakening `unsafe-eval` for the whole app to accommodate one library's default build is a security regression across the entire frontend.
+
+**Rule:** When a WebGL / Canvas / GPU library fails silently on a Tauri target, suspect CSP — the default is strict and any library using `new Function()` or `eval()` for runtime codegen will fail without surfacing an error. Prefer the library's pre-compiled / no-eval variant via a side-effect import before any usage. Never relax the app-wide CSP to work around a single library's default build.
+
+---
+
+## LL-020: Wall-Clock vs Server-Time Decides Whether the Bottleneck Is in Your Code
+**Discovered:** 2026-04-16 (boot-perf cold-start round 3)
+
+`cache_boot_snapshot_core` frontend wall-clock was 27,710 ms. Server-side phase timings (ensure_db, open_reader, read_notes) summed to 8,094 ms. The delta — **19,616 ms of pure queue/contention wait** — proved the bottleneck was not inside the Rust function at all. It was the OS I/O scheduler round-robining 34 concurrent boot IPCs on Windows NTFS and starving the one we needed first.
+
+Without this split attribution I would have optimized Rust code that was already fast enough. The fix wasn't inside the handler; it was **ordering the call sites** (await `refreshLibraryCaches()` before fan-out) so the critical IPC got exclusive I/O until hydration fired.
+
+The same measurement also separated the two real costs: 8 s was genuine Rust work (row-store full scan — fixed with `CREATE INDEX IF NOT EXISTS idx_note_boot_snapshot ON note_meta(name, path, library_name)` — dropped to 5 ms, 1,600×), and the other 19 s was pure queue. Two root causes, one measurement to tell them apart.
+
+**Rule:** For any frontend `invoke(...)` on the critical path, always instrument both:
+1. Frontend `performance.now()` wall-clock around the invoke.
+2. Rust-side per-phase `Instant::now()` checkpoints returned in the response struct.
+
+If `wall_ms >> sum(server_timings_ms)`, the delta is IPC queue / OS contention — optimize by reordering, de-paralleling fire-and-forget calls, or moving work off the critical path. If `wall_ms ≈ sum(server_timings_ms)`, the bottleneck is genuinely inside the handler — optimize the Rust code or the SQL plan. Never optimize blind; the fix direction flips based on which pattern you have.
+
+**Corollary — covering indexes on row-stores.** SQLite is a row store. A `SELECT a, b, c FROM wide_table` still reads every page to find a/b/c — including columns you never asked for (body_text, JSON blobs). For narrow projections on wide tables, a covering index (`CREATE INDEX ... ON table(a, b, c)`) lets the planner do an index-only scan against a small, dense index instead of a full-page scan against the wide row-store. Cost is trivial disk; speedup is typically 100–1000×.
+
+---
+
+## LL-021: The Five-Stamp IPC Diagnostic — And Why a Measured Queue Is Not a Diagnosed Queue
+**Discovered:** 2026-04-19 (boot-perf Criterion 2 closure, Round 1 → Round 3)
+**Status:** Revised after Round 3 falsified the original "fix". The rule below is what survives the measurement.
+
+LL-020 identified the wall-vs-server gap and attributed it to OS I/O contention, fixed by reordering call sites. But after ordering was fixed, cold-boot still showed `hydrated_ms ≈ 17.8 s` on the same 7,600-note Universe. Round 1 instrumentation (`Instant::now()` inside the command body, transport-time via Unix timestamps) measured `wall = 23,103 ms`, `sum(server_timings) = 170 ms`, `transport = 19 ms`, `assign = 0 ms` — leaving **22.9 s completely unaccounted**. The gap was not in transport, not in serialization, not in the JS assign cascade, and not in the Rust body as measured.
+
+The blind spot was simple: `Instant::now()` stamped at the command body's first line measures only *in-body elapsed*. It cannot see the time between JS issuing `invoke(...)` and the Rust dispatcher actually running the body — the **pre-body queue**.
+
+### What survives: the five-stamp diagnostic
+
+Always instrument all five. If only some are present, you are blind to one of the failure modes:
+
+1. `invoke_start_unix_ms` (JS, **before** `await invoke(...)`).
+2. `server_start_unix_ms` (Rust, **first line of body**, before any work).
+3. Per-phase `Instant::now()` checkpoints inside the Rust body.
+4. `server_return_unix_ms` (Rust, last line before returning).
+5. `client_recv_unix_ms` (JS, **immediately after** `await invoke(...)` resolves).
+
+Derivations:
+
+- `queue_ms = server_start_unix_ms - invoke_start_unix_ms` → **pre-body dispatcher wait**.
+- `body_ms = server_return_unix_ms - server_start_unix_ms` → **pure Rust execution** (same as LL-020's `sum(server_timings)`).
+- `transport_ms = client_recv_unix_ms - server_return_unix_ms` → **serialization + IPC pipe + JS task-queue wait**.
+- `wall_ms = client_recv_unix_ms - invoke_start_unix_ms` → **total elapsed from JS perspective**.
+
+Check: `queue_ms + body_ms + transport_ms ≈ wall_ms` should hold within ±clock-skew noise (<10 ms on the same machine). If it doesn't, the clock drifted or one of the stamps is wrong.
+
+Round 2 applied this model and produced decisive evidence on the trial Universe:
+
+| field | value | interpretation |
+|:---|---:|:---|
+| `core_wall_ms` | 17,314 ms | JS-side wall |
+| `core_queue_ms` | **17,224 ms** | pre-body dispatcher wait |
+| `core_body_ms` | **72 ms** | pure SQLite work |
+| `graph_queue_ms` | **96 ms** | graph fires via rIC — runtime idle by then |
+| `graph_body_ms` | 2,286 ms | graph SQLite + serialization |
+
+**The diagnostic was correct**: 99.5 % of core-phase wall was pre-body queue, not transport, not body, not serialization. Keep this pattern.
+
+### What did NOT survive: the spawn_blocking theory
+
+Round 2's diagnosis jumped from *measured queue* to *hypothesized cause*: "`#[tauri::command] pub fn` dispatches onto Tokio's ~4-thread async-runtime worker pool; 30+ sync fan-out commands saturate it; the core snapshot waits for a worker." The proposed fix was to declare the snapshot commands `async fn` wrapping `tauri::async_runtime::spawn_blocking(move || impl(..)).await` — on the theory that this shifts the sync body off the async pool onto Tokio's 512-thread blocking pool.
+
+That fix landed in commit `5f60448`. Round 3 measurement on the exact same trial Universe, same Rust release binary, same boot sequence:
+
+| field | Round 2 (before fix) | Round 3 (after fix) | Δ |
+|:---|---:|---:|---:|
+| `hydrated_ms` | 17,800 ms | **20,610 ms** | **+2.8 s worse** |
+| `core_queue_ms` | 17,224 ms | **19,880 ms** | **+2.7 s worse** |
+| `core_body_ms` | 72 ms | 112 ms | +40 ms |
+| `graph_queue_ms` | 96 ms | ~90 ms | ≈flat |
+
+The fix made the queue **slightly worse**, not zero. The root-cause theory was falsified. Commit `5f60448` was reverted in `f5f0b6a`.
+
+**Why the theory failed** (the investigation still owes a definitive answer — see follow-up below — but at least one of these must be true):
+
+- **(a)** Tauri v2's `#[tauri::command]` macro already dispatches sync bodies onto `spawn_blocking` internally. In that case the wrapper I added was a no-op plus one extra async task hop — explaining the +2.7 s regression as pure overhead, not correction.
+- **(b)** The queue is not async-worker-pool contention at all. Candidates: per-command receiver serialization, a mutex in the webview IPC drain, the WebView2 IPC message channel itself being single-consumer, or the fan-out occupying a resource the core snapshot also needs that is **not** the worker pool (e.g., the SQLite file's OS-level read contention before WAL warm-up).
+- **(c)** Something I haven't thought of.
+
+### The rule that survives
+
+1. **Measurement diagnoses only the stage.** The five-stamp model tells you *where* time is spent (queue vs. body vs. transport). It does **not** tell you *why* time is spent there. Do not skip the second question.
+2. **Before proposing a runtime-internals fix, read the runtime's actual source** (or run a targeted experiment that can only succeed if the hypothesis holds). A `spawn_blocking` wrapper should have been preceded by grep'ing `tauri-runtime` / `tauri-macros` for whether sync commands are already wrapped. They may be. I didn't check. That is the mistake LL-021 now exists to prevent.
+3. **If a fix regresses the metric it was supposed to improve, revert immediately** — don't stack a "tuning" commit on top. The regression is evidence the model is wrong, not that the fix needs tuning.
+4. **Keep the five-stamp diagnostic instrumentation permanently.** It is cheap (two `Date.now()` + two `SystemTime::now()`), works in release, and is the only way to distinguish queue from body from transport. Without it, a 20 s boot looks exactly like a 2 s boot followed by 18 s of mystery JS work — and you will fix the wrong thing.
+
+### Follow-up resolved — Rounds 4 → 7 (added 2026-04-19)
+
+The follow-up investigation closed Criterion 2 on 2026-04-19 at `hydrated_ms = 811 ms` (trial Universe, commit `8a74949`). It took four more rounds to get there. The methodology that worked — and that must be repeated rather than reinvented — is the **escalating-specificity diagnostic stack**:
+
+#### Stage 1 — Queue-time stamps (LL-021's original instrumentation)
+
+The five-stamp model correctly said "the 20 s is pre-body queue, not body, not transport." That narrowed the search to "what happens between JS `postMessage` and Rust body starting." This is table stakes for any IPC regression. Without it you are guessing.
+
+#### Stage 2 — "Broadly plausible" patch rounds (Rounds 4 and 5)
+
+Convert every sync `#[tauri::command]` in the obvious fan-out to `#[tauri::command(async)]` based on the theory "sync commands run inline on the UI thread, so they serialize." The theory is correct as a mechanism but useless as a diagnosis — *which* sync command is the blocker is still unread. Rounds 4 and 5 each converted a cluster (layout fan-out, then DashboardView fan-out) and each left `core_queue_ms` statistically unchanged.
+
+**When this pattern fires twice without moving the metric, LL-014 triggers (three-strike rule). Stop patching.**
+
+#### Stage 3 — Cheap falsifiers (adversarial investigation)
+
+Dispatch an agent with the instruction "try to falsify the UI-thread-contention theory." It will produce two or three specific hypotheses. For each, find a falsifying test that costs one line of code:
+
+- *Hypothesis*: DashboardView mount is the blocker → gate the whole subtree with `{#if false && ...}`. One edit. Measurement: `core_queue_ms` unchanged. Subtree off the critical path. Hypothesis falsified.
+- *Hypothesis*: JS itself is blocked (a microtask/promise chain is stuck, not awaiting Rust) → add a `setInterval(…, 100)` from `boot:paint` onward, record `boot_heartbeat_max_gap_ms`, freeze at `boot:hydrated`. Measurement: max gap = 112 ms during an 18,614 ms queue window. JS is fully alive. Hypothesis falsified.
+
+**Cheap falsifiers are the tool of choice the moment a third-hit LL-014 trigger happens.** They cost minutes, not hours, and they eliminate hypotheses definitively. The DashboardView gate was 14 characters. The heartbeat was one `setInterval` + max-gap tracking. Both produced irrefutable verdicts.
+
+#### Stage 4 — Rust-side IPC arrival tracer (the instrument that actually names the culprit)
+
+By elimination after Stage 3: the 18.6 s lives between JS `postMessage` and Rust `invoke_handler` dispatch. That's upstream of every `Instant::now()` we had. The instrument needed is one a per-command stamp **at the dispatcher**, independent of any edits to individual command bodies.
+
+Pattern (Constellation implementation in `src-tauri/src/perf_trace.rs` + `src-tauri/src/lib.rs`):
+
+```rust
+// perf_trace.rs
+static TRACE_LOG: Mutex<Vec<(String, u64)>> = Mutex::new(Vec::new());
+
+pub fn record(cmd: &str) {
+    let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
+    if let Ok(mut log) = TRACE_LOG.lock() { log.push((cmd.to_string(), ts)); }
+}
+
+#[tauri::command]
+pub fn get_perf_trace_log() -> Vec<(String, u64)> { TRACE_LOG.lock().map(|l| l.clone()).unwrap_or_default() }
+
+// lib.rs — wrap generate_handler!
+.invoke_handler({
+    let inner: Box<dyn Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static> =
+        Box::new(tauri::generate_handler![ /* all commands */ ]);
+    move |invoke: tauri::ipc::Invoke<tauri::Wry>| -> bool {
+        perf_trace::record(invoke.message.command());
+        inner(invoke)
+    }
+})
+```
+
+Two Tauri v2 type-system subtleties worth recording for the next implementer:
+
+1. `generate_handler!` must be bound via `Box<dyn Fn(Invoke<Wry>) -> bool + Send + Sync + 'static>` to pin the macro's `R: Runtime` generic at the binding site. Without the annotation, Rust cannot resolve R in a `let` binding and emits `E0282 cannot infer type`.
+2. `invoke.message.command()` returns `&str`; call `perf_trace::record` *before* forwarding to `inner(invoke)` (which consumes `invoke` by value).
+
+**On the first measurement after adding this, the answer fell out in one line of JSON.** Of the 20.6 s queue, the arrival log showed:
+
+| t (ms, relative) | command | what |
+|---:|:---|:---|
+| +566 | `constellation_map_universe` | first call |
+| +17,792 | `constellation_map_universe` (again) | second call, 17.2 s later |
+| +21,294 | `cache_boot_snapshot_core` | finally dispatched |
+
+The 17.2 s gap between the two map arrivals was the dispatcher blocked by the first call. The second call cost a further 3.5 s. Core was queued behind both of them for the full 20.7 s.
+
+#### Stage 5 — Named-culprit conversion (Round 7, the actual fix)
+
+One line: `#[tauri::command]` → `#[tauri::command(async)]` on `constellation_map_universe`. Rebuild. Measurement on the next boot: `core_queue_ms = 4`, `hydrated_ms = 811`. A 5,100× reduction in queue, closing Criterion 2 at 7.4× under budget.
+
+### The rule (extended — supersedes "read the runtime's source" from the original)
+
+1. **The five-stamp model is stage 1. Keep it permanently — it rules in/out queue vs. body vs. transport.**
+2. **When two consecutive patches (matching the same hypothesis) don't move the metric, stop.** LL-014 triggers. Do not patch a third time on the same theory.
+3. **Run cheap falsifiers before writing the next fix.** A single `{#if false}` gate or a `setInterval` heartbeat can eliminate a whole class of hypotheses in one build. Prefer falsification over confirmation — an experiment that *can't fail* teaches nothing.
+4. **When the queue stage is named but the cause isn't, instrument the dispatcher, not individual commands.** A per-dispatch arrival log is ~30 lines of Rust and reveals the full timeline with zero per-command edits. In Tauri v2 specifically, wrap `generate_handler!` in a Box-typed closure and stamp `invoke.message.command()`.
+5. **Keep every diagnostic instrument in the codebase permanently.** `perf_trace`, the heartbeat, and the five-stamp model are all cheap at runtime (one mutex, one interval, four timestamps per IPC). Together they transform a future boot regression from "where did the time go" into "here is the exact arrival log — go look at entry N."
+6. **Fixes that don't move the metric are still sometimes correctness-improving** (Round 5's DashboardView fan-out converts are a real improvement in UI-thread hygiene, even though they didn't close Criterion 2). Keep them; don't revert purely for performance reasons if the commit improves code shape.
+
+### What closed Criterion 2
+
+- `perf_trace` arrival tracer → instrument that named `constellation_map_universe`.
+- `#[tauri::command(async)]` on the named command → closed the queue.
+- Total code added: ~30 lines Rust, ~15 lines Svelte, one attribute change.
+
+### What the five-diagnostic stack costs to repeat on the next regression
+
+- Queue-time stamps: already permanent.
+- Cheap falsifiers: minutes each.
+- Heartbeat: already permanent.
+- Arrival tracer: already permanent.
+- Named-culprit conversion: minutes.
+
+Total: ~1 hour if the methodology is followed. ~4 sessions if it isn't.
+
+---
+
+## LL-022: Always-Mounted UI = Always-Running IPC
+
+Even after Criterion 2 was "closed" by converting `constellation_map_universe` to
+`#[tauri::command(async)]` (Round 7), the boot `ipc_arrival_log` still showed **two**
+dispatches of that command 17 seconds apart, spending ~17 s of background CPU walking the
+Universe filesystem — for a view the user might never open that session. The async
+conversion got the work off the UI thread, so Criterion 2 passed at 811 ms — but the work
+itself was still wasted.
+
+**Root cause.** Both `<ConstellationMap>` and the fullscreen `<OrgChart>` overlays were
+always-mounted in `+layout.svelte`, hidden via CSS (`class:map-visible={showConstellationMap}`)
+instead of gated with Svelte `{#if}`. The comment on the ConstellationMap overlay explained
+the motivation — "always rendered, hidden with CSS to preserve drill-down state" — and
+that motivation was correct, but the cost was invisible until the five-stamp diagnostic
+exposed it.
+
+CSS `display: none` hides a component. It does **not** prevent its `onMount` / mount-time
+`$effect` from firing. Every always-mounted overlay whose mount performs IPC pays the IPC
+cost on every boot. Multiplied across Map, OrgChart, and whatever other panels fall into
+the same pattern, the IPC queue stays saturated even after each individual command is
+made async.
+
+**Fix.** Gate each overlay with `{#if mapEverOpened}` / `{#if orgChartEverOpened}`, where
+`*EverOpened` is a `$state(false)` flag flipped `true` by a one-line reactive effect:
+
+```typescript
+let mapEverOpened = $state(false);
+$effect(() => { if (showConstellationMap) mapEverOpened = true; });
+```
+
+First open mounts the overlay and pays the IPC cost **once, interactively, where the user
+expects it**. Subsequent opens reuse the mounted instance, so drill-down state
+(`mapFocusNode`, `mapColorMode`) survives exactly as with the CSS-hiding pattern. The
+`*EverOpened` flag is sticky within a Universe session — it never flips back on close —
+so "has the user ever opened this view" is preserved across every show/hide cycle.
+
+**Reset on context switch.** If the component's IPC only fires from `onMount` (common)
+and the context changes (Universe switch, account switch, vault switch), the flag must
+be reset, otherwise the user sees stale data from the prior context. In Constellation,
+`handleUniverseSwitch` resets `mapEverOpened` / `orgChartEverOpened` alongside the other
+in-memory state clears, so the next Map/OrgChart open re-mounts and re-fetches for the
+new Universe. Any future overlay using this pattern must do the same.
+
+**Rule.** Any always-mounted component that performs IPC during `onMount` or mount-time
+`$effect` must be audited. If the IPC walks the filesystem, opens a DB, or reads anything
+larger than O(1), default to lazy-mount with the `*EverOpened` pattern. CSS-hiding is for
+components whose mount is cheap and which the user toggles frequently. Lazy-mount is for
+components whose mount is expensive and which the user may never open.
+
+**Relationship to Rule 8 (Write-Time Derivation).** Rule 8 is the deeper fix: persist the
+map tree via triggers on note save/rename, so first-open is a cheap SQLite read instead of
+a filesystem walk. Until that lands, lazy-mount is the cheap win that keeps the boot path
+clean. Once the persistent-map refactor ships, the `*EverOpened` pattern becomes
+effectively free (DB read on first open, cached afterwards) but still worth keeping — it
+also defers the D3 / PIXI component mount itself, which is non-trivial CPU in its own right.
+
+**How to find more of these.** Check the boot `ipc_arrival_log` after `paint_ms`. Any
+command that arrives unbidden — i.e., not triggered by a user gesture — and whose
+component is currently visible or always-mounted, is a lazy-mount candidate. On the 7,600-
+note Universe, the arrival log should be essentially empty after hydration; if it isn't,
+start there.
+
+---
+
+*Last updated: 2026-04-19 (Criterion 2 closed @ `8a74949`, hydrated_ms = 811; LL-022
+lazy-mount follow-up landed same session)*
+*For: Constellation — Boot Criterion 2 investigation (closed) + Rule 8 follow-up*

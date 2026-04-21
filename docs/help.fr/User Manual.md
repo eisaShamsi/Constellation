@@ -1,6 +1,6 @@
 # Manuel d'utilisation de Constellation
 
-**Version 0.3.4 | Mars 2026**
+**Version 0.1.0 | Mars 2026**
 
 Constellation est une application de bureau de gestion des connaissances personnelles (PKM) pour gerer des bibliotheques de notes Markdown. Developpee avec Tauri v2, SvelteKit et Rust, elle fonctionne nativement sur Windows, macOS et Linux avec une prise en charge complete de l'arabe et du RTL.
 
@@ -11,23 +11,25 @@ Constellation est une application de bureau de gestion des connaissances personn
 1. [Premiers pas](#premiers-pas)
 2. [Univers et bibliotheques](#univers-et-bibliotheques)
 3. [Creer et modifier des notes](#creer-et-modifier-des-notes)
-4. [Vue Etoiles (GraphMind)](#vue-etoiles-graphmind)
-5. [Vue fractionnee](#vue-fractionnee)
-6. [Index](#index)
-7. [Second ecran](#second-ecran)
-8. [Proprietes et Frontmatter](#proprietes-et-frontmatter)
-9. [Modeles](#modeles)
-10. [Tableaux](#tableaux)
-11. [Taches](#taches)
-12. [Importateur](#importateur)
-13. [Calendrier](#calendrier)
-14. [Lens](#lens)
-15. [Parametres](#parametres)
-16. [Raccourcis clavier](#raccourcis-clavier)
-17. [Prise en charge RTL et arabe](#prise-en-charge-rtl-et-arabe)
-18. [Securite et confidentialite](#securite-et-confidentialite)
-19. [Carte des connaissances](#carte-des-connaissances)
-20. [Moteur Cognitif](#moteur-cognitif)
+4. [Recherche](#recherche)
+5. [Vue Etoiles (GraphMind)](#vue-etoiles-graphmind)
+6. [Vue fractionnee](#vue-fractionnee)
+7. [Index](#index)
+8. [Constellation Sight](#constellation-sight)
+9. [Second ecran](#second-ecran)
+10. [Proprietes et Frontmatter](#proprietes-et-frontmatter)
+11. [Modeles](#modeles)
+12. [Tableaux](#tableaux)
+13. [Taches](#taches)
+14. [Importateur](#importateur)
+15. [Calendrier](#calendrier)
+16. [Lens](#lens)
+17. [Parametres](#parametres)
+18. [Raccourcis clavier](#raccourcis-clavier)
+19. [Prise en charge RTL et arabe](#prise-en-charge-rtl-et-arabe)
+20. [Securite et confidentialite](#securite-et-confidentialite)
+21. [Carte des connaissances](#carte-des-connaissances)
+22. [Moteur Cognitif](#moteur-cognitif)
 
 ---
 
@@ -218,7 +220,87 @@ Vous pouvez egalement lier vers des titres specifiques : `[[Nom de la note#Titre
 
 ---
 
-## 4. Vue Etoiles (GraphMind)
+## 4. Recherche
+
+Constellation dispose d'un moteur de recherche hybride multilingue base sur SQLite FTS5 avec classement BM25, filtres de requete structures et normalisation optimisee pour l'arabe. La recherche est accessible depuis la barre laterale.
+
+### Comment rechercher
+
+Cliquez sur l'icone de recherche dans la barre laterale ou utilisez `Ctrl+Shift+F` pour activer le mode recherche. Tapez votre requete et les resultats apparaissent apres un bref delai (300ms). Appuyez sur `Escape` ou cliquez sur `x` pour effacer la recherche et revenir a l'arborescence.
+
+### Syntaxe de recherche
+
+| Syntaxe | Exemple | Ce qui est trouve |
+|---------|---------|-------------------|
+| Texte libre | `gestion de projet` | Notes contenant ces mots dans le titre ou le corps |
+| Filtre par tag | `#recherche` | Notes etiquetees avec `#recherche` |
+| Filtre par propriete | `status=actif` | Notes avec propriete frontmatter `status` egale a `actif` |
+| Filtre par wikilink | `links to [[Climat]]` | Notes contenant un lien vers `[[Climat]]` |
+| Portee bibliotheque | `in:MaBibliotheque` | Restreint les resultats a une bibliotheque specifique |
+| Combine | `#recherche status=actif economie` | Tous les filtres appliques ensemble |
+
+### Badges de type de correspondance
+
+Chaque resultat affiche un badge colore indiquant comment la correspondance a ete trouvee. Le badge affiche une lettre localisee pour l'accessibilite (adapte aux daltoniens) :
+
+| Badge | Couleur | Signification |
+|-------|---------|---------------|
+| **T** | Bleu | Correspondance de titre — le terme apparait dans le nom de la note |
+| **C** | Vert | Correspondance de contenu — le terme apparait dans le corps de la note |
+| **S** | Violet | Correspondance semantique — conceptuellement lie (necessite un modele d'embedding) |
+| **P** | Ambre | Correspondance de propriete — trouve via filtre de propriete frontmatter |
+| **#** | Rose | Correspondance de tag — trouve via filtre de tag |
+| **W** | Bleu clair | Correspondance de wikilink — trouve via filtre de wikilink |
+
+Les lettres des badges sont localisees pour les 15 langues prises en charge.
+
+### Resultats epingles (Naviguer entre les resultats)
+
+Les resultats restent visibles apres avoir clique sur l'un d'eux. La note ouverte est mise en surbrillance dans la liste pour que vous sachiez quel resultat vous visualisez. Cliquez sur un autre resultat pour y naviguer sans relancer la recherche.
+
+Pour effacer la recherche, appuyez sur `Escape` ou cliquez sur `x`.
+
+### Navigation au clavier
+
+| Touche | Action |
+|--------|--------|
+| `Fleche bas` | Selectionner le resultat suivant |
+| `Fleche haut` | Selectionner le resultat precedent |
+| `Enter` | Ouvrir le resultat selectionne |
+| `Escape` | Effacer la recherche et revenir a l'arborescence |
+
+### Mise en surbrillance du terme recherche
+
+Lorsque vous ouvrez une note depuis les resultats, toutes les occurrences du terme sont mises en surbrillance dans l'editeur. Cela fonctionne avec la detection des diacritiques arabes — chercher "ادارة" mettra en surbrillance "إدارة" et toutes les variantes diacritiques.
+
+### Historique de recherche
+
+Cliquez sur le champ de recherche lorsqu'il est vide pour voir vos recherches recentes (20 dernieres requetes). Chaque entree affiche le texte et le temps ecoule depuis son execution. Cliquez sur une entree pour relancer cette recherche instantanement. Utilisez le lien "Effacer l'historique" en bas pour supprimer tout l'historique.
+
+L'historique de recherche est stocke localement sur votre appareil et persiste entre les redemarrages.
+
+### Search Hub
+
+Le Search Hub est une experience de recherche en plein ecran. Cliquez sur l'icone de loupe dans la barre du dock pour l'ouvrir. Les deux barres laterales se replient pour offrir un espace maximum. Tapez n'importe quel terme et Constellation recherche partout simultanement, regroupant les resultats en 5 categories : Titres, Contenus, Tags, Proprietes et Wikilinks. Chaque categorie dispose d'une section depliable avec un badge de comptage. Cliquez sur un resultat pour l'ouvrir dans l'editeur avec toutes les occurrences surlignees. Un bouton "Retour au Search Hub" apparait pour revenir sans relancer la recherche.
+
+### Operateurs de liens
+
+Constellation prend en charge 6 operateurs de recherche de topologie de liens :
+
+| Syntaxe | Ce qu'il trouve |
+|---------|-----------------|
+| `links to [[X]]` | Notes qui pointent vers X (backlinks) |
+| `links from [[X]]` | Notes vers lesquelles X pointe (liens sortants) |
+| `mutual [[X]]` | Notes liees a X ET X lie en retour (bidirectionnel) |
+| `mentions [[X]]` | Notes contenant le nom de X sans [[wikilink]] |
+| `orphans` | Notes sans liens entrants ni sortants |
+| `links between [[X]] and [[Y]]` | Notes qui pointent vers X et Y |
+
+Lors de la saisie d'un operateur de lien, l'autocompletion `[[` affiche toutes les notes de l'univers. Apres avoir selectionne une note, tapez `#` pour la completion des titres ou `|type:` pour la completion du type de lien.
+
+---
+
+## 5. Vue Etoiles (GraphMind)
 
 La Vue Etoiles visualise vos notes sous forme de graphe 3D interactif propulse par le moteur **GraphMind** (Pixi.js WebGL).
 
@@ -303,7 +385,7 @@ Le niveau de maturite est mis a jour automatiquement en fonction du nombre de li
 
 ---
 
-## 5. Vue fractionnee
+## 6. Vue fractionnee
 
 La vue fractionnee vous permet de modifier plusieurs notes cote a cote dans la fenetre principale.
 
@@ -332,7 +414,7 @@ Cliquez sur n'importe quel volet pour le mettre au premier plan. Le volet actif 
 
 ---
 
-## 6. Index
+## 7. Index
 
 L'Index est un glossaire complet de termes de toutes vos bibliotheques — chaque mot significatif, classe par ordre alphabetique avec le nombre d'occurrences.
 
@@ -373,7 +455,49 @@ Lorsque le Second Ecran est ouvert :
 
 ---
 
-## 7. Second ecran
+## 8. Constellation Sight
+
+Constellation Sight visualise l'ensemble de votre systeme de connaissances sous forme de graphe en puits gravitationnel. Il repond a la question : **"A quoi ressemble mon savoir et quelle est sa sante ?"**
+
+### Ouvrir Sight
+
+Cliquez sur le **bouton Sight** (icone d'oeil) dans le ruban gauche. Le graphe en puits gravitationnel apparait. Cliquez sur x pour fermer.
+
+### Le Graphe en Puits Gravitationnel
+
+Les notes sont disposees en anneaux concentriques par importance (centralite). Les notes les plus connectees se trouvent au centre ; les notes peripheriques aux bords. Au sein de chaque anneau, les notes sont groupees par bibliotheque (votre organisation). Couleur du noeud = bibliotheque.
+
+| Element | Signification |
+|---------|---------------|
+| **Grand noeud** | Haute centralite — relie differents domaines de connaissance |
+| **Petit noeud** | Peripherique — au sein d'un domaine |
+| **Couleur du noeud** | Appartenance a une bibliotheque |
+| **Ligne pleine** | Lien entre deux notes |
+| **Fleches de direction** | Petites fleches indiquant la direction du lien |
+| **Epaisseur de ligne** | Niveau de confiance (epais = etabli, fin = hypothese) |
+
+### Interaction
+
+- **Simple clic** sur un noeud : met en surbrillance son voisinage (toutes les notes connectees). Tout le reste s'estompe.
+- **Double-clic** : ouvre la note dans l'editeur.
+- **Clic sur espace vide** : efface la surbrillance.
+- **Defiler** : zoom. **Glisser** : panoramique. **Ajuster a l'ecran** : bouton de la barre d'outils.
+
+### Recherche dans Sight
+
+Cliquez sur la loupe. Prend en charge tous les operateurs : `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, texte libre et recherche semantique. Les resultats affichent des couleurs directionnelles : vert (entrant), rouge (sortant).
+
+### Panneau d'Analyse (SightPanel)
+
+Cliquez sur l'icone de grille pour ouvrir la barre laterale. Affiche : score de Sante de l'Univers (0-100), compteurs de notes/liens/orphelins, barres de type de lien et de confiance, top 10 des ponts et Aperçus des Connaissances (preuves les plus solides, fondations faibles, tensions, stagnation, les plus connectes, lacunes de connaissance).
+
+### Parametres
+
+Icone d'engrenage : ajustez l'epaisseur du trait de lien, l'opacite et la taille des fleches. Les parametres persistent entre les sessions.
+
+---
+
+## 9. Second ecran
 
 Le second ecran est une fenetre complementaire basee sur les modes qui s'adapte au mode actuel de votre barre laterale.
 
@@ -428,7 +552,7 @@ Tous les parametres visuels se propagent instantanement au second ecran — aucu
 
 ---
 
-## 8. Proprietes et Frontmatter
+## 10. Proprietes et Frontmatter
 
 Les notes peuvent contenir du YAML Frontmatter en en-tete :
 
@@ -455,7 +579,7 @@ Basculez l'affichage des proprietes dans **Parametres > Editeur > Proprietes dan
 
 ---
 
-## 9. Modeles
+## 11. Modeles
 
 Creez des modeles de notes reutilisables :
 
@@ -474,7 +598,7 @@ Les modeles prennent en charge les variables :
 
 ---
 
-## 10. Tableaux
+## 12. Tableaux
 
 ### Tableaux Markdown
 
@@ -504,7 +628,7 @@ L'editeur de document (TipTap) offre une experience de tableau visuelle :
 
 ---
 
-## 11. Taches
+## 13. Taches
 
 Constellation prend en charge les cases a cocher de taches dans les notes :
 
@@ -517,7 +641,7 @@ En mode Apercu en direct, les cases a cocher sont cliquables. Les taches peuvent
 
 ---
 
-## 12. Importateur
+## 14. Importateur
 
 Importez des notes depuis d'autres outils PKM :
 
@@ -529,7 +653,7 @@ Allez dans **Parametres > Importateur** pour lancer un import.
 
 ---
 
-## 13. Calendrier
+## 15. Calendrier
 
 La vue Calendrier affiche les notes organisees par date :
 
@@ -541,7 +665,7 @@ Ouvrez le Calendrier depuis la barre laterale.
 
 ---
 
-## 14. Lens
+## 16. Lens
 
 Lens fournit des vues filtrees de vos notes :
 
@@ -551,7 +675,7 @@ Lens fournit des vues filtrees de vos notes :
 
 ---
 
-## 15. Parametres
+## 17. Parametres
 
 Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctrl+,`.
 
@@ -561,6 +685,32 @@ Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctr
 - Theme (Clair / Sombre)
 - Police d'interface, Police de texte, Police monospace, Taille de police
 - Theme de police — combinaisons de polices predefinies (Machine a ecrire, Classique, Moderne, etc.) pour un changement rapide
+- **Themes** — choisissez parmi six themes integres, creez des themes personnalises (editeur de cinq couleurs), importez des themes depuis le registre communautaire d'Obsidian (200+ themes), ou importez un fichier `.json`. Supprimez n'importe quel theme personnalise avec le bouton ✕ au survol.
+
+### Style Settings
+
+Un onglet dedie pour la personnalisation fine de chaque element visible de l'interface, applique en direct au theme actif.
+
+- **Couleurs** — fond, surfaces, texte (normal/attenue/faible), accent, bordures, couleurs d'etat
+- **Typographie** — tailles de police interface/note/code, tailles H1–H6, graisse des titres, hauteurs de ligne, espacement des paragraphes
+- **Mise en page et forme** — rayons de coin petit/moyen/grand, largeurs de bordure, ombres, longueur de ligne lisible de l'editeur, marges laterales
+- **Composants** — dock ruban, barre d'actions laterale, barre de mise en page (bascules de panneaux), barre superieure/bande d'onglets, barre d'etat, barre laterale droite (inspecteur), explorateur de fichiers (notes d'Univers, univers enfants, bibliotheques, dossiers, notes), boutons, etiquettes, callouts — chacun avec taille, rayon, couleur independants, et style d'etat actif le cas echeant
+- **Editeur** — couleur/survol/decoration du lien, couleur/fond/rayon du code en ligne, largeur/couleur de la barre de citation, couleur du curseur, fond de selection
+
+**Importer / Exporter** — barre d'outils en haut de l'onglet :
+- Coller depuis le presse-papiers (un clic)
+- Importer / Coller (zone de texte avec Fusionner ou Remplacer)
+- Depuis un fichier (.json)
+- Copier (valeurs actuelles dans le presse-papiers)
+- Exporter (.json)
+
+Le format correspond exactement au plugin Style Settings d'Obsidian, vous pouvez donc partager des reglages entre Obsidian et Constellation.
+
+Les modifications sont enregistrees automatiquement dans le theme actif ; si vous modifiez un theme integre, il est automatiquement clone dans vos themes personnalises pour que les changements persistent sans modifier l'original.
+
+### Surcharges du moteur arabe
+
+Un panneau par Univers ou vous fixez la facon dont le moteur arabe analyse certaines formes de surface — vos propres neologismes, des noms locaux, des emprunts specifiques a un domaine, ou les cas ou vous etes en desaccord avec la lecture automatique du moteur. Chaque surcharge l'emporte sur le FST generatif, la cascade et le repli heuristique. Ajouter ou retirer une surcharge declenche une reindexation ciblee sur les seules notes qui contiennent la forme de surface concernee — pas de reconstruction complete. Voir le chapitre 19 (« Prise en charge RTL et arabe ») pour la procedure pas a pas.
 
 ### Editeur
 
@@ -583,7 +733,7 @@ Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctr
 
 ---
 
-## 16. Raccourcis clavier
+## 18. Raccourcis clavier
 
 ### Globaux
 
@@ -623,7 +773,7 @@ Accedez aux Parametres depuis l'icone d'engrenage dans la barre laterale ou `Ctr
 
 ---
 
-## 17. Prise en charge RTL et arabe
+## 19. Prise en charge RTL et arabe
 
 Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu, le persan, l'ourdou et les autres ecritures RTL :
 
@@ -640,9 +790,37 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 2. Optionnellement, definissez une police arabe dediee dans **Parametres > General > Polices de script**
 3. Les notes avec du contenu arabe s'afficheront automatiquement en RTL
 
+### Surcharges du moteur arabe
+
+Le moteur arabe de Constellation est un analyseur morphologique a cinq couches qui tourne sous chaque recherche, chaque lien et chaque entree d'index. Il comprend racines, schemes, noms propres, emprunts et reparations phonologiques — de sorte qu'une requete pour كاتب trouve aussi كتبنا et كتاب, mais que وائل reste intact comme nom propre au lieu d'etre mutile en ائل.
+
+Le panneau **Surcharges arabes** dans les Parametres est l'endroit ou vous enseignez votre propre terminologie au moteur. Chaque surcharge est la reponse souveraine — elle l'emporte sur le FST generatif, la cascade et le repli heuristique.
+
+**Quand utiliser les surcharges :**
+- Noms de personnes, toponymes locaux ou termes specifiques a votre domaine que le moteur ne connait pas
+- Neologismes ou acronymes propres a votre Univers
+- Emprunts dont vous voulez preserver une orthographe particuliere
+- Tout cas ou l'analyse automatique du moteur contredit votre facon de lire le mot
+
+**Pas a pas :**
+
+1. Ouvrez les **Parametres** (icone d'engrenage ou `Ctrl + ,` / `Cmd + ,`) et selectionnez **Surcharges arabes** dans la barre laterale.
+2. Cliquez sur **Ajouter une surcharge**.
+3. Remplissez :
+   - **Forme de surface** — le mot arabe tel que vous le tapez
+   - **Lemme** — la forme canonique que le moteur doit renvoyer
+   - **Racine** (optionnelle) — 3 ou 4 consonnes si le mot a une racine classique
+   - **Scheme** (optionnel) — par ex. `فاعل`
+   - **Categorie** — Nom propre / Nom / Adjectif / Adverbe / Verbe / Particule / Etranger / Inconnu
+   - **Note** (optionnelle) — une ligne de contexte pour vous-meme
+4. Cliquez sur **Enregistrer**. Le panneau affiche **Reindexation…** pendant que chaque note contenant la forme de surface est retokenisee, puis **N note(s) reindexee(s)** une fois termine.
+5. Pour retirer une surcharge, cliquez sur le **x** de sa ligne — le meme balayage de reindexation s'execute en sens inverse.
+
+Les surcharges sont stockees par Univers dans `<univers>/.constellation/arabic-overrides.json` — texte brut, trie alphabetiquement, ecrit de maniere atomique. Vous pouvez mettre le fichier sous controle de version ou le partager entre appareils.
+
 ---
 
-## 18. Securite et confidentialite
+## 20. Securite et confidentialite
 
 - **Toutes les donnees restent locales** — pas de synchronisation cloud, pas de telemetrie, pas de suivi
 - **Fichiers Markdown** — vos notes sont des fichiers texte brut qui vous appartiennent entierement
@@ -652,7 +830,7 @@ Constellation offre une prise en charge de premier ordre pour l'arabe, l'hebreu,
 
 ---
 
-## 19. Carte des connaissances
+## 21. Carte des connaissances
 
 La Carte des connaissances est une visualisation radiale (sunburst) qui montre la structure, la densite et la maturite de votre univers de connaissances.
 
@@ -685,7 +863,7 @@ Apres avoir ouvert une note depuis la Carte, un bouton "Retour a la Carte" appar
 
 ---
 
-## 20. Moteur Cognitif
+## 22. Moteur Cognitif
 
 Le Moteur Cognitif est le systeme d'intelligence integre de Constellation qui analyse vos notes et revele les motifs caches et les relations entre vos idees. Sa philosophie fondamentale :
 
@@ -938,5 +1116,5 @@ Tous les outils du Moteur Cognitif se configurent dans **Parametres > Moteur Cog
 
 ---
 
-*Manuel d'utilisation de Constellation — Version 0.3.4 — Mars 2026*
+*Manuel d'utilisation de Constellation — Version 0.1.0 — Mars 2026*
 *uconstellation.world*

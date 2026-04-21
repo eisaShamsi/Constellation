@@ -27,6 +27,16 @@ export async function loadPropertyTypes(): Promise<void> {
 	}
 }
 
+/** Seed the cache from a boot-bundle response so initializeApp can avoid
+ *  a separate read_universe_property_types IPC. Effectively identical to
+ *  loadPropertyTypes but skips the invoke. */
+export function seedFromBundle(data: unknown): void {
+	if (data && typeof data === 'object') {
+		cache = data as Record<string, Record<string, PropertyType>>;
+	}
+	loaded = true;
+}
+
 /** Persist the cache to the active universe (debounced). */
 function persistPropertyTypes() {
 	if (saveTimer) clearTimeout(saveTimer);

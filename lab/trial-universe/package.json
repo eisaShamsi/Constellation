@@ -1,0 +1,15 @@
+{
+  "name": "constellation-trial-universe",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Generator for Constellation's trial Universe — 5000 notes built from Wikipedia/Commons/Wikidata.",
+  "scripts": {
+    "poc":   "node generator/index.mjs --stage poc",
+    "pilot": "node generator/index.mjs --stage pilot",
+    "full":  "node generator/index.mjs --stage full"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0"
+  }
+}

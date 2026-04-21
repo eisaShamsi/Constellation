@@ -5,7 +5,13 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS } from '$lib/libraries/store';
+	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
+	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
+	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
+	import { downloadJSON, pickJSONFile } from '$lib/utils';
+	import IconOverrideSettings from './IconOverrideSettings.svelte';
+	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -20,6 +26,162 @@
 	} = $props();
 
 	let activeSection = $state('dashboard');
+
+	// Theme editor state
+	let editingTheme = $state<ConstellationTheme | null>(null);
+	let themeEditorOpen = $state(false);
+	let ssImportOpen = $state(false);
+	let ssImportText = $state('');
+	let ssImportError = $state('');
+
+	/** Get the active theme (explicitly selected, or the first available as fallback). */
+	function getActiveTheme(): ConstellationTheme | undefined {
+		return allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0];
+	}
+
+	/**
+	 * Return a mutable copy of customThemes with a guaranteed entry for `activeId`.
+	 * If the active theme is built-in, it is cloned into customs (marked `source: 'custom'`)
+	 * so changes persist without mutating the built-in.
+	 */
+	function ensureCustomTheme(active: ConstellationTheme): { customs: ConstellationTheme[]; target: ConstellationTheme } {
+		const customs = [...($appSettings.customThemes ?? [])];
+		let target = customs.find(t => t.id === active.id);
+		if (!target) {
+			target = { ...active, styleSettingsValues: { ...(active.styleSettingsValues ?? {}) } };
+			if (BUILTIN_THEMES.find(b => b.id === active.id)) target.source = 'custom';
+			customs.push(target);
+		}
+		return { customs, target };
+	}
+
+	function exportStyleSettings() {
+		const active = getActiveTheme();
+		if (!active) return;
+		downloadJSON(`${active.name || 'theme'}-style-settings`, active.styleSettingsValues ?? {});
+	}
+
+	function copyStyleSettings() {
+		const active = getActiveTheme();
+		if (!active) return;
+		navigator.clipboard?.writeText(JSON.stringify(active.styleSettingsValues ?? {}, null, 2)).catch(() => {});
+	}
+
+	function applyStyleSettingsJSON(raw: string, mode: 'merge' | 'replace' = 'merge'): boolean {
+		ssImportError = '';
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(raw);
+		} catch (e: any) {
+			ssImportError = 'Invalid JSON: ' + (e?.message ?? 'parse error');
+			return false;
+		}
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+			ssImportError = 'Expected an object of setting-id → value pairs.';
+			return false;
+		}
+		const active = getActiveTheme();
+		if (!active) { ssImportError = 'No active theme.'; return false; }
+		const { customs, target } = ensureCustomTheme(active);
+		const base = mode === 'replace' ? {} : { ...(target.styleSettingsValues ?? {}) };
+		for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+			if (v === null || v === undefined || v === '') delete base[k];
+			else base[k] = String(v);
+		}
+		target.styleSettingsValues = base;
+		updateSettings({ customThemes: customs, activeThemeId: target.id });
+		return true;
+	}
+
+	async function pasteStyleSettingsFromClipboard() {
+		try {
+			const text = await navigator.clipboard.readText();
+			if (!text || !text.trim()) {
+				ssImportError = 'Clipboard is empty.';
+				ssImportText = '';
+				ssImportOpen = true;
+				return;
+			}
+			if (!applyStyleSettingsJSON(text, 'merge')) {
+				ssImportText = text;
+				ssImportOpen = true;
+			}
+		} catch {
+			ssImportError = 'Clipboard access denied. Use Import / Paste instead.';
+			ssImportOpen = true;
+		}
+	}
+
+	async function importStyleSettingsFile() {
+		const text = await pickJSONFile();
+		if (!text) return;
+		if (applyStyleSettingsJSON(text, 'merge')) {
+			ssImportOpen = false;
+			ssImportText = '';
+		} else {
+			ssImportText = text;
+			ssImportOpen = true;
+		}
+	}
+	let showObsidianBrowser = $state(false);
+
+	const allThemes = $derived([...BUILTIN_THEMES, ...($appSettings.customThemes ?? [])]);
+
+	function selectTheme(id: string) {
+		updateSettings({ activeThemeId: id });
+	}
+
+	function startNewTheme() {
+		const base = $appSettings.colorScheme === 'dark' ? BUILTIN_THEMES[1] : BUILTIN_THEMES[0];
+		editingTheme = {
+			id: `custom-${Date.now()}`,
+			name: 'My Theme',
+			type: base.type,
+			colors: { ...base.colors },
+		};
+		themeEditorOpen = true;
+	}
+
+	function startEditTheme(theme: ConstellationTheme) {
+		editingTheme = { ...theme, colors: { ...theme.colors } };
+		themeEditorOpen = true;
+	}
+
+	function saveTheme() {
+		if (!editingTheme) return;
+		const customs = [...($appSettings.customThemes ?? [])];
+		const idx = customs.findIndex(t => t.id === editingTheme!.id);
+		if (idx >= 0) customs[idx] = editingTheme;
+		else customs.push(editingTheme);
+		updateSettings({ customThemes: customs, activeThemeId: editingTheme.id });
+		themeEditorOpen = false;
+		editingTheme = null;
+	}
+
+	function deleteTheme(id: string) {
+		const customs = ($appSettings.customThemes ?? []).filter(t => t.id !== id);
+		updateSettings({
+			customThemes: customs,
+			activeThemeId: $appSettings.activeThemeId === id ? '' : $appSettings.activeThemeId,
+		});
+		if (editingTheme?.id === id) { editingTheme = null; themeEditorOpen = false; }
+	}
+
+	function exportTheme(theme: ConstellationTheme) {
+		downloadJSON(`${theme.name}.constellation-theme`, theme);
+	}
+
+	async function importTheme() {
+		const text = await pickJSONFile();
+		if (!text) return;
+		try {
+			const theme = JSON.parse(text) as ConstellationTheme;
+			if (!theme.id || !theme.name || !theme.colors) throw new Error('Invalid theme');
+			theme.id = `imported-${Date.now()}`;
+			const customs = [...($appSettings.customThemes ?? []), theme];
+			updateSettings({ customThemes: customs, activeThemeId: theme.id });
+		} catch {}
+	}
 	let hotkeyFilter = $state('');
 	let testStatus = $state('');
 	let testing = $state(false);
@@ -40,13 +202,18 @@
 		{ id: 'universe', label: $t('settings.sections.universe'), icon: 'universe' },
 		{ id: 'editor', label: $t('settings.sections.editor'), icon: 'edit' },
 		{ id: 'language', label: $t('settings.language.title') || 'Language', icon: 'translate' },
+		{ id: 'arabic-overrides', label: $t('settings.sections.arabicOverrides') || 'Arabic Overrides', icon: 'translate' },
 		{ id: 'skyview', label: $t('settings.sections.skyview'), icon: 'graph' },
 		{ id: 'intelligence', label: $t('settings.sections.intelligence'), icon: 'bot' },
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
 		{ id: 'knowledge', label: $t('settings.sections.knowledge') || 'Knowledge Management', icon: 'brain' },
 		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
-		{ id: 'keyboard', label: $t('settings.sections.keyboard'), icon: 'keyboard' },
-		{ id: 'features', label: $t('settings.sections.features'), icon: 'grid' },
+		{ id: 'stylesettings', label: $t('settings.sections.styleSettings') || 'Style Settings', icon: 'sliders' },
+		{ id: 'iconoverrides', label: $t('settings.sections.iconOverrides') || 'App Icons', icon: 'grid' },
+		{ id: 'hotkeys', label: $t('settings.sections.hotkeys') || 'Hotkeys', icon: 'keyboard' },
+		{ id: 'templates', label: $t('settings.sections.templates') || 'Templates', icon: 'template' },
+		{ id: 'plugins', label: $t('settings.sections.plugins') || 'Plug-Ins', icon: 'grid' },
+		{ id: 'debug', label: $t('settings.sections.debug') || 'Debug', icon: 'bug' },
 	]);
 
 	const filteredCommands = $derived(
@@ -55,37 +222,43 @@
 			: commands
 	);
 
-	// Feature cards grouped by category
+	// Plug-in cards grouped by category
 	const featureGroups = $derived([
 		{
-			category: $t('settings.features.navigation'),
+			category: $t('settings.plugins.navigation') || 'Navigation',
 			icon: 'compass',
 			features: [
-				{ id: 'search', name: $t('settings.features.search'), desc: $t('settings.features.searchDesc'), icon: '🔍' },
-				{ id: 'quickSwitcher', name: $t('settings.features.quickSwitcher'), desc: $t('settings.features.quickSwitcherDesc'), icon: '⚡' },
-				{ id: 'commandPalette', name: $t('settings.features.commandPalette'), desc: $t('settings.features.commandPaletteDesc'), icon: '🎯' },
+				{ id: 'notesNavigator', name: $t('settings.plugins.notesNavigator') || 'Notes Navigator', desc: $t('settings.plugins.notesNavigatorDesc') || 'Browse and filter notes by folder, tag, or property', icon: '📋' },
+				{ id: 'quickSwitcher', name: $t('settings.plugins.quickSwitcher') || 'Quick Switcher', desc: $t('settings.plugins.quickSwitcherDesc') || 'Quickly navigate between notes', icon: '⚡' },
+				{ id: 'commandPalette', name: $t('settings.plugins.commandPalette') || 'Command Palette', desc: $t('settings.plugins.commandPaletteDesc') || 'Quick access to all commands', icon: '🎯' },
 			]
 		},
 		{
-			category: $t('settings.features.discovery'),
+			category: $t('settings.plugins.discovery') || 'Discovery',
 			icon: 'eye',
 			features: [
-				{ id: 'graphView', name: $t('settings.features.graphView'), desc: $t('settings.features.graphViewDesc'), icon: '🌐' },
-				{ id: 'backlinks', name: $t('settings.features.backlinks'), desc: $t('settings.features.backlinksDesc'), icon: '🔗' },
-				{ id: 'outgoingLinks', name: $t('settings.features.outgoingLinks'), desc: $t('settings.features.outgoingLinksDesc'), icon: '↗️' },
-				{ id: 'pagePreview', name: $t('settings.features.pagePreview'), desc: $t('settings.features.pagePreviewDesc'), icon: '👁️' },
-				{ id: 'tags', name: $t('settings.features.tags'), desc: $t('settings.features.tagsDesc'), icon: '🏷️' },
-				{ id: 'index', name: $t('settings.features.index'), desc: $t('settings.features.indexDesc'), icon: '📑' },
+				{ id: 'skyView', name: $t('settings.plugins.graphView') || 'Sky View', desc: $t('settings.plugins.graphViewDesc') || 'Visualize links between notes', icon: '🌐' },
+				{ id: 'constellationSight', name: $t('settings.plugins.constellationSight') || 'Constellation Sight', desc: $t('settings.plugins.constellationSightDesc') || 'Gravity-well knowledge visualization with analytics', icon: '👁️' },
+				{ id: 'constellationMap', name: $t('settings.plugins.constellationMap') || 'Constellation Map', desc: $t('settings.plugins.constellationMapDesc') || 'Sunburst visualization of knowledge structure', icon: '🗺️' },
+				{ id: 'orgChart', name: $t('settings.plugins.orgChart') || 'OrgChart', desc: $t('settings.plugins.orgChartDesc') || 'Visual tree of your knowledge hierarchy', icon: '🏛️' },
+				{ id: 'backlinks', name: $t('settings.plugins.backlinks') || 'Backlinks', desc: $t('settings.plugins.backlinksDesc') || 'Show notes that link to the current note', icon: '🔗' },
+				{ id: 'outgoingLinks', name: $t('settings.plugins.outgoingLinks') || 'Outgoing Links', desc: $t('settings.plugins.outgoingLinksDesc') || 'Show links in the current note', icon: '↗️' },
+				{ id: 'pagePreview', name: $t('settings.plugins.pagePreview') || 'Page Preview', desc: $t('settings.plugins.pagePreviewDesc') || 'Preview notes on link hover', icon: '👁️' },
+				{ id: 'tags', name: $t('settings.plugins.tags') || 'Tags', desc: $t('settings.plugins.tagsDesc') || 'View and browse all tags', icon: '🏷️' },
+				{ id: 'index', name: $t('settings.plugins.index') || 'Index', desc: $t('settings.plugins.indexDesc') || 'Collect and browse terms from all notes', icon: '📑' },
+				{ id: 'semanticSearch', name: $t('settings.plugins.semanticSearch') || 'Semantic Search', desc: $t('settings.plugins.semanticSearchDesc') || 'Find conceptually related notes using AI', icon: '🧠' },
 			]
 		},
 		{
-			category: $t('settings.features.organization'),
+			category: $t('settings.plugins.organization') || 'Organization',
 			icon: 'layers',
 			features: [
-				{ id: 'dailyNotes', name: $t('settings.features.dailyNotes'), desc: $t('settings.features.dailyNotesDesc'), icon: '📅' },
-				{ id: 'templates', name: $t('settings.features.templates'), desc: $t('settings.features.templatesDesc'), icon: '📋' },
-				{ id: 'workspaces', name: $t('settings.features.workspaces'), desc: $t('settings.features.workspacesDesc'), icon: '📐' },
-				{ id: 'wordCount', name: $t('settings.features.wordCount'), desc: $t('settings.features.wordCountDesc'), icon: '📊' },
+				{ id: 'aiSkills', name: $t('settings.plugins.aiSkills') || 'AI Skills', desc: $t('settings.plugins.aiSkillsDesc') || 'AI-powered automation and knowledge tools', icon: '⭐' },
+				{ id: 'secondScreen', name: $t('settings.plugins.secondScreen') || 'Second Screen', desc: $t('settings.plugins.secondScreenDesc') || 'Companion window on a second monitor', icon: '🖥️' },
+				{ id: 'dailyNotes', name: $t('settings.plugins.dailyNotes') || 'Daily Notes', desc: $t('settings.plugins.dailyNotesDesc') || 'Create and open daily notes', icon: '📅' },
+				{ id: 'workspaces', name: $t('settings.plugins.workspaces') || 'Workspaces', desc: $t('settings.plugins.workspacesDesc') || 'Save and restore workspace layouts', icon: '📐' },
+				{ id: 'wordCount', name: $t('settings.plugins.wordCount') || 'Word Count', desc: $t('settings.plugins.wordCountDesc') || 'Show word count in status bar', icon: '📊' },
+				{ id: 'emojiIconPicker', name: $t('settings.plugins.emojiIconPicker') || 'Emoji & Icon Library', desc: $t('settings.plugins.emojiIconPickerDesc') || 'Ctrl+. picker for emoji and vector icons — insert into notes, override app icons', icon: '😀' },
 			]
 		},
 	]);
@@ -398,6 +571,40 @@
 		} as any);
 	}
 
+	// ─── Living Link pill helpers ───
+	function updatePillFill(type: string, color: string) {
+		updateSettings({
+			linkPills: {
+				...$appSettings.linkPills,
+				fill: { ...$appSettings.linkPills.fill, [type]: color },
+			},
+		});
+	}
+	function updatePillText(type: string, color: string) {
+		updateSettings({
+			linkPills: {
+				...$appSettings.linkPills,
+				text: { ...$appSettings.linkPills.text, [type]: color },
+			},
+		});
+	}
+	function updatePillShape(partial: Partial<typeof $appSettings.linkPills.shape>) {
+		updateSettings({
+			linkPills: {
+				...$appSettings.linkPills,
+				shape: { ...$appSettings.linkPills.shape, ...partial },
+			},
+		});
+	}
+	function resetLinkPills() {
+		updateSettings({ linkPills: DEFAULT_SETTINGS.linkPills });
+	}
+	function updateLinkLifecycle(partial: Partial<typeof $appSettings.linkLifecycle>) {
+		updateSettings({
+			linkLifecycle: { ...$appSettings.linkLifecycle, ...partial },
+		});
+	}
+
 	function sectionIcon(icon: string): string {
 		const icons: Record<string, string> = {
 			dashboard: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z',
@@ -411,6 +618,10 @@
 			bot: 'M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1H3a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM9 14a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z',
 			brain: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zm11 5a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2a3 3 0 1 1 0-6 3 3 0 0 1 0 6z',
 			translate: 'M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z',
+			sliders: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
+			template: 'M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z',
+			compass: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z',
+			bug: 'M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5c-.49 0-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z',
 		};
 		return icons[icon] || icons.dashboard;
 	}
@@ -474,6 +685,65 @@
 
 	let containerEl: HTMLDivElement;
 	onMount(() => { containerEl?.focus(); });
+
+	// ═══ Boot Performance (Settings → Debug) ═══
+	//
+	// Reads `<universe>/.constellation/boot-perf.latest.json`, written on every
+	// boot by `recordBootPerf()` in `+layout.svelte`. Displays a scorecard
+	// against the five ship-gate criteria in `lab/boot-perf/BOOT-BUDGET.md`.
+	// See SESSION-LOG-2026-04-19 § 10 for the async-runtime fix that closes
+	// Criterion 2.
+	let bootPerf = $state<Record<string, unknown> | null>(null);
+	let bootPerfLoading = $state(false);
+	let bootPerfError = $state<string | null>(null);
+	let bootPerfLoadedFor: string | null = null; // avoid reloading on every render
+
+	async function loadBootPerfReport(force = false): Promise<void> {
+		if (bootPerfLoading) return;
+		if (!force && bootPerfLoadedFor === 'latest' && bootPerf !== null) return;
+		bootPerfLoading = true;
+		bootPerfError = null;
+		try {
+			const raw: string | null = await invoke('read_boot_perf_report');
+			if (raw === null) {
+				bootPerf = null;
+				bootPerfError = $t('settings.debug.noReportYet')
+					|| 'No boot-perf report yet. Close the app and relaunch on the trial Universe to record one.';
+			} else {
+				bootPerf = JSON.parse(raw) as Record<string, unknown>;
+				bootPerfError = null;
+			}
+			bootPerfLoadedFor = 'latest';
+		} catch (e) {
+			bootPerf = null;
+			bootPerfError = String(e);
+		} finally {
+			bootPerfLoading = false;
+		}
+	}
+
+	// Auto-load when the Debug section is opened.
+	$effect(() => {
+		if (activeSection === 'debug') loadBootPerfReport(false);
+	});
+
+	/** Helper — pass/fail colouring for a criterion row. */
+	function bpStatusClass(value: unknown, target: number): string {
+		if (typeof value !== 'number') return 'bp-unknown';
+		return value <= target ? 'bp-pass' : 'bp-fail';
+	}
+	function bpStatusLabel(value: unknown, target: number): string {
+		if (typeof value !== 'number') return '—';
+		return value <= target
+			? ($t('settings.debug.pass') || 'PASS')
+			: ($t('settings.debug.fail') || 'FAIL');
+	}
+	/** Format `value` in ms as "1.2s" or "234ms". */
+	function fmtMs(value: unknown): string {
+		if (typeof value !== 'number') return '—';
+		if (value >= 1000) return `${(value / 1000).toFixed(2)}s`;
+		return `${Math.round(value)}ms`;
+	}
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -734,6 +1004,17 @@
 							<code>{'{{suggester:a,b,c}}'}</code> — {$t('settings.templates.varSuggester')}<br/>
 							<code>{'{{cursor}}'}</code> — {$t('settings.templates.varCursor')}
 						</div>
+					</div>
+
+					<div class="setting-section-heading">{$t('ribbon.importNotes') || 'Import Notes'}</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('ribbon.importNotes') || 'Import Notes'}</div>
+							<div class="setting-desc">{$t('importer.desc') || 'Import notes from another application'}</div>
+						</div>
+						<button class="setting-control btn-action" onclick={() => { onClose?.(); setTimeout(() => document.dispatchEvent(new CustomEvent('constellation:show-importer')), 100); }}>
+							{$t('importer.import') || 'Import'}
+						</button>
 					</div>
 
 				<!-- ═══ EDITOR ═══ -->
@@ -1089,6 +1370,10 @@
 							</div>
 						</div>
 					{/if}
+
+				<!-- ═══ ARABIC OVERRIDES ═══ -->
+				{:else if activeSection === 'arabic-overrides'}
+					<ArabicOverridesPanel />
 
 				<!-- ═══ SKY VIEW & LINKS ═══ -->
 				{:else if activeSection === 'skyview'}
@@ -1513,17 +1798,122 @@
 
 				<!-- ═══ APPEARANCE ═══ -->
 				{:else if activeSection === 'appearance'}
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.colorScheme')}</div>
-							<div class="setting-desc">{$t('settings.appearance.colorSchemeDesc')}</div>
-						</div>
-						<select class="setting-control" value={$appSettings.colorScheme} onchange={(e) => updateSettings({ colorScheme: (e.target as HTMLSelectElement).value as any })}>
-							<option value="light">{$t('settings.appearance.light')}</option>
-							<option value="dark">{$t('settings.appearance.dark')}</option>
-							<option value="system">{$t('settings.appearance.system')}</option>
-						</select>
+
+					<!-- Theme Gallery -->
+					<div class="setting-section-heading">{$t('settings.appearance.themes') || 'Themes'}</div>
+					<div class="theme-gallery">
+						{#each allThemes as theme}
+							<button class="theme-card" class:active={$appSettings.activeThemeId === theme.id}
+								onclick={() => selectTheme(theme.id)}>
+								<div class="theme-swatches">
+									<span class="theme-sw" style="background:{theme.colors.background}"></span>
+									<span class="theme-sw" style="background:{theme.colors.surface}"></span>
+									<span class="theme-sw" style="background:{theme.colors.accent}"></span>
+									<span class="theme-sw" style="background:{theme.colors.text}"></span>
+								</div>
+								<div class="theme-card-name">{theme.name}</div>
+								{#if !BUILTIN_THEMES.find(b => b.id === theme.id)}
+									<button class="theme-edit-btn" onclick={(e) => { e.stopPropagation(); startEditTheme(theme); }} title={$t('common.edit') || 'Edit'}>✏️</button>
+									<button class="theme-delete-btn" onclick={(e) => { e.stopPropagation(); if (confirm(($t('settings.appearance.deleteThemeConfirm') || 'Delete theme') + ' "' + theme.name + '"?')) deleteTheme(theme.id); }} title={$t('common.delete') || 'Delete'}>✕</button>
+								{/if}
+							</button>
+						{/each}
+						<button class="theme-card theme-add" onclick={startNewTheme}>
+							<span class="theme-add-icon">+</span>
+							<div class="theme-card-name">{$t('settings.appearance.newTheme') || 'New Theme'}</div>
+						</button>
+						<button class="theme-card theme-import" onclick={importTheme}>
+							<span class="theme-add-icon">↓</span>
+							<div class="theme-card-name">{$t('settings.appearance.importTheme') || 'Import'}</div>
+						</button>
+						<button class="theme-card theme-obsidian" onclick={() => showObsidianBrowser = true}>
+							<span class="theme-add-icon">🟣</span>
+							<div class="theme-card-name">{$t('settings.appearance.obsidianThemes') || 'Obsidian Themes'}</div>
+						</button>
 					</div>
+
+					<!-- Reset to default -->
+					{#if $appSettings.activeThemeId}
+						<button class="btn-text" onclick={() => updateSettings({ activeThemeId: '' })}>{$t('settings.appearance.resetTheme') || 'Reset to default'}</button>
+					{/if}
+
+					<!-- Theme Editor -->
+					{#if themeEditorOpen && editingTheme}
+						<div class="theme-editor">
+							<div class="setting-section-heading">{$t('settings.appearance.customize') || 'Customize Theme'}</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeName') || 'Name'}</div></div>
+								<input type="text" class="setting-control" bind:value={editingTheme.name} />
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeType') || 'Type'}</div></div>
+								<select class="setting-control" bind:value={editingTheme.type}>
+									<option value="light">{$t('settings.appearance.light')}</option>
+									<option value="dark">{$t('settings.appearance.dark')}</option>
+								</select>
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeBackground') || 'Background'}</div></div>
+								<div class="color-row">
+									<input type="color" class="color-input" value={editingTheme.colors.background}
+										oninput={(e) => { editingTheme!.colors.background = (e.target as HTMLInputElement).value; }} />
+									<span class="color-hex">{editingTheme.colors.background}</span>
+								</div>
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeSurface') || 'Surface'}</div></div>
+								<div class="color-row">
+									<input type="color" class="color-input" value={editingTheme.colors.surface}
+										oninput={(e) => { editingTheme!.colors.surface = (e.target as HTMLInputElement).value; }} />
+									<span class="color-hex">{editingTheme.colors.surface}</span>
+								</div>
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeText') || 'Text'}</div></div>
+								<div class="color-row">
+									<input type="color" class="color-input" value={editingTheme.colors.text}
+										oninput={(e) => { editingTheme!.colors.text = (e.target as HTMLInputElement).value; }} />
+									<span class="color-hex">{editingTheme.colors.text}</span>
+								</div>
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeAccent') || 'Accent'}</div></div>
+								<div class="color-row">
+									<input type="color" class="color-input" value={editingTheme.colors.accent}
+										oninput={(e) => { editingTheme!.colors.accent = (e.target as HTMLInputElement).value; }} />
+									<span class="color-hex">{editingTheme.colors.accent}</span>
+								</div>
+							</div>
+							<div class="setting-item">
+								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeBorder') || 'Border'}</div></div>
+								<div class="color-row">
+									<input type="color" class="color-input" value={editingTheme.colors.border}
+										oninput={(e) => { editingTheme!.colors.border = (e.target as HTMLInputElement).value; }} />
+									<span class="color-hex">{editingTheme.colors.border}</span>
+								</div>
+							</div>
+							<!-- Style Settings hint -->
+							{#if editingTheme.styleSettingsBlocks && editingTheme.styleSettingsBlocks.length > 0}
+								<div class="setting-item">
+									<div class="setting-info">
+										<div class="setting-name">{$t('settings.appearance.hasStyleSettings') || 'This theme has Style Settings'}</div>
+										<div class="setting-desc">{$t('settings.appearance.seeStyleSettingsTab') || 'Open the “Style Settings” tab to customize theme options.'}</div>
+									</div>
+								</div>
+							{/if}
+
+							<div class="theme-editor-actions">
+								<button class="btn-primary" onclick={saveTheme}>Save</button>
+								<button class="btn-text" onclick={() => { themeEditorOpen = false; editingTheme = null; }}>{$t('common.cancel') || 'Cancel'}</button>
+								{#if !BUILTIN_THEMES.find(b => b.id === editingTheme.id)}
+									<button class="btn-danger" onclick={() => deleteTheme(editingTheme!.id)}>{$t('common.delete') || 'Delete'}</button>
+									<button class="btn-text" onclick={() => exportTheme(editingTheme!)}>{$t('settings.appearance.exportTheme') || 'Export'}</button>
+								{/if}
+							</div>
+						</div>
+					{/if}
+
+					<div class="setting-section-heading" style="margin-top:16px">{$t('settings.appearance.general') || 'General'}</div>
 
 					<div class="setting-item">
 						<div class="setting-info">
@@ -1534,18 +1924,6 @@
 							<option value="start">{$t('settings.appearance.titleAlignStart')}</option>
 							<option value="center">{$t('settings.appearance.titleAlignCenter')}</option>
 						</select>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.accentColor')}</div>
-							<div class="setting-desc">{$t('settings.appearance.accentColorDesc')}</div>
-						</div>
-						<div class="color-row">
-							<input type="color" class="color-input" value={$appSettings.accentColor}
-								onchange={(e) => updateSettings({ accentColor: (e.target as HTMLInputElement).value })} />
-							<span class="color-hex">{$appSettings.accentColor}</span>
-						</div>
 					</div>
 
 					<!-- Interface Font Size -->
@@ -1574,8 +1952,192 @@
 						</div>
 					</div>
 
+					<!-- ═══ LIVING LINK PILLS ═══ -->
+					<div class="setting-section-heading">{$t('settings.appearance.livingLinkPills') || 'Living Link Pills'}</div>
+					<div class="setting-desc" style="margin-bottom: 8px;">
+						{$t('settings.appearance.livingLinkPillsDesc') || 'Customize the colors and shape of the link-type badges and traversal chips that appear in the Backlinks and Outgoing Links panels.'}
+					</div>
+
+					<!-- Per-type colors -->
+					{#each LINK_TYPE_NAMES as type}
+						{@const fill = $appSettings.linkPills?.fill?.[type] ?? '#888'}
+						{@const text = $appSettings.linkPills?.text?.[type] ?? '#fff'}
+						{@const localized = $t(`linkTypes.${type}`) || type}
+						<div class="setting-item">
+							<div class="setting-info">
+								<div class="setting-name">{localized}<span class="ll-type-id">· {type}</span></div>
+								<div class="setting-desc">
+									<span class="ll-pill-preview" style="background:{fill};color:{text};border-radius:{$appSettings.linkPills?.shape?.radius ?? 10}px;height:{$appSettings.linkPills?.shape?.height ?? 20}px;font-weight:{$appSettings.linkPills?.shape?.fontWeight ?? 700}">{localized}</span>
+								</div>
+							</div>
+							<div class="ll-color-controls">
+								<label class="ll-color-col">
+									<span class="ll-color-label">{$t('settings.appearance.pillFill') || 'Fill'}</span>
+									<input type="color" class="color-input" value={fill}
+										onchange={(e) => updatePillFill(type, (e.target as HTMLInputElement).value)} />
+								</label>
+								<label class="ll-color-col">
+									<span class="ll-color-label">{$t('settings.appearance.pillText') || 'Text'}</span>
+									<input type="color" class="color-input" value={text}
+										onchange={(e) => updatePillText(type, (e.target as HTMLInputElement).value)} />
+								</label>
+							</div>
+						</div>
+					{/each}
+
+					<!-- Shape: radius / height / weight -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.pillRadius') || 'Corner radius'}</div>
+							<div class="setting-desc">{$t('settings.appearance.pillRadiusDesc') || 'How rounded the pill corners are (0 = sharp, 20 = fully round).'}</div>
+						</div>
+						<div class="slider-row">
+							<input type="range" class="setting-slider" min="0" max="20" step="1"
+								value={$appSettings.linkPills?.shape?.radius ?? 10}
+								oninput={(e) => updatePillShape({ radius: parseInt((e.target as HTMLInputElement).value) })} />
+							<span class="slider-val">{$appSettings.linkPills?.shape?.radius ?? 10}px</span>
+						</div>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.pillHeight') || 'Pill height'}</div>
+							<div class="setting-desc">{$t('settings.appearance.pillHeightDesc') || 'Vertical size of every pill.'}</div>
+						</div>
+						<div class="slider-row">
+							<input type="range" class="setting-slider" min="14" max="32" step="1"
+								value={$appSettings.linkPills?.shape?.height ?? 20}
+								oninput={(e) => updatePillShape({ height: parseInt((e.target as HTMLInputElement).value) })} />
+							<span class="slider-val">{$appSettings.linkPills?.shape?.height ?? 20}px</span>
+						</div>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.pillWeight') || 'Text weight'}</div>
+							<div class="setting-desc">{$t('settings.appearance.pillWeightDesc') || 'Font weight of pill labels (400 = normal, 700 = bold, 900 = extra bold).'}</div>
+						</div>
+						<select class="setting-control" value={String($appSettings.linkPills?.shape?.fontWeight ?? 700)}
+							onchange={(e) => updatePillShape({ fontWeight: parseInt((e.target as HTMLSelectElement).value) })}>
+							<option value="400">400 · Normal</option>
+							<option value="500">500 · Medium</option>
+							<option value="600">600 · Semi-bold</option>
+							<option value="700">700 · Bold</option>
+							<option value="800">800 · Extra-bold</option>
+							<option value="900">900 · Black</option>
+						</select>
+					</div>
+
+					<button class="btn-text" onclick={resetLinkPills}>{$t('settings.appearance.resetPillStyles') || 'Reset pill styles to default'}</button>
+
+					<!-- ═══ Living Link Lifecycle (P5) ═══ -->
+					<div class="setting-section-heading">{$t('settings.appearance.linkLifecycle') || 'Living Link Lifecycle'}</div>
+					<div class="setting-desc setting-section-desc">
+						{$t('settings.appearance.linkLifecycleDesc') || 'Links you haven\'t followed in a while drift down the Backlinks / Outgoing / Most-Traveled sort. The decay is a display concern only — the raw traversal counts in the database stay intact.'}
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.decayEnabled') || 'Apply weight decay to link sorts'}</div>
+							<div class="setting-desc">{$t('settings.appearance.decayEnabledDesc') || 'When off, links sort by raw traversal count only (no recency weighting).'}</div>
+						</div>
+						<input type="checkbox" class="setting-toggle"
+							checked={$appSettings.linkLifecycle?.decayEnabled ?? true}
+							onchange={(e) => updateLinkLifecycle({ decayEnabled: (e.target as HTMLInputElement).checked })} />
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.halfLifeDays') || 'Decay half-life'}</div>
+							<div class="setting-desc">{$t('settings.appearance.halfLifeDaysDesc') || 'Days after which an untouched link\'s effective weight halves. Lower = faster drop-off; higher = slower.'}</div>
+						</div>
+						<div class="slider-row">
+							<input type="range" class="setting-slider" min="7" max="365" step="1"
+								value={$appSettings.linkLifecycle?.halfLifeDays ?? 60}
+								disabled={!($appSettings.linkLifecycle?.decayEnabled ?? true)}
+								oninput={(e) => updateLinkLifecycle({ halfLifeDays: parseInt((e.target as HTMLInputElement).value) })} />
+							<span class="slider-val">{$appSettings.linkLifecycle?.halfLifeDays ?? 60} {$t('settings.appearance.days') || 'days'}</span>
+						</div>
+					</div>
+
+				<!-- ═══ STYLE SETTINGS ═══ -->
+				{:else if activeSection === 'stylesettings'}
+					{@const activeTheme = allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0]}
+					{#if !activeTheme}
+						<div class="setting-desc">{$t('settings.appearance.noActiveTheme') || 'No active theme selected. Choose a theme in Appearance first.'}</div>
+					{:else}
+						<div class="ss-toolbar">
+							<div class="ss-toolbar-title">{activeTheme.name}</div>
+							<div class="ss-toolbar-actions">
+								<button class="w-btn w-btn-sm" onclick={pasteStyleSettingsFromClipboard} title={$t('settings.appearance.ssPasteClipboard') || 'Paste JSON directly from clipboard (merge)'}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+									{$t('settings.appearance.ssPasteClipboard') || 'Paste from clipboard'}
+								</button>
+								<button class="w-btn w-btn-sm" onclick={() => { ssImportText = ''; ssImportError = ''; ssImportOpen = true; }} title={$t('settings.appearance.ssPasteTitle') || 'Open paste box to review, merge, or replace'}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+									{$t('settings.appearance.ssImport') || 'Import / Paste'}
+								</button>
+								<button class="w-btn w-btn-sm" onclick={importStyleSettingsFile} title={$t('settings.appearance.ssImportFile') || 'Import from .json file'}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+									{$t('settings.appearance.ssImportFile') || 'From file'}
+								</button>
+								<button class="w-btn w-btn-sm" onclick={copyStyleSettings} title={$t('settings.appearance.ssCopy') || 'Copy current values as JSON'}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+									{$t('settings.appearance.ssCopy') || 'Copy'}
+								</button>
+								<button class="w-btn w-btn-sm" onclick={exportStyleSettings} title={$t('settings.appearance.ssExport') || 'Export current values to a .json file'}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+									{$t('settings.appearance.ssExport') || 'Export'}
+								</button>
+							</div>
+						</div>
+						<div class="setting-desc" style="margin-bottom:12px">
+							{$t('settings.appearance.styleSettingsHint') || 'Customize the active theme. Changes apply live and are saved automatically.'}
+						</div>
+
+						{#if ssImportOpen}
+							<div class="ss-import-box">
+								<div class="ss-import-head">
+									<strong>{$t('settings.appearance.ssImportTitle') || 'Import Style Settings'}</strong>
+									<button class="btn-text" onclick={() => { ssImportOpen = false; ssImportText = ''; ssImportError = ''; }}>{$t('common.cancel') || 'Cancel'}</button>
+								</div>
+								<div class="setting-desc" style="margin-bottom:6px">
+									{$t('settings.appearance.ssImportHint') || 'Paste JSON exported from Obsidian’s Style Settings plugin or Constellation. Keys are setting IDs (e.g. "h1-size") mapping to string values.'}
+								</div>
+								<textarea class="ss-import-ta" bind:value={ssImportText}
+									placeholder={'{\n  "h1-size": "32",\n  "interactive-accent": "#7c3aed"\n}'}></textarea>
+								{#if ssImportError}
+									<div class="ss-import-err">{ssImportError}</div>
+								{/if}
+								<div class="ss-import-actions">
+									<button class="w-btn" onclick={() => { if (applyStyleSettingsJSON(ssImportText, 'merge')) { ssImportOpen = false; ssImportText = ''; } }}>{$t('settings.appearance.ssApplyMerge') || 'Merge'}</button>
+									<button class="w-btn" onclick={() => { if (applyStyleSettingsJSON(ssImportText, 'replace')) { ssImportOpen = false; ssImportText = ''; } }}>{$t('settings.appearance.ssApplyReplace') || 'Replace all'}</button>
+								</div>
+							</div>
+						{/if}
+						<StyleSettingsPanel
+							blocks={getEffectiveStyleBlocks(activeTheme)}
+							values={activeTheme.styleSettingsValues ?? {}}
+							onChange={(id, value) => {
+								const { customs, target } = ensureCustomTheme(activeTheme);
+								if (!target.styleSettingsValues) target.styleSettingsValues = {};
+								if (value === '' || value == null) delete target.styleSettingsValues[id];
+								else target.styleSettingsValues[id] = value;
+								updateSettings({ customThemes: customs, activeThemeId: target.id });
+							}}
+						/>
+						<div style="margin-top:16px; display:flex; gap:12px; align-items:center;">
+							<button class="btn-text" onclick={() => {
+								const customs = [...($appSettings.customThemes ?? [])];
+								const target = customs.find(t => t.id === activeTheme.id);
+								if (target) { target.styleSettingsValues = {}; updateSettings({ customThemes: customs }); }
+							}}>{$t('settings.appearance.resetStyleSettings') || 'Reset all to defaults'}</button>
+							<span class="setting-desc">{$t('settings.appearance.stylesSavedTo') || 'Saved to:'} <strong>{activeTheme.name}</strong></span>
+						</div>
+					{/if}
+
+				<!-- ═══ ICON OVERRIDES ═══ -->
+				{:else if activeSection === 'iconoverrides'}
+					<IconOverrideSettings />
+
 				<!-- ═══ KEYBOARD ═══ -->
-				{:else if activeSection === 'keyboard'}
+				{:else if activeSection === 'hotkeys'}
 					<div class="hotkey-filter">
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 						<input type="text" placeholder={$t('settings.keyboard.filter')}
@@ -1615,34 +2177,210 @@
 						{/if}
 					</div>
 
-				<!-- ═══ FEATURES ═══ -->
-				{:else if activeSection === 'features'}
-					<p class="section-intro">{$t('settings.features.intro')}</p>
+				<!-- ═══ TEMPLATES ═══ -->
+				{:else if activeSection === 'templates'}
+					<p class="section-intro">{$t('settings.templates.intro') || 'Manage note templates. Templates let you insert predefined content into new notes.'}</p>
+					<div class="setting-row">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.plugins.templates') || 'Templates'}</div>
+							<div class="setting-desc">{$t('settings.plugins.templatesDesc') || 'Insert content from template files'}</div>
+						</div>
+						<button class="toggle-btn" class:on={getFeatureEnabled('templates')} onclick={() => toggleFeature('templates')}>
+							{getFeatureEnabled('templates') ? $t('settings.plugins.on') || 'On' : $t('settings.plugins.off') || 'Off'}
+						</button>
+					</div>
+
+				<!-- ═══ PLUG-INS ═══ -->
+				{:else if activeSection === 'plugins'}
+					<p class="section-intro">{$t('settings.plugins.intro') || 'Toggle plug-ins on or off. Disabled plug-ins are hidden from the interface.'}</p>
 
 					{#each featureGroups as group}
-						<div class="feature-group">
-							<div class="feature-group-header">{group.category}</div>
-							<div class="feature-grid">
-								{#each group.features as feature}
-									<button class="feature-card" class:enabled={getFeatureEnabled(feature.id)}
-										onclick={() => toggleFeature(feature.id)}>
-										<div class="feature-card-icon">{feature.icon}</div>
-										<div class="feature-card-name">{feature.name}</div>
-										<div class="feature-card-desc">{feature.desc}</div>
-										<div class="feature-card-toggle">
-											<span class="feature-dot" class:on={getFeatureEnabled(feature.id)}></span>
-											{getFeatureEnabled(feature.id) ? $t('settings.features.on') : $t('settings.features.off')}
-										</div>
+						<div class="plugin-group">
+							<div class="plugin-group-header">{group.category}</div>
+							{#each group.features as feature}
+								<div class="plugin-row">
+									<span class="plugin-icon">{feature.icon}</span>
+									<div class="plugin-info">
+										<div class="plugin-name">{feature.name}</div>
+										<div class="plugin-desc">{feature.desc}</div>
+									</div>
+									<button class="plugin-switch" class:on={getFeatureEnabled(feature.id)}
+										onclick={() => toggleFeature(feature.id)}
+										title={getFeatureEnabled(feature.id) ? 'On' : 'Off'}>
+										<span class="plugin-switch-knob"></span>
 									</button>
-								{/each}
-							</div>
+								</div>
+							{/each}
 						</div>
 					{/each}
+
+				<!-- ═══ DEBUG (Boot Performance Scorecard) ═══ -->
+				{:else if activeSection === 'debug'}
+					<p class="section-intro">
+						{$t('settings.debug.intro')
+							|| 'Read-only diagnostic view. The boot-performance scorecard evaluates the five ship-gate criteria defined in lab/boot-perf/BOOT-BUDGET.md against the last launch on the active Universe.'}
+					</p>
+
+					<div class="setting-section-heading">{$t('settings.debug.bootPerfHeading') || 'Boot Performance'}</div>
+
+					{#if bootPerfLoading}
+						<p class="section-intro">{$t('settings.debug.loading') || 'Loading…'}</p>
+					{:else if bootPerfError}
+						<p class="section-intro" style="color: var(--text-error, var(--color-red))">{bootPerfError}</p>
+					{:else if bootPerf}
+						<!-- Timestamp + reload -->
+						<div class="bp-header">
+							<div class="bp-timestamp">
+								{$t('settings.debug.measuredAt') || 'Measured at'}
+								<code>{bootPerf.timestamp ?? '—'}</code>
+								· {bootPerf.note_count ?? '—'} {$t('settings.debug.notes') || 'notes'}
+							</div>
+							<button class="setting-btn" onclick={() => loadBootPerfReport(true)}>
+								{$t('settings.debug.refresh') || 'Refresh'}
+							</button>
+						</div>
+
+						<!-- Five-criterion scorecard -->
+						<div class="bp-scorecard">
+							<!-- Criterion 1 — UI visible ≤ 2.5s -->
+							<div class="bp-row">
+								<div class="bp-row-head">
+									<span class="bp-num">1</span>
+									<span class="bp-name">{$t('settings.debug.c1') || 'UI visible'}</span>
+								</div>
+								<div class="bp-row-meta">
+									<span class="bp-target">≤ 2.5s</span>
+									<span class="bp-value">{fmtMs(bootPerf.paint_ms)}</span>
+									<span class="bp-status {bpStatusClass(bootPerf.paint_ms, 2500)}">
+										{bpStatusLabel(bootPerf.paint_ms, 2500)}
+									</span>
+								</div>
+							</div>
+
+							<!-- Criterion 2 — Fully responsive ≤ 6s -->
+							<div class="bp-row">
+								<div class="bp-row-head">
+									<span class="bp-num">2</span>
+									<span class="bp-name">{$t('settings.debug.c2') || 'Fully responsive'}</span>
+								</div>
+								<div class="bp-row-meta">
+									<span class="bp-target">≤ 6s</span>
+									<span class="bp-value">{fmtMs(bootPerf.hydrated_ms)}</span>
+									<span class="bp-status {bpStatusClass(bootPerf.hydrated_ms, 6000)}">
+										{bpStatusLabel(bootPerf.hydrated_ms, 6000)}
+									</span>
+								</div>
+							</div>
+
+							<!-- Criterion 3 — RSS ≤ 350 MB (not yet instrumented) -->
+							<div class="bp-row">
+								<div class="bp-row-head">
+									<span class="bp-num">3</span>
+									<span class="bp-name">{$t('settings.debug.c3') || 'Idle RSS memory'}</span>
+								</div>
+								<div class="bp-row-meta">
+									<span class="bp-target">≤ 350 MB</span>
+									<span class="bp-value">—</span>
+									<span class="bp-status bp-unknown">{$t('settings.debug.notMeasured') || 'Not measured'}</span>
+								</div>
+							</div>
+
+							<!-- Criterion 4 — Post-boot stat-sweep (not yet instrumented) -->
+							<div class="bp-row">
+								<div class="bp-row-head">
+									<span class="bp-num">4</span>
+									<span class="bp-name">{$t('settings.debug.c4') || 'Post-boot stat sweep'}</span>
+								</div>
+								<div class="bp-row-meta">
+									<span class="bp-target">≤ 3s / 50 files</span>
+									<span class="bp-value">—</span>
+									<span class="bp-status bp-unknown">{$t('settings.debug.notMeasured') || 'Not measured'}</span>
+								</div>
+							</div>
+
+							<!-- Criterion 5 — Kill-mid-index recovery (manual procedure) -->
+							<div class="bp-row">
+								<div class="bp-row-head">
+									<span class="bp-num">5</span>
+									<span class="bp-name">{$t('settings.debug.c5') || 'Kill mid-index recovery'}</span>
+								</div>
+								<div class="bp-row-meta">
+									<span class="bp-target">{$t('settings.debug.manual') || 'Manual'}</span>
+									<span class="bp-value">
+										{bootPerf.recovery_pass === true
+											? ($t('settings.debug.pass') || 'PASS')
+											: '—'}
+									</span>
+									<span class="bp-status {bootPerf.recovery_pass === true ? 'bp-pass' : 'bp-unknown'}">
+										{bootPerf.recovery_pass === true
+											? ($t('settings.debug.pass') || 'PASS')
+											: ($t('settings.debug.notMeasured') || 'Not measured')}
+									</span>
+								</div>
+							</div>
+						</div>
+
+						<!-- Deep attribution (collapsible) -->
+						<details class="bp-details">
+							<summary>{$t('settings.debug.details') || 'Show per-phase timings'}</summary>
+
+							<div class="bp-grid">
+								<div class="bp-kv">
+									<span class="bp-k">{$t('settings.debug.graphReady') || 'Graph ready'}</span>
+									<span class="bp-v">{fmtMs(bootPerf.graph_ready_ms)}</span>
+								</div>
+								<div class="bp-kv">
+									<span class="bp-k">{$t('settings.debug.librariesLoaded') || 'Libraries loaded'}</span>
+									<span class="bp-v">{fmtMs(bootPerf.libraries_loaded_ms)}</span>
+								</div>
+							</div>
+
+							<div class="bp-subheading">{$t('settings.debug.coreSnapshot') || 'Core snapshot (notes)'}</div>
+							<div class="bp-grid">
+								<div class="bp-kv"><span class="bp-k">wall</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_core_wall_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">queue</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_core_queue_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">body</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_core_body_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">transport</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_core_transport_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">assign</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_core_assign_ms)}</span></div>
+							</div>
+
+							<div class="bp-subheading">{$t('settings.debug.graphSnapshot') || 'Graph snapshot (links + tags)'}</div>
+							<div class="bp-grid">
+								<div class="bp-kv"><span class="bp-k">wall</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_graph_wall_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">queue</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_graph_queue_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">body</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_graph_body_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">transport</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_graph_transport_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">assign</span><span class="bp-v">{fmtMs(bootPerf.cache_snapshot_graph_assign_ms)}</span></div>
+							</div>
+
+							<div class="bp-subheading">{$t('settings.debug.fanout') || 'Fire-and-forget fan-out'}</div>
+							<div class="bp-grid">
+								<div class="bp-kv"><span class="bp-k">load_all_stats</span><span class="bp-v">{fmtMs(bootPerf.load_all_stats_wall_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">start_watching_all</span><span class="bp-v">{fmtMs(bootPerf.start_watching_all_wall_ms)}</span></div>
+								<div class="bp-kv"><span class="bp-k">load_all_appearances</span><span class="bp-v">{fmtMs(bootPerf.load_all_appearances_wall_ms)}</span></div>
+							</div>
+						</details>
+
+						<!-- Raw JSON (last-resort fallback for fields the UI doesn't surface) -->
+						<details class="bp-details">
+							<summary>{$t('settings.debug.rawJson') || 'Show raw JSON'}</summary>
+							<pre class="bp-raw">{JSON.stringify(bootPerf, null, 2)}</pre>
+						</details>
+					{:else}
+						<p class="section-intro">{$t('settings.debug.noReportYet') || 'No boot-perf report yet.'}</p>
+					{/if}
 				{/if}
 			</div>
 		</div>
 	</div>
 </div>
+
+{#if showObsidianBrowser}
+	<ObsidianThemeBrowser
+		onClose={() => showObsidianBrowser = false}
+		onImported={(theme) => { showObsidianBrowser = false; }}
+	/>
+{/if}
 
 <style>
 	/* ═══ OVERLAY ═══ */
@@ -1830,6 +2568,126 @@
 		border-radius: 6px; padding: 2px; cursor: pointer; background: none;
 	}
 	.color-hex { font-size: 0.82rem; color: var(--text-muted); font-family: var(--font-monospace-theme); }
+
+	/* Living Link pill settings */
+	.ll-color-controls { display: flex; gap: 10px; align-items: center; }
+	.ll-color-col { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+	.ll-color-label { font-size: 0.7rem; color: var(--text-muted); }
+	.ll-pill-preview {
+		display: inline-flex; align-items: center; justify-content: center;
+		padding: 0 8px; line-height: 1; font-size: 0.65rem;
+		text-transform: lowercase; letter-spacing: 0.02em;
+		box-sizing: border-box; margin-top: 4px;
+		border: 1px solid rgba(0,0,0,0.1);
+	}
+	.ll-type-id {
+		font-family: var(--font-monospace-theme, monospace);
+		font-size: 0.72rem; font-weight: 400;
+		color: var(--text-faint); margin-inline-start: 6px;
+	}
+
+	/* Theme gallery */
+	.theme-gallery {
+		display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+		gap: 10px; margin-bottom: 12px;
+	}
+	.theme-card {
+		display: flex; flex-direction: column; align-items: center; gap: 6px;
+		padding: 10px 8px; border-radius: 10px;
+		border: 2px solid var(--background-modifier-border);
+		background: var(--background-secondary); cursor: pointer;
+		position: relative; transition: all 0.15s;
+	}
+	.theme-card:hover { border-color: var(--interactive-accent); }
+	.theme-card.active { border-color: var(--interactive-accent); box-shadow: 0 0 0 2px var(--interactive-accent); }
+	.theme-swatches { display: flex; gap: 3px; }
+	.theme-sw { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
+	.theme-card-name { font-size: 0.75rem; color: var(--text-muted); text-align: center; }
+	.theme-edit-btn {
+		position: absolute; top: 4px; inset-inline-end: 4px; background: none; border: none;
+		cursor: pointer; font-size: 12px; opacity: 0; transition: opacity 0.15s;
+	}
+	.theme-card:hover .theme-edit-btn { opacity: 1; }
+	.theme-delete-btn {
+		position: absolute; top: 4px; inset-inline-end: 24px; background: none; border: none;
+		cursor: pointer; font-size: 12px; opacity: 0; transition: opacity 0.15s; color: var(--text-muted);
+		padding: 0; line-height: 1;
+	}
+	.theme-card:hover .theme-delete-btn { opacity: 1; }
+	.theme-delete-btn:hover { color: var(--text-error, #e06666); }
+	/* Style Settings toolbar */
+	.ss-toolbar {
+		display: flex; align-items: center; justify-content: space-between;
+		gap: 12px; flex-wrap: wrap;
+		padding: 8px 0 10px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		margin-bottom: 10px;
+	}
+	.ss-toolbar-title {
+		font-size: 14px; font-weight: 700;
+		color: var(--interactive-accent);
+	}
+	.ss-toolbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+	.w-btn-sm {
+		display: inline-flex; align-items: center; gap: 4px;
+		padding: 4px 10px; font-size: 12px;
+	}
+	.w-btn-sm svg { flex-shrink: 0; }
+	/* Import box */
+	.ss-import-box {
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+		border-radius: 8px;
+		padding: 12px;
+		margin-bottom: 14px;
+	}
+	.ss-import-head {
+		display: flex; align-items: center; justify-content: space-between;
+		margin-bottom: 8px;
+	}
+	.ss-import-ta {
+		width: 100%; min-height: 160px; resize: vertical;
+		font-family: var(--font-monospace-theme, monospace);
+		font-size: 12px; line-height: 1.5;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		background: var(--background-primary);
+		color: var(--text-normal);
+		padding: 8px 10px;
+	}
+	.ss-import-err {
+		margin-top: 6px; color: var(--text-error, #e06666);
+		font-size: 12px;
+	}
+	.ss-import-actions {
+		display: flex; gap: 8px; margin-top: 10px;
+	}
+	.theme-add, .theme-import { border-style: dashed; }
+	.theme-add-icon { font-size: 1.5rem; color: var(--text-faint); }
+
+	/* Theme editor */
+	.theme-editor {
+		margin-top: 12px; padding: 14px; border-radius: 10px;
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+	}
+	.theme-editor-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+	.btn-primary {
+		padding: 6px 16px; border-radius: 6px; border: none;
+		background: var(--interactive-accent); color: var(--text-on-accent);
+		font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit;
+	}
+	.btn-primary:hover { opacity: 0.9; }
+	.btn-text {
+		padding: 6px 12px; border-radius: 6px; border: none; background: none;
+		color: var(--text-muted); font-size: 0.82rem; cursor: pointer; font-family: inherit;
+	}
+	.btn-text:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.btn-danger {
+		padding: 6px 12px; border-radius: 6px; border: none;
+		background: var(--text-error); color: white;
+		font-size: 0.82rem; cursor: pointer; font-family: inherit; margin-inline-start: auto;
+	}
 
 	/* Slider */
 	.slider-row { display: flex; align-items: center; gap: 10px; min-width: 180px; }
@@ -2121,6 +2979,131 @@
 		transition: background 0.2s ease;
 	}
 	.feature-dot.on { background: var(--color-green, #4ade80); }
+
+	/* Plug-in toggle switches */
+	.plugin-group { margin-bottom: 20px; }
+	.plugin-group-header {
+		font-size: 0.8rem; font-weight: 600; color: var(--text-faint);
+		text-transform: uppercase; letter-spacing: 0.04em;
+		margin-bottom: 8px;
+	}
+	.plugin-row {
+		display: flex; align-items: center; gap: 12px;
+		padding: 10px 12px; border-radius: 8px;
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+	.plugin-row:hover { background: var(--background-modifier-hover); }
+	.plugin-icon { font-size: 1.1rem; flex-shrink: 0; }
+	.plugin-info { flex: 1; min-width: 0; }
+	.plugin-name { font-size: 0.85rem; font-weight: 600; color: var(--text-normal); }
+	.plugin-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; margin-top: 1px; }
+	.plugin-switch {
+		width: 40px; height: 22px; border-radius: 11px; border: none;
+		background: var(--background-modifier-border); cursor: pointer;
+		position: relative; flex-shrink: 0; transition: background 0.2s;
+		padding: 0;
+	}
+	.plugin-switch.on { background: var(--interactive-accent, #7c3aed); }
+	.plugin-switch-knob {
+		position: absolute; top: 2px; inset-inline-start: 2px;
+		width: 18px; height: 18px; border-radius: 50%;
+		background: white; transition: inset-inline-start 0.2s;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+	}
+	.plugin-switch.on .plugin-switch-knob { inset-inline-start: 20px; }
+
+	/* ═══ DEBUG — BOOT PERFORMANCE SCORECARD ═══ */
+	.bp-header {
+		display: flex; align-items: center; justify-content: space-between;
+		gap: 12px; margin-bottom: 16px;
+		padding: 8px 12px; border-radius: 6px;
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+	}
+	.bp-timestamp { font-size: 0.78rem; color: var(--text-muted); }
+	.bp-timestamp code {
+		font-family: var(--font-monospace, monospace);
+		font-size: 0.75rem; color: var(--text-normal);
+		background: var(--background-primary);
+		padding: 1px 5px; border-radius: 3px;
+	}
+	.bp-scorecard {
+		display: flex; flex-direction: column; gap: 6px;
+		margin-bottom: 20px;
+	}
+	.bp-row {
+		display: flex; align-items: center; justify-content: space-between;
+		gap: 12px;
+		padding: 10px 14px; border-radius: 8px;
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-primary);
+	}
+	.bp-row-head { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+	.bp-num {
+		display: inline-flex; align-items: center; justify-content: center;
+		width: 22px; height: 22px; border-radius: 50%;
+		background: var(--background-secondary);
+		color: var(--text-muted);
+		font-size: 0.72rem; font-weight: 600;
+		flex-shrink: 0;
+	}
+	.bp-name { font-size: 0.88rem; color: var(--text-normal); font-weight: 500; }
+	.bp-row-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+	.bp-target {
+		font-size: 0.72rem; color: var(--text-faint);
+		font-family: var(--font-monospace, monospace);
+	}
+	.bp-value {
+		font-size: 0.82rem; color: var(--text-normal);
+		font-family: var(--font-monospace, monospace);
+		min-width: 60px; text-align: end;
+	}
+	.bp-status {
+		font-size: 0.68rem; font-weight: 600;
+		padding: 2px 8px; border-radius: 10px;
+		letter-spacing: 0.04em;
+		min-width: 54px; text-align: center;
+	}
+	.bp-status.bp-pass { background: var(--color-green, #4ade80); color: #052e16; }
+	.bp-status.bp-fail { background: var(--color-red, #ef4444); color: #fef2f2; }
+	.bp-status.bp-unknown { background: var(--background-modifier-border); color: var(--text-faint); }
+
+	.bp-details {
+		margin-top: 10px; padding: 8px 12px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		background: var(--background-secondary);
+	}
+	.bp-details summary {
+		cursor: pointer; font-size: 0.82rem; color: var(--text-muted);
+		padding: 2px 0;
+	}
+	.bp-details[open] summary { margin-bottom: 8px; color: var(--text-normal); }
+	.bp-subheading {
+		font-size: 0.72rem; font-weight: 600;
+		color: var(--text-faint);
+		text-transform: uppercase; letter-spacing: 0.06em;
+		margin: 12px 0 6px;
+	}
+	.bp-subheading:first-child { margin-top: 0; }
+	.bp-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		gap: 4px 12px;
+	}
+	.bp-kv {
+		display: flex; justify-content: space-between; align-items: baseline;
+		padding: 2px 0; font-family: var(--font-monospace, monospace); font-size: 0.76rem;
+	}
+	.bp-k { color: var(--text-muted); }
+	.bp-v { color: var(--text-normal); }
+	.bp-raw {
+		max-height: 280px; overflow: auto;
+		font-family: var(--font-monospace, monospace); font-size: 0.72rem;
+		background: var(--background-primary); color: var(--text-muted);
+		padding: 8px 10px; border-radius: 4px;
+		white-space: pre; margin: 0;
+	}
 
 	/* ═══ AI / INTELLIGENCE ═══ */
 	.test-btn {

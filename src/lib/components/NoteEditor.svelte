@@ -17,6 +17,7 @@
 		createNote, buildDefaultFrontmatter, appSettings,
 		type FrontmatterProperty
 	} from '$lib/libraries/store';
+	import { broadcastNoteSaved } from '$lib/secondScreen';
 	import { buildLibraryColorMap } from '$lib/libraries/colors';
 	import { detectDir } from '$lib/utils';
 	import { get } from 'svelte/store';
@@ -51,6 +52,7 @@
 		onnavigateforward,
 		onmoreaction,
 		onStageChanged,
+		linkTraversalMap,
 	}: {
 		tab: TabLike;
 		noteNames?: { name: string; path: string; libraryName?: string }[];
@@ -64,6 +66,7 @@
 		onnavigateforward?: () => void;
 		onmoreaction?: (action: string) => void;
 		onStageChanged?: (path: string, stage: string) => void;
+		linkTraversalMap?: Map<string, number>;
 	} = $props();
 
 	// Internal derived state — recalculated when tab changes
@@ -113,18 +116,29 @@
 		onStageChanged?.(tab.path, nextStage);
 	}
 
-	function handleSave(text: string) {
+	// `filePath` is captured by NotePane at mount and passed back on every
+	// save/flush. If it doesn't match the current tab.path, this callback is
+	// arriving from an already-destroyed editor whose tab has been repurposed
+	// by a wikilink click / Alt+← nav. Using `tab.path` / `freshProps()` at
+	// that point would (a) reconstruct content as `current-tab frontmatter
+	// + old-tab body` — corruption — and (b) write that corruption to the
+	// wrong file on disk, or at minimum poison `setWriteAhead` for the new
+	// tab. Bail in that case.
+	function handleSave(text: string, filePath: string) {
 		if (saving) return;
+		if (!filePath || filePath !== tab.path) return;
 		saving = true;
 		const props = freshProps();
-		markRecentWrite(tab.path);
+		markRecentWrite(filePath);
 		const content = buildFullContent(props, text);
-		writeNote(tab.path, content)
+		writeNote(filePath, content)
+			.then(() => { broadcastNoteSaved(filePath); })
 			.catch(() => {})
 			.finally(() => { saving = false; });
 	}
 
-	function handleFlush(text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number) {
+	function handleFlush(text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number, filePath: string) {
+		if (!filePath || filePath !== tab.path) return;
 		const props = freshProps();
 		const content = buildFullContent(props, text);
 		// Update store tab if present
@@ -134,22 +148,31 @@
 			ct.cursorPos = cursorPos;
 			ct.scrollTop = scrollTop;
 		}
-		// Update local tab
-		tab.content = content;
-		tab.cursorPos = cursorPos;
-		tab.scrollTop = scrollTop;
-		setWriteAhead(tab.path, content, cursorPos, scrollTop);
+		setWriteAhead(filePath, content, cursorPos, scrollTop);
 		if (needsDiskSave) {
-			markRecentWrite(tab.path);
-			writeNote(tab.path, content)
-				.then(() => clearWriteAhead(tab.path))
+			markRecentWrite(filePath);
+			writeNote(filePath, content)
+				.then(() => { clearWriteAhead(filePath); broadcastNoteSaved(filePath); })
 				.catch(() => {});
 		}
 	}
 
-	function handleTitleChange(newTitle: string) {
-		if (newTitle !== tab.name.replace(/\.md$/, '')) {
-			renameItem(tab.path, tab.path.replace(/[^/\\]+$/, newTitle + '.md'));
+	async function handleTitleChange(newTitle: string) {
+		if (!newTitle || !tab.path) return;
+		const currentName = tab.name.replace(/\.md$/, '');
+		if (newTitle === currentName) return;
+
+		// Skip rename if the file doesn't exist (e.g., during initial load)
+		const newPath = tab.path.replace(/[^/\\]+$/, newTitle + '.md');
+		try {
+			await renameItem(tab.path, newPath);
+		} catch (e) {
+			// Rename failed — log but don't disrupt the user
+			if (String(e).includes('does not exist')) {
+				// File might have been moved/renamed externally — silently ignore
+			} else {
+				console.error('[NoteEditor] Rename failed:', e);
+			}
 		}
 	}
 
@@ -184,7 +207,7 @@
 		try {
 			const resolved = await resolveWikilinkCrossLibrary(tab.libraryPath, link);
 			if (resolved) {
-				await openNoteTab(resolved.path, resolved.libraryName, resolved.libraryColor || '#7c3aed', undefined, newTab);
+				await openNoteTab(resolved.path, resolved.libraryName, resolved.libraryColor || '#7c3aed', undefined, newTab, tab.path);
 			} else {
 				// Note doesn't exist — create it in the same folder with default frontmatter
 				const folder = tab.path.replace(/[/\\][^/\\]+$/, '');
@@ -221,6 +244,7 @@
 	{onTrailNext}
 	canGoBack={(tab.historyIndex ?? 0) > 0}
 	canGoForward={(tab.historyIndex ?? 0) < (tab.history?.length ?? 1) - 1}
+	{linkTraversalMap}
 	onchange={() => {}}
 	onpromote={handlePromote}
 	onsave={handleSave}

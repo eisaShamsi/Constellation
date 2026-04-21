@@ -6,24 +6,27 @@ aliases:
   - Multi-window
   - Companion window
   - Dashboard
-description: Use Constellation's Second Screen as a mode-based companion — showing a Universe Dashboard in File Explorer mode, Navigator, Sky View, or Star View companion depending on the active sidebar.
+description: Use Constellation's Second Screen as a mode-based companion — showing a Universe Dashboard in File Explorer mode, Navigator, Sky View, or Sky View companion depending on the active sidebar. Requires two or more connected monitors.
 ---
 
 # Second Screen
 
 The Second Screen is a mode-based companion window that adapts to your current sidebar mode. Instead of duplicating the main CodeMirror 6 editor, it provides contextual views and information relevant to what you're doing.
 
+> [!important] Requires Two Monitors
+> The Second Screen is only available when **two or more monitors** are connected to your computer. If only one monitor is detected, the Second Screen button, keyboard shortcut, and command palette entries are hidden. This is by design — the Second Screen is meant to live on a dedicated display so your main window stays a clean writing space.
+
 ## Opening the Second Screen
 
 | Method | Action |
 |--------|--------|
-| **Ribbon** | Click the monitor icon in the left ribbon |
+| **Dock** | Click the monitor icon in the bottom dock bar |
 | **Mission Control** | Press `Ctrl+P`, type "Second Screen" |
 | **Keyboard shortcut** | `Ctrl+Shift+2` |
 
-If you have two or more monitors connected, the second screen automatically positions itself centered on your secondary display. On a single monitor, it opens as a standard window.
+The second screen automatically positions itself centered on your secondary display, filling approximately 80% of the screen.
 
-When the Second Screen opens, the main window's right sidebar automatically hides — its panels (Properties, Backlinks, Tags, Star, Tasks) migrate to the Second Screen. When you close the Second Screen, the right sidebar returns.
+When the Second Screen opens, the main window's right sidebar automatically hides — its panels (Properties, Backlinks, Tags, Sky View, Tasks) migrate to the Second Screen. When you close the Second Screen, the right sidebar returns.
 
 The Second Screen always starts closed — it is never auto-restored from workspaces. You open it deliberately when you need it.
 
@@ -41,7 +44,7 @@ When you're editing a note with the Second Screen open, it shows the panels that
 | **Backlinks** | Notes that link TO the current note, with library color dots |
 | **Forward Links** | Notes that the current note links TO |
 | **Tags** | Tags from frontmatter, displayed as badges |
-| **Star** | Local graph showing the note and its direct connections |
+| **Sky View** | Local graph showing the note and its direct connections |
 | **Tasks** | Tasks found in the note |
 
 The panels update automatically when you switch between tabs in the main window. Click any backlink or forward link to open that note in the main window.
@@ -57,7 +60,7 @@ The second screen automatically adapts its content based on the active sidebar m
 | **File Explorer** (tree) | Universe Dashboard |
 | **Navigator** (list) | Full Navigator view |
 | **Sky View** (skyview) | Sky View tree |
-| **Star View** (graph) | Star View companion with backlinks, forward links, tags, and local graph |
+| **Sky View** (graph) | Sky View companion with backlinks, forward links, tags, and local graph |
 
 Switching sidebar modes in the main window instantly updates the second screen.
 
@@ -118,13 +121,13 @@ Click the close button (×) to collapse the tag notes panel.
 
 ---
 
-## Star View Companion
+## Sky View Companion
 
-When the main window is in Star View mode, the second screen becomes a Star View companion that shows detailed information about the node you hover or click.
+When the main window is in Sky View mode, the second screen becomes a Sky View companion that shows detailed information about the node you hover or click.
 
 ### Hover Preview
 
-Hover over a node in the main window's Star View to see its details in the second screen:
+Hover over a node in the main window's Sky View to see its details in the second screen:
 
 - Note name, library, and markdown preview
 - Backlinks and forward links
@@ -146,7 +149,7 @@ Click any backlink or forward link in the companion to open a full editable prev
 The second screen supports full note editing in all modes:
 
 - **Editor mode**: The detail view is a complete editor with toolbar, properties, stage dropdown, and save support
-- **Star View peek**: Click a link in the companion to open a full editor in the peek panel
+- **Sky View peek**: Click a link in the companion to open a full editor in the peek panel
 - **Save**: Press Ctrl+S or the editor auto-saves — changes sync back to the main window automatically
 - **Rename**: Edit the title to rename the file
 - **Properties**: Expand the Properties panel to edit frontmatter
@@ -199,6 +202,41 @@ All visual settings changes propagate instantly to the second screen:
 | **Accent color** | Instant |
 | **Editor settings** (readable line length, line numbers, floating toolbar) | Instant |
 | **Primary script** | Instant |
+
+---
+
+## Split View Comparison
+
+When Split View is active in the main window (multiple notes open side by side), the Second Screen switches to **comparison mode**:
+
+- A **panel tab bar** at the top lets you choose which panel to compare (Properties, Backlinks, Tags, Sky View, Tasks)
+- Below, **one column per note** displays that panel's data side by side
+- Each column header shows the note name with a library color dot
+- Click any backlink or forward link in any column to open it in the main window
+
+This is designed for comparing metadata across notes — see which notes share tags, compare backlinks, or view tasks side by side.
+
+---
+
+## Index Companion
+
+When the Index is open in the main window, clicking a term sends its data to the Second Screen:
+
+- **Single term**: A split view with the note list on the left and a full editor on the right
+- **Multi-term compare** (Ctrl+Click): One column per term, each showing its note list. Click a note to open it in the editor pane.
+
+---
+
+## Constellation Map Companion
+
+When the Constellation Map is open in the main window, the Second Screen shows a companion view:
+
+- **Drill-down view**: A grid of mini-maps for child folders/libraries
+- **Note click**: Opens the note in a full editor alongside a context mini-map
+- **Color mode dropdown**: Switch between Maturity, Stratum, and Library coloring
+- **Legend**: Shows the color meaning for the selected mode
+
+The color mode and legend sync across all mini-maps on the Second Screen.
 
 ---
 

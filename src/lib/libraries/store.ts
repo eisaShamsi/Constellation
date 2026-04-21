@@ -11,6 +11,8 @@ export interface LibraryInfo {
 	name: string;
 	path: string;
 	is_universe_notes?: boolean;
+	/** "native" | "canonical" | "compatible" */
+	canonical_mode?: string;
 }
 
 export interface StarInfo {
@@ -41,6 +43,8 @@ export interface FileEntry {
 	modified: number | null;
 	status: string | null;
 	isCUniverse?: boolean;
+	/** For canonical files: human-readable title from frontmatter. */
+	display_title?: string | null;
 }
 
 export interface OpenTab {
@@ -217,6 +221,21 @@ export async function saveTabContent(
 		recentWrites.set(filePath, Date.now());
 		await writeNote(filePath, newContent);
 		emit('screen:note-saved', { path: filePath }).catch(() => {});
+		// Reindex for search (non-blocking) — updates FTS5, tags, links
+		const tab = get(openTabs).find(t => t.path === filePath);
+		if (tab) {
+			invoke('constellation_search_reindex', { notePath: filePath, libraryName: tab.libraryName }).catch(() => {});
+		}
+		// Re-embed for semantic search via Rust ONNX (non-blocking)
+		if (get(appSettings).enabledFeatures?.semanticSearch) {
+			const tab = get(openTabs).find(t => t.path === filePath);
+			if (tab) {
+				invoke('constellation_embed_notes', {
+					notes: [{ path: filePath, name: tab.name, content: body }],
+					force: true
+				}).catch(() => {});
+			}
+		}
 		// Track as recently edited in localStorage for second screen dashboard
 		try {
 			const key = 'constellation-recent-edited';
@@ -274,11 +293,29 @@ export const libraryCount = derived(libraries, ($v) => $v.length);
 export const totalStars = derived(libraryStats, ($s) => $s.reduce((sum, v) => sum + v.star_count, 0));
 
 // ─── Per-tab navigation ───
+// Supersede token per tab — a later call overwrites an in-flight earlier one
+// so rapid Alt+Left / Alt+Right keypresses don't race openTabs.update with
+// stale content/name/path combinations (the "tab title ≠ body" bug).
+const _navTokens = new Map<string, number>();
+
+// Ring-buffer trace of navigation calls exposed as `window.__navTrace` for
+// debugging the wikilink-click cycle. 200 entries is plenty for a session.
+const _navTrace: Array<{ t: number; fn: string; tabId?: string; from?: string; to?: string; stack?: string }> = [];
+if (typeof window !== 'undefined') (window as unknown as Record<string, unknown>).__navTrace = _navTrace;
+function _traceNav(fn: string, tabId?: string, to?: string, from?: string) {
+	_navTrace.push({
+		t: Date.now(), fn, tabId, to, from,
+		stack: new Error().stack?.split('\n').slice(2, 6).join(' ← '),
+	});
+	if (_navTrace.length > 200) _navTrace.shift();
+}
+
 export function navigateBack() {
 	const tab = get(splitActive) ? get(focusedTab) : get(activeTab);
 	if (!tab || tab.historyIndex <= 0) return;
 	const newIndex = tab.historyIndex - 1;
 	const targetPath = tab.history[newIndex];
+	_traceNav('navigateBack', tab.id, targetPath, tab.path);
 	loadTabHistoryEntry(tab.id, targetPath, newIndex);
 }
 
@@ -287,17 +324,54 @@ export function navigateForward() {
 	if (!tab || tab.historyIndex >= tab.history.length - 1) return;
 	const newIndex = tab.historyIndex + 1;
 	const targetPath = tab.history[newIndex];
+	_traceNav('navigateForward', tab.id, targetPath, tab.path);
 	loadTabHistoryEntry(tab.id, targetPath, newIndex);
 }
 
 async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIndex: number) {
+	const myToken = (_navTokens.get(tabId) ?? 0) + 1;
+	_navTokens.set(tabId, myToken);
 	try {
 		const content: string = await invoke('read_note', { filePath });
-		const name = filePath.split(/[\\/]/).pop()?.replace('.md', '') ?? '';
+		// If a later nav has superseded this one, don't stomp its result.
+		if (_navTokens.get(tabId) !== myToken) return;
+
+		// Name: mirror openNoteTab — prefer frontmatter `title:`, fall back to
+		// the filename stem. Without this parity the tab label flips between
+		// the two conventions as the user navigates forward (click) vs back
+		// (history), producing visible "title ≠ body" desync.
+		let name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
+		const fmTitleMatch = content.match(/^---[\s\S]*?^title:\s*"?([^"\n]+)"?\s*$/m);
+		if (fmTitleMatch?.[1]) name = fmTitleMatch[1].trim();
+
+		// Resolve library for the new path so cross-library history entries
+		// (or any future cross-library nav) don't keep the old library's
+		// name/path on the tab.
+		const allLibs = get(libraries);
+		const normalize = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+		const filePathNorm = normalize(filePath);
+		let resolvedLibrary: typeof allLibs[number] | undefined;
+		let bestLen = -1;
+		for (const v of allLibs) {
+			const libNorm = normalize(v.path);
+			if (filePathNorm === libNorm || filePathNorm.startsWith(libNorm + '/')) {
+				if (libNorm.length > bestLen) { bestLen = libNorm.length; resolvedLibrary = v; }
+			}
+		}
+
 		openTabs.update(tabs => tabs.map(t => {
 			if (t.id !== tabId) return t;
-			return { ...t, path: filePath, content, name, historyIndex: newHistoryIndex, highlightTerm: undefined };
+			return {
+				...t,
+				path: filePath,
+				content,
+				name,
+				historyIndex: newHistoryIndex,
+				highlightTerm: undefined,
+				...(resolvedLibrary ? { libraryName: resolvedLibrary.name, libraryPath: resolvedLibrary.path } : {}),
+			};
 		}));
+		_traceNav('loadTabHistoryEntry:applied', tabId, filePath);
 	} catch { /* file may have been deleted */ }
 }
 
@@ -543,17 +617,55 @@ export function createEmptyTab() {
 	}
 }
 
-export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean) {
+// Living Link traversal throttle: coalesce rapid repeat clicks on the same
+// (source, target) pair so double-clicks don't inflate traversal_count.
+const TRAVERSAL_THROTTLE_MS = 2000;
+const traversalLastWrite = new Map<string, number>();
+
+// P4.2 live refresh: optimistic per-pair traversal increments applied on top
+// of the boot-graph counts. When the user follows a wikilink and we fire
+// `constellation_link_traverse`, we ALSO bump this local map so the in-prose
+// `×N` chip and the sidebar chips update immediately without waiting for
+// the next boot-graph re-fetch. The bumps are cleared whenever the graph
+// payload arrives fresh — at that point the DB has already absorbed the
+// bumps, so keeping them around would double-count.
+export const linkTraversalBumps = writable<Map<string, number>>(new Map());
+
+/** Increment the optimistic bump for a (source, target) pair by 1. Key
+ *  format matches the consumers' lookup: `source_path.toLowerCase()|target.toLowerCase()`. */
+export function bumpLinkTraversal(sourcePath: string, targetLower: string) {
+	const key = sourcePath.toLowerCase() + '|' + targetLower;
+	linkTraversalBumps.update(m => {
+		const next = new Map(m);
+		next.set(key, (next.get(key) ?? 0) + 1);
+		return next;
+	});
+}
+
+/** Reset the bumps — call this immediately after a fresh boot-graph load
+ *  lands in `allLibraryLinks`, otherwise the optimistic increments will
+ *  double-count against the (now-updated) server counts. */
+export function clearLinkTraversalBumps() {
+	linkTraversalBumps.set(new Map());
+}
+
+export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean, fromNotePath?: string) {
 	const tabs = get(openTabs);
 
 	// If the same file is already the active tab, just update highlight
 	const currentTab = get(splitActive) ? get(focusedTab) : get(activeTab);
+	_traceNav('openNoteTab:entry', currentTab?.id, filePath, fromNotePath ?? currentTab?.path);
 	if (currentTab && currentTab.path === filePath) {
 		if (highlightTerm) {
 			openTabs.update(tabs => tabs.map(t => t.id === currentTab.id ? { ...t, highlightTerm } : t));
 		}
+		_traceNav('openNoteTab:earlyReturn', currentTab.id, filePath);
 		return;
 	}
+
+	// Living Link System: record traversal when following a wikilink (fire-and-forget)
+	// Deferred until we have the note's display name (extracted from content below)
+	const _fromNotePath = fromNotePath;
 
 	/* Check write-ahead buffer first — it has the latest content if the
 	   async disk write from a previous close hasn't completed yet. */
@@ -569,12 +681,85 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 			return; // File may not exist or be readable
 		}
 	}
-	const name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
 
-	// Derive library path from registered libraries
+	// Living Link identifier (cid_cn): injected lazily the first time a note is
+	// opened. Adds a `cid_cn:` property to the note's YAML frontmatter with a
+	// timestamp derived from the file's creation time. Migrates any legacy
+	// `cid:` to `cid_cn:` on the same pass. Only markdown files get this; the
+	// vault's original filenames are never touched.
+	if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
+		try {
+			const updated = await invoke<string>('ensure_cid_cn_cmd', { filePath });
+			if (updated && updated !== content) content = updated;
+		} catch { /* non-fatal: CID stays absent, note still opens */ }
+	}
+	// For canonical files, extract title from frontmatter; fallback to filename stem
+	let name = filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') ?? '';
+	const fmTitleMatch = content.match(/^---[\s\S]*?^title:\s*"?([^"\n]+)"?\s*$/m);
+	if (fmTitleMatch?.[1]) {
+		name = fmTitleMatch[1].trim();
+	}
+
+	// Living Link System: record traversal now that we have the display name
+	if (_fromNotePath) {
+		const nameLower = name.toLowerCase();
+		const key = `${_fromNotePath}|${nameLower}`;
+		const now = Date.now();
+		if (now - (traversalLastWrite.get(key) ?? 0) >= TRAVERSAL_THROTTLE_MS) {
+			traversalLastWrite.set(key, now);
+			// Stale entries (older than TRAVERSAL_THROTTLE_MS) are already inert;
+			// clearing on overflow is equivalent to letting them age out.
+			if (traversalLastWrite.size > 500) traversalLastWrite.clear();
+			// P4.2 live refresh: bump the optimistic counter so the chips
+			// render the new count immediately. The server-side write fires
+			// fire-and-forget below — if it fails, the bump remains (the user
+			// clicked, they expect feedback) and gets reconciled on the next
+			// boot-graph fetch anyway.
+			//
+			// Deferred via queueMicrotask so the bump's reactive cascade
+			// (linkTraversalBumps → linkTraversalMap → NotePane $effect →
+			// view.dispatch → LivePreviewPlugin rebuild) fires AFTER this
+			// openNoteTab call has finished its `{#key}`-remount-triggering
+			// tab update. Running the cascade synchronously mid-navigation
+			// would race with the in-flight editor teardown/mount and
+	// risk the same class of desync the mountedFilePath /
+			// supersede-token guards defend against.
+			queueMicrotask(() => bumpLinkTraversal(_fromNotePath, nameLower));
+			invoke('constellation_link_traverse', { sourcePath: _fromNotePath, targetName: name }).catch(() => {});
+		}
+	}
+
+	// Derive library path from registered libraries.
+	// Use a path-normalized, case-insensitive prefix match so Windows paths
+	// (\ vs / separators) and case differences don't silently lose the
+	// library anchor — which would break embed resolution for any note.
+	// Pick the LONGEST matching prefix so nested libraries
+	// (e.g. "Universe" and "Universe/Project" both registered) route each
+	// note to its immediate containing library.
 	const allLibraries = get(libraries);
-	const library = allLibraries.find(v => filePath.startsWith(v.path));
+	const normalize = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+	const filePathNorm = normalize(filePath);
+	let library: typeof allLibraries[number] | undefined;
+	let bestLen = -1;
+	for (const v of allLibraries) {
+		const libNorm = normalize(v.path);
+		if (filePathNorm === libNorm || filePathNorm.startsWith(libNorm + '/')) {
+			if (libNorm.length > bestLen) { bestLen = libNorm.length; library = v; }
+		}
+	}
 	const libraryPath = library?.path ?? '';
+	// Derive libraryName locally from the same normalized match used for
+	// libraryPath. The caller's `libraryName` arg comes from
+	// `resolve_wikilink_cross_library` whose current-library branch uses
+	// strict string equality against the registered library path — which
+	// silently drops to "" on Windows slash/trailing-slash drift, leaving
+	// the tab with an empty library chip AND poisoning the next
+	// wikilink resolution (empty `currentLibraryPath` skips the
+	// current-library branch and picks the first matching library in
+	// store order, loading the wrong same-named note from another
+	// library). Trust the local derivation; only fall back to the
+	// caller's value when we genuinely couldn't match.
+	const resolvedLibraryName = library?.name ?? libraryName;
 
 	// Default: replace active tab content
 	if (!newTab && currentTab) {
@@ -591,7 +776,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 				path: filePath,
 				content,
 				name,
-				libraryName,
+				libraryName: resolvedLibraryName,
 				libraryPath,
 				libraryColor: color,
 				highlightTerm,
@@ -604,13 +789,14 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		}));
 		// Auto-enable editing mode (WYSIWYG is always edit-ready)
 		editingTabIds.update(set => { const next = new Set(set); next.add(currentTab.id); return next; });
+		_traceNav('openNoteTab:applied', currentTab.id, filePath);
 		return;
 	}
 
 	// Ctrl+click / new tab: create a new tab
 	const id = `tab_${++tabCounter}_${Date.now()}`;
 	const tab: OpenTab = {
-		id, path: filePath, content, libraryName, libraryPath, name, libraryColor: color, highlightTerm,
+		id, path: filePath, content, libraryName: resolvedLibraryName, libraryPath, name, libraryColor: color, highlightTerm,
 		history: [filePath], historyIndex: 0,
 		/* Restore cursor/scroll from write-ahead buffer if available */
 		cursorPos: wab?.cursorPos ?? 0,
@@ -757,6 +943,450 @@ export async function searchAllStars(query: string) {
 	searchResults.set(results);
 }
 
+// ─── Constellation Search Engine (Phase 1) ───
+
+export interface ConstellationSearchRequest {
+	query?: string;
+	query_embedding?: number[];  // pre-computed embedding for semantic mode
+	mode: 'lexical' | 'structured' | 'semantic' | 'hybrid';
+	filters?: {
+		properties?: { key: string; op: string; value?: string }[];
+		tags?: string[];
+		wikilinks_to?: string[];
+		wikilinks_from?: string[];
+		mutual?: string[];
+		mentions?: string[];
+		orphans?: boolean;
+		links_between?: string[];
+		links_all?: string[];
+		typed_links?: { link_type: string; target: string }[];
+		library_names?: string[];
+		maturity?: string[];
+		path_prefix?: string;
+	};
+	limit?: number;
+	include_snippet?: boolean;
+	include_headings?: boolean;
+}
+
+export interface ConstellationSearchResult {
+	name: string;
+	path: string;
+	library_name: string;
+	score: number;
+	match_type: string;
+	snippet?: string;
+	heading_breadcrumb?: string[];
+	modified: number;
+	/**
+	 * M13 — cross-lingual match badge. Populated when the result was
+	 * found via a Lexical Bridge expansion to a language other than the
+	 * query's source language. Example: query "tree" matches an Arabic
+	 * note containing "شجرة" → `match_via: "شجرة"`. UI renders as
+	 * "via شجرة" next to the result title.
+	 *
+	 * Absent (undefined) when the hit was same-language, a title match,
+	 * or the expansion didn't produce cross-language terms.
+	 */
+	match_via?: string;
+}
+
+/** Initialize the search index (builds SQLite FTS5 database). */
+export async function initSearchIndex(): Promise<{ note_count: number; index_size_bytes: number }> {
+	return invoke('constellation_search_init');
+}
+
+/** Main search command — supports lexical, structured, and hybrid modes. */
+export async function constellationSearch(request: ConstellationSearchRequest): Promise<ConstellationSearchResult[]> {
+	return invoke('constellation_search', { request });
+}
+
+/** Reindex a single note after file change. */
+export async function reindexNote(notePath: string, libraryName: string): Promise<void> {
+	return invoke('constellation_search_reindex', { notePath, libraryName });
+}
+
+/** Store a pre-computed embedding vector for a note (from JS semantic engine). */
+export async function storeNoteEmbedding(notePath: string, embedding: number[]): Promise<void> {
+	return invoke('constellation_search_store_embedding', { notePath, embedding });
+}
+
+/** Find notes semantically similar to a given note. */
+export async function searchSimilarNotes(notePath: string, limit?: number): Promise<ConstellationSearchResult[]> {
+	return invoke('constellation_search_similar', { notePath, limit: limit ?? 20 });
+}
+
+/** Universal categorized search — searches everywhere at once. */
+export interface UniversalSearchResponse {
+	titles: ConstellationSearchResult[];
+	contents: ConstellationSearchResult[];
+	tags: ConstellationSearchResult[];
+	properties: ConstellationSearchResult[];
+	wikilinks: ConstellationSearchResult[];
+	semantic: ConstellationSearchResult[];
+}
+
+export async function universalSearch(query: string, queryEmbedding?: number[] | null, limit?: number): Promise<UniversalSearchResponse> {
+	return invoke('constellation_search_universal', { query, queryEmbedding: queryEmbedding ?? null, limit: limit ?? 0 });
+}
+
+// ─── Living Link System: P3-P5 wrappers ────────────────────────────────
+
+export interface LinkStats {
+	total_links: number;
+	by_type: Record<string, number>;
+	by_confidence: Record<string, number>;
+	with_annotation: number;
+	sample_links: Array<{ source: string; target: string; type: string; annotation: string; confidence: string; weight: number }>;
+}
+
+export interface LinkDecayResult {
+	decayed: number;
+	new_dormant: number;
+	lifecycle: { birth: number; growth: number; maturity: number; dormancy: number; archived: number };
+}
+
+export interface FormulationInsight {
+	source_name: string;
+	target_name: string;
+	link_type: string;
+	annotation: string;
+	weight: number;
+	confidence: string;
+	traversal_count: number;
+	last_traversed: string;
+	library_name: string;
+}
+
+export type FormulationQueryType =
+	| 'strongest_evidence' | 'weak_foundations' | 'tensions' | 'stagnating'
+	| 'abandoned' | 'emerging' | 'bias_check' | 'most_connected';
+
+export async function linkStats(): Promise<LinkStats> {
+	return invoke('constellation_link_stats');
+}
+
+export async function linkDecay(): Promise<LinkDecayResult> {
+	return invoke('constellation_link_decay');
+}
+
+export async function formulationAnalysis(queryType: FormulationQueryType, target?: string): Promise<FormulationInsight[]> {
+	return invoke('constellation_formulation_analysis', { queryType, target: target ?? null });
+}
+
+/**
+ * Map a NoteLink-like row (with weight, traversal_count, last_traversed, status fields)
+ * to its current lifecycle stage. Mirrors the Rust classification in
+ * `constellation_link_decay` so the UI doesn't need a roundtrip per row.
+ *
+ *   spark      — created < 7 days ago, no traversal yet
+ *   birth      — traversal_count = 0 (or weight ≤ 1)
+ *   growth     — traversed at least once, weight < 5
+ *   maturity   — weight ≥ 5
+ *   dormancy   — status = 'dormant' (set by decay job after 90 days idle)
+ *   archival   — status = 'archived'
+ */
+export type LinkStage = 'spark' | 'birth' | 'growth' | 'maturity' | 'dormancy' | 'archival';
+
+export function getLinkStage(link: { weight?: number; traversal_count?: number; status?: string; created?: string; last_traversed?: string }): LinkStage {
+	if (link.status === 'archived') return 'archival';
+	if (link.status === 'dormant') return 'dormancy';
+	const w = link.weight ?? 1;
+	const tc = link.traversal_count ?? 0;
+	if (tc === 0) {
+		// Within 7 days = spark; otherwise birth (waiting for first use)
+		if (link.created) {
+			const ageDays = (Date.now() - new Date(link.created).getTime()) / 86400000;
+			if (ageDays < 7) return 'spark';
+		}
+		return 'birth';
+	}
+	if (w >= 5) return 'maturity';
+	return 'growth';
+}
+
+const STAGE_META: Record<LinkStage, { icon: string; color: string; label: string }> = {
+	spark:    { icon: '✨', color: '#a78bfa', label: 'Spark' },
+	birth:    { icon: '🌱', color: '#86efac', label: 'Birth' },
+	growth:   { icon: '🌿', color: '#22c55e', label: 'Growth' },
+	maturity: { icon: '🌳', color: '#15803d', label: 'Maturity' },
+	dormancy: { icon: '🌙', color: '#94a3b8', label: 'Dormant' },
+	archival: { icon: '📦', color: '#64748b', label: 'Archived' },
+};
+
+export function getLinkStageMeta(stage: LinkStage) { return STAGE_META[stage]; }
+
+/** Initialize the Rust-native ONNX embedding engine. */
+export async function initEmbeddingEngine(): Promise<string> {
+	return invoke('constellation_init_embeddings');
+}
+
+/** Embed text using the Rust ONNX engine. Returns 384-dim vector. */
+export async function embedText(text: string): Promise<number[]> {
+	return invoke('constellation_embed_text', { text });
+}
+
+/** Batch embed notes and store in search DB. Returns count embedded. */
+export async function embedNotes(notes: { path: string; name: string; content: string }[]): Promise<number> {
+	return invoke('constellation_embed_notes', { notes });
+}
+
+/** Get embedding engine status. */
+export async function embeddingStatus(): Promise<{ ready: boolean; embedded_count: number; model_loaded: boolean }> {
+	return invoke('constellation_embedding_status');
+}
+
+/**
+ * Strip invisible Unicode characters that browsers inject in bidi text inputs.
+ * This is the ROOT fix for manual Arabic typing: RTL inputs insert directional
+ * marks (LRM, RLM, ALM) and joiners (ZWJ, ZWNJ) that are invisible but break
+ * string matching. Must be applied to ALL search input before any processing.
+ */
+export function stripInvisibleChars(text: string): string {
+	return text.replace(/[\u200B-\u200F\u2028-\u202F\u2060-\u2069\u061C\uFEFF\u00AD]/g, '');
+}
+
+/**
+ * Normalize Arabic text for fuzzy matching: strip diacritics (tashkeel),
+ * normalize Alef variants (أإآٱ→ا), normalize Teh marbuta (ة→ه),
+ * normalize Alef Maksura (ى→ي). This ensures manual typing matches
+ * regardless of keyboard/input method differences.
+ */
+function normalizeArabicLight(text: string): string {
+	return stripInvisibleChars(text)
+		// Strip Arabic diacritics (Fathah, Dammah, Kasrah, Shadda, Sukun, etc.)
+		.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g, '')
+		// Normalize Alef variants → bare Alef
+		.replace(/[أإآٱ]/g, 'ا')
+		// Normalize Teh marbuta → Heh
+		.replace(/ة/g, 'ه')
+		// Normalize Alef Maksura → Yeh
+		.replace(/ى/g, 'ي');
+}
+
+/**
+ * Canonicalize a search query: replace localized operators with English equivalents.
+ * Always accepts English in any locale. Only translates the current locale's keywords.
+ * Uses simple string matching with Arabic normalization — no complex regex lookbehinds.
+ * Pattern: Excel/LibreOffice — canonical internal + locale display layer.
+ */
+export function canonicalizeSearchQuery(raw: string, ops: Record<string, string> | null): string {
+	if (!ops) return raw;
+
+	// ROOT FIX: strip invisible bidi characters browsers inject in RTL text inputs
+	let result = stripInvisibleChars(raw);
+
+	// Build replacement pairs: [localized, canonical]
+	// Sorted by localized string length (longest first) to prevent partial matches
+	const replacements: [string, string][] = [
+		[ops.linksBetween, 'links between'],
+		[ops.linksAll, 'links all'],
+		[ops.linksTo, 'links to'],
+		[ops.linksFrom, 'links from'],
+		[ops.mutual, 'mutual'],
+		[ops.mentions, 'mentions'],
+		[ops.orphans, 'orphans'],
+		// Cognitive typed link operators
+		[ops.supports, 'supports'],
+		[ops.contradicts, 'contradicts'],
+		[ops.causes, 'causes'],
+		[ops.exemplifies, 'exemplifies'],
+		[ops.generalizes, 'generalizes'],
+		[ops.derivesFrom, 'derives from'],
+		[ops.partOf, 'part of'],
+	].filter(([loc, can]) => loc && can && loc !== can) as [string, string][];
+
+	replacements.sort((a, b) => b[0].length - a[0].length);
+
+	const normalizedResult = normalizeArabicLight(result);
+
+	for (const [localized, canonical] of replacements) {
+		// Try exact match first
+		if (result.includes(localized)) {
+			result = result.split(localized).join(canonical);
+			continue;
+		}
+		// Try normalized match (Arabic: أ→ا, ة→ه, ى→ي, strip diacritics)
+		const normalizedOp = normalizeArabicLight(localized);
+		if (normalizedResult.includes(normalizedOp)) {
+			// Find the position in the normalized string
+			const idx = normalizedResult.indexOf(normalizedOp);
+			// Map back to original string position
+			const before = result.slice(0, idx);
+			const after = result.slice(idx);
+			// Find the original span that corresponds to the normalized match
+			let consumed = 0, origLen = 0;
+			for (let i = 0; i < after.length && consumed < normalizedOp.length; i++) {
+				origLen++;
+				if (!/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/.test(after[i])) {
+					consumed++;
+				}
+			}
+			result = before + canonical + after.slice(origLen);
+		}
+	}
+
+	// Handle "and" keyword (used in "links between [[X]] and [[Y]]")
+	if (ops.and && ops.and !== 'and') {
+		const andPattern = `]] ${ops.and} [[`;
+		const andNormalized = `]] ${normalizeArabicLight(ops.and)} [[`;
+		if (result.includes(andPattern)) {
+			result = result.replace(andPattern, ']] and [[');
+		} else if (normalizeArabicLight(result).includes(andNormalized)) {
+			result = result.replace(new RegExp(`\\]\\]\\s*${ops.and.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\[\\[`, 'g'), ']] and [[');
+		}
+	}
+
+	// Handle scope prefix: في: → in:
+	if (ops.scope && ops.scope !== 'in') {
+		if (result.includes(ops.scope + ':')) {
+			result = result.split(ops.scope + ':').join('in:');
+		} else {
+			const normalizedScope = normalizeArabicLight(ops.scope);
+			if (normalizeArabicLight(result).includes(normalizedScope + ':')) {
+				result = result.replace(new RegExp(normalizedScope.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':', 'g'), 'in:');
+			}
+		}
+	}
+
+	return result;
+}
+
+/**
+ * Check if a query contains advanced syntax in any supported language.
+ * Uses simple string matching with Arabic normalization.
+ */
+export function hasAdvancedSyntaxMultilingual(q: string, ops: Record<string, string> | null): boolean {
+	// ROOT FIX: strip invisible bidi characters before checking
+	const clean = stripInvisibleChars(q);
+	// English operators (always checked) — includes cognitive typed link operators
+	if (/[#=]|links?\s+(to|from|between|all)|mutual\s|mentions?\s|orphans?|\bin:|supports\s+\[\[|contradicts\s+\[\[|causes\s+\[\[|exemplifies\s+\[\[|generalizes\s+\[\[|derives[- ]from\s+\[\[|part[- ]of\s+\[\[/i.test(clean)) return true;
+	// Localized operators for current locale
+	if (!ops) return false;
+	const normalized = normalizeArabicLight(clean);
+	return Object.values(ops).some(op => {
+		if (!op || op.length < 2) return false;
+		// Exact match (on clean text, no invisible chars)
+		if (clean.includes(op)) return true;
+		// Normalized match (Arabic fuzzy)
+		if (normalized.includes(normalizeArabicLight(op))) return true;
+		return false;
+	});
+}
+
+/**
+ * Parse a search query string into a SearchRequest.
+ * Recognizes: #tag, property=value, links to [[X]], in:Library, free text.
+ */
+export function parseSearchQuery(raw: string): ConstellationSearchRequest {
+	const filters: ConstellationSearchRequest['filters'] = {};
+	let freeText = '';
+
+	const parts = raw.split(/\s+/);
+	for (const part of parts) {
+		// Tag: #project
+		if (part.startsWith('#') && part.length > 1) {
+			if (!filters.tags) filters.tags = [];
+			filters.tags.push(part.slice(1).toLowerCase());
+			continue;
+		}
+		// Library scope: in:LibraryName
+		if (part.startsWith('in:') && part.length > 3) {
+			if (!filters.library_names) filters.library_names = [];
+			filters.library_names.push(part.slice(3));
+			continue;
+		}
+		// Property: key=value
+		if (part.includes('=') && !part.startsWith('=')) {
+			const [key, ...valueParts] = part.split('=');
+			const value = valueParts.join('=');
+			if (!filters.properties) filters.properties = [];
+			filters.properties.push({ key, op: '=', value: value || undefined });
+			continue;
+		}
+		freeText += (freeText ? ' ' : '') + part;
+	}
+
+	// Wikilink: "links to [[X]]"
+	const wikiToRe = /links?\s+to\s+\[\[([^\]]+)\]\]/gi;
+	let match;
+	while ((match = wikiToRe.exec(raw)) !== null) {
+		if (!filters.wikilinks_to) filters.wikilinks_to = [];
+		filters.wikilinks_to.push(match[1].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Wikilink: "links from [[X]]"
+	const wikiFromRe = /links?\s+from\s+\[\[([^\]]+)\]\]/gi;
+	while ((match = wikiFromRe.exec(raw)) !== null) {
+		if (!filters.wikilinks_from) filters.wikilinks_from = [];
+		filters.wikilinks_from.push(match[1].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Mutual: "mutual [[X]]"
+	const mutualRe = /mutual\s+\[\[([^\]]+)\]\]/gi;
+	while ((match = mutualRe.exec(raw)) !== null) {
+		if (!filters.mutual) filters.mutual = [];
+		filters.mutual.push(match[1].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Mentions: "mentions [[X]]"
+	const mentionsRe = /mentions?\s+\[\[([^\]]+)\]\]/gi;
+	while ((match = mentionsRe.exec(raw)) !== null) {
+		if (!filters.mentions) filters.mentions = [];
+		filters.mentions.push(match[1].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Orphans: standalone keyword
+	if (/\borphans?\b/i.test(freeText)) {
+		filters.orphans = true;
+		freeText = freeText.replace(/\borphans?\b/gi, '').trim();
+	}
+
+	// Links between: "links between [[X]] and [[Y]]"
+	const betweenRe = /links?\s+between\s+\[\[([^\]]+)\]\]\s+and\s+\[\[([^\]]+)\]\]/gi;
+	while ((match = betweenRe.exec(raw)) !== null) {
+		if (!filters.links_between) filters.links_between = [];
+		filters.links_between.push(match[1].toLowerCase());
+		filters.links_between.push(match[2].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Links all: "links all [[X]]" — both incoming and outgoing
+	const allLinksRe = /links?\s+all\s+\[\[([^\]]+)\]\]/gi;
+	while ((match = allLinksRe.exec(raw)) !== null) {
+		if (!filters.links_all) filters.links_all = [];
+		filters.links_all.push(match[1].toLowerCase());
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	// Cognitive typed link operators: "supports [[X]]", "contradicts [[X]]", etc.
+	const typedLinkTypes = ['supports', 'contradicts', 'causes', 'exemplifies', 'generalizes', 'derives[- ]from', 'part[- ]of'];
+	const typedLinkRe = new RegExp(`(${typedLinkTypes.join('|')})\\s+\\[\\[([^\\]]+)\\]\\]`, 'gi');
+	while ((match = typedLinkRe.exec(raw)) !== null) {
+		if (!filters.typed_links) filters.typed_links = [];
+		// Normalize type: "derives from" → "derives-from", "part of" → "part-of"
+		const linkType = match[1].toLowerCase().replace(/\s+/g, '-');
+		filters.typed_links.push({ link_type: linkType, target: match[2].toLowerCase() });
+		freeText = freeText.replace(match[0], '').trim();
+	}
+
+	const hasFilters = Object.values(filters).some(v => v && (Array.isArray(v) ? v.length > 0 : true));
+	const hasQuery = freeText.trim().length > 0;
+
+	return {
+		query: hasQuery ? freeText.trim() : undefined,
+		mode: hasQuery && hasFilters ? 'hybrid' : hasQuery ? 'lexical' : 'structured',
+		filters: hasFilters ? filters : undefined,
+		limit: 0,
+		include_snippet: true,
+		include_headings: true,
+	};
+}
+
 /** Close the current note (closes active tab). */
 export function closeNote() {
 	const id = get(activeTabId);
@@ -794,10 +1424,11 @@ export function buildDefaultFrontmatter(settings: AppSettings): string {
 	// Auto-populate created date
 	lines.push(`created: ${dateStr}`);
 
-	// Add user-defined default properties
+	// Add user-defined default properties (skip canonical fields — handled by Rust)
+	const canonicalKeys = new Set(['created', 'title', 'cid', 'kind']);
 	if (settings.defaultProperties) {
 		for (const prop of settings.defaultProperties) {
-			if (prop.key && prop.key !== 'created') {
+			if (prop.key && !canonicalKeys.has(prop.key)) {
 				lines.push(`${prop.key}: ${prop.value}`);
 			}
 		}
@@ -915,27 +1546,184 @@ export interface NoteLink {
 	context: string;
 	library_name: string;
 	link_type: string | null;
+	/** User's typed annotation from `[[target|annotation]]`. The second
+	 *  parser (`extract_typed_links` in search.rs) stores the semantic
+	 *  tag here and leaves `link_type` at the default "relates". Used by
+	 *  `displayLinkType` to resolve which name to show on the badge. */
+	annotation?: string;
+	/** Living Link weight = 1 + ln(1 + traversal_count). Default 1 for
+	 *  untraversed links; higher values indicate worn paths. Used by
+	 *  `getBacklinks` to prioritize heavily-travelled connections. */
+	weight?: number;
+	/** How many times the user has traversed this link. Default 0. */
+	traversal_count?: number;
+	/** ISO-8601 timestamp of the most recent traversal, or empty for
+	 *  never-followed links. Powers the P5 lifecycle helpers (decay,
+	 *  stale flagging, confidence tiering). */
+	last_traversed?: string;
+	/** Confidence tier stored in the DB: "hypothesis" (default) or a
+	 *  user-promoted tier. The UI derives a richer lifecycle state from
+	 *  (traversal_count + last_traversed + confidence) via `linkLifecycle()`. */
+	confidence?: string;
+}
+
+/** P5 — Living Link lifecycle state computed client-side from the raw
+ *  DB fields. Four tiers:
+ *
+ *  - `fresh`: never traversed (traversal_count === 0)
+ *  - `emerging`: 1–2 traversals, regardless of age — just-found paths
+ *  - `established`: 3+ traversals AND touched within LINK_STALE_DAYS
+ *  - `load-bearing`: 10+ traversals AND touched within LINK_STALE_DAYS
+ *  - `stale`: previously traversed but untouched for LINK_STALE_DAYS+
+ *
+ *  The UI uses this to color-tier chips, list stale links in the
+ *  LinkDashboard, and (future) apply weight decay. No DB write yet —
+ *  tier is recomputed on every read so threshold changes apply
+ *  immediately without a migration. */
+export type LinkLifecycle = 'fresh' | 'emerging' | 'established' | 'load-bearing' | 'stale';
+
+export const LINK_STALE_DAYS = 90;
+
+/** ms in 24 hours, cached so we don't recompute per call. */
+const MS_PER_DAY = 86_400_000;
+
+/** Compute lifecycle tier for a link. Pure function of the link's
+ *  traversal fields + current time; no side effects.
+ *
+ *  `nowMs` is a param (not `Date.now()` inline) so callers that batch
+ *  many links in a derived can snapshot `Date.now()` once upstream. */
+export function linkLifecycle(link: NoteLink, nowMs: number = Date.now()): LinkLifecycle {
+	const tc = link.traversal_count ?? 0;
+	if (tc === 0) return 'fresh';
+
+	// Age check: parse last_traversed (ISO-8601); fall back to "active" if
+	// the field is missing or malformed — never-traversed links already
+	// returned above, so an empty string here means pre-P5 data that was
+	// still flagged active, which we treat as fresh-looking rather than
+	// stale (principle of least destruction).
+	const lt = link.last_traversed ?? '';
+	let ageDays = 0;
+	if (lt) {
+		const parsed = Date.parse(lt);
+		if (!Number.isNaN(parsed)) ageDays = (nowMs - parsed) / MS_PER_DAY;
+	}
+
+	if (ageDays > LINK_STALE_DAYS) return 'stale';
+	if (tc >= 10) return 'load-bearing';
+	if (tc >= 3) return 'established';
+	return 'emerging';
+}
+
+/** P5 slice 2 — read-time weight decay.
+ *
+ *  `effectiveWeight = weight * exp(-ln(2) * daysSinceTraversal / halfLifeDays)`
+ *
+ *  The DB column `weight = 1 + ln(1 + traversal_count)` is a pure integral
+ *  of the user's traversal activity. Decay is a display/ordering concern
+ *  only, never a write: that way threshold tuning (half-life slider) takes
+ *  effect immediately, and the ground-truth weight never loses fidelity
+ *  against a user's future revisits.
+ *
+ *  Callers that sort large lists should pass `nowMs` and the settings
+ *  block once rather than reading them per iteration. */
+export function effectiveLinkWeight(
+	link: NoteLink,
+	nowMs: number = Date.now(),
+	halfLifeDays: number = 60,
+	decayEnabled: boolean = true
+): number {
+	const raw = link.weight ?? 1;
+	if (!decayEnabled) return raw;
+
+	const tc = link.traversal_count ?? 0;
+	if (tc === 0) return raw; // never traversed — no age to decay from
+
+	const lt = link.last_traversed ?? '';
+	if (!lt) return raw;
+	const parsed = Date.parse(lt);
+	if (Number.isNaN(parsed)) return raw;
+
+	const ageDays = Math.max(0, (nowMs - parsed) / MS_PER_DAY);
+	const lambda = Math.LN2 / Math.max(1, halfLifeDays);
+	return raw * Math.exp(-lambda * ageDays);
+}
+
+/** Known typed-link names shared across the Backlinks/Outgoing panels,
+ *  GraphMind, and the livePreview decorator. Kept in sync with the
+ *  `KNOWN_LINK_TYPES` slice in `src-tauri/src/libraries.rs` and the
+ *  `TYPED_LINK_TYPES` set in `src/lib/editor/livePreview.ts`. */
+const KNOWN_LINK_TYPES = new Set([
+	'supports', 'contradicts', 'causes', 'exemplifies',
+	'generalizes', 'derives-from', 'part-of', 'associative',
+]);
+
+/** Resolve which typed name to show on a link's badge. Prefers the
+ *  `annotation` field (populated by the DB-indexed parser) when it
+ *  matches a known type; falls back to `link_type` if THAT matches a
+ *  known type; otherwise returns `undefined` so the UI can skip the
+ *  badge. Drops the vacuous default `"relates"` that every DB row
+ *  carries at rest. */
+function displayLinkType(l: NoteLink): string | undefined {
+	const ann = l.annotation?.trim().toLowerCase();
+	if (ann && KNOWN_LINK_TYPES.has(ann)) return ann;
+	const lt = l.link_type?.trim().toLowerCase();
+	if (lt && KNOWN_LINK_TYPES.has(lt)) return lt;
+	return undefined;
 }
 
 export async function scanLibraryLinks(libraryPath: string, libraryName: string): Promise<NoteLink[]> {
 	return await invoke('scan_library_links', { libraryPath, libraryName });
 }
 
-export function getBacklinks(allLinks: NoteLink[], noteName: string) {
-	const linked = allLinks.filter(l =>
-		l.target.toLowerCase() === noteName.toLowerCase()
-	);
+/** Optional P5 decay config for the sort helpers. Passing it in (rather
+ *  than reading the store here) keeps these functions pure and testable
+ *  while letting callers batch-snapshot `Date.now()` + settings once. */
+export interface LinkDecayConfig {
+	nowMs: number;
+	halfLifeDays: number;
+	decayEnabled: boolean;
+}
+
+function sortWeight(link: NoteLink, cfg?: LinkDecayConfig): number {
+	if (!cfg) return link.weight ?? 1;
+	return effectiveLinkWeight(link, cfg.nowMs, cfg.halfLifeDays, cfg.decayEnabled);
+}
+
+export function getBacklinks(allLinks: NoteLink[], noteName: string, decay?: LinkDecayConfig) {
+	const target = noteName.toLowerCase();
+	const linked = allLinks.filter(l => l.target.toLowerCase() === target);
+	// Sort by Living Link weight (desc), decayed if caller opted in. Ties
+	// break alphabetically by source name so fresh vaults (all weights == 1)
+	// stay in a stable order across boots.
+	linked.sort((a, b) => {
+		const wDiff = sortWeight(b, decay) - sortWeight(a, decay);
+		if (wDiff !== 0) return wDiff;
+		return a.source_name.localeCompare(b.source_name);
+	});
 	return linked.map(l => ({
 		name: l.source_name,
 		path: l.source_path,
 		context: l.context,
 		libraryName: l.library_name,
-		linkType: l.link_type ?? undefined,
+		linkType: displayLinkType(l),
+		traversalCount: l.traversal_count ?? 0,
 	}));
 }
 
-export function getOutgoingLinks(allLinks: NoteLink[], notePath: string) {
-	return allLinks.filter(l => l.source_path === notePath);
+export function getOutgoingLinks(allLinks: NoteLink[], notePath: string, decay?: LinkDecayConfig) {
+	const outgoing = allLinks.filter(l => l.source_path === notePath);
+	// Same contract as getBacklinks — weight-desc with decay optional.
+	outgoing.sort((a, b) => {
+		const wDiff = sortWeight(b, decay) - sortWeight(a, decay);
+		if (wDiff !== 0) return wDiff;
+		return a.target.localeCompare(b.target);
+	});
+	return outgoing.map(l => ({
+		target: l.target,
+		context: l.context,
+		linkType: displayLinkType(l),
+		traversalCount: l.traversal_count ?? 0,
+	}));
 }
 
 export async function scanUnlinkedMentions(noteName: string, notePath: string): Promise<{ name: string; path: string; context: string; libraryName: string }[]> {
@@ -955,9 +1743,22 @@ export async function scanLibraryTags(libraryPath: string): Promise<Record<strin
 }
 
 // ─── Index: Word Index ───
+/** Sentinel chars that wrap matched tokens inside an `IndexMention.snippet`.
+ *  The Rust backend emits them via `snippet(notes_fts, …, CHAR(2), CHAR(3), …)`
+ *  so the JS side can split safely and render `<mark>` spans without ever
+ *  interpreting user note content as HTML. Keep both sides in sync — the
+ *  Rust literal lives in `src-tauri/src/libraries.rs`. */
+export const SNIPPET_MARK_START = '\x02';
+export const SNIPPET_MARK_END = '\x03';
+
 export interface IndexMention {
 	note_path: string;
 	note_name: string;
+	/** One-line context around the matched term. Matched tokens are wrapped
+	 *  in {@link SNIPPET_MARK_START}…{@link SNIPPET_MARK_END} sentinels.
+	 *  Optional: empty/absent when FTS5 produced no snippet (title-only
+	 *  match against an empty body). */
+	snippet?: string | null;
 }
 
 export interface IndexEntry {
@@ -969,6 +1770,69 @@ export interface IndexEntry {
 
 export async function scanLibraryIndex(libraryPath: string): Promise<IndexEntry[]> {
 	return await invoke('scan_library_index', { libraryPath });
+}
+
+/**
+ * Read the full Universe vocabulary from the FTS5 term dictionary.
+ *
+ * Backed by the `notes_vocab` virtual table — a `fts5vocab(notes_fts)` view
+ * over the term dictionary that FTS5 already maintains as notes are added,
+ * edited, or deleted (via existing triggers on `note_meta`).
+ *
+ * Returns one `IndexEntry` per term with display and count. `mentions` is
+ * empty — the UI lazy-fetches the notes for a term via `readTermMentions`
+ * when the user expands it, so we don't move millions of rows across IPC.
+ *
+ * No progress bar needed: the dictionary is already built. Result arrives
+ * in tens of milliseconds.
+ */
+export async function readIndexEntries(): Promise<IndexEntry[]> {
+	return await invoke('read_index_entries');
+}
+
+/**
+ * Lazy-load the list of notes mentioning a given term. Called on expand.
+ * Uses FTS5 MATCH against the term dictionary — sub-10 ms per call.
+ */
+export async function readTermMentions(term: string, limit?: number): Promise<IndexMention[]> {
+	return await invoke('read_term_mentions', { term, limit: limit ?? null });
+}
+
+/**
+ * A vocabulary term that co-occurs with a query term. "co-occurs" means
+ * "appears in the same note as". Note count is across the sampled matching
+ * set (defaults to 200 notes, cheap on large vaults, statistically stable
+ * for ranking by the time you reach a few hundred hits).
+ */
+export interface CooccurringTerm {
+	/** Display form. Bigrams are space-joined (the `\x1f` sentinel is
+	 *  unwrapped on the Rust side so the UI never sees a control char). */
+	term: string;
+	/** Number of sampled notes in which this term appears alongside the
+	 *  query term. Never exceeds `sample_limit`. */
+	note_count: number;
+}
+
+/**
+ * Lazy-load co-occurring terms for an Index term. Called when the user
+ * expands a row; cached per term so re-expanding is free.
+ *
+ * `sampleLimit` caps how many matching notes we re-tokenize (default 200,
+ * max 2000). `resultLimit` caps how many co-occurring terms we return
+ * (default 20, max 100). These are advisory — for rare query terms we
+ * return everything; for common ones, sampling gives a stable top-K by
+ * law of large numbers.
+ */
+export async function readCooccurringTerms(
+	term: string,
+	sampleLimit?: number,
+	resultLimit?: number
+): Promise<CooccurringTerm[]> {
+	return await invoke('read_cooccurring_terms', {
+		term,
+		sampleLimit: sampleLimit ?? null,
+		resultLimit: resultLimit ?? null,
+	});
 }
 
 // ─── Navigator data ───
@@ -988,7 +1852,7 @@ export async function collectLibraryNotesWithMeta(libraryPath: string): Promise<
 }
 
 // ─── Graph data ───
-export interface StarNode {
+export interface SkyNode {
 	id: string;
 	name: string;
 	path: string;
@@ -1001,14 +1865,14 @@ export interface StarNode {
 	originType?: string; // received|discovered|mixed|none (CE Phase 5)
 }
 
-export interface StarLink {
+export interface SkyLink {
 	source: string;
 	target: string;
 	linkType?: string;
 }
 
-export function buildStarData(allLinks: NoteLink[], allNotes: { name: string; path: string; libraryName: string }[]) {
-	const nodeMap = new Map<string, StarNode>();
+export function buildSkyData(allLinks: NoteLink[], allNotes: { name: string; path: string; libraryName: string }[]) {
+	const nodeMap = new Map<string, SkyNode>();
 	// Add all notes as nodes
 	for (const note of allNotes) {
 		nodeMap.set(note.name.toLowerCase(), {
@@ -1021,7 +1885,7 @@ export function buildStarData(allLinks: NoteLink[], allNotes: { name: string; pa
 		});
 	}
 
-	const links: StarLink[] = [];
+	const links: SkyLink[] = [];
 	const seen = new Set<string>();
 
 	for (const link of allLinks) {
@@ -1041,8 +1905,9 @@ export function buildStarData(allLinks: NoteLink[], allNotes: { name: string; pa
 		nodeMap.get(targetId)!.linkCount++;
 	}
 
-	// Only include nodes that have at least one link
-	const nodes = Array.from(nodeMap.values()).filter(n => n.linkCount > 0);
+	// Include ALL notes — every note in the universe is a node in Sky View.
+	// Orphans appear as smaller dots at the periphery, ready to be connected.
+	const nodes = Array.from(nodeMap.values());
 
 	return { nodes, links };
 }
@@ -1152,6 +2017,128 @@ export function getAllFontSets(customSets: FontSet[] = []): FontSet[] {
 }
 
 // ─── Settings store ───
+// ─── Theme System ─────────────────────────────────────────
+export interface ConstellationTheme {
+	id: string;
+	name: string;
+	type: 'light' | 'dark';
+	pairedThemeId?: string; // ID of the light/dark counterpart (for auto-switching)
+	author?: string;        // Original theme author
+	source?: 'custom' | 'obsidian' | 'builtin'; // Where this theme came from
+	colors: {
+		background: string;
+		surface: string;
+		text: string;
+		accent: string;
+		border: string;
+	};
+	customCSS?: string;
+	styleSettingsBlocks?: import('$lib/theme/styleSettings').StyleSettingsBlock[];
+	styleSettingsValues?: Record<string, string>;
+	styleSettingsClasses?: Record<string, boolean>;
+}
+
+/** Convert hex color to HSL components */
+export function hexToHSL(hex: string): { h: number; s: number; l: number } {
+	const r = parseInt(hex.slice(1, 3), 16) / 255;
+	const g = parseInt(hex.slice(3, 5), 16) / 255;
+	const b = parseInt(hex.slice(5, 7), 16) / 255;
+	const max = Math.max(r, g, b), min = Math.min(r, g, b);
+	let h = 0, s = 0;
+	const l = (max + min) / 2;
+	if (max !== min) {
+		const d = max - min;
+		s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+		if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+		else if (max === g) h = ((b - r) / d + 2) / 6;
+		else h = ((r - g) / d + 4) / 6;
+	}
+	return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+/** Lighten or darken a hex color by percentage */
+function adjustLightness(hex: string, amount: number): string {
+	const hsl = hexToHSL(hex);
+	const newL = Math.max(0, Math.min(100, hsl.l + amount));
+	return `hsl(${hsl.h}, ${hsl.s}%, ${newL}%)`;
+}
+
+/** Derive all CSS variables from 5 theme colors */
+export function deriveThemeVariables(colors: ConstellationTheme['colors'], type: 'light' | 'dark'): Record<string, string> {
+	const { background, surface, text, accent, border } = colors;
+	const accentHSL = hexToHSL(accent);
+	const isDark = type === 'dark';
+
+	return {
+		'--background-primary': background,
+		'--background-primary-alt': adjustLightness(background, isDark ? 3 : -3),
+		'--background-secondary': surface,
+		'--background-secondary-alt': adjustLightness(surface, isDark ? 3 : -3),
+		'--background-modifier-border': border,
+		'--background-modifier-border-focus': accent,
+		'--background-modifier-hover': adjustLightness(surface, isDark ? 5 : -4),
+		'--background-modifier-form-field': adjustLightness(background, isDark ? 3 : -2),
+		'--background-modifier-cover': isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
+		'--background-modifier-success': '#16a34a22',
+		'--background-modifier-error': '#ef444422',
+		'--text-normal': text,
+		'--text-muted': adjustLightness(text, isDark ? -20 : 20),
+		'--text-faint': adjustLightness(text, isDark ? -35 : 35),
+		'--text-on-accent': isDark ? '#1e1e2e' : '#ffffff',
+		'--text-error': '#ef4444',
+		'--text-warning': '#f59e0b',
+		'--text-success': '#16a34a',
+		'--text-accent': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${accentHSL.l}%)`,
+		'--text-accent-hover': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${Math.max(0, accentHSL.l - 10)}%)`,
+		'--interactive-normal': surface,
+		'--interactive-hover': adjustLightness(surface, isDark ? 5 : -5),
+		'--interactive-accent': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${accentHSL.l}%)`,
+		'--interactive-accent-hover': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${Math.max(0, accentHSL.l - 8)}%)`,
+		'--accent-h': String(accentHSL.h),
+		'--accent-s': `${accentHSL.s}%`,
+		'--accent-l': `${accentHSL.l}%`,
+		'--scrollbar-bg': 'transparent',
+		'--scrollbar-thumb-bg': adjustLightness(border, isDark ? 5 : -5),
+		'--scrollbar-active-thumb-bg': adjustLightness(border, isDark ? 10 : -10),
+		'--shadow-s': isDark ? '0 1px 2px rgba(0,0,0,0.4)' : '0 1px 2px rgba(0,0,0,0.1)',
+		'--shadow-l': isDark ? '0 4px 16px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.12)',
+	};
+}
+
+/** Built-in themes */
+export const BUILTIN_THEMES: ConstellationTheme[] = [
+	{
+		id: 'constellation-light', name: 'Constellation Light', type: 'light',
+		pairedThemeId: 'constellation-dark', source: 'builtin',
+		colors: { background: '#ffffff', surface: '#f8fafc', text: '#1f2328', accent: '#7c3aed', border: '#e5e7eb' },
+	},
+	{
+		id: 'constellation-dark', name: 'Constellation Dark', type: 'dark',
+		pairedThemeId: 'constellation-light', source: 'builtin',
+		colors: { background: '#1e1e2e', surface: '#2a2a3e', text: '#cdd6f4', accent: '#b4befe', border: '#45475a' },
+	},
+	{
+		id: 'nord-light', name: 'Nord Light', type: 'light',
+		pairedThemeId: 'nord-dark', source: 'builtin',
+		colors: { background: '#eceff4', surface: '#e5e9f0', text: '#2e3440', accent: '#5e81ac', border: '#d8dee9' },
+	},
+	{
+		id: 'nord-dark', name: 'Nord Dark', type: 'dark',
+		pairedThemeId: 'nord-light', source: 'builtin',
+		colors: { background: '#2e3440', surface: '#3b4252', text: '#eceff4', accent: '#88c0d0', border: '#4c566a' },
+	},
+	{
+		id: 'solarized-light', name: 'Solarized Light', type: 'light',
+		pairedThemeId: 'solarized-dark', source: 'builtin',
+		colors: { background: '#fdf6e3', surface: '#eee8d5', text: '#657b83', accent: '#268bd2', border: '#93a1a1' },
+	},
+	{
+		id: 'solarized-dark', name: 'Solarized Dark', type: 'dark',
+		pairedThemeId: 'solarized-light', source: 'builtin',
+		colors: { background: '#002b36', surface: '#073642', text: '#839496', accent: '#2aa198', border: '#586e75' },
+	},
+];
+
 export interface AppSettings {
 	// Editor
 	showLineNumbers: boolean;
@@ -1179,10 +2166,16 @@ export interface AppSettings {
 	confirmDelete: boolean;
 	trashDestination: 'system' | 'local' | 'permanent';
 
-	// Appearance
+	// Appearance & Themes
 	titleAlignment: 'start' | 'center';
 	colorScheme: 'light' | 'dark' | 'system';
 	accentColor: string;
+	activeThemeId: string;
+	customThemes: ConstellationTheme[];
+	/** Emoji & Icon Library (core plug-in): per-slot icon overrides.
+	 *  Map<slot, ref> where ref is an emoji char or a namespaced icon id
+	 *  ("lucide:heart", "phosphor:heart", ...). Unset = use built-in default. */
+	iconOverrides?: Record<string, string>;
 	interfaceFont: string;
 	interfaceFontSize: number;
 	textFont: string;
@@ -1246,6 +2239,32 @@ export interface AppSettings {
 	// Custom keyboard shortcut overrides (command ID → shortcut string, empty = unbound)
 	customShortcuts: Record<string, string>;
 
+	// Living Link pill appearance — per-type fill + text colors and shared
+	// shape. Consumed reactively by BacklinksPanel + OutgoingLinksPanel so
+	// the user can tune the sidebar pills without editing CSS. Defaults
+	// mirror the palette that shipped with P3/P4.1.
+	linkPills: {
+		fill: Record<string, string>;    // type name → fill hex
+		text: Record<string, string>;    // type name → text hex
+		shape: {
+			radius: number;              // px border-radius
+			height: number;              // px explicit pill height
+			fontWeight: number;          // 400..900
+		};
+	};
+
+	// P5 — Living Link lifecycle. Weight decay applied at sort-time only
+	// (no DB write); the raw `weight` column stays as the traversal
+	// integral and the UI picks `effectiveLinkWeight(link)` for ordering.
+	linkLifecycle: {
+		decayEnabled: boolean;
+		// Days after which decayed weight halves. λ = ln(2) / halfLifeDays.
+		// 60 is a middle ground — faster than 90-day stale threshold so
+		// sort order drifts before the link is flagged, giving a gradient
+		// of decay rather than a cliff.
+		halfLifeDays: number;
+	};
+
 	// Sky View graph settings
 	skyView: {
 		nodeSize: number;
@@ -1263,7 +2282,7 @@ export interface AppSettings {
 	enabledFeatures: {
 		dailyNotes: boolean;
 		templates: boolean;
-		starView: boolean;
+		skyView: boolean;
 		backlinks: boolean;
 		outgoingLinks: boolean;
 		tags: boolean;
@@ -1274,10 +2293,17 @@ export interface AppSettings {
 		wordCount: boolean;
 		workspaces: boolean;
 		index: boolean;
+		semanticSearch: boolean;
+		notesNavigator: boolean;
+		orgChart: boolean;
+		aiSkills: boolean;
+		secondScreen: boolean;
+		constellationMap: boolean;
+		constellationSight: boolean;
 	};
 }
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
 	showLineNumbers: true,
 	readableLineLength: true,
 	tabSize: 4,
@@ -1303,6 +2329,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 	titleAlignment: 'center',
 	colorScheme: 'light',
 	accentColor: '#7c3aed',
+	activeThemeId: '',
+	customThemes: [],
+	iconOverrides: {},
 	interfaceFont: '',
 	interfaceFontSize: 14,
 	textFont: '',
@@ -1356,7 +2385,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 	enabledFeatures: {
 		dailyNotes: true,
 		templates: true,
-		starView: true,
+		skyView: true,
 		backlinks: true,
 		outgoingLinks: true,
 		tags: true,
@@ -1367,9 +2396,51 @@ const DEFAULT_SETTINGS: AppSettings = {
 		wordCount: true,
 		workspaces: true,
 		index: true,
+		semanticSearch: false,
+		notesNavigator: true,
+		orgChart: true,
+		aiSkills: true,
+		secondScreen: true,
+		constellationMap: false,
+		constellationSight: true,
 	},
 	customShortcuts: {},
+	linkPills: {
+		fill: {
+			supports:       '#4A9EFF',
+			contradicts:    '#FF4A4A',
+			causes:         '#FF8C42',
+			exemplifies:    '#4AFF88',
+			generalizes:    '#A44AFF',
+			'derives-from': '#FFD700',
+			'part-of':      '#AAAAAA',
+			associative:    '#888888',
+		},
+		text: {
+			supports:       '#ffffff',
+			contradicts:    '#ffffff',
+			causes:         '#ffffff',
+			exemplifies:    '#000000',
+			generalizes:    '#ffffff',
+			'derives-from': '#000000',
+			'part-of':      '#ffffff',
+			associative:    '#ffffff',
+		},
+		shape: { radius: 10, height: 20, fontWeight: 700 },
+	},
+	linkLifecycle: {
+		decayEnabled: true,
+		halfLifeDays: 60,
+	},
 };
+
+/** Shared metadata for the eight typed-link names — used by Settings UI
+ *  and the two panels so the iteration order is stable. Kept in sync
+ *  with `KNOWN_LINK_TYPES` above and `TYPED_LINK_TYPES` in livePreview. */
+export const LINK_TYPE_NAMES = [
+	'supports', 'contradicts', 'causes', 'exemplifies',
+	'generalizes', 'derives-from', 'part-of', 'associative',
+] as const;
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);
 

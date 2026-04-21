@@ -1,34 +1,73 @@
 # Constellation User Manual
 
-**Version 0.3.4 | March 2026**
+**Version 0.1.0 | March 2026**
 
-Constellation is a Personal Knowledge Management (PKM) desktop application for managing Markdown note libraries. Built with Tauri v2, SvelteKit, and Rust, it runs natively on Windows, macOS, and Linux with full Arabic and RTL support.
+Constellation is a Personal Knowledge Formulation desktop application. Not a file manager — a thinking instrument. Built with Tauri v2, SvelteKit, and Rust, it runs natively on Windows, macOS, and Linux with full multilingual support (15 languages, RTL-native).
 
 ---
 
 ## Table of Contents
 
-1. [Getting Started](#getting-started)
-2. [Universe and Libraries](#universe-and-libraries)
-3. [Creating and Editing Notes](#creating-and-editing-notes)
+1. [Knowledge Formulation](#knowledge-formulation)
+2. [Getting Started](#getting-started)
+3. [Universe and Libraries](#universe-and-libraries)
+4. [Creating and Editing Notes](#creating-and-editing-notes)
 4. [Notes Management Sidebar](#notes-management-sidebar)
-5. [Star View (GraphMind)](#star-view-graphmind)
+5. [Search](#search)
+6. [Sky View (GraphMind)](#star-view-graphmind)
 6. [Split View](#split-view)
 7. [Index](#index)
-8. [Second Screen](#second-screen)
-9. [Properties and Frontmatter](#properties-and-frontmatter)
-10. [Templates](#templates)
-11. [Tables](#tables)
-12. [Tasks](#tasks)
-13. [Importer](#importer)
-14. [Calendar](#calendar)
-15. [Lens](#lens)
+8. [Constellation Sight](#constellation-lens)
+9. [Second Screen](#second-screen)
+10. [Properties and Frontmatter](#properties-and-frontmatter)
+11. [Templates](#templates)
+12. [Tables](#tables)
+13. [Tasks](#tasks)
+14. [Importer](#importer)
+15. [Calendar](#calendar)
+16. [Lens (DQL Queries)](#lens)
 16. [Settings](#settings)
 17. [Keyboard Shortcuts](#keyboard-shortcuts)
 18. [RTL and Arabic Support](#rtl-and-arabic-support)
 19. [Security and Privacy](#security-and-privacy)
 20. [Constellation Map](#constellation-map)
 21. [Cognitive Engine](#cognitive-engine)
+
+---
+
+## Knowledge Formulation
+
+Constellation is built on a simple belief: **knowledge is not about storage — it's about formulation**. You don't become wiser by organizing files. You become wiser by connecting ideas, challenging assumptions, tracing origins, and synthesizing understanding.
+
+### The Living Link
+
+In Constellation, a link between two notes is not a dead pointer. It is a **living vessel** that carries meaning:
+
+- **Type**: What kind of relationship? (supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of)
+- **Annotation**: Why does this connection exist? Your reasoning at the moment of linking.
+- **Weight**: How significant? Grows with use, decays with neglect.
+- **Confidence**: How certain? Hypothesis → Evidence → Established.
+
+### The Five Acts of Knowledge Creation
+
+1. **Observation** — You capture something new (a note is born)
+2. **Connection** — You link it to existing knowledge (the first heartbeat)
+3. **Tension** — You discover a contradiction (critical thinking begins)
+4. **Synthesis** — You resolve the tension with a new understanding (knowledge is created)
+5. **Conviction** — Evidence accumulates over time (the idea becomes bedrock)
+
+### Searching Your Thinking
+
+Constellation's search engine is a diagnostic instrument for your intellectual life:
+
+- `supports [[Democracy]]` — What evidence supports this idea?
+- `contradicts [[My Thesis]]` — What challenges my thinking?
+- `causes [[Event]]` — What led to this outcome?
+- `orphans` — Which ideas are isolated and unconnected?
+
+All operators work in your language — type in Arabic, French, Japanese, or any of 15 supported languages.
+
+For the full specification, see `docs/CONSTELLATION-KNOWLEDGE-FORMULATION.md`.
 
 ---
 
@@ -83,12 +122,12 @@ A **Library** is a folder on your computer containing Markdown (`.md`) files. Yo
 Every universe automatically gets a **Universe Notes** folder at its root, named after the universe. This folder holds cross-library notes — MOCs (Maps of Content), dashboards, indexes, and any notes that don't belong to a single library.
 
 - Appears at the top of the File Explorer, above child universes and libraries
-- Included in search, Star View, and all features
+- Included in search, Sky View, and all features
 - When creating a new note (`Ctrl+N`), the Universe Notes folder appears as the first option
 
 ### Child Universes
 
-You can nest universes inside universes. A **Child Universe** is another universe folder referenced by your parent universe. Notes from child universes appear in Star View alongside your own notes, with cross-library links shown as dashed lines.
+You can nest universes inside universes. A **Child Universe** is another universe folder referenced by your parent universe. Notes from child universes appear in Sky View alongside your own notes, with cross-library links shown as dashed lines.
 
 ### Auto-Reopen
 
@@ -288,11 +327,11 @@ This grouping is consistent across Tree, List, and OrgChart modes.
 
 ### Cross-Mode Selection Sync
 
-Clicking a child universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Star View graph. This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base.
+Clicking a child universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Sky View graph. This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base.
 
 ### Picture-in-Picture (PiP) Overlay
 
-When Star View is open and you click a child universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay. The PiP shows a filtered sub-graph containing only the nodes belonging to the selected scope, with its own legend showing only the relevant entries. You can resize and reposition the PiP window freely.
+When Sky View is open and you click a child universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay. The PiP shows a filtered sub-graph containing only the nodes belonging to the selected scope, with its own legend showing only the relevant entries. You can resize and reposition the PiP window freely.
 
 ### Tree Mode (File Explorer)
 
@@ -325,14 +364,94 @@ An interactive tree-list visualization of your entire knowledge base hierarchy:
 
 ---
 
-## 5. Star View (GraphMind)
+## 5. Search
 
-Star View visualizes your notes as an interactive 3D graph powered by the **GraphMind** engine (Pixi.js WebGL).
+Constellation includes a hybrid multilingual search engine powered by SQLite FTS5 with BM25 ranking, structured query filters, and Arabic-optimized normalization. Search is accessible from the sidebar toolbar.
 
-### Opening Star View
+### How to Search
+
+Click the search icon in the sidebar toolbar or use `Ctrl+Shift+F` to activate search mode. Type your query and results appear after a brief debounce (300ms). Press `Escape` or click the `×` button to clear the search and return to the file tree.
+
+### Search Syntax
+
+| Syntax | Example | What it finds |
+|--------|---------|---------------|
+| Free text | `project management` | Notes containing those words in title or body |
+| Tag filter | `#research` | Notes tagged with `#research` |
+| Property filter | `status=active` | Notes with frontmatter property `status` equal to `active` |
+| Wikilink filter | `links to [[Climate]]` | Notes that link to `[[Climate]]` |
+| Library scope | `in:MyLibrary` | Restricts results to a specific library |
+| Combined | `#research status=active economy` | All filters applied together |
+
+### Match-Type Badges
+
+Each search result displays a colored badge indicating how the match was found. The badge shows a localized letter from your language for accessibility (color-blind safe):
+
+| Badge | Color | Meaning |
+|-------|-------|---------|
+| **T** (en) / **ع** (ar) | Blue | Title match — the search term appears in the note's name |
+| **C** (en) / **م** (ar) | Green | Content match — the search term appears in the note's body |
+| **S** (en) / **د** (ar) | Purple | Semantic match — conceptually related (requires embedding model) |
+| **P** (en) / **خ** (ar) | Amber | Property match — matched via frontmatter property filter |
+| **#** | Pink | Tag match — matched via tag filter |
+| **W** (en) / **ر** (ar) | Light blue | Wikilink match — matched via wikilink filter |
+
+Badge letters are localized for all 15 supported languages.
+
+### Pinned Results (Navigate Through Results)
+
+Search results stay visible after you click one. The opened note is highlighted in the result list so you can see which result you are viewing. Click another result to navigate to it without re-searching. This lets you browse through multiple results from a single search.
+
+To clear the search, press `Escape` or click the `×` button.
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Arrow Down` | Select next result |
+| `Arrow Up` | Select previous result |
+| `Enter` | Open the selected result |
+| `Escape` | Clear search and return to file tree |
+
+### Search Term Highlighting
+
+When you open a note from search results, all occurrences of your search term are highlighted in the editor. This works with Arabic-aware diacritic-insensitive matching — searching for "ادارة" will highlight "إدارة" and all diacritical variants.
+
+### Search History
+
+Click on the search field when it is empty to see your recent searches (last 20 queries). Each entry shows the query text and how long ago it was performed. Click any history entry to re-run that search instantly. Use the "Clear history" link at the bottom to erase all history.
+
+Search history is stored locally on your device and persists across app restarts.
+
+### Search Hub
+
+The Search Hub is a full-screen search experience. Click the magnifying glass icon in the dock bar to open it. Both sidebars collapse to give maximum space. Type any term and Constellation searches everywhere simultaneously, grouping results into 5 categories: Titles, Contents, Tags, Properties, and Wikilinks. Each category has a collapsible section with a count badge. Click any result to open it in the editor with all occurrences highlighted. A "Return to Search Hub" button appears so you can go back without re-searching.
+
+### Link Operators
+
+Constellation supports 6 link-topology search operators:
+
+| Syntax | What it finds |
+|--------|---------------|
+| `links to [[X]]` | Notes that link to X (backlinks) |
+| `links from [[X]]` | Notes that X links to (outgoing links) |
+| `mutual [[X]]` | Notes linked to X AND X links back (bidirectional) |
+| `mentions [[X]]` | Notes containing X's name without a [[wikilink]] |
+| `orphans` | Notes with no incoming or outgoing links |
+| `links between [[X]] and [[Y]]` | Notes that link to both X and Y |
+
+When typing any link operator, the `[[` autocomplete shows all notes in the universe. After selecting a note, type `#` for heading completion or `|type:` for link type completion.
+
+---
+
+## 6. Sky View (GraphMind)
+
+Sky View visualizes your notes as an interactive 3D graph powered by the **GraphMind** engine (Pixi.js WebGL).
+
+### Opening Sky View
 
 - Press `Ctrl+G`
-- Mission Control (`Ctrl+P`) > "Star View"
+- Mission Control (`Ctrl+P`) > "Sky View"
 
 ### Navigation
 
@@ -411,7 +530,7 @@ Notes grow through 4 maturity states, computed from inbound links and file age:
 
 Maturity appears in three places:
 - **File tree**: colored left border on note names
-- **Star View**: colored ring around nodes
+- **Sky View**: colored ring around nodes
 - **Tab bar**: small colored dot (●) before the note title
 
 ---
@@ -486,12 +605,58 @@ When the Second Screen is open:
 
 ---
 
-## 8. Second Screen
+## 8. Constellation Sight
+
+The Constellation Sight visualizes your entire knowledge system as a gravity-well graph. It answers: **"What does my knowledge look like, and how healthy is it?"**
+
+### Opening the Sight
+
+Click the **Sight button** (eye icon) in the left ribbon. The gravity-well graph appears. Click x to close.
+
+### The Gravity-Well Graph
+
+Notes are arranged in concentric rings by importance (centrality). The most connected notes sit at the center; peripheral notes at the edges. Within each ring, notes are grouped by library (your organization). Node color = library.
+
+| Element | Meaning |
+|---------|---------|
+| **Large node** | High centrality — bridges different knowledge areas |
+| **Small node** | Peripheral — within one area |
+| **Node color** | Library membership |
+| **Solid line** | Link between two notes |
+| **Direction arrows** | Small arrows showing link direction |
+| **Line thickness** | Confidence level (thick = established, thin = hypothesis) |
+
+### Interaction
+
+- **Single-click** a node: highlights its neighborhood (all connected notes). Everything else dims.
+- **Double-click**: opens the note in the editor.
+- **Click empty space**: clears the highlight.
+- **Scroll**: zoom. **Drag**: pan. **Fit to Screen**: toolbar button.
+
+### Search in Sight
+
+Click the magnifying glass. Supports all operators: `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, free text, and semantic search. Results show directional colors: green (inward), red (outward).
+
+### Analytics Panel (SightPanel)
+
+Click the grid icon to open the sidebar. Shows: Universe Health score (0-100), note/link/orphan counts, link type and confidence bars, top 10 bridges, and Knowledge Insights (strongest evidence, weak foundations, tensions, stagnating, most connected, knowledge gaps).
+
+### Settings
+
+Gear icon: adjust link stroke thickness, opacity, and arrow size. Settings persist across sessions.
+
+---
+
+## 9. Second Screen
 
 The Second Screen is a mode-based companion window that adapts to your current sidebar mode.
 
-- **Open**: Click the second screen icon in the sidebar, or `Ctrl+Shift+2`
+> **Requires Two Monitors** — The Second Screen is only available when two or more monitors are connected. With a single monitor, the button, keyboard shortcut, and command palette entries are hidden. The right sidebar provides the same panels inline.
+
+- **Open**: Click the monitor icon in the bottom dock bar, or `Ctrl+Shift+2`
+- **Auto-positions**: Centered on your secondary monitor at ~80% of the display
 - **Auto-closes**: When you close the main window, the second screen closes automatically
+- **Right sidebar auto-hides**: When the Second Screen opens, the right sidebar hides; when it closes, the sidebar returns
 
 ### Mode-Based Companion
 
@@ -502,7 +667,10 @@ The second screen changes its content based on the active sidebar mode in the ma
 | **File Explorer** | Universe Dashboard — stats, library breakdown, child universes, tags, recently edited/opened notes |
 | **Navigator** | Full Navigator view for browsing notes |
 | **Sky View** | Sky View tree with directory structure |
-| **Star View** | Star View companion with backlinks, forward links, tags, and local graph |
+| **Sky View** (graph) | Sky View companion with backlinks, forward links, tags, and local graph |
+| **Split View** | Comparison panels — all split notes side by side with shared panel selector |
+| **Constellation Map** | Map companion with mini-maps, color dropdown, and legend |
+| **Index** | Term exploration — note list + editor for clicked terms |
 
 ### Universe Dashboard (File Explorer Mode)
 
@@ -541,7 +709,7 @@ All visual settings instantly propagate to the second screen — no restart need
 
 ---
 
-## 9. Properties and Frontmatter
+## 10. Properties and Frontmatter
 
 Notes can have YAML frontmatter at the top:
 
@@ -568,7 +736,7 @@ Toggle property display in **Settings > Editor > Properties in document** (Visib
 
 ---
 
-## 10. Templates
+## 11. Templates
 
 Create reusable note templates:
 
@@ -670,6 +838,28 @@ Access Settings from the sidebar gear icon or `Ctrl+,`.
 - Accent color
 - Interface font size (11–18px)
 - Note font size
+- **Themes** — pick from six built-in themes, create custom themes (five-color editor), import themes from the Obsidian Community registry (200+ themes), or import a `.json` theme file. Delete any custom theme with the ✕ button on hover.
+
+### Style Settings
+
+A dedicated tab for fine-grained customization of every visible interface element, applied live to the active theme.
+
+- **Colors** — background, surfaces, text (normal/muted/faint), accent, borders, state colors
+- **Typography** — interface / note / code font sizes, H1–H6 sizes, heading weight, line heights, paragraph spacing
+- **Layout & Shape** — small/medium/large corner radii, border widths, shadows, editor readable line length, side margins
+- **Components** — ribbon dock, sidebar action toolbar, layout bar (pane toggles), top bar / tab strip, status bar, right sidebar (inspector), file explorer (Universe notes, child universes, libraries, folders, notes), buttons, tags, callouts — each with independent size, radius, color, and where applicable, active-state styling
+- **Editor** — link color/hover/decoration, inline code color/background/radius, blockquote bar width/color, cursor color, selection background
+
+**Import / Export** — toolbar at top of the tab:
+- Paste from clipboard (one-click)
+- Import / Paste (textarea with Merge or Replace)
+- From file (.json)
+- Copy (current values to clipboard)
+- Export (.json)
+
+The format matches Obsidian's Style Settings plugin exactly, so you can share settings between Obsidian and Constellation.
+
+Changes auto-save to the active theme; if you edit a built-in theme, it is auto-cloned into your custom themes so changes persist without modifying the original.
 
 ### Language
 
@@ -682,6 +872,10 @@ A dedicated tab consolidating all language-related settings:
 - **Date & Numbers** — numeral style (Arabic 0-9 or Hindi numerals), per-language date format with a Contextual checkbox for direction-aware rendering
 - **Script Tools** — language-specific symbol and punctuation toolbars (Arabic, Hebrew, CJK, etc.)
 - **Font Theme** — choose between Default and Typewriter font themes. The Typewriter theme applies authentic pre-PC-era fonts for each script (Courier Prime for Latin, Noto Naskh Arabic for Arabic, Miriam Libre for Hebrew, PT Mono for Cyrillic, Tiro Devanagari Hindi for Hindi, and system CJK fonts for Chinese/Japanese/Korean)
+
+### Arabic Overrides
+
+A per-Universe panel where you pin how the Arabic engine analyses specific surfaces — your own coinages, local names, field-specific loanwords, or cases where you disagree with the engine's automatic reading. Each override wins over the generative FST, the cascade, and the heuristic fallback. Adding or removing an override triggers a targeted reindex of only the notes that contain the affected surface — no full rebuild. See §18 ("RTL and Arabic Support") for the step-by-step walkthrough.
 
 ### Editor
 
@@ -702,6 +896,20 @@ A dedicated tab consolidating all language-related settings:
 - Check for updates
 - GitHub token for private repo updates
 
+### Debug
+
+Read-only diagnostic view for power users and developers. The **Boot Performance** scorecard reads `<universe>/.constellation/boot-perf.latest.json` — written on every launch — and evaluates it against the five ship-gate criteria defined in `lab/boot-perf/BOOT-BUDGET.md`:
+
+1. **UI visible** (≤ 2.5s) — sidebar painted, last-open note skeleton on screen.
+2. **Fully responsive** (≤ 6s) — typing instant, toolbar clicks open panes, search returns results.
+3. **Idle RSS memory** (≤ 350 MB) — 30 seconds after Criterion 2, no input, no notes open.
+4. **Post-boot stat sweep** — 50 externally-modified files detected in ≤ 3s, non-blocking.
+5. **Kill mid-index recovery** — force-killing during initial index rebuild resumes cleanly.
+
+Each row shows the target, the measured value, and a PASS/FAIL/Not-measured pill. Two collapsible panels below the scorecard show the full per-phase breakdown (graph-ready, core snapshot wall/queue/body/transport, graph snapshot, and the fire-and-forget fan-out) plus the raw JSON.
+
+The scorecard is read-only; to refresh it, close Constellation and relaunch, then re-open the panel (or press the **Refresh** button).
+
 ---
 
 ## 17. Keyboard Shortcuts
@@ -713,7 +921,7 @@ A dedicated tab consolidating all language-related settings:
 | `Ctrl+N` | New note |
 | `Ctrl+O` | Star Jump (quick open) |
 | `Ctrl+P` | Mission Control |
-| `Ctrl+G` | Open Star View |
+| `Ctrl+G` | Open Sky View |
 | `Ctrl+,` | Settings |
 | `Ctrl+Shift+F` | Search library |
 | `Ctrl+Shift+N` | Second screen |
@@ -733,7 +941,7 @@ A dedicated tab consolidating all language-related settings:
 | `Ctrl+/` | Toggle comment |
 | `Tab` | Indent / next table cell |
 
-### Star View
+### Sky View
 
 | Shortcut | Action |
 |----------|--------|
@@ -742,7 +950,7 @@ A dedicated tab consolidating all language-related settings:
 | `Space` | Toggle focus mode |
 | `0` | Reset 3D rotation |
 | `W/A/S/D/Q/E` | Fly through 3D |
-| `Escape` | Close Star View |
+| `Escape` | Close Sky View |
 
 ---
 
@@ -753,7 +961,7 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 - **Auto-detection**: Note direction is detected automatically from content
 - **Interface**: Full RTL interface when Arabic/Hebrew language is selected
 - **Editor**: RTL text editing with correct cursor movement and selection
-- **Star View**: Arabic labels render right-to-left with proper font fallback
+- **Sky View**: Arabic labels render right-to-left with proper font fallback
 - **Legend**: Items flip dot/text order based on content language
 - **Script fonts**: Configure Arabic, Hebrew, and CJK fonts independently in Settings > Language
 - **Script toolbars**: Language-specific symbol and punctuation buttons (Arabic symbols, Hebrew, CJK punctuation)
@@ -765,6 +973,34 @@ Constellation provides first-class support for Arabic, Hebrew, Persian, Urdu, an
 2. Optionally set a dedicated Arabic font set in **Settings > Language > Custom Font Sets**
 3. Enable Script Tools for Arabic symbol toolbar access
 4. Notes with Arabic content will automatically render RTL
+
+### Arabic Engine Overrides
+
+Constellation's Arabic engine is a five-layer morphological analyser that runs beneath every search, link, and index entry. It understands roots, patterns, proper nouns, loanwords, and phonological repairs — so a query for كاتب finds كتبنا and كتاب, but وائل stays intact as a name instead of being mangled into ائل.
+
+The **Arabic Overrides** panel in Settings is where you teach the engine your own terminology. Each override is the sovereign answer — it wins over the generative FST, the cascade, and the heuristic fallback.
+
+**When to use overrides:**
+- Personal names, local place names, or field-specific terms the engine does not know
+- Coinages or acronyms unique to your Universe
+- Loanwords where you want a specific spelling preserved
+- Any case where the engine's automatic analysis disagrees with how you read the word
+
+**Step-by-step:**
+
+1. Open **Settings** (gear icon or `Ctrl + ,` / `Cmd + ,`) and select **Arabic Overrides** in the sidebar.
+2. Click **Add override**.
+3. Fill in:
+   - **Surface** — the Arabic word as you type it
+   - **Lemma** — the canonical form the engine should return
+   - **Root** (optional) — 3 or 4 consonants if the word has a classical root
+   - **Pattern** (optional) — e.g. `فاعل`
+   - **Part of speech** — Proper noun / Noun / Adjective / Adverb / Verb / Particle / Foreign / Unknown
+   - **Note** (optional) — a line of context for yourself
+4. Click **Save**. The panel shows **Reindexing…** while every note containing the surface is re-tokenised, then **Reindexed N note(s)** when done.
+5. To remove an override, click the **×** on its row — the same reindex sweep runs in reverse.
+
+Overrides are stored per Universe at `<universe>/.constellation/arabic-overrides.json` — plain text, alphabetically sorted, atomically written. You can version-control the file or share it across devices.
 
 ---
 
@@ -829,7 +1065,7 @@ All nine Cognitive Engine features require no configuration. They activate autom
 
 **What it is**
 
-Typed Links let you add semantic meaning to the connections between your notes. Instead of a plain link like `[[Climate Change]]` that only says "these two notes are related somehow," a Typed Link says exactly how they are related: `[[Climate Change|type:supports]]` means "this note provides evidence for the claims in Climate Change." Constellation supports seven link types, each with a distinct color in Star View.
+Typed Links let you add semantic meaning to the connections between your notes. Instead of a plain link like `[[Climate Change]]` that only says "these two notes are related somehow," a Typed Link says exactly how they are related: `[[Climate Change|type:supports]]` means "this note provides evidence for the claims in Climate Change." Constellation supports seven link types, each with a distinct color in Sky View.
 
 **Why it matters for knowledge**
 
@@ -853,12 +1089,12 @@ A library full of plain links is like a map with roads but no signs. You can see
 **Where you see it**
 
 - **In the editor**: Typed links render as colored text with a tooltip showing the link type. Hover over any typed link to see its semantic label.
-- **In Star View (GraphMind)**: Each link type has a distinct color, so you can visually trace chains of support, contradiction, or derivation across your entire library.
+- **In Sky View (GraphMind)**: Each link type has a distinct color, so you can visually trace chains of support, contradiction, or derivation across your entire library.
 - **In the autocomplete menu**: When you type `|type:` inside a wiki-link, all seven types appear with short descriptions.
 
 **Tips**
 
-- You do not need to type every link. Start by typing the links that carry the strongest meaning — the ones where you know "this supports that" or "this contradicts that." Even a handful of typed links will light up your Star View.
+- You do not need to type every link. Start by typing the links that carry the strongest meaning — the ones where you know "this supports that" or "this contradicts that." Even a handful of typed links will light up your Sky View.
 - The `contradicts` type is especially powerful. It forces you to acknowledge tensions in your thinking, which is where real learning happens.
 - You can always add a type to an existing link later. Just open the note, find the plain `[[link]]`, and add `|type:supports` (or whichever type applies).
 - Typed Links feed into three other Cognitive Engine features: Knowledge Strata uses them to determine note depth, the Tension Detector watches for contradictions, and the Provenance Chain follows `derives-from` links.
@@ -890,7 +1126,7 @@ Most people cannot tell you the difference between a fact they jotted down and a
 
 1. Simply write notes and create links as you normally would. Knowledge Strata computes automatically.
 2. To see a note's stratum, check the **right sidebar** — the stratum level appears in the note's properties section.
-3. In **Star View**, nodes are sized and layered by stratum. Higher-stratum notes appear larger and more prominent.
+3. In **Sky View**, nodes are sized and layered by stratum. Higher-stratum notes appear larger and more prominent.
 4. To raise a note's stratum naturally:
    - Write more (expand from a short fact into a developed explanation).
    - Link it to other notes (connect it to the broader web of your knowledge).
@@ -899,7 +1135,7 @@ Most people cannot tell you the difference between a fact they jotted down and a
 **Where you see it**
 
 - **Right sidebar**: The note's stratum level is shown in the properties area.
-- **Star View (GraphMind)**: Node size reflects stratum. Datum notes appear as small dots; Worldview notes appear as large, prominent nodes.
+- **Sky View (GraphMind)**: Node size reflects stratum. Datum notes appear as small dots; Worldview notes appear as large, prominent nodes.
 - **Strata are recalculated** each time you open a library, so they always reflect the current state of your notes.
 
 **Tips**
@@ -940,7 +1176,7 @@ Ideas do not arrive fully formed. They start as fragments, grow through revision
 **Where you see it**
 
 - **File tree**: Each note shows a small maturity indicator (icon or color) so you can scan your library and see which notes are Seeds, Saplings, Evergreens, or Canonical.
-- **Star View (GraphMind)**: Maturity affects the visual appearance of nodes, helping you see at a glance which parts of your knowledge are well-developed and which are still germinating.
+- **Sky View (GraphMind)**: Maturity affects the visual appearance of nodes, helping you see at a glance which parts of your knowledge are well-developed and which are still germinating.
 - **Tab bar**: The active note's maturity stage is visible in the tab, so you always know the state of the note you are editing.
 
 **Tips**
@@ -986,7 +1222,7 @@ A library of notes can develop blind spots just like a person's thinking can. Yo
 **Where you see it**
 
 - **Right sidebar — Tension tab**: The main interface for the Tension Detector, showing all four issue types with counts and clickable items.
-- **Star View**: Contradiction links appear in a distinct color, making tension lines visible in your knowledge graph.
+- **Sky View**: Contradiction links appear in a distinct color, making tension lines visible in your knowledge graph.
 
 **Tips**
 
@@ -1022,7 +1258,7 @@ Knowing what you think is only half the picture. Knowing where your ideas came f
 **Where you see it**
 
 - **Right sidebar — Provenance tab**: Shows the full ancestry tree for the currently open note, with depth count and origin classification (Received / Discovered / Mixed).
-- **Star View (GraphMind)**: `derives-from` links appear as distinct edges, so you can visually trace provenance chains across your library.
+- **Sky View (GraphMind)**: `derives-from` links appear as distinct edges, so you can visually trace provenance chains across your library.
 - **Note properties**: The origin type (Received / Discovered / Mixed) appears in the note's metadata in the right sidebar.
 
 **Tips**
@@ -1177,5 +1413,5 @@ Folder structures impose a single hierarchy, but knowledge does not fit one tree
 
 ---
 
-*Constellation User Manual — Version 0.3.4 — March 2026*
+*Constellation User Manual — Version 0.1.0 — March 2026*
 *uconstellation.world*

@@ -161,7 +161,36 @@ fn build_library_node(lib_path: &str, lib_name: &str, depth_limit: u32) -> Optio
 }
 
 /// Compute the Constellation Map tree for the entire universe (all libraries + child universes).
-#[tauri::command]
+///
+/// # Boot-path implication (Round 7 fix, 2026-04-19)
+///
+/// `+layout.svelte` keeps both the `<ConstellationMap>` overlay (line 4134)
+/// and the `<OrgChart fullscreen>` overlay (line 4173) **always mounted**,
+/// toggling visibility with a CSS class rather than `{#if}`. That pattern
+/// is deliberate ("preserve drill-down state across navigation"), but it
+/// means both components' `onMount` / `$effect` fire on every boot:
+///
+/// * `ConstellationMap.loadData()` → `invoke('constellation_map_universe')`
+/// * `OrgChart.loadFullscreenData()` → `invoke('constellation_map_universe')`
+///
+/// With the sync `#[tauri::command]` binding, both calls ran inline on
+/// the WebView2 UI thread. Round 6's arrival log showed the first call
+/// held the dispatcher for 17.2 s and the second for 3.5 s — a 20.7-second
+/// queue in front of `cache_boot_snapshot_core`. That fully explained
+/// `core_queue_ms = 20,693`.
+///
+/// Converting to `#[tauri::command(async)]` routes through
+/// `respond_async_serialized` → `tauri::async_runtime::spawn`, so each
+/// dispatch runs on a Tokio worker. The body is unchanged — the map tree
+/// is still computed with the same filesystem walk — but it no longer
+/// serializes in front of the core snapshot.
+///
+/// Rule 8 follow-up (tracked separately): the correct long-term fix is
+/// to (a) gate both overlays with `{#if}` so the walk only runs when the
+/// user opens the Map/OrgChart, and (b) persist the derived map tree,
+/// maintained by triggers on note-save, so even an explicit open is
+/// instant. Neither is needed to close Criterion 2.
+#[tauri::command(async)]
 pub fn constellation_map_universe(
     app: tauri::AppHandle,
     universe_name: String,

@@ -1,6 +1,6 @@
 [package]
 name = "constellation"
-version = "0.1"
+version = "0.1.0"
 description = "A Universe of Libraries — Desktop knowledge management platform for connected notes"
 authors = ["eisaShamsi"]
 license = "MIT"
@@ -24,9 +24,37 @@ tokio = { version = "1", features = ["full"] }
 rfd = "0.15"
 notify = "7"
 regex = "1"
+petgraph = "0.6"
+rusqlite = { version = "0.31", features = ["bundled"] }
+ort = "2.0.0-rc.12"
+tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
 chrono = "0.4"
+rand = "0.8"
 tauri-plugin-updater = "2.10.0"
 tauri-plugin-process = "2.3.1"
+# M3: compact, read-only morphological index. BurntSushi's `fst` crate —
+# pure-Rust FST (finite-state transducer) over UTF-8 keys with u64 values.
+# Used by arabic::fst_index to replace the HashMap-backed GenerativeIndex.
+# BSD/MIT licensed (license-clean, matches our no-GPL policy).
+fst = "0.4"
+# M3-baker: cross-platform cache directory resolution (Windows
+# `%LOCALAPPDATA%`, macOS `~/Library/Caches`, Linux `~/.cache`).
+# Used by arabic::fst_bake to persist the compiled FST between launches.
+# Apache-2.0/MIT licensed.
+dirs = "5"
+# M9-hotpath (b): inline small-vector storage for the analyzer's
+# `Vec<Analysis>` hot path. Already in the dep tree transitively (via
+# rusqlite / hashbrown); promoting to a direct dep so the analyzer can
+# name the type. MIT/Apache-2.0 licensed.
+smallvec = "1"
+
+# M9-mmap: memory-map the baked Arabic FST byte buffers so they live
+# in the OS page cache rather than the process heap. Applied only on
+# desktop targets — iOS and Android sandboxes routinely deny anonymous
+# mmap. On those targets `fst_bake` falls back to `Vec<u8>` (the old
+# heap-resident path). MIT/Apache-2.0 licensed.
+[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+memmap2 = "0.9"
 
 [features]
 default = ["custom-protocol"]

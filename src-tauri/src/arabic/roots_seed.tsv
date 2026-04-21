@@ -1,0 +1,654 @@
+# Constellation Arabic root seed (M1f / M1f-data).
+#
+# Format: key<TAB>gloss
+#   key   — canonical hyphenated radicals (Arabic letters + '-').
+#   gloss — short English gloss; first input to the lexical bridge seed.
+#
+# Blank lines and lines starting with '#' are ignored. Column separator
+# is a single TAB. First-write-wins — duplicates are silently discarded
+# by the loader, so appending an already-present key is safe.
+#
+# Licence: curated from public-domain classical sources (al-Ghalāyīnī
+# *Jāmiʿ al-Durūs al-ʿArabiyyah*, Ibn Manẓūr *Lisān al-ʿArab*, al-Fīrūz-
+# ābādī *al-Qāmūs al-Muḥīṭ* — all pre-20th-century works, no longer in
+# copyright) cross-referenced with modern corpus-frequency lists
+# distributed under CC BY-SA. **No GPL / BAMA / SAMA data is used.**
+#
+# Long-range target: 7K roots (M1f-data). Growth is append-only; the
+# M7 disambiguator will layer frequency tiers on top without schema
+# change.
+
+# ──────────────────────────────────────────────────────────────────────
+# Sound triliterals — high frequency (MSA daily + Quranic core)
+# ──────────────────────────────────────────────────────────────────────
+ك-ت-ب	writing
+ع-ل-م	knowing
+ع-م-ل	working
+ج-ل-س	sitting
+ذ-ه-ب	going
+د-خ-ل	entering
+خ-ر-ج	exiting
+ر-ج-ع	returning
+ف-ه-م	understanding
+ش-ر-ب	drinking
+ض-ر-ب	striking
+س-م-ع	hearing
+ن-ظ-ر	looking
+ش-ع-ر	feeling / poetry
+ف-ع-ل	doing
+ح-ك-م	judging / ruling
+ح-م-د	praising
+ذ-ك-ر	remembering
+ح-ف-ظ	preserving
+ك-س-ب	earning
+ف-ت-ح	opening
+غ-ل-ق	closing
+ط-ل-ب	seeking
+ش-ك-ر	thanking
+ق-ت-ل	killing
+س-ك-ن	dwelling
+ع-ب-د	worshipping
+ص-ن-ع	making
+ل-ب-س	wearing
+خ-ل-ق	creating
+غ-ف-ر	forgiving
+ن-ص-ر	helping / victory
+ج-م-ع	gathering
+ف-ر-ق	separating
+س-ر-ق	stealing
+ر-س-ل	sending
+ش-ه-د	witnessing
+ق-ط-ع	cutting
+ح-م-ل	carrying
+ح-ب-س	confining
+ب-ح-ث	searching
+ن-ق-ل	transferring
+ع-ج-ب	wondering
+م-ل-ك	owning / ruling
+ق-ب-ض	seizing
+ش-غ-ل	occupying
+س-ج-د	prostrating
+ح-ز-ن	grieving
+س-ل-م	submitting / peace
+ج-ه-ل	being ignorant
+ص-د-ق	being truthful
+ك-ذ-ب	lying
+ظ-ل-م	oppressing
+ع-د-ل	being just
+ر-ح-م	having mercy
+
+# ── Sound triliterals — second tier ──
+ب-ر-ك	blessing
+ب-ر-ز	emerging
+ب-ش-ر	being human / good tidings
+ب-ع-د	being far
+ب-ل-غ	reaching / conveying
+ج-ب-ر	mending / forcing
+ج-ب-ل	mountain / forming
+ج-ح-د	denying
+ج-ر-ح	wounding
+ج-ن-د	conscripting / soldier
+ج-ه-د	striving
+ح-ج-ب	veiling
+ح-ر-ث	plowing
+ح-ر-س	guarding
+ح-ر-ص	being eager
+ح-ر-ق	burning
+ح-ر-ك	moving
+ح-ر-م	forbidding / sanctifying
+ح-س-ب	calculating / reckoning
+ح-س-د	envying
+ح-س-ن	being good
+ح-ش-ر	gathering a crowd
+ح-ص-ل	attaining
+ح-ص-ن	fortifying
+ح-ط-م	crushing
+ح-ف-ر	digging
+ح-ل-ف	swearing an oath
+ح-ل-م	dreaming / being forbearing
+خ-ب-ر	informing / experience
+خ-ت-م	sealing / concluding
+خ-د-ع	deceiving
+خ-د-م	serving
+خ-س-ر	losing
+خ-ش-ع	humbling
+خ-ض-ع	submitting
+خ-ط-ب	addressing / engaging
+خ-ل-د	being eternal
+خ-ل-ص	purifying
+خ-ل-ط	mixing
+خ-ل-ف	succeeding / differing
+د-ب-ر	managing / back
+د-ر-س	studying
+د-ر-ج	stepping / degree
+د-ف-ع	pushing / paying
+د-ف-ن	burying
+ذ-ب-ح	slaughtering
+ر-ب-ح	profiting
+ر-ب-ط	binding
+ر-ف-ع	raising
+ر-ق-ب	watching / neck
+ر-ق-د	sleeping
+ر-ك-ب	riding / mounting
+ر-ك-ع	bowing
+ز-ر-ع	sowing
+ز-ع-م	claiming
+س-ب-ح	glorifying / swimming
+س-ب-ق	preceding
+س-ت-ر	veiling
+س-ج-ن	imprisoning
+س-ح-ب	pulling / dragging
+س-ح-ر	sorcery / pre-dawn
+س-ر-ع	being quick
+س-ق-ط	falling
+ش-ج-ع	being brave
+ش-ر-ح	explaining
+ش-ر-ط	conditioning
+ش-ر-ع	legislating
+ش-م-ل	encompassing
+ص-ب-ح	morning
+ص-ب-ر	being patient
+ص-ح-ب	accompanying
+ص-ر-ف	changing / disbursing
+ص-ع-د	ascending
+ص-ف-ح	forgiving / turning page
+ص-ل-ح	reforming / being righteous
+ض-ح-ك	laughing
+ض-ع-ف	weakening / doubling
+ط-ب-خ	cooking
+ط-ب-ع	printing / nature
+ط-ح-ن	grinding
+ط-ر-ح	throwing / proposing
+ط-ر-ق	knocking / road
+ط-ع-م	feeding / taste
+ط-ه-ر	purifying
+ظ-ف-ر	triumphing / nail
+ظ-ه-ر	appearing / back
+ع-ب-ر	crossing / lesson
+ع-ج-ز	being unable
+ع-ذ-ب	tormenting / fresh
+ع-ذ-ر	excusing
+ع-ر-ض	presenting / width
+ع-ر-ف	recognizing
+ع-ظ-م	being great
+ع-ق-د	contracting / knotting
+ع-ق-ل	reasoning / mind
+ع-ك-س	reflecting / opposite
+ع-ل-ق	attaching / hanging
+ع-م-ر	building / lifespan
+غ-د-ر	betraying
+غ-ر-ب	setting / west
+غ-س-ل	washing
+غ-ض-ب	being angry
+غ-ل-ب	defeating
+ف-ر-ح	being joyful
+ف-ر-ش	spreading
+ف-ر-ض	imposing / obligating
+ف-س-د	corrupting
+ف-س-ر	interpreting
+ف-ش-ل	failing
+ف-ص-ل	separating / chapter
+ف-ض-ل	favoring / grace
+ف-ك-ر	thinking
+ق-ب-ل	accepting / before
+ق-د-م	advancing
+ق-د-ر	being able / destiny
+ق-د-س	sanctifying
+ق-ر-ب	drawing near
+ق-س-م	dividing / swearing
+ق-ص-د	intending / aim
+ق-ع-د	sitting
+ق-ف-ل	locking / returning
+ق-ل-ب	overturning / heart
+ك-ب-ر	being great
+ك-ر-م	being generous
+ك-س-ل	being lazy
+ك-ش-ف	uncovering
+ك-م-ل	completing
+ك-ن-ز	treasuring
+ل-ب-ث	lingering
+ل-ح-ق	catching up / attaching
+ل-ز-م	being necessary
+ل-ط-ف	being gentle / kind
+ل-ع-ن	cursing
+ل-ف-ظ	uttering
+ل-ق-ط	picking up
+ل-م-س	touching
+م-ر-ض	being ill
+م-ز-ج	blending
+م-ز-ح	joking
+م-ط-ر	raining
+م-ن-ح	granting
+م-ن-ع	preventing
+ن-ب-ت	sprouting
+ن-ت-ج	producing
+ن-ث-ر	scattering / prose
+ن-ج-ح	succeeding
+ن-ذ-ر	vowing / warning
+ن-ز-ل	descending
+ن-س-ب	being related / genealogy
+ن-س-خ	copying / abrogating
+ن-ش-ر	spreading / publishing
+ن-ص-ح	advising
+ن-ص-ف	halving
+ن-ط-ق	speaking
+ن-ف-ذ	executing / penetrating
+ن-ف-ع	benefiting
+ن-ف-ق	spending / tunnel
+ن-ق-د	critiquing / cash
+ن-ك-ح	marrying
+ه-ب-ط	descending / landing
+ه-د-م	demolishing
+ه-ر-ب	fleeing
+ه-ج-ر	emigrating / abandoning
+ه-ل-ك	perishing
+و-ث-ق	trusting
+و-ج-ه	facing / direction
+و-س-ع	being spacious
+و-ف-د	delegating
+و-ف-ق	agreeing / reconciling
+و-ق-ع	falling / happening
+و-ل-ج	entering deeply
+و-ه-ب	gifting
+ع-ص-ب	bandaging / nerve
+ع-ص-ر	squeezing / era
+ع-ص-م	protecting / infallibility
+ع-ط-ف	sympathizing / bending
+ع-ق-ب	following / heel
+ع-ل-ن	declaring openly
+ع-ن-د	stubbornness
+ع-و-ج	being crooked
+ص-ف-ق	clapping / striking deal
+ش-ق-ي	being wretched
+ق-ص-ر	shortening / palace
+ق-ت-ل	killing
+ب-د-ل	exchanging
+ب-ذ-ل	expending
+ب-ر-ر	being pious
+ب-ر-ش	speckling
+ب-ع-ث	sending / resurrecting
+ب-ل-ع	swallowing
+ت-ب-ع	following
+ت-ر-ك	leaving
+ج-ب-ن	being cowardly / cheese
+ج-د-ل	arguing / braiding
+ج-ه-ز	equipping
+ح-ج-ج	arguing / pilgrimage
+ح-د-ث	happening / speech
+ح-ر-ر	liberating
+ح-س-ر	regretting / baring
+ح-ف-ل	gathering / party
+ح-ق-ن	injecting / retaining
+ح-ك-ك	scratching / rubbing
+ح-ل-ل	dissolving / permitting
+خ-ب-أ	hiding (root of ikhtibāʾ)
+خ-ل-ع	stripping off
+د-ع-م	supporting
+د-ل-ل	indicating / coquetry
+ر-ب-ق	tying by neck
+ر-ت-ب	arranging / rank
+ر-ح-ل	travelling
+ر-ح-ب	welcoming / wide
+ر-د-ع	deterring
+ر-ش-د	guiding aright
+ز-ف-ف	processing bride
+ز-ه-ر	shining / flowering
+س-ج-ل	registering
+س-د-د	blocking / paying off
+س-ل-ب	robbing
+س-ل-ق	boiling
+س-ه-ل	being easy
+ش-ر-ف	being noble
+ش-ط-ر	halving
+ش-ك-و	complaining
+ص-د-ر	emerging / chest
+ص-د-م	colliding
+ص-د-ي	echoing
+ض-ر-س	grinding teeth
+ض-م-ن	guaranteeing
+ط-ل-ع	rising / ascending
+ط-و-ل	being long
+ع-ن-ي	meaning / caring
+ع-و-ض	compensating
+ف-ت-ر	becoming tepid
+ف-ر-ج	relieving / spreading
+ف-ر-م	mincing
+ف-ق-د	losing / missing
+ف-ق-ه	comprehending law
+ف-ك-ك	releasing / dismantling
+ف-ل-ح	tilling / succeeding
+ف-ي-ض	overflowing
+ق-ت-ل	killing
+ق-ر-ر	settling / deciding
+ق-ط-ف	plucking fruit
+ق-ل-ع	uprooting
+ق-م-ع	suppressing
+ك-ب-س	pressing / compressing
+ك-ت-م	concealing
+ك-ف-ل	sponsoring / guaranteeing
+ك-ف-ي	being enough
+ل-ب-ن	milk / brick
+ل-ج-أ	taking refuge
+ل-ح-ظ	noticing
+ل-ع-ب	playing
+م-ث-ل	resembling / example
+م-ر-ر	passing
+م-ن-ن	bestowing / reminding favour
+م-ه-ل	granting respite
+م-ه-ن	being humble / profession
+ن-ب-ذ	discarding
+ن-ب-ع	springing forth
+ن-ت-ف	plucking
+ن-ج-م	rising / star
+ن-ح-ر	slaughtering / throat
+ن-خ-ر	snoring / decay
+ن-د-م	regretting
+ن-س-ج	weaving
+ن-ع-س	drowsing
+ن-ك-ر	denying / unknown
+ه-ج-م	attacking
+ه-د-ر	being shed in vain
+ه-ر-م	aging
+ه-ش-م	crushing / Hāshim
+ه-م-د	subsiding
+ه-م-س	whispering
+ه-م-م	concerning / ambition
+و-ج-ب	being obligatory
+و-ل-م	hosting a banquet
+و-ل-ي	being patron / neighbor
+و-ه-ن	being weak
+
+# ──────────────────────────────────────────────────────────────────────
+# Hollow triliterals (weak 2nd radical — و or ي)
+# ──────────────────────────────────────────────────────────────────────
+ق-و-ل	saying
+ك-و-ن	being
+ع-و-د	returning
+ق-و-م	standing / rising
+ز-و-ر	visiting
+ط-و-ف	circling
+ف-و-ز	winning
+ن-و-م	sleeping
+ذ-و-ق	tasting
+ب-ي-ع	selling
+ز-ي-د	increasing
+س-ي-ر	travelling
+ط-ي-ر	flying
+ع-ي-ش	living
+غ-ي-ب	being absent
+م-ي-ل	inclining
+خ-و-ف	fearing
+ج-و-ع	being hungry
+ج-و-ز	permitting / passing
+ح-و-ج	needing
+ح-و-ز	possessing
+ح-و-ل	transforming / year
+ح-و-ي	containing
+د-و-ر	turning / house
+د-و-م	lasting
+د-و-ن	being lowly / below
+ذ-و-ب	melting
+ر-و-ض	training / garden
+ر-و-ع	terrifying
+ز-و-ج	pairing / marrying
+س-و-د	being black
+س-و-ق	driving / market
+ص-و-ب	being correct / direction
+ص-و-غ	forming / shaping
+ص-و-ل	attacking
+ص-و-م	fasting
+ص-و-ن	safeguarding
+ع-و-ج	bending
+ع-و-ض	compensating
+ع-و-ق	hindering
+غ-و-ث	aiding in distress
+غ-و-ر	sinking / depth
+غ-و-ي	erring
+ف-و-ت	missing / elapsing
+ف-و-ض	delegating / chaos
+ق-و-ت	nourishing
+ق-و-د	leading
+ل-و-ح	flashing / tablet
+ل-و-م	blaming
+ل-و-ن	colouring
+م-و-ت	dying
+م-و-ج	waving
+م-و-ل	financing
+ن-و-ب	taking turns / representing
+ن-و-ح	wailing
+ن-و-ر	lighting
+ن-و-ط	linking / medal
+ه-و-ل	terrifying
+ج-ي-ء	coming
+ح-ي-د	deviating
+ح-ي-ر	being perplexed
+ح-ي-ض	menstruating
+خ-ي-ب	disappointing
+خ-ي-ر	being better / choosing
+خ-ي-ط	sewing / thread
+خ-ي-م	pitching tent
+د-ي-ن	indebting / religion
+ذ-ي-ع	spreading news
+ر-ي-ب	doubting
+ر-ي-ح	winding / scent
+ز-ي-ن	adorning
+س-ي-ل	flowing
+ش-ي-خ	aging / sheikh
+ش-ي-ع	escorting / partisanship
+ص-ي-د	hunting
+ض-ي-ع	being lost
+ض-ي-ف	hosting / guest
+ض-ي-ق	narrowing
+ط-ي-ب	being good / pleasant
+ع-ي-ن	specifying / eye
+ف-ي-د	benefiting
+ق-ي-د	binding / restriction
+ق-ي-ض	exchanging
+ك-ي-د	scheming
+ك-ي-ل	measuring
+ل-ي-ل	night
+م-ي-ز	distinguishing
+
+# ──────────────────────────────────────────────────────────────────────
+# Defective triliterals (weak 3rd radical — و, ي, or ى)
+# ──────────────────────────────────────────────────────────────────────
+د-ع-و	calling / inviting
+ر-م-ي	throwing
+م-ش-ي	walking
+ج-ر-ي	running
+ب-ق-ي	remaining
+ن-س-ي	forgetting
+ر-أ-ي	seeing
+ت-ل-و	reciting
+غ-ز-و	raiding
+ن-ج-و	escaping
+ر-ج-و	hoping
+ع-ل-و	rising high
+ن-د-و	gathering
+ب-ن-ي	building
+ح-ك-ي	telling
+ب-غ-ي	seeking / wronging
+ث-ن-ي	folding / second
+ج-ن-ي	harvesting / perpetrating
+ح-ل-و	being sweet
+ح-م-ي	defending / heating
+ح-ن-و	bending / compassion
+خ-ش-ي	fearing
+خ-ف-ي	hiding
+ر-ض-ي	being content
+ر-و-ي	narrating / quenching
+س-ع-ي	striving
+س-ق-ي	giving to drink
+س-م-و	being high / name
+ش-د-و	singing softly
+ش-ف-ي	healing
+ش-ك-و	complaining
+ص-ب-و	being young / yearning
+ص-ف-و	being pure
+ص-ل-ي	praying / burning
+ض-ح-و	forenoon
+ط-غ-ي	transgressing
+ط-و-ي	folding
+ظ-م-أ	thirsting
+ع-ص-ي	disobeying
+ع-ف-و	pardoning
+ع-م-ي	being blind
+غ-ط-ي	covering
+غ-ش-ي	overcoming / fainting
+غ-ل-و	exaggerating
+غ-ن-ي	being wealthy
+ف-د-ي	ransoming
+ف-ن-ي	perishing
+ك-س-و	clothing
+ك-ف-ي	being enough
+ل-ق-ي	meeting
+ل-ه-و	amusing
+م-ح-و	erasing
+ن-ح-و	direction / grammar
+ن-ف-ي	denying / exiling
+ن-م-ي	growing
+ن-و-ي	intending
+ه-د-ي	guiding / gift
+ه-ذ-ي	raving
+
+# ──────────────────────────────────────────────────────────────────────
+# Assimilated triliterals (weak 1st radical — و or ي)
+# ──────────────────────────────────────────────────────────────────────
+و-ع-د	promising
+و-ج-د	finding
+و-ض-ع	placing
+و-ق-ف	stopping
+و-ص-ل	arriving / joining
+و-ر-ث	inheriting
+و-ز-ن	weighing
+و-ل-د	being born / begetting
+ي-س-ر	being easy / left
+ي-ئ-س	despairing
+ي-ق-ظ	being awake
+و-ب-ل	causing trouble
+و-ب-خ	reprimanding
+و-ح-د	being one
+و-د-ع	bidding farewell / depositing
+و-س-م	branding / season
+و-ص-ف	describing
+و-ض-ح	being clear
+و-ط-ن	homeland
+و-ع-ظ	admonishing
+و-ع-ي	comprehending
+و-ف-ي	fulfilling
+و-ق-ت	timing
+و-ق-ي	protecting
+و-ك-ل	entrusting
+و-ل-ع	being fond of
+
+# ──────────────────────────────────────────────────────────────────────
+# Geminated triliterals (r[1] == r[2])
+# ──────────────────────────────────────────────────────────────────────
+م-د-د	extending
+ش-ك-ك	doubting
+ر-د-د	returning (trans.)
+ع-د-د	counting
+ح-ب-ب	loving
+م-س-س	touching
+ف-ر-ر	fleeing
+ض-ل-ل	straying
+ذ-ل-ل	being humble
+ب-ت-ت	severing decisively
+ج-د-د	renewing / grandfather
+ح-ج-ج	arguing / pilgrimage
+ح-ق-ق	verifying / being true
+خ-س-س	being vile
+خ-ص-ص	specifying
+خ-ف-ف	lightening
+د-ق-ق	grinding fine
+س-ب-ب	causing
+س-ر-ر	being secret / delighting
+س-ن-ن	instituting law
+ش-د-د	being strong
+ص-ح-ح	being correct
+ص-ف-ف	lining up
+ض-م-م	embracing
+ض-ن-ن	being miserly
+ظ-ن-ن	supposing
+ع-م-م	generalizing / uncle
+ف-ك-ك	loosening
+ق-ل-ل	being few
+ك-ف-ف	refraining / palm
+ل-ذ-ذ	being delicious
+م-ر-ر	passing / bitter
+ن-ص-ص	texting / stipulating
+و-د-د	loving affectionately
+ه-ل-ل	cheering / new-moon sighting
+ه-م-م	concerning / resolve
+
+# ──────────────────────────────────────────────────────────────────────
+# Hamzated triliterals — hamza beats all other weakness
+# ──────────────────────────────────────────────────────────────────────
+أ-م-ر	ordering
+أ-خ-ذ	taking
+أ-ك-ل	eating
+أ-ذ-ن	permitting / ear
+س-أ-ل	asking
+ب-د-أ	beginning
+ن-ش-أ	arising
+ق-ر-أ	reading
+م-ل-أ	filling
+ه-ن-أ	congratulating
+ء-م-م	leading (root of imām)
+ء-م-ن	believing / securing
+ء-ل-ف	being familiar / thousand
+ء-خ-و	brotherhood
+أ-ث-ر	transmitting / trace
+أ-ج-ر	hiring / reward
+أ-س-ر	captivating / household
+أ-س-ف	regretting
+أ-ل-م	aching
+ب-ر-أ	being free / creating
+ج-ر-أ	daring
+خ-ط-أ	erring / sin
+د-ف-أ	being warm
+ر-ز-أ	enduring loss
+ض-و-أ	lighting
+ع-ب-أ	caring / burdening
+ف-ج-أ	startling / sudden
+ف-ق-أ	gouging
+ف-ن-أ	expiring
+ق-ي-أ	vomiting
+ك-ف-أ	equaling / tilting
+ن-ب-أ	informing / news
+ن-ق-أ	being clean
+و-ط-أ	preparing / treading
+أ-س-س	founding
+أ-م-ل	hoping
+أ-و-ب	returning home
+أ-و-ل	interpreting / first
+أ-ي-د	supporting / hand
+ء-ت-ي	coming / bringing
+ء-ه-ل	being family-fit / welcoming
+ء-س-و	consoling / medical treatment
+
+# ──────────────────────────────────────────────────────────────────────
+# Sound quadriliterals
+# ──────────────────────────────────────────────────────────────────────
+د-ح-ر-ج	rolling
+ز-ل-ز-ل	shaking / earthquake
+ت-ر-ج-م	translating
+ب-ع-ث-ر	scattering
+س-ي-ط-ر	controlling
+ف-ل-س-ف	philosophizing
+ب-ر-م-ج	programming
+ع-س-ك-ر	encamping / army
+ب-ه-ر-ج	making tawdry / bogus
+ج-م-ه-ر	crowding / republic
+خ-ن-د-ق	trenching
+د-ر-د-ش	chatting (colloquial)
+ص-ل-ص-ل	ringing / clay
+ط-م-أ-ن	tranquilizing
+ف-ر-ع-ن	behaving tyrannically (from Pharaoh)
+ق-ه-ق-ر	retreating
+ق-ه-ق-ه	guffawing
+ك-ه-ر-ب	electrifying
+م-غ-ن-ط	magnetizing
+ه-ر-و-ل	jogging
+ه-ن-د-س	engineering
+و-س-و-س	whispering / intrusive thought

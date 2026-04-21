@@ -1,0 +1,353 @@
+{
+  "universe": {
+    "name": "Constellation Discovery",
+    "tagline": "A curated demonstration Universe built from Wikipedia, Wikimedia Commons, and Wikidata. For exploring Constellation's Living Link Architecture, Cognitive Engine, and multi-level hierarchy."
+  },
+  "cUniverses": [
+    {
+      "id": "science",
+      "name": "Science",
+      "color": "#1e88e5",
+      "libraries": [
+        {
+          "id": "physics",
+          "name": "Physics",
+          "targetNoteCount": 550,
+          "folders": [
+            {
+              "name": "Classical Mechanics",
+              "seeds": ["Classical mechanics", "Newton's laws of motion", "Kinematics", "Dynamics (mechanics)", "Lagrangian mechanics", "Hamiltonian mechanics", "Work (physics)", "Energy", "Power (physics)", "Momentum", "Angular momentum", "Conservation of energy", "Friction", "Kinetic energy", "Potential energy", "Harmonic oscillator", "Pendulum", "Projectile motion", "Rotation", "Torque", "Inertia", "Mass", "Force", "Gravity", "Orbital mechanics"]
+            },
+            {
+              "name": "Electromagnetism",
+              "seeds": ["Electromagnetism", "Maxwell's equations", "Electric field", "Magnetic field", "Electromagnetic induction", "Coulomb's law", "Gauss's law", "Ampère's circuital law", "Faraday's law of induction", "Electromagnetic radiation", "Ohm's law", "Kirchhoff's circuit laws", "Electric current", "Voltage", "Resistance", "Capacitance", "Inductance"]
+            },
+            {
+              "name": "Thermodynamics",
+              "seeds": ["Thermodynamics", "Laws of thermodynamics", "Entropy", "Heat", "Temperature", "Thermodynamic system", "Enthalpy", "Gibbs free energy", "Carnot cycle", "Heat engine", "Refrigerator", "Boltzmann constant", "Ideal gas law", "Second law of thermodynamics"]
+            },
+            {
+              "name": "Quantum Mechanics",
+              "seeds": ["Quantum mechanics", "Wave–particle duality", "Schrödinger equation", "Heisenberg uncertainty principle", "Quantum entanglement", "Quantum superposition", "Planck constant", "Photon", "Atom", "Electron", "Proton", "Neutron", "Quark", "Standard Model", "Copenhagen interpretation", "Many-worlds interpretation"]
+            },
+            {
+              "name": "Relativity",
+              "seeds": ["Theory of relativity", "Special relativity", "General relativity", "Spacetime", "Gravitational wave", "Time dilation", "Length contraction", "Mass–energy equivalence", "Black hole", "Event horizon", "Gravitational lensing", "Cosmological constant", "Lorentz transformation"]
+            },
+            {
+              "name": "Astrophysics & Cosmology",
+              "seeds": ["Astrophysics", "Cosmology", "Big Bang", "Cosmic microwave background", "Dark matter", "Dark energy", "Star", "Stellar evolution", "Supernova", "Neutron star", "Galaxy", "Milky Way", "Quasar", "Universe", "Inflation (cosmology)", "Hubble's law", "Exoplanet"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["Newton's laws of motion", "General relativity"],
+            ["Copenhagen interpretation", "Many-worlds interpretation"],
+            ["Classical mechanics", "Quantum mechanics"],
+            ["Steady-state model", "Big Bang"]
+          ]
+        },
+        {
+          "id": "biology",
+          "name": "Biology",
+          "targetNoteCount": 550,
+          "folders": [
+            {
+              "name": "Cell Biology",
+              "seeds": ["Cell (biology)", "Cell membrane", "Nucleus", "Mitochondrion", "Ribosome", "Endoplasmic reticulum", "Golgi apparatus", "Lysosome", "Chloroplast", "Cytoskeleton", "Cell cycle", "Mitosis", "Meiosis", "Apoptosis"]
+            },
+            {
+              "name": "Genetics",
+              "seeds": ["Genetics", "DNA", "RNA", "Gene", "Genome", "Chromosome", "Allele", "Heredity", "Mutation", "Genetic code", "DNA replication", "Transcription (biology)", "Translation (biology)", "CRISPR", "Mendelian inheritance"]
+            },
+            {
+              "name": "Evolution",
+              "seeds": ["Evolution", "Natural selection", "Charles Darwin", "On the Origin of Species", "Speciation", "Phylogenetics", "Last universal common ancestor", "Adaptation", "Sexual selection", "Genetic drift", "Convergent evolution", "Evolutionary biology", "Modern synthesis (20th century)"]
+            },
+            {
+              "name": "Ecology",
+              "seeds": ["Ecology", "Ecosystem", "Biome", "Biodiversity", "Food chain", "Symbiosis", "Predation", "Competition (biology)", "Niche (ecology)", "Population ecology", "Community (ecology)", "Conservation biology"]
+            },
+            {
+              "name": "Human Biology",
+              "seeds": ["Human body", "Anatomy", "Physiology", "Nervous system", "Circulatory system", "Respiratory system", "Digestive system", "Immune system", "Endocrine system", "Brain", "Heart", "Liver", "Kidney"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["Lamarckism", "Natural selection"],
+            ["Spontaneous generation", "Cell theory"]
+          ]
+        },
+        {
+          "id": "computer-science",
+          "name": "Computer Science",
+          "targetNoteCount": 500,
+          "folders": [
+            {
+              "name": "Algorithms & Data Structures",
+              "seeds": ["Algorithm", "Data structure", "Sorting algorithm", "Search algorithm", "Binary search algorithm", "Hash table", "Binary tree", "Graph (abstract data type)", "Linked list", "Dynamic programming", "Greedy algorithm", "Divide-and-conquer algorithm", "Big O notation", "Time complexity"]
+            },
+            {
+              "name": "Theory of Computation",
+              "seeds": ["Theory of computation", "Turing machine", "Finite-state machine", "Formal language", "Computability theory", "NP (complexity)", "P versus NP problem", "Halting problem", "Church–Turing thesis", "Lambda calculus", "Automata theory"]
+            },
+            {
+              "name": "Programming Languages",
+              "seeds": ["Programming language", "Compiler", "Interpreter (computing)", "Functional programming", "Object-oriented programming", "Type system", "Garbage collection (computer science)", "Concurrency (computer science)", "Lisp (programming language)", "C (programming language)", "Python (programming language)", "Rust (programming language)"]
+            },
+            {
+              "name": "Artificial Intelligence",
+              "seeds": ["Artificial intelligence", "Machine learning", "Neural network", "Deep learning", "Reinforcement learning", "Natural language processing", "Computer vision", "Transformer (machine learning model)", "Large language model", "Turing test", "History of artificial intelligence"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["Symbolic artificial intelligence", "Connectionism"]
+          ]
+        },
+        {
+          "id": "earth-sciences",
+          "name": "Earth Sciences",
+          "targetNoteCount": 450,
+          "folders": [
+            {
+              "name": "Geology",
+              "seeds": ["Geology", "Plate tectonics", "Rock (geology)", "Mineral", "Volcano", "Earthquake", "Mountain", "Continental drift", "Geological time scale", "Sedimentary rock", "Igneous rock", "Metamorphic rock"]
+            },
+            {
+              "name": "Climate & Atmosphere",
+              "seeds": ["Climate", "Weather", "Atmosphere of Earth", "Climate change", "Greenhouse effect", "Ozone layer", "Hurricane", "Monsoon", "Jet stream", "El Niño", "Ice age"]
+            },
+            {
+              "name": "Oceanography",
+              "seeds": ["Oceanography", "Ocean", "Ocean current", "Tide", "Wave", "Coral reef", "Marine biology", "Salinity", "Thermohaline circulation"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["Neptunism", "Plutonism"],
+            ["Uniformitarianism", "Catastrophism"]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "humanities",
+      "name": "Humanities",
+      "color": "#8e24aa",
+      "libraries": [
+        {
+          "id": "philosophy",
+          "name": "Philosophy",
+          "targetNoteCount": 550,
+          "folders": [
+            {
+              "name": "Ancient Philosophy",
+              "seeds": ["Ancient philosophy", "Pre-Socratic philosophy", "Socrates", "Plato", "Aristotle", "Stoicism", "Epicureanism", "Skepticism", "Neoplatonism", "The Republic (Plato)", "Nicomachean Ethics", "Metaphysics (Aristotle)"]
+            },
+            {
+              "name": "Modern Philosophy",
+              "seeds": ["Modern philosophy", "René Descartes", "Baruch Spinoza", "John Locke", "David Hume", "Immanuel Kant", "Georg Wilhelm Friedrich Hegel", "Rationalism", "Empiricism", "Idealism", "Critique of Pure Reason", "Meditations on First Philosophy"]
+            },
+            {
+              "name": "Contemporary Philosophy",
+              "seeds": ["Contemporary philosophy", "Analytic philosophy", "Continental philosophy", "Phenomenology (philosophy)", "Existentialism", "Pragmatism", "Ludwig Wittgenstein", "Martin Heidegger", "Jean-Paul Sartre", "Bertrand Russell", "Being and Time", "Tractatus Logico-Philosophicus"]
+            },
+            {
+              "name": "Ethics",
+              "seeds": ["Ethics", "Normative ethics", "Meta-ethics", "Applied ethics", "Deontological ethics", "Consequentialism", "Virtue ethics", "Utilitarianism", "Categorical imperative", "Moral realism", "Moral relativism"]
+            },
+            {
+              "name": "Philosophy of Mind",
+              "seeds": ["Philosophy of mind", "Mind–body problem", "Consciousness", "Qualia", "Free will", "Determinism", "Dualism (philosophy of mind)", "Physicalism", "Functionalism (philosophy of mind)", "Chinese room"]
+            },
+            {
+              "name": "Islamic Philosophy",
+              "seeds": ["Islamic philosophy", "Al-Farabi", "Avicenna", "Al-Ghazali", "Averroes", "Ibn Khaldun", "The Incoherence of the Philosophers", "Kalam", "Ash'ari", "Mu'tazila"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["Rationalism", "Empiricism"],
+            ["Determinism", "Free will"],
+            ["Dualism (philosophy of mind)", "Physicalism"],
+            ["Moral realism", "Moral relativism"],
+            ["The Incoherence of the Philosophers", "The Incoherence of the Incoherence"]
+          ]
+        },
+        {
+          "id": "history",
+          "name": "History",
+          "targetNoteCount": 550,
+          "folders": [
+            {
+              "name": "Ancient History",
+              "seeds": ["Ancient history", "Ancient Egypt", "Mesopotamia", "Ancient Greece", "Roman Empire", "Ancient China", "Indus Valley civilisation", "Persian Empire", "Pharaoh", "Hieroglyphs", "Alexander the Great", "Julius Caesar"]
+            },
+            {
+              "name": "Medieval History",
+              "seeds": ["Middle Ages", "Byzantine Empire", "Islamic Golden Age", "Crusades", "Feudalism", "Black Death", "Charlemagne", "Ottoman Empire", "Mongol Empire", "Abbasid Caliphate", "Umayyad Caliphate", "Al-Andalus"]
+            },
+            {
+              "name": "Early Modern History",
+              "seeds": ["Early modern period", "Renaissance", "Age of Discovery", "Scientific Revolution", "Reformation", "Enlightenment", "French Revolution", "American Revolution", "Industrial Revolution", "Napoleon"]
+            },
+            {
+              "name": "Modern & Contemporary",
+              "seeds": ["World War I", "World War II", "Cold War", "Decolonization", "Space Race", "Fall of the Berlin Wall", "Arab Spring", "Digital Revolution"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["Great man theory", "Historical materialism"],
+            ["Whig history", "Revisionist history"]
+          ]
+        },
+        {
+          "id": "linguistics",
+          "name": "Linguistics",
+          "targetNoteCount": 450,
+          "folders": [
+            {
+              "name": "Core Areas",
+              "seeds": ["Linguistics", "Phonetics", "Phonology", "Morphology (linguistics)", "Syntax", "Semantics", "Pragmatics", "Grammar", "Historical linguistics", "Sociolinguistics"]
+            },
+            {
+              "name": "Language Families",
+              "seeds": ["Language family", "Indo-European languages", "Afroasiatic languages", "Sino-Tibetan languages", "Niger–Congo languages", "Austronesian languages", "Uralic languages", "Dravidian languages"]
+            },
+            {
+              "name": "Theoretical Approaches",
+              "seeds": ["Generative grammar", "Structural linguistics", "Cognitive linguistics", "Functional linguistics", "Universal grammar", "Noam Chomsky", "Ferdinand de Saussure", "Saussurean sign", "Deep structure and surface structure"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["Generative grammar", "Cognitive linguistics"],
+            ["Linguistic relativity", "Universal grammar"]
+          ]
+        },
+        {
+          "id": "religion",
+          "name": "Religion & Comparative Traditions",
+          "targetNoteCount": 500,
+          "folders": [
+            {
+              "name": "Abrahamic Traditions",
+              "seeds": ["Islam", "Christianity", "Judaism", "Quran", "Bible", "Torah", "Hadith", "Monotheism", "Prophet", "Covenant (religion)"]
+            },
+            {
+              "name": "Eastern Traditions",
+              "seeds": ["Buddhism", "Hinduism", "Taoism", "Confucianism", "Sikhism", "Jainism", "Karma", "Dharma", "Nirvana", "Meditation"]
+            },
+            {
+              "name": "Comparative Religion",
+              "seeds": ["Comparative religion", "Religious studies", "Theology", "Sacred", "Ritual", "Pilgrimage", "Mysticism", "Sufism", "Kabbalah", "Gnosticism"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["Monotheism", "Polytheism"],
+            ["Free will in theology", "Predestination"]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arts-culture",
+      "name": "Arts & Culture",
+      "color": "#f4511e",
+      "libraries": [
+        {
+          "id": "literature",
+          "name": "Literature",
+          "targetNoteCount": 550,
+          "folders": [
+            {
+              "name": "Classical",
+              "seeds": ["Homer", "The Iliad", "The Odyssey", "Virgil", "Aeneid", "Ovid", "Metamorphoses (poem)", "Greek tragedy", "Sophocles", "Aeschylus", "Euripides"]
+            },
+            {
+              "name": "World Literary Traditions",
+              "seeds": ["Arabic literature", "Persian literature", "Chinese literature", "Japanese literature", "Indian literature", "One Thousand and One Nights", "The Tale of Genji", "Dream of the Red Chamber", "Mahabharata", "Ramayana"]
+            },
+            {
+              "name": "Modern Literature",
+              "seeds": ["Novel", "Short story", "Poetry", "Drama", "Modernist literature", "Postmodern literature", "James Joyce", "Virginia Woolf", "Franz Kafka", "Gabriel García Márquez", "Toni Morrison", "Naguib Mahfouz"]
+            },
+            {
+              "name": "Literary Theory",
+              "seeds": ["Literary theory", "Structuralism", "Deconstruction", "Reader-response criticism", "New Criticism", "Postcolonial literature"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["New Criticism", "Reader-response criticism"],
+            ["Formalism (art)", "Historicism"]
+          ]
+        },
+        {
+          "id": "music",
+          "name": "Music",
+          "targetNoteCount": 500,
+          "folders": [
+            {
+              "name": "Theory & Practice",
+              "seeds": ["Music theory", "Harmony", "Melody", "Rhythm", "Counterpoint", "Musical form", "Musical notation", "Scale (music)", "Chord (music)", "Tonality"]
+            },
+            {
+              "name": "Western Classical",
+              "seeds": ["Classical music", "Baroque music", "Classical period (music)", "Romantic music", "20th-century classical music", "Johann Sebastian Bach", "Wolfgang Amadeus Mozart", "Ludwig van Beethoven", "Frédéric Chopin", "Igor Stravinsky"]
+            },
+            {
+              "name": "World Musics",
+              "seeds": ["Arabic maqam", "Indian classical music", "Chinese music", "Flamenco", "Jazz", "Blues", "Ethnomusicology", "Folk music", "Raga", "Pentatonic scale"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["Tonality", "Atonality"],
+            ["Serialism", "Minimal music"]
+          ]
+        },
+        {
+          "id": "architecture",
+          "name": "Architecture",
+          "targetNoteCount": 450,
+          "folders": [
+            {
+              "name": "Historical Styles",
+              "seeds": ["Classical architecture", "Gothic architecture", "Romanesque architecture", "Renaissance architecture", "Baroque architecture", "Islamic architecture", "Mughal architecture", "Ottoman architecture", "Japanese architecture"]
+            },
+            {
+              "name": "Modern Movements",
+              "seeds": ["Modern architecture", "Bauhaus", "International Style", "Brutalist architecture", "Postmodern architecture", "Deconstructivism", "Le Corbusier", "Frank Lloyd Wright", "Mies van der Rohe", "Zaha Hadid"]
+            },
+            {
+              "name": "Elements & Systems",
+              "seeds": ["Column", "Arch", "Dome", "Vault (architecture)", "Façade", "Floor plan", "Structural engineering", "Sustainable architecture"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["International Style", "Postmodern architecture"],
+            ["Form follows function", "Ornament and Crime"]
+          ]
+        },
+        {
+          "id": "film",
+          "name": "Film",
+          "targetNoteCount": 400,
+          "folders": [
+            {
+              "name": "History",
+              "seeds": ["History of film", "Silent film", "Sound film", "Golden Age of Hollywood", "Italian neorealism", "French New Wave", "New Hollywood", "World cinema"]
+            },
+            {
+              "name": "Form & Language",
+              "seeds": ["Film theory", "Mise-en-scène", "Montage", "Cinematography", "Film editing", "Sound design", "Film genre", "Auteur theory"]
+            },
+            {
+              "name": "Key Figures",
+              "seeds": ["Akira Kurosawa", "Ingmar Bergman", "Federico Fellini", "Alfred Hitchcock", "Stanley Kubrick", "Yasujirō Ozu", "Satyajit Ray", "Youssef Chahine"]
+            }
+          ],
+          "contradictionSeeds": [
+            ["Auteur theory", "Film as collaborative art"],
+            ["Narrative cinema", "Structural film"]
+          ]
+        }
+      ]
+    }
+  ]
+}

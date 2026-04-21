@@ -256,6 +256,40 @@ npm run tauri dev
 npm run tauri build
 ```
 
+### Updater signing (optional, release builds only)
+
+`npm run tauri build` always produces the installers (`.msi` + `.exe`). Those are
+standalone and work fine without any signing step.
+
+If `createUpdaterArtifacts: true` is set in `src-tauri/tauri.conf.json` (it is on this
+repo, because the production auto-updater needs signed `.sig` files), the build will
+additionally try to sign the bundles using a Tauri-provided minisign keypair. When the
+private key isn't available, the build prints:
+
+```
+A public key has been found, but no private key.
+Make sure to set TAURI_SIGNING_PRIVATE_KEY environment variable.
+       Error A public key has been found, but no private key. ...
+```
+
+**This is not a build failure.** The `.msi` and `.exe` bundles are produced and usable.
+Only the `.sig` sidecar (needed by the in-app auto-updater) is skipped.
+
+To silence the warning and produce signed update artifacts locally:
+
+```powershell
+# PowerShell — point to the encrypted private key
+$env:TAURI_SIGNING_PRIVATE_KEY      = "$HOME/.tauri/constellation.key"
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = "<the password for that key>"
+npm run tauri build
+```
+
+For CI, both env vars are plumbed from GitHub Secrets
+(`TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`) in
+`.github/workflows/release.yml`. The public key pinned in `src-tauri/tauri.conf.json`
+must match the private key used to sign; changing the keypair breaks updates for
+existing installs.
+
 ## Roadmap
 
 1. **Project scaffold** — Tauri + Svelte + TypeScript setup

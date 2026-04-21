@@ -1,0 +1,1340 @@
+# Constellation Arabic Engine — Layer 2 protected list.
+#
+# This file is the authoritative source for words the analyzer must
+# never decompose. Loaded via `include_str!` at compile time; zero I/O
+# at runtime. Append-only: duplicates are first-write-wins, so reordering
+# or pasting an already-present entry is always safe.
+#
+# Format (three TAB-separated columns):
+#
+#   surface  category  origin_lang
+#
+# Where:
+#   surface     The Arabic surface form. MUST be stripped of tashkeel
+#               (fatḥa/kasra/ḍamma/shadda/sukūn) and tatweel (ـ). Hamza
+#               variants (أ إ آ ؤ ئ) MUST be preserved — they are root
+#               letters. The normalizer strips tashkeel before lookup, so
+#               users who type a vocalized form will still match.
+#   category    One of: proper | place | loanword | function.
+#               - proper   — person name (Arabic or transliterated).
+#               - place    — city, country, or region.
+#               - loanword — non-Arabic word adopted into Arabic.
+#               - function — grammatical particle, pronoun, conjunction.
+#   origin_lang BCP-47 code: ar, de, en, es, fa, fr, he, hi, ja, ko,
+#               pt, ru, tr, ur, zh. Use '-' for None (native Arabic or
+#               an origin we don't carry in the 15-language bridge).
+#
+# Lines starting with `#` and blank lines are ignored.
+#
+# Selection criteria (the bar for adding an entry):
+#   1. The surface would be over-stripped by a Light10-class stemmer OR
+#      decomposed by our FST into something semantically wrong.
+#   2. The word is high-frequency enough to appear in real user text.
+#   3. It is genuinely non-decomposable — there is no (root × pattern)
+#      analysis because the word isn't derived from an Arabic root.
+#
+# Source provenance: hand-curated from public-domain references and
+# common-knowledge. No BAMA / Buckwalter / SAMA content. Entries that
+# would eventually be sourced from Wikipedia CC BY-SA extraction are
+# marked with a `# wp:` comment near the section header.
+#
+# Ramp target (M1g/M1h full): 20K proper nouns + 2K loanwords. Today's
+# file ships ~1000 hand-picked entries across all categories — enough to
+# make the analyzer behave correctly on common text while the full
+# Wikipedia-driven pipeline is built out in lab/ (separate milestone).
+
+# ──────────────────────────────────────────────────────────────────────
+# PROPER NOUNS — Arabic male names
+# Classical + modern. Selected for prefix-collision risk (و / أ / م / ال)
+# and corpus frequency. Many are traditional / religious-heritage names.
+# ──────────────────────────────────────────────────────────────────────
+
+# Flagship regression case — Light10 over-stripped وائل → ائل.
+وائل	proper	-
+محمد	proper	-
+أحمد	proper	-
+علي	proper	-
+عمر	proper	-
+عثمان	proper	-
+يوسف	proper	-
+إبراهيم	proper	-
+إسماعيل	proper	-
+موسى	proper	-
+عيسى	proper	-
+يعقوب	proper	-
+داود	proper	-
+سليمان	proper	-
+خالد	proper	-
+حسن	proper	-
+حسين	proper	-
+عبدالله	proper	-
+عبدالرحمن	proper	-
+طارق	proper	-
+ياسر	proper	-
+سامي	proper	-
+ماجد	proper	-
+فيصل	proper	-
+بدر	proper	-
+أسامة	proper	-
+أنس	proper	-
+زياد	proper	-
+رائد	proper	-
+صالح	proper	-
+مازن	proper	-
+نبيل	proper	-
+# Expanded set (M1g) — common modern + classical male names.
+عبدالعزيز	proper	-
+عبدالكريم	proper	-
+عبدالمجيد	proper	-
+عبدالمنعم	proper	-
+عبدالسلام	proper	-
+عبدالهادي	proper	-
+عبدالقادر	proper	-
+عبدالباسط	proper	-
+عبدالحكيم	proper	-
+عبدالناصر	proper	-
+عبدالوهاب	proper	-
+عبدالغني	proper	-
+عبدالفتاح	proper	-
+كريم	proper	-
+جمال	proper	-
+مصطفى	proper	-
+صلاح	proper	-
+هاني	proper	-
+مروان	proper	-
+رشيد	proper	-
+بلال	proper	-
+أيمن	proper	-
+طلال	proper	-
+غسان	proper	-
+رفيق	proper	-
+فؤاد	proper	-
+نزار	proper	-
+نسيم	proper	-
+حمدي	proper	-
+معتز	proper	-
+قاسم	proper	-
+باسم	proper	-
+أكرم	proper	-
+مجدي	proper	-
+منير	proper	-
+شريف	proper	-
+يحيى	proper	-
+زكي	proper	-
+جهاد	proper	-
+لطفي	proper	-
+كمال	proper	-
+حمزة	proper	-
+معاذ	proper	-
+شعبان	proper	-
+سليم	proper	-
+سيف	proper	-
+هاشم	proper	-
+ناصر	proper	-
+حافظ	proper	-
+فتحي	proper	-
+عدنان	proper	-
+عاطف	proper	-
+رضوان	proper	-
+زيدان	proper	-
+مبارك	proper	-
+عصام	proper	-
+ناجي	proper	-
+أشرف	proper	-
+صبري	proper	-
+نعيم	proper	-
+نديم	proper	-
+وليد	proper	-
+إدريس	proper	-
+إلياس	proper	-
+قيس	proper	-
+وصفي	proper	-
+جمعة	proper	-
+رضا	proper	-
+يونس	proper	-
+أديب	proper	-
+همام	proper	-
+منصور	proper	-
+نواف	proper	-
+مالك	proper	-
+فاروق	proper	-
+قتيبة	proper	-
+غانم	proper	-
+عدي	proper	-
+عبده	proper	-
+عدلي	proper	-
+ضياء	proper	-
+صدقي	proper	-
+رؤوف	proper	-
+ذياد	proper	-
+جرير	proper	-
+نجم	proper	-
+حمد	proper	-
+سعد	proper	-
+صادق	proper	-
+حذيفة	proper	-
+سراج	proper	-
+عوض	proper	-
+أوس	proper	-
+زهير	proper	-
+طه	proper	-
+ثامر	proper	-
+ثائر	proper	-
+جابر	proper	-
+حامد	proper	-
+حليم	proper	-
+خليل	proper	-
+رامي	proper	-
+رامز	proper	-
+زين	proper	-
+سمير	proper	-
+شاكر	proper	-
+صفوان	proper	-
+عامر	proper	-
+عاصم	proper	-
+فارس	proper	-
+فادي	proper	-
+لؤي	proper	-
+ماهر	proper	-
+مهند	proper	-
+هيثم	proper	-
+وسام	proper	-
+ياسين	proper	-
+تيسير	proper	-
+توفيق	proper	-
+جودت	proper	-
+حنبل	proper	-
+سالم	proper	-
+شوقي	proper	-
+ظافر	proper	-
+عزيز	proper	-
+عماد	proper	-
+فهد	proper	-
+قحطان	proper	-
+كاظم	proper	-
+محمود	proper	-
+مختار	proper	-
+معمر	proper	-
+مفيد	proper	-
+نجاتي	proper	-
+هلال	proper	-
+وجدي	proper	-
+يسري	proper	-
+هادي	proper	-
+بسام	proper	-
+
+# ──────────────────────────────────────────────────────────────────────
+# PROPER NOUNS — Arabic female names
+# ──────────────────────────────────────────────────────────────────────
+
+فاطمة	proper	-
+عائشة	proper	-
+خديجة	proper	-
+مريم	proper	-
+زينب	proper	-
+سارة	proper	-
+ليلى	proper	-
+نور	proper	-
+هدى	proper	-
+أمل	proper	-
+رنا	proper	-
+هند	proper	-
+دينا	proper	-
+رانيا	proper	-
+سلمى	proper	-
+إيمان	proper	-
+جميلة	proper	-
+منى	proper	-
+نجلاء	proper	-
+# Expanded set (M1g).
+نادية	proper	-
+أسماء	proper	-
+صفية	proper	-
+حفصة	proper	-
+هناء	proper	-
+رجاء	proper	-
+وفاء	proper	-
+نجوى	proper	-
+نسرين	proper	-
+إسراء	proper	-
+أسيل	proper	-
+ديما	proper	-
+هيام	proper	-
+جيهان	proper	-
+غادة	proper	-
+يسرا	proper	-
+ياسمين	proper	-
+ندى	proper	-
+رغد	proper	-
+رحمة	proper	-
+بشرى	proper	-
+بلقيس	proper	-
+تقى	proper	-
+ثريا	proper	-
+حنين	proper	-
+بثينة	proper	-
+دارين	proper	-
+رشا	proper	-
+روان	proper	-
+عبير	proper	-
+عبلة	proper	-
+فرح	proper	-
+فريدة	proper	-
+فوزية	proper	-
+كوثر	proper	-
+لمى	proper	-
+مروة	proper	-
+ميار	proper	-
+ميسون	proper	-
+نهى	proper	-
+نيفين	proper	-
+هالة	proper	-
+هبة	proper	-
+وئام	proper	-
+ولاء	proper	-
+مي	proper	-
+منال	proper	-
+هنادي	proper	-
+سهام	proper	-
+أريج	proper	-
+أمنية	proper	-
+أنوار	proper	-
+إنعام	proper	-
+بشاير	proper	-
+بسمة	proper	-
+تسنيم	proper	-
+تغريد	proper	-
+جنى	proper	-
+جيداء	proper	-
+حنان	proper	-
+دعاء	proper	-
+رؤى	proper	-
+ريم	proper	-
+ريهام	proper	-
+زمزم	proper	-
+سعاد	proper	-
+سلوى	proper	-
+سمية	proper	-
+سناء	proper	-
+سهى	proper	-
+سوزان	proper	-
+شيماء	proper	-
+صابرين	proper	-
+صباح	proper	-
+صفاء	proper	-
+عفاف	proper	-
+علياء	proper	-
+عهد	proper	-
+غدير	proper	-
+فادية	proper	-
+لطيفة	proper	-
+لينا	proper	-
+مرام	proper	-
+مرح	proper	-
+مهى	proper	-
+نادين	proper	-
+نجاح	proper	-
+نجمة	proper	-
+نوال	proper	-
+هيفاء	proper	-
+وردة	proper	-
+وسيلة	proper	-
+
+# ──────────────────────────────────────────────────────────────────────
+# PROPER NOUNS — Transliterated Western / international names
+# Common renderings in modern Arabic press and social media.
+# ──────────────────────────────────────────────────────────────────────
+
+جون	proper	en
+جورج	proper	en
+توماس	proper	en
+بول	proper	en
+دانيال	proper	en
+ديفيد	proper	en
+هنري	proper	en
+جيمس	proper	en
+مارتن	proper	en
+روبرت	proper	en
+ريتشارد	proper	en
+وليام	proper	en
+إدوارد	proper	en
+تشارلز	proper	en
+ألبرت	proper	en
+أوسكار	proper	en
+مارك	proper	en
+مايكل	proper	en
+ستيفن	proper	en
+ماثيو	proper	en
+آدم	proper	en
+آرثر	proper	en
+لويس	proper	fr
+ماركوس	proper	en
+بيتر	proper	en
+كيفن	proper	en
+إيان	proper	en
+براين	proper	en
+جاسبر	proper	en
+جوردن	proper	en
+ستيف	proper	en
+سكوت	proper	en
+سيمون	proper	en
+غابريل	proper	en
+فرانك	proper	en
+فيكتور	proper	en
+كارلوس	proper	es
+لورينزو	proper	es
+ماريو	proper	es
+ميغيل	proper	es
+بابلو	proper	es
+بيير	proper	fr
+جان	proper	fr
+لوك	proper	fr
+فرانسوا	proper	fr
+جاك	proper	fr
+هانز	proper	de
+كلاوس	proper	de
+وولف	proper	de
+آنا	proper	en
+إيما	proper	en
+صوفيا	proper	en
+إيزابيلا	proper	en
+أوليفيا	proper	en
+ميا	proper	en
+إيفا	proper	en
+إيلي	proper	en
+لوسي	proper	en
+كلير	proper	en
+جين	proper	en
+جوليا	proper	en
+كاترين	proper	en
+مادلين	proper	en
+إليزابيث	proper	en
+فيكتوريا	proper	en
+شارلوت	proper	en
+أميليا	proper	en
+هنريتا	proper	en
+فيرونيكا	proper	en
+كارمن	proper	es
+إيزابيل	proper	fr
+بريجيت	proper	fr
+ماري	proper	fr
+نيكول	proper	fr
+ناتالي	proper	fr
+
+# ──────────────────────────────────────────────────────────────────────
+# PROPER NOUNS — Political / historical figures (modern references)
+# Single-token renderings in Arabic media.
+# ──────────────────────────────────────────────────────────────────────
+
+أوباما	proper	en
+ترمب	proper	en
+بايدن	proper	en
+هاريس	proper	en
+بوتين	proper	ru
+زيلينسكي	proper	en
+ماكرون	proper	fr
+ساركوزي	proper	fr
+ميركل	proper	de
+شولز	proper	de
+إردوغان	proper	tr
+مودي	proper	hi
+نيتانياهو	proper	he
+مانديلا	proper	en
+غاندي	proper	hi
+أينشتاين	proper	de
+نيوتن	proper	en
+داروين	proper	en
+أرسطو	proper	-
+أفلاطون	proper	-
+سقراط	proper	-
+بوذا	proper	-
+كونفوشيوس	proper	zh
+شكسبير	proper	en
+هوميروس	proper	-
+موتسارت	proper	de
+بيتهوفن	proper	de
+باخ	proper	de
+بيكاسو	proper	es
+أنشتاين	proper	de
+تشرشل	proper	en
+ستالين	proper	ru
+لينين	proper	ru
+نابليون	proper	fr
+دا_فنشي	proper	-
+فان_جوخ	proper	-
+ليوناردو	proper	-
+غاليليو	proper	-
+
+# ──────────────────────────────────────────────────────────────────────
+# PLACES — Arab countries
+# ──────────────────────────────────────────────────────────────────────
+
+السعودية	place	-
+مصر	place	-
+العراق	place	-
+سوريا	place	-
+لبنان	place	-
+الأردن	place	-
+فلسطين	place	-
+اليمن	place	-
+عمان	place	-
+الكويت	place	-
+البحرين	place	-
+قطر	place	-
+الإمارات	place	-
+المغرب	place	-
+الجزائر	place	-
+تونس	place	-
+ليبيا	place	-
+السودان	place	-
+موريتانيا	place	-
+الصومال	place	-
+جيبوتي	place	-
+# Expanded — additional Arab region identifiers.
+جزرالقمر	place	-
+الخليج	place	-
+الشام	place	-
+الحجاز	place	-
+نجد	place	-
+المغربالعربي	place	-
+الجزيرةالعربية	place	-
+
+# ──────────────────────────────────────────────────────────────────────
+# PLACES — Arab cities
+# ──────────────────────────────────────────────────────────────────────
+
+القاهرة	place	-
+بغداد	place	-
+دمشق	place	-
+بيروت	place	-
+الرياض	place	-
+جدة	place	-
+مكة	place	-
+المدينة	place	-
+أبوظبي	place	-
+دبي	place	-
+الدوحة	place	-
+الإسكندرية	place	-
+الخرطوم	place	-
+الرباط	place	-
+طرابلس	place	-
+صنعاء	place	-
+القدس	place	-
+غزة	place	-
+حلب	place	-
+الموصل	place	-
+البصرة	place	-
+# Expanded Arab cities — major governorate capitals and landmarks.
+طنطا	place	-
+المنصورة	place	-
+أسيوط	place	-
+الأقصر	place	-
+أسوان	place	-
+بورسعيد	place	-
+السويس	place	-
+الفيوم	place	-
+دمياط	place	-
+سوهاج	place	-
+قنا	place	-
+الزقازيق	place	-
+الإسماعيلية	place	-
+كفرالشيخ	place	-
+شبرا	place	-
+كركوك	place	-
+السليمانية	place	-
+أربيل	place	-
+النجف	place	-
+كربلاء	place	-
+الناصرية	place	-
+الرمادي	place	-
+الفلوجة	place	-
+حمص	place	-
+حماة	place	-
+اللاذقية	place	-
+طرطوس	place	-
+السويداء	place	-
+الرقة	place	-
+درعا	place	-
+ديرالزور	place	-
+صيدا	place	-
+صور	place	-
+بعلبك	place	-
+زحلة	place	-
+إربد	place	-
+الزرقاء	place	-
+العقبة	place	-
+عدن	place	-
+تعز	place	-
+الحديدة	place	-
+مسقط	place	-
+صلالة	place	-
+صحار	place	-
+الدمام	place	-
+الظهران	place	-
+الخبر	place	-
+تبوك	place	-
+بريدة	place	-
+حائل	place	-
+أبها	place	-
+الطائف	place	-
+خميسمشيط	place	-
+الشارقة	place	-
+عجمان	place	-
+الفجيرة	place	-
+رأسالخيمة	place	-
+العين	place	-
+فاس	place	-
+مراكش	place	-
+مكناس	place	-
+أغادير	place	-
+طنجة	place	-
+تطوان	place	-
+وجدة	place	-
+وهران	place	-
+قسنطينة	place	-
+عنابة	place	-
+سطيف	place	-
+صفاقس	place	-
+سوسة	place	-
+بنزرت	place	-
+بنغازي	place	-
+سبها	place	-
+مصراتة	place	-
+أمدرمان	place	-
+بورتسودان	place	-
+كسلا	place	-
+نواكشوط	place	-
+مقديشو	place	-
+
+# ──────────────────────────────────────────────────────────────────────
+# PLACES — Non-Arab countries
+# origin_lang marks the primary language of the country, used by the
+# lexical bridge for automatic cross-language links.
+# ──────────────────────────────────────────────────────────────────────
+
+أمريكا	place	en
+بريطانيا	place	en
+فرنسا	place	fr
+ألمانيا	place	de
+إسبانيا	place	es
+إيطاليا	place	-
+روسيا	place	ru
+الصين	place	zh
+اليابان	place	ja
+كوريا	place	ko
+الهند	place	hi
+تركيا	place	tr
+إيران	place	fa
+باكستان	place	ur
+# Expanded world countries.
+كندا	place	en
+المكسيك	place	es
+البرازيل	place	pt
+الأرجنتين	place	es
+تشيلي	place	es
+كولومبيا	place	es
+بيرو	place	es
+فنزويلا	place	es
+الإكوادور	place	es
+أوروغواي	place	es
+بوليفيا	place	es
+باراغواي	place	es
+بنما	place	es
+كوبا	place	es
+بولندا	place	-
+النمسا	place	de
+سويسرا	place	de
+هولندا	place	-
+بلجيكا	place	fr
+السويد	place	-
+الدنمارك	place	-
+النرويج	place	-
+فنلندا	place	-
+أيرلندا	place	en
+اليونان	place	-
+البرتغال	place	pt
+المجر	place	-
+التشيك	place	-
+رومانيا	place	-
+أوكرانيا	place	ru
+بيلاروسيا	place	ru
+صربيا	place	-
+كرواتيا	place	-
+بلغاريا	place	-
+إندونيسيا	place	-
+ماليزيا	place	-
+تايلاند	place	-
+فيتنام	place	-
+الفلبين	place	-
+سنغافورة	place	en
+ميانمار	place	-
+بنغلادش	place	hi
+أفغانستان	place	fa
+نيبال	place	-
+سريلانكا	place	-
+نيجيريا	place	en
+كينيا	place	en
+إثيوبيا	place	-
+جنوبأفريقيا	place	en
+غانا	place	en
+تنزانيا	place	en
+أوغندا	place	en
+السنغال	place	fr
+أنغولا	place	pt
+موزمبيق	place	pt
+مدغشقر	place	fr
+زيمبابوي	place	en
+زامبيا	place	en
+كوتديفوار	place	fr
+الكاميرون	place	fr
+أستراليا	place	en
+نيوزيلندا	place	en
+إسرائيل	place	he
+سنغافورا	place	en
+
+# ──────────────────────────────────────────────────────────────────────
+# PLACES — Non-Arab cities
+# ──────────────────────────────────────────────────────────────────────
+
+لندن	place	en
+باريس	place	fr
+برلين	place	de
+نيويورك	place	en
+موسكو	place	ru
+طوكيو	place	ja
+إسطنبول	place	tr
+# Expanded world cities.
+واشنطن	place	en
+لوسأنجلوس	place	en
+شيكاغو	place	en
+سانفرانسيسكو	place	en
+بوسطن	place	en
+تورنتو	place	en
+فانكوفر	place	en
+مونتريال	place	fr
+مدريد	place	es
+برشلونة	place	es
+روما	place	-
+ميلانو	place	-
+فلورنسا	place	-
+فيينا	place	de
+زيورخ	place	de
+جنيف	place	fr
+أمستردام	place	-
+روتردام	place	-
+بروكسل	place	fr
+ستوكهولم	place	-
+كوبنهاغن	place	-
+أوسلو	place	-
+هلسنكي	place	-
+دبلن	place	en
+أثينا	place	-
+براغ	place	-
+وارسو	place	-
+بودابست	place	-
+بوخارست	place	-
+كييف	place	ru
+بلغراد	place	-
+لشبونة	place	pt
+ريو	place	pt
+ساوباولو	place	pt
+بوينسآيرس	place	es
+ليما	place	es
+سانتياغو	place	es
+بيجين	place	zh
+بكين	place	zh
+شنغهاي	place	zh
+هونغكونغ	place	zh
+سيول	place	ko
+هانوي	place	-
+بانكوك	place	-
+مانيلا	place	-
+جاكرتا	place	-
+كوالالمبور	place	-
+نيودلهي	place	hi
+مومباي	place	hi
+كراتشي	place	ur
+إسلامآباد	place	ur
+كابل	place	fa
+طهران	place	fa
+تلأبيب	place	he
+أنقرة	place	tr
+إزمير	place	tr
+كيبتاون	place	en
+جوهانسبرغ	place	en
+نيروبي	place	en
+لاغوس	place	en
+أديسأبابا	place	-
+
+# ──────────────────────────────────────────────────────────────────────
+# LOANWORDS — Technology / computing
+# ──────────────────────────────────────────────────────────────────────
+
+إنترنت	loanword	en
+كمبيوتر	loanword	en
+تلفزيون	loanword	en
+تلفون	loanword	en
+راديو	loanword	en
+فيديو	loanword	en
+موبايل	loanword	en
+لابتوب	loanword	en
+تابلت	loanword	en
+سيرفر	loanword	en
+باسورد	loanword	en
+إيميل	loanword	en
+فيسبوك	loanword	en
+تويتر	loanword	en
+يوتيوب	loanword	en
+جوجل	loanword	en
+# Expanded tech / computing.
+ويفي	loanword	en
+واي_فاي	loanword	en
+بلوتوث	loanword	en
+بكسل	loanword	en
+كيبورد	loanword	en
+ماوس	loanword	en
+برنتر	loanword	en
+طابعة	loanword	-
+سكانر	loanword	en
+موديم	loanword	en
+راوتر	loanword	en
+فلاشة	loanword	en
+ويندوز	loanword	en
+لينكس	loanword	en
+ماكنتوش	loanword	en
+أندرويد	loanword	en
+آيفون	loanword	en
+آيباد	loanword	en
+سامسونج	loanword	ko
+نوكيا	loanword	en
+هواوي	loanword	zh
+شاومي	loanword	zh
+تيكتوك	loanword	en
+إنستغرام	loanword	en
+إنستاجرام	loanword	en
+سناب	loanword	en
+سنابشات	loanword	en
+واتساب	loanword	en
+واتس_آب	loanword	en
+تلغرام	loanword	en
+تيليغرام	loanword	en
+سكايب	loanword	en
+زوم	loanword	en
+لينكدإن	loanword	en
+ريديت	loanword	en
+سلاك	loanword	en
+ديسكورد	loanword	en
+تيمز	loanword	en
+جيت	loanword	en
+جيتهاب	loanword	en
+دوكر	loanword	en
+بايثون	loanword	en
+جافا	loanword	en
+جافاسكربت	loanword	en
+روست	loanword	en
+تشاتجيبيتي	loanword	en
+جيميني	loanword	en
+كلود	loanword	en
+ميتا	loanword	en
+أوبنتو	loanword	en
+ديبيان	loanword	en
+فيدورا	loanword	en
+بلوك_تشين	loanword	en
+بيتكوين	loanword	en
+إيثيريوم	loanword	en
+كريبتو	loanword	en
+ألغوريتم	loanword	en
+دومين	loanword	en
+هوست	loanword	en
+كلاود	loanword	en
+داتا	loanword	en
+باك_إند	loanword	en
+فرونت_إند	loanword	en
+فل_ستاك	loanword	en
+بيكسل	loanword	en
+ميجابكسل	loanword	en
+فلاش	loanword	en
+بيك_أب	loanword	en
+ستريم	loanword	en
+ستريمينج	loanword	en
+تحميل	loanword	-
+رفع	loanword	-
+واي	loanword	en
+بروكسي	loanword	en
+في_بي_إن	loanword	en
+سيرفيس	loanword	en
+إيه_بي_آي	loanword	en
+أي_دي	loanword	en
+يو_إس_بي	loanword	en
+إتش_تي_تي_بي	loanword	en
+إس_إس_إل	loanword	en
+جي_بي_إس	loanword	en
+ويب	loanword	en
+بلوج	loanword	en
+بودكاست	loanword	en
+فيديوكلب	loanword	en
+تطبيق	loanword	-
+برنامج	loanword	-
+شاشة	loanword	-
+
+# ──────────────────────────────────────────────────────────────────────
+# LOANWORDS — Finance / business
+# ──────────────────────────────────────────────────────────────────────
+
+بنك	loanword	-
+فيزا	loanword	en
+فاتورة	loanword	-
+دولار	loanword	en
+يورو	loanword	en
+شيك	loanword	en
+بوليصة	loanword	-
+# Expanded finance.
+ماستركارد	loanword	en
+أمريكانإكسبرس	loanword	en
+باي_بال	loanword	en
+بنكنوت	loanword	en
+كاش	loanword	en
+كرديت	loanword	en
+ديبيت	loanword	en
+فايننس	loanword	en
+بورصة	loanword	-
+مؤشر	loanword	-
+أرباح	loanword	-
+خصم	loanword	-
+عمولة	loanword	-
+ضريبة	loanword	-
+ميزانية	loanword	-
+رأسمال	loanword	-
+استثمار	loanword	-
+تمويل	loanword	-
+تدقيق	loanword	-
+ريال	loanword	-
+درهم	loanword	-
+دينار	loanword	-
+جنيه	loanword	-
+روبية	loanword	hi
+روبل	loanword	ru
+ين	loanword	ja
+يوان	loanword	zh
+سوبرماركت	loanword	en
+هايبرماركت	loanword	en
+مول	loanword	en
+بوتيك	loanword	fr
+ماركة	loanword	-
+برند	loanword	en
+لوجو	loanword	en
+ماركتينج	loanword	en
+إعلان	loanword	-
+
+# ──────────────────────────────────────────────────────────────────────
+# LOANWORDS — Transport
+# ──────────────────────────────────────────────────────────────────────
+
+أوتوبيس	loanword	en
+تاكسي	loanword	en
+سيارة	loanword	-
+طيارة	loanword	-
+قطار	loanword	-
+ميترو	loanword	fr
+باص	loanword	en
+# Expanded transport.
+أتوبيس	loanword	en
+ترام	loanword	en
+مترو	loanword	fr
+سكوتر	loanword	en
+موتوسيكل	loanword	en
+لوري	loanword	en
+تريلا	loanword	en
+شاحنة	loanword	-
+ليموزين	loanword	en
+ميني_باص	loanword	en
+تريل	loanword	en
+مكينة	loanword	-
+محرك	loanword	-
+كراج	loanword	fr
+جراج	loanword	en
+بنزين	loanword	en
+ديزل	loanword	en
+أوكتان	loanword	en
+عجلة	loanword	-
+كاوتش	loanword	-
+فرامل	loanword	-
+كلاتش	loanword	en
+جير	loanword	en
+كابينة	loanword	en
+كابوت	loanword	fr
+شاصيه	loanword	fr
+صالون	loanword	fr
+هاتشباك	loanword	en
+سيدان	loanword	en
+كوبيه	loanword	fr
+إس_يو_في	loanword	en
+فيراري	loanword	-
+بورش	loanword	de
+مرسيدس	loanword	de
+بي_إم_دبليو	loanword	de
+أودي	loanword	de
+فولكسفاغن	loanword	de
+تويوتا	loanword	ja
+هوندا	loanword	ja
+نيسان	loanword	ja
+هيونداي	loanword	ko
+كيا	loanword	ko
+فورد	loanword	en
+شيفروليه	loanword	en
+تسلا	loanword	en
+
+# ──────────────────────────────────────────────────────────────────────
+# LOANWORDS — Food / drink / kitchen
+# ──────────────────────────────────────────────────────────────────────
+
+تلفاز	loanword	en
+سندوتش	loanword	en
+بيتزا	loanword	-
+قهوة	loanword	-
+شاي	loanword	zh
+شاورما	loanword	tr
+بطاطس	loanword	en
+طماطم	loanword	en
+# Expanded food.
+هامبرغر	loanword	en
+هامبورغر	loanword	en
+برغر	loanword	en
+هوتدوغ	loanword	en
+ستيك	loanword	en
+باستا	loanword	-
+سباغيتي	loanword	-
+لازانيا	loanword	-
+ريزوتو	loanword	-
+رافيولي	loanword	-
+جيلاتو	loanword	-
+أيسكريم	loanword	en
+آيس_كريم	loanword	en
+سوشي	loanword	ja
+ساشيمي	loanword	ja
+راميـن	loanword	ja
+نودلز	loanword	en
+كاري	loanword	hi
+بولونيز	loanword	-
+كاربونارا	loanword	-
+بارميزان	loanword	-
+موزاريلا	loanword	-
+تاكو	loanword	es
+بوريتو	loanword	es
+فاخيتا	loanword	es
+كاساديا	loanword	es
+ناتشوز	loanword	en
+سلطة	loanword	-
+زبادي	loanword	-
+ياغورت	loanword	en
+يوغرت	loanword	en
+جبنة	loanword	-
+كيك	loanword	en
+بسكويت	loanword	en
+شوكولاتة	loanword	en
+شوكولاته	loanword	en
+فانيليا	loanword	en
+كاراميل	loanword	en
+كابتشينو	loanword	-
+إسبريسو	loanword	-
+لاتيه	loanword	-
+موكا	loanword	-
+كاكاو	loanword	es
+بيبسي	loanword	en
+كوكاكولا	loanword	en
+سفن_أب	loanword	en
+سبرايت	loanword	en
+ريدبول	loanword	en
+نيسكافيه	loanword	-
+نسكافيه	loanword	-
+ماكدونالدز	loanword	en
+كنتاكي	loanword	en
+ستاربكس	loanword	en
+سبواي	loanword	en
+دومينوز	loanword	en
+بيتزاهت	loanword	en
+بطاطا	loanword	es
+بروكلي	loanword	en
+خيار	loanword	-
+بصل	loanword	-
+ثوم	loanword	-
+فلفل	loanword	-
+زيتون	loanword	-
+ليمون	loanword	-
+برتقال	loanword	-
+تفاح	loanword	-
+موز	loanword	-
+فراولة	loanword	-
+مانجو	loanword	hi
+أناناس	loanword	-
+كيوي	loanword	en
+أفوكادو	loanword	es
+كوسا	loanword	-
+بامية	loanword	-
+
+# ──────────────────────────────────────────────────────────────────────
+# LOANWORDS — Medical / scientific
+# ──────────────────────────────────────────────────────────────────────
+
+كيميا	loanword	-
+فيزياء	loanword	-
+بيولوجيا	loanword	en
+جيولوجيا	loanword	en
+أكسجين	loanword	en
+هيدروجين	loanword	en
+فيتامين	loanword	en
+فيروس	loanword	en
+بكتيريا	loanword	en
+إنزيم	loanword	en
+هرمون	loanword	en
+# Expanded medical / scientific.
+كولسترول	loanword	en
+ديابيتس	loanword	en
+إنسولين	loanword	en
+كورتيزون	loanword	en
+باراسيتامول	loanword	en
+أسبرين	loanword	en
+بروتين	loanword	en
+كربوهيدرات	loanword	en
+دهون	loanword	-
+كالسيوم	loanword	en
+فلوريد	loanword	en
+مغنيسيوم	loanword	en
+بوتاسيوم	loanword	en
+صوديوم	loanword	en
+نيتروجين	loanword	en
+كربون	loanword	en
+كلور	loanword	en
+يود	loanword	en
+أرغون	loanword	en
+زينون	loanword	en
+نيون	loanword	en
+هيليوم	loanword	en
+راديوم	loanword	en
+يورانيوم	loanword	en
+بلوتونيوم	loanword	en
+بلازما	loanword	en
+نيوترون	loanword	en
+إلكترون	loanword	en
+بروتون	loanword	en
+فوتون	loanword	en
+كوارك	loanword	en
+فيتون	loanword	en
+كيراتين	loanword	en
+كولاجين	loanword	en
+هيموغلوبين	loanword	en
+أنتيبيوتيك	loanword	en
+مضادحيوي	loanword	-
+جينوم	loanword	en
+كروموسوم	loanword	en
+دي_إن_إيه	loanword	en
+آر_إن_إيه	loanword	en
+ليزر	loanword	en
+رادار	loanword	en
+سونار	loanword	en
+مايكرويف	loanword	en
+إكسراي	loanword	en
+أشعة	loanword	-
+إم_آر_آي	loanword	en
+سي_تي	loanword	en
+كوفيد	loanword	en
+كورونا	loanword	en
+إنفلونزا	loanword	-
+ملاريا	loanword	en
+إيبولا	loanword	en
+إيدز	loanword	en
+إتش_آي_في	loanword	en
+فاكسين	loanword	en
+لقاح	loanword	-
+مستشفى	loanword	-
+عيادة	loanword	-
+دكتور	loanword	en
+طبيب	loanword	-
+ممرض	loanword	-
+جراحة	loanword	-
+جراح	loanword	-
+تخدير	loanword	-
+عملية	loanword	-
+علاج	loanword	-
+دواء	loanword	-
+وصفة	loanword	-
+صيدلي	loanword	-
+صيدلية	loanword	-
+أنبوب	loanword	-
+حقنة	loanword	-
+سرنجة	loanword	en
+سماعة	loanword	-
+تحليل	loanword	-
+فحص	loanword	-
+عينة	loanword	-
+
+# ──────────────────────────────────────────────────────────────────────
+# LOANWORDS — Sports
+# ──────────────────────────────────────────────────────────────────────
+
+فوتبول	loanword	en
+باسكتبول	loanword	en
+فوليبول	loanword	en
+بيسبول	loanword	en
+كريكيت	loanword	en
+غولف	loanword	en
+تنس	loanword	en
+سكواش	loanword	en
+بنجبونج	loanword	en
+رجبي	loanword	en
+هوكي	loanword	en
+بودي_بيلدنغ	loanword	en
+فيتنس	loanword	en
+بيلاتس	loanword	en
+يوغا	loanword	en
+يوجا	loanword	hi
+كاراتيه	loanword	ja
+جودو	loanword	ja
+تايكواندو	loanword	ko
+كونغفو	loanword	zh
+بوكسينج	loanword	en
+ملاكمة	loanword	-
+مصارعة	loanword	-
+سكي	loanword	en
+سنوبورد	loanword	en
+سيرفنج	loanword	en
+غطس	loanword	-
+سباحة	loanword	-
+جمباز	loanword	-
+أولمبياد	loanword	-
+أولمبية	loanword	-
+ماراثون	loanword	en
+كأس	loanword	-
+دوري	loanword	-
+ليغ	loanword	en
+تشامبيونز_ليغ	loanword	en
+بريمير_ليغ	loanword	en
+ليغا	loanword	es
+بوندسليغا	loanword	de
+سيري_آ	loanword	-
+ميسي	loanword	es
+رونالدو	loanword	pt
+نيمار	loanword	pt
+بيكيه	loanword	es
+رياضة	loanword	-
+بلايستيشن	loanword	en
+إكسبوكس	loanword	en
+نينتندو	loanword	ja
+غيمباد	loanword	en
+فيفا	loanword	en
+جوائز	loanword	-
+بطولة	loanword	-
+نصف_نهائي	loanword	-
+ربع_نهائي	loanword	-
+
+# ──────────────────────────────────────────────────────────────────────
+# LOANWORDS — Clothing / fashion
+# ──────────────────────────────────────────────────────────────────────
+
+بنطلون	loanword	en
+بنطال	loanword	en
+شورت	loanword	en
+تيشيرت	loanword	en
+بلوزة	loanword	fr
+جاكيت	loanword	en
+بالطو	loanword	fr
+كرافات	loanword	fr
+بوت	loanword	en
+صندل	loanword	-
+كنزة	loanword	fr
+سويتر	loanword	en
+بلوفر	loanword	en
+فستان	loanword	-
+كعب	loanword	-
+حذاء	loanword	-
+شبشب	loanword	-
+قبعة	loanword	-
+نظارة	loanword	-
+ساعة	loanword	-
+ميدالية	loanword	-
+مكياج	loanword	fr
+شامبو	loanword	en
+عطر	loanword	-
+برفان	loanword	fr
+مانكير	loanword	fr
+بديكير	loanword	fr
+سبا	loanword	en
+جل	loanword	en
+
+# ──────────────────────────────────────────────────────────────────────
+# FUNCTION WORDS / particles / pronouns (non-decomposable)
+# Too short or too irregular for safe morphological analysis.
+# ──────────────────────────────────────────────────────────────────────
+
+هذا	function	-
+هذه	function	-
+هؤلاء	function	-
+ذلك	function	-
+تلك	function	-
+أولئك	function	-
+الذي	function	-
+التي	function	-
+الذين	function	-
+اللواتي	function	-
+اللاتي	function	-
+متى	function	-
+أين	function	-
+كيف	function	-
+لماذا	function	-
+ماذا	function	-
+أيضا	function	-
+إذن	function	-
+لكن	function	-
+بل	function	-
+قد	function	-
+لقد	function	-
+إن	function	-
+إنما	function	-
+كي	function	-
+لكي	function	-
+عندما	function	-
+حيث	function	-
+حتى	function	-
+فقط	function	-
+# Expanded function words.
+إذا	function	-
+إذ	function	-
+ثم	function	-
+إما	function	-
+أما	function	-
+حيثما	function	-
+كلما	function	-
+مهما	function	-
+أينما	function	-
+هنا	function	-
+هناك	function	-
+هنالك	function	-
+هكذا	function	-
+أيها	function	-
+أيتها	function	-
+كلا	function	-
+كلتا	function	-
+عدا	function	-
+سوى	function	-
+جدا	function	-
+فعلا	function	-
+حقا	function	-
+ربما	function	-
+بعدما	function	-
+قبلما	function	-
+لدى	function	-
+إزاء	function	-
+تجاه	function	-
+بجانب	function	-
+بشأن	function	-
+إياك	function	-
+إياه	function	-
+إياها	function	-
+نحو	function	-
+لعل	function	-
+ليت	function	-
+كأن	function	-
+لولا	function	-
+لوما	function	-
+بلى	function	-
+نعم	function	-

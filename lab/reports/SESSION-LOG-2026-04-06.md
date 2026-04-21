@@ -135,3 +135,294 @@ Constellation is an extension of the mind. The main window is where you think. T
 | 5. Link clicks | Backlink/forward link clicks open note in main window |
 | 6. No auto-restore | Workspace restore does not reopen SS |
 | 7. Context-aware | SS switches between editor/map/index companions automatically |
+
+---
+
+## Phase: 2-Monitor Live Testing & RTL Fix
+
+### Context
+Testing the SS architecture redesign with an actual 2-monitor setup. Primary: 5120×2160 (DISPLAY1), Secondary: 4096×2160 (DISPLAY5, positioned left at x=-4096).
+
+### Commit: `175ff87`
+
+### Test Results (2-Monitor)
+| Test | Result |
+|------|--------|
+| Monitor detection (2 monitors found) | ✅ Pass |
+| Smart positioning on secondary | ✅ Pass — centered on DISPLAY5 |
+| Right sidebar auto-hide | ✅ Pass |
+| Editor panels on SS | ✅ Pass |
+| "2nd Display" badge | ✅ Pass |
+| Tab switch sync | ✅ Pass |
+
+### Bug Found & Fixed: RTL Panels
+- **Issue**: RTL note opened on SS — panel elements (properties, backlinks, tags) displayed LTR. English property values were left-justified instead of right-justified.
+- **Root cause**: Inner `dir="auto"` on individual elements overrode the container direction, causing each element to auto-detect its own script direction.
+- **Fix**: Added `dir={detectDir(noteName || content)}` to the `split-companion` container. Removed all inner `dir="auto"` overrides so elements inherit RTL from container.
+
+### Other Changes
+- Debug logging: Rust `println!` + JS `console.log` for monitor detection diagnostics
+- Badge: "2 displays" → "2nd Display", enlarged (12px, font-weight 500, 10px border-radius)
+
+### Open Items
+- Context-aware mode switching (Map/Index companions) — not yet tested with 2 monitors
+
+---
+
+## Phase: SS Audit Fix — Split Companion, RTL, Data Integrity
+
+### Context
+Full audit of SS code after core redesign revealed 14 issues: split companion had no data loading (backlinks/star/tasks empty), RTL detection missing on most companion modes, fragile library resolution, 600ms race condition, duplicate effects.
+
+### Commit: `1937010`
+
+### What Was Fixed
+
+#### Phase 1: Split Companion Data Loading
+- Added `loadSplitCompanionPanelData()` — mirrors `loadEditorPanelsData()` pattern
+- Split companion now loads real backlinks, forward links, star view, properties, tags, tasks
+- Tasks tab works in both editor panels and split companion (TasksPanel with toggle)
+
+#### Phase 2: RTL Across All Companion Modes
+- Dashboard note/tag containers: `dir={detectDir(...)}`
+- Index term container: `dir={detectDir(indexTermData.term)}`
+- Index compare columns: per-term `dir={detectDir(termData.term)}`
+- Map companion container: `dir={detectDir(focusNode.name)}`
+
+#### Phase 3: Data Integrity
+- Index library resolution: replaced fragile `startsWith` with exact `allNotes.find(n => n.path === note.note_path)`
+- Map companion `sendNoteToMain`: resolves actual libraryName/libraryPath/libraryColor from allNotes
+- Replaced 600ms `setTimeout` with `emitScreenReady()` / `waitForScreenReady()` handshake (2s timeout fallback)
+- Removed duplicate `emitContextChanged('editor')` effect
+- Removed all debug logging (Rust println + JS console.log)
+
+#### Phase 4: Minor
+- `loadEditorPanelsData` catch block now logs errors
+- `allNotes = []` cleared before rebuild on universe switch
+
+### Test Results
+- `npx vite build` — clean ✓
+
+### Open Items
+- Constellation Map Phase 2: maturity inference + drill-down animation
+- CE Layer 3: Constellation Lens
+
+---
+
+## Phase: SS Enhancements — Sky View, Map Legend, Split Comparison
+
+### Commit: `1edb972`
+
+### What Was Built
+
+#### Sky View Rename
+- "Star View" → "Sky View" across all 15 locale files
+- ⭐ emoji replaced with original connected-nodes SVG icon in SS panel tabs
+
+#### Map Companion — Color Dropdown + Legend
+- Added color mode dropdown (Maturity / Stratum / Library) to SS map companion header
+- Added color legend below header — updates dynamically with dropdown selection
+- ConstellationMap gains `initialColorMode` prop for external color mode control
+- All SS mini-maps sync to selected color mode
+
+#### Split Companion — Comparison Layout
+- `SplitCompanionData` type now carries `notes[]` array (all open split tabs)
+- Main window sends all open tabs when split view active (not just focused tab)
+- SS loads panel data for all notes in parallel via `Promise.all`
+- New comparison UI: one panel tab selector at top, columns per note below
+- Each column: note name header (with library color dot) + selected panel content
+- Per-column RTL detection via `detectDir(noteName)`
+
+#### Task Sync Fix
+- `NoteEditor.handleSave` and `handleFlush` now call `broadcastNoteSaved`
+- Main window sidebar task toggle also broadcasts
+- SS `onNoteSaved` listener reloads panels when active note changes
+- `wasRecentlyWritten` guard prevents SS from reprocessing its own saves
+
+### Test Results (2-Monitor)
+All 10 tests passing:
+1. ✅ Monitor detection + positioning
+2. ✅ Right sidebar auto-hide
+3. ✅ Editor panels (Properties, Backlinks, Tags, Sky View, Tasks)
+4. ✅ Sky View tab with real data
+5. ✅ RTL — Index term
+6. ✅ RTL — Dashboard tag
+7. ✅ RTL — Map companion
+8. ✅ Index library color resolution
+9. ✅ SS open timing (ready signal)
+10. ✅ Split comparison layout
+
+---
+
+## Phase: SS Multi-Monitor Gating + Star View → Sky View Rename
+
+### Commit: `f26f3b7`
+
+#### SS Gated Behind 2+ Monitors
+- `hasMultipleDisplays` checked on startup — dock button, command palette entries, and functions all gated
+- Design: SS exists for a second display — without one, the right sidebar serves the same purpose
+
+#### Star View → Sky View Rename (All Docs)
+- Help folder/file renamed: `Star View/` → `Sky View/`
+- User Manual (en + ar + hi + ru + tr), help files all updated
+- Second Screen help: new sections for Split Comparison, Index Companion, Map Companion + multi-monitor callout
+
+---
+
+## Phase: OrgChart Redesign — Full-Screen Visual Hierarchy
+
+### Commit: `d64a9b2`
+
+### What Was Built
+- **Full-screen overlay**: OrgChart dock button opens overlay (like Map/Index pattern)
+- **Visual org chart**: Real hierarchy diagram — boxes connected by CSS connector lines
+  - Universe (purple root) → Libraries (colored) → Folders (dashed) → Notes (small)
+  - Each box: name, note count, word count, maturity dot
+- **Data source**: Reuses `constellation_map_universe` MapNode for metadata (maturity, word_count, stratum)
+- **CSS-first centering**: Flexbox centers content — no JS measurement timing issues
+- **Auto-fit width**: Svelte action + ResizeObserver scales to fill canvas; re-fits on window maximize/minimize
+- **Pan & zoom**: Drag background to pan, scroll wheel to zoom
+- **Node interaction**: Click expand/collapse, click note opens in editor
+- **Sidebar collapse**: Both sidebars hide on open, restore on close
+- **Context menu, search, maturity filter chips**
+- **RTL**: detectDir on all node names
+
+### Key Lesson
+Centering a component inside a `display: none` overlay cannot rely on JS measurement (getBoundingClientRect returns 0x0). CSS flexbox centering is the correct approach — no timing issues, works at any window size, survives resize.
+
+---
+
+## Phase: OrgChart Enhancements + SS Complementary Architecture
+
+### Commit: `09ab54a`
+
+### What Was Built
+
+#### OrgChart Search
+- Full-text search via Rust `search_stars` — searches both note titles AND bodies
+- Enter to execute, prev/next match navigation, match highlights
+- Search results displayed as note lists under parent boxes in the chart
+- Proven search-box pattern replicated from sidebar search (same HTML/CSS)
+
+#### OrgChart Visual Improvements
+- Horizontal connector lines between children (proven CSS ::before/::after from Envato Tuts+)
+- Note children rendered as vertical lists with full titles (not cramped chart boxes)
+- Fit-to-screen button — scales chart to fit both width and height
+- Reset button fix — properly clears all search state
+- Max 5 nodes per row with overflow to next row
+- Return to OrgChart button after clicking a note
+
+#### SS Companion Infrastructure
+- `OrgChartCompanionData` type + emit/listen events
+- Layout syncs OrgChart state to SS on open/close
+- Placeholder for function switcher
+
+### Architecture Principle Established
+**"All Constellation functions are complementing each other, NOT competing"**
+- SS is a lens, not a mirror — offers complementary perspectives
+- When OrgChart is on main window, SS offers Sky View, Index, Map, Editor Panels as alternative lenses
+- Approved SS companions (8 modes) are frozen — new features build on top
+- Function switcher to be implemented: users toggle between complementary views on SS
+
+### Key Lessons
+- Search clear button: use the same pattern already working in the codebase (sidebar search)
+- Connector lines: use proven CSS ::before/::after technique, not custom JS
+- Don't center components inside `display:none` overlays with JS — use CSS flexbox
+- Research first, build from scratch only if no proven solution exists
+
+---
+
+## Phase: Constellation Lens Phase 1 — CE Layer 3
+
+### Commit: `a14c5c1`
+
+### What Was Built
+
+**CE Layer 3: Constellation Lens** — network analysis engine inspired by InfraNodus (Paranyushkin, WWW'19). Transforms the GraphMind graph from passive visualization into active knowledge discovery.
+
+#### Rust Backend (lens.rs)
+- Brandes' betweenness centrality algorithm (O(VE)) — finds bridge notes
+- Uses `petgraph` crate for graph data structure
+- `constellation_lens_centrality` command: scans all libraries, builds graph, returns per-note scores
+
+#### JS Analytics (clusterEngine.ts)
+- Structural gap detection (Ronald Burt's structural holes theory)
+- Shannon entropy for cognitive diversity
+- Universe health metric (0-100): modularity + dominance + entropy + connectivity
+
+#### GraphEngine Overlay
+- Node sizes override with centrality (bridge notes become larger)
+- Node colors override with community membership (auto-detected clusters)
+- Save/restore original state on toggle
+
+#### LensPanel Sidebar
+- Universe Health score with breakdown
+- Top 10 Bridge notes ranked by centrality
+- Community list with names, colors, member counts
+- Structural Gaps (blind spots) between knowledge areas
+
+#### Integration
+- Lens toggle button in Sky View toolbar
+- Orchestration: Rust centrality → JS Louvain → gaps → health → overlay
+- LensPanel as sidebar overlay inside Sky View
+
+### Architecture
+- **Hybrid Rust + JS**: Centrality in Rust (performance), community detection in existing JS Louvain (reuse)
+- **No new heavy dependencies**: Brandes' algorithm implemented directly (~100 lines Rust), not via rustworkx-core
+- **Existing infrastructure reused**: clusterEngine.ts, GraphEngine, GraphMindView, buildStarData
+
+---
+
+## Phase: Constellation Lens Phases 2-3 — Complete
+
+### Commit: `1df3942`
+
+### Phase 2: Structural Gap Visualization
+- Red dashed lines between community centroids in GraphMind
+- Gap data flows: layout → GraphMindView → GraphEngine render loop
+
+### Phase 3: Shared-Tag Edges
+- `constellation_lens_tag_edges` Rust command: scans all notes for tags, returns note pairs sharing tags
+- Weight: 0.6 × number of shared tags, top 500 edges
+- Toggle in LensPanel Advanced section
+
+### Phase 3: Layer Peeling
+- Slider (0-20) to hide top-N centrality nodes
+- Reveals hidden structure beneath dominant MOC/index notes
+
+### Help & i18n
+- Full documentation: Constellation Lens help file
+- 16 i18n keys across all 15 locale files
+
+### Constellation Lens — COMPLETE
+All 3 phases of the concept paper roadmap implemented:
+- Phase 1: Brandes' centrality + Louvain communities + analytics panel ✅
+- Phase 2: Structural gaps + gap highlighting ✅
+- Phase 3: Shared-tag edges + layer peeling ✅
+
+---
+
+## Phase: Constellation Lens — Standalone Rebuild + 7 Unique Features
+
+### Commit: `48eb5f0`
+
+### Standalone Rebuild
+- Created `ConstellationLens.svelte`: D3.js force simulation + HTML5 Canvas 2D
+- Completely separated from Sky View — zero shared rendering code
+- Removed all lens overlay code from GraphMindView and graphEngine
+- Own dock button, overlay, header, legend, D3 force layout
+
+### 7 Features Unique to Constellation (InfraNodus Cannot Do These)
+1. **Typed link weighting**: supports=1.0, causes=0.9, contradicts=0.8, etc.
+2. **Stratum-weighted centrality**: bridges between high-stratum notes matter more
+3. **Contradiction mapping**: tracks "contradicts" links, displays in panel
+4. **Provenance distribution**: per-community received vs discovered breakdown
+5. **Maturity health**: per-community seed/sapling/evergreen/canonical/wilting bars
+6. **Diversivity metric**: BC/degree — identifies VIP nodes (InfraNodus's own metric)
+7. **Gap bridge suggestions**: identifies existing notes that could bridge structural gaps
+
+### Open Items
+- Constellation Map Phase 2
+- OrgChart: drag-drop to move notes/folders
+- Lens: content similarity edges (deferred to CE Layer 4)
+- Lens: D3+Canvas graph needs further visual polish and testing

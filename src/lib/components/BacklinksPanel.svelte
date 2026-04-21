@@ -1,34 +1,44 @@
 <script lang="ts">
-	import { openNoteTab, libraries, readNote } from '$lib/libraries/store';
+	import { openNoteTab, libraries, readNote, appSettings } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
 
-	// Link type color palette — matches GraphMind + livePreview typed link colors
-	const LINK_TYPE_COLORS: Record<string, string> = {
-		supports:     '#4A9EFF',
-		contradicts:  '#FF4A4A',
-		causes:       '#FF8C42',
-		exemplifies:  '#4AFF88',
-		generalizes:  '#A44AFF',
-		'derives-from': '#FFD700',
-		'part-of':    '#AAAAAA',
-		associative:  '#888888',
-	};
+	// Pill colors + shape now come from $appSettings.linkPills so the user
+	// can tune them from Settings → Appearance → Living Link Pills. The
+	// `?? '#...'` fallbacks keep the panel rendering during the brief
+	// window between boot and settings-loaded, and cover any type the user
+	// might remove from the settings object.
+	const LINK_TYPE_COLORS = $derived($appSettings.linkPills?.fill ?? {});
+	const LINK_TYPE_TEXT   = $derived($appSettings.linkPills?.text ?? {});
+	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	let {
-		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string }[],
+		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number }[],
 		unlinkedMentions = [] as { name: string; path: string; context: string; libraryName: string }[],
 		activeNoteName = '',
+		activeNotePath = '',
 		libraryColorMap = {} as Record<string, string>,
 	}: {
-		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string }[];
+		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number }[];
 		unlinkedMentions: { name: string; path: string; context: string; libraryName: string }[];
 		activeNoteName?: string;
+		activeNotePath?: string;
 		libraryColorMap?: Record<string, string>;
 	} = $props();
 
 	let showUnlinked = $state(false);
+	let filterQuery = $state('');
+	const filteredBacklinks = $derived(
+		filterQuery.trim()
+			? backlinks.filter(bl => bl.name.toLowerCase().includes(filterQuery.toLowerCase()) || bl.context.toLowerCase().includes(filterQuery.toLowerCase()))
+			: backlinks
+	);
+	const filteredUnlinked = $derived(
+		filterQuery.trim()
+			? unlinkedMentions.filter(m => m.name.toLowerCase().includes(filterQuery.toLowerCase()) || m.context.toLowerCase().includes(filterQuery.toLowerCase()))
+			: unlinkedMentions
+	);
 
 	function getLibraryColor(libraryName: string): string {
 		return libraryColorMap[libraryName] || '#7c3aed';
@@ -36,7 +46,7 @@
 
 	async function openLink(path: string, libraryName: string, e?: MouseEvent) {
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		await openNoteTab(path, libraryName, getLibraryColor(libraryName), undefined, newTab);
+		await openNoteTab(path, libraryName, getLibraryColor(libraryName), undefined, newTab, activeNotePath || undefined);
 	}
 
 	async function linkMention(mentionPath: string, e: MouseEvent) {
@@ -54,14 +64,19 @@
 	}
 </script>
 
-<div class="backlinks-panel">
+<div class="backlinks-panel" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
+	{#if backlinks.length + unlinkedMentions.length > 3}
+		<div class="bl-filter">
+			<input type="text" dir="auto" placeholder="Filter..." value={filterQuery} oninput={(e) => filterQuery = (e.target as HTMLInputElement).value} />
+		</div>
+	{/if}
 	<div class="bl-section">
 		<div class="bl-header">
 			{$t('backlinksPanel.linkedMentions')}
-			<span class="bl-count">{backlinks.length}</span>
+			<span class="bl-count">{filteredBacklinks.length}</span>
 		</div>
-		{#if backlinks.length > 0}
-			{#each backlinks as bl}
+		{#if filteredBacklinks.length > 0}
+			{#each filteredBacklinks as bl}
 				<button class="bl-item" onclick={(e) => openLink(bl.path, bl.libraryName, e)}>
 					<span class="bl-name-row">
 						{#if bl.libraryName}
@@ -69,9 +84,14 @@
 						{/if}
 						<span class="bl-name">{bl.name}</span>
 						{#if bl.linkType}
+							{@const fill = LINK_TYPE_COLORS[bl.linkType] ?? '#888'}
+							{@const txt = LINK_TYPE_TEXT[bl.linkType] ?? '#ffffff'}
 							<span class="bl-link-type-badge"
-								style="color:{LINK_TYPE_COLORS[bl.linkType] ?? '#888'};border-color:{LINK_TYPE_COLORS[bl.linkType] ?? '#888'}20"
-							>{bl.linkType}</span>
+								style="color:{txt};background:{fill};border-color:{fill}"
+							>{$t(`linkTypes.${bl.linkType}`) || bl.linkType}</span>
+						{/if}
+						{#if (bl.traversalCount ?? 0) > 0}
+							<span class="bl-traversal-chip" title={`Traversed ${bl.traversalCount} time${bl.traversalCount === 1 ? '' : 's'}`}>×{bl.traversalCount}</span>
 						{/if}
 						{#if bl.libraryName}
 							<span class="bl-library-label">{bl.libraryName}</span>
@@ -91,10 +111,10 @@
 				<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 			</svg>
 			{$t('backlinksPanel.unlinkedMentions')}
-			<span class="bl-count">{unlinkedMentions.length}</span>
+			<span class="bl-count">{filteredUnlinked.length}</span>
 		</button>
-		{#if showUnlinked && unlinkedMentions.length > 0}
-			{#each unlinkedMentions as ul}
+		{#if showUnlinked && filteredUnlinked.length > 0}
+			{#each filteredUnlinked as ul}
 				<div class="bl-item-row">
 					<button class="bl-item" onclick={(e) => openLink(ul.path, ul.libraryName, e)}>
 						<span class="bl-name-row">
@@ -121,6 +141,13 @@
 
 <style>
 	.backlinks-panel { font-size: 0.8rem; }
+	.bl-filter { padding: 2px 8px 4px; }
+	.bl-filter input {
+		width: 100%; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px;
+		background: var(--bg); color: var(--text); font-size: 0.75rem; font-family: inherit; outline: none;
+	}
+	.bl-filter input:focus { border-color: var(--interactive-accent); }
+	.bl-filter input::placeholder { color: var(--text-faint); }
 	.bl-section { margin-bottom: 4px; }
 	.bl-header {
 		display: flex; align-items: center; gap: 4px;
@@ -131,7 +158,17 @@
 		background: none; border: none; cursor: pointer; font-family: inherit; width: 100%; text-align: start;
 	}
 	.bl-toggle:hover { color: var(--text-normal); }
-	.bl-count { background: var(--background-modifier-border-focus); border-radius: 8px; padding: 0 5px; font-size: 0.7rem; color: var(--text-faint); }
+	.bl-count {
+		display: inline-flex; align-items: center;
+		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
+		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
+		color: var(--interactive-accent, #7c3aed);
+		border-radius: var(--pill-radius, 10px); padding: 0 8px;
+		height: var(--pill-height, 20px); line-height: 1;
+		font-size: 0.7rem; font-weight: var(--pill-weight, 700);
+		font-variant-numeric: tabular-nums;
+		box-sizing: border-box;
+	}
 	.bl-chev { transition: transform 0.15s ease; flex-shrink: 0; }
 	.bl-chev.expanded { transform: rotate(90deg); }
 	.bl-item-row { display: flex; align-items: flex-start; gap: 2px; }
@@ -144,7 +181,7 @@
 	.bl-item:hover { background: var(--background-modifier-hover); }
 	.bl-name-row { display: flex; align-items: center; gap: 4px; }
 	.bl-library-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-	.bl-library-label { font-size: 0.68rem; color: var(--text-faint); margin-inline-start: auto; flex-shrink: 0; }
+	.bl-library-label { font-size: 0.68rem; color: var(--text-faint); flex-shrink: 0; }
 	.bl-name { color: var(--interactive-accent); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.bl-context { display: block; color: var(--text-faint); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.bl-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
@@ -155,8 +192,23 @@
 	}
 	.bl-link-btn:hover { color: var(--interactive-accent); border-color: var(--interactive-accent); }
 	.bl-link-type-badge {
-		font-size: 0.65rem; font-weight: 500; padding: 0 5px;
-		border-radius: 8px; border: 1px solid; white-space: nowrap; flex-shrink: 0;
+		display: inline-flex; align-items: center;
+		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
+		padding: 0 8px; height: var(--pill-height, 20px);
+		border-radius: var(--pill-radius, 10px); border: 1px solid;
+		white-space: nowrap; flex-shrink: 0;
 		text-transform: lowercase; letter-spacing: 0.02em;
+		box-sizing: border-box;
+	}
+	.bl-traversal-chip {
+		display: inline-flex; align-items: center;
+		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
+		padding: 0 8px; height: var(--pill-height, 20px);
+		border-radius: var(--pill-radius, 10px); white-space: nowrap; flex-shrink: 0;
+		color: var(--interactive-accent, #7c3aed);
+		background: color-mix(in srgb, var(--interactive-accent, #7c3aed) 14%, transparent);
+		border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c3aed) 30%, transparent);
+		letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
+		box-sizing: border-box;
 	}
 </style>

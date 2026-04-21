@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
+	import { constellationSearch, parseSearchQuery } from '$lib/libraries/store';
 
 	let {
 		notes = [] as { name: string; path: string; libraryName: string }[],
@@ -15,13 +16,41 @@
 	let query = $state('');
 	let selectedIndex = $state(0);
 	let inputEl: HTMLInputElement;
+	let extendedResults = $state<{ name: string; path: string; libraryName: string }[]>([]);
+	let searchTimer: ReturnType<typeof setTimeout>;
 
 	const filtered = $derived.by(() => {
 		if (!query.trim()) return notes.slice(0, 30);
 		const q = query.toLowerCase();
-		return notes
+		const local = notes
 			.filter(n => n.name.toLowerCase().includes(q) || n.path.toLowerCase().includes(q))
-			.slice(0, 30);
+			.slice(0, 20);
+		// Merge extended results (deduplicated)
+		if (extendedResults.length > 0) {
+			const seen = new Set(local.map(n => n.path));
+			for (const r of extendedResults) {
+				if (!seen.has(r.path)) { local.push(r); seen.add(r.path); }
+			}
+		}
+		return local.slice(0, 30);
+	});
+
+	// Async extended search for queries >= 3 chars
+	$effect(() => {
+		const q = query;
+		clearTimeout(searchTimer);
+		if (q.trim().length >= 3) {
+			searchTimer = setTimeout(async () => {
+				try {
+					const req = parseSearchQuery(q);
+					req.limit = 15;
+					const results = await constellationSearch(req);
+					extendedResults = results.map(r => ({ name: r.name, path: r.path, libraryName: r.library_name }));
+				} catch { extendedResults = []; }
+			}, 300);
+		} else {
+			extendedResults = [];
+		}
 	});
 
 	$effect(() => {

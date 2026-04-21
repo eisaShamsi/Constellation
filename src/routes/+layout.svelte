@@ -7,10 +7,12 @@
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { getVersion } from '@tauri-apps/api/app';
 	import {
-		libraries, libraryStats, searchResults, totalStars, libraryCount,
+		libraries, libraryStats, totalStars, libraryCount,
 		activeTab, openTabs, activeTabId,
 		splitActive, splitDirection, focusedTabId, focusedTab,
-		loadLibraries, loadAllStats, addLibrary, createNewLibrary, searchAllStars,
+		loadLibraries, loadAllStats, addLibrary, createNewLibrary,
+		initSearchIndex,
+		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, writeNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
@@ -20,19 +22,22 @@
 		toggleEditMode, editingTabIds,
 		navigateBack, navigateForward,
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
-		scanLibraryIndex,
-		buildStarData, readNotePreview,
+		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
+		buildSkyData, readNotePreview,
 		getDailyNotePath, updateLinksOnRename, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
-		loadSettings, updateSettings, appSettings,
+		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
-		buildDefaultFrontmatter, searchByProperty,
-		type FrontmatterProperty, type HeadingItem, type NoteLink, type StarNode, type StarLink,
+		buildDefaultFrontmatter,
+		linkTraversalBumps, clearLinkTraversalBumps,
+		type FrontmatterProperty, type HeadingItem, type NoteLink, type SkyNode, type SkyLink,
 		type IndexEntry
 	} from '$lib/libraries/store';
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet } from '$lib/libraries/store';
-	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById } from '$lib/libraries/store';
+	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, BUILTIN_THEMES, deriveThemeVariables, hexToHSL } from '$lib/libraries/store';
+	import { generateStyleSettingsCSS } from '$lib/theme/styleSettings';
+	import { CORE_BLOCK_IDS, getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
@@ -52,19 +57,27 @@
 	import TemplateSuggester from '$lib/components/TemplateSuggester.svelte';
 	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
 	import GraphMindView from '$lib/components/GraphMindView.svelte';
+	import ConstellationSight from '$lib/components/ConstellationSight2.svelte';
+	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
-	import LocalStarView from '$lib/components/LocalStarView.svelte';
+	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
+	import SlotIcon from '$lib/components/SlotIcon.svelte';
+	import SearchHub from '$lib/components/SearchHub.svelte';
+	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
 
+	import { embedNotes, embeddingStatus } from '$lib/libraries/store';
 	import DashboardView from '$lib/components/DashboardView.svelte';
+	import KnowledgeHealthDashboard from '$lib/components/KnowledgeHealthDashboard.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
 	import TensionPanel from '$lib/components/TensionPanel.svelte';
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
 	import ReviewPulsePanel from '$lib/components/ReviewPulsePanel.svelte';
+	import LinkDashboard from '$lib/components/LinkDashboard.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
 	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
@@ -85,6 +98,7 @@
 	import UniverseSetup from '$lib/components/UniverseSetup.svelte';
 	import UniverseManager from '$lib/components/UniverseManager.svelte';
 	import ImporterModal from '$lib/components/ImporterModal.svelte';
+	import CanonicalChoiceDialog from '$lib/components/CanonicalChoiceDialog.svelte';
 	import {
 		listUniverses, createUniverse, setActiveUniverse,
 		checkMigrationNeeded, migrateLegacyData,
@@ -92,7 +106,7 @@
 		type UniverseEntry, type ChildUniverseInfo
 	} from '$lib/universe/store';
 	import { loadPropertyTypes } from '$lib/libraries/propertyTypeRegistry';
-	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
+	import { openSecondScreen, openSecondScreenSmart, closeSecondScreen, isSecondScreenOpen, hasMultipleMonitors, waitForScreenReady, sendNoteToScreen, onNoteToMain, onScreenClosed, onNoteSaved, broadcastNoteSaved, notifyUniverseSwitch, notifySettingsChanged, requestScreenState, onStateResponse, sendWorkspaceRestore, emitContextChanged, emitSkyViewHover, emitSkyViewClick, emitSidebarModeChanged, emitSplitModeChanged, emitDashboardOpenNote, emitDashboardTagSelected, emitIndexTermSelected, emitIndexCompare, emitMapCompanion, emitEditorPanels, type ScreenNote, type ScreenState, type SkyViewNodeInfo } from '$lib/secondScreen';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
@@ -230,7 +244,7 @@
 		}
 		tabCtxMenu = null;
 	}
-	let searchMode = $state(false);
+	// searchMode removed — Search Hub is the single search experience
 	let sidebarMode = $state<'tree' | 'list' | 'skyview'>('tree');
 	// CE Phase 9: Multi-Lens Views
 	let availableLenses = $state<any[]>([]);
@@ -273,8 +287,15 @@
 		return Math.min(Math.max(Math.ceil(maxTextWidth) + extraPadding, 200), 500);
 	}
 	// indexMode removed - index now opens as full page view
-	let searchQuery = $state('');
-	let searchTimeout: ReturnType<typeof setTimeout>;
+	let searchEngineReady = $state(false); // true when SQLite FTS5 index is built
+	let semanticIndexProgress = $state('');
+	let semanticIndexing = $state(false);
+
+	// Canonical system state
+	let canonicalizing = $state(false);
+	let canonicalProgress = $state({ current: 0, total: 0, currentFile: '', libraryName: '', phase: '' });
+	let showCanonicalChoice = $state(false);
+	let pendingLibraryPath = $state('');
 	let sortOrder = $state<'name-asc' | 'name-desc' | 'modified-desc' | 'modified-asc'>('name-asc');
 	let libraryPickerAction = $state<'note' | 'folder' | 'base'>('note');
 	let allExpanded = $state(true);
@@ -285,6 +306,11 @@
 	let activeUniverseName = $state('');
 	let appVersion = $state('');
 	let appReady = $state(false);
+	// Distinguishes "hydration in progress" from "genuinely has no libraries".
+	// Flips to true ONLY after loadLibraries() completes (success or empty).
+	// Used to gate the Welcome/Create screen — we don't want that screen to
+	// flash during the window between paint and libraries loading.
+	let librariesLoaded = $state(false);
 
 	// Load app version
 	getVersion().then(v => appVersion = v).catch(() => {});
@@ -302,12 +328,20 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'links'>('properties');
 	let dueNotes = $state<any[]>([]); // CE Phase 7: ReviewPulse due notes
 	let activeTrail = $state<any>(null); // CE Phase 8: active trail data
 	let showExpressionForge = $state(false); // CE Phase 10
 	let showSenseMakingCanvas = $state(false); // CE Phase 11
 	let showConstellationMap = $state(false);
+	let showSearchHub = $state(false);
+	let showKnowledgeHealth = $state(false);
+	let showPicker = $state(false);
+	let searchHubMatchIds = $state<Set<string> | null>(null);
+	let searchHubReturnPending = $state(false);
+	let searchHubInitialQuery = $state('');
+	let sidebarBeforeSearch = $state(false);
+	let rightSidebarBeforeSearch = $state(false);
 	// let inspector360Data = $state<any>(null); // CE Phase 12: disabled — revisit later
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
@@ -316,7 +350,7 @@
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(300);
-	let rightSidebarWidth = $state(300);
+	let rightSidebarWidth = $state(340);
 	let resizing = $state<'left' | 'right' | null>(null);
 	let splitPaneSizes = $state<number[]>([]); // flex values per pane in split view
 
@@ -351,8 +385,12 @@
 			},
 		};
 	}
-	let showStarView = $state(false);
-	// showOrgChart removed — now sidebarMode === 'skyview'
+	let showSkyView = $state(false);
+	let showOrgChart = $state(false);
+	let sidebarBeforeOC = $state(false); // remember left sidebar state
+	let rightSidebarBeforeOC = $state(false); // remember right sidebar state
+	let sidebarBeforeLens = $state(false);
+	let rightSidebarBeforeLens = $state(false);
 	// Shared selection path — when an item is clicked in any sidebar mode, OrgChart highlights it
 	let skyViewSelectedPath = $state<string | string[] | null>(null);
 
@@ -369,7 +407,7 @@
 	let skyviewHoverTimer: ReturnType<typeof setTimeout> | null = null;
 	$effect(() => {
 		if (secondScreenOpen) {
-			const mode = showStarView ? 'skyview' : 'editor';
+			const mode = showSkyView ? 'skyview' : 'editor';
 			emitContextChanged(mode);
 			// When switching to editor mode, send the current note to second screen
 			if (mode === 'editor' && $activeTab?.path) {
@@ -385,7 +423,7 @@
 	});
 	// Also sync when the user switches tabs in editor mode
 	$effect(() => {
-		if (secondScreenOpen && !showStarView && $activeTab?.path) {
+		if (secondScreenOpen && !showSkyView && $activeTab?.path) {
 			sendNoteToScreen({
 				path: $activeTab.path,
 				name: $activeTab.name,
@@ -411,14 +449,8 @@
 		if (!tab?.path) return;
 		addRecentOpened({ name: tab.name, path: tab.path, libraryName: tab.libraryName });
 	});
-	// Clipboard monitoring: send copy events to second screen
-	let lastSavedContent = $state('');
-	$effect(() => {
-		if (!secondScreenOpen || showStarView) return;
-		// Emit editor context mode when not in Star View
-		emitContextChanged('editor');
-	});
 	// Track initial content for diff baseline
+	let lastSavedContent = $state('');
 	$effect(() => {
 		const tab = $activeTab;
 		if (tab?.path) {
@@ -428,19 +460,22 @@
 		}
 	});
 
-	// Sync split view state to second screen
+
+	// Sync split view state to second screen — send ALL open tabs for comparison
 	$effect(() => {
 		if (!secondScreenOpen) return;
 		const active = $splitActive;
-		const tab = $focusedTab;
-		if (active && tab?.path) {
+		const tabs = $openTabs;
+		if (active && tabs.length > 0) {
 			emitSplitModeChanged({
 				active: true,
-				notePath: tab.path,
-				noteName: tab.name,
-				libraryName: tab.libraryName,
-				libraryPath: tab.libraryPath ?? '',
-				content: tab.content ?? '',
+				notes: tabs.filter(t => t.path).map(t => ({
+					notePath: t.path,
+					noteName: t.name,
+					libraryName: t.libraryName,
+					libraryPath: t.libraryPath ?? '',
+					content: t.content ?? '',
+				})),
 			});
 		} else if (!active) {
 			emitSplitModeChanged({ active: false });
@@ -454,8 +489,17 @@
 	let indexSelectedTerms = $state<Set<string>>(new Set());
 	let indexReturnPending = $state(false); // show "Return to Index" button on note tab
 	let mapReturnPending = $state(false); // show "Return to Map" button on note tab
+	let orgChartReturnPending = $state(false); // show "Return to OrgChart" button on note tab
+	let lensReturnPending = $state(false);
+	let skyViewReturnPending = $state(false);
 	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 	let mapFocusNode = $state<any>(null); // current MapNode being viewed
+	// Sticky lazy-mount flags — stay true after first open so drill-down state survives
+	// close/reopen, reset on Universe switch. See LL-022.
+	let mapEverOpened = $state(false);
+	let orgChartEverOpened = $state(false);
+	$effect(() => { if (showConstellationMap) mapEverOpened = true; });
+	$effect(() => { if (showOrgChart) orgChartEverOpened = true; });
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -471,6 +515,7 @@
 	// Importer modal
 	let showImporter = $state(false);
 	let secondScreenOpen = $state(false);
+	let hasMultipleDisplays = $state(false); // gate SS features behind 2+ monitors
 	let rightSidebarBeforeSS = $state(false); // remember right sidebar state before SS hid it
 
 	// Library management
@@ -478,6 +523,8 @@
 	let showLibraryManager = $state(false);
 	let showLibraryPicker = $state(false);
 	let showNewBaseDialog = $state(false);
+	let showNewLibraryDropdown = $state(false);
+	let newLibName = $state('');
 
 	// Lock screen
 	let isLocked = $state(false);
@@ -494,38 +541,105 @@
 
 	// Library data caches
 	let allLibraryLinks = $state<NoteLink[]>([]);
+	// P4.2: per-(source,target) traversal counts, derived from the boot
+	// graph PLUS any optimistic bumps fired by openNoteTab since the last
+	// fetch. Key = `${sourcePath.toLowerCase()}|${target.toLowerCase()}`.
+	// livePreview.ts consumes this via the linkTraversalMapField StateField
+	// to render a `×N` chip after each traversed wikilink in the note body.
+	// The bumps are cleared by clearLinkTraversalBumps() right after the
+	// boot-graph payload lands so live increments don't double-count against
+	// the server's already-updated values.
+	const linkTraversalMap = $derived.by(() => {
+		const m = new Map<string, number>();
+		for (const l of allLibraryLinks) {
+			const count = l.traversal_count ?? 0;
+			if (count <= 0 || !l.source_path || !l.target) continue;
+			m.set(l.source_path.toLowerCase() + '|' + l.target.toLowerCase(), count);
+		}
+		for (const [key, bump] of $linkTraversalBumps) {
+			m.set(key, (m.get(key) ?? 0) + bump);
+		}
+		return m;
+	});
+	// Same fold as `linkTraversalMap` but projected back onto the NoteLink
+	// list so consumers (`getBacklinks` / `getOutgoingLinks`) who read
+	// `l.traversal_count` directly still see the live value. Cloning only
+	// the entries that actually have a bump keeps the hot path at
+	// `O(bumps)` per derivation, not `O(links)`.
+	const effectiveLibraryLinks = $derived.by(() => {
+		if ($linkTraversalBumps.size === 0) return allLibraryLinks;
+		return allLibraryLinks.map(l => {
+			const bump = $linkTraversalBumps.get(
+				l.source_path.toLowerCase() + '|' + l.target.toLowerCase()
+			);
+			return bump ? { ...l, traversal_count: (l.traversal_count ?? 0) + bump } : l;
+		});
+	});
 	let allLibraryTags = $state<Record<string, number>>({});
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let allIndexEntries = $state<IndexEntry[]>([]);
-	// Star data stored as plain (non-reactive) arrays to avoid $state proxy overhead
-	// on potentially tens of thousands of items. Use starVersion to signal changes.
-	let starNodes: StarNode[] = [];
-	let starLinks: StarLink[] = [];
-	let starVersion = $state(0);
+	// Index panel lazy-load state. The index is built by a filesystem walk in
+	// `scan_library_index` (libraries.rs), so it is NOT on the boot path (per
+	// commit 039ac66 "kill ALL filesystem walkers from boot"). Instead we
+	// scan lazily when the user opens the panel for the first time. The key
+	// combines universe + library count so adding/removing libraries also
+	// triggers a re-scan on next panel open. Reset to null on universe switch.
+	let indexLoading = $state(false);
+	let indexLoadedKey = $state<string | null>(null);
+	// Star data uses $state.raw — tracks reassignment (required for the main Sky View
+	// <GraphMindView nodes={skyNodes}> binding and the Lens <ConstellationSight> binding
+	// to re-run when refreshLibraryCaches populates these arrays after mount) but
+	// skips the per-element proxy wrap, preserving iteration perf on 10k+ arrays.
+	// Plain `let` is non-reactive in Svelte 5 runes — confirmed by Sky View boot
+	// investigation, see docs/LESSONS-LEARNED.md LL-017.
+	let skyNodes = $state.raw<SkyNode[]>([]);
+	let skyLinks = $state.raw<SkyLink[]>([]);
+
+	// Constellation Lens state
+	let lensActive = $state(false);
+	let lensLoading = $state(false);
+	let lensCentrality = $state<Map<string, number>>(new Map());
+	let lensCommunities = $state<ClusterInfo[]>([]);
+	let lensCommunityAssignments = $state<Map<string, number>>(new Map());
+	let lensGaps = $state<StructuralGap[]>([]);
+	let lensHealth = $state<UniverseHealth | null>(null);
+	let lensBridges = $state<{ id: string; name: string; centrality: number }[]>([]);
+	let lensShowTagEdges = $state(false);
+	let lensPeelCount = $state(0);
+	let lensTagEdges = $state<{ source: string; target: string; shared_tags: string[]; weight: number }[]>([]);
+	let lensCommunityProfiles = $state<CommunityProfile[]>([]);
+	let lensContradictions = $state<[string, string][]>([]);
+	let skyVersion = $state(0);
+	// Boot Criterion 2: `graphReady` flips to true once the deferred link+tag
+	// payload (Phase 2 of refreshLibraryCaches) lands. Views that render
+	// degraded state while the graph is still loading (Sky View shell, tag
+	// browser) can read this flag to flip to the full UI when it arrives.
+	let graphReady = $state(false);
+	let searchLinkCounts = $state(new Map<string, { incoming: number }>());
 	let maturityMap = $state(new Map<string, string>()); // path → maturity state (CE Phase 3)
 	let stageMap = $state(new Map<string, string>()); // path → stage (CE Phase 6)
-	// Star data is passed to StarView as plain arrays.
+	// Star data is passed to SkyView as plain arrays.
 	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
-	// make iteration extremely slow. Instead, starVersion ($state) triggers re-render
-	// and StarView reads the plain starNodes/starLinks directly.
+	// make iteration extremely slow. Instead, skyVersion ($state) triggers re-render
+	// and SkyView reads the plain skyNodes/skyLinks directly.
 
 	// WiW filtered data — recomputed when selection or star data changes
-	// Uses starVersion as reactive trigger since starNodes/starLinks are plain arrays
+	// Uses skyVersion as reactive trigger since skyNodes/skyLinks are plain arrays
 	const wiwFilteredNodes = $derived.by(() => {
-		const _ver = starVersion; // reactive trigger
-		if (!skyViewSelectedPath || !showStarView) return [];
+		const _ver = skyVersion; // reactive trigger
+		if (!skyViewSelectedPath || !showSkyView) return [];
 		const paths = Array.isArray(skyViewSelectedPath) ? skyViewSelectedPath : [skyViewSelectedPath];
 		const norms = paths.map(p => p.replace(/\\/g, '/').toLowerCase());
-		return starNodes.filter(n => {
+		return skyNodes.filter(n => {
 			const np = n.path.replace(/\\/g, '/').toLowerCase();
 			return norms.some(norm => np.startsWith(norm + '/') || np === norm);
 		});
 	});
 	const wiwFilteredNodeIds = $derived(new Set(wiwFilteredNodes.map(n => n.id)));
 	const wiwFilteredLinks = $derived.by(() => {
-		const _ver = starVersion;
+		const _ver = skyVersion;
 		if (wiwFilteredNodes.length === 0) return [];
-		return starLinks.filter(l => wiwFilteredNodeIds.has(l.source) && wiwFilteredNodeIds.has(l.target));
+		return skyLinks.filter(l => wiwFilteredNodeIds.has(l.source) && wiwFilteredNodeIds.has(l.target));
 	});
 
 	// WiW legend — only libraries present in filtered nodes
@@ -560,7 +674,7 @@
 
 	// Auto-show/hide WiW (guarded to avoid redundant writes)
 	$effect(() => {
-		const shouldShow = showStarView && wiwEnabled && skyViewSelectedPath && wiwFilteredNodes.length > 0;
+		const shouldShow = showSkyView && wiwEnabled && skyViewSelectedPath && wiwFilteredNodes.length > 0;
 		if (shouldShow) {
 			if (!wiwInitialized) {
 				wiwX = Math.max(50, window.innerWidth - wiwW - 30);
@@ -623,7 +737,7 @@
 			if (side === 'left') {
 				leftSidebarWidth = Math.max(160, Math.min(500, startWidth + (isRtl ? -delta : delta)));
 			} else {
-				rightSidebarWidth = Math.max(160, Math.min(500, startWidth + (isRtl ? delta : -delta)));
+				rightSidebarWidth = Math.max(320, Math.min(600, startWidth + (isRtl ? delta : -delta)));
 			}
 		}
 
@@ -710,6 +824,28 @@
 	let newLibraryName = $state('');
 
 	const isHome = $derived(page.url.pathname === '/');
+	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
+	/** True when any full-page function is active — disables sidebars and split pane */
+	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || showSearchHub || isDashboardVisible);
+
+	// Auto-collapse sidebars when full-page becomes active, restore when deactivated
+	let sidebarBeforeFullPage = false;
+	let rightSidebarBeforeFullPage = false;
+	let fullPageWasActive = false;
+	$effect(() => {
+		if (fullPageActive && !fullPageWasActive) {
+			// Entering full-page: save and collapse
+			sidebarBeforeFullPage = sidebarOpen;
+			rightSidebarBeforeFullPage = rightSidebarOpen;
+			sidebarOpen = false;
+			rightSidebarOpen = false;
+		} else if (!fullPageActive && fullPageWasActive) {
+			// Leaving full-page: restore
+			sidebarOpen = sidebarBeforeFullPage;
+			rightSidebarOpen = rightSidebarBeforeFullPage;
+		}
+		fullPageWasActive = fullPageActive;
+	});
 
 	// Separate own libraries from child universe libraries
 	function isChildUniverseLib(libPath: string): boolean {
@@ -747,8 +883,8 @@
 	let focusMode = $state(false);
 	let _focusModeTabId = '';
 	$effect(() => { const id = $activeTab?.id ?? ''; if (id !== _focusModeTabId) { _focusModeTabId = id; focusMode = false; } });
-	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string }[]>([]);
-	let currentOutgoing = $state<{ target: string; context: string }[]>([]);
+	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number }[]>([]);
+	let currentOutgoing = $state<{ target: string; context: string; traversalCount?: number; linkType?: string }[]>([]);
 	let activeNoteTags = $state<string[]>([]);
 	let _sidebarDebounce: ReturnType<typeof setTimeout> | undefined;
 
@@ -757,6 +893,15 @@
 		const tab = sidebarTab;
 		const props = sidebarProperties;
 		const dirFallback = $dir as 'ltr' | 'rtl';
+		// Track allLibraryLinks as a dep so this effect re-runs when the
+		// deferred graph payload (Phase 2 of refreshLibraryCaches) lands —
+		// otherwise a tab focused BEFORE the graph arrives would show an
+		// empty backlinks/outgoing panel and never auto-refresh. Reading
+		// `.length` at top level is enough to establish the dependency.
+		// Also track linkTraversalBumps so the `×N` chips in the sidebar
+		// refresh live when the user follows a wikilink (P4.2 follow-up).
+		void allLibraryLinks.length;
+		void $linkTraversalBumps.size;
 		clearTimeout(_sidebarDebounce);
 
 		// Immediate reset when no tab
@@ -774,14 +919,19 @@
 			sidebarHeadings = body ? extractHeadings(body) : [];
 			// Direction
 			noteDir = body ? detectDir(body) : dirFallback;
+			// P5 slice 2: snapshot the decay config once so both sort helpers
+			// get the same `nowMs` (no skew between backlinks and outgoing).
+			const lifecycle = $appSettings.linkLifecycle;
+			const decayCfg = {
+				nowMs: Date.now(),
+				halfLifeDays: lifecycle?.halfLifeDays ?? 60,
+				decayEnabled: lifecycle?.decayEnabled ?? true,
+			};
 			// Backlinks
-			currentBacklinks = getBacklinks(allLibraryLinks, tab.name);
+			currentBacklinks = getBacklinks(effectiveLibraryLinks, tab.name, decayCfg);
 			// CE Phase 5: Provenance fetched on tab click only (not here — no IPC on typing path)
 			// Outgoing links
-			currentOutgoing = getOutgoingLinks(allLibraryLinks, tab.path).map(l => ({
-				target: l.target,
-				context: l.context,
-			}));
+			currentOutgoing = getOutgoingLinks(effectiveLibraryLinks, tab.path, decayCfg);
 			// Tags (from frontmatter + inline)
 			const tags: string[] = [];
 			for (const p of props) {
@@ -820,21 +970,21 @@
 
 	// Local star: nodes/links for the active note and its direct connections
 	// Uses deferred state to avoid blocking the main thread with heavy iteration
-	let localStarNodes = $state<StarNode[]>([]);
-	let localStarLinks = $state<StarLink[]>([]);
+	let localSkyNodes = $state<SkyNode[]>([]);
+	let localSkyLinks = $state<SkyLink[]>([]);
 	let _localStarTimer: ReturnType<typeof setTimeout> | undefined;
 
 	$effect(() => {
-		// Track reactive dependencies (starVersion signals when plain arrays change)
+		// Track reactive dependencies (skyVersion signals when plain arrays change)
 		const isVisible = rightSidebarOpen && rightSidebarTab === 'star';
 		const tab = sidebarTab;
-		const _ver = starVersion; // reactive trigger for non-reactive starNodes/starLinks
+		const _ver = skyVersion; // reactive trigger for non-reactive skyNodes/skyLinks
 
 		clearTimeout(_localStarTimer);
 
 		if (!isVisible || !tab) {
-			localStarNodes = [];
-			localStarLinks = [];
+			localSkyNodes = [];
+			localSkyLinks = [];
 			return;
 		}
 
@@ -843,14 +993,14 @@
 			const activeId = tab.name.replace(/\.md$/, '').toLowerCase();
 			const connectedIds = new Set<string>();
 			connectedIds.add(activeId);
-			for (const link of starLinks) {
+			for (const link of skyLinks) {
 				if (link.source === activeId || link.target === activeId) {
 					connectedIds.add(link.source);
 					connectedIds.add(link.target);
 				}
 			}
-			localStarNodes = starNodes.filter(n => connectedIds.has(n.id));
-			localStarLinks = starLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
+			localSkyNodes = skyNodes.filter(n => connectedIds.has(n.id));
+			localSkyLinks = skyLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
 		}, 50);
 	});
 
@@ -936,6 +1086,156 @@
 				: colorScheme;
 			document.body.classList.remove('theme-light', 'theme-dark');
 			document.body.classList.add(`theme-${resolved}`);
+		}
+	});
+
+	// One-time cleanup: earlier versions stored core blocks on custom themes and
+	// wrote hard-coded per-tier File-Explorer defaults into styleSettingsValues.
+	// Both defeat the current cascade. Runs exactly once per session.
+	let _coreBlockCleanupDone = false;
+	// Any per-tier File-Explorer value stored from earlier sessions would
+	// defeat the new master cascade (CSS var fallbacks can't distinguish
+	// "explicitly set" from "not set"). Clear them all on startup. Master
+	// ids (ft-master-*) and non-file-explorer ids are preserved.
+	const LEGACY_FT_TIER_IDS = new Set([
+		'ft-universe-font-size', 'ft-universe-weight', 'ft-universe-color',
+		'ft-cuniverse-font-size', 'ft-cuniverse-weight', 'ft-cuniverse-color',
+		'ft-library-font-size', 'ft-library-weight', 'ft-library-color',
+		'ft-font-size', 'ft-folder-weight', 'ft-folder-color',
+		'ft-file-weight', 'ft-file-color', 'ft-row-padding-y',
+	]);
+	$effect(() => {
+		if (_coreBlockCleanupDone) return;
+		const customs = $appSettings.customThemes;
+		if (!customs || customs.length === 0) { _coreBlockCleanupDone = true; return; }
+		let changed = false;
+		const cleaned = customs.map(ct => {
+			let next = ct;
+			// (a) strip stored core blocks
+			if (ct.styleSettingsBlocks && ct.styleSettingsBlocks.length > 0) {
+				const filtered = ct.styleSettingsBlocks.filter(b => !CORE_BLOCK_IDS.has(b.id));
+				if (filtered.length !== ct.styleSettingsBlocks.length) {
+					changed = true;
+					next = { ...next, styleSettingsBlocks: filtered };
+				}
+			}
+			// (b) clear legacy per-tier File-Explorer overrides so master cascades
+			if (ct.styleSettingsValues) {
+				const values = { ...ct.styleSettingsValues };
+				let valuesChanged = false;
+				for (const id of Object.keys(values)) {
+					if (LEGACY_FT_TIER_IDS.has(id)) { delete values[id]; valuesChanged = true; }
+				}
+				if (valuesChanged) {
+					changed = true;
+					next = { ...next, styleSettingsValues: values };
+				}
+			}
+			return next;
+		});
+		if (changed) updateSettings({ customThemes: cleaned });
+		_coreBlockCleanupDone = true;
+	});
+
+	// Track which Style-Settings CSS vars the last theme-apply wrote, so
+	// stale overrides are cleared when the user resets a row (empty values
+	// are skipped by the generator, so the property would otherwise persist
+	// forever).
+	let _lastStyleSettingsKeys: string[] = [];
+
+	// Apply custom theme colors (responds to both activeThemeId and colorScheme changes)
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		const s = $appSettings;
+		let themeId = s.activeThemeId;
+
+		// Auto-pair: if the active theme has a counterpart for the current scheme, switch to it
+		if (themeId) {
+			const resolved = colorScheme === 'system'
+				? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+				: colorScheme;
+			const allThemes = [...BUILTIN_THEMES, ...(s.customThemes ?? [])];
+			const current = allThemes.find(t => t.id === themeId);
+			if (current && current.type !== resolved && current.pairedThemeId) {
+				const paired = allThemes.find(t => t.id === current.pairedThemeId);
+				if (paired) themeId = paired.id;
+			}
+		}
+
+		if (!themeId) {
+			// No custom theme — but still apply accent color if set
+			if (s.accentColor && s.accentColor !== '#7c3aed') {
+				const hsl = hexToHSL(s.accentColor);
+				document.body.style.setProperty('--accent-h', String(hsl.h));
+				document.body.style.setProperty('--accent-s', `${hsl.s}%`);
+				document.body.style.setProperty('--accent-l', `${hsl.l}%`);
+			}
+			return;
+		}
+
+		// Find theme — customs take precedence over built-ins so a user's
+		// auto-cloned copy of a built-in theme (same id, now with their
+		// styleSettingsValues attached) is the one that gets applied.
+		const theme = s.customThemes?.find(t => t.id === themeId) || BUILTIN_THEMES.find(t => t.id === themeId);
+		if (!theme) return;
+
+		// Apply derived CSS variables
+		const vars = deriveThemeVariables(theme.colors, theme.type);
+		const root = document.body.style;
+		for (const [key, value] of Object.entries(vars)) {
+			root.setProperty(key, value);
+		}
+
+		// Apply theme type class
+		document.body.classList.remove('theme-light', 'theme-dark');
+		document.body.classList.add(`theme-${theme.type}`);
+
+		// Apply custom CSS if present
+		let customStyleEl = document.getElementById('constellation-custom-theme-css');
+		if (theme.customCSS) {
+			if (!customStyleEl) {
+				customStyleEl = document.createElement('style');
+				customStyleEl.id = 'constellation-custom-theme-css';
+				document.head.appendChild(customStyleEl);
+			}
+			customStyleEl.textContent = theme.customCSS;
+		} else if (customStyleEl) {
+			customStyleEl.remove();
+		}
+
+		// Apply Style Settings: core blocks + theme's own blocks (dedup guarded).
+		const ssBlocks = getEffectiveStyleBlocks(theme);
+		if (ssBlocks.length > 0) {
+			const ssResult = generateStyleSettingsCSS(
+				ssBlocks,
+				theme.styleSettingsValues ?? {},
+				theme.type
+			);
+			// Clear any Style-Settings var from the previous apply that is NOT
+			// in the new set (user reset it, or cleared a tier override).
+			const newKeys = new Set(Object.keys(ssResult.variables));
+			for (const prevKey of _lastStyleSettingsKeys) {
+				if (!newKeys.has(prevKey)) root.removeProperty(prevKey);
+			}
+			_lastStyleSettingsKeys = [...newKeys];
+			// Apply CSS variables with proper format units
+			for (const [key, value] of Object.entries(ssResult.variables)) {
+				root.setProperty(key, value);
+			}
+			// Apply body classes from class-toggle and class-select
+			// Remove old style settings classes first
+			document.body.className = document.body.className
+				.split(' ')
+				.filter(c => !c.startsWith('css-settings-'))
+				.join(' ');
+			for (const cls of ssResult.classes) {
+				document.body.classList.add(cls);
+			}
+		} else if (theme.styleSettingsValues) {
+			// Fallback: simple key→value application
+			for (const [id, value] of Object.entries(theme.styleSettingsValues)) {
+				root.setProperty(`--${id}`, value);
+			}
 		}
 	});
 
@@ -1089,28 +1389,31 @@
 			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
 			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
 			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { sidebarOpen = true; searchMode = true; }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
-			{ id: 'star-view', name: $t('commands.starView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showStarView = !showStarView; showConstellationMap = false; }, category: 'View' },
-			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showStarView = false; showConstellationMap = false; }, category: 'View' },
+			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
+			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showSkyView = false; showConstellationMap = false; }, category: 'View' },
 			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
 			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: sc('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
 			{ id: 'split-view', name: $t('commands.splitView'), shortcut: sc('split-view'), icon: '⊞', action: cycleSplit, category: 'View' },
 			{ id: 'close-note', name: $t('commands.closeNote'), shortcut: sc('close-note'), icon: '✕', action: closeNote, category: 'File' },
-			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: sc('toggle-left'), icon: '◧', action: () => sidebarOpen = !sidebarOpen, category: 'View' },
-			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: sc('toggle-right'), icon: '◨', action: () => rightSidebarOpen = !rightSidebarOpen, category: 'View' },
+			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: sc('toggle-left'), icon: '◧', action: () => { if (!fullPageActive) sidebarOpen = !sidebarOpen; }, category: 'View' },
+			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: sc('toggle-right'), icon: '◨', action: () => { if (!fullPageActive) rightSidebarOpen = !rightSidebarOpen; }, category: 'View' },
 			{ id: 'add-library', name: $t('commands.addLibrary'), shortcut: sc('add-library'), icon: '📁', action: handleAddLibrary, category: 'Library' },
+			{ id: 'new-library', name: $t('commands.newLibrary'), icon: '📚', action: handleNewLibrary, category: 'Library' },
 			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), shortcut: sc('toggle-bookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
 			{ id: 'random-note', name: $t('commands.randomNote'), shortcut: sc('random-note'), icon: '🎲', action: handleRandomNote, category: 'Navigation' },
 			{ id: 'toggle-theme', name: $t('commands.toggleTheme'), shortcut: sc('toggle-theme'), icon: '🌗', action: handleToggleTheme, category: 'Appearance' },
-			{ id: 'second-screen', name: $t('secondScreen.title'), shortcut: sc('second-screen'), icon: '🖥️', action: handleToggleSecondScreen, category: 'View' },
-			{ id: 'send-to-screen', name: $t('secondScreen.sendToScreen'), shortcut: sc('send-to-screen'), icon: '📤', action: handleSendToSecondScreen, category: 'View' },
+			...(hasMultipleDisplays ? [
+				{ id: 'second-screen', name: $t('secondScreen.title'), shortcut: sc('second-screen'), icon: '🖥️', action: handleToggleSecondScreen, category: 'View' },
+				{ id: 'send-to-screen', name: $t('secondScreen.sendToScreen'), shortcut: sc('send-to-screen'), icon: '📤', action: handleSendToSecondScreen, category: 'View' },
+			] : []),
 			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: sc('nav-back'), icon: '←', action: navigateBack, category: 'Navigation' },
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
-			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showStarView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }, category: 'Navigation' },
+			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
@@ -1129,9 +1432,10 @@
 				} catch {}
 			}, category: 'Navigation' },
 			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
-			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showStarView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; }, category: 'View' },
-			{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; mapReturnPending = false; }, category: 'View' },
-			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showStarView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; }, category: 'View' },
+			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; }, category: 'View' },
+			...($appSettings.enabledFeatures?.constellationMap === true ? [{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; mapReturnPending = false; }, category: 'View' }] : []),
+			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; }, category: 'View' },
+			{ id: 'knowledge-health', name: 'Knowledge Health', icon: '🧠', action: () => { showCommandPalette = false; showKnowledgeHealth = true; }, category: 'View' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
@@ -1171,30 +1475,39 @@
 
 	// ─── Universe initialization ───
 	async function initializeApp() {
-		// Load essential data from the active universe in parallel (each fault-tolerant)
-		await Promise.all([
-			loadSettings().catch(() => {}),
-			loadBookmarks().catch(() => {}),
-			loadWorkspaces().catch(() => {}),
-			loadPropertyTypes().catch(() => {}),
-			listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}),
-			getChildUniverses().then(async (c) => {
-				childUniverses = c;
-				// Resolve which libraries belong to each child universe
-				const map = new Map<string, Set<string>>();
-				for (const cu of c) {
-					try {
-						const childLibs = await invoke<{ id: string; name: string; path: string }[]>(
-							'read_child_universe_libraries', { childPath: cu.path }
-						);
-						map.set(cu.path, new Set(childLibs.map(l => l.path.replace(/\\/g, '/').toLowerCase())));
-					} catch {
-						map.set(cu.path, new Set());
-					}
-				}
-				childUniverseLibPaths = map;
-			}).catch(() => {}),
-		]);
+		// ═══ BOOT ARCHITECTURE — paint-first, single-bundle IPC ════════════
+		// Per 2026-04-15 expert panel + LL-015 (dev-mode per-IPC overhead is
+		// ~37s on Windows): the frontend now makes ONE IPC call at boot that
+		// returns the full bundle of config + libraries + child universes,
+		// rather than ~10 serialized calls. This collapses boot-IPC latency
+		// from 10× the per-call overhead to 1×.
+		//
+		// appReady still flips synchronously at the top so the UI shell
+		// paints instantly. The bundle call populates all reactive stores in
+		// one shot when it returns.
+		performance.mark('boot:paint');
+		appReady = true;
+
+		// ── Round 5 follow-up diagnostic: JS-event-loop heartbeat ──
+		// Samples the event loop every 100 ms. If the JS thread is blocked
+		// during the core-snapshot queue window, `bootHeartbeatMaxGapMs`
+		// will be large; if the event loop stays responsive, it stays small.
+		// Value is dumped into `buildBootPerfReport()` alongside the other
+		// per-phase timings.
+		bootHeartbeatLastFire = performance.now();
+		bootHeartbeatMaxGapMs = 0;
+		bootHeartbeatInterval = setInterval(() => {
+			const now = performance.now();
+			const gap = now - bootHeartbeatLastFire;
+			if (gap > bootHeartbeatMaxGapMs) bootHeartbeatMaxGapMs = gap;
+			bootHeartbeatLastFire = now;
+		}, 100);
+		cleanupFns.push(() => {
+			if (bootHeartbeatInterval !== undefined) {
+				clearInterval(bootHeartbeatInterval);
+				bootHeartbeatInterval = undefined;
+			}
+		});
 
 		// Idle detection for lock screen
 		const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'] as const;
@@ -1209,19 +1522,166 @@
 			if (idleTimer) clearTimeout(idleTimer);
 		});
 
-		// Load libraries — this is what the sidebar needs
-		try { await loadLibraries(); } catch { /* ignore */ }
-		try { await loadAllStats(); } catch { /* ignore */ }
-
-		// App is usable now — show UI immediately
-		appReady = true;
-
-		// Start file watchers and build caches in the background
-		for (const lib of $libraries) {
-			try { await startWatchingLibrary(lib.id, lib.path); } catch { /* ignore */ }
-			await loadLibraryAppearance(lib.path, lib.id);
+		// One IPC call returns everything: libraries, settings, bookmarks,
+		// workspaces, property types, workspace bases, child universes.
+		type BootBundle = {
+			libraries: any[];
+			settings: Record<string, unknown>;
+			bookmarks: unknown[];
+			workspaces: unknown[];
+			property_types: Record<string, unknown>;
+			workspace_bases: any[];
+			child_universes: ChildUniverseInfo[];
+			child_universe_lib_paths: Record<string, string[]>;
+			/** Per-step wall-clock timings measured inside the Rust command.
+			 *  Attributed into `boot-perf.latest.json#boot_bundle_timings`
+			 *  so cold-boot bottlenecks are diagnosable without rebuilds. */
+			timings_ms?: Array<[string, number]>;
+		};
+		let bundle: BootBundle | null = null;
+		try {
+			bundle = await invoke<BootBundle>('constellation_boot_bundle');
+		} catch (e) {
+			console.warn('[boot] boot bundle failed, falling back to per-call loads', e);
 		}
-		await refreshLibraryCaches();
+
+		if (bundle) {
+			// Populate every store directly from the bundle response. No
+			// additional IPCs — the whole point of collapsing into one call.
+			// Each store-setter mirrors what the individual loader functions
+			// do in $lib/libraries/store.ts + propertyTypeRegistry.ts.
+			libraries.set(bundle.libraries);
+
+			// Settings — merge with DEFAULT_SETTINGS (same logic as loadSettings).
+			try {
+				const parsed = bundle.settings as any;
+				if (parsed && Object.keys(parsed).length > 0) {
+					const savedSkyView = parsed.skyView || {};
+					if (savedSkyView.nodeSize === 4) savedSkyView.nodeSize = 1.5;
+					appSettings.set({
+						...DEFAULT_SETTINGS,
+						...parsed,
+						skyView: { ...DEFAULT_SETTINGS.skyView, ...savedSkyView },
+						security: { ...DEFAULT_SETTINGS.security, ...(parsed.security || {}) },
+						enabledFeatures: { ...DEFAULT_SETTINGS.enabledFeatures, ...(parsed.enabledFeatures ?? parsed.enabledPlugins ?? {}) },
+						customShortcuts: { ...(parsed.customShortcuts || {}) },
+					});
+				}
+			} catch { /* settings schema mismatch — fall through with defaults */ }
+
+			// Bookmarks / Workspaces — arrays set directly.
+			if (Array.isArray(bundle.bookmarks) && bundle.bookmarks.length > 0) {
+				bookmarks.set(bundle.bookmarks as any);
+			}
+			if (Array.isArray(bundle.workspaces) && bundle.workspaces.length > 0) {
+				workspaces.set(bundle.workspaces as any);
+			}
+
+			// Property types — seed the registry cache (avoids a separate IPC).
+			try {
+				const reg = await import('$lib/libraries/propertyTypeRegistry');
+				reg.seedFromBundle(bundle.property_types);
+			} catch { /* on-demand load on first use */ }
+
+			workspaceBases = bundle.workspace_bases;
+			childUniverses = bundle.child_universes;
+			const map = new Map<string, Set<string>>();
+			for (const cu of bundle.child_universes) {
+				map.set(cu.path, new Set(bundle.child_universe_lib_paths[cu.path] ?? []));
+			}
+			childUniverseLibPaths = map;
+
+			// Stash Rust-side per-step timings so buildBootPerfReport can write
+			// them into boot-perf.latest.json. Investigation target per
+			// lab/boot-perf/boot-bundle-cold-start.md.
+			if (Array.isArray(bundle.timings_ms)) {
+				bootBundleTimings = bundle.timings_ms;
+			}
+		} else {
+			// Fallback: old per-IPC pattern. Only runs if the bundle command
+			// is unavailable (shouldn't happen post-dc46683 but defensive).
+			await Promise.all([
+				loadSettings().catch(() => {}),
+				loadBookmarks().catch(() => {}),
+				loadWorkspaces().catch(() => {}),
+				loadPropertyTypes().catch(() => {}),
+				listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}),
+				getChildUniverses().then(async (c) => {
+					childUniverses = c;
+					const m = new Map<string, Set<string>>();
+					for (const cu of c) {
+						try {
+							const childLibs = await invoke<{ id: string; name: string; path: string }[]>(
+								'read_child_universe_libraries', { childPath: cu.path }
+							);
+							m.set(cu.path, new Set(childLibs.map(l => l.path.replace(/\\/g, '/').toLowerCase())));
+						} catch {
+							m.set(cu.path, new Set());
+						}
+					}
+					childUniverseLibPaths = m;
+				}).catch(() => {}),
+				loadLibraries().catch(() => {}),
+			]);
+		}
+
+		librariesLoaded = true;
+		performance.mark('boot:libraries-loaded');
+
+		// ═══ BOOT RULE: ZERO FILESYSTEM WALKS ════════════════════════════
+		// Per the 2026-04-15 expert panel, nothing walks the filesystem on
+		// boot. Everything below is fire-and-forget — the UI never waits.
+		//
+		// Removed from the boot path in this rewrite:
+		//   - cache_reconcile() — full-filesystem mtime walk. Now only
+		//     triggered by the file watcher (per-file) or by the user
+		//     clicking Settings → Rebuild Index.
+		//   - enrichNodesBackground() — 4 per-library walks for strata /
+		//     maturity / origins / stages. Will be persisted into SQLite
+		//     at index time and read from cache in a future commit.
+		//
+		// loadAllStats remains because its Rust side is already cache-
+		// fast (metadata-only walk + per-library thread parallelism).
+		// It's fire-and-forget so the sidebar star counts populate
+		// without blocking anything.
+		// ═══ BOOT ORDER: hydrate first, fan-out after ═══════════════════
+		// Critical finding (2026-04-16): all 34 boot IPCs (16 watchers +
+		// 16 appearances + stats + snapshot) were racing into Tauri's
+		// command queue in the same tick. On Windows/NTFS the I/O
+		// scheduler round-robined them, so `cache_boot_snapshot_core` —
+		// the ONE thing that gates `boot:hydrated` — took 27 s wall-clock
+		// despite only 8 s of Rust execution time. Everything else
+		// finished at the same ~27 s endpoint.
+		//
+		// Fix: await the ship-gate IPC first. The core snapshot owns the
+		// I/O queue until `boot:hydrated` fires; only THEN do watchers,
+		// appearances, and stats fan out. They don't gate anything the
+		// user can see, so deferring them is free.
+		// See lab/boot-perf/boot-bundle-cold-start.md.
+		await refreshLibraryCaches().catch(() => {});
+
+		// Post-hydration fan-out — populate sidebar badges and enable
+		// the file watcher. Fire-and-forget; the UI is already live.
+		{
+			const t0 = performance.now();
+			Promise.all($libraries.map(lib =>
+				startWatchingLibrary(lib.id, lib.path).catch(() => {})
+			)).then(() => { startWatchingAllWallMs = Math.round(performance.now() - t0); })
+			  .catch(() => { startWatchingAllWallMs = Math.round(performance.now() - t0); });
+		}
+		{
+			const t0 = performance.now();
+			Promise.all($libraries.map(lib =>
+				loadLibraryAppearance(lib.path, lib.id).catch(() => {})
+			)).then(() => { loadAllAppearancesWallMs = Math.round(performance.now() - t0); })
+			  .catch(() => { loadAllAppearancesWallMs = Math.round(performance.now() - t0); });
+		}
+		{
+			const t0 = performance.now();
+			loadAllStats()
+				.then(() => { loadAllStatsWallMs = Math.round(performance.now() - t0); })
+				.catch(() => { loadAllStatsWallMs = Math.round(performance.now() - t0); });
+		}
 	}
 
 	async function handleUniverseCreated(entry: UniverseEntry) {
@@ -1234,6 +1694,7 @@
 	async function handleUniverseSwitch() {
 		// Save current state, clear everything, re-init
 		appReady = false;
+		librariesLoaded = false;
 		showUniverseManager = false;
 
 		// Unwatch all libraries
@@ -1253,12 +1714,21 @@
 		allLibraryLinks = [];
 		allLibraryTags = {};
 		allNotes = [];
+		clearLinkTraversalBumps();
 		allIndexEntries = [];
+		indexLoadedKey = null;
 		libraryTrees = {};
 		expandedLibraries = new Set();
 		editingTabIds.set(new Set());
 		libraryAppearances.set({});
 		bookmarks.set([]);
+
+		// Force Map + OrgChart to re-mount on next open for the new Universe.
+		// Their IPC (constellation_map_universe) fires only from onMount, so without
+		// this reset the user would see stale data from the prior Universe.
+		mapEverOpened = false;
+		orgChartEverOpened = false;
+		mapFocusNode = null;
 
 		// Reset cache guard so refreshLibraryCaches can run for the new universe
 		cacheRefreshing = false;
@@ -1292,6 +1762,59 @@
 
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
+		document.addEventListener('constellation:show-importer', () => { showImporter = true; });
+
+		// Universal Embed: "open this note" (from transclusion header click)
+		window.addEventListener('constellation:open-note', (e: Event) => {
+			const detail = (e as CustomEvent).detail as { path?: string };
+			if (!detail?.path) return;
+			const libs = get(libraries);
+			const lib = libs.find(l => detail.path!.startsWith(l.path));
+			if (lib) openNoteTab(detail.path!, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+		});
+		// Universal Embed: "open this file externally" (from generic file card)
+		window.addEventListener('constellation:open-external', (e: Event) => {
+			const detail = (e as CustomEvent).detail as { path?: string };
+			if (!detail?.path) return;
+			invoke('constellation_show_in_folder', { path: detail.path }).catch(() => {});
+		});
+
+		// Safety net: de-canonicalize any external library that earlier builds
+		// may have renamed en-masse on import. Runs at most ONCE per install —
+		// after the first successful sweep, we mark it done in localStorage and
+		// skip on subsequent boots (the import path that created canonical
+		// filenames has been removed, so they cannot reappear).
+		//
+		// This matters at scale: with a 7,600-note Universe across 16 libraries
+		// the repair walks ~12,000 files via IPC on every launch, which bogged
+		// down startup by several seconds even when every library was clean.
+		// Canonical repair: fire-and-forget, gated by a one-shot localStorage
+		// flag. The Rust side walks every library's filesystem checking for
+		// canonical-format filenames to revert; the flag ensures this only
+		// runs once per install, then never again. Paint time is unaffected
+		// because the call doesn't block.
+		try {
+			if (localStorage.getItem('constellation:canonical-repair-done') !== '1') {
+				invoke<string[]>('repair_external_libraries_on_startup').then((repaired) => {
+					if (repaired.length > 0) {
+						console.log('[Constellation] Restored original filenames in libraries:', repaired);
+					}
+					localStorage.setItem('constellation:canonical-repair-done', '1');
+				}).catch(err => console.error('[Constellation] Startup repair failed:', err));
+			}
+		} catch { /* localStorage unavailable */ }
+
+		// Living Link P3: run weight decay job once per 24h (fire-and-forget,
+		// gated by localStorage timestamp). Operates on the SQLite
+		// note_links table; does not block any IPC.
+		try {
+			const lastDecay = Number(localStorage.getItem('constellation:last-link-decay') ?? '0');
+			if (Date.now() - lastDecay > 86_400_000) {
+				const { linkDecay } = await import('$lib/libraries/store');
+				linkDecay().then(() => localStorage.setItem('constellation:last-link-decay', String(Date.now())))
+					.catch(() => { /* index not ready yet — try again next launch */ });
+			}
+		} catch { /* localStorage unavailable */ }
 
 		// 1. Check universe state
 		let universes: UniverseEntry[] = [];
@@ -1337,6 +1860,10 @@
 			return;
 		}
 
+		// initializeApp paints the shell (appReady=true) at its very first
+		// step, then loads data in the background. We `await` its full
+		// completion here so later onMount steps (watcher setup, etc.)
+		// run with a populated libraries store.
 		await initializeApp();
 
 		// Listen for file change events from the watcher
@@ -1386,6 +1913,42 @@
 			await toggleLibrary($libraryStats[0]);
 		}
 
+		// Detect multiple monitors — gate SS features
+		hasMultipleDisplays = await hasMultipleMonitors().catch(() => false);
+
+		// Canonical system: no startup rename. Canonicalization happens only when
+		// the user explicitly links/imports with "Adopt Constellation Format".
+		// Native libraries (created by Constellation) are born canonical.
+
+		// When the background reconcile finishes (filesystem walk complete,
+		// any stale cache rows refreshed), re-read the cache snapshot so the
+		// UI picks up any notes/links/tags that changed outside Constellation
+		// since the last launch. Cheap: SQLite queries only.
+		const unlistenCacheReconciled = await listen('cache-reconciled', () => {
+			// Re-read snapshot without kicking off another reconcile —
+			// cacheRefreshing gate prevents the reconcile from running twice.
+			if (!cacheRefreshing) {
+				refreshLibraryCaches().catch(() => {});
+			}
+		});
+		cleanupFns.push(() => { try { unlistenCacheReconciled(); } catch {} });
+
+		// Search engine init is driven by cache_reconcile() (which invokes
+		// constellation_search_init on a background thread). When it finishes
+		// the cache-reconciled event fires; we load link counts then.
+		const unlistenSearchReady = await listen('cache-reconciled', async () => {
+			searchEngineReady = true;
+			try {
+				const counts: Record<string, number> = await invoke('constellation_search_link_counts');
+				searchLinkCounts = new Map(Object.entries(counts).map(([k, v]) => [k, { incoming: v }]));
+			} catch {}
+			// Living Link System: apply weight decay on startup (background)
+			invoke('constellation_link_decay').catch(() => {});
+		});
+		cleanupFns.push(() => { try { unlistenSearchReady(); } catch {} });
+
+		// Semantic search: ONNX engine lazy-loads on first search/embed call
+
 		// Second screen event listeners
 		const unlistenScreenNote = await onNoteToMain(async (note: ScreenNote) => {
 			await openNoteTab(note.path, note.libraryName, note.libraryColor);
@@ -1424,7 +1987,6 @@
 
 	const cleanupFns: (() => void)[] = [];
 	onDestroy(() => {
-		clearTimeout(searchTimeout);
 		clearTimeout(previewTimeout);
 		clearTimeout(cacheRefreshDebounce);
 		clearTimeout(watcherDebounce);
@@ -1444,129 +2006,464 @@
 	});
 
 	let cacheRefreshing = false;
+	/** Yield to the browser event loop so UI clicks can preempt heavy work. */
+	const yieldToUI = () => new Promise<void>(r => setTimeout(r, 0));
+
+	/**
+	 * Write the boot-perf scorecard for `lab/boot-perf/BOOT-BUDGET.md`.
+	 * Called twice: once when `boot:hydrated` is marked (Criteria 1+2), and
+	 * again when `boot:graph-ready` resolves so `graph_ready_ms` is recorded
+	 * even though it isn't a ship-gate. Both writes are idempotent — the
+	 * first write fills paint/hydrated; the second overwrites with the full
+	 * scorecard (paint/hydrated/graph-ready).
+	 */
+	let bootPerfCorePhaseWritten = false;
+	let bootPerfGraphPhaseWritten = false;
+	/** Per-step timings captured inside Rust's constellation_boot_bundle.
+	 *  Populated once on first paint; written to boot-perf.latest.json so
+	 *  cold-boot attribution is possible without rebuilds. See
+	 *  lab/boot-perf/boot-bundle-cold-start.md. */
+	let bootBundleTimings: Array<[string, number]> = [];
+	/** Diagnostic — time between `await invoke(...)` issue and resolution
+	 *  for each awaited boot IPC. Paired with the Rust `timings_ms` inside
+	 *  each response: if `wall_ms >> sum(timings_ms)`, the difference is
+	 *  queue/contention time, not Rust execution time. */
+	let cacheSnapshotCoreWallMs = 0;
+	let cacheSnapshotCoreServerTimings: Array<[string, number]> = [];
+	let cacheSnapshotGraphWallMs = 0;
+	let cacheSnapshotGraphServerTimings: Array<[string, number]> = [];
+	/** Criterion 2 IPC-overhead diagnostic (2026-04-19). We split the
+	 *  previously-undifferentiated "wall time" bucket into three:
+	 *
+	 *   1. transport_ms  = clientRecvUnixMs - server_return_unix_ms
+	 *      Pure IPC: the time between Rust returning the struct and the
+	 *      JS `await invoke(...)` resolving. Isolates Tauri serialize +
+	 *      WebView2 pipe + JS deserialize — independent of what the
+	 *      caller does with the payload.
+	 *
+	 *   2. assign_ms     = perf.now() after allNotes=... - perf.now() after invoke
+	 *      Time to apply the response to reactive state. On a 7,600-note
+	 *      Universe this is the Svelte 5 reactive cascade triggered by
+	 *      the `allNotes = ...` assignment — if it dominates, the fix is
+	 *      to chunk the assignment across `requestAnimationFrame` rather
+	 *      than attack IPC.
+	 *
+	 *   3. The remainder of wall_ms is everything else (promise micro-task
+	 *      scheduling, other JS running in between, etc.).
+	 *
+	 *  If core_wall = 22,614 ms but server_timings sum to only ~48 ms, we
+	 *  need to know whether the missing ~22,500 ms lives in transport or
+	 *  assign. The raw unix timestamps are also shipped so we can sanity-
+	 *  check clock drift between Rust and JS clocks. */
+	let cacheSnapshotCoreTransportMs = 0;
+	let cacheSnapshotCoreAssignMs = 0;
+	let cacheSnapshotCoreServerReturnUnixMs = 0;
+	let cacheSnapshotCoreClientRecvUnixMs = 0;
+	let cacheSnapshotGraphTransportMs = 0;
+	let cacheSnapshotGraphAssignMs = 0;
+	let cacheSnapshotGraphServerReturnUnixMs = 0;
+	let cacheSnapshotGraphClientRecvUnixMs = 0;
+	/** Round 2 of IPC-overhead diagnostic (2026-04-19). Adds queue-time
+	 *  attribution — the time between JS issuing `invoke(...)` and the
+	 *  Rust command body actually starting execution. If `queue_ms`
+	 *  dominates `wall_ms`, the bottleneck is Tauri's dispatcher or the
+	 *  blocking-pool scheduler, not any work we do inside the command. */
+	let cacheSnapshotCoreInvokeStartUnixMs = 0;
+	let cacheSnapshotCoreServerStartUnixMs = 0;
+	let cacheSnapshotCoreQueueMs = 0;
+	let cacheSnapshotCoreBodyMs = 0;
+	let cacheSnapshotGraphInvokeStartUnixMs = 0;
+	let cacheSnapshotGraphServerStartUnixMs = 0;
+	let cacheSnapshotGraphQueueMs = 0;
+	let cacheSnapshotGraphBodyMs = 0;
+	/** Round 5 follow-up (2026-04-19). JS-event-loop heartbeat. After two
+	 *  rounds of converting sync commands to `(async)` failed to move
+	 *  `core_queue_ms` (stayed at ~19.5 s even with DashboardView fully gated
+	 *  off), the live hypothesis is that the JS thread itself is blocked
+	 *  between `invoke('cache_boot_snapshot_core')` and the Rust dispatcher
+	 *  picking up the message. A `setInterval(…, 100)` samples the event
+	 *  loop: if max-gap-between-fires ≪ 500 ms, JS is alive during the
+	 *  window (next diagnostic: Rust-side arrival tracing). If max-gap
+	 *  ≫ 5,000 ms, JS is blocked (next diagnostic: find the blocker). */
+	let bootHeartbeatMaxGapMs = 0;
+	let bootHeartbeatLastFire = 0;
+	let bootHeartbeatInterval: ReturnType<typeof setInterval> | undefined = undefined;
+	/** Round 6 diagnostic (2026-04-19). Rust-side IPC arrival log.
+	 *  Populated once at boot:hydrated by `invoke('get_perf_trace_log')`,
+	 *  which returns `[command_name, unix_ms]` tuples captured by the
+	 *  `invoke_handler` wrapper in lib.rs on every command dispatch. If
+	 *  during the 18.6 s queue window the log shows many arrivals →
+	 *  dispatcher serialization; if it shows NO arrivals → the delay
+	 *  is upstream of Rust (WebView2 / wry level). */
+	let ipcArrivalLog: Array<[string, number]> = [];
+	/** Wall-clock for the fire-and-forget chain issued right before
+	 *  `refreshLibraryCaches()`. These race into Tauri's command queue
+	 *  alongside `cache_boot_snapshot_core`; if any is slow it may starve
+	 *  the core snapshot. */
+	let loadAllStatsWallMs = 0;
+	let startWatchingAllWallMs = 0;
+	let loadAllAppearancesWallMs = 0;
+	function buildBootPerfReport(includeGraphPhase: boolean): Record<string, unknown> {
+		const paint = performance.getEntriesByName('boot:paint')[0]?.startTime ?? 0;
+		const libs = performance.getEntriesByName('boot:libraries-loaded')[0]?.startTime ?? 0;
+		const hyd = performance.getEntriesByName('boot:hydrated')[0]?.startTime ?? 0;
+		const graphReadyMark = performance.getEntriesByName('boot:graph-ready')[0]?.startTime ?? 0;
+		return {
+			paint_ms: Math.round(paint),
+			libraries_loaded_ms: Math.round(libs),
+			hydrated_ms: Math.round(hyd),
+			// graph_ready_ms is informational — not a ship-gate criterion.
+			graph_ready_ms: includeGraphPhase ? Math.round(graphReadyMark) : null,
+			note_count: allNotes.length,
+			timestamp: new Date().toISOString(),
+			// Criteria from lab/boot-perf/BOOT-BUDGET.md
+			criterion_1_paint: paint <= 2500 ? 'PASS' : 'FAIL',
+			criterion_2_hydrated: hyd <= 6000 ? 'PASS' : 'FAIL',
+			// Per-step timings from constellation_boot_bundle — diagnostic only.
+			// Empty on first paint before the bundle resolves; populated on the
+			// graph-phase write (and any subsequent writes).
+			boot_bundle_timings: bootBundleTimings,
+			// ── Deep attribution for Criterion 2 cold-boot regression ──
+			// `*_wall_ms` is the frontend-side elapsed from `await invoke(...)`
+			// to resolution. `*_server_timings` is the Rust-side per-phase
+			// breakdown returned inside the response. If wall >> sum(server),
+			// the time is queue/contention; if read_notes dominates server,
+			// the fix is the SQLite row-scan.
+			cache_snapshot_core_wall_ms: cacheSnapshotCoreWallMs,
+			cache_snapshot_core_server_timings: cacheSnapshotCoreServerTimings,
+			cache_snapshot_graph_wall_ms: cacheSnapshotGraphWallMs,
+			cache_snapshot_graph_server_timings: cacheSnapshotGraphServerTimings,
+			// ── IPC-overhead attribution (2026-04-19 Criterion 2 diagnostic) ──
+			// Splits the single wall_ms bucket into transport (pure IPC) and
+			// assign (reactive cascade cost of applying payload to state).
+			// Raw unix timestamps are included so clock skew between Rust and
+			// JS can be ruled out if transport_ms looks implausible.
+			cache_snapshot_core_transport_ms: cacheSnapshotCoreTransportMs,
+			cache_snapshot_core_assign_ms: cacheSnapshotCoreAssignMs,
+			cache_snapshot_core_server_return_unix_ms: cacheSnapshotCoreServerReturnUnixMs,
+			cache_snapshot_core_client_recv_unix_ms: cacheSnapshotCoreClientRecvUnixMs,
+			cache_snapshot_graph_transport_ms: cacheSnapshotGraphTransportMs,
+			cache_snapshot_graph_assign_ms: cacheSnapshotGraphAssignMs,
+			cache_snapshot_graph_server_return_unix_ms: cacheSnapshotGraphServerReturnUnixMs,
+			cache_snapshot_graph_client_recv_unix_ms: cacheSnapshotGraphClientRecvUnixMs,
+			// ── Round 2: queue-time diagnostic (2026-04-19) ──
+			// If queue_ms dominates wall_ms but body_ms is small, the
+			// bottleneck is Tauri's dispatcher / blocking-pool scheduler,
+			// NOT anything in the SQL or IPC codepath. body_ms =
+			// server_return_unix_ms - server_start_unix_ms (pure in-Rust
+			// execution); queue_ms = server_start_unix_ms - invoke_start_unix_ms.
+			cache_snapshot_core_invoke_start_unix_ms: cacheSnapshotCoreInvokeStartUnixMs,
+			cache_snapshot_core_server_start_unix_ms: cacheSnapshotCoreServerStartUnixMs,
+			cache_snapshot_core_queue_ms: cacheSnapshotCoreQueueMs,
+			cache_snapshot_core_body_ms: cacheSnapshotCoreBodyMs,
+			cache_snapshot_graph_invoke_start_unix_ms: cacheSnapshotGraphInvokeStartUnixMs,
+			cache_snapshot_graph_server_start_unix_ms: cacheSnapshotGraphServerStartUnixMs,
+			cache_snapshot_graph_queue_ms: cacheSnapshotGraphQueueMs,
+			cache_snapshot_graph_body_ms: cacheSnapshotGraphBodyMs,
+			// Fire-and-forget chain that races alongside the core snapshot.
+			load_all_stats_wall_ms: loadAllStatsWallMs,
+			start_watching_all_wall_ms: startWatchingAllWallMs,
+			load_all_appearances_wall_ms: loadAllAppearancesWallMs,
+			// Round 5 follow-up: JS-event-loop heartbeat. Max gap between
+			// `setInterval(…, 100)` firings from boot:paint onward. Small
+			// (< 500) → JS alive; large (> 5000) → JS blocked for that long.
+			boot_heartbeat_max_gap_ms: Math.round(bootHeartbeatMaxGapMs),
+			// Round 6 diagnostic: Rust-side IPC arrival log. Each entry is
+			// `[command_name, unix_ms]` captured by the `invoke_handler`
+			// wrapper in lib.rs the moment a command reaches the Rust
+			// dispatcher. Cross-reference with `cache_snapshot_core_*_unix_ms`
+			// to see what (if anything) ran between JS `postMessage` and the
+			// core snapshot's Rust body starting.
+			ipc_arrival_log: ipcArrivalLog,
+		};
+	}
+	async function recordBootPerf() {
+		if (bootPerfCorePhaseWritten) return;
+		bootPerfCorePhaseWritten = true;
+		// Freeze the heartbeat max-gap to the boot:paint → boot:hydrated window.
+		if (bootHeartbeatInterval !== undefined) {
+			clearInterval(bootHeartbeatInterval);
+			bootHeartbeatInterval = undefined;
+		}
+		// Round 6 diagnostic: fetch the Rust-side IPC arrival log before
+		// writing the report. Captures every command that reached the
+		// Rust dispatcher up to this moment, with a Unix-ms timestamp.
+		try {
+			const log = await invoke<Array<[string, number]>>('get_perf_trace_log');
+			if (Array.isArray(log)) ipcArrivalLog = log;
+		} catch (e) {
+			console.warn('[boot-perf] failed to fetch IPC arrival log', e);
+		}
+		try {
+			const report = buildBootPerfReport(false);
+			console.log('[boot-perf]', report);
+			// Persist to .constellation/boot-perf.latest.json so the
+			// Settings → Debug panel and the lab harness can read it.
+			await invoke('write_boot_perf_report', { reportJson: JSON.stringify(report) }).catch(() => {});
+		} catch (e) {
+			console.warn('[boot-perf] recording failed', e);
+		}
+	}
+	async function recordBootPerfGraphPhase() {
+		if (bootPerfGraphPhaseWritten) return;
+		bootPerfGraphPhaseWritten = true;
+		try {
+			const report = buildBootPerfReport(true);
+			console.log('[boot-perf] graph-ready', report);
+			await invoke('write_boot_perf_report', { reportJson: JSON.stringify(report) }).catch(() => {});
+		} catch (e) {
+			console.warn('[boot-perf] graph-phase recording failed', e);
+		}
+	}
 	async function refreshLibraryCaches() {
-		// Prevent concurrent scans — skip if one is already in progress
+		// Prevent concurrent scans — skip if one is already in progress.
+		// The guard spans BOTH phases (core await + deferred graph load) so
+		// re-entrant callers during the idle-callback window still short-circuit.
 		if (cacheRefreshing) return;
 		cacheRefreshing = true;
+
+		// ── Phase 1 (awaited): CORE snapshot ────────────────────────────
+		// Minimal payload (notes + is_cold) needed to paint the sidebar /
+		// file tree / Sight. Returns in low-millis on a 7,600-note Universe.
+		// The heavy link graph + tag aggregation is deferred to Phase 2
+		// via requestIdleCallback so `boot:hydrated` fires before the
+		// ~656k-row link payload crosses IPC.
+		let core: {
+			notes: { name: string; path: string; library_name: string }[];
+			is_cold: boolean;
+			timings_ms?: Array<[string, number]>;
+			server_return_unix_ms?: number;
+			server_start_unix_ms?: number;
+		};
+		const coreInvokeStart = performance.now();
+		// Round 2 (2026-04-19) — capture the wall-clock instant the invoke
+		// was issued. Paired with Rust `server_start_unix_ms` (stamped at
+		// the first line of the command body), the delta is pure dispatcher
+		// queue time. If queue_ms is huge but body_ms is small, Tauri's
+		// blocking-pool scheduler is where the 22.9 s disappears.
+		const coreInvokeStartUnixMs = Date.now();
 		try {
-			const links: NoteLink[] = [];
-			const tags: Record<string, number> = {};
-			const notes: { name: string; path: string; libraryName: string }[] = [];
-			const indexRaw: IndexEntry[] = [];
-
-			// Process libraries sequentially (2 at a time) to avoid IPC flood
-			const libraryList = $libraries;
-			for (let i = 0; i < libraryList.length; i += 2) {
-				const batch = libraryList.slice(i, i + 2);
-				const batchResults = await Promise.all(batch.map(async (lib) => {
-					const [libLinks, libTags, libNotes, libIndex] = await Promise.all([
-						scanLibraryLinks(lib.path, lib.name).catch(() => [] as NoteLink[]),
-						scanLibraryTags(lib.path).catch(() => ({} as Record<string, number>)),
-						invoke('collect_library_notes', { libraryPath: lib.path }).catch(() => []) as Promise<any[]>,
-						scanLibraryIndex(lib.path).catch(() => [] as IndexEntry[]),
-					]);
-					return { lib, libLinks, libTags, libNotes, libIndex };
-				}));
-
-				for (const { lib, libLinks, libTags, libNotes, libIndex } of batchResults) {
-					links.push(...libLinks);
-					for (const [tag, count] of Object.entries(libTags)) {
-						tags[tag] = (tags[tag] || 0) + count;
-					}
-					notes.push(...libNotes.map((n: any) => ({ name: n.name, path: n.path, libraryName: lib.name })));
-					indexRaw.push(...libIndex);
-				}
-			}
-
-			allLibraryLinks = links;
-			allLibraryTags = tags;
-			allNotes = notes;
-			allIndexEntries = mergeIndexEntries(indexRaw);
-
-			// Build star data from all libraries combined
-			if (libraryList.length > 0) {
-				const { nodes, links: gLinks } = buildStarData(links, notes);
-				starNodes = nodes;
-				starLinks = gLinks;
-				starVersion++;
-
-				// CE Phase 2: Fetch Knowledge Strata per library, merge into starNodes
-				for (const lib of libraryList) {
-					try {
-						const strata = await invoke<{ note_path: string; stratum: number }[]>(
-							'compute_note_strata', { libraryPath: lib.path, libraryName: lib.name }
-						);
-						const strataMap = new Map(strata.map(s => [s.note_path.replace(/\\/g, '/').toLowerCase(), s.stratum]));
-						for (const node of starNodes) {
-							const key = node.path.replace(/\\/g, '/').toLowerCase();
-							const s = strataMap.get(key);
-							if (s !== undefined) node.stratum = s;
-						}
-					} catch { /* strata computation failed — nodes stay without stratum */ }
-				}
-				// CE Phase 3: Fetch Maturity Lifecycle per library, merge into starNodes + maturityMap
-				const newMatMap = new Map<string, string>();
-				for (const lib of libraryList) {
-					try {
-						const maturities = await invoke<{ note_path: string; state: string }[]>(
-							'compute_note_maturity', { libraryPath: lib.path, libraryName: lib.name }
-						);
-						for (const m of maturities) {
-							const key = m.note_path.replace(/\\/g, '/').toLowerCase();
-							newMatMap.set(key, m.state);
-						}
-						for (const node of starNodes) {
-							const key = node.path.replace(/\\/g, '/').toLowerCase();
-							const m = newMatMap.get(key);
-							if (m) node.maturity = m;
-						}
-					} catch { /* maturity computation failed */ }
-				}
-				maturityMap = newMatMap;
-
-				// CE Phase 5: Fetch provenance origins per library, merge into starNodes
-				for (const lib of libraryList) {
-					try {
-						const origins = await invoke<{ note_path: string; origin_type: string }[]>(
-							'compute_note_origins', { libraryPath: lib.path, libraryName: lib.name }
-						);
-						const originMap = new Map(origins.map(o => [o.note_path.replace(/\\/g, '/').toLowerCase(), o.origin_type]));
-						for (const node of starNodes) {
-							const key = node.path.replace(/\\/g, '/').toLowerCase();
-							const o = originMap.get(key);
-							if (o && o !== 'none') node.originType = o;
-						}
-					} catch { /* origins failed */ }
-				}
-
-				// CE Phase 6: Scan note stages per library
-				const newStageMap = new Map<string, string>();
-				for (const lib of libraryList) {
-					try {
-						const stages = await invoke<[string, string][]>('scan_note_stages', { libraryPath: lib.path });
-						for (const [path, stage] of stages) {
-							newStageMap.set(path.replace(/\\/g, '/').toLowerCase(), stage);
-						}
-					} catch { /* stages scan failed */ }
-				}
-				stageMap = newStageMap;
-
-				// CE Phase 9: Load available lenses
-				try {
-					availableLenses = await invoke('list_lenses');
-				} catch { availableLenses = []; }
-
-				// CE Phase 4: Detect tensions (first library only for performance)
-				if (libraryList.length > 0) {
-					try {
-						tensionReport = await invoke('detect_tensions', { libraryPath: libraryList[0].path, libraryName: libraryList[0].name });
-					} catch { tensionReport = null; }
-				}
-				starVersion++; // signal strata + maturity + tension data ready
-			}
-		} finally {
-			cacheRefreshing = false;
+			core = await invoke('cache_boot_snapshot_core');
+		} catch {
+			core = { notes: [], is_cold: true };
 		}
+		// Capture the instant `await invoke(...)` resolved — before any
+		// reactive work. Paired with `core.server_return_unix_ms` (captured
+		// in Rust right before `Ok(...)`), the delta is pure transport cost.
+		const coreClientRecvUnixMs = Date.now();
+		const corePostInvokePerfMs = performance.now();
+		cacheSnapshotCoreWallMs = Math.round(corePostInvokePerfMs - coreInvokeStart);
+		if (Array.isArray(core.timings_ms)) {
+			cacheSnapshotCoreServerTimings = core.timings_ms;
+		}
+		cacheSnapshotCoreServerReturnUnixMs = core.server_return_unix_ms ?? 0;
+		cacheSnapshotCoreClientRecvUnixMs = coreClientRecvUnixMs;
+		cacheSnapshotCoreTransportMs = core.server_return_unix_ms
+			? Math.max(0, coreClientRecvUnixMs - core.server_return_unix_ms)
+			: 0;
+		// Round-2 queue + body attribution.
+		cacheSnapshotCoreInvokeStartUnixMs = coreInvokeStartUnixMs;
+		cacheSnapshotCoreServerStartUnixMs = core.server_start_unix_ms ?? 0;
+		cacheSnapshotCoreQueueMs = core.server_start_unix_ms
+			? Math.max(0, core.server_start_unix_ms - coreInvokeStartUnixMs)
+			: 0;
+		cacheSnapshotCoreBodyMs = core.server_start_unix_ms && core.server_return_unix_ms
+			? Math.max(0, core.server_return_unix_ms - core.server_start_unix_ms)
+			: 0;
+
+		if (!core.is_cold) {
+			allNotes = core.notes.map(n => ({
+				name: n.name,
+				path: n.path,
+				libraryName: n.library_name,
+			}));
+			// Measure how long the reactive cascade from `allNotes = ...` took.
+			// On Svelte 5, this includes re-running every `$derived` / `$effect`
+			// that reads `allNotes` (file tree, sidebar, Sight). If this number
+			// is large, the fix path is chunking via requestAnimationFrame, not
+			// attacking IPC.
+			cacheSnapshotCoreAssignMs = Math.round(performance.now() - corePostInvokePerfMs);
+
+			// Boot-perf Criterion 2: fully responsive. Reached when the
+			// core snapshot has populated the notes list — the UI can paint
+			// the sidebar/file tree/Sight immediately even while the link
+			// graph is still streaming in.
+			performance.mark('boot:hydrated');
+			recordBootPerf();
+		}
+
+		// ── Phase 2 (deferred): GRAPH snapshot ──────────────────────────
+		// Fires via requestIdleCallback so it never competes with the paint
+		// that just happened. Populates link/tag state and rebuilds Sky View
+		// data; bumps `skyVersion` so open views re-derive off the new data.
+		const loadGraph = async (): Promise<void> => {
+			try {
+				let graph: {
+					links: NoteLink[];
+					tags: Record<string, number>;
+					timings_ms?: Array<[string, number]>;
+					server_return_unix_ms?: number;
+					server_start_unix_ms?: number;
+				};
+				const graphInvokeStart = performance.now();
+				const graphInvokeStartUnixMs = Date.now();
+				try {
+					graph = await invoke('cache_boot_snapshot_graph');
+				} catch {
+					graph = { links: [], tags: {} };
+				}
+				const graphClientRecvUnixMs = Date.now();
+				const graphPostInvokePerfMs = performance.now();
+				cacheSnapshotGraphWallMs = Math.round(graphPostInvokePerfMs - graphInvokeStart);
+				if (Array.isArray(graph.timings_ms)) {
+					cacheSnapshotGraphServerTimings = graph.timings_ms;
+				}
+				cacheSnapshotGraphServerReturnUnixMs = graph.server_return_unix_ms ?? 0;
+				cacheSnapshotGraphClientRecvUnixMs = graphClientRecvUnixMs;
+				cacheSnapshotGraphTransportMs = graph.server_return_unix_ms
+					? Math.max(0, graphClientRecvUnixMs - graph.server_return_unix_ms)
+					: 0;
+				// Round-2 queue + body attribution (see core phase above).
+				cacheSnapshotGraphInvokeStartUnixMs = graphInvokeStartUnixMs;
+				cacheSnapshotGraphServerStartUnixMs = graph.server_start_unix_ms ?? 0;
+				cacheSnapshotGraphQueueMs = graph.server_start_unix_ms
+					? Math.max(0, graph.server_start_unix_ms - graphInvokeStartUnixMs)
+					: 0;
+				cacheSnapshotGraphBodyMs = graph.server_start_unix_ms && graph.server_return_unix_ms
+					? Math.max(0, graph.server_return_unix_ms - graph.server_start_unix_ms)
+					: 0;
+
+				allLibraryLinks = graph.links;
+				allLibraryTags = graph.tags;
+				// Boot graph carries the canonical counts from the DB, which
+				// already absorbed every traversal that was fired since the
+				// last fetch — drop our optimistic bumps so they don't add
+				// on top.
+				clearLinkTraversalBumps();
+
+				const libraryList = $libraries;
+				if (libraryList.length > 0 && graph.links.length > 0) {
+					const { nodes, links: gLinks } = buildSkyData(graph.links, allNotes);
+					skyNodes = nodes;
+					skyLinks = gLinks;
+					skyVersion++;
+				}
+
+				// Measure how long applying the graph to reactive state took.
+				// Captured AFTER buildSkyData since that synchronously iterates
+				// the full link set on the main thread (store.ts:1504-1543) and
+				// is part of the "cost of receiving the graph payload" bucket.
+				cacheSnapshotGraphAssignMs = Math.round(performance.now() - graphPostInvokePerfMs);
+
+				// Signal: Sky View / backlinks / tag browser can now use the
+				// full graph. Components that render a degraded "Loading…"
+				// state while waiting can read this flag to flip to full UI.
+				graphReady = true;
+				performance.mark('boot:graph-ready');
+				recordBootPerfGraphPhase();
+			} finally {
+				cacheRefreshing = false;
+			}
+		};
+
+		const schedule = (fn: () => void): void => {
+			// requestIdleCallback is a browser primitive; fall back to
+			// setTimeout(0) on WebKit (Safari/iOS) where it isn't implemented.
+			const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+			if (typeof w.requestIdleCallback === 'function') {
+				w.requestIdleCallback(fn, { timeout: 3000 });
+			} else {
+				setTimeout(fn, 0);
+			}
+		};
+		schedule(() => { loadGraph().catch(() => { cacheRefreshing = false; }); });
+
+		// ═══ ZERO BOOT-TIME WALKS — see initializeApp() comment ════════
+		// `cache_reconcile` and `enrichNodesBackground` used to fire here.
+		// Both walked every library on every boot, causing the audible
+		// disk thrashing and IPC saturation that made the app
+		// unresponsive for minutes after first paint.
+		//
+		// They are now triggered ONLY by:
+		//   - The runtime file watcher (per-file, incremental).
+		//   - The user clicking Settings → Rebuild Index.
+		//   - First-ever launch when the cache is empty (one-time modal).
+		//
+		// External edits made while the app was closed (git pull, sync
+		// clients) are detected by a future cheap stat-only sweep — see
+		// Criterion 4 in lab/boot-perf/BOOT-BUDGET.md.
+	}
+
+	async function enrichNodesBackground(libraryList: typeof $libraries) {
+		if (libraryList.length === 0) return;
+		const libPaths = libraryList.map(l => l.path);
+		const libNames = libraryList.map(l => l.name);
+
+		// Strata — per library, yield between
+		for (let i = 0; i < libPaths.length; i++) {
+			try {
+				const strata = await invoke<{ note_path: string; stratum: number }[]>(
+					'compute_note_strata', { libraryPath: libPaths[i], libraryName: libNames[i] }
+				);
+				const sMap = new Map(strata.map(s => [s.note_path.replace(/\\/g, '/').toLowerCase(), s.stratum]));
+				for (const node of skyNodes) {
+					const key = node.path.replace(/\\/g, '/').toLowerCase();
+					const s = sMap.get(key);
+					if (s !== undefined) node.stratum = s;
+				}
+			} catch { /* skip */ }
+			await yieldToUI();
+		}
+		// Maturity
+		const newMatMap = new Map<string, string>();
+		for (let i = 0; i < libPaths.length; i++) {
+			try {
+				const maturities = await invoke<{ note_path: string; state: string }[]>(
+					'compute_note_maturity', { libraryPath: libPaths[i], libraryName: libNames[i] }
+				);
+				for (const m of maturities) newMatMap.set(m.note_path.replace(/\\/g, '/').toLowerCase(), m.state);
+				for (const node of skyNodes) {
+					const key = node.path.replace(/\\/g, '/').toLowerCase();
+					const m = newMatMap.get(key);
+					if (m) node.maturity = m;
+				}
+			} catch { /* skip */ }
+			await yieldToUI();
+		}
+		maturityMap = newMatMap;
+		// Origins
+		for (let i = 0; i < libPaths.length; i++) {
+			try {
+				const origins = await invoke<{ note_path: string; origin_type: string }[]>(
+					'compute_note_origins', { libraryPath: libPaths[i], libraryName: libNames[i] }
+				);
+				const oMap = new Map(origins.map(o => [o.note_path.replace(/\\/g, '/').toLowerCase(), o.origin_type]));
+				for (const node of skyNodes) {
+					const key = node.path.replace(/\\/g, '/').toLowerCase();
+					const o = oMap.get(key);
+					if (o && o !== 'none') node.originType = o;
+				}
+			} catch { /* skip */ }
+			await yieldToUI();
+		}
+		// Stages
+		const newStageMap = new Map<string, string>();
+		for (let i = 0; i < libPaths.length; i++) {
+			try {
+				const stages = await invoke<[string, string][]>('scan_note_stages', { libraryPath: libPaths[i] });
+				for (const [path, stage] of stages) {
+					newStageMap.set(path.replace(/\\/g, '/').toLowerCase(), stage);
+				}
+			} catch { /* skip */ }
+			await yieldToUI();
+		}
+		stageMap = newStageMap;
+		// Lenses + tensions (cheap, once)
+		try { availableLenses = await invoke('list_lenses'); } catch { availableLenses = []; }
+		try {
+			tensionReport = await invoke('detect_tensions', { libraryPath: libPaths[0], libraryName: libNames[0] });
+		} catch { tensionReport = null; }
+		skyVersion++;
 	}
 
 	function mergeIndexEntries(entries: IndexEntry[]): IndexEntry[] {
@@ -1602,11 +2499,23 @@
 			e.preventDefault();
 		}
 
+		// Ctrl+. → open the Emoji & Icon picker (Obsidian-parity shortcut).
+		// Gated on the Core Plug-In toggle.
+		if ((e.ctrlKey || e.metaKey) && e.key === '.' && !e.shiftKey && !e.altKey
+			&& $appSettings.enabledFeatures?.emojiIconPicker !== false) {
+			e.preventDefault();
+			showPicker = true;
+			return;
+		}
+
 		// Escape always closes overlays (not remappable)
 		if (e.key === 'Escape') {
+			if (showNewLibraryDropdown) { showNewLibraryDropdown = false; newLibName = ''; return; }
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
-			if (showStarView) { showStarView = false; return; }
+			if (showSkyView) { showSkyView = false; return; }
+			if (lensActive) { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; return; }
+			if (showOrgChart) { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
 			if (showIndex) { showIndex = false; return; }
@@ -1614,6 +2523,7 @@
 			if (showWorkspaces) { showWorkspaces = false; return; }
 			if (showSettings) { showSettings = false; return; }
 			if (showImporter) { showImporter = false; return; }
+			if (showPicker) { showPicker = false; return; }
 			return;
 		}
 
@@ -1705,13 +2615,31 @@
 				} catch { /* no template — OK */ }
 			}
 
-			// Apply template if found
+			// Apply template if found — preserve canonical frontmatter fields (cid, kind, title)
 			if (templateBody.trim()) {
 				try {
+					// Read back the canonical frontmatter that create_note injected
+					const noteContent: string = await invoke('read_note', { filePath: newPath });
+					const canonicalFields: string[] = [];
+					const fmMatch = noteContent.match(/^---\n([\s\S]*?)\n---/);
+					if (fmMatch) {
+						for (const line of fmMatch[1].split('\n')) {
+							const t = line.trim();
+							if (t.startsWith('title:') || t.startsWith('cid:') || t.startsWith('kind:')) {
+								canonicalFields.push(t);
+							}
+						}
+					}
+
 					const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(-2, -1)[0] || '';
 					const ctx = { title: name, folder: noteFolder, library: lib.name, filePath: newPath };
 					const result = await processTemplateAsync(templateBody, ctx, buildTemplateCallbacks());
-					const fullContent = `---\n${defaultFM}\n---\n${result.content}`;
+					// Merge: canonical fields first, then user defaults (skip duplicates)
+					const mergedFM = [...canonicalFields, ...defaultFM.split('\n').filter(l => {
+						const key = l.split(':')[0]?.trim();
+						return key && !canonicalFields.some(cf => cf.startsWith(key + ':'));
+					})].join('\n');
+					const fullContent = `---\n${mergedFM}\n---\n${result.content}`;
 					await invoke('write_note', { filePath: newPath, content: fullContent });
 				} catch { /* template write failed — note still created */ }
 			}
@@ -1800,6 +2728,24 @@
 			libraryPickerAction = 'folder';
 			showLibraryPicker = true;
 		}
+	}
+
+	function handleNewLibrary() {
+		showNewLibraryDropdown = !showNewLibraryDropdown;
+		newLibName = '';
+	}
+
+	async function handleCreateNewLib() {
+		if (!newLibName.trim()) return;
+		showNewLibraryDropdown = false;
+		try {
+			await createNewLibrary(newLibName.trim());
+			await loadLibraries();
+			await refreshLibraryCaches();
+			// Rebuild search index to include new library's notes
+			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
+			newLibName = '';
+		} catch (e) { console.error('[Library] Create failed:', e); }
 	}
 
 	async function createFolderInLibrary(lib: { id: string; name: string; path: string }) {
@@ -1996,7 +2942,94 @@
 		}
 	}
 
+	async function toggleLens() {
+		if (lensActive) {
+			lensActive = false;
+			lensCentrality = new Map();
+			lensCommunities = [];
+			lensCommunityAssignments = new Map();
+			lensGaps = [];
+			lensHealth = null;
+			lensBridges = [];
+			return;
+		}
+		lensLoading = true;
+		try {
+			// 1. Compute centrality in Rust
+			const libPaths = $libraries.map(l => [l.path, l.name] as [string, string]);
+			const result = await invoke<{ centrality: Record<string, number>; node_count: number; edge_count: number }>(
+				'constellation_lens_centrality', { libraryPaths: libPaths }
+			);
+			lensCentrality = new Map(Object.entries(result.centrality));
+
+			// 2. Run community detection (existing JS Louvain)
+			const clusterResult = detectClusters(
+				skyNodes.map(n => ({ id: n.id, name: n.name })),
+				skyLinks.map(l => ({ source: l.source, target: l.target })),
+			);
+			lensCommunities = clusterResult.clusters;
+			lensCommunityAssignments = clusterResult.assignments;
+
+			// 3. Compute structural gaps
+			lensGaps = computeStructuralGaps(
+				clusterResult.clusters,
+				skyLinks.map(l => ({ source: l.source, target: l.target })),
+				clusterResult.assignments,
+			);
+
+			// 4. Compute universe health
+			lensHealth = computeUniverseHealth(
+				clusterResult.modularity,
+				clusterResult.clusters,
+				skyNodes.length,
+				skyLinks.length,
+				lensGaps.length,
+			);
+
+			// 5. Stratum-weighted centrality (Feature 2)
+			const weightedCentrality = stratumWeightedCentrality(
+				lensCentrality,
+				skyLinks.map(l => ({ source: l.source, target: l.target })),
+				skyNodes,
+			);
+			lensCentrality = weightedCentrality; // Replace with stratum-weighted version
+
+			// 6. Build top bridges list (top 10 by weighted centrality)
+			lensBridges = [...lensCentrality.entries()]
+				.sort((a, b) => b[1] - a[1])
+				.slice(0, 10)
+				.map(([id, centrality]) => {
+					const node = skyNodes.find(n => n.id === id);
+					return { id, name: node?.name ?? id, centrality };
+				});
+
+			// 7. Community profiles (Features 4 & 5: maturity + provenance)
+			lensCommunityProfiles = buildCommunityProfiles(
+				clusterResult.clusters,
+				clusterResult.assignments,
+				skyNodes,
+			);
+
+			// 8. Bridge suggestions for gaps (Feature 7)
+			lensGaps = suggestBridges(
+				lensGaps,
+				clusterResult.clusters,
+				skyNodes.map(n => ({ id: n.id, name: n.name })),
+				skyLinks.map(l => ({ source: l.source, target: l.target })),
+			);
+
+			// 9. Contradictions from Rust (Feature 3)
+			lensContradictions = (result as any).contradictions ?? [];
+
+			lensActive = true;
+		} catch (e) {
+			console.error('[Lens] Failed to compute:', e);
+		}
+		lensLoading = false;
+	}
+
 	async function handleToggleSecondScreen() {
+		if (!hasMultipleDisplays) return; // SS requires 2+ monitors
 		const isOpen = await invoke<boolean>('is_second_screen_open');
 		if (isOpen) {
 			await invoke('close_second_screen');
@@ -2010,8 +3043,8 @@
 			rightSidebarOpen = false;
 			await openSecondScreenSmart();
 			secondScreenOpen = true;
-			// Wait for SS to initialize its event listeners, then emit editor panels
-			await new Promise(r => setTimeout(r, 600));
+			// Wait for SS to signal it has registered all listeners
+			await waitForScreenReady();
 			const tab = get(activeTab);
 			if (tab?.path) {
 				emitEditorPanels({
@@ -2027,6 +3060,7 @@
 	}
 
 	async function handleSendToSecondScreen() {
+		if (!hasMultipleDisplays) return; // SS requires 2+ monitors
 		const tab = get(activeTab);
 		if (!tab?.path) return;
 		if (!secondScreenOpen) {
@@ -2034,7 +3068,7 @@
 			rightSidebarOpen = false;
 			await openSecondScreenSmart();
 			secondScreenOpen = true;
-			await new Promise(r => setTimeout(r, 600));
+			await waitForScreenReady();
 		}
 		await sendNoteToScreen({
 			path: tab.path,
@@ -2059,7 +3093,7 @@
 		await openNoteTab(path, libraryName, libraryColor);
 	}
 
-	async function handleStarNodeClick(path: string, libraryName: string) {
+	async function handleSkyNodeClick(path: string, libraryName: string, highlightTerm?: string) {
 		const lib = $libraries.find(v => v.name === libraryName);
 		const color = libraryColorMap[libraryName] ?? '#7c3aed';
 
@@ -2077,15 +3111,21 @@
 
 		// No second screen — open note in main, THEN exit Sky View so the tab
 		// has a path before the new-tab guard renders an empty screen.
-		await openNoteTab(path, libraryName, color);
-		showStarView = false;
+		// Pass the currently-active tab as _fromNotePath so Living Link records
+		// the traversal from the note the user was reading through Sky View to
+		// the node they clicked.
+		const fromPath = $activeTab?.path && $activeTab.path !== path ? $activeTab.path : undefined;
+		await openNoteTab(path, libraryName, color, highlightTerm, false, fromPath);
+		showSkyView = false;
+		if (highlightTerm) skyViewReturnPending = true;
 	}
 
 	function handleTagClick(tag: string) {
-		searchQuery = `#${tag}`;
-		searchMode = true;
-		sidebarOpen = true;
-		searchAllStars(`#${tag}`);
+		searchHubInitialQuery = `#${tag}`;
+		showSearchHub = true;
+		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
+		sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen;
+		sidebarOpen = false; rightSidebarOpen = false;
 	}
 
 	// ─── Page Preview (hover) ───
@@ -2142,6 +3182,35 @@
 		pagePreview = { ...pagePreview, visible: false };
 	}
 
+	// ─── Index panel: FTS5 vocab read ───
+	// The Index panel is now backed by the `notes_vocab` virtual table
+	// (fts5vocab over `notes_fts`). FTS5 already maintains the term dictionary
+	// incrementally as notes change — no build step, no progress bar, no
+	// batch loop. We just read when the data is ready.
+	//
+	// Triggered on `graphReady` so the first read doesn't fight the boot
+	// snapshot IPC queue. Subsequent universe switches trigger a re-read.
+	// One `invoke` round-trip, tens of milliseconds on a 50k-term Universe.
+	$effect(() => {
+		if (!graphReady) return;
+		if ($libraries.length === 0) return;
+		const key = `${activeUniverseName}|${$libraries.length}`;
+		if (indexLoadedKey === key) return;
+		if (indexLoading) return;
+
+		indexLoading = true;
+		(async () => {
+			try {
+				allIndexEntries = await readIndexEntries();
+				indexLoadedKey = key;
+			} catch {
+				/* leave allIndexEntries as-is */
+			} finally {
+				indexLoading = false;
+			}
+		})();
+	});
+
 	// ─── Library tree operations ───
 	async function toggleLibrary(lib: LibraryStats) {
 		skyViewSelectedPath = lib.path;
@@ -2163,8 +3232,48 @@
 	async function handleAddLibrary() {
 		adding = true;
 		error = '';
-		try { await addLibrary(); await loadAllStats(); await refreshLibraryCaches(); }
-		catch (e) { error = String(e); }
+		try {
+			// Step 1: Pick folder
+			const folderPath: string | null = await invoke('pick_folder');
+			if (!folderPath) { adding = false; return; }
+			// Step 2: Add as a compatible library — ALWAYS. External files
+			// (existing Obsidian vaults, etc.) are never renamed on import.
+			// We only inject a `cid` property into the frontmatter of each
+			// markdown note so Constellation's Living Link system has a
+			// stable identifier, leaving the filename and the rest of the
+			// vault exactly as the user had it.
+			pendingLibraryPath = folderPath;
+			await handleKeepIntact();
+		} catch (e) { error = String(e); adding = false; }
+	}
+
+	// Deprecated: external library canonicalization is disabled entirely.
+	// Constellation MUST NOT rename files in libraries the user imports or
+	// links to the app. External files keep their original filenames; a
+	// `cid` property is added to each markdown note's frontmatter so the
+	// Living Link system has a stable identifier without touching the vault.
+	// Redirects to the compatible-mode path. Kept as a stub so any stale
+	// call-site (e.g. the old CanonicalChoiceDialog) behaves identically
+	// to keep-intact. Will be removed once the dialog is too.
+	async function handleCanonicalAdopt() {
+		await handleKeepIntact();
+	}
+
+	async function handleKeepIntact() {
+		showCanonicalChoice = false;
+		try {
+			// Register library with "compatible" mode (the only mode for external
+			// vaults). No bulk writes to the vault on import — the Living Link
+			// identifier (cid_cn) is injected lazily on a per-note basis the first
+			// time Constellation actually opens a note. This keeps the user's
+			// filesystem untouched until the note is genuinely accessed.
+			await invoke('add_library', { path: pendingLibraryPath });
+
+			await loadLibraries();
+			await loadAllStats();
+			await refreshLibraryCaches();
+			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
+		} catch (e) { error = String(e); }
 		adding = false;
 	}
 
@@ -2177,6 +3286,7 @@
 			newLibraryName = '';
 			await loadAllStats();
 			await refreshLibraryCaches();
+			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
 		} catch (e) { error = String(e); }
 		creatingNew = false;
 	}
@@ -2195,33 +3305,50 @@
 		} catch { /* ignore */ }
 	}
 
-	function handleSearch(e: Event) {
-		searchQuery = (e.target as HTMLInputElement).value;
-		clearTimeout(searchTimeout);
-		if (searchQuery.trim()) {
-			searchMode = true;
-			// Property-based search: [key:value] or [key]
-			const propMatch = searchQuery.trim().match(/^\[([^\]:]+)(?::(.+))?\]$/);
-			if (propMatch) {
-				const key = propMatch[1].trim();
-				const value = propMatch[2]?.trim() ?? '';
-				searchTimeout = setTimeout(async () => {
-					const results = await searchByProperty(key, value);
-					searchResults.set(results);
-				}, 300);
-			} else {
-				searchTimeout = setTimeout(() => searchAllStars(searchQuery), 300);
-			}
-		} else {
-			searchMode = false;
-			searchResults.set([]);
+	// Trigger semantic indexing when enabled, search DB ready, and notes loaded
+	// Engine lazy-loads on first embed call — no eager init needed
+	let semanticIndexTriggered = false;
+	$effect(() => {
+		const enabled = $appSettings.enabledFeatures?.semanticSearch;
+		const notesReady = allNotes.length > 0;
+		const dbReady = searchEngineReady;
+		if (enabled && dbReady && notesReady && !semanticIndexTriggered && !semanticIndexing) {
+			// Check how many are already embedded
+			embeddingStatus().then(status => {
+				if (status.embedded_count < allNotes.length) {
+					semanticIndexTriggered = true;
+					console.log(`[Semantic] Indexing: ${status.embedded_count}/${allNotes.length} embedded. Starting...`);
+					startSemanticIndexing();
+				} else {
+					console.log(`[Semantic] All ${allNotes.length} notes already embedded.`);
+				}
+			}).catch(() => {});
 		}
-	}
+	});
 
-	function clearSearch() {
-		searchQuery = '';
-		searchMode = false;
-		searchResults.set([]);
+	async function startSemanticIndexing() {
+		if (semanticIndexing || allNotes.length === 0) return;
+		semanticIndexing = true;
+		semanticIndexProgress = 'Loading notes for embedding...';
+		try {
+			// Load note contents for embedding — batch in chunks to avoid memory spike
+			const CHUNK = 50;
+			for (let i = 0; i < allNotes.length; i += CHUNK) {
+				const chunk = allNotes.slice(i, i + CHUNK);
+				const notesWithContent = await Promise.all(
+					chunk.map(async (n) => {
+						try {
+							const content: string = await invoke('read_note', { filePath: n.path });
+							return { path: n.path, name: n.name, content };
+						} catch { return { path: n.path, name: n.name, content: '' }; }
+					})
+				);
+				const done = await embedNotes(notesWithContent);
+				semanticIndexProgress = `Embedding ${Math.min(i + CHUNK, allNotes.length)}/${allNotes.length} notes`;
+			}
+		} catch (err) { console.error('[Semantic] Indexing failed:', err); }
+		semanticIndexing = false;
+		semanticIndexProgress = '';
 	}
 
 	function cycleSplit() {
@@ -2451,13 +3578,6 @@
 		} catch { /* ignore read errors */ }
 	}
 
-	async function handleSearchResultClick(path: string, libraryName: string, e?: MouseEvent) {
-		const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
-		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
-		await openNoteTab(path, libraryName, libraryColor, undefined, newTab);
-		clearSearch();
-		if (!isHome) window.location.href = '/';
-	}
 
 	// Get all tags as flat array for editor autocomplete
 	const allTagsList = $derived(Object.keys(allLibraryTags));
@@ -2477,36 +3597,98 @@
 	<!-- ═══ DOCK ═══ -->
 	<div class="dock">
 		<div class="dock-top">
-			<button class="dock-btn" onclick={() => { sidebarOpen = true; searchMode = true; }} title={$t('ribbon.search')}>
+			<button class="dock-btn" class:active={showSearchHub} onclick={() => {
+				showSearchHub = !showSearchHub;
+				if (showSearchHub) {
+					searchHubInitialQuery = '';
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
+					sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen;
+					sidebarOpen = false; rightSidebarOpen = false;
+				} else {
+					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
+				}
+				searchHubReturnPending = false;
+			}} title={$t('searchHub.title')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</button>
-			<button class="dock-btn" class:active={showGlobalTasks} onclick={() => { showGlobalTasks = !showGlobalTasks; showStarView = false; showIndex = false; showConstellationMap = false; }} title={$t('ribbon.globalTasks')}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+			{#if $appSettings.enabledFeatures?.orgChart !== false}
+			<button class="dock-btn" class:active={showOrgChart} onclick={() => {
+				showOrgChart = !showOrgChart;
+				orgChartReturnPending = false;
+				if (showOrgChart) {
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false;
+					sidebarBeforeOC = sidebarOpen; rightSidebarBeforeOC = rightSidebarOpen;
+					sidebarOpen = false; rightSidebarOpen = false;
+				} else {
+					sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC;
+				}
+			}} title={$t('navigator.orgChart') || 'Organization Chart'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
 			</button>
+			{/if}
+			<button class="dock-btn" class:active={showKnowledgeHealth} onclick={() => {
+				showKnowledgeHealth = !showKnowledgeHealth;
+				if (showKnowledgeHealth) {
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false;
+				}
+			}} title={$t('ribbon.knowledgeHealth') || 'Knowledge Health'}>
+				<SlotIcon slot="dock.knowledgeHealth">
+					{#snippet children()}
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+							<path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+							<path d="M15 13a4.5 4.5 0 0 1-3-4"/>
+							<path d="M12 5v13"/>
+						</svg>
+					{/snippet}
+				</SlotIcon>
+			</button>
+			{#if $appSettings.enabledFeatures?.skyView !== false}
+			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showKnowledgeHealth = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
+			</button>
+			{/if}
+			{#if $appSettings.enabledFeatures?.dailyNotes !== false}
 			<button class="dock-btn" onclick={handleOpenDailyNote} title={$t('ribbon.dailyNote')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
 			</button>
+			{/if}
+			{#if $appSettings.enabledFeatures?.aiSkills !== false}
 			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('ribbon.aiSkills')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
 			</a>
-			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showStarView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
+			{/if}
+			{#if $appSettings.enabledFeatures?.index !== false}
+			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
 			</button>
-			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showStarView = false; showGlobalTasks = false; showIndex = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
+			{/if}
+			{#if $appSettings.enabledFeatures?.constellationMap === true}
+			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 			</button>
+			{/if}
+			{#if $appSettings.enabledFeatures?.constellationSight !== false}
+			<button class="dock-btn" class:active={lensActive} onclick={() => {
+				if (!lensActive) {
+					toggleLens(); showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensReturnPending = false;
+					sidebarBeforeLens = sidebarOpen; rightSidebarBeforeLens = rightSidebarOpen;
+					sidebarOpen = false; rightSidebarOpen = false;
+				} else {
+					lensActive = false;
+					sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens;
+				}
+			}} title={$t('lens.title') || 'Constellation Sight'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+			</button>
+			{/if}
 		</div>
 		<div class="dock-bottom">
-			<button class="dock-btn" class:active={secondScreenOpen} onclick={handleToggleSecondScreen} title={$t('secondScreen.title')}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/><rect x="9" y="10" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/></svg>
-			</button>
-			<!-- Universe manager moved to sidebar -->
-			<button class="dock-btn" onclick={handleToggleTheme} title={$t('ribbon.toggleTheme')}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-			</button>
-<button class="dock-btn" onclick={() => showImporter = true} title={$t('ribbon.importNotes')}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-			</button>
+			{#if hasMultipleDisplays && $appSettings.enabledFeatures?.secondScreen !== false}
+				<button class="dock-btn" class:active={secondScreenOpen} onclick={handleToggleSecondScreen} title={$t('secondScreen.title')}>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/><rect x="9" y="10" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/></svg>
+				</button>
+			{/if}
 <button class="dock-btn" class:active={showSettings} onclick={() => showSettings = !showSettings} title={$t('ribbon.settings')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
 			</button>
@@ -2517,15 +3699,9 @@
 	{#if sidebarOpen}
 		<aside class="sidebar" style:width="{leftSidebarWidth}px">
 			<div class="sidebar-toolbar">
-				{#if searchMode}
-					<div class="search-box">
-						<svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-						<input type="text" placeholder={$t('sidebar.searchPlaceholder')} value={searchQuery} oninput={handleSearch}/>
-						<button class="search-clear" onclick={clearSearch}>×</button>
-					</div>
-				{/if}
+				<!-- Sidebar search removed — Search Hub is the single search experience -->
 				<!-- Row 1: New Elements — always visible -->
-				<div class="toolbar-actions new-elements">
+				<div class="toolbar-actions new-elements" style="position:relative">
 					<button class="tb-btn" onclick={handleNewNote} title={$t('sidebar.newNote')}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
 					</button>
@@ -2535,22 +3711,47 @@
 					<button class="tb-btn" onclick={handleNewFolder} title={$t('sidebar.newFolder')}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
 					</button>
+					<button class="tb-btn" onclick={handleNewLibrary} title={$t('sidebar.newLibrary')}>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M12 10v4"/><path d="M10 12h4"/></svg>
+					</button>
+
+					<!-- New Library dropdown -->
+					{#if showNewLibraryDropdown}
+						<div class="new-lib-drop">
+							<div class="nld-option">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+								<div class="nld-text">
+									<span class="nld-title">{$t('libraries.newLibrary')}</span>
+									<div class="nld-input-row">
+										<input class="nld-input" type="text" dir="auto" placeholder={$t('libraries.newLibrary')}
+											bind:value={newLibName}
+											onkeydown={(e) => { if (e.key === 'Enter') handleCreateNewLib(); if (e.key === 'Escape') showNewLibraryDropdown = false; }} />
+										<button class="nld-create" onclick={handleCreateNewLib}>+</button>
+									</div>
+								</div>
+							</div>
+							<button class="nld-option" onclick={async () => { showNewLibraryDropdown = false; await handleAddLibrary(); }}>
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+								<div class="nld-text">
+									<span class="nld-title">{$t('libraries.linkLibrary')}</span>
+									<span class="nld-desc">{$t('libraries.linkLibraryDesc')}</span>
+								</div>
+							</button>
+						</div>
+					{/if}
 				</div>
 				<!-- Row 2: Notes Management — always visible, even during search -->
 				<div class="toolbar-modes notes-management">
-					<button class="mode-tab" class:active={sidebarMode === 'tree'} onclick={() => { searchMode = false; searchQuery = ''; if (sidebarMode !== 'tree') { sidebarMode = 'tree'; leftSidebarWidth = calcContentWidth(100); emitSidebarModeChanged('tree'); } }} title={$t('navigator.fileExplorer') || 'File Explorer'}>
+					<button class="mode-tab" class:active={sidebarMode === 'tree'} onclick={() => { if (sidebarMode !== 'tree') { sidebarMode = 'tree'; leftSidebarWidth = calcContentWidth(100); emitSidebarModeChanged('tree'); } }} title={$t('navigator.fileExplorer') || 'File Explorer'}>
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
 					</button>
-					<button class="mode-tab" class:active={sidebarMode === 'list'} onclick={() => { searchMode = false; searchQuery = ''; if (sidebarMode !== 'list') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'list'; leftSidebarWidth = Math.max(leftSidebarWidth, 450); emitSidebarModeChanged('list'); } }} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
+					{#if $appSettings.enabledFeatures?.notesNavigator !== false}
+					<button class="mode-tab" class:active={sidebarMode === 'list'} onclick={() => { if (sidebarMode !== 'list') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'list'; leftSidebarWidth = Math.max(leftSidebarWidth, 450); emitSidebarModeChanged('list'); } }} title={$t('navigator.notesNavigator') || 'Notes Navigator'}>
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
 					</button>
-					<button class="mode-tab" class:active={sidebarMode === 'skyview'} onclick={() => { searchMode = false; searchQuery = ''; if (sidebarMode !== 'skyview') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'skyview'; leftSidebarWidth = calcContentWidth(130); emitSidebarModeChanged('skyview'); } }} title={$t('navigator.orgChart') || 'Organization Chart'}>
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
-					</button>
-					<button class="mode-tab" class:active={showStarView} onclick={() => { showStarView = !showStarView; showGlobalTasks = false; showIndex = false; }} title={$t('ribbon.graphView')}>
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
-					</button>
-					{#if sidebarMode === 'tree' && !searchMode}
+					{/if}
+					<!-- OrgChart and Sky View buttons moved to left dock bar -->
+					{#if sidebarMode === 'tree' }
 						<button class="mode-tab" onclick={cycleSortOrder} title={getSortTooltip()}>
 							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/></svg>
 						</button>
@@ -2562,27 +3763,6 @@
 							{/if}
 						</button>
 					{/if}
-						<!-- CE Phase 9: Lens switcher -->
-						{#if sidebarMode === 'tree' && !searchMode}
-							<select class="mode-tab lens-select" value={activeLensId}
-								onchange={async (e) => {
-									const id = (e.target as HTMLSelectElement).value;
-									activeLensId = id;
-									if (!id) { lensGroups = []; return; }
-									const lens = availableLenses.find((l: any) => l.id === id);
-									const lib = get(libraries)[0];
-									if (lens && lib) {
-										try {
-											lensGroups = await invoke('apply_lens', { libraryPath: lib.path, lens });
-										} catch { lensGroups = []; }
-									}
-								}}>
-								<option value="">📁 {$t('lensPanel.default') || 'Folders'}</option>
-								{#each availableLenses as lens}
-									<option value={lens.id}>🔍 {lens.name}</option>
-								{/each}
-							</select>
-						{/if}
 					</div>
 				</div>
 
@@ -2603,21 +3783,6 @@
 						onClose={() => sidebarMode = 'tree'}
 						embedded={true}
 					/>
-				{:else if searchMode && searchQuery}
-					{#if $searchResults.length > 0}
-						<div class="section-label">{$searchResults.length} {$t('sidebar.results')}</div>
-						{#each $searchResults as star}
-							<button class="s-result" class:active={$activeTab?.path === star.path} onclick={(e) => handleSearchResultClick(star.path, star.library_name, e)}>
-								<div class="s-name">{star.name}</div>
-								<div class="s-meta">
-									<span class="s-lib-name">{star.library_name}</span>
-									<span class="s-preview">{star.preview}</span>
-								</div>
-							</button>
-						{/each}
-					{:else}
-						<div class="no-results">{$t('sidebar.noResults')}</div>
-					{/if}
 				{:else if activeLensId && lensEntries}
 					<!-- CE Phase 9: Lens view -->
 					<div class="section-label">🔍 {availableLenses.find((l: any) => l.id === activeLensId)?.name ?? 'Lens'}</div>
@@ -2803,10 +3968,14 @@
 						</div>
 					{/each}
 
-					{#if $libraryStats.length === 0}
+					{#if $libraries.length === 0 && librariesLoaded}
 						<div class="empty-sidebar">
 							<p>{$t('sidebar.noLibraries')}</p>
 							<button class="add-first-btn" onclick={handleAddLibrary}>{$t('sidebar.addLibraryButton')}</button>
+						</div>
+					{:else if !librariesLoaded}
+						<div class="empty-sidebar">
+							<div class="loading-spinner" aria-label="Loading libraries"></div>
 						</div>
 					{/if}
 				{/if}
@@ -2841,26 +4010,26 @@
 	<!-- ═══ MAIN AREA ═══ -->
 	<div class="main-area">
 		<!-- Tab Bar (unified with layout controls) -->
-		<!-- Layout bar: sidebar + split controls (independent from tabs/paper) -->
+		<!-- Layout bar: sidebar + split controls (disabled when full-page overlay active) -->
 		<div class="layout-bar">
-			<button class="tab-action" class:active={sidebarOpen} onclick={() => sidebarOpen = !sidebarOpen} title={$t('layout.leftSidebar')}>
+			<button class="tab-action" class:active={sidebarOpen} disabled={fullPageActive} onclick={() => sidebarOpen = !sidebarOpen} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : $t('layout.leftSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
 			<div style="flex:1"></div>
-			<button class="tab-action" class:active={$splitActive} onclick={cycleSplit} title={$t('layout.splitView')}>
+			<button class="tab-action" class:active={$splitActive} disabled={fullPageActive} onclick={cycleSplit} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : $t('layout.splitView')}>
 				{#if $splitActive && $splitDirection === 'horizontal'}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/></svg>
 				{:else}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
 				{/if}
 			</button>
-			<button class="tab-action" class:active={rightSidebarOpen} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={$t('layout.rightSidebar')}>
+			<button class="tab-action" class:active={rightSidebarOpen} disabled={fullPageActive} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : $t('layout.rightSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
 			</button>
 		</div>
 
 		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
-		<div class="tab-bar" class:tab-bar-hidden={showStarView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap}>
+		<div class="tab-bar" class:tab-bar-hidden={fullPageActive}>
 			{#if indexReturnPending}
 				<button class="index-return-btn" onclick={() => { showIndex = true; indexReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -2871,6 +4040,30 @@
 				<button class="index-return-btn" onclick={() => { showConstellationMap = true; mapReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('constellationMap.returnToMap') || 'Return to Map'}
+				</button>
+			{/if}
+			{#if orgChartReturnPending}
+				<button class="index-return-btn" onclick={() => { showOrgChart = true; orgChartReturnPending = false; sidebarBeforeOC = sidebarOpen; rightSidebarBeforeOC = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('orgChart.returnToOrgChart') || 'Return to OrgChart'}
+				</button>
+			{/if}
+			{#if lensReturnPending}
+				<button class="index-return-btn" onclick={() => { lensActive = true; lensReturnPending = false; sidebarBeforeLens = sidebarOpen; rightSidebarBeforeLens = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('lens.returnToLens') || 'Return to Lens'}
+				</button>
+			{/if}
+			{#if searchHubReturnPending}
+				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('searchHub.title')}
+				</button>
+			{/if}
+			{#if skyViewReturnPending}
+				<button class="index-return-btn" onclick={() => { showSkyView = true; skyViewReturnPending = false; showSearchHub = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('layout.skyViewTitle') || 'Sky View'}
 				</button>
 			{/if}
 			{#if !$splitActive}
@@ -2958,7 +4151,7 @@
 							<span class="index-note-name" dir="auto">{indexNoteTab.name}</span>
 							<button class="index-close" onclick={() => { indexNoteTab = null; indexActiveNotePath = ''; }} title="Close note">×</button>
 						</div>
-						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} />
+						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} {linkTraversalMap} />
 					</div>
 					<div class="index-split-divider"></div>
 				{/if}
@@ -2970,7 +4163,10 @@
 					<div class="index-body">
 						<IndexPanel
 							entries={allIndexEntries}
+							isLoading={indexLoading}
 							onNoteClick={handleIndexNoteClick}
+							loadMentions={(term) => readTermMentions(term, 500)}
+							loadCooccurrence={(term) => readCooccurringTerms(term)}
 							onNoteHover={handleIndexNoteHover}
 							onNoteLeave={handleIndexNoteLeave}
 							activeNotePath={indexActiveNotePath}
@@ -2997,63 +4193,149 @@
 			</div>
 		</div>
 
-		<!-- Constellation Map (always rendered, hidden with CSS to preserve drill-down state) -->
-		<div class="map-overlay" class:map-visible={showConstellationMap}>
-			<ConstellationMap
-				universeName={activeUniverseName}
-				libraryPath={get(libraries)[0]?.path ?? ''}
-				libraryName={get(libraries)[0]?.name ?? ''}
-				libraryColor={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}
-				{libraryColorMap}
-				onNoteClick={(path, name) => {
-					const lib = $libraryStats.find(l => path.startsWith(l.path));
-					if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-					showConstellationMap = false;
-					mapReturnPending = true;
-					if (secondScreenOpen) {
-						emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: mapFocusNode, parentNode: null, clickedNote: { path, name, libraryName: lib?.name ?? '', libraryPath: lib?.path ?? '' } });
-					}
-				}}
-				onDrillDown={(node, bcNames) => {
-					mapFocusNode = node;
-					if (secondScreenOpen && showConstellationMap) {
-						emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: node, parentNode: null, clickedNote: null });
-					}
-				}}
-				onColorModeChange={(mode) => {
-					mapColorMode = mode as any;
-					if (secondScreenOpen && showConstellationMap) {
-						emitMapCompanion({ active: true, colorMode: mode as any, focusNode: mapFocusNode, parentNode: null, clickedNote: null });
-					}
+		<!-- Constellation Map — lazy-mounted (LL-022). -->
+		{#if mapEverOpened}
+			<div class="map-overlay" class:map-visible={showConstellationMap}>
+				<ConstellationMap
+					universeName={activeUniverseName}
+					libraryPath={get(libraries)[0]?.path ?? ''}
+					libraryName={get(libraries)[0]?.name ?? ''}
+					libraryColor={libraryColorMap[get(libraries)[0]?.name ?? ''] ?? '#7c3aed'}
+					{libraryColorMap}
+					onNoteClick={(path, name) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						showConstellationMap = false;
+						mapReturnPending = true;
+						if (secondScreenOpen) {
+							emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: mapFocusNode, parentNode: null, clickedNote: { path, name, libraryName: lib?.name ?? '', libraryPath: lib?.path ?? '' } });
+						}
+					}}
+					onDrillDown={(node, bcNames) => {
+						mapFocusNode = node;
+						if (secondScreenOpen && showConstellationMap) {
+							emitMapCompanion({ active: true, colorMode: mapColorMode, focusNode: node, parentNode: null, clickedNote: null });
+						}
+					}}
+					onColorModeChange={(mode) => {
+						mapColorMode = mode as any;
+						if (secondScreenOpen && showConstellationMap) {
+							emitMapCompanion({ active: true, colorMode: mode as any, focusNode: mapFocusNode, parentNode: null, clickedNote: null });
+						}
+					}}
+					onClose={() => {
+						showConstellationMap = false;
+						mapReturnPending = false;
+						if (secondScreenOpen) {
+							emitMapCompanion({ active: false, colorMode: mapColorMode, focusNode: null, parentNode: null, clickedNote: null });
+						}
+					}}
+				/>
+			</div>
+		{/if}
+
+		<!-- OrgChart overlay — lazy-mounted (LL-022). -->
+		{#if orgChartEverOpened}
+			<div class="orgchart-overlay" class:orgchart-visible={showOrgChart}>
+				<OrgChart
+					universeName={activeUniverseName}
+					{libraryColorMap}
+					fullscreen={true}
+					onNoteClick={(path, name) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						showOrgChart = false;
+						sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC;
+						orgChartReturnPending = true;
+					}}
+					onClose={() => { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; orgChartReturnPending = false; }}
+				/>
+			</div>
+		{/if}
+
+		<!-- Constellation Lens — standalone D3+Canvas component -->
+		<div class="lens-overlay" class:lens-visible={lensActive}>
+			{#if lensActive}
+				<ConstellationSight
+					nodes={skyNodes}
+					links={skyLinks}
+					centrality={lensCentrality}
+					communityAssignments={lensCommunityAssignments}
+					communityColors={new Map(lensCommunities.map(c => [c.id, c.color]))}
+					gaps={lensGaps}
+					health={lensHealth}
+					bridges={lensBridges}
+					communities={lensCommunities}
+					communityProfiles={lensCommunityProfiles}
+					contradictions={lensContradictions}
+					{libraryColorMap}
+					searchMatchIds={searchHubMatchIds}
+					onNoteClick={(path, name, highlightTerm) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) {
+							let hl = highlightTerm || '';
+							hl = hl.replace(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?|supports|contradicts|causes|exemplifies|generalizes|derives[- ]from|part[- ]of)\s*/gi, '');
+							hl = hl.replace(/\[\[|\]\]/g, '').replace(/^\s*#/, '').trim() || undefined;
+							openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', hl as string | undefined);
+						}
+						lensActive = false;
+						sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens;
+						lensReturnPending = true;
+					}}
+					onClose={() => { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; lensReturnPending = false; }}
+				/>
+			{/if}
+		</div>
+
+		<!-- Search Hub overlay -->
+		<div class="searchhub-overlay" class:searchhub-visible={showSearchHub}>
+			<SearchHub
+				initialQuery={searchHubInitialQuery}
+				{allNotes}
+				linkCounts={searchLinkCounts}
+				onNoteClick={(path, name, libraryName, hubQuery) => {
+					const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
+					// Strip operator syntax from query for clean highlighting
+					let hl = hubQuery || '';
+					hl = hl.replace(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?)\s*/gi, '');
+					hl = hl.replace(/\[\[|\]\]/g, '');
+					hl = hl.replace(/\band\b/gi, ',');
+					hl = hl.replace(/^\s*#/, '');
+					hl = hl.replace(/^\s*in:\S+\s*/, '');
+					hl = hl.replace(/^\s*\S+=\S+\s*/, '');
+					hl = hl.trim() || undefined;
+					openNoteTab(path, libraryName, libraryColor, hl as string | undefined);
+					showSearchHub = false;
+					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
+					searchHubReturnPending = true;
 				}}
 				onClose={() => {
-					showConstellationMap = false;
-					mapReturnPending = false;
-					if (secondScreenOpen) {
-						emitMapCompanion({ active: false, colorMode: mapColorMode, focusNode: null, parentNode: null, clickedNote: null });
-					}
+					showSearchHub = false;
+					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
+					searchHubReturnPending = false;
 				}}
+				onResults={(ids) => { searchHubMatchIds = ids.size > 0 ? ids : null; }}
 			/>
 		</div>
 
 		<!-- Content -->
-		<div class="content-area" class:content-hidden={showIndex || showConstellationMap} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
-			{#if showStarView}
+		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || lensActive || showSearchHub} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+			{#if showSkyView}
 				<div class="star-fullscreen">
 					<div class="star-header">
-						<span class="star-title">{$t('layout.starViewTitle')}</span>
+						<span class="star-title">{$t('layout.skyViewTitle')}</span>
 						<button class="star-wiw-toggle" class:active={wiwEnabled} onclick={() => { wiwEnabled = !wiwEnabled; if (!wiwEnabled) showWiW = false; }} title="Window in Window">
 							<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<rect x="0.75" y="1.75" width="12.5" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
 								<rect x="7" y="5" width="5" height="3.5" rx="0.75" fill="currentColor"/>
 							</svg>
 						</button>
-						<button class="star-close" onclick={() => showStarView = false}>×</button>
+						<button class="star-close" onclick={() => showSkyView = false}>×</button>
 					</div>
 					<GraphMindView
-					nodes={starNodes}
-					links={starLinks}
-					onNodeClick={handleStarNodeClick}
+					nodes={skyNodes}
+					links={skyLinks}
+					onNodeClick={handleSkyNodeClick}
 					onNodeHover={(node) => {
 						if (!secondScreenOpen) return;
 						if (skyviewHoverTimer) clearTimeout(skyviewHoverTimer);
@@ -3087,7 +4369,18 @@
 					})()}
 					skyViewSettings={$appSettings.skyView}
 					{libraryColorMap}
+					searchMatchIds={searchHubMatchIds}
+					{allNotes}
 				/>
+				{#if !graphReady}
+					<div class="sky-loading" role="status" aria-live="polite" dir="auto">
+						<svg class="sky-loading-spinner" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+							<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5" fill="none" opacity="0.25"/>
+							<path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+						</svg>
+						<span>{$t('layout.skyViewLoading')}</span>
+					</div>
+				{/if}
 				<!-- WiW Overlay -->
 				{#if showWiW && wiwFilteredNodes.length > 0}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -3099,14 +4392,14 @@
 								<span class="wiw-count">{wiwFilteredNodes.length} nodes</span>
 								<button class="wiw-close" onclick={() => { showWiW = false; skyViewSelectedPath = null; }}>×</button>
 							</div>
-							<span class="wiw-subtitle">{$t('layout.starViewWiWHint')}</span>
+							<span class="wiw-subtitle">{$t('layout.skyViewWiWHint')}</span>
 						</div>
 						<div class="wiw-graph">
 							<GraphMindView
 								nodes={wiwFilteredNodes}
 								links={wiwFilteredLinks}
 								libraryColorMap={wiwLibraryColorMap}
-								onNodeClick={handleStarNodeClick}
+								onNodeClick={handleSkyNodeClick}
 							/>
 						</div>
 						<!-- Resize handles -->
@@ -3143,7 +4436,7 @@
 				/>
 			{:else if showExpressionForge}
 				<ExpressionForge
-					notes={starNodes}
+					notes={skyNodes}
 					{activeTrail}
 					libraryPath={get(libraries)[0]?.path ?? ''}
 					libraryName={get(libraries)[0]?.name ?? ''}
@@ -3164,6 +4457,7 @@
 									{tab}
 									noteNames={allNotes}
 									allTags={allTagsList}
+									{linkTraversalMap}
 									onnavigateback={() => { setFocusedTab(tab.id); navigateBack(); }}
 									onnavigateforward={() => { setFocusedTab(tab.id); navigateForward(); }}
 									onStageChanged={(path, stage) => {
@@ -3231,26 +4525,29 @@
 								tab={$activeTab}
 								noteNames={allNotes}
 								allTags={allTagsList}
+								{linkTraversalMap}
 								trail={activeTrail ? activeTrail.title : ''}
 								{trailIndex}
 								trailTotal={activeTrail ? activeTrail.notes.length : 0}
 								onTrailPrev={async () => {
 									if (activeTrail && trailIndex > 0) {
+										const fromPath = activeTrail.notes[trailIndex]?.path;
 										trailIndex--;
 										const note = activeTrail.notes[trailIndex];
 										if (note.exists) {
 											const lib = get(libraries)[0];
-											if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+											if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, false, fromPath);
 										}
 									}
 								}}
 								onTrailNext={async () => {
 									if (activeTrail && trailIndex < activeTrail.notes.length - 1) {
+										const fromPath = activeTrail.notes[trailIndex]?.path;
 										trailIndex++;
 										const note = activeTrail.notes[trailIndex];
 										if (note.exists) {
 											const lib = get(libraries)[0];
-											if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+											if (lib) await openNoteTab(note.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, false, fromPath);
 										}
 									}
 								}}
@@ -3288,8 +4585,13 @@
 					{/if}
 				</div>
 			{:else if isHome}
-				<div class="welcome" class:welcome-dashboard={$libraryStats.length > 0 && $appSettings.showDashboard}>
-					{#if $libraryStats.length === 0}
+				<div class="welcome" class:welcome-dashboard={$libraries.length > 0 && $appSettings.showDashboard}>
+					{#if !librariesLoaded}
+						<!-- Hydration window: spinner, not the Create-Library screen. -->
+						<div class="app-loading" style="min-height: 400px;">
+							<div class="loading-spinner"></div>
+						</div>
+					{:else if $libraries.length === 0}
 						<svg class="w-icon" width="80" height="80" viewBox="0 0 160 160" fill="none">
 								<defs>
 									<linearGradient id="wStarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -3360,11 +4662,9 @@
 											openNoteTab(note.path, note.libraryName, note.libraryColor);
 										}
 									}}
-									onTagSelect={(tag, notes) => {
-										if (secondScreenOpen) {
-											emitDashboardTagSelected({ tag, notes });
-										}
-									}}
+									onTagSelect={secondScreenOpen ? (tag, notes) => {
+										emitDashboardTagSelected({ tag, notes });
+									} : undefined}
 								/>
 							</div>
 						{:else}
@@ -3401,7 +4701,7 @@
 				<button class="rs-tab" class:active={rightSidebarTab === 'tags'} onclick={() => rightSidebarTab = 'tags'} title={$t('panels.tags')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
 				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'star'} onclick={() => rightSidebarTab = 'star'} title={$t('panels.starView')}>
+				<button class="rs-tab" class:active={rightSidebarTab === 'star'} onclick={() => rightSidebarTab = 'star'} title={$t('panels.skyView')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg>
 				</button>
 				<button class="rs-tab" class:active={rightSidebarTab === 'tasks'} onclick={() => rightSidebarTab = 'tasks'} title={$t('panels.tasks')}>
@@ -3433,6 +4733,9 @@
 				}} title={$t('panels.review') || 'Review Pulse'}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 					{#if dueNotes.length > 0}<span class="rs-tab-badge">{dueNotes.length}</span>{/if}
+				</button>
+				<button class="rs-tab" class:active={rightSidebarTab === 'links'} onclick={() => rightSidebarTab = 'links'} title={$t('panels.links') || 'Link Dashboard'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
 				</button>
 			</div>
 
@@ -3480,6 +4783,7 @@
 							backlinks={currentBacklinks}
 							unlinkedMentions={currentUnlinkedMentions}
 							activeNoteName={sidebarTab?.name ?? ''}
+							activeNotePath={sidebarTab?.path ?? ''}
 							{libraryColorMap}
 						/>
 					</div>
@@ -3487,6 +4791,9 @@
 						<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
 						<OutgoingLinksPanel
 							outgoingLinks={currentOutgoing}
+							activeNotePath={sidebarTab?.path ?? ''}
+							libraryPath={sidebarTab?.libraryPath ?? ''}
+							{libraryColorMap}
 						/>
 					</div>
 				{:else if rightSidebarTab === 'tags'}
@@ -3508,10 +4815,10 @@
 				{:else if rightSidebarTab === 'star'}
 					<!-- Local star centered on the active note -->
 					<div class="rs-section rs-full-height">
-						{#if localStarNodes.length > 0}
-							<LocalStarView
-								nodes={localStarNodes}
-								links={localStarLinks}
+						{#if localSkyNodes.length > 0}
+							<LocalSkyView
+								nodes={localSkyNodes}
+								links={localSkyLinks}
 								onNodeClick={(nodeId) => {
 									const note = allNotes.find(n => n.path === nodeId || n.name.replace(/\.md$/, '').toLowerCase() === nodeId);
 									if (note) openNoteTab(note.path, note.libraryName, libraryColorMap[note.libraryName] || '#7c3aed');
@@ -3538,6 +4845,8 @@
 											const result = await scanNoteTasks(sidebarTab.path, sidebarTab.libraryName, sidebarTab.libraryPath);
 											sidebarTasks = result.tasks;
 										}
+										// Notify SS so it can refresh its panels
+										if (secondScreenOpen) broadcastNoteSaved(filePath);
 									} catch (e) { console.error('Toggle task failed:', e); }
 								}}
 								{libraryColorMap}
@@ -3586,6 +4895,17 @@
 							onNoteClick={(path, name) => {
 								const lib = $libraryStats.find(l => path.startsWith(l.path));
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+							}}
+						/>
+					</div>
+				{:else if rightSidebarTab === 'links'}
+					<div class="rs-section rs-full-height">
+						<LinkDashboard
+							allLinks={effectiveLibraryLinks}
+							allNotes={allNotes}
+							visible={rightSidebarOpen && rightSidebarTab === 'links'}
+							onNoteClick={(path, libraryName) => {
+								openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed');
 							}}
 						/>
 					</div>
@@ -3743,11 +5063,80 @@
 		/>
 	{/if}
 
+	{#if showCanonicalChoice}
+		<CanonicalChoiceDialog
+			onAdopt={handleCanonicalAdopt}
+			onKeepIntact={handleKeepIntact}
+			onCancel={() => { showCanonicalChoice = false; adding = false; }}
+		/>
+	{/if}
+
+	{#if canonicalizing}
+		<div class="canonical-overlay">
+			<div class="canonical-modal">
+				<div class="canonical-icon">
+					<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+						<polyline points="14 2 14 8 20 8"/>
+						<path d="M12 18v-6"/>
+						<path d="M9 15l3 3 3-3"/>
+					</svg>
+				</div>
+				<h2>{$t('canonical.migrationTitle')}</h2>
+				<p class="canonical-desc">{$t('canonical.migrationDesc')}</p>
+
+				{#if canonicalProgress.phase === 'scanning'}
+					<div class="canonical-status">{$t('canonical.scanning')}</div>
+					<div class="canonical-bar-track"><div class="canonical-bar-fill scanning"></div></div>
+				{:else if canonicalProgress.phase === 'canonicalizing'}
+					<div class="canonical-status">
+						{canonicalProgress.current} / {canonicalProgress.total}
+						<span class="canonical-lib">— {canonicalProgress.libraryName}</span>
+					</div>
+					<div class="canonical-bar-track">
+						<div class="canonical-bar-fill" style="width: {Math.round((canonicalProgress.current / Math.max(canonicalProgress.total, 1)) * 100)}%"></div>
+					</div>
+					<div class="canonical-file">{canonicalProgress.currentFile}</div>
+				{/if}
+
+				<p class="canonical-note">{$t('canonical.migrationNote')}</p>
+			</div>
+		</div>
+	{/if}
+
 	{#if showImporter}
 		<ImporterModal
 			libraries={$libraries.map(v => ({ name: v.name, path: v.path }))}
 			onClose={() => showImporter = false}
 			onImportComplete={refreshLibraryCaches}
+		/>
+	{/if}
+
+	{#if showKnowledgeHealth}
+		<KnowledgeHealthDashboard onClose={() => showKnowledgeHealth = false} />
+	{/if}
+
+	{#if showPicker}
+		<EmojiIconPicker
+			onClose={() => showPicker = false}
+			onPick={async (insertion) => {
+				// Insert directly into the last-focused CM6 editor via the
+				// active-editor registry. The picker's own focus doesn't
+				// interfere because registration happens on every editor
+				// focusin, and the picker opens without stealing that record.
+				const { getActiveEditor } = await import('$lib/editor/activeEditor');
+				const view = getActiveEditor();
+				if (view) {
+					const sel = view.state.selection.main;
+					view.dispatch({
+						changes: { from: sel.from, to: sel.to, insert: insertion },
+						selection: { anchor: sel.from + insertion.length },
+					});
+					// Defer focus so Svelte finishes unmounting the picker first
+					setTimeout(() => view.focus(), 0);
+				}
+				showPicker = false;
+			}}
 		/>
 	{/if}
 
@@ -3843,6 +5232,92 @@
 {/if}
 
 <style>
+	/* ─── Canonical Migration Overlay ─── */
+	.canonical-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 99999;
+		background: rgba(0, 0, 0, 0.7);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		animation: canonFadeIn 0.3s ease;
+	}
+	.canonical-modal {
+		background: var(--background-primary, #1e1e2e);
+		border-radius: 16px;
+		padding: 40px 48px;
+		max-width: 520px;
+		width: 90vw;
+		text-align: center;
+		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+	}
+	.canonical-icon { margin-bottom: 16px; }
+	.canonical-modal h2 {
+		margin: 0 0 8px;
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--text-normal);
+	}
+	.canonical-desc {
+		margin: 0 0 24px;
+		font-size: 0.88rem;
+		color: var(--text-muted);
+		line-height: 1.6;
+	}
+	.canonical-status {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--text-normal);
+		margin-bottom: 8px;
+	}
+	.canonical-lib {
+		font-weight: 400;
+		color: var(--text-muted);
+		font-size: 0.82rem;
+	}
+	.canonical-bar-track {
+		width: 100%;
+		height: 6px;
+		background: var(--background-modifier-border);
+		border-radius: 3px;
+		overflow: hidden;
+		margin-bottom: 12px;
+	}
+	.canonical-bar-fill {
+		height: 100%;
+		background: var(--text-accent);
+		border-radius: 3px;
+		transition: width 0.15s ease;
+	}
+	.canonical-bar-fill.scanning {
+		width: 30%;
+		animation: canonScan 1.5s ease-in-out infinite;
+	}
+	.canonical-file {
+		font-size: 0.78rem;
+		color: var(--text-faint);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		margin-bottom: 16px;
+	}
+	.canonical-note {
+		margin: 16px 0 0;
+		font-size: 0.78rem;
+		color: var(--text-faint);
+		line-height: 1.5;
+		font-style: italic;
+	}
+	@keyframes canonFadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+	@keyframes canonScan {
+		0% { transform: translateX(-100%); }
+		100% { transform: translateX(400%); }
+	}
+
 	:global(html) { margin: 0; padding: 0; overflow: hidden; }
 	:global(body) {
 		margin: 0; padding: 0;
@@ -3860,7 +5335,7 @@
 		height: 100vh;
 		display: grid;
 		grid-template-columns: auto auto 1fr auto;
-		grid-template-rows: 1fr 24px;
+		grid-template-rows: 1fr var(--statusbar-height, 24px);
 		overflow: hidden;
 	}
 	.app.no-sidebar {
@@ -3869,16 +5344,24 @@
 
 	/* ═══ DOCK ═══ */
 	.dock {
-		grid-row: 1; width: 40px; background: var(--bg-tertiary);
+		grid-row: 1;
+		width: var(--dock-width, 40px);
+		background: var(--dock-bg, var(--bg-tertiary));
 		border-inline-end: 1px solid var(--border);
 		display: flex; flex-direction: column;
 		justify-content: space-between; align-items: center; padding: 6px 0;
 	}
 	.dock-top, .dock-bottom { display: flex; flex-direction: column; align-items: center; gap: 1px; }
 	.dock-btn {
-		width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-		border-radius: 4px; border: none; background: none;
-		color: var(--text-secondary); cursor: pointer; text-decoration: none; transition: all 0.1s;
+		width: var(--dock-btn-size, 32px); height: var(--dock-btn-size, 32px);
+		display: flex; align-items: center; justify-content: center;
+		border-radius: var(--dock-btn-radius, 4px); border: none; background: none;
+		color: var(--dock-btn-color, var(--text-secondary));
+		cursor: pointer; text-decoration: none; transition: all 0.1s;
+	}
+	.dock-btn svg {
+		width: var(--dock-icon-size, 18px);
+		height: var(--dock-icon-size, 18px);
 	}
 	.dock-btn:hover { background: var(--border); color: var(--text); }
 	.dock-btn.active { color: var(--accent); }
@@ -3891,16 +5374,57 @@
 		position: relative;
 	}
 	.sidebar-toolbar {
-		padding: 4px 6px; border-bottom: 1px solid var(--border);
-		min-height: 34px; display: flex; flex-direction: column;
+		padding: 4px 6px;
+		border-bottom: 1px solid var(--border);
+		min-height: var(--sidebar-toolbar-height, 34px);
+		background: var(--sidebar-toolbar-bg, transparent);
+		display: flex; flex-direction: column;
 	}
 	.toolbar-actions { display: flex; gap: 2px; align-items: center; padding: 2px 0; }
 	.tb-btn {
-		width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-		border: none; background: none; border-radius: 3px; color: var(--text-muted); cursor: pointer;
+		width: var(--sidebar-btn-size, 26px); height: var(--sidebar-btn-size, 26px);
+		display: flex; align-items: center; justify-content: center;
+		border: none; background: none;
+		border-radius: var(--sidebar-btn-radius, 3px);
+		color: var(--sidebar-btn-color, var(--text-muted));
+		cursor: pointer;
+	}
+	.tb-btn svg {
+		width: var(--sidebar-icon-size, 16px);
+		height: var(--sidebar-icon-size, 16px);
 	}
 	.tb-btn:hover { background: var(--border); color: var(--text); }
 	.tb-btn.active { color: var(--interactive-accent); }
+
+	/* New Library dropdown */
+	.new-lib-drop {
+		position: absolute; top: 100%; inset-inline: 0; z-index: 100;
+		background: var(--background-primary, #fff); border: 1px solid var(--border);
+		border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+		padding: 4px; margin-top: 2px; min-width: 220px;
+	}
+	.nld-option {
+		display: flex; gap: 8px; align-items: flex-start; padding: 8px;
+		border-radius: 4px; cursor: pointer; border: none; background: none;
+		width: 100%; text-align: start; font-family: inherit; color: var(--text);
+	}
+	.nld-option:hover { background: var(--bg-hover); }
+	.nld-option svg { flex-shrink: 0; margin-top: 2px; color: var(--text-muted); }
+	.nld-text { flex: 1; min-width: 0; }
+	.nld-title { font-size: 0.78rem; font-weight: 500; display: block; }
+	.nld-desc { font-size: 0.68rem; color: var(--text-muted); display: block; margin-top: 1px; }
+	.nld-input-row { display: flex; gap: 4px; margin-top: 4px; }
+	.nld-input {
+		flex: 1; min-width: 0; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px;
+		background: var(--bg); color: var(--text); font-size: 0.75rem; font-family: inherit; outline: none;
+	}
+	.nld-input:focus { border-color: var(--interactive-accent); }
+	.nld-create {
+		padding: 3px 8px; border: 1px solid var(--interactive-accent); border-radius: 4px;
+		background: var(--interactive-accent); color: #fff; font-size: 0.75rem;
+		cursor: pointer; font-weight: 600;
+	}
+	.nld-create:hover { opacity: 0.9; }
 
 	.toolbar-section-label {
 		font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.5px;
@@ -3930,10 +5454,16 @@
 	}
 	.search-icon { color: var(--text-muted); flex-shrink: 0; }
 	.search-box input {
-		flex: 1; border: none; background: none; padding: 4px 0;
+		flex: 1; min-width: 0; border: none; background: none; padding: 4px 0;
 		font-size: 0.82rem; color: var(--text); font-family: inherit; outline: none;
+		text-overflow: ellipsis;
 	}
 	.search-box input::placeholder { color: var(--text-faint); }
+	.search-expand {
+		border: none; background: none; color: var(--text-faint); cursor: pointer; padding: 2px;
+		display: flex; align-items: center; justify-content: center; border-radius: 3px;
+	}
+	.search-expand:hover { color: var(--interactive-accent); background: var(--bg-hover); }
 	.search-clear { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 0 2px; }
 
 	.sidebar-content { flex: 1; overflow-y: auto; padding: 2px 0; }
@@ -3949,12 +5479,52 @@
 	.s-meta { display: flex; gap: 4px; font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
 	.s-lib-name { color: var(--accent); flex-shrink: 0; }
 	.s-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.s-result-top { display: flex; align-items: center; gap: 4px; }
+	.s-result.s-selected { background: var(--bg-hover); outline: 1px solid var(--interactive-accent); outline-offset: -1px; }
+	.s-match-badge {
+		min-width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;
+		font-size: 9px; font-weight: 700; line-height: 14px; text-align: center;
+		color: #fff; display: inline-block;
+	}
+	.s-match-title { background: #3b82f6; }
+	.s-match-content { background: #16a34a; }
+	.s-match-semantic { background: #7c3aed; }
+	.s-match-property { background: #f59e0b; }
+	.s-match-tag { background: #f472b6; }
+	.s-match-wikilink { background: #60a5fa; }
+	.s-match-structured { background: #94a3b8; }
+	/* Search history */
+	.sh-icon { color: var(--text-faint); flex-shrink: 0; }
+	.sh-time { margin-inline-start: auto; font-size: 0.65rem; color: var(--text-faint); flex-shrink: 0; }
+	.s-history-clear {
+		display: block; width: 100%; padding: 4px 12px; background: none; border: none;
+		color: var(--text-faint); font-size: 0.7rem; cursor: pointer; text-align: start;
+		font-family: inherit;
+	}
+	.s-history-clear:hover { color: var(--text-muted); text-decoration: underline; }
+	/* Wikilink autocomplete */
+	.wiki-autocomplete { max-height: 300px; overflow-y: auto; }
+	.wa-item {
+		display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 12px;
+		background: none; border: none; color: var(--text); font-family: inherit;
+		cursor: pointer; text-align: start; font-size: 0.82rem;
+	}
+	.wa-item:hover, .wa-item.wa-selected { background: var(--bg-hover); }
+	.wa-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.wa-lib { font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
+	.s-breadcrumb { font-size: 0.65rem; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.s-snippet { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.s-snippet :global(mark) { background: color-mix(in srgb, var(--interactive-accent) 25%, transparent); color: var(--text-normal); border-radius: 2px; padding: 0 1px; }
 	.no-results { padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.82rem; }
 
 	.library-header {
-		display: flex; align-items: center; gap: 4px; width: 100%; padding: 3px 12px;
-		background: none; border: none; color: var(--text-secondary);
-		font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; text-align: start;
+		display: flex; align-items: center; gap: 4px; width: 100%;
+		padding: var(--ft-master-row-padding-y, 3px) 12px;
+		background: none; border: none;
+		color: var(--ft-master-color, var(--text-secondary));
+		font-size: var(--ft-master-font-size, 0.8rem);
+		font-weight: var(--ft-master-weight, 600);
+		font-family: inherit; cursor: pointer; text-align: start;
 	}
 	.library-header:hover { background: var(--bg-hover); }
 	.v-chev { color: var(--text-muted); flex-shrink: 0; transition: transform 0.15s ease; }
@@ -3977,19 +5547,19 @@
 		display: flex;
 		align-items: center;
 		gap: 4px;
-		padding: 3px 12px;
-		font-size: 0.8rem;
-		color: var(--interactive-accent);
-		font-weight: 600;
+		padding: var(--ft-master-row-padding-y, 3px) 12px;
+		font-size: var(--ft-master-font-size, 0.8rem);
+		color: var(--ft-master-color, var(--interactive-accent));
+		font-weight: var(--ft-master-weight, 600);
 	}
 	.child-universe-item {
 		display: flex;
 		align-items: center;
 		gap: 4px;
-		padding: 3px 12px;
-		font-size: 0.8rem;
-		color: var(--text-secondary);
-		font-weight: 600;
+		padding: var(--ft-master-row-padding-y, 3px) 12px;
+		font-size: var(--ft-master-font-size, 0.8rem);
+		color: var(--ft-master-color, var(--text-secondary));
+		font-weight: var(--ft-master-weight, 600);
 	}
 	.child-universe-name {
 		flex: 1;
@@ -4006,9 +5576,6 @@
 		padding-inline-start: 16px;
 	}
 	.library-section-nested {
-	}
-	.library-section-nested .library-header {
-		font-weight: 500;
 	}
 
 	.ws-base-item {
@@ -4053,8 +5620,9 @@
 	/* Layout bar (sidebar + split controls, independent from tabs) */
 	.layout-bar {
 		display: flex; align-items: center;
-		background: var(--bg-secondary);
+		background: var(--layout-bar-bg, var(--bg-secondary));
 		padding: 4px 8px;
+		min-height: var(--layout-bar-height, auto);
 		flex-shrink: 0;
 		gap: 4px;
 		box-shadow: 0 -1px 0 0 rgba(0,0,0,0.08) inset;
@@ -4063,8 +5631,9 @@
 	/* Tab bar (locked to paper edge) */
 	.tab-bar {
 		display: flex; flex-direction: column; align-items: center;
-		background: #e8e8ec; border-bottom: none;
+		background: var(--topbar-bg, #e8e8ec); border-bottom: none;
 		flex-shrink: 0;
+		min-height: var(--topbar-height, auto);
 		padding: 5px 32px 0;
 	}
 	.tab-scroll-wrap {
@@ -4094,18 +5663,22 @@
 	.tab-scroll.no-tabs { margin-inline-start: 0; padding: 0; }
 	.tab {
 		display: flex; align-items: center; gap: 6px;
-		padding: 5px 10px; font-size: 0.8rem; color: var(--text-secondary);
-		background: #dcdce0; border-radius: 6px 6px 0 0;
+		padding: 5px 10px;
+		font-size: var(--tab-font-size, 0.8rem);
+		height: var(--tab-height, auto);
+		color: var(--tab-color, var(--text-secondary));
+		background: var(--tab-bg, #dcdce0);
+		border-radius: var(--tab-radius, 6px) var(--tab-radius, 6px) 0 0;
 		cursor: pointer; min-width: 0;
 		border: none; font-family: inherit; flex-shrink: 0;
 		border-top: 3px solid var(--library-color, transparent);
 		position: relative;
 	}
 	.tab.active, .tab.focused {
-		background: #ffffff; color: var(--text);
-		border: 1px solid #d0d0d0;
+		background: var(--tab-active-bg, #ffffff); color: var(--tab-active-color, var(--text));
+		border: 1px solid var(--tab-border, #d0d0d0);
 		border-top: 3px solid var(--library-color, var(--accent));
-		border-bottom: 1px solid #ffffff;
+		border-bottom: 1px solid var(--tab-active-bg, #ffffff);
 		margin-bottom: -1px;
 	}
 	.tab.drag-over {
@@ -4148,12 +5721,20 @@
 	}
 	.tab-close:hover { background: var(--border); color: var(--text); }
 	.tab-action {
-		width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-		border: none; background: none; border-radius: 4px;
-		color: var(--text-muted); cursor: pointer; flex-shrink: 0; margin: auto 2px;
+		width: var(--layout-btn-size, 28px); height: var(--layout-btn-size, 28px);
+		display: flex; align-items: center; justify-content: center;
+		border: none; background: none;
+		border-radius: var(--layout-btn-radius, 4px);
+		color: var(--layout-btn-color, var(--text-muted));
+		cursor: pointer; flex-shrink: 0; margin: auto 2px;
 	}
-	.tab-action:hover { background: var(--border); color: var(--text); }
-	.tab-action.active { color: var(--accent); }
+	.tab-action svg {
+		width: var(--layout-icon-size, 14px);
+		height: var(--layout-icon-size, 14px);
+	}
+	.tab-action:hover:not(:disabled) { background: var(--border); color: var(--text); }
+	.tab-action.active { color: var(--layout-btn-active-color, var(--accent)); }
+	.tab-action:disabled { opacity: 0.3; cursor: not-allowed; }
 	.tab-spacer { flex: 1; }
 	.tab-ctx-menu {
 		position: fixed; z-index: 9999;
@@ -4268,16 +5849,16 @@
 	.split-pane-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
 	.split-pane-wrap :global(.e-desk) { padding-inline: 8px !important; }
 
-	.index-overlay, .map-overlay {
+	.index-overlay, .map-overlay, .orgchart-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary, #fff);
 		min-height: 0;
 	}
-	.index-overlay.index-visible, .map-overlay.map-visible { display: flex; flex-direction: column; }
+	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible { display: flex; flex-direction: column; }
 
 	.index-return-btn {
 		display: flex; align-items: center; gap: 4px;
-		padding: 3px 10px; margin-inline-start: 4px;
+		padding: 3px 10px; margin-inline-start: 8px; margin-inline-end: 4px;
 		border: 1px solid var(--interactive-accent);
 		background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
 		color: var(--interactive-accent); font-size: 11px; font-weight: 600;
@@ -4293,12 +5874,30 @@
 	.star-fullscreen {
 		flex: 1; display: flex; flex-direction: column; overflow: hidden;
 		background: var(--background-primary, #fff);
+		position: relative;
 	}
+	.sky-loading {
+		position: absolute;
+		top: 56px;
+		inset-inline-end: 16px;
+		display: flex; align-items: center; gap: 8px;
+		padding: 6px 12px;
+		background: rgba(0, 0, 0, 0.55);
+		color: #fff;
+		border-radius: 999px;
+		font-size: 0.8rem;
+		pointer-events: none;
+		z-index: 15;
+		backdrop-filter: blur(4px);
+	}
+	.sky-loading-spinner { animation: sky-loading-spin 0.9s linear infinite; }
+	@keyframes sky-loading-spin { to { transform: rotate(360deg); } }
 	.tab-bar-hidden { display: none !important; }
 	.star-header {
 		display: flex; align-items: center; gap: 4px;
 		padding: 8px 16px; border-bottom: 1px solid var(--border);
 		background: var(--bg-secondary);
+		position: relative; z-index: 20;
 	}
 	.star-title { font-weight: 600; font-size: 0.9rem; flex: 1; }
 	.star-wiw-toggle {
@@ -4314,6 +5913,18 @@
 		font-size: 1.2rem;
 	}
 	.star-close:hover { background: var(--border); color: var(--text); }
+	.lens-overlay {
+		display: none; flex: 1; overflow: hidden;
+		background: var(--background-primary); min-height: 0;
+	}
+	.lens-overlay.lens-visible { display: flex; }
+	.searchhub-overlay {
+		display: none; flex: 1; overflow: hidden;
+		background: var(--background-primary); min-height: 0;
+	}
+	.searchhub-overlay.searchhub-visible { display: flex; }
+	@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+	:global(.spin) { animation: spin 1s linear infinite; }
 
 	/* WiW overlay */
 	.wiw-overlay {
@@ -4457,7 +6068,9 @@
 	.home-dashboard-toggle:hover { background: var(--border); color: var(--text); }
 	.w-btn {
 		background: var(--accent); border: none; color: var(--text-on-accent);
-		padding: 8px 20px; border-radius: 6px; cursor: pointer;
+		padding: var(--button-padding-y, 8px) var(--button-padding-x, 20px);
+		border-radius: var(--button-radius, 6px);
+		cursor: pointer;
 		font-size: 0.9rem; font-weight: 600;
 	}
 	.w-btn:hover { background: var(--accent-hover); }
@@ -4501,7 +6114,7 @@
 
 	/* ═══ RIGHT SIDEBAR ═══ */
 	.right-sidebar {
-		grid-row: 1; background: var(--bg-secondary);
+		grid-row: 1; background: var(--right-sidebar-bg, var(--bg-secondary));
 		border-inline-start: 1px solid var(--border);
 		overflow: hidden;
 		transition: width 0.2s ease;
@@ -4515,15 +6128,25 @@
 
 	.rs-tabs {
 		display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+		background: var(--rs-tabs-bg, transparent);
 	}
 	.rs-tab {
 		flex: 1; display: flex; align-items: center; justify-content: center;
-		height: 30px; border: none; background: none;
-		color: var(--text-muted); cursor: pointer;
+		height: var(--rs-tab-height, 30px);
+		border: none; background: none;
+		color: var(--rs-tab-color, var(--text-muted));
+		cursor: pointer;
 		border-bottom: 2px solid transparent;
 	}
+	.rs-tab svg {
+		width: var(--rs-icon-size, 16px);
+		height: var(--rs-icon-size, 16px);
+	}
 	.rs-tab:hover { background: var(--bg-hover); color: var(--text); }
-	.rs-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+	.rs-tab.active {
+		color: var(--rs-tab-active-color, var(--accent));
+		border-bottom-color: var(--rs-tab-active-color, var(--accent));
+	}
 	.rs-tab-badge {
 		position: absolute; top: -2px; inset-inline-end: -2px;
 		font-size: 0.55rem; background: var(--interactive-accent); color: white;
@@ -4577,10 +6200,14 @@
 
 	/* ═══ STATUS BAR ═══ */
 	.status-bar {
-		grid-column: 1 / -1; grid-row: 2; height: 24px;
-		background: var(--bg-tertiary); border-top: 1px solid var(--border);
+		grid-column: 1 / -1; grid-row: 2;
+		height: var(--statusbar-height, 24px);
+		background: var(--statusbar-bg, var(--bg-tertiary));
+		border-top: 1px solid var(--border);
 		display: flex; align-items: center; justify-content: space-between;
-		padding: 0 10px; font-size: 0.7rem; color: var(--text-muted);
+		padding: 0 10px;
+		font-size: var(--statusbar-font-size, 0.7rem);
+		color: var(--statusbar-color, var(--text-muted));
 	}
 	.sb-left, .sb-right { display: flex; align-items: center; gap: 4px; }
 	.sb-dot { color: var(--border); }

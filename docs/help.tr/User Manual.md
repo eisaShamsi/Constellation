@@ -1,6 +1,6 @@
 # Constellation Kullanım Kılavuzu
 
-**Sürüm 0.3.4 | Mart 2026**
+**Sürüm 0.1.0 | Mart 2026**
 
 Constellation, Markdown not kütüphanelerini yönetmek için tasarlanmış bir Kişisel Bilgi Yönetimi (PKM) masaüstü uygulamasıdır. Tauri v2, SvelteKit ve Rust ile geliştirilmiş olup Windows, macOS ve Linux'ta tam Arapça ve RTL desteğiyle yerel olarak çalışır.
 
@@ -11,23 +11,25 @@ Constellation, Markdown not kütüphanelerini yönetmek için tasarlanmış bir 
 1. [Başlarken](#başlarken)
 2. [Evren ve Kütüphaneler](#evren-ve-kütüphaneler)
 3. [Not Oluşturma ve Düzenleme](#not-oluşturma-ve-düzenleme)
-4. [Star View (GraphMind)](#star-view-graphmind)
-5. [Bölünmüş Görünüm](#bölünmüş-görünüm)
-6. [Dizin](#dizin)
-7. [İkinci Ekran](#ikinci-ekran)
-8. [Özellikler ve Frontmatter](#özellikler-ve-frontmatter)
-9. [Şablonlar](#şablonlar)
-10. [Tablolar](#tablolar)
-11. [Görevler](#görevler)
-12. [İçe Aktarıcı](#içe-aktarıcı)
-13. [Takvim](#takvim)
-14. [Lens](#lens)
-15. [Ayarlar](#ayarlar)
-16. [Klavye Kısayolları](#klavye-kısayolları)
-17. [RTL ve Arapça Desteği](#rtl-ve-arapça-desteği)
-18. [Güvenlik ve Gizlilik](#güvenlik-ve-gizlilik)
-19. [Bilgi Haritası](#bilgi-haritası)
-20. [Bilişsel Motor](#bilişsel-motor)
+4. [Arama](#arama)
+5. [Sky View (GraphMind)](#star-view-graphmind)
+6. [Bölünmüş Görünüm](#bölünmüş-görünüm)
+7. [Dizin](#dizin)
+8. [Constellation Sight](#constellation-sight)
+9. [İkinci Ekran](#ikinci-ekran)
+10. [Özellikler ve Frontmatter](#özellikler-ve-frontmatter)
+11. [Şablonlar](#şablonlar)
+12. [Tablolar](#tablolar)
+13. [Görevler](#görevler)
+14. [İçe Aktarıcı](#içe-aktarıcı)
+15. [Takvim](#takvim)
+16. [Lens](#lens)
+17. [Ayarlar](#ayarlar)
+18. [Klavye Kısayolları](#klavye-kısayolları)
+19. [RTL ve Arapça Desteği](#rtl-ve-arapça-desteği)
+20. [Güvenlik ve Gizlilik](#güvenlik-ve-gizlilik)
+21. [Bilgi Haritası](#bilgi-haritası)
+22. [Bilişsel Motor](#bilişsel-motor)
 
 ---
 
@@ -53,7 +55,7 @@ Constellation'ı ilk kez açtığınızda, **Evren Kurulum Sihirbazı** sizi şu
 
 | Öğe | Açıklama |
 |-----|----------|
-| **Kenar Çubuğu (Şerit)** | Gezinme düğmeleri: Dosya ağacı, Arama, Star View, Takvim, Şablonlar, Ayarlar |
+| **Kenar Çubuğu (Şerit)** | Gezinme düğmeleri: Dosya ağacı, Arama, Sky View, Takvim, Şablonlar, Ayarlar |
 | **Dosya Ağacı** | Kütüphanelerinizdeki notları ve klasörleri tarayın |
 | **Düzenleyici** | Markdown notlarınızı okuyun ve düzenleyin |
 | **Sekme Çubuğu** | Birden fazla notu sekmelerde açın |
@@ -79,7 +81,7 @@ Constellation'ı ilk kez açtığınızda, **Evren Kurulum Sihirbazı** sizi şu
 
 ### Alt Evrenler
 
-Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Star View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.
+Evrenleri evrenlerin içine yerleştirebilirsiniz. Bir **Alt Evren**, ana evreniniz tarafından başvurulan başka bir evren klasörüdür. Alt evrenlerdeki notlar Sky View'da kendi notlarınızla birlikte görünür ve kütüphaneler arası bağlantılar kesikli çizgiler olarak gösterilir.
 
 ### Otomatik yeniden açma
 
@@ -218,15 +220,95 @@ Belirli başlıklara da bağlantı verebilirsiniz: `[[Note Name#Heading]]`.
 
 ---
 
-## 4. Star View (GraphMind)
+## 4. Arama
 
-Star View, notlarınızı **GraphMind** motoru (Pixi.js WebGL) tarafından desteklenen etkileşimli bir 3D grafik olarak görselleştirir.
+Constellation, SQLite FTS5 tabanlı BM25 sıralama, yapılandırılmış sorgu filtreleri ve Arapçaya optimize edilmiş normalizasyon ile hibrit çok dilli bir arama motoruna sahiptir. Arama, kenar çubuğu araç çubuğundan erişilebilir.
 
-### Star View'ı Açma
+### Nasıl aranır
+
+Kenar çubuğu araç çubuğundaki arama simgesine tıklayın veya arama modunu etkinleştirmek için `Ctrl+Shift+F` tuşuna basın. Sorgunuzu yazın ve sonuçlar kısa bir gecikmeden (300ms) sonra görünür. Aramayı temizlemek ve dosya ağacına dönmek için `Escape` tuşuna basın veya `×` düğmesine tıklayın.
+
+### Arama sözdizimi
+
+| Sözdizimi | Örnek | Ne bulur |
+|-----------|-------|----------|
+| Serbest metin | `proje yönetimi` | Başlık veya gövdede bu kelimeleri içeren notlar |
+| Etiket filtresi | `#araştırma` | `#araştırma` etiketi olan notlar |
+| Özellik filtresi | `status=aktif` | Frontmatter özelliği `status` değeri `aktif` olan notlar |
+| Vikibağ filtresi | `links to [[İklim]]` | `[[İklim]]`'e bağlantı içeren notlar |
+| Kütüphane kapsamı | `in:Kütüphanem` | Sonuçları belirli bir kütüphaneyle sınırlar |
+| Birleşik | `#araştırma status=aktif ekonomi` | Tüm filtreler birlikte uygulanır |
+
+### Eşleme türü rozetleri
+
+Her arama sonucu, eşleşmenin nasıl bulunduğunu gösteren renkli bir rozet görüntüler. Rozet, erişilebilirlik için yerelleştirilmiş bir harf gösterir (renk körlüğü için güvenli):
+
+| Rozet | Renk | Anlam |
+|-------|------|-------|
+| **B** | Mavi | Başlık eşleşmesi — arama terimi notun adında görünür |
+| **İ** | Yeşil | İçerik eşleşmesi — arama terimi notun gövdesinde görünür |
+| **A** | Mor | Anlamsal eşleme — kavramsal olarak ilişkili (embedding modeli gerektirir) |
+| **Ö** | Kehribar | Özellik eşleşmesi — frontmatter özellik filtresiyle bulundu |
+| **#** | Pembe | Etiket eşleşmesi — etiket filtresiyle bulundu |
+| **V** | Açık mavi | Vikibağ eşleşmesi — vikibağ filtresiyle bulundu |
+
+Rozet harfleri desteklenen 15 dilin tümüne yerelleştirilmiştir.
+
+### Sabitlenmiş sonuçlar (Sonuçlar arasında gezinme)
+
+Arama sonuçları birine tıkladıktan sonra görünür kalır. Açılan not sonuç listesinde vurgulanır, böylece hangi sonucu görüntülediğinizi görebilirsiniz. Yeniden arama yapmadan başka bir sonuca tıklayarak ona gidin.
+
+Aramayı temizlemek için `Escape` tuşuna basın veya `×` düğmesine tıklayın.
+
+### Klavye ile gezinme
+
+| Tuş | Eylem |
+|-----|-------|
+| `Aşağı ok` | Sonraki sonucu seç |
+| `Yukarı ok` | Önceki sonucu seç |
+| `Enter` | Seçili sonucu aç |
+| `Escape` | Aramayı temizle ve dosya ağacına dön |
+
+### Arama terimi vurgulama
+
+Arama sonuçlarından bir notu açtığınızda, arama teriminin tüm geçişleri editörde vurgulanır. Bu, Arapça harekeli harf tanıma ile çalışır — "ادارة" araması "إدارة" ve tüm hareke varyantlarını vurgular.
+
+### Arama geçmişi
+
+Boş olduğunda arama alanına tıklayarak son aramalarınızı (son 20 sorgu) görün. Her girişte sorgu metni ve ne zaman yapıldığı gösterilir. Herhangi bir girişe tıklayarak o aramayı anında yeniden çalıştırın. Tüm geçmişi silmek için alttaki "Geçmişi temizle" bağlantısını kullanın.
+
+Arama geçmişi cihazınızda yerel olarak depolanır ve uygulama yeniden başlatmaları arasında korunur.
+
+### Search Hub
+
+Search Hub, tam ekran bir arama deneyimidir. Açmak için dock çubuğundaki büyüteç simgesine tıklayın. Maksimum alan sağlamak için her iki kenar çubuğu da kapanır. Herhangi bir terim yazın ve Constellation her yerde aynı anda arar, sonuçları 5 kategoriye gruplar: Başlıklar, İçerikler, Etiketler, Özellikler ve Wikilink'ler. Her kategorinin sayı rozeti olan daraltılabilir bir bölümü vardır. Herhangi bir sonuca tıklayarak tüm geçişlerin vurgulandığı editörde açın. "Search Hub'a Dön" düğmesi görünerek yeniden aramadan geri dönmenizi sağlar.
+
+### Bağlantı operatörleri
+
+Constellation 6 bağlantı topolojisi arama operatörünü destekler:
+
+| Söz dizimi | Ne bulur |
+|------------|----------|
+| `links to [[X]]` | X'e bağlantı veren notlar (geri bağlantılar) |
+| `links from [[X]]` | X'in bağlantı verdiği notlar (giden bağlantılar) |
+| `mutual [[X]]` | X'e bağlı ve X geri bağlantı veren notlar (çift yönlü) |
+| `mentions [[X]]` | [[wikilink]] olmadan X'in adını içeren notlar |
+| `orphans` | Gelen veya giden bağlantısı olmayan notlar |
+| `links between [[X]] and [[Y]]` | Hem X hem de Y'ye bağlantı veren notlar |
+
+Herhangi bir bağlantı operatörü yazarken, `[[` otomatik tamamlama evrendeki tüm notları gösterir. Bir not seçtikten sonra, başlık tamamlama için `#` veya bağlantı türü tamamlama için `|type:` yazın.
+
+---
+
+## 5. Sky View (GraphMind)
+
+Sky View, notlarınızı **GraphMind** motoru (Pixi.js WebGL) tarafından desteklenen etkileşimli bir 3D grafik olarak görselleştirir.
+
+### Sky View'ı Açma
 
 - Kenar çubuğundaki grafik simgesine tıklayın
 - `Ctrl+G` tuşuna basın
-- Mission Control (`Ctrl+P`) > "Star View"
+- Mission Control (`Ctrl+P`) > "Sky View"
 
 ### Gezinme
 
@@ -275,7 +357,7 @@ Sağ alt köşedeki açıklama, görünürlüğü değiştirmek için onay kutul
 
 ### Bilgi Katmanları
 
-Star View, notlarınızı soyutlama düzeyine göre otomatik olarak sekiz bilgi katmanına sınıflandırır:
+Sky View, notlarınızı soyutlama düzeyine göre otomatik olarak sekiz bilgi katmanına sınıflandırır:
 
 | Katman | Açıklama |
 |--------|----------|
@@ -303,7 +385,7 @@ Olgunluk seviyesi, bağlantı sayısı, gözden geçirme tarihi ve düzenleme s�
 
 ---
 
-## 5. Bölünmüş Görünüm
+## 6. Bölünmüş Görünüm
 
 Bölünmüş görünüm, birden fazla notu ana pencerede yan yana düzenlemenizi sağlar.
 
@@ -332,7 +414,7 @@ Herhangi bir panele tıklayarak odaklayın. Odaklanan panel klavye kısayolları
 
 ---
 
-## 6. Dizin
+## 7. Dizin
 
 Dizin, tüm kütüphaneleriniz genelinde kapsamlı bir terim sözlüğüdür — her anlamlı kelime, oluşum sayılarıyla birlikte alfabetik olarak sıralanmıştır.
 
@@ -373,7 +455,49 @@ Notu normal bir sekme olarak açmak için `Ctrl+Tıklama` yapın. Sekme çubuğu
 
 ---
 
-## 7. İkinci Ekran
+## 8. Constellation Sight
+
+Constellation Sight, tum bilgi sisteminizi bir kutle cekimi kuyusu grafigi olarak gorsellestirir. Su soruya cevap verir: **"Bilgim nasil gorunuyor ve ne kadar saglikli?"**
+
+### Sight'i Acma
+
+Sol seritte **Sight dugmesine** (goz simgesi) tiklayin. Kutle cekimi kuyusu grafigi goruntulenir. Kapatmak icin x'e tiklayin.
+
+### Kutle Cekimi Kuyusu Grafigi
+
+Notlar onem (merkezilik) derecesine gore es merkezli halkalar seklinde duzenlenir. En cok baglantili notlar merkezde; cevresel notlar kenarlarda yer alir. Her halka icinde notlar kutuphaneye (organizasyonunuza) gore gruplanir. Dugum rengi = kutuphane.
+
+| Oge | Anlami |
+|-----|--------|
+| **Buyuk dugum** | Yuksek merkezilik — farkli bilgi alanlarini birlestiren kopru |
+| **Kucuk dugum** | Cevresel — tek bir alan icinde |
+| **Dugum rengi** | Kutuphane uyeligi |
+| **Duz cizgi** | Iki not arasindaki baglanti |
+| **Yon oklari** | Baglanti yonunu gosteren kucuk oklar |
+| **Cizgi kalinligi** | Guven duzeyi (kalin = yerlesik, ince = hipotez) |
+
+### Etkilesim
+
+- **Tek tiklama**: Dugumun komsulugunu vurgular (tum baglantili notlar). Diger her sey soluklaşır.
+- **Cift tiklama**: Notu duzenleyicide acar.
+- **Bos alana tiklama**: Vurgulamayi temizler.
+- **Kaydirma**: yakinlastirma/uzaklastirma. **Surukle**: kaydir. **Ekrana Sigdir**: arac cubugu dugmesi.
+
+### Sight'ta Arama
+
+Buyutece tiklayin. Tum operatorleri destekler: `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, serbest metin ve anlamsal arama. Sonuclar yonsel renkler gosterir: yesil (gelen), kirmizi (giden).
+
+### Analiz Paneli (SightPanel)
+
+Izgara simgesine tiklayarak yan cubugu acin. Gosterir: Evren Saglik puani (0-100), not/baglanti/yetim sayaclari, baglanti turu ve guven cubuklari, en iyi 10 kopru ve Bilgi Icgörüleri (en guclu kanit, zayif temeller, gerilimler, durgunlar, en cok baglantili, bilgi boslukları).
+
+### Ayarlar
+
+Disli simgesi: baglanti cizgi kalinligini, opakligini ve ok boyutunu ayarlayin. Ayarlar oturumlar arasinda kalici olarak saklanir.
+
+---
+
+## 9. İkinci Ekran
 
 İkinci Ekran, geçerli kenar çubuğu modunuza uyum sağlayan mod tabanlı bir eşlik penceresidir.
 
@@ -389,7 +513,7 @@ Notu normal bir sekme olarak açmak için `Ctrl+Tıklama` yapın. Sekme çubuğu
 | **Dosya Gezgini** | Evren Paneli — istatistikler, kütüphane dağılımı, alt evrenler, etiketler, son düzenlenen/açılan notlar |
 | **Gezgin** | Notlara göz atmak için tam Gezgin görünümü |
 | **Gökyüzü Görünümü** | Dizin yapısıyla Gökyüzü Görünümü ağacı |
-| **Star View** | Geri bağlantılar, ileri bağlantılar, etiketler ve yerel grafik ile Star View eşliği |
+| **Sky View** | Geri bağlantılar, ileri bağlantılar, etiketler ve yerel grafik ile Sky View eşliği |
 
 ### Evren Paneli (Dosya Gezgini Modu)
 
@@ -428,7 +552,7 @@ Tüm görsel ayarlar anında ikinci ekrana yansıtılır — yeniden başlatma g
 
 ---
 
-## 8. Özellikler ve Frontmatter
+## 10. Özellikler ve Frontmatter
 
 Notların üst kısmında YAML frontmatter bulunabilir:
 
@@ -455,7 +579,7 @@ Constellation özellik türlerini otomatik olarak algılar:
 
 ---
 
-## 9. Şablonlar
+## 11. Şablonlar
 
 Yeniden kullanılabilir not şablonları oluşturun:
 
@@ -474,7 +598,7 @@ Yeniden kullanılabilir not şablonları oluşturun:
 
 ---
 
-## 10. Tablolar
+## 12. Tablolar
 
 ### Markdown Tabloları
 
@@ -504,7 +628,7 @@ Belge düzenleyici (TipTap) görsel bir tablo deneyimi sunar:
 
 ---
 
-## 11. Görevler
+## 13. Görevler
 
 Constellation, notlarda görev onay kutularını destekler:
 
@@ -517,7 +641,7 @@ Canlı Önizleme modunda, onay kutuları tıklanabilirdir. Görevler, kütüphan
 
 ---
 
-## 12. İçe Aktarıcı
+## 14. İçe Aktarıcı
 
 Diğer PKM araçlarından notları içe aktarın:
 
@@ -529,7 +653,7 @@ Diğer PKM araçlarından notları içe aktarın:
 
 ---
 
-## 13. Takvim
+## 15. Takvim
 
 Takvim görünümü, notları tarihe göre düzenlenmiş olarak gösterir:
 
@@ -541,7 +665,7 @@ Takvimi kenar çubuğundan açın.
 
 ---
 
-## 14. Lens
+## 16. Lens
 
 Lens, notlarınızın filtrelenmiş görünümlerini sağlar:
 
@@ -551,7 +675,7 @@ Lens, notlarınızın filtrelenmiş görünümlerini sağlar:
 
 ---
 
-## 15. Ayarlar
+## 17. Ayarlar
 
 Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
@@ -561,6 +685,32 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 - Tema (Açık / Koyu)
 - Arayüz yazı tipi, Metin yazı tipi, Mono yazı tipi, Yazı tipi boyutu
 - Yazı tipi teması — hazır yazı tipi kombinasyonları (Daktilo, Klasik, Modern vb.) hızlı geçiş için
+- **Temalar** — altı yerleşik temadan seçin, özel temalar oluşturun (beş renkli düzenleyici), Obsidian topluluk kayıt defterinden temalar içe aktarın (200+ tema) veya bir `.json` tema dosyası içe aktarın. Üzerine gelindiğinde ✕ düğmesiyle herhangi bir özel temayı silin.
+
+### Style Settings
+
+Arayüzün her görünür öğesinin ince ayarı için özel bir sekme, aktif temaya canlı olarak uygulanır.
+
+- **Renkler** — arka plan, yüzeyler, metin (normal/azaltılmış/soluk), vurgu, kenarlıklar, durum renkleri
+- **Tipografi** — arayüz/not/kod yazı tipi boyutları, H1–H6 boyutları, başlık ağırlığı, satır yükseklikleri, paragraf aralığı
+- **Düzen ve Şekil** — küçük/orta/büyük köşe yarıçapları, kenarlık genişlikleri, gölgeler, editör okunabilir satır uzunluğu, yan kenar boşlukları
+- **Bileşenler** — şerit dock, yan işlem çubuğu, düzen çubuğu (panel anahtarları), üst çubuk/sekme şeridi, durum çubuğu, sağ kenar çubuğu (müfettiş), dosya gezgini (Evren notları, alt evrenler, kitaplıklar, klasörler, notlar), düğmeler, etiketler, callout'lar — her biri bağımsız boyut, yarıçap, renk ve geçerli olduğunda aktif durum stili ile
+- **Editör** — bağlantı renk/üzerine gelme/dekorasyon, satır içi kod renk/arka plan/yarıçap, alıntı çubuğu genişlik/renk, imleç rengi, seçim arka planı
+
+**İçe Aktar / Dışa Aktar** — sekmenin üstündeki araç çubuğu:
+- Panodan yapıştır (tek tıklama)
+- İçe aktar / Yapıştır (Birleştir veya Değiştir ile metin alanı)
+- Dosyadan (.json)
+- Kopyala (mevcut değerleri panoya)
+- Dışa aktar (.json)
+
+Biçim Obsidian'ın Style Settings eklentisiyle tam olarak eşleşir, böylece Obsidian ve Constellation arasında ayarları paylaşabilirsiniz.
+
+Değişiklikler aktif temaya otomatik kaydedilir; yerleşik bir temayı düzenlerseniz, değişiklikler orijinali değiştirmeden kalıcı olacak şekilde özel temalarınıza otomatik klonlanır.
+
+### Arapça Geçersiz Kılmalar
+
+Arapça motorun belirli yüzey biçimlerini nasıl çözümleyeceğini sabitlediğiniz, Evren başına bir panel — kendi türettiğiniz sözcükler, yerel adlar, alana özgü ödünç sözcükler veya motorun otomatik okumasıyla aynı fikirde olmadığınız durumlar için. Her geçersiz kılma üretici FST, kaskad ve sezgisel yedeği geçer. Bir geçersiz kılma eklemek veya kaldırmak, yalnızca etkilenen yüzey biçimini içeren notların hedefli bir şekilde yeniden dizinlenmesini tetikler — tam yeniden oluşturma yoktur. Adım adım kılavuz için §19 ("RTL ve Arapça Desteği") bölümüne bakın.
 
 ### Düzenleyici
 
@@ -583,7 +733,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 
 ---
 
-## 16. Klavye Kısayolları
+## 18. Klavye Kısayolları
 
 ### Genel
 
@@ -592,7 +742,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 | `Ctrl+N` | Yeni not |
 | `Ctrl+O` | Star Jump (hızlı açma) |
 | `Ctrl+P` | Mission Control |
-| `Ctrl+G` | Star View'ı aç |
+| `Ctrl+G` | Sky View'ı aç |
 | `Ctrl+,` | Ayarlar |
 | `Ctrl+Shift+F` | Kütüphanede ara |
 | `Ctrl+Shift+N` | İkinci ekran |
@@ -610,7 +760,7 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 | `Ctrl+/` | Yorumu aç/kapat |
 | `Tab` | Girinti / sonraki tablo hücresi |
 
-### Star View
+### Sky View
 
 | Kısayol | İşlem |
 |---------|-------|
@@ -619,18 +769,18 @@ Kenar çubuğundaki dişli simgesinden veya `Ctrl+,` ile ayarlara erişin.
 | `Space` | Odak modunu aç/kapat |
 | `0` | 3D döndürmeyi sıfırla |
 | `W/A/S/D/Q/E` | 3D'de uç |
-| `Escape` | Star View'ı kapat |
+| `Escape` | Sky View'ı kapat |
 
 ---
 
-## 17. RTL ve Arapça Desteği
+## 19. RTL ve Arapça Desteği
 
 Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemleri için birinci sınıf destek sunar:
 
 - **Otomatik algılama**: Not yönü içerikten otomatik olarak algılanır
 - **Arayüz**: Arapça/İbranice dil seçildiğinde tam RTL arayüz
 - **Düzenleyici**: Doğru imleç hareketi ve seçim ile RTL metin düzenleme
-- **Star View**: Arapça etiketler uygun yazı tipi geri dönüşü ile sağdan sola oluşturulur
+- **Sky View**: Arapça etiketler uygun yazı tipi geri dönüşü ile sağdan sola oluşturulur
 - **Açıklama**: Öğeler, içerik diline göre nokta/metin sırasını çevirir
 - **Yazı tipi betikleri**: Ayarlar'da Arapça, İbranice ve CJK yazı tiplerini bağımsız olarak yapılandırın
 
@@ -640,9 +790,37 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 2. İsteğe bağlı olarak **Ayarlar > Genel > Yazı tipi betikleri** bölümünde özel bir Arapça yazı tipi ayarlayın
 3. Arapça içerikli notlar otomatik olarak RTL olarak görüntülenecektir
 
+### Arapça Motor Geçersiz Kılmaları
+
+Constellation'ın Arapça motoru, her aramanın, her bağlantının ve her dizin girdisinin altında çalışan beş katmanlı bir biçimbilim çözümleyicisidir. Kökleri, örüntüleri, özel adları, ödünç sözcükleri ve fonolojik onarımları anlar — böylece كاتب sorgusu كتبنا ve كتاب sözcüklerini bulur, ancak وائل bir ad olarak olduğu gibi kalır, ائل olarak bozulmaz.
+
+Ayarlar'daki **Arapça Geçersiz Kılmalar** paneli, motora kendi terminolojinizi öğrettiğiniz yerdir. Her geçersiz kılma egemen yanıttır — üretici FST, kaskad ve sezgisel yedeği geçer.
+
+**Geçersiz kılmaları ne zaman kullanmalı:**
+- Motorun bilmediği kişi adları, yerel yer adları veya alana özgü terimler
+- Evreninize özgü türetilmiş sözcükler veya kısaltmalar
+- Belirli bir yazımı korumak istediğiniz ödünç sözcükler
+- Motorun otomatik çözümlemesinin sözcüğü nasıl okuduğunuzla çeliştiği her durum
+
+**Adım adım:**
+
+1. **Ayarlar** bölümünü açın (dişli simgesi veya `Ctrl + ,` / `Cmd + ,`) ve kenar çubuğundan **Arapça Geçersiz Kılmalar** öğesini seçin.
+2. **Geçersiz kılma ekle** düğmesine tıklayın.
+3. Şunları doldurun:
+   - **Yüzey biçimi** — Arapça sözcüğü yazdığınız şekliyle
+   - **Lemma** — motorun döndürmesi gereken kanonik biçim
+   - **Kök** (isteğe bağlı) — sözcüğün klasik bir kökü varsa 3 veya 4 ünsüz
+   - **Örüntü** (isteğe bağlı) — örn. `فاعل`
+   - **Söz türü** — Özel ad / Ad / Sıfat / Zarf / Fiil / İlgeç / Yabancı / Bilinmiyor
+   - **Not** (isteğe bağlı) — kendiniz için bir bağlam satırı
+4. **Kaydet** düğmesine tıklayın. Panel, yüzey biçimini içeren her not yeniden belirteçlenirken **Yeniden dizinleniyor…** gösterir ve tamamlandığında **N not yeniden dizinlendi** gösterir.
+5. Bir geçersiz kılmayı kaldırmak için satırındaki **×** düğmesine tıklayın — aynı yeniden dizinleme taraması tersine çalışır.
+
+Geçersiz kılmalar Evren başına `<universe>/.constellation/arabic-overrides.json` konumunda saklanır — düz metin, alfabetik sıralı, atomik yazılmış. Dosyayı sürüm kontrolüne alabilir veya cihazlar arasında paylaşabilirsiniz.
+
 ---
 
-## 18. Güvenlik ve Gizlilik
+## 20. Güvenlik ve Gizlilik
 
 - **Tüm veriler yerelde kalır** — bulut senkronizasyonu yok, telemetri yok, izleme yok
 - **Markdown dosyaları** — notlarınız tamamen size ait düz metin dosyalarıdır
@@ -652,7 +830,7 @@ Constellation, Arapça, İbranice, Farsça, Urduca ve diğer RTL yazı sistemler
 
 ---
 
-## 19. Bilgi Haritası
+## 21. Bilgi Haritası
 
 Bilgi Haritası, tum bilgi evreninizin yapisini, yogunlugunu ve olgunlugunu gosteren radyal bir sunburst gorsellestirmesidir.
 
@@ -685,7 +863,7 @@ Haritadan bir not actiktan sonra, sekme cubugunda "Haritaya Don" dugmesi gorunur
 
 ---
 
-## 20. Bilişsel Motor
+## 22. Bilişsel Motor
 
 Bilişsel Motor, Constellation'ın notlarınızı analiz eden ve fikirleriniz arasındaki gizli kalıpları ve ilişkileri ortaya çıkaran yerleşik zeka sistemidir. Temel felsefesi:
 
@@ -938,5 +1116,5 @@ Bilişsel Motor'un tüm araçları **Ayarlar > Bilişsel Motor** bölümünden y
 
 ---
 
-*Constellation Kullanım Kılavuzu — Sürüm 0.3.4 — Mart 2026*
+*Constellation Kullanım Kılavuzu — Sürüm 0.1.0 — Mart 2026*
 *uconstellation.world*

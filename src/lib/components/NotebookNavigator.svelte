@@ -63,27 +63,41 @@
 
 	function normalizePath(p: string): string { return p.replace(/\\/g, '/').toLowerCase(); }
 
-	// Load data
+	// Load data — process 2 libraries at a time to avoid IPC flooding
 	onMount(async () => {
 		try {
 			const libs = $libraries;
 			const allNotes: NoteWithMeta[] = [];
 			const allTags: Record<string, number> = {};
+			const libTreeMap = new Map<string, FileEntry>();
 
-			// Build per-library trees and collect notes/tags
-			const libTreeMap = new Map<string, FileEntry>(); // lib.path → tree entry
-			for (const lib of libs) {
-				const notes = await collectLibraryNotesWithMeta(lib.path);
-				for (const n of notes) n.libraryName = lib.name;
-				allNotes.push(...notes);
+			// Timeout wrapper: prevents infinite hang on any IPC call
+			function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+				return Promise.race([
+					promise,
+					new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms)),
+				]);
+			}
 
-				const libTags = await invoke<Record<string, number>>('scan_library_tags', { libraryPath: lib.path }).catch(() => ({}));
-				for (const [tag, count] of Object.entries(libTags)) {
-					allTags[tag] = (allTags[tag] || 0) + count;
+			// Process 2 libraries at a time
+			for (let i = 0; i < libs.length; i += 2) {
+				const batch = libs.slice(i, i + 2);
+				const results = await Promise.all(batch.map(async (lib) => {
+					const [notes, libTags, tree] = await Promise.all([
+						withTimeout(collectLibraryNotesWithMeta(lib.path).catch(() => []), 15000, [] as NoteWithMeta[]),
+						withTimeout(invoke<Record<string, number>>('scan_library_tags', { libraryPath: lib.path }).catch(() => ({})), 10000, {}),
+						withTimeout(invoke<FileEntry[]>('read_library_tree', { libraryPath: lib.path, maxDepth: 10 }).catch(() => []), 10000, []),
+					]);
+					return { lib, notes, libTags, tree };
+				}));
+				for (const { lib, notes, libTags, tree } of results) {
+					for (const n of notes) n.libraryName = lib.name;
+					allNotes.push(...notes);
+					for (const [tag, count] of Object.entries(libTags)) {
+						allTags[tag] = (allTags[tag] || 0) + count;
+					}
+					libTreeMap.set(normalizePath(lib.path), { name: lib.name, path: lib.path, is_dir: true, children: tree } as FileEntry);
 				}
-
-				const tree = await invoke<FileEntry[]>('read_library_tree', { libraryPath: lib.path, maxDepth: 10 }).catch(() => []);
-				libTreeMap.set(normalizePath(lib.path), { name: lib.name, path: lib.path, is_dir: true, children: tree } as FileEntry);
 			}
 
 			// Group under child universes
@@ -129,7 +143,13 @@
 				}
 			}
 
-			allNotesWithMeta = allNotes;
+			// Deduplicate notes by path (prevents Svelte each_key_duplicate crash)
+			const seen = new Set<string>();
+			const deduped: NoteWithMeta[] = [];
+			for (const n of allNotes) {
+				if (!seen.has(n.path)) { seen.add(n.path); deduped.push(n); }
+			}
+			allNotesWithMeta = deduped;
 			tagMap = allTags;
 			folderTrees = trees;
 		} finally {

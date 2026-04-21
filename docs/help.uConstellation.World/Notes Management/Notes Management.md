@@ -45,7 +45,7 @@ The second row contains three mode tabs. Click a tab to switch how your notes ar
 Your selection and scroll position are preserved when switching between tabs.
 
 > [!note]
-> The Star View ribbon icon has been removed from the left dock. Sky View (OrgChart) is now accessible via the OrgChart mode tab in this sidebar. Star View (the full 3D graph) is still available via `Ctrl+G` or Mission Control.
+> The Sky View ribbon icon has been removed from the left dock. Sky View (OrgChart) is now accessible via the OrgChart mode tab in this sidebar. Sky View (the full 3D graph) is still available via `Ctrl+G` or Mission Control.
 
 ---
 
@@ -68,13 +68,13 @@ This grouping is consistent across Tree, List, and OrgChart modes, so switching 
 
 ## Cross-mode selection sync
 
-Clicking a child universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Star View graph (if Star View is open). This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base in different modes.
+Clicking a child universe, library, folder, or note in any sidebar mode highlights the corresponding nodes in the Sky View graph (if Sky View is open). This bidirectional sync helps you maintain spatial awareness as you browse your knowledge base in different modes.
 
 ---
 
 ## Picture-in-Picture (PiP) overlay
 
-When Star View is open and you click a child universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay on top of the main Star View graph.
+When Sky View is open and you click a child universe, library, or folder in the sidebar, a **Picture-in-Picture (PiP)** window appears as a resizable overlay on top of the main Sky View graph.
 
 ### What the PiP shows
 
@@ -85,7 +85,7 @@ When Star View is open and you click a child universe, library, or folder in the
 | **Resizable** | Drag the edges or corners to resize the PiP window |
 | **Repositionable** | Drag the title bar to move the PiP anywhere on screen |
 
-The PiP provides a focused view of a subset of your graph without losing the full Star View context behind it.
+The PiP provides a focused view of a subset of your graph without losing the full Sky View context behind it.
 
 ---
 
