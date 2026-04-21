@@ -229,6 +229,7 @@ c:baht	Noun	ar:بات	de:Baht	en:baht	es:baht	fa:بات	fr:baht	he:באט	hi:ब
 c:bail	Noun	ar:كفالة	de:Kaution	en:bail	es:fianza	fa:وثیقه,ضمانت	fr:caution	he:ערבות	hi:ज़मानत	ja:保釈,保釈金	ko:보석,보석금	pt:fiança	ru:залог	tr:kefalet	ur:ضمانت	zh:保释,保释金
 c:bake	Verb	ar:خبز,يخبز	de:backen	en:bake	es:hornear	fa:پختن در فر	fr:cuire au four	he:לאפות	hi:सेंकना	ja:焼く	ko:굽다	pt:assar	ru:печь,выпекать	tr:fırında pişirmek	ur:پکانا,سینکنا	zh:烘焙
 c:baker	Noun	ar:خباز	de:Bäcker,Bäckerin	en:baker	es:panadero	fa:نانوا	fr:boulanger,boulangère	he:אופה	hi:नानबाई,बेकर	ja:パン屋,パン職人	ko:제빵사	pt:padeiro	ru:пекарь,булочник	tr:fırıncı,ekmekçi	ur:نانبائی,بیکر	zh:面包师
+c:baklava	Noun	ar:بقلاوة	de:Baklava	en:baklava	es:baklava	fa:باقلوا	fr:baklava	he:בקלאוה	hi:बकलावा	ja:バクラヴァ	ko:바클라바	pt:baklava	ru:пахлава	tr:baklava	ur:باقلاوہ	zh:果仁蜜饼
 c:balalaika	Noun	ar:بالاليكا	de:Balalaika	en:balalaika	es:balalaika	fa:بالالایکا	fr:balalaïka	he:בלליקה	hi:बालालाइका	ja:バラライカ	ko:발랄라이카	pt:balalaica	ru:балалайка	tr:balalayka	ur:بالالائیکا	zh:巴拉莱卡琴
 c:balcony	Noun	ar:شرفة,بلكون	de:Balkon	en:balcony	es:balcón	fa:بالکن,ایوان	fr:balcon	he:מרפסת	hi:बालकनी,छज्जा	ja:バルコニー	ko:발코니	pt:varanda,sacada	ru:балкон	tr:balkon	ur:بالکنی,برآمدہ	zh:阳台
 c:ball	Noun	ar:كرة	de:Ball	en:ball	es:pelota,balón	fa:توپ	fr:ballon,balle	he:כדור	hi:गेंद	ja:ボール	ko:공,볼	pt:bola	ru:мяч	tr:top	ur:گیند,بال	zh:球
@@ -402,6 +403,7 @@ c:brewer	Noun	ar:صانع الجعة	de:Brauer,Bierbrauer	en:brewer	es:cervecero
 c:bribery	Noun	ar:رشوة	de:Bestechung	en:bribery	es:soborno,cohecho	fa:رشوه‌خواری,رشوه	fr:corruption,pot-de-vin	he:שוחד	hi:रिश्वत,घूस	ja:贈賄,収賄	ko:뇌물,뇌물수수	pt:suborno	ru:взяточничество,взятка	tr:rüşvet	ur:رشوت	zh:贿赂,受贿
 c:brick	Noun	ar:طوبة,قالب طوب	de:Ziegel,Backstein	en:brick	es:ladrillo	fa:آجر	fr:brique	he:לבנה	hi:ईंट	ja:レンガ,煉瓦	ko:벽돌	pt:tijolo	ru:кирпич	tr:tuğla	ur:اینٹ	zh:砖,砖头
 c:bridge	Noun	ar:جسر	de:Brücke	en:bridge	es:puente	fa:پل	fr:pont	he:גשר	hi:पुल	ja:橋	ko:다리	pt:ponte	ru:мост	tr:köprü	ur:پل	zh:桥
+c:brie	Noun	ar:جبنة بري	de:Brie	en:brie	es:brie	fa:بری	fr:brie	he:ברי	hi:ब्री	ja:ブリー	ko:브리	pt:brie	ru:бри	tr:brie peyniri	ur:بری	zh:布里奶酪
 c:bright	Adjective	ar:ساطع,مضيء	de:hell,leuchtend	en:bright	es:brillante,luminoso	fa:روشن,درخشان	fr:lumineux,éclatant	he:בהיר	hi:चमकीला,प्रकाशमान	ja:明るい	ko:밝은	pt:brilhante,luminoso	ru:яркий	tr:parlak	ur:روشن	zh:明亮
 c:bring	Verb	ar:أحضر,جلب	de:bringen	en:bring	es:traer	fa:آوردن	fr:apporter,amener	he:להביא	hi:लाना	ja:持ってくる	ko:가져오다	pt:trazer	ru:приносить,принести	tr:getirmek	ur:لانا	zh:带
 c:broccoli	Noun	ar:بروكلي	de:Brokkoli	en:broccoli	es:brócoli	fa:بروکلی,کلم‌بروکلی	fr:brocoli	he:ברוקולי	hi:ब्रोकोली,हरी गोभी	ja:ブロッコリー	ko:브로콜리	pt:brócolis	ru:брокколи	tr:brokoli	ur:بروکلی	zh:西兰花,花椰菜
@@ -437,6 +439,7 @@ c:business-card	Noun	ar:بطاقة عمل	de:Visitenkarte	en:business card	es:ta
 c:butcher	Noun	ar:جزار,لحام	de:Metzger,Fleischer	en:butcher	es:carnicero	fa:قصاب	fr:boucher	he:קצב	hi:क़साई	ja:肉屋,精肉店	ko:정육점,푸주한	pt:açougueiro,carniceiro	ru:мясник	tr:kasap	ur:قصائی	zh:屠夫,肉贩
 c:butter	Noun	ar:زبدة	de:Butter	en:butter	es:mantequilla	fa:کره	fr:beurre	he:חמאה	hi:मक्खन	ja:バター	ko:버터	pt:manteiga	ru:масло	tr:tereyağı	ur:مکھن	zh:黄油
 c:butterfly	Noun	ar:فراشة	de:Schmetterling	en:butterfly	es:mariposa	fa:پروانه	fr:papillon	he:פרפר	hi:तितली	ja:蝶	ko:나비	pt:borboleta	ru:бабочка	tr:kelebek	ur:تتلی	zh:蝴蝶
+c:buttermilk	Noun	ar:اللبن الرائب	de:Buttermilch	en:buttermilk	es:suero de leche	fa:دوغ	fr:babeurre	he:לבן	hi:छाछ,मट्ठा	ja:バターミルク	ko:버터밀크	pt:leitelho	ru:пахта	tr:ayran	ur:چھاچھ	zh:酪乳
 c:buy	Verb	ar:اشترى	de:kaufen	en:buy	es:comprar	fa:خریدن	fr:acheter	he:לקנות	hi:खरीदना	ja:買う	ko:사다	pt:comprar	ru:покупать,купить	tr:satın almak	ur:خریدنا	zh:买
 c:buzzard	Noun	ar:بزار,صقر الفار	de:Bussard	en:buzzard	es:ratonero	fa:سرگنده	fr:buse	he:עיט עכבר	hi:बज़र्ड	ja:ノスリ	ko:말똥가리	pt:águia-de-asa-redonda	ru:канюк	tr:şahin	ur:بزرڈ	zh:鵟
 c:byzantine-era	Noun	ar:العصر البيزنطي,الإمبراطورية البيزنطية	de:Byzantinisches Reich,byzantinische Zeit	en:byzantine era,byzantine empire	es:era bizantina,imperio bizantino	fa:دوره بیزانس,امپراتوری بیزانس	fr:époque byzantine,empire byzantin	he:התקופה הביזנטית,האימפריה הביזנטית	hi:बीजान्टिन युग,बीजान्टिन साम्राज्य	ja:ビザンツ帝国,東ローマ帝国	ko:비잔틴 제국,비잔티움 제국	pt:era bizantina,império bizantino	ru:византийская эпоха,византийская империя	tr:bizans dönemi,bizans imparatorluğu	ur:بازنطینی دور,بازنطینی سلطنت	zh:拜占庭时代,拜占庭帝国
@@ -458,6 +461,7 @@ c:calligrapher	Noun	ar:خطّاط	de:Kalligraph	en:calligrapher	es:calígrafo	fa
 c:callisto	Noun	ar:كاليستو	de:Kallisto	en:Callisto	es:Calisto	fa:کالیستو	fr:Callisto	he:קליסטו	hi:कैलिस्टो	ja:カリスト	ko:칼리스토	pt:Calisto	ru:Каллисто	tr:Kallisto	ur:کلسٹو	zh:木卫四
 c:camel	Noun	ar:جمل,ناقة	de:Kamel	en:camel	es:camello	fa:شتر	fr:chameau	he:גמל	hi:ऊँट	ja:ラクダ	ko:낙타	pt:camelo	ru:верблюд	tr:deve	ur:اونٹ	zh:骆驼
 c:camel-spider	Noun	ar:أبو ركبة,عنكبوت الجمل	de:Walzenspinne,Kamelspinne	en:camel spider,sun spider	es:araña camello,solífugo	fa:خرچنگ باد	fr:solifuge,araignée chameau	he:עכביש הגמל	hi:ऊंट मकड़ी	ja:ヒヨケムシ	ko:낙타거미	pt:aranha-camelo,solifuge	ru:сольпуга,фаланга	tr:deve örümceği	ur:اونٹ مکڑی	zh:避日蛛,骆驼蜘蛛
+c:camembert	Noun	ar:جبنة كامبر	de:Camembert	en:camembert	es:camembert	fa:کامامبر	fr:camembert	he:קממבר	hi:कामेम्बर्ट	ja:カマンベール	ko:카망베르	pt:camembert	ru:камамбер	tr:camembert peyniri	ur:کامیمبرٹ	zh:卡门贝尔奶酪
 c:cameo	Noun	ar:نقش بارز	de:Kamee	en:cameo	es:camafeo	fa:کامئو	fr:camée	he:קמאו	hi:केमियो	ja:カメオ	ko:카메오	pt:camafeu	ru:камея	tr:kameo	ur:نقش برجستہ	zh:浮雕宝石
 c:camera	Noun	ar:كاميرا,آلة تصوير	de:Kamera,Fotoapparat	en:camera	es:cámara	fa:دوربین	fr:caméra,appareil photo	he:מצלמה	hi:कैमरा	ja:カメラ	ko:카메라	pt:câmera,câmara	ru:камера,фотоаппарат	tr:kamera	ur:کیمرہ	zh:相机,照相机,摄像机
 c:campaign	Noun	ar:حملة	de:Feldzug,Kampagne	en:campaign	es:campaña	fa:لشکرکشی	fr:campagne	he:מערכה	hi:अभियान	ja:遠征,戦役	ko:원정,작전	pt:campanha	ru:кампания	tr:sefer	ur:مہم	zh:战役
@@ -561,6 +565,7 @@ c:chartreuse	Noun	ar:أخضر ليموني	de:Chartreuse	en:chartreuse	es:chartr
 c:chatbot	Noun	ar:روبوت محادثة,شات بوت	de:Chatbot	en:chatbot	es:chatbot,robot conversacional	fa:ربات گفتگو,چت بات	fr:agent conversationnel,chatbot	he:בוט שיחה,צ'אטבוט	hi:चैटबॉट	ja:チャットボット	ko:챗봇	pt:chatbot,bot de conversa	ru:чат бот	tr:sohbet robotu,chatbot	ur:چیٹ بوٹ	zh:聊天机器人
 c:check	Noun	ar:شيك	de:Scheck	en:check,cheque	es:cheque	fa:چک	fr:chèque	he:המחאה,צ'ק	hi:चेक	ja:小切手,チェック	ko:수표,체크	pt:cheque	ru:чек	tr:çek	ur:چیک	zh:支票
 c:checkers	Noun	ar:الداما	de:Dame-Spiel	en:checkers	es:damas	fa:بازی دام	fr:jeu de dames	he:דמקה	hi:चेकर्स	ja:チェッカー	ko:체커	pt:jogo de damas	ru:шашки	tr:dama	ur:چیکرز	zh:跳棋
+c:cheddar	Noun	ar:جبنة الشيدر	de:Cheddar	en:cheddar	es:queso cheddar	fa:چدر	fr:cheddar	he:צ'דר	hi:चेडर	ja:チェダー	ko:체다	pt:queijo cheddar	ru:чеддер	tr:çedar peyniri	ur:چیڈر	zh:切达奶酪
 c:cheek	Noun	ar:خد,وجنة	de:Wange,Backe	en:cheek	es:mejilla	fa:گونه	fr:joue	he:לחי	hi:गाल	ja:頬	ko:뺨,볼	pt:bochecha,face	ru:щека	tr:yanak	ur:گال	zh:脸颊,面颊
 c:cheese	Noun	ar:جبن,جبنة	de:Käse	en:cheese	es:queso	fa:پنیر	fr:fromage	he:גבינה	hi:पनीर	ja:チーズ	ko:치즈	pt:queijo	ru:сыр	tr:peynir	ur:پنیر	zh:奶酪
 c:cheetah	Noun	ar:فهد صياد	de:Gepard	en:cheetah	es:guepardo	fa:یوزپلنگ	fr:guépard	he:ברדלס	hi:चीता	ja:チーター	ko:치타	pt:chita,guepardo	ru:гепард	tr:çita	ur:چیتا	zh:猎豹
@@ -640,6 +645,7 @@ c:clock	Noun	ar:ساعة	de:Uhr	en:clock	es:reloj	fa:ساعت	fr:horloge	he:שע
 c:close	Verb	ar:أغلق	de:schließen	en:close,shut	es:cerrar	fa:بستن	fr:fermer	he:לסגור	hi:बंद करना	ja:閉める	ko:닫다	pt:fechar	ru:закрывать,закрыть	tr:kapatmak	ur:بند کرنا	zh:关
 c:cloth	Noun	ar:قماش,نسيج	de:Stoff,Tuch	en:cloth,fabric	es:tela,tejido	fa:پارچه	fr:tissu,étoffe	he:בד	hi:कपड़ा,वस्त्र	ja:布,生地	ko:천,직물	pt:tecido,pano	ru:ткань,полотно	tr:kumaş,bez	ur:کپڑا,پارچہ	zh:布,布料
 c:clothes	Noun	ar:ملابس,ثياب	de:Kleidung,Kleider	en:clothes,clothing	es:ropa	fa:لباس	fr:vêtements	he:בגדים	hi:कपड़े	ja:服,衣服	ko:옷,의복	pt:roupa	ru:одежда	tr:giysi,kıyafet	ur:کپڑے	zh:衣服
+c:clotted-cream	Noun	ar:القشدة المتخثرة	de:Clotted Cream	en:clotted cream	es:crema coagulada	fa:سرشیر	fr:crème clotted	he:שמנת מקורשת	hi:क्लॉटेड क्रीम	ja:クロテッドクリーム	ko:클로티드 크림	pt:nata coagulada	ru:топлёные сливки	tr:pıhtılaşmış krema	ur:کلاٹڈ کریم	zh:凝脂奶油
 c:cloud	Noun	ar:سحابة,غيمة	de:Wolke	en:cloud	es:nube	fa:ابر	fr:nuage	he:ענן	hi:बादल	ja:雲	ko:구름	pt:nuvem	ru:облако,туча	tr:bulut	ur:بادل	zh:云
 c:cloud-computing	Noun	ar:الحوسبة السحابية	de:Cloud Computing,Wolkencomputing	en:cloud computing	es:computación en la nube	fa:رایانش ابری	fr:informatique en nuage	he:מחשוב ענן	hi:क्लाउड कंप्यूटिंग	ja:クラウドコンピューティング	ko:클라우드 컴퓨팅	pt:computação em nuvem	ru:облачные вычисления	tr:bulut bilişim	ur:کلاؤڈ کمپیوٹنگ	zh:云计算
 c:cloudburst	Noun	ar:وابل مطري	de:Wolkenbruch	en:cloudburst	es:aguacero	fa:رگبار	fr:trombe d'eau	he:מבול	hi:बादल फटना	ja:豪雨	ko:폭우	pt:aguaceiro	ru:ливень	tr:sağanak	ur:بادل پھٹنا	zh:暴雨
@@ -699,6 +705,7 @@ c:concept	Noun	ar:مفهوم	de:Begriff,Konzept	en:concept	es:concepto	fa:مفه
 c:concert	Noun	ar:حفلة موسيقية,كونسيرت	de:Konzert	en:concert	es:concierto	fa:کنسرت	fr:concert	he:קונצרט	hi:संगीत कार्यक्रम,कॉन्सर्ट	ja:コンサート,演奏会	ko:콘서트,연주회	pt:concerto	ru:концерт	tr:konser	ur:کنسرٹ,محفل موسیقی	zh:音乐会,演唱会
 c:concrete	Noun	ar:خرسانة	de:Beton	en:concrete	es:hormigón,concreto	fa:بتن	fr:béton	he:בטון	hi:कंक्रीट	ja:コンクリート	ko:콘크리트	pt:concreto,betão	ru:бетон	tr:beton	ur:کنکریٹ	zh:混凝土
 c:condensation	Noun	ar:تكاثف	de:Kondensation	en:condensation	es:condensación	fa:میعان,تراکم	fr:condensation	he:עיבוי	hi:संघनन,द्रवण	ja:凝縮,縮合	ko:응축,축합	pt:condensação	ru:конденсация	tr:yoğuşma,yoğunlaşma	ur:تکاثف,گاڑھا پن	zh:冷凝,凝结
+c:condensed-milk	Noun	ar:حليب مكثف	de:Kondensmilch	en:condensed milk	es:leche condensada	fa:شیر تغلیظ شده	fr:lait concentré sucré	he:חלב מרוכז	hi:गाढ़ा दूध	ja:コンデンスミルク	ko:연유	pt:leite condensado	ru:сгущённое молоко	tr:yoğunlaştırılmış süt	ur:گاڑھا دودھ	zh:炼乳
 c:conditioning	Noun	ar:اشتراط,تكييف نفسي	de:Konditionierung	en:conditioning	es:condicionamiento	fa:شرطی سازی	fr:conditionnement	he:התנייה	hi:अनुबंधन,कंडीशनिंग	ja:条件付け	ko:조건형성,컨디셔닝	pt:condicionamento	ru:обусловливание,кондиционирование	tr:koşullanma,şartlandırma	ur:شرطی بندی,کنڈیشننگ	zh:条件反射,条件作用
 c:condor	Noun	ar:كندور	de:Kondor	en:condor	es:cóndor	fa:کندور	fr:condor	he:קונדור	hi:कोंडोर	ja:コンドル	ko:콘도르	pt:condor	ru:кондор	tr:kondor	ur:کنڈور	zh:神鹫
 c:conductor	Noun	ar:قائد الأوركسترا,مايسترو	de:Dirigent	en:conductor	es:director de orquesta,director	fa:رهبر ارکستر	fr:chef d'orchestre	he:מנצח	hi:संचालक,कंडक्टर	ja:指揮者	ko:지휘자	pt:maestro,regente	ru:дирижёр	tr:orkestra şefi,şef	ur:آرکسٹرا لیڈر,مایسترو	zh:指挥家,指挥
@@ -747,6 +754,7 @@ c:corsage	Noun	ar:باقة الصدر	de:Ansteckblume,Corsage	en:corsage	es:cors
 c:cosmos	Noun	ar:كون	de:Kosmos	en:cosmos	es:cosmos	fa:کیهان,گیتی	fr:cosmos	he:קוסמוס,יקום	hi:ब्रह्मांड,सृष्टि	ja:コスモス,宇宙	ko:코스모스,우주	pt:cosmos	ru:космос	tr:kozmos,evren	ur:کائنات	zh:宇宙
 c:cost	Noun	ar:تكلفة,كلفة	de:Kosten	en:cost	es:coste,costo	fa:هزینه	fr:coût	he:עלות	hi:लागत	ja:費用,コスト	ko:비용,원가	pt:custo	ru:стоимость,издержки	tr:maliyet	ur:لاگت	zh:成本,费用
 c:cottage	Noun	ar:كوخ ريفي,بيت ريفي	de:Cottage,Landhaus	en:cottage	es:cabaña,casa de campo	fa:کلبه روستایی	fr:chaumière,cottage	he:בקתה כפרית,קוטג	hi:कुटी,कुटीर	ja:コテージ,田舎家	ko:코티지,시골집	pt:chalé,casa de campo	ru:коттедж,домик	tr:kulübe ev,köy evi	ur:کاٹج,دیہی گھر	zh:小别墅,乡村小屋
+c:cottage-cheese	Noun	ar:الجبن القريش	de:Hüttenkäse	en:cottage cheese	es:requesón	fa:پنیر دانه ای	fr:fromage cottage	he:גבינת קוטג	hi:कॉटेज चीज़	ja:カッテージチーズ	ko:코티지 치즈	pt:queijo cottage	ru:творог	tr:süzme peynir	ur:کاٹیج پنیر	zh:农家奶酪
 c:cotton	Noun	ar:قطن	de:Baumwolle	en:cotton	es:algodón	fa:پنبه	fr:coton	he:כותנה	hi:कपास,रुई	ja:綿,コットン	ko:면,솜	pt:algodão	ru:хлопок	tr:pamuk	ur:روئی,کپاس	zh:棉,棉花
 c:cough	Noun	ar:سعال,كحة	de:Husten	en:cough	es:tos	fa:سرفه	fr:toux	he:שיעול	hi:खांसी	ja:咳	ko:기침	pt:tosse	ru:кашель	tr:öksürük	ur:کھانسی	zh:咳嗽
 c:counseling	Noun	ar:استشارة نفسية,إرشاد نفسي	de:Beratung,psychologische Beratung	en:counseling,counselling	es:asesoramiento,orientación psicológica	fa:مشاوره	fr:conseil psychologique,counseling	he:ייעוץ,ייעוץ פסיכולוגי	hi:परामर्श,काउंसलिंग	ja:カウンセリング,心理相談	ko:상담,카운슬링	pt:aconselhamento,orientação psicológica	ru:консультирование,консультация	tr:danışmanlık,psikolojik danışmanlık	ur:مشاورت,کونسلنگ	zh:咨询,心理咨询
@@ -763,10 +771,13 @@ c:crane	Noun	ar:كركي,غرنوق	de:Kranich	en:crane	es:grulla	fa:درنا	fr
 c:crater	Noun	ar:فوهة بركانية	de:Krater	en:crater	es:cráter	fa:دهانه آتشفشان	fr:cratère	he:לוע,מכתש	hi:गड्ढा,क्रेटर	ja:クレーター,火口	ko:분화구	pt:cratera	ru:кратер	tr:krater	ur:دہانہ	zh:火山口
 c:crawl	Verb	ar:زحف	de:kriechen	en:crawl	es:gatear	fa:چهار دست و پا رفتن,خزیدن	fr:ramper	he:לזחול	hi:रेंगना	ja:這う	ko:기어가다	pt:engatinhar,rastejar	ru:ползти	tr:emeklemek,sürünmek	ur:رینگنا	zh:爬行
 c:crayfish	Noun	ar:كركند النهر,جراد الماء	de:Flusskrebs	en:crayfish,crawfish	es:cangrejo de río	fa:خرچنگ رودخانه	fr:écrevisse	he:סרטן נהרות	hi:नदी झींगा	ja:ザリガニ	ko:가재	pt:lagostim-do-rio	ru:речной рак	tr:tatlı su istakozu,kerevit	ur:دریائی جھینگا	zh:小龙虾
+c:cream	Noun	ar:قشدة,كريمة	de:Sahne,Rahm	en:cream	es:crema,nata	fa:خامه	fr:crème	he:שמנת	hi:मलाई,क्रीम	ja:クリーム	ko:크림	pt:creme de leite	ru:сливки	tr:krema	ur:کریم	zh:奶油
+c:cream-cheese	Noun	ar:الجبن الكريمي	de:Frischkäse	en:cream cheese	es:queso crema	fa:پنیر خامه ای	fr:fromage à la crème	he:גבינת שמנת	hi:क्रीम चीज़	ja:クリームチーズ	ko:크림치즈	pt:cream cheese	ru:творожный сыр	tr:krem peynir	ur:کریم پنیر	zh:奶油奶酪
 c:cream-color	Noun	ar:كريمي	de:Cremefarben,Creme	en:cream	es:crema	fa:کرم	fr:crème	he:שמנת	hi:क्रीम रंग	ja:クリーム色	ko:크림색	pt:creme	ru:кремовый	tr:krem rengi	ur:کریم رنگ	zh:奶油色
 c:creation	Noun	ar:إبداع,خلق	de:Schöpfung,Kreation	en:creation	es:creación	fa:خلق,آفرینش	fr:création	he:יצירה	hi:रचना,सृष्टि	ja:創造,創作	ko:창조,창작	pt:criação	ru:создание,творение	tr:yaratılış,yaratım	ur:تخلیق	zh:创造,创作
 c:credit	Noun	ar:ائتمان	de:Kredit	en:credit	es:crédito	fa:اعتبار	fr:crédit	he:אשראי	hi:क्रेडिट,उधार	ja:信用,クレジット	ko:신용,크레딧	pt:crédito	ru:кредит	tr:kredi	ur:کریڈٹ,ادھار	zh:信用,信贷
 c:creep	Verb	ar:تسلل,دب ببطء	de:schleichen	en:creep	es:deslizarse sigilosamente	fa:دزدکی رفتن,خزیدن آرام	fr:se glisser furtivement	he:להתגנב	hi:चुपके से सरकना	ja:忍び寄る	ko:살금살금 기다	pt:mover-se furtivamente	ru:красться	tr:sinsice ilerlemek	ur:دبے پاؤں چلنا	zh:悄悄爬行
+c:creme-brulee	Noun	ar:كريم بروليه	de:Crème brûlée	en:crème brûlée	es:crema quemada	fa:کرم بروله	fr:crème brûlée	he:קרם ברולה	hi:क्रेम ब्रूले	ja:クレームブリュレ	ko:크림 브륄레	pt:creme brulée	ru:крем-брюле	tr:krep brüle	ur:کریم بروله	zh:焦糖布丁
 c:crescent	Noun	ar:هلال	de:Mondsichel,Halbmond	en:crescent	es:luna creciente,creciente	fa:هلال	fr:croissant	he:סהר	hi:अर्धचंद्र,हिलाल	ja:三日月	ko:초승달	pt:crescente,lua crescente	ru:полумесяц	tr:hilal	ur:ہلال	zh:新月,月牙
 c:crescent-shape	Noun	ar:هلال	de:Halbmond,Sichel	en:crescent	es:creciente,media luna	fa:هلال	fr:croissant	he:סהר	hi:अर्धचंद्र	ja:三日月形	ko:초승달 모양	pt:crescente	ru:полумесяц	tr:hilal	ur:ہلال	zh:新月形,月牙形
 c:cricket	Noun	ar:كريكيت	de:Cricket,Kricket	en:cricket	es:críquet	fa:کریکت	fr:cricket	he:קריקט	hi:क्रिकेट	ja:クリケット	ko:크리켓	pt:críquete	ru:крикет	tr:kriket	ur:کرکٹ	zh:板球
@@ -803,6 +814,7 @@ c:curse	Noun	ar:لعنة	de:Fluch	en:curse	es:maldición	fa:نفرین	fr:maléd
 c:curtain	Noun	ar:ستارة	de:Vorhang,Gardine	en:curtain	es:cortina	fa:پرده	fr:rideau	he:וילון	hi:परदा	ja:カーテン	ko:커튼	pt:cortina	ru:занавеска,штора	tr:perde	ur:پردہ	zh:窗帘
 c:curve	Noun	ar:منحنى	de:Kurve	en:curve	es:curva	fa:منحنی	fr:courbe	he:עקומה	hi:वक्र	ja:曲線,カーブ	ko:곡선,커브	pt:curva	ru:кривая	tr:eğri	ur:منحنی	zh:曲线
 c:curved	Adjective	ar:منحني	de:gekrümmt,gebogen	en:curved	es:curvo	fa:خمیده,منحنی	fr:courbé,courbe	he:מעוקל	hi:घुमावदार	ja:曲がった	ko:굽은,구부러진	pt:curvo	ru:изогнутый	tr:eğri,kıvrık	ur:خمیدہ	zh:弯曲
+c:custard	Noun	ar:كاسترد	de:Vanillecreme	en:custard	es:natillas	fa:کاستارد	fr:crème anglaise	he:קרם אנגלז	hi:कस्टर्ड	ja:カスタード	ko:커스터드	pt:creme de baunilha	ru:заварной крем	tr:muhallebi	ur:کسٹرڈ	zh:蛋奶冻
 c:custom	Noun	ar:عادة,عرف	de:Brauch,Sitte	en:custom	es:costumbre	fa:رسم,عرف	fr:coutume,usage	he:מנהג	hi:रिवाज,प्रथा	ja:習慣,風習	ko:관습,풍습	pt:costume	ru:обычай	tr:gelenek,adet	ur:رواج,رسم	zh:习俗,风俗
 c:customer	Noun	ar:زبون,عميل	de:Kunde,Kundin	en:customer,client	es:cliente	fa:مشتری	fr:client	he:לקוח	hi:ग्राहक	ja:客,顧客,カスタマー	ko:고객,손님	pt:cliente	ru:клиент,покупатель	tr:müşteri	ur:گاہک,صارف	zh:顾客,客户
 c:cuttlefish	Noun	ar:سبيط,حبار سهمي	de:Sepia,Tintenfisch	en:cuttlefish	es:sepia,jibia	fa:ماهی مرکب سپیا	fr:seiche	he:דיונון סלעים	hi:कटलफिश	ja:コウイカ	ko:갑오징어	pt:choco,sépia	ru:каракатица	tr:mürekkepbalığı,sübye	ur:کٹل فش	zh:墨鱼
@@ -1054,6 +1066,7 @@ c:embroidery	Noun	ar:تطريز	de:Stickerei	en:embroidery	es:bordado	fa:گلد�
 c:emerald	Noun	ar:زمرد	de:Smaragd	en:emerald	es:esmeralda	fa:زمرد	fr:émeraude	he:אזמרגד,ברקת	hi:पन्ना,मरकत	ja:エメラルド,翠玉	ko:에메랄드,취옥	pt:esmeralda	ru:изумруд	tr:zümrüt	ur:زمرد,پنا	zh:绿宝石,祖母绿
 c:emerald-color	Noun	ar:زُمُرُّدي	de:Smaragdgrün	en:emerald,emerald green	es:verde esmeralda	fa:زمردی	fr:vert émeraude	he:ירוק אזמרגד	hi:पन्ना हरा	ja:エメラルドグリーン	ko:에메랄드색	pt:verde-esmeralda	ru:изумрудный	tr:zümrüt yeşili	ur:زمردی	zh:翠绿色,祖母绿色
 c:emergency	Noun	ar:طوارئ	de:Notfall	en:emergency	es:emergencia	fa:اورژانس,فوریت	fr:urgence	he:חירום	hi:आपातकाल	ja:緊急	ko:비상,응급	pt:emergência	ru:чрезвычайная ситуация	tr:acil durum	ur:ہنگامی حالت	zh:紧急情况
+c:emmental	Noun	ar:جبنة الايمنتال	de:Emmentaler	en:emmental	es:emmental	fa:امنتال	fr:emmental	he:אמנטל	hi:एम्मेंटल	ja:エメンタール	ko:에멘탈	pt:emmental	ru:эмменталь	tr:Emmental peyniri	ur:ایمنٹل	zh:埃曼塔尔奶酪
 c:emmer	Noun	ar:قمح الايمر	de:Emmer	en:emmer wheat	es:trigo farro	fa:امر	fr:amidonnier	he:חיטה עינית	hi:एमर	ja:エンマー小麦	ko:엠머	pt:farro	ru:эммер	tr:emmer	ur:ایمر	zh:二粒小麦
 c:empathy	Noun	ar:تعاطف	de:Empathie,Einfühlungsvermögen	en:empathy	es:empatía	fa:همدلی	fr:empathie	he:אמפתיה	hi:सहानुभूति,समानुभूति	ja:共感,感情移入	ko:공감,감정이입	pt:empatia	ru:эмпатия,сопереживание	tr:empati	ur:ہمدردی	zh:同理心,共情
 c:emperor	Noun	ar:إمبراطور	de:Kaiser,Imperator	en:emperor	es:emperador	fa:امپراتور	fr:empereur	he:קיסר	hi:सम्राट	ja:皇帝,天皇	ko:황제	pt:imperador	ru:император	tr:imparator	ur:شہنشاہ,بادشاہ اعظم	zh:皇帝
@@ -1110,6 +1123,7 @@ c:euphrates	Noun	ar:الفرات,نهر الفرات	de:Euphrat	en:Euphrates,Eup
 c:euro	Noun	ar:يورو	de:Euro	en:euro	es:euro	fa:یورو	fr:euro	he:יורו	hi:यूरो	ja:ユーロ	ko:유로	pt:euro	ru:евро	tr:avro,euro	ur:یورو	zh:欧元
 c:europa-moon	Noun	ar:يوروبا,قمر يوروبا	de:Europa	en:Europa	es:Europa	fa:اروپا	fr:Europe	he:אירופה	hi:यूरोपा	ja:エウロパ	ko:유로파	pt:Europa	ru:Европа	tr:Europa	ur:یوروپا	zh:木卫二
 c:evacuation	Noun	ar:إخلاء	de:Evakuierung,Räumung	en:evacuation	es:evacuación	fa:تخلیه	fr:évacuation	he:פינוי	hi:निकासी	ja:避難	ko:대피,철수	pt:evacuação	ru:эвакуация	tr:tahliye	ur:انخلا	zh:疏散
+c:evaporated-milk	Noun	ar:حليب مبخر	de:Verdampfte Milch	en:evaporated milk	es:leche evaporada	fa:شیر تبخیر شده	fr:lait évaporé	he:חלב מאודה	hi:वाष्पीकृत दूध	ja:エバミルク	ko:증발 우유	pt:leite evaporado	ru:сгущённое молоко без сахара	tr:evaporize süt	ur:بخاری دودھ	zh:淡炼乳
 c:evaporation	Noun	ar:تبخر	de:Verdunstung,Verdampfung	en:evaporation,vaporization	es:evaporación,vaporización	fa:تبخیر	fr:évaporation,vaporisation	he:אידוי,התאדות	hi:वाष्पीकरण	ja:蒸発	ko:증발	pt:evaporação,vaporização	ru:испарение	tr:buharlaşma	ur:تبخیر,بخارات	zh:蒸发,汽化
 c:evening	Noun	ar:مساء	de:Abend	en:evening	es:atardecer,noche	fa:عصر,غروب	fr:soir	he:ערב	hi:शाम	ja:夕方	ko:저녁	pt:tarde,noite	ru:вечер	tr:akşam	ur:شام	zh:晚上,傍晚
 c:event	Noun	ar:حدث	de:Ereignis,Veranstaltung	en:event	es:evento,suceso	fa:رویداد,اتفاق	fr:événement	he:אירוע	hi:घटना,आयोजन	ja:イベント,出来事	ko:행사,사건	pt:evento,acontecimento	ru:событие	tr:olay,etkinlik	ur:واقعہ	zh:事件,活动
@@ -1160,6 +1174,7 @@ c:fern	Noun	ar:سرخس	de:Farn	en:fern	es:helecho	fa:سرخس	fr:fougère	he:ש
 c:ferry	Noun	ar:عبارة	de:Fähre	en:ferry	es:transbordador,ferry	fa:کشتی عبور	fr:ferry,bac	he:מעבורת	hi:नौका,फ़ेरी	ja:フェリー,連絡船	ko:페리,연락선	pt:balsa,ferry	ru:паром	tr:feribot	ur:فیری,کشتی	zh:渡轮
 c:fertilizer	Noun	ar:سماد	de:Dünger	en:fertilizer	es:fertilizante	fa:کود	fr:engrais	he:דשן	hi:उर्वरक	ja:肥料	ko:비료	pt:fertilizante	ru:удобрение	tr:gübre	ur:کھاد	zh:肥料
 c:festival	Noun	ar:مهرجان	de:Fest,Festival	en:festival	es:festival,fiesta	fa:جشنواره,فستیوال	fr:festival,fête	he:פסטיבל,חג	hi:त्योहार,फ़ेस्टिवल	ja:祭り,フェスティバル	ko:축제,페스티벌	pt:festival,festa	ru:фестиваль,праздник	tr:festival,bayram	ur:میلہ,تہوار	zh:节日,节庆
+c:feta	Noun	ar:جبنة الفيتا	de:Feta	en:feta	es:queso feta	fa:فتا	fr:feta	he:פטה	hi:फेटा	ja:フェタ	ko:페타	pt:queijo feta	ru:фета	tr:beyaz peynir	ur:فیٹا	zh:菲达奶酪
 c:feudalism	Noun	ar:إقطاعية,إقطاع	de:Feudalismus,Lehnswesen	en:feudalism	es:feudalismo	fa:فئودالیسم,نظام ارباب رعیتی	fr:féodalisme	he:פיאודליזם	hi:सामंतवाद	ja:封建主義,封建制	ko:봉건주의,봉건제	pt:feudalismo	ru:феодализм	tr:feodalizm,feodalite	ur:جاگیرداری,فیوڈلزم	zh:封建主义,封建制度
 c:fever	Noun	ar:حمى	de:Fieber	en:fever	es:fiebre	fa:تب	fr:fièvre	he:חום	hi:बुखार	ja:熱	ko:열	pt:febre	ru:лихорадка	tr:ateş	ur:بخار	zh:发烧,发热
 c:few	Adjective	ar:قليل	de:wenige	en:few	es:pocos	fa:کم,اندک	fr:peu	he:מעט	hi:कुछ,थोड़े	ja:少し,少ない	ko:적은	pt:poucos	ru:мало,немногие	tr:az,birkaç	ur:کم,چند	zh:少,几个
@@ -1297,6 +1312,7 @@ c:gazelle	Noun	ar:غزال	de:Gazelle	en:gazelle	es:gacela	fa:آهو	fr:gazelle	
 c:gdp	Noun	ar:الناتج المحلي الإجمالي	de:Bruttoinlandsprodukt,BIP	en:gross domestic product,GDP	es:producto interno bruto,PIB	fa:تولید ناخالص داخلی	fr:produit intérieur brut,PIB	he:תוצר מקומי גולמי	hi:सकल घरेलू उत्पाद,जीडीपी	ja:国内総生産,GDP	ko:국내총생산,GDP	pt:produto interno bruto,PIB	ru:валовой внутренний продукт,ВВП	tr:gayri safi yurt içi hasıla,GSYİH	ur:مجموعی ملکی پیداوار,جی ڈی پی	zh:国内生产总值,GDP
 c:gecko	Noun	ar:وزيغ,ابرص	de:Gecko	en:gecko	es:gecko	fa:گکو	fr:gecko	he:גקו	hi:छिपकली,गेको	ja:ヤモリ	ko:도마뱀붙이	pt:gecko	ru:гекон	tr:keler	ur:گیکو	zh:壁虎
 c:gel-pen	Noun	ar:قلم جل	de:Gelschreiber	en:gel pen	es:bolígrafo de gel	fa:خودکار ژله ای	fr:stylo gel	he:עט ג'ל	hi:जेल पेन	ja:ゲルペン	ko:젤 펜	pt:caneta gel	ru:гелевая ручка	tr:jel kalem	ur:جیل پین	zh:中性笔
+c:gelato	Noun	ar:جيلاتو	de:Gelato	en:gelato	es:gelato	fa:ژلاتو	fr:gelato	he:ג'לאטו	hi:जेलाटो	ja:ジェラート	ko:젤라토	pt:gelato	ru:джелато	tr:Italyan dondurması	ur:جیلاٹو	zh:意式冰淇淋
 c:gemsbok	Noun	ar:الجمسبوك	de:Gemsbock	en:gemsbok	es:gemsbok	fa:جمزبوک	fr:gemsbok	he:גמסבוק	hi:गेम्सबोक	ja:ゲムズボック	ko:겜스복	pt:órix-do-cabo	ru:гемсбок	tr:gemsbok	ur:گیمس بوک	zh:南非剑羚
 c:gemstone	Noun	ar:حجر كريم	de:Edelstein	en:gemstone,gem	es:gema,piedra preciosa	fa:سنگ قیمتی	fr:gemme,pierre précieuse	he:אבן חן	hi:रत्न,कीमती पत्थर	ja:宝石	ko:보석	pt:gema,pedra preciosa	ru:драгоценный камень,самоцвет	tr:değerli taş,mücevher taşı	ur:قیمتی پتھر,جواہر	zh:宝石
 c:gene	Noun	ar:جين,مورثة	de:Gen	en:gene	es:gen	fa:ژن	fr:gène	he:גן	hi:जीन	ja:遺伝子	ko:유전자	pt:gene	ru:ген	tr:gen	ur:جین	zh:基因
@@ -1309,6 +1325,7 @@ c:genus	Noun	ar:جنس,أجناس	de:Gattung	en:genus	es:género	fa:سرده	fr:
 c:geography	Noun	ar:جغرافيا	de:Geografie,Geographie	en:geography	es:geografía	fa:جغرافیا	fr:géographie	he:גיאוגרפיה	hi:भूगोल	ja:地理	ko:지리	pt:geografia	ru:география	tr:coğrafya	ur:جغرافیہ	zh:地理
 c:germany	Noun	ar:ألمانيا	de:Deutschland	en:Germany	es:Alemania	fa:آلمان	fr:Allemagne	he:גרמניה	hi:जर्मनी	ja:ドイツ	ko:독일	pt:Alemanha	ru:Германия	tr:Almanya	ur:جرمنی	zh:德国
 c:geyser	Noun	ar:نافورة حرارية	de:Geysir	en:geyser	es:géiser	fa:آبفشان	fr:geyser	he:גייזר	hi:गर्म जल स्रोत,गीज़र	ja:間欠泉	ko:간헐천	pt:géiser	ru:гейзер	tr:gayzer	ur:گیزر	zh:间歇泉
+c:ghee	Noun	ar:سمن	de:Ghee	en:ghee	es:ghee	fa:روغن حیوانی	fr:ghee	he:גהי	hi:घी	ja:ギー	ko:기	pt:ghee	ru:гхи	tr:ghee	ur:گھی	zh:酥油
 c:ghost	Noun	ar:شبح	de:Geist	en:ghost	es:fantasma	fa:روح	fr:fantôme	he:רוח רפאים	hi:भूत	ja:幽霊	ko:유령	pt:fantasma	ru:призрак	tr:hayalet	ur:بھوت	zh:鬼
 c:gift	Noun	ar:هدية,عطية	de:Geschenk,Gabe	en:gift,present	es:regalo,obsequio	fa:هدیه,کادو	fr:cadeau,présent	he:מתנה	hi:उपहार,तोहफ़ा	ja:贈り物,ギフト	ko:선물	pt:presente,dádiva	ru:подарок	tr:hediye	ur:تحفہ,ہدیہ	zh:礼物,礼品
 c:gila-monster	Noun	ar:وحش خيلا	de:Gilaechse	en:Gila monster	es:monstruo de Gila	fa:مانستر گیلا	fr:monstre de Gila	he:גילה-מונסטר	hi:गिला मॉन्स्टर	ja:ドクトカゲ	ko:힐라몬스터	pt:monstro-de-gila	ru:ядозуб	tr:gila canavarı	ur:گیلا مانسٹر	zh:希拉毒蜥
@@ -1330,6 +1347,7 @@ c:gnat	Noun	ar:بعوضة صغيرة,بعوض	de:Mücke,Kriebelmücke	en:gnat	es
 c:go	Verb	ar:ذهب	de:gehen	en:go	es:ir	fa:رفتن	fr:aller	he:ללכת	hi:जाना	ja:行く	ko:가다	pt:ir	ru:идти,ходить	tr:gitmek	ur:جانا	zh:去
 c:goal	Noun	ar:هدف,مرمى	de:Tor,Ziel	en:goal	es:gol,meta	fa:گل,دروازه	fr:but	he:שער	hi:गोल,लक्ष्य	ja:ゴール	ko:골,목표	pt:gol,meta	ru:гол,ворота	tr:gol,kale	ur:گول,مقصد	zh:进球,目标
 c:goat	Noun	ar:ماعز	de:Ziege	en:goat	es:cabra	fa:بز	fr:chèvre	he:עז	hi:बकरी	ja:山羊,ヤギ	ko:염소	pt:cabra	ru:коза	tr:keçi	ur:بکری	zh:山羊
+c:goat-cheese	Noun	ar:جبنة الماعز	de:Ziegenkäse	en:goat cheese	es:queso de cabra	fa:پنیر بز	fr:fromage de chèvre	he:גבינת עזים	hi:बकरी पनीर	ja:ゴートチーズ	ko:염소 치즈	pt:queijo de cabra	ru:козий сыр	tr:keçi peyniri	ur:بکری پنیر	zh:山羊奶酪
 c:god	Noun	ar:إله,الله	de:Gott	en:god	es:dios	fa:خدا	fr:dieu	he:אלוהים	hi:ईश्वर,भगवान	ja:神	ko:신,하나님	pt:deus	ru:бог	tr:tanrı,allah	ur:خدا,اللہ	zh:神,上帝
 c:goddess	Noun	ar:إلهة	de:Göttin	en:goddess	es:diosa	fa:الهه	fr:déesse	he:אלה	hi:देवी	ja:女神	ko:여신	pt:deusa	ru:богиня	tr:tanrıça	ur:دیوی	zh:女神
 c:gold	Noun	ar:ذهب	de:Gold	en:gold	es:oro	fa:طلا	fr:or	he:זהב	hi:सोना,स्वर्ण	ja:金,ゴールド	ko:금,골드	pt:ouro	ru:золото	tr:altın	ur:سونا,زر	zh:金,黄金
@@ -1341,6 +1359,7 @@ c:goodness	Noun	ar:خير,صلاح	de:Güte	en:goodness	es:bondad	fa:نیکی,خ
 c:goose	Noun	ar:إوزة	de:Gans	en:goose	es:ganso	fa:غاز	fr:oie	he:אווז	hi:हंस	ja:ガチョウ	ko:거위	pt:ganso	ru:гусь	tr:kaz	ur:گوز	zh:鹅
 c:gooseberry	Noun	ar:عنب الثعلب	de:Stachelbeere	en:gooseberry	es:grosella espinosa	fa:خدنگ	fr:groseille à maquereau	he:דרדר-ים	hi:आंवला	ja:グースベリー	ko:구즈베리	pt:groselha-espinhosa	ru:крыжовник	tr:bektaşi üzümü	ur:آنولہ	zh:醋栗
 c:gorilla	Noun	ar:غوريلا	de:Gorilla	en:gorilla	es:gorila	fa:گوریل	fr:gorille	he:גורילה	hi:गोरिल्ला	ja:ゴリラ	ko:고릴라	pt:gorila	ru:горилла	tr:goril	ur:گوریلا	zh:大猩猩
+c:gouda	Noun	ar:جبنة غودا	de:Gouda	en:gouda	es:queso gouda	fa:گودا	fr:gouda	he:גאודה	hi:गौडा	ja:ゴーダ	ko:고다	pt:queijo gouda	ru:гауда	tr:gouda peyniri	ur:گودا	zh:高达奶酪
 c:government	Noun	ar:حكومة	de:Regierung	en:government	es:gobierno	fa:دولت,حکومت	fr:gouvernement	he:ממשלה	hi:सरकार	ja:政府	ko:정부	pt:governo	ru:правительство	tr:hükümet	ur:حکومت	zh:政府
 c:gown	Noun	ar:ثوب طويل,رداء	de:Abendkleid,Robe	en:gown	es:bata,vestido largo	fa:ردا	fr:robe de soirée,toge	he:גלימה	hi:गाउन	ja:ガウン	ko:가운	pt:vestido de gala	ru:мантия	tr:rop	ur:گاؤن	zh:礼服
 c:gps	Noun	ar:نظام تحديد المواقع العالمي	de:GPS,Satellitennavigation	en:GPS,global positioning system	es:GPS,sistema de posicionamiento global	fa:جی پی اس,سامانه موقعیت یاب جهانی	fr:GPS	he:GPS,ניווט לווייני	hi:जीपीएस	ja:GPS,全地球測位システム	ko:GPS,위성 항법 시스템	pt:GPS,sistema de posicionamento global	ru:GPS,глобальная система позиционирования	tr:GPS,küresel konumlama sistemi	ur:جی پی ایس	zh:GPS,全球定位系统
@@ -1401,6 +1420,7 @@ c:hairpin	Noun	ar:دبوس الشعر	de:Haarnadel	en:hairpin,hair pin	es:horqui
 c:hake	Noun	ar:حك,سمك الحك	de:Seehecht	en:hake	es:merluza	fa:هیک	fr:merlu,colin	he:מרלוזה	hi:हेक	ja:ヘイク	ko:메를루사	pt:pescada	ru:хек	tr:hek balığı	ur:ہیک	zh:无须鳕
 c:halibut	Noun	ar:هلبوت	de:Heilbutt	en:halibut	es:halibut,fletán	fa:هالیبوت	fr:flétan	he:הליבוט	hi:हैलिबट	ja:おひょう	ko:넙치	pt:alabote	ru:палтус	tr:pisi balığı	ur:ہیلیبٹ	zh:比目鱼
 c:halley	Noun	ar:مذنب هالي	de:Halleyscher Komet	en:Halley's Comet,Halley	es:cometa Halley	fa:دنباله‌دار هالی	fr:comète de Halley	he:השביט הלי	hi:हैली धूमकेतु	ja:ハレー彗星	ko:핼리 혜성	pt:cometa Halley	ru:комета Галлея	tr:Halley Kuyruklu Yıldızı	ur:دمدار ستارہ ہیلی	zh:哈雷彗星
+c:halloumi	Noun	ar:جبنة الحلوم	de:Halloumi	en:halloumi	es:halloumi	fa:هالومی	fr:halloumi	he:חלומי	hi:हलौमी	ja:ハルーミ	ko:할루미	pt:halloumi	ru:халлуми	tr:hellim	ur:حلومی	zh:哈卢米奶酪
 c:halloween	Noun	ar:هالوين	de:Halloween	en:halloween	es:halloween,noche de brujas	fa:هالووین	fr:halloween	he:האלווין	hi:हैलोवीन	ja:ハロウィン	ko:핼러윈	pt:halloween,dia das bruxas	ru:хэллоуин	tr:cadılar bayramı	ur:ہالووین	zh:万圣节
 c:hallucination	Noun	ar:هلوسة	de:Halluzination	en:hallucination	es:alucinación	fa:توهم	fr:hallucination	he:הזיה	hi:मतिभ्रम	ja:幻覚	ko:환각	pt:alucinação	ru:галлюцинация	tr:halüsinasyon,sanrı	ur:فریب نظر,ہلوسینیشن	zh:幻觉,幻象
 c:halo	Noun	ar:هالة	de:Halo	en:halo	es:halo	fa:هاله	fr:halo	he:הילה	hi:प्रभामंडल	ja:暈	ko:무리	pt:halo	ru:гало	tr:hale	ur:ہالہ	zh:晕
@@ -1551,6 +1571,7 @@ c:ibis	Noun	ar:ابو منجل	de:Ibis	en:ibis	es:ibis	fa:ابیس	fr:ibis	he:א
 c:ibn-khaldun	Noun	ar:ابن خلدون,عبد الرحمن بن خلدون	de:Ibn Chaldun	en:Ibn Khaldun	es:Ibn Jaldún	fa:ابن خلدون	fr:Ibn Khaldoun	he:אבן ח'לדון	hi:इब्न खल्दून	ja:イブン・ハルドゥーン	ko:이븐 할둔	pt:Ibn Caldune	ru:Ибн Халдун	tr:İbn Haldun	ur:ابن خلدون	zh:伊本·赫勒敦
 c:ibn-sina	Noun	ar:ابن سينا,أبو علي ابن سينا	de:Avicenna,Ibn Sina	en:Ibn Sina,Avicenna	es:Avicena,Ibn Sina	fa:ابن سینا,ابو علی سینا	fr:Avicenne,Ibn Sina	he:אבן סינא,אביסנה	hi:इब्न सीना,एविसेना	ja:イブン・スィーナー,アヴィセンナ	ko:이븐 시나,아비센나	pt:Avicena,Ibn Sina	ru:Ибн Сина,Авиценна	tr:İbn Sînâ	ur:ابن سینا,بو علی سینا	zh:伊本·西那,阿维森纳
 c:ice	Noun	ar:جليد,ثلج	de:Eis	en:ice	es:hielo	fa:یخ	fr:glace	he:קרח	hi:बर्फ़	ja:氷	ko:얼음	pt:gelo	ru:лёд	tr:buz	ur:برف,یخ	zh:冰
+c:ice-cream	Noun	ar:آيس كريم,مثلجات	de:Speiseeis	en:ice cream	es:helado	fa:بستنی	fr:glace	he:גלידה	hi:आइसक्रीम	ja:アイスクリーム	ko:아이스크림	pt:sorvete	ru:мороженое	tr:dondurma	ur:آئس کریم	zh:冰淇淋
 c:iceberg	Noun	ar:جبل جليدي	de:Eisberg	en:iceberg	es:iceberg	fa:کوه یخ	fr:iceberg	he:קרחון	hi:हिमखंड	ja:氷山	ko:빙산	pt:iceberg	ru:айсберг	tr:buzdağı	ur:برفانی تودہ	zh:冰山
 c:icecap	Noun	ar:قبعة جليدية	de:Eiskappe	en:ice cap,icecap	es:casquete polar	fa:کلاهک یخی	fr:calotte glaciaire	he:כיפת קרח	hi:हिम टोपी,हिमटोप	ja:氷冠,氷帽	ko:빙모	pt:calota polar,calota de gelo	ru:ледниковый покров,ледяная шапка	tr:buz takkesi	ur:برفانی ٹوپی	zh:冰盖,冰冠
 c:icicle	Noun	ar:دُلاع جليدي	de:Eiszapfen	en:icicle	es:carámbano	fa:قندیل یخ	fr:glaçon	he:נטיף קרח	hi:बर्फ़ का लट्टू	ja:つらら	ko:고드름	pt:sincelo	ru:сосулька	tr:buz saçağı	ur:یخ کی چھڑی	zh:冰柱
@@ -1681,6 +1702,7 @@ c:karachi	Noun	ar:كراتشي	de:Karatschi	en:Karachi	es:Karachi	fa:کراچی	
 c:karakoram	Noun	ar:جبال قراقرم,قراقرم	de:Karakorum	en:Karakoram,Karakorum	es:Karakórum,cordillera del Karakórum	fa:قراقروم,رشته‌کوه قراقروم	fr:Karakoram	he:קרקורם	hi:काराकोरम	ja:カラコルム山脈	ko:카라코람산맥	pt:Karakoram,Caracórum	ru:Каракорум	tr:Karakurum Dağları	ur:قراقرم,سلسلہ قراقرم	zh:喀喇昆仑山脉
 c:karma	Noun	ar:الكارما,قانون الكارما	de:Karma	en:karma	es:karma	fa:کارما	fr:karma	he:קארמה	hi:कर्म	ja:業,カルマ	ko:업,카르마	pt:carma,karma	ru:карма	tr:karma	ur:کرما	zh:业力,羯磨
 c:kebab	Noun	ar:كباب	de:Kebab,Kebap	en:kebab	es:kebab,brocheta	fa:کباب	fr:kebab,brochette	he:קבב	hi:कबाब	ja:ケバブ	ko:케밥	pt:kebab,espetinho	ru:кебаб,шашлык	tr:kebap	ur:کباب	zh:烤肉串,卡巴
+c:kefir	Noun	ar:كفير	de:Kefir	en:kefir	es:kéfir	fa:کفیر	fr:kéfir	he:קפיר	hi:केफिर	ja:ケフィア	ko:케피르	pt:kefir	ru:кефир	tr:kefir	ur:کیفر	zh:开菲尔
 c:kenya	Noun	ar:كينيا	de:Kenia	en:Kenya	es:Kenia	fa:کنیا	fr:Kenya	he:קניה	hi:केन्या	ja:ケニア	ko:케냐	pt:Quênia,Quénia	ru:Кения	tr:Kenya	ur:کینیا	zh:肯尼亚
 c:kettle	Noun	ar:غلاية,إبريق شاي	de:Wasserkocher,Kessel	en:kettle	es:hervidor,tetera	fa:کتری	fr:bouilloire	he:קומקום	hi:केतली	ja:やかん,ケトル	ko:주전자	pt:chaleira	ru:чайник	tr:su ısıtıcısı,çaydanlık	ur:کیتلی	zh:水壶
 c:key	Noun	ar:مفتاح	de:Schlüssel	en:key	es:llave	fa:کلید	fr:clé,clef	he:מפתח	hi:चाबी,कुंजी	ja:鍵	ko:열쇠	pt:chave	ru:ключ	tr:anahtar	ur:چابی	zh:钥匙
@@ -1692,6 +1714,7 @@ c:khamsin	Noun	ar:خماسين	de:Chamsin	en:khamsin	es:jamsín	fa:خمسین	fr
 c:kick	Verb	ar:ركل	de:treten,kicken	en:kick,kicks,kicked,kicking	es:patear,dar una patada	fa:لگد زدن	fr:donner un coup de pied	he:לבעוט	hi:लात मारना,ठोकर मारना	ja:蹴る,キックする	ko:차다	pt:chutar	ru:пинать,ударять ногой	tr:tekmelemek	ur:لات مارنا	zh:踢
 c:kidney	Noun	ar:كلية	de:Niere	en:kidney	es:riñón	fa:کلیه	fr:rein	he:כליה	hi:गुर्दा,वृक्क	ja:腎臓	ko:신장,콩팥	pt:rim	ru:почка	tr:böbrek	ur:گردہ	zh:肾,肾脏
 c:kiln	Noun	ar:فرن خزف,أتون	de:Brennofen,Ofen	en:kiln	es:horno de cocción,horno cerámico	fa:کوره سفال‌پزی,کوره	fr:four de potier,four à céramique	he:כבשן	hi:भट्टा,भट्टी	ja:窯	ko:가마,도요	pt:forno cerâmico	ru:печь для обжига	tr:fırın,seramik fırını	ur:بھٹہ,بھٹی	zh:窑,窑炉
+c:kimchi	Noun	ar:كيمتشي	de:Kimchi	en:kimchi	es:kimchi	fa:کیمچی	fr:kimchi	he:קימצ'י	hi:किमची	ja:キムチ	ko:김치	pt:kimchi	ru:кимчи	tr:kimchi	ur:کمچی	zh:泡菜
 c:kimono	Noun	ar:كيمونو	de:Kimono	en:kimono	es:kimono	fa:کیمونو	fr:kimono	he:קימונו	hi:किमोनो	ja:着物	ko:기모노	pt:quimono	ru:кимоно	tr:kimono	ur:کیمونو	zh:和服
 c:kinetic-energy	Noun	ar:طاقة حركية	de:kinetische Energie,Bewegungsenergie	en:kinetic energy	es:energía cinética	fa:انرژی جنبشی	fr:énergie cinétique	he:אנרגיה קינטית	hi:गतिज ऊर्जा	ja:運動エネルギー	ko:운동에너지	pt:energia cinética	ru:кинетическая энергия	tr:kinetik enerji	ur:حرکی توانائی	zh:动能
 c:king	Noun	ar:ملك	de:König	en:king	es:rey	fa:پادشاه,شاه	fr:roi	he:מלך	hi:राजा	ja:王	ko:왕	pt:rei	ru:король,царь	tr:kral	ur:بادشاہ	zh:国王,王
@@ -1709,6 +1732,7 @@ c:knowledge	Noun	ar:معرفة,علم	de:Wissen,Erkenntnis	en:knowledge,cognitio
 c:koala	Noun	ar:كوالا	de:Koala	en:koala	es:koala	fa:کوالا	fr:koala	he:קואלה	hi:कोआला	ja:コアラ	ko:코알라	pt:coala	ru:коала	tr:koala	ur:کوالا	zh:考拉,树袋熊
 c:kohlrabi	Noun	ar:كولرابي	de:Kohlrabi	en:kohlrabi	es:colinabo	fa:کولرابی	fr:chou-rave	he:לפסן	hi:कोहलराबी	ja:コールラビ	ko:콜라비	pt:colinabo	ru:кольраби	tr:alabaş	ur:کول رابی	zh:苤蓝
 c:kolkata	Noun	ar:كولكاتا	de:Kolkata,Kalkutta	en:Kolkata,Calcutta	es:Calcuta	fa:کلکته	fr:Calcutta,Kolkata	he:כולכותה	hi:कोलकाता	ja:コルカタ	ko:콜카타	pt:Calcutá	ru:Калькутта	tr:Kalküta	ur:کولکاتا	zh:加尔各答
+c:kombucha	Noun	ar:كومبوتشا	de:Kombucha	en:kombucha	es:kombucha	fa:کامبوچا	fr:kombucha	he:קומבוצ'ה	hi:कोम्बुचा	ja:コンブチャ	ko:콤부차	pt:kombuchá	ru:чайный гриб	tr:kombucha	ur:کومبوچا	zh:红茶菌
 c:komodo-dragon	Noun	ar:تنين كومودو	de:Komododrache	en:Komodo dragon	es:dragón de Komodo	fa:اژدهای کومودو	fr:dragon de Komodo	he:דרקון קומודו	hi:कोमोडो ड्रैगन	ja:コモドドラゴン	ko:코모도왕도마뱀	pt:dragão-de-komodo	ru:варан Комодо	tr:Komodo ejderi	ur:کوموڈو اژدہا	zh:科莫多巨蜥
 c:kookaburra	Noun	ar:كوكابورا	de:Kookaburra	en:kookaburra	es:cucaburra	fa:کوکابارا	fr:kookaburra	he:קוקאבורה	hi:कूकाबर्रा	ja:ワライカワセミ	ko:쿠카부라	pt:cucaburra	ru:кукабарра	tr:kookaburra	ur:کوکابرا	zh:笑翠鸟
 c:koruna	Noun	ar:كرونة تشيكية	de:Krone,tschechische Krone	en:koruna	es:corona checa	fa:کرون چک	fr:couronne tchèque	he:כתר צ'כי	hi:कोरुना	ja:コルナ	ko:코루나	pt:coroa checa	ru:крона,чешская крона	tr:koruna	ur:کورونا	zh:捷克克朗
@@ -1722,6 +1746,7 @@ c:kudu	Noun	ar:كودو	de:Kudu	en:kudu	es:kudú	fa:کودو	fr:koudou	he:קוד
 c:kuiper-belt	Noun	ar:حزام كايبر	de:Kuipergürtel	en:Kuiper Belt	es:cinturón de Kuiper	fa:کمربند کویپر	fr:ceinture de Kuiper	he:חגורת קויפר	hi:काइपर घेरा	ja:カイパーベルト	ko:카이퍼대	pt:cinturão de Kuiper	ru:пояс Койпера	tr:Kuiper kuşağı	ur:کائپر پٹی	zh:柯伊伯带
 c:kumquat	Noun	ar:كمكوات	de:Kumquat	en:kumquat	es:kumquat	fa:کامکوات	fr:kumquat	he:קומקואט	hi:कमक्वाट	ja:キンカン	ko:금귤	pt:cumquat	ru:кумкват	tr:kumkat	ur:کمکواٹ	zh:金橘
 c:kyoto	Noun	ar:كيوتو	de:Kyoto	en:Kyoto	es:Kioto	fa:کیوتو	fr:Kyoto	he:קיוטו	hi:क्योटो	ja:京都,きょうと	ko:교토	pt:Quioto	ru:Киото	tr:Kyoto	ur:کیوٹو	zh:京都
+c:labneh	Noun	ar:لبنة	de:Labneh	en:labneh	es:labneh	fa:لبنه	fr:labneh	he:לבנה	hi:लबनेह	ja:ラブネ	ko:라브네	pt:labneh	ru:лябне	tr:suzme	ur:لبنہ	zh:酸奶奶酪
 c:lacewing	Noun	ar:ذبابة الشبك,اسد المن	de:Florfliege	en:lacewing	es:crisopa,alavesa	fa:بالتوری	fr:chrysope,hémérobe	he:אריה הכינים	hi:लेसविंग	ja:クサカゲロウ	ko:풀잠자리	pt:crisopa,bicho-lixeiro	ru:золотоглазка	tr:aslanağzı	ur:لیس ونگ	zh:草蛉
 c:ladder	Noun	ar:سلم	de:Leiter	en:ladder	es:escalera	fa:نردبان	fr:échelle	he:סולם	hi:सीढ़ी	ja:はしご	ko:사다리	pt:escada	ru:лестница,стремянка	tr:merdiven	ur:سیڑھی	zh:梯子
 c:ladle	Noun	ar:مغرفة	de:Schöpfkelle	en:ladle	es:cucharón	fa:ملاقه	fr:louche	he:מצקת	hi:करछुल	ja:お玉,おたま	ko:국자	pt:concha	ru:половник	tr:kepçe	ur:کرچھا	zh:长柄勺
@@ -1977,6 +2002,7 @@ c:minute	Noun	ar:دقيقة	de:Minute	en:minute	es:minuto	fa:دقیقه	fr:minut
 c:miracle	Noun	ar:معجزة	de:Wunder	en:miracle	es:milagro	fa:معجزه	fr:miracle	he:נס	hi:चमत्कार	ja:奇跡	ko:기적	pt:milagre	ru:чудо	tr:mucize	ur:معجزہ	zh:奇迹
 c:mirage	Noun	ar:سراب	de:Fata Morgana	en:mirage	es:espejismo	fa:سراب	fr:mirage	he:אחיזת עיניים	hi:मरीचिका	ja:蜃気楼	ko:신기루	pt:miragem	ru:мираж	tr:serap	ur:سراب	zh:海市蜃楼
 c:mirror	Noun	ar:مرآة	de:Spiegel	en:mirror	es:espejo	fa:آینه	fr:miroir	he:מראה	hi:दर्पण,आईना	ja:鏡	ko:거울	pt:espelho	ru:зеркало	tr:ayna	ur:آئینہ	zh:镜子
+c:miso	Noun	ar:ميسو	de:Miso	en:miso	es:miso	fa:میسو	fr:miso	he:מיסו	hi:मिसो	ja:味噌	ko:된장	pt:missô	ru:мисо	tr:miso	ur:میسو	zh:味噌
 c:missile	Noun	ar:صاروخ	de:Rakete	en:missile	es:misil	fa:موشک	fr:missile	he:טיל	hi:मिसाइल,प्रक्षेपास्त्र	ja:ミサイル	ko:미사일	pt:míssil	ru:ракета	tr:füze	ur:میزائل	zh:导弹,飞弹
 c:mississippi	Noun	ar:الميسيسيبي,نهر الميسيسيبي	de:Mississippi	en:Mississippi,Mississippi River	es:Misisipi,río Misisipi	fa:می‌سی‌سی‌پی,رود می‌سی‌سی‌پی	fr:Mississippi	he:מיסיסיפי,נהר המיסיסיפי	hi:मिसिसिपी,मिसिसिपी नदी	ja:ミシシッピ川	ko:미시시피강	pt:Mississippi,rio Mississippi	ru:Миссисипи	tr:Misisipi,Misisipi Nehri	ur:دریائے مسیسپی	zh:密西西比河
 c:mist	Noun	ar:ضبابة خفيفة,سديم	de:Dunst,Nebelschleier	en:mist	es:neblina,bruma	fa:مه رقیق	fr:brume	he:אובך,ערפל קל	hi:धुँध	ja:霞,もや	ko:엷은 안개	pt:neblina,bruma	ru:дымка	tr:pus	ur:کہر	zh:薄雾
@@ -2040,9 +2066,11 @@ c:mount-whitney	Noun	ar:جبل ويتني	de:Mount Whitney	en:Mount Whitney	es:m
 c:mountain	Noun	ar:جبل	de:Berg	en:mountain	es:montaña	fa:کوه	fr:montagne	he:הר	hi:पर्वत,पहाड़	ja:山	ko:산	pt:montanha,serra	ru:гора	tr:dağ	ur:پہاڑ	zh:山
 c:mouse	Noun	ar:فأر	de:Maus	en:mouse,mice	es:ratón	fa:موش	fr:souris	he:עכבר	hi:चूहा	ja:ネズミ	ko:쥐	pt:rato,camundongo	ru:мышь	tr:fare	ur:چوہا	zh:老鼠,鼠
 c:mouse-pad	Noun	ar:لوحة فأرة	de:Mauspad	en:mouse pad	es:alfombrilla	fa:ماوس پد	fr:tapis de souris	he:משטח עכבר	hi:माउस पैड	ja:マウスパッド	ko:마우스 패드	pt:mouse pad	ru:коврик для мыши	tr:mouse pedi	ur:ماؤس پیڈ	zh:鼠标垫
+c:mousse	Noun	ar:موس	de:Mousse	en:mousse	es:mousse	fa:موس	fr:mousse	he:מוס	hi:मूस	ja:ムース	ko:무스	pt:musse	ru:мусс	tr:mus	ur:موس	zh:慕斯
 c:mouth	Noun	ar:فم	de:Mund	en:mouth	es:boca	fa:دهان	fr:bouche	he:פה	hi:मुँह	ja:口	ko:입	pt:boca	ru:рот	tr:ağız	ur:منہ	zh:口,嘴
 c:move	Verb	ar:تحرك,انتقل	de:bewegen	en:move	es:mover	fa:حرکت کرد,جابجا شد	fr:bouger,se déplacer	he:זז,נע	hi:हिलना,चलना	ja:動く,移動する	ko:움직이다,이동하다	pt:mover,deslocar	ru:двигать,перемещаться	tr:hareket etmek,taşınmak	ur:حرکت کرنا	zh:移动,动
 c:mozart	Noun	ar:موتسارت,فولفغانغ أماديوس موتسارت	de:Mozart,Wolfgang Amadeus Mozart	en:Mozart,Wolfgang Amadeus Mozart	es:Mozart	fa:موتسارت	fr:Mozart	he:מוצרט	hi:मोज़ार्ट	ja:モーツァルト	ko:모차르트	pt:Mozart	ru:Моцарт	tr:Mozart	ur:موزارٹ	zh:莫扎特
+c:mozzarella	Noun	ar:جبنة الموزاريلا	de:Mozzarella	en:mozzarella	es:mozzarella	fa:موزارلا	fr:mozzarella	he:מוצרלה	hi:मोज़ेरेला	ja:モッツァレラ	ko:모짜렐라	pt:mussarela	ru:моцарелла	tr:mozzarella	ur:موزریلا	zh:马苏里拉奶酪
 c:mud-wasp	Noun	ar:دبور الطين,زنبور الطين	de:Lehmwespe	en:mud wasp,mud dauber	es:avispa alfarera,avispa de barro	fa:زنبور گل	fr:guêpe maçonne,sphex	he:צרעת הבוץ	hi:मिट्टी का ततैया	ja:ドロバチ	ko:진흙말벌	pt:vespa-oleira	ru:оса-горшечница,пробочная оса	tr:çamur eşekarısı	ur:مٹی کا بھڑ	zh:泥蜂
 c:mudpuppy	Noun	ar:جرو الطين	de:Schlammteufel	en:mudpuppy	es:perrito de barro	fa:موداپی	fr:necture tacheté	he:מאדפאפי	hi:मडपप्पी	ja:ドロガメ	ko:머드퍼피	pt:néctur	ru:мудпапи	tr:çamur iti	ur:مڈپپی	zh:泥狗
 c:mug	Noun	ar:كوب كبير,قدح	de:Becher,Tasse	en:mug	es:taza grande,tarro	fa:لیوان دسته دار	fr:mug,grande tasse	he:ספל	hi:मग	ja:マグカップ	ko:머그잔	pt:caneca	ru:кружка	tr:kupa	ur:مگ	zh:马克杯
@@ -2076,6 +2104,7 @@ c:narrative	Noun	ar:سرد,رواية	de:Erzählung,Narrativ	en:narrative	es:nar
 c:narwhal	Noun	ar:الحوت المرقط	de:Narwal	en:narwhal	es:narval	fa:نروال	fr:narval	he:נרוול	hi:नरव्हाल	ja:イッカク	ko:일각고래	pt:narval	ru:нарвал	tr:denizgergedanı	ur:ناروہال	zh:独角鲸
 c:nation	Noun	ar:أمة	de:Nation	en:nation	es:nación	fa:ملت	fr:nation	he:אומה	hi:राष्ट्र	ja:国家,国民	ko:국가,민족	pt:nação	ru:нация	tr:millet,ulus	ur:قوم	zh:国家,民族
 c:nationality	Noun	ar:جنسية,قومية	de:Nationalität,Staatsangehörigkeit	en:nationality	es:nacionalidad	fa:ملیت,تابعیت	fr:nationalité	he:לאום,אזרחות	hi:राष्ट्रीयता	ja:国籍	ko:국적	pt:nacionalidade	ru:национальность	tr:milliyet,vatandaşlık	ur:قومیت,شہریت	zh:国籍,民族
+c:natto	Noun	ar:ناتو	de:Natto	en:natto	es:natto	fa:ناتو	fr:nattō	he:נאטו	hi:नट्टो	ja:納豆	ko:낫토	pt:natto	ru:натто	tr:natto	ur:ناٹو	zh:纳豆
 c:navigate	Verb	ar:تنقل,يتنقل	de:navigieren	en:navigate	es:navegar	fa:هدایت کردن	fr:naviguer	he:לנווט	hi:नेविगेट करना,मार्गदर्शन करना	ja:ナビゲートする	ko:길을 찾다,내비게이션하다	pt:navegar	ru:ориентироваться,прокладывать курс	tr:yön bulmak	ur:راہ یابی کرنا	zh:导航
 c:navy-blue	Noun	ar:كُحْلي,أزرق داكن	de:Marineblau	en:navy blue	es:azul marino	fa:سرمه‌ای	fr:bleu marine	he:כחול כהה	hi:गहरा नीला	ja:紺色,ネイビーブルー	ko:남색,네이비	pt:azul-marinho	ru:тёмно-синий	tr:lacivert	ur:گہرا نیلا	zh:藏青色,海军蓝
 c:near	Adverb	ar:قريب	de:nah,nahe	en:near,close	es:cerca	fa:نزدیک	fr:près,proche	he:קרוב	hi:पास,निकट	ja:近い	ko:가까이,가까운	pt:perto,próximo	ru:близко	tr:yakın	ur:قریب	zh:近
@@ -2240,6 +2269,7 @@ c:pancreas	Noun	ar:بنكرياس	de:Bauchspeicheldrüse,Pankreas	en:pancreas	es
 c:panda	Noun	ar:باندا	de:Panda	en:panda	es:panda	fa:پاندا	fr:panda	he:פנדה	hi:पांडा	ja:パンダ	ko:판다	pt:panda	ru:панда	tr:panda	ur:پانڈا	zh:熊猫
 c:pangolin	Noun	ar:بنغولين	de:Pangolin,Schuppentier	en:pangolin	es:pangolín	fa:پانگولین	fr:pangolin	he:פנגולין	hi:पैंगोलिन	ja:センザンコウ	ko:천산갑	pt:pangolim	ru:панголин	tr:pangolin	ur:پینگولن	zh:穿山甲
 c:panic	Noun	ar:هلع	de:Panik	en:panic	es:pánico	fa:وحشت	fr:panique	he:פאניקה	hi:घबराहट	ja:パニック	ko:공황	pt:pânico	ru:паника	tr:panik	ur:گھبراہٹ	zh:恐慌
+c:panna-cotta	Noun	ar:بانا كوتا	de:Panna cotta	en:panna cotta	es:panna cotta	fa:پانا کوتا	fr:panna cotta	he:פאנה קוטה	hi:पन्ना कोट्टा	ja:パンナコッタ	ko:판나코타	pt:panna cotta	ru:панна-котта	tr:panna cotta	ur:پانا کوٹا	zh:奶冻
 c:pants	Noun	ar:بنطال,سروال	de:Hose	en:pants,trousers	es:pantalones	fa:شلوار	fr:pantalon	he:מכנסיים	hi:पतलून,पैंट	ja:ズボン	ko:바지	pt:calças	ru:брюки,штаны	tr:pantolon	ur:پتلون	zh:裤子
 c:papaya	Noun	ar:بابايا	de:Papaya	en:papaya	es:papaya	fa:پاپایا	fr:papaye	he:פפאיה	hi:पपीता	ja:パパイア	ko:파파야	pt:mamão	ru:папайя	tr:papaya	ur:پپیتا	zh:木瓜
 c:paper	Noun	ar:ورق,ورقة	de:Papier	en:paper	es:papel	fa:کاغذ	fr:papier	he:נייר	hi:कागज़	ja:紙	ko:종이	pt:papel	ru:бумага	tr:kâğıt	ur:کاغذ	zh:纸
@@ -2258,6 +2288,7 @@ c:paranoia	Noun	ar:بارانويا,جنون الارتياب	de:Paranoia	en:par
 c:parent	Noun	ar:والد	de:Elternteil	en:parent,parents	es:padre,madre	fa:والد	fr:parent	he:הורה	hi:अभिभावक	ja:親	ko:부모	pt:pai,mãe	ru:родитель	tr:ebeveyn	ur:والد	zh:父母,家长
 c:paris	Noun	ar:باريس	de:Paris	en:Paris	es:París	fa:پاریس	fr:Paris	he:פריז	hi:पेरिस	ja:パリ	ko:파리	pt:Paris	ru:Париж	tr:Paris	ur:پیرس	zh:巴黎
 c:park	Verb	ar:ركن,يركن	de:parken	en:park	es:estacionar,aparcar	fa:پارک کردن	fr:garer,stationner	he:לחנות	hi:खड़ी करना,पार्क करना	ja:駐車する	ko:주차하다	pt:estacionar	ru:парковать,парковаться	tr:park etmek	ur:کھڑا کرنا,پارک کرنا	zh:停车,停放
+c:parmesan	Noun	ar:جبنة البارميزان	de:Parmesan	en:parmesan	es:parmesano	fa:پارمزان	fr:parmesan	he:פרמזן	hi:परमेज़न	ja:パルメザン	ko:파르메산	pt:parmesão	ru:пармезан	tr:parmesan	ur:پارمیسن	zh:帕尔马干酪
 c:parrot	Noun	ar:ببغاء	de:Papagei	en:parrot	es:loro,papagayo	fa:طوطی	fr:perroquet	he:תוכי	hi:तोता	ja:オウム	ko:앵무새	pt:papagaio	ru:попугай	tr:papağan	ur:طوطا	zh:鹦鹉
 c:parsec	Noun	ar:فرسخ فلكي,بارسك	de:Parsec	en:parsec	es:pársec	fa:پارسک	fr:parsec	he:פרסק	hi:पारसेक	ja:パーセク	ko:파섹	pt:parsec	ru:парсек	tr:parsek	ur:پارسیک	zh:秒差距
 c:parsley	Noun	ar:بقدونس	de:Petersilie	en:parsley	es:perejil	fa:جعفری	fr:persil	he:פטרוזיליה	hi:अजमोद	ja:パセリ	ko:파슬리	pt:salsa	ru:петрушка	tr:maydanoz	ur:اجمود	zh:欧芹
@@ -2617,6 +2648,7 @@ c:rib	Noun	ar:ضلع	de:Rippe	en:rib	es:costilla	fa:دنده	fr:côte	he:צלע	
 c:ribosome	Noun	ar:ريبوسوم,جسيم ريبي	de:Ribosom	en:ribosome	es:ribosoma	fa:ریبوزوم	fr:ribosome	he:ריבוזום	hi:राइबोसोम	ja:リボソーム	ko:리보솜	pt:ribossomo	ru:рибосома	tr:ribozom	ur:رائبوسوم	zh:核糖体
 c:rice	Noun	ar:أرز	de:Reis	en:rice	es:arroz	fa:برنج	fr:riz	he:אורז	hi:चावल	ja:米,ご飯	ko:쌀,밥	pt:arroz	ru:рис	tr:pirinç	ur:چاول	zh:米,大米
 c:rich	Adjective	ar:غني,ثري	de:reich	en:rich,wealthy	es:rico	fa:ثروتمند,پولدار	fr:riche	he:עשיר	hi:अमीर,धनी	ja:裕福な,金持ちの	ko:부유한,부자의	pt:rico	ru:богатый	tr:zengin	ur:امیر,دولت مند	zh:富,富有
+c:ricotta	Noun	ar:جبنة الريكوتا	de:Ricotta	en:ricotta	es:ricota	fa:ریکوتا	fr:ricotta	he:ריקוטה	hi:रिकोटा	ja:リコッタ	ko:리코타	pt:ricota	ru:рикотта	tr:ricotta peyniri	ur:ریکوٹا	zh:乳清干酪
 c:ride	Verb	ar:ركب	de:reiten,fahren	en:ride	es:montar,cabalgar	fa:سوار شد,سوار شدن	fr:monter,chevaucher	he:רכב	hi:सवारी करना	ja:乗る	ko:타다	pt:montar,cavalgar	ru:ехать,ездить	tr:binmek	ur:سوار ہونا	zh:骑,乘
 c:rifle	Noun	ar:بندقية	de:Gewehr	en:rifle	es:rifle,fusil	fa:تفنگ	fr:fusil	he:רובה	hi:राइफल	ja:ライフル,小銃	ko:소총,라이플	pt:rifle,fuzil	ru:винтовка	tr:tüfek	ur:بندوق,رائفل	zh:步枪
 c:rigel	Noun	ar:رجل الجبار,ريجل	de:Rigel	en:Rigel	es:Rigel	fa:رجل	fr:Rigel	he:ריגל	hi:रिजेल	ja:リゲル	ko:리겔	pt:Rigel	ru:Ригель	tr:Rigel	ur:رجل	zh:参宿七
@@ -2714,6 +2746,7 @@ c:saturn	Noun	ar:زحل	de:Saturn	en:Saturn	es:Saturno	fa:کیوان,زحل	fr:S
 c:saucepan	Noun	ar:قدر صغير,قدر طبخ	de:Stieltopf,Kochtopf	en:saucepan	es:cazo,cacerola	fa:قابلمه دسته دار	fr:casserole	he:סיר עם ידית	hi:सॉसपैन	ja:片手鍋	ko:편수냄비	pt:panela	ru:сотейник	tr:sos tavası	ur:دیگچی	zh:炖锅,长柄锅
 c:saucer	Noun	ar:صحن فنجان	de:Untertasse	en:saucer	es:platillo	fa:نعلبکی	fr:soucoupe	he:תחתית	hi:तश्तरी	ja:受け皿	ko:받침접시	pt:pires	ru:блюдце	tr:fincan tabağı	ur:طشتری	zh:茶碟
 c:saudi-arabia	Noun	ar:المملكة العربية السعودية,السعودية	de:Saudi-Arabien	en:Saudi Arabia	es:Arabia Saudita,Arabia Saudí	fa:عربستان سعودی	fr:Arabie saoudite	he:ערב הסעודית	hi:सऊदी अरब	ja:サウジアラビア	ko:사우디아라비아	pt:Arábia Saudita	ru:Саудовская Аравия	tr:Suudi Arabistan	ur:سعودی عرب	zh:沙特阿拉伯,沙特
+c:sauerkraut	Noun	ar:مخلل الملفوف	de:Sauerkraut	en:sauerkraut	es:chucrut	fa:کلم ترش	fr:choucroute	he:כרוב כבוש	hi:सौरक्राउट	ja:ザワークラウト	ko:사우어크라우트	pt:chucrute	ru:квашеная капуста	tr:lahana turşusu	ur:ساورکراؤٹ	zh:德国酸菜
 c:saunter	Verb	ar:تجول بتراخ	de:bummeln,schlendern	en:saunter	es:caminar despreocupadamente	fa:بی عجله قدم زدن	fr:déambuler	he:לטייל בנינוחות	hi:आराम से टहलना	ja:のんびり歩く	ko:한가로이 거닐다	pt:caminhar despreocupado	ru:прохаживаться	tr:aylak aylak yürümek	ur:اطمینان سے چلنا	zh:闲逛,漫步
 c:savanna	Noun	ar:سافانا,سهوب استوائية	de:Savanne	en:savanna,savannah	es:sabana	fa:ساوانا	fr:savane	he:סוואנה	hi:सवाना	ja:サバンナ	ko:사바나	pt:savana	ru:саванна	tr:savan,savana	ur:ساوانا	zh:热带草原,萨瓦纳
 c:savannah	Noun	ar:سافانا,سهل عشبي استوائي	de:Savanne	en:savannah,savanna	es:sabana	fa:ساوانا	fr:savane	he:סוואנה	hi:सवाना,उष्ण घासस्थल	ja:サバンナ	ko:사바나	pt:savana	ru:саванна	tr:savana	ur:سوانا	zh:热带草原,稀树草原
@@ -2798,6 +2831,7 @@ c:shekel	Noun	ar:شيكل	de:Schekel	en:shekel	es:séquel,shekel	fa:شکل,شق�
 c:shelf	Noun	ar:رف	de:Regal	en:shelf	es:estante	fa:قفسه	fr:étagère	he:מדף	hi:शेल्फ,ताक	ja:棚	ko:선반	pt:prateleira	ru:полка	tr:raf	ur:شیلف,تاک	zh:架子
 c:shenzhen	Noun	ar:شنتشن	de:Shenzhen	en:Shenzhen	es:Shenzhen	fa:شن‌جن	fr:Shenzhen	he:שנג'ן	hi:शेन्ज़ेन	ja:深圳,シンセン	ko:선전	pt:Shenzhen	ru:Шэньчжэнь	tr:Shenzhen	ur:شینزن	zh:深圳
 c:shepherd	Noun	ar:راعي	de:Hirte	en:shepherd	es:pastor	fa:چوپان	fr:berger	he:רועה	hi:चरवाहा	ja:羊飼い	ko:양치기	pt:pastor	ru:пастух	tr:çoban	ur:گڈریا	zh:牧羊人
+c:sherbet	Noun	ar:شربات	de:Sherbet	en:sherbet	es:sherbet	fa:شربت	fr:sherbet	he:שרבת	hi:शरबत	ja:シャーベット	ko:셔벗	pt:sorbet	ru:щербет	tr:şerbet	ur:شربت	zh:雪芭
 c:shield	Noun	ar:ترس	de:Schild	en:shield	es:escudo	fa:سپر	fr:bouclier	he:מגן	hi:ढाल	ja:盾	ko:방패	pt:escudo	ru:щит	tr:kalkan	ur:ڈھال	zh:盾,盾牌
 c:shiny	Adjective	ar:لامع,مضيء	de:glänzend	en:shiny	es:brillante,lustroso	fa:براق,درخشان	fr:brillant,luisant	he:מבריק	hi:चमकदार	ja:光沢のある,輝いた	ko:반짝이는,빛나는	pt:brilhante,lustroso	ru:блестящий	tr:parlak	ur:چمکدار	zh:有光泽,光亮
 c:ship	Noun	ar:سفينة	de:Schiff	en:ship,vessel	es:barco,buque,nave	fa:کشتی	fr:navire	he:אונייה,ספינה	hi:जहाज़,पोत	ja:船,船舶	ko:배,선박	pt:navio	ru:корабль,судно	tr:gemi	ur:جہاز	zh:船,轮船,船舶
@@ -2899,11 +2933,13 @@ c:solution	Noun	ar:محلول	de:Lösung	en:solution	es:solución,disolución	fa
 c:solvent	Noun	ar:مذيب	de:Lösungsmittel	en:solvent	es:disolvente,solvente	fa:حلال	fr:solvant	he:ממס	hi:विलायक	ja:溶媒,溶剤	ko:용매	pt:solvente,dissolvente	ru:растворитель	tr:çözücü,solvent	ur:محلل,سالوینٹ	zh:溶剂
 c:son	Noun	ar:ابن	de:Sohn	en:son	es:hijo	fa:پسر	fr:fils	he:בן	hi:बेटा,पुत्र	ja:息子	ko:아들	pt:filho	ru:сын	tr:oğul	ur:بیٹا	zh:儿子
 c:song	Noun	ar:أغنية	de:Lied	en:song	es:canción	fa:آهنگ,ترانه	fr:chanson	he:שיר	hi:गीत,गाना	ja:歌,ソング	ko:노래	pt:canção,música	ru:песня	tr:şarkı	ur:گیت,گانا	zh:歌,歌曲
+c:sorbet	Noun	ar:سوربيه	de:Sorbet	en:sorbet	es:sorbete	fa:شربت یخی	fr:sorbet	he:סורבה	hi:सॉर्बे	ja:シャーベット	ko:소르베	pt:sorvete de fruta	ru:сорбет	tr:sorbe	ur:سوربے	zh:冰沙
 c:sorcerer	Noun	ar:مشعوذ	de:Hexenmeister	en:sorcerer	es:hechicero	fa:ساحر	fr:sorcier	he:מכשף	hi:जादूगर	ja:呪術師	ko:주술사	pt:feiticeiro	ru:чародей	tr:sihirbaz	ur:ساحر	zh:术士
 c:sorghum	Noun	ar:ذرة بيضاء	de:Sorghum	en:sorghum	es:sorgo	fa:سورگوم	fr:sorgho	he:סורגום	hi:ज्वार	ja:モロコシ	ko:수수	pt:sorgo	ru:сорго	tr:süpürge darısı	ur:جوار	zh:高粱
 c:soul	Noun	ar:روح,نفس	de:Seele	en:soul	es:alma	fa:روح,جان	fr:âme	he:נשמה	hi:आत्मा	ja:魂	ko:영혼	pt:alma	ru:душа	tr:ruh	ur:روح	zh:灵魂
 c:soup	Noun	ar:حساء,شوربة	de:Suppe	en:soup	es:sopa	fa:سوپ	fr:soupe,potage	he:מרק	hi:सूप,शोरबा	ja:スープ,汁	ko:수프,국	pt:sopa	ru:суп	tr:çorba	ur:سوپ,شوربہ	zh:汤
 c:sour	Adjective	ar:حامض	de:sauer	en:sour	es:agrio,ácido	fa:ترش	fr:aigre,acide	he:חמוץ	hi:खट्टा	ja:酸っぱい	ko:신	pt:azedo	ru:кислый	tr:ekşi	ur:کھٹا	zh:酸
+c:sour-cream	Noun	ar:القشدة الحامضة	de:Sauerrahm	en:sour cream	es:crema agria	fa:خامه ترش	fr:crème fraîche	he:שמנת חמוצה	hi:खट्टी मलाई	ja:サワークリーム	ko:사워크림	pt:creme azedo	ru:сметана	tr:ekşi krema	ur:ترش کریم	zh:酸奶油
 c:soursop	Noun	ar:قشطة شائكة,الشريفة الشائكة	de:Stachelannone	en:soursop	es:guanábana	fa:سورسوپ	fr:corossol	he:גואנבנה	hi:सीताफल	ja:グアナバナ	ko:사워솝	pt:graviola	ru:гуанабана	tr:sirsaklama	ur:سورسوپ	zh:刺果番荔枝
 c:south	Noun	ar:جنوب	de:Süden	en:south	es:sur	fa:جنوب	fr:sud	he:דרום	hi:दक्षिण	ja:南	ko:남쪽,남	pt:sul	ru:юг	tr:güney	ur:جنوب	zh:南
 c:south-africa	Noun	ar:جنوب أفريقيا	de:Südafrika	en:South Africa	es:Sudáfrica	fa:آفریقای جنوبی	fr:Afrique du Sud	he:דרום אפריקה	hi:दक्षिण अफ्रीका	ja:南アフリカ	ko:남아프리카	pt:África do Sul	ru:Южная Африка,ЮАР	tr:Güney Afrika	ur:جنوبی افریقہ	zh:南非
@@ -3133,6 +3169,7 @@ c:television-channel	Noun	ar:قناة تلفزيونية	de:Fernsehkanal,Fernseh
 c:television-episode	Noun	ar:حلقة تلفزيونية	de:Fernsehfolge,Episode	en:television episode,TV episode,episode	es:episodio,capítulo	fa:قسمت سریال	fr:épisode	he:פרק	hi:टेलीविजन एपिसोड	ja:テレビのエピソード,回	ko:TV 에피소드,회	pt:episódio	ru:эпизод,серия	tr:bölüm	ur:ٹی وی ایپیسوڈ	zh:电视剧集,集
 c:television-series	Noun	ar:مسلسل تلفزيوني	de:Fernsehserie	en:television series,TV series	es:serie de televisión,serie televisiva	fa:سریال تلویزیونی	fr:série télévisée	he:סדרת טלוויזיה	hi:टेलीविजन श्रृंखला	ja:テレビシリーズ,テレビドラマ	ko:TV 시리즈,드라마	pt:série de televisão	ru:телесериал	tr:televizyon dizisi	ur:ٹیلی ویژن سیریز	zh:电视剧,电视系列
 c:tell	Verb	ar:أخبر	de:erzählen,sagen	en:tell	es:contar,decir	fa:گفتن,خبر دادن	fr:raconter,dire	he:לספר	hi:बताना	ja:伝える,話す	ko:알리다,말하다	pt:contar,dizer	ru:рассказывать,сказать	tr:anlatmak,söylemek	ur:بتانا	zh:告诉
+c:tempeh	Noun	ar:تمبيه	de:Tempeh	en:tempeh	es:tempeh	fa:تمپه	fr:tempeh	he:טמפה	hi:टेम्पेह	ja:テンペ	ko:템페	pt:tempeh	ru:темпе	tr:tempeh	ur:ٹمپے	zh:天贝
 c:temperament	Noun	ar:مزاج,طبع	de:Temperament	en:temperament	es:temperamento	fa:مزاج	fr:tempérament	he:מזג,טמפרמנט	hi:स्वभाव,मिज़ाज	ja:気質,気性	ko:기질	pt:temperamento	ru:темперамент	tr:mizaç	ur:مزاج,طبیعت	zh:气质,性情
 c:temperature	Noun	ar:درجة الحرارة	de:Temperatur	en:temperature	es:temperatura	fa:دما,حرارت	fr:température	he:טמפרטורה	hi:तापमान	ja:温度	ko:온도	pt:temperatura	ru:температура	tr:sıcaklık	ur:درجہ حرارت	zh:温度
 c:tempest	Noun	ar:زوبعة عاتية	de:Unwetter	en:tempest	es:tempestad	fa:طوفان سهمگین	fr:tempête	he:סערה	hi:प्रचंड तूफ़ान	ja:大嵐	ko:폭풍우	pt:tempestade	ru:буря	tr:bora	ur:زبردست طوفان	zh:暴风雨
@@ -3200,6 +3237,7 @@ c:time	Noun	ar:وقت,زمن	de:Zeit	en:time	es:tiempo	fa:زمان	fr:temps	he:�
 c:timor-sea	Noun	ar:بحر تيمور	de:Timorsee	en:Timor Sea	es:Mar de Timor	fa:دریای تیمور	fr:Mer de Timor	he:ים טימור	hi:तिमोर सागर	ja:ティモール海	ko:티모르해	pt:Mar de Timor	ru:Тиморское море	tr:Timor Denizi	ur:بحیرہ تیمور	zh:帝汶海
 c:tin	Noun	ar:قصدير	de:Zinn	en:tin	es:estaño	fa:قلع	fr:étain	he:בדיל	hi:टिन,राँगा	ja:錫,スズ	ko:주석	pt:estanho	ru:олово	tr:kalay	ur:رانگ,قلعی	zh:锡
 c:tingly	Adjective	ar:موخز,وخاز	de:prickelnd,kribbelig	en:tingly	es:hormigueante	fa:گزگز کننده	fr:picotant,fourmillant	he:מעקצץ	hi:झनझनाहट वाला	ja:ピリピリする	ko:따끔거리는	pt:formigante	ru:покалывающий	tr:karıncalanan	ur:سنسناہٹ والا	zh:刺刺的,麻酥酥
+c:tiramisu	Noun	ar:تيراميسو	de:Tiramisu	en:tiramisu	es:tiramisú	fa:تیرامیسو	fr:tiramisu	he:טירמיסו	hi:तिरामिसू	ja:ティラミス	ko:티라미수	pt:tiramisù	ru:тирамису	tr:tiramisu	ur:تیرامیسو	zh:提拉米苏
 c:tire	Noun	ar:إطار,كاوتشوك	de:Reifen	en:tire,tyre	es:neumático,llanta	fa:لاستیک,تایر	fr:pneu	he:צמיג	hi:टायर	ja:タイヤ	ko:타이어	pt:pneu	ru:шина,покрышка	tr:lastik	ur:ٹائر	zh:轮胎
 c:tired	Adjective	ar:متعب	de:müde	en:tired	es:cansado	fa:خسته	fr:fatigué	he:עייף	hi:थका	ja:疲れた	ko:피곤한	pt:cansado	ru:усталый	tr:yorgun	ur:تھکا ہوا	zh:累,疲倦
 c:titan-moon	Noun	ar:تيتان,قمر تيتان	de:Titan	en:Titan	es:Titán	fa:تیتان	fr:Titan	he:טיטאן	hi:टाइटन	ja:タイタン	ko:타이탄	pt:Titã	ru:Титан	tr:Titan	ur:ٹائٹن	zh:土卫六
@@ -3211,6 +3249,7 @@ c:toaster	Noun	ar:محمصة	de:Toaster	en:toaster	es:tostadora	fa:توستر	fr
 c:today	Adverb	ar:اليوم	de:heute	en:today	es:hoy	fa:امروز	fr:aujourd'hui	he:היום	hi:आज	ja:今日	ko:오늘	pt:hoje	ru:сегодня	tr:bugün	ur:آج	zh:今天
 c:toe	Noun	ar:إصبع قدم	de:Zehe	en:toe	es:dedo del pie	fa:انگشت پا	fr:orteil	he:בוהן	hi:पैर की उंगली	ja:つま先,足指	ko:발가락	pt:dedo do pé	ru:палец ноги	tr:ayak parmağı	ur:پاؤں کی انگلی	zh:脚趾
 c:toe-ring	Noun	ar:خاتم الإصبع القدم	de:Zehenring	en:toe ring	es:anillo de pie	fa:انگشتر پا	fr:bague de pied	he:טבעת אצבע רגל	hi:बिछिया	ja:トゥリング	ko:발가락 반지	pt:anel de dedo do pé	ru:кольцо на палец ноги	tr:ayak yüzüğü	ur:بچھیا	zh:趾环
+c:tofu	Noun	ar:توفو	de:Tofu	en:tofu	es:tofu	fa:توفو	fr:tofu	he:טופו	hi:टोफू	ja:豆腐	ko:두부	pt:tofu	ru:тофу	tr:tofu	ur:ٹوفو	zh:豆腐
 c:tokyo	Noun	ar:طوكيو	de:Tokio	en:Tokyo	es:Tokio	fa:توکیو	fr:Tokyo	he:טוקיו	hi:टोक्यो	ja:東京,とうきょう	ko:도쿄,동경	pt:Tóquio	ru:Токио	tr:Tokyo	ur:ٹوکیو	zh:东京
 c:toll	Noun	ar:رسوم المرور,رسم عبور	de:Maut	en:toll	es:peaje	fa:عوارض	fr:péage	he:אגרה	hi:टोल	ja:通行料	ko:통행료	pt:pedágio,portagem	ru:плата за проезд,пошлина	tr:geçiş ücreti	ur:ٹول	zh:过路费,通行费
 c:tomato	Noun	ar:طماطم,بندورة	de:Tomate	en:tomato	es:tomate,jitomate	fa:گوجه‌فرنگی	fr:tomate	he:עגבנייה	hi:टमाटर	ja:トマト	ko:토마토	pt:tomate	ru:помидор,томат	tr:domates	ur:ٹماٹر	zh:番茄,西红柿
@@ -3444,6 +3483,7 @@ c:wharf	Noun	ar:مرسى	de:Kai	en:wharf	es:embarcadero	fa:بارانداز	fr:q
 c:wheat	Noun	ar:قمح,حنطة	de:Weizen	en:wheat	es:trigo	fa:گندم	fr:blé,froment	he:חיטה	hi:गेहूँ	ja:小麦	ko:밀	pt:trigo	ru:пшеница	tr:buğday	ur:گندم	zh:小麦,麦
 c:wheel	Noun	ar:عجلة	de:Rad	en:wheel	es:rueda	fa:چرخ	fr:roue	he:גלגל	hi:पहिया	ja:車輪	ko:바퀴	pt:roda	ru:колесо	tr:tekerlek	ur:پہیہ	zh:轮子,车轮
 c:whelk	Noun	ar:حلزون البحر,بزاقة البحر	de:Wellhornschnecke	en:whelk	es:bígaro,caracola	fa:حلزون دریایی	fr:buccin	he:חילזון-ים	hi:व्हेल्क	ja:バイガイ	ko:고둥	pt:búzio	ru:рапана	tr:deniz salyangozu	ur:ویلک	zh:玉螺
+c:whey	Noun	ar:مصل اللبن	de:Molke	en:whey	es:suero	fa:آب پنیر	fr:lactosérum	he:מי-גבינה	hi:मट्ठा	ja:乳清	ko:유청	pt:soro de leite	ru:сыворотка	tr:peynir altı suyu	ur:مصلا	zh:乳清
 c:whirlpool	Noun	ar:دوامة	de:Strudel	en:whirlpool	es:remolino	fa:گرداب	fr:tourbillon	he:מערבולת	hi:भँवर	ja:渦	ko:소용돌이	pt:redemoinho	ru:водоворот	tr:girdap	ur:بھنور	zh:漩涡
 c:whirlwind	Noun	ar:زوبعة	de:Wirbelwind	en:whirlwind	es:torbellino	fa:گردباد	fr:tourbillon	he:מערבולת	hi:बवंडर	ja:旋風	ko:회오리바람	pt:redemoinho	ru:вихрь	tr:hortum	ur:بگولہ	zh:旋风
 c:whisk	Noun	ar:مضرب بيض,خفاقة	de:Schneebesen	en:whisk	es:batidor	fa:همزن دستی	fr:fouet	he:מטרפה	hi:व्हिस्क,फेंटनी	ja:泡立て器	ko:거품기	pt:batedor	ru:венчик	tr:çırpıcı	ur:پھینٹنے والا	zh:打蛋器
