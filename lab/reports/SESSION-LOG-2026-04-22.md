@@ -112,3 +112,58 @@ All §48 (backlog commit) + §49 + §50 + §51 pushed to `origin/main`.
 - RTL alignment pass on Arabic docx
 - Fix `picker` / `knowledgeHealth` i18n keys missing from non-EN locales
   (55 pre-existing svelte-check errors — separate cleanup task)
+
+---
+
+## § 52. Clear All svelte-check Type Errors (55 → 0)
+
+**Commit**: da8dc1e  
+**Status**: ✅ Complete
+
+### Problem
+55 pre-existing `svelte-check` type errors accumulated across multiple sessions.
+TypeScript reported cascading errors in `src/lib/i18n/index.ts` plus scattered
+component and library errors.
+
+### Solution: i18n Gaps (39 keys × 14 locales)
+
+Two scripts written to add missing translation keys:
+- `lab/scripts/i18n_picker_khealth.py` — `picker` + `knowledgeHealth` top-level sections
+- `lab/scripts/i18n_complete_fix.py` — comprehensive fix for all remaining gaps:
+  `settings.debug` (23 keys), `settings.templates.*` (16 keys), `settings.sections.*` (2 keys),
+  `settings.plugins.emojiIconPicker` (2 keys), `commands.newLibrary`, `sidebar.newLibrary`,
+  `ribbon.knowledgeHealth`, `constellationMap.*` (3 keys)
+  Applied to all 14 non-English locales (+37–39 keys each).
+
+### Solution: TypeScript Fixes (14 remaining after i18n)
+
+| File | Fix |
+|------|-----|
+| `store.ts` | Added `emojiIconPicker` to `enabledFeatures` type + `DEFAULT_SETTINGS` |
+| `store.ts` | Added `status?: 'active' \| 'archived'` to `NoteLink` interface |
+| `store.ts` | Added `ai?: { contextLines?, libraryAccess?, ... }` to `AppSettings` |
+| `NoteEditor.svelte` | `resolved.libraryName` → `resolved.library_name`; compute color via `buildLibraryColorMap(get(libraries))` |
+| `OutgoingLinksPanel.svelte` | Same `library_name` fix |
+| `ConstellationSight.svelte` | Added missing `searchMatchIds` prop destructuring |
+| `ConstellationMap.svelte` | Use `any` for `MapNode` in `$props()` type annotation (Svelte 5 scope quirk) |
+| `EditorContextMenu.svelte` | Added `'list' \| 'blockquote'` to `CursorContext` type |
+| `livePreview/lineDecoPlugin/bidiPlugin.ts` | `view.destroyed` → `(view as any).destroyed` (CM6 private field) |
+| `markdownHighlight.ts` | Cast string `style` values to `any` for Lezer compatibility |
+| `graphEngine.ts` | `@ts-ignore` on PixiJS `direction` property |
+| `semanticEngine.ts` | `embedder: any` for `FeatureExtractionPipeline` (Xenova types mismatch) |
+| `SearchHub.svelte` | Wrap `onClose` in arrow fn for `MouseEventHandler` compatibility |
+| `SettingsModal.svelte` | Optional chaining `ai?.contextLines`, `editingTheme?.id` |
+| `PropertyEditor.svelte` | Fix `getDateDir()` return type to `'ltr' \| 'rtl' \| 'auto'` |
+| `OrgChart/+layout.svelte` | Non-null assertions inside `{#if}` guards |
+| `vite.config.js` | Remove stale `@ts-expect-error` |
+
+### Result
+- Before: 55 errors  
+- After: **0 errors**, 284 warnings (warnings are CSS/minor, not blocking)
+
+### Still on the queue
+- Tier 2: drag-and-drop panel rearrangement (slot highlighting + drop zones)
+- Tier 3: detachable floating panels (needs Tauri multi-window)
+- Write-Time Derivation: Sight dashboard, sidebar star counts — audit pending
+- navTrace instrumentation dev-gate
+- Settings → Debug Boot Performance scorecard UI
