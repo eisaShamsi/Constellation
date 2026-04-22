@@ -356,6 +356,9 @@
 	// Flanking column widths — Tier 1b drag-resize. Initialized from appSettings on load.
 	let leftFlankWidth = $state(280);
 	let rightFlankWidth = $state(280);
+	/** Tier 1b: collapsed flanks — width goes to 0, panel content hidden. */
+	let leftFlankCollapsed = $state(false);
+	let rightFlankCollapsed = $state(false);
 	let splitPaneSizes = $state<number[]>([]); // flex values per pane in split view
 
 	// Command palette & quick switcher
@@ -1098,6 +1101,21 @@
 				sidebarTasks = [];
 			}
 		}, 100);
+	});
+
+	// Safety: if the active right sidebar tab's panel has been moved away from
+	// right-sidebar (via Settings → Panels), reset to 'properties' so the user
+	// doesn't see an empty panel body. Runs reactively whenever panelPlacements changes.
+	$effect(() => {
+		const placements = $appSettings.panelPlacements;
+		if (!placements) return;
+		if (rightSidebarTab === 'backlinks') {
+			const backlinksThere = placements.backlinks === 'right-sidebar';
+			const outgoingThere = placements.outgoing === 'right-sidebar';
+			if (!backlinksThere && !outgoingThere) {
+				rightSidebarTab = 'properties';
+			}
+		}
 	});
 
 	// Calendar sidebar: load note dates when Calendar tab is visible
@@ -4625,36 +4643,57 @@
 							{@const outgoingOnRight  = $appSettings.panelPlacements?.outgoing === 'right-of-note'}
 							<div class="editor-with-flanks" class:flank-resizing={flankResizing !== null} dir={$dir}>
 								{#if backlinksOnLeft || outgoingOnLeft}
-									<div class="flank flank-start" style:flex-basis="{leftFlankWidth}px">
-										{#if backlinksOnLeft}
-											<BacklinksPanel
-												backlinks={currentBacklinks}
-												unlinkedMentions={currentUnlinkedMentions}
-												activeNoteName={$activeTab?.name ?? ''}
-												activeNotePath={$activeTab?.path ?? ''}
-												{libraryColorMap}
-												onConfidenceChange={applyConfidenceLocally}
-												onArchive={applyArchiveLocally}
-											/>
-										{/if}
-										{#if outgoingOnLeft}
-											<OutgoingLinksPanel
-												outgoingLinks={currentOutgoing}
-												activeNotePath={$activeTab?.path ?? ''}
-												libraryPath={$activeTab?.libraryPath ?? ''}
-												{libraryColorMap}
-												onConfidenceChange={applyConfidenceLocally}
-												onArchive={applyArchiveLocally}
-											/>
+									<div class="flank flank-start"
+										class:flank-collapsed={leftFlankCollapsed}
+										style:flex-basis="{leftFlankCollapsed ? 0 : leftFlankWidth}px">
+										{#if !leftFlankCollapsed}
+											{#if backlinksOnLeft}
+												<BacklinksPanel
+													backlinks={currentBacklinks}
+													unlinkedMentions={currentUnlinkedMentions}
+													activeNoteName={$activeTab?.name ?? ''}
+													activeNotePath={$activeTab?.path ?? ''}
+													{libraryColorMap}
+													onConfidenceChange={applyConfidenceLocally}
+													onArchive={applyArchiveLocally}
+												/>
+											{/if}
+											{#if outgoingOnLeft}
+												<OutgoingLinksPanel
+													outgoingLinks={currentOutgoing}
+													activeNotePath={$activeTab?.path ?? ''}
+													libraryPath={$activeTab?.libraryPath ?? ''}
+													{libraryColorMap}
+													onConfidenceChange={applyConfidenceLocally}
+													onArchive={applyArchiveLocally}
+												/>
+											{/if}
 										{/if}
 									</div>
-									<!-- Drag handle between left flank and center editor -->
-									<div
-										class="flank-handle flank-handle-start"
-										role="separator"
-										aria-label="Resize left panel"
-										onmousedown={(e) => startFlankResize('left', e)}
-									></div>
+									<!-- Drag handle + collapse toggle between left flank and center editor -->
+									<div class="flank-handle-wrap flank-handle-wrap-start">
+										<button class="flank-collapse-btn"
+											aria-label={leftFlankCollapsed ? 'Expand left panel' : 'Collapse left panel'}
+											title={leftFlankCollapsed ? 'Expand' : 'Collapse'}
+											onclick={() => leftFlankCollapsed = !leftFlankCollapsed}>
+											<!-- Chevron points right when collapsed (show), left when expanded (hide) -->
+											{#if $dir === 'rtl'}
+												<svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+													<path d={leftFlankCollapsed ? 'M7 5L3 1v8z' : 'M3 5l4-4v8z'}/>
+												</svg>
+											{:else}
+												<svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+													<path d={leftFlankCollapsed ? 'M3 5l4-4v8z' : 'M7 5L3 1v8z'}/>
+												</svg>
+											{/if}
+										</button>
+										<div
+											class="flank-handle flank-handle-start"
+											role="separator"
+											aria-label="Resize left panel"
+											onmousedown={(e) => !leftFlankCollapsed && startFlankResize('left', e)}
+										></div>
+									</div>
 								{/if}
 								<div class="flank-center">
 							<NoteEditor
@@ -4719,34 +4758,54 @@
 							/>
 								</div>
 								{#if backlinksOnRight || outgoingOnRight}
-									<!-- Drag handle between center editor and right flank -->
-									<div
-										class="flank-handle flank-handle-end"
-										role="separator"
-										aria-label="Resize right panel"
-										onmousedown={(e) => startFlankResize('right', e)}
-									></div>
-									<div class="flank flank-end" style:flex-basis="{rightFlankWidth}px">
-										{#if outgoingOnRight}
-											<OutgoingLinksPanel
-												outgoingLinks={currentOutgoing}
-												activeNotePath={$activeTab?.path ?? ''}
-												libraryPath={$activeTab?.libraryPath ?? ''}
-												{libraryColorMap}
-												onConfidenceChange={applyConfidenceLocally}
-												onArchive={applyArchiveLocally}
-											/>
-										{/if}
-										{#if backlinksOnRight}
-											<BacklinksPanel
-												backlinks={currentBacklinks}
-												unlinkedMentions={currentUnlinkedMentions}
-												activeNoteName={$activeTab?.name ?? ''}
-												activeNotePath={$activeTab?.path ?? ''}
-												{libraryColorMap}
-												onConfidenceChange={applyConfidenceLocally}
-												onArchive={applyArchiveLocally}
-											/>
+									<!-- Drag handle + collapse toggle between center editor and right flank -->
+									<div class="flank-handle-wrap flank-handle-wrap-end">
+										<div
+											class="flank-handle flank-handle-end"
+											role="separator"
+											aria-label="Resize right panel"
+											onmousedown={(e) => !rightFlankCollapsed && startFlankResize('right', e)}
+										></div>
+										<button class="flank-collapse-btn"
+											aria-label={rightFlankCollapsed ? 'Expand right panel' : 'Collapse right panel'}
+											title={rightFlankCollapsed ? 'Expand' : 'Collapse'}
+											onclick={() => rightFlankCollapsed = !rightFlankCollapsed}>
+											{#if $dir === 'rtl'}
+												<svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+													<path d={rightFlankCollapsed ? 'M3 5l4-4v8z' : 'M7 5L3 1v8z'}/>
+												</svg>
+											{:else}
+												<svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+													<path d={rightFlankCollapsed ? 'M7 5L3 1v8z' : 'M3 5l4-4v8z'}/>
+												</svg>
+											{/if}
+										</button>
+									</div>
+									<div class="flank flank-end"
+										class:flank-collapsed={rightFlankCollapsed}
+										style:flex-basis="{rightFlankCollapsed ? 0 : rightFlankWidth}px">
+										{#if !rightFlankCollapsed}
+											{#if outgoingOnRight}
+												<OutgoingLinksPanel
+													outgoingLinks={currentOutgoing}
+													activeNotePath={$activeTab?.path ?? ''}
+													libraryPath={$activeTab?.libraryPath ?? ''}
+													{libraryColorMap}
+													onConfidenceChange={applyConfidenceLocally}
+													onArchive={applyArchiveLocally}
+												/>
+											{/if}
+											{#if backlinksOnRight}
+												<BacklinksPanel
+													backlinks={currentBacklinks}
+													unlinkedMentions={currentUnlinkedMentions}
+													activeNoteName={$activeTab?.name ?? ''}
+													activeNotePath={$activeTab?.path ?? ''}
+													{libraryColorMap}
+													onConfidenceChange={applyConfidenceLocally}
+													onArchive={applyArchiveLocally}
+												/>
+											{/if}
 										{/if}
 									</div>
 								{/if}
@@ -6056,17 +6115,34 @@
 		padding: 12px 8px;
 		background: var(--bg-secondary);
 		border: 0 solid var(--border);
+		transition: flex-basis 120ms ease, min-width 120ms ease;
+	}
+	.flank-collapsed {
+		/* min-width overrides the 180px floor so the flank can truly vanish */
+		min-width: 0 !important;
+		padding: 0;
+		overflow: hidden;
 	}
 	.flank-start { border-inline-end-width: 1px; }
 	.flank-end   { border-inline-start-width: 1px; }
 
+	/* Wrapper that stacks the drag handle and collapse button vertically */
+	.flank-handle-wrap {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		flex: 0 0 14px;
+		position: relative;
+		z-index: 10;
+		gap: 0;
+	}
 	/* Drag handles between flanking columns and the center editor */
 	.flank-handle {
-		flex: 0 0 4px;
+		flex: 1;
+		width: 4px;
 		cursor: col-resize;
 		background: transparent;
 		position: relative;
-		z-index: 10;
 		transition: background 120ms ease;
 	}
 	.flank-handle:hover,
@@ -6080,8 +6156,27 @@
 		display: block;
 		position: absolute;
 		inset-block: 0;
-		inset-inline: -4px;   /* 4px extra on each side → 12px total hit area */
+		inset-inline: -5px;   /* 5px extra on each side → 14px total hit area */
 	}
+
+	/* Collapse/expand toggle button on each drag-handle strip */
+	.flank-collapse-btn {
+		flex: 0 0 auto;
+		width: 14px; height: 20px;
+		display: flex; align-items: center; justify-content: center;
+		background: var(--background-modifier-border);
+		border: none; border-radius: 2px;
+		color: var(--text-muted);
+		cursor: pointer;
+		padding: 0;
+		opacity: 0.6;
+		transition: opacity 120ms, color 120ms;
+	}
+	.flank-collapse-btn:hover {
+		opacity: 1;
+		color: var(--interactive-accent);
+	}
+
 	.flank-center {
 		flex: 1;
 		min-width: 0;
