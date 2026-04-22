@@ -526,6 +526,8 @@
 			$appSettings.panelPlacements?.outgoing === 'right-of-note'
 		)
 	);
+	// layoutCtrlDisabled / layoutCtrlDisabledReason defined after fullPageActive
+	// (depends on it) — see the block right after fullPageActive declaration.
 	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 	let mapFocusNode = $state<any>(null); // current MapNode being viewed
 	// Sticky lazy-mount flags — stay true after first open so drill-down state survives
@@ -937,6 +939,20 @@
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
 	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || showSearchHub || isDashboardVisible);
+
+	// Shared disable/title logic for the three layout-bar buttons (left sidebar,
+	// split-view, right sidebar). Any overlay mode that takes over the editor
+	// area — full-page view (OrgChart/Lens/Search Hub) or SV inspect mode —
+	// disables all three. Adding a fourth overlay mode touches only this pair,
+	// not three title ternaries.
+	const layoutCtrlDisabled = $derived(fullPageActive || skyViewInspectMode);
+	const layoutCtrlDisabledReason = $derived(
+		fullPageActive
+			? $t('layout.disabledFullPage') || 'Disabled in full-page view'
+			: skyViewInspectMode
+				? $t('layout.disabledInSkyInspect') || 'Disabled while inspecting a Sky View note'
+				: ''
+	);
 
 	// Auto-collapse sidebars when full-page becomes active, restore when deactivated
 	let sidebarBeforeFullPage = false;
@@ -3875,9 +3891,6 @@
 	</div>
 
 	<!-- ═══ LEFT SIDEBAR ═══ -->
-	<!-- Hard gate on skyViewInspectMode: regardless of sidebarOpen, the left
-	     sidebar must never render while inspecting a Sky View node. The exit
-	     path restores sidebarOpen from the snapshot. -->
 	{#if sidebarOpen && !skyViewInspectMode}
 		<aside class="sidebar" style:width="{leftSidebarWidth}px">
 			<div class="sidebar-toolbar">
@@ -4195,18 +4208,18 @@
 		<!-- Tab Bar (unified with layout controls) -->
 		<!-- Layout bar: sidebar + split controls (disabled when full-page overlay active) -->
 		<div class="layout-bar">
-			<button class="tab-action" class:active={sidebarOpen} disabled={fullPageActive || skyViewInspectMode} onclick={() => sidebarOpen = !sidebarOpen} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : (skyViewInspectMode ? $t('layout.disabledInSkyInspect') || 'Disabled while inspecting a Sky View note' : $t('layout.leftSidebar'))}>
+			<button class="tab-action" class:active={sidebarOpen} disabled={layoutCtrlDisabled} onclick={() => sidebarOpen = !sidebarOpen} title={layoutCtrlDisabled ? layoutCtrlDisabledReason : $t('layout.leftSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
 			<div style="flex:1"></div>
-			<button class="tab-action" class:active={$splitActive} disabled={fullPageActive || skyViewInspectMode} onclick={cycleSplit} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : (skyViewInspectMode ? $t('layout.disabledInSkyInspect') || 'Disabled while inspecting a Sky View note' : $t('layout.splitView'))}>
+			<button class="tab-action" class:active={$splitActive} disabled={layoutCtrlDisabled} onclick={cycleSplit} title={layoutCtrlDisabled ? layoutCtrlDisabledReason : $t('layout.splitView')}>
 				{#if $splitActive && $splitDirection === 'horizontal'}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/></svg>
 				{:else}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
 				{/if}
 			</button>
-			<button class="tab-action" class:active={rightSidebarOpen} disabled={fullPageActive || skyViewInspectMode} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : (skyViewInspectMode ? $t('layout.disabledInSkyInspect') || 'Disabled while inspecting a Sky View note' : $t('layout.rightSidebar'))}>
+			<button class="tab-action" class:active={rightSidebarOpen} disabled={layoutCtrlDisabled} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={layoutCtrlDisabled ? layoutCtrlDisabledReason : $t('layout.rightSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
 			</button>
 		</div>
@@ -5021,7 +5034,6 @@
 	</div>
 
 	<!-- ═══ RIGHT SIDEBAR ═══ -->
-	<!-- Hard gate on skyViewInspectMode: forced collapsed while inspecting. -->
 	<aside class="right-sidebar" class:collapsed={!rightSidebarOpen || skyViewInspectMode} style:width={(rightSidebarOpen && !skyViewInspectMode) ? rightSidebarWidth + 'px' : undefined}>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="rs-resize" onmousedown={(e) => startResize('right', e)}></div>
@@ -5138,11 +5150,10 @@
 							<div class="rs-empty">{$t('panels.noHeadings')}</div>
 						{/if}
 					</div>
-				{:else if rightSidebarTab === 'backlinks'}
-					<!-- Always render both panels in the sidebar tab — it's an alternative
-					     access point for when the user isn't in SV inspect mode (and the
-					     flanking columns are therefore hidden). Having both here means
-					     the sidebar tab is functionally complete on its own. -->
+				{:else if rightSidebarTab === 'backlinks' && !skyViewInspectMode}
+					<!-- Skip mounting in inspect mode: the right sidebar is force-collapsed
+					     and cannot be opened, so this would be an invisible mount paying
+					     render cost over currentBacklinks/currentOutgoing for nothing. -->
 					<div class="rs-section rs-section--flush">
 						<div class="rs-header">{$t('panels.backlinksHeader')}</div>
 						<BacklinksPanel
@@ -5401,12 +5412,19 @@
 			}}
 			onRestore={async (layout, screen) => {
 				if (layout) {
-					// In SV inspect mode the sidebars must stay hidden; workspace
-					// restore would otherwise re-expand them and break the flanked
-					// note layout. Snapshot is kept so exit still restores state.
-					sidebarOpen = skyViewInspectMode ? false : layout.leftSidebarOpen;
+					// In SV inspect mode: force sidebars hidden, but ALSO update the
+					// snapshot so the dismiss-path restores the workspace's intended
+					// state (not the pre-workspace-load state).
+					if (skyViewInspectMode) {
+						sidebarBeforeSkyInspect = layout.leftSidebarOpen;
+						rightSidebarBeforeSkyInspect = layout.rightSidebarOpen;
+						sidebarOpen = false;
+						rightSidebarOpen = false;
+					} else {
+						sidebarOpen = layout.leftSidebarOpen;
+						rightSidebarOpen = layout.rightSidebarOpen;
+					}
 					leftSidebarWidth = layout.leftSidebarWidth;
-					rightSidebarOpen = skyViewInspectMode ? false : layout.rightSidebarOpen;
 					const validTabs = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review'] as const;
 					rightSidebarTab = validTabs.includes(layout.rightSidebarTab as any) ? layout.rightSidebarTab as typeof rightSidebarTab : 'properties';
 					rightSidebarWidth = layout.rightSidebarWidth;
