@@ -153,6 +153,7 @@ c:altai	Noun	ar:جبال ألتاي	de:Altai	en:Altai,Altai Mountains	es:Altái,
 c:altar-table	Noun	ar:مذبح	de:Altar	en:altar	es:altar	fa:قربانگاه	fr:autel	he:מזבח	hi:वेदी	ja:祭壇	ko:제단	pt:altar	ru:алтарь	tr:sunak	ur:قربان گاہ	zh:祭坛
 c:altarpiece	Noun	ar:لوحة المذبح	de:Altarbild	en:altarpiece	es:retablo	fa:تصویر قربانگاه	fr:retable	he:מזבחית	hi:वेदी चित्र	ja:祭壇画	ko:제단화	pt:retábulo	ru:алтарный образ	tr:sunak resmi	ur:قربان گاہ کی تصویر	zh:祭坛画
 c:altimeter	Noun	ar:مقياس الارتفاع	de:Höhenmesser	en:altimeter	es:altímetro	fa:ارتفاع سنج	fr:altimètre	he:מד גובה	hi:अल्टीमीटर	ja:高度計	ko:고도계	pt:altímetro	ru:альтиметр	tr:yükseklik ölçer	ur:بلندی ناپ	zh:高度表
+c:altimeter-device	Noun	ar:مقياس الارتفاع	de:Höhenmesser	en:altimeter	es:altímetro	fa:ارتفاع‌سنج	fr:altimètre	he:מד גובה	hi:ऊंचाईमापी	ja:高度計	ko:고도계	pt:altímetro	ru:альтиметр	tr:irtifametre	ur:بلندی پیما	zh:高度计
 c:altitude-training	Noun	ar:التدريب في الارتفاع	de:Höhentraining	en:altitude training	es:entrenamiento en altitud	fa:تمرین در ارتفاع	fr:entraînement en altitude	he:אימון בגובה	hi:उच्च ऊंचाई प्रशिक्षण	ja:高地トレーニング	ko:고지대 훈련	pt:treino em altitude	ru:тренировки на высоте	tr:irtifa antrenmanı	ur:بلندی تربیت	zh:高原训练
 c:altruism-economics	Noun	ar:الإيثار الاقتصادي	de:ökonomischer Altruismus	en:economic altruism	es:altruismo económico	fa:نوع‌دوستی اقتصادی	fr:altruisme économique	he:אלטרואיזם כלכלי	hi:आर्थिक परोपकारिता	ja:経済的利他主義	ko:경제적 이타주의	pt:altruísmo econômico	ru:экономический альтруизм	tr:ekonomik fedakarlık	ur:معاشی ایثار	zh:经济利他主义
 c:aluminum	Noun	ar:ألومنيوم,ألمنيوم	de:Aluminium	en:aluminum,aluminium	es:aluminio	fa:آلومینیوم	fr:aluminium	he:אלומיניום	hi:एल्यूमीनियम	ja:アルミニウム,アルミ	ko:알루미늄	pt:alumínio	ru:алюминий	tr:alüminyum	ur:ایلومینیم	zh:铝
@@ -171,6 +172,7 @@ c:amendment	Noun	ar:تعديل	de:Änderung	en:amendment	es:enmienda	fa:اصلا
 c:amethyst	Noun	ar:جمشت	de:Amethyst	en:amethyst	es:amatista	fa:آمتیست,جمشت	fr:améthyste	he:אחלמה	hi:जामुनिया,एमेथिस्ट	ja:アメジスト,紫水晶	ko:자수정,아메시스트	pt:ametista	ru:аметист	tr:ametist	ur:جامنیا	zh:紫水晶,紫晶
 c:amicus-curiae	Noun	ar:صديق المحكمة	de:Amicus curiae	en:amicus curiae	es:amicus curiae	fa:دوست دادگاه	fr:amicus curiae	he:ידיד בית המשפט	hi:न्यायालय का मित्र	ja:法廷助言者	ko:법정 조언자	pt:amicus curiae	ru:друг суда	tr:mahkeme dostu	ur:عدالت کا دوست	zh:法庭之友
 c:amine	Noun	ar:أمين	de:Amin	en:amine	es:amina	fa:آمین	fr:amine	he:אמין	hi:एमीन	ja:アミン	ko:아민	pt:amina	ru:амин	tr:amin	ur:امین	zh:胺
+c:ammeter	Noun	ar:مقياس التيار	de:Amperemeter	en:ammeter	es:amperímetro	fa:آمپرسنج	fr:ampèremètre	he:אמפרמטר	hi:एमीटर	ja:電流計	ko:전류계	pt:amperímetro	ru:амперметр	tr:ampermetre	ur:ایمپیر میٹر	zh:电流表
 c:amnesia	Noun	ar:فقدان الذاكرة	de:Amnesie,Gedächtnisverlust	en:amnesia	es:amnesia	fa:فراموشی	fr:amnésie	he:אמנזיה	hi:स्मृतिलोप	ja:健忘症,記憶喪失	ko:기억상실,건망증	pt:amnésia	ru:амнезия,потеря памяти	tr:amnezi,hafıza kaybı	ur:حافظے کا ضیاع	zh:失忆,健忘症
 c:amnesty	Noun	ar:العفو العام	de:Amnestie	en:amnesty	es:amnistía	fa:عفو عمومی	fr:amnistie	he:חנינה	hi:माफी	ja:恩赦	ko:사면	pt:anistia	ru:амнистия	tr:af	ur:عام معافی	zh:大赦
 c:amorphous-material	Noun	ar:المادة الزجاجية	de:amorphes Material	en:amorphous material,amorphous solid	es:material amorfo	fa:ماده آمورف	fr:matériau amorphe	he:חומר אמורפי	hi:अनाकार सामग्री	ja:非晶質材料	ko:비정질 재료	pt:material amorfo	ru:аморфный материал	tr:amorf malzeme	ur:بے شکل مواد	zh:非晶态材料
@@ -210,12 +212,14 @@ c:andromeda-galaxy	Noun	ar:مجرة أندروميدا	de:Andromedagalaxie	en:An
 c:anechoic	Adjective	ar:لاصدوي	de:schallgedämpft	en:anechoic	es:anecoico	fa:بدون انعکاس	fr:anéchoïque	he:חסר הדהוד	hi:निप्रतिध्वनिक	ja:無響	ko:무반향	pt:anecóico	ru:безэховый	tr:yankısız	ur:بے گونج	zh:消声
 c:anemia	Noun	ar:فقر الدم	de:Anämie	en:anemia	es:anemia	fa:کم‌خونی	fr:anémie	he:אנמיה	hi:रक्ताल्पता	ja:貧血	ko:빈혈	pt:anemia	ru:анемия	tr:anemi	ur:خون کی کمی	zh:贫血
 c:anemometer	Noun	ar:مقياس الرياح,أنيمومتر	de:Anemometer,Windmesser	en:anemometer	es:anemómetro	fa:بادسنج	fr:anémomètre	he:אנמומטר,מד-רוח	hi:एनीमोमीटर,वायुवेग मापी	ja:風速計,アネモメーター	ko:풍속계	pt:anemômetro	ru:анемометр	tr:anemometre,rüzgârölçer	ur:اینیمومیٹر,بادسنج	zh:风速计
+c:anemometer-device	Noun	ar:مقياس سرعة الرياح	de:Anemometer	en:anemometer	es:anemómetro	fa:بادسنج	fr:anémomètre	he:מד רוח	hi:वायुवेगमापी	ja:風速計	ko:풍속계	pt:anemômetro	ru:анемометр	tr:anemometre	ur:ہوا ناپ	zh:风速计
 c:anemone	Noun	ar:شقائق البحر	de:Seeanemone	en:sea anemone	es:anémona de mar	fa:شقایق دریایی	fr:anémone de mer	he:כלנית ים	hi:समुद्री एनीमोन	ja:イソギンチャク	ko:말미잘	pt:anêmona-do-mar	ru:морской анемон	tr:deniz anemonisi	ur:سمندری پھول	zh:海葵
 c:anesthesia	Noun	ar:تخدير	de:Anästhesie	en:anesthesia	es:anestesia	fa:بیهوشی	fr:anesthésie	he:הרדמה	hi:संवेदनाहरण	ja:麻酔	ko:마취	pt:anestesia	ru:анестезия	tr:anestezi	ur:بے ہوشی	zh:麻醉
 c:angel	Noun	ar:ملاك	de:Engel	en:angel	es:ángel	fa:فرشته	fr:ange	he:מלאך	hi:देवदूत,फ़रिश्ता	ja:天使	ko:천사	pt:anjo	ru:ангел	tr:melek	ur:فرشتہ	zh:天使
 c:anger	Noun	ar:غضب	de:Zorn,Ärger,Wut	en:anger	es:ira,enojo	fa:خشم,عصبانیت	fr:colère	he:כעס	hi:क्रोध,ग़ुस्सा	ja:怒り	ko:분노,화	pt:raiva,ira	ru:гнев,злость	tr:öfke,kızgınlık	ur:غصہ	zh:愤怒,生气
 c:angiography	Noun	ar:تصوير الأوعية الدموية	de:Angiographie	en:angiography	es:angiografía	fa:آنژیوگرافی	fr:angiographie	he:אנגיוגרפיה	hi:एंजियोग्राफी	ja:血管造影	ko:혈관 조영술	pt:angiografia	ru:ангиография	tr:anjiyografi	ur:خون کی نالی تصویر	zh:血管造影
 c:angle	Noun	ar:زاوية	de:Winkel	en:angle	es:ángulo	fa:زاویه	fr:angle	he:זווית	hi:कोण	ja:角,角度	ko:각,각도	pt:ângulo	ru:угол	tr:açı	ur:زاویہ	zh:角,角度
+c:angle-finder	Noun	ar:مقياس الزوايا	de:Winkelfinder	en:angle finder	es:buscador de ángulos	fa:زاویه‌یاب	fr:chercheur d'angle	he:מוצא זוויות	hi:कोण खोजक	ja:角度計	ko:각도 측정기	pt:localizador de ângulo	ru:угломер	tr:açı bulucu	ur:زاویہ پتہ لگانے والا	zh:角度仪
 c:angle-grinder	Noun	ar:جلاخة زاوية	de:Winkelschleifer	en:angle grinder	es:amoladora angular	fa:سنگ‌ساب زاویه‌ای	fr:meuleuse d'angle	he:משחזת זוויתית	hi:एंगल ग्राइंडर	ja:アングルグラインダー	ko:앵글 그라인더	pt:esmerilhadeira angular	ru:угловая шлифмашина	tr:taşlama makinesi	ur:اینگل گرائنڈر	zh:角磨机
 c:anglerfish	Noun	ar:سمكة الصياد	de:Anglerfisch,Seeteufel	en:anglerfish	es:rape	fa:ماهی صیاد	fr:baudroie,lotte	he:דייגן	hi:एंगलरफिश	ja:アンコウ	ko:아귀	pt:tamboril	ru:удильщик	tr:fener balığı	ur:اینگلر مچھلی	zh:鮟鱇
 c:angora	Noun	ar:الانغورا	de:Angora	en:angora	es:angora	fa:انگورا	fr:angora	he:אנגורה	hi:अंगोरा	ja:アンゴラ	ko:앙고라	pt:angora	ru:ангора	tr:angora	ur:انگورا	zh:安哥拉
@@ -448,6 +452,7 @@ c:bake	Verb	ar:خبز,يخبز	de:backen	en:bake	es:hornear	fa:پختن در ف�
 c:baker	Noun	ar:خباز	de:Bäcker,Bäckerin	en:baker	es:panadero	fa:نانوا	fr:boulanger,boulangère	he:אופה	hi:नानबाई,बेकर	ja:パン屋,パン職人	ko:제빵사	pt:padeiro	ru:пекарь,булочник	tr:fırıncı,ekmekçi	ur:نانبائی,بیکر	zh:面包师
 c:baklava	Noun	ar:بقلاوة	de:Baklava	en:baklava	es:baklava	fa:باقلوا	fr:baklava	he:בקלאוה	hi:बकलावा	ja:バクラヴァ	ko:바클라바	pt:baklava	ru:пахлава	tr:baklava	ur:باقلاوہ	zh:果仁蜜饼
 c:balalaika	Noun	ar:بالاليكا	de:Balalaika	en:balalaika	es:balalaika	fa:بالالایکا	fr:balalaïka	he:בלליקה	hi:बालालाइका	ja:バラライカ	ko:발랄라이카	pt:balalaica	ru:балалайка	tr:balalayka	ur:بالالائیکا	zh:巴拉莱卡琴
+c:balance-scale	Noun	ar:ميزان	de:Balkenwaage	en:balance scale	es:balanza	fa:ترازو	fr:balance	he:מאזניים	hi:तुला	ja:天秤	ko:저울	pt:balança	ru:весы	tr:terazi	ur:ترازو	zh:天平
 c:balance-sheet	Noun	ar:ميزانية عمومية	de:Bilanz	en:balance sheet	es:balance general	fa:ترازنامه	fr:bilan	he:מאזן	hi:बैलेंस शीट	ja:貸借対照表	ko:대차대조표	pt:balanço patrimonial	ru:бухгалтерский баланс	tr:bilanço	ur:بیلنس شیٹ	zh:资产负债表
 c:balcony	Noun	ar:شرفة,بلكون	de:Balkon	en:balcony	es:balcón	fa:بالکن,ایوان	fr:balcon	he:מרפסת	hi:बालकनी,छज्जा	ja:バルコニー	ko:발코니	pt:varanda,sacada	ru:балкон	tr:balkon	ur:بالکنی,برآمدہ	zh:阳台
 c:ball	Noun	ar:كرة	de:Ball	en:ball	es:pelota,balón	fa:توپ	fr:ballon,balle	he:כדור	hi:गेंद	ja:ボール	ko:공,볼	pt:bola	ru:мяч	tr:top	ur:گیند,بال	zh:球
@@ -489,6 +494,7 @@ c:barley	Noun	ar:شعير	de:Gerste	en:barley	es:cebada	fa:جو	fr:orge	he:שע�
 c:barn	Noun	ar:حظيرة	de:Scheune	en:barn	es:granero	fa:انبار غله	fr:grange	he:אסם	hi:खलिहान	ja:納屋	ko:헛간	pt:celeiro	ru:амбар	tr:samanlık	ur:باڑا	zh:谷仓
 c:barnacle	Noun	ar:بلح البحر العالق,دبق البحر	de:Seepocke,Entenmuschel	en:barnacle	es:percebe,bellota de mar	fa:کشتی‌چسب	fr:bernacle,anatife	he:דילעה	hi:बार्नेकल	ja:フジツボ	ko:따개비	pt:craca,percebe	ru:морской жёлудь,усоногий рак	tr:deniz palamutu	ur:سمندری سپ	zh:藤壶
 c:barometer	Noun	ar:مقياس الضغط الجوي,بارومتر	de:Barometer,Luftdruckmesser	en:barometer	es:barómetro	fa:فشارسنج,بارومتر	fr:baromètre	he:ברומטר,מד-לחץ	hi:बैरोमीटर,वायुदाब मापी	ja:気圧計,バロメーター	ko:기압계,바로미터	pt:barômetro	ru:барометр	tr:barometre,basınçölçer	ur:بیرومیٹر,فشار پیما	zh:气压计
+c:barometer-device	Noun	ar:باروميتر	de:Barometer	en:barometer	es:barómetro	fa:فشارسنج هوا	fr:baromètre	he:ברומטר	hi:वायुमंडलीय दाबमापी	ja:気圧計	ko:기압계	pt:barômetro	ru:барометр	tr:barometre	ur:بیرومیٹر	zh:气压计
 c:baroque-art	Noun	ar:الباروك	de:Barock	en:Baroque	es:barroco	fa:باروک	fr:baroque	he:בארוק	hi:बारोक	ja:バロック	ko:바로크	pt:barroco	ru:барокко	tr:barok	ur:بارک	zh:巴洛克
 c:barracuda	Noun	ar:بركودة	de:Barrakuda	en:barracuda	es:barracuda	fa:باراکودا	fr:barracuda	he:ברקודה	hi:बैरकुडा	ja:バラクーダ	ko:바라쿠다	pt:barracuda	ru:барракуда	tr:barakuda	ur:بیراکوڈا	zh:梭鱼
 c:barter	Noun	ar:مقايضة	de:Tauschhandel	en:barter	es:trueque	fa:پایاپای	fr:troc	he:סחר חליפין	hi:वस्तु विनिमय,अदला-बदली	ja:物々交換	ko:물물교환	pt:escambo,troca	ru:бартер,натуральный обмен	tr:takas,trampa	ur:مبادلہ,لین دین	zh:物物交换,易货
@@ -845,6 +851,7 @@ c:calcium	Noun	ar:كالسيوم	de:Kalzium,Calcium	en:calcium	es:calcio	fa:کل
 c:calculus	Noun	ar:حساب التفاضل والتكامل	de:Kalkül	en:calculus	es:cálculo	fa:حساب دیفرانسیل و انتگرال	fr:calcul infinitésimal	he:חשבון אינפיניטסימלי	hi:कलन	ja:微積分	ko:미적분학	pt:cálculo	ru:математический анализ	tr:kalkülüs	ur:حساب تفاضل	zh:微积分
 c:caldera	Noun	ar:الفوهة البركانية	de:Caldera	en:caldera	es:caldera	fa:کالدرا	fr:caldera	he:קלדרה	hi:काल्डेरा	ja:カルデラ	ko:칼데라	pt:caldeira	ru:кальдера	tr:kaldera	ur:کالڈیرا	zh:破火山口
 c:calf	Noun	ar:عجل	de:Kalb	en:calf	es:ternero	fa:گوساله	fr:veau	he:עגל	hi:बछड़ा	ja:子牛	ko:송아지	pt:bezerro	ru:телёнок	tr:buzağı	ur:بچھڑا	zh:小牛
+c:caliper	Noun	ar:ورنية	de:Messschieber	en:caliper	es:calibrador	fa:کولیس	fr:pied à coulisse	he:מד מרחק	hi:कैलिपर	ja:ノギス	ko:캘리퍼	pt:paquímetro	ru:штангенциркуль	tr:kumpas	ur:کیلیپر	zh:卡尺
 c:caliph	Noun	ar:خليفة	de:Kalif	en:caliph	es:califa	fa:خلیفه	fr:calife	he:ח'ליף	hi:खलीफा	ja:カリフ	ko:칼리프	pt:califa	ru:халиф	tr:halife	ur:خلیفہ	zh:哈里发
 c:calligrapher	Noun	ar:خطّاط	de:Kalligraph	en:calligrapher	es:calígrafo	fa:خطّاط	fr:calligraphe	he:קליגרף	hi:खुशनवीस,सुलेखक	ja:書家,カリグラファー	ko:서예가,캘리그래퍼	pt:calígrafo	ru:каллиграф	tr:hattat	ur:خوش نویس,خطّاط	zh:书法家
 c:callisto	Noun	ar:كاليستو	de:Kallisto	en:Callisto	es:Calisto	fa:کالیستو	fr:Callisto	he:קליסטו	hi:कैलिस्टो	ja:カリスト	ko:칼리스토	pt:Calisto	ru:Каллисто	tr:Kallisto	ur:کلسٹو	zh:木卫四
@@ -1099,6 +1106,7 @@ c:chromium	Noun	ar:كروم	de:Chrom	en:chromium	es:cromo	fa:کروم	fr:chrome	
 c:chromosome	Noun	ar:كروموسوم,صبغي	de:Chromosom	en:chromosome	es:cromosoma	fa:کروموزوم	fr:chromosome	he:כרומוזום	hi:गुणसूत्र	ja:染色体	ko:염색체	pt:cromossomo,cromossoma	ru:хромосома	tr:kromozom	ur:کروموسوم	zh:染色体
 c:chromosphere	Noun	ar:الغلاف اللوني	de:Chromosphäre	en:chromosphere	es:cromosfera	fa:رنگین‌کره	fr:chromosphère	he:כרומוספירה	hi:वर्णमंडल	ja:彩層	ko:채층	pt:cromosfera	ru:хромосфера	tr:kromosferi	ur:رنگین کرہ	zh:色球
 c:chronicler	Noun	ar:مؤرخ	de:Chronist	en:chronicler	es:cronista	fa:تاریخ نگار	fr:chroniqueur	he:כרוניקאי	hi:वृत्तान्तकार	ja:年代記者	ko:연대기 작가	pt:cronista	ru:летописец	tr:vakayiname yazarı	ur:تاریخ نگار	zh:编年史家
+c:chronometer	Noun	ar:كرونومتر	de:Chronometer	en:chronometer	es:cronómetro de precisión	fa:ساعت دقیق	fr:chronomètre de précision	he:כרונומטר	hi:क्रोनोमीटर	ja:クロノメーター	ko:크로노미터	pt:cronômetro de precisão	ru:хронометр	tr:kronometer	ur:کرونومیٹر	zh:天文钟
 c:chrysalis	Noun	ar:شرنقة	de:Chrysalis	en:chrysalis	es:crisálida	fa:شفیره پروانه	fr:chrysalide	he:גלם	hi:क्रिसलिस	ja:蛹	ko:번데기	pt:crisálida	ru:куколка	tr:krisalit	ur:شرنقہ	zh:蛹
 c:chrysanthemum	Noun	ar:الأقحوان	de:Chrysantheme	en:chrysanthemum	es:crisantemo	fa:داوودی	fr:chrysanthème	he:חרצית	hi:गुलदाउदी	ja:菊	ko:국화	pt:crisântemo	ru:хризантема	tr:krizantem	ur:گل داؤدی	zh:菊花
 c:chunking-cog	Noun	ar:التكتيل المعرفي	de:Chunking	en:chunking	es:agrupamiento	fa:تکه‌بندی	fr:regroupement	he:צ'אנקינג	hi:चंकिंग	ja:チャンキング	ko:청킹	pt:agrupamento cognitivo	ru:чанкинг	tr:gruplama	ur:حصہ بندی	zh:组块
@@ -1269,6 +1277,7 @@ c:comparative-anatomy	Noun	ar:التشريح المقارن	de:vergleichende Ana
 c:comparative-genomics	Noun	ar:الجينوميات المقارنة	de:Vergleichende Genomik	en:comparative genomics	es:genómica comparativa	fa:ژنومیکس مقایسه‌ای	fr:génomique comparative	he:גנומיקה השוואתית	hi:तुलनात्मक जीनोमिक्स	ja:比較ゲノミクス	ko:비교 유전체학	pt:genômica comparativa	ru:сравнительная геномика	tr:karşılaştırmalı genomik	ur:تقابلی جینومکس	zh:比较基因组学
 c:compare	Verb	ar:قارن	de:vergleichen	en:compare	es:comparar	fa:مقایسه کردن	fr:comparer	he:להשוות	hi:तुलना करना	ja:比較する,比べる	ko:비교하다	pt:comparar	ru:сравнивать	tr:karşılaştırmak	ur:موازنہ کرنا	zh:比较
 c:compass	Noun	ar:بوصلة	de:Kompass	en:compass	es:brújula	fa:قطب نما	fr:boussole	he:מצפן	hi:दिशासूचक,कम्पास	ja:羅針盤,コンパス	ko:나침반	pt:bússola	ru:компас	tr:pusula	ur:قطب نما	zh:指南针,罗盘
+c:compass-device	Noun	ar:بوصلة	de:Kompass	en:compass	es:brújula	fa:قطب‌نما	fr:boussole	he:מצפן	hi:दिशा-सूचक यंत्र	ja:磁気コンパス	ko:나침반	pt:bússola	ru:компас	tr:pusula	ur:قطب نما	zh:指南针
 c:compassion	Noun	ar:شفقة	de:Mitgefühl	en:compassion	es:compasión	fa:شفقت	fr:compassion	he:חמלה	hi:करुणा	ja:思いやり	ko:연민	pt:compaixão	ru:сострадание	tr:merhamet	ur:ترس	zh:同情
 c:compatibilism	Noun	ar:التوافقية	de:Kompatibilismus	en:compatibilism	es:compatibilismo	fa:سازگارانگاری	fr:compatibilisme	he:קומפטיביליזם	hi:सामंजस्यवाद	ja:両立論	ko:양립주의	pt:compatibilismo	ru:компатибилизм	tr:bağdaşırcılık	ur:ہم آہنگی پسندی	zh:相容论
 c:compete	Verb	ar:نافس,تنافس	de:konkurrieren,wetteifern	en:compete,competes,competed,competing	es:competir	fa:رقابت کردن	fr:concourir,rivaliser	he:להתחרות	hi:मुक़ाबला करना,प्रतिस्पर्धा करना	ja:競う,競争する	ko:경쟁하다,겨루다	pt:competir	ru:соревноваться,конкурировать	tr:yarışmak,rekabet etmek	ur:مقابلہ کرنا	zh:竞争,比赛
@@ -1641,6 +1650,7 @@ c:denial	Noun	ar:إنكار	de:Verleugnung	en:denial	es:negación	fa:انکار	
 c:denim	Noun	ar:دنيم	de:Denim	en:denim	es:denim	fa:دنیم	fr:denim	he:ג'ינס	hi:डेनिम	ja:デニム	ko:데님	pt:denim	ru:деним	tr:denim	ur:ڈینم	zh:牛仔布
 c:denouement	Noun	ar:الحل الدرامي	de:Auflösung	en:dénouement	es:desenlace	fa:گره‌گشایی	fr:dénouement	he:פתרון	hi:उपसंहार	ja:大団円	ko:결말	pt:desfecho	ru:развязка	tr:çözüm	ur:انجام	zh:结局
 c:dense	Adjective	ar:كثيف	de:dicht	en:dense	es:denso	fa:متراکم,انبوه	fr:dense	he:צפוף	hi:घना	ja:密な,濃密な	ko:밀집한,빽빽한	pt:denso	ru:плотный,густой	tr:yoğun	ur:گھنا,کثیف	zh:密,稠密
+c:densitometer	Noun	ar:مقياس الكثافة	de:Densitometer	en:densitometer	es:densitómetro	fa:چگالی‌سنج	fr:densitomètre	he:מד צפיפות	hi:घनत्वमापी	ja:濃度計	ko:밀도계	pt:densitômetro	ru:денситометр	tr:dansitometre	ur:کثافت پیما	zh:密度计
 c:density-bonus	Noun	ar:مكافأة الكثافة	de:Dichtebonus	en:density bonus	es:bonificación de densidad	fa:جایزه تراکم	fr:bonus de densité	he:בונוס צפיפות	hi:घनत्व बोनस	ja:密度ボーナス	ko:밀도 인센티브	pt:bônus de densidade	ru:бонус плотности	tr:yoğunluk bonusu	ur:کثافت بونس	zh:密度奖励
 c:dentil	Noun	ar:سن الكرنيش	de:Zahnfries	en:dentil	es:dentículo	fa:دندانه	fr:denticule	he:שן	hi:दंतिक	ja:デンティル	ko:덴틸	pt:dente	ru:зубчик	tr:diş süsü	ur:دانت دار آرائش	zh:齿饰
 c:deontology	Noun	ar:الأخلاق الواجبية,الديونتولوجيا	de:Deontologie,Pflichtethik	en:deontology	es:deontología	fa:اخلاق وظیفه گرا	fr:déontologie	he:דאונטולוגיה	hi:कर्तव्यशास्त्र	ja:義務論	ko:의무론	pt:deontologia	ru:деонтология	tr:deontoloji,ödev etiği	ur:علم فرائض	zh:义务论
@@ -1816,6 +1826,7 @@ c:dramatic-irony	Noun	ar:مفارقة درامية	de:dramatische Ironie	en:dram
 c:drawbridge	Noun	ar:الجسر المتحرك	de:Zugbrücke	en:drawbridge	es:puente levadizo	fa:پل متحرک	fr:pont-levis	he:גשר מרים	hi:उठाऊ पुल	ja:跳ね橋	ko:도개교	pt:ponte levadiça	ru:подъёмный мост	tr:açılır köprü	ur:اٹھنے والا پل	zh:吊桥
 c:drawer	Noun	ar:درج	de:Schublade	en:drawer	es:cajón	fa:کشو	fr:tiroir	he:מגירה	hi:दराज़	ja:引き出し	ko:서랍	pt:gaveta	ru:ящик	tr:çekmece	ur:دراز	zh:抽屉
 c:drawing	Noun	ar:رسم	de:Zeichnung	en:drawing	es:dibujo	fa:طراحی	fr:dessin	he:ציור,רישום	hi:रेखांकन,ड्राइंग	ja:絵,デッサン	ko:드로잉,그림	pt:desenho	ru:рисунок	tr:çizim	ur:ڈرائنگ,خاکہ	zh:素描,绘图
+c:drawing-compass	Noun	ar:بركار	de:Zirkel	en:drawing compass	es:compás	fa:پرگار	fr:compas	he:מחוגה	hi:परकार	ja:コンパス	ko:컴퍼스	pt:compasso	ru:циркуль	tr:pergel	ur:پرکار	zh:圆规
 c:dream	Noun	ar:حلم	de:Traum	en:dream	es:sueño	fa:رویا,خواب	fr:rêve	he:חלום	hi:सपना,स्वप्न	ja:夢	ko:꿈	pt:sonho	ru:сон,мечта	tr:rüya,düş	ur:خواب,سپنا	zh:梦
 c:dress	Noun	ar:فستان	de:Kleid	en:dress,frock	es:vestido	fa:پیراهن زنانه	fr:robe	he:שמלה	hi:पोशाक,ड्रेस	ja:ドレス,ワンピース	ko:드레스,원피스	pt:vestido	ru:платье	tr:elbise	ur:لباس	zh:连衣裙
 c:dresser	Noun	ar:خزانة أدراج	de:Kommode	en:dresser,chest of drawers	es:cómoda	fa:کشودار	fr:commode	he:שידה	hi:ड्रेसर,दराज़ वाली अलमारी	ja:たんす,ドレッサー	ko:서랍장	pt:cômoda	ru:комод	tr:şifonyer	ur:دراز دار الماری	zh:五斗柜
@@ -2300,6 +2311,7 @@ c:florin	Noun	ar:فلورين	de:Gulden,Florin	en:florin	es:florín	fa:فلور�
 c:florist-shop	Noun	ar:محل زهور	de:Blumenladen	en:florist shop	es:floristería	fa:گل فروشی	fr:fleuriste	he:חנות פרחים	hi:फूलों की दुकान	ja:花屋	ko:꽃집	pt:floricultura	ru:цветочный магазин	tr:çiçekçi	ur:پھولوں کی دکان	zh:花店
 c:flounder	Noun	ar:بلطة البحر,فلاندر	de:Flunder	en:flounder	es:platija	fa:کفشک	fr:flet	he:סולייה	hi:फ्लाउंडर	ja:カレイ	ko:가자미	pt:solha	ru:камбала	tr:pisi balığı	ur:فلاؤنڈر	zh:比目鱼
 c:flour	Noun	ar:دقيق,طحين	de:Mehl	en:flour	es:harina	fa:آرد	fr:farine	he:קמח	hi:आटा,मैदा	ja:小麦粉,粉	ko:밀가루,가루	pt:farinha	ru:мука	tr:un	ur:آٹا,میدا	zh:面粉
+c:flow-meter	Noun	ar:مقياس التدفق	de:Durchflussmesser	en:flow meter	es:caudalímetro	fa:جریان‌سنج	fr:débitmètre	he:מד זרימה	hi:प्रवाह मापी	ja:流量計	ko:유량계	pt:medidor de vazão	ru:расходомер	tr:debi ölçer	ur:بہاؤ ناپ	zh:流量计
 c:flow-state	Noun	ar:حالة التدفق	de:Flow-Zustand	en:flow state	es:estado de flujo	fa:حالت جریان	fr:état de flow	he:מצב זרימה	hi:प्रवाह अवस्था	ja:フロー状態	ko:몰입 상태	pt:estado de fluxo	ru:состояние потока	tr:akış durumu	ur:بہاو کی حالت	zh:心流状态
 c:flower	Noun	ar:زهرة,وردة	de:Blume	en:flower	es:flor	fa:گل	fr:fleur	he:פרח	hi:फूल	ja:花	ko:꽃	pt:flor	ru:цветок	tr:çiçek	ur:پھول	zh:花
 c:flu	Noun	ar:إنفلونزا	de:Grippe,Influenza	en:flu,influenza	es:gripe,influenza	fa:آنفولانزا	fr:grippe	he:שפעת	hi:फ्लू,इन्फ्लुएंज़ा	ja:インフルエンザ	ko:독감,인플루엔자	pt:gripe,influenza	ru:грипп	tr:grip	ur:فلو,انفلوئنزا	zh:流感
@@ -2594,6 +2606,7 @@ c:gouda	Noun	ar:جبنة غودا	de:Gouda	en:gouda	es:queso gouda	fa:گودا	f
 c:government	Noun	ar:حكومة	de:Regierung	en:government	es:gobierno	fa:دولت,حکومت	fr:gouvernement	he:ממשלה	hi:सरकार	ja:政府	ko:정부	pt:governo	ru:правительство	tr:hükümet	ur:حکومت	zh:政府
 c:gown	Noun	ar:ثوب طويل,رداء	de:Abendkleid,Robe	en:gown	es:bata,vestido largo	fa:ردا	fr:robe de soirée,toge	he:גלימה	hi:गाउन	ja:ガウン	ko:가운	pt:vestido de gala	ru:мантия	tr:rop	ur:گاؤن	zh:礼服
 c:gps	Noun	ar:نظام تحديد المواقع العالمي	de:GPS,Satellitennavigation	en:GPS,global positioning system	es:GPS,sistema de posicionamiento global	fa:جی پی اس,سامانه موقعیت یاب جهانی	fr:GPS	he:GPS,ניווט לווייני	hi:जीपीएस	ja:GPS,全地球測位システム	ko:GPS,위성 항법 시스템	pt:GPS,sistema de posicionamento global	ru:GPS,глобальная система позиционирования	tr:GPS,küresel konumlama sistemi	ur:جی پی ایس	zh:GPS,全球定位系统
+c:gps-device	Noun	ar:جهاز تحديد مواقع	de:GPS-Gerät	en:GPS device	es:dispositivo GPS	fa:دستگاه GPS	fr:appareil GPS	he:מכשיר GPS	hi:जीपीएस उपकरण	ja:GPSデバイス	ko:GPS 장치	pt:dispositivo GPS	ru:GPS-навигатор	tr:GPS cihazı	ur:جی پی ایس آلہ	zh:GPS设备
 c:gps-geodesy	Noun	ar:المساحة بالنظام العالمي	de:GPS-Geodäsie	en:GPS geodesy	es:geodesia por GPS	fa:ژئودزی GPS	fr:géodésie par GPS	he:ג'אודזיה ב-GPS	hi:GPS भूमापन	ja:GPS測地学	ko:GPS 측지	pt:geodésia por GPS	ru:GPS-геодезия	tr:GPS jeodezisi	ur:GPS زمین پیمائی	zh:GPS大地测量
 c:grade	Noun	ar:درجة,علامة	de:Note	en:grade,mark	es:nota,calificación	fa:نمره	fr:note	he:ציון	hi:अंक,ग्रेड	ja:成績,評価	ko:성적,등급	pt:nota	ru:оценка,балл	tr:not	ur:گریڈ,درجہ	zh:成绩,分数
 c:gradient	Noun	ar:التدرج	de:Gradient	en:gradient	es:gradiente	fa:گرادیان	fr:gradient	he:גרדיינט	hi:प्रवणता	ja:勾配	ko:기울기	pt:gradiente	ru:градиент	tr:gradyan	ur:میلان	zh:梯度
@@ -2937,6 +2950,7 @@ c:hydrolysis	Noun	ar:تحلل مائي	de:Hydrolyse	en:hydrolysis	es:hidrólisis
 c:hydrothermal-vent	Noun	ar:فوهة حرارية مائية	de:Hydrothermale Tiefseequelle	en:hydrothermal vent	es:chimenea hidrotermal	fa:دودکش آبگرمایی	fr:source hydrothermale	he:נחיר הידרותרמי	hi:जलतापीय छिद्र	ja:熱水噴出孔	ko:열수공	pt:fonte hidrotermal	ru:гидротермальный источник	tr:hidrotermal bacalık	ur:آبی حرارتی سوراخ	zh:热液喷口
 c:hyena	Noun	ar:ضبع	de:Hyäne	en:hyena	es:hiena	fa:کفتار	fr:hyène	he:צבוע	hi:लकड़बग्घा	ja:ハイエナ	ko:하이에나	pt:hiena	ru:гиена	tr:sırtlan	ur:لگڑ بگا	zh:鬣狗
 c:hygrometer	Noun	ar:مقياس الرطوبة,هايجرومتر	de:Hygrometer,Feuchtigkeitsmesser	en:hygrometer	es:higrómetro	fa:رطوبت‌سنج	fr:hygromètre	he:היגרומטר,מד-לחות	hi:हाइग्रोमीटर,आर्द्रतामापी	ja:湿度計	ko:습도계	pt:higrômetro	ru:гигрометр	tr:higrometre,nemölçer	ur:ہائیگرومیٹر,نمی پیما	zh:湿度计
+c:hygrometer-device	Noun	ar:مقياس الرطوبة	de:Hygrometer	en:hygrometer	es:higrómetro	fa:رطوبت‌سنج	fr:hygromètre	he:מד לחות	hi:आर्द्रतामापी	ja:湿度計	ko:습도계	pt:higrômetro	ru:гигрометр	tr:nem ölçer	ur:نمی ناپ	zh:湿度计
 c:hymn	Noun	ar:ترنيمة,نشيد ديني	de:Hymne,Kirchenlied	en:hymn	es:himno	fa:سرود مذهبی	fr:hymne,cantique	he:מזמור	hi:स्तोत्र,भजन	ja:賛美歌,聖歌	ko:찬송가	pt:hino	ru:гимн,псалом	tr:ilahi	ur:ترانہ,حمد	zh:圣歌,赞美诗
 c:hypatia	Noun	ar:هيباتيا	de:Hypatia	en:Hypatia	es:Hipatia	fa:هیپاتیا	fr:Hypatie	he:היפטיה	hi:हाइपेशिया	ja:ヒュパティア	ko:히파티아	pt:Hipátia	ru:Гипатия	tr:Hypatia	ur:ہائپیشیا	zh:希帕提娅
 c:hyperbole	Noun	ar:مبالغة	de:Hyperbel,Übertreibung	en:hyperbole	es:hipérbole	fa:مبالغه,اغراق	fr:hyperbole	he:היפרבולה,הפרזה	hi:अतिशयोक्ति	ja:誇張法	ko:과장법	pt:hipérbole	ru:гипербола	tr:abartma,mübalağa	ur:مبالغہ	zh:夸张,夸饰
@@ -3346,6 +3360,7 @@ c:lark	Noun	ar:قبرة	de:Lerche	en:lark	es:alondra	fa:چکاوک	fr:alouette	h
 c:larva	Noun	ar:يرقة	de:Larve	en:larva	es:larva	fa:لارو	fr:larve	he:זחל	hi:लार्वा	ja:幼虫	ko:유충	pt:larva	ru:личинка	tr:larva	ur:لارو	zh:幼虫
 c:larynx	Noun	ar:الحنجرة	de:Kehlkopf	en:larynx	es:laringe	fa:حنجره	fr:larynx	he:גרגרת	hi:स्वरयंत्र	ja:喉頭	ko:후두	pt:laringe	ru:гортань	tr:gırtlak	ur:حنجرہ	zh:喉头
 c:laser	Noun	ar:ليزر	de:Laser	en:laser	es:láser	fa:لیزر	fr:laser	he:לייזר	hi:लेज़र	ja:レーザー,レーザ	ko:레이저	pt:laser	ru:лазер	tr:lazer	ur:لیزر	zh:激光,镭射
+c:laser-level	Noun	ar:ميزان الليزر	de:Laserwasserwaage	en:laser level	es:nivel láser	fa:تراز لیزری	fr:niveau laser	he:פלס לייזר	hi:लेजर लेवल	ja:レーザーレベル	ko:레이저 수평기	pt:nível a laser	ru:лазерный уровень	tr:lazer su terazisi	ur:لیزر سطح	zh:激光水平仪
 c:latency	Noun	ar:زمن الاستجابة,كمون	de:Latenz,Verzögerung	en:latency	es:latencia	fa:تأخیر شبکه,لیتنسی	fr:latence	he:השהיה,חביון	hi:विलंबता	ja:遅延,レイテンシ	ko:지연 시간,레이턴시	pt:latência	ru:задержка	tr:gecikme,gecikme süresi	ur:تاخیر	zh:延迟,时延
 c:latent-heat	Noun	ar:حرارة كامنة	de:latente Wärme	en:latent heat	es:calor latente	fa:گرمای نهان	fr:chaleur latente	he:חום סמוי	hi:गुप्त ऊष्मा	ja:潜熱	ko:잠열	pt:calor latente	ru:скрытая теплота	tr:gizli ısı	ur:مخفی حرارت	zh:潜热
 c:lateral-load	Noun	ar:حمل جانبي	de:Horizontalbelastung	en:lateral load	es:carga lateral	fa:بار جانبی	fr:charge horizontale	he:עומס אופקי	hi:पार्श्व भार	ja:水平荷重	ko:횡하중	pt:carga lateral	ru:горизонтальная нагрузка	tr:yatay yük	ur:پہلوئی بوجھ	zh:水平荷载
@@ -3522,6 +3537,7 @@ c:lung	Noun	ar:رئة	de:Lunge	en:lung,lungs	es:pulmón	fa:ریه,شش	fr:poumon
 c:lurch	Verb	ar:ترنح فجأة	de:ruckeln,taumeln	en:lurch	es:dar un bandazo	fa:تکان ناگهانی خوردن	fr:faire une embardée	he:להטלטל	hi:झटका खाना	ja:よろめき進む	ko:휘청거리다	pt:cambalear bruscamente	ru:качнуться,шататься резко	tr:yalpalamak	ur:جھٹکے سے ہلنا	zh:突然倾斜,踉跄
 c:lustrous	Adjective	ar:براق الرونق,زاهي اللمعان	de:glänzend,schimmernd	en:lustrous	es:lustroso	fa:جلا دار,درخشنده	fr:lustré,brillant	he:זוהר	hi:कांतिमय	ja:光沢のある	ko:윤이 나는	pt:luzidio,reluzente	ru:блестящий,лучистый	tr:parlak ışıltılı	ur:آب دار	zh:有光泽,光润
 c:lute	Noun	ar:عود,لوت	de:Laute	en:lute	es:laúd	fa:عود,لوت	fr:luth	he:לאוטה	hi:ल्यूट,वीणा सदृश	ja:リュート	ko:류트	pt:alaúde	ru:лютня	tr:lavta,ut	ur:لوٹ	zh:琉特琴,鲁特琴
+c:lux-meter	Noun	ar:مقياس الإضاءة	de:Luxmeter	en:lux meter	es:luxómetro	fa:لوکس‌سنج	fr:luxmètre	he:מד לוקס	hi:लक्स मीटर	ja:照度計	ko:조도계	pt:luxímetro	ru:люксметр	tr:lüks ölçer	ur:لکس میٹر	zh:照度计
 c:lychee	Noun	ar:ليتشي	de:Litschi	en:lychee	es:lichi	fa:لیچی	fr:litchi	he:ליצ'י	hi:लीची	ja:ライチ	ko:리치	pt:lichia	ru:личи	tr:liçi	ur:لیچی	zh:荔枝
 c:lymph-node	Noun	ar:العقدة الليمفاوية	de:Lymphknoten	en:lymph node	es:ganglio linfático	fa:گره لنفاوی	fr:ganglion lymphatique	he:בלוטת לימפה	hi:लिम्फ नोड	ja:リンパ節	ko:림프절	pt:nódulo linfático	ru:лимфатический узел	tr:lenf bezi	ur:لمفی غدہ	zh:淋巴结
 c:lymphocyte	Noun	ar:خلية ليمفاوية	de:Lymphozyt	en:lymphocyte	es:linfocito	fa:لنفوسیت	fr:lymphocyte	he:לימפוציט	hi:लसीकाणु	ja:リンパ球	ko:림프구	pt:linfócito	ru:лимфоцит	tr:lenfosit	ur:لمفاوی خلیہ	zh:淋巴细胞
@@ -3590,6 +3606,7 @@ c:manifold	Noun	ar:التعدد	de:Mannigfaltigkeit	en:manifold	es:variedad	fa:�
 c:manila	Noun	ar:مانيلا	de:Manila	en:Manila	es:Manila	fa:مانیل	fr:Manille	he:מנילה	hi:मनीला	ja:マニラ	ko:마닐라	pt:Manila	ru:Манила	tr:Manila	ur:منیلا	zh:马尼拉
 c:manila-folder	Noun	ar:مجلد مانيلا	de:Hängemappe	en:manila folder	es:carpeta manila	fa:پوشه مانیل	fr:chemise cartonnée	he:תיקייה חומה	hi:मनीला फोल्डर	ja:マニラフォルダー	ko:마닐라 폴더	pt:pasta manilha	ru:манильская папка	tr:manila dosya	ur:منیلا فولڈر	zh:马尼拉文件夹
 c:manners	Noun	ar:أخلاق,سلوك	de:Manieren,Umgangsformen	en:manners	es:modales	fa:ادب,رفتار	fr:manières	he:נימוסים	hi:शिष्टाचार,व्यवहार	ja:マナー,礼儀	ko:매너,예의	pt:modos,maneiras	ru:манеры	tr:tavır,davranış kuralları	ur:اخلاق,طور طریقے	zh:礼貌,举止
+c:manometer	Noun	ar:مانومتر	de:Manometer	en:manometer	es:manómetro	fa:فشارسنج	fr:manomètre	he:מנומטר	hi:मैनोमीटर	ja:圧力計	ko:압력계	pt:manômetro	ru:манометр	tr:manometre	ur:مینومیٹر	zh:压力计
 c:mansa-musa	Noun	ar:مانسا موسى	de:Mansa Musa	en:Mansa Musa	es:Mansa Musa	fa:مانسا موسی	fr:Mansa Moussa	he:מנסא מוסא	hi:मनसा मूसा	ja:マンサ・ムーサ	ko:만사 무사	pt:Mansa Musa	ru:Манса Муса	tr:Mansa Musa	ur:منسا موسیٰ	zh:曼萨·穆萨
 c:mansion	Noun	ar:قصر,منزل فخم	de:Villa,Herrenhaus	en:mansion	es:mansión	fa:عمارت,قصر	fr:manoir,demeure	he:אחוזה	hi:हवेली,भव्य घर	ja:豪邸,邸宅	ko:대저택	pt:mansão	ru:особняк,поместье	tr:konak,malikane	ur:حویلی,محل	zh:豪宅,大宅
 c:manta-ray	Noun	ar:الشفنين العملاق,مانتا	de:Mantarochen	en:manta ray	es:manta	fa:سفره ماهی غول	fr:raie manta	he:מנטה	hi:मांटा रे	ja:オニイトマキエイ	ko:만타가오리	pt:raia-manta	ru:манта	tr:manta vatozu	ur:مانٹا رے	zh:蝠鲼
@@ -3737,6 +3754,7 @@ c:microbe	Noun	ar:ميكروب,حي دقيق	de:Mikrobe,Mikroorganismus	en:micro
 c:microbiome	Noun	ar:الميكروبيوم	de:Mikrobiom	en:microbiome	es:microbioma	fa:میکروبیوم	fr:microbiome	he:מיקרוביום	hi:सूक्ष्मजीव समुदाय	ja:マイクロバイオーム	ko:마이크로바이옴	pt:microbioma	ru:микробиом	tr:mikrobiyom	ur:جراثیم کا مجموعہ	zh:微生物组
 c:microburst	Noun	ar:دفع هوائي صغير	de:Mikroburst	en:microburst	es:microcizalladura	fa:میکروبرست	fr:microburst	he:מיקרובורסט	hi:सूक्ष्म झोंका	ja:マイクロバースト	ko:마이크로버스트	pt:microjato	ru:микровзрыв	tr:mikropatlama	ur:مائیکروبرسٹ	zh:微暴流
 c:microeconomics	Noun	ar:الاقتصاد الجزئي	de:Mikroökonomie	en:microeconomics	es:microeconomía	fa:خردانه‌نگری اقتصادی	fr:microéconomie	he:מיקרו-כלכלה	hi:व्यष्टि अर्थशास्त्र	ja:ミクロ経済学	ko:미시경제학	pt:microeconomia	ru:микроэкономика	tr:mikroekonomi	ur:جزوی معاشیات	zh:微观经济学
+c:micrometer	Noun	ar:مايكروميتر	de:Mikrometer	en:micrometer	es:micrómetro	fa:میکرومتر	fr:micromètre	he:מיקרומטר	hi:माइक्रोमीटर	ja:マイクロメーター	ko:마이크로미터	pt:micrômetro	ru:микрометр	tr:mikrometre	ur:مائیکرومیٹر	zh:千分尺
 c:microphone	Noun	ar:ميكروفون	de:Mikrofon	en:microphone,mic	es:micrófono	fa:میکروفون	fr:microphone,micro	he:מיקרופון	hi:माइक्रोफोन,माइक	ja:マイク,マイクロフォン	ko:마이크,마이크로폰	pt:microfone	ru:микрофон	tr:mikrofon	ur:مائیکروفون	zh:麦克风,话筒
 c:microphone-acoustics	Noun	ar:الميكروفون	de:Mikrofon	en:microphone	es:micrófono	fa:میکروفون	fr:microphone	he:מיקרופון	hi:माइक्रोफोन	ja:マイクロフォン	ko:마이크	pt:microfone	ru:микрофон	tr:mikrofon	ur:مائیکروفون	zh:麦克风
 c:microscope	Noun	ar:مجهر,ميكروسكوب	de:Mikroskop	en:microscope	es:microscopio	fa:میکروسکوپ,ذره‌بین	fr:microscope	he:מיקרוסקופ	hi:सूक्ष्मदर्शी,माइक्रोस्कोप	ja:顕微鏡,マイクロスコープ	ko:현미경,마이크로스코프	pt:microscópio	ru:микроскоп	tr:mikroskop	ur:خردبین,مائیکروسکوپ	zh:显微镜
@@ -3809,6 +3827,7 @@ c:modulation	Noun	ar:الانتقال الموسيقي	de:Modulation	en:modulati
 c:modus-ponens	Noun	ar:قياس إثبات المقدم	de:Modus ponens	en:modus ponens	es:modus ponens	fa:استدلال وضع مقدم	fr:modus ponens	he:מודוס פוננס	hi:मोडस पोनेंस	ja:肯定式	ko:긍정 논법	pt:modus ponens	ru:modus ponens	tr:olumlama	ur:مودس پوننس	zh:肯定前件
 c:modus-tollens	Noun	ar:قياس نفي التالي	de:Modus tollens	en:modus tollens	es:modus tollens	fa:استدلال رفع تالی	fr:modus tollens	he:מודוס טולנס	hi:मोडस टॉलेंस	ja:否定式	ko:부정 논법	pt:modus tollens	ru:modus tollens	tr:olumsuzlama	ur:مودس ٹولنز	zh:否定后件
 c:mohair	Noun	ar:موهير	de:Mohair	en:mohair	es:mohair	fa:موهر	fr:mohair	he:מוהר	hi:मोहेयर	ja:モヘア	ko:모헤어	pt:mohair	ru:мохер	tr:moher	ur:موہیر	zh:马海毛
+c:moisture-meter	Noun	ar:مقياس الرطوبة	de:Feuchtigkeitsmesser	en:moisture meter	es:medidor de humedad	fa:رطوبت‌سنج	fr:humidimètre	he:מד לחות	hi:नमी मापी	ja:水分計	ko:수분계	pt:medidor de umidade	ru:влагомер	tr:nem ölçer	ur:نمی ناپ	zh:水分仪
 c:moisture-transport	Noun	ar:نقل الرطوبة	de:Feuchtigkeitstransport	en:moisture transport	es:transporte de humedad	fa:انتقال رطوبت	fr:transport d'humidité	he:הובלת לחות	hi:नमी परिवहन	ja:水蒸気輸送	ko:수분 수송	pt:transporte de umidade	ru:перенос влаги	tr:nem taşınımı	ur:نمی نقل و حمل	zh:水汽输送
 c:moksha	Noun	ar:الموكشا	de:Moksha	en:moksha	es:moksha	fa:موکشا	fr:moksha	he:מוקשה	hi:मोक्ष	ja:解脱	ko:목샤	pt:moksha	ru:мокша	tr:moksha	ur:موکشا	zh:解脱
 c:molarity	Noun	ar:مولارية	de:Molarität	en:molarity	es:molaridad	fa:مولاریته	fr:molarité	he:מולריות	hi:मोलरता	ja:モル濃度	ko:몰 농도	pt:molaridade	ru:молярность	tr:molarite	ur:مولاریتی	zh:摩尔浓度
@@ -3920,6 +3939,7 @@ c:multiculturalism	Noun	ar:التعددية الثقافية	de:Multikulturalism
 c:multilateralism	Noun	ar:متعددية الأطراف	de:Multilateralismus	en:multilateralism	es:multilateralismo	fa:چندجانبه‌گرایی	fr:multilatéralisme	he:רב-צדדיות	hi:बहुपक्षवाद	ja:多国間主義	ko:다자주의	pt:multilateralismo	ru:многосторонность	tr:çok taraflılık	ur:کثیر الجانبیت	zh:多边主义
 c:multilingual-nlp	Noun	ar:المعالجة اللغوية متعددة اللغات	de:mehrsprachige NLP	en:multilingual NLP	es:PLN multilingüe	fa:پردازش زبان چندزبانه	fr:TALN multilingue	he:NLP רב-לשוני	hi:बहुभाषी NLP	ja:多言語NLP	ko:다국어 NLP	pt:PLN multilíngue	ru:многоязычная обработка	tr:çok dilli NLP	ur:کثیر لسانی NLP	zh:多语言NLP
 c:multimeter	Noun	ar:مقياس متعدد	de:Multimeter	en:multimeter	es:multímetro	fa:مولتی متر	fr:multimètre	he:מולטימטר	hi:मल्टीमीटर	ja:テスター	ko:멀티미터	pt:multímetro	ru:мультиметр	tr:multimetre	ur:ملٹی میٹر	zh:万用表
+c:multimeter-device	Noun	ar:مقياس متعدد	de:Multimeter	en:multimeter	es:multímetro	fa:مولتی‌متر	fr:multimètre	he:מולטימטר	hi:मल्टीमीटर	ja:マルチメーター	ko:멀티미터	pt:multímetro	ru:мультиметр	tr:multimetre	ur:ملٹی میٹر	zh:万用表
 c:multiple-sequence-alignment	Noun	ar:المحاذاة المتعددة للتسلسلات	de:multiples Sequenzalignment	en:multiple sequence alignment,MSA	es:alineamiento múltiple de secuencias	fa:هم‌ترازی چندگانه توالی	fr:alignement multiple de séquences	he:יישור רצפים מרובה	hi:बहु अनुक्रम संरेखण	ja:多重配列アライメント	ko:다중 서열 정렬	pt:alinhamento múltiplo de sequências	ru:множественное выравнивание	tr:çoklu dizi hizalama	ur:متعدد تسلسل سیدھائی	zh:多序列比对
 c:multiplicative-function	Noun	ar:الدالة الضربية	de:multiplikative Funktion	en:multiplicative function	es:función multiplicativa	fa:تابع ضربی	fr:fonction multiplicative	he:פונקציה מכפלתית	hi:गुणात्मक फलन	ja:乗法的関数	ko:곱셈 함수	pt:função multiplicativa	ru:мультипликативная функция	tr:çarpımsal fonksiyon	ur:ضربی فنکشن	zh:积性函数
 c:multiply	Verb	ar:ضرب	de:multiplizieren	en:multiply	es:multiplicar	fa:ضرب کردن	fr:multiplier	he:להכפיל	hi:गुणा करना	ja:掛ける	ko:곱하다	pt:multiplicar	ru:умножать	tr:çarpmak	ur:ضرب کرنا	zh:乘
@@ -4158,6 +4178,7 @@ c:octopus	Noun	ar:أخطبوط	de:Oktopus,Krake	en:octopus	es:pulpo	fa:هشت‌
 c:ode-lit	Noun	ar:القصيدة الغنائية	de:Ode	en:ode	es:oda	fa:اد	fr:ode	he:אודה	hi:ओड	ja:頌詩	ko:송가	pt:ode	ru:ода	tr:kaside	ur:قصیدہ	zh:颂歌
 c:odin	Noun	ar:أودين	de:Odin	en:Odin	es:Odín	fa:اودین	fr:Odin	he:אודין	hi:ओडिन	ja:オーディン	ko:오딘	pt:Odin	ru:Один	tr:Odin	ur:اوڈین	zh:奥丁
 c:odissi	Noun	ar:رقص أوديسي	de:Odissi	en:odissi	es:odissi	fa:اودیسی	fr:odissi	he:אודיסי	hi:ओडिसी	ja:オディッシー	ko:오디시	pt:odissi	ru:одисси	tr:odissi	ur:اودسی	zh:奥迪西舞
+c:odometer	Noun	ar:عداد المسافة	de:Kilometerzähler	en:odometer	es:odómetro	fa:مسافت‌سنج	fr:odomètre	he:מד מרחק	hi:ओडोमीटर	ja:走行距離計	ko:주행 거리계	pt:odômetro	ru:одометр	tr:kilometre sayacı	ur:اوڈومیٹر	zh:里程计
 c:offense	Noun	ar:مخالفة,جنحة	de:Vergehen,Straftat	en:offense,offence	es:delito,ofensa	fa:تخلف,جرم	fr:infraction,délit	he:עבירה	hi:अपराध,उल्लंघन	ja:犯罪,違反	ko:범죄,위반	pt:delito,infração	ru:правонарушение,проступок	tr:suç,ihlal	ur:جرم,خلاف ورزی	zh:罪行,违法行为
 c:office	Noun	ar:مكتب	de:Büro	en:office	es:oficina	fa:دفتر	fr:bureau	he:משרד	hi:कार्यालय,ऑफिस,दफ़्तर	ja:事務所,オフィス	ko:사무실	pt:escritório	ru:офис,контора	tr:ofis,büro	ur:دفتر,آفس	zh:办公室
 c:office-building	Noun	ar:مبنى مكاتب	de:Bürogebäude	en:office building	es:edificio de oficinas	fa:ساختمان اداری	fr:immeuble de bureaux	he:בניין משרדים	hi:कार्यालय भवन	ja:オフィスビル	ko:사무용 건물	pt:edifício de escritórios	ru:офисное здание	tr:ofis binası	ur:دفتری عمارت	zh:写字楼
@@ -4226,6 +4247,7 @@ c:ortholog	Noun	ar:الجين المماثل بين الانواع	de:Ortholog	e
 c:oryx	Noun	ar:مهاة	de:Oryx	en:oryx	es:órix	fa:اوریکس	fr:oryx	he:אורקס	hi:ओरिक्स	ja:オリックス	ko:오릭스	pt:órix	ru:орикс	tr:oriks	ur:اوریکس	zh:羚羊
 c:osaka	Noun	ar:أوساكا	de:Osaka	en:Osaka	es:Osaka	fa:اوساکا	fr:Osaka	he:אוסקה	hi:ओसाका	ja:大阪,おおさか	ko:오사카	pt:Osaka	ru:Осака	tr:Osaka	ur:اوساکا	zh:大阪
 c:oscillation	Noun	ar:تذبذب,اهتزاز	de:Schwingung,Oszillation	en:oscillation	es:oscilación	fa:نوسان	fr:oscillation	he:תנודה,נדנוד	hi:दोलन	ja:振動,発振	ko:진동,발진	pt:oscilação	ru:колебание,осцилляция	tr:salınım,osilasyon	ur:تذبذب,ہچکولا	zh:振荡,振动
+c:oscilloscope	Noun	ar:راسم الذبذبات	de:Oszilloskop	en:oscilloscope	es:osciloscopio	fa:اسیلوسکوپ	fr:oscilloscope	he:אוסילוסקופ	hi:ऑसिलोस्कोप	ja:オシロスコープ	ko:오실로스코프	pt:osciloscópio	ru:осциллограф	tr:osiloskop	ur:آسیلوسکوپ	zh:示波器
 c:osiris	Noun	ar:أوزيريس	de:Osiris	en:Osiris	es:Osiris	fa:اوزیریس	fr:Osiris	he:אוזיריס	hi:ओसिरिस	ja:オシリス	ko:오시리스	pt:Osíris	ru:Осирис	tr:Osiris	ur:اوزیرس	zh:奥西里斯
 c:osprey	Noun	ar:عقاب السمك,نسر البحر	de:Fischadler	en:osprey	es:águila pescadora	fa:عقاب ماهیگیر	fr:balbuzard	he:עיט הנהרות	hi:ओस्प्री	ja:ミサゴ	ko:물수리	pt:águia-pescadora	ru:скопа	tr:balık kartalı	ur:اوسپری	zh:鱼鹰
 c:ostrich	Noun	ar:نعامة	de:Strauß	en:ostrich	es:avestruz	fa:شترمرغ	fr:autruche	he:יען	hi:शुतुरमुर्ग	ja:ダチョウ	ko:타조	pt:avestruz	ru:страус	tr:deve kuşu	ur:شتر مرغ	zh:鸵鸟
@@ -4450,6 +4472,7 @@ c:pet-scan	Noun	ar:التصوير بالانبعاث البوزيتروني	de:P
 c:petal	Noun	ar:بتلة,تويجية	de:Blütenblatt	en:petal	es:pétalo	fa:گلبرگ	fr:pétale	he:עלה כותרת	hi:पंखुड़ी	ja:花びら	ko:꽃잎	pt:pétala	ru:лепесток	tr:taç yaprağı	ur:پنکھڑی	zh:花瓣
 c:petrel	Noun	ar:طائر العاصفة	de:Sturmvogel	en:petrel	es:petrel	fa:پترل	fr:pétrel	he:פטרל	hi:पेट्रेल	ja:ウミツバメ	ko:슴새류	pt:petrel	ru:качурка	tr:fırtına kuşu	ur:پیٹرل	zh:海燕
 c:petri-dish	Noun	ar:طبق بتري,طبق بيتري	de:Petrischale	en:petri dish,Petri dish	es:placa de Petri,caja de Petri	fa:ظرف پتری	fr:boîte de Petri,boîte de pétri	he:צלחת פטרי	hi:पेट्री डिश	ja:シャーレ,ペトリ皿	ko:페트리 접시	pt:placa de Petri,caixa de Petri	ru:чашка Петри	tr:petri kabı	ur:پیٹری ڈش	zh:培养皿
+c:ph-meter	Noun	ar:مقياس الحموضة	de:pH-Meter	en:pH meter	es:medidor de pH	fa:pH سنج	fr:pH-mètre	he:מד חומציות	hi:पीएच मीटर	ja:pH計	ko:pH 미터	pt:medidor de pH	ru:pH-метр	tr:pH metre	ur:پی ایچ میٹر	zh:酸碱度计
 c:pharaoh	Noun	ar:فرعون	de:Pharao	en:pharaoh	es:faraón	fa:فرعون	fr:pharaon	he:פרעה	hi:फिरौन,फराओ	ja:ファラオ	ko:파라오	pt:faraó	ru:фараон	tr:firavun	ur:فرعون	zh:法老
 c:pharmacodynamics-neuro	Noun	ar:الديناميكية الدوائية	de:Pharmakodynamik	en:pharmacodynamics	es:farmacodinámica	fa:فارماکودینامیک	fr:pharmacodynamique	he:פרמקודינמיקה	hi:फार्माकोडायनामिक्स	ja:薬力学	ko:약력학	pt:farmacodinâmica	ru:фармакодинамика	tr:farmakodinamik	ur:دوائی اثرات	zh:药效学
 c:pharmacogenomics	Noun	ar:علم الصيدلة الجينومية	de:Pharmakogenomik	en:pharmacogenomics	es:farmacogenómica	fa:داروژنومیک	fr:pharmacogénomique	he:פרמקוגנומיקה	hi:फार्माकोजेनोमिक्स	ja:薬理ゲノミクス	ko:약물유전체학	pt:farmacogenômica	ru:фармакогеномика	tr:farmakogenomik	ur:فارماکوجینومکس	zh:药物基因组学
@@ -4797,6 +4820,7 @@ c:proteomics	Noun	ar:علم البروتيوم	de:Proteomik	en:proteomics	es:pro
 c:protocol-tech	Noun	ar:بروتوكول	de:Protokoll,Netzwerkprotokoll	en:protocol	es:protocolo	fa:پروتکل	fr:protocole	he:פרוטוקול	hi:प्रोटोकॉल	ja:プロトコル,通信規約	ko:프로토콜,통신 규약	pt:protocolo	ru:протокол	tr:protokol	ur:پروٹوکول	zh:协议
 c:proton	Noun	ar:بروتون	de:Proton	en:proton	es:protón	fa:پروتون	fr:proton	he:פרוטון	hi:प्रोटॉन	ja:陽子,プロトン	ko:양성자,프로톤	pt:próton,protão	ru:протон	tr:proton	ur:پروٹون	zh:质子
 c:protostar	Noun	ar:نجم بدئي	de:Protostern	en:protostar	es:protoestrella	fa:ستاره اولیه	fr:protoétoile	he:פרוטו-כוכב	hi:आद्यतारा	ja:原始星	ko:원시별	pt:protoestrela	ru:протозвезда	tr:protostar	ur:ابتدائی ستارہ	zh:原恒星
+c:protractor	Noun	ar:منقلة	de:Winkelmesser	en:protractor	es:transportador	fa:نقاله	fr:rapporteur	he:מד זווית	hi:चांदा	ja:分度器	ko:각도기	pt:transferidor	ru:транспортир	tr:iletki	ur:زاویہ پیما	zh:量角器
 c:provenance	Noun	ar:مصدر العمل الفني	de:Provenienz	en:provenance	es:procedencia	fa:منشا اثر	fr:provenance	he:פרובנאנס	hi:उद्गम	ja:来歴	ko:출처	pt:proveniência	ru:провенанс	tr:köken	ur:ماخذ	zh:来源
 c:proverb	Noun	ar:مثل,حكمة	de:Sprichwort	en:proverb	es:proverbio,refrán	fa:ضرب المثل	fr:proverbe	he:פתגם	hi:कहावत,लोकोक्ति	ja:ことわざ,諺	ko:속담	pt:provérbio	ru:пословица	tr:atasözü	ur:کہاوت,ضرب المثل	zh:谚语
 c:province	Noun	ar:مقاطعة,إقليم	de:Provinz	en:province	es:provincia	fa:استان	fr:province	he:מחוז	hi:प्रांत	ja:州,省	ko:도,성	pt:província	ru:провинция	tr:il	ur:صوبہ	zh:省
@@ -4910,6 +4934,7 @@ c:raccoon	Noun	ar:راكون	de:Waschbär	en:raccoon	es:mapache	fa:راکون	fr
 c:race	Noun	ar:سباق	de:Rennen,Wettlauf	en:race	es:carrera	fa:مسابقه,دو	fr:course	he:מרוץ	hi:दौड़,रेस	ja:レース,競走	ko:경주,레이스	pt:corrida	ru:гонка,забег	tr:yarış	ur:دوڑ,ریس	zh:赛跑,比赛
 c:race-society	Noun	ar:عرق	de:Rasse	en:race	es:raza	fa:نژاد	fr:race	he:גזע	hi:नस्ल	ja:人種	ko:인종	pt:raça	ru:раса	tr:ırk	ur:نسل	zh:种族
 c:rack	Noun	ar:رف الخوادم	de:Server-Rack	en:server rack	es:rack de servidores	fa:رک سرور	fr:rack de serveurs	he:מדף שרתים	hi:सर्वर रैक	ja:サーバーラック	ko:서버 랙	pt:rack de servidores	ru:стойка серверов	tr:sunucu rafı	ur:سرور ریک	zh:服务器机架
+c:radiation-detector	Noun	ar:كاشف الإشعاع	de:Strahlungsdetektor	en:radiation detector	es:detector de radiación	fa:آشکارساز تشعشع	fr:détecteur de rayonnement	he:גלאי קרינה	hi:विकिरण संसूचक	ja:放射線検出器	ko:방사선 감지기	pt:detector de radiação	ru:детектор радиации	tr:radyasyon dedektörü	ur:تابکاری پکڑنے والا	zh:辐射探测器
 c:radiation-dose	Noun	ar:جرعة الإشعاع	de:Strahlendosis	en:radiation dose	es:dosis de radiación	fa:دوز تشعشع	fr:dose de rayonnement	he:מינון קרינה	hi:विकिरण खुराक	ja:放射線量	ko:방사선 선량	pt:dose de radiação	ru:доза облучения	tr:radyasyon dozu	ur:تابکاری خوراک	zh:辐射剂量
 c:radiation-fog	Noun	ar:ضباب إشعاعي	de:Strahlungsnebel	en:radiation fog	es:niebla de irradiación	fa:مه تشعشعی	fr:brouillard radiatif	he:ערפל הקרנה	hi:विकिरण कोहरा	ja:放射霧	ko:복사안개	pt:nevoeiro de radiação	ru:радиационный туман	tr:radyasyon sisi	ur:تابکاری دھند	zh:辐射雾
 c:radiation-heat	Noun	ar:الإشعاع الحراري	de:Wärmestrahlung	en:thermal radiation	es:radiación térmica	fa:تابش حرارتی	fr:rayonnement thermique	he:קרינה תרמית	hi:ऊष्मीय विकिरण	ja:熱放射	ko:열복사	pt:radiação térmica	ru:тепловое излучение	tr:ısıl ışıma	ur:حرارتی تابکاری	zh:热辐射
@@ -4948,6 +4973,7 @@ c:rampart	Noun	ar:السور الدفاعي	de:Wallanlage	en:rampart	es:muralla	
 c:rancher	Noun	ar:مربي ماشية	de:Viehzüchter	en:rancher	es:ranchero	fa:دامدار	fr:éleveur	he:חוואי	hi:पशुपालक	ja:牧場主	ko:목장주	pt:fazendeiro	ru:ранчеро	tr:hayvancı	ur:مویشی پال	zh:牧场主
 c:rand	Noun	ar:راند	de:Rand	en:rand	es:rand	fa:راند	fr:rand	he:ראנד	hi:रैंड	ja:ランド	ko:랜드	pt:rand	ru:ранд	tr:rand	ur:رینڈ	zh:兰特
 c:randomized-trial	Noun	ar:التجربة المعشاة	de:randomisierte Studie	en:randomized controlled trial	es:ensayo controlado aleatorizado	fa:کارآزمایی کنترل‌شده تصادفی	fr:essai contrôlé randomisé	he:ניסוי מבוקר אקראי	hi:यादृच्छिक नियंत्रित परीक्षण	ja:無作為化比較試験	ko:무작위 대조 시험	pt:ensaio clínico randomizado	ru:рандомизированное контролируемое испытание	tr:randomize kontrollü deneme	ur:تصادفی کنٹرول آزمائش	zh:随机对照试验
+c:range-finder	Noun	ar:مقياس المسافة	de:Entfernungsmesser	en:range finder	es:telémetro	fa:مسافت‌یاب	fr:télémètre	he:מד טווח	hi:रेंज फाइंडर	ja:距離計	ko:거리 측정기	pt:telémetro	ru:дальномер	tr:mesafe ölçer	ur:فاصلہ ناپ	zh:测距仪
 c:rankine	Noun	ar:دورة رانكين	de:Rankine-Kreisprozess	en:Rankine cycle	es:ciclo Rankine	fa:چرخه رنکین	fr:cycle de Rankine	he:מחזור רנקין	hi:रैंकिन चक्र	ja:ランキンサイクル	ko:랭킨 사이클	pt:ciclo Rankine	ru:цикл Ренкина	tr:Rankine döngüsü	ur:رینکن چکر	zh:朗肯循环
 c:rat	Noun	ar:جرذ,فأر كبير	de:Ratte	en:rat	es:rata	fa:موش صحرایی	fr:rat	he:חולדה	hi:चूहा	ja:ネズミ,ラット	ko:쥐	pt:rato,ratazana	ru:крыса	tr:sıçan	ur:چوہا	zh:老鼠
 c:ratification	Noun	ar:التصديق	de:Ratifizierung	en:ratification	es:ratificación	fa:تصویب	fr:ratification	he:אשרור	hi:अनुसमर्थन	ja:批准	ko:비준	pt:ratificação	ru:ратификация	tr:onay	ur:توثیق	zh:批准
@@ -5017,6 +5043,7 @@ c:reforestation	Noun	ar:إعادة التشجير	de:Wiederaufforstung	en:refore
 c:reformation	Noun	ar:الإصلاح البروتستانتي,الإصلاح الديني	de:Reformation	en:reformation	es:reforma protestante,reforma	fa:اصلاحات پروتستان	fr:réforme protestante,réforme	he:רפורמציה	hi:प्रोटेस्टेंट सुधार,धर्म सुधार	ja:宗教改革	ko:종교개혁	pt:reforma protestante	ru:реформация	tr:reform hareketi,reformasyon	ur:پروٹسٹنٹ اصلاح,اصلاح مذہبی	zh:宗教改革
 c:refraction	Noun	ar:انكسار	de:Brechung,Refraktion	en:refraction	es:refracción	fa:شکست نور,انکسار	fr:réfraction	he:שבירה	hi:अपवर्तन	ja:屈折	ko:굴절	pt:refração	ru:преломление,рефракция	tr:kırılma,refraksiyon	ur:انعطاف,انکسار	zh:折射
 c:refraction-seismology	Noun	ar:الانكسار الزلزالي	de:Refraktionsseismik	en:seismic refraction	es:sísmica de refracción	fa:شکست لرزه‌نگاری	fr:sismique réfraction	he:שבירה סיסמית	hi:भूकम्पीय अपवर्तन	ja:屈折法地震探査	ko:굴절 탐사	pt:sísmica de refração	ru:сейсморазведка методом преломления	tr:sismik kırılma	ur:زلزلاتی انعطاف	zh:折射地震勘探
+c:refractometer	Noun	ar:مقياس الانكسار	de:Refraktometer	en:refractometer	es:refractómetro	fa:رفرکتومتر	fr:réfractomètre	he:רפרקטומטר	hi:अपवर्तनमापी	ja:屈折計	ko:굴절계	pt:refratômetro	ru:рефрактометр	tr:refraktometre	ur:انعطاف پیما	zh:折射计
 c:refractory-material	Noun	ar:المادة الحرارية	de:feuerfestes Material	en:refractory material	es:material refractario	fa:مواد دیرگداز	fr:matériau réfractaire	he:חומר עמיד לחום	hi:दुर्दाह्य सामग्री	ja:耐火材料	ko:내화 재료	pt:material refratário	ru:огнеупорный материал	tr:refrakter malzeme	ur:آگ برداشت مواد	zh:耐火材料
 c:refrigerant	Noun	ar:مادة التبريد	de:Kältemittel	en:refrigerant	es:refrigerante	fa:مبرد	fr:réfrigérant	he:חומר קירור	hi:प्रशीतक	ja:冷媒	ko:냉매	pt:refrigerante	ru:хладагент	tr:soğutucu akışkan	ur:ٹھنڈک کا مادہ	zh:制冷剂
 c:refrigeration	Noun	ar:التبريد	de:Kühlung	en:refrigeration	es:refrigeración	fa:تبرید	fr:réfrigération	he:קירור	hi:प्रशीतन	ja:冷凍	ko:냉동	pt:refrigeração	ru:холодильный цикл	tr:soğutma	ur:تبرید	zh:制冷
@@ -5186,6 +5213,7 @@ c:rugby	Noun	ar:الرغبي	de:Rugby	en:rugby	es:rugby	fa:راگبی	fr:rugby	h
 c:rule	Noun	ar:قاعدة	de:Regel	en:rule	es:regla,norma	fa:قاعده	fr:règle	he:כלל	hi:नियम	ja:規則,ルール	ko:규칙,법칙	pt:regra	ru:правило	tr:kural	ur:اصول,قاعدہ	zh:规则,规定
 c:rule-of-law-pol	Noun	ar:سيادة القانون	de:Rechtsstaatlichkeit	en:rule of law	es:estado de derecho	fa:حاکمیت قانون	fr:état de droit	he:שלטון החוק	hi:कानून का शासन	ja:法の支配	ko:법치주의	pt:estado de direito	ru:верховенство закона	tr:hukukun üstünlüğü	ur:قانون کی حکمرانی	zh:法治
 c:ruler	Noun	ar:مسطرة	de:Lineal	en:ruler	es:regla	fa:خط کش	fr:règle	he:סרגל	hi:रूलर	ja:定規	ko:자	pt:régua	ru:линейка	tr:cetvel	ur:سطر	zh:尺子
+c:ruler-tool	Noun	ar:مسطرة	de:Lineal	en:ruler	es:regla	fa:خط‌کش	fr:règle	he:סרגל	hi:रूलर	ja:定規	ko:자	pt:régua	ru:линейка	tr:cetvel	ur:رولر	zh:直尺
 c:ruling	Noun	ar:قرار,حكم	de:Beschluss,Entscheidung	en:ruling	es:dictamen,resolución	fa:رای,تصمیم	fr:décision,arrêt	he:פסיקה,החלטה	hi:फ़ैसला,निर्णय	ja:裁定,決定	ko:판결,결정	pt:decisão,despacho	ru:постановление,решение	tr:karar,hüküm	ur:فیصلہ,حکم	zh:裁定,决定
 c:rumba	Noun	ar:رقص الرومبا	de:Rumba	en:rumba	es:rumba	fa:رومبا	fr:rumba	he:רומבה	hi:रूम्बा	ja:ルンバ	ko:룸바	pt:rumba	ru:румба	tr:rumba	ur:رومبا	zh:伦巴舞
 c:rumi	Noun	ar:جلال الدين الرومي,الرومي	de:Rumi	en:Rumi,Jalal al-Din Rumi	es:Rumi	fa:مولوی,جلال‌الدین محمد بلخی,مولانا	fr:Rûmî	he:רומי	hi:रूमी	ja:ルーミー	ko:루미	pt:Rumi	ru:Руми	tr:Mevlâna,Rumi	ur:مولانا رومی,جلال الدین رومی	zh:鲁米
@@ -5367,6 +5395,7 @@ c:seismic-design	Noun	ar:التصميم الزلزالي	de:Erdbebendesign	en:se
 c:seismic-hazard	Noun	ar:الخطر الزلزالي	de:Erdbebengefahr	en:seismic hazard	es:peligro sísmico	fa:خطر زلزله	fr:aléa sismique	he:סיכון סיסמי	hi:भूकम्प जोखिम	ja:地震ハザード	ko:지진 위험도	pt:perigo sísmico	ru:сейсмическая опасность	tr:sismik tehlike	ur:زلزلاتی خطرہ	zh:地震危险性
 c:seismic-tomography	Noun	ar:التصوير المقطعي الزلزالي	de:seismische Tomographie	en:seismic tomography	es:tomografía sísmica	fa:توموگرافی لرزه‌ای	fr:tomographie sismique	he:טומוגרפיה סיסמית	hi:भूकम्पीय टोमोग्राफी	ja:地震波トモグラフィー	ko:지진 토모그래피	pt:tomografia sísmica	ru:сейсмическая томография	tr:sismik tomografi	ur:زلزلاتی ٹوموگرافی	zh:地震层析成像
 c:seismic-wave	Noun	ar:موجة زلزالية	de:seismische Welle	en:seismic wave	es:onda sísmica	fa:موج لرزه‌ای	fr:onde sismique	he:גל סיסמי	hi:भूकम्पीय तरंग	ja:地震波	ko:지진파	pt:onda sísmica	ru:сейсмическая волна	tr:sismik dalga	ur:زلزلاتی موج	zh:地震波
+c:seismograph	Noun	ar:مقياس الزلازل	de:Seismograph	en:seismograph	es:sismógrafo	fa:لرزه‌نگار	fr:sismographe	he:סייסמוגרף	hi:भूकंपमापी	ja:地震計	ko:지진계	pt:sismógrafo	ru:сейсмограф	tr:sismograf	ur:زلزلہ پیما	zh:地震仪
 c:seismology	Noun	ar:علم الزلازل	de:Seismologie	en:seismology	es:sismología	fa:لرزه‌شناسی	fr:sismologie	he:סיסמולוגיה	hi:भूकम्प विज्ञान	ja:地震学	ko:지진학	pt:sismologia	ru:сейсмология	tr:sismoloji	ur:زلزلہ شناسی	zh:地震学
 c:selective-attention	Noun	ar:الانتباه الانتقائي	de:selektive Aufmerksamkeit	en:selective attention	es:atención selectiva	fa:توجه انتخابی	fr:attention sélective	he:קשב סלקטיבי	hi:चयनात्मक ध्यान	ja:選択的注意	ko:선택적 주의	pt:atenção seletiva	ru:избирательное внимание	tr:seçici dikkat	ur:منتخب توجہ	zh:选择性注意
 c:selenium	Noun	ar:سيلينيوم	de:Selen	en:selenium	es:selenio	fa:سلنیم	fr:sélénium	he:סלניום	hi:सेलेनियम	ja:セレン	ko:셀레늄	pt:selênio	ru:селен	tr:selenyum	ur:سیلینیم	zh:硒
@@ -5415,6 +5444,7 @@ c:setback	Noun	ar:خط التراجع	de:Bauabstandsregel	en:setback	es:retiro	f
 c:settlement	Noun	ar:تسوية	de:Vergleich	en:settlement	es:acuerdo extrajudicial	fa:توافق	fr:règlement à l'amiable	he:פשרה	hi:समझौता	ja:和解	ko:합의	pt:acordo	ru:урегулирование	tr:uzlaşma	ur:تصفیہ	zh:和解
 c:seven	Noun	ar:سبعة	de:sieben	en:seven	es:siete	fa:هفت	fr:sept	he:שבעה	hi:सात	ja:七,なな	ko:일곱,칠	pt:sete	ru:семь	tr:yedi	ur:سات	zh:七
 c:sewage	Noun	ar:مجاري الصرف الصحي	de:Abwasserkanal	en:sewage	es:alcantarillado	fa:فاضلاب شهری	fr:eaux d'égout	he:ביוב	hi:मलजल	ja:下水	ko:하수	pt:esgoto	ru:канализация	tr:kanalizasyon	ur:نالی	zh:污水
+c:sextant	Noun	ar:سدس الدائرة	de:Sextant	en:sextant	es:sextante	fa:سدسیه	fr:sextant	he:סקסטנט	hi:षष्ठांश	ja:六分儀	ko:육분의	pt:sextante	ru:секстант	tr:sekstant	ur:سیکسٹنٹ	zh:六分仪
 c:sfumato	Noun	ar:سفوماتو	de:Sfumato	en:sfumato	es:sfumato	fa:سفوماتو	fr:sfumato	he:ספומטו	hi:स्फूमातो	ja:スフマート	ko:스푸마토	pt:sfumato	ru:сфумато	tr:sfumato	ur:دھندلا پن	zh:晕涂法
 c:shade	Noun	ar:ظل,فيء	de:Schatten	en:shade,shadow	es:sombra	fa:سایه	fr:ombre,ombrage	he:צל	hi:छाया,छाँव	ja:日陰,陰	ko:그늘,응달	pt:sombra	ru:тень,затенение	tr:gölge	ur:سایہ,چھاؤں	zh:阴凉,荫
 c:shadow	Noun	ar:ظل	de:Schatten	en:shadow	es:sombra	fa:سایه	fr:ombre	he:צל	hi:छाया,परछाई	ja:影	ko:그림자	pt:sombra	ru:тень	tr:gölge	ur:سایہ	zh:影,影子
@@ -5638,6 +5668,7 @@ c:soteriology	Noun	ar:علم الخلاص	de:Soteriologie	en:soteriology	es:sote
 c:soul	Noun	ar:روح,نفس	de:Seele	en:soul	es:alma	fa:روح,جان	fr:âme	he:נשמה	hi:आत्मा	ja:魂	ko:영혼	pt:alma	ru:душа	tr:ruh	ur:روح	zh:灵魂
 c:sound-card	Noun	ar:بطاقة الصوت	de:Soundkarte	en:sound card	es:tarjeta de sonido	fa:کارت صدا	fr:carte son	he:כרטיס קול	hi:साउंड कार्ड	ja:サウンドカード	ko:사운드 카드	pt:placa de som	ru:звуковая карта	tr:ses kartı	ur:ساؤنڈ کارڈ	zh:声卡
 c:sound-isolation	Noun	ar:عزل الصوت	de:Schalldämmung	en:sound isolation	es:aislamiento acústico	fa:ایزولاسیون صوتی	fr:isolation phonique	he:בידוד קול	hi:ध्वनि पृथक्करण	ja:防音	ko:방음	pt:isolamento acústico	ru:звукоизоляция	tr:ses yalıtımı	ur:آواز کی علیحدگی	zh:隔声
+c:sound-level-meter	Noun	ar:مقياس مستوى الصوت	de:Schallpegelmessgerät	en:sound level meter	es:sonómetro	fa:دب‌سنج	fr:sonomètre	he:מד עוצמת קול	hi:ध्वनि स्तर मापी	ja:騒音計	ko:소음계	pt:decibelímetro	ru:шумомер	tr:ses seviyesi ölçer	ur:آواز سطح ناپ	zh:噪声计
 c:sound-pressure	Noun	ar:ضغط الصوت	de:Schalldruck	en:sound pressure	es:presión sonora	fa:فشار صدا	fr:pression acoustique	he:לחץ קול	hi:ध्वनि दाब	ja:音圧	ko:음압	pt:pressão sonora	ru:звуковое давление	tr:ses basıncı	ur:آواز کا دباو	zh:声压
 c:soundtrack	Noun	ar:موسيقى تصويرية	de:Filmmusik	en:soundtrack	es:banda sonora	fa:موسیقی متن	fr:bande originale	he:פסקול	hi:साउंडट्रैक	ja:サウンドトラック	ko:사운드트랙	pt:trilha sonora	ru:саундтрек	tr:film müziği	ur:ساؤنڈ ٹریک	zh:原声带
 c:soup	Noun	ar:حساء,شوربة	de:Suppe	en:soup	es:sopa	fa:سوپ	fr:soupe,potage	he:מרק	hi:सूप,शोरबा	ja:スープ,汁	ko:수프,국	pt:sopa	ru:суп	tr:çorba	ur:سوپ,شوربہ	zh:汤
@@ -5676,12 +5707,14 @@ c:specific-heat	Noun	ar:الحرارة النوعية	de:spezifische Wärme	en:s
 c:spect	Noun	ar:التصوير المقطعي بانبعاث الفوتون المفرد	de:SPECT	en:SPECT	es:SPECT	fa:SPECT	fr:SPECT	he:SPECT	hi:स्पेक्ट	ja:SPECT	ko:단일광자 방출 전산화 단층촬영	pt:SPECT	ru:ОЭКТ	tr:SPECT	ur:SPECT اسکین	zh:单光子发射计算机断层扫描
 c:specter	Noun	ar:طيف	de:Gespenst	en:specter,spectre	es:espectro	fa:شبح	fr:spectre	he:רוח	hi:प्रेत	ja:亡霊	ko:망령	pt:espectro	ru:призрак	tr:hortlak	ur:پریت	zh:幽灵
 c:spectral-sequence	Noun	ar:المتتالية الطيفية	de:Spektralfolge	en:spectral sequence	es:sucesión espectral	fa:دنباله طیفی	fr:suite spectrale	he:סדרה ספקטרלית	hi:वर्णक्रम अनुक्रम	ja:スペクトル系列	ko:스펙트럼 수열	pt:sequência espectral	ru:спектральная последовательность	tr:spektral dizi	ur:طیفی تسلسل	zh:谱序列
+c:spectrometer	Noun	ar:مطياف	de:Spektrometer	en:spectrometer	es:espectrómetro	fa:طیف‌سنج	fr:spectromètre	he:ספקטרומטר	hi:स्पेक्ट्रोमीटर	ja:分光計	ko:분광계	pt:espectrômetro	ru:спектрометр	tr:spektrometre	ur:طیف پیما	zh:分光计
 c:spectroscopy	Noun	ar:التحليل الطيفي	de:Spektroskopie	en:spectroscopy	es:espectroscopía	fa:طیف‌سنجی	fr:spectroscopie	he:ספקטרוסקופיה	hi:वर्णक्रमिकी	ja:分光法	ko:분광법	pt:espectroscopia	ru:спектроскопия	tr:spektroskopi	ur:طیف پیمائی	zh:光谱学
 c:spectrum	Noun	ar:طيف	de:Spektrum	en:spectrum	es:espectro	fa:طیف	fr:spectre	he:ספקטרום	hi:स्पेक्ट्रम,वर्णक्रम	ja:スペクトル,スペクトラム	ko:스펙트럼	pt:espectro	ru:спектр	tr:spektrum,tayf	ur:اسپیکٹرم,طیف	zh:光谱,频谱
 c:speculation	Noun	ar:مضاربة	de:Spekulation	en:speculation	es:especulación	fa:سفته بازی	fr:spéculation	he:ספקולציה	hi:सट्टेबाजी	ja:投機	ko:투기	pt:especulação	ru:спекуляция	tr:spekülasyon	ur:سٹہ بازی	zh:投机
 c:speech-act	Noun	ar:فعل كلامي	de:Sprechakt	en:speech act	es:acto de habla	fa:کنش گفتاری	fr:acte de parole	he:מעשה לשוני	hi:वाक्-क्रिया	ja:発話行為	ko:발화 행위	pt:ato de fala	ru:речевой акт	tr:söz edimi	ur:کلامی فعل	zh:言语行为
 c:speech-recognition	Noun	ar:التعرف على الكلام	de:Spracherkennung	en:speech recognition	es:reconocimiento de voz	fa:تشخیص گفتار	fr:reconnaissance vocale	he:זיהוי דיבור	hi:वाक् पहचान	ja:音声認識	ko:음성 인식	pt:reconhecimento de voz	ru:распознавание речи	tr:konuşma tanıma	ur:تقریر پہچان	zh:语音识别
 c:speech-synthesis	Noun	ar:تركيب الكلام	de:Sprachsynthese	en:speech synthesis	es:síntesis de voz	fa:ترکیب گفتار	fr:synthèse vocale	he:סינתזת דיבור	hi:वाक् संश्लेषण	ja:音声合成	ko:음성 합성	pt:síntese de fala	ru:синтез речи	tr:konuşma sentezi	ur:تقریر ترکیب	zh:语音合成
+c:speedometer	Noun	ar:عداد السرعة	de:Tachometer	en:speedometer	es:velocímetro	fa:سرعت‌سنج	fr:compteur de vitesse	he:מד מהירות	hi:गति-मापी	ja:速度計	ko:속도계	pt:velocímetro	ru:спидометр	tr:hız göstergesi	ur:رفتار میٹر	zh:速度表
 c:spell	Noun	ar:تعويذة	de:Zauberspruch	en:spell	es:hechizo	fa:طلسم	fr:sortilège	he:כישוף	hi:मंत्र	ja:呪文	ko:주문	pt:feitiço	ru:заклинание	tr:büyü sözü	ur:جادو منتر	zh:咒语
 c:spelt	Noun	ar:الدنكل	de:Dinkel	en:spelt	es:espelta	fa:هجدانه	fr:épeautre	he:כוסמין	hi:स्पेल्ट	ja:スペルト小麦	ko:스펠트	pt:espelta	ru:спельта	tr:kavılca	ur:اسپیلٹ	zh:斯佩尔特小麦
 c:spend	Verb	ar:أنفق,صرف	de:ausgeben	en:spend	es:gastar	fa:خرج کرد,مصرف کرد	fr:dépenser	he:הוציא,להוציא	hi:खर्च करना	ja:使う,費やす	ko:쓰다,소비하다	pt:gastar	ru:тратить,потратить	tr:harcamak	ur:خرچ کرنا	zh:花,花费
@@ -5718,6 +5751,7 @@ c:sprat	Noun	ar:سبرط	de:Sprotte	en:sprat	es:espadín	fa:اسپرت	fr:sprat	
 c:spray-drying	Noun	ar:التجفيف بالرش	de:Sprühtrocknung	en:spray drying	es:secado por pulverización	fa:خشک‌کردن پاششی	fr:séchage par atomisation	he:ייבוש בספריי	hi:छिड़काव सुखाना	ja:噴霧乾燥	ko:분무 건조	pt:secagem por aspersão	ru:распылительная сушка	tr:püskürtmeli kurutma	ur:سپرے سے خشک	zh:喷雾干燥
 c:spring	Noun	ar:ربيع	de:Frühling,Frühjahr	en:spring	es:primavera	fa:بهار	fr:printemps	he:אביב	hi:वसंत,बसंत	ja:春	ko:봄	pt:primavera	ru:весна	tr:ilkbahar,bahar	ur:بہار,بسنت	zh:春,春季
 c:spring-festival	Noun	ar:عيد الربيع,مهرجان الربيع	de:Frühlingsfest	en:spring festival	es:fiesta de la primavera	fa:جشن بهار,نوروز	fr:fête du printemps	he:חג האביב	hi:वसंत उत्सव	ja:春祭り,春節	ko:봄 축제,춘절	pt:festa da primavera	ru:праздник весны	tr:bahar festivali	ur:بہار تہوار	zh:春节
+c:spring-scale	Noun	ar:ميزان زنبركي	de:Federwaage	en:spring scale	es:dinamómetro	fa:ترازوی فنری	fr:dynamomètre	he:מד כוח קפיץ	hi:स्प्रिंग तुला	ja:ばねはかり	ko:용수철 저울	pt:balança de mola	ru:пружинные весы	tr:yaylı terazi	ur:اسپرنگ ترازو	zh:弹簧秤
 c:springbok	Noun	ar:الغزال الوثاب	de:Springbock	en:springbok	es:springbok,gacela saltadora	fa:اسپرینگبوک	fr:springbok	he:ספרינגבוק	hi:स्प्रिंगबोक	ja:スプリングボック	ko:스프링복	pt:springbok	ru:спрингбок	tr:zıpzıp antilobu	ur:اسپرنگ بوک	zh:跳羚
 c:springer	Noun	ar:حجر بداية القوس	de:Kämpferstein	en:springer	es:salmer	fa:سنگ شروع قوس	fr:sommier	he:אבן ספרינגר	hi:स्प्रिंगर	ja:起拱石	ko:스프링거	pt:pedra de arranque	ru:пята,пятовый камень	tr:kemer başlangıç taşı	ur:محراب کا پہلا پتھر	zh:拱脚石
 c:sprint	Verb	ar:ركض بسرعة قصوى	de:sprinten	en:sprint	es:esprintar	fa:دویدن سرعتی	fr:sprinter	he:לרוץ בזריזות,לספרינט	hi:तेज़ धावना	ja:全力疾走する	ko:전력 질주하다	pt:correr em disparada,esprintar	ru:бежать спринтом	tr:sprint atmak	ur:سپرنٹ کرنا	zh:冲刺
@@ -5811,6 +5845,7 @@ c:stonefly	Noun	ar:ذبابة الحجر	de:Steinfliege	en:stonefly	es:mosca de 
 c:stool	Noun	ar:كرسي بلا ظهر,مقعد صغير	de:Hocker	en:stool	es:taburete	fa:چارپایه	fr:tabouret	he:שרפרף	hi:स्टूल,तिपाई	ja:スツール,腰掛け	ko:등 없는 의자,스툴	pt:banqueta	ru:табурет	tr:tabure	ur:اسٹول,تپائی	zh:凳子
 c:stop	Verb	ar:توقف	de:stoppen,anhalten,aufhören	en:stop	es:parar,detener	fa:ایستادن,متوقف کردن	fr:arrêter	he:לעצור	hi:रुकना,बंद करना	ja:止める	ko:멈추다	pt:parar	ru:останавливать,остановить	tr:durmak	ur:رکنا	zh:停
 c:stop-consonant	Noun	ar:صوت انفجاري	de:Plosiv	en:stop consonant	es:consonante oclusiva	fa:همخوان انسدادی	fr:occlusive	he:עצור	hi:स्पर्श व्यंजन	ja:破裂音	ko:파열음	pt:oclusiva	ru:смычный согласный	tr:patlayıcı	ur:انفجاری آواز	zh:塞音
+c:stopwatch	Noun	ar:ساعة إيقاف	de:Stoppuhr	en:stopwatch	es:cronómetro	fa:کرنومتر	fr:chronomètre	he:שעון עצור	hi:स्टॉपवॉच	ja:ストップウォッチ	ko:초시계	pt:cronômetro	ru:секундомер	tr:kronometre	ur:سٹاپ واچ	zh:秒表
 c:stork	Noun	ar:لقلق	de:Storch	en:stork	es:cigüeña	fa:لک‌لک	fr:cigogne	he:חסידה	hi:सारस	ja:コウノトリ	ko:황새	pt:cegonha	ru:аист	tr:leylek	ur:لق لق	zh:鹳
 c:storm	Noun	ar:عاصفة	de:Sturm	en:storm	es:tormenta	fa:طوفان	fr:tempête,orage	he:סערה	hi:तूफ़ान	ja:嵐	ko:폭풍	pt:tempestade	ru:буря,шторм	tr:fırtına	ur:طوفان	zh:风暴,暴风
 c:stormwater	Noun	ar:مياه الأمطار	de:Regenwasser	en:stormwater	es:agua pluvial	fa:آب باران	fr:eau pluviale	he:מי גשמים	hi:तूफानी जल	ja:雨水	ko:우수	pt:água pluvial	ru:ливневые воды	tr:yağmur suyu	ur:بارشی پانی	zh:雨水
@@ -5984,6 +6019,7 @@ c:table-of-contents	Noun	ar:جدول المحتويات,فهرس المحتوي�
 c:table-tennis	Noun	ar:تنس الطاولة	de:Tischtennis	en:table tennis	es:tenis de mesa	fa:پینگ پونگ	fr:tennis de table	he:פינג פונג	hi:टेबल टेनिस	ja:卓球	ko:탁구	pt:tênis de mesa	ru:настольный теннис	tr:masa tenisi	ur:ٹیبل ٹینس	zh:乒乓球
 c:tablet	Noun	ar:جهاز لوحي,تابلت	de:Tablet	en:tablet	es:tableta,tablet	fa:تبلت	fr:tablette	he:טאבלט	hi:टैबलेट	ja:タブレット	ko:태블릿	pt:tablet	ru:планшет	tr:tablet	ur:ٹیبلیٹ	zh:平板电脑
 c:taboo	Noun	ar:محرم,تابو	de:Tabu	en:taboo	es:tabú	fa:تابو,حرام	fr:tabou	he:טאבו	hi:वर्जना,टैबू	ja:タブー,禁忌	ko:금기,터부	pt:tabu	ru:табу	tr:tabu	ur:ممنوع,وارجت	zh:禁忌,塔布
+c:tachometer	Noun	ar:عداد الدورات	de:Drehzahlmesser	en:tachometer	es:tacómetro	fa:تاکومتر	fr:tachymètre	he:טכומטר	hi:टैकोमीटर	ja:回転計	ko:회전속도계	pt:tacômetro	ru:тахометр	tr:takometre	ur:ٹیکومیٹر	zh:转速计
 c:tacit-knowledge	Noun	ar:المعرفة الضمنية	de:implizites Wissen	en:tacit knowledge	es:conocimiento tácito	fa:دانش ضمنی	fr:connaissance tacite	he:ידע סמוי	hi:अंतर्निहित ज्ञान	ja:暗黙知	ko:암묵지	pt:conhecimento tácito	ru:неявное знание	tr:örtük bilgi	ur:ضمنی علم	zh:默会知识
 c:taekwondo	Noun	ar:تاي كوندو	de:Taekwondo	en:taekwondo	es:taekwondo	fa:تکواندو	fr:taekwondo	he:טאקוונדו	hi:तायक्वांडो	ja:テコンドー	ko:태권도	pt:taekwondo	ru:тхэквондо	tr:taekwondo	ur:تائیکوانڈو	zh:跆拳道
 c:taffeta	Noun	ar:التافتا	de:Taft	en:taffeta	es:tafetán	fa:تافته	fr:taffetas	he:טפטה	hi:टैफेटा	ja:タフタ	ko:태피터	pt:tafetá	ru:тафта	tr:tafta	ur:تافتہ	zh:塔夫绸
@@ -6136,6 +6172,7 @@ c:theft	Noun	ar:سرقة	de:Diebstahl	en:theft	es:robo,hurto	fa:سرقت,دزد�
 c:theme-lit	Noun	ar:الموضوع الأدبي	de:Thema	en:theme	es:tema	fa:مضمون	fr:thème	he:נושא	hi:विषयवस्तु	ja:テーマ	ko:주제	pt:tema	ru:тема	tr:tema	ur:موضوع	zh:主题
 c:theocracy	Noun	ar:ثيوقراطية	de:Theokratie	en:theocracy	es:teocracia	fa:تئوکراسی	fr:théocratie	he:תיאוקרטיה	hi:धर्मतंत्र	ja:神権政治	ko:신정	pt:teocracia	ru:теократия	tr:teokrasi	ur:مذہبی حکومت	zh:神权政治
 c:theodicy	Noun	ar:العدل الإلهي	de:Theodizee	en:theodicy	es:teodicea	fa:عدل الهی	fr:théodicée	he:תיאודיציאה	hi:ईश्वरन्याय	ja:弁神論	ko:신정론	pt:teodiceia	ru:теодицея	tr:teodise	ur:عدل الہی	zh:神义论
+c:theodolite	Noun	ar:ثيودوليت	de:Theodolit	en:theodolite	es:teodolito	fa:تئودولیت	fr:théodolite	he:תיאודוליט	hi:थियोडोलाइट	ja:経緯儀	ko:경위의	pt:teodolito	ru:теодолит	tr:teodolite	ur:تھیوڈولائٹ	zh:经纬仪
 c:theorem	Noun	ar:مبرهنة	de:Satz	en:theorem	es:teorema	fa:قضیه	fr:théorème	he:משפט	hi:प्रमेय	ja:定理	ko:정리	pt:teorema	ru:теорема	tr:teorem	ur:نظریہ	zh:定理
 c:theory	Noun	ar:نظرية	de:Theorie	en:theory	es:teoría	fa:نظریه,تئوری	fr:théorie	he:תאוריה,תיאוריה	hi:सिद्धांत	ja:理論,セオリー	ko:이론	pt:teoria	ru:теория	tr:teori,kuram	ur:نظریہ	zh:理论
 c:theory-ladenness	Noun	ar:التحيز النظري	de:Theoriegeladenheit	en:theory-ladenness	es:carga teórica	fa:نظریه‌باری	fr:imprégnation théorique	he:עמוסות תיאורטית	hi:सिद्धांत-लदान	ja:理論負荷性	ko:이론 의존성	pt:impregnação teórica	ru:теоретическая нагруженность	tr:teorik yüklülük	ur:نظریاتی بوجھ	zh:理论负载
@@ -6155,6 +6192,7 @@ c:thermoelectric	Noun	ar:التاثير الحراري الكهربائي	de:The
 c:thermohaline	Adjective	ar:التيارات الحرارية الملحية	de:thermohalin	en:thermohaline	es:termohalino	fa:گرما-شوری	fr:thermohalin	he:תרמוהאלין	hi:उष्मालवणता	ja:熱塩循環	ko:열염분	pt:termohalino	ru:термохалинный	tr:termohalin	ur:حرارتی نمکیاتی	zh:热盐环流
 c:thermohaline-circulation	Noun	ar:الدوران الحراري الملحي	de:thermohaline Zirkulation	en:thermohaline circulation	es:circulación termohalina	fa:گردش ترموهالین	fr:circulation thermohaline	he:מחזור תרמו-הלין	hi:थर्मोहैलाइन परिसंचरण	ja:熱塩循環	ko:열염분 순환	pt:circulação termohalina	ru:термохалинная циркуляция	tr:termohalin sirkülasyon	ur:تھرموہالین گردش	zh:热盐环流
 c:thermometer	Noun	ar:ميزان الحرارة,مقياس الحرارة	de:Thermometer	en:thermometer	es:termómetro	fa:دماسنج	fr:thermomètre	he:מדחום,תרמומטר	hi:थर्मामीटर,तापमापी	ja:温度計	ko:온도계	pt:termômetro	ru:термометр	tr:termometre,sıcaklıkölçer	ur:تھرمامیٹر,درجہ حرارت پیما	zh:温度计
+c:thermometer-device	Noun	ar:ميزان حرارة	de:Thermometer	en:thermometer	es:termómetro	fa:دماسنج	fr:thermomètre	he:מדחום	hi:तापमापी	ja:温度計	ko:온도계	pt:termômetro	ru:термометр	tr:termometre	ur:تھرمامیٹر	zh:温度计
 c:thermoregulation-sport	Noun	ar:التنظيم الحراري	de:Thermoregulation	en:thermoregulation	es:termorregulación	fa:تنظیم دمای بدن	fr:thermorégulation	he:ויסות חום	hi:ताप-नियमन	ja:体温調節	ko:체온 조절	pt:termorregulação	ru:терморегуляция	tr:termoregülasyon	ur:حرارتی ضابطہ	zh:体温调节
 c:thermosphere	Noun	ar:الثيرموسفير	de:Thermosphäre	en:thermosphere	es:termosfera	fa:گرماسپهر	fr:thermosphère	he:תרמוספירה	hi:तापमंडल	ja:熱圏	ko:열권	pt:termosfera	ru:термосфера	tr:termosfer	ur:حرارتی کرہ	zh:热层
 c:thick	Adjective	ar:سميك,كثيف	de:dick	en:thick	es:grueso,espeso	fa:ضخیم,کلفت	fr:épais	he:עבה	hi:मोटा,गाढ़ा	ja:厚い,太い	ko:두꺼운,진한	pt:grosso,espesso	ru:толстый	tr:kalın	ur:موٹا	zh:厚,浓
@@ -6272,6 +6310,7 @@ c:torii-gate-shinto	Noun	ar:بوابة توري	de:Torii	en:torii gate	es:torii	
 c:tornado	Noun	ar:زوبعة,تورنادو	de:Tornado,Wirbelsturm	en:tornado,twister	es:tornado	fa:گردباد	fr:tornade	he:טורנדו	hi:बवंडर	ja:竜巻,トルネード	ko:토네이도,회오리바람	pt:tornado	ru:торнадо,смерч	tr:hortum	ur:بگولا,ٹورنیڈو	zh:龙卷风
 c:toronto	Noun	ar:تورنتو	de:Toronto	en:Toronto	es:Toronto	fa:تورنتو	fr:Toronto	he:טורונטו	hi:टोरंटो	ja:トロント	ko:토론토	pt:Toronto	ru:Торонто	tr:Toronto	ur:ٹورانٹو	zh:多伦多
 c:torque	Noun	ar:عزم الدوران,عزم	de:Drehmoment	en:torque,moment of force	es:par,par motor,momento de fuerza	fa:گشتاور,تورک	fr:couple,moment de force	he:מומנט,מומנט פיתול	hi:बलाघूर्ण,टॉर्क	ja:トルク,力のモーメント	ko:토크,회전력	pt:torque,momento de força	ru:момент силы,крутящий момент	tr:tork,burulma momenti	ur:ٹارک,قوت گردش	zh:扭矩,力矩
+c:torque-meter	Noun	ar:مقياس العزم	de:Drehmomentmesser	en:torque meter	es:medidor de par	fa:گشتاورسنج	fr:couple-mètre	he:מד מומנט	hi:टॉर्क मीटर	ja:トルクメーター	ko:토크미터	pt:medidor de torque	ru:измеритель крутящего момента	tr:tork ölçer	ur:ٹارک میٹر	zh:扭矩计
 c:torque-wrench	Noun	ar:مفتاح عزم	de:Drehmomentschlüssel	en:torque wrench	es:llave dinamométrica	fa:آچار گشتاور	fr:clé dynamométrique	he:מפתח מומנט	hi:टॉर्क रिंच	ja:トルクレンチ	ko:토크 렌치	pt:chave de torque	ru:динамометрический ключ	tr:tork anahtarı	ur:ٹارک رینچ	zh:扭矩扳手
 c:tort	Noun	ar:ضرر مدني	de:unerlaubte Handlung	en:tort	es:agravio	fa:ضرر مدنی	fr:délit civil	he:עוולה	hi:अपकृत्य	ja:不法行為	ko:불법행위	pt:ato ilícito	ru:деликт	tr:haksız fiil	ur:نقصان	zh:侵权行为
 c:tortilla	Noun	ar:تورتيلا	de:Tortilla	en:tortilla	es:tortilla	fa:تورتیلا	fr:tortilla	he:טורטייה	hi:टॉर्टिला	ja:トルティーヤ	ko:토르티야	pt:tortilha	ru:тортилья	tr:tortilla	ur:ٹارٹیلا	zh:玉米饼
@@ -6576,6 +6615,7 @@ c:volga	Noun	ar:الفولغا,نهر الفولغا	de:Wolga	en:Volga,Volga Riv
 c:volleyball	Noun	ar:كرة الطائرة	de:Volleyball	en:volleyball	es:voleibol,vóleibol	fa:والیبال	fr:volley-ball,volley	he:כדורעף	hi:वॉलीबॉल	ja:バレーボール	ko:배구	pt:voleibol,vôlei	ru:волейбол	tr:voleybol	ur:والی بال	zh:排球
 c:volt	Noun	ar:فولت	de:Volt	en:volt	es:voltio,volt	fa:ولت	fr:volt	he:וולט	hi:वोल्ट	ja:ボルト	ko:볼트	pt:volt	ru:вольт	tr:volt	ur:وولٹ	zh:伏特,伏
 c:voltage	Noun	ar:فرق الجهد,فولتية	de:Spannung,elektrische Spannung	en:voltage,electric potential difference	es:voltaje,tensión eléctrica	fa:ولتاژ,اختلاف پتانسیل	fr:tension,voltage	he:מתח,מתח חשמלי	hi:वोल्टता,वोल्टेज	ja:電圧,ボルテージ	ko:전압,볼티지	pt:voltagem,tensão	ru:напряжение,вольтаж	tr:voltaj,gerilim	ur:وولٹیج,برقی دباؤ	zh:电压
+c:voltmeter	Noun	ar:مقياس الفولت	de:Voltmeter	en:voltmeter	es:voltímetro	fa:ولت‌سنج	fr:voltmètre	he:וולטמטר	hi:वोल्टमीटर	ja:電圧計	ko:전압계	pt:voltímetro	ru:вольтметр	tr:voltmetre	ur:وولٹ میٹر	zh:电压表
 c:vorticity	Noun	ar:الدوامية	de:Vortizität	en:vorticity	es:vorticidad	fa:چرخندگی	fr:vorticité	he:מערבוליות	hi:भंवरता	ja:渦度	ko:와도	pt:vorticidade	ru:завихрённость	tr:girdap oranı	ur:چکراؤ	zh:涡度
 c:vote	Noun	ar:تصويت,صوت	de:Abstimmung,Stimme	en:vote	es:voto	fa:رأی	fr:vote,voix	he:קול,הצבעה	hi:वोट,मत	ja:投票,票	ko:투표	pt:voto	ru:голос,голосование	tr:oy	ur:ووٹ	zh:投票,选票
 c:voussoir	Noun	ar:حجر القوس	de:Keilstein	en:voussoir	es:dovela	fa:سنگ قوس	fr:voussoir	he:ווסואר	hi:वुसॉयर	ja:迫石	ko:쐐기돌	pt:aduelas	ru:клинчатый камень	tr:kama taşı	ur:محراب کا پتھر	zh:楔石
