@@ -2201,6 +2201,40 @@ export const BUILTIN_THEMES: ConstellationTheme[] = [
 	},
 ];
 
+/**
+ * Panel-Placement system (Tier 1 of the "note as organism" redesign).
+ *
+ * Each movable UI panel has a stable {@link PanelId}. It can be assigned
+ * to one of a small set of {@link PanelSlot}s via {@link AppSettings.panelPlacements}.
+ * Workspaces persist this map so users can save/switch entire layouts.
+ *
+ * Tier 1 ships: slot picker in Settings, static flanking positions for
+ * Backlinks / Outgoing Links around the editor, right-sidebar tab strip
+ * remains the default host for everything else.
+ *
+ * Tier 2 will add drag-and-drop rearrangement on top of the same schema.
+ * Tier 3 will add detachable floating windows (Tauri multi-window) and
+ * stack-as-tabs / split-within-slot.
+ */
+export type PanelId =
+	| 'backlinks'
+	| 'outgoing'
+	| 'properties'
+	| 'tags'
+	| 'sky'
+	| 'tasks'
+	| 'calendar'
+	| 'health'
+	| 'provenance'
+	| 'review'
+	| 'links';
+
+export type PanelSlot =
+	| 'left-of-note'    // inside editor area, logical-left flanking column
+	| 'right-of-note'   // inside editor area, logical-right flanking column
+	| 'right-sidebar'   // existing right sidebar tab strip
+	| 'hidden';         // user chose to hide this panel entirely
+
 export interface AppSettings {
 	// Editor
 	showLineNumbers: boolean;
@@ -2339,6 +2373,14 @@ export interface AppSettings {
 		showOrphans: boolean;
 		colorByLibrary: boolean;
 	};
+
+	// Panel Placements — Tier 1 of the "note as organism" redesign.
+	// Every movable panel has a stable ID and can be assigned to a slot.
+	// Default: Backlinks flanks the note on the logical-left (reading-
+	// order: before), Outgoing on the logical-right. Other panels still
+	// live in the right sidebar tab strip until Tier 2 exposes drag-and-
+	// drop rearrangement.
+	panelPlacements: Record<PanelId, PanelSlot>;
 
 	// Built-in features
 	enabledFeatures: {
@@ -2494,6 +2536,22 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		decayEnabled: true,
 		halfLifeDays: 60,
 	},
+	panelPlacements: {
+		// "Nervous system" default: the two link panels flank the note.
+		backlinks: 'left-of-note',
+		outgoing:  'right-of-note',
+		// Everything else keeps its current right-sidebar home until Tier 2
+		// drag-and-drop lands and the user can rearrange freely.
+		properties: 'right-sidebar',
+		tags:       'right-sidebar',
+		sky:        'right-sidebar',
+		tasks:      'right-sidebar',
+		calendar:   'right-sidebar',
+		health:     'right-sidebar',
+		provenance: 'right-sidebar',
+		review:     'right-sidebar',
+		links:      'right-sidebar',
+	},
 };
 
 /** Shared metadata for the eight typed-link names — used by Settings UI
@@ -2521,6 +2579,9 @@ export async function loadSettings() {
 				security: { ...DEFAULT_SETTINGS.security, ...((parsed.security as Record<string, unknown>) || {}) },
 				enabledFeatures: { ...DEFAULT_SETTINGS.enabledFeatures, ...((parsed.enabledFeatures as Record<string, boolean>) ?? (parsed.enabledPlugins as Record<string, boolean>) ?? {}) },
 				customShortcuts: { ...((parsed.customShortcuts as Record<string, string>) || {}) },
+				// Merge panel placements so existing users get new-panel defaults
+				// automatically when we add a new PanelId in a future release.
+				panelPlacements: { ...DEFAULT_SETTINGS.panelPlacements, ...((parsed.panelPlacements as Record<PanelId, PanelSlot>) || {}) },
 			});
 		}
 	} catch { /* ignore */ }
@@ -2557,6 +2618,15 @@ export interface WorkspaceLayout {
 	rightSidebarOpen: boolean;
 	rightSidebarTab: string;
 	rightSidebarWidth: number;
+	/** Tier 1 panel-placement snapshot. Workspaces that predate this field
+	 *  load without it; restoring such a workspace leaves the current
+	 *  panelPlacements untouched. Saving writes the current map. */
+	panelPlacements?: Record<PanelId, PanelSlot>;
+	/** Flanking column widths. Resizable via drag handles in Tier 1b; for
+	 *  now they hold the defaults so the schema can accept them when the
+	 *  drag handle ships without a migration. */
+	leftOfNoteWidth?: number;
+	rightOfNoteWidth?: number;
 }
 
 export interface WorkspaceSecondScreen {

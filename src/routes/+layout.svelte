@@ -4091,6 +4091,14 @@
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('layout.skyViewTitle') || 'Sky View'}
 				</button>
+			{:else if $activeTab?.path && !showSkyView && !fullPageActive && ($appSettings.enabledFeatures?.skyView ?? true)}
+				<!-- Tier 1 "return to Sky View": always visible when a note is open so the user can
+				     jump back to the universe view with one click. Independent of skyViewReturnPending
+				     (which is set only when a note was opened via search highlight). -->
+				<button class="index-return-btn sv-return-pill" onclick={() => { showSkyView = true; }} title={$t('layout.skyViewTitle') || 'Sky View'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+					{$t('layout.skyViewTitle') || 'Sky View'}
+				</button>
 			{/if}
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
@@ -4547,6 +4555,50 @@
 								}}
 							/>
 						{:else}
+							<!--
+								"Note as organism" — Tier 1 flanking panels.
+								Backlinks placed on logical-left, Outgoing on
+								logical-right, both user-configurable via
+								appSettings.panelPlacements. Flanks hide in
+								focus mode (handled above) and split mode
+								(the {$splitActive} branch renders a different
+								code path that doesn't reach here). RTL is
+								handled by the dir attribute on the wrapper:
+								flex-direction:row + dir:rtl reverses the
+								visual order so Backlinks stays on the reading-
+								start side.
+							-->
+							{@const backlinksOnLeft  = $appSettings.panelPlacements?.backlinks === 'left-of-note'}
+							{@const backlinksOnRight = $appSettings.panelPlacements?.backlinks === 'right-of-note'}
+							{@const outgoingOnLeft   = $appSettings.panelPlacements?.outgoing === 'left-of-note'}
+							{@const outgoingOnRight  = $appSettings.panelPlacements?.outgoing === 'right-of-note'}
+							<div class="editor-with-flanks" dir={$dir}>
+								{#if backlinksOnLeft || outgoingOnLeft}
+									<div class="flank flank-start">
+										{#if backlinksOnLeft}
+											<BacklinksPanel
+												backlinks={currentBacklinks}
+												unlinkedMentions={currentUnlinkedMentions}
+												activeNoteName={$activeTab?.name ?? ''}
+												activeNotePath={$activeTab?.path ?? ''}
+												{libraryColorMap}
+												onConfidenceChange={applyConfidenceLocally}
+												onArchive={applyArchiveLocally}
+											/>
+										{/if}
+										{#if outgoingOnLeft}
+											<OutgoingLinksPanel
+												outgoingLinks={currentOutgoing}
+												activeNotePath={$activeTab?.path ?? ''}
+												libraryPath={$activeTab?.libraryPath ?? ''}
+												{libraryColorMap}
+												onConfidenceChange={applyConfidenceLocally}
+												onArchive={applyArchiveLocally}
+											/>
+										{/if}
+									</div>
+								{/if}
+								<div class="flank-center">
 							<NoteEditor
 								tab={$activeTab}
 								noteNames={allNotes}
@@ -4607,6 +4659,33 @@
 									}
 								}}
 							/>
+								</div>
+								{#if backlinksOnRight || outgoingOnRight}
+									<div class="flank flank-end">
+										{#if outgoingOnRight}
+											<OutgoingLinksPanel
+												outgoingLinks={currentOutgoing}
+												activeNotePath={$activeTab?.path ?? ''}
+												libraryPath={$activeTab?.libraryPath ?? ''}
+												{libraryColorMap}
+												onConfidenceChange={applyConfidenceLocally}
+												onArchive={applyArchiveLocally}
+											/>
+										{/if}
+										{#if backlinksOnRight}
+											<BacklinksPanel
+												backlinks={currentBacklinks}
+												unlinkedMentions={currentUnlinkedMentions}
+												activeNoteName={$activeTab?.name ?? ''}
+												activeNotePath={$activeTab?.path ?? ''}
+												{libraryColorMap}
+												onConfidenceChange={applyConfidenceLocally}
+												onArchive={applyArchiveLocally}
+											/>
+										{/if}
+									</div>
+								{/if}
+							</div>
 						{/if}
 					{/if}
 				</div>
@@ -4721,9 +4800,11 @@
 				<button class="rs-tab" class:active={rightSidebarTab === 'properties'} onclick={() => rightSidebarTab = 'properties'} title={$t('panels.properties')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
 				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'backlinks'} onclick={() => rightSidebarTab = 'backlinks'} title={$t('panels.backlinks')}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-				</button>
+				{#if $appSettings.panelPlacements?.backlinks === 'right-sidebar' || $appSettings.panelPlacements?.outgoing === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'backlinks'} onclick={() => rightSidebarTab = 'backlinks'} title={$t('panels.backlinks')}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+					</button>
+				{/if}
 				<button class="rs-tab" class:active={rightSidebarTab === 'tags'} onclick={() => rightSidebarTab = 'tags'} title={$t('panels.tags')}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
 				</button>
@@ -4803,29 +4884,35 @@
 						{/if}
 					</div>
 				{:else if rightSidebarTab === 'backlinks'}
-					<div class="rs-section rs-section--flush">
-						<div class="rs-header">{$t('panels.backlinksHeader')}</div>
-						<BacklinksPanel
-							backlinks={currentBacklinks}
-							unlinkedMentions={currentUnlinkedMentions}
-							activeNoteName={sidebarTab?.name ?? ''}
-							activeNotePath={sidebarTab?.path ?? ''}
-							{libraryColorMap}
-							onConfidenceChange={applyConfidenceLocally}
-							onArchive={applyArchiveLocally}
-						/>
-					</div>
-					<div class="rs-section rs-section--flush">
-						<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
-						<OutgoingLinksPanel
-							outgoingLinks={currentOutgoing}
-							activeNotePath={sidebarTab?.path ?? ''}
-							libraryPath={sidebarTab?.libraryPath ?? ''}
-							{libraryColorMap}
-							onConfidenceChange={applyConfidenceLocally}
-							onArchive={applyArchiveLocally}
-						/>
-					</div>
+					<!-- Only render the panel whose placement is actually 'right-sidebar'.
+					     The other one is mounted in a flanking column. -->
+					{#if $appSettings.panelPlacements?.backlinks === 'right-sidebar'}
+						<div class="rs-section rs-section--flush">
+							<div class="rs-header">{$t('panels.backlinksHeader')}</div>
+							<BacklinksPanel
+								backlinks={currentBacklinks}
+								unlinkedMentions={currentUnlinkedMentions}
+								activeNoteName={sidebarTab?.name ?? ''}
+								activeNotePath={sidebarTab?.path ?? ''}
+								{libraryColorMap}
+								onConfidenceChange={applyConfidenceLocally}
+								onArchive={applyArchiveLocally}
+							/>
+						</div>
+					{/if}
+					{#if $appSettings.panelPlacements?.outgoing === 'right-sidebar'}
+						<div class="rs-section rs-section--flush">
+							<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
+							<OutgoingLinksPanel
+								outgoingLinks={currentOutgoing}
+								activeNotePath={sidebarTab?.path ?? ''}
+								libraryPath={sidebarTab?.libraryPath ?? ''}
+								{libraryColorMap}
+								onConfidenceChange={applyConfidenceLocally}
+								onArchive={applyArchiveLocally}
+							/>
+						</div>
+					{/if}
 				{:else if rightSidebarTab === 'tags'}
 					<!-- Tags for the active note -->
 					<div class="rs-section">
@@ -5878,6 +5965,41 @@
 	.pane-divider:hover { background: var(--accent); }
 	.split-pane-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
 	.split-pane-wrap :global(.e-desk) { padding-inline: 8px !important; }
+
+	/* ──────────────────────────────────────────────────────────────
+	   Tier 1 flanking panels — "note as organism"
+	   Backlinks / Outgoing Links live beside the editor instead of
+	   inside the right sidebar. Wrapper inherits dir from $dir so
+	   flank-start/end flip automatically in RTL.
+	   ──────────────────────────────────────────────────────────── */
+	.editor-with-flanks {
+		flex: 1;
+		display: flex;
+		flex-direction: row;
+		min-width: 0;
+		min-height: 0;
+		overflow: hidden;
+	}
+	.flank {
+		flex: 0 0 280px;        /* default flanking width */
+		min-width: 180px;
+		max-width: 420px;
+		overflow-y: auto;
+		overflow-x: hidden;
+		padding: 12px 8px;
+		background: var(--bg-secondary);
+		border: 0 solid var(--border);
+	}
+	.flank-start { border-inline-end-width: 1px; }
+	.flank-end   { border-inline-start-width: 1px; }
+	.flank-center {
+		flex: 1;
+		min-width: 0;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
 
 	.index-overlay, .map-overlay, .orgchart-overlay {
 		display: none; flex: 1; overflow: hidden;

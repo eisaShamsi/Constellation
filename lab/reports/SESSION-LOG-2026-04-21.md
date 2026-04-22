@@ -341,13 +341,82 @@ points on CLAUDE.md Rule 8's list:
 - Sidebar star counts — unknown
 - Map — unknown
 
+## § 48. "Note as organism" Tier 1 — flanking Backlinks / Outgoing
+
+User directed a broader vision: every UI panel should eventually
+be movable (detachable/rearrangeable), with named Workspaces
+saving the layout. Scoped that into three tiers; shipped Tier 1.
+
+### Tier model
+
+- **Tier 1 (this session)**: slot-based panel placement.
+  Settings-driven picker for which slot holds each panel. No drag-
+  and-drop yet. Default ships "Backlinks → left-of-note, Outgoing
+  → right-of-note" as the "nervous system" layout. Workspace
+  schema extended to persist panelPlacements.
+- **Tier 2 (pending)**: drag handles on panel headers + drop-zone
+  highlights. Same slot model under the hood.
+- **Tier 3 (pending)**: detachable floating windows (Tauri multi-
+  window), stack-as-tabs within a slot, split-within-slot.
+
+### Changes in Tier 1
+
+New types in `src/lib/libraries/store.ts`:
+- `PanelId` (11 entries — backlinks, outgoing, properties, tags,
+  sky, tasks, calendar, health, provenance, review, links).
+- `PanelSlot` ('left-of-note', 'right-of-note', 'right-sidebar',
+  'hidden').
+- `AppSettings.panelPlacements: Record<PanelId, PanelSlot>`.
+- `DEFAULT_SETTINGS.panelPlacements` ships backlinks→left-of-note,
+  outgoing→right-of-note, everything else → right-sidebar.
+- `loadSettings` merges panelPlacements so existing users get
+  new-panel defaults automatically on next load.
+- `WorkspaceLayout` gains optional `panelPlacements`,
+  `leftOfNoteWidth`, `rightOfNoteWidth` (widths for future Tier 1b
+  drag-resize).
+
+New layout in `src/routes/+layout.svelte`:
+- `.editor-with-flanks` wrapper around the non-split, non-focus
+  NoteEditor branch. dir={$dir} on the wrapper so flex row +
+  `border-inline-start/end` logical CSS flip the visual order in
+  RTL locales (Backlinks stays on the reading-start side).
+- `.flank-start` / `.flank-end` render the panels assigned to
+  left-of-note / right-of-note. Default 280px wide, min 180 / max
+  420. Scrollable if content overflows.
+- Right-sidebar Backlinks/Outgoing tab button hides when neither
+  is placed there. Tab content only renders the panel whose
+  placement is 'right-sidebar' (so if one moves out, the other
+  still shows alone).
+- Hidden automatically in focus mode (tree-structurally: flanks
+  are inside the `{:else}` branch of `{#if focusMode}`) and in
+  split mode (flanks are inside the non-split branch of
+  `{#if $splitActive}`).
+
+New "Return to Sky View" pill in the tab-action bar:
+- Visible whenever an active note has a path, Sky View feature is
+  enabled, and Sky View isn't already open.
+- Independent of the existing `skyViewReturnPending` mechanism
+  which was only set by search-highlight navigation.
+- Uses the share-2 icon (same as the Link Dashboard tab), labeled
+  with the Sky View i18n key.
+
+### Commit
+
+`<pending>` — PCS.
+
 ## Still on the queue (orthogonal)
 
+- **Tier 2**: drag-and-drop panel rearrangement with slot
+  highlighting + settings UI
+- **Tier 3**: detachable floating panels, stack-as-tabs per slot,
+  split-within-slot (needs Tauri multi-window)
+- **Tier 1b**: resize handles on flanking columns + width
+  persistence in panelPlacements schema
+- **Tier 1 Settings UI**: dropdown-per-panel picker in Settings →
+  Panels page (quick rearrange without drag)
 - navTrace instrumentation dev-gate
 - Settings → Debug Boot Performance scorecard UI
 - Isolated throttle stress-test helper
 - RTL alignment pass on Arabic docx (if needed)
 - Write-Time Derivation audit across Sky View / Tag browser /
   Sight / sidebar stars / Map
-- "Note as organism" editor redesign (three-column backlinks /
-  note / outgoing + Return to SV)
