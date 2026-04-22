@@ -642,6 +642,10 @@
 	let lensTagEdges = $state<{ source: string; target: string; shared_tags: string[]; weight: number }[]>([]);
 	let lensCommunityProfiles = $state<CommunityProfile[]>([]);
 	let lensContradictions = $state<[string, string][]>([]);
+	/** WTD cache flag: true = lens data is stale and must be recomputed on next open.
+	 *  Starts true (no data yet). Flipped to false after a successful computation,
+	 *  back to true whenever skyVersion increments (graph topology changed). */
+	let lensDataStale = $state(true);
 	let skyVersion = $state(0);
 	// Boot Criterion 2: `graphReady` flips to true once the deferred link+tag
 	// payload (Phase 2 of refreshLibraryCaches) lands. Views that render
@@ -1081,6 +1085,19 @@
 			localSkyNodes = skyNodes.filter(n => connectedIds.has(n.id));
 			localSkyLinks = skyLinks.filter(l => connectedIds.has(l.source) && connectedIds.has(l.target));
 		}, 50);
+	});
+
+	// WTD: Invalidate cached Constellation Lens data whenever the sky graph changes.
+	// skyVersion increments each time skyNodes/skyLinks are rebuilt (on library load,
+	// note save, link scan). If lens data was previously computed, mark it stale so
+	// the next toggleLens() call triggers a fresh computation instead of showing
+	// outdated graph analytics.
+	$effect(() => {
+		const ver = skyVersion; // reactive trigger
+		if (ver > 0 && lensHealth !== null) {
+			// Graph changed after a successful computation — mark data stale.
+			lensDataStale = true;
+		}
 	});
 
 	// Tasks sidebar: load tasks from the active note when Tasks tab is visible
@@ -3053,16 +3070,23 @@
 
 	async function toggleLens() {
 		if (lensActive) {
+			// Toggle OFF: hide the overlay but keep computed data in memory.
+			// The next toggle-on will reuse it if the graph hasn't changed.
+			// Data is only discarded when skyVersion increments (graph changed)
+			// — see the WTD $effect above.
 			lensActive = false;
-			lensCentrality = new Map();
-			lensCommunities = [];
-			lensCommunityAssignments = new Map();
-			lensGaps = [];
-			lensHealth = null;
-			lensBridges = [];
 			return;
 		}
+
+		// Toggle ON — serve from cache if data is still fresh.
+		if (!lensDataStale && lensHealth !== null) {
+			lensActive = true;
+			return;
+		}
+
 		lensLoading = true;
+		// Snapshot the graph version so we can detect a mid-computation change.
+		const computeVersion = skyVersion;
 		try {
 			// 1. Compute centrality in Rust
 			const libPaths = $libraries.map(l => [l.path, l.name] as [string, string]);
@@ -3130,6 +3154,10 @@
 			// 9. Contradictions from Rust (Feature 3)
 			lensContradictions = (result as any).contradictions ?? [];
 
+			// Mark cache fresh only if the graph didn't change mid-computation.
+			if (skyVersion === computeVersion) {
+				lensDataStale = false;
+			}
 			lensActive = true;
 		} catch (e) {
 			console.error('[Lens] Failed to compute:', e);
