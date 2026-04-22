@@ -329,6 +329,42 @@
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
 	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'links'>('properties');
+
+	// ── Sidebar overlay snapshots ───────────────────────────────────────────
+	// Every overlay mode that takes over the editor area (full-page view,
+	// Search Hub, OrgChart, Lens, SV inspect mode) hides both sidebars on
+	// entry and restores them on exit. Before this helper there were 5 pairs
+	// of `sidebarBeforeX` / `rightSidebarBeforeX` variables with copy-pasted
+	// save/restore logic at ~15 sites. The Map below is the single snapshot
+	// store; push/pop are the single save/restore API. Adding a new overlay
+	// mode is now a one-liner `pushSidebars('newKey')`.
+	type OverlayKey = 'fullPage' | 'search' | 'oc' | 'lens' | 'skyInspect';
+	const sidebarSnapshots = new Map<OverlayKey, { left: boolean; right: boolean }>();
+	function pushSidebars(key: OverlayKey) {
+		// Idempotent: re-entering the same overlay doesn't overwrite the
+		// original snapshot. The first push wins so the exit restores the
+		// state the user had before the first entry.
+		if (!sidebarSnapshots.has(key)) {
+			sidebarSnapshots.set(key, { left: sidebarOpen, right: rightSidebarOpen });
+		}
+		sidebarOpen = false;
+		rightSidebarOpen = false;
+	}
+	function popSidebars(key: OverlayKey) {
+		const snap = sidebarSnapshots.get(key);
+		if (!snap) return;
+		sidebarOpen = snap.left;
+		rightSidebarOpen = snap.right;
+		sidebarSnapshots.delete(key);
+	}
+	// For workspace-restore fired while an overlay is active: update the
+	// stored target state so the eventual pop restores the workspace's
+	// intended layout, not the pre-load state.
+	function updateSidebarSnapshot(key: OverlayKey, left: boolean, right: boolean) {
+		if (sidebarSnapshots.has(key)) {
+			sidebarSnapshots.set(key, { left, right });
+		}
+	}
 	let dueNotes = $state<any[]>([]); // CE Phase 7: ReviewPulse due notes
 	let activeTrail = $state<any>(null); // CE Phase 8: active trail data
 	let showExpressionForge = $state(false); // CE Phase 10
@@ -340,8 +376,7 @@
 	let searchHubMatchIds = $state<Set<string> | null>(null);
 	let searchHubReturnPending = $state(false);
 	let searchHubInitialQuery = $state('');
-	let sidebarBeforeSearch = $state(false);
-	let rightSidebarBeforeSearch = $state(false);
+	// Sidebar snapshot for Search Hub: managed via pushSidebars/popSidebars('search')
 	// let inspector360Data = $state<any>(null); // CE Phase 12: disabled — revisit later
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
@@ -394,10 +429,7 @@
 	}
 	let showSkyView = $state(false);
 	let showOrgChart = $state(false);
-	let sidebarBeforeOC = $state(false); // remember left sidebar state
-	let rightSidebarBeforeOC = $state(false); // remember right sidebar state
-	let sidebarBeforeLens = $state(false);
-	let rightSidebarBeforeLens = $state(false);
+	// Sidebar snapshots for OrgChart and Lens: managed via pushSidebars/popSidebars('oc' | 'lens')
 	// Shared selection path — when an item is clicked in any sidebar mode, OrgChart highlights it
 	let skyViewSelectedPath = $state<string | string[] | null>(null);
 
@@ -507,10 +539,7 @@
 	// A user who just opens a note via tree / quick-switcher / wikilink
 	// sees the regular editor without flanks.
 	let skyViewInspectMode = $state(false);
-	// Snapshot the user's sidebar open state when entering inspect mode so
-	// the original layout is restored cleanly when they dismiss it.
-	let sidebarBeforeSkyInspect = false;
-	let rightSidebarBeforeSkyInspect = false;
+	// Sidebar snapshot for SV inspect mode: managed via pushSidebars/popSidebars('skyInspect')
 
 	// Flank-side predicates for the tab-bar alignment in inspect mode.
 	// Derived so changes to panelPlacements or inspect-mode flip immediately.
@@ -955,20 +984,13 @@
 	);
 
 	// Auto-collapse sidebars when full-page becomes active, restore when deactivated
-	let sidebarBeforeFullPage = false;
-	let rightSidebarBeforeFullPage = false;
+	// Sidebar snapshot for full-page view: managed via pushSidebars/popSidebars('fullPage')
 	let fullPageWasActive = false;
 	$effect(() => {
 		if (fullPageActive && !fullPageWasActive) {
-			// Entering full-page: save and collapse
-			sidebarBeforeFullPage = sidebarOpen;
-			rightSidebarBeforeFullPage = rightSidebarOpen;
-			sidebarOpen = false;
-			rightSidebarOpen = false;
+			pushSidebars('fullPage');
 		} else if (!fullPageActive && fullPageWasActive) {
-			// Leaving full-page: restore
-			sidebarOpen = sidebarBeforeFullPage;
-			rightSidebarOpen = rightSidebarBeforeFullPage;
+			popSidebars('fullPage');
 		}
 		fullPageWasActive = fullPageActive;
 	});
@@ -1562,7 +1584,7 @@
 			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
 			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
 			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; pushSidebars('search'); }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
@@ -2687,8 +2709,8 @@
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showSkyView) { showSkyView = false; return; }
-			if (lensActive) { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; return; }
-			if (showOrgChart) { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; return; }
+			if (lensActive) { lensActive = false; popSidebars('lens'); return; }
+			if (showOrgChart) { showOrgChart = false; popSidebars('oc'); return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
 			if (showIndex) { showIndex = false; return; }
@@ -3301,16 +3323,10 @@
 		const fromPath = $activeTab?.path && $activeTab.path !== path ? $activeTab.path : undefined;
 		await openNoteTab(path, libraryName, color, highlightTerm, false, fromPath);
 		showSkyView = false;
-		// Entering inspect mode: snapshot sidebar state, then close both so
-		// the flanking Backlinks/Outgoing panels are the only auxiliary view.
-		// Idempotent — re-entering from another SV click doesn't overwrite
-		// the original snapshot.
-		if (!skyViewInspectMode) {
-			sidebarBeforeSkyInspect = sidebarOpen;
-			rightSidebarBeforeSkyInspect = rightSidebarOpen;
-		}
-		sidebarOpen = false;
-		rightSidebarOpen = false;
+		// Entering inspect mode: flanking Backlinks/Outgoing panels are the
+		// only auxiliary view. pushSidebars is idempotent, so re-entering
+		// from another SV click doesn't overwrite the original snapshot.
+		pushSidebars('skyInspect');
 		skyViewInspectMode = true;
 		if (highlightTerm) skyViewReturnPending = true;
 	}
@@ -3319,8 +3335,7 @@
 		searchHubInitialQuery = `#${tag}`;
 		showSearchHub = true;
 		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
-		sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen;
-		sidebarOpen = false; rightSidebarOpen = false;
+		pushSidebars('search');
 	}
 
 	// ─── Page Preview (hover) ───
@@ -3797,10 +3812,9 @@
 				if (showSearchHub) {
 					searchHubInitialQuery = '';
 					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
-					sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen;
-					sidebarOpen = false; rightSidebarOpen = false;
+					pushSidebars('search');
 				} else {
-					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
+					popSidebars('search');
 				}
 				searchHubReturnPending = false;
 			}} title={$t('searchHub.title')}>
@@ -3812,10 +3826,9 @@
 				orgChartReturnPending = false;
 				if (showOrgChart) {
 					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false;
-					sidebarBeforeOC = sidebarOpen; rightSidebarBeforeOC = rightSidebarOpen;
-					sidebarOpen = false; rightSidebarOpen = false;
+					pushSidebars('oc');
 				} else {
-					sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC;
+					popSidebars('oc');
 				}
 			}} title={$t('navigator.orgChart') || 'Organization Chart'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
@@ -3867,11 +3880,10 @@
 			<button class="dock-btn" class:active={lensActive} onclick={() => {
 				if (!lensActive) {
 					toggleLens(); showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensReturnPending = false;
-					sidebarBeforeLens = sidebarOpen; rightSidebarBeforeLens = rightSidebarOpen;
-					sidebarOpen = false; rightSidebarOpen = false;
+					pushSidebars('lens');
 				} else {
 					lensActive = false;
-					sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens;
+					popSidebars('lens');
 				}
 			}} title={$t('lens.title') || 'Constellation Sight'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -4245,19 +4257,19 @@
 				</button>
 			{/if}
 			{#if orgChartReturnPending}
-				<button class="index-return-btn" onclick={() => { showOrgChart = true; orgChartReturnPending = false; sidebarBeforeOC = sidebarOpen; rightSidebarBeforeOC = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
+				<button class="index-return-btn" onclick={() => { showOrgChart = true; orgChartReturnPending = false; pushSidebars('oc'); }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('orgChart.returnToOrgChart') || 'Return to OrgChart'}
 				</button>
 			{/if}
 			{#if lensReturnPending}
-				<button class="index-return-btn" onclick={() => { lensActive = true; lensReturnPending = false; sidebarBeforeLens = sidebarOpen; rightSidebarBeforeLens = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
+				<button class="index-return-btn" onclick={() => { lensActive = true; lensReturnPending = false; pushSidebars('lens'); }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('lens.returnToLens') || 'Return to Lens'}
 				</button>
 			{/if}
 			{#if searchHubReturnPending}
-				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sidebarBeforeSearch = sidebarOpen; rightSidebarBeforeSearch = rightSidebarOpen; sidebarOpen = false; rightSidebarOpen = false; }}>
+				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; pushSidebars('search'); }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('searchHub.title')}
 				</button>
@@ -4278,9 +4290,7 @@
 						{$t('layout.skyViewTitle') || 'Sky View'}
 					</button>
 					<button class="sv-pill-dismiss" onclick={() => {
-						// Restore the sidebar layout the user had before entering inspect mode.
-						sidebarOpen = sidebarBeforeSkyInspect;
-						rightSidebarOpen = rightSidebarBeforeSkyInspect;
+						popSidebars('skyInspect');
 						skyViewInspectMode = false;
 					}} title={$t('layout.exitSkyViewMode') || 'Exit Sky View inspect mode'}>×</button>
 				</span>
@@ -4464,10 +4474,10 @@
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showOrgChart = false;
-						sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC;
+						popSidebars('oc');
 						orgChartReturnPending = true;
 					}}
-					onClose={() => { showOrgChart = false; sidebarOpen = sidebarBeforeOC; rightSidebarOpen = rightSidebarBeforeOC; orgChartReturnPending = false; }}
+					onClose={() => { showOrgChart = false; popSidebars('oc'); orgChartReturnPending = false; }}
 				/>
 			</div>
 		{/if}
@@ -4498,10 +4508,10 @@
 							openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', hlFinal);
 						}
 						lensActive = false;
-						sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens;
+						popSidebars('lens');
 						lensReturnPending = true;
 					}}
-					onClose={() => { lensActive = false; sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens; lensReturnPending = false; }}
+					onClose={() => { lensActive = false; popSidebars('lens'); lensReturnPending = false; }}
 				/>
 			{/if}
 		</div>
@@ -4525,12 +4535,12 @@
 					const hlFinal = hl.trim() || undefined;
 					openNoteTab(path, libraryName, libraryColor, hlFinal);
 					showSearchHub = false;
-					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
+					popSidebars('search');
 					searchHubReturnPending = true;
 				}}
 				onClose={() => {
 					showSearchHub = false;
-					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
+					popSidebars('search');
 					searchHubReturnPending = false;
 				}}
 				onResults={(ids: Set<string>) => { searchHubMatchIds = ids.size > 0 ? ids : null; }}
@@ -5412,12 +5422,11 @@
 			}}
 			onRestore={async (layout, screen) => {
 				if (layout) {
-					// In SV inspect mode: force sidebars hidden, but ALSO update the
-					// snapshot so the dismiss-path restores the workspace's intended
-					// state (not the pre-workspace-load state).
+					// In SV inspect mode: force sidebars hidden, but update the
+					// snapshot so the eventual pop restores the workspace's
+					// intended state (not the pre-workspace-load state).
 					if (skyViewInspectMode) {
-						sidebarBeforeSkyInspect = layout.leftSidebarOpen;
-						rightSidebarBeforeSkyInspect = layout.rightSidebarOpen;
+						updateSidebarSnapshot('skyInspect', layout.leftSidebarOpen, layout.rightSidebarOpen);
 						sidebarOpen = false;
 						rightSidebarOpen = false;
 					} else {
