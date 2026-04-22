@@ -13,6 +13,7 @@
 # redistributable under whatever license Constellation chooses, now
 # and forever.
 
+c:5g-network	Noun	ar:شبكة الجيل الخامس	de:5G-Netz	en:5G network	es:red 5G	fa:شبکه نسل پنجم	fr:réseau 5G	he:רשת 5G	hi:5जी नेटवर्क	ja:5Gネットワーク	ko:5G 네트워크	pt:rede 5G	ru:сеть 5G	tr:5G ağı	ur:فائیو جی نیٹ ورک	zh:5G网络
 c:a-cappella	Adjective	ar:أكابيلا	de:a cappella	en:a cappella	es:a capella	fa:آکاپلا	fr:a cappella	he:א קפלה	hi:अकेपेला	ja:アカペラ	ko:아카펠라	pt:a cappella	ru:а капелла	tr:a cappella	ur:آکاپیلا	zh:无伴奏合唱
 c:a-posteriori	Adjective	ar:بعدي	de:a posteriori	en:a posteriori	es:a posteriori	fa:پسین	fr:a posteriori	he:אפוסטריורי	hi:परोक्ष ज्ञान	ja:ア・ポステリオリ	ko:경험적	pt:a posteriori	ru:апостериорный	tr:ardsal	ur:بعد از تجربہ	zh:后验的
 c:a-priori	Adjective	ar:قبلي	de:a priori	en:a priori	es:a priori	fa:پیشین	fr:a priori	he:אפריורי	hi:पूर्वज्ञान	ja:ア・プリオリ	ko:선험적	pt:a priori	ru:априорный	tr:önsel	ur:قبل از تجربہ	zh:先验的
@@ -43,6 +44,7 @@ c:academy	Noun	ar:أكاديمية	de:Akademie	en:academy	es:academia	fa:آکا�
 c:acanthus	Noun	ar:أكانثوس	de:Akanthus	en:acanthus	es:acanto	fa:آکانتوس	fr:acanthe	he:אקנתוס	hi:अकांथस	ja:アカンサス	ko:아칸서스	pt:acanto	ru:акант	tr:akantus	ur:اکانتھس	zh:茛苕
 c:accelerate	Verb	ar:عجل,يعجل,أسرع,يسرع	de:beschleunigen	en:accelerate,speed up	es:acelerar	fa:شتاب دادن	fr:accélérer	he:להאיץ	hi:गति बढ़ाना	ja:加速する	ko:가속하다	pt:acelerar	ru:ускорять,ускоряться	tr:hızlanmak	ur:رفتار بڑھانا	zh:加速
 c:acceleration	Noun	ar:تسارع,تعجيل	de:Beschleunigung	en:acceleration	es:aceleración	fa:شتاب	fr:accélération	he:תאוצה	hi:त्वरण	ja:加速度	ko:가속도	pt:aceleração	ru:ускорение	tr:ivme	ur:اسراع,تسارع	zh:加速度
+c:accelerometer	Noun	ar:مقياس التسارع	de:Beschleunigungssensor	en:accelerometer	es:acelerómetro	fa:شتاب‌سنج	fr:accéléromètre	he:מד תאוצה	hi:त्वरणमापी	ja:加速度センサー	ko:가속도계	pt:acelerômetro	ru:акселерометр	tr:ivmeölçer	ur:سرعت ناپ	zh:加速度计
 c:accent	Noun	ar:لكنة	de:Akzent	en:accent	es:acento	fa:لهجه	fr:accent	he:מבטא	hi:उच्चारण	ja:訛り	ko:억양	pt:sotaque	ru:акцент	tr:aksan	ur:لہجہ	zh:口音
 c:accordion	Noun	ar:أكورديون	de:Akkordeon,Ziehharmonika	en:accordion	es:acordeón	fa:آکاردئون	fr:accordéon	he:אקורדיון	hi:अकॉर्डियन	ja:アコーディオン	ko:아코디언	pt:acordeão	ru:аккордеон,гармонь	tr:akordeon	ur:اکارڈین	zh:手风琴
 c:account	Noun	ar:حساب	de:Konto	en:account	es:cuenta	fa:حساب	fr:compte	he:חשבון	hi:खाता,अकाउंट	ja:口座,アカウント	ko:계좌,계정	pt:conta	ru:счёт,аккаунт	tr:hesap	ur:کھاتہ,اکاؤنٹ	zh:账户,帐户
@@ -294,6 +296,7 @@ c:api-prog	Noun	ar:واجهة برمجة التطبيقات	de:API	en:API	es:API
 c:apologize	Verb	ar:اعتذر	de:entschuldigen,sich entschuldigen	en:apologize,apologise	es:disculparse	fa:عذرخواهی کردن	fr:s'excuser	he:להתנצל	hi:माफी मांगना	ja:謝る,謝罪する	ko:사과하다	pt:desculpar-se,pedir desculpa	ru:извиняться	tr:özür dilemek	ur:معافی مانگنا	zh:道歉
 c:apoptosis	Noun	ar:موت الخلية المبرمج	de:Apoptose	en:apoptosis	es:apoptosis	fa:آپوپتوز	fr:apoptose	he:אפופטוזיס	hi:अपोप्टोसिस	ja:アポトーシス	ko:세포자살	pt:apoptose	ru:апоптоз	tr:apoptoz	ur:سیل موت	zh:细胞凋亡
 c:apothecary	Noun	ar:صيدلاني,عشّاب	de:Apotheker,Kräuterhändler	en:apothecary	es:boticario	fa:داروگر,دواساز	fr:apothicaire	he:רוקח,פרמצבט	hi:औषधकार,वैद्य	ja:薬剤師,薬種商	ko:약종상,약제사	pt:boticário	ru:аптекарь	tr:eczacı,aktar	ur:دوا فروش,عطار	zh:药剂师,药铺掌柜
+c:app-store	Noun	ar:متجر التطبيقات	de:App Store	en:app store	es:tienda de aplicaciones	fa:فروشگاه برنامه	fr:boutique d'applications	he:חנות אפליקציות	hi:ऐप स्टोर	ja:アプリストア	ko:앱 스토어	pt:loja de aplicativos	ru:магазин приложений	tr:uygulama mağazası	ur:ایپ اسٹور	zh:应用商店
 c:appalachians	Noun	ar:جبال الأبلاش	de:Appalachen	en:Appalachians,Appalachian Mountains	es:Apalaches,montes Apalaches	fa:آپالاش,کوه‌های آپالاش	fr:Appalaches	he:הרי האפלצ'ים	hi:अप्पालाचियन पर्वत	ja:アパラチア山脈	ko:애팔래치아산맥	pt:Apalaches,montes Apalaches	ru:Аппалачи	tr:Apalaş Dağları	ur:اپلیچن پہاڑ	zh:阿巴拉契亚山脉
 c:appeal	Noun	ar:استئناف	de:Berufung,Einspruch	en:appeal	es:apelación,recurso	fa:تجدیدنظر,استیناف	fr:appel,recours	he:ערעור	hi:अपील	ja:上訴,控訴	ko:항소,상소	pt:apelação,recurso	ru:апелляция,обжалование	tr:temyiz,itiraz	ur:اپیل	zh:上诉,申诉
 c:appeal-law	Noun	ar:الاستئناف	de:Berufung	en:appeal	es:apelación	fa:تجدیدنظر	fr:appel	he:ערעור	hi:अपील	ja:控訴	ko:항소	pt:recurso	ru:апелляция	tr:temyiz	ur:اپیل	zh:上诉
@@ -414,6 +417,7 @@ c:audiobook	Noun	ar:كتاب صوتي	de:Hörbuch	en:audiobook	es:audiolibro	fa:
 c:audit	Noun	ar:مراجعة حسابات	de:Prüfung	en:audit	es:auditoría	fa:حسابرسی	fr:audit	he:ביקורת חשבונות	hi:ऑडिट	ja:監査	ko:감사	pt:auditoria	ru:аудит	tr:denetim	ur:آڈٹ	zh:审计
 c:auditorium	Noun	ar:قاعة المحاضرات,مدرج	de:Auditorium,Hörsaal	en:auditorium	es:auditorio	fa:تالار,سالن سخنرانی	fr:auditorium,salle de conférence	he:אודיטוריום	hi:सभागार	ja:講堂,ホール	ko:강당,대강당	pt:auditório	ru:аудитория,зал	tr:konferans salonu,oditoryum	ur:آڈیٹوریم,سبھاگار	zh:礼堂,观众厅
 c:augmented-reality	Noun	ar:الواقع المعزز	de:erweiterte Realität	en:augmented reality,AR	es:realidad aumentada	fa:واقعیت افزوده	fr:réalité augmentée	he:מציאות רבודה	hi:संवर्धित वास्तविकता	ja:拡張現実	ko:증강 현실	pt:realidade aumentada	ru:дополненная реальность	tr:artırılmış gerçeklik	ur:بڑھی ہوئی حقیقت	zh:增强现实
+c:augmented-reality-mobile	Noun	ar:الواقع المعزز	de:Augmented Reality	en:augmented reality	es:realidad aumentada	fa:واقعیت افزوده	fr:réalité augmentée	he:מציאות מוגברת	hi:संवर्धित वास्तविकता	ja:拡張現実	ko:증강 현실	pt:realidade aumentada	ru:дополненная реальность	tr:artırılmış gerçeklik	ur:بڑھی ہوئی حقیقت	zh:增强现实
 c:augury	Noun	ar:التفاؤل بالطيور	de:Vogelschau	en:augury	es:augurio	fa:فال پرندگان	fr:augure	he:ניחוש עופות	hi:शकुन	ja:卜占	ko:점괘	pt:aúspicio	ru:гадание по птицам	tr:kehanet	ur:فال	zh:占卜
 c:augustus	Noun	ar:أغسطس	de:Augustus	en:Augustus	es:Augusto	fa:آگوستوس	fr:Auguste	he:אוגוסטוס	hi:ऑगस्टस	ja:アウグストゥス	ko:아우구스투스	pt:Augusto	ru:Август	tr:Augustus	ur:آگستس	zh:奥古斯都
 c:auk	Noun	ar:طائر الالق	de:Alk	en:auk	es:alcidé	fa:اوک	fr:alcidé	he:אלק	hi:ऑक	ja:ウミスズメ	ko:오리새	pt:alca	ru:чистик	tr:alk	ur:اوک	zh:海雀
@@ -693,6 +697,7 @@ c:blue	Adjective	ar:أزرق	de:blau	en:blue	es:azul	fa:آبی	fr:bleu	he:כחו
 c:blue-carbon	Noun	ar:الكربون الأزرق	de:Blaukohlenstoff	en:blue carbon	es:carbono azul	fa:کربن آبی	fr:carbone bleu	he:פחמן כחול	hi:नीला कार्बन	ja:ブルーカーボン	ko:블루 카본	pt:carbono azul	ru:голубой углерод	tr:mavi karbon	ur:نیلا کاربن	zh:蓝碳
 c:blue-tongued-lizard	Noun	ar:ضبة اللسان الازرق	de:Blauzungenskink	en:blue-tongued lizard	es:lagarto de lengua azul	fa:مارمولک زبان آبی	fr:scinque à langue bleue	he:שממית לשון כחולה	hi:नीली जीभ छिपकली	ja:アオジタトカゲ	ko:파란혀도마뱀	pt:lagarto-de-língua-azul	ru:синеязычный сцинк	tr:mavi dilli kertenkele	ur:نیلی زبان چھپکلی	zh:蓝舌蜥
 c:bluetooth	Noun	ar:بلوتوث	de:Bluetooth	en:bluetooth	es:bluetooth	fa:بلوتوث	fr:bluetooth	he:בלוטות	hi:ब्लूटूथ	ja:ブルートゥース	ko:블루투스	pt:bluetooth	ru:блютуз,Bluetooth	tr:bluetooth	ur:بلوٹوتھ	zh:蓝牙
+c:bluetooth-tech	Noun	ar:بلوتوث	de:Bluetooth	en:Bluetooth	es:Bluetooth	fa:بلوتوث	fr:Bluetooth	he:בלוטות'	hi:ब्लूटूथ	ja:Bluetooth	ko:블루투스	pt:Bluetooth	ru:Bluetooth	tr:Bluetooth	ur:بلوٹوتھ	zh:蓝牙
 c:blunt	Adjective	ar:كليل	de:stumpf	en:blunt	es:romo,desafilado	fa:کند	fr:émoussé	he:קהה	hi:कुंद	ja:鈍い	ko:무딘,둔한	pt:rombo,cego	ru:тупой	tr:kör,küt	ur:کند	zh:钝
 c:bmp-signaling	Noun	ar:إشارة البروتين العظمي المورفوجيني	de:BMP-Signalweg	en:BMP signaling	es:señalización BMP	fa:سیگنالینگ BMP	fr:signalisation BMP	he:איתות BMP	hi:BMP संकेतन	ja:BMPシグナル	ko:BMP 신호	pt:sinalização BMP	ru:сигнальный путь BMP	tr:BMP sinyali	ur:BMP اشارہ	zh:BMP信号
 c:boa	Noun	ar:ثعبان البواء	de:Boa	en:boa	es:boa	fa:بوا	fr:boa	he:בואה	hi:बोआ	ja:ボア	ko:보아뱀	pt:jiboia	ru:боа	tr:boa yılanı	ur:بوا	zh:蚺蛇
@@ -1633,6 +1638,7 @@ c:dark-age-cosmos	Noun	ar:العصور الكونية المظلمة	de:kosmisch
 c:dark-energy	Noun	ar:الطاقة المظلمة	de:Dunkle Energie	en:dark energy	es:energía oscura	fa:انرژی تاریک	fr:énergie sombre	he:אנרגיה אפלה	hi:श्याम ऊर्जा	ja:暗黒エネルギー	ko:암흑 에너지	pt:energia escura	ru:тёмная энергия	tr:karanlık enerji	ur:تاریک توانائی	zh:暗能量
 c:dark-matter	Noun	ar:مادة مظلمة	de:dunkle Materie	en:dark matter	es:materia oscura	fa:ماده تاریک	fr:matière noire	he:חומר אפל	hi:डार्क मैटर,अदृश्य पदार्थ	ja:暗黒物質	ko:암흑 물질	pt:matéria escura	ru:тёмная материя	tr:karanlık madde	ur:تاریک مادہ	zh:暗物质
 c:dark-matter-halo	Noun	ar:هالة المادة المظلمة	de:dunkle Materiehülle	en:dark matter halo	es:halo de materia oscura	fa:هاله ماده تاریک	fr:halo de matière noire	he:הילת חומר אפל	hi:डार्क मैटर हेलो	ja:ダークマターハロー	ko:암흑 물질 헤일로	pt:halo de matéria escura	ru:гало тёмной материи	tr:karanlık madde halesi	ur:سیاہ مادہ ہالہ	zh:暗物质晕
+c:dark-mode	Noun	ar:الوضع الداكن	de:Dunkelmodus	en:dark mode	es:modo oscuro	fa:حالت تاریک	fr:mode sombre	he:מצב כהה	hi:डार्क मोड	ja:ダークモード	ko:다크 모드	pt:modo escuro	ru:тёмный режим	tr:koyu mod	ur:ڈارک موڈ	zh:深色模式
 c:darkroom	Noun	ar:غرفة مظلمة	de:Dunkelkammer	en:darkroom	es:cuarto oscuro	fa:اتاق تاریک	fr:chambre noire	he:חדר חושך	hi:डार्करूम	ja:暗室	ko:암실	pt:câmara escura	ru:тёмная комната	tr:karanlık oda	ur:اندھیرا کمرہ	zh:暗室
 c:dart	Verb	ar:انطلق كالسهم	de:flitzen,pfeilen	en:dart	es:lanzarse raudo	fa:تیر وار رفتن,بیرون جهیدن	fr:s'élancer comme une flèche	he:לזנק כחץ	hi:झपटना	ja:さっと動く	ko:쏜살같이 움직이다	pt:disparar rápido	ru:метнуться	tr:ok gibi fırlamak	ur:تیر کی طرح بھاگنا	zh:急奔,飞驰
 c:darwin	Noun	ar:داروين,تشارلز داروين	de:Darwin,Charles Darwin	en:Darwin,Charles Darwin	es:Darwin	fa:داروین,چارلز داروین	fr:Darwin	he:דרווין	hi:डार्विन	ja:ダーウィン	ko:다윈	pt:Darwin	ru:Дарвин	tr:Darwin	ur:ڈارون	zh:达尔文
@@ -1948,6 +1954,7 @@ c:dynasty	Noun	ar:سلالة,أسرة حاكمة	de:Dynastie	en:dynasty	es:dinas
 c:eagle	Noun	ar:نسر,عقاب	de:Adler	en:eagle	es:águila	fa:عقاب	fr:aigle	he:נשר	hi:बाज़,चील	ja:鷲,ワシ	ko:독수리	pt:águia	ru:орёл	tr:kartal	ur:عقاب	zh:鹰
 c:ear	Noun	ar:أذن	de:Ohr	en:ear,ears	es:oreja,oído	fa:گوش	fr:oreille	he:אוזן	hi:कान	ja:耳	ko:귀	pt:orelha,ouvido	ru:ухо	tr:kulak	ur:کان	zh:耳,耳朵
 c:ear-cuff	Noun	ar:كليب الأذن	de:Ohrmanschette,Ear Cuff	en:ear cuff,ear clip	es:clip de oreja	fa:کلیپ گوش	fr:manchette d'oreille	he:אטב אוזן	hi:कान कफ	ja:イヤーカフ	ko:이어 커프	pt:clip de orelha	ru:кафф	tr:kulak klibi	ur:کان کلپ	zh:耳骨夹,耳扣
+c:earbuds	Noun	ar:سماعات أذن صغيرة	de:Ohrhörer	en:earbuds	es:auriculares inalámbricos	fa:ایربادز	fr:oreillettes	he:אוזניות קטנות	hi:ईयरबड्स	ja:イヤフォン	ko:이어버드	pt:fones intrauriculares	ru:беспроводные наушники	tr:kulak içi kulaklık	ur:کان میں لگانے والی سماعت	zh:耳塞
 c:eardrum	Noun	ar:طبلة الاذن	de:Trommelfell	en:eardrum	es:tímpano	fa:پرده گوش	fr:tympan	he:עור הטמפן	hi:कर्णपट	ja:鼓膜	ko:고막	pt:tímpano	ru:барабанная перепонка	tr:kulak zarı	ur:کان کا پردہ	zh:鼓膜
 c:earn	Verb	ar:كسب,ربح	de:verdienen	en:earn	es:ganar	fa:کسب کرد,درآورد	fr:gagner	he:הרוויח,להרוויח	hi:कमाना	ja:稼ぐ,儲ける	ko:벌다	pt:ganhar	ru:зарабатывать,заработать	tr:kazanmak	ur:کمانا	zh:赚,挣
 c:earring	Noun	ar:قرط,حلق	de:Ohrring	en:earring	es:pendiente,arete	fa:گوشواره	fr:boucle d'oreille	he:עגיל	hi:कान की बाली,झुमका	ja:イヤリング	ko:귀걸이	pt:brinco	ru:серьга	tr:küpe	ur:بالی	zh:耳环
@@ -2134,6 +2141,7 @@ c:erhu	Noun	ar:إرهو	de:Erhu	en:erhu	es:erhu	fa:ارهو	fr:erhu	he:ארהו	
 c:eris	Noun	ar:إيريس	de:Eris	en:Eris	es:Eris	fa:اریس	fr:Éris	he:אריס	hi:एरिस	ja:エリス	ko:에리스	pt:Éris	ru:Эрида	tr:Eris	ur:ایرس	zh:阋神星
 c:eruption	Noun	ar:ثوران,ثوران بركاني	de:Ausbruch,Eruption	en:eruption	es:erupción	fa:فوران,فوران آتشفشان	fr:éruption	he:התפרצות	hi:विस्फोट,ज्वालामुखी विस्फोट	ja:噴火	ko:분화,폭발	pt:erupção	ru:извержение	tr:patlama,volkanik patlama	ur:پھٹنا,آتش فشانی	zh:喷发,爆发
 c:eschatology	Noun	ar:علم الآخرة	de:Eschatologie	en:eschatology	es:escatología	fa:آخرت‌شناسی	fr:eschatologie	he:אסכטולוגיה	hi:अंतिम समय का धर्मशास्त्र	ja:終末論	ko:종말론	pt:escatologia	ru:эсхатология	tr:eskatoloji	ur:علم الآخرت	zh:末世论
+c:esim	Noun	ar:شريحة eSIM	de:eSIM	en:eSIM	es:eSIM	fa:eSIM	fr:eSIM	he:eSIM	hi:ईसिम	ja:eSIM	ko:eSIM	pt:eSIM	ru:eSIM	tr:eSIM	ur:ای سم	zh:电子SIM卡
 c:esophagus	Noun	ar:المريء	de:Speiseröhre	en:esophagus	es:esófago	fa:مری	fr:œsophage	he:וושט	hi:ग्रासनली	ja:食道	ko:식도	pt:esôfago	ru:пищевод	tr:yemek borusu	ur:بھوجن نالی	zh:食道
 c:espresso	Noun	ar:إسبريسو,قهوة مركزة	de:Espresso	en:espresso	es:espresso,exprés	fa:اسپرسو	fr:espresso,expresso	he:אספרסו	hi:एस्प्रेसो	ja:エスプレッソ	ko:에스프레소	pt:expresso,espresso	ru:эспрессо	tr:espresso	ur:ایسپریسو	zh:浓缩咖啡,意式浓缩
 c:essence	Noun	ar:جوهر,ماهية	de:Wesen,Essenz	en:essence	es:esencia	fa:جوهر,ذات	fr:essence	he:מהות	hi:सार,तत्त्व	ja:本質	ko:본질	pt:essência	ru:сущность	tr:öz,cevher	ur:جوہر,ماہیت	zh:本质
@@ -2216,6 +2224,7 @@ c:fable	Noun	ar:حكاية رمزية,خرافة	de:Fabel	en:fable	es:fábula	fa
 c:fabula	Noun	ar:الحبكة الأصلية	de:Fabel	en:fabula	es:fábula	fa:فابولا	fr:fabula	he:פאבולה	hi:फाबुला	ja:ファビュラ	ko:파뷸라	pt:fábula	ru:фабула	tr:fabula	ur:اصل کہانی	zh:故事本事
 c:facade	Noun	ar:واجهة	de:Fassade	en:facade	es:fachada	fa:نما,نمای ساختمان	fr:façade	he:חזית	hi:अग्रभाग,मुखौटा	ja:ファサード,正面	ko:파사드,정면	pt:fachada	ru:фасад	tr:cephe	ur:بیرونی منظر,پیش منظر	zh:立面,正面
 c:face	Noun	ar:وجه	de:Gesicht	en:face	es:cara,rostro	fa:چهره,صورت	fr:visage,figure	he:פנים	hi:चेहरा,मुख	ja:顔	ko:얼굴	pt:rosto,cara	ru:лицо	tr:yüz,surat	ur:چہرہ	zh:脸,面
+c:face-recognition	Noun	ar:التعرف على الوجه	de:Gesichtserkennung	en:face recognition	es:reconocimiento facial	fa:تشخیص چهره	fr:reconnaissance faciale	he:זיהוי פנים	hi:चेहरा पहचान	ja:顔認証	ko:얼굴 인식	pt:reconhecimento facial	ru:распознавание лиц	tr:yüz tanıma	ur:چہرہ پہچان	zh:面部识别
 c:factorial	Noun	ar:مضروب	de:Fakultät	en:factorial	es:factorial	fa:فاکتوریل	fr:factorielle	he:עצרת	hi:क्रमगुणित	ja:階乗	ko:팩토리얼	pt:fatorial	ru:факториал	tr:faktöriyel	ur:ضربی	zh:阶乘
 c:factory	Noun	ar:مصنع	de:Fabrik	en:factory	es:fábrica	fa:کارخانه	fr:usine,fabrique	he:מפעל,בית חרושת	hi:कारख़ाना,फ़ैक्ट्री	ja:工場	ko:공장	pt:fábrica	ru:фабрика,завод	tr:fabrika	ur:کارخانہ,فیکٹری	zh:工厂
 c:factory-plant	Noun	ar:مصنع	de:Fabrik	en:factory	es:fábrica	fa:کارخانه	fr:usine	he:מפעל	hi:कारखाना	ja:工場	ko:공장	pt:fábrica	ru:завод	tr:fabrika	ur:کارخانہ	zh:工厂
@@ -2328,6 +2337,7 @@ c:fine	Noun	ar:غرامة	de:Geldstrafe,Bußgeld	en:fine	es:multa	fa:جریمه	
 c:finger	Noun	ar:إصبع	de:Finger	en:finger	es:dedo	fa:انگشت	fr:doigt	he:אצבע	hi:उँगली	ja:指	ko:손가락	pt:dedo	ru:палец	tr:parmak	ur:انگلی	zh:手指
 c:finger-paints	Noun	ar:ألوان الإصبع	de:Fingerfarben	en:finger paints	es:pinturas de dedos	fa:رنگ انگشتی	fr:peintures au doigt	he:צבעי אצבעות	hi:फिंगर पेंट्स	ja:フィンガーペイント	ko:핑거 페인트	pt:tintas de dedo	ru:пальчиковые краски	tr:parmak boyası	ur:انگلی کے رنگ	zh:手指颜料
 c:finger-ring	Noun	ar:خاتم,دبلة	de:Fingerring,Ring	en:finger ring,ring	es:anillo,sortija	fa:انگشتر	fr:bague,anneau	he:טבעת	hi:अंगूठी	ja:指輪	ko:반지	pt:anel	ru:кольцо,перстень	tr:yüzük	ur:انگوٹھی	zh:戒指,指环
+c:fingerprint-sensor	Noun	ar:مستشعر البصمة	de:Fingerabdrucksensor	en:fingerprint sensor	es:sensor de huella dactilar	fa:حسگر اثر انگشت	fr:capteur d'empreinte digitale	he:חיישן טביעת אצבע	hi:फिंगरप्रिंट सेंसर	ja:指紋センサー	ko:지문 센서	pt:sensor de impressão digital	ru:сканер отпечатков пальцев	tr:parmak izi sensörü	ur:فنگر پرنٹ سنسر	zh:指纹传感器
 c:finial	Noun	ar:الزينة الذروية	de:Fiale	en:finial	es:pináculo	fa:تزئین بالایی	fr:fleuron	he:פינייל	hi:शिखर सजावट	ja:フィニアル	ko:꼭대기 장식	pt:pináculo	ru:финиаль	tr:tepe bezemesi	ur:چوٹی کی زینت	zh:尖顶饰
 c:fire	Noun	ar:نار	de:Feuer	en:fire	es:fuego	fa:آتش	fr:feu	he:אש	hi:आग	ja:火	ko:불	pt:fogo	ru:огонь	tr:ateş	ur:آگ	zh:火
 c:fire-salamander	Noun	ar:سمندل النار	de:Feuersalamander	en:fire salamander	es:salamandra común	fa:سمندر آتش	fr:salamandre tachetée	he:סלמנדרת אש	hi:अग्नि सैलामैंडर	ja:ファイアサラマンダー	ko:불도롱뇽	pt:salamandra-de-fogo	ru:огненная саламандра	tr:ateş semenderi	ur:آگ کا سمندر	zh:火蝾螈
@@ -2344,6 +2354,7 @@ c:fisherman	Noun	ar:صياد,صياد سمك	de:Fischer,Fischerin	en:fisherman	e
 c:fisheye	Noun	ar:عدسة عين السمكة	de:Fischaugenobjektiv	en:fisheye	es:ojo de pez	fa:چشم ماهی	fr:fisheye	he:עדשת עין הדג	hi:फिशआई	ja:魚眼	ko:어안	pt:olho de peixe	ru:рыбий глаз	tr:balık gözü	ur:مچھلی آنکھ	zh:鱼眼
 c:fission	Noun	ar:انشطار	de:Kernspaltung	en:nuclear fission	es:fisión nuclear	fa:شکافت هسته‌ای	fr:fission nucléaire	he:ביקוע גרעיני	hi:नाभिकीय विखंडन	ja:核分裂	ko:핵분열	pt:fissão nuclear	ru:ядерное деление	tr:nükleer fisyon	ur:جوہری انشقاق	zh:核裂变
 c:fitness-center	Noun	ar:مركز لياقة	de:Fitnessstudio	en:fitness center	es:gimnasio	fa:مرکز تناسب اندام	fr:salle de sport	he:מרכז כושר	hi:फिटनेस सेंटर	ja:フィットネスセンター	ko:피트니스 센터	pt:academia	ru:фитнес-центр	tr:spor salonu	ur:فٹنس سنٹر	zh:健身中心
+c:fitness-tracker	Noun	ar:متتبع اللياقة	de:Fitnesstracker	en:fitness tracker	es:pulsera de actividad	fa:دستبند سلامت	fr:bracelet de fitness	he:רצועת כושר	hi:फिटनेस ट्रैकर	ja:フィットネストラッカー	ko:피트니스 트래커	pt:monitor de atividade	ru:фитнес-браслет	tr:aktivite takipçisi	ur:فٹنس ٹریکر	zh:健康追踪器
 c:five	Noun	ar:خمسة	de:fünf	en:five	es:cinco	fa:پنج	fr:cinq	he:חמישה	hi:पांच	ja:五,ご	ko:다섯,오	pt:cinco	ru:пять	tr:beş	ur:پانچ	zh:五
 c:fixation	Noun	ar:التثبيت	de:Fixierung	en:fixation	es:fijación	fa:تثبیت	fr:fixation	he:קיבעון	hi:स्थिरीकरण	ja:固着	ko:고착	pt:fixação	ru:фиксация	tr:takıntı	ur:تثبیت	zh:固着
 c:fjord	Noun	ar:مضيق	de:Fjord	en:fjord	es:fiordo	fa:فیورد	fr:fjord	he:פיורד	hi:फियोर्ड	ja:フィヨルド	ko:피오르	pt:fiorde	ru:фьорд	tr:fiyort	ur:فیورڈ	zh:峡湾
@@ -2401,6 +2412,7 @@ c:focus	Noun	ar:تركيز	de:Fokus	en:focus	es:enfoque	fa:فوکوس	fr:mise au
 c:foehn	Noun	ar:رياح فون	de:Föhn	en:foehn	es:föhn	fa:فون	fr:foehn	he:פון	hi:फ़ोन पवन	ja:フェーン	ko:푄	pt:föhn	ru:фён	tr:fön	ur:فون	zh:焚风
 c:fog	Noun	ar:ضباب	de:Nebel	en:fog,mist	es:niebla,neblina	fa:مه	fr:brouillard,brume	he:ערפל	hi:कोहरा,धुंध	ja:霧	ko:안개	pt:nevoeiro,neblina	ru:туман	tr:sis,pus	ur:دھند,کہر	zh:雾
 c:fog-atm	Noun	ar:الضباب الجوي	de:Nebel	en:fog	es:niebla	fa:مه	fr:brouillard	he:ערפל	hi:कोहरा	ja:霧	ko:안개	pt:nevoeiro	ru:туман	tr:sis	ur:دھند	zh:雾
+c:foldable-phone	Noun	ar:هاتف قابل للطي	de:Falt-Smartphone	en:foldable phone	es:teléfono plegable	fa:گوشی تاشو	fr:téléphone pliant	he:טלפון מתקפל	hi:फोल्डेबल फोन	ja:折りたたみスマホ	ko:폴더블 폰	pt:celular dobrável	ru:складной смартфон	tr:katlanabilir telefon	ur:فولڈ ایبل فون	zh:折叠屏手机
 c:folder	Noun	ar:مجلد	de:Ordner	en:folder	es:carpeta	fa:پوشه	fr:dossier	he:תיקייה	hi:फ़ोल्डर	ja:フォルダ,フォルダー	ko:폴더	pt:pasta	ru:папка	tr:klasör	ur:فولڈر	zh:文件夹
 c:folk	Noun	ar:شعب,قوم	de:Volk	en:folk,folk-people	es:pueblo,gente común	fa:مردم,قوم	fr:peuple,gens du peuple	he:עם,פולק	hi:लोक,जनसाधारण	ja:民衆,フォーク	ko:민중,포크	pt:povo,gente	ru:народ	tr:halk	ur:عوام,قوم	zh:民众,民俗
 c:folk-dance	Noun	ar:رقصة شعبية,رقص شعبي	de:Volkstanz	en:folk dance,folk-dance	es:danza folclórica,baile folclórico	fa:رقص فولکلور,رقص محلی	fr:danse folklorique	he:ריקוד עם	hi:लोक नृत्य	ja:民族舞踊,フォークダンス	ko:민속 무용	pt:dança folclórica	ru:народный танец	tr:halk dansı,folklor	ur:لوک رقص	zh:民间舞,民族舞
@@ -2761,6 +2773,7 @@ c:guzheng	Noun	ar:غوزنغ,قيثارة صينية	de:Guzheng,chinesische Zith
 c:gym	Noun	ar:صالة رياضية	de:Turnhalle,Fitnessstudio	en:gym,gymnasium	es:gimnasio	fa:باشگاه ورزشی	fr:gymnase,salle de sport	he:אולם ספורט,חדר כושר	hi:जिम,व्यायामशाला	ja:体育館,ジム	ko:체육관,헬스장	pt:ginásio,academia	ru:спортзал,зал	tr:spor salonu,jimnastikhane	ur:جم,ورزش گاہ	zh:健身房,体育馆
 c:gymnastics	Noun	ar:الجمباز	de:Turnen	en:gymnastics	es:gimnasia	fa:ژیمناستیک	fr:gymnastique	he:התעמלות	hi:जिमनास्टिक	ja:体操	ko:체조	pt:ginástica	ru:гимнастика	tr:jimnastik	ur:جمناسٹک	zh:体操
 c:gypsum-mineral	Noun	ar:جبس	de:Gips	en:gypsum	es:yeso	fa:گچ	fr:gypse	he:גבס	hi:जिप्सम	ja:石膏	ko:석고	pt:gesso	ru:гипс	tr:alçı taşı	ur:جپسم	zh:石膏
+c:gyroscope-phone	Noun	ar:مستشعر الدوران	de:Gyroskop	en:gyroscope	es:giroscopio	fa:ژیروسکوپ	fr:gyroscope	he:ג'ירוסקופ	hi:जायरोस्कोप	ja:ジャイロスコープ	ko:자이로스코프	pt:giroscópio	ru:гироскоп	tr:jiroskop	ur:جائروسکوپ	zh:陀螺仪
 c:habeas-corpus	Noun	ar:مثول أمام القضاء	de:Habeas Corpus	en:habeas corpus	es:habeas corpus	fa:احضار متهم	fr:habeas corpus	he:כתב הגעה	hi:बंदी प्रत्यक्षीकरण	ja:人身保護令状	ko:인신보호 영장	pt:habeas corpus	ru:хабеас корпус	tr:habeas corpus	ur:حاضری حق	zh:人身保护令
 c:habit	Noun	ar:عادة	de:Gewohnheit	en:habit	es:hábito,costumbre	fa:عادت	fr:habitude	he:הרגל	hi:आदत	ja:習慣,癖	ko:습관,버릇	pt:hábito,costume	ru:привычка	tr:alışkanlık,itiyat	ur:عادت	zh:习惯
 c:habitat	Noun	ar:موطن,مسكن	de:Habitat,Lebensraum	en:habitat	es:hábitat	fa:زیستگاه	fr:habitat	he:בית גידול	hi:आवास,पर्यावास	ja:生息地	ko:서식지	pt:habitat	ru:среда обитания,ареал	tr:yaşam alanı,habitat	ur:مسکن	zh:栖息地
@@ -3458,6 +3471,7 @@ c:lapel-pin	Noun	ar:دبوس الطية	de:Anstecknadel	en:lapel pin,pin badge	e
 c:lapis-lazuli-gem	Noun	ar:لازورد	de:Lapislazuli	en:lapis lazuli	es:lapislázuli	fa:لاجورد	fr:lapis-lazuli	he:לפיס לזולי	hi:लैपिस लाजुली	ja:ラピスラズリ	ko:라피스 라줄리	pt:lápis-lazúli	ru:лазурит	tr:lacivert taşı	ur:لاجورد	zh:青金石
 c:lapse-rate	Noun	ar:معدل التبدل الحراري	de:Temperaturgradient	en:lapse rate	es:gradiente adiabático	fa:نرخ کاهش دما	fr:gradient thermique	he:שיפוע טמפרטורה	hi:ह्रास दर	ja:気温減率	ko:기온감률	pt:gradiente térmico vertical	ru:вертикальный градиент температуры	tr:sıcaklık düşüş oranı	ur:درجہ حرارت کمی شرح	zh:温度递减率
 c:laptop	Noun	ar:حاسوب محمول,لابتوب	de:Laptop,Notebook	en:laptop,notebook	es:portátil,laptop	fa:لپ‌تاپ	fr:ordinateur portable,portable	he:מחשב נייד,לפטופ	hi:लैपटॉप	ja:ノートパソコン,ラップトップ	ko:노트북	pt:laptop,portátil	ru:ноутбук,лэптоп	tr:dizüstü bilgisayar,laptop	ur:لیپ ٹاپ	zh:笔记本电脑,笔记本
+c:laptop-device	Noun	ar:حاسوب محمول	de:Laptop	en:laptop	es:portátil	fa:لپ‌تاپ	fr:ordinateur portable	he:מחשב נייד	hi:लैपटॉप	ja:ノートパソコン	ko:노트북	pt:laptop	ru:ноутбук	tr:dizüstü bilgisayar	ur:لیپ ٹاپ	zh:笔记本电脑
 c:lapwing	Noun	ar:طيطوى	de:Kiebitz	en:lapwing	es:avefría	fa:آتشک	fr:vanneau	he:טוטוי	hi:टिटिहरी	ja:タゲリ	ko:댕기물떼새	pt:abibe	ru:чибис	tr:kızkuşu	ur:ٹٹیہری	zh:凤头麦鸡
 c:larceny	Noun	ar:سرقة	de:Diebstahl	en:larceny	es:latrocinio	fa:دزدی	fr:vol	he:גניבה	hi:चोरी का अपराध	ja:窃盗	ko:절도	pt:latrocínio	ru:кража	tr:hırsızlık	ur:چوری	zh:盗窃罪
 c:large-scale-structure	Noun	ar:البنية الكونية الكبرى	de:Großraumstruktur	en:large-scale structure	es:estructura a gran escala	fa:ساختار بزرگ‌مقیاس	fr:grande structure de l'univers	he:מבנה בקנה מידה גדול	hi:वृहत-पैमाने की संरचना	ja:大規模構造	ko:대규모 구조	pt:estrutura de grande escala	ru:крупномасштабная структура	tr:büyük ölçekli yapı	ur:بڑے پیمانے کی ساخت	zh:大尺度结构
@@ -3936,6 +3950,10 @@ c:mixed-use	Noun	ar:الاستخدام المختلط	de:Mischnutzung	en:mixed-u
 c:mixture	Noun	ar:خليط,مزيج	de:Mischung,Gemisch	en:mixture	es:mezcla	fa:مخلوط	fr:mélange	he:תערובת	hi:मिश्रण	ja:混合物	ko:혼합물	pt:mistura	ru:смесь	tr:karışım	ur:ملاوٹ,مکسچر	zh:混合物
 c:moat	Noun	ar:الخندق المائي	de:Burggraben	en:moat	es:foso	fa:خندق آبی	fr:douves	he:חפיר	hi:खाई	ja:堀	ko:해자	pt:fosso	ru:ров	tr:hendek	ur:خندق	zh:护城河
 c:mobile	Noun	ar:جوال,محمول,موبايل	de:Handy,Mobiltelefon	en:mobile,cell phone,cellphone,cell	es:móvil,celular	fa:موبایل,تلفن همراه	fr:mobile,portable	he:נייד,סלולרי	hi:मोबाइल,सेलफ़ोन	ja:携帯電話,ケータイ	ko:휴대폰,핸드폰	pt:celular,telemóvel	ru:мобильный,сотовый	tr:cep telefonu,mobil	ur:موبائل	zh:手机
+c:mobile-app	Noun	ar:تطبيق هاتف	de:Mobile App	en:mobile app	es:aplicación móvil	fa:اپلیکیشن موبایل	fr:application mobile	he:אפליקציה	hi:मोबाइल ऐप	ja:モバイルアプリ	ko:모바일 앱	pt:aplicativo móvel	ru:мобильное приложение	tr:mobil uygulama	ur:موبائل ایپ	zh:手机应用
+c:mobile-gps	Noun	ar:تحديد الموقع	de:GPS	en:GPS	es:GPS	fa:سامانه موقعیت‌یابی	fr:GPS	he:GPS	hi:जीपीएस	ja:GPS	ko:GPS	pt:GPS	ru:GPS	tr:GPS	ur:جی پی ایس	zh:全球定位系统
+c:mobile-hotspot	Noun	ar:نقطة اتصال محمولة	de:mobiler Hotspot	en:mobile hotspot	es:punto de acceso móvil	fa:هات‌اسپات موبایل	fr:point d'accès mobile	he:נקודת חם ניידת	hi:मोबाइल हॉटस्पॉट	ja:モバイルホットスポット	ko:모바일 핫스팟	pt:ponto de acesso móvel	ru:мобильная точка доступа	tr:mobil erişim noktası	ur:موبائل ہاٹ اسپاٹ	zh:移动热点
+c:mobile-operating-system	Noun	ar:نظام تشغيل محمول	de:mobiles Betriebssystem	en:mobile operating system	es:sistema operativo móvil	fa:سیستم‌عامل موبایل	fr:système d'exploitation mobile	he:מערכת הפעלה ניידת	hi:मोबाइल ऑपरेटिंग सिस्टम	ja:モバイルOS	ko:모바일 운영 체제	pt:sistema operacional móvel	ru:мобильная ОС	tr:mobil işletim sistemi	ur:موبائل آپریٹنگ سسٹم	zh:移动操作系统
 c:mobility	Noun	ar:حراك اجتماعي	de:soziale Mobilität	en:social mobility	es:movilidad social	fa:تحرک اجتماعی	fr:mobilité sociale	he:ניידות חברתית	hi:सामाजिक गतिशीलता	ja:社会的移動	ko:사회 이동	pt:mobilidade social	ru:социальная мобильность	tr:sosyal hareketlilik	ur:سماجی نقل و حرکت	zh:社会流动
 c:mobius-strip	Noun	ar:شريط موبيوس	de:Möbiusband	en:Möbius strip	es:cinta de Möbius	fa:نوار موبیوس	fr:ruban de Möbius	he:רצועת מביוס	hi:मोबियस पट्टी	ja:メビウスの輪	ko:뫼비우스 띠	pt:fita de Möbius	ru:лист Мёбиуса	tr:Möbius şeridi	ur:موبیئس پٹی	zh:莫比乌斯带
 c:modal-logic	Noun	ar:المنطق الرياضي	de:Modallogik	en:modal logic	es:lógica modal	fa:منطق وجهی	fr:logique modale	he:לוגיקה מודלית	hi:रूपात्मक तर्क	ja:様相論理	ko:양상논리	pt:lógica modal	ru:модальная логика	tr:kipsel mantık	ur:مودل منطق	zh:模态逻辑
@@ -4198,6 +4216,7 @@ c:newt	Noun	ar:عقيق مائي,نيوت	de:Molch	en:newt	es:tritón	fa:نوت	
 c:newton	Noun	ar:نيوتن	de:Newton	en:newton	es:newton	fa:نیوتن	fr:newton	he:ניוטון	hi:न्यूटन	ja:ニュートン	ko:뉴턴	pt:newton	ru:ньютон	tr:newton	ur:نیوٹن	zh:牛顿,牛
 c:newton-person	Noun	ar:إسحاق نيوتن,نيوتن	de:Isaac Newton,Newton	en:Isaac Newton,Newton	es:Isaac Newton,Newton	fa:اسحاق نیوتن,نیوتن	fr:Isaac Newton,Newton	he:אייזק ניוטון	hi:आइज़ैक न्यूटन,न्यूटन	ja:アイザック・ニュートン,ニュートン	ko:아이작 뉴턴,뉴턴	pt:Isaac Newton,Newton	ru:Исаак Ньютон,Ньютон	tr:Isaac Newton,Newton	ur:آئزک نیوٹن,نیوٹن	zh:艾萨克·牛顿,牛顿
 c:ney	Noun	ar:ناي	de:Ney,Rohrflöte	en:ney	es:ney	fa:نی	fr:ney	he:ניי	hi:नय,नेय	ja:ネイ	ko:네이	pt:ney	ru:най	tr:ney	ur:نَے,نئے	zh:奈伊笛
+c:nfc-tech	Noun	ar:الاتصال قريب المدى	de:NFC	en:NFC	es:NFC	fa:ارتباط میدان نزدیک	fr:NFC	he:NFC	hi:एनएफसी	ja:NFC	ko:NFC	pt:NFC	ru:NFC	tr:NFC	ur:این ایف سی	zh:近场通信
 c:niche	Noun	ar:المكانة البيئية	de:ökologische Nische	en:niche	es:nicho ecológico	fa:جایگاه اکولوژیک	fr:niche écologique	he:נישה אקולוגית	hi:पारिस्थितिक स्थान	ja:生態的地位	ko:생태적 지위	pt:nicho ecológico	ru:экологическая ниша	tr:ekolojik niş	ur:ماحولیاتی مقام	zh:生态位
 c:nichrome-alloy	Noun	ar:نيكروم	de:Nickelchrom	en:nichrome	es:nicromo	fa:نیکروم	fr:nichrome	he:ניקרום	hi:नाइक्रोम	ja:ニクロム	ko:니크롬	pt:nicromo	ru:нихром	tr:nikrom	ur:نائیکروم	zh:镍铬合金
 c:nickel	Noun	ar:نيكل	de:Nickel	en:nickel	es:níquel	fa:نیکل	fr:nickel	he:ניקל	hi:निकेल	ja:ニッケル	ko:니켈	pt:níquel	ru:никель	tr:nikel	ur:نکل	zh:镍
@@ -4245,6 +4264,7 @@ c:notary	Noun	ar:كاتب عدل	de:Notar	en:notary	es:notario	fa:سردفتر	f
 c:notch-signaling	Noun	ar:إشارة نوتش	de:Notch-Signalweg	en:Notch signaling	es:señalización Notch	fa:سیگنالینگ ناچ	fr:signalisation Notch	he:איתות נוטש	hi:नॉच संकेतन	ja:Notchシグナル	ko:노치 신호	pt:sinalização Notch	ru:сигнальный путь Notch	tr:Notch sinyali	ur:ناچ اشارہ	zh:Notch信号
 c:note	Noun	ar:ملاحظة,مذكرة	de:Notiz	en:note,notes	es:nota,apunte	fa:یادداشت	fr:note	he:הערה,פתק	hi:टिप्पणी,नोट	ja:メモ,ノート	ko:메모,노트	pt:nota,apontamento	ru:заметка,запись	tr:not	ur:نوٹ	zh:笔记
 c:notebook	Noun	ar:دفتر,كراسة	de:Notizbuch,Heft	en:notebook	es:cuaderno,libreta	fa:دفترچه,دفتر	fr:cahier,carnet	he:מחברת	hi:नोटबुक,कॉपी	ja:ノート	ko:공책,노트	pt:caderno	ru:тетрадь,блокнот	tr:defter	ur:کاپی,نوٹ بک	zh:笔记本
+c:notification	Noun	ar:إشعار	de:Benachrichtigung	en:notification	es:notificación	fa:اعلان	fr:notification	he:התראה	hi:सूचना	ja:通知	ko:알림	pt:notificação	ru:уведомление	tr:bildirim	ur:اطلاع	zh:通知
 c:notion	Noun	ar:فكرة,تصور	de:Vorstellung,Idee	en:notion	es:noción	fa:تصور,مفهوم	fr:notion,idée	he:רעיון,מושג	hi:धारणा,विचार	ja:観念,考え	ko:관념,생각	pt:noção	ru:представление,понятие	tr:kavrayış,fikir	ur:خیال,تصور	zh:观念,概念
 c:noun	Noun	ar:اسم	de:Substantiv,Nomen,Hauptwort	en:noun	es:sustantivo,nombre	fa:اسم	fr:nom,substantif	he:שם עצם	hi:संज्ञा	ja:名詞	ko:명사	pt:substantivo	ru:существительное	tr:isim,ad	ur:اسم	zh:名词
 c:novel	Noun	ar:رواية	de:Roman	en:novel	es:novela	fa:رمان	fr:roman	he:רומן	hi:उपन्यास	ja:小説	ko:소설	pt:romance	ru:роман	tr:roman	ur:ناول	zh:小说
@@ -4650,6 +4670,12 @@ c:phobia	Noun	ar:رهاب,خوف مرضي	de:Phobie	en:phobia	es:fobia	fa:فوب
 c:phobos	Noun	ar:فوبوس	de:Phobos	en:Phobos	es:Fobos	fa:فوبوس	fr:Phobos	he:פובוס	hi:फोबोस	ja:フォボス	ko:포보스	pt:Fobos	ru:Фобос	tr:Phobos	ur:فوبوس	zh:火卫一
 c:phoenix	Noun	ar:العنقاء	de:Phönix	en:phoenix	es:fénix	fa:ققنوس	fr:phénix	he:עוף החול	hi:फ़ीनिक्स	ja:フェニックス	ko:불사조	pt:fênix	ru:феникс	tr:anka	ur:ققنس	zh:凤凰
 c:phone	Noun	ar:هاتف,تلفون	de:Telefon	en:phone,telephone	es:teléfono	fa:تلفن	fr:téléphone	he:טלפון	hi:फोन,टेलीफोन	ja:電話	ko:전화	pt:telefone	ru:телефон	tr:telefon	ur:فون,ٹیلیفون	zh:电话
+c:phone-battery	Noun	ar:بطارية الهاتف	de:Akkupack	en:phone battery	es:batería del teléfono	fa:باتری موبایل	fr:batterie de téléphone	he:סוללת טלפון	hi:फोन बैटरी	ja:スマホバッテリー	ko:휴대폰 배터리	pt:bateria do celular	ru:аккумулятор телефона	tr:telefon pili	ur:فون بیٹری	zh:手机电池
+c:phone-camera	Noun	ar:كاميرا الهاتف	de:Handykamera	en:phone camera	es:cámara del teléfono	fa:دوربین موبایل	fr:appareil photo du téléphone	he:מצלמת טלפון	hi:फोन कैमरा	ja:スマホカメラ	ko:휴대폰 카메라	pt:câmera do celular	ru:камера телефона	tr:telefon kamerası	ur:فون کیمرہ	zh:手机摄像头
+c:phone-case	Noun	ar:حافظة الهاتف	de:Handyhülle	en:phone case	es:funda de teléfono	fa:قاب موبایل	fr:coque de téléphone	he:כיסוי לטלפון	hi:फोन का कवर	ja:スマホケース	ko:핸드폰 케이스	pt:capa de celular	ru:чехол для телефона	tr:telefon kılıfı	ur:فون کور	zh:手机壳
+c:phone-charger	Noun	ar:شاحن هاتف	de:Ladegerät	en:charger	es:cargador	fa:شارژر	fr:chargeur	he:מטען	hi:चार्जर	ja:充電器	ko:충전기	pt:carregador	ru:зарядное устройство	tr:şarj cihazı	ur:چارجر	zh:充电器
+c:phone-microphone	Noun	ar:ميكروفون الهاتف	de:Mikrofon	en:microphone	es:micrófono	fa:میکروفون	fr:microphone	he:מיקרופון	hi:माइक्रोफोन	ja:マイクロフォン	ko:마이크	pt:microfone	ru:микрофон	tr:mikrofon	ur:مائیکروفون	zh:麦克风
+c:phone-speaker	Noun	ar:مكبر صوت الهاتف	de:Handylautsprecher	en:phone speaker	es:altavoz del teléfono	fa:بلندگو	fr:haut-parleur du téléphone	he:רמקול טלפון	hi:फोन स्पीकर	ja:スピーカー	ko:휴대폰 스피커	pt:alto-falante do celular	ru:динамик телефона	tr:telefon hoparlörü	ur:فون اسپیکر	zh:手机扬声器
 c:phoneme	Noun	ar:صوتيم	de:Phonem	en:phoneme	es:fonema	fa:واج	fr:phonème	he:פונמה	hi:स्वनिम	ja:音素	ko:음소	pt:fonema	ru:фонема	tr:fonem	ur:صوتیہ	zh:音素
 c:phonetics	Noun	ar:علم الأصوات,الصوتيات	de:Phonetik,Lautlehre	en:phonetics	es:fonética	fa:آواشناسی	fr:phonétique	he:פונטיקה,תורת ההגה	hi:स्वन विज्ञान	ja:音声学	ko:음성학	pt:fonética	ru:фонетика	tr:sesbilgisi,fonetik	ur:علم الاصوات	zh:语音学
 c:phonology	Noun	ar:علم الفونولوجيا,علم وظائف الأصوات	de:Phonologie	en:phonology	es:fonología	fa:واج شناسی	fr:phonologie	he:פונולוגיה	hi:स्वनिमविज्ञान	ja:音韻論	ko:음운론	pt:fonologia	ru:фонология	tr:sesbilim,fonoloji	ur:صوتیات	zh:音系学,音韵学
@@ -4854,6 +4880,7 @@ c:pottery	Noun	ar:فخّار,خزف	de:Töpferei,Keramik	en:pottery	es:alfarerí
 c:potting-mix	Noun	ar:تربة الأصص	de:Blumenerde	en:potting mix	es:tierra para macetas	fa:خاک گلدان	fr:terreau	he:אדמת עציצים	hi:गमले की मिट्टी	ja:培養土	ko:화분 흙	pt:substrato	ru:грунт для посадки	tr:saksı toprağı	ur:گملے کی مٹی	zh:盆栽土
 c:pound-currency	Noun	ar:جنيه,جنيه استرليني	de:Pfund,Pfund Sterling	en:pound,pound sterling	es:libra,libra esterlina	fa:پوند,پوند استرلینگ	fr:livre,livre sterling	he:לירה שטרלינג,פאונד	hi:पाउंड,पाउंड स्टर्लिंग	ja:ポンド	ko:파운드	pt:libra,libra esterlina	ru:фунт,фунт стерлингов	tr:sterlin,pound	ur:پاؤنڈ	zh:英镑
 c:power	Noun	ar:قوة,سلطة	de:Macht,Kraft	en:power	es:poder	fa:قدرت	fr:pouvoir	he:כוח,עוצמה	hi:शक्ति,ताकत	ja:力,権力	ko:힘,권력	pt:poder	ru:власть,сила	tr:güç,iktidar	ur:طاقت,قوت	zh:力量,权力
+c:power-bank	Noun	ar:بنك طاقة	de:Powerbank	en:power bank	es:batería portátil	fa:پاور بانک	fr:batterie externe	he:סוללה ניידת	hi:पावर बैंक	ja:モバイルバッテリー	ko:보조 배터리	pt:bateria portátil	ru:внешний аккумулятор	tr:taşınabilir şarj aleti	ur:پاور بینک	zh:移动电源
 c:power-of-attorney	Noun	ar:التوكيل	de:Vollmacht	en:power of attorney	es:poder notarial	fa:وکالت	fr:procuration	he:ייפוי כוח	hi:मुख्तार नामा	ja:委任状	ko:위임장	pt:procuração	ru:доверенность	tr:vekalet	ur:وکالت نامہ	zh:授权书
 c:power-spectrum	Noun	ar:طيف القوة	de:Leistungsspektrum	en:power spectrum	es:espectro de potencia	fa:طیف توان	fr:spectre de puissance	he:ספקטרום עוצמה	hi:शक्ति स्पेक्ट्रम	ja:パワースペクトル	ko:파워 스펙트럼	pt:espectro de potência	ru:спектр мощности	tr:güç spektrumu	ur:طاقت طیف	zh:功率谱
 c:power-supply	Noun	ar:وحدة امداد الطاقة	de:Netzteil	en:power supply unit	es:fuente de alimentación	fa:منبع تغذیه	fr:bloc d'alimentation	he:יחידת אספקת חשמל	hi:पावर सप्लाई	ja:電源ユニット	ko:전원 공급 장치	pt:fonte de alimentação	ru:блок питания	tr:güç kaynağı	ur:پاور سپلائی	zh:电源
@@ -5035,6 +5062,7 @@ c:pyroclastic	Adjective	ar:بيروكلاستي	de:pyroklastisch	en:pyroclastic	
 c:python	Noun	ar:ثعبان الاجدع,اجدع	de:Python	en:python	es:pitón	fa:پیتون	fr:python	he:פייתון	hi:अजगर	ja:ニシキヘビ	ko:비단뱀	pt:píton	ru:питон	tr:piton	ur:اژدہا	zh:蟒蛇
 c:qanun	Noun	ar:قانون	de:Kanun	en:qanun	es:qanun	fa:قانون	fr:kanoun	he:קנון	hi:कानून	ja:カーヌーン	ko:카눈	pt:qanun	ru:кануун	tr:kanun	ur:قانون	zh:卡侬琴
 c:qkd	Noun	ar:توزيع المفتاح الكمومي	de:Quantenschlüsselverteilung	en:quantum key distribution	es:distribución de clave cuántica	fa:توزیع کلید کوانتومی	fr:distribution de clé quantique	he:הפצת מפתח קוונטית	hi:क्वांटम कुंजी वितरण	ja:量子鍵配送	ko:양자 키 분배	pt:distribuição quântica de chave	ru:квантовое распределение ключей	tr:kuantum anahtar dağıtımı	ur:کوانٹم کلید تقسیم	zh:量子密钥分发
+c:qr-code	Noun	ar:رمز الاستجابة السريعة	de:QR-Code	en:QR code	es:código QR	fa:کد QR	fr:code QR	he:קוד QR	hi:क्यूआर कोड	ja:QRコード	ko:QR 코드	pt:código QR	ru:QR-код	tr:QR kodu	ur:کیو آر کوڈ	zh:二维码
 c:quadratic	Adjective	ar:تربيعي	de:quadratisch	en:quadratic	es:cuadrático	fa:درجه دوم	fr:quadratique	he:ריבועי	hi:द्विघात	ja:二次	ko:이차	pt:quadrático	ru:квадратный	tr:ikinci dereceden	ur:مربعی	zh:二次
 c:quadratic-residue	Noun	ar:البقية التربيعية	de:quadratischer Rest	en:quadratic residue	es:residuo cuadrático	fa:باقی‌مانده مربعی	fr:résidu quadratique	he:שארית ריבועית	hi:द्विघात अवशेष	ja:平方剰余	ko:이차잉여	pt:resíduo quadrático	ru:квадратичный вычет	tr:ikinci dereceden kalan	ur:مربعی باقی	zh:二次剩余
 c:quail	Noun	ar:سمان	de:Wachtel	en:quail	es:codorniz	fa:بلدرچین	fr:caille	he:שלו	hi:बटेर	ja:ウズラ	ko:메추라기	pt:codorna	ru:перепел	tr:bıldırcın	ur:بٹیر	zh:鹌鹑
@@ -5517,6 +5545,8 @@ c:scorpion	Noun	ar:عقرب	de:Skorpion	en:scorpion	es:escorpión,alacrán	fa:ع
 c:scorpius-constellation	Noun	ar:العقرب,كوكبة العقرب	de:Skorpion	en:Scorpius,Scorpio	es:Escorpio,Escorpión	fa:عقرب	fr:Scorpion	he:עקרב	hi:वृश्चिक राशि	ja:さそり座	ko:전갈자리	pt:Escorpião	ru:Скорпион	tr:Akrep Burcu	ur:عقرب	zh:天蝎座
 c:scottish-reel	Noun	ar:رقص الريل الاسكتلندي	de:Schottische Reel	en:Scottish reel	es:reel escocés	fa:ریل اسکاتلندی	fr:reel écossais	he:ריל סקוטי	hi:स्कॉटिश रील	ja:スコットランドリール	ko:스코틀랜드 릴	pt:reel escocês	ru:шотландская рил	tr:İskoç reel	ur:اسکاٹش ریل	zh:苏格兰里尔舞
 c:screen	Noun	ar:شاشة	de:Bildschirm,Schirm	en:screen,display	es:pantalla	fa:صفحه نمایش,پرده	fr:écran	he:מסך,צג	hi:स्क्रीन,पर्दा	ja:画面,スクリーン	ko:화면,스크린	pt:tela	ru:экран	tr:ekran	ur:اسکرین	zh:屏幕,银幕
+c:screen-protector	Noun	ar:واقي الشاشة	de:Displayschutzfolie	en:screen protector	es:protector de pantalla	fa:محافظ صفحه	fr:protecteur d'écran	he:מגן מסך	hi:स्क्रीन प्रोटेक्टर	ja:液晶保護フィルム	ko:화면 보호 필름	pt:protetor de tela	ru:защитное стекло	tr:ekran koruyucu	ur:اسکرین پروٹیکٹر	zh:屏幕保护贴
+c:screen-resolution	Noun	ar:دقة الشاشة	de:Bildschirmauflösung	en:screen resolution	es:resolución de pantalla	fa:رزولوشن صفحه	fr:résolution d'écran	he:רזולוציית מסך	hi:स्क्रीन रिज़ॉल्यूशन	ja:画面解像度	ko:화면 해상도	pt:resolução de tela	ru:разрешение экрана	tr:ekran çözünürlüğü	ur:اسکرین ریزولوشن	zh:屏幕分辨率
 c:screening-economics	Noun	ar:فرز المعلومات الاقتصادي	de:Screening	en:market screening	es:selección de mercado	fa:غربالگری بازار	fr:filtrage sur le marché	he:סינון שוק	hi:बाजार जांच	ja:スクリーニング	ko:시장 선별	pt:triagem de mercado	ru:скрининг на рынке	tr:piyasa tarama	ur:بازار چھاننا	zh:市场甄别
 c:screenplay	Noun	ar:سيناريو	de:Drehbuch	en:screenplay,script	es:guion	fa:فیلمنامه	fr:scénario	he:תסריט	hi:पटकथा	ja:脚本,シナリオ	ko:시나리오,각본	pt:roteiro,guião	ru:сценарий	tr:senaryo	ur:اسکرین پلے	zh:剧本,电影剧本
 c:screenwriter	Noun	ar:كاتب سيناريو	de:Drehbuchautor	en:screenwriter	es:guionista	fa:فیلمنامه نویس	fr:scénariste	he:תסריטאי	hi:पटकथा लेखक	ja:脚本家	ko:시나리오 작가	pt:roteirista	ru:сценарист	tr:senaryo yazarı	ur:اسکرین رائٹر	zh:编剧
@@ -5708,6 +5738,7 @@ c:silver	Noun	ar:فضة	de:Silber	en:silver	es:plata	fa:نقره	fr:argent	he:כ
 c:silver-metal	Noun	ar:فضة	de:Silber	en:silver	es:plata	fa:نقره	fr:argent	he:כסף	hi:चाँदी	ja:銀	ko:은	pt:prata	ru:серебро	tr:gümüş	ur:چاندی	zh:银
 c:silverfish	Noun	ar:أبو أذنين,الفضية	de:Silberfischchen	en:silverfish	es:pececillo de plata,lepisma	fa:ماهی نقره‌ای,لپیسما	fr:poisson d'argent,lépisme	he:דג כסף	hi:सिल्वरफिश	ja:シミ	ko:좀	pt:traça-de-livro,peixinho-da-prata	ru:чешуйница,мокрица книжная	tr:gümüş balığı	ur:چاندی کی مچھلی	zh:衣鱼
 c:silversmith	Noun	ar:صائغ فضة	de:Silberschmied	en:silversmith	es:platero	fa:نقره‌کار,نقره‌ساز	fr:argentier	he:צורף כסף	hi:चांदी का कारीगर,रौप्यकार	ja:銀細工師	ko:은세공인	pt:prateiro	ru:серебряных дел мастер	tr:gümüş ustası	ur:چاندی کا کاریگر	zh:银匠
+c:sim-card	Noun	ar:شريحة SIM	de:SIM-Karte	en:SIM card	es:tarjeta SIM	fa:سیم‌کارت	fr:carte SIM	he:כרטיס SIM	hi:सिम कार्ड	ja:SIMカード	ko:SIM 카드	pt:cartão SIM	ru:SIM-карта	tr:SIM kart	ur:سم کارڈ	zh:SIM卡
 c:simile	Noun	ar:تشبيه	de:Vergleich,Gleichnis	en:simile	es:símil,comparación	fa:تشبیه	fr:comparaison	he:דימוי	hi:उपमा	ja:直喩,明喩	ko:직유,비유	pt:símile,comparação	ru:сравнение	tr:benzetme,teşbih	ur:تشبیہ	zh:明喻,比喻
 c:simmer	Verb	ar:طهى على نار هادئة	de:köcheln	en:simmer	es:cocer a fuego lento	fa:کم حرارت جوشاندن	fr:mijoter,frémir	he:לבשל על אש נמוכה	hi:धीमी आँच पर पकाना	ja:弱火で煮る	ko:약한 불로 끓이다	pt:cozinhar em fogo baixo	ru:томить,тушить	tr:hafif ateşte pişirmek	ur:دھیمی آنچ پر پکانا	zh:炖,慢煮
 c:simple	Adjective	ar:بسيط	de:einfach	en:simple	es:simple,sencillo	fa:ساده	fr:simple	he:פשוט	hi:सरल	ja:簡単,シンプル	ko:간단하다	pt:simples	ru:простой	tr:basit	ur:سادہ	zh:简单
@@ -5769,6 +5800,8 @@ c:slug	Noun	ar:بزاقة	de:Nacktschnecke	en:slug	es:babosa	fa:راب	fr:limace
 c:small	Adjective	ar:صغير	de:klein	en:small,little	es:pequeño	fa:کوچک	fr:petit	he:קטן	hi:छोटा	ja:小さい	ko:작은	pt:pequeno	ru:маленький	tr:küçük	ur:چھوٹا	zh:小
 c:smart-city	Noun	ar:المدينة الذكية	de:Smart City	en:smart city	es:ciudad inteligente	fa:شهر هوشمند	fr:ville intelligente	he:עיר חכמה	hi:स्मार्ट शहर	ja:スマートシティ	ko:스마트 시티	pt:cidade inteligente	ru:умный город	tr:akıllı şehir	ur:ذہین شہر	zh:智慧城市
 c:smartphone	Noun	ar:هاتف ذكي	de:Smartphone	en:smartphone	es:teléfono inteligente,smartphone	fa:گوشی هوشمند	fr:smartphone,téléphone intelligent	he:סמארטפון	hi:स्मार्टफोन	ja:スマートフォン,スマホ	ko:스마트폰	pt:smartphone	ru:смартфон	tr:akıllı telefon	ur:اسمارٹ فون	zh:智能手机
+c:smartphone-device	Noun	ar:هاتف ذكي	de:Smartphone	en:smartphone	es:teléfono inteligente	fa:گوشی هوشمند	fr:smartphone	he:סמארטפון	hi:स्मार्टफोन	ja:スマートフォン	ko:스마트폰	pt:smartphone	ru:смартфон	tr:akıllı telefon	ur:سمارٹ فون	zh:智能手机
+c:smartwatch	Noun	ar:ساعة ذكية	de:Smartwatch	en:smartwatch	es:reloj inteligente	fa:ساعت هوشمند	fr:montre connectée	he:שעון חכם	hi:स्मार्टवॉच	ja:スマートウォッチ	ko:스마트워치	pt:smartwatch	ru:умные часы	tr:akıllı saat	ur:سمارٹ واچ	zh:智能手表
 c:smile	Verb	ar:ابتسم	de:lächeln	en:smile	es:sonreír	fa:لبخند زدن	fr:sourire	he:לחייך	hi:मुस्कुराना	ja:微笑む	ko:미소 짓다	pt:sorrir	ru:улыбаться	tr:gülümsemek	ur:مسکرانا	zh:微笑
 c:smog	Noun	ar:الضباب الدخاني	de:Smog	en:smog	es:smog	fa:دود و مه	fr:smog	he:ערפיח	hi:धुंआ-कोहरा	ja:スモッグ	ko:스모그	pt:smog	ru:смог	tr:duman sisi	ur:دھواں	zh:雾霾
 c:smoke	Noun	ar:دخان	de:Rauch	en:smoke	es:humo	fa:دود	fr:fumée	he:עשן	hi:धुआँ	ja:煙	ko:연기	pt:fumaça,fumo	ru:дым	tr:duman	ur:دھواں	zh:烟
@@ -6085,6 +6118,7 @@ c:stupa	Noun	ar:الستوبا البوذية	de:Stupa	en:stupa	es:stupa	fa:اس
 c:stupa-buddhist	Noun	ar:ستوبا	de:Stupa	en:stupa	es:estupa	fa:ستوپا	fr:stupa	he:סטופה	hi:स्तूप	ja:ストゥーパ	ko:스투파	pt:stupa	ru:ступа	tr:stupa	ur:ستوپا	zh:佛塔
 c:sturgeon	Noun	ar:سمك الحفش,حفش	de:Stör	en:sturgeon	es:esturión	fa:تاس ماهی	fr:esturgeon	he:חוזנקה	hi:स्टर्जन	ja:チョウザメ	ko:철갑상어	pt:esturjão	ru:осётр	tr:mersin balığı	ur:اسٹرجن	zh:鲟鱼
 c:style	Noun	ar:أسلوب,طراز	de:Stil	en:style	es:estilo	fa:سبک,شیوه	fr:style	he:סגנון	hi:शैली	ja:スタイル,様式	ko:스타일,양식	pt:estilo	ru:стиль	tr:stil,tarz	ur:انداز,اسلوب	zh:风格,样式
+c:stylus-pen	Noun	ar:قلم لمسي	de:Eingabestift	en:stylus	es:lápiz táctil	fa:قلم لمسی	fr:stylet	he:עט סטיילוס	hi:स्टाइलस	ja:スタイラス	ko:스타일러스	pt:estilete digital	ru:стилус	tr:dokunmatik kalem	ur:ٹچ قلم	zh:触控笔
 c:subaltern	Noun	ar:المهمش	de:Subalterner	en:subaltern	es:subalterno	fa:فرودست	fr:subalterne	he:כפוף	hi:निम्नवर्गीय	ja:サバルタン	ko:피지배자	pt:subalterno	ru:субальтерн	tr:tabi	ur:ماتحت	zh:庶民
 c:subconscious	Noun	ar:باطن الوعي	de:Unterbewusstsein	en:subconscious	es:subconsciente	fa:ضمیر ناخودآگاه	fr:subconscient	he:תת מודע	hi:अवचेतन	ja:潜在意識,サブコンシャス	ko:잠재의식	pt:subconsciente	ru:подсознание	tr:bilinçaltı	ur:تحت الشعور	zh:潜意识
 c:subduction	Noun	ar:الاندساس	de:Subduktion	en:subduction	es:subducción	fa:فرورانش	fr:subduction	he:סובדוקציה	hi:अधोगमन	ja:沈み込み	ko:섭입	pt:subducção	ru:субдукция	tr:dalma	ur:زمینی دھنسنا	zh:俯冲
@@ -6219,6 +6253,7 @@ c:table	Noun	ar:طاولة,مائدة	de:Tisch	en:table	es:mesa	fa:میز	fr:tab
 c:table-of-contents	Noun	ar:جدول المحتويات,فهرس المحتويات	de:Inhaltsverzeichnis	en:table of contents	es:tabla de contenidos,índice	fa:فهرست مطالب	fr:table des matières	he:תוכן עניינים	hi:विषय-सूची	ja:目次	ko:목차	pt:sumário,índice	ru:оглавление,содержание	tr:içindekiler	ur:فہرست مضامین	zh:目录
 c:table-tennis	Noun	ar:تنس الطاولة	de:Tischtennis	en:table tennis	es:tenis de mesa	fa:پینگ پونگ	fr:tennis de table	he:פינג פונג	hi:टेबल टेनिस	ja:卓球	ko:탁구	pt:tênis de mesa	ru:настольный теннис	tr:masa tenisi	ur:ٹیبل ٹینس	zh:乒乓球
 c:tablet	Noun	ar:جهاز لوحي,تابلت	de:Tablet	en:tablet	es:tableta,tablet	fa:تبلت	fr:tablette	he:טאבלט	hi:टैबलेट	ja:タブレット	ko:태블릿	pt:tablet	ru:планшет	tr:tablet	ur:ٹیبلیٹ	zh:平板电脑
+c:tablet-device	Noun	ar:حاسوب لوحي	de:Tablet	en:tablet	es:tableta	fa:تبلت	fr:tablette	he:טאבלט	hi:टैबलेट	ja:タブレット	ko:태블릿	pt:tablet	ru:планшет	tr:tablet	ur:ٹیبلیٹ	zh:平板电脑
 c:taboo	Noun	ar:محرم,تابو	de:Tabu	en:taboo	es:tabú	fa:تابو,حرام	fr:tabou	he:טאבו	hi:वर्जना,टैबू	ja:タブー,禁忌	ko:금기,터부	pt:tabu	ru:табу	tr:tabu	ur:ممنوع,وارجت	zh:禁忌,塔布
 c:tachometer	Noun	ar:عداد الدورات	de:Drehzahlmesser	en:tachometer	es:tacómetro	fa:تاکومتر	fr:tachymètre	he:טכומטר	hi:टैकोमीटर	ja:回転計	ko:회전속도계	pt:tacômetro	ru:тахометр	tr:takometre	ur:ٹیکومیٹر	zh:转速计
 c:tacit-knowledge	Noun	ar:المعرفة الضمنية	de:implizites Wissen	en:tacit knowledge	es:conocimiento tácito	fa:دانش ضمنی	fr:connaissance tacite	he:ידע סמוי	hi:अंतर्निहित ज्ञान	ja:暗黙知	ko:암묵지	pt:conhecimento tácito	ru:неявное знание	tr:örtük bilgi	ur:ضمنی علم	zh:默会知识
@@ -6529,6 +6564,7 @@ c:totalitarianism	Noun	ar:شمولية	de:Totalitarismus	en:totalitarianism	es:t
 c:totem	Noun	ar:طوطم	de:Totem	en:totem	es:tótem	fa:توتم	fr:totem	he:טוטם	hi:टोटेम	ja:トーテム	ko:토템	pt:totem	ru:тотем	tr:totem	ur:ٹوٹم	zh:图腾
 c:totipotent	Adjective	ar:كامل القدرة التفاضلية	de:totipotent	en:totipotent	es:totipotente	fa:همه‌توان	fr:totipotent	he:טוטיפוטנטי	hi:सर्वशक्तिमान	ja:全能性	ko:전능성	pt:totipotente	ru:тотипотентный	tr:totipotent	ur:کلی قدرت	zh:全能性
 c:toucan	Noun	ar:طوقان	de:Tukan	en:toucan	es:tucán	fa:توکان	fr:toucan	he:טוקן	hi:टूकन	ja:オオハシ	ko:큰부리새	pt:tucano	ru:тукан	tr:tukan	ur:ٹوکان	zh:巨嘴鸟
+c:touchscreen	Noun	ar:شاشة لمسية	de:Touchscreen	en:touchscreen	es:pantalla táctil	fa:صفحه لمسی	fr:écran tactile	he:מסך מגע	hi:टचस्क्रीन	ja:タッチスクリーン	ko:터치스크린	pt:tela sensível ao toque	ru:сенсорный экран	tr:dokunmatik ekran	ur:ٹچ اسکرین	zh:触摸屏
 c:toughness	Noun	ar:الصفاقة	de:Zähigkeit	en:toughness	es:tenacidad	fa:چقرمگی	fr:ténacité	he:קשיחות	hi:चिमड़ापन	ja:靱性	ko:인성	pt:tenacidade	ru:вязкость разрушения	tr:tokluk	ur:مضبوطی	zh:韧性
 c:tour	Noun	ar:جولة	de:Tour,Rundreise	en:tour	es:gira,recorrido,tour	fa:تور,گردش	fr:tour	he:סיור	hi:टूर,भ्रमण	ja:ツアー,観光	ko:투어,관광	pt:tour,passeio	ru:тур,турне	tr:tur	ur:دورہ,ٹور	zh:旅游,旅行团
 c:tourmaline	Noun	ar:تورمالين	de:Turmalin	en:tourmaline	es:turmalina	fa:تورمالین	fr:tourmaline	he:טורמלין	hi:टूर्मेलाइन	ja:トルマリン	ko:토르말린	pt:turmalina	ru:турмалин	tr:turmalin	ur:ٹورمیلین	zh:电气石
@@ -6810,6 +6846,7 @@ c:virga	Noun	ar:مطر متبخر	de:Virga	en:virga	es:virga	fa:ویرگا	fr:vi
 c:virgil	Noun	ar:فيرجيل	de:Vergil	en:Virgil,Vergil	es:Virgilio	fa:ویرژیل	fr:Virgile	he:ורגיליוס	hi:वर्जिल	ja:ウェルギリウス	ko:베르길리우스	pt:Virgílio	ru:Вергилий	tr:Vergilius	ur:ورجل	zh:维吉尔
 c:virtual-machine	Noun	ar:الجهاز الافتراضي	de:virtuelle Maschine	en:virtual machine	es:máquina virtual	fa:ماشین مجازی	fr:machine virtuelle	he:מכונה וירטואלית	hi:वर्चुअल मशीन	ja:仮想マシン	ko:가상 머신	pt:máquina virtual	ru:виртуальная машина	tr:sanal makine	ur:ورچوئل مشین	zh:虚拟机
 c:virtual-reality	Noun	ar:الواقع الافتراضي	de:virtuelle Realität	en:virtual reality,VR	es:realidad virtual	fa:واقعیت مجازی	fr:réalité virtuelle	he:מציאות מדומה	hi:आभासी वास्तविकता	ja:仮想現実,バーチャルリアリティ	ko:가상 현실	pt:realidade virtual	ru:виртуальная реальность	tr:sanal gerçeklik	ur:مجازی حقیقت	zh:虚拟现实
+c:virtual-reality-mobile	Noun	ar:الواقع الافتراضي	de:Virtuelle Realität	en:virtual reality	es:realidad virtual	fa:واقعیت مجازی	fr:réalité virtuelle	he:מציאות מדומה	hi:आभासी वास्तविकता	ja:仮想現実	ko:가상 현실	pt:realidade virtual	ru:виртуальная реальность	tr:sanal gerçeklik	ur:مجازی حقیقت	zh:虚拟现实
 c:virtual-screening	Noun	ar:الفحص الافتراضي	de:virtuelles Screening	en:virtual screening	es:cribado virtual	fa:غربالگری مجازی	fr:criblage virtuel	he:סינון וירטואלי	hi:आभासी जांच	ja:バーチャルスクリーニング	ko:가상 선별	pt:triagem virtual	ru:виртуальный скрининг	tr:sanal tarama	ur:مجازی جانچ	zh:虚拟筛选
 c:virtue	Noun	ar:فضيلة	de:Tugend	en:virtue	es:virtud	fa:فضیلت	fr:vertu	he:מידה טובה,סגולה	hi:सद्गुण,पुण्य	ja:美徳,徳	ko:덕,미덕	pt:virtude	ru:добродетель	tr:erdem,fazilet	ur:فضیلت,نیکی	zh:美德
 c:virtue-epistemology	Noun	ar:الإبستيمولوجيا الفضيلية	de:Tugenderkenntnis	en:virtue epistemology	es:epistemología de virtudes	fa:معرفت‌شناسی فضیلت	fr:épistémologie des vertus	he:אפיסטמולוגיה של מידות	hi:सद्गुण ज्ञानमीमांसा	ja:徳認識論	ko:덕 인식론	pt:epistemologia das virtudes	ru:эпистемология добродетелей	tr:erdem epistemolojisi	ur:فضیلت معرفیات	zh:德性认识论
@@ -6983,6 +7020,9 @@ c:winter	Noun	ar:شتاء	de:Winter	en:winter	es:invierno	fa:زمستان	fr:hiv
 c:wire	Noun	ar:سلك	de:Draht,Kabel	en:wire	es:alambre,cable	fa:سیم	fr:fil,câble	he:חוט,תיל	hi:तार	ja:針金,ワイヤー	ko:철사,와이어	pt:fio,arame	ru:провод,проволока	tr:tel,kablo	ur:تار	zh:电线,金属丝
 c:wire-stripper	Noun	ar:قاشط الأسلاك	de:Abisolierzange	en:wire stripper	es:pelacables	fa:سیم لخت کن	fr:dénudeur	he:קולפן חוטים	hi:वायर स्ट्रिपर	ja:ワイヤーストリッパー	ko:와이어 스트리퍼	pt:decapador de fios	ru:стриппер	tr:kablo soyucu	ur:وائر اسٹریپر	zh:剥线钳
 c:wire-stripper-tool	Noun	ar:قاشط أسلاك	de:Abisolierzange	en:wire stripper	es:pelacables	fa:سیم لخت‌کن	fr:pince à dénuder	he:אצבעוני	hi:तार पट्टाकर	ja:ワイヤーストリッパー	ko:전선 탈피기	pt:descascador de fio	ru:стриппер	tr:kablo soyucu	ur:تار اتارنے والا	zh:剥线钳
+c:wireless-charging	Noun	ar:الشحن اللاسلكي	de:kabelloses Laden	en:wireless charging	es:carga inalámbrica	fa:شارژ بی‌سیم	fr:chargement sans fil	he:טעינה אלחוטית	hi:वायरलेस चार्जिंग	ja:ワイヤレス充電	ko:무선 충전	pt:carregamento sem fio	ru:беспроводная зарядка	tr:kablosuz şarj	ur:وائرلیس چارجنگ	zh:无线充电
+c:wireless-earphones	Noun	ar:سماعات لاسلكية صغيرة	de:kabellose Kopfhörer	en:wireless earphones	es:auriculares inalámbricos	fa:هندزفری بی‌سیم	fr:écouteurs sans fil	he:אוזניות אלחוטיות	hi:वायरलेस इयरफोन	ja:ワイヤレスイヤフォン	ko:무선 이어폰	pt:fones de ouvido sem fio	ru:беспроводные наушники	tr:kablosuz kulaklık	ur:وائرلیس کان فون	zh:无线耳机
+c:wireless-headphones	Noun	ar:سماعات لاسلكية	de:Kopfhörer	en:headphones	es:auriculares	fa:هدفون	fr:écouteurs	he:אוזניות	hi:हेडफोन	ja:ヘッドフォン	ko:헤드폰	pt:fones de ouvido	ru:наушники	tr:kulaklık	ur:ہیڈ فون	zh:耳机
 c:wisdom	Noun	ar:حكمة	de:Weisheit	en:wisdom	es:sabiduría	fa:حکمت,خرد	fr:sagesse	he:חוכמה	hi:ज्ञान,बुद्धिमत्ता	ja:知恵	ko:지혜	pt:sabedoria	ru:мудрость	tr:bilgelik,hikmet	ur:حکمت,دانائی	zh:智慧
 c:wisteria	Noun	ar:الوستارية	de:Blauregen,Glyzinie	en:wisteria	es:glicinia	fa:پیچ گلیسین	fr:glycine	he:ויסטריה	hi:विस्टेरिया	ja:藤	ko:등나무	pt:glicínia	ru:глициния	tr:mor salkım	ur:وسٹیریا	zh:紫藤
 c:witch	Noun	ar:ساحرة	de:Hexe	en:witch	es:bruja	fa:جادوگر	fr:sorcière	he:מכשפה	hi:डायन	ja:魔女	ko:마녀	pt:bruxa	ru:ведьма	tr:cadı	ur:ڈائن	zh:女巫
