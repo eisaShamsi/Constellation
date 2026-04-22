@@ -20,6 +20,8 @@ import {
 	forceManyBody,
 	forceCenter,
 	forceCollide,
+	forceX,
+	forceY,
 	type SimulationNodeDatum,
 	type SimulationLinkDatum,
 } from 'd3-force';
@@ -64,22 +66,28 @@ function sendPositions(settled: boolean) {
 	}
 	if (maxXY < 1) maxXY = 1;
 
-	// Set Z from deterministic seed, scaled to match X,Y spread
+	// Set Z from deterministic seed, scaled to match X,Y spread. Scale up
+	// (1.4×) so the sphere reads as genuinely 3D when rotated — at 1:1
+	// with X/Y, the Z spread was too flat and the constellation collapsed
+	// to a strip on yaw rotation. 1.4× gives visible depth without making
+	// the graph "egg-shaped" in Z.
 	for (let i = 0; i < nodes.length; i++) {
-		nodes[i].z = nodes[i].baseZ * maxXY;
+		nodes[i].z = nodes[i].baseZ * maxXY * 1.4;
 	}
 
-	// Smooth Z along edges: connected nodes should have closer Z values
-	// Run a few relaxation passes
-	for (let pass = 0; pass < 3; pass++) {
-		for (const e of resolvedEdges) {
-			const src = nodes[e.src];
-			const tgt = nodes[e.tgt];
-			if (!src || !tgt) continue;
-			const avg = (src.z + tgt.z) * 0.5;
-			src.z = src.z * 0.85 + avg * 0.15;
-			tgt.z = tgt.z * 0.85 + avg * 0.15;
-		}
+	// Edge-based Z smoothing used to run 3 passes at 0.15 mixing rate. On
+	// a 217k-edge universe that flattens Z almost completely — connected
+	// nodes drag each other onto the same depth plane. Drop to a single
+	// very light pass so connected nodes sit on _similar_ depths without
+	// collapsing the whole field. This is what restores the 3D spherical
+	// impression when the view rotates.
+	for (const e of resolvedEdges) {
+		const src = nodes[e.src];
+		const tgt = nodes[e.tgt];
+		if (!src || !tgt) continue;
+		const avg = (src.z + tgt.z) * 0.5;
+		src.z = src.z * 0.97 + avg * 0.03;
+		tgt.z = tgt.z * 0.97 + avg * 0.03;
 	}
 
 	// Pack as [x0, y0, z0, x1, y1, z1, ...]
@@ -137,8 +145,19 @@ function initSimulation(
 				.strength(settings.linkForce)
 				.distance(settings.linkDistance)
 		)
-		.force('charge', forceManyBody<WNode>().strength(-settings.repelForce).theta(1.2))
+		// distanceMax caps repulsion range. Without it every node pushes
+		// every other node apart regardless of distance — which is exactly
+		// what keeps two disconnected library-clusters floating apart.
+		// Capping at 400 world-units means far clusters stop repelling each
+		// other and the center pull wins, merging them into one
+		// constellation without having to crank center force so hard it
+		// collapses the whole graph to a blob.
+		.force('charge', forceManyBody<WNode>().strength(-settings.repelForce).distanceMax(400).theta(1.2))
 		.force('center', forceCenter(0, 0).strength(settings.centerForce))
+		// Per-axis pull toward origin. With bounded repulsion above, a
+		// modest strength is enough to merge the clusters.
+		.force('x', forceX<WNode>(0).strength(0.15))
+		.force('y', forceY<WNode>(0).strength(0.15))
 		.force('collide', forceCollide<WNode>(6))
 		.alphaDecay(0.03)
 		.alphaMin(0.005)

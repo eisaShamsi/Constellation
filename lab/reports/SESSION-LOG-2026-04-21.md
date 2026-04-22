@@ -228,9 +228,126 @@ the Word rendering looks off. Deferred until user confirms.
 
 `<pending>` — PCS.
 
+## § 47. Sky View — "nervous system" redesign + 3D + unification
+
+User directed a series of SV behavior fixes in one session, driven
+by a design principle: "knowledge is a constant process; SV should
+feel alive — one universe, visible at a glance." Implementation
+shipped across `src/lib/graph/graphEngine.ts` and
+`src/lib/graph/forceWorker.ts`.
+
+### Diagnosis first
+
+On a 7,294-node / 217,232-edge universe, Sky View was effectively
+static at ~0.3 FPS. Temporary diagnostic logs in the auto-rotate
+block showed `innerGate: true`, `camRotY` advancing — but at
+0.02°/sec instead of 3°/sec. Root cause: the edge-draw loop was
+projecting all 217k edges every frame, collapsing the ticker.
+
+### Changes
+
+1. **Edge draw gate** — default SV is now **edgeless**. The loop
+   runs only when a node is hovered, search is active, focus/
+   local mode is on, or search-link highlights exist. At 7k nodes
+   with no edges, frame cost drops from 217k projections to 7k →
+   the ticker runs at 60 fps and auto-rotate becomes visible.
+2. **Auto-rotate pause on hover** — added `this.hoveredIdx < 0`
+   to the outer gate so rotation freezes while the user inspects
+   a node. "Hover = inquiry state."
+3. **Base rotation speed** 0.05 → 0.1 deg/frame (~6°/sec). Slow
+   speed (mouse-over) 0.005 → 0.01. User feedback: "pump by a
+   notch."
+4. **Neighbor node labels on hover** — when hovering, the ego-
+   network's node names appear, not just the hovered node's.
+   `graphEngine.ts:2198` — `!isNeighbor` added to the skip
+   condition.
+5. **Direction arrowheads**:
+   - **Target-end arrowhead** (edge color) anchored just outside
+     the target node's radius.
+   - **Mid-link color-coded arrowhead**: green (`#22c55e`) for
+     outgoing from hovered node, red (`#ef4444`) for incoming.
+     User request: "Green forward, Red Backward."
+6. **Unify the two library-clusters into ONE constellation**:
+   - First attempt: centerForce 0.1 → 0.4. Still two clusters
+     (centerForce only translates the centroid, doesn't compress).
+   - Second attempt: add `forceX(0)` + `forceY(0)` at strength
+     `centerForce × 0.5`. Still two clusters.
+   - Third attempt: `forceX/Y` strength 0.5 absolute. Still.
+   - **Final working fix**: `forceManyBody.distanceMax(400)` +
+     `forceX/Y` at strength 0.15. Capping repulsion range means
+     far clusters stop pushing each other apart, and the center
+     pull does its job cleanly. Bonus: faster simulation (Barnes-
+     Hut doesn't accumulate distant pole influence).
+7. **3D depth** — the narrow-strip-on-rotation symptom came from
+   aggressive Z smoothing (3 passes at 0.15 mixing rate × 217k
+   edges = 651k averagings that collapsed Z to a plane). Dropped
+   to **1 pass at 0.03 mixing rate**, plus **Z spread scaled up
+   1.4× vs XY** so the sphere reads as genuinely 3D when rotated.
+8. **Fit-to-screen** —
+   - Removed the `didInitialFit` gate so every worker `settled`
+     event re-fits. User pan/zoom doesn't re-run the worker so
+     this only fires on layout updates.
+   - Added a `× 0.5` final multiplier to the fit scale, giving 2×
+     zoom-out with breathing room for the 3D rotation sweep.
+
+### Philosophy captured in code comments
+
+Multiple block comments in both files capture *why* each number
+was chosen — e.g., the edge-draw gate comment explains the "Sky
+View nervous system" design (edgeless default → hover reveals
+ego-network), the `distanceMax` comment explains the disconnected-
+component math, the Z-smoothing comment explains the strip-
+collapse symptom. Future sessions don't have to rediscover.
+
+### Tested and verified by user
+
+- Default SV: one constellation, rotating, no edges → PASS
+- Hover: ego-network appears, rotation pauses, green/red arrows
+  show direction, neighbor labels visible → PASS
+- Un-hover: edges fade, rotation resumes → PASS
+- 3D depth: visible sphere instead of strip → PASS
+- Fit-to-screen: 2× zoom-out shows full constellation → PASS
+
+### Separate workstream captured for future
+
+User described a broader "note as organism" redesign for the
+editor view:
+- Backlinks panel → move from right sidebar to LEFT side of note
+- Outgoing Links panel → RIGHT side of note (where the sidebar
+  tabs are now)
+- Both panels show full Living Link metadata — type badge, tier
+  chip, confidence, annotation (the "nervous system /
+  bloodstream" metaphor — all connections splayed visibly)
+- "Return to Sky View" button visible while a note is open
+
+Not started this session. Will need its own design pass — it
+interacts with the existing right-sidebar tabs, split-view, and
+floating elements.
+
+### Commit
+
+`<pending>` — PCS.
+
+### Write-Time Derivation audit
+
+Originally requested in the same turn as the Sky View rotation
+revert. Deferred to a separate session — the SV work consumed the
+budget and the WTD audit deserves its own focused pass. Entry
+points on CLAUDE.md Rule 8's list:
+- Sky View (`skyNodes`/`skyLinks` rebuilt on boot) — still TRUE
+- Backlinks/Outgoing (already instant post-P5, reads SQLite)
+- Tag browser (scanned on open) — TRUE
+- Sight dashboard — unknown
+- Sidebar star counts — unknown
+- Map — unknown
+
 ## Still on the queue (orthogonal)
 
 - navTrace instrumentation dev-gate
 - Settings → Debug Boot Performance scorecard UI
 - Isolated throttle stress-test helper
 - RTL alignment pass on Arabic docx (if needed)
+- Write-Time Derivation audit across Sky View / Tag browser /
+  Sight / sidebar stars / Map
+- "Note as organism" editor redesign (three-column backlinks /
+  note / outgoing + Return to SV)

@@ -230,9 +230,9 @@ export class GraphEngine {
 	private rotBaseZ: number = 0;
 
 	// 4D: auto-rotation (slow idle spin when not interacting)
-	private autoRotateBaseSpeed: number = 0.05; // degrees per frame — full speed
-	private autoRotateSlowSpeed: number = 0.005; // degrees per frame — when mouse is over canvas
-	private autoRotateCurrentSpeed: number = 0.05; // current interpolated speed
+	private autoRotateBaseSpeed: number = 0.1; // degrees per frame — full speed (~6°/sec @ 60fps)
+	private autoRotateSlowSpeed: number = 0.01; // degrees per frame — when mouse is over canvas
+	private autoRotateCurrentSpeed: number = 0.1; // current interpolated speed
 	private autoRotateEnabled: boolean = true;
 	private lastInteractionTime: number = 0;
 	private autoRotateDelay: number = 3000; // ms of inactivity before auto-rotate starts
@@ -477,7 +477,11 @@ export class GraphEngine {
 					repelForce: this.config.repelForce,
 					linkForce: this.config.linkForce,
 					linkDistance: this.config.linkDistance,
-					centerForce: 0.1,
+					// Stronger center pull (0.1 → 0.4) so disconnected components
+				// — typically driven by how few links cross between libraries —
+				// are drawn into one unified constellation. Knowledge formulation
+				// is ONE universe regardless of language or library.
+				centerForce: 0.4,
 				},
 			});
 		}
@@ -838,7 +842,11 @@ export class GraphEngine {
 		const gw = maxX - minX || 1;
 		const gh = maxY - minY || 1;
 		const pad = 60;
-		const scale = Math.min((w - pad * 2) / gw, (h - pad * 2) / gh, 3);
+		// 0.5× = zoom out 2× so the user sees the full constellation with
+		// breathing room around the edges. Without this the fit was pegged
+		// right against the viewport bounds, obscuring outer nodes during
+		// 3D rotation (the sphere's corners sweep outside the screen).
+		const scale = Math.min((w - pad * 2) / gw, (h - pad * 2) / gh, 3) * 0.5;
 
 		// Animate toward target
 		const targetScale = scale;
@@ -1319,9 +1327,18 @@ export class GraphEngine {
 				}
 				this.needsRedraw = true;
 
-				if (e.data.settled && !this.didInitialFit) {
-					this.didInitialFit = true;
-					this.layoutSettled = true;
+				if (e.data.settled) {
+					// Fit on every settled event, not just the first. The old
+					// `didInitialFit` gate meant the first fit could land
+					// before the clusters had fully merged — and subsequent
+					// settle-events re-positioned everything without ever
+					// re-fitting, leaving the view zoomed in. User pan/zoom
+					// doesn't re-run the worker, so re-fitting on `settled`
+					// only affects layout-driven updates, not interaction.
+					if (!this.didInitialFit) {
+						this.didInitialFit = true;
+						this.layoutSettled = true;
+					}
 					this.fitToScreen();
 				}
 			}
@@ -1341,7 +1358,11 @@ export class GraphEngine {
 				repelForce: this.config.repelForce,
 				linkForce: this.config.linkForce,
 				linkDistance: this.config.linkDistance,
-				centerForce: 0.1,
+				// Stronger center pull (0.1 → 0.4) so disconnected components
+				// — typically driven by how few links cross between libraries —
+				// are drawn into one unified constellation. Knowledge formulation
+				// is ONE universe regardless of language or library.
+				centerForce: 0.4,
 			},
 		});
 	}
@@ -1696,9 +1717,15 @@ export class GraphEngine {
 	private draw = (): void => {
 		const now = performance.now();
 
-		// 4D: Auto-rotate when idle (slow ambient spin like a living organism)
-		// Smoothly interpolate speed: slow when mouse is active over canvas, fast when idle
-		if (this.autoRotateEnabled && !this.isDragging && !this.isRotating && !this.isPanning) {
+		// 4D: Auto-rotate when idle (slow ambient spin like a living organism).
+		// Paused while the user is hovering a node — hover = inquiry state, the
+		// rotation should stop so the revealed ego-network holds still.
+		if (this.autoRotateEnabled
+			&& this.hoveredIdx < 0
+			&& !this.isDragging
+			&& !this.isRotating
+			&& !this.isPanning
+		) {
 			// Determine target speed
 			const mouseActive = this.mouseOverCanvas && (now - this.lastMouseMoveTime < this.mouseIdleDelay);
 			const targetSpeed = mouseActive ? this.autoRotateSlowSpeed : this.autoRotateBaseSpeed;
@@ -1806,7 +1833,23 @@ export class GraphEngine {
 			}
 		}
 
-		for (const link of this.links) {
+		// ⚡ PERF (Sky View "nervous system" design): on a 7k-node / 217k-edge
+		// universe, iterating + projecting every edge every frame collapses the
+		// ticker to 0.3 fps and blocks the auto-rotate. Default SV should be
+		// *edgeless* — the user sees constellations drifting, then hovers a
+		// node to reveal its ego-network. The loop runs only when:
+		//   - a node is hovered (show its neighbor edges)
+		//   - a search is active (match highlights)
+		//   - focus or local-graph mode is on (scoped view)
+		//   - explicit search link highlights exist
+		// Cluster boundaries above this gate always render because they're
+		// drawn once per cluster, not once per edge.
+		const needsEdgeDraw = hovered >= 0
+			|| hasSearch
+			|| visibleSet !== null
+			|| this.searchLinkHighlights.size > 0;
+
+		if (needsEdgeDraw) { for (const link of this.links) {
 			// Skip edges involving hidden nodes
 			if (this.hiddenIndices.has(link.sourceIdx) || this.hiddenIndices.has(link.targetIdx)) continue;
 
@@ -1847,10 +1890,50 @@ export class GraphEngine {
 				this.linkGfx.lineTo(tx, ty);
 				this.linkGfx.stroke({ width: this.config.linkThickness * 2, color: edgeColor, alpha: 0.9 });
 
+				// Direction arrowhead at the target end — users asked to see
+				// where each edge points when hovering (source → target).
+				const angle = Math.atan2(ty - sy, tx - sx);
+				const aLen = 9;
+				const tgtR = Math.max((this.nodes[link.targetIdx].r ?? 4) * this.viewScale, 3);
+				// Anchor arrowhead just outside the target node's radius so it
+				// points *to* the node rather than overlapping it.
+				const ax = tx - tgtR * Math.cos(angle);
+				const ay = ty - tgtR * Math.sin(angle);
+				this.linkGfx.moveTo(ax, ay);
+				this.linkGfx.lineTo(ax - aLen * Math.cos(angle - 0.38), ay - aLen * Math.sin(angle - 0.38));
+				this.linkGfx.moveTo(ax, ay);
+				this.linkGfx.lineTo(ax - aLen * Math.cos(angle + 0.38), ay - aLen * Math.sin(angle + 0.38));
+				this.linkGfx.stroke({ width: this.config.linkThickness * 2, color: edgeColor, alpha: 0.9 });
+
+				// Mid-link direction arrow, color-coded from the hovered node's
+				// perspective: green = outgoing (hovered is source), red =
+				// incoming (hovered is target). Lets the user read each
+				// connection's flow at a glance while hovering.
+				const isOutgoing = link.sourceIdx === hovered;
+				const midColor = isOutgoing ? 0x22c55e : 0xef4444; // green / red
+				const mx = (sx + tx) / 2;
+				const my = (sy + ty) / 2;
+				const midLen = 8;
+				this.linkGfx.moveTo(mx, my);
+				this.linkGfx.lineTo(mx - midLen * Math.cos(angle - 0.38), my - midLen * Math.sin(angle - 0.38));
+				this.linkGfx.moveTo(mx, my);
+				this.linkGfx.lineTo(mx - midLen * Math.cos(angle + 0.38), my - midLen * Math.sin(angle + 0.38));
+				this.linkGfx.stroke({ width: this.config.linkThickness * 2, color: midColor, alpha: 1.0 });
+
 				// For contradicts: draw reverse arrow too (bidirectional tension)
 				if (link.linkType === 'contradicts') {
 					this.linkGfx.moveTo(tx, ty);
 					this.linkGfx.lineTo(sx, sy);
+					this.linkGfx.stroke({ width: this.config.linkThickness * 2, color: edgeColor, alpha: 0.6 });
+					// Mirror arrowhead at the source end for the contradicts case.
+					const rAngle = angle + Math.PI;
+					const srcR = Math.max((this.nodes[link.sourceIdx].r ?? 4) * this.viewScale, 3);
+					const rax = sx - srcR * Math.cos(rAngle);
+					const ray = sy - srcR * Math.sin(rAngle);
+					this.linkGfx.moveTo(rax, ray);
+					this.linkGfx.lineTo(rax - aLen * Math.cos(rAngle - 0.38), ray - aLen * Math.sin(rAngle - 0.38));
+					this.linkGfx.moveTo(rax, ray);
+					this.linkGfx.lineTo(rax - aLen * Math.cos(rAngle + 0.38), ray - aLen * Math.sin(rAngle + 0.38));
 					this.linkGfx.stroke({ width: this.config.linkThickness * 2, color: edgeColor, alpha: 0.6 });
 				}
 
@@ -1907,7 +1990,7 @@ export class GraphEngine {
 						this.linkGfx.stroke({ width: 3, color: hlColor, alpha: 0.9 });
 					}
 				}
-			}
+			} } // closes `for` loop and `if (needsEdgeDraw)` gate
 
 			// ─── Semantic Links (dashed, Phase 2) ────
 		if (this.config.showSemanticLinks && this.semanticLinks.length > 0 && hovered < 0 && !hasSearch) {
@@ -2173,7 +2256,9 @@ export class GraphEngine {
 			const isActive = i === this.activeNodeIdx;
 			const isNeighbor = neighbors?.has(i) ?? false;
 
-			if (!showAll && !isHovered && !isActive) continue;
+			// When hovering, also label every neighbor so the user can read the
+			// names of the connected notes without chasing each edge one-by-one.
+			if (!showAll && !isHovered && !isActive && !isNeighbor) continue;
 
 			let sx: number, sy: number;
 			if (is3D) {
