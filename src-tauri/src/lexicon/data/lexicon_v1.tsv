@@ -157,6 +157,7 @@ c:altimeter-device	Noun	ar:مقياس الارتفاع	de:Höhenmesser	en:altime
 c:altitude-training	Noun	ar:التدريب في الارتفاع	de:Höhentraining	en:altitude training	es:entrenamiento en altitud	fa:تمرین در ارتفاع	fr:entraînement en altitude	he:אימון בגובה	hi:उच्च ऊंचाई प्रशिक्षण	ja:高地トレーニング	ko:고지대 훈련	pt:treino em altitude	ru:тренировки на высоте	tr:irtifa antrenmanı	ur:بلندی تربیت	zh:高原训练
 c:altruism-economics	Noun	ar:الإيثار الاقتصادي	de:ökonomischer Altruismus	en:economic altruism	es:altruismo económico	fa:نوع‌دوستی اقتصادی	fr:altruisme économique	he:אלטרואיזם כלכלי	hi:आर्थिक परोपकारिता	ja:経済的利他主義	ko:경제적 이타주의	pt:altruísmo econômico	ru:экономический альтруизм	tr:ekonomik fedakarlık	ur:معاشی ایثار	zh:经济利他主义
 c:aluminum	Noun	ar:ألومنيوم,ألمنيوم	de:Aluminium	en:aluminum,aluminium	es:aluminio	fa:آلومینیوم	fr:aluminium	he:אלומיניום	hi:एल्यूमीनियम	ja:アルミニウム,アルミ	ko:알루미늄	pt:alumínio	ru:алюминий	tr:alüminyum	ur:ایلومینیم	zh:铝
+c:aluminum-metal	Noun	ar:ألومنيوم	de:Aluminium	en:aluminum	es:aluminio	fa:آلومینیوم	fr:aluminium	he:אלומיניום	hi:एल्यूमीनियम	ja:アルミニウム	ko:알루미늄	pt:alumínio	ru:алюминий	tr:alüminyum	ur:ایلومینیم	zh:铝
 c:alveolar	Adjective	ar:أسناني سنخي	de:alveolar	en:alveolar	es:alveolar	fa:لثوی	fr:alvéolaire	he:אלוואולרי	hi:वर्त्स्य	ja:歯茎音	ko:치경음	pt:alveolar	ru:альвеолярный	tr:dişeti	ur:لثوی	zh:齿龈音
 c:alveolus	Noun	ar:الحويصلة الهوائية	de:Lungenbläschen	en:alveolus	es:alvéolo	fa:کیسه هوایی	fr:alvéole	he:אויריות	hi:कूपिका	ja:肺胞	ko:폐포	pt:alvéolo	ru:альвеола	tr:alveol	ur:پھیپھڑے کی تھیلی	zh:肺泡
 c:amaranth	Noun	ar:بذور الاماراث	de:Amaranth	en:amaranth	es:amaranto	fa:آمارانت	fr:amarante	he:ירבוז	hi:राजगिरा,चौलाई	ja:アマランサス	ko:아마란스	pt:amaranto	ru:амарант	tr:amarant	ur:امارانتھ	zh:苋菜
@@ -260,6 +261,7 @@ c:anticyclone	Noun	ar:مضاد الإعصار	de:Antizyklone	en:anticyclone	es:a
 c:antidepressant	Noun	ar:مضاد الاكتئاب	de:Antidepressivum	en:antidepressant	es:antidepresivo	fa:ضد افسردگی	fr:antidépresseur	he:נוגד דיכאון	hi:अवसादरोधी	ja:抗うつ薬	ko:항우울제	pt:antidepressivo	ru:антидепрессант	tr:antidepresan	ur:ڈپریشن مخالف دوا	zh:抗抑郁药
 c:antigen	Noun	ar:مستضد	de:Antigen	en:antigen	es:antígeno	fa:آنتی‌ژن	fr:antigène	he:אנטיגן	hi:प्रतिजन	ja:抗原	ko:항원	pt:antígeno	ru:антиген	tr:antijen	ur:اینٹی جن	zh:抗原
 c:antimatter	Noun	ar:مادة مضادة	de:Antimaterie	en:antimatter	es:antimateria	fa:پادماده	fr:antimatière	he:אנטי-חומר	hi:प्रतिपदार्थ	ja:反物質	ko:반물질	pt:antimatéria	ru:антиматерия	tr:antimadde	ur:ضد مادہ	zh:反物质
+c:antimony-metal	Noun	ar:أنتيمون	de:Antimon	en:antimony	es:antimonio	fa:آنتیموان	fr:antimoine	he:אנטימון	hi:एंटीमनी	ja:アンチモン	ko:안티몬	pt:antimônio	ru:сурьма	tr:antimon	ur:اینٹیمنی	zh:锑
 c:antioxidant-food	Noun	ar:مضاد الأكسدة	de:Antioxidans	en:antioxidant	es:antioxidante	fa:آنتی‌اکسیدان	fr:antioxydant	he:נוגד חמצון	hi:प्रतिऑक्सीकारक	ja:抗酸化物質	ko:항산화제	pt:antioxidante	ru:антиоксидант	tr:antioksidan	ur:اینٹی آکسیڈنٹ	zh:抗氧化剂
 c:antipsychotic	Noun	ar:مضاد الذهان	de:Antipsychotikum	en:antipsychotic	es:antipsicótico	fa:ضد روان‌پریشی	fr:antipsychotique	he:תרופה אנטיפסיכוטית	hi:मनोविकाररोधी	ja:抗精神病薬	ko:항정신병약	pt:antipsicótico	ru:антипсихотик	tr:antipsikotik	ur:نفسیاتی مخالف دوا	zh:抗精神病药
 c:antiquity	Noun	ar:العصور القديمة,العصر القديم	de:Antike,Altertum	en:antiquity	es:antigüedad	fa:دوران باستان	fr:antiquité	he:עת עתיקה,העת העתיקה	hi:प्राचीन काल,पुरातनता	ja:古代,古代史	ko:고대,고대사	pt:antiguidade	ru:античность,древность	tr:antik çağ,ilk çağ	ur:قدیم دور,زمانۂ قدیم	zh:古代,上古
@@ -636,6 +638,7 @@ c:birthday	Noun	ar:عيد ميلاد,ميلاد	de:Geburtstag	en:birthday	es:cum
 c:biscuit	Noun	ar:بسكويت	de:Keks	en:biscuit	es:galleta	fa:بیسکویت	fr:biscuit	he:ביסקוויט	hi:बिस्कुट	ja:ビスケット	ko:비스킷	pt:biscoito	ru:печенье	tr:bisküvi	ur:بسکٹ	zh:饼干
 c:bishop	Noun	ar:اسقف	de:Bischof	en:bishop	es:obispo	fa:اسقف	fr:évêque	he:בישוף	hi:बिशप	ja:司教	ko:주교	pt:bispo	ru:епископ	tr:piskopos	ur:بشپ	zh:主教
 c:bismuth	Noun	ar:بزموت	de:Bismut	en:bismuth	es:bismuto	fa:بیسموت	fr:bismuth	he:ביסמות	hi:बिस्मथ	ja:ビスマス	ko:비스무트	pt:bismuto	ru:висмут	tr:bizmut	ur:بزمت	zh:铋
+c:bismuth-metal	Noun	ar:بزموت	de:Bismut	en:bismuth	es:bismuto	fa:بیسموت	fr:bismuth	he:ביסמות	hi:बिस्मथ	ja:ビスマス	ko:비스무트	pt:bismuto	ru:висмут	tr:bizmut	ur:بزمتھ	zh:铋
 c:bison	Noun	ar:بيسون	de:Bison	en:bison	es:bisonte	fa:بیسون	fr:bison	he:ביזון	hi:बाइसन	ja:バイソン	ko:들소	pt:bisonte	ru:бизон	tr:bizon	ur:بائسن	zh:野牛
 c:bispecific-antibody	Noun	ar:الجسم المضاد ثنائي النوعية	de:bispezifischer Antikörper	en:bispecific antibody	es:anticuerpo biespecífico	fa:پادتن دوگانه اختصاصی	fr:anticorps bispécifique	he:נוגדן דו-ספציפי	hi:द्विविशिष्ट प्रतिरक्षी	ja:二重特異性抗体	ko:이중특이성 항체	pt:anticorpo biespecífico	ru:биспецифическое антитело	tr:bispesifik antikor	ur:دو خاص ضد جسم	zh:双特异性抗体
 c:bit-depth	Noun	ar:عمق البت	de:Bittiefe	en:bit depth	es:profundidad de bits	fa:عمق بیت	fr:résolution en bits	he:עומק סיביות	hi:बिट गहराई	ja:ビット深度	ko:비트 깊이	pt:profundidade de bits	ru:битовая глубина	tr:bit derinliği	ur:بٹ گہرائی	zh:位深度
@@ -756,6 +759,7 @@ c:branch	Noun	ar:فرع,غصن	de:Ast,Zweig	en:branch	es:rama	fa:شاخه	fr:bra
 c:brane-cosmology	Noun	ar:الكوزمولوجيا الغشائية	de:Brane-Kosmologie	en:brane cosmology	es:cosmología de branas	fa:کیهانشناسی بران	fr:cosmologie des branes	he:קוסמולוגיית ברנות	hi:ब्रेन ब्रह्मांडविज्ञान	ja:ブレーン宇宙論	ko:브레인 우주론	pt:cosmologia de branas	ru:бранная космология	tr:bran kozmolojisi	ur:برین کائناتیات	zh:膜宇宙学
 c:brasilia	Noun	ar:برازيليا	de:Brasília	en:Brasilia,Brasília	es:Brasilia	fa:برازیلیا	fr:Brasilia	he:ברזיליה	hi:ब्रासीलिया	ja:ブラジリア	ko:브라질리아	pt:Brasília	ru:Бразилиа	tr:Brasília	ur:برازیلیا	zh:巴西利亚
 c:brass	Noun	ar:نحاس أصفر,نحاس	de:Messing	en:brass	es:latón	fa:برنج,برنج زرد	fr:laiton	he:פליז	hi:पीतल	ja:真鍮,黄銅	ko:황동,놋쇠	pt:latão	ru:латунь	tr:pirinç,sarı bakır	ur:پیتل	zh:黄铜
+c:brass-alloy	Noun	ar:نحاس أصفر	de:Messing	en:brass	es:latón	fa:برنج	fr:laiton	he:פליז	hi:पीतल	ja:真鍮	ko:황동	pt:latão	ru:латунь	tr:pirinç	ur:پیتل	zh:黄铜
 c:brayton-cycle	Noun	ar:دورة برايتون	de:Joule-Kreisprozess	en:Brayton cycle	es:ciclo Brayton	fa:چرخه برایتون	fr:cycle de Brayton	he:מחזור ברייטון	hi:ब्रेटन चक्र	ja:ブレイトンサイクル	ko:브레이턴 사이클	pt:ciclo Brayton	ru:цикл Брайтона	tr:Brayton döngüsü	ur:بریٹن چکر	zh:布雷顿循环
 c:brazil	Noun	ar:البرازيل	de:Brasilien	en:Brazil	es:Brasil	fa:برزیل	fr:Brésil	he:ברזיל	hi:ब्राज़ील	ja:ブラジル	ko:브라질	pt:Brasil	ru:Бразилия	tr:Brezilya	ur:برازیل	zh:巴西
 c:brazil-nut	Noun	ar:جوز البرازيل	de:Paranuss	en:Brazil nut	es:nuez de Brasil	fa:آجیل برزیل	fr:noix du Brésil	he:אגוז ברזיל	hi:ब्राज़ील नट	ja:ブラジルナッツ	ko:브라질 너트	pt:castanha-do-pará	ru:бразильский орех	tr:Brezilya fıstığı	ur:برازیل نٹ	zh:巴西坚果
@@ -783,6 +787,7 @@ c:bromine	Noun	ar:بروم	de:Brom	en:bromine	es:bromo	fa:برم	fr:brome	he:ב�
 c:bronchus	Noun	ar:القصبة الهوائية الفرعية	de:Bronchus	en:bronchus	es:bronquio	fa:برونش	fr:bronche	he:סמפון	hi:श्वसनी	ja:気管支	ko:기관지	pt:brônquio	ru:бронх	tr:bronş	ur:برونکس	zh:支气管
 c:bronze	Noun	ar:برونز	de:Bronze	en:bronze	es:bronce	fa:برنز,مفرغ	fr:bronze	he:ארד,ברונזה	hi:कांस्य,ब्रॉन्ज़	ja:青銅,ブロンズ	ko:청동,브론즈	pt:bronze	ru:бронза	tr:bronz,tunç	ur:کانسی	zh:青铜
 c:bronze-age	Noun	ar:العصر البرونزي	de:Bronzezeit	en:bronze age	es:edad del bronce	fa:عصر برنز	fr:âge du bronze	he:תקופת הברונזה	hi:कांस्य युग	ja:青銅器時代	ko:청동기시대	pt:idade do bronze	ru:бронзовый век	tr:bronz çağı,tunç çağı	ur:کانسی کا دور	zh:青铜时代,青铜器时代
+c:bronze-alloy	Noun	ar:برونز	de:Bronze	en:bronze	es:bronce	fa:برنز	fr:bronze	he:ארד	hi:कांस्य	ja:青銅	ko:청동	pt:bronze	ru:бронза	tr:bronz	ur:کانسی	zh:青铜
 c:brooch	Noun	ar:بروش,دبوس الزينة	de:Brosche	en:brooch	es:broche	fa:گل سینه	fr:broche	he:סיכת חזה	hi:ब्रोच	ja:ブローチ	ko:브로치	pt:broche	ru:брошь	tr:broş	ur:بروچ	zh:胸针
 c:broom	Noun	ar:مكنسة	de:Besen	en:broom	es:escoba	fa:جارو	fr:balai	he:מטאטא	hi:झाड़ू,बुहारी	ja:ほうき	ko:빗자루	pt:vassoura	ru:метла,веник	tr:süpürge	ur:جھاڑو	zh:扫帚,笤帚
 c:brother	Noun	ar:أخ	de:Bruder	en:brother	es:hermano	fa:برادر	fr:frère	he:אח	hi:भाई	ja:兄,弟	ko:형제,형,동생	pt:irmão	ru:брат	tr:kardeş,erkek kardeş	ur:بھائی	zh:兄弟,哥哥,弟弟
@@ -947,6 +952,7 @@ c:caspian-sea	Noun	ar:بحر قزوين	de:Kaspisches Meer	en:Caspian Sea	es:Mar
 c:cassava	Noun	ar:كسافا,مانيوك	de:Maniok	en:cassava,manioc	es:yuca,mandioca	fa:کاساوا	fr:manioc	he:קסאוה	hi:कसावा	ja:キャッサバ	ko:카사바	pt:mandioca	ru:маниок	tr:manyok	ur:کساوا	zh:木薯
 c:cassiopeia	Noun	ar:ذات الكرسي,كاسيوبيا	de:Kassiopeia	en:Cassiopeia	es:Casiopea	fa:ذات الکرسی	fr:Cassiopée	he:קסיופיאה	hi:कैसियोपिया	ja:カシオペヤ座	ko:카시오페이아자리	pt:Cassiopeia	ru:Кассиопея	tr:Kraliçe Takımyıldızı	ur:کیسیوپیا	zh:仙后座
 c:cassowary	Noun	ar:كاسواري	de:Kasuar	en:cassowary	es:casuario	fa:کاسواری	fr:casoar	he:קסוואר	hi:कैसोवरी	ja:ヒクイドリ	ko:화식조	pt:casuário	ru:казуар	tr:kasuvar	ur:کیسواری	zh:食火鸡
+c:cast-iron-metal	Noun	ar:حديد زهر	de:Gusseisen	en:cast iron	es:hierro fundido	fa:چدن	fr:fonte	he:ברזל יצוק	hi:ढलवां लोहा	ja:鋳鉄	ko:주철	pt:ferro fundido	ru:чугун	tr:dökme demir	ur:ڈھلوان لوہا	zh:铸铁
 c:castanets	Noun	ar:كستانيت	de:Kastagnetten	en:castanets	es:castañuelas	fa:کاستانت	fr:castagnettes	he:קסטנייטות	hi:कैस्टनेट	ja:カスタネット	ko:캐스터네츠	pt:castanholas	ru:кастаньеты	tr:kastanyet	ur:کاسٹنیٹ	zh:响板
 c:caste	Noun	ar:طبقة اجتماعية,كاست	de:Kaste	en:caste	es:casta	fa:کاست,طبقه موروثی	fr:caste	he:קסטה	hi:जाति,वर्ण	ja:カースト	ko:카스트,계급	pt:casta	ru:каста	tr:kast	ur:ذات,برادری	zh:种姓,卡斯特
 c:casting-material	Noun	ar:الصب	de:Gießen	en:casting	es:fundición	fa:ریخته‌گری	fr:moulage	he:יציקה	hi:ढलाई	ja:鋳造	ko:주조	pt:fundição	ru:литьё	tr:döküm	ur:ڈھلائی	zh:铸造
@@ -1114,6 +1120,7 @@ c:christmas	Noun	ar:عيد الميلاد,الكريسماس	de:Weihnachten	en:c
 c:chromatic	Adjective	ar:كروماتيكي	de:chromatisch	en:chromatic	es:cromático	fa:کروماتیک	fr:chromatique	he:כרומטי	hi:क्रोमेटिक	ja:半音階的	ko:반음계	pt:cromático	ru:хроматический	tr:kromatik	ur:کروماٹک	zh:半音阶
 c:chromatography	Noun	ar:كروماتوغرافيا	de:Chromatographie	en:chromatography	es:cromatografía	fa:کروماتوگرافی	fr:chromatographie	he:כרומטוגרפיה	hi:वर्णलेखन	ja:クロマトグラフィー	ko:크로마토그래피	pt:cromatografia	ru:хроматография	tr:kromatografi	ur:رنگ نگاری	zh:色谱法
 c:chromium	Noun	ar:كروم	de:Chrom	en:chromium	es:cromo	fa:کروم	fr:chrome	he:כרום	hi:क्रोमियम	ja:クロム	ko:크로뮴	pt:cromo	ru:хром	tr:krom	ur:کرومیم	zh:铬
+c:chromium-metal	Noun	ar:كروم	de:Chrom	en:chromium	es:cromo	fa:کروم	fr:chrome	he:כרום	hi:क्रोमियम	ja:クロム	ko:크롬	pt:cromo	ru:хром	tr:krom	ur:کرومیم	zh:铬
 c:chromosome	Noun	ar:كروموسوم,صبغي	de:Chromosom	en:chromosome	es:cromosoma	fa:کروموزوم	fr:chromosome	he:כרומוזום	hi:गुणसूत्र	ja:染色体	ko:염색체	pt:cromossomo,cromossoma	ru:хромосома	tr:kromozom	ur:کروموسوم	zh:染色体
 c:chromosphere	Noun	ar:الغلاف اللوني	de:Chromosphäre	en:chromosphere	es:cromosfera	fa:رنگین‌کره	fr:chromosphère	he:כרומוספירה	hi:वर्णमंडल	ja:彩層	ko:채층	pt:cromosfera	ru:хромосфера	tr:kromosferi	ur:رنگین کرہ	zh:色球
 c:chronicler	Noun	ar:مؤرخ	de:Chronist	en:chronicler	es:cronista	fa:تاریخ نگار	fr:chroniqueur	he:כרוניקאי	hi:वृत्तान्तकार	ja:年代記者	ko:연대기 작가	pt:cronista	ru:летописец	tr:vakayiname yazarı	ur:تاریخ نگار	zh:编年史家
@@ -1218,6 +1225,7 @@ c:coat	Noun	ar:معطف	de:Mantel	en:coat	es:abrigo	fa:پالتو	fr:manteau	he:
 c:coat-of-arms	Noun	ar:شعار العائلة	de:Wappen	en:coat of arms	es:escudo de armas	fa:نشان خانوادگی	fr:armoiries	he:סמל משפחה	hi:कुलचिह्न	ja:紋章	ko:문장	pt:brasão de armas	ru:герб	tr:arma	ur:خاندانی نشان	zh:纹章
 c:coat-rack	Noun	ar:علاقة معاطف,مشجب	de:Garderobenständer	en:coat rack,coat stand	es:perchero	fa:جالباسی	fr:portemanteau	he:מתלה מעילים	hi:कोट रैक,कोट टांगने की रैक	ja:コート掛け	ko:코트 걸이	pt:cabideiro	ru:вешалка для пальто	tr:vestiyer,portmanto	ur:کوٹ رکھنے کا اسٹینڈ	zh:衣帽架
 c:cobalt	Noun	ar:كوبلتي,أزرق كوبلت	de:Kobaltblau	en:cobalt,cobalt blue	es:azul cobalto	fa:آبی کبالت	fr:bleu cobalt	he:כחול קובלט	hi:कोबाल्ट नीला	ja:コバルトブルー	ko:코발트블루	pt:azul-cobalto	ru:кобальтовый	tr:kobalt mavisi	ur:کوبالٹ نیلا	zh:钴蓝色
+c:cobalt-metal	Noun	ar:كوبالت	de:Kobalt	en:cobalt	es:cobalto	fa:کبالت	fr:cobalt	he:קובלט	hi:कोबाल्ट	ja:コバルト	ko:코발트	pt:cobalto	ru:кобальт	tr:kobalt	ur:کوبالٹ	zh:钴
 c:cobbler	Noun	ar:إسكافي,صانع الأحذية	de:Schuster,Schuhmacher	en:cobbler,shoemaker	es:zapatero	fa:کفاش,کفش‌دوز	fr:cordonnier	he:סנדלר	hi:मोची	ja:靴屋,靴職人	ko:제화공,구두장이	pt:sapateiro	ru:сапожник	tr:ayakkabıcı,kunduracı	ur:موچی	zh:鞋匠
 c:cobordism	Noun	ar:التكافؤ الحدودي	de:Kobordismus	en:cobordism	es:cobordismo	fa:همکرانی	fr:cobordisme	he:קובורדיזם	hi:सह-सीमावाद	ja:コボルディズム	ko:코보르디즘	pt:cobordismo	ru:кобордизм	tr:kobordizm	ur:کوبورڈیزم	zh:配边
 c:cobra	Noun	ar:كوبرا,ثعبان الكوبرا	de:Kobra	en:cobra	es:cobra	fa:کبرا	fr:cobra	he:קוברה	hi:कोबरा	ja:コブラ	ko:코브라	pt:cobra	ru:кобра	tr:kobra	ur:کوبرا	zh:眼镜蛇
@@ -1402,6 +1410,7 @@ c:copernicus	Noun	ar:كوبرنيكوس	de:Kopernikus	en:Copernicus	es:Copérnic
 c:copier	Noun	ar:آلة نسخ	de:Kopierer	en:copier	es:fotocopiadora	fa:دستگاه کپی	fr:photocopieuse	he:מכונת צילום	hi:कॉपियर	ja:コピー機	ko:복사기	pt:copiadora	ru:копир	tr:fotokopi makinesi	ur:کاپی مشین	zh:复印机
 c:copolymer	Noun	ar:الكوبوليمر	de:Copolymer	en:copolymer	es:copolímero	fa:کوپلیمر	fr:copolymère	he:קופולימר	hi:सहबहुलक	ja:コポリマー	ko:공중합체	pt:copolímero	ru:сополимер	tr:kopolimer	ur:مشترک پولیمر	zh:共聚物
 c:copper	Noun	ar:نحاس	de:Kupfer	en:copper	es:cobre	fa:مس	fr:cuivre	he:נחושת	hi:तांबा,ताम्र	ja:銅	ko:구리,동	pt:cobre	ru:медь	tr:bakır	ur:تانبا	zh:铜
+c:copper-metal	Noun	ar:نحاس	de:Kupfer	en:copper	es:cobre	fa:مس	fr:cuivre	he:נחושת	hi:तांबा	ja:銅	ko:구리	pt:cobre	ru:медь	tr:bakır	ur:تانبا	zh:铜
 c:copperhead-snake	Noun	ar:افعى النحاس	de:Kupferkopf	en:copperhead snake	es:cabeza de cobre	fa:مار مسی	fr:tête de cuivre	he:ראש נחושת	hi:कॉपरहेड सांप	ja:コパーヘッド	ko:구리머리뱀	pt:cobra-cabeça-de-cobre	ru:медноголовый щитомордник	tr:bakır başlı yılan	ur:تانبا سر سانپ	zh:铜头蛇
 c:copyright	Noun	ar:حقوق النشر,حق المؤلف	de:Urheberrecht,Copyright	en:copyright	es:derechos de autor,copyright	fa:حق مولف,کپی رایت	fr:droit d'auteur,copyright	he:זכויות יוצרים	hi:कॉपीराइट,स्वत्वाधिकार	ja:著作権	ko:저작권	pt:direitos autorais,copyright	ru:авторское право	tr:telif hakkı	ur:حق طبع	zh:版权
 c:coral	Noun	ar:مرجان	de:Koralle	en:coral	es:coral	fa:مرجان	fr:corail	he:אלמוג	hi:प्रवाल	ja:サンゴ	ko:산호	pt:coral	ru:коралл	tr:mercan	ur:مرجان	zh:珊瑚
@@ -1895,6 +1904,7 @@ c:dunlin	Noun	ar:طائر الزقزاق الرملي	de:Alpenstrandläufer	en:d
 c:dunning-kruger	Noun	ar:أثر دانينج كروجر	de:Dunning-Kruger-Effekt	en:Dunning-Kruger effect	es:efecto Dunning-Kruger	fa:اثر دانینگ کروگر	fr:effet Dunning-Kruger	he:אפקט דאנינג-קרוגר	hi:डनिंग-क्रूगर प्रभाव	ja:ダニング・クルーガー効果	ko:더닝-크루거 효과	pt:efeito Dunning-Kruger	ru:эффект Даннинга-Крюгера	tr:Dunning-Kruger etkisi	ur:ڈننگ کروگر اثر	zh:邓宁-克鲁格效应
 c:duodenum	Noun	ar:الاثني عشر	de:Zwölffingerdarm	en:duodenum	es:duodeno	fa:دوازدهه	fr:duodénum	he:תריסריון	hi:ग्रहणी	ja:十二指腸	ko:십이지장	pt:duodeno	ru:двенадцатиперстная кишка	tr:onikiparmak bağırsağı	ur:گرہانی	zh:十二指肠
 c:duopoly	Noun	ar:ثنائية الاحتكار	de:Duopol	en:duopoly	es:duopolio	fa:دوقطبی	fr:duopole	he:דואופול	hi:द्वाधिकार	ja:複占	ko:복점	pt:duopólio	ru:дуополия	tr:düopolü	ur:دوہری اجارہ داری	zh:双头垄断
+c:duralumin	Noun	ar:دورالومين	de:Duralumin	en:duralumin	es:duraluminio	fa:دورالومین	fr:duralumin	he:דורלומין	hi:ड्यूरेलुमिन	ja:ジュラルミン	ko:두랄루민	pt:duralumin	ru:дюралюминий	tr:duralumin	ur:ڈیورالومن	zh:硬铝
 c:durian	Noun	ar:دوريان	de:Durian	en:durian	es:durián	fa:دورین	fr:durian	he:דוריאן	hi:दुरियन	ja:ドリアン	ko:두리안	pt:durião	ru:дуриан	tr:durian	ur:ڈیورین	zh:榴莲
 c:dusk	Noun	ar:شفق,غسق	de:Abenddämmerung	en:dusk,twilight	es:crepúsculo,anochecer	fa:شامگاه,غروب	fr:crépuscule	he:בין השמשות,דמדומים	hi:सांझ,गोधूलि	ja:黄昏,夕暮れ	ko:황혼,땅거미	pt:anoitecer,crepúsculo	ru:сумерки	tr:alacakaranlık	ur:شام,غروب	zh:黄昏,暮色
 c:dust-devil	Noun	ar:عجة التراب	de:Windhose	en:dust devil	es:torbellino de polvo	fa:گرداب گردوغبار	fr:tourbillon de poussière	he:סופת אבק	hi:धूल भूत	ja:砂嵐	ko:먼지 소용돌이	pt:redemoinho de poeira	ru:пыльный смерч	tr:toz şeytan	ur:گرد کا بھنور	zh:尘卷风
@@ -2479,6 +2489,7 @@ c:gallery	Noun	ar:الشرفة العلوية	de:Galerie	en:gallery	es:galería	
 c:gallium	Noun	ar:غاليوم	de:Gallium	en:gallium	es:galio	fa:گالیم	fr:gallium	he:גליום	hi:गैलियम	ja:ガリウム	ko:갈륨	pt:gálio	ru:галлий	tr:galyum	ur:گیلیم	zh:镓
 c:gallop	Verb	ar:عدا بسرعة,ركض ركض الخيل	de:galoppieren	en:gallop	es:galopar	fa:چهار نعل دویدن	fr:galoper	he:לדהור	hi:सरपट दौड़ना	ja:駆ける,ギャロップする	ko:전속력으로 달리다	pt:galopar	ru:скакать галопом	tr:dörtnala koşmak	ur:سرپٹ دوڑنا	zh:疾驰,奔驰
 c:galois-representation	Noun	ar:تمثيل غالوا	de:Galois-Darstellung	en:Galois representation	es:representación de Galois	fa:نمایش گالوا	fr:représentation galoisienne	he:ייצוג גלואה	hi:गेलुआ प्रतिनिधित्व	ja:ガロア表現	ko:갈루아 표현	pt:representação de Galois	ru:представление Галуа	tr:Galois temsili	ur:گالوا نمائندگی	zh:伽罗瓦表示
+c:galvanized-steel	Noun	ar:فولاذ مجلفن	de:Verzinkter Stahl	en:galvanized steel	es:acero galvanizado	fa:فولاد گالوانیزه	fr:acier galvanisé	he:פלדה מגולוונת	hi:गैल्वेनाइज्ड स्टील	ja:亜鉛めっき鋼	ko:아연도강	pt:aço galvanizado	ru:оцинкованная сталь	tr:galvanizli çelik	ur:گیلوانائزڈ اسٹیل	zh:镀锌钢
 c:game	Noun	ar:لعبة	de:Spiel	en:game	es:juego	fa:بازی	fr:jeu	he:משחק	hi:खेल	ja:ゲーム,試合	ko:게임,놀이	pt:jogo	ru:игра	tr:oyun	ur:کھیل,گیم	zh:游戏,比赛
 c:gamete	Noun	ar:مشيج,خلية تناسلية	de:Gamet,Keimzelle	en:gamete	es:gameto	fa:گامت	fr:gamète	he:גמטה,תא רבייה	hi:युग्मक	ja:配偶子	ko:생식세포,배우자	pt:gameta	ru:гамета	tr:gamet	ur:تولیدی خلیہ	zh:配子
 c:gamma-ray-burst	Noun	ar:انفجار أشعة غاما	de:Gammastrahlenausbruch	en:gamma-ray burst	es:destello de rayos gamma	fa:انفجار پرتو گاما	fr:sursaut gamma	he:פרץ קרני גמא	hi:गामा-किरण विस्फोट	ja:ガンマ線バースト	ko:감마선 폭발	pt:explosão de raios gama	ru:гамма-всплеск	tr:gama ışını patlaması	ur:گاما شعاعی دھماکہ	zh:伽马射线暴
@@ -2615,6 +2626,9 @@ c:god	Noun	ar:إله,الله	de:Gott	en:god	es:dios	fa:خدا	fr:dieu	he:אלו
 c:goddess	Noun	ar:إلهة	de:Göttin	en:goddess	es:diosa	fa:الهه	fr:déesse	he:אלה	hi:देवी	ja:女神	ko:여신	pt:deusa	ru:богиня	tr:tanrıça	ur:دیوی	zh:女神
 c:godwit	Noun	ar:طائر الاصطياف	de:Uferschnepfe	en:godwit	es:aguja	fa:گاد وایت	fr:barge	he:בצית	hi:गॉडविट	ja:オオソリハシシギ	ko:큰뒷부리도요	pt:maçarico-de-bico-direito	ru:веретенник	tr:uzun gagalı kuş	ur:گاڈوٹ پرندہ	zh:塍鹬
 c:gold	Noun	ar:ذهب	de:Gold	en:gold	es:oro	fa:طلا	fr:or	he:זהב	hi:सोना,स्वर्ण	ja:金,ゴールド	ko:금,골드	pt:ouro	ru:золото	tr:altın	ur:سونا,زر	zh:金,黄金
+c:gold-alloy	Noun	ar:سبيكة ذهب	de:Goldlegierung	en:gold alloy	es:aleación de oro	fa:آلیاژ طلا	fr:alliage d'or	he:סגסוגת זהב	hi:सोने का मिश्रधातु	ja:金合金	ko:금 합금	pt:liga de ouro	ru:золотой сплав	tr:altın alaşımı	ur:سونے کا مرکب	zh:金合金
+c:gold-leaf	Noun	ar:ورق الذهب	de:Blattgold	en:gold leaf	es:pan de oro	fa:ورق طلا	fr:feuille d'or	he:עלה זהב	hi:सोने की पत्ती	ja:金箔	ko:금박	pt:folha de ouro	ru:сусальное золото	tr:altın varak	ur:سونے کی پتی	zh:金箔
+c:gold-metal	Noun	ar:ذهب	de:Gold	en:gold	es:oro	fa:طلا	fr:or	he:זהב	hi:सोना	ja:金	ko:금	pt:ouro	ru:золото	tr:altın	ur:سونا	zh:黄金
 c:goldbach-conjecture	Noun	ar:حدسية غولدباخ	de:Goldbach-Vermutung	en:Goldbach's conjecture	es:conjetura de Goldbach	fa:حدس گلدباخ	fr:conjecture de Goldbach	he:השערת גולדבך	hi:गोल्डबाख का अनुमान	ja:ゴールドバッハ予想	ko:골드바흐 추측	pt:conjectura de Goldbach	ru:гипотеза Гольдбаха	tr:Goldbach sanısı	ur:گولڈ باخ کا قیاس	zh:哥德巴赫猜想
 c:goldfish	Noun	ar:سمكة ذهبية	de:Goldfisch	en:goldfish	es:pez dorado	fa:ماهی قرمز	fr:poisson rouge	he:דג זהב	hi:सुनहरी मछली	ja:金魚	ko:금붕어	pt:peixe-dourado	ru:золотая рыбка	tr:Japon balığı	ur:سنہری مچھلی	zh:金鱼
 c:goldsmith	Noun	ar:صائغ ذهب,صائغ	de:Goldschmied	en:goldsmith	es:orfebre	fa:زرگر,طلاساز	fr:orfèvre	he:צורף זהב	hi:सुनार,स्वर्णकार	ja:金細工師,金匠	ko:금세공인	pt:ourives	ru:золотых дел мастер,ювелир по золоту	tr:kuyumcu,altın ustası	ur:سنار,زرگر	zh:金匠
@@ -3160,11 +3174,13 @@ c:ipo	Noun	ar:الاكتتاب العام	de:Börsengang	en:IPO	es:oferta públi
 c:iran	Noun	ar:إيران	de:Iran	en:Iran	es:Irán	fa:ایران	fr:Iran	he:איראן	hi:ईरान	ja:イラン	ko:이란	pt:Irã,Irão	ru:Иран	tr:İran	ur:ایران	zh:伊朗
 c:iraq	Noun	ar:العراق	de:Irak	en:Iraq	es:Irak,Iraq	fa:عراق	fr:Irak	he:עיראק	hi:इराक	ja:イラク	ko:이라크	pt:Iraque	ru:Ирак	tr:Irak	ur:عراق	zh:伊拉克
 c:iridescent	Adjective	ar:متقزح الألوان	de:schillernd,irisierend	en:iridescent	es:iridiscente,tornasolado	fa:رنگین کمانی,رنگارنگ	fr:irisé,opalescent	he:מתחלף בצבעים	hi:इंद्रधनुषी	ja:玉虫色の	ko:무지갯빛의	pt:iridescente	ru:переливчатый	tr:yanar döner	ur:قوس قزح رنگ	zh:虹彩,彩虹般
+c:iridium-metal	Noun	ar:إيريديوم	de:Iridium	en:iridium	es:iridio	fa:ایریدیوم	fr:iridium	he:אירידיום	hi:इरीडियम	ja:イリジウム	ko:이리듐	pt:irídio	ru:иридий	tr:iridyum	ur:اریڈیم	zh:铱
 c:iris	Noun	ar:السوسن,الإيرِس	de:Schwertlilie,Iris	en:iris	es:iris,lirio	fa:زنبق,ایریس	fr:iris	he:איריס	hi:आइरिस	ja:アイリス,アヤメ	ko:붓꽃	pt:íris	ru:ирис	tr:süsen	ur:سوسن	zh:鸢尾
 c:irish-jig	Noun	ar:رقص الجيغ الإيرلندي	de:Irische Jig	en:Irish jig	es:giga irlandesa	fa:جیگ ایرلندی	fr:gigue irlandaise	he:ג׳יג אירי	hi:आयरिश जिग	ja:アイリッシュジグ	ko:아이리시 지그	pt:jig irlandês	ru:ирландская джига	tr:İrlanda ciği	ur:آئرش جگ	zh:爱尔兰吉格舞
 c:irish-sea	Noun	ar:البحر الأيرلندي	de:Irische See	en:Irish Sea	es:Mar de Irlanda	fa:دریای ایرلند	fr:Mer d'Irlande	he:הים האירי	hi:आयरिश सागर	ja:アイリッシュ海	ko:아일랜드해	pt:Mar da Irlanda	ru:Ирландское море	tr:İrlanda Denizi	ur:بحیرہ آئرش	zh:爱尔兰海
 c:iron	Noun	ar:حديد	de:Eisen	en:iron	es:hierro	fa:آهن	fr:fer	he:ברזל	hi:लोहा	ja:鉄,アイアン	ko:철	pt:ferro	ru:железо	tr:demir	ur:لوہا	zh:铁
 c:iron-age	Noun	ar:العصر الحديدي	de:Eisenzeit	en:iron age	es:edad del hierro	fa:عصر آهن	fr:âge du fer	he:תקופת הברזל	hi:लौह युग	ja:鉄器時代	ko:철기시대	pt:idade do ferro	ru:железный век	tr:demir çağı	ur:لوہے کا دور	zh:铁器时代
+c:iron-metal	Noun	ar:حديد	de:Eisen	en:iron	es:hierro	fa:آهن	fr:fer	he:ברזל	hi:लोहा	ja:鉄	ko:철	pt:ferro	ru:железо	tr:demir	ur:لوہا	zh:铁
 c:irony	Noun	ar:سخرية,مفارقة	de:Ironie	en:irony	es:ironía	fa:طعنه,کنایه	fr:ironie	he:אירוניה	hi:व्यंग्य	ja:皮肉,アイロニー	ko:아이러니,반어	pt:ironia	ru:ирония	tr:ironi,alaycılık	ur:طنز	zh:反讽,讽刺
 c:irreversibility	Noun	ar:اللارجعية	de:Irreversibilität	en:irreversibility	es:irreversibilidad	fa:برگشت‌ناپذیری	fr:irréversibilité	he:אי-הפיכות	hi:अनुत्क्रमणीयता	ja:非可逆性	ko:비가역성	pt:irreversibilidade	ru:необратимость	tr:geri dönüşsüzlük	ur:ناقابل واپسی	zh:不可逆性
 c:irrigation-drip	Noun	ar:ري بالتنقيط	de:Tropfbewässerung	en:drip irrigation	es:riego por goteo	fa:آبیاری قطره‌ای	fr:irrigation goutte-à-goutte	he:השקיה טפטוף	hi:ड्रिप सिंचाई	ja:点滴灌漑	ko:점적 관개	pt:irrigação por gotejamento	ru:капельное орошение	tr:damla sulama	ur:قطرہ آبپاشی	zh:滴灌
@@ -3412,6 +3428,7 @@ c:lawyer	Noun	ar:محامي	de:Anwalt,Rechtsanwalt	en:lawyer,attorney	es:abogado
 c:leachate	Noun	ar:عصارة المكب	de:Sickerwasser	en:leachate	es:lixiviado	fa:شیرابه	fr:lixiviat	he:ספיגה	hi:लीचेट	ja:浸出水	ko:침출수	pt:lixiviado	ru:фильтрат	tr:sızıntı suyu	ur:رسنے والا پانی	zh:渗滤液
 c:lead	Noun	ar:رصاص	de:Blei	en:lead	es:plomo	fa:سرب	fr:plomb	he:עופרת	hi:सीसा	ja:鉛,ナマリ	ko:납,연	pt:chumbo	ru:свинец	tr:kurşun	ur:سیسہ	zh:铅
 c:lead-compound	Noun	ar:المركب الرائد	de:Leitverbindung	en:lead compound	es:compuesto líder	fa:ترکیب پیشرو	fr:composé chef de file	he:תרכובת מובילה	hi:लीड यौगिक	ja:リード化合物	ko:리드 화합물	pt:composto líder	ru:лидерное соединение	tr:öncü bileşik	ur:اگواہ مرکب	zh:先导化合物
+c:lead-metal	Noun	ar:رصاص	de:Blei	en:lead	es:plomo	fa:سرب	fr:plomb	he:עופרת	hi:सीसा	ja:鉛	ko:납	pt:chumbo	ru:свинец	tr:kurşun	ur:سیسہ	zh:铅
 c:leader	Noun	ar:قائد,زعيم	de:Führer,Anführer	en:leader	es:líder	fa:رهبر	fr:leader,chef	he:מנהיג	hi:नेता	ja:指導者,リーダー	ko:지도자,리더	pt:líder	ru:лидер,вождь	tr:lider,önder	ur:رہنما,قائد	zh:领导,领袖
 c:leaf	Noun	ar:ورقة	de:Blatt	en:leaf,leaves	es:hoja	fa:برگ	fr:feuille	he:עלה	hi:पत्ता,पत्ती	ja:葉,葉っぱ	ko:잎	pt:folha	ru:лист	tr:yaprak	ur:پتا	zh:叶,叶子
 c:leaf-blower	Noun	ar:منفاخ أوراق	de:Laubbläser	en:leaf blower	es:soplador de hojas	fa:دمنده برگ	fr:souffleur de feuilles	he:מפוח עלים	hi:लीफ ब्लोअर	ja:ブロワー	ko:낙엽 블로어	pt:soprador de folhas	ru:воздуходувка	tr:yaprak üfleyici	ur:پتوں کا بلوور	zh:吹叶机
@@ -3509,6 +3526,7 @@ c:lira-currency	Noun	ar:ليرة	de:Lira	en:lira	es:lira	fa:لیر	fr:lire	he:ל
 c:listen	Verb	ar:استمع,أصغى	de:zuhören,hören	en:listen	es:escuchar	fa:گوش دادن	fr:écouter	he:להקשיב	hi:सुनना	ja:聴く	ko:듣다	pt:escutar,ouvir	ru:слушать	tr:dinlemek	ur:سننا	zh:听
 c:literature	Noun	ar:أدب	de:Literatur	en:literature	es:literatura	fa:ادبیات	fr:littérature	he:ספרות	hi:साहित्य	ja:文学	ko:문학	pt:literatura	ru:литература	tr:edebiyat	ur:ادب,ادبیات	zh:文学
 c:lithium	Noun	ar:ليثيوم	de:Lithium	en:lithium	es:litio	fa:لیتیم	fr:lithium	he:ליתיום	hi:लिथियम	ja:リチウム	ko:리튬	pt:lítio	ru:литий	tr:lityum	ur:لیتھیم	zh:锂
+c:lithium-metal	Noun	ar:ليثيوم	de:Lithium	en:lithium	es:litio	fa:لیتیم	fr:lithium	he:ליתיום	hi:लिथियम	ja:リチウム	ko:리튬	pt:lítio	ru:литий	tr:lityum	ur:لتھیم	zh:锂
 c:lithography	Noun	ar:الطباعة الحجرية	de:Lithografie	en:lithography	es:litografía	fa:سنگ‌چاپ	fr:lithographie	he:ליתוגרפיה	hi:लिथोग्राफी	ja:リトグラフ	ko:석판화	pt:litografia	ru:литография	tr:litografi	ur:سنگی چھپائی	zh:石版印刷
 c:lithosphere	Noun	ar:الغلاف الصخري	de:Lithosphäre	en:lithosphere	es:litosfera	fa:سنگ‌کره	fr:lithosphère	he:ליתוספירה	hi:स्थलमंडल	ja:岩石圏	ko:암석권	pt:litosfera	ru:литосфера	tr:litosfer	ur:پتھر کرہ	zh:岩石圈
 c:litigation	Noun	ar:التقاضي	de:Rechtsstreit	en:litigation	es:litigio	fa:دعوای قضایی	fr:contentieux	he:ניהול תביעה	hi:मुकदमेबाजी	ja:訴訟	ko:소송	pt:litígio	ru:судопроизводство	tr:dava	ur:مقدمہ بازی	zh:诉讼
@@ -3603,6 +3621,7 @@ c:magma	Noun	ar:الصهارة	de:Magma	en:magma	es:magma	fa:ماگما	fr:magma
 c:magma-chamber	Noun	ar:غرفة الصهارة	de:Magmakammer	en:magma chamber	es:cámara magmática	fa:محفظه ماگما	fr:chambre magmatique	he:תא מגמה	hi:मैग्मा कक्ष	ja:マグマ溜まり	ko:마그마 챔버	pt:câmara magmática	ru:магматический очаг	tr:magma odası	ur:میگما چیمبر	zh:岩浆房
 c:magna-carta	Noun	ar:الماغنا كارتا	de:Magna Carta	en:Magna Carta	es:Carta Magna	fa:منشور کبیر	fr:Magna Carta	he:מגנה כרטה	hi:मैग्ना कार्टा	ja:マグナ・カルタ	ko:마그나 카르타	pt:Magna Carta	ru:Великая хартия вольностей	tr:Magna Carta	ur:میگنا کارٹا	zh:大宪章
 c:magnesium	Noun	ar:مغنيسيوم	de:Magnesium	en:magnesium	es:magnesio	fa:منیزیم	fr:magnésium	he:מגנזיום	hi:मैग्नीशियम	ja:マグネシウム	ko:마그네슘	pt:magnésio	ru:магний	tr:magnezyum	ur:میگنیشیم	zh:镁
+c:magnesium-metal	Noun	ar:مغنيسيوم	de:Magnesium	en:magnesium	es:magnesio	fa:منیزیم	fr:magnésium	he:מגנזיום	hi:मैग्नीशियम	ja:マグネシウム	ko:마그네슘	pt:magnésio	ru:магний	tr:magnezyum	ur:میگنیشیم	zh:镁
 c:magnet	Noun	ar:مغناطيس	de:Magnet	en:magnet	es:imán	fa:آهنربا,مغناطیس	fr:aimant	he:מגנט	hi:चुम्बक	ja:磁石,マグネット	ko:자석,마그넷	pt:ímã,íman	ru:магнит	tr:mıknatıs,magnet	ur:مقناطیس	zh:磁铁,磁石
 c:magnetar	Noun	ar:نجم مغناطيسي	de:Magnetar	en:magnetar	es:magnetar	fa:مگنتار	fr:magnétar	he:מגנטר	hi:मैग्नेटार	ja:マグネター	ko:자기별	pt:magnetar	ru:магнетар	tr:magnetar	ur:مقناطیسی ستارہ	zh:磁星
 c:magnolia	Noun	ar:المغنوليا	de:Magnolie	en:magnolia	es:magnolia	fa:ماگنولیا	fr:magnolia	he:מגנוליה	hi:मैगनोलिया	ja:モクレン	ko:목련	pt:magnólia	ru:магнолия	tr:manolya	ur:مگنولیا	zh:玉兰
@@ -3633,6 +3652,7 @@ c:mandela	Noun	ar:مانديلا,نيلسون مانديلا	de:Mandela,Nelson M
 c:mandible	Noun	ar:فك	de:Mandibel	en:mandible	es:mandíbula	fa:فک	fr:mandibule	he:לסת	hi:मैंडिबल	ja:顎	ko:큰턱	pt:mandíbula	ru:мандибула	tr:mandibül	ur:جبڑا	zh:上颚
 c:mandolin	Noun	ar:ماندولين	de:Mandoline	en:mandolin	es:mandolina	fa:ماندولین	fr:mandoline	he:מנדולינה	hi:मैन्डोलिन	ja:マンドリン	ko:만돌린	pt:bandolim	ru:мандолина	tr:mandolin	ur:مینڈولن	zh:曼陀林
 c:manganese	Noun	ar:منغنيز	de:Mangan	en:manganese	es:manganeso	fa:منگنز	fr:manganèse	he:מנגן	hi:मैंगनीज	ja:マンガン	ko:망가니즈	pt:manganês	ru:марганец	tr:mangan	ur:مینگنیز	zh:锰
+c:manganese-metal	Noun	ar:منغنيز	de:Mangan	en:manganese	es:manganeso	fa:منگنز	fr:manganèse	he:מנגן	hi:मैंगनीज	ja:マンガン	ko:망간	pt:manganês	ru:марганец	tr:mangan	ur:مینگنیز	zh:锰
 c:mango	Noun	ar:مانجو	de:Mango	en:mango	es:mango	fa:انبه	fr:mangue	he:מנגו	hi:आम	ja:マンゴー	ko:망고	pt:manga	ru:манго	tr:mango	ur:آم	zh:芒果
 c:mangosteen	Noun	ar:منجستين,مانجوستان	de:Mangostane	en:mangosteen	es:mangostán	fa:مانگوستین	fr:mangoustan	he:מנגוסטין	hi:मैंगोस्टीन	ja:マンゴスチン	ko:망고스틴	pt:mangostim	ru:мангостин	tr:manggis	ur:مانگوسٹین	zh:山竹
 c:mangrove	Noun	ar:اشجار المانغروف	de:Mangrove	en:mangrove	es:manglar	fa:جنگل مانگرو	fr:mangrove	he:מנגרוב	hi:मैंग्रोव	ja:マングローブ	ko:맹그로브	pt:manguezal	ru:мангровые заросли	tr:mangrov	ur:مینگرو	zh:红树林
@@ -3755,6 +3775,7 @@ c:mental-toughness	Noun	ar:الصلابة النفسية	de:mentale Stärke	en:m
 c:mercantilism	Noun	ar:التجارية	de:Merkantilismus	en:mercantilism	es:mercantilismo	fa:سوداگری	fr:mercantilisme	he:מרקנטיליזם	hi:वाणिज्यवाद	ja:重商主義	ko:중상주의	pt:mercantilismo	ru:меркантилизм	tr:merkantilizm	ur:تجارت پسندی	zh:重商主义
 c:merchant	Noun	ar:تاجر	de:Kaufmann,Händler	en:merchant,trader	es:comerciante,mercader	fa:تاجر,بازرگان	fr:marchand,commerçant	he:סוחר	hi:व्यापारी	ja:商人	ko:상인	pt:comerciante,mercador	ru:торговец,купец	tr:tüccar,tacir	ur:تاجر	zh:商人,商贩
 c:mercury	Noun	ar:عطارد	de:Merkur	en:Mercury	es:Mercurio	fa:عطارد,تیر	fr:Mercure	he:כוכב חמה	hi:बुध	ja:水星	ko:수성	pt:Mercúrio	ru:Меркурий	tr:Merkür	ur:عطارد	zh:水星
+c:mercury-metal	Noun	ar:زئبق	de:Quecksilber	en:mercury	es:mercurio	fa:جیوه	fr:mercure	he:כספית	hi:पारा	ja:水銀	ko:수은	pt:mercúrio	ru:ртуть	tr:cıva	ur:پارہ	zh:汞
 c:mercy	Noun	ar:رحمة	de:Barmherzigkeit,Gnade	en:mercy	es:misericordia,piedad	fa:رحمت,مهربانی	fr:miséricorde,pitié	he:רחמים,חסד	hi:दया,करुणा	ja:慈悲	ko:자비	pt:misericórdia,piedade	ru:милосердие	tr:merhamet	ur:رحم,رحمت	zh:怜悯,慈悲
 c:merengue	Noun	ar:رقص الميرنغ	de:Merengue	en:merengue	es:merengue	fa:مرنگ	fr:merengue	he:מרנגה	hi:मेरेंगे	ja:メレンゲ	ko:메렝게	pt:merengue	ru:меренге	tr:merengue	ur:مرنگو	zh:梅伦格舞
 c:merger	Noun	ar:اندماج	de:Fusion	en:merger	es:fusión	fa:ادغام	fr:fusion	he:מיזוג	hi:विलय	ja:合併	ko:합병	pt:fusão	ru:слияние	tr:birleşme	ur:ادغام	zh:合并
@@ -3877,6 +3898,7 @@ c:mole	Noun	ar:مول	de:Mol	en:mole	es:mol	fa:مول	fr:mole	he:מול	hi:म�
 c:molecule	Noun	ar:جزيء	de:Molekül	en:molecule	es:molécula	fa:مولکول	fr:molécule	he:מולקולה	hi:अणु	ja:分子	ko:분자	pt:molécula	ru:молекула	tr:molekül	ur:مالیکیول	zh:分子
 c:molting	Noun	ar:انسلاخ	de:Häutung	en:molting	es:muda	fa:جوست اندازی	fr:mue	he:קילוף	hi:निर्मोचन	ja:脱皮	ko:탈피	pt:muda	ru:линька	tr:deri değiştirme	ur:کھال اتارنا	zh:蜕皮
 c:molybdenum	Noun	ar:موليبدينوم	de:Molybdän	en:molybdenum	es:molibdeno	fa:مولیبدن	fr:molybdène	he:מוליבדן	hi:मोलिब्डेनम	ja:モリブデン	ko:몰리브데넘	pt:molibdênio	ru:молибден	tr:molibden	ur:مولیبڈینم	zh:钼
+c:molybdenum-metal	Noun	ar:موليبدينوم	de:Molybdän	en:molybdenum	es:molibdeno	fa:مولیبدن	fr:molybdène	he:מוליבדן	hi:मोलिब्डेनम	ja:モリブデン	ko:몰리브덴	pt:molibdênio	ru:молибден	tr:molibden	ur:مولیبڈینم	zh:钼
 c:moment	Noun	ar:لحظة	de:Moment,Augenblick	en:moment,instant	es:momento,instante	fa:لحظه	fr:moment,instant	he:רגע	hi:पल,क्षण	ja:瞬間	ko:순간	pt:momento,instante	ru:момент,миг	tr:an	ur:لمحہ,پل	zh:瞬间,片刻
 c:moment-frame	Noun	ar:إطار العزم	de:Momentenrahmen	en:moment frame	es:marco resistente a momento	fa:قاب خمشی	fr:portique à nœuds rigides	he:מסגרת רגידה	hi:क्षण फ्रेम	ja:ラーメン構造	ko:모멘트 골조	pt:pórtico rígido	ru:рамная конструкция	tr:moment çerçevesi	ur:لمحہ فریم	zh:弯矩框架
 c:moment-magnitude	Noun	ar:قياس العزم الزلزالي	de:Momenten-Magnitudenskala	en:moment magnitude scale	es:escala de magnitud de momento	fa:مقیاس بزرگای گشتاور	fr:magnitude du moment	he:סולם עוצמת מומנט	hi:क्षण परिमाण पैमाना	ja:モーメントマグニチュード	ko:모멘트 규모	pt:escala de magnitude de momento	ru:магнитуда момента	tr:moment büyüklüğü	ur:لمحہ شدت پیمانہ	zh:矩震级
@@ -4113,8 +4135,10 @@ c:newton	Noun	ar:نيوتن	de:Newton	en:newton	es:newton	fa:نیوتن	fr:newto
 c:newton-person	Noun	ar:إسحاق نيوتن,نيوتن	de:Isaac Newton,Newton	en:Isaac Newton,Newton	es:Isaac Newton,Newton	fa:اسحاق نیوتن,نیوتن	fr:Isaac Newton,Newton	he:אייזק ניוטון	hi:आइज़ैक न्यूटन,न्यूटन	ja:アイザック・ニュートン,ニュートン	ko:아이작 뉴턴,뉴턴	pt:Isaac Newton,Newton	ru:Исаак Ньютон,Ньютон	tr:Isaac Newton,Newton	ur:آئزک نیوٹن,نیوٹن	zh:艾萨克·牛顿,牛顿
 c:ney	Noun	ar:ناي	de:Ney,Rohrflöte	en:ney	es:ney	fa:نی	fr:ney	he:ניי	hi:नय,नेय	ja:ネイ	ko:네이	pt:ney	ru:най	tr:ney	ur:نَے,نئے	zh:奈伊笛
 c:niche	Noun	ar:المكانة البيئية	de:ökologische Nische	en:niche	es:nicho ecológico	fa:جایگاه اکولوژیک	fr:niche écologique	he:נישה אקולוגית	hi:पारिस्थितिक स्थान	ja:生態的地位	ko:생태적 지위	pt:nicho ecológico	ru:экологическая ниша	tr:ekolojik niş	ur:ماحولیاتی مقام	zh:生态位
+c:nichrome-alloy	Noun	ar:نيكروم	de:Nickelchrom	en:nichrome	es:nicromo	fa:نیکروم	fr:nichrome	he:ניקרום	hi:नाइक्रोम	ja:ニクロム	ko:니크롬	pt:nicromo	ru:нихром	tr:nikrom	ur:نائیکروم	zh:镍铬合金
 c:nickel	Noun	ar:نيكل	de:Nickel	en:nickel	es:níquel	fa:نیکل	fr:nickel	he:ניקל	hi:निकेल	ja:ニッケル	ko:니켈	pt:níquel	ru:никель	tr:nikel	ur:نکل	zh:镍
 c:nickel-coin	Noun	ar:قطعة نيكل,عملة النيكل	de:Nickel,Fünfcentstück	en:nickel	es:moneda de cinco centavos,níquel	fa:سکه نیکل,سکه پنج سنتی	fr:pièce de cinq cents,nickel	he:מטבע ניקל,ניקל	hi:निकेल सिक्का	ja:ニッケル硬貨,5セント硬貨	ko:니켈 동전,5센트 동전	pt:moeda de cinco centavos,níquel	ru:никель,пятицентовая монета	tr:nikel parası,beş sentlik	ur:نکل سکہ	zh:五分硬币,镍币
+c:nickel-metal	Noun	ar:نيكل	de:Nickel	en:nickel	es:níquel	fa:نیکل	fr:nickel	he:ניקל	hi:निकेल	ja:ニッケル	ko:니켈	pt:níquel	ru:никель	tr:nikel	ur:نکل	zh:镍
 c:niger	Noun	ar:النيجر,نهر النيجر	de:Niger	en:Niger,Niger River	es:Níger,río Níger	fa:نیجر,رود نیجر	fr:Niger,fleuve Niger	he:ניז'ר,נהר הניז'ר	hi:नाइजर नदी	ja:ニジェール川	ko:니제르강	pt:Níger,rio Níger	ru:Нигер	tr:Nijer,Nijer Nehri	ur:دریائے نائجر	zh:尼日尔河
 c:nigeria	Noun	ar:نيجيريا	de:Nigeria	en:Nigeria	es:Nigeria	fa:نیجریه	fr:Nigéria	he:ניגריה	hi:नाइजीरिया	ja:ナイジェリア	ko:나이지리아	pt:Nigéria	ru:Нигерия	tr:Nijerya	ur:نائیجیریا	zh:尼日利亚
 c:night	Noun	ar:ليل,ليلة	de:Nacht	en:night	es:noche	fa:شب	fr:nuit	he:לילה	hi:रात	ja:夜	ko:밤	pt:noite	ru:ночь	tr:gece	ur:رات	zh:夜
@@ -4295,6 +4319,7 @@ c:osaka	Noun	ar:أوساكا	de:Osaka	en:Osaka	es:Osaka	fa:اوساکا	fr:Osaka
 c:oscillation	Noun	ar:تذبذب,اهتزاز	de:Schwingung,Oszillation	en:oscillation	es:oscilación	fa:نوسان	fr:oscillation	he:תנודה,נדנוד	hi:दोलन	ja:振動,発振	ko:진동,발진	pt:oscilação	ru:колебание,осцилляция	tr:salınım,osilasyon	ur:تذبذب,ہچکولا	zh:振荡,振动
 c:oscilloscope	Noun	ar:راسم الذبذبات	de:Oszilloskop	en:oscilloscope	es:osciloscopio	fa:اسیلوسکوپ	fr:oscilloscope	he:אוסילוסקופ	hi:ऑसिलोस्कोप	ja:オシロスコープ	ko:오실로스코프	pt:osciloscópio	ru:осциллограф	tr:osiloskop	ur:آسیلوسکوپ	zh:示波器
 c:osiris	Noun	ar:أوزيريس	de:Osiris	en:Osiris	es:Osiris	fa:اوزیریس	fr:Osiris	he:אוזיריס	hi:ओसिरिस	ja:オシリス	ko:오시리스	pt:Osíris	ru:Осирис	tr:Osiris	ur:اوزیرس	zh:奥西里斯
+c:osmium-metal	Noun	ar:أوزميوم	de:Osmium	en:osmium	es:osmio	fa:اسمیم	fr:osmium	he:אוסמיום	hi:ऑस्मियम	ja:オスミウム	ko:오스뮴	pt:ósmio	ru:осмий	tr:osmiyum	ur:اوسمیم	zh:锇
 c:osprey	Noun	ar:عقاب السمك,نسر البحر	de:Fischadler	en:osprey	es:águila pescadora	fa:عقاب ماهیگیر	fr:balbuzard	he:עיט הנהרות	hi:ओस्प्री	ja:ミサゴ	ko:물수리	pt:águia-pescadora	ru:скопа	tr:balık kartalı	ur:اوسپری	zh:鱼鹰
 c:ostrich	Noun	ar:نعامة	de:Strauß	en:ostrich	es:avestruz	fa:شترمرغ	fr:autruche	he:יען	hi:शुतुरमुर्ग	ja:ダチョウ	ko:타조	pt:avestruz	ru:страус	tr:deve kuşu	ur:شتر مرغ	zh:鸵鸟
 c:otoscope	Noun	ar:منظار الأذن	de:Otoskop	en:otoscope	es:otoscopio	fa:اتوسکوپ	fr:otoscope	he:אוטוסקופ	hi:ओटोस्कोप	ja:耳鏡	ko:이경	pt:otoscópio	ru:отоскоп	tr:otoskop	ur:کان کا آلہ	zh:耳镜
@@ -4350,6 +4375,7 @@ c:paleoclimatology	Noun	ar:علم المناخ القديم	de:Paläoklimatologi
 c:paleolithic	Noun	ar:العصر الحجري القديم	de:Altsteinzeit,Paläolithikum	en:paleolithic	es:paleolítico	fa:پارینه‌سنگی,دوره پارینه‌سنگی	fr:paléolithique	he:פלאוליתית,תקופת האבן הקדומה	hi:पुरापाषाण काल	ja:旧石器時代	ko:구석기시대	pt:paleolítico	ru:палеолит	tr:paleolitik,eski taş çağı	ur:قدیم پتھر کا دور	zh:旧石器时代
 c:paleomagnetism	Noun	ar:المغناطيسية القديمة	de:Paläomagnetismus	en:paleomagnetism	es:paleomagnetismo	fa:دیرینه‌مغناطیس	fr:paléomagnétisme	he:פלאומגנטיזם	hi:पुरातन चुम्बकत्व	ja:古地磁気学	ko:고지자기학	pt:paleomagnetismo	ru:палеомагнетизм	tr:paleomagnetizma	ur:قدیم مقناطیسیت	zh:古地磁学
 c:palladium	Noun	ar:بالاديوم	de:Palladium	en:palladium	es:paladio	fa:پالادیم	fr:palladium	he:פלדיום	hi:पैलेडियम	ja:パラジウム	ko:팔라듐	pt:paládio	ru:палладий	tr:paladyum	ur:پیلیڈیم	zh:钯
+c:palladium-metal	Noun	ar:بلاديوم	de:Palladium	en:palladium	es:paladio	fa:پالادیوم	fr:palladium	he:פלדיום	hi:पैलेडियम	ja:パラジウム	ko:팔라듐	pt:paládio	ru:палладий	tr:paladyum	ur:پیلیڈیم	zh:钯
 c:palm	Noun	ar:راحة,كف	de:Handfläche	en:palm	es:palma	fa:کف دست	fr:paume	he:כף יד	hi:हथेली	ja:手のひら	ko:손바닥	pt:palma	ru:ладонь	tr:avuç	ur:ہتھیلی	zh:手掌,掌
 c:palm-tree	Noun	ar:نخلة,نخيل	de:Palme	en:palm tree,palm-tree	es:palmera	fa:درخت خرما,نخل	fr:palmier	he:דקל	hi:ताड़,खजूर का पेड़	ja:ヤシの木,椰子	ko:야자나무	pt:palmeira	ru:пальма	tr:hurma ağacı,palmiye	ur:کھجور کا درخت,نخل	zh:棕榈树,棕榈
 c:pamirs	Noun	ar:جبال بامير,البامير	de:Pamir	en:Pamirs,Pamir Mountains	es:Pamir,montes Pamir	fa:پامیر,کوه‌های پامیر	fr:Pamir	he:פאמיר,הרי פאמיר	hi:पामीर पर्वत	ja:パミール高原	ko:파미르고원	pt:Pamir,montes Pamir	ru:Памир	tr:Pamir Dağları	ur:پامیر,کوہ پامیر	zh:帕米尔高原
@@ -4520,6 +4546,7 @@ c:pet-scan	Noun	ar:التصوير بالانبعاث البوزيتروني	de:P
 c:petal	Noun	ar:بتلة,تويجية	de:Blütenblatt	en:petal	es:pétalo	fa:گلبرگ	fr:pétale	he:עלה כותרת	hi:पंखुड़ी	ja:花びら	ko:꽃잎	pt:pétala	ru:лепесток	tr:taç yaprağı	ur:پنکھڑی	zh:花瓣
 c:petrel	Noun	ar:طائر العاصفة	de:Sturmvogel	en:petrel	es:petrel	fa:پترل	fr:pétrel	he:פטרל	hi:पेट्रेल	ja:ウミツバメ	ko:슴새류	pt:petrel	ru:качурка	tr:fırtına kuşu	ur:پیٹرل	zh:海燕
 c:petri-dish	Noun	ar:طبق بتري,طبق بيتري	de:Petrischale	en:petri dish,Petri dish	es:placa de Petri,caja de Petri	fa:ظرف پتری	fr:boîte de Petri,boîte de pétri	he:צלחת פטרי	hi:पेट्री डिश	ja:シャーレ,ペトリ皿	ko:페트리 접시	pt:placa de Petri,caixa de Petri	ru:чашка Петри	tr:petri kabı	ur:پیٹری ڈش	zh:培养皿
+c:pewter-alloy	Noun	ar:زينك أبيض	de:Zinn-Legierung	en:pewter	es:peltre	fa:مفرغ	fr:étain travaillé	he:פיוטר	hi:पेवटर	ja:ピューター	ko:퓨터	pt:estanho	ru:олово	tr:kalay alaşımı	ur:پیوٹر	zh:锡合金
 c:ph-meter	Noun	ar:مقياس الحموضة	de:pH-Meter	en:pH meter	es:medidor de pH	fa:pH سنج	fr:pH-mètre	he:מד חומציות	hi:पीएच मीटर	ja:pH計	ko:pH 미터	pt:medidor de pH	ru:pH-метр	tr:pH metre	ur:پی ایچ میٹر	zh:酸碱度计
 c:pharaoh	Noun	ar:فرعون	de:Pharao	en:pharaoh	es:faraón	fa:فرعون	fr:pharaon	he:פרעה	hi:फिरौन,फराओ	ja:ファラオ	ko:파라오	pt:faraó	ru:фараон	tr:firavun	ur:فرعون	zh:法老
 c:pharmacodynamics-neuro	Noun	ar:الديناميكية الدوائية	de:Pharmakodynamik	en:pharmacodynamics	es:farmacodinámica	fa:فارماکودینامیک	fr:pharmacodynamique	he:פרמקודינמיקה	hi:फार्माकोडायनामिक्स	ja:薬力学	ko:약력학	pt:farmacodinâmica	ru:фармакодинамика	tr:farmakodinamik	ur:دوائی اثرات	zh:药效学
@@ -4641,6 +4668,7 @@ c:plateau-landform	Noun	ar:هضبة	de:Plateau,Hochebene	en:plateau,tableland	es
 c:platelet	Noun	ar:صفيحة دموية	de:Blutplättchen	en:platelet	es:plaqueta	fa:پلاکت	fr:plaquette	he:טסית	hi:प्लेटलेट	ja:血小板	ko:혈소판	pt:plaqueta	ru:тромбоцит	tr:trombosit	ur:پلیٹلٹ	zh:血小板
 c:platinum	Noun	ar:بلاتين	de:Platin	en:platinum	es:platino	fa:پلاتین	fr:platine	he:פלטינה	hi:प्लैटिनम	ja:プラチナ,白金	ko:백금,플래티넘	pt:platina	ru:платина	tr:platin	ur:پلاٹینم	zh:铂,白金
 c:platinum-color	Noun	ar:بلاتيني	de:Platinfarben	en:platinum	es:platino	fa:پلاتینی	fr:platine	he:פלטינה	hi:प्लैटिनम रंग	ja:プラチナ色	ko:플래티넘색	pt:platina	ru:платиновый	tr:platin rengi	ur:پلاٹینم رنگ	zh:铂金色
+c:platinum-metal	Noun	ar:بلاتين	de:Platin	en:platinum	es:platino	fa:پلاتین	fr:platine	he:פלטינה	hi:प्लेटिनम	ja:白金	ko:백금	pt:platina	ru:платина	tr:platin	ur:پلاٹینم	zh:铂
 c:plato	Noun	ar:أفلاطون	de:Platon	en:Plato	es:Platón	fa:افلاطون	fr:Platon	he:אפלטון	hi:प्लेटो	ja:プラトン	ko:플라톤	pt:Platão	ru:Платон	tr:Platon	ur:افلاطون	zh:柏拉图
 c:platter	Noun	ar:طبق كبير	de:Servierplatte	en:platter	es:fuente,bandeja	fa:دیس	fr:plat de service	he:מגש הגשה	hi:परोसने का बरतन	ja:大皿	ko:큰접시	pt:travessa	ru:большое блюдо	tr:servis tabağı	ur:بڑی پلیٹ	zh:大浅盘
 c:play	Verb	ar:لعب	de:spielen	en:play	es:jugar	fa:بازی کردن	fr:jouer	he:לשחק	hi:खेलना	ja:遊ぶ	ko:놀다	pt:jogar,brincar	ru:играть	tr:oynamak	ur:کھیلنا	zh:玩
@@ -5173,10 +5201,12 @@ c:reverse-osmosis	Noun	ar:التناضح العكسي	de:Umkehrosmose	en:reverse
 c:review	Verb	ar:راجع	de:überprüfen,wiederholen	en:review,revise,revising	es:revisar,repasar	fa:مرور کردن,بازبینی کردن	fr:réviser,revoir	he:לחזור,לבדוק	hi:समीक्षा करना,दोहराना	ja:復習する	ko:복습하다,검토하다	pt:revisar,rever	ru:повторять,пересматривать	tr:tekrar etmek,gözden geçirmek	ur:نظر ثانی کرنا,دہرانا	zh:复习,审查
 c:revolution-historical	Noun	ar:ثورة	de:Revolution	en:revolution	es:revolución	fa:انقلاب	fr:révolution	he:מהפכה	hi:क्रांति	ja:革命	ko:혁명	pt:revolução	ru:революция	tr:devrim,ihtilal	ur:انقلاب	zh:革命
 c:rewilding	Noun	ar:إعادة التوحش	de:Rewilding	en:rewilding	es:rewilding	fa:بازوحشی‌سازی	fr:réensauvagement	he:חידוש הטבע	hi:पुनर्वनीकरण	ja:再野生化	ko:재야생화	pt:recampestrização	ru:ревайлдинг	tr:yeniden vahşileştirme	ur:قدرتی بحالی	zh:再野化
+c:rhenium-metal	Noun	ar:رينيوم	de:Rhenium	en:rhenium	es:renio	fa:رنیم	fr:rhénium	he:רניום	hi:रेनियम	ja:レニウム	ko:레늄	pt:rênio	ru:рений	tr:renyum	ur:رینیم	zh:铼
 c:rheology-geo	Noun	ar:الريولوجيا الجيولوجية	de:Gesteinsrheologie	en:geological rheology	es:reología geológica	fa:رئولوژی زمین‌شناسی	fr:rhéologie géologique	he:ריאולוגיה גאולוגית	hi:भूवैज्ञानिक रियोलॉजी	ja:地質学的レオロジー	ko:지질 유변학	pt:reologia geológica	ru:геологическая реология	tr:jeolojik reoloji	ur:ارضیاتی بہاؤ	zh:地质流变学
 c:rhine	Noun	ar:الراين,نهر الراين	de:Rhein	en:Rhine,Rhine River	es:Rin,río Rin	fa:راین,رود راین	fr:Rhin	he:ריין,נהר הריין	hi:राइन नदी,राइन	ja:ライン川	ko:라인강	pt:Reno,rio Reno	ru:Рейн	tr:Ren,Ren Nehri	ur:دریائے رائن	zh:莱茵河
 c:rhizome	Noun	ar:جذمور	de:Rhizom	en:rhizome	es:rizoma	fa:ریزوم	fr:rhizome	he:קנה שורש	hi:प्रकंद	ja:根茎	ko:근경	pt:rizoma	ru:корневище	tr:rizom	ur:ریزوم	zh:根茎
 c:rhodium	Noun	ar:روديوم	de:Rhodium	en:rhodium	es:rodio	fa:رودیم	fr:rhodium	he:רודיום	hi:रोडियम	ja:ロジウム	ko:로듐	pt:ródio	ru:родий	tr:rodyum	ur:روڈیم	zh:铑
+c:rhodium-metal	Noun	ar:روديوم	de:Rhodium	en:rhodium	es:rodio	fa:رودیم	fr:rhodium	he:רודיום	hi:रोडियम	ja:ロジウム	ko:로듐	pt:ródio	ru:родий	tr:rodyum	ur:روڈیم	zh:铑
 c:rhombus	Noun	ar:معين	de:Raute,Rhombus	en:rhombus	es:rombo	fa:لوزی	fr:losange	he:מעוין	hi:समचतुर्भुज	ja:菱形,ひし形	ko:마름모	pt:losango	ru:ромб	tr:eşkenar dörtgen	ur:معین	zh:菱形
 c:rhone	Noun	ar:الرون,نهر الرون	de:Rhone,Rhône	en:Rhone,Rhône	es:Ródano,río Ródano	fa:رون,رود رون	fr:Rhône	he:רון,נהר הרון	hi:रोन नदी	ja:ローヌ川	ko:론강	pt:Ródano,rio Ródano	ru:Рона	tr:Rhône,Ron Nehri	ur:دریائے رون	zh:罗讷河
 c:rhyme	Noun	ar:القافية	de:Reim	en:rhyme	es:rima	fa:قافیه	fr:rime	he:חרוז	hi:तुकबंदी	ja:脚韻	ko:운	pt:rima	ru:рифма	tr:kafiye	ur:قافیہ	zh:韵脚
@@ -5585,6 +5615,7 @@ c:silkworm	Noun	ar:دودة القز	de:Seidenraupe	en:silkworm	es:gusano de sed
 c:silky	Adjective	ar:حريري	de:seidig	en:silky	es:sedoso	fa:ابریشمی	fr:soyeux	he:משיי	hi:रेशमी	ja:絹のような	ko:비단 같은	pt:sedoso	ru:шелковистый	tr:ipeksi	ur:ریشمی	zh:丝滑,如丝
 c:silo	Noun	ar:صومعة حبوب	de:Silo	en:silo	es:silo	fa:سیلو	fr:silo	he:ממגורה	hi:अन्न भंडार	ja:サイロ	ko:사일로	pt:silo	ru:силос	tr:silo	ur:سیلو	zh:筒仓
 c:silver	Noun	ar:فضة	de:Silber	en:silver	es:plata	fa:نقره	fr:argent	he:כסף	hi:चांदी,रजत	ja:銀,シルバー	ko:은,실버	pt:prata	ru:серебро	tr:gümüş	ur:چاندی	zh:银,银子
+c:silver-metal	Noun	ar:فضة	de:Silber	en:silver	es:plata	fa:نقره	fr:argent	he:כסף	hi:चाँदी	ja:銀	ko:은	pt:prata	ru:серебро	tr:gümüş	ur:چاندی	zh:银
 c:silverfish	Noun	ar:أبو أذنين,الفضية	de:Silberfischchen	en:silverfish	es:pececillo de plata,lepisma	fa:ماهی نقره‌ای,لپیسما	fr:poisson d'argent,lépisme	he:דג כסף	hi:सिल्वरफिश	ja:シミ	ko:좀	pt:traça-de-livro,peixinho-da-prata	ru:чешуйница,мокрица книжная	tr:gümüş balığı	ur:چاندی کی مچھلی	zh:衣鱼
 c:silversmith	Noun	ar:صائغ فضة	de:Silberschmied	en:silversmith	es:platero	fa:نقره‌کار,نقره‌ساز	fr:argentier	he:צורף כסף	hi:चांदी का कारीगर,रौप्यकार	ja:銀細工師	ko:은세공인	pt:prateiro	ru:серебряных дел мастер	tr:gümüş ustası	ur:چاندی کا کاریگر	zh:银匠
 c:simile	Noun	ar:تشبيه	de:Vergleich,Gleichnis	en:simile	es:símil,comparación	fa:تشبیه	fr:comparaison	he:דימוי	hi:उपमा	ja:直喩,明喩	ko:직유,비유	pt:símile,comparação	ru:сравнение	tr:benzetme,teşbih	ur:تشبیہ	zh:明喻,比喻
@@ -5701,6 +5732,7 @@ c:solar-irradiance	Noun	ar:الإشعاع الشمسي	de:solare Einstrahlung	en
 c:solar-panel	Noun	ar:الالواح الشمسية	de:Solarpanel	en:solar panel	es:panel solar	fa:پنل خورشیدی	fr:panneau solaire	he:לוח סולארי	hi:सौर पैनल	ja:ソーラーパネル	ko:태양 전지판	pt:painel solar	ru:солнечная панель	tr:güneş paneli	ur:شمسی پینل	zh:太阳能板
 c:solar-system	Noun	ar:المجموعة الشمسية,النظام الشمسي	de:Sonnensystem	en:solar system	es:sistema solar	fa:منظومه شمسی	fr:système solaire	he:מערכת השמש	hi:सौर मंडल	ja:太陽系	ko:태양계	pt:sistema solar	ru:Солнечная система	tr:Güneş sistemi	ur:نظام شمسی	zh:太阳系
 c:solar-wind	Noun	ar:الرياح الشمسية	de:Sonnenwind	en:solar wind	es:viento solar	fa:باد خورشیدی	fr:vent solaire	he:רוח שמש	hi:सौर पवन	ja:太陽風	ko:태양풍	pt:vento solar	ru:солнечный ветер	tr:güneş rüzgarı	ur:شمسی ہوا	zh:太阳风
+c:solder-alloy	Noun	ar:لحام	de:Lötmittel	en:solder	es:soldadura	fa:لحیم	fr:soudure	he:בדיל לחמה	hi:सोल्डर	ja:はんだ	ko:납땜	pt:solda	ru:припой	tr:lehim	ur:قلعی	zh:焊料
 c:soldering-iron	Noun	ar:مكواة لحام	de:Lötkolben	en:soldering iron	es:soldador	fa:هویه	fr:fer à souder	he:מכשיר הלחמה	hi:सोल्डरिंग आयरन	ja:はんだごて	ko:납땜인두	pt:ferro de soldar	ru:паяльник	tr:lehim havyası	ur:سولڈرنگ آئرن	zh:烙铁
 c:soldier	Noun	ar:جندي	de:Soldat	en:soldier	es:soldado	fa:سرباز	fr:soldat	he:חייל	hi:सैनिक	ja:兵士,軍人	ko:군인,병사	pt:soldado	ru:солдат	tr:asker	ur:سپاہی	zh:士兵,军人
 c:sole	Noun	ar:سمك موسى	de:Seezunge	en:sole	es:lenguado	fa:ماهی زبان	fr:sole	he:שפמנון	hi:सोल	ja:シタビラメ	ko:서대	pt:linguado	ru:морской язык	tr:dil balığı	ur:سول مچھلی	zh:舌鳎
@@ -5845,6 +5877,7 @@ c:stage-fright	Noun	ar:رهبة المسرح,الخوف من الاداء	de:Lam
 c:stagecraft	Noun	ar:فن المسرح,حرفة المسرح	de:Bühnenkunst,Inszenierungskunst	en:stagecraft	es:técnica escénica,arte escénico	fa:هنر صحنه‌آرایی	fr:technique théâtrale,scénographie	he:מלאכת הבמה	hi:रंगमंच कला	ja:舞台技術	ko:무대 기술	pt:arte cénica,técnica teatral	ru:сценическое мастерство	tr:sahne sanatı	ur:اسٹیج کا فن	zh:舞台技术
 c:stagflation	Noun	ar:ركود تضخمي	de:Stagflation	en:stagflation	es:estanflación	fa:رکود تورمی	fr:stagflation	he:סטגפלציה	hi:मुद्रास्फीतिजनित मंदी	ja:スタグフレーション	ko:스태그플레이션	pt:estagflação	ru:стагфляция	tr:stagflasyon	ur:رکود تورمی	zh:滞胀,停滞性通货膨胀
 c:stagger	Verb	ar:ترنح	de:taumeln,wanken	en:stagger	es:tambalearse	fa:تلوتلو خوردن	fr:tituber,chanceler	he:להתנודד	hi:लड़खड़ाना	ja:よろめく	ko:비틀거리다	pt:cambalear	ru:шататься при ходьбе	tr:sendelemek	ur:لڑکھڑانا	zh:蹒跚,踉跄
+c:stainless-steel	Noun	ar:فولاذ مقاوم للصدأ	de:Edelstahl	en:stainless steel	es:acero inoxidable	fa:فولاد ضد زنگ	fr:acier inoxydable	he:פלדת אל-חלד	hi:स्टेनलेस स्टील	ja:ステンレス鋼	ko:스테인리스 강	pt:aço inoxidável	ru:нержавеющая сталь	tr:paslanmaz çelik	ur:زنگ سے پاک فولاد	zh:不锈钢
 c:staircase	Noun	ar:درج,سلم	de:Treppe,Stiege	en:staircase,stairs	es:escalera	fa:پلکان,راه پله	fr:escalier	he:מדרגות,גרם מדרגות	hi:सीढ़ी,ज़ीना	ja:階段	ko:계단	pt:escada,escadaria	ru:лестница	tr:merdiven	ur:سیڑھی,زینہ	zh:楼梯
 c:stakeholder	Noun	ar:أصحاب المصلحة	de:Interessengruppe	en:stakeholder	es:parte interesada	fa:ذینفع	fr:partie prenante	he:בעל עניין	hi:हितधारक	ja:ステークホルダー	ko:이해관계자	pt:partes interessadas	ru:заинтересованная сторона	tr:paydaş	ur:حصہ دار	zh:利益相关者
 c:stall	Noun	ar:توقف الرفع	de:Strömungsabriss	en:stall	es:pérdida de sustentación	fa:استال	fr:décrochage	he:דיגום	hi:स्टॉल	ja:失速	ko:실속	pt:estol	ru:срыв потока	tr:taşıma yitirilmesi	ur:سٹال	zh:失速
@@ -5874,6 +5907,7 @@ c:steadicam	Noun	ar:كاميرا مثبتة	de:Steadicam	en:steadicam	es:steadic
 c:steady-state	Noun	ar:الحالة المستقرة	de:Steady-State-Theorie	en:steady-state theory	es:teoría del estado estacionario	fa:نظریه حالت پایدار	fr:théorie de l'état stationnaire	he:תיאוריית המצב היציב	hi:स्थिर अवस्था सिद्धांत	ja:定常宇宙論	ko:정상 우주론	pt:teoria do estado estacionário	ru:теория стационарного состояния	tr:kararlı durum teorisi	ur:مستحکم حالت کا نظریہ	zh:稳恒态宇宙论
 c:steam	Verb	ar:طبخ بالبخار	de:dämpfen	en:steam	es:cocinar al vapor	fa:بخارپز کردن	fr:cuire à la vapeur	he:לאדות	hi:भाप में पकाना	ja:蒸す	ko:찌다	pt:cozinhar no vapor	ru:готовить на пару	tr:buharda pişirmek	ur:دم دینا	zh:蒸
 c:steel	Noun	ar:فولاذ,صلب	de:Stahl	en:steel	es:acero	fa:فولاد	fr:acier	he:פלדה	hi:इस्पात,स्टील	ja:鋼,スチール	ko:강철,스틸	pt:aço	ru:сталь	tr:çelik	ur:فولاد,اسٹیل	zh:钢,钢铁
+c:steel-metal	Noun	ar:فولاذ	de:Stahl	en:steel	es:acero	fa:فولاد	fr:acier	he:פלדה	hi:इस्पात	ja:鋼鉄	ko:강철	pt:aço	ru:сталь	tr:çelik	ur:فولاد	zh:钢铁
 c:steel-structure	Noun	ar:هيكل فولاذي	de:Stahlbau	en:steel structure	es:estructura de acero	fa:سازه فولادی	fr:structure métallique	he:מבנה פלדה	hi:इस्पात संरचना	ja:鉄骨構造	ko:철골 구조	pt:estrutura de aço	ru:стальная конструкция	tr:çelik yapı	ur:فولادی ڈھانچہ	zh:钢结构
 c:steelpan	Noun	ar:طبلة فولاذية	de:Steelpan	en:steelpan	es:tambor de acero	fa:استیل پان	fr:steel drum	he:סטיל פאן	hi:स्टील पैन	ja:スティールパン	ko:스틸팬	pt:steel pan	ru:стилпэн	tr:çelik davul	ur:اسٹیل پین	zh:钢鼓
 c:steer	Verb	ar:وجه,يوجه	de:lenken,steuern	en:steer	es:dirigir,guiar	fa:هدایت کردن	fr:diriger,piloter	he:להגה	hi:संचालित करना	ja:操縦する	ko:조종하다	pt:dirigir,guiar	ru:рулить,править	tr:yönlendirmek	ur:چلانا	zh:驾驶,掌舵
@@ -6329,6 +6363,7 @@ c:time-preference	Noun	ar:التفضيل الزمني	de:Zeitpräferenz	en:time 
 c:timelapse	Noun	ar:مسرعة زمنية	de:Zeitraffer	en:timelapse	es:lapso de tiempo	fa:تایم لپس	fr:time-lapse	he:תמונות מואצות	hi:टाइमलैप्स	ja:タイムラプス	ko:타임랩스	pt:timelapse	ru:таймлапс	tr:zaman atlamalı çekim	ur:ٹائم لیپس	zh:延时摄影
 c:timor-sea	Noun	ar:بحر تيمور	de:Timorsee	en:Timor Sea	es:Mar de Timor	fa:دریای تیمور	fr:Mer de Timor	he:ים טימור	hi:तिमोर सागर	ja:ティモール海	ko:티모르해	pt:Mar de Timor	ru:Тиморское море	tr:Timor Denizi	ur:بحیرہ تیمور	zh:帝汶海
 c:tin	Noun	ar:قصدير	de:Zinn	en:tin	es:estaño	fa:قلع	fr:étain	he:בדיל	hi:टिन,राँगा	ja:錫,スズ	ko:주석	pt:estanho	ru:олово	tr:kalay	ur:رانگ,قلعی	zh:锡
+c:tin-metal	Noun	ar:قصدير	de:Zinn	en:tin	es:estaño	fa:قلع	fr:étain	he:בדיל	hi:टिन	ja:スズ	ko:주석	pt:estanho	ru:олово	tr:kalay	ur:ٹن	zh:锡
 c:tingly	Adjective	ar:موخز,وخاز	de:prickelnd,kribbelig	en:tingly	es:hormigueante	fa:گزگز کننده	fr:picotant,fourmillant	he:מעקצץ	hi:झनझनाहट वाला	ja:ピリピリする	ko:따끔거리는	pt:formigante	ru:покалывающий	tr:karıncalanan	ur:سنسناہٹ والا	zh:刺刺的,麻酥酥
 c:tipping-point	Noun	ar:نقطة التحول	de:Kipppunkt	en:tipping point	es:punto de inflexión	fa:نقطه عطف	fr:point de basculement	he:נקודת מפנה	hi:टिपिंग प्वाइंट	ja:ティッピングポイント	ko:임계점	pt:ponto de inflexão	ru:переломный момент	tr:kritik eşik	ur:نقطہ انتہا	zh:临界点
 c:tiramisu	Noun	ar:تيراميسو	de:Tiramisu	en:tiramisu	es:tiramisú	fa:تیرامیسو	fr:tiramisu	he:טירמיסו	hi:तिरामिसू	ja:ティラミス	ko:티라미수	pt:tiramisù	ru:тирамису	tr:tiramisu	ur:تیرامیسو	zh:提拉米苏
@@ -6337,6 +6372,7 @@ c:tired	Adjective	ar:متعب	de:müde	en:tired	es:cansado	fa:خسته	fr:fatigu
 c:titan	Noun	ar:تيتان	de:Titan	en:Titan	es:titán	fa:تیتان	fr:Titan	he:טיטאן	hi:टाइटन	ja:ティタン	ko:타이탄	pt:Titã	ru:Титан	tr:Titan	ur:ٹائٹن	zh:泰坦
 c:titan-moon	Noun	ar:تيتان,قمر تيتان	de:Titan	en:Titan	es:Titán	fa:تیتان	fr:Titan	he:טיטאן	hi:टाइटन	ja:タイタン	ko:타이탄	pt:Titã	ru:Титан	tr:Titan	ur:ٹائٹن	zh:土卫六
 c:titanium	Noun	ar:تيتانيوم	de:Titan	en:titanium	es:titanio	fa:تیتانیوم	fr:titane	he:טיטניום	hi:टाइटेनियम	ja:チタン,チタニウム	ko:티타늄	pt:titânio	ru:титан	tr:titanyum	ur:ٹائٹینیم	zh:钛
+c:titanium-metal	Noun	ar:تيتانيوم	de:Titan	en:titanium	es:titanio	fa:تیتانیوم	fr:titane	he:טיטניום	hi:टाइटेनियम	ja:チタン	ko:티타늄	pt:titânio	ru:титан	tr:titanyum	ur:ٹائٹینیم	zh:钛
 c:tithes	Noun	ar:عشور	de:Zehnten	en:tithes	es:diezmo	fa:خمس	fr:dîme	he:מעשרות	hi:दशांश	ja:十分の一税	ko:십일조	pt:dízimo	ru:десятина	tr:öşür	ur:عشر	zh:什一税
 c:tithing	Noun	ar:العشور	de:Zehnter	en:tithing	es:diezmo	fa:عشریه	fr:dîme	he:מעשר	hi:दशांश	ja:十分の一税	ko:십일조	pt:dízimo	ru:десятина	tr:öşür	ur:عشر	zh:什一税
 c:title	Noun	ar:عنوان	de:Titel	en:title	es:título	fa:عنوان	fr:titre	he:כותרת	hi:शीर्षक	ja:題,タイトル	ko:제목,타이틀	pt:título	ru:название,заглавие	tr:başlık,unvan	ur:عنوان	zh:标题,题目
@@ -6514,6 +6550,7 @@ c:tundra	Noun	ar:تندرا	de:Tundra	en:tundra	es:tundra	fa:توندرا	fr:tou
 c:tundra-ecology	Noun	ar:التندرا	de:Tundra	en:tundra	es:tundra	fa:توندرا	fr:toundra	he:טונדרה	hi:टुंड्रा	ja:ツンドラ	ko:툰드라	pt:tundra	ru:тундра	tr:tundra	ur:ٹنڈرا	zh:苔原
 c:tundra-landform	Noun	ar:تندرا	de:Tundra	en:tundra	es:tundra	fa:توندرا	fr:toundra	he:טונדרה	hi:टुंड्रा	ja:ツンドラ	ko:툰드라	pt:tundra	ru:тундра	tr:tundra	ur:ٹنڈرا	zh:苔原,冻原
 c:tungsten	Noun	ar:تنغستن	de:Wolfram	en:tungsten	es:wolframio	fa:تنگستن	fr:tungstène	he:טונגסטן	hi:टंगस्टन	ja:タングステン	ko:텅스텐	pt:tungsténio	ru:вольфрам	tr:tungsten	ur:ٹنگسٹن	zh:钨
+c:tungsten-metal	Noun	ar:تنجستن	de:Wolfram	en:tungsten	es:tungsteno	fa:تنگستن	fr:tungstène	he:טונגסטן	hi:टंगस्टन	ja:タングステン	ko:텅스텐	pt:tungsténio	ru:вольфрам	tr:tungsten	ur:ٹنگسٹن	zh:钨
 c:tunic	Noun	ar:تونيك	de:Tunika	en:tunic	es:túnica	fa:تونیک	fr:tunique	he:טוניקה	hi:कुर्ता,ट्यूनिक	ja:チュニック	ko:튜닉	pt:túnica	ru:туника	tr:tunik	ur:کرتا	zh:束腰外衣
 c:tunnel	Noun	ar:نفق	de:Tunnel	en:tunnel	es:túnel	fa:تونل	fr:tunnel	he:מנהרה	hi:सुरंग	ja:トンネル	ko:터널	pt:túnel	ru:туннель,тоннель	tr:tünel	ur:سرنگ	zh:隧道
 c:turban	Noun	ar:عمامة	de:Turban	en:turban	es:turbante	fa:عمامه	fr:turban	he:טורבן	hi:पगड़ी	ja:ターバン	ko:터번	pt:turbante	ru:тюрбан	tr:türban	ur:عمامہ	zh:头巾
@@ -6603,6 +6640,7 @@ c:vampire	Noun	ar:مصاص دماء	de:Vampir	en:vampire	es:vampiro	fa:خون‌
 c:van	Noun	ar:شاحنة صغيرة,فان	de:Lieferwagen,Van	en:van	es:furgoneta,van	fa:ون	fr:camionnette,van	he:טנדר,וואן	hi:वैन	ja:バン,ワゴン車	ko:밴,승합차	pt:furgão,van	ru:фургон	tr:minibüs,van	ur:وین	zh:面包车,厢式货车
 c:van-der-waals	Noun	ar:معادلة فان دير فالس	de:Van-der-Waals-Gleichung	en:van der Waals equation	es:ecuación de van der Waals	fa:معادله وان دروالس	fr:équation de van der Waals	he:משוואת ון דר ואלס	hi:वान डेर वॉल्स समीकरण	ja:ファン・デル・ワールスの式	ko:반데르발스 방정식	pt:equação de van der Waals	ru:уравнение Ван-дер-Ваальса	tr:Van der Waals denklemi	ur:وان ڈیر والز مساوات	zh:范德华方程
 c:vanadium	Noun	ar:فاناديوم	de:Vanadium	en:vanadium	es:vanadio	fa:وانادیم	fr:vanadium	he:ונדיום	hi:वैनेडियम	ja:バナジウム	ko:바나듐	pt:vanádio	ru:ванадий	tr:vanadyum	ur:وینیڈیم	zh:钒
+c:vanadium-metal	Noun	ar:فاناديوم	de:Vanadium	en:vanadium	es:vanadio	fa:وانادیوم	fr:vanadium	he:וואנדיום	hi:वैनेडियम	ja:バナジウム	ko:바나듐	pt:vanádio	ru:ванадий	tr:vanadyum	ur:ویناڈیم	zh:钒
 c:vancouver	Noun	ar:فانكوفر	de:Vancouver	en:Vancouver	es:Vancouver	fa:ونکوور	fr:Vancouver	he:ונקובר	hi:वैंकूवर	ja:バンクーバー	ko:밴쿠버	pt:Vancouver	ru:Ванкувер	tr:Vancouver	ur:وینکوور	zh:温哥华
 c:vanilla	Noun	ar:فانيليا	de:Vanille	en:vanilla	es:vainilla	fa:وانیل	fr:vanille	he:וניל	hi:वनीला	ja:バニラ	ko:바닐라	pt:baunilha	ru:ваниль	tr:vanilya	ur:ونیلا	zh:香草
 c:variance	Noun	ar:تباين	de:Varianz	en:variance	es:varianza	fa:واریانس	fr:variance	he:שונות	hi:प्रसरण	ja:分散	ko:분산	pt:variância	ru:дисперсия	tr:varyans	ur:تغیر	zh:方差
@@ -6878,6 +6916,7 @@ c:write	Verb	ar:كتب,يكتب	de:schreiben	en:write,writes,wrote,writing	es:es
 c:writer	Noun	ar:كاتب	de:Schriftsteller	en:writer	es:escritor	fa:نویسنده	fr:écrivain	he:סופר	hi:लेखक	ja:作家,ライター	ko:작가,라이터	pt:escritor	ru:писатель	tr:yazar	ur:لکھاری	zh:作家,作者
 c:writing-desk	Noun	ar:مكتب كتابة	de:Schreibtisch	en:writing desk	es:escritorio	fa:میز تحریر	fr:bureau	he:שולחן כתיבה	hi:डेस्क,मेज़	ja:机,デスク	ko:책상	pt:escrivaninha	ru:письменный стол	tr:yazı masası	ur:میز	zh:书桌
 c:wrong	Adjective	ar:خاطئ	de:falsch	en:wrong,incorrect	es:incorrecto,equivocado	fa:اشتباه,غلط	fr:faux,incorrect	he:לא נכון,שגוי	hi:ग़लत	ja:間違い,誤り	ko:틀린,잘못된	pt:errado,incorreto	ru:неправильный,ошибочный	tr:yanlış	ur:غلط	zh:错,错误
+c:wrought-iron	Noun	ar:حديد مطروق	de:Schmiedeeisen	en:wrought iron	es:hierro forjado	fa:آهن تمیز	fr:fer forgé	he:ברזל מחוץ	hi:पिटवां लोहा	ja:錬鉄	ko:연철	pt:ferro forjado	ru:кованое железо	tr:dövme demir	ur:پٹوان لوہا	zh:熟铁
 c:xenon	Noun	ar:زينون	de:Xenon	en:xenon	es:xenón	fa:زنون	fr:xénon	he:קסנון	hi:जेनन	ja:キセノン	ko:제논	pt:xénon	ru:ксенон	tr:ksenon	ur:زینون	zh:氙
 c:xray-machine	Noun	ar:جهاز أشعة سينية	de:Röntgengerät	en:X-ray machine	es:máquina de rayos X	fa:دستگاه اشعه ایکس	fr:appareil à rayons X	he:מכשיר רנטגן	hi:एक्स-रे मशीन	ja:X線装置	ko:X선 기계	pt:máquina de raios-X	ru:рентгеновский аппарат	tr:röntgen cihazı	ur:ایکسرے مشین	zh:X光机
 c:xylem	Noun	ar:خشب النبات	de:Xylem	en:xylem	es:xilema	fa:چوب	fr:xylème	he:עצה	hi:जाइलम	ja:木部	ko:목부	pt:xilema	ru:ксилема	tr:odun borusu	ur:زائلم	zh:木质部
@@ -6922,6 +6961,7 @@ c:zeta-function	Noun	ar:دالة زيتا لريمان	de:Riemannsche Zetafunkti
 c:ziggurat	Noun	ar:الزقورة	de:Ziggurat	en:ziggurat	es:zigurat	fa:زیگورات	fr:ziggourat	he:זיגורט	hi:जिगुरात	ja:ジッグラト	ko:지구라트	pt:zigurate	ru:зиккурат	tr:ziggurat	ur:زیگورات	zh:神庙塔
 c:ziggurat-temple	Noun	ar:زقورة	de:Ziggurat	en:ziggurat	es:zigurat	fa:زیگورات	fr:ziggurat	he:זיגורט	hi:ज़िगुरात	ja:ジッグラト	ko:지구라트	pt:zigurate	ru:зиккурат	tr:ziggurat	ur:زگورات	zh:塔庙
 c:zinc	Noun	ar:زنك,خارصين	de:Zink	en:zinc	es:zinc,cinc	fa:روی	fr:zinc	he:אבץ	hi:जस्ता,जिंक	ja:亜鉛	ko:아연,징크	pt:zinco	ru:цинк	tr:çinko	ur:جست,زنک	zh:锌
+c:zinc-metal	Noun	ar:خارصين	de:Zink	en:zinc	es:zinc	fa:روی	fr:zinc	he:אבץ	hi:जस्ता	ja:亜鉛	ko:아연	pt:zinco	ru:цинк	tr:çinko	ur:جست	zh:锌
 c:zirconium	Noun	ar:زركونيوم	de:Zirconium	en:zirconium	es:circonio	fa:زیرکونیم	fr:zirconium	he:זירקוניום	hi:जिरकोनियम	ja:ジルコニウム	ko:지르코늄	pt:zircônio	ru:цирконий	tr:zirkonyum	ur:زرکونیم	zh:锆
 c:zither	Noun	ar:قانون,قيثارة	de:Zither	en:zither	es:cítara	fa:سنتور,قانون	fr:cithare	he:ציטרה	hi:जीथर,सितार जैसा वाद्य	ja:ツィター	ko:지터	pt:cítara	ru:цитра	tr:kanun,kanun sazı	ur:قانون,زیتھر	zh:齐特琴
 c:zloty	Noun	ar:زلوتي	de:Zloty	en:zloty	es:zloty	fa:زلوتی	fr:zloty	he:זלוטי	hi:ज़्लोटी	ja:ズウォティ	ko:즈워티	pt:zloty	ru:злотый	tr:zloti	ur:زلوتی	zh:兹罗提
