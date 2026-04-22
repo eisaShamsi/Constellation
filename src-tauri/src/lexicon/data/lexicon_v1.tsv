@@ -353,6 +353,7 @@ c:ashura	Noun	ar:عاشوراء	de:Aschura	en:ashura	es:ashura	fa:عاشورا	f
 c:ask	Verb	ar:سأل	de:fragen	en:ask	es:preguntar	fa:پرسیدن	fr:demander	he:לשאול	hi:पूछना	ja:尋ねる,聞く	ko:묻다	pt:perguntar	ru:спрашивать,спросить	tr:sormak	ur:پوچھنا	zh:问
 c:asparagus	Noun	ar:هليون	de:Spargel	en:asparagus	es:espárrago	fa:مارچوبه	fr:asperge	he:אספרגוס	hi:शतावरी	ja:アスパラガス	ko:아스파라거스	pt:espargo	ru:спаржа	tr:kuşkonmaz	ur:ہلیون	zh:芦笋
 c:aspect	Noun	ar:جهة الفعل	de:Aspekt	en:aspect	es:aspecto verbal	fa:وجه فعل	fr:aspect verbal	he:אספקט	hi:पक्ष	ja:アスペクト	ko:상	pt:aspecto verbal	ru:вид глагола	tr:eylem görünüşü	ur:فعل کا پہلو	zh:体
+c:aspirator	Noun	ar:شافط طبي	de:Aspirator	en:aspirator	es:aspirador médico	fa:آسپیراتور	fr:aspirateur médical	he:שואב	hi:एस्पिरेटर	ja:吸引器	ko:흡인기	pt:aspirador médico	ru:аспиратор	tr:aspiratör	ur:اسپیریٹر	zh:吸引器
 c:assassin-bug	Noun	ar:حشرة القاتلة	de:Raubwanze	en:assassin bug	es:chinche asesina	fa:سن قاتل	fr:réduves	he:חרק מתנקש	hi:हत्यारा खटमल	ja:サシガメ	ko:장님노린재	pt:percevejo-assassino	ru:хищнец	tr:suikastçı böceği	ur:قاتل کیڑا	zh:猎蝽
 c:assault	Noun	ar:اعتداء	de:Angriff,Körperverletzung	en:assault	es:agresión,asalto	fa:حمله,تعرض	fr:agression,assaut	he:תקיפה	hi:हमला	ja:暴行,襲撃	ko:폭행,공격	pt:agressão,assalto	ru:нападение,побои	tr:saldırı	ur:حملہ	zh:攻击,袭击
 c:assemblage	Noun	ar:التجميع الفني	de:Assemblage	en:assemblage	es:ensamblaje	fa:مونتاژ هنری	fr:assemblage	he:אסמבלאז	hi:एसेंबलाज	ja:アッサンブラージュ	ko:아상블라주	pt:assemblagem	ru:ассамбляж	tr:kolaj	ur:ملاوٹ	zh:集合艺术
@@ -665,6 +666,7 @@ c:bloch-sphere	Noun	ar:كرة بلوخ	de:Bloch-Kugel	en:Bloch sphere	es:esfera 
 c:blockchain	Noun	ar:سلسلة الكتل,بلوك تشين	de:Blockchain	en:blockchain	es:cadena de bloques,blockchain	fa:بلاک چین,زنجیره بلوکی	fr:chaîne de blocs,blockchain	he:בלוקצ'יין,שרשרת בלוקים	hi:ब्लॉकचेन	ja:ブロックチェーン	ko:블록체인	pt:cadeia de blocos,blockchain	ru:блокчейн	tr:blokzincir,blockchain	ur:بلاک چین	zh:区块链
 c:blood	Noun	ar:دم	de:Blut	en:blood	es:sangre	fa:خون	fr:sang	he:דם	hi:खून,रक्त	ja:血	ko:피	pt:sangue	ru:кровь	tr:kan	ur:خون	zh:血
 c:blood-brain-barrier	Noun	ar:الحاجز الدموي الدماغي	de:Blut-Hirn-Schranke	en:blood-brain barrier	es:barrera hematoencefálica	fa:سد خونی-مغزی	fr:barrière hémato-encéphalique	he:מחסום הדם-מוח	hi:रक्त-मस्तिष्क बाधा	ja:血液脳関門	ko:혈액뇌장벽	pt:barreira hematoencefálica	ru:гематоэнцефалический барьер	tr:kan-beyin bariyeri	ur:خون دماغی رکاوٹ	zh:血脑屏障
+c:blood-pressure-cuff	Noun	ar:قفاز قياس ضغط الدم	de:Blutdruckmanschette	en:blood pressure cuff	es:manguito de presión arterial	fa:کاف فشارخون	fr:brassard de tensiomètre	he:שרוול מד לחץ דם	hi:रक्तचाप कफ	ja:血圧計カフ	ko:혈압 커프	pt:manguito de pressão arterial	ru:манжета тонометра	tr:tansiyon manşeti	ur:بلڈ پریشر کف	zh:血压袖带
 c:blood-vessel	Noun	ar:وعاء دموي	de:Blutgefäß	en:blood vessel	es:vaso sanguíneo	fa:رگ خونی	fr:vaisseau sanguin	he:כלי דם	hi:रक्त वाहिका	ja:血管	ko:혈관	pt:vaso sanguíneo	ru:кровеносный сосуд	tr:kan damarı	ur:خون کی نالی	zh:血管
 c:blouse	Noun	ar:بلوزة	de:Bluse	en:blouse	es:blusa	fa:بلوز	fr:blouse,chemisier	he:חולצת נשים	hi:ब्लाउज़	ja:ブラウス	ko:블라우스	pt:blusa	ru:блузка	tr:bluz	ur:بلاؤز	zh:女衬衫
 c:blowfly	Noun	ar:ذبابة الجيف	de:Schmeißfliege	en:blowfly	es:mosca carroñera	fa:مگس جیفه	fr:mouche calliphore	he:זבוב הבשר	hi:ब्लोफ्लाई	ja:キンバエ	ko:쉬파리	pt:varejeira	ru:падальная муха	tr:leş sineği	ur:لاشی مکھی	zh:丽蝇
@@ -871,6 +873,7 @@ c:canberra	Noun	ar:كانبرا	de:Canberra	en:Canberra	es:Canberra	fa:کانب�
 c:cancer-vaccine	Noun	ar:لقاح السرطان	de:Krebsimpfstoff	en:cancer vaccine	es:vacuna contra el cáncer	fa:واکسن سرطان	fr:vaccin contre le cancer	he:חיסון לסרטן	hi:कैंसर टीका	ja:がんワクチン	ko:암 백신	pt:vacina contra câncer	ru:противоопухолевая вакцина	tr:kanser aşısı	ur:سرطان ویکسین	zh:癌症疫苗
 c:canistel	Noun	ar:كانيستيل,تفاح المومياء	de:Canistel	en:canistel,egg fruit	es:canistel	fa:کانیستل	fr:canistel	he:קניסטל	hi:कनिस्टेल	ja:カニステル	ko:카니스텔	pt:canistel	ru:канистель	tr:canistel	ur:کنسٹل	zh:蛋黄果
 c:cannon	Noun	ar:مدفع	de:Kanone	en:cannon	es:cañón	fa:توپ	fr:canon	he:תותח	hi:तोप	ja:大砲	ko:대포	pt:canhão	ru:пушка	tr:top	ur:توپ	zh:大炮
+c:cannula	Noun	ar:قنية	de:Kanüle	en:cannula	es:cánula	fa:کانول	fr:canule	he:קנולה	hi:कैनुला	ja:カニューレ	ko:캐뉼러	pt:cânula	ru:канюля	tr:kanül	ur:کینولا	zh:套管
 c:canonization	Noun	ar:التقديس	de:Heiligsprechung	en:canonization	es:canonización	fa:قدیس شناختن	fr:canonisation	he:קנוניזציה	hi:संतीकरण	ja:列聖	ko:시성	pt:canonização	ru:канонизация	tr:aziz ilan etme	ur:ولایت کا اعلان	zh:封圣
 c:canopic-jar	Noun	ar:جرة كانوبية	de:Kanope	en:canopic jar	es:vasija canópica	fa:جار کانوپیک	fr:vase canope	he:צנצנת קנופית	hi:कैनोपिक जार	ja:カノポス壺	ko:카노포스 항아리	pt:vaso canópico	ru:канопа	tr:kanopik kavanoz	ur:کنوپک برتن	zh:卡诺匹克罐
 c:cantaloupe	Noun	ar:شمام,كانتالوب	de:Cantaloupe-Melone	en:cantaloupe	es:cantalupo	fa:خربزه	fr:cantaloup	he:קנטלופ	hi:खरबूजा	ja:カンタローブ	ko:칸탈루프	pt:cantalupo	ru:дыня	tr:kavun	ur:خربوزہ	zh:哈密瓜
@@ -955,6 +958,7 @@ c:catharsis	Noun	ar:التطهير النفسي	de:Katharsis	en:catharsis	es:cat
 c:catharsis-lit	Noun	ar:التطهر	de:Katharsis	en:catharsis	es:catarsis	fa:کاتارسیس	fr:catharsis	he:קתרזיס	hi:विरेचन	ja:カタルシス	ko:카타르시스	pt:catarse	ru:катарсис	tr:katarsis	ur:تطہیر	zh:宣泄
 c:cathedral	Noun	ar:كاتدرائية	de:Kathedrale,Dom	en:cathedral	es:catedral	fa:کلیسای جامع,کاتدرال	fr:cathédrale	he:קתדרלה	hi:कैथेड्रल,गिरजाघर	ja:大聖堂,カテドラル	ko:대성당,카테드랄	pt:catedral	ru:собор	tr:katedral	ur:بڑا گرجا,کیتھیڈرل	zh:大教堂,主教座堂
 c:cathedral-church	Noun	ar:كاتدرائية	de:Kathedrale	en:cathedral	es:catedral	fa:کلیسای جامع	fr:cathédrale	he:קתדרלה	hi:गिरजाघर	ja:大聖堂	ko:대성당	pt:catedral	ru:собор	tr:katedral	ur:گرجا گھر	zh:大教堂
+c:catheter	Noun	ar:قسطرة	de:Katheter	en:catheter	es:catéter	fa:کاتتر	fr:cathéter	he:קטטר	hi:कैथेटर	ja:カテーテル	ko:카테터	pt:cateter	ru:катетер	tr:kateter	ur:کیتھیٹر	zh:导管
 c:cation	Noun	ar:كاتيون	de:Kation	en:cation	es:catión	fa:کاتیون	fr:cation	he:קטיון	hi:धनायन	ja:陽イオン	ko:양이온	pt:cátion	ru:катион	tr:katyon	ur:کیٹائن	zh:阳离子
 c:cattle	Noun	ar:ماشية	de:Rinder	en:cattle	es:ganado	fa:دام	fr:bétail	he:בקר	hi:मवेशी	ja:家畜	ko:가축	pt:gado	ru:скот	tr:sığır	ur:مویشی	zh:牲畜
 c:caucasus	Noun	ar:جبال القوقاز,القوقاز	de:Kaukasus	en:Caucasus,Caucasus Mountains	es:Cáucaso,montes del Cáucaso	fa:قفقاز,کوه‌های قفقاز	fr:Caucase	he:הקווקז,הרי הקווקז	hi:कॉकसस,काकेशस पर्वत	ja:コーカサス山脈	ko:캅카스산맥	pt:Cáucaso	ru:Кавказ,Кавказские горы	tr:Kafkas Dağları,Kafkaslar	ur:قفقاز,کوہ قفقاز	zh:高加索山脉
@@ -963,6 +967,7 @@ c:caulking-gun	Noun	ar:مسدس حشو	de:Kartuschenpistole	en:caulking gun	es:p
 c:caulking-gun-tool	Noun	ar:مسدس عزل	de:Dichtstoffpresse	en:caulking gun	es:pistola de sellado	fa:تفنگ درزبند	fr:pistolet à mastic	he:אקדח איטום	hi:कॉकिंग गन	ja:コーキングガン	ko:코킹건	pt:pistola de calafetagem	ru:пистолет для герметика	tr:silikongun	ur:کالکنگ گن	zh:密封枪
 c:causal-inference	Noun	ar:الاستدلال السببي	de:Kausalinferenz	en:causal inference	es:inferencia causal	fa:استنتاج علی	fr:inférence causale	he:הסקה סיבתית	hi:कारण अनुमान	ja:因果推論	ko:인과 추론	pt:inferência causal	ru:причинный вывод	tr:nedensel çıkarım	ur:سببی استنتاج	zh:因果推断
 c:cause	Noun	ar:سبب,علة	de:Ursache,Grund	en:cause	es:causa	fa:علت,سبب	fr:cause	he:סיבה	hi:कारण	ja:原因	ko:원인	pt:causa	ru:причина	tr:neden,sebep	ur:سبب,وجہ	zh:原因,起因
+c:cauterizer	Noun	ar:كوي	de:Kauterisationsgerät	en:cauterizer	es:cauterizador	fa:کوتریزاسیون	fr:cautère	he:כלי כוייה	hi:दाग लगाने वाला	ja:焼灼器	ko:소작기	pt:cauterizador	ru:каутер	tr:koterizatör	ur:کوٹرائزر	zh:烧灼器
 c:cave	Noun	ar:كهف,مغارة	de:Höhle	en:cave	es:cueva,caverna	fa:غار	fr:grotte,caverne	he:מערה	hi:गुफा	ja:洞窟,洞穴	ko:동굴	pt:caverna,gruta	ru:пещера	tr:mağara	ur:غار	zh:洞穴,山洞
 c:cd-rom	Noun	ar:CD-ROM	de:CD-ROM	en:CD-ROM	es:CD-ROM	fa:CD-ROM	fr:CD-ROM	he:CD-ROM	hi:सीडी-रॉम	ja:CD-ROM	ko:CD-ROM	pt:CD-ROM	ru:CD-ROM	tr:CD-ROM	ur:سی ڈی روم	zh:光盘
 c:cd4-t-cell	Noun	ar:خلية تائية مساعدة	de:CD4+-T-Zelle	en:CD4+ T cell	es:célula T CD4+	fa:سلول T کمکی	fr:lymphocyte T CD4+	he:תא T עוזר	hi:सहायक T कोशिका	ja:ヘルパーT細胞	ko:보조 T 세포	pt:célula T auxiliar	ru:Т-хелпер	tr:yardımcı T hücresi	ur:مددگار T خلیہ	zh:辅助性T细胞
@@ -1511,6 +1516,7 @@ c:crusade	Noun	ar:حملة صليبية	de:Kreuzzug	en:crusade	es:cruzada	fa:ج�
 c:crusades	Noun	ar:الحروب الصليبية	de:Kreuzzüge	en:crusades	es:cruzadas	fa:جنگ‌های صلیبی	fr:croisades	he:מסעות הצלב	hi:धर्मयुद्ध,क्रूसेड	ja:十字軍	ko:십자군 전쟁	pt:cruzadas	ru:крестовые походы	tr:haçlı seferleri	ur:صلیبی جنگیں	zh:十字军东征
 c:crustacean	Noun	ar:قشريات	de:Krebstier	en:crustacean	es:crustáceo	fa:سخت پوستان	fr:crustacé	he:סרטנאים	hi:क्रस्टेशियन	ja:甲殻類	ko:갑각류	pt:crustáceo	ru:ракообразное	tr:kabuklu hayvan	ur:جھینگا نوع	zh:甲壳类
 c:crustal-deformation	Noun	ar:تشوه القشرة الأرضية	de:Krustendeformation	en:crustal deformation	es:deformación cortical	fa:تغییر شکل پوسته	fr:déformation crustale	he:עיוות קרום	hi:क्रस्टल विरूपण	ja:地殻変動	ko:지각 변형	pt:deformação crustal	ru:деформация коры	tr:kabuk deformasyonu	ur:زمینی قشر تشکیل	zh:地壳形变
+c:crutch	Noun	ar:عكاز	de:Krücke	en:crutch	es:muleta	fa:عصا	fr:béquille	he:קביים	hi:बैसाखी	ja:松葉杖	ko:목발	pt:muleta	ru:костыль	tr:koltuk değneği	ur:بیساکھی	zh:拐杖
 c:cry	Verb	ar:بكى	de:weinen	en:cry,weep	es:llorar	fa:گریه کردن	fr:pleurer	he:לבכות	hi:रोना	ja:泣く	ko:울다	pt:chorar	ru:плакать	tr:ağlamak	ur:رونا	zh:哭
 c:crypt-vault	Noun	ar:سرداب	de:Krypta	en:crypt	es:cripta	fa:زیرزمین کلیسا	fr:crypte	he:קריפטה	hi:भूमिगत कक्ष	ja:地下礼拝堂	ko:지하 납골당	pt:cripta	ru:крипта	tr:kripta	ur:زیرزمینی تہہ خانہ	zh:地下室
 c:cryptocurrency	Noun	ar:عملة مشفرة,عملة رقمية مشفرة	de:Kryptowährung	en:cryptocurrency	es:criptomoneda	fa:ارز رمزنگاری شده,رمزارز	fr:cryptomonnaie	he:מטבע קריפטו,מטבע דיגיטלי	hi:क्रिप्टोकरेंसी	ja:暗号通貨,仮想通貨	ko:암호화폐,가상화폐	pt:criptomoeda	ru:криптовалюта	tr:kripto para	ur:کرپٹو کرنسی	zh:加密货币
@@ -1534,6 +1540,7 @@ c:cuneiform	Noun	ar:خط مسماري	de:Keilschrift	en:cuneiform	es:cuneiforme	
 c:cup	Noun	ar:كوب,فنجان	de:Tasse,Becher	en:cup	es:taza	fa:فنجان,لیوان	fr:tasse,coupe	he:כוס,ספל	hi:कप,प्याला	ja:カップ,杯	ko:컵	pt:xícara,chávena	ru:чашка	tr:fincan,bardak	ur:کپ,پیالہ	zh:杯子
 c:cupboard	Noun	ar:خزانة	de:Schrank	en:cupboard	es:alacena	fa:گنجه	fr:placard	he:ארון	hi:अलमारी	ja:戸棚	ko:찬장	pt:armário	ru:шкаф	tr:dolap	ur:الماری	zh:橱柜
 c:cure	Noun	ar:شفاء,علاج	de:Heilung,Heilmittel	en:cure,remedy	es:cura,remedio	fa:درمان,شفا	fr:remède,guérison	he:מרפא,ריפוי	hi:इलाज,उपाय	ja:治癒	ko:치유	pt:cura,remédio	ru:лекарство,исцеление	tr:çare,tedavi	ur:علاج,شفا	zh:治愈
+c:curette	Noun	ar:مكشطة	de:Kürette	en:curette	es:cureta	fa:کورت	fr:curette	he:קורטה	hi:क्यूरेट	ja:キュレット	ko:소파기	pt:cureta	ru:кюретка	tr:küret	ur:کیورٹ	zh:刮匙
 c:curiosity	Noun	ar:فضول	de:Neugier	en:curiosity	es:curiosidad	fa:کنجکاوی	fr:curiosité	he:סקרנות	hi:जिज्ञासा,कौतूहल	ja:好奇心	ko:호기심	pt:curiosidade	ru:любопытство,любознательность	tr:merak	ur:تجسس,شوق	zh:好奇心
 c:curlew-bird	Noun	ar:طائر الكروان	de:Brachvogel	en:curlew	es:zarapito	fa:قره واز	fr:courlis	he:עקוב	hi:कर्ल्यू	ja:ダイシャクシギ	ko:마도요	pt:maçarico	ru:кроншнеп	tr:sürmeli	ur:کیو	zh:杓鹬
 c:currant	Noun	ar:كشمش	de:Johannisbeere	en:currant	es:grosella	fa:انگور فرنگی	fr:groseille	he:דומדמנית	hi:करंट	ja:カラント	ko:까치밥나무	pt:groselha	ru:смородина	tr:frenk üzümü	ur:کشمش	zh:醋栗
@@ -1628,6 +1635,7 @@ c:default-effect	Noun	ar:أثر الخيار الافتراضي	de:Standardeinst
 c:defeat	Noun	ar:هزيمة,خسارة	de:Niederlage	en:defeat,loss	es:derrota	fa:شکست	fr:défaite	he:תבוסה,הפסד	hi:हार,पराजय	ja:敗北	ko:패배	pt:derrota	ru:поражение	tr:yenilgi,mağlubiyet	ur:شکست,ہار	zh:失败
 c:defend	Verb	ar:دافع,يدافع	de:verteidigen	en:defend	es:defender	fa:دفاع کردن	fr:défendre	he:להגן	hi:रक्षा करना,बचाव करना	ja:守る,防衛する	ko:방어하다	pt:defender	ru:защищать	tr:savunmak	ur:دفاع کرنا	zh:防御,保卫
 c:defendant	Noun	ar:متهم,مدعى عليه	de:Angeklagter,Beklagter	en:defendant	es:acusado,demandado	fa:متهم,مدعی‌علیه	fr:accusé,défendeur	he:נאשם,נתבע	hi:प्रतिवादी,अभियुक्त	ja:被告,被告人	ko:피고,피고인	pt:réu,acusado	ru:ответчик,подсудимый	tr:sanık,davalı	ur:ملزم,مدعا علیہ	zh:被告,被告人
+c:defibrillator	Noun	ar:جهاز إزالة الرجفان	de:Defibrillator	en:defibrillator	es:desfibrilador	fa:دفیبریلاتور	fr:défibrillateur	he:דפיברילטור	hi:डिफिब्रिलेटर	ja:除細動器	ko:제세동기	pt:desfibrilador	ru:дефибриллятор	tr:defibrilatör	ur:ڈیفبریلیٹر	zh:除颤器
 c:deflation	Noun	ar:انكماش	de:Deflation	en:deflation	es:deflación	fa:کاهش تورم	fr:déflation	he:דפלציה	hi:अपस्फीति	ja:デフレーション,デフレ	ko:디플레이션	pt:deflação	ru:дефляция	tr:deflasyon	ur:انقباض زر	zh:通货紧缩,通缩
 c:deforestation	Noun	ar:إزالة الغابات	de:Abholzung	en:deforestation	es:deforestación	fa:جنگل زدایی	fr:déforestation	he:כריתת יערות	hi:वनों की कटाई	ja:森林破壊	ko:삼림 벌채	pt:desmatamento	ru:вырубка лесов	tr:ormansızlaştırma	ur:جنگل کی کٹائی	zh:森林砍伐
 c:degree	Noun	ar:شهادة,درجة علمية	de:Abschluss,Grad	en:degree	es:grado,título	fa:مدرک,درجه	fr:diplôme,grade	he:תואר	hi:डिग्री,उपाधि	ja:学位	ko:학위	pt:grau,diploma	ru:степень,диплом	tr:derece,diploma	ur:ڈگری,سند	zh:学位
@@ -1908,6 +1916,7 @@ c:eat	Verb	ar:أكل,يأكل	de:essen	en:eat,eats,ate	es:comer	fa:خوردن	fr
 c:eave	Noun	ar:طنف	de:Dachtraufe	en:eave	es:alero	fa:لبه بام	fr:avant-toit	he:שפת הגג	hi:छज्जा	ja:軒	ko:처마	pt:beirado	ru:свес	tr:saçak	ur:چھجہ	zh:屋檐
 c:ebook	Noun	ar:كتاب الكتروني	de:E-Book,elektronisches Buch	en:ebook,e-book	es:libro electrónico	fa:کتاب الکترونیکی	fr:livre numérique,e-book	he:ספר אלקטרוני	hi:ई-बुक	ja:電子書籍	ko:전자책	pt:e-book,livro eletrônico	ru:электронная книга	tr:e-kitap	ur:برقی کتاب	zh:电子书
 c:ebro	Noun	ar:الإبرو,نهر الإبرو	de:Ebro	en:Ebro,Ebro River	es:Ebro,río Ebro	fa:ابرو,رود ابرو	fr:Èbre	he:אברו,נהר האברו	hi:एब्रो नदी	ja:エブロ川	ko:에브로강	pt:Ebro,rio Ebro	ru:Эбро	tr:Ebro,Ebro Nehri	ur:دریائے ایبرو	zh:埃布罗河
+c:ecg-machine	Noun	ar:جهاز رسم القلب	de:EKG-Gerät	en:ECG machine	es:electrocardiograma	fa:دستگاه ECG	fr:électrocardiographe	he:מכשיר א.ק.ג	hi:ईसीजी मशीन	ja:心電計	ko:심전도 기계	pt:eletrocardiógrafo	ru:электрокардиограф	tr:EKG cihazı	ur:ای سی جی مشین	zh:心电图仪
 c:echinoderm	Noun	ar:شوكيات الجلد	de:Stachelhäuter	en:echinoderm	es:equinodermo	fa:خارپوستان	fr:échinoderme	he:קוצי עור	hi:शूलत्वचीय	ja:棘皮動物	ko:극피동물	pt:equinodermo	ru:иглокожие	tr:denizkestanegiller	ur:خاردار چمڑا	zh:棘皮动物
 c:echocardiography	Noun	ar:صدى القلب	de:Echokardiographie	en:echocardiography	es:ecocardiografía	fa:اکوکاردیوگرافی	fr:échocardiographie	he:אקוקרדיוגרפיה	hi:इकोकार्डियोग्राफी	ja:心臓超音波検査	ko:심장 초음파 검사	pt:ecocardiografia	ru:эхокардиография	tr:ekokardiyografi	ur:دل کی آواز تصویر	zh:超声心动图
 c:echolocation	Noun	ar:تحديد الموقع بالصدى	de:Echolokation	en:echolocation	es:ecolocalización	fa:اکولوکیشن	fr:écholocation	he:אקולוקציה	hi:प्रतिध्वनि स्थान-निर्धारण	ja:反響定位	ko:반향 위치 탐지	pt:ecolocalização	ru:эхолокация	tr:ekolokasyon	ur:گونج مقام	zh:回声定位
@@ -2008,6 +2017,7 @@ c:endive	Noun	ar:هندباء	de:Chicorée	en:endive	es:endibia	fa:کاسنی	fr
 c:endocannabinoid	Noun	ar:الكانابينويد الداخلي	de:Endocannabinoid	en:endocannabinoid	es:endocannabinoide	fa:اندوکانابینوئید	fr:endocannabinoïde	he:אנדוקנבינואיד	hi:एंडोकेनाबिनोइड	ja:エンドカンナビノイド	ko:엔도카나비노이드	pt:endocanabinoide	ru:эндоканнабиноид	tr:endokannabinoid	ur:اندرونی کینبینائڈ	zh:内源性大麻素
 c:endoderm	Noun	ar:الأديم الداخلي	de:Endoderm	en:endoderm	es:endodermo	fa:اندودرم	fr:endoderme	he:אנדודרם	hi:अन्तःत्वचा	ja:内胚葉	ko:내배엽	pt:endoderma	ru:энтодерма	tr:endoderm	ur:انڈوڈرم	zh:内胚层
 c:endogamy	Noun	ar:زواج داخلي	de:Endogamie	en:endogamy	es:endogamia	fa:درون‌همسری	fr:endogamie	he:אנדוגמיה	hi:अंतर्विवाह	ja:内婚	ko:동족 결혼	pt:endogamia	ru:эндогамия	tr:iç evlilik	ur:برادری میں شادی	zh:内婚制
+c:endoscope	Noun	ar:منظار داخلي	de:Endoskop	en:endoscope	es:endoscopio	fa:آندوسکوپ	fr:endoscope	he:אנדוסקופ	hi:एंडोस्कोप	ja:内視鏡	ko:내시경	pt:endoscópio	ru:эндоскоп	tr:endoskop	ur:اندوسکوپ	zh:内窥镜
 c:endosperm	Noun	ar:سويداء	de:Endosperm	en:endosperm	es:endospermo	fa:اندوسپرم	fr:endosperme	he:אנדוספרם	hi:भ्रूणपोष	ja:胚乳	ko:배유	pt:endosperma	ru:эндосперм	tr:endosperm	ur:غذائی ساخت	zh:胚乳
 c:endowment-effect	Noun	ar:أثر التوقيع	de:Besitztumseffekt	en:endowment effect	es:efecto dotación	fa:اثر مالکیت	fr:effet de dotation	he:אפקט ההחזקה	hi:स्वामित्व प्रभाव	ja:保有効果	ko:보유 효과	pt:efeito dotação	ru:эффект владения	tr:sahiplik etkisi	ur:ملکیت اثر	zh:禀赋效应
 c:enemy	Noun	ar:عدو	de:Feind	en:enemy,foe	es:enemigo	fa:دشمن	fr:ennemi	he:אויב	hi:दुश्मन,शत्रु	ja:敵	ko:적	pt:inimigo	ru:враг	tr:düşman	ur:دشمن	zh:敌人,敌
@@ -2577,6 +2587,7 @@ c:glossy	Adjective	ar:لامع,مصقول	de:glänzend,hochglanz	en:glossy	es:lu
 c:glove	Noun	ar:قفاز	de:Handschuh	en:glove	es:guante	fa:دستکش	fr:gant	he:כפפה	hi:दस्ताना	ja:手袋	ko:장갑	pt:luva	ru:перчатка	tr:eldiven	ur:دستانہ	zh:手套
 c:gloves	Noun	ar:قفازات	de:Handschuhe	en:gloves	es:guantes	fa:دستکش	fr:gants	he:כפפות	hi:दस्ताने	ja:手袋	ko:장갑	pt:luvas	ru:перчатки	tr:eldivenler	ur:دستانے	zh:手套
 c:glow-worm	Noun	ar:دودة النار,يرقة متوهجة	de:Glühwürmchen,Leuchtkäfer	en:glow worm,glowworm	es:gusano de luz,luciérnaga larva	fa:کرم شب‌تاب	fr:ver luisant	he:גחלילית,תולעת הנוהר	hi:जुगनू लार्वा,चमकता कीड़ा	ja:ホタルの幼虫	ko:반딧불이 유충	pt:pirilampo,vagalume larva	ru:светлячок,ивановский червяк	tr:ateş böceği larva	ur:جگنو لاروا	zh:萤火虫幼虫
+c:glucometer	Noun	ar:جهاز قياس السكر	de:Blutzuckermessgerät	en:glucometer	es:glucómetro	fa:گلوکومتر	fr:glucomètre	he:מד סוכר	hi:ग्लूकोमीटर	ja:血糖値測定器	ko:혈당계	pt:glicosímetro	ru:глюкометр	tr:glukoz ölçer	ur:شوگر ناپ	zh:血糖仪
 c:glutamate	Noun	ar:الغلوتامات	de:Glutamat	en:glutamate	es:glutamato	fa:گلوتامات	fr:glutamate	he:גלוטמט	hi:ग्लूटामेट	ja:グルタミン酸	ko:글루탐산	pt:glutamato	ru:глутамат	tr:glutamat	ur:گلوٹامیٹ	zh:谷氨酸
 c:glutamatergic	Adjective	ar:غلوتاماتي	de:glutamaterg	en:glutamatergic	es:glutamatérgico	fa:گلوتامیرژیک	fr:glutamatergique	he:גלוטמטרגי	hi:ग्लूटामेटर्जिक	ja:グルタミン酸作動性	ko:글루타마트성	pt:glutamatérgico	ru:глутаматергический	tr:glutamaterjik	ur:گلوٹامیٹ والا	zh:谷氨酸能
 c:gluten	Noun	ar:الغلوتين	de:Gluten	en:gluten	es:gluten	fa:گلوتن	fr:gluten	he:גלוטן	hi:ग्लूटेन	ja:グルテン	ko:글루텐	pt:glúten	ru:глютен	tr:glüten	ur:گلوٹن	zh:麸质
@@ -2775,6 +2786,7 @@ c:headphone	Noun	ar:سماعة رأس,سماعات	de:Kopfhörer	en:headphones,h
 c:health	Noun	ar:صحة	de:Gesundheit	en:health	es:salud	fa:سلامتی,سلامت	fr:santé	he:בריאות	hi:स्वास्थ्य	ja:健康	ko:건강	pt:saúde	ru:здоровье	tr:sağlık	ur:صحت	zh:健康
 c:hear	Verb	ar:سمع,يسمع	de:hören	en:hear,hears,heard	es:oír,escuchar	fa:شنیدن	fr:entendre	he:לשמוע	hi:सुनना	ja:聞く	ko:듣다	pt:ouvir	ru:слышать	tr:duymak	ur:سننا	zh:听
 c:hearing	Noun	ar:جلسة	de:Anhörung,Verhandlung	en:hearing	es:audiencia	fa:استماع,جلسه	fr:audience	he:דיון,שימוע	hi:सुनवाई	ja:聴聞,審問	ko:청문,심리	pt:audiência	ru:слушание	tr:duruşma,dinleme	ur:سماعت	zh:听证,审讯
+c:hearing-aid	Noun	ar:معين سمعي	de:Hörgerät	en:hearing aid	es:audífono	fa:سمعک	fr:prothèse auditive	he:מכשיר שמיעה	hi:श्रवण यंत्र	ja:補聴器	ko:보청기	pt:aparelho auditivo	ru:слуховой аппарат	tr:işitme cihazı	ur:سماعت آلہ	zh:助听器
 c:hearsay	Noun	ar:الشهادة السماعية	de:Hörensagen	en:hearsay	es:testimonio de oídas	fa:شهادت شنیداری	fr:ouï-dire	he:עדות שמיעה	hi:सुनी-सुनाई बात	ja:伝聞証拠	ko:전문 증거	pt:prova por ouvir dizer	ru:показания с чужих слов	tr:duyuma dayalı delil	ur:سنی سنائی بات	zh:传闻证据
 c:heart	Noun	ar:قلب	de:Herz	en:heart	es:corazón	fa:قلب,دل	fr:cœur	he:לב	hi:दिल,हृदय	ja:心臓,心	ko:심장,마음	pt:coração	ru:сердце	tr:kalp,yürek	ur:دل	zh:心,心脏
 c:heat	Noun	ar:حرارة	de:Hitze,Wärme	en:heat	es:calor	fa:گرما	fr:chaleur	he:חום	hi:गर्मी,ऊष्मा	ja:熱	ko:열	pt:calor	ru:тепло,жар	tr:ısı,sıcaklık	ur:حرارت	zh:热
@@ -3161,6 +3173,7 @@ c:israel	Noun	ar:إسرائيل	de:Israel	en:Israel	es:Israel	fa:اسرائیل	
 c:istanbul	Noun	ar:إسطنبول	de:Istanbul	en:Istanbul	es:Estambul	fa:استانبول	fr:Istanbul	he:איסטנבול	hi:इस्तांबुल	ja:イスタンブール	ko:이스탄불	pt:Istambul	ru:Стамбул	tr:İstanbul	ur:استنبول	zh:伊斯坦布尔
 c:isthmus	Noun	ar:برزخ	de:Landenge,Isthmus	en:isthmus	es:istmo	fa:تنگه خشکی,برزخ	fr:isthme	he:מצר יבשה	hi:भूडमरूमध्य,जलडमरूमध्य	ja:地峡	ko:지협	pt:istmo	ru:перешеек	tr:kıstak	ur:برزخ	zh:地峡
 c:italy	Noun	ar:إيطاليا	de:Italien	en:Italy	es:Italia	fa:ایتالیا	fr:Italie	he:איטליה	hi:इटली	ja:イタリア	ko:이탈리아	pt:Itália	ru:Италия	tr:İtalya	ur:اٹلی	zh:意大利
+c:iv-drip	Noun	ar:تسريب وريدي	de:Infusionsständer	en:IV drip	es:gotero intravenoso	fa:سرم	fr:perfusion intraveineuse	he:עירוי תוך-ורידי	hi:आईवी ड्रिप	ja:点滴	ko:정맥 주사	pt:soro intravenoso	ru:капельница	tr:serum seti	ur:وریدی قطرہ	zh:静脉滴注
 c:ivory	Noun	ar:عاجي	de:Elfenbein,Elfenbeinfarben	en:ivory	es:marfil	fa:عاج‌فیل,عاجی	fr:ivoire	he:שנהב	hi:हाथीदाँत	ja:象牙色,アイボリー	ko:상아색	pt:marfim	ru:слоновая кость	tr:fildişi	ur:ہاتھی دانت	zh:象牙色
 c:ivy	Noun	ar:لبلاب	de:Efeu	en:ivy	es:hiedra	fa:پیچک,عشقه	fr:lierre	he:קיסוס	hi:आइवी	ja:ツタ,蔦	ko:담쟁이덩굴	pt:hera	ru:плющ	tr:sarmaşık	ur:آئیوی,پیچک	zh:常春藤
 c:jabuticaba	Noun	ar:جابوتيكابا	de:Jabuticaba	en:jabuticaba	es:jabuticaba	fa:جابوتیکابا	fr:jabuticaba	he:ז'בוטיקבה	hi:जबुतीकाबा	ja:ジャボチカバ	ko:자부티카바	pt:jabuticaba	ru:жабутикаба	tr:jabuticaba	ur:جابوٹیکابا	zh:嘉宝果
@@ -3358,6 +3371,7 @@ c:larceny	Noun	ar:سرقة	de:Diebstahl	en:larceny	es:latrocinio	fa:دزدی	fr:
 c:large-scale-structure	Noun	ar:البنية الكونية الكبرى	de:Großraumstruktur	en:large-scale structure	es:estructura a gran escala	fa:ساختار بزرگ‌مقیاس	fr:grande structure de l'univers	he:מבנה בקנה מידה גדול	hi:वृहत-पैमाने की संरचना	ja:大規模構造	ko:대규모 구조	pt:estrutura de grande escala	ru:крупномасштабная структура	tr:büyük ölçekli yapı	ur:بڑے پیمانے کی ساخت	zh:大尺度结构
 c:lark	Noun	ar:قبرة	de:Lerche	en:lark	es:alondra	fa:چکاوک	fr:alouette	he:עפרוני	hi:लार्क	ja:ヒバリ	ko:종다리	pt:cotovia	ru:жаворонок	tr:tarla kuşu	ur:لارک	zh:百灵
 c:larva	Noun	ar:يرقة	de:Larve	en:larva	es:larva	fa:لارو	fr:larve	he:זחל	hi:लार्वा	ja:幼虫	ko:유충	pt:larva	ru:личинка	tr:larva	ur:لارو	zh:幼虫
+c:laryngoscope	Noun	ar:منظار الحنجرة	de:Laryngoskop	en:laryngoscope	es:laringoscopio	fa:لارنگوسکوپ	fr:laryngoscope	he:לרינגוסקופ	hi:लैरिंगोस्कोप	ja:喉頭鏡	ko:후두경	pt:laringoscópio	ru:ларингоскоп	tr:laringoskop	ur:لارنگواسکوپ	zh:喉镜
 c:larynx	Noun	ar:الحنجرة	de:Kehlkopf	en:larynx	es:laringe	fa:حنجره	fr:larynx	he:גרגרת	hi:स्वरयंत्र	ja:喉頭	ko:후두	pt:laringe	ru:гортань	tr:gırtlak	ur:حنجرہ	zh:喉头
 c:laser	Noun	ar:ليزر	de:Laser	en:laser	es:láser	fa:لیزر	fr:laser	he:לייזר	hi:लेज़र	ja:レーザー,レーザ	ko:레이저	pt:laser	ru:лазер	tr:lazer	ur:لیزر	zh:激光,镭射
 c:laser-level	Noun	ar:ميزان الليزر	de:Laserwasserwaage	en:laser level	es:nivel láser	fa:تراز لیزری	fr:niveau laser	he:פלס לייזר	hi:लेजर लेवल	ja:レーザーレベル	ko:레이저 수평기	pt:nível a laser	ru:лазерный уровень	tr:lazer su terazisi	ur:لیزر سطح	zh:激光水平仪
@@ -3681,6 +3695,12 @@ c:medallion	Noun	ar:ميدالية	de:Medaillon	en:medallion	es:medallón	fa:م�
 c:media	Noun	ar:إعلام,وسائل الإعلام	de:Medien	en:media	es:medios,medios de comunicación	fa:رسانه	fr:médias	he:תקשורת,מדיה	hi:मीडिया	ja:メディア,マスメディア	ko:미디어,매체	pt:mídia,meios de comunicação	ru:медиа,средства массовой информации	tr:medya	ur:میڈیا	zh:媒体
 c:median	Noun	ar:وسيط	de:Median	en:median	es:mediana	fa:میانه	fr:médiane	he:חציון	hi:माध्यिका	ja:中央値	ko:중앙값	pt:mediana	ru:медиана	tr:medyan	ur:وسطی	zh:中位数
 c:mediation	Noun	ar:وساطة	de:Mediation	en:mediation	es:mediación	fa:میانجیگری	fr:médiation	he:גישור	hi:सुलह	ja:調停	ko:조정	pt:mediação	ru:медиация	tr:arabuluculuk	ur:صلح کاری	zh:调解
+c:medical-bandage	Noun	ar:ضماد	de:Verband	en:medical bandage	es:vendaje	fa:باندپیچ	fr:bandage	he:תחבושת	hi:पट्टी	ja:包帯	ko:붕대	pt:curativo	ru:бинт	tr:bandaj	ur:پٹی	zh:绷带
+c:medical-clamp	Noun	ar:مشبك طبي	de:Klemme	en:medical clamp	es:pinza médica	fa:گیره طبی	fr:clamp médical	he:מהדק רפואי	hi:चिकित्सा क्लैंप	ja:医療用クランプ	ko:의료용 클램프	pt:grampo médico	ru:медицинский зажим	tr:tıbbi klemp	ur:طبی کلیمپ	zh:医用夹
+c:medical-needle	Noun	ar:إبرة طبية	de:medizinische Nadel	en:medical needle	es:aguja médica	fa:سوزن پزشکی	fr:aiguille médicale	he:מחט רפואי	hi:चिकित्सा सुई	ja:医療用針	ko:의료용 바늘	pt:agulha médica	ru:медицинская игла	tr:tıbbi iğne	ur:طبی سوئی	zh:医用针
+c:medical-syringe	Noun	ar:حقنة	de:Spritze	en:syringe	es:jeringa	fa:سرنگ	fr:seringue	he:מזרק	hi:सिरिंज	ja:注射器	ko:주사기	pt:seringa	ru:шприц	tr:şırınga	ur:سرنج	zh:注射器
+c:medical-thermometer	Noun	ar:ميزان حرارة طبي	de:Fieberthermometer	en:medical thermometer	es:termómetro médico	fa:دماسنج پزشکی	fr:thermomètre médical	he:מדחום רפואי	hi:चिकित्सा थर्मामीटर	ja:体温計	ko:체온계	pt:termômetro clínico	ru:медицинский термометр	tr:klinik termometre	ur:طبی تھرمامیٹر	zh:医用温度计
+c:medical-ultrasound	Noun	ar:جهاز الموجات فوق الصوتية	de:Ultraschallgerät	en:medical ultrasound	es:ultrasonido médico	fa:سونوگرافی پزشکی	fr:échographe médical	he:אולטרה-סאונד רפואי	hi:चिकित्सा अल्ट्रासाउंड	ja:超音波診断装置	ko:의료용 초음파	pt:ultrassom médico	ru:медицинский ультразвук	tr:tıbbi ultrason	ur:طبی الٹراساؤنڈ	zh:医用超声波
 c:medicine	Noun	ar:دواء,طب	de:Medizin,Arznei	en:medicine	es:medicina,medicamento	fa:دارو,پزشکی	fr:médecine,médicament	he:רפואה,תרופה	hi:दवा,चिकित्सा	ja:薬,医学	ko:약,의학	pt:medicina,remédio	ru:медицина,лекарство	tr:ilaç,tıp	ur:دوا,طب	zh:药,医学
 c:medieval	Noun	ar:القرون الوسطى,العصور الوسطى	de:Mittelalter	en:middle ages,medieval period	es:edad media,medievo	fa:قرون وسطی	fr:moyen âge	he:ימי הביניים	hi:मध्यकाल,मध्य युग	ja:中世	ko:중세	pt:idade média	ru:средневековье,средние века	tr:orta çağ	ur:قرون وسطی,وسطی دور	zh:中世纪
 c:meditation	Noun	ar:تأمل	de:Meditation	en:meditation	es:meditación	fa:مدیتیشن,مراقبه	fr:méditation	he:מדיטציה	hi:ध्यान	ja:瞑想	ko:명상	pt:meditação	ru:медитация	tr:meditasyon,derin düşünce	ur:مراقبہ	zh:冥想,禅定
@@ -3923,6 +3943,7 @@ c:move	Verb	ar:تحرك,انتقل	de:bewegen	en:move	es:mover	fa:حرکت کر�
 c:mozart	Noun	ar:موتسارت,فولفغانغ أماديوس موتسارت	de:Mozart,Wolfgang Amadeus Mozart	en:Mozart,Wolfgang Amadeus Mozart	es:Mozart	fa:موتسارت	fr:Mozart	he:מוצרט	hi:मोज़ार्ट	ja:モーツァルト	ko:모차르트	pt:Mozart	ru:Моцарт	tr:Mozart	ur:موزارٹ	zh:莫扎特
 c:mozzarella	Noun	ar:جبنة الموزاريلا	de:Mozzarella	en:mozzarella	es:mozzarella	fa:موزارلا	fr:mozzarella	he:מוצרלה	hi:मोज़ेरेला	ja:モッツァレラ	ko:모짜렐라	pt:mussarela	ru:моцарелла	tr:mozzarella	ur:موزریلا	zh:马苏里拉奶酪
 c:mri-imaging	Noun	ar:التصوير بالرنين المغناطيسي	de:Magnetresonanztomographie	en:magnetic resonance imaging	es:resonancia magnética	fa:تصویربرداری رزونانس مغناطیسی	fr:imagerie par résonance magnétique	he:הדמיית תהודה מגנטית	hi:चुम्बकीय अनुनाद इमेजिंग	ja:磁気共鳴画像法	ko:자기 공명 영상	pt:ressonância magnética	ru:магнитно-резонансная томография	tr:manyetik rezonans görüntüleme	ur:مقناطیسی گونج تصویر کشی	zh:磁共振成像
+c:mri-scanner	Noun	ar:جهاز الرنين المغناطيسي	de:MRT-Gerät	en:MRI scanner	es:escáner de resonancia magnética	fa:دستگاه MRI	fr:scanner IRM	he:מכשיר MRI	hi:एमआरआई स्कैनर	ja:MRIスキャナー	ko:MRI 스캐너	pt:scanner de ressonância magnética	ru:МРТ-сканер	tr:MRI tarayıcısı	ur:ایم آر آئی سکینر	zh:核磁共振扫描仪
 c:mrna	Noun	ar:الرنا المرسال	de:mRNA	en:mRNA	es:ARNm	fa:ام‌آرانی‌ای	fr:ARNm	he:mRNA	hi:एमआरएनए	ja:mRNA	ko:mRNA	pt:mRNA	ru:мРНК	tr:mRNA	ur:ایم آر این اے	zh:信使RNA
 c:muay-thai	Noun	ar:موي تاي	de:Muay Thai	en:Muay Thai	es:muay thai	fa:موای تای	fr:muay-thaï	he:מואי טאי	hi:मुआय थाई	ja:ムエタイ	ko:무에타이	pt:muay thai	ru:муай тай	tr:muay thai	ur:موائی تھائی	zh:泰拳
 c:mud-wasp	Noun	ar:دبور الطين,زنبور الطين	de:Lehmwespe	en:mud wasp,mud dauber	es:avispa alfarera,avispa de barro	fa:زنبور گل	fr:guêpe maçonne,sphex	he:צרעת הבוץ	hi:मिट्टी का ततैया	ja:ドロバチ	ko:진흙말벌	pt:vespa-oleira	ru:оса-горшечница,пробочная оса	tr:çamur eşekarısı	ur:مٹی کا بھڑ	zh:泥蜂
@@ -4015,6 +4036,7 @@ c:navigate	Verb	ar:تنقل,يتنقل	de:navigieren	en:navigate	es:navegar	fa:�
 c:navy-blue	Noun	ar:كُحْلي,أزرق داكن	de:Marineblau	en:navy blue	es:azul marino	fa:سرمه‌ای	fr:bleu marine	he:כחול כהה	hi:गहरा नीला	ja:紺色,ネイビーブルー	ko:남색,네이비	pt:azul-marinho	ru:тёмно-синий	tr:lacivert	ur:گہرا نیلا	zh:藏青色,海军蓝
 c:near	Adverb	ar:قريب	de:nah,nahe	en:near,close	es:cerca	fa:نزدیک	fr:près,proche	he:קרוב	hi:पास,निकट	ja:近い	ko:가까이,가까운	pt:perto,próximo	ru:близко	tr:yakın	ur:قریب	zh:近
 c:nebula	Noun	ar:سديم	de:Nebel	en:nebula	es:nebulosa	fa:سحابی	fr:nébuleuse	he:ערפילית	hi:निहारिका	ja:星雲	ko:성운	pt:nebulosa	ru:туманность	tr:bulutsu	ur:سحابیہ	zh:星云
+c:nebulizer	Noun	ar:جهاز البخار	de:Vernebler	en:nebulizer	es:nebulizador	fa:نبولایزر	fr:nébuliseur	he:מרסס	hi:नेब्युलाइज़र	ja:ネブライザー	ko:분무기	pt:nebulizador	ru:небулайзер	tr:nebülizatör	ur:نیبولائزر	zh:雾化器
 c:necessity	Noun	ar:ضرورة	de:Notwendigkeit	en:necessity	es:necesidad	fa:ضرورت,لزوم	fr:nécessité	he:הכרח,נחיצות	hi:आवश्यकता,अनिवार्यता	ja:必要性,必然性	ko:필요성,필연성	pt:necessidade	ru:необходимость	tr:zorunluluk,gereklilik	ur:ضرورت	zh:必要性,必然性
 c:neck	Noun	ar:عنق,رقبة	de:Hals	en:neck	es:cuello	fa:گردن	fr:cou	he:צוואר	hi:गर्दन	ja:首	ko:목	pt:pescoço	ru:шея	tr:boyun	ur:گردن	zh:颈,脖子
 c:necklace	Noun	ar:قلادة,عقد	de:Halskette	en:necklace	es:collar	fa:گردنبند	fr:collier	he:שרשרת	hi:हार,नेकलेस	ja:ネックレス,首飾り	ko:목걸이	pt:colar	ru:ожерелье	tr:kolye	ur:ہار	zh:项链
@@ -4212,6 +4234,7 @@ c:open-set	Noun	ar:المجموعة المفتوحة	de:offene Menge	en:open set
 c:opera	Noun	ar:أوبرا	de:Oper	en:opera	es:ópera	fa:اپرا	fr:opéra	he:אופרה	hi:ओपेरा	ja:オペラ,歌劇	ko:오페라	pt:ópera	ru:опера	tr:opera	ur:اوپرا	zh:歌剧
 c:operant	Adjective	ar:اشتراط فعال	de:operante Konditionierung	en:operant conditioning	es:condicionamiento operante	fa:شرطی‌سازی عاملی	fr:conditionnement opérant	he:התניה אופרנטית	hi:क्रियाप्रसूत अनुबंधन	ja:オペラント条件づけ	ko:조작적 조건화	pt:condicionamento operante	ru:оперантное обусловливание	tr:edimsel koşullanma	ur:عاملی تکوین	zh:操作性条件作用
 c:operationalism	Noun	ar:العملانية	de:Operationalismus	en:operationalism	es:operacionalismo	fa:عملیات‌گرایی	fr:opérationnalisme	he:אופרציונליזם	hi:प्रचालनवाद	ja:操作主義	ko:조작주의	pt:operacionalismo	ru:операционализм	tr:operasyonalizm	ur:عملیاتی نظریہ	zh:操作主义
+c:ophthalmoscope	Noun	ar:منظار العين	de:Ophthalmoskop	en:ophthalmoscope	es:oftalmoscopio	fa:افتالموسکوپ	fr:ophtalmoscope	he:אופתלמוסקופ	hi:नेत्रदर्शी	ja:検眼鏡	ko:검안경	pt:oftalmoscópio	ru:офтальмоскоп	tr:oftalmoskop	ur:آنکھ کا آلہ	zh:眼底镜
 c:opinion	Noun	ar:رأي	de:Meinung	en:opinion	es:opinión	fa:نظر,عقیده	fr:opinion,avis	he:דעה	hi:राय,विचार	ja:意見	ko:의견	pt:opinião	ru:мнение	tr:görüş,fikir	ur:رائے	zh:意见,观点
 c:opioid	Noun	ar:الافيونيات	de:Opioid	en:opioid	es:opioide	fa:اوپیوئید	fr:opioïde	he:אופיואיד	hi:ओपिओइड	ja:オピオイド	ko:오피오이드	pt:opioide	ru:опиоид	tr:opioid	ur:افیونی	zh:阿片类药物
 c:opportunity-cost	Noun	ar:تكلفة الفرصة البديلة	de:Opportunitätskosten	en:opportunity cost	es:costo de oportunidad	fa:هزینه فرصت	fr:coût d'opportunité	he:עלות אלטרנטיבית	hi:अवसर लागत	ja:機会費用	ko:기회비용	pt:custo de oportunidade	ru:альтернативные издержки	tr:fırsat maliyeti	ur:متبادل لاگت	zh:机会成本
@@ -4251,6 +4274,7 @@ c:oscilloscope	Noun	ar:راسم الذبذبات	de:Oszilloskop	en:oscilloscope	
 c:osiris	Noun	ar:أوزيريس	de:Osiris	en:Osiris	es:Osiris	fa:اوزیریس	fr:Osiris	he:אוזיריס	hi:ओसिरिस	ja:オシリス	ko:오시리스	pt:Osíris	ru:Осирис	tr:Osiris	ur:اوزیرس	zh:奥西里斯
 c:osprey	Noun	ar:عقاب السمك,نسر البحر	de:Fischadler	en:osprey	es:águila pescadora	fa:عقاب ماهیگیر	fr:balbuzard	he:עיט הנהרות	hi:ओस्प्री	ja:ミサゴ	ko:물수리	pt:águia-pescadora	ru:скопа	tr:balık kartalı	ur:اوسپری	zh:鱼鹰
 c:ostrich	Noun	ar:نعامة	de:Strauß	en:ostrich	es:avestruz	fa:شترمرغ	fr:autruche	he:יען	hi:शुतुरमुर्ग	ja:ダチョウ	ko:타조	pt:avestruz	ru:страус	tr:deve kuşu	ur:شتر مرغ	zh:鸵鸟
+c:otoscope	Noun	ar:منظار الأذن	de:Otoskop	en:otoscope	es:otoscopio	fa:اتوسکوپ	fr:otoscope	he:אוטוסקופ	hi:ओटोस्कोप	ja:耳鏡	ko:이경	pt:otoscópio	ru:отоскоп	tr:otoskop	ur:کان کا آلہ	zh:耳镜
 c:ottawa	Noun	ar:أوتاوا	de:Ottawa	en:Ottawa	es:Ottawa	fa:اتاوا	fr:Ottawa	he:אוטווה	hi:ओटावा	ja:オタワ	ko:오타와	pt:Ottawa	ru:Оттава	tr:Ottawa	ur:اوٹاوا	zh:渥太华
 c:otter	Noun	ar:ثعلب الماء,قضاعة	de:Otter	en:otter	es:nutria	fa:سمور آبی	fr:loutre	he:לוטרה	hi:ऊदबिलाव	ja:カワウソ	ko:수달	pt:lontra	ru:выдра	tr:su samuru	ur:اود بلاؤ	zh:水獭
 c:otto-cycle	Noun	ar:دورة أوتو	de:Otto-Kreisprozess	en:Otto cycle	es:ciclo Otto	fa:چرخه اوتو	fr:cycle Otto	he:מחזור אוטו	hi:ओटो चक्र	ja:オットーサイクル	ko:오토 사이클	pt:ciclo Otto	ru:цикл Отто	tr:Otto döngüsü	ur:اوٹو چکر	zh:奥托循环
@@ -4811,6 +4835,7 @@ c:prosecutor	Noun	ar:مدعي عام	de:Staatsanwalt	en:prosecutor	es:fiscal	fa:
 c:prosody	Noun	ar:تناغم الكلام	de:Prosodie	en:prosody	es:prosodia	fa:آهنگ گفتار	fr:prosodie	he:פרוסודיה	hi:छंदशास्त्र	ja:韻律	ko:운율	pt:prosódia	ru:просодия	tr:prozodi	ur:آہنگ	zh:韵律
 c:prospect-theory	Noun	ar:نظرية الاحتمالات	de:Prospect Theory	en:prospect theory	es:teoría de las perspectivas	fa:نظریه چشم‌انداز	fr:théorie des perspectives	he:תיאוריית הסיכוי	hi:संभावना सिद्धांत	ja:プロスペクト理論	ko:전망 이론	pt:teoria dos prospectos	ru:теория перспектив	tr:olasılık teorisi	ur:امکان نظریہ	zh:前景理论
 c:prospective-memory	Noun	ar:الذاكرة المستقبلية	de:prospektives Gedächtnis	en:prospective memory	es:memoria prospectiva	fa:حافظه آینده‌نگر	fr:mémoire prospective	he:זיכרון פרוספקטיבי	hi:भावी स्मृति	ja:展望記憶	ko:미래 기억	pt:memória prospectiva	ru:проспективная память	tr:ileriye dönük bellek	ur:مستقبلی یادداشت	zh:前瞻记忆
+c:prosthetic-limb	Noun	ar:طرف اصطناعي	de:Prothese	en:prosthetic limb	es:prótesis	fa:عضو مصنوعی	fr:prothèse de membre	he:גפה תותבת	hi:कृत्रिम अंग	ja:義肢	ko:의수족	pt:prótese de membro	ru:протез конечности	tr:protez uzuv	ur:مصنوعی اعضاء	zh:假肢
 c:protagonist	Noun	ar:بطل الرواية,شخصية رئيسية	de:Protagonist,Hauptfigur	en:protagonist	es:protagonista	fa:قهرمان اصلی	fr:protagoniste,personnage principal	he:גיבור,פרוטגוניסט	hi:नायक,मुख्य पात्र	ja:主人公,プロタゴニスト	ko:주인공	pt:protagonista	ru:главный герой,протагонист	tr:başkahraman,protagonist	ur:مرکزی کردار	zh:主角,主人公
 c:protectionism	Noun	ar:الحمائية	de:Protektionismus	en:protectionism	es:proteccionismo	fa:حمایت‌گرایی	fr:protectionnisme	he:פרוטקציוניזם	hi:संरक्षणवाद	ja:保護主義	ko:보호주의	pt:protecionismo	ru:протекционизм	tr:korumacılık	ur:تحفظ پسندی	zh:保护主义
 c:protein	Noun	ar:بروتين	de:Protein,Eiweiß	en:protein	es:proteína	fa:پروتئین	fr:protéine	he:חלבון,פרוטאין	hi:प्रोटीन	ja:タンパク質,プロテイン	ko:단백질,프로틴	pt:proteína	ru:белок,протеин	tr:protein	ur:پروٹین	zh:蛋白质
@@ -4853,6 +4878,7 @@ c:puja	Noun	ar:بوجا	de:Puja	en:puja	es:puja	fa:پوجا	fr:puja	he:פוג'ה
 c:pulpit-lectern	Noun	ar:منبر	de:Kanzel	en:pulpit	es:púlpito	fa:منبر کلیسا	fr:chaire	he:במה	hi:व्याख्यान मंच	ja:説教壇	ko:강단	pt:púlpito	ru:амвон	tr:kürsü	ur:تقریری منبر	zh:讲坛
 c:pulsar	Noun	ar:نجم نابض	de:Pulsar	en:pulsar	es:pulsar	fa:پالسار	fr:pulsar	he:פולסר	hi:पल्सार	ja:パルサー	ko:펄서	pt:pulsar	ru:пульсар	tr:pulsar	ur:پلسار	zh:脉冲星
 c:pulse	Noun	ar:نبض	de:Puls	en:pulse	es:pulso	fa:نبض	fr:pouls	he:דופק	hi:नाड़ी	ja:脈拍	ko:맥박	pt:pulso	ru:пульс	tr:nabız	ur:نبض	zh:脉搏
+c:pulse-oximeter	Noun	ar:مقياس نبض الأكسجين	de:Pulsoximeter	en:pulse oximeter	es:pulsioxímetro	fa:پالس اکسیمتر	fr:oxymètre de pouls	he:מד סטורציה	hi:पल्स ऑक्सीमीटर	ja:パルスオキシメーター	ko:맥박 산소 측정기	pt:oxímetro de pulso	ru:пульсоксиметр	tr:nabız oksimetre	ur:پلس آکسیمیٹر	zh:脉搏血氧仪
 c:puma	Noun	ar:بوما,الاسد الجبلي	de:Puma	en:puma,cougar,mountain lion	es:puma	fa:پوما	fr:puma	he:פומה	hi:प्यूमा	ja:ピューマ	ko:퓨마	pt:puma	ru:пума	tr:puma	ur:پوما	zh:美洲狮
 c:pumpernickel	Noun	ar:خبز البومبرنيكل	de:Pumpernickel	en:pumpernickel	es:pumpernickel	fa:پامپرنیکل	fr:pumpernickel	he:פומפרניקל	hi:पम्परनिकल	ja:プンパーニッケル	ko:펌퍼니클	pt:pumpernickel	ru:пумперникель	tr:pumpernickel	ur:پمپرنیکل	zh:黑麦粗面包
 c:pumpkin	Noun	ar:قرع,يقطين	de:Kürbis	en:pumpkin	es:calabaza	fa:کدو تنبل	fr:citrouille	he:דלעת	hi:कद्दू	ja:カボチャ	ko:호박	pt:abóbora	ru:тыква	tr:balkabağı	ur:کدو	zh:南瓜
@@ -5110,6 +5136,7 @@ c:retaining-wall	Noun	ar:جدار الاستناد	de:Stützmauer	en:retaining w
 c:reticulated-python	Noun	ar:ثعبان الشبكي	de:Netzpython	en:reticulated python	es:pitón reticulada	fa:پیتون شبکه ای	fr:python réticulé	he:פייתון משובץ	hi:जालीदार अजगर	ja:アミメニシキヘビ	ko:그물무늬비단뱀	pt:píton-reticulada	ru:сетчатый питон	tr:ağ piton	ur:جالی اژدہا	zh:网纹蟒
 c:retina	Noun	ar:الشبكية	de:Netzhaut	en:retina	es:retina	fa:شبکیه	fr:rétine	he:רשתית	hi:रेटिना	ja:網膜	ko:망막	pt:retina	ru:сетчатка	tr:retina	ur:پردہ چشم	zh:视网膜
 c:retirement	Noun	ar:تقاعد	de:Ruhestand,Rente	en:retirement	es:jubilación,retiro	fa:بازنشستگی	fr:retraite	he:פרישה	hi:सेवानिवृत्ति	ja:退職,引退	ko:퇴직,은퇴	pt:aposentadoria,reforma	ru:пенсия,выход на пенсию	tr:emeklilik	ur:ریٹائرمنٹ,سبکدوشی	zh:退休
+c:retractor	Noun	ar:شافع جراحي	de:Retraktor	en:retractor	es:retractor	fa:رتراکتور	fr:rétracteur	he:מרחיב	hi:रिट्रेक्टर	ja:開創器	ko:견인기	pt:retrator	ru:ретрактор	tr:retraktör	ur:ریٹریکٹر	zh:牵开器
 c:retreat	Verb	ar:انسحب,ينسحب	de:zurückziehen	en:retreat	es:retirarse	fa:عقب‌نشینی کردن	fr:battre en retraite,se retirer	he:לסגת	hi:पीछे हटना	ja:退却する	ko:퇴각하다	pt:retirar-se,recuar	ru:отступать	tr:geri çekilmek	ur:پیچھے ہٹنا	zh:撤退
 c:return	Verb	ar:عاد,رجع	de:zurückkehren,zurückkommen	en:return	es:volver,regresar,retornar	fa:برگشت,بازگشت	fr:retourner,revenir,rentrer	he:חזר,שב	hi:लौटना,वापस आना	ja:帰る,戻る	ko:돌아가다,돌아오다	pt:voltar,regressar,retornar	ru:возвращаться	tr:dönmek	ur:واپس آنا,لوٹنا	zh:返回,回来,归来
 c:reuptake-inhibitor	Noun	ar:مثبط اعادة الامتصاص	de:Wiederaufnahmehemmer	en:reuptake inhibitor	es:inhibidor de recaptación	fa:مهارکننده بازجذب	fr:inhibiteur de recaptage	he:מעכב ספיגה חוזרת	hi:पुनः ग्रहण अवरोधक	ja:再取り込み阻害薬	ko:재흡수 억제제	pt:inibidor de recaptação	ru:ингибитор обратного захвата	tr:geri alım inhibitörü	ur:واپسی روکنے والا	zh:再摄取抑制剂
@@ -5312,6 +5339,7 @@ c:scalar	Noun	ar:عدد قياسي	de:Skalar	en:scalar	es:escalar	fa:عدد اس
 c:scale-insect	Noun	ar:حشرة الحرشفية,قشرية	de:Schildlaus	en:scale insect	es:cochinilla de escamas,escama	fa:شپشک	fr:cochenille	he:כנימת מגן	hi:स्केल कीड़ा	ja:カイガラムシ	ko:깍지벌레	pt:cochonilha	ru:щитовка,кокцида	tr:kabuklubit	ur:چھلکا کیڑا	zh:介壳虫
 c:scale-music	Noun	ar:السلم الموسيقي	de:Tonleiter	en:scale	es:escala musical	fa:گام موسیقی	fr:gamme	he:סולם מוזיקלי	hi:सरगम	ja:音階	ko:음계	pt:escala musical	ru:гамма	tr:gamut	ur:سریگم	zh:音阶
 c:scallop	Noun	ar:اسقلوب	de:Jakobsmuschel	en:scallop	es:vieira	fa:صدف ریزه	fr:coquille Saint-Jacques	he:קונכיה	hi:स्कैलप	ja:ホタテガイ	ko:가리비	pt:vieira	ru:морской гребешок	tr:tarak	ur:اسکیلوپ	zh:扇贝
+c:scalpel	Noun	ar:مشرط	de:Skalpell	en:scalpel	es:bisturí	fa:اسکالپل	fr:scalpel	he:אזמל כירורגי	hi:स्केलपेल	ja:メス	ko:수술칼	pt:bisturi	ru:скальпель	tr:neşter	ur:جراحی کا چاقو	zh:手术刀
 c:scandium	Noun	ar:سكانديوم	de:Scandium	en:scandium	es:escandio	fa:اسکاندیم	fr:scandium	he:סקנדיום	hi:स्कैंडियम	ja:スカンジウム	ko:스칸듐	pt:escândio	ru:скандий	tr:skandiyum	ur:سکینڈیم	zh:钪
 c:scanner	Noun	ar:الماسح الضوئي	de:Scanner	en:scanner	es:escáner	fa:اسکنر	fr:scanner	he:סורק	hi:स्कैनर	ja:スキャナ	ko:스캐너	pt:scanner	ru:сканер	tr:tarayıcı	ur:اسکینر	zh:扫描仪
 c:scarab	Noun	ar:خنفساء مقدسة	de:Skarabäus	en:scarab	es:escarabajo	fa:سوسک مقدس	fr:scarabée	he:חיפושית	hi:स्कैरब	ja:スカラベ	ko:스카라브	pt:escaravelho	ru:скарабей	tr:skarabeus	ur:سکارب	zh:圣甲虫
@@ -5711,6 +5739,7 @@ c:spectrometer	Noun	ar:مطياف	de:Spektrometer	en:spectrometer	es:espectróme
 c:spectroscopy	Noun	ar:التحليل الطيفي	de:Spektroskopie	en:spectroscopy	es:espectroscopía	fa:طیف‌سنجی	fr:spectroscopie	he:ספקטרוסקופיה	hi:वर्णक्रमिकी	ja:分光法	ko:분광법	pt:espectroscopia	ru:спектроскопия	tr:spektroskopi	ur:طیف پیمائی	zh:光谱学
 c:spectrum	Noun	ar:طيف	de:Spektrum	en:spectrum	es:espectro	fa:طیف	fr:spectre	he:ספקטרום	hi:स्पेक्ट्रम,वर्णक्रम	ja:スペクトル,スペクトラム	ko:스펙트럼	pt:espectro	ru:спектр	tr:spektrum,tayf	ur:اسپیکٹرم,طیف	zh:光谱,频谱
 c:speculation	Noun	ar:مضاربة	de:Spekulation	en:speculation	es:especulación	fa:سفته بازی	fr:spéculation	he:ספקולציה	hi:सट्टेबाजी	ja:投機	ko:투기	pt:especulação	ru:спекуляция	tr:spekülasyon	ur:سٹہ بازی	zh:投机
+c:speculum	Noun	ar:منظار طبي	de:Spekulum	en:speculum	es:espéculo	fa:اسپکولوم	fr:spéculum	he:ספקולום	hi:स्पेकुलम	ja:膣鏡	ko:검경	pt:espéculo	ru:зеркало	tr:spekulum	ur:اسپیکولم	zh:窥镜
 c:speech-act	Noun	ar:فعل كلامي	de:Sprechakt	en:speech act	es:acto de habla	fa:کنش گفتاری	fr:acte de parole	he:מעשה לשוני	hi:वाक्-क्रिया	ja:発話行為	ko:발화 행위	pt:ato de fala	ru:речевой акт	tr:söz edimi	ur:کلامی فعل	zh:言语行为
 c:speech-recognition	Noun	ar:التعرف على الكلام	de:Spracherkennung	en:speech recognition	es:reconocimiento de voz	fa:تشخیص گفتار	fr:reconnaissance vocale	he:זיהוי דיבור	hi:वाक् पहचान	ja:音声認識	ko:음성 인식	pt:reconhecimento de voz	ru:распознавание речи	tr:konuşma tanıma	ur:تقریر پہچان	zh:语音识别
 c:speech-synthesis	Noun	ar:تركيب الكلام	de:Sprachsynthese	en:speech synthesis	es:síntesis de voz	fa:ترکیب گفتار	fr:synthèse vocale	he:סינתזת דיבור	hi:वाक् संश्लेषण	ja:音声合成	ko:음성 합성	pt:síntese de fala	ru:синтез речи	tr:konuşma sentezi	ur:تقریر ترکیب	zh:语音合成
@@ -5824,6 +5853,7 @@ c:stepladder	Noun	ar:سلم قابل للطي,سلم منزلي	de:Stehleiter,Kl
 c:steppe	Noun	ar:سهب	de:Steppe	en:steppe	es:estepa	fa:استپ	fr:steppe	he:ערבת עשב	hi:स्तेपी,सप्तमी घास मैदान	ja:ステップ,草原	ko:스텝,초원	pt:estepe	ru:степь	tr:step,bozkır	ur:میدانی گھاس زمین	zh:草原,大草原
 c:stepstool	Noun	ar:كرسي درج,سلم قصير	de:Trittleiter,Tritthocker	en:stepstool,step stool	es:taburete escalera	fa:چهارپایه پلکانی	fr:marchepied	he:שרפרף מדרגות	hi:स्टेप स्टूल	ja:踏み台	ko:발판,스텝 스툴	pt:banqueta escada	ru:стремянка-табурет	tr:basamaklı tabure	ur:سیڑھی والا اسٹول	zh:踏脚凳
 c:sterling	Noun	ar:إسترليني	de:Sterling,Pfund Sterling	en:sterling	es:esterlina	fa:استرلینگ	fr:sterling	he:שטרלינג,לירה שטרלינג	hi:स्टर्लिंग	ja:スターリング	ko:스털링	pt:esterlino	ru:стерлинг	tr:sterlin	ur:سٹرلنگ	zh:英镑,斯特林
+c:stethoscope	Noun	ar:سماعة طبية	de:Stethoskop	en:stethoscope	es:estetoscopio	fa:گوشی پزشکی	fr:stéthoscope	he:סטטוסקופ	hi:स्टेथोस्कोप	ja:聴診器	ko:청진기	pt:estetoscópio	ru:стетоскоп	tr:stetoskop	ur:سٹیتھواسکوپ	zh:听诊器
 c:stick-insect	Noun	ar:حشرة عصا,حشرة العصا	de:Stabschrecke,Gespenstschrecke	en:stick insect,walking stick	es:insecto palo,palo de campo	fa:حشره چوب	fr:phasme	he:חרק מקל	hi:स्टिक इन्सेक्ट	ja:ナナフシ	ko:대벌레	pt:bicho-pau,fásmida	ru:палочник	tr:çubuk böceği	ur:لاٹھی کیڑا	zh:竹节虫
 c:sticker-book	Noun	ar:كتاب الملصقات	de:Stickerbuch	en:sticker book	es:libro de pegatinas	fa:کتاب استیکر	fr:livre d'autocollants	he:ספר מדבקות	hi:स्टीकर बुक	ja:シールブック	ko:스티커 북	pt:livro de adesivos	ru:книжка с наклейками	tr:çıkartma kitabı	ur:اسٹیکر بک	zh:贴纸书
 c:sticky	Adjective	ar:لزج,دبق	de:klebrig	en:sticky	es:pegajoso	fa:چسبناک	fr:collant,poisseux	he:דביק	hi:चिपचिपा	ja:粘着性の,ねばねば	ko:끈적거리는	pt:pegajoso,viscoso	ru:липкий	tr:yapışkan	ur:چپچپا	zh:粘
@@ -5951,6 +5981,9 @@ c:surfing	Noun	ar:ركوب الامواج	de:Surfen	en:surfing	es:surf	fa:موج
 c:surgeonfish	Noun	ar:سمكة الجراح	de:Doktorfisch	en:surgeonfish	es:pez cirujano	fa:ماهی جراح	fr:poisson chirurgien	he:דג מנתח	hi:सर्जनफिश	ja:ニザダイ	ko:양쥐돔	pt:peixe-cirurgião	ru:рыба-хирург	tr:cerrah balığı	ur:جراح مچھلی	zh:刺尾鱼
 c:surgery	Noun	ar:جراحة,عملية	de:Operation,Chirurgie	en:surgery,operation	es:cirugía,operación	fa:جراحی,عمل	fr:chirurgie,opération	he:ניתוח,כירורגיה	hi:शल्यचिकित्सा,ऑपरेशन	ja:手術	ko:수술	pt:cirurgia,operação	ru:операция,хирургия	tr:ameliyat,cerrahi	ur:سرجری,آپریشن	zh:手术
 c:surgery-theory	Noun	ar:نظرية الجراحة التبولوجية	de:Chirurgietheorie	en:surgery theory	es:teoría de la cirugía	fa:نظریه جراحی	fr:théorie de la chirurgie	he:תורת הניתוח הטופולוגי	hi:शल्य चिकित्सा सिद्धांत	ja:手術理論	ko:수술 이론	pt:teoria da cirurgia	ru:теория хирургии	tr:cerrahi teorisi	ur:جراحی نظریہ	zh:手术理论
+c:surgical-forceps	Noun	ar:ملقط جراحي	de:Pinzette	en:surgical forceps	es:fórceps quirúrgico	fa:فورسپس جراحی	fr:forceps chirurgical	he:מלקחיים כירורגיים	hi:सर्जिकल संदंश	ja:鑷子	ko:수술 겸자	pt:fórceps cirúrgico	ru:хирургические щипцы	tr:cerrahi forseps	ur:جراحی چمٹا	zh:外科钳
+c:surgical-robot	Noun	ar:روبوت جراحي	de:Operationsroboter	en:surgical robot	es:robot quirúrgico	fa:ربات جراحی	fr:robot chirurgical	he:רובוט כירורגי	hi:सर्जिकल रोबोट	ja:手術ロボット	ko:수술 로봇	pt:robô cirúrgico	ru:хирургический робот	tr:cerrahi robot	ur:سرجیکل روبوٹ	zh:手术机器人
+c:surgical-splint	Noun	ar:جبيرة	de:Schiene	en:splint	es:férula	fa:آتل	fr:attelle	he:סד	hi:पट्टा	ja:添え木	ko:부목	pt:tala	ru:шина	tr:atel	ur:پٹی کا تختہ	zh:夹板
 c:surinam-toad	Noun	ar:ضفدع سورينام	de:Wabenkröte	en:Surinam toad	es:pipa de Surinam	fa:وزغ سورینام	fr:pipa de Surinam	he:קרפדת סורינם	hi:सूरीनाम मेंढक	ja:ピパピパ	ko:수리남두꺼비	pt:pipa de Suriname	ru:пипа суринамская	tr:Surinam kurbağası	ur:سورینام مینڈک	zh:负子蟾
 c:surplus	Noun	ar:فائض	de:Überschuss	en:surplus	es:excedente,superávit	fa:مازاد	fr:excédent,surplus	he:עודף	hi:अधिशेष,अतिरिक्त	ja:余剰,黒字	ko:잉여,흑자	pt:excedente,superávit	ru:излишек,профицит	tr:fazla,fazlalık	ur:زائد,فاضل	zh:剩余,盈余
 c:surprise	Noun	ar:مفاجأة	de:Überraschung	en:surprise	es:sorpresa	fa:تعجب,شگفتی	fr:surprise	he:הפתעה	hi:आश्चर्य	ja:驚き	ko:놀람	pt:surpresa	ru:удивление	tr:sürpriz,şaşkınlık	ur:حیرت	zh:惊讶,惊奇
@@ -5959,6 +5992,7 @@ c:surrender	Verb	ar:استسلم,يستسلم	de:sich ergeben,kapitulieren	en:su
 c:surrogate-endpoint	Noun	ar:نقطة النهاية البديلة	de:Surrogat-Endpunkt	en:surrogate endpoint	es:criterio de valoración sustituto	fa:نقطه پایانی جایگزین	fr:critère de substitution	he:נקודת קצה תחלופית	hi:सरोगेट एंडपॉइंट	ja:代替エンドポイント	ko:대리 종료점	pt:critério de avaliação substituto	ru:суррогатная конечная точка	tr:vekil son nokta	ur:نائب آخری نقطہ	zh:替代终点
 c:susanoo	Noun	ar:سوسانو	de:Susanoo	en:Susanoo	es:Susanoo	fa:سوسانو	fr:Susanoo	he:סוסנו	hi:सुसानू	ja:須佐之男	ko:스사노오	pt:Susanoo	ru:Сусаноо	tr:Susanoo	ur:سوسانو	zh:须佐之男
 c:suspension	Noun	ar:معلق	de:Suspension	en:suspension	es:suspensión	fa:سوسپانسیون	fr:suspension	he:תרחיף	hi:निलंबन	ja:懸濁液	ko:현탁액	pt:suspensão	ru:суспензия	tr:süspansiyon	ur:معلق محلول	zh:悬浮液
+c:suture-thread	Noun	ar:خيط خياطة الجروح	de:Nahtmaterial	en:suture	es:sutura	fa:بخیه	fr:suture	he:תפר כירורגי	hi:टांका	ja:縫合糸	ko:봉합사	pt:sutura	ru:хирургический шов	tr:sütür	ur:ٹانکا	zh:缝合线
 c:swallow	Noun	ar:سنونو	de:Schwalbe	en:swallow	es:golondrina	fa:پرستو	fr:hirondelle	he:סנונית	hi:अबाबील	ja:ツバメ	ko:제비	pt:andorinha	ru:ласточка	tr:kırlangıç	ur:ابابیل	zh:燕子
 c:swamp	Noun	ar:مستنقع	de:Sumpf,Moor	en:swamp,marsh	es:pantano,ciénaga	fa:باتلاق,مرداب	fr:marais,marécage	he:ביצה	hi:दलदल	ja:沼,湿地	ko:늪,습지	pt:pântano,brejo	ru:болото	tr:bataklık	ur:دلدل	zh:沼泽
 c:swamp-landform	Noun	ar:مستنقع حرجي	de:Sumpf	en:swamp	es:ciénaga	fa:باتلاق جنگلی	fr:marécage	he:ביצה טרופית	hi:कछार,दलदल	ja:沼沢地	ko:늪지	pt:brejo,charco	ru:болото	tr:sazlık	ur:جنگلی دلدل	zh:沼泽地
@@ -6292,6 +6326,7 @@ c:tomorrow	Noun	ar:غدا	de:morgen	en:tomorrow	es:mañana	fa:فردا	fr:demain
 c:tone-lit	Noun	ar:النبرة الأدبية	de:Ton	en:tone	es:tono	fa:لحن	fr:ton	he:טון	hi:स्वर	ja:トーン	ko:어조	pt:tom	ru:тон	tr:ton	ur:لہجہ	zh:语调
 c:tongs	Noun	ar:ملقط	de:Zange	en:tongs	es:pinzas	fa:انبر	fr:pince	he:מלקחיים	hi:चिमटा	ja:トング	ko:집게	pt:pinça	ru:щипцы	tr:maşa	ur:چمٹا	zh:夹子
 c:tongue	Noun	ar:لسان	de:Zunge	en:tongue	es:lengua	fa:زبان	fr:langue	he:לשון	hi:जीभ	ja:舌	ko:혀	pt:língua	ru:язык	tr:dil	ur:زبان	zh:舌,舌头
+c:tongue-depressor	Noun	ar:ضاغط اللسان	de:Zungenspatel	en:tongue depressor	es:depresor lingual	fa:کاردک زبان	fr:abaisse-langue	he:לחצן לשון	hi:जीभ दाबने वाला	ja:舌圧子	ko:설압자	pt:abaixador de língua	ru:шпатель	tr:dil basacağı	ur:زبان دابنے والا	zh:压舌板
 c:tonic	Noun	ar:نغمة التأسيس	de:Tonika	en:tonic	es:tónica	fa:درجه اول گام	fr:tonique	he:תוניקה	hi:मूल स्वर	ja:主音	ko:으뜸음	pt:tônica	ru:тоника	tr:tonik	ur:بنیادی سر	zh:主音
 c:tonsil	Noun	ar:اللوزة	de:Mandel	en:tonsil	es:amígdala	fa:لوزه	fr:amygdale	he:שקד	hi:टॉन्सिल	ja:扁桃腺	ko:편도선	pt:amígdala	ru:миндалина	tr:bademcik	ur:گلے کی گلٹی	zh:扁桃体
 c:tool	Noun	ar:أداة	de:Werkzeug,Instrument	en:tool,instrument	es:herramienta,instrumento	fa:ابزار,وسیله	fr:outil,instrument	he:כלי	hi:औज़ार,उपकरण	ja:道具,ツール	ko:도구,공구	pt:ferramenta,instrumento	ru:инструмент,орудие	tr:alet,araç	ur:اوزار,آلہ	zh:工具,器具
@@ -6323,6 +6358,7 @@ c:toucan	Noun	ar:طوقان	de:Tukan	en:toucan	es:tucán	fa:توکان	fr:toucan
 c:toughness	Noun	ar:الصفاقة	de:Zähigkeit	en:toughness	es:tenacidad	fa:چقرمگی	fr:ténacité	he:קשיחות	hi:चिमड़ापन	ja:靱性	ko:인성	pt:tenacidade	ru:вязкость разрушения	tr:tokluk	ur:مضبوطی	zh:韧性
 c:tour	Noun	ar:جولة	de:Tour,Rundreise	en:tour	es:gira,recorrido,tour	fa:تور,گردش	fr:tour	he:סיור	hi:टूर,भ्रमण	ja:ツアー,観光	ko:투어,관광	pt:tour,passeio	ru:тур,турне	tr:tur	ur:دورہ,ٹور	zh:旅游,旅行团
 c:tournament	Noun	ar:بطولة	de:Turnier	en:tournament	es:torneo	fa:تورنمنت,مسابقه	fr:tournoi	he:טורניר	hi:टूर्नामेंट,प्रतियोगिता	ja:トーナメント,大会	ko:토너먼트,대회	pt:torneio	ru:турнир	tr:turnuva	ur:ٹورنامنٹ,بطولت	zh:锦标赛,比赛
+c:tourniquet	Noun	ar:عاصبة	de:Tourniquet	en:tourniquet	es:torniquete	fa:گارو	fr:garrot	he:חוסם עורקים	hi:टूर्निकेट	ja:止血帯	ko:지혈대	pt:torniquete	ru:жгут	tr:turnike	ur:ٹورنیکیٹ	zh:止血带
 c:tower	Noun	ar:برج	de:Turm	en:tower	es:torre	fa:برج,مناره	fr:tour	he:מגדל	hi:मीनार,बुर्ज	ja:塔,タワー	ko:탑,타워	pt:torre	ru:башня	tr:kule	ur:مینار,برج	zh:塔,楼塔
 c:town	Noun	ar:بلدة	de:Stadt,Kleinstadt	en:town	es:pueblo,villa	fa:شهرک	fr:ville	he:עיירה	hi:कस्बा,नगर	ja:町	ko:읍,소도시	pt:cidade pequena	ru:город	tr:kasaba	ur:قصبہ	zh:镇
 c:toy-car	Noun	ar:سيارة لعبة	de:Spielzeugauto	en:toy car	es:coche de juguete	fa:ماشین اسباب‌بازی	fr:voiture jouet	he:מכונית צעצוע	hi:खिलौना कार	ja:ミニカー	ko:장난감 자동차	pt:carrinho de brinquedo	ru:игрушечная машинка	tr:oyuncak araba	ur:کھلونا کار	zh:玩具车
@@ -6404,6 +6440,7 @@ c:trireme	Noun	ar:سفينة ثلاثية	de:Trireme	en:trireme	es:trirreme	fa:�
 c:triticale	Noun	ar:تريتيكالي	de:Triticale	en:triticale	es:triticale	fa:تریتیکاله	fr:triticale	he:טריטיקלה	hi:ट्रिटिकेल	ja:トリティカーレ	ko:트리티케일	pt:triticale	ru:тритикале	tr:triticale	ur:ٹریٹیکیل	zh:小黑麦
 c:triton-moon	Noun	ar:تريتون,قمر تريتون	de:Triton	en:Triton	es:Tritón	fa:تریتون	fr:Triton	he:טריטון	hi:ट्राइटन	ja:トリトン	ko:트리톤	pt:Tritão	ru:Тритон	tr:Triton	ur:ٹرائٹن	zh:海卫一
 c:trivia-game	Noun	ar:لعبة المعلومات العامة	de:Quizspiel	en:trivia game	es:juego de trivia	fa:بازی چیستان	fr:jeu de questions	he:משחק טריוויה	hi:ट्रिविया गेम	ja:クイズゲーム	ko:퀴즈 게임	pt:jogo de trivialidades	ru:викторина	tr:bilgi yarışması oyunu	ur:ٹریویا گیم	zh:问答游戏
+c:trocar	Noun	ar:مبزل	de:Trokar	en:trocar	es:trócar	fa:تروکار	fr:trocart	he:טרוקר	hi:ट्रोकार	ja:トロカール	ko:투관침	pt:trocarte	ru:троакар	tr:trokar	ur:ٹروکار	zh:套管针
 c:trojan	Adjective	ar:طروادي	de:trojanisch	en:Trojan	es:troyano	fa:تروایی	fr:troyen	he:טרויאני	hi:ट्रोजन	ja:トロイの	ko:트로이	pt:troiano	ru:троянский	tr:Truvalı	ur:ٹرویائی	zh:特洛伊
 c:troll	Noun	ar:ترول	de:Troll	en:troll	es:trol	fa:ترول	fr:troll	he:טרול	hi:ट्रोल	ja:トロール	ko:트롤	pt:trol	ru:тролль	tr:trol	ur:ٹرول	zh:巨魔
 c:trombone	Noun	ar:ترمبون	de:Posaune	en:trombone	es:trombón	fa:ترومبون	fr:trombone	he:טרומבון	hi:ट्रॉम्बोन	ja:トロンボーン	ko:트롬본	pt:trombone	ru:тромбон	tr:trombon	ur:ٹرومبون	zh:长号,伸缩号
@@ -6550,6 +6587,7 @@ c:velocity	Noun	ar:سرعة متجهة,سرعة	de:Geschwindigkeit	en:velocity	e
 c:velvet	Noun	ar:مخمل	de:Samt	en:velvet	es:terciopelo	fa:مخمل	fr:velours	he:קטיפה	hi:मखमल	ja:ベルベット	ko:벨벳	pt:veludo	ru:бархат	tr:kadife	ur:مخمل	zh:天鹅绒
 c:velvety	Adjective	ar:مخملي	de:samtig	en:velvety	es:aterciopelado	fa:مخملی	fr:velouté	he:קטיפתי	hi:मखमली	ja:ビロードのような	ko:벨벳 같은	pt:aveludado	ru:бархатистый	tr:kadifemsi	ur:مخملی	zh:天鹅绒般,柔滑
 c:venezuela	Noun	ar:فنزويلا	de:Venezuela	en:Venezuela	es:Venezuela	fa:ونزوئلا	fr:Venezuela	he:ונצואלה	hi:वेनेज़ुएला	ja:ベネズエラ	ko:베네수엘라	pt:Venezuela	ru:Венесуэла	tr:Venezuela	ur:وینزویلا	zh:委内瑞拉
+c:ventilator	Noun	ar:جهاز التنفس الصناعي	de:Beatmungsgerät	en:ventilator	es:ventilador mecánico	fa:دستگاه تنفس مصنوعی	fr:respirateur	he:מכשיר הנשמה	hi:वेंटिलेटर	ja:人工呼吸器	ko:인공호흡기	pt:ventilador mecânico	ru:аппарат ИВЛ	tr:solunum cihazı	ur:وینٹیلیٹر	zh:呼吸机
 c:ventricle	Noun	ar:بطين	de:Ventrikel	en:ventricle	es:ventrículo	fa:بطن	fr:ventricule	he:חדר לב	hi:निलय	ja:心室	ko:심실	pt:ventrículo	ru:желудочек	tr:ventrikül	ur:بطن قلب	zh:心室
 c:venue-law	Noun	ar:مكان المحكمة المختصة	de:Gerichtsort	en:venue	es:jurisdicción territorial	fa:دادگاه صالح	fr:compétence territoriale	he:מקום שיפוט	hi:न्यायालय स्थान	ja:裁判籍	ko:재판 관할지	pt:foro	ru:место судебного разбирательства	tr:yetki alanı	ur:عدالت کی جگہ	zh:管辖地
 c:venus	Noun	ar:الزهرة	de:Venus	en:Venus	es:Venus	fa:ناهید,زهره	fr:Vénus	he:נוגה	hi:शुक्र	ja:金星	ko:금성	pt:Vênus	ru:Венера	tr:Venüs	ur:زہرہ	zh:金星
@@ -6712,6 +6750,7 @@ c:wharf	Noun	ar:مرسى	de:Kai	en:wharf	es:embarcadero	fa:بارانداز	fr:q
 c:wheat	Noun	ar:قمح,حنطة	de:Weizen	en:wheat	es:trigo	fa:گندم	fr:blé,froment	he:חיטה	hi:गेहूँ	ja:小麦	ko:밀	pt:trigo	ru:пшеница	tr:buğday	ur:گندم	zh:小麦,麦
 c:wheel	Noun	ar:عجلة	de:Rad	en:wheel	es:rueda	fa:چرخ	fr:roue	he:גלגל	hi:पहिया	ja:車輪	ko:바퀴	pt:roda	ru:колесо	tr:tekerlek	ur:پہیہ	zh:轮子,车轮
 c:wheelbarrow	Noun	ar:عربة يدوية	de:Schubkarre	en:wheelbarrow	es:carretilla	fa:فرغون	fr:brouette	he:מריצה	hi:ठेला	ja:手押し車	ko:손수레	pt:carrinho de mão	ru:тачка	tr:el arabası	ur:ریڑھی	zh:手推车
+c:wheelchair-medical	Noun	ar:كرسي متحرك	de:Rollstuhl	en:wheelchair	es:silla de ruedas	fa:ویلچر	fr:fauteuil roulant	he:כיסא גלגלים	hi:व्हीलचेयर	ja:車椅子	ko:휠체어	pt:cadeira de rodas	ru:инвалидная коляска	tr:tekerlekli sandalye	ur:پہیہ کرسی	zh:轮椅
 c:whelk	Noun	ar:حلزون البحر,بزاقة البحر	de:Wellhornschnecke	en:whelk	es:bígaro,caracola	fa:حلزون دریایی	fr:buccin	he:חילזון-ים	hi:व्हेल्क	ja:バイガイ	ko:고둥	pt:búzio	ru:рапана	tr:deniz salyangozu	ur:ویلک	zh:玉螺
 c:whey	Noun	ar:مصل اللبن	de:Molke	en:whey	es:suero	fa:آب پنیر	fr:lactosérum	he:מי-גבינה	hi:मट्ठा	ja:乳清	ko:유청	pt:soro de leite	ru:сыворотка	tr:peynir altı suyu	ur:مصلا	zh:乳清
 c:whirlpool	Noun	ar:دوامة	de:Strudel	en:whirlpool	es:remolino	fa:گرداب	fr:tourbillon	he:מערבולת	hi:भँवर	ja:渦	ko:소용돌이	pt:redemoinho	ru:водоворот	tr:girdap	ur:بھنور	zh:漩涡
@@ -6800,6 +6839,7 @@ c:writer	Noun	ar:كاتب	de:Schriftsteller	en:writer	es:escritor	fa:نویسن�
 c:writing-desk	Noun	ar:مكتب كتابة	de:Schreibtisch	en:writing desk	es:escritorio	fa:میز تحریر	fr:bureau	he:שולחן כתיבה	hi:डेस्क,मेज़	ja:机,デスク	ko:책상	pt:escrivaninha	ru:письменный стол	tr:yazı masası	ur:میز	zh:书桌
 c:wrong	Adjective	ar:خاطئ	de:falsch	en:wrong,incorrect	es:incorrecto,equivocado	fa:اشتباه,غلط	fr:faux,incorrect	he:לא נכון,שגוי	hi:ग़लत	ja:間違い,誤り	ko:틀린,잘못된	pt:errado,incorreto	ru:неправильный,ошибочный	tr:yanlış	ur:غلط	zh:错,错误
 c:xenon	Noun	ar:زينون	de:Xenon	en:xenon	es:xenón	fa:زنون	fr:xénon	he:קסנון	hi:जेनन	ja:キセノン	ko:제논	pt:xénon	ru:ксенон	tr:ksenon	ur:زینون	zh:氙
+c:xray-machine	Noun	ar:جهاز أشعة سينية	de:Röntgengerät	en:X-ray machine	es:máquina de rayos X	fa:دستگاه اشعه ایکس	fr:appareil à rayons X	he:מכשיר רנטגן	hi:एक्स-रे मशीन	ja:X線装置	ko:X선 기계	pt:máquina de raios-X	ru:рентгеновский аппарат	tr:röntgen cihazı	ur:ایکسرے مشین	zh:X光机
 c:xylem	Noun	ar:خشب النبات	de:Xylem	en:xylem	es:xilema	fa:چوب	fr:xylème	he:עצה	hi:जाइलम	ja:木部	ko:목부	pt:xilema	ru:ксилема	tr:odun borusu	ur:زائلم	zh:木质部
 c:xylophone	Noun	ar:إكسيليفون	de:Xylophon	en:xylophone	es:xilófono	fa:زایلوفون	fr:xylophone	he:קסילופון	hi:ज़ाइलोफोन	ja:シロフォン,木琴	ko:실로폰,목금	pt:xilofone	ru:ксилофон	tr:ksilofon	ur:زائلوفون	zh:木琴
 c:yacht	Noun	ar:يخت	de:Jacht,Yacht	en:yacht	es:yate	fa:قایق تفریحی,کشتی تفریحی	fr:yacht	he:יאכטה	hi:नौका	ja:ヨット	ko:요트	pt:iate	ru:яхта	tr:yat	ur:کشتی تفریحی	zh:游艇
