@@ -635,7 +635,10 @@
     "skyViewWiWHint": "Bağlantılarını görmek için kenar çubuğunda bir nota tıklayın",
     "skyViewLoading": "Grafik yükleniyor…",
     "clickToStart": "Başlamak için tıklayın",
-    "search": "Ara..."
+    "search": "Ara...",
+    "disabledFullPage": "Tam sayfa görünümünde devre dışı",
+    "disabledInSkyInspect": "Sky View notu incelenirken devre dışı",
+    "exitSkyViewMode": "Sky View inceleme modundan çık"
   },
   "welcome": {
     "title": "Constellation'a Hoş Geldiniz",

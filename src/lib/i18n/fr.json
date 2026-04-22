@@ -635,7 +635,10 @@
     "skyViewWiWHint": "Cliquez sur une note dans la barre latérale pour voir ses connexions",
     "skyViewLoading": "Chargement du graphe…",
     "clickToStart": "Cliquez ici pour commencer",
-    "search": "Rechercher..."
+    "search": "Rechercher...",
+    "disabledFullPage": "Désactivé en vue pleine page",
+    "disabledInSkyInspect": "Désactivé lors de l'inspection d'une note Sky View",
+    "exitSkyViewMode": "Quitter le mode inspection Sky View"
   },
   "welcome": {
     "title": "Bienvenue dans Constellation",

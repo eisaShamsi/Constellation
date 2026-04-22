@@ -635,7 +635,10 @@
     "skyViewWiWHint": "点击侧边栏中的笔记以查看其连接",
     "skyViewLoading": "正在加载图表…",
     "clickToStart": "点击开始",
-    "search": "搜索..."
+    "search": "搜索...",
+    "disabledFullPage": "全页视图中已禁用",
+    "disabledInSkyInspect": "检查 Sky View 笔记时已禁用",
+    "exitSkyViewMode": "退出 Sky View 检查模式"
   },
   "welcome": {
     "title": "欢迎使用 Constellation",

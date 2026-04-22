@@ -635,7 +635,10 @@
     "skyViewWiWHint": "사이드바에서 노트를 클릭하면 연결을 볼 수 있습니다",
     "skyViewLoading": "그래프 로딩 중…",
     "clickToStart": "클릭하여 시작",
-    "search": "검색..."
+    "search": "검색...",
+    "disabledFullPage": "전체 페이지 보기에서 비활성화됨",
+    "disabledInSkyInspect": "Sky View 노트 검사 중 비활성화됨",
+    "exitSkyViewMode": "Sky View 검사 모드 종료"
   },
   "welcome": {
     "title": "Constellation에 오신 것을 환영합니다",

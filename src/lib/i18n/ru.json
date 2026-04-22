@@ -635,7 +635,10 @@
     "skyViewWiWHint": "Нажмите на заметку в боковой панели, чтобы увидеть её связи",
     "skyViewLoading": "Загрузка графа…",
     "clickToStart": "Нажмите, чтобы начать",
-    "search": "Поиск..."
+    "search": "Поиск...",
+    "disabledFullPage": "Отключено в полноэкранном режиме",
+    "disabledInSkyInspect": "Отключено при инспекции заметки Sky View",
+    "exitSkyViewMode": "Выйти из режима инспекции Sky View"
   },
   "welcome": {
     "title": "Добро пожаловать в Constellation",

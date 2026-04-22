@@ -635,7 +635,10 @@
     "skyViewWiWHint": "לחץ על פתק בסרגל הצד כדי לראות את הקשרים שלו",
     "skyViewLoading": "טוען גרף…",
     "clickToStart": "לחץ כאן כדי להתחיל",
-    "search": "חיפוש..."
+    "search": "חיפוש...",
+    "disabledFullPage": "מושבת בתצוגת עמוד מלא",
+    "disabledInSkyInspect": "מושבת בעת בחינת פתק Sky View",
+    "exitSkyViewMode": "יציאה ממצב בחינת Sky View"
   },
   "welcome": {
     "title": "ברוכים הבאים ל-Constellation",

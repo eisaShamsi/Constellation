@@ -636,7 +636,10 @@
     "skyViewWiWHint": "انقر على ملاحظة في الشريط الجانبي لعرض ارتباطاتها",
     "skyViewLoading": "جارٍ تحميل الرسم البياني…",
     "clickToStart": "اضغط هنا للبدء",
-    "search": "بحث..."
+    "search": "بحث...",
+    "disabledFullPage": "معطل في عرض الصفحة الكاملة",
+    "disabledInSkyInspect": "معطل أثناء فحص ملاحظة من عرض السماء",
+    "exitSkyViewMode": "الخروج من وضع فحص عرض السماء"
   },
   "welcome": {
     "title": "مرحبا بك في كونستليشن",

@@ -635,7 +635,10 @@
     "skyViewWiWHint": "サイドバーのノートをクリックして接続を表示",
     "skyViewLoading": "グラフを読み込み中…",
     "clickToStart": "クリックして開始",
-    "search": "検索..."
+    "search": "検索...",
+    "disabledFullPage": "全画面表示中は無効",
+    "disabledInSkyInspect": "Sky View ノートの検査中は無効",
+    "exitSkyViewMode": "Sky View 検査モードを終了"
   },
   "welcome": {
     "title": "Constellation へようこそ",

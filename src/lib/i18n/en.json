@@ -672,7 +672,10 @@
     "skyViewWiWHint": "Click a note in the sidebar to see its connections",
     "skyViewLoading": "Loading graph…",
     "clickToStart": "Click me to start",
-    "search": "Search..."
+    "search": "Search...",
+    "disabledFullPage": "Disabled in full-page view",
+    "disabledInSkyInspect": "Disabled while inspecting a Sky View note",
+    "exitSkyViewMode": "Exit Sky View inspect mode"
   },
   "welcome": {
     "title": "Welcome to Constellation",

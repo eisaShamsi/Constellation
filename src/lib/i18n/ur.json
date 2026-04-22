@@ -635,7 +635,10 @@
     "skyViewWiWHint": "سائیڈ بار میں نوٹ کلک کریں اس کے روابط دیکھنے کے لیے",
     "skyViewLoading": "گراف لوڈ ہو رہا ہے…",
     "clickToStart": "شروع کرنے کے لیے کلک کریں",
-    "search": "تلاش..."
+    "search": "تلاش...",
+    "disabledFullPage": "مکمل صفحہ ویو میں غیر فعال",
+    "disabledInSkyInspect": "Sky View نوٹ کا معائنہ کرتے وقت غیر فعال",
+    "exitSkyViewMode": "Sky View معائنہ موڈ سے باہر نکلیں"
   },
   "welcome": {
     "title": "Constellation میں خوش آمدید",

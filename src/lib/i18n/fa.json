@@ -635,7 +635,10 @@
     "skyViewWiWHint": "روی یک یادداشت در نوار کناری کلیک کنید تا ارتباطات آن را ببینید",
     "skyViewLoading": "در حال بارگذاری نمودار…",
     "clickToStart": "برای شروع کلیک کنید",
-    "search": "جستجو..."
+    "search": "جستجو...",
+    "disabledFullPage": "در نمای تمام‌صفحه غیرفعال است",
+    "disabledInSkyInspect": "هنگام بررسی یادداشت Sky View غیرفعال است",
+    "exitSkyViewMode": "خروج از حالت بررسی Sky View"
   },
   "welcome": {
     "title": "به Constellation خوش آمدید",
