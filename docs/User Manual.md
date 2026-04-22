@@ -26,7 +26,8 @@ Constellation is a Personal Knowledge Formulation desktop application. Not a fil
 14. [Importer](#importer)
 15. [Calendar](#calendar)
 16. [Lens (DQL Queries)](#lens)
-16. [Settings](#settings)
+16b. [Panels](#panels)
+17. [Settings](#settings)
 17. [Keyboard Shortcuts](#keyboard-shortcuts)
 18. [RTL and Arabic Support](#rtl-and-arabic-support)
 19. [Security and Privacy](#security-and-privacy)
@@ -923,6 +924,40 @@ Lens provides filtered views of your notes:
 - Filter by tags, folders, properties
 - Sort by name, date, or custom properties
 - Save lens configurations for quick access
+
+---
+
+## 15b. Panels
+
+Constellation's panels — Backlinks, Outgoing Links, Properties, Tags, Sky View, Tasks, Calendar, Knowledge Health, Provenance, Review Pulse, and Link Dashboard — can each be placed in one of four positions via **Settings → Panels**.
+
+### Panel slots
+
+| Slot | Description |
+|------|-------------|
+| **Left of note** | A column to the left of the editor. Best for Backlinks. |
+| **Right of note** | A column to the right of the editor. Best for Outgoing Links. |
+| **Right sidebar** | The right-side tab strip (default for most panels). |
+| **Hidden** | Removes the panel from the interface entirely. |
+
+### Default layout
+
+By default, Backlinks appear to the **left** of your note and Outgoing Links appear to the **right** — placing the note at the center of its link network. All other panels live in the **right sidebar**.
+
+### Flanking columns
+
+The left-of-note and right-of-note positions create **flanking columns** — thin panels that bracket the editor:
+
+- **Resize**: Drag the strip between the flank and the editor.
+- **Collapse/expand**: Click the ▶/◀ arrow at the top of the strip. The column slides away with a 120 ms animation; your width setting is remembered.
+
+### Right sidebar tabs
+
+The tab bar shows only the panels currently placed in `right-sidebar`. Tabs for panels moved to flanks or hidden are automatically removed. If you move the active tab's panel away, Constellation switches to the next available tab.
+
+### Workspaces
+
+Panel placements are saved and restored with workspaces. Older workspaces (saved before this feature existed) leave the current layout unchanged when loaded.
 
 ---
 

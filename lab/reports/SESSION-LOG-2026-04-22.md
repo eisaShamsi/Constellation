@@ -254,3 +254,40 @@ and back on (even without any notes changing) triggered the full pipeline again.
 - Write-Time Derivation: Sight dashboard Sight2 component
 - Tier 2: drag-and-drop panel rearrangement (slot highlighting + drop zones)
 - navTrace instrumentation dev-gate
+
+---
+
+## § 56. Living Link Panel Tooltips + Roadmap Update
+
+**Commit**: 89fa974  
+**Status**: ✅ Complete — pushed to origin/main
+
+### Changes
+
+**lastTraversed in Backlinks/Outgoing tooltips**
+- `getBacklinks()` and `getOutgoingLinks()` in `store.ts` now include
+  `lastTraversed: l.last_traversed ?? ''` in each returned link object
+- `BacklinksPanel.svelte`: added `fmtTraversed()` relative-time helper;
+  traversal chip tooltip expanded to: "Traversed N times · tier · Last: 2d ago"
+- `OutgoingLinksPanel.svelte`: same helper and tooltip expansion
+- Shows "today", "yesterday", "Nd ago", "Nw ago", "Nmo ago", "Ny ago"
+
+**Cognitive roadmap update**
+- `docs/cognitive-engine-roadmap.md`: updated P2–P5 to ✅ — all Living
+  Link Architecture phases are shipped (traversal tracking, confidence levels,
+  weight+lifecycle, formulation analysis, Knowledge Health dashboard)
+
+---
+
+## § 57. Panel Placement Help Documentation
+
+**Commit**: (next)  
+**Status**: 🔄 In progress
+
+### Changes
+- `docs/help.uConstellation.World/Panels/Panels.md` — NEW help file
+  covering the panel placement system (slots, flanking columns, collapse
+  buttons, right sidebar tabs, workspaces)
+- `docs/User Manual.md` — new §15b Panels section with table, description
+  of flanking column resize/collapse behavior, sidebar tab gating, workspaces
+- ToC entry added for §15b
