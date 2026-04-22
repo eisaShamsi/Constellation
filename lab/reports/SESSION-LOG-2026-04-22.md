@@ -291,3 +291,32 @@ and back on (even without any notes changing) triggered the full pipeline again.
 - `docs/User Manual.md` — new §15b Panels section with table, description
   of flanking column resize/collapse behavior, sidebar tab gating, workspaces
 - ToC entry added for §15b
+
+## Session Summary — 2026-04-22
+
+### Total changes this session
+
+| § | Commit | Change |
+|---|--------|--------|
+| §52 | da8dc1e | Fixed all 55 pre-existing svelte-check type errors (0 errors remaining) |
+| §53 | 4834697 | Flanking panel collapse buttons + sidebar tab safety reset |
+| §54 | 75bfd4d | Gate all right-sidebar tabs on panel placement setting |
+| §55 | a19bc05 | WTD cache for Constellation Lens analytics (instant re-open) |
+| §56 | 89fa974 | Living Link: lastTraversed in panel tooltips + roadmap update |
+| SO57 | 48638fa | Help page + User Manual for Panel Placement System |
+
+### Key improvements
+1. **Zero type errors**: All 55 pre-existing TypeScript errors cleared
+2. **Collapse buttons**: Flanking panels now have triangle toggle buttons with 120ms animation
+3. **Tab placement gating**: Right sidebar tabs correctly hidden when panel is moved/hidden
+4. **WTD Lens cache**: Constellation Lens analytics cached in memory — instant toggle if graph unchanged
+5. **lastTraversed tooltip**: Traversal chip shows "Last: 2d ago" relative date on hover
+6. **Documentation**: New Panels help page + User Manual §15b added
+
+### Still pending
+- Tier 2: drag-and-drop panel rearrangement with slot highlighting + drop zones
+- Tier 3: detachable floating panels (needs Tauri multi-window)
+- Write-Time Derivation: Sight dashboard (ConstellationSight2 computes graph on every open)
+- Write-Time Derivation: Backlinks in SQLite (currently pure JS filter — acceptable for now)
+- navTrace instrumentation dev-gate
+- Functional test for Panel Placement with user (definitions + step-by-step)
