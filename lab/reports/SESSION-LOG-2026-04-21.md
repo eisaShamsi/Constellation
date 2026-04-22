@@ -188,8 +188,49 @@ build:
    do these tiers mean" side panel. The tooltip on the chip +
    the User Manual cover this for now.
 
+## § 46. Docs + tutorials + Word export
+
+Following the "Living Link Done" marker in §45, documentation
+was brought up to parity with the shipped surface.
+
+### What landed
+
+- **User Manual (EN)** — `docs/User Manual.md` grew 11 step-by-
+  step Living Link tutorials inline in the Knowledge Formulation
+  section: typed links, annotations, tier growth, tier-vs-
+  confidence, contest/force-promote, archive, restore, back-fill,
+  decay tuning, the seven-tab Link Dashboard, search.
+- **User Manual (AR)** — `docs/help.ar/User Manual.md` was
+  missing the Knowledge Formulation section entirely (TOC
+  jumped from line 9 to line 37). Added the full section plus
+  the same 11 tutorials in Arabic, with a TOC entry at #0.
+- **Help file (EN)** — `docs/help.uConstellation.World/Knowledge
+  Formulation/Knowledge Formulation.md` expanded to 243 lines
+  with the same tutorial block.
+- **Help file (AR)** — `docs/help.ar/Knowledge Formulation/
+  Knowledge Formulation.md` created fresh at 243 lines matching
+  the English (the directory didn't exist prior).
+- **Word exports** — `docs/Constellation User Manual.docx`
+  regenerated (54 KB) with the new tutorials. Added
+  `docs/generate-docx-ar.cjs` as an Arabic sibling of the
+  existing generator; produces `docs/Constellation User Manual
+  (AR).docx` (48 KB).
+
+### RTL note
+
+The Arabic docx was generated with the same pipeline as the
+English one (no explicit `bidirectional: true` + right-align).
+Word auto-detects character-level direction correctly for the
+Arabic runs; paragraph alignment may need an explicit pass if
+the Word rendering looks off. Deferred until user confirms.
+
+### Commit
+
+`<pending>` — PCS.
+
 ## Still on the queue (orthogonal)
 
 - navTrace instrumentation dev-gate
 - Settings → Debug Boot Performance scorecard UI
 - Isolated throttle stress-test helper
+- RTL alignment pass on Arabic docx (if needed)

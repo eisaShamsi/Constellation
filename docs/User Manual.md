@@ -43,12 +43,14 @@ Constellation is built on a simple belief: **knowledge is not about storage — 
 
 In Constellation, a link between two notes is not a dead pointer. It is a **living vessel** that carries meaning:
 
-- **Type**: What kind of relationship? (supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of)
-- **Annotation**: Why does this connection exist? Your reasoning at the moment of linking.
-- **Weight**: How significant? Grows with use, decays with neglect.
-- **Confidence**: How certain? Hypothesis → Evidence → Established (auto-promotes as you traverse; you can also right-click any backlink or outgoing link to contest it or force-promote). Settings → Appearance → Living Link Lifecycle includes a one-shot "Run back-fill" that age-assigns existing links whose traversal count already crossed a threshold but never ran through the auto-promotion rule.
-- **Annotation**: Why does this connection exist? Written inline via `[[type::target|your reasoning]]`. Displayed in italic accent text under the link row in Backlinks / Outgoing panels.
-- **Archive**: Every link operation is reversible. Right-click a backlink / outgoing link → **Archive link** to soft-delete it (preserved in history, hidden from panels). Restore from the **Archived** tab in the Link Dashboard with the circular-arrow button.
+- **Type** — the kind of relationship (supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of).
+- **Annotation** — the *why*. Your reasoning at the moment of linking, authored inline via `[[type::Target|your reasoning]]` and displayed in italic purple text under the link in Backlinks / Outgoing panels.
+- **Weight** — how significant the connection is. Starts at 1.0, grows logarithmically with each traversal, and decays exponentially when neglected.
+- **Confidence** — how certain you are. Four tiers (Hypothesis → Evidence → Established → Contested). Auto-promotes as you traverse; right-click any link to override.
+- **Tier (visual)** — derived from traversal count: *emerging* (×1–2), *established* (×3–9), *load-bearing* (×10+), *stale* (≥90d untouched).
+- **Archive** — every operation is reversible. Archived links are soft-deleted (hidden everywhere, preserved in history) and can be restored from the Link Dashboard.
+
+Detailed step-by-step tutorials for every Living Link function — authoring, contesting, archiving, decay settings, the back-fill one-shot, and the Link Dashboard's seven tabs — live in the dedicated help file: [Knowledge Formulation](help.uConstellation.World/Knowledge%20Formulation/Knowledge%20Formulation.md).
 
 ### The Five Acts of Knowledge Creation
 
@@ -70,6 +72,104 @@ Constellation's search engine is a diagnostic instrument for your intellectual l
 All operators work in your language — type in Arabic, French, Japanese, or any of 15 supported languages.
 
 For the full specification, see `docs/CONSTELLATION-KNOWLEDGE-FORMULATION.md`.
+
+### Living Link Tutorials
+
+Every Living Link function, step by step.
+
+#### Tutorial 1 — Your first typed link
+1. Open any note. Place cursor where you want the link.
+2. Type: `[[supports::Mughal Empire]]`
+3. Save. The link renders with a small **supports** badge in the Backlinks and Outgoing Links panels.
+
+Recognized types: `supports`, `contradicts`, `causes`, `exemplifies`, `generalizes`, `derives-from`, `part-of`. Anything else is parsed as an untyped `relates` link.
+
+#### Tutorial 2 — Adding an annotation (the "why")
+1. Write a typed link as in Tutorial 1.
+2. Add a single pipe `|` after the target, followed by your reasoning: `[[supports::Mughal Empire|Babur launched his 1526 invasion from Kabul]]`
+3. Save.
+4. Open the target note and look at the right sidebar → Backlinks tab. Under the context excerpt you'll see your annotation in italic purple quotes.
+
+Rule: only one pipe per link. Write concise, future-proof reasoning ("timeline fits" beats "see above").
+
+#### Tutorial 3 — Tier growth through traversal
+Click a wikilink: it gets a `×1` chip. Click it 3 total times: the chip colors shift to *established*. Click 10+ times total: the chip becomes solid purple — **load-bearing**. 90+ days without traversal: the chip turns **amber (stale)**.
+
+| Traversals | Tier | Visual |
+|---|---|---|
+| 1–2 | emerging | faint tint |
+| 3–9 | established | stronger tint |
+| 10+ | load-bearing | solid fill, white text |
+| 90+ days idle | stale | amber |
+
+#### Tutorial 4 — Tier vs Confidence
+- **Tier** = earned passively from traversal count.
+- **Confidence** = your epistemic stance (Hypothesis / Evidence / Established / Contested).
+
+Auto-promotion: ×1–2 → Hypothesis, ×3–9 → Evidence, ×10+ → Established. User-set `Contested` is never overridden by the auto-rule.
+
+#### Tutorial 5 — Contesting / force-promoting confidence
+1. Right sidebar → **Backlinks** or **Outgoing Links**.
+2. **Right-click** the link row (left-click navigates).
+3. In the popover, pick one: Hypothesis / Evidence / Established / Contested. The current level is highlighted.
+4. Change is saved immediately. Right-click again to verify.
+
+#### Tutorial 6 — Archiving a link (soft delete)
+1. Right-click the link row.
+2. Below the four confidence options, click **Archive link**.
+3. Row disappears from Backlinks / Outgoing / Most-Traveled / Stale. Traversal count and confidence are preserved.
+
+#### Tutorial 7 — Restoring an archived link
+1. Right sidebar → **Link Dashboard** (share-2 icon, last tab).
+2. Click the **Archived** tab (rightmost).
+3. Click the circular-arrow button at the end of the row.
+4. Link returns to active status with weight reset to 1.0.
+
+#### Tutorial 8 — One-shot confidence back-fill
+Use this when you imported notes from elsewhere, or if links existed before auto-promotion shipped: they may have high traversal counts but stale confidence.
+
+1. Settings → **Appearance** → **Living Link Lifecycle**.
+2. Find **Back-fill link confidence** row.
+3. Click **Run back-fill**.
+4. Result appears in accent color: *Promoted N link(s) (→evidence: X, →established: Y).*
+
+Safe to re-run. Never downgrades. Preserves `Contested`.
+
+#### Tutorial 9 — Tuning decay (half-life)
+Settings → **Appearance** → **Living Link Lifecycle**:
+
+- **Apply weight decay to link sorts** — toggle off for raw counts only.
+- **Decay half-life** slider — 7–365 days (default 60).
+
+Guideline: 30 days (aggressive — "what's alive now?") · 60 days (balanced default) · 120 days (gentle, slow research) · 365 days (nearly off).
+
+#### Tutorial 10 — The Link Dashboard (seven tabs)
+
+| Tab | Question it answers |
+|---|---|
+| Most Connected | Which notes have the most links? |
+| Most Traveled | Which links have you walked most often? |
+| Stale | 90+ days untouched — revisit or retire. |
+| Cross-Library | Links crossing library boundaries. |
+| Broken | Links pointing to notes that don't exist. |
+| Orphans | Notes with zero links — isolated cells. |
+| Archived | Soft-deleted links with one-click restore. |
+
+#### Tutorial 11 — Searching your knowledge
+All operators work in 15 languages:
+
+| Query | Returns |
+|---|---|
+| `supports [[Democracy]]` | Notes that `supports`-link to Democracy. |
+| `contradicts [[My Thesis]]` | Counter-evidence. |
+| `causes [[Event]]` | Causal precedents. |
+| `derives-from [[Source]]` | Intellectual lineage. |
+| `orphans` | Isolated notes. |
+
+#### Keyboard shortcuts
+- **Right-click a link row** → confidence/archive popover.
+- **Ctrl/Cmd-click a wikilink** → opens target in a new tab.
+- **Middle-click a wikilink** → same as Ctrl-click.
 
 ---
 
