@@ -2381,6 +2381,10 @@ export interface AppSettings {
 	// live in the right sidebar tab strip until Tier 2 exposes drag-and-
 	// drop rearrangement.
 	panelPlacements: Record<PanelId, PanelSlot>;
+	/** Width of the left-of-note flanking column in px. Tier 1b — set by drag handle. */
+	leftOfNoteWidth: number;
+	/** Width of the right-of-note flanking column in px. Tier 1b — set by drag handle. */
+	rightOfNoteWidth: number;
 
 	// Built-in features
 	enabledFeatures: {
@@ -2552,6 +2556,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		review:     'right-sidebar',
 		links:      'right-sidebar',
 	},
+	leftOfNoteWidth: 280,
+	rightOfNoteWidth: 280,
 };
 
 /** Shared metadata for the eight typed-link names — used by Settings UI

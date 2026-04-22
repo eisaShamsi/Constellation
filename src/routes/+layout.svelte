@@ -352,6 +352,10 @@
 	let leftSidebarWidth = $state(300);
 	let rightSidebarWidth = $state(340);
 	let resizing = $state<'left' | 'right' | null>(null);
+
+	// Flanking column widths — Tier 1b drag-resize. Initialized from appSettings on load.
+	let leftFlankWidth = $state(280);
+	let rightFlankWidth = $state(280);
 	let splitPaneSizes = $state<number[]>([]); // flex values per pane in split view
 
 	// Command palette & quick switcher
@@ -750,6 +754,52 @@
 	}
 
 	let resizeCleanup: (() => void) | null = null;
+
+	// ── Flanking column resize (Tier 1b) ────────────────────────────────────
+	// Initialize widths from persisted settings on first load; only run once
+	// so user drags aren't cancelled by subsequent appSettings reactions.
+	let flankWidthsLoaded = false;
+	$effect(() => {
+		const lw = $appSettings.leftOfNoteWidth;
+		const rw = $appSettings.rightOfNoteWidth;
+		if (!flankWidthsLoaded && (lw ?? 0) > 0) {
+			flankWidthsLoaded = true;
+			leftFlankWidth = lw ?? 280;
+			rightFlankWidth = rw ?? 280;
+		}
+	});
+
+	let flankResizing = $state<'left' | 'right' | null>(null);
+
+	function startFlankResize(side: 'left' | 'right', e: MouseEvent) {
+		e.preventDefault();
+		flankResizing = side;
+		const startX = e.clientX;
+		const startWidth = side === 'left' ? leftFlankWidth : rightFlankWidth;
+		const isRtl = $dir === 'rtl';
+
+		function onMouseMove(ev: MouseEvent) {
+			const delta = ev.clientX - startX;
+			if (side === 'left') {
+				// Left flank: grows rightward in LTR, leftward in RTL
+				leftFlankWidth = Math.max(180, Math.min(500, startWidth + (isRtl ? -delta : delta)));
+			} else {
+				// Right flank: grows leftward in LTR, rightward in RTL
+				rightFlankWidth = Math.max(180, Math.min(500, startWidth + (isRtl ? delta : -delta)));
+			}
+		}
+
+		function onMouseUp() {
+			flankResizing = null;
+			document.removeEventListener('mousemove', onMouseMove);
+			document.removeEventListener('mouseup', onMouseUp);
+			// Persist to appSettings on drag end
+			updateSettings({ leftOfNoteWidth: leftFlankWidth, rightOfNoteWidth: rightFlankWidth });
+		}
+
+		document.addEventListener('mousemove', onMouseMove);
+		document.addEventListener('mouseup', onMouseUp);
+	}
 
 	function startResize(side: 'left' | 'right', e: MouseEvent) {
 		e.preventDefault();
@@ -4573,9 +4623,9 @@
 							{@const backlinksOnRight = $appSettings.panelPlacements?.backlinks === 'right-of-note'}
 							{@const outgoingOnLeft   = $appSettings.panelPlacements?.outgoing === 'left-of-note'}
 							{@const outgoingOnRight  = $appSettings.panelPlacements?.outgoing === 'right-of-note'}
-							<div class="editor-with-flanks" dir={$dir}>
+							<div class="editor-with-flanks" class:flank-resizing={flankResizing !== null} dir={$dir}>
 								{#if backlinksOnLeft || outgoingOnLeft}
-									<div class="flank flank-start">
+									<div class="flank flank-start" style:flex-basis="{leftFlankWidth}px">
 										{#if backlinksOnLeft}
 											<BacklinksPanel
 												backlinks={currentBacklinks}
@@ -4598,6 +4648,13 @@
 											/>
 										{/if}
 									</div>
+									<!-- Drag handle between left flank and center editor -->
+									<div
+										class="flank-handle flank-handle-start"
+										role="separator"
+										aria-label="Resize left panel"
+										onmousedown={(e) => startFlankResize('left', e)}
+									></div>
 								{/if}
 								<div class="flank-center">
 							<NoteEditor
@@ -4662,7 +4719,14 @@
 							/>
 								</div>
 								{#if backlinksOnRight || outgoingOnRight}
-									<div class="flank flank-end">
+									<!-- Drag handle between center editor and right flank -->
+									<div
+										class="flank-handle flank-handle-end"
+										role="separator"
+										aria-label="Resize right panel"
+										onmousedown={(e) => startFlankResize('right', e)}
+									></div>
+									<div class="flank flank-end" style:flex-basis="{rightFlankWidth}px">
 										{#if outgoingOnRight}
 											<OutgoingLinksPanel
 												outgoingLinks={currentOutgoing}
@@ -5982,9 +6046,11 @@
 		overflow: hidden;
 	}
 	.flank {
-		flex: 0 0 280px;        /* default flanking width */
+		/* flex-basis is set via inline style (dynamic width from drag-resize).
+		   The flex shorthand below must NOT set flex-basis — it's overridden per-instance. */
+		flex: 0 0 auto;
 		min-width: 180px;
-		max-width: 420px;
+		max-width: 500px;
 		overflow-y: auto;
 		overflow-x: hidden;
 		padding: 12px 8px;
@@ -5993,6 +6059,29 @@
 	}
 	.flank-start { border-inline-end-width: 1px; }
 	.flank-end   { border-inline-start-width: 1px; }
+
+	/* Drag handles between flanking columns and the center editor */
+	.flank-handle {
+		flex: 0 0 4px;
+		cursor: col-resize;
+		background: transparent;
+		position: relative;
+		z-index: 10;
+		transition: background 120ms ease;
+	}
+	.flank-handle:hover,
+	.flank-resizing .flank-handle {
+		background: var(--accent, #7c3aed);
+		opacity: 0.5;
+	}
+	/* Widen the hit-target without widening the visual bar */
+	.flank-handle::before {
+		content: '';
+		display: block;
+		position: absolute;
+		inset-block: 0;
+		inset-inline: -4px;   /* 4px extra on each side → 12px total hit area */
+	}
 	.flank-center {
 		flex: 1;
 		min-width: 0;
