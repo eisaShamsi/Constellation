@@ -53,6 +53,7 @@ c:acquittal	Noun	ar:براءة	de:Freispruch	en:acquittal	es:absolución	fa:تب
 c:acropolis	Noun	ar:أكروبوليس	de:Akropolis	en:acropolis	es:acrópolis	fa:آکروپولیس	fr:acropole	he:אקרופוליס	hi:एक्रोपोलिस	ja:アクロポリス	ko:아크로폴리스	pt:acrópole	ru:Акрополь	tr:akropol	ur:ایکروپولس	zh:卫城
 c:action-figure	Noun	ar:دمية حركة	de:Actionfigur	en:action figure	es:figura de acción	fa:فیگور اکشن	fr:figurine d'action	he:דמות פעולה	hi:एक्शन फिगर	ja:アクションフィギュア	ko:액션 피규어	pt:boneco de ação	ru:экшн-фигурка	tr:aksiyon figürü	ur:ایکشن فگر	zh:动作玩偶
 c:action-film	Noun	ar:فيلم أكشن,فيلم حركة	de:Actionfilm	en:action film,action movie	es:película de acción	fa:فیلم اکشن	fr:film d'action	he:סרט אקשן	hi:एक्शन फिल्म	ja:アクション映画	ko:액션 영화	pt:filme de ação	ru:боевик	tr:aksiyon filmi	ur:ایکشن فلم	zh:动作片
+c:action-potential	Noun	ar:جهد الفعل	de:Aktionspotenzial	en:action potential	es:potencial de acción	fa:پتانسیل عمل	fr:potentiel d'action	he:פוטנציאל פעולה	hi:क्रिया विभव	ja:活動電位	ko:활동 전위	pt:potencial de ação	ru:потенциал действия	tr:aksiyon potansiyeli	ur:عمل کی صلاحیت	zh:动作电位
 c:actor	Noun	ar:ممثل	de:Schauspieler	en:actor	es:actor	fa:بازیگر	fr:acteur	he:שחקן	hi:अभिनेता	ja:俳優,役者	ko:배우	pt:ator	ru:актёр	tr:oyuncu,aktör	ur:اداکار	zh:演员
 c:actress	Noun	ar:ممثلة	de:Schauspielerin	en:actress	es:actriz	fa:بازیگر زن	fr:actrice	he:שחקנית	hi:अभिनेत्री	ja:女優	ko:여배우	pt:atriz	ru:актриса	tr:aktris	ur:اداکارہ	zh:女演员
 c:ada-lovelace	Noun	ar:آدا لافلايس	de:Ada Lovelace	en:Ada Lovelace	es:Ada Lovelace	fa:آدا لاولیس	fr:Ada Lovelace	he:עדה לאבלייס	hi:एडा लवलेस	ja:エイダ・ラブレス	ko:에이다 러브레이스	pt:Ada Lovelace	ru:Ада Лавлейс	tr:Ada Lovelace	ur:ایڈا لوولیس	zh:艾达·洛夫莱斯
@@ -73,6 +74,7 @@ c:adverse-selection	Noun	ar:الانتقاء العكسي	de:adverse Selektion	e
 c:aegean-sea	Noun	ar:بحر إيجة	de:Ägäis,Ägäisches Meer	en:Aegean,Aegean Sea	es:Mar Egeo	fa:دریای اژه	fr:Mer Égée	he:הים האגאי	hi:एजियन सागर	ja:エーゲ海	ko:에게해	pt:Mar Egeu	ru:Эгейское море	tr:Ege Denizi	ur:بحیرہ ایجیئن	zh:爱琴海
 c:aesthetics	Noun	ar:علم الجمال,الإستطيقا	de:Ästhetik	en:aesthetics	es:estética	fa:زیبایی شناسی	fr:esthétique	he:אסתטיקה	hi:सौंदर्यशास्त्र	ja:美学	ko:미학	pt:estética	ru:эстетика	tr:estetik	ur:جمالیات	zh:美学
 c:affection	Noun	ar:مودة	de:Zuneigung	en:affection	es:afecto	fa:محبت	fr:affection	he:חיבה	hi:स्नेह	ja:愛情	ko:애정	pt:afeto	ru:привязанность	tr:sevgi	ur:پیار	zh:爱意
+c:afferent	Adjective	ar:وارد	de:afferent	en:afferent	es:aferente	fa:آوران	fr:afférent	he:אפרנטי	hi:अभिवाही	ja:求心性	ko:구심성	pt:aferente	ru:афферентный	tr:afferent	ur:ورودی	zh:传入的
 c:affidavit	Noun	ar:إفادة خطية محلفة	de:eidesstattliche Erklärung	en:affidavit	es:declaración jurada	fa:سوگندنامه کتبی	fr:déclaration sous serment	he:תצהיר	hi:हलफनामा	ja:宣誓供述書	ko:선서 진술서	pt:declaração juramentada	ru:письменное показание под присягой	tr:yemin beyanı	ur:حلف نامہ	zh:宣誓书
 c:affix	Noun	ar:لاحقة ولاحق	de:Affix	en:affix	es:afijo	fa:وند	fr:affixe	he:תחיליתית	hi:उपसर्ग-प्रत्यय	ja:接辞	ko:접사	pt:afixo	ru:аффикс	tr:ek	ur:سابقہ یا لاحقہ	zh:词缀
 c:afternoon	Noun	ar:بعد الظهر	de:Nachmittag	en:afternoon	es:tarde	fa:بعدازظهر	fr:après-midi	he:אחר הצהריים	hi:दोपहर	ja:午後	ko:오후	pt:tarde	ru:день	tr:öğleden sonra	ur:دوپہر	zh:下午
@@ -142,6 +144,7 @@ c:amsterdam	Noun	ar:أمستردام	de:Amsterdam	en:Amsterdam	es:Ámsterdam	fa:
 c:amulet	Noun	ar:تميمة,حرز	de:Amulett	en:amulet,charm	es:amuleto	fa:تعویذ	fr:amulette	he:קמע	hi:ताबीज	ja:お守り,アミュレット	ko:부적	pt:amuleto	ru:амулет	tr:muska	ur:تعویذ	zh:护身符,辟邪物
 c:amun	Noun	ar:آمون	de:Amun	en:Amun	es:Amón	fa:آمون	fr:Amon	he:אמון	hi:आमुन	ja:アメン	ko:아문	pt:Amon	ru:Амон	tr:Amun	ur:آمون	zh:阿蒙
 c:amur	Noun	ar:الأمور,نهر الأمور	de:Amur	en:Amur,Amur River	es:Amur,río Amur	fa:آمور,رود آمور	fr:Amour	he:אמור,נהר האמור	hi:अमूर नदी	ja:アムール川	ko:아무르강	pt:Amur,rio Amur	ru:Амур	tr:Amur,Amur Nehri	ur:دریائے آمور	zh:黑龙江,阿穆尔河
+c:amygdala	Noun	ar:اللوزة الدماغية	de:Amygdala	en:amygdala	es:amígdala	fa:آمیگدال	fr:amygdale	he:אמיגדלה	hi:अमिग्डाला	ja:扁桃体	ko:편도체	pt:amígdala	ru:миндалина	tr:amigdala	ur:بادامی غدہ	zh:杏仁核
 c:anabatic	Adjective	ar:رياح أنابية	de:anabatischer Wind	en:anabatic wind	es:viento anabático	fa:باد بالاکوهی	fr:vent anabatique	he:רוח אנבטית	hi:अनाबैटिक पवन	ja:上昇風	ko:상승풍	pt:vento anabático	ru:анабатический ветер	tr:anapatik rüzgar	ur:چڑھاو ہوا	zh:上坡风
 c:anaconda	Noun	ar:اناكوندا	de:Anakonda	en:anaconda	es:anaconda	fa:آناکوندا	fr:anaconda	he:אנקונדה	hi:अनाकोंडा	ja:アナコンダ	ko:아나콘다	pt:anaconda	ru:анаконда	tr:anakonda	ur:اناکونڈا	zh:水蚺
 c:analysis	Noun	ar:تحليل	de:Analyse	en:analysis	es:análisis	fa:تحلیل	fr:analyse	he:ניתוח	hi:विश्लेषण	ja:分析,解析	ko:분석	pt:análise	ru:анализ	tr:analiz,çözümleme	ur:تجزیہ	zh:分析
@@ -285,6 +288,7 @@ c:assimilation	Noun	ar:استيعاب	de:Assimilation	en:assimilation	es:asimila
 c:assumption	Noun	ar:افتراض	de:Annahme,Voraussetzung	en:assumption	es:suposición,presunción	fa:فرض,گمان	fr:hypothèse,supposition	he:הנחה,הנחת יסוד	hi:धारणा,अनुमान	ja:仮定,前提	ko:가정,전제	pt:suposição,pressuposto	ru:предположение,допущение	tr:varsayım	ur:مفروضہ	zh:假设,假定
 c:asteroid	Noun	ar:كويكب	de:Asteroid	en:asteroid	es:asteroide	fa:سیارک	fr:astéroïde	he:אסטרואיד	hi:क्षुद्रग्रह	ja:小惑星	ko:소행성	pt:asteroide	ru:астероид	tr:asteroit	ur:سیارچہ	zh:小行星
 c:asteroid-belt	Noun	ar:حزام الكويكبات	de:Asteroidengürtel	en:Asteroid Belt	es:cinturón de asteroides	fa:کمربند سیارکی	fr:ceinture d'astéroïdes	he:חגורת האסטרואידים	hi:क्षुद्रग्रह घेरा	ja:小惑星帯	ko:소행성대	pt:cinturão de asteroides	ru:пояс астероидов	tr:asteroit kuşağı	ur:سیارچہ پٹی	zh:小行星带
+c:astrocyte	Noun	ar:الخلية النجمية	de:Astrozyt	en:astrocyte	es:astrocito	fa:آستروسیت	fr:astrocyte	he:אסטרוציט	hi:एस्ट्रोसाइट	ja:アストロサイト	ko:성상교세포	pt:astrócito	ru:астроцит	tr:astrositler	ur:نجمی خلیہ	zh:星形胶质细胞
 c:astrolabe	Noun	ar:اسطرلاب	de:Astrolabium	en:astrolabe	es:astrolabio	fa:اسطرلاب	fr:astrolabe	he:אסטרולב	hi:एस्ट्रोलेब	ja:アストロラーベ	ko:아스트롤라베	pt:astrolábio	ru:астролябия	tr:usturlap	ur:اسطرلاب	zh:星盘
 c:astronaut	Noun	ar:رائد فضاء	de:Astronaut,Astronautin,Raumfahrer	en:astronaut	es:astronauta	fa:فضانورد	fr:astronaute,cosmonaute	he:אסטרונאוט	hi:अंतरिक्ष यात्री	ja:宇宙飛行士	ko:우주 비행사	pt:astronauta	ru:космонавт,астронавт	tr:astronot,uzay adamı	ur:خلا باز	zh:宇航员,太空人
 c:astronomer	Noun	ar:عالم فلك,فلكي	de:Astronom,Astronomin	en:astronomer	es:astrónomo,astrónoma	fa:اخترشناس,ستاره‌شناس	fr:astronome	he:אסטרונום	hi:खगोलविद,खगोलशास्त्री	ja:天文学者	ko:천문학자	pt:astrônomo	ru:астроном	tr:astronom,gök bilimci	ur:ماہر فلکیات	zh:天文学家
@@ -325,6 +329,7 @@ c:autism	Noun	ar:توحد	de:Autismus	en:autism	es:autismo	fa:اوتیسم	fr:au
 c:autobiography	Noun	ar:سيرة ذاتية	de:Autobiografie,Autobiographie	en:autobiography	es:autobiografía	fa:خودنوشت	fr:autobiographie	he:אוטוביוגרפיה	hi:आत्मकथा	ja:自伝	ko:자서전	pt:autobiografia	ru:автобиография	tr:otobiyografi	ur:خود نوشت	zh:自传
 c:autocracy	Noun	ar:حكم استبدادي	de:Autokratie	en:autocracy	es:autocracia	fa:خودکامگی	fr:autocratie	he:אוטוקרטיה	hi:निरंकुशता	ja:専制政治	ko:독재	pt:autocracia	ru:автократия	tr:otokrasi	ur:آمریت	zh:独裁
 c:automation	Noun	ar:أتمتة	de:Automatisierung	en:automation	es:automatización	fa:خودکارسازی,اتوماسیون	fr:automatisation	he:אוטומציה	hi:स्वचालन	ja:自動化	ko:자동화	pt:automação	ru:автоматизация	tr:otomasyon,özdevinim	ur:خودکاری	zh:自动化
+c:autonomic-nervous	Noun	ar:الجهاز العصبي اللاإرادي	de:autonomes Nervensystem	en:autonomic nervous system	es:sistema nervioso autónomo	fa:دستگاه عصبی خودکار	fr:système nerveux autonome	he:מערכת עצבים אוטונומית	hi:स्वायत्त तंत्रिका तंत्र	ja:自律神経系	ko:자율 신경계	pt:sistema nervoso autônomo	ru:вегетативная нервная система	tr:otonom sinir sistemi	ur:خودکار اعصابی نظام	zh:自主神经系统
 c:autopilot	Noun	ar:طيار آلي	de:Autopilot	en:autopilot	es:piloto automático	fa:خلبان خودکار	fr:pilote automatique	he:טייס אוטומטי	hi:ऑटोपायलट	ja:自動操縦	ko:자동 조종	pt:piloto automático	ru:автопилот	tr:otomatik pilot	ur:خودکار خلبان	zh:自动驾驶仪
 c:autumn	Noun	ar:خريف	de:Herbst	en:autumn,fall	es:otoño	fa:پاییز	fr:automne	he:סתיו	hi:शरद,पतझड़	ja:秋	ko:가을	pt:outono	ru:осень	tr:sonbahar,güz	ur:خزاں,پت جھڑ	zh:秋,秋季
 c:avalanche	Noun	ar:انهيار ثلجي	de:Lawine	en:avalanche	es:avalancha,alud	fa:بهمن	fr:avalanche	he:מפולת שלגים	hi:हिमस्खलन	ja:雪崩	ko:눈사태	pt:avalanche	ru:лавина	tr:çığ	ur:برفانی تودہ	zh:雪崩
@@ -394,6 +399,7 @@ c:barnacle	Noun	ar:بلح البحر العالق,دبق البحر	de:Seepocke,
 c:barometer	Noun	ar:مقياس الضغط الجوي,بارومتر	de:Barometer,Luftdruckmesser	en:barometer	es:barómetro	fa:فشارسنج,بارومتر	fr:baromètre	he:ברומטר,מד-לחץ	hi:बैरोमीटर,वायुदाब मापी	ja:気圧計,バロメーター	ko:기압계,바로미터	pt:barômetro	ru:барометр	tr:barometre,basınçölçer	ur:بیرومیٹر,فشار پیما	zh:气压计
 c:barracuda	Noun	ar:بركودة	de:Barrakuda	en:barracuda	es:barracuda	fa:باراکودا	fr:barracuda	he:ברקודה	hi:बैरकुडा	ja:バラクーダ	ko:바라쿠다	pt:barracuda	ru:барракуда	tr:barakuda	ur:بیراکوڈا	zh:梭鱼
 c:barter	Noun	ar:مقايضة	de:Tauschhandel	en:barter	es:trueque	fa:پایاپای	fr:troc	he:סחר חליפין	hi:वस्तु विनिमय,अदला-बदली	ja:物々交換	ko:물물교환	pt:escambo,troca	ru:бартер,натуральный обмен	tr:takas,trampa	ur:مبادلہ,لین دین	zh:物物交换,易货
+c:basal-ganglia	Noun	ar:العقد القاعدية	de:Basalganglien	en:basal ganglia	es:ganglios basales	fa:عقده‌های پایه	fr:ganglions de la base	he:גנגליות הבסיס	hi:बेसल गैंगलिया	ja:大脳基底核	ko:기저핵	pt:gânglios da base	ru:базальные ганглии	tr:bazal gangliya	ur:بنیادی اعصابی گٹھے	zh:基底核
 c:basalt	Noun	ar:بازلت,حجر بركاني	de:Basalt	en:basalt	es:basalto	fa:بازالت	fr:basalte	he:בזלת	hi:बेसाल्ट	ja:玄武岩,バサルト	ko:현무암,바살트	pt:basalto	ru:базальт	tr:bazalt	ur:بازالٹ	zh:玄武岩
 c:base	Noun	ar:قاعدة	de:Base	en:base	es:base	fa:باز	fr:base	he:בסיס	hi:क्षार	ja:塩基	ko:염기	pt:base	ru:основание	tr:baz	ur:قلعی	zh:碱
 c:base-chem	Noun	ar:قاعدة,قاعدة كيميائية	de:Base	en:base,chemical base	es:base,base química	fa:باز,باز شیمیایی	fr:base,base chimique	he:בסיס	hi:क्षारक,बेस	ja:塩基	ko:염기	pt:base,base química	ru:основание	tr:baz,kimyasal baz	ur:اساس,کیمیائی اساس	zh:碱,化学碱
@@ -527,6 +533,7 @@ c:bliss	Noun	ar:نعيم	de:Glückseligkeit	en:bliss	es:dicha	fa:نشاط	fr:fé
 c:blizzard	Noun	ar:عاصفة ثلجية	de:Schneesturm,Blizzard	en:blizzard,snowstorm	es:ventisca,tormenta de nieve	fa:بوران,کولاک	fr:blizzard,tempête de neige	he:סופת שלגים	hi:बर्फ़ीला तूफ़ान,हिम-तूफ़ान	ja:吹雪	ko:눈보라	pt:nevasca,tempestade de neve	ru:метель,буран,пурга	tr:kar fırtınası,tipi	ur:برفانی طوفان	zh:暴风雪
 c:blockchain	Noun	ar:سلسلة الكتل,بلوك تشين	de:Blockchain	en:blockchain	es:cadena de bloques,blockchain	fa:بلاک چین,زنجیره بلوکی	fr:chaîne de blocs,blockchain	he:בלוקצ'יין,שרשרת בלוקים	hi:ब्लॉकचेन	ja:ブロックチェーン	ko:블록체인	pt:cadeia de blocos,blockchain	ru:блокчейн	tr:blokzincir,blockchain	ur:بلاک چین	zh:区块链
 c:blood	Noun	ar:دم	de:Blut	en:blood	es:sangre	fa:خون	fr:sang	he:דם	hi:खून,रक्त	ja:血	ko:피	pt:sangue	ru:кровь	tr:kan	ur:خون	zh:血
+c:blood-brain-barrier	Noun	ar:الحاجز الدموي الدماغي	de:Blut-Hirn-Schranke	en:blood-brain barrier	es:barrera hematoencefálica	fa:سد خونی-مغزی	fr:barrière hémato-encéphalique	he:מחסום הדם-מוח	hi:रक्त-मस्तिष्क बाधा	ja:血液脳関門	ko:혈액뇌장벽	pt:barreira hematoencefálica	ru:гематоэнцефалический барьер	tr:kan-beyin bariyeri	ur:خون دماغی رکاوٹ	zh:血脑屏障
 c:blood-vessel	Noun	ar:وعاء دموي	de:Blutgefäß	en:blood vessel	es:vaso sanguíneo	fa:رگ خونی	fr:vaisseau sanguin	he:כלי דם	hi:रक्त वाहिका	ja:血管	ko:혈관	pt:vaso sanguíneo	ru:кровеносный сосуд	tr:kan damarı	ur:خون کی نالی	zh:血管
 c:blouse	Noun	ar:بلوزة	de:Bluse	en:blouse	es:blusa	fa:بلوز	fr:blouse,chemisier	he:חולצת נשים	hi:ब्लाउज़	ja:ブラウス	ko:블라우스	pt:blusa	ru:блузка	tr:bluz	ur:بلاؤز	zh:女衬衫
 c:blowfly	Noun	ar:ذبابة الجيف	de:Schmeißfliege	en:blowfly	es:mosca carroñera	fa:مگس جیفه	fr:mouche calliphore	he:זבוב הבשר	hi:ब्लोफ्लाई	ja:キンバエ	ko:쉬파리	pt:varejeira	ru:падальная муха	tr:leş sineği	ur:لاشی مکھی	zh:丽蝇
@@ -803,6 +810,7 @@ c:century	Noun	ar:قرن	de:Jahrhundert	en:century	es:siglo	fa:قرن,سده	fr:
 c:cephalopod	Noun	ar:راسقدميات	de:Kopffüßer	en:cephalopod	es:cefalópodo	fa:سرپایان	fr:céphalopode	he:ראשי רגל	hi:सिरपादी	ja:頭足類	ko:두족류	pt:cefalópode	ru:головоногий моллюск	tr:başayaklı	ur:سر پاؤں والا	zh:头足类
 c:ceramic	Noun	ar:سيراميك,خزف	de:Keramik	en:ceramic	es:cerámica	fa:سرامیک	fr:céramique	he:קרמיקה	hi:चीनी मिट्टी	ja:陶器,セラミック	ko:도자기,세라믹	pt:cerâmica	ru:керамика	tr:seramik	ur:سیرامک	zh:陶瓷
 c:cerebellum	Noun	ar:المخيخ	de:Kleinhirn	en:cerebellum	es:cerebelo	fa:مخچه	fr:cervelet	he:מוח קטן	hi:अनुमस्तिष्क	ja:小脳	ko:소뇌	pt:cerebelo	ru:мозжечок	tr:serebelum	ur:چھوٹا دماغ	zh:小脑
+c:cerebrospinal	Adjective	ar:السائل النخاعي	de:zerebrospinal	en:cerebrospinal	es:cerebroespinal	fa:مغزی نخاعی	fr:cérébrospinal	he:מוחי-עמוד שדרה	hi:प्रमस्तिष्क मेरु	ja:脳脊髄	ko:뇌척수의	pt:cerebroespinal	ru:цереброспинальный	tr:beyin-omurilik	ur:دماغی ریڑھ کی ہڈی	zh:脑脊髓
 c:cerebrum	Noun	ar:المخ الكبير	de:Großhirn	en:cerebrum	es:cerebro	fa:مغز بزرگ	fr:cerveau	he:מוח גדול	hi:प्रमस्तिष्क	ja:大脳	ko:대뇌	pt:cérebro	ru:большой мозг	tr:büyük beyin	ur:بڑا دماغ	zh:大脑
 c:ceremony	Noun	ar:احتفال,مراسم	de:Zeremonie,Feier	en:ceremony	es:ceremonia	fa:مراسم	fr:cérémonie	he:טקס	hi:समारोह,उत्सव	ja:式,儀式	ko:의식,행사	pt:cerimônia	ru:церемония	tr:tören	ur:تقریب,رسم	zh:仪式,典礼
 c:ceres	Noun	ar:سيريس	de:Ceres	en:Ceres	es:Ceres	fa:سرس	fr:Cérès	he:קרס	hi:सेरेस	ja:ケレス	ko:세레스	pt:Ceres	ru:Церера	tr:Ceres	ur:سیریز	zh:谷神星
@@ -1127,6 +1135,7 @@ c:cornice	Noun	ar:إفريز علوي	de:Gesims	en:cornice	es:cornisa	fa:قرن�
 c:corona-sun	Noun	ar:الهالة الشمسية	de:Sonnenkorona	en:solar corona	es:corona solar	fa:تاج خورشیدی	fr:couronne solaire	he:קורונה סולרית	hi:सौर कोरोना	ja:コロナ	ko:코로나	pt:coroa solar	ru:корона Солнца	tr:güneş tacı	ur:شمسی ہالہ	zh:日冕
 c:coronary	Noun	ar:الشريان التاجي	de:Herzarterie	en:coronary artery	es:arteria coronaria	fa:عروق کرونری	fr:artère coronaire	he:עורק כלילי	hi:कोरोनरी धमनी	ja:冠状動脈	ko:관상동맥	pt:artéria coronária	ru:коронарная артерия	tr:koroner damar	ur:کورونری شریان	zh:冠状动脉
 c:corpus	Noun	ar:مدونة	de:Korpus	en:corpus	es:corpus	fa:پیکره	fr:corpus	he:קורפוס	hi:कोश	ja:コーパス	ko:코퍼스	pt:corpus	ru:корпус	tr:derlem	ur:متنی مجموعہ	zh:语料库
+c:corpus-callosum	Noun	ar:الجسم الثفني	de:Corpus Callosum	en:corpus callosum	es:cuerpo calloso	fa:جسم پینه‌ای	fr:corps calleux	he:גוף יבלתי	hi:कॉर्पस कैलोसम	ja:脳梁	ko:뇌량	pt:corpo caloso	ru:мозолистое тело	tr:korpus kallozum	ur:کیلوسم	zh:胼胝体
 c:correction-fluid	Noun	ar:سائل تصحيح	de:Korrekturflüssigkeit	en:correction fluid	es:líquido corrector	fa:غلط گیر مایع	fr:liquide correcteur	he:טיפקס	hi:करेक्शन फ्लूइड	ja:修正液	ko:수정액	pt:corretor líquido	ru:корректирующая жидкость	tr:daksil	ur:کریکشن فلوڈ	zh:修正液
 c:correction-tape	Noun	ar:شريط تصحيح	de:Korrekturband	en:correction tape	es:cinta correctora	fa:غلط گیر نواری	fr:ruban correcteur	he:סרט תיקון	hi:करेक्शन टेप	ja:修正テープ	ko:수정 테이프	pt:fita corretiva	ru:корректирующая лента	tr:şerit daksil	ur:کریکشن ٹیپ	zh:修正带
 c:corridor	Noun	ar:ممر,رواق	de:Korridor,Flur	en:corridor,hallway	es:corredor,pasillo	fa:راهرو,کریدور	fr:corridor,couloir	he:מסדרון	hi:गलियारा,कॉरिडोर	ja:廊下,コリドー	ko:복도	pt:corredor	ru:коридор	tr:koridor	ur:راہداری,کوریڈور	zh:走廊
@@ -1287,6 +1296,7 @@ c:decagon	Noun	ar:عشاري,شكل عشاري	de:Zehneck,Dekagon	en:decagon	es:
 c:decibel	Noun	ar:ديسيبل	de:Dezibel	en:decibel	es:decibelio	fa:دسی‌بل	fr:décibel	he:דציבל	hi:डेसिबल	ja:デシベル	ko:데시벨	pt:decibel	ru:децибел	tr:desibel	ur:ڈیسی بل	zh:分贝
 c:decide	Verb	ar:قرر	de:entscheiden	en:decide	es:decidir	fa:تصمیم گرفتن	fr:décider	he:להחליט	hi:तय करना,निर्णय करना	ja:決める,決定する	ko:결정하다	pt:decidir	ru:решать,решить	tr:karar vermek	ur:فیصلہ کرنا	zh:决定
 c:deciduous	Adjective	ar:متساقط الاوراق	de:laubabwerfend	en:deciduous	es:caducifolio	fa:خزان ریز	fr:caduc	he:נשיר	hi:पर्णपाती	ja:落葉	ko:낙엽	pt:caducifólio	ru:листопадный	tr:yaprak döken	ur:پتے جھاڑنے والا	zh:落叶
+c:declarative-memory	Noun	ar:الذاكرة التقريرية	de:deklaratives Gedächtnis	en:declarative memory	es:memoria declarativa	fa:حافظه اعلامی	fr:mémoire déclarative	he:זיכרון דקלרטיבי	hi:घोषणात्मक स्मृति	ja:陳述記憶	ko:서술 기억	pt:memória declarativa	ru:декларативная память	tr:bildirimsel bellek	ur:اعلانی یادداشت	zh:陈述性记忆
 c:declension	Noun	ar:تصريف الأسماء	de:Deklination	en:declension	es:declinación	fa:صرف اسم	fr:déclinaison	he:נטיית שם עצם	hi:विभक्ति	ja:格変化	ko:격변화	pt:declinação	ru:склонение	tr:çekim	ur:اسم کی صرف	zh:格变化
 c:decomposer	Noun	ar:المحلل	de:Zersetzer	en:decomposer	es:descomponedor	fa:تجزیه‌کننده	fr:décomposeur	he:מפרק	hi:विघटक	ja:分解者	ko:분해자	pt:decomposta	ru:редуцент	tr:ayrıştırıcı	ur:گلانے والا	zh:分解者
 c:deconstruction	Noun	ar:التفكيك	de:Dekonstruktion	en:deconstruction	es:deconstrucción	fa:واسازی	fr:déconstruction	he:דקונסטרוקציה	hi:विनिर्माण	ja:脱構築	ko:해체주의	pt:desconstrução	ru:деконструкция	tr:yapısöküm	ur:تفکیک	zh:解构主义
@@ -1318,6 +1328,7 @@ c:dense	Adjective	ar:كثيف	de:dicht	en:dense	es:denso	fa:متراکم,انب�
 c:dentil	Noun	ar:سن الكرنيش	de:Zahnfries	en:dentil	es:dentículo	fa:دندانه	fr:denticule	he:שן	hi:दंतिक	ja:デンティル	ko:덴틸	pt:dente	ru:зубчик	tr:diş süsü	ur:دانت دار آرائش	zh:齿饰
 c:deontology	Noun	ar:الأخلاق الواجبية,الديونتولوجيا	de:Deontologie,Pflichtethik	en:deontology	es:deontología	fa:اخلاق وظیفه گرا	fr:déontologie	he:דאונטולוגיה	hi:कर्तव्यशास्त्र	ja:義務論	ko:의무론	pt:deontologia	ru:деонтология	tr:deontoloji,ödev etiği	ur:علم فرائض	zh:义务论
 c:depart	Verb	ar:غادر	de:abfahren,abreisen	en:depart,leave	es:partir,salir	fa:رفت,عزیمت کرد	fr:partir,quitter	he:עזב,יצא	hi:प्रस्थान करना,छोड़ना	ja:出発する,去る	ko:떠나다,출발하다	pt:partir,sair	ru:уходить,уезжать,отправляться	tr:ayrılmak,gitmek	ur:روانہ ہونا	zh:离开,出发
+c:depolarization	Noun	ar:إزالة الاستقطاب	de:Depolarisation	en:depolarization	es:despolarización	fa:دپولاریزاسیون	fr:dépolarisation	he:דפולריזציה	hi:विध्रुवण	ja:脱分極	ko:탈분극	pt:despolarização	ru:деполяризация	tr:depolarizasyon	ur:قطبیت ہٹانا	zh:去极化
 c:deposition	Noun	ar:إفادة مسجلة	de:Zeugenaussage	en:deposition	es:deposición	fa:اظهارنامه	fr:déposition	he:עדות בשבועה	hi:बयान	ja:証言録取	ko:증언 녹취	pt:depoimento	ru:показания под присягой	tr:tanıklık	ur:بیان	zh:证词录取
 c:depreciation-currency	Noun	ar:انخفاض قيمة العملة	de:Währungsabwertung,Abwertung	en:currency depreciation,depreciation	es:depreciación monetaria,depreciación	fa:کاهش ارزش پول	fr:dépréciation monétaire,dépréciation	he:פיחות,פיחות מטבע	hi:मुद्रा अवमूल्यन	ja:通貨減価,通貨安	ko:통화가치하락,통화 평가 절하	pt:depreciação cambial,depreciação	ru:обесценение валюты,девальвация	tr:para birimi değer kaybı,değer kaybı	ur:کرنسی کی قدر میں کمی	zh:货币贬值,贬值
 c:depression	Noun	ar:اكتئاب	de:Depression	en:depression	es:depresión	fa:افسردگی	fr:dépression	he:דיכאון	hi:अवसाद	ja:うつ病	ko:우울증	pt:depressão	ru:депрессия	tr:depresyon	ur:ذہنی دباو	zh:抑郁症
@@ -1430,6 +1441,7 @@ c:doorbell	Noun	ar:جرس الباب	de:Türklingel	en:doorbell	es:timbre	fa:ز�
 c:doorknob	Noun	ar:مقبض الباب	de:Türknauf,Türklinke	en:doorknob,door handle	es:pomo de puerta,manija	fa:دستگیره در	fr:poignée de porte	he:ידית דלת	hi:दरवाज़े का हैंडल	ja:ドアノブ	ko:문손잡이	pt:maçaneta	ru:дверная ручка	tr:kapı kolu	ur:دروازے کا ہینڈل	zh:门把手
 c:doormat	Noun	ar:ممسحة أرجل,دعاسة	de:Fußmatte	en:doormat	es:felpudo	fa:پادری	fr:paillasson	he:שטיחון סף	hi:पायदान,डोरमैट	ja:玄関マット	ko:현관 매트	pt:capacho	ru:коврик у двери	tr:paspas	ur:پائیدان	zh:门垫
 c:dopamine	Noun	ar:دوبامين	de:Dopamin	en:dopamine	es:dopamina	fa:دوپامین	fr:dopamine	he:דופמין	hi:डोपामाइन	ja:ドーパミン	ko:도파민	pt:dopamina	ru:дофамин	tr:dopamin	ur:ڈوپامین	zh:多巴胺
+c:dopaminergic	Adjective	ar:دوباميني	de:dopaminerg	en:dopaminergic	es:dopaminérgico	fa:دوپامینرژیک	fr:dopaminergique	he:דופמינרגי	hi:डोपामिनर्जिक	ja:ドーパミン作動性	ko:도파민성	pt:dopaminérgico	ru:дофаминергический	tr:dopaminerjik	ur:ڈوپامین والا	zh:多巴胺能
 c:doppler	Noun	ar:تأثير دوبلر	de:Doppler-Effekt	en:Doppler effect	es:efecto Doppler	fa:اثر دوپلر	fr:effet Doppler	he:אפקט דופלר	hi:डॉपलर प्रभाव	ja:ドップラー効果	ko:도플러 효과	pt:efeito Doppler	ru:эффект Доплера	tr:Doppler etkisi	ur:ڈوپلر اثر	zh:多普勒效应
 c:dormer	Noun	ar:نافذة السقف	de:Dachgaube	en:dormer window	es:buhardilla	fa:روزن سقف	fr:lucarne	he:חלון גג	hi:छत की खिड़की	ja:ドーマー	ko:도머창	pt:mansarda	ru:мансардное окно	tr:çatı penceresi	ur:چھت کی کھڑکی	zh:老虎窗
 c:dosage	Noun	ar:جرعة	de:Dosierung	en:dosage	es:dosis	fa:دوز	fr:dosage	he:מינון	hi:खुराक	ja:投与量	ko:복용량	pt:dosagem	ru:дозировка	tr:dozaj	ur:مقدار	zh:剂量
@@ -1533,6 +1545,7 @@ c:edo-period	Noun	ar:عصر إيدو,فترة إيدو	de:Edo-Zeit	en:edo period
 c:education	Noun	ar:تعليم,تربية	de:Bildung,Erziehung	en:education	es:educación	fa:آموزش,تحصیل	fr:éducation	he:חינוך	hi:शिक्षा	ja:教育	ko:교육	pt:educação	ru:образование	tr:eğitim	ur:تعلیم	zh:教育
 c:eel	Noun	ar:ثعبان البحر	de:Aal	en:eel	es:anguila	fa:مارماهی	fr:anguille	he:צלופח	hi:बाम मछली	ja:鰻	ko:뱀장어	pt:enguia	ru:угорь	tr:yılan balığı	ur:بام مچھلی	zh:鳗鱼
 c:effect	Noun	ar:أثر,تأثير	de:Wirkung,Effekt	en:effect	es:efecto	fa:اثر,تأثیر	fr:effet	he:השפעה,אפקט	hi:प्रभाव,असर	ja:効果,影響	ko:효과,영향	pt:efeito	ru:эффект,воздействие	tr:etki	ur:اثر,تاثیر	zh:效果,影响
+c:efferent	Adjective	ar:صادر	de:efferent	en:efferent	es:eferente	fa:وابران	fr:efférent	he:אפרנטי יוצא	hi:अपवाही	ja:遠心性	ko:원심성	pt:eferente	ru:эфферентный	tr:efferent	ur:خروجی	zh:传出的
 c:egg	Noun	ar:بيضة,بيض	de:Ei	en:egg,eggs	es:huevo	fa:تخم مرغ	fr:œuf	he:ביצה	hi:अंडा	ja:卵,たまご	ko:달걀,계란	pt:ovo	ru:яйцо	tr:yumurta	ur:انڈا	zh:蛋,鸡蛋
 c:eggplant	Noun	ar:باذنجان	de:Aubergine	en:eggplant,aubergine	es:berenjena	fa:بادمجان	fr:aubergine	he:חציל	hi:बैंगन	ja:ナス	ko:가지	pt:berinjela	ru:баклажан	tr:patlıcan	ur:بینگن	zh:茄子
 c:ego	Noun	ar:الأنا	de:Ego	en:ego	es:ego	fa:من	fr:ego	he:אגו	hi:अहंकार	ja:自我	ko:자아	pt:ego	ru:эго	tr:ego	ur:انا	zh:自我
@@ -1621,6 +1634,7 @@ c:epidemic	Noun	ar:وباء	de:Epidemie	en:epidemic	es:epidemia	fa:همه‌گی
 c:epigenetics	Noun	ar:علم التخلق	de:Epigenetik	en:epigenetics	es:epigenética	fa:اپی‌ژنتیک	fr:épigénétique	he:אפיגנטיקה	hi:एपिजेनेटिक्स	ja:エピジェネティクス	ko:후성유전학	pt:epigenética	ru:эпигенетика	tr:epigenetik	ur:ایپی جینیٹکس	zh:表观遗传学
 c:epilogue	Noun	ar:خاتمة,تذييل	de:Epilog,Nachwort	en:epilogue	es:epílogo	fa:خاتمه,پایان بندی	fr:épilogue	he:אפילוג	hi:उपसंहार	ja:エピローグ,後書き	ko:에필로그,후기	pt:epílogo	ru:эпилог	tr:son söz,epilog	ur:خاتمہ	zh:后记,结语
 c:epiphyte	Noun	ar:نبات هوائي	de:Epiphyt	en:epiphyte	es:epífita	fa:گیاه هوازی	fr:épiphyte	he:אפיפיט	hi:अधिपादप	ja:着生植物	ko:착생식물	pt:epífita	ru:эпифит	tr:epifil	ur:ہوائی پودا	zh:附生植物
+c:episodic-memory	Noun	ar:الذاكرة العرضية	de:episodisches Gedächtnis	en:episodic memory	es:memoria episódica	fa:حافظه رویدادی	fr:mémoire épisodique	he:זיכרון אפיזודי	hi:प्रासंगिक स्मृति	ja:エピソード記憶	ko:일화 기억	pt:memória episódica	ru:эпизодическая память	tr:epizodik bellek	ur:واقعاتی یاداشت	zh:情景记忆
 c:epistasis	Noun	ar:الكبت الجيني	de:Epistase	en:epistasis	es:epistasia	fa:اپیستاز	fr:épistasie	he:אפיסטזיס	hi:एपीस्टैसिस	ja:上位性	ko:상위성	pt:epistase	ru:эпистаз	tr:epistaz	ur:ایپی اسٹاسس	zh:上位性
 c:epistemology	Noun	ar:نظرية المعرفة,الإبستمولوجيا	de:Epistemologie,Erkenntnistheorie	en:epistemology	es:epistemología	fa:معرفت شناسی	fr:épistémologie	he:אפיסטמולוגיה,תורת ההכרה	hi:ज्ञान मीमांसा	ja:認識論	ko:인식론	pt:epistemologia	ru:эпистемология,гносеология	tr:epistemoloji,bilgi kuramı	ur:نظریہ علم	zh:认识论
 c:epoch	Noun	ar:حقبة زمنية,عهد	de:Epoche	en:epoch	es:época	fa:دوره,عهد	fr:époque	he:תקופה היסטורית	hi:महाकाल,कालखंड	ja:紀元,エポック	ko:시기,세	pt:época	ru:эпоха	tr:dönem	ur:عہد,زمانہ	zh:纪元,时期
@@ -1672,6 +1686,7 @@ c:exam	Noun	ar:امتحان	de:Prüfung,Examen	en:exam,examination	es:examen	fa:
 c:exchange-rate	Noun	ar:سعر الصرف	de:Wechselkurs	en:exchange rate	es:tipo de cambio	fa:نرخ ارز,نرخ تبدیل	fr:taux de change	he:שער חליפין	hi:विनिमय दर	ja:為替レート,為替相場	ko:환율	pt:taxa de câmbio	ru:валютный курс,курс обмена	tr:döviz kuru	ur:شرح تبادلہ	zh:汇率,兑换率
 c:excitement	Noun	ar:حماس,إثارة	de:Aufregung,Begeisterung	en:excitement	es:emoción,entusiasmo	fa:هیجان	fr:excitation	he:התרגשות	hi:उत्साह	ja:興奮	ko:흥분	pt:emoção,entusiasmo	ru:возбуждение	tr:heyecan	ur:جوش	zh:兴奋
 c:excommunication	Noun	ar:حرمان كنسي	de:Exkommunikation	en:excommunication	es:excomunión	fa:اخراج از کلیسا	fr:excommunication	he:נידוי	hi:चर्च से निष्कासन	ja:破門	ko:파문	pt:excomunhão	ru:отлучение от церкви	tr:aforoz	ur:کلیسا سے خارج	zh:绝罚
+c:executive-function	Noun	ar:الوظيفة التنفيذية	de:Exekutivfunktionen	en:executive function	es:función ejecutiva	fa:کارکردهای اجرایی	fr:fonctions exécutives	he:תפקוד מנהלי	hi:कार्यकारी कार्य	ja:実行機能	ko:실행 기능	pt:função executiva	ru:управляющие функции	tr:yürütücü işlev	ur:عملی صلاحیت	zh:执行功能
 c:exercise	Noun	ar:تمرين,رياضة	de:Übung,Sport	en:exercise	es:ejercicio	fa:ورزش,تمرین	fr:exercice	he:תרגיל,אימון	hi:व्यायाम	ja:運動	ko:운동	pt:exercício	ru:упражнение	tr:egzersiz	ur:ورزش	zh:运动,锻炼
 c:existence	Noun	ar:وجود	de:Existenz,Dasein	en:existence	es:existencia	fa:وجود,هستی	fr:existence	he:קיום	hi:अस्तित्व	ja:存在	ko:존재	pt:existência	ru:существование	tr:varoluş,var olma	ur:وجود	zh:存在
 c:existentialism	Noun	ar:الوجودية	de:Existenzialismus,Existentialismus	en:existentialism	es:existencialismo	fa:اگزیستانسیالیسم	fr:existentialisme	he:אקזיסטנציאליזם	hi:अस्तित्ववाद	ja:実存主義	ko:실존주의	pt:existencialismo	ru:экзистенциализм	tr:varoluşçuluk,egzistansiyalizm	ur:وجودیت	zh:存在主义
@@ -1914,6 +1929,7 @@ c:fuselage	Noun	ar:هيكل الطائرة	de:Rumpf	en:fuselage	es:fuselaje	fa:�
 c:fusion	Noun	ar:اندماج نووي	de:Kernfusion	en:nuclear fusion	es:fusión nuclear	fa:همجوشی هسته‌ای	fr:fusion nucléaire	he:היתוך גרעיני	hi:नाभिकीय संलयन	ja:核融合	ko:핵융합	pt:fusão nuclear	ru:ядерный синтез	tr:nükleer füzyon	ur:جوہری ادغام	zh:核聚变
 c:future	Noun	ar:مستقبل	de:Zukunft	en:future	es:futuro	fa:آینده	fr:futur,avenir	he:עתיד	hi:भविष्य	ja:未来	ko:미래	pt:futuro	ru:будущее	tr:gelecek	ur:مستقبل	zh:未来
 c:futures	Noun	ar:عقود آجلة	de:Futures	en:futures	es:contratos de futuros	fa:قرارداد آتی	fr:contrats à terme	he:חוזים עתידיים	hi:फ्यूचर्स	ja:先物	ko:선물	pt:futuros	ru:фьючерсы	tr:vadeli işlemler	ur:فیوچرز	zh:期货
+c:gabaergic	Adjective	ar:غابايي	de:GABAerg	en:GABAergic	es:GABAérgico	fa:گابائرژیک	fr:GABAergique	he:גאבה-רגי	hi:गाबाएर्जिक	ja:GABA作動性	ko:가바성	pt:GABAérgico	ru:ГАМКергический	tr:GABAerjik	ur:گابا والا	zh:GABA能
 c:gable	Noun	ar:جدار جملوني	de:Giebel	en:gable	es:hastial	fa:هرمی نما	fr:pignon	he:מצלע	hi:त्रिकोणीय दीवार	ja:切妻	ko:박공벽	pt:empena	ru:щипец	tr:alınlık duvarı	ur:مثلثی دیوار	zh:山墙
 c:gaboon-viper	Noun	ar:افعى الغابون	de:Gabunviper	en:Gaboon viper	es:víbora de Gabón	fa:افعی گابون	fr:vipère du Gabon	he:כרוזן גבון	hi:गैबून वाइपर	ja:ガボンバイパー	ko:가분 독사	pt:víbora do Gabão	ru:габонская гадюка	tr:Gabon engereği	ur:گیبون سانپ	zh:加蓬蝰
 c:galaxy	Noun	ar:مجرة	de:Galaxie,Galaxis	en:galaxy	es:galaxia	fa:کهکشان	fr:galaxie	he:גלקסיה	hi:आकाशगंगा,गैलेक्सी	ja:銀河	ko:은하,갤럭시	pt:galáxia	ru:галактика	tr:galaksi	ur:کہکشاں	zh:星系,银河系
@@ -1993,6 +2009,7 @@ c:gladiator	Noun	ar:مصارع	de:Gladiator	en:gladiator	es:gladiador	fa:گلا�
 c:glass	Noun	ar:زجاج	de:Glas	en:glass	es:vidrio,cristal	fa:شیشه	fr:verre	he:זכוכית	hi:कांच,शीशा	ja:ガラス,硝子	ko:유리,글라스	pt:vidro	ru:стекло	tr:cam	ur:شیشہ	zh:玻璃
 c:glass-frog	Noun	ar:ضفدع زجاجي	de:Glasfrosch	en:glass frog	es:rana de cristal	fa:قورباغه شیشه ای	fr:grenouille de verre	he:צפרדע זכוכית	hi:काँच मेंढक	ja:ガラスガエル	ko:유리개구리	pt:rã de vidro	ru:стеклянная лягушка	tr:cam kurbağa	ur:شیشے کا مینڈک	zh:玻璃蛙
 c:glassblower	Noun	ar:نافخ زجاج,صانع الزجاج	de:Glasbläser	en:glassblower	es:soplador de vidrio	fa:شیشه‌گر	fr:souffleur de verre	he:מנפח זכוכית	hi:कांच का कारीगर,कांच शिल्पी	ja:ガラス吹き職人	ko:유리 부는 사람,유리 공예가	pt:soprador de vidro	ru:стеклодув	tr:cam üfleyicisi,cam ustası	ur:شیشہ ساز	zh:玻璃工,吹玻璃匠
+c:glial	Adjective	ar:خلية دبقية	de:glial	en:glial	es:glial	fa:گلیال	fr:glial	he:גליאלי	hi:ग्लियल	ja:グリア	ko:신경교의	pt:glial	ru:глиальный	tr:glial	ur:گلیائی	zh:神经胶质
 c:glide	Verb	ar:انزلق,حلق دون رفرفة	de:gleiten	en:glide	es:planear,deslizarse	fa:سر خوردن,پرواز بی بال زدن	fr:planer,glisser	he:לדאות,להחליק	hi:सरकना,विमान चलाना	ja:滑空する	ko:활공하다	pt:planar,deslizar	ru:скользить,планировать	tr:süzülmek	ur:نرمی سے سرکنا	zh:滑翔
 c:global-warming	Noun	ar:الاحتباس الحراري العالمي,الاحترار العالمي	de:globale Erwärmung,Erderwärmung	en:global warming	es:calentamiento global	fa:گرمایش زمین,گرمایش جهانی	fr:réchauffement climatique,réchauffement planétaire	he:התחממות כדור הארץ,התחממות גלובלית	hi:वैश्विक तापन,ग्लोबल वार्मिंग	ja:地球温暖化,温暖化	ko:지구 온난화	pt:aquecimento global	ru:глобальное потепление	tr:küresel ısınma	ur:عالمی حرارت,گلوبل وارمنگ	zh:全球变暖
 c:globe	Noun	ar:كرة أرضية	de:Globus	en:globe	es:globo,globo terráqueo	fa:کره زمین,گوی	fr:globe	he:גלובוס	hi:ग्लोब,भूगोल	ja:地球儀	ko:지구본,구	pt:globo	ru:глобус	tr:küre	ur:گلوب,کرۂ ارض	zh:地球仪
@@ -2002,6 +2019,7 @@ c:glossy	Adjective	ar:لامع,مصقول	de:glänzend,hochglanz	en:glossy	es:lu
 c:glove	Noun	ar:قفاز	de:Handschuh	en:glove	es:guante	fa:دستکش	fr:gant	he:כפפה	hi:दस्ताना	ja:手袋	ko:장갑	pt:luva	ru:перчатка	tr:eldiven	ur:دستانہ	zh:手套
 c:gloves	Noun	ar:قفازات	de:Handschuhe	en:gloves	es:guantes	fa:دستکش	fr:gants	he:כפפות	hi:दस्ताने	ja:手袋	ko:장갑	pt:luvas	ru:перчатки	tr:eldivenler	ur:دستانے	zh:手套
 c:glow-worm	Noun	ar:دودة النار,يرقة متوهجة	de:Glühwürmchen,Leuchtkäfer	en:glow worm,glowworm	es:gusano de luz,luciérnaga larva	fa:کرم شب‌تاب	fr:ver luisant	he:גחלילית,תולעת הנוהר	hi:जुगनू लार्वा,चमकता कीड़ा	ja:ホタルの幼虫	ko:반딧불이 유충	pt:pirilampo,vagalume larva	ru:светлячок,ивановский червяк	tr:ateş böceği larva	ur:جگنو لاروا	zh:萤火虫幼虫
+c:glutamatergic	Adjective	ar:غلوتاماتي	de:glutamaterg	en:glutamatergic	es:glutamatérgico	fa:گلوتامیرژیک	fr:glutamatergique	he:גלוטמטרגי	hi:ग्लूटामेटर्जिक	ja:グルタミン酸作動性	ko:글루타마트성	pt:glutamatérgico	ru:глутаматергический	tr:glutamaterjik	ur:گلوٹامیٹ والا	zh:谷氨酸能
 c:gnat	Noun	ar:بعوضة صغيرة,بعوض	de:Mücke,Kriebelmücke	en:gnat	es:jején,mosquito pequeño	fa:پشه کوچک	fr:moucheron	he:יתוש קטן,עמומית	hi:छोटा मच्छर,गनाट	ja:ブヨ,ユスリカ	ko:각다귀,깔따구	pt:mosquito pequeno,borrachudo	ru:мошка,мокрец	tr:tatarcık,küçük sivrisinek	ur:چھوٹا مچھر	zh:蚋,小蚊子
 c:go	Verb	ar:ذهب	de:gehen	en:go	es:ir	fa:رفتن	fr:aller	he:ללכת	hi:जाना	ja:行く	ko:가다	pt:ir	ru:идти,ходить	tr:gitmek	ur:جانا	zh:去
 c:goal	Noun	ar:هدف,مرمى	de:Tor,Ziel	en:goal	es:gol,meta	fa:گل,دروازه	fr:but	he:שער	hi:गोल,लक्ष्य	ja:ゴール	ko:골,목표	pt:gol,meta	ru:гол,ворота	tr:gol,kale	ur:گول,مقصد	zh:进球,目标
@@ -2220,6 +2238,7 @@ c:himalayas	Noun	ar:جبال الهيمالايا,الهيمالايا	de:Himala
 c:hindu-kush	Noun	ar:جبال هندوكوش,هندوكوش	de:Hindukusch	en:Hindu Kush	es:Hindú Kush,Hindukush	fa:هندوکش,کوه‌های هندوکش	fr:Hindou Kouch	he:הינדו כוש	hi:हिंदू कुश	ja:ヒンドゥークシュ山脈	ko:힌두쿠시산맥	pt:Hindu Kush	ru:Гиндукуш	tr:Hindukuş Dağları	ur:ہندوکش,کوہ ہندوکش	zh:兴都库什山脉
 c:hip	Noun	ar:ورك	de:Hüfte	en:hip	es:cadera	fa:لگن,باسن	fr:hanche	he:ירך	hi:कूल्हा	ja:ヒップ,腰回り	ko:엉덩이	pt:quadril,anca	ru:бедро	tr:kalça	ur:کولھا	zh:臀部,髋
 c:hip-hop	Noun	ar:رقص الهيب هوب	de:Hip-Hop	en:hip-hop	es:hip-hop	fa:هیپ هاپ	fr:hip-hop	he:היפ הופ	hi:हिप-हॉप	ja:ヒップホップ	ko:힙합	pt:hip-hop	ru:хип-хоп	tr:hip-hop	ur:ہپ ہاپ	zh:嘻哈舞
+c:hippocampus	Noun	ar:الحصين	de:Hippocampus	en:hippocampus	es:hipocampo	fa:هیپوکامپ	fr:hippocampe	he:היפוקמפוס	hi:हिप्पोकैम्पस	ja:海馬	ko:해마	pt:hipocampo	ru:гиппокамп	tr:hipokampüs	ur:دماغی گھوڑا	zh:海马体
 c:hippocrates	Noun	ar:أبقراط	de:Hippokrates	en:Hippocrates	es:Hipócrates	fa:بقراط	fr:Hippocrate	he:היפוקרטס	hi:हिप्पोक्रेट्स	ja:ヒポクラテス	ko:히포크라테스	pt:Hipócrates	ru:Гиппократ	tr:Hipokrat	ur:بقراط	zh:希波克拉底
 c:hippopotamus	Noun	ar:فرس النهر	de:Nilpferd,Flusspferd	en:hippopotamus,hippo	es:hipopótamo	fa:اسب آبی	fr:hippopotame	he:היפופוטם	hi:दरियाई घोड़ा	ja:カバ	ko:하마	pt:hipopótamo	ru:бегемот	tr:su aygırı	ur:دریائی گھوڑا	zh:河马
 c:histogram	Noun	ar:مخطط بياني	de:Histogramm	en:histogram	es:histograma	fa:هیستوگرام	fr:histogramme	he:היסטוגרמה	hi:हिस्टोग्राम	ja:ヒストグラム	ko:히스토그램	pt:histograma	ru:гистограмма	tr:histogram	ur:ہسٹوگرام	zh:直方图
@@ -2300,6 +2319,7 @@ c:hymn	Noun	ar:ترنيمة,نشيد ديني	de:Hymne,Kirchenlied	en:hymn	es:hi
 c:hypatia	Noun	ar:هيباتيا	de:Hypatia	en:Hypatia	es:Hipatia	fa:هیپاتیا	fr:Hypatie	he:היפטיה	hi:हाइपेशिया	ja:ヒュパティア	ko:히파티아	pt:Hipátia	ru:Гипатия	tr:Hypatia	ur:ہائپیشیا	zh:希帕提娅
 c:hyperbole	Noun	ar:مبالغة	de:Hyperbel,Übertreibung	en:hyperbole	es:hipérbole	fa:مبالغه,اغراق	fr:hyperbole	he:היפרבולה,הפרזה	hi:अतिशयोक्ति	ja:誇張法	ko:과장법	pt:hipérbole	ru:гипербола	tr:abartma,mübalağa	ur:مبالغہ	zh:夸张,夸饰
 c:hyperinflation	Noun	ar:تضخم مفرط	de:Hyperinflation	en:hyperinflation	es:hiperinflación	fa:ابرتورم	fr:hyperinflation	he:היפר אינפלציה	hi:अतिमुद्रास्फीति	ja:ハイパーインフレーション,ハイパーインフレ	ko:하이퍼인플레이션,초인플레이션	pt:hiperinflação	ru:гиперинфляция	tr:hiperenflasyon	ur:شدید افراط زر	zh:恶性通货膨胀,超高通胀
+c:hyperpolarization	Noun	ar:فرط الاستقطاب	de:Hyperpolarisation	en:hyperpolarization	es:hiperpolarización	fa:بیش‌قطبش	fr:hyperpolarisation	he:היפרפולריזציה	hi:अतिध्रुवण	ja:過分極	ko:과분극	pt:hiperpolarização	ru:гиперполяризация	tr:hiperpolarizasyon	ur:زیادہ قطبیت	zh:超极化
 c:hypersonic	Adjective	ar:فوق صوتي عال	de:hypersonisch	en:hypersonic	es:hipersónico	fa:فراصوتی	fr:hypersonique	he:היפרסוני	hi:अतिध्वनिक	ja:極超音速	ko:극초음속	pt:hipersônico	ru:гиперзвуковой	tr:hipersonik	ur:ہائپر صوتی	zh:高超音速
 c:hypertension	Noun	ar:ارتفاع ضغط الدم	de:Hypertonie	en:hypertension	es:hipertensión	fa:فشار خون بالا	fr:hypertension	he:יתר לחץ דם	hi:उच्च रक्तचाप	ja:高血圧	ko:고혈압	pt:hipertensão	ru:гипертония	tr:hipertansiyon	ur:ہائی بلڈ پریشر	zh:高血压
 c:hypotenuse	Noun	ar:وتر	de:Hypotenuse	en:hypotenuse	es:hipotenusa	fa:وتر	fr:hypoténuse	he:יתר	hi:कर्ण	ja:斜辺	ko:빗변	pt:hipotenusa	ru:гипотенуза	tr:hipotenüs	ur:وتر	zh:斜边
@@ -2391,6 +2411,7 @@ c:interest	Noun	ar:فائدة,ربا	de:Zins,Zinsen	en:interest	es:interés	fa:�
 c:interest-rate	Noun	ar:سعر الفائدة	de:Zinssatz	en:interest rate	es:tipo de interés	fa:نرخ بهره	fr:taux d'intérêt	he:שיעור ריבית	hi:ब्याज दर	ja:金利	ko:이자율	pt:taxa de juros	ru:процентная ставка	tr:faiz oranı	ur:سود کی شرح	zh:利率
 c:intergalactic	Adjective	ar:بين المجرات	de:intergalaktisch	en:intergalactic	es:intergaláctico	fa:میان کهکشانی	fr:intergalactique	he:בין-גלקטי	hi:आकाशगंगांतरिक	ja:銀河間	ko:은하 간	pt:intergaláctico	ru:межгалактический	tr:galaksilerarası	ur:کہکشاوں کے درمیان	zh:星系际
 c:internet	Noun	ar:إنترنت	de:Internet	en:internet,net	es:internet	fa:اینترنت	fr:internet	he:אינטרנט	hi:इंटरनेट	ja:インターネット,ネット	ko:인터넷	pt:internet	ru:интернет	tr:internet	ur:انٹرنیٹ	zh:互联网,因特网
+c:interneuron	Noun	ar:العصبون البيني	de:Interneuron	en:interneuron	es:interneurona	fa:نورون درونی	fr:interneurone	he:אינטרנוירון	hi:अन्तर्नयूरॉन	ja:介在ニューロン	ko:연합 뉴런	pt:interneurônio	ru:интернейрон	tr:ara nöron	ur:درمیانی نیورون	zh:中间神经元
 c:intersection	Noun	ar:تقاطع	de:Kreuzung	en:intersection,crossroads,junction	es:intersección,cruce	fa:تقاطع,چهارراه	fr:intersection,carrefour	he:צומת	hi:चौराहा	ja:交差点	ko:교차로	pt:interseção,cruzamento	ru:перекрёсток	tr:kavşak	ur:چوراہا	zh:十字路口,路口
 c:intersectionality	Noun	ar:التقاطعية	de:Intersektionalität	en:intersectionality	es:interseccionalidad	fa:تلاقی‌گرایی	fr:intersectionnalité	he:אינטרסקציונליות	hi:अंतरखंडीयता	ja:インターセクショナリティ	ko:교차성	pt:interseccionalidade	ru:интерсекциональность	tr:kesişimsellik	ur:تقاطعیت	zh:交叉性
 c:interstellar	Adjective	ar:بين النجوم	de:interstellar	en:interstellar	es:interestelar	fa:میان ستاره‌ای	fr:interstellaire	he:בין-כוכבי	hi:तारांतरिक	ja:星間	ko:성간	pt:interestelar	ru:межзвёздный	tr:yıldızlararası	ur:ستاروں کے درمیان	zh:星际
@@ -2674,6 +2695,7 @@ c:light-year	Noun	ar:سنة ضوئية	de:Lichtjahr	en:light year	es:año luz	fa
 c:lightning	Noun	ar:برق	de:Blitz	en:lightning	es:relámpago,rayo	fa:صاعقه,برق	fr:éclair,foudre	he:ברק	hi:बिजली	ja:稲妻,雷光	ko:번개	pt:relâmpago,raio	ru:молния	tr:şimşek,yıldırım	ur:بجلی	zh:闪电
 c:lilac	Noun	ar:الليلك	de:Flieder	en:lilac	es:lila	fa:یاس بنفش	fr:lilas	he:לילך	hi:लाइलैक	ja:ライラック	ko:라일락	pt:lilás	ru:сирень	tr:leylak	ur:لائلک	zh:丁香
 c:lily	Noun	ar:زنبق	de:Lilie	en:lily	es:lirio,azucena	fa:سوسن,نیلوفر	fr:lys,lis	he:שושן	hi:कुमुदिनी,लिली	ja:ユリ,百合	ko:백합	pt:lírio	ru:лилия	tr:zambak	ur:سوسن	zh:百合花,百合
+c:limbic	Adjective	ar:الجهاز الحوفي	de:limbisch	en:limbic	es:límbico	fa:لیمبیک	fr:limbique	he:לימבי	hi:लिंबिक	ja:大脳辺縁	ko:변연계	pt:límbico	ru:лимбический	tr:limbik	ur:جذباتی نظام	zh:边缘系统
 c:limestone	Noun	ar:حجر جيري,كلس	de:Kalkstein	en:limestone	es:caliza,piedra caliza	fa:سنگ آهک	fr:calcaire,pierre calcaire	he:אבן גיר,גיר	hi:चूना पत्थर	ja:石灰岩	ko:석회암,석회석	pt:calcário	ru:известняк	tr:kireç taşı,kalker	ur:چونا پتھر	zh:石灰岩,石灰石
 c:liminality	Noun	ar:العتبية	de:Liminalität	en:liminality	es:liminalidad	fa:آستانگی	fr:liminalité	he:לימינליות	hi:सांध्य अवस्था	ja:境界性	ko:전환 상태	pt:liminalidade	ru:лиминальность	tr:eşik hali	ur:درمیانی حالت	zh:过渡性
 c:limit	Noun	ar:نهاية	de:Grenzwert	en:limit	es:límite	fa:حد	fr:limite	he:גבול	hi:सीमा	ja:極限	ko:극한	pt:limite	ru:предел	tr:limit	ur:حد	zh:极限
@@ -2727,6 +2749,7 @@ c:loiter	Verb	ar:تسكع	de:herumlungern	en:loiter	es:merodear,holgazanear	fa:�
 c:loki	Noun	ar:لوكي	de:Loki	en:Loki	es:Loki	fa:لوکی	fr:Loki	he:לוקי	hi:लोकी	ja:ロキ	ko:로키	pt:Loki	ru:Локи	tr:Loki	ur:لوکی	zh:洛基
 c:london	Noun	ar:لندن	de:London	en:London	es:Londres	fa:لندن	fr:Londres	he:לונדון	hi:लंदन	ja:ロンドン	ko:런던	pt:Londres	ru:Лондон	tr:Londra	ur:لندن	zh:伦敦
 c:long-jump	Noun	ar:القفز الطويل	de:Weitsprung	en:long jump	es:salto de longitud	fa:پرش طول	fr:saut en longueur	he:קפיצה לרוחק	hi:लंबी कूद	ja:走り幅跳び	ko:멀리뛰기	pt:salto em comprimento	ru:прыжки в длину	tr:uzun atlama	ur:لمبی چھلانگ	zh:跳远
+c:long-term-potentiation	Noun	ar:التقوية طويلة الأمد	de:Langzeitpotenzierung	en:long-term potentiation	es:potenciación a largo plazo	fa:تقویت طولانی‌مدت	fr:potentialisation à long terme	he:חיזוק לטווח ארוך	hi:दीर्घकालीन प्रबलता	ja:長期増強	ko:장기 강화	pt:potenciação de longa duração	ru:долговременная потенциация	tr:uzun süreli potansiyasyon	ur:طویل مدتی تقویت	zh:长时程增强
 c:longan	Noun	ar:لونغان	de:Longan	en:longan	es:longan	fa:لونگان	fr:longan	he:לונגן	hi:लोंगन	ja:リュウガン	ko:용안	pt:longan	ru:лонган	tr:longan	ur:لونگان	zh:龙眼
 c:longbow	Noun	ar:قوس طويل	de:Langbogen	en:longbow	es:arco largo	fa:کمان بلند	fr:arc long	he:קשת ארוכה	hi:लंबा धनुष	ja:ロングボウ	ko:장궁	pt:arco longo	ru:длинный лук	tr:uzun yay	ur:لمبا تیر کمان	zh:长弓
 c:longhorn-beetle	Noun	ar:خنفساء القرون الطويلة	de:Bockkäfer,Langhornkäfer	en:longhorn beetle,longicorn	es:escarabajo longicornio	fa:سوسک شاخ‌دار	fr:longicorne,capricorne	he:חיפושית מוט ארוך	hi:लंबे सींग का बीटल	ja:カミキリムシ	ko:하늘소	pt:serrador,cerambicídeo	ru:жук-усач,дровосек	tr:uzunboynuzlu böcek	ur:لمبے سینگ والا بیٹل	zh:天牛
@@ -2867,6 +2890,7 @@ c:medicine	Noun	ar:دواء,طب	de:Medizin,Arznei	en:medicine	es:medicina,medic
 c:medieval	Noun	ar:القرون الوسطى,العصور الوسطى	de:Mittelalter	en:middle ages,medieval period	es:edad media,medievo	fa:قرون وسطی	fr:moyen âge	he:ימי הביניים	hi:मध्यकाल,मध्य युग	ja:中世	ko:중세	pt:idade média	ru:средневековье,средние века	tr:orta çağ	ur:قرون وسطی,وسطی دور	zh:中世纪
 c:meditation	Noun	ar:تأمل	de:Meditation	en:meditation	es:meditación	fa:مدیتیشن,مراقبه	fr:méditation	he:מדיטציה	hi:ध्यान	ja:瞑想	ko:명상	pt:meditação	ru:медитация	tr:meditasyon,derin düşünce	ur:مراقبہ	zh:冥想,禅定
 c:mediterranean	Noun	ar:البحر المتوسط,البحر الأبيض المتوسط	de:Mittelmeer	en:Mediterranean,Mediterranean Sea	es:Mediterráneo,Mar Mediterráneo	fa:دریای مدیترانه	fr:Méditerranée,Mer Méditerranée	he:ים התיכון	hi:भूमध्य सागर	ja:地中海	ko:지중해	pt:Mediterrâneo,Mar Mediterrâneo	ru:Средиземное море	tr:Akdeniz	ur:بحیرہ روم	zh:地中海
+c:medulla	Noun	ar:النخاع المستطيل	de:Medulla oblongata	en:medulla oblongata	es:médula oblongada	fa:بصل النخاع	fr:bulbe rachidien	he:מדולה	hi:मेडुला ओब्लोंगेटा	ja:延髄	ko:연수	pt:medula oblonga	ru:продолговатый мозг	tr:uzun soğan	ur:مڈولا	zh:延髓
 c:medusa	Noun	ar:ميدوسا	de:Medusa	en:Medusa	es:Medusa	fa:مدوسا	fr:Méduse	he:מדוסה	hi:मेदूसा	ja:メデューサ	ko:메두사	pt:Medusa	ru:Медуза	tr:Medusa	ur:میدوسا	zh:美杜莎
 c:meerkat	Noun	ar:ميركات	de:Erdmännchen	en:meerkat	es:suricata	fa:میرکت	fr:suricate	he:מירקט	hi:मीरकट	ja:ミーアキャット	ko:미어캣	pt:suricato	ru:сурикат	tr:suricate	ur:میرکیٹ	zh:猫鼬
 c:meet	Verb	ar:قابل,لقي	de:treffen,begegnen	en:meet	es:encontrar,conocer	fa:ملاقات کردن,دیدن	fr:rencontrer	he:לפגוש	hi:मिलना	ja:会う	ko:만나다	pt:encontrar	ru:встречать,встретить	tr:tanışmak,buluşmak	ur:ملنا	zh:见,遇见
@@ -2883,6 +2907,7 @@ c:memorize	Verb	ar:حفظ	de:auswendig lernen,memorieren	en:memorize,memorise	es
 c:memory	Noun	ar:ذاكرة,ذكرى	de:Erinnerung,Gedächtnis	en:memory	es:memoria,recuerdo	fa:حافظه,خاطره	fr:mémoire,souvenir	he:זיכרון	hi:स्मृति,याद	ja:記憶,思い出	ko:기억,추억	pt:memória,lembrança	ru:память,воспоминание	tr:hafıza,bellek,anı	ur:یاد,یادداشت	zh:记忆
 c:memory-ram	Noun	ar:ذاكرة الوصول العشوائي	de:Arbeitsspeicher	en:RAM	es:RAM	fa:رم	fr:RAM	he:זיכרון RAM	hi:रैम	ja:RAM	ko:램	pt:RAM	ru:оперативная память	tr:RAM	ur:رام	zh:内存
 c:mendelian	Adjective	ar:مندلي	de:Mendelsich	en:Mendelian	es:mendeliano	fa:مندلی	fr:mendélien	he:מנדלי	hi:मेंडलीय	ja:メンデルの	ko:멘델의	pt:mendeliano	ru:менделевский	tr:Mendel'e göre	ur:مینڈل کا	zh:孟德尔的
+c:meninges	Noun	ar:السحايا	de:Hirnhäute	en:meninges	es:meninges	fa:مننژ	fr:méninges	he:קרום המוח	hi:मस्तिष्कावरण	ja:髄膜	ko:뇌막	pt:meninges	ru:мозговые оболочки	tr:zarlar	ur:دماغی پردہ	zh:脑膜
 c:mercantilism	Noun	ar:التجارية	de:Merkantilismus	en:mercantilism	es:mercantilismo	fa:سوداگری	fr:mercantilisme	he:מרקנטיליזם	hi:वाणिज्यवाद	ja:重商主義	ko:중상주의	pt:mercantilismo	ru:меркантилизм	tr:merkantilizm	ur:تجارت پسندی	zh:重商主义
 c:merchant	Noun	ar:تاجر	de:Kaufmann,Händler	en:merchant,trader	es:comerciante,mercader	fa:تاجر,بازرگان	fr:marchand,commerçant	he:סוחר	hi:व्यापारी	ja:商人	ko:상인	pt:comerciante,mercador	ru:торговец,купец	tr:tüccar,tacir	ur:تاجر	zh:商人,商贩
 c:mercury	Noun	ar:عطارد	de:Merkur	en:Mercury	es:Mercurio	fa:عطارد,تیر	fr:Mercure	he:כוכב חמה	hi:बुध	ja:水星	ko:수성	pt:Mercúrio	ru:Меркурий	tr:Merkür	ur:عطارد	zh:水星
@@ -3131,9 +3156,12 @@ c:netherlands	Noun	ar:هولندا	de:Niederlande	en:Netherlands,Holland	es:Paí
 c:network	Noun	ar:شبكة	de:Netzwerk,Netz	en:network	es:red	fa:شبکه	fr:réseau	he:רשת	hi:नेटवर्क	ja:ネットワーク	ko:네트워크,망	pt:rede	ru:сеть	tr:ağ,şebeke	ur:نیٹ ورک	zh:网络
 c:network-card	Noun	ar:بطاقة الشبكة	de:Netzwerkkarte	en:network card	es:tarjeta de red	fa:کارت شبکه	fr:carte réseau	he:כרטיס רשת	hi:नेटवर्क कार्ड	ja:ネットワークカード	ko:네트워크 카드	pt:placa de rede	ru:сетевая карта	tr:ağ kartı	ur:نیٹ ورک کارڈ	zh:网卡
 c:neural-network	Noun	ar:شبكة عصبية	de:neuronales Netz,neuronales Netzwerk	en:neural network	es:red neuronal	fa:شبکه عصبی	fr:réseau de neurones	he:רשת עצבית	hi:तंत्रिका नेटवर्क	ja:ニューラルネットワーク,神経網	ko:신경망,뉴럴 네트워크	pt:rede neural	ru:нейронная сеть	tr:yapay sinir ağı	ur:عصبی نیٹ ورک	zh:神经网络
+c:neurogenesis	Noun	ar:التوليد العصبي	de:Neurogenese	en:neurogenesis	es:neurogénesis	fa:نوروژنز	fr:neurogenèse	he:נוירוגנזה	hi:तंत्रिका जनन	ja:神経新生	ko:신경 생성	pt:neurogênese	ru:нейрогенез	tr:nörojenez	ur:اعصابی پیدائش	zh:神经发生
 c:neuron	Noun	ar:الخلية العصبية	de:Neuron	en:neuron	es:neurona	fa:نورون	fr:neurone	he:נוירון	hi:न्यूरॉन	ja:ニューロン	ko:뉴런	pt:neurônio	ru:нейрон	tr:nöron	ur:عصبی خلیہ	zh:神经元
+c:neuroplasticity	Noun	ar:المرونة العصبية	de:Neuroplastizität	en:neuroplasticity	es:neuroplasticidad	fa:انعطاف‌پذیری عصبی	fr:neuroplasticité	he:נוירופלסטיות	hi:तंत्रिका लचीलापन	ja:神経可塑性	ko:신경 가소성	pt:neuroplasticidade	ru:нейропластичность	tr:nöroplastisite	ur:اعصابی لچک	zh:神经可塑性
 c:neurosis	Noun	ar:عصاب	de:Neurose	en:neurosis	es:neurosis	fa:روان رنجوری,بیماری عصبی	fr:névrose	he:נוירוזה	hi:मनःस्नायुविकार,नयूरोसिस	ja:神経症,ノイローゼ	ko:신경증,노이로제	pt:neurose	ru:невроз	tr:nevroz	ur:عصابی مرض	zh:神经症,神经官能症
 c:neurotransmitter	Noun	ar:ناقل عصبي	de:Neurotransmitter	en:neurotransmitter	es:neurotransmisor	fa:ناقل عصبی	fr:neurotransmetteur	he:מוליך עצבי	hi:तंत्रिका-संचारक	ja:神経伝達物質	ko:신경전달물질	pt:neurotransmissor	ru:нейромедиатор	tr:nörotransmitter	ur:اعصابی منتقل کنندہ	zh:神经递质
+c:neurotrophic	Adjective	ar:عاملة نموذج عصبي	de:neurotrophisch	en:neurotrophic	es:neurotrófico	fa:نوروتروفیک	fr:neurotrophique	he:נוירוטרופי	hi:न्यूरोट्रॉफिक	ja:神経栄養性	ko:신경 영양성	pt:neurotrópico	ru:нейротрофический	tr:nörotrofik	ur:اعصابی غذائیت	zh:神经营养的
 c:neutrino	Noun	ar:نيوترينو	de:Neutrino	en:neutrino	es:neutrino	fa:نوترینو	fr:neutrino	he:ניוטרינו	hi:न्यूट्रिनो	ja:ニュートリノ	ko:중성미자	pt:neutrino	ru:нейтрино	tr:nötrino	ur:نیوٹرینو	zh:中微子
 c:neutron	Noun	ar:نيوترون	de:Neutron	en:neutron	es:neutrón	fa:نوترون	fr:neutron	he:נייטרון,ניטרון	hi:न्यूट्रॉन	ja:中性子,ニュートロン	ko:중성자,뉴트론	pt:nêutron,neutrão	ru:нейтрон	tr:nötron	ur:نیوٹرون	zh:中子
 c:neutron-star	Noun	ar:نجم نيوتروني	de:Neutronenstern	en:neutron star	es:estrella de neutrones	fa:ستاره نوترونی	fr:étoile à neutrons	he:כוכב נויטרונים	hi:न्यूट्रॉन तारा	ja:中性子星	ko:중성자별	pt:estrela de nêutrons	ru:нейтронная звезда	tr:nötron yıldızı	ur:نیوٹران ستارہ	zh:中子星
@@ -3221,6 +3249,7 @@ c:observatory	Noun	ar:مرصد	de:Observatorium,Sternwarte	en:observatory	es:obs
 c:obsidian	Noun	ar:سبج,أوبسيديان	de:Obsidian	en:obsidian	es:obsidiana	fa:ابسیدین	fr:obsidienne	he:אובסידיאן	hi:ऑब्सीडियन	ja:黒曜石,オブシディアン	ko:흑요석,옵시디언	pt:obsidiana	ru:обсидиан	tr:obsidyen,volkan camı	ur:آبسیڈین	zh:黑曜石
 c:ocarina	Noun	ar:اوكارينا	de:Okarina	en:ocarina	es:ocarina	fa:اوکارینا	fr:ocarina	he:אוקרינה	hi:ओकारिना	ja:オカリナ	ko:오카리나	pt:ocarina	ru:окарина	tr:okarina	ur:اوکارینا	zh:陶笛
 c:occasionalism	Noun	ar:المناسباتية	de:Occasionalismus	en:occasionalism	es:ocasionalismo	fa:فرصت‌گرایی	fr:occasionnalisme	he:אוקזיונליזם	hi:अवसरवाद	ja:機会原因論	ko:기회원인론	pt:ocasionalismo	ru:окказионализм	tr:fırsatçılık	ur:مناسباتیت	zh:偶因论
+c:occipital	Adjective	ar:الفص القذالي	de:okzipital	en:occipital	es:occipital	fa:پس‌سری	fr:occipital	he:עורפי	hi:अनुकपाल	ja:後頭葉	ko:후두엽	pt:occipital	ru:затылочный	tr:oksipital	ur:اوکسپیٹل	zh:枕叶
 c:occluded-front	Noun	ar:جبهة محاطة	de:Okklusion	en:occluded front	es:frente ocluido	fa:جبهه انسدادی	fr:front occlus	he:חזית חסומה	hi:अवरुद्ध वाताग्र	ja:閉塞前線	ko:폐색 전선	pt:frente ocluída	ru:окклюзия	tr:kapanmış cephe	ur:مسدود محاذ	zh:锢囚锋
 c:occultation	Noun	ar:احتجاب فلكي	de:Okkultation	en:occultation	es:ocultación	fa:گرفتگی	fr:occultation	he:אוקולטציה	hi:अधिगूहन	ja:食	ko:엄폐	pt:ocultação	ru:покрытие	tr:örtme	ur:فلکی پردہ	zh:掩星
 c:ocean	Noun	ar:محيط	de:Ozean	en:ocean	es:océano	fa:اقیانوس	fr:océan	he:אוקיינוס	hi:महासागर	ja:海洋,大洋	ko:대양,해양	pt:oceano	ru:океан	tr:okyanus	ur:بحر	zh:海洋,大洋
@@ -3242,6 +3271,7 @@ c:oil	Noun	ar:زيت	de:Öl	en:oil	es:aceite	fa:روغن	fr:huile	he:שמן	hi:�
 c:okra	Noun	ar:بامية	de:Okra	en:okra	es:quimbombó	fa:بامیه	fr:gombo	he:אוקרה	hi:भिंडी	ja:オクラ	ko:오크라	pt:quiabo	ru:окра	tr:bamya	ur:بھنڈی	zh:秋葵
 c:old	Adjective	ar:قديم,عجوز	de:alt	en:old	es:viejo,antiguo	fa:کهنه,پیر	fr:vieux,ancien	he:ישן,זקן	hi:पुराना,बूढ़ा	ja:古い,老いた	ko:오래된,늙은	pt:velho,antigo	ru:старый	tr:eski,yaşlı	ur:پرانا,بوڑھا	zh:老,旧
 c:oligarchy	Noun	ar:أوليغارشية	de:Oligarchie	en:oligarchy	es:oligarquía	fa:الیگارشی	fr:oligarchie	he:אוליגרכיה	hi:अल्पतंत्र	ja:寡頭政治	ko:과두제	pt:oligarquia	ru:олигархия	tr:oligarşi	ur:چند سری حکومت	zh:寡头政治
+c:oligodendrocyte	Noun	ar:خلية قليلة التغصنات	de:Oligodendrozyt	en:oligodendrocyte	es:oligodendrocito	fa:الیگودندروسیت	fr:oligodendrocyte	he:אוליגודנדרוציט	hi:ऑलिगोडेंड्रोसाइट	ja:オリゴデンドロサイト	ko:희소돌기아교세포	pt:oligodendrócito	ru:олигодендроцит	tr:oligodendrosit	ur:میلین خلیہ	zh:少突胶质细胞
 c:oligopoly	Noun	ar:احتكار القلة	de:Oligopol	en:oligopoly	es:oligopolio	fa:انحصار چند جانبه	fr:oligopole	he:אוליגופול	hi:अल्पाधिकार,कुलाधिकार	ja:寡占	ko:과점	pt:oligopólio	ru:олигополия	tr:oligopol	ur:گروہی اجارہ داری	zh:寡头垄断,寡占
 c:olive	Noun	ar:زيتون	de:Olive	en:olive	es:aceituna,oliva	fa:زیتون	fr:olive	he:זית	hi:जैतून	ja:オリーブ	ko:올리브	pt:azeitona	ru:оливка,маслина	tr:zeytin	ur:زیتون	zh:橄榄
 c:olive-color	Noun	ar:زيتوني	de:Olivgrün,Oliv	en:olive,olive green	es:verde oliva	fa:زیتونی	fr:vert olive	he:ירוק זית	hi:जैतूनी	ja:オリーブ色	ko:올리브색	pt:verde-oliva	ru:оливковый	tr:zeytin yeşili	ur:زیتونی	zh:橄榄色
@@ -3365,9 +3395,11 @@ c:parapet	Noun	ar:الشرفة الدفاعية	de:Brüstung	en:parapet	es:parap
 c:parasite	Noun	ar:طفيل	de:Parasit	en:parasite	es:parásito	fa:انگل	fr:parasite	he:טפיל	hi:परजीवी	ja:寄生生物	ko:기생생물	pt:parasita	ru:паразит	tr:parazit	ur:پرجیوی	zh:寄生生物
 c:parasitic-wasp	Noun	ar:زنبور طفيلي	de:Schlupfwespe	en:parasitic wasp	es:avispa parasitoide	fa:زنبور انگلی	fr:guêpe parasitoïde	he:צרעה טפילה	hi:परजीवी ततैया	ja:寄生蜂	ko:기생벌	pt:vespa parasitoide	ru:паразитическая оса	tr:asalak arı	ur:پرجیوی زنبور	zh:寄生蜂
 c:parasitism	Noun	ar:الطفيلية	de:Parasitismus	en:parasitism	es:parasitismo	fa:انگل‌واری	fr:parasitisme	he:פרזיטיזם	hi:परजीविता	ja:寄生	ko:기생	pt:parasitismo	ru:паразитизм	tr:parazitizm	ur:پرجیویت	zh:寄生
+c:parasympathetic	Adjective	ar:الجهاز العصبي نظير الودي	de:parasympathisch	en:parasympathetic nervous system	es:parasimpático	fa:دستگاه عصبی پاراسمپاتیک	fr:système parasympathique	he:פרה-סימפטתי	hi:अनुकंपी	ja:副交感神経	ko:부교감신경	pt:sistema parassimpático	ru:парасимпатическая нервная система	tr:parasempatik sinir sistemi	ur:ضد ہمدردی اعصابی نظام	zh:副交感神经系统
 c:paratha	Noun	ar:باراتا	de:Paratha	en:paratha	es:paratha	fa:پاراتا	fr:paratha	he:פארטה	hi:परांठा	ja:パラタ	ko:파라타	pt:paratha	ru:паратха	tr:paratha	ur:پراٹھا	zh:帕拉塔
 c:parent	Noun	ar:والد	de:Elternteil	en:parent,parents	es:padre,madre	fa:والد	fr:parent	he:הורה	hi:अभिभावक	ja:親	ko:부모	pt:pai,mãe	ru:родитель	tr:ebeveyn	ur:والد	zh:父母,家长
 c:parhelion	Noun	ar:شمس مزيفة	de:Parhelie	en:parhelion	es:antelia	fa:خورشید کاذب	fr:parhélie	he:שמש שנייה	hi:परहेलियन	ja:幻日	ko:환일	pt:pare-hélio	ru:паргелий	tr:yalancı güneş	ur:جھوٹا سورج	zh:幻日
+c:parietal	Adjective	ar:الفص الجداري	de:parietal	en:parietal	es:parietal	fa:جداری	fr:pariétal	he:פריאטלי	hi:पार्श्विका	ja:頭頂葉	ko:두정엽	pt:parietal	ru:теменной	tr:parietal	ur:پیریٹل	zh:顶叶
 c:paris	Noun	ar:باريس	de:Paris	en:Paris	es:París	fa:پاریس	fr:Paris	he:פריז	hi:पेरिस	ja:パリ	ko:파리	pt:Paris	ru:Париж	tr:Paris	ur:پیرس	zh:巴黎
 c:park	Verb	ar:ركن,يركن	de:parken	en:park	es:estacionar,aparcar	fa:پارک کردن	fr:garer,stationner	he:לחנות	hi:खड़ी करना,पार्क करना	ja:駐車する	ko:주차하다	pt:estacionar	ru:парковать,парковаться	tr:park etmek	ur:کھڑا کرنا,پارک کرنا	zh:停车,停放
 c:parka	Noun	ar:باركا	de:Parka	en:parka	es:parka	fa:پارکا	fr:parka	he:פארקה	hi:पार्का	ja:パーカー	ko:파카	pt:parka	ru:парка	tr:parka	ur:پارکا	zh:派克大衣
@@ -3447,6 +3479,7 @@ c:perfumer	Noun	ar:عطّار,صانع العطور	de:Parfümeur	en:perfumer	es
 c:pericardium	Noun	ar:التامور	de:Herzbeutel	en:pericardium	es:pericardio	fa:پریکاردیم	fr:péricarde	he:שק הלב	hi:पेरिकार्डियम	ja:心膜	ko:심낭	pt:pericárdio	ru:перикард	tr:perikart	ur:دل کا خول	zh:心包
 c:perihelion	Noun	ar:الحضيض الشمسي	de:Perihel	en:perihelion	es:perihelio	fa:حضیض	fr:périhélie	he:פריהליון	hi:उपसौर	ja:近日点	ko:근일점	pt:periélio	ru:перигелий	tr:günyan	ur:حضیض شمسی	zh:近日点
 c:perimeter	Noun	ar:محيط	de:Umfang	en:perimeter	es:perímetro	fa:محیط	fr:périmètre	he:היקף	hi:परिमाप	ja:周,外周	ko:둘레	pt:perímetro	ru:периметр	tr:çevre	ur:احاطہ	zh:周长,周边
+c:peripheral-nervous	Noun	ar:الجهاز العصبي المحيطي	de:peripheres Nervensystem	en:peripheral nervous system	es:sistema nervioso periférico	fa:دستگاه عصبی محیطی	fr:système nerveux périphérique	he:מערכת עצבים פריפרית	hi:परिधीय तंत्रिका तंत्र	ja:末梢神経系	ko:말초 신경계	pt:sistema nervoso periférico	ru:периферическая нервная система	tr:periferik sinir sistemi	ur:اطراف اعصابی نظام	zh:周围神经系统
 c:periwinkle	Noun	ar:بنفسجي مزرق	de:Immergrünblau,Periwinkle	en:periwinkle	es:azul vincapervinca	fa:آبی‌بنفش کم‌رنگ	fr:pervenche	he:כחול סגלגל	hi:हल्का नीला-बैंगनी	ja:ペリウィンクル	ko:페리윙클	pt:azul-pervinca	ru:барвинковый	tr:cezayir menekşesi mavisi	ur:ہلکا نیلا جامنی	zh:长春花色
 c:perjury	Noun	ar:شهادة زور	de:Meineid	en:perjury	es:perjurio	fa:شهادت دروغ	fr:parjure	he:עדות שקר	hi:झूठी गवाही	ja:偽証	ko:위증	pt:perjúrio	ru:лжесвидетельство	tr:yalan yere yemin	ur:جھوٹی گواہی	zh:伪证
 c:permaculture	Noun	ar:الزراعة الدائمة	de:Permakultur	en:permaculture	es:permacultura	fa:پرماکالچر	fr:permaculture	he:פרמקולטורה	hi:परमाकल्चर	ja:パーマカルチャー	ko:퍼머컬처	pt:permacultura	ru:пермакультура	tr:permakultur	ur:مستقل زراعت	zh:永续农业
@@ -3604,6 +3637,7 @@ c:polytheism	Noun	ar:تعدد الآلهة	de:Polytheismus	en:polytheism	es:poli
 c:pomegranate	Noun	ar:رمان	de:Granatapfel	en:pomegranate	es:granada	fa:انار	fr:grenade	he:רימון	hi:अनार	ja:ザクロ	ko:석류	pt:romã	ru:гранат	tr:nar	ur:انار	zh:石榴
 c:pomegranate-tree	Noun	ar:شجرة الرمان	de:Granatapfelbaum	en:pomegranate tree	es:granado	fa:درخت انار	fr:grenadier	he:עץ רימון	hi:अनार का पेड़	ja:ザクロの木	ko:석류나무	pt:romãzeira	ru:гранатовое дерево	tr:nar ağacı	ur:انار کا درخت	zh:石榴树
 c:pomelo	Noun	ar:بوميلو,الزهر الكبير	de:Pampelmuse	en:pomelo	es:pomelo chino	fa:پوملو	fr:pomelo	he:פומלו	hi:पोमेलो	ja:ザボン	ko:포멜로	pt:pamplemusa	ru:помело	tr:pomelo	ur:پوملو	zh:柚子
+c:pons	Noun	ar:الجسر	de:Pons	en:pons	es:puente	fa:پونز	fr:pont	he:פונס	hi:सेतु	ja:橋	ko:교뇌	pt:ponte	ru:мост	tr:pons	ur:پنس	zh:脑桥
 c:poor	Adjective	ar:فقير	de:arm	en:poor	es:pobre	fa:فقیر,تنگدست	fr:pauvre	he:עני	hi:ग़रीब,निर्धन	ja:貧しい,貧乏な	ko:가난한,빈곤한	pt:pobre	ru:бедный	tr:yoksul,fakir	ur:غریب,مفلس	zh:贫穷,穷
 c:pope	Noun	ar:بابا الكنيسة	de:Papst	en:pope	es:papa	fa:پاپ	fr:pape	he:אפיפיור	hi:पोप	ja:ローマ教皇	ko:교황	pt:papa	ru:папа римский	tr:papa	ur:پوپ	zh:教皇
 c:poplar	Noun	ar:الحور	de:Pappel	en:poplar	es:álamo	fa:سپیدار,تبریزی	fr:peuplier	he:צפצפה	hi:चिनार	ja:ポプラ	ko:포플러	pt:choupo,álamo	ru:тополь	tr:kavak	ur:سفیدار	zh:杨树
@@ -3654,6 +3688,7 @@ c:predicate	Noun	ar:خبر,مسند	de:Prädikat,Satzaussage	en:predicate	es:pre
 c:predicate-logic	Noun	ar:منطق المحمولات	de:Prädikatenlogik	en:predicate logic	es:lógica de predicados	fa:منطق محمولی	fr:logique des prédicats	he:לוגיקת הפרדיקטים	hi:विधेय तर्क	ja:述語論理	ko:술어논리	pt:lógica de predicados	ru:логика предикатов	tr:yüklem mantığı	ur:خبری منطق	zh:谓词逻辑
 c:preface	Noun	ar:مقدمة الكتاب	de:Vorwort	en:preface	es:prefacio	fa:پیشگفتار	fr:préface	he:הקדמה	hi:प्रस्तावना	ja:序文,前置き	ko:서문,머리말	pt:prefácio	ru:предисловие	tr:önsöz	ur:دیباچہ	zh:前言
 c:prefix	Noun	ar:سابقة,بادئة	de:Präfix,Vorsilbe	en:prefix	es:prefijo	fa:پیشوند	fr:préfixe	he:תחילית	hi:उपसर्ग	ja:接頭辞	ko:접두사	pt:prefixo	ru:префикс,приставка	tr:önek	ur:سابقہ	zh:前缀,词头
+c:prefrontal	Adjective	ar:الفص الجبهي الأمامي	de:präfrontal	en:prefrontal	es:prefrontal	fa:پیش‌پیشانی	fr:préfrontal	he:קדם-מצחי	hi:प्रीफ्रंटल	ja:前頭前野	ko:전전두엽	pt:pré-frontal	ru:префронтальный	tr:prefrontal	ur:پیشانی لوب	zh:前额叶
 c:pregnancy	Noun	ar:حمل	de:Schwangerschaft	en:pregnancy	es:embarazo	fa:بارداری,حاملگی	fr:grossesse	he:הריון	hi:गर्भावस्था	ja:妊娠	ko:임신	pt:gravidez	ru:беременность	tr:gebelik,hamilelik	ur:حمل	zh:怀孕
 c:prehistory	Noun	ar:عصر ما قبل التاريخ,ما قبل التاريخ	de:Vorgeschichte,Urgeschichte	en:prehistory	es:prehistoria	fa:پیش از تاریخ	fr:préhistoire	he:פרהיסטוריה,טרום היסטוריה	hi:प्रागैतिहासिक काल,प्रागितिहास	ja:先史時代	ko:선사시대	pt:pré-história	ru:доисторическая эпоха,предыстория	tr:tarih öncesi,prehistorya	ur:قبل از تاریخ	zh:史前,史前时代
 c:prelude	Noun	ar:بريليود	de:Präludium	en:prelude	es:preludio	fa:پرلود	fr:prélude	he:פרלוד	hi:प्रस्तावना	ja:前奏曲	ko:전주곡	pt:prelúdio	ru:прелюдия	tr:prelüd	ur:تمہید	zh:前奏曲
@@ -4166,6 +4201,7 @@ c:serf	Noun	ar:قن	de:Leibeigener	en:serf	es:siervo	fa:رعیت	fr:serf	he:עב
 c:sergeant	Noun	ar:رقيب	de:Feldwebel	en:sergeant	es:sargento	fa:گروهبان	fr:sergent	he:סמל	hi:सार्जेंट	ja:軍曹	ko:중사,상사	pt:sargento	ru:сержант	tr:çavuş	ur:سارجنٹ	zh:中士
 c:serial-port	Noun	ar:المنفذ المتسلسل	de:serielle Schnittstelle	en:serial port	es:puerto serie	fa:پورت سریال	fr:port série	he:יציאה טורית	hi:सीरियल पोर्ट	ja:シリアルポート	ko:시리얼 포트	pt:porta serial	ru:последовательный порт	tr:seri bağlantı noktası	ur:سیریل پورٹ	zh:串行接口
 c:sermon	Noun	ar:خطبة	de:Predigt	en:sermon	es:sermón	fa:موعظه	fr:sermon	he:דרשה	hi:प्रवचन	ja:説教	ko:설교	pt:sermão	ru:проповедь	tr:vaaz	ur:خطبہ	zh:布道
+c:serotonergic	Adjective	ar:سيروتونيني	de:serotonerg	en:serotonergic	es:serotoninérgico	fa:سروتونرژیک	fr:sérotoninergique	he:סרוטונרגי	hi:सेरोटोनर्जिक	ja:セロトニン作動性	ko:세로토닌성	pt:serotoninérgico	ru:серотонинергический	tr:serotonerjik	ur:سیروٹونن والا	zh:血清素能
 c:serotonin	Noun	ar:سيروتونين	de:Serotonin	en:serotonin	es:serotonina	fa:سروتونین	fr:sérotonine	he:סרוטונין	hi:सेरोटोनिन	ja:セロトニン	ko:세로토닌	pt:serotonina	ru:серотонин	tr:serotonin	ur:سیروٹونن	zh:血清素
 c:serval	Noun	ar:سيرفال	de:Serval	en:serval	es:serval	fa:سروال	fr:serval	he:סרוול	hi:सर्वल	ja:サーバル	ko:서벌	pt:serval	ru:сервал	tr:serval	ur:سروال	zh:薮猫
 c:servant	Noun	ar:خادم	de:Diener,Dienerin	en:servant	es:sirviente,criado	fa:خدمتکار	fr:serviteur,domestique	he:משרת	hi:नौकर,सेवक	ja:使用人,召使い	ko:하인,종	pt:servo,criado	ru:слуга	tr:hizmetçi,uşak	ur:نوکر,خادم	zh:仆人,侍者
@@ -4595,6 +4631,7 @@ c:symbiosis	Noun	ar:التكافل	de:Symbiose	en:symbiosis	es:simbiosis	fa:هم
 c:symbolic-interactionism	Noun	ar:التفاعلية الرمزية	de:Symbolischer Interaktionismus	en:symbolic interactionism	es:interaccionismo simbólico	fa:کنش متقابل نمادین	fr:interactionnisme symbolique	he:אינטראקציוניזם סמלי	hi:सांकेतिक अन्तःक्रियावाद	ja:象徴的相互作用論	ko:상징적 상호작용론	pt:interacionismo simbólico	ru:символический интеракционизм	tr:sembolik etkileşimcilik	ur:علامتی تعامل	zh:符号互动论
 c:symbolism	Noun	ar:رمزية	de:Symbolismus,Symbolik	en:symbolism	es:simbolismo	fa:نمادگرایی	fr:symbolisme	he:סמליות,סימבוליזם	hi:प्रतीकवाद	ja:象徴主義	ko:상징주의,상징성	pt:simbolismo	ru:символизм	tr:sembolizm	ur:علامت نگاری	zh:象征主义
 c:symmetry	Noun	ar:تماثل,تناظر	de:Symmetrie	en:symmetry	es:simetría	fa:تقارن	fr:symétrie	he:סימטריה	hi:सममिति	ja:対称,対称性	ko:대칭,대칭성	pt:simetria	ru:симметрия	tr:simetri	ur:تناسب,تماثل	zh:对称,对称性
+c:sympathetic	Adjective	ar:الجهاز العصبي الودي	de:sympathisch	en:sympathetic nervous system	es:simpático	fa:دستگاه عصبی سمپاتیک	fr:système sympathique	he:סימפטתי	hi:सहानुकंपी	ja:交感神経	ko:교감신경	pt:sistema simpático	ru:симпатическая нервная система	tr:sempatik sinir sistemi	ur:ہمدردی اعصابی نظام	zh:交感神经系统
 c:sympathy	Noun	ar:تعاطف	de:Sympathie	en:sympathy	es:simpatía	fa:همدردی	fr:sympathie	he:אהדה	hi:सहानुभूति	ja:共感	ko:동정	pt:simpatia	ru:симпатия	tr:sempati	ur:ہمدردی	zh:同情心
 c:symphony	Noun	ar:سيمفونية	de:Sinfonie,Symphonie	en:symphony	es:sinfonía	fa:سمفونی	fr:symphonie	he:סימפוניה	hi:सिम्फनी	ja:交響曲	ko:교향곡	pt:sinfonia	ru:симфония	tr:senfoni	ur:سمفنی	zh:交响曲,交响乐
 c:symptom	Noun	ar:عرض	de:Symptom	en:symptom	es:síntoma	fa:علامت,نشانه	fr:symptôme	he:תסמין	hi:लक्षण	ja:症状	ko:증상	pt:sintoma	ru:симптом	tr:belirti,semptom	ur:علامت	zh:症状
@@ -4685,6 +4722,7 @@ c:temperature	Noun	ar:درجة الحرارة	de:Temperatur	en:temperature	es:te
 c:tempest	Noun	ar:زوبعة عاتية	de:Unwetter	en:tempest	es:tempestad	fa:طوفان سهمگین	fr:tempête	he:סערה	hi:प्रचंड तूफ़ान	ja:大嵐	ko:폭풍우	pt:tempestade	ru:буря	tr:bora	ur:زبردست طوفان	zh:暴风雨
 c:temple	Noun	ar:معبد,هيكل	de:Tempel	en:temple	es:templo	fa:معبد	fr:temple	he:מקדש	hi:मंदिर	ja:寺院	ko:사원,절	pt:templo	ru:храм	tr:tapınak	ur:مندر,معبد	zh:庙,寺
 c:tempo	Noun	ar:الإيقاع الزمني	de:Tempo	en:tempo	es:tempo	fa:تمپو	fr:tempo	he:קצב	hi:गति	ja:テンポ	ko:템포	pt:tempo	ru:темп	tr:tempo	ur:رفتار	zh:速度
+c:temporal-lobe	Noun	ar:الفص الصدغي	de:Temporallappen	en:temporal lobe	es:lóbulo temporal	fa:لوب گیجگاهی	fr:lobe temporal	he:האונה הרקתית	hi:कनपटी पालि	ja:側頭葉	ko:측두엽	pt:lobo temporal	ru:височная доля	tr:temporal lob	ur:عارضی لوب	zh:颞叶
 c:ten	Noun	ar:عشرة	de:zehn	en:ten	es:diez	fa:ده	fr:dix	he:עשרה	hi:दस	ja:十,じゅう	ko:열,십	pt:dez	ru:десять	tr:on	ur:دس	zh:十
 c:tench	Noun	ar:سمك التنش,تنش	de:Schleie	en:tench	es:tenca	fa:تنچ	fr:tanche	he:טנש	hi:टेंच	ja:テンチ	ko:잉어류	pt:tenca	ru:линь	tr:kadife balığı	ur:ٹنچ	zh:丁鲔
 c:tenderness	Noun	ar:حنان	de:Zärtlichkeit	en:tenderness	es:ternura	fa:مهربانی	fr:tendresse	he:רוך	hi:कोमलता	ja:優しさ	ko:부드러움	pt:ternura	ru:нежность	tr:şefkat	ur:نرمی	zh:温柔
@@ -4708,6 +4746,7 @@ c:test	Noun	ar:اختبار,فحص	de:Test	en:test	es:prueba,test	fa:آزمون,
 c:testimony	Noun	ar:شهادة	de:Zeugnis,Aussage	en:testimony	es:testimonio	fa:شهادت,گواهی	fr:témoignage	he:עדות	hi:गवाही,साक्ष्य	ja:証言	ko:증언	pt:testemunho	ru:показание,свидетельство	tr:tanıklık,ifade	ur:گواہی,شہادت	zh:证词,证言
 c:textbook	Noun	ar:كتاب مدرسي	de:Lehrbuch,Schulbuch	en:textbook	es:libro de texto	fa:کتاب درسی	fr:manuel	he:ספר לימוד	hi:पाठ्यपुस्तक	ja:教科書	ko:교과서	pt:livro didático,manual	ru:учебник	tr:ders kitabı	ur:نصابی کتاب,درسی کتاب	zh:教科书,课本
 c:thailand	Noun	ar:تايلاند	de:Thailand	en:Thailand	es:Tailandia	fa:تایلند	fr:Thaïlande	he:תאילנד	hi:थाईलैंड	ja:タイ	ko:태국	pt:Tailândia	ru:Таиланд	tr:Tayland	ur:تھائی لینڈ	zh:泰国
+c:thalamus	Noun	ar:المهاد	de:Thalamus	en:thalamus	es:tálamo	fa:تالاموس	fr:thalamus	he:תלמוס	hi:थैलेमस	ja:視床	ko:시상	pt:tálamo	ru:таламус	tr:talamus	ur:تھیلامس	zh:丘脑
 c:thames	Noun	ar:التايمز,نهر التايمز	de:Themse	en:Thames,River Thames	es:Támesis,río Támesis	fa:تیمز,رود تیمز	fr:Tamise	he:התמזה,נהר התמזה	hi:टेम्स नदी,टेम्स	ja:テムズ川	ko:템스강	pt:Tâmisa,rio Tâmisa	ru:Темза	tr:Thames,Thames Nehri	ur:دریائے ٹیمز	zh:泰晤士河
 c:thank	Verb	ar:شكر	de:danken	en:thank	es:agradecer	fa:تشکر کردن	fr:remercier	he:להודות	hi:धन्यवाद देना,आभार व्यक्त करना	ja:感謝する	ko:감사하다	pt:agradecer	ru:благодарить	tr:teşekkür etmek	ur:شکریہ ادا کرنا,شکر کرنا	zh:感谢,谢
 c:thanksgiving	Noun	ar:عيد الشكر	de:Erntedankfest,Thanksgiving	en:thanksgiving	es:día de acción de gracias	fa:روز شکرگزاری	fr:action de grâce,thanksgiving	he:חג ההודיה	hi:थैंक्सगिविंग,धन्यवाद दिवस	ja:感謝祭	ko:추수감사절	pt:ação de graças	ru:день благодарения	tr:şükran günü	ur:یوم تشکر,تھینکس گیونگ	zh:感恩节
@@ -5190,6 +5229,7 @@ c:word	Noun	ar:كلمة	de:Wort	en:word,words	es:palabra	fa:کلمه,واژه	fr
 c:work	Verb	ar:عمل,يعمل	de:arbeiten	en:work,works,worked	es:trabajar	fa:کار کردن	fr:travailler	he:לעבוד	hi:काम करना	ja:働く	ko:일하다	pt:trabalhar	ru:работать	tr:çalışmak	ur:کام کرنا	zh:工作
 c:worker	Noun	ar:عامل	de:Arbeiter,Arbeiterin	en:worker,laborer	es:trabajador,obrero	fa:کارگر	fr:travailleur,ouvrier	he:עובד,פועל	hi:मज़दूर,कामगार	ja:労働者	ko:노동자	pt:trabalhador,operário	ru:рабочий,работник	tr:işçi	ur:مزدور,کارکن	zh:工人,劳动者
 c:worker-bee	Noun	ar:نحلة عاملة	de:Arbeitsbiene	en:worker bee	es:abeja obrera	fa:زنبور کارگر	fr:abeille ouvrière	he:דבורת עובדת	hi:श्रमिक मधुमक्खी	ja:働き蜂	ko:일벌	pt:abelha operária	ru:рабочая пчела	tr:işçi arı	ur:کارکن مکھی	zh:工蜂
+c:working-memory	Noun	ar:الذاكرة العاملة	de:Arbeitsgedächtnis	en:working memory	es:memoria de trabajo	fa:حافظه کاری	fr:mémoire de travail	he:זיכרון עבודה	hi:कार्यशील स्मृति	ja:ワーキングメモリ	ko:작업 기억	pt:memória de trabalho	ru:рабочая память	tr:çalışma belleği	ur:کام کی یاداشت	zh:工作记忆
 c:workshop	Noun	ar:ورشة,محترف	de:Werkstatt	en:workshop	es:taller	fa:کارگاه	fr:atelier	he:סדנה	hi:कार्यशाला,वर्कशॉप	ja:工房,作業場	ko:공방,작업장	pt:oficina	ru:мастерская	tr:atölye,işlik	ur:کارگاہ,ورکشاپ	zh:工坊,作坊
 c:world	Noun	ar:عالم,دنيا	de:Welt	en:world	es:mundo	fa:جهان,دنیا	fr:monde	he:עולם	hi:दुनिया,विश्व	ja:世界	ko:세계	pt:mundo	ru:мир	tr:dünya	ur:دنیا	zh:世界
 c:worldview	Noun	ar:نظرة العالم,رؤية كونية	de:Weltanschauung,Weltbild	en:worldview	es:cosmovisión,visión del mundo	fa:جهان بینی	fr:vision du monde	he:השקפת עולם	hi:विश्वदृष्टि	ja:世界観	ko:세계관	pt:cosmovisão,visão de mundo	ru:мировоззрение	tr:dünya görüşü	ur:عالمی نظریہ,نظریہ حیات	zh:世界观
