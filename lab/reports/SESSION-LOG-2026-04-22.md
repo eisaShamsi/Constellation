@@ -199,3 +199,58 @@ Two scripts written to add missing translation keys:
 - Write-Time Derivation: Sight dashboard (Louvain + health computed on each toggleLens() call)
 - Write-Time Derivation: sidebar star counts audit
 - navTrace instrumentation dev-gate
+
+---
+
+## § 54. Gate All Right-Sidebar Tabs on Panel Placement
+
+**Commit**: 75bfd4d  
+**Status**: ✅ Complete — pushed to origin/main
+
+### Problem
+Only the `backlinks` tab was gated on its `panelPlacements` setting. The other 9
+tabs (properties, tags, sky, tasks, calendar, health, provenance, review, links)
+always showed in the right sidebar tab bar regardless of whether those panels had
+been moved to a flank column or hidden via Settings → Panels.
+
+### Solution
+- Wrapped each `rs-tab` button in `{#if ($appSettings.panelPlacements?.ID ?? fallback) === 'right-sidebar'}`
+  — fallback defaults match DEFAULT_SETTINGS (left-of-note for backlinks,
+  right-of-note for outgoing, right-sidebar for everything else)
+- Added `type PanelId` to layout.svelte type imports
+- Expanded the safety `$effect` from single-panel check (backlinks only) to a full
+  10-panel map; if `rightSidebarTab` references a panel no longer in right-sidebar,
+  automatically switches to the first still-visible tab in priority order
+
+---
+
+## § 55. Write-Time Derivation Cache for Constellation Lens Analytics
+
+**Commit**: a19bc05  
+**Status**: ✅ Complete — pushed to origin/main
+
+### Problem
+Every time the user toggled the Constellation Lens on, 9 expensive steps ran:
+Rust centrality IPC, Louvain community detection (JS), structural gap analysis,
+universe health scoring, stratum-weighted centrality, bridge list, community
+profiles, bridge suggestions, and contradiction detection. Turning the lens off
+and back on (even without any notes changing) triggered the full pipeline again.
+
+### Solution: WTD in-memory cache
+- Added `lensDataStale = $state(true)` flag
+- Added `$effect` watching `skyVersion`: when the sky graph rebuilds after a
+  successful computation (`lensHealth !== null`), marks `lensDataStale = true`
+- Modified `toggleLens()`:
+  - **Toggle OFF**: keeps all computed data in memory (just hides overlay)
+  - **Toggle ON, data fresh**: instant activation — O(1), no IPC or computation
+  - **Toggle ON, data stale**: runs full 9-step pipeline, then clears stale flag
+    (with race guard: only clears if `skyVersion` hasn't changed during async work)
+- Result: Louvain + centrality runs at most once per graph change — every
+  subsequent open within the same graph state is instant
+
+### Still on the queue
+- Write-Time Derivation: Backlinks/Outgoing panels (recomputed on tab focus)
+- Write-Time Derivation: Tag browser (scanned on open)
+- Write-Time Derivation: Sight dashboard Sight2 component
+- Tier 2: drag-and-drop panel rearrangement (slot highlighting + drop zones)
+- navTrace instrumentation dev-gate

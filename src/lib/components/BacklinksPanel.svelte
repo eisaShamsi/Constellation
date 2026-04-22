@@ -13,8 +13,22 @@
 	const LINK_TYPE_TEXT   = $derived($appSettings.linkPills?.text ?? {});
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
+	/** Format ISO-8601 last_traversed to a short relative label for the tooltip. */
+	function fmtTraversed(iso: string): string {
+		if (!iso) return '';
+		const d = new Date(iso);
+		if (isNaN(d.getTime())) return '';
+		const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+		if (days === 0) return 'today';
+		if (days === 1) return 'yesterday';
+		if (days < 7) return `${days}d ago`;
+		if (days < 30) return `${Math.floor(days / 7)}w ago`;
+		if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+		return `${Math.floor(days / 365)}y ago`;
+	}
+
 	let {
-		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string; confidence?: LinkConfidence; annotation?: string }[],
+		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; lastTraversed?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[],
 		unlinkedMentions = [] as { name: string; path: string; context: string; libraryName: string }[],
 		activeNoteName = '',
 		activeNotePath = '',
@@ -22,7 +36,7 @@
 		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
 		onArchive = undefined as undefined | ((sourcePath: string, targetName: string) => void),
 	}: {
-		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; tier?: string; confidence?: LinkConfidence; annotation?: string }[];
+		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; lastTraversed?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[];
 		unlinkedMentions: { name: string; path: string; context: string; libraryName: string }[];
 		activeNoteName?: string;
 		activeNotePath?: string;
@@ -130,7 +144,9 @@
 							>{$t(`linkTypes.${bl.linkType}`) || bl.linkType}</span>
 						{/if}
 						{#if (bl.traversalCount ?? 0) > 0}
-							<span class="bl-traversal-chip bl-tier-{bl.tier ?? 'emerging'}" title={`Traversed ${bl.traversalCount} time${bl.traversalCount === 1 ? '' : 's'} · ${bl.tier ?? 'emerging'}`}>×{bl.traversalCount}</span>
+							{@const ltLabel = fmtTraversed(bl.lastTraversed ?? '')}
+							<span class="bl-traversal-chip bl-tier-{bl.tier ?? 'emerging'}"
+								title={`Traversed ${bl.traversalCount} time${bl.traversalCount === 1 ? '' : 's'} · ${bl.tier ?? 'emerging'}${ltLabel ? ' · Last: ' + ltLabel : ''}`}>×{bl.traversalCount}</span>
 						{/if}
 						{#if bl.libraryName}
 							<span class="bl-library-label">{bl.libraryName}</span>

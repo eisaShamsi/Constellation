@@ -24,10 +24,13 @@ LAYER 2 — Living Link Architecture (reads Layer 1, no AI)
 
   P0: Dual-layer storage       ✅  LINK files on disk + note_links SQLite index
   P1: 7 cognitive operators    ✅  in SearchHub + Sky View, all 15 locales
-  P2: Traversal tracking       🔲  increment count + last_traversed on link click
-  P3: Weight + lifecycle       🔲  log-growth on use, 5%/month decay, 6 stages
-  P4: Formulation queries      🔲  strongest chains, contested clusters, untraversed
-  P5: Knowledge Health         🔲  single-screen diagnostic dashboard
+  P2: Traversal tracking       ✅  constellation_link_traverse Rust cmd; log-weight update + confidence auto-promote on click
+  P2: Confidence levels        ✅  4 levels (hypothesis → evidence → established → contested); displayed + searchable
+  P3: Weight + lifecycle       ✅  1+ln(1+n) growth; 5%/month decay in effectiveLinkWeight; 6 stages (getLinkStage)
+  P3: Lifecycle display        ✅  tier chips (×N) in Backlinks + Outgoing panels, color-coded by stage
+  P4: Formulation queries      ✅  constellation_formulation_analysis: emerging, bias_check, most_connected, weak_foundations
+  P4: Formulation dashboard    ✅  KnowledgeHealthDashboard.svelte — accessible from dock ribbon
+  P5: Knowledge Health panel   ✅  link_stats + lifecycle + formulation insights; full-screen view
 
 LAYER 3 — AI Discovery (reads Layer 1 + 2 structures)
 

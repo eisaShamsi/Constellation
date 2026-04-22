@@ -9,15 +9,29 @@
 	const LINK_TYPE_TEXT   = $derived($appSettings.linkPills?.text ?? {});
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
+	/** Format ISO-8601 last_traversed to a short relative label for the tooltip. */
+	function fmtTraversed(iso: string): string {
+		if (!iso) return '';
+		const d = new Date(iso);
+		if (isNaN(d.getTime())) return '';
+		const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+		if (days === 0) return 'today';
+		if (days === 1) return 'yesterday';
+		if (days < 7) return `${days}d ago`;
+		if (days < 30) return `${Math.floor(days / 7)}w ago`;
+		if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+		return `${Math.floor(days / 365)}y ago`;
+	}
+
 	let {
-		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[],
+		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; lastTraversed?: string; linkType?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[],
 		activeNotePath = '',
 		libraryPath = '',
 		libraryColorMap = {} as Record<string, string>,
 		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
 		onArchive = undefined as undefined | ((sourcePath: string, targetName: string) => void),
 	}: {
-		outgoingLinks: { target: string; context: string; traversalCount?: number; linkType?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[];
+		outgoingLinks: { target: string; context: string; traversalCount?: number; lastTraversed?: string; linkType?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[];
 		activeNotePath?: string;
 		libraryPath?: string;
 		libraryColorMap?: Record<string, string>;
@@ -93,7 +107,9 @@
 						>{$t(`linkTypes.${link.linkType}`) || link.linkType}</span>
 					{/if}
 					{#if (link.traversalCount ?? 0) > 0}
-						<span class="ol-traversal-chip ol-tier-{link.tier ?? 'emerging'}" title={`Traversed ${link.traversalCount} time${link.traversalCount === 1 ? '' : 's'} · ${link.tier ?? 'emerging'}`}>×{link.traversalCount}</span>
+						{@const ltLabel = fmtTraversed(link.lastTraversed ?? '')}
+						<span class="ol-traversal-chip ol-tier-{link.tier ?? 'emerging'}"
+							title={`Traversed ${link.traversalCount} time${link.traversalCount === 1 ? '' : 's'} · ${link.tier ?? 'emerging'}${ltLabel ? ' · Last: ' + ltLabel : ''}`}>×{link.traversalCount}</span>
 					{/if}
 				</span>
 				<span class="ol-context">{link.context}</span>

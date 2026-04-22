@@ -1763,6 +1763,8 @@ export function getBacklinks(allLinks: NoteLink[], noteName: string, decay?: Lin
 		libraryName: l.library_name,
 		linkType: displayLinkType(l),
 		traversalCount: l.traversal_count ?? 0,
+		/** ISO-8601 timestamp of last traversal — empty string if never traversed. */
+		lastTraversed: l.last_traversed ?? '',
 		// P5 slice 3: precompute the lifecycle tier here so panels don't
 		// need to import / re-derive on every row render.
 		tier: linkLifecycle(l, nowMs) as LinkLifecycle,
@@ -1785,6 +1787,8 @@ export function getOutgoingLinks(allLinks: NoteLink[], notePath: string, decay?:
 		context: l.context,
 		linkType: displayLinkType(l),
 		traversalCount: l.traversal_count ?? 0,
+		/** ISO-8601 timestamp of last traversal — empty string if never traversed. */
+		lastTraversed: l.last_traversed ?? '',
 		tier: linkLifecycle(l, nowMs) as LinkLifecycle,
 		confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
 		annotation: l.annotation ?? '',
