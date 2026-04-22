@@ -392,6 +392,19 @@ New layout in `src/routes/+layout.svelte`:
   split mode (flanks are inside the non-split branch of
   `{#if $splitActive}`).
 
+Sky View "inspect mode" gate:
+- New state `skyViewInspectMode` controls when flanks render.
+- Set TRUE when `handleSkyNodeClick` fires (user clicked an SV
+  node). Preserved across wikilink navigation — exploring the
+  ego-network from an SV-opened note keeps the flanks visible.
+- Cleared only by the user dismissing the "Return to Sky View"
+  pill (× button next to it). That returns the editor to its
+  regular non-flanked state for ordinary note reading.
+- Default OFF, so users opening notes via the tree / quick-
+  switcher / wikilinks see the plain editor. This matches the
+  user's mental model: flanks = "SV companion view", not a
+  permanent editor redesign.
+
 New "Return to Sky View" pill in the tab-action bar:
 - Visible whenever an active note has a path, Sky View feature is
   enabled, and Sky View isn't already open.

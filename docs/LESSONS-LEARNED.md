@@ -454,6 +454,58 @@ start there.
 
 ---
 
-*Last updated: 2026-04-19 (Criterion 2 closed @ `8a74949`, hydrated_ms = 811; LL-022
-lazy-mount follow-up landed same session)*
-*For: Constellation — Boot Criterion 2 investigation (closed) + Rule 8 follow-up*
+## LL-023: Don't Regress Working Features When Adding New Ones
+
+**The rule.** Before shipping any gate, guard, conditional, or refactor around
+existing behavior, verify the **baseline path** still executes end-to-end.
+"Does X still render?" is not enough — also ask "does X still function?"
+Every feature that works today is a hard-won win paid for in a previous
+iteration. Losing one costs the time of that iteration all over again.
+
+**The failure mode.** You add a clean new system (placement layer, routing
+layer, permission layer, feature flag) that guards an existing surface. You
+check the obvious surface: "The button is still visible." You don't check
+the invisible machinery around it. An auto-reset `$effect`, a CSS override,
+an upstream state derivation, a selector that filters by a property your
+new guard doesn't know about — any of these can sit one level below your
+audit and silently steal the click, swallow the event, or reset the state.
+The user reports regression; you debug your own footprint; the time you
+saved by "just adding the guard" is now gone, plus some.
+
+**The case that earned this.** Tier 1 panel placement (2026-04-22). Adding
+`panelPlacements` to the right-sidebar tabs introduced visibility guards on
+the tab buttons **and** a safety `$effect` that reset `rightSidebarTab`
+when the current tab's panel was placed outside `'right-sidebar'`. The
+default placement for backlinks was `'left-of-note'`, so the safety effect
+evaluated the Backlinks tab as "not visible," and any user click on the
+Backlinks tab was silently reset to Properties one tick later. The tab
+looked fine and the content path rendered correctly; the **click itself
+was being stolen**. Cost: one debugging round after the user caught it.
+
+**The verification protocol.** After any refactor that adds conditional
+logic around an existing surface, run through this mental checklist:
+
+1. **Render path** — does the surface still appear in the DOM?
+2. **Event path** — does a click / keypress / focus still reach the intended
+   handler, and does the handler still do what it used to do?
+3. **State path** — does the state change from the event persist, or does
+   something downstream revert it? Check `$effect`s, derived stores,
+   observers.
+4. **Data path** — is the content still populated with the right data, or
+   is a filter / selector silently excluding it?
+
+The cost of this checklist is seconds. The cost of skipping it is the time
+of the iteration that built the feature you just broke.
+
+**Rule extension (for `$effect` audits).** Any `$effect` that can **overwrite
+user intent** (auto-close, auto-reset, auto-navigate) is high-risk and must
+be re-read end-to-end whenever a new branch is added to the system it
+monitors. A reset effect with a single stale entry in its visibility map is
+exactly enough to undo a new feature.
+
+---
+
+*Last updated: 2026-04-22 (LL-023 added after Tier 1 panel-placement
+regression on the Backlinks tab)*
+*For: Constellation — Boot Criterion 2 investigation (closed) + Rule 8
+follow-up + Tier 1 panel-placement shipped*

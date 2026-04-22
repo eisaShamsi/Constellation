@@ -292,6 +292,55 @@ and back on (even without any notes changing) triggered the full pipeline again.
   of flanking column resize/collapse behavior, sidebar tab gating, workspaces
 - ToC entry added for §15b
 
+## § 58. Sky View Inspect Mode: Sidebar Hard-Gate + Tab Nudge
+
+**Status**: ✅ Done
+
+Follow-up to the Tier 1 flanks rollout. After shipping, the user saw the
+left sidebar still expanded while a Sky View node was being inspected —
+flanks and sidebar coexisting crammed the editor. Also, the note title
+tab was flush against the flank edge instead of centered with the editor
+column.
+
+### Changes (`src/routes/+layout.svelte`)
+
+- **Hard render-gate on left sidebar**: `{#if sidebarOpen && !skyViewInspectMode}`.
+  Regardless of state, the aside does not mount in inspect mode. Exit via
+  "× Return to Sky View" still restores the snapshot.
+- **Hard collapse on right sidebar**: `class:collapsed={!rightSidebarOpen || skyViewInspectMode}`
+  + width forced to `undefined` in inspect mode. Same snapshot/restore.
+- **Toggle buttons disabled in inspect mode**: both left (`◧`) and right
+  (`◨`) layout-bar toggles add `|| skyViewInspectMode` to their `disabled`
+  attr (mirrors the existing split-view button pattern). Tooltip switches
+  to "Disabled while inspecting a Sky View note".
+- **Command-palette shortcuts gated**: `toggle-left` / `toggle-right`
+  actions now check `!fullPageActive && !skyViewInspectMode` before
+  flipping state.
+- **Workspace `onRestore` gated**: If a workspace load fires while in
+  inspect mode, `sidebarOpen` and `rightSidebarOpen` are forced to
+  `false` regardless of the saved layout. Snapshot still holds the saved
+  state for post-exit restore.
+- **Tab-bar nudge**: `.tab-bar.tab-bar-flanked-start` padding bumped from
+  `calc(32px + 280px)` to `calc(32px + 280px + 5px)` so the note title
+  tab aligns with the center editor column (the asymmetric gap the user
+  saw).
+
+### Why layered gates
+
+One gate caught the click path but not the render path. One gate caught
+the render path but not the workspace-load path. The user's regression
+screenshot showed both failures live. LL-023 verification protocol
+applied: audited render path, event path, state path, data path — each
+needed its own guard. Four layers now, all trivial, covers every route
+a stale `sidebarOpen = true` could take.
+
+### Verified
+- SV → click node → left sidebar hidden, right sidebar collapsed, both
+  toggles grayed, split-view button grayed, tab title shifted 5px right.
+- Dismiss "× Return to Sky View" → sidebars restored to pre-inspect state.
+- Workspace load while inspecting → sidebars stay hidden.
+- Cmd-palette toggle-left / toggle-right → no-ops while inspecting.
+
 ## Session Summary — 2026-04-22
 
 ### Total changes this session
@@ -304,6 +353,7 @@ and back on (even without any notes changing) triggered the full pipeline again.
 | §55 | a19bc05 | WTD cache for Constellation Lens analytics (instant re-open) |
 | §56 | 89fa974 | Living Link: lastTraversed in panel tooltips + roadmap update |
 | SO57 | 48638fa | Help page + User Manual for Panel Placement System |
+| §58 | (this)  | SV inspect mode: hard-gate sidebars + 5px tab nudge |
 
 ### Key improvements
 1. **Zero type errors**: All 55 pre-existing TypeScript errors cleared

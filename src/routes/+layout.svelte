@@ -499,6 +499,33 @@
 	let orgChartReturnPending = $state(false); // show "Return to OrgChart" button on note tab
 	let lensReturnPending = $state(false);
 	let skyViewReturnPending = $state(false);
+
+	// "Note as organism" — flanking Backlinks/Outgoing panels only render
+	// when the user arrived at the note by clicking a Sky-View node. This
+	// is the "inspect mode" — SV → node → note-with-flanks → maybe return
+	// to SV. Clicking Sky-View nodes sets it; explicit dismiss clears it.
+	// A user who just opens a note via tree / quick-switcher / wikilink
+	// sees the regular editor without flanks.
+	let skyViewInspectMode = $state(false);
+	// Snapshot the user's sidebar open state when entering inspect mode so
+	// the original layout is restored cleanly when they dismiss it.
+	let sidebarBeforeSkyInspect = false;
+	let rightSidebarBeforeSkyInspect = false;
+
+	// Flank-side predicates for the tab-bar alignment in inspect mode.
+	// Derived so changes to panelPlacements or inspect-mode flip immediately.
+	const tabBarFlankLeft  = $derived(
+		skyViewInspectMode && (
+			$appSettings.panelPlacements?.backlinks === 'left-of-note' ||
+			$appSettings.panelPlacements?.outgoing === 'left-of-note'
+		)
+	);
+	const tabBarFlankRight = $derived(
+		skyViewInspectMode && (
+			$appSettings.panelPlacements?.backlinks === 'right-of-note' ||
+			$appSettings.panelPlacements?.outgoing === 'right-of-note'
+		)
+	);
 	let mapColorMode = $state<'maturity' | 'stratum' | 'library'>('maturity');
 	let mapFocusNode = $state<any>(null); // current MapNode being viewed
 	// Sticky lazy-mount flags — stay true after first open so drill-down state survives
@@ -1132,7 +1159,11 @@
 
 		const tabVisible: Record<string, boolean> = {
 			properties: inSidebar('properties'),
-			backlinks:  inSidebar('backlinks') || inSidebar('outgoing'),
+			// Backlinks tab is unconditionally rendered in the sidebar as an
+			// alternative access path to the backlinks/outgoing panels, even
+			// when they're placed in the flanking slots. Force visible so the
+			// safety reset below doesn't steal the user's click.
+			backlinks:  true,
 			tags:       inSidebar('tags'),
 			star:       inSidebar('sky'),
 			tasks:      inSidebar('tasks'),
@@ -1525,8 +1556,8 @@
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
 			{ id: 'split-view', name: $t('commands.splitView'), shortcut: sc('split-view'), icon: '⊞', action: cycleSplit, category: 'View' },
 			{ id: 'close-note', name: $t('commands.closeNote'), shortcut: sc('close-note'), icon: '✕', action: closeNote, category: 'File' },
-			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: sc('toggle-left'), icon: '◧', action: () => { if (!fullPageActive) sidebarOpen = !sidebarOpen; }, category: 'View' },
-			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: sc('toggle-right'), icon: '◨', action: () => { if (!fullPageActive) rightSidebarOpen = !rightSidebarOpen; }, category: 'View' },
+			{ id: 'toggle-left', name: $t('commands.toggleLeftSidebar'), shortcut: sc('toggle-left'), icon: '◧', action: () => { if (!fullPageActive && !skyViewInspectMode) sidebarOpen = !sidebarOpen; }, category: 'View' },
+			{ id: 'toggle-right', name: $t('commands.toggleRightSidebar'), shortcut: sc('toggle-right'), icon: '◨', action: () => { if (!fullPageActive && !skyViewInspectMode) rightSidebarOpen = !rightSidebarOpen; }, category: 'View' },
 			{ id: 'add-library', name: $t('commands.addLibrary'), shortcut: sc('add-library'), icon: '📁', action: handleAddLibrary, category: 'Library' },
 			{ id: 'new-library', name: $t('commands.newLibrary'), icon: '📚', action: handleNewLibrary, category: 'Library' },
 			{ id: 'toggle-bookmark', name: $t('commands.toggleBookmark'), shortcut: sc('toggle-bookmark'), icon: '⭐', action: handleToggleBookmark, category: 'Bookmarks' },
@@ -3254,6 +3285,17 @@
 		const fromPath = $activeTab?.path && $activeTab.path !== path ? $activeTab.path : undefined;
 		await openNoteTab(path, libraryName, color, highlightTerm, false, fromPath);
 		showSkyView = false;
+		// Entering inspect mode: snapshot sidebar state, then close both so
+		// the flanking Backlinks/Outgoing panels are the only auxiliary view.
+		// Idempotent — re-entering from another SV click doesn't overwrite
+		// the original snapshot.
+		if (!skyViewInspectMode) {
+			sidebarBeforeSkyInspect = sidebarOpen;
+			rightSidebarBeforeSkyInspect = rightSidebarOpen;
+		}
+		sidebarOpen = false;
+		rightSidebarOpen = false;
+		skyViewInspectMode = true;
 		if (highlightTerm) skyViewReturnPending = true;
 	}
 
@@ -3833,7 +3875,10 @@
 	</div>
 
 	<!-- ═══ LEFT SIDEBAR ═══ -->
-	{#if sidebarOpen}
+	<!-- Hard gate on skyViewInspectMode: regardless of sidebarOpen, the left
+	     sidebar must never render while inspecting a Sky View node. The exit
+	     path restores sidebarOpen from the snapshot. -->
+	{#if sidebarOpen && !skyViewInspectMode}
 		<aside class="sidebar" style:width="{leftSidebarWidth}px">
 			<div class="sidebar-toolbar">
 				<!-- Sidebar search removed — Search Hub is the single search experience -->
@@ -4150,24 +4195,30 @@
 		<!-- Tab Bar (unified with layout controls) -->
 		<!-- Layout bar: sidebar + split controls (disabled when full-page overlay active) -->
 		<div class="layout-bar">
-			<button class="tab-action" class:active={sidebarOpen} disabled={fullPageActive} onclick={() => sidebarOpen = !sidebarOpen} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : $t('layout.leftSidebar')}>
+			<button class="tab-action" class:active={sidebarOpen} disabled={fullPageActive || skyViewInspectMode} onclick={() => sidebarOpen = !sidebarOpen} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : (skyViewInspectMode ? $t('layout.disabledInSkyInspect') || 'Disabled while inspecting a Sky View note' : $t('layout.leftSidebar'))}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
 			<div style="flex:1"></div>
-			<button class="tab-action" class:active={$splitActive} disabled={fullPageActive} onclick={cycleSplit} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : $t('layout.splitView')}>
+			<button class="tab-action" class:active={$splitActive} disabled={fullPageActive || skyViewInspectMode} onclick={cycleSplit} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : (skyViewInspectMode ? $t('layout.disabledInSkyInspect') || 'Disabled while inspecting a Sky View note' : $t('layout.splitView'))}>
 				{#if $splitActive && $splitDirection === 'horizontal'}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/></svg>
 				{:else}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
 				{/if}
 			</button>
-			<button class="tab-action" class:active={rightSidebarOpen} disabled={fullPageActive} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : $t('layout.rightSidebar')}>
+			<button class="tab-action" class:active={rightSidebarOpen} disabled={fullPageActive || skyViewInspectMode} onclick={() => rightSidebarOpen = !rightSidebarOpen} title={fullPageActive ? $t('layout.disabledFullPage') || 'Disabled in full-page view' : (skyViewInspectMode ? $t('layout.disabledInSkyInspect') || 'Disabled while inspecting a Sky View note' : $t('layout.rightSidebar'))}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
 			</button>
 		</div>
 
-		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active) -->
-		<div class="tab-bar" class:tab-bar-hidden={fullPageActive}>
+		<!-- Tab bar (locked to paper, hidden when full-screen overlay is active).
+		     When SV inspect mode is active the pane-container below gets flanked
+		     by Backlinks/Outgoing columns; padding-inline here shifts the tab
+		     strip so it aligns with the center (editor) column instead of sitting
+		     flush against the screen edge. Padding respects per-side placement;
+		     uses logical CSS so RTL flips automatically.
+		     `tabBarFlankLeft` / `tabBarFlankRight` derived in the script above. -->
+		<div class="tab-bar" class:tab-bar-hidden={fullPageActive} class:tab-bar-flanked-start={tabBarFlankLeft} class:tab-bar-flanked-end={tabBarFlankRight}>
 			{#if indexReturnPending}
 				<button class="index-return-btn" onclick={() => { showIndex = true; indexReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -4203,14 +4254,23 @@
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('layout.skyViewTitle') || 'Sky View'}
 				</button>
-			{:else if $activeTab?.path && !showSkyView && !fullPageActive && ($appSettings.enabledFeatures?.skyView ?? true)}
-				<!-- Tier 1 "return to Sky View": always visible when a note is open so the user can
-				     jump back to the universe view with one click. Independent of skyViewReturnPending
-				     (which is set only when a note was opened via search highlight). -->
-				<button class="index-return-btn sv-return-pill" onclick={() => { showSkyView = true; }} title={$t('layout.skyViewTitle') || 'Sky View'}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-					{$t('layout.skyViewTitle') || 'Sky View'}
-				</button>
+			{:else if skyViewInspectMode && $activeTab?.path && !showSkyView && !fullPageActive && ($appSettings.enabledFeatures?.skyView ?? true)}
+				<!-- "Return to Sky View" pill — only visible while in SV inspect mode
+				     (user arrived at this note by clicking a Sky-View node). Pair of
+				     buttons: clicking the main body returns to SV, clicking × exits
+				     inspect mode entirely (flanks hide, pill disappears). -->
+				<span class="sv-pill-group">
+					<button class="index-return-btn sv-return-pill" onclick={() => { showSkyView = true; }} title={$t('layout.skyViewTitle') || 'Sky View'}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+						{$t('layout.skyViewTitle') || 'Sky View'}
+					</button>
+					<button class="sv-pill-dismiss" onclick={() => {
+						// Restore the sidebar layout the user had before entering inspect mode.
+						sidebarOpen = sidebarBeforeSkyInspect;
+						rightSidebarOpen = rightSidebarBeforeSkyInspect;
+						skyViewInspectMode = false;
+					}} title={$t('layout.exitSkyViewMode') || 'Exit Sky View inspect mode'}>×</button>
+				</span>
 			{/if}
 			{#if !$splitActive}
 				<div class="tab-scroll-wrap">
@@ -4680,10 +4740,13 @@
 								visual order so Backlinks stays on the reading-
 								start side.
 							-->
-							{@const backlinksOnLeft  = $appSettings.panelPlacements?.backlinks === 'left-of-note'}
-							{@const backlinksOnRight = $appSettings.panelPlacements?.backlinks === 'right-of-note'}
-							{@const outgoingOnLeft   = $appSettings.panelPlacements?.outgoing === 'left-of-note'}
-							{@const outgoingOnRight  = $appSettings.panelPlacements?.outgoing === 'right-of-note'}
+							<!-- Flanks only render in SV "inspect mode" — when the user arrived
+							     by clicking a Sky-View node. Regular navigation shows the plain
+							     editor. See skyViewInspectMode declaration for lifecycle. -->
+							{@const backlinksOnLeft  = skyViewInspectMode && $appSettings.panelPlacements?.backlinks === 'left-of-note'}
+							{@const backlinksOnRight = skyViewInspectMode && $appSettings.panelPlacements?.backlinks === 'right-of-note'}
+							{@const outgoingOnLeft   = skyViewInspectMode && $appSettings.panelPlacements?.outgoing === 'left-of-note'}
+							{@const outgoingOnRight  = skyViewInspectMode && $appSettings.panelPlacements?.outgoing === 'right-of-note'}
 							<div class="editor-with-flanks" class:flank-resizing={flankResizing !== null} dir={$dir}>
 								{#if backlinksOnLeft || outgoingOnLeft}
 									<div class="flank flank-start"
@@ -4958,7 +5021,8 @@
 	</div>
 
 	<!-- ═══ RIGHT SIDEBAR ═══ -->
-	<aside class="right-sidebar" class:collapsed={!rightSidebarOpen} style:width={rightSidebarOpen ? rightSidebarWidth + 'px' : undefined}>
+	<!-- Hard gate on skyViewInspectMode: forced collapsed while inspecting. -->
+	<aside class="right-sidebar" class:collapsed={!rightSidebarOpen || skyViewInspectMode} style:width={(rightSidebarOpen && !skyViewInspectMode) ? rightSidebarWidth + 'px' : undefined}>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="rs-resize" onmousedown={(e) => startResize('right', e)}></div>
 		<div class="rs-inner" dir={noteDir}>
@@ -4973,11 +5037,13 @@
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
 					</button>
 				{/if}
-				{#if ($appSettings.panelPlacements?.backlinks ?? 'left-of-note') === 'right-sidebar' || ($appSettings.panelPlacements?.outgoing ?? 'right-of-note') === 'right-sidebar'}
-					<button class="rs-tab" class:active={rightSidebarTab === 'backlinks'} onclick={() => rightSidebarTab = 'backlinks'} title={$t('panels.backlinks')}>
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-					</button>
-				{/if}
+				<!-- Backlinks tab always present in the right sidebar regardless of panelPlacements.
+				     Placement controls whether the flanks render next to the editor; the sidebar
+				     tab is an alternative access path that stays available for regular navigation
+				     (not just in SV inspect mode). -->
+				<button class="rs-tab" class:active={rightSidebarTab === 'backlinks'} onclick={() => rightSidebarTab = 'backlinks'} title={$t('panels.backlinks')}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+				</button>
 				{#if ($appSettings.panelPlacements?.tags ?? 'right-sidebar') === 'right-sidebar'}
 					<button class="rs-tab" class:active={rightSidebarTab === 'tags'} onclick={() => rightSidebarTab = 'tags'} title={$t('panels.tags')}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -5073,35 +5139,33 @@
 						{/if}
 					</div>
 				{:else if rightSidebarTab === 'backlinks'}
-					<!-- Only render the panel whose placement is actually 'right-sidebar'.
-					     The other one is mounted in a flanking column. -->
-					{#if $appSettings.panelPlacements?.backlinks === 'right-sidebar'}
-						<div class="rs-section rs-section--flush">
-							<div class="rs-header">{$t('panels.backlinksHeader')}</div>
-							<BacklinksPanel
-								backlinks={currentBacklinks}
-								unlinkedMentions={currentUnlinkedMentions}
-								activeNoteName={sidebarTab?.name ?? ''}
-								activeNotePath={sidebarTab?.path ?? ''}
-								{libraryColorMap}
-								onConfidenceChange={applyConfidenceLocally}
-								onArchive={applyArchiveLocally}
-							/>
-						</div>
-					{/if}
-					{#if $appSettings.panelPlacements?.outgoing === 'right-sidebar'}
-						<div class="rs-section rs-section--flush">
-							<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
-							<OutgoingLinksPanel
-								outgoingLinks={currentOutgoing}
-								activeNotePath={sidebarTab?.path ?? ''}
-								libraryPath={sidebarTab?.libraryPath ?? ''}
-								{libraryColorMap}
-								onConfidenceChange={applyConfidenceLocally}
-								onArchive={applyArchiveLocally}
-							/>
-						</div>
-					{/if}
+					<!-- Always render both panels in the sidebar tab — it's an alternative
+					     access point for when the user isn't in SV inspect mode (and the
+					     flanking columns are therefore hidden). Having both here means
+					     the sidebar tab is functionally complete on its own. -->
+					<div class="rs-section rs-section--flush">
+						<div class="rs-header">{$t('panels.backlinksHeader')}</div>
+						<BacklinksPanel
+							backlinks={currentBacklinks}
+							unlinkedMentions={currentUnlinkedMentions}
+							activeNoteName={sidebarTab?.name ?? ''}
+							activeNotePath={sidebarTab?.path ?? ''}
+							{libraryColorMap}
+							onConfidenceChange={applyConfidenceLocally}
+							onArchive={applyArchiveLocally}
+						/>
+					</div>
+					<div class="rs-section rs-section--flush">
+						<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
+						<OutgoingLinksPanel
+							outgoingLinks={currentOutgoing}
+							activeNotePath={sidebarTab?.path ?? ''}
+							libraryPath={sidebarTab?.libraryPath ?? ''}
+							{libraryColorMap}
+							onConfidenceChange={applyConfidenceLocally}
+							onArchive={applyArchiveLocally}
+						/>
+					</div>
 				{:else if rightSidebarTab === 'tags'}
 					<!-- Tags for the active note -->
 					<div class="rs-section">
@@ -5337,9 +5401,12 @@
 			}}
 			onRestore={async (layout, screen) => {
 				if (layout) {
-					sidebarOpen = layout.leftSidebarOpen;
+					// In SV inspect mode the sidebars must stay hidden; workspace
+					// restore would otherwise re-expand them and break the flanked
+					// note layout. Snapshot is kept so exit still restores state.
+					sidebarOpen = skyViewInspectMode ? false : layout.leftSidebarOpen;
 					leftSidebarWidth = layout.leftSidebarWidth;
-					rightSidebarOpen = layout.rightSidebarOpen;
+					rightSidebarOpen = skyViewInspectMode ? false : layout.rightSidebarOpen;
 					const validTabs = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review'] as const;
 					rightSidebarTab = validTabs.includes(layout.rightSidebarTab as any) ? layout.rightSidebarTab as typeof rightSidebarTab : 'properties';
 					rightSidebarWidth = layout.rightSidebarWidth;
@@ -5942,6 +6009,12 @@
 		min-height: var(--topbar-height, auto);
 		padding: 5px 32px 0;
 	}
+	/* SV inspect mode: shift the tab-bar to align with the editor's
+	   .flank-center column so tabs visually sit above the note content
+	   instead of being flush left/right. Values must match the 280px
+	   .flank width defined below. */
+	.tab-bar.tab-bar-flanked-start { padding-inline-start: calc(32px + 280px + 5px); }
+	.tab-bar.tab-bar-flanked-end   { padding-inline-end:   calc(32px + 280px); }
 	.tab-scroll-wrap {
 		display: flex; align-items: center;
 		width: 100%;
@@ -6271,6 +6344,20 @@
 		background: var(--interactive-accent); color: white;
 	}
 	:global([dir="rtl"]) .index-return-btn svg { transform: scaleX(-1); }
+
+	/* "Return to Sky View" paired pill + dismiss button for inspect mode. */
+	.sv-pill-group { display: inline-flex; align-items: center; gap: 0; }
+	.sv-pill-group .index-return-btn { margin-inline-end: 0; border-end-end-radius: 0; border-start-end-radius: 0; }
+	.sv-pill-dismiss {
+		padding: 3px 7px; margin-inline-end: 4px;
+		border: 1px solid var(--interactive-accent);
+		border-inline-start-width: 0;
+		background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
+		color: var(--interactive-accent); font-size: 13px; font-weight: 600;
+		line-height: 1; cursor: pointer;
+		border-end-end-radius: 4px; border-start-end-radius: 4px;
+	}
+	.sv-pill-dismiss:hover { background: var(--interactive-accent); color: white; }
 
 	/* Star fullscreen */
 	.star-fullscreen {
