@@ -22,7 +22,8 @@
       "iconOverrides": "App Icons",
       "knowledge": "Knowledge Management",
       "arabicOverrides": "Arabic Overrides",
-      "debug": "Debug"
+      "debug": "Debug",
+      "panels": "Panels"
     },
     "dashboard": {
       "libraries": "Libraries",
@@ -456,6 +457,38 @@
       "coreSnapshot": "Core snapshot (notes)",
       "graphSnapshot": "Graph snapshot (links + tags)",
       "fanout": "Fire-and-forget fan-out"
+    },
+    "panels": {
+      "intro": "Choose where each panel appears — beside the note or in the right sidebar.",
+      "slotsHeading": "Panel Placement",
+      "slotLeftOfNote": "Left of note",
+      "slotRightOfNote": "Right of note",
+      "slotRightSidebar": "Right sidebar",
+      "slotHidden": "Hidden",
+      "panelBacklinks": "Backlinks",
+      "panelBacklinksDesc": "Notes that link to the current note",
+      "panelOutgoing": "Outgoing Links",
+      "panelOutgoingDesc": "Links going out from the current note",
+      "panelProperties": "Properties",
+      "panelPropertiesDesc": "Frontmatter metadata of the current note",
+      "panelTags": "Tags",
+      "panelTagsDesc": "Tags browser for your library",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "3D link graph of your knowledge universe",
+      "panelTasks": "Tasks",
+      "panelTasksDesc": "Task checklist and tracking",
+      "panelCalendar": "Calendar",
+      "panelCalendarDesc": "Daily notes calendar",
+      "panelHealth": "Health",
+      "panelHealthDesc": "Knowledge health and quality metrics",
+      "panelProvenance": "Provenance",
+      "panelProvenanceDesc": "Note history and origin tracking",
+      "panelReview": "Review",
+      "panelReviewDesc": "Spaced repetition review queue",
+      "panelLinks": "Link Dashboard",
+      "panelLinksDesc": "Living Link analytics and management",
+      "resetDefault": "Reset to defaults",
+      "resetDefaultDesc": "Restore the default panel layout (Backlinks left, Outgoing right)"
     }
   },
   "commands": {

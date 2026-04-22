@@ -20,7 +20,8 @@
       "templates": "Шаблоны",
       "styleSettings": "Настройки стиля",
       "knowledge": "Управление знаниями",
-      "arabicOverrides": "Переопределения арабского"
+      "arabicOverrides": "Переопределения арабского",
+      "panels": "Панели"
     },
     "general": {
       "language": "Язык",
@@ -401,6 +402,38 @@
       "save": "Сохранить",
       "create": "Создать",
       "cancel": "Отмена"
+    },
+    "panels": {
+      "intro": "Выберите, где отображается каждая панель — рядом с заметкой или на правой боковой панели.",
+      "slotsHeading": "Расположение панели",
+      "slotLeftOfNote": "Слева от заметки",
+      "slotRightOfNote": "Справа от заметки",
+      "slotRightSidebar": "Правая боковая панель",
+      "slotHidden": "Скрыто",
+      "panelBacklinks": "Обратные ссылки",
+      "panelBacklinksDesc": "Заметки, ссылающиеся на текущую заметку",
+      "panelOutgoing": "Исходящие ссылки",
+      "panelOutgoingDesc": "Ссылки, исходящие из текущей заметки",
+      "panelProperties": "Свойства",
+      "panelPropertiesDesc": "Метаданные frontmatter текущей заметки",
+      "panelTags": "Теги",
+      "panelTagsDesc": "Браузер тегов вашей библиотеки",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "3D граф ссылок вашей вселенной знаний",
+      "panelTasks": "Задачи",
+      "panelTasksDesc": "Список задач и отслеживание",
+      "panelCalendar": "Календарь",
+      "panelCalendarDesc": "Календарь ежедневных заметок",
+      "panelHealth": "Здоровье",
+      "panelHealthDesc": "Метрики здоровья и качества знаний",
+      "panelProvenance": "Происхождение",
+      "panelProvenanceDesc": "История и отслеживание происхождения заметки",
+      "panelReview": "Повторение",
+      "panelReviewDesc": "Очередь повторения с интервальным повторением",
+      "panelLinks": "Панель ссылок",
+      "panelLinksDesc": "Аналитика и управление Living Links",
+      "resetDefault": "Сбросить до умолчаний",
+      "resetDefaultDesc": "Восстановить расположение панелей по умолчанию"
     }
   },
   "commands": {

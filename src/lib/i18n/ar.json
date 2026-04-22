@@ -20,7 +20,8 @@
       "templates": "القوالب",
       "styleSettings": "إعدادات الأسلوب",
       "knowledge": "إدارة المعرفة",
-      "arabicOverrides": "تجاوزات المحرك العربي"
+      "arabicOverrides": "تجاوزات المحرك العربي",
+      "panels": "اللوحات"
     },
     "general": {
       "language": "اللغة",
@@ -401,6 +402,38 @@
       "save": "حفظ",
       "create": "إنشاء",
       "cancel": "إلغاء"
+    },
+    "panels": {
+      "intro": "اختر مكان ظهور كل لوحة — بجانب الملاحظة أو في الشريط الجانبي الأيمن.",
+      "slotsHeading": "موضع اللوحة",
+      "slotLeftOfNote": "يسار الملاحظة",
+      "slotRightOfNote": "يمين الملاحظة",
+      "slotRightSidebar": "الشريط الجانبي الأيمن",
+      "slotHidden": "مخفية",
+      "panelBacklinks": "الروابط الواردة",
+      "panelBacklinksDesc": "الملاحظات التي تشير إلى الملاحظة الحالية",
+      "panelOutgoing": "الروابط الصادرة",
+      "panelOutgoingDesc": "الروابط الخارجة من الملاحظة الحالية",
+      "panelProperties": "الخصائص",
+      "panelPropertiesDesc": "البيانات الوصفية في مقدمة الملاحظة",
+      "panelTags": "العلامات",
+      "panelTagsDesc": "متصفح علامات المكتبة",
+      "panelSky": "عرض السماء",
+      "panelSkyDesc": "رسم بياني ثلاثي الأبعاد لكون المعرفة",
+      "panelTasks": "المهام",
+      "panelTasksDesc": "قائمة المهام والتتبع",
+      "panelCalendar": "التقويم",
+      "panelCalendarDesc": "تقويم الملاحظات اليومية",
+      "panelHealth": "الصحة",
+      "panelHealthDesc": "مقاييس جودة وصحة المعرفة",
+      "panelProvenance": "المصدر",
+      "panelProvenanceDesc": "تتبع تاريخ الملاحظة ومصدرها",
+      "panelReview": "المراجعة",
+      "panelReviewDesc": "قائمة انتظار المراجعة بالتكرار المتباعد",
+      "panelLinks": "لوحة الروابط",
+      "panelLinksDesc": "تحليل الروابط الحية وإدارتها",
+      "resetDefault": "إعادة الضبط الافتراضي",
+      "resetDefaultDesc": "استعادة تخطيط اللوحة الافتراضي (الروابط الواردة يساراً، الصادرة يميناً)"
     }
   },
   "commands": {

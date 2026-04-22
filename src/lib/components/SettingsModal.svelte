@@ -5,7 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS, backfillLinkConfidence } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot } from '$lib/libraries/store';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
 	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
@@ -207,6 +207,7 @@
 		{ id: 'intelligence', label: $t('settings.sections.intelligence'), icon: 'bot' },
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
 		{ id: 'knowledge', label: $t('settings.sections.knowledge') || 'Knowledge Management', icon: 'brain' },
+		{ id: 'panels', label: $t('settings.sections.panels') || 'Panels', icon: 'layout' },
 		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
 		{ id: 'stylesettings', label: $t('settings.sections.styleSettings') || 'Style Settings', icon: 'sliders' },
 		{ id: 'iconoverrides', label: $t('settings.sections.iconOverrides') || 'App Icons', icon: 'grid' },
@@ -642,6 +643,7 @@
 			template: 'M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z',
 			compass: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z',
 			bug: 'M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5c-.49 0-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z',
+			layout: 'M3 3h18v4H3V3zm0 6h8v12H3V9zm10 0h8v5h-8V9zm0 7h8v5h-8v-5z',
 		};
 		return icons[icon] || icons.dashboard;
 	}
@@ -1815,6 +1817,58 @@
 							</div>
 						{/if}
 					{/if}
+
+				<!-- ═══ PANELS ═══ -->
+				{:else if activeSection === 'panels'}
+					<p class="section-intro">{$t('settings.panels.intro')}</p>
+
+					<div class="setting-section-heading">{$t('settings.panels.slotsHeading')}</div>
+
+					{#each ([
+						['backlinks',  $t('settings.panels.panelBacklinks'),  $t('settings.panels.panelBacklinksDesc')],
+						['outgoing',   $t('settings.panels.panelOutgoing'),   $t('settings.panels.panelOutgoingDesc')],
+						['properties', $t('settings.panels.panelProperties'), $t('settings.panels.panelPropertiesDesc')],
+						['tags',       $t('settings.panels.panelTags'),       $t('settings.panels.panelTagsDesc')],
+						['sky',        $t('settings.panels.panelSky'),        $t('settings.panels.panelSkyDesc')],
+						['tasks',      $t('settings.panels.panelTasks'),      $t('settings.panels.panelTasksDesc')],
+						['calendar',   $t('settings.panels.panelCalendar'),   $t('settings.panels.panelCalendarDesc')],
+						['health',     $t('settings.panels.panelHealth'),     $t('settings.panels.panelHealthDesc')],
+						['provenance', $t('settings.panels.panelProvenance'), $t('settings.panels.panelProvenanceDesc')],
+						['review',     $t('settings.panels.panelReview'),     $t('settings.panels.panelReviewDesc')],
+						['links',      $t('settings.panels.panelLinks'),      $t('settings.panels.panelLinksDesc')],
+					] as [PanelId, string, string][]) as [panelId, panelName, panelDesc]}
+						<div class="setting-item">
+							<div class="setting-info">
+								<div class="setting-name">{panelName}</div>
+								<div class="setting-desc">{panelDesc}</div>
+							</div>
+							<select
+								class="setting-control"
+								value={$appSettings.panelPlacements?.[panelId] ?? DEFAULT_SETTINGS.panelPlacements[panelId]}
+								onchange={(e) => updateSettings({
+									panelPlacements: {
+										...($appSettings.panelPlacements ?? DEFAULT_SETTINGS.panelPlacements),
+										[panelId]: (e.target as HTMLSelectElement).value as PanelSlot,
+									}
+								})}
+							>
+								<option value="left-of-note">{$t('settings.panels.slotLeftOfNote')}</option>
+								<option value="right-of-note">{$t('settings.panels.slotRightOfNote')}</option>
+								<option value="right-sidebar">{$t('settings.panels.slotRightSidebar')}</option>
+								<option value="hidden">{$t('settings.panels.slotHidden')}</option>
+							</select>
+						</div>
+					{/each}
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.panels.resetDefault')}</div>
+							<div class="setting-desc">{$t('settings.panels.resetDefaultDesc')}</div>
+						</div>
+						<button class="btn-secondary" onclick={() => updateSettings({ panelPlacements: DEFAULT_SETTINGS.panelPlacements })}>
+							{$t('settings.panels.resetDefault')}
+						</button>
+					</div>
 
 				<!-- ═══ APPEARANCE ═══ -->
 				{:else if activeSection === 'appearance'}

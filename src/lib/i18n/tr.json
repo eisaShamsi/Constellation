@@ -20,7 +20,8 @@
       "templates": "Şablonlar",
       "styleSettings": "Stil Ayarları",
       "knowledge": "Bilgi Yönetimi",
-      "arabicOverrides": "Arapça Geçersiz Kılmalar"
+      "arabicOverrides": "Arapça Geçersiz Kılmalar",
+      "panels": "Paneller"
     },
     "general": {
       "language": "Dil",
@@ -401,6 +402,38 @@
       "save": "Kaydet",
       "create": "Oluştur",
       "cancel": "İptal"
+    },
+    "panels": {
+      "intro": "Her panesin nerede görüneceğini seçin — notun yanında veya sağ kenar çubuğunda.",
+      "slotsHeading": "Panel Yerleşimi",
+      "slotLeftOfNote": "Notun solunda",
+      "slotRightOfNote": "Notun sağında",
+      "slotRightSidebar": "Sağ kenar çubuğu",
+      "slotHidden": "Gizli",
+      "panelBacklinks": "Geri Bağlantılar",
+      "panelBacklinksDesc": "Mevcut nota bağlantı veren notlar",
+      "panelOutgoing": "Giden Bağlantılar",
+      "panelOutgoingDesc": "Mevcut nottan çıkan bağlantılar",
+      "panelProperties": "Özellikler",
+      "panelPropertiesDesc": "Mevcut notun frontmatter meta verileri",
+      "panelTags": "Etiketler",
+      "panelTagsDesc": "Kütüphaneniz için etiket tarayıcısı",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "Bilgi evreninizin 3D bağlantı grafiği",
+      "panelTasks": "Görevler",
+      "panelTasksDesc": "Görev listesi ve takip",
+      "panelCalendar": "Takvim",
+      "panelCalendarDesc": "Günlük notlar takvimi",
+      "panelHealth": "Sağlık",
+      "panelHealthDesc": "Bilgi sağlığı ve kalite ölçütleri",
+      "panelProvenance": "Köken",
+      "panelProvenanceDesc": "Not geçmişi ve köken takibi",
+      "panelReview": "Gözden Geçirme",
+      "panelReviewDesc": "Aralıklı tekrar gözden geçirme kuyruğu",
+      "panelLinks": "Bağlantı Paneli",
+      "panelLinksDesc": "Living Link analizleri ve yönetimi",
+      "resetDefault": "Varsayılana sıfırla",
+      "resetDefaultDesc": "Varsayılan panel düzenini geri yükle"
     }
   },
   "commands": {

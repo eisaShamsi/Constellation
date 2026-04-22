@@ -20,7 +20,8 @@
       "templates": "टेम्पलेट",
       "styleSettings": "स्टाइल सेटिंग्स",
       "knowledge": "ज्ञान प्रबंधन",
-      "arabicOverrides": "अरबी ओवरराइड"
+      "arabicOverrides": "अरबी ओवरराइड",
+      "panels": "पैनल"
     },
     "general": {
       "language": "भाषा",
@@ -401,6 +402,38 @@
       "save": "सहेजें",
       "create": "बनाएं",
       "cancel": "रद्द करें"
+    },
+    "panels": {
+      "intro": "चुनें कि प्रत्येक पैनल कहाँ दिखाई दे — नोट के बगल में या दाईं साइडबार में।",
+      "slotsHeading": "पैनल स्थान",
+      "slotLeftOfNote": "नोट के बाईं ओर",
+      "slotRightOfNote": "नोट के दाईं ओर",
+      "slotRightSidebar": "दाईं साइडबार",
+      "slotHidden": "छुपा हुआ",
+      "panelBacklinks": "बैकलिंक्स",
+      "panelBacklinksDesc": "वे नोट जो वर्तमान नोट से लिंक करते हैं",
+      "panelOutgoing": "आउटगोइंग लिंक्स",
+      "panelOutgoingDesc": "वर्तमान नोट से निकलने वाले लिंक",
+      "panelProperties": "गुण",
+      "panelPropertiesDesc": "वर्तमान नोट का frontmatter मेटाडेटा",
+      "panelTags": "टैग",
+      "panelTagsDesc": "आपकी लाइब्रेरी का टैग ब्राउज़र",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "आपके ज्ञान ब्रह्मांड का 3D लिंक ग्राफ",
+      "panelTasks": "कार्य",
+      "panelTasksDesc": "कार्य चेकलिस्ट और ट्रैकिंग",
+      "panelCalendar": "कैलेंडर",
+      "panelCalendarDesc": "दैनिक नोट्स कैलेंडर",
+      "panelHealth": "स्वास्थ्य",
+      "panelHealthDesc": "ज्ञान स्वास्थ्य और गुणवत्ता मेट्रिक्स",
+      "panelProvenance": "उत्पत्ति",
+      "panelProvenanceDesc": "नोट इतिहास और मूल ट्रैकिंग",
+      "panelReview": "समीक्षा",
+      "panelReviewDesc": "स्पेस्ड रिपीटिशन समीक्षा कतार",
+      "panelLinks": "लिंक डैशबोर्ड",
+      "panelLinksDesc": "Living Link विश्लेषण और प्रबंधन",
+      "resetDefault": "डिफ़ॉल्ट पर रीसेट करें",
+      "resetDefaultDesc": "डिफ़ॉल्ट पैनल लेआउट पुनर्स्थापित करें"
     }
   },
   "commands": {

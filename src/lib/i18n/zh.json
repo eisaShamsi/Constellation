@@ -20,7 +20,8 @@
       "templates": "模板",
       "styleSettings": "样式设置",
       "knowledge": "知识管理",
-      "arabicOverrides": "阿拉伯语覆盖"
+      "arabicOverrides": "阿拉伯语覆盖",
+      "panels": "面板"
     },
     "general": {
       "language": "语言",
@@ -401,6 +402,38 @@
       "save": "保存",
       "create": "创建",
       "cancel": "取消"
+    },
+    "panels": {
+      "intro": "选择每个面板的显示位置 — 笔记旁边或右侧边栏。",
+      "slotsHeading": "面板位置",
+      "slotLeftOfNote": "笔记左侧",
+      "slotRightOfNote": "笔记右侧",
+      "slotRightSidebar": "右侧边栏",
+      "slotHidden": "隐藏",
+      "panelBacklinks": "反向链接",
+      "panelBacklinksDesc": "链接到当前笔记的笔记",
+      "panelOutgoing": "出站链接",
+      "panelOutgoingDesc": "从当前笔记出发的链接",
+      "panelProperties": "属性",
+      "panelPropertiesDesc": "当前笔记的 frontmatter 元数据",
+      "panelTags": "标签",
+      "panelTagsDesc": "您的库的标签浏览器",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "您知识宇宙的 3D 链接图",
+      "panelTasks": "任务",
+      "panelTasksDesc": "任务清单和追踪",
+      "panelCalendar": "日历",
+      "panelCalendarDesc": "每日笔记日历",
+      "panelHealth": "健康",
+      "panelHealthDesc": "知识健康和质量指标",
+      "panelProvenance": "来源",
+      "panelProvenanceDesc": "笔记历史和来源追踪",
+      "panelReview": "复习",
+      "panelReviewDesc": "间隔重复复习队列",
+      "panelLinks": "链接仪表板",
+      "panelLinksDesc": "Living Link 分析和管理",
+      "resetDefault": "重置为默认",
+      "resetDefaultDesc": "恢复默认面板布局（反向链接居左，出站链接居右）"
     }
   },
   "commands": {

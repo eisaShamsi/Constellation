@@ -20,7 +20,8 @@
       "templates": "Vorlagen",
       "styleSettings": "Stil-Einstellungen",
       "knowledge": "Wissensmanagement",
-      "arabicOverrides": "Arabische Überschreibungen"
+      "arabicOverrides": "Arabische Überschreibungen",
+      "panels": "Panels"
     },
     "general": {
       "language": "Sprache",
@@ -401,6 +402,38 @@
       "save": "Speichern",
       "create": "Erstellen",
       "cancel": "Abbrechen"
+    },
+    "panels": {
+      "intro": "Wähle, wo jedes Panel erscheint — neben der Notiz oder in der rechten Seitenleiste.",
+      "slotsHeading": "Panel-Platzierung",
+      "slotLeftOfNote": "Links der Notiz",
+      "slotRightOfNote": "Rechts der Notiz",
+      "slotRightSidebar": "Rechte Seitenleiste",
+      "slotHidden": "Ausgeblendet",
+      "panelBacklinks": "Rückverweise",
+      "panelBacklinksDesc": "Notizen, die auf die aktuelle Notiz verlinken",
+      "panelOutgoing": "Ausgehende Links",
+      "panelOutgoingDesc": "Links aus der aktuellen Notiz heraus",
+      "panelProperties": "Eigenschaften",
+      "panelPropertiesDesc": "Frontmatter-Metadaten der aktuellen Notiz",
+      "panelTags": "Tags",
+      "panelTagsDesc": "Tag-Browser für deine Bibliothek",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "3D-Linkgraph deines Wissensuniversums",
+      "panelTasks": "Aufgaben",
+      "panelTasksDesc": "Aufgabenliste und Verfolgung",
+      "panelCalendar": "Kalender",
+      "panelCalendarDesc": "Kalender für tägliche Notizen",
+      "panelHealth": "Gesundheit",
+      "panelHealthDesc": "Wissensgesundheits- und Qualitätsmetriken",
+      "panelProvenance": "Herkunft",
+      "panelProvenanceDesc": "Notizhistorie und Herkunftsverfolgung",
+      "panelReview": "Wiederholung",
+      "panelReviewDesc": "Wiederholungswarteschlange für Karteikarten",
+      "panelLinks": "Link-Dashboard",
+      "panelLinksDesc": "Living Link-Analysen und -Verwaltung",
+      "resetDefault": "Auf Standard zurücksetzen",
+      "resetDefaultDesc": "Standard-Panel-Layout wiederherstellen (Rückverweise links, Ausgehende rechts)"
     }
   },
   "commands": {

@@ -20,7 +20,8 @@
       "templates": "Modèles",
       "styleSettings": "Paramètres de style",
       "knowledge": "Gestion des connaissances",
-      "arabicOverrides": "Surcharges arabes"
+      "arabicOverrides": "Surcharges arabes",
+      "panels": "Panneaux"
     },
     "general": {
       "language": "Langue",
@@ -401,6 +402,38 @@
       "save": "Enregistrer",
       "create": "Créer",
       "cancel": "Annuler"
+    },
+    "panels": {
+      "intro": "Choisissez où apparaît chaque panneau — à côté de la note ou dans la barre latérale droite.",
+      "slotsHeading": "Placement du panneau",
+      "slotLeftOfNote": "À gauche de la note",
+      "slotRightOfNote": "À droite de la note",
+      "slotRightSidebar": "Barre latérale droite",
+      "slotHidden": "Masqué",
+      "panelBacklinks": "Rétroliens",
+      "panelBacklinksDesc": "Notes qui pointent vers la note actuelle",
+      "panelOutgoing": "Liens sortants",
+      "panelOutgoingDesc": "Liens sortant de la note actuelle",
+      "panelProperties": "Propriétés",
+      "panelPropertiesDesc": "Métadonnées frontmatter de la note actuelle",
+      "panelTags": "Étiquettes",
+      "panelTagsDesc": "Explorateur d'étiquettes de votre bibliothèque",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "Graphe de liens 3D de votre univers de connaissances",
+      "panelTasks": "Tâches",
+      "panelTasksDesc": "Liste de tâches et suivi",
+      "panelCalendar": "Calendrier",
+      "panelCalendarDesc": "Calendrier des notes quotidiennes",
+      "panelHealth": "Santé",
+      "panelHealthDesc": "Métriques de santé et de qualité des connaissances",
+      "panelProvenance": "Provenance",
+      "panelProvenanceDesc": "Historique et suivi de l'origine de la note",
+      "panelReview": "Révision",
+      "panelReviewDesc": "File d'attente de révision par répétition espacée",
+      "panelLinks": "Tableau de bord des liens",
+      "panelLinksDesc": "Analyses et gestion des Living Links",
+      "resetDefault": "Réinitialiser les paramètres par défaut",
+      "resetDefaultDesc": "Restaurer la disposition par défaut (Rétroliens à gauche, Sortants à droite)"
     }
   },
   "commands": {

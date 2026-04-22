@@ -20,7 +20,8 @@
       "templates": "قالب‌ها",
       "styleSettings": "تنظیمات سبک",
       "knowledge": "مدیریت دانش",
-      "arabicOverrides": "بازنویسی‌های عربی"
+      "arabicOverrides": "بازنویسی‌های عربی",
+      "panels": "پانل‌ها"
     },
     "general": {
       "language": "زبان",
@@ -401,6 +402,38 @@
       "save": "ذخیره",
       "create": "ایجاد",
       "cancel": "لغو"
+    },
+    "panels": {
+      "intro": "انتخاب کنید هر پانل کجا نمایش داده شود — کنار یادداشت یا در نوار کناری راست.",
+      "slotsHeading": "جایگذاری پانل",
+      "slotLeftOfNote": "چپ یادداشت",
+      "slotRightOfNote": "راست یادداشت",
+      "slotRightSidebar": "نوار کناری راست",
+      "slotHidden": "پنهان",
+      "panelBacklinks": "پیوندهای ورودی",
+      "panelBacklinksDesc": "یادداشت‌هایی که به یادداشت فعلی لینک دارند",
+      "panelOutgoing": "پیوندهای خروجی",
+      "panelOutgoingDesc": "پیوندهای خارج‌شده از یادداشت فعلی",
+      "panelProperties": "ویژگی‌ها",
+      "panelPropertiesDesc": "متادیتای frontmatter یادداشت فعلی",
+      "panelTags": "برچسب‌ها",
+      "panelTagsDesc": "مرورگر برچسب‌های کتابخانه",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "نمودار لینک سه‌بعدی کیهان دانش",
+      "panelTasks": "وظایف",
+      "panelTasksDesc": "فهرست وظایف و پیگیری",
+      "panelCalendar": "تقویم",
+      "panelCalendarDesc": "تقویم یادداشت‌های روزانه",
+      "panelHealth": "سلامت",
+      "panelHealthDesc": "معیارهای سلامت و کیفیت دانش",
+      "panelProvenance": "منشأ",
+      "panelProvenanceDesc": "تاریخچه و ردیابی منشأ یادداشت",
+      "panelReview": "مرور",
+      "panelReviewDesc": "صف مرور با تکرار فاصله‌دار",
+      "panelLinks": "داشبورد لینک",
+      "panelLinksDesc": "تحلیل و مدیریت Living Link",
+      "resetDefault": "بازنشانی به پیش‌فرض",
+      "resetDefaultDesc": "بازگرداندن چیدمان پیش‌فرض پانل"
     }
   },
   "commands": {

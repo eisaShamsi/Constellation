@@ -20,7 +20,8 @@
       "templates": "Modelos",
       "styleSettings": "Configurações de estilo",
       "knowledge": "Gestão do conhecimento",
-      "arabicOverrides": "Substituições do árabe"
+      "arabicOverrides": "Substituições do árabe",
+      "panels": "Painéis"
     },
     "general": {
       "language": "Idioma",
@@ -401,6 +402,38 @@
       "save": "Salvar",
       "create": "Criar",
       "cancel": "Cancelar"
+    },
+    "panels": {
+      "intro": "Escolha onde cada painel aparece — ao lado da nota ou na barra lateral direita.",
+      "slotsHeading": "Posicionamento do painel",
+      "slotLeftOfNote": "À esquerda da nota",
+      "slotRightOfNote": "À direita da nota",
+      "slotRightSidebar": "Barra lateral direita",
+      "slotHidden": "Oculto",
+      "panelBacklinks": "Backlinks",
+      "panelBacklinksDesc": "Notas que ligam à nota atual",
+      "panelOutgoing": "Links de saída",
+      "panelOutgoingDesc": "Links que saem da nota atual",
+      "panelProperties": "Propriedades",
+      "panelPropertiesDesc": "Metadados frontmatter da nota atual",
+      "panelTags": "Etiquetas",
+      "panelTagsDesc": "Navegador de etiquetas da sua biblioteca",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "Gráfico de links 3D do seu universo de conhecimento",
+      "panelTasks": "Tarefas",
+      "panelTasksDesc": "Lista de tarefas e acompanhamento",
+      "panelCalendar": "Calendário",
+      "panelCalendarDesc": "Calendário de notas diárias",
+      "panelHealth": "Saúde",
+      "panelHealthDesc": "Métricas de saúde e qualidade do conhecimento",
+      "panelProvenance": "Proveniência",
+      "panelProvenanceDesc": "Histórico e rastreamento da origem da nota",
+      "panelReview": "Revisão",
+      "panelReviewDesc": "Fila de revisão com repetição espaçada",
+      "panelLinks": "Painel de links",
+      "panelLinksDesc": "Análise e gestão de Living Links",
+      "resetDefault": "Redefinir para padrão",
+      "resetDefaultDesc": "Restaurar o layout padrão de painéis"
     }
   },
   "commands": {

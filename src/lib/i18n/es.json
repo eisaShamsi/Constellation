@@ -20,7 +20,8 @@
       "templates": "Plantillas",
       "styleSettings": "Ajustes de estilo",
       "knowledge": "Gestión del conocimiento",
-      "arabicOverrides": "Anulaciones del árabe"
+      "arabicOverrides": "Anulaciones del árabe",
+      "panels": "Paneles"
     },
     "general": {
       "language": "Idioma",
@@ -401,6 +402,38 @@
       "save": "Guardar",
       "create": "Crear",
       "cancel": "Cancelar"
+    },
+    "panels": {
+      "intro": "Elige dónde aparece cada panel — junto a la nota o en la barra lateral derecha.",
+      "slotsHeading": "Ubicación del panel",
+      "slotLeftOfNote": "A la izquierda de la nota",
+      "slotRightOfNote": "A la derecha de la nota",
+      "slotRightSidebar": "Barra lateral derecha",
+      "slotHidden": "Oculto",
+      "panelBacklinks": "Backlinks",
+      "panelBacklinksDesc": "Notas que enlazan a la nota actual",
+      "panelOutgoing": "Enlaces salientes",
+      "panelOutgoingDesc": "Enlaces que salen de la nota actual",
+      "panelProperties": "Propiedades",
+      "panelPropertiesDesc": "Metadatos frontmatter de la nota actual",
+      "panelTags": "Etiquetas",
+      "panelTagsDesc": "Explorador de etiquetas de tu biblioteca",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "Gráfico de enlaces 3D de tu universo del conocimiento",
+      "panelTasks": "Tareas",
+      "panelTasksDesc": "Lista de tareas y seguimiento",
+      "panelCalendar": "Calendario",
+      "panelCalendarDesc": "Calendario de notas diarias",
+      "panelHealth": "Salud",
+      "panelHealthDesc": "Métricas de salud y calidad del conocimiento",
+      "panelProvenance": "Procedencia",
+      "panelProvenanceDesc": "Historial y seguimiento del origen de la nota",
+      "panelReview": "Revisión",
+      "panelReviewDesc": "Cola de revisión con repetición espaciada",
+      "panelLinks": "Panel de enlaces",
+      "panelLinksDesc": "Análisis y gestión de Living Links",
+      "resetDefault": "Restablecer valores predeterminados",
+      "resetDefaultDesc": "Restaurar el diseño predeterminado (Backlinks izquierda, Salientes derecha)"
     }
   },
   "commands": {

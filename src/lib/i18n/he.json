@@ -20,7 +20,8 @@
       "templates": "תבניות",
       "styleSettings": "הגדרות סגנון",
       "knowledge": "ניהול ידע",
-      "arabicOverrides": "דריסות ערבית"
+      "arabicOverrides": "דריסות ערבית",
+      "panels": "פאנלים"
     },
     "general": {
       "language": "שפה",
@@ -401,6 +402,38 @@
       "save": "שמור",
       "create": "צור",
       "cancel": "ביטול"
+    },
+    "panels": {
+      "intro": "בחר היכן יוצג כל פאנל — ליד הפתק או בסרגל הצד הימני.",
+      "slotsHeading": "מיקום הפאנל",
+      "slotLeftOfNote": "משמאל לפתק",
+      "slotRightOfNote": "מימין לפתק",
+      "slotRightSidebar": "סרגל צד ימני",
+      "slotHidden": "מוסתר",
+      "panelBacklinks": "קישורים נכנסים",
+      "panelBacklinksDesc": "פתקים המקשרים לפתק הנוכחי",
+      "panelOutgoing": "קישורים יוצאים",
+      "panelOutgoingDesc": "קישורים היוצאים מהפתק הנוכחי",
+      "panelProperties": "מאפיינים",
+      "panelPropertiesDesc": "מטא-נתוני frontmatter של הפתק הנוכחי",
+      "panelTags": "תגיות",
+      "panelTagsDesc": "דפדפן תגיות הספרייה",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "גרף קישורים תלת-ממדי של יקום הידע",
+      "panelTasks": "משימות",
+      "panelTasksDesc": "רשימת משימות ומעקב",
+      "panelCalendar": "לוח שנה",
+      "panelCalendarDesc": "לוח שנה לפתקים יומיים",
+      "panelHealth": "בריאות",
+      "panelHealthDesc": "מדדי בריאות ואיכות הידע",
+      "panelProvenance": "מקור",
+      "panelProvenanceDesc": "היסטוריה ומעקב אחר מקור הפתק",
+      "panelReview": "חזרה",
+      "panelReviewDesc": "תור חזרה עם חזרות מרווחות",
+      "panelLinks": "לוח בקרת קישורים",
+      "panelLinksDesc": "ניתוח וניהול Living Links",
+      "resetDefault": "איפוס לברירת מחדל",
+      "resetDefaultDesc": "שחזור פריסת הפאנל ברירת המחדל"
     }
   },
   "commands": {

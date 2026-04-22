@@ -20,7 +20,8 @@
       "templates": "テンプレート",
       "styleSettings": "スタイル設定",
       "knowledge": "ナレッジ管理",
-      "arabicOverrides": "アラビア語オーバーライド"
+      "arabicOverrides": "アラビア語オーバーライド",
+      "panels": "パネル"
     },
     "general": {
       "language": "言語",
@@ -401,6 +402,38 @@
       "save": "保存",
       "create": "作成",
       "cancel": "キャンセル"
+    },
+    "panels": {
+      "intro": "各パネルの表示場所を選択してください — ノートの横または右サイドバー。",
+      "slotsHeading": "パネルの配置",
+      "slotLeftOfNote": "ノートの左",
+      "slotRightOfNote": "ノートの右",
+      "slotRightSidebar": "右サイドバー",
+      "slotHidden": "非表示",
+      "panelBacklinks": "バックリンク",
+      "panelBacklinksDesc": "現在のノートにリンクしているノート",
+      "panelOutgoing": "発リンク",
+      "panelOutgoingDesc": "現在のノートから出るリンク",
+      "panelProperties": "プロパティ",
+      "panelPropertiesDesc": "現在のノートのフロントマターメタデータ",
+      "panelTags": "タグ",
+      "panelTagsDesc": "ライブラリのタグブラウザ",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "知識宇宙の3Dリンクグラフ",
+      "panelTasks": "タスク",
+      "panelTasksDesc": "タスクチェックリストと追跡",
+      "panelCalendar": "カレンダー",
+      "panelCalendarDesc": "デイリーノートカレンダー",
+      "panelHealth": "ヘルス",
+      "panelHealthDesc": "知識の健全性と品質指標",
+      "panelProvenance": "来歴",
+      "panelProvenanceDesc": "ノートの履歴と出所の追跡",
+      "panelReview": "レビュー",
+      "panelReviewDesc": "間隔反復レビューキュー",
+      "panelLinks": "リンクダッシュボード",
+      "panelLinksDesc": "Living Linkの分析と管理",
+      "resetDefault": "デフォルトにリセット",
+      "resetDefaultDesc": "デフォルトのパネルレイアウトを復元する"
     }
   },
   "commands": {

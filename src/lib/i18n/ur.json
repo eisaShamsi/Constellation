@@ -20,7 +20,8 @@
       "templates": "ٹیمپلیٹس",
       "styleSettings": "اسٹائل سیٹنگز",
       "knowledge": "علم کا انتظام",
-      "arabicOverrides": "عربی اوور رائڈز"
+      "arabicOverrides": "عربی اوور رائڈز",
+      "panels": "پینلز"
     },
     "general": {
       "language": "زبان",
@@ -401,6 +402,38 @@
       "save": "محفوظ کریں",
       "create": "بنائیں",
       "cancel": "منسوخ"
+    },
+    "panels": {
+      "intro": "ہر پینل کہاں ظاہر ہو یہ منتخب کریں — نوٹ کے ساتھ یا دائیں سائیڈبار میں۔",
+      "slotsHeading": "پینل کی جگہ",
+      "slotLeftOfNote": "نوٹ کے بائیں",
+      "slotRightOfNote": "نوٹ کے دائیں",
+      "slotRightSidebar": "دائیں سائیڈبار",
+      "slotHidden": "پوشیدہ",
+      "panelBacklinks": "بیک لنکس",
+      "panelBacklinksDesc": "وہ نوٹس جو موجودہ نوٹ سے لنک ہیں",
+      "panelOutgoing": "صادر لنکس",
+      "panelOutgoingDesc": "موجودہ نوٹ سے نکلنے والے لنکس",
+      "panelProperties": "خصوصیات",
+      "panelPropertiesDesc": "موجودہ نوٹ کا frontmatter میٹا ڈیٹا",
+      "panelTags": "ٹیگز",
+      "panelTagsDesc": "آپ کی لائبریری کا ٹیگ براؤزر",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "آپ کے علم کے کائنات کا 3D لنک گراف",
+      "panelTasks": "کام",
+      "panelTasksDesc": "کام کی فہرست اور ٹریکنگ",
+      "panelCalendar": "کیلنڈر",
+      "panelCalendarDesc": "روزانہ نوٹس کا کیلنڈر",
+      "panelHealth": "صحت",
+      "panelHealthDesc": "علم کی صحت اور معیار کے اشارے",
+      "panelProvenance": "ماخذ",
+      "panelProvenanceDesc": "نوٹ کی تاریخ اور ماخذ ٹریکنگ",
+      "panelReview": "جائزہ",
+      "panelReviewDesc": "وقفہ تکرار جائزہ قطار",
+      "panelLinks": "لنک ڈیش بورڈ",
+      "panelLinksDesc": "Living Link تجزیہ اور انتظام",
+      "resetDefault": "ڈیفالٹ پر ری سیٹ کریں",
+      "resetDefaultDesc": "ڈیفالٹ پینل ترتیب بحال کریں"
     }
   },
   "commands": {

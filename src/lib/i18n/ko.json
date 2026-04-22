@@ -20,7 +20,8 @@
       "templates": "템플릿",
       "styleSettings": "스타일 설정",
       "knowledge": "지식 관리",
-      "arabicOverrides": "아랍어 재정의"
+      "arabicOverrides": "아랍어 재정의",
+      "panels": "패널"
     },
     "general": {
       "language": "언어",
@@ -401,6 +402,38 @@
       "save": "저장",
       "create": "만들기",
       "cancel": "취소"
+    },
+    "panels": {
+      "intro": "각 패널이 표시될 위치를 선택하세요 — 노트 옆 또는 오른쪽 사이드바.",
+      "slotsHeading": "패널 배치",
+      "slotLeftOfNote": "노트 왼쪽",
+      "slotRightOfNote": "노트 오른쪽",
+      "slotRightSidebar": "오른쪽 사이드바",
+      "slotHidden": "숨김",
+      "panelBacklinks": "백링크",
+      "panelBacklinksDesc": "현재 노트에 링크된 노트",
+      "panelOutgoing": "발신 링크",
+      "panelOutgoingDesc": "현재 노트에서 나가는 링크",
+      "panelProperties": "속성",
+      "panelPropertiesDesc": "현재 노트의 frontmatter 메타데이터",
+      "panelTags": "태그",
+      "panelTagsDesc": "라이브러리 태그 브라우저",
+      "panelSky": "Sky View",
+      "panelSkyDesc": "지식 우주의 3D 링크 그래프",
+      "panelTasks": "작업",
+      "panelTasksDesc": "작업 체크리스트 및 추적",
+      "panelCalendar": "캘린더",
+      "panelCalendarDesc": "일간 노트 캘린더",
+      "panelHealth": "건강",
+      "panelHealthDesc": "지식 건강 및 품질 지표",
+      "panelProvenance": "출처",
+      "panelProvenanceDesc": "노트 기록 및 출처 추적",
+      "panelReview": "복습",
+      "panelReviewDesc": "간격 반복 복습 대기열",
+      "panelLinks": "링크 대시보드",
+      "panelLinksDesc": "Living Link 분석 및 관리",
+      "resetDefault": "기본값으로 재설정",
+      "resetDefaultDesc": "기본 패널 레이아웃 복원"
     }
   },
   "commands": {
