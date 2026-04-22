@@ -3797,6 +3797,7 @@
 					<NotebookNavigator
 						mode="main"
 						{libraryColorMap}
+						initialTags={allLibraryTags}
 						onNoteClick={(path, name, lib) => handleNoteClick(path, name, undefined)}
 						onFolderSelect={(path) => { skyViewSelectedPath = path; }}
 					/>

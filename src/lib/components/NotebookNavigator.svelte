@@ -11,6 +11,10 @@
 	let {
 		mode = 'main' as 'main' | 'second',
 		libraryColorMap = {} as Record<string, string>,
+		/** Pre-computed tags from the boot snapshot (SQLite-backed, write-time derived).
+		 *  When non-empty, skips the expensive scan_library_tags filesystem scan on mount.
+		 *  The boot snapshot is populated before first paint and kept current via note-save hooks. */
+		initialTags = {} as Record<string, number>,
 		onNoteClick,
 		onNoteDoubleClick,
 		onNotePreview,
@@ -18,6 +22,7 @@
 	}: {
 		mode?: 'main' | 'second';
 		libraryColorMap?: Record<string, string>;
+		initialTags?: Record<string, number>;
 		onNoteClick?: (path: string, name: string, libraryName: string) => void;
 		onNoteDoubleClick?: (path: string, name: string, libraryName: string) => void;
 		onNotePreview?: (path: string, name: string, libraryName: string) => void;
@@ -85,7 +90,11 @@
 				const results = await Promise.all(batch.map(async (lib) => {
 					const [notes, libTags, tree] = await Promise.all([
 						withTimeout(collectLibraryNotesWithMeta(lib.path).catch(() => []), 15000, [] as NoteWithMeta[]),
-						withTimeout(invoke<Record<string, number>>('scan_library_tags', { libraryPath: lib.path }).catch(() => ({})), 10000, {}),
+						// Skip the O(N-file-reads) scan if the boot snapshot already has tags.
+						// initialTags comes from cache_boot_snapshot_graph (SQLite-backed, write-time derived).
+						Object.keys(initialTags).length > 0
+							? Promise.resolve({} as Record<string, number>)
+							: withTimeout(invoke<Record<string, number>>('scan_library_tags', { libraryPath: lib.path }).catch(() => ({})), 10000, {}),
 						withTimeout(invoke<FileEntry[]>('read_library_tree', { libraryPath: lib.path, maxDepth: 10 }).catch(() => []), 10000, []),
 					]);
 					return { lib, notes, libTags, tree };
@@ -150,7 +159,10 @@
 				if (!seen.has(n.path)) { seen.add(n.path); deduped.push(n); }
 			}
 			allNotesWithMeta = deduped;
-			tagMap = allTags;
+			// Use boot-snapshot tags when available — eliminates the filesystem scan cost.
+			// Fall back to the locally-merged scan result (allTags) only when
+			// initialTags is empty (e.g. second screen, or very early mount before graph loads).
+			tagMap = Object.keys(initialTags).length > 0 ? initialTags : allTags;
 			folderTrees = trees;
 		} finally {
 			loading = false;
