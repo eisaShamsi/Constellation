@@ -21,7 +21,9 @@
       "styleSettings": "Stil-Einstellungen",
       "knowledge": "Wissensmanagement",
       "arabicOverrides": "Arabische Überschreibungen",
-      "panels": "Panels"
+      "panels": "Panels",
+      "iconOverrides": "App-Icons",
+      "debug": "Debug"
     },
     "general": {
       "language": "Sprache",
@@ -285,7 +287,35 @@
       "connectionTest": "Testen"
     },
     "templates": {
-      "intro": "Notizvorlagen verwalten. Vorlagen fügen vordefinierte Inhalte in neue Notizen ein."
+      "intro": "Notizvorlagen verwalten. Vorlagen fügen vordefinierte Inhalte in neue Notizen ein.",
+      "templateFolder": "Vorlagenordner",
+      "templateFolderDesc": "Der Ordner, in dem Ihre Vorlagendateien gespeichert sind",
+      "dailyNoteTemplate": "Tagesnotizvorlage",
+      "dailyNoteTemplateDesc": "Vorlagendateiname für tägliche Notizen (ohne .md)",
+      "variables": "Vorlagenvariablen",
+      "variablesDesc": "Verfügbare Variablen für Ihre Vorlagen",
+      "varDate": "Aktuelles Datum (YYYY-MM-DD)",
+      "varDateFormat": "Benutzerdefiniertes Datumsformat (z.B. YYYY/MM/DD)",
+      "varTime": "Aktuelle Uhrzeit (HH:MM)",
+      "varTitle": "Notiztitel",
+      "varFolder": "Übergeordneter Ordnername",
+      "varLibrary": "Bibliotheksname",
+      "varCursor": "Cursorposition nach dem Einfügen",
+      "varYesterday": "Datum von gestern",
+      "varTomorrow": "Datum von morgen",
+      "varDateOffset": "Datum mit Versatz (N Tage)",
+      "varClipboard": "Zwischenablageinhalt",
+      "varFrontmatter": "Frontmatter-Wert der aktuellen Notiz",
+      "varFileCreated": "Erstellungsdatum der Datei",
+      "varFileModified": "Änderungsdatum der Datei",
+      "varPrompt": "Eingabe beim Einfügen anfordern",
+      "varSuggester": "Beim Einfügen aus Liste wählen",
+      "folderTemplates": "Ordnervorlagen",
+      "folderTemplatesDesc": "Vorlagen automatisch anwenden beim Erstellen von Notizen in bestimmten Ordnern",
+      "addFolderTemplate": "Ordnervorlage hinzufügen",
+      "folderPath": "Ordnerpfad",
+      "templateName": "Vorlagenname",
+      "noFolderTemplates": "Keine Ordnervorlagen konfiguriert"
     },
     "dashboard": {
       "libraries": "Bibliotheken",
@@ -387,7 +417,9 @@
       "orgChart": "Organigramm",
       "orgChartDesc": "Visueller Baum Ihrer Wissenshierarchie",
       "aiSkills": "KI-Fähigkeiten",
-      "aiSkillsDesc": "KI-gestützte Automatisierung und Wissenswerkzeuge"
+      "aiSkillsDesc": "KI-gestützte Automatisierung und Wissenswerkzeuge",
+      "emojiIconPicker": "Emoji- und Icon-Bibliothek",
+      "emojiIconPickerDesc": "Strg+.-Auswahl für Emojis und Vektorsymbole — in Notizen einfügen oder App-Icons überschreiben"
     },
     "knowledge": {
       "intro": "Konfigurieren Sie, wie Ihr Wissen organisiert, angezeigt und analysiert wird.",
@@ -434,6 +466,31 @@
       "panelLinksDesc": "Living Link-Analysen und -Verwaltung",
       "resetDefault": "Auf Standard zurücksetzen",
       "resetDefaultDesc": "Standard-Panel-Layout wiederherstellen (Rückverweise links, Ausgehende rechts)"
+    },
+    "debug": {
+      "intro": "Schreibgeschützte Diagnoseansicht. Die Boot-Leistungsbewertung prüft die fünf Versandkriterien aus lab/boot-perf/BOOT-BUDGET.md gegen den letzten Start im aktiven Universum.",
+      "bootPerfHeading": "Boot-Leistung",
+      "loading": "Laden…",
+      "noReportYet": "Noch kein Boot-Leistungsbericht. Schließen Sie die App und starten Sie sie im aktiven Universum neu.",
+      "measuredAt": "Gemessen am",
+      "notes": "Notizen",
+      "refresh": "Aktualisieren",
+      "pass": "BESTANDEN",
+      "fail": "FEHLER",
+      "notMeasured": "Nicht gemessen",
+      "manual": "Manuell",
+      "c1": "UI sichtbar",
+      "c2": "Voll reaktionsfähig",
+      "c3": "Leerlauf-RSS-Speicher",
+      "c4": "Post-Boot-Statistik-Scan",
+      "c5": "Wiederherstellung nach Indexabbruch",
+      "details": "Phasenzeitungen anzeigen",
+      "rawJson": "Roh-JSON anzeigen",
+      "graphReady": "Graph bereit",
+      "librariesLoaded": "Bibliotheken geladen",
+      "coreSnapshot": "Kern-Snapshot (Notizen)",
+      "graphSnapshot": "Graph-Snapshot (Links + Tags)",
+      "fanout": "Fire-and-Forget-Fanout"
     }
   },
   "commands": {
@@ -480,7 +537,8 @@
     "expressionForge": "Ausdrucksschmiede",
     "senseMakingCanvas": "Sinngebungsleinwand",
     "inspector360": "360.3D-Inspektor",
-    "constellationMap": "Wissenskarte"
+    "constellationMap": "Wissenskarte",
+    "newLibrary": "Neue Bibliothek"
   },
   "actions": {
     "untitled": "Unbenannt",
@@ -501,7 +559,8 @@
     "index": "Index",
     "constellationMap": "Wissenskarte",
     "settings": "Einstellungen",
-    "importNotes": "Notizen importieren"
+    "importNotes": "Notizen importieren",
+    "knowledgeHealth": "Wissensgesundheit"
   },
   "sidebar": {
     "searchPlaceholder": "Suchen...",
@@ -529,7 +588,8 @@
     "matchTag": "#",
     "matchWikilink": "W",
     "searchHistory": "Letzte Suchen",
-    "clearHistory": "Verlauf löschen"
+    "clearHistory": "Verlauf löschen",
+    "newLibrary": "Neue Bibliothek"
   },
   "searchHub": {
     "title": "Search Hub",
@@ -1067,7 +1127,10 @@
     "colorByStratum": "Nach Stratum",
     "colorByLibrary": "Nach Bibliothek",
     "zoomIn": "Klicken zum Vergrößern",
-    "zoomOut": "Klicken zum Verkleinern"
+    "zoomOut": "Klicken zum Verkleinern",
+    "childUniverse": "Unteruniversum",
+    "library": "Bibliothek",
+    "returnToMap": "Zurück zur Karte"
   },
   "tableToolbar": {
     "addRow": "Zeile hinzufügen",
@@ -1672,5 +1735,44 @@
     "established": "Etabliert",
     "contested": "Umstritten",
     "archive": "Link archivieren"
+  },
+  "picker": {
+    "title": "Emojis & Symbole",
+    "emoji": "Emojis",
+    "icons": "Symbole",
+    "recent": "Zuletzt verwendet",
+    "search": "Suchen — in beliebiger Sprache tippen",
+    "noResults": "Keine Treffer.",
+    "recentEmpty": "Noch nichts verwendet. Wähle etwas aus Emojis oder Symbolen.",
+    "customizeAppIcons": "App-Symbole anpassen",
+    "customizeDesc": "Ersetze jedes Constellation-Symbol durch ein Emoji oder ein Symbol aus der Bibliothek.",
+    "filterSlots": "Slots filtern…",
+    "reset": "Zurücksetzen",
+    "resetAll": "Alles zurücksetzen"
+  },
+  "knowledgeHealth": {
+    "title": "Wissensgesundheit",
+    "subtitle": "Eine diagnostische Momentaufnahme deiner Living-Link-Architektur.",
+    "loading": "Gesundheitssnapshot wird berechnet…",
+    "refresh": "Aktualisieren",
+    "emptyTitle": "Noch keine Verknüpfungen",
+    "emptyDesc": "Erstelle Wikilinks zwischen Notizen — das Living-Link-System verfolgt Typ, Gewicht und Lebenszyklus automatisch.",
+    "universeHealth": "Universum-Gesundheit",
+    "activeLinks": "aktive Verknüpfungen",
+    "linkTypes": "verwendete Link-Typen",
+    "annotated": "annotiert",
+    "matureLinks": "reife Verknüpfungen",
+    "byType": "Nach kognitivem Typ",
+    "lifecycle": "Lebenszyklusverteilung",
+    "byConfidence": "Nach Vertrauenslevel",
+    "strongest": "Stärkste Beweisketten",
+    "tensions": "Aktive Spannungen",
+    "connected": "Am meisten vernetzte Notizen",
+    "stagnating": "Stagnierende Hochgewichts-Links",
+    "stagnatingDesc": "Schwere Verbindungen, die nicht erneut aufgerufen wurden — Wissen, das zu verblassen droht.",
+    "weakFoundations": "Schwache Grundlagen",
+    "weakFoundationsDesc": "Hochgewichtige Ideen auf hypothetischer Basis — vor der Formalisierung prüfen.",
+    "bias": "Potenzielle Verzerrung (kein Gegenpunkt)",
+    "biasDesc": "Ziele mit nur Unterstützungen und null Widersprüchen — gegenteilige Perspektiven suchen."
   }
 }

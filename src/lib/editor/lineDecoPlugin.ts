@@ -101,7 +101,7 @@ class LineDecoPluginClass {
 			const view = update.view;
 			this.rebuildTimer = setTimeout(() => {
 				this.rebuildTimer = null;
-				if (!view.destroyed) {
+				if (!(view as any).destroyed) {
 					this.decorations = buildLineDecorations(view);
 				}
 			}, 300);

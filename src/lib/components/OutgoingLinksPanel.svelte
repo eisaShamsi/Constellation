@@ -64,7 +64,7 @@
 			const resolved = await resolveWikilinkCrossLibrary(libraryPath, target);
 			if (resolved) {
 				const newTab = e ? (e.ctrlKey || e.metaKey) : false;
-				await openNoteTab(resolved.path, resolved.libraryName, getLibraryColor(resolved.libraryName), undefined, newTab, activeNotePath || undefined);
+				await openNoteTab(resolved.path, resolved.library_name, getLibraryColor(resolved.library_name), undefined, newTab, activeNotePath || undefined);
 			}
 		} catch {}
 	}

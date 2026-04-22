@@ -21,7 +21,9 @@
       "styleSettings": "스타일 설정",
       "knowledge": "지식 관리",
       "arabicOverrides": "아랍어 재정의",
-      "panels": "패널"
+      "panels": "패널",
+      "iconOverrides": "앱 아이콘",
+      "debug": "디버그"
     },
     "general": {
       "language": "언어",
@@ -285,7 +287,35 @@
       "connectionTest": "테스트"
     },
     "templates": {
-      "intro": "노트 템플릿을 관리합니다. 템플릿으로 새 노트에 미리 정의된 콘텐츠를 삽입할 수 있습니다."
+      "intro": "노트 템플릿을 관리합니다. 템플릿으로 새 노트에 미리 정의된 콘텐츠를 삽입할 수 있습니다.",
+      "templateFolder": "템플릿 폴더",
+      "templateFolderDesc": "템플릿 파일이 저장된 폴더",
+      "dailyNoteTemplate": "일일 노트 템플릿",
+      "dailyNoteTemplateDesc": "일일 노트 생성 시 사용할 템플릿 파일 이름 (.md 제외)",
+      "variables": "템플릿 변수",
+      "variablesDesc": "템플릿에서 사용할 수 있는 변수",
+      "varDate": "현재 날짜 (YYYY-MM-DD)",
+      "varDateFormat": "사용자 정의 날짜 형식 (예: YYYY/MM/DD)",
+      "varTime": "현재 시간 (HH:MM)",
+      "varTitle": "노트 제목",
+      "varFolder": "상위 폴더 이름",
+      "varLibrary": "라이브러리 이름",
+      "varCursor": "삽입 후 커서 위치",
+      "varYesterday": "어제 날짜",
+      "varTomorrow": "내일 날짜",
+      "varDateOffset": "오프셋이 있는 날짜 (N일)",
+      "varClipboard": "클립보드 내용",
+      "varFrontmatter": "현재 노트의 frontmatter 값",
+      "varFileCreated": "파일 생성 날짜",
+      "varFileModified": "파일 수정 날짜",
+      "varPrompt": "삽입 시 입력 요청",
+      "varSuggester": "삽입 시 목록에서 선택",
+      "folderTemplates": "폴더 템플릿",
+      "folderTemplatesDesc": "특정 폴더에 노트 생성 시 자동으로 템플릿 적용",
+      "addFolderTemplate": "폴더 템플릿 추가",
+      "folderPath": "폴더 경로",
+      "templateName": "템플릿 이름",
+      "noFolderTemplates": "폴더 템플릿이 구성되지 않았습니다"
     },
     "dashboard": {
       "libraries": "라이브러리",
@@ -387,7 +417,9 @@
       "orgChart": "조직도",
       "orgChartDesc": "지식 계층의 시각적 트리",
       "aiSkills": "AI 스킬",
-      "aiSkillsDesc": "AI 기반 자동화 및 지식 도구"
+      "aiSkillsDesc": "AI 기반 자동화 및 지식 도구",
+      "emojiIconPicker": "이모지 & 아이콘 라이브러리",
+      "emojiIconPickerDesc": "이모지와 벡터 아이콘용 Ctrl+. 선택기 — 노트에 삽입하거나 앱 아이콘 재정의"
     },
     "knowledge": {
       "intro": "지식이 구성, 표시 및 분석되는 방식을 구성합니다.",
@@ -434,6 +466,31 @@
       "panelLinksDesc": "Living Link 분석 및 관리",
       "resetDefault": "기본값으로 재설정",
       "resetDefaultDesc": "기본 패널 레이아웃 복원"
+    },
+    "debug": {
+      "intro": "읽기 전용 진단 보기. 부트 성능 스코어카드는 lab/boot-perf/BOOT-BUDGET.md에 정의된 5가지 출시 기준을 활성 유니버스의 마지막 실행과 비교해 평가합니다.",
+      "bootPerfHeading": "부트 성능",
+      "loading": "로딩 중…",
+      "noReportYet": "아직 부트 성능 보고서가 없습니다. 앱을 닫고 활성 유니버스에서 재시작하여 기록하세요.",
+      "measuredAt": "측정 시간",
+      "notes": "노트",
+      "refresh": "새로고침",
+      "pass": "통과",
+      "fail": "실패",
+      "notMeasured": "측정되지 않음",
+      "manual": "수동",
+      "c1": "UI 표시",
+      "c2": "완전 응답",
+      "c3": "유휴 RSS 메모리",
+      "c4": "부트 후 통계 스캔",
+      "c5": "인덱스 중단 복구",
+      "details": "단계별 타이밍 표시",
+      "rawJson": "원시 JSON 표시",
+      "graphReady": "그래프 준비됨",
+      "librariesLoaded": "라이브러리 로드됨",
+      "coreSnapshot": "핵심 스냅샷 (노트)",
+      "graphSnapshot": "그래프 스냅샷 (링크 + 태그)",
+      "fanout": "파이어앤드포겟 팬아웃"
     }
   },
   "commands": {
@@ -480,7 +537,8 @@
     "expressionForge": "표현 포지",
     "senseMakingCanvas": "센스메이킹 캔버스",
     "inspector360": "360.3D 인스펙터",
-    "constellationMap": "지식 맵"
+    "constellationMap": "지식 맵",
+    "newLibrary": "새 라이브러리"
   },
   "actions": {
     "untitled": "제목 없음",
@@ -501,7 +559,8 @@
     "index": "색인",
     "constellationMap": "지식 맵",
     "settings": "설정",
-    "importNotes": "노트 가져오기"
+    "importNotes": "노트 가져오기",
+    "knowledgeHealth": "지식 건강도"
   },
   "sidebar": {
     "searchPlaceholder": "검색...",
@@ -529,7 +588,8 @@
     "matchTag": "#",
     "matchWikilink": "위",
     "searchHistory": "최근 검색",
-    "clearHistory": "기록 삭제"
+    "clearHistory": "기록 삭제",
+    "newLibrary": "새 라이브러리"
   },
   "searchHub": {
     "title": "Search Hub",
@@ -1056,7 +1116,10 @@
     "colorByStratum": "계층별",
     "colorByLibrary": "라이브러리별",
     "zoomIn": "확대 클릭",
-    "zoomOut": "축소 클릭"
+    "zoomOut": "축소 클릭",
+    "childUniverse": "하위 유니버스",
+    "library": "라이브러리",
+    "returnToMap": "맵으로 돌아가기"
   },
   "tableToolbar": {
     "addRow": "행 추가",
@@ -1672,5 +1735,44 @@
     "established": "확립됨",
     "contested": "이의 제기됨",
     "archive": "링크 보관"
+  },
+  "picker": {
+    "title": "이모지 및 아이콘",
+    "emoji": "이모지",
+    "icons": "아이콘",
+    "recent": "최근 사용",
+    "search": "검색 — 어떤 언어로든 입력하세요",
+    "noResults": "일치하는 항목이 없습니다.",
+    "recentEmpty": "아직 사용된 항목이 없습니다. 이모지 또는 아이콘에서 선택하세요.",
+    "customizeAppIcons": "앱 아이콘 사용자 지정",
+    "customizeDesc": "Constellation 아이콘을 라이브러리의 이모지 또는 아이콘으로 교체하세요.",
+    "filterSlots": "슬롯 필터…",
+    "reset": "초기화",
+    "resetAll": "모두 초기화"
+  },
+  "knowledgeHealth": {
+    "title": "지식 건강",
+    "subtitle": "리빙 링크 아키텍처의 진단 스냅샷.",
+    "loading": "건강 스냅샷 계산 중…",
+    "refresh": "새로고침",
+    "emptyTitle": "아직 링크가 없습니다",
+    "emptyDesc": "노트 간 위키링크를 만드세요 — 리빙 링크 시스템이 유형, 가중치, 생명주기를 자동으로 추적합니다.",
+    "universeHealth": "유니버스 건강",
+    "activeLinks": "활성 링크",
+    "linkTypes": "사용 중인 링크 유형",
+    "annotated": "주석 달린",
+    "matureLinks": "성숙한 링크",
+    "byType": "인지 유형별",
+    "lifecycle": "생명주기 분포",
+    "byConfidence": "신뢰 수준별",
+    "strongest": "가장 강한 증거 체인",
+    "tensions": "활성 긴장",
+    "connected": "가장 연결된 노트",
+    "stagnating": "정체된 고가중치 링크",
+    "stagnatingDesc": "재방문되지 않은 무거운 연결 — 사라질 위험이 있는 지식.",
+    "weakFoundations": "약한 기반",
+    "weakFoundationsDesc": "가설 수준 증거 위에 구축된 고가중치 아이디어 — 공식화 전에 검토하세요.",
+    "bias": "잠재적 편향 (반대 관점 없음)",
+    "biasDesc": "지지만 있고 모순이 없는 대상 — 반대 관점을 찾으세요."
   }
 }

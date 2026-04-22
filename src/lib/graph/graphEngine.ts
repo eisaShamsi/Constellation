@@ -2277,6 +2277,7 @@ export class GraphEngine {
 					fontFamily,
 					fill: dark ? '#e2e8f0' : '#1e293b',
 					align: n.isRTL ? 'right' : 'left',
+					// @ts-ignore — direction is a valid PixiJS TextStyle property but not in the TS types
 					direction: n.isRTL ? 'rtl' : 'ltr',
 				});
 				label = new Text({ text: n.name, style });

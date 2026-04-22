@@ -29,6 +29,7 @@
 		libraryColorMap = {} as Record<string, string>,
 		onNoteClick,
 		onClose,
+		searchMatchIds = null as Set<string> | null,
 	}: {
 		nodes?: SkyNode[];
 		links?: SkyLink[];

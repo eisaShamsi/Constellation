@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Command ffmpeg)",
+      "PowerShell(winget install -e --id Gyan.FFmpeg --accept-source-agreements --accept-package-agreements --silent 2>&1)",
+      "PowerShell($ff = Get-ChildItem \"$env:LOCALAPPDATA\\\\Microsoft\\\\WinGet\\\\Packages\" -Filter ffmpeg.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName; $ff)",
+      "PowerShell($ff = \"C:\\\\Users\\\\ealsh\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-8.1-full_build\\\\bin\\\\ffmpeg.exe\"; New-Item -ItemType Directory -Path \"C:\\\\Users\\\\ealsh\\\\Desktop\\\\ghost_frames\" -Force | Out-Null; & $ff -i \"C:\\\\Users\\\\ealsh\\\\Desktop\\\\Ghost.mp4\" -vf \"fps=2\" -q:v 2 \"C:\\\\Users\\\\ealsh\\\\Desktop\\\\ghost_frames\\\\frame_%03d.jpg\" 2>&1 | Select-Object -Last 5; Get-ChildItem \"C:\\\\Users\\\\ealsh\\\\Desktop\\\\ghost_frames\" | Measure-Object | Select-Object Count)"
+    ]
+  }
+}

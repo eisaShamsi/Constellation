@@ -7,8 +7,8 @@ import { type MarkdownExtension } from '@lezer/markdown';
 
 export const Highlight: MarkdownExtension = {
 	defineNodes: [
-		{ name: 'Highlight', style: 'highlight' },
-		{ name: 'HighlightMark', style: 'processingInstruction' },
+		{ name: 'Highlight', style: 'highlight' as any },
+		{ name: 'HighlightMark', style: 'processingInstruction' as any },
 	],
 	parseInline: [
 		{

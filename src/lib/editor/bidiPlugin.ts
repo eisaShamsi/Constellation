@@ -176,7 +176,7 @@ class BidiPluginClass {
 			const view = update.view;
 			this.rebuildTimer = setTimeout(() => {
 				this.rebuildTimer = null;
-				if (!view.destroyed) {
+				if (!(view as any).destroyed) {
 					this.decorations = buildBidiDecorations(view);
 				}
 			}, 300);

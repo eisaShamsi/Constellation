@@ -28,11 +28,11 @@ export type EmbeddingProgress = {
 	total: number;
 };
 
-let embedder: Pipeline | null = null;
+let embedder: any = null; // FeatureExtractionPipeline from @xenova/transformers
 let modelLoading = false;
 
 /** Load the sentence embedding model (cached after first download) */
-async function getEmbedder(): Promise<Pipeline> {
+async function getEmbedder(): Promise<any> {
 	if (embedder) return embedder;
 	if (modelLoading) {
 		// Wait for concurrent load
@@ -46,7 +46,7 @@ async function getEmbedder(): Promise<Pipeline> {
 	try {
 		embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
 			quantized: true, // Use quantized model for speed (~23MB vs ~90MB)
-		});
+		}) as any;
 		return embedder;
 	} finally {
 		modelLoading = false;

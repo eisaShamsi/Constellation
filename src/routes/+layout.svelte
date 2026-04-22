@@ -4207,7 +4207,7 @@
 
 				<!-- Tab context menu -->
 				{#if tabCtxMenu}
-					{#each [$openTabs.find(t => t.id === tabCtxMenu.tabId)] as ctxTab}
+					{#each [$openTabs.find(t => t.id === tabCtxMenu!.tabId)] as ctxTab}
 						<div class="tab-ctx-menu" style="left:{tabCtxMenu.x}px;top:{tabCtxMenu.y}px">
 							<button class="tab-ctx-item" onclick={() => tabCtxAction('pin')}>
 								{ctxTab?.pinned ? 'Unpin' : 'Pin'}
@@ -4360,8 +4360,8 @@
 						if (lib) {
 							let hl = highlightTerm || '';
 							hl = hl.replace(/(?:links?\s+(?:to|from|between|all)|mutual|mentions?|supports|contradicts|causes|exemplifies|generalizes|derives[- ]from|part[- ]of)\s*/gi, '');
-							hl = hl.replace(/\[\[|\]\]/g, '').replace(/^\s*#/, '').trim() || undefined;
-							openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', hl as string | undefined);
+							const hlFinal = hl.replace(/\[\[|\]\]/g, '').replace(/^\s*#/, '').trim() || undefined;
+							openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', hlFinal);
 						}
 						lensActive = false;
 						sidebarOpen = sidebarBeforeLens; rightSidebarOpen = rightSidebarBeforeLens;
@@ -4378,7 +4378,7 @@
 				initialQuery={searchHubInitialQuery}
 				{allNotes}
 				linkCounts={searchLinkCounts}
-				onNoteClick={(path, name, libraryName, hubQuery) => {
+				onNoteClick={(path: string, name: string, libraryName: string, hubQuery: string) => {
 					const libraryColor = libraryColorMap[libraryName] ?? '#7c3aed';
 					// Strip operator syntax from query for clean highlighting
 					let hl = hubQuery || '';
@@ -4388,8 +4388,8 @@
 					hl = hl.replace(/^\s*#/, '');
 					hl = hl.replace(/^\s*in:\S+\s*/, '');
 					hl = hl.replace(/^\s*\S+=\S+\s*/, '');
-					hl = hl.trim() || undefined;
-					openNoteTab(path, libraryName, libraryColor, hl as string | undefined);
+					const hlFinal = hl.trim() || undefined;
+					openNoteTab(path, libraryName, libraryColor, hlFinal);
 					showSearchHub = false;
 					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
 					searchHubReturnPending = true;
@@ -4399,7 +4399,7 @@
 					sidebarOpen = sidebarBeforeSearch; rightSidebarOpen = rightSidebarBeforeSearch;
 					searchHubReturnPending = false;
 				}}
-				onResults={(ids) => { searchHubMatchIds = ids.size > 0 ? ids : null; }}
+				onResults={(ids: Set<string>) => { searchHubMatchIds = ids.size > 0 ? ids : null; }}
 			/>
 		</div>
 

@@ -412,7 +412,9 @@
       "Bash(awk -F'\\\\t' '!/^#/ && NF>=3 {print $2}' src-tauri/src/arabic/regression_cases.tsv)",
       "Bash(tasklist //FI \"IMAGENAME eq constellation_lib-76aaf3fef244d68f.exe\")",
       "Bash(tasklist //FI \"IMAGENAME eq constellation*.exe\")",
-      "PowerShell($file = \"E:\\\\مشاريع كلاود\\\\Constellation\\\\.claude\\\\worktrees\\\\upbeat-proskuriakova\\\\src\\\\routes\\\\+layout.svelte\"; $bytes = [System.IO.File]::ReadAllBytes\\($file\\); $text = [System.Text.Encoding]::UTF8.GetString\\($bytes\\); if\\($text -match \"`r`n\"\\){Write-Output \"CRLF\"} else {Write-Output \"LF\"}; Write-Output \\(\"Total length: \" + $text.Length\\))"
+      "PowerShell($file = \"E:\\\\مشاريع كلاود\\\\Constellation\\\\.claude\\\\worktrees\\\\upbeat-proskuriakova\\\\src\\\\routes\\\\+layout.svelte\"; $bytes = [System.IO.File]::ReadAllBytes\\($file\\); $text = [System.Text.Encoding]::UTF8.GetString\\($bytes\\); if\\($text -match \"`r`n\"\\){Write-Output \"CRLF\"} else {Write-Output \"LF\"}; Write-Output \\(\"Total length: \" + $text.Length\\))",
+      "Bash(find src *)",
+      "Bash(find \"E:\\\\مشاريع كلاود\\\\Constellation\\\\src\" -type f \\\\\\( -name \"*.ts\" -o -name \"*.svelte\" \\\\\\) -exec grep -l \"^[[:space:]]*//\" {} \\\\;)"
     ]
   }
 }

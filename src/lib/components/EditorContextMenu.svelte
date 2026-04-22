@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { t, dir } from '$lib/i18n';
 
-	type CursorContext = 'normal' | 'heading' | 'table' | 'checkbox' | 'link' | 'codeblock';
+	type CursorContext = 'normal' | 'heading' | 'table' | 'checkbox' | 'link' | 'codeblock' | 'list' | 'blockquote';
 
 	let {
 		x,

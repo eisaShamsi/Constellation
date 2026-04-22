@@ -1617,6 +1617,9 @@ export interface NoteLink {
 	 *  user-promoted tier. The UI derives a richer lifecycle state from
 	 *  (traversal_count + last_traversed + confidence) via `linkLifecycle()`. */
 	confidence?: string;
+	/** Archival status: 'active' (default) or 'archived'. Archived links
+	 *  are hidden from backlinks/outgoing panels but preserved on disk. */
+	status?: 'active' | 'archived';
 }
 
 /** P5 — Living Link lifecycle state computed client-side from the raw
@@ -2408,6 +2411,13 @@ export interface AppSettings {
 		secondScreen: boolean;
 		constellationMap: boolean;
 		constellationSight: boolean;
+		emojiIconPicker: boolean;
+	};
+	/** AI/LLM integration preferences */
+	ai?: {
+		contextLines?: number;
+		libraryAccess?: 'all' | 'active' | 'none';
+		[key: string]: unknown;
 	};
 }
 
@@ -2511,6 +2521,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		secondScreen: true,
 		constellationMap: false,
 		constellationSight: true,
+		emojiIconPicker: true,
 	},
 	customShortcuts: {},
 	linkPills: {

@@ -21,7 +21,9 @@
       "styleSettings": "スタイル設定",
       "knowledge": "ナレッジ管理",
       "arabicOverrides": "アラビア語オーバーライド",
-      "panels": "パネル"
+      "panels": "パネル",
+      "iconOverrides": "アプリアイコン",
+      "debug": "デバッグ"
     },
     "general": {
       "language": "言語",
@@ -285,7 +287,35 @@
       "connectionTest": "テスト"
     },
     "templates": {
-      "intro": "ノートテンプレートを管理します。テンプレートで事前定義されたコンテンツを新しいノートに挿入できます。"
+      "intro": "ノートテンプレートを管理します。テンプレートで事前定義されたコンテンツを新しいノートに挿入できます。",
+      "templateFolder": "テンプレートフォルダ",
+      "templateFolderDesc": "テンプレートファイルが保存されているフォルダ",
+      "dailyNoteTemplate": "デイリーノートテンプレート",
+      "dailyNoteTemplateDesc": "デイリーノート作成時に使用するテンプレートファイル名（.mdなし）",
+      "variables": "テンプレート変数",
+      "variablesDesc": "テンプレートで使用できる変数",
+      "varDate": "現在の日付 (YYYY-MM-DD)",
+      "varDateFormat": "カスタム日付形式（例：YYYY/MM/DD）",
+      "varTime": "現在の時刻 (HH:MM)",
+      "varTitle": "ノートタイトル",
+      "varFolder": "親フォルダ名",
+      "varLibrary": "ライブラリ名",
+      "varCursor": "挿入後のカーソル位置",
+      "varYesterday": "昨日の日付",
+      "varTomorrow": "明日の日付",
+      "varDateOffset": "オフセット付き日付（N日）",
+      "varClipboard": "クリップボードの内容",
+      "varFrontmatter": "現在のノートのfrontmatter値",
+      "varFileCreated": "ファイル作成日",
+      "varFileModified": "ファイル変更日",
+      "varPrompt": "挿入時に入力を要求",
+      "varSuggester": "挿入時にリストから選択",
+      "folderTemplates": "フォルダテンプレート",
+      "folderTemplatesDesc": "特定のフォルダにノートを作成する際にテンプレートを自動適用",
+      "addFolderTemplate": "フォルダテンプレートを追加",
+      "folderPath": "フォルダパス",
+      "templateName": "テンプレート名",
+      "noFolderTemplates": "フォルダテンプレートが設定されていません"
     },
     "dashboard": {
       "libraries": "ライブラリ",
@@ -387,7 +417,9 @@
       "orgChart": "組織図",
       "orgChartDesc": "ナレッジ階層のビジュアルツリー",
       "aiSkills": "AIスキル",
-      "aiSkillsDesc": "AI搭載の自動化・ナレッジツール"
+      "aiSkillsDesc": "AI搭載の自動化・ナレッジツール",
+      "emojiIconPicker": "絵文字＆アイコンライブラリ",
+      "emojiIconPickerDesc": "絵文字とベクターアイコン用のCtrl+.ピッカー — ノートに挿入またはアプリアイコンを上書き"
     },
     "knowledge": {
       "intro": "知識の整理、表示、分析の方法を設定します。",
@@ -434,6 +466,31 @@
       "panelLinksDesc": "Living Linkの分析と管理",
       "resetDefault": "デフォルトにリセット",
       "resetDefaultDesc": "デフォルトのパネルレイアウトを復元する"
+    },
+    "debug": {
+      "intro": "読み取り専用の診断ビュー。ブートパフォーマンススコアカードは、lab/boot-perf/BOOT-BUDGET.mdで定義された5つの出荷基準をアクティブユニバースでの最後の起動と照合して評価します。",
+      "bootPerfHeading": "ブートパフォーマンス",
+      "loading": "読み込み中…",
+      "noReportYet": "ブートパフォーマンスレポートがまだありません。アプリを閉じてアクティブユニバースで再起動してください。",
+      "measuredAt": "測定日時",
+      "notes": "ノート",
+      "refresh": "更新",
+      "pass": "合格",
+      "fail": "不合格",
+      "notMeasured": "未測定",
+      "manual": "手動",
+      "c1": "UI表示",
+      "c2": "完全応答",
+      "c3": "アイドルRSSメモリ",
+      "c4": "ブート後の統計スキャン",
+      "c5": "インデックス中断からの回復",
+      "details": "フェーズ別タイミングを表示",
+      "rawJson": "raw JSONを表示",
+      "graphReady": "グラフ準備完了",
+      "librariesLoaded": "ライブラリ読み込み完了",
+      "coreSnapshot": "コアスナップショット（ノート）",
+      "graphSnapshot": "グラフスナップショット（リンク＋タグ）",
+      "fanout": "ファイアアンドフォーゲットファンアウト"
     }
   },
   "commands": {
@@ -480,7 +537,8 @@
     "expressionForge": "表現フォージ",
     "senseMakingCanvas": "センスメイキングキャンバス",
     "inspector360": "360.3Dインスペクター",
-    "constellationMap": "ナレッジマップ"
+    "constellationMap": "ナレッジマップ",
+    "newLibrary": "新しいライブラリ"
   },
   "actions": {
     "untitled": "無題",
@@ -501,7 +559,8 @@
     "index": "索引",
     "constellationMap": "ナレッジマップ",
     "settings": "設定",
-    "importNotes": "ノートをインポート"
+    "importNotes": "ノートをインポート",
+    "knowledgeHealth": "知識の健全性"
   },
   "sidebar": {
     "searchPlaceholder": "検索...",
@@ -529,7 +588,8 @@
     "matchTag": "#",
     "matchWikilink": "ウ",
     "searchHistory": "最近の検索",
-    "clearHistory": "履歴を消去"
+    "clearHistory": "履歴を消去",
+    "newLibrary": "新しいライブラリ"
   },
   "searchHub": {
     "title": "Search Hub",
@@ -1056,7 +1116,10 @@
     "colorByStratum": "階層別",
     "colorByLibrary": "ライブラリ別",
     "zoomIn": "クリックで拡大",
-    "zoomOut": "クリックで縮小"
+    "zoomOut": "クリックで縮小",
+    "childUniverse": "チャイルドユニバース",
+    "library": "ライブラリ",
+    "returnToMap": "マップに戻る"
   },
   "tableToolbar": {
     "addRow": "行を追加",
@@ -1672,5 +1735,44 @@
     "established": "確立",
     "contested": "異議あり",
     "archive": "リンクをアーカイブ"
+  },
+  "picker": {
+    "title": "絵文字とアイコン",
+    "emoji": "絵文字",
+    "icons": "アイコン",
+    "recent": "最近使用したもの",
+    "search": "検索 — どの言語でも入力できます",
+    "noResults": "一致するものがありません。",
+    "recentEmpty": "まだ何も使用していません。絵文字またはアイコンから選んでください。",
+    "customizeAppIcons": "アプリアイコンをカスタマイズ",
+    "customizeDesc": "Constellationのアイコンを、ライブラリの絵文字またはアイコンに置き換えます。",
+    "filterSlots": "スロットをフィルタ…",
+    "reset": "リセット",
+    "resetAll": "すべてリセット"
+  },
+  "knowledgeHealth": {
+    "title": "知識の健全性",
+    "subtitle": "リビングリンクアーキテクチャの診断スナップショット。",
+    "loading": "健全性スナップショットを計算中…",
+    "refresh": "更新",
+    "emptyTitle": "まだリンクがありません",
+    "emptyDesc": "ノート間にウィキリンクを作成してください — リビングリンクシステムが種類、重み、ライフサイクルを自動で追跡します。",
+    "universeHealth": "ユニバースの健全性",
+    "activeLinks": "アクティブリンク",
+    "linkTypes": "使用中のリンクタイプ",
+    "annotated": "注釈付き",
+    "matureLinks": "成熟したリンク",
+    "byType": "認知タイプ別",
+    "lifecycle": "ライフサイクル分布",
+    "byConfidence": "信頼レベル別",
+    "strongest": "最強の証拠連鎖",
+    "tensions": "アクティブな緊張",
+    "connected": "最も接続されたノート",
+    "stagnating": "停滞している高重みリンク",
+    "stagnatingDesc": "再訪されていない重い接続 — 薄れるリスクのある知識。",
+    "weakFoundations": "弱い基盤",
+    "weakFoundationsDesc": "仮説レベルの証拠に基づく高重みのアイデア — 形式化前に検証してください。",
+    "bias": "潜在的バイアス（反対意見なし）",
+    "biasDesc": "サポートのみでゼロの矛盾のあるターゲット — 反対の視点を探してください。"
   }
 }

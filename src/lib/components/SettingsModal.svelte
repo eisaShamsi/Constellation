@@ -566,9 +566,9 @@
 		} as any);
 	}
 
-	function updateAIPrefs(partial: Partial<typeof $appSettings.ai>) {
+	function updateAIPrefs(partial: Record<string, unknown>) {
 		updateSettings({
-			ai: { ...$appSettings.ai, ...partial }
+			ai: { ...($appSettings.ai ?? {}), ...partial }
 		} as any);
 	}
 
@@ -1625,9 +1625,9 @@
 							<div class="setting-desc">{$t('settings.intelligence.contextLinesDesc')}</div>
 						</div>
 						<div class="slider-row">
-							<input type="range" class="setting-slider" min="10" max="200" step="10" value={$appSettings.ai.contextLines}
+							<input type="range" class="setting-slider" min="10" max="200" step="10" value={$appSettings.ai?.contextLines ?? 50}
 								oninput={(e) => updateAIPrefs({ contextLines: parseInt((e.target as HTMLInputElement).value) })} />
-							<span class="slider-val">{$appSettings.ai.contextLines}</span>
+							<span class="slider-val">{$appSettings.ai?.contextLines ?? 50}</span>
 						</div>
 					</div>
 
@@ -1636,7 +1636,7 @@
 							<div class="setting-name">{$t('settings.intelligence.libraryAccess')}</div>
 							<div class="setting-desc">{$t('settings.intelligence.libraryAccessDesc')}</div>
 						</div>
-						<select class="setting-control" value={$appSettings.ai.libraryAccess} onchange={(e) => updateAIPrefs({ libraryAccess: (e.target as HTMLSelectElement).value as any })}>
+						<select class="setting-control" value={$appSettings.ai?.libraryAccess ?? 'all'} onchange={(e) => updateAIPrefs({ libraryAccess: (e.target as HTMLSelectElement).value as any })}>
 							<option value="all">{$t('settings.intelligence.allLibraries')}</option>
 							<option value="active">{$t('settings.intelligence.activeOnly')}</option>
 							<option value="none">{$t('settings.intelligence.noAccess')}</option>
@@ -1979,7 +1979,7 @@
 							<div class="theme-editor-actions">
 								<button class="btn-primary" onclick={saveTheme}>Save</button>
 								<button class="btn-text" onclick={() => { themeEditorOpen = false; editingTheme = null; }}>{$t('common.cancel') || 'Cancel'}</button>
-								{#if !BUILTIN_THEMES.find(b => b.id === editingTheme.id)}
+								{#if !BUILTIN_THEMES.find(b => b.id === editingTheme?.id)}
 									<button class="btn-danger" onclick={() => deleteTheme(editingTheme!.id)}>{$t('common.delete') || 'Delete'}</button>
 									<button class="btn-text" onclick={() => exportTheme(editingTheme!)}>{$t('settings.appearance.exportTheme') || 'Export'}</button>
 								{/if}

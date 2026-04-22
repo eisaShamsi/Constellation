@@ -1090,7 +1090,7 @@ class LivePreviewPlugin {
 			const view = update.view;
 			this.rebuildTimer = setTimeout(() => {
 				this.rebuildTimer = null;
-				if (!view.destroyed) {
+				if (!(view as any).destroyed) {
 					this.decorations = buildDecorations(view);
 				}
 			}, 300);

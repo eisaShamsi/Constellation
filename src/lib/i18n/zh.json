@@ -21,7 +21,9 @@
       "styleSettings": "样式设置",
       "knowledge": "知识管理",
       "arabicOverrides": "阿拉伯语覆盖",
-      "panels": "面板"
+      "panels": "面板",
+      "iconOverrides": "应用图标",
+      "debug": "调试"
     },
     "general": {
       "language": "语言",
@@ -285,7 +287,35 @@
       "connectionTest": "测试"
     },
     "templates": {
-      "intro": "管理笔记模板。模板可以在新笔记中插入预定义内容。"
+      "intro": "管理笔记模板。模板可以在新笔记中插入预定义内容。",
+      "templateFolder": "模板文件夹",
+      "templateFolderDesc": "存储模板文件的文件夹",
+      "dailyNoteTemplate": "每日笔记模板",
+      "dailyNoteTemplateDesc": "创建每日笔记时使用的模板文件名（不含 .md）",
+      "variables": "模板变量",
+      "variablesDesc": "模板中可用的变量",
+      "varDate": "当前日期 (YYYY-MM-DD)",
+      "varDateFormat": "自定义日期格式（如 YYYY/MM/DD）",
+      "varTime": "当前时间 (HH:MM)",
+      "varTitle": "笔记标题",
+      "varFolder": "父文件夹名称",
+      "varLibrary": "库名称",
+      "varCursor": "插入后光标位置",
+      "varYesterday": "昨天的日期",
+      "varTomorrow": "明天的日期",
+      "varDateOffset": "带偏移的日期（N天）",
+      "varClipboard": "剪贴板内容",
+      "varFrontmatter": "当前笔记的 frontmatter 值",
+      "varFileCreated": "文件创建日期",
+      "varFileModified": "文件修改日期",
+      "varPrompt": "插入时请求输入",
+      "varSuggester": "插入时从列表中选择",
+      "folderTemplates": "文件夹模板",
+      "folderTemplatesDesc": "在特定文件夹中创建笔记时自动应用模板",
+      "addFolderTemplate": "添加文件夹模板",
+      "folderPath": "文件夹路径",
+      "templateName": "模板名称",
+      "noFolderTemplates": "未配置文件夹模板"
     },
     "dashboard": {
       "libraries": "资料库",
@@ -387,7 +417,9 @@
       "orgChart": "组织图",
       "orgChartDesc": "知识层次结构的可视化树",
       "aiSkills": "AI技能",
-      "aiSkillsDesc": "AI驱动的自动化和知识工具"
+      "aiSkillsDesc": "AI驱动的自动化和知识工具",
+      "emojiIconPicker": "表情符号和图标库",
+      "emojiIconPickerDesc": "Ctrl+. 选择器，用于表情符号和矢量图标——插入笔记或替换应用图标"
     },
     "knowledge": {
       "intro": "配置知识的组织、查看和分析方式。",
@@ -434,6 +466,31 @@
       "panelLinksDesc": "Living Link 分析和管理",
       "resetDefault": "重置为默认",
       "resetDefaultDesc": "恢复默认面板布局（反向链接居左，出站链接居右）"
+    },
+    "debug": {
+      "intro": "只读诊断视图。启动性能评分卡根据 lab/boot-perf/BOOT-BUDGET.md 中定义的五个发布标准评估活跃宇宙的最后一次启动。",
+      "bootPerfHeading": "启动性能",
+      "loading": "加载中…",
+      "noReportYet": "尚无启动性能报告。请关闭应用并在活跃宇宙中重新启动以记录一份。",
+      "measuredAt": "测量时间",
+      "notes": "笔记",
+      "refresh": "刷新",
+      "pass": "通过",
+      "fail": "失败",
+      "notMeasured": "未测量",
+      "manual": "手动",
+      "c1": "UI 可见",
+      "c2": "完全响应",
+      "c3": "空闲 RSS 内存",
+      "c4": "启动后统计扫描",
+      "c5": "索引中断恢复",
+      "details": "显示各阶段计时",
+      "rawJson": "显示原始 JSON",
+      "graphReady": "图谱就绪",
+      "librariesLoaded": "库已加载",
+      "coreSnapshot": "核心快照（笔记）",
+      "graphSnapshot": "图谱快照（链接 + 标签）",
+      "fanout": "Fire-and-forget 扇出"
     }
   },
   "commands": {
@@ -480,7 +537,8 @@
     "expressionForge": "表达锻造",
     "senseMakingCanvas": "意义构建画布",
     "inspector360": "360.3D检查器",
-    "constellationMap": "知识地图"
+    "constellationMap": "知识地图",
+    "newLibrary": "新建库"
   },
   "actions": {
     "untitled": "未命名",
@@ -501,7 +559,8 @@
     "index": "索引",
     "constellationMap": "知识地图",
     "settings": "设置",
-    "importNotes": "导入笔记"
+    "importNotes": "导入笔记",
+    "knowledgeHealth": "知识健康度"
   },
   "sidebar": {
     "searchPlaceholder": "搜索...",
@@ -529,7 +588,8 @@
     "matchTag": "#",
     "matchWikilink": "维",
     "searchHistory": "最近搜索",
-    "clearHistory": "清除历史"
+    "clearHistory": "清除历史",
+    "newLibrary": "新建库"
   },
   "searchHub": {
     "title": "Search Hub",
@@ -1056,7 +1116,10 @@
     "colorByStratum": "按层次",
     "colorByLibrary": "按库",
     "zoomIn": "点击放大",
-    "zoomOut": "点击缩小"
+    "zoomOut": "点击缩小",
+    "childUniverse": "子宇宙",
+    "library": "库",
+    "returnToMap": "返回地图"
   },
   "tableToolbar": {
     "addRow": "添加行",
@@ -1672,5 +1735,44 @@
     "established": "已确立",
     "contested": "有争议",
     "archive": "归档链接"
+  },
+  "picker": {
+    "title": "表情符号和图标",
+    "emoji": "表情符号",
+    "icons": "图标",
+    "recent": "最近使用",
+    "search": "搜索 — 用任何语言输入",
+    "noResults": "无匹配项。",
+    "recentEmpty": "还没有使用过任何内容。从表情符号或图标中选择。",
+    "customizeAppIcons": "自定义应用图标",
+    "customizeDesc": "将任意 Constellation 图标替换为库中的表情符号或图标。",
+    "filterSlots": "筛选插槽…",
+    "reset": "重置",
+    "resetAll": "全部重置"
+  },
+  "knowledgeHealth": {
+    "title": "知识健康",
+    "subtitle": "您的活体链接架构的诊断快照。",
+    "loading": "正在计算健康快照…",
+    "refresh": "刷新",
+    "emptyTitle": "还没有链接",
+    "emptyDesc": "在笔记之间创建维基链接 — 活体链接系统将自动追踪其类型、权重和生命周期。",
+    "universeHealth": "宇宙健康",
+    "activeLinks": "活跃链接",
+    "linkTypes": "使用中的链接类型",
+    "annotated": "已注释",
+    "matureLinks": "成熟链接",
+    "byType": "按认知类型",
+    "lifecycle": "生命周期分布",
+    "byConfidence": "按置信度",
+    "strongest": "最强证据链",
+    "tensions": "活跃张力",
+    "connected": "连接最多的笔记",
+    "stagnating": "停滞的高权重链接",
+    "stagnatingDesc": "未重新访问的重型连接 — 有衰退风险的知识。",
+    "weakFoundations": "薄弱基础",
+    "weakFoundationsDesc": "建立在假设级证据上的高权重想法 — 正式化前请检查。",
+    "bias": "潜在偏见（没有对立观点）",
+    "biasDesc": "只有支持且无矛盾的目标 — 寻找对立的观点。"
   }
 }

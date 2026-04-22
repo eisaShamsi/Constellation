@@ -334,9 +334,9 @@
 		return (s.contextualDates || {})[script] ?? false;
 	}
 
-	function getDateDir(): string {
+	function getDateDir(): 'ltr' | 'rtl' | 'auto' {
 		if (!isDateContextual()) return 'ltr';
-		return noteDir;
+		return (noteDir as 'ltr' | 'rtl' | 'auto') || 'ltr';
 	}
 
 	function handleLinkClick(value: string) {

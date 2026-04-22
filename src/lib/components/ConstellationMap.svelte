@@ -50,12 +50,12 @@
 		libraryName?: string;
 		libraryColor?: string;
 		libraryColorMap?: Record<string, string>;
-		initialData?: MapNode | null;
+		initialData?: any; // MapNode | null
 		compact?: boolean;
 		initialColorMode?: 'maturity' | 'stratum' | 'library';
 		onNoteClick?: (path: string, name: string) => void;
 		onClose?: () => void;
-		onDrillDown?: (node: MapNode, breadcrumbNames: string[]) => void;
+		onDrillDown?: (node: any, breadcrumbNames: string[]) => void; // node: MapNode
 		onColorModeChange?: (mode: string) => void;
 	} = $props();
 

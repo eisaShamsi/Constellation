@@ -352,7 +352,7 @@
 				scriptFontsField, bidiPlugin, bidiTheme, /* per-line RTL/LTR direction + cursor positioning */
 				libraryPathField, notePathField, attachmentFolderField, /* image path resolution */
 				linkTraversalMapField, /* P4.2: per-wikilink `×N` chip */
-				...($appSettings.autoPairBrackets ? [closeBrackets({ brackets: ['(', '[', '{', '"', "'", '`'] })] : []),
+				...($appSettings.autoPairBrackets ? [closeBrackets()] : []),
 				search({ top: true }),
 				colorHighlightField,
 				autocompletion({

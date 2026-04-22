@@ -980,7 +980,7 @@
 			{#if ctxMenu.node.node_type === 'note'}
 				<button onclick={() => handleCtxAction('open')}>{$t('contextMenu.open') || 'Open'}</button>
 			{:else}
-				<button onclick={() => toggleFsExpand(ctxMenu.node.path)}>{fsExpandedPaths.has(ctxMenu.node.path) ? ($t('sidebar.collapseAll') || 'Collapse') : ($t('sidebar.expandAll') || 'Expand')}</button>
+				<button onclick={() => toggleFsExpand(ctxMenu!.node.path)}>{fsExpandedPaths.has(ctxMenu!.node.path) ? ($t('sidebar.collapseAll') || 'Collapse') : ($t('sidebar.expandAll') || 'Expand')}</button>
 			{/if}
 		</div>
 	{/if}

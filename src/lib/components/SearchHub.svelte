@@ -384,7 +384,7 @@
 				{@const unique = uniqueNoteCount()}
 				<span class="sh-total">{totalResults()} {#if unique < totalResults()}<span class="sh-unique">{$t('searchHub.from')} {unique} {$t('searchHub.notes')}</span>{/if}</span>
 			{/if}
-			<button class="sh-close" onclick={onClose}>×</button>
+			<button class="sh-close" onclick={() => onClose()}>×</button>
 		</div>
 
 		<!-- Wikilink autocomplete dropdown (absolute overlay below header) -->

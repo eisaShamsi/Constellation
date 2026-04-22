@@ -21,7 +21,9 @@
       "styleSettings": "הגדרות סגנון",
       "knowledge": "ניהול ידע",
       "arabicOverrides": "דריסות ערבית",
-      "panels": "פאנלים"
+      "panels": "פאנלים",
+      "iconOverrides": "אייקוני האפליקציה",
+      "debug": "ניפוי שגיאות"
     },
     "general": {
       "language": "שפה",
@@ -285,7 +287,35 @@
       "connectionTest": "בדיקה"
     },
     "templates": {
-      "intro": "ניהול תבניות הערות. תבניות מאפשרות הוספת תוכן מוגדר מראש להערות חדשות."
+      "intro": "ניהול תבניות הערות. תבניות מאפשרות הוספת תוכן מוגדר מראש להערות חדשות.",
+      "templateFolder": "תיקיית תבניות",
+      "templateFolderDesc": "התיקייה שבה מאוחסנים קבצי התבניות שלך",
+      "dailyNoteTemplate": "תבנית פתק יומי",
+      "dailyNoteTemplateDesc": "שם קובץ התבנית ליצירת פתקים יומיים (ללא .md)",
+      "variables": "משתני תבנית",
+      "variablesDesc": "משתנים זמינים לשימוש בתבניות שלך",
+      "varDate": "תאריך נוכחי (YYYY-MM-DD)",
+      "varDateFormat": "פורמט תאריך מותאם אישית (לדוגמה YYYY/MM/DD)",
+      "varTime": "שעה נוכחית (HH:MM)",
+      "varTitle": "כותרת הפתק",
+      "varFolder": "שם תיקיית האב",
+      "varLibrary": "שם הספרייה",
+      "varCursor": "מיקום סמן לאחר הכנסה",
+      "varYesterday": "תאריך אתמול",
+      "varTomorrow": "תאריך מחר",
+      "varDateOffset": "תאריך עם היסט (N ימים)",
+      "varClipboard": "תוכן הלוח",
+      "varFrontmatter": "ערך frontmatter של הפתק הנוכחי",
+      "varFileCreated": "תאריך יצירת הקובץ",
+      "varFileModified": "תאריך שינוי הקובץ",
+      "varPrompt": "בקש קלט בעת הכנסה",
+      "varSuggester": "בחר מרשימה בעת הכנסה",
+      "folderTemplates": "תבניות תיקייה",
+      "folderTemplatesDesc": "החל תבניות אוטומטית בעת יצירת פתקים בתיקיות ספציפיות",
+      "addFolderTemplate": "הוסף תבנית תיקייה",
+      "folderPath": "נתיב תיקייה",
+      "templateName": "שם תבנית",
+      "noFolderTemplates": "לא הוגדרו תבניות תיקייה"
     },
     "dashboard": {
       "libraries": "ספריות",
@@ -387,7 +417,9 @@
       "orgChart": "תרשים ארגוני",
       "orgChartDesc": "עץ חזותי של היררכיית הידע שלך",
       "aiSkills": "כישורי AI",
-      "aiSkillsDesc": "כלי אוטומציה וידע מבוססי AI"
+      "aiSkillsDesc": "כלי אוטומציה וידע מבוססי AI",
+      "emojiIconPicker": "ספריית אמוג'י ואייקונים",
+      "emojiIconPickerDesc": "בורר Ctrl+. לאמוג'י ואייקוני וקטור — הוסף להערות או עקוף אייקוני אפליקציה"
     },
     "knowledge": {
       "intro": "הגדר כיצד הידע שלך מאורגן, מוצג ומנותח.",
@@ -434,6 +466,31 @@
       "panelLinksDesc": "ניתוח וניהול Living Links",
       "resetDefault": "איפוס לברירת מחדל",
       "resetDefaultDesc": "שחזור פריסת הפאנל ברירת המחדל"
+    },
+    "debug": {
+      "intro": "תצוגת אבחון לקריאה בלבד. כרטיס ביצועי האתחול מעריך את חמשת קריטריוני השילוח המוגדרים ב-lab/boot-perf/BOOT-BUDGET.md מול ההשקה האחרונה ביקום הפעיל.",
+      "bootPerfHeading": "ביצועי אתחול",
+      "loading": "טוען…",
+      "noReportYet": "עדיין אין דוח ביצועי אתחול. סגור את האפליקציה והפעל מחדש ביקום הפעיל כדי לתעד אחד.",
+      "measuredAt": "נמדד בשעה",
+      "notes": "פתקים",
+      "refresh": "רענן",
+      "pass": "עבר",
+      "fail": "נכשל",
+      "notMeasured": "לא נמדד",
+      "manual": "ידני",
+      "c1": "ממשק משתמש גלוי",
+      "c2": "מגיב במלואו",
+      "c3": "זיכרון RSS בסרק",
+      "c4": "סריקת סטטיסטיקות לאחר אתחול",
+      "c5": "שחזור לאחר קטיעת אינדקס",
+      "details": "הצג תזמוני שלבים",
+      "rawJson": "הצג JSON גולמי",
+      "graphReady": "גרף מוכן",
+      "librariesLoaded": "ספריות נטענו",
+      "coreSnapshot": "תמונת מצב ראשית (פתקים)",
+      "graphSnapshot": "תמונת מצב גרף (קישורים + תגיות)",
+      "fanout": "הפצת fire-and-forget"
     }
   },
   "commands": {
@@ -480,7 +537,8 @@
     "expressionForge": "מפעל ביטוי",
     "senseMakingCanvas": "קנבס יצירת משמעות",
     "inspector360": "מפקח 360.3D",
-    "constellationMap": "מפת ידע"
+    "constellationMap": "מפת ידע",
+    "newLibrary": "ספרייה חדשה"
   },
   "actions": {
     "untitled": "ללא כותרת",
@@ -501,7 +559,8 @@
     "index": "מפתח",
     "constellationMap": "מפת ידע",
     "settings": "הגדרות",
-    "importNotes": "ייבוא הערות"
+    "importNotes": "ייבוא הערות",
+    "knowledgeHealth": "בריאות הידע"
   },
   "sidebar": {
     "searchPlaceholder": "חיפוש...",
@@ -529,7 +588,8 @@
     "matchTag": "#",
     "matchWikilink": "ק",
     "searchHistory": "חיפושים אחרונים",
-    "clearHistory": "נקה היסטוריה"
+    "clearHistory": "נקה היסטוריה",
+    "newLibrary": "ספרייה חדשה"
   },
   "searchHub": {
     "title": "Search Hub",
@@ -1056,7 +1116,10 @@
     "colorByStratum": "לפי שכבה",
     "colorByLibrary": "לפי ספרייה",
     "zoomIn": "לחץ להגדלה",
-    "zoomOut": "לחץ להקטנה"
+    "zoomOut": "לחץ להקטנה",
+    "childUniverse": "יקום בן",
+    "library": "ספרייה",
+    "returnToMap": "חזרה למפה"
   },
   "tableToolbar": {
     "addRow": "הוסף שורה",
@@ -1672,5 +1735,44 @@
     "established": "מבוסס",
     "contested": "שנוי במחלוקת",
     "archive": "העבר קישור לארכיון"
+  },
+  "picker": {
+    "title": "אמוג'י וסמלים",
+    "emoji": "אמוג'י",
+    "icons": "סמלים",
+    "recent": "לאחרונה",
+    "search": "חיפוש — הקלד בכל שפה",
+    "noResults": "אין תוצאות.",
+    "recentEmpty": "עדיין לא נעשה שימוש. בחר מאמוג'י או סמלים.",
+    "customizeAppIcons": "התאמת סמלי האפליקציה",
+    "customizeDesc": "החלף כל סמל Constellation באמוג'י או סמל מהספרייה.",
+    "filterSlots": "סינון חריצים…",
+    "reset": "איפוס",
+    "resetAll": "איפוס הכל"
+  },
+  "knowledgeHealth": {
+    "title": "בריאות הידע",
+    "subtitle": "תמונת מצב אבחנתית של ארכיטקטורת הקישורים החיים שלך.",
+    "loading": "מחשב תמונת בריאות…",
+    "refresh": "רענן",
+    "emptyTitle": "אין קישורים עדיין",
+    "emptyDesc": "צור קישורי ויקי בין פתקים — מערכת הקישורים החיים תעקוב אחר הסוג, המשקל ומחזור החיים אוטומטית.",
+    "universeHealth": "בריאות היקום",
+    "activeLinks": "קישורים פעילים",
+    "linkTypes": "סוגי קישורים בשימוש",
+    "annotated": "עם הערות",
+    "matureLinks": "קישורים בוגרים",
+    "byType": "לפי סוג קוגניטיבי",
+    "lifecycle": "התפלגות מחזור חיים",
+    "byConfidence": "לפי רמת ביטחון",
+    "strongest": "שרשראות הראיות החזקות ביותר",
+    "tensions": "מתחים פעילים",
+    "connected": "הפתקים המחוברים ביותר",
+    "stagnating": "קישורים כבדים מדולדלים",
+    "stagnatingDesc": "חיבורים כבדים שלא עלו בשנית — ידע בסכנת דעיכה.",
+    "weakFoundations": "יסודות חלשים",
+    "weakFoundationsDesc": "רעיונות כבדי משקל הבנויים על עדויות היפותטיות — לבחון לפני פורמליזציה.",
+    "bias": "הטיה פוטנציאלית (ללא עמדה מנוגדת)",
+    "biasDesc": "יעדים עם תמיכות בלבד ואפס סתירות — לחפש פרספקטיבות מנוגדות."
   }
 }

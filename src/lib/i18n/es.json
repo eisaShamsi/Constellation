@@ -21,7 +21,9 @@
       "styleSettings": "Ajustes de estilo",
       "knowledge": "Gestión del conocimiento",
       "arabicOverrides": "Anulaciones del árabe",
-      "panels": "Paneles"
+      "panels": "Paneles",
+      "iconOverrides": "Iconos de la app",
+      "debug": "Diagnóstico"
     },
     "general": {
       "language": "Idioma",
@@ -285,7 +287,35 @@
       "connectionTest": "Probar"
     },
     "templates": {
-      "intro": "Gestionar plantillas de notas. Las plantillas insertan contenido predefinido en nuevas notas."
+      "intro": "Gestionar plantillas de notas. Las plantillas insertan contenido predefinido en nuevas notas.",
+      "templateFolder": "Carpeta de plantillas",
+      "templateFolderDesc": "La carpeta donde se guardan los archivos de plantilla",
+      "dailyNoteTemplate": "Plantilla de nota diaria",
+      "dailyNoteTemplateDesc": "Nombre del archivo de plantilla para notas diarias (sin .md)",
+      "variables": "Variables de plantilla",
+      "variablesDesc": "Variables disponibles en tus plantillas",
+      "varDate": "Fecha actual (YYYY-MM-DD)",
+      "varDateFormat": "Formato de fecha personalizado (ej. YYYY/MM/DD)",
+      "varTime": "Hora actual (HH:MM)",
+      "varTitle": "Título de la nota",
+      "varFolder": "Nombre de la carpeta principal",
+      "varLibrary": "Nombre de la biblioteca",
+      "varCursor": "Posición del cursor tras la inserción",
+      "varYesterday": "Fecha de ayer",
+      "varTomorrow": "Fecha de mañana",
+      "varDateOffset": "Fecha con desplazamiento (N días)",
+      "varClipboard": "Contenido del portapapeles",
+      "varFrontmatter": "Valor de frontmatter de la nota actual",
+      "varFileCreated": "Fecha de creación del archivo",
+      "varFileModified": "Fecha de modificación del archivo",
+      "varPrompt": "Solicitar entrada al insertar",
+      "varSuggester": "Elegir de una lista al insertar",
+      "folderTemplates": "Plantillas de carpeta",
+      "folderTemplatesDesc": "Aplicar plantillas automáticamente al crear notas en carpetas específicas",
+      "addFolderTemplate": "Agregar plantilla de carpeta",
+      "folderPath": "Ruta de carpeta",
+      "templateName": "Nombre de plantilla",
+      "noFolderTemplates": "No hay plantillas de carpeta configuradas"
     },
     "dashboard": {
       "libraries": "Bibliotecas",
@@ -387,7 +417,9 @@
       "orgChart": "Organigrama",
       "orgChartDesc": "Árbol visual de su jerarquía de conocimiento",
       "aiSkills": "Habilidades IA",
-      "aiSkillsDesc": "Herramientas de automatización y conocimiento con IA"
+      "aiSkillsDesc": "Herramientas de automatización y conocimiento con IA",
+      "emojiIconPicker": "Biblioteca de emojis e iconos",
+      "emojiIconPickerDesc": "Selector Ctrl+. para emojis e iconos vectoriales — insertar en notas o reemplazar iconos de la app"
     },
     "knowledge": {
       "intro": "Configure cómo se organiza, visualiza y analiza su conocimiento.",
@@ -434,6 +466,31 @@
       "panelLinksDesc": "Análisis y gestión de Living Links",
       "resetDefault": "Restablecer valores predeterminados",
       "resetDefaultDesc": "Restaurar el diseño predeterminado (Backlinks izquierda, Salientes derecha)"
+    },
+    "debug": {
+      "intro": "Vista de diagnóstico de solo lectura. La tarjeta de rendimiento de arranque evalúa los cinco criterios definidos en lab/boot-perf/BOOT-BUDGET.md contra el último inicio en el Universo activo.",
+      "bootPerfHeading": "Rendimiento de arranque",
+      "loading": "Cargando…",
+      "noReportYet": "Aún no hay informe de rendimiento. Cierra la app y reiníciala en el Universo activo para registrar uno.",
+      "measuredAt": "Medido a las",
+      "notes": "notas",
+      "refresh": "Actualizar",
+      "pass": "OK",
+      "fail": "FALLO",
+      "notMeasured": "No medido",
+      "manual": "Manual",
+      "c1": "UI visible",
+      "c2": "Totalmente responsivo",
+      "c3": "Memoria RSS en reposo",
+      "c4": "Barrido de estadísticas post-arranque",
+      "c5": "Recuperación tras interrupción de índice",
+      "details": "Ver tiempos por fase",
+      "rawJson": "Ver JSON sin procesar",
+      "graphReady": "Grafo listo",
+      "librariesLoaded": "Bibliotecas cargadas",
+      "coreSnapshot": "Instantánea principal (notas)",
+      "graphSnapshot": "Instantánea de grafo (enlaces + etiquetas)",
+      "fanout": "Distribución fire-and-forget"
     }
   },
   "commands": {
@@ -480,7 +537,8 @@
     "expressionForge": "Fragua de expresión",
     "senseMakingCanvas": "Lienzo de sentido",
     "inspector360": "Inspector 360.3D",
-    "constellationMap": "Mapa del conocimiento"
+    "constellationMap": "Mapa del conocimiento",
+    "newLibrary": "Nueva biblioteca"
   },
   "actions": {
     "untitled": "Sin título",
@@ -501,7 +559,8 @@
     "index": "Índice",
     "constellationMap": "Mapa del conocimiento",
     "settings": "Ajustes",
-    "importNotes": "Importar notas"
+    "importNotes": "Importar notas",
+    "knowledgeHealth": "Salud del conocimiento"
   },
   "sidebar": {
     "searchPlaceholder": "Buscar...",
@@ -529,7 +588,8 @@
     "matchTag": "#",
     "matchWikilink": "W",
     "searchHistory": "Búsquedas recientes",
-    "clearHistory": "Borrar historial"
+    "clearHistory": "Borrar historial",
+    "newLibrary": "Nueva biblioteca"
   },
   "searchHub": {
     "title": "Search Hub",
@@ -1067,7 +1127,10 @@
     "colorByStratum": "Por estrato",
     "colorByLibrary": "Por biblioteca",
     "zoomIn": "Clic para ampliar",
-    "zoomOut": "Clic para reducir"
+    "zoomOut": "Clic para reducir",
+    "childUniverse": "Universo hijo",
+    "library": "Biblioteca",
+    "returnToMap": "Volver al mapa"
   },
   "tableToolbar": {
     "addRow": "Agregar fila",
@@ -1672,5 +1735,44 @@
     "established": "Establecido",
     "contested": "Impugnado",
     "archive": "Archivar enlace"
+  },
+  "picker": {
+    "title": "Emojis e íconos",
+    "emoji": "Emojis",
+    "icons": "Íconos",
+    "recent": "Recientes",
+    "search": "Buscar — escribe en cualquier idioma",
+    "noResults": "Sin coincidencias.",
+    "recentEmpty": "Nada usado aún. Elige algo de Emojis o Íconos.",
+    "customizeAppIcons": "Personalizar íconos de la app",
+    "customizeDesc": "Reemplaza cualquier ícono de Constellation con un emoji o ícono de la biblioteca.",
+    "filterSlots": "Filtrar ranuras…",
+    "reset": "Restablecer",
+    "resetAll": "Restablecer todo"
+  },
+  "knowledgeHealth": {
+    "title": "Salud del conocimiento",
+    "subtitle": "Una instantánea diagnóstica de tu arquitectura de Living Links.",
+    "loading": "Calculando instantánea de salud…",
+    "refresh": "Actualizar",
+    "emptyTitle": "Sin enlaces aún",
+    "emptyDesc": "Crea wikilinks entre notas — el Sistema de Living Links rastreará su tipo, peso y ciclo de vida automáticamente.",
+    "universeHealth": "Salud del universo",
+    "activeLinks": "enlaces activos",
+    "linkTypes": "tipos de enlace en uso",
+    "annotated": "anotados",
+    "matureLinks": "enlaces maduros",
+    "byType": "Por tipo cognitivo",
+    "lifecycle": "Distribución del ciclo de vida",
+    "byConfidence": "Por nivel de confianza",
+    "strongest": "Cadenas de evidencia más fuertes",
+    "tensions": "Tensiones activas",
+    "connected": "Notas más conectadas",
+    "stagnating": "Enlaces de alto peso estancados",
+    "stagnatingDesc": "Conexiones pesadas que no han sido revisadas — conocimiento en riesgo de desvanecerse.",
+    "weakFoundations": "Fundamentos débiles",
+    "weakFoundationsDesc": "Ideas de alto peso construidas sobre evidencia hipotética — examinar antes de formalizar.",
+    "bias": "Sesgo potencial (sin visión contraria)",
+    "biasDesc": "Objetivos solo con apoyos y cero contradicciones — buscar perspectivas opuestas."
   }
 }

@@ -21,7 +21,9 @@
       "styleSettings": "Stil Ayarları",
       "knowledge": "Bilgi Yönetimi",
       "arabicOverrides": "Arapça Geçersiz Kılmalar",
-      "panels": "Paneller"
+      "panels": "Paneller",
+      "iconOverrides": "Uygulama simgeleri",
+      "debug": "Hata ayıklama"
     },
     "general": {
       "language": "Dil",
@@ -285,7 +287,35 @@
       "connectionTest": "Test"
     },
     "templates": {
-      "intro": "Not şablonlarını yönetin. Şablonlar yeni notlara önceden tanımlanmış içerik ekler."
+      "intro": "Not şablonlarını yönetin. Şablonlar yeni notlara önceden tanımlanmış içerik ekler.",
+      "templateFolder": "Şablon klasörü",
+      "templateFolderDesc": "Şablon dosyalarınızın depolandığı klasör",
+      "dailyNoteTemplate": "Günlük not şablonu",
+      "dailyNoteTemplateDesc": "Günlük notlar oluştururken kullanılacak şablon dosya adı (.md olmadan)",
+      "variables": "Şablon değişkenleri",
+      "variablesDesc": "Şablonlarınızda kullanabileceğiniz değişkenler",
+      "varDate": "Mevcut tarih (YYYY-MM-DD)",
+      "varDateFormat": "Özel tarih biçimi (ör. YYYY/MM/DD)",
+      "varTime": "Mevcut saat (HH:MM)",
+      "varTitle": "Not başlığı",
+      "varFolder": "Üst klasör adı",
+      "varLibrary": "Kütüphane adı",
+      "varCursor": "Eklemeden sonra imleç konumu",
+      "varYesterday": "Dünün tarihi",
+      "varTomorrow": "Yarının tarihi",
+      "varDateOffset": "Kaymali tarih (N gün)",
+      "varClipboard": "Pano içeriği",
+      "varFrontmatter": "Mevcut notun frontmatter değeri",
+      "varFileCreated": "Dosya oluşturma tarihi",
+      "varFileModified": "Dosya değiştirme tarihi",
+      "varPrompt": "Eklerken giriş iste",
+      "varSuggester": "Eklerken listeden seç",
+      "folderTemplates": "Klasör şablonları",
+      "folderTemplatesDesc": "Belirli klasörlerde not oluştururken şablonları otomatik uygula",
+      "addFolderTemplate": "Klasör şablonu ekle",
+      "folderPath": "Klasör yolu",
+      "templateName": "Şablon adı",
+      "noFolderTemplates": "Klasör şablonu yapılandırılmamış"
     },
     "dashboard": {
       "libraries": "Kütüphaneler",
@@ -387,7 +417,9 @@
       "orgChart": "Organizasyon Şeması",
       "orgChartDesc": "Bilgi hiyerarşinizin görsel ağacı",
       "aiSkills": "Yapay Zeka Becerileri",
-      "aiSkillsDesc": "Yapay zeka destekli otomasyon ve bilgi araçları"
+      "aiSkillsDesc": "Yapay zeka destekli otomasyon ve bilgi araçları",
+      "emojiIconPicker": "Emoji ve simge kütüphanesi",
+      "emojiIconPickerDesc": "Emoji ve vektör simgeler için Ctrl+. seçici — notlara ekle veya uygulama simgelerini geçersiz kıl"
     },
     "knowledge": {
       "intro": "Bilginizin nasıl düzenlendiğini, görüntülendiğini ve analiz edildiğini yapılandırın.",
@@ -434,6 +466,31 @@
       "panelLinksDesc": "Living Link analizleri ve yönetimi",
       "resetDefault": "Varsayılana sıfırla",
       "resetDefaultDesc": "Varsayılan panel düzenini geri yükle"
+    },
+    "debug": {
+      "intro": "Salt okunur tanı görünümü. Önyükleme performansı puan kartı, lab/boot-perf/BOOT-BUDGET.md'de tanımlanan beş sevkiyat kriteri gatini aktif Evrendeki son başlatmaya karşı değerlendirir.",
+      "bootPerfHeading": "Önyükleme performansı",
+      "loading": "Yükleniyor…",
+      "noReportYet": "Henüz önyükleme performansı raporu yok. Bir tane kaydetmek için uygulamayı kapatın ve aktif Evrende yeniden başlatın.",
+      "measuredAt": "Ölçüm zamanı",
+      "notes": "not",
+      "refresh": "Yenile",
+      "pass": "GEÇTİ",
+      "fail": "BAŞARISIZ",
+      "notMeasured": "Ölçülmedi",
+      "manual": "Manuel",
+      "c1": "UI görünür",
+      "c2": "Tamamen duyarlı",
+      "c3": "Boşta RSS belleği",
+      "c4": "Önyükleme sonrası istatistik taraması",
+      "c5": "İndeks kesintisinden kurtarma",
+      "details": "Aşama zamanlamalarını göster",
+      "rawJson": "Ham JSON göster",
+      "graphReady": "Graf hazır",
+      "librariesLoaded": "Kütüphaneler yüklendi",
+      "coreSnapshot": "Çekirdek anlık görüntü (notlar)",
+      "graphSnapshot": "Graf anlık görüntüsü (bağlantılar + etiketler)",
+      "fanout": "Fire-and-forget dağılım"
     }
   },
   "commands": {
@@ -480,7 +537,8 @@
     "expressionForge": "İfade Dökümhanesi",
     "senseMakingCanvas": "Anlam Oluşturma Tuvali",
     "inspector360": "360.3D Denetçi",
-    "constellationMap": "Bilgi Haritası"
+    "constellationMap": "Bilgi Haritası",
+    "newLibrary": "Yeni kütüphane"
   },
   "actions": {
     "untitled": "Başlıksız",
@@ -501,7 +559,8 @@
     "index": "Dizin",
     "constellationMap": "Bilgi Haritası",
     "settings": "Ayarlar",
-    "importNotes": "Notları içe aktar"
+    "importNotes": "Notları içe aktar",
+    "knowledgeHealth": "Bilgi sağlığı"
   },
   "sidebar": {
     "searchPlaceholder": "Ara...",
@@ -529,7 +588,8 @@
     "matchTag": "#",
     "matchWikilink": "V",
     "searchHistory": "Son aramalar",
-    "clearHistory": "Geçmişi temizle"
+    "clearHistory": "Geçmişi temizle",
+    "newLibrary": "Yeni kütüphane"
   },
   "searchHub": {
     "title": "Search Hub",
@@ -1056,7 +1116,10 @@
     "colorByStratum": "Katmana göre",
     "colorByLibrary": "Kütüphaneye göre",
     "zoomIn": "Yakınlaştırmak için tıklayın",
-    "zoomOut": "Uzaklaştırmak için tıklayın"
+    "zoomOut": "Uzaklaştırmak için tıklayın",
+    "childUniverse": "Alt evren",
+    "library": "Kütüphane",
+    "returnToMap": "Haritaya dön"
   },
   "tableToolbar": {
     "addRow": "Satır ekle",
@@ -1672,5 +1735,44 @@
     "established": "Yerleşik",
     "contested": "İtirazlı",
     "archive": "Bağlantıyı arşivle"
+  },
+  "picker": {
+    "title": "Emojiler ve Simgeler",
+    "emoji": "Emojiler",
+    "icons": "Simgeler",
+    "recent": "Son kullanılanlar",
+    "search": "Ara — herhangi bir dilde yazın",
+    "noResults": "Eşleşme yok.",
+    "recentEmpty": "Henüz hiçbir şey kullanılmadı. Emojiler veya Simgelerden seçin.",
+    "customizeAppIcons": "Uygulama simgelerini özelleştir",
+    "customizeDesc": "Herhangi bir Constellation simgesini kitaplıktaki bir emoji veya simgeyle değiştirin.",
+    "filterSlots": "Yuvalar…",
+    "reset": "Sıfırla",
+    "resetAll": "Tümünü sıfırla"
+  },
+  "knowledgeHealth": {
+    "title": "Bilgi Sağlığı",
+    "subtitle": "Yaşayan bağlantı mimarinizin tanı anlık görüntüsü.",
+    "loading": "Sağlık anlık görüntüsü hesaplanıyor…",
+    "refresh": "Yenile",
+    "emptyTitle": "Henüz bağlantı yok",
+    "emptyDesc": "Notlar arasında wikilink oluşturun — Living Link Sistemi tür, ağırlık ve yaşam döngüsünü otomatik olarak takip edecek.",
+    "universeHealth": "Evren Sağlığı",
+    "activeLinks": "aktif bağlantı",
+    "linkTypes": "kullanılan bağlantı türleri",
+    "annotated": "açıklamalı",
+    "matureLinks": "olgun bağlantılar",
+    "byType": "Bilişsel türe göre",
+    "lifecycle": "Yaşam döngüsü dağılımı",
+    "byConfidence": "Güven düzeyine göre",
+    "strongest": "En güçlü kanıt zincirleri",
+    "tensions": "Aktif gerilimler",
+    "connected": "En çok bağlantılı notlar",
+    "stagnating": "Durağan yüksek ağırlıklı bağlantılar",
+    "stagnatingDesc": "Yeniden ziyaret edilmemiş ağır bağlantılar — solma riski taşıyan bilgiler.",
+    "weakFoundations": "Zayıf temeller",
+    "weakFoundationsDesc": "Hipotez düzeyinde kanıtlara dayanan yüksek ağırlıklı fikirler — resmileştirmeden önce inceleyin.",
+    "bias": "Potansiyel önyargı (karşı görüş yok)",
+    "biasDesc": "Yalnızca destekleyici ve sıfır çelişkili hedefler — karşıt perspektifler arayın."
   }
 }
