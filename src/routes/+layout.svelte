@@ -338,7 +338,14 @@
 	// save/restore logic at ~15 sites. The Map below is the single snapshot
 	// store; push/pop are the single save/restore API. Adding a new overlay
 	// mode is now a one-liner `pushSidebars('newKey')`.
-	type OverlayKey = 'fullPage' | 'search' | 'oc' | 'lens' | 'skyInspect';
+	// Only two distinct snapshot domains:
+	// - 'fullPage' covers every overlay included in fullPageActive (Sky View,
+	//   Search Hub, OrgChart, Lens, Dashboard, etc.). The fullPageActive
+	//   $effect pushes once on first true, pops once on first false — so
+	//   overlays inside this group share one snapshot and can't stomp it.
+	// - 'skyInspect' is separate because it coexists with normal note-editor
+	//   flow (not part of fullPageActive) and has its own dismiss path.
+	type OverlayKey = 'fullPage' | 'skyInspect';
 	const sidebarSnapshots = new Map<OverlayKey, { left: boolean; right: boolean }>();
 	function pushSidebars(key: OverlayKey) {
 		// Idempotent: re-entering the same overlay doesn't overwrite the
@@ -376,7 +383,6 @@
 	let searchHubMatchIds = $state<Set<string> | null>(null);
 	let searchHubReturnPending = $state(false);
 	let searchHubInitialQuery = $state('');
-	// Sidebar snapshot for Search Hub: managed via pushSidebars/popSidebars('search')
 	// let inspector360Data = $state<any>(null); // CE Phase 12: disabled — revisit later
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
@@ -429,7 +435,6 @@
 	}
 	let showSkyView = $state(false);
 	let showOrgChart = $state(false);
-	// Sidebar snapshots for OrgChart and Lens: managed via pushSidebars/popSidebars('oc' | 'lens')
 	// Shared selection path — when an item is clicked in any sidebar mode, OrgChart highlights it
 	let skyViewSelectedPath = $state<string | string[] | null>(null);
 
@@ -1584,7 +1589,7 @@
 			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
 			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
 			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; pushSidebars('search'); }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
@@ -2709,8 +2714,8 @@
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showSkyView) { showSkyView = false; return; }
-			if (lensActive) { lensActive = false; popSidebars('lens'); return; }
-			if (showOrgChart) { showOrgChart = false; popSidebars('oc'); return; }
+			if (lensActive) { lensActive = false; return; }
+			if (showOrgChart) { showOrgChart = false; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
 			if (showIndex) { showIndex = false; return; }
@@ -3322,11 +3327,21 @@
 		// the node they clicked.
 		const fromPath = $activeTab?.path && $activeTab.path !== path ? $activeTab.path : undefined;
 		await openNoteTab(path, libraryName, color, highlightTerm, false, fromPath);
+		// Entering inspect mode from SV: sidebars were already zeroed by the
+		// fullPage snapshot when SV opened. Steal that snapshot so the
+		// eventual dismiss restores the user's pre-SV layout (not {false,
+		// false}). Idempotent via the `!skyViewInspectMode` guard — re-
+		// entering from another SV click doesn't overwrite.
+		if (!skyViewInspectMode) {
+			const fp = sidebarSnapshots.get('fullPage');
+			sidebarSnapshots.set('skyInspect', fp
+				? { ...fp }
+				: { left: sidebarOpen, right: rightSidebarOpen }
+			);
+		}
+		sidebarOpen = false;
+		rightSidebarOpen = false;
 		showSkyView = false;
-		// Entering inspect mode: flanking Backlinks/Outgoing panels are the
-		// only auxiliary view. pushSidebars is idempotent, so re-entering
-		// from another SV click doesn't overwrite the original snapshot.
-		pushSidebars('skyInspect');
 		skyViewInspectMode = true;
 		if (highlightTerm) skyViewReturnPending = true;
 	}
@@ -3335,7 +3350,7 @@
 		searchHubInitialQuery = `#${tag}`;
 		showSearchHub = true;
 		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
-		pushSidebars('search');
+		/* fullPageActive $effect handles sidebar snapshot */
 	}
 
 	// ─── Page Preview (hover) ───
@@ -3812,11 +3827,9 @@
 				if (showSearchHub) {
 					searchHubInitialQuery = '';
 					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
-					pushSidebars('search');
-				} else {
-					popSidebars('search');
 				}
 				searchHubReturnPending = false;
+				/* fullPageActive $effect handles sidebar snapshot on entry/exit */
 			}} title={$t('searchHub.title')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</button>
@@ -3826,10 +3839,8 @@
 				orgChartReturnPending = false;
 				if (showOrgChart) {
 					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false;
-					pushSidebars('oc');
-				} else {
-					popSidebars('oc');
 				}
+				/* fullPageActive $effect handles sidebar snapshot */
 			}} title={$t('navigator.orgChart') || 'Organization Chart'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4"/><path d="M5 17v-2h14v2"/></svg>
 			</button>
@@ -3880,11 +3891,10 @@
 			<button class="dock-btn" class:active={lensActive} onclick={() => {
 				if (!lensActive) {
 					toggleLens(); showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensReturnPending = false;
-					pushSidebars('lens');
 				} else {
 					lensActive = false;
-					popSidebars('lens');
 				}
+				/* fullPageActive $effect handles sidebar snapshot */
 			}} title={$t('lens.title') || 'Constellation Sight'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
 			</button>
@@ -4257,19 +4267,19 @@
 				</button>
 			{/if}
 			{#if orgChartReturnPending}
-				<button class="index-return-btn" onclick={() => { showOrgChart = true; orgChartReturnPending = false; pushSidebars('oc'); }}>
+				<button class="index-return-btn" onclick={() => { showOrgChart = true; orgChartReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('orgChart.returnToOrgChart') || 'Return to OrgChart'}
 				</button>
 			{/if}
 			{#if lensReturnPending}
-				<button class="index-return-btn" onclick={() => { lensActive = true; lensReturnPending = false; pushSidebars('lens'); }}>
+				<button class="index-return-btn" onclick={() => { lensActive = true; lensReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('lens.returnToLens') || 'Return to Lens'}
 				</button>
 			{/if}
 			{#if searchHubReturnPending}
-				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; pushSidebars('search'); }}>
+				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('searchHub.title')}
 				</button>
@@ -4474,10 +4484,9 @@
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						showOrgChart = false;
-						popSidebars('oc');
 						orgChartReturnPending = true;
 					}}
-					onClose={() => { showOrgChart = false; popSidebars('oc'); orgChartReturnPending = false; }}
+					onClose={() => { showOrgChart = false; orgChartReturnPending = false; }}
 				/>
 			</div>
 		{/if}
@@ -4508,10 +4517,9 @@
 							openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', hlFinal);
 						}
 						lensActive = false;
-						popSidebars('lens');
 						lensReturnPending = true;
 					}}
-					onClose={() => { lensActive = false; popSidebars('lens'); lensReturnPending = false; }}
+					onClose={() => { lensActive = false; lensReturnPending = false; }}
 				/>
 			{/if}
 		</div>
@@ -4535,12 +4543,10 @@
 					const hlFinal = hl.trim() || undefined;
 					openNoteTab(path, libraryName, libraryColor, hlFinal);
 					showSearchHub = false;
-					popSidebars('search');
 					searchHubReturnPending = true;
 				}}
 				onClose={() => {
 					showSearchHub = false;
-					popSidebars('search');
 					searchHubReturnPending = false;
 				}}
 				onResults={(ids: Set<string>) => { searchHubMatchIds = ids.size > 0 ? ids : null; }}
