@@ -167,3 +167,35 @@ Two scripts written to add missing translation keys:
 - Write-Time Derivation: Sight dashboard, sidebar star counts — audit pending
 - navTrace instrumentation dev-gate
 - Settings → Debug Boot Performance scorecard UI
+
+---
+
+## § 53. Flanking Panel Collapse Buttons + Sidebar Tab Safety Reset
+
+**Commit**: 4834697  
+**Status**: ✅ Complete — pushed to origin/main
+
+### Changes
+
+**Flanking panel collapse buttons**
+- Added `leftFlankCollapsed` / `rightFlankCollapsed` `$state` booleans in `+layout.svelte`
+- Left drag handle becomes a flex column (`flank-handle-wrap`) with a collapse toggle button
+  above the resize strip — chevron points right when open, left when collapsed (RTL mirrors)
+- Right side mirrors: chevron points left when open, right when collapsed
+- Collapsed flank: `flex-basis: 0`, `min-width: 0 !important`, `overflow: hidden`,
+  `padding: 0` — content hidden with 120ms ease transition (CSS only, no JS layout)
+- Resize is disabled when flank is collapsed (`!leftFlankCollapsed && startFlankResize(...)`)
+
+**Sidebar tab safety reset**
+- Added `$effect` that watches `$appSettings.panelPlacements`; if `rightSidebarTab === 'backlinks'`
+  but neither backlinks nor outgoing is placed in `right-sidebar`, resets tab to `'properties'`
+  — prevents blank right sidebar when user moves panels away from the sidebar
+
+### Still on the queue
+- Tier 2: drag-and-drop panel rearrangement (slot highlighting + drop zones)
+- Tier 3: detachable floating panels (needs Tauri multi-window)
+- Right sidebar tab bar: "hidden" placement panels still show their tabs
+  (only backlinks/outgoing are gated; properties, tags, sky, etc. always show)
+- Write-Time Derivation: Sight dashboard (Louvain + health computed on each toggleLens() call)
+- Write-Time Derivation: sidebar star counts audit
+- navTrace instrumentation dev-gate

@@ -34,7 +34,7 @@
 		type FrontmatterProperty, type HeadingItem, type NoteLink, type SkyNode, type SkyLink,
 		type IndexEntry
 	} from '$lib/libraries/store';
-	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet } from '$lib/libraries/store';
+	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet, PanelId } from '$lib/libraries/store';
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, BUILTIN_THEMES, deriveThemeVariables, hexToHSL } from '$lib/libraries/store';
 	import { generateStyleSettingsCSS } from '$lib/theme/styleSettings';
 	import { CORE_BLOCK_IDS, getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
@@ -1104,17 +1104,32 @@
 	});
 
 	// Safety: if the active right sidebar tab's panel has been moved away from
-	// right-sidebar (via Settings → Panels), reset to 'properties' so the user
-	// doesn't see an empty panel body. Runs reactively whenever panelPlacements changes.
+	// right-sidebar (via Settings → Panels), switch to the first tab that IS
+	// still in the sidebar. Runs reactively whenever panelPlacements changes.
+	// Falls back to 'right-sidebar' when no placement is saved (new install /
+	// first-time user), so all tabs remain visible by default.
 	$effect(() => {
-		const placements = $appSettings.panelPlacements;
-		if (!placements) return;
-		if (rightSidebarTab === 'backlinks') {
-			const backlinksThere = placements.backlinks === 'right-sidebar';
-			const outgoingThere = placements.outgoing === 'right-sidebar';
-			if (!backlinksThere && !outgoingThere) {
-				rightSidebarTab = 'properties';
-			}
+		const p = $appSettings.panelPlacements;
+		const inSidebar = (id: PanelId): boolean =>
+			(p?.[id] ?? 'right-sidebar') === 'right-sidebar';
+
+		const tabVisible: Record<string, boolean> = {
+			properties: inSidebar('properties'),
+			backlinks:  inSidebar('backlinks') || inSidebar('outgoing'),
+			tags:       inSidebar('tags'),
+			star:       inSidebar('sky'),
+			tasks:      inSidebar('tasks'),
+			calendar:   inSidebar('calendar'),
+			health:     inSidebar('health'),
+			provenance: inSidebar('provenance'),
+			review:     inSidebar('review'),
+			links:      inSidebar('links'),
+		};
+
+		if (!tabVisible[rightSidebarTab]) {
+			const order = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review', 'links'] as const;
+			const first = order.find(tab => tabVisible[tab]);
+			rightSidebarTab = (first ?? 'properties') as typeof rightSidebarTab;
 		}
 	});
 
@@ -4919,55 +4934,77 @@
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="rs-resize" onmousedown={(e) => startResize('right', e)}></div>
 		<div class="rs-inner" dir={noteDir}>
-			<!-- Right sidebar tab bar -->
+			<!-- Right sidebar tab bar.
+			     Each tab button is gated on its panel being placed in 'right-sidebar'.
+			     Falls back to showing the tab when no placement is saved (new install),
+			     so all tabs remain visible by default. The safety $effect above resets
+			     rightSidebarTab if the active tab's panel is moved away. -->
 			<div class="rs-tabs">
-				<button class="rs-tab" class:active={rightSidebarTab === 'properties'} onclick={() => rightSidebarTab = 'properties'} title={$t('panels.properties')}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-				</button>
-				{#if $appSettings.panelPlacements?.backlinks === 'right-sidebar' || $appSettings.panelPlacements?.outgoing === 'right-sidebar'}
+				{#if ($appSettings.panelPlacements?.properties ?? 'right-sidebar') === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'properties'} onclick={() => rightSidebarTab = 'properties'} title={$t('panels.properties')}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+					</button>
+				{/if}
+				{#if ($appSettings.panelPlacements?.backlinks ?? 'left-of-note') === 'right-sidebar' || ($appSettings.panelPlacements?.outgoing ?? 'right-of-note') === 'right-sidebar'}
 					<button class="rs-tab" class:active={rightSidebarTab === 'backlinks'} onclick={() => rightSidebarTab = 'backlinks'} title={$t('panels.backlinks')}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
 					</button>
 				{/if}
-				<button class="rs-tab" class:active={rightSidebarTab === 'tags'} onclick={() => rightSidebarTab = 'tags'} title={$t('panels.tags')}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'star'} onclick={() => rightSidebarTab = 'star'} title={$t('panels.skyView')}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg>
-				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'tasks'} onclick={() => rightSidebarTab = 'tasks'} title={$t('panels.tasks')}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'calendar'} onclick={() => rightSidebarTab = 'calendar'} title={$t('panels.calendar')}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'health'} onclick={() => rightSidebarTab = 'health'} title={$t('panels.health') || 'Knowledge Health'}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'provenance'} onclick={() => {
-					rightSidebarTab = 'provenance';
-					_lastProvenancePath = ''; // reset cache to force fresh fetch
-					const tab = $focusedTab;
-					if (tab?.path && tab?.libraryPath) {
-						_lastProvenancePath = tab.path;
-						invoke<any>('get_provenance_chain', { libraryPath: tab.libraryPath, notePath: tab.path, maxDepth: 10 })
-							.then(chain => { provenanceChain = chain; }).catch(() => { provenanceChain = null; });
-					}
-				}} title={$t('panels.provenance') || 'Provenance'}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M12 22v-6M2 12h6M22 12h-6"/><circle cx="12" cy="12" r="3"/></svg>
-				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'review'} onclick={() => {
-					rightSidebarTab = 'review';
-					const lib = get(libraries)[0];
-					if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path })
-						.then(notes => { dueNotes = notes; }).catch(() => { dueNotes = []; });
-				}} title={$t('panels.review') || 'Review Pulse'}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-					{#if dueNotes.length > 0}<span class="rs-tab-badge">{dueNotes.length}</span>{/if}
-				</button>
-				<button class="rs-tab" class:active={rightSidebarTab === 'links'} onclick={() => rightSidebarTab = 'links'} title={$t('panels.links') || 'Link Dashboard'}>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-				</button>
+				{#if ($appSettings.panelPlacements?.tags ?? 'right-sidebar') === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'tags'} onclick={() => rightSidebarTab = 'tags'} title={$t('panels.tags')}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+					</button>
+				{/if}
+				{#if ($appSettings.panelPlacements?.sky ?? 'right-sidebar') === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'star'} onclick={() => rightSidebarTab = 'star'} title={$t('panels.skyView')}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg>
+					</button>
+				{/if}
+				{#if ($appSettings.panelPlacements?.tasks ?? 'right-sidebar') === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'tasks'} onclick={() => rightSidebarTab = 'tasks'} title={$t('panels.tasks')}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+					</button>
+				{/if}
+				{#if ($appSettings.panelPlacements?.calendar ?? 'right-sidebar') === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'calendar'} onclick={() => rightSidebarTab = 'calendar'} title={$t('panels.calendar')}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+					</button>
+				{/if}
+				{#if ($appSettings.panelPlacements?.health ?? 'right-sidebar') === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'health'} onclick={() => rightSidebarTab = 'health'} title={$t('panels.health') || 'Knowledge Health'}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+					</button>
+				{/if}
+				{#if ($appSettings.panelPlacements?.provenance ?? 'right-sidebar') === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'provenance'} onclick={() => {
+						rightSidebarTab = 'provenance';
+						_lastProvenancePath = ''; // reset cache to force fresh fetch
+						const tab = $focusedTab;
+						if (tab?.path && tab?.libraryPath) {
+							_lastProvenancePath = tab.path;
+							invoke<any>('get_provenance_chain', { libraryPath: tab.libraryPath, notePath: tab.path, maxDepth: 10 })
+								.then(chain => { provenanceChain = chain; }).catch(() => { provenanceChain = null; });
+						}
+					}} title={$t('panels.provenance') || 'Provenance'}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M12 22v-6M2 12h6M22 12h-6"/><circle cx="12" cy="12" r="3"/></svg>
+					</button>
+				{/if}
+				{#if ($appSettings.panelPlacements?.review ?? 'right-sidebar') === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'review'} onclick={() => {
+						rightSidebarTab = 'review';
+						const lib = get(libraries)[0];
+						if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path })
+							.then(notes => { dueNotes = notes; }).catch(() => { dueNotes = []; });
+					}} title={$t('panels.review') || 'Review Pulse'}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+						{#if dueNotes.length > 0}<span class="rs-tab-badge">{dueNotes.length}</span>{/if}
+					</button>
+				{/if}
+				{#if ($appSettings.panelPlacements?.links ?? 'right-sidebar') === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'links'} onclick={() => rightSidebarTab = 'links'} title={$t('panels.links') || 'Link Dashboard'}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+					</button>
+				{/if}
 			</div>
 
 			{#if isHome && sidebarTab}
