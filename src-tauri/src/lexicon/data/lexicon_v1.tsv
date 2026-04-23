@@ -247,6 +247,7 @@ c:aluminum	Noun	ar:ألومنيوم,ألمنيوم	de:Aluminium	en:aluminum,alum
 c:aluminum-metal	Noun	ar:ألومنيوم	de:Aluminium	en:aluminum	es:aluminio	fa:آلومینیوم	fr:aluminium	he:אלומיניום	hi:एल्यूमीनियम	ja:アルミニウム	ko:알루미늄	pt:alumínio	ru:алюминий	tr:alüminyum	ur:ایلومینیم	zh:铝
 c:alveolar	Adjective	ar:أسناني سنخي	de:alveolar	en:alveolar	es:alveolar	fa:لثوی	fr:alvéolaire	he:אלוואולרי	hi:वर्त्स्य	ja:歯茎音	ko:치경음	pt:alveolar	ru:альвеолярный	tr:dişeti	ur:لثوی	zh:齿龈音
 c:alveolus	Noun	ar:الحويصلة الهوائية	de:Lungenbläschen	en:alveolus	es:alvéolo	fa:کیسه هوایی	fr:alvéole	he:אויריות	hi:कूपिका	ja:肺胞	ko:폐포	pt:alvéolo	ru:альвеола	tr:alveol	ur:پھیپھڑے کی تھیلی	zh:肺泡
+c:alzheimer-disease	Noun	ar:ألزهايمر	de:Alzheimer	en:Alzheimer's disease	es:Alzheimer	fa:آلزایمر	fr:Alzheimer	he:אלצהיימר	hi:अल्जाइमर	ja:アルツハイマー病	ko:알츠하이머	pt:Alzheimer	ru:Альцгеймер	tr:Alzheimer	ur:الزائمر	zh:阿尔茨海默病
 c:amaranth	Noun	ar:بذور الاماراث	de:Amaranth	en:amaranth	es:amaranto	fa:آمارانت	fr:amarante	he:ירבוז	hi:राजगिरा,चौलाई	ja:アマランサス	ko:아마란스	pt:amaranto	ru:амарант	tr:amarant	ur:امارانتھ	zh:苋菜
 c:amaranth-grain	Noun	ar:قطيفة	de:Amaranth	en:amaranth	es:amaranto	fa:تاج‌خروس	fr:amarante	he:אמרנטה	hi:चौलाई	ja:アマランサス	ko:아마란스	pt:amaranto	ru:амарант	tr:amarant	ur:چولائی	zh:苋米
 c:amaterasu	Noun	ar:أماتيراسو	de:Amaterasu	en:Amaterasu	es:Amaterasu	fa:آماتراسو	fr:Amaterasu	he:אמטרסו	hi:अमातेरासु	ja:天照	ko:아마테라스	pt:Amaterasu	ru:Аматэрасу	tr:Amaterasu	ur:امیٹراسو	zh:天照大神
@@ -389,6 +390,7 @@ c:anther	Noun	ar:مئبر	de:Anthere	en:anther	es:antera	fa:بساک	fr:anthère
 c:anthology	Noun	ar:مختارات	de:Anthologie	en:anthology	es:antología	fa:گزیده,مجموعه	fr:anthologie	he:אנתולוגיה	hi:संकलन	ja:アンソロジー,選集	ko:선집	pt:antologia	ru:антология,сборник	tr:antoloji,seçki	ur:انتخاب	zh:选集
 c:anthology-series	Noun	ar:مسلسل مختارات	de:Anthologie-Serie	en:anthology series	es:serie antológica	fa:سریال گلچین	fr:série anthologique	he:סדרת אנתולוגיה	hi:संकलन श्रृंखला	ja:アンソロジーシリーズ	ko:앤솔러지 시리즈	pt:série antológica	ru:антология сериал	tr:antoloji dizi	ur:انتھالوجی سیریز	zh:选集系列
 c:anthracite	Noun	ar:أنثراسيت	de:Anthrazit	en:anthracite	es:antracita	fa:آنتراسیت	fr:anthracite	he:אנתרציט	hi:एंथ्रेसाइट	ja:無煙炭	ko:무연탄	pt:antracito	ru:антрацит	tr:antrasit	ur:اینتھراسائٹ	zh:无烟煤
+c:anthrax	Noun	ar:الجمرة الخبيثة	de:Milzbrand	en:anthrax	es:ántrax	fa:سیاه‌زخم	fr:anthrax	he:אנתרקס	hi:एंथ्रेक्स	ja:炭疽	ko:탄저	pt:antraz	ru:сибирская язва	tr:şarbon	ur:تلی پھٹنے کی بیماری	zh:炭疽
 c:anthropology	Noun	ar:علم الإنسان	de:Anthropologie	en:anthropology	es:antropología	fa:انسان‌شناسی	fr:anthropologie	he:אנתרופולוגיה	hi:मानव विज्ञान	ja:人類学	ko:인류학	pt:antropologia	ru:антропология	tr:antropoloji	ur:بشریات	zh:人类学
 c:anti-inflammatory	Noun	ar:مضاد التهاب	de:Entzündungshemmer	en:anti-inflammatory	es:antiinflamatorio	fa:ضد التهاب	fr:anti-inflammatoire	he:נוגד דלקת	hi:सूजनरोधी	ja:抗炎症剤	ko:항염증제	pt:anti-inflamatório	ru:противовоспалительное	tr:iltihap önleyici	ur:سوزش مخالف	zh:消炎药
 c:anti-realism	Noun	ar:اللاواقعية	de:Anti-Realismus	en:anti-realism	es:antirrealismo	fa:ضدواقع‌گرایی	fr:antiréalisme	he:אנטי-ריאליזם	hi:विरोधी-यथार्थवाद	ja:反実在論	ko:반실재론	pt:anti-realismo	ru:антиреализм	tr:anti-gerçekçilik	ur:ضد حقیقت پسندی	zh:反实在论
@@ -594,6 +596,7 @@ c:asteroid	Noun	ar:كويكب	de:Asteroid	en:asteroid	es:asteroide	fa:سیارک
 c:asteroid-astro	Noun	ar:كويكب	de:Asteroid	en:asteroid	es:asteroide	fa:سیارک	fr:astéroïde	he:אסטרואיד	hi:क्षुद्रग्रह	ja:小惑星	ko:소행성	pt:asteroide	ru:астероид	tr:asteroit	ur:شہابیہ	zh:小行星
 c:asteroid-belt	Noun	ar:حزام الكويكبات	de:Asteroidengürtel	en:Asteroid Belt	es:cinturón de asteroides	fa:کمربند سیارکی	fr:ceinture d'astéroïdes	he:חגורת האסטרואידים	hi:क्षुद्रग्रह घेरा	ja:小惑星帯	ko:소행성대	pt:cinturão de asteroides	ru:пояс астероидов	tr:asteroit kuşağı	ur:سیارچہ پٹی	zh:小行星带
 c:asthenosphere	Noun	ar:الغلاف المائع	de:Asthenosphäre	en:asthenosphere	es:astenosfera	fa:سست‌کره	fr:asthénosphère	he:אסתנוספירה	hi:दुर्बलमंडल	ja:アセノスフェア	ko:연약권	pt:astenosfera	ru:астеносфера	tr:astenosfer	ur:نرم کرہ	zh:软流圈
+c:asthma	Noun	ar:الربو	de:Asthma	en:asthma	es:asma	fa:آسم	fr:asthme	he:אסתמה	hi:दमा	ja:喘息	ko:천식	pt:asma	ru:астма	tr:astım	ur:دمہ	zh:哮喘
 c:astrocyte	Noun	ar:الخلية النجمية	de:Astrozyt	en:astrocyte	es:astrocito	fa:آستروسیت	fr:astrocyte	he:אסטרוציט	hi:एस्ट्रोसाइट	ja:アストロサイト	ko:성상교세포	pt:astrócito	ru:астроцит	tr:astrositler	ur:نجمی خلیہ	zh:星形胶质细胞
 c:astrolabe	Noun	ar:اسطرلاب	de:Astrolabium	en:astrolabe	es:astrolabio	fa:اسطرلاب	fr:astrolabe	he:אסטרולב	hi:एस्ट्रोलेब	ja:アストロラーベ	ko:아스트롤라베	pt:astrolábio	ru:астролябия	tr:usturlap	ur:اسطرلاب	zh:星盘
 c:astronaut	Noun	ar:رائد فضاء	de:Astronaut,Astronautin,Raumfahrer	en:astronaut	es:astronauta	fa:فضانورد	fr:astronaute,cosmonaute	he:אסטרונאוט	hi:अंतरिक्ष यात्री	ja:宇宙飛行士	ko:우주 비행사	pt:astronauta	ru:космонавт,астронавт	tr:astronot,uzay adamı	ur:خلا باز	zh:宇航员,太空人
@@ -1276,6 +1279,7 @@ c:broccoli-veg	Noun	ar:بروكلي	de:Brokkoli	en:broccoli	es:brócoli	fa:بر�
 c:broil	Noun	ar:شي من أعلى	de:überbacken	en:broiling	es:gratinar	fa:برشته کردن	fr:gratiner	he:בישול מעל	hi:ब्रॉयलिंग	ja:ブロイル	ko:브로일	pt:gratinar	ru:бройлинг	tr:üstten kızartma	ur:برائل	zh:烤箱烤
 c:broker	Noun	ar:وسيط مالي	de:Makler	en:broker	es:corredor	fa:کارگزار	fr:courtier	he:מתווך	hi:दलाल	ja:ブローカー	ko:브로커	pt:corretor	ru:брокер	tr:aracı kurum	ur:دلال	zh:经纪人
 c:bromine	Noun	ar:بروم	de:Brom	en:bromine	es:bromo	fa:برم	fr:brome	he:ברום	hi:ब्रोमीन	ja:臭素	ko:브로민	pt:bromo	ru:бром	tr:brom	ur:برومین	zh:溴
+c:bronchitis	Noun	ar:التهاب الشعب الهوائية	de:Bronchitis	en:bronchitis	es:bronquitis	fa:برونشیت	fr:bronchite	he:ברונכיטיס	hi:ब्रोन्काइटिस	ja:気管支炎	ko:기관지염	pt:bronquite	ru:бронхит	tr:bronşit	ur:برونکائٹس	zh:支气管炎
 c:bronchus	Noun	ar:القصبة الهوائية الفرعية	de:Bronchus	en:bronchus	es:bronquio	fa:برونش	fr:bronche	he:סמפון	hi:श्वसनी	ja:気管支	ko:기관지	pt:brônquio	ru:бронх	tr:bronş	ur:برونکس	zh:支气管
 c:brontosaurus	Noun	ar:برونتوصور	de:Brontosaurus	en:brontosaurus	es:brontosaurio	fa:برونتوزاروس	fr:brontosaure	he:ברונטוזאורוס	hi:ब्रोंटोसॉरस	ja:ブロントサウルス	ko:브론토사우루스	pt:brontossauro	ru:бронтозавр	tr:brontozor	ur:برونٹوسارس	zh:雷龙
 c:bronze	Noun	ar:برونز	de:Bronze	en:bronze	es:bronce	fa:برنز,مفرغ	fr:bronze	he:ארד,ברונזה	hi:कांस्य,ब्रॉन्ज़	ja:青銅,ブロンズ	ko:청동,브론즈	pt:bronze	ru:бронза	tr:bronz,tunç	ur:کانسی	zh:青铜
@@ -1438,6 +1442,7 @@ c:canary	Noun	ar:كناري	de:Kanarienvogel	en:canary	es:canario	fa:قناری	
 c:canary-bird	Noun	ar:كناري	de:Kanarienvogel	en:canary	es:canario	fa:قناری	fr:canari	he:כנרית	hi:कनारी	ja:カナリア	ko:카나리아	pt:canário	ru:канарейка	tr:kanarya	ur:کنیری	zh:金丝雀
 c:canberra	Noun	ar:كانبرا	de:Canberra	en:Canberra	es:Canberra	fa:کانبرا	fr:Canberra	he:קנברה	hi:कैनबरा	ja:キャンベラ	ko:캔버라	pt:Camberra,Canberra	ru:Канберра	tr:Canberra	ur:کینبرا	zh:堪培拉
 c:canberra-capital	Noun	ar:كانبرا	de:Canberra	en:Canberra	es:Canberra	fa:کنبرا	fr:Canberra	he:קנברה	hi:कैनबरा	ja:キャンベラ	ko:캔버라	pt:Camberra	ru:Канберра	tr:Kanberra	ur:کینبرا	zh:堪培拉
+c:cancer-disease	Noun	ar:سرطان	de:Krebs	en:cancer	es:cáncer	fa:سرطان	fr:cancer	he:סרטן מחלה	hi:कैंसर	ja:がん	ko:암	pt:câncer	ru:рак	tr:kanser	ur:کینسر	zh:癌症
 c:cancer-sign	Noun	ar:السرطان برج	de:Krebs	en:Cancer	es:Cáncer	fa:خرچنگ برج	fr:Cancer	he:סרטן מזל	hi:कर्क	ja:蟹座	ko:게자리	pt:Câncer	ru:Рак	tr:Yengeç burcu	ur:سرطان	zh:巨蟹座
 c:cancer-vaccine	Noun	ar:لقاح السرطان	de:Krebsimpfstoff	en:cancer vaccine	es:vacuna contra el cáncer	fa:واکسن سرطان	fr:vaccin contre le cancer	he:חיסון לסרטן	hi:कैंसर टीका	ja:がんワクチン	ko:암 백신	pt:vacina contra câncer	ru:противоопухолевая вакцина	tr:kanser aşısı	ur:سرطان ویکسین	zh:癌症疫苗
 c:canistel	Noun	ar:كانيستيل,تفاح المومياء	de:Canistel	en:canistel,egg fruit	es:canistel	fa:کانیستل	fr:canistel	he:קניסטל	hi:कनिस्टेल	ja:カニステル	ko:카니스텔	pt:canistel	ru:канистель	tr:canistel	ur:کنسٹل	zh:蛋黄果
@@ -1770,6 +1775,7 @@ c:chick-bird	Noun	ar:كتكوت	de:Küken	en:chick	es:pollito	fa:جوجه	fr:pou
 c:chicken	Noun	ar:دجاج	de:Huhn	en:chicken	es:pollo	fa:مرغ	fr:poulet	he:עוף	hi:चिकन	ja:鶏	ko:닭	pt:galinha	ru:курица	tr:tavuk	ur:مرغی	zh:鸡
 c:chicken-bird	Noun	ar:دجاجة	de:Huhn	en:chicken	es:gallina	fa:مرغ	fr:poule	he:תרנגולת	hi:मुर्गी	ja:鶏	ko:닭	pt:galinha	ru:курица	tr:tavuk	ur:مرغی	zh:鸡
 c:chicken-meat	Noun	ar:لحم دجاج	de:Hühnerfleisch	en:chicken meat	es:pollo	fa:گوشت مرغ	fr:viande de poulet	he:בשר עוף	hi:मुर्गे का मांस	ja:鶏肉	ko:닭고기	pt:frango carne	ru:куриное мясо	tr:tavuk eti	ur:مرغ کا گوشت	zh:鸡肉
+c:chickenpox	Noun	ar:الجديري المائي	de:Windpocken	en:chickenpox	es:varicela	fa:آبله‌مرغان	fr:varicelle	he:אבעבועות רוח	hi:छोटी माता	ja:水痘	ko:수두	pt:catapora	ru:ветрянка	tr:suçiçeği	ur:چھوٹی ماتا	zh:水痘
 c:chickpea	Noun	ar:حمص	de:Kichererbse	en:chickpea	es:garbanzo	fa:نخود	fr:pois chiche	he:חומוס	hi:चना	ja:ひよこ豆	ko:병아리콩	pt:grão-de-bico	ru:нут	tr:nohut	ur:چنا	zh:鹰嘴豆
 c:chiefdom	Noun	ar:مشيخة	de:Häuptlingstum	en:chiefdom	es:jefatura	fa:سرداری	fr:chefferie	he:שבטנות	hi:सरदारी	ja:首長制	ko:수장제	pt:chefia	ru:вождество	tr:aşiret yönetimi	ur:سرداری	zh:酋邦
 c:chiffon	Noun	ar:شيفون	de:Chiffon	en:chiffon	es:chifón	fa:شیفون	fr:chiffon	he:שיפון	hi:शिफॉन	ja:シフォン	ko:쉬폰	pt:chiffon	ru:шифон	tr:şifon	ur:شفون	zh:雪纺
@@ -1812,6 +1818,7 @@ c:chokeberry	Noun	ar:توت الأرونيا	de:Aronia	en:chokeberry	es:aronia	f
 c:choker	Noun	ar:طوق الرقبة	de:Halsband,Choker	en:choker	es:gargantilla	fa:گردنبند چسبان	fr:ras-du-cou	he:קולר	hi:चोकर	ja:チョーカー	ko:초커	pt:gargantilha	ru:чокер	tr:boyunluk,choker	ur:چوکر	zh:颈饰,贴颈项链
 c:chola-dynasty	Noun	ar:سلالة تشولا	de:Chola-Dynastie	en:Chola dynasty	es:dinastía Chola	fa:دودمان چولا	fr:dynastie Chola	he:שושלת הצ'ולה	hi:चोल राजवंश	ja:チョーラ朝	ko:촐라 왕조	pt:dinastia Chola	ru:династия Чола	tr:Çola hanedanı	ur:چولا خاندان	zh:朱罗王朝
 c:chola-empire	Noun	ar:إمبراطورية تشولا	de:Chola-Reich	en:Chola Empire	es:Imperio Chola	fa:امپراتوری چولا	fr:Empire Chola	he:אימפריית הצ'ולה	hi:चोल साम्राज्य	ja:チョーラ朝王国	ko:촐라 왕국	pt:Império Chola	ru:империя Чола	tr:Çola İmparatorluğu	ur:چولا سلطنت	zh:朱罗帝国
+c:cholera	Noun	ar:الكوليرا	de:Cholera	en:cholera	es:cólera	fa:وبا	fr:choléra	he:כולרה	hi:हैजा	ja:コレラ	ko:콜레라	pt:cólera	ru:холера	tr:kolera	ur:ہیضہ	zh:霍乱
 c:cholesterol-drug	Noun	ar:دواء الكوليسترول	de:Cholesterinsenker	en:cholesterol medication	es:medicamento para el colesterol	fa:داروی کلسترول	fr:médicament anticholestérol	he:תרופה לכולסטרול	hi:कोलेस्ट्रॉल दवा	ja:コレステロール薬	ko:콜레스테롤 약	pt:medicamento para colesterol	ru:лекарство от холестерина	tr:kolesterol ilacı	ur:کولیسٹرول کی دوا	zh:胆固醇药物
 c:choose	Verb	ar:اختار	de:wählen,auswählen	en:choose	es:elegir,escoger	fa:انتخاب کردن	fr:choisir	he:לבחור	hi:चुनना	ja:選ぶ	ko:선택하다,고르다	pt:escolher	ru:выбирать	tr:seçmek	ur:چننا	zh:选择,选
 c:chop	Verb	ar:فرم,قطع	de:hacken	en:chop	es:picar	fa:خرد کردن	fr:hacher	he:לקצוץ	hi:काटना	ja:刻む	ko:썰다,다지다	pt:picar	ru:рубить	tr:doğramak	ur:کاٹنا	zh:切碎,剁
@@ -2048,6 +2055,7 @@ c:cola	Noun	ar:كولا	de:Cola	en:cola	es:cola	fa:کولا	fr:cola	he:קולה	
 c:colander	Noun	ar:مصفاة	de:Sieb	en:colander	es:colador	fa:آبکش	fr:passoire	he:מסננת	hi:छलनी	ja:水切りざる	ko:체	pt:escorredor	ru:дуршлаг	tr:kevgir	ur:چھلنی	zh:滤盆
 c:cold	Adjective	ar:بارد	de:kalt	en:cold	es:frío	fa:سرد	fr:froid	he:קר	hi:ठंडा	ja:寒い,冷たい	ko:추운,차가운	pt:frio	ru:холодный	tr:soğuk	ur:ٹھنڈا	zh:冷
 c:cold-desert	Noun	ar:صحراء باردة	de:Kältewüste	en:cold desert	es:desierto frío	fa:صحرای سرد	fr:désert froid	he:מדבר קר	hi:शीत रेगिस्तान	ja:寒冷砂漠	ko:추운 사막	pt:deserto frio	ru:холодная пустыня	tr:soğuk çöl	ur:سرد صحرا	zh:寒漠
+c:cold-disease	Noun	ar:نزلة برد	de:Erkältung	en:common cold	es:resfriado	fa:سرماخوردگی	fr:rhume	he:צינון	hi:ज़ुकाम	ja:風邪	ko:감기	pt:resfriado	ru:простуда	tr:soğuk algınlığı	ur:زکام	zh:感冒
 c:cold-frame	Noun	ar:إطار بارد	de:Frühbeetkasten	en:cold frame	es:marco frío	fa:کادر سرد	fr:châssis froid	he:מסגרת קרה	hi:कोल्ड फ्रेम	ja:コールドフレーム	ko:냉상	pt:moldura fria	ru:холодный парник	tr:soğuk çerçeve	ur:سرد فریم	zh:冷床
 c:cold-front	Noun	ar:جبهة باردة	de:Kaltfront	en:cold front	es:frente frío	fa:جبهه سرد	fr:front froid	he:חזית קרה	hi:शीत मोर्चा	ja:寒冷前線	ko:한랭전선	pt:frente fria	ru:холодный фронт	tr:soğuk cephe	ur:سرد محاذ	zh:冷锋
 c:cold-front-weather	Noun	ar:جبهة باردة	de:Kaltfront	en:cold front	es:frente frío	fa:جبهه سرد	fr:front froid	he:חזית קרה	hi:शीत मोर्चा	ja:寒冷前線	ko:한랭 전선	pt:frente fria	ru:холодный фронт	tr:soğuk cephe	ur:سرد محاذ	zh:冷锋
@@ -2292,6 +2300,7 @@ c:cooling-fan	Noun	ar:مروحة التبريد	de:Lüfter	en:cooling fan	es:ven
 c:cooper	Noun	ar:صانع البراميل	de:Küfer,Böttcher,Fassbinder	en:cooper,barrelmaker	es:tonelero	fa:بشکه‌ساز	fr:tonnelier	he:חבתן,חביתאי	hi:पीपा निर्माता	ja:桶職人,樽職人	ko:통 제조공,통장이	pt:tanoeiro	ru:бондарь,бочар	tr:fıçıcı	ur:پیپا ساز	zh:箍桶匠
 c:cooperation-social	Noun	ar:تعاون اجتماعي	de:soziale Kooperation	en:social cooperation	es:cooperación social	fa:همکاری اجتماعی	fr:coopération sociale	he:שיתוף פעולה חברתי	hi:सामाजिक सहयोग	ja:社会的協力	ko:사회적 협력	pt:cooperação social	ru:социальное сотрудничество	tr:toplumsal işbirliği	ur:معاشرتی تعاون	zh:社会合作
 c:coordinate-system	Noun	ar:نظام الإحداثيات	de:Koordinatensystem	en:coordinate system	es:sistema de coordenadas	fa:دستگاه مختصات	fr:système de coordonnées	he:מערכת קואורדינטות	hi:निर्देशांक प्रणाली	ja:座標系	ko:좌표계	pt:sistema de coordenadas	ru:система координат	tr:koordinat sistemi	ur:کوآرڈینیٹ سسٹم	zh:坐标系
+c:copd-disease	Noun	ar:الانسداد الرئوي المزمن	de:COPD	en:COPD	es:EPOC	fa:COPD	fr:BPCO	he:COPD	hi:सीओपीडी	ja:COPD	ko:COPD	pt:DPOC	ru:ХОБЛ	tr:KOAH	ur:سی او پی ڈی	zh:慢阻肺
 c:copenhagen-capital	Noun	ar:كوبنهاغن	de:Kopenhagen	en:Copenhagen	es:Copenhague	fa:کپنهاگ	fr:Copenhague	he:קופנהגן	hi:कोपेनहेगन	ja:コペンハーゲン	ko:코펜하겐	pt:Copenhaga	ru:Копенгаген	tr:Kopenhag	ur:کوپن ہیگن	zh:哥本哈根
 c:copepod	Noun	ar:قشريات الكوبيبودا	de:Ruderfußkrebse	en:copepod	es:copépodo	fa:کوپه پود	fr:copépode	he:קופיפוד	hi:कोपेपॉड	ja:カイアシ類	ko:요각류	pt:copépode	ru:веслоногий рачок	tr:kürek ayaklı	ur:کوپی پاڈ	zh:桡足类
 c:copernicus	Noun	ar:كوبرنيكوس	de:Kopernikus	en:Copernicus	es:Copérnico	fa:کوپرنیک	fr:Copernic	he:קופרניקוס	hi:कॉपरनिकस	ja:コペルニクス	ko:코페르니쿠스	pt:Copérnico	ru:Коперник	tr:Kopernik	ur:کوپرنیکس	zh:哥白尼
@@ -2409,6 +2418,7 @@ c:covalent-bond	Noun	ar:الرابطة التساهمية	de:kovalente Bindung	e
 c:cove	Noun	ar:خليج صغير	de:Bucht	en:cove	es:cala	fa:خور	fr:crique	he:מפרץ קטן	hi:छोटी खाड़ी	ja:入り江	ko:작은 만	pt:enseada	ru:бухта	tr:koy	ur:چھوٹی خلیج	zh:小湾
 c:covenant	Noun	ar:العهد	de:Bund	en:covenant	es:pacto	fa:پیمان	fr:alliance	he:ברית	hi:वाचा	ja:契約	ko:언약	pt:aliança	ru:завет	tr:ahit	ur:عہد	zh:圣约
 c:covering-space	Noun	ar:الفضاء المغطي	de:Überlagerungsraum	en:covering space	es:espacio de recubrimiento	fa:فضای پوششی	fr:espace de revêtement	he:מרחב כיסוי	hi:आवरण स्थान	ja:被覆空間	ko:피복 공간	pt:espaço de cobertura	ru:накрывающее пространство	tr:örtme uzayı	ur:احاطہ فضا	zh:覆叠空间
+c:covid	Noun	ar:كوفيد	de:COVID	en:COVID	es:COVID	fa:کووید	fr:COVID	he:קוביד	hi:कोविड	ja:コロナウイルス	ko:코로나	pt:COVID	ru:COVID	tr:COVID	ur:کووڈ	zh:新冠
 c:cow	Noun	ar:بقرة	de:Kuh	en:cow	es:vaca	fa:گاو	fr:vache	he:פרה	hi:गाय	ja:牛	ko:소,암소	pt:vaca	ru:корова	tr:inek	ur:گائے	zh:牛,母牛
 c:cow-animal	Noun	ar:بقرة	de:Kuh	en:cow	es:vaca	fa:گاو ماده	fr:vache	he:פרה	hi:गाय	ja:雌牛	ko:암소	pt:vaca	ru:корова	tr:inek	ur:گائے	zh:母牛
 c:cowardice	Noun	ar:جبن	de:Feigheit	en:cowardice	es:cobardía	fa:بزدلی	fr:lâcheté	he:פחדנות	hi:कायरता	ja:臆病	ko:비겁	pt:covardia	ru:трусость	tr:korkaklık	ur:بزدلی	zh:懦弱
@@ -2740,6 +2750,7 @@ c:denali	Noun	ar:جبل ديناليي	de:Denali	en:Denali	es:Denali	fa:دنال
 c:denarius	Noun	ar:دينار روماني,ديناريوس	de:Denar,Denarius	en:denarius	es:denario	fa:دینار روم	fr:denier	he:דינר רומי,דינריוס	hi:डिनेरियस	ja:デナリウス	ko:데나리우스	pt:denário	ru:денарий	tr:denarius	ur:دیناریوس	zh:第纳里乌斯
 c:dendrite	Noun	ar:تغصن	de:Dendrit	en:dendrite	es:dendrita	fa:دندریت	fr:dendrite	he:דנדריט	hi:डेंड्राइट	ja:樹状突起	ko:수상돌기	pt:dendrito	ru:дендрит	tr:dendrit	ur:ڈینڈرائٹ	zh:树突
 c:dendritic-cell-therapy	Noun	ar:العلاج بالخلايا التغصنية	de:dendritische Zelltherapie	en:dendritic cell therapy	es:terapia de células dendríticas	fa:درمان با سلول دندریتیک	fr:thérapie par cellules dendritiques	he:טיפול בתאים דנדריטים	hi:डेंड्रिटिक कोशिका चिकित्सा	ja:樹状細胞療法	ko:수지상 세포 치료	pt:terapia com células dendríticas	ru:дендритноклеточная терапия	tr:dendritik hücre tedavisi	ur:ڈینڈرائٹک سیل علاج	zh:树突状细胞疗法
+c:dengue-fever	Noun	ar:حمى الضنك	de:Denguefieber	en:dengue fever	es:dengue	fa:تب دانگ	fr:dengue	he:קדחת דנגי	hi:डेंगू बुखार	ja:デング熱	ko:뎅기열	pt:dengue	ru:лихорадка денге	tr:dang humması	ur:ڈینگی بخار	zh:登革热
 c:denial	Noun	ar:إنكار	de:Verleugnung	en:denial	es:negación	fa:انکار	fr:déni	he:הכחשה	hi:अस्वीकृति	ja:否認	ko:부정	pt:negação	ru:отрицание	tr:inkâr	ur:انکار	zh:否认
 c:denim	Noun	ar:دنيم	de:Denim	en:denim	es:denim	fa:دنیم	fr:denim	he:ג'ינס	hi:डेनिम	ja:デニム	ko:데님	pt:denim	ru:деним	tr:denim	ur:ڈینم	zh:牛仔布
 c:denormalization	Noun	ar:إزالة التطبيع	de:Denormalisierung	en:denormalization	es:desnormalización	fa:عدم نرمال‌سازی	fr:dénormalisation	he:דנורמליזציה	hi:असामान्यीकरण	ja:非正規化	ko:비정규화	pt:desnormalização	ru:денормализация	tr:denormalizasyon	ur:ڈی نارملائزیشن	zh:反规范化
@@ -2817,6 +2828,7 @@ c:dhaulagiri	Noun	ar:دولاغيري	de:Dhaulagiri	en:Dhaulagiri	es:Dhaulagiri	
 c:dhaulagiri-peak	Noun	ar:دولاغيري	de:Dhaulagiri	en:Dhaulagiri	es:Dhaulagiri	fa:دائولاگیری	fr:Dhaulagiri	he:דהאולגירי	hi:धौलागिरि	ja:ダウラギリ	ko:다울라기리	pt:Dhaulagiri	ru:Дхаулагири	tr:Dhaulagiri	ur:دھولاگیری	zh:道拉吉里峰
 c:dhcp	Noun	ar:بروتوكول التهيئة الديناميكية	de:DHCP	en:DHCP	es:DHCP	fa:DHCP	fr:DHCP	he:DHCP	hi:डीएचसीपी	ja:DHCP	ko:DHCP	pt:DHCP	ru:DHCP	tr:DHCP	ur:ڈی ایچ سی پی	zh:动态主机配置协议
 c:dhoti	Noun	ar:دوتي	de:Dhoti	en:dhoti	es:dhoti	fa:دوتی	fr:dhoti	he:דהוטי	hi:धोती	ja:ドーティ	ko:도티	pt:dhoti	ru:дхоти	tr:dhoti	ur:دھوتی	zh:腰布
+c:diabetes	Noun	ar:السكري	de:Diabetes	en:diabetes	es:diabetes	fa:دیابت	fr:diabète	he:סוכרת	hi:मधुमेह	ja:糖尿病	ko:당뇨병	pt:diabetes	ru:диабет	tr:diyabet	ur:ذیابیطس	zh:糖尿病
 c:diadem	Noun	ar:عصابة الرأس	de:Diadem	en:diadem	es:diadema	fa:دیهیم	fr:diadème	he:דיאדמה	hi:डायाडेम	ja:ダイアデム	ko:다이아뎀	pt:diadema	ru:диадема	tr:diadem	ur:تاج	zh:王冠,饰带
 c:diagnosis	Noun	ar:تشخيص	de:Diagnose	en:diagnosis	es:diagnóstico	fa:تشخیص	fr:diagnostic	he:אבחון	hi:निदान	ja:診断	ko:진단	pt:diagnóstico	ru:диагноз	tr:teşhis	ur:تشخیص	zh:诊断
 c:diagnosis-med	Noun	ar:تشخيص طبي	de:Diagnose	en:diagnosis	es:diagnóstico	fa:تشخیص پزشکی	fr:diagnostic	he:אבחנה	hi:निदान	ja:診断	ko:진단	pt:diagnóstico	ru:диагноз	tr:teşhis	ur:تشخیص	zh:诊断
@@ -2898,6 +2910,7 @@ c:discuss	Verb	ar:ناقش	de:diskutieren,besprechen	en:discuss	es:discutir,deba
 c:disdain	Noun	ar:ازدراء	de:Geringschätzung	en:disdain	es:desdén	fa:خوارشمری	fr:dédain	he:זלזול	hi:घृणा	ja:侮蔑	ko:경시	pt:desdém	ru:пренебрежение	tr:hor görme	ur:حقارت نفرت	zh:鄙视
 c:disease	Noun	ar:داء,مرض	de:Krankheit,Erkrankung	en:disease	es:enfermedad,dolencia	fa:بیماری,مرض	fr:maladie	he:מחלה	hi:रोग,व्याधि	ja:病,疾患	ko:질환,병	pt:doença	ru:заболевание,болезнь	tr:hastalık,rahatsızlık	ur:بیماری,مرض	zh:疾病
 c:disease-health	Noun	ar:مرض صحي	de:Krankheit	en:disease	es:enfermedad	fa:بیماری	fr:maladie	he:מחלה	hi:बीमारी	ja:疾病	ko:질병	pt:doença	ru:болезнь	tr:hastalık	ur:بیماری	zh:疾病
+c:diseases-conditions	Noun	ar:أمراض وحالات	de:Krankheiten und Zustände	en:diseases and conditions	es:enfermedades y condiciones	fa:بیماری‌ها و شرایط	fr:maladies et conditions	he:מחלות ומצבים	hi:रोग और स्थितियां	ja:病気と症状	ko:질병과 상태	pt:doenças e condições	ru:болезни и состояния	tr:hastalıklar ve durumlar	ur:بیماریاں اور حالات	zh:疾病与病症
 c:disgust	Noun	ar:اشمئزاز	de:Ekel	en:disgust	es:asco	fa:انزجار	fr:dégoût	he:גועל	hi:घृणा	ja:嫌悪	ko:혐오	pt:nojo	ru:отвращение	tr:iğrenme	ur:نفرت	zh:厌恶
 c:dish	Noun	ar:طبق	de:Gericht,Schale	en:dish	es:plato,fuente	fa:ظرف,دیش	fr:plat	he:מנה,קערה	hi:व्यंजन,डिश	ja:皿,料理	ko:접시,요리	pt:prato	ru:блюдо	tr:yemek	ur:پکوان	zh:菜肴
 c:dish-rack	Noun	ar:رف الأطباق	de:Geschirrständer	en:dish rack	es:escurreplatos	fa:جاظرفی	fr:égouttoir à vaisselle	he:מתקן כלים	hi:डिश रैक	ja:水切りラック	ko:설거지 선반	pt:escorredor de louça	ru:сушилка для посуды	tr:bulaşık süzgeci	ur:ڈش ریک	zh:碗碟架
@@ -3151,6 +3164,7 @@ c:easy	Adjective	ar:سهل	de:einfach,leicht	en:easy	es:fácil	fa:آسان,سا�
 c:eat	Verb	ar:أكل,يأكل	de:essen	en:eat,eats,ate	es:comer	fa:خوردن	fr:manger	he:לאכול	hi:खाना	ja:食べる	ko:먹다	pt:comer	ru:есть,кушать	tr:yemek	ur:کھانا	zh:吃
 c:eat-action	Verb	ar:يأكل	de:essen	en:eat	es:comer	fa:خوردن	fr:manger	he:לאכול	hi:खाना	ja:食べる	ko:먹다	pt:comer	ru:есть	tr:yemek yemek	ur:کھانا	zh:吃
 c:eave	Noun	ar:طنف	de:Dachtraufe	en:eave	es:alero	fa:لبه بام	fr:avant-toit	he:שפת הגג	hi:छज्जा	ja:軒	ko:처마	pt:beirado	ru:свес	tr:saçak	ur:چھجہ	zh:屋檐
+c:ebola	Noun	ar:إيبولا	de:Ebola	en:Ebola	es:ébola	fa:ابولا	fr:Ebola	he:אבולה	hi:इबोला	ja:エボラ	ko:에볼라	pt:ebola	ru:Эбола	tr:Ebola	ur:ایبولا	zh:埃博拉
 c:ebony-wood	Noun	ar:خشب الأبنوس	de:Ebenholz	en:ebony wood	es:madera de ébano	fa:چوب آبنوس	fr:bois d'ébène	he:עץ הובנה	hi:आबनूस की लकड़ी	ja:黒檀	ko:흑단	pt:ébano	ru:эбеновое дерево	tr:abanoz	ur:آبنوس	zh:乌木
 c:ebook	Noun	ar:كتاب الكتروني	de:E-Book,elektronisches Buch	en:ebook,e-book	es:libro electrónico	fa:کتاب الکترونیکی	fr:livre numérique,e-book	he:ספר אלקטרוני	hi:ई-बुक	ja:電子書籍	ko:전자책	pt:e-book,livro eletrônico	ru:электронная книга	tr:e-kitap	ur:برقی کتاب	zh:电子书
 c:ebro	Noun	ar:الإبرو,نهر الإبرو	de:Ebro	en:Ebro,Ebro River	es:Ebro,río Ebro	fa:ابرو,رود ابرو	fr:Èbre	he:אברו,נהר האברו	hi:एब्रो नदी	ja:エブロ川	ko:에브로강	pt:Ebro,rio Ebro	ru:Эбро	tr:Ebro,Ebro Nehri	ur:دریائے ایبرو	zh:埃布罗河
@@ -3290,6 +3304,7 @@ c:emotions-feelings	Noun	ar:عواطف	de:Gefühle	en:emotions	es:emociones	fa:�
 c:empathy	Noun	ar:تعاطف	de:Empathie,Einfühlungsvermögen	en:empathy	es:empatía	fa:همدلی	fr:empathie	he:אמפתיה	hi:सहानुभूति,समानुभूति	ja:共感,感情移入	ko:공감,감정이입	pt:empatia	ru:эмпатия,сопереживание	tr:empati	ur:ہمدردی	zh:同理心,共情
 c:empennage	Noun	ar:مؤخرة الطائرة	de:Leitwerk	en:empennage	es:empenaje	fa:دم هواپیما	fr:empennage	he:זנב המטוס	hi:एम्पेनेज	ja:尾翼	ko:꼬리날개	pt:empenagem	ru:хвостовое оперение	tr:kuyruk grubu	ur:دم پر	zh:尾翼
 c:emperor	Noun	ar:إمبراطور	de:Kaiser,Imperator	en:emperor	es:emperador	fa:امپراتور	fr:empereur	he:קיסר	hi:सम्राट	ja:皇帝,天皇	ko:황제	pt:imperador	ru:император	tr:imparator	ur:شہنشاہ,بادشاہ اعظم	zh:皇帝
+c:emphysema	Noun	ar:انتفاخ الرئة	de:Lungenemphysem	en:emphysema	es:enfisema	fa:آمفیزم	fr:emphysème	he:אמפיזמה	hi:वातस्फीति	ja:肺気腫	ko:폐기종	pt:enfisema	ru:эмфизема	tr:amfizem	ur:پھیپھڑے کا انتفاخ	zh:肺气肿
 c:empire	Noun	ar:إمبراطورية,امبراطورية	de:Reich,Imperium	en:empire	es:imperio	fa:امپراتوری	fr:empire	he:אימפריה	hi:साम्राज्य	ja:帝国	ko:제국	pt:império	ru:империя	tr:imparatorluk	ur:سلطنت,شہنشاہیت	zh:帝国
 c:empiricism	Noun	ar:التجريبية	de:Empirismus	en:empiricism	es:empirismo	fa:تجربه گرایی	fr:empirisme	he:אמפיריציזם	hi:अनुभववाद	ja:経験主義	ko:경험주의	pt:empirismo	ru:эмпиризм	tr:deneycilik,empirizm	ur:تجربیت	zh:经验主义
 c:empiricism-phil	Noun	ar:التجريبية	de:Empirismus	en:empiricism	es:empirismo	fa:تجربه‌گرایی	fr:empirisme	he:אמפיריציזם	hi:अनुभववाद	ja:経験主義	ko:경험론	pt:empirismo	ru:эмпиризм	tr:ampirizm	ur:تجرباتی نظریہ	zh:经验主义
@@ -3375,6 +3390,7 @@ c:epidemic-disease	Noun	ar:وباء	de:Epidemie	en:epidemic	es:epidemia	fa:هم�
 c:epidemiology	Noun	ar:علم الأوبئة	de:Epidemiologie	en:epidemiology	es:epidemiología	fa:اپیدمیولوژی	fr:épidémiologie	he:אפידמיולוגיה	hi:महामारी विज्ञान	ja:疫学	ko:역학	pt:epidemiologia	ru:эпидемиология	tr:epidemiyoloji	ur:وبائی علم	zh:流行病学
 c:epigenetics	Noun	ar:علم التخلق	de:Epigenetik	en:epigenetics	es:epigenética	fa:اپی‌ژنتیک	fr:épigénétique	he:אפיגנטיקה	hi:एपिजेनेटिक्स	ja:エピジェネティクス	ko:후성유전학	pt:epigenética	ru:эпигенетика	tr:epigenetik	ur:ایپی جینیٹکس	zh:表观遗传学
 c:epigenetics-dev	Noun	ar:التخلق فوق الجيني	de:Entwicklungsepigenetik	en:developmental epigenetics	es:epigenética del desarrollo	fa:اپی‌ژنتیک تکاملی	fr:épigénétique du développement	he:אפיגנטיקה התפתחותית	hi:विकासात्मक एपिजेनेटिक्स	ja:発生エピジェネティクス	ko:발생 후성유전학	pt:epigenética do desenvolvimento	ru:эпигенетика развития	tr:gelişimsel epigenetik	ur:ارتقائی ایپی جینیٹکس	zh:发育表观遗传学
+c:epilepsy	Noun	ar:الصرع	de:Epilepsie	en:epilepsy	es:epilepsia	fa:صرع	fr:épilepsie	he:אפילפסיה	hi:मिर्गी	ja:てんかん	ko:간질	pt:epilepsia	ru:эпилепсия	tr:sara	ur:مرگی	zh:癫痫
 c:epilogue	Noun	ar:خاتمة,تذييل	de:Epilog,Nachwort	en:epilogue	es:epílogo	fa:خاتمه,پایان بندی	fr:épilogue	he:אפילוג	hi:उपसंहार	ja:エピローグ,後書き	ko:에필로그,후기	pt:epílogo	ru:эпилог	tr:son söz,epilog	ur:خاتمہ	zh:后记,结语
 c:epiphany	ProperNoun	ar:إبيفاني	de:Epiphany	en:Epiphany	es:Epiphany	fa:اپیفانی	fr:Epiphany	he:אפיפני	hi:एपीफनी	ja:エピファニー	ko:에피퍼니	pt:Epiphany	ru:Epiphany	tr:Epiphany	ur:ایپی فنی	zh:顿悟
 c:epiphyte	Noun	ar:نبات هوائي	de:Epiphyt	en:epiphyte	es:epífita	fa:گیاه هوازی	fr:épiphyte	he:אפיפיט	hi:अधिपादप	ja:着生植物	ko:착생식물	pt:epífita	ru:эпифит	tr:epifil	ur:ہوائی پودا	zh:附生植物
@@ -3804,6 +3820,7 @@ c:flower	Noun	ar:زهرة,وردة	de:Blume	en:flower	es:flor	fa:گل	fr:fleur	h
 c:flower-plant	Noun	ar:زهرة	de:Blume	en:flower	es:flor	fa:گل	fr:fleur	he:פרח	hi:फूल	ja:花	ko:꽃	pt:flor	ru:цветок	tr:çiçek	ur:پھول	zh:花
 c:flowers	Noun	ar:زهور	de:Blumen	en:flowers	es:flores	fa:گل‌ها	fr:fleurs	he:פרחים	hi:फूल	ja:花々	ko:꽃들	pt:flores	ru:цветы	tr:çiçekler	ur:پھول	zh:花朵
 c:flu	Noun	ar:إنفلونزا	de:Grippe,Influenza	en:flu,influenza	es:gripe,influenza	fa:آنفولانزا	fr:grippe	he:שפעת	hi:फ्लू,इन्फ्लुएंज़ा	ja:インフルエンザ	ko:독감,인플루엔자	pt:gripe,influenza	ru:грипп	tr:grip	ur:فلو,انفلوئنزا	zh:流感
+c:flu-disease	Noun	ar:أنفلونزا	de:Grippe	en:flu	es:gripe	fa:آنفلوآنزا	fr:grippe	he:שפעת	hi:फ्लू	ja:インフルエンザ	ko:독감	pt:gripe	ru:грипп	tr:grip	ur:فلو	zh:流感
 c:flugelhorn	Noun	ar:فلوغل هورن	de:Flügelhorn	en:flugelhorn	es:fliscorno	fa:فلوگل هورن	fr:bugle	he:פלוגלהורן	hi:फ्लूगलहॉर्न	ja:フリューゲルホルン	ko:플뤼겔호른	pt:fliscorne	ru:флюгельгорн	tr:flugelhorn	ur:فلوگل ہارن	zh:翼号
 c:fluorescent	Adjective	ar:فلوري,وهاج فلوري	de:fluoreszierend	en:fluorescent	es:fluorescente	fa:فلورسنت	fr:fluorescent	he:פלואורסצנטי	hi:फ्लोरेसेंट,दीप्तिमान	ja:蛍光の	ko:형광의	pt:fluorescente	ru:флуоресцентный	tr:floresan	ur:فلوریسنٹ	zh:荧光
 c:fluorine	Noun	ar:فلور	de:Fluor	en:fluorine	es:flúor	fa:فلوئور	fr:fluor	he:פלואור	hi:फ्लोरीन	ja:フッ素	ko:플루오린	pt:flúor	ru:фтор	tr:flor	ur:فلورین	zh:氟
@@ -4621,6 +4638,7 @@ c:hemp-seed	Noun	ar:بذور القنب	de:Hanfsamen	en:hemp seed	es:semilla de 
 c:hen	Noun	ar:دجاجة	de:Henne	en:hen	es:gallina	fa:مرغ خانگی	fr:poule	he:תרנגולת	hi:मुर्गी	ja:雌鶏	ko:암탉	pt:galinha poedeira	ru:несушка	tr:tavuk	ur:مرغی	zh:母鸡
 c:hen-chicken	Noun	ar:دجاجة بياضة	de:Henne	en:hen	es:gallina ponedora	fa:مرغ ماده	fr:poule pondeuse	he:תרנגולת מטילה	hi:मुर्गी	ja:雌鶏	ko:암탉	pt:galinha	ru:несушка	tr:tavuk	ur:مرغی	zh:母鸡
 c:henceforth	Adverb	ar:من الآن فصاعدا	de:fortan	en:henceforth	es:de ahora en adelante	fa:از این پس	fr:désormais	he:מכאן ואילך	hi:अब से	ja:今後	ko:앞으로	pt:daqui em diante	ru:отныне	tr:bundan böyle	ur:آئندہ سے	zh:从此
+c:hepatitis-disease	Noun	ar:التهاب الكبد	de:Hepatitis	en:hepatitis	es:hepatitis	fa:هپاتیت	fr:hépatite	he:דלקת כבד	hi:हेपेटाइटिस	ja:肝炎	ko:간염	pt:hepatite	ru:гепатит	tr:hepatit	ur:ہیپاٹائٹس	zh:肝炎
 c:heptagon	Noun	ar:سباعي,شكل سباعي	de:Siebeneck,Heptagon	en:heptagon	es:heptágono	fa:هفت‌ضلعی	fr:heptagone	he:משובע	hi:सप्तभुज	ja:七角形	ko:칠각형	pt:heptágono	ru:семиугольник	tr:yedigen	ur:سات ضلعی	zh:七边形,七角形
 c:heraldry	Noun	ar:علم الشعارات	de:Heraldik	en:heraldry	es:heráldica	fa:علم نشان شناسی	fr:héraldique	he:הרלדיקה	hi:हेराल्ड्री	ja:紋章学	ko:문장학	pt:heráldica	ru:геральдика	tr:heraldik	ur:شعاریات	zh:纹章学
 c:herb	Noun	ar:عشب,نبات عطري	de:Kraut,Heilkraut	en:herb	es:hierba	fa:گیاه,علف	fr:herbe	he:עשב תיבול	hi:जड़ी-बूटी	ja:ハーブ,薬草	ko:허브,약초	pt:erva	ru:трава,пряная трава	tr:ot,bitki	ur:جڑی بوٹی,بوٹی	zh:草药,香草
@@ -4694,6 +4712,7 @@ c:historical-film	Noun	ar:فيلم تاريخي	de:Historienfilm	en:historical f
 c:history	Noun	ar:تاريخ	de:Geschichte	en:history	es:historia	fa:تاریخ	fr:histoire	he:היסטוריה	hi:इतिहास	ja:歴史	ko:역사	pt:história	ru:история	tr:tarih	ur:تاریخ	zh:历史
 c:hit-compound	Noun	ar:المركب المؤثر	de:Hit-Verbindung	en:hit compound	es:compuesto activo	fa:ترکیب اثربخش	fr:composé actif	he:תרכובת פגיעה	hi:हिट यौगिक	ja:ヒット化合物	ko:히트 화합물	pt:composto ativo	ru:хит-соединение	tr:hit bileşik	ur:اثردار مرکب	zh:苗头化合物
 c:hittite-empire	Noun	ar:الإمبراطورية الحثية	de:Hethiterreich	en:Hittite Empire	es:Imperio hitita	fa:امپراتوری هیتی	fr:Empire hittite	he:האימפריה החתית	hi:हित्ती साम्राज्य	ja:ヒッタイト帝国	ko:히타이트 제국	pt:Império Hitita	ru:Хеттская империя	tr:Hitit İmparatorluğu	ur:حتی سلطنت	zh:赫梯帝国
+c:hiv-aids	Noun	ar:الإيدز	de:HIV/AIDS	en:HIV/AIDS	es:VIH/SIDA	fa:اچ‌آی‌وی/ایدز	fr:VIH/SIDA	he:HIV/איידס	hi:एचआईवी/एड्स	ja:HIV/エイズ	ko:HIV/에이즈	pt:HIV/AIDS	ru:ВИЧ/СПИД	tr:HIV/AIDS	ur:ایچ آئی وی/ایڈز	zh:艾滋病
 c:ho-chi-minh-city	Noun	ar:مدينة هو تشي منه	de:Ho-Chi-Minh-Stadt	en:Ho Chi Minh City,Saigon	es:Ciudad Ho Chi Minh,Saigón	fa:هوشی‌مین	fr:Hô-Chi-Minh-Ville,Saïgon	he:הו צ'י מין סיטי	hi:हो ची मिन्ह सिटी	ja:ホーチミン,ホーチミン市	ko:호찌민	pt:Cidade de Ho Chi Minh,Saigão	ru:Хошимин	tr:Ho Chi Minh Şehri	ur:ہو چی منہ شہر	zh:胡志明市
 c:hoarfrost	Noun	ar:صقيع بلوري	de:Rauhreif	en:hoarfrost	es:escarcha	fa:شبنم یخ زده	fr:givre blanc	he:כפור	hi:पाला	ja:霜	ko:서리	pt:geada branca	ru:иней	tr:kırçil	ur:پالا	zh:霜
 c:hobby-falcon	Noun	ar:طائر الهواية	de:Baumfalke	en:hobby	es:alcotán	fa:لاچین	fr:faucon hobereau	he:בז נודד	hi:हॉबी बाज़	ja:チゴハヤブサ	ko:새홀리기	pt:ógea	ru:чеглок	tr:delice doğan	ur:ہابی شکرا	zh:燕隼
@@ -5646,6 +5665,7 @@ c:leopard	Noun	ar:فهد,نمر	de:Leopard	en:leopard	es:leopardo	fa:پلنگ	fr
 c:leopard-frog	Noun	ar:ضفدع الفهد	de:Leopardfrosch	en:leopard frog	es:rana leopardo	fa:قورباغه پلنگی	fr:grenouille léopard	he:צפרדע נמרית	hi:तेंदुआ मेंढक	ja:ヒョウガエル	ko:표범개구리	pt:rã-leopardo	ru:леопардовая лягушка	tr:leopar kurbağası	ur:چیتا مینڈک	zh:豹纹蛙
 c:leopard-mammal	Noun	ar:فهد	de:Leopard	en:leopard	es:leopardo	fa:پلنگ	fr:léopard	he:נמר	hi:तेंदुआ	ja:ヒョウ	ko:표범	pt:leopardo	ru:леопард	tr:leopar	ur:تیندوا	zh:豹
 c:leprechaun-creature	Noun	ar:الليبركون	de:Leprechaun	en:leprechaun	es:duende irlandés	fa:لپرکان	fr:leprechaun	he:לפרקון	hi:लेप्रिकॉन	ja:レプラコーン	ko:레프리콘	pt:leprechaun	ru:лепрекон	tr:leprikon	ur:لیپرکاؤن	zh:矮妖
+c:leprosy	Noun	ar:الجذام	de:Lepra	en:leprosy	es:lepra	fa:جذام	fr:lèpre	he:צרעת	hi:कुष्ठ रोग	ja:ハンセン病	ko:나병	pt:hanseníase	ru:проказа	tr:cüzzam	ur:جذام	zh:麻风病
 c:lepton	Noun	ar:ليبتون	de:Lepton	en:lepton	es:leptón	fa:لپتون	fr:lepton	he:לפטון	hi:लेप्टॉन	ja:レプトン	ko:렙톤	pt:lépton	ru:лептон	tr:lepton	ur:لیپٹون	zh:轻子
 c:lesson	Noun	ar:درس	de:Lektion,Unterrichtsstunde	en:lesson	es:lección	fa:درس	fr:leçon	he:שיעור	hi:पाठ,सबक	ja:レッスン,授業	ko:레슨,수업	pt:lição,aula	ru:урок	tr:ders	ur:سبق,درس	zh:课,课程
 c:letter-tray	Noun	ar:صينية الرسائل	de:Briefablage	en:letter tray	es:bandeja de cartas	fa:سینی نامه	fr:corbeille à courrier	he:מגש מכתבים	hi:लेटर ट्रे	ja:レタートレイ	ko:서류 트레이	pt:bandeja de cartas	ru:лоток для бумаг	tr:mektup tepsisi	ur:لیٹر ٹرے	zh:文件盘
@@ -5653,6 +5673,7 @@ c:letter-writing	Noun	ar:رسالة أدبية	de:Briefliteratur	en:letter writi
 c:letterhead	Noun	ar:ورق رسمي	de:Briefkopf	en:letterhead	es:membrete	fa:سربرگ	fr:en-tête	he:נייר מכתבים	hi:लेटरहेड	ja:レターヘッド	ko:편지지 머리글	pt:papel timbrado	ru:фирменный бланк	tr:antetli kağıt	ur:لیٹر ہیڈ	zh:信头
 c:lettuce	Noun	ar:خس	de:Salat,Kopfsalat	en:lettuce	es:lechuga	fa:کاهو	fr:laitue	he:חסה	hi:सलाद पत्ता,लेट्यूस	ja:レタス	ko:상추,양상추	pt:alface	ru:салат,латук	tr:marul	ur:سلاد,کاہو	zh:生菜,莴苣
 c:lettuce-veg	Noun	ar:خس	de:Salat	en:lettuce	es:lechuga	fa:کاهو	fr:laitue	he:חסה	hi:सलाद पत्ती	ja:レタス	ko:양상추	pt:alface	ru:салат латук	tr:marul	ur:سلاد	zh:生菜
+c:leukemia	Noun	ar:ابيضاض الدم	de:Leukämie	en:leukemia	es:leucemia	fa:لوسمی	fr:leucémie	he:לוקמיה	hi:ल्यूकेमिया	ja:白血病	ko:백혈병	pt:leucemia	ru:лейкемия	tr:lösemi	ur:خون کا کینسر	zh:白血病
 c:leukocyte	Noun	ar:كريات بيضاء	de:Leukozyten	en:leukocyte	es:leucocito	fa:لکوسیت	fr:leucocyte	he:לויקוציט	hi:श्वेत रक्त कोशिका	ja:白血球	ko:백혈구	pt:leucócito	ru:лейкоцит	tr:lökosit	ur:سفید خون خلیہ	zh:白细胞
 c:leveldb	ProperNoun	ar:ليفل دي بي	de:LevelDB	en:LevelDB	es:LevelDB	fa:لول‌دی‌بی	fr:LevelDB	he:לוולDB	hi:लेवलDB	ja:レベルDB	ko:레벨DB	pt:LevelDB	ru:LevelDB	tr:LevelDB	ur:لیول ڈی بی	zh:级别DB
 c:leverage	Noun	ar:رافعة مالية	de:Hebelwirkung	en:leverage	es:apalancamiento	fa:اهرم مالی	fr:effet de levier	he:מינוף	hi:लिवरेज	ja:レバレッジ	ko:레버리지	pt:alavancagem	ru:кредитное плечо	tr:kaldıraç	ur:لیوریج	zh:杠杆
@@ -5867,6 +5888,7 @@ c:lux-meter	Noun	ar:مقياس الإضاءة	de:Luxmeter	en:lux meter	es:luxóm
 c:lychee	Noun	ar:ليتشي	de:Litschi	en:lychee	es:lichi	fa:لیچی	fr:litchi	he:ליצ'י	hi:लीची	ja:ライチ	ko:리치	pt:lichia	ru:личи	tr:liçi	ur:لیچی	zh:荔枝
 c:lymph-node	Noun	ar:العقدة الليمفاوية	de:Lymphknoten	en:lymph node	es:ganglio linfático	fa:گره لنفاوی	fr:ganglion lymphatique	he:בלוטת לימפה	hi:लिम्फ नोड	ja:リンパ節	ko:림프절	pt:nódulo linfático	ru:лимфатический узел	tr:lenf bezi	ur:لمفی غدہ	zh:淋巴结
 c:lymphocyte	Noun	ar:خلية ليمفاوية	de:Lymphozyt	en:lymphocyte	es:linfocito	fa:لنفوسیت	fr:lymphocyte	he:לימפוציט	hi:लसीकाणु	ja:リンパ球	ko:림프구	pt:linfócito	ru:лимфоцит	tr:lenfosit	ur:لمفاوی خلیہ	zh:淋巴细胞
+c:lymphoma	Noun	ar:الأورام اللمفاوية	de:Lymphom	en:lymphoma	es:linfoma	fa:لنفوم	fr:lymphome	he:לימפומה	hi:लिम्फोमा	ja:リンパ腫	ko:림프종	pt:linfoma	ru:лимфома	tr:lenfoma	ur:لمفوما	zh:淋巴瘤
 c:lynx	Noun	ar:وشق	de:Luchs	en:lynx	es:lince	fa:سیاه گوش	fr:lynx	he:לינקס	hi:लिंक्स	ja:オオヤマネコ	ko:스라소니	pt:lince	ru:рысь	tr:vaşak	ur:وشق	zh:猞猁
 c:lynx-browser	ProperNoun	ar:لينكس متصفح	de:Lynx-Browser	en:Lynx	es:Lynx navegador	fa:لینکس مرورگر	fr:Lynx	he:Lynx	hi:लिंक्स ब्राउज़र	ja:リンクス	ko:링크스	pt:Lynx	ru:Lynx	tr:Lynx	ur:لنکس براؤزر	zh:山猫
 c:lyra	Noun	ar:السلياق,القيثارة	de:Leier	en:Lyra	es:Lira	fa:شلیاق	fr:Lyre	he:נבל	hi:लायरा	ja:こと座	ko:거문고자리	pt:Lira	ru:Лира	tr:Lir Takımyıldızı	ur:لائرا,قیثار	zh:天琴座
@@ -5939,6 +5961,7 @@ c:make	Verb	ar:صنع,عمل	de:machen	en:make	es:hacer	fa:ساختن	fr:faire	h
 c:make-action	Verb	ar:يصنع	de:machen	en:make	es:hacer	fa:ساختن	fr:faire	he:לעשות	hi:बनाना	ja:作る	ko:만들다	pt:fazer	ru:делать	tr:yapmak	ur:بنانا	zh:做
 c:makeup-brush	Noun	ar:فرشاة مكياج	de:Make-up-Pinsel	en:makeup brush	es:brocha de maquillaje	fa:برس آرایشی	fr:pinceau de maquillage	he:מברשת איפור	hi:मेकअप ब्रश	ja:メイクブラシ	ko:메이크업 브러시	pt:pincel de maquiagem	ru:кисть для макияжа	tr:makyaj fırçası	ur:میک اپ برش	zh:化妆刷
 c:malachite-mineral	Noun	ar:ملكيت	de:Malachit	en:malachite	es:malaquita	fa:مالاکیت	fr:malachite	he:מלכיט	hi:मैलाकाइट	ja:孔雀石	ko:공작석	pt:malaquita	ru:малахит	tr:malakit	ur:مالاکائٹ	zh:孔雀石
+c:malaria-disease	Noun	ar:ملاريا	de:Malaria	en:malaria	es:malaria	fa:مالاریا	fr:paludisme	he:מלריה	hi:मलेरिया	ja:マラリア	ko:말라리아	pt:malária	ru:малярия	tr:sıtma	ur:ملیریا	zh:疟疾
 c:malay	Noun	ar:ملايو	de:Malaien	en:Malays	es:malayos	fa:مالایی‌ها	fr:malais	he:מלאים	hi:मलय	ja:マレー人	ko:말레이족	pt:malaios	ru:малайцы	tr:Malaylar	ur:ملائی	zh:马来人
 c:malay-language	Noun	ar:اللغة الملايوية	de:Malaiisch	en:Malay language	es:idioma malayo	fa:زبان مالایی	fr:malais	he:מלאית	hi:मलय भाषा	ja:マレー語	ko:말레이어	pt:língua malaia	ru:малайский язык	tr:Malayca	ur:ملائی زبان	zh:马来语
 c:malaysia	Noun	ar:ماليزيا	de:Malaysia	en:Malaysia	es:Malasia	fa:مالزی	fr:Malaisie	he:מלזיה	hi:मलेशिया	ja:マレーシア	ko:말레이시아	pt:Malásia	ru:Малайзия	tr:Malezya	ur:ملائیشیا	zh:马来西亚
@@ -6094,6 +6117,7 @@ c:meal	Noun	ar:وجبة	de:Mahlzeit	en:meal	es:comida	fa:وعده غذایی	fr:
 c:mean	Noun	ar:متوسط	de:Mittelwert	en:mean	es:media	fa:میانگین	fr:moyenne	he:ממוצע	hi:माध्य	ja:平均	ko:평균	pt:média	ru:среднее	tr:ortalama	ur:اوسط	zh:均值
 c:mean-average	Noun	ar:متوسط حسابي	de:arithmetisches Mittel	en:arithmetic mean	es:media aritmética	fa:میانگین حسابی	fr:moyenne arithmétique	he:ממוצע חשבוני	hi:अंकगणितीय माध्य	ja:算術平均	ko:산술 평균	pt:média aritmética	ru:среднее арифметическое	tr:aritmetik ortalama	ur:اوسط	zh:算术平均数
 c:meaning	Noun	ar:معنى	de:Bedeutung	en:meaning	es:significado	fa:معنی,معنا	fr:signification,sens	he:משמעות	hi:अर्थ,मतलब	ja:意味	ko:의미,뜻	pt:significado,sentido	ru:значение	tr:anlam,mana	ur:معنی,مطلب	zh:意思,意义
+c:measles	Noun	ar:حصبة	de:Masern	en:measles	es:sarampión	fa:سرخک	fr:rougeole	he:חצבת	hi:खसरा	ja:はしか	ko:홍역	pt:sarampo	ru:корь	tr:kızamık	ur:خسرہ	zh:麻疹
 c:measurement	Noun	ar:قياس	de:Messung	en:measurement	es:medición,medida	fa:اندازه‌گیری	fr:mesure	he:מדידה	hi:माप,मापन	ja:測定,計測	ko:측정	pt:medição,medida	ru:измерение	tr:ölçüm	ur:پیمائش	zh:测量
 c:measuring-cup	Noun	ar:كوب قياس	de:Messbecher	en:measuring cup	es:taza medidora	fa:پیمانه	fr:tasse à mesurer	he:כוס מדידה	hi:मापने वाला कप	ja:計量カップ	ko:계량컵	pt:copo medidor	ru:мерная чашка	tr:ölçü kabı	ur:ماپنے کا کپ	zh:量杯
 c:measuring-spoon	Noun	ar:ملعقة قياس	de:Messlöffel	en:measuring spoon	es:cuchara medidora	fa:قاشق پیمانه	fr:cuillère à mesurer	he:כף מדידה	hi:मापने वाला चम्मच	ja:計量スプーン	ko:계량스푼	pt:colher medidora	ru:мерная ложка	tr:ölçü kaşığı	ur:ماپنے کا چمچ	zh:量匙
@@ -6150,6 +6174,7 @@ c:meiosis-bio	Noun	ar:انقسام منصف	de:Meiose	en:meiosis	es:meiosis	fa:�
 c:mekong	Noun	ar:الميكونغ,نهر الميكونغ	de:Mekong	en:Mekong,Mekong River	es:Mekong,río Mekong	fa:مکونگ,رود مکونگ	fr:Mékong	he:מקונג,נהר המקונג	hi:मेकांग नदी	ja:メコン川	ko:메콩강	pt:Mekong,rio Mekong	ru:Меконг	tr:Mekong,Mekong Nehri	ur:دریائے میکانگ	zh:湄公河
 c:mekong-river	Noun	ar:نهر الميكونغ	de:Mekong	en:Mekong river	es:río Mekong	fa:رود مکونگ	fr:Mékong	he:נהר המקונג	hi:मेकांग नदी	ja:メコン川	ko:메콩강	pt:rio Mekong	ru:река Меконг	tr:Mekong Nehri	ur:دریائے میکونگ	zh:湄公河
 c:melancholy	Noun	ar:كآبة	de:Melancholie	en:melancholy	es:melancolía	fa:مالیخولیا	fr:mélancolie	he:מלנכוליה	hi:विषाद	ja:憂鬱	ko:우울	pt:melancolia	ru:меланхолия	tr:melankoli	ur:اداسی	zh:忧郁
+c:melanoma	Noun	ar:الميلانوما	de:Melanom	en:melanoma	es:melanoma	fa:ملانوما	fr:mélanome	he:מלנומה	hi:मेलानोमा	ja:メラノーマ	ko:흑색종	pt:melanoma	ru:меланома	tr:melanom	ur:میلانوما	zh:黑色素瘤
 c:melbourne	Noun	ar:ملبورن	de:Melbourne	en:Melbourne	es:Melbourne	fa:ملبورن	fr:Melbourne	he:מלבורן	hi:मेलबर्न	ja:メルボルン	ko:멜버른	pt:Melbourne	ru:Мельбурн	tr:Melbourne	ur:میلبورن	zh:墨尔本
 c:melodica	Noun	ar:ميلوديكا	de:Melodica	en:melodica	es:melodica	fa:ملودیکا	fr:mélodica	he:מלודיקה	hi:मेलोडिका	ja:メロディカ	ko:멜로디카	pt:melodica	ru:мелодика	tr:melodika	ur:میلوڈیکا	zh:口风琴
 c:melody	Noun	ar:لحن,نغمة	de:Melodie	en:melody,tune	es:melodía,tonada	fa:ملودی,آهنگ	fr:mélodie,air	he:מנגינה,לחן	hi:धुन,राग	ja:メロディー,旋律	ko:멜로디,선율	pt:melodia	ru:мелодия	tr:melodi,ezgi	ur:لے,دھن	zh:旋律,曲调
@@ -6190,6 +6215,7 @@ c:mermaid	Noun	ar:حورية البحر	de:Meerjungfrau	en:mermaid	es:sirena	fa:
 c:mermaid-creature	Noun	ar:حورية البحر	de:Meerjungfrau	en:mermaid	es:sirena	fa:پری دریایی	fr:sirène	he:בת ים	hi:जलपरी	ja:人魚	ko:인어	pt:sereia	ru:русалка	tr:deniz kızı	ur:جل پری	zh:美人鱼
 c:merman	Noun	ar:رجل البحر	de:Wassermann	en:merman	es:tritón	fa:مرد دریایی	fr:triton	he:בן ים	hi:जलमानव	ja:人魚男	ko:인어남자	pt:tritão	ru:водяной	tr:deniz adamı	ur:سمندری آدمی	zh:男人鱼
 c:merovingian	Noun	ar:السلالة الميروفنجية	de:Merowinger	en:Merovingian dynasty	es:dinastía merovingia	fa:دودمان مروونژی	fr:dynastie mérovingienne	he:השושלת המרובינגית	hi:मेरोविंगियन राजवंश	ja:メロヴィング朝	ko:메로빙거 왕조	pt:dinastia merovíngia	ru:династия Меровингов	tr:Merovenj hanedanı	ur:میرووونجیائی خاندان	zh:墨洛温王朝
+c:mers	Noun	ar:ميرس	de:MERS	en:MERS	es:MERS	fa:مرس	fr:MERS	he:מרס	hi:मर्स	ja:MERS	ko:메르스	pt:MERS	ru:MERS	tr:MERS	ur:میرس	zh:中东呼吸综合征
 c:mersenne-prime	Noun	ar:عدد ميرسين الاولي	de:Mersenne-Primzahl	en:Mersenne prime	es:primo de Mersenne	fa:عدد اول مرسن	fr:nombre premier de Mersenne	he:ראשוני מרסן	hi:मर्सेन अभाज्य	ja:メルセンヌ素数	ko:메르센 소수	pt:primo de Mersenne	ru:простое число Мерсенна	tr:Mersenne asal sayısı	ur:مرسین اول عدد	zh:梅森素数
 c:mesa	Noun	ar:هضبة مسطحة القمة	de:Tafelberg,Mesa	en:mesa	es:mesa,meseta	fa:میزا,کوه میزمانند	fr:mesa	he:מסה,הר שולחן	hi:मेसा,समतलशिखर पर्वत	ja:メサ,卓状台地	ko:메사,평탄 대지	pt:mesa,montanha de topo plano	ru:меса,столовая гора	tr:mesa,masa şeklindeki tepe	ur:پتھر کی میز	zh:平顶山,方山
 c:mesoderm	Noun	ar:الأديم المتوسط	de:Mesoderm	en:mesoderm	es:mesodermo	fa:مزودرم	fr:mésoderme	he:מזודרם	hi:मध्यत्वचा	ja:中胚葉	ko:중배엽	pt:mesoderma	ru:мезодерма	tr:mezoderm	ur:میسوڈرم	zh:中胚层
@@ -6268,6 +6294,7 @@ c:midori-browser	ProperNoun	ar:ميدوري	de:Midori	en:Midori	es:Midori	fa:م�
 c:midpoint	Noun	ar:نقطة المنتصف	de:Mittelpunkt	en:midpoint	es:punto medio	fa:نقطه میانی	fr:point milieu	he:נקודת אמצע	hi:मध्य बिंदु	ja:中点	ko:중점	pt:ponto médio	ru:середина	tr:orta nokta	ur:درمیانی نقطہ	zh:中点
 c:midshipman	Noun	ar:ضابط بحري متدرب	de:Seekadett	en:midshipman	es:guardiamarina	fa:دانشجوی نیروی دریایی	fr:aspirant de marine	he:צוער ימי	hi:मिडशिपमैन	ja:海軍士官候補生	ko:해군 사관 후보생	pt:aspirante a oficial	ru:гардемарин	tr:deniz harbiye	ur:مڈشپ مین	zh:海军军校学员
 c:midwife-toad	Noun	ar:ضفدع القابلة	de:Geburtshelferkröte	en:midwife toad	es:sapo partero	fa:وزغ ماما	fr:alyte accoucheur	he:קרפדת מיילדת	hi:दाई मेंढक	ja:コモリガエル	ko:산파두꺼비	pt:sapo parteiro	ru:повитуха	tr:ebe kurbağası	ur:دائی مینڈک	zh:产婆蟾
+c:migraine-disease	Noun	ar:الصداع النصفي	de:Migräne	en:migraine	es:migraña	fa:میگرن	fr:migraine	he:מיגרנה	hi:माइग्रेन	ja:片頭痛	ko:편두통	pt:enxaqueca	ru:мигрень	tr:migren	ur:درد شقیقہ	zh:偏头痛
 c:migration	Noun	ar:هجرة	de:Migration,Wanderung	en:migration	es:migración	fa:مهاجرت,کوچ	fr:migration	he:הגירה	hi:प्रवास,प्रव्रजन	ja:移住,移動	ko:이주,이민	pt:migração	ru:миграция	tr:göç	ur:ہجرت,نقل مکانی	zh:迁徙,移民
 c:migration-db	Noun	ar:ترحيل قاعدة البيانات	de:Datenbankmigration	en:database migration	es:migración de base de datos	fa:مهاجرت پایگاه داده	fr:migration de base de données	he:העברת מסד נתונים	hi:डेटाबेस माइग्रेशन	ja:データベース移行	ko:데이터베이스 마이그레이션	pt:migração de banco de dados	ru:миграция базы данных	tr:veritabanı geçişi	ur:ڈیٹا بیس مائیگریشن	zh:数据库迁移
 c:migration-people	Noun	ar:هجرة سكانية	de:Migration	en:migration	es:migración	fa:مهاجرت	fr:migration	he:הגירה	hi:प्रवास	ja:移住	ko:이주	pt:migração	ru:миграция	tr:göç	ur:ہجرت	zh:迁徙
@@ -6559,6 +6586,7 @@ c:multiply	Verb	ar:ضرب	de:multiplizieren	en:multiply	es:multiplicar	fa:ضرب
 c:multiverse	Noun	ar:الكون المتعدد	de:Multiversum	en:multiverse	es:multiverso	fa:چندجهانی	fr:multivers	he:רב-יקום	hi:बहुब्रह्मांड	ja:多元宇宙	ko:다중 우주	pt:multiverso	ru:мультивселенная	tr:çoklu evren	ur:کثیر کائنات	zh:多元宇宙
 c:mumbai	Noun	ar:مومباي	de:Mumbai	en:Mumbai,Bombay	es:Bombay,Mumbái	fa:بمبئی	fr:Bombay,Mumbai	he:מומבאי	hi:मुंबई	ja:ムンバイ	ko:뭄바이	pt:Bombaim,Mumbai	ru:Мумбаи,Бомбей	tr:Mumbai	ur:ممبئی	zh:孟买
 c:mummy	Noun	ar:مومياء	de:Mumie	en:mummy	es:momia	fa:مومیایی	fr:momie	he:מומיה	hi:ममी	ja:ミイラ	ko:미라	pt:múmia	ru:мумия	tr:mumya	ur:ممی	zh:木乃伊
+c:mumps	Noun	ar:النكاف	de:Mumps	en:mumps	es:paperas	fa:اوریون	fr:oreillons	he:חזרת	hi:गलसुआ	ja:おたふく風邪	ko:볼거리	pt:caxumba	ru:свинка	tr:kabakulak	ur:کنپیڑا	zh:腮腺炎
 c:munich	Noun	ar:ميونخ	de:München	en:Munich	es:Múnich	fa:مونیخ	fr:Munich	he:מינכן	hi:म्यूनिख	ja:ミュンヘン	ko:뮌헨	pt:Munique	ru:Мюнхен	tr:Münih	ur:میونخ	zh:慕尼黑
 c:municipality	Noun	ar:بلدية	de:Gemeinde,Kommune	en:municipality	es:municipio,municipalidad	fa:شهرداری	fr:municipalité,commune	he:עירייה	hi:नगरपालिका	ja:自治体,市町村	ko:지자체,자치단체	pt:município,municipalidade	ru:муниципалитет	tr:belediye	ur:بلدیہ	zh:市,自治体
 c:murals	Noun	ar:جداريات فنية	de:Wandgemälde	en:mural	es:mural	fa:نقاشی دیواری	fr:peinture murale	he:ציור קיר	hi:भित्तिचित्र दीवार	ja:壁画	ko:벽화	pt:mural	ru:настенная роспись	tr:duvar resmi	ur:دیواری تصویر	zh:壁画
@@ -7606,6 +7634,7 @@ c:placebo	Noun	ar:دواء وهمي	de:Placebo	en:placebo	es:placebo	fa:دارو
 c:placemaking	Noun	ar:صنع المكان	de:Placemaking	en:placemaking	es:creación de lugar	fa:مکان‌سازی	fr:création de lieu	he:יצירת מקום	hi:स्थान निर्माण	ja:プレイスメイキング	ko:장소 만들기	pt:criação de lugar	ru:плейсмейкинг	tr:yer yaratma	ur:جگہ بنانا	zh:场所营造
 c:plagiarism	Noun	ar:سرقة ادبية,انتحال	de:Plagiat	en:plagiarism	es:plagio	fa:سرقت ادبی	fr:plagiat	he:גנבת רעיונות,פלגיאט	hi:साहित्यिक चोरी	ja:盗作,剽窃	ko:표절	pt:plágio	ru:плагиат	tr:intihal	ur:سرقت	zh:剽窃,抄袭
 c:plague	Noun	ar:طاعون	de:Pest	en:plague	es:plaga	fa:طاعون	fr:peste	he:מגפה	hi:महामारी	ja:疫病	ko:역병	pt:praga	ru:чума	tr:veba	ur:طاعون	zh:瘟疫
+c:plague-disease	Noun	ar:طاعون	de:Pest	en:plague	es:peste	fa:طاعون	fr:peste	he:מגפה	hi:प्लेग	ja:ペスト	ko:페스트	pt:peste	ru:чума	tr:veba	ur:طاعون	zh:瘟疫
 c:plaice	Noun	ar:سمك البلايس	de:Scholle	en:plaice	es:solla	fa:پلایس	fr:plie	he:פלייס	hi:प्लेइस	ja:ヒラメ	ko:넙치	pt:solha-das-pedras	ru:камбала-ёрш	tr:Avrupa pisisi	ur:پلیس مچھلی	zh:鲽鱼
 c:plain	Noun	ar:سهل	de:Ebene	en:plain	es:llanura	fa:دشت,جلگه	fr:plaine	he:מישור	hi:मैदान	ja:平原,平野	ko:평원,평야	pt:planície	ru:равнина	tr:ova	ur:میدان	zh:平原
 c:plain-landform	Noun	ar:سهل	de:Ebene	en:plain,flatland	es:llanura,llano	fa:دشت,جلگه	fr:plaine	he:מישור	hi:मैदान,समतल	ja:平原,平野	ko:평원	pt:planície	ru:равнина	tr:ova	ur:میدان	zh:平原
@@ -7676,6 +7705,7 @@ c:plus	Noun	ar:زائد,جمع	de:Plus	en:plus	es:más	fa:به‌علاوه,جم
 c:pluto	Noun	ar:بلوتو	de:Pluto	en:Pluto	es:Plutón	fa:پلوتون	fr:Pluton	he:פלוטו	hi:प्लूटो	ja:冥王星	ko:명왕성	pt:Plutão	ru:Плутон	tr:Plüton	ur:پلوٹو	zh:冥王星
 c:plyometrics	Noun	ar:التدريبات البليومترية	de:Plyometrie	en:plyometrics	es:pliometría	fa:پلیومتریک	fr:pliométrie	he:פליומטריקס	hi:प्लायोमेट्रिक्स	ja:プライオメトリクス	ko:플라이오메트릭스	pt:pliometria	ru:плиометрия	tr:pliometri	ur:پلیومیٹرکس	zh:增强式训练
 c:plywood	Noun	ar:خشب أبلكاج	de:Sperrholz	en:plywood	es:contrachapado	fa:چندلایی	fr:contreplaqué	he:דיקט	hi:प्लाईवुड	ja:合板	ko:합판	pt:contraplacado	ru:фанера	tr:kontrplak	ur:پلائی ووڈ	zh:胶合板
+c:pneumonia-disease	Noun	ar:الالتهاب الرئوي	de:Lungenentzündung	en:pneumonia	es:neumonía	fa:پنومونی	fr:pneumonie	he:דלקת ריאות	hi:निमोनिया	ja:肺炎	ko:폐렴	pt:pneumonia	ru:пневмония	tr:zatürre	ur:نمونیا	zh:肺炎
 c:po	Noun	ar:نهر بو,بو	de:Po	en:Po,Po River	es:Po,río Po	fa:رود پو,پو	fr:Pô	he:פו,נהר הפו	hi:पो नदी	ja:ポー川	ko:포강	pt:Pó,rio Pó	ru:По	tr:Po,Po Nehri	ur:دریائے پو	zh:波河
 c:po-river	Noun	ar:نهر البو	de:Po	en:Po river	es:río Po	fa:رود پو	fr:Pô	he:נהר הפו	hi:पो नदी	ja:ポー川	ko:포강	pt:rio Pó	ru:река По	tr:Po Nehri	ur:دریائے پو	zh:波河
 c:poach-cook	Noun	ar:سلق لطيف	de:pochieren	en:poaching	es:escalfar	fa:آب‌پز کردن لطیف	fr:pocher	he:שליקה	hi:धीमी उबलन	ja:ポーチド	ko:포칭	pt:escalfar	ru:припускание	tr:hafif haşlama	ur:ہلکا سا ابالنا	zh:水煮
@@ -7708,6 +7738,7 @@ c:pole-vault	Noun	ar:قفز بالزانة	de:Stabhochsprung	en:pole vault	es:sa
 c:police	Noun	ar:شرطة	de:Polizei	en:police	es:policía	fa:پلیس	fr:police	he:משטרה	hi:पुलिस	ja:警察	ko:경찰	pt:polícia	ru:полиция	tr:polis	ur:پولیس	zh:警察
 c:police-car	Noun	ar:سيارة شرطة	de:Polizeiauto	en:police car	es:coche de policía	fa:ماشین پلیس	fr:voiture de police	he:ניידת משטרה	hi:पुलिस कार	ja:パトカー	ko:경찰차	pt:carro de polícia	ru:полицейская машина	tr:polis arabası	ur:پولیس کار	zh:警车
 c:policeman	Noun	ar:شرطي	de:Polizist,Polizistin	en:policeman,police officer	es:policía	fa:پلیس	fr:policier	he:שוטר	hi:पुलिसकर्मी,सिपाही	ja:警察官,警官	ko:경찰관,경찰	pt:policial	ru:полицейский	tr:polis,polis memuru	ur:پولیس والا,سپاہی	zh:警察,警官
+c:polio-disease	Noun	ar:شلل الأطفال	de:Kinderlähmung	en:polio	es:poliomielitis	fa:فلج اطفال	fr:polio	he:פוליו	hi:पोलियो	ja:ポリオ	ko:소아마비	pt:poliomielite	ru:полиомиелит	tr:çocuk felci	ur:پولیو	zh:脊髓灰质炎
 c:polis	Noun	ar:مدينة دولة	de:Polis	en:polis	es:polis	fa:شهر-دولت	fr:polis	he:פוליס	hi:पोलिस	ja:ポリス	ko:폴리스	pt:pólis	ru:полис	tr:polis	ur:شہر ریاست	zh:城邦
 c:polish-language	Noun	ar:اللغة البولندية	de:Polnisch	en:Polish language	es:idioma polaco	fa:زبان لهستانی	fr:polonais	he:פולנית	hi:पोलिश भाषा	ja:ポーランド語	ko:폴란드어	pt:língua polaca	ru:польский язык	tr:Lehçe	ur:پولش زبان	zh:波兰语
 c:polished-grain	Noun	ar:حبوب مقشورة	de:polierter Reis	en:polished grain	es:grano pulido	fa:غلات سفید شده	fr:grain poli	he:דגן מעובד	hi:पॉलिश अनाज	ja:精白米	ko:도정 곡물	pt:grão polido	ru:шлифованное зерно	tr:işlenmiş tahıl	ur:پالش شدہ اناج	zh:精米
@@ -8177,6 +8208,7 @@ c:rabbit	Noun	ar:أرنب	de:Kaninchen,Hase	en:rabbit	es:conejo	fa:خرگوش	fr
 c:rabbit-animal	Noun	ar:أرنب	de:Kaninchen	en:rabbit	es:conejo	fa:خرگوش	fr:lapin	he:ארנב	hi:खरगोश	ja:ウサギ	ko:토끼	pt:coelho	ru:кролик	tr:tavşan	ur:خرگوش	zh:兔子
 c:rabbit-meat	Noun	ar:لحم أرنب	de:Kaninchenfleisch	en:rabbit meat	es:carne de conejo	fa:گوشت خرگوش	fr:viande de lapin	he:בשר ארנב	hi:खरगोश का मांस	ja:ウサギ肉	ko:토끼 고기	pt:carne de coelho	ru:крольчатина	tr:tavşan eti	ur:خرگوش کا گوشت	zh:兔肉
 c:rabbit-zodiac	Noun	ar:أرنب البروج	de:Hase Tierkreis	en:rabbit zodiac	es:conejo zodíaco	fa:خرگوش زودیاک	fr:lapin zodiaque	he:ארנב אסטרולוגי	hi:खरगोश राशि	ja:卯十二支	ko:토끼띠	pt:coelho zodíaco	ru:кролик зодиак	tr:tavşan burcu	ur:خرگوش برج	zh:兔生肖
+c:rabies-disease	Noun	ar:داء الكلب	de:Tollwut	en:rabies	es:rabia	fa:هاری	fr:rage	he:כלבת	hi:रेबीज	ja:狂犬病	ko:광견병	pt:raiva	ru:бешенство	tr:kuduz	ur:ریبیز	zh:狂犬病
 c:raccoon	Noun	ar:راكون	de:Waschbär	en:raccoon	es:mapache	fa:راکون	fr:raton laveur	he:דביבון	hi:रैकून	ja:アライグマ	ko:너구리	pt:guaxinim	ru:енот	tr:rakun	ur:ریکون	zh:浣熊
 c:raccoon-mammal	Noun	ar:راكون	de:Waschbär	en:raccoon	es:mapache	fa:راکون	fr:raton laveur	he:דביבון	hi:रैकून	ja:アライグマ	ko:너구리	pt:guaxinim	ru:енот	tr:rakun	ur:ریکون	zh:浣熊
 c:race	Noun	ar:سباق	de:Rennen,Wettlauf	en:race	es:carrera	fa:مسابقه,دو	fr:course	he:מרוץ	hi:दौड़,रेस	ja:レース,競走	ko:경주,레이스	pt:corrida	ru:гонка,забег	tr:yarış	ur:دوڑ,ریس	zh:赛跑,比赛
@@ -8635,6 +8667,7 @@ c:rubber-band	Noun	ar:شريط مطاطي	de:Gummiband	en:rubber band	es:goma el
 c:rubber-duck	Noun	ar:بطة مطاطية	de:Badeente	en:rubber duck	es:pato de goma	fa:اردک لاستیکی	fr:canard en caoutchouc	he:ברווז גומי	hi:रबर की बत्तख	ja:ゴムのアヒル	ko:고무 오리	pt:patinho de borracha	ru:резиновая уточка	tr:kauçuk ördek	ur:ربڑ کی بطخ	zh:橡皮鸭
 c:rubber-material	Noun	ar:مطاط	de:Kautschuk	en:rubber	es:caucho	fa:لاستیک	fr:caoutchouc	he:גומי	hi:रबड़	ja:ゴム	ko:고무	pt:borracha	ru:каучук	tr:kauçuk	ur:ربڑ	zh:橡胶
 c:rubber-stamp	Noun	ar:ختم مطاطي	de:Gummistempel	en:rubber stamp	es:sello de goma	fa:مهر لاستیکی	fr:tampon en caoutchouc	he:חותמת גומי	hi:रबर स्टांप	ja:ゴム印	ko:고무 도장	pt:carimbo	ru:резиновый штамп	tr:lastik damga	ur:ربڑ مہر	zh:橡皮图章
+c:rubella	Noun	ar:الحصبة الألمانية	de:Röteln	en:rubella	es:rubéola	fa:سرخجه	fr:rubéole	he:אדמת	hi:जर्मन खसरा	ja:風疹	ko:풍진	pt:rubéola	ru:краснуха	tr:kızamıkçık	ur:جرمن خسرہ	zh:风疹
 c:rubidium	Noun	ar:روبيديوم	de:Rubidium	en:rubidium	es:rubidio	fa:روبیدیم	fr:rubidium	he:רובידיום	hi:रुबिडियम	ja:ルビジウム	ko:루비듐	pt:rubídio	ru:рубидий	tr:rubidyum	ur:روبیڈیم	zh:铷
 c:rubiks-cube	Noun	ar:مكعب روبيك	de:Zauberwürfel	en:Rubik's Cube	es:cubo de Rubik	fa:مکعب روبیک	fr:Rubik's Cube	he:קוביית רוביק	hi:रूबिक्स क्यूब	ja:ルービックキューブ	ko:루빅스 큐브	pt:cubo de Rubik	ru:кубик Рубика	tr:Rubik Küpü	ur:روبک کیوب	zh:魔方
 c:ruble	Noun	ar:روبل	de:Rubel	en:ruble,rouble	es:rublo	fa:روبل	fr:rouble	he:רובל	hi:रूबल	ja:ルーブル	ko:루블	pt:rublo	ru:рубль	tr:ruble	ur:روبل	zh:卢布
@@ -8771,6 +8804,7 @@ c:sargasso-sea-body	Noun	ar:بحر سرغاسو	de:Sargassosee	en:Sargasso Sea	e
 c:sari	Noun	ar:ساري	de:Sari	en:sari,saree	es:sari	fa:ساری	fr:sari	he:סארי	hi:साड़ी	ja:サリー	ko:사리	pt:sári	ru:сари	tr:sari	ur:ساڑھی	zh:纱丽
 c:sarod	Noun	ar:سارود	de:Sarod	en:sarod	es:sarod	fa:سارود	fr:sarod	he:סארוד	hi:सरोद	ja:サロード	ko:사로드	pt:sarod	ru:сарод	tr:sarod	ur:سارود	zh:萨罗德
 c:sarong-wrap	Noun	ar:سارونغ	de:Sarong	en:sarong	es:pareo	fa:سارونگ	fr:sarong	he:סרונג	hi:सारोंग	ja:サロン	ko:사롱	pt:sarongue	ru:саронг	tr:sarong	ur:سارونگ	zh:纱笼
+c:sars-disease	Noun	ar:سارس	de:SARS	en:SARS	es:SARS	fa:سارس	fr:SRAS	he:סארס	hi:सार्स	ja:SARS	ko:사스	pt:SARS	ru:SARS	tr:SARS	ur:سارس	zh:非典
 c:sashimi	Noun	ar:ساشيمي	de:Sashimi	en:sashimi	es:sashimi	fa:ساشیمی	fr:sashimi	he:סשימי	hi:साशिमी	ja:刺身	ko:사시미	pt:sashimi	ru:сашими	tr:sashimi	ur:ساشیمی	zh:生鱼片
 c:sashimi-tuna	Noun	ar:ساشيمي تونة	de:Thunfisch-Sashimi	en:tuna sashimi	es:sashimi de atún	fa:ساشیمی تن	fr:sashimi de thon	he:סשימי טונה	hi:टूना साशिमी	ja:マグロ刺身	ko:참치 사시미	pt:sashimi de atum	ru:сашими из тунца	tr:ton balığı sashimi	ur:ٹونا ساشیمی	zh:金枪鱼刺身
 c:sassanid-empire	Noun	ar:الإمبراطورية الساسانية	de:Sassanidenreich	en:Sassanid Empire	es:Imperio sasánida	fa:امپراتوری ساسانی	fr:Empire sassanide	he:האימפריה הסאסאנית	hi:सासानी साम्राज्य	ja:サーサーン朝	ko:사산 제국	pt:Império Sassânida	ru:Сасанидская империя	tr:Sasani İmparatorluğu	ur:ساسانی سلطنت	zh:萨珊帝国
@@ -9186,6 +9220,7 @@ c:singularity	Noun	ar:تفردية	de:Singularität	en:singularity	es:singularid
 c:sink-bath	Noun	ar:حوض غسيل	de:Waschbecken	en:sink	es:lavabo	fa:دستشویی	fr:lavabo	he:כיור	hi:वॉशबेसिन	ja:洗面台	ko:세면대	pt:pia	ru:раковина	tr:lavabo	ur:واش بیسن	zh:水槽
 c:sintering	Noun	ar:التلبيد	de:Sintern	en:sintering	es:sinterización	fa:تف‌جوشی	fr:frittage	he:הלחמה	hi:सिंटरिंग	ja:焼結	ko:소결	pt:sinterização	ru:спекание	tr:sinterleme	ur:پختہ کاری	zh:烧结
 c:sintering-mat	Noun	ar:التلبيد	de:Sintern	en:sintering	es:sinterización	fa:تفجوشی	fr:frittage	he:סינטור	hi:सिंटरिंग	ja:焼結	ko:소결	pt:sinterização	ru:спекание	tr:sinterleme	ur:تپانا	zh:烧结
+c:sinusitis	Noun	ar:التهاب الجيوب الأنفية	de:Sinusitis	en:sinusitis	es:sinusitis	fa:سینوزیت	fr:sinusite	he:סינוסיטיס	hi:साइनसाइटिस	ja:副鼻腔炎	ko:부비동염	pt:sinusite	ru:синусит	tr:sinüzit	ur:سینوسائٹس	zh:鼻窦炎
 c:sioux	Noun	ar:سيو	de:Sioux	en:Sioux	es:sioux	fa:سو	fr:sioux	he:סיו	hi:सिओक्स	ja:スー族	ko:수족	pt:sioux	ru:сиу	tr:Siular	ur:سو	zh:苏族
 c:siphonophore	Noun	ar:المستعمرات الهلامية	de:Siphonophore	en:siphonophore	es:sifonóforo	fa:سیفونوفور	fr:siphonophore	he:ספונופורה	hi:साइफनोफोर	ja:管クラゲ	ko:관해파리류	pt:sifonóforo	ru:сифонофора	tr:sifonfor	ur:سیفونوفور	zh:管水母目
 c:siren-amphibian	Noun	ar:السيرين البرمائي	de:Siren	en:siren	es:siren	fa:سایرن	fr:siren	he:סיירן	hi:साइरन	ja:サイレン	ko:사이렌 도롱뇽	pt:sirena	ru:сирена	tr:siren semender	ur:سائرن	zh:鳗螈
@@ -9259,6 +9294,7 @@ c:slow-twitch	Noun	ar:الألياف العضلية بطيئة الانقباض	
 c:sludge-treatment	Noun	ar:معالجة الحمأة	de:Schlammbehandlung	en:sludge treatment	es:tratamiento de lodos	fa:تصفیه لجن	fr:traitement des boues	he:טיפול בבוצה	hi:कीचड़ उपचार	ja:汚泥処理	ko:슬러지 처리	pt:tratamento de lodos	ru:обработка осадка	tr:çamur arıtma	ur:کیچڑ علاج	zh:污泥处理
 c:slug	Noun	ar:بزاقة	de:Nacktschnecke	en:slug	es:babosa	fa:راب	fr:limace	he:שבלול חשוף	hi:स्लग,कोंचा	ja:ナメクジ	ko:민달팽이	pt:lesma	ru:слизень	tr:sümüklüböcek	ur:سلگ	zh:蛞蝓
 c:small	Adjective	ar:صغير	de:klein	en:small,little	es:pequeño	fa:کوچک	fr:petit	he:קטן	hi:छोटा	ja:小さい	ko:작은	pt:pequeno	ru:маленький	tr:küçük	ur:چھوٹا	zh:小
+c:smallpox	Noun	ar:الجدري	de:Pocken	en:smallpox	es:viruela	fa:آبله	fr:variole	he:אבעבועות שחורות	hi:चेचक	ja:天然痘	ko:천연두	pt:varíola	ru:оспа	tr:çiçek hastalığı	ur:چیچک	zh:天花
 c:smart-city	Noun	ar:المدينة الذكية	de:Smart City	en:smart city	es:ciudad inteligente	fa:شهر هوشمند	fr:ville intelligente	he:עיר חכמה	hi:स्मार्ट शहर	ja:スマートシティ	ko:스마트 시티	pt:cidade inteligente	ru:умный город	tr:akıllı şehir	ur:ذہین شہر	zh:智慧城市
 c:smart-speaker	Noun	ar:مكبر صوت ذكي	de:intelligenter Lautsprecher	en:smart speaker	es:altavoz inteligente	fa:بلندگوی هوشمند	fr:enceinte intelligente	he:רמקול חכם	hi:स्मार्ट स्पीकर	ja:スマートスピーカー	ko:스마트 스피커	pt:alto-falante inteligente	ru:умная колонка	tr:akıllı hoparlör	ur:سمارٹ اسپیکر	zh:智能音箱
 c:smartphone	Noun	ar:هاتف ذكي	de:Smartphone	en:smartphone	es:teléfono inteligente,smartphone	fa:گوشی هوشمند	fr:smartphone,téléphone intelligent	he:סמארטפון	hi:स्मार्टफोन	ja:スマートフォン,スマホ	ko:스마트폰	pt:smartphone	ru:смартфон	tr:akıllı telefon	ur:اسمارٹ فون	zh:智能手机
@@ -10613,6 +10649,7 @@ c:tuareg	Noun	ar:طوارق	de:Tuareg	en:Tuareg	es:tuareg	fa:طوارق	fr:touar
 c:tuatara	Noun	ar:توتارا	de:Tuatara	en:tuatara	es:tuátara	fa:توآتارا	fr:tuatara	he:טואטארה	hi:टुआटारा	ja:ムカシトカゲ	ko:투아타라	pt:tuátara	ru:гаттерия	tr:tuatara	ur:ٹواٹارا	zh:楔齿蜥
 c:tuba	Noun	ar:توبا	de:Tuba	en:tuba	es:tuba	fa:توبا	fr:tuba	he:טובה	hi:ट्यूबा	ja:チューバ	ko:튜바	pt:tuba	ru:туба	tr:tuba	ur:ٹیوبا	zh:大号
 c:tuber	Noun	ar:درنة	de:Knolle	en:tuber	es:tubérculo	fa:غده	fr:tubercule	he:פקעת	hi:कंदिका	ja:塊茎	ko:괴경	pt:tubérculo	ru:клубень	tr:yumru	ur:گانٹھ	zh:块茎
+c:tuberculosis	Noun	ar:سل	de:Tuberkulose	en:tuberculosis	es:tuberculosis	fa:سل	fr:tuberculose	he:שחפת	hi:क्षय रोग	ja:結核	ko:결핵	pt:tuberculose	ru:туберкулёз	tr:verem	ur:ٹی بی	zh:肺结核
 c:tudor-dynasty	Noun	ar:سلالة تيودور	de:Haus Tudor	en:House of Tudor	es:dinastía Tudor	fa:دودمان تیودور	fr:dynastie Tudor	he:בית טיודור	hi:ट्यूडर राजवंश	ja:テューダー朝	ko:튜더 왕조	pt:dinastia Tudor	ru:династия Тюдоров	tr:Tudor hanedanı	ur:ٹیوڈر خاندان	zh:都铎王朝
 c:tudor-style	Noun	ar:الطراز التيودوري	de:Tudor-Stil	en:Tudor style	es:estilo Tudor	fa:سبک تیودور	fr:style Tudor	he:סגנון טיודור	hi:ट्यूडर शैली	ja:テューダー様式	ko:튜더 양식	pt:estilo Tudor	ru:тюдоровский стиль	tr:Tudor tarzı	ur:ٹیوڈر طرز	zh:都铎式
 c:tuff	Noun	ar:الحجر الطفي	de:Tuff	en:tuff	es:toba volcánica	fa:توف	fr:tuf	he:טוף	hi:टफ़	ja:凝灰岩	ko:응회암	pt:tufo	ru:туф	tr:tüf	ur:توف	zh:凝灰岩
@@ -10681,6 +10718,7 @@ c:typeface	Noun	ar:خط طباعي,نمط الخط	de:Schriftart,Schriftbild	en:
 c:typeorm	ProperNoun	ar:تايب أو آر إم	de:TypeORM	en:TypeORM	es:TypeORM	fa:تایپ‌اور‌ام	fr:TypeORM	he:TypeORM	hi:टाइपORM	ja:タイプORM	ko:타입ORM	pt:TypeORM	ru:TypeORM	tr:TypeORM	ur:ٹائپ او آر ایم	zh:类型ORM
 c:typescript-lang	ProperNoun	ar:تايب سكريبت	de:TypeScript	en:TypeScript	es:TypeScript	fa:تایپ‌اسکریپت	fr:TypeScript	he:טייפסקריפט	hi:टाइपस्क्रिप्ट	ja:タイプスクリプト	ko:타입스크립트	pt:TypeScript	ru:TypeScript	tr:TypeScript	ur:ٹائپ اسکرپٹ	zh:类型脚本
 c:typewriter	Noun	ar:آلة كاتبة	de:Schreibmaschine	en:typewriter	es:máquina de escribir	fa:ماشین تحریر	fr:machine à écrire	he:מכונת כתיבה	hi:टाइपराइटर	ja:タイプライター	ko:타자기	pt:máquina de escrever	ru:пишущая машинка	tr:daktilo	ur:ٹائپ رائٹر	zh:打字机
+c:typhoid-fever	Noun	ar:حمى التيفوئيد	de:Typhus	en:typhoid fever	es:tifoidea	fa:تیفوئید	fr:typhoïde	he:טיפוס הבטן	hi:टाइफ़ाइड	ja:腸チフス	ko:장티푸스	pt:febre tifoide	ru:брюшной тиф	tr:tifo	ur:ٹائفائیڈ	zh:伤寒
 c:typhoon	Noun	ar:تايفون,إعصار مداري	de:Taifun	en:typhoon	es:tifón	fa:تایفون	fr:typhon	he:טייפון	hi:टाइफ़ून	ja:台風	ko:태풍	pt:tufão	ru:тайфун	tr:tayfun	ur:ٹائفون	zh:台风
 c:typhoon-storm	Noun	ar:إعصار مداري	de:Taifun	en:typhoon	es:tifón	fa:توفان	fr:typhon	he:טייפון	hi:टाइफून	ja:台風	ko:태풍	pt:tufão	ru:тайфун	tr:tayfun	ur:ٹائفون	zh:台风
 c:tyrannosaurus	Noun	ar:تيرانوصور	de:Tyrannosaurus	en:tyrannosaurus	es:tiranosaurio	fa:تیرانوزاروس	fr:tyrannosaure	he:טירנוזאורוס	hi:टायरानोसॉरस	ja:ティラノサウルス	ko:티라노사우루스	pt:tiranossauro	ru:тираннозавр	tr:tiranozor	ur:ٹائرانوسارس	zh:暴龙
@@ -11300,6 +11338,7 @@ c:yazidi-faith	Noun	ar:الإيزيدية	de:Jesiden	en:Yazidism	es:yazidismo	fa
 c:year	Noun	ar:سنة,عام	de:Jahr	en:year,years	es:año	fa:سال	fr:an,année	he:שנה	hi:वर्ष,साल	ja:年	ko:년,해	pt:ano	ru:год	tr:yıl,sene	ur:سال	zh:年
 c:year-time	Noun	ar:سنة	de:Jahr	en:year	es:año	fa:سال	fr:an	he:שנה	hi:वर्ष	ja:年	ko:년	pt:ano	ru:год	tr:yıl	ur:سال	zh:年
 c:yellow	Adjective	ar:أصفر	de:gelb	en:yellow	es:amarillo	fa:زرد	fr:jaune	he:צהוב	hi:पीला	ja:黄色,黄色い	ko:노란,노랑	pt:amarelo	ru:жёлтый	tr:sarı	ur:زرد,پیلا	zh:黄,黄色
+c:yellow-fever	Noun	ar:الحمى الصفراء	de:Gelbfieber	en:yellow fever	es:fiebre amarilla	fa:تب زرد	fr:fièvre jaune	he:קדחת צהובה	hi:पीत ज्वर	ja:黄熱	ko:황열	pt:febre amarela	ru:жёлтая лихорадка	tr:sarı humma	ur:زرد بخار	zh:黄热病
 c:yellow-river	Noun	ar:النهر الأصفر,هوانغ خه	de:Gelber Fluss,Huang He	en:Yellow River,Huang He	es:río Amarillo,Huang He	fa:رود زرد,هوانگ‌هه	fr:fleuve Jaune,Huang He	he:הנהר הצהוב,חואנג הה	hi:पीली नदी,ह्वांग हो	ja:黄河	ko:황허,황하	pt:rio Amarelo,Huang He	ru:Хуанхэ	tr:Sarı Irmak,Huang He	ur:دریائے زرد,ہوانگ ہو	zh:黄河
 c:yellow-river-china	Noun	ar:النهر الأصفر	de:Gelber Fluss	en:Yellow river	es:río Amarillo	fa:رود زرد	fr:fleuve Jaune	he:הנהר הצהוב	hi:पीली नदी	ja:黄河	ko:황하	pt:rio Amarelo	ru:река Хуанхэ	tr:Sarı Nehir	ur:زرد دریا	zh:黄河
 c:yellow-sea	Noun	ar:البحر الأصفر	de:Gelbes Meer	en:Yellow Sea	es:Mar Amarillo	fa:دریای زرد	fr:Mer Jaune	he:הים הצהוב	hi:पीला सागर	ja:黄海	ko:황해,서해	pt:Mar Amarelo	ru:Жёлтое море	tr:Sarı Deniz	ur:بحیرہ زرد	zh:黄海
@@ -11350,6 +11389,7 @@ c:zeroth-law	Noun	ar:القانون الصفري للديناميكا الحرا
 c:zeta-function	Noun	ar:دالة زيتا لريمان	de:Riemannsche Zetafunktion	en:Riemann zeta function,zeta function	es:función zeta de Riemann	fa:تابع زتای ریمان	fr:fonction zêta de Riemann	he:פונקציית זטא של רימן	hi:रीमान ज़ेटा फलन	ja:リーマンゼータ関数	ko:리만 제타 함수	pt:função zeta de Riemann	ru:дзета-функция Римана	tr:Riemann zeta fonksiyonu	ur:ریمان زیٹا فنکشن	zh:黎曼ζ函数
 c:ziggurat	Noun	ar:الزقورة	de:Ziggurat	en:ziggurat	es:zigurat	fa:زیگورات	fr:ziggourat	he:זיגורט	hi:जिगुरात	ja:ジッグラト	ko:지구라트	pt:zigurate	ru:зиккурат	tr:ziggurat	ur:زیگورات	zh:神庙塔
 c:ziggurat-temple	Noun	ar:زقورة	de:Ziggurat	en:ziggurat	es:zigurat	fa:زیگورات	fr:ziggurat	he:זיגורט	hi:ज़िगुरात	ja:ジッグラト	ko:지구라트	pt:zigurate	ru:зиккурат	tr:ziggurat	ur:زگورات	zh:塔庙
+c:zika	Noun	ar:زيكا	de:Zika-Virus	en:Zika	es:Zika	fa:زیکا	fr:Zika	he:זיקה	hi:ज़ीका	ja:ジカウイルス	ko:지카	pt:Zika	ru:Зика	tr:Zika	ur:زیکا	zh:寨卡
 c:zinc	Noun	ar:زنك,خارصين	de:Zink	en:zinc	es:zinc,cinc	fa:روی	fr:zinc	he:אבץ	hi:जस्ता,जिंक	ja:亜鉛	ko:아연,징크	pt:zinco	ru:цинк	tr:çinko	ur:جست,زنک	zh:锌
 c:zinc-metal	Noun	ar:خارصين	de:Zink	en:zinc	es:zinc	fa:روی	fr:zinc	he:אבץ	hi:जस्ता	ja:亜鉛	ko:아연	pt:zinco	ru:цинк	tr:çinko	ur:جست	zh:锌
 c:zinnia	Noun	ar:زينية	de:Zinnie	en:zinnia	es:zinnia	fa:آهار	fr:zinnia	he:זיניה	hi:ज़िन्निया	ja:ヒャクニチソウ	ko:백일홍	pt:zínia	ru:цинния	tr:kirli hanım	ur:زینیا	zh:百日菊
