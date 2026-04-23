@@ -922,7 +922,11 @@
       "linkDistance": "Distance de liaison"
     },
     "showLegend": "Afficher la légende",
-    "hideLegend": "Masquer la légende"
+    "hideLegend": "Masquer la légende",
+    "colorByStratum": "Strate",
+    "colorByStratumHint": "Colorer par strate de connaissance (1–8)",
+    "colorByMaturity": "Maturité",
+    "colorByMaturityHint": "Colorer par état de maturité de la note"
   },
   "libraries": {
     "searchPlaceholder": "Rechercher dans tous les coffres...",

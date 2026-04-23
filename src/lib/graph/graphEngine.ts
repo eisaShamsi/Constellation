@@ -1038,6 +1038,34 @@ export class GraphEngine {
 		};
 	}
 
+	/**
+	 * Recolor every node using a resolver function. Used by GraphMindView
+	 * when the user flips the legend's color-by mode (library → folder →
+	 * stratum → maturity). Doesn't touch positions or links — just swaps
+	 * the cached hex/int color per node and triggers a redraw.
+	 *
+	 * Cheap compared to setData: O(nodes), no worker rebuild, no layout
+	 * reset. Called on every mode switch.
+	 */
+	setNodeColors(resolver: (node: {
+		id: string;
+		name: string;
+		path: string;
+		libraryName: string;
+		linkCount: number;
+		outgoingCount: number;
+		stratum?: number;
+		maturity?: string;
+		originType?: string;
+	}) => string): void {
+		for (const n of this.nodes) {
+			const hex = resolver(n as any);
+			n.colorHex = hex;
+			n.color = hexToInt(hex);
+		}
+		this.needsRedraw = true;
+	}
+
 	/** Move camera in 3D space (for WASD controls) */
 	moveCamera(dx: number, dy: number, dz: number): void {
 		this.camPosX += dx;

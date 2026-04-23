@@ -922,7 +922,11 @@
       "linkDistance": "מרחק קישור"
     },
     "showLegend": "הצג מקרא",
-    "hideLegend": "הסתר מקרא"
+    "hideLegend": "הסתר מקרא",
+    "colorByStratum": "שכבה",
+    "colorByStratumHint": "צביעה לפי שכבת ידע (1–8)",
+    "colorByMaturity": "בשלות",
+    "colorByMaturityHint": "צביעה לפי מצב הבשלות של הפתק"
   },
   "libraries": {
     "searchPlaceholder": "חפש בכל הכספות...",

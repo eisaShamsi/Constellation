@@ -922,7 +922,11 @@
       "linkDistance": "连接距离"
     },
     "showLegend": "显示图例",
-    "hideLegend": "隐藏图例"
+    "hideLegend": "隐藏图例",
+    "colorByStratum": "层级",
+    "colorByStratumHint": "按知识层级着色（1–8）",
+    "colorByMaturity": "成熟度",
+    "colorByMaturityHint": "按笔记成熟度着色"
   },
   "libraries": {
     "searchPlaceholder": "搜索所有仓库...",

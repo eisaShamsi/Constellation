@@ -922,7 +922,11 @@
       "linkDistance": "Verbindungsabstand"
     },
     "showLegend": "Legende anzeigen",
-    "hideLegend": "Legende ausblenden"
+    "hideLegend": "Legende ausblenden",
+    "colorByStratum": "Schicht",
+    "colorByStratumHint": "Nach Wissensschicht einfärben (1–8)",
+    "colorByMaturity": "Reife",
+    "colorByMaturityHint": "Nach Notizreifegrad einfärben"
   },
   "libraries": {
     "searchPlaceholder": "Alle Bibliotheken durchsuchen...",

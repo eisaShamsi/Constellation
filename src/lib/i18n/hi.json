@@ -922,7 +922,11 @@
       "linkDistance": "लिंक दूरी"
     },
     "showLegend": "लेजेंड दिखाएँ",
-    "hideLegend": "लेजेंड छिपाएँ"
+    "hideLegend": "लेजेंड छिपाएँ",
+    "colorByStratum": "स्तर",
+    "colorByStratumHint": "ज्ञान स्तर के अनुसार रंग (1–8)",
+    "colorByMaturity": "परिपक्वता",
+    "colorByMaturityHint": "नोट परिपक्वता अवस्था के अनुसार रंग"
   },
   "libraries": {
     "searchPlaceholder": "सभी तिजोरियों में खोजें...",

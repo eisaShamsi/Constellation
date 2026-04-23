@@ -116,16 +116,34 @@
 	let clusterResult = $state<ClusterResult | null>(null);
 	let showClusters = $state(false);
 
-	// Color-by mode for legend. 'tag' removed — was dead code (the graph
-	// nodes don't carry tag data, so the tag color map could never be
-	// populated). If tag-mode becomes a real feature, it needs its own
-	// data plumbing first; not a legend-side issue.
-	let colorBy = $state<'library' | 'folder'>('library');
+	// Color-by mode for legend. Stratum + maturity are the Constellation
+	// Knowledge Formulation dimensions — enrichment data already arrives
+	// on each SkyNode (populated by +layout.svelte via compute_note_strata
+	// / compute_note_maturity), so we just need to recolor with the right
+	// palette when the user switches modes.
+	let colorBy = $state<'library' | 'folder' | 'stratum' | 'maturity'>('library');
 	// Legend panel visibility — user toggles from the toolbar palette
 	// button. Default visible so first-time users see the color key; the
 	// toggle gives repeat users the screen space back when they know the
 	// scheme.
 	let legendVisible = $state(true);
+
+	// Stratum palette: 8 layers, cool → warm. Mirrors ConstellationMap.svelte
+	// so a user toggling between Map and Sky View sees consistent colors
+	// for the same stratum value.
+	const STRATUM_COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#ef4444'];
+	// Maturity palette: 5 states. Same mapping as ConstellationMap.
+	const MATURITY_COLORS: Record<string, string> = {
+		seed:      '#d1d5db',
+		sapling:   '#86efac',
+		evergreen: '#16a34a',
+		canonical: '#f59e0b',
+		wilting:   '#a3e635',
+	};
+	// Human labels for maturity states — ordered canonically so the legend
+	// reads from least to most mature (wilting sits at the end as the
+	// decline state).
+	const MATURITY_ORDER: Array<keyof typeof MATURITY_COLORS> = ['seed', 'sapling', 'evergreen', 'canonical', 'wilting'];
 
 	// Hidden groups — separate sets for library and folder modes
 	let hiddenLibraries = $state(new Set<string>());
@@ -207,9 +225,35 @@
 		return parts.length >= 3 ? parts[parts.length - 2] : '(root)';
 	}
 
+	// Stratum color map — keys are "Stratum 1" through "Stratum 8" for
+	// legend display. Values are the palette colors.
+	const stratumColorMap = $derived.by(() => {
+		const map: Record<string, string> = {};
+		// Only include strata that are actually present in the data so the
+		// legend doesn't show empty entries for unused layers.
+		const present = new Set<number>();
+		for (const n of nodes) if (n.stratum && n.stratum >= 1 && n.stratum <= 8) present.add(n.stratum);
+		for (const s of [...present].sort((a, b) => a - b)) {
+			map[`Stratum ${s}`] = STRATUM_COLORS[Math.min(s - 1, 7)];
+		}
+		return map;
+	});
+	// Maturity color map — keys are state names as they appear on the
+	// nodes. Only includes states present in the data.
+	const maturityColorMap = $derived.by(() => {
+		const map: Record<string, string> = {};
+		const present = new Set<string>();
+		for (const n of nodes) if (n.maturity) present.add(n.maturity);
+		for (const state of MATURITY_ORDER) {
+			if (present.has(state)) map[state] = MATURITY_COLORS[state];
+		}
+		return map;
+	});
 	// Active color map based on colorBy mode
 	const activeColorMap = $derived.by(() => {
-		if (colorBy === 'folder') return folderColorMap;
+		if (colorBy === 'folder')   return folderColorMap;
+		if (colorBy === 'stratum')  return stratumColorMap;
+		if (colorBy === 'maturity') return maturityColorMap;
 		return libraryColorMap; // 'library' default
 	});
 
@@ -574,9 +618,29 @@
 			let dataNodes = nodes;
 			let dataLinks = links;
 
-			// When colorBy is 'folder', remap nodes to use folder as their grouping key
+			// Remap the node's grouping key to match the active color map's
+			// keys, so engine's `colorMap[n.libraryName]` lookup resolves
+			// correctly across all four modes. Per-mode key:
+			//   library  → original libraryName
+			//   folder   → parent folder name (getNodeFolder)
+			//   stratum  → "Stratum N" where N is the note's stratum (1-8)
+			//   maturity → maturity state ('seed' | 'sapling' | ...)
+			// Nodes with no computed stratum/maturity fall into a single
+			// bucket so they still render with a deterministic color.
 			if (cb === 'folder') {
 				dataNodes = nodes.map(n => ({ ...n, libraryName: getNodeFolder(n.path) }));
+			} else if (cb === 'stratum') {
+				dataNodes = nodes.map(n => {
+					const s = n.stratum;
+					const key = (s && s >= 1 && s <= 8) ? `Stratum ${s}` : 'Stratum —';
+					return { ...n, libraryName: key };
+				});
+			} else if (cb === 'maturity') {
+				dataNodes = nodes.map(n => {
+					const m = n.maturity;
+					const key = (m && MATURITY_COLORS[m]) ? m : 'unknown';
+					return { ...n, libraryName: key };
+				});
 			}
 
 			// Filter out hidden groups (with library→folder cascade)
@@ -610,6 +674,7 @@
 			engine?.setFocusDepth(d);
 		}
 	});
+
 
 	onMount(async () => {
 		window.addEventListener('keydown', handleKeydown);
@@ -981,6 +1046,16 @@
 					onclick={() => { colorBy = 'folder'; }}>
 					{$t('graphView.colorByFolder') || 'Folder'} ({visibleFolderCount})
 				</button>
+				<button class="gm-legend-toggle" class:active={colorBy === 'stratum'}
+					onclick={() => { colorBy = 'stratum'; }}
+					title={$t('graphView.colorByStratumHint') || 'Color by knowledge stratum (1–8)'}>
+					{$t('graphView.colorByStratum') || 'Stratum'}
+				</button>
+				<button class="gm-legend-toggle" class:active={colorBy === 'maturity'}
+					onclick={() => { colorBy = 'maturity'; }}
+					title={$t('graphView.colorByMaturityHint') || 'Color by note maturity state'}>
+					{$t('graphView.colorByMaturity') || 'Maturity'}
+				</button>
 			</div>
 			<div class="gm-legend-items">
 				{#each Object.entries(activeColorMap).filter(([name]) => {
@@ -996,19 +1071,22 @@
 				}) as [name, color]}
 					{@const nameIsRTL = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(name)}
 					{@const isHidden = hiddenGroups.has(name)}
-					<label class="gm-legend-item" style:flex-direction={nameIsRTL ? 'row-reverse' : 'row'} style:opacity={isHidden ? 0.4 : 1}>
-						<input type="checkbox" class="gm-legend-check" checked={!isHidden}
-							onchange={() => {
-								if (colorBy === 'folder') {
-									const next = new Set(hiddenFolders);
-									if (next.has(name)) next.delete(name); else next.add(name);
-									hiddenFolders = next;
-								} else {
-									const next = new Set(hiddenLibraries);
-									if (next.has(name)) next.delete(name); else next.add(name);
-									hiddenLibraries = next;
-								}
-							}} />
+					{@const showCheckbox = colorBy === 'library' || colorBy === 'folder'}
+					<label class="gm-legend-item" style:flex-direction={nameIsRTL ? 'row-reverse' : 'row'} style:opacity={showCheckbox && isHidden ? 0.4 : 1}>
+						{#if showCheckbox}
+							<input type="checkbox" class="gm-legend-check" checked={!isHidden}
+								onchange={() => {
+									if (colorBy === 'folder') {
+										const next = new Set(hiddenFolders);
+										if (next.has(name)) next.delete(name); else next.add(name);
+										hiddenFolders = next;
+									} else {
+										const next = new Set(hiddenLibraries);
+										if (next.has(name)) next.delete(name); else next.add(name);
+										hiddenLibraries = next;
+									}
+								}} />
+						{/if}
 						<span class="gm-legend-dot" style="background:{color}"></span>
 						<span class="gm-legend-name" dir="auto" style:text-align={nameIsRTL ? 'right' : 'left'}>{name}</span>
 					</label>

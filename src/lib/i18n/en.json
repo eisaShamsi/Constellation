@@ -959,7 +959,11 @@
       "linkDistance": "Link distance"
     },
     "showLegend": "Show legend",
-    "hideLegend": "Hide legend"
+    "hideLegend": "Hide legend",
+    "colorByStratum": "Stratum",
+    "colorByStratumHint": "Color by knowledge stratum (1–8)",
+    "colorByMaturity": "Maturity",
+    "colorByMaturityHint": "Color by note maturity state"
   },
   "libraries": {
     "searchPlaceholder": "Search all libraries...",

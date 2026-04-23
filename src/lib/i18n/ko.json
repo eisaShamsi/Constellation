@@ -922,7 +922,11 @@
       "linkDistance": "링크 거리"
     },
     "showLegend": "범례 표시",
-    "hideLegend": "범례 숨기기"
+    "hideLegend": "범례 숨기기",
+    "colorByStratum": "계층",
+    "colorByStratumHint": "지식 계층(1–8)에 따라 색상 지정",
+    "colorByMaturity": "성숙도",
+    "colorByMaturityHint": "노트 성숙도 상태에 따라 색상 지정"
   },
   "libraries": {
     "searchPlaceholder": "모든 보관함 검색...",

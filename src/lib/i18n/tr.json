@@ -922,7 +922,11 @@
       "linkDistance": "Bağlantı mesafesi"
     },
     "showLegend": "Göstergeyi göster",
-    "hideLegend": "Göstergeyi gizle"
+    "hideLegend": "Göstergeyi gizle",
+    "colorByStratum": "Katman",
+    "colorByStratumHint": "Bilgi katmanına göre renklendir (1–8)",
+    "colorByMaturity": "Olgunluk",
+    "colorByMaturityHint": "Not olgunluk durumuna göre renklendir"
   },
   "libraries": {
     "searchPlaceholder": "Tüm kasalarda ara...",

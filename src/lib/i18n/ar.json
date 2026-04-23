@@ -923,7 +923,11 @@
       "linkDistance": "مسافة الرابط"
     },
     "showLegend": "إظهار مفتاح الألوان",
-    "hideLegend": "إخفاء مفتاح الألوان"
+    "hideLegend": "إخفاء مفتاح الألوان",
+    "colorByStratum": "الطبقة",
+    "colorByStratumHint": "التلوين حسب طبقة المعرفة (1–8)",
+    "colorByMaturity": "النضج",
+    "colorByMaturityHint": "التلوين حسب حالة نضج الملاحظة"
   },
   "libraries": {
     "searchPlaceholder": "البحث في جميع المكتبات...",

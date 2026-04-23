@@ -922,7 +922,11 @@
       "linkDistance": "Distância do link"
     },
     "showLegend": "Mostrar legenda",
-    "hideLegend": "Ocultar legenda"
+    "hideLegend": "Ocultar legenda",
+    "colorByStratum": "Estrato",
+    "colorByStratumHint": "Colorir por estrato de conhecimento (1–8)",
+    "colorByMaturity": "Maturidade",
+    "colorByMaturityHint": "Colorir por estado de maturidade da nota"
   },
   "libraries": {
     "searchPlaceholder": "Pesquisar em todos os cofres...",

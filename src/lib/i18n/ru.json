@@ -922,7 +922,11 @@
       "linkDistance": "Расстояние связи"
     },
     "showLegend": "Показать легенду",
-    "hideLegend": "Скрыть легенду"
+    "hideLegend": "Скрыть легенду",
+    "colorByStratum": "Страта",
+    "colorByStratumHint": "Окрасить по страте знаний (1–8)",
+    "colorByMaturity": "Зрелость",
+    "colorByMaturityHint": "Окрасить по состоянию зрелости заметки"
   },
   "libraries": {
     "searchPlaceholder": "Поиск по всем хранилищам...",

@@ -922,7 +922,11 @@
       "linkDistance": "لنک کی دوری"
     },
     "showLegend": "لیجنڈ دکھائیں",
-    "hideLegend": "لیجنڈ چھپائیں"
+    "hideLegend": "لیجنڈ چھپائیں",
+    "colorByStratum": "تہ",
+    "colorByStratumHint": "علم کی تہ کے مطابق رنگ کریں (1–8)",
+    "colorByMaturity": "پختگی",
+    "colorByMaturityHint": "نوٹ کی پختگی کے مطابق رنگ کریں"
   },
   "libraries": {
     "searchPlaceholder": "تمام خزانوں میں تلاش...",

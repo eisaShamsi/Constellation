@@ -922,7 +922,11 @@
       "linkDistance": "リンク距離"
     },
     "showLegend": "凡例を表示",
-    "hideLegend": "凡例を非表示"
+    "hideLegend": "凡例を非表示",
+    "colorByStratum": "層",
+    "colorByStratumHint": "知識層（1–8）で色分け",
+    "colorByMaturity": "成營度",
+    "colorByMaturityHint": "ノートの成營度で色分け"
   },
   "libraries": {
     "searchPlaceholder": "すべての保管庫を検索...",

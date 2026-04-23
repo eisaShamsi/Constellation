@@ -922,7 +922,11 @@
       "linkDistance": "فاصله لینک"
     },
     "showLegend": "نمایش راهنما",
-    "hideLegend": "پنهان کردن راهنما"
+    "hideLegend": "پنهان کردن راهنما",
+    "colorByStratum": "لایه",
+    "colorByStratumHint": "رنگ‌آمیزی بر اساس لایه دانش (1–8)",
+    "colorByMaturity": "بلوغ",
+    "colorByMaturityHint": "رنگ‌آمیزی بر اساس حالت بلوغ یادداشت"
   },
   "libraries": {
     "searchPlaceholder": "جستجوی همه کتابخانه‌ها...",
