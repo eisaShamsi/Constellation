@@ -500,12 +500,24 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // genuinely new rows, and AU explicitly DELETEs the OLD key before
     // inserting NEW — so the UNIQUE-constraint resolver would never
     // trigger and OR REPLACE would only add overhead.
+    // INSERT OR IGNORE (not plain INSERT) on AI / AU re-insert: defends
+    // against races with the back-fill populator (sky_backfill.rs) and
+    // the AU→delete-then-insert pattern when another writer briefly
+    // repopulates the same key. SQLite serializes writes, so the window
+    // is narrow, but the UNIQUE constraint would still raise on the
+    // rare overlap. OR IGNORE is idempotent: benign no-op when the row
+    // already exists, same observable state either way.
+    //
+    // Weight-divergence check: sky_backfill.rs uses the same
+    // `COALESCE(weight, 1.0)` convention as these triggers, so OR IGNORE
+    // silently keeping the back-fill's weight never produces a different
+    // value from what the trigger would have written.
     conn.execute_batch("
         CREATE TRIGGER IF NOT EXISTS note_links_sky_ai
         AFTER INSERT ON note_links
         WHEN NEW.status = 'active'
         BEGIN
-            INSERT INTO sky_links (source_path, target_name, link_type, weight)
+            INSERT OR IGNORE INTO sky_links (source_path, target_name, link_type, weight)
             VALUES (NEW.source_path, NEW.target_name, NEW.link_type, COALESCE(NEW.weight, 1.0));
         END;
 
@@ -530,7 +542,7 @@ fn init_db(path: &Path) -> Result<Connection, String> {
             WHERE source_path = OLD.source_path
               AND target_name = OLD.target_name
               AND link_type = OLD.link_type;
-            INSERT INTO sky_links (source_path, target_name, link_type, weight)
+            INSERT OR IGNORE INTO sky_links (source_path, target_name, link_type, weight)
             SELECT NEW.source_path, NEW.target_name, NEW.link_type, COALESCE(NEW.weight, 1.0)
             WHERE NEW.status = 'active';
         END;
@@ -551,14 +563,36 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // Enrichment columns (stratum, maturity, origin_type) land in
     // Step 7 via a separate trigger on properties_json changes.
     //
-    // Rename cascade: the AU trigger handles both path renames (note
-    // file moved) and name renames (display name changed). When path
-    // changes, the sky_nodes row's PK changes, so we DELETE-then-INSERT;
-    // sky_links.source_path is migrated to the new path. When name
-    // changes, sky_links.target_name is also migrated — cross-library
-    // name collisions are accepted per Invariant 3 (same behavior as
-    // existing note_links target_name resolution). Step 6 verifies
-    // this coverage end-to-end.
+    // Rename cascade (verified in Step 6): the end-to-end chain is more
+    // complex than the AU trigger alone. `index_note` writes note_meta
+    // via DELETE + INSERT (not UPDATE — see search.rs:966/969), so a
+    // rename-driven reindex fires the AD+AI pair here, NOT AU. The AU
+    // trigger below exists for the rare case where note_meta is
+    // UPDATE'd directly (e.g. future code that edits a single column
+    // without a full reindex). It's defensive coverage, not the primary
+    // rename path.
+    //
+    // Actual rename flow for a canonical file (the common case):
+    //   1. rename_item updates frontmatter title in-place, calls
+    //      reindex_single_note.
+    //   2. index_note: DELETE note_meta; INSERT note_meta with new
+    //      name. AD fires (sky_nodes row + outgoing sky_links deleted);
+    //      AI fires (sky_nodes row recreated with new name).
+    //   3. index_note: DELETE note_links; INSERT new note_links rows.
+    //      note_links_sky_ad and _ai fire for each, rebuilding outgoing
+    //      sky_links.
+    //   4. update_links_on_rename walks every other .md file, rewrites
+    //      `[[old-name]]` → `[[new-name]]`, calls reindex for each.
+    //      Step 2+3 repeat for each affected source, updating
+    //      target_name in their sky_links rows via the note_links
+    //      trigger chain.
+    //
+    // During the window between step 2 and step 4 completion, sky_links
+    // has stale target_name for incoming edges. Transient; self-heals
+    // on UI refresh after update_links_on_rename completes. A single
+    // atomic UPDATE would require rewriting the DELETE+INSERT pattern
+    // at search.rs:976, which is load-bearing for the preserved-
+    // traversal-data snapshot there.
     //
     // The AU WHEN guard limits firing to structural changes
     // (path / name / library_name). Frequent note saves that only
