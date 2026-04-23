@@ -459,8 +459,80 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         );
         CREATE INDEX IF NOT EXISTS idx_sky_links_source ON sky_links(source_path);
         CREATE INDEX IF NOT EXISTS idx_sky_links_target ON sky_links(target_name);
-        CREATE INDEX IF NOT EXISTS idx_sky_links_type ON sky_links(link_type);
+        -- Deliberately no index on link_type alone: ~7 distinct values across
+        -- 217k rows makes it non-selective, and all current queries filter by
+        -- source_path or target_name (covered above) with link_type as payload.
+        -- Reinstate if a pure `WHERE link_type=?` query ever shows up.
     ").map_err(|e| format!("Failed to create sky_* tables: {}", e))?;
+
+    // ─── Sky-link triggers (MIG-001 Step 3) ─────────────────────────────
+    // Keep sky_links in lock-step with note_links. Triggers fire on every
+    // write to note_links regardless of which of the 9 writer sites
+    // (search.rs 623/1389/1743/1812/1833/1841/1869/1891/2033) did it —
+    // that's the whole point of using the DB as the integration boundary
+    // instead of threading hooks through every Rust call site.
+    //
+    // Invariant 4 (archived links excluded): the AI / AU triggers only
+    // insert when NEW.status = 'active'. Archiving a link fires AU with
+    // the old row still reachable via OLD; the DELETE clause removes it.
+    //
+    // Invariant 2 (dedup by source→target:type): note_links already has
+    // UNIQUE(source_path, target_name, link_type), so the dedup happens
+    // upstream. sky_links inherits the same UNIQUE constraint so an
+    // accidental duplicate trigger fire is idempotent.
+    //
+    // Update strategy: AU deletes the OLD row by its key and re-inserts
+    // NEW if active. This handles (a) status transitions active↔archived,
+    // (b) weight changes, (c) rare edits where the key itself changes.
+    // A WHEN guard skips the body entirely for metadata-only updates —
+    // traversal bumps (last_traversed, traversal_count) and confidence
+    // edits don't affect the sky_links shape, so firing the trigger body
+    // on every SV click would be pure write amplification.
+    //
+    // Weight default mirrors note_links.weight DEFAULT 1.0 so a freshly
+    // created link with a NULL weight lands in sky_links as 1.0 (the
+    // Living Link "birth weight"), not 0 (which on the weight scale
+    // means "dormant/dead").
+    //
+    // INSERT (not INSERT OR REPLACE) is correct here: AI only fires on
+    // genuinely new rows, and AU explicitly DELETEs the OLD key before
+    // inserting NEW — so the UNIQUE-constraint resolver would never
+    // trigger and OR REPLACE would only add overhead.
+    conn.execute_batch("
+        CREATE TRIGGER IF NOT EXISTS note_links_sky_ai
+        AFTER INSERT ON note_links
+        WHEN NEW.status = 'active'
+        BEGIN
+            INSERT INTO sky_links (source_path, target_name, link_type, weight)
+            VALUES (NEW.source_path, NEW.target_name, NEW.link_type, COALESCE(NEW.weight, 1.0));
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS note_links_sky_ad
+        AFTER DELETE ON note_links
+        BEGIN
+            DELETE FROM sky_links
+            WHERE source_path = OLD.source_path
+              AND target_name = OLD.target_name
+              AND link_type = OLD.link_type;
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS note_links_sky_au
+        AFTER UPDATE ON note_links
+        WHEN OLD.source_path IS NOT NEW.source_path
+          OR OLD.target_name IS NOT NEW.target_name
+          OR OLD.link_type   IS NOT NEW.link_type
+          OR OLD.status      IS NOT NEW.status
+          OR COALESCE(OLD.weight, 1.0) IS NOT COALESCE(NEW.weight, 1.0)
+        BEGIN
+            DELETE FROM sky_links
+            WHERE source_path = OLD.source_path
+              AND target_name = OLD.target_name
+              AND link_type = OLD.link_type;
+            INSERT INTO sky_links (source_path, target_name, link_type, weight)
+            SELECT NEW.source_path, NEW.target_name, NEW.link_type, COALESCE(NEW.weight, 1.0)
+            WHERE NEW.status = 'active';
+        END;
+    ").map_err(|e| format!("Failed to create sky_link triggers: {}", e))?;
 
     // ─── One-time FTS5 rebuild after tokenizer migration ─────────────
     // If we bumped past FTS_SCHEMA_VERSION above we dropped the old
