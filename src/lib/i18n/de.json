@@ -920,7 +920,9 @@
       "repelForce": "Abstoßungskraft",
       "linkForce": "Verbindungskraft",
       "linkDistance": "Verbindungsabstand"
-    }
+    },
+    "showLegend": "Legende anzeigen",
+    "hideLegend": "Legende ausblenden"
   },
   "libraries": {
     "searchPlaceholder": "Alle Bibliotheken durchsuchen...",

@@ -957,7 +957,9 @@
       "repelForce": "Repel force",
       "linkForce": "Link force",
       "linkDistance": "Link distance"
-    }
+    },
+    "showLegend": "Show legend",
+    "hideLegend": "Hide legend"
   },
   "libraries": {
     "searchPlaceholder": "Search all libraries...",

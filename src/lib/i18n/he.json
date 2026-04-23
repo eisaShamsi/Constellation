@@ -920,7 +920,9 @@
       "repelForce": "כוח דחייה",
       "linkForce": "כוח קישור",
       "linkDistance": "מרחק קישור"
-    }
+    },
+    "showLegend": "הצג מקרא",
+    "hideLegend": "הסתר מקרא"
   },
   "libraries": {
     "searchPlaceholder": "חפש בכל הכספות...",

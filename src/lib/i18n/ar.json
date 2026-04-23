@@ -921,7 +921,9 @@
       "repelForce": "قوة التنافر",
       "linkForce": "قوة الرابط",
       "linkDistance": "مسافة الرابط"
-    }
+    },
+    "showLegend": "إظهار مفتاح الألوان",
+    "hideLegend": "إخفاء مفتاح الألوان"
   },
   "libraries": {
     "searchPlaceholder": "البحث في جميع المكتبات...",

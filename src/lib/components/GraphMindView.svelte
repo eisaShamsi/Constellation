@@ -116,8 +116,16 @@
 	let clusterResult = $state<ClusterResult | null>(null);
 	let showClusters = $state(false);
 
-	// Color-by mode for legend
-	let colorBy = $state<'library' | 'folder' | 'tag'>('library');
+	// Color-by mode for legend. 'tag' removed — was dead code (the graph
+	// nodes don't carry tag data, so the tag color map could never be
+	// populated). If tag-mode becomes a real feature, it needs its own
+	// data plumbing first; not a legend-side issue.
+	let colorBy = $state<'library' | 'folder'>('library');
+	// Legend panel visibility — user toggles from the toolbar palette
+	// button. Default visible so first-time users see the color key; the
+	// toggle gives repeat users the screen space back when they know the
+	// scheme.
+	let legendVisible = $state(true);
 
 	// Hidden groups — separate sets for library and folder modes
 	let hiddenLibraries = $state(new Set<string>());
@@ -737,6 +745,11 @@
 			<button class="gm-btn" title="Fit to screen" onclick={() => engine?.fitToScreen()}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
 			</button>
+			<button class="gm-btn" class:active={legendVisible} title={legendVisible ? ($t('graphView.hideLegend') || 'Hide legend') : ($t('graphView.showLegend') || 'Show legend')}
+				onclick={() => legendVisible = !legendVisible}>
+				<!-- Palette icon: indicates the color-key drawer toggle -->
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="0.5" fill="currentColor"/><circle cx="17.5" cy="10.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="7.5" r="0.5" fill="currentColor"/><circle cx="6.5" cy="12.5" r="0.5" fill="currentColor"/><path d="M12 2a10 10 0 0 0 0 20 2.5 2.5 0 0 0 2-4 2.5 2.5 0 0 1 2-4h2a4 4 0 0 0 4-4 10 10 0 0 0-10-8z"/></svg>
+			</button>
 			<button class="gm-btn" class:active={settingsOpen} title="Settings"
 				onclick={() => settingsOpen = !settingsOpen}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -956,8 +969,8 @@
 		{/if}
 	</div>
 
-	<!-- Legend -->
-	{#if Object.keys(activeColorMap).length > 0}
+	<!-- Legend (toggled by palette button in the right toolbar) -->
+	{#if legendVisible && Object.keys(activeColorMap).length > 0}
 		<div class="gm-legend" dir="auto">
 			<div class="gm-legend-header">
 				<button class="gm-legend-toggle" class:active={colorBy === 'library'}

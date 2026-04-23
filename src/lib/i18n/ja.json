@@ -920,7 +920,9 @@
       "repelForce": "反発力",
       "linkForce": "リンク力",
       "linkDistance": "リンク距離"
-    }
+    },
+    "showLegend": "凡例を表示",
+    "hideLegend": "凡例を非表示"
   },
   "libraries": {
     "searchPlaceholder": "すべての保管庫を検索...",

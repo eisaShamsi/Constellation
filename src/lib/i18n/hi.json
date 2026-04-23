@@ -920,7 +920,9 @@
       "repelForce": "प्रतिकर्षण बल",
       "linkForce": "लिंक बल",
       "linkDistance": "लिंक दूरी"
-    }
+    },
+    "showLegend": "लेजेंड दिखाएँ",
+    "hideLegend": "लेजेंड छिपाएँ"
   },
   "libraries": {
     "searchPlaceholder": "सभी तिजोरियों में खोजें...",

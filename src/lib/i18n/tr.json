@@ -920,7 +920,9 @@
       "repelForce": "İtme kuvveti",
       "linkForce": "Bağlantı kuvveti",
       "linkDistance": "Bağlantı mesafesi"
-    }
+    },
+    "showLegend": "Göstergeyi göster",
+    "hideLegend": "Göstergeyi gizle"
   },
   "libraries": {
     "searchPlaceholder": "Tüm kasalarda ara...",

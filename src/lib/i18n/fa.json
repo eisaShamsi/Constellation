@@ -920,7 +920,9 @@
       "repelForce": "نیروی دافعه",
       "linkForce": "نیروی لینک",
       "linkDistance": "فاصله لینک"
-    }
+    },
+    "showLegend": "نمایش راهنما",
+    "hideLegend": "پنهان کردن راهنما"
   },
   "libraries": {
     "searchPlaceholder": "جستجوی همه کتابخانه‌ها...",

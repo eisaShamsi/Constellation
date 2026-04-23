@@ -920,7 +920,9 @@
       "repelForce": "Сила отталкивания",
       "linkForce": "Сила связи",
       "linkDistance": "Расстояние связи"
-    }
+    },
+    "showLegend": "Показать легенду",
+    "hideLegend": "Скрыть легенду"
   },
   "libraries": {
     "searchPlaceholder": "Поиск по всем хранилищам...",

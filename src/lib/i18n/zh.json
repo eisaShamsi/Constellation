@@ -920,7 +920,9 @@
       "repelForce": "排斥力",
       "linkForce": "连接力",
       "linkDistance": "连接距离"
-    }
+    },
+    "showLegend": "显示图例",
+    "hideLegend": "隐藏图例"
   },
   "libraries": {
     "searchPlaceholder": "搜索所有仓库...",

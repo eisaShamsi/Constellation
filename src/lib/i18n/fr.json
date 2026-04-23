@@ -920,7 +920,9 @@
       "repelForce": "Force de répulsion",
       "linkForce": "Force de liaison",
       "linkDistance": "Distance de liaison"
-    }
+    },
+    "showLegend": "Afficher la légende",
+    "hideLegend": "Masquer la légende"
   },
   "libraries": {
     "searchPlaceholder": "Rechercher dans tous les coffres...",

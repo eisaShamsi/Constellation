@@ -920,7 +920,9 @@
       "repelForce": "Força de repulsão",
       "linkForce": "Força do link",
       "linkDistance": "Distância do link"
-    }
+    },
+    "showLegend": "Mostrar legenda",
+    "hideLegend": "Ocultar legenda"
   },
   "libraries": {
     "searchPlaceholder": "Pesquisar em todos os cofres...",

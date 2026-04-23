@@ -920,7 +920,9 @@
       "repelForce": "دھکیلنے کی قوت",
       "linkForce": "لنک کی قوت",
       "linkDistance": "لنک کی دوری"
-    }
+    },
+    "showLegend": "لیجنڈ دکھائیں",
+    "hideLegend": "لیجنڈ چھپائیں"
   },
   "libraries": {
     "searchPlaceholder": "تمام خزانوں میں تلاش...",

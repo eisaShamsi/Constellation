@@ -920,7 +920,9 @@
       "repelForce": "척력",
       "linkForce": "링크 힘",
       "linkDistance": "링크 거리"
-    }
+    },
+    "showLegend": "범례 표시",
+    "hideLegend": "범례 숨기기"
   },
   "libraries": {
     "searchPlaceholder": "모든 보관함 검색...",
