@@ -168,6 +168,23 @@ collected** — the release output file only contained tail lines
 confirming build success. User-side capture deferred; will be
 appended once a release-run trace is in hand.
 
+**Capture procedure** (for whoever runs it):
+
+1. Install from `src-tauri/target/release/bundle/nsis/Constellation_0.3.4_x64-setup.exe`
+   (or the MSI). Fresh install is ideal — existing installs carry
+   state that skews cold-boot numbers.
+2. Launch and open the target universe (7,600-node / 232,461-link
+   reference). Wait for the boot to complete fully (sidebar + Sky
+   View painted).
+3. Close and relaunch twice — first is cold, second/third are warm.
+   The app overwrites `boot-perf.latest.json` on each boot, so copy
+   it out between runs if you want all three.
+4. Capture `<universe>/.constellation/boot-perf.latest.json` — it
+   contains `cache_snapshot_graph_wall_ms`, the server-side timings
+   array (including `scan_nodes` / `scan_links_and_counts`), transport,
+   queue, body, and assign deltas. Paste relevant fields into this
+   section when taken.
+
 The debug-build numbers from §80-81 stand as the internal perf
 benchmark:
 - `cache_boot_snapshot_sky` wall time: 7.7 s → 2.8 s after SQL-JOIN
