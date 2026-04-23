@@ -21,6 +21,7 @@ c:a-priori	Adjective	ar:قبلي	de:a priori	en:a priori	es:a priori	fa:پیشی
 c:aardvark	Noun	ar:خنزير الارض	de:Erdferkel	en:aardvark	es:cerdo hormiguero	fa:آردوارک	fr:oryctérope	he:שנבוב	hi:आर्डवार्क	ja:ツチブタ	ko:땅돼지	pt:porco-formigueiro	ru:трубкозуб	tr:yerdomuzu	ur:آرڈوارک	zh:土猪
 c:abacus	Noun	ar:قمة التاج	de:Abakus	en:abacus	es:ábaco	fa:ابر ستون	fr:abaque	he:אבקוס	hi:अबेकस	ja:アバクス	ko:주판	pt:ábaco	ru:абак	tr:abak	ur:ستون کی ٹوپی	zh:柱顶板
 c:abalone	Noun	ar:ابالون,حلزون البحر الصخري	de:Abalone,Meerohren	en:abalone	es:oreja de mar,abulón	fa:آبالون	fr:ormeau	he:אבלון	hi:अबालोन	ja:アワビ	ko:전복	pt:orelha-de-mar	ru:морское ухо,абалон	tr:abalone	ur:ابالون	zh:鲍鱼
+c:abalone-sea	Noun	ar:أذن البحر	de:Abalone	en:abalone	es:abulón	fa:صدف گوش دریایی	fr:ormeau	he:אבלון	hi:अबालोन	ja:アワビ	ko:전복	pt:abalone	ru:морское ушко	tr:deniz kulağı	ur:ابالون	zh:鲍鱼
 c:abbasid	Noun	ar:العصر العباسي,الخلافة العباسية	de:Abbasiden,Abbasidenreich	en:abbasid era,abbasid caliphate	es:califato abasí,era abasí	fa:دوره عباسی,خلافت عباسی	fr:califat abbasside,époque abbasside	he:התקופה העבאסית,ח'ליפות עבאסית	hi:अब्बासी खिलाफत,अब्बासी युग	ja:アッバース朝	ko:아바스 왕조	pt:califado abássida,era abássida	ru:аббасидский халифат,эпоха аббасидов	tr:abbasi dönemi,abbasi hilafeti	ur:عباسی دور,عباسی خلافت	zh:阿拔斯王朝,阿拔斯时代
 c:abbasid-caliphate	Noun	ar:الخلافة العباسية	de:Abbasiden-Kalifat	en:Abbasid Caliphate	es:Califato abasí	fa:خلافت عباسیان	fr:Califat abbasside	he:הח'ליפות העבאסית	hi:अब्बासी खिलाफत	ja:アッバース朝	ko:아바스 칼리파국	pt:Califado Abássida	ru:Аббасидский халифат	tr:Abbasi Halifeliği	ur:عباسی خلافت	zh:阿拔斯王朝
 c:abbey	Noun	ar:دير كبير	de:Abtei	en:abbey	es:abadía	fa:صومعه	fr:abbaye	he:אביי	hi:एब्बी	ja:修道院	ko:수도원	pt:abadia	ru:аббатство	tr:manastır	ur:خانقاہ	zh:修道院
@@ -276,6 +277,7 @@ c:ancestor	Noun	ar:سلف,جد	de:Vorfahre,Ahne	en:ancestor,forefather	es:ancest
 c:anchoring	Noun	ar:التثبيت المعرفي	de:Ankereffekt	en:anchoring bias	es:sesgo de anclaje	fa:اثر لنگر	fr:biais d'ancrage	he:הטיית עיגון	hi:लंगर पूर्वाग्रह	ja:アンカリング	ko:닻내림 효과	pt:viés de ancoragem	ru:эффект якоря	tr:çıpa etkisi	ur:لنگر تعصب	zh:锚定效应
 c:anchoring-bias	Noun	ar:تحيز الارتكاز	de:Ankereffekt	en:anchoring bias	es:sesgo de anclaje	fa:سوگیری لنگرانداختن	fr:biais d'ancrage	he:הטיית עיגון	hi:लंगर पूर्वाग्रह	ja:アンカリング効果	ko:기준점 편향	pt:viés de ancoragem	ru:эффект якоря	tr:çıpa etkisi	ur:لنگر تعصب	zh:锚定效应
 c:anchovy	Noun	ar:أنشوجة	de:Sardelle	en:anchovy	es:anchoa	fa:آنچوی	fr:anchois	he:אנשובי	hi:एंकोवी	ja:カタクチイワシ	ko:멸치	pt:anchova	ru:анчоус	tr:hamsi	ur:اینچووی	zh:凤尾鱼
+c:anchovy-fish	Noun	ar:أنشوجة	de:Sardelle	en:anchovy	es:anchoa	fa:آنچوی	fr:anchois	he:אנשובי	hi:एंकोवी	ja:アンチョビ	ko:멸치	pt:anchova	ru:анчоус	tr:hamsi	ur:اینچووی	zh:凤尾鱼
 c:andaman-sea	Noun	ar:بحر أندامان	de:Andamanensee	en:Andaman Sea	es:Mar de Andamán	fa:دریای آندامان	fr:Mer d'Andaman	he:ים אנדמן	hi:अंडमान सागर	ja:アンダマン海	ko:안다만해	pt:Mar de Andamão	ru:Андаманское море	tr:Andaman Denizi	ur:بحیرہ انڈمان	zh:安达曼海
 c:andaman-sea-body	Noun	ar:بحر أندامان	de:Andamanensee	en:Andaman Sea	es:mar de Andamán	fa:دریای آندامان	fr:mer d'Andaman	he:ים אנדמן	hi:अंडमान सागर	ja:アンダマン海	ko:안다만해	pt:mar de Andamão	ru:Андаманское море	tr:Andaman Denizi	ur:انڈامان سمندر	zh:安达曼海
 c:andante	Adjective	ar:أندانتي	de:Andante	en:andante	es:andante	fa:آندانته	fr:andante	he:אנדנטה	hi:आंदांते	ja:アンダンテ	ko:안단테	pt:andante	ru:анданте	tr:andante	ur:آہستہ	zh:行板
@@ -722,6 +724,7 @@ c:basmati-rice	Noun	ar:أرز بسمتي	de:Basmati-Reis	en:basmati rice	es:arro
 c:bass	Noun	ar:باس,قاروص	de:Bass	en:bass	es:lubina	fa:باس	fr:bar,loup de mer	he:לברק	hi:बास	ja:スズキ	ko:베이스	pt:robalo	ru:басс	tr:levrek	ur:باس	zh:鲈
 c:bass-clarinet	Noun	ar:كلارينيت الباص	de:Bassklarinette	en:bass clarinet	es:clarinete bajo	fa:کلارینت باس	fr:clarinette basse	he:קלרינט בס	hi:बास क्लैरिनेट	ja:バスクラリネット	ko:베이스 클라리넷	pt:clarinete baixo	ru:бас-кларнет	tr:bas klarnet	ur:باس کلارنیٹ	zh:低音单簧管
 c:bass-drum	Noun	ar:طبل باس	de:Bassdrum	en:bass drum	es:bombo	fa:بس درام	fr:grosse caisse	he:תוף גדול	hi:बास ड्रम	ja:バスドラム	ko:베이스 드럼	pt:bumbo	ru:большой барабан	tr:bas davul	ur:باس ڈرم	zh:大鼓
+c:bass-fish	Noun	ar:قاروس	de:Barsch	en:bass fish	es:lubina	fa:ماهی باس	fr:bar poisson	he:לברק	hi:बास मछली	ja:スズキ	ko:농어	pt:robalo	ru:окунь	tr:levrek	ur:باس مچھلی	zh:鲈鱼
 c:bassoon	Noun	ar:باسون	de:Fagott	en:bassoon	es:fagot	fa:باسون	fr:basson	he:בסון	hi:बैसून	ja:ファゴット,バスーン	ko:바순,파곳	pt:fagote	ru:фагот	tr:fagot	ur:باسون	zh:巴松管,低音管
 c:bastion	Noun	ar:الحصن	de:Bastion	en:bastion	es:bastión	fa:برج دفاعی	fr:bastion	he:מצודה	hi:गढ़	ja:稜堡	ko:보루	pt:bastião	ru:бастион	tr:burç	ur:قلعہ	zh:棱堡
 c:bat	Noun	ar:خفاش	de:Fledermaus	en:bat	es:murciélago	fa:خفاش	fr:chauve-souris	he:עטלף	hi:चमगादड़	ja:コウモリ	ko:박쥐	pt:morcego	ru:летучая мышь	tr:yarasa	ur:چمگادڑ	zh:蝙蝠
@@ -1269,6 +1272,7 @@ c:carnot	Noun	ar:دورة كارنو	de:Carnot-Kreisprozess	en:Carnot cycle	es:c
 c:carolingian-dynasty	Noun	ar:السلالة الكارولنجية	de:Karolinger	en:Carolingian dynasty	es:dinastía carolingia	fa:دودمان کارولنژی	fr:dynastie carolingienne	he:השושלת הקרולינגית	hi:कैरोलिंगियन राजवंश	ja:カロリング朝	ko:카롤링거 왕조	pt:dinastia carolíngia	ru:династия Каролингов	tr:Karolenj hanedanı	ur:کیرولنجی خاندان	zh:加洛林王朝
 c:carotenoid	Noun	ar:الكاروتينويد	de:Carotinoid	en:carotenoid	es:carotenoide	fa:کاروتنوئید	fr:caroténoïde	he:קרוטנואיד	hi:कैरोटीनॉइड	ja:カロテノイド	ko:카로티노이드	pt:carotenóide	ru:каротиноид	tr:karotenoid	ur:کیروٹینائڈ	zh:类胡萝卜素
 c:carp	Noun	ar:كارب,سمك الشبوط	de:Karpfen	en:carp	es:carpa	fa:کپور	fr:carpe	he:קרפיון	hi:कार्प	ja:コイ	ko:잉어	pt:carpa	ru:карп	tr:sazan	ur:کارپ	zh:鲤鱼
+c:carp-fish	Noun	ar:شبوط	de:Karpfen	en:carp	es:carpa	fa:کپور	fr:carpe	he:קרפיון	hi:रोहू मछली	ja:コイ	ko:잉어	pt:carpa	ru:карп	tr:sazan	ur:روہو	zh:鲤鱼
 c:carpathian-range	Noun	ar:جبال الكاربات	de:Karpaten	en:Carpathian Mountains	es:Cárpatos	fa:کوه‌های کارپات	fr:Carpates	he:הרי הקרפטים	hi:कार्पेथियन पर्वत	ja:カルパティア山脈	ko:카르파티아산맥	pt:Cárpatos	ru:Карпаты	tr:Karpat Dağları	ur:کارپیتھین پہاڑ	zh:喀尔巴阡山脉
 c:carpenter	Noun	ar:نجار	de:Tischler,Schreiner,Zimmermann	en:carpenter	es:carpintero	fa:نجار	fr:charpentier,menuisier	he:נגר	hi:बढ़ई	ja:大工	ko:목수	pt:carpinteiro	ru:плотник,столяр	tr:marangoz,dülger	ur:بڑھئی	zh:木匠
 c:carpentry	Noun	ar:نجارة	de:Tischlerei,Zimmerei	en:carpentry	es:carpintería	fa:نجاری,درودگری	fr:menuiserie,charpenterie	he:נגרות	hi:बढ़ईगीरी,काष्ठ कला	ja:大工仕事,木工	ko:목공,목수일	pt:carpintaria,marcenaria	ru:плотничество,столярное дело	tr:marangozluk,dülgerlik	ur:بڑھئی کا کام,نجاری	zh:木工,木匠活
@@ -1310,6 +1314,7 @@ c:catastrophism	Noun	ar:الكارثية	de:Katastrophismus	en:catastrophism	es:
 c:categorical-imperative	Noun	ar:الأمر المطلق	de:kategorischer Imperativ	en:categorical imperative	es:imperativo categórico	fa:امر مطلق	fr:impératif catégorique	he:ציווי קטגורי	hi:निरपेक्ष आदेश	ja:定言命法	ko:정언명령	pt:imperativo categórico	ru:категорический императив	tr:kategorik buyruk	ur:قطعی حکم	zh:绝对命令
 c:caterpillar	Noun	ar:يرقة	de:Raupe	en:caterpillar	es:oruga	fa:کرم ابریشم‌ساز,کرم پروانه	fr:chenille	he:זחל	hi:इल्ली,कैटरपिलर	ja:芋虫,毛虫	ko:애벌레	pt:lagarta	ru:гусеница	tr:tırtıl	ur:سنڈی	zh:毛毛虫
 c:catfish	Noun	ar:سمك السلور,سلور	de:Wels	en:catfish	es:siluro,bagre	fa:گربه ماهی	fr:silure,poisson-chat	he:דג חתול	hi:कैटफिश	ja:ナマズ	ko:메기	pt:bagre	ru:сом	tr:yayın balığı	ur:کیٹ فش	zh:鲶鱼
+c:catfish-fish	Noun	ar:سمك السلور	de:Wels	en:catfish	es:bagre	fa:گربه‌ماهی	fr:poisson-chat	he:שפמנון	hi:कैटफ़िश	ja:ナマズ	ko:메기	pt:peixe-gato	ru:сом	tr:yayın balığı	ur:کیٹ فش	zh:鲶鱼
 c:catharsis	Noun	ar:التطهير النفسي	de:Katharsis	en:catharsis	es:catarsis	fa:کاتارسیس	fr:catharsis	he:קתרזיס	hi:विरेचन	ja:カタルシス	ko:카타르시스	pt:catarse	ru:катарсис	tr:katarsis	ur:کتھارسس	zh:宣泄
 c:catharsis-lit	Noun	ar:التطهر	de:Katharsis	en:catharsis	es:catarsis	fa:کاتارسیس	fr:catharsis	he:קתרזיס	hi:विरेचन	ja:カタルシス	ko:카타르시스	pt:catarse	ru:катарсис	tr:katarsis	ur:تطہیر	zh:宣泄
 c:cathedral	Noun	ar:كاتدرائية	de:Kathedrale,Dom	en:cathedral	es:catedral	fa:کلیسای جامع,کاتدرال	fr:cathédrale	he:קתדרלה	hi:कैथेड्रल,गिरजाघर	ja:大聖堂,カテドラル	ko:대성당,카테드랄	pt:catedral	ru:собор	tr:katedral	ur:بڑا گرجا,کیتھیڈرل	zh:大教堂,主教座堂
@@ -1328,6 +1333,7 @@ c:causal-inference	Noun	ar:الاستدلال السببي	de:Kausalinferenz	en:
 c:cause	Noun	ar:سبب,علة	de:Ursache,Grund	en:cause	es:causa	fa:علت,سبب	fr:cause	he:סיבה	hi:कारण	ja:原因	ko:원인	pt:causa	ru:причина	tr:neden,sebep	ur:سبب,وجہ	zh:原因,起因
 c:cauterizer	Noun	ar:كوي	de:Kauterisationsgerät	en:cauterizer	es:cauterizador	fa:کوتریزاسیون	fr:cautère	he:כלי כוייה	hi:दाग लगाने वाला	ja:焼灼器	ko:소작기	pt:cauterizador	ru:каутер	tr:koterizatör	ur:کوٹرائزر	zh:烧灼器
 c:cave	Noun	ar:كهف,مغارة	de:Höhle	en:cave	es:cueva,caverna	fa:غار	fr:grotte,caverne	he:מערה	hi:गुफा	ja:洞窟,洞穴	ko:동굴	pt:caverna,gruta	ru:пещера	tr:mağara	ur:غار	zh:洞穴,山洞
+c:caviar	Noun	ar:كافيار	de:Kaviar	en:caviar	es:caviar	fa:خاویار	fr:caviar	he:קוויאר	hi:कैवियार	ja:キャビア	ko:캐비어	pt:caviar	ru:икра	tr:havyar	ur:کیویار	zh:鱼子酱
 c:cayenne	Noun	ar:فلفل كايين	de:Cayennepfeffer	en:cayenne pepper	es:pimienta de Cayena	fa:فلفل کاین	fr:poivre de Cayenne	he:פלפל קאיין	hi:लाल मिर्च	ja:カイエンペッパー	ko:카옌페퍼	pt:pimenta-caiena	ru:кайенский перец	tr:arnavut biberi	ur:کیئن مرچ	zh:辣椒粉
 c:cd-rom	Noun	ar:CD-ROM	de:CD-ROM	en:CD-ROM	es:CD-ROM	fa:CD-ROM	fr:CD-ROM	he:CD-ROM	hi:सीडी-रॉम	ja:CD-ROM	ko:CD-ROM	pt:CD-ROM	ru:CD-ROM	tr:CD-ROM	ur:سی ڈی روم	zh:光盘
 c:cd4-t-cell	Noun	ar:خلية تائية مساعدة	de:CD4+-T-Zelle	en:CD4+ T cell	es:célula T CD4+	fa:سلول T کمکی	fr:lymphocyte T CD4+	he:תא T עוזר	hi:सहायक T कोशिका	ja:ヘルパーT細胞	ko:보조 T 세포	pt:célula T auxiliar	ru:Т-хелпер	tr:yardımcı T hücresi	ur:مددگار T خلیہ	zh:辅助性T细胞
@@ -1575,6 +1581,7 @@ c:civil-rights-movement	Noun	ar:حركة الحقوق المدنية	de:Bürgerr
 c:civil-society	Noun	ar:المجتمع المدني	de:Zivilgesellschaft	en:civil society	es:sociedad civil	fa:جامعه مدنی	fr:société civile	he:חברה אזרחית	hi:नागरिक समाज	ja:市民社会	ko:시민 사회	pt:sociedade civil	ru:гражданское общество	tr:sivil toplum	ur:شہری معاشرہ	zh:公民社会
 c:civilization	Noun	ar:حضارة	de:Zivilisation,Kultur	en:civilization	es:civilización	fa:تمدن	fr:civilisation	he:ציוויליזציה,תרבות	hi:सभ्यता	ja:文明	ko:문명	pt:civilização	ru:цивилизация	tr:medeniyet,uygarlık	ur:تہذیب,تمدن	zh:文明
 c:clam	Noun	ar:محار,بلح البحر	de:Muschel,Venusmuschel	en:clam	es:almeja	fa:صدف دوکپه‌ای	fr:palourde	he:צדפה	hi:सीप	ja:アサリ,ハマグリ	ko:조개	pt:amêijoa	ru:моллюск двустворчатый	tr:midye,akivades	ur:سیپ	zh:蛤蜊
+c:clam-sea	Noun	ar:محار	de:Muschel Clam	en:clam	es:almeja	fa:صدف حلزون	fr:palourde	he:צדפה	hi:क्लैम	ja:アサリ	ko:조개	pt:amêijoa	ru:моллюск	tr:deniz tarağı	ur:کلام	zh:蛤蜊
 c:clamp	Noun	ar:مشبك	de:Klemme	en:clamp	es:abrazadera	fa:گیره	fr:pince	he:מהדק	hi:क्लैंप	ja:クランプ	ko:클램프	pt:grampo	ru:зажим	tr:kelepçe	ur:کلیمپ	zh:夹具
 c:clan	Noun	ar:عشيرة	de:Klan,Sippe	en:clan	es:clan	fa:طایفه,خاندان	fr:clan	he:חמולה	hi:कुल,वंश	ja:一族,クラン	ko:씨족,가문	pt:clã	ru:клан,род	tr:klan,soy	ur:قبیلہ,خاندان	zh:氏族,家族
 c:clapperboard	Noun	ar:لوح السينما	de:Filmklappe	en:clapperboard	es:claqueta	fa:کلاکت	fr:claquette	he:מחאת הסצנה	hi:क्लैपरबोर्ड	ja:カチンコ	ko:클래퍼보드	pt:claquete	ru:хлопушка	tr:klakör	ur:کلیپربورڈ	zh:场记板
@@ -1679,6 +1686,7 @@ c:cocoa	Noun	ar:كاكاو	de:Kakao	en:cocoa	es:cacao	fa:کاکائو	fr:cacao	h
 c:coconut	Noun	ar:جوز الهند	de:Kokosnuss	en:coconut	es:coco	fa:نارگیل	fr:noix de coco	he:קוקוס	hi:नारियल	ja:ココナッツ	ko:코코넛	pt:coco	ru:кокос,кокосовый орех	tr:hindistan cevizi	ur:ناریل	zh:椰子
 c:cocoon	Noun	ar:شرنقة الحرير	de:Kokon	en:cocoon	es:capullo	fa:پیله	fr:cocon	he:פקעת	hi:कोकून	ja:繭	ko:고치	pt:casulo	ru:кокон	tr:koza	ur:پیلہ	zh:茧
 c:cod	Noun	ar:سمك القد	de:Kabeljau,Dorsch	en:cod,codfish	es:bacalao	fa:ماهی کاد	fr:morue,cabillaud	he:בקלה	hi:कॉड मछली	ja:鱈	ko:대구	pt:bacalhau	ru:треска	tr:morina	ur:کاڈ مچھلی	zh:鳕鱼
+c:cod-fish	Noun	ar:قد	de:Dorsch	en:cod	es:bacalao	fa:ماهی روغن	fr:morue	he:בקלה	hi:कॉड	ja:タラ	ko:대구	pt:bacalhau	ru:треска	tr:morina balığı	ur:کاڈ مچھلی	zh:鳕鱼
 c:coda	Noun	ar:الكودا	de:Koda	en:coda	es:coda	fa:کودا	fr:coda	he:קודה	hi:कोडा	ja:コーダ	ko:코다	pt:coda	ru:кода	tr:koda	ur:اختتامی حصہ	zh:尾声
 c:code	Noun	ar:رمز,شيفرة,كود	de:Code,Kode	en:code	es:código	fa:کد	fr:code	he:קוד	hi:कोड	ja:コード,符号	ko:코드,부호	pt:código	ru:код	tr:kod	ur:کوڈ	zh:代码,密码
 c:codominance	Noun	ar:السيادة المشتركة	de:Kodominanz	en:codominance	es:codominancia	fa:هم‌غالبی	fr:codominance	he:קודומיננטיות	hi:सहप्रभाविता	ja:共優性	ko:공우성	pt:codominância	ru:кодоминантность	tr:kodomin	ur:مشترک غلبہ	zh:共显性
@@ -2030,6 +2038,7 @@ c:covering-space	Noun	ar:الفضاء المغطي	de:Überlagerungsraum	en:cove
 c:cow	Noun	ar:بقرة	de:Kuh	en:cow	es:vaca	fa:گاو	fr:vache	he:פרה	hi:गाय	ja:牛	ko:소,암소	pt:vaca	ru:корова	tr:inek	ur:گائے	zh:牛,母牛
 c:coworking-space	Noun	ar:مساحة عمل مشتركة	de:Coworking-Space	en:coworking space	es:espacio de coworking	fa:فضای کار مشترک	fr:espace de coworking	he:מרחב עבודה משותף	hi:को-वर्किंग स्पेस	ja:コワーキングスペース	ko:코워킹 스페이스	pt:espaço de coworking	ru:коворкинг	tr:ortak çalışma alanı	ur:مشترکہ کام کی جگہ	zh:联合办公空间
 c:crab	Noun	ar:سرطان البحر,كابوريا	de:Krabbe	en:crab	es:cangrejo	fa:خرچنگ	fr:crabe	he:סרטן	hi:केकड़ा	ja:カニ	ko:게	pt:caranguejo	ru:краб	tr:yengeç	ur:کیکڑا	zh:螃蟹
+c:crab-sea	Noun	ar:سرطان بحري	de:Krabbe	en:crab	es:cangrejo	fa:خرچنگ	fr:crabe	he:סרטן	hi:केकड़ा	ja:カニ	ko:게	pt:caranguejo	ru:краб	tr:yengeç	ur:کیکڑا	zh:螃蟹
 c:craft	Noun	ar:حرفة	de:Handwerk	en:craft	es:artesanía,oficio	fa:صنعت,پیشه	fr:artisanat,métier	he:מלאכה	hi:शिल्प,कला	ja:工芸,技	ko:공예,기술	pt:artesanato,ofício	ru:ремесло	tr:el sanatı,zanaat	ur:فن,دستکاری	zh:工艺,手工
 c:craftsman-style	Noun	ar:طراز الحرفيين	de:Craftsman-Stil	en:Craftsman style	es:estilo Craftsman	fa:سبک کرفتسمن	fr:style Craftsman	he:סגנון קרפטסמן	hi:क्राफ्ट्समैन शैली	ja:クラフツマン様式	ko:크래프트맨 양식	pt:estilo Craftsman	ru:стиль Крафтсмен	tr:Craftsman tarzı	ur:کرافٹ سمین طرز	zh:工艺美术式
 c:cranberry-var	Noun	ar:توت بري	de:Preiselbeere	en:cranberry	es:arándano rojo	fa:کرن بری	fr:canneberge	he:חמוציות	hi:क्रैनबेरी	ja:クランベリー	ko:크랜베리	pt:airela	ru:клюква	tr:yaban mersini kızıl	ur:کرین بیری	zh:蔓越莓
@@ -2041,6 +2050,7 @@ c:craps	Noun	ar:كرابس	de:Craps	en:craps	es:craps	fa:کرپس	fr:craps	he:ק
 c:crater	Noun	ar:فوهة بركانية	de:Krater	en:crater	es:cráter	fa:دهانه آتشفشان	fr:cratère	he:לוע,מכתש	hi:गड्ढा,क्रेटर	ja:クレーター,火口	ko:분화구	pt:cratera	ru:кратер	tr:krater	ur:دہانہ	zh:火山口
 c:crawl	Verb	ar:زحف	de:kriechen	en:crawl	es:gatear	fa:چهار دست و پا رفتن,خزیدن	fr:ramper	he:לזחול	hi:रेंगना	ja:這う	ko:기어가다	pt:engatinhar,rastejar	ru:ползти	tr:emeklemek,sürünmek	ur:رینگنا	zh:爬行
 c:crayfish	Noun	ar:كركند النهر,جراد الماء	de:Flusskrebs	en:crayfish,crawfish	es:cangrejo de río	fa:خرچنگ رودخانه	fr:écrevisse	he:סרטן נהרות	hi:नदी झींगा	ja:ザリガニ	ko:가재	pt:lagostim-do-rio	ru:речной рак	tr:tatlı su istakozu,kerevit	ur:دریائی جھینگا	zh:小龙虾
+c:crayfish-sea	Noun	ar:كركند النهر	de:Flusskrebs	en:crayfish	es:cangrejo de río	fa:خرچنگ رودخانه	fr:écrevisse	he:סרטן הנהרות	hi:क्रेफ़िश	ja:ザリガニ	ko:가재	pt:lagostim	ru:речной рак	tr:kerevit	ur:کرے فش	zh:小龙虾
 c:cream	Noun	ar:قشدة,كريمة	de:Sahne,Rahm	en:cream	es:crema,nata	fa:خامه	fr:crème	he:שמנת	hi:मलाई,क्रीम	ja:クリーム	ko:크림	pt:creme de leite	ru:сливки	tr:krema	ur:کریم	zh:奶油
 c:cream-cheese	Noun	ar:الجبن الكريمي	de:Frischkäse	en:cream cheese	es:queso crema	fa:پنیر خامه ای	fr:fromage à la crème	he:גבינת שמנת	hi:क्रीम चीज़	ja:クリームチーズ	ko:크림치즈	pt:cream cheese	ru:творожный сыр	tr:krem peynir	ur:کریم پنیر	zh:奶油奶酪
 c:cream-cheese-dairy	Noun	ar:جبن كريمي	de:Frischkäse	en:cream cheese	es:queso crema	fa:پنیر خامه‌ای	fr:fromage à la crème	he:גבינת שמנת	hi:क्रीम चीज़	ja:クリームチーズ	ko:크림 치즈	pt:queijo creme	ru:творожный сыр	tr:krem peynir	ur:کریم چیز	zh:奶油奶酪
@@ -2156,6 +2166,7 @@ c:custom	Noun	ar:عادة,عرف	de:Brauch,Sitte	en:custom	es:costumbre	fa:رس�
 c:customer	Noun	ar:زبون,عميل	de:Kunde,Kundin	en:customer,client	es:cliente	fa:مشتری	fr:client	he:לקוח	hi:ग्राहक	ja:客,顧客,カスタマー	ko:고객,손님	pt:cliente	ru:клиент,покупатель	tr:müşteri	ur:گاہک,صارف	zh:顾客,客户
 c:cutaway	Noun	ar:لقطة انتقالية	de:Cutaway	en:cutaway	es:corte de acción	fa:نمای درج	fr:plan de coupe	he:קאטאוויי	hi:कटअवे	ja:カットアウェイ	ko:컷어웨이	pt:cutaway	ru:вставной план	tr:kesme çekim	ur:کٹ اوے	zh:切入镜头
 c:cuttlefish	Noun	ar:سبيط,حبار سهمي	de:Sepia,Tintenfisch	en:cuttlefish	es:sepia,jibia	fa:ماهی مرکب سپیا	fr:seiche	he:דיונון סלעים	hi:कटलफिश	ja:コウイカ	ko:갑오징어	pt:choco,sépia	ru:каракатица	tr:mürekkepbalığı,sübye	ur:کٹل فش	zh:墨鱼
+c:cuttlefish-sea	Noun	ar:حبار صغير	de:Sepia	en:cuttlefish	es:sepia	fa:ماهی مرکب کوچک	fr:seiche	he:סתרן	hi:कटलफिश	ja:コウイカ	ko:갑오징어	pt:choco	ru:каракатица	tr:mürekkep balığı	ur:کٹل فش	zh:乌贼
 c:cw-complex	Noun	ar:المركب الخلوي	de:CW-Komplex	en:CW complex	es:complejo CW	fa:مجتمع CW	fr:complexe CW	he:קומפלקס CW	hi:CW जटिल	ja:CW複体	ko:CW 복합체	pt:complexo CW	ru:CW-комплекс	tr:CW kompleks	ur:CW مجتمع	zh:CW复形
 c:cyan	Noun	ar:سماوي,سيان	de:Cyan,Türkisblau	en:cyan	es:cian	fa:فیروزه‌ای روشن,سایان	fr:cyan	he:ציאן	hi:सायन	ja:シアン	ko:사이안	pt:ciano	ru:голубой,циан	tr:camgöbeği	ur:سایان	zh:青色,氰色
 c:cybersecurity	Noun	ar:الأمن السيبراني	de:Cybersicherheit	en:cybersecurity	es:ciberseguridad	fa:امنیت سایبری	fr:cybersécurité	he:אבטחת סייבר	hi:साइबर सुरक्षा	ja:サイバーセキュリティ	ko:사이버 보안	pt:cibersegurança	ru:кибербезопасность	tr:siber güvenlik	ur:سائبر سیکیورٹی	zh:网络安全
@@ -2661,6 +2672,7 @@ c:education	Noun	ar:تعليم,تربية	de:Bildung,Erziehung	en:education	es:e
 c:edwardian-arch	Noun	ar:الطراز الإدواردي	de:edwardianische Architektur	en:Edwardian architecture	es:arquitectura eduardiana	fa:معماری ادوارد	fr:architecture édouardienne	he:אדריכלות אדוארדית	hi:एडवर्डियन वास्तुकला	ja:エドワード建築	ko:에드워드 양식	pt:arquitetura eduardiana	ru:эдвардианская архитектура	tr:Edwardian mimari	ur:ایڈورڈیائی فن	zh:爱德华建筑
 c:edwardian-era	Noun	ar:العصر الإدواردي	de:edwardianisches Zeitalter	en:Edwardian era	es:era eduardiana	fa:دوره ادواردی	fr:époque édouardienne	he:התקופה האדוארדית	hi:एडवर्डियन युग	ja:エドワード朝	ko:에드워드 시대	pt:era eduardiana	ru:эдвардианская эпоха	tr:Edward dönemi	ur:ایڈورڈین دور	zh:爱德华时代
 c:eel	Noun	ar:ثعبان البحر	de:Aal	en:eel	es:anguila	fa:مارماهی	fr:anguille	he:צלופח	hi:बाम मछली	ja:鰻	ko:뱀장어	pt:enguia	ru:угорь	tr:yılan balığı	ur:بام مچھلی	zh:鳗鱼
+c:eel-fish	Noun	ar:ثعبان البحر	de:Aal	en:eel	es:anguila	fa:مارماهی	fr:anguille	he:צלופח	hi:बाम मछली	ja:ウナギ	ko:장어	pt:enguia	ru:угорь	tr:yılan balığı	ur:بام مچھلی	zh:鳗鱼
 c:effect	Noun	ar:أثر,تأثير	de:Wirkung,Effekt	en:effect	es:efecto	fa:اثر,تأثیر	fr:effet	he:השפעה,אפקט	hi:प्रभाव,असर	ja:効果,影響	ko:효과,영향	pt:efeito	ru:эффект,воздействие	tr:etki	ur:اثر,تاثیر	zh:效果,影响
 c:effect-size	Noun	ar:حجم التأثير	de:Effektgröße	en:effect size	es:tamaño del efecto	fa:اندازه اثر	fr:taille d'effet	he:גודל אפקט	hi:प्रभाव आकार	ja:効果量	ko:효과 크기	pt:tamanho do efeito	ru:размер эффекта	tr:etki büyüklüğü	ur:اثر کا حجم	zh:效应量
 c:efferent	Adjective	ar:صادر	de:efferent	en:efferent	es:eferente	fa:وابران	fr:efférent	he:אפרנטי יוצא	hi:अपवाही	ja:遠心性	ko:원심성	pt:eferente	ru:эфферентный	tr:efferent	ur:خروجی	zh:传出的
@@ -3701,6 +3713,7 @@ c:half-life	Noun	ar:عمر النصف	de:Halbwertszeit	en:half-life	es:vida medi
 c:half-life-drug	Noun	ar:عمر النصف للدواء	de:Halbwertszeit	en:drug half-life	es:vida media del fármaco	fa:نیمه عمر دارو	fr:demi-vie d'un médicament	he:זמן מחצית חיים של תרופה	hi:दवा अर्ध-आयु	ja:薬物の半減期	ko:약물 반감기	pt:meia-vida do fármaco	ru:период полувыведения	tr:ilaç yarı ömrü	ur:دوا کی نیم زندگی	zh:药物半衰期
 c:half-life-rad	Noun	ar:عمر النصف الإشعاعي	de:Halbwertszeit	en:radioactive half-life	es:vida media radiactiva	fa:نیمه عمر رادیواکتیو	fr:demi-vie radioactive	he:זמן מחצית חיים רדיואקטיבי	hi:रेडियोधर्मी अर्ध-आयु	ja:放射性半減期	ko:방사성 반감기	pt:meia-vida radioativa	ru:период полураспада	tr:radyoaktif yarı ömür	ur:تابکار نیم عمر	zh:放射性半衰期
 c:halibut	Noun	ar:هلبوت	de:Heilbutt	en:halibut	es:halibut,fletán	fa:هالیبوت	fr:flétan	he:הליבוט	hi:हैलिबट	ja:おひょう	ko:넙치	pt:alabote	ru:палтус	tr:pisi balığı	ur:ہیلیبٹ	zh:比目鱼
+c:halibut-fish	Noun	ar:هلبوت	de:Heilbutt	en:halibut	es:halibut	fa:هالیبوت	fr:flétan	he:הליבוט	hi:हलिबट	ja:オヒョウ	ko:넙치	pt:alabote	ru:палтус	tr:dil balığı	ur:ہیلبٹ	zh:比目鱼
 c:halley	Noun	ar:مذنب هالي	de:Halleyscher Komet	en:Halley's Comet,Halley	es:cometa Halley	fa:دنباله‌دار هالی	fr:comète de Halley	he:השביט הלי	hi:हैली धूमकेतु	ja:ハレー彗星	ko:핼리 혜성	pt:cometa Halley	ru:комета Галлея	tr:Halley Kuyruklu Yıldızı	ur:دمدار ستارہ ہیلی	zh:哈雷彗星
 c:halloumi	Noun	ar:جبنة الحلوم	de:Halloumi	en:halloumi	es:halloumi	fa:هالومی	fr:halloumi	he:חלומי	hi:हलौमी	ja:ハルーミ	ko:할루미	pt:halloumi	ru:халлуми	tr:hellim	ur:حلومی	zh:哈卢米奶酪
 c:halloumi-dairy	Noun	ar:حلوم	de:Halloumi	en:halloumi	es:halloumi	fa:هالومی	fr:halloumi	he:חלומי	hi:हल्लूमी	ja:ハルーミ	ko:할루미	pt:halloumi	ru:халуми	tr:hellim	ur:حلومی	zh:哈鲁米
@@ -3857,6 +3870,7 @@ c:hero	Noun	ar:بطل	de:Held	en:hero	es:héroe	fa:قهرمان	fr:héros	he:ג�
 c:heroine	Noun	ar:بطلة	de:Heldin	en:heroine	es:heroína	fa:قهرمان زن	fr:héroïne	he:גיבורה	hi:नायिका	ja:ヒロイン	ko:여주인공	pt:heroína	ru:героиня	tr:kadın kahraman	ur:ہیروئن	zh:女英雄
 c:heron	Noun	ar:مالك الحزين	de:Reiher	en:heron	es:garza	fa:حواصیل	fr:héron	he:אנפה	hi:बगुला	ja:サギ	ko:왜가리	pt:garça	ru:цапля	tr:balıkçıl	ur:بگلا	zh:鹭
 c:herring	Noun	ar:رنجة	de:Hering	en:herring	es:arenque	fa:شاه ماهی	fr:hareng	he:דג מלוח	hi:हेरिंग	ja:鰊	ko:청어	pt:arenque	ru:сельдь	tr:ringa	ur:ہیرنگ	zh:鲱鱼
+c:herring-fish	Noun	ar:رنجة	de:Hering	en:herring	es:arenque	fa:شاه‌ماهی	fr:hareng	he:דג מלוח	hi:हेरिंग	ja:ニシン	ko:청어	pt:arenque	ru:сельдь	tr:ringa	ur:ہیرنگ	zh:鲱鱼
 c:hertz	Noun	ar:هرتز	de:Hertz	en:hertz	es:hercio,hertz	fa:هرتز	fr:hertz	he:הרץ	hi:हर्ट्ज़	ja:ヘルツ	ko:헤르츠	pt:hertz	ru:герц	tr:hertz	ur:ہرٹز	zh:赫兹,赫
 c:heterozygous	Noun	ar:متغاير اللواقح	de:heterozygot	en:heterozygous	es:heterocigoto	fa:هتروزیگوت	fr:hétérozygote	he:הטרוזיגוט	hi:विषमयुग्मजी	ja:ヘテロ接合	ko:이형 접합	pt:heterozigoto	ru:гетерозигота	tr:heterozigot	ur:ہیٹروزائیگوس	zh:杂合子
 c:heuristic	Noun	ar:إرشادي	de:Heuristik	en:heuristic	es:heurístico	fa:ابتکاری	fr:heuristique	he:היוריסטיקה	hi:अनुमानोपाय	ja:ヒューリスティック	ko:휴리스틱	pt:heurística	ru:эвристика	tr:sezgisel	ur:ابتکاری طریقہ	zh:启发法
@@ -4817,6 +4831,7 @@ c:loan	Noun	ar:قرض	de:Darlehen,Kredit	en:loan	es:préstamo	fa:وام	fr:prêt
 c:loanword	Noun	ar:كلمة دخيلة,لفظ مستعار	de:Lehnwort	en:loanword	es:préstamo lingüístico	fa:واژه قرضی	fr:emprunt lexical	he:מילה שאולה	hi:उधार शब्द	ja:借用語,外来語	ko:차용어	pt:empréstimo lexical	ru:заимствование	tr:alıntı sözcük	ur:مستعار لفظ	zh:借词,外来词
 c:lobbying	Noun	ar:الضغط السياسي	de:Lobbyarbeit	en:lobbying	es:cabildeo	fa:لابی‌گری	fr:lobbying	he:לוביסטיקה	hi:पैरवी	ja:ロビー活動	ko:로비 활동	pt:lobby	ru:лоббирование	tr:lobi faaliyeti	ur:لابنگ	zh:游说
 c:lobster	Noun	ar:كركند	de:Hummer	en:lobster	es:langosta	fa:خرچنگ دریایی	fr:homard	he:לובסטר	hi:झींगा मछली	ja:ロブスター	ko:바닷가재	pt:lagosta	ru:омар	tr:ıstakoz	ur:لوبسٹر	zh:龙虾
+c:lobster-sea	Noun	ar:كركند	de:Hummer	en:lobster	es:langosta	fa:خرچنگ دریایی	fr:homard	he:לובסטר	hi:लॉबस्टर	ja:ロブスター	ko:바닷가재	pt:lagosta	ru:омар	tr:ıstakoz	ur:لابسٹر	zh:龙虾
 c:location	Noun	ar:موقع	de:Position,Lage	en:location	es:ubicación	fa:موقعیت	fr:position,emplacement	he:מיקום	hi:स्थिति	ja:位置	ko:위치	pt:localização,posição	ru:положение,местоположение	tr:konum	ur:مقام,جگہ	zh:位置
 c:lock	Noun	ar:قفل	de:Schloss	en:lock	es:cerradura,candado	fa:قفل	fr:serrure,cadenas	he:מנעול	hi:ताला	ja:鍵,錠	ko:자물쇠,잠금장치	pt:fechadura,cadeado	ru:замок	tr:kilit	ur:تالا	zh:锁,锁头
 c:locket	Noun	ar:ميدالية صغيرة	de:Medaillon	en:locket	es:guardapelo,locket	fa:مدالیون	fr:médaillon	he:מדליון	hi:लॉकेट	ja:ロケット	ko:로켓	pt:medalhão	ru:медальон	tr:madalyon	ur:لاکٹ	zh:纪念盒坠,胸针盒
@@ -4905,6 +4920,7 @@ c:machine-translation	Noun	ar:الترجمة الآلية	de:maschinelle Überse
 c:mackenzie	Noun	ar:ماكنزي,نهر ماكنزي	de:Mackenzie	en:Mackenzie,Mackenzie River	es:Mackenzie,río Mackenzie	fa:مکنزی	fr:Mackenzie	he:מקנזי	hi:मैकेंज़ी नदी	ja:マッケンジー川	ko:매켄지강	pt:Mackenzie,rio Mackenzie	ru:Маккензи	tr:Mackenzie	ur:دریائے میکنزی	zh:麦肯齐河
 c:mackenzie-river	Noun	ar:نهر ماكنزي	de:Mackenzie	en:Mackenzie river	es:río Mackenzie	fa:رود مکنزی	fr:Mackenzie	he:נהר המקנזי	hi:मैकेंज़ी नदी	ja:マッケンジー川	ko:매켄지강	pt:rio Mackenzie	ru:река Маккензи	tr:Mackenzie Nehri	ur:دریائے میکنزی	zh:麦肯齐河
 c:mackerel	Noun	ar:إسقمري	de:Makrele	en:mackerel	es:caballa	fa:ماهی خال مخالی	fr:maquereau	he:מקרל	hi:मैकेरल	ja:鯖	ko:고등어	pt:cavala	ru:скумбрия	tr:uskumru	ur:میکریل	zh:鲭鱼
+c:mackerel-fish	Noun	ar:ماكريل	de:Makrele	en:mackerel	es:caballa	fa:ماهی قزل آلا خالدار	fr:maquereau	he:מקרל	hi:मैकेरल	ja:サバ	ko:고등어	pt:cavala	ru:скумбрия	tr:uskumru	ur:میکرل	zh:鲭鱼
 c:macro	Noun	ar:تصوير مقرب	de:Makro	en:macro	es:macro	fa:ماکرو	fr:macro	he:מאקרו	hi:मैक्रो	ja:マクロ	ko:접사	pt:macro	ru:макро	tr:makro	ur:ماکرو	zh:微距
 c:macroalgae	Noun	ar:الطحالب الكبيرة	de:Makroalgen	en:macroalgae	es:macroalgas	fa:ماکروجلبک	fr:macroalgues	he:מאקרו-אצות	hi:मैक्रोशैवाल	ja:大型藻類	ko:대형 조류	pt:macroalgas	ru:макроводоросли	tr:makroalg	ur:بڑی کائی	zh:大型藻类
 c:macroeconomics	Noun	ar:الاقتصاد الكلي	de:Makroökonomie	en:macroeconomics	es:macroeconomía	fa:کلان‌اقتصاد	fr:macroéconomie	he:מקרו-כלכלה	hi:समष्टि अर्थशास्त्र	ja:マクロ経済学	ko:거시경제학	pt:macroeconomia	ru:макроэкономика	tr:makroekonomi	ur:کلی معاشیات	zh:宏观经济学
@@ -5490,6 +5506,7 @@ c:musical-film	Noun	ar:فيلم موسيقي	de:Musikfilm	en:musical film	es:pel
 c:musician	Noun	ar:موسيقي,موسيقار	de:Musiker,Musikerin	en:musician	es:músico	fa:موسیقیدان,نوازنده	fr:musicien,musicienne	he:מוזיקאי	hi:संगीतकार,संगीतज्ञ	ja:音楽家,ミュージシャン	ko:음악가,뮤지션	pt:músico	ru:музыкант	tr:müzisyen	ur:موسیقار	zh:音乐家
 c:muslin	Noun	ar:الموسلين	de:Musselin	en:muslin	es:muselina	fa:موسلین	fr:mousseline	he:מוסלין	hi:मलमल	ja:モスリン	ko:무명	pt:musselina	ru:муслин	tr:müslin	ur:ململ	zh:平纹细布
 c:mussel	Noun	ar:بلح البحر	de:Miesmuschel	en:mussel	es:mejillón	fa:صدف دریایی	fr:moule	he:מדגה	hi:मसल	ja:ムール貝	ko:홍합	pt:mexilhão	ru:мидия	tr:midye	ur:مسل	zh:贻贝
+c:mussel-sea	Noun	ar:بلح البحر	de:Miesmuschel	en:mussel	es:mejillón	fa:صدف دوکفه	fr:moule	he:מידיה	hi:मसल	ja:ムール貝	ko:홍합	pt:mexilhão	ru:мидия	tr:midye	ur:مسل	zh:贻贝
 c:mustard-color	Noun	ar:خَردَلي	de:Senfgelb	en:mustard,mustard yellow	es:mostaza	fa:خردلی	fr:moutarde	he:חרדל	hi:सरसों रंग	ja:マスタード色,からし色	ko:겨자색	pt:mostarda	ru:горчичный	tr:hardal sarısı	ur:سرسوں رنگ	zh:芥末黄
 c:mustard-seed	Noun	ar:بذور الخردل	de:Senfsamen	en:mustard seed	es:semilla de mostaza	fa:دانه خردل	fr:graine de moutarde	he:גרעין חרדל	hi:सरसों के बीज	ja:マスタードシード	ko:겨자씨	pt:semente de mostarda	ru:семена горчицы	tr:hardal tohumu	ur:سرسوں کے بیج	zh:芥末籽
 c:mustard-seed-spice	Noun	ar:حب الخردل	de:Senfkorn	en:mustard seed	es:semilla de mostaza	fa:دانه خردل	fr:graine de moutarde	he:גרגרי חרדל	hi:सरसों के बीज	ja:マスタードシード	ko:겨자씨	pt:semente de mostarda	ru:горчичное семя	tr:hardal tohumu	ur:رائی کے بیج	zh:芥末籽
@@ -5799,6 +5816,7 @@ c:octagon	Noun	ar:ثماني,شكل ثماني	de:Achteck,Oktagon	en:octagon	es:
 c:octave	Noun	ar:الأوكتاف	de:Oktave	en:octave	es:octava	fa:اکتاو	fr:octave	he:אוקטבה	hi:सप्तक	ja:オクターブ	ko:옥타브	pt:oitava	ru:октава	tr:oktav	ur:اوکتیو	zh:八度
 c:octave-music	Noun	ar:ديوان موسيقي	de:Oktave	en:octave	es:octava	fa:اکتاو	fr:octave	he:אוקטבה	hi:सप्तक	ja:オクターブ	ko:옥타브	pt:oitava	ru:октава	tr:oktav	ur:آکٹیو	zh:八度
 c:octopus	Noun	ar:أخطبوط	de:Oktopus,Krake	en:octopus	es:pulpo	fa:هشت‌پا	fr:poulpe,pieuvre	he:תמנון	hi:ऑक्टोपस	ja:タコ	ko:문어	pt:polvo	ru:осьминог	tr:ahtapot	ur:آکٹوپس	zh:章鱼
+c:octopus-sea	Noun	ar:أخطبوط	de:Tintenfisch Octopus	en:octopus	es:pulpo	fa:اختاپوس	fr:poulpe	he:תמנון	hi:ऑक्टोपस	ja:タコ	ko:문어	pt:polvo	ru:осьминог	tr:ahtapot	ur:آکٹوپس	zh:章鱼
 c:ode-lit	Noun	ar:القصيدة الغنائية	de:Ode	en:ode	es:oda	fa:اد	fr:ode	he:אודה	hi:ओड	ja:頌詩	ko:송가	pt:ode	ru:ода	tr:kaside	ur:قصیدہ	zh:颂歌
 c:ode-poem	Noun	ar:قصيدة مدح	de:Ode	en:ode	es:oda	fa:چکامه	fr:ode	he:אודה	hi:स्तवन कविता	ja:頌歌	ko:송가	pt:ode	ru:ода	tr:od	ur:قصیدہ	zh:颂诗
 c:oder-river	Noun	ar:نهر الأودر	de:Oder	en:Oder river	es:río Oder	fa:رود اودر	fr:Oder	he:נהר האודר	hi:ओडर नदी	ja:オーデル川	ko:오데르강	pt:rio Oder	ru:река Одра	tr:Oder Nehri	ur:دریائے اوڈر	zh:奥得河
@@ -5955,6 +5973,7 @@ c:oxidizing-agent	Noun	ar:عامل مؤكسد	de:Oxidationsmittel	en:oxidizing a
 c:oxygen	Noun	ar:أكسجين,أوكسجين	de:Sauerstoff	en:oxygen	es:oxígeno	fa:اکسیژن	fr:oxygène	he:חמצן	hi:ऑक्सीजन	ja:酸素,オキシジェン	ko:산소,옥시젠	pt:oxigênio,oxigénio	ru:кислород	tr:oksijen	ur:آکسیجن	zh:氧,氧气
 c:oxymoron	Noun	ar:الطباق	de:Oxymoron	en:oxymoron	es:oxímoron	fa:متناقض‌نما	fr:oxymore	he:אוקסימורון	hi:विरोधाभास	ja:矛盾語法	ko:역설어	pt:oxímoro	ru:оксюморон	tr:çelişki	ur:تضاد	zh:矛盾修辞
 c:oyster	Noun	ar:محار اللؤلؤ,محار	de:Auster	en:oyster	es:ostra	fa:صدف خوراکی	fr:huître	he:צדפת מאכל	hi:शुक्ति,सीप	ja:牡蠣,カキ	ko:굴	pt:ostra	ru:устрица	tr:istiridye	ur:سیپ صدف	zh:牡蛎,蚝
+c:oyster-sea	Noun	ar:محار صدفي	de:Auster	en:oyster	es:ostra	fa:صدف	fr:huître	he:צדפת פנינה	hi:सीप	ja:カキ	ko:굴	pt:ostra	ru:устрица	tr:istiridye	ur:سیپ	zh:牡蛎
 c:oystercatcher	Noun	ar:طائر صياد المحار	de:Austernfischer	en:oystercatcher	es:ostrero	fa:صدفچین	fr:huîtrier	he:מולסן	hi:ओयस्टरकैचर	ja:ミヤコドリ	ko:검은머리물떼새	pt:ostraceiro	ru:кулик-сорока	tr:istiridye kuşu	ur:سیپ چر پرندہ	zh:蛎鹬
 c:ozonation	Noun	ar:المعالجة بالأوزون	de:Ozonisierung	en:ozonation	es:ozonización	fa:اوزوناسیون	fr:ozonation	he:אוזונציה	hi:ओज़ोनीकरण	ja:オゾン処理	ko:오존 처리	pt:ozonização	ru:озонирование	tr:ozonlama	ur:اوزون علاج	zh:臭氧化
 c:ozone	Noun	ar:أوزون	de:Ozon	en:ozone	es:ozono	fa:ازن	fr:ozone	he:אוזון	hi:ओजोन	ja:オゾン	ko:오존	pt:ozônio,ozono	ru:озон	tr:ozon	ur:اوزون	zh:臭氧
@@ -6179,6 +6198,7 @@ c:percentile	Noun	ar:مئوي إحصائي	de:Perzentil	en:percentile	es:percent
 c:perception	Noun	ar:إدراك	de:Wahrnehmung	en:perception	es:percepción	fa:ادراک,درک	fr:perception	he:תפיסה	hi:अनुभूति,बोध	ja:知覚,認識	ko:지각,인식	pt:percepção	ru:восприятие	tr:algı	ur:ادراک,احساس	zh:感知,认知
 c:perception-psych	Noun	ar:إدراك نفسي	de:Wahrnehmung	en:perception	es:percepción	fa:ادراک	fr:perception	he:תפיסה	hi:धारणा	ja:知覚	ko:지각	pt:percepção	ru:восприятие	tr:algı	ur:ادراک	zh:感知
 c:perch	Noun	ar:فرخة البحر,بيرش	de:Barsch	en:perch	es:perca	fa:سوف	fr:perche	he:אמנון	hi:पर्च	ja:パーチ	ko:농어	pt:perca	ru:окунь	tr:tatlı su levreği	ur:پرچ	zh:鲈鱼
+c:perch-fish	Noun	ar:سمك فرخ	de:Flussbarsch	en:perch fish	es:perca	fa:سوف	fr:perche	he:פרקוס	hi:पर्च मछली	ja:パーチ	ko:농어과 민물	pt:perca	ru:окунь речной	tr:tatlı su levreği	ur:پرچ مچھلی	zh:鲈形目鱼
 c:perennial	Noun	ar:نبات معمر	de:Staude	en:perennial	es:planta perenne	fa:گیاه چند ساله	fr:vivace	he:רב שנתי	hi:बहुवर्षी	ja:多年草	ko:다년생	pt:perene	ru:многолетнее растение	tr:çok yıllık bitki	ur:بارہ ماسی پودا	zh:多年生植物
 c:perfect-competition	Noun	ar:المنافسة الكاملة	de:vollkommener Wettbewerb	en:perfect competition	es:competencia perfecta	fa:رقابت کامل	fr:concurrence parfaite	he:תחרות מושלמת	hi:पूर्ण प्रतियोगिता	ja:完全競争	ko:완전 경쟁	pt:concorrência perfeita	ru:совершенная конкуренция	tr:tam rekabet	ur:مکمل مسابقت	zh:完全竞争
 c:perfect-competition-market	Noun	ar:المنافسة الكاملة	de:vollkommene Konkurrenz	en:perfect competition	es:competencia perfecta	fa:رقابت کامل	fr:concurrence pure et parfaite	he:תחרות משוכללת	hi:पूर्ण प्रतिस्पर्धा	ja:完全競争	ko:완전 경쟁	pt:concorrência perfeita	ru:совершенная конкуренция	tr:tam rekabet	ur:مکمل مسابقت	zh:完全竞争
@@ -6314,6 +6334,7 @@ c:piezoelectric-mat	Noun	ar:التاثير الكهروضغطي	de:Piezoelektris
 c:pig	Noun	ar:خنزير	de:Schwein	en:pig	es:cerdo	fa:خوک	fr:cochon	he:חזיר	hi:सूअर	ja:豚	ko:돼지	pt:porco	ru:свинья	tr:domuz	ur:سور	zh:猪
 c:pigeon	Noun	ar:حمامة	de:Taube	en:pigeon	es:paloma	fa:کبوتر	fr:pigeon	he:יונה	hi:कबूतर	ja:鳩	ko:비둘기	pt:pombo	ru:голубь	tr:güvercin	ur:کبوتر	zh:鸽子
 c:pike	Noun	ar:بايك,سمك الحشف	de:Hecht	en:pike	es:lucio	fa:اردک ماهی	fr:brochet	he:צלופח	hi:पाइक	ja:カワカマス	ko:강꼬치고기	pt:lúcio	ru:щука	tr:turna balığı	ur:پائک	zh:狗鱼
+c:pike-fish	Noun	ar:كراكي	de:Hecht	en:pike fish	es:lucio	fa:ماهی اسکله	fr:brochet	he:זאבנון	hi:पाइक मछली	ja:カワカマス	ko:강꼬치고기	pt:lúcio	ru:щука	tr:turna balığı	ur:پائیک مچھلی	zh:狗鱼
 c:pilaster	Noun	ar:عمود ناتئ	de:Pilaster	en:pilaster	es:pilastra	fa:ستون نیمه‌برجسته	fr:pilastre	he:פילסטר	hi:पिलास्टर	ja:付け柱	ko:벽기둥	pt:pilastra	ru:пилястр	tr:pilaster	ur:دیوار ستون	zh:壁柱
 c:pile-foundation	Noun	ar:أساس الركائز	de:Pfahlgründung	en:pile foundation	es:cimentación por pilotes	fa:پی شمعی	fr:fondation sur pieux	he:יסודות עמודים	hi:पाइल नींव	ja:杭基礎	ko:말뚝기초	pt:fundação por estacas	ru:свайный фундамент	tr:kazık temeli	ur:ڈھیر بنیاد	zh:桩基础
 c:pilgrim	Noun	ar:حاج	de:Pilger	en:pilgrim	es:peregrino	fa:زائر	fr:pèlerin	he:עולה לרגל	hi:तीर्थयात्री	ja:巡礼者	ko:순례자	pt:peregrino	ru:паломник	tr:hacı	ur:حاجی	zh:朝圣者
@@ -6460,6 +6481,7 @@ c:pollen	Noun	ar:حبوب اللقاح,لقاح	de:Pollen,Blütenstaub	en:pollen
 c:pollination	Noun	ar:التلقيح	de:Bestäubung	en:pollination	es:polinización	fa:گرده‌افشانی	fr:pollinisation	he:האבקה	hi:परागण	ja:授粉	ko:수분	pt:polinização	ru:опыление	tr:tozlaşma	ur:زیر گیری	zh:授粉
 c:pollinator	Noun	ar:الملقح	de:Bestäuber	en:pollinator	es:polinizador	fa:گرده افشان	fr:pollinisateur	he:מאבק פרחים	hi:परागणकर्ता	ja:送粉者	ko:수분 매개체	pt:polinizador	ru:опылитель	tr:tozlaştırıcı	ur:پولینیٹر	zh:传粉者
 c:pollock	Noun	ar:بولوك,سمك القد الاسود	de:Pollack	en:pollock	es:abadejo	fa:پولاک	fr:lieu	he:פולוק	hi:पॉलॉक	ja:スケソウダラ	ko:명태	pt:escamudo	ru:минтай	tr:mezgit	ur:پولاک	zh:狭鳕
+c:pollock-fish	Noun	ar:بولوك	de:Seelachs	en:pollock	es:abadejo	fa:ماهی پولاک	fr:lieu noir	he:פולוק	hi:पोलोक	ja:スケトウダラ	ko:명태	pt:escamudo	ru:минтай	tr:pollock	ur:پولاک	zh:明太鱼
 c:pollution	Noun	ar:تلوث بيئي	de:Umweltverschmutzung	en:pollution	es:contaminación	fa:آلودگی	fr:pollution	he:זיהום	hi:प्रदूषण	ja:汚染	ko:오염	pt:poluição	ru:загрязнение	tr:kirlilik	ur:آلودگی	zh:污染
 c:polo	Noun	ar:البولو	de:Polo	en:polo	es:polo	fa:پولو	fr:polo	he:פולו	hi:पोलो	ja:ポロ	ko:폴로	pt:polo	ru:поло	tr:polo	ur:پولو	zh:马球
 c:polo-shirt	Noun	ar:قميص بولو	de:Poloshirt	en:polo shirt	es:polo	fa:پولوشرت	fr:polo	he:חולצת פולו	hi:पोलो शर्ट	ja:ポロシャツ	ko:폴로 셔츠	pt:camisa polo	ru:поло	tr:polo gömlek	ur:پولو شرٹ	zh:马球衫
@@ -6562,6 +6584,7 @@ c:prague-capital	Noun	ar:براغ	de:Prag	en:Prague	es:Praga	fa:پراگ	fr:Prag
 c:prairie	Noun	ar:سهل عشبي	de:Prärie	en:prairie	es:pradera	fa:چمنزار,پریری	fr:prairie	he:פריירי,ערבה	hi:प्रेयरी,घास के मैदान	ja:プレーリー,大草原	ko:프레리,대초원	pt:pradaria	ru:прерия	tr:çayır,preri	ur:سبزہ زار	zh:北美大草原,普列里
 c:prairie-style	Noun	ar:طراز البراري	de:Prärie-Stil	en:Prairie Style	es:estilo Pradera	fa:سبک پریری	fr:style Prairie	he:סגנון הפררייה	hi:प्रेयरी शैली	ja:プレーリー様式	ko:프레리 양식	pt:estilo Prairie	ru:стиль прерий	tr:Prairie tarzı	ur:پریری طرز	zh:草原式
 c:prawn	Noun	ar:قريدس,جمبري كبير	de:Riesengarnele,Große Garnele	en:prawn	es:langostino	fa:میگوی درشت	fr:crevette rose,gambas	he:שרימפ גדול	hi:बड़ा झींगा	ja:クルマエビ,大正海老	ko:대하	pt:lagostim,gamba	ru:креветка крупная	tr:iri karides	ur:بڑا جھینگا	zh:对虾
+c:prawn-sea	Noun	ar:قريدس	de:Garnelen	en:prawn	es:langostino	fa:میگو بزرگ	fr:gambas	he:שרימפס גדול	hi:बड़ा झींगा	ja:クルマエビ	ko:큰새우	pt:gamba	ru:крупная креветка	tr:iri karides	ur:بڑا جھینگا	zh:对虾
 c:prayer	Noun	ar:صلاة,دعاء	de:Gebet	en:prayer	es:oración,plegaria	fa:نماز,دعا	fr:prière	he:תפילה	hi:प्रार्थना	ja:祈り	ko:기도	pt:oração	ru:молитва	tr:dua,namaz	ur:دعا,نماز	zh:祈祷
 c:prayer-hall-room	Noun	ar:قاعة الصلاة	de:Gebetshalle	en:prayer hall	es:sala de oración	fa:سالن نماز	fr:salle de prière	he:אולם תפילה	hi:प्रार्थना कक्ष	ja:礼拝堂	ko:기도실	pt:sala de oração	ru:молельный зал	tr:namaz salonu	ur:نماز ہال	zh:祈祷厅
 c:praying-mantis	Noun	ar:فرس النبي,سرعوف	de:Gottesanbeterin	en:praying mantis,mantis	es:mantis religiosa	fa:آخوندک	fr:mante religieuse	he:גמל שלמה	hi:प्रेइंग मैंटिस,बिगड़ी कुदनी	ja:カマキリ	ko:사마귀	pt:louva-a-deus	ru:богомол	tr:peygamberdevesi	ur:فقیہ مچھلی	zh:螳螂
@@ -7181,6 +7204,7 @@ c:rockies	Noun	ar:جبال روكي,الروكي	de:Rocky Mountains,Rockies	en:R
 c:rocking-horse	Noun	ar:حصان الهزاز	de:Schaukelpferd	en:rocking horse	es:caballito de madera	fa:اسب گهواره‌ای	fr:cheval à bascule	he:סוס נדנדה	hi:झूलता घोड़ा	ja:木馬	ko:흔들 목마	pt:cavalo de balanço	ru:лошадь-качалка	tr:sallanan at	ur:جھولتا گھوڑا	zh:摇摆木马
 c:rocky-mountains	Noun	ar:الجبال الصخرية	de:Rocky Mountains	en:Rocky Mountains	es:montañas Rocosas	fa:کوه‌های راکی	fr:montagnes Rocheuses	he:הרי הרוקי	hi:रॉकी पर्वत	ja:ロッキー山脈	ko:로키산맥	pt:montanhas Rochosas	ru:Скалистые горы	tr:Kayalık Dağlar	ur:چٹانی پہاڑ	zh:落基山脉
 c:rococo	Noun	ar:طراز روكوكو	de:Rokoko	en:Rococo	es:rococó	fa:روکوکو	fr:rococo	he:רוקוקו	hi:रोकोको	ja:ロココ	ko:로코코	pt:rococó	ru:рококо	tr:rokoko	ur:روکوکو	zh:洛可可
+c:roe	Noun	ar:بيض السمك	de:Fischrogen	en:fish roe	es:huevas de pescado	fa:تخم ماهی	fr:œufs de poisson	he:ביצי דגים	hi:मछली के अंडे	ja:魚卵	ko:어란	pt:ovas de peixe	ru:икра рыбы	tr:balık yumurtası	ur:مچھلی کے انڈے	zh:鱼卵
 c:rogue-wave	Noun	ar:الموجة الضالة	de:Riesenwelle	en:rogue wave	es:ola freak	fa:موج سرکش	fr:vague scélérate	he:גל סורר	hi:दुष्ट लहर	ja:異常波	ko:이상파	pt:onda gigante	ru:волна-убийца	tr:hileli dalga	ur:بدمعاش لہر	zh:畸形波
 c:role-playing-game	Noun	ar:لعبة تقمص أدوار	de:Rollenspiel	en:role-playing game	es:juego de rol	fa:بازی نقش‌آفرینی	fr:jeu de rôle	he:משחק תפקידים	hi:भूमिका निभाने वाला खेल	ja:ロールプレイングゲーム	ko:롤플레잉 게임	pt:jogo de interpretação	ru:ролевая игра	tr:rol yapma oyunu	ur:کردار نگاری گیم	zh:角色扮演游戏
 c:role-social	Noun	ar:دور اجتماعي	de:soziale Rolle	en:social role	es:rol social	fa:نقش اجتماعی	fr:rôle social	he:תפקיד חברתי	hi:सामाजिक भूमिका	ja:社会的役割	ko:사회적 역할	pt:papel social	ru:социальная роль	tr:toplumsal rol	ur:معاشرتی کردار	zh:社会角色
@@ -7308,6 +7332,7 @@ c:salinity-ocean	Noun	ar:ملوحة المحيط	de:Meeressalinität	en:ocean sa
 c:salinity-water	Noun	ar:ملوحة الماء	de:Salzgehalt	en:salinity	es:salinidad	fa:شوری آب	fr:salinité	he:מליחות	hi:लवणता	ja:塩分	ko:염도	pt:salinidade	ru:солёность	tr:tuzluluk	ur:نمکین پن	zh:盐度
 c:salmon	Noun	ar:سلمون	de:Lachs	en:salmon	es:salmón	fa:ماهی آزاد	fr:saumon	he:סלמון	hi:सैल्मन	ja:鮭,サーモン	ko:연어	pt:salmão	ru:лосось	tr:somon	ur:سالمن مچھلی	zh:三文鱼,鲑鱼
 c:salmon-color	Noun	ar:سلموني,وردي سلموني	de:Lachsrosa,Lachsfarben	en:salmon,salmon pink	es:salmón	fa:گلبهی,ماهی‌آزادی	fr:saumon	he:סלמון	hi:सैल्मन रंग	ja:サーモンピンク	ko:연어색	pt:salmão	ru:лососёвый	tr:somon rengi	ur:سیمن رنگ	zh:鲑鱼色,三文鱼色
+c:salmon-fish	Noun	ar:سلمون	de:Lachs	en:salmon	es:salmón	fa:ماهی سالمون	fr:saumon	he:סלמון	hi:सैल्मन	ja:サケ	ko:연어	pt:salmão	ru:лосось	tr:somon	ur:سالمن مچھلی	zh:三文鱼
 c:salsa	Noun	ar:سالسا	de:Salsa	en:salsa	es:salsa	fa:سالسا	fr:salsa	he:סלסה	hi:साल्सा	ja:サルサ	ko:살사	pt:salsa	ru:сальса	tr:salsa	ur:سالسا	zh:萨尔萨
 c:salsa-dance	Noun	ar:رقص السالسا	de:Salsa-Tanz	en:salsa dance	es:baile salsa	fa:رقص سالسا	fr:danse salsa	he:סלסה	hi:साल्सा नृत्य	ja:サルサ	ko:살사	pt:dança salsa	ru:сальса	tr:salsa dansı	ur:سالسا رقص	zh:萨尔萨舞
 c:salt	Noun	ar:ملح	de:Salz	en:salt	es:sal	fa:نمک	fr:sel	he:מלח	hi:नमक	ja:塩	ko:소금	pt:sal	ru:соль	tr:tuz	ur:نمک	zh:盐
@@ -7356,11 +7381,13 @@ c:sarangi	Noun	ar:سارانغي	de:Sarangi	en:sarangi	es:sarangi	fa:سارنگ�
 c:sarcomere	Noun	ar:القسيم العضلي	de:Sarkomer	en:sarcomere	es:sarcómero	fa:سارکومر	fr:sarcomère	he:סרקומר	hi:सार्कोमेयर	ja:サルコメア	ko:근절	pt:sarcômero	ru:саркомер	tr:sarkomere	ur:عضلی اکائی	zh:肌节
 c:sarcophagus	Noun	ar:تابوت حجري	de:Sarkophag	en:sarcophagus	es:sarcófago	fa:صندوق سنگی	fr:sarcophage	he:ארון אבן	hi:शवपेटिका	ja:石棺	ko:석관	pt:sarcófago	ru:саркофаг	tr:lahit	ur:پتھر کا تابوت	zh:石棺
 c:sardine	Noun	ar:سردين	de:Sardine	en:sardine	es:sardina	fa:ساردین	fr:sardine	he:סרדין	hi:सार्डिन	ja:鰯	ko:정어리	pt:sardinha	ru:сардина	tr:sardalya	ur:سارڈین	zh:沙丁鱼
+c:sardine-fish	Noun	ar:سردين	de:Sardine	en:sardine	es:sardina	fa:ساردین	fr:sardine	he:סרדינים	hi:सार्डिन	ja:イワシ	ko:정어리	pt:sardinha	ru:сардина	tr:sardalya	ur:سارڈین	zh:沙丁鱼
 c:sargasso-sea	Noun	ar:بحر سارجاسو	de:Sargassosee	en:Sargasso Sea	es:Mar de los Sargazos	fa:دریای سارگاسو	fr:Mer des Sargasses	he:ים סרגסו	hi:सर्गासो सागर	ja:サルガッソ海	ko:사르가소해	pt:Mar dos Sargaços	ru:Саргассово море	tr:Sargasso Denizi	ur:بحیرہ سرگیسو	zh:马尾藻海
 c:sargasso-sea-body	Noun	ar:بحر سرغاسو	de:Sargassosee	en:Sargasso Sea	es:mar de los Sargazos	fa:دریای سرگاسو	fr:mer des Sargasses	he:ים סרגסו	hi:सरगासो सागर	ja:サルガッソ海	ko:사르가소해	pt:mar dos Sargaços	ru:Саргассово море	tr:Sargasso Denizi	ur:سرگاسو سمندر	zh:马尾藻海
 c:sari	Noun	ar:ساري	de:Sari	en:sari,saree	es:sari	fa:ساری	fr:sari	he:סארי	hi:साड़ी	ja:サリー	ko:사리	pt:sári	ru:сари	tr:sari	ur:ساڑھی	zh:纱丽
 c:sarod	Noun	ar:سارود	de:Sarod	en:sarod	es:sarod	fa:سارود	fr:sarod	he:סארוד	hi:सरोद	ja:サロード	ko:사로드	pt:sarod	ru:сарод	tr:sarod	ur:سارود	zh:萨罗德
 c:sashimi	Noun	ar:ساشيمي	de:Sashimi	en:sashimi	es:sashimi	fa:ساشیمی	fr:sashimi	he:סשימי	hi:साशिमी	ja:刺身	ko:사시미	pt:sashimi	ru:сашими	tr:sashimi	ur:ساشیمی	zh:生鱼片
+c:sashimi-tuna	Noun	ar:ساشيمي تونة	de:Thunfisch-Sashimi	en:tuna sashimi	es:sashimi de atún	fa:ساشیمی تن	fr:sashimi de thon	he:סשימי טונה	hi:टूना साशिमी	ja:マグロ刺身	ko:참치 사시미	pt:sashimi de atum	ru:сашими из тунца	tr:ton balığı sashimi	ur:ٹونا ساشیمی	zh:金枪鱼刺身
 c:sassanid-empire	Noun	ar:الإمبراطورية الساسانية	de:Sassanidenreich	en:Sassanid Empire	es:Imperio sasánida	fa:امپراتوری ساسانی	fr:Empire sassanide	he:האימפריה הסאסאנית	hi:सासानी साम्राज्य	ja:サーサーン朝	ko:사산 제국	pt:Império Sassânida	ru:Сасанидская империя	tr:Sasani İmparatorluğu	ur:ساسانی سلطنت	zh:萨珊帝国
 c:satellite	Noun	ar:قمر صناعي,تابع	de:Satellit	en:satellite	es:satélite	fa:ماهواره,قمر مصنوعی	fr:satellite	he:לוויין	hi:उपग्रह,सैटेलाइट	ja:衛星,人工衛星	ko:위성,인공위성	pt:satélite	ru:спутник	tr:uydu	ur:سیارچہ,مصنوعی سیارہ	zh:卫星,人造卫星
 c:satellite-orbit	Noun	ar:قمر صناعي	de:Satellit	en:satellite	es:satélite	fa:ماهواره	fr:satellite	he:לוויין	hi:उपग्रह	ja:人工衛星	ko:인공위성	pt:satélite	ru:спутник	tr:uydu	ur:سیارچہ	zh:卫星
@@ -7398,6 +7425,7 @@ c:scale-music	Noun	ar:السلم الموسيقي	de:Tonleiter	en:scale	es:escal
 c:scale-music-pitch	Noun	ar:سلم موسيقي	de:Tonleiter	en:musical scale	es:escala musical	fa:گام موسیقایی	fr:gamme musicale	he:סולם צלילים	hi:संगीत स्केल	ja:音階	ko:음계	pt:escala musical	ru:музыкальная шкала	tr:müzik skalası	ur:میوزک اسکیل	zh:音阶
 c:scalene-triangle	Noun	ar:مثلث مختلف الأضلاع	de:ungleichseitiges Dreieck	en:scalene triangle	es:triángulo escaleno	fa:مثلث مختلف‌الاضلاع	fr:triangle scalène	he:משולש שונה צלעות	hi:विषमबाहु त्रिभुज	ja:不等辺三角形	ko:부등변 삼각형	pt:triângulo escaleno	ru:разносторонний треугольник	tr:çeşitkenar üçgen	ur:غیر برابر اضلاع مثلث	zh:不等边三角形
 c:scallop	Noun	ar:اسقلوب	de:Jakobsmuschel	en:scallop	es:vieira	fa:صدف ریزه	fr:coquille Saint-Jacques	he:קונכיה	hi:स्कैलप	ja:ホタテガイ	ko:가리비	pt:vieira	ru:морской гребешок	tr:tarak	ur:اسکیلوپ	zh:扇贝
+c:scallop-sea	Noun	ar:أسقلوب	de:Jakobsmuschel	en:scallop	es:vieira	fa:صدف اسکالوپ	fr:coquille Saint-Jacques	he:סקלופ	hi:स्कैलप	ja:ホタテ	ko:가리비	pt:vieira	ru:морской гребешок	tr:tarak midyesi	ur:اسکیلپ	zh:扇贝
 c:scalpel	Noun	ar:مشرط	de:Skalpell	en:scalpel	es:bisturí	fa:اسکالپل	fr:scalpel	he:אזמל כירורגי	hi:स्केलपेल	ja:メス	ko:수술칼	pt:bisturi	ru:скальпель	tr:neşter	ur:جراحی کا چاقو	zh:手术刀
 c:scandium	Noun	ar:سكانديوم	de:Scandium	en:scandium	es:escandio	fa:اسکاندیم	fr:scandium	he:סקנדיום	hi:स्कैंडियम	ja:スカンジウム	ko:스칸듐	pt:escândio	ru:скандий	tr:skandiyum	ur:سکینڈیم	zh:钪
 c:scanner	Noun	ar:الماسح الضوئي	de:Scanner	en:scanner	es:escáner	fa:اسکنر	fr:scanner	he:סורק	hi:स्कैनर	ja:スキャナ	ko:스캐너	pt:scanner	ru:сканер	tr:tarayıcı	ur:اسکینر	zh:扫描仪
@@ -7469,9 +7497,12 @@ c:sea-surface-temperature	Noun	ar:درجة حرارة سطح البحر	de:Meere
 c:sea-trout	Noun	ar:تراوت البحر,سمك التروت البحري	de:Meerforelle	en:sea trout	es:trucha de mar	fa:قزل آلای دریایی	fr:truite de mer	he:פורל-ים	hi:समुद्री ट्राउट	ja:サクラマス	ko:바다송어	pt:truta-de-mar	ru:кумжа	tr:deniz alası	ur:سمندری ٹراؤٹ	zh:海鳟
 c:sea-turtle	Noun	ar:سلحفاة البحر	de:Meeresschildkröte	en:sea turtle	es:tortuga marina	fa:لاک پشت دریایی	fr:tortue de mer	he:צב ים	hi:समुद्री कछुआ	ja:ウミガメ	ko:바다거북	pt:tartaruga marinha	ru:морская черепаха	tr:deniz kaplumbağası	ur:سمندری کچھوا	zh:海龟
 c:sea-urchin	Noun	ar:قنفذ البحر	de:Seeigel	en:sea urchin	es:erizo de mar	fa:خارپشت دریایی	fr:oursin	he:קיפוד ים	hi:समुद्री अर्चिन	ja:ウニ	ko:성게	pt:ouriço-do-mar	ru:морской ёж	tr:denizkestanesi	ur:سمندری خارپشت	zh:海胆
+c:sea-urchin-sea	Noun	ar:قنفذ البحر	de:Seeigel	en:sea urchin	es:erizo de mar	fa:توتیا	fr:oursin	he:קיפוד ים	hi:समुद्री अर्चिन	ja:ウニ	ko:성게	pt:ouriço-do-mar	ru:морской ёж	tr:deniz kestanesi	ur:سمندری خارپشت	zh:海胆
 c:seabed	Noun	ar:قاع البحر	de:Meeresboden	en:seabed	es:fondo marino	fa:بستر دریا	fr:fond marin	he:קרקעית הים	hi:समुद्री तल	ja:海底	ko:해저	pt:leito marinho	ru:морское дно	tr:deniz dibi	ur:سمندر کی تہہ	zh:海床
 c:seafloor	Noun	ar:قاع البحر	de:Meeresboden	en:seafloor	es:fondo marino	fa:کف دریا	fr:fond marin	he:קרקעית הים	hi:समुद्री तल	ja:海底	ko:해저	pt:fundo do mar	ru:морское дно	tr:deniz tabanı	ur:سمندر کا فرش	zh:海底
 c:seafloor-spreading	Noun	ar:انتشار قاع البحر	de:Meeresbodenausbreitung	en:seafloor spreading	es:expansión del fondo oceánico	fa:گسترش کف اقیانوس	fr:expansion des fonds marins	he:התפשטות קרקעית הים	hi:समुद्री तल प्रसार	ja:海底拡大	ko:해저 확장	pt:expansão do fundo oceânico	ru:спрединг морского дна	tr:deniz tabanı yayılması	ur:سمندری تہہ پھیلاؤ	zh:海底扩张
+c:seafood	Noun	ar:مأكولات بحرية	de:Meeresfrüchte	en:seafood	es:mariscos	fa:غذای دریایی	fr:fruits de mer	he:מאכלי ים	hi:समुद्री खाद्य	ja:シーフード	ko:해산물	pt:frutos do mar	ru:морепродукты	tr:deniz ürünleri	ur:بحری غذا	zh:海鲜
+c:seafood-paella	Noun	ar:بايا بحرية	de:Meeresfrüchte-Paella	en:seafood paella	es:paella de mariscos	fa:پائلا دریایی	fr:paella aux fruits de mer	he:פאייה של פירות ים	hi:समुद्री पाएला	ja:シーフードパエリア	ko:해산물 파에야	pt:paelha de marisco	ru:паэлья с морепродуктами	tr:deniz ürünlü paella	ur:سمندری پائیلا	zh:海鲜海鲜饭
 c:seagrass	Noun	ar:عشب البحر	de:Seegras	en:seagrass	es:pradera marina	fa:گیاه دریایی	fr:herbier marin	he:עשב ים	hi:समुद्री घास	ja:海草	ko:해초	pt:erva marinha	ru:морская трава	tr:deniz çimi	ur:سمندری گھاس	zh:海草
 c:seagrass-marine	Noun	ar:عشب بحري	de:Seegras	en:seagrass	es:pasto marino	fa:علف دریایی	fr:herbier marin	he:עשב ים	hi:समुद्री घास	ja:海草	ko:해초	pt:erva marinha	ru:морская трава	tr:deniz çayırı	ur:سمندری گھاس	zh:海草
 c:seagull	Noun	ar:نورس	de:Möwe	en:seagull,gull	es:gaviota	fa:مرغ دریایی	fr:mouette	he:שחף	hi:सीगल	ja:カモメ	ko:갈매기	pt:gaivota	ru:чайка	tr:martı	ur:مرغابی	zh:海鸥
@@ -7648,6 +7679,7 @@ c:show	Verb	ar:أظهر,أرى	de:zeigen	en:show	es:mostrar,enseñar	fa:نشان
 c:shower	Noun	ar:زخة,رشة مطر	de:Schauer,Regenschauer	en:shower,rain shower	es:chubasco,llovizna corta	fa:رگبار کوتاه,بارش کوتاه	fr:averse,ondée	he:ממטר,גשם קצר	hi:बौछार,फुहार	ja:にわか雨,夕立	ko:소나기	pt:aguaceiro,chuvisco	ru:кратковременный дождь,ливень	tr:sağanak yağmur,kısa yağmur	ur:بوچھاڑ,ہلکی بارش	zh:阵雨
 c:showroom	Noun	ar:صالة عرض	de:Ausstellungsraum	en:showroom	es:sala de exposición	fa:نمایشگاه	fr:salle d'exposition	he:חדר תצוגה	hi:शोरूम	ja:ショールーム	ko:쇼룸	pt:showroom	ru:выставочный зал	tr:teşhir salonu	ur:شورم	zh:陈列室
 c:shrimp	Noun	ar:روبيان,جمبري	de:Garnele	en:shrimp	es:camarón,gamba	fa:میگو	fr:crevette	he:חסילון,שרימפ	hi:झींगा	ja:エビ,海老	ko:새우	pt:camarão	ru:креветка	tr:karides	ur:جھینگا	zh:虾
+c:shrimp-sea	Noun	ar:جمبري	de:Garnele	en:shrimp	es:camarón	fa:میگو کوچک	fr:crevette	he:שרימפס	hi:झींगा	ja:エビ	ko:새우	pt:camarão	ru:креветка	tr:karides	ur:جھینگا	zh:虾
 c:shrine	Noun	ar:ضريح,مزار	de:Schrein,Heiligtum	en:shrine	es:santuario,relicario	fa:زیارتگاه,آرامگاه	fr:sanctuaire,châsse	he:מקדש,קבר קדוש	hi:मंदिर,देवालय	ja:神社,聖堂	ko:성지,신사	pt:santuário	ru:святилище,храм малый	tr:türbe,mabet	ur:مزار,درگاہ	zh:神龛,圣殿
 c:shrine-structure	Noun	ar:ضريح	de:Schrein	en:shrine	es:santuario	fa:آستان	fr:sanctuaire	he:מקדש	hi:तीर्थस्थल	ja:神社	ko:신사	pt:santuário	ru:святилище	tr:türbe	ur:مزار	zh:神祠
 c:shrub	Noun	ar:شجيرة	de:Strauch	en:shrub,bush	es:arbusto	fa:بوته,درختچه	fr:arbuste,buisson	he:שיח	hi:झाड़ी	ja:低木,潅木	ko:관목	pt:arbusto	ru:куст,кустарник	tr:çalı	ur:جھاڑی	zh:灌木
@@ -7765,6 +7797,7 @@ c:smtp	Noun	ar:بروتوكول نقل البريد البسيط	de:SMTP	en:SMTP
 c:snail	Noun	ar:حلزون	de:Schnecke	en:snail	es:caracol	fa:حلزون	fr:escargot	he:חילזון	hi:घोंघा	ja:カタツムリ	ko:달팽이	pt:caracol	ru:улитка	tr:salyangoz	ur:گھونگا	zh:蜗牛
 c:snake	Noun	ar:ثعبان,حية	de:Schlange	en:snake	es:serpiente	fa:مار	fr:serpent	he:נחש	hi:साँप	ja:蛇,ヘビ	ko:뱀	pt:serpente,cobra	ru:змея	tr:yılan	ur:سانپ	zh:蛇
 c:snapper	Noun	ar:سمك السنبر,سنبر	de:Schnapper	en:snapper	es:pargo	fa:سناپر	fr:vivaneau	he:פרגית-ים	hi:स्नैपर	ja:スナッパー	ko:참돔	pt:pargo	ru:луциан	tr:mercan balığı	ur:سنیپر	zh:笛鲷
+c:snapper-fish	Noun	ar:سناپر	de:Schnapper	en:snapper fish	es:pargo	fa:سرخو	fr:vivaneau	he:סנפר	hi:स्नैपर	ja:フエダイ	ko:도미	pt:pargo	ru:луциан	tr:mercan balığı	ur:سنیپر	zh:鲷鱼
 c:snare-drum	Noun	ar:الطبلة الحبلية	de:Snaredrum	en:snare drum	es:caja	fa:سنر درام	fr:caisse claire	he:תוף פח	hi:स्नेयर ड्रम	ja:スネアドラム	ko:스네어 드럼	pt:caixa	ru:малый барабан	tr:trampet	ur:سنیر ڈرم	zh:小鼓
 c:sneaker	Noun	ar:حذاء رياضي	de:Sneaker,Turnschuh	en:sneaker,trainer	es:zapatilla deportiva,tenis	fa:کفش ورزشی,کتانی	fr:basket,tennis	he:נעל ספורט	hi:स्नीकर	ja:スニーカー	ko:스니커즈,운동화	pt:tênis	ru:кроссовки	tr:spor ayakkabı	ur:جوگر	zh:运动鞋
 c:sneakers	Noun	ar:حذاء رياضي	de:Turnschuhe	en:sneakers	es:zapatillas	fa:کتانی	fr:baskets	he:נעלי ספורט	hi:स्नीकर्स	ja:スニーカー	ko:운동화	pt:tênis	ru:кроссовки	tr:spor ayakkabı	ur:سنیکرز	zh:运动鞋
@@ -7999,6 +8032,7 @@ c:square-shape	Noun	ar:مربع	de:Quadrat	en:square	es:cuadrado	fa:مربع	fr:
 c:squash	Noun	ar:الاسكواش	de:Squash	en:squash	es:squash	fa:اسکواش	fr:squash	he:סקווש	hi:स्क्वैश	ja:スカッシュ	ko:스쿼시	pt:squash	ru:сквош	tr:squash	ur:اسکواش	zh:壁球
 c:squash-veg	Noun	ar:اليقطين	de:Kürbisgewächs	en:squash	es:calabacín	fa:کدو	fr:courge	he:דלעת משפחה	hi:स्क्वैश	ja:スクワッシュ	ko:스쿼시	pt:abóbora squash	ru:кабачок	tr:kabak türü	ur:اسکواش	zh:南瓜属
 c:squid	Noun	ar:حبار	de:Kalmar,Tintenfisch	en:squid	es:calamar	fa:ماهی مرکب,اسکویید	fr:calmar,calamar	he:דיונון	hi:स्क्विड	ja:イカ	ko:오징어	pt:lula	ru:кальмар	tr:kalamar	ur:اسکوڈ	zh:鱿鱼
+c:squid-sea	Noun	ar:حبار	de:Tintenfisch	en:squid	es:calamar	fa:ماهی مرکب	fr:calamar	he:דיונון	hi:स्क्विड	ja:イカ	ko:오징어	pt:lula	ru:кальмар	tr:kalamar	ur:سکویڈ	zh:鱿鱼
 c:squire	Noun	ar:مرافق الفارس	de:Knappe	en:squire	es:escudero	fa:خادم شوالیه	fr:écuyer	he:אשקר	hi:स्क्वायर	ja:従士	ko:종자	pt:escudeiro	ru:оруженосец	tr:silah arkadaşı	ur:شوالیہ کا خادم	zh:扈从
 c:squirrel	Noun	ar:سنجاب	de:Eichhörnchen	en:squirrel	es:ardilla	fa:سنجاب	fr:écureuil	he:סנאי	hi:गिलहरी	ja:リス	ko:다람쥐	pt:esquilo	ru:белка	tr:sincap	ur:گلہری	zh:松鼠
 c:srivijaya-empire	Noun	ar:إمبراطورية سريفيجايا	de:Srivijaya-Reich	en:Srivijaya Empire	es:Imperio Srivijaya	fa:امپراتوری سریویجایا	fr:Empire de Srivijaya	he:אימפריית סריוויג'איה	hi:श्रीविजय साम्राज्य	ja:シュリーヴィジャヤ王国	ko:스리비자야 왕국	pt:Império Srivijaya	ru:Шривиджая	tr:Sri Vijaya İmparatorluğu	ur:سریوجیا سلطنت	zh:三佛齐
@@ -8170,6 +8204,7 @@ c:stumble	Verb	ar:تعثر	de:stolpern	en:stumble	es:tropezar	fa:سکندری خ
 c:stupa	Noun	ar:الستوبا البوذية	de:Stupa	en:stupa	es:stupa	fa:استوپا	fr:stûpa	he:סטופה	hi:स्तूप	ja:仏塔	ko:스투파	pt:estupa	ru:ступа	tr:stupa	ur:بدھ مت کا مینار	zh:窣堵坡
 c:stupa-buddhist	Noun	ar:ستوبا	de:Stupa	en:stupa	es:estupa	fa:ستوپا	fr:stupa	he:סטופה	hi:स्तूप	ja:ストゥーパ	ko:스투파	pt:stupa	ru:ступа	tr:stupa	ur:ستوپا	zh:佛塔
 c:sturgeon	Noun	ar:سمك الحفش,حفش	de:Stör	en:sturgeon	es:esturión	fa:تاس ماهی	fr:esturgeon	he:חוזנקה	hi:स्टर्जन	ja:チョウザメ	ko:철갑상어	pt:esturjão	ru:осётр	tr:mersin balığı	ur:اسٹرجن	zh:鲟鱼
+c:sturgeon-fish	Noun	ar:حفش	de:Stör	en:sturgeon	es:esturión	fa:ماهی خاویار	fr:esturgeon	he:חדקן	hi:स्टर्जन	ja:チョウザメ	ko:철갑상어	pt:esturjão	ru:осётр	tr:mersin balığı	ur:سٹرجن	zh:鲟鱼
 c:style	Noun	ar:أسلوب,طراز	de:Stil	en:style	es:estilo	fa:سبک,شیوه	fr:style	he:סגנון	hi:शैली	ja:スタイル,様式	ko:스타일,양식	pt:estilo	ru:стиль	tr:stil,tarz	ur:انداز,اسلوب	zh:风格,样式
 c:stylus-pen	Noun	ar:قلم لمسي	de:Eingabestift	en:stylus	es:lápiz táctil	fa:قلم لمسی	fr:stylet	he:עט סטיילוס	hi:स्टाइलस	ja:スタイラス	ko:스타일러스	pt:estilete digital	ru:стилус	tr:dokunmatik kalem	ur:ٹچ قلم	zh:触控笔
 c:subaltern	Noun	ar:المهمش	de:Subalterner	en:subaltern	es:subalterno	fa:فرودست	fr:subalterne	he:כפוף	hi:निम्नवर्गीय	ja:サバルタン	ko:피지배자	pt:subalterno	ru:субальтерн	tr:tabi	ur:ماتحت	zh:庶民
@@ -8273,6 +8308,7 @@ c:surrogate-endpoint	Noun	ar:نقطة النهاية البديلة	de:Surrogat-
 c:susanoo	Noun	ar:سوسانو	de:Susanoo	en:Susanoo	es:Susanoo	fa:سوسانو	fr:Susanoo	he:סוסנו	hi:सुसानू	ja:須佐之男	ko:스사노오	pt:Susanoo	ru:Сусаноо	tr:Susanoo	ur:سوسانو	zh:须佐之男
 c:sushi-food	Noun	ar:سوشي	de:Sushi	en:sushi	es:sushi	fa:سوشی	fr:sushi	he:סושי	hi:सुशी	ja:寿司	ko:초밥	pt:sushi	ru:суши	tr:suşi	ur:سشی	zh:寿司
 c:sushi-rice	Noun	ar:أرز سوشي	de:Sushi-Reis	en:sushi rice	es:arroz para sushi	fa:برنج سوشی	fr:riz à sushi	he:אורז לסושי	hi:सुशी चावल	ja:寿司米	ko:스시용 쌀	pt:arroz para sushi	ru:суши рис	tr:suşi pirinci	ur:سشی چاول	zh:寿司米
+c:sushi-salmon	Noun	ar:سوشي سلمون	de:Sushi Lachs	en:salmon sushi	es:sushi de salmón	fa:سوشی سالمون	fr:sushi saumon	he:סושי סלמון	hi:सैल्मन सुशी	ja:サーモン寿司	ko:연어 초밥	pt:sushi de salmão	ru:суши с лососем	tr:somon suşi	ur:سالمن سشی	zh:三文鱼寿司
 c:suspension	Noun	ar:معلق	de:Suspension	en:suspension	es:suspensión	fa:سوسپانسیون	fr:suspension	he:תרחיף	hi:निलंबन	ja:懸濁液	ko:현탁액	pt:suspensão	ru:суспензия	tr:süspansiyon	ur:معلق محلول	zh:悬浮液
 c:sustainability	Noun	ar:استدامة	de:Nachhaltigkeit	en:sustainability	es:sostenibilidad	fa:پایداری	fr:durabilité	he:קיימות	hi:सतत विकास	ja:持続可能性	ko:지속 가능성	pt:sustentabilidade	ru:устойчивость	tr:sürdürülebilirlik	ur:پائیداری	zh:可持续性
 c:sustainability-dev	Noun	ar:تنمية مستدامة	de:nachhaltige Entwicklung	en:sustainable development	es:desarrollo sostenible	fa:توسعه پایدار	fr:développement durable	he:פיתוח בר-קיימא	hi:सतत विकास	ja:持続可能な開発	ko:지속 가능한 발전	pt:desenvolvimento sustentável	ru:устойчивое развитие	tr:sürdürülebilir kalkınma	ur:پائیدار ترقی	zh:可持续发展
@@ -8307,6 +8343,7 @@ c:switch-network	Noun	ar:محول شبكة	de:Netzwerk-Switch	en:network switch	
 c:sword	Noun	ar:سيف	de:Schwert	en:sword	es:espada	fa:شمشیر	fr:épée	he:חרב	hi:तलवार	ja:剣,刀	ko:검,칼	pt:espada	ru:меч	tr:kılıç	ur:تلوار	zh:剑,刀
 c:sword-dance	Noun	ar:رقص السيف	de:Schwerttanz	en:sword dance	es:danza de la espada	fa:رقص شمشیر	fr:danse de l'épée	he:ריקוד חרב	hi:तलवार नृत्य	ja:剣舞	ko:검무	pt:dança da espada	ru:танец с мечами	tr:kılıç dansı	ur:تلوار رقص	zh:剑舞
 c:swordfish	Noun	ar:ابو سيف,سمك السيف	de:Schwertfisch	en:swordfish	es:pez espada	fa:ماهی شمشیر	fr:espadon	he:חרבן	hi:स्वोर्डफिश	ja:メカジキ	ko:황새치	pt:peixe-espada	ru:меч-рыба	tr:kılıç balığı	ur:تلوار مچھلی	zh:剑鱼
+c:swordfish-fish	Noun	ar:سمك أبو سيف	de:Schwertfisch	en:swordfish	es:pez espada	fa:ماهی شمشیر	fr:espadon	he:דג חרב	hi:स्वोर्डफिश	ja:メカジキ	ko:황새치	pt:peixe-espada	ru:рыба-меч	tr:kılıç balığı	ur:ساورڈ فش	zh:剑鱼
 c:sycamore	Noun	ar:الجميز	de:Bergahorn	en:sycamore	es:sicómoro	fa:چنار	fr:sycomore	he:שקמה	hi:सिकैमोर	ja:スズカケノキ	ko:플라타너스	pt:sicômoro	ru:сикомор,явор	tr:çınar	ur:گولر	zh:梧桐
 c:sycamore-wood	Noun	ar:خشب الجميز	de:Ahornplatane	en:sycamore wood	es:madera de sicómoro	fa:چوب چنار	fr:bois de sycomore	he:עץ שקמה	hi:गूलर	ja:プラタナス材	ko:시카모어	pt:madeira de sicômoro	ru:сикомор древесина	tr:çınar ağacı	ur:گولر	zh:梧桐木
 c:sydney	Noun	ar:سيدني	de:Sydney	en:Sydney	es:Sídney	fa:سیدنی	fr:Sydney	he:סידני	hi:सिडनी	ja:シドニー	ko:시드니	pt:Sydney	ru:Сидней	tr:Sidney	ur:سڈنی	zh:悉尼
@@ -8655,6 +8692,7 @@ c:tights	Noun	ar:جوارب طويلة ضيقة	de:Strumpfhose	en:tights	es:medi
 c:tigris	Noun	ar:دجلة,نهر دجلة	de:Tigris	en:Tigris,Tigris River	es:Tigris,río Tigris	fa:دجله,رود دجله	fr:Tigre	he:חידקל,נהר החידקל	hi:टाइग्रिस नदी,दजला	ja:ティグリス川	ko:티그리스강	pt:Tigre,rio Tigre	ru:Тигр	tr:Dicle,Dicle Nehri	ur:دریائے دجلہ,دجلہ	zh:底格里斯河
 c:tigris-river	Noun	ar:نهر دجلة	de:Tigris	en:Tigris river	es:río Tigris	fa:رود دجله	fr:Tigre	he:נהר החידקל	hi:तिगरिस नदी	ja:チグリス川	ko:티그리스강	pt:rio Tigre	ru:река Тигр	tr:Dicle Nehri	ur:دریائے دجلہ	zh:底格里斯河
 c:tilapia	Noun	ar:تيلابيا,بلطي	de:Tilapia	en:tilapia	es:tilapia	fa:تیلاپیا	fr:tilapia	he:טילפיה	hi:तिलापिया	ja:ティラピア	ko:틸라피아	pt:tilápia	ru:тилапия	tr:tilapia	ur:تلاپیا	zh:罗非鱼
+c:tilapia-fish	Noun	ar:بلطي	de:Tilapia	en:tilapia	es:tilapia	fa:تیلاپیا	fr:tilapia	he:טילפיה	hi:तिलापिया	ja:ティラピア	ko:틸라피아	pt:tilápia	ru:тиляпия	tr:tilapya	ur:تلاپیا	zh:罗非鱼
 c:tile	Noun	ar:بلاط,قرميد	de:Fliese,Kachel	en:tile	es:azulejo,baldosa	fa:کاشی	fr:carreau,tuile	he:אריח	hi:टाइल	ja:タイル	ko:타일	pt:azulejo	ru:плитка	tr:fayans,kiremit	ur:ٹائل	zh:瓦,瓷砖
 c:tile-cutter	Noun	ar:قاطعة بلاط	de:Fliesenschneider	en:tile cutter	es:cortadora de azulejos	fa:کاشی‌بر	fr:coupe-carreaux	he:חותך קרמיקה	hi:टाइल कटर	ja:タイルカッター	ko:타일 커터	pt:cortador de azulejo	ru:плиткорез	tr:fayans kesici	ur:ٹائل کٹر	zh:瓷砖切割机
 c:till	Verb	ar:حرث,يحرث	de:pflügen	en:till	es:labrar	fa:شخم زدن	fr:labourer	he:חרש	hi:जोतना	ja:耕す	ko:갈다	pt:lavrar	ru:пахать	tr:sürmek	ur:ہل چلانا	zh:犁地
@@ -8870,6 +8908,7 @@ c:trot	Verb	ar:خبّ,هرول خبب	de:traben	en:trot	es:trotar	fa:یورتم�
 c:trough-wave	Noun	ar:حضيض الموجة	de:Wellental	en:wave trough	es:valle de onda	fa:دره موج	fr:creux d'onde	he:שפל גל	hi:तरंग गर्त	ja:波の谷	ko:파곡	pt:vale de onda	ru:впадина волны	tr:dalga çukuru	ur:موج کا گڑھا	zh:波谷
 c:trousers	Noun	ar:بنطال	de:Hose	en:trousers	es:pantalones	fa:شلوار	fr:pantalon	he:מכנסיים	hi:पतलून	ja:ズボン	ko:바지	pt:calças	ru:брюки	tr:pantolon	ur:پتلون	zh:裤子
 c:trout	Noun	ar:سلمون مرقط	de:Forelle	en:trout	es:trucha	fa:قزل‌آلا	fr:truite	he:פורל	hi:ट्राउट	ja:マス	ko:송어	pt:truta	ru:форель	tr:alabalık	ur:ٹراؤٹ	zh:鳟鱼
+c:trout-fish	Noun	ar:تراوت	de:Forelle	en:trout	es:trucha	fa:قزل‌آلا	fr:truite	he:פורל	hi:ट्राउट	ja:マス	ko:송어	pt:truta	ru:форель	tr:alabalık	ur:ٹراؤٹ	zh:鳟鱼
 c:trowel	Noun	ar:مالج	de:Kelle	en:trowel	es:llana	fa:ماله	fr:truelle	he:מגרפה	hi:करनी	ja:コテ	ko:흙손	pt:colher de pedreiro	ru:шпатель	tr:mala	ur:ترول	zh:泥铲
 c:trowel-tool	Noun	ar:مالج	de:Kelle	en:trowel	es:llana	fa:ماله	fr:truelle	he:מגרפה	hi:करनी	ja:コテ	ko:흙손	pt:colher de pedreiro	ru:мастерок	tr:mala	ur:کرنی	zh:抹刀
 c:truck	Noun	ar:شاحنة	de:Lastwagen,Laster,LKW	en:truck,lorry	es:camión	fa:کامیون	fr:camion	he:משאית	hi:ट्रक,लॉरी	ja:トラック	ko:트럭	pt:caminhão,camião	ru:грузовик	tr:kamyon	ur:ٹرک	zh:卡车,货车
@@ -8894,6 +8933,7 @@ c:tumor-antigen	Noun	ar:مستضد الورم	de:Tumorantigen	en:tumor antigen	e
 c:tumor-infiltrating	Noun	ar:الخلايا المناعية المتسللة للورم	de:tumorinfiltrierender Lymphozyt	en:tumor-infiltrating lymphocyte	es:linfocito infiltrante de tumor	fa:لنفوسیت نفوذ کننده به تومور	fr:lymphocyte infiltrant la tumeur	he:לימפוציט חודר גידול	hi:ट्यूमर-प्रवेशी लिम्फोसाइट	ja:腫瘍浸潤リンパ球	ko:종양 침윤 림프구	pt:linfócito infiltrante de tumor	ru:опухоль-инфильтрирующий лимфоцит	tr:tümör infiltre eden lenfosit	ur:ورم میں گھسنے والا خلیہ	zh:肿瘤浸润淋巴细胞
 c:tumor-microenvironment	Noun	ar:البيئة المجهرية للورم	de:Tumormikroumgebung	en:tumor microenvironment	es:microambiente tumoral	fa:ریزمحیط تومور	fr:microenvironnement tumoral	he:מיקרו-סביבה גידולית	hi:ट्यूमर सूक्ष्म-पर्यावरण	ja:腫瘍微小環境	ko:종양 미세환경	pt:microambiente tumoral	ru:опухолевое микроокружение	tr:tümör mikro ortamı	ur:ورم کا چھوٹا ماحول	zh:肿瘤微环境
 c:tuna	Noun	ar:تونة,تن	de:Thunfisch	en:tuna	es:atún	fa:تن ماهی	fr:thon	he:טונה	hi:ट्यूना	ja:マグロ	ko:참치	pt:atum	ru:тунец	tr:ton balığı	ur:ٹونا	zh:金枪鱼
+c:tuna-fish	Noun	ar:تونة	de:Thunfisch	en:tuna	es:atún	fa:ماهی تن	fr:thon	he:טונה	hi:टूना	ja:マグロ	ko:참치	pt:atum	ru:тунец	tr:ton balığı	ur:ٹونا	zh:金枪鱼
 c:tundra	Noun	ar:تندرا	de:Tundra	en:tundra	es:tundra	fa:توندرا	fr:toundra	he:טונדרה	hi:टुंड्रा	ja:ツンドラ	ko:툰드라	pt:tundra	ru:тундра	tr:tundra	ur:ٹنڈرا	zh:苔原,冻原
 c:tundra-ecology	Noun	ar:التندرا	de:Tundra	en:tundra	es:tundra	fa:توندرا	fr:toundra	he:טונדרה	hi:टुंड्रा	ja:ツンドラ	ko:툰드라	pt:tundra	ru:тундра	tr:tundra	ur:ٹنڈرا	zh:苔原
 c:tundra-landform	Noun	ar:تندرا	de:Tundra	en:tundra	es:tundra	fa:توندرا	fr:toundra	he:טונדרה	hi:टुंड्रा	ja:ツンドラ	ko:툰드라	pt:tundra	ru:тундра	tr:tundra	ur:ٹنڈرا	zh:苔原,冻原
