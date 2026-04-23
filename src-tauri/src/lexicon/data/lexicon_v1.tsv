@@ -82,6 +82,7 @@ c:acquisition-biz	Noun	ar:استحواذ تجاري	de:Übernahme	en:acquisition
 c:acquittal	Noun	ar:براءة	de:Freispruch	en:acquittal	es:absolución	fa:تبرئه	fr:acquittement	he:זיכוי	hi:बरी	ja:無罪判決	ko:무죄 판결	pt:absolvição	ru:оправдательный приговор	tr:beraat	ur:بری	zh:无罪释放
 c:acropolis	Noun	ar:أكروبوليس	de:Akropolis	en:acropolis	es:acrópolis	fa:آکروپولیس	fr:acropole	he:אקרופוליס	hi:एक्रोपोलिस	ja:アクロポリス	ko:아크로폴리스	pt:acrópole	ru:Акрополь	tr:akropol	ur:ایکروپولس	zh:卫城
 c:acrostic	Noun	ar:قصيدة أوائلية	de:Akrostichon	en:acrostic	es:acróstico	fa:شعر اوایل	fr:acrostiche	he:שיר אקרוסטיכון	hi:अक्षरार्थ कविता	ja:アクロスティック	ko:아크로스틱	pt:acróstico	ru:акростих	tr:akrostiş	ur:اکروسٹک	zh:离合诗
+c:acrylic-paint	Noun	ar:دهان أكريليك	de:Acrylfarbe	en:acrylic paint	es:pintura acrílica	fa:رنگ اکریلیک	fr:peinture acrylique	he:צבע אקריליק	hi:एक्रिलिक पेंट	ja:アクリル絵の具	ko:아크릴 물감	pt:tinta acrílica	ru:акриловая краска	tr:akrilik boya	ur:ایکریلک پینٹ	zh:丙烯颜料
 c:action-figure	Noun	ar:دمية حركة	de:Actionfigur	en:action figure	es:figura de acción	fa:فیگور اکشن	fr:figurine d'action	he:דמות פעולה	hi:एक्शन फिगर	ja:アクションフィギュア	ko:액션 피규어	pt:boneco de ação	ru:экшн-фигурка	tr:aksiyon figürü	ur:ایکشن فگر	zh:动作玩偶
 c:action-film	Noun	ar:فيلم أكشن,فيلم حركة	de:Actionfilm	en:action film,action movie	es:película de acción	fa:فیلم اکشن	fr:film d'action	he:סרט אקשן	hi:एक्शन फिल्म	ja:アクション映画	ko:액션 영화	pt:filme de ação	ru:боевик	tr:aksiyon filmi	ur:ایکشن فلم	zh:动作片
 c:action-film-genre	Noun	ar:فيلم حركي	de:Actionfilm	en:action film	es:película de acción	fa:فیلم اکشن	fr:film d'action	he:סרט פעולה	hi:एक्शन फिल्म	ja:アクション映画	ko:액션 영화	pt:filme de ação	ru:боевик	tr:aksiyon filmi	ur:ایکشن فلم	zh:动作片
@@ -132,6 +133,7 @@ c:aegean-sea-body	Noun	ar:بحر إيجة	de:Ägäisches Meer	en:Aegean Sea	es:m
 c:aerobic-exercise	Noun	ar:التمرين الهوائي	de:aerobes Training	en:aerobic exercise	es:ejercicio aeróbico	fa:ورزش هوازی	fr:exercice aérobie	he:אימון אירובי	hi:एरोबिक व्यायाम	ja:有酸素運動	ko:유산소 운동	pt:exercício aeróbico	ru:аэробные упражнения	tr:aerobik egzersiz	ur:ہوائی ورزش	zh:有氧运动
 c:aerobraking	Noun	ar:كبح هوائي	de:Aerobraking	en:aerobraking	es:aerofrenado	fa:ترمز هوایی	fr:aérofreinage	he:בלימה אווירית	hi:वायु ब्रेकिंग	ja:エアロブレーキ	ko:공력 제동	pt:aerofreagem	ru:аэродинамическое торможение	tr:aerofrenleme	ur:ہوائی بریک	zh:气动制动
 c:aerosol	Noun	ar:الهباء الجوي	de:Aerosol	en:aerosol	es:aerosol	fa:ذرات معلق	fr:aérosol	he:אירוסול	hi:एरोसोल	ja:エアロゾル	ko:에어로졸	pt:aerossol	ru:аэрозоль	tr:aerosol	ur:فضائی ذرات	zh:气溶胶
+c:aerosol-paint	Noun	ar:دهان رذاذي	de:Aerosollack	en:aerosol paint	es:pintura aerosol	fa:رنگ افشانه	fr:peinture aérosol	he:צבע תרסיס	hi:एयरोसोल पेंट	ja:エアロゾル塗料	ko:에어로졸 페인트	pt:tinta em spray	ru:аэрозольная	tr:aerosol boya	ur:ایروسول پینٹ	zh:气雾漆
 c:aes	Noun	ar:معيار التشفير المتقدم	de:AES	en:AES	es:AES	fa:AES	fr:AES	he:AES	hi:एईएस	ja:AES	ko:AES	pt:AES	ru:AES	tr:AES	ur:اے ای ایس	zh:高级加密标准
 c:aesthetics	Noun	ar:علم الجمال,الإستطيقا	de:Ästhetik	en:aesthetics	es:estética	fa:زیبایی شناسی	fr:esthétique	he:אסתטיקה	hi:सौंदर्यशास्त्र	ja:美学	ko:미학	pt:estética	ru:эстетика	tr:estetik	ur:جمالیات	zh:美学
 c:aesthetics-phil	Noun	ar:علم الجمال	de:Ästhetik	en:aesthetics	es:estética	fa:زیبایی‌شناسی	fr:esthétique	he:אסתטיקה	hi:सौंदर्यशास्त्र	ja:美学	ko:미학	pt:estética	ru:эстетика	tr:estetik	ur:جمالیات	zh:美学
@@ -916,6 +918,7 @@ c:binary-tree	Noun	ar:شجرة ثنائية	de:Binärbaum	en:binary tree	es:árb
 c:binary-tree-ds	Noun	ar:شجرة ثنائية	de:binärer Baum	en:binary tree	es:árbol binario	fa:درخت دودویی	fr:arbre binaire	he:עץ בינארי	hi:द्विआधारी वृक्ष	ja:二分木	ko:이진 트리	pt:árvore binária	ru:бинарное дерево	tr:ikili ağaç	ur:دوگانہ درخت	zh:二叉树
 c:binder-clip	Noun	ar:مشبك ربط	de:Foldback-Klammer	en:binder clip	es:pinza sujetapapeles	fa:گیره بایندر	fr:pince double	he:מהדק רחב	hi:बाइंडर क्लिप	ja:ダブルクリップ	ko:집게 클립	pt:prendedor de papel	ru:зажим для бумаг	tr:föy mandalı	ur:بائنڈر کلپ	zh:长尾夹
 c:binder-office	Noun	ar:ملف مجلد	de:Ordner	en:binder	es:carpeta de anillas	fa:کلاسور	fr:classeur	he:קלסר	hi:बाइंडर	ja:バインダー	ko:바인더	pt:fichário	ru:папка-скоросшиватель	tr:klasör	ur:بائنڈر	zh:活页夹
+c:binder-paint	Noun	ar:مادة رابطة للدهان	de:Bindemittel	en:paint binder	es:aglutinante	fa:چسباننده رنگ	fr:liant	he:מקשר צבע	hi:बाइंडर पेंट	ja:バインダー	ko:바인더	pt:aglutinante	ru:связующее	tr:bağlayıcı	ur:بائنڈر پینٹ	zh:粘合剂
 c:bingo	Noun	ar:بينغو	de:Bingo	en:bingo	es:bingo	fa:بینگو	fr:bingo	he:בינגו	hi:बिंगो	ja:ビンゴ	ko:빙고	pt:bingo	ru:бинго	tr:bingo	ur:بنگو	zh:宾戈
 c:binomial	Noun	ar:ثنائي الحد	de:Binom	en:binomial	es:binomio	fa:دوجمله‌ای	fr:binôme	he:דו-איבר	hi:द्विपद	ja:二項式	ko:이항식	pt:binômio	ru:двучлен	tr:iki terimli	ur:دو رقمی	zh:二项式
 c:binomial-distribution	Noun	ar:توزيع ثنائي	de:Binomialverteilung	en:binomial distribution	es:distribución binomial	fa:توزیع دوجمله‌ای	fr:loi binomiale	he:התפלגות בינומית	hi:द्विपद बंटन	ja:二項分布	ko:이항 분포	pt:distribuição binomial	ru:биномиальное распределение	tr:binom dağılımı	ur:دو رقمی تقسیم	zh:二项分布
@@ -1194,6 +1197,7 @@ c:brownie	Noun	ar:براوني	de:Brownie	en:brownie	es:brownie	fa:براونی	
 c:brownie-dessert	Noun	ar:براوني	de:Brownie	en:brownie	es:brownie	fa:براونی	fr:brownie	he:בראוני	hi:ब्राउनी	ja:ブラウニー	ko:브라우니	pt:brownie	ru:брауни	tr:brownie	ur:براونی	zh:布朗尼
 c:browser	Noun	ar:متصفح	de:Browser,Webbrowser	en:browser	es:navegador	fa:مرورگر	fr:navigateur	he:דפדפן	hi:ब्राउज़र	ja:ブラウザ,ウェブブラウザ	ko:브라우저,웹 브라우저	pt:navegador	ru:браузер,обозреватель	tr:tarayıcı,web tarayıcısı	ur:براؤزر	zh:浏览器
 c:brush	Noun	ar:فرشاة	de:Bürste,Pinsel	en:brush	es:cepillo,pincel	fa:برس,قلم مو	fr:brosse,pinceau	he:מברשת	hi:ब्रश	ja:ブラシ,刷毛	ko:브러시,솔	pt:escova,pincel	ru:щётка,кисть	tr:fırça	ur:برش	zh:刷子,毛刷
+c:brush-paint	Noun	ar:فرشاة دهان	de:Pinsel	en:paintbrush	es:pincel	fa:قلم‌مو	fr:pinceau	he:מכחול	hi:ब्रश	ja:絵筆	ko:페인트 붓	pt:pincel	ru:кисть	tr:fırça	ur:برش	zh:画笔
 c:brussels-capital	Noun	ar:بروكسل	de:Brüssel	en:Brussels	es:Bruselas	fa:بروکسل	fr:Bruxelles	he:בריסל	hi:ब्रसेल्स	ja:ブリュッセル	ko:브뤼셀	pt:Bruxelas	ru:Брюссель	tr:Brüksel	ur:برسلز	zh:布鲁塞尔
 c:brussels-sprouts	Noun	ar:براعم بروكسل	de:Rosenkohl	en:Brussels sprouts	es:coles de Bruselas	fa:کلم بروکسل	fr:chou de Bruxelles	he:נצרי בריסל	hi:ब्रसेल्स स्प्राउट	ja:芽キャベツ	ko:방울양배추	pt:couves-de-bruxelas	ru:брюссельская капуста	tr:Brüksel lahanası	ur:برسلز اسپراؤٹ	zh:抱子甘蓝
 c:brussels-sprouts-veg	Noun	ar:كرنب بروكسل	de:Rosenkohl	en:Brussels sprouts	es:coles de Bruselas	fa:کلم بروکسل	fr:choux de Bruxelles	he:כרוב ניצנים	hi:ब्रसेल्स स्प्राउट्स	ja:芽キャベツ	ko:방울 다다기	pt:couves-de-bruxelas	ru:брюссельская капуста	tr:brüksel lahanası	ur:برسلز اسپراؤٹس	zh:抱子甘蓝
@@ -1341,6 +1345,7 @@ c:canopy-bed	Noun	ar:سرير بمظلة	de:Betthimmel	en:canopy bed	es:cama con
 c:cantaloupe	Noun	ar:شمام,كانتالوب	de:Cantaloupe-Melone	en:cantaloupe	es:cantalupo	fa:خربزه	fr:cantaloup	he:קנטלופ	hi:खरबूजा	ja:カンタローブ	ko:칸탈루프	pt:cantalupo	ru:дыня	tr:kavun	ur:خربوزہ	zh:哈密瓜
 c:cantilever	Noun	ar:ذراع متدلية	de:Kragarm	en:cantilever	es:voladizo	fa:کنسول	fr:porte-à-faux	he:קנטיליבר	hi:कैंटिलीवर	ja:片持ち梁	ko:캔틸레버	pt:balanço	ru:консоль	tr:konsol	ur:لٹکی ہوئی سہارہ	zh:悬臂
 c:canvas	Noun	ar:كانفاس	de:Leinwand	en:canvas	es:lienzo	fa:کنواس	fr:toile	he:קנבס	hi:कैनवास	ja:キャンバス	ko:캔버스	pt:lona	ru:холст	tr:kanvas	ur:کینوس	zh:帆布
+c:canvas-art	Noun	ar:قماش رسم	de:Leinwand	en:canvas	es:lienzo	fa:بوم نقاشی	fr:toile	he:קנבס	hi:कैनवास	ja:キャンバス	ko:캔버스	pt:tela	ru:холст	tr:tuval	ur:کینوس	zh:画布
 c:canyon	Noun	ar:وادي سحيق,أخدود	de:Schlucht,Canyon	en:canyon,gorge	es:cañón,desfiladero	fa:تنگه,دره عمیق	fr:canyon,gorge	he:קניון	hi:घाटी	ja:峡谷,キャニオン	ko:협곡	pt:cânion,desfiladeiro	ru:каньон,ущелье	tr:kanyon	ur:گھاٹی	zh:峡谷
 c:canyon-geo	Noun	ar:أخدود عميق	de:Canyon	en:canyon	es:cañón	fa:دره عمیق	fr:canyon	he:קניון	hi:घाटी कैनियन	ja:峡谷	ko:협곡	pt:cânion	ru:каньон	tr:kanyon	ur:کینین	zh:峡谷
 c:canyon-landform	Noun	ar:أخدود	de:Schlucht,Canyon	en:canyon,gorge	es:cañón	fa:کانیون,دره عمیق	fr:canyon	he:קניון	hi:कैन्यन,खड्ड	ja:峡谷,キャニオン	ko:협곡	pt:cânion	ru:каньон	tr:kanyon	ur:گھاٹی	zh:峡谷
@@ -1559,6 +1564,7 @@ c:chalcolithic	Noun	ar:العصر النحاسي	de:Kupferzeit	en:Chalcolithic p
 c:chalk-line	Noun	ar:خيط طباشير	de:Schlagschnur	en:chalk line	es:línea de tiza	fa:ریسمان گچی	fr:cordeau à craie	he:חוט גיר	hi:चॉक लाइन	ja:墨壺	ko:먹줄	pt:linha de giz	ru:меловой шнур	tr:tebeşir ipi	ur:چاک لائن	zh:粉线
 c:chalk-line-tool	Noun	ar:خيط طباشير	de:Schlagschnur	en:chalk line	es:cordel de tiza	fa:گچ خط	fr:cordeau à craie	he:חוט גיר	hi:चाक लाइन	ja:墨壺	ko:먹줄	pt:cordel de giz	ru:меловая нить	tr:tebeşir ipi	ur:چاک لائن	zh:弹线
 c:chalk-office	Noun	ar:طباشير	de:Kreide	en:chalk	es:tiza	fa:گچ	fr:craie	he:גיר	hi:चॉक	ja:チョーク	ko:분필	pt:giz	ru:мел	tr:tebeşir	ur:چاک	zh:粉笔
+c:chalk-paint	Noun	ar:دهان طباشيري	de:Kreidefarbe	en:chalk paint	es:pintura tiza	fa:رنگ گچی	fr:peinture à la craie	he:צבע גיר	hi:चाक पेंट	ja:チョークペイント	ko:초크 페인트	pt:tinta de giz	ru:меловая краска	tr:tebeşir boya	ur:چاک پینٹ	zh:粉笔漆
 c:challah	Noun	ar:خالا	de:Challah	en:challah	es:challah	fa:چالا	fr:hallah	he:חלה	hi:चालाह	ja:ハッラー	ko:할라	pt:challah	ru:хала	tr:challah	ur:چالا	zh:哈拉面包
 c:challah-bread	Noun	ar:خلة	de:Challah	en:challah	es:jalá	fa:چلا	fr:hallah	he:חלה	hi:चालाह	ja:ハラー	ko:할라	pt:challah	ru:хала	tr:challah	ur:چلاہ	zh:哈拉面包
 c:chambray	Noun	ar:الشامبريه	de:Chambray	en:chambray	es:chambray	fa:شامبری	fr:chambray	he:שמברי	hi:चेम्ब्रे	ja:シャンブレー	ko:챔브레이	pt:chambray	ru:шамбре	tr:chambray	ur:چامبری	zh:条纹棉布
@@ -1580,6 +1586,7 @@ c:chapel-building	Noun	ar:كنيسة صغيرة	de:Kapelle	en:chapel	es:capilla	
 c:chapter	Noun	ar:فصل	de:Kapitel	en:chapter	es:capítulo	fa:فصل	fr:chapitre	he:פרק	hi:अध्याय	ja:章	ko:장,챕터	pt:capítulo	ru:глава	tr:bölüm	ur:باب	zh:章,章节
 c:characteristic-class	Noun	ar:الفئة المميزة	de:charakteristische Klasse	en:characteristic class	es:clase característica	fa:کلاس مشخصه	fr:classe caractéristique	he:מחלקה אופיינית	hi:अभिलाक्षणिक वर्ग	ja:特性類	ko:특성류	pt:classe característica	ru:характеристический класс	tr:karakteristik sınıf	ur:خصوصی کلاس	zh:示性类
 c:charcoal-color	Noun	ar:فحمي	de:Anthrazit,Holzkohlengrau	en:charcoal,charcoal gray	es:gris carbón	fa:زغالی	fr:gris anthracite	he:אפור פחם	hi:कोयला रंग	ja:チャコールグレー,炭色	ko:차콜색,숯색	pt:cinza-carvão	ru:угольный	tr:kömür grisi	ur:کوئلہ رنگ	zh:炭灰色
+c:charcoal-drawing	Noun	ar:فحم للرسم	de:Zeichenkohle	en:drawing charcoal	es:carbón para dibujo	fa:زغال طراحی	fr:fusain	he:פחם לרישום	hi:चित्रांकन कोयला	ja:木炭	ko:목탄	pt:carvão de desenho	ru:уголь для рисования	tr:füzen	ur:ڈرائنگ چارکول	zh:炭条
 c:charcoal-material	Noun	ar:فحم خشبي	de:Holzkohle	en:charcoal	es:carbón vegetal	fa:زغال	fr:charbon de bois	he:פחם עצים	hi:लकड़ी का कोयला	ja:木炭	ko:숯	pt:carvão vegetal	ru:древесный уголь	tr:odun kömürü	ur:لکڑی کا کوئلہ	zh:木炭
 c:chard	Noun	ar:سلق	de:Mangold	en:chard,Swiss chard	es:acelga	fa:چغندر برگی	fr:bette	he:מנגולד	hi:चार्ड	ja:フダンソウ	ko:근대	pt:acelga	ru:мангольд	tr:pazi	ur:چارڈ	zh:瑞士甜菜
 c:chard-veg	Noun	ar:سلق	de:Mangold	en:Swiss chard	es:acelga	fa:برگ چغندر	fr:bette	he:מנגולד	hi:चुकंदर पत्ता	ja:フダンソウ	ko:근대	pt:acelga	ru:мангольд	tr:pazı	ur:چقندر پتہ	zh:瑞士甜菜
@@ -2891,6 +2898,8 @@ c:dvd-player	Noun	ar:مشغل دي في دي	de:DVD-Player	en:DVD player	es:repr
 c:dvd-rom	Noun	ar:DVD-ROM	de:DVD-ROM	en:DVD-ROM	es:DVD-ROM	fa:DVD-ROM	fr:DVD-ROM	he:DVD-ROM	hi:डीवीडी-रॉम	ja:DVD-ROM	ko:DVD-ROM	pt:DVD-ROM	ru:DVD-ROM	tr:DVD-ROM	ur:ڈی وی ڈی روم	zh:DVD光盘
 c:dwarf-creature	Noun	ar:قزم خرافي	de:Zwerg	en:dwarf	es:enano	fa:کوتوله افسانه‌ای	fr:nain	he:גמד	hi:बौना	ja:ドワーフ	ko:드워프	pt:anão	ru:гном	tr:cüce	ur:بونا	zh:矮人
 c:dwarf-planet	Noun	ar:كوكب قزم	de:Zwergplanet	en:dwarf planet	es:planeta enano	fa:سیاره کوتوله	fr:planète naine	he:כוכב לכת ננסי	hi:वामन ग्रह	ja:準惑星	ko:왜행성	pt:planeta anão	ru:карликовая планета	tr:cüce gezegen	ur:بونا سیارہ	zh:矮行星
+c:dye-color	Noun	ar:صبغة اللون	de:Farbstoff Farbe	en:color dye	es:colorante	fa:رنگ شیمیایی	fr:colorant	he:צובע	hi:रंजक	ja:色素染料	ko:염색염료	pt:corante de cor	ru:красящий состав	tr:boyar madde	ur:رنگ کا ڈائی	zh:着色剂
+c:dye-paint	Noun	ar:صبغة	de:Farbstoff	en:dye	es:tinte	fa:رنگینه	fr:teinture	he:צבען	hi:डाई	ja:染料	ko:염료	pt:corante	ru:краситель	tr:boya maddesi	ur:رنگ چیز	zh:染料
 c:dynamic-range-audio	Noun	ar:النطاق الديناميكي	de:Dynamikbereich	en:dynamic range	es:rango dinámico	fa:دامنه دینامیکی	fr:plage dynamique	he:טווח דינמי	hi:गतिशील परास	ja:ダイナミックレンジ	ko:다이나믹 레인지	pt:alcance dinâmico	ru:динамический диапазон	tr:dinamik aralık	ur:متحرک حد	zh:动态范围
 c:dynamics	Noun	ar:ديناميكيات الصوت	de:Dynamik	en:dynamics	es:dinámica musical	fa:دینامیک موسیقی	fr:nuances	he:דינמיקה	hi:संगीत गतिकी	ja:強弱	ko:다이내믹	pt:dinâmica	ru:динамика	tr:dinamik	ur:آواز کی طاقت	zh:力度
 c:dynasty	Noun	ar:سلالة,أسرة حاكمة	de:Dynastie	en:dynasty	es:dinastía	fa:دودمان,سلسله	fr:dynastie	he:שושלת	hi:राजवंश	ja:王朝	ko:왕조	pt:dinastia	ru:династия	tr:hanedan	ur:خاندان شاہی,سلسلہ	zh:王朝,朝代
@@ -2913,6 +2922,7 @@ c:earthquake-geo	Noun	ar:زلزال أرضي	de:Erdbeben	en:earthquake	es:terrem
 c:earthquake-prediction	Noun	ar:التنبؤ بالزلازل	de:Erdbebenvorhersage	en:earthquake prediction	es:predicción de terremotos	fa:پیش‌بینی زلزله	fr:prédiction de séismes	he:ניבוי רעידות אדמה	hi:भूकम्प पूर्वानुमान	ja:地震予知	ko:지진 예측	pt:previsão de terremotos	ru:прогноз землетрясений	tr:deprem tahmini	ur:زلزلہ پیش گوئی	zh:地震预测
 c:earthworm	Noun	ar:دودة الأرض	de:Regenwurm	en:earthworm	es:lombriz de tierra	fa:کرم خاکی	fr:ver de terre,lombric	he:תולעת אדמה	hi:केंचुआ	ja:ミミズ	ko:지렁이	pt:minhoca	ru:дождевой червь	tr:solucan,toprak solucanı	ur:کنچوا	zh:蚯蚓
 c:earwig	Noun	ar:حشرة الاذن,ام الاذن	de:Ohrwurm	en:earwig	es:tijereta,cortapicos	fa:موریانه گوش,خرخاکی	fr:perce-oreille,forficule	he:אוזנית	hi:कनखजूरा	ja:ハサミムシ	ko:집게벌레	pt:tesourinha,bicha-cadela	ru:уховёртка	tr:kulağakaçan	ur:کان کا کیڑا	zh:蠼螋
+c:easel	Noun	ar:حامل اللوحة	de:Staffelei	en:easel	es:caballete	fa:سه‌پایه نقاشی	fr:chevalet	he:כן ציור	hi:ईज़ल	ja:イーゼル	ko:이젤	pt:cavalete	ru:мольберт	tr:sehpa resim	ur:ایزل	zh:画架
 c:easement	Noun	ar:حق الارتفاق	de:Grunddienstbarkeit	en:easement	es:servidumbre	fa:حق عبور	fr:servitude	he:זיקת הנאה	hi:सेवाधिकार	ja:地役権	ko:지역권	pt:servidão	ru:сервитут	tr:irtifak hakkı	ur:حق راہداری	zh:地役权
 c:east	Noun	ar:شرق	de:Osten	en:east	es:este,oriente	fa:شرق	fr:est	he:מזרח	hi:पूर्व	ja:東	ko:동쪽,동	pt:leste,oriente	ru:восток	tr:doğu	ur:مشرق	zh:东
 c:east-china-sea	Noun	ar:بحر الصين الشرقي	de:Ostchinesisches Meer	en:East China Sea	es:Mar de China Oriental	fa:دریای چین شرقی	fr:Mer de Chine orientale	he:ים סין המזרחי	hi:पूर्वी चीन सागर	ja:東シナ海	ko:동중국해	pt:Mar da China Oriental	ru:Восточно-Китайское море	tr:Doğu Çin Denizi	ur:بحیرہ مشرقی چین	zh:东海,东中国海
@@ -3056,6 +3066,8 @@ c:empty	Adjective	ar:فارغ	de:leer	en:empty	es:vacío	fa:خالی	fr:vide	he:
 c:emu	Noun	ar:الايمو,ايمو	de:Emu	en:emu	es:emú	fa:امو	fr:émeu	he:אמו	hi:एमू	ja:エミュー	ko:에뮤	pt:emu	ru:эму	tr:emu	ur:ایمو	zh:鸸鹋
 c:emu-bird	Noun	ar:إمو	de:Emu	en:emu	es:emú	fa:امو	fr:émeu	he:אמו	hi:एमू	ja:エミュー	ko:에뮤	pt:emu	ru:эму	tr:emu	ur:ایمو	zh:鸸鹋
 c:emulsification	Noun	ar:الاستحلاب	de:Emulgierung	en:emulsification	es:emulsificación	fa:امولسیون‌سازی	fr:émulsification	he:אמולסיפיקציה	hi:इमल्सीकरण	ja:乳化	ko:유화	pt:emulsificação	ru:эмульгирование	tr:emülsifikasyon	ur:ملانا	zh:乳化
+c:emulsion-paint	Noun	ar:دهان مستحلب	de:Dispersionsfarbe	en:emulsion paint	es:pintura en emulsión	fa:رنگ امولسیون	fr:peinture à l'eau	he:צבע אמולסיה	hi:इमल्शन पेंट	ja:水性塗料	ko:에멀션 페인트	pt:tinta em emulsão	ru:эмульсионная краска	tr:emülsiyon boya	ur:ایملشن پینٹ	zh:乳胶漆
+c:enamel-paint	Noun	ar:دهان مينا	de:Emaillelack	en:enamel paint	es:pintura esmaltada	fa:رنگ لعابی	fr:peinture émail	he:צבע אמייל	hi:एनामेल पेंट	ja:エナメル塗料	ko:에나멜 페인트	pt:tinta esmalte	ru:эмалевая краска	tr:emaye boya	ur:انامل پینٹ	zh:瓷漆
 c:enantiomer	Noun	ar:متماثل مرآة	de:Enantiomer	en:enantiomer	es:enantiómero	fa:انانتیومر	fr:énantiomère	he:אנטיומר	hi:प्रतिबिम्ब समावयव	ja:鏡像異性体	ko:거울상 이성질체	pt:enantiômero	ru:энантиомер	tr:enantiyomer	ur:آئینہ ہم ساختہ	zh:对映体
 c:encapsulation	Noun	ar:التغليف	de:Kapselung	en:encapsulation	es:encapsulación	fa:کپسوله‌سازی	fr:encapsulation	he:אנקפסולציה	hi:इनकैप्सुलेशन	ja:カプセル化	ko:캡슐화	pt:encapsulamento	ru:инкапсуляция	tr:kapsülleme	ur:کیپسولیشن	zh:封装
 c:encapsulation-prog	Noun	ar:تغليف	de:Kapselung	en:encapsulation	es:encapsulamiento	fa:محصورسازی	fr:encapsulation	he:כימוס	hi:एन्कैप्सुलेशन	ja:カプセル化	ko:캡슐화	pt:encapsulamento	ru:инкапсуляция	tr:kapsülleme	ur:انکیپسولیشن	zh:封装
@@ -3471,6 +3483,7 @@ c:fitness-center	Noun	ar:مركز لياقة	de:Fitnessstudio	en:fitness center	
 c:fitness-tracker	Noun	ar:متتبع اللياقة	de:Fitnesstracker	en:fitness tracker	es:pulsera de actividad	fa:دستبند سلامت	fr:bracelet de fitness	he:רצועת כושר	hi:फिटनेस ट्रैकर	ja:フィットネストラッカー	ko:피트니스 트래커	pt:monitor de atividade	ru:фитнес-браслет	tr:aktivite takipçisi	ur:فٹنس ٹریکر	zh:健康追踪器
 c:five	Noun	ar:خمسة	de:fünf	en:five	es:cinco	fa:پنج	fr:cinq	he:חמישה	hi:पांच	ja:五,ご	ko:다섯,오	pt:cinco	ru:пять	tr:beş	ur:پانچ	zh:五
 c:fixation	Noun	ar:التثبيت	de:Fixierung	en:fixation	es:fijación	fa:تثبیت	fr:fixation	he:קיבעון	hi:स्थिरीकरण	ja:固着	ko:고착	pt:fixação	ru:фиксация	tr:takıntı	ur:تثبیت	zh:固着
+c:fixative-art	Noun	ar:مثبت الرسم	de:Fixativ	en:fixative	es:fijador	fa:تثبیت‌کننده	fr:fixatif	he:קיבוע	hi:फिक्सेटिव	ja:フィキサチーフ	ko:정착제	pt:fixador	ru:фиксатив	tr:sabitleştirici	ur:فکسیٹو	zh:定色剂
 c:fjord	Noun	ar:مضيق	de:Fjord	en:fjord	es:fiordo	fa:فیورد	fr:fjord	he:פיורד	hi:फियोर्ड	ja:フィヨルド	ko:피오르	pt:fiorde	ru:фьорд	tr:fiyort	ur:فیورڈ	zh:峡湾
 c:fjord-geo	Noun	ar:مضيق فيوردي	de:Fjord	en:fjord	es:fiordo	fa:فیورد	fr:fjord	he:פיורד	hi:फियोर्ड	ja:フィヨルド	ko:피오르	pt:fiorde	ru:фьорд	tr:fiyort	ur:فیورڈ	zh:峡湾
 c:fjord-landform	Noun	ar:مضيق بحري,فيورد	de:Fjord	en:fjord	es:fiordo	fa:فیورد,خور	fr:fjord	he:פיורד	hi:फ़्योर्ड	ja:フィヨルド	ko:피오르	pt:fiorde	ru:фьорд	tr:fiyort	ur:فیورڈ	zh:峡湾
@@ -3653,6 +3666,7 @@ c:frequency-wave	Noun	ar:تردد الموجة	de:Frequenz	en:frequency	es:frecu
 c:frequentist-stat	Noun	ar:إحصاء ترددي	de:frequentistische Statistik	en:frequentist statistics	es:estadística frecuentista	fa:آمار فراوانی‌گرا	fr:statistique fréquentiste	he:סטטיסטיקה שכיחותנית	hi:आवृत्तिवादी सांख्यिकी	ja:頻度主義統計	ko:빈도주의 통계학	pt:estatística frequentista	ru:частотная статистика	tr:sıklıkçı istatistik	ur:تعداد پرست اعداد و شمار	zh:频率学派统计
 c:fresco	Noun	ar:فريسكو	de:Fresko	en:fresco	es:fresco	fa:نقاشی دیواری	fr:fresque	he:פרסקו	hi:फ्रेस्को	ja:フレスコ	ko:프레스코	pt:afresco	ru:фреска	tr:fresk	ur:تازہ گچ پر مصوری	zh:壁画
 c:fresco-art	Noun	ar:جدارية فرسكو	de:Fresko	en:fresco	es:fresco	fa:نقاشی فرسک	fr:fresque	he:פרסקו	hi:भित्तिचित्र	ja:フレスコ画	ko:프레스코화	pt:fresco	ru:фреска	tr:fresk	ur:فرسکو	zh:湿壁画
+c:fresco-paint	Noun	ar:فريسكو	de:Freskomalerei	en:fresco	es:fresco	fa:نقاشی فرسکو	fr:fresque	he:פרסקו	hi:भित्तिचित्र	ja:フレスコ画	ko:프레스코화	pt:afresco	ru:фреска	tr:fresk	ur:فریسکو	zh:湿壁画
 c:freya	Noun	ar:فريا	de:Freya	en:Freya	es:Freya	fa:فریا	fr:Freya	he:פריה	hi:फ्रेया	ja:フレイヤ	ko:프레이야	pt:Freya	ru:Фрейя	tr:Freya	ur:فریا	zh:弗蕾雅
 c:friar	Noun	ar:راهب متجول	de:Bettelbruder	en:friar	es:fraile	fa:برادر دینی	fr:frère	he:נזיר	hi:फ्रियर	ja:托鉢修道士	ko:수사	pt:frade	ru:монах	tr:keşiş	ur:فریئر	zh:托钵修士
 c:fricative	Noun	ar:احتكاكي	de:Frikativ	en:fricative	es:fricativo	fa:سایشی	fr:fricative	he:חיכוכית	hi:संघर्षी	ja:摩擦音	ko:마찰음	pt:fricativa	ru:фрикативный	tr:sızıcı	ur:رگڑدار آواز	zh:擦音
@@ -3845,6 +3859,7 @@ c:germanium	Noun	ar:جرمانيوم	de:Germanium	en:germanium	es:germanio	fa:ژ
 c:germany	Noun	ar:ألمانيا	de:Deutschland	en:Germany	es:Alemania	fa:آلمان	fr:Allemagne	he:גרמניה	hi:जर्मनी	ja:ドイツ	ko:독일	pt:Alemanha	ru:Германия	tr:Almanya	ur:جرمنی	zh:德国
 c:germination	Noun	ar:انبات	de:Keimung	en:germination	es:germinación	fa:جوانه زنی	fr:germination	he:נבטוט	hi:अंकुरण	ja:発芽	ko:발아	pt:germinação	ru:прорастание	tr:çimlenme	ur:انکرن	zh:发芽
 c:gerrymandering	Noun	ar:تشكيل الدوائر الانتخابية	de:Gerrymandering	en:gerrymandering	es:gerrymandering	fa:دستکاری حوزه‌های انتخاباتی	fr:charcutage électoral	he:גריימנדרינג	hi:निर्वाचन क्षेत्र हेरफेर	ja:ゲリマンダリング	ko:게리맨더링	pt:gerrymandering	ru:джерримендеринг	tr:seçim bölgesi manipülasyonu	ur:حلقہ بندی میں ہیرا پھیری	zh:选区操控
+c:gesso	Noun	ar:جيسو	de:Gesso	en:gesso	es:gesso	fa:جسو	fr:gesso	he:גסו	hi:जेसो	ja:ジェッソ	ko:제소	pt:gesso acrílico	ru:гессо	tr:gesso	ur:جیسو	zh:石膏底料
 c:gestalt	Noun	ar:الجشطالت	de:Gestalt	en:gestalt	es:gestalt	fa:گشتالت	fr:gestalt	he:גשטלט	hi:गेस्टाल्ट	ja:ゲシュタルト	ko:게슈탈트	pt:gestalt	ru:гештальт	tr:gestalt	ur:گشٹالٹ	zh:格式塔
 c:gestalt-psychology	Noun	ar:علم النفس الجشتلتي	de:Gestaltpsychologie	en:Gestalt psychology	es:psicología de la Gestalt	fa:روانشناسی گشتالت	fr:psychologie de la forme	he:פסיכולוגיית הגשטלט	hi:गेस्टाल्ट मनोविज्ञान	ja:ゲシュタルト心理学	ko:게슈탈트 심리학	pt:psicologia da Gestalt	ru:гештальтпсихология	tr:Gestalt psikolojisi	ur:گیسٹالٹ نفسیات	zh:格式塔心理学
 c:gettier-problem	Noun	ar:مشكلة غيتيه	de:Gettier-Problem	en:Gettier problem	es:problema de Gettier	fa:مساله گتیه	fr:problème de Gettier	he:בעיית גטייר	hi:गेटियर समस्या	ja:ゲティア問題	ko:게티어 문제	pt:problema de Gettier	ru:проблема Гетье	tr:Gettier problemi	ur:گیٹیئر مسئلہ	zh:葛梯尔问题
@@ -3884,6 +3899,7 @@ c:glass	Noun	ar:زجاج	de:Glas	en:glass	es:vidrio,cristal	fa:شیشه	fr:verre
 c:glass-frog	Noun	ar:ضفدع زجاجي	de:Glasfrosch	en:glass frog	es:rana de cristal	fa:قورباغه شیشه ای	fr:grenouille de verre	he:צפרדע זכוכית	hi:काँच मेंढक	ja:ガラスガエル	ko:유리개구리	pt:rã de vidro	ru:стеклянная лягушка	tr:cam kurbağa	ur:شیشے کا مینڈک	zh:玻璃蛙
 c:glassblower	Noun	ar:نافخ زجاج,صانع الزجاج	de:Glasbläser	en:glassblower	es:soplador de vidrio	fa:شیشه‌گر	fr:souffleur de verre	he:מנפח זכוכית	hi:कांच का कारीगर,कांच शिल्पी	ja:ガラス吹き職人	ko:유리 부는 사람,유리 공예가	pt:soprador de vidro	ru:стеклодув	tr:cam üfleyicisi,cam ustası	ur:شیشہ ساز	zh:玻璃工,吹玻璃匠
 c:glassware-art	Noun	ar:فن الزجاج	de:Glaskunst	en:glass art	es:arte del vidrio	fa:هنر شیشه	fr:art verrier	he:אמנות הזכוכית	hi:कांच कला	ja:ガラス工芸	ko:유리 공예	pt:arte em vidro	ru:художественное стекло	tr:cam sanatı	ur:شیشہ کا فن	zh:玻璃艺术
+c:glaze-paint	Noun	ar:طبقة تلميع	de:Glasur	en:glaze	es:vidriado	fa:لعاب	fr:glaçure	he:זיגוג	hi:ग्लेज़	ja:釉薬	ko:유약	pt:esmalte vidrado	ru:глазурь	tr:sır	ur:چمک	zh:釉
 c:glee	Noun	ar:ابتهاج	de:Fröhlichkeit	en:glee	es:alegría	fa:شادی	fr:allégresse joie	he:שמחה	hi:खुशी बड़ी	ja:歓喜	ko:기쁨 환희	pt:alegria	ru:веселье ликование	tr:sevinç	ur:خوشی بڑی	zh:欢乐
 c:glial	Adjective	ar:خلية دبقية	de:glial	en:glial	es:glial	fa:گلیال	fr:glial	he:גליאלי	hi:ग्लियल	ja:グリア	ko:신경교의	pt:glial	ru:глиальный	tr:glial	ur:گلیائی	zh:神经胶质
 c:glide	Verb	ar:انزلق,حلق دون رفرفة	de:gleiten	en:glide	es:planear,deslizarse	fa:سر خوردن,پرواز بی بال زدن	fr:planer,glisser	he:לדאות,להחליק	hi:सरकना,विमान चलाना	ja:滑空する	ko:활공하다	pt:planar,deslizar	ru:скользить,планировать	tr:süzülmek	ur:نرمی سے سرکنا	zh:滑翔
@@ -3978,6 +3994,7 @@ c:graph-paper	Noun	ar:ورق رسم بياني	de:Millimeterpapier	en:graph pape
 c:graphic-design	Noun	ar:التصميم الجرافيكي	de:Grafikdesign	en:graphic design	es:diseño gráfico	fa:طراحی گرافیک	fr:design graphique	he:עיצוב גרפי	hi:ग्राफिक डिज़ाइन	ja:グラフィックデザイン	ko:그래픽 디자인	pt:design gráfico	ru:графический дизайн	tr:grafik tasarım	ur:گرافک ڈیزائن	zh:平面设计
 c:graphics-card	Noun	ar:بطاقة الرسومات	de:Grafikkarte	en:graphics card	es:tarjeta gráfica	fa:کارت گرافیک	fr:carte graphique	he:כרטיס מסך	hi:ग्राफिक्स कार्ड	ja:グラフィックスカード	ko:그래픽 카드	pt:placa de vídeo	ru:видеокарта	tr:ekran kartı	ur:گرافکس کارڈ	zh:显卡
 c:graphics-chip	Noun	ar:معالج الرسومات	de:Grafik-Chip	en:graphics processing unit	es:unidad de procesamiento gráfico	fa:پردازنده گرافیکی	fr:processeur graphique	he:מעבד גרפי	hi:ग्राफिक्स प्रोसेसिंग यूनिट	ja:GPU	ko:GPU	pt:unidade de processamento gráfico	ru:графический процессор	tr:grafik işlemcisi	ur:گرافکس پروسیسنگ یونٹ	zh:图形处理器
+c:graphite-drawing	Noun	ar:جرافيت للرسم	de:Graphitstift	en:graphite	es:grafito	fa:گرافیت	fr:graphite	he:גרפיט	hi:ग्रेफ़ाइट	ja:黒鉛	ko:흑연	pt:grafite	ru:графит	tr:grafit	ur:گریفائٹ	zh:石墨
 c:grass	Noun	ar:العشب	de:Gras	en:grass	es:hierba,césped	fa:علف,چمن	fr:herbe	he:עשב	hi:घास	ja:草	ko:풀	pt:grama,relva	ru:трава	tr:çim,ot	ur:گھاس	zh:草
 c:grass-trimmer	Noun	ar:مقص عشب	de:Rasentrimmer	en:grass trimmer	es:desbrozadora	fa:علف‌تراش	fr:débroussailleuse	he:מד עשב	hi:घास ट्रिमर	ja:草刈り機	ko:잔디 트리머	pt:aparador de grama	ru:триммер	tr:çim kenar biçme	ur:گھاس ٹریمر	zh:草坪修边机
 c:grasshopper	Noun	ar:جندب,جرادة	de:Heuschrecke,Grashüpfer	en:grasshopper	es:saltamontes	fa:ملخ	fr:sauterelle	he:חגב	hi:टिड्डा	ja:バッタ	ko:메뚜기	pt:gafanhoto	ru:кузнечик	tr:çekirge	ur:ٹڈا	zh:蚱蜢
@@ -4633,6 +4650,7 @@ c:injera	Noun	ar:انجيرا	de:Injera	en:injera	es:injera	fa:انجرا	fr:inj
 c:injunction	Noun	ar:أمر قضائي	de:einstweilige Verfügung	en:injunction	es:mandato judicial	fa:دستور منع	fr:injonction	he:צו מניעה	hi:निषेधादेश	ja:差し止め命令	ko:금지 명령	pt:liminar	ru:судебный запрет	tr:ihtiyati tedbir	ur:عدالتی حکم	zh:禁令
 c:injury	Noun	ar:إصابة	de:Verletzung	en:injury	es:lesión,herida	fa:آسیب,جراحت	fr:blessure	he:פציעה	hi:चोट	ja:怪我	ko:부상	pt:lesão,ferimento	ru:травма	tr:yaralanma,sakatlık	ur:چوٹ,زخم	zh:受伤
 c:ink-pad	Noun	ar:وسادة حبر	de:Stempelkissen	en:ink pad	es:tampón de tinta	fa:استامپ	fr:tampon encreur	he:כרית דיו	hi:स्याही पैड	ja:スタンプ台	ko:인주	pt:almofada de carimbo	ru:штемпельная подушка	tr:mühür yastığı	ur:انک پیڈ	zh:印台
+c:ink-paint	Noun	ar:حبر	de:Tinte	en:ink	es:tinta	fa:جوهر	fr:encre	he:דיו	hi:स्याही	ja:インク	ko:잉크	pt:tinta líquida	ru:чернила	tr:mürekkep	ur:سیاہی	zh:墨水
 c:innate-immune-therapy	Noun	ar:العلاج بالمناعة الفطرية	de:angeborene Immuntherapie	en:innate immune therapy	es:terapia inmune innata	fa:ایمنی‌درمانی ذاتی	fr:thérapie immunitaire innée	he:טיפול חיסוני מולד	hi:सहज प्रतिरक्षा चिकित्सा	ja:自然免疫療法	ko:선천성 면역 치료	pt:terapia imune inata	ru:терапия врождённого иммунитета	tr:doğal bağışıklık terapisi	ur:پیدائشی قوت مدافعت علاج	zh:先天免疫疗法
 c:innocent	Adjective	ar:بريء	de:unschuldig	en:innocent	es:inocente	fa:بی‌گناه,بی‌تقصیر	fr:innocent	he:חף מפשע,תמים	hi:निर्दोष,मासूम	ja:無罪の,無実の	ko:무죄의,결백한	pt:inocente	ru:невиновный,невинный	tr:masum,suçsuz	ur:بے گناہ,معصوم	zh:无辜,清白
 c:inquisition	Noun	ar:محاكم التفتيش	de:Inquisition	en:inquisition	es:inquisición	fa:تفتیش عقاید	fr:inquisition	he:אינקוויזיציה	hi:इन्क्विज़िशन	ja:異端審問	ko:종교재판	pt:inquisição	ru:инквизиция	tr:engizisyon	ur:مذہبی تحقیق	zh:宗教裁判所
@@ -5054,6 +5072,7 @@ c:labyrinth	Noun	ar:متاهة	de:Labyrinth	en:labyrinth	es:laberinto	fa:هزا�
 c:lace	Noun	ar:الدانتيل	de:Spitze	en:lace	es:encaje	fa:توری	fr:dentelle	he:תחרה	hi:फीता	ja:レース	ko:레이스	pt:renda	ru:кружево	tr:dantel	ur:لیس	zh:蕾丝
 c:lacewing	Noun	ar:ذبابة الشبك,اسد المن	de:Florfliege	en:lacewing	es:crisopa,alavesa	fa:بالتوری	fr:chrysope,hémérobe	he:אריה הכינים	hi:लेसविंग	ja:クサカゲロウ	ko:풀잠자리	pt:crisopa,bicho-lixeiro	ru:золотоглазка	tr:aslanağzı	ur:لیس ونگ	zh:草蛉
 c:lacework	Noun	ar:صناعة الدانتيل	de:Spitzenklöppelei	en:lacework	es:encaje	fa:توربافی	fr:dentellerie	he:תחרה	hi:लेस कार्य	ja:レース編み	ko:레이스 뜨개	pt:rendas	ru:кружевоплетение	tr:dantel	ur:لیس بنائی	zh:花边编织
+c:lacquer-paint	Noun	ar:لاكيه	de:Lack	en:lacquer	es:laca	fa:لاک	fr:laque	he:לכה מבריקה	hi:लैकर	ja:漆	ko:래커	pt:laca	ru:лакировка	tr:cila	ur:لیکر	zh:漆
 c:lacrosse	Noun	ar:لاكروس	de:Lacrosse	en:lacrosse	es:lacrosse	fa:لاکروس	fr:crosse	he:לאקרוס	hi:लैक्रोस	ja:ラクロス	ko:라크로스	pt:lacrosse	ru:лакросс	tr:lacrosse	ur:لاکروس	zh:长曲棍球
 c:lactate-threshold	Noun	ar:عتبة اللاكتات	de:Laktatschwelle	en:lactate threshold	es:umbral de lactato	fa:آستانه لاکتات	fr:seuil lactique	he:סף לקטאט	hi:लैक्टेट थ्रेशोल्ड	ja:乳酸閾値	ko:젖산 역치	pt:limiar do lactato	ru:лактатный порог	tr:laktat eşiği	ur:لیکٹیٹ حد	zh:乳酸阈值
 c:lactic-acid	Noun	ar:حامض اللاكتيك	de:Milchsäure	en:lactic acid	es:ácido láctico	fa:اسید لاکتیک	fr:acide lactique	he:חומצת חלב	hi:लैक्टिक अम्ल	ja:乳酸	ko:젖산	pt:ácido láctico	ru:молочная кислота	tr:laktik asit	ur:لیکٹک ایسڈ	zh:乳酸
@@ -5151,6 +5170,7 @@ c:latency	Noun	ar:زمن الاستجابة,كمون	de:Latenz,Verzögerung	en:l
 c:latent-heat	Noun	ar:حرارة كامنة	de:latente Wärme	en:latent heat	es:calor latente	fa:گرمای نهان	fr:chaleur latente	he:חום סמוי	hi:गुप्त ऊष्मा	ja:潜熱	ko:잠열	pt:calor latente	ru:скрытая теплота	tr:gizli ısı	ur:مخفی حرارت	zh:潜热
 c:lateral-load	Noun	ar:حمل جانبي	de:Horizontalbelastung	en:lateral load	es:carga lateral	fa:بار جانبی	fr:charge horizontale	he:עומס אופקי	hi:पार्श्व भार	ja:水平荷重	ko:횡하중	pt:carga lateral	ru:горизонтальная нагрузка	tr:yatay yük	ur:پہلوئی بوجھ	zh:水平荷载
 c:lateral-root	Noun	ar:جذر جانبي	de:Seitenwurzel	en:lateral root	es:raíz lateral	fa:ریشه جانبی	fr:racine latérale	he:שורש צדדי	hi:पार्श्व जड़	ja:側根	ko:측근	pt:raiz lateral	ru:боковой корень	tr:yan kök	ur:پہلو والی جڑ	zh:侧根
+c:latex-paint	Noun	ar:دهان لاتكس	de:Latexfarbe	en:latex paint	es:pintura látex	fa:رنگ لاتکس	fr:peinture latex	he:צבע לטקס	hi:लेटेक्स पेंट	ja:ラテックス塗料	ko:라텍스 페인트	pt:tinta látex	ru:латексная краска	tr:lateks boya	ur:لیٹکس پینٹ	zh:乳胶漆涂料
 c:lathe	Noun	ar:مخرطة	de:Drehmaschine	en:lathe	es:torno	fa:تراش	fr:tour	he:מחרטה	hi:खराद	ja:旋盤	ko:선반	pt:torno mecânico	ru:токарный станок	tr:torna	ur:خراد	zh:车床
 c:latte	Noun	ar:لاتيه	de:Caffè Latte	en:latte	es:café con leche	fa:لاته	fr:latte	he:לאטה	hi:लेट	ja:ラテ	ko:라떼	pt:latte	ru:латте	tr:latte	ur:لاٹے	zh:拿铁
 c:laugh	Verb	ar:ضحك	de:lachen	en:laugh	es:reír	fa:خندیدن	fr:rire	he:לצחוק	hi:हँसना	ja:笑う	ko:웃다	pt:rir	ru:смеяться	tr:gülmek	ur:ہنسنا	zh:笑
@@ -5967,6 +5987,7 @@ c:mop	Noun	ar:ممسحة أرضيات	de:Wischmopp	en:mop	es:fregona,trapeador	f
 c:moraine	Noun	ar:الركام الجليدي	de:Moräne	en:moraine	es:morrena	fa:تل یخچال	fr:moraine	he:מוראנה	hi:हिमनदी चट्टान	ja:モレーン	ko:빙퇴석	pt:morreia	ru:морена	tr:moren	ur:گلیشیائی ملبہ	zh:冰碛
 c:moral-hazard	Noun	ar:المخاطر الأخلاقية	de:moralisches Risiko	en:moral hazard	es:riesgo moral	fa:مخاطرات اخلاقی	fr:aléa moral	he:סכנה מוסרית	hi:नैतिक खतरा	ja:モラルハザード	ko:도덕적 해이	pt:risco moral	ru:моральный риск	tr:ahlaki tehlike	ur:اخلاقی خطرہ	zh:道德风险
 c:moray-eel	Noun	ar:مورينا	de:Muräne	en:moray eel	es:morena	fa:مارماهی موری	fr:murène	he:מוריינה	hi:मोरे ईल	ja:ウツボ	ko:곰치	pt:moreia	ru:мурена	tr:muren yılanbalığı	ur:مورے مچھلی	zh:海鳝
+c:mordant	Noun	ar:مادة مثبتة للصبغة	de:Beizmittel	en:mordant	es:mordiente	fa:دنبه	fr:mordant	he:מצרן	hi:मोर्डेंट	ja:媒染剤	ko:매염제	pt:mordente	ru:протрава	tr:mordan	ur:موردنٹ	zh:媒染剂
 c:mores-society	Noun	ar:الأعراف الأخلاقية	de:Sitten	en:mores	es:mores sociales	fa:اخلاق اجتماعی	fr:mœurs	he:מוסכמות חברתיות	hi:सामाजिक संस्कार	ja:社会的道徳規範	ko:사회적 관습	pt:costumes morais	ru:нравы	tr:toplumsal ahlak	ur:سماجی رسم و رواج	zh:社会道德规范
 c:morin-khuur	Noun	ar:مورين خور	de:Morin-Chuur	en:morin khuur	es:morin khuur	fa:مورین خور	fr:morin khuur	he:מורין חור	hi:मोरिन खुर	ja:馬頭琴	ko:마두금	pt:morin khuur	ru:морин хуур	tr:morin huur	ur:مورن خور	zh:马头琴
 c:mormon	Noun	ar:المورمون	de:Mormonen	en:Mormonism	es:mormonismo	fa:مورمون	fr:mormonisme	he:מורמונים	hi:मॉर्मन	ja:モルモン教	ko:모르몬교	pt:mormonismo	ru:мормонизм	tr:Mormonluk	ur:مورمن	zh:摩门教
@@ -6436,6 +6457,7 @@ c:ogre-creature	Noun	ar:الغول الآكل	de:Oger	en:ogre	es:ogro	fa:غول 
 c:ohio-river	Noun	ar:نهر أوهايو	de:Ohio River	en:Ohio river	es:río Ohio	fa:رود اوهایو	fr:Ohio	he:נהר האוהיו	hi:ओहियो नदी	ja:オハイオ川	ko:오하이오강	pt:rio Ohio	ru:река Огайо	tr:Ohio Nehri	ur:دریائے اوہائیو	zh:俄亥俄河
 c:ohm	Noun	ar:أوم	de:Ohm	en:ohm	es:ohmio	fa:اهم	fr:ohm	he:אוהם	hi:ओम	ja:オーム	ko:옴	pt:ohm	ru:ом	tr:ohm	ur:اوہم	zh:欧姆
 c:oil	Noun	ar:زيت	de:Öl	en:oil	es:aceite	fa:روغن	fr:huile	he:שמן	hi:तेल	ja:油,オイル	ko:기름	pt:óleo	ru:масло	tr:yağ	ur:تیل	zh:油
+c:oil-paint	Noun	ar:دهان زيتي	de:Ölfarbe	en:oil paint	es:pintura al óleo	fa:رنگ روغن	fr:peinture à l'huile	he:צבע שמן	hi:तैल रंग	ja:油絵具	ko:유화 물감	pt:tinta a óleo	ru:масляная краска	tr:yağlı boya	ur:تیل رنگ	zh:油画颜料
 c:okra	Noun	ar:بامية	de:Okra	en:okra	es:quimbombó	fa:بامیه	fr:gombo	he:אוקרה	hi:भिंडी	ja:オクラ	ko:오크라	pt:quiabo	ru:окра	tr:bamya	ur:بھنڈی	zh:秋葵
 c:okra-veg	Noun	ar:بامية	de:Okra	en:okra	es:quimbombó	fa:بامیه	fr:gombo	he:במיה	hi:भिंडी	ja:オクラ	ko:오크라	pt:quiabo	ru:окра	tr:bamya	ur:بھنڈی	zh:秋葵
 c:old	Adjective	ar:قديم,عجوز	de:alt	en:old	es:viejo,antiguo	fa:کهنه,پیر	fr:vieux,ancien	he:ישן,זקן	hi:पुराना,बूढ़ा	ja:古い,老いた	ko:오래된,늙은	pt:velho,antigo	ru:старый	tr:eski,yaşlı	ur:پرانا,بوڑھا	zh:老,旧
@@ -6615,10 +6637,13 @@ c:pager	Noun	ar:جهاز النداء	de:Pager	en:pager	es:buscapersonas	fa:پی
 c:pagoda	Noun	ar:باغودا,معبد شرقي	de:Pagode	en:pagoda	es:pagoda	fa:پاگودا,معبد بودایی	fr:pagode	he:פגודה	hi:पगोडा,स्तूप	ja:塔,パゴダ	ko:파고다,불탑	pt:pagode	ru:пагода	tr:pagoda	ur:پگوڈا,بدھ مندر	zh:宝塔,佛塔
 c:pagoda-tower	Noun	ar:برج معبد	de:Pagode	en:pagoda	es:pagoda	fa:پاگودا	fr:pagode	he:פגודה	hi:पैगोडा	ja:塔	ko:탑	pt:pagode	ru:пагода	tr:pagoda	ur:پگوڈا	zh:宝塔
 c:pain	Noun	ar:ألم,وجع	de:Schmerz	en:pain,ache	es:dolor	fa:درد	fr:douleur	he:כאב	hi:दर्द,पीड़ा	ja:痛み	ko:아픔,통증	pt:dor	ru:боль	tr:ağrı,acı	ur:درد,تکلیف	zh:疼痛,痛
+c:paint-coat	Noun	ar:طلاء	de:Farbe	en:paint	es:pintura	fa:رنگ	fr:peinture	he:צבע	hi:पेंट	ja:ペンキ	ko:페인트	pt:tinta	ru:краска	tr:boya	ur:پینٹ	zh:油漆
 c:paint-roller	Noun	ar:بكرة دهان	de:Malerrolle	en:paint roller	es:rodillo de pintura	fa:غلتک رنگ	fr:rouleau à peinture	he:מגלגל צבע	hi:पेंट रोलर	ja:ペイントローラー	ko:페인트 롤러	pt:rolo de pintura	ru:малярный валик	tr:boya rulosu	ur:پینٹ رولر	zh:滚筒刷
+c:paintbrush	Noun	ar:فرشاة رسم	de:Malpinsel	en:art brush	es:pincel artístico	fa:قلم‌موی نقاشی	fr:pinceau artistique	he:מכחול אמנותי	hi:कला ब्रश	ja:アートブラシ	ko:미술용 붓	pt:pincel artístico	ru:художественная кисть	tr:sanatsal fırça	ur:آرٹ برش	zh:画笔艺术用
 c:painted-turtle	Noun	ar:السلحفاة المطلية	de:Zierschildkröte	en:painted turtle	es:tortuga pintada	fa:لاکپشت رنگارنگ	fr:tortue peinte	he:צב מצויר	hi:चित्रित कछुआ	ja:キガシラハコガメ	ko:색깔거북	pt:tartaruga-pintada	ru:расписная черепаха	tr:boyalı kaplumbağa	ur:رنگین کچھوا	zh:锦龟
 c:painting	Noun	ar:رسم,لوحة	de:Gemälde,Malerei	en:painting	es:pintura	fa:نقاشی	fr:peinture,tableau	he:ציור	hi:चित्रकारी,पेंटिंग	ja:絵画,絵	ko:그림,회화	pt:pintura,quadro	ru:картина,живопись	tr:resim,tablo	ur:پینٹنگ,تصویر کشی	zh:绘画,画作
 c:painting-art	Noun	ar:فن الرسم	de:Malerei	en:painting	es:pintura	fa:نقاشی	fr:peinture	he:ציור	hi:चित्रकारी	ja:絵画	ko:회화	pt:pintura	ru:живопись	tr:resim	ur:مصوری	zh:绘画
+c:paints-colors	Noun	ar:دهانات وألوان	de:Farben und Lacke	en:paints and colors	es:pinturas y colores	fa:رنگ و رنگدانه	fr:peintures et couleurs	he:צבעים ופיגמנטים	hi:रंग और पेंट	ja:塗料と色	ko:페인트와 색	pt:tintas e cores	ru:краски и цвета	tr:boyalar ve renkler	ur:رنگ و پینٹ	zh:颜料与色彩
 c:pajamas	Noun	ar:بيجاما	de:Pyjama,Schlafanzug	en:pajamas,pyjamas	es:pijama	fa:پیژامه	fr:pyjama	he:פיג׳מה	hi:पाजामा,नाइटसूट	ja:パジャマ	ko:파자마,잠옷	pt:pijama	ru:пижама	tr:pijama	ur:پاجامہ	zh:睡衣
 c:pakistan	Noun	ar:باكستان	de:Pakistan	en:Pakistan	es:Pakistán	fa:پاکستان	fr:Pakistan	he:פקיסטן	hi:पाकिस्तान	ja:パキスタン	ko:파키스탄	pt:Paquistão	ru:Пакистан	tr:Pakistan	ur:پاکستان	zh:巴基斯坦
 c:pala-dynasty	Noun	ar:سلالة بالا	de:Pala-Dynastie	en:Pala dynasty	es:dinastía Pala	fa:دودمان پالا	fr:dynastie Pala	he:שושלת הפאלה	hi:पाल राजवंश	ja:パーラ朝	ko:팔라 왕조	pt:dinastia Pala	ru:династия Пала	tr:Pala hanedanı	ur:پال خاندان	zh:波罗王朝
@@ -6629,6 +6654,7 @@ c:paleolithic	Noun	ar:العصر الحجري القديم	de:Altsteinzeit,Palä
 c:paleolithic-era	Noun	ar:العصر الحجري القديم	de:Altsteinzeit	en:Paleolithic period	es:período paleolítico	fa:دوره پارینه‌سنگی	fr:paléolithique	he:התקופה הפליאוליתית	hi:पुरापाषाण काल	ja:旧石器時代	ko:구석기 시대	pt:período paleolítico	ru:палеолит	tr:paleolitik dönem	ur:قدیم پتھر دور	zh:旧石器时代
 c:paleomagnetism	Noun	ar:المغناطيسية القديمة	de:Paläomagnetismus	en:paleomagnetism	es:paleomagnetismo	fa:دیرینه‌مغناطیس	fr:paléomagnétisme	he:פלאומגנטיזם	hi:पुरातन चुम्बकत्व	ja:古地磁気学	ko:고지자기학	pt:paleomagnetismo	ru:палеомагнетизм	tr:paleomagnetizma	ur:قدیم مقناطیسیت	zh:古地磁学
 c:paleozoic	Noun	ar:حقبة الحياة القديمة	de:Paläozoikum	en:Paleozoic era	es:era paleozoica	fa:پالئوزوئیک	fr:ère paléozoïque	he:עידן הפליאוזואיקון	hi:पेलियोजोइक युग	ja:古生代	ko:고생대	pt:era paleozoica	ru:палеозойская эра	tr:Paleozoik zaman	ur:قدیم حیاتی دور	zh:古生代
+c:palette-art	Noun	ar:لوحة ألوان	de:Palette	en:palette	es:paleta	fa:پالت	fr:palette	he:פלטה	hi:पैलेट	ja:パレット	ko:팔레트	pt:paleta	ru:палитра	tr:palet	ur:پیلیٹ	zh:调色板
 c:palladium	Noun	ar:بالاديوم	de:Palladium	en:palladium	es:paladio	fa:پالادیم	fr:palladium	he:פלדיום	hi:पैलेडियम	ja:パラジウム	ko:팔라듐	pt:paládio	ru:палладий	tr:paladyum	ur:پیلیڈیم	zh:钯
 c:palladium-metal	Noun	ar:بلاديوم	de:Palladium	en:palladium	es:paladio	fa:پالادیوم	fr:palladium	he:פלדיום	hi:पैलेडियम	ja:パラジウム	ko:팔라듐	pt:paládio	ru:палладий	tr:paladyum	ur:پیلیڈیم	zh:钯
 c:palm	Noun	ar:راحة,كف	de:Handfläche	en:palm	es:palma	fa:کف دست	fr:paume	he:כף יד	hi:हथेली	ja:手のひら	ko:손바닥	pt:palma	ru:ладонь	tr:avuç	ur:ہتھیلی	zh:手掌,掌
@@ -6746,6 +6772,7 @@ c:password-security	Noun	ar:كلمة مرور	de:Passwort	en:password	es:contras
 c:past	Noun	ar:ماض,ماضي	de:Vergangenheit	en:past	es:pasado	fa:گذشته	fr:passé	he:עבר	hi:अतीत,भूतकाल	ja:過去	ko:과거	pt:passado	ru:прошлое	tr:geçmiş	ur:ماضی	zh:过去
 c:pasta	Noun	ar:معكرونة,باستا	de:Pasta,Nudeln	en:pasta	es:pasta	fa:پاستا,ماکارونی	fr:pâtes	he:פסטה	hi:पास्ता	ja:パスタ	ko:파스타	pt:massa,pasta	ru:паста,макароны	tr:makarna	ur:پاستا	zh:意大利面,面食
 c:pasta-food	Noun	ar:معكرونة	de:Nudeln	en:pasta	es:pasta	fa:پاستا	fr:pâtes	he:פסטה	hi:पास्ता	ja:パスタ	ko:파스타	pt:massa	ru:паста	tr:makarna	ur:پاستا	zh:意大利面
+c:pastel-paint	Noun	ar:باستيل	de:Pastellkreide	en:pastel	es:pastel	fa:پاستل	fr:pastel	he:פסטל	hi:पेस्टल	ja:パステル	ko:파스텔	pt:pastel	ru:пастель	tr:pastel	ur:پیسٹل	zh:粉彩
 c:pasteur	Noun	ar:باستور	de:Pasteur	en:Pasteur	es:Pasteur	fa:پاستور	fr:Pasteur	he:פסטר	hi:पाश्चर	ja:パスツール	ko:파스퇴르	pt:Pasteur	ru:Пастер	tr:Pasteur	ur:پاسچر	zh:巴斯德
 c:pasteurization	Noun	ar:البسترة	de:Pasteurisierung	en:pasteurization	es:pasteurización	fa:پاستوریزاسیون	fr:pasteurisation	he:פסטור	hi:पाश्चरीकरण	ja:低温殺菌	ko:파스퇴르 살균	pt:pasteurização	ru:пастеризация	tr:pastörizasyon	ur:پاسچرائزیشن	zh:巴氏杀菌
 c:pastiche-lit	Noun	ar:التقليد الأدبي	de:Pastiche	en:pastiche	es:pastiche	fa:پاستیش	fr:pastiche	he:פסטיש	hi:पैस्टिश	ja:パスティーシュ	ko:패스티시	pt:pastiche	ru:пастиш	tr:pastiş	ur:ادبی نقل	zh:拼贴
@@ -6817,6 +6844,7 @@ c:penalty	Noun	ar:عقوبة	de:Strafe	en:penalty	es:pena,sanción	fa:جریمه
 c:pencil	Noun	ar:قلم رصاص	de:Bleistift	en:pencil	es:lápiz	fa:مداد	fr:crayon	he:עיפרון	hi:पेंसिल	ja:鉛筆,ペンシル	ko:연필	pt:lápis	ru:карандаш	tr:kurşun kalem	ur:پنسل	zh:铅笔
 c:pencil-case	Noun	ar:مقلمة	de:Federmäppchen	en:pencil case	es:estuche	fa:جامدادی	fr:trousse	he:קלמר	hi:पेंसिल केस	ja:筆箱	ko:필통	pt:estojo	ru:пенал	tr:kalemlik	ur:پنسل کیس	zh:铅笔盒
 c:pencil-office	Noun	ar:قلم رصاص	de:Bleistift	en:pencil	es:lápiz	fa:مداد	fr:crayon	he:עיפרון	hi:पेंसिल	ja:鉛筆	ko:연필	pt:lápis	ru:карандаш	tr:kurşun kalem	ur:پنسل	zh:铅笔
+c:pencil-sketch	Noun	ar:رسم بالقلم الرصاص	de:Bleistiftskizze	en:pencil sketch	es:boceto a lápiz	fa:طرح مدادی	fr:croquis au crayon	he:סקיצה בעיפרון	hi:पेंसिल स्केच	ja:鉛筆スケッチ	ko:연필 스케치	pt:esboço a lápis	ru:эскиз карандашом	tr:kurşun kalem eskiz	ur:پنسل اسکیچ	zh:铅笔素描
 c:pendant	Noun	ar:قلادة,معلقة	de:Anhänger	en:pendant	es:colgante	fa:آویز	fr:pendentif	he:תליון	hi:पेंडेंट,लॉकेट	ja:ペンダント	ko:펜던트	pt:pingente	ru:кулон,подвеска	tr:kolye ucu	ur:لاکٹ	zh:吊坠,挂坠
 c:pendentive	Noun	ar:القواصر	de:Hängezwickel	en:pendentive	es:pechina	fa:پاطاق	fr:pendentif	he:ינשוף	hi:पेंडेंटिव	ja:帆形天井	ko:펜던티브	pt:pendente	ru:парус	tr:pandantif	ur:گنبد کا سہارا	zh:帆拱
 c:pendulum	Noun	ar:بندول	de:Pendel	en:pendulum	es:péndulo	fa:آونگ	fr:pendule	he:מטוטלת	hi:लोलक	ja:振り子	ko:진자	pt:pêndulo	ru:маятник	tr:sarkaç	ur:آویزاں	zh:摆
@@ -6993,6 +7021,7 @@ c:pig-animal	Noun	ar:خنزير	de:Schwein	en:pig	es:cerdo	fa:خوک	fr:cochon	h
 c:pigeon	Noun	ar:حمامة	de:Taube	en:pigeon	es:paloma	fa:کبوتر	fr:pigeon	he:יונה	hi:कबूतर	ja:鳩	ko:비둘기	pt:pombo	ru:голубь	tr:güvercin	ur:کبوتر	zh:鸽子
 c:pigeon-bird	Noun	ar:حمامة	de:Taube	en:pigeon	es:paloma	fa:کبوتر	fr:pigeon	he:יונה	hi:कबूतर	ja:鳩	ko:비둘기	pt:pombo	ru:голубь	tr:güvercin	ur:کبوتر	zh:鸽子
 c:piglet	Noun	ar:خنزير صغير	de:Ferkel	en:piglet	es:lechón	fa:بچه خوک	fr:porcelet	he:חזרזיר	hi:सूअर का बच्चा	ja:子豚	ko:새끼 돼지	pt:leitão	ru:поросёнок	tr:domuz yavrusu	ur:خنزیر کا بچہ	zh:小猪
+c:pigment-color	Noun	ar:صبغ لوني	de:Pigment	en:pigment	es:pigmento	fa:رنگدانه	fr:pigment	he:פיגמנט	hi:पिगमेंट	ja:顔料	ko:안료	pt:pigmento	ru:пигмент	tr:pigment	ur:رنگت	zh:色素
 c:pike	Noun	ar:بايك,سمك الحشف	de:Hecht	en:pike	es:lucio	fa:اردک ماهی	fr:brochet	he:צלופח	hi:पाइक	ja:カワカマス	ko:강꼬치고기	pt:lúcio	ru:щука	tr:turna balığı	ur:پائک	zh:狗鱼
 c:pike-fish	Noun	ar:كراكي	de:Hecht	en:pike fish	es:lucio	fa:ماهی اسکله	fr:brochet	he:זאבנון	hi:पाइक मछली	ja:カワカマス	ko:강꼬치고기	pt:lúcio	ru:щука	tr:turna balığı	ur:پائیک مچھلی	zh:狗鱼
 c:pike-weapon	Noun	ar:رمح طويل	de:Pike	en:pike weapon	es:pica	fa:پیک نیزه	fr:pique	he:חנית רומח	hi:पाइक भाला	ja:パイク	ko:파이크 창	pt:pica arma	ru:пика	tr:kargı	ur:پائیک	zh:长矛
@@ -7322,6 +7351,7 @@ c:prime	Noun	ar:عدد أولي	de:Primzahl	en:prime number	es:número primo	fa:
 c:prime-counting	Noun	ar:دالة عد الاعداد الاولية	de:Primzahlzählfunktion	en:prime-counting function	es:función contadora de primos	fa:تابع شمارش اعداد اول	fr:fonction de comptage des nombres premiers	he:פונקציית ספירת ראשוניים	hi:अभाज्य गणना फलन	ja:素数計数関数	ko:소수 계수 함수	pt:função contadora de primos	ru:функция подсчёта простых чисел	tr:asal sayı sayma fonksiyonu	ur:اول عدد شمار فنکشن	zh:质数计数函数
 c:prime-factorization	Noun	ar:التحليل الى عوامل اولية	de:Primfaktorzerlegung	en:prime factorization,prime factorisation	es:factorización prima	fa:تجزیه به عوامل اول	fr:décomposition en facteurs premiers	he:פירוק לגורמים ראשוניים	hi:अभाज्य गुणनखंड	ja:素因数分解	ko:소인수분해	pt:fatoração prima	ru:разложение на простые множители	tr:asal çarpanlara ayırma	ur:اول عددی تجزیہ	zh:质因数分解
 c:prime-number	Noun	ar:العدد الاولي	de:Primzahl	en:prime number,prime	es:número primo	fa:عدد اول	fr:nombre premier	he:מספר ראשוני	hi:अभाज्य संख्या	ja:素数	ko:소수	pt:número primo	ru:простое число	tr:asal sayı	ur:اول عدد	zh:质数
+c:primer-paint	Noun	ar:دهان أساس	de:Grundierung	en:primer	es:imprimación	fa:آستر رنگ	fr:apprêt	he:פריימר	hi:प्राइमर	ja:プライマー	ko:프라이머	pt:primer	ru:грунтовка	tr:astar boya	ur:پرائمر	zh:底漆
 c:primetime	Noun	ar:وقت الذروة	de:Hauptsendezeit	en:primetime	es:horario estelar	fa:زمان طلایی	fr:heure de grande écoute	he:זמן השיא	hi:प्राइमटाइम	ja:ゴールデンタイム	ko:황금 시간대	pt:horário nobre	ru:прайм-тайм	tr:en yoğun saat	ur:پرائم ٹائم	zh:黄金时段
 c:priming	Noun	ar:التحضير الذهني	de:Priming	en:priming	es:efecto de preparación	fa:آماده‌سازی	fr:amorçage	he:פריימינג	hi:प्राइमिंग	ja:プライミング	ko:점화 효과	pt:priming	ru:прайминг	tr:hazırlama etkisi	ur:ذہنی تیاری	zh:启动效应
 c:priming-cog	Noun	ar:التمهيد المعرفي	de:Priming	en:priming	es:efecto de preparación	fa:آماده‌سازی	fr:amorçage	he:פריימינג קוגניטיבי	hi:प्राइमिंग	ja:プライミング	ko:점화 효과	pt:priming	ru:прайминг	tr:hazırlama etkisi	ur:پرائمنگ	zh:启动效应
@@ -7939,6 +7969,7 @@ c:rollback-db	Noun	ar:تراجع المعاملة	de:Transaktionsrollback	en:tra
 c:rollback-version	Noun	ar:التراجع عن الإصدار	de:Rollback	en:rollback	es:reversión	fa:بازگشت به نسخه قبل	fr:retour arrière	he:חזרה לאחור	hi:रोलबैक	ja:ロールバック	ko:롤백	pt:reversão	ru:откат	tr:geri alma	ur:رول بیک	zh:回滚
 c:rolled-oats	Noun	ar:شوفان مطحون	de:Haferflocken	en:rolled oats	es:avena en copos	fa:جو دوسر ورقه	fr:flocons d'avoine	he:פתיתי שיבולת שועל	hi:रोल्ड ओट्स	ja:ロールドオーツ	ko:롤드 오트	pt:aveia em flocos	ru:овсяные хлопья	tr:yulaf ezmesi	ur:رولڈ اوٹس	zh:燕麦片
 c:roller-bird	Noun	ar:شقراق	de:Blauracke	en:roller	es:carraca	fa:سبزقبا	fr:rollier	he:שקנאי	hi:रोलर पक्षी	ja:ブッポウソウ	ko:파랑새	pt:rolieiro	ru:сизоворонка	tr:gökkuzgun	ur:رولر پرندہ	zh:佛法僧
+c:roller-paint	Noun	ar:رول الدهان	de:Farbroller	en:paint roller	es:rodillo de pintura	fa:غلتک رنگ	fr:rouleau à peinture	he:רולר צבע	hi:पेंट रोलर	ja:ペイントローラー	ko:페인트 롤러	pt:rolo de pintura	ru:малярный валик	tr:boya rulosu	ur:پینٹ رولر	zh:油漆滚筒
 c:rolling-pin	Noun	ar:شوبك	de:Nudelholz,Teigroller	en:rolling pin	es:rodillo	fa:وردنه	fr:rouleau à pâtisserie	he:מערוך	hi:बेलन	ja:麺棒	ko:밀방망이	pt:rolo de massa	ru:скалка	tr:oklava,merdane	ur:بیلن	zh:擀面杖
 c:romaine	Noun	ar:خس روماني	de:Römersalat	en:romaine lettuce	es:lechuga romana	fa:کاهو رومی	fr:laitue romaine	he:חסה רומית	hi:रोमेन सलाद	ja:ロメインレタス	ko:로메인	pt:alface romana	ru:ромен	tr:marul romen	ur:رومین لیٹس	zh:罗马生菜
 c:roman-empire-era	Noun	ar:عصر الإمبراطورية الرومانية	de:römische Kaiserzeit	en:Roman Empire era	es:era del Imperio Romano	fa:عصر امپراتوری روم	fr:ère de l'Empire romain	he:תקופת האימפריה הרומית	hi:रोमन साम्राज्य काल	ja:ローマ帝国時代	ko:로마 제국 시대	pt:era do Império Romano	ru:эпоха Римской империи	tr:Roma İmparatorluğu dönemi	ur:رومی سلطنت کا دور	zh:罗马帝国时期
@@ -8402,6 +8433,7 @@ c:shelf-break	Noun	ar:حافة الرصيف القاري	de:Schelfkante	en:shelf
 c:shelf-life	Noun	ar:مدة الصلاحية	de:Haltbarkeit	en:shelf life	es:vida útil	fa:عمر ماندگاری	fr:durée de conservation	he:חיי מדף	hi:शेल्फ जीवन	ja:保存期間	ko:유통기한	pt:prazo de validade	ru:срок хранения	tr:raf ömrü	ur:مدت استعمال	zh:保质期
 c:shell-program	Noun	ar:صدفة الأوامر	de:Shell	en:shell	es:shell	fa:پوسته	fr:shell	he:מעטפת	hi:शेल	ja:シェル	ko:셸	pt:shell	ru:командная оболочка	tr:kabuk	ur:شیل	zh:命令外壳
 c:shell-structure	Noun	ar:الهيكل القشري	de:Schalentragwerk	en:shell structure	es:estructura laminada	fa:سازه پوسته‌ای	fr:structure en coque	he:מבנה קליפה	hi:शेल संरचना	ja:シェル構造	ko:쉘 구조	pt:estrutura em casca	ru:оболочечная конструкция	tr:kabuk yapı	ur:خول ڈھانچہ	zh:薄壳结构
+c:shellac	Noun	ar:شيلاك	de:Schellack	en:shellac	es:goma laca	fa:شلاک	fr:gomme laque	he:שלק	hi:शेलक	ja:シェラック	ko:셸락	pt:goma-laca	ru:шеллак	tr:gomalak	ur:شیلک	zh:虫胶
 c:sheng	Noun	ar:شينغ	de:Sheng	en:sheng	es:sheng	fa:شنگ	fr:sheng	he:שנג	hi:शेंग	ja:笙	ko:생황	pt:sheng	ru:шэн	tr:sheng	ur:شینگ	zh:笙
 c:shenzhen	Noun	ar:شنتشن	de:Shenzhen	en:Shenzhen	es:Shenzhen	fa:شن‌جن	fr:Shenzhen	he:שנג'ן	hi:शेन्ज़ेन	ja:深圳,シンセン	ko:선전	pt:Shenzhen	ru:Шэньчжэнь	tr:Shenzhen	ur:شینزن	zh:深圳
 c:shepherd	Noun	ar:راعي	de:Hirte	en:shepherd	es:pastor	fa:چوپان	fr:berger	he:רועה	hi:चरवाहा	ja:羊飼い	ko:양치기	pt:pastor	ru:пастух	tr:çoban	ur:گڈریا	zh:牧羊人
@@ -8527,6 +8559,7 @@ c:skateboarding-sport	Noun	ar:التزلج على اللوح	de:Skateboarden	en:
 c:skater-fashion	Noun	ar:موضة التزلج	de:Skater-Mode	en:skater fashion	es:moda skater	fa:مد اسکیتر	fr:mode skater	he:אופנת סקייט	hi:स्केटर फैशन	ja:スケーターファッション	ko:스케이터 패션	pt:moda skater	ru:скейтер-мода	tr:skater moda	ur:اسکیٹر فیشن	zh:滑板时尚
 c:skepticism	Noun	ar:الشكوكية,الشك الفلسفي	de:Skeptizismus	en:skepticism,scepticism	es:escepticismo	fa:شکاکیت	fr:scepticisme	he:סקפטיציזם	hi:संशयवाद	ja:懐疑主義	ko:회의주의	pt:ceticismo	ru:скептицизм	tr:şüphecilik,septisizm	ur:شکوکیت	zh:怀疑主义
 c:skepticism-phil	Noun	ar:الشكية	de:Skeptizismus	en:skepticism	es:escepticismo	fa:شک‌گرایی	fr:scepticisme	he:סקפטיציזם	hi:संशयवाद	ja:懐疑主義	ko:회의주의	pt:ceticismo	ru:скептицизм	tr:şüphecilik	ur:شک پسندی	zh:怀疑主义
+c:sketchbook	Noun	ar:دفتر رسم	de:Skizzenbuch	en:sketchbook	es:cuaderno de bocetos	fa:دفتر طراحی	fr:carnet de croquis	he:מחברת רישום	hi:स्केचबुक	ja:スケッチブック	ko:스케치북	pt:caderno de esboços	ru:альбом для эскизов	tr:eskiz defteri	ur:سکیچ بک	zh:速写本
 c:skewness	Noun	ar:التواء إحصائي	de:Schiefe	en:skewness	es:asimetría	fa:چولگی	fr:asymétrie	he:אסימטריה	hi:विषमता	ja:歪度	ko:왜도	pt:assimetria	ru:асимметрия	tr:çarpıklık	ur:ٹیڑھا پن	zh:偏度
 c:skiing	Noun	ar:التزلج على الجليد	de:Skifahren	en:skiing	es:esquí	fa:اسکی	fr:ski	he:סקי	hi:स्कीइंग	ja:スキー	ko:스키	pt:esqui	ru:лыжный спорт	tr:kayak	ur:اسکینگ	zh:滑雪
 c:skill-acquisition	Noun	ar:اكتساب المهارة	de:Fertigkeitserwerb	en:skill acquisition	es:adquisición de habilidades	fa:کسب مهارت	fr:acquisition de compétences	he:רכישת מיומנות	hi:कौशल अर्जन	ja:技術習得	ko:기술 습득	pt:aquisição de habilidades	ru:приобретение навыков	tr:beceri edinimi	ur:مہارت حاصل کرنا	zh:技能习得
@@ -8677,6 +8710,7 @@ c:solute	Noun	ar:مذاب	de:gelöster Stoff	en:solute	es:soluto	fa:حل‌شو�
 c:solution	Noun	ar:محلول	de:Lösung	en:solution	es:solución,disolución	fa:محلول	fr:solution	he:תמיסה	hi:घोल,विलयन	ja:溶液	ko:용액	pt:solução	ru:раствор	tr:çözelti	ur:محلول	zh:溶液
 c:solvency	Noun	ar:الملاءة المالية	de:Zahlungsfähigkeit	en:solvency	es:solvencia	fa:توانایی پرداخت	fr:solvabilité	he:כושר פרעון	hi:सॉल्वेंसी	ja:支払能力	ko:지급능력	pt:solvência	ru:платёжеспособность	tr:ödeme gücü	ur:قرض ادائیگی کی اہلیت	zh:偿债能力
 c:solvent	Noun	ar:مذيب	de:Lösungsmittel	en:solvent	es:disolvente,solvente	fa:حلال	fr:solvant	he:ממס	hi:विलायक	ja:溶媒,溶剤	ko:용매	pt:solvente,dissolvente	ru:растворитель	tr:çözücü,solvent	ur:محلل,سالوینٹ	zh:溶剂
+c:solvent-paint	Noun	ar:مذيب دهان	de:Lösungsmittel	en:paint solvent	es:disolvente	fa:حلال رنگ	fr:solvant	he:ממס צבע	hi:सॉल्वेंट	ja:溶剤	ko:용제	pt:solvente	ru:растворитель	tr:çözücü	ur:سالونٹ	zh:溶剂
 c:somite	Noun	ar:القطعة الجسدية	de:Somit	en:somite	es:somita	fa:سومیت	fr:somite	he:סומיט	hi:सोमाइट	ja:体節	ko:체절	pt:somito	ru:сомит	tr:somit	ur:سومیٹ	zh:体节
 c:son	Noun	ar:ابن	de:Sohn	en:son	es:hijo	fa:پسر	fr:fils	he:בן	hi:बेटा,पुत्र	ja:息子	ko:아들	pt:filho	ru:сын	tr:oğul	ur:بیٹا	zh:儿子
 c:sonar	Noun	ar:السونار	de:Sonar	en:sonar	es:sonar	fa:سونار	fr:sonar	he:סונר	hi:सोनार	ja:ソナー	ko:소나	pt:sonar	ru:гидролокатор	tr:sonar	ur:سونار	zh:声纳
@@ -8818,6 +8852,7 @@ c:sports-game	Noun	ar:لعبة رياضة	de:Sportspiel	en:sports game	es:videoj
 c:sportswear	Noun	ar:ملابس رياضية	de:Sportbekleidung	en:sportswear	es:ropa deportiva	fa:لباس ورزشی	fr:vêtement de sport	he:ביגוד ספורט	hi:खेलकूद परिधान	ja:スポーツウェア	ko:스포츠웨어	pt:roupa desportiva	ru:спортивная одежда	tr:spor giyim	ur:اسپورٹس ویئر	zh:运动服
 c:sprat	Noun	ar:سبرط	de:Sprotte	en:sprat	es:espadín	fa:اسپرت	fr:sprat	he:ספרט	hi:स्प्रेट	ja:スプラット	ko:청어류	pt:espadilha	ru:шпрот	tr:çaça	ur:سپریٹ	zh:小沙丁鱼
 c:spray-drying	Noun	ar:التجفيف بالرش	de:Sprühtrocknung	en:spray drying	es:secado por pulverización	fa:خشک‌کردن پاششی	fr:séchage par atomisation	he:ייבוש בספריי	hi:छिड़काव सुखाना	ja:噴霧乾燥	ko:분무 건조	pt:secagem por aspersão	ru:распылительная сушка	tr:püskürtmeli kurutma	ur:سپرے سے خشک	zh:喷雾干燥
+c:spray-paint	Noun	ar:بخاخ طلاء	de:Sprühfarbe	en:spray paint	es:pintura en aerosol	fa:اسپری رنگ	fr:peinture en aérosol	he:צבע ספריי	hi:स्प्रे पेंट	ja:スプレー塗料	ko:스프레이 페인트	pt:tinta spray	ru:аэрозольная краска	tr:sprey boya	ur:اسپرے پینٹ	zh:喷漆
 c:spring	Noun	ar:ربيع	de:Frühling,Frühjahr	en:spring	es:primavera	fa:بهار	fr:printemps	he:אביב	hi:वसंत,बसंत	ja:春	ko:봄	pt:primavera	ru:весна	tr:ilkbahar,bahar	ur:بہار,بسنت	zh:春,春季
 c:spring-festival	Noun	ar:عيد الربيع,مهرجان الربيع	de:Frühlingsfest	en:spring festival	es:fiesta de la primavera	fa:جشن بهار,نوروز	fr:fête du printemps	he:חג האביב	hi:वसंत उत्सव	ja:春祭り,春節	ko:봄 축제,춘절	pt:festa da primavera	ru:праздник весны	tr:bahar festivali	ur:بہار تہوار	zh:春节
 c:spring-force	Noun	ar:قوة الزنبرك	de:Federkraft	en:spring force	es:fuerza elástica	fa:نیروی فنر	fr:force de rappel	he:כוח קפיצי	hi:स्प्रिंग बल	ja:ばね力	ko:탄성력	pt:força elástica	ru:сила упругости	tr:yay kuvveti	ur:اسپرنگ قوت	zh:弹力
@@ -8874,6 +8909,7 @@ c:stage-fright	Noun	ar:رهبة المسرح,الخوف من الاداء	de:Lam
 c:stagecraft	Noun	ar:فن المسرح,حرفة المسرح	de:Bühnenkunst,Inszenierungskunst	en:stagecraft	es:técnica escénica,arte escénico	fa:هنر صحنه‌آرایی	fr:technique théâtrale,scénographie	he:מלאכת הבמה	hi:रंगमंच कला	ja:舞台技術	ko:무대 기술	pt:arte cénica,técnica teatral	ru:сценическое мастерство	tr:sahne sanatı	ur:اسٹیج کا فن	zh:舞台技术
 c:stagflation	Noun	ar:ركود تضخمي	de:Stagflation	en:stagflation	es:estanflación	fa:رکود تورمی	fr:stagflation	he:סטגפלציה	hi:मुद्रास्फीतिजनित मंदी	ja:スタグフレーション	ko:스태그플레이션	pt:estagflação	ru:стагфляция	tr:stagflasyon	ur:رکود تورمی	zh:滞胀,停滞性通货膨胀
 c:stagger	Verb	ar:ترنح	de:taumeln,wanken	en:stagger	es:tambalearse	fa:تلوتلو خوردن	fr:tituber,chanceler	he:להתנודד	hi:लड़खड़ाना	ja:よろめく	ko:비틀거리다	pt:cambalear	ru:шататься при ходьбе	tr:sendelemek	ur:لڑکھڑانا	zh:蹒跚,踉跄
+c:stain-wood	Noun	ar:صبغة خشب	de:Holzbeize	en:wood stain	es:tinte para madera	fa:رنگ چوب	fr:teinture pour bois	he:לכה לעץ	hi:वुड स्टेन	ja:木材用染料	ko:목재 착색제	pt:tingidor de madeira	ru:морилка	tr:ahşap cilası	ur:لکڑی رنگ	zh:木器染色剂
 c:stainless-steel	Noun	ar:فولاذ مقاوم للصدأ	de:Edelstahl	en:stainless steel	es:acero inoxidable	fa:فولاد ضد زنگ	fr:acier inoxydable	he:פלדת אל-חלד	hi:स्टेनलेस स्टील	ja:ステンレス鋼	ko:스테인리스 강	pt:aço inoxidável	ru:нержавеющая сталь	tr:paslanmaz çelik	ur:زنگ سے پاک فولاد	zh:不锈钢
 c:staircase	Noun	ar:درج,سلم	de:Treppe,Stiege	en:staircase,stairs	es:escalera	fa:پلکان,راه پله	fr:escalier	he:מדרגות,גרם מדרגות	hi:सीढ़ी,ज़ीना	ja:階段	ko:계단	pt:escada,escadaria	ru:лестница	tr:merdiven	ur:سیڑھی,زینہ	zh:楼梯
 c:stakeholder	Noun	ar:أصحاب المصلحة	de:Interessengruppe	en:stakeholder	es:parte interesada	fa:ذینفع	fr:partie prenante	he:בעל עניין	hi:हितधारक	ja:ステークホルダー	ko:이해관계자	pt:partes interessadas	ru:заинтересованная сторона	tr:paydaş	ur:حصہ دار	zh:利益相关者
@@ -9636,6 +9672,7 @@ c:top-hat	Noun	ar:قبعة البرنيطة	de:Zylinder	en:top hat	es:sombrero d
 c:topaz	Noun	ar:توباز,زبرجد	de:Topas	en:topaz	es:topacio	fa:توپاز,زبرجد	fr:topaze	he:טופז,פטדה	hi:पुखराज,टोपाज़	ja:トパーズ,黄玉	ko:토파즈,황옥	pt:topázio	ru:топаз	tr:topaz	ur:پکھراج	zh:黄玉,托帕石
 c:topaz-color	Noun	ar:توبازي	de:Topasgelb	en:topaz	es:topacio	fa:توپازی	fr:topaze	he:טופז	hi:पुखराज रंग	ja:トパーズ色	ko:토파즈색	pt:topázio	ru:топазовый	tr:topaz rengi	ur:پکھراج رنگ	zh:黄玉色
 c:topaz-gem	Noun	ar:توباز	de:Topas	en:topaz	es:topacio	fa:توپاز	fr:topaze	he:טופז	hi:पुखराज	ja:トパーズ	ko:토파즈	pt:topázio	ru:топаз	tr:topaz	ur:پخراج	zh:黄玉
+c:topcoat-paint	Noun	ar:طبقة نهائية	de:Decklack	en:topcoat	es:capa final	fa:لایه نهایی	fr:couche de finition	he:שכבת עליון	hi:टॉपकोट	ja:上塗り	ko:마감 칠	pt:camada final	ru:финишная краска	tr:son kat	ur:ٹاپ کوٹ	zh:面漆
 c:topiary-shears	Noun	ar:مقص تشكيل الأشجار	de:Formschnittschere	en:topiary shears	es:tijeras topiarias	fa:قیچی درخت آرایی	fr:ciseaux topiaire	he:מספריים לאמנות עיצוב	hi:झाड़ी कटाई कैंची	ja:トピアリー剪定ばさみ	ko:토피어리 가위	pt:tesoura de topiária	ru:ножницы для топиарной стрижки	tr:topiyer makası	ur:درخت شکل قینچی	zh:修剪艺术剪
 c:topic	Noun	ar:موضوع	de:Thema	en:topic	es:tema,tópico	fa:موضوع	fr:sujet,thème	he:נושא,טופיק	hi:विषय,टॉपिक	ja:トピック,話題	ko:주제,토픽	pt:tópico,tema	ru:тема	tr:konu	ur:موضوع	zh:话题,主题
 c:topological-group	Noun	ar:المجموعة التبولوجية	de:topologische Gruppe	en:topological group	es:grupo topológico	fa:گروه توپولوژیکی	fr:groupe topologique	he:קבוצה טופולוגית	hi:स्थलाकृतिक समूह	ja:位相群	ko:위상군	pt:grupo topológico	ru:топологическая группа	tr:topolojik grup	ur:ٹوپولوجیکل گروہ	zh:拓扑群
@@ -9897,6 +9934,7 @@ c:umayyad-caliphate	Noun	ar:الخلافة الأموية	de:Umayyaden-Kalifat	e
 c:uncertainty	Noun	ar:عدم يقين,شك	de:Unsicherheit,Ungewissheit	en:uncertainty	es:incertidumbre	fa:عدم قطعیت,تردید	fr:incertitude	he:אי ודאות	hi:अनिश्चितता	ja:不確実性,不確かさ	ko:불확실성	pt:incerteza	ru:неопределённость	tr:belirsizlik	ur:غیر یقینی	zh:不确定性
 c:unconscious	Noun	ar:لاوعي,لاشعور	de:Unbewusstes	en:unconscious	es:inconsciente	fa:ناخودآگاه	fr:inconscient	he:לא מודע	hi:अचेतन	ja:無意識	ko:무의식	pt:inconsciente	ru:бессознательное	tr:bilinçdışı	ur:لاشعور	zh:无意识
 c:unconscious-mind	Noun	ar:العقل اللاواعي	de:Unbewusstes	en:unconscious mind	es:inconsciente	fa:ناهشیار	fr:inconscient	he:לא-מודע	hi:अचेतन	ja:無意識	ko:무의식	pt:inconsciente	ru:бессознательное	tr:bilinçdışı	ur:لاشعور	zh:无意识
+c:undercoat-paint	Noun	ar:طبقة تحتية	de:Grundanstrich	en:undercoat	es:capa base	fa:لایه زیرین	fr:sous-couche	he:שכבת יסוד	hi:अंडरकोट	ja:下塗り	ko:밑칠	pt:camada base	ru:подкладочная краска	tr:alt kat	ur:انڈر کوٹ	zh:底涂
 c:underdetermination	Noun	ar:اللاتحديد	de:Unterbestimmtheit	en:underdetermination	es:subdeterminación	fa:زیرتعیین	fr:sous-détermination	he:תת-קביעה	hi:अधोनिर्धारण	ja:過少決定	ko:과소결정	pt:subdeterminação	ru:недоопределённость	tr:eksik belirlenimlik	ur:کم تعین	zh:欠定
 c:understand	Verb	ar:فهم	de:verstehen	en:understand	es:entender,comprender	fa:فهمیدن	fr:comprendre	he:להבין	hi:समझना	ja:理解する,わかる	ko:이해하다	pt:entender,compreender	ru:понимать	tr:anlamak	ur:سمجھنا	zh:理解,懂
 c:understanding-epistemic	Noun	ar:الفهم المعرفي	de:epistemisches Verstehen	en:epistemic understanding	es:comprensión epistémica	fa:فهم معرفتی	fr:compréhension épistémique	he:הבנה אפיסטמית	hi:ज्ञानमीमांसा समझ	ja:認識的理解	ko:인식론적 이해	pt:compreensão epistêmica	ru:эпистемическое понимание	tr:epistemik anlayış	ur:معرفتی فہم	zh:认识理解
@@ -9995,6 +10033,7 @@ c:variance-stat	Noun	ar:تباين	de:Varianz	en:variance	es:varianza	fa:وار�
 c:variant-calling	Noun	ar:استدعاء المتغيرات	de:Variantenidentifikation	en:variant calling	es:detección de variantes	fa:شناسایی واریانت	fr:détection de variants	he:זיהוי וריאנטים	hi:वेरिएंट कॉलिंग	ja:バリアントコーリング	ko:변이 검출	pt:chamada de variantes	ru:вызов вариантов	tr:varyant çağırma	ur:ویریئنٹ کالنگ	zh:变异检测
 c:variational-qc	Noun	ar:الخوارزميات التغايرية	de:variationeller Quanteneigenwertalgorithmus	en:variational quantum eigensolver	es:solucionador variacional cuántico	fa:الگوریتم تغییراتی کوانتومی	fr:solveur variationnel quantique	he:אלגוריתם וריאציוני קוונטי	hi:परिवर्तनशील क्वांटम एल्गोसॉल्वर	ja:変分量子固有値ソルバー	ko:변분 양자 고유값 계산기	pt:solver variacional quântico	ru:вариационный квантовый решатель	tr:varyasyonel kuantum çözücü	ur:متغیر کوانٹم حل	zh:变分量子本征值求解器
 c:variety-show	Noun	ar:برنامج متنوع	de:Variete-Show	en:variety show	es:programa de variedades	fa:برنامه تنوع	fr:émission de variétés	he:תכנית בידור	hi:वैरायटी शो	ja:バラエティ番組	ko:버라이어티 쇼	pt:programa de variedades	ru:развлекательное шоу	tr:eğlence programı	ur:ورائٹی شو	zh:综艺节目
+c:varnish-coat	Noun	ar:ورنيش	de:Firnis	en:varnish	es:barniz	fa:لاک الکل	fr:vernis	he:לכה	hi:वार्निश	ja:ニス	ko:바니시	pt:verniz	ru:лак	tr:vernik	ur:وارنش	zh:清漆
 c:vase	Noun	ar:مزهرية,إناء زهور	de:Vase	en:vase	es:jarrón,florero	fa:گلدان	fr:vase	he:אגרטל	hi:फूलदान	ja:花瓶	ko:꽃병	pt:vaso	ru:ваза	tr:vazo	ur:گلدان	zh:花瓶
 c:vasoconstrictor	Noun	ar:مضيق وعائي	de:Vasokonstriktor	en:vasoconstrictor	es:vasoconstrictor	fa:منقبض‌کننده عروق	fr:vasoconstricteur	he:מכווץ כלי דם	hi:वाहिका संकोचक	ja:血管収縮薬	ko:혈관수축제	pt:vasoconstritor	ru:сосудосуживающее	tr:damar daraltıcı	ur:خون کی نالیاں تنگ کرنے والا	zh:血管收缩剂
 c:vasodilator	Noun	ar:موسع وعائي	de:Vasodilatator	en:vasodilator	es:vasodilatador	fa:گشادکننده عروق	fr:vasodilatateur	he:מרחיב כלי דם	hi:वाहिका विस्तारक	ja:血管拡張薬	ko:혈관확장제	pt:vasodilatador	ru:сосудорасширяющее	tr:damar genişletici	ur:خون کی نالیاں کھولنے والا	zh:血管扩张剂
@@ -10197,6 +10236,7 @@ c:water-polo	Noun	ar:كرة الماء	de:Wasserball	en:water polo	es:waterpolo	
 c:water-strider	Noun	ar:حشرة الساقية,عداء الماء	de:Wasserläufer	en:water strider,pond skater	es:patinador de agua,zapatero	fa:آب‌آور	fr:gerris,araignée d'eau	he:מחליק מים	hi:जल धावक	ja:アメンボ	ko:소금쟁이	pt:patinador-da-água	ru:водомерка	tr:su yüzücüsü	ur:پانی پر چلنے والا	zh:水黾
 c:waterbed	Noun	ar:سرير مائي	de:Wasserbett	en:waterbed	es:cama de agua	fa:تخت آبی	fr:lit à eau	he:מיטת מים	hi:वाटरबेड	ja:ウォーターベッド	ko:물침대	pt:cama de água	ru:водяная кровать	tr:su yatağı	ur:پانی کا بستر	zh:水床
 c:waterbuck	Noun	ar:الظبي المائي	de:Wasserbock	en:waterbuck	es:cobo	fa:آنتلوپ آبی	fr:cobe	he:ווטרבאק	hi:वाटरबक	ja:ウォーターバック	ko:물영양	pt:cobo	ru:водяной козёл	tr:su antilobu	ur:واٹر بک	zh:水羚
+c:watercolor	Noun	ar:ألوان مائية	de:Aquarell	en:watercolor	es:acuarela	fa:آبرنگ	fr:aquarelle	he:צבעי מים	hi:जल रंग	ja:水彩絵の具	ko:수채화 물감	pt:aquarela	ru:акварель	tr:sulu boya	ur:آبی رنگ	zh:水彩
 c:watercress	Noun	ar:جرجير مائي	de:Brunnenkresse	en:watercress	es:berro	fa:شاهی آبی	fr:cresson	he:כרשה	hi:जलकुंभी	ja:クレソン	ko:물냉이	pt:agrião	ru:водяной кресс	tr:su teresi	ur:آبی جرجیر	zh:豆瓣菜
 c:waterfall	Noun	ar:شلال	de:Wasserfall	en:waterfall,cascade	es:cascada,catarata	fa:آبشار	fr:cascade,chute d'eau	he:מפל	hi:झरना	ja:滝	ko:폭포	pt:cachoeira,queda d'água	ru:водопад	tr:şelale	ur:آبشار	zh:瀑布
 c:waterfall-landform	Noun	ar:شلال	de:Wasserfall	en:waterfall	es:cascada,catarata	fa:آبشار	fr:cascade,chute d'eau	he:מפל מים	hi:झरना,जलप्रपात	ja:滝	ko:폭포	pt:cachoeira,cascata	ru:водопад	tr:şelale	ur:آبشار	zh:瀑布
