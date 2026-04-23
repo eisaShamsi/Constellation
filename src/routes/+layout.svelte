@@ -2563,13 +2563,18 @@
 				clearLinkTraversalBumps();
 
 				const libraryList = $libraries;
-				if (libraryList.length > 0 && graph.links.length > 0) {
-					// Resolve the parallel sky snapshot kicked off earlier.
-					// If the graph IPC took longer (common), this await is
-					// free — the sky payload is already in hand. Fallback
-					// to buildSkyData when the back-fill hasn't stamped
-					// schema_versions.sky yet or the IPC errored.
-					const sky = await skyPromise;
+				// Resolve the parallel sky snapshot kicked off earlier.
+				// If the graph IPC took longer (common), this await is
+				// free — the sky payload is already in hand. Fallback
+				// to buildSkyData when the back-fill hasn't stamped
+				// schema_versions.sky yet or the IPC errored.
+				const sky = await skyPromise;
+				// Enter this block if EITHER source can produce a graph:
+				// graph IPC returned links, OR sky IPC is ready. The old
+				// guard skipped sky assignment entirely when graph failed
+				// (links=[]) even if sky had data — the graph-failure
+				// fallback path would leave Sky View empty.
+				if (libraryList.length > 0 && (graph.links.length > 0 || (sky && sky.isReady))) {
 					if (sky && sky.isReady) {
 						// Trust the readiness flag — a zero-node Universe
 						// with isReady=true is legitimately empty; falling
