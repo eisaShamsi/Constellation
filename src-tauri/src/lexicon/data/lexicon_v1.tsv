@@ -160,6 +160,7 @@ c:air	Noun	ar:هواء	de:Luft	en:air	es:aire	fa:هوا	fr:air	he:אוויר	hi:
 c:air-chief-marshal	Noun	ar:كبير مشير الطيران	de:Luftwaffen-Oberkommandierender	en:air chief marshal	es:jefe del estado mayor del aire	fa:ارتشبد ارشد هوایی	fr:chef d'état-major de l'air	he:ראש המטה לחיל האוויר	hi:एयर चीफ मार्शल	ja:空軍大将	ko:공군 대장	pt:chefe do estado-maior da aeronáutica	ru:главный маршал авиации	tr:hava orgenerali	ur:ایئر چیف مارشل	zh:空军参谋长
 c:air-commodore	Noun	ar:عميد طيران	de:Luftwaffenkommodore	en:air commodore	es:comodoro del aire	fa:سرتیپ هوایی	fr:commodore de l'air	he:קומודור אוויר	hi:एयर कमोडोर	ja:空軍准将	ko:공군 준장	pt:comodoro do ar	ru:коммодор авиации	tr:hava tuğgenerali	ur:ایئر کموڈور	zh:空军准将
 c:air-compressor	Noun	ar:ضاغط هواء	de:Luftkompressor	en:air compressor	es:compresor de aire	fa:کمپرسور هوا	fr:compresseur d'air	he:מדחס אוויר	hi:वायु कंप्रेसर	ja:エアーコンプレッサー	ko:에어 컴프레서	pt:compressor de ar	ru:воздушный компрессор	tr:hava kompresörü	ur:ہوا کمپریسر	zh:空气压缩机
+c:air-fryer	Noun	ar:قلاية هوائية	de:Heißluftfritteuse	en:air fryer	es:freidora de aire	fa:سرخ‌کن هوا	fr:friteuse à air	he:טיגון אוויר	hi:एयर फ्रायर	ja:エアフライヤー	ko:에어 프라이어	pt:fritadeira a ar	ru:аэрофритюрница	tr:sıcak hava fritözü	ur:ایئر فرائر	zh:空气炸锅
 c:air-marshal	Noun	ar:مشير طيران	de:Luftmarschall	en:air marshal	es:mariscal del aire	fa:ارتشبد هوایی	fr:maréchal de l'air	he:מרשל אוויר	hi:एयर मार्शल	ja:空軍中将	ko:공군 원수	pt:marechal do ar	ru:маршал авиации	tr:hava mareşali	ur:ایئر مارشل	zh:空军元帅
 c:air-mass	Noun	ar:الكتلة الهوائية	de:Luftmasse	en:air mass	es:masa de aire	fa:توده هوا	fr:masse d'air	he:מסת אוויר	hi:वायु राशि	ja:気団	ko:기단	pt:massa de ar	ru:воздушная масса	tr:hava kütlesi	ur:ہوا کا حجم	zh:气团
 c:air-mass-weather	Noun	ar:كتلة هوائية	de:Luftmasse	en:air mass	es:masa de aire	fa:توده هوا	fr:masse d'air	he:גוש אוויר	hi:वायुराशि	ja:気団	ko:기단	pt:massa de ar	ru:воздушная масса	tr:hava kütlesi	ur:ہوا کی کثافت	zh:气团
@@ -801,6 +802,7 @@ c:bay-of-bengal	Noun	ar:خليج البنغال	de:Golf von Bengalen	en:Bay of B
 c:bayesian	Adjective	ar:البايزي	de:Bayesianisch	en:Bayesian	es:bayesiano	fa:بیزی	fr:bayésien	he:בייזיאני	hi:बेयसियन	ja:ベイズ的	ko:베이즈의	pt:bayesiano	ru:байесовский	tr:Bayes'çi	ur:بیزین	zh:贝叶斯
 c:bayesian-epistemology	Noun	ar:الإبستيمولوجيا البيزية	de:Bayesianische Erkenntnistheorie	en:Bayesian epistemology	es:epistemología bayesiana	fa:معرفت‌شناسی بیزی	fr:épistémologie bayésienne	he:אפיסטמולוגיה בייזיאנית	hi:बेयसियन ज्ञानमीमांसा	ja:ベイズ認識論	ko:베이지안 인식론	pt:epistemologia bayesiana	ru:байесианская эпистемология	tr:Bayesci epistemoloji	ur:بیزیئن معرفیات	zh:贝叶斯认识论
 c:bayesian-stat	Noun	ar:إحصاء بايزي	de:Bayessche Statistik	en:Bayesian statistics	es:estadística bayesiana	fa:آمار بیزی	fr:statistique bayésienne	he:סטטיסטיקה בייסיאנית	hi:बायेसियन सांख्यिकी	ja:ベイズ統計学	ko:베이즈 통계학	pt:estatística bayesiana	ru:байесовская статистика	tr:Bayesci istatistik	ur:بے سین اعداد و شمار	zh:贝叶斯统计
+c:bbq-kitchen	Noun	ar:شواية باربكيو	de:Barbecue	en:barbecue	es:barbacoa	fa:باربیکیو	fr:barbecue	he:ברביקיו	hi:बारबेक्यू	ja:バーベキュー	ko:바비큐	pt:churrasqueira	ru:барбекю	tr:barbekü	ur:باربیکیو	zh:烧烤架
 c:beach	Noun	ar:شاطئ	de:Strand,Ufer	en:beach,shore	es:playa	fa:ساحل,کرانه	fr:plage	he:חוף	hi:समुद्र तट,तट	ja:浜,ビーチ	ko:해변,바닷가	pt:praia	ru:пляж	tr:plaj,kumsal	ur:ساحل سمندر	zh:海滩,沙滩
 c:beach-landform	Noun	ar:شاطئ	de:Strand	en:beach	es:playa	fa:ساحل شنی	fr:plage	he:חוף	hi:समुद्रतट,तट	ja:浜,ビーチ	ko:해변	pt:praia	ru:пляж	tr:plaj,kumsal	ur:ساحل	zh:海滩,沙滩
 c:beaded-necklace	Noun	ar:عقد الخرز	de:Perlenkette,Perlenstrang	en:beaded necklace,bead necklace	es:collar de cuentas	fa:گردنبند مهره	fr:collier de perles,collier de perles de verre	he:שרשרת חרוזים	hi:मनकों का हार	ja:ビーズネックレス	ko:비즈 목걸이	pt:colar de contas	ru:ожерелье из бусин,бусы	tr:boncuk kolye	ur:مالا,موتیوں کی مالا	zh:珠串项链,串珠项链
@@ -993,6 +995,7 @@ c:blastula	Noun	ar:البلاستولا	de:Blastula	en:blastula	es:blástula	fa:
 c:blazer	Noun	ar:بليزر	de:Blazer	en:blazer	es:blazer	fa:بلیزر	fr:blazer	he:בלייזר	hi:ब्लेज़र	ja:ブレザー	ko:블레이저	pt:blazer	ru:блейзер	tr:blazer	ur:بلیزر	zh:西装外套
 c:blazer-jacket	Noun	ar:بليزر	de:Blazer	en:blazer jacket	es:americana blazer	fa:بلیزر	fr:blazer	he:בלייזר	hi:ब्लेज़र	ja:ブレザー	ko:블레이저	pt:blazer	ru:блейзер	tr:blazer ceket	ur:بلیزر	zh:西装外套
 c:blender	Noun	ar:خلاط	de:Mixer,Standmixer	en:blender	es:licuadora,batidora	fa:مخلوط کن	fr:mixeur	he:בלנדר	hi:ब्लेंडर,मिक्सर	ja:ミキサー,ブレンダー	ko:믹서,블렌더	pt:liquidificador	ru:блендер	tr:blender	ur:بلینڈر	zh:搅拌机
+c:blender-kitchen	Noun	ar:خلاط	de:Mixer	en:blender	es:licuadora	fa:مخلوط‌کن	fr:mixeur	he:בלנדר	hi:ब्लेंडर	ja:ブレンダー	ko:블렌더	pt:liquidificador	ru:блендер	tr:blender	ur:بلینڈر	zh:搅拌机
 c:blessing	Noun	ar:بركة,نعمة	de:Segen	en:blessing	es:bendición	fa:برکت,نعمت	fr:bénédiction	he:ברכה	hi:आशीर्वाद	ja:祝福	ko:축복	pt:bênção	ru:благословение	tr:bereket,lütuf	ur:برکت,نعمت	zh:祝福
 c:bliss	Noun	ar:نعيم	de:Glückseligkeit	en:bliss	es:dicha	fa:نشاط	fr:félicité	he:אושר עילאי	hi:परमानंद	ja:至福	ko:지복	pt:bem-aventurança	ru:блаженство	tr:saadet	ur:سرور	zh:极乐
 c:blizzard	Noun	ar:عاصفة ثلجية	de:Schneesturm,Blizzard	en:blizzard,snowstorm	es:ventisca,tormenta de nieve	fa:بوران,کولاک	fr:blizzard,tempête de neige	he:סופת שלגים	hi:बर्फ़ीला तूफ़ान,हिम-तूफ़ान	ja:吹雪	ko:눈보라	pt:nevasca,tempestade de neve	ru:метель,буран,пурга	tr:kar fırtınası,tipi	ur:برفانی طوفان	zh:暴风雪
@@ -1851,6 +1854,7 @@ c:coevolution	Noun	ar:التطور المشترك	de:Koevolution	en:coevolution	
 c:coffee	Noun	ar:قهوة	de:Kaffee	en:coffee	es:café	fa:قهوه	fr:café	he:קפה	hi:कॉफ़ी	ja:コーヒー,珈琲	ko:커피	pt:café	ru:кофе	tr:kahve	ur:کافی	zh:咖啡
 c:coffee-drink	Noun	ar:قهوة	de:Kaffee	en:coffee	es:café	fa:قهوه	fr:café	he:קפה	hi:कॉफी	ja:コーヒー	ko:커피	pt:café	ru:кофе	tr:kahve	ur:کافی	zh:咖啡
 c:coffee-table	Noun	ar:طاولة قهوة	de:Couchtisch	en:coffee table	es:mesa de café	fa:میز قهوه	fr:table basse	he:שולחן קפה	hi:कॉफ़ी टेबल	ja:コーヒーテーブル	ko:커피 테이블	pt:mesa de centro	ru:кофейный столик	tr:sehpa	ur:کافی میز	zh:茶几
+c:coffeemaker	Noun	ar:ماكينة القهوة	de:Kaffeemaschine	en:coffeemaker	es:cafetera	fa:قهوه‌ساز	fr:cafetière	he:מכונת קפה	hi:कॉफ़ी मेकर	ja:コーヒーメーカー	ko:커피 메이커	pt:cafeteira	ru:кофеварка	tr:kahve makinesi	ur:کافی میکر	zh:咖啡机
 c:cognac	Noun	ar:كونياك	de:Cognac	en:cognac	es:coñac	fa:کنیاک	fr:cognac	he:קוניאק	hi:कॉग्नेक	ja:コニャック	ko:코냑	pt:cognac	ru:коньяк	tr:konyak	ur:کونیاک	zh:干邑
 c:cognate	Noun	ar:كلمة مشتركة الأصل	de:Kognate	en:cognate	es:cognado	fa:هم‌ریشه	fr:cognate	he:בן-שורש	hi:समूल	ja:同源語	ko:동원어	pt:cognato	ru:когнат	tr:akraba sözcük	ur:ہم اصل	zh:同源词
 c:cognition	Noun	ar:إدراك	de:Kognition,Erkenntnis	en:cognition	es:cognición	fa:شناخت	fr:cognition	he:קוגניציה,הכרה	hi:अनुभूति,संज्ञान	ja:認知,認識	ko:인지,인식	pt:cognição	ru:познание,когниция	tr:biliş,idrak	ur:ادراک,شناخت	zh:认知,认识
@@ -1868,6 +1872,7 @@ c:cohomology	Noun	ar:التماثلات المساعدة	de:Kohomologie	en:cohom
 c:coin	Noun	ar:قطعة نقدية,عملة معدنية	de:Münze	en:coin	es:moneda	fa:سکه	fr:pièce,pièce de monnaie	he:מטבע	hi:सिक्का	ja:硬貨,コイン	ko:동전,코인	pt:moeda	ru:монета	tr:madeni para,bozuk para	ur:سکہ	zh:硬币
 c:coir-material	Noun	ar:ليف جوز الهند	de:Kokosfaser	en:coir	es:coco fibra	fa:نارگیل الیاف	fr:coco fibre	he:ליפ קוקוס	hi:नारियल रेशे	ja:ヤシ繊維	ko:야자 섬유	pt:fibra de coco	ru:кокосовое волокно	tr:hindistan cevizi lifi	ur:ناریل ریشہ	zh:椰壳纤维
 c:cola	Noun	ar:كولا	de:Cola	en:cola	es:cola	fa:کولا	fr:cola	he:קולה	hi:कोला	ja:コーラ	ko:콜라	pt:cola	ru:кола	tr:kola	ur:کولا	zh:可乐
+c:colander	Noun	ar:مصفاة	de:Sieb	en:colander	es:colador	fa:آبکش	fr:passoire	he:מסננת	hi:छलनी	ja:水切りざる	ko:체	pt:escorredor	ru:дуршлаг	tr:kevgir	ur:چھلنی	zh:滤盆
 c:cold	Adjective	ar:بارد	de:kalt	en:cold	es:frío	fa:سرد	fr:froid	he:קר	hi:ठंडा	ja:寒い,冷たい	ko:추운,차가운	pt:frio	ru:холодный	tr:soğuk	ur:ٹھنڈا	zh:冷
 c:cold-desert	Noun	ar:صحراء باردة	de:Kältewüste	en:cold desert	es:desierto frío	fa:صحرای سرد	fr:désert froid	he:מדבר קר	hi:शीत रेगिस्तान	ja:寒冷砂漠	ko:추운 사막	pt:deserto frio	ru:холодная пустыня	tr:soğuk çöl	ur:سرد صحرا	zh:寒漠
 c:cold-frame	Noun	ar:إطار بارد	de:Frühbeetkasten	en:cold frame	es:marco frío	fa:کادر سرد	fr:châssis froid	he:מסגרת קרה	hi:कोल्ड फ्रेम	ja:コールドフレーム	ko:냉상	pt:moldura fria	ru:холодный парник	tr:soğuk çerçeve	ur:سرد فریم	zh:冷床
@@ -2369,6 +2374,7 @@ c:custard-dessert	Noun	ar:كاسترد	de:Pudding Custard	en:custard	es:natilla	
 c:custom	Noun	ar:عادة,عرف	de:Brauch,Sitte	en:custom	es:costumbre	fa:رسم,عرف	fr:coutume,usage	he:מנהג	hi:रिवाज,प्रथा	ja:習慣,風習	ko:관습,풍습	pt:costume	ru:обычай	tr:gelenek,adet	ur:رواج,رسم	zh:习俗,风俗
 c:customer	Noun	ar:زبون,عميل	de:Kunde,Kundin	en:customer,client	es:cliente	fa:مشتری	fr:client	he:לקוח	hi:ग्राहक	ja:客,顧客,カスタマー	ko:고객,손님	pt:cliente	ru:клиент,покупатель	tr:müşteri	ur:گاہک,صارف	zh:顾客,客户
 c:cutaway	Noun	ar:لقطة انتقالية	de:Cutaway	en:cutaway	es:corte de acción	fa:نمای درج	fr:plan de coupe	he:קאטאוויי	hi:कटअवे	ja:カットアウェイ	ko:컷어웨이	pt:cutaway	ru:вставной план	tr:kesme çekim	ur:کٹ اوے	zh:切入镜头
+c:cutting-board	Noun	ar:لوح تقطيع	de:Schneidebrett	en:cutting board	es:tabla de cortar	fa:تخته برش	fr:planche à découper	he:קרש חיתוך	hi:कटिंग बोर्ड	ja:まな板	ko:도마	pt:tábua de cortar	ru:разделочная доска	tr:kesme tahtası	ur:کاٹنے کا بورڈ	zh:砧板
 c:cuttlefish	Noun	ar:سبيط,حبار سهمي	de:Sepia,Tintenfisch	en:cuttlefish	es:sepia,jibia	fa:ماهی مرکب سپیا	fr:seiche	he:דיונון סלעים	hi:कटलफिश	ja:コウイカ	ko:갑오징어	pt:choco,sépia	ru:каракатица	tr:mürekkepbalığı,sübye	ur:کٹل فش	zh:墨鱼
 c:cuttlefish-sea	Noun	ar:حبار صغير	de:Sepia	en:cuttlefish	es:sepia	fa:ماهی مرکب کوچک	fr:seiche	he:סתרן	hi:कटलफिश	ja:コウイカ	ko:갑오징어	pt:choco	ru:каракатица	tr:mürekkep balığı	ur:کٹل فش	zh:乌贼
 c:cw-complex	Noun	ar:المركب الخلوي	de:CW-Komplex	en:CW complex	es:complejo CW	fa:مجتمع CW	fr:complexe CW	he:קומפלקס CW	hi:CW जटिल	ja:CW複体	ko:CW 복합체	pt:complexo CW	ru:CW-комплекс	tr:CW kompleks	ur:CW مجتمع	zh:CW复形
@@ -2482,6 +2488,7 @@ c:deduction	Noun	ar:استنتاج,استنباط	de:Deduktion,Schlussfolgerung	
 c:deductive	Adjective	ar:استنتاجي	de:deduktiv	en:deductive	es:deductivo	fa:قیاسی	fr:déductif	he:דדוקטיבי	hi:निगमनात्मक	ja:演繹的	ko:연역적	pt:dedutivo	ru:дедуктивный	tr:tümdengelimli	ur:استخراجی	zh:演绎的
 c:deep-current	Noun	ar:تيار عميق	de:Tiefenströmung	en:deep ocean current	es:corriente oceánica profunda	fa:جریان عمیق اقیانوس	fr:courant profond	he:זרם עמוק	hi:गहरी समुद्री धारा	ja:深層流	ko:심층류	pt:corrente profunda	ru:глубинное течение	tr:derin okyanus akıntısı	ur:گہری سمندری روانی	zh:深层流
 c:deep-fry	Noun	ar:قلي عميق	de:frittieren	en:deep-frying	es:freír en aceite	fa:سرخ کردن در روغن	fr:friture profonde	he:טיגון עמוק	hi:डीप फ्राई	ja:揚げ物	ko:기름 튀김	pt:fritar em óleo	ru:фритюр	tr:bol yağda kızartma	ur:ڈیپ فرائی	zh:深炸
+c:deep-fryer	Noun	ar:قلاية عميقة	de:Fritteuse	en:deep fryer	es:freidora	fa:سرخ‌کن	fr:friteuse	he:מטגנת	hi:डीप फ्रायर	ja:ディープフライヤー	ko:딥 프라이어	pt:fritadeira	ru:фритюрница	tr:derin fritöz	ur:ڈیپ فرائر	zh:深煎锅
 c:deep-learning	Noun	ar:التعلم العميق	de:tiefes Lernen,Deep Learning	en:deep learning	es:aprendizaje profundo	fa:یادگیری عمیق	fr:apprentissage profond	he:למידה עמוקה	hi:गहन अधिगम	ja:深層学習,ディープラーニング	ko:딥 러닝,심층 학습	pt:aprendizado profundo	ru:глубокое обучение	tr:derin öğrenme	ur:گہری تعلیم	zh:深度学习
 c:deep-sea	Noun	ar:أعماق البحار	de:Tiefsee	en:deep sea	es:mar profundo	fa:ژرفای دریا	fr:grand fond	he:מעמקי הים	hi:गहरा समुद्र	ja:深海	ko:심해	pt:mar profundo	ru:глубоководье	tr:derin deniz	ur:گہرا سمندر	zh:深海
 c:deer	Noun	ar:غزال	de:Hirsch	en:deer	es:ciervo	fa:گوزن	fr:cerf	he:צבי	hi:हिरण	ja:鹿,シカ	ko:사슴	pt:veado,cervo	ru:олень	tr:geyik	ur:ہرن	zh:鹿
@@ -2659,7 +2666,9 @@ c:disease	Noun	ar:داء,مرض	de:Krankheit,Erkrankung	en:disease	es:enfermedad
 c:disease-health	Noun	ar:مرض صحي	de:Krankheit	en:disease	es:enfermedad	fa:بیماری	fr:maladie	he:מחלה	hi:बीमारी	ja:疾病	ko:질병	pt:doença	ru:болезнь	tr:hastalık	ur:بیماری	zh:疾病
 c:disgust	Noun	ar:اشمئزاز	de:Ekel	en:disgust	es:asco	fa:انزجار	fr:dégoût	he:גועל	hi:घृणा	ja:嫌悪	ko:혐오	pt:nojo	ru:отвращение	tr:iğrenme	ur:نفرت	zh:厌恶
 c:dish	Noun	ar:طبق	de:Gericht,Schale	en:dish	es:plato,fuente	fa:ظرف,دیش	fr:plat	he:מנה,קערה	hi:व्यंजन,डिश	ja:皿,料理	ko:접시,요리	pt:prato	ru:блюдо	tr:yemek	ur:پکوان	zh:菜肴
+c:dish-rack	Noun	ar:رف الأطباق	de:Geschirrständer	en:dish rack	es:escurreplatos	fa:جاظرفی	fr:égouttoir à vaisselle	he:מתקן כלים	hi:डिश रैक	ja:水切りラック	ko:설거지 선반	pt:escorredor de louça	ru:сушилка для посуды	tr:bulaşık süzgeci	ur:ڈش ریک	zh:碗碟架
 c:dishonesty	Noun	ar:خيانة أمانة	de:Unehrlichkeit	en:dishonesty	es:deshonestidad	fa:عدم صداقت	fr:malhonnêteté	he:חוסר יושר	hi:बेईमानी	ja:不誠実	ko:부정직	pt:desonestidade	ru:нечестность	tr:dürüstsüzlük	ur:بددیانتی	zh:不诚实
+c:dishwasher	Noun	ar:غسالة أطباق	de:Geschirrspüler	en:dishwasher	es:lavavajillas	fa:ماشین ظرف‌شویی	fr:lave-vaisselle	he:מדיח כלים	hi:डिशवॉशर	ja:食器洗い機	ko:식기세척기	pt:lava-louças	ru:посудомоечная машина	tr:bulaşık makinesi	ur:ڈش واشر	zh:洗碗机
 c:disinfection-water	Noun	ar:تطهير المياه	de:Wasserdesinfektion	en:water disinfection	es:desinfección del agua	fa:ضدعفونی آب	fr:désinfection de l'eau	he:חיטוי מים	hi:जल निर्जंतुकीकरण	ja:水の消毒	ko:물 소독	pt:desinfecção de água	ru:обеззараживание воды	tr:su dezenfeksiyonu	ur:پانی کی صفائی	zh:水消毒
 c:dislocation	Noun	ar:الإزاحة البلورية	de:Versetzung	en:dislocation	es:dislocación	fa:نابجایی	fr:dislocation	he:נקע	hi:विस्थापन	ja:転位	ko:전위	pt:discordância	ru:дислокация	tr:kayma düzlemi	ur:کرسٹل بے جائی	zh:位错
 c:dislocation-mat	Noun	ar:الانزياح البلوري	de:Versetzung	en:dislocation	es:dislocación	fa:نابجایی بلوری	fr:dislocation	he:ניתוק	hi:विस्थापन	ja:転位	ko:전위	pt:deslocação	ru:дислокация	tr:dislokasyon	ur:کرسٹل نقص	zh:位错
@@ -3126,6 +3135,7 @@ c:esim	Noun	ar:شريحة eSIM	de:eSIM	en:eSIM	es:eSIM	fa:eSIM	fr:eSIM	he:eSIM	h
 c:esophagus	Noun	ar:المريء	de:Speiseröhre	en:esophagus	es:esófago	fa:مری	fr:œsophage	he:וושט	hi:ग्रासनली	ja:食道	ko:식도	pt:esôfago	ru:пищевод	tr:yemek borusu	ur:بھوجن نالی	zh:食道
 c:espresso	Noun	ar:إسبريسو,قهوة مركزة	de:Espresso	en:espresso	es:espresso,exprés	fa:اسپرسو	fr:espresso,expresso	he:אספרסו	hi:एस्प्रेसो	ja:エスプレッソ	ko:에스프레소	pt:expresso,espresso	ru:эспрессо	tr:espresso	ur:ایسپریسو	zh:浓缩咖啡,意式浓缩
 c:espresso-drink	Noun	ar:إسبرسو	de:Espresso	en:espresso	es:espresso	fa:اسپرسو	fr:expresso	he:אספרסו	hi:एस्प्रेसो	ja:エスプレッソ	ko:에스프레소	pt:expresso	ru:эспрессо	tr:espresso	ur:ایسپریسو	zh:浓缩咖啡
+c:espresso-machine	Noun	ar:ماكينة الإسبريسو	de:Espressomaschine	en:espresso machine	es:máquina de espresso	fa:دستگاه اسپرسو	fr:machine à espresso	he:מכונת אספרסו	hi:एस्प्रेसो मशीन	ja:エスプレッソマシン	ko:에스프레소 머신	pt:máquina de espresso	ru:эспрессо-машина	tr:espresso makinesi	ur:ایسپریسو مشین	zh:浓缩咖啡机
 c:essay-genre	Noun	ar:مقال أدبي	de:Essay	en:essay	es:ensayo	fa:جستار	fr:essai	he:מסה	hi:निबंध	ja:エッセイ	ko:수필	pt:ensaio	ru:эссе	tr:deneme	ur:مضمون	zh:散文
 c:essence	Noun	ar:جوهر,ماهية	de:Wesen,Essenz	en:essence	es:esencia	fa:جوهر,ذات	fr:essence	he:מהות	hi:सार,तत्त्व	ja:本質	ko:본질	pt:essência	ru:сущность	tr:öz,cevher	ur:جوہر,ماہیت	zh:本质
 c:essentialism	Noun	ar:الجوهرانية	de:Essentialismus	en:essentialism	es:esencialismo	fa:ذات‌گرایی	fr:essentialisme	he:אסנציאליזם	hi:सारतत्त्ववाद	ja:本質主義	ko:본질주의	pt:essencialismo	ru:эссенциализм	tr:özselcilik	ur:ذاتیت	zh:本质主义
@@ -3512,6 +3522,7 @@ c:food-coloring	Noun	ar:الملونات الغذائية	de:Lebensmittelfarbe	e
 c:food-court	Noun	ar:ساحة طعام	de:Food-Court	en:food court	es:patio de comidas	fa:فودکورت	fr:food court	he:מתחם מזון	hi:फूड कोर्ट	ja:フードコート	ko:푸드코트	pt:praça de alimentação	ru:фуд-корт	tr:yeme içme alanı	ur:فوڈ کورٹ	zh:美食广场
 c:food-fortification	Noun	ar:تحصين الغذاء	de:Lebensmittelanreicherung	en:food fortification	es:enriquecimiento de alimentos	fa:غنی‌سازی غذا	fr:enrichissement alimentaire	he:העשרת מזון	hi:खाद्य दृढ़ीकरण	ja:食品強化	ko:식품 강화	pt:enriquecimento alimentar	ru:обогащение пищи	tr:gıda zenginleştirme	ur:غذا افزودگی	zh:食品强化
 c:food-irradiation	Noun	ar:تشعيع الغذاء	de:Lebensmittelbestrahlung	en:food irradiation	es:irradiación de alimentos	fa:تابش غذا	fr:irradiation des aliments	he:הקרנת מזון	hi:खाद्य विकिरण	ja:食品照射	ko:식품 방사선 조사	pt:irradiação de alimentos	ru:облучение пищи	tr:gıda ışınlama	ur:غذائی اشعاع	zh:食品辐照
+c:food-processor	Noun	ar:محضرة طعام	de:Küchenmaschine	en:food processor	es:procesador de alimentos	fa:غذاساز	fr:robot culinaire	he:מעבד מזון	hi:फ़ूड प्रोसेसर	ja:フードプロセッサー	ko:푸드 프로세서	pt:processador de alimentos	ru:кухонный комбайн	tr:mutfak robotu	ur:فوڈ پروسیسر	zh:食物处理器
 c:food-rheology	Noun	ar:ريولوجيا الغذاء	de:Lebensmittelrheologie	en:food rheology	es:reología alimentaria	fa:رئولوژی غذا	fr:rhéologie alimentaire	he:ריאולוגיה של מזון	hi:खाद्य धारा विज्ञान	ja:食品レオロジー	ko:식품 유변학	pt:reologia de alimentos	ru:реология пищи	tr:gıda reolojisi	ur:غذائی سیلانیت	zh:食品流变学
 c:food-safety	Noun	ar:سلامة الغذاء	de:Lebensmittelsicherheit	en:food safety	es:inocuidad alimentaria	fa:ایمنی غذا	fr:sécurité alimentaire	he:בטיחות מזון	hi:खाद्य सुरक्षा	ja:食品安全	ko:식품 안전	pt:segurança alimentar	ru:безопасность пищи	tr:gıda güvenliği	ur:غذائی حفاظت	zh:食品安全
 c:food-texture	Noun	ar:قوام الغذاء	de:Lebensmitteltextur	en:food texture	es:textura de los alimentos	fa:بافت غذا	fr:texture alimentaire	he:מרקם מזון	hi:खाद्य बनावट	ja:食感	ko:식품 질감	pt:textura de alimentos	ru:текстура пищи	tr:gıda dokusu	ur:غذائی بناوٹ	zh:食品质地
@@ -3644,6 +3655,7 @@ c:fundamental-frequency	Noun	ar:التردد الأساسي	de:Grundfrequenz	en:
 c:fundamental-group	Noun	ar:المجموعة الأساسية	de:Fundamentalgruppe	en:fundamental group	es:grupo fundamental	fa:گروه بنیادی	fr:groupe fondamental	he:קבוצה יסודית	hi:मूल समूह	ja:基本群	ko:기본군	pt:grupo fundamental	ru:фундаментальная группа	tr:temel grup	ur:بنیادی گروہ	zh:基本群
 c:funeral	Noun	ar:جنازة,مأتم	de:Beerdigung,Begräbnis	en:funeral	es:funeral,entierro	fa:مراسم تدفین,تشییع	fr:funérailles,obsèques	he:הלוויה	hi:अंतिम संस्कार	ja:葬式,葬儀	ko:장례식	pt:funeral	ru:похороны	tr:cenaze	ur:جنازہ,تدفین	zh:葬礼,丧礼
 c:fungus	Noun	ar:فطر,فطريات	de:Pilz	en:fungus	es:hongo	fa:قارچ	fr:champignon	he:פטרייה	hi:कवक,फफूंद	ja:菌類,真菌	ko:균류,진균	pt:fungo	ru:гриб	tr:mantar	ur:پھپھوندی	zh:真菌,菌类
+c:funnel-kitchen	Noun	ar:قمع	de:Trichter	en:funnel	es:embudo	fa:قیف	fr:entonnoir	he:משפך	hi:कीप	ja:漏斗	ko:깔때기	pt:funil	ru:воронка	tr:huni	ur:قمع	zh:漏斗
 c:fur	Noun	ar:الفرو	de:Pelz	en:fur	es:piel	fa:خز	fr:fourrure	he:פרווה	hi:फर	ja:毛皮	ko:모피	pt:pele	ru:мех	tr:kürk	ur:پشم	zh:皮草
 c:furniture-generic	Noun	ar:أثاث	de:Möbel	en:furniture	es:mueble	fa:مبلمان	fr:meuble	he:רהיט	hi:फर्नीचर	ja:家具	ko:가구	pt:móvel	ru:мебель	tr:mobilya	ur:فرنیچر	zh:家具
 c:fury	Noun	ar:سخط	de:Raserei	en:fury	es:furia	fa:خشم شدید	fr:fureur	he:חמה	hi:उग्र क्रोध	ja:激憤	ko:격노	pt:fúria	ru:неистовство	tr:hiddet	ur:قہر	zh:盛怒
@@ -3974,6 +3986,7 @@ c:griffin	Noun	ar:جريفون	de:Greif	en:griffin,gryphon	es:grifo	fa:گریف�
 c:griffin-creature	Noun	ar:الغرفين	de:Greif	en:griffin	es:grifo	fa:گریفین	fr:griffon	he:גריפון	hi:ग्रिफिन	ja:グリフォン	ko:그리핀	pt:grifo	ru:грифон	tr:grifon	ur:گریفن	zh:狮鹫
 c:grill	Verb	ar:شوى على الشواية	de:grillen	en:grill	es:asar a la parrilla	fa:کباب کردن	fr:griller	he:לצלות על גריל	hi:ग्रिल करना	ja:グリルする	ko:그릴에 굽다	pt:grelhar	ru:жарить на гриле	tr:ızgara yapmak	ur:گرل کرنا	zh:烧烤
 c:grill-cook	Noun	ar:شواء	de:Grillen	en:grilling	es:asar a la parrilla	fa:کباب کردن	fr:grillade	he:צלייה על גריל	hi:ग्रिल करना	ja:グリル	ko:그릴	pt:grelhar	ru:жарка на гриле	tr:ızgara	ur:گرل	zh:烧烤
+c:grill-kitchen	Noun	ar:شواية	de:Grill	en:grill	es:parrilla	fa:گریل	fr:gril	he:גריל	hi:ग्रिल	ja:グリル	ko:그릴	pt:grelha	ru:гриль	tr:ızgara	ur:گرل	zh:烤架
 c:grill-pan	Noun	ar:مقلاة شواء	de:Grillpfanne	en:grill pan	es:sartén de parrilla	fa:ماهیتابه گریل	fr:poêle à griller	he:מחבת גריל	hi:ग्रिल पैन	ja:グリルパン	ko:그릴 팬	pt:grelhador de frigideira	ru:сковорода-гриль	tr:ızgara tavası	ur:گرل پین	zh:烤盘
 c:grinder	Noun	ar:جلاخة	de:Schleifer	en:grinder	es:amoladora	fa:سنگ فرز	fr:meuleuse	he:טוחן	hi:ग्राइंडर	ja:グラインダー	ko:그라인더	pt:esmerilhadeira	ru:шлифовальная машина	tr:taşlama makinesi	ur:گرائنڈر	zh:研磨机
 c:grizzly-bear	Noun	ar:دب أشيب	de:Grizzlybär	en:grizzly bear	es:oso pardo	fa:خرس گریزلی	fr:grizzli	he:דוב גריזלי	hi:भूरा भालू	ja:ハイイログマ	ko:회색곰	pt:urso-pardo	ru:медведь гризли	tr:boz ayı	ur:بھورا ریچھ	zh:灰熊
@@ -4446,6 +4459,7 @@ c:ice	Noun	ar:جليد,ثلج	de:Eis	en:ice	es:hielo	fa:یخ	fr:glace	he:קרח	
 c:ice-core	Noun	ar:قلب الجليد	de:Eiskern	en:ice core	es:testigo de hielo	fa:مغزه یخچال	fr:carotte de glace	he:ליבת קרח	hi:हिम कोर	ja:氷床コア	ko:빙하 코어	pt:testemunho de gelo	ru:ледяной керн	tr:buz özü	ur:برف کی پرت	zh:冰芯
 c:ice-cream	Noun	ar:آيس كريم,مثلجات	de:Speiseeis	en:ice cream	es:helado	fa:بستنی	fr:glace	he:גלידה	hi:आइसक्रीम	ja:アイスクリーム	ko:아이스크림	pt:sorvete	ru:мороженое	tr:dondurma	ur:آئس کریم	zh:冰淇淋
 c:ice-cream-dessert	Noun	ar:آيس كريم	de:Eiscreme	en:ice cream	es:helado	fa:بستنی	fr:crème glacée	he:גלידה	hi:आइसक्रीम	ja:アイスクリーム	ko:아이스크림	pt:sorvete	ru:мороженое	tr:dondurma	ur:آئس کریم	zh:冰淇淋
+c:ice-maker	Noun	ar:صانعة ثلج	de:Eismaschine	en:ice maker	es:máquina de hielo	fa:یخ‌ساز	fr:machine à glaçons	he:מכשיר קרח	hi:आइस मेकर	ja:製氷機	ko:제빙기	pt:máquina de gelo	ru:льдогенератор	tr:buz makinesi	ur:آئس میکر	zh:制冰机
 c:ice-sheet	Noun	ar:الغطاء الجليدي	de:Eisschild	en:ice sheet	es:capa de hielo	fa:صفحه یخ	fr:calotte glaciaire	he:שכבת קרח	hi:बर्फ की चादर	ja:氷床	ko:빙상	pt:manto de gelo	ru:ледяной щит	tr:buz tabakası	ur:برف کی چادر	zh:冰盖
 c:ice-storm	Noun	ar:عاصفة جليدية	de:Eisregen	en:ice storm	es:tormenta de hielo	fa:طوفان یخ	fr:tempête de verglas	he:סופת קרח	hi:बर्फ तूफान	ja:凍雨嵐	ko:얼음 폭풍	pt:tempestade de gelo	ru:ледяной шторм	tr:buz fırtınası	ur:برفانی طوفان	zh:冻雨风暴
 c:iceberg	Noun	ar:جبل جليدي	de:Eisberg	en:iceberg	es:iceberg	fa:کوه یخ	fr:iceberg	he:קרחון	hi:हिमखंड	ja:氷山	ko:빙산	pt:iceberg	ru:айсберг	tr:buzdağı	ur:برفانی تودہ	zh:冰山
@@ -4815,6 +4829,7 @@ c:judo	Noun	ar:جودو	de:Judo	en:judo	es:judo	fa:جودو	fr:judo	he:ג'ודו
 c:judo-sport	Noun	ar:جودو	de:Judo	en:judo	es:judo	fa:جودو	fr:judo	he:ג'ודו	hi:जूडो	ja:柔道	ko:유도	pt:judo	ru:дзюдо	tr:judo	ur:جوڈو	zh:柔道
 c:juice	Noun	ar:عصير	de:Saft	en:juice	es:jugo,zumo	fa:آبمیوه	fr:jus	he:מיץ	hi:रस	ja:ジュース	ko:주스	pt:suco,sumo	ru:сок	tr:meyve suyu	ur:رس	zh:果汁
 c:juice-drink	Noun	ar:عصير	de:Saft	en:juice	es:jugo	fa:آبمیوه	fr:jus	he:מיץ	hi:रस	ja:ジュース	ko:주스	pt:suco	ru:сок	tr:meyve suyu	ur:جوس	zh:果汁
+c:juicer	Noun	ar:عصارة	de:Entsafter	en:juicer	es:exprimidor	fa:آب‌میوه‌گیری	fr:presse-fruits	he:מסחטה	hi:जूसर	ja:ジューサー	ko:주서	pt:espremedor	ru:соковыжималка	tr:meyve sıkacağı	ur:جوسر	zh:榨汁机
 c:jujitsu	Noun	ar:الجوجيتسو	de:Jiu-Jitsu	en:jiu-jitsu	es:jiu-jitsu	fa:جوجیتسو	fr:jiu-jitsu	he:ג'יו-ג'יטסו	hi:जूजित्सु	ja:柔術	ko:주짓수	pt:jiujitsu	ru:джиу-джитсу	tr:jiu-jitsu	ur:جوجتسو	zh:柔术
 c:julius-caesar	Noun	ar:يوليوس قيصر	de:Julius Caesar	en:Julius Caesar,Caesar	es:Julio César	fa:یولیوس سزار	fr:Jules César	he:יוליוס קיסר	hi:जूलियस सीज़र	ja:ユリウス・カエサル	ko:율리우스 카이사르	pt:Júlio César	ru:Юлий Цезарь	tr:Julius Sezar	ur:جولیس سیزر	zh:尤利乌斯·凯撒
 c:jump	Verb	ar:قفز	de:springen	en:jump,jumps,jumped,jumping	es:saltar	fa:پریدن	fr:sauter	he:לקפוץ	hi:कूदना,छलांग लगाना	ja:跳ぶ,ジャンプする	ko:뛰다,점프하다	pt:saltar,pular	ru:прыгать	tr:zıplamak,atlamak	ur:کودنا,چھلانگ لگانا	zh:跳,跳跃
@@ -4885,6 +4900,7 @@ c:kernel-os	Noun	ar:نواة النظام	de:Kernel	en:kernel	es:núcleo	fa:هس
 c:kestrel	Noun	ar:عقيق	de:Turmfalke	en:kestrel	es:cernícalo	fa:بالابان	fr:crécerelle	he:בז מצוי	hi:केस्ट्रेल	ja:チョウゲンボウ	ko:황조롱이	pt:peneireiro	ru:пустельга	tr:kerkenez	ur:کیسٹریل	zh:红隼
 c:ketone	Noun	ar:كيتون	de:Keton	en:ketone	es:cetona	fa:کتون	fr:cétone	he:קטון	hi:कीटोन	ja:ケトン	ko:케톤	pt:cetona	ru:кетон	tr:keton	ur:کیٹون	zh:酮
 c:kettle	Noun	ar:غلاية,إبريق شاي	de:Wasserkocher,Kessel	en:kettle	es:hervidor,tetera	fa:کتری	fr:bouilloire	he:קומקום	hi:केतली	ja:やかん,ケトル	ko:주전자	pt:chaleira	ru:чайник	tr:su ısıtıcısı,çaydanlık	ur:کیتلی	zh:水壶
+c:kettle-kitchen	Noun	ar:غلاية	de:Wasserkocher	en:kettle	es:hervidor	fa:کتری	fr:bouilloire	he:קומקום	hi:केतली	ja:ケトル	ko:주전자	pt:chaleira	ru:чайник	tr:su ısıtıcısı	ur:کیتلی	zh:水壶
 c:key	Noun	ar:مفتاح	de:Schlüssel	en:key	es:llave	fa:کلید	fr:clé,clef	he:מפתח	hi:चाबी,कुंजी	ja:鍵	ko:열쇠	pt:chave	ru:ключ	tr:anahtar	ur:چابی	zh:钥匙
 c:key-music	Noun	ar:مقام موسيقي	de:Tonart	en:key	es:tonalidad	fa:گام	fr:tonalité	he:סולם	hi:स्वरसप्तक	ja:調	ko:조성	pt:tonalidade	ru:тональность	tr:ton	ur:سر	zh:调性
 c:keyboard	Noun	ar:لوحة مفاتيح	de:Tastatur	en:keyboard	es:teclado	fa:صفحه کلید	fr:clavier	he:מקלדת	hi:कीबोर्ड	ja:キーボード	ko:키보드	pt:teclado	ru:клавиатура	tr:klavye	ur:کی بورڈ	zh:键盘
@@ -4917,6 +4933,8 @@ c:king-cobra	Noun	ar:كوبرا الملك	de:Königskobra	en:king cobra	es:cobr
 c:kingdom	Noun	ar:مملكة	de:Reich	en:kingdom	es:reino	fa:فرمانرو,سلسله	fr:règne	he:ממלכה	hi:जगत	ja:界	ko:계	pt:reino	ru:царство	tr:alem	ur:بادشاہت,عالم	zh:界
 c:kingfisher	Noun	ar:الرفراف	de:Eisvogel	en:kingfisher	es:martín pescador	fa:ماهی‌خورک	fr:martin-pêcheur	he:שלדג	hi:किलकिला	ja:カワセミ	ko:물총새	pt:martim-pescador	ru:зимородок	tr:yalıçapkını	ur:رام چڑیا	zh:翠鸟
 c:kinship	Noun	ar:قرابة	de:Verwandtschaft	en:kinship	es:parentesco	fa:خویشاوندی	fr:parenté	he:קרבת משפחה	hi:रिश्तेदारी	ja:親族	ko:친족	pt:parentesco	ru:родство	tr:akrabalık	ur:رشتہ داری	zh:亲属关系
+c:kitchen-items	Noun	ar:أدوات مطبخ	de:Küchenartikel	en:kitchen items	es:artículos de cocina	fa:لوازم آشپزخانه	fr:articles de cuisine	he:פריטי מטבח	hi:रसोई के सामान	ja:キッチン用品	ko:주방용품	pt:artigos de cozinha	ru:кухонные принадлежности	tr:mutfak eşyaları	ur:کچن کا سامان	zh:厨房用品
+c:kitchenware	Noun	ar:أواني المطبخ	de:Küchenausrüstung	en:kitchenware	es:menaje de cocina	fa:ظروف آشپزخانه	fr:ustensiles de cuisine	he:כלי מטבח	hi:रसोई के बर्तन	ja:キッチンウェア	ko:주방 용기	pt:utensílios de cozinha	ru:кухонная посуда	tr:mutfak gereçleri	ur:کچن ویئر	zh:厨房用具
 c:kite	Noun	ar:طائرة ورقية	de:Drachen	en:kite	es:cometa	fa:بادبادک	fr:cerf-volant	he:עפיפון	hi:पतंग	ja:凧	ko:연	pt:pipa	ru:воздушный змей	tr:uçurtma	ur:پتنگ	zh:风筝
 c:kitsune	Noun	ar:الكيتسوني	de:Kitsune	en:kitsune	es:kitsune	fa:کیتسونه	fr:kitsune	he:קיצונה	hi:कित्सुने	ja:狐	ko:키츠네	pt:kitsune	ru:кицунэ	tr:kitsune	ur:کتسونی	zh:狐仙
 c:kitten	Noun	ar:هريرة	de:Kätzchen	en:kitten	es:gatito	fa:بچه گربه	fr:chaton	he:חתלתול	hi:बिल्ली का बच्चा	ja:子猫	ko:새끼 고양이	pt:gatinho	ru:котёнок	tr:yavru kedi	ur:بلی کا بچہ	zh:小猫
@@ -4930,6 +4948,7 @@ c:knead	Verb	ar:عجن	de:kneten	en:knead	es:amasar	fa:ورز دادن	fr:pétri
 c:knee	Noun	ar:ركبة	de:Knie	en:knee	es:rodilla	fa:زانو	fr:genou	he:ברך	hi:घुटना	ja:膝	ko:무릎	pt:joelho	ru:колено	tr:diz	ur:گھٹنا	zh:膝,膝盖
 c:knee-body	Noun	ar:ركبة	de:Knie	en:knee	es:rodilla	fa:زانو	fr:genou	he:ברך	hi:घुटना	ja:膝	ko:무릎	pt:joelho	ru:колено	tr:diz	ur:گھٹنا	zh:膝盖
 c:knife	Noun	ar:سكين	de:Messer	en:knife	es:cuchillo	fa:چاقو,کارد	fr:couteau	he:סכין	hi:चाकू,छुरी	ja:ナイフ,包丁	ko:칼	pt:faca	ru:нож	tr:bıçak	ur:چاقو	zh:刀
+c:knife-block	Noun	ar:حامل السكاكين	de:Messerblock	en:knife block	es:portacuchillos	fa:نگهدارنده چاقو	fr:bloc à couteaux	he:מעמד סכינים	hi:चाकू ब्लॉक	ja:ナイフブロック	ko:칼 보관대	pt:suporte para facas	ru:подставка для ножей	tr:bıçak bloğu	ur:چاقو بلاک	zh:刀架
 c:knife-weapon	Noun	ar:سكين سلاح	de:Messer Waffe	en:combat knife	es:cuchillo de combate	fa:چاقو نظامی	fr:couteau de combat	he:סכין לחימה	hi:लड़ाई का चाकू	ja:戦闘ナイフ	ko:전투 칼	pt:faca de combate	ru:боевой нож	tr:savaş bıçağı	ur:لڑائی کا چاقو	zh:战斗刀
 c:knight	Noun	ar:فارس	de:Ritter	en:knight	es:caballero	fa:شوالیه	fr:chevalier	he:אביר	hi:नाइट	ja:騎士	ko:기사	pt:cavaleiro	ru:рыцарь	tr:şövalye	ur:نائٹ	zh:骑士
 c:knitting	Noun	ar:حياكة الصوف	de:Stricken	en:knitting	es:tricot	fa:بافتنی	fr:tricot	he:סריגה	hi:बुनाई सुई	ja:編み物	ko:뜨개질	pt:tricô	ru:вязание	tr:örgü	ur:بنائی سوئی	zh:编织毛线
@@ -4994,6 +5013,7 @@ c:lactose	Noun	ar:اللاكتوز	de:Laktose	en:lactose	es:lactosa	fa:لاکت�
 c:ladder	Noun	ar:سلم	de:Leiter	en:ladder	es:escalera	fa:نردبان	fr:échelle	he:סולם	hi:सीढ़ी	ja:はしご	ko:사다리	pt:escada	ru:лестница,стремянка	tr:merdiven	ur:سیڑھی	zh:梯子
 c:ladder-tool	Noun	ar:سلم	de:Leiter	en:ladder	es:escalera	fa:نردبان	fr:échelle	he:סולם	hi:सीढ़ी	ja:梯子	ko:사다리	pt:escada	ru:лестница	tr:merdiven	ur:سیڑھی	zh:梯子
 c:ladle	Noun	ar:مغرفة	de:Schöpfkelle	en:ladle	es:cucharón	fa:ملاقه	fr:louche	he:מצקת	hi:करछुल	ja:お玉,おたま	ko:국자	pt:concha	ru:половник	tr:kepçe	ur:کرچھا	zh:长柄勺
+c:ladle-kitchen	Noun	ar:مغرفة	de:Schöpfkelle	en:ladle	es:cucharón	fa:ملاقه	fr:louche	he:תרווד	hi:कलछी	ja:お玉	ko:국자	pt:concha	ru:половник	tr:kepçe	ur:کرچھی	zh:汤勺
 c:ladybug	Noun	ar:خنفساء مرقطة,دعسوقة	de:Marienkäfer	en:ladybug,ladybird	es:mariquita	fa:کفشدوزک	fr:coccinelle	he:פרת משה רבנו	hi:सोनपंखी,लेडीबग	ja:テントウムシ	ko:무당벌레	pt:joaninha	ru:божья коровка	tr:uğurböceği,hanımböceği	ur:سونپنکھی	zh:瓢虫
 c:lagoon	Noun	ar:بحيرة شاطئية	de:Lagune	en:lagoon	es:laguna	fa:تالاب	fr:lagune	he:לגונה	hi:अनूप	ja:ラグーン	ko:석호	pt:lagoa	ru:лагуна	tr:lagün	ur:جھیل	zh:潟湖
 c:lagoon-geo	Noun	ar:بحيرة ساحلية	de:Lagune	en:lagoon	es:laguna	fa:تالاب ساحلی	fr:lagune	he:לגונה	hi:लैगून	ja:潟湖	ko:석호	pt:laguna	ru:лагуна	tr:lagün	ur:ساحلی جھیل	zh:潟湖
@@ -5561,6 +5581,8 @@ c:mean	Noun	ar:متوسط	de:Mittelwert	en:mean	es:media	fa:میانگین	fr:mo
 c:mean-average	Noun	ar:متوسط حسابي	de:arithmetisches Mittel	en:arithmetic mean	es:media aritmética	fa:میانگین حسابی	fr:moyenne arithmétique	he:ממוצע חשבוני	hi:अंकगणितीय माध्य	ja:算術平均	ko:산술 평균	pt:média aritmética	ru:среднее арифметическое	tr:aritmetik ortalama	ur:اوسط	zh:算术平均数
 c:meaning	Noun	ar:معنى	de:Bedeutung	en:meaning	es:significado	fa:معنی,معنا	fr:signification,sens	he:משמעות	hi:अर्थ,मतलब	ja:意味	ko:의미,뜻	pt:significado,sentido	ru:значение	tr:anlam,mana	ur:معنی,مطلب	zh:意思,意义
 c:measurement	Noun	ar:قياس	de:Messung	en:measurement	es:medición,medida	fa:اندازه‌گیری	fr:mesure	he:מדידה	hi:माप,मापन	ja:測定,計測	ko:측정	pt:medição,medida	ru:измерение	tr:ölçüm	ur:پیمائش	zh:测量
+c:measuring-cup	Noun	ar:كوب قياس	de:Messbecher	en:measuring cup	es:taza medidora	fa:پیمانه	fr:tasse à mesurer	he:כוס מדידה	hi:मापने वाला कप	ja:計量カップ	ko:계량컵	pt:copo medidor	ru:мерная чашка	tr:ölçü kabı	ur:ماپنے کا کپ	zh:量杯
+c:measuring-spoon	Noun	ar:ملعقة قياس	de:Messlöffel	en:measuring spoon	es:cuchara medidora	fa:قاشق پیمانه	fr:cuillère à mesurer	he:כף מדידה	hi:मापने वाला चम्मच	ja:計量スプーン	ko:계량스푼	pt:colher medidora	ru:мерная ложка	tr:ölçü kaşığı	ur:ماپنے کا چمچ	zh:量匙
 c:meat	Noun	ar:لحم	de:Fleisch	en:meat	es:carne	fa:گوشت	fr:viande	he:בשר	hi:मांस	ja:肉	ko:고기	pt:carne	ru:мясо	tr:et	ur:گوشت	zh:肉
 c:meat-products	Noun	ar:منتجات اللحم	de:Fleischprodukte	en:meat products	es:productos cárnicos	fa:محصولات گوشتی	fr:produits à base de viande	he:מוצרי בשר	hi:मांस उत्पाद	ja:食肉製品	ko:육류 제품	pt:produtos cárneos	ru:мясные продукты	tr:et ürünleri	ur:گوشت کی مصنوعات	zh:肉制品
 c:meatball-meat	Noun	ar:كرات لحم	de:Fleischbällchen	en:meatball	es:albóndiga	fa:کوفته	fr:boulette de viande	he:כדור בשר	hi:कोफ्ता	ja:ミートボール	ko:미트볼	pt:almôndega	ru:фрикаделька	tr:köfte	ur:کوفتہ	zh:肉丸
@@ -5709,6 +5731,7 @@ c:microstate	Noun	ar:الحالة الدقيقة	de:Mikrozustand	en:microstate	e
 c:microwave	Noun	ar:ميكروويف	de:Mikrowelle	en:microwave	es:microondas	fa:مایکروویو	fr:micro-ondes	he:מיקרוגל	hi:माइक्रोवेव	ja:電子レンジ	ko:전자레인지	pt:micro-ondas	ru:микроволновка	tr:mikrodalga	ur:مائیکرو ویو	zh:微波炉
 c:microwave-cook	Noun	ar:طهي مايكروويف	de:Mikrowellengaren	en:microwave cooking	es:cocción en microondas	fa:پخت با مایکروویو	fr:cuisson micro-ondes	he:בישול במיקרוגל	hi:माइक्रोवेव में पकाना	ja:電子レンジ調理	ko:전자레인지 요리	pt:cozinhar no microondas	ru:готовка в микроволновке	tr:mikrodalgada pişirme	ur:مائیکرو ویو پکانا	zh:微波烹饪
 c:microwave-em	Noun	ar:موجة ميكروية	de:Mikrowellenstrahlung	en:microwave	es:microonda	fa:ریزموج	fr:micro-onde	he:מיקרוגל	hi:सूक्ष्मतरंग	ja:マイクロ波	ko:마이크로파	pt:micro-onda	ru:микроволна	tr:mikrodalga	ur:مائیکرو ویو	zh:微波
+c:microwave-kitchen	Noun	ar:ميكروويف	de:Mikrowelle	en:microwave	es:microondas	fa:مایکروویو	fr:four à micro-ondes	he:מיקרוגל	hi:माइक्रोवेव	ja:電子レンジ	ko:전자레인지	pt:micro-ondas	ru:микроволновка	tr:mikrodalga	ur:مائیکروویو	zh:微波炉
 c:mictlan	Noun	ar:ميكتلان	de:Mictlan	en:Mictlan	es:Mictlán	fa:میکتلان	fr:Mictlan	he:מיקטלן	hi:मिक्टलान	ja:ミクトラン	ko:믹틀란	pt:Mictlán	ru:Миктлан	tr:Mictlan	ur:میکٹلان	zh:冥界
 c:mid-ocean-ridge	Noun	ar:سلسلة وسط المحيط	de:Mittelozeanischer Rücken	en:mid-ocean ridge	es:dorsal oceánica	fa:پشته میان اقیانوسی	fr:dorsale médio-océanique	he:רכס אמצע האוקיינוס	hi:मध्य-महासागरीय कटक	ja:中央海嶺	ko:중앙해령	pt:dorsal meso-oceânica	ru:срединно-океанический хребет	tr:orta okyanus sırtı	ur:وسط سمندر پہاڑی سلسلہ	zh:大洋中脊
 c:mid-ocean-ridge-feat	Noun	ar:حيد وسط المحيط	de:mittelozeanischer Rücken	en:mid-ocean ridge	es:dorsal oceánica	fa:پشته میان‌اقیانوسی	fr:dorsale océanique	he:רכס תת-ימי	hi:मध्य-समुद्र कटक	ja:中央海嶺	ko:중앙해령	pt:dorsal oceânica	ru:срединно-океанический хребет	tr:orta okyanus sırtı	ur:سمندری چوٹی	zh:大洋中脊
@@ -5783,6 +5806,8 @@ c:mittens	Noun	ar:قفازات مدمجة	de:Fäustlinge	en:mittens	es:mitones	f
 c:mixed-economy	Noun	ar:اقتصاد مختلط	de:gemischte Wirtschaft	en:mixed economy	es:economía mixta	fa:اقتصاد مختلط	fr:économie mixte	he:כלכלה מעורבת	hi:मिश्रित अर्थव्यवस्था	ja:混合経済	ko:혼합 경제	pt:economia mista	ru:смешанная экономика	tr:karma ekonomi	ur:مخلوط معیشت	zh:混合经济
 c:mixed-layer	Noun	ar:الطبقة المختلطة	de:Durchmischungsschicht	en:ocean mixed layer	es:capa de mezcla	fa:لایه اختلاط اقیانوسی	fr:couche de mélange	he:שכבת ערבוב	hi:महासागर मिश्रित परत	ja:混合層	ko:혼합층	pt:camada de mistura	ru:перемешанный слой	tr:karışım katmanı	ur:مخلوط تہہ	zh:混合层
 c:mixed-use	Noun	ar:الاستخدام المختلط	de:Mischnutzung	en:mixed-use development	es:desarrollo de uso mixto	fa:توسعه مختلط	fr:développement mixte	he:פיתוח מעורב	hi:मिश्रित उपयोग विकास	ja:複合用途開発	ko:복합 용도 개발	pt:desenvolvimento de uso misto	ru:смешанное использование	tr:karma kullanım	ur:ملا جلا استعمال	zh:混合用途开发
+c:mixer-kitchen	Noun	ar:عجانة	de:Rührgerät	en:mixer	es:batidora	fa:میکسر	fr:batteur	he:מיקסר	hi:मिक्सर	ja:ミキサー	ko:믹서	pt:batedeira	ru:миксер	tr:mikser	ur:مکسر	zh:搅拌器
+c:mixing-bowl	Noun	ar:وعاء الخلط	de:Rührschüssel	en:mixing bowl	es:bol para mezclar	fa:کاسه مخلوط‌کن	fr:bol à mélanger	he:קערת ערבוב	hi:मिक्सिंग बाउल	ja:ミキシングボウル	ko:믹싱볼	pt:tigela de mistura	ru:миска для смешивания	tr:karıştırma kâsesi	ur:مکسنگ باؤل	zh:搅拌碗
 c:mixture	Noun	ar:خليط,مزيج	de:Mischung,Gemisch	en:mixture	es:mezcla	fa:مخلوط	fr:mélange	he:תערובת	hi:मिश्रण	ja:混合物	ko:혼합물	pt:mistura	ru:смесь	tr:karışım	ur:ملاوٹ,مکسچر	zh:混合物
 c:moat	Noun	ar:الخندق المائي	de:Burggraben	en:moat	es:foso	fa:خندق آبی	fr:douves	he:חפיר	hi:खाई	ja:堀	ko:해자	pt:fosso	ru:ров	tr:hendek	ur:خندق	zh:护城河
 c:mobile	Noun	ar:جوال,محمول,موبايل	de:Handy,Mobiltelefon	en:mobile,cell phone,cellphone,cell	es:móvil,celular	fa:موبایل,تلفن همراه	fr:mobile,portable	he:נייד,סלולרי	hi:मोबाइल,सेलफ़ोन	ja:携帯電話,ケータイ	ko:휴대폰,핸드폰	pt:celular,telemóvel	ru:мобильный,сотовый	tr:cep telefonu,mobil	ur:موبائل	zh:手机
@@ -6472,6 +6497,7 @@ c:outside	Noun	ar:خارج	de:außen,draußen	en:outside	es:fuera,exterior	fa:ب
 c:oval	Noun	ar:بيضاوي,شكل بيضاوي	de:Oval	en:oval	es:óvalo	fa:بیضی‌شکل	fr:ovale	he:אובל	hi:अंडाकार	ja:楕円形,オーバル	ko:타원형	pt:oval	ru:овал	tr:oval,yumurta biçimi	ur:بیضوی	zh:椭圆形,卵形
 c:oven	Noun	ar:فرن	de:Backofen,Ofen	en:oven	es:horno	fa:فر	fr:four	he:תנור	hi:ओवन,तंदूर	ja:オーブン	ko:오븐	pt:forno	ru:духовка	tr:fırın	ur:چولہا	zh:烤箱
 c:oven-cook	Noun	ar:طهي فرن	de:Ofengaren	en:oven cooking	es:cocción en horno	fa:پخت در فر	fr:cuisson au four fr	he:בישול בתנור	hi:तंदूर खाना	ja:オーブン調理	ko:오븐 요리	pt:cozinhar no forno	ru:печение в духовке	tr:fırın yemek	ur:تنور پکانا	zh:烤箱烹饪
+c:oven-kitchen	Noun	ar:فرن	de:Ofen	en:oven	es:horno	fa:فر	fr:four	he:תנור	hi:ओवन	ja:オーブン	ko:오븐	pt:forno	ru:духовка	tr:fırın	ur:تندور	zh:烤箱
 c:overalls	Noun	ar:ملابس عمل كاملة	de:Arbeitshose	en:overalls	es:overol	fa:لباس کار یک تکه	fr:bleu de travail	he:בגד עבודה	hi:ओवरआल	ja:つなぎ服	ko:작업복	pt:macacão de trabalho	ru:спецовка	tr:işçi tulumu	ur:اوورآل	zh:工装裤
 c:overcast	Noun	ar:غيوم كثيفة	de:Bewölkung	en:overcast	es:cielo nublado	fa:ابر کامل	fr:ciel couvert	he:מעונן	hi:घनघोर बादल	ja:曇天	ko:흐림	pt:céu encoberto	ru:пасмурность	tr:kapalı hava	ur:ابر آلود	zh:阴天
 c:overcoat	Noun	ar:معطف	de:Mantel,Überzieher	en:overcoat,greatcoat	es:abrigo	fa:پالتو	fr:pardessus,manteau	he:מעיל עליון	hi:ओवरकोट	ja:オーバーコート	ko:오버코트	pt:sobretudo	ru:пальто	tr:palto	ur:اوور کوٹ	zh:大衣
@@ -6737,6 +6763,7 @@ c:pentatonic-scale	Noun	ar:السلم الخماسي	de:pentatonische Tonleiter	
 c:pentecostal	Noun	ar:الخمسينية	de:Pfingstbewegung	en:Pentecostalism	es:pentecostalismo	fa:پنتیکاستال	fr:pentecôtisme	he:פנטקוסטלים	hi:पेंटेकोस्टल	ja:ペンテコステ派	ko:오순절교회	pt:pentecostalismo	ru:пятидесятничество	tr:Pentekostalizm	ur:پینتیکوسٹل	zh:五旬宗
 c:peony	Noun	ar:الفاوانيا	de:Pfingstrose	en:peony	es:peonía	fa:صدتومانی	fr:pivoine	he:אדמונית	hi:पियोनी	ja:牡丹,芍薬	ko:모란,작약	pt:peônia	ru:пион	tr:şakayık	ur:پیونی	zh:牡丹
 c:pepper	Noun	ar:فلفل رومي,فلفل حلو	de:Paprika	en:bell pepper,pepper	es:pimiento	fa:فلفل دلمه	fr:poivron	he:פלפל	hi:शिमला मिर्च	ja:ピーマン	ko:피망	pt:pimentão	ru:болгарский перец	tr:biber	ur:شملہ مرچ	zh:甜椒
+c:pepper-mill	Noun	ar:مطحنة الفلفل	de:Pfeffermühle	en:pepper mill	es:molinillo de pimienta	fa:آسیاب فلفل	fr:moulin à poivre	he:מטחנת פלפל	hi:काली मिर्च मिल	ja:ペッパーミル	ko:후추 그라인더	pt:moinho de pimenta	ru:мельница для перца	tr:biber değirmeni	ur:کالی مرچ چکی	zh:胡椒磨
 c:pepper-veg	Noun	ar:فلفل حلو	de:Paprika Gemüse	en:bell pepper	es:pimiento	fa:فلفل دلمه‌ای	fr:poivron	he:פלפל מתוק	hi:शिमला मिर्च	ja:ピーマン	ko:피망	pt:pimentão	ru:болгарский перец	tr:biber dolmalık	ur:شملہ مرچ	zh:甜椒
 c:pepperoni	Noun	ar:بيبروني	de:Pepperoni	en:pepperoni	es:pepperoni	fa:پپرونی	fr:pepperoni	he:פפרוני	hi:पेपरोनी	ja:ペパロニ	ko:페퍼로니	pt:pepperoni	ru:пепперони	tr:pepperoni	ur:پپرونی	zh:意式辣香肠
 c:percale	Noun	ar:البيركال	de:Perkal	en:percale	es:percal	fa:پرکال	fr:percale	he:פרקל	hi:परकेल	ja:パーケール	ko:퍼케일	pt:percal	ru:перкаль	tr:perkal	ur:پرکال	zh:高支棉
@@ -7198,6 +7225,7 @@ c:preservative	Noun	ar:المادة الحافظة	de:Konservierungsmittel	en:pr
 c:president	Noun	ar:رئيس	de:Präsident	en:president	es:presidente	fa:رئیس جمهور	fr:président	he:נשיא	hi:राष्ट्रपति	ja:大統領	ko:대통령	pt:presidente	ru:президент	tr:başkan,cumhurbaşkanı	ur:صدر	zh:总统,主席
 c:pressure	Noun	ar:ضغط	de:Druck	en:pressure	es:presión	fa:فشار	fr:pression	he:לחץ	hi:दबाव,दाब	ja:圧力	ko:압력	pt:pressão	ru:давление	tr:basınç	ur:دباؤ,دباو	zh:压力,压强
 c:pressure-cook	Noun	ar:طهي بالضغط	de:Druckgaren	en:pressure cooking	es:cocción a presión	fa:پخت با زودپز	fr:cuisson sous pression	he:בישול בסיר לחץ	hi:प्रेशर कुकिंग	ja:圧力調理	ko:압력솥 요리	pt:cozinhar sob pressão	ru:готовка под давлением	tr:düdüklü pişirme	ur:پریشر ککر	zh:高压烹饪
+c:pressure-cooker	Noun	ar:طنجرة ضغط	de:Schnellkochtopf	en:pressure cooker	es:olla a presión	fa:زودپز	fr:autocuiseur	he:סיר לחץ	hi:प्रेशर कुकर	ja:圧力鍋	ko:압력솥	pt:panela de pressão	ru:скороварка	tr:düdüklü tencere	ur:پریشر ککر	zh:压力锅
 c:prestressed-concrete	Noun	ar:خرسانة مسبقة الإجهاد	de:Spannbeton	en:prestressed concrete	es:hormigón pretensado	fa:بتن پیش تنیده	fr:béton précontraint	he:בטון קדם-מתוח	hi:पूर्व-प्रतिबलित कंक्रीट	ja:プレストレストコンクリート	ko:프리스트레스트 콘크리트	pt:concreto protendido	ru:предварительно напряжённый бетон	tr:öngerilmeli beton	ur:پیش تناو کنکریٹ	zh:预应力混凝土
 c:presumption-of-innocence	Noun	ar:قرينة البراءة	de:Unschuldsvermutung	en:presumption of innocence	es:presunción de inocencia	fa:اصل برائت	fr:présomption d'innocence	he:חזקת חפות	hi:निर्दोषता की अनुमान	ja:無罪推定	ko:무죄 추정	pt:presunção de inocência	ru:презумпция невиновности	tr:masumiyet karinesi	ur:بے گناہی کا اصول	zh:无罪推定
 c:pret-a-porter	Noun	ar:بريت أ بورتيه	de:Prêt-à-porter	en:prêt-à-porter	es:prêt-à-porter	fa:پرت آ پورته	fr:prêt-à-porter	he:פרט-א-פורטה	hi:प्रेत ए पोर्ते	ja:プレタポルテ	ko:프레타포르테	pt:prêt-à-porter pt	ru:prêt-à-porter	tr:prêt-à-porter	ur:پرت ا پورتے	zh:高级成衣
@@ -7633,6 +7661,7 @@ c:refrigerant	Noun	ar:مادة التبريد	de:Kältemittel	en:refrigerant	es:
 c:refrigeration	Noun	ar:التبريد	de:Kühlung	en:refrigeration	es:refrigeración	fa:تبرید	fr:réfrigération	he:קירור	hi:प्रशीतन	ja:冷凍	ko:냉동	pt:refrigeração	ru:холодильный цикл	tr:soğutma	ur:تبرید	zh:制冷
 c:refrigerator	Noun	ar:ثلاجة,براد	de:Kühlschrank	en:refrigerator,fridge	es:refrigerador,nevera	fa:یخچال	fr:réfrigérateur,frigo	he:מקרר	hi:फ्रिज,रेफ्रिजरेटर	ja:冷蔵庫	ko:냉장고	pt:geladeira,frigorífico	ru:холодильник	tr:buzdolabı	ur:فریج	zh:冰箱
 c:refrigerator-inv	Noun	ar:اختراع الثلاجة	de:Kühlschrank Erfindung	en:refrigerator invention	es:invención del refrigerador	fa:اختراع یخچال	fr:invention du réfrigérateur	he:המצאת המקרר	hi:फ्रिज आविष्कार	ja:冷蔵庫の発明	ko:냉장고 발명	pt:invenção do frigorífico	ru:изобретение холодильника	tr:buzdolabının icadı	ur:فریج ایجاد	zh:冰箱发明
+c:refrigerator-kitchen	Noun	ar:ثلاجة	de:Kühlschrank	en:refrigerator	es:refrigerador	fa:یخچال	fr:réfrigérateur	he:מקרר	hi:फ्रिज	ja:冷蔵庫	ko:냉장고	pt:refrigerador	ru:холодильник	tr:buzdolabı	ur:فرج	zh:冰箱
 c:refugee	Noun	ar:لاجئ	de:Flüchtling	en:refugee	es:refugiado	fa:پناهنده	fr:réfugié	he:פליט	hi:शरणार्थी	ja:難民	ko:난민	pt:refugiado	ru:беженец	tr:mülteci	ur:پناہ گزین,مہاجر	zh:难民
 c:regeneration-dev	Noun	ar:التجديد النسيجي	de:Geweberegeneration	en:tissue regeneration	es:regeneración tisular	fa:بازسازی بافت	fr:régénération tissulaire	he:התחדשות רקמה	hi:ऊतक पुनर्जनन	ja:組織再生	ko:조직 재생	pt:regeneração tecidual	ru:регенерация тканей	tr:doku rejenerasyonu	ur:بافت تجدید	zh:组织再生
 c:regiment	Noun	ar:فوج	de:Regiment	en:regiment	es:regimiento	fa:هنگ	fr:régiment	he:רגימנט	hi:रेजिमेंट	ja:連隊	ko:연대	pt:regimento	ru:полк	tr:alay	ur:رجمنٹ	zh:团
@@ -7748,6 +7777,7 @@ c:ribeye-steak	Noun	ar:شريحة ريب آي	de:Ribeye-Steak	en:ribeye steak	es
 c:ribosome	Noun	ar:ريبوسوم,جسيم ريبي	de:Ribosom	en:ribosome	es:ribosoma	fa:ریبوزوم	fr:ribosome	he:ריבוזום	hi:राइबोसोम	ja:リボソーム	ko:리보솜	pt:ribossomo	ru:рибосома	tr:ribozom	ur:رائبوسوم	zh:核糖体
 c:ribosome-bio	Noun	ar:ريبوسوم	de:Ribosom	en:ribosome	es:ribosoma	fa:ریبوزوم	fr:ribosome	he:ריבוזום	hi:राइबोसोम	ja:リボソーム	ko:리보솜	pt:ribossomo	ru:рибосома	tr:ribozom	ur:رائبوسوم	zh:核糖体
 c:rice	Noun	ar:أرز	de:Reis	en:rice	es:arroz	fa:برنج	fr:riz	he:אורז	hi:चावल	ja:米,ご飯	ko:쌀,밥	pt:arroz	ru:рис	tr:pirinç	ur:چاول	zh:米,大米
+c:rice-cooker	Noun	ar:طباخ الأرز	de:Reiskocher	en:rice cooker	es:olla arrocera	fa:پلوپز	fr:cuiseur à riz	he:סיר אורז	hi:राइस कुकर	ja:炊飯器	ko:전기밥솥	pt:panela de arroz	ru:рисоварка	tr:pirinç pişirici	ur:رائس ککر	zh:电饭锅
 c:rice-grain	Noun	ar:أرز	de:Reis	en:rice	es:arroz	fa:برنج	fr:riz	he:אורז	hi:चावल	ja:米	ko:쌀	pt:arroz	ru:рис	tr:pirinç	ur:چاول	zh:大米
 c:rich	Adjective	ar:غني,ثري	de:reich	en:rich,wealthy	es:rico	fa:ثروتمند,پولدار	fr:riche	he:עשיר	hi:अमीर,धनी	ja:裕福な,金持ちの	ko:부유한,부자의	pt:rico	ru:богатый	tr:zengin	ur:امیر,دولت مند	zh:富,富有
 c:richter-scale	Noun	ar:مقياس ريختر	de:Richterskala	en:Richter scale	es:escala Richter	fa:مقیاس ریشتر	fr:échelle de Richter	he:סולם ריכטר	hi:रिक्टर पैमाना	ja:リヒタースケール	ko:리히터 규모	pt:escala Richter	ru:шкала Рихтера	tr:Richter ölçeği	ur:ریکٹر پیمانہ	zh:里氏震级
@@ -7951,6 +7981,7 @@ c:salmon-fish	Noun	ar:سلمون	de:Lachs	en:salmon	es:salmón	fa:ماهی سا�
 c:salsa	Noun	ar:سالسا	de:Salsa	en:salsa	es:salsa	fa:سالسا	fr:salsa	he:סלסה	hi:साल्सा	ja:サルサ	ko:살사	pt:salsa	ru:сальса	tr:salsa	ur:سالسا	zh:萨尔萨
 c:salsa-dance	Noun	ar:رقص السالسا	de:Salsa-Tanz	en:salsa dance	es:baile salsa	fa:رقص سالسا	fr:danse salsa	he:סלסה	hi:साल्सा नृत्य	ja:サルサ	ko:살사	pt:dança salsa	ru:сальса	tr:salsa dansı	ur:سالسا رقص	zh:萨尔萨舞
 c:salt	Noun	ar:ملح	de:Salz	en:salt	es:sal	fa:نمک	fr:sel	he:מלח	hi:नमक	ja:塩	ko:소금	pt:sal	ru:соль	tr:tuz	ur:نمک	zh:盐
+c:salt-shaker	Noun	ar:مملحة	de:Salzstreuer	en:salt shaker	es:salero	fa:نمکدان	fr:salière	he:מלחייה	hi:नमकदानी	ja:塩振り	ko:소금통	pt:saleiro	ru:солонка	tr:tuzluk	ur:نمکدان	zh:盐瓶
 c:salting-food	Noun	ar:تمليح طعام	de:Salzen	en:salting food	es:salar alimentos	fa:نمک‌سود کردن	fr:salage	he:מלוח	hi:नमक लगाना	ja:塩蔵	ko:염장	pt:salgar	ru:посолка	tr:tuzlama	ur:نمک لگانا	zh:盐渍
 c:salton-sea	Noun	ar:بحر سالتون	de:Saltonsee	en:Salton Sea	es:mar Salton	fa:دریاچه سالتون	fr:mer de Salton	he:ימת סולטון	hi:साल्टन सागर	ja:ソルトン湖	ko:솔턴호	pt:mar Salton	ru:озеро Солтон-Си	tr:Salton Gölü	ur:جھیل سالٹن	zh:索尔顿湖
 c:salty	Adjective	ar:مالح	de:salzig	en:salty	es:salado	fa:شور	fr:salé	he:מלוח	hi:नमकीन	ja:塩辛い	ko:짠	pt:salgado	ru:солёный	tr:tuzlu	ur:نمکین	zh:咸
@@ -8337,6 +8368,7 @@ c:sidewalk	Noun	ar:رصيف	de:Gehweg,Bürgersteig	en:sidewalk,pavement	es:acera
 c:sidewinder	Noun	ar:افعى الرمل الملتوية	de:Seitenwinder	en:sidewinder	es:cascabel cornuda	fa:افعی جانب خز	fr:crotalus céraste	he:נחש הצד	hi:साइडवाइंडर	ja:サイドワインダー	ko:사이드와인더	pt:cascavel-cornuda	ru:боковой гремучник	tr:yandan kayan çıngıraklı yılan	ur:سائیڈ وائنڈر	zh:角响尾蛇
 c:siege	Noun	ar:حصار	de:Belagerung	en:siege	es:asedio	fa:محاصره	fr:siège	he:מצור	hi:घेराबंदी	ja:包囲	ko:포위	pt:cerco	ru:осада	tr:kuşatma	ur:محاصرہ	zh:围攻,围困
 c:sierra-nevada	Noun	ar:سلسلة سييرا نيفادا	de:Sierra Nevada	en:Sierra Nevada	es:Sierra Nevada	fa:سی‌یرا نوادا	fr:sierra Nevada	he:סיירה נבאדה	hi:सिएरा नेवाडा	ja:シエラネバダ山脈	ko:시에라네바다산맥	pt:Serra Nevada	ru:Сьерра-Невада	tr:Sierra Nevada	ur:سیرا نواڈا	zh:内华达山脉
+c:sieve-kitchen	Noun	ar:غربال	de:Siebgerät	en:sieve	es:tamiz	fa:الک	fr:tamis	he:נפה	hi:छन्नी	ja:ふるい	ko:체망	pt:peneira	ru:сито	tr:elek	ur:چھاننی	zh:筛子
 c:sieve-of-eratosthenes	Noun	ar:غربال اراتوستينيس	de:Sieb des Eratosthenes	en:sieve of Eratosthenes	es:criba de Eratóstenes	fa:غربال اراتوستن	fr:crible d'Ératosthène	he:נפת אראטוסתנס	hi:एराटोस्थनीज की चलनी	ja:エラトステネスの篩	ko:에라토스테네스의 체	pt:crivo de Eratóstenes	ru:решето Эратосфена	tr:Eratosthenes kalburu	ur:ایراٹوستھنیس کی چھلنی	zh:埃拉托斯特尼筛法
 c:sievert	Noun	ar:السيفرت	de:Sievert	en:sievert	es:sievert	fa:سیورت	fr:sievert	he:סיוורט	hi:सीवर्ट	ja:シーベルト	ko:시버트	pt:sievert	ru:зиверт	tr:sievert	ur:سیورٹ	zh:希沃特
 c:signal-noise-ratio	Noun	ar:نسبة الإشارة إلى الضوضاء	de:Signal-Rausch-Verhältnis	en:signal-to-noise ratio	es:relación señal-ruido	fa:نسبت سیگنال به نویز	fr:rapport signal sur bruit	he:יחס אות לרעש	hi:संकेत-शोर अनुपात	ja:信号雑音比	ko:신호 대 잡음비	pt:relação sinal-ruído	ru:отношение сигнал-шум	tr:sinyal-gürültü oranı	ur:اشارہ شور تناسب	zh:信噪比
@@ -8437,6 +8469,7 @@ c:sloth	Noun	ar:كسل	de:Trägheit Faulheit	en:sloth vice	es:pereza	fa:تنبل
 c:sloth-mammal	Noun	ar:كسلان	de:Faultier	en:sloth	es:perezoso	fa:تنبل	fr:paresseux	he:עצלן	hi:स्लोथ	ja:ナマケモノ	ko:나무늘보	pt:preguiça	ru:ленивец	tr:tembel hayvan	ur:سست حیوان	zh:树懒
 c:slow	Adjective	ar:بطيء	de:langsam	en:slow	es:lento	fa:آهسته,کند	fr:lent	he:איטי	hi:धीमा	ja:遅い	ko:느린	pt:lento	ru:медленный	tr:yavaş	ur:سست	zh:慢
 c:slow-cook	Noun	ar:طهي بطيء	de:Langsames Garen	en:slow cooking	es:cocción lenta	fa:پخت آهسته	fr:cuisson lente	he:בישול איטי	hi:धीमी पकाना	ja:スロークック	ko:슬로우 쿡	pt:cozinhar lento	ru:медленное приготовление	tr:yavaş pişirme	ur:سلو کک	zh:慢煮
+c:slow-cooker	Noun	ar:طباخ بطيء	de:Schongarer	en:slow cooker	es:olla de cocción lenta	fa:پلوپز آهسته	fr:mijoteuse	he:סיר בישול איטי	hi:स्लो कुकर	ja:スロークッカー	ko:슬로우 쿠커	pt:panela elétrica lenta	ru:мультиварка медленная	tr:yavaş pişirici	ur:سست ککر	zh:慢炖锅
 c:slow-twitch	Noun	ar:الألياف العضلية بطيئة الانقباض	de:langsame Muskelfasern	en:slow-twitch muscle fiber	es:fibra muscular de contracción lenta	fa:فیبر عضلانی کند	fr:fibre musculaire à contraction lente	he:סיב שריר איטי-כיווץ	hi:धीमा-मरोड़ पेशी तंतु	ja:遅筋繊維	ko:지근섬유	pt:fibra muscular de contração lenta	ru:медленные мышечные волокна	tr:yavaş kasılan kas lifi	ur:آہستہ سکڑنے والی عضلات	zh:慢肌纤维
 c:sludge-treatment	Noun	ar:معالجة الحمأة	de:Schlammbehandlung	en:sludge treatment	es:tratamiento de lodos	fa:تصفیه لجن	fr:traitement des boues	he:טיפול בבוצה	hi:कीचड़ उपचार	ja:汚泥処理	ko:슬러지 처리	pt:tratamento de lodos	ru:обработка осадка	tr:çamur arıtma	ur:کیچڑ علاج	zh:污泥处理
 c:slug	Noun	ar:بزاقة	de:Nacktschnecke	en:slug	es:babosa	fa:راب	fr:limace	he:שבלול חשוף	hi:स्लग,कोंचा	ja:ナメクジ	ko:민달팽이	pt:lesma	ru:слизень	tr:sümüklüböcek	ur:سلگ	zh:蛞蝓
@@ -8621,6 +8654,7 @@ c:sparrow-bird	Noun	ar:عصفور	de:Spatz	en:sparrow	es:gorrión	fa:گنجشک	
 c:sparta	Noun	ar:اسبرطة	de:Sparta	en:Sparta	es:Esparta	fa:اسپارت	fr:Sparte	he:ספרטה	hi:स्पार्टा	ja:スパルタ	ko:스파르타	pt:Esparta	ru:Спарта	tr:Sparta	ur:سپارٹا	zh:斯巴达
 c:spatial-cognition	Noun	ar:الإدراك المكاني	de:räumliche Kognition	en:spatial cognition	es:cognición espacial	fa:شناخت فضایی	fr:cognition spatiale	he:קוגניציה מרחבית	hi:स्थानिक अनुभूति	ja:空間認知	ko:공간 인지	pt:cognição espacial	ru:пространственное познание	tr:uzamsal biliş	ur:مکانی ادراک	zh:空间认知
 c:spatula	Noun	ar:ملوق,مقلاة مسطحة	de:Spatel,Pfannenwender	en:spatula	es:espátula	fa:کاردک	fr:spatule	he:מרית	hi:स्पैचुला,पलटा	ja:ヘラ,フライ返し	ko:뒤집개	pt:espátula	ru:лопатка	tr:spatula	ur:کڑچھا	zh:锅铲
+c:spatula-kitchen	Noun	ar:ملعقة عريضة	de:Spatel	en:spatula	es:espátula	fa:کفگیر	fr:spatule	he:מרית	hi:स्पैटुला	ja:ヘラ	ko:뒤집개	pt:espátula	ru:лопатка	tr:spatula	ur:اسپاتولا	zh:铲子
 c:spatula-tool	Noun	ar:ملعقة مسطحة	de:Spatel	en:spatula	es:espátula	fa:کفگیر پهن	fr:spatule	he:מרית	hi:स्पैटुला	ja:ヘラ	ko:주걱	pt:espátula	ru:лопатка	tr:spatula	ur:سپاتولا	zh:抹刀
 c:speak	Verb	ar:تكلم,يتكلم	de:sprechen	en:speak,speaks,spoke	es:hablar	fa:صحبت کردن	fr:parler	he:לדבר	hi:बोलना	ja:話す	ko:말하다	pt:falar	ru:говорить	tr:konuşmak	ur:بولنا	zh:说
 c:speaker	Noun	ar:سماعة,مكبر صوت	de:Lautsprecher	en:speaker,loudspeaker	es:altavoz,parlante,bocina	fa:بلندگو,اسپیکر	fr:haut-parleur,enceinte	he:רמקול	hi:स्पीकर,लाउडस्पीकर	ja:スピーカー	ko:스피커,확성기	pt:alto-falante,coluna	ru:динамик,громкоговоритель	tr:hoparlör	ur:اسپیکر	zh:扬声器,喇叭
@@ -8851,7 +8885,9 @@ c:stormwater	Noun	ar:مياه الأمطار	de:Regenwasser	en:stormwater	es:agu
 c:story	Noun	ar:قصة	de:Geschichte	en:story	es:historia,cuento	fa:داستان	fr:histoire	he:סיפור	hi:कहानी	ja:物語,ストーリー	ko:이야기	pt:história,conto	ru:история,рассказ	tr:hikaye,öykü	ur:کہانی	zh:故事
 c:storyboard	Noun	ar:لوحة قصصية	de:Storyboard	en:storyboard	es:guion gráfico,storyboard	fa:استوری بورد	fr:storyboard,scénarimage	he:לוח סיפור	hi:स्टोरीबोर्ड	ja:絵コンテ	ko:스토리보드	pt:storyboard,esboço	ru:раскадровка	tr:hikaye tahtası	ur:اسٹوری بورڈ	zh:分镜头
 c:stove	Noun	ar:موقد,بوتاجاز	de:Herd,Kochfeld	en:stove,cooker	es:estufa,cocina	fa:اجاق	fr:cuisinière	he:כיריים	hi:चूल्हा,स्टोव	ja:コンロ	ko:가스레인지,스토브	pt:fogão	ru:плита	tr:ocak	ur:چولہا	zh:炉灶
+c:stove-kitchen	Noun	ar:موقد	de:Herd	en:stove	es:estufa	fa:اجاق	fr:cuisinière	he:כיריים	hi:चूल्हा	ja:コンロ	ko:가스레인지	pt:fogão	ru:плита	tr:ocak	ur:چولہا	zh:炉灶
 c:straight-angle	Noun	ar:زاوية مستقيمة	de:gestreckter Winkel	en:straight angle	es:ángulo llano	fa:زاویه نیم‌صفحه	fr:angle plat	he:זווית שטוחה	hi:ऋजु कोण	ja:平角	ko:평각	pt:ângulo raso	ru:развёрнутый угол	tr:doğru açı	ur:سیدھا زاویہ	zh:平角
+c:strainer	Noun	ar:مصفاة دقيقة	de:Seiher	en:strainer	es:colador fino	fa:صافی	fr:passoire fine	he:סיננת	hi:छलनी बारीक	ja:ストレーナー	ko:여과기	pt:coador	ru:ситечко	tr:süzgeç	ur:چھاننی باریک	zh:细网筛
 c:strait	Noun	ar:مضيق	de:Meerenge,Straße	en:strait	es:estrecho	fa:تنگه	fr:détroit	he:מצר	hi:जलसंधि	ja:海峡	ko:해협	pt:estreito	ru:пролив	tr:boğaz	ur:آبنائے	zh:海峡
 c:strait-geo	Noun	ar:مضيق بحري	de:Meerenge	en:strait	es:estrecho	fa:تنگه	fr:détroit	he:מיצר	hi:जलसंधि	ja:海峡	ko:해협	pt:estreito	ru:пролив	tr:boğaz	ur:آبنائے	zh:海峡
 c:strait-of-gibraltar	Noun	ar:مضيق جبل طارق	de:Straße von Gibraltar	en:Strait of Gibraltar	es:Estrecho de Gibraltar	fa:تنگه جبل‌الطارق	fr:Détroit de Gibraltar	he:מיצר גיברלטר	hi:जिब्राल्टर जलडमरूमध्य	ja:ジブラルタル海峡	ko:지브롤터 해협	pt:Estreito de Gibraltar	ru:Гибралтарский пролив	tr:Cebelitarık Boğazı	ur:آبنائے جبل الطارق	zh:直布罗陀海峡
@@ -9454,6 +9490,7 @@ c:tls	Noun	ar:أمان طبقة النقل	de:TLS	en:TLS	es:TLS	fa:TLS	fr:TLS	he
 c:toad	Noun	ar:علجوم,ضفدع طيني	de:Kröte	en:toad	es:sapo	fa:وزغ	fr:crapaud	he:קרפדה	hi:विषखापर	ja:ヒキガエル	ko:두꺼비	pt:sapo	ru:жаба	tr:karakurbağası	ur:ٹوڈ,بڑا مینڈک	zh:蟾蜍
 c:toast	Noun	ar:نخب,نخب الشرف	de:Toast,Trinkspruch	en:toast	es:brindis	fa:نوش,به سلامتی	fr:toast	he:הרמת כוסית	hi:टोस्ट,जयकार	ja:乾杯	ko:건배	pt:brinde	ru:тост	tr:kadeh kaldırma,tost	ur:ٹوسٹ,جام صحت	zh:祝酒,敬酒
 c:toaster	Noun	ar:محمصة	de:Toaster	en:toaster	es:tostadora	fa:توستر	fr:grille-pain	he:מצנם	hi:टोस्टर	ja:トースター	ko:토스터	pt:torradeira	ru:тостер	tr:tost makinesi	ur:ٹوسٹر	zh:烤面包机
+c:toaster-kitchen	Noun	ar:محمصة	de:Toaster	en:toaster	es:tostadora	fa:توستر	fr:grille-pain	he:מצנם	hi:टोस्टर	ja:トースター	ko:토스터	pt:torradeira	ru:тостер	tr:ekmek kızartma makinesi	ur:ٹوسٹر	zh:烤面包机
 c:today	Adverb	ar:اليوم	de:heute	en:today	es:hoy	fa:امروز	fr:aujourd'hui	he:היום	hi:आज	ja:今日	ko:오늘	pt:hoje	ru:сегодня	tr:bugün	ur:آج	zh:今天
 c:toe	Noun	ar:إصبع قدم	de:Zehe	en:toe	es:dedo del pie	fa:انگشت پا	fr:orteil	he:בוהן	hi:पैर की उंगली	ja:つま先,足指	ko:발가락	pt:dedo do pé	ru:палец ноги	tr:ayak parmağı	ur:پاؤں کی انگلی	zh:脚趾
 c:toe-body	Noun	ar:إصبع قدم	de:Zeh	en:toe	es:dedo del pie	fa:انگشت پا	fr:orteil	he:אצבע רגל	hi:पैर की उंगली	ja:足指	ko:발가락	pt:dedo do pé	ru:палец ноги	tr:ayak parmağı	ur:پاؤں کی انگلی	zh:脚趾
@@ -9982,6 +10019,7 @@ c:vulture	Noun	ar:نسر	de:Geier	en:vulture	es:buitre	fa:کرکس	fr:vautour	he
 c:vulture-bird	Noun	ar:رخمة	de:Geier	en:vulture	es:buitre	fa:کرکس	fr:vautour	he:נשר	hi:गिद्ध	ja:ハゲタカ	ko:독수리	pt:abutre	ru:стервятник	tr:akbaba	ur:گدھ	zh:秃鹰
 c:waffle	Noun	ar:وافل	de:Waffel	en:waffle	es:gofre	fa:وافل	fr:gaufre	he:וופל	hi:वैफल	ja:ワッフル	ko:와플	pt:waffle	ru:вафля	tr:waffle	ur:وافل	zh:华夫饼
 c:waffle-dessert	Noun	ar:وافل	de:Waffel	en:waffle	es:gofre	fa:وافل	fr:gaufre	he:וופל	hi:वाफ़ल	ja:ワッフル	ko:와플	pt:waffle	ru:вафля	tr:waffle	ur:وافل	zh:华夫饼
+c:waffle-iron	Noun	ar:حديدة الوافل	de:Waffeleisen	en:waffle iron	es:gofrera	fa:وافل‌ساز	fr:gaufrier	he:מכשיר וופלים	hi:वफ़ल आयरन	ja:ワッフル焼き器	ko:와플 메이커	pt:máquina de waffle	ru:вафельница	tr:waffle makinesi	ur:وافل آئرن	zh:华夫饼机
 c:wage	Noun	ar:أجر,أجور	de:Lohn	en:wage	es:salario,sueldo	fa:دستمزد,مزد	fr:salaire,rémunération	he:שכר,משכורת	hi:वेतन,मजदूरी	ja:賃金	ko:임금	pt:salário,ordenado	ru:заработная плата,зарплата	tr:ücret,maaş	ur:مزدوری,اجرت	zh:工资,薪资
 c:wagon	Noun	ar:عربة	de:Wagen,Karren	en:wagon,cart	es:vagón,carro,carreta	fa:گاری,واگن	fr:chariot,charrette	he:עגלה	hi:गाड़ी,ठेला	ja:荷車,ワゴン	ko:수레,마차	pt:vagão,carroça	ru:повозка,телега	tr:araba,vagon	ur:ریڑھی	zh:货车,马车
 c:wagon-vehicle	Noun	ar:عربة خشبية	de:Wagen	en:wagon	es:carreta	fa:گاری	fr:chariot	he:עגלה	hi:वैगन	ja:荷馬車	ko:마차	pt:vagão	ru:повозка	tr:vagon	ur:ویگن	zh:货车
@@ -10132,6 +10170,7 @@ c:whey-dairy	Noun	ar:شرش اللبن	de:Molke	en:whey	es:suero	fa:آب پنی�
 c:whirlpool	Noun	ar:دوامة	de:Strudel	en:whirlpool	es:remolino	fa:گرداب	fr:tourbillon	he:מערבולת	hi:भँवर	ja:渦	ko:소용돌이	pt:redemoinho	ru:водоворот	tr:girdap	ur:بھنور	zh:漩涡
 c:whirlwind	Noun	ar:زوبعة	de:Wirbelwind	en:whirlwind	es:torbellino	fa:گردباد	fr:tourbillon	he:מערבולת	hi:बवंडर	ja:旋風	ko:회오리바람	pt:redemoinho	ru:вихрь	tr:hortum	ur:بگولہ	zh:旋风
 c:whisk	Noun	ar:مضرب بيض,خفاقة	de:Schneebesen	en:whisk	es:batidor	fa:همزن دستی	fr:fouet	he:מטרפה	hi:व्हिस्क,फेंटनी	ja:泡立て器	ko:거품기	pt:batedor	ru:венчик	tr:çırpıcı	ur:پھینٹنے والا	zh:打蛋器
+c:whisk-kitchen	Noun	ar:مضرب بيض	de:Schneebesen	en:whisk	es:batidor	fa:همزن	fr:fouet	he:מטרפה	hi:व्हिस्क	ja:泡立て器	ko:거품기	pt:batedor	ru:венчик	tr:çırpıcı	ur:وسک	zh:打蛋器
 c:whiskey	Noun	ar:ويسكي	de:Whiskey	en:whiskey	es:whisky	fa:ویسکی	fr:whisky	he:וויסקי	hi:व्हिस्की	ja:ウィスキー	ko:위스키	pt:uísque	ru:виски	tr:viski	ur:وہسکی	zh:威士忌
 c:whisper	Verb	ar:همس	de:flüstern	en:whisper	es:susurrar	fa:پچ پچ کردن	fr:chuchoter,murmurer	he:ללחוש	hi:फुसफुसाना	ja:ささやく	ko:속삭이다	pt:sussurrar	ru:шептать	tr:fısıldamak	ur:سرگوشی کرنا	zh:悄悄说,耳语
 c:white	Adjective	ar:أبيض	de:weiß	en:white	es:blanco	fa:سفید	fr:blanc	he:לבן	hi:सफ़ेद	ja:白,白い	ko:흰,하얀	pt:branco	ru:белый	tr:beyaz	ur:سفید	zh:白,白色
@@ -10171,6 +10210,7 @@ c:windshear	Noun	ar:قص الريح	de:Windscherung	en:wind shear	es:cizalladura
 c:windshield	Noun	ar:زجاج أمامي	de:Windschutzscheibe	en:windshield,windscreen	es:parabrisas	fa:شیشه جلو	fr:pare-brise	he:שמשה קדמית	hi:विंडशील्ड	ja:フロントガラス	ko:앞유리,윈드실드	pt:para-brisa	ru:лобовое стекло	tr:ön cam	ur:ونڈ اسکرین	zh:挡风玻璃
 c:windstorm	Noun	ar:عاصفة ريحية	de:Windsturm	en:windstorm	es:vendaval	fa:طوفان باد	fr:tempête de vent	he:סופת רוחות	hi:आँधी	ja:暴風	ko:폭풍	pt:ventania	ru:буря	tr:rüzgâr fırtınası	ur:ہوا کا طوفان	zh:风暴
 c:wine	Noun	ar:نبيذ,خمر	de:Wein	en:wine	es:vino	fa:شراب	fr:vin	he:יין	hi:शराब,मदिरा	ja:ワイン	ko:와인,포도주	pt:vinho	ru:вино	tr:şarap	ur:شراب	zh:葡萄酒,酒
+c:wine-cooler	Noun	ar:مبرد النبيذ	de:Weinkühler	en:wine cooler	es:enfriador de vino	fa:خنک‌کن شراب	fr:cave à vin	he:מקרר יין	hi:वाइन कूलर	ja:ワインクーラー	ko:와인 쿨러	pt:adega	ru:винный холодильник	tr:şarap soğutucusu	ur:شراب کولر	zh:红酒柜
 c:wine-drink	Noun	ar:نبيذ	de:Wein	en:wine	es:vino	fa:شراب	fr:vin	he:יין	hi:शराब अंगूरी	ja:ワイン	ko:와인	pt:vinho	ru:вино	tr:şarap	ur:شراب	zh:葡萄酒
 c:wing-commander	Noun	ar:قائد جناح	de:Geschwaderkommodore	en:wing commander	es:comandante de ala	fa:فرمانده ناوگروه	fr:commandant d'aile	he:מפקד כנף	hi:विंग कमांडर	ja:飛行隊司令	ko:비행단장	pt:comandante de ala	ru:командир крыла	tr:kanat komutanı	ur:ونگ کمانڈر	zh:联队司令
 c:wingtip	Noun	ar:طرف الجناح	de:Flügelspitze	en:wingtip	es:punta de ala	fa:نوک بال	fr:bout d'aile	he:קצה כנף	hi:विंगटिप	ja:翼端	ko:날개 끝	pt:ponta da asa	ru:законцовка крыла	tr:kanat ucu	ur:پر کا سرا	zh:翼尖
